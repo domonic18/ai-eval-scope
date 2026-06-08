@@ -450,7 +450,9 @@ class JudgeOrchestrator:
 
 ## 三、多模态视觉评估
 
-VisionEvaluator 通过 ProviderPool 获取多模态 Provider（如 Kimi-2.6），输入课件截图输出结构化评分。
+VisionEvaluator 通过 ProviderPool 获取多模态 Provider（如 Kimi-2.6），输入 HTML 文档渲染截图输出结构化评分。
+
+> **评估对象**：当前阶段为 Markdown/HTML 文档集。Markdown 可先转为 HTML 再截图评估，HTML 文档直接通过浏览器渲染后截图。PPTX 评估暂不支持，后续可通过插件扩展。
 
 ```python
 # agent_eval/evaluation/evaluators/vision.py
@@ -465,7 +467,8 @@ class VisionEvaluator(BaseEvaluator):
         # 通过 ProviderPool 获取配置的多模态 Provider
         client = self.provider_pool.get(self.params.get("llm_provider"))
 
-        screenshots = self._capture_screenshots(sample)
+        # 将 HTML 文档渲染为截图（Markdown 先转 HTML）
+        screenshots = self._render_and_capture(sample)
         prompt = self.template_manager.render("visual_quality", context)
         response = client.chat_with_vision(messages=prompt, images=screenshots)
         scores = self.output_parser.parse(response.content, self.output_schema)
@@ -566,3 +569,4 @@ rule_results.json 中可见每个约束使用的模型
 |------|------|----------|
 | v1.0 | 2026-06-08 | 按架构层次重组，更新交叉引用 |
 | v1.1 | 2026-06-08 | 新增 ProviderPool 多模型管理、运行时切换、JudgeRecord 评审溯源、ConstraintResult 模型溯源字段 |
+| v1.2 | 2026-06-08 | 视觉评估从 PPTX 截图调整为 HTML 渲染截图；PPTX 评估标注为后续插件扩展 |
