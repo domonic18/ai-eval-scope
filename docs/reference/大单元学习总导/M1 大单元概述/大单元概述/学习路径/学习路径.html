@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学习路径 - 三年级数学</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+            font-size: 16px;
+            line-height: 1.8;
+            color: #333;
+            background: linear-gradient(135deg, #e8f5e9 0%, #e3f2fd 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #2e7d32 0%, #1976d2 100%);
+            color: white;
+            padding: 30px 40px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 30px 40px;
+        }
+        h2 {
+            color: #1565c0;
+            font-size: 22px;
+            margin: 25px 0 15px;
+            padding-left: 15px;
+            border-left: 4px solid #1565c0;
+        }
+        h3 {
+            color: #2e7d32;
+            font-size: 19px;
+            margin: 20px 0 12px;
+        }
+        .path-section {
+            background: #f8fdf8;
+            border: 2px solid #c8e6c9;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        .path-section.base {
+            border-color: #81c784;
+            background: #f1f8e9;
+        }
+        .path-section.standard {
+            border-color: #64b5f6;
+            background: #e3f2fd;
+        }
+        .path-section.advanced {
+            border-color: #ba68c8;
+            background: #f3e5f5;
+        }
+        .path-section h3 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .path-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            color: white;
+        }
+        .path-tag.base { background: #4caf50; }
+        .path-tag.standard { background: #2196f3; }
+        .path-tag.advanced { background: #9c27b0; }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+        .info-item {
+            background: white;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border-left: 3px solid #1565c0;
+        }
+        .info-item strong {
+            color: #1565c0;
+            display: block;
+            margin-bottom: 5px;
+            font-size: 15px;
+        }
+        .info-item p {
+            color: #555;
+            font-size: 15px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 15px;
+        }
+        th {
+            background: #1565c0;
+            color: white;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        tr:nth-child(even) {
+            background: #f5f5f5;
+        }
+        tr:hover {
+            background: #e8f5e9;
+        }
+        .成果-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+        .成果-item {
+            background: linear-gradient(135deg, #e8f5e9, #e3f2fd);
+            padding: 15px 20px;
+            border-radius: 10px;
+            border-left: 4px solid #2e7d32;
+            font-size: 15px;
+        }
+        .成果-item span {
+            font-weight: bold;
+            color: #1565c0;
+            margin-right: 8px;
+        }
+        .footer {
+            background: #f5f5f5;
+            padding: 20px 40px;
+            text-align: center;
+            color: #888;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>学习路径</h1>
+            <p>数学 · 三年级上学期</p>
+        </div>
+        
+        <div class="content">
+            <!-- 基础进入路径 -->
+            <h2>基础进入路径</h2>
+            <div class="path-section base">
+                <h3><span class="path-tag base">基础</span>适合对象</h3>
+                <p>需要巩固基础知识和基本技能的学生</p>
+                
+                <div class="info-grid">
+                    <div class="info-item">
+                        <strong>学习重点</strong>
+                        <p>掌握核心概念、基础计算方法和简单问题解决</p>
+                    </div>
+                    <div class="info-item">
+                        <strong>建议模块</strong>
+                        <p>教材精读、基础练习、生活情境导入</p>
+                    </div>
+                    <div class="info-item">
+                        <strong>成果要求</strong>
+                        <p>完成基础练习册，正确率达到80%以上</p>
+                    </div>
+                    <div class="info-item">
+                        <strong>支持工具</strong>
+                        <p>多媒体课件、动手操作材料、学习卡片</p>
+                    </div>
+                    <div class="info-item">
+                        <strong>自我提醒</strong>
+                        <p>每天复习5分钟，坚持做思维导图整理</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 标准发展路径 -->
+            <h2>标准发展路径</h2>
+            <div class="path-section standard">
+                <h3><span class="path-tag standard">标准</span>适合对象</h3>
+                <p>能够独立完成学习任务，希望提升应用能力的学生</p>
+                
+                <div class="info-grid">
+                    <div class="info-item">
+                        <strong>学习重点</strong>
+                        <p>理解知识联系、掌握方法应用、培养数学思维</p>
+                    </div>
+                    <div class="info-item">
+                        <strong>建议模块</strong>
+                        <p>探究学习、项目实践、跨单元整合</p>
+                    </div>
+                    <div class="info-item">
+                        <strong>成果要求</strong>
+                        <p>完成拓展任务包，能够讲解解题思路</p>
+                    </div>
+                    <div class="info-item">
+                        <strong>合作方式</strong>
+                        <p>同桌互助、小组讨论、师徒结对</p>
+                    </div>
+                    <div class="info-item">
+                        <strong>自我提醒</strong>
+                        <p>每周整理错题本，积极参与课堂分享</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 高阶挑战路径 -->
+            <h2>高阶挑战路径</h2>
+            <div class="path-section advanced">
+                <h3><span class="path-tag advanced">挑战</span>适合对象</h3>
+                <p>学有余力、追求深度探索和创新挑战的学生</p>
+                
+                <div class="info-grid">
+                    <div class="info-item">
+                        <strong>学习重点</strong>
+                        <p>高阶思维训练、复杂问题解决、创新应用</p>
+                    </div>
+                    <div class="info-item">
+                        <strong>建议模块</strong>
+                        <p>数学游戏、思维挑战、项目研究、竞赛准备</p>
+                    </div>
+                    <div class="info-item">
+                        <strong>成果要求</strong>
+                        <p>完成挑战任务，提出创新解法并展示</p>
+                    </div>
+                    <div class="info-item">
+                        <strong>挑战任务</strong>
+                        <p>数学建模、自主出题、专题研究、展示答辩</p>
+                    </div>
+                    <div class="info-item">
+                        <strong>自我提醒</strong>
+                        <p>主动挑战难题，帮助同伴共同进步</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 个体学习建议 -->
+            <h2>个体学习建议（6类学生）</h2>
+            <table>
+                <tr>
+                    <th>学生类型</th>
+                    <th>学习特点</th>
+                    <th>建议策略</th>
+                </tr>
+                <tr>
+                    <td>勤奋踏实型</td>
+                    <td>学习认真但方法单一</td>
+                    <td>多练习变式题，尝试一题多解</td>
+                </tr>
+                <tr>
+                    <td>思维敏捷型</td>
+                    <td>反应快但易粗心</td>
+                    <td>养成检查习惯，注重过程规范</td>
+                </tr>
+                <tr>
+                    <td>内敛沉稳型</td>
+                    <td>基础扎实但不爱表达</td>
+                    <td>鼓励发言展示，给予表达机会</td>
+                </tr>
+                <tr>
+                    <td>活跃开朗型</td>
+                    <td>参与积极但注意力分散</td>
+                    <td>设定专注目标，限时完成任务</td>
+                </tr>
+                <tr>
+                    <td>困难求助型</td>
+                    <td>需要更多支持</td>
+                    <td>及时辅导，分层任务设计</td>
+                </tr>
+                <tr>
+                    <td>探索创新型</td>
+                    <td>不满足标准答案</td>
+                    <td>提供拓展资源，鼓励创新思考</td>
+                </tr>
+            </table>
+
+            <!-- 小组合作建议 -->
+            <h2>小组合作建议（7种角色）</h2>
+            <table>
+                <tr>
+                    <th>角色</th>
+                    <th>职责</th>
+                    <th>核心能力</th>
+                </tr>
+                <tr>
+                    <td>组长</td>
+                    <td>组织讨论、分配任务、督促进度</td>
+                    <td>领导力、组织协调</td>
+                </tr>
+                <tr>
+                    <td>记录员</td>
+                    <td>整理要点、记录问题、汇总成果</td>
+                    <td>倾听、归纳、书写</td>
+                </tr>
+                <tr>
+                    <td>汇报员</td>
+                    <td>代表小组展示、发言交流</td>
+                    <td>表达、胆识、感染力</td>
+                </tr>
+                <tr>
+                    <td>计时员</td>
+                    <td>控制时间、提醒进度、效率把控</td>
+                    <td>时间管理、专注</td>
+                </tr>
+                <tr>
+                    <td>检查员</td>
+                    <td>核对答案、检查质量、把控细节</td>
+                    <td>细心、严谨、耐心</td>
+                </tr>
+                <tr>
+                    <td>激励员</td>
+                    <td>鼓励同伴、活跃气氛、调动情绪</td>
+                    <td>热情、正能量、共情</td>
+                </tr>
+                <tr>
+                    <td>质疑员</td>
+                    <td>提出问题、引发思考、推动深入</td>
+                    <td>批判思维、逻辑推理</td>
+                </tr>
+            </table>
+
+            <!-- 自主表达建议 -->
+            <h2>自主表达建议（9种方式）</h2>
+            <table>
+                <tr>
+                    <th>序号</th>
+                    <th>表达方式</th>
+                    <th>具体形式</th>
+                </tr>
+                <tr>
+                    <td>1</td>
+                    <td>口头讲解</td>
+                    <td>向同伴或老师讲解解题思路</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>书面演算</td>
+                    <td>规范书写解题过程，展示完整步骤</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>图示呈现</td>
+                    <td>画图、列表、画线段图等可视化表达</td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td>思维导图</td>
+                    <td>整理知识结构，建立联系网络</td>
+                </tr>
+                <tr>
+                    <td>5</td>
+                    <td>角色扮演</td>
+                    <td>模拟生活情境，表演数学应用</td>
+                </tr>
+                <tr>
+                    <td>6</td>
+                    <td>实物演示</td>
+                    <td>使用学具操作，边做边说</td>
+                </tr>
+                <tr>
+                    <td>7</td>
+                    <td>视频录制</td>
+                    <td>录制讲解视频，保存学习成果</td>
+                </tr>
+                <tr>
+                    <td>8</td>
+                    <td>海报制作</td>
+                    <td>设计数学小报，展示学习收获</td>
+                </tr>
+                <tr>
+                    <td>9</td>
+                    <td>互评互改</td>
+                    <td>与同伴交换作业，互相评价建议</td>
+                </tr>
+            </table>
+
+            <!-- 作品化成果建议 -->
+            <h2>作品化成果建议（7项成果）</h2>
+            <div class="成果-list">
+                <div class="成果-item"><span>1.</span>数学日记：记录生活中的数学发现和问题</div>
+                <div class="成果-item"><span>2.</span>错题本：整理典型错题，分析错误原因</div>
+                <div class="成果-item"><span>3.</span>数学小报：专题整理，图文并茂展示</div>
+                <div class="成果-item"><span>4.</span>自创题目：设计有创意的数学题目</div>
+                <div class="成果-item"><span>5.</span>项目报告：完成数学实践活动研究报告</div>
+                <div class="成果-item"><span>6.</span>讲解视频：录制知识讲解或难题解析</div>
+                <div class="成果-item"><span>7.</span>成长档案袋：收集学习过程中的代表性作品</div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>三年级数学 · 大单元学习路径</p>
+        </div>
+    </div>
+</body>
+</html>

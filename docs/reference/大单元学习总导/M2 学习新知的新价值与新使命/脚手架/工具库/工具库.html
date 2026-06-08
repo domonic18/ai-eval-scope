@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工具库 - 三年级数学学习工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            font-size: 16px;
+            line-height: 1.8;
+            color: #333;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e3f2fd 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background: linear-gradient(135deg, #1565c00%, #1976d2 50%, #1e88e5 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 12px rgba(21, 101, 192, 0.3);
+        }
+        h1 {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        h2 {
+            font-size: 22px;
+            color: #1565c0;
+            border-left: 4px solid #1e88e5;
+            padding-left: 12px;
+            margin: 25px 0 15px 0;
+        }
+        h3 {
+            font-size: 18px;
+            color: #1976d2;
+            margin: 15px 0 10px 0;
+        }
+        .tool-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid #1e88e5;
+        }
+        .tool-card.level-1 {
+            border-left-color: #42a5f5;
+        }
+        .tool-card.level-2 {
+            border-left-color: #1e88e5;
+        }
+        .tool-card.level-3 {
+            border-left-color: #1565c0;
+        }
+        .tool-title {
+            font-size: 20px;
+            color: #0d47a1;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .tool-purpose {
+            background: #e3f2fd;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            color: #0d47a1;
+        }
+        .tool-steps {
+            padding-left: 20px;
+            margin-bottom: 12px;
+        }
+        .tool-steps li {
+            margin-bottom: 6px;
+        }
+        .tool-example {
+            background: #f5f5f5;
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            font-style: italic;
+            color: #555;
+        }
+        .tool-scene {
+            color: #666;
+            font-size: 14px;
+        }
+        .tool-scene strong {
+            color: #1565c0;
+        }
+        .section-header {
+            background: linear-gradient(90deg, #1e88e50%, #42a5f5 100%);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin: 30px 0 20px 0;
+        }
+        .section-header h2 {
+            color: white;
+            border-left: none;
+            padding-left: 0;
+            margin: 0;
+        }
+        .guide-section {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        .guide-item {
+            display: flex;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed #e0e0e0;
+        }
+        .guide-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .guide-label {
+            font-weight: bold;
+            color: #1565c0;
+            min-width: 80px;
+        }
+        .recommend-box {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .recommend-box h3 {
+            color: #0d47a1;
+            margin-bottom: 10px;
+        }
+        .recommend-box p {
+            margin-bottom: 8px;
+        }
+        @media (max-width: 600px) {
+            body {
+                font-size: 15px;
+            }
+            h1 {
+                font-size: 24px;
+            }
+            h2 {
+                font-size: 20px;
+            }
+            .container {
+                padding: 15px;
+            }
+            .tool-card {
+                padding: 15px;
+            }
+            .guide-item {
+                flex-direction: column;
+            }
+            .guide-label {
+                margin-bottom: 5px;
+            }
+        }
+   </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>七、工具库</h1>
+            <p>数学学习的好帮手</p>
+        </header>
+
+        <div class="section-header">
+            <h2>基础工具（认知放大器）</h2>
+        </div>
+
+        <div class="tool-card level-1">
+            <div class="tool-title">工具1：草稿纸画图法</div>
+            <div class="tool-purpose">
+                <strong>用途说明：</strong>当遇到看不懂的应用题或复杂数量关系时，用草稿纸把题目中的信息画成示意图或线段图，让抽象的数量关系变得形象直观。
+            </div>
+            <h3>使用步骤：</h3>
+            <ol class="tool-steps">
+                <li>读题两遍，理解题目讲了一件什么事</li>
+                <li>找出题目中的关键词和数据，用简单的图形表示</li>
+                <li>根据题意，把图形排列成线段图或流程图</li>
+                <li>看着图，重新复述题目意思</li>
+            </ol>
+            <div class="tool-example">
+                <strong>示例：</strong>"小明有25颗糖，小红比小明多8颗，小红有多少颗？" 画一个线段表示小明的25颗，再画一条更长的线段表示小红，标出多8颗的关系。
+            </div>
+            <div class="tool-scene">
+                <strong>适用场景：</strong>理解应用题数量关系、比较大小问题、倍数问题、分数理解初期。
+            </div>
+        </div>
+
+        <div class="tool-card level-1">
+            <div class="tool-title">工具2：计算自查表</div>
+            <div class="tool-purpose">
+                <strong>用途说明：</strong>做完计算题后，用这张表快速检查是否出错，避免因为粗心丢分。
+            </div>
+            <h3>使用步骤：</h3>
+            <ol class="tool-steps">
+                <li>把题目和答案抄在表上</li>
+                <li>用估算判断答案是否合理</li>
+                <li>用逆运算验证（如加法用减法验算）</li>
+                <li>重做一遍对比结果</li>
+            </ol>
+            <div class="tool-example">
+                <strong>示例：</strong>算完36+47=83后，估算80左右合理，用83-47=36验证正确。
+            </div>
+            <div class="tool-scene">
+                <strong>适用场景：</strong>所有计算题检查、考试卷面检查、平时练习自我验证。
+            </div>
+        </div>
+
+        <div class="tool-card level-1">
+            <div class="tool-title">工具3：生词数学本</div>
+            <div class="tool-purpose">
+                <strong>用途说明：</strong>遇到数学书上的陌生名词或术语，记录在这个本子里，方便复习和理解。
+            </div>
+            <h3>使用步骤：</h3>
+            <ol class="tool-steps">
+                <li>遇到不懂的词，立即写在生词本上</li>
+                <li>试着用自己的话说出它的意思</li>
+                <li>课后问老师或查资料补充解释</li>
+                <li>每周复习一次，用这个词编一道题</li>
+            </ol>
+            <div class="tool-example">
+                <strong>示例：</strong>遇到"进位"这个词，写下来，注上"相加满十向前一位送一"。
+            </div>
+            <div class="tool-scene">
+                <strong>适用场景：</strong>新课预习、单元复习、概念辨析、跨单元知识整理。
+            </div>
+        </div>
+
+        <div class="section-header">
+            <h2>进阶工具（思维加速器）</h2>
+        </div>
+
+        <div class="tool-card level-2">
+            <div class="tool-title">工具4：错题三步分析</div>
+            <div class="tool-purpose">
+                <strong>用途说明：</strong>做错的题目不能只改答案，要深入分析错误原因，才能真正进步。
+            </div>
+            <h3>使用步骤：</h3>
+            <ol class="tool-steps">
+                <li>抄原题，遮住答案重新做</li>
+                <li>分析错误原因：计算失误？概念不清？题意理解错误？</li>
+                <li>写出正确解法，并标注关键步骤</li>
+                <li>找一道同类题练习巩固</li>
+            </ol>
+            <div class="tool-example">
+                <strong>示例：</strong>12×3做成36后分析：错因是分步乘法不熟练，正确的思路是把12拆成10和2。
+            </div>
+            <div class="tool-scene">
+                <strong>适用场景：</strong>单元测试后、期中期末复习、平时作业订正。
+            </div>
+        </div>
+
+        <div class="tool-card level-2">
+            <div class="tool-title">工具5：思维导图模板</div>
+            <div class="tool-purpose">
+                <strong>用途说明：</strong>学完一个单元后，用思维导图把零散的知识点串联成网，形成整体认知。
+            </div>
+            <h3>使用步骤：</h3>
+            <ol class="tool-steps">
+                <li>在纸中央写单元主题</li>
+                <li>回忆本单元有哪些知识点，向外延伸分支</li>
+                <li>每个分支写关键概念，补充1-2个典型例题</li>
+                <li>用不同颜色标注重点和难点</li>
+            </ol>
+            <div class="tool-example">
+                <strong>示例：</strong>画"万以内数的认识"思维导图，中心是"万以内数"，分支是数位、计数单位、读写法、比大小等。
+            </div>
+            <div class="tool-scene">
+                <strong>适用场景：</strong>单元总结、期中期末复习、知识梳理、考前快速回忆。
+            </div>
+        </div>
+
+        <div class="tool-card level-2">
+            <div class="tool-title">工具6：同伴讲题对练</div>
+            <div class="tool-purpose">
+                <strong>用途说明：</strong>和同学互相讲解题目，能讲清楚说明真懂，讲不出来的地方就是薄弱点。
+            </div>
+            <h3>使用步骤：</h3>
+            <ol class="tool-steps">
+                <li>每人选一道做过的好题</li>
+                <li>像小老师一样把解题思路讲给对方听</li>
+                <li>听众可以提问，讲的人尝试回答</li>
+                <li>互相评价谁的讲解更清楚</li>
+            </ol>
+            <div class="tool-example">
+                <strong>示例：</strong>你给同桌讲"求比一个数多几"的应用题，从读题、分析数量关系、列式每一步都讲清楚。
+            </div>
+            <div class="tool-scene">
+                <strong>适用场景：</strong>课后巩固、单元复习、与同学合作学习、角色扮演活动。
+            </div>
+        </div>
+
+        <div class="section-header">
+            <h2>高阶工具（研究级探索器）</h2>
+        </div>
+
+        <div class="tool-card level-3">
+            <div class="tool-title">工具7：数学日记本</div>
+            <div class="tool-purpose">
+                <strong>用途说明：</strong>记录日常生活中发现的数学问题或思考，培养用数学眼光看世界的习惯。
+            </div>
+            <h3>使用步骤：</h3>
+            <ol class="tool-steps">
+                <li>每天花5分钟记录一个身边的数学现象</li>
+                <li>试着用数学语言描述这个现象</li>
+                <li>提出一个和它相关的数学问题</li>
+                <li>每周选一个最有趣的问题深入研究</li>
+            </ol>
+            <div class="tool-example">
+                <strong>示例：</strong>"今天妈妈买水果，苹果3元一斤，买了4斤6两，怎么算总价？"然后研究小数乘法在生活中的应用。
+            </div>
+            <div class="tool-scene">
+                <strong>适用场景：</strong>课外探究、假期实践活动、培养学生数学眼光、写作与数学结合。
+            </div>
+        </div>
+
+        <div class="tool-card level-3">
+            <div class="tool-title">工具8：数学游戏设计</div>
+            <div class="tool-purpose">
+                <strong>用途说明：</strong>尝试自己设计数学游戏，把学过的知识变成好玩的游戏，在设计过程中深化理解。
+            </div>
+            <h3>使用步骤：</h3>
+            <ol class="tool-steps">
+                <li>确定要巩固的知识点</li>
+                <li>设计游戏规则和玩法</li>
+                <li>准备游戏材料（卡片、骰子、棋盘等）</li>
+                <li>和家人或同学试玩，根据反馈改进</li>
+            </ol>
+            <div class="tool-example">
+                <strong>示例：</strong>设计一个"乘法口诀飞行棋"，每走一步要答对一道乘法题，答错倒退一格。
+            </div>
+            <div class="tool-scene">
+                <strong>适用场景：</strong>寒暑假项目学习、班级数学活动、知识竞赛准备。
+            </div>
+        </div>
+
+        <div class="tool-card level-3">
+            <div class="tool-title">工具9：数学小研究</div>
+            <div class="tool-purpose">
+                <strong>用途说明：</strong>选定一个感兴趣的主题，像数学家一样做研究，经历完整的探究过程。
+            </div>
+            <h3>使用步骤：</h3>
+            <ol class="tool-steps">
+                <li>提出一个感兴趣的数学问题</li>
+                <li>通过查资料、做实验、计算等方式收集信息</li>
+                <li>分析数据，发现规律</li>
+                <li>得出结论，写成研究报告</li>
+            </ol>
+            <div class="tool-example">
+                <strong>示例：</strong>研究"为什么时钟的指针走得不一样快"，探索时间单位的进率关系。
+            </div>
+            <div class="tool-scene">
+                <strong>适用场景：</strong>科技创新活动、课题研究、课外拓展、假期探究作业。
+            </div>
+        </div>
+
+        <div class="guide-section">
+            <h2>工具选择指南</h2>
+            <div class="guide-item">
+                <span class="guide-label">多样性：</span>
+                <span>工具库包含画图、计算、记录、分析、表达、创造等不同类型的工具，满足不同学习需求。</span>
+            </div>
+            <div class="guide-item">
+                <span class="guide-label">层次性：</span>
+                <span>基础工具帮助理解，进阶工具提升技能，高阶工具培养思维，由浅入深逐步进阶。</span>
+            </div>
+            <div class="guide-item">
+                <span class="guide-label">选择性：</span>
+                <span>根据自己的学习情况和兴趣，选择最适合的工具，不必全部掌握。</span>
+            </div>
+            <div class="guide-item">
+                <span class="guide-label">复合性：</span>
+                <span>多种工具可以组合使用，如先用草稿纸画图，再用错题分析，最后用思维导图总结。</span>
+            </div>
+            <div class="guide-item">
+                <span class="guide-label">格局性：</span>
+                <span>从"会做题"到"会学习"到"会研究"，工具库帮助你成为数学学习的主人。</span>
+            </div>
+            <div class="recommend-box">
+                <h3>工具推荐</h3>
+                <p><strong>课堂学习首选：</strong>草稿纸画图法 + 计算自查表</p>
+                <p><strong>单元复习首选：</strong>错题三步分析 + 思维导图模板</p>
+                <p><strong>深度探究首选：</strong>数学日记本 + 数学小研究</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

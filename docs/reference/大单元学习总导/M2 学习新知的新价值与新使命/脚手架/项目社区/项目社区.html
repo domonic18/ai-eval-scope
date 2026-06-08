@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目社区 - 数学三年级上</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  min-height: 100vh;
+}
+
+/* 顶部标题区 */
+.header-section {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  color: #fff;
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.header-section h1 {
+  font-size: var(--font-h1);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.header-section .subtitle {
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+/* 主容器 */
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+/* 卡片通用样式 */
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.card-header {
+  background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+  color: #fff;
+  padding: 14px 20px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.card-body {
+  padding: 20px;
+}
+
+/* 项目社区介绍 */
+.community-intro {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.intro-item {
+  flex: 1;
+  min-width: 200px;
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+}
+
+.intro-icon {
+  font-size: 36px;
+  margin-bottom: 8px;
+}
+
+.intro-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.intro-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* 项目列表 */
+.project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.project-item {
+  background: linear-gradient(135deg, #f8fbff 0%, #f0f5ff 100%);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.project-item:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(22,119,255,0.15);
+}
+
+.project-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.project-title::before {
+  content: "📁";
+  font-size: 20px;
+}
+
+.project-desc {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+
+.project-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  background: var(--primary);
+  color: #fff;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+}
+
+/* 活动区 */
+.activity-section {
+  background: linear-gradient(135deg, #fff9e6 0%, #fff7e6 100%);
+  border: 2px dashed #fa8c16;
+}
+
+.activity-section .card-header {
+  background: linear-gradient(90deg, #fa8c16 0%, #ffc53d 100%);
+}
+
+.activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px dashed var(--border);
+}
+
+.activity-item:last-child {
+  border-bottom: none;
+}
+
+.activity-icon {
+  width: 48px;
+  height: 48px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.activity-content {
+  flex: 1;
+}
+
+.activity-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.activity-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* 作品展示 */
+.works-section {
+  background: linear-gradient(135deg, #f6ffed 0%, #f0fdf4 100%);
+  border: 2px solid #52c41a;
+}
+
+.works-section .card-header {
+  background: linear-gradient(90deg, #52c41a 0%, #73d13d 100%);
+}
+
+.works-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.work-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  border: 1px solid var(--border);
+  transition: all 0.3s ease;
+}
+
+.work-card:hover {
+  border-color: #52c41a;
+  transform: scale(1.02);
+}
+
+.work-emoji {
+  font-size: 48px;
+  margin-bottom: 8px;
+}
+
+.work-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.work-author {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* 互动区 */
+.interaction-section {
+  background: linear-gradient(135deg, #f9f0ff 0%, #faf5ff 100%);
+  border: 2px solid #722ed1;
+}
+
+.interaction-section .card-header {
+  background: linear-gradient(90deg, #722ed1 0%, #9254de 100%);
+}
+
+.interaction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.interaction-item {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.interaction-item:hover {
+  border-color: #722ed1;
+  background: #faf5ff;
+}
+
+.interaction-icon {
+  width: 40px;
+  height: 40px;
+  background: #f9f0ff;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.interaction-content {
+  flex: 1;
+}
+
+.interaction-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.interaction-meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* 统计区 */
+.stats-section {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.stat-number {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* 底部 */
+.footer {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .stats-section {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .community-intro {
+    flex-direction: column;
+  }
+  
+  .works-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- 顶部标题区 -->
+<div class="header-section">
+  <h1>数学项目社区</h1>
+  <p class="subtitle">M2 学习新知的新价值与新使命 - 三年级上学期</p>
+</div>
+
+<!-- 主容器 -->
+<div class="container">
+
+  <!-- 统计数据 -->
+  <div class="stats-section">
+    <div class="stat-card">
+      <div class="stat-number">12</div>
+      <div class="stat-label">参与项目</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">48</div>
+      <div class="stat-label">作品数量</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">36</div>
+      <div class="stat-label">讨论话题</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">156</div>
+      <div class="stat-label">社区成员</div>
+    </div>
+  </div>
+
+  <!-- 项目社区介绍 -->
+  <div class="card">
+    <div class="card-header">项目社区简介</div>
+    <div class="card-body">
+      <div class="community-intro">
+        <div class="intro-item">
+          <div class="intro-icon">🎯</div>
+          <div class="intro-title">学习目标</div>
+          <div class="intro-desc">通过项目实践，掌握数学知识，提升解决问题的能力</div>
+        </div>
+        <div class="intro-item">
+          <div class="intro-icon">👥</div>
+          <div class="intro-title">协作学习</div>
+          <div class="intro-desc">与小组成员共同探索，互相帮助，共同进步</div>
+        </div>
+        <div class="intro-item">
+          <div class="intro-icon">🏆</div>
+          <div class="intro-title">成果展示</div>
+          <div class="intro-desc">分享学习成果，互相评价，激发学习热情</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 项目列表 -->
+  <div class="card">
+    <div class="card-header">正在进行的学习项目</div>
+    <div class="card-body">
+      <div class="project-list">
+        <div class="project-item">
+          <div class="project-title">万以内数的认识与表达</div>
+          <div class="project-desc">通过生活实例，理解万以内数的意义，学会用不同方式表示数，培养数感和符号意识。</div>
+          <div class="project-tags">
+            <span class="tag">数与代数</span>
+            <span class="tag">探究实践</span>
+            <span class="tag">小组合作</span>
+          </div>
+        </div>
+        <div class="project-item">
+          <div class="project-title">测量与估计</div>
+          <div class="project-desc">使用尺子、天平等工具进行实际测量活动，学习估计的方法，提高测量技能。</div>
+          <div class="project-tags">
+            <span class="tag">图形与几何</span>
+            <span class="tag">动手操作</span>
+            <span class="tag">实践探究</span>
+          </div>
+        </div>
+        <div class="project-item">
+          <div class="project-title">加减法的应用</div>
+          <div class="project-desc">解决购物、分配等实际情境中的加减法问题，体验数学在生活中的应用价值。</div>
+          <div class="project-tags">
+            <span class="tag">数与代数</span>
+            <span class="tag">问题解决</span>
+            <span class="tag">情境应用</span>
+          </div>
+        </div>
+        <div class="project-item">
+          <div class="project-title">图形分类与识别</div>
+          <div class="project-desc">观察生活中的图形，学会按照不同标准进行分类，认识常见几何图形的特征。</div>
+          <div class="project-tags">
+            <span class="tag">图形与几何</span>
+            <span class="tag">观察分类</span>
+            <span class="tag">生活数学</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 活动区 -->
+  <div class="card activity-section">
+    <div class="card-header">近期社区活动</div>
+    <div class="card-body">
+      <div class="activity-item">
+        <div class="activity-icon">📝</div>
+        <div class="activity-content">
+          <div class="activity-name">"数的故事"征集活动</div>
+          <div class="activity-desc">用数学日记记录生活中发现的有趣数学现象，分享你对数的认识和理解</div>
+        </div>
+      </div>
+      <div class="activity-item">
+        <div class="activity-icon">🎨</div>
+        <div class="activity-content">
+          <div class="activity-name">图形设计大赛</div>
+          <div class="activity-desc">利用学过的几何图形，设计一幅美丽的图案，发挥你的想象力与创造力</div>
+        </div>
+      </div>
+      <div class="activity-item">
+        <div class="activity-icon">🏅</div>
+        <div class="activity-content">
+          <div class="activity-name">"数学小达人"评选</div>
+          <div class="activity-desc">根据项目参与度和作品质量，评选本期"数学小达人"，激励同学们努力学习</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 作品展示 -->
+  <div class="card works-section">
+    <div class="card-header">优秀作品展示</div>
+    <div class="card-body">
+      <div class="works-grid">
+        <div class="work-card">
+          <div class="work-emoji">🏠</div>
+          <div class="work-title">我的房间平面图</div>
+          <div class="work-author">王小明</div>
+        </div>
+        <div class="work-card">
+          <div class="work-emoji">🧮</div>
+          <div class="work-title">加减法故事卡</div>
+          <div class="work-author">李小红</div>
+        </div>
+        <div class="work-card">
+          <div class="work-emoji">📐</div>
+          <div class="work-title">图形拼贴画</div>
+          <div class="work-author">张小三</div>
+        </div>
+        <div class="work-card">
+          <div class="work-emoji">📊</div>
+          <div class="work-title">班级身高统计图</div>
+          <div class="work-author">刘小四</div>
+        </div>
+        <div class="work-card">
+          <div class="work-emoji">⏰</div>
+          <div class="work-title">一天的时间安排</div>
+          <div class="work-author">陈小文</div>
+        </div>
+        <div class="work-card">
+          <div class="work-emoji">🛒</div>
+          <div class="work-title">超市购物清单</div>
+          <div class="work-author">赵小丽</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 互动区 -->
+  <div class="card interaction-section">
+    <div class="card-header">社区互动</div>
+    <div class="card-body">
+      <div class="interaction-list">
+        <div class="interaction-item">
+          <div class="interaction-icon">💬</div>
+          <div class="interaction-content">
+            <div class="interaction-title">数学问题讨论区</div>
+            <div class="interaction-meta">128条讨论 · 最后更新：今天</div>
+          </div>
+        </div>
+        <div class="interaction-item">
+          <div class="interaction-icon">🤝</div>
+          <div class="interaction-content">
+            <div class="interaction-title">学习伙伴匹配</div>
+            <div class="interaction-meta">寻找学习伙伴，一起进步 · 36人参与</div>
+          </div>
+        </div>
+        <div class="interaction-item">
+          <div class="interaction-icon">📢</div>
+          <div class="interaction-content">
+            <div class="interaction-title">教师答疑专区</div>
+            <div class="interaction-meta">老师在线答疑 · 响应迅速</div>
+          </div>
+        </div>
+        <div class="interaction-item">
+          <div class="interaction-icon">🌟</div>
+          <div class="interaction-content">
+            <div class="interaction-title">学习心得分享</div>
+            <div class="interaction-meta">分享你的学习方法和心得 · 89篇分享</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 底部 -->
+<div class="footer">
+  <p>项目社区 - 数学三年级上学期 · M2 学习新知的新价值与新使命</p>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>建构性七阶适配案例导学 -三年级数学</title>
+    <style>
+        :root {
+            --primary: #1677ff;
+            --primary-hover: #4096ff;
+            --accent: #69b1ff;
+            --bg: #f0f5ff;
+            --card-bg: #ffffff;
+            --font-body: 18px;
+            --font-h1: 28px;
+            --font-h2: 22px;
+            --line-height: 1.8;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            font-size: var(--font-body);
+            line-height: var(--line-height);
+            background-color: var(--bg);
+            color: #333;
+            width: 100%;
+        }
+        .container {
+            width: 100%;
+            padding: 20px;
+        }
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            color: #fff;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        header h1 {
+            font-size: var(--font-h1);
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        header p {
+            font-size: var(--font-body);
+            opacity: 0.9;
+        }
+        .case-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            margin: 20px 0;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(22, 119, 255, 0.1);
+            border-left: 4px solid var(--primary);
+        }
+        .case-card h2 {
+            font-size: var(--font-h2);
+            color: var(--primary);
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--accent);
+        }
+        .case-card h3 {
+            font-size: 20px;
+            color: #333;
+            margin: 16px 0 10px;
+        }
+        .case-card p {
+            margin: 8px 0;
+            text-align: justify;
+        }
+        .case-card ul {
+            margin: 10px 0 10px 20px;
+            list-style: none;
+        }
+        .case-card ul li {
+            margin: 8px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        .case-card ul li::before {
+            content: "•";
+            color: var(--primary);
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+        .case-card ol {
+            margin: 10px 0 10px 20px;
+            list-style: none;
+            counter-reset: step-counter;
+        }
+        .case-card ol li {
+            margin: 10px 0;
+            padding-left: 28px;
+            position: relative;
+            counter-increment: step-counter;
+        }
+        .case-card ol li::before {
+            content: counter(step-counter);
+            color: var(--primary);
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+            background: var(--accent);
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 22px;
+            font-size: 14px;
+        }
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 20px 0 10px;
+        }
+        .highlight-box {
+            background: linear-gradient(135deg, #e6f4ff 0%, #f0f5ff 100%);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 12px 0;
+            border: 1px solid var(--accent);
+        }
+        .highlight-box strong {
+            color: var(--primary);
+        }
+        .checklist {
+            background: #fafafa;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 12px 0;
+        }
+        .checklist li {
+            margin: 6px 0;
+        }
+        .principle-tag {
+            display: inline-block;
+            background: var(--primary);
+            color: #fff;
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-right: 8px;
+        }
+        .case-number {
+            display: inline-block;
+            background: var(--primary);
+            color: #fff;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 36px;
+            font-weight: bold;
+            margin-right: 12px;
+        }
+        footer {
+            background: var(--primary);
+            color: #fff;
+            text-align: center;
+            padding: 20px;
+            margin-top: 30px;
+        }
+        footer p {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+   </style>
+</head>
+<body>
+    <header>
+        <h1>模块建构性七阶适配案例导学</h1>
+        <p>三年级数学 · 万以内的加减法 · 建构性学习活动</p>
+    </header>
+
+    <div class="container">
+        <!-- 案例一 -->
+        <div class="case-card">
+            <h2><span class="case-number">1</span>案例一：我来当一次"小账房"——家庭开支我记录</h2>
+
+            <div class="section-title">1. 真实建构情境</div>
+            <p>新学期到了，妈妈给你100元零花钱，让你自己管理一个月的开支。你兴奋地列下想买的东西：图书角的新绘本32元、美术课用的彩泥套装25元、想请同学喝奶茶28元……可钱只有100元，买哪些、不买哪些？当你把所有开销加起来时，发现竟然超出了预算。翻开教材第9页，看看婷婷是怎么用竖式算出"238+185"的，她遇到的问题和你有什么不同？试着把你的问题也用竖式算清楚。</p>
+
+            <div class="section-title">2. 建构任务</div>
+            <p>你的任务是用竖式算清楚自己100元零花钱的所有安排，产出一张"月度零花钱计划表"。</p>
+
+            <div class="section-title">3. 原理调用提示</div>
+            <div class="highlight-box">
+                <p><span class="principle-tag">原理1</span><strong>位值原理：</strong>每个数字在竖式中占的位置不同（个位、十位、百位），进位和退位的规则就像积木的层叠，理解了位值才能算对。</p>
+                <p><span class="principle-tag">原理2</span><strong>建构模型：</strong>把文字问题翻译成数学算式，就像把故事翻译成另一种语言，需要找到"关键词句"。</p>
+            </div>
+
+            <div class="section-title">4. 建构步骤</div>
+            <ol>
+                <li><strong>列清单：</strong>把所有想买的东西及价格写下来，不漏一样。</li>
+                <li><strong>分类：</strong>用"+"号把所有价格加总，算出总数。</li>
+                <li><strong>比大小：</strong>把总支出与100元比较，看超了多少。</li>
+                <li><strong>取舍：</strong>根据总额，判断哪些必须买、哪些可以缓买，调整项目。</li>
+                <li><strong>写竖式：</strong>把调整后的方案用竖式认真计算，验算结果。</li>
+            </ol>
+
+            <div class="section-title">5. 脚手架推荐</div>
+            <ul>
+                <li>草稿纸、计算器（验算用）</li>
+                <li>参考教材第9页婷婷的竖式范例</li>
+            </ul>
+
+            <div class="section-title">6. 成果表达</div>
+            <div class="highlight-box">
+                <p><strong>成果名称：</strong>月度零花钱计划表</p>
+                <p><strong>基本格式与要求：</strong>分三列——"想买的东西"、"价格"、"是否购买"；底部用竖式写出总花费，并与100元对比注明。</p>
+                <p><strong>你的呈现建议：</strong>用表格呈现，竖式计算部分用红笔圈出进位数字，清晰又美观。</p>
+            </div>
+
+            <div class="section-title">7. 自评量规</div>
+            <ul class="checklist">
+                <li>[ ] 我是否列出了所有想买的东西及对应价格？</li>
+                <li>[ ] 我的竖式计算是否进位正确、无遗漏？</li>
+                <li>[ ] 总支出与100元的对比是否清晰注明？</li>
+                <li>[ ] 我是否在成果中使用了"个位""十位""百位"等术语？</li>
+                <li>[ ] 我的计划表是否整洁有序，他人能直接看懂？</li>
+            </ul>
+        </div>
+
+        <!-- 案例二 -->
+        <div class="case-card">
+            <h2><span class="case-number">2</span>案例二：超市购物大挑战——怎样买更划算？</h2>
+
+            <div class="section-title">1. 真实建构情境</div>
+            <p>你和爸爸去超市买水果，发现同一种苹果有两种包装：A包装单个45元，B包装一盒4个只要168元。爸爸问你："买哪种更划算？"你拿起计算器算了半天，发现直接比总价不够直观。旁边阿姨买了3盒B包装，她付了504元，营业员找回36元，她算对了吗？请你帮她验算，同时帮爸爸做出选择，并把推理过程写下来。</p>
+
+            <div class="section-title">2. 建构任务</div>
+            <p>你的任务是帮爸爸和阿姨算出最划算的购果方案，并写一份简单的购物分析报告。</p>
+
+            <div class="section-title">3. 原理调用提示</div>
+            <div class="highlight-box">
+                <p><span class="principle-tag">原理1</span><strong>运算意义建构：</strong>加减法不仅是算得数，更是比较数量、找差额的有力工具。</p>
+                <p><span class="principle-tag">原理2</span><strong>验算意识：</strong>每一步计算后用逆运算（减法验算加法）检查结果，这是数学严谨性的起点。</p>
+            </div>
+
+            <div class="section-title">4. 建构步骤</div>
+            <ol>
+                <li><strong>算A包装单位价：</strong>用竖式算45元×4=180元。</li>
+                <li><strong>比B包装总价：</strong>168元 vs 180元，先判断高低。</li>
+                <li><strong>帮阿姨验算：</strong>用竖式算504-36=468元，对不对？</li>
+                <li><strong>综合建议：</strong>根据计算结果，给爸爸写一条建议并说明理由。</li>
+                <li><strong>写出报告：</strong>整理成"问题—计算—结论"三段式报告。</li>
+            </ol>
+
+            <div class="section-title">5. 脚手架推荐</div>
+            <ul>
+                <li>草稿纸、超市小票（参考）</li>
+                <li>逆运算验算方法回顾（教材第11页）</li>
+            </ul>
+
+            <div class="section-title">6. 成果表达</div>
+            <div class="highlight-box">
+                <p><strong>成果名称：</strong>超市购果分析报告</p>
+                <p><strong>基本格式与要求：</strong>包含"问题描述"、"计算过程（竖式）"、"结论与建议"三部分。</p>
+                <p><strong>你的呈现建议：</strong>计算部分用框框起来，建议部分用彩笔标出关键词。</p>
+            </div>
+
+            <div class="section-title">7. 自评量规</div>
+            <ul class="checklist">
+                <li>[ ] 我是否分别算出两种包装的性价比并进行了比较？</li>
+                <li>[ ] 我的竖式计算过程是否完整且进位正确？</li>
+                <li>[ ] 我是否帮阿姨正确验算了504-36=468元？</li>
+                <li>[ ] 我的建议是否有计算数据支撑，而非凭空判断？</li>
+                <li>[ ] 我的报告是否结构清晰，别人能直接读懂我的思路？</li>
+            </ul>
+        </div>
+
+        <!-- 案例三 -->
+        <div class="case-card">
+            <h2><span class="case-number">3</span>案例三：班级运动会积分榜——我来当记分员</h2>
+
+            <div class="section-title">1. 真实建构情境</div>
+            <p>班级运动会设立了积分榜：个人项目冠军积100分，亚军积85分，第三名积72分；接力赛第一名积200分，第二名积155分。咱们班个人项目得了2个冠军、1个亚军，接力赛得了第2名。隔壁班总积分725分，比咱们班多85分。咱们班到底积了多少分？请你用竖式帮班级算出总分，并推断隔壁班的各项成绩。这个问题课本没有现成答案，需要你主动建构解题思路。</p>
+
+            <div class="section-title">2. 建构任务</div>
+            <p>你的任务是算出咱们班的总积分，并推断隔壁班的得分结构，产出一份"班级积分分析报告"。</p>
+
+            <div class="section-title">3. 原理调用提示</div>
+            <div class="highlight-box">
+                <p><span class="principle-tag">原理1</span><strong>数量关系建构：</strong>已知两个数的和与差，可以反推各自的数量——这比正向计算更深一层。</p>
+                <p><span class="principle-tag">原理2</span><strong>分步建构：</strong>复杂问题拆成小步骤，每一步都算对了，总体才不会出错。</p>
+            </div>
+
+            <div class="section-title">4. 建构步骤</div>
+            <ol>
+                <li><strong>算个人项目积分：</strong>用竖式算2个冠军+1个亚军的总分（100+100+85）。</li>
+                <li><strong>算接力赛积分：</strong>直接记录155分。</li>
+                <li><strong>算班级总积分：</strong>把两项加起来。</li>
+                <li><strong>反推隔壁班：</strong>已知咱班比隔壁班少85分，用咱班积分+85，推断隔壁班总分。</li>
+                <li><strong>写报告：</strong>把以上所有计算过程用竖式整理呈现。</li>
+            </ol>
+
+            <div class="section-title">5. 脚手架推荐</div>
+            <ul>
+                <li>草稿纸、分步计算模板</li>
+                <li>可参考教材第14页加减混合运算的例题思路</li>
+            </ul>
+
+            <div class="section-title">6. 成果表达</div>
+            <div class="highlight-box">
+                <p><strong>成果名称：</strong>班级运动会积分分析报告</p>
+                <p><strong>基本格式与要求：</strong>分"咱们班积分"和"隔壁班推测"两部分，每部分都要有竖式计算过程。</p>
+                <p><strong>你的呈现建议：</strong>用两种颜色区分两个班的计算区域，结论用箭头指向。</p>
+            </div>
+
+            <div class="section-title">7. 自评量规</div>
+            <ul class="checklist">
+                <li>[ ] 我是否完整计算了班级各项积分？</li>
+                <li>[ ] 我的竖式计算是否准确无误（进位退位都正确）？</li>
+                <li>[ ] 我是否正确反推出了隔壁班的总分？</li>
+                <li>[ ] 我是否在报告中使用了"和""差""积分"等学科词语？</li>
+                <li>[ ] 我的报告计算步骤是否完整、可供他人检验？</li>
+            </ul>
+        </div>
+
+        <!-- 案例四 -->
+        <div class="case-card">
+            <h2><span class="case-number">4</span>案例四：数学小讲师——我来给爸妈讲一道难题</h2>
+
+            <div class="section-title">1. 真实建构情境</div>
+            <p>爸爸妈妈看到你最近学了万以内的加减法，想考考你。他们出了一道题："学校图书馆第一次买书用了345元，第二次比第一次少用78元，两次一共用了多少元？"你读完题目觉得有点绕，但又觉得能讲清楚。试着把这道题的解题思路画成图、写出来，然后像小老师一样讲给爸妈听。爸妈听完给你打分，你能拿到满分吗？</p>
+
+            <div class="section-title">2. 建构任务</div>
+            <p>你的任务是当一回"数学小讲师"，把这道稍复杂的加减问题用自己的方式（图形+算式+语言）讲清楚。</p>
+
+            <div class="section-title">3. 原理调用提示</div>
+            <div class="highlight-box">
+                <p><span class="principle-tag">原理1</span><strong>问题表征转换：</strong>把文字语言转化为线段图或关系图，是理解复杂数量关系的有效工具。</p>
+                <p><span class="principle-tag">原理2</span><strong>分步意义建构：</strong>先算什么、再算什么，每一步都有数学意义，不是随意列式。</p>
+            </div>
+
+            <div class="section-title">4. 建构步骤</div>
+            <ol>
+                <li><strong>读懂题意：</strong>划出关键词——"第二次比第一次少78元"、"一共用了多少"。</li>
+                <li><strong>画线段图：</strong>用一条线段表示第一次的345元，再画一条更短的表示第二次（少78元）。</li>
+                <li><strong>先求第二次：</strong>用竖式345-78=267元。</li>
+                <li><strong>再求总和：</strong>用竖式345+267=612元。</li>
+                <li><strong>组织讲述：</strong>把线段图、算式和语言串联起来，准备像老师一样讲出来。</li>
+            </ol>
+
+            <div class="section-title">5. 脚手架推荐</div>
+            <ul>
+                <li>白纸或小黑板</li>
+                <li>参考教材第16页"求比一个数多（少）几的数"例题图示</li>
+            </ul>
+
+            <div class="section-title">6. 成果表达</div>
+            <div class="highlight-box">
+                <p><strong>成果名称：</strong>数学小讲师讲题稿</p>
+                <p><strong>基本格式与要求：</strong>包含"题目原文"、"线段图示"、"分步算式（含竖式）"、"完整答案"四部分。</p>
+                <p><strong>你的呈现建议：</strong>线段图用铅笔画，标注用红笔；竖式部分用蓝笔认真书写；最后给爸妈签名评分。</p>
+            </div>
+
+            <div class="section-title">7. 自评量规</div>
+            <ul class="checklist">
+                <li>[ ] 我的线段图是否准确表示了"第一次"和"第二次"的数量关系？</li>
+                <li>[ ] 我的分步算式是否每一步都有竖式，且计算正确？</li>
+                <li>[ ] 我是否先算了第二次再算总和，顺序正确？</li>
+                <li>[ ] 我的讲稿是否能让他人（爸妈）不看教材直接听懂？</li>
+                <li>[ ] 我是否在成果中标注了关键步骤名称（如"第一步：求第二次"）？</li>
+            </ul>
+        </div>
+
+        <!-- 案例五 -->
+        <div class="case-card">
+            <h2><span class="case-number">5</span>案例五：设计"校园采购方案"——数学与生活的跨学科挑战</h2>
+
+            <div class="section-title">1. 真实建构情境</div>
+            <p>学校要采购一批体育器材，体育老师列出清单：篮球每个128元，要买6个；跳绳每根25元，要买15根；羽毛球拍每副175元，要买4副。总预算2500元。老师请你帮忙算算：这套采购方案总共需要多少钱？会不会超出预算？如果超了，超出多少？请你提出至少一个调整建议（如"减少篮球数量"或"换一家供应商"），并用数学计算证明你的建议是否有效。</p>
+
+            <div class="section-title">2. 建构任务</div>
+            <p>你的任务是完成一份完整的"校园采购方案分析"，包括总费用计算、预算对比及调整建议。</p>
+
+            <div class="section-title">3. 原理调用提示</div>
+            <div class="highlight-box">
+                <p><span class="principle-tag">原理1</span><strong>乘法是加法的简便形式：</strong>6个篮球的总价=128×6，即6个128相加，这是乘法意义的建构。</p>
+                <p><span class="principle-tag">原理2</span><strong>数量关系综合应用：</strong>购物问题中"单价×数量=总价"是核心数量关系，综合运用加、减、乘解决问题。</p>
+            </div>
+
+            <div class="section-title">4. 建构步骤</div>
+            <ol>
+                <li><strong>算篮球总价：</strong>用竖式或乘法算128×6。</li>
+                <li><strong>算跳绳总价：</strong>用竖式算25×15。</li>
+                <li><strong>算羽毛球拍总价：</strong>用竖式算175×4。</li>
+                <li><strong>算采购总费用：</strong>把三项加起来，与2500元对比。</li>
+                <li><strong>提出调整方案：</strong>若超预算，给出具体调整并重新计算验证。</li>
+            </ol>
+
+            <div class="section-title">5. 脚手架推荐</div>
+            <ul>
+                <li>草稿纸、计算器</li>
+                <li>参考教材第20页"乘法的估算"方法</li>
+            </ul>
+
+            <div class="section-title">6. 成果表达</div>
+            <div class="highlight-box">
+                <p><strong>成果名称：</strong>校园采购方案分析表</p>
+                <p><strong>基本格式与要求：</strong>用表格列出"器材名、单价、数量、总价"；底部用竖式计算总费用，并写明是否超出预算及调整建议。</p>
+                <p><strong>你的呈现建议：</strong>表格用尺子画整齐，数字部分用计算器验算后填写，竖式计算区域单独框出。</p>
+            </div>
+
+            <div class="section-title">7. 自评量规</div>
+            <ul class="checklist">
+                <li>[ ] 我是否正确计算了三种器材的总价（乘法竖式无误）？</li>
+                <li>[ ] 我的总费用计算是否正确使用了加减法竖式？</li>
+                <li>[ ] 我是否将总费用与2500元预算进行了明确对比？</li>
+                <li>[ ] 我的调整建议是否有具体数字支撑并经验证？</li>
+                <li>[ ] 我的成果表格是否完整包含所有必填项、无遗漏？</li>
+            </ul>
+        </div>
+
+        <!-- 案例六 -->
+        <div class="case-card">
+            <h2><span class="case-number">6</span>案例六：未来城市设计师——万以内加减法规划绿色家园</h2>
+
+            <div class="section-title">1. 真实建构情境</div>
+            <p>2050年，你成为了一名城市设计师，正在规划一个绿色社区。社区需要以下设施预算：太阳能发电设施782元、雨水回收系统456元、社区花园建设325元、垃圾分类站点189元。已知社区基金共有2000元，第一期已投入1045元。你需要算算：第二期还能投入多少元？以上四项建设全部完成后，基金还会有余钱吗？如果有，还剩多少？这笔钱可以用来再增加一项什么设施（假设新设施预计花费300元以内）？请把你的完整规划方案写成报告。</p>
+
+            <div class="section-title">2. 建构任务</div>
+            <p>你的任务是完成一份"2050绿色社区规划报告"，包含预算计算、余额分析和二期规划建议。</p>
+
+            <div class="section-title">3. 原理调用提示</div>
+            <div class="highlight-box">
+                <p><span class="principle-tag">原理1</span><strong>连续量构建：</strong>从初始值出发，经过增减变化，用加减法追踪数量变化轨迹。</p>
+                <p><span class="principle-tag">原理2</span><strong>逆向思维：</strong>已知和与一个加数，求另一个加数；已知差与被减数，求减数——这是建构问题解决能力的关键。</p>
+            </div>
+
+            <div class="section-title">4. 建构步骤</div>
+            <ol>
+                <li><strong>算四项建设总费用：</strong>用竖式算出782+456+325+189的总和。</li>
+                <li><strong>算二期可用资金：</strong>用竖式算2000-1045。</li>
+                <li><strong>算建设后余额：</strong>比较总费用与二期资金，判断是否有缺口。</li>
+                <li><strong>提出新设施建议：</strong>若有余额，规划一项300元以内的新设施并验算。</li>
+                <li><strong>撰写完整报告：</strong>用"现状—计算—结论—建议"的结构整理成文。</li>
+            </ol>
+
+            <div class="section-title">5. 脚手架推荐</div>
+            <ul>
+                <li>草稿纸、分步计算提示卡</li>
+                <li>参考教材第22页综合应用例题</li>
+            </ul>
+
+            <div class="section-title">6. 成果表达</div>
+            <div class="highlight-box">
+                <p><strong>成果名称：</strong>2050绿色社区规划报告</p>
+                <p><strong>基本格式与要求：</strong>包含"背景说明"、"分步计算（竖式）"、"结论"和"新设施建议"四部分，结尾有你的签名。</p>
+                <p><strong>你的呈现建议：</strong>用彩色笔画一个简单的社区平面示意图，标注各设施位置；计算部分用红笔圈出关键得数。</p>
+            </div>
+
+            <div class="section-title">7. 自评量规</div>
+            <ul class="checklist">
+                <li>[ ] 我的四项费用加总竖式是否完全正确？</li>
+                <li>[ ] 我的二期资金计算（2000-1045）是否准确？</li>
+                <li>[ ] 我是否正确判断了建设后是否有余额？</li>
+                <li>[ ] 我的新设施建议是否在300元以内且有计算验证？</li>
+                <li>[ ] 我的报告是否完整包含所有要求板块、逻辑清晰？</li>
+            </ul>
+        </div>
+
+        <!-- 案例七 -->
+        <div class="case-card">
+            <h2><span class="case-number">7</span>案例七：我来策划一场"数学游园会"——综合创新大挑战</h2>
+
+            <div class="section-title">1. 真实建构情境</div>
+            <p>班级要举办"数学游园会"，你是小小策划人。游园会设5个游戏摊位，每个摊位需要的道具预算如下：①跳蚤市场（零钱找零模拟）需要采购物品总费用367元；②24点PK区制作卡片费用185元；③汉诺塔挑战区购买道具费用298元；④数学谜语区制作灯笼费用156元；⑤投篮计分游戏购买篮球费用245元。班主任说班级活动经费共1500元，但已经批了400元给另一项活动。你需要：①算出5个摊位总费用；②判断经费是否足够；③如果超了，在不超过剩余经费1100元的前提下，提出你的调整方案（可以减少摊位、降低某项费用或寻找赞助）；④如果没超，把省下的钱做一个"惊喜奖品采购计划"（价值不超过省下金额）。把完整的策划案写出来，张贴在班级公告栏。</p>
+
+            <div class="section-title">2. 建构任务</div>
+            <p>你的任务是从预算计算、问题诊断、方案调整到成果表达，完成一份完整的"数学游园会策划案"。</p>
+
+            <div class="section-title">3. 原理调用提示</div>
+            <div class="highlight-box">
+                <p><span class="principle-tag">原理1</span><strong>综合问题拆解：</strong>面对复杂的多步问题，将其拆解为多个小问题逐一解决，这是综合创新思维的基础。</p>
+                <p><span class="principle-tag">原理2</span><strong>最优化思维：</strong>在有限资源（经费）约束下，找到最优组合或最佳调整方案，是真实问题解决能力的体现。</p>
+            </div>
+
+            <div class="section-title">4. 建构步骤</div>
+            <ol>
+                <li><strong>汇总预算：</strong>用竖式算出367+185+298+156+245的总费用。</li>
+                <li><strong>算实际可用经费：</strong>用竖式算1500-400=1100元。</li>
+                <li><strong>对比分析：</strong>比较总费用与1100元，判断是否超支。</li>
+                <li><strong>制定调整方案：</strong>如需调整，列出2-3个调整选项，每个选项重新算一次并比较，选出最优。</li>
+                <li><strong>完成策划文档：</strong>整理成"预算总表—经费分析—调整方案—奖品计划"四部分，写清每一步的计算。</li>
+            </ol>
+
+            <div class="section-title">5. 脚手架推荐</div>
+            <ul>
+                <li>大张白纸、彩笔</li>
+                <li>策划文档模板（参考班级通知海报格式）</li>
+            </ul>
+
+            <div class="section-title">6. 成果表达</div>
+            <div class="highlight-box">
+                <p><strong>成果名称：</strong>数学游园会策划案（含预算总表）</p>
+                <p><strong>基本格式与要求：</strong>包含"5个摊位预算明细表"、"经费分析"、"调整方案（如有）"、"奖品计划"四部分，每部分都有竖式计算过程。</p>
+                <p><strong>你的呈现建议：</strong>用A4纸或更大纸张制作，表格用尺子画精细；不同区域用不同颜色区分；结尾有"策划人：___"签名栏。</p>
+            </div>
+
+            <div class="section-title">7. 自评量规</div>
+            <ul class="checklist">
+                <li>[ ] 我的5个摊位预算加总竖式是否完全正确？</li>
+                <li>[ ] 我的实际可用经费计算（1500-400）是否准确？</li>
+                <li>[ ] 我的对比分析结论是否有计算数据支撑？</li>
+                <li>[ ] 我的调整方案（如需）是否经验证、在1100元以内？</li>
+                <li>[ ] 我的策划案是否完整包含所有板块、整体美观、可直接张贴展示？</li>
+            </ul>
+        </div>
+    </div>
+
+    <footer>
+        <p>三年级数学 · 万以内的加减法 · 建构性七阶适配案例导学</p>
+    </footer>
+</body>
+</html>

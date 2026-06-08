@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大单元概述 - 整体定位</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+            font-size: 18px;
+            line-height: 1.8;
+            color: #333;
+            background: linear-gradient(135deg, #e8f4fd 0%, #d4e9f7 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 102, 177, 0.15);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #0066cc 0%, #0099ff 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        .header .subtitle {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 40px 35px;
+        }
+        .section {
+            margin-bottom: 35px;
+            padding: 25px;
+            background: #f0f7ff;
+            border-left: 5px solid #0066cc;
+            border-radius: 0 12px 12px 0;
+        }
+        .section h2 {
+            font-size: 24px;
+            color: #0066cc;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        .section h2::before {
+            content: "";
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #0066cc;
+            border-radius: 50%;
+            margin-right: 12px;
+        }
+        .section p {
+            color: #555;
+            margin-bottom: 12px;
+        }
+        .highlight-box {
+            background: linear-gradient(135deg, #fff9e6 0%, #fff3cc 100%);
+            border: 2px solid #ffaa00;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .highlight-box h3 {
+            color: #cc8800;
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+        .knowledge-map {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .map-item {
+            background: #fff;
+            border: 2px solid #0066cc;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            font-size: 16px;
+            color: #0066cc;
+            font-weight: bold;
+        }
+        .map-item.active {
+            background: #0066cc;
+            color: #fff;
+        }
+        .arrow {
+            text-align: center;
+            font-size: 24px;
+            color: #0066cc;
+            margin: 10px 0;
+        }
+        .learning-support {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .support-item {
+            background: #fff;
+            border-radius: 10px;
+            padding: 20px 15px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 102, 177, 0.1);
+        }
+        .support-item .icon {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        .support-item h4 {
+            color: #0066cc;
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        .support-item p {
+            font-size: 14px;
+            color: #666;
+        }
+        .footer {
+            background: #f0f7ff;
+            padding: 25px;
+            text-align: center;
+            border-top: 3px solid #0066cc;
+        }
+        .footer p {
+            color: #0066cc;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        @media (max-width: 768px) {
+            body {
+                font-size: 16px;
+                padding: 10px;
+            }
+            .header h1 {
+                font-size: 26px;
+            }
+            .content {
+                padding: 25px 20px;
+            }
+            .section h2 {
+                font-size: 20px;
+            }
+            .knowledge-map {
+                grid-template-columns: 1fr;
+            }
+            .learning-support {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>整体定位</h1>
+            <p class="subtitle">大单元学习导航台</p>
+        </div>
+        
+        <div class="content">
+            <div class="section">
+                <h2>本模块学习位置</h2>
+                <p>欢迎来到大单元学习的第一步——整体定位。这里是整个20个模块的"学习导航台"，帮你建立全局视野，不再迷失在零散的知识碎片中。</p>
+            </div>
+
+            <div class="highlight-box">
+                <h3>你将解决的核心认知问题</h3>
+                <p>学习本单元前，你可能存在这样的困惑："这些内容有什么用？""它和以前学的知识有什么联系？""学完我能做什么？"</p>
+                <p>整体定位将帮助你建立"知识全局观"——明白本单元属于"数与代数"领域中的"分数初步认识"，它是整数运算的延伸，为后续小数学习奠定基础。学完这章，你将能解决"把一个蛋糕平均分给多人，每人得到多少"这样的实际问题。</p>
+            </div>
+
+            <div class="section">
+                <h2>知识结构全景</h2>
+                <div class="knowledge-map">
+                    <div class="map-item">整数运算</div>
+                    <div class="map-item active">分数初步认识</div>
+                    <div class="map-item">小数学习</div>
+                </div>
+                <div class="arrow">← 知识延伸方向 →</div>
+            </div>
+
+            <div class="section">
+                <h2>学习支架</h2>
+                <p>完成整体定位后，你将获得：</p>
+                <div class="learning-support">
+                    <div class="support-item">
+                        <div class="icon">🗺</div>
+                        <h4>知识结构全景图</h4>
+                        <p>清晰呈现本单元知识框架</p>
+                    </div>
+                    <div class="support-item">
+                        <div class="icon">🔗</div>
+                        <h4>知识连接点清单</h4>
+                        <p>明确与已学知识的关联</p>
+                    </div>
+                    <div class="support-item">
+                        <div class="icon">🎯</div>
+                        <h4>真实生活应用</h4>
+                        <p>提前预告实际应用场景</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>带着这些准备，正式进入各模块学习时，你将更主动、更有方向感！</p>
+        </div>
+    </div>
+</body>
+</html>

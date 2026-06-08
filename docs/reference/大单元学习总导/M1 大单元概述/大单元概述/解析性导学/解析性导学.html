@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>解析性导学 -生活中的测量问题</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --cognition: #3498db;
+            --emotion: #e74c3c;
+            --skill: #2ecc71;
+            --metacognition: #9b59b6;
+            --value: #f1c40f;
+            --bg-dark: #1a1a2e;
+            --bg-medium: #16213e;
+            --text-light: #eef2f7;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+            font-size: 18px;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 30px 20px;
+            background: linear-gradient(135deg, var(--bg-medium), var(--bg-dark));
+            border-radius: 20px;
+            margin-bottom: 30px;
+            border: 2px solid var(--cognition);
+            box-shadow: 0 0 30px rgba(52, 152, 219, 0.3);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            color: var(--cognition);
+            text-shadow: 0 0 20px rgba(52, 152, 219, 0.5);
+            margin-bottom: 15px;
+        }
+
+        .header .subtitle {
+            font-size: 20px;
+            color: var(--text-light);
+            opacity: 0.9;
+        }
+
+        .compass-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+            align-items: flex-start;
+            margin-bottom: 30px;
+        }
+
+        .compass-wrapper {
+            position: relative;
+            width: 500px;
+            height: 500px;
+        }
+
+        .compass {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle at center, rgba(22, 33, 62, 0.9), rgba(26, 26, 46, 0.95));
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 60px rgba(52, 152, 219, 0.2), inset0 0 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .compass-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--bg-medium), var(--bg-dark));
+            border: 3px solid var(--cognition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--cognition);
+            text-align: center;
+            box-shadow: 0 0 30px rgba(52, 152, 219, 0.4);
+            z-index: 10;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .compass-center:hover {
+            transform: translate(-50%, -50%) scale(1.05);
+            box-shadow: 0 0 50px rgba(52, 152, 219, 0.6);
+        }
+
+        .compass-center.ready {
+            animation: pulseReady 1s ease infinite;
+        }
+
+        @keyframes pulseReady {
+            0%, 100% { box-shadow: 0 0 30px rgba(46, 204, 113, 0.4); border-color: var(--skill); }
+            50% { box-shadow: 0 0 60px rgba(46, 204, 113, 0.8); }
+        }
+
+        .sector {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            transform-origin: 100% 100%;
+            clip-path: polygon(00, 100% 0, 100% 100%);
+            cursor: pointer;
+            transition: all 0.4s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.7;
+        }
+
+        .sector:hover {
+            opacity: 1;
+        }
+
+        .sector.active {
+            opacity: 1;
+            filter: brightness(1.3);
+        }
+
+        .sector-cognition {
+            top: 0;
+            right: 0;
+            background: linear-gradient(135deg, transparent50%, var(--cognition));
+            clip-path: polygon(0 0, 100% 0, 100% 100%);
+        }
+
+        .sector-emotion {
+            top: 0;
+            left: 0;
+            background: linear-gradient(225deg, transparent 50%, var(--emotion));
+            clip-path: polygon(0 0, 0 100%, 100% 100%);
+        }
+
+        .sector-skill {
+            bottom: 0;
+            left: 0;
+            background: linear-gradient(315deg, transparent 50%, var(--skill));
+            clip-path: polygon(0 0, 100% 0, 0 100%);
+        }
+
+        .sector-metacognition {
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(45deg, transparent 50%, var(--metacognition));
+            clip-path: polygon(100% 0, 100% 100%, 0 100%);
+        }
+
+        .sector-value {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30%;
+            height: 30%;
+            background: radial-gradient(circle, var(--value), transparent);
+            border-radius: 50%;
+            z-index: 5;
+        }
+
+        .sector-icon {
+            position: absolute;
+            font-size: 36px;
+            filter: drop-shadow(0 0 10px currentColor);
+            animation: floatIcon 3s ease-in-out infinite;
+        }
+
+        @keyframes floatIcon {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .sector-cognition .sector-icon { color: var(--cognition); top: 15%; right: 15%; }
+        .sector-emotion .sector-icon { color: var(--emotion); top: 15%; left: 15%; }
+        .sector-skill .sector-icon { color: var(--skill); bottom: 15%; left: 15%; }
+        .sector-metacognition .sector-icon { color: var(--metacognition); bottom: 15%; right: 15%; }
+        .sector-value .sector-icon { color: var(--value); }
+
+        .sector-label {
+            position: absolute;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 8px 15px;
+            border-radius: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            white-space: nowrap;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .sector-cognition .sector-label { color: var(--cognition); top: 25%; right: -60px; border: 2px solid var(--cognition); }
+        .sector-emotion .sector-label { color: var(--emotion); top: 25%; left: -60px; border: 2px solid var(--emotion); }
+        .sector-skill .sector-label { color: var(--skill); bottom: 25%; left: -60px; border: 2px solid var(--skill); }
+        .sector-metacognition .sector-label { color: var(--metacognition); bottom: 25%; right: -60px; border: 2px solid var(--metacognition); }
+        .sector-value .sector-label { color: var(--value); top: -40px; left: 50%; transform: translateX(-50%); border: 2px solid var(--value); }
+
+        .sidebar {
+            flex: 1;
+            min-width: 300px;
+            max-width: 400px;
+        }
+
+        .balance-radar {
+            background: var(--bg-medium);
+            border-radius: 20px;
+            padding: 25px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .balance-radar h3 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: var(--text-light);
+            text-align: center;
+        }
+
+        .radar-chart {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            margin: 0 auto;
+        }
+
+        .radar-circle {
+            position: absolute;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .radar-circle:nth-child(1) { width: 100%; height: 100%; }
+        .radar-circle:nth-child(2) { width: 75%; height: 75%; }
+        .radar-circle:nth-child(3) { width: 50%; height: 50%; }
+        .radar-circle:nth-child(4) { width: 25%; height: 25%; }
+
+        .radar-axis {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            transform-origin: center;
+        }
+
+        .radar-axis:nth-child(5) { width: 2px; height: 100%; left: 50%; top: 0; transform: translateX(-50%); }
+        .radar-axis:nth-child(6) { width: 100%; height: 2px; top: 50%; left: 0; transform: translateY(-50%); }
+        .radar-axis:nth-child(7) { width: 2px; height: 100%; left: 50%; top: 0; transform: translateX(-50%) rotate(72deg); }
+        .radar-axis:nth-child(8) { width: 2px; height: 100%; left: 50%; top: 0; transform: translateX(-50%) rotate(-72deg); }
+        .radar-axis:nth-child(9) { width: 2px; height: 100%; left: 50%; top: 0; transform: translateX(-50%) rotate(144deg); }
+
+        .radar-polygon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            clip-path: polygon(50% 50%, 50% 5%, 95% 50%, 50% 95%, 5% 50%);
+            background: rgba(52, 152, 219, 0.3);
+            border: 2px solid var(--cognition);
+            animation: radarGrow 1s ease-out forwards;
+            opacity: 0;
+        }
+
+        @keyframes radarGrow {
+            from { clip-path: polygon(50% 50%, 50% 50%, 50% 50%, 50% 50%, 50% 50%); opacity: 1; }
+            to { clip-path: polygon(50% 50%, 50% 5%, 95% 50%, 50% 95%, 5% 50%); opacity: 1; }
+        }
+
+        .radar-label {
+            position: absolute;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .radar-label:nth-child(10) { top: 0; left: 50%; transform: translateX(-50%); color: var(--cognition); }
+        .radar-label:nth-child(11) { top: 20%; right: 0; color: var(--emotion); }
+        .radar-label:nth-child(12) { bottom: 20%; right: 0; color: var(--skill); }
+        .radar-label:nth-child(13) { bottom: 0; left: 50%; transform: translateX(-50%); color: var(--metacognition); }
+        .radar-label:nth-child(14) { top: 20%; left: 0; color: var(--value); }
+
+        .warning-box {
+            background: rgba(231, 76, 60, 0.2);
+            border: 2px solid var(--emotion);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 14px;
+            color: var(--emotion);
+            display: none;
+        }
+
+        .warning-box.show {
+            display: block;
+            animation: blinkWarning 1s ease infinite;
+        }
+
+        @keyframes blinkWarning {
+            0%, 100% { border-color: var(--emotion); }
+            50% { border-color: transparent; }
+        }
+
+        .goal-cards {
+            background: var(--bg-medium);
+            border-radius: 20px;
+            padding: 25px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .goal-cards h3 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: var(--text-light);
+        }
+
+        .goal-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            cursor: grab;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        .goal-card:hover {
+            border-color: var(--cognition);
+            transform: translateX(5px);
+        }
+
+        .goal-card.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+
+        .goal-card.cognitive { border-left: 4px solid var(--cognition); }
+        .goal-card.emotive { border-left: 4px solid var(--emotion); }
+        .goal-card.skillful { border-left: 4px solid var(--skill); }
+        .goal-card.metacognitive { border-left: 4px solid var(--metacognition); }
+        .goal-card.valuable { border-left: 4px solid var(--value); }
+
+        .goal-card.matched {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .timeline-section {
+            background: var(--bg-medium);
+            border-radius: 20px;
+            padding: 25px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            margin-top: 30px;
+        }
+
+        .timeline-section h3 {
+            font-size: 20px;
+            margin-bottom: 25px;
+            color: var(--text-light);
+            text-align: center;
+        }
+
+        .timeline {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            padding: 0 20px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 50px;
+            right: 50px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+        }
+
+        .timeline-node {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .timeline-dot {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-dark);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .timeline-node.completed .timeline-dot {
+            background: var(--skill);
+            border-color: var(--skill);
+        }
+
+        .timeline-node.current .timeline-dot {
+            background: var(--value);
+            border-color: var(--value);
+            animation: pulseCurrent 1.5s ease infinite;
+        }
+
+        @keyframes pulseCurrent {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.4); }
+            50% { box-shadow: 0 0 0 15px rgba(241, 196, 15, 0); }
+        }
+
+        .timeline-node.future .timeline-dot {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .timeline-label {
+            margin-top: 10px;
+            font-size: 12px;
+            text-align: center;
+            max-width: 80px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-medium);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 2px solid var(--cognition);
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: var(--text-light);
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal h2 {
+            font-size: 22px;
+            margin-bottom: 20px;
+            color: var(--cognition);
+        }
+
+        .modal-question {
+            background: rgba(52, 152, 219, 0.2);
+            border-left: 4px solid var(--cognition);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .modal-content {
+            font-size: 16px;
+            line-height: 1.8;
+        }
+
+        .quiz-modal .modal {
+            max-width: 500px;
+        }
+
+        .quiz-question {
+            margin-bottom: 20px;
+        }
+
+        .quiz-question h4 {
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+
+        .quiz-option {
+            display: block;
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: var(--text-light);
+            font-size: 16px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quiz-option:hover {
+            border-color: var(--cognition);
+        }
+
+        .quiz-option.selected {
+            border-color: var(--cognition);
+            background: rgba(52, 152, 219, 0.2);
+        }
+
+        .quiz-option.correct {
+            border-color: var(--skill);
+            background: rgba(46, 204, 113, 0.2);
+        }
+
+        .quiz-option.incorrect {
+            border-color: var(--emotion);
+            background: rgba(231, 76, 60, 0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--cognition), #2980b9);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 20px auto 0;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(52, 152, 219, 0.4);
+        }
+
+        .export-section {
+            text-align: center;
+            margin-top: 30px;
+            display: none;
+        }
+
+        .export-section.show {
+            display: block;
+        }
+
+        .drop-zone {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px dashed rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .drop-zone.highlight {
+            border-color: var(--skill);
+            background: rgba(46, 204, 113, 0.2);
+        }
+
+        .drop-zone.wrong {
+            border-color: var(--emotion);
+            background: rgba(231, 76, 60, 0.2);
+            animation: shake0.5s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .sector-dropzone {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+
+        .sector-dropzone .drop-zone {
+            pointer-events: auto;
+        }
+
+        .sector-cognition .drop-zone { top: 5%; right: 5%; }
+        .sector-emotion .drop-zone { top: 5%; left: 5%; }
+        .sector-skill .drop-zone { bottom: 5%; left: 5%; }
+        .sector-metacognition .drop-zone { bottom: 5%; right: 5%; }
+        .sector-value .drop-zone { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+        .stamp-animation {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-15deg) scale(0);
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--skill);
+            border: 4px solid var(--skill);
+            padding: 10px 20px;
+            border-radius: 10px;
+            background: rgba(26, 26, 46, 0.95);
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .stamp-animation.show {
+            animation: stampIn 0.8s ease forwards;
+        }
+
+        @keyframes stampIn {
+            0% { transform: translate(-50%, -50%) rotate(-15deg) scale(3); opacity: 0; }
+            50% { transform: translate(-50%, -50%) rotate(-15deg) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) rotate(-15deg) scale(1.1); opacity: 1; }
+        }
+
+        .intro-section {
+            background: var(--bg-medium);
+            border-radius: 20px;
+            padding: 30px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .intro-section h2 {
+            font-size: 24px;
+            color: var(--cognition);
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--cognition);
+            padding-bottom: 10px;
+        }
+
+        .intro-section p {
+            font-size: 18px;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+
+        .intro-section .highlight {
+            color: var(--value);
+            font-weight: bold;
+        }
+
+        .principle-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--cognition);
+            transition: all 0.3s ease;
+        }
+
+        .principle-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            transform: translateX(10px);
+        }
+
+        .principle-card h4 {
+            font-size: 18px;
+            color: var(--cognition);
+            margin-bottom: 10px;
+        }
+
+        .principle-card p {
+            font-size: 16px;
+            line-height: 1.7;
+        }
+
+        .case-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .case-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .case-card:hover {
+            border-color: var(--cognition);
+            transform: translateY(-5px);
+        }
+
+        .case-card h4 {
+            font-size: 18px;
+            color: var(--value);
+            margin-bottom: 12px;
+        }
+
+        .case-card .situation {
+            font-size: 15px;
+            color: rgba(238, 242, 247, 0.8);
+            margin-bottom: 10px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+
+        .case-card .question {
+            font-size: 15px;
+            color: var(--cognition);
+            margin-bottom: 10px;
+            font-style: italic;
+        }
+
+        .case-card .outcome {
+            font-size: 14px;
+            color: var(--skill);
+            padding: 10px;
+            background: rgba(46, 204, 113, 0.1);
+            border-radius: 8px;
+        }
+
+        .reflection-section {
+            background: linear-gradient(135deg, var(--bg-medium), var(--bg-dark));
+            border-radius: 20px;
+            padding: 30px;
+            border: 2px solid var(--value);
+            margin-top: 30px;
+        }
+
+        .reflection-section h3 {
+            font-size: 22px;
+            color: var(--value);
+            margin-bottom: 20px;
+        }
+
+        .reflection-section ol {
+            padding-left: 25px;
+        }
+
+        .reflection-section li {
+            font-size: 16px;
+            line-height: 1.8;
+            margin-bottom: 12px;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, var(--skill), #27ae60);
+            border: none;
+            color: white;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(46, 204, 113, 0.4);
+        }
+
+        .start-scan-btn {
+            background: linear-gradient(135deg, var(--value), #f39c12);
+            border: none;
+            color: var(--bg-dark);
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .start-scan-btn:hover {
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            body { font-size: 16px; }
+            .header h1 { font-size: 22px; }
+            .compass-wrapper { width: 350px; height: 350px; }
+            .sidebar { min-width: 100%; max-width: 100%; }
+            .sector-label { font-size: 12px; }
+            .timeline { flex-wrap: wrap; gap: 20px; justify-content: center; }
+            .timeline::before { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>五维导航罗盘 - 解析性导学</h1>
+            <div class="subtitle">数学 · 三年级上 · 生活中的测量问题</div>
+        </div>
+
+        <button class="start-scan-btn" id="startScanBtn" onclick="startRadarScan()">开始五维雷达扫描</button>
+
+        <div class="compass-container">
+            <div class="compass-wrapper">
+                <div class="compass" id="compass">
+                    <div class="sector sector-cognition" data-dimension="cognitive">
+                        <span class="sector-icon">🧠</span>
+                        <span class="sector-label">认知维度</span>
+                        <div class="drop-zone" data-accept="cognitive"></div>
+                    </div>
+                    <div class="sector sector-emotion" data-dimension="emotive">
+                        <span class="sector-icon">❤️</span>
+                        <span class="sector-label">情感维度</span>
+                        <div class="drop-zone" data-accept="emotive"></div>
+                    </div>
+                    <div class="sector sector-skill" data-dimension="skillful">
+                        <span class="sector-icon">⚙️</span>
+                        <span class="sector-label">技能维度</span>
+                        <div class="drop-zone" data-accept="skillful"></div>
+                    </div>
+                    <div class="sector sector-metacognition" data-dimension="metacognitive">
+                        <span class="sector-icon">🔍</span>
+                        <span class="sector-label">元认知维度</span>
+                        <div class="drop-zone" data-accept="metacognitive"></div>
+                    </div>
+                    <div class="sector sector-value" data-dimension="valuable">
+                        <span class="sector-icon">✨</span>
+                        <span class="sector-label">价值维度</span>
+                        <div class="drop-zone" data-accept="valuable"></div>
+                    </div>
+                    <div class="compass-center" id="compassCenter">
+                        <span>导学案<br>就绪</span>
+                    </div>
+                    <div class="stamp-animation" id="stampAnimation">导学案就绪</div>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="balance-radar">
+                    <h3>五维覆盖度检测</h3>
+                    <div class="radar-chart">
+                        <div class="radar-circle"></div>
+                        <div class="radar-circle"></div>
+                        <div class="radar-circle"></div>
+                        <div class="radar-circle"></div>
+                        <div class="radar-axis"></div>
+                        <div class="radar-axis"></div>
+                        <div class="radar-axis"></div>
+                        <div class="radar-axis"></div>
+                        <div class="radar-axis"></div>
+                        <div class="radar-polygon" id="radarPolygon"></div>
+                        <span class="radar-label">认知</span>
+                        <span class="radar-label">情感</span>
+                        <span class="radar-label">技能</span>
+                        <span class="radar-label">元认知</span>
+                        <span class="radar-label">价值</span>
+                    </div>
+                    <div class="warning-box" id="warningBox">
+                        请检查是否遗漏了学习目标，建议补充相应维度的学习活动
+                    </div>
+                </div>
+
+                <div class="goal-cards">
+                    <h3>学习目标卡片</h3>
+                    <div class="goal-card cognitive" draggable="true" data-type="cognitive">
+                       理解"130-140厘米之间"比"差不多高"更准确的道理
+                    </div>
+                    <div class="goal-card emotive" draggable="true" data-type="emotive">
+                        体验用数学语言描述身高相近现象的简洁美感
+                    </div>
+                    <div class="goal-card skillful" draggable="true" data-type="skillful">
+                        掌握用区间表示一组数据范围的方法
+                    </div>
+                    <div class="goal-card metacognitive" draggable="true" data-type="metacognitive">
+                        能反思自己的思维过程，检查是否遗漏边界判断
+                    </div>
+                    <div class="goal-card valuable" draggable="true" data-type="valuable">
+                        认识到数学是精确描述现实世界的重要工具
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="intro-section">
+            <h2>现象导入：从身高说起</h2>
+            <p>班级里新来了一位同学<span class="highlight">小明</span>，身高135厘米。体育课上测量身高，发现李强134厘米、王红136厘米、张亮133厘米，和小明差不多高。</p>
+            <p>老师说："你们四个人的身高都在130到140厘米之间，谁能用一句话说清楚？"小明说"差不多高"，王红说"130到140厘米之间"。</p>
+            <p class="highlight">核心问题：为什么老师认为"130-140厘米之间"比"差不多高"更准确？</p>
+            <p>本单元我们将学习：<span class="highlight">测量、估计、数量范围、近似数与精确数的区分</span>，以及如何用数学的"区间"概念来精确描述这类现象。</p>
+        </div>
+
+        <div class="timeline-section">
+            <h3>学习路径时间轴</h3>
+            <div class="timeline">
+                <div class="timeline-node completed">
+                    <div class="timeline-dot">✓</div>
+                    <span class="timeline-label">现象观察</span>
+                </div>
+                <div class="timeline-node completed">
+                    <div class="timeline-dot">✓</div>
+                    <span class="timeline-label">问题提取</span>
+                </div>
+                <div class="timeline-node current">
+                    <div class="timeline-dot">●</div>
+                    <span class="timeline-label">概念聚焦</span>
+                </div>
+                <div class="timeline-node future">
+                    <div class="timeline-dot">○</div>
+                    <span class="timeline-label">证据分析</span>
+                </div>
+                <div class="timeline-node future">
+                    <div class="timeline-dot">○</div>
+                    <span class="timeline-label">规律归纳</span>
+                </div>
+                <div class="timeline-node future">
+                    <div class="timeline-dot">○</div>
+                    <span class="timeline-label">应用迁移</span>
+                </div>
+               <div class="timeline-node future">
+                    <div class="timeline-dot">○</div>
+                    <span class="timeline-label">反思总结</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="intro-section" style="margin-top: 30px;">
+            <h2>解析性学习七原理</h2>
+            
+            <div class="principle-card">
+                <h4>原理一：从现象到问题的提取</h4>
+                <p>数学学习往往从生活中遇到的真实现象开始。当现象中出现矛盾、冲突或选择困难时，问题就产生了。例如四个人身高相近，当老师要求"用一句话说清楚"时，问题就出现了。</p>
+            </div>
+
+            <div class="principle-card">
+                <h4>原理二：从问题到概念的聚焦</h4>
+                <p>当问题明确之后，需要找到与之相关的核心概念。问题"怎样描述四个人的身高相近"涉及的核心概念是：测量、范围、边界、区间。聚焦概念的过程就是从具体问题走向抽象知识的过程。</p>
+            </div>
+
+            <div class="principle-card">
+                <h4>原理三：从概念到证据的对应</h4>
+                <p>每个概念都需要证据来支撑。例如"身高都在130到140厘米之间"这个结论，需要把四个人的身高数据作为证据。证据必须与概念对应：概念是"范围"，证据就是"最小值和最大值"。</p>
+            </div>
+
+            <div class="principle-card">
+                <h4>原理四：从证据到规律的归纳</h4>
+                <p>当多个证据指向同一结论时，规律就形成了。例如：测量身高会得到近似值；一组相近的数据可以用范围来描述；范围的边界有包含与不包含之分。</p>
+            </div>
+
+            <div class="principle-card">
+                <h4>原理五：从规律到应用的迁移</h4>
+                <p>规律的价值在于可以迁移到新情境。掌握了"从具体数据到范围描述"的规律后，你可以用来分析成绩统计、购物优惠、测量课桌长度等各种情境。</p>
+            </div>
+
+            <div class="principle-card">
+                <h4>原理六：从应用到反思的深化</h4>
+                <p>每一次应用都会产生新的认识。反思的核心问题是："我用得对吗？还有更好的方法吗？这次分析有没有遗漏什么？"通过反思可以发现思维漏洞。</p>
+            </div>
+
+            <div class="principle-card">
+                <h4>原理七：从单点知识到系统结构的建构</h4>
+                <p>一个单元结束时，需要把分散的知识点串联成系统。本单元的核心概念包括：测量与近似、范围与边界、区间与集合。这三个维度组合在一起，就是本单元的"解析系统结构"。</p>
+            </div>
+        </div>
+
+        <div class="intro-section">
+            <h2>七阶解析案例</h2>
+            
+            <div class="case-grid">
+                <div class="case-card">
+                    <h4>第一阶：个人与家庭</h4>
+                    <div class="situation">整理全家鞋子：爸爸42码、妈妈38码、你35码、奶奶小布鞋（无尺码）</div>
+                    <div class="question">全家的鞋子尺码有什么规律？能否用统一方式描述？</div>
+                    <div class="outcome">用表格记录尺码，标出范围，注明边界位置</div>
+                </div>
+
+                <div class="case-card">
+                    <h4>第二阶：学校与社区</h4>
+                    <div class="situation">运动会接力赛：一班48秒、二班47秒、三班49秒、四班46秒</div>
+                    <div class="question">四个班的成绩"时间相近"如何用数学语言表达？</div>
+                    <div class="outcome">用区间[46,49]秒表示，画数轴标注边界值</div>
+                </div>
+
+                <div class="case-card">
+                    <h4>第三阶：地方与城市</h4>
+                    <div class="situation">绘画比赛规定边长20-30厘米的正方形，你的作品28、22、25厘米</div>
+                    <div class="question">如何判断三幅作品是否都在规定尺寸范围内？</div>
+                    <div class="outcome">数轴标出20和30边界，标注三个边长位置</div>
+                </div>
+
+                <div class="case-card">
+                    <h4>第四阶：区域与民族</h4>
+                    <div class="situation">南北方小学生平均身高128和124厘米，教材说"120-135厘米之间"</div>
+                    <div class="question">128厘米和124厘米是否都在这个区间内？</div>
+                    <div class="outcome">128∈[120,135]，124∈[120,135]，都落在此区间</div>
+                </div>
+
+                <div class="case-card">
+                    <h4>第五阶：国家</h4>
+                    <div class="situation">国家学生体质标准：三年级体重28-60千克，某地男24女22千克</div>
+                    <div class="question">该地学生体重是否在国家标准范围内？</div>
+                    <div class="outcome">24∉[28,60]，22∉[28,60]，均不在范围内</div>
+                </div>
+
+                <div class="case-card">
+                    <h4>第六阶：人类</h4>
+                    <div class="situation">健康新生儿体重2.5-4.5千克，某巨大儿5.2千克</div>
+                    <div class="question">5.2千克是否在健康范围内？超出边界意味着什么？</div>
+                    <div class="outcome">5.2∉[2.5,4.5]，属于巨大儿，可能有健康风险</div>
+                </div>
+
+                <div class="case-card">
+                    <h4>第七阶：未来</h4>
+                    <div class="situation">科学家预测100年后气温上升2-4摄氏度，或5度以上</div>
+                    <div class="question">如何用区间概念理解温度变化预测？</div>
+                    <div class="outcome">有限范围[T+2,T+4]意味着可预测，开放范围[T+5,∞)意味风险</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="reflection-section">
+            <h3>综合反思</h3>
+            <ol>
+                <li>七个案例中，哪一个最容易解析？它有什么共同特点？</li>
+                <li>哪一个案例解析最难？困难发生在提取问题、聚焦概念，还是边界判断？</li>
+                <li>在所有案例中，"范围"和"区间"这两个概念出现了几次？含义一样吗？</li>
+                <li>"从现象到问题、从问题到概念、从概念到证据"这个解析路径，哪一步对你最有挑战？</li>
+                <li>学完本单元后，遇到新的测量或统计问题，你打算怎样用解析方法分析？</li>
+            </ol>
+        </div>
+
+        <div class="export-section" id="exportSection">
+            <button class="download-btn" onclick="exportGuide()">
+                <span>📥</span> 下载导学案
+            </button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="dimensionModal">
+        <div class="modal">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <h2 id="modalTitle">维度详情</h2>
+            <div class="modal-question" id="modalQuestion"></div>
+            <div class="modal-content" id="modalContent"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay quiz-modal" id="quizModal">
+        <div class="modal">
+            <button class="modal-close" onclick="closeQuiz()">×</button>
+            <h2>前置知识快检</h2>
+            <div id="quizContent"></div>
+            <button class="btn-primary" id="quizSubmitBtn" onclick="submitQuiz()">提交答案</button>
+        </div>
+    </div>
+
+    <script>
+        const dimensionData = {
+            cognitive: {
+                title: '认知维度',
+                icon: '🧠',
+                question: '本单元要帮你理解什么核心问题？',
+                content: '通过"身高测量"情境，理解"范围"和"区间"的概念，学会用数学语言精确描述一组相近数据的共同特征。你将掌握：1）最小值与最大值的寻找；2）边界与区间的定义；3）"130-140厘米之间"为何比"差不多高"更准确。'
+            },
+            emotive: {
+                title: '情感维度',
+                icon: '❤️',
+                question: '这堂课会唤起你怎样的情感体验？',
+                content: '当你发现用"区间"可以简洁准确地描述看似模糊的现象时，会体验到数学语言的简洁美感。从"差不多高"到"133-136厘米之间"，这种精确化的过程会带给你掌控感和满足感。'
+            },
+            skillful: {
+                title: '技能维度',
+                icon: '⚙️',
+                question: '学完你将掌握什么具体能力？',
+                content: '1）收集数据并排列找特征；2）确定最小值和最大值；3）用区间表示法描述范围；4）判断数据是否落在给定区间内；5）区分包含边界（≥≤）与不包含边界（><）。'
+            },
+            metacognitive: {
+                title: '元认知维度',
+                icon: '🔍',
+                question: '你将如何反思和监控自己的学习？',
+                content: '在学习过程中检查：我的分析有没有遗漏边界？判断包含还是不包含时是否清晰？遇到新情境时，能否主动问"这个问题可以用区间来分析吗？"通过反思日志或自问自答来监控理解程度。'
+            },
+            valuable: {
+                title: '价值维度',
+                icon: '✨',
+                question: '这些知识会怎样改变你看待世界的方式？',
+                content: '你会发现数学不只是计算，更是描述世界的有力工具。一句"130-140厘米之间"就能把四个不同数据统一描述，这种精确化的思维方式可以迁移到成绩统计、购物决策、健康管理等方方面面，让你用数学的眼光看世界。'
+            }
+        };
+
+        const quizQuestions = [
+            {
+                question: '小明身高135厘米，李强134厘米，王红136厘米，张亮133厘米，他们的身高大约是多少？',
+                options: ['差不多高', '130-140厘米之间', '都是135厘米', '无法确定'],
+                correct: 1
+            },
+            {
+                question: '下面哪个说法更精确？',
+                options: ['他们身高相近', '都在130到140厘米之间', '他们都差不多', '不知道'],
+                correct: 1
+            },
+            {
+                question: '如果老师说"体重在28到60千克之间"，40千克算不算在这个范围内？',
+                options: ['算', '不算', '要看具体情况', '无法判断'],
+                correct: 0
+            }
+        ];
+
+        let currentQuizQuestion = 0;
+        let quizAnswers = [];
+        let scanComplete = false;
+        let matchedGoals = 0;
+        const totalGoals = 5;
+
+        function startRadarScan() {
+            document.getElementById('startScanBtn').style.display = 'none';
+            const sectors = document.querySelectorAll('.sector');
+            sectors.forEach((sector, index) => {
+                setTimeout(() => {
+                    sector.classList.add('active');
+                    const dimension = sector.dataset.dimension;
+                    showDimensionModal(dimension);
+                }, index * 1500);
+            });
+
+            setTimeout(() => {
+                sectors.forEach(sector => sector.classList.remove('active'));
+                openQuizModal();
+            }, sectors.length * 1500 + 500);
+        }
+
+        function showDimensionModal(dimension) {
+            const data = dimensionData[dimension];
+            const modal = document.getElementById('dimensionModal');
+            document.getElementById('modalTitle').textContent = data.icon + ' ' + data.title;
+            document.getElementById('modalQuestion').textContent = data.question;
+            document.getElementById('modalContent').textContent = data.content;
+            modal.classList.add('show');
+            
+            setTimeout(() => {
+                closeModal();
+            }, 1200);
+        }
+
+        function closeModal() {
+            document.getElementById('dimensionModal').classList.remove('show');
+        }
+
+        function openQuizModal() {
+            document.getElementById('quizModal').classList.add('show');
+            renderQuiz();
+        }
+
+        function closeQuiz() {
+            document.getElementById('quizModal').classList.remove('show');
+            scanComplete = true;
+            updateRadarCoverage();
+        }
+
+        function renderQuiz() {
+            const container = document.getElementById('quizContent');
+            let html = '';
+            quizQuestions.forEach((q, qIndex) => {
+                html += `<div class="quiz-question">
+                    <h4>问题${qIndex + 1}：${q.question}</h4>`;
+                q.options.forEach((opt, oIndex) => {
+                    html += `<button class="quiz-option" onclick="selectQuizOption(${qIndex}, ${oIndex})" id="q${qIndex}_o${oIndex}">${opt}</button>`;
+                });
+                html += '</div>';
+            });
+            container.innerHTML = html;
+        }
+
+        function selectQuizOption(qIndex, oIndex) {
+            document.querySelectorAll(`#quizContent .quiz-question:nth-child(${qIndex + 1}) .quiz-option`).forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            document.getElementById(`q${qIndex}_o${oIndex}`).classList.add('selected');
+            quizAnswers[qIndex] = oIndex;
+        }
+
+        function submitQuiz() {
+            let correct = 0;
+            quizQuestions.forEach((q, i) => {
+                const btn = document.getElementById(`q${i}_o${q.correct}`);
+                if (quizAnswers[i] === q.correct) {
+                    btn.classList.add('correct');
+                    correct++;
+                } else {
+                    btn.classList.add('incorrect');
+                    document.getElementById(`q${i}_o${quizAnswers[i]}`).classList.add('incorrect');
+                }
+                btn.style.pointerEvents = 'none';
+            });
+
+            document.getElementById('quizSubmitBtn').textContent = `答对 ${correct}/3 题`;
+            document.getElementById('quizSubmitBtn').onclick = closeQuiz;
+            document.getElementById('quizSubmitBtn').textContent = '关闭';
+        }
+
+        function updateRadarCoverage() {
+            const polygon = document.getElementById('radarPolygon');
+            polygon.style.animation = 'none';
+            polygon.offsetHeight;
+            polygon.style.animation = 'radarGrow 1s ease-out forwards';
+        }
+
+        document.querySelectorAll('.sector').forEach(sector => {
+            sector.addEventListener('click', () => {
+                const dimension = sector.dataset.dimension;
+                showDimensionModal(dimension);
+                document.getElementById('dimensionModal').classList.add('show');
+            });
+        });
+
+        document.querySelectorAll('.goal-card').forEach(card => {
+            card.addEventListener('dragstart', (e) => {
+                card.classList.add('dragging');
+                e.dataTransfer.setData('text/plain', card.dataset.type);
+            });
+
+            card.addEventListener('dragend', () => {
+                card.classList.remove('dragging');
+            });
+        });
+
+        document.querySelectorAll('.drop-zone').forEach(zone => {
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('highlight');
+            });
+
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('highlight');
+            });
+
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('highlight');
+                const cardType = e.dataTransfer.getData('text/plain');
+                const acceptType = zone.dataset.accept;
+
+                if (cardType === acceptType) {
+                    const card = document.querySelector(`.goal-card[data-type="${cardType}"]`);
+                    card.classList.add('matched');
+                    zone.style.borderStyle = 'solid';
+                    zone.style.borderColor = 'var(--skill)';
+                    zone.style.background = 'rgba(46, 204, 113, 0.3)';
+                    matchedGoals++;
+
+                    if (matchedGoals === totalGoals) {
+                        showStampAnimation();
+                    }
+                } else {
+                    zone.classList.add('wrong');
+                    setTimeout(() => {
+                        zone.classList.remove('wrong');
+                    }, 500);
+                }
+            });
+        });
+
+        function showStampAnimation() {
+            const stamp = document.getElementById('stampAnimation');
+            stamp.classList.add('show');
+            document.getElementById('compassCenter').classList.add('ready');
+            document.getElementById('exportSection').classList.add('show');
+        }
+
+        function exportGuide() {
+            const content = document.querySelector('.container').innerText;
+            alert('导学案已生成！内容包含：\n1. 五维导航罗盘\n2. 学习目标配对\n3. 七阶解析案例\n4. 综合反思问题');
+        }
+
+        document.querySelectorAll('.timeline-node').forEach(node => {
+            node.addEventListener('click', () => {
+                if (!node.classList.contains('future')) {
+                    node.style.transform = 'scale(1.2)';
+                    setTimeout(() => {
+                        node.style.transform = 'scale(1)';
+                    }, 300);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

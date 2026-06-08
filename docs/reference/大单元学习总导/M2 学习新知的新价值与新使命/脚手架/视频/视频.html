@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频脚手架：学习新知的价值与意义 - M2模块</title>
+    <style>
+        :root {
+            --primary: #1677ff;
+            --primary-light: #e6f4ff;
+            --primary-dark: #0958d9;
+            --text: #262626;
+            --text-secondary: #595959;
+            --border: #d9d9d9;
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --success: #52c41a;
+            --warning: #faad14;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            font-size: 18px;
+            line-height: 1.6;
+            color: var(--text);
+            background: var(--bg);
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        h2 {
+            font-size: 22px;
+            font-weight: 600;
+        }
+
+        h3 {
+            font-size: 20px;
+            font-weight: 500;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* 头部 */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: var(--white);
+            padding: 32px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .header h1 {
+            margin-bottom: 8px;
+        }
+
+        .header-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .header-info {
+            display: flex;
+            gap: 24px;
+            margin-top: 16px;
+            font-size: 14px;
+        }
+
+        .header-info span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* 标签 */
+        .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .tag-basic {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+        }
+
+        .tag-advanced {
+            background: #fff7e6;
+            color: #d46b08;
+        }
+
+        .tag-challenge {
+            background: #f6ffed;
+            color: #389e0d;
+        }
+
+        /* 定义卡片 */
+        .definition-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .definition-card h2 {
+            color: var(--primary);
+            margin-bottom: 12px;
+        }
+
+        /* 层级说明 */
+        .level-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .level-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .level-card h3 {
+            margin-bottom: 12px;
+        }
+
+        .level-card.basic {
+            border-top: 4px solid var(--primary);
+        }
+
+        .level-card.advanced {
+            border-top: 4px solid var(--warning);
+        }
+
+        .level-card.challenge {
+            border-top: 4px solid var(--success);
+        }
+
+        .level-card p {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* 视频资源库 */
+        .video-section {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .video-section h2 {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .video-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .video-item {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .video-item:hover {
+            border-color: var(--primary);
+            box-shadow: 0 2px 8px rgba(22, 119, 255, 0.15);
+        }
+
+        .video-item h3 {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .video-meta {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .video-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .task-box {
+            background: var(--primary-light);
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+        }
+
+        .task-box h4 {
+            font-size: 14px;
+            color: var(--primary-dark);
+            margin-bottom: 6px;
+        }
+
+        .task-box p {
+            font-size: 14px;
+        }
+
+        .question-list {
+            margin-top: 12px;
+        }
+
+        .question-list li {
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .question-list li::before {
+            content: "？";
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        .pause-point {
+            background: #fffbe6;
+            border: 1px solid #ffe58f;
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin-top: 12px;
+            font-size: 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .pause-point::before {
+            content: "⏸";
+            font-size: 16px;
+        }
+
+        .output-task {
+            background: #f6ffed;
+            border: 1px solid #b7eb8f;
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin-top: 12px;
+            font-size: 14px;
+        }
+
+        .output-task h4 {
+            color: var(--success);
+            margin-bottom: 4px;
+        }
+
+        /* 学习支持工具 */
+        .support-section {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .support-section h2 {
+            margin-bottom: 20px;
+        }
+
+        .watch-list {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 24px;
+        }
+
+        .watch-list th,
+        .watch-list td {
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+
+        .watch-list th {
+            background: var(--primary-light);
+            font-weight: 500;
+            color: var(--primary-dark);
+        }
+
+        .watch-list td {
+            font-size: 14px;
+        }
+
+        .status-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            display: inline-block;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .status-checkbox:hover {
+            border-color: var(--primary);
+        }
+
+        .status-checkbox.checked {
+            background: var(--success);
+            border-color: var(--success);
+        }
+
+        .status-checkbox.checked::after {
+            content: "✓";
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .question-cards {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .question-card {
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 16px;
+            font-size: 14px;
+        }
+
+        .question-card::before {
+            content: "Q";
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .example-box {
+            background: var(--primary-light);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .example-box h4 {
+            color: var(--primary-dark);
+            margin-bottom: 12px;
+        }
+
+        .example-box .problem {
+            background: white;
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .thinking-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .thinking-steps .step {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .step-num {
+            width: 28px;
+            height: 28px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        /* 资源索引表 */
+        .resource-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+
+        .resource-table th,
+        .resource-table td {
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        .resource-table th {
+            background: var(--primary-light);
+            font-weight: 500;
+            color: var(--primary-dark);
+        }
+
+        /* 输出任务汇总 */
+        .output-section {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .output-section h2 {
+            margin-bottom: 20px;
+        }
+
+        .output-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .output-card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .output-card h4 {
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .output-card.basic h4 {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+        }
+
+        .output-card.advanced h4 {
+            background: #fff7e6;
+            color: #d46b08;
+        }
+
+        .output-card.challenge h4 {
+            background: #f6ffed;
+            color: #389e0d;
+        }
+
+        .output-card ul {
+            list-style: none;
+        }
+
+        .output-card li {
+            font-size: 14px;
+            padding: 8px 0;
+            border-bottom: 1px dashed var(--border);
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .output-card li:last-child {
+            border-bottom: none;
+        }
+
+        .output-card li::before {
+            content: "○";
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        /* 页脚 */
+        .footer {
+            text-align: center;
+            padding: 24px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .level-grid,
+            .output-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .question-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .header-info {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <h1>视频脚手架：学习新知的价值与意义</h1>
+            <p class="header-subtitle">通过分层视频资源，理解万以内加减法在生活中的应用价值</p>
+            <div class="header-info">
+                <span>📚 学科：数学</span>
+                <span>🎯 年级：三年级上</span>
+                <span>📖 模块：M2 学习新知的新价值与新使命</span>
+            </div>
+        </div>
+
+        <!-- 定义 -->
+        <div class="definition-card">
+            <h2>什么是视频脚手架？</h2>
+            <p>以"观看焦点"为核心，而非泛化观看，训练信息提取能力。每个视频必须附带观看任务、关键问题、暂停思考点和输出任务，帮助你从"看热闹"变成"看门道"。</p>
+        </div>
+
+        <!-- 层级说明 -->
+        <div class="level-grid">
+            <div class="level-card basic">
+                <span class="tag tag-basic">基础层</span>
+                <h3>解释型</h3>
+                <p>课程类视频，直观讲解，注重基础概念澄清，帮助建立基本表象</p>
+            </div>
+            <div class="level-card advanced">
+                <span class="tag tag-advanced">进阶层</span>
+                <h3>分析型</h3>
+                <p>纪录片类型，真实情境呈现，引导分析运算本质</p>
+            </div>
+            <div class="level-card challenge">
+                <span class="tag tag-challenge">挑战层</span>
+                <h3>辩论/前沿型</h3>
+                <p>专题演讲与行业实录，开放性议题，激发批判性思维</p>
+            </div>
+        </div>
+
+        <!-- 基础层视频 -->
+        <div class="video-section">
+            <h2>
+                <span class="tag tag-basic">基础层</span>
+                必选视频
+            </h2>
+            <div class="video-list">
+                <!-- 视频1 -->
+                <div class="video-item">
+                    <h3>
+                        <span>🎬</span>
+                        微课视频：为什么要学习万以内加减法
+                    </h3>
+                    <div class="video-meta">
+                        <span>⏱ 时长：3分钟</span>
+                        <span>📺 平台：国家智慧教育平台</span>
+                    </div>
+                    <div class="task-box">
+                        <h4>📋 观看任务</h4>
+                        <p>说出万以内加减法在生活中的3个应用场景</p>
+                    </div>
+                    <div class="task-box">
+                        <h4>❓ 关键问题</h4>
+                        <ul class="question-list">
+                            <li>万以内的数和之前学的有什么联系？</li>
+                            <li>学习这部分内容对我有什么帮助？</li>
+                        </ul>
+                    </div>
+                    <div class="pause-point">
+                        <div>
+                            <strong>⏸ 暂停思考点：1分30秒</strong><br>
+                            暂停视频，思考：你身边有哪些地方用到了万以内的加减法？试着举出2个例子。
+                        </div>
+                    </div>
+                    <div class="output-task">
+                        <h4>📝 输出任务</h4>
+                        <p>完成"生活中的加减法"数学日记，记录你发现的3个应用场景</p>
+                    </div>
+                </div>
+
+                <!-- 视频2 -->
+                <div class="video-item">
+                    <h3>
+                        <span>🎬</span>
+                        课程类视频：人教版数学三年级上册配套微课
+                    </h3>
+                    <div class="video-meta">
+                        <span>⏱ 时长：约10分钟</span>
+                        <span>📺 平台：国家智慧教育平台</span>
+                    </div>
+                    <div class="task-box">
+                        <h4>📋 观看任务</h4>
+                        <p>理解不进位、不退位加减法的意义</p>
+                    </div>
+                    <div class="task-box">
+                        <h4>❓ 关键问题</h4>
+                        <ul class="question-list">
+                            <li>1234+567等于多少？</li>
+                            <li>如何用算盘或计数器辅助计算？</li>
+                        </ul>
+                    </div>
+                    <div class="pause-point">
+                        <div>
+                            <strong>⏸ 暂停思考点：2分钟</strong><br>
+                            暂停视频，找到身边的算盘或打开计数器模拟器，动手操作一下。
+                        </div>
+                    </div>
+                    <div class="output-task">
+                        <h4>📝 输出任务</h4>
+                        <p>完成课后基础练习5题</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 进阶层视频 -->
+        <div class="video-section">
+            <h2>
+                <span class="tag tag-advanced">进阶层</span>
+                可选视频
+            </h2>
+            <div class="video-list">
+                <!-- 纪录片 -->
+                <div class="video-item">
+                    <h3>
+                        <span>🎬</span>
+                        纪录片：生活中的万以内加减法
+                    </h3>
+                    <div class="video-meta">
+                        <span>⏱ 时长：约5分钟</span>
+                        <span>🎯 场景：购物场景中的加减法应用</span>
+                    </div>
+                    <div class="task-box">
+                        <h4>📋 观看任务</h4>
+                        <p>提取纪录片中3个使用加减法的真实情境</p>
+                    </div>
+                    <div class="task-box">
+                        <h4>❓ 关键问题</h4>
+                        <ul class="question-list">
+                            <li>购物时哪些情况需要用到万以内的加减法？</li>
+                            <li>售货员如何快速计算找零？</li>
+                        </ul>
+                    </div>
+                    <div class="pause-point">
+                        <div>
+                            <strong>⏸ 暂停思考点：3分钟</strong><br>
+                            暂停视频，想一想：如果你是小明的家长，购物清单上的总价你会怎么算？
+                        </div>
+                    </div>
+                    <div class="output-task">
+                        <h4>📝 输出任务</h4>
+                        <p>用加减法解决纪录片中的一个实际问题</p>
+                    </div>
+                </div>
+
+                <!-- 情境动画 -->
+                <div class="video-item">
+                    <h3>
+                        <span>🎬</span>
+                        情境动画：小明去书店
+                    </h3>
+                    <div class="video-meta">
+                        <span>⏱ 时长：约4分钟</span>
+                        <span>📺 平台：数学王子APP</span>
+                    </div>
+                    <div class="task-box">
+                        <h4>📋 观看任务</h4>
+                        <p>观察小明在书店购书过程中的数学思维</p>
+                    </div>
+                    <div class="task-box">
+                        <h4>❓ 关键问题</h4>
+                        <ul class="question-list">
+                            <li>小明买了哪些书？总价是多少？</li>
+                            <li>小明付钱后应找回多少？</li>
+                        </ul>
+                    </div>
+                    <div class="pause-point">
+                        <div>
+                            <strong>⏸ 暂停思考点：2分30秒</strong><br>
+                            暂停视频，尝试分步计算总价与找零，看看和你想的一不一样。
+                        </div>
+                    </div>
+                    <div class="output-task">
+                        <h4>📝 输出任务</h4>
+                        <p>改编一个类似的购书情境并解答</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 挑战层视频 -->
+        <div class="video-section">
+            <h2>
+                <span class="tag tag-challenge">挑战层</span>
+                自主拓展
+            </h2>
+            <div class="video-list">
+                <!-- TED演讲 -->
+                <div class="video-item">
+                    <h3>
+                        <span>🎬</span>
+                        TED演讲：计算工具的演变
+                    </h3>
+                    <div class="video-meta">
+                        <span>⏱ 时长：约6分钟</span>
+                        <span>📺 来源：TED官网 / 哔哩哔哩</span>
+                    </div>
+                    <div class="task-box">
+                        <h4>📋 观看任务</h4>
+                        <p>归纳计算工具演变的3个阶段及其特点</p>
+                    </div>
+                    <div class="task-box">
+                        <h4>❓ 关键问题</h4>
+                        <ul class="question-list">
+                            <li>古代算筹和现代计算器有什么本质区别？</li>
+                            <li>为什么说运算能力是文明进步的基石？</li>
+                        </ul>
+                    </div>
+                    <div class="pause-point">
+                        <div>
+                            <strong>⏸ 暂停思考点：4分钟</strong><br>
+                            暂停视频，对比不同计算工具的优缺点，你更喜欢哪种？为什么？
+                        </div>
+                    </div>
+                    <div class="output-task">
+                        <h4>📝 输出任务</h4>
+                        <p>撰写100字感想，谈谈计算工具演变对你的启发</p>
+                    </div>
+                </div>
+
+                <!-- 行业实录 -->
+                <div class="video-item">
+                    <h3>
+                        <span>🎬</span>
+                        职业实录：会计工作中的数学
+                    </h3>
+                    <div class="video-meta">
+                        <span>⏱ 时长：约5分钟</span>
+                        <span>📺 来源：职业体验类纪录片</span>
+                    </div>
+                    <div class="task-box">
+                        <h4>📋 观看任务</h4>
+                        <p>观察会计人员如何使用加减法处理账目</p>
+                    </div>
+                    <div class="task-box">
+                        <h4>❓ 关键问题</h4>
+                        <ul class="question-list">
+                            <li>会计工作中的加减法有什么特点？</li>
+                            <li>为什么精确的运算对会计工作至关重要？</li>
+                        </ul>
+                    </div>
+                    <div class="pause-point">
+                        <div>
+                            <strong>⏸ 暂停思考点：5分钟</strong><br>
+                            思考：精度与效率哪个更重要？在生活中你是怎么平衡这两点的？
+                        </div>
+                    </div>
+                    <div class="output-task">
+                        <h4>📝 输出任务</h4>
+                        <p>设计一道与家庭收支相关的加减法应用题</p>
+                    </div>
+                </div>
+
+                <!-- 科普视频 -->
+                <div class="video-item">
+                    <h3>
+                        <span>🎬</span>
+                        科普视频：天文数字与计数发展史
+                    </h3>
+                    <div class="video-meta">
+                        <span>⏱ 时长：约6分钟</span>
+                        <span>📺 平台：科普中国</span>
+                    </div>
+                    <div class="task-box">
+                        <h4>📋 观看任务</h4>
+                        <p>了解从个位到万位数的扩展过程</p>
+                    </div>
+                    <div class="task-box">
+                        <h4>❓ 关键问题</h4>
+                        <ul class="question-list">
+                            <li>人类为什么要发明更大的数？</li>
+                            <li>位值系统在计数中有什么重要作用？</li>
+                        </ul>
+                    </div>
+                    <div class="pause-point">
+                        <div>
+                            <strong>⏸ 暂停思考点：3分30秒</strong><br>
+                            暂停视频，思考：生活中有哪些大数让你印象深刻？
+                        </div>
+                    </div>
+                    <div class="output-task">
+                        <h4>📝 输出任务</h4>
+                        <p>收集3个生活中遇到的大数例子</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 学习支持工具 -->
+        <div class="support-section">
+            <h2>📋 学习支持工具</h2>
+            
+            <!-- 观看任务单 -->
+            <h3 style="margin-bottom: 16px;">观看任务单</h3>
+            <table class="watch-list">
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>视频名称</th>
+                        <th>观看任务</th>
+                        <th>完成状态</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>为什么要学习万以内加减法</td>
+                        <td>说出3个应用场景</td>
+                        <td><span class="status-checkbox" onclick="this.classList.toggle('checked')"></span></td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>人教版配套微课</td>
+                        <td>完成基础练习5题</td>
+                        <td><span class="status-checkbox" onclick="this.classList.toggle('checked')"></span></td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td>购物场景纪录片</td>
+                        <td>解决1个实际问题</td>
+                        <td><span class="status-checkbox" onclick="this.classList.toggle('checked')"></span></td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td>计算工具的演变</td>
+                        <td>撰写100字感想</td>
+                        <td><span class="status-checkbox" onclick="this.classList.toggle('checked')"></span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- 问题提示卡 -->
+            <h3 style="margin: 24px 0 16px;">❓ 问题提示卡</h3>
+            <div class="question-cards">
+                <div class="question-card">视频中哪些场景用到了万以内的加减法？</div>
+                <div class="question-card">主人公是怎样一步步算出结果的？</div>
+                <div class="question-card">这种计算方法和你之前学的一样吗？</div>
+                <div class="question-card">你还能想到其他可以用这种方法解决的问题吗？</div>
+            </div>
+
+            <!-- 思维示范 -->
+            <h3 style="margin: 24px 0 16px;">🧠 思维示范（以购物场景为例）</h3>
+            <div class="example-box">
+                <div class="problem">
+                    <strong>例题：</strong>小明去书店买书，一本《十万个为什么》售价268元，一本《趣味数学》售价145元。小明付给营业员500元，应找回多少元？
+                </div>
+                <div class="thinking-steps">
+                    <div class="step">
+                        <span class="step-num">1</span>
+                        <span><strong>理解题意：</strong>500 - 268 - 145 = ?</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-num">2</span>
+                        <span><strong>分步计算：</strong>先算268+145=413，再算500-413=87</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-num">3</span>
+                        <span><strong>检验结果：</strong>268+145+87=500 ✓</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 资源获取索引 -->
+        <div class="support-section">
+            <h2>🔗 资源获取索引</h2>
+            <table class="resource-table">
+                <thead>
+                    <tr>
+                        <th>资源类型</th>
+                        <th>资源名称</th>
+                        <th>获取方式</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>微课</td>
+                        <td>为什么要学习万以内加减法</td>
+                        <td>国家智慧教育平台</td>
+                    </tr>
+                    <tr>
+                        <td>微课</td>
+                        <td>人教版配套微课</td>
+                        <td>国家智慧教育平台</td>
+                    </tr>
+                    <tr>
+                        <td>纪录片</td>
+                        <td>生活中的万以内加减法</td>
+                        <td>校内资源库</td>
+                    </tr>
+                    <tr>
+                        <td>情境动画</td>
+                        <td>小明去书店</td>
+                        <td>数学王子APP</td>
+                    </tr>
+                    <tr>
+                        <td>演讲</td>
+                        <td>计算工具的演变</td>
+                        <td>TED官网 / 哔哩哔哩</td>
+                    </tr>
+                    <tr>
+                        <td>职业实录</td>
+                        <td>会计工作中的数学</td>
+                        <td>科普网站搜索</td>
+                    </tr>
+                    <tr>
+                        <td>科普视频</td>
+                        <td>天文数字与计数发展史</td>
+                        <td>科普中国</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 输出任务汇总 -->
+        <div class="output-section">
+            <h2>📝 输出任务汇总</h2>
+            <div class="output-grid">
+                <div class="output-card basic">
+                    <h4>必选输出（基础层完成者）</h4>
+                    <ul>
+                        <li>完成"生活中的加减法"数学日记</li>
+                        <li>完成课后基础练习10题</li>
+                        <li>收集3个生活中遇到的大数例子</li>
+                    </ul>
+                </div>
+                <div class="output-card advanced">
+                    <h4>可选输出（进阶层完成者）</h4>
+                    <ul>
+                        <li>用加减法解决纪录片中的一个实际问题</li>
+                        <li>设计一道与家庭收支相关的加减法应用题</li>
+                    </ul>
+                </div>
+                <div class="output-card challenge">
+                    <h4>挑战输出（挑战层完成者）</h4>
+                    <ul>
+                        <li>撰写100字感想：计算工具演变对你的启发</li>
+                        <li>改编情境题：给弟弟妹妹讲一道加减法题</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <div class="footer">
+            <p>本视频脚手架为M2模块核心支持资源，通过分层视频资源与配套学习任务，帮助学生理解万以内加减法的意义与价值，发展数学核心素养。</p>
+            <p style="margin-top: 8px;">建议学生根据自身情况选择性使用，完成相应层次的观看任务与输出任务。</p>
+        </div>
+    </div>
+
+    <script>
+        // 为复选框添加点击交互
+        document.querySelectorAll('.status-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('click', function() {
+                this.classList.toggle('checked');
+            });
+        });
+    </script>
+</body>
+</html>

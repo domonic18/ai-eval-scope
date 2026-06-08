@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性案例 - 数学三年级上</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --primary: #1a5fb4;
+  --primary-light: #3584e4;
+  --primary-dark: #0d47a1;
+  --secondary: #26a269;
+  --accent: #e5a50b;
+  --bg: #f8f9fa;
+  --card-bg: #ffffff;
+  --text: #1a1a2e;
+  --text-secondary: #5c6370;
+  --border: #d0d7de;
+  --shadow: rgba(26, 95, 180, 0.08);
+  --radius: 12px;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  background: linear-gradient(135deg, #f0f4f8 0%, #e8f0fe 100%);
+  color: var(--text);
+  line-height: 1.8;
+  padding: 24px 16px;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 32px;
+  padding: 24px 16px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  border-radius: var(--radius);
+  color: #fff;
+  box-shadow: 0 4px 16px var(--shadow);
+}
+
+.header h1 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+
+.header .subtitle {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.header .grade-tag {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 4px 16px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 20px;
+  font-size: 13px;
+}
+
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 20px 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 12px var(--shadow);
+  border-left: 4px solid var(--primary);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.case-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px var(--shadow);
+}
+
+.case-card.secondary {
+  border-left-color: var(--secondary);
+}
+
+.case-card.accent {
+  border-left-color: var(--accent);
+}
+
+.case-number {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 700;
+  margin-right: 10px;
+}
+
+.case-card.secondary .case-number {
+  background: var(--secondary);
+}
+
+.case-card.accent .case-number {
+  background: var(--accent);
+}
+
+.case-title {
+  display: inline;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.case-content {
+  margin-top: 12px;
+  padding-left: 38px;
+}
+
+.case-section {
+  margin-bottom: 10px;
+}
+
+.case-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.case-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.example-box {
+  background: #f0f4f8;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.example-box .label {
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.math-expression {
+  font-family: 'Times New Roman', serif;
+  font-style: italic;
+  background: #e8f0fe;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 15px;
+  color: var(--primary-dark);
+}
+
+.thought-box {
+  background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-top: 8px;
+  border-left: 3px solid var(--accent);
+}
+
+.thought-box .label {
+  font-weight: 600;
+  color: #b7791f;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.thought-box .text {
+  font-size: 13px;
+  color: #5d4037;
+  line-height: 1.6;
+}
+
+.reflection-card {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border-radius: var(--radius);
+  padding: 24px 20px;
+  margin-top: 24px;
+  border: 2px solid var(--primary-light);
+  box-shadow: 0 4px 16px rgba(26, 95, 180, 0.15);
+}
+
+.reflection-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  text-align: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px dashed var(--primary);
+}
+
+.reflection-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.reflection-item {
+  background: rgba(255,255,255,0.7);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.reflection-item .title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.reflection-item .desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.summary-section {
+  margin-top: 20px;
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: 0 2px 12px var(--shadow);
+}
+
+.summary-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.summary-list {
+  list-style: none;
+  padding: 0;
+}
+
+.summary-list li {
+  font-size: 14px;
+  color: var(--text-secondary);
+  padding: 8px 0 8px 24px;
+  position: relative;
+  border-bottom: 1px dashed #eee;
+}
+
+.summary-list li:last-child {
+  border-bottom: none;
+}
+
+.summary-list li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--secondary);
+  font-weight: bold;
+}
+
+.step-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.step-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.step-dot.active {
+  background: var(--primary);
+  width: 24px;
+  border-radius: 5px;
+}
+
+.footer {
+  text-align: center;
+  margin-top: 32px;
+  padding: 16px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  .header h1 { font-size: 18px; }
+  .case-title { font-size: 15px; }
+  .reflection-content { grid-template-columns: 1fr; }
+  .case-content { padding-left: 0; margin-top: 10px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>解析性案例学习</h1>
+  <p class="subtitle">七阶解析性适配 · 数学思维培养</p>
+  <span class="grade-tag">三年级上册 · 小学低段</span>
+</div>
+
+<div class="step-indicator">
+  <span class="step-dot active"></span>
+  <span class="step-dot active"></span>
+  <span class="step-dot active"></span>
+  <span class="step-dot active"></span>
+  <span class="step-dot active"></span>
+  <span class="step-dot active"></span>
+  <span class="step-dot active"></span>
+</div>
+
+<div class="case-card">
+  <span class="case-number">一</span>
+  <span class="case-title">超市购物算账</span>
+  <div class="case-content">
+    <div class="case-section">
+      <div class="case-section-title">情境描述</div>
+      <div class="case-text">小明去超市买文具，一支铅笔3元，一个橡皮2元，一盒彩笔15元。他付了50元，售货员应该找回多少钱？</div>
+    </div>
+    <div class="example-box">
+      <div class="label">解题思路</div>
+      <div>先算总花费：3 + 2 + 15 = <span class="math-expression">20</span> 元</div>
+      <div>再算找回：50 - 20 = <span class="math-expression">30</span> 元</div>
+    </div>
+    <div class="thought-box">
+      <div class="label">思维进阶</div>
+      <div class="text">引导孩子理解：付钱 - 消费 = 找回，培养数感与生活数学意识。</div>
+    </div>
+  </div>
+</div>
+
+<div class="case-card secondary">
+  <span class="case-number">二</span>
+  <span class="case-title">运动会积分比赛</span>
+  <div class="case-content">
+    <div class="case-section">
+      <div class="case-section-title">情境描述</div>
+      <div class="case-text">三年级运动会设置积分规则：跳绳第一名得50分，第二名得45分，第三名得40分，第四名得35分。小明得了45分，小红得了40分，他们分别得了第几名？</div>
+    </div>
+    <div class="example-box">
+      <div class="label">解题思路</div>
+      <div>根据积分排名：第一名50分，第二名45分，第三名40分</div>
+      <div>小明45分 → <span class="math-expression">第二名</span></div>
+      <div>小红40分 → <span class="math-expression">第三名</span></div>
+    </div>
+    <div class="thought-box">
+      <div class="label">思维进阶</div>
+      <div class="text">培养孩子对排序与等差数列的直观感知，理解递减规律。</div>
+    </div>
+  </div>
+</div>
+
+<div class="case-card accent">
+  <span class="case-number">三</span>
+  <span class="case-title">图书角书本统计</span>
+  <div class="case-content">
+    <div class="case-section">
+      <div class="case-section-title">情境描述</div>
+      <div class="case-text">班级图书角有故事书24本，科技书比故事书多8本，漫画书比科技书少5本。图书角一共有多少本书？</div>
+    </div>
+    <div class="example-box">
+      <div class="label">解题步骤</div>
+      <div>科技书：24 + 8 = <span class="math-expression">32</span> 本</div>
+      <div>漫画书：32 - 5 = <span class="math-expression">27</span> 本</div>
+      <div>总数：24 + 32 + 27 = <span class="math-expression">83</span> 本</div>
+    </div>
+    <div class="thought-box">
+      <div class="label">思维进阶</div>
+      <div class="text">培养分步计算能力与数量关系的分析能力，建立多步骤问题的解决策略。</div>
+    </div>
+  </div>
+</div>
+
+<div class="case-card">
+  <span class="case-number">四</span>
+  <span class="case-title">两种竖式谁对谁错</span>
+  <div class="case-content">
+    <div class="case-section">
+      <div class="case-section-title">情境描述</div>
+      <div class="case-text">计算 56 + 37，小明和小红写了不同的竖式，哪个是正确的？为什么？</div>
+    </div>
+    <div class="example-box">
+      <div class="label">竖式对比</div>
+      <div style="display:flex; gap:24px; margin-top:8px;">
+        <div>
+          <div>小明：</div>
+          <div>  56</div>
+          <div>+ 37</div>
+          <div>-----</div>
+          <div>  83</div>
+          <div style="color:#26a269; margin-top:4px;">✓ 正确</div>
+        </div>
+        <div>
+          <div>小红：</div>
+          <div>  56</div>
+          <div>+ 37</div>
+          <div>-----</div>
+          <div>  93</div>
+          <div style="color:#e5a50b; margin-top:4px;">? 需要检查</div>
+        </div>
+      </div>
+    </div>
+    <div class="thought-box">
+      <div class="label">思维进阶</div>
+      <div class="text">56 + 30 = 86，86 + 7 = 93，所以93是正确的竖式。引导孩子养成验算习惯。</div>
+    </div>
+  </div>
+</div>
+
+<div class="case-card secondary">
+  <span class="case-number">五</span>
+  <span class="case-title">跳绳比赛中的数学</span>
+  <div class="case-content">
+    <div class="case-section">
+      <div class="case-section-title">情境描述</div>
+      <div class="case-text">体育课上跳绳测试，小明第一分钟跳了42个，第二分钟跳了38个，第三分钟跳了45个。小明三分钟一共跳了多少个？平均每分钟跳多少个？</div>
+    </div>
+    <div class="example-box">
+      <div class="label">解题步骤</div>
+      <div>总个数：42 + 38 + 45 = <span class="math-expression">125</span> 个</div>
+      <div>平均每分钟：125 ÷ 3 = <span class="math-expression">41</span> 余 <span class="math-expression">2</span> 个</div>
+    </div>
+    <div class="thought-box">
+      <div class="label">思维进阶</div>
+      <div class="text">引入"总数÷数量=平均数"的概念，用实际数据帮助孩子理解除法的实际意义。</div>
+    </div>
+  </div>
+</div>
+
+<div class="case-card accent">
+  <span class="case-number">六</span>
+  <span class="case-title">购物卡充值与消费</span>
+  <div class="case-content">
+    <div class="case-section">
+      <div class="case-section-title">情境描述</div>
+      <div class="case-text">妈妈的购物卡原有200元，先充值了50元，又买了水果用去75元，现在卡里还剩多少元？</div>
+    </div>
+    <div class="example-box">
+      <div class="label">解题思路</div>
+      <div>充值后：200 + 50 = <span class="math-expression">250</span> 元</div>
+      <div>消费后：250 - 75 = <span class="math-expression">175</span> 元</div>
+    </div>
+    <div class="thought-box">
+      <div class="label">思维进阶</div>
+      <div class="text">理解"充值"是加法操作，"消费"是减法操作，建立收支平衡的概念。</div>
+    </div>
+  </div>
+</div>
+
+<div class="case-card">
+  <span class="case-number">七</span>
+  <span class="case-title">设计购物方案</span>
+  <div class="case-content">
+    <div class="case-section">
+      <div class="case-section-title">情境描述</div>
+      <div class="case-text">你有100元，要买以下物品中的几样，使得刚好花完或者剩余最少：铅笔5元/支，橡皮3元/个，尺子7元/把，笔记本12元/本，彩笔18元/盒。你会怎么买？</div>
+    </div>
+    <div class="example-box">
+      <div class="label">方案示例</div>
+      <div>方案一（刚好花完）：18 + 12 + 7 + 3 + 5 = <span class="math-expression">45</span> 元 → 剩余55元</div>
+      <div>方案二（剩余最少）：100 - (18 + 12 + 7 + 3 + 5) = <span class="math-expression">55</span> 元</div>
+      <div>最优方案：12×2 + 7 + 3 + 5 + 18 = <span class="math-expression">100</span> 元（刚好花完）</div>
+    </div>
+    <div class="thought-box">
+      <div class="label">思维进阶</div>
+      <div class="text">开放性问题，培养组合思维与优化意识，鼓励孩子多角度思考不同方案。</div>
+    </div>
+  </div>
+</div>
+
+<div class="reflection-card">
+  <div class="reflection-title">综合反思 · 七阶案例回顾</div>
+  <div class="reflection-content">
+    <div class="reflection-item">
+      <div class="title">📊 数感培养</div>
+      <div class="desc">通过购物算账、积分比赛等场景，培养对数字大小、关系的直觉判断能力。</div>
+    </div>
+    <div class="reflection-item">
+      <div class="title">🔢 运算能力</div>
+      <div class="desc">加减法的实际应用，竖式计算的规范与验算习惯，多步骤运算的分步策略。</div>
+    </div>
+    <div class="reflection-item">
+      <div class="title">📐 数量关系</div>
+      <div class="desc">理解多与少、差与倍的关系，能够从文字描述中提取数学信息并建模。</div>
+    </div>
+    <div class="reflection-item">
+      <div class="title">🎯 问题解决</div>
+      <div class="desc">面对实际问题能够分析条件、选择策略、检验结果，发展数学应用意识。</div>
+    </div>
+    <div class="reflection-item">
+      <div class="title">🧮 逻辑思维</div>
+      <div class="desc">从具体情境中抽象数学问题，进行有序思考和推理说明。</div>
+    </div>
+    <div class="reflection-item">
+      <div class="title">💡 优化意识</div>
+      <div class="desc">在设计购物方案中体验最优化的思考方式，培养比较与选择的能力。</div>
+    </div>
+  </div>
+</div>
+
+<div class="summary-section">
+  <div class="summary-title">学习要点总结</div>
+  <ul class="summary-list">
+    <li>掌握100以内数的加减法运算，能够进行简单的估算</li>
+    <li>理解"比多比少"的数量关系，能用加减法解决实际问题</li>
+    <li>学会分步解决问题，培养有序思考的学习习惯</li>
+    <li>初步认识平均数的概念，理解除法的实际含义</li>
+    <li>能够验算计算结果，养成认真仔细的学习态度</li>
+    <li>在生活情境中發現数学问题，体会数学与生活的紧密联系</li>
+  </ul>
+</div>
+
+<div class="footer">
+  <p>数学三年级上 · 解析性案例 · 大单元学习总导</p>
+</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>名人名言 - 数学家的认知跃迁</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            font-size: 16px;
+            line-height: 1.8;
+            color: #333;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8f5e9 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background: linear-gradient(135deg, #00695c 0%, #00897b 50%, #26a69a 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 12px rgba(0, 105, 92, 0.3);
+        }
+        h1 {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        h2 {
+            font-size: 22px;
+            color: #00695c;
+            border-left: 4px solid #00897b;
+            padding-left: 12px;
+            margin: 25px 0 15px 0;
+        }
+        h3 {
+            font-size: 18px;
+            color: #00796b;
+            margin: 15px 0 10px 0;
+        }
+        .intro-section {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid #26a69a;
+        }
+        .intro-section p {
+            margin-bottom: 12px;
+            text-align: justify;
+        }
+        .mathematician-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s;
+        }
+        .mathematician-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+        .mathematician-card.gauss {
+            border-left: 4px solid #00796b;
+        }
+        .mathematician-card.hualuogeng {
+            border-left: 4px solid #00897b;
+        }
+        .mathematician-card.chenjingrunt {
+            border-left: 4px solid #26a69a;
+        }
+        .mathematician-name {
+            font-size: 22px;
+            color: #004d40;
+            font-weight: bold;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+        }
+        .mathematician-name::before {
+            content: "★";
+            margin-right: 10px;
+            color: #00897b;
+        }
+        .quote-box {
+            background: linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 100%);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 12px 0;
+            font-style: italic;
+            color: #00695c;
+            border-left: 3px solid #00897b;
+        }
+        .quote-box strong {
+            display: block;
+            margin-bottom: 5px;
+            font-style: normal;
+        }
+        .info-item {
+            margin-bottom: 12px;
+            padding-left: 15px;
+            border-left: 2px solid #b2dfdb;
+        }
+        .info-item strong {
+            color: #00796b;
+        }
+        .insight-box {
+            background: #f1f8e9;
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-top: 12px;
+            color: #33691e;
+            border-left: 3px solid #7cb342;
+        }
+        .insight-box strong {
+            color: #558b2f;
+        }
+        .section-header {
+            background: linear-gradient(90deg, #00897b 0%, #26a69a 100%);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin: 30px 0 20px 0;
+        }
+        .section-header h2 {
+            color: white;
+            border-left: none;
+            padding-left: 0;
+            margin: 0;
+        }
+        .task-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        .task-title {
+            font-size: 18px;
+            color: #00695c;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .task-scenario {
+            background: #e8f5e9;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            color: #2e7d32;
+        }
+        .task-content {
+            padding-left: 20px;
+            margin-bottom: 10px;
+        }
+        .task-content li {
+            margin-bottom: 6px;
+        }
+        .think-question {
+            background: #fff3e0;
+            padding: 10px 15px;
+            border-radius: 6px;
+            color: #e65100;
+            font-size: 15px;
+        }
+        .think-question strong {
+            color: #bf360c;
+        }
+        .resource-box {
+            background: linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 100%);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .resource-box h3 {
+            color: #00695c;
+            margin-bottom: 10px;
+        }
+        .resource-box ul {
+            padding-left: 20px;
+        }
+        .resource-box li {
+            margin-bottom: 8px;
+        }
+        .reflection-box {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 25px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        .reflection-box h3 {
+            color: #00695c;
+        }
+        .reflection-box ol {
+            padding-left: 25px;
+        }
+        .reflection-box li {
+            margin-bottom: 12px;
+        }
+        @media (max-width: 600px) {
+            body {
+                font-size: 15px;
+            }
+            h1 {
+                font-size: 24px;
+            }
+            h2 {
+                font-size: 20px;
+            }
+            .container {
+                padding: 15px;
+            }
+            .mathematician-card {
+                padding: 15px;
+            }
+            .mathematician-name {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>三、脚手架：名人名言</h1>
+            <p>数学家的认知跃迁故事</p>
+        </header>
+
+        <div class="intro-section">
+            <h2>一、核心目标：理解"认知跃迁"</h2>
+            <p>同学们，你有没有想过：那些伟大的数学家，他们是怎么想到那些厉害的方法的？他们天生就很聪明吗？</p>
+            <p>其实不是的。每一位数学家的重大发现，都经历过"认知跃迁"——就是从"不懂"到"懂"、从"看不清"到"看明白"的过程。这个过程比我们想象的要曲折得多。</p>
+            <p>今天，我们不是来听故事的。我们要研究的是：<strong>他们是怎么突破自己的认知障碍的？</strong>这些方法，对我们今天的数学学习有什么启发？</p>
+        </div>
+
+        <div class="section-header">
+            <h2>二、人物卡片：三位数学家的认知跃迁</h2>
+        </div>
+
+        <div class="mathematician-card gauss">
+            <div class="mathematician-name">高斯（Gauss）— 奠基人物</div>
+            <div class="quote-box">
+                <strong>名言：</strong>"数学是科学之王。" — 高斯
+            </div>
+            <div class="info-item">
+                <strong>关键问题：</strong>如何快速计算1+2+3+...+100的结果？
+            </div>
+            <div class="info-item">
+                <strong>思维突破点：</strong>一般人会一个个加起来，但高斯发现了规律——头尾配对：1+100=101，2+99=101，一共有50对，所以是101×50=5050。
+            </div>
+            <div class="info-item">
+                <strong>失败/争议点：</strong>传说高斯小时候就展现出天赋，但他的父亲并不支持他继续读书，认为数学没有"实用价值"。高斯是靠着自己的坚持和一位公爵的资助，才完成了学业。
+            </div>
+            <div class="insight-box">
+                <strong>对当下的启示：</strong>有时候，不是你做不到，而是你还没找到正确的方法。面对复杂问题，先观察规律，再动手计算。
+            </div>
+        </div>
+
+        <div class="mathematician-card hualuogeng">
+            <div class="mathematician-name">华罗庚 — 跨界人物</div>
+            <div class="quote-box">
+                <strong>名言：</strong>"聪明在于学习，天才在于积累。" — 华罗庚
+            </div>
+            <div class="info-item">
+                <strong>关键问题：</strong>如何把抽象的数学知识变得通俗易懂？
+            </div>
+            <div class="info-item">
+                <strong>思维突破点：</strong>华罗庚不仅是数学家，还善于把数学思想用生活中常见的例子解释清楚。他提倡"由薄到厚、由厚到薄"的学习方法——先把书读厚（详细理解），再把书读薄（抓住核心）。
+            </div>
+            <div class="info-item">
+                <strong>失败/争议点：</strong>华罗庚只有初中学历，但靠自学成为数学大师。他也曾被质疑"学历不够"，但他用实际行动证明了：持续学习比学历更重要。
+            </div>
+            <div class="insight-box">
+                <strong>对当下的启示：</strong>学习不是死记硬背，要学会把知识"消化"成自己的东西。能用自己的话讲清楚，才算真正理解了。
+            </div>
+        </div>
+
+        <div class="mathematician-card chenjingrunt">
+            <div class="mathematician-name">陈景润 — 当代人物</div>
+            <div class="quote-box">
+                <strong>名言：</strong>"做学问要有敢于攀登高峰的勇气。" — 陈景润
+            </div>
+            <div class="info-item">
+                <strong>关键问题：</strong>如何证明"哥德巴赫猜想"这个数学皇冠上的明珠？
+            </div>
+            <div class="info-item">
+                <strong>思维突破点：</strong>陈景润在极其简陋的条件下，用十几年的专注研究，在1966年取得了关键突破。他每天工作12个小时以上，把草稿纸装了几麻袋。
+            </div>
+            <div class="info-item">
+                <strong>失败/争议点：</strong>陈景润性格内向，不善交际，几乎把所有时间都用于研究。他曾被认为"不懂生活"，但他用坚持和专注创造了让世界瞩目的成果。
+            </div>
+            <div class="insight-box">
+                <strong>对当下的启示：</strong>成功没有捷径，只有持续专注才能有所成就。面对困难的任务，与其担心做不到，不如专注于眼前的一小步。
+            </div>
+        </div>
+
+        <div class="section-header">
+            <h2>三、"如果你是他"思考任务</h2>
+        </div>
+
+        <div class="task-card">
+            <div class="task-title">任务1：如果你是高斯</div>
+            <div class="task-scenario">
+                <strong>情境：</strong>老师布置了一道题：计算1+2+3+...+50。同学们都在埋头苦算，有人已经开始抱怨太麻烦了。
+            </div>
+            <ul class="task-content">
+                <li>你会用什么方法又快又准确地算出结果？把你的方法和同学的方法比一比，看看谁的方法更简单。</li>
+            </ul>
+            <div class="think-question">
+                <strong>思考问题：</strong>如果数字增加到1+2+3+...+1000，你的办法还能用吗？为什么？
+            </div>
+        </div>
+
+        <div class="task-card">
+            <div class="task-title">任务2：如果你是华罗庚</div>
+            <div class="task-scenario">
+                <strong>情境：</strong>你的好朋友数学考试成绩不理想，他说："我就是太笨了，怎么学都学不会。"你很想帮助他。
+            </div>
+            <ul class="task-content">
+                <li>请你用华罗庚的学习方法，给你的好朋友提三条具体建议，让他重新找回学习数学的信心。</li>
+            </ul>
+            <div class="think-question">
+                <strong>思考问题：</strong>你觉得学习方法重要，还是天赋重要？你自己的数学学习过程中，有没有什么特别有效的方法？
+            </div>
+        </div>
+
+        <div class="task-card">
+            <div class="task-title">任务3：如果你是陈景润</div>
+            <div class="task-scenario">
+                <strong>情境：</strong>有一个很难的数学题，你研究了一周还是没有思路。同学们都说："放弃吧，太难了。"你也有点想打退堂鼓。
+            </div>
+            <ul class="task-content">
+                <li>面对这种情况，你会怎么办？是继续坚持还是放弃？请说出你的理由。</li>
+            </ul>
+            <div class="think-question">
+                <strong>思考问题：</strong>陈景润用十几年研究一个数学问题，你觉得这种"专注"精神值得学习吗？在你的生活中，有什么事情是你愿意长期坚持的？
+            </div>
+        </div>
+
+        <div class="resource-box">
+            <h3>四、深度阅读路径</h3>
+            <ul>
+                <li><strong>传记推荐：</strong>《数学大师的成长故事》《华罗庚传》《陈景润：摘取数学皇冠的人》</li>
+                <li><strong>论文与访谈：</strong>华罗庚《聪明在于学习，天才在于积累》、陈景润关于"哥德巴赫猜想"研究的科普文章</li>
+                <li><strong>纪录片推荐：</strong>《数学的故事》第3集（BBC）、《中国数学家的故事》系列</li>
+            </ul>
+        </div>
+
+        <div class="reflection-box">
+            <h3>五、学习后的自我反思</h3>
+            <p>学完了这三位数学家的故事，请你思考：</p>
+            <ol>
+                <li>这三位数学家，他们的共同点是什么？（提示：想一想他们面对困难时的态度）</li>
+                <li>哪位数学家的故事对你启发最大？为什么？</li>
+                <li>从今天开始，你能做一件什么小事来改进自己的数学学习？</li>
+            </ol>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>解析性原理导学 - 三年级数学</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Microsoft YaHei", "SimSun", serif;
+            background: linear-gradient(135deg, #e8f4fc 0%, #f0f7fa 100%);
+            color: #2c3e50;
+            line-height: 1.8;
+            font-size: 18px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1565c0, #1976d2, #2196f3);
+            color: white;
+            padding: 35px 25px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(21, 101, 192, 0.3);
+        }
+
+        header h1 {
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        header p {
+            font-size: 16px;
+            margin-top: 8px;
+            opacity: 0.95;
+        }
+
+        .section {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border-left: 5px solid #1976d2;
+        }
+
+        .section-intro {
+            border-left-color: #4caf50;
+        }
+
+        .section-principle {
+            border-left-color: #1976d2;
+        }
+
+        .section-practice {
+            border-left-color: #ff9800;
+        }
+
+        .section-summary {
+            border-left-color: #9c27b0;
+        }
+
+        h2 {
+            color: #1565c0;
+            font-size: 22px;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e3f2fd;
+        }
+
+        h3 {
+            color: #0d47a1;
+            font-size: 20px;
+            margin: 18px 0 12px;
+        }
+
+        h4 {
+            color: #1565c0;
+            font-size: 18px;
+            margin: 14px 0 10px;
+        }
+
+        .principle-box {
+            background: linear-gradient(to right, #e3f2fd, #f1f8ff);
+            border: 2px solid #90caf9;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 18px 0;
+        }
+
+        .principle-box h3 {
+            color: #0d47a1;
+            margin-top: 0;
+        }
+
+        .example-box {
+            background: #fff8e1;
+            border: 2px solid #ffe082;
+            border-radius: 8px;
+            padding: 18px;
+            margin: 15px 0;
+        }
+
+        .example-box .calc-demo {
+            font-size: 24px;
+            font-family: "Consolas", "Monaco", monospace;
+            color: #e65100;
+            text-align: center;
+            padding: 12px;
+            background: #fff3cd;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+
+        .principle-detail {
+            margin: 12px 0;
+            padding: 12px 15px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .principle-detail strong {
+            color: #1565c0;
+        }
+
+        .tip-box {
+            background: #e8f5e9;
+            border: 2px solid #a5d6a7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .tip-box::before {
+            content: "💡 使用提醒：";
+            font-weight: bold;
+            color: #2e7d32;
+        }
+
+        .warning-box {
+            background: #fff3e0;
+            border: 2px solid #ffcc80;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .question-box {
+            background: #fce4ec;
+            border: 2px solid #f48fb1;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .question-box::before {
+            content: "🔄 可迁移问题：";
+            font-weight: bold;
+            color: #c2185b;
+        }
+
+        .practice-card {
+            background: linear-gradient(135deg, #fff8e1, #fff3e0);
+            border: 2px solid #ffcc02;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 18px 0;
+        }
+
+        .self-check {
+            background: linear-gradient(135deg, #e3f2fd, #e8f5e9);
+            border: 2px solid #90caf9;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 18px 0;
+        }
+
+        .self-check ol {
+            padding-left: 25px;
+        }
+
+        .self-check li {
+            margin: 12px 0;
+            font-size: 17px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .summary-item {
+            background: linear-gradient(135deg, #e8eaf6, #f3e5f5);
+            border: 2px solid #9fa8da;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .summary-item h4 {
+            color: #303f9f;
+            margin-bottom: 8px;
+        }
+
+        .summary-item p {
+            font-size: 15px;
+            color: #424242;
+        }
+
+        .nav-menu {
+            background: #1565c0;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .nav-menu a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 20px;
+            font-size: 15px;
+            transition: background 0.3s;
+        }
+
+        .nav-menu a:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>解析性原理导学</h1>
+            <p>数学三年级上册 · 竖式计算与数位理解</p>
+        </header>
+
+        <nav class="nav-menu">
+            <a href="#intro">从示例到原理</a>
+            <a href="#p1">原理一</a>
+            <a href="#p2">原理二</a>
+            <a href="#p3">原理三</a>
+            <a href="#p4">原理四</a>
+            <a href="#p5">原理五</a>
+            <a href="#practice">练习</a>
+            <a href="#selfcheck">自我检测</a>
+            <a href="#summary">总结</a>
+        </nav>
+
+        <div class="section section-intro" id="intro">
+            <h2>从示例到原理引入</h2>
+            <p>小朋友们，今天我们一起来探索竖式计算的奥秘。通过下面的示例，请认真观察计算过程，思考为什么会这样算。</p>
+            
+            <div class="example-box">
+                <h3>示例：图书角新书问题</h3>
+                <p>图书角第一天借出23本书，第二天借出18本书。两天一共借出多少本书？</p>
+                <div class="calc-demo">
+                    23 + 18 = 41
+                </div>
+                <p style="text-align:center; font-size:16px; color:#666;">用竖式怎样计算呢？让我们一起学习其中的原理！</p>
+            </div>
+        </div>
+
+        <div class="section section-principle" id="p1">
+            <div class="principle-box">
+                <h3>原理一：数位对齐是计算的基础</h3>
+                
+                <div class="principle-detail">
+                    <strong>原理说明：</strong>
+                    <p>在竖式计算中，每个数位上的数字必须上下对齐，个位对个位，十位对十位。这样才能保证相同数位的数字相加减，否则就会出错。</p>
+                </div>
+
+                <div class="principle-detail">
+                    <strong>在本示例中的体现：</strong>
+                    <div class="calc-demo">
+                    &nbsp;&nbsp;23<br>
+                    + 18<br>
+                    ────<br>
+                    &nbsp;&nbsp;41
+                    </div>
+                    <p>数字"3"和"8"对齐（个位），数字"2"和"1"对齐（十位）</p>
+                </div>
+
+                <div class="principle-detail">
+                    <strong>如何使用：</strong>
+                    <p>写竖式时，先把被加数写在第一行，再把加数写在下面，确保右对齐。同样的规则也适用于减法、乘法等运算。</p>
+                </div>
+
+                <div class="question-box">
+                    <p><strong>可迁移问题：</strong></p>
+                    <p>如果把23写成32，把18写成81，还能正确计算吗？为什么？请举例说明。</p>
+                </div>
+
+                <div class="tip-box">
+                    <p>记住：数位对齐是一切计算的基础，对齐了计算就正确，对不齐计算就出错！</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section section-principle" id="p2">
+            <div class="principle-box">
+                <h3>原理二：从个位算起逐位推进</h3>
+                
+                <div class="principle-detail">
+                    <strong>原理说明：</strong>
+                    <p>竖式计算要从最右边的个位开始，先算个位相加，再算十位相加。如果个位满了十，要记得进位。</p>
+                </div>
+
+                <div class="principle-detail">
+                    <strong>在本示例中的体现：</strong>
+                    <div class="calc-demo">
+                    &nbsp;&nbsp;23<br>
+                    + 18<br>
+                    ────<br>
+                    &nbsp;&nbsp;41
+                    </div>
+                    <p>先算3+8=11，写1进1；再算2+1+1=4</p>
+                </div>
+
+                <div class="principle-detail">
+                    <strong>如何使用：</strong>
+                    <p>按照从右到左的顺序，依次计算每一位。计算时要用手指或眼睛指着当前计算的数位，确保不漏掉也不重复。</p>
+                </div>
+
+                <div class="question-box">
+                    <p><strong>可迁移问题：</strong></p>
+                    <p>如果从左边开始算会发生什么？试着从左到右算一算23+18，看看结果对不对？</p>
+                </div>
+
+                <div class="tip-box">
+                    <p>就像我们读书要从左往右读一样，计算也要从右往左逐位进行，这是数学计算的规矩！</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section section-principle" id="p3">
+            <div class="principle-box">
+                <h3>原理三：进位的本质是满十换一</h3>
+                
+                <div class="principle-detail">
+                    <strong>原理说明：</strong>
+                    <p>当某个数位相加的结果等于或超过10时，就要向左边一位进1。进位的本质是"满十换一"——满了10个一就换成1个十，满了10个十就换成1个百。</p>
+                </div>
+
+                <div class="principle-detail">
+                    <strong>在本示例中的体现：</strong>
+                    <div class="calc-demo">
+                    &nbsp;&nbsp;23<br>
+                    + 18<br>
+                    ────<br>
+                    &nbsp;&nbsp;41
+                    </div>
+                    <p>个位3+8=11，满10进1，个位写1；十位2+1+进的1=4</p>
+                </div>
+
+                <div class="principle-detail">
+                    <strong>如何使用：</strong>
+                    <p>记住"满十进一"的规则。当个位相加满十时，在个位写和的个位数字，向十位进一。十位相加时不要忘记加上进上来的数。</p>
+                </div>
+
+                <div class="question-box">
+                    <p><strong>可迁移问题：</strong></p>
+                    <p>37+48，个位7+8=15，怎么处理？如果继续计算十位，3+4+1等于多少？</p>
+                </div>
+
+                <div class="tip-box">
+                    <p>进位是竖式计算的重点也是难点！记住：满十就进一，进位要加在左边那位上。</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section section-principle" id="p4">
+            <div class="principle-box">
+                <h3>原理四：竖式是计算过程的可视化记录</h3>
+                
+                <div class="principle-detail">
+                    <strong>原理说明：</strong>
+                    <p>竖式把抽象的计算过程用文字和符号记录下来，让我们能够看得见、算得清。每一层都有其意义：横线表示"开始计算"，进位的小数字表示"有新的数位产生"。</p>
+                </div>
+
+                <div class="principle-detail">
+                    <strong>在本示例中的体现：</strong>
+                    <div class="calc-demo">
+                    &nbsp;&nbsp;23<br>
+                    + 18<br>
+                    ────<br>
+                    &nbsp;&nbsp;41
+                    </div>
+                    <p>竖式清楚地记录了：先加个位，再加十位，每一步都有据可查</p>
+                </div>
+
+                <div class="principle-detail">
+                    <strong>如何使用：</strong>
+                    <p>写竖式时，数字要写规范，占位要准确。横线要用尺子画，画在合适的位置。进位的小数字要写在上方偏左的位置。</p>
+                </div>
+
+                <div class="question-box">
+                    <p><strong>可迁移问题：</strong></p>
+                    <p>竖式和口算有什么区别？竖式有什么好处？请举一个例子说明。</p>
+                </div>
+
+                <div class="tip-box">
+                    <p>竖式就像计算的"黑匣子"，把每一步都记得清清楚楚，再也不用担心算错了！</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section section-principle" id="p5">
+            <div class="principle-box">
+                <h3>原理五：验算是确认结果的重要方法</h3>
+                
+                <div class="principle-detail">
+                    <strong>原理说明：</strong>
+                    <p>计算完成后，用逆运算（减法验算加法，乘法验算除法）或交换加数位置再算一遍，可以检查结果是否正确。验算是确认结果的重要方法。</p>
+                </div>
+
+                <div class="principle-detail">
+                    <strong>在本示例中的体现：</strong>
+                    <div class="calc-demo">
+                    验算：41 - 18 = 23 ✓
+                    </div>
+                    <p>用41减去向加的18，应该等于23，说明计算正确</p>
+                </div>
+
+                <div class="principle-detail">
+                    <strong>如何使用：</strong>
+                    <p>加法的验算方法：1）交换两个加数位置再算一遍；2）用和减去其中一个加数。减法的验算方法：用差加上减数，应该等于被减数。</p>
+                </div>
+
+                <div class="question-box">
+                    <p><strong>可迁移问题：</strong></p>
+                    <p>用两种方法验算56+37=93，看看两种方法都能证明计算正确吗？</p>
+                </div>
+
+                <div class="tip-box">
+                    <p>验算就像给自己找"小帮手"，帮助我们检查对不对，是学习数学的好习惯！</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section section-practice" id="practice">
+            <h2>练习时间</h2>
+
+            <div class="practice-card">
+                <h3>练习一：图书角新书</h3>
+                <p>图书馆又收到一批新书，其中科普类45本，故事类28本。一共收到多少本新书？</p>
+                <div style="text-align:center; margin:15px 0;">
+                    <div class="calc-demo">
+                    &nbsp;&nbsp;45<br>
+                    + 28<br>
+                    ────<br>
+                    &nbsp;&nbsp;__
+                    </div>
+                </div>
+                <p><strong>要求：</strong>1）列竖式计算；2）说一说数位对齐的重要性；3）验算检查。</p>
+            </div>
+
+            <div class="practice-card">
+                <h3>练习二：跳绳比赛成绩</h3>
+                <p>跳绳比赛中，第一小队跳了56个，第二小队跳了37个。两个小队一共跳了多少个？</p>
+                <div style="text-align:center; margin:15px 0;">
+                    <div class="calc-demo">
+                    &nbsp;&nbsp;56<br>
+                    + 37<br>
+                    ────<br>
+                    &nbsp;&nbsp;__
+                    </div>
+                </div>
+                <p><strong>要求：</strong>1）列竖式计算；2）说一说进位的过程；3）用两种方法验算。</p>
+            </div>
+        </div>
+
+        <div class="section" id="selfcheck">
+            <h2>自我检测</h2>
+            <div class="self-check">
+                <p style="font-size:19px; font-weight:bold; color:#1565c0; margin-bottom:15px;">完成下面五道题，检验自己掌握的情况：</p>
+                <ol>
+                    <li>列竖式计算：34 + 29 = ？</li>
+                    <li>列竖式计算：47 + 35 = ？</li>
+                    <li>列竖式计算：62 + 28 = ？</li>
+                    <li>列竖式计算：75 + 17 = ？</li>
+                    <li>列竖式计算：83 + 19 = ？</li>
+                </ol>
+                <p style="margin-top:15px; text-align:center; color:#666;">每题20分，共100分。你能得满分吗？记得验算哦！</p>
+            </div>
+        </div>
+
+        <div class="section section-summary" id="summary">
+            <h2>学习总结</h2>
+            <p style="margin-bottom:15px;">通过今天的学习，我们掌握了竖式计算的重要原理。一起来回顾一下吧：</p>
+            
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <h4>原理一</h4>
+                    <p>数位对齐是计算的基础</p>
+                </div>
+                <div class="summary-item">
+                    <h4>原理二</h4>
+                    <p>从个位算起逐位推进</p>
+                </div>
+                <div class="summary-item">
+                    <h4>原理三</h4>
+                    <p>进位的本质是满十换一</p>
+                </div>
+                <div class="summary-item">
+                    <h4>原理四</h4>
+                    <p>竖式是计算过程的可视化记录</p>
+                </div>
+                <div class="summary-item">
+                    <h4>原理五</h4>
+                    <p>验算是确认结果的重要方法</p>
+                </div>
+            </div>
+
+            <div class="tip-box" style="margin-top:20px;">
+                <p>恭喜你完成了解析性原理的学习！记住这五个原理，竖式计算就不怕啦！</p>
+            </div>
+        </div>
+
+        <footer>
+            <p>数学三年级上册 · 解析性原理导学</p>
+        </footer>
+    </div>
+</body>
+</html>

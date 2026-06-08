@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>五维导学 - 游戏化技能地图</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #0a1628 0%, #1a2d4a 50%, #0d1f3c 100%);
+            min-height: 100vh;
+            overflow: hidden;
+            color: #e0f0ff;
+            font-size: 16px;
+        }
+        .title-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(90deg, #0a3d62, #148f77);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .title-bar h1 {
+            font-size: 24px;
+            color: #7fdbff;
+            text-shadow: 0 0 10px rgba(127,219,255,0.5);
+        }
+        .map-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            padding-top: 60px;
+            overflow: hidden;
+            cursor: grab;
+        }
+        .map-container:active {
+            cursor: grabbing;
+        }
+        .map-inner {
+            position: absolute;
+            width: 1400px;
+            height: 900px;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) scale(1);
+            transition: transform 0.1s ease-out;
+        }
+        .node {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .node.locked {
+            filter: brightness(0.3) blur(2px);
+        }
+        .node:hover {
+            transform: scale(1.1);
+        }
+        .node-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            box-shadow: 0 0 20px rgba(127,219,255,0.4);
+            border: 3px solid #7fdbff;
+            background: linear-gradient(145deg, #1e5799, #148f77);
+        }
+        .node.locked .node-icon {
+            background: linear-gradient(145deg, #2a2a3a, #1a1a2a);
+            border-color: #4a4a5a;
+            box-shadow: none;
+        }
+        .node-label {
+            margin-top: 8px;
+            padding: 6px 12px;
+            background: rgba(20,60,100,0.9);
+            border-radius: 8px;
+            font-size: 14px;
+            color: #7fdbff;
+            text-align: center;
+            border: 1px solid #2980b9;
+            max-width: 120px;
+        }
+        .node.locked .node-label {
+            background: rgba(30,30,40,0.9);
+            color: #6a6a7a;
+            border-color: #3a3a4a;
+        }
+        .node-detail {
+            position: absolute;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10,30,60,0.95);
+            border: 2px solid #2980b9;
+            border-radius: 12px;
+            padding: 15px;
+            width: 200px;
+            display: none;
+            z-index: 50;
+            box-shadow: 0 0 30px rgba(41,128,185,0.5);
+        }
+        .node-detail.show {
+            display: block;
+        }
+        .node-detail h3 {
+            font-size: 15px;
+            color: #7fdbff;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #2980b9;
+            padding-bottom: 5px;
+        }
+        .node-detail p, .node-detail li {
+            font-size: 13px;
+            color: #a0d0ff;
+            line-height: 1.6;
+        }
+        .node-detail ul {
+            list-style: none;
+            padding-left: 5px;
+        }
+        .node-detail li::before {
+            content: "◆ ";
+            color: #148f77;
+        }
+        .svg-lines {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .line {
+            stroke: #2980b9;
+            stroke-width: 2;
+            fill: none;
+            opacity: 0.6;
+        }
+        .line.unlocked {
+            stroke: #7fdbff;
+            opacity: 1;
+            filter: drop-shadow(0 0 4px rgba(127,219,255,0.8));
+        }
+        .fog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, transparent 80px, rgba(5,15,30,0.7) 200px);
+            pointer-events: none;
+            z-index: 10;
+        }
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }
+        .controls button {
+            padding: 10px 16px;
+            background: linear-gradient(145deg, #0a3d62, #148f77);
+            border: 2px solid #7fdbff;
+            border-radius: 8px;
+            color: #7fdbff;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .controls button:hover {
+            background: linear-gradient(145deg, #148f77, #0a3d62);
+            box-shadow: 0 0 15px rgba(127,219,255,0.5);
+        }
+        .legend {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(10,30,60,0.9);
+            border: 2px solid #2980b9;
+            border-radius: 10px;
+            padding: 12px 15px;
+            font-size: 13px;
+            z-index: 100;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+            color: #a0d0ff;
+        }
+        .legend-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 10px;
+            border: 2px solid;
+        }
+        .legend-dot.active {
+            background: linear-gradient(145deg, #1e5799, #148f77);
+            border-color: #7fdbff;
+        }
+        .legend-dot.locked {
+            background: linear-gradient(145deg, #2a2a3a, #1a1a2a);
+            border-color: #4a4a5a;
+        }
+        .tooltip {
+            position: fixed;
+            background: rgba(10,30,60,0.95);
+            border: 1px solid #7fdbff;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 12px;
+            color: #7fdbff;
+            pointer-events: none;
+            display: none;
+            z-index: 200;
+        }
+    </style>
+</head>
+<body>
+    <div class="title-bar">
+        <h1>三年级数学 · 大单元概述 · 五维导学技能地图</h1>
+    </div>
+    
+    <div class="map-container" id="mapContainer">
+        <div class="map-inner" id="mapInner">
+            <svg class="svg-lines" id="svgLines"></svg>
+            
+            <!-- 中心根节点 -->
+            <div class="node center-node" id="node-center" data-id="center" style="left: 650px; top: 420px;">
+                <div class="node-icon">📐</div>
+                <div class="node-label">大单元核心<br>分数的初步认识</div>
+            </div>
+            
+            <!-- 维度一：学习目的与目标 -->
+            <div class="node" id="node-d1" data-id="d1" style="left: 180px; top: 120px;">
+                <div class="node-icon">🎯</div>
+                <div class="node-label">维度一<br>学习目的与目标</div>
+            </div>
+            
+            <!-- 维度二：高精尖价值 -->
+            <div class="node" id="node-d2" data-id="d2" style="left: 1150px; top: 120px;">
+                <div class="node-icon">🚀</div>
+                <div class="node-label">维度二<br>高精尖价值与未来意义</div>
+            </div>
+            
+            <!-- 维度三：学习方式与方法 -->
+            <div class="node" id="node-d3" data-id="d3" style="left: 180px; top: 680px;">
+                <div class="node-icon">🧠</div>
+                <div class="node-label">维度三<br>学习方式与方法</div>
+            </div>
+            
+            <!-- 维度四：关键人物与成果 -->
+            <div class="node" id="node-d4" data-id="d4" style="left: 1150px; top: 680px;">
+                <div class="node-icon">👑</div>
+                <div class="node-label">维度四<br>关键人物与成果</div>
+            </div>
+            
+            <!-- 维度五：未完全解决的矛盾 -->
+            <div class="node" id="node-d5" data-id="d5" style="left: 650px; top: 820px;">
+                <div class="node-icon">❓</div>
+                <div class="node-label">维度五<br>学术留白与前沿追问</div>
+            </div>
+            
+            <!-- 维度一子节点 -->
+            <div class="node locked" data-parent="d1" data-id="d1-1" style="left: 50px; top: 50px;">
+                <div class="node-icon">1️⃣</div>
+                <div class="node-label">理解分数基本概念</div>
+            </div>
+            <div class="node locked" data-parent="d1" data-id="d1-2" style="left: 150px; top: 50px;">
+                <div class="node-icon">2️⃣</div>
+                <div class="node-label">学会分数简单运算</div>
+            </div>
+            <div class="node locked" data-parent="d1" data-id="d1-3" style="left: 250px; top: 50px;">
+                <div class="node-icon">3️⃣</div>
+                <div class="node-label">应用分数解决实际问题</div>
+            </div>
+            <div class="node locked" data-parent="d1" data-id="d1-4" style="left: 80px; top: 180px;">
+                <div class="node-icon">4️⃣</div>
+                <div class="node-label">培养数学逻辑思维</div>
+            </div>
+            <div class="node locked" data-parent="d1" data-id="d1-5" style="left: 220px; top: 180px;">
+                <div class="node-icon">5️⃣</div>
+                <div class="node-label">建立数感与量感</div>
+            </div>
+            
+            <!-- 维度二子节点 -->
+            <div class="node locked" data-parent="d2" data-id="d2-1" style="left: 1020px; top: 50px;">
+                <div class="node-icon">🔬</div>
+                <div class="node-label">科技领域精密计算</div>
+            </div>
+            <div class="node locked" data-parent="d2" data-id="d2-2" style="left: 1120px; top: 50px;">
+                <div class="node-icon">💰</div>
+                <div class="node-label">金融经济数据分析</div>
+            </div>
+            <div class="node locked" data-parent="d2" data-id="d2-3" style="left: 1220px; top: 50px;">
+                <div class="node-icon">🎮</div>
+                <div class="node-label">游戏开发概率设计</div>
+            </div>
+            <div class="node locked" data-parent="d2" data-id="d2-4" style="left: 1070px; top: 180px;">
+                <div class="node-icon">🏗️</div>
+                <div class="node-label">工程建筑比例分配</div>
+            </div>
+            
+            <!-- 维度三子节点 -->
+            <div class="node locked" data-parent="d3" data-id="d3-1" style="left: 50px; top: 600px;">
+                <div class="node-icon">📊</div>
+                <div class="node-label">直观演示法</div>
+            </div>
+            <div class="node locked" data-parent="d3" data-id="d3-2" style="left: 150px; top: 600px;">
+                <div class="node-icon">✂️</div>
+                <div class="node-label">动手操作法</div>
+            </div>
+            <div class="node locked" data-parent="d3" data-id="d3-3" style="left: 250px; top: 600px;">
+                <div class="node-icon">🎭</div>
+                <div class="node-label">情境模拟法</div>
+            </div>
+            <div class="node locked" data-parent="d3" data-id="d3-4" style="left: 130px; top: 750px;">
+                <div class="node-icon">🧩</div>
+                <div class="node-label">合作探究法</div>
+            </div>
+            
+            <!-- 维度四子节点 -->
+            <div class="node locked" data-parent="d4" data-id="d4-1" style="left: 1020px; top: 600px;">
+                <div class="node-icon">👨‍🔬</div>
+                <div class="node-label">刘徽·割圆术</div>
+            </div>
+            <div class="node locked" data-parent="d4" data-id="d4-2" style="left: 1120px; top: 600px;">
+                <div class="node-icon">👨‍🎓</div>
+                <div class="node-label">祖冲之·圆周率</div>
+            </div>
+            <div class="node locked" data-parent="d4" data-id="d4-3" style="left: 1220px; top: 600px;">
+                <div class="node-icon">🔢</div>
+                <div class="node-label">高斯·数学王子</div>
+            </div>
+            <div class="node locked" data-parent="d4" data-id="d4-4" style="left: 1070px; top: 750px;">
+                <div class="node-icon">💻</div>
+                <div class="node-label">计算机二进制</div>
+            </div>
+            
+            <!-- 维度五子节点 -->
+            <div class="node locked" data-parent="d5" data-id="d5-1" style="left: 450px; top: 750px;">
+                <div class="node-icon">🔍</div>
+                <div class="node-label">无限不循环之谜</div>
+            </div>
+            <div class="node locked" data-parent="d5" data-id="d5-2" style="left: 580px; top: 750px;">
+                <div class="node-icon">⚖️</div>
+                <div class="node-label">部分与整体的关系</div>
+            </div>
+            <div class="node locked" data-parent="d5" data-id="d5-3" style="left: 710px; top: 750px;">
+                <div class="node-icon">🌐</div>
+                <div class="node-label">数学与自然的联系</div>
+            </div>
+            <div class="node locked" data-parent="d5" data-id="d5-4" style="left: 840px; top: 750px;">
+                <div class="node-icon">🚀</div>
+                <div class="node-label">前沿数学探索</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="fog-overlay" id="fogOverlay"></div>
+    
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-dot active"></div>
+            <span>已解锁节点</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot locked"></div>
+            <span>待解锁节点（点击父节点解锁）</span>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <button onclick="resetMap()">重置地图</button>
+        <button onclick="zoomIn()">放大</button>
+        <button onclick="zoomOut()">缩小</button>
+    </div>
+    
+    <div class="tooltip" id="tooltip"></div>
+    
+    <script>
+        // 节点详情数据
+        const nodeDetails = {
+            'center': {
+                title: '大单元核心：分数的初步认识',
+                content: '本单元引导三年级学生初步认识分数，理解分数的意义，学会简单的分数加减运算，为后续数学学习奠定基础。'
+            },
+            'd1': {
+                title: '维度一：学习目的与目标',
+                content: '通过本单元学习，学生将掌握分数的基本概念，学会比较简单分数的大小，能进行同分母分数的加减运算。'
+            },
+            'd1-1': { title: '目标1：理解分数基本概念', content: '认识几分之一和几分之几，理解分数各部分名称及含义。' },
+            'd1-2': { title: '目标2：学会分数简单运算', content: '掌握同分母分数相加减的计算方法，能解决简单实际问题。' },
+            'd1-3': { title: '目标3：应用分数解决实际问题', content: '能用分数表示生活中的一部分量，如分配物品、测量长度等。' },
+            'd1-4': { title: '目标4：培养数学逻辑思维', content: '通过分数学习培养归纳、类比等数学思维能力。' },
+            'd1-5': { title: '目标5：建立数感与量感', content: '建立对分数大小、多少的直观感知，发展数感。' },
+            'd2': {
+                title: '维度二：高精尖价值与未来意义',
+                content: '分数是现代科技的重要基础，从航天工程到日常购物，分数运算无处不在。'
+            },
+            'd2-1': { title: '科技精密计算', content: '航天器轨道计算、芯片设计等高科技领域离不开分数与比例。' },
+            'd2-2': { title: '金融经济数据', content: '股票分析、投资回报计算中常用分数和百分比表示数据。' },
+            'd2-3': { title: '游戏开发', content: '游戏中的概率设计、伤害计算、升级经验条都需要分数运算。' },
+            'd2-4': { title: '工程建筑', content: '建筑设计中的比例尺、材料分配都涉及分数的应用。' },
+            'd3': {
+                title: '维度三：学习方式与方法',
+                content: '采用多种教学策略，帮助学生从直观到抽象，循序渐进掌握分数知识。'
+            },
+            'd3-1': { title: '策略1：直观演示法', content: '通过实物演示、图形动画让学生直观理解分数的含义。' },
+            'd3-2': { title: '策略2：动手操作法', content: '让学生折叠纸张、切割物品，亲身体验分数的产生过程。' },
+            'd3-3': { title: '策略3：情境模拟法', content: '创设生活情境，如分蛋糕、分水果，激发学习兴趣。' },
+            'd3-4': { title: '策略4：合作探究法', content: '小组合作探讨分数问题，培养交流合作与探究能力。' },
+            'd4': {
+                title: '维度四：关键人物与成果',
+                content: '介绍古今中外对分数研究做出重要贡献的数学家及其成就。'
+            },
+            'd4-1': { title: '刘徽·割圆术', content: '三国时期数学家刘徽，用割圆术得出圆周率近似值3.1416。' },
+            'd4-2': { title: '祖冲之·圆周率', content: '南北朝数学家祖冲之，首次精确计算圆周率到小数点后7位。' },
+            'd4-3': { title: '高斯·数学王子', content: '德国数学家高斯，童年即展现数学天赋，提出等差数列求和公式。' },
+            'd4-4': { title: '计算机二进制', content: '现代计算机使用二进制（0和1）进行运算，是数字化时代基础。' },
+            'd5': {
+                title: '维度五：学术留白与前沿追问',
+                content: '数学的世界充满未知，引导学生思考，培养探究精神。'
+            },
+            'd5-1': { title: '问题1：无限不循环之谜', content: '为什么有些分数的小数表示是无限不循环的？这其中有什么规律？' },
+            'd5-2': { title: '问题2：部分与整体的关系', content: '当一个整体被无限细分时，部分与整体的关系如何界定？' },
+            'd5-3': { title: '问题3：数学与自然的联系', content: '自然界中哪些现象可以用分数来描述和解释？' },
+            'd5-4': { title: '问题4：前沿数学探索', content: '还有哪些关于分数的数学问题等待我们去发现和解决？' }
+        };
+        
+        // 绘图连接线
+        const lines = [
+            { from: 'node-center', to: 'node-d1' },
+            { from: 'node-center', to: 'node-d2' },
+            { from: 'node-center', to: 'node-d3' },
+            { from: 'node-center', to: 'node-d4' },
+            { from: 'node-center', to: 'node-d5' },
+            { from: 'node-d1', to: 'd1-1' },
+            { from: 'node-d1', to: 'd1-2' },
+            { from: 'node-d1', to: 'd1-3' },
+            { from: 'node-d1', to: 'd1-4' },
+            { from: 'node-d1', to: 'd1-5' },
+            { from: 'node-d2', to: 'd2-1' },
+            { from: 'node-d2', to: 'd2-2' },
+            { from: 'node-d2', to: 'd2-3' },
+            { from: 'node-d2', to: 'd2-4' },
+            { from: 'node-d3', to: 'd3-1' },
+            { from: 'node-d3', to: 'd3-2' },
+            { from: 'node-d3', to: 'd3-3' },
+            { from: 'node-d3', to: 'd3-4' },
+            { from: 'node-d4', to: 'd4-1' },
+            { from: 'node-d4', to: 'd4-2' },
+            { from: 'node-d4', to: 'd4-3' },
+            { from: 'node-d4', to: 'd4-4' },
+            { from: 'node-d5', to: 'd5-1' },
+            { from: 'node-d5', to: 'd5-2' },
+            { from: 'node-d5', to: 'd5-3' },
+            { from: 'node-d5', to: 'd5-4' }
+        ];
+        
+        let currentScale = 1;
+        let isDragging = false;
+        let startX, startY;
+        let mapInner = document.getElementById('mapInner');
+        let mapContainer = document.getElementById('mapContainer');
+        let activeNode = null;
+        let unlockedNodes = ['center', 'd1', 'd2', 'd3', 'd4', 'd5'];
+        
+        // 绘制连接线
+        function drawLines() {
+            const svg = document.getElementById('svgLines');
+            svg.innerHTML = '';
+            
+            lines.forEach(line => {
+                const fromEl = document.getElementById(line.from);
+                const toEl = document.getElementById(line.to);
+                if (!fromEl || !toEl) return;
+                
+                const fromRect = fromEl.getBoundingClientRect();
+                const toRect = toEl.getBoundingClientRect();
+                const containerRect = mapContainer.getBoundingClientRect();
+                
+                const x1 = fromRect.left + fromRect.width / 2 - containerRect.left;
+                const y1 = fromRect.top + fromRect.height / 2 - containerRect.top;
+                const x2 = toRect.left + toRect.width / 2 - containerRect.left;
+                const y2 = toRect.top + toRect.height / 2 - containerRect.top;
+                
+                const lineEl = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                lineEl.setAttribute('x1', x1);
+                lineEl.setAttribute('y1', y1);
+                lineEl.setAttribute('x2', x2);
+                lineEl.setAttribute('y2', y2);
+                lineEl.classList.add('line');
+                
+                if (unlockedNodes.includes(line.from)) {
+                    lineEl.classList.add('unlocked');
+                }
+                
+                svg.appendChild(lineEl);
+            });
+        }
+        
+        // 解锁节点
+        function unlockNodes(nodeId) {
+            if (unlockedNodes.includes(nodeId)) return;
+            unlockedNodes.push(nodeId);
+            
+            document.querySelectorAll('.node[data-parent="' + nodeId + '"]').forEach(el => {
+                el.classList.remove('locked');
+            });
+            
+            drawLines();
+        }
+        
+        // 显示详情
+        function showDetail(nodeId) {
+            const detail = nodeDetails[nodeId];
+            if (!detail) return;
+            
+            document.querySelectorAll('.node-detail').forEach(el => el.classList.remove('show'));
+            
+            let detailEl = document.getElementById('detail-' + nodeId);
+            if (!detailEl) {
+                detailEl = document.createElement('div');
+                detailEl.className = 'node-detail';
+                detailEl.id = 'detail-' + nodeId;
+                detailEl.innerHTML = '<h3>' + detail.title + '</h3><p>' + detail.content + '</p>';
+                document.getElementById(nodeId).appendChild(detailEl);
+            }
+            detailEl.classList.add('show');
+        }
+        
+        // 节点点击事件
+        document.querySelectorAll('.node').forEach(node => {
+            node.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const nodeId = this.dataset.id;
+                
+                if (this.classList.contains('locked')) {
+                    return;
+                }
+                
+                if (unlockedNodes.includes(nodeId) && !this.classList.contains('center-node')) {
+                    unlockNodes(nodeId);
+                }
+                
+                showDetail(nodeId);
+            });
+            
+            node.addEventListener('mouseenter', function() {
+                const nodeId = this.dataset.id;
+                const tooltip = document.getElementById('tooltip');
+                tooltip.style.display = 'block';
+                tooltip.textContent = this.classList.contains('locked') ? '点击父节点解锁' : '点击查看详情';
+                tooltip.style.left = e.clientX + 15 + 'px';
+                tooltip.style.top = e.clientY + 15 + 'px';
+            });
+            
+            node.addEventListener('mousemove', function(e) {
+                const tooltip = document.getElementById('tooltip');
+                tooltip.style.left = e.clientX + 15 + 'px';
+                tooltip.style.top = e.clientY + 15 + 'px';
+            });
+            
+            node.addEventListener('mouseleave', function() {
+                document.getElementById('tooltip').style.display = 'none';
+            });
+        });
+        
+        // 拖拽功能
+        mapContainer.addEventListener('mousedown', function(e) {
+            if (e.target.closest('.node')) return;
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+        });
+        
+        mapContainer.addEventListener('mousemove', function(e) {
+            if (!isDragging) return;
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            const rect = mapInner.getBoundingClientRect();
+            const containerRect = mapContainer.getBoundingClientRect();
+            
+            mapInner.style.left = (rect.left - containerRect.left + dx) + 'px';
+            mapInner.style.top = (rect.top - containerRect.top + dy) + 'px';
+            
+            startX = e.clientX;
+            startY = e.clientY;
+        });
+        
+        document.addEventListener('mouseup', function() {
+            isDragging = false;
+        });
+        
+        // 滚轮缩放
+        mapContainer.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            currentScale = Math.max(0.5, Math.min(2, currentScale * delta));
+            
+            const rect = mapInner.getBoundingClientRect();
+            const containerRect = mapContainer.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2 - containerRect.left;
+            const centerY = rect.top + rect.height / 2 - containerRect.top;
+            
+            mapInner.style.transform = `translate(${containerRect.width / 2 - centerX}px, ${containerRect.height / 2 - centerY}px) scale(${currentScale})`;
+        });
+        
+        // 控制函数
+        function zoomIn() {
+            currentScale = Math.min(2, currentScale * 1.2);
+            mapInner.style.transform = `translate(-50%, -50%) scale(${currentScale})`;
+        }
+        
+        function zoomOut() {
+            currentScale = Math.max(0.5, currentScale * 0.8);
+            mapInner.style.transform = `translate(-50%, -50%) scale(${currentScale})`;
+        }
+        
+        function resetMap() {
+            currentScale = 1;
+            mapInner.style.transform = 'translate(-50%, -50%) scale(1)';
+            mapInner.style.left = '50%';
+            mapInner.style.top = '50%';
+        }
+        
+        // 初始化
+        window.addEventListener('load', function() {
+            drawLines();
+        });
+        
+        window.addEventListener('resize', function() {
+            drawLines();
+        });
+    </script>
+</body>
+</html>

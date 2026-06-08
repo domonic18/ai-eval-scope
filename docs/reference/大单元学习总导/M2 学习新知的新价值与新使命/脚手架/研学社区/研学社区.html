@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>研学社区 - 数学三年级上</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+            background: linear-gradient(135deg, #e8f4fd 0%, #d4ecff 50%, #c0e0ff 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #2c3e50;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(33, 150, 243, 0.15);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #1976d2 0%, #2196f3 50%, #42bff5 100%);
+            color: #ffffff;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+        .content {
+            padding: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 25px;
+            border-radius: 15px;
+            background: #f8fbff;
+            border-left: 5px solid #1976d2;
+        }
+        .section h2 {
+            color: #1565c0;
+            font-size: 1.6em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        .section h2::before {
+            content: "";
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #1976d2;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .section p {
+            font-size: 1em;
+            line-height: 1.8;
+            color: #455a64;
+        }
+        .level-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 15px;
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.1);
+            border: 1px solid #e3f2fd;
+        }
+        .level-card h3 {
+            color: #0d47a1;
+            font-size: 1.3em;
+            margin-bottom: 10px;
+        }
+        .level-card strong {
+            color: #1565c0;
+        }
+        .level-card p {
+            font-size: 1em;
+            line-height: 1.7;
+        }
+        .basic { border-left-color: #4fc3f7; }
+        .intermediate { border-left-color: #29b6f6; }
+        .challenge { border-left-color: #1976d2; }
+        .enlighten {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-left-color: #0d47a1;
+        }
+        .enlighten h2 {
+            color: #0d47a1;
+        }
+        .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            margin-right: 8px;
+        }
+        .tag-basic { background: #e1f5fe; color: #0277bd; }
+        .tag-intermediate { background: #e3f2fd; color: #1565c0; }
+        .tag-challenge { background: #bbdefb; color: #0d47a1; }
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .header { padding: 30px 20px; }
+            .header h1 { font-size: 1.8em; }
+            .content { padding: 20px; }
+            .section { padding: 20px; }
+            .section h2 { font-size: 1.4em; }
+        }
+        @media (max-width: 480px) {
+            .header h1 { font-size: 1.5em; }
+            .section h2 { font-size: 1.2em; }
+            .level-card h3 { font-size: 1.1em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>研学社区</h1>
+            <p>数学三年级上 | 在真实场景中探索数学奥秘</p>
+        </div>
+        <div class="content">
+            <div class="section">
+                <h2>我要学什么</h2>
+                <p>研学社区是和其他同学一起走出课堂、在真实场景中探索数学奥秘的学习方式。我们可以通过调查、测量、实验等活动，把课堂上学到的数学知识用到生活中去。在研学过程中，我们会遇到各种有趣的问题，用数学的方法去分析和解决它们，体验数学带来的无穷乐趣。</p>
+            </div>
+            <div class="section basic">
+                <h2>基础级</h2>
+                <span class="tag tag-basic">基础级</span>
+                <div class="level-card">
+                    <h3>案例：小小测量员</h3>
+                    <p>社区里组织一次校园植物测量活动。同学们遇到问题：怎样测量一棵大树的高度？大家想出用影子测量、用身高对比等方法，最后成功测出高度。通过研学，我们发现数学不只是做题，还可以解决真实问题。这种实地测量的经历让我们对长度单位有了更深刻的理解，也学会了如何把课堂知识应用到日常生活中。</p>
+                </div>
+            </div>
+            <div class="section intermediate">
+                <h2>进阶级</h2>
+                <span class="tag tag-intermediate">进阶级</span>
+                <div class="level-card">
+                    <h3>案例：超市价格调查</h3>
+                    <p>社区成员分组去超市调查同一种商品的不同价格，发现同样的物品在不同超市价格不同。大家用学到的小数加减法计算差价，分析哪个超市更划算。研学让我们学会用数学眼光看世界。通过比较价格，我们不仅巩固了小数的加减运算，还培养了比较分析和独立思考的能力，感受到数学在生活中的实用价值。</p>
+                </div>
+            </div>
+            <div class="section challenge">
+                <h2>挑战级</h2>
+                <span class="tag tag-challenge">挑战级</span>
+                <div class="level-card">
+                    <h3>案例：社区绿化规划</h3>
+                    <p>社区成员合作完成学校花园的绿化规划。需要测量土地面积、计算不同植物的种植间距、设计灌溉用水量。这是一个综合问题，涉及面积计算、单位换算、数据统计等多种数学知识。完成挑战后，我们能独立完成简单的数学调研项目。这种综合性任务帮助我们建立知识之间的联系，提升解决复杂问题的能力。</p>
+                </div>
+            </div>
+            <div class="section enlighten">
+                <h2>可迁移启示</h2>
+                <p>研学社区教我们：数学知识不是孤立的，它可以帮我们理解和解决生活中的实际问题。遇到复杂问题时，可以把大问题拆成小问题，一步一步用数学方法解决。这种思维方式不仅对数学学习有帮助，更能让我们终身受益，成为生活中的有心人。</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

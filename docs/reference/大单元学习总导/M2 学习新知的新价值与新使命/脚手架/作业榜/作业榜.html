@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>作业榜 - 三年级数学</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            font-size: 16px;
+            line-height: 1.8;
+            background: linear-gradient(135deg, #e8f5f5 0%, #e0f7fa 50%, #e8f5e9 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 150, 136, 0.15);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #00897b 0%, #00695c 100%);
+            color: #fff;
+            padding: 28px 24px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 1.75em;
+            margin-bottom: 8px;
+        }
+        .header p {
+            opacity: 0.9;
+            font-size: 0.95em;
+        }
+        .content {
+            padding: 24px;
+        }
+        .section {
+            margin-bottom: 24px;
+            padding: 20px;
+            background: #f1f8e9;
+            border-left: 4px solid #00897b;
+            border-radius: 0 8px 8px 0;
+        }
+        .section h2 {
+            color: #00695c;
+            font-size: 1.2em;
+            margin-bottom: 12px;
+        }
+        .section ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        .section li {
+            padding: 8px 0;
+            color: #37474f;
+            position: relative;
+            padding-left: 24px;
+        }
+        .section li::before {
+            content: "✦";
+            position: absolute;
+            left: 0;
+            color: #00897b;
+        }
+        .task-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .task-card {
+            background: #fff;
+            border: 2px solid #b2dfdb;
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.3s ease;
+        }
+        .task-card:hover {
+            border-color: #00897b;
+            transform: translateY(-4px);
+            box-shadow: 0 6px 20px rgba(0, 150, 136, 0.2);
+        }
+        .task-card h3 {
+            color: #00897b;
+            font-size: 1.05em;
+            margin-bottom: 8px;
+        }
+        .task-card p {
+            color: #546e7a;
+            font-size: 0.9em;
+        }
+        .quote-box {
+            background: linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            text-align: center;
+            font-style: italic;
+            color: #00695c;
+        }
+        .footer {
+            background: #f5f5f5;
+            padding: 16px;
+            text-align: center;
+            color: #78909c;
+            font-size: 0.85em;
+        }
+        @media (max-width: 600px) {
+            body {
+                padding: 12px;
+            }
+            .header h1 {
+                font-size: 1.4em;
+            }
+            .content {
+                padding: 16px;
+            }
+            .section {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✏️ 作业榜</h1>
+            <p>站在同伴肩上，看得更远</p>
+        </div>
+        <div class="content">
+            <div class="quote-box">
+                "如果你不能用自己的话复述，说明你还没真正理解。" —— 理查德·费曼
+            </div>
+            <div class="section">
+                <h2>🌟 作业榜是什么</h2>
+                <p>作业榜是通过分享和借鉴同伴解题思路，实现知识内化与深度理解的脚手架。这里是思维碰撞的舞台，让我们在互相启发中共同成长。</p>
+            </div>
+            <div class="section">
+                <h2>📚 学习目标</h2>
+                <ul>
+                    <li>看懂并理解同伴的解题方法，发现不同思路之间的联系</li>
+                    <li>比较多种解法的优劣，选择最适合自己的表达方式</li>
+                    <li>借鉴他人思路，独立完成具有挑战性的任务</li>
+                    <li>用多种形式（写作、图示、演讲）清晰表达解题过程</li>
+                </ul>
+            </div>
+            <div class="section">
+                <h2>🎯 分层任务</h2>
+                <div class="task-cards">
+                    <div class="task-card">
+                        <h3>基础任务</h3>
+                        <p>选择一道已完成的作品，记录解题的关键步骤，说说自己读懂了什么。</p>
+                    </div>
+                    <div class="task-card">
+                        <h3>分层任务</h3>
+                        <p>对比两份不同解法的作业，用图表呈现它们的异同点，分析哪种更适合自己。</p>
+                    </div>
+                    <div class="task-card">
+                        <h3>挑战任务</h3>
+                        <p>针对一道难题，尝试用两种以上方法解答，并写成"解题思路分享"发布到作业榜。</p>
+                    </div>
+                    <div class="task-card">
+                        <h3>开放任务</h3>
+                        <p>观看同伴的作品后，提出一个追问或改进建议，用语音或视频发表自己的观点。</p>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <h2>💡 数学家的故事</h2>
+                <ul>
+                    <li><strong>费曼：</strong>如果你不能用自己的话复述，说明你还没真正理解</li>
+                    <li><strong>高斯：</strong>发现规律后，复杂计算变得简单</li>
+                    <li><strong>欧拉：</strong>数学家也是通过大量例题练习成长的</li>
+                </ul>
+            </div>
+            <div class="section">
+                <h2>❓ 思考与追问</h2>
+                <ul>
+                    <li>如何在借鉴同伴的同时保持独立思考，而不是简单抄袭？</li>
+                    <li>不同学生适合的学习方式不同，如何找到最适合自己的作业展示形式？</li>
+                    <li>作业榜的评价标准如何兼顾过程与结果，鼓励原创而非模仿？</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer">
+            <p>数学 · 三年级上 · 大单元学习总导</p>
+        </div>
+    </div>
+</body>
+</html>

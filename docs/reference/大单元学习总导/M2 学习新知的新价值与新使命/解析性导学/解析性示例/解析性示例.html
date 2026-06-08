@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>解析性示例 - M2学习新知的新价值与新使命</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --academic-blue: #1a5fb4;
+            --academic-blue-light: #3584e4;
+            --academic-blue-pale: #e6f0fa;
+            --academic-blue-dark: #0d3a6e;
+            --text-dark: #2c3e50;
+            --text-medium: #5a6c7d;
+            --bg-white: #ffffff;
+            --bg-light: #f5f8fc;
+            --border-color: #c5d5e8;
+            --success-green: #26a269;
+            --warning-orange: #e66100;
+            --error-red: #c01c28;
+        }
+
+        body {
+            font-family: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif;
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--text-dark);
+            background: linear-gradient(135deg, var(--bg-white) 0%, var(--academic-blue-pale) 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--bg-white);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(26, 95, 180, 0.12);
+            overflow: hidden;
+        }
+
+        /*头部区域 */
+        .header {
+            background: linear-gradient(135deg, var(--academic-blue) 0%, var(--academic-blue-light) 100%);
+            color: white;
+            padding: 30px 40px;
+            text-align: center;
+        }
+
+        .header-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .header h1 {
+            font-size: 26px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        .header-subtitle {
+            font-size: 15px;
+            opacity: 0.9;
+        }
+
+        /* 主内容区 */
+        .content {
+            padding: 30px 40px;
+        }
+
+        /* 任务情境卡片 */
+        .scenario-card {
+            background: linear-gradient(135deg, var(--academic-blue-pale) 0%, #d6e8f7 100%);
+            border-left: 5px solid var(--academic-blue);
+            border-radius: 12px;
+            padding: 24px 28px;
+            margin-bottom: 28px;
+        }
+
+        .scenario-title {
+            color: var(--academic-blue);
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .scenario-title::before {
+            content: "📖";
+        }
+
+        .scenario-content {
+            font-size: 15px;
+            color: var(--text-dark);
+        }
+
+        /* 核心问题 */
+        .core-question {
+            background: var(--academic-blue);
+            color: white;
+            padding: 20px 28px;
+            border-radius: 12px;
+            margin-bottom: 28px;
+            text-align: center;
+        }
+
+        .core-question-label {
+            font-size: 14px;
+            opacity: 0.85;
+            margin-bottom: 8px;
+        }
+
+        .core-question-text {
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        /* 关键信息表格 */
+        .info-table-section {
+            margin-bottom: 28px;
+        }
+
+        .section-title {
+            color: var(--academic-blue);
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 14px;
+            padding-left: 12px;
+            border-left: 4px solid var(--academic-blue);
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(26, 95, 180, 0.08);
+        }
+
+        .info-table thead {
+            background: var(--academic-blue);
+            color: white;
+        }
+
+        .info-table th {
+            padding: 14px 16px;
+            font-size: 15px;
+            font-weight: bold;
+            text-align: left;
+        }
+
+        .info-table td {
+            padding: 12px 16px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-white);
+        }
+
+        .info-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .info-table tr:hover td {
+            background: var(--academic-blue-pale);
+        }
+
+        /* 专家解析五步法 */
+        .analysis-steps {
+            margin-bottom: 28px;
+        }
+
+        .step-card {
+            background: var(--bg-white);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .step-card:hover {
+            border-color: var(--academic-blue-light);
+            box-shadow: 0 4px 16px rgba(26, 95, 180, 0.1);
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 12px;
+        }
+
+        .step-number {
+            width: 36px;
+            height: 36px;
+            background: var(--academic-blue);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .step-title {
+            color: var(--academic-blue);
+            font-size: 17px;
+            font-weight: bold;
+        }
+
+        .step-content {
+            font-size: 14px;
+            color: var(--text-medium);
+            padding-left: 50px;
+        }
+
+        /* 结论表达 */
+        .conclusion-box {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border-left: 5px solid var(--success-green);
+            border-radius: 12px;
+            padding: 22px 28px;
+            margin-bottom: 28px;
+        }
+
+        .conclusion-title {
+            color: var(--success-green);
+            font-size: 17px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .conclusion-content {
+            font-size: 15px;
+            color: var(--text-dark);
+        }
+
+        /* 方法提炼 */
+        .method-box {
+            background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+            border-left: 5px solid var(--warning-orange);
+            border-radius: 12px;
+            padding: 22px 28px;
+            margin-bottom: 28px;
+        }
+
+        .method-title {
+            color: var(--warning-orange);
+            font-size: 17px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .method-content {
+            font-size: 15px;
+            color: var(--text-dark);
+        }
+
+        /* 易错提醒 */
+        .mistakes-box {
+            background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+            border-left: 5px solid var(--error-red);
+            border-radius: 12px;
+            padding: 22px 28px;
+            margin-bottom: 28px;
+        }
+
+        .mistakes-title {
+            color: var(--error-red);
+            font-size: 17px;
+            font-weight: bold;
+            margin-bottom: 14px;
+        }
+
+        .mistake-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: var(--text-dark);
+        }
+
+        .mistake-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .mistake-icon {
+            color: var(--error-red);
+            font-weight: bold;
+        }
+
+        /* 自主迁移练习 */
+        .exercise-section {
+            background: var(--bg-light);
+            border-radius: 12px;
+            padding: 24px 28px;
+            margin-bottom: 28px;
+        }
+
+        .exercise-title {
+            color: var(--academic-blue);
+            font-size: 17px;
+            font-weight: bold;
+            margin-bottom: 14px;
+        }
+
+        .exercise-item {
+            background: var(--bg-white);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .exercise-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .exercise-question {
+            font-size: 14px;
+            color: var(--text-dark);
+            margin-bottom: 10px;
+        }
+
+        .exercise-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .exercise-input:focus {
+            outline: none;
+            border-color: var(--academic-blue);
+        }
+
+        /* 学习自评表格 */
+        .self-assessment {
+            margin-bottom: 20px;
+        }
+
+        .assessment-table {
+            width: 100%;
+            border-collapse: collapse;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(26, 95, 180, 0.08);
+        }
+
+        .assessment-table thead {
+            background: var(--academic-blue);
+            color: white;
+        }
+
+        .assessment-table th {
+            padding: 14px 12px;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .assessment-table td {
+            padding: 12px;
+            font-size: 13px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-white);
+        }
+
+        .assessment-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .rating-cell {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .rating-btn {
+            width: 28px;
+            height: 28px;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-white);
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .rating-btn:hover {
+            border-color: var(--academic-blue);
+            background: var(--academic-blue-pale);
+        }
+
+        .rating-btn.selected {
+            background: var(--academic-blue);
+            color: white;
+            border-color: var(--academic-blue);
+        }
+
+        /* 底部 */
+        .footer {
+            background: var(--academic-blue-pale);
+            padding: 20px 40px;
+            text-align: center;
+            color: var(--text-medium);
+            font-size: 13px;
+        }
+
+        /* 响应式 */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+                font-size: 14px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .step-content {
+                padding-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <div class="header-badge">📚 三年级数学 · 解析性示例</div>
+            <h1>M2 学习新知的新价值与新使命</h1>
+            <div class="header-subtitle">解析性示例 · 图书馆购书问题</div>
+        </div>
+
+        <!-- 主内容 -->
+        <div class="content">
+            <!-- 任务情境 -->
+            <div class="scenario-card">
+                <div class="scenario-title">解析任务情境</div>
+                <div class="scenario-content">
+                    学校图书馆购买一批新书，经费预算为600元。图书管理员李老师需要为三年级的同学们选购适合阅读的书籍。已知科普类图书每本28元，故事类图书每本22元，绘本类图书每本35元。如果李老师要购买若干本书，总价恰好用完600元，且三种类型的书都要购买，请问李老师可以怎么购买？
+                </div>
+            </div>
+
+            <!-- 核心问题 -->
+            <div class="core-question">
+                <div class="core-question-label">核心问题</div>
+                <div class="core-question-text">如何找出使三种书都购买且总价恰好为600元的购买方案？</div>
+            </div>
+
+            <!-- 关键信息提取表格 -->
+            <div class="info-table-section">
+                <div class="section-title">关键信息提取</div>
+                <table class="info-table">
+                    <thead>
+                        <tr>
+                            <th>信息类别</th>
+                            <th>具体内容</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>总预算</td>
+                            <td>600元</td>
+                        </tr>
+                        <tr>
+                            <td>科普类图书单价</td>
+                            <td>28元/本</td>
+                        </tr>
+                        <tr>
+                            <td>故事类图书单价</td>
+                            <td>22元/本</td>
+                        </tr>
+                        <tr>
+                            <td>绘本类图书单价</td>
+                            <td>35元/本</td>
+                        </tr>
+                        <tr>
+                            <td>约束条件</td>
+                            <td>三种类型的书都要购买，总价恰好为600元</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 专家解析五步法 -->
+            <div class="analysis-steps">
+                <div class="section-title">专家解析过程</div>
+
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-number">1</div>
+                        <div class="step-title">先看见什么</div>
+                    </div>
+                    <div class="step-content">
+                        首先阅读题目，提取出三个关键数据：总钱数（600元）和三种图书的单价（28元、22元、35元）。同时明确约束条件是"三种书都要购买"且"总价恰好为600元"。
+                    </div>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-number">2</div>
+                        <div class="step-title">判断问题类型</div>
+                    </div>
+                    <div class="step-content">
+                        这是一道"鸡兔同笼"类型的问题，属于"购书问题"的实际应用。需要找到满足特定条件的组合方案，核心是试算与调整。
+                    </div>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-number">3</div>
+                        <div class="step-title">调用概念原理</div>
+                    </div>
+                    <div class="step-content">
+                        运用"等量关系"和"加减法的逆运算"原理。设科普书x本、故事书y本、绘本z本，列出方程：28x + 22y + 35z = 600，其中x≥1, y≥1, z≥1。
+                    </div>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-number">4</div>
+                        <div class="step-title">如何推理分析</div>
+                    </div>
+                    <div class="step-content">
+                        采用"逐步尝试法"：先保证每种书至少买1本，计算剩余金额600-28-22-35=515元。然后在剩余金额范围内进行试算。从大单价绘本开始尝试，515÷35≈14本...，调整后找到可行组合。
+                    </div>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-number">5</div>
+                        <div class="step-title">怎样形成结论</div>
+                    </div>
+                    <div class="step-content">
+                        经过系统试算，得到可行方案：科普书8本、故事书9本、绘本4本。验证：28×8 + 22×9 + 35×4 = 224 + 198 + 140 = 562元...，调整后最优方案为科普10本、故事5本、绘本6本：280+110+210=600元。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 结论表达 -->
+            <div class="conclusion-box">
+                <div class="conclusion-title">结论表达</div>
+                <div class="conclusion-content">
+                    李老师可以购买科普类图书10本、故事类图书5本、绘本类图书6本。验证计算：28×10 + 22×5 + 35×6 = 280 + 110 + 210 = 600元，正好用完所有预算，且三种类型的书都有购买。
+                </div>
+            </div>
+
+            <!-- 方法提炼 -->
+            <div class="method-box">
+                <div class="method-title">方法提炼</div>
+                <div class="method-content">
+                    解决此类购书问题的通用方法：① 先扣除每种书的最低购买数量；② 列出剩余金额的等量关系；③ 从最大单价物品开始尝试；④ 用逆运算调整各类数量；⑤ 验证结果是否满足所有条件。
+                </div>
+            </div>
+
+            <!-- 易错提醒 -->
+            <div class="mistakes-box">
+                <div class="mistakes-title">易错提醒三点</div>
+                <div class="mistake-item">
+                    <span class="mistake-icon">⚠</span>
+                    <span>错误一：忽略了"三种书都要购买"的条件，直接用总价除以最便宜的单价，导致漏掉必要的约束。</span>
+                </div>
+                <div class="mistake-item">
+                    <span class="mistake-icon">⚠</span>
+                    <span>错误二：计算过程中忘记进位或退位，导致最终金额与600元不符。</span>
+                </div>
+                <div class="mistake-item">
+                    <span class="mistake-icon">⚠</span>
+                    <span>错误三：只找到一种方案就认为完成，没有检查是否还有其他可能的组合。</span>
+                </div>
+            </div>
+
+            <!-- 自主迁移练习 -->
+            <div class="exercise-section">
+                <div class="exercise-title">自主迁移小练习</div>
+                <div class="exercise-item">
+                    <div class="exercise-question">练习1：学校要购买篮球和足球共10个，总价为680元。已知篮球每个65元，足球每个58元，请问篮球和足球各买了多少个？</div>
+                    <input type="text" class="exercise-input" placeholder="请输入你的答案...">
+                </div>
+                <div class="exercise-item">
+                    <div class="exercise-question">练习2：妈妈去超市买水果，苹果每斤12元，橘子每斤8元，共花了100元买了9斤水果。请问苹果和橘子各多少斤？</div>
+                    <input type="text" class="exercise-input" placeholder="请输入你的答案...">
+                </div>
+               <div class="exercise-item">
+                    <div class="exercise-question">练习3：文具店促销，铅笔每支5元，橡皮每块3元，笔记本每个7元。小明买了若干件文具，共花去83元，且三种文具都买了，至少各1件。请给出一种购买方案。</div>
+                    <input type="text" class="exercise-input" placeholder="请输入你的答案...">
+                </div>
+            </div>
+
+            <!-- 学习自评表格 -->
+            <div class="self-assessment">
+                <div class="section-title">学习自评表格</div>
+                <table class="assessment-table">
+                    <thead>
+                        <tr>
+                            <th>评价维度</th>
+                            <th>☆☆☆</th>
+                            <th>☆☆</th>
+                            <th>☆</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>能够准确提取题目中的关键信息</td>
+                            <td>
+                                <div class="rating-cell">
+                                    <button class="rating-btn" onclick="selectRating(this,0)">A</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 1)">B</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 2)">C</button>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="rating-cell">
+                                    <button class="rating-btn" onclick="selectRating(this, 0)">A</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 1)">B</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 2)">C</button>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="rating-cell">
+                                    <button class="rating-btn" onclick="selectRating(this, 0)">A</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 1)">B</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 2)">C</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>能够正确判断问题类型</td>
+                            <td>
+                                <div class="rating-cell">
+                                    <button class="rating-btn" onclick="selectRating(this, 0)">A</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 1)">B</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 2)">C</button>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="rating-cell">
+                                    <button class="rating-btn" onclick="selectRating(this, 0)">A</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 1)">B</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 2)">C</button>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="rating-cell">
+                                    <button class="rating-btn" onclick="selectRating(this, 0)">A</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 1)">B</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 2)">C</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>能够运用正确的方法进行分析</td>
+                            <td>
+                                <div class="rating-cell">
+                                    <button class="rating-btn" onclick="selectRating(this, 0)">A</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 1)">B</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 2)">C</button>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="rating-cell">
+                                    <button class="rating-btn" onclick="selectRating(this, 0)">A</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 1)">B</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 2)">C</button>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="rating-cell">
+                                    <button class="rating-btn" onclick="selectRating(this, 0)">A</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 1)">B</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 2)">C</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>能够准确计算并验证结果</td>
+                            <td>
+                                <div class="rating-cell">
+                                    <button class="rating-btn" onclick="selectRating(this, 0)">A</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 1)">B</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 2)">C</button>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="rating-cell">
+                                    <button class="rating-btn" onclick="selectRating(this, 0)">A</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 1)">B</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 2)">C</button>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="rating-cell">
+                                    <button class="rating-btn" onclick="selectRating(this, 0)">A</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 1)">B</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 2)">C</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>能够独立完成迁移练习</td>
+                            <td>
+                                <div class="rating-cell">
+                                    <button class="rating-btn" onclick="selectRating(this, 0)">A</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 1)">B</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 2)">C</button>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="rating-cell">
+                                    <button class="rating-btn" onclick="selectRating(this, 0)">A</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 1)">B</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 2)">C</button>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="rating-cell">
+                                    <button class="rating-btn" onclick="selectRating(this, 0)">A</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 1)">B</button>
+                                    <button class="rating-btn" onclick="selectRating(this, 2)">C</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 底部 -->
+        <div class="footer">
+            三年级数学 · M2学习新知的新价值与新使命 · 解析性示例
+        </div>
+    </div>
+
+    <script>
+        function selectRating(btn, level) {
+            const row = btn.closest('td');
+            const buttons = row.querySelectorAll('.rating-btn');
+            buttons.forEach((b, index) => {
+                if (index <= level) {
+                    b.classList.add('selected');
+                } else {
+                    b.classList.remove('selected');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

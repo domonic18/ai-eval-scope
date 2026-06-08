@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模块定位画像：大单元第2至第20模块内容适配</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+            font-size: 18px;
+            line-height: 1.8;
+            color: #333;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 67, 147, 0.12);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #0053a0 0%, #0075d9 50%, #00a3e0 100%);
+            color: #fff;
+            padding: 40px 50px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .header .meta {
+            font-size: 16px;
+            opacity: 0.95;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .header .meta span {
+            background: rgba(255,255,255,0.2);
+            padding: 6px 16px;
+            border-radius: 20px;
+        }
+        .content {
+            padding: 40px 50px;
+        }
+        .intro {
+            background: linear-gradient(120deg, #e8f4fc 0%, #dbeeff 100%);
+            border-left: 5px solid #0075d9;
+            padding: 25px 30px;
+            border-radius: 0 12px 12px 0;
+            margin-bottom: 35px;
+            font-size: 17px;
+            color: #2a5a8a;
+        }
+        h2 {
+            font-size: 24px;
+            color: #0053a0;
+            margin: 30px 0 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #00a3e0;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+            margin: 20px 0;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,67,147,0.08);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            font-size: 16px;
+        }
+        thead {
+            background: linear-gradient(135deg, #0053a0 0%, #0075d9 100%);
+            color: #fff;
+        }
+        thead th {
+            padding: 16px 12px;
+            text-align: center;
+            font-weight: 600;
+        }
+        tbody tr {
+            border-bottom: 1px solid #e8f0f8;
+            transition: background 0.3s;
+        }
+        tbody tr:hover {
+            background: #f0f7ff;
+        }
+        tbody td {
+            padding: 14px 12px;
+            vertical-align: top;
+        }
+        tbody td:first-child {
+            text-align: center;
+            font-weight: 700;
+            color: #0053a0;
+            background: #f5f9ff;
+            width: 80px;
+        }
+        .module-tag {
+            display: inline-block;
+            background: linear-gradient(135deg, #0075d9, #00a3e0);
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+        }
+        .section-block {
+            background: #f8fbff;
+            border: 1px solid #d0e4f5;
+            border-radius: 12px;
+            padding: 25px 30px;
+            margin: 25px 0;
+        }
+        .section-block h3 {
+            font-size: 20px;
+            color: #0053a0;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        .section-block h3::before {
+            content: "";
+            width: 6px;
+            height: 24px;
+            background: linear-gradient(180deg, #0075d9, #00a3e0);
+            border-radius: 3px;
+            margin-right: 12px;
+        }
+        .section-block ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        .section-block li {
+            padding: 10px 0;
+            border-bottom: 1px dashed #cce4f7;
+            display: flex;
+            align-items: flex-start;
+        }
+        .section-block li:last-child {
+            border-bottom: none;
+        }
+        .section-block li::before {
+            content: "◆";
+            color: #00a3e0;
+            margin-right: 10px;
+            font-size: 12px;
+        }
+        .section-block .highlight {
+            background: linear-gradient(90deg, #fff3cd, #fff8e1);
+            padding: 12px 18px;
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+            margin-top: 15px;
+            font-size: 16px;
+        }
+        .footer {
+            text-align: center;
+            padding: 25px;
+            background: #f5f9ff;
+            color: #667788;
+            font-size: 14px;
+            border-top: 1px solid #e0e8f0;
+        }
+        @media (max-width: 768px) {
+            body {
+                font-size: 16px;
+                padding: 10px;
+            }
+            .header {
+                padding: 30px 20px;
+            }
+            .header h1 {
+                font-size: 22px;
+            }
+            .content {
+                padding: 25px 20px;
+            }
+            table {
+                font-size: 14px;
+            }
+            thead th, tbody td {
+                padding: 10px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>模块定位画像：大单元第2至第20模块内容适配</h1>
+            <div class="meta">
+                <span>学科：数学</span>
+                <span>学段：小学</span>
+                <span>年级：三年级上（2013年版）</span>
+                <span>单元名称：大单元数学学习总览</span>
+                <span>模块特性：新知建构与应用</span>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="intro">
+                <strong>概述</strong><br>
+                本定位画像基于【模块1：大单元概要】的总框架，为第2至第20模块（共19个模块）提供具体的内容适配定位。每个模块在整体大单元中承担特定功能，对应相应的核心概念与核心内容，帮助学生在数学学科学习中实现从认知建构到应用创新的完整学习闭环。
+            </div>
+
+            <h2>模块定位总表</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>模块序号</th>
+                            <th>模块主题</th>
+                            <th>在大单元中的功能定位</th>
+                            <th>对应的核心概念/核心内容</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="module-tag">2</span></td>
+                            <td>学习新知的新价值与新使命</td>
+                            <td>价值引领模块：建立数学学习的目标感与意义感</td>
+                            <td>核心概念：数学学习的个人价值、社会价值、科学价值<br>核心内容：新知学习的动机激发、学习目标设定、学习意义认知</td>
+                        </tr>
+                        <tr>
+                            <td><span class="module-tag">3</span></td>
+                            <td>全息活动与感知：新概念前认知</td>
+                            <td>感知激活模块：唤醒已有经验，建立新知联结点</td>
+                            <td>核心概念：生活经验激活、前概念唤醒、感知觉参与<br>核心内容：全息活动设计、情境导入、已有知识唤醒</td>
+                        </tr>
+                        <tr>
+                            <td><span class="module-tag">4</span></td>
+                            <td>新概念解析、建构与定义</td>
+                            <td>概念建构模块：完成新知从感性到理性的转化</td>
+                            <td>核心概念：数学概念解析、概念建构、定义表达<br>核心内容：概念内涵挖掘、属性提取、符号化定义</td>
+                        </tr>
+                        <tr>
+                            <td><span class="module-tag">5</span></td>
+                            <td>新知艺术思维</td>
+                            <td>审美融合模块：培育数学美感的初步意识</td>
+                            <td>核心概念：数学美感、对称美、简洁美<br>核心内容：数学规律中的美、图形之美、秩序之美</td>
+                        </tr>
+                        <tr>
+                            <td><span class="module-tag">6</span></td>
+                            <td>新知技术思维</td>
+                            <td>技术应用模块：掌握数学学习的工具与方法</td>
+                            <td>核心概念：数学工具使用、操作技能、信息技术融合<br>核心内容：学具操作、图形绘制、计算工具使用</td>
+                        </tr>
+                        <tr>
+                            <td><span class="module-tag">7</span></td>
+                            <td>新知数学思维</td>
+                            <td>学科本质模块：聚焦数学核心思想与思维方式</td>
+                            <td>核心概念：抽象思维、推理思维、模型思维<br>核心内容：数形结合、分类思想、归纳演绎</td>
+                        </tr>
+                        <tr>
+                            <td><span class="module-tag">8</span></td>
+                            <td>新知科学思维</td>
+                            <td>探究方法模块：培养数学探究与实证意识</td>
+                            <td>核心概念：科学探究方法、实证精神、假设验证<br>核心内容：观察发现、提出问题、猜想验证</td>
+                        </tr>
+                        <tr>
+                            <td><span class="module-tag">9</span></td>
+                            <td>新知文化思维</td>
+                            <td>文化理解模块：感受数学学科的人文底蕴</td>
+                            <td>核心概念：数学文化、历史背景、跨学科联系<br>核心内容：数学史话、数学应用情境、文化链接</td>
+                        </tr>
+                        <tr>
+                            <td><span class="module-tag">10</span></td>
+                            <td>新知哲学思维</td>
+                            <td>深度思考模块：引导对数学本质问题的初步思考</td>
+                            <td>核心概念：数学本质、无限思想、相对性认识<br>核心内容：数与量本质、变化与不变、有限与无限</td>
+                        </tr>
+                        <tr>
+                            <td><span class="module-tag">11</span></td>
+                            <td>新知美术思维</td>
+                            <td>视觉思维模块：发展数学图形与空间想象力</td>
+                            <td>核心概念：图形感知、空间观念、视觉表达<br>核心内容：几何图形认知、空间方位、图形变换</td>
+                        </tr>
+                        <tr>
+                            <td><span class="module-tag">12</span></td>
+                            <td>新知书面性应用</td>
+                            <td>书面表达模块：训练数学文字与符号表达能力</td>
+                            <td>核心概念：数学语言表达、书面规范、符号运用<br>核心内容：解题步骤书写、数学日记、符号记录</td>
+                        </tr>
+                        <tr>
+                            <td><span class="module-tag">13</span></td>
+                            <td>新知项目性应用</td>
+                            <td>综合实践模块：运用数学知识解决真实问题</td>
+                            <td>核心概念：项目学习、问题解决、合作探究<br>核心内容：数学项目设计、实施过程、成果展示</td>
+                        </tr>
+                        <tr>
+                            <td><span class="module-tag">14</span></td>
+                            <td>新知STEAM融合性应用</td>
+                            <td>融合创新模块：跨学科整合培育创新思维</td>
+                            <td>核心概念：STEAM理念、跨学科整合、创客精神<br>核心内容：科学、技术、工程、艺术融合项目</td>
+                        </tr>
+                        <tr>
+                            <td><span class="module-tag">15</span></td>
+                            <td>新知三创性应用</td>
+                            <td>创新实践模块：培养创意、创新、创造能力</td>
+                            <td>核心概念：创造性思维、创新实践、成果转化<br>核心内容：数学创意思维、创新方案、实践制作</td>
+                        </tr>
+                        <tr>
+                            <td><span class="module-tag">16</span></td>
+                            <td>新知应用与创新中的真善美思维与反思</td>
+                            <td>价值反思模块：建立正确的数学应用价值观</td>
+                            <td>核心概念：真善美统一、数学伦理、社会责任<br>核心内容：数学应用真实性、创新向善性、成果审美性</td>
+                        </tr>
+                        <tr>
+                            <td><span class="module-tag">17</span></td>
+                            <td>新知学习过程的成就与成功性思维与反思</td>
+                            <td>成就激励模块：培养积极的自我效能感</td>
+                            <td>核心概念：成就动机、成功体验、自我效能<br>核心内容：学习过程记录、成就回顾、成功反思</td>
+                        </tr>
+                        <tr>
+                            <td><span class="module-tag">18</span></td>
+                            <td>新知学习收获的幸福与福祉性思维与反思</td>
+                            <td>福祉关怀模块：感受数学学习的幸福感与获得感</td>
+                            <td>核心概念：学习幸福感、福祉意识、积极心理<br>核心内容：学习收获感恩、幸福体验分享、心灵成长</td>
+                        </tr>
+                        <tr>
+                            <td><span class="module-tag">19</span></td>
+                            <td>新知全面的系统性思维与智能化思维</td>
+                            <td>思维跃升模块：培育综合思维与智能时代素养</td>
+                            <td>核心概念：系统性思维、智能化素养、信息处理<br>核心内容：知识联网、思维导图、智能工具使用</td>
+                        </tr>
+                        <tr>
+                            <td><span class="module-tag">20</span></td>
+                            <td>新知的理论和学术性总结与表达</td>
+                            <td>学术表达模块：完成从学习者到表达者的转变</td>
+                            <td>核心概念：学术规范、总结表达、成果呈现<br>核心内容：单元总结、学术表达、学习档案</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2>模块功能梯度说明</h2>
+
+            <div class="section-block">
+                <h3>认知建构线（模块2-4）</h3>
+                <ul>
+                    <li>从价值引领到感知激活，再到概念建构，完成新知学习的认知准备与初步建构。</li>
+                </ul>
+            </div>
+
+            <div class="section-block">
+                <h3>思维培育线（模块5-11）</h3>
+                <ul>
+                    <li>覆盖艺术、技术、数学、科学、文化、哲学、美术七大思维领域，培育学生多元思维能力。</li>
+                </ul>
+            </div>
+
+            <div class="section-block">
+                <h3>应用实践线（模块12-15）</h3>
+                <ul>
+                    <li>从书面应用到项目性应用，再到STEAM融合与三创应用，形成递进的应用实践能力。</li>
+                </ul>
+            </div>
+
+            <div class="section-block">
+                <h3>反思成长线（模块16-18）</h3>
+                <ul>
+                    <li>聚焦真善美价值、成就成功、幸福福祉三大维度，引导学生深度反思与自我认知。</li>
+                </ul>
+            </div>
+
+            <div class="section-block">
+                <h3>综合跃升线（模块19-20）</h3>
+                <ul>
+                    <li>系统性思维培育与学术性总结表达，完成大单元学习的总结与升华。</li>
+                </ul>
+            </div>
+
+            <div class="section-block">
+                <div class="highlight">
+                    <strong>说明</strong>：本画像严格适配数学学科三年级上学期学生的学习特点，各模块内容按导学案语言风格编写，面向学生进行学习引导与能力培养。
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            大单元数学学习总览 | 三年级上（2013年版）
+        </div>
+    </div>
+</body>
+</html>

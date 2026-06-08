@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>建构性示例：万以内加减法（二）竖式计算的秘密</title>
+    <style>
+        :root {
+            --primary: #1677ff;
+            --primary-hover: #4096ff;
+            --accent: #69b1ff;
+            --bg: #f0f5ff;
+            --card-bg: #ffffff;
+            --font-body: 18px;
+            --font-h1: 28px;
+            --font-h2: 22px;
+            --line-height: 1.8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            font-size: var(--font-body);
+            line-height: var(--line-height);
+            background-color: var(--bg);
+            color: #333;
+        }
+
+        .container {
+            width: 100%;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: var(--font-h1);
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 10px;
+            padding: 15px;
+            background: var(--card-bg);
+            border-radius: 8px;
+            border-left: 5px solid var(--primary);
+        }
+
+        h2 {
+            font-size: var(--font-h2);
+            color: var(--primary);
+            margin: 25px 0 15px 0;
+            padding: 10px 15px;
+            background: var(--card-bg);
+            border-radius: 8px;
+            border-left: 4px solid var(--accent);
+        }
+
+        h3 {
+            font-size: 20px;
+            color: #444;
+            margin: 20px 0 10px 0;
+        }
+
+        p {
+            margin: 10px 0;
+            text-indent: 2em;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 2px 8px rgba(22, 119, 255, 0.1);
+        }
+
+        .situation {
+            background: linear-gradient(135deg, var(--bg) 0%, var(--card-bg) 100%);
+            border: 2px solid var(--accent);
+            padding: 25px;
+        }
+
+        .goal-box {
+            background: linear-gradient(to right, var(--bg), var(--card-bg));
+            border-left: 4px solid var(--primary);
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .task-spec {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        .task-item {
+            background: var(--bg);
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 3px solid var(--primary);
+        }
+
+        .task-item strong {
+            color: var(--primary);
+        }
+
+        .step {
+            background: var(--card-bg);
+            border: 1px solid var(--accent);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .step-number {
+            background: var(--primary);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .step-content {
+            margin: 10px 0;
+        }
+
+        .step-content strong {
+            color: var(--primary);
+        }
+
+        .formula-box {
+            background: #f8f9fa;
+            border: 2px dashed var(--accent);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            font-family: "Courier New", monospace;
+            font-size: 20px;
+            text-align: center;
+            overflow-x: auto;
+        }
+
+        .formula-highlight {
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+
+        th, td {
+            border: 1px solid var(--accent);
+            padding: 12px 15px;
+            text-align: center;
+        }
+
+        th {
+            background: var(--primary);
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background: var(--bg);
+        }
+
+        .tool-box {
+            background: #fff9e6;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .tool-title {
+            color: #ff9800;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+
+        .checklist li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .checklist li::before {
+            content: "□";
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+            font-size: 20px;
+        }
+
+        .example-box {
+            background: linear-gradient(135deg, var(--bg) 0%, #e8f4ff 100%);
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .rating-table {
+            width: 100%;
+        }
+
+        .rating-table th {
+            text-align: left;
+        }
+
+        .rating-table td {
+            text-align: center;
+        }
+
+        .stars {
+            color: #ffc107;
+            letter-spacing: 2px;
+        }
+
+        .reflection-box {
+            background: var(--bg);
+            border: 2px dashed var(--accent);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            min-height: 100px;
+        }
+
+        .highlight {
+            background: linear-gradient(to bottom, transparent60%, var(--accent) 60%);
+            padding: 0 4px;
+        }
+
+        ul, ol {
+            padding-left: 30px;
+            margin: 10px 0;
+        }
+
+        li {
+            margin: 8px 0;
+        }
+
+        .progress-note {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .warning-note {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>建构性示例标题<br>万以内加减法（二）：竖式计算的秘密</h1>
+
+        <div class="card situation">
+            <h2>二、真实建构情境</h2>
+            <p>新学期到了，班级图书角要添置新书。图书管理员小美需要统计两类书的数量：科普类图书有<span class="highlight">243本</span>，故事类图书有<span class="highlight">158本</span>。图书角一共有多少本书？</p>
+            <p>小美列了一个竖式，但是算到一半卡住了……</p>
+            <p>请你先试着自己算一算，看看这个竖式哪里出了问题，然后和小美一起把正确答案算出来。</p>
+        </div>
+
+        <div class="card">
+            <h2>三、建构目标</h2>
+            <div class="goal-box">
+                <p>本节课的建构目标是：</p>
+                <p>让你通过观察、模仿、比较和总结，理解多位数加法的竖式计算道理，明白<span class="highlight">"为什么这样摆竖式、为什么从个位算起、满十为什么要向前进一"</span>。建构完成后，你能用自己的话说出竖式计算的关键步骤，形成自己的计算思路。</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>四、建构任务说明</h2>
+            <div class="task-spec">
+                <div class="task-item">
+                    <strong>成果名称：</strong>我的竖式计算说明书
+                </div>
+                <div class="task-item">
+                    <strong>用途：</strong>记录并解释竖式计算的全过程，供自己复习或向同伴讲解。
+                </div>
+                <div class="task-item">
+                    <strong>对象：</strong>给遇到困难的同学看，或者留给以后的自己复习使用。
+                </div>
+                <div class="task-item">
+                    <strong>形式：</strong>手写或打印的A4纸大小的计算说明卡。
+                </div>
+                <div class="task-item">
+                    <strong>最低标准：</strong>
+                    <ul>
+                        <li>能正确列出至少2道三位数加法的竖式</li>
+                        <li>每一步计算都有简短的文字说明</li>
+                        <li>能标出进位的位置和数值</li>
+                        <li>成果整洁、有条理</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>五、建构过程示范</h2>
+
+            <div class="step">
+                <div class="step-header">
+                    <div class="step-number">1</div>
+                    <h3>观察例题，找出问题</h3>
+                </div>
+                <div class="step-content">
+                    <p><strong>做什么：</strong>找到课本上的例题，或者看下面的竖式，圈出你觉得奇怪的地方。</p>
+                    <p><strong>怎么做：</strong>仔细看竖式中每一个数的位置，上下对齐了吗？从哪一位开始算的？</p>
+                    <p><strong>生成什么：</strong>在竖式中圈出你疑惑的地方。</p>
+                </div>
+                <div class="formula-box">
+                    243<br>
+                    + 158<br>
+                    ------<br>
+                    <span class="formula-highlight">401</span>
+                </div>
+                <div class="progress-note">
+                    <strong>小明发现：</strong>咦，243加158，3加8等于11，写1进1，但小明不知道这个1应该写在哪里。
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-header">
+                    <div class="step-number">2</div>
+                    <h3>借助小棒图，理解算理</h3>
+                </div>
+                <div class="step-content">
+                    <p><strong>做什么：</strong>用小棒代替数字，摆出两组小棒，一组243根，一组158根。</p>
+                    <p><strong>怎么做：</strong>先摆243根小棒（2个百、4个十、3个一根），再摆158根小棒（1个百、5个十、8个一根），然后把两组小棒合在一起数。</p>
+                    <p><strong>生成什么：</strong>填写记录单。</p>
+                </div>
+                <table>
+                    <tr>
+                        <th>数量</th>
+                        <th>百</th>
+                        <th>十</th>
+                        <th>个</th>
+                    </tr>
+                    <tr>
+                        <td>第一组</td>
+                        <td>2</td>
+                        <td>4</td>
+                        <td>3</td>
+                    </tr>
+                    <tr>
+                        <td>第二组</td>
+                        <td>1</td>
+                        <td>5</td>
+                        <td>8</td>
+                    </tr>
+                    <tr>
+                        <td>合并后</td>
+                        <td>3</td>
+                        <td>9</td>
+                        <td>11</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="step">
+                <div class="step-header">
+                    <div class="step-number">3</div>
+                    <h3>整理发现，理解满十进一</h3>
+                </div>
+                <div class="step-content">
+                    <p><strong>做什么：</strong>观察合并后的小棒计数结果，发现规律。</p>
+                    <p><strong>怎么做：</strong>提问引导自己——个位有11根小棒，应该怎么记？十位有9组小棒，现在要怎么处理？</p>
+                    <p><strong>生成什么：</strong>记录整理发现：11个一根可以换成1个十还多1个一根，所以个位写1，向十位进1。</p>
+                </div>
+                <div class="progress-note">
+                    <strong>我的发现：</strong>当某一数位加起来满10，就要向前进1，就像用10根小棒换1捆小棒一样。
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-header">
+                    <div class="step-number">4</div>
+                    <h3>重新摆竖式，规范记录</h3>
+                </div>
+                <div class="step-content">
+                    <p><strong>做什么：</strong>把小棒图的操作转化为竖式书写，规范记录每一步。</p>
+                    <p><strong>怎么做：</strong>在竖式上标注进位，用箭头标出进位的位置。</p>
+                    <p><strong>生成什么：</strong>规范正确的竖式。</p>
+                </div>
+                <div class="formula-box">
+                    &nbsp;&nbsp;243<br>
+                    + 158<br>
+                    ------<br>
+                    &nbsp;&nbsp;401
+                </div>
+                <ul>
+                    <li><strong>个位：</strong>3加8等于11，写1进1</li>
+                    <li><strong>十位：</strong>4加5加进位1等于10，写0进1</li>
+                    <li><strong>百位：</strong>2加1加进位1等于4</li>
+                </ul>
+            </div>
+
+            <div class="step">
+                <div class="step-header">
+                    <div class="step-number">5</div>
+                    <h3>用自己的话说步骤</h3>
+                </div>
+                <div class="step-content">
+                    <p><strong>做什么：</strong>关上书本，用自己的话把计算过程说一遍。</p>
+                    <p><strong>怎么做：</strong>想象你在教弟弟妹妹，先说什么、再说什么、最后说什么？</p>
+                    <p><strong>生成什么：</strong>口头或书面的讲解提纲。</p>
+                </div>
+                <div class="example-box">
+                    <strong>我的讲解提纲：</strong>
+                    <ol>
+                        <li>先把数对齐，个位对个位，十位对十位，百位对百位</li>
+                        <li>从个位加起，3加8等于11，写1进1</li>
+                        <li>再算十位，4加5再加进上来的1，等于10，写0进1</li>
+                        <li>最后算百位，2加1再加进上来的1，等于4</li>
+                        <li>所以答案是401</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-header">
+                    <div class="step-number">6</div>
+                    <h3>出一道类似的题，检验自己</h3>
+                </div>
+                <div class="step-content">
+                    <p><strong>做什么：</strong>自己编一道三位数加三位数的题目，用刚学的方法算一遍。</p>
+                    <p><strong>怎么做：</strong>把数字换一换（个位和十位尽量有进位），按同样步骤计算。</p>
+                    <p><strong>生成什么：</strong>自己出的题目和解答过程。</p>
+                </div>
+                <div class="example-box">
+                    <strong>我出的题：</strong>376 + 247 = ？<br><br>
+                    <strong>我的解答：</strong>
+                    <div class="formula-box">
+                        &nbsp;&nbsp;376<br>
+                        + 247<br>
+                        ------<br>
+                        &nbsp;&nbsp;623
+                    </div>
+                    <ul>
+                        <li>个位6加7等于13，写3进1</li>
+                        <li>十位7加4加1等于12，写2进1</li>
+                        <li>百位3加2加1等于6</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-header">
+                    <div class="step-number">7</div>
+                    <h3>回顾反思，总结要点</h3>
+                </div>
+                <div class="step-content">
+                    <p><strong>做什么：</strong>检查自己做的题，想一想有没有容易出错的地方。</p>
+                    <p><strong>怎么做：</strong>拿出自己出的题，和正确答案对比，看看有没有算错。如果有，回到第4步重新检查竖式。</p>
+                    <p><strong>生成什么：</strong>记录容易出错的地方和自己的提醒。</p>
+                </div>
+                <div class="warning-note">
+                    <strong>我发现的易错点：</strong>忘了加上进位的1。下次计算时，要用红笔把进位数字圈出来，提醒自己不要忘记。
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>六、支架工具推荐</h2>
+
+            <div class="tool-box">
+                <div class="tool-title">竖式计算模板：</div>
+                <div class="formula-box">
+                    &nbsp;&nbsp;□□□ ← 百位<br>
+                    + □□□ ← 百位<br>
+                    ------<br>
+                    &nbsp;&nbsp;□□□
+                </div>
+            </div>
+
+            <div class="tool-box">
+                <div class="tool-title">关键句式：</div>
+                <ul>
+                    <li>"个位相加等于<span class="highlight">__</span>，写<span class="highlight">__</span>进<span class="highlight">__</span>。"</li>
+                    <li>"十位相加等于<span class="highlight">__</span>，加上进位的<span class="highlight">__</span>，等于<span class="highlight">__</span>，写<span class="highlight">__</span>进<span class="highlight">__</span>。"</li>
+                    <li>"这一位满十了，要向前一位进一。"</li>
+                    <li>"检查一下：进位有没有算进去？"</li>
+                </ul>
+            </div>
+
+            <div class="tool-box">
+                <div class="tool-title">检查清单：</div>
+                <ul class="checklist">
+                    <li>数位是否对齐（个位对个位，十位对十位）</li>
+                    <li>从哪一位开始算的？（个位）</li>
+                    <li>每一位有没有满十需要进位？</li>
+                    <li>进位的数字有没有加到下一位？</li>
+                    <li>最终结果是否正确？</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>七、建构成果样例</h2>
+
+            <div class="example-box">
+                <h3>成果名称</h3>
+                <p><strong>我的竖式计算说明书</strong></p>
+
+                <h3>成果评价要求</h3>
+                <ul>
+                    <li>正确列出2道三位数加法的竖式</li>
+                    <li>每一步都有简短文字说明</li>
+                    <li>进位位置标注清楚</li>
+                    <li>整体整洁、有条理</li>
+                </ul>
+
+                <h3>推荐表达格式</h3>
+                <p><strong>格式一：图配文式</strong></p>
+                <ul>
+                    <li>左侧画竖式计算图</li>
+                    <li>右侧写关键步骤说明</li>
+                    <li>底部写"我的发现"和"易错提醒"</li>
+                </ul>
+                <p><strong>格式二：提纲式</strong></p>
+                <ul>
+                    <li>标题：竖式计算三步法</li>
+                    <li>第一步：列竖式，对齐数位</li>
+                    <li>第二步：从个位算起，满十进一</li>
+                    <li>第三步：检查进位，结果验算</li>
+                </ul>
+
+                <h3>完成建议</h3>
+                <ol>
+                    <li>先用铅笔轻轻列竖式，确认无误后用签字笔描深</li>
+                    <li>进位的"1"可以用红笔圈出来，更醒目</li>
+                    <li>如果字数不够，可以画小棒图辅助说明</li>
+                    <li>完成后朗读一遍给自己听，看看说不说得通</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>八、成果优化建议</h2>
+
+            <div class="task-spec">
+                <div class="task-item">
+                    <strong>对照检查：</strong>用计算器验证结果，如果算错了，回到竖式找到出错的那一步，用红笔改正。
+                </div>
+                <div class="task-item">
+                    <strong>补充说明：</strong>如果文字说明不够清楚，想想能不能用更简单的话说清楚。如果小棒图能帮助理解，可以画一个小棒图在旁边。
+                </div>
+                <div class="task-item">
+                    <strong>增加变式：</strong>在第一页成果后，附加一道你自己改编的题目，并写出完整的解答过程，作为巩固练习。
+                </div>
+                <div class="task-item">
+                    <strong>优化排版：</strong>如果版面太乱，可以用尺子画线，让竖式更整齐。也可以给成果加一个边框或标题，让它看起来更像一份正式的"说明书"。
+                </div>
+                <div class="task-item">
+                    <strong>同伴检验：</strong>把成果给同学看，请他挑一挑毛病——有没有哪一步看不懂？有没有哪个地方写错了？根据反馈修改。
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>九、自我评价量表</h2>
+
+            <p>完成建构后，请你自己评一评：</p>
+
+            <table class="rating-table">
+                <tr>
+                    <th>评价项目</th>
+                    <th>☆☆☆</th>
+                    <th>☆☆</th>
+                    <th>☆</th>
+                    <th>实际情况描述</th>
+                </tr>
+                <tr>
+                    <td>竖式计算正确性</td>
+                    <td>能正确计算3道及以上</td>
+                    <td>能正确计算2道</td>
+                    <td>只能计算1道或有错误</td>
+                    <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                </tr>
+                <tr>
+                    <td>进位标注清晰度</td>
+                    <td>进位位置和数值都标清楚</td>
+                    <td>大部分标清楚</td>
+                    <td>标注不清楚或遗漏</td>
+                    <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                </tr>
+                <tr>
+                    <td>步骤说明完整性</td>
+                    <td>每一步都有说明</td>
+                    <td>部分步骤有说明</td>
+                    <td>只有答案没有说明</td>
+                    <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                </tr>
+                <tr>
+                    <td>成果整洁程度</td>
+                    <td>整洁有序，版面美观</td>
+                    <td>基本整洁</td>
+                    <td>比较凌乱</td>
+                    <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                </tr>
+                <tr>
+                    <td>能用自己的话说清楚</td>
+                    <td>完全能独立讲解</td>
+                    <td>能模仿着说</td>
+                    <td>还说不清楚</td>
+                    <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                </tr>
+            </table>
+
+            <div class="warning-note">
+                <strong>总体评价：</strong>
+                <ul>
+                    <li>如果拿到4-5颗星，说明你建构得很成功，可以进入下一环节。</li>
+                    <li>如果只有2-3颗星，建议回到第4步，重新检查竖式，补充说明。</li>
+                    <li>如果只有0-1颗星，不要着急，可以先重新阅读课本例题，再来尝试。</li>
+                </ul>
+            </div>
+
+            <div class="reflection-box">
+                <p><strong>我的收获：</strong></p>
+                <p>（请用2-3句话写一写，今天学会了什么，有什么新发现）</p>
+                <br><br><br>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

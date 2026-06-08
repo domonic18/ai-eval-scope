@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>问题榜 - M2 学习新知的新价值与新使命</title>
+  <style>
+    :root {
+      --primary: #1677ff;
+      --primary-hover: #4096ff;
+      --accent: #69b1ff;
+      --bg: #f0f5ff;
+      --card-bg: #ffffff;
+      --text: rgba(0,0,0,0.88);
+      --text-secondary: rgba(0,0,0,0.45);
+      --border: #d9d9d9;
+      --border-radius: 8px;
+      --shadow: 0 2px 8px rgba(0,0,0,0.06);
+      --font-body: 18px;
+      --font-h1: 28px;
+      --font-h2: 22px;
+      --line-height: 1.8;
+    }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      font-size: var(--font-body);
+      line-height: var(--line-height);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .container {
+      width: 100%;
+      max-width: none;
+      padding: 40px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .header h1 {
+      font-size: var(--font-h1);
+      color: var(--primary);
+      margin-bottom: 12px;
+    }
+    .header .subtitle {
+      font-size: calc(var(--font-body) * 0.9);
+      color: var(--text-secondary);
+    }
+    .question-list {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .question-card {
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      padding: 24px 28px;
+      border-left: 4px solid var(--primary);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .question-card:hover {
+      transform: translateX(4px);
+      box-shadow: 0 4px 16px rgba(22,119,255,0.15);
+    }
+    .question-card .number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: var(--primary);
+      color: #fff;
+      border-radius: 50%;
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 12px;
+    }
+    .question-card .question-text {
+      font-size: var(--font-body);
+      color: var(--text);
+      line-height: var(--line-height);
+    }
+    .question-card .hint {
+      margin-top: 12px;
+      font-size: calc(var(--font-body) * 0.85);
+      color: var(--text-secondary);
+      padding-left: 12px;
+      border-left: 2px solid var(--accent);
+    }
+    .footer {
+      text-align: center;
+      margin-top: 48px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-size: calc(var(--font-body) * 0.85);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>问题榜</h1>
+      <p class="subtitle">M2 学习新知的新价值与新使命</p>
+    </div>
+    <div class="question-list">
+      <div class="question-card">
+        <div class="number">1</div>
+        <div class="question-text">为什么说学习新知识能够帮助我们更好地理解周围的世界？</div>
+        <div class="hint">提示：结合生活中的实例，思考知识与经验的关系。</div>
+      </div>
+      <div class="question-card">
+        <div class="number">2</div>
+        <div class="question-text">学习新知除了考试，还有哪些重要意义？</div>
+        <div class="hint">提示：从个人成长、社会参与等角度思考。</div>
+      </div>
+      <div class="question-card">
+        <div class="number">3</div>
+        <div class="question-text">当我们学习一门新课程时，应该如何调整自己的学习策略？</div>
+        <div class="hint">提示：考虑新旧知识的联系与区别。</div>
+      </div>
+      <div class="question-card">
+        <div class="number">4</div>
+        <div class="question-text">如果遇到完全陌生的知识领域，你会从哪里开始探索？</div>
+        <div class="hint">提示：思考信息获取的途径和资源利用的方法。</div>
+      </div>
+      <div class="question-card">
+        <div class="number">5</div>
+        <div class="question-text">学习新知识后，我们怎样判断自己是否真正掌握了它？</div>
+        <div class="hint">提示：考虑应用、讲解、迁移等检验方式。</div>
+      </div>
+      <div class="question-card">
+        <div class="number">6</div>
+        <div class="question-text">在信息时代，我们应该以怎样的态度面对不断出现的新知识？</div>
+        <div class="hint">提示：思考批判性思维与开放心态的平衡。</div>
+      </div>
+    </div>
+    <div class="footer">
+      <p>数学 · 三年级上册 · 脚手架</p>
+    </div>
+  </div>
+</body>
+</html>

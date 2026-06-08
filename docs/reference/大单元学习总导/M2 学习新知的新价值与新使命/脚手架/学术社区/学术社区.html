@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学术社区 - 三年级数学</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+            font-size: 16px;
+            line-height: 1.8;
+            color: #333;
+            background: linear-gradient(135deg, #e8f4fd 0%, #d6e9f8 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background: linear-gradient(135deg, #1565c0, #1976d2, #2196f3);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px rgba(21, 101, 192, 0.3);
+        }
+        header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+        header .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        .section h2 {
+            font-size: 22px;
+            color: #1565c0;
+            border-left: 4px solid #2196f3;
+            padding-left: 12px;
+            margin-bottom: 16px;
+        }
+        .section h3 {
+            font-size: 18px;
+            color: #1976d2;
+            margin: 16px 0 10px 0;
+        }
+        .section p {
+            margin-bottom: 12px;
+            color: #555;
+        }
+        .definition-box {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 4px solid #1565c0;
+            margin-bottom: 16px;
+        }
+        .connection-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, min-width(280px));
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .card {
+            background: linear-gradient(135deg, #f5f9fc, #e8f4fd);
+            border-radius: 8px;
+            padding: 16px;
+            border: 1px solid #d6e9f8;
+        }
+        .card h4 {
+            color: #1565c0;
+            font-size: 17px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card ul {
+            list-style: none;
+            padding-left: 8px;
+        }
+        .card li {
+            position: relative;
+            padding-left: 18px;
+            margin-bottom: 6px;
+            color: #555;
+        }
+        .card li::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 10px;
+            width: 6px;
+            height: 6px;
+            background: #2196f3;
+            border-radius: 50%;
+        }
+        .design-elements {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, min-width(280px));
+            gap: 16px;
+        }
+        .element-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 16px;
+        }
+        .element-item h4 {
+            color: #1565c0;
+            font-size: 17px;
+            margin-bottom: 10px;
+        }
+        .task-group {
+            background: #f5f9fc;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .task-group h4 {
+            color: #1565c0;
+            font-size: 17px;
+            margin-bottom: 12px;
+        }
+        .task-item {
+            background: white;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-left: 3px solid #2196f3;
+        }
+        .task-item h5 {
+            color: #1976d2;
+            font-size: 16px;
+            margin-bottom: 6px;
+        }
+        .task-item p {
+            font-size: 15px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        .task-item .output {
+            color: #1565c0;
+            font-weight: 600;
+        }
+        .discussion-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, min-width(280px));
+            gap: 16px;
+        }
+        .discussion-level {
+            background: linear-gradient(135deg, #e8f4fd, #d6e9f8);
+            border-radius: 8px;
+            padding: 16px;
+        }
+        .discussion-level h4 {
+            color: #1565c0;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        .discussion-level ul {
+            list-style: none;
+        }
+        .discussion-level li {
+            padding: 6px 0 6px 20px;
+            position: relative;
+            color: #555;
+        }
+        .discussion-level li::before {
+            content: "?";
+            position: absolute;
+            left: 0;
+            color: #2196f3;
+            font-weight: bold;
+        }
+        .role-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+            font-size: 15px;
+        }
+        .role-table th {
+            background: linear-gradient(135deg, #1565c0, #1976d2);
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        .role-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .role-table tr:nth-child(even) {
+            background: #f5f9fc;
+        }
+        .role-table tr:hover {
+            background: #e3f2fd;
+        }
+        .output-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, min-width(260px));
+            gap: 16px;
+        }
+        .output-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 16px;
+        }
+        .output-item h4 {
+            color: #1565c0;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        .output-item ul {
+            list-style: none;
+        }
+        .output-item li {
+            padding: 4px 0 4px 18px;
+            position: relative;
+            color: #555;
+        }
+        .output-item li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .support-section {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .question-card {
+            background: white;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .question-number {
+            background: #2196f3;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        .resource-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, min-width(200px));
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .resource-item {
+            background: white;
+            border-radius: 6px;
+            padding: 12px;
+            text-align: center;
+            color: #1565c0;
+            border: 1px solid #d6e9f8;
+        }
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 24px;
+            }
+            .section h2 {
+                font-size: 20px;
+            }
+            .role-table {
+                font-size: 14px;
+            }
+            .role-table th, .role-table td {
+                padding: 8px;
+            }
+        }
+        @media (max-width: 480px) {
+            body {
+                font-size: 15px;
+            }
+            .container {
+                padding: 12px;
+            }
+            header {
+                padding: 20px 16px;
+            }
+            header h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>学术社区</h1>
+            <p class="subtitle">构建学习共同体 · 实现认知社会化建构</p>
+        </header>
+
+        <div class="section">
+            <h2>什么是学术社区？</h2>
+            <div class="definition-box">
+                <p><strong>定义：</strong>构建"学习共同体"，实现认知的社会化建构。</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>设计标准：三类连接</h2>
+            <div class="connection-cards">
+                <div class="card">
+                    <h4>同伴连接</h4>
+                    <ul>
+                        <li>组织小组讨论活动，促进观点碰撞与思维深化</li>
+                        <li>设计协作学习任务，培养团队合作能力</li>
+                        <li>建立同伴互评机制，支持同伴间的支持与反馈</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>家校连接</h4>
+                    <ul>
+                        <li>创设家长参与渠道，实现家庭与学校的协同支持</li>
+                        <li>设计亲子学习任务，促进家庭学习氛围</li>
+                        <li>建立家长反馈通道，及时了解学生在校学习情况</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>社会连接</h4>
+                    <ul>
+                        <li>引入真实社会情境，建立知识与生活的联结</li>
+                        <li>邀请行业专家或机构人员，分享真实经验和见解</li>
+                        <li>开展社会实践项目，增强学习的意义感和价值感</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>必须设计要素</h2>
+            <div class="design-elements">
+                <div class="element-item">
+                    <h4>讨论议题（结构化）</h4>
+                    <ul>
+                        <li>设计层层递进的讨论问题，引导深度思考</li>
+                        <li>提供讨论支架和思考提示，支持不同水平学生参与</li>
+                        <li>设置开放性与封闭性相结合的问题，兼顾基础与拓展</li>
+                    </ul>
+                </div>
+                <div class="element-item">
+                    <h4>角色分工</h4>
+                    <ul>
+                        <li>明确小组内各成员职责，实现分工协作</li>
+                        <li>设置多样化角色：组织者、记录员、汇报员、质疑者等</li>
+                        <li>定期轮换角色，培养多元能力</li>
+                    </ul>
+                </div>
+                <div class="element-item">
+                    <h4>输出机制（展示/分享）</h4>
+                    <ul>
+                        <li>设计多样化的成果展示形式：口头汇报、海报展示、实物演示等</li>
+                        <li>建立组间交流与互评平台，促进相互学习</li>
+                        <li>创设向真实观众展示的机会，增强成就动机</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>万以内加减法（二）学习社区设计</h2>
+
+            <div class="task-group">
+                <h4>同伴协作任务</h4>
+                <div class="task-item">
+                    <h5>计算策略分享会</h5>
+                    <p><strong>主题：</strong>你是怎么计算这道题的？</p>
+                    <p><strong>形式：</strong>小组内轮流分享自己的计算方法</p>
+                    <p class="output">产出：整理组内最简捷的计算方法</p>
+                </div>
+                <div class="task-item">
+                    <h5>错题诊所</h5>
+                    <p><strong>主题：</strong>这些题目为什么容易出错？</p>
+                    <p><strong>形式：</strong>组内互助分析错误原因，互相出题检验</p>
+                    <p class="output">产出：形成"常见错误警示卡"</p>
+                </div>
+                <div class="task-item">
+                    <h5>数学日记交流</h5>
+                    <p><strong>主题：</strong>我在生活中发现的数学问题</p>
+                    <p><strong>形式：</strong>组内传阅交流，分享生活中的数学应用实例</p>
+                    <p class="output">产出：汇编"生活中的加减法"数学日记集</p>
+                </div>
+            </div>
+
+            <div class="task-group">
+                <h4>家校联动任务</h4>
+                <div class="task-item">
+                    <h5>亲子计算挑战</h5>
+                    <p><strong>任务：</strong>和家长一起完成"家庭购物账单"计算任务</p>
+                    <p class="output">目标：体验加减法在日常生活中的实际应用</p>
+                </div>
+                <div class="task-item">
+                    <h5>家庭数学故事</h5>
+                    <p><strong>任务：</strong>采访家人，了解他们在工作中如何使用计算</p>
+                    <p class="output">产出：记录并分享"家人的计算故事"</p>
+                </div>
+            </div>
+
+            <div class="task-group">
+                <h4>社会拓展任务</h4>
+                <div class="task-item">
+                    <h5>小小记账员</h5>
+                    <p><strong>任务：</strong>调查超市购物中的数学应用</p>
+                    <p><strong>形式：</strong>记录一次购物经历，计算总价、找零等</p>
+                    <p class="output">产出：数学实践报告</p>
+                </div>
+                <div class="task-item">
+                    <h5>行业专家分享</h5>
+                    <p><strong>形式：</strong>邀请会计、店员等职业人员线上分享工作中如何用到计算</p>
+                    <p class="output">目标：拓展学生对运算能力社会价值的认识</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>结构化讨论议题</h2>
+            <div class="discussion-section">
+                <div class="discussion-level">
+                    <h4>基础讨论</h4>
+                    <ul>
+                        <li>我们已经学过哪些加减法？</li>
+                        <li>万以内的数和以前学的数有什么联系？</li>
+                    </ul>
+                </div>
+                <div class="discussion-level">
+                    <h4>进阶讨论</h4>
+                    <ul>
+                        <li>为什么要学习万以内的加减法？</li>
+                        <li>生活中哪些地方需要用到万以内的加减法？</li>
+                    </ul>
+                </div>
+                <div class="discussion-level">
+                    <h4>挑战讨论</h4>
+                    <ul>
+                        <li>如果没有计算工具，你会怎么计算？</li>
+                        <li>古代人是怎么计算的？和现在有什么不同？</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>角色分工建议</h2>
+            <table class="role-table">
+                <thead>
+                    <tr>
+                        <th>角色</th>
+                        <th>职责</th>
+                        <th>培养能力</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>组织者</strong></td>
+                        <td>协调讨论进程，调控发言顺序</td>
+                        <td>组织协调能力</td>
+                    </tr>
+                    <tr>
+                        <td><strong>记录员</strong></td>
+                        <td>记录组内讨论要点和成果</td>
+                        <td>倾听与记录能力</td>
+                    </tr>
+                    <tr>
+                        <td><strong>汇报员</strong></td>
+                        <td>代表小组进行全班汇报展示</td>
+                        <td>表达能力</td>
+                    </tr>
+                    <tr>
+                        <td><strong>质疑者</strong></td>
+                        <td>提出不同观点和疑问</td>
+                        <td>批判性思维</td>
+                    </tr>
+                    <tr>
+                        <td><strong>计时员</strong></td>
+                        <td>控制讨论时间，提示进度</td>
+                        <td>时间管理能力</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>输出与展示</h2>
+            <div class="output-section">
+                <div class="output-item">
+                    <h4>组内成果</h4>
+                    <ul>
+                        <li>计算方法汇总表</li>
+                        <li>常见错误警示卡</li>
+                        <li>数学日记集</li>
+                    </ul>
+                </div>
+                <div class="output-item">
+                    <h4>班级展示</h4>
+                    <ul>
+                        <li>计算策略分享会</li>
+                        <li>优秀数学日记展览</li>
+                        <li>亲子学习成果展</li>
+                    </ul>
+                </div>
+                <div class="output-item">
+                    <h4>评价机制</h4>
+                    <ul>
+                        <li>同伴互评：合作态度、参与积极性</li>
+                        <li>自我反思：学习收获与困惑</li>
+                        <li>教师评价：参与质量与成长幅度</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>学习支持</h2>
+            <div class="support-section">
+                <h3>问题提示卡</h3>
+                <div class="question-card">
+                    <span class="question-number">1</span>
+                    <span>在小组讨论时，你的主要贡献是什么？</span>
+                </div>
+                <div class="question-card">
+                    <span class="question-number">2</span>
+                    <span>听了别人的方法后，你有什么新想法？</span>
+                </div>
+                <div class="question-card">
+                    <span class="question-number">3</span>
+                    <span>你发现在生活中还有哪些地方可以用到今天学的知识？</span>
+                </div>
+                <div class="question-card">
+                    <span class="question-number">4</span>
+                    <span>如果遇到困难，你会向谁求助？为什么？</span>
+                </div>
+
+                <h3>资源链接</h3>
+                <div class="resource-links">
+                    <div class="resource-item">小组合作评价量规（校内资源库）</div>
+                    <div class="resource-item">数学日记模板（校内资源库）</div>
+                    <div class="resource-item">讨论记录表（校内资源库）</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名著介绍 - 数学经典阅读</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; font-size: 16px; line-height: 1.8; background: linear-gradient(135deg, #e8f5f5 0%, #f0fafa100%); min-height: 100vh; padding: 20px; color: #2c3e50; }
+.container { max-width: 900px; margin: 0 auto; background: #ffffff; border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 150, 150, 0.12); overflow: hidden; }
+.header { background: linear-gradient(135deg, #08979c 0%, #006d6d 100%); color: white; padding: 28px 24px; text-align: center; }
+.header h1 { font-size: 24px; font-weight: 600; letter-spacing: 2px; }
+.header p { font-size: 14px; opacity: 0.9; margin-top: 8px; }
+.section { padding: 24px; border-bottom: 1px solid #e0f5f5; }
+.section:last-child { border-bottom: none; }
+.section-title { font-size: 18px; color: #08979c; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.section-title::before { content: ""; width: 4px; height: 20px; background: linear-gradient(180deg, #08979c, #006d6d); border-radius: 2px; }
+.card { background: #f8fafa; border-radius: 12px; padding: 20px; margin-bottom: 16px; border-left: 4px solid #08979c; }
+.card h3 { font-size: 17px; color: #006d6d; margin-bottom: 10px; }
+.card p { font-size: 15px; color: #4a5568; }
+.quote { background: linear-gradient(135deg, #e6f7f70%, #d1f0f0 100%); border-radius: 10px; padding: 16px 20px; margin: 12px 0; position: relative; }
+.quote-text { font-size: 16px; color: #006d6d; font-style: italic; font-weight: 500; }
+.quote-author { font-size: 14px; color: #08979c; text-align: right; margin-top: 8px; }
+.quote-note { font-size: 13px; color: #666; margin-top: 4px; }
+.book-card { background: #fff; border: 1px solid #b2dfdb; border-radius: 12px; padding: 18px; margin-bottom: 14px; transition: transform 0.2s, box-shadow 0.2s; }
+.book-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(8, 151, 156, 0.15); }
+.book-title { font-size: 17px; color: #006d6d; font-weight: 600; margin-bottom: 8px; }
+.book-info { font-size: 14px; color: #666; margin: 4px 0; }
+.book-info span { color: #08979c; font-weight: 500; }
+.book-level { font-size: 13px; margin-top: 8px; }
+.star { color: #ff9800; }
+.star-empty { color: #ddd; }
+.method-step { display: flex; align-items: flex-start; gap: 12px; margin: 12px 0; }
+.step-num { width: 28px; height: 28px; background: linear-gradient(135deg, #08979c, #006d6d); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; flex-shrink: 0; }
+.step-content { font-size: 15px; color: #4a5568; flex: 1; }
+.level-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; margin-right: 8px; }
+.level-基础 { background: #b2dfdb; color: #006d6d; }
+.level-进阶 { background: #80cbc4; color: #004d40; }
+.level-挑战 { background: #006d6d; color: white; }
+@media (max-width: 600px) { body { padding: 10px; font-size: 15px; } .header h1 { font-size: 20px; } .section { padding: 16px; } .card { padding: 14px; } }
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<h1>📚 名著介绍</h1>
+<p>数学不只是算数字，更是锻炼思考问题的方式</p>
+</div>
+
+<div class="section">
+<div class="section-title">我要学什么</div>
+<div class="card">
+<p>数学不只是算数字，更是锻炼思考问题的方式。读名著就像和聪明人聊天，能帮我们打开思路，学会用不同角度看待数学问题。</p>
+</div>
+</div>
+
+<div class="section">
+<div class="section-title">名言引入</div>
+<div class="quote">
+<div class="quote-text">数学是无穷的科学。</div>
+<div class="quote-author">—— 希尔伯特</div>
+<div class="quote-note">数学的世界很大，每一次学习都是探索新大陆的开始</div>
+</div>
+<div class="quote">
+<div class="quote-text">数学是科学的语言。</div>
+<div class="quote-author">—— 伽利略</div>
+<div class="quote-note">学数学就像学一门世界通用语言，能读懂自然的奥秘</div>
+</div>
+<div class="quote">
+<div class="quote-text">我解决的问题是数学问题，但我的方法是哲学的。</div>
+<div class="quote-author">—— 笛卡尔</div>
+<div class="quote-note">换个角度想问题，可能就会找到答案</div>
+</div>
+</div>
+
+<div class="section">
+<div class="section-title">名著推荐</div>
+
+<div class="book-card">
+<div class="book-title">📚 《原来数学可以这样学》</div>
+<div class="book-info"><span>核心问题：</span>数学和生活有什么关系？</div>
+<div class="book-info"><span>目录：</span>数的起源 / 形状的故事 / 生活中的数学</div>
+<div class="book-info"><span>观点：</span>数学不是死的公式，而是活生生藏在生活里的智慧。</div>
+<div class="book-info"><span>片段：</span>"买东西找零钱，就是最早的数学应用。"</div>
+<div class="book-level">
+<span class="level-badge level-基础">基础✨✨</span>
+<span class="level-badge level-进阶">进阶 ✨✨✨</span>
+<span class="level-badge level-挑战">挑战 ✨</span>
+</div>
+<div class="book-info"><span>获取：</span>纸质版（儿童数学启蒙系列）</div>
+</div>
+
+<div class="book-card">
+<div class="book-title">📖 《几何原本》</div>
+<div class="book-info"><span>核心问题：</span>图形背后的规律是什么？</div>
+<div class="book-info"><span>目录：</span>基础定义 / 公理系统 / 证明方法</div>
+<div class="book-info"><span>观点：</span>复杂的图形世界，源于几个简单公理的推演。</div>
+<div class="book-info"><span>片段：</span>"两点之间，直线最短——这是几何的起点。"</div>
+<div class="book-level">
+<span class="level-badge level-基础">基础 ✨</span>
+<span class="level-badge level-进阶">进阶 ✨✨</span>
+<span class="level-badge level-挑战">挑战 ✨✨✨</span>
+</div>
+<div class="book-info"><span>获取：</span>电子书（青少年注释版）/ 有声书</div>
+</div>
+
+<div class="book-card">
+<div class="book-title">🌍 《数学与生活》</div>
+<div class="book-info"><span>核心问题：</span>数学怎样帮我们理解世界？</div>
+<div class="book-info"><span>目录：</span>自然中的数学 / 建筑里的秘密 / 艺术与数字</div>
+<div class="book-info"><span>观点：</span>数学是连接万物的隐形桥梁。</div>
+<div class="book-info"><span>片段：</span>"蜂巢为什么是六边形？因为这样最节省材料。"</div>
+<div class="book-level">
+<span class="level-badge level-基础">基础 ✨✨</span>
+<span class="level-badge level-进阶">进阶 ✨✨</span>
+<span class="level-badge level-挑战">挑战 ✨✨✨</span>
+</div>
+<div class="book-info"><span>获取：</span>纸质版 / 儿童科普视频解读</div>
+</div>
+</div>
+
+<div class="section">
+<div class="section-title">使用方法</div>
+<div class="method-step">
+<div class="step-num">1</div>
+<div class="step-content">先读名言，思考数学对你意味着什么</div>
+</div>
+<div class="method-step">
+<div class="step-num">2</div>
+<div class="step-content">选一本感兴趣的名著开始阅读</div>
+</div>
+<div class="method-step">
+<div class="step-num">3</div>
+<div class="step-content">把书里的故事和数学课学的内容联系起来</div>
+</div>
+<div class="method-step">
+<div class="step-num">4</div>
+<div class="step-content">试着用书里的方法去解决数学问题</div>
+</div>
+</div>
+
+<div class="section">
+<div class="section-title">三个层次</div>
+<div class="card">
+<h3>🌱 基础</h3>
+<p>读完一本，了解数学的有趣之处</p>
+</div>
+<div class="card">
+<h3>🌿 进阶</h3>
+<p>把名著里的方法和课堂知识结合</p>
+</div>
+<div class="card">
+<h3>🌳 挑战</h3>
+<p>讲给同学听，让更多人感受数学魅力</p>
+</div>
+</div>
+
+</div>
+</body>
+</html>

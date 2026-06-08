@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VR体验脚手架 - 数学VR学习</title>
+    <style>
+        :root {
+            --primary: #1677ff;
+            --primary-hover: #4096ff;
+            --accent: #69b1ff;
+            --bg: #f0f5ff;
+            --card-bg: #ffffff;
+            --font-body: 18px;
+            --font-h1: 28px;
+            --font-h2: 22px;
+            --line-height: 1.8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            font-size: var(--font-body);
+            line-height: var(--line-height);
+            background: var(--bg);
+            color: #333;
+            min-height: 100vh;
+        }
+
+        /* VR主题背景动画 */
+        .vr-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .vr-bg::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 20% 80%, rgba(22, 119, 255, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, rgba(105, 177, 255, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 50% 50%, rgba(22, 119, 255, 0.05) 0%, transparent 70%);
+            animation: vrFloat 20s ease-in-out infinite;
+        }
+
+        @keyframes vrFloat {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(-5%, -5%) rotate(5deg); }
+        }
+
+        /* 3D立方体装饰 */
+        .cube-decoration {
+            position: fixed;
+            width: 60px;
+            height: 60px;
+            z-index: -1;
+            opacity: 0.15;
+        }
+
+        .cube-decoration:nth-child(1) {
+            top: 10%;
+            left: 5%;
+            animation: cubeRotate 8s ease-in-out infinite;
+        }
+
+        .cube-decoration:nth-child(2) {
+            top: 60%;
+            right: 8%;
+            animation: cubeRotate 10s ease-in-out infinite reverse;
+        }
+
+        .cube-decoration:nth-child(3) {
+            bottom: 15%;
+            left: 10%;
+            animation: cubeRotate 12s ease-in-out infinite;
+        }
+
+        @keyframes cubeRotate {
+            0%, 100% { transform: rotateX(0deg) rotateY(0deg); }
+            50% { transform: rotateX(180deg) rotateY(180deg); }
+        }
+
+        /* 页面容器 */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        /* 页头 */
+        .page-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .vr-icon {
+            display: inline-block;
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            border-radius: 20px;
+            margin-bottom: 20px;
+            position: relative;
+            animation: vrPulse 2s ease-in-out infinite;
+            box-shadow: 0 10px 30px rgba(22, 119, 255, 0.3);
+        }
+
+        .vr-icon::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px;
+            height: 30px;
+            background: #fff;
+            border-radius: 8px;
+            border: 4px solid var(--primary);
+        }
+
+        .vr-icon::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%);
+            border-radius: 50%;
+        }
+
+        @keyframes vrPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        h1 {
+            font-size: var(--font-h1);
+            color: var(--primary);
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 16px;
+        }
+
+        /* 内容卡片 */
+        .content-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 20px rgba(22, 119, 255, 0.1);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .content-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(22, 119, 255, 0.15);
+        }
+
+        .content-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 6px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--primary) 0%, var(--accent) 100%);
+        }
+
+        /* 介绍卡片 */
+        .intro-card {
+            background: linear-gradient(135deg, var(--primary) 0%, #2b7fff 100%);
+            color: #fff;
+            text-align: center;
+        }
+
+        .intro-card::before {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .intro-card p {
+            font-size: 20px;
+            line-height: 2;
+        }
+
+        /* 标题样式 */
+        h2 {
+            font-size: var(--font-h2);
+            color: var(--primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        h2 .icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 20px;
+        }
+
+        h3 {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 15px;
+            padding-left: 15px;
+            border-left: 4px solid var(--primary);
+        }
+
+        /* 任务卡片网格 */
+        .task-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .task-card {
+            background: var(--bg);
+            border-radius: 16px;
+            padding: 25px;
+            border: 2px solid var(--accent);
+            transition: all 0.3s ease;
+        }
+
+        .task-card:hover {
+            border-color: var(--primary);
+            transform: scale(1.02);
+        }
+
+        .task-card .task-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--primary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+
+        .task-card h4 {
+            font-size: 18px;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .task-card p {
+            color: #666;
+            font-size: 16px;
+            line-height: 1.8;
+        }
+
+        /* 资源卡片 */
+        .resource-card {
+            background: var(--bg);
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 15px;
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .resource-card:hover {
+            border-color: var(--accent);
+        }
+
+        .resource-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+
+        .resource-content h4 {
+            font-size: 18px;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .resource-content p {
+            color: #666;
+            font-size: 16px;
+        }
+
+        /* 挑战卡片 */
+        .challenge-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .challenge-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .challenge-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 25px;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .challenge-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+        }
+
+        .challenge-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-5px);
+        }
+
+        .challenge-card.level-1 {
+            background: linear-gradient(180deg, #e6f4ff 0%, var(--card-bg) 100%);
+        }
+
+        .challenge-card.level-2 {
+            background: linear-gradient(180deg, #fff7e6 0%, var(--card-bg) 100%);
+        }
+
+        .challenge-card.level-3 {
+            background: linear-gradient(180deg, #fff1f0 0%, var(--card-bg) 100%);
+        }
+
+        .challenge-level {
+            display: inline-block;
+            padding: 6px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .level-1 .challenge-level {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .level-2 .challenge-level {
+            background: #fa8c16;
+            color: #fff;
+        }
+
+        .level-3 .challenge-level {
+            background: #ff4d4f;
+            color: #fff;
+        }
+
+        .challenge-card h4 {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 12px;
+        }
+
+        .challenge-card p {
+            color: #666;
+            font-size: 15px;
+            line-height: 1.8;
+        }
+
+        /* VR场景装饰 */
+        .vr-scene {
+            position: relative;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 16px;
+            padding: 30px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        .vr-scene::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%231677ff' fill-opacity='0.1'%3E%3Cpath d='M30 30l15-15v30L30 30z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            animation: vrScan 3s linear infinite;
+        }
+
+        @keyframes vrScan {
+            0% { transform: translateX(-60px); }
+            100% { transform: translateX(0); }
+        }
+
+        .vr-scene-content {
+            position: relative;
+            z-index: 1;
+            color: #fff;
+        }
+
+        .vr-scene-content h4 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: var(--accent);
+        }
+
+        .vr-scene-content p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 16px;
+        }
+
+        /* 页脚 */
+        .page-footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #999;
+            font-size: 14px;
+        }
+
+        /* 动画入场 */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .fade-in:nth-child(1) { animation-delay: 0.1s; }
+        .fade-in:nth-child(2) { animation-delay: 0.2s; }
+        .fade-in:nth-child(3) { animation-delay: 0.3s; }
+        .fade-in:nth-child(4) { animation-delay: 0.4s; }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 响应式 */
+        @media (max-width: 600px) {
+            h1 { font-size: 24px; }
+            h2 { font-size: 20px; }
+            .content-card { padding: 20px; }
+            .task-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+   <div class="vr-bg"></div>
+    
+    <!-- 3D立方体装饰 -->
+    <div class="cube-decoration">
+        <svg viewBox="0 0 100 100" width="60" height="60">
+            <polygon points="50,10 90,30 90,70 50,9010,70 10,30" fill="none" stroke="#1677ff" stroke-width="2"/>
+            <line x1="50" y1="10" x2="50" y2="90" stroke="#1677ff" stroke-width="1"/>
+            <line x1="10" y1="30" x2="90" y2="30" stroke="#1677ff" stroke-width="1"/>
+            <line x1="10" y1="70" x2="90" y2="70" stroke="#1677ff" stroke-width="1"/>
+        </svg>
+    </div>
+    <div class="cube-decoration">
+        <svg viewBox="0 0 100 100" width="60" height="60">
+            <polygon points="50,10 90,30 90,70 50,90 10,70 10,30" fill="none" stroke="#1677ff" stroke-width="2"/>
+            <line x1="50" y1="10" x2="50" y2="90" stroke="#1677ff" stroke-width="1"/>
+            <line x1="10" y1="30" x2="90" y2="30" stroke="#1677ff" stroke-width="1"/>
+            <line x1="10" y1="70" x2="90" y2="70" stroke="#1677ff" stroke-width="1"/>
+        </svg>
+    </div>
+    <div class="cube-decoration">
+        <svg viewBox="0 0 100 100" width="60" height="60">
+            <polygon points="50,10 90,30 90,70 50,90 10,70 10,30" fill="none" stroke="#1677ff" stroke-width="2"/>
+            <line x1="50" y1="10" x2="50" y2="90" stroke="#1677ff" stroke-width="1"/>
+            <line x1="10" y1="30" x2="90" y2="30" stroke="#1677ff" stroke-width="1"/>
+            <line x1="10" y1="70" x2="90" y2="70" stroke="#1677ff" stroke-width="1"/>
+        </svg>
+    </div>
+
+    <div class="container">
+        <!-- 页头 -->
+        <header class="page-header fade-in">
+            <div class="vr-icon"></div>
+            <h1>VR体验脚手架</h1>
+            <p class="subtitle">戴上神奇的眼镜，走进数学的3D世界</p>
+        </header>
+
+        <!-- 我来做什么 -->
+        <section class="content-card intro-card fade-in">
+            <h2>
+                <span class="icon">🎯</span>
+                我来做什么
+            </h2>
+            <p>通过虚拟现实技术，把数学知识变成可以"走进去看"的场景。像戴上一副神奇的眼镜，就能进入数学的世界里亲眼看、亲手摸、亲身感受。</p>
+        </section>
+
+        <!-- 我能做什么 -->
+        <section class="content-card fade-in">
+            <h2>
+                <span class="icon">💪</span>
+                我能做什么
+            </h2>
+            
+            <div class="task-grid">
+                <!-- 观察任务 -->
+                <div class="task-card">
+                    <div class="task-icon">👀</div>
+                    <h4>观察任务</h4>
+                    <p>走进VR数学世界，仔细观察各种数学现象。比如"走进分数城堡"，看看一半的蛋糕和四分之一的蛋糕到底差多少。观察图形翻转、旋转时发生了什么变化。</p>
+                </div>
+
+                <!-- 操作任务 -->
+                <div class="task-card">
+                    <div class="task-icon">🖐️</div>
+                    <h4>操作任务</h4>
+                    <p>在虚拟世界里动手操作数学。把立方体堆起来看体积变化，拉伸橡皮筋感受周长和半径的关系，点击按钮让数字变大变小。动手试试看，答案就藏在操作里。</p>
+                </div>
+
+                <!-- 记录任务 -->
+                <div class="task-card">
+                    <div class="task-icon">✏️</div>
+                    <h4>记录任务</h4>
+                    <p>用VR内置的截图和笔记功能，把看到的精彩瞬间记录下来。也可以用画笔功能把发现的规律画出来，和同学们分享。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 我有什么资源 -->
+        <section class="content-card fade-in">
+            <h2>
+                <span class="icon">🎒</span>
+                我有什么资源
+            </h2>
+
+            <div class="resource-card">
+                <div class="resource-icon">🥽</div>
+                <div class="resource-content">
+                    <h4>VR专区</h4>
+                    <p>学校VR教室里有专门的学习软件，戴上头盔就能进入数学3D世界。里面有各种数学场景，从简单的数数到复杂的几何图形。</p>
+                </div>
+            </div>
+
+            <div class="resource-card">
+                <div class="resource-icon">📱</div>
+                <div class="resource-content">
+                    <h4>替代方案</h4>
+                    <p>没有VR设备也没关系！可以用手机加纸盒做的简易VR眼镜，或者直接看老师准备的3D动画和视频。一样能感受数学的神奇。</p>
+                </div>
+            </div>
+
+            <!-- VR场景展示 -->
+            <div class="vr-scene">
+                <div class="vr-scene-content">
+                    <h4>🌟 VR数学世界预览</h4>
+                    <p>分数城堡 | 几何图形 | 数字乐园 | 测量实验室</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 三级挑战 -->
+        <section class="content-card fade-in">
+            <h2>
+                <span class="icon">🏆</span>
+                三级挑战
+            </h2>
+
+            <div class="challenge-cards">
+                <!-- 基础 -->
+                <div class="challenge-card level-1">
+                    <span class="challenge-level">基础</span>
+                    <h4>初探VR</h4>
+                    <p>跟着引导进入VR场景，看一看基本的数学演示，知道数学不只是纸上的数字。</p>
+                </div>
+
+                <!-- 进阶 -->
+                <div class="challenge-card level-2">
+                    <span class="challenge-level">进阶</span>
+                    <h4>探索发现</h4>
+                    <p>自己探索VR场景，主动发现数学规律，把看到的和学到的联系起来。</p>
+                </div>
+
+                <!-- 挑战 -->
+                <div class="challenge-card level-3">
+                    <span class="challenge-level">挑战</span>
+                    <h4>设计创造</h4>
+                    <p>设计自己的VR数学场景，提出问题让同学们一起在虚拟世界里寻找答案。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 页脚 -->
+        <footer class="page-footer">
+            <p>VR体验脚手架 | 数学三年级上册</p>
+        </footer>
+    </div>
+
+    <script>
+        // 入场动画触发
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.fade-in');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.15}s`;
+            });
+
+            // 任务卡片点击效果
+            const taskCards = document.querySelectorAll('.task-card');
+            taskCards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.boxShadow = '0 10px 30px rgba(22, 119, 255, 0.2)';
+                });
+                card.addEventListener('mouseleave', function() {
+                    this.style.boxShadow = 'none';
+                });
+            });
+
+            // 挑战卡片点击效果
+            const challengeCards = document.querySelectorAll('.challenge-card');
+            challengeCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    this.style.transform = 'scale(0.98)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 150);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

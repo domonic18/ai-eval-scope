@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>模块五维导学 - M2学习新知的新价值与新使命</title>
+<style>
+:root{
+--primary:#1677ff;--primary-hover:#4096ff;--accent:#69b1ff;--bg:#f0f5ff;--card-bg:#ffffff;
+--font-body:18px;--font-h1:28px;--font-h2:22px;--line-height:1.8;
+--cog:#ff6b6b;--emo:#ffd93d;--soc:#6bcb77;--ach:#4d96ff;--val:#9d4edd;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;min-height:100vh;font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:#333;line-height:var(--line-height);font-size:var(--font-body)}
+.container{max-width:1200px;margin:0 auto;padding:20px}
+
+/* Header */
+.module-header{text-align:center;padding:30px 20px;background:linear-gradient(135deg,var(--primary),var(--accent));border-radius:16px;margin-bottom:24px;position:relative;overflow:hidden}
+.module-header::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle,rgba(255,255,255,0.1) 0%,transparent 60%);animation:headerPulse 4s ease-in-out infinite}
+.module-header h1{font-size:var(--font-h1);color:#fff;position:relative;z-index:1;text-shadow:0 2px 4px rgba(0,0,0,0.1)}
+.module-header p{color:rgba(255,255,255,0.9);margin-top:8px;position:relative;z-index:1}
+@keyframes headerPulse{0%,100%{transform:scale(1);opacity:0.5}50%{transform:scale(1.05);opacity:0.8}}
+
+/* Chat Interface Background */
+.chat-bg{background:var(--card-bg);border-radius:16px;padding:20px;margin-bottom:20px;box-shadow:0 4px 20px rgba(22,119,255,0.08);position:relative;min-height:200px}
+.chat-bg::before{content:'💬 智能导师';position:absolute;top:12px;left:20px;font-size:12px;color:var(--accent);font-weight:bold}
+.chat-messages{padding-top:30px;display:flex;flex-direction:column;gap:12px}
+.msg{display:flex;gap:10px;animation:msgSlide 0.3s ease}
+.msg.ai{flex-direction:row}
+.msg.user{flex-direction:row-reverse}
+.msg-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.msg.ai .msg-avatar{background:var(--accent);color:#fff}
+.msg.user .msg-avatar{background:var(--primary);color:#fff}
+.msg-content{max-width:70%;padding:12px 16px;border-radius:16px;position:relative}
+.msg.ai .msg-content{background:var(--bg);border-bottom-left-radius:4px}
+.msg.user .msg-content{background:var(--primary);color:#fff;border-bottom-right-radius:4px}
+@keyframes msgSlide{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* Curiosity Gap Card */
+.curiosity-card{background:linear-gradient(135deg,#fff9e6,#fff);border:2px solid #ffd93d;border-radius:16px;padding:20px;margin:16px 0;cursor:pointer;transition:all 0.3s;position:relative;overflow:hidden}
+.curiosity-card::before{content:'🌟';position:absolute;top:10px;right:10px;font-size:24px;animation:starSpin 2s linear infinite}
+.curiosity-card.hidden .curiosity-answer{display:none}
+.curiosity-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,217,61,0.3)}
+.curiosity-question{font-size:var(--font-h2);color:#b8860b;font-weight:bold;margin-bottom:8px}
+.curiosity-answer{margin-top:12px;padding-top:12px;border-top:1px dashed #ffd93d;color:#666;font-size:16px}
+@keyframes starSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+/* 5D Dashboard */
+.dashboard-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);display:none;z-index:1000;justify-content:center;align-items:center;backdrop-filter:blur(4px)}
+.dashboard-overlay.active{display:flex}
+.dashboard-panel{width:95%;max-width:900px;max-height:90vh;background:var(--card-bg);border-radius:24px;padding:30px;position:relative;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);animation:panelSlide 0.4s ease}
+@keyframes panelSlide{from{opacity:0;transform:scale(0.9) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.dashboard-close{position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:50%;background:var(--bg);border:none;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.dashboard-close:hover{background:var(--primary);color:#fff}
+.dashboard-title{font-size:var(--font-h1);color:var(--primary);text-align:center;margin-bottom:24px}
+.dashboard-subtitle{text-align:center;color:#666;margin-bottom:30px;font-size:16px}
+
+/* 5 Dimension Rings */
+.dimensions-container{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:30px}
+@media(max-width:600px){.dimensions-container{grid-template-columns:1fr}}
+.dim-ring{position:relative;width:100%;aspect-ratio:1;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.dim-ring-outer{position:absolute;width:100%;height:100%;border-radius:50%;border:4px solid var(--dim-color);opacity:0.3;transition:all 0.4s;animation:pulseRing 2s ease-in-out infinite}
+.dim-ring:hover .dim-ring-outer,.dim-ring.active .dim-ring-outer{opacity:1;box-shadow:0 0 30px var(--dim-color)}
+.dim-ring.active .dim-ring-outer{animation:none}
+.dim-ring.warning .dim-ring-outer{border-color:#ff4444;animation:warningPulse 0.5s ease-in-out infinite}
+@keyframes pulseRing{0%,100%{transform:scale(1);opacity:0.3}50%{transform:scale(1.05);opacity:0.5}}
+@keyframes warningPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,68,68,0.4)}50%{box-shadow:0 0 0 15px rgba(255,68,68,0)}}
+.dim-ring-inner{position:relative;width:70%;height:70%;border-radius:50%;background:linear-gradient(135deg,var(--dim-color),rgba(255,255,255,0.9));display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1;transition:all 0.3s}
+.dim-ring:hover .dim-ring-inner{transform:scale(1.05);box-shadow:0 8px 24px rgba(0,0,0,0.15)}
+.dim-icon{font-size:32px;margin-bottom:4px}
+.dim-name{font-size:14px;font-weight:bold;color:#333}
+.dim-score{font-size:12px;color:#666;margin-top:2px}
+.dim-card{position:absolute;top:100%;left:50%;transform:translateX(-50%) translateY(10px);width:280px;background:#fff;border-radius:16px;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,0.15);z-index:100;opacity:0;pointer-events:none;transition:all 0.3s}
+.dim-ring.active .dim-card{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(16px)}
+.dim-card h4{color:var(--dim-color);margin-bottom:8px;font-size:var(--font-h2)}
+.dim-card p{color:#555;font-size:15px;margin-bottom:12px}
+.dim-card .example{background:var(--bg);padding:12px;border-radius:8px;font-size:14px;color:var(--primary)}
+.dim-card .example strong{color:var(--dim-color)}
+
+/* Motivation Sliders */
+.slider-section{background:var(--bg);border-radius:16px;padding:24px;margin-bottom:24px}
+.slider-section h3{font-size:var(--font-h2);color:var(--primary);margin-bottom:20px;text-align:center}
+.slider-row{display:flex;align-items:center;gap:16px;margin-bottom:16px;padding:12px;background:#fff;border-radius:12px}
+.slider-label{flex:00 80px;font-size:14px;font-weight:bold;color:var(--dim-color)}
+.slider-track{flex:1;position:relative;height:8px;background:#e0e0e0;border-radius:4px}
+.slider-fill{position:absolute;height:100%;background:var(--dim-color);border-radius:4px;transition:width0.1s}
+.slider-input{position:absolute;width:100%;height:100%;opacity:0;cursor:pointer;top:0;left:0;-webkit-appearance:none}
+.slider-value{flex:0 0 50px;text-align:center;font-weight:bold;color:var(--dim-color)}
+.slider-desc{margin-top:4px;font-size:12px;color:#888;text-align:center}
+
+/* Radar Chart */
+.radar-section{text-align:center;margin-bottom:24px}
+.radar-section h3{font-size:var(--font-h2);color:var(--primary);margin-bottom:16px}
+.radar-canvas-wrap{position:relative;display:inline-block}
+#radarCanvas{background:#fff;border-radius:16px}
+.radar-legend{display:flex;justify-content:center;gap:20px;margin-top:16px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:13px}
+.legend-dot{width:12px;height:12px;border-radius:50%}
+
+/* Trigger Cards */
+.trigger-section{margin-bottom:24px}
+.trigger-section h3{font-size:var(--font-h2);color:var(--primary);margin-bottom:16px;text-align:center}
+.trigger-cards{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-bottom:20px}
+.trigger-card{background:#fff;border:2px solid var(--primary);border-radius:12px;padding:12px 20px;font-size:15px;cursor:grab;transition:all 0.2s;user-select:none;touch-action:none}
+.trigger-card:active{cursor:grabbing}
+.trigger-card.dragging{opacity:0.5;transform:scale(1.05)}
+.trigger-card.matched{border-color:var(--soc);background:linear-gradient(135deg,#f0f5ff,#e8f5e9)}
+.trigger-targets{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+@media(max-width:600px){.trigger-targets{grid-template-columns:repeat(3,1fr)}}
+.trigger-target{background:var(--bg);border:2px dashed var(--accent);border-radius:12px;padding:16px;min-height:80px;text-align:center;font-size:13px;transition:all 0.2s;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.trigger-target.drag-over{border-color:var(--primary);background:#e6f0ff}
+.trigger-target.correct{border-color:var(--soc);border-style:solid;background:linear-gradient(135deg,#f0f5ff,#e8f5e9)}
+.trigger-target .target-icon{font-size:24px;margin-bottom:4px}
+.trigger-target .target-label{color:var(--dim-color);font-weight:bold;font-size:12px}
+.trigger-target .target-example{display:none;font-size:12px;color:#666;margin-top:8px}
+.trigger-target.show-example .target-example{display:block}
+
+/* Generate Button */
+.generate-btn{background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;border:none;padding:16px 48px;border-radius:50px;font-size:var(--font-h2);cursor:pointer;transition:all 0.3s;display:block;margin:0 auto;box-shadow:0 4px 20px rgba(22,119,255,0.3)}
+.generate-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(22,119,255,0.4)}
+.generate-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+
+/* Portrait Modal */
+.portrait-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:none;z-index:2000;justify-content:center;align-items:center;backdrop-filter:blur(4px)}
+.portrait-modal.active{display:flex}
+.portrait-card{background:#fff;border-radius:24px;padding:32px;width:95%;max-width:500px;text-align:center;animation:panelSlide 0.4s ease;max-height:90vh;overflow-y:auto}
+.portrait-card h2{color:var(--primary);margin-bottom:24px;font-size:var(--font-h1)}
+.portrait-radar{margin:20px auto}
+.portrait-stats{display:grid;grid-template-columns:1fr 1fr;gap:16px;text-align:left;margin:20px 0}
+.portrait-stat{background:var(--bg);padding:16px;border-radius:12px}
+.portrait-stat h4{color:var(--primary);margin-bottom:8px;font-size:14px}
+.portrait-stat p{font-size:13px;color:#555}
+.portrait-actions{display:flex;gap:12px;justify-content:center;margin-top:24px;flex-wrap:wrap}
+.portrait-action{background:var(--primary);color:#fff;border:none;padding:12px 24px;border-radius:24px;font-size:15px;cursor:pointer;transition:all 0.2s}
+.portrait-action:hover{background:var(--primary-hover)}
+.portrait-action.secondary{background:#fff;color:var(--primary);border:2px solid var(--primary)}
+
+/* Warning Card */
+.warning-card{background:linear-gradient(135deg,#ffe6e6,#fff);border:2px solid #ff4444;border-radius:16px;padding:20px;margin:16px 0;display:none}
+.warning-card.show{display:block;animation:warningSlide 0.3s ease}
+@keyframes warningSlide{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.warning-title{color:#ff4444;font-weight:bold;font-size:16px;margin-bottom:12px}
+.warning-tips{list-style:none;padding:0}
+.warning-tips li{background:#fff;padding:8px 12px;border-radius:8px;margin-bottom:8px;font-size:14px;color:#555;padding-left:30px;position:relative}
+.warning-tips li::before{content:'💡';position:absolute;left:10px}
+
+/* Open Dashboard Button */
+.open-dashboard{background:linear-gradient(135deg,var(--primary),#0d5eeb);color:#fff;border:none;padding:14px 32px;border-radius:50px;font-size:16px;cursor:pointer;transition:all 0.3s;box-shadow:0 4px 16px rgba(22,119,255,0.3);display:flex;align-items:center;gap:8px;margin:0 auto}
+.open-dashboard:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(22,119,255,0.4)}
+.open-dashboard svg{width:20px;height:20px}
+
+/* Content Sections */
+.content-section{background:var(--card-bg);border-radius:16px;padding:24px;margin-bottom:20px;box-shadow:0 4px 20px rgba(22,119,255,0.08)}
+.content-section h2{font-size:var(--font-h2);color:var(--primary);margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid var(--bg)}
+.content-section ul{list-style:none;padding:0}
+.content-section li{padding:12px 0 12px 30px;position:relative;border-bottom:1px solid var(--bg)}
+.content-section li:last-child{border-bottom:none}
+.content-section li::before{content:'📌';position:absolute;left:0}
+.content-highlight{background:linear-gradient(120deg,#e6f0ff,#f0f5ff);padding:20px;border-radius:12px;margin:16px 0;border-left:4px solid var(--primary)}
+.content-highlight p{color:#444}
+
+/* Footer */
+.page-footer{text-align:center;padding:30px;color:#888;font-size:14px}
+
+/* Animations */
+.dim-icon{transition:transform0.3s}
+.dim-ring:hover .dim-icon{transform:scale(1.2)}
+@keyframes iconCog{0%,100%{filter:drop-shadow(0 0 4px var(--cog))}50%{filter:drop-shadow(0 0 12px var(--cog))}}
+@keyframes iconEmo{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+@keyframes iconSoc{0%,100%{opacity:0.8}50%{opacity:1}}
+@keyframes iconAch{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes iconVal{0%,100%{opacity:0.7;transform:rotate(0deg)}50%{opacity:1;transform:rotate(180deg)}}
+.icon-cog{animation:iconCog 2s ease-in-out infinite}
+.icon-emo{animation:iconEmo 1.5s ease-in-out infinite}
+.icon-soc{animation:iconSoc 2s ease-in-out infinite}
+.icon-ach{animation:iconAch 1.5s ease-in-out infinite}
+.icon-val{animation:iconVal 3s linear infinite}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="module-header">
+<h1>M2：学习新知的新价值与新使命</h1>
+<p>数学 · 三年级上 · 模块五维导学</p>
+</div>
+
+<div class="chat-bg">
+<div class="chat-messages">
+<div class="msg ai">
+<div class="msg-avatar">🤖</div>
+<div class="msg-content">
+嗨！欢迎来到M2模块！今天我们要一起探索加减法的奥秘。你有没有想过，为什么即使有了计算器，我们还要学手算呢？一起来看看吧！
+</div>
+</div>
+<div class="msg user">
+<div class="msg-avatar">👤</div>
+<div class="msg-content">
+老师好！我有点好奇，为什么要学竖式计算呀？
+</div>
+</div>
+<div class="msg ai">
+<div class="msg-avatar">🤖</div>
+<div class="msg-content">
+好问题！让我先带你了解学习的"动力地图"，看看学习这件事背后有哪些有趣的心理机制~
+</div>
+</div>
+</div>
+
+<div class="curiosity-card hidden" onclick="this.classList.toggle('hidden')">
+<div class="curiosity-question">你知道吗？古代数学家祖冲之在没有计算器的情况下，把圆周率算到了小数点后7位！他是怎么做到的？</div>
+<div class="curiosity-answer">
+答案：祖冲之使用的是一种叫"算筹"的工具，通过大量的手工计算一步步推算出来。这告诉我们，精确计算的能力是人类探索世界的重要工具。每一次认真的加减运算，都在锻炼你探索未知的能力！
+</div>
+</div>
+
+<div class="warning-card" id="warningCard">
+<div class="warning-title">⚠️ 动力预警</div>
+<p id="warningText"></p>
+<ul class="warning-tips" id="warningTips"></ul>
+</div>
+
+<button class="open-dashboard" onclick="openDashboard()">
+<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+开启五维动机仪表盘
+</button>
+</div>
+
+<div class="content-section">
+<h2>📚 模块学习目标</h2>
+<ul>
+<li><strong>知识理解：</strong>说清楚多位数加法和减法的运算道理，知道竖式计算中"为什么要进位、退位"，理解运算规律背后的原理。</li>
+<li><strong>能力形成：</strong>熟练计算四位数以内的加减法，能准确判断运算结果；能发现和避免计算中的常见错误，如漏加进位、忘退减位等。</li>
+<li><strong>思维发展：</strong>通过"小棒图—竖式—口算"的转化过程，理解从具体到抽象的数学思想；学会用多种方法验证同一道题的结果。</li>
+<li><strong>表达产出：</strong>能用自己的话把计算步骤讲清楚，包括"先算什么、再算什么、最后算什么"，并能向同伴解释为什么这样做。</li>
+</ul>
+</div>
+
+<div class="content-section">
+<h2>🌟 高精尖价值与未来意义</h2>
+<div class="content-highlight">
+<h3 style="color:var(--primary);margin-bottom:12px">为什么现在还要学手算加减法？</h3>
+<p>我们生活在一个随时能用计算器的时代，但你有没有想过：计算器虽然快，却不能帮你判断"答案是否合理"。举个例子，网购时商品价格从128元变成581元，如果你能快速估算"128加128等于256，接近300，不可能到581"，你就能立刻发现输入错误。</p>
+<p style="margin-top:12px">学习加减法的真正目的不是比谁算得快，而是培养<strong>数感</strong>——对数字的敏感度和判断力。这种能力会帮助你在日常生活中快速决策，比如比较价格、规划零花钱、计算时间。将来无论你从事什么职业，数据分析、财务报表、工程测量都离不开对数字的信任感，而这种信任感正是从准确计算中积累出来的。</p>
+</div>
+</div>
+
+<div class="content-section">
+<h2>🛠️ 推荐学习方式与方法</h2>
+<ul>
+<li><strong>动手操作法：</strong>准备一包棉签或小棒，先摆出数字，再合并计数。动手操作能帮助你理解"满十进一"的道理，而不是死记规则。</li>
+<li><strong>错题解剖法：</strong>每次练习后，如果发现错误，不要只是改正答案。拿出错题，问自己三个问题：哪里错了？为什么会错？下次怎么避免？把反思写在错题本上。</li>
+<li><strong>估算验证法：</strong>做完一道题，用估算快速检验结果是否合理。例如，算完376加247等于623，可以估算"370加250等于620左右，结果应该接近620，623是合理的"。这种习惯会让你受益无穷。</li>
+<li><strong>小老师讲解法：</strong>学会之后，试着把解题思路讲给家人或同学听。能讲清楚，说明你真的理解了。讲不清楚的地方，就是你需要再巩固的地方。</li>
+<li><strong>对比归纳法：</strong>把加法和减法竖式放在一起比较，找出它们的相同点和不同点。你会发现：加法是合并，减法是拿走；加法进位，减法退位；它们的竖式结构几乎一样，只是符号不同。</li>
+</ul>
+</div>
+
+<div class="content-section">
+<h2>👤关键人物与事件</h2>
+<div class="content-highlight">
+<h3 style="color:var(--primary);margin-bottom:12px">祖冲之与圆周率的故事</h3>
+<p>祖冲之是南北朝时期的数学家，他计算出圆周率在3.1415926和3.1415927之间。在没有计算器的时代，他用古老的算筹工具，一步步推算出如此精确的结果。这说明：计算能力是人类探索世界的重要工具，精确计算让我们能够丈量世界、描述自然。</p>
+<p style="margin-top:12px"><strong>为什么值得了解？</strong>祖冲之的故事告诉我们，看似简单的计算背后蕴含着巨大的耐心和智慧。每一次认真的加减运算，都是在锻炼你探索未知的能力。</p>
+</div>
+</div>
+
+<div class="content-section">
+<h2>❓ 前沿追问</h2>
+<ul>
+<li>如果没有进位制，人类会怎样计数？有没有其他进制的计数方式存在？</li>
+<li>计算器算得那么快，我们为什么还要学竖式计算？两者是否可以互补？</li>
+<li>日常生活中，哪些情况下我们需要快速心算或估算，而不是精确计算？</li>
+<li>当两个数的和一定时，这两个数的大小变化有什么规律？</li>
+<li>如果让你设计一道"考验数感"的数学游戏，你会怎么设计？</li>
+</ul>
+</div>
+
+<div class="page-footer">
+<p>模块五维导学 · M2学习新知的新价值与新使命</p>
+</div>
+</div>
+
+<!-- Dashboard Overlay -->
+<div class="dashboard-overlay" id="dashboardOverlay">
+<div class="dashboard-panel">
+<button class="dashboard-close" onclick="closeDashboard()">✕</button>
+<h2 class="dashboard-title">🎯 动机激发五维仪表盘</h2>
+<p class="dashboard-subtitle">点击各维度圆环查看导学目标，拖拽触发器卡片进行配对</p>
+
+<div class="dimensions-container">
+<div class="dim-ring" style="--dim-color:var(--cog)" data-dim="cog" onclick="toggleDim(this)">
+<div class="dim-ring-outer"></div>
+<div class="dim-ring-inner">
+<span class="dim-icon icon-cog">🧠</span>
+<span class="dim-name">认知动机</span>
+<span class="dim-score" id="score-cog">--</span>
+</div>
+<div class="dim-card">
+<h4>🧠 认知动机</h4>
+<p>你将发现这个问题背后的神奇逻辑</p>
+<div class="example"><strong>本单元体现：</strong>通过"小棒图—竖式—口算"的转化，理解从具体到抽象的数学思想，揭开进位退位的奥秘。</div>
+</div>
+</div>
+
+<div class="dim-ring" style="--dim-color:var(--emo)" data-dim="emo" onclick="toggleDim(this)">
+<div class="dim-ring-outer"></div>
+<div class="dim-ring-inner">
+<span class="dim-icon icon-emo">💗</span>
+<span class="dim-name">情感动机</span>
+<span class="dim-score" id="score-emo">--</span>
+</div>
+<div class="dim-card">
+<h4>💗 情感动机</h4>
+<p>这个故事会让你感同身受，激发你的共鸣</p>
+<div class="example"><strong>本单元体现：</strong>通过祖冲之的故事，感受古代数学家的探索精神，激发对数学的热爱。</div>
+</div>
+</div>
+
+<div class="dim-ring" style="--dim-color:var(--soc)" data-dim="soc" onclick="toggleDim(this)">
+<div class="dim-ring-outer"></div>
+<div class="dim-ring-inner">
+<span class="dim-icon icon-soc">👥</span>
+<span class="dim-name">社会动机</span>
+<span class="dim-score" id="score-soc">--</span>
+</div>
+<div class="dim-card">
+<h4>👥 社会动机</h4>
+<p>学完后你可以帮身边的人解决实际问题</p>
+<div class="example"><strong>本单元体现：</strong>学会估算后，可以帮爸爸妈妈检查网购价格、计算购物找零，成为家里的"数学小帮手"。</div>
+</div>
+</div>
+
+<div class="dim-ring" style="--dim-color:var(--ach)" data-dim="ach" onclick="toggleDim(this)">
+<div class="dim-ring-outer"></div>
+<div class="dim-ring-inner">
+<span class="dim-icon icon-ach">🏆</span>
+<span class="dim-name">成就动机</span>
+<span class="dim-score" id="score-ach">--</span>
+</div>
+<div class="dim-card">
+<h4>🏆 成就动机</h4>
+<p>掌握这个技能，你将解锁通往下一关的钥匙</p>
+<div class="example"><strong>本单元体现：</strong>完成加减法学习后，你将解锁"混合运算"和"实际问题解决"两大新关卡！</div>
+</div>
+</div>
+
+<div class="dim-ring" style="--dim-color:var(--val)" data-dim="val" onclick="toggleDim(this)">
+<div class="dim-ring-outer"></div>
+<div class="dim-ring-inner">
+<span class="dim-icon icon-val">⭐</span>
+<span class="dim-name">价值动机</span>
+<span class="dim-score" id="score-val">--</span>
+</div>
+<div class="dim-card">
+<h4>⭐ 价值动机</h4>
+<p>这个知识会改变你看待世界的方式</p>
+<div class="example"><strong>本单元体现：</strong>建立数感后，你会发现数字在生活中无处不在，学会用数学的眼光看世界。</div>
+</div>
+</div>
+</div>
+
+<div class="slider-section">
+<h3>📊 动机雷达自评</h3>
+<div class="slider-row" data-slider="cog">
+<div class="slider-label">🧠 认知</div>
+<div class="slider-track">
+<div class="slider-fill" style="width:50%;background:var(--cog)"></div>
+<input type="range" class="slider-input" min="0" max="100" value="50" oninput="updateSlider(this)">
+</div>
+<div class="slider-value">50</div>
+</div>
+<div class="slider-desc">0"完全不想知道" → 100"迫不及待想搞清楚"</div>
+
+<div class="slider-row" data-slider="emo">
+<div class="slider-label">💗 情感</div>
+<div class="slider-track">
+<div class="slider-fill" style="width:50%;background:var(--emo)"></div>
+<input type="range" class="slider-input" min="0" max="100" value="50" oninput="updateSlider(this)">
+</div>
+<div class="slider-value">50</div>
+</div>
+<div class="slider-desc">0"毫无感觉" → 100"充满期待和热情"</div>
+
+<div class="slider-row" data-slider="soc">
+<div class="slider-label">👥 社会</div>
+<div class="slider-track">
+<div class="slider-fill" style="width:50%;background:var(--soc)"></div>
+<input type="range" class="slider-input" min="0" max="100" value="50" oninput="updateSlider(this)">
+</div>
+<div class="slider-value">50</div>
+</div>
+<div class="slider-desc">0"只想自己学" → 100"想帮助更多人"</div>
+
+<div class="slider-row" data-slider="ach">
+<div class="slider-label">🏆 成就</div>
+<div class="slider-track">
+<div class="slider-fill" style="width:50%;background:var(--ach)"></div>
+<input type="range" class="slider-input" min="0" max="100" value="50" oninput="updateSlider(this)">
+</div>
+<div class="slider-value">50</div>
+</div>
+<div class="slider-desc">0"不想挑战" → 100"渴望突破自我"</div>
+
+<div class="slider-row" data-slider="val">
+<div class="slider-label">⭐ 价值</div>
+<div class="slider-track">
+<div class="slider-fill" style="width:50%;background:var(--val)"></div>
+<input type="range" class="slider-input" min="0" max="100" value="50" oninput="updateSlider(this)">
+</div>
+<div class="slider-value">50</div>
+</div>
+<div class="slider-desc">0"觉得没用" → 100"深感意义重大"</div>
+</div>
+
+<div class="radar-section">
+<h3>🎯 你的动机雷达 vs 理想动机分布</h3>
+<div class="radar-canvas-wrap">
+<canvas id="radarCanvas" width="300" height="300"></canvas>
+</div>
+<div class="radar-legend">
+<div class="legend-item"><div class="legend-dot" style="background:var(--primary)"></div>你的动机</div>
+<div class="legend-item"><div class="legend-dot" style="background:#ff6b6b;opacity:0.5"></div>理想分布</div>
+</div>
+</div>
+
+<div class="trigger-section">
+<h3>🎮 动机触发器配对</h3>
+<p style="text-align:center;color:#888;font-size:14px;margin-bottom:16px">将触发器卡片拖拽到对应的动机维度上</p>
+<div class="trigger-cards">
+<div class="trigger-card" draggable="true" data-trigger="challenge" data-correct="ach">🎯 挑战性任务</div>
+<div class="trigger-card" draggable="true" data-trigger="realproblem" data-correct="soc">🛒真实问题情境</div>
+<div class="trigger-card" draggable="true" data-trigger="competition" data-correct="ach">🏅 同伴竞赛</div>
+<div class="trigger-card" draggable="true" data-trigger="story" data-correct="emo">📖 故事悬念</div>
+<div class="trigger-card" draggable="true" data-trigger="feedback" data-correct="ach">⚡ 即时反馈</div>
+<div class="trigger-card" draggable="true" data-trigger="roleplay" data-correct="val">🎭 角色代入</div>
+</div>
+<div class="trigger-targets">
+<div class="trigger-target" data-target="cog" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="handleDragLeave(event)">
+<div class="target-icon">🧠</div>
+<div class="target-label">认知</div>
+<div class="target-example"><strong>运用：</strong>"想想看，为什么满十就要进一？"</div>
+</div>
+<div class="trigger-target" data-target="emo" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="handleDragLeave(event)">
+<div class="target-icon">💗</div>
+<div class="target-label">情感</div>
+<div class="target-example"><strong>运用：</strong>"祖冲之用了十年才算出圆周率..."</div>
+</div>
+<div class="trigger-target" data-target="soc" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="handleDragLeave(event)">
+<div class="target-icon">👥</div>
+<div class="target-label">社会</div>
+<div class="target-example"><strong>运用：</strong>"帮爸妈算算这次购物要花多少钱"</div>
+</div>
+<div class="trigger-target" data-target="ach" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="handleDragLeave(event)">
+<div class="target-icon">🏆</div>
+<div class="target-label">成就</div>
+<div class="target-example"><strong>运用：</strong>"限时挑战赛，看谁全对！"</div>
+</div>
+<div class="trigger-target" data-target="val" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="handleDragLeave(event)">
+<div class="target-icon">⭐</div>
+<div class="target-label">价值</div>
+<div class="target-example"><strong>运用：</strong>"你就是未来的数学家"</div>
+</div>
+</div>
+</div>
+
+<button class="generate-btn" id="generateBtn" onclick="generatePortrait()">🎨 生成我的动机画像</button>
+</div>
+</div>
+</div>
+
+<!-- Portrait Modal -->
+<div class="portrait-modal" id="portraitModal">
+<div class="portrait-card">
+<h2>🎭 我的动机自画像</h2>
+<div class="portrait-radar">
+<canvas id="portraitCanvas" width="200" height="200"></canvas>
+</div>
+<div class="portrait-stats" id="portraitStats"></div>
+<div class="portrait-actions">
+<button class="portrait-action" onclick="savePortrait()">📸 截图保存</button>
+<button class="portrait-action secondary" onclick="sharePortrait()">📤 分享班级</button>
+<button class="portrait-action secondary" onclick="closePortrait()">关闭</button>
+</div>
+</div>
+</div>
+
+<script>
+const dims=['cog','emo','soc','ach','val'];
+const dimNames={cog:'认知',emo:'情感',soc:'社会',ach:'成就',val:'价值'};
+const dimColors={cog:'#ff6b6b',emo:'#ffd93d',soc:'#6bcb77',ach:'#4d96ff',val:'#9d4edd'};
+const idealScores={cog:75,emo:70,soc:65,ach:80,val:70};
+const warnings={
+cog:['先玩一个数字猜谜游戏','看看计算器是怎么算错了一道题'],
+emo:['听听祖冲之的故事','想象自己成为数学小达人'],
+soc:['和家长一起逛超市看价格','当小老师教弟弟妹妹'],
+ach:['先做一道简单的找找感觉','和自己比，每天进步一点点'],
+val:['想想数学在生活中的用处','了解古代数学家的故事']
+};
+let scores={cog:50,emo:50,soc:50,ach:50,val:50};
+let matchedTriggers={};
+
+function openDashboard(){
+document.getElementById('dashboardOverlay').classList.add('active');
+drawRadar();
+}
+function closeDashboard(){
+document.getElementById('dashboardOverlay').classList.remove('active');
+}
+function toggleDim(el){
+const wasActive=el.classList.contains('active');
+document.querySelectorAll('.dim-ring').forEach(r=>r.classList.remove('active'));
+if(!wasActive)el.classList.add('active');
+}
+function updateSlider(input){
+const row=input.closest('.slider-row');
+const dim=row.dataset.slider;
+const val=parseInt(input.value);
+scores[dim]=val;
+row.querySelector('.slider-fill').style.width=val+'%';
+row.querySelector('.slider-value').textContent=val;
+document.getElementById('score-'+dim).textContent=val;
+drawRadar();
+checkWarning(dim,val);
+}
+function checkWarning(dim,val){
+const ring=document.querySelector(`.dim-ring[data-dim="${dim}"]`);
+const warningCard=document.getElementById('warningCard');
+if(val<30){
+ring.classList.add('warning');
+warningCard.classList.add('show');
+document.getElementById('warningText').textContent=`你在${dimNames[dim]}动机上似乎动力不太足——试试先看一个有趣的现象？`;
+const tips=document.getElementById('warningTips');
+tips.innerHTML=warnings[dim].map(t=>`<li>${t}</li>`).join('');
+}else{
+ring.classList.remove('warning');
+const hasLow=Object.values(scores).some(v=>v<30);
+if(!hasLow)warningCard.classList.remove('show');
+}
+}
+function drawRadar(){
+const canvas=document.getElementById('radarCanvas');
+const ctx=canvas.getContext('2d');
+const cx=canvas.width/2,cy=canvas.height/2,r=100;
+ctx.clearRect(0,0,canvas.width,canvas.height);
+ctx.strokeStyle='#e0e0e0';
+ctx.lineWidth=1;
+for(let i=1;i<=5;i++){
+ctx.beginPath();
+for(let j=0;j<5;j++){
+const angle=(Math.PI*2/5)*(j-Math.PI/2);
+const x=cx+r*i/5*Math.cos(angle);
+const y=cy+r*i/5*Math.sin(angle);
+if(j===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+}
+ctx.closePath();
+ctx.stroke();
+}
+ctx.strokeStyle='#e0e0e0';
+ctx.lineWidth=1;
+for(let j=0;j<5;j++){
+const angle=(Math.PI*2/5)*(j-Math.PI/2);
+ctx.beginPath();
+ctx.moveTo(cx,cy);
+ctx.lineTo(cx+r*Math.cos(angle),cy+r*Math.sin(angle));
+ctx.stroke();
+}
+ctx.fillStyle='rgba(22,119,255,0.3)';
+ctx.strokeStyle='#1677ff';
+ctx.lineWidth=2;
+ctx.beginPath();
+for(let j=0;j<5;j++){
+const angle=(Math.PI*2/5)*(j-Math.PI/2);
+const val=scores[dims[j]]/100;
+const x=cx+r*val*Math.cos(angle);
+const y=cy+r*val*Math.sin(angle);
+if(j===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+}
+ctx.closePath();
+ctx.fill();
+ctx.stroke();
+ctx.fillStyle='rgba(255,107,107,0.3)';
+ctx.strokeStyle='rgba(255,107,107,0.5)';
+ctx.lineWidth=2;
+ctx.beginPath();
+for(let j=0;j<5;j++){
+const angle=(Math.PI*2/5)*(j-Math.PI/2);
+const val=idealScores[dims[j]]/100;
+const x=cx+r*val*Math.cos(angle);
+const y=cy+r*val*Math.sin(angle);
+if(j===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+}
+ctx.closePath();
+ctx.fill();
+ctx.stroke();
+ctx.fillStyle='#333';
+ctx.font='12px PingFang SC';
+ctx.textAlign='center';
+for(let j=0;j<5;j++){
+const angle=(Math.PI*2/5)*(j-Math.PI/2);
+const x=cx+(r+20)*Math.cos(angle);
+const y=cy+(r+20)*Math.sin(angle);
+ctx.fillText(dimNames[dims[j]],x,y);
+}
+}
+
+let draggedCard=null;
+document.querySelectorAll('.trigger-card').forEach(card=>{
+card.addEventListener('dragstart',e=>{
+draggedCard=card;
+card.classList.add('dragging');
+e.dataTransfer.effectAllowed='move';
+});
+card.addEventListener('dragend',()=>{
+card.classList.remove('dragging');
+draggedCard=null;
+});
+card.addEventListener('touchstart',e=>{
+draggedCard=card;
+card.classList.add('dragging');
+},{passive:true});
+card.addEventListener('touchend',e=>{
+if(draggedCard){
+card.classList.remove('dragging');
+draggedCard=null;
+}
+},{passive:true});
+});
+function handleDragOver(e){
+e.preventDefault();
+e.currentTarget.classList.add('drag-over');
+}
+function handleDragLeave(e){
+e.currentTarget.classList.remove('drag-over');
+}
+function handleDrop(e){
+e.preventDefault();
+e.currentTarget.classList.remove('drag-over');
+if(!draggedCard)return;
+const target=e.currentTarget.dataset.target;
+const correct=draggedCard.dataset.correct;
+if(target===correct){
+draggedCard.classList.add('matched');
+e.currentTarget.classList.add('correct','show-example');
+matchedTriggers[draggedCard.dataset.trigger]=target;
+const dimRing=document.querySelector(`.dim-ring[data-dim="${target}"]`);
+dimRing.querySelector('.dim-ring-outer').style.opacity='1';
+dimRing.querySelector('.dim-ring-outer').style.boxShadow=`0 0 30px ${dimColors[target]}`;
+}else{
+draggedCard.style.background='#ffe6e6';
+setTimeout(()=>{draggedCard.style.background=''},500);
+}
+}
+document.querySelectorAll('.trigger-target').forEach(t=>{
+t.addEventListener('touchend',e=>{
+if(!draggedCard)return;
+const touch=e.changedTouches[0];
+const targetEl=document.elementFromPoint(touch.clientX,touch.clientY);
+if(targetEl){
+const target=t.closest('.trigger-target');
+if(target){
+const tgt=target.dataset.target;
+const correct=draggedCard.dataset.correct;
+if(tgt===correct){
+draggedCard.classList.add('matched');
+target.classList.add('correct','show-example');
+matchedTriggers[draggedCard.dataset.trigger]=tgt;
+const dimRing=document.querySelector(`.dim-ring[data-dim="${tgt}"]`);
+dimRing.querySelector('.dim-ring-outer').style.opacity='1';
+dimRing.querySelector('.dim-ring-outer').style.boxShadow=`0 0 30px ${dimColors[tgt]}`;
+}else{
+draggedCard.style.background='#ffe6e6';
+setTimeout(()=>{draggedCard.style.background=''},500);
+}
+}
+}
+});
+});
+function generatePortrait(){
+const modal=document.getElementById('portraitModal');
+modal.classList.add('active');
+const canvas=document.getElementById('portraitCanvas');
+const ctx=canvas.getContext('2d');
+const cx=100,cy=100,r=70;
+ctx.clearRect(0,0,200,200);
+ctx.strokeStyle='#e0e0e0';
+ctx.lineWidth=1;
+for(let i=1;i<=5;i++){
+ctx.beginPath();
+for(let j=0;j<5;j++){
+const angle=(Math.PI*2/5)*(j-Math.PI/2);
+const x=cx+r*i/5*Math.cos(angle);
+const y=cy+r*i/5*Math.sin(angle);
+if(j===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+}
+ctx.closePath();
+ctx.stroke();
+}
+ctx.fillStyle='rgba(22,119,255,0.4)';
+ctx.strokeStyle='#1677ff';
+ctx.lineWidth=2;
+ctx.beginPath();
+for(let j=0;j<5;j++){
+const angle=(Math.PI*2/5)*(j-Math.PI/2);
+const val=scores[dims[j]]/100;
+const x=cx+r*val*Math.cos(angle);
+const y=cy+r*val*Math.sin(angle);
+if(j===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+}
+ctx.closePath();
+ctx.fill();
+ctx.stroke();
+ctx.fillStyle='#333';
+ctx.font='10px PingFang SC';
+ctx.textAlign='center';
+for(let j=0;j<5;j++){
+const angle=(Math.PI*2/5)*(j-Math.PI/2);
+const x=cx+(r+15)*Math.cos(angle);
+const y=cy+(r+15)*Math.sin(angle);
+ctx.fillText(dimNames[dims[j]],x,y);
+}
+const sortedDims=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+const top3=sortedDims.slice(0,3);
+const bottomDims=sortedDims.filter(d=>d[1]<50);
+const strategies={
+cog:['尝试用不同方法解题','问自己"还有别的方法吗"'],
+emo:['把数学知识联系到感兴趣的事物','想象学成后的成就感'],
+soc:['找学习伙伴一起探讨','当小老师教别人'],
+ach:['设定小目标逐步达成','和自己比而非和别人比'],
+val:['思考知识在生活中的应用','了解数学家的探索故事']
+};
+let html=`<div class="portrait-stat"><h4>🌟 优势维度</h4><p>${top3.map(d=>dimNames[d[0]]+'('+d[1]+'分)').join('、')}</p></div>`;
+if(bottomDims.length>0){
+html+=`<div class="portrait-stat"><h4>📈 待激发维度</h4><p>${bottomDims.map(d=>dimNames[d[0]]+'('+d[1]+'分)').join('、')}</p></div>`;
+}
+const allStrategies=[];
+bottomDims.forEach(d=>{if(strategies[d[0]])allStrategies.push(...strategies[d[0]]);});
+html+=`<div class="portrait-stat"><h4>💡 推荐策略</h4><p>${allStrategies.slice(0,3).join('、')||'继续保持学习热情！'}</p></div>`;
+document.getElementById('portraitStats').innerHTML=html;
+}
+function savePortrait(){
+const card=document.querySelector('.portrait-card');
+html2canvas(card).then(canvas=>{
+const link=document.createElement('a');
+link.download='我的动机画像.png';
+link.href=canvas.toDataURL();
+link.click();
+}).catch(()=>{alert('截图功能暂不可用，请手动截图保存');});
+}
+function sharePortrait(){
+const msg=JSON.stringify({type:'portrait',scores});
+if(navigator.clipboard){
+navigator.clipboard.writeText(msg).then(()=>alert('已复制到剪贴板，可粘贴分享'));
+}else{
+alert('分享功能：请截图后手动分享');
+}
+}
+function closePortrait(){
+document.getElementById('portraitModal').classList.remove('active');
+}
+document.addEventListener('keydown',e=>{
+if(e.key==='Escape'){
+closeDashboard();
+closePortrait();
+}
+});
+</script>
+</body>
+</html>

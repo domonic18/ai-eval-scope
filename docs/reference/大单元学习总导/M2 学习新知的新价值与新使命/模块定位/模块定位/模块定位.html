@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>模块定位 - 数学</title>
+  <style>
+    :root {
+      --primary: #1677ff;
+      --primary-hover: #4096ff;
+      --accent: #69b1ff;
+      --bg: #f0f5ff;
+      --card-bg: #ffffff;
+      --font-body: 18px;
+      --font-h1: 28px;
+      --font-h2: 22px;
+      --line-height: 1.8;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: #333;
+      font-size: var(--font-body);
+      line-height: var(--line-height);
+      min-height: 100vh;
+    }
+
+    .chat-container {
+      max-width: 100%;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      padding-bottom: 100px;
+    }
+
+    .header {
+      text-align: center;
+      padding: 20px 0;
+      background: var(--card-bg);
+      border-radius: 16px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(22, 119, 255, 0.1);
+    }
+
+    .header h1 {
+      font-size: var(--font-h1);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .header .subtitle {
+      font-size: 14px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .messages {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .message {
+      display: flex;
+      align-items: flex-start;
+      animation: slideIn 0.4s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .message.user {
+      flex-direction: row-reverse;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .message.user .avatar {
+      background: var(--accent);
+    }
+
+    .bubble {
+      max-width: 75%;
+      padding: 14px 18px;
+      border-radius: 18px;
+      background: var(--card-bg);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      margin-left: 10px;
+      position: relative;
+    }
+
+    .message.user .bubble {
+      background: var(--primary);
+      color: #fff;
+      margin-left: 0;
+      margin-right: 10px;
+    }
+
+    .bubble::before {
+      content: '';
+      position: absolute;
+      left: -8px;
+      top: 16px;
+      width: 0;
+      height: 0;
+      border-top: 8px solid transparent;
+      border-bottom: 8px solid transparent;
+      border-right: 10px solid var(--card-bg);
+    }
+
+    .message.user .bubble::before {
+      left: auto;
+      right: -8px;
+      border-right: none;
+      border-left: 10px solid var(--primary);
+    }
+
+    .bubble h3 {
+      font-size: var(--font-h2);
+      color: var(--primary);
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .message.user .bubble h3 {
+      color: #fff;
+    }
+
+    .bubble p {
+      font-size: var(--font-body);
+      color: #444;
+    }
+
+    .message.user .bubble p {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    .typing-indicator {
+      display: none;
+      padding: 14px 18px;
+      background: var(--card-bg);
+      border-radius: 18px;
+      margin-left: 50px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .typing-indicator.active {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .typing-dots {
+      display: flex;
+      gap: 4px;
+    }
+
+    .typing-dots span {
+      width: 8px;
+      height: 8px;
+      background: var(--primary);
+      border-radius: 50%;
+      animation: typingBounce 1.2s infinite ease-in-out;
+    }
+
+    .typing-dots span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .typing-dots span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes typingBounce {
+      0%, 60%, 100% {
+        transform: translateY(0);
+      }
+      30% {
+        transform: translateY(-6px);
+      }
+    }
+
+    .quick-replies {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to top, var(--bg) 80%, transparent);
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .quick-reply-btn {
+      width: 100%;
+      max-width: 320px;
+      padding: 14px 20px;
+      background: var(--card-bg);
+      border: 2px solid var(--primary);
+      border-radius: 24px;
+      font-size: 16px;
+      color: var(--primary);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(22, 119, 255, 0.15);
+    }
+
+    .quick-reply-btn:hover {
+      background: var(--primary);
+      color: #fff;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(22, 119, 255, 0.3);
+    }
+
+    .quick-reply-btn:active {
+      transform: translateY(0);
+    }
+
+    .quick-reply-btn.hidden {
+      display: none;
+    }
+
+    .section-title {
+      font-size: var(--font-body);
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 6px;
+    }
+
+    .progress-indicator {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      background: var(--card-bg);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      color: var(--primary);
+      box-shadow: 0 2px 8px rgba(22, 119, 255, 0.15);
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <div class="progress-indicator" id="progress">1 / 5</div>
+    
+    <div class="header">
+      <h1>模块定位</h1>
+      <div class="subtitle">M2 学习新知的新价值与新使命</div>
+    </div>
+
+    <div class="messages" id="messages">
+      <div class="message" id="msg-1">
+        <div class="avatar">🤖</div>
+        <div class="bubble">
+          <h3>1. 本模块学习什么</h3>
+          <p>本模块我们将一起探索万以内的加法和减法（二）。在之前学习的基础上，我们要学会计算千以内甚至更大的数的加减法，掌握加减混合运算的方法。这就像升级打怪一样，我们的计算能力从"小怪兽"进化到"大怪兽"！</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="typing-indicator" id="typing">
+      <div class="avatar">🤖</div>
+      <div class="typing-dots">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <span style="color: #666; font-size: 14px; margin-left: 8px;">AI导师正在输入...</span>
+    </div>
+
+    <div class="quick-replies" id="quickReplies">
+      <button class="quick-reply-btn" onclick="showMessage(2)">本模块为什么重要？</button>
+    </div>
+  </div>
+
+  <script>
+    const messages = [
+      {
+        id: 1,
+        title: "1. 本模块学习什么",
+        content: "本模块我们将一起探索万以内的加法和减法（二）。在之前学习的基础上，我们要学会计算千以内甚至更大的数的加减法，掌握加减混合运算的方法。这就像升级打怪一样，我们的计算能力从"小怪兽"进化到"大怪兽"！"
+      },
+      {
+        id: 2,
+        title: "2. 本模块为什么重要",
+        content: "为什么要学这个呢？因为生活中我们经常需要算大数字！去买东西、算零花钱、计算班级人数……这些都需要用到万以内的加减法。掌握这门技能，就像获得了一把数学超能力，让我们在日常生活中更加独立自主。"
+      },
+      {
+        id: 3,
+        title: "3. 本模块与大单元主题的关系",
+        content: "这个模块属于"万以内的加法和减法"大单元。大单元像一本精彩的故事书，M1告诉我们故事的开头，M2让我们理解为什么要继续读下去——因为学习新知识能让我们变得更强大了。"
+      },
+      {
+        id: 4,
+        title: "4. 本模块与前后模块的衔接",
+        content: "前面我们学过万以内加减法（一），已经掌握了基础。现在我们要在这个基础上继续攀登数学山峰。M1是热身，M2是让我们明白学习的意义和价值，为接下来的深入学习做好心理准备。"
+      },
+      {
+        id: 5,
+        title: "5. 本模块预期学习成果",
+        content: "学完这个模块，我们会明白为什么要学习新的计算方法，知道这些知识在生活中有什么用，树立学好数学的信心。我们会带着好奇心和积极性，迎接接下来的挑战！"
+      }
+    ];
+
+    const buttons = [
+      "本模块为什么重要？",
+      "与大单元主题有什么关系？",
+      "与前后模块如何衔接？",
+      "学完会有什么收获？",
+      "开始学习！"
+    ];
+
+    let currentIndex = 1;
+
+    function updateProgress() {
+      document.getElementById('progress').textContent = `${currentIndex} / 5`;
+    }
+
+    function showTyping(callback) {
+      const typingEl = document.getElementById('typing');
+      typingEl.classList.add('active');
+      
+      setTimeout(() => {
+        typingEl.classList.remove('active');
+        callback();
+      }, 1000);
+    }
+
+    function createMessageElement(msg) {
+      const div = document.createElement('div');
+      div.className = 'message';
+      div.id = `msg-${msg.id}`;
+      div.innerHTML = `
+        <div class="avatar">🤖</div>
+        <div class="bubble">
+          <h3>${msg.title}</h3>
+          <p>${msg.content}</p>
+        </div>
+      `;
+      return div;
+    }
+
+    function showMessage(index) {
+      if (index > messages.length) return;
+
+      currentIndex = index;
+      updateProgress();
+
+      const messagesEl = document.getElementById('messages');
+      const quickRepliesEl = document.getElementById('quickReplies');
+
+      // Hide all existing quick reply buttons
+      const existingBtns = quickRepliesEl.querySelectorAll('.quick-reply-btn');
+      existingBtns.forEach(btn => btn.classList.add('hidden'));
+
+      if (index <= messages.length) {
+        showTyping(() => {
+          const msg = messages[index - 1];
+          const msgEl = createMessageElement(msg);
+          messagesEl.appendChild(msgEl);
+
+          // Scroll to bottom
+          msgEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
+
+          if (index < messages.length) {
+            // Add next button
+            const btn = document.createElement('button');
+            btn.className = 'quick-reply-btn';
+            btn.textContent = buttons[index - 1];
+            btn.onclick = () => showMessage(index + 1);
+            quickRepliesEl.appendChild(btn);
+          } else {
+            // Show completion message
+            const btn = document.createElement('button');
+            btn.className = 'quick-reply-btn';
+            btn.textContent = "我准备好继续学习了！";
+            btn.onclick = () => {
+              showTyping(() => {
+                const finalMsg = document.createElement('div');
+                finalMsg.className = 'message';
+                finalMsg.innerHTML = `
+                  <div class="avatar">🤖</div>
+                  <div class="bubble">
+                    <p>太棒了！让我们带着这些收获，正式进入M2的学习吧！🚀</p>
+                  </div>
+                `;
+                messagesEl.appendChild(finalMsg);
+                finalMsg.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                btn.classList.add('hidden');
+              });
+            };
+            quickRepliesEl.appendChild(btn);
+          }
+        });
+      }
+    }
+  </script>
+</body>
+</html>
