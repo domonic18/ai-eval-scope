@@ -1,0 +1,32 @@
+id: "test_task_set"
+name: "测试任务集"
+description: "用于单元测试的任务集"
+
+tasks:
+  - id: math_grade7_001
+    input:
+      subject: math
+      grade: 7
+      topic: "一元一次方程"
+    constraints:
+      min_documents: 1
+      max_documents: 10
+      format: ["md", "html"]
+    expected:
+      knowledge_points:
+        - "一元一次方程定义"
+        - "解方程步骤"
+        - "应用题"
+
+  - id: directory_test_001
+    input:
+      subject: "综合"
+      grade: 3
+      topic: "大单元学习总导"
+    input_mode: directory
+    directory_path: "tests/fixtures/golden/directory_sample/"
+    file_patterns: ["*.html"]
+    constraints:
+      min_documents: 1
+      max_documents: 30
+      format: ["html"]

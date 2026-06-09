@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RuleSet Schema",
+  "description": "规则集配置文件的 JSON Schema 校验定义",
+  "type": "object",
+  "required": ["version", "rules"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "规则集版本号"
+    },
+    "description": {
+      "type": "string",
+      "description": "规则集描述"
+    },
+    "schema": {
+      "type": ["string", "null"],
+      "description": "JSON Schema 引用路径"
+    },
+    "dimensions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "weight": { "type": "number", "minimum": 0 }
+        }
+      }
+    },
+    "cascade": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["stage"],
+        "properties": {
+          "stage": { "type": "string" },
+          "name": { "type": "string" },
+          "stop_on_fail": { "type": "boolean" }
+        }
+      }
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "dimension", "stage", "evaluator"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "dimension": { "type": "string" },
+          "stage": { "type": "string" },
+          "description": { "type": "string" },
+          "evaluator": { "type": "string" },
+          "params": { "type": "object" },
+          "weight": { "type": "number", "minimum": 0 },
+          "penalty_on_fail": { "type": ["number", "null"] }
+        }
+      }
+    }
+  }
+}

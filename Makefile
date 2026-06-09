@@ -1,27 +1,26 @@
-.PHONY: install dev test lint format clean
+.PHONY: install dev test lint format clean golden
 
-PYTHON ?= python3
-PIP ?= pip3
+# 使用 uv 进行包管理（推荐）
+# 需要先安装 uv: curl -LsSf https://astral.sh/uv/install.sh | sh
 
 install:
-	$(PIP) install -e .
+	uv sync
 
 dev:
-	$(PIP) install -e ".[dev]"
+	uv sync --extra dev
 
 test:
-	pytest tests/ -v --tb=short
+	uv run pytest tests/ -v --tb=short
 
 test-cov:
-	pytest tests/ -v --cov=agent_eval --cov-report=term-missing --cov-report=html
+	uv run pytest tests/ -v --cov=agent_eval --cov-report=term-missing --cov-report=html
 
 lint:
-	ruff check agent_eval/ tests/
-	mypy agent_eval/
+	uv run ruff check agent_eval/ tests/
 
 format:
-	ruff format agent_eval/ tests/
-	ruff check --fix agent_eval/ tests/
+	uv run ruff format agent_eval/ tests/
+	uv run ruff check --fix agent_eval/ tests/
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
@@ -30,4 +29,4 @@ clean:
 	rm -rf dist/ build/ *.egg-info/
 
 golden:
-	pytest tests/golden/ -v
+	uv run pytest tests/golden/ -v

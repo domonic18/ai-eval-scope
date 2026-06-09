@@ -1,0 +1,7 @@
+version: "1.0"
+description: "非法配置（缺少必要字段）"
+
+# 故意缺少 rules 字段用于校验测试
+dimensions:
+  - id: functional
+    name: "功能性"

@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "TaskSet Schema",
+  "description": "任务集配置文件的 JSON Schema 校验定义",
+  "type": "object",
+  "required": ["id", "name", "tasks"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "任务集唯一标识"
+    },
+    "name": {
+      "type": "string",
+      "description": "任务集名称"
+    },
+    "description": {
+      "type": "string",
+      "description": "任务集描述"
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "input"],
+        "properties": {
+          "id": { "type": "string" },
+          "input": { "type": "object" },
+          "expected": { "type": ["object", "null"] },
+          "constraints": { "type": "object" },
+          "input_mode": {
+            "type": "string",
+            "enum": ["inline", "directory"],
+            "default": "inline"
+          },
+          "directory_path": { "type": ["string", "null"] },
+          "file_patterns": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}
