@@ -22,6 +22,8 @@ system_prompt: |
   1. 教学结构是否完整（导入→新授→练习→总结）
   2. 知识递进是否合理
   3. 互动设计是否有效
+
+  你必须严格按照指定的 JSON 格式输出评估结果，字段名和结构不能修改。
 user_prompt_template: |
   请评估以下课件的教学逻辑质量：
 
@@ -34,7 +36,16 @@ user_prompt_template: |
   ## 学科领域
   {{ subject }}
 
-  请严格按照 JSON 格式输出评估结果。
+  请严格按照以下 JSON 格式输出评估结果（每个维度评分范围 0-10）：
+
+  ```json
+  {
+    "structure": <0-10>,
+    "progression": <0-10>,
+    "engagement": <0-10>,
+    "summary": "<评估总结>"
+  }
+  ```
 output_schema:
   type: object
   properties:

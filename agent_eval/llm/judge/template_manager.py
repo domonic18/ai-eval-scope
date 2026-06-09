@@ -7,9 +7,12 @@ from pathlib import Path
 from typing import Any
 
 import jinja2
+import structlog
 import yaml
 
 from agent_eval.core.exceptions import LLMError
+
+logger = structlog.get_logger("template_manager")
 
 
 @dataclass
@@ -58,6 +61,10 @@ class TemplateManager:
     def load_all(self) -> None:
         """加载目录下所有 YAML 模板文件。"""
         if not self._template_dir.exists():
+            logger.warning(
+                "模板目录不存在，LLM 评估器将无法加载 Prompt",
+                path=str(self._template_dir),
+            )
             return
         for path in self._template_dir.glob("*.yaml"):
             self._load_template(path)

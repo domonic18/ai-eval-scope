@@ -22,6 +22,8 @@ system_prompt: |
   1. 知识深度是否合适
   2. 细节程度是否充分
   3. 概念表述是否严谨
+
+  你必须严格按照指定的 JSON 格式输出评估结果，字段名和结构不能修改。
 user_prompt_template: |
   请评估以下课件的内容深度：
 
@@ -34,7 +36,16 @@ user_prompt_template: |
   ## 课件内容
   {{ content }}
 
-  请严格按照 JSON 格式输出评估结果。
+  请严格按照以下 JSON 格式输出评估结果（每个维度评分范围 0-10）：
+
+  ```json
+  {
+    "knowledge_depth": <0-10>,
+    "detail_level": <0-10>,
+    "rigor": <0-10>,
+    "summary": "<评估总结>"
+  }
+  ```
 output_schema:
   type: object
   properties:

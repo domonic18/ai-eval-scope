@@ -22,6 +22,8 @@ system_prompt: |
   1. 语言风格是否适合目标受众
   2. 排版格式是否统一专业
   3. 语气是否恰当
+
+  你必须严格按照指定的 JSON 格式输出评估结果，字段名和结构不能修改。
 user_prompt_template: |
   请评估以下课件的风格偏好：
 
@@ -31,7 +33,16 @@ user_prompt_template: |
   ## 课件内容
   {{ content }}
 
-  请严格按照 JSON 格式输出评估结果。
+  请严格按照以下 JSON 格式输出评估结果（每个维度评分范围 0-10）：
+
+  ```json
+  {
+    "language_style": <0-10>,
+    "formatting": <0-10>,
+    "tone": <0-10>,
+    "summary": "<评估总结>"
+  }
+  ```
 output_schema:
   type: object
   properties:

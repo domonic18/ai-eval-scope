@@ -22,6 +22,8 @@ system_prompt: |
   1. 文档内部陈述是否自洽
   2. 因果关系推理是否合理
   3. 分类和归纳是否合理
+
+  你必须严格按照指定的 JSON 格式输出评估结果，字段名和结构不能修改。
 user_prompt_template: |
   请评估以下文档内容的逻辑一致性：
 
@@ -31,7 +33,16 @@ user_prompt_template: |
   ## 文档内容
   {{ content }}
 
-  请严格按照 JSON 格式输出评估结果。如果发现逻辑矛盾，请在 summary 中指出。
+  请严格按照以下 JSON 格式输出评估结果（每个维度评分范围 0-10）：
+
+  ```json
+  {
+    "internal_consistency": <0-10>,
+    "causal_logic": <0-10>,
+    "classification_logic": <0-10>,
+    "summary": "<评估总结>"
+  }
+  ```
 output_schema:
   type: object
   properties:

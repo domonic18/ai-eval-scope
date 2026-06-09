@@ -22,6 +22,8 @@ system_prompt: |
   1. 内容是否使用了多种表达形式（文字、公式、表格、图片等）
   2. 是否覆盖了主题的多个方面
   3. 是否提供了丰富多样的示例和案例
+
+  你必须严格按照指定的 JSON 格式输出评估结果，字段名和结构不能修改。
 user_prompt_template: |
   请评估以下课件的内容多样性：
 
@@ -37,7 +39,16 @@ user_prompt_template: |
   - 图片：{{ has_image }}
   - 列表：{{ has_list }}
 
-  请严格按照 JSON 格式输出评估结果。
+  请严格按照以下 JSON 格式输出评估结果（每个维度评分范围 0-10）：
+
+  ```json
+  {
+    "media_variety": <0-10>,
+    "topic_breadth": <0-10>,
+    "example_richness": <0-10>,
+    "summary": "<评估总结>"
+  }
+  ```
 output_schema:
   type: object
   properties:
