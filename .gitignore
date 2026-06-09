@@ -10,6 +10,12 @@ build/
 # Virtual environment
 .venv/
 
+# Environment variables
+.env
+
+# User LLM config (contains API keys)
+llm_config.yaml
+
 # IDE
 .idea/
 .vscode/

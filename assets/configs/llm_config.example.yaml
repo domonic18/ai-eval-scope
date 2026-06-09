@@ -1,0 +1,18 @@
+# LLM 配置示例 — 用于 agent-eval eval --llm-config
+# 复制到项目根目录并配置真实 API Key：
+#   cp assets/configs/llm_config.example.yaml llm_config.yaml
+#
+# API Key 支持环境变量引用：${DEEPSEEK_API_KEY}
+# 需先创建 .env 文件（参考 .env.example）
+
+llm:
+  default: deepseek_judge
+  providers:
+    deepseek_judge:
+      provider: deepseek
+      model: deepseek-chat
+      api_key: ${DEEPSEEK_API_KEY}
+      base_url: https://api.deepseek.com/v1
+      max_tokens: 4096
+      temperature: 0.0
+      seed: 42
