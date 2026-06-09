@@ -7,11 +7,16 @@ import pytest
 from agent_eval.core.types import ConstraintTier, EvalMethod, EvalStatus
 from agent_eval.evaluation.aggregator import ScoreAggregator
 from agent_eval.evaluation.base import BaseEvaluator
-from agent_eval.evaluation.engine import PipelineConfig, StageConfig, EvaluatorConfig, PipelineEngine
+from agent_eval.evaluation.engine import (
+    EvaluatorConfig,
+    PipelineConfig,
+    PipelineEngine,
+    StageConfig,
+)
 from agent_eval.evaluation.evaluators import *  # trigger registration
 from agent_eval.evaluation.metrics import MetricsCalculator
 from agent_eval.evaluation.models import ConstraintResult, SampleResult, StageResult
-from agent_eval.evaluation.registry import EvaluatorRegistry, registry
+from agent_eval.evaluation.registry import registry
 from agent_eval.evaluation.stage import PipelineStage
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"

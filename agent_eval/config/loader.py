@@ -11,7 +11,8 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from jsonschema import ValidationError, validate as jsonschema_validate
+from jsonschema import ValidationError
+from jsonschema import validate as jsonschema_validate
 
 from agent_eval.core.exceptions import (
     ConfigError,
@@ -20,7 +21,6 @@ from agent_eval.core.exceptions import (
 )
 from agent_eval.execution.models import TaskSet
 from agent_eval.rules.models import RuleSet
-
 
 # Schema 文件查找路径
 _SCHEMA_DIR = Path(__file__).parent.parent.parent / "assets" / "schemas"

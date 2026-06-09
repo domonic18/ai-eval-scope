@@ -11,21 +11,19 @@ from __future__ import annotations
 import json
 import shutil
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from agent_eval.execution.models import Task
 from agent_eval.storage.collector import DirectoryCollector
 from agent_eval.storage.package import (
-    DirectoryManifest,
     PackageManifest,
     PackageMetadata,
     PackageStatus,
     generate_package_id,
     generate_run_id,
 )
-from agent_eval.storage.workspace import RunWorkspace
 
 
 class PackageBuilder:
@@ -88,7 +86,7 @@ class PackageBuilder:
         # 写入 manifest.json
         manifest = PackageManifest(
             package_id=package_id,
-            created_at=datetime.now(timezone.utc).isoformat(),
+            created_at=datetime.now(UTC).isoformat(),
             task_id=task.id,
             sut_config_id="manual",
             status=status,
@@ -117,7 +115,7 @@ class PackageBuilder:
         )
 
         # 写入 trace.json
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         trace = {
             "request": {"method": "manual", "source": "PackageBuilder"},
             "response": {"status": "manual_package"},
@@ -207,7 +205,7 @@ class PackageBuilder:
         # 写入 manifest.json
         pkg_manifest = PackageManifest(
             package_id=package_id,
-            created_at=datetime.now(timezone.utc).isoformat(),
+            created_at=datetime.now(UTC).isoformat(),
             task_id=task.id,
             sut_config_id="manual",
             status=status,
@@ -236,7 +234,7 @@ class PackageBuilder:
         )
 
         # 写入 trace.json
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         trace = {
             "request": {"method": "directory", "source": str(source_dir)},
             "response": {"status": "directory_package"},

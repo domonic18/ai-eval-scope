@@ -7,14 +7,13 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, Field
 
 from agent_eval.core.types import PackageStatus
-
 
 # ─── ExecutionPackage 相关模型 ───
 
@@ -296,7 +295,7 @@ class EvaluationResult(BaseModel):
 
 def generate_run_id() -> str:
     """生成运行 ID（时间戳格式）。"""
-    return datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    return datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
 
 
 def generate_package_id(run_id: str, task_id: str) -> str:

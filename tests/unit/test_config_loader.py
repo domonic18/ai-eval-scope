@@ -1,13 +1,11 @@
 """ConfigLoader 和 JSON Schema 校验测试。"""
 
-import json
 from pathlib import Path
 
 import pytest
 
 from agent_eval.config.loader import ConfigLoader, get_schema_path
 from agent_eval.core.exceptions import (
-    ConfigError,
     ConfigFileNotFoundError,
     SchemaValidationError,
 )

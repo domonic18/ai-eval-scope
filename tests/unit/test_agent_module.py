@@ -31,15 +31,16 @@ def test_import_plan_parser() -> None:
 
 
 def test_import_hooks() -> None:
-    from agent_eval.agent.hooks import BudgetController, SessionLogger
+    from agent_eval.agent.hooks import BudgetController
     ctrl = BudgetController(max_budget_usd=1.0)
     assert ctrl.check() == "ok"
 
 
 def test_execution_agent_raises() -> None:
+    import asyncio
+
     from agent_eval.agent.execution_agent import ExecutionAgent
     from agent_eval.execution.models import AgentConfig
-    import asyncio
 
     agent = ExecutionAgent(config=AgentConfig())
     with pytest.raises(NotImplementedError):
@@ -49,8 +50,9 @@ def test_execution_agent_raises() -> None:
 
 
 def test_evaluation_agent_raises() -> None:
-    from agent_eval.agent.evaluation_agent import EvaluationAgent
     import asyncio
+
+    from agent_eval.agent.evaluation_agent import EvaluationAgent
 
     agent = EvaluationAgent()
     with pytest.raises(NotImplementedError):

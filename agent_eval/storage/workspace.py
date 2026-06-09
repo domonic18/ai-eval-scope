@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import json
 import shutil
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -161,7 +161,7 @@ class RunWorkspace:
         """写入运行 manifest。"""
         manifest = {
             "run_id": self.run_id,
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
             **(metadata or {}),
         }
         (self.root / "run_manifest.json").write_text(

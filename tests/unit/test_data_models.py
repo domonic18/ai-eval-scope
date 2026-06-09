@@ -10,7 +10,6 @@ from agent_eval.evaluation.models import (
     ConstraintResult,
     MetricsReport,
     SampleResult,
-    SampleScore,
     StageResult,
 )
 from agent_eval.execution.models import (
@@ -29,7 +28,6 @@ from agent_eval.storage.package import (
     PackageMetadata,
     ScoreSummary,
 )
-
 
 # ─── 执行侧模型 ───
 

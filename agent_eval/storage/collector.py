@@ -7,9 +7,8 @@
 from __future__ import annotations
 
 import fnmatch
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 from agent_eval.storage.package import (
     DirectoryManifest,

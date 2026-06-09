@@ -5,8 +5,6 @@
 
 from pathlib import Path
 
-import pytest
-
 from agent_eval.core.types import ConstraintTier, EvalStatus
 from agent_eval.evaluation.evaluators import *  # trigger registration
 from agent_eval.evaluation.registry import registry

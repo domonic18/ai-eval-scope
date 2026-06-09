@@ -1,17 +1,6 @@
 """核心类型（枚举）和异常的单元测试。"""
 
-import pytest
 
-from agent_eval.core.types import (
-    CascadeStageID,
-    ConstraintTier,
-    EvalMethod,
-    EvalMode,
-    EvalStatus,
-    PackageStatus,
-    RunMode,
-    ShortCircuitPolicy,
-)
 from agent_eval.core.exceptions import (
     AgentError,
     AgentEvalError,
@@ -26,7 +15,16 @@ from agent_eval.core.exceptions import (
     SchemaValidationError,
     WorkspaceError,
 )
-
+from agent_eval.core.types import (
+    CascadeStageID,
+    ConstraintTier,
+    EvalMethod,
+    EvalMode,
+    EvalStatus,
+    PackageStatus,
+    RunMode,
+    ShortCircuitPolicy,
+)
 
 # ─── 枚举测试 ───
 

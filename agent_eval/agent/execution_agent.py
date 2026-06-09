@@ -41,7 +41,7 @@ class ExecutionAgent:
             "ExecutionAgent.run_task() 将在 Sprint 8 中实现。"
         )
 
-    async def run_task_set(self, task_set: "TaskSet") -> list[ExecutionPackage]:
+    async def run_task_set(self, task_set: TaskSet) -> list[ExecutionPackage]:
         """批量执行任务集，返回执行包列表。
 
         Args:
