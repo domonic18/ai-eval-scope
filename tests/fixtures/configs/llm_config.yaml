@@ -1,0 +1,17 @@
+llm:
+  default: deepseek_judge
+  providers:
+    deepseek_judge:
+      provider: deepseek
+      model: deepseek-chat
+      api_key: test-api-key-for-ci
+      base_url: https://api.deepseek.com/v1
+      max_tokens: 4096
+      temperature: 0.0
+      seed: 42
+    openai_judge:
+      provider: openai
+      model: gpt-4
+      api_key: test-api-key-for-ci
+      base_url: https://api.openai.com/v1
+      max_tokens: 8192

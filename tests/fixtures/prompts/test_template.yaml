@@ -1,0 +1,19 @@
+template_id: test_eval
+name: 测试评估模板
+dimensions:
+  - dim_id: quality
+    name: 质量
+    description: 内容质量评估
+    weight: 1.0
+system_prompt: "你是一个内容评审专家。"
+user_prompt_template: "请评估以下内容：{{ text }}"
+output_schema:
+  type: object
+  properties:
+    quality:
+      type: number
+  required:
+    - quality
+temperature: 0.0
+seed: 42
+num_samples: 1

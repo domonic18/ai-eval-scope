@@ -1,0 +1,59 @@
+template_id: pedagogical_logic
+name: 教学逻辑评估
+dimensions:
+  - dim_id: structure
+    name: 结构完整性
+    description: 教学内容是否具备完整的导入、新授、练习、总结结构
+    weight: 0.4
+    score_range: [0.0, 10.0]
+  - dim_id: progression
+    name: 知识递进
+    description: 知识点编排是否符合由浅入深的认知规律
+    weight: 0.3
+    score_range: [0.0, 10.0]
+  - dim_id: engagement
+    name: 互动设计
+    description: 是否设计了有效的师生互动环节
+    weight: 0.3
+    score_range: [0.0, 10.0]
+system_prompt: |
+  你是一位资深的教学设计评审专家。请对以下课件内容的教学逻辑进行评估。
+  评估时请关注：
+  1. 教学结构是否完整（导入→新授→练习→总结）
+  2. 知识递进是否合理
+  3. 互动设计是否有效
+user_prompt_template: |
+  请评估以下课件的教学逻辑质量：
+
+  ## 课件标题
+  {{ title }}
+
+  ## 课件内容
+  {{ content }}
+
+  ## 学科领域
+  {{ subject }}
+
+  请严格按照 JSON 格式输出评估结果。
+output_schema:
+  type: object
+  properties:
+    structure:
+      type: number
+      description: 结构完整性得分（0-10）
+    progression:
+      type: number
+      description: 知识递进得分（0-10）
+    engagement:
+      type: number
+      description: 互动设计得分（0-10）
+    summary:
+      type: string
+      description: 简要评语
+  required:
+    - structure
+    - progression
+    - engagement
+temperature: 0.0
+seed: 42
+num_samples: 3

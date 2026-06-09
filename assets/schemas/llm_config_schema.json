@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LLMConfig",
+  "description": "LLM Provider 配置 JSON Schema",
+  "type": "object",
+  "required": ["llm"],
+  "properties": {
+    "llm": {
+      "type": "object",
+      "required": ["default", "providers"],
+      "properties": {
+        "default": {
+          "type": "string",
+          "description": "默认 Provider 名称"
+        },
+        "providers": {
+          "type": "object",
+          "description": "Provider 配置映射",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["provider", "model", "api_key"],
+            "properties": {
+              "provider": {
+                "type": "string",
+                "enum": ["deepseek", "openai", "anthropic"],
+                "description": "协议类型"
+              },
+              "model": {
+                "type": "string",
+                "description": "模型 ID"
+              },
+              "api_key": {
+                "type": "string",
+                "description": "API Key（支持 ${ENV_VAR} 引用）"
+              },
+              "base_url": {
+                "type": "string",
+                "description": "API base URL"
+              },
+              "max_tokens": {
+                "type": "integer",
+                "default": 4096,
+                "description": "最大输出 token 数"
+              },
+              "temperature": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 2,
+                "default": 0,
+                "description": "默认温度"
+              },
+              "seed": {
+                "type": "integer",
+                "default": 42,
+                "description": "默认随机种子"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
