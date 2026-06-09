@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from agent_eval.core.types import EvalStatus
-from agent_eval.evaluation.models import MetricsReport, SampleResult, StageResult
+from agent_eval.evaluation.models import MetricsReport, SampleResult, SampleScore, StageResult
 
 
 class MetricsCalculator:
@@ -69,14 +69,14 @@ class MetricsCalculator:
             cond_r=(sum(r.reward for r in gated) / len(gated)) if gated else 0.0,
             avg_time_ms=sum(r.total_duration_ms for r in results) / total,
             sample_scores=[
-                {
-                    "sample_id": r.sample_id,
-                    "s_format": r.s_format,
-                    "s_common": r.s_common,
-                    "s_soft": r.s_soft,
-                    "s_pref": r.s_pref,
-                    "reward": r.reward,
-                }
+                SampleScore(
+                    sample_id=r.sample_id,
+                    s_format=r.s_format,
+                    s_common=r.s_common,
+                    s_soft=r.s_soft,
+                    s_pref=r.s_pref,
+                    reward=r.reward,
+                )
                 for r in results
             ],
             failure_breakdown=failure_breakdown,

@@ -20,6 +20,7 @@ from agent_eval.core.exceptions import (
     SchemaValidationError,
 )
 from agent_eval.execution.models import TaskSet
+from agent_eval.llm.config import LLMConfig
 from agent_eval.rules.models import RuleSet
 
 # Schema 文件查找路径
@@ -85,12 +86,14 @@ class ConfigLoader:
         try:
             jsonschema_validate(instance=data, schema=schema)
         except ValidationError as e:
-            errors.append({
-                "message": e.message,
-                "path": ".".join(str(p) for p in e.absolute_path) if e.absolute_path else "",
-                "validator": e.validator,
-                "expected": e.schema if hasattr(e, "schema") else None,
-            })
+            errors.append(
+                {
+                    "message": e.message,
+                    "path": ".".join(str(p) for p in e.absolute_path) if e.absolute_path else "",
+                    "validator": e.validator,
+                    "expected": e.schema if hasattr(e, "schema") else None,
+                }
+            )
 
         return errors
 
@@ -158,6 +161,25 @@ class ConfigLoader:
         """
         data = ConfigLoader.load_and_validate(path, schema_path)
         return TaskSet.model_validate(data)
+
+    @staticmethod
+    def load_llm_config(
+        path: Path | str,
+        schema_path: Path | str | None = None,
+    ) -> LLMConfig:
+        """加载 LLM 配置并转换为 LLMConfig 模型。
+
+        Args:
+            path: llm_config.yaml 文件路径。
+            schema_path: JSON Schema 文件路径（可选）。
+
+        Returns:
+            LLMConfig 实例。
+        """
+        data = ConfigLoader.load_and_validate(path, schema_path)
+        # 兼容顶层 llm: 或直接就是 providers 结构
+        llm_data = data.get("llm", data)
+        return LLMConfig.model_validate(llm_data)
 
 
 def get_schema_path(schema_name: str) -> Path:

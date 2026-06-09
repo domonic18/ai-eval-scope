@@ -144,10 +144,7 @@ class PipelineEngine:
         result.total_duration_ms = (time.monotonic() - total_start) * 1000
 
         # 4. 确定最终状态
-        if any(
-            sr.status == EvalStatus.FAIL
-            for sr in result.stage_results.values()
-        ):
+        if any(sr.status == EvalStatus.FAIL for sr in result.stage_results.values()):
             result.status = EvalStatus.FAIL
 
         self._cache[cache_key] = result
@@ -159,6 +156,7 @@ class PipelineEngine:
         rule_set: Any = None,
         *,
         run_id: str = "",
+        extra_context: dict[str, Any] | None = None,
     ) -> Any:
         """批量评估所有样本。
 
@@ -166,6 +164,8 @@ class PipelineEngine:
             packages: 样本列表。
             rule_set: 规则集（用于构建上下文）。
             run_id: 运行 ID。
+            extra_context: 额外上下文（如 judge_orchestrator、evidence_dir），
+                           合并到每个样本的上下文中。
 
         Returns:
             MetricsReport 实例。
@@ -174,6 +174,8 @@ class PipelineEngine:
 
         for i, pkg in enumerate(packages):
             context = self._build_context(pkg, rule_set, index=i)
+            if extra_context:
+                context.update(extra_context)
             results.append(self.evaluate_sample(pkg, context))
 
         return self.metrics_calculator.compute(results, run_id=run_id)
@@ -182,12 +184,12 @@ class PipelineEngine:
         """计算缓存 Key（基于样本内容 + 规则集版本）。"""
         content = str(sample)
         rule_version = context.get("rule_set_version", "")
-        content_str = f"{content}:{rule_version}:{json.dumps(context.get('constraints', {}), sort_keys=True)}"
+        content_str = (
+            f"{content}:{rule_version}:{json.dumps(context.get('constraints', {}), sort_keys=True)}"
+        )
         return hashlib.sha256(content_str.encode()).hexdigest()
 
-    def _mark_remaining_skipped(
-        self, result: SampleResult, failed_stage_id: str
-    ) -> None:
+    def _mark_remaining_skipped(self, result: SampleResult, failed_stage_id: str) -> None:
         """将失败阶段之后的阶段标记为 SKIP。"""
         remaining = False
         for stage in self.stages:
@@ -200,9 +202,7 @@ class PipelineEngine:
             if stage.stage_id == failed_stage_id:
                 remaining = True
 
-    def _build_context(
-        self, package: Any, rule_set: Any, *, index: int = 0
-    ) -> dict[str, Any]:
+    def _build_context(self, package: Any, rule_set: Any, *, index: int = 0) -> dict[str, Any]:
         """构建评估上下文。"""
         context: dict[str, Any] = {
             "sample_id": f"sample_{index:03d}",
@@ -277,7 +277,9 @@ def build_default_pipeline(registry: EvaluatorRegistry) -> PipelineEngine:
                     # LLM Judge 偏好约束
                     EvaluatorConfig("pref.style_preference", {"template_id": "style_preference"}),
                     EvaluatorConfig("pref.depth_preference", {"template_id": "depth_preference"}),
-                    EvaluatorConfig("pref.request_fulfillment", {"template_id": "request_fulfillment"}),
+                    EvaluatorConfig(
+                        "pref.request_fulfillment", {"template_id": "request_fulfillment"}
+                    ),
                 ],
             ),
         ],

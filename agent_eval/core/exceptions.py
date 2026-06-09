@@ -147,6 +147,12 @@ class LLMResponseError(LLMError):
     """LLM 响应解析失败。"""
 
 
+# ─── 编排调度相关 ───
+
+class OrchestratorError(AgentEvalError):
+    """编排调度异常。"""
+
+
 # ─── Workspace 相关 ───
 
 class WorkspaceError(AgentEvalError):
