@@ -19,6 +19,9 @@ llm_config.yaml
 # IDE
 .idea/
 .vscode/
+
+# Claude Code
+.claude/
 *.swp
 *.swo
 
