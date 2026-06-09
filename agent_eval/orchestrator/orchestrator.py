@@ -13,6 +13,10 @@ from pathlib import Path
 from typing import Any
 
 import structlog
+from dotenv import load_dotenv
+
+# 在配置解析前加载 .env 中的环境变量
+load_dotenv()
 
 # 确保所有评估器注册到 registry（触发 @registry.register 装饰器）
 import agent_eval.evaluation.evaluators  # noqa: F401

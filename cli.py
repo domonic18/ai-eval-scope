@@ -8,8 +8,12 @@ from __future__ import annotations
 from pathlib import Path
 
 import typer
+from dotenv import load_dotenv
 from rich import print as rprint
 from rich.table import Table
+
+# 在任何配置解析之前加载 .env
+load_dotenv()
 
 app = typer.Typer(
     name="agent-eval",

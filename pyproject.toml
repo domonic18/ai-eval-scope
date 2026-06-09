@@ -25,6 +25,7 @@ dependencies = [
     "html5lib>=1.1",
     "jsonschema>=4.21",
     "rich>=13.0",
+    "python-dotenv>=1.2.2",
 ]
 
 [project.optional-dependencies]

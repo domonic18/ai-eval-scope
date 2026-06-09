@@ -68,7 +68,7 @@ def main() -> None:
     print(f"📦 打包样本: {sample_dir}")
     print(f"   → {pkg_dir}")
 
-    PackageBuilder.build_directory(
+    PackageBuilder().build_directory(
         task=task,
         source_dir=sample_dir,
         package_dir=pkg_dir,
