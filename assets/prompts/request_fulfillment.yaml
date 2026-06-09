@@ -1,0 +1,55 @@
+template_id: request_fulfillment
+name: 需求满足度评估
+dimensions:
+  - dim_id: completeness
+    name: 完整性
+    description: 产出是否覆盖了原始需求的所有要点
+    weight: 0.4
+    score_range: [0.0, 10.0]
+  - dim_id: relevance
+    name: 相关性
+    description: 内容是否与原始需求紧密相关
+    weight: 0.3
+    score_range: [0.0, 10.0]
+  - dim_id: quality
+    name: 质量
+    description: 产出质量是否达到预期水准
+    weight: 0.3
+    score_range: [0.0, 10.0]
+system_prompt: |
+  你是一位需求满足度评审专家。请评估以下课件产出是否满足原始需求。
+  评估时请关注：
+  1. 是否覆盖了需求的全部要点
+  2. 内容是否与需求紧密相关
+  3. 产出质量是否达到预期
+user_prompt_template: |
+  请评估以下产出是否满足原始需求：
+
+  ## 原始需求
+  {{ original_request }}
+
+  ## 预期产出
+  {{ expected_output }}
+
+  ## 实际产出内容
+  {{ content }}
+
+  请严格按照 JSON 格式输出评估结果。
+output_schema:
+  type: object
+  properties:
+    completeness:
+      type: number
+    relevance:
+      type: number
+    quality:
+      type: number
+    summary:
+      type: string
+  required:
+    - completeness
+    - relevance
+    - quality
+temperature: 0.0
+seed: 42
+num_samples: 3

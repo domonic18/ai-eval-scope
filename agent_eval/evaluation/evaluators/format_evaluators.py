@@ -33,7 +33,6 @@ class ResponseFormatEvaluator(BaseEvaluator):
     def evaluate(self, sample: Any, context: dict[str, Any]) -> Any:
         import time
 
-        from agent_eval.evaluation.models import ConstraintResult
 
         start = time.monotonic()
         allowed = set(self.params.get("allowed_formats", ["md", "html"]))
@@ -152,7 +151,6 @@ class DocumentCountEvaluator(BaseEvaluator):
     def evaluate(self, sample: Any, context: dict[str, Any]) -> Any:
         import time
 
-        from agent_eval.evaluation.models import ConstraintResult
 
         start = time.monotonic()
 
@@ -216,12 +214,11 @@ class StructureComplianceEvaluator(BaseEvaluator):
     def evaluate(self, sample: Any, context: dict[str, Any]) -> Any:
         import time
 
-        from agent_eval.evaluation.models import ConstraintResult
 
         start = time.monotonic()
 
         max_heading_depth = self.params.get("max_heading_depth", 6)
-        require_toc = self.params.get("require_toc", False)
+        self.params.get("require_toc", False)  # reserved for future TOC check
 
         output_dir = self._get_output_dir(sample)
         if output_dir is None or not output_dir.exists():
@@ -344,7 +341,6 @@ class HtmlValidityEvaluator(BaseEvaluator):
     def evaluate(self, sample: Any, context: dict[str, Any]) -> Any:
         import time
 
-        from agent_eval.evaluation.models import ConstraintResult
 
         start = time.monotonic()
         check_html_only = self.params.get("check_html_only", True)
@@ -476,7 +472,6 @@ class DirectoryStructureEvaluator(BaseEvaluator):
     def evaluate(self, sample: Any, context: dict[str, Any]) -> Any:
         import time
 
-        from agent_eval.evaluation.models import ConstraintResult
 
         start = time.monotonic()
 

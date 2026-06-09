@@ -1,0 +1,61 @@
+template_id: content_diversity
+name: 内容多样性评估
+dimensions:
+  - dim_id: media_variety
+    name: 媒体多样性
+    description: 内容是否包含多种表达形式（文字、公式、表格、图片等）
+    weight: 0.4
+    score_range: [0.0, 10.0]
+  - dim_id: topic_breadth
+    name: 主题广度
+    description: 是否覆盖了相关主题的多个方面
+    weight: 0.3
+    score_range: [0.0, 10.0]
+  - dim_id: example_richness
+    name: 示例丰富度
+    description: 是否提供了丰富多样的示例和案例
+    weight: 0.3
+    score_range: [0.0, 10.0]
+system_prompt: |
+  你是一位教育内容评审专家。请评估以下课件内容的多样性。
+  评估时请关注：
+  1. 内容是否使用了多种表达形式（文字、公式、表格、图片等）
+  2. 是否覆盖了主题的多个方面
+  3. 是否提供了丰富多样的示例和案例
+user_prompt_template: |
+  请评估以下课件的内容多样性：
+
+  ## 课件标题
+  {{ title }}
+
+  ## 课件内容
+  {{ content }}
+
+  ## 已检测到的内容元素
+  - 公式：{{ has_formula }}
+  - 表格：{{ has_table }}
+  - 图片：{{ has_image }}
+  - 列表：{{ has_list }}
+
+  请严格按照 JSON 格式输出评估结果。
+output_schema:
+  type: object
+  properties:
+    media_variety:
+      type: number
+      description: 媒体多样性得分（0-10）
+    topic_breadth:
+      type: number
+      description: 主题广度得分（0-10）
+    example_richness:
+      type: number
+      description: 示例丰富度得分（0-10）
+    summary:
+      type: string
+  required:
+    - media_variety
+    - topic_breadth
+    - example_richness
+temperature: 0.0
+seed: 42
+num_samples: 3

@@ -1,0 +1,52 @@
+template_id: style_preference
+name: 风格偏好评估
+dimensions:
+  - dim_id: language_style
+    name: 语言风格
+    description: 语言表达是否符合目标受众的风格偏好
+    weight: 0.4
+    score_range: [0.0, 10.0]
+  - dim_id: formatting
+    name: 排版风格
+    description: 排版和格式风格是否统一、专业
+    weight: 0.3
+    score_range: [0.0, 10.0]
+  - dim_id: tone
+    name: 语气风格
+    description: 整体语气是否恰当、亲和或严谨
+    weight: 0.3
+    score_range: [0.0, 10.0]
+system_prompt: |
+  你是一位教育内容风格评审专家。请评估以下课件的风格是否符合教学场景要求。
+  评估时请关注：
+  1. 语言风格是否适合目标受众
+  2. 排版格式是否统一专业
+  3. 语气是否恰当
+user_prompt_template: |
+  请评估以下课件的风格偏好：
+
+  ## 课件标题
+  {{ title }}
+
+  ## 课件内容
+  {{ content }}
+
+  请严格按照 JSON 格式输出评估结果。
+output_schema:
+  type: object
+  properties:
+    language_style:
+      type: number
+    formatting:
+      type: number
+    tone:
+      type: number
+    summary:
+      type: string
+  required:
+    - language_style
+    - formatting
+    - tone
+temperature: 0.0
+seed: 42
+num_samples: 3

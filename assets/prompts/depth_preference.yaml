@@ -1,0 +1,55 @@
+template_id: depth_preference
+name: 深度偏好评估
+dimensions:
+  - dim_id: knowledge_depth
+    name: 知识深度
+    description: 内容是否达到了合适的知识深度
+    weight: 0.4
+    score_range: [0.0, 10.0]
+  - dim_id: detail_level
+    name: 细节程度
+    description: 解释和论述是否足够详细
+    weight: 0.3
+    score_range: [0.0, 10.0]
+  - dim_id: rigor
+    name: 严谨程度
+    description: 概念表述是否准确、严谨
+    weight: 0.3
+    score_range: [0.0, 10.0]
+system_prompt: |
+  你是一位学科教学评审专家。请评估以下课件内容的深度是否满足教学需求。
+  评估时请关注：
+  1. 知识深度是否合适
+  2. 细节程度是否充分
+  3. 概念表述是否严谨
+user_prompt_template: |
+  请评估以下课件的内容深度：
+
+  ## 课件标题
+  {{ title }}
+
+  ## 学科领域
+  {{ subject }}
+
+  ## 课件内容
+  {{ content }}
+
+  请严格按照 JSON 格式输出评估结果。
+output_schema:
+  type: object
+  properties:
+    knowledge_depth:
+      type: number
+    detail_level:
+      type: number
+    rigor:
+      type: number
+    summary:
+      type: string
+  required:
+    - knowledge_depth
+    - detail_level
+    - rigor
+temperature: 0.0
+seed: 42
+num_samples: 3

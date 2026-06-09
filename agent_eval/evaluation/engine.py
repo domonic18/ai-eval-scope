@@ -9,7 +9,6 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any
 
 from agent_eval.core.types import EvalStatus
@@ -269,7 +268,16 @@ def build_default_pipeline(registry: EvaluatorRegistry) -> PipelineEngine:
                 id="quality",
                 short_circuit_policy="continue_all",
                 evaluators=[
-                    # 软约束和偏好约束将在 Sprint 4 接入
+                    # Rule-based 软约束
+                    EvaluatorConfig("soft.content_density"),
+                    EvaluatorConfig("soft.visual_consistency"),
+                    # LLM Judge 软约束
+                    EvaluatorConfig("soft.teaching_logic", {"template_id": "pedagogical_logic"}),
+                    EvaluatorConfig("soft.content_diversity", {"template_id": "content_diversity"}),
+                    # LLM Judge 偏好约束
+                    EvaluatorConfig("pref.style_preference", {"template_id": "style_preference"}),
+                    EvaluatorConfig("pref.depth_preference", {"template_id": "depth_preference"}),
+                    EvaluatorConfig("pref.request_fulfillment", {"template_id": "request_fulfillment"}),
                 ],
             ),
         ],

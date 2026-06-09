@@ -1,0 +1,52 @@
+template_id: logical_consistency
+name: 逻辑一致性评估
+dimensions:
+  - dim_id: internal_consistency
+    name: 内部一致性
+    description: 文档内部的陈述是否自洽、无矛盾
+    weight: 0.5
+    score_range: [0.0, 10.0]
+  - dim_id: causal_logic
+    name: 因果逻辑
+    description: 因果关系推理是否合理
+    weight: 0.3
+    score_range: [0.0, 10.0]
+  - dim_id: classification_logic
+    name: 分类逻辑
+    description: 分类和归纳是否合理
+    weight: 0.2
+    score_range: [0.0, 10.0]
+system_prompt: |
+  你是一位内容逻辑评审专家。请检查以下文档内容是否存在逻辑矛盾或不一致。
+  评估时请关注：
+  1. 文档内部陈述是否自洽
+  2. 因果关系推理是否合理
+  3. 分类和归纳是否合理
+user_prompt_template: |
+  请评估以下文档内容的逻辑一致性：
+
+  ## 文档标题
+  {{ title }}
+
+  ## 文档内容
+  {{ content }}
+
+  请严格按照 JSON 格式输出评估结果。如果发现逻辑矛盾，请在 summary 中指出。
+output_schema:
+  type: object
+  properties:
+    internal_consistency:
+      type: number
+    causal_logic:
+      type: number
+    classification_logic:
+      type: number
+    summary:
+      type: string
+  required:
+    - internal_consistency
+    - causal_logic
+    - classification_logic
+temperature: 0.0
+seed: 42
+num_samples: 3

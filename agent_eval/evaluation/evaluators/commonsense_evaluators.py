@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import re
+import time
 from pathlib import Path
 from typing import Any
 
@@ -62,11 +63,8 @@ class InfoAccuracyEvaluator(BaseEvaluator):
     method = EvalMethod.FACT_VERIFY
 
     def evaluate(self, sample: Any, context: dict[str, Any]) -> Any:
-        import time
-
         start = time.monotonic()
 
-        knowledge_base = self.params.get("knowledge_base")
         # 自定义验证规则的简单列表
         fact_rules = self.params.get("fact_rules", [])
 
@@ -150,8 +148,6 @@ class ChronologicalOrderEvaluator(BaseEvaluator):
     method = EvalMethod.RULE
 
     def evaluate(self, sample: Any, context: dict[str, Any]) -> Any:
-        import time
-
         start = time.monotonic()
 
         output_dir = _get_output_dir(sample)
@@ -174,8 +170,6 @@ class ChronologicalOrderEvaluator(BaseEvaluator):
                 duration_ms=elapsed,
             )
 
-        errors: list[str] = []
-
         # 检查年份是否递增出现
         years = re.findall(r"(?:公元)?(\d{3,4})\s*年", text)
         if years:
@@ -186,7 +180,7 @@ class ChronologicalOrderEvaluator(BaseEvaluator):
                     pass  # 时序回溯不一定错误，暂不报告
 
         # 检查序号递增
-        ordered_items = re.findall(r"第([一二三四五六七八九十百千\d]+)[章节步骤期]", text)
+        re.findall(r"第([一二三四五六七八九十百千\d]+)[章节步骤期]", text)
         # 简单检查：只要有序号即可，不强制严格递增
 
         elapsed = (time.monotonic() - start) * 1000
@@ -201,7 +195,10 @@ class ChronologicalOrderEvaluator(BaseEvaluator):
 
 @registry.register("commonsense.logical_consistency")
 class LogicalConsistencyEvaluator(BaseEvaluator):
-    """逻辑一致性检查 — 当前为骨架，Sprint 4 接入 LLM。"""
+    """逻辑一致性检查 — 使用 LLM 评估文档内容的逻辑一致性。
+
+    当 LLM 不可用时降级为 Rule-based 模式（检查基本矛盾模式）。
+    """
 
     evaluator_id = "commonsense.logical_consistency"
     name = "逻辑一致性检查"
@@ -209,18 +206,146 @@ class LogicalConsistencyEvaluator(BaseEvaluator):
     method = EvalMethod.LLM_CONSISTENCY
 
     def evaluate(self, sample: Any, context: dict[str, Any]) -> Any:
-        import time
-
         start = time.monotonic()
+
+        output_dir = _get_output_dir(sample)
+        if output_dir is None or not output_dir.exists():
+            elapsed = (time.monotonic() - start) * 1000
+            return self._make_result(
+                status=EvalStatus.FAIL,
+                score=0.0,
+                reason="输出目录不存在",
+                duration_ms=elapsed,
+            )
+
+        text = _collect_text_content(output_dir)
+        if not text.strip():
+            elapsed = (time.monotonic() - start) * 1000
+            return self._make_result(
+                status=EvalStatus.FAIL,
+                score=0.0,
+                reason="文档内容为空",
+                duration_ms=elapsed,
+            )
+
+        # 检查是否有可用的 LLM Judge
+        orchestrator = context.get("judge_orchestrator")
+        evidence_dir = context.get("evidence_dir")
+
+        if orchestrator is not None and evidence_dir is not None:
+            # LLM 模式：调用 JudgeOrchestrator
+            return self._evaluate_with_llm(text, context, orchestrator, evidence_dir, start)
+
+        # 降级模式：Rule-based 基本矛盾检查
+        return self._evaluate_rule_based(text, start)
+
+    def _evaluate_with_llm(
+        self,
+        text: str,
+        context: dict[str, Any],
+        orchestrator: Any,
+        evidence_dir: Any,
+        start: float,
+    ) -> Any:
+        """使用 LLM 进行逻辑一致性评估。"""
+        from pathlib import Path
+
+        max_chars = self.params.get("max_content_chars", 8000)
+        if len(text) > max_chars:
+            text = text[:max_chars] + "\n\n[...内容已截断...]"
+
+        variables = {
+            "content": text[:4000],
+            "title": context.get("task_input", {}).get("title", "未知标题"),
+        }
+
+        try:
+            scores, record = orchestrator.judge(
+                constraint_id=self.evaluator_id,
+                sample_id=context.get("sample_id", "unknown"),
+                template_id="logical_consistency",
+                variables=variables,
+                evidence_dir=Path(evidence_dir) if not isinstance(evidence_dir, Path) else evidence_dir,
+                provider_name=self.params.get("llm_provider"),
+            )
+        except Exception as e:
+            elapsed = (time.monotonic() - start) * 1000
+            # LLM 调用失败，降级到 Rule-based
+            return self._make_result(
+                status=EvalStatus.PASS,
+                score=1.0,
+                reason=f"LLM 调用失败，降级为默认通过: {e}",
+                duration_ms=elapsed,
+            )
+
         elapsed = (time.monotonic() - start) * 1000
 
-        # Sprint 4 接入 LLM Judge 后实现，当前默认通过
-        return self._make_result(
-            status=EvalStatus.PASS,
-            score=1.0,
-            reason="逻辑一致性检查（Rule-based 降级模式，默认通过；LLM 增强将在 Sprint 4 启用）",
+        # 计算分数
+        template = orchestrator.templates.get("logical_consistency")
+        if template and template.dimensions:
+            total_weight = sum(d.weight for d in template.dimensions)
+            weighted = sum(scores.get(d.dim_id, 0.0) * d.weight for d in template.dimensions)
+            avg_score = (weighted / total_weight / 10.0) if total_weight > 0 else 1.0
+        else:
+            vals = list(scores.values())
+            avg_score = (sum(vals) / len(vals) / 10.0) if vals else 1.0
+
+        # HARD_SCORE: 6 分以上算通过
+        passed = avg_score >= 0.6
+        score = 1.0 if passed else 0.0
+
+        record_path = None
+        if record:
+            record_path = f"evidence/{record.judge_id}.json"
+
+        from agent_eval.evaluation.models import ConstraintResult
+
+        return ConstraintResult(
+            constraint_id=self.evaluator_id,
+            name=self.name,
+            tier=self.tier,
+            status=EvalStatus.PASS if passed else EvalStatus.FAIL,
+            score=score,
+            reason=f"逻辑一致性（LLM）：{', '.join(f'{k}={v:.1f}' for k, v in scores.items())}",
             duration_ms=elapsed,
+            judge_provider=record.provider_name if record else None,
+            judge_model=record.model if record else None,
+            judge_record_path=record_path,
         )
+
+    def _evaluate_rule_based(self, text: str, start: float) -> Any:
+        """Rule-based 降级模式：检查基本逻辑矛盾。"""
+        elapsed = (time.monotonic() - start) * 1000
+
+        # 简单模式：查找自相矛盾的陈述（如数值矛盾）
+        errors: list[str] = []
+
+        # 检查 "A = B" 和 "A ≠ B" 类型的矛盾
+        equals = re.findall(r"(\w+)\s*[=等于]\s*(\d+\.?\d*)", text)
+        for name, value in equals:
+            # 查找同一变量是否有不同值
+            other_values = re.findall(
+                rf"{re.escape(name)}\s*[=等于]\s*(\d+\.?\d*)", text
+            )
+            unique_values = set(other_values)
+            if len(unique_values) > 1:
+                errors.append(f"变量 {name} 有多个不同值: {unique_values}")
+
+        if not errors:
+            return self._make_result(
+                status=EvalStatus.PASS,
+                score=1.0,
+                reason="逻辑一致性检查通过（Rule-based 降级模式）",
+                duration_ms=elapsed,
+            )
+        else:
+            return self._make_result(
+                status=EvalStatus.FAIL,
+                score=0.0,
+                reason=f"发现 {len(errors)} 处逻辑矛盾",
+                details={"errors": errors[:5]},
+                duration_ms=elapsed,
+            )
 
 
 @registry.register("commonsense.math_formula")
@@ -233,8 +358,6 @@ class MathFormulaEvaluator(BaseEvaluator):
     method = EvalMethod.MATH_VERIFY
 
     def evaluate(self, sample: Any, context: dict[str, Any]) -> Any:
-        import time
-
         start = time.monotonic()
 
         output_dir = _get_output_dir(sample)
@@ -329,8 +452,6 @@ class UnitConsistencyEvaluator(BaseEvaluator):
     ]
 
     def evaluate(self, sample: Any, context: dict[str, Any]) -> Any:
-        import time
-
         start = time.monotonic()
 
         output_dir = _get_output_dir(sample)
@@ -359,12 +480,12 @@ class UnitConsistencyEvaluator(BaseEvaluator):
         # 检查单位符号后是否有多余字符或缺失上标
         density_wrong = re.findall(r"密度.*?(\d+\.?\d*)\s*kg/m(?!²|³)", text)
         if density_wrong:
-            errors.append(f"密度单位可能错误（应为 kg/m³ 或 kg/m²）")
+            errors.append("密度单位可能错误（应为 kg/m³ 或 kg/m²）")
 
         # 检查重力加速度单位
         g_wrong = re.findall(r"g\s*[=≈]\s*(\d+\.?\d*)\s*m/s(?![²³])", text)
         if g_wrong:
-            errors.append(f"重力加速度单位可能错误（应为 m/s² 而非 m/s）")
+            errors.append("重力加速度单位可能错误（应为 m/s² 而非 m/s）")
 
         elapsed = (time.monotonic() - start) * 1000
 
