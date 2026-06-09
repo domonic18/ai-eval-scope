@@ -15,6 +15,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from agent_eval.config.paths import paths
 from agent_eval.core.exceptions import WorkspaceError
 from agent_eval.storage.package import generate_run_id
 
@@ -31,7 +32,7 @@ class Workspace:
         Args:
             root_dir: 工作空间根目录路径，默认为 ./workspace。
         """
-        self.root = Path(root_dir) if root_dir else Path("./workspace")
+        self.root = Path(root_dir) if root_dir else paths.default_workspace
         self.runs_dir = self.root / "runs"
         self.cache_dir = self.root / "cache"
         self.index_dir = self.root / "index"

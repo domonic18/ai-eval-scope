@@ -14,6 +14,7 @@ import yaml
 from jsonschema import ValidationError
 from jsonschema import validate as jsonschema_validate
 
+from agent_eval.config.paths import paths
 from agent_eval.core.exceptions import (
     ConfigError,
     ConfigFileNotFoundError,
@@ -22,9 +23,6 @@ from agent_eval.core.exceptions import (
 from agent_eval.execution.models import TaskSet
 from agent_eval.llm.config import LLMConfig
 from agent_eval.rules.models import RuleSet
-
-# Schema 文件查找路径
-_SCHEMA_DIR = Path(__file__).parent.parent.parent / "assets" / "schemas"
 
 
 class ConfigLoader:
@@ -191,4 +189,4 @@ def get_schema_path(schema_name: str) -> Path:
     Returns:
         Schema 文件的完整路径。
     """
-    return _SCHEMA_DIR / schema_name
+    return paths.schemas_dir / schema_name

@@ -40,8 +40,9 @@ def _init_judge_orchestrator(
 
         llm_config = ConfigLoader.load_llm_config(llm_config_path)
         pool = ProviderPool(llm_config)
-        template_dir = Path(__file__).parent / "assets" / "prompts"
-        templates = TemplateManager(template_dir)
+        from agent_eval.config.paths import paths
+
+        templates = TemplateManager(paths.prompts_dir)
         templates.load_all()
         stability = StabilityController()
         parser = StructuredOutputParser()
