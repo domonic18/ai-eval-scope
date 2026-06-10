@@ -86,14 +86,30 @@ def _collect_file_texts(output_dir: Path) -> dict[str, str]:
 _fact_db_cache: dict[str, dict] = {}
 
 
-def _merge_fact_section(source: dict[str, Any] | None, target: dict[str, list]) -> None:
-    """将 source 中的 constants/misconceptions/domain_facts 合并到 target。"""
+def _merge_fact_section(source: dict[str, Any] | None, target: dict[str, Any]) -> None:
+    """将 source 中的 constants/misconceptions/domain_facts 合并到 target。
+
+    constants 和 misconceptions 是 list，做 extend 合并。
+    domain_facts 是嵌套 dict，按子 key 递归合并。
+    """
     if source is None:
         return
-    for key in ("constants", "misconceptions", "domain_facts"):
+    for key in ("constants", "misconceptions"):
         items = source.get(key, [])
         if items:
             target.setdefault(key, []).extend(items)
+    # domain_facts 是嵌套 dict（如 {math_formulas: {plane_figures: [...]}}），
+    # 不能用 extend 否则只追加 dict 的 key 字符串。
+    df = source.get("domain_facts")
+    if df and isinstance(df, dict):
+        existing = target.setdefault("domain_facts", {})
+        for sub_key, sub_val in df.items():
+            if isinstance(sub_val, list):
+                existing.setdefault(sub_key, []).extend(sub_val)
+            elif isinstance(sub_val, dict):
+                existing.setdefault(sub_key, {}).update(sub_val)
+            else:
+                existing[sub_key] = sub_val
 
 
 def _load_fact_db(subjects: list[str] | None = None) -> dict:
@@ -118,10 +134,10 @@ def _load_fact_db(subjects: list[str] | None = None) -> dict:
     from agent_eval.config.paths import paths
 
     knowledge_dir = paths.assets_dir / "knowledge"
-    merged: dict[str, list] = {
+    merged: dict[str, Any] = {
         "constants": [],
         "misconceptions": [],
-        "domain_facts": [],
+        "domain_facts": {},
     }
 
     # 1. 始终加载 _defaults.yaml
@@ -1090,50 +1106,202 @@ class LogicalConsistencyEvaluator(BaseEvaluator):
         )
 
     def _evaluate_rule_based(self, text: str, output_dir: Path, start: float) -> Any:
-        """Rule-based 降级模式：检查基本逻辑矛盾。"""
+        """Rule-based 降级模式：检查基本逻辑矛盾。
+
+        检查策略：
+        1. 仅匹配具名变量赋值（如 "总面积=567"、"total = 350"），
+           排除纯数字（避免将算术项如 "8=32" 误判为变量）
+        2. 中文变量使用公共后缀匹配（"有学生数=42" 与 "但学生数=45"
+           共享后缀 "学生数" → 视为同一变量）
+        3. Per-file 检查（不同文件的变量互不比较）
+        4. 输出包含文件归属和上下文片段
+        """
         elapsed = (time.monotonic() - start) * 1000
 
-        # 简单模式：查找自相矛盾的陈述（如数值矛盾）
-        errors: list[str] = []
+        # 具名变量正则：变量名以字母或中文字符开头，排除纯数字
+        _VAR_PATTERN = re.compile(
+            r"(?<![\d])"
+            r"([a-zA-Z_一-鿿][\w一-鿿]{0,19})"
+            r"\s*[=＝]\s*"
+            r"(\d+\.?\d*)"
+        )
 
-        # 检查 "A = B" 和 "A ≠ B" 类型的矛盾
-        equals = re.findall(r"(\w+)\s*[=等于]\s*(\d+\.?\d*)", text)
-        for name, value in equals:
-            # 查找同一变量是否有不同值
-            other_values = re.findall(
-                rf"{re.escape(name)}\s*[=等于]\s*(\d+\.?\d*)", text
-            )
-            unique_values = set(other_values)
-            if len(unique_values) > 1:
-                errors.append(f"变量 {name} 有多个不同值: {unique_values}")
+        file_texts = _collect_file_texts(output_dir)
+        findings: list[dict[str, Any]] = []
+
+        for filename, ftext in file_texts.items():
+            # 收集本文件中每个变量的所有值和上下文
+            var_values: dict[str, set[str]] = {}
+            var_contexts: dict[str, list[str]] = {}
+
+            for m in _VAR_PATTERN.finditer(ftext):
+                name, value = m.group(1), m.group(2)
+                # 跳过单字母 ASCII 变量（数学公式中的 x=5 等）
+                if len(name) <= 1 and name.isascii():
+                    continue
+                var_values.setdefault(name, set()).add(value)
+                ctx_start = max(0, m.start() - 25)
+                ctx_end = min(len(ftext), m.end() + 15)
+                ctx = ftext[ctx_start:ctx_end].replace("\n", " ").strip()
+                var_contexts.setdefault(name, []).append(
+                    f"{name}={value} (…{ctx}…)"
+                )
+
+            # Pass 1: 精确匹配 — 同名变量有多个不同值
+            reported_vars: set[str] = set()
+            for name, values in var_values.items():
+                if len(values) > 1:
+                    reported_vars.add(name)
+                    contexts = var_contexts.get(name, [])
+                    findings.append({
+                        "file": filename,
+                        "check_type": "variable_contradiction",
+                        "severity": "error",
+                        "variable": name,
+                        "values": sorted(values),
+                        "occurrences": len(contexts),
+                        "contexts": contexts[:5],
+                    })
+
+            # Pass 2: 中文公共后缀匹配 — "有学生数" 与 "但学生数"
+            # 共享后缀 "学生数" → 视为同一变量的不同表述
+            cjk_vars = {
+                n: vs for n, vs in var_values.items()
+                if n not in reported_vars and any("一" <= c <= "鿿" for c in n)
+            }
+            if len(cjk_vars) >= 2:
+                findings.extend(
+                    self._check_cjk_suffix_conflicts(
+                        filename, cjk_vars, var_contexts
+                    )
+                )
 
         files_checked = _collect_file_names(output_dir)
-        if not errors:
+
+        if not findings:
             return self._make_result(
                 status=EvalStatus.PASS,
                 score=1.0,
                 reason="逻辑一致性检查通过（Rule-based 降级模式）",
-                details={"files_checked": files_checked, "content_length": len(text)},
+                details={
+                    "files_checked": files_checked,
+                    "content_length": len(text),
+                    "mode": "rule_based",
+                    "checks_performed": "named_variable_assignment",
+                },
                 duration_ms=elapsed,
             )
         else:
+            error_msgs = [
+                f"{f['file']}: 变量「{f['variable']}」"
+                f"有 {len(f['values'])} 个不同值 {f['values']}"
+                for f in findings
+            ]
             return self._make_result(
                 status=EvalStatus.FAIL,
                 score=0.0,
-                reason=f"发现 {len(errors)} 处逻辑矛盾",
-                details={"errors": errors[:5], "files_checked": files_checked, "content_length": len(text)},
+                reason=f"发现 {len(findings)} 处变量赋值矛盾",
+                details={
+                    "findings": findings,
+                    "errors": error_msgs[:10],
+                    "files_checked": files_checked,
+                    "content_length": len(text),
+                    "mode": "rule_based",
+                },
                 duration_ms=elapsed,
             )
+
+    @staticmethod
+    def _check_cjk_suffix_conflicts(
+        filename: str,
+        cjk_vars: dict[str, set[str]],
+        var_contexts: dict[str, list[str]],
+    ) -> list[dict[str, Any]]:
+        """检查中文变量的公共后缀冲突。
+
+        如 "有学生数=42" 和 "但学生数=45" 共享后缀 "学生数"，
+        但值不同 → 报告为矛盾。
+        """
+        names = list(cjk_vars.keys())
+        findings: list[dict[str, Any]] = []
+        seen_pairs: set[frozenset[str]] = set()
+
+        for i, name_a in enumerate(names):
+            for name_b in names[i + 1:]:
+                pair_key = frozenset({name_a, name_b})
+                if pair_key in seen_pairs:
+                    continue
+
+                # 寻找公共后缀（至少 2 个中文字符）
+                suffix = ""
+                min_len = min(len(name_a), len(name_b))
+                for k in range(1, min_len + 1):
+                    if name_a[-k] == name_b[-k] and "一" <= name_a[-k] <= "鿿":
+                        suffix = name_a[-k:]
+                    else:
+                        break
+
+                if len(suffix) < 2:
+                    continue
+
+                seen_pairs.add(pair_key)
+
+                # 合并两个变量的值
+                merged_values = cjk_vars[name_a] | cjk_vars[name_b]
+                if len(merged_values) > 1:
+                    merged_contexts = (
+                        var_contexts.get(name_a, []) + var_contexts.get(name_b, [])
+                    )
+                    findings.append({
+                        "file": filename,
+                        "check_type": "variable_contradiction",
+                        "severity": "error",
+                        "variable": suffix,
+                        "matched_as": [name_a, name_b],
+                        "values": sorted(merged_values),
+                        "occurrences": len(merged_contexts),
+                        "contexts": merged_contexts[:5],
+                    })
+
+        return findings
 
 
 @registry.register("commonsense.math_formula")
 class MathFormulaEvaluator(BaseEvaluator):
-    """公式正确性检查 — 验证数学公式的合理性。"""
+    """公式正确性检查 — 验证数学公式的合理性。
+
+    检查内容：
+    1. LaTeX 公式中的括号匹配（$...$ 格式）
+    2. 算术等式正确性（复用 InfoAccuracyEvaluator 的
+       _EQ_PATTERN + _eval_simple_expr，避免二元正则子表达式误报）
+    3. 符号公式校验（利用 domain_facts.math_formulas 中的 30+ 条
+       已知公式，检测文档中出现的公式是否正确）
+    """
 
     evaluator_id = "commonsense.math_formula"
     name = "公式正确性检查"
     tier = ConstraintTier.HARD_SCORE
     method = EvalMethod.MATH_VERIFY
+
+    # 复用 InfoAccuracyEvaluator 的算术正则（完整左侧，非二元子表达式）
+    _EQ_PATTERN = InfoAccuracyEvaluator._EQ_PATTERN
+    _REMAINDER_PATTERN = InfoAccuracyEvaluator._REMAINDER_PATTERN
+
+    # ─── 符号公式提取正则 ───
+
+    # 匹配 "圆的面积 S=πr²" / "长方形面积=长×宽" / "梯形面积公式：(上底+下底)×高÷2"
+    _FORMULA_NAME_PATTERN = re.compile(
+        r"([一-鿿]{2,8}(?:面积|周长|体积|表面积|侧面积))"
+        r"\s*(?:公式)?[是为]?\s*[：:＝=]?\s*"
+        r"([A-Za-z½⅓¼¾π\d+\-()×÷*/^²³·\s＝=]+?)"
+        r"(?=[，。、；\n\r]|$)"
+    )
+    _FORMULA_KW_PATTERN = re.compile(
+        r"([一-鿿]{2,8})公式"
+        r"[是为]?\s*[：:＝=]?\s*"
+        r"([A-Za-z½⅓¼¾π\d+\-()×÷*/^²³·\s＝=]+?)"
+        r"(?=[，。、；\n\r]|$)"
+    )
 
     def evaluate(self, sample: Any, context: dict[str, Any]) -> Any:
         start = time.monotonic()
@@ -1148,8 +1316,8 @@ class MathFormulaEvaluator(BaseEvaluator):
                 duration_ms=elapsed,
             )
 
-        text = _collect_text_content(output_dir)
-        if not text.strip():
+        file_texts = _collect_file_texts(output_dir)
+        if not file_texts:
             elapsed = (time.monotonic() - start) * 1000
             return self._make_result(
                 status=EvalStatus.FAIL,
@@ -1159,37 +1327,87 @@ class MathFormulaEvaluator(BaseEvaluator):
             )
 
         errors: list[str] = []
+        formulas_checked = 0
+        arith_checks = 0
+        symbolic_checks = 0
 
-        # 检查公式中的括号匹配
-        formula_patterns = re.findall(r"[$].+?[$]", text)
-        for formula in formula_patterns:
-            if formula.count("(") != formula.count(")"):
-                errors.append(f"公式括号不匹配: {formula[:50]}")
-            if formula.count("{") != formula.count("}"):
-                errors.append(f"公式花括号不匹配: {formula[:50]}")
+        for filename, text in file_texts.items():
+            # 检查 LaTeX 公式中的括号匹配
+            formula_patterns = re.findall(r"[$].+?[$]", text)
+            formulas_checked += len(formula_patterns)
+            for formula in formula_patterns:
+                if formula.count("(") != formula.count(")"):
+                    errors.append(
+                        f"{filename}: 公式括号不匹配: {formula[:50]}"
+                    )
+                if formula.count("{") != formula.count("}"):
+                    errors.append(
+                        f"{filename}: 公式花括号不匹配: {formula[:50]}"
+                    )
 
-        # 检查简单算术等式
-        # 如 "2x = 7 - 3" → 检查 "2x = 4" → "x = 2"
-        arithmetic = re.findall(r"(\d+)\s*([+\-*/×÷])\s*(\d+)\s*=\s*(\d+)", text)
-        for left, op, right, result in arithmetic:
-            try:
-                left_val, right_val, result_val = float(left), float(right), float(result)
-                expected = {
-                    "+": left_val + right_val,
-                    "-": left_val - right_val,
-                    "*": left_val * right_val,
-                    "×": left_val * right_val,
-                    "/": left_val / right_val if right_val != 0 else None,
-                    "÷": left_val / right_val if right_val != 0 else None,
-                }.get(op)
-                if expected is not None and abs(expected - result_val) > 0.01:
-                    errors.append(f"算术错误: {left} {op} {right} = {result}（应为 {expected}）")
-            except (ValueError, ZeroDivisionError):
-                continue
+            # 算术等式验证（复用完整左侧正则 + 竖式上下文跳过）
+            remainder_positions: set[int] = set()
+            for m in self._REMAINDER_PATTERN.finditer(text):
+                remainder_positions.add(m.start())
+                dividend_s, divisor_s, quotient_s, remainder_s = m.groups()
+                start_pos = max(0, m.start() - 40)
+                end_pos = min(len(text), m.end() + 40)
+                ctx_window = text[start_pos:end_pos]
+                if _VERTICAL_CALC_KEYWORDS.search(ctx_window):
+                    continue
+                try:
+                    dividend = float(dividend_s)
+                    divisor = float(divisor_s)
+                    quotient = float(quotient_s)
+                    remainder = float(remainder_s)
+                except ValueError:
+                    continue
+                if divisor == 0:
+                    continue
+                arith_checks += 1
+                expected = quotient * divisor + remainder
+                if abs(expected - dividend) > 0.01:
+                    errors.append(
+                        f"{filename}: 除法余数错误 "
+                        f"{float(dividend_s):g} ÷ {float(divisor_s):g} "
+                        f"= {float(quotient_s):g} 余 {float(remainder_s):g}"
+                        f"（应为 {expected:g}）"
+                    )
+
+            for m in self._EQ_PATTERN.finditer(text):
+                if m.start() in remainder_positions:
+                    continue
+                lhs_expr, result_s = m.group(1), m.group(2)
+                start_pos = max(0, m.start() - 40)
+                end_pos = min(len(text), m.end() + 40)
+                ctx_window = text[start_pos:end_pos]
+                if _VERTICAL_CALC_KEYWORDS.search(ctx_window):
+                    continue
+                try:
+                    result_val = float(result_s)
+                except ValueError:
+                    continue
+                expected = _eval_simple_expr(lhs_expr)
+                if expected is None:
+                    continue
+                arith_checks += 1
+                if abs(expected - result_val) > 0.01:
+                    errors.append(
+                        f"{filename}: 算术错误 "
+                        f"{lhs_expr.strip()} = {result_s}"
+                        f"（应为 {expected:g}）"
+                    )
+
+            # 符号公式校验
+            sym_errors, sym_checks = self._check_symbolic_formulas(
+                filename, text
+            )
+            errors.extend(sym_errors)
+            symbolic_checks += sym_checks
 
         elapsed = (time.monotonic() - start) * 1000
+        files_checked = list(file_texts.keys())
 
-        files_checked = _collect_file_names(output_dir)
         if not errors:
             return self._make_result(
                 status=EvalStatus.PASS,
@@ -1197,8 +1415,9 @@ class MathFormulaEvaluator(BaseEvaluator):
                 reason="公式正确性检查通过",
                 details={
                     "files_checked": files_checked,
-                    "formulas_checked": len(formula_patterns),
-                    "arithmetic_checked": len(arithmetic),
+                    "formulas_checked": formulas_checked,
+                    "arithmetic_checked": arith_checks,
+                    "symbolic_checked": symbolic_checks,
                 },
                 duration_ms=elapsed,
             )
@@ -1210,11 +1429,125 @@ class MathFormulaEvaluator(BaseEvaluator):
                 details={
                     "errors": errors,
                     "files_checked": files_checked,
-                    "formulas_checked": len(formula_patterns),
-                    "arithmetic_checked": len(arithmetic),
+                    "formulas_checked": formulas_checked,
+                    "arithmetic_checked": arith_checks,
+                    "symbolic_checked": symbolic_checks,
                 },
                 duration_ms=elapsed,
             )
+
+    # ─── 符号公式校验 ───
+
+    def _check_symbolic_formulas(
+        self, filename: str, text: str
+    ) -> tuple[list[str], int]:
+        """利用 domain_facts 校验文档中的符号公式。
+
+        Returns:
+            (errors, checks_count)
+        """
+        from agent_eval.evaluation.evaluators.formula_normalizer import (
+            build_formula_index,
+            normalize_formula,
+            normalize_formula_name,
+        )
+
+        fact_db = _load_fact_db(subjects=["math"])
+        domain_facts = fact_db.get("domain_facts", {})
+        if not isinstance(domain_facts, dict) or "math_formulas" not in domain_facts:
+            return [], 0
+
+        formula_index = build_formula_index(domain_facts)
+        if not formula_index:
+            return [], 0
+
+        errors: list[str] = []
+        checks = 0
+        reported: set[str] = set()  # 去重
+
+        for pattern in (self._FORMULA_NAME_PATTERN, self._FORMULA_KW_PATTERN):
+            for m in pattern.finditer(text):
+                name_raw = m.group(1)
+                expr_raw = m.group(2)
+
+                norm_name = normalize_formula_name(name_raw)
+                norm_expr = normalize_formula(expr_raw)
+
+                if len(norm_expr) < 2:
+                    continue
+
+                matched = self._find_matching_formula(norm_name, formula_index)
+                if matched is None:
+                    continue
+
+                dedup_key = f"{filename}:{matched['canonical_name']}"
+                if dedup_key in reported:
+                    continue
+
+                checks += 1
+                reported.add(dedup_key)
+                canonical = matched["normalized_formula"]
+
+                if not self._formulas_match(norm_expr, canonical):
+                    errors.append(
+                        f"{filename}: 公式错误 「{name_raw}」"
+                        f"文中为 {expr_raw.strip()}，"
+                        f"正确应为 {matched['formula']}"
+                    )
+
+        return errors, checks
+
+    @staticmethod
+    def _find_matching_formula(
+        norm_name: str, formula_index: list[dict[str, Any]]
+    ) -> dict[str, Any] | None:
+        """根据归一化名称查找匹配的公式条目。
+
+        精确匹配优先，其次子串匹配（仅当唯一匹配时返回）。
+        """
+        for entry in formula_index:
+            if norm_name == entry["canonical_name"]:
+                return entry
+
+        candidates = [
+            entry
+            for entry in formula_index
+            if norm_name in entry["canonical_name"]
+            or entry["canonical_name"] in norm_name
+        ]
+        if len(candidates) == 1:
+            return candidates[0]
+        return None
+
+    @staticmethod
+    def _formulas_match(extracted: str, canonical: str) -> bool:
+        """比较归一化后的公式表达式是否匹配。
+
+        处理：
+        - 可选的左侧变量：S=πr² 与 πr² 视为相同
+        - 等价形式：2πr=πd 中的多选项
+        """
+        if extracted == canonical:
+            return True
+
+        def _strip_lhs(f: str) -> str:
+            """去掉单字母 LHS 变量（如 S=、V=、C=）。"""
+            parts = f.split("=", 1)
+            if len(parts) == 2 and len(parts[0]) <= 2 and parts[0].isalpha():
+                return parts[1]
+            return f
+
+        if _strip_lhs(extracted) == _strip_lhs(canonical):
+            return True
+
+        # canonical 可能含多个等价形式（如 "2πr=πd"）
+        canonical_rhs = _strip_lhs(canonical)
+        extracted_rhs = _strip_lhs(extracted)
+        for alt in canonical_rhs.split("="):
+            if extracted_rhs == alt:
+                return True
+
+        return False
 
 
 @registry.register("commonsense.unit_consistency")
