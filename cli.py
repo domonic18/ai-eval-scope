@@ -147,7 +147,12 @@ def eval(
             project=project,
         )
 
-        # 5. 输出摘要
+        # 5. 刷新 Langfuse trace 数据
+        from agent_eval.llm.tracing import flush_traces
+
+        flush_traces()
+
+        # 6. 输出摘要
         _print_summary(result.report)
 
         rprint("[green]✅ 评估完成[/green] — 结果已保存至 workspace")

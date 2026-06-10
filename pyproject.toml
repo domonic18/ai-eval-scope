@@ -39,6 +39,7 @@ dev = [
 llm = [
     "openai>=1.30",
     "anthropic>=0.30",
+    "langfuse>=2.0",
 ]
 
 [project.scripts]

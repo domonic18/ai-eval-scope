@@ -492,10 +492,17 @@ def eval_packages(
 
     # 创建 Orchestrator 并执行
     orch = Orchestrator(workspace=workspace)
-    return orch.eval_only(
+    result = orch.eval_only(
         Path(package_dir),
         rule_set,
         judge_orchestrator=judge_orch,
         llm_provider=llm_provider,
         project=project,
     )
+
+    # 刷新 Langfuse trace 数据
+    from agent_eval.llm.tracing import flush_traces
+
+    flush_traces()
+
+    return result

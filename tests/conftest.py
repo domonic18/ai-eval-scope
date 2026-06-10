@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
+
+# Mock langfuse 模块（避免未安装时导入报错）
+sys.modules.setdefault("langfuse", MagicMock())
 
 from agent_eval.core.types import ConstraintTier, EvalStatus
 from agent_eval.evaluation.models import (

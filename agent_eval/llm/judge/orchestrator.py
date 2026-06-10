@@ -10,12 +10,17 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+import structlog
+
 from agent_eval.llm.judge.recorder import JudgeRecorder
 from agent_eval.llm.judge.stability import StabilityController
 from agent_eval.llm.judge.structured_output import StructuredOutputParser
 from agent_eval.llm.judge.template_manager import TemplateManager
 from agent_eval.llm.models import JudgeRecord, Message, TokenUsage
 from agent_eval.llm.pool import ProviderPool
+from agent_eval.llm.tracing import create_trace
+
+logger = structlog.get_logger("judge.orchestrator")
 
 
 class JudgeOrchestrator:
@@ -81,7 +86,19 @@ class JudgeOrchestrator:
         template = self.templates.get(template_id)
         system_prompt, user_prompt = self.templates.render(template_id, variables)
 
-        # 3. 采样并记录
+        # 3. Langfuse Trace（v4 API: create_trace_id + start_observation）
+        trace_info = create_trace(
+            name=f"judge:{constraint_id}",
+            metadata={
+                "sample_id": sample_id,
+                "template_id": template_id,
+                "provider": provider_info.name,
+                "model": provider_info.model,
+            },
+        )
+        root_span = trace_info[0] if trace_info else None
+
+        # 4. 采样并记录
         all_raw_responses: list[str] = []
         total_tokens = TokenUsage()
 
@@ -90,11 +107,42 @@ class JudgeOrchestrator:
                 Message(role="system", content=system_prompt),
                 Message(role="user", content=user_prompt),
             ]
+
+            # Langfuse Generation — 记录单次 LLM 调用
+            generation = None
+            if root_span:
+                generation = root_span.start_observation(
+                    name=f"sample_{sample_index}",
+                    as_type="generation",
+                    input={"system": system_prompt, "user": user_prompt},
+                    model=f"{provider_info.name}/{provider_info.model}",
+                    model_parameters={
+                        "temperature": template.temperature,
+                        "seed": template.seed + sample_index,
+                    },
+                )
+
             response = client.chat(
                 messages,
                 seed=template.seed + sample_index,
                 temperature=template.temperature,
             )
+
+            # Langfuse Generation — 更新输出和 token 用量
+            if generation:
+                usage_details = {}
+                if response.usage:
+                    usage_details = {
+                        "prompt_tokens": response.usage.prompt_tokens,
+                        "completion_tokens": response.usage.completion_tokens,
+                        "total_tokens": response.usage.total_tokens,
+                    }
+                generation.update(
+                    output=response.content,
+                    usage_details=usage_details,
+                )
+                generation.end()
+
             all_raw_responses.append(response.content)
 
             # 累计 token 用量
@@ -107,12 +155,12 @@ class JudgeOrchestrator:
             parsed = self.parser.parse(response.content, template.output_schema)
             return {dim.dim_id: float(parsed.get(dim.dim_id, 0.0)) for dim in template.dimensions}
 
-        # 4. 稳定性控制 — 多次采样
+        # 5. 稳定性控制 — 多次采样
         start_time = time.monotonic()
         stable_result = self.stability.evaluate_stable(single_judge, template.dimensions)
         total_duration_ms = (time.monotonic() - start_time) * 1000
 
-        # 5. 生成 JudgeRecord
+        # 6. 生成 JudgeRecord
         timestamp = datetime.now(tz=UTC).isoformat()
         record = JudgeRecord(
             judge_id=f"judge_{constraint_id}_{datetime.now(tz=UTC).strftime('%Y%m%d_%H%M%S')}",
@@ -133,7 +181,14 @@ class JudgeOrchestrator:
             timestamp=timestamp,
         )
 
-        # 6. 持久化 JudgeRecord
+        # 7. 结束 Langfuse Trace
+        if root_span:
+            root_span.update(
+                output={"scores": stable_result.scores, "confidence": stable_result.confidence},
+            )
+            root_span.end()
+
+        # 8. 持久化 JudgeRecord
         JudgeRecorder.save(record, evidence_dir)
 
         return stable_result.scores, record
