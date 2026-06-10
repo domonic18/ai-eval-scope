@@ -121,12 +121,29 @@ class ReportGenerator:
             for cr in stage_result.constraint_results:
                 status_icon = "✅" if cr.status == EvalStatus.PASS else "❌"
                 tier_mark = _TIER_MARKERS.get(cr.tier.value, cr.tier.value)
-                reason = cr.reason[:60] + "..." if len(cr.reason) > 60 else cr.reason
+                reason = cr.reason[:200] + "..." if len(cr.reason) > 200 else cr.reason
                 lines.append(
                     f"| {cr.name} | {tier_mark} | {status_icon} | {cr.score:.2f} | {reason} |"
                 )
 
             lines.append("")
+
+            # 约束详情 — 展示 details 中的检查信息
+            details_sections: list[tuple[str, ConstraintResult]] = []
+            for cr in stage_result.constraint_results:
+                if cr.details:
+                    details_sections.append((cr.name, cr))
+
+            if details_sections:
+                lines.append("<details>")
+                lines.append("<summary>📋 检查详情</summary>")
+                lines.append("")
+                for name, cr in details_sections:
+                    lines.append(f"**{name}**")
+                    lines.append("")
+                    self._render_details_block(lines, cr.details)
+                lines.append("</details>")
+                lines.append("")
 
             # LLM Judge 溯源信息
             llm_results = [
@@ -241,6 +258,86 @@ class ReportGenerator:
         return "\n".join(lines)
 
     # ─── 数据转换 ───
+
+    def _render_details_block(self, lines: list[str], details: dict[str, Any]) -> None:
+        """将 details dict 渲染为 Markdown 列表。"""
+        # 优先展示的关键字段（按顺序）
+        _DETAIL_KEYS = [
+            ("checked_files", "检查文件"),
+            ("valid_files", "有效文件"),
+            ("files", "文件列表"),
+            ("files_checked", "检查文件"),
+            ("invalid_files", "无效文件"),
+            ("issues", "问题"),
+            ("errors", "错误"),
+            ("score_breakdown", "得分明细"),
+            ("heading_summary", "标题结构"),
+            ("checks", "检查项"),
+        ]
+
+        rendered_keys: set[str] = set()
+
+        for key, label in _DETAIL_KEYS:
+            if key not in details:
+                continue
+            value = details[key]
+            rendered_keys.add(key)
+
+            if isinstance(value, list):
+                if not value:
+                    continue
+                # 列表类字段
+                if key in ("checked_files", "valid_files", "files", "files_checked"):
+                    # 文件列表：紧凑显示
+                    if len(value) <= 10:
+                        lines.append(f"- {label}（{len(value)} 个）: {', '.join(str(v) for v in value)}")
+                    else:
+                        lines.append(f"- {label}（{len(value)} 个）: {', '.join(str(v) for v in value[:10])} ...等 {len(value)} 个")
+                elif key in ("invalid_files", "issues", "errors"):
+                    # 错误/问题列表：逐条显示
+                    lines.append(f"- {label}（{len(value)} 项）:")
+                    for item in value[:20]:
+                        lines.append(f"  - {item}")
+                    if len(value) > 20:
+                        lines.append(f"  - ... 共 {len(value)} 项")
+                elif key == "checks":
+                    lines.append(f"- {label}:")
+                    for item in value:
+                        if isinstance(item, dict):
+                            icon = "✅" if item.get("passed") else "❌"
+                            lines.append(f"  - {icon} {item.get('name', '?')}: {item.get('reason', '')}")
+                        else:
+                            lines.append(f"  - {item}")
+                else:
+                    lines.append(f"- {label}: {value}")
+            elif isinstance(value, dict):
+                if key == "score_breakdown":
+                    lines.append(f"- {label}:")
+                    for k, v in value.items():
+                        lines.append(f"  - {k}: {v:.3f}" if isinstance(v, float) else f"  - {k}: {v}")
+                elif key == "heading_summary":
+                    lines.append(f"- {label}:")
+                    for fname, headings in value.items():
+                        if isinstance(headings, list) and headings:
+                            heading_strs = [f"H{h[0]}: {h[1][:30]}" for h in headings[:5]]
+                            lines.append(f"  - {fname}: {', '.join(heading_strs)}")
+                else:
+                    lines.append(f"- {label}: {value}")
+            else:
+                lines.append(f"- {label}: {value}")
+
+        # 渲染剩余未特殊处理的字段
+        for key, value in details.items():
+            if key in rendered_keys:
+                continue
+            if isinstance(value, (str, int, float, bool)):
+                lines.append(f"- {key}: {value}")
+            elif isinstance(value, list) and len(value) <= 10:
+                lines.append(f"- {key}: {value}")
+            elif isinstance(value, list):
+                lines.append(f"- {key}: [{len(value)} 项]")
+
+        lines.append("")
 
     def constraint_to_rule_result(self, cr: ConstraintResult) -> dict[str, Any]:
         """将 ConstraintResult 转为 rule_results.json 条目格式。"""
