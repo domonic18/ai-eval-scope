@@ -71,13 +71,20 @@ class PipelineStage:
 
             stage_result.constraint_results.append(constraint_result)
 
-            # 门控判定：HARD_GATE 或 HARD_SCORE 失败时标记门控未通过
-            if evaluator.tier in (ConstraintTier.HARD_GATE, ConstraintTier.HARD_SCORE):
+            # 门控判定：
+            # - HARD_GATE 失败 → 门控未通过（格式不对无法继续）
+            # - HARD_SCORE 失败 → 门控未通过但不中断阶段内后续评估器
+            #   （内容有错不代表后续 soft/pref 评估无意义）
+            if evaluator.tier == ConstraintTier.HARD_GATE:
                 if constraint_result.status == EvalStatus.FAIL:
                     gate_passed = False
                     # fail_fast 模式下立即终止本阶段
                     if self.short_circuit_policy == "fail_fast":
                         break
+            elif evaluator.tier == ConstraintTier.HARD_SCORE:
+                if constraint_result.status == EvalStatus.FAIL:
+                    gate_passed = False
+                    # HARD_SCORE 失败不中断阶段内其他评估器，继续执行
 
         stage_result.gate_passed = gate_passed
         stage_result.status = EvalStatus.PASS if gate_passed else EvalStatus.FAIL

@@ -11,7 +11,7 @@ import json
 from dataclasses import dataclass, field
 from typing import Any
 
-from agent_eval.core.types import EvalStatus
+from agent_eval.core.types import ConstraintTier, EvalStatus
 from agent_eval.evaluation.aggregator import ScoreAggregator
 from agent_eval.evaluation.base import BaseEvaluator
 from agent_eval.evaluation.metrics import MetricsCalculator
@@ -126,13 +126,22 @@ class PipelineEngine:
         total_start = time.monotonic()
 
         # 2. 逐阶段执行，短路终止
+        #    仅 HARD_GATE 阶段（如 format）失败时阻塞后续阶段
+        #    HARD_SCORE 阶段（如 commonsense）失败只影响本阶段得分，不阻塞后续
         for stage in self.stages:
             stage_result = stage.execute(sample, context)
             result.stage_results[stage.stage_id] = stage_result
 
             if not stage_result.gate_passed:
-                self._mark_remaining_skipped(result, stage.stage_id)
-                break
+                # 判断该阶段是否为 HARD_GATE 类型（通过检查评估器 tier）
+                is_hard_gate_stage = any(
+                    ev.tier == ConstraintTier.HARD_GATE for ev in stage.evaluators
+                )
+                if is_hard_gate_stage:
+                    # HARD_GATE 失败 → 阻塞所有后续阶段
+                    self._mark_remaining_skipped(result, stage.stage_id)
+                    break
+                # HARD_SCORE 失败 → 标记失败但继续后续阶段
 
         # 3. 评分聚合
         score = self.aggregator.aggregate(result)
