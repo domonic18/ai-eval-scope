@@ -618,13 +618,177 @@ class TestInfoAccuracyEvaluator:
 
 
 class TestChronologicalOrderEvaluator:
-    def test_pass(self, tmp_path: Path) -> None:
+    """时序正确性检查评估器测试。
+
+    当前实现为空壳（始终 PASS），测试验证：
+    1. 提取逻辑的正确性（years_found、sequences_found）
+    2. 文档行为的稳定性（始终 PASS）
+    3. 已知局限（年份误提取、序号不校验递增）
+    """
+
+    def test_pass_correct_year_order(self, tmp_path: Path) -> None:
+        """年份递增出现 → PASS，details 含正确年份列表。"""
         out = _prepare_output(tmp_path)
-        (out / "doc.md").write_text("# 历史\n\n1949年新中国成立。1978年改革开放。")
+        (out / "doc.md").write_text("1949年新中国成立。1978年改革开放。2001年加入WTO。")
 
         ev = registry.create("commonsense.chronological_order")
         result = ev.evaluate(tmp_path, {})
         assert result.status == EvalStatus.PASS
+        assert result.score == 1.0
+        assert result.details["years_found"] == [1949, 1978, 2001]
+
+    def test_pass_year_regression_not_reported(self, tmp_path: Path) -> None:
+        """年份回溯（如回顾历史）→ 仍然 PASS（空实现，暂不报告）。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.md").write_text("1978年改革开放。回顾1949年新中国成立。")
+
+        ev = registry.create("commonsense.chronological_order")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.PASS
+        assert result.details["years_found"] == [1978, 1949]
+
+    def test_pass_no_years(self, tmp_path: Path) -> None:
+        """无年份 → PASS，years_found 为空。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.md").write_text("这是一段没有年份的文本。")
+
+        ev = registry.create("commonsense.chronological_order")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.PASS
+        assert result.details["years_found"] == []
+
+    def test_sequences_found(self, tmp_path: Path) -> None:
+        """序号提取应统计数量。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.md").write_text(
+            "第一步：准备材料。\n第二步：开始实验。\n第三步：记录结果。"
+        )
+
+        ev = registry.create("commonsense.chronological_order")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.PASS
+        assert result.details["sequences_found"] >= 3
+
+    def test_mixed_chinese_arabic_sequences(self, tmp_path: Path) -> None:
+        """混合中/阿拉伯数字序号（第一步 → 第4步）仍 PASS，但应被提取。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.md").write_text("第一步：准备。\n第4步：重新检查。")
+
+        ev = registry.create("commonsense.chronological_order")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.PASS
+        # 至少提取到 2 个序号
+        assert result.details["sequences_found"] >= 2
+
+    def test_duration_not_extracted_as_year(self, tmp_path: Path) -> None:
+        """\"100年后\" 不应被提取为年份 100。
+
+        这是当前实现的已知局限——正则 `(?:公元)?(\\d{3,4})\\s*年`
+        会将 \"100年后\" 匹配为 year=100。
+        当修复后此测试应断言 100 不在 years_found 中。
+        """
+        out = _prepare_output(tmp_path)
+        (out / "doc.md").write_text("科学家预测100年后气温上升2-4摄氏度。")
+
+        ev = registry.create("commonsense.chronological_order")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.PASS
+        # 已知局限：当前会错误提取 "100年后" 为 year=100
+        # 修复后改为: assert 100 not in result.details["years_found"]
+        assert 100 not in result.details["years_found"], (
+            "「100年后」是时间段而非年份，不应被提取。"
+        )
+
+    def test_details_structure(self, tmp_path: Path) -> None:
+        """details 应包含标准字段。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.md").write_text("1949年新中国成立。第一步：准备。")
+
+        ev = registry.create("commonsense.chronological_order")
+        result = ev.evaluate(tmp_path, {})
+        assert "files_checked" in result.details
+        assert "years_found" in result.details
+        assert "sequences_found" in result.details
+        assert "content_length" in result.details
+
+    def test_fail_empty_content(self, tmp_path: Path) -> None:
+        """空文档内容 → FAIL。"""
+        out = _prepare_output(tmp_path)
+        (out / "empty.md").write_text("   ")
+
+        ev = registry.create("commonsense.chronological_order")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.FAIL
+        assert result.score == 0.0
+
+    def test_fail_no_output_dir(self, tmp_path: Path) -> None:
+        """无 output 目录 → FAIL。"""
+        ev = registry.create("commonsense.chronological_order")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.FAIL
+        assert result.score == 0.0
+
+    def test_html_tags_stripped(self, tmp_path: Path) -> None:
+        """HTML 标签应被去除后再提取年份。"""
+        out = _prepare_output(tmp_path)
+        (out / "page.html").write_text(
+            "<html><body><p>1949年</p><p>1978年</p></body></html>"
+        )
+
+        ev = registry.create("commonsense.chronological_order")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.PASS
+        assert 1949 in result.details["years_found"]
+        assert 1978 in result.details["years_found"]
+
+    def test_year_filtering_range(self, tmp_path: Path) -> None:
+        """年份应在 (0, 2100] 范围内；超出范围的数字不提取。
+        同时验证持续时间模式（N年后/历史/内/间）不提取。
+        """
+        out = _prepare_output(tmp_path)
+        (out / "doc.md").write_text(
+            "99999年代码量。100年后气温上升。500年历史。1949年新中国。"
+        )
+
+        ev = registry.create("commonsense.chronological_order")
+        result = ev.evaluate(tmp_path, {})
+        # 99999 > 2100 → 不提取
+        assert 99999 not in result.details["years_found"]
+        # 100年后 → 时间段，不提取
+        assert 100 not in result.details["years_found"]
+        # 500年历史 → 时间段，不提取
+        assert 500 not in result.details["years_found"]
+        # 1949 在范围内 → 提取
+        assert 1949 in result.details["years_found"]
+
+    def test_reference_courseware_years(self, tmp_path: Path) -> None:
+        """模拟参考课件中的年份提取结果。
+
+        参考 docs/reference/大单元学习总导 中出现的年份：
+        1966（陈景润）、2013（教材版本，×2）、2050（虚构场景）。
+        "100年后"不应被提取。
+        """
+        out = _prepare_output(tmp_path)
+        (out / "doc.html").write_text(
+            "在1966年取得了关键突破。"
+            "年级：三年级上（2013年版）。"
+            "2050年，你成为了一名城市设计师。"
+            "科学家预测100年后气温上升2-4摄氏度。"
+        )
+
+        ev = registry.create("commonsense.chronological_order")
+        result = ev.evaluate(tmp_path, {})
+        years = result.details["years_found"]
+
+        # 应提取的正确年份
+        assert 1966 in years, "陈景润年份 1966 应被提取"
+        assert 2013 in years, "教材版本年份 2013 应被提取"
+        assert 2050 in years, "虚构场景年份 2050 应被提取"
+
+        # 已知局限：100 不应被提取（修复后验证）
+        assert 100 not in years, (
+            "「100年后」是时间段而非年份，不应被提取"
+        )
 
 
 class TestLogicalConsistencyEvaluator:

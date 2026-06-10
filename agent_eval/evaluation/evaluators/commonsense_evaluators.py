@@ -928,8 +928,12 @@ class ChronologicalOrderEvaluator(BaseEvaluator):
                 duration_ms=elapsed,
             )
 
-        # 检查年份是否递增出现
-        years = re.findall(r"(?:公元)?(\d{3,4})\s*年", text)
+        # 提取年份 — 排除持续时间模式（"100年后""500年历史"等）
+        # (?!\s*[后历史内间以来前]) — "N年后/历史/内/间/以/来/前" 是时间段，非年份
+        _YEAR_PATTERN = re.compile(
+            r"(?:公元)?(\d{3,4})\s*年(?!\s*[后历史内间以来前])"
+        )
+        years = _YEAR_PATTERN.findall(text)
         year_list: list[int] = []
         if years:
             year_list = [int(y) for y in years if 0 < int(y) <= 2100]
@@ -938,8 +942,10 @@ class ChronologicalOrderEvaluator(BaseEvaluator):
                     # 允许回溯（如回顾历史），但标记为潜在问题
                     pass  # 时序回溯不一定错误，暂不报告
 
-        # 检查序号递增
-        sequences = re.findall(r"第([一二三四五六七八九十百千\d]+)[章节步骤期]", text)
+        # 提取序号
+        sequences = re.findall(
+            r"第([一二三四五六七八九十百千\d]+)[章节步骤期]", text
+        )
 
         elapsed = (time.monotonic() - start) * 1000
 
