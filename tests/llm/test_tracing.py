@@ -34,12 +34,8 @@ def _make_mock_langfuse():
 def _setup_env_and_mock():
     """设置环境变量并 mock Langfuse 构造函数。"""
     mock_cls, mock_instance = _make_mock_langfuse()
-    cm = patch.dict(
-        os.environ,
-        {"LANGFUSE_PUBLIC_KEY": "pk-lf-test", "LANGFUSE_SECRET_KEY": "sk-lf-test"},
-    )
     pm = patch("langfuse.Langfuse", mock_cls)
-    return mock_cls, mock_instance, cm, pm
+    return mock_cls, mock_instance, pm
 
 
 # ─── get_langfuse ───
@@ -70,8 +66,14 @@ class TestGetLangfuse:
 
     def test_returns_client_with_valid_keys(self) -> None:
         """双 key 齐全时返回 Langfuse 客户端实例。"""
-        mock_cls, mock_instance, cm, pm = _setup_env_and_mock()
-        with cm, pm:
+        mock_cls, mock_instance, pm = _setup_env_and_mock()
+        env = {
+            "LANGFUSE_PUBLIC_KEY": "pk-lf-test",
+            "LANGFUSE_SECRET_KEY": "sk-lf-test",
+        }
+        with patch.dict(os.environ, env, clear=False), pm:
+            # Clear any LANGFUSE_HOST from .env to use default
+            os.environ.pop("LANGFUSE_HOST", None)
             result = get_langfuse()
 
         assert result is mock_instance
@@ -106,8 +108,9 @@ class TestGetLangfuse:
 
     def test_singleton_reuse(self) -> None:
         """第二次调用返回同一实例（不再调用构造函数）。"""
-        mock_cls, _, cm, pm = _setup_env_and_mock()
-        with cm, pm:
+        mock_cls, _, pm = _setup_env_and_mock()
+        env = {"LANGFUSE_PUBLIC_KEY": "pk-lf-test", "LANGFUSE_SECRET_KEY": "sk-lf-test"}
+        with patch.dict(os.environ, env, clear=False), pm:
             first = get_langfuse()
             second = get_langfuse()
 
@@ -143,8 +146,9 @@ class TestIsTracingEnabled:
 
     def test_enabled_with_valid_keys(self) -> None:
         """有效环境变量时启用。"""
-        mock_cls, _, cm, pm = _setup_env_and_mock()
-        with cm, pm:
+        mock_cls, _, pm = _setup_env_and_mock()
+        env = {"LANGFUSE_PUBLIC_KEY": "pk-lf-test", "LANGFUSE_SECRET_KEY": "sk-lf-test"}
+        with patch.dict(os.environ, env, clear=False), pm:
             assert is_tracing_enabled() is True
 
 
@@ -164,8 +168,9 @@ class TestFlushTraces:
 
     def test_calls_flush_when_enabled(self) -> None:
         """已启用时调用客户端 flush。"""
-        mock_cls, mock_instance, cm, pm = _setup_env_and_mock()
-        with cm, pm:
+        mock_cls, mock_instance, pm = _setup_env_and_mock()
+        env = {"LANGFUSE_PUBLIC_KEY": "pk-lf-test", "LANGFUSE_SECRET_KEY": "sk-lf-test"}
+        with patch.dict(os.environ, env, clear=False), pm:
             get_langfuse()  # 初始化单例
             flush_traces()
 
@@ -192,11 +197,12 @@ class TestCreateTrace:
         """启用时创建 trace 并返回 (span, trace_ctx) 元组。"""
         mock_span = MagicMock()
 
-        mock_cls, mock_instance, cm, pm = _setup_env_and_mock()
+        mock_cls, mock_instance, pm = _setup_env_and_mock()
         mock_instance.create_trace_id.return_value = "abc123"
         mock_instance.start_observation.return_value = mock_span
 
-        with cm, pm:
+        env = {"LANGFUSE_PUBLIC_KEY": "pk-lf-test", "LANGFUSE_SECRET_KEY": "sk-lf-test"}
+        with patch.dict(os.environ, env, clear=False), pm:
             result = create_trace("judge:test", metadata={"key": "val"})
 
         assert result is not None
@@ -221,8 +227,9 @@ class TestResetLangfuse:
 
     def test_resets_singleton(self) -> None:
         """重置后再次调用 get_langfuse() 会重新创建客户端。"""
-        mock_cls, _, cm, pm = _setup_env_and_mock()
-        with cm, pm:
+        mock_cls, _, pm = _setup_env_and_mock()
+        env = {"LANGFUSE_PUBLIC_KEY": "pk-lf-test", "LANGFUSE_SECRET_KEY": "sk-lf-test"}
+        with patch.dict(os.environ, env, clear=False), pm:
             first = get_langfuse()
 
         assert first is not None
