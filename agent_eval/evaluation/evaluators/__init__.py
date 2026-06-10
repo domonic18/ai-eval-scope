@@ -16,16 +16,14 @@ from agent_eval.evaluation.evaluators.format_evaluators import (  # noqa: F401
     StructureComplianceEvaluator,
 )
 
-# 导入质量评估器（7 项：2 Rule-based + 5 LLM Judge）
+# 导入质量评估器（5 项 LLM Judge）
 from agent_eval.evaluation.evaluators.quality_evaluators import (  # noqa: F401
     BaseLLMJudgeEvaluator,
-    ContentDensityEvaluator,
     ContentDiversityEvaluator,
     DepthPreferenceEvaluator,
     RequestFulfillmentEvaluator,
     StylePreferenceEvaluator,
     TeachingLogicEvaluator,
-    VisualConsistencyEvaluator,
 )
 
 __all__ = [
@@ -40,9 +38,6 @@ __all__ = [
     "LogicalConsistencyEvaluator",
     "MathFormulaEvaluator",
     "UnitConsistencyEvaluator",
-    # 质量评估器（Rule-based）
-    "ContentDensityEvaluator",
-    "VisualConsistencyEvaluator",
     # 质量评估器（LLM Judge）
     "BaseLLMJudgeEvaluator",
     "TeachingLogicEvaluator",

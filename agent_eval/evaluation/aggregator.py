@@ -29,10 +29,8 @@ class ScoreAggregator:
         self.w3 = w3
         self.w4 = w4
         self.soft_weights = soft_weights or {
-            "soft.content_density": 0.25,
-            "soft.visual_consistency": 0.25,
-            "soft.teaching_logic": 0.25,
-            "soft.content_diversity": 0.25,
+            "soft.teaching_logic": 0.5,
+            "soft.content_diversity": 0.5,
         }
         self.pref_weights = pref_weights or {
             "pref.style_preference": 0.33,

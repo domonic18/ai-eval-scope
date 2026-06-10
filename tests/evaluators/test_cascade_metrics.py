@@ -113,8 +113,8 @@ class TestScoreAggregator:
             status=EvalStatus.PASS,
             constraint_results=[
                 ConstraintResult(
-                    constraint_id="soft.content_density",
-                    name="密度",
+                    constraint_id="soft.teaching_logic",
+                    name="教学逻辑",
                     tier=ConstraintTier.SOFT,
                     status=EvalStatus.PASS,
                     score=soft_score,
@@ -139,7 +139,7 @@ class TestScoreAggregator:
         agg = ScoreAggregator(
             w3=1.0,
             w4=1.0,
-            soft_weights={"soft.content_density": 1.0},
+            soft_weights={"soft.teaching_logic": 1.0},
             pref_weights={"pref.style_preference": 1.0},
         )
         sample = self._make_sample(soft_score=0.8, pref_score=0.7)
@@ -172,7 +172,7 @@ class TestScoreAggregator:
         agg = ScoreAggregator(
             w3=1.0,
             w4=1.0,
-            soft_weights={"soft.content_density": 1.0},
+            soft_weights={"soft.teaching_logic": 1.0},
             pref_weights={"pref.style_preference": 1.0},
         )
         sample = self._make_sample(soft_score=0.78, pref_score=0.65)
@@ -183,7 +183,7 @@ class TestScoreAggregator:
         agg = ScoreAggregator(
             w3=0.5,
             w4=0.5,
-            soft_weights={"soft.content_density": 1.0},
+            soft_weights={"soft.teaching_logic": 1.0},
             pref_weights={"pref.style_preference": 1.0},
         )
         sample = self._make_sample(soft_score=1.0, pref_score=1.0)

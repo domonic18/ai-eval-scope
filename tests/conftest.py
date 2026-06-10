@@ -47,12 +47,12 @@ def sample_result_pass() -> SampleResult:
         duration_ms=5.0,
     )
     cr_soft = ConstraintResult(
-        constraint_id="soft.content_density",
-        name="内容密度",
+        constraint_id="soft.teaching_logic",
+        name="教学逻辑",
         tier=ConstraintTier.SOFT,
         status=EvalStatus.PASS,
         score=0.85,
-        reason="内容充实",
+        reason="教学逻辑良好",
         duration_ms=3.0,
     )
     cr_pref = ConstraintResult(

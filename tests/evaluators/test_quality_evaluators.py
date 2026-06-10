@@ -1,4 +1,4 @@
-"""质量评估器测试 — Rule-based + LLM Judge 评估器。"""
+"""质量评估器测试 — LLM Judge 评估器。"""
 
 from __future__ import annotations
 
@@ -7,13 +7,11 @@ from unittest.mock import MagicMock
 
 from agent_eval.core.types import ConstraintTier, EvalMethod, EvalStatus
 from agent_eval.evaluation.evaluators.quality_evaluators import (
-    ContentDensityEvaluator,
     ContentDiversityEvaluator,
     DepthPreferenceEvaluator,
     RequestFulfillmentEvaluator,
     StylePreferenceEvaluator,
     TeachingLogicEvaluator,
-    VisualConsistencyEvaluator,
 )
 from agent_eval.evaluation.models import ConstraintResult
 from agent_eval.evaluation.registry import registry
@@ -28,110 +26,6 @@ def _prepare_output(tmp_path: Path, content: str = "", filename: str = "index.md
     (output / filename).write_text(content, encoding="utf-8")
     return tmp_path
 
-
-# ─── ContentDensityEvaluator ───
-
-
-class TestContentDensityEvaluator:
-    """内容密度评估器测试。"""
-
-    def test_registered(self) -> None:
-        """评估器已注册。"""
-        evaluator = registry.create("soft.content_density", {})
-        assert isinstance(evaluator, ContentDensityEvaluator)
-        assert evaluator.tier == ConstraintTier.SOFT
-        assert evaluator.method == EvalMethod.RULE
-
-    def test_good_content(self, tmp_path: Path) -> None:
-        """内容充实的文档得分较高。"""
-        content = "\n\n".join(
-            [
-                "# 标题一",
-                "这是一段有意义的文字，包含了丰富的内容。" * 10,
-                "## 标题二",
-                "这是另一段有意义的文字，同样包含了丰富的内容。" * 10,
-                "## 标题三",
-                "- 列表项一\n- 列表项二\n- 列表项三",
-                "总结段落。" * 20,
-            ]
-        )
-        sample = _prepare_output(tmp_path, content)
-        evaluator = ContentDensityEvaluator()
-        result = evaluator.evaluate(sample, {})
-        assert result.constraint_id == "soft.content_density"
-        assert result.score > 0.5
-        assert result.status == EvalStatus.PASS
-
-    def test_empty_content(self, tmp_path: Path) -> None:
-        """空内容得分 0。"""
-        sample = _prepare_output(tmp_path, "")
-        evaluator = ContentDensityEvaluator()
-        result = evaluator.evaluate(sample, {})
-        assert result.score == 0.0
-        assert result.status == EvalStatus.FAIL
-
-    def test_no_output_dir(self, tmp_path: Path) -> None:
-        """无 output 目录。"""
-        evaluator = ContentDensityEvaluator()
-        result = evaluator.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.FAIL
-
-    def test_thin_content(self, tmp_path: Path) -> None:
-        """内容过少得分低。"""
-        sample = _prepare_output(tmp_path, "短文本")
-        evaluator = ContentDensityEvaluator()
-        result = evaluator.evaluate(sample, {})
-        assert result.score < 0.5
-
-
-# ─── VisualConsistencyEvaluator ───
-
-
-class TestVisualConsistencyEvaluator:
-    """视觉一致性评估器测试。"""
-
-    def test_registered(self) -> None:
-        """评估器已注册。"""
-        evaluator = registry.create("soft.visual_consistency", {})
-        assert isinstance(evaluator, VisualConsistencyEvaluator)
-        assert evaluator.tier == ConstraintTier.SOFT
-
-    def test_markdown_only(self, tmp_path: Path) -> None:
-        """纯 Markdown 文件默认 0.7。"""
-        sample = _prepare_output(tmp_path, "# Test\nContent")
-        evaluator = VisualConsistencyEvaluator()
-        result = evaluator.evaluate(sample, {})
-        assert result.score == 0.7
-        assert "Markdown" in result.reason
-
-    def test_consistent_html(self, tmp_path: Path) -> None:
-        """样式一致的 HTML。"""
-        html = """
-        <html><head><style>body { font-family: Arial; color: #333; }</style></head>
-        <body><h1>Title</h1><p>Content</p></body></html>
-        """
-        sample = _prepare_output(tmp_path, html, "index.html")
-        evaluator = VisualConsistencyEvaluator()
-        result = evaluator.evaluate(sample, {})
-        assert result.score == 1.0
-
-    def test_inconsistent_html(self, tmp_path: Path) -> None:
-        """样式不一致的 HTML。"""
-        html = '<p style="font-family: Arial; color: red;">A</p>'
-        html += '<p style="font-family: Times; color: blue; font-size: 12px;">B</p>'
-        # 添加足够多的字体/颜色/字号来触发扣分
-        for i in range(5):
-            html += f'<p style="font-family: Font{i}; color: #{i:06x}; font-size: {12+i*2}px;">X</p>'
-        sample = _prepare_output(tmp_path, html, "index.html")
-        evaluator = VisualConsistencyEvaluator()
-        result = evaluator.evaluate(sample, {})
-        assert result.score < 1.0
-
-    def test_no_output_dir(self, tmp_path: Path) -> None:
-        """无 output 目录。"""
-        evaluator = VisualConsistencyEvaluator()
-        result = evaluator.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.FAIL
 
 
 # ─── LLM Judge Evaluators ───
@@ -296,17 +190,17 @@ class TestThreeStageCascade:
     """三阶段级联集成测试（format → commonsense → quality）。"""
 
     def test_full_pipeline_quality_stage(self, tmp_path: Path) -> None:
-        """quality 阶段可执行 Rule-based 评估器。"""
+        """quality 阶段可执行 LLM Judge 评估器。"""
         from agent_eval.evaluation.engine import build_default_pipeline
 
         engine = build_default_pipeline(registry)
         # 验证 quality 阶段包含评估器
         quality_stage = [s for s in engine.stages if s.stage_id == "quality"]
         assert len(quality_stage) == 1
-        assert len(quality_stage[0].evaluators) == 7  # 2 rule + 5 llm
+        assert len(quality_stage[0].evaluators) == 5  # 5 llm
 
     def test_17_evaluators_registered(self) -> None:
-        """17 项评估器全部注册。"""
+        """14 项评估器全部注册。"""
         expected = [
             # 格式（4）
             "format.response_format",
@@ -319,9 +213,7 @@ class TestThreeStageCascade:
             "commonsense.logical_consistency",
             "commonsense.math_formula",
             "commonsense.unit_consistency",
-            # 软约束（4）
-            "soft.content_density",
-            "soft.visual_consistency",
+            # 软约束（2）
             "soft.teaching_logic",
             "soft.content_diversity",
             # 偏好约束（3）
@@ -329,7 +221,7 @@ class TestThreeStageCascade:
             "pref.depth_preference",
             "pref.request_fulfillment",
         ]
-        assert len(expected) == 16
+        assert len(expected) == 14
         for eval_id in expected:
             e = registry.create(eval_id, {})
             assert e is not None, f"评估器 {eval_id} 未注册"

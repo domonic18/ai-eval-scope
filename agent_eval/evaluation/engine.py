@@ -267,9 +267,6 @@ def build_default_pipeline(registry: EvaluatorRegistry) -> PipelineEngine:
                 id="quality",
                 short_circuit_policy="continue_all",
                 evaluators=[
-                    # Rule-based 软约束
-                    EvaluatorConfig("soft.content_density"),
-                    EvaluatorConfig("soft.visual_consistency"),
                     # LLM Judge 软约束
                     EvaluatorConfig("soft.teaching_logic", {"template_id": "pedagogical_logic"}),
                     EvaluatorConfig("soft.content_diversity", {"template_id": "content_diversity"}),
