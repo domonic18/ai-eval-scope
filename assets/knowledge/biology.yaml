@@ -1,0 +1,134 @@
+subject: "biology"
+description: "生物知识库：常见动物分类误区、人体基本事实、细胞生物学、光合作用"
+version: "1.0"
+
+constants: []
+
+misconceptions:
+  # ---- 动物分类 ----
+  - pattern: "鲸鱼(?:是|属于)鱼"
+    correct: "鲸鱼是哺乳动物（用肺呼吸、胎生、哺乳）"
+    description: "鲸鱼虽然生活在水中，但属于哺乳动物"
+    severity: "error"
+
+  - pattern: "蝙蝠(?:是|属于)鸟"
+    correct: "蝙蝠是哺乳动物（胎生、哺乳、体表被毛）"
+    description: "蝙蝠会飞但不是鸟类，是哺乳动物"
+    severity: "error"
+
+  - pattern: "蘑菇(?:是|属于)植物"
+    correct: "蘑菇是真菌（无叶绿体，不能进行光合作用，靠分解有机物获取营养）"
+    description: "蘑菇属于真菌界，不是植物"
+    severity: "error"
+
+  - pattern: "企鹅(?:是|属于)哺乳动物"
+    correct: "企鹅是鸟类（卵生、有羽毛、前肢特化为鳍）"
+    description: "企鹅不会飞但属于鸟类"
+    severity: "error"
+
+  - pattern: "鸭嘴兽不是哺乳动物"
+    correct: "鸭嘴兽是哺乳动物（单孔目，卵生但哺乳）"
+    description: "鸭嘴兽是最原始的哺乳动物之一，虽卵生但仍属哺乳动物"
+    severity: "error"
+
+  # ---- 微生物 ----
+  - pattern: "细菌都是有害的"
+    correct: "多数细菌是有益的，只有少数细菌能使人生病（如大肠杆菌、乳酸菌等是有益菌）"
+    description: "绝大多数细菌对人类有益或无害"
+    severity: "error"
+
+  - pattern: "病毒(?:是|属于|有)细胞"
+    correct: "病毒没有细胞结构，由蛋白质外壳和内部遗传物质组成"
+    description: "病毒是非细胞生物，不能独立生存"
+    severity: "error"
+
+  # ---- 植物生理 ----
+  - pattern: "植物只能进行光合作用"
+    correct: "植物既进行光合作用（合成有机物），也进行呼吸作用（分解有机物释放能量）"
+    description: "植物同时进行光合作用和呼吸作用"
+    severity: "error"
+
+  - pattern: "光合作用只在白天进行"
+    correct: "只要有光（包括人造光源），光合作用就可以进行，与白天黑夜无关"
+    description: "光合作用的关键条件是光，不是白天"
+    severity: "warning"
+
+  - pattern: "植物白天(?:进行|只进行)光合作用.*晚上(?:进行|只进行)呼吸作用"
+    correct: "植物的呼吸作用全天进行；光合作用在有光条件下进行。白天光合作用强度大于呼吸作用"
+    description: "呼吸作用24小时不间断，光合作用需要光"
+    severity: "error"
+
+  # ---- 无脊椎动物 ----
+  - pattern: "蚯蚓(?:是|属于)昆虫"
+    correct: "蚯蚓是环节动物（身体分节，无外骨骼）"
+    description: "蚯蚓属于环节动物门，不是昆虫"
+    severity: "error"
+
+  - pattern: "蜘蛛(?:是|属于)昆虫"
+    correct: "蜘蛛是节肢动物但不是昆虫（8条腿，身体分头胸部和腹部两部分）"
+    description: "昆虫有6条腿3节身体，蜘蛛有8条腿2节身体"
+    severity: "error"
+
+domain_facts:
+  classification:
+    - animal: "鲸鱼"
+      correct_class: "哺乳动物"
+      key_traits: ["用肺呼吸", "胎生", "哺乳", "恒温"]
+    - animal: "蝙蝠"
+      correct_class: "哺乳动物"
+      key_traits: ["胎生", "哺乳", "体表被毛"]
+    - animal: "企鹅"
+      correct_class: "鸟类"
+      key_traits: ["卵生", "有羽毛", "前肢特化为鳍", "恒温"]
+    - animal: "鸭嘴兽"
+      correct_class: "哺乳动物（单孔目）"
+      key_traits: ["卵生", "哺乳", "有毛发"]
+    - animal: "蚯蚓"
+      correct_class: "环节动物"
+      key_traits: ["身体分节", "无外骨骼", "靠体壁呼吸"]
+    - animal: "蜘蛛"
+      correct_class: "节肢动物（蛛形纲）"
+      key_traits: ["8条腿", "身体分头胸部和腹部", "无触角无翅"]
+    - animal: "蘑菇"
+      correct_class: "真菌"
+      key_traits: ["无叶绿体", "分解有机物", "有细胞核"]
+
+  human_body:
+    - fact: "人体骨骼数量"
+      value: 206
+      unit: "块"
+    - fact: "人体肌肉数量"
+      value: 600
+      unit: "块以上"
+    - fact: "人体五大主要脏器"
+      value: "心、肝、脾、肺、肾"
+      unit: null
+    - fact: "人体最大器官"
+      value: "皮肤"
+      unit: null
+    - fact: "人体最坚硬的组织"
+      value: "牙釉质"
+      unit: null
+
+  cell_facts:
+    - fact: "细胞基本结构"
+      description: "细胞膜、细胞质、细胞核（植物细胞还有细胞壁、叶绿体、液泡）"
+    - fact: "细胞是生物体结构和功能的基本单位"
+      description: "除病毒外，所有生物都由细胞构成"
+    - fact: "动物细胞与植物细胞的区别"
+      description: "植物细胞有细胞壁、叶绿体、液泡，动物细胞没有"
+    - fact: "DNA主要存在于细胞核中"
+      description: "细胞核中含有遗传物质DNA"
+
+  photosynthesis:
+    equation: "6CO2 + 6H2O → C6H12O6 + 6O2（光照/叶绿体）"
+    conditions:
+      - "光（不止白天，有光源即可）"
+      - "叶绿体（含叶绿素）"
+    raw_materials: ["二氧化碳", "水"]
+    products: ["有机物（葡萄糖）", "氧气"]
+    key_facts:
+      - "光合作用在叶绿体中进行"
+      - "光合作用将光能转化为化学能储存在有机物中"
+      - "光合作用吸收CO2释放O2"
+      - "光合作用和呼吸作用同时进行，白天光合作用强度大于呼吸作用"

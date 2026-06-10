@@ -1,0 +1,89 @@
+# 跨学科通用知识准确性规则
+# 来源：行业标准常数 + 通用科学常识
+# 被 _load_fact_db() 始终加载
+
+subject: "_defaults"
+description: "跨学科通用知识准确性规则（始终加载）"
+version: "1.0"
+
+constants:
+  # ─── 数学/物理通用常数 ───
+
+  - name: "圆周率 π"
+    extract_pattern: "(?:π|pi|圆周率)\\s*(?:≈|＝|=|约等于|约为|约)\\s*(\\d+\\.?\\d*)"
+    value: 3.14159
+    tolerance: 0.002
+    description: "π ≈ 3.14159"
+
+  - name: "自然常数 e"
+    extract_pattern: "(?:自然常数|欧拉数)\\s*e\\s*(?:≈|＝|=|约为|约)\\s*(\\d+\\.?\\d*)"
+    value: 2.71828
+    tolerance: 0.005
+    description: "e ≈ 2.71828"
+
+  - name: "光速 c"
+    extract_pattern: "(?:光速|光在真空中的速度)\\s*(?:≈|＝|=|约为|约)\\s*(\\d[\\d,]*(?:\\.\\d+)?)\\s*(?:km/s|千米每秒|公里每秒|千米/秒)"
+    value: 300000
+    tolerance: 1000
+    description: "光速 ≈ 300,000 km/s = 3×10⁸ m/s"
+
+  - name: "绝对零度"
+    extract_pattern: "绝对零度\\s*(?:≈|＝|=|约为|约|为)\\s*[零下负−-]?\\s*(\\d+\\.?\\d*)\\s*°?C?"
+    value: 273.15
+    tolerance: 0.5
+    description: "绝对零度 = -273.15°C = 0K"
+
+  # ─── 地球科学常数 ───
+
+  - name: "地球赤道周长"
+    extract_pattern: "地球.*赤道.*(?:周长|全长|约)\\s*(\\d[\\d,]*(?:\\.\\d+)?)\\s*(?:公里|千米|km)"
+    value: 40075
+    tolerance: 100
+    description: "地球赤道周长 ≈ 40,075 km"
+
+  - name: "地球自转周期"
+    extract_pattern: "地球.*自转.*(?:周期|时间|约)\\s*(\\d+\\.?\\d*)\\s*(?:小时|时|h)"
+    value: 24
+    tolerance: 0.5
+    description: "地球自转周期 ≈ 24小时"
+
+  - name: "地球公转周期"
+    extract_pattern: "地球.*公转.*(?:周期|时间|约)\\s*(\\d+\\.?\\d*)\\s*(?:天|日)"
+    value: 365.25
+    tolerance: 1
+    description: "地球公转周期 ≈ 365.25天"
+
+misconceptions:
+  # ─── 基本科学常识错误 ───
+
+  - pattern: "太阳从西边升起"
+    correct: "太阳从东方升起"
+    description: "太阳升起方向错误"
+    severity: "error"
+
+  - pattern: "地球是[平的方的]"
+    correct: "地球是球体"
+    description: "地球形状错误"
+    severity: "error"
+
+  - pattern: "太阳绕[着地]球[转公]"
+    correct: "地球绕太阳公转"
+    description: "日心说/地心说混淆"
+    severity: "warning"
+
+  # ─── 基础数学常识错误 ───
+
+  - pattern: "三角形内角和.*(?:360|270|大于180|180度以上|超过180)"
+    correct: "平面三角形内角和为180度"
+    description: "三角形内角和错误"
+    severity: "error"
+
+  - pattern: "0.*[是无没有].*偶数"
+    correct: "0是偶数"
+    description: "0的奇偶性错误"
+    severity: "warning"
+
+  - pattern: "0.*[是无没有].*自然数"
+    correct: "0是自然数（中国1993年国标规定）"
+    description: "0的自然数归属争议（1993年起国标规定0是自然数）"
+    severity: "warning"

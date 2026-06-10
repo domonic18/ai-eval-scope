@@ -91,6 +91,12 @@ class ResponseFormatEvaluator(BaseEvaluator):
                 status=EvalStatus.PASS,
                 score=1.0,
                 reason=f"全部 {valid_count} 个文件格式有效",
+                details={
+                    "checked_files": [f.name for f in files],
+                    "valid_formats": sorted(allowed_exts),
+                    "total": len(files),
+                    "valid_count": valid_count,
+                },
                 duration_ms=elapsed,
             )
         else:
@@ -98,7 +104,12 @@ class ResponseFormatEvaluator(BaseEvaluator):
                 status=EvalStatus.FAIL,
                 score=0.0,
                 reason=f"格式不合规: {'; '.join(invalid_files[:5])}",
-                details={"invalid_files": invalid_files},
+                details={
+                    "invalid_files": invalid_files,
+                    "checked_files": [f.name for f in files],
+                    "valid_count": valid_count,
+                    "total": len(files),
+                },
                 duration_ms=elapsed,
             )
 
@@ -185,7 +196,7 @@ class DocumentCountEvaluator(BaseEvaluator):
             status=EvalStatus.PASS if passed else EvalStatus.FAIL,
             score=1.0 if passed else 0.0,
             reason=f"实际 {actual} 个文档，要求 [{min_docs}, {max_docs}]",
-            details={"actual": actual, "min": min_docs, "max": max_docs},
+            details={"actual": actual, "min": min_docs, "max": max_docs, "checked_files": [f.name for f in files]},
             duration_ms=elapsed,
         )
 
@@ -242,6 +253,8 @@ class StructureComplianceEvaluator(BaseEvaluator):
 
         issues: list[str] = []
         has_heading = False
+        heading_summary: dict[str, list[list]] = {}  # filename -> [[level, text], ...]
+        total_heading_count = 0
 
         for f in files:
             try:
@@ -259,6 +272,8 @@ class StructureComplianceEvaluator(BaseEvaluator):
 
             if headings:
                 has_heading = True
+                total_heading_count += len(headings)
+                heading_summary[f.name] = [[level, text] for level, text in headings]
                 # 检查标题层级是否超出限制
                 for level, text in headings:
                     if level > max_heading_depth:
@@ -279,7 +294,12 @@ class StructureComplianceEvaluator(BaseEvaluator):
                 status=EvalStatus.FAIL,
                 score=0.0,
                 reason=f"结构不合规: {'; '.join(issues[:5])}",
-                details={"issues": issues},
+                details={
+                    "issues": issues,
+                    "checked_files": [f.name for f in files],
+                    "heading_summary": heading_summary,
+                    "total_headings": total_heading_count,
+                },
                 duration_ms=elapsed,
             )
 
@@ -287,6 +307,12 @@ class StructureComplianceEvaluator(BaseEvaluator):
             status=EvalStatus.PASS,
             score=1.0,
             reason="文档结构规范，标题层级合理",
+            details={
+                "checked_files": [f.name for f in files],
+                "heading_summary": heading_summary,
+                "total_headings": total_heading_count,
+                "max_heading_depth": max_heading_depth,
+            },
             duration_ms=elapsed,
         )
 
@@ -399,6 +425,7 @@ class HtmlValidityEvaluator(BaseEvaluator):
                 status=EvalStatus.PASS,
                 score=1.0,
                 reason=f"全部 {valid_count} 个 HTML 文件有效",
+                details={"valid_files": [f.name for f in html_files], "total": len(html_files)},
                 duration_ms=elapsed,
             )
         else:
@@ -406,7 +433,12 @@ class HtmlValidityEvaluator(BaseEvaluator):
                 status=EvalStatus.FAIL,
                 score=0.0,
                 reason=f"HTML 校验失败: {'; '.join(issues[:5])}",
-                details={"issues": issues, "valid_count": valid_count, "total": len(html_files)},
+                details={
+                    "issues": issues,
+                    "valid_count": valid_count,
+                    "total": len(html_files),
+                    "checked_files": [f.name for f in html_files],
+                },
                 duration_ms=elapsed,
             )
 

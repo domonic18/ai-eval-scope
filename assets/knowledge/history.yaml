@@ -1,0 +1,503 @@
+# 中国与世界历史知识准确性规则
+# 覆盖范围：K-12 历史常识（朝代、人物、重大事件）
+# 被 InfoAccuracyEvaluator 加载用于事实校验
+
+subject: "history"
+description: "中国与世界历史知识准确性规则（K-12 教育）"
+version: "1.0"
+
+# ─── 历史常数（关键年份/数值） ────────────────────────────────
+# extract_pattern: 从文档中提取数值的正则（需包含一个捕获组）
+# value: 标准值
+# tolerance: 允许偏差
+
+constants:
+  # ─── 中国近现代关键年份 ───
+
+  - name: "中华人民共和国成立"
+    extract_pattern: "(?:中华人民共和国|新中国).*成立.*(?:于|在|公元)\\s*(\\d{4})|成立(?:于|在)\\s*(\\d{4})年.*中华人民共和国"
+    value: 1949
+    tolerance: 0
+    description: "1949年10月1日"
+
+  - name: "鸦片战争爆发"
+    extract_pattern: "(?:鸦片战争|第一次鸦片战争).*(?:爆发|开始|发生).*(?:于|在|公元)?\\s*(\\d{4})|(?:于|在)\\s*(\\d{4})年.*(?:鸦片战争|第一次鸦片战争)"
+    value: 1840
+    tolerance: 0
+    description: "1840年"
+
+  - name: "五四运动"
+    extract_pattern: "(?:五四运动|五四爱国运动).*(?:爆发|发生|于|在).*(?:公元)?\\s*(\\d{4})|(?:于|在)\\s*(\\d{4})年.*(?:五四|五·四)"
+    value: 1919
+    tolerance: 0
+    description: "1919年5月4日"
+
+  - name: "中国共产党成立"
+    extract_pattern: "(?:中国共产党|中共).*成立.*(?:于|在|公元)?\\s*(\\d{4})|成立(?:于|在)\\s*(\\d{4})年.*(?:中国共产党|中共)"
+    value: 1921
+    tolerance: 0
+    description: "1921年7月"
+
+  - name: "辛亥革命"
+    extract_pattern: "(?:辛亥革命|武昌起义).*(?:爆发|发生|于|在).*(?:公元)?\\s*(\\d{4})|(?:于|在)\\s*(\\d{4})年.*(?:辛亥革命|武昌起义)"
+    value: 1911
+    tolerance: 0
+    description: "1911年"
+
+  - name: "秦统一六国"
+    extract_pattern: "(?:秦始皇|秦王嬴政|秦).*统一.*六国.*(?:于|在|公元).*?(-?\\d{3,4})|(?:于|在).*?(-?\\d{3,4})年.*秦.*统一"
+    value: -221
+    tolerance: 0
+    description: "公元前221年"
+
+  - name: "成吉思汗建立蒙古"
+    extract_pattern: "(?:成吉思汗|铁木真|蒙古汗国|蒙古帝国).*建立.*(?:于|在|公元)?\\s*(\\d{4})|(?:于|在)\\s*(\\d{4})年.*(?:成吉思汗|铁木真).*建立"
+    value: 1206
+    tolerance: 0
+    description: "1206年"
+
+  - name: "郑和下西洋"
+    extract_pattern: "(?:郑和|三保太监).*下西洋.*(?:于|在|首次|第一次|开始).*(?:公元)?\\s*(\\d{4})|(?:于|在)\\s*(\\d{4})年.*郑和.*下西洋"
+    value: 1405
+    tolerance: 0
+    description: "1405年首次出发"
+
+# ─── 常见历史错误模式 ─────────────────────────────────
+# pattern: 匹配可能的错误表述
+# correct: 正确信息
+# severity: error（确信错误）或 warning（可能误报）
+
+misconceptions:
+  # ─── 历史人物朝代归属错误（课件高频错误） ───
+
+  - pattern: "祖冲之.*(?:唐朝|宋代|明朝|清代|汉代|晋代|唐代|宋朝|明代|清代|汉代|晋代|唐人|宋人|明人|清人|汉人)"
+    correct: "祖冲之（429-500）是南北朝时期数学家，非唐宋明清汉晋"
+    description: "祖冲之朝代归属错误"
+    severity: "warning"
+
+  - pattern: "(?:唐朝|宋代|明朝|清代|汉代|唐代|宋朝|明代|清朝|汉人).*祖冲之|祖冲之是(?:唐朝|宋代|明朝|清代|汉代|唐代|宋朝|明代|清朝)"
+    correct: "祖冲之（429-500）是南北朝时期数学家"
+    description: "祖冲之朝代归属错误（反向匹配）"
+    severity: "warning"
+
+  - pattern: "刘徽.*(?:唐朝|宋代|明朝|清代|汉代|南北朝)"
+    correct: "刘徽（约225-295）是三国魏时期数学家，非唐宋明清汉南北朝"
+    description: "刘徽朝代归属错误"
+    severity: "error"
+
+  - pattern: "(?:唐朝|宋代|明朝|清代|汉代|南北朝).*刘徽|刘徽是(?:唐朝|宋代|明朝|清代|汉代|南北朝)"
+    correct: "刘徽（约225-295）是三国魏时期数学家"
+    description: "刘徽朝代归属错误（反向匹配）"
+    severity: "error"
+
+  - pattern: "张衡.*(?:唐朝|宋代|明朝|清代)"
+    correct: "张衡（78-139）是东汉科学家，非唐宋明清"
+    description: "张衡朝代归属错误"
+    severity: "error"
+
+  - pattern: "(?:唐朝|宋代|明朝|清代).*张衡|张衡是(?:唐朝|宋代|明朝|清代)"
+    correct: "张衡（78-139）是东汉科学家"
+    description: "张衡朝代归属错误（反向匹配）"
+    severity: "error"
+
+  - pattern: "沈括.*(?:唐朝|明朝|清代|元代)"
+    correct: "沈括（1031-1095）是北宋科学家，非唐明清元"
+    description: "沈括朝代归属错误"
+    severity: "error"
+
+  - pattern: "(?:唐朝|明朝|清代|元代).*沈括|沈括是(?:唐朝|明朝|清代|元代)"
+    correct: "沈括（1031-1095）是北宋科学家"
+    description: "沈括朝代归属错误（反向匹配）"
+    severity: "error"
+
+  - pattern: "宋应星.*(?:唐朝|宋代|元代|清代)"
+    correct: "宋应星（1587-1666）是明末科学家，非唐宋元清"
+    description: "宋应星朝代归属错误"
+    severity: "error"
+
+  - pattern: "(?:唐朝|宋代|元代|清代).*宋应星|宋应星是(?:唐朝|宋代|元代|清代)"
+    correct: "宋应星（1587-1666）是明末科学家"
+    description: "宋应星朝代归属错误（反向匹配）"
+    severity: "error"
+
+  - pattern: "华罗庚.*古代|华罗庚.*古人|古代.*华罗庚"
+    correct: "华罗庚（1910-1985）是近现代数学家，不是古代人物"
+    description: "华罗庚时代归属错误"
+    severity: "error"
+
+  - pattern: "陈景润.*古代|陈景润.*古人|古代.*陈景润"
+    correct: "陈景润（1933-1996）是近现代数学家，不是古代人物"
+    description: "陈景润时代归属错误"
+    severity: "error"
+
+  - pattern: "高斯.*(?:中国|中国的|中国人|我国|我国古代)"
+    correct: "高斯（Carl Friedrich Gauss，1777-1855）是德国数学家，不是中国人"
+    description: "高斯国籍归属错误"
+    severity: "error"
+
+  # ─── 近现代重大事件年份错误 ───
+
+  - pattern: "中华人民共和国.*成立.*(?:194[0-8]|195[0-9]|193\\d)年?"
+    correct: "中华人民共和国成立于1949年10月1日"
+    description: "新中国成立年份错误"
+    severity: "error"
+
+  - pattern: "(?:鸦片战争|第一次鸦片战争).*(?:183\\d|184[1-9]|18[56789]\\d)年?"
+    correct: "鸦片战争爆发于1840年"
+    description: "鸦片战争年份错误"
+    severity: "error"
+
+  - pattern: "(?:五四运动|五四).*(?:191[0-8]|192\\d|190\\d)年?"
+    correct: "五四运动发生于1919年5月4日"
+    description: "五四运动年份错误"
+    severity: "error"
+
+  - pattern: "(?:中国共产党|中共).*成立.*(?:192[02-9]|19[01]\\d|193\\d)年?"
+    correct: "中国共产党成立于1921年7月"
+    description: "中共成立年份错误"
+    severity: "error"
+
+  - pattern: "(?:辛亥革命|武昌起义).*(?:191[02]|190\\d|192\\d|18\\d\\d)年?"
+    correct: "辛亥革命爆发于1911年"
+    description: "辛亥革命年份错误"
+    severity: "error"
+
+  - pattern: "(?:秦始皇|秦).*统一.*六国.*(?:-?2[012]\\d|-?23\\d|-?19\\d|-?18\\d)年?"
+    correct: "秦统一六国在公元前221年"
+    description: "秦统一六国年份错误"
+    severity: "error"
+
+  - pattern: "(?:成吉思汗|铁木真).*建立.*蒙古.*(?:11\\d\\d|12[0-57-9]\\d|13\\d\\d)年?"
+    correct: "成吉思汗于1206年建立蒙古汗国"
+    description: "成吉思汗建国年份错误"
+    severity: "error"
+
+  - pattern: "郑和.*下西洋.*(?:13\\d\\d|14[0-9]\\d|14[1-9]\\d|15[1-9]\\d)年?"
+    correct: "郑和于1405年首次下西洋"
+    description: "郑和下西洋年份错误"
+    severity: "error"
+
+  # ─── 其他常见历史常识错误 ───
+
+  - pattern: "(?:秦始皇|嬴政).*统一.*文字.*(?:楷书|行书|草书|简体)"
+    correct: "秦始皇统一文字为小篆（隶书也在秦朝发展，但统一推行的是小篆）"
+    description: "秦始皇统一文字应为小篆"
+    severity: "warning"
+
+  - pattern: "造纸术.*蔡伦.*发明"
+    correct: "蔡伦改进了造纸术（西汉已有植物纤维纸），并非发明造纸术"
+    description: "蔡伦改进而非发明造纸术"
+    severity: "warning"
+
+  - pattern: "四大发明.*唐代"
+    correct: "四大发明（造纸术、印刷术、火药、指南针）成熟时期不同，并非都在唐代"
+    description: "四大发明成熟时期不同"
+    severity: "warning"
+
+# ─── 学科领域知识 ─────────────────────────────────────
+
+domain_facts:
+
+  # ─── 中国朝代年表 ───
+
+  dynasty_timeline:
+    description: "中国主要朝代更替年表"
+    timeline:
+      - dynasty: "夏"
+        start_year: -2070
+        end_year: -1600
+        note: "中国第一个王朝"
+
+      - dynasty: "商"
+        start_year: -1600
+        end_year: -1046
+        note: "甲骨文、青铜器"
+
+      - dynasty: "西周"
+        start_year: -1046
+        end_year: -771
+        note: "分封制、礼乐制"
+
+      - dynasty: "东周"
+        start_year: -770
+        end_year: -256
+        note: "春秋(-770~-476)、战国(-475~-221)"
+
+      - dynasty: "秦"
+        start_year: -221
+        end_year: -207
+        note: "秦始皇统一六国、统一度量衡"
+
+      - dynasty: "西汉"
+        start_year: -202
+        end_year: 8
+        note: "汉武帝、张骞通西域"
+
+      - dynasty: "新"
+        start_year: 9
+        end_year: 23
+        note: "王莽篡汉"
+
+      - dynasty: "东汉"
+        start_year: 25
+        end_year: 220
+        note: "张衡、蔡伦、黄巾起义"
+
+      - dynasty: "三国"
+        start_year: 220
+        end_year: 280
+        note: "魏(220-266)、蜀(221-263)、吴(222-280)"
+
+      - dynasty: "西晋"
+        start_year: 265
+        end_year: 316
+        note: "短暂统一"
+
+      - dynasty: "东晋"
+        start_year: 317
+        end_year: 420
+        note: "偏安南方"
+
+      - dynasty: "南北朝"
+        start_year: 420
+        end_year: 589
+        note: "南朝(宋齐梁陈)、北朝(北魏等)"
+
+      - dynasty: "隋"
+        start_year: 581
+        end_year: 618
+        note: "隋文帝统一、大运河、科举制"
+
+      - dynasty: "唐"
+        start_year: 618
+        end_year: 907
+        note: "贞观之治、开元盛世"
+
+      - dynasty: "五代十国"
+        start_year: 907
+        end_year: 960
+        note: "分裂时期"
+
+      - dynasty: "北宋"
+        start_year: 960
+        end_year: 1127
+        note: "毕昇活字印刷、沈括"
+
+      - dynasty: "南宋"
+        start_year: 1127
+        end_year: 1279
+        note: "偏安江南、岳飞"
+
+      - dynasty: "元"
+        start_year: 1271
+        end_year: 1368
+        note: "蒙古族建立、疆域最广"
+
+      - dynasty: "明"
+        start_year: 1368
+        end_year: 1644
+        note: "郑和下西洋、宋应星《天工开物》"
+
+      - dynasty: "清"
+        start_year: 1644
+        end_year: 1912
+        note: "最后封建王朝、鸦片战争"
+
+      - dynasty: "中华民国"
+        start_year: 1912
+        end_year: 1949
+        note: "辛亥革命后建立"
+
+      - dynasty: "中华人民共和国"
+        start_year: 1949
+        end_year: null
+        note: "新中国成立"
+
+  # ─── 重要历史人物 ───
+
+  historical_figures:
+    # 科学家与数学家
+    scientists:
+      - name: "祖冲之"
+        dynasty: "南北朝"
+        period: "429-500"
+        contribution: "将圆周率精确到小数点后7位（3.1415926~3.1415927），著《缀术》"
+
+      - name: "刘徽"
+        dynasty: "三国魏"
+        period: "约225-295"
+        contribution: "割圆术计算圆周率至3.1416，著《九章算术注》"
+
+      - name: "张衡"
+        dynasty: "东汉"
+        period: "78-139"
+        contribution: "发明地动仪、浑天仪，天文历法"
+
+      - name: "沈括"
+        dynasty: "北宋"
+        period: "1031-1095"
+        contribution: "著《梦溪笔谈》，被誉为中国科学史里程碑"
+
+      - name: "宋应星"
+        dynasty: "明末"
+        period: "1587-1666"
+        contribution: "著《天工开物》，系统总结农业和手工业技术"
+
+      - name: "华罗庚"
+        dynasty: "近现代"
+        period: "1910-1985"
+        contribution: "解析数论、典型群、优选法推广"
+
+      - name: "陈景润"
+        dynasty: "近现代"
+        period: "1933-1996"
+        contribution: "哥德巴赫猜想'1+2'证明"
+
+      - name: "高斯"
+        dynasty: "德国"
+        period: "1777-1855"
+        contribution: "数论、微分几何、统计学基础，数学王子"
+
+    # 政治与军事人物
+    political_figures:
+      - name: "秦始皇（嬴政）"
+        dynasty: "秦"
+        period: "前259-前210"
+        contribution: "统一六国、统一度量衡文字、修长城"
+
+      - name: "汉武帝（刘彻）"
+        dynasty: "西汉"
+        period: "前156-前87"
+        contribution: "罢黜百家独尊儒术、张骞通西域"
+
+      - name: "唐太宗（李世民）"
+        dynasty: "唐"
+        period: "598-649"
+        contribution: "贞观之治"
+
+      - name: "成吉思汗（铁木真）"
+        dynasty: "蒙古"
+        period: "1162-1227"
+        contribution: "1206年建立蒙古汗国"
+
+      - name: "朱元璋"
+        dynasty: "明"
+        period: "1328-1398"
+        contribution: "建立明朝"
+
+      - name: "孙中山"
+        dynasty: "近现代"
+        period: "1866-1925"
+        contribution: "辛亥革命、创立民国"
+
+    # 发明家与文化人物
+    inventors:
+      - name: "蔡伦"
+        dynasty: "东汉"
+        period: "约61-121"
+        contribution: "改进造纸术（西汉已有纸）"
+
+      - name: "毕昇"
+        dynasty: "北宋"
+        period: "约970-1051"
+        contribution: "发明活字印刷术"
+
+      - name: "郑和"
+        dynasty: "明"
+        period: "1371-1433"
+        contribution: "1405年起七次下西洋"
+
+  # ─── 重大历史事件 ───
+
+  key_events:
+    # 古代
+    ancient:
+      - event: "夏朝建立"
+        date: "约公元前2070年"
+        significance: "中国第一个王朝，启建立"
+
+      - event: "商鞅变法"
+        date: "公元前356年"
+        significance: "秦国富国强兵的基础"
+
+      - event: "秦统一六国"
+        date: "公元前221年"
+        significance: "中国首次大一统"
+
+      - event: "张骞通西域"
+        date: "公元前138年"
+        significance: "开辟丝绸之路"
+
+      - event: "造纸术改进"
+        date: "东汉（约105年）"
+        significance: "蔡伦改进造纸术"
+
+      - event: "活字印刷术发明"
+        date: "北宋（约1040年）"
+        significance: "毕昇发明泥活字"
+
+      - event: "成吉思汗建立蒙古汗国"
+        date: "1206年"
+        significance: "蒙古帝国奠基"
+
+      - event: "郑和首次下西洋"
+        date: "1405年"
+        significance: "世界航海史壮举"
+
+    # 近现代
+    modern:
+      - event: "鸦片战争"
+        date: "1840年"
+        significance: "中国近代史开端"
+
+      - event: "太平天国运动"
+        date: "1851-1864年"
+        significance: "中国历史上规模最大的农民起义之一"
+
+      - event: "洋务运动"
+        date: "19世纪60-90年代"
+        significance: "自强求富、引进西方技术"
+
+      - event: "甲午中日战争"
+        date: "1894-1895年"
+        significance: "签订《马关条约》"
+
+      - event: "戊戌变法"
+        date: "1898年"
+        significance: "百日维新"
+
+      - event: "辛亥革命"
+        date: "1911年"
+        significance: "推翻清王朝、结束帝制"
+
+      - event: "五四运动"
+        date: "1919年5月4日"
+        significance: "新民主主义革命开端"
+
+      - event: "中国共产党成立"
+        date: "1921年7月"
+        significance: "开天辟地的大事变"
+
+      - event: "南昌起义"
+        date: "1927年8月1日"
+        significance: "建军节的由来"
+
+      - event: "九一八事变"
+        date: "1931年9月18日"
+        significance: "日本侵华开端"
+
+      - event: "七七事变（卢沟桥事变）"
+        date: "1937年7月7日"
+        significance: "全面抗日战争爆发"
+
+      - event: "日本投降"
+        date: "1945年8月15日"
+        significance: "抗日战争胜利"
+
+      - event: "中华人民共和国成立"
+        date: "1949年10月1日"
+        significance: "中国人民站起来了"
+
+      - event: "改革开放"
+        date: "1978年"
+        significance: "十一届三中全会，开启现代化建设新时期"

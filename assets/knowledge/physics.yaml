@@ -1,0 +1,383 @@
+# 物理知识准确性规则
+# 覆盖范围：小学科学至初中物理
+# 被 InfoAccuracyEvaluator 加载用于事实校验
+
+subject: "physics"
+description: "物理知识准确性规则（小学科学至初中物理）"
+version: "1.0"
+
+# ─── 物理常数 ───────────────────────────────────────────
+# extract_pattern: 从文档中提取数值的正则（需包含一个捕获组）
+# value: 标准值
+# tolerance: 允许偏差
+
+constants:
+  # ─── 力学常数 ───
+
+  - name: "重力加速度 g (m/s²)"
+    extract_pattern: "(?:重力加速度|g)\\s*(?:≈|＝|=|约为|约|取)\\s*(\\d+\\.?\\d*)\\s*(?:m/s²|m/s\\^2|米每二次方秒|米/秒²)"
+    value: 9.8
+    tolerance: 0.15
+    description: "g ≈ 9.8 m/s²"
+
+  - name: "重力加速度 g (N/kg)"
+    extract_pattern: "(?:地球表面|地面附近).*重力加速度\\s*(?:≈|＝|=|约为|约)\\s*(\\d+\\.?\\d*)\\s*(?:N/kg|牛每千克|牛/千克)"
+    value: 9.8
+    tolerance: 0.15
+    description: "g ≈ 9.8 N/kg（地球表面）"
+
+  # ─── 密度常数 ───
+
+  - name: "水的密度"
+    extract_pattern: "(?:水的密度|纯水密度|常温下水的密度)\\s*(?:≈|＝|=|约为|约|为)\\s*(\\d[\\d,]*(?:\\.\\d+)?)\\s*(?:kg/m³|千克每立方米|kg/m\\^3|千克/立方米)"
+    value: 1000
+    tolerance: 50
+    description: "水的密度 ≈ 1000 kg/m³ = 1 g/cm³（4°C时精确值）"
+
+  - name: "水的密度 (g/cm³)"
+    extract_pattern: "(?:水的密度|纯水密度)\\s*(?:≈|＝|=|约为|约|为)\\s*(\\d+\\.?\\d*)\\s*(?:g/cm³|克每立方厘米|g/cm\\^3|克/厘米³)"
+    value: 1.0
+    tolerance: 0.05
+    description: "水的密度 ≈ 1 g/cm³"
+
+  # ─── 温度常数 ───
+
+  - name: "水的沸点 (标准大气压)"
+    extract_pattern: "(?:水的沸点|水沸腾|纯水沸点)\\s*(?:≈|＝|=|约为|约|为|是)\\s*(\\d+\\.?\\d*)\\s*°?C?"
+    value: 100
+    tolerance: 1
+    description: "水在1标准大气压下的沸点 = 100°C"
+
+  - name: "水的冰点"
+    extract_pattern: "(?:水的冰点|水的凝固点|水结冰|纯水凝固点)\\s*(?:≈|＝|=|约为|约|为|是)\\s*[零下负−-]?\\s*(\\d+\\.?\\d*)\\s*°?C?"
+    value: 0
+    tolerance: 0.5
+    description: "水在1标准大气压下的冰点 = 0°C"
+
+  # ─── 压强常数 ───
+
+  - name: "标准大气压"
+    extract_pattern: "(?:标准大气压|1个标准大气压|一个标准大气压|1\\s*atm)\\s*(?:≈|＝|=|约为|约|为)\\s*(\\d[\\d,]*(?:\\.\\d+)?)\\s*(?:Pa|帕斯卡|千帕|hPa)"
+    value: 101325
+    tolerance: 500
+    description: "1标准大气压 = 101325 Pa ≈ 1.013×10⁵ Pa"
+
+  - name: "标准大气压 (kPa)"
+    extract_pattern: "(?:标准大气压|1\\s*atm)\\s*(?:≈|＝|=|约为|约)\\s*(\\d+\\.?\\d*)\\s*(?:kPa|千帕)"
+    value: 101.325
+    tolerance: 0.5
+    description: "1标准大气压 ≈ 101.325 kPa"
+
+  # ─── 声学常数 ───
+
+  - name: "声速 (空气中, 15°C)"
+    extract_pattern: "(?:声速|声音在空气中的速度|空气中声速|声音速度)\\s*(?:≈|＝|=|约为|约)\\s*(\\d+\\.?\\d*)\\s*(?:m/s|米每秒|米/秒)"
+    value: 340
+    tolerance: 20
+    description: "空气中声速 ≈ 340 m/s（15°C, 1atm）"
+
+  # ─── 其他常见常数 ───
+
+  - name: "安全电压"
+    extract_pattern: "(?:安全电压|人体安全电压)\\s*(?:≤|不高于|不超过|≤|<=|＝|=|为)\\s*(\\d+)\\s*V?"
+    value: 36
+    tolerance: 0
+    description: "安全电压 ≤ 36V"
+
+  - name: "家庭电路电压"
+    extract_pattern: "(?:家庭电路|家用|市电|照明电路).*电压\\s*(?:≈|＝|=|约为|约|为|是)\\s*(\\d+)\\s*V?"
+    value: 220
+    tolerance: 20
+    description: "中国家庭电路电压 = 220V"
+
+# ─── 常见物理错误模式 ─────────────────────────────────
+# pattern: 匹配可能的错误表述
+# correct: 正确信息
+# severity: error（确信错误）或 warning（可能误报）
+
+misconceptions:
+  # ─── 力学常见错误 ───
+
+  - pattern: "重力.*方向.*向下[^，。]|重力.*方向.*垂直向下"
+    correct: "重力的方向是竖直向下（不是'垂直向下'，垂直向下与接触面有关，竖直向下指向地心）"
+    description: "重力方向表述不准确：应为竖直向下而非垂直向下"
+    severity: "warning"
+
+  - pattern: "力.*(?:维持|保持).*(?:运动|物体运动)"
+    correct: "力是改变物体运动状态的原因，不是维持运动的原因（牛顿第一定律）"
+    description: "力不是维持运动的原因（亚里士多德观点的错误）"
+    severity: "error"
+
+  - pattern: "物体不受力.*(?:静止|停下|停下来|停止)"
+    correct: "牛顿第一定律：不受力的物体保持静止或匀速直线运动状态"
+    description: "物体不受力不一定静止，也可能匀速直线运动"
+    severity: "error"
+
+  - pattern: "惯性.*(?:是一种力|是力|力的|受到惯性|受到惯性力|惯性力)"
+    correct: "惯性不是力，是物体的固有属性，只与质量有关"
+    description: "惯性是物体属性不是力"
+    severity: "error"
+
+  - pattern: "质量.*(?:与|跟).*重力.*(?:成正比|有关|一样|相等)"
+    correct: "质量是物体本身属性，不随位置改变；重力与位置有关（G=mg）。质量不等于重力"
+    description: "质量和重力概念混淆"
+    severity: "warning"
+
+  - pattern: "失重.*(?:没有|无|不存在|失去).*重力"
+    correct: "失重不是没有重力，而是物体对支持物的压力（或对悬挂物的拉力）小于实际重力"
+    description: "失重不等于没有重力"
+    severity: "error"
+
+  # ─── 电学常见错误 ───
+
+  - pattern: "导体.*容易导电.*绝缘体.*不导电|绝缘体.*(?:完全不|绝对不|不能).*导电"
+    correct: "导体容易导电，绝缘体不容易导电但并非完全不导电（条件变化时可能导电）"
+    description: "绝缘体不是绝对不导电"
+    severity: "warning"
+
+  - pattern: "电流.*(?:从负极到正极|负极流向正极)"
+    correct: "电流方向：正极→外电路→负极（物理学规定正电荷移动方向为电流方向）"
+    description: "电流方向错误"
+    severity: "error"
+
+  # ─── 声学常见错误 ───
+
+  - pattern: "声音.*真空.*(?:传播|传递|通过)|真空.*声音.*(?:传播|通过)"
+    correct: "声音不能在真空中传播（声音的传播需要介质）"
+    description: "声音不能在真空中传播"
+    severity: "error"
+
+  - pattern: "声音.*(?:在空气中最快|空气中.*最快|空气.*传播最快)"
+    correct: "声音在固体中传播最快，其次是液体，气体中最慢"
+    description: "声音传播速度：固体>液体>气体"
+    severity: "error"
+
+  # ─── 热学常见错误 ───
+
+  - pattern: "温度高.*热量多|温度.*高.*热量.*多|温度.*热量"
+    correct: "温度和热量是不同概念：温度是状态量，热量是过程量，不能说温度高则热量多"
+    description: "温度高的物体不一定热量多"
+    severity: "error"
+
+  - pattern: "吸收热量.*温度.*(?:一定|必定|总是).*升高"
+    correct: "吸收热量温度不一定升高（如冰融化时吸热但温度保持0°C不变）"
+    description: "吸收热量不一定会导致温度升高（物态变化过程）"
+    severity: "warning"
+
+  # ─── 光学常见错误 ───
+
+  - pattern: "光年.*(?:时间|速度|单位是时间)"
+    correct: "光年是长度单位（光在一年内传播的距离），不是时间单位"
+    description: "光年是长度单位而非时间单位"
+    severity: "error"
+
+  - pattern: "反射.*入射角大于反射角|反射角小于入射角"
+    correct: "反射角等于入射角"
+    description: "反射定律：反射角等于入射角"
+    severity: "error"
+
+  # ─── 浮力常见错误 ───
+
+  - pattern: "浮力.*(?:与深度有关|越深浮力越大|深度越大浮力)"
+    correct: "浮力大小取决于排开液体的体积和液体密度（F_浮=ρ液gV_排），与物体浸没的深度无关"
+    description: "浮力与深度无关（完全浸没时）"
+    severity: "warning"
+
+  - pattern: "沉底的物体.*没有浮力|沉底.*不受浮力"
+    correct: "浸在液体中的物体都受到浮力，沉底只是浮力小于重力"
+    description: "沉底的物体同样受到浮力"
+    severity: "error"
+
+# ─── 学科领域知识 ─────────────────────────────────────
+
+domain_facts:
+
+  # ─── 物理量与单位对照表 ───
+
+  physical_quantities:
+    - quantity: "长度"
+      symbol: "L / s"
+      unit: "米 (m)"
+      common_units: ["千米(kkm)", "分米(dm)", "厘米(cm)", "毫米(mm)", "微米(μm)", "纳米(nm)"]
+    - quantity: "质量"
+      symbol: "m"
+      unit: "千克 (kg)"
+      common_units: ["克(g)", "毫克(mg)", "吨(t)"]
+    - quantity: "时间"
+      symbol: "t"
+      unit: "秒 (s)"
+      common_units: ["分(min)", "时(h)", "天(d)"]
+    - quantity: "速度"
+      symbol: "v"
+      unit: "米每秒 (m/s)"
+      common_units: ["千米每小时(km/h)"]
+      conversion: "1 m/s = 3.6 km/h"
+    - quantity: "力"
+      symbol: "F"
+      unit: "牛顿 (N)"
+    - quantity: "重力"
+      symbol: "G"
+      unit: "牛顿 (N)"
+      formula: "G = mg"
+    - quantity: "密度"
+      symbol: "ρ"
+      unit: "千克每立方米 (kg/m³)"
+      common_units: ["克每立方厘米(g/cm³)"]
+      conversion: "1 g/cm³ = 1000 kg/m³"
+    - quantity: "压强"
+      symbol: "p"
+      unit: "帕斯卡 (Pa)"
+      formula: "p = F/S"
+      common_units: ["千帕(kPa)", "标准大气压(atm)"]
+    - quantity: "功"
+      symbol: "W"
+      unit: "焦耳 (J)"
+      formula: "W = Fs"
+    - quantity: "功率"
+      symbol: "P"
+      unit: "瓦特 (W)"
+      formula: "P = W/t"
+      common_units: ["千瓦(kW)"]
+    - quantity: "电流"
+      symbol: "I"
+      unit: "安培 (A)"
+      common_units: ["毫安(mA)", "微安(μA)"]
+    - quantity: "电压"
+      symbol: "U"
+      unit: "伏特 (V)"
+      common_units: ["千伏(kV)", "毫伏(mV)"]
+    - quantity: "电阻"
+      symbol: "R"
+      unit: "欧姆 (Ω)"
+      common_units: ["千欧(kΩ)", "兆欧(MΩ)"]
+    - quantity: "温度"
+      symbol: "t / T"
+      unit: "摄氏度 (°C) / 开尔文 (K)"
+      conversion: "T = t + 273.15"
+    - quantity: "比热容"
+      symbol: "c"
+      unit: "焦耳每千克摄氏度 (J/(kg·°C))"
+    - quantity: "热量"
+      symbol: "Q"
+      unit: "焦耳 (J)"
+    - quantity: "能量"
+      symbol: "E"
+      unit: "焦耳 (J)"
+    - quantity: "频率"
+      symbol: "f"
+      unit: "赫兹 (Hz)"
+      common_units: ["千赫(kHz)", "兆赫(MHz)"]
+
+  # ─── 牛顿三大定律 ───
+
+  newtons_laws:
+    - law: "牛顿第一定律（惯性定律）"
+      statement: "一切物体在没有受到力的作用时，总保持静止状态或匀速直线运动状态"
+      key_points:
+        - "力不是维持运动的原因，而是改变运动状态的原因"
+        - "惯性是物体的固有属性，只与质量有关"
+        - "不受力的物体不存在，该定律是理想化推理的结论"
+      common_misconceptions:
+        - "物体不受力就一定静止"
+        - "力是维持运动的原因"
+        - "惯性是一种力"
+
+    - law: "牛顿第二定律"
+      statement: "物体的加速度与所受合力成正比，与物体质量成反比"
+      formula: "F = ma"
+      key_points:
+        - "加速度方向与合力方向相同"
+        - "力是产生加速度的原因"
+        - "质量越大，相同力产生的加速度越小"
+      common_misconceptions:
+        - "大物体受力大"
+        - "速度大的物体受力大"
+
+    - law: "牛顿第三定律（作用力与反作用力）"
+      statement: "两个物体之间的作用力和反作用力总是大小相等、方向相反、作用在同一直线上"
+      key_points:
+        - "作用力和反作用力分别作用在两个物体上"
+        - "它们同时产生、同时消失、同时变化"
+        - "与二力平衡不同（二力平衡作用在同一物体上）"
+      common_misconceptions:
+        - "作用力和反作用力可以抵消"
+        - "主动力大于被动力"
+
+  # ─── 常见物理公式 ───
+
+  physics_formulas:
+    mechanics:
+      - name: "重力"
+        formula: "G = mg"
+        description: "g ≈ 9.8 N/kg"
+      - name: "密度"
+        formula: "ρ = m/V"
+        description: "m为质量，V为体积"
+      - name: "压强"
+        formula: "p = F/S"
+        description: "F为压力，S为受力面积"
+      - name: "液体压强"
+        formula: "p = ρgh"
+        description: "ρ为液体密度，h为深度"
+      - name: "浮力（阿基米德原理）"
+        formula: "F_浮 = ρ_液 g V_排"
+        description: "排开液体所受的重力"
+      - name: "功"
+        formula: "W = Fs"
+        description: "F为力，s为在力的方向上移动的距离"
+      - name: "功率"
+        formula: "P = W/t"
+        description: "做功快慢的物理量"
+      - name: "动能"
+        formula: "E_k = ½mv²"
+        description: "与质量和速度有关"
+      - name: "势能（重力势能）"
+        formula: "E_p = mgh"
+        description: "与质量和高度有关"
+      - name: "杠杆平衡条件"
+        formula: "F₁L₁ = F₂L₂"
+        description: "动力×动力臂 = 阻力×阻力臂"
+
+    electricity:
+      - name: "欧姆定律"
+        formula: "I = U/R"
+        description: "电流等于电压除以电阻"
+      - name: "电功"
+        formula: "W = UIt"
+        description: "U电压、I电流、t时间"
+      - name: "电功率"
+        formula: "P = UI"
+        description: "电功率等于电压乘以电流"
+      - name: "电功率（推导）"
+        formula: "P = I²R = U²/R"
+        description: "由欧姆定律推导"
+      - name: "焦耳定律"
+        formula: "Q = I²Rt"
+        description: "电流产生的热量"
+
+    thermal:
+      - name: "吸热公式"
+        formula: "Q_吸 = cm(t-t₀)"
+        description: "c为比热容，m为质量"
+      - name: "放热公式"
+        formula: "Q_放 = cm(t₀-t)"
+        description: "物体降温放热"
+      - name: "热平衡"
+        formula: "Q_吸 = Q_放"
+        description: "无热损失时吸热等于放热"
+
+    optics:
+      - name: "光速"
+        formula: "c = 3×10⁸ m/s"
+        description: "真空中的光速"
+      - name: "反射定律"
+        formula: "反射角 = 入射角"
+        description: "三线共面、法线居中、两角相等"
+
+    waves:
+      - name: "波速公式"
+        formula: "v = fλ"
+        description: "波速=频率×波长"
+      - name: "声速（空气）"
+        formula: "v ≈ 340 m/s"
+        description: "15°C空气中"

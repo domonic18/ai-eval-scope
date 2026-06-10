@@ -53,6 +53,15 @@ def _collect_text_content(output_dir: Path) -> str:
     return "\n\n".join(texts)
 
 
+def _collect_file_names(output_dir: Path) -> list[str]:
+    """收集目录下所有文档文件名。"""
+    names: list[str] = []
+    for ext in ("*.md", "*.markdown", "*.html", "*.htm"):
+        for f in output_dir.rglob(ext):
+            names.append(f.name)
+    return sorted(names)
+
+
 # ─── Rule-based 软约束评估器 ───
 
 
@@ -172,6 +181,7 @@ class ContentDensityEvaluator(BaseEvaluator):
             "structure": structure_score,
             "content_volume": content_score,
         }
+        details["files_checked"] = _collect_file_names(output_dir)
 
         reason = "内容密度" + ("良好" if score >= 0.6 else "不足")
         if reasons:
@@ -286,6 +296,9 @@ class VisualConsistencyEvaluator(BaseEvaluator):
         score = max(0.0, min(1.0, score))
 
         elapsed = (time.monotonic() - start) * 1000
+        details["files_checked"] = [f.name for f in html_files]
+        details["font_list"] = sorted(font_families)
+        details["color_list"] = sorted(colors)
 
         reason = "视觉一致性" + ("良好" if score >= 0.6 else "欠佳")
         if issues:

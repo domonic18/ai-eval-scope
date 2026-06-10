@@ -1,0 +1,169 @@
+subject: "chemistry"
+description: "化学知识库：常量、常见误区纠正、元素/化合物/指示剂基础事实"
+version: "1.0"
+
+constants:
+  - name: "水的沸点"
+    extract_pattern: "水的沸点.*?(\\d+(?:\\.\\d+)?)\\s*[°度]?C"
+    value: 100.0
+    tolerance: 0.5
+
+  - name: "水的冰点"
+    extract_pattern: "水的冰点.*?(\\d+(?:\\.\\d+)?)\\s*[°度]?C"
+    value: 0.0
+    tolerance: 0.5
+
+  - name: "水的pH值"
+    extract_pattern: "水.*?pH.*?(\\d+(?:\\.\\d+)?)"
+    value: 7.0
+    tolerance: 0.5
+
+misconceptions:
+  # ---- 物质组成 ----
+  - pattern: "水由\\d+个氢原子和\\d+个氧原子组成"
+    correct: "水由氢元素和氧元素组成（微观上：每个水分子由2个氢原子和1个氧原子构成）"
+    description: "混淆了宏观元素组成与微观分子构成的表述"
+    severity: "warning"
+
+  - pattern: "二氧化碳是有毒气体"
+    correct: "二氧化碳无毒，但不能供给呼吸；浓度过高会导致窒息"
+    description: "二氧化碳本身无毒，属于不能供给呼吸的气体"
+    severity: "error"
+
+  # ---- 燃烧条件 ----
+  - pattern: "铁在空气中燃烧"
+    correct: "铁在纯氧中才能燃烧（在空气中不能燃烧）"
+    description: "铁在空气中不能燃烧，只有在纯氧中才能剧烈燃烧"
+    severity: "error"
+
+  # ---- 导电性 ----
+  - pattern: "纯水能导电"
+    correct: "纯水几乎不导电（天然水和溶液因含离子才导电）"
+    description: "纯水是极弱的电解质，几乎不导电"
+    severity: "error"
+
+  # ---- 原子守恒 ----
+  - pattern: "化学变化中原子种类(?:发?生)?改变"
+    correct: "化学变化中原子种类不变（原子是化学变化中的最小粒子）"
+    description: "化学变化中原子种类、数目不变，只是重新组合"
+    severity: "error"
+
+  # ---- 催化剂 ----
+  - pattern: "催化剂.*(?:质量|性质).*(?:改变|变化)"
+    correct: "催化剂能改变化学反应速率，但反应前后其质量和化学性质不变"
+    description: "催化剂在反应前后质量和化学性质不变（物理性质可能改变）"
+    severity: "error"
+
+domain_facts:
+  common_elements:
+    - symbol: "H"
+      name: "氢"
+      atomic_number: 1
+    - symbol: "He"
+      name: "氦"
+      atomic_number: 2
+    - symbol: "C"
+      name: "碳"
+      atomic_number: 6
+    - symbol: "N"
+      name: "氮"
+      atomic_number: 7
+    - symbol: "O"
+      name: "氧"
+      atomic_number: 8
+    - symbol: "Na"
+      name: "钠"
+      atomic_number: 11
+    - symbol: "Mg"
+      name: "镁"
+      atomic_number: 12
+    - symbol: "Al"
+      name: "铝"
+      atomic_number: 13
+    - symbol: "Si"
+      name: "硅"
+      atomic_number: 14
+    - symbol: "P"
+      name: "磷"
+      atomic_number: 15
+    - symbol: "S"
+      name: "硫"
+      atomic_number: 16
+    - symbol: "Cl"
+      name: "氯"
+      atomic_number: 17
+    - symbol: "K"
+      name: "钾"
+      atomic_number: 19
+    - symbol: "Ca"
+      name: "钙"
+      atomic_number: 20
+    - symbol: "Fe"
+      name: "铁"
+      atomic_number: 26
+    - symbol: "Cu"
+      name: "铜"
+      atomic_number: 29
+    - symbol: "Zn"
+      name: "锌"
+      atomic_number: 30
+    - symbol: "Ag"
+      name: "银"
+      atomic_number: 47
+    - symbol: "Ba"
+      name: "钡"
+      atomic_number: 56
+    - symbol: "Au"
+      name: "金"
+      atomic_number: 79
+
+  common_compounds:
+    - formula: "H2O"
+      name: "水"
+      common_name: "水"
+    - formula: "CO2"
+      name: "二氧化碳"
+      common_name: "干冰（固态）"
+    - formula: "NaCl"
+      name: "氯化钠"
+      common_name: "食盐"
+    - formula: "CaCO3"
+      name: "碳酸钙"
+      common_name: "石灰石/大理石主要成分"
+    - formula: "H2SO4"
+      name: "硫酸"
+      common_name: null
+    - formula: "HCl"
+      name: "盐酸（氯化氢水溶液）"
+      common_name: "盐酸"
+    - formula: "NaOH"
+      name: "氢氧化钠"
+      common_name: "烧碱/火碱/苛性钠"
+    - formula: "Ca(OH)2"
+      name: "氢氧化钙"
+      common_name: "熟石灰/消石灰"
+    - formula: "NaHCO3"
+      name: "碳酸氢钠"
+      common_name: "小苏打"
+    - formula: "Na2CO3"
+      name: "碳酸钠"
+      common_name: "纯碱/苏打"
+    - formula: "Fe2O3"
+      name: "氧化铁"
+      common_name: "铁锈主要成分"
+    - formula: "CaO"
+      name: "氧化钙"
+      common_name: "生石灰"
+    - formula: "CO"
+      name: "一氧化碳"
+      common_name: null
+
+  acid_base_indicators:
+    - name: "石蕊"
+      acid_color: "红色"
+      neutral_color: "紫色"
+      base_color: "蓝色"
+    - name: "酚酞"
+      acid_color: "无色"
+      neutral_color: "无色"
+      base_color: "红色"

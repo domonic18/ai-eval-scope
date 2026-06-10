@@ -1,0 +1,564 @@
+# 地理知识准确性规则
+# 覆盖范围：K-12 中国地理与世界地理常识
+# 被 InfoAccuracyEvaluator 加载用于事实校验
+
+subject: "geography"
+description: "地理知识准确性规则（K-12 教育）"
+version: "1.0"
+
+# ─── 地理常数（关键数值） ────────────────────────────────────
+# extract_pattern: 从文档中提取数值的正则（需包含一个捕获组）
+# value: 标准值
+# tolerance: 允许偏差
+
+constants:
+  # ─── 中国地理关键数值 ───
+
+  - name: "珠穆朗玛峰海拔"
+    extract_pattern: "(?:珠穆朗玛峰|珠峰|珠穆朗玛).*?(?:海拔|高度|高).*(?:≈|＝|=|约为|约|为|是)\\s*(\\d+\\.?\\d*)\\s*(?:米|m)"
+    value: 8848.86
+    tolerance: 5
+    description: "珠穆朗玛峰海拔 8848.86m（2020年中尼联合测量）"
+
+  - name: "长江全长"
+    extract_pattern: "(?:长江|长江干流).*?(?:全长|长度|约).*(?:≈|＝|=|约为|约|为|是)\\s*(\\d[\\d,]*(?:\\.\\d+)?)\\s*(?:公里|千米|km)"
+    value: 6300
+    tolerance: 50
+    description: "长江全长约6300km"
+
+  - name: "黄河全长"
+    extract_pattern: "(?:黄河|黄河干流).*?(?:全长|长度|约).*(?:≈|＝|=|约为|约|为|是)\\s*(\\d[\\d,]*(?:\\.\\d+)?)\\s*(?:公里|千米|km)"
+    value: 5464
+    tolerance: 50
+    description: "黄河全长约5464km"
+
+  - name: "中国陆地面积"
+    extract_pattern: "(?:中国|我国).*?(?:陆地面积|国土面积|领土面积|国土总面积).*(?:≈|＝|=|约为|约|为|是)\\s*(\\d[\\d,]*(?:\\.\\d+)?)\\s*(?:万?平方公里|万?km²)"
+    value: 960
+    tolerance: 10
+    description: "中国陆地面积约960万平方公里"
+
+  # ─── 世界地理关键数值 ───
+
+  - name: "地球表面积"
+    extract_pattern: "(?:地球表面积|地球表面总面积).*(?:≈|＝|=|约为|约|为|是)\\s*(\\d+\\.?\\d*)\\s*(?:亿平方公里|亿km²)"
+    value: 5.1
+    tolerance: 0.2
+    description: "地球表面积约5.1亿平方公里"
+
+  - name: "地球海洋面积占比"
+    extract_pattern: "(?:地球|地表).*?(?:海洋|海洋面积).*?(?:占比|占|比例|约为|约|为|是)\\s*(\\d+\\.?\\d*)\\s*%?"
+    value: 71
+    tolerance: 2
+    description: "地球表面约71%被海洋覆盖"
+
+# ─── 常见地理错误模式 ─────────────────────────────────
+# pattern: 匹配可能的错误表述
+# correct: 正确信息
+# severity: error（确信错误）或 warning（可能误报）
+
+misconceptions:
+  # ─── 河流长度错误 ───
+
+  - pattern: "长江.*?(?:全长|长度|约).*(?:5000|七千|7000|八千|8000|五千)\\s*(?:公里|千米|km)"
+    correct: "长江全长约6300km"
+    description: "长江长度错误（正确值约6300km）"
+    severity: "error"
+
+  - pattern: "黄河.*?(?:全长|长度|约).*(?:3000|4000|6000|三千|四千|六千)\\s*(?:公里|千米|km)"
+    correct: "黄河全长约5464km"
+    description: "黄河长度错误（正确值约5464km）"
+    severity: "error"
+
+  # ─── 省会城市错误 ───
+
+  - pattern: "(?:中国|我国).*?首都.*?(?:上海|南京|广州|深圳|重庆|成都|武汉|杭州)"
+    correct: "中国首都是北京"
+    description: "中国首都错误"
+    severity: "error"
+
+  - pattern: "四川.*?省会.*?重庆|重庆.*?四川.*?省会"
+    correct: "四川省会是成都，重庆是直辖市（1997年从四川分离）"
+    description: "四川省会错误（重庆是直辖市不是四川省会）"
+    severity: "error"
+
+  - pattern: "浙江.*?省会.*?南京|南京.*?浙江.*?省会"
+    correct: "浙江省会是杭州（南京是江苏省会）"
+    description: "浙江省会错误"
+    severity: "error"
+
+  - pattern: "江苏.*?省会.*?杭州|杭州.*?江苏.*?省会"
+    correct: "江苏省会是南京（杭州是浙江省会）"
+    description: "江苏省会错误"
+    severity: "error"
+
+  - pattern: "福建.*?省会.*?(?:厦门|泉州)"
+    correct: "福建省会是福州（厦门是经济特区，不是省会）"
+    description: "福建省会错误"
+    severity: "warning"
+
+  - pattern: "广东.*?省会.*?(?:深圳|东莞|佛山)"
+    correct: "广东省会是广州（深圳是经济特区，不是省会）"
+    description: "广东省会错误"
+    severity: "warning"
+
+  - pattern: "广西.*?省会"
+    correct: "广西是自治区，首府为南宁（非省会）"
+    description: "广西行政称谓不准确（应为首府）"
+    severity: "warning"
+
+  - pattern: "山东.*?省会.*?(?:青岛|烟台)"
+    correct: "山东省会是济南（青岛是副省级城市，不是省会）"
+    description: "山东省会错误"
+    severity: "warning"
+
+  - pattern: "辽宁.*?省会.*?(?:大连|鞍山)"
+    correct: "辽宁省会是沈阳（大连是副省级城市，不是省会）"
+    description: "辽宁省会错误"
+    severity: "warning"
+
+  - pattern: "河南.*?省会.*?(?:洛阳|开封)"
+    correct: "河南省会是郑州（洛阳、开封是历史古都，非现任省会）"
+    description: "河南省会错误"
+    severity: "warning"
+
+  # ─── 行政区划错误 ───
+
+  - pattern: "新疆.*?不是.*?(?:最大的|面积最大)|最大的.*?省.*?不是.*?新疆"
+    correct: "新疆是中国面积最大的省级行政区，面积约166万平方公里"
+    description: "新疆面积事实错误"
+    severity: "error"
+
+  - pattern: "海南.*?不是.*?经济特区|经济特区.*?不.*?海南"
+    correct: "海南是中国最大的经济特区（1988年设立）"
+    description: "海南经济特区事实错误"
+    severity: "error"
+
+  - pattern: "台湾.*?不是.*?中国|台湾.*?独立"
+    correct: "台湾是中国领土不可分割的一部分"
+    description: "台湾归属事实错误"
+    severity: "error"
+
+  # ─── 地理常识错误 ───
+
+  - pattern: "长江.*?注入.*?(?:黄海|南海|日本海|渤海)"
+    correct: "长江注入东海"
+    description: "长江入海口错误"
+    severity: "error"
+
+  - pattern: "黄河.*?注入.*?(?:东海|南海|日本海|渤海以外的海)"
+    correct: "黄河注入渤海"
+    description: "黄河入海口错误"
+    severity: "error"
+
+  - pattern: "(?:最高峰|世界最高峰).*?不是.*?珠穆朗玛|珠穆朗玛.*?不是.*?(?:最高峰|世界最高)"
+    correct: "珠穆朗玛峰是世界最高峰，海拔8848.86m"
+    description: "世界最高峰事实错误"
+    severity: "error"
+
+  - pattern: "中国.*?没有.*?(?:内陆国|邻国|接壤)|中国.*?不与.*?接壤"
+    correct: "中国陆地边界线约2.2万千米，与14个国家接壤"
+    description: "中国邻国事实错误"
+    severity: "error"
+
+  - pattern: "北京.*?不.*?靠海|北京.*?内陆|北京.*?没有.*?出海"
+    correct: "北京距海约150km，虽不直接临海但距海较近，经天津可出海"
+    description: "北京地理位置表述不严谨"
+    severity: "warning"
+
+# ─── 学科领域知识 ─────────────────────────────────────
+
+domain_facts:
+
+  # ─── 省级行政区划及省会/首府 ───
+
+  provincial_capitals:
+    description: "中国34个省级行政区及其省会/首府"
+    divisions:
+      # 23个省
+      - name: "河北省"
+        short: "冀"
+        capital: "石家庄"
+        type: "省"
+
+      - name: "山西省"
+        short: "晋"
+        capital: "太原"
+        type: "省"
+
+      - name: "辽宁省"
+        short: "辽"
+        capital: "沈阳"
+        type: "省"
+
+      - name: "吉林省"
+        short: "吉"
+        capital: "长春"
+        type: "省"
+
+      - name: "黑龙江省"
+        short: "黑"
+        capital: "哈尔滨"
+        type: "省"
+
+      - name: "江苏省"
+        short: "苏"
+        capital: "南京"
+        type: "省"
+
+      - name: "浙江省"
+        short: "浙"
+        capital: "杭州"
+        type: "省"
+
+      - name: "安徽省"
+        short: "皖"
+        capital: "合肥"
+        type: "省"
+
+      - name: "福建省"
+        short: "闽"
+        capital: "福州"
+        type: "省"
+
+      - name: "江西省"
+        short: "赣"
+        capital: "南昌"
+        type: "省"
+
+      - name: "山东省"
+        short: "鲁"
+        capital: "济南"
+        type: "省"
+
+      - name: "河南省"
+        short: "豫"
+        capital: "郑州"
+        type: "省"
+
+      - name: "湖北省"
+        short: "鄂"
+        capital: "武汉"
+        type: "省"
+
+      - name: "湖南省"
+        short: "湘"
+        capital: "长沙"
+        type: "省"
+
+      - name: "广东省"
+        short: "粤"
+        capital: "广州"
+        type: "省"
+
+      - name: "海南省"
+        short: "琼"
+        capital: "海口"
+        type: "省"
+
+      - name: "四川省"
+        short: "川/蜀"
+        capital: "成都"
+        type: "省"
+
+      - name: "贵州省"
+        short: "黔/贵"
+        capital: "贵阳"
+        type: "省"
+
+      - name: "云南省"
+        short: "滇/云"
+        capital: "昆明"
+        type: "省"
+
+      - name: "陕西省"
+        short: "陕/秦"
+        capital: "西安"
+        type: "省"
+
+      - name: "甘肃省"
+        short: "甘/陇"
+        capital: "兰州"
+        type: "省"
+
+      - name: "青海省"
+        short: "青"
+        capital: "西宁"
+        type: "省"
+
+      - name: "台湾省"
+        short: "台"
+        capital: "台北"
+        type: "省"
+
+      # 5个自治区
+      - name: "内蒙古自治区"
+        short: "蒙"
+        capital: "呼和浩特"
+        type: "自治区"
+
+      - name: "广西壮族自治区"
+        short: "桂"
+        capital: "南宁"
+        type: "自治区"
+
+      - name: "西藏自治区"
+        short: "藏"
+        capital: "拉萨"
+        type: "自治区"
+
+      - name: "宁夏回族自治区"
+        short: "宁"
+        capital: "银川"
+        type: "自治区"
+
+      - name: "新疆维吾尔自治区"
+        short: "新"
+        capital: "乌鲁木齐"
+        type: "自治区"
+
+      # 4个直辖市
+      - name: "北京市"
+        short: "京"
+        capital: "北京"
+        type: "直辖市"
+
+      - name: "天津市"
+        short: "津"
+        capital: "天津"
+        type: "直辖市"
+
+      - name: "上海市"
+        short: "沪"
+        capital: "上海"
+        type: "直辖市"
+
+      - name: "重庆市"
+        short: "渝"
+        capital: "重庆"
+        type: "直辖市"
+
+      # 2个特别行政区
+      - name: "香港特别行政区"
+        short: "港"
+        capital: "香港"
+        type: "特别行政区"
+
+      - name: "澳门特别行政区"
+        short: "澳"
+        capital: "澳门"
+        type: "特别行政区"
+
+  # ─── 中国主要河流 ───
+
+  major_rivers:
+    description: "中国主要河流及其长度"
+    rivers:
+      - name: "长江"
+        length_km: 6300
+        source: "青藏高原唐古拉山"
+        mouth: "东海"
+        note: "中国第一长河，世界第三长河"
+
+      - name: "黄河"
+        length_km: 5464
+        source: "青藏高原巴颜喀拉山"
+        mouth: "渤海"
+        note: "中国第二长河，母亲河"
+
+      - name: "黑龙江"
+        length_km: 4478
+        source: "肯特山"
+        mouth: "鞑靼海峡"
+        note: "中俄界河（中国境内部分）"
+
+      - name: "珠江"
+        length_km: 2320
+        source: "云贵高原"
+        mouth: "南海"
+        note: "中国第三大河，水量第二"
+
+      - name: "澜沧江"
+        length_km: 2153
+        source: "青藏高原唐古拉山"
+        mouth: "南海（出境后称湄公河）"
+        note: "国际河流"
+
+      - name: "塔里木河"
+        length_km: 2137
+        source: "天山和喀喇昆仑山"
+        mouth: "台特玛湖"
+        note: "中国最长的内陆河"
+
+      - name: "雅鲁藏布江"
+        length_km: 2057
+        source: "西藏西南部喜马拉雅山"
+        mouth: "孟加拉湾（出境后称布拉马普特拉河）"
+        note: "世界最深峡谷——雅鲁藏布大峡谷"
+
+      - name: "怒江"
+        length_km: 2013
+        source: "青藏高原唐古拉山"
+        mouth: "安达曼海（出境后称萨尔温江）"
+        note: "国际河流"
+
+      - name: "松花江"
+        length_km: 1927
+        source: "长白山天池"
+        mouth: "黑龙江"
+        note: "黑龙江最大支流"
+
+      - name: "汉江"
+        length_km: 1577
+        source: "陕西秦岭"
+        mouth: "长江"
+        note: "长江最长支流"
+
+  # ─── 中国主要山脉 ───
+
+  major_mountains:
+    description: "中国著名山脉与山峰"
+    mountains:
+      - name: "珠穆朗玛峰"
+        height_m: 8848.86
+        location: "中尼边境"
+        note: "世界最高峰"
+
+      - name: "乔戈里峰（K2）"
+        height_m: 8611
+        location: "中巴边境"
+        note: "世界第二高峰"
+
+      - name: "贡嘎山"
+        height_m: 7556
+        location: "四川"
+        note: "蜀山之王"
+
+      - name: "慕士塔格峰"
+        height_m: 7546
+        location: "新疆"
+        note: "冰山之父"
+
+      - name: "泰山"
+        height_m: 1532.7
+        location: "山东泰安"
+        note: "五岳之首"
+
+      - name: "华山"
+        height_m: 2154.9
+        location: "陕西渭南"
+        note: "五岳之西岳，以险著称"
+
+      - name: "衡山"
+        height_m: 1300.2
+        location: "湖南衡阳"
+        note: "五岳之南岳"
+
+      - name: "恒山"
+        height_m: 2016.1
+        location: "山西大同"
+        note: "五岳之北岳"
+
+      - name: "嵩山"
+        height_m: 1491.7
+        location: "河南郑州"
+        note: "五岳之中岳"
+
+      - name: "黄山"
+        height_m: 1864.8
+        location: "安徽黄山"
+        note: "天下第一奇山"
+
+  # ─── 中国主要湖泊 ───
+
+  major_lakes:
+    description: "中国主要湖泊及其面积"
+    lakes:
+      - name: "青海湖"
+        area_sqkm: 4543
+        location: "青海"
+        note: "中国最大咸水湖"
+
+      - name: "鄱阳湖"
+        area_sqkm: 3150
+        location: "江西"
+        note: "中国最大淡水湖"
+
+      - name: "洞庭湖"
+        area_sqkm: 2579
+        location: "湖南"
+        note: "中国第二大淡水湖"
+
+      - name: "太湖"
+        area_sqkm: 2427
+        location: "江苏"
+        note: "中国第三大淡水湖"
+
+      - name: "纳木错"
+        area_sqkm: 1920
+        location: "西藏"
+        note: "西藏三大圣湖之一"
+
+      - name: "色林错"
+        area_sqkm: 2391
+        location: "西藏"
+        note: "西藏最大湖泊（已超纳木错）"
+
+      - name: "洪泽湖"
+        area_sqkm: 1597
+        location: "江苏"
+        note: "中国第四大淡水湖"
+
+  # ─── 中国陆上邻国 ───
+
+  neighboring_countries:
+    description: "中国14个陆上邻国（按方位排列）"
+    count: 14
+    countries:
+      # 东北
+      - name: "朝鲜"
+        border_direction: "东北"
+
+      - name: "俄罗斯"
+        border_direction: "东北/西北"
+
+      # 北
+      - name: "蒙古"
+        border_direction: "北"
+
+      # 西北
+      - name: "哈萨克斯坦"
+        border_direction: "西北"
+
+      - name: "吉尔吉斯斯坦"
+        border_direction: "西北"
+
+      - name: "塔吉克斯坦"
+        border_direction: "西北"
+
+      # 西
+      - name: "阿富汗"
+        border_direction: "西"
+
+      - name: "巴基斯坦"
+        border_direction: "西"
+
+      # 西南
+      - name: "印度"
+        border_direction: "西南"
+
+      - name: "尼泊尔"
+        border_direction: "西南"
+
+      - name: "不丹"
+        border_direction: "西南"
+
+      - name: "缅甸"
+        border_direction: "西南"
+
+      # 南
+      - name: "老挝"
+        border_direction: "南"
+
+      - name: "越南"
+        border_direction: "南"

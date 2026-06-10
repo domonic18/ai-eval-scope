@@ -1,0 +1,111 @@
+subject: "morality"
+description: "道德与法治知识库：国家象征、重要纪念日、宪法基础知识"
+version: "1.0"
+
+constants:
+  - name: "中国国土面积"
+    extract_pattern: "中国.*国土面积.*?(\\d+)万"
+    value: 960.0
+    tolerance: 5.0
+
+misconceptions:
+  # ---- 国家象征 ----
+  - pattern: "(?:中国)?首都(?:不是|不是)?北京"
+    correct: "中国的首都是北京"
+    description: "中华人民共和国首都是北京"
+    severity: "error"
+
+  - pattern: "五星红旗不是国旗"
+    correct: "五星红旗是中华人民共和国的国旗"
+    description: "五星红旗是中华人民共和国国旗"
+    severity: "error"
+
+  - pattern: "国歌不是义勇军进行曲"
+    correct: "中华人民共和国国歌是《义勇军进行曲》"
+    description: "《义勇军进行曲》由田汉作词、聂耳作曲，是中华人民共和国国歌"
+    severity: "error"
+
+  # ---- 重要纪念日 ----
+  - pattern: "国庆节不是10月1日"
+    correct: "国庆节是10月1日（1949年10月1日中华人民共和国成立）"
+    description: "1949年10月1日是中华人民共和国国庆日"
+    severity: "error"
+
+  - pattern: "建党节不是7月1日"
+    correct: "建党节是7月1日（1921年7月中国共产党成立）"
+    description: "1921年7月中国共产党成立，7月1日为建党节"
+    severity: "error"
+
+  - pattern: "建军节不是8月1日"
+    correct: "建军节是8月1日（1927年8月1日南昌起义）"
+    description: "1927年8月1日南昌起义，8月1日为建军节"
+    severity: "error"
+
+  - pattern: "少先队建队日不是10月13日"
+    correct: "少先队建队日是10月13日（1949年10月13日中国少年先锋队成立）"
+    description: "1949年10月13日中国少年先锋队成立"
+    severity: "error"
+
+  # ---- 政治制度 ----
+  - pattern: "人民代表大会制度不是根本政治制度"
+    correct: "人民代表大会制度是我国的根本政治制度"
+    description: "人民代表大会制度是中国的根本政治制度"
+    severity: "error"
+
+  - pattern: "宪法不是根本法"
+    correct: "宪法是国家的根本法，具有最高法律效力"
+    description: "宪法是治国安邦的总章程，具有最高法律效力"
+    severity: "error"
+
+domain_facts:
+  national_symbols:
+    - symbol: "国旗"
+      description: "五星红旗"
+      details: "红色象征革命，大星代表中国共产党，四颗小星代表四个阶级"
+    - symbol: "国歌"
+      description: "《义勇军进行曲》"
+      details: "田汉作词，聂耳作曲"
+    - symbol: "国徽"
+      description: "中间是五星照耀下的天安门，周围是谷穗和齿轮"
+      details: "象征中国人民自五四运动以来的新民主主义革命斗争和工人阶级领导的工农联盟"
+    - symbol: "首都"
+      description: "北京"
+      details: null
+
+  key_dates:
+    - holiday: "国庆节"
+      date: "10月1日"
+      year_established: 1949
+      significance: "中华人民共和国成立"
+    - holiday: "建党节"
+      date: "7月1日"
+      year_established: 1921
+      significance: "中国共产党成立"
+    - holiday: "建军节"
+      date: "8月1日"
+      year_established: 1927
+      significance: "南昌起义"
+    - holiday: "少先队建队日"
+      date: "10月13日"
+      year_established: 1949
+      significance: "中国少年先锋队成立"
+    - holiday: "青年节"
+      date: "5月4日"
+      year_established: 1919
+      significance: "五四运动"
+    - holiday: "教师节"
+      date: "9月10日"
+      year_established: 1985
+      significance: "尊师重教"
+
+  constitution_basics:
+    - fact: "宪法地位"
+      description: "宪法是国家的根本法，具有最高法律效力"
+    - fact: "宪法内容"
+      description: "规定国家根本制度和根本任务、公民基本权利和义务"
+    - fact: "宪法的修改"
+      description: "由全国人民代表大会常委会或五分之一以上全国人大代表提议，并由全国人大以全体代表三分之二以上多数通过"
+    - fact: "宪法日"
+      description: "12月4日是国家宪法日（2014年设立）"
+    - fact: "宪法实施"
+      description: "全国各族人民、一切国家机关和武装力量、各政党和各社会团体、各企业事业组织都必须遵守宪法"

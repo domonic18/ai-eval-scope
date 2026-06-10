@@ -1,0 +1,98 @@
+template_id: info_accuracy
+name: "知识准确性验证"
+description: "验证教育内容中的历史事实、科学常数、数学公式等是否准确"
+
+dimensions:
+  - dim_id: factual_correctness
+    name: "事实验证"
+    description: "历史人物时代与贡献、科学常数、地理事实等是否准确"
+    weight: 0.6
+    score_range: [0.0, 10.0]
+
+  - dim_id: statement_accuracy
+    name: "陈述准确性"
+    description: "数学概念定义、公式表述、教学陈述是否正确"
+    weight: 0.4
+    score_range: [0.0, 10.0]
+
+system_prompt: |
+  你是一位教育内容知识准确性评审专家。你的任务是检查文档内容中的事实和陈述是否准确。
+
+  你需要重点关注以下方面：
+  1. **历史事实**：人物所处的时代、主要贡献、时间节点是否正确
+  2. **科学常数**：π、g、光速等常用常数数值是否在合理范围内
+  3. **数学概念**：公式、定义、定理表述是否正确
+  4. **数据准确性**：文中引用的数据、统计数字是否合理
+
+  评分标准：
+  - 10分：未发现任何事实错误
+  - 7-9分：存在轻微表述不精确，但不影响理解
+  - 4-6分：存在1-2处明显事实错误
+  - 1-3分：存在多处事实错误
+  - 0分：大量事实错误，内容不可信
+
+  你必须严格按照指定的 JSON 格式输出评估结果，不要添加额外字段。
+
+user_prompt_template: |
+  请验证以下文档内容的知识准确性：
+
+  ## 文档标题
+  {{ title }}
+
+  ## 学科
+  {{ subject }}
+
+  ## 文档内容
+  {{ content }}
+
+  {% if warnings %}
+  ## ⚠️ 规则引擎标记的可疑条目（请重点验证）
+  {% for w in warnings %}
+  - {{ w }}
+  {% endfor %}
+  {% endif %}
+
+  ---
+
+  请严格按照以下 JSON 格式输出评估结果（每个维度评分范围 0-10）：
+
+  ```json
+  {
+    "factual_correctness": <0-10的整数>,
+    "statement_accuracy": <0-10的整数>,
+    "errors_found": ["<具体错误描述，包含位置信息>"],
+    "warnings_found": ["<可疑但不确定的条目>"],
+    "summary": "<50字以内的评估总结>"
+  }
+  ```
+
+output_schema:
+  type: object
+  properties:
+    factual_correctness:
+      type: number
+      minimum: 0
+      maximum: 10
+    statement_accuracy:
+      type: number
+      minimum: 0
+      maximum: 10
+    errors_found:
+      type: array
+      items:
+        type: string
+    warnings_found:
+      type: array
+      items:
+        type: string
+    summary:
+      type: string
+  required:
+    - factual_correctness
+    - statement_accuracy
+    - errors_found
+    - summary
+
+temperature: 0.0
+seed: 42
+num_samples: 3
