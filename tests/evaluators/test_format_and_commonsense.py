@@ -179,56 +179,6 @@ class TestHtmlValidityEvaluator:
         assert result.status == EvalStatus.FAIL
 
 
-class TestDirectoryStructureEvaluator:
-    def test_flat_mode_skips(self, tmp_path: Path) -> None:
-        out = _prepare_output(tmp_path)
-        (out / "index.md").write_text("# Doc")
-
-        ev = registry.create("format.directory_structure")
-        result = ev.evaluate(tmp_path, {})  # 无 manifest
-        assert result.status == EvalStatus.PASS
-        assert result.score == 1.0
-
-    def test_directory_mode_pass(self, tmp_path: Path) -> None:
-        import json
-
-        output = tmp_path / "output"
-        output.mkdir()
-        (output / "_manifest.json").write_text(json.dumps({
-            "mode": "directory",
-            "total_files": 4,
-            "hierarchy_depth": 3,
-            "modules": [
-                {"name": "M1", "path": "M1/", "file_count": 2},
-                {"name": "M2", "path": "M2/", "file_count": 2},
-            ],
-        }))
-
-        ev = registry.create("format.directory_structure")
-        result = ev.evaluate(tmp_path, {
-            "constraints": {"expected_modules": 2, "hierarchy_depth": 5},
-        })
-        assert result.status == EvalStatus.PASS
-
-    def test_directory_mode_wrong_module_count(self, tmp_path: Path) -> None:
-        import json
-
-        output = tmp_path / "output"
-        output.mkdir()
-        (output / "_manifest.json").write_text(json.dumps({
-            "mode": "directory",
-            "total_files": 2,
-            "hierarchy_depth": 2,
-            "modules": [
-                {"name": "M1", "path": "M1/", "file_count": 2},
-            ],
-        }))
-
-        ev = registry.create("format.directory_structure")
-        result = ev.evaluate(tmp_path, {
-            "constraints": {"expected_modules": 3},
-        })
-        assert result.status == EvalStatus.FAIL
 
 
 # ─── 常识评估器 ───
@@ -246,6 +196,104 @@ class TestMathFormulaEvaluator:
     def test_wrong_arithmetic(self, tmp_path: Path) -> None:
         out = _prepare_output(tmp_path)
         (out / "wrong.md").write_text("2+3=6 是正确的。")
+
+        ev = registry.create("commonsense.math_formula")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.FAIL
+
+    def test_multi_term_no_false_positive(self, tmp_path: Path) -> None:
+        """多项表达式不应产生子表达式误报。"""
+        out = _prepare_output(tmp_path)
+        (out / "math.md").write_text(
+            "总数：24 + 32 + 27 = 83 本\n"
+            "总分：42 + 38 + 45 = 125 分\n"
+            "检验：268+145+87=500\n"
+            "验证：28×8 + 22×9 + 35×4 = 224 + 198 + 140 = 562元\n"
+        )
+
+        ev = registry.create("commonsense.math_formula")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.PASS, (
+            f"多项表达式不应产生误报: {result.details.get('errors')}"
+        )
+
+    def test_multi_term_error_detected(self, tmp_path: Path) -> None:
+        """多项表达式错误应被检测。"""
+        out = _prepare_output(tmp_path)
+        (out / "math.md").write_text("方案：12×2 + 7 + 3 + 5 + 18 = 100 元")
+
+        ev = registry.create("commonsense.math_formula")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.FAIL
+        assert any("57" in e for e in result.details["errors"])
+
+    def test_per_file_attribution(self, tmp_path: Path) -> None:
+        """错误应携带文件名归属。"""
+        out = _prepare_output(tmp_path)
+        (out / "good.md").write_text("2+3=5")
+        (out / "bad.md").write_text("5+3=9")
+
+        ev = registry.create("commonsense.math_formula")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.FAIL
+        assert any("bad.md" in e for e in result.details["errors"])
+        assert not any("good.md" in e for e in result.details["errors"])
+
+    # ─── 符号公式校验 ───
+
+    def test_correct_circle_area(self, tmp_path: Path) -> None:
+        """正确的圆面积公式 → PASS。"""
+        out = _prepare_output(tmp_path)
+        (out / "math.md").write_text("圆的面积 S=πr²")
+
+        ev = registry.create("commonsense.math_formula")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.PASS
+
+    def test_wrong_circle_area(self, tmp_path: Path) -> None:
+        """圆面积用了周长公式 2πr → FAIL。"""
+        out = _prepare_output(tmp_path)
+        (out / "math.md").write_text("圆的面积 S=2πr")
+
+        ev = registry.create("commonsense.math_formula")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.FAIL
+        assert any("圆" in e for e in result.details["errors"])
+
+    def test_triangle_missing_half(self, tmp_path: Path) -> None:
+        """三角形面积缺少 ½ → FAIL。"""
+        out = _prepare_output(tmp_path)
+        (out / "math.md").write_text("三角形面积 S=ah")
+
+        ev = registry.create("commonsense.math_formula")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.FAIL
+
+    def test_correct_rectangle_area(self, tmp_path: Path) -> None:
+        """正确的长方形面积公式 → PASS。"""
+        out = _prepare_output(tmp_path)
+        (out / "math.md").write_text("长方形面积=长×宽")
+
+        ev = registry.create("commonsense.math_formula")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.PASS
+
+    def test_unknown_formula_not_flagged(self, tmp_path: Path) -> None:
+        """未知公式名不应产生误报。"""
+        out = _prepare_output(tmp_path)
+        (out / "math.md").write_text("特殊五边形面积=S=3ab")
+
+        ev = registry.create("commonsense.math_formula")
+        result = ev.evaluate(tmp_path, {})
+        # 无匹配的 domain_facts 条目 → 不报错
+        assert result.status == EvalStatus.PASS
+
+    def test_formula_in_html(self, tmp_path: Path) -> None:
+        """HTML 中的公式应被检测。"""
+        out = _prepare_output(tmp_path)
+        (out / "page.html").write_text(
+            "<p>圆的面积公式是：S=2πr</p>"
+        )
 
         ev = registry.create("commonsense.math_formula")
         result = ev.evaluate(tmp_path, {})
@@ -792,7 +840,17 @@ class TestChronologicalOrderEvaluator:
 
 
 class TestLogicalConsistencyEvaluator:
+    """逻辑一致性检查评估器测试 — Rule-based 降级模式。
+
+    验证：
+    1. 算术表达式不误判为变量矛盾
+    2. 真正的变量赋值矛盾能被检测
+    3. 跨文件变量不互相比较
+    4. details 包含文件归属和上下文
+    """
+
     def test_default_pass(self, tmp_path: Path) -> None:
+        """无变量赋值模式 → PASS。"""
         out = _prepare_output(tmp_path)
         (out / "doc.md").write_text("Some content.")
 
@@ -800,3 +858,147 @@ class TestLogicalConsistencyEvaluator:
         result = ev.evaluate(tmp_path, {})
         assert result.status == EvalStatus.PASS
         assert result.tier == ConstraintTier.HARD_SCORE
+
+    def test_arithmetic_not_false_positive(self, tmp_path: Path) -> None:
+        """算术表达式（24+8=32、83-47=36）不应产生变量矛盾。
+
+        旧正则将纯数字（"8""47"）当作变量名，产生 28 处假阳性。
+        新正则只匹配具名变量（字母/中文开头），排除纯数字。
+        """
+        out = _prepare_output(tmp_path)
+        (out / "doc.md").write_text(
+            "计算：24 + 8 = 32 本\n"
+            "验算：83 - 47 = 36\n"
+            "验证：101 × 50 = 5050\n"
+            "竖式：个位 7+9=16，写6进1；十位 6+8+1=15\n"
+        )
+
+        ev = registry.create("commonsense.logical_consistency")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.PASS, (
+            f"算术表达式不应产生假阳性: {result.details.get('errors')}"
+        )
+
+    def test_chinese_equal_not_split(self, tmp_path: Path) -> None:
+        """\"等于\" 不应被拆为 \"变量等=值\"。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.md").write_text(
+            "十位 4加5等于10，写0进1。\n"
+            "百位 2加1等于4。\n"
+        )
+
+        ev = registry.create("commonsense.logical_consistency")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.PASS
+
+    def test_real_variable_contradiction(self, tmp_path: Path) -> None:
+        """同一文件中具名变量赋值矛盾应被检测。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.md").write_text(
+            "总面积=567平方米。\n"
+            "根据计算，总面积=658平方米。\n"
+        )
+
+        ev = registry.create("commonsense.logical_consistency")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.FAIL
+        findings = result.details.get("findings", [])
+        assert len(findings) > 0
+        assert any("总面积" in f.get("variable", "") for f in findings)
+
+    def test_cross_file_no_false_positive(self, tmp_path: Path) -> None:
+        """不同文件中同名变量不应互相比较。"""
+        out = _prepare_output(tmp_path)
+        (out / "a.md").write_text("总价 = 350 元")
+        (out / "b.md").write_text("总价 = 500 元")
+
+        ev = registry.create("commonsense.logical_consistency")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.PASS, (
+            "不同文件中的同名变量不应被当作矛盾"
+        )
+
+    def test_same_file_contradiction_detected(self, tmp_path: Path) -> None:
+        """同一文件中同名变量不同值应被检测。"""
+        out = _prepare_output(tmp_path)
+        (out / "a.md").write_text(
+            "方案一：总价 = 350 元\n"
+            "方案二：总价 = 500 元"
+        )
+
+        ev = registry.create("commonsense.logical_consistency")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.FAIL
+
+    def test_details_have_file_attribution(self, tmp_path: Path) -> None:
+        """findings 应包含 file 字段和 contexts。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.md").write_text("学生数=45人。学生数=50人。")
+
+        ev = registry.create("commonsense.logical_consistency")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.FAIL
+        findings = result.details.get("findings", [])
+        assert len(findings) > 0
+        f = findings[0]
+        assert "file" in f
+        assert "variable" in f
+        assert "values" in f
+        assert "contexts" in f
+
+    def test_short_ascii_vars_skipped(self, tmp_path: Path) -> None:
+        """单字母变量（如 x=1, x=2）应被跳过（数学公式常见）。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.md").write_text("设 x=5。方程 x=10 的解。")
+
+        ev = registry.create("commonsense.logical_consistency")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.PASS
+
+    def test_chinese_named_var_detected(self, tmp_path: Path) -> None:
+        """中文命名的变量赋值矛盾应被检测。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.md").write_text(
+            "三年级一班有学生数=42人。\n"
+            "但实际上学生数=45人。\n"
+        )
+
+        ev = registry.create("commonsense.logical_consistency")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.FAIL
+        findings = result.details.get("findings", [])
+        assert any("学生数" in f.get("variable", "") for f in findings)
+
+    def test_reference_courseware_no_false_positive(self, tmp_path: Path) -> None:
+        """参考课件中的算术内容不应产生假阳性。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.md").write_text(
+            "示例：算完36+47=83后，估算80左右合理，用83-47=36验证正确。\n"
+            "方案一：18 + 12 + 7 + 3 + 5 = 45 元\n"
+            "最优方案：12×2 + 7 + 3 + 5 + 18 = 100 元\n"
+            "101×50=5050。高斯配对法。\n"
+            "竖式：个位3+8=11，写1进1；十位2+1+1=4\n"
+        )
+
+        ev = registry.create("commonsense.logical_consistency")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.PASS, (
+            f"参考课件算术内容不应产生假阳性: {result.details.get('errors')}"
+        )
+
+    def test_fail_no_output_dir(self, tmp_path: Path) -> None:
+        """无 output 目录 → FAIL。"""
+        ev = registry.create("commonsense.logical_consistency")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.FAIL
+        assert result.score == 0.0
+
+    def test_fail_empty_content(self, tmp_path: Path) -> None:
+        """空文档 → FAIL。"""
+        out = _prepare_output(tmp_path)
+        (out / "empty.md").write_text("   ")
+
+        ev = registry.create("commonsense.logical_consistency")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.FAIL
+        assert result.score == 0.0

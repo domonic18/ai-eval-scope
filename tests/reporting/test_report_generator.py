@@ -196,11 +196,11 @@ class TestConstraintToRuleResult:
         assert "judge_model" not in result
 
     def test_module_results_preserved(self) -> None:
-        """目录模式 module_results 保留。"""
+        """module_results 字段保留。"""
         gen = ReportGenerator()
         cr = ConstraintResult(
-            constraint_id="format.directory_structure",
-            name="目录结构检查",
+            constraint_id="format.structure_compliance",
+            name="结构规范性检查",
             tier=ConstraintTier.HARD_GATE,
             status=EvalStatus.PASS,
             score=1.0,

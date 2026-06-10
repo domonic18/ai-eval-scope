@@ -308,12 +308,11 @@ class TestThreeStageCascade:
     def test_17_evaluators_registered(self) -> None:
         """17 项评估器全部注册。"""
         expected = [
-            # 格式（5）
+            # 格式（4）
             "format.response_format",
             "format.document_count",
             "format.structure_compliance",
             "format.html_validity",
-            "format.directory_structure",
             # 常识（5）
             "commonsense.info_accuracy",
             "commonsense.chronological_order",
@@ -330,7 +329,7 @@ class TestThreeStageCascade:
             "pref.depth_preference",
             "pref.request_fulfillment",
         ]
-        assert len(expected) == 17
+        assert len(expected) == 16
         for eval_id in expected:
             e = registry.create(eval_id, {})
             assert e is not None, f"评估器 {eval_id} 未注册"

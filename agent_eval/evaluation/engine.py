@@ -250,7 +250,6 @@ def build_default_pipeline(registry: EvaluatorRegistry) -> PipelineEngine:
                     EvaluatorConfig("format.document_count", {}),
                     EvaluatorConfig("format.structure_compliance", {}),
                     EvaluatorConfig("format.html_validity", {"check_html_only": True}),
-                    EvaluatorConfig("format.directory_structure", {}),
                 ],
             ),
             StageConfig(

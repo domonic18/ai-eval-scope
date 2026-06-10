@@ -89,7 +89,6 @@ class TestGlobalRegistry:
             "format.document_count",
             "format.structure_compliance",
             "format.html_validity",
-            "format.directory_structure",
         ]:
             assert registry.is_registered(eid), f"{eid} 未注册"
 
