@@ -115,6 +115,8 @@ class JudgeRecord:
     parsed_scores: dict[str, Any] = field(default_factory=dict)
     final_scores: dict[str, Any] = field(default_factory=dict)
     confidence: dict[str, str] = field(default_factory=dict)  # dim_id -> "high" | "low"
+    # LLM 评价总结（可解释性说明）
+    summary: str = ""
     # 统计
     num_samples: int = 1
     total_duration_ms: float = 0.0
@@ -137,6 +139,7 @@ class JudgeRecord:
             "final_scores": self.final_scores,
             "confidence": self.confidence,
             "num_samples": self.num_samples,
+            "summary": self.summary,
             "total_duration_ms": self.total_duration_ms,
             "timestamp": self.timestamp,
         }

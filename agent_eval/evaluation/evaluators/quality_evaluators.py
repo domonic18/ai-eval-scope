@@ -144,9 +144,39 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
 
         normalized = max(0.0, min(1.0, normalized))
 
-        # 构建评估原因
-        score_parts = [f"{k}: {v:.1f}" for k, v in scores.items()]
+        # 构建评估原因 — 使用维度中文名
+        score_parts = []
+        if template and template.dimensions:
+            for dim in template.dimensions:
+                dim_score = scores.get(dim.dim_id, 0.0)
+                score_parts.append(f"{dim.name}: {dim_score:.1f}")
+        else:
+            score_parts = [f"{k}: {v:.1f}" for k, v in scores.items()]
+
         reason = f"{self.name}（LLM 评估）：{', '.join(score_parts)}"
+        if record and hasattr(record, "summary") and record.summary:
+            reason += f" — {record.summary[:150]}"
+
+        # 构建 details — 包含结构化维度详情和 LLM 总结
+        details: dict[str, Any] = {
+            "scores": scores,
+            "confidence": record.confidence if record else {},
+        }
+        if record and hasattr(record, "summary"):
+            details["summary"] = record.summary
+        if template and template.dimensions:
+            details["dimensions"] = [
+                {
+                    "id": dim.dim_id,
+                    "name": dim.name,
+                    "score": scores.get(dim.dim_id, 0.0),
+                    "weight": dim.weight,
+                    "confidence": (
+                        record.confidence.get(dim.dim_id, "unknown") if record else "unknown"
+                    ),
+                }
+                for dim in template.dimensions
+            ]
 
         # 获取 judge record 路径
         record_path = None
@@ -161,7 +191,7 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
             status=EvalStatus.PASS if normalized >= 0.4 else EvalStatus.FAIL,
             score=normalized,
             reason=reason,
-            details={"scores": scores, "confidence": record.confidence if record else {}},
+            details=details,
             duration_ms=elapsed,
             judge_provider=record.provider_name if record else None,
             judge_model=record.model if record else None,

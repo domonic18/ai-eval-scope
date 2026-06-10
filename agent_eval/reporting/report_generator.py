@@ -145,20 +145,32 @@ class ReportGenerator:
                 lines.append("</details>")
                 lines.append("")
 
-            # LLM Judge 溯源信息
+            # LLM Judge 评审详情
             llm_results = [
                 cr for cr in stage_result.constraint_results if cr.judge_provider is not None
             ]
             if llm_results:
-                lines.append("### LLM Judge 溯源")
+                lines.append("### LLM Judge 评审")
                 lines.append("")
                 for cr in llm_results:
-                    lines.append(f"- **{cr.name}**")
-                    lines.append(f"  - Provider: `{cr.judge_provider}`")
-                    lines.append(f"  - Model: `{cr.judge_model}`")
+                    lines.append(f"**{cr.name}** ({cr.score:.2f})")
+                    lines.append(f"- Provider: `{cr.judge_provider}` / `{cr.judge_model}`")
+                    # 展示维度详情
+                    dims = cr.details.get("dimensions", []) if cr.details else []
+                    if dims:
+                        for d in dims:
+                            conf_icon = "🟢" if d.get("confidence") == "high" else "🟡"
+                            lines.append(
+                                f"- {conf_icon} {d['name']}: {d['score']:.1f}/10"
+                                f" (权重 {d['weight']:.0%}, {d['confidence']})"
+                            )
+                    # 展示 LLM 评价总结
+                    summary = cr.details.get("summary", "") if cr.details else ""
+                    if summary:
+                        lines.append(f"> {summary[:300]}")
                     if cr.judge_record_path:
-                        lines.append(f"  - 记录: `{cr.judge_record_path}`")
-                lines.append("")
+                        lines.append(f"- 溯源记录: `{cr.judge_record_path}`")
+                    lines.append("")
 
         return "\n".join(lines)
 

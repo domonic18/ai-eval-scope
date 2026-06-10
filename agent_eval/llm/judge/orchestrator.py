@@ -153,7 +153,15 @@ class JudgeOrchestrator:
 
             # 解析结构化输出
             parsed = self.parser.parse(response.content, template.output_schema)
-            return {dim.dim_id: float(parsed.get(dim.dim_id, 0.0)) for dim in template.dimensions}
+            # 确保维度分数为 float，同时保留 summary 等非维度字段
+            result: dict[str, Any] = {}
+            for dim in template.dimensions:
+                result[dim.dim_id] = float(parsed.get(dim.dim_id, 0.0))
+            # 保留 summary 等非维度字段（用于可解释性）
+            for key in parsed:
+                if key not in result:
+                    result[key] = parsed[key]
+            return result
 
         # 5. 稳定性控制 — 多次采样
         start_time = time.monotonic()
@@ -162,6 +170,8 @@ class JudgeOrchestrator:
 
         # 6. 生成 JudgeRecord
         timestamp = datetime.now(tz=UTC).isoformat()
+        last_parsed = stable_result.all_samples[-1] if stable_result.all_samples else {}
+        summary_text = str(last_parsed.get("summary", ""))
         record = JudgeRecord(
             judge_id=f"judge_{constraint_id}_{datetime.now(tz=UTC).strftime('%Y%m%d_%H%M%S')}",
             constraint_id=constraint_id,
@@ -172,10 +182,11 @@ class JudgeOrchestrator:
             temperature=template.temperature,
             seed=template.seed,
             raw_response=all_raw_responses[-1] if all_raw_responses else "",
-            parsed_scores=stable_result.all_samples[-1] if stable_result.all_samples else {},
+            parsed_scores=last_parsed,
             final_scores=stable_result.scores,
             confidence=stable_result.confidence,
             num_samples=stable_result.num_samples,
+            summary=summary_text,
             total_duration_ms=total_duration_ms,
             token_usage=total_tokens,
             timestamp=timestamp,

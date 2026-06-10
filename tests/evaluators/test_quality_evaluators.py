@@ -80,17 +80,26 @@ class TestTeachingLogicEvaluator:
         mock_record.provider_name = "deepseek_judge"
         mock_record.model = "deepseek-chat"
         mock_record.confidence = {"structure": "high", "progression": "high", "engagement": "high"}
+        mock_record.summary = "教学结构完整，知识递进合理，但互动设计不足。"
         mock_orch = MagicMock()
         mock_orch.judge.return_value = (
             {"structure": 8.0, "progression": 7.5, "engagement": 7.0},
             mock_record,
         )
         mock_template = MagicMock()
-        mock_template.dimensions = [
-            MagicMock(dim_id="structure", weight=0.4),
-            MagicMock(dim_id="progression", weight=0.3),
-            MagicMock(dim_id="engagement", weight=0.3),
-        ]
+        dim1 = MagicMock()
+        dim1.dim_id = "structure"
+        dim1.name = "结构完整性"
+        dim1.weight = 0.4
+        dim2 = MagicMock()
+        dim2.dim_id = "progression"
+        dim2.name = "知识递进"
+        dim2.weight = 0.3
+        dim3 = MagicMock()
+        dim3.dim_id = "engagement"
+        dim3.name = "互动设计"
+        dim3.weight = 0.3
+        mock_template.dimensions = [dim1, dim2, dim3]
         mock_orch.templates.get.return_value = mock_template
 
         evaluator = TeachingLogicEvaluator()
@@ -103,6 +112,18 @@ class TestTeachingLogicEvaluator:
         assert result.judge_model == "deepseek-chat"
         assert result.judge_record_path is not None
         assert result.score > 0.5
+        # 可解释性：reason 包含维度中文名
+        assert "结构完整性" in result.reason
+        assert "知识递进" in result.reason
+        # 可解释性：reason 包含 LLM summary
+        assert "教学结构完整" in result.reason
+        # 可解释性：details 包含 dimensions 结构
+        assert "dimensions" in result.details
+        assert result.details["dimensions"][0]["name"] == "结构完整性"
+        assert result.details["dimensions"][0]["weight"] == 0.4
+        # 可解释性：details 包含 summary
+        assert "summary" in result.details
+        assert "教学结构完整" in result.details["summary"]
 
     def test_llm_judge_error(self, tmp_path: Path) -> None:
         """LLM Judge 调用失败。"""
