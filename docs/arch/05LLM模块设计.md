@@ -1,6 +1,6 @@
 # LLM 模块设计
 
-> 本文档涵盖 LLM Provider 抽象层与 LLM Judge 模块的设计，属于 [01 整体架构设计](./01整体架构设计.md) §二中"基础设施层"的详细展开。评估器调用 LLM 的方式参见 [04 评估引擎设计](./04评估引擎设计.md)，Provider 配置格式参见 [07 配置规范](./07配置规范.md)。
+> 本文档涵盖 LLM Provider 抽象层、LLM Judge 模块及 Langfuse 调用追踪的设计，属于 [01 整体架构设计](./01整体架构设计.md) §二中"基础设施层"的详细展开。评估器调用 LLM 的方式参见 [04 评估引擎设计](./04评估引擎设计.md)，Provider 配置格式参见 [06 数据管理与配置规范](./06数据管理与配置规范.md)。
 
 ---
 
@@ -52,6 +52,7 @@ class LLMResponse:
     model: str                            # 实际模型 ID，如 "deepseek-chat"
     usage: TokenUsage | None = None       # Token 消耗
     raw_response: dict | None = None      # 原始响应（调试用）
+    duration_ms: float = 0.0              # 调用耗时（毫秒）
 
 @dataclass
 class TokenUsage:
@@ -65,17 +66,15 @@ class TokenUsage:
 ```python
 # agent_eval/llm/providers/deepseek.py
 class DeepSeekClient(LLMClient):
-    """DeepSeek — 使用 openai 库兼容模式。"""
-    # base_url: https://api.deepseek.com/v1
+    """DeepSeek / OpenAI 协议客户端 — 基于 openai 库兼容模式。
 
-# agent_eval/llm/providers/anthropic_compat.py
-class AnthropicCompatClient(LLMClient):
-    """Anthropic 协议兼容 — Kimi / 智谱 / MiniMax。"""
-
-# agent_eval/llm/providers/openai_compat.py
-class OpenAICompatClient(LLMClient):
-    """OpenAI 协议通用客户端。"""
+    同时支持 provider="deepseek" 和 provider="openai" 两种类型。
+    DeepSeek: base_url=https://api.deepseek.com/v1
+    OpenAI:   base_url 由用户配置指定
+    """
 ```
+
+> **Anthropic 协议支持**：`AnthropicCompatClient` 设计保留，当前 factory 对 `provider="anthropic"` 会 raise `LLMError`。`OpenAICompatClient` 不再作为独立类，由 `DeepSeekClient` 统一覆盖 OpenAI 协议兼容场景。
 
 ### 1.4 Provider Pool — 多模型管理
 
@@ -139,15 +138,16 @@ class ProviderInfo:
 
 class LLMClientFactory:
     @staticmethod
-    def create(config: ProviderConfig) -> LLMClient:
-        if config.provider == "deepseek":
-            return DeepSeekClient(config)
+    def create(name: str, config: ProviderConfig) -> LLMClient:
+        if config.provider in ("deepseek", "openai"):
+            _check_openai_available()
+            from agent_eval.llm.providers.deepseek import DeepSeekClient
+            return DeepSeekClient(name, config)
         elif config.provider == "anthropic":
-            return AnthropicCompatClient(config)
-        elif config.provider == "openai":
-            return OpenAICompatClient(config)
+            _check_anthropic_available()
+            raise LLMError("Anthropic 协议客户端尚未实现")
         else:
-            raise ValueError(f"不支持的 provider: {config.provider}")
+            raise LLMError(f"不支持的 provider 类型: {config.provider}")
 ```
 
 ### 1.6 使用示例
@@ -219,6 +219,7 @@ class JudgeRecord:
     parsed_scores: dict                   # 解析后的评分
     final_scores: dict                    # 最终得分（多次采样取中位数后）
     confidence: dict                      # 各维度置信度
+    summary: str = ""                     # LLM 生成的评价总结（可解释性）
     # 统计
     num_samples: int                      # 采样次数
     total_duration_ms: float              # 总耗时
@@ -355,96 +356,124 @@ class JudgeOrchestrator:
     LLM Judge 调用编排器。
 
     职责：
-    1. 接收评估请求（constraint_id + sample + context）
+    1. 接收评估请求（constraint_id + sample_id + template_id + variables）
     2. 从 ProviderPool 获取指定 Provider（或使用默认）
     3. 渲染 Prompt 模板
     4. 调用 StabilityController 进行多次采样
     5. 生成 JudgeRecord 并持久化到 evidence 目录
-    6. 返回 ConstraintResult（含模型溯源字段）
+    6. 返回 (scores_dict, JudgeRecord) 元组
     """
 
     def __init__(self, pool: ProviderPool,
                  template_manager: TemplateManager,
                  stability: StabilityController,
-                 output_parser: StructuredOutputParser,
-                 evidence_dir: Path):
+                 output_parser: StructuredOutputParser):
         self.pool = pool
         self.templates = template_manager
         self.stability = stability
         self.parser = output_parser
-        self.evidence_dir = evidence_dir
 
-    def judge(self, constraint_id: str, sample_id: str,
-              template_id: str, variables: dict,
-              provider_name: str | None = None) -> ConstraintResult:
+    def judge(
+        self,
+        *,
+        constraint_id: str,
+        sample_id: str,
+        template_id: str,
+        variables: dict,
+        evidence_dir: Path,
+        provider_name: str | None = None,
+    ) -> tuple[dict[str, Any], JudgeRecord]:
         """
         执行 LLM Judge 评估。
 
         Args:
-            provider_name: 指定使用哪个 Provider。
-                           None → 使用 pipeline.yaml 中该评估器配置的 llm_provider。
-                           也未配置 → 使用默认 Provider。
+            constraint_id: 约束 ID。
+            sample_id: 样本 ID。
+            template_id: Prompt 模板 ID。
+            variables: 模板渲染变量。
+            evidence_dir: 证据保存目录。
+            provider_name: 指定 Provider，None 使用默认。
+
+        Returns:
+            (scores_dict, JudgeRecord) 元组。
         """
         # 1. 获取 Provider
         client = self.pool.get(provider_name)
-        provider_info = client.provider_info  # (name, model)
+        provider_info = client.provider_info
 
         # 2. 渲染模板
-        template = self.templates.get(template_id)
         system_prompt, user_prompt = self.templates.render(template_id, variables)
 
-        # 3. 稳定性控制 — 多次采样
-        def single_judge(seed: int) -> dict:
+        # 3. Langfuse Trace（详见 §五）
+        trace_info = create_trace(name=f"judge:{constraint_id}", metadata={...})
+        root_span = trace_info[0] if trace_info else None
+
+        # 4. 多次采样
+        def single_judge(sample_index: int) -> dict:
             messages = [Message(role="system", content=system_prompt),
                         Message(role="user", content=user_prompt)]
-            response = client.chat(messages, seed=seed, temperature=template.temperature)
-            return self.parser.parse(response.content, template.output_schema)
+            response = client.chat(messages, seed=template.seed + sample_index,
+                                   temperature=template.temperature)
+            # Langfuse Generation Span（详见 §五）
+            ...
+            parsed = self.parser.parse(response.content, template.output_schema)
+            return parsed
 
-        stable_result = self.stability.evaluate_stable(single_judge, sample, template)
+        stable_result = self.stability.evaluate_stable(single_judge, template.dimensions)
 
-        # 4. 生成 JudgeRecord
-        record = JudgeRecord(
-            judge_id=f"judge_{constraint_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-            constraint_id=constraint_id,
-            sample_id=sample_id,
-            provider_name=provider_info.name,
-            model=provider_info.model,
-            template_id=template_id,
-            temperature=template.temperature,
-            seed=template.seed,
-            raw_response=...,  # 保存原始响应
-            parsed_scores=...,
-            final_scores=stable_result["scores"],
-            confidence=stable_result["confidence"],
-            num_samples=template.num_samples,
-            total_duration_ms=...,
-            token_usage=...,
-            timestamp=datetime.now().isoformat(),
-        )
+        # 5. 生成 JudgeRecord（含 summary）
+        record = JudgeRecord(...)
+        JudgeRecorder.save(record, evidence_dir)
 
-        # 5. 持久化 JudgeRecord
-        record_path = self.evidence_dir / f"{record.judge_id}.json"
-        record_path.write_text(json.dumps(asdict(record), ensure_ascii=False, indent=2))
+        # 6. 结束 Langfuse Trace
+        if root_span:
+            root_span.update(output={"scores": stable_result.scores, ...})
+            root_span.end()
 
-        # 6. 返回 ConstraintResult（含溯源字段）
-        # 聚合各维度得分为单个分数
-        total_score = sum(
-            stable_result["scores"].get(dim.dim_id, 0) * dim.weight
-            for dim in template.dimensions
-        ) / sum(dim.weight for dim in template.dimensions)
-
-        return ConstraintResult(
-            constraint_id=constraint_id,
-            name=template.name,
-            tier=ConstraintTier.SOFT,
-            status=EvalStatus.PASS if total_score >= 0.6 else EvalStatus.FAIL,
-            score=total_score / 10.0,  # 归一化到 [0,1]
-            reason=self._build_reason(stable_result, template),
-            judge_provider=provider_info.name,
-            judge_model=provider_info.model,
-            judge_record_path=str(record_path),
-        )
+        return stable_result.scores, record
 ```
+
+### 2.7 降级机制
+
+当 LLM 服务不可用时（未配置 `llm_config.yaml`、Provider 连接失败等），LLM Judge 评估器自动降级为默认通过模式：
+
+```python
+class BaseLLMJudgeEvaluator(BaseEvaluator):
+    """LLM Judge 评估器基类。"""
+
+    def evaluate(self, sample, context: dict) -> ConstraintResult:
+        judge_orchestrator = context.get("judge_orchestrator")
+        evidence_dir = context.get("evidence_dir")
+
+        if judge_orchestrator is None or evidence_dir is None:
+            # 降级模式：LLM 不可用，默认通过
+            return self._make_result(
+                status=EvalStatus.PASS,
+                score=0.7,
+                reason="LLM 不可用，降级模式默认 0.7",
+            )
+
+        # 正常模式：调用 JudgeOrchestrator
+        scores, record = judge_orchestrator.judge(
+            constraint_id=self.evaluator_id,
+            sample_id=sample.get("sample_id", ""),
+            template_id=self.template_id,
+            variables={...},
+            evidence_dir=evidence_dir,
+        )
+        # 计算加权分数，归一化到 [0,1]
+        ...
+```
+
+**降级策略**：
+
+| 场景 | 行为 |
+|------|------|
+| 未配置 LLM（`llm_config_path=None`） | 所有 LLM Judge 评估器返回 `score=0.7, PASS` |
+| Provider 连接失败 | 单个评估器降级，不阻塞管线 |
+| 模板解析失败 | 降级为 `score=0.7`，记录错误信息 |
+
+> **设计意图**：降级机制确保系统在无 LLM 配置时仍可正常运行 Rule-based 评估（格式门控 + 常识检查），LLM Judge 评估器的结果仅作参考。
 
 ---
 
@@ -484,7 +513,7 @@ class VisionEvaluator(BaseEvaluator):
 在 `pipeline.yaml` 的评估器配置中指定 `llm_provider`：
 
 ```yaml
-# 详见 07配置规范
+# 详见 06数据管理与配置规范
 evaluators:
   - name: soft.teaching_logic
     params:
@@ -563,10 +592,204 @@ rule_results.json 中可见每个约束使用的模型
 
 ---
 
-## 五、版本记录
+## 五、Langfuse 调用追踪
+
+### 5.1 设计目标
+
+| 目标 | 说明 |
+|------|------|
+| **全链路追踪** | 一次 `judge()` 调用生成一条 Trace，内含 N 个 Generation Span，完整记录每次 LLM 调用 |
+| **零侵入禁用** | 未配置 Langfuse 环境变量时完全无感，不影响评估流程和性能 |
+| **Cloud SaaS** | 优先使用 Langfuse Cloud（零部署），配置 3 个环境变量即可启用 |
+| **多模态预留** | 架构支持未来追踪图片/音频等多模态输入输出 |
+
+### 5.2 技术选型
+
+| 方案 | 类型 | 开源 | 选型结论 |
+|------|------|------|---------|
+| **Langfuse** | LLM 可观测平台 | ✅ MIT | ✅ **首选** — 功能全（Tracing + Eval + Prompt），16k+ Stars |
+| Arize Phoenix | AI 可观测工具 | ✅ MIT | 备选 — OpenTelemetry 原生 |
+
+**依赖声明**：
+
+```toml
+# pyproject.toml
+[project.optional-dependencies]
+llm = [
+    "openai>=1.30",
+    "anthropic>=0.30",
+    "langfuse>=2.0",
+]
+```
+
+> 当前安装版本为 Langfuse v4.x，其 API 与 v2/v3 有较大差异（详见 §5.4）。
+
+### 5.3 核心模块：`agent_eval/llm/tracing.py`
+
+```python
+"""Langfuse 追踪模块 — LLM 调用可观测性。
+
+Cloud SaaS 模式：通过环境变量配置。
+未配置时自动禁用，对评估流程无任何影响。
+"""
+
+_langfuse_client: Optional[Langfuse] = None
+
+def get_langfuse() -> Optional[Langfuse]:
+    """获取 Langfuse 客户端单例。未配置时返回 None。"""
+
+def create_trace(name: str, metadata: dict | None = None)
+        -> Optional[tuple[Any, dict[str, str]]]:
+    """创建 Langfuse Trace（根 Span）。
+
+    Returns: (span, trace_context_dict) 元组，或 None（未启用时）。
+    """
+
+def is_tracing_enabled() -> bool:
+    """检查 Langfuse 追踪是否已启用。"""
+
+def flush_traces() -> None:
+    """刷新所有待发送的 trace 数据。在评估结束时调用。"""
+
+def reset_langfuse() -> None:
+    """重置 Langfuse 客户端（仅用于测试）。"""
+```
+
+**设计要点**：
+
+| 设计决策 | 理由 |
+|----------|------|
+| 懒初始化单例 | 首次调用时才创建客户端，避免未安装 langfuse 时导入报错 |
+| 环境变量控制 | 无需修改配置文件，3 个环境变量即可启用/禁用 |
+| `create_trace()` 封装 | 屏蔽 v4 API 的 `create_trace_id` + `start_observation` 复杂度 |
+| `flush_traces()` | Langfuse SDK 异步发送，需在评估结束时确保数据落盘 |
+
+### 5.4 Langfuse v4 API 说明
+
+Langfuse v4.x 相较于 v2/v3 有重大 API 变更：
+
+| 概念 | v2/v3 API | v4 API（本项目使用） |
+|------|-----------|---------------------|
+| 创建客户端 | `Langfuse()` | `Langfuse(public_key, secret_key, host)` |
+| 创建 Trace | `langfuse.trace(name=...)` | `create_trace_id(seed=...)` + `start_observation(trace_context=..., as_type="span")` |
+| 嵌套观察 | `trace.generation(name=...)` | `span.start_observation(name=..., as_type="generation")` |
+| 记录输出 | `generation.end(output=..., usage=...)` | `generation.update(output=..., usage_details=...)` + `generation.end()` |
+| 刷新 | `langfuse.flush()` | `langfuse.flush()`（不变） |
+
+**v4 API 调用流程**：
+
+```
+Langfuse(public_key, secret_key, host)
+  │
+  ├─ create_trace_id(seed=name)       → trace_id: str
+  │
+  ├─ start_observation(               → root_span (as_type="span")
+  │     name, trace_context={trace_id}, as_type="span", metadata={...})
+  │
+  │   ├─ root_span.start_observation( → generation (as_type="generation")
+  │   │     name="sample_0", input={...}, model="...", model_parameters={...})
+  │   │   ├─ generation.update(output=..., usage_details={...})
+  │   │   └─ generation.end()
+  │   │
+  │   ├─ (sample_1, sample_2 ... 同上)
+  │   │
+  │   ├─ root_span.update(output={scores, confidence})
+  │   └─ root_span.end()
+  │
+  └─ flush()                           → 发送到 Langfuse 服务端
+```
+
+### 5.5 埋点设计
+
+#### 调用链与埋点位置
+
+```
+eval_packages()
+  → Orchestrator.eval_only()
+    → PipelineEngine.evaluate_sample()
+      → PipelineStage.execute()
+        → Evaluator.evaluate()
+          → JudgeOrchestrator.judge()            ← ① 创建 Trace (root_span)
+            → single_judge(0)                    ← ② 创建 Generation (sample_0)
+              → client.chat()                    ← ③ LLM API 调用
+              → generation.update(output, usage)
+              → generation.end()
+            → single_judge(1)                    ← ② 创建 Generation (sample_1)
+            → single_judge(2)                    ← ② 创建 Generation (sample_2)
+            → root_span.update(output=scores)
+            → root_span.end()
+  → flush_traces()                               ← ④ 确保数据落盘
+```
+
+#### flush 位置
+
+| 入口 | 文件 | 位置 |
+|------|------|------|
+| SDK `eval_packages()` | `agent_eval/orchestrator/orchestrator.py` | 函数末尾 |
+| CLI `agent-eval eval` | `cli.py` | eval 命令末尾 |
+
+### 5.6 配置
+
+通过 `.env` 文件或环境变量配置：
+
+| 变量 | 必需 | 默认值 | 说明 |
+|------|------|--------|------|
+| `LANGFUSE_PUBLIC_KEY` | ✅ | — | 公钥，`pk-lf-` 前缀 |
+| `LANGFUSE_SECRET_KEY` | ✅ | — | 密钥，`sk-lf-` 前缀 |
+| `LANGFUSE_HOST` | ❌ | `https://cloud.langfuse.com` | 服务端地址 |
+
+### 5.7 Dashboard 数据结构
+
+一次 `judge()` 调用在 Langfuse Dashboard 上展示为：
+
+```
+Trace: judge:commonsense.logical_consistency
+├── metadata: {sample_id, template_id, provider, model}
+├── Generation: sample_0
+│   ├── input: {system, user}
+│   ├── output: {"internal_consistency": 8, ...}
+│   ├── model: deepseek_judge/deepseek-chat
+│   └── usage_details: {prompt_tokens, completion_tokens, total_tokens}
+├── Generation: sample_1 (seed=43)
+├── Generation: sample_2 (seed=44)
+└── output: {scores, confidence}
+```
+
+### 5.8 测试策略
+
+**Mock 策略**：在 `tests/conftest.py` 中全局 mock langfuse 模块：
+
+```python
+import sys
+from unittest.mock import MagicMock
+sys.modules.setdefault("langfuse", MagicMock())
+```
+
+**追踪模块测试**（`tests/llm/test_tracing.py`）：
+
+| 测试类 | 覆盖场景 |
+|--------|---------|
+| `TestGetLangfuse` | 无环境变量→None、空 key→None、双 key→客户端实例、单例复用、导入失败→None |
+| `TestIsTracingEnabled` | 禁用/启用判断 |
+| `TestFlushTraces` | 禁用时无异常、启用时调用 flush |
+| `TestCreateTrace` | 禁用时→None、启用时返回 (span, trace_ctx) |
+| `TestResetLangfuse` | 重置后单例清空 |
+
+### 5.9 未来扩展
+
+| Phase | 内容 | 说明 |
+|-------|------|------|
+| Phase 2 | 评估结果 Score 关联 | 将 scores 写入 Langfuse Score，与 Trace 关联 |
+| Phase 3 | Prompt 版本管理 | 将 `assets/prompts/*.yaml` 迁移到 Langfuse Prompt 管理 |
+| Phase 4 | 多模态追踪 | 扩展追踪图片/音频输入，支持多模态评估场景 |
+
+---
+
+## 六、版本记录
 
 | 版本 | 日期 | 变更内容 |
 |------|------|----------|
 | v1.0 | 2026-06-08 | 按架构层次重组，更新交叉引用 |
 | v1.1 | 2026-06-08 | 新增 ProviderPool 多模型管理、运行时切换、JudgeRecord 评审溯源、ConstraintResult 模型溯源字段 |
 | v1.2 | 2026-06-08 | 视觉评估从 PPTX 截图调整为 HTML 渲染截图；PPTX 评估标注为后续插件扩展 |
+| **v2.0** | **2026-06-12** | **§1.3 更新 Provider 实现现状（DeepSeekClient 覆盖 deepseek+openai；Anthropic 未实现）；§1.5 Factory 更新为实际代码；LLMResponse 新增 duration_ms 字段；JudgeRecord 新增 summary 字段；JudgeOrchestrator.judge() 签名更新为 keyword-only + 返回 tuple；新增 §2.7 降级机制；合并原 09 Langfuse 调用追踪设计文档到 §五** |
