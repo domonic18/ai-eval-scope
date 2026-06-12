@@ -4,6 +4,7 @@
 """
 
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -1002,3 +1003,313 @@ class TestLogicalConsistencyEvaluator:
         result = ev.evaluate(tmp_path, {})
         assert result.status == EvalStatus.FAIL
         assert result.score == 0.0
+
+
+# ─── InfoAccuracy LLM Phase 3 测试 ───
+
+
+class TestInfoAccuracyLLM:
+    """InfoAccuracyEvaluator 的 LLM Phase 3 路径测试。"""
+
+    def _make_mock_record(self, judge_id="judge_ia_001", errors_found=None):
+        """创建 mock JudgeRecord。"""
+        rec = MagicMock()
+        rec.judge_id = judge_id
+        rec.provider_name = "deepseek_judge"
+        rec.model = "deepseek-chat"
+        rec.confidence = {"factual_correctness": "high", "statement_accuracy": "high"}
+        rec.raw_response = {"errors_found": errors_found or []}
+        return rec
+
+    def _make_mock_orchestrator(self, scores, record, dims=None):
+        """创建 mock JudgeOrchestrator。"""
+        orch = MagicMock()
+        orch.judge.return_value = (scores, record)
+
+        mock_template = MagicMock()
+        if dims is not None:
+            mock_template.dimensions = dims
+        else:
+            # 默认 2 维度
+            d1 = MagicMock(dim_id="factual_correctness", name="事实正确性", weight=0.6)
+            d2 = MagicMock(dim_id="statement_accuracy", name="陈述准确性", weight=0.4)
+            mock_template.dimensions = [d1, d2]
+        orch.templates.get.return_value = mock_template
+        return orch
+
+    def test_llm_high_score_pass(self, tmp_path: Path) -> None:
+        """LLM 高分 + 无规则错误 → PASS。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.md").write_text(
+            "圆周率 π ≈ 3.14，是数学中的重要常数。\n", encoding="utf-8"
+        )
+
+        record = self._make_mock_record(errors_found=[])
+        orch = self._make_mock_orchestrator(
+            {"factual_correctness": 9.0, "statement_accuracy": 8.5}, record
+        )
+
+        ev = registry.create("commonsense.info_accuracy")
+        result = ev.evaluate(tmp_path, {
+            "judge_orchestrator": orch,
+            "evidence_dir": tmp_path / "evidence",
+        })
+
+        assert result.status == EvalStatus.PASS
+        assert result.score == 1.0
+        assert result.judge_provider == "deepseek_judge"
+        assert result.judge_model == "deepseek-chat"
+        assert result.judge_record_path == "evidence/judge_ia_001.json"
+        assert "LLM + 规则" in result.reason
+
+    def test_llm_low_score_fail(self, tmp_path: Path) -> None:
+        """LLM 低分 → FAIL（低于 pass_threshold 0.8）。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.md").write_text("一些教学内容\n", encoding="utf-8")
+
+        record = self._make_mock_record(
+            judge_id="judge_ia_002", errors_found=["信息不准确"]
+        )
+        orch = self._make_mock_orchestrator(
+            {"factual_correctness": 3.0, "statement_accuracy": 4.0}, record
+        )
+
+        ev = registry.create("commonsense.info_accuracy")
+        result = ev.evaluate(tmp_path, {
+            "judge_orchestrator": orch,
+            "evidence_dir": tmp_path / "evidence",
+        })
+
+        assert result.status == EvalStatus.FAIL
+        assert result.score == 0.0
+
+    def test_llm_rule_errors_override(self, tmp_path: Path) -> None:
+        """LLM 高分但规则检查有 error → FAIL。"""
+        out = _prepare_output(tmp_path)
+        # 包含算术错误，Phase 1 会发现 error
+        (out / "doc.md").write_text("3 + 5 = 9\n", encoding="utf-8")
+
+        record = self._make_mock_record(judge_id="judge_ia_003", errors_found=[])
+        orch = self._make_mock_orchestrator(
+            {"factual_correctness": 9.0, "statement_accuracy": 9.0}, record
+        )
+
+        ev = registry.create("commonsense.info_accuracy")
+        result = ev.evaluate(tmp_path, {
+            "judge_orchestrator": orch,
+            "evidence_dir": tmp_path / "evidence",
+        })
+
+        # 规则有 error 即使 LLM 高分也 FAIL
+        assert result.status == EvalStatus.FAIL
+        assert result.score == 0.0
+        assert "规则检查发现" in result.reason
+
+    def test_llm_exception_fallback(self, tmp_path: Path) -> None:
+        """LLM 调用异常 → 回退到 Phase 1-2 结果。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.md").write_text("正常教学内容\n", encoding="utf-8")
+
+        orch = MagicMock()
+        orch.judge.side_effect = RuntimeError("API timeout")
+
+        ev = registry.create("commonsense.info_accuracy")
+        result = ev.evaluate(tmp_path, {
+            "judge_orchestrator": orch,
+            "evidence_dir": tmp_path / "evidence",
+        })
+
+        # 回退到 Phase 1-2，无错误 → PASS
+        assert result.status == EvalStatus.PASS
+
+    def test_llm_no_dimensions(self, tmp_path: Path) -> None:
+        """无维度模板 → 使用简单平均。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.md").write_text("教学内容\n", encoding="utf-8")
+
+        record = self._make_mock_record(judge_id="judge_ia_004", errors_found=[])
+        orch = self._make_mock_orchestrator(
+            {"a": 8.0, "b": 9.0}, record, dims=[]  # 空维度
+        )
+
+        ev = registry.create("commonsense.info_accuracy")
+        result = ev.evaluate(tmp_path, {
+            "judge_orchestrator": orch,
+            "evidence_dir": tmp_path / "evidence",
+        })
+
+        # (8+9)/2/10 = 0.85 >= 0.8 → PASS
+        assert result.status == EvalStatus.PASS
+
+    def test_llm_multi_file_truncation(self, tmp_path: Path) -> None:
+        """多文件内容截断。"""
+        out = _prepare_output(tmp_path)
+        # 创建多个文件，总内容超过 max_content_chars
+        for i in range(5):
+            (out / f"doc_{i}.md").write_text("内容" * 2000, encoding="utf-8")
+
+        record = self._make_mock_record(judge_id="judge_ia_005", errors_found=[])
+        orch = self._make_mock_orchestrator(
+            {"factual_correctness": 8.0, "statement_accuracy": 8.0}, record
+        )
+
+        ev = registry.create("commonsense.info_accuracy")
+        result = ev.evaluate(tmp_path, {
+            "judge_orchestrator": orch,
+            "evidence_dir": tmp_path / "evidence",
+        })
+
+        assert result.status == EvalStatus.PASS
+
+
+# ─── LogicalConsistency LLM 路径测试 ───
+
+
+class TestLogicalConsistencyLLM:
+    """LogicalConsistencyEvaluator 的 LLM 路径测试。"""
+
+    def _make_mock_record(self, judge_id="judge_lc_001"):
+        """创建 mock JudgeRecord。"""
+        rec = MagicMock()
+        rec.judge_id = judge_id
+        rec.provider_name = "deepseek_judge"
+        rec.model = "deepseek-chat"
+        rec.confidence = {"internal_consistency": "high", "causal_logic": "high"}
+        return rec
+
+    def _make_mock_orchestrator(self, scores, record, dims=None):
+        """创建 mock JudgeOrchestrator。"""
+        orch = MagicMock()
+        orch.judge.return_value = (scores, record)
+
+        mock_template = MagicMock()
+        if dims is not None:
+            mock_template.dimensions = dims
+        else:
+            d1 = MagicMock(dim_id="internal_consistency", name="内部一致性", weight=0.4)
+            d2 = MagicMock(dim_id="causal_logic", name="因果逻辑", weight=0.3)
+            d3 = MagicMock(dim_id="classification_logic", name="分类逻辑", weight=0.3)
+            mock_template.dimensions = [d1, d2, d3]
+        orch.templates.get.return_value = mock_template
+        return orch
+
+    def test_llm_high_score_pass(self, tmp_path: Path) -> None:
+        """LLM 高分 → PASS。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.md").write_text("教学" * 30, encoding="utf-8")
+
+        record = self._make_mock_record()
+        orch = self._make_mock_orchestrator(
+            {"internal_consistency": 8.5, "causal_logic": 7.0, "classification_logic": 9.0},
+            record,
+        )
+
+        ev = registry.create("commonsense.logical_consistency")
+        result = ev.evaluate(tmp_path, {
+            "judge_orchestrator": orch,
+            "evidence_dir": tmp_path / "evidence",
+        })
+
+        assert result.status == EvalStatus.PASS
+        assert result.score == 1.0
+        assert result.judge_provider == "deepseek_judge"
+        assert result.judge_model == "deepseek-chat"
+        assert result.judge_record_path == "evidence/judge_lc_001.json"
+        assert "LLM" in result.reason
+
+    def test_llm_low_score_fail(self, tmp_path: Path) -> None:
+        """LLM 低分（< 0.6）→ FAIL。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.md").write_text("教学" * 30, encoding="utf-8")
+
+        record = self._make_mock_record(judge_id="judge_lc_002")
+        orch = self._make_mock_orchestrator(
+            {"internal_consistency": 2.0, "causal_logic": 3.0, "classification_logic": 2.0},
+            record,
+        )
+
+        ev = registry.create("commonsense.logical_consistency")
+        result = ev.evaluate(tmp_path, {
+            "judge_orchestrator": orch,
+            "evidence_dir": tmp_path / "evidence",
+        })
+
+        assert result.status == EvalStatus.FAIL
+        assert result.score == 0.0
+
+    def test_llm_exception_degrades_to_pass(self, tmp_path: Path) -> None:
+        """LLM 调用异常 → 降级为 PASS。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.md").write_text("教学" * 30, encoding="utf-8")
+
+        orch = MagicMock()
+        orch.judge.side_effect = RuntimeError("Connection refused")
+
+        ev = registry.create("commonsense.logical_consistency")
+        result = ev.evaluate(tmp_path, {
+            "judge_orchestrator": orch,
+            "evidence_dir": tmp_path / "evidence",
+        })
+
+        assert result.status == EvalStatus.PASS
+        assert "降级" in result.reason
+        assert "Connection refused" in result.reason
+
+    def test_llm_no_dimensions(self, tmp_path: Path) -> None:
+        """无维度模板 → 使用简单平均。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.md").write_text("教学" * 30, encoding="utf-8")
+
+        record = self._make_mock_record(judge_id="judge_lc_003")
+        orch = self._make_mock_orchestrator(
+            {"a": 7.0, "b": 8.0}, record, dims=[]  # 空维度
+        )
+
+        ev = registry.create("commonsense.logical_consistency")
+        result = ev.evaluate(tmp_path, {
+            "judge_orchestrator": orch,
+            "evidence_dir": tmp_path / "evidence",
+        })
+
+        # (7+8)/2/10 = 0.75 >= 0.6 → PASS
+        assert result.status == EvalStatus.PASS
+        assert result.score == 1.0
+
+    def test_llm_borderline_score(self, tmp_path: Path) -> None:
+        """LLM 分数恰好等于阈值 0.6 → PASS。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.md").write_text("教学" * 30, encoding="utf-8")
+
+        record = self._make_mock_record(judge_id="judge_lc_004")
+        # 维度加权恰好 0.6
+        orch = self._make_mock_orchestrator(
+            {"internal_consistency": 6.0, "causal_logic": 6.0, "classification_logic": 6.0},
+            record,
+        )
+
+        ev = registry.create("commonsense.logical_consistency")
+        result = ev.evaluate(tmp_path, {
+            "judge_orchestrator": orch,
+            "evidence_dir": tmp_path / "evidence",
+        })
+
+        assert result.status == EvalStatus.PASS
+
+    def test_llm_content_truncation(self, tmp_path: Path) -> None:
+        """超长内容被截断。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.md").write_text("内容" * 10000, encoding="utf-8")
+
+        record = self._make_mock_record(judge_id="judge_lc_005")
+        orch = self._make_mock_orchestrator(
+            {"internal_consistency": 8.0, "causal_logic": 8.0, "classification_logic": 8.0},
+            record,
+        )
+
+        ev = registry.create("commonsense.logical_consistency")
+        result = ev.evaluate(tmp_path, {
+            "judge_orchestrator": orch,
+            "evidence_dir": tmp_path / "evidence",
+        })
+
+        assert result.status == EvalStatus.PASS
