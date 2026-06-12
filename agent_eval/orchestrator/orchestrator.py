@@ -126,10 +126,13 @@ class Orchestrator:
 
         logger.info("加载执行包", count=len(packages))
 
-        # 3. 加载缓存
+        # 3. 用 RuleSet 参数覆盖评估器默认参数
+        self.pipeline_engine.apply_rule_set_params(rule_set)
+
+        # 4. 加载缓存
         self._load_cache(self.workspace, self.pipeline_engine)
 
-        # 4. 构建 extra_context
+        # 5. 构建 extra_context
         rule_set_version = ""
         if rule_set is not None and hasattr(rule_set, "version"):
             rule_set_version = rule_set.version
@@ -145,7 +148,7 @@ class Orchestrator:
         # 但每个包的 evidence_dir 不同，需要在循环中单独处理
         # 使用 per-sample context override
 
-        # 5. 逐样本评估
+        # 6. 逐样本评估
         sample_results: list[SampleResult] = []
         result_map: dict[str, EvaluationResult] = {}
 
@@ -163,7 +166,7 @@ class Orchestrator:
             sample_result = self.pipeline_engine.evaluate_sample(pkg, context)
             sample_results.append(sample_result)
 
-            # 6. 转为 EvaluationResult 并保存
+            # 7. 转为 EvaluationResult 并保存
             eval_result = self._sample_to_evaluation_result(
                 sample_result,
                 pkg,
@@ -180,13 +183,13 @@ class Orchestrator:
                 reward=sample_result.reward,
             )
 
-        # 7. 计算聚合指标
+        # 8. 计算聚合指标
         metrics_report = self.pipeline_engine.metrics_calculator.compute(
             sample_results,
             run_id=run_id,
         )
 
-        # 8. 生成聚合报告
+        # 9. 生成聚合报告
         summary_md, summary_json = self.report_generator.generate_summary_report(
             metrics_report,
         )
@@ -199,10 +202,10 @@ class Orchestrator:
             encoding="utf-8",
         )
 
-        # 9. 保存缓存
+        # 10. 保存缓存
         self._save_cache(self.workspace, self.pipeline_engine)
 
-        # 10. 更新 workspace index
+        # 11. 更新 workspace index
         self._update_workspace_index(
             self.workspace,
             run_workspace,

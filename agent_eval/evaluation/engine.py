@@ -71,6 +71,33 @@ class PipelineEngine:
         self._cache: dict[str, SampleResult] = {}
         self._build_stages()
 
+    def apply_rule_set_params(self, rule_set: Any) -> None:
+        """用 RuleSet 中的 params 覆盖已创建评估器的参数。
+
+        当 RuleSet 指定了评估器参数时（如 max: 30），覆盖默认管线中的硬编码默认值。
+        """
+        if rule_set is None or not hasattr(rule_set, "rules"):
+            return
+
+        # 建立 evaluator_id → params 映射
+        rule_params: dict[str, dict[str, Any]] = {}
+        for rule in rule_set.rules:
+            if hasattr(rule, "evaluator") and hasattr(rule, "params"):
+                if rule.params:
+                    rule_params[rule.evaluator] = rule.params
+
+        if not rule_params:
+            return
+
+        # 遍历所有阶段中的评估器，合并参数
+        for stage in self.stages:
+            for evaluator in stage.evaluators:
+                eid = evaluator.evaluator_id
+                if eid in rule_params:
+                    # 合并：RuleSet params 覆盖默认 params
+                    merged = {**evaluator.params, **rule_params[eid]}
+                    evaluator.setup(merged)
+
     def _build_stages(self) -> None:
         """根据配置构建级联阶段。"""
         for stage_conf in self.config.stages:
