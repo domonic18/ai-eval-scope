@@ -28,7 +28,7 @@ uv run agent-eval pack \
 
 # ② 评估
 uv run agent-eval eval \
-  --package-dir ./packages/大单元学习总导/ \
+  --package-dir ./workspace/packages/大单元学习总导/ \
   --rule-set ./assets/rules/default_rule_set.yaml
 
 # ③ 查看报告
@@ -59,12 +59,12 @@ agent-eval pack --source-dir /path/to/output/ --validate
 ```bash
 # 最简模式（无 LLM）
 agent-eval eval \
-  --package-dir ./packages/math_001 \
+  --package-dir ./workspace/packages/math_001 \
   --rule-set ./assets/rules/default_rule_set.yaml
 
 # 含 LLM Judge
 agent-eval eval \
-  --package-dir ./packages/math_001 \
+  --package-dir ./workspace/packages/math_001 \
   --rule-set ./assets/rules/default_rule_set.yaml \
   --llm-config ./llm_config.yaml \
   --llm-provider deepseek_judge

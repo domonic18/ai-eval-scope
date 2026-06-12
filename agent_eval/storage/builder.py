@@ -189,15 +189,20 @@ class PackageBuilder:
         output_dir = package_dir / "output"
         output_dir.mkdir(parents=True, exist_ok=True)
 
+        # 排除系统/隐藏文件（.DS_Store、Thumbs.db、._* 等）
+        _ignore = shutil.ignore_patterns(".DS_Store", "Thumbs.db", "._*", "__MACOSX")
+
         # 复制整个目录结构到 output/
         for item in source_dir.iterdir():
             if item.name in collector.exclude_dirs:
                 continue
             if item.is_file():
+                if item.name.startswith("."):
+                    continue
                 if collector._matches_pattern(item):
                     shutil.copy2(item, output_dir / item.name)
             elif item.is_dir():
-                shutil.copytree(item, output_dir / item.name, dirs_exist_ok=True)
+                shutil.copytree(item, output_dir / item.name, dirs_exist_ok=True, ignore=_ignore)
 
         # 写入 _manifest.json
         collector.write_manifest(manifest_data, output_dir)

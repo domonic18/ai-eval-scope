@@ -174,6 +174,12 @@ class DirectoryCollector:
         return any(fnmatch.fnmatch(name, pattern) for pattern in self.file_patterns)
 
     def _is_excluded(self, path: Path) -> bool:
-        """检查文件路径是否包含排除的目录。"""
+        """检查文件路径是否包含排除的目录或文件名。"""
         rel_parts = path.relative_to(self.root_dir).parts
-        return any(part in self.exclude_dirs for part in rel_parts)
+        # 排除包含在 exclude_dirs 中的目录段
+        if any(part in self.exclude_dirs for part in rel_parts):
+            return True
+        # 排除隐藏/系统文件（以 . 开头）
+        if path.name.startswith("."):
+            return True
+        return False

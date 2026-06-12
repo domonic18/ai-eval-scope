@@ -106,7 +106,7 @@ def pack(
     task_id: str | None = typer.Option(None, "--task-id", help="任务 ID（默认自动推导）"),
     task_title: str | None = typer.Option(None, "--task-title", help="任务标题"),
     task_subject: str | None = typer.Option(None, "--task-subject", help="任务学科"),
-    output_dir: str = typer.Option("./packages", "--output-dir", help="输出目录"),
+    output_dir: str = typer.Option("./workspace/packages", "--output-dir", help="输出目录"),
     validate: bool = typer.Option(False, "--validate", help="打包后验证完整性"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="详细输出"),
 ) -> None:

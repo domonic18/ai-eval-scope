@@ -31,10 +31,9 @@ htmlcov/
 .coverage
 coverage.xml
 
-# Workspace (runtime, not version controlled)
-workspace/runs/
-workspace/cache/
-workspace/index/
+# Runtime data (not version controlled)
+workspace/
+packages/
 
 # OS
 .DS_Store
