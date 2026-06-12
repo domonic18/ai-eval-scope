@@ -251,7 +251,6 @@
 **组件**：
 - **DirectoryTree**：递归树形组件，基于 `_manifest.json` 渲染目录层级，节点颜色标识通过/失败/警告状态
 - **ModuleScoreTable**：模块级得分对比表，数据来自 `rule_results.json` 的 `module_results` 字段
-- **StructureCheckDetail**：`format.directory_structure` 的检查结果明细，来自 `details.checks`
 
 **数据流**：
 
