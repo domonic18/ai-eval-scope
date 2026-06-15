@@ -37,6 +37,32 @@ def _hash_images(images: list[str]) -> list[str]:
     return hashes
 
 
+def _coerce_score(value: Any) -> float:
+    """把 LLM 返回的维度分值规约为 float。
+
+    模板要求维度为 number，但部分 LLM（尤其多模态模型在低内容页上）会自作主张返回
+    嵌套对象 `{"score": 8, "issues": [...]}` 或字符串 "8"。此处统一容错：
+    - number → float
+    - dict → 取其中的 score/value/rating/分 键（递归一层），缺失则 0.0
+    - str → 提取首个数字
+    - 其他 → 0.0
+    规约后裁剪到 [0, 10]（与模板 score_range 对齐）。
+    """
+    if isinstance(value, bool):  # bool 是 int 子类，先排除
+        return 0.0
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, dict):
+        for k in ("score", "value", "rating", "分", "分数", "得分"):
+            if k in value:
+                return _coerce_score(value[k])
+        return 0.0
+    if isinstance(value, str):
+        m = re.search(r"-?\d+(?:\.\d+)?", value)
+        return float(m.group()) if m else 0.0
+    return 0.0
+
+
 class JudgeOrchestrator:
     """LLM Judge 调用编排器。
 
@@ -189,7 +215,7 @@ class JudgeOrchestrator:
             # 确保维度分数为 float，同时保留 summary 等非维度字段
             result: dict[str, Any] = {}
             for dim in template.dimensions:
-                result[dim.dim_id] = float(parsed.get(dim.dim_id, 0.0))
+                result[dim.dim_id] = _coerce_score(parsed.get(dim.dim_id, 0.0))
             # 保留 summary 等非维度字段（用于可解释性）
             for key in parsed:
                 if key not in result:

@@ -161,6 +161,8 @@ class VisionQualityEvaluator(BaseLLMJudgeEvaluator):
                         "scores": scores,
                         "summary": getattr(record, "summary", "") if record else "",
                         "judge_id": getattr(record, "judge_id", "") if record else "",
+                        "model": getattr(record, "model", "") if record else "",
+                        "confidence": getattr(record, "confidence", {}) if record else {},
                         "ok": True,
                     }
                 )
@@ -180,6 +182,8 @@ class VisionQualityEvaluator(BaseLLMJudgeEvaluator):
         """将逐文档分数按维度取均值，归一化并构造 ConstraintResult。"""
         ok_docs = [d for d in per_doc if d.get("ok")]
         dims = _VISUAL_DIMS  # (dim_id, name, weight)
+        # 逐文档均值聚合的置信度：覆盖率高（无失败文档）=high，否则 low
+        dim_confidence = "high" if len(ok_docs) == total_docs and total_docs > 0 else "low"
 
         # 按维度取所有成功文档的均值
         avg_scores: dict[str, float] = {}
@@ -226,6 +230,8 @@ class VisionQualityEvaluator(BaseLLMJudgeEvaluator):
                     "name": name,
                     "score": avg_scores.get(did, 0.0),
                     "weight": w,
+                    # 逐文档均值聚合：置信度反映文档覆盖度（全部成功=high）
+                    "confidence": dim_confidence,
                 }
                 for did, name, w in dims
             ],
@@ -240,8 +246,9 @@ class VisionQualityEvaluator(BaseLLMJudgeEvaluator):
             if first_ok and first_ok.get("judge_id")
             else None
         )
-        # provider/model 取自评估器配置（逐文档共用同一 provider）
+        # provider/model 取自评估器配置与首成功文档（逐文档共用同一 provider）
         provider_name = self.params.get("llm_provider")
+        model_name = first_ok.get("model", "") if first_ok else ""
 
         return ConstraintResult(
             constraint_id=self.evaluator_id,
@@ -253,7 +260,7 @@ class VisionQualityEvaluator(BaseLLMJudgeEvaluator):
             details=details,
             duration_ms=elapsed,
             judge_provider=provider_name,
-            judge_model=None,
+            judge_model=model_name or None,
             judge_record_path=record_path,
         )
 
