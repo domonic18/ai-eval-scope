@@ -17,6 +17,7 @@ from typing import Any
 from agent_eval.core.types import ConstraintTier, EvalMethod, EvalStatus
 from agent_eval.evaluation.base import BaseEvaluator
 from agent_eval.evaluation.registry import registry
+from agent_eval.evaluation.text_utils import collect_file_texts, collect_text_content
 
 
 def _get_output_dir(sample: Any) -> Path | None:
@@ -36,20 +37,10 @@ def _get_output_dir(sample: Any) -> Path | None:
 def _collect_text_content(output_dir: Path) -> str:
     """收集目录下所有文档的文本内容（合并为单字符串）。
 
-    其他评估器（chronological_order 等）仍在使用此函数。
+    其他评估器（chronological_order 等）仍在使用此函数。HTML 经
+    `text_utils.collect_text_content` 干净提取（剥除 style/script，保留块级结构）。
     """
-    texts: list[str] = []
-    for ext in ("*.md", "*.markdown", "*.html", "*.htm"):
-        for f in output_dir.rglob(ext):
-            try:
-                content = f.read_text(encoding="utf-8", errors="ignore")
-                # 简单去除 HTML 标签
-                if f.suffix.lower() in (".html", ".htm"):
-                    content = re.sub(r"<[^>]+>", " ", content)
-                texts.append(content)
-            except OSError:
-                continue
-    return "\n\n".join(texts)
+    return collect_text_content(output_dir)
 
 
 def _collect_file_names(output_dir: Path) -> list[str]:
@@ -65,20 +56,9 @@ def _collect_file_texts(output_dir: Path) -> dict[str, str]:
     """收集 per-file 文本内容，保留文件归属。
 
     Returns:
-        {文件相对路径: 纯文本内容}，HTML 标签已去除。
+        {文件相对路径: 纯文本内容}，HTML 经 `text_utils` 干净提取。
     """
-    file_texts: dict[str, str] = {}
-    for ext in ("*.md", "*.markdown", "*.html", "*.htm"):
-        for f in output_dir.rglob(ext):
-            try:
-                content = f.read_text(encoding="utf-8", errors="ignore")
-                if f.suffix.lower() in (".html", ".htm"):
-                    content = re.sub(r"<[^>]+>", " ", content)
-                if content.strip():
-                    file_texts[str(f.relative_to(output_dir))] = content
-            except OSError:
-                continue
-    return file_texts
+    return collect_file_texts(output_dir)
 
 
 # ─── 事实知识库缓存（多文件、按学科加载） ───

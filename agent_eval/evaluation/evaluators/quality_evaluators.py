@@ -16,38 +16,10 @@ from typing import Any
 
 from agent_eval.core.types import ConstraintTier, EvalMethod, EvalStatus
 from agent_eval.evaluation.base import BaseEvaluator
+from agent_eval.evaluation.evaluators.commonsense_evaluators import _get_output_dir
 from agent_eval.evaluation.models import ConstraintResult
 from agent_eval.evaluation.registry import registry
-
-
-def _get_output_dir(sample: Any) -> Path | None:
-    """从样本中提取 output 目录。"""
-    if isinstance(sample, Path):
-        return sample / "output" if sample.is_dir() else sample.parent / "output"
-    if hasattr(sample, "output_dir") and sample.output_dir is not None:
-        return Path(sample.output_dir)
-    if isinstance(sample, dict):
-        p = sample.get("package_dir") or sample.get("output_dir")
-        if p:
-            p = Path(p)
-            return p / "output" if p.is_dir() and (p / "output").exists() else p
-    return None
-
-
-def _collect_text_content(output_dir: Path) -> str:
-    """收集目录下所有文档的文本内容。"""
-    texts: list[str] = []
-    for ext in ("*.md", "*.markdown", "*.html", "*.htm"):
-        for f in output_dir.rglob(ext):
-            try:
-                content = f.read_text(encoding="utf-8", errors="ignore")
-                if f.suffix.lower() in (".html", ".htm"):
-                    content = re.sub(r"<[^>]+>", " ", content)
-                texts.append(content)
-            except OSError:
-                continue
-    return "\n\n".join(texts)
-
+from agent_eval.evaluation.text_utils import collect_text_content
 
 # ─── LLM Judge 评估器 ───
 
@@ -88,7 +60,7 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
         output_dir = _get_output_dir(sample)
         text = ""
         if output_dir and output_dir.exists():
-            text = _collect_text_content(output_dir)
+            text = collect_text_content(output_dir)
 
         if not text.strip():
             elapsed = (time.monotonic() - start) * 1000
