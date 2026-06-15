@@ -33,13 +33,12 @@ def resolve_api_key(api_key: str) -> str:
     Raises:
         ValueError: 环境变量未设置时。
     """
+
     def _replace(match: re.Match[str]) -> str:
         var_name = match.group(1) or match.group(2)
         value = os.environ.get(var_name)
         if value is None:
-            raise ValueError(
-                f"环境变量 {var_name} 未设置，无法解析 API Key"
-            )
+            raise ValueError(f"环境变量 {var_name} 未设置，无法解析 API Key")
         return value
 
     return _ENV_VAR_PATTERN.sub(_replace, api_key)
@@ -55,9 +54,7 @@ class ProviderConfig(BaseModel):
     max_tokens: int = Field(default=4096, description="最大输出 token 数")
     temperature: float = Field(default=0.0, ge=0.0, le=2.0, description="默认温度")
     seed: int = Field(default=42, description="默认随机种子")
-    extra_params: dict[str, Any] = Field(
-        default_factory=dict, description="额外参数"
-    )
+    extra_params: dict[str, Any] = Field(default_factory=dict, description="额外参数")
 
     model_config = {"extra": "allow"}
 

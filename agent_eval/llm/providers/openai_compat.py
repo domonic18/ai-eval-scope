@@ -1,4 +1,12 @@
-"""DeepSeek LLM 客户端 — 使用 openai 库兼容模式。"""
+"""OpenAI 兼容协议 LLM 客户端 — 使用 openai 库。
+
+适用于所有 OpenAI Chat Completions 协议兼容的 API 服务，包括但不限于：
+OpenAI 官方、DeepSeek、Moonshot（OpenAI 端点）、vLLM、Together 等。
+
+`provider="openai"` 为通用协议值（base_url 由配置指定或使用 openai SDK 默认）；
+`provider="deepseek"` 为便捷别名，未指定 base_url 时预置 DeepSeek 端点。
+两者复用同一客户端类，差异仅在 base_url 默认值。
+"""
 
 from __future__ import annotations
 
@@ -12,19 +20,27 @@ from agent_eval.llm.client import LLMClient
 from agent_eval.llm.config import ProviderConfig, resolve_api_key
 from agent_eval.llm.models import LLMResponse, Message, TokenUsage
 
+# DeepSeek 便捷别名预置的端点
+_DEEPSEEK_DEFAULT_BASE_URL = "https://api.deepseek.com/v1"
 
-class DeepSeekClient(LLMClient):
-    """DeepSeek 客户端 — 基于 openai 库兼容模式。
 
-    适用于 DeepSeek 以及所有 OpenAI 兼容协议的 API 服务。
+class OpenAICompatClient(LLMClient):
+    """OpenAI 兼容协议客户端 — 基于 openai 库。
+
+    适用于所有 OpenAI Chat Completions 协议兼容的 API 服务。
     """
 
     def __init__(self, name: str, config: ProviderConfig) -> None:
         self._name = name
         self._config = config
+        # deepseek 别名未指定 base_url 时预置 DeepSeek 端点；
+        # openai 通用协议未指定时由 openai SDK 使用其默认端点
+        base_url = config.base_url
+        if not base_url and config.provider == "deepseek":
+            base_url = _DEEPSEEK_DEFAULT_BASE_URL
         self._client = openai.OpenAI(
             api_key=resolve_api_key(config.api_key),
-            base_url=config.base_url or "https://api.deepseek.com/v1",
+            base_url=base_url,
         )
 
     @property
@@ -37,7 +53,8 @@ class DeepSeekClient(LLMClient):
 
     @property
     def provider_type(self) -> str:
-        return "deepseek"
+        # 协议类型：openai 兼容协议统一返回 "openai"（而非具体厂商）
+        return "openai"
 
     def chat(self, messages: list[Message], **kwargs: Any) -> LLMResponse:
         """发送对话请求。
@@ -63,7 +80,7 @@ class DeepSeekClient(LLMClient):
             )
         except openai.APIError as e:
             raise LLMError(
-                f"DeepSeek API 调用失败: {e}",
+                f"OpenAI 兼容 API 调用失败: {e}",
                 details={"provider": self._name, "model": self._config.model},
             ) from e
 
@@ -103,10 +120,12 @@ class DeepSeekClient(LLMClient):
                     {"type": "text", "text": msg.content},
                 ]
                 for img in images:
-                    content_parts.append({
-                        "type": "image_url",
-                        "image_url": {"url": img},
-                    })
+                    content_parts.append(
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": img},
+                        }
+                    )
                 openai_messages.append({"role": msg.role, "content": content_parts})
             else:
                 openai_messages.append(msg.to_dict())
@@ -122,7 +141,7 @@ class DeepSeekClient(LLMClient):
             )
         except openai.APIError as e:
             raise LLMError(
-                f"DeepSeek Vision API 调用失败: {e}",
+                f"OpenAI 兼容 Vision API 调用失败: {e}",
                 details={"provider": self._name, "model": self._config.model},
             ) from e
 
@@ -145,3 +164,7 @@ class DeepSeekClient(LLMClient):
             raw_response=response.model_dump(),
             duration_ms=duration_ms,
         )
+
+
+# 向后兼容别名：历史代码可能 import DeepSeekClient
+DeepSeekClient = OpenAICompatClient

@@ -53,9 +53,7 @@ class TestProviderConfig:
 
     def test_minimal(self) -> None:
         """最少必填字段。"""
-        cfg = ProviderConfig(
-            provider="deepseek", model="deepseek-chat", api_key="sk-test"
-        )
+        cfg = ProviderConfig(provider="deepseek", model="deepseek-chat", api_key="sk-test")
         assert cfg.base_url is None
         assert cfg.max_tokens == 4096
         assert cfg.temperature == 0.0
@@ -80,9 +78,7 @@ class TestProviderConfig:
     def test_temperature_validation(self) -> None:
         """温度范围校验 [0, 2]。"""
         with pytest.raises(Exception):
-            ProviderConfig(
-                provider="deepseek", model="m", api_key="k", temperature=3.0
-            )
+            ProviderConfig(provider="deepseek", model="m", api_key="k", temperature=3.0)
 
     def test_extra_fields_allowed(self) -> None:
         """允许额外字段（model_config extra=allow）。"""

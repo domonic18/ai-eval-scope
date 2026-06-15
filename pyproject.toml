@@ -41,6 +41,10 @@ llm = [
     "anthropic>=0.30",
     "langfuse>=2.0",
 ]
+vision = [
+    "agent-eval[llm]",
+    "playwright>=1.40",
+]
 
 [project.scripts]
 agent-eval = "cli:app"

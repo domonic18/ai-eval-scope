@@ -16,3 +16,14 @@ llm:
       max_tokens: 4096
       temperature: 0.0
       seed: 42
+    # 多模态视觉 Provider（Anthropic 协议兼容，如 Kimi-2.6）。
+    # 用于 --enable-vision 模式下 vision.quality 评估器。
+    # 启用：agent-eval eval ... --llm-config <本文件> --enable-vision
+    # 注意 base_url 须使用厂商的 Anthropic 兼容端点，请以官方文档为准。
+    kimi_vision:
+      provider: anthropic
+      model: kimi-2.6
+      api_key: ${KIMI_API_KEY}
+      base_url: https://api.moonshot.cn/anthropic
+      max_tokens: 4096
+      temperature: 0.0

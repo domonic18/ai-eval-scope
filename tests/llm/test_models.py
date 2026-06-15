@@ -66,9 +66,7 @@ class TestLLMResponse:
     """LLMResponse 序列化往返测试。"""
 
     def test_minimal(self) -> None:
-        resp = LLMResponse(
-            content="Hello", provider_name="deepseek_judge", model="deepseek-chat"
-        )
+        resp = LLMResponse(content="Hello", provider_name="deepseek_judge", model="deepseek-chat")
         assert resp.usage is None
         assert resp.raw_response is None
         assert resp.duration_ms == 0.0
@@ -144,8 +142,12 @@ class TestJudgeRecord:
 
     def test_defaults(self) -> None:
         record = JudgeRecord(
-            judge_id="j1", constraint_id="c1", sample_id="s1",
-            provider_name="p1", model="m1", template_id="t1",
+            judge_id="j1",
+            constraint_id="c1",
+            sample_id="s1",
+            provider_name="p1",
+            model="m1",
+            template_id="t1",
         )
         assert record.temperature == 0.0
         assert record.seed == 42

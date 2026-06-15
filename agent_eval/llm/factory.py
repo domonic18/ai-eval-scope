@@ -25,8 +25,7 @@ def _check_anthropic_available() -> None:
         import anthropic  # noqa: F401
     except ImportError:
         raise LLMError(
-            "使用 Anthropic Provider 需要安装 anthropic 库。"
-            "请执行: pip install 'agent-eval[llm]'",
+            "使用 Anthropic Provider 需要安装 anthropic 库。请执行: pip install 'agent-eval[llm]'",
             details={"missing_module": "anthropic"},
         ) from None
 
@@ -53,16 +52,15 @@ class LLMClientFactory:
         """
         if config.provider in ("deepseek", "openai"):
             _check_openai_available()
-            from agent_eval.llm.providers.deepseek import DeepSeekClient
+            from agent_eval.llm.providers.openai_compat import OpenAICompatClient
 
-            return DeepSeekClient(name, config)
+            return OpenAICompatClient(name, config)
 
         elif config.provider == "anthropic":
             _check_anthropic_available()
-            raise LLMError(
-                "Anthropic 协议客户端将在 Sprint 6 实现",
-                details={"provider": "anthropic"},
-            )
+            from agent_eval.llm.providers.anthropic import AnthropicCompatClient
+
+            return AnthropicCompatClient(name, config)
 
         else:
             raise LLMError(

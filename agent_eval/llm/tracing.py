@@ -59,7 +59,9 @@ def get_langfuse() -> Optional[Langfuse]:
         return None
 
 
-def create_trace(name: str, metadata: dict[str, Any] | None = None) -> Optional[tuple[Any, dict[str, str]]]:
+def create_trace(
+    name: str, metadata: dict[str, Any] | None = None
+) -> Optional[tuple[Any, dict[str, str]]]:
     """创建 Langfuse Trace（根 Span）。
 
     Args:

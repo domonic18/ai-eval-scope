@@ -46,18 +46,23 @@ class StabilityController:
         self,
         judge_fn: Callable[[int], dict[str, float]],
         dimensions: list[JudgeDimension],
+        *,
+        num_samples: int | None = None,
     ) -> StableResult:
         """执行多次采样，计算中位数和置信度。
 
         Args:
             judge_fn: 接收 seed 参数，返回 {dim_id: score} 的函数。
             dimensions: 评分维度列表。
+            num_samples: 本次采样次数，None 时使用构造默认值。
+                允许按模板覆盖（如视觉模板 num_samples=1 节省成本）。
 
         Returns:
             StableResult 包含最终得分和置信度。
         """
+        n = self.num_samples if num_samples is None else num_samples
         all_samples: list[dict[str, float]] = []
-        for i in range(self.num_samples):
+        for i in range(n):
             scores = judge_fn(i)
             all_samples.append(scores)
 
@@ -76,9 +81,7 @@ class StabilityController:
 
                 # 标准差计算（需要至少 2 个样本）
                 stddev = statistics.stdev(dim_scores) if len(dim_scores) >= 2 else 0.0
-                confidence[dim.dim_id] = (
-                    "high" if stddev <= self.stddev_threshold else "low"
-                )
+                confidence[dim.dim_id] = "high" if stddev <= self.stddev_threshold else "low"
 
         return StableResult(
             scores=final_scores,

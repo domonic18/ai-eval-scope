@@ -10,10 +10,7 @@ from agent_eval.llm.judge.template_manager import JudgeDimension
 
 def _make_dims(*ids: str) -> list[JudgeDimension]:
     """创建测试维度列表。"""
-    return [
-        JudgeDimension(dim_id=d, name=d, description=f"Dimension {d}")
-        for d in ids
-    ]
+    return [JudgeDimension(dim_id=d, name=d, description=f"Dimension {d}") for d in ids]
 
 
 class TestStabilityController:

@@ -60,7 +60,9 @@ class TestGetLangfuse:
 
     def test_returns_none_with_only_public_key(self) -> None:
         """只有 public key 时返回 None。"""
-        with patch.dict(os.environ, {"LANGFUSE_PUBLIC_KEY": "pk-lf-test", "LANGFUSE_SECRET_KEY": ""}):
+        with patch.dict(
+            os.environ, {"LANGFUSE_PUBLIC_KEY": "pk-lf-test", "LANGFUSE_SECRET_KEY": ""}
+        ):
             result = get_langfuse()
         assert result is None
 

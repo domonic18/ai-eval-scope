@@ -122,6 +122,8 @@ class JudgeRecord:
     total_duration_ms: float = 0.0
     token_usage: TokenUsage | None = None
     timestamp: str = ""  # ISO 8601
+    # 多模态溯源（视觉评估）：图片哈希列表（不含图片本体，便于审计）
+    image_hashes: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         """序列化为字典。"""
@@ -142,6 +144,7 @@ class JudgeRecord:
             "summary": self.summary,
             "total_duration_ms": self.total_duration_ms,
             "timestamp": self.timestamp,
+            "image_hashes": self.image_hashes,
         }
         if self.token_usage is not None:
             d["token_usage"] = self.token_usage.to_dict()

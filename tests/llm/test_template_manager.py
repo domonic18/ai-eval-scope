@@ -87,10 +87,13 @@ class TestTemplateManager:
 
     def test_load_yml_extension(self, prompts_dir: Path) -> None:
         """支持 .yml 扩展名。"""
-        _write_template(prompts_dir / "other.yml", {
-            "template_id": "other",
-            "name": "Other",
-        })
+        _write_template(
+            prompts_dir / "other.yml",
+            {
+                "template_id": "other",
+                "name": "Other",
+            },
+        )
         mgr = TemplateManager(prompts_dir)
         mgr.load_all()
         assert "other" in mgr.template_ids
