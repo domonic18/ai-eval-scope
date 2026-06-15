@@ -14,7 +14,7 @@ from agent_eval.llm.judge.template_manager import TemplateManager
 from agent_eval.llm.models import LLMResponse, TokenUsage
 
 
-def _setup_template(prompts_dir: Path) -> None:
+def _setup_template(prompts_dir: Path, *, num_samples: int = 1) -> None:
     """创建测试用模板文件。"""
     template_data = {
         "template_id": "test_judge",
@@ -35,7 +35,7 @@ def _setup_template(prompts_dir: Path) -> None:
         },
         "temperature": 0.0,
         "seed": 42,
-        "num_samples": 1,
+        "num_samples": num_samples,
     }
     (prompts_dir / "test_judge.yaml").write_text(
         yaml.dump(template_data, allow_unicode=True), encoding="utf-8"
@@ -73,6 +73,7 @@ class TestJudgeOrchestrator:
 
         # Mock StabilityController — 单次采样
         from agent_eval.llm.judge.stability import StabilityController
+
         stability = StabilityController(num_samples=1)
 
         orchestrator = JudgeOrchestrator(
@@ -126,6 +127,7 @@ class TestJudgeOrchestrator:
         tm = TemplateManager(prompts_dir)
         tm.load_all()
         from agent_eval.llm.judge.stability import StabilityController
+
         orchestrator = JudgeOrchestrator(
             pool=mock_pool,
             template_manager=tm,
@@ -199,7 +201,7 @@ class TestJudgeOrchestrator:
         """多次采样累计 token 用量。"""
         prompts_dir = tmp_path / "prompts"
         prompts_dir.mkdir()
-        _setup_template(prompts_dir)
+        _setup_template(prompts_dir, num_samples=3)
 
         call_count = 0
         usage_sequence = [
@@ -232,6 +234,7 @@ class TestJudgeOrchestrator:
         tm.load_all()
 
         from agent_eval.llm.judge.stability import StabilityController
+
         orchestrator = JudgeOrchestrator(
             pool=mock_pool,
             template_manager=tm,
@@ -271,6 +274,7 @@ class TestJudgeOrchestrator:
         tm.load_all()
 
         from agent_eval.llm.judge.stability import StabilityController
+
         orchestrator = JudgeOrchestrator(
             pool=mock_pool,
             template_manager=tm,
