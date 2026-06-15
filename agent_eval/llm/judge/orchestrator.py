@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -78,6 +79,7 @@ class JudgeOrchestrator:
         evidence_dir: Path,
         provider_name: str | None = None,
         images: list[str] | None = None,
+        judge_id_suffix: str | None = None,
     ) -> tuple[dict[str, Any], JudgeRecord]:
         """执行完整 judge pipeline。
 
@@ -90,6 +92,9 @@ class JudgeOrchestrator:
             provider_name: 指定 Provider 名称。None 使用默认。
             images: 多模态图片引用列表（data URI 或 URL）。非空时走
                 chat_with_vision（视觉评估），None 时走普通 chat。
+            judge_id_suffix: judge_id 与 evidence 文件名的附加后缀。当同一约束
+                在一次评估内被多次调用（如逐文档视觉评估）时必填，否则时间戳到秒
+                的 judge_id 会碰撞、evidence 文件互相覆盖。
 
         Returns:
             (scores_dict, JudgeRecord) 元组。
@@ -202,8 +207,13 @@ class JudgeOrchestrator:
         timestamp = datetime.now(tz=UTC).isoformat()
         last_parsed = stable_result.all_samples[-1] if stable_result.all_samples else {}
         summary_text = str(last_parsed.get("summary", ""))
+        judge_id = f"judge_{constraint_id}_{datetime.now(tz=UTC).strftime('%Y%m%d_%H%M%S')}"
+        if judge_id_suffix:
+            # 后缀只允许安全字符，避免污染文件名
+            safe_suffix = re.sub(r"[^A-Za-z0-9_.-]", "_", judge_id_suffix)
+            judge_id = f"{judge_id}_{safe_suffix}"
         record = JudgeRecord(
-            judge_id=f"judge_{constraint_id}_{datetime.now(tz=UTC).strftime('%Y%m%d_%H%M%S')}",
+            judge_id=judge_id,
             constraint_id=constraint_id,
             sample_id=sample_id,
             provider_name=provider_info.name,

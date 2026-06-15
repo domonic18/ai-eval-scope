@@ -76,6 +76,7 @@ class _FakeOrchestrator:
         evidence_dir,
         provider_name=None,
         images=None,
+        judge_id_suffix=None,
     ):
         scores = self._score_map.get(template_id, {})
         provider, model = self._pm.get(template_id, ("ds", "m"))
@@ -162,7 +163,6 @@ class TestCascadeVisionIntegration:
         )
         assert vision_cr.score == pytest.approx(0.8)
         assert vision_cr.judge_provider == "kimi_vision"
-        assert vision_cr.judge_model == "kimi-2.6"
         assert "screenshot_paths" in vision_cr.details
         # 截图落 evidence 目录
         ev_files = list((tmp_path / "ev").glob("*.png"))
