@@ -27,7 +27,6 @@ def _prepare_output(tmp_path: Path, content: str = "", filename: str = "index.md
     return tmp_path
 
 
-
 # ─── LLM Judge Evaluators ───
 
 

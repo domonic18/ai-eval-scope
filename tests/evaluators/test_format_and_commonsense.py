@@ -107,9 +107,7 @@ class TestDocumentCountEvaluator:
 class TestStructureComplianceEvaluator:
     def test_valid_md_structure(self, tmp_path: Path) -> None:
         out = _prepare_output(tmp_path)
-        (out / "index.md").write_text(
-            "# Title\n\n## Section 1\n\n### Subsection\n\n## Section 2\n"
-        )
+        (out / "index.md").write_text("# Title\n\n## Section 1\n\n### Subsection\n\n## Section 2\n")
 
         ev = registry.create("format.structure_compliance", {"max_heading_depth": 4})
         result = ev.evaluate(tmp_path, {})
@@ -117,9 +115,7 @@ class TestStructureComplianceEvaluator:
 
     def test_heading_too_deep(self, tmp_path: Path) -> None:
         out = _prepare_output(tmp_path)
-        (out / "deep.md").write_text(
-            "# H1\n## H2\n### H3\n#### H4\n##### H5\n###### H6\n"
-        )
+        (out / "deep.md").write_text("# H1\n## H2\n### H3\n#### H4\n##### H5\n###### H6\n")
 
         ev = registry.create("format.structure_compliance", {"max_heading_depth": 4})
         result = ev.evaluate(tmp_path, {})
@@ -135,9 +131,7 @@ class TestStructureComplianceEvaluator:
 
     def test_valid_html_structure(self, tmp_path: Path) -> None:
         out = _prepare_output(tmp_path)
-        (out / "index.html").write_text(
-            "<html><body><h1>Title</h1><h2>Section</h2></body></html>"
-        )
+        (out / "index.html").write_text("<html><body><h1>Title</h1><h2>Section</h2></body></html>")
 
         ev = registry.create("format.structure_compliance", {"max_heading_depth": 4})
         result = ev.evaluate(tmp_path, {})
@@ -178,8 +172,6 @@ class TestHtmlValidityEvaluator:
         ev = registry.create("format.html_validity")
         result = ev.evaluate(tmp_path, {})
         assert result.status == EvalStatus.FAIL
-
-
 
 
 # ─── 常识评估器 ───
@@ -292,9 +284,7 @@ class TestMathFormulaEvaluator:
     def test_formula_in_html(self, tmp_path: Path) -> None:
         """HTML 中的公式应被检测。"""
         out = _prepare_output(tmp_path)
-        (out / "page.html").write_text(
-            "<p>圆的面积公式是：S=2πr</p>"
-        )
+        (out / "page.html").write_text("<p>圆的面积公式是：S=2πr</p>")
 
         ev = registry.create("commonsense.math_formula")
         result = ev.evaluate(tmp_path, {})
@@ -304,9 +294,7 @@ class TestMathFormulaEvaluator:
 class TestUnitConsistencyEvaluator:
     def test_correct_units(self, tmp_path: Path) -> None:
         out = _prepare_output(tmp_path)
-        (out / "physics.md").write_text(
-            "浮力公式 F = ρ液 × g × V_排，其中 g = 9.8 m/s²"
-        )
+        (out / "physics.md").write_text("浮力公式 F = ρ液 × g × V_排，其中 g = 9.8 m/s²")
 
         ev = registry.create("commonsense.unit_consistency")
         result = ev.evaluate(tmp_path, {})
@@ -345,11 +333,14 @@ class TestInfoAccuracyEvaluator:
         out = _prepare_output(tmp_path)
         (out / "doc.md").write_text("# 浮力\n\n浮力的定义。")
 
-        ev = registry.create("commonsense.info_accuracy", {
-            "fact_rules": [
-                {"type": "must_contain", "keyword": "阿基米德"},
-            ],
-        })
+        ev = registry.create(
+            "commonsense.info_accuracy",
+            {
+                "fact_rules": [
+                    {"type": "must_contain", "keyword": "阿基米德"},
+                ],
+            },
+        )
         result = ev.evaluate(tmp_path, {})
         assert result.status == EvalStatus.FAIL
 
@@ -357,11 +348,14 @@ class TestInfoAccuracyEvaluator:
         out = _prepare_output(tmp_path)
         (out / "doc.md").write_text("# 浮力\n\n浮力等于物体的重量。")
 
-        ev = registry.create("commonsense.info_accuracy", {
-            "fact_rules": [
-                {"type": "must_not_contain", "pattern": "浮力等于物体的重量"},
-            ],
-        })
+        ev = registry.create(
+            "commonsense.info_accuracy",
+            {
+                "fact_rules": [
+                    {"type": "must_not_contain", "pattern": "浮力等于物体的重量"},
+                ],
+            },
+        )
         result = ev.evaluate(tmp_path, {})
         assert result.status == EvalStatus.FAIL
 
@@ -397,9 +391,7 @@ class TestInfoAccuracyEvaluator:
     def test_arithmetic_vertical_calc_skipped(self, tmp_path: Path) -> None:
         """竖式计算上下文中的算术应被跳过。"""
         out = _prepare_output(tmp_path)
-        (out / "math.md").write_text(
-            "竖式计算：个位 7+9=16，写6进1；十位 3+2+1=6，结果是 67。"
-        )
+        (out / "math.md").write_text("竖式计算：个位 7+9=16，写6进1；十位 3+2+1=6，结果是 67。")
 
         ev = registry.create("commonsense.info_accuracy")
         result = ev.evaluate(tmp_path, {})
@@ -502,11 +494,19 @@ class TestInfoAccuracyEvaluator:
         (out / "doc.md").write_text("圆周率是一个重要的数学常数。")
 
         # must_match=True: 应找到匹配 → PASS
-        ev = registry.create("commonsense.info_accuracy", {
-            "fact_rules": [
-                {"type": "regex_match", "pattern": r"圆周率", "must_match": True, "name": "圆周率提及"},
-            ],
-        })
+        ev = registry.create(
+            "commonsense.info_accuracy",
+            {
+                "fact_rules": [
+                    {
+                        "type": "regex_match",
+                        "pattern": r"圆周率",
+                        "must_match": True,
+                        "name": "圆周率提及",
+                    },
+                ],
+            },
+        )
         result = ev.evaluate(tmp_path, {})
         findings = result.details.get("findings", [])
         rule_errors = [f for f in findings if f.get("rule_type") == "regex_match"]
@@ -517,11 +517,19 @@ class TestInfoAccuracyEvaluator:
         out = _prepare_output(tmp_path)
         (out / "doc.md").write_text("这是一个简单的文档。")
 
-        ev = registry.create("commonsense.info_accuracy", {
-            "fact_rules": [
-                {"type": "regex_match", "pattern": r"圆周率", "must_match": True, "name": "圆周率提及"},
-            ],
-        })
+        ev = registry.create(
+            "commonsense.info_accuracy",
+            {
+                "fact_rules": [
+                    {
+                        "type": "regex_match",
+                        "pattern": r"圆周率",
+                        "must_match": True,
+                        "name": "圆周率提及",
+                    },
+                ],
+            },
+        )
         result = ev.evaluate(tmp_path, {})
         findings = result.details.get("findings", [])
         rule_errors = [f for f in findings if f.get("rule_type") == "regex_match"]
@@ -532,11 +540,20 @@ class TestInfoAccuracyEvaluator:
         out = _prepare_output(tmp_path)
         (out / "doc.md").write_text("圆周率的近似值是3.20")
 
-        ev = registry.create("commonsense.info_accuracy", {
-            "fact_rules": [
-                {"type": "number_in_context", "keyword": "圆周率", "min": 3.14, "max": 3.15, "name": "圆周率数值"},
-            ],
-        })
+        ev = registry.create(
+            "commonsense.info_accuracy",
+            {
+                "fact_rules": [
+                    {
+                        "type": "number_in_context",
+                        "keyword": "圆周率",
+                        "min": 3.14,
+                        "max": 3.15,
+                        "name": "圆周率数值",
+                    },
+                ],
+            },
+        )
         result = ev.evaluate(tmp_path, {})
         findings = result.details.get("findings", [])
         ctx_errors = [f for f in findings if f.get("rule_type") == "number_in_context"]
@@ -547,11 +564,18 @@ class TestInfoAccuracyEvaluator:
         out = _prepare_output(tmp_path)
         (out / "doc.md").write_text("祖冲之是唐朝最伟大的数学家。")
 
-        ev = registry.create("commonsense.info_accuracy", {
-            "fact_rules": [
-                {"type": "forbidden_pattern", "pattern": r"祖冲之.*唐朝", "reason": "祖冲之非唐朝人"},
-            ],
-        })
+        ev = registry.create(
+            "commonsense.info_accuracy",
+            {
+                "fact_rules": [
+                    {
+                        "type": "forbidden_pattern",
+                        "pattern": r"祖冲之.*唐朝",
+                        "reason": "祖冲之非唐朝人",
+                    },
+                ],
+            },
+        )
         result = ev.evaluate(tmp_path, {})
         findings = result.details.get("findings", [])
         forbidden_errors = [f for f in findings if f.get("rule_type") == "forbidden_pattern"]
@@ -579,17 +603,14 @@ class TestInfoAccuracyEvaluator:
         """三项以上加法应正确验证完整表达式，而非子表达式。"""
         out = _prepare_output(tmp_path)
         (out / "math.md").write_text(
-            "总花费：3 + 2 + 15 = 20 元\n"
-            "总数：24 + 32 + 27 = 83 本\n"
-            "总分：42 + 38 + 45 = 125 分"
+            "总花费：3 + 2 + 15 = 20 元\n总数：24 + 32 + 27 = 83 本\n总分：42 + 38 + 45 = 125 分"
         )
 
         ev = registry.create("commonsense.info_accuracy")
         result = ev.evaluate(tmp_path, {})
         assert result.status == EvalStatus.PASS
         arith_errors = [
-            f for f in result.details.get("findings", [])
-            if f["check_type"] == "arithmetic"
+            f for f in result.details.get("findings", []) if f["check_type"] == "arithmetic"
         ]
         assert len(arith_errors) == 0
 
@@ -602,8 +623,7 @@ class TestInfoAccuracyEvaluator:
         result = ev.evaluate(tmp_path, {})
         assert result.status == EvalStatus.FAIL
         arith_errors = [
-            f for f in result.details.get("findings", [])
-            if f["check_type"] == "arithmetic"
+            f for f in result.details.get("findings", []) if f["check_type"] == "arithmetic"
         ]
         assert len(arith_errors) == 1
         assert "57" in arith_errors[0]["message"]
@@ -611,15 +631,12 @@ class TestInfoAccuracyEvaluator:
     def test_chained_equation_correct(self, tmp_path: Path) -> None:
         """链式等式（A = B + C = D）应只验证最终结果。"""
         out = _prepare_output(tmp_path)
-        (out / "math.md").write_text(
-            "验证：28×8 + 22×9 + 35×4 = 224 + 198 + 140 = 562元"
-        )
+        (out / "math.md").write_text("验证：28×8 + 22×9 + 35×4 = 224 + 198 + 140 = 562元")
 
         ev = registry.create("commonsense.info_accuracy")
         result = ev.evaluate(tmp_path, {})
         arith_errors = [
-            f for f in result.details.get("findings", [])
-            if f["check_type"] == "arithmetic"
+            f for f in result.details.get("findings", []) if f["check_type"] == "arithmetic"
         ]
         assert len(arith_errors) == 0, (
             f"链式展开式不应产生误报: {[e['message'] for e in arith_errors]}"
@@ -633,8 +650,7 @@ class TestInfoAccuracyEvaluator:
         ev = registry.create("commonsense.info_accuracy")
         result = ev.evaluate(tmp_path, {})
         arith_errors = [
-            f for f in result.details.get("findings", [])
-            if f["check_type"] == "arithmetic"
+            f for f in result.details.get("findings", []) if f["check_type"] == "arithmetic"
         ]
         assert len(arith_errors) == 0
 
@@ -646,8 +662,7 @@ class TestInfoAccuracyEvaluator:
         ev = registry.create("commonsense.info_accuracy")
         result = ev.evaluate(tmp_path, {})
         arith_errors = [
-            f for f in result.details.get("findings", [])
-            if f["check_type"] == "arithmetic"
+            f for f in result.details.get("findings", []) if f["check_type"] == "arithmetic"
         ]
         assert len(arith_errors) == 0
 
@@ -659,8 +674,7 @@ class TestInfoAccuracyEvaluator:
         ev = registry.create("commonsense.info_accuracy")
         result = ev.evaluate(tmp_path, {})
         arith_errors = [
-            f for f in result.details.get("findings", [])
-            if f["check_type"] == "arithmetic"
+            f for f in result.details.get("findings", []) if f["check_type"] == "arithmetic"
         ]
         assert len(arith_errors) == 1
         assert "余数错误" in arith_errors[0]["message"]
@@ -709,9 +723,7 @@ class TestChronologicalOrderEvaluator:
     def test_sequences_found(self, tmp_path: Path) -> None:
         """序号提取应统计数量。"""
         out = _prepare_output(tmp_path)
-        (out / "doc.md").write_text(
-            "第一步：准备材料。\n第二步：开始实验。\n第三步：记录结果。"
-        )
+        (out / "doc.md").write_text("第一步：准备材料。\n第二步：开始实验。\n第三步：记录结果。")
 
         ev = registry.create("commonsense.chronological_order")
         result = ev.evaluate(tmp_path, {})
@@ -744,9 +756,7 @@ class TestChronologicalOrderEvaluator:
         assert result.status == EvalStatus.PASS
         # 已知局限：当前会错误提取 "100年后" 为 year=100
         # 修复后改为: assert 100 not in result.details["years_found"]
-        assert 100 not in result.details["years_found"], (
-            "「100年后」是时间段而非年份，不应被提取。"
-        )
+        assert 100 not in result.details["years_found"], "「100年后」是时间段而非年份，不应被提取。"
 
     def test_details_structure(self, tmp_path: Path) -> None:
         """details 应包含标准字段。"""
@@ -780,9 +790,7 @@ class TestChronologicalOrderEvaluator:
     def test_html_tags_stripped(self, tmp_path: Path) -> None:
         """HTML 标签应被去除后再提取年份。"""
         out = _prepare_output(tmp_path)
-        (out / "page.html").write_text(
-            "<html><body><p>1949年</p><p>1978年</p></body></html>"
-        )
+        (out / "page.html").write_text("<html><body><p>1949年</p><p>1978年</p></body></html>")
 
         ev = registry.create("commonsense.chronological_order")
         result = ev.evaluate(tmp_path, {})
@@ -795,9 +803,7 @@ class TestChronologicalOrderEvaluator:
         同时验证持续时间模式（N年后/历史/内/间）不提取。
         """
         out = _prepare_output(tmp_path)
-        (out / "doc.md").write_text(
-            "99999年代码量。100年后气温上升。500年历史。1949年新中国。"
-        )
+        (out / "doc.md").write_text("99999年代码量。100年后气温上升。500年历史。1949年新中国。")
 
         ev = registry.create("commonsense.chronological_order")
         result = ev.evaluate(tmp_path, {})
@@ -835,9 +841,7 @@ class TestChronologicalOrderEvaluator:
         assert 2050 in years, "虚构场景年份 2050 应被提取"
 
         # 已知局限：100 不应被提取（修复后验证）
-        assert 100 not in years, (
-            "「100年后」是时间段而非年份，不应被提取"
-        )
+        assert 100 not in years, "「100年后」是时间段而非年份，不应被提取"
 
 
 class TestLogicalConsistencyEvaluator:
@@ -883,10 +887,7 @@ class TestLogicalConsistencyEvaluator:
     def test_chinese_equal_not_split(self, tmp_path: Path) -> None:
         """\"等于\" 不应被拆为 \"变量等=值\"。"""
         out = _prepare_output(tmp_path)
-        (out / "doc.md").write_text(
-            "十位 4加5等于10，写0进1。\n"
-            "百位 2加1等于4。\n"
-        )
+        (out / "doc.md").write_text("十位 4加5等于10，写0进1。\n百位 2加1等于4。\n")
 
         ev = registry.create("commonsense.logical_consistency")
         result = ev.evaluate(tmp_path, {})
@@ -895,10 +896,7 @@ class TestLogicalConsistencyEvaluator:
     def test_real_variable_contradiction(self, tmp_path: Path) -> None:
         """同一文件中具名变量赋值矛盾应被检测。"""
         out = _prepare_output(tmp_path)
-        (out / "doc.md").write_text(
-            "总面积=567平方米。\n"
-            "根据计算，总面积=658平方米。\n"
-        )
+        (out / "doc.md").write_text("总面积=567平方米。\n根据计算，总面积=658平方米。\n")
 
         ev = registry.create("commonsense.logical_consistency")
         result = ev.evaluate(tmp_path, {})
@@ -915,17 +913,12 @@ class TestLogicalConsistencyEvaluator:
 
         ev = registry.create("commonsense.logical_consistency")
         result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.PASS, (
-            "不同文件中的同名变量不应被当作矛盾"
-        )
+        assert result.status == EvalStatus.PASS, "不同文件中的同名变量不应被当作矛盾"
 
     def test_same_file_contradiction_detected(self, tmp_path: Path) -> None:
         """同一文件中同名变量不同值应被检测。"""
         out = _prepare_output(tmp_path)
-        (out / "a.md").write_text(
-            "方案一：总价 = 350 元\n"
-            "方案二：总价 = 500 元"
-        )
+        (out / "a.md").write_text("方案一：总价 = 350 元\n方案二：总价 = 500 元")
 
         ev = registry.create("commonsense.logical_consistency")
         result = ev.evaluate(tmp_path, {})
@@ -959,10 +952,7 @@ class TestLogicalConsistencyEvaluator:
     def test_chinese_named_var_detected(self, tmp_path: Path) -> None:
         """中文命名的变量赋值矛盾应被检测。"""
         out = _prepare_output(tmp_path)
-        (out / "doc.md").write_text(
-            "三年级一班有学生数=42人。\n"
-            "但实际上学生数=45人。\n"
-        )
+        (out / "doc.md").write_text("三年级一班有学生数=42人。\n但实际上学生数=45人。\n")
 
         ev = registry.create("commonsense.logical_consistency")
         result = ev.evaluate(tmp_path, {})
@@ -1040,9 +1030,7 @@ class TestInfoAccuracyLLM:
     def test_llm_high_score_pass(self, tmp_path: Path) -> None:
         """LLM 高分 + 无规则错误 → PASS。"""
         out = _prepare_output(tmp_path)
-        (out / "doc.md").write_text(
-            "圆周率 π ≈ 3.14，是数学中的重要常数。\n", encoding="utf-8"
-        )
+        (out / "doc.md").write_text("圆周率 π ≈ 3.14，是数学中的重要常数。\n", encoding="utf-8")
 
         record = self._make_mock_record(errors_found=[])
         orch = self._make_mock_orchestrator(
@@ -1050,10 +1038,13 @@ class TestInfoAccuracyLLM:
         )
 
         ev = registry.create("commonsense.info_accuracy")
-        result = ev.evaluate(tmp_path, {
-            "judge_orchestrator": orch,
-            "evidence_dir": tmp_path / "evidence",
-        })
+        result = ev.evaluate(
+            tmp_path,
+            {
+                "judge_orchestrator": orch,
+                "evidence_dir": tmp_path / "evidence",
+            },
+        )
 
         assert result.status == EvalStatus.PASS
         assert result.score == 1.0
@@ -1067,18 +1058,19 @@ class TestInfoAccuracyLLM:
         out = _prepare_output(tmp_path)
         (out / "doc.md").write_text("一些教学内容\n", encoding="utf-8")
 
-        record = self._make_mock_record(
-            judge_id="judge_ia_002", errors_found=["信息不准确"]
-        )
+        record = self._make_mock_record(judge_id="judge_ia_002", errors_found=["信息不准确"])
         orch = self._make_mock_orchestrator(
             {"factual_correctness": 3.0, "statement_accuracy": 4.0}, record
         )
 
         ev = registry.create("commonsense.info_accuracy")
-        result = ev.evaluate(tmp_path, {
-            "judge_orchestrator": orch,
-            "evidence_dir": tmp_path / "evidence",
-        })
+        result = ev.evaluate(
+            tmp_path,
+            {
+                "judge_orchestrator": orch,
+                "evidence_dir": tmp_path / "evidence",
+            },
+        )
 
         assert result.status == EvalStatus.FAIL
         assert result.score == 0.0
@@ -1095,10 +1087,13 @@ class TestInfoAccuracyLLM:
         )
 
         ev = registry.create("commonsense.info_accuracy")
-        result = ev.evaluate(tmp_path, {
-            "judge_orchestrator": orch,
-            "evidence_dir": tmp_path / "evidence",
-        })
+        result = ev.evaluate(
+            tmp_path,
+            {
+                "judge_orchestrator": orch,
+                "evidence_dir": tmp_path / "evidence",
+            },
+        )
 
         # 规则有 error 即使 LLM 高分也 FAIL
         assert result.status == EvalStatus.FAIL
@@ -1114,10 +1109,13 @@ class TestInfoAccuracyLLM:
         orch.judge.side_effect = RuntimeError("API timeout")
 
         ev = registry.create("commonsense.info_accuracy")
-        result = ev.evaluate(tmp_path, {
-            "judge_orchestrator": orch,
-            "evidence_dir": tmp_path / "evidence",
-        })
+        result = ev.evaluate(
+            tmp_path,
+            {
+                "judge_orchestrator": orch,
+                "evidence_dir": tmp_path / "evidence",
+            },
+        )
 
         # 回退到 Phase 1-2，无错误 → PASS
         assert result.status == EvalStatus.PASS
@@ -1129,14 +1127,19 @@ class TestInfoAccuracyLLM:
 
         record = self._make_mock_record(judge_id="judge_ia_004", errors_found=[])
         orch = self._make_mock_orchestrator(
-            {"a": 8.0, "b": 9.0}, record, dims=[]  # 空维度
+            {"a": 8.0, "b": 9.0},
+            record,
+            dims=[],  # 空维度
         )
 
         ev = registry.create("commonsense.info_accuracy")
-        result = ev.evaluate(tmp_path, {
-            "judge_orchestrator": orch,
-            "evidence_dir": tmp_path / "evidence",
-        })
+        result = ev.evaluate(
+            tmp_path,
+            {
+                "judge_orchestrator": orch,
+                "evidence_dir": tmp_path / "evidence",
+            },
+        )
 
         # (8+9)/2/10 = 0.85 >= 0.8 → PASS
         assert result.status == EvalStatus.PASS
@@ -1154,10 +1157,13 @@ class TestInfoAccuracyLLM:
         )
 
         ev = registry.create("commonsense.info_accuracy")
-        result = ev.evaluate(tmp_path, {
-            "judge_orchestrator": orch,
-            "evidence_dir": tmp_path / "evidence",
-        })
+        result = ev.evaluate(
+            tmp_path,
+            {
+                "judge_orchestrator": orch,
+                "evidence_dir": tmp_path / "evidence",
+            },
+        )
 
         assert result.status == EvalStatus.PASS
 
@@ -1205,10 +1211,13 @@ class TestLogicalConsistencyLLM:
         )
 
         ev = registry.create("commonsense.logical_consistency")
-        result = ev.evaluate(tmp_path, {
-            "judge_orchestrator": orch,
-            "evidence_dir": tmp_path / "evidence",
-        })
+        result = ev.evaluate(
+            tmp_path,
+            {
+                "judge_orchestrator": orch,
+                "evidence_dir": tmp_path / "evidence",
+            },
+        )
 
         assert result.status == EvalStatus.PASS
         assert result.score == 1.0
@@ -1229,10 +1238,13 @@ class TestLogicalConsistencyLLM:
         )
 
         ev = registry.create("commonsense.logical_consistency")
-        result = ev.evaluate(tmp_path, {
-            "judge_orchestrator": orch,
-            "evidence_dir": tmp_path / "evidence",
-        })
+        result = ev.evaluate(
+            tmp_path,
+            {
+                "judge_orchestrator": orch,
+                "evidence_dir": tmp_path / "evidence",
+            },
+        )
 
         assert result.status == EvalStatus.FAIL
         assert result.score == 0.0
@@ -1246,10 +1258,13 @@ class TestLogicalConsistencyLLM:
         orch.judge.side_effect = RuntimeError("Connection refused")
 
         ev = registry.create("commonsense.logical_consistency")
-        result = ev.evaluate(tmp_path, {
-            "judge_orchestrator": orch,
-            "evidence_dir": tmp_path / "evidence",
-        })
+        result = ev.evaluate(
+            tmp_path,
+            {
+                "judge_orchestrator": orch,
+                "evidence_dir": tmp_path / "evidence",
+            },
+        )
 
         assert result.status == EvalStatus.PASS
         assert "降级" in result.reason
@@ -1262,14 +1277,19 @@ class TestLogicalConsistencyLLM:
 
         record = self._make_mock_record(judge_id="judge_lc_003")
         orch = self._make_mock_orchestrator(
-            {"a": 7.0, "b": 8.0}, record, dims=[]  # 空维度
+            {"a": 7.0, "b": 8.0},
+            record,
+            dims=[],  # 空维度
         )
 
         ev = registry.create("commonsense.logical_consistency")
-        result = ev.evaluate(tmp_path, {
-            "judge_orchestrator": orch,
-            "evidence_dir": tmp_path / "evidence",
-        })
+        result = ev.evaluate(
+            tmp_path,
+            {
+                "judge_orchestrator": orch,
+                "evidence_dir": tmp_path / "evidence",
+            },
+        )
 
         # (7+8)/2/10 = 0.75 >= 0.6 → PASS
         assert result.status == EvalStatus.PASS
@@ -1288,10 +1308,13 @@ class TestLogicalConsistencyLLM:
         )
 
         ev = registry.create("commonsense.logical_consistency")
-        result = ev.evaluate(tmp_path, {
-            "judge_orchestrator": orch,
-            "evidence_dir": tmp_path / "evidence",
-        })
+        result = ev.evaluate(
+            tmp_path,
+            {
+                "judge_orchestrator": orch,
+                "evidence_dir": tmp_path / "evidence",
+            },
+        )
 
         assert result.status == EvalStatus.PASS
 
@@ -1307,9 +1330,12 @@ class TestLogicalConsistencyLLM:
         )
 
         ev = registry.create("commonsense.logical_consistency")
-        result = ev.evaluate(tmp_path, {
-            "judge_orchestrator": orch,
-            "evidence_dir": tmp_path / "evidence",
-        })
+        result = ev.evaluate(
+            tmp_path,
+            {
+                "judge_orchestrator": orch,
+                "evidence_dir": tmp_path / "evidence",
+            },
+        )
 
         assert result.status == EvalStatus.PASS

@@ -104,7 +104,8 @@ class DirectoryCollector:
         output_dir.mkdir(parents=True, exist_ok=True)
         manifest_path = output_dir / "_manifest.json"
         manifest_path.write_text(
-            manifest.model_dump_json(indent=2), encoding="utf-8",
+            manifest.model_dump_json(indent=2),
+            encoding="utf-8",
         )
         return manifest_path
 
@@ -124,14 +125,16 @@ class DirectoryCollector:
             depth = len(rel_path.parts) - 1  # 文件所在深度
             parent_module = rel_path.parts[0] if rel_path.parts else ""
 
-            files.append(CollectedFile(
-                relative_path=str(rel_path),
-                absolute_path=path,
-                file_size=path.stat().st_size,
-                depth=depth,
-                parent_module=parent_module,
-                file_type=path.suffix.lower(),
-            ))
+            files.append(
+                CollectedFile(
+                    relative_path=str(rel_path),
+                    absolute_path=path,
+                    file_size=path.stat().st_size,
+                    depth=depth,
+                    parent_module=parent_module,
+                    file_type=path.suffix.lower(),
+                )
+            )
 
         return sorted(files, key=lambda f: f.relative_path)
 
@@ -152,12 +155,14 @@ class DirectoryCollector:
                 )
                 for f in module_files
             ]
-            modules.append(DirectoryManifestModule(
-                name=module_name,
-                path=f"{module_name}/",
-                file_count=len(module_files),
-                children=children,
-            ))
+            modules.append(
+                DirectoryManifestModule(
+                    name=module_name,
+                    path=f"{module_name}/",
+                    file_count=len(module_files),
+                    children=children,
+                )
+            )
 
         return modules
 

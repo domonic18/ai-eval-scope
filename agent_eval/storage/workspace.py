@@ -166,7 +166,8 @@ class RunWorkspace:
             **(metadata or {}),
         }
         (self.root / "run_manifest.json").write_text(
-            json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8",
+            json.dumps(manifest, ensure_ascii=False, indent=2),
+            encoding="utf-8",
         )
 
     def list_packages(self) -> list[str]:

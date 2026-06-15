@@ -92,12 +92,14 @@ class PackageBuilder:
             status=status,
         )
         (package_dir / "manifest.json").write_text(
-            manifest.model_dump_json(indent=2), encoding="utf-8",
+            manifest.model_dump_json(indent=2),
+            encoding="utf-8",
         )
 
         # 写入 task.json
         (package_dir / "task.json").write_text(
-            task.model_dump_json(indent=2), encoding="utf-8",
+            task.model_dump_json(indent=2),
+            encoding="utf-8",
         )
 
         # 写入 metadata.json
@@ -111,7 +113,8 @@ class PackageBuilder:
                 if hasattr(pkg_metadata, k):
                     setattr(pkg_metadata, k, v)
         (package_dir / "metadata.json").write_text(
-            pkg_metadata.model_dump_json(indent=2), encoding="utf-8",
+            pkg_metadata.model_dump_json(indent=2),
+            encoding="utf-8",
         )
 
         # 写入 trace.json
@@ -124,7 +127,8 @@ class PackageBuilder:
             "error": None,
         }
         (package_dir / "trace.json").write_text(
-            json.dumps(trace, ensure_ascii=False, indent=2), encoding="utf-8",
+            json.dumps(trace, ensure_ascii=False, indent=2),
+            encoding="utf-8",
         )
 
         # 写入 metrics.json
@@ -138,7 +142,8 @@ class PackageBuilder:
             "files_copied": copied_count,
         }
         (package_dir / "metrics.json").write_text(
-            json.dumps(metrics, ensure_ascii=False, indent=2), encoding="utf-8",
+            json.dumps(metrics, ensure_ascii=False, indent=2),
+            encoding="utf-8",
         )
 
         return package_dir
@@ -216,12 +221,14 @@ class PackageBuilder:
             status=status,
         )
         (package_dir / "manifest.json").write_text(
-            pkg_manifest.model_dump_json(indent=2), encoding="utf-8",
+            pkg_manifest.model_dump_json(indent=2),
+            encoding="utf-8",
         )
 
         # 写入 task.json
         (package_dir / "task.json").write_text(
-            task.model_dump_json(indent=2), encoding="utf-8",
+            task.model_dump_json(indent=2),
+            encoding="utf-8",
         )
 
         # 写入 metadata.json
@@ -235,7 +242,8 @@ class PackageBuilder:
                 if hasattr(pkg_metadata, k):
                     setattr(pkg_metadata, k, v)
         (package_dir / "metadata.json").write_text(
-            pkg_metadata.model_dump_json(indent=2), encoding="utf-8",
+            pkg_metadata.model_dump_json(indent=2),
+            encoding="utf-8",
         )
 
         # 写入 trace.json
@@ -248,7 +256,8 @@ class PackageBuilder:
             "error": None,
         }
         (package_dir / "trace.json").write_text(
-            json.dumps(trace, ensure_ascii=False, indent=2), encoding="utf-8",
+            json.dumps(trace, ensure_ascii=False, indent=2),
+            encoding="utf-8",
         )
 
         # 写入 metrics.json
@@ -262,7 +271,8 @@ class PackageBuilder:
             "modules": len(manifest_data.modules),
         }
         (package_dir / "metrics.json").write_text(
-            json.dumps(metrics, ensure_ascii=False, indent=2), encoding="utf-8",
+            json.dumps(metrics, ensure_ascii=False, indent=2),
+            encoding="utf-8",
         )
 
         return package_dir

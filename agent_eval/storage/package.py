@@ -56,7 +56,8 @@ class DirectoryManifestModule(BaseModel):
     path: str = Field(description="模块相对路径")
     file_count: int = Field(description="文件数量")
     children: list[DirectoryManifestFile] = Field(
-        default_factory=list, description="模块下文件列表",
+        default_factory=list,
+        description="模块下文件列表",
     )
 
 
@@ -67,11 +68,13 @@ class DirectoryManifest(BaseModel):
     root_dir: str = Field(description="输出文件根目录（相对路径）")
     total_files: int = Field(description="文件总数")
     file_types: dict[str, int] = Field(
-        default_factory=dict, description="按扩展名统计",
+        default_factory=dict,
+        description="按扩展名统计",
     )
     hierarchy_depth: int = Field(default=0, description="最大目录深度")
     modules: list[DirectoryManifestModule] = Field(
-        default_factory=list, description="顶层模块列表",
+        default_factory=list,
+        description="顶层模块列表",
     )
 
 
@@ -92,22 +95,28 @@ class ExecutionPackage(BaseModel):
 
     manifest: PackageManifest
     task_data: dict[str, Any] = Field(
-        default_factory=dict, description="原始任务定义（task.json 内容）",
+        default_factory=dict,
+        description="原始任务定义（task.json 内容）",
     )
     output_dir: Path | None = Field(
-        default=None, description="output/ 目录路径",
+        default=None,
+        description="output/ 目录路径",
     )
     trace: dict[str, Any] | None = Field(
-        default=None, description="执行轨迹（trace.json 内容）",
+        default=None,
+        description="执行轨迹（trace.json 内容）",
     )
     metrics: dict[str, Any] | None = Field(
-        default=None, description="过程指标（metrics.json 内容）",
+        default=None,
+        description="过程指标（metrics.json 内容）",
     )
     metadata: PackageMetadata = Field(
-        default_factory=PackageMetadata, description="SUT 与环境元信息",
+        default_factory=PackageMetadata,
+        description="SUT 与环境元信息",
     )
     directory_manifest: DirectoryManifest | None = Field(
-        default=None, description="目录清单（仅目录模式）",
+        default=None,
+        description="目录清单（仅目录模式）",
     )
 
     model_config = {"arbitrary_types_allowed": True}
@@ -117,6 +126,7 @@ class ExecutionPackage(BaseModel):
         """从目录加载 ExecutionPackage。"""
         if not package_dir.exists():
             from agent_eval.core.exceptions import PackageNotFoundError
+
             raise PackageNotFoundError(str(package_dir))
 
         manifest = PackageManifest.model_validate_json(
@@ -169,22 +179,27 @@ class ExecutionPackage(BaseModel):
         package_dir.mkdir(parents=True, exist_ok=True)
 
         (package_dir / "manifest.json").write_text(
-            self.manifest.model_dump_json(indent=2), encoding="utf-8",
+            self.manifest.model_dump_json(indent=2),
+            encoding="utf-8",
         )
         (package_dir / "task.json").write_text(
-            json.dumps(self.task_data, ensure_ascii=False, indent=2), encoding="utf-8",
+            json.dumps(self.task_data, ensure_ascii=False, indent=2),
+            encoding="utf-8",
         )
         (package_dir / "metadata.json").write_text(
-            self.metadata.model_dump_json(indent=2), encoding="utf-8",
+            self.metadata.model_dump_json(indent=2),
+            encoding="utf-8",
         )
 
         if self.trace is not None:
             (package_dir / "trace.json").write_text(
-                json.dumps(self.trace, ensure_ascii=False, indent=2), encoding="utf-8",
+                json.dumps(self.trace, ensure_ascii=False, indent=2),
+                encoding="utf-8",
             )
         if self.metrics is not None:
             (package_dir / "metrics.json").write_text(
-                json.dumps(self.metrics, ensure_ascii=False, indent=2), encoding="utf-8",
+                json.dumps(self.metrics, ensure_ascii=False, indent=2),
+                encoding="utf-8",
             )
 
         return package_dir
@@ -274,19 +289,23 @@ class EvaluationResult(BaseModel):
         result_dir.mkdir(parents=True, exist_ok=True)
 
         (result_dir / "manifest.json").write_text(
-            self.manifest.model_dump_json(indent=2), encoding="utf-8",
+            self.manifest.model_dump_json(indent=2),
+            encoding="utf-8",
         )
         (result_dir / "rule_results.json").write_text(
-            json.dumps(self.rule_results, ensure_ascii=False, indent=2), encoding="utf-8",
+            json.dumps(self.rule_results, ensure_ascii=False, indent=2),
+            encoding="utf-8",
         )
         (result_dir / "scores.json").write_text(
-            self.scores.model_dump_json(indent=2), encoding="utf-8",
+            self.scores.model_dump_json(indent=2),
+            encoding="utf-8",
         )
         if self.report_markdown:
             (result_dir / "report.md").write_text(self.report_markdown, encoding="utf-8")
         if self.report_json:
             (result_dir / "report.json").write_text(
-                json.dumps(self.report_json, ensure_ascii=False, indent=2), encoding="utf-8",
+                json.dumps(self.report_json, ensure_ascii=False, indent=2),
+                encoding="utf-8",
             )
         (result_dir / "evidence").mkdir(exist_ok=True)
 

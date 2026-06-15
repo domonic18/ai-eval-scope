@@ -21,6 +21,7 @@ class TestEvaluatorRegistry:
 
             def evaluate(self, sample, context):
                 from agent_eval.core.types import EvalStatus
+
                 return self._make_result(status=EvalStatus.PASS, score=1.0, reason="ok")
 
         ev = reg.create("test.dummy")
@@ -39,9 +40,7 @@ class TestEvaluatorRegistry:
             method = EvalMethod.RULE
 
             def evaluate(self, sample, context):
-                return self._make_result(
-                    status=EvalStatus.PASS, score=1.0, reason=str(self.params)
-                )
+                return self._make_result(status=EvalStatus.PASS, score=1.0, reason=str(self.params))
 
         ev = reg.create("test.with_params", {"key": "value"})
         assert ev.params == {"key": "value"}
@@ -59,14 +58,17 @@ class TestEvaluatorRegistry:
         class Dup1(BaseEvaluator):
             evaluator_id = "test.dup"
             name = "Dup1"
+
             def evaluate(self, sample, context):
                 pass
 
         with pytest.raises(ValueError, match="冲突"):
+
             @reg.register("test.dup")
             class Dup2(BaseEvaluator):
                 evaluator_id = "test.dup"
                 name = "Dup2"
+
                 def evaluate(self, sample, context):
                     pass
 

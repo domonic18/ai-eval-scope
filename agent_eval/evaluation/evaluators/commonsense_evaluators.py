@@ -182,12 +182,7 @@ def _eval_simple_expr(expr: str) -> float | None:
     返回浮点结果，解析失败返回 None。
     """
     # 归一化运算符
-    norm = (
-        expr.replace("＋", "+")
-        .replace("－", "-")
-        .replace("×", "*")
-        .replace("÷", "/")
-    )
+    norm = expr.replace("＋", "+").replace("－", "-").replace("×", "*").replace("÷", "/")
     # 词法分析：提取 数字 / 运算符
     tokens: list[str | float] = []
     for m in re.finditer(r"(\d+\.?\d*)|([+\-*/])", norm):
@@ -378,18 +373,20 @@ class InfoAccuracyEvaluator(BaseEvaluator):
                 # 验证: dividend == quotient × divisor + remainder
                 expected = quotient * divisor + remainder
                 if abs(expected - dividend) > 0.01:
-                    findings.append({
-                        "file": filename,
-                        "check_type": "arithmetic",
-                        "severity": "error",
-                        "message": (
-                            f"除法余数错误: {float(dividend_s):g} ÷ {float(divisor_s):g} "
-                            f"= {float(quotient_s):g} 余 {float(remainder_s):g}"
-                            f"（验证: {float(quotient_s):g} × {float(divisor_s):g}"
-                            f" + {float(remainder_s):g}"
-                            f" = {expected:g} ≠ {float(dividend_s):g}）"
-                        ),
-                    })
+                    findings.append(
+                        {
+                            "file": filename,
+                            "check_type": "arithmetic",
+                            "severity": "error",
+                            "message": (
+                                f"除法余数错误: {float(dividend_s):g} ÷ {float(divisor_s):g} "
+                                f"= {float(quotient_s):g} 余 {float(remainder_s):g}"
+                                f"（验证: {float(quotient_s):g} × {float(divisor_s):g}"
+                                f" + {float(remainder_s):g}"
+                                f" = {expected:g} ≠ {float(dividend_s):g}）"
+                            ),
+                        }
+                    )
 
         # ─── Pass 2: 一般等式 "LHS = result" ───
         for filename, text in file_texts.items():
@@ -418,15 +415,16 @@ class InfoAccuracyEvaluator(BaseEvaluator):
 
                 checks += 1
                 if abs(expected - result_val) > 0.01:
-                    findings.append({
-                        "file": filename,
-                        "check_type": "arithmetic",
-                        "severity": "error",
-                        "message": (
-                            f"算术错误: {lhs_expr.strip()} = {result_s}"
-                            f"（应为 {expected:g}）"
-                        ),
-                    })
+                    findings.append(
+                        {
+                            "file": filename,
+                            "check_type": "arithmetic",
+                            "severity": "error",
+                            "message": (
+                                f"算术错误: {lhs_expr.strip()} = {result_s}（应为 {expected:g}）"
+                            ),
+                        }
+                    )
 
         return findings, checks
 
@@ -465,12 +463,14 @@ class InfoAccuracyEvaluator(BaseEvaluator):
 
                     checks += 1
                     if abs(val - value) > tolerance:
-                        findings.append({
-                            "file": filename,
-                            "check_type": "constant",
-                            "severity": "error",
-                            "message": f"{name}: 值 {val} 与标准值 {value} 偏差超过容差 {tolerance}",
-                        })
+                        findings.append(
+                            {
+                                "file": filename,
+                                "check_type": "constant",
+                                "severity": "error",
+                                "message": f"{name}: 值 {val} 与标准值 {value} 偏差超过容差 {tolerance}",
+                            }
+                        )
 
         return findings, checks
 
@@ -503,12 +503,14 @@ class InfoAccuracyEvaluator(BaseEvaluator):
 
             for filename, text in file_texts.items():
                 if pattern.search(text):
-                    findings.append({
-                        "file": filename,
-                        "check_type": "misconception",
-                        "severity": severity,
-                        "message": f"{description}（正确: {correct}）",
-                    })
+                    findings.append(
+                        {
+                            "file": filename,
+                            "check_type": "misconception",
+                            "severity": severity,
+                            "message": f"{description}（正确: {correct}）",
+                        }
+                    )
 
         return findings, 0
 
@@ -533,25 +535,29 @@ class InfoAccuracyEvaluator(BaseEvaluator):
                 checks += 1
                 keyword = rule.get("keyword", "")
                 if keyword and keyword not in merged_text:
-                    findings.append({
-                        "file": "(全局)",
-                        "check_type": "rule",
-                        "severity": "error",
-                        "message": f"缺少必要内容: '{keyword}'",
-                        "rule_type": rule_type,
-                    })
+                    findings.append(
+                        {
+                            "file": "(全局)",
+                            "check_type": "rule",
+                            "severity": "error",
+                            "message": f"缺少必要内容: '{keyword}'",
+                            "rule_type": rule_type,
+                        }
+                    )
 
             elif rule_type == "must_not_contain":
                 checks += 1
                 wrong = rule.get("pattern", "")
                 if wrong and wrong in merged_text:
-                    findings.append({
-                        "file": "(全局)",
-                        "check_type": "rule",
-                        "severity": "error",
-                        "message": f"包含错误表述: '{wrong[:50]}'",
-                        "rule_type": rule_type,
-                    })
+                    findings.append(
+                        {
+                            "file": "(全局)",
+                            "check_type": "rule",
+                            "severity": "error",
+                            "message": f"包含错误表述: '{wrong[:50]}'",
+                            "rule_type": rule_type,
+                        }
+                    )
 
             elif rule_type == "value_range":
                 sub_findings, sub_checks = self._check_value_range_rule(file_texts, rule)
@@ -603,21 +609,25 @@ class InfoAccuracyEvaluator(BaseEvaluator):
                     continue
                 checks += 1
                 if min_val is not None and val < min_val:
-                    findings.append({
-                        "file": filename,
-                        "check_type": "rule",
-                        "severity": "error",
-                        "message": f"{name}: 值 {val} 低于最小值 {min_val}",
-                        "rule_type": "value_range",
-                    })
+                    findings.append(
+                        {
+                            "file": filename,
+                            "check_type": "rule",
+                            "severity": "error",
+                            "message": f"{name}: 值 {val} 低于最小值 {min_val}",
+                            "rule_type": "value_range",
+                        }
+                    )
                 if max_val is not None and val > max_val:
-                    findings.append({
-                        "file": filename,
-                        "check_type": "rule",
-                        "severity": "error",
-                        "message": f"{name}: 值 {val} 超过最大值 {max_val}",
-                        "rule_type": "value_range",
-                    })
+                    findings.append(
+                        {
+                            "file": filename,
+                            "check_type": "rule",
+                            "severity": "error",
+                            "message": f"{name}: 值 {val} 超过最大值 {max_val}",
+                            "rule_type": "value_range",
+                        }
+                    )
 
         return findings, checks
 
@@ -644,24 +654,28 @@ class InfoAccuracyEvaluator(BaseEvaluator):
             # 至少一个文件需要匹配
             found = any(compiled.search(text) for text in file_texts.values())
             if not found:
-                findings.append({
-                    "file": "(全局)",
-                    "check_type": "rule",
-                    "severity": "error",
-                    "message": f"{name}: 未找到匹配 '{pattern_str}' 的内容",
-                    "rule_type": "regex_match",
-                })
+                findings.append(
+                    {
+                        "file": "(全局)",
+                        "check_type": "rule",
+                        "severity": "error",
+                        "message": f"{name}: 未找到匹配 '{pattern_str}' 的内容",
+                        "rule_type": "regex_match",
+                    }
+                )
         else:
             # 不应有任何文件匹配
             for filename, text in file_texts.items():
                 if compiled.search(text):
-                    findings.append({
-                        "file": filename,
-                        "check_type": "rule",
-                        "severity": "error",
-                        "message": f"{name}: 不应包含匹配 '{pattern_str}' 的内容",
-                        "rule_type": "regex_match",
-                    })
+                    findings.append(
+                        {
+                            "file": filename,
+                            "check_type": "rule",
+                            "severity": "error",
+                            "message": f"{name}: 不应包含匹配 '{pattern_str}' 的内容",
+                            "rule_type": "regex_match",
+                        }
+                    )
 
         return findings, checks
 
@@ -697,21 +711,25 @@ class InfoAccuracyEvaluator(BaseEvaluator):
                     continue
                 checks += 1
                 if min_val is not None and val < min_val:
-                    findings.append({
-                        "file": filename,
-                        "check_type": "rule",
-                        "severity": "error",
-                        "message": f"{name}: 关键词附近数值 {val} 低于最小值 {min_val}",
-                        "rule_type": "number_in_context",
-                    })
+                    findings.append(
+                        {
+                            "file": filename,
+                            "check_type": "rule",
+                            "severity": "error",
+                            "message": f"{name}: 关键词附近数值 {val} 低于最小值 {min_val}",
+                            "rule_type": "number_in_context",
+                        }
+                    )
                 if max_val is not None and val > max_val:
-                    findings.append({
-                        "file": filename,
-                        "check_type": "rule",
-                        "severity": "error",
-                        "message": f"{name}: 关键词附近数值 {val} 超过最大值 {max_val}",
-                        "rule_type": "number_in_context",
-                    })
+                    findings.append(
+                        {
+                            "file": filename,
+                            "check_type": "rule",
+                            "severity": "error",
+                            "message": f"{name}: 关键词附近数值 {val} 超过最大值 {max_val}",
+                            "rule_type": "number_in_context",
+                        }
+                    )
 
         return findings, checks
 
@@ -736,13 +754,15 @@ class InfoAccuracyEvaluator(BaseEvaluator):
         for filename, text in file_texts.items():
             checks += 1
             if compiled.search(text):
-                findings.append({
-                    "file": filename,
-                    "check_type": "rule",
-                    "severity": "error",
-                    "message": reason,
-                    "rule_type": "forbidden_pattern",
-                })
+                findings.append(
+                    {
+                        "file": filename,
+                        "check_type": "rule",
+                        "severity": "error",
+                        "message": reason,
+                        "rule_type": "forbidden_pattern",
+                    }
+                )
 
         return findings, checks
 
@@ -841,7 +861,9 @@ class InfoAccuracyEvaluator(BaseEvaluator):
                 sample_id=context.get("sample_id", "unknown"),
                 template_id="info_accuracy",
                 variables=variables,
-                evidence_dir=Path(evidence_dir) if not isinstance(evidence_dir, Path) else evidence_dir,
+                evidence_dir=Path(evidence_dir)
+                if not isinstance(evidence_dir, Path)
+                else evidence_dir,
                 provider_name=self.params.get("llm_provider"),
             )
         except Exception as e:
@@ -863,7 +885,11 @@ class InfoAccuracyEvaluator(BaseEvaluator):
         avg_score = max(0.0, min(1.0, avg_score))
 
         # 合并 findings 和 LLM 结果
-        llm_errors = record.raw_response.get("errors_found", []) if record and hasattr(record, "raw_response") and isinstance(record.raw_response, dict) else []
+        llm_errors = (
+            record.raw_response.get("errors_found", [])
+            if record and hasattr(record, "raw_response") and isinstance(record.raw_response, dict)
+            else []
+        )
 
         # 计分：合并 rule-based findings + LLM 分数
         rule_errors = [f for f in findings if f["severity"] == "error"]
@@ -946,9 +972,7 @@ class ChronologicalOrderEvaluator(BaseEvaluator):
 
         # 提取年份 — 排除持续时间模式（"100年后""500年历史"等）
         # (?!\s*[后历史内间以来前]) — "N年后/历史/内/间/以/来/前" 是时间段，非年份
-        _YEAR_PATTERN = re.compile(
-            r"(?:公元)?(\d{3,4})\s*年(?!\s*[后历史内间以来前])"
-        )
+        _YEAR_PATTERN = re.compile(r"(?:公元)?(\d{3,4})\s*年(?!\s*[后历史内间以来前])")
         years = _YEAR_PATTERN.findall(text)
         year_list: list[int] = []
         if years:
@@ -959,9 +983,7 @@ class ChronologicalOrderEvaluator(BaseEvaluator):
                     pass  # 时序回溯不一定错误，暂不报告
 
         # 提取序号
-        sequences = re.findall(
-            r"第([一二三四五六七八九十百千\d]+)[章节步骤期]", text
-        )
+        sequences = re.findall(r"第([一二三四五六七八九十百千\d]+)[章节步骤期]", text)
 
         elapsed = (time.monotonic() - start) * 1000
 
@@ -1020,7 +1042,9 @@ class LogicalConsistencyEvaluator(BaseEvaluator):
 
         if orchestrator is not None and evidence_dir is not None:
             # LLM 模式：调用 JudgeOrchestrator
-            return self._evaluate_with_llm(text, context, orchestrator, evidence_dir, output_dir, start)
+            return self._evaluate_with_llm(
+                text, context, orchestrator, evidence_dir, output_dir, start
+            )
 
         # 降级模式：Rule-based 基本矛盾检查
         return self._evaluate_rule_based(text, output_dir, start)
@@ -1052,7 +1076,9 @@ class LogicalConsistencyEvaluator(BaseEvaluator):
                 sample_id=context.get("sample_id", "unknown"),
                 template_id="logical_consistency",
                 variables=variables,
-                evidence_dir=Path(evidence_dir) if not isinstance(evidence_dir, Path) else evidence_dir,
+                evidence_dir=Path(evidence_dir)
+                if not isinstance(evidence_dir, Path)
+                else evidence_dir,
                 provider_name=self.params.get("llm_provider"),
             )
         except Exception as e:
@@ -1143,9 +1169,7 @@ class LogicalConsistencyEvaluator(BaseEvaluator):
                 ctx_start = max(0, m.start() - 25)
                 ctx_end = min(len(ftext), m.end() + 15)
                 ctx = ftext[ctx_start:ctx_end].replace("\n", " ").strip()
-                var_contexts.setdefault(name, []).append(
-                    f"{name}={value} (…{ctx}…)"
-                )
+                var_contexts.setdefault(name, []).append(f"{name}={value} (…{ctx}…)")
 
             # Pass 1: 精确匹配 — 同名变量有多个不同值
             reported_vars: set[str] = set()
@@ -1153,28 +1177,27 @@ class LogicalConsistencyEvaluator(BaseEvaluator):
                 if len(values) > 1:
                     reported_vars.add(name)
                     contexts = var_contexts.get(name, [])
-                    findings.append({
-                        "file": filename,
-                        "check_type": "variable_contradiction",
-                        "severity": "error",
-                        "variable": name,
-                        "values": sorted(values),
-                        "occurrences": len(contexts),
-                        "contexts": contexts[:5],
-                    })
+                    findings.append(
+                        {
+                            "file": filename,
+                            "check_type": "variable_contradiction",
+                            "severity": "error",
+                            "variable": name,
+                            "values": sorted(values),
+                            "occurrences": len(contexts),
+                            "contexts": contexts[:5],
+                        }
+                    )
 
             # Pass 2: 中文公共后缀匹配 — "有学生数" 与 "但学生数"
             # 共享后缀 "学生数" → 视为同一变量的不同表述
             cjk_vars = {
-                n: vs for n, vs in var_values.items()
+                n: vs
+                for n, vs in var_values.items()
                 if n not in reported_vars and any("一" <= c <= "鿿" for c in n)
             }
             if len(cjk_vars) >= 2:
-                findings.extend(
-                    self._check_cjk_suffix_conflicts(
-                        filename, cjk_vars, var_contexts
-                    )
-                )
+                findings.extend(self._check_cjk_suffix_conflicts(filename, cjk_vars, var_contexts))
 
         files_checked = _collect_file_names(output_dir)
 
@@ -1193,8 +1216,7 @@ class LogicalConsistencyEvaluator(BaseEvaluator):
             )
         else:
             error_msgs = [
-                f"{f['file']}: 变量「{f['variable']}」"
-                f"有 {len(f['values'])} 个不同值 {f['values']}"
+                f"{f['file']}: 变量「{f['variable']}」有 {len(f['values'])} 个不同值 {f['values']}"
                 for f in findings
             ]
             return self._make_result(
@@ -1227,7 +1249,7 @@ class LogicalConsistencyEvaluator(BaseEvaluator):
         seen_pairs: set[frozenset[str]] = set()
 
         for i, name_a in enumerate(names):
-            for name_b in names[i + 1:]:
+            for name_b in names[i + 1 :]:
                 pair_key = frozenset({name_a, name_b})
                 if pair_key in seen_pairs:
                     continue
@@ -1249,19 +1271,19 @@ class LogicalConsistencyEvaluator(BaseEvaluator):
                 # 合并两个变量的值
                 merged_values = cjk_vars[name_a] | cjk_vars[name_b]
                 if len(merged_values) > 1:
-                    merged_contexts = (
-                        var_contexts.get(name_a, []) + var_contexts.get(name_b, [])
+                    merged_contexts = var_contexts.get(name_a, []) + var_contexts.get(name_b, [])
+                    findings.append(
+                        {
+                            "file": filename,
+                            "check_type": "variable_contradiction",
+                            "severity": "error",
+                            "variable": suffix,
+                            "matched_as": [name_a, name_b],
+                            "values": sorted(merged_values),
+                            "occurrences": len(merged_contexts),
+                            "contexts": merged_contexts[:5],
+                        }
                     )
-                    findings.append({
-                        "file": filename,
-                        "check_type": "variable_contradiction",
-                        "severity": "error",
-                        "variable": suffix,
-                        "matched_as": [name_a, name_b],
-                        "values": sorted(merged_values),
-                        "occurrences": len(merged_contexts),
-                        "contexts": merged_contexts[:5],
-                    })
 
         return findings
 
@@ -1337,13 +1359,9 @@ class MathFormulaEvaluator(BaseEvaluator):
             formulas_checked += len(formula_patterns)
             for formula in formula_patterns:
                 if formula.count("(") != formula.count(")"):
-                    errors.append(
-                        f"{filename}: 公式括号不匹配: {formula[:50]}"
-                    )
+                    errors.append(f"{filename}: 公式括号不匹配: {formula[:50]}")
                 if formula.count("{") != formula.count("}"):
-                    errors.append(
-                        f"{filename}: 公式花括号不匹配: {formula[:50]}"
-                    )
+                    errors.append(f"{filename}: 公式花括号不匹配: {formula[:50]}")
 
             # 算术等式验证（复用完整左侧正则 + 竖式上下文跳过）
             remainder_positions: set[int] = set()
@@ -1393,15 +1411,11 @@ class MathFormulaEvaluator(BaseEvaluator):
                 arith_checks += 1
                 if abs(expected - result_val) > 0.01:
                     errors.append(
-                        f"{filename}: 算术错误 "
-                        f"{lhs_expr.strip()} = {result_s}"
-                        f"（应为 {expected:g}）"
+                        f"{filename}: 算术错误 {lhs_expr.strip()} = {result_s}（应为 {expected:g}）"
                     )
 
             # 符号公式校验
-            sym_errors, sym_checks = self._check_symbolic_formulas(
-                filename, text
-            )
+            sym_errors, sym_checks = self._check_symbolic_formulas(filename, text)
             errors.extend(sym_errors)
             symbolic_checks += sym_checks
 
@@ -1438,9 +1452,7 @@ class MathFormulaEvaluator(BaseEvaluator):
 
     # ─── 符号公式校验 ───
 
-    def _check_symbolic_formulas(
-        self, filename: str, text: str
-    ) -> tuple[list[str], int]:
+    def _check_symbolic_formulas(self, filename: str, text: str) -> tuple[list[str], int]:
         """利用 domain_facts 校验文档中的符号公式。
 
         Returns:
@@ -1512,8 +1524,7 @@ class MathFormulaEvaluator(BaseEvaluator):
         candidates = [
             entry
             for entry in formula_index
-            if norm_name in entry["canonical_name"]
-            or entry["canonical_name"] in norm_name
+            if norm_name in entry["canonical_name"] or entry["canonical_name"] in norm_name
         ]
         if len(candidates) == 1:
             return candidates[0]
@@ -1625,6 +1636,10 @@ class UnitConsistencyEvaluator(BaseEvaluator):
                 status=EvalStatus.FAIL,
                 score=0.0,
                 reason=f"发现 {len(errors)} 处单位问题",
-                details={"errors": errors, "files_checked": files_checked, "content_length": len(text)},
+                details={
+                    "errors": errors,
+                    "files_checked": files_checked,
+                    "content_length": len(text),
+                },
                 duration_ms=elapsed,
             )
