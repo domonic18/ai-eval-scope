@@ -1,0 +1,75 @@
+template_id: visual_quality
+name: 视觉质量评估
+dimensions:
+  - dim_id: layout
+    name: 排版
+    description: 页面布局是否合理、结构清晰、留白适当
+    weight: 0.3
+    score_range: [0.0, 10.0]
+  - dim_id: color_scheme
+    name: 配色
+    description: 配色是否协调、符合教学/阅读场景、对比度适宜
+    weight: 0.25
+    score_range: [0.0, 10.0]
+  - dim_id: information_hierarchy
+    name: 信息层级
+    description: 标题/正文/重点的层级是否分明、主次清晰
+    weight: 0.25
+    score_range: [0.0, 10.0]
+  - dim_id: readability
+    name: 可读性
+    description: 文字、字号、行距是否易读，图文搭配是否得当
+    weight: 0.2
+    score_range: [0.0, 10.0]
+system_prompt: |
+  你是一位文档视觉设计评审专家。请基于给出的文档截图，评估其视觉质量。
+  评估时请关注：
+  1. 排版：页面布局是否合理、结构清晰、留白适当
+  2. 配色：配色是否协调、对比度是否适宜阅读
+  3. 信息层级：标题/正文/重点的层级是否分明
+  4. 可读性：字号、行距、图文搭配是否易读
+
+  注意：评分基于截图呈现的实际视觉效果，而非源码。如截图为空白或渲染异常，各项给低分并在总结中说明。
+
+  你必须严格按照指定的 JSON 格式输出评估结果，字段名和结构不能修改。
+user_prompt_template: |
+  请评估以下文档的视觉质量：
+
+  ## 文档标题
+  {{ title }}
+
+  ## 文档数量
+  共 {{ num_documents }} 个文档的截图
+
+  请结合截图，严格按照以下 JSON 格式输出评估结果（每个维度评分范围 0-10）：
+
+  ```json
+  {
+    "layout": <0-10>,
+    "color_scheme": <0-10>,
+    "information_hierarchy": <0-10>,
+    "readability": <0-10>,
+    "summary": "<评估总结>"
+  }
+  ```
+output_schema:
+  type: object
+  properties:
+    layout:
+      type: number
+    color_scheme:
+      type: number
+    information_hierarchy:
+      type: number
+    readability:
+      type: number
+    summary:
+      type: string
+  required:
+    - layout
+    - color_scheme
+    - information_hierarchy
+    - readability
+temperature: 0.0
+seed: 42
+num_samples: 1

@@ -32,7 +32,6 @@ class ResponseFormatEvaluator(BaseEvaluator):
     def evaluate(self, sample: Any, context: dict[str, Any]) -> Any:
         import time
 
-
         start = time.monotonic()
         allowed = set(self.params.get("allowed_formats", ["md", "html"]))
         allowed_exts = set()
@@ -56,11 +55,7 @@ class ResponseFormatEvaluator(BaseEvaluator):
             )
 
         # 收集所有输出文件（跳过 _manifest.json）
-        files = [
-            f
-            for f in output_dir.rglob("*")
-            if f.is_file() and f.name != "_manifest.json"
-        ]
+        files = [f for f in output_dir.rglob("*") if f.is_file() and f.name != "_manifest.json"]
 
         if not files:
             return self._make_result(
@@ -161,7 +156,6 @@ class DocumentCountEvaluator(BaseEvaluator):
     def evaluate(self, sample: Any, context: dict[str, Any]) -> Any:
         import time
 
-
         start = time.monotonic()
 
         constraints = context.get("constraints", {})
@@ -182,11 +176,7 @@ class DocumentCountEvaluator(BaseEvaluator):
             )
 
         # 统计文件数（排除 _manifest.json）
-        files = [
-            f
-            for f in output_dir.rglob("*")
-            if f.is_file() and f.name != "_manifest.json"
-        ]
+        files = [f for f in output_dir.rglob("*") if f.is_file() and f.name != "_manifest.json"]
         actual = len(files)
         elapsed = (time.monotonic() - start) * 1000
 
@@ -195,7 +185,12 @@ class DocumentCountEvaluator(BaseEvaluator):
             status=EvalStatus.PASS if passed else EvalStatus.FAIL,
             score=1.0 if passed else 0.0,
             reason=f"实际 {actual} 个文档，要求 [{min_docs}, {max_docs}]",
-            details={"actual": actual, "min": min_docs, "max": max_docs, "checked_files": [f.name for f in files]},
+            details={
+                "actual": actual,
+                "min": min_docs,
+                "max": max_docs,
+                "checked_files": [f.name for f in files],
+            },
             duration_ms=elapsed,
         )
 
@@ -223,7 +218,6 @@ class StructureComplianceEvaluator(BaseEvaluator):
 
     def evaluate(self, sample: Any, context: dict[str, Any]) -> Any:
         import time
-
 
         start = time.monotonic()
 
@@ -276,7 +270,9 @@ class StructureComplianceEvaluator(BaseEvaluator):
                 # 检查标题层级是否超出限制
                 for level, text in headings:
                     if level > max_heading_depth:
-                        issues.append(f"{f.name}: 标题层级 {level} 超出限制 {max_heading_depth} — '{text[:30]}'")
+                        issues.append(
+                            f"{f.name}: 标题层级 {level} 超出限制 {max_heading_depth} — '{text[:30]}'"
+                        )
 
         elapsed = (time.monotonic() - start) * 1000
 
@@ -365,7 +361,6 @@ class HtmlValidityEvaluator(BaseEvaluator):
 
     def evaluate(self, sample: Any, context: dict[str, Any]) -> Any:
         import time
-
 
         start = time.monotonic()
         check_html_only = self.params.get("check_html_only", True)

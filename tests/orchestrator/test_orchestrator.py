@@ -198,9 +198,7 @@ class TestEvalOnly:
 class TestLoadPackagesErrorPaths:
     """包加载错误路径测试。"""
 
-    def test_load_single_package_with_invalid_manifest(
-        self, tmp_path: Path
-    ) -> None:
+    def test_load_single_package_with_invalid_manifest(self, tmp_path: Path) -> None:
         """单个包目录 manifest.json 存在但内容无效 → OrchestratorError。"""
         pkg_dir = tmp_path / "bad_pkg"
         pkg_dir.mkdir()
@@ -213,9 +211,7 @@ class TestLoadPackagesErrorPaths:
         with pytest.raises(OrchestratorError, match="加载执行包失败"):
             orch._load_packages(pkg_dir)
 
-    def test_load_packages_skips_invalid_subdir(
-        self, tmp_path: Path, golden_package: Path
-    ) -> None:
+    def test_load_packages_skips_invalid_subdir(self, tmp_path: Path, golden_package: Path) -> None:
         """子目录含 manifest.json 但加载失败时跳过（不中断）。"""
         # 有效包在 golden_package 的父目录
         parent = tmp_path / "pkgs"
@@ -223,6 +219,7 @@ class TestLoadPackagesErrorPaths:
 
         # 复制 golden 包
         import shutil
+
         good = parent / "good_pkg"
         shutil.copytree(golden_package, good)
 
@@ -241,9 +238,7 @@ class TestLoadPackagesErrorPaths:
 class TestCacheErrorPaths:
     """缓存错误路径测试。"""
 
-    def test_load_corrupt_cache_file(
-        self, tmp_path: Path
-    ) -> None:
+    def test_load_corrupt_cache_file(self, tmp_path: Path) -> None:
         """缓存文件损坏时不崩溃。"""
         from agent_eval.evaluation.engine import build_default_pipeline
         from agent_eval.evaluation.registry import registry
@@ -262,9 +257,7 @@ class TestCacheErrorPaths:
         orch._load_cache(ws, engine)
         assert len(engine._cache) == 0
 
-    def test_load_cache_with_corrupt_entry(
-        self, tmp_path: Path
-    ) -> None:
+    def test_load_cache_with_corrupt_entry(self, tmp_path: Path) -> None:
         """缓存文件合法 JSON 但条目损坏时不崩溃。"""
         from agent_eval.evaluation.engine import build_default_pipeline
         from agent_eval.evaluation.registry import registry
@@ -278,9 +271,7 @@ class TestCacheErrorPaths:
             "key1": {"invalid": "structure", "missing_fields": True},
             "key2": {"also_invalid": 123},
         }
-        cache_file.write_text(
-            json.dumps(cache_data), encoding="utf-8"
-        )
+        cache_file.write_text(json.dumps(cache_data), encoding="utf-8")
 
         engine = build_default_pipeline(registry)
         orch = Orchestrator(pipeline_engine=engine, workspace=ws)
@@ -289,9 +280,7 @@ class TestCacheErrorPaths:
         # 所有条目都损坏，cache 应为空
         assert len(engine._cache) == 0
 
-    def test_save_cache_readonly_dir(
-        self, tmp_path: Path
-    ) -> None:
+    def test_save_cache_readonly_dir(self, tmp_path: Path) -> None:
         """缓存保存到只读目录时不崩溃。"""
         from agent_eval.evaluation.engine import build_default_pipeline
         from agent_eval.evaluation.registry import registry
@@ -304,6 +293,7 @@ class TestCacheErrorPaths:
 
         # 让 cache_dir 变为不可写（通过 monkey-patch write_text）
         import unittest.mock
+
         with unittest.mock.patch.object(
             type(ws.cache_dir / "evaluation_cache.json"),
             "write_text",
@@ -316,18 +306,14 @@ class TestCacheErrorPaths:
 class TestWorkspaceIndexErrorPaths:
     """Workspace 索引错误路径测试。"""
 
-    def test_index_with_corrupt_existing_runs(
-        self, tmp_path: Path, golden_package: Path
-    ) -> None:
+    def test_index_with_corrupt_existing_runs(self, tmp_path: Path, golden_package: Path) -> None:
         """已有 runs_index.json 中 runs 不是 list 时自动修复。"""
         ws = Workspace(root_dir=tmp_path / "ws")
         ws.ensure_dirs()
 
         # 写入格式错误的索引（runs 不是 list）
         index_file = ws.index_dir / "runs_index.json"
-        index_file.write_text(
-            json.dumps({"runs": "not_a_list"}), encoding="utf-8"
-        )
+        index_file.write_text(json.dumps({"runs": "not_a_list"}), encoding="utf-8")
 
         orch = Orchestrator(workspace=ws)
         orch.eval_only(golden_package)
@@ -337,9 +323,7 @@ class TestWorkspaceIndexErrorPaths:
         assert isinstance(index["runs"], list)
         assert len(index["runs"]) == 1
 
-    def test_index_update_with_readonly_file(
-        self, tmp_path: Path
-    ) -> None:
+    def test_index_update_with_readonly_file(self, tmp_path: Path) -> None:
         """索引文件写入失败时不崩溃。"""
         from agent_eval.evaluation.models import MetricsReport, SampleScore
 
@@ -365,14 +349,14 @@ class TestWorkspaceIndexErrorPaths:
         )
 
         import unittest.mock
+
         with unittest.mock.patch.object(
-            type(index_file), "write_text",
+            type(index_file),
+            "write_text",
             side_effect=PermissionError("read-only"),
         ):
             # 应该不抛异常
-            orch._update_workspace_index(
-                ws, ws.create_run("test_run"), metrics, None
-            )
+            orch._update_workspace_index(ws, ws.create_run("test_run"), metrics, None)
 
 
 class TestCachePersistence:

@@ -220,8 +220,12 @@ class PipelineEngine:
         """计算缓存 Key（基于样本内容 + 规则集版本）。"""
         content = str(sample)
         rule_version = context.get("rule_set_version", "")
+        # 视觉评估的截图内容随渲染器/CSS 变化，纳入 cache key 避免命中陈旧结果。
+        # 默认空（非视觉场景不影响 key），调用方按需注入 vision_snapshot_hash。
+        vision_hash = context.get("vision_snapshot_hash", "")
         content_str = (
-            f"{content}:{rule_version}:{json.dumps(context.get('constraints', {}), sort_keys=True)}"
+            f"{content}:{rule_version}:{vision_hash}:"
+            f"{json.dumps(context.get('constraints', {}), sort_keys=True)}"
         )
         return hashlib.sha256(content_str.encode()).hexdigest()
 
@@ -268,14 +272,39 @@ class PipelineEngine:
         self._cache.clear()
 
 
-def build_default_pipeline(registry: EvaluatorRegistry) -> PipelineEngine:
+def build_default_pipeline(
+    registry: EvaluatorRegistry, *, with_vision: bool = False
+) -> PipelineEngine:
     """构建默认的三阶段级联管线。
 
     阶段:
         1. format (fail_fast): 格式门控
         2. commonsense (fail_fast): 常识检查
         3. quality (continue_all): 质量评估
+
+    Args:
+        registry: 评估器注册表。
+        with_vision: 是否启用视觉评估器（vision.quality）。默认 False —— 视觉
+            需浏览器渲染与多模态 Provider，作为 opt-in 能力。启用时调用方需自行
+            传入显式 soft_weights（含 vision.quality）以保持归一化正确。
     """
+    quality_evaluators = [
+        # LLM Judge 软约束
+        EvaluatorConfig("soft.teaching_logic", {"template_id": "pedagogical_logic"}),
+        EvaluatorConfig("soft.content_diversity", {"template_id": "content_diversity"}),
+        # LLM Judge 偏好约束
+        EvaluatorConfig("pref.style_preference", {"template_id": "style_preference"}),
+        EvaluatorConfig("pref.depth_preference", {"template_id": "depth_preference"}),
+        EvaluatorConfig("pref.request_fulfillment", {"template_id": "request_fulfillment"}),
+    ]
+    if with_vision:
+        quality_evaluators.append(
+            EvaluatorConfig(
+                "vision.quality",
+                {"template_id": "visual_quality", "llm_provider": "kimi_vision"},
+            )
+        )
+
     config = PipelineConfig(
         stages=[
             StageConfig(
@@ -302,17 +331,7 @@ def build_default_pipeline(registry: EvaluatorRegistry) -> PipelineEngine:
             StageConfig(
                 id="quality",
                 short_circuit_policy="continue_all",
-                evaluators=[
-                    # LLM Judge 软约束
-                    EvaluatorConfig("soft.teaching_logic", {"template_id": "pedagogical_logic"}),
-                    EvaluatorConfig("soft.content_diversity", {"template_id": "content_diversity"}),
-                    # LLM Judge 偏好约束
-                    EvaluatorConfig("pref.style_preference", {"template_id": "style_preference"}),
-                    EvaluatorConfig("pref.depth_preference", {"template_id": "depth_preference"}),
-                    EvaluatorConfig(
-                        "pref.request_fulfillment", {"template_id": "request_fulfillment"}
-                    ),
-                ],
+                evaluators=quality_evaluators,
             ),
         ],
     )

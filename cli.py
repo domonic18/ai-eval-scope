@@ -190,6 +190,9 @@ def eval(
     llm_provider: str | None = typer.Option(None, "--llm-provider", help="覆盖默认 LLM Provider"),
     llm_config: str | None = typer.Option(None, "--llm-config", help="LLM 配置文件路径"),
     project: str | None = typer.Option(None, "--project", help="项目 ID"),
+    enable_vision: bool = typer.Option(
+        False, "--enable-vision", help="启用多模态视觉评估（需安装 vision extra 与视觉 Provider）"
+    ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="详细输出"),
 ) -> None:
     """对 ExecutionPackage 执行评估。"""
@@ -204,6 +207,8 @@ def eval(
     rprint(f"[blue]评估模式:[/blue] {eval_mode}")
     rprint(f"[blue]执行包:[/blue] {package_dir}")
     rprint(f"[blue]规则集:[/blue] {rule_set}")
+    if enable_vision:
+        rprint("[blue]视觉评估:[/blue] 已启用")
 
     try:
         from agent_eval.config.loader import ConfigLoader
@@ -219,22 +224,38 @@ def eval(
         # 3. 创建 Workspace
         ws = Workspace(output_dir) if output_dir else Workspace()
 
-        # 4. 创建 Orchestrator 并执行
-        orch = Orchestrator(workspace=ws)
-        result = orch.eval_only(
-            Path(package_dir),
-            rule_set_obj,
-            judge_orchestrator=judge_orch,
-            llm_provider=llm_provider,
-            project=project,
-        )
+        # 4. 创建截图渲染器（仅 --enable-vision 时）
+        renderer = None
+        if enable_vision:
+            try:
+                from agent_eval.evaluation.vision import PlaywrightScreenshotRenderer
 
-        # 5. 刷新 Langfuse trace 数据
+                renderer = PlaywrightScreenshotRenderer()
+            except Exception as e:
+                rprint(f"[yellow]⚠ 视觉渲染器初始化失败，视觉评估器将降级: {e}[/yellow]")
+
+        # 5. 创建 Orchestrator 并执行
+        orch = Orchestrator(workspace=ws)
+        try:
+            result = orch.eval_only(
+                Path(package_dir),
+                rule_set_obj,
+                judge_orchestrator=judge_orch,
+                llm_provider=llm_provider,
+                project=project,
+                with_vision=enable_vision,
+                screenshot_renderer=renderer,
+            )
+        finally:
+            if renderer is not None:
+                renderer.close()
+
+        # 6. 刷新 Langfuse trace 数据
         from agent_eval.llm.tracing import flush_traces
 
         flush_traces()
 
-        # 6. 输出摘要
+        # 7. 输出摘要
         _print_summary(result.report)
 
         rprint("[green]✅ 评估完成[/green] — 结果已保存至 workspace")

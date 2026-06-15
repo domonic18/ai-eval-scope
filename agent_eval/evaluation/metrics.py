@@ -38,14 +38,18 @@ class MetricsCalculator:
         fmt_pass = sum(
             1
             for r in results
-            if r.stage_results.get("format", StageResult(stage_id="format", status=EvalStatus.FAIL)).gate_passed
+            if r.stage_results.get(
+                "format", StageResult(stage_id="format", status=EvalStatus.FAIL)
+            ).gate_passed
         )
 
         # CPR: 格式 + 常识均通过数 / 总数
         com_pass = sum(
             1
             for r in results
-            if r.stage_results.get("format", StageResult(stage_id="format", status=EvalStatus.FAIL)).gate_passed
+            if r.stage_results.get(
+                "format", StageResult(stage_id="format", status=EvalStatus.FAIL)
+            ).gate_passed
             and r.stage_results.get(
                 "commonsense", StageResult(stage_id="commonsense", status=EvalStatus.FAIL)
             ).gate_passed

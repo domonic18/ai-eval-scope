@@ -6,6 +6,7 @@
 
 # ─── 基础异常 ───
 
+
 class AgentEvalError(Exception):
     """Agent 评估系统基础异常。"""
 
@@ -21,6 +22,7 @@ class AgentEvalError(Exception):
 
 
 # ─── 配置相关 ───
+
 
 class ConfigError(AgentEvalError):
     """配置加载或校验失败。"""
@@ -43,6 +45,7 @@ class ConfigFileNotFoundError(ConfigError):
 
 
 # ─── 执行引擎相关 ───
+
 
 class ExecutionError(AgentEvalError):
     """执行引擎基础异常。"""
@@ -81,6 +84,7 @@ class TaskBuildError(ExecutionError):
 
 # ─── 评估引擎相关 ───
 
+
 class EvaluationError(AgentEvalError):
     """评估引擎基础异常。"""
 
@@ -106,7 +110,12 @@ class ScoreAggregationError(EvaluationError):
     """评分聚合异常。"""
 
 
+class VisionError(EvaluationError):
+    """视觉评估异常（截图渲染失败、playwright/浏览器不可用等）。"""
+
+
 # ─── 数据包相关 ───
+
 
 class PackageError(AgentEvalError):
     """执行包操作异常。"""
@@ -125,6 +134,7 @@ class PackageValidationError(PackageError):
 
 
 # ─── LLM 相关 ───
+
 
 class LLMError(AgentEvalError):
     """LLM 调用异常。"""
@@ -149,11 +159,13 @@ class LLMResponseError(LLMError):
 
 # ─── 编排调度相关 ───
 
+
 class OrchestratorError(AgentEvalError):
     """编排调度异常。"""
 
 
 # ─── Workspace 相关 ───
+
 
 class WorkspaceError(AgentEvalError):
     """Workspace 操作异常。"""

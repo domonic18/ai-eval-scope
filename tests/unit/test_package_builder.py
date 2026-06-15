@@ -39,7 +39,10 @@ def directory_task() -> Task:
 
 class TestBuildInline:
     def test_build_inline_basic(
-        self, builder: PackageBuilder, sample_task: Task, tmp_path: Path,
+        self,
+        builder: PackageBuilder,
+        sample_task: Task,
+        tmp_path: Path,
     ) -> None:
         output_files = [
             GOLDEN / "valid_docset" / "output" / "index.md",
@@ -61,7 +64,10 @@ class TestBuildInline:
         assert (pkg_dir / "output").exists()
 
     def test_build_inline_copies_files(
-        self, builder: PackageBuilder, sample_task: Task, tmp_path: Path,
+        self,
+        builder: PackageBuilder,
+        sample_task: Task,
+        tmp_path: Path,
     ) -> None:
         output_files = [
             GOLDEN / "valid_docset" / "output" / "index.md",
@@ -79,7 +85,10 @@ class TestBuildInline:
         assert len(files) == 2
 
     def test_build_inline_manifest_content(
-        self, builder: PackageBuilder, sample_task: Task, tmp_path: Path,
+        self,
+        builder: PackageBuilder,
+        sample_task: Task,
+        tmp_path: Path,
     ) -> None:
         pkg_dir = builder.build_inline(
             task=sample_task,
@@ -94,7 +103,10 @@ class TestBuildInline:
         assert manifest["status"] == "success"
 
     def test_build_inline_task_json(
-        self, builder: PackageBuilder, sample_task: Task, tmp_path: Path,
+        self,
+        builder: PackageBuilder,
+        sample_task: Task,
+        tmp_path: Path,
     ) -> None:
         pkg_dir = builder.build_inline(
             task=sample_task,
@@ -110,7 +122,10 @@ class TestBuildInline:
 
 class TestBuildDirectory:
     def test_build_directory_basic(
-        self, builder: PackageBuilder, directory_task: Task, tmp_path: Path,
+        self,
+        builder: PackageBuilder,
+        directory_task: Task,
+        tmp_path: Path,
     ) -> None:
         pkg_dir = builder.build_directory(
             task=directory_task,
@@ -126,7 +141,10 @@ class TestBuildDirectory:
         assert (pkg_dir / "output" / "_manifest.json").exists()
 
     def test_build_directory_manifest(
-        self, builder: PackageBuilder, directory_task: Task, tmp_path: Path,
+        self,
+        builder: PackageBuilder,
+        directory_task: Task,
+        tmp_path: Path,
     ) -> None:
         pkg_dir = builder.build_directory(
             task=directory_task,
@@ -143,7 +161,10 @@ class TestBuildDirectory:
         assert len(dir_manifest["modules"]) == 2
 
     def test_build_directory_metrics(
-        self, builder: PackageBuilder, directory_task: Task, tmp_path: Path,
+        self,
+        builder: PackageBuilder,
+        directory_task: Task,
+        tmp_path: Path,
     ) -> None:
         pkg_dir = builder.build_directory(
             task=directory_task,
@@ -157,7 +178,10 @@ class TestBuildDirectory:
         assert metrics["modules"] == 2
 
     def test_build_directory_nonexistent_source(
-        self, builder: PackageBuilder, directory_task: Task, tmp_path: Path,
+        self,
+        builder: PackageBuilder,
+        directory_task: Task,
+        tmp_path: Path,
     ) -> None:
         with pytest.raises(FileNotFoundError):
             builder.build_directory(
@@ -169,7 +193,10 @@ class TestBuildDirectory:
 
 class TestValidatePackage:
     def test_valid_package(
-        self, builder: PackageBuilder, sample_task: Task, tmp_path: Path,
+        self,
+        builder: PackageBuilder,
+        sample_task: Task,
+        tmp_path: Path,
     ) -> None:
         pkg_dir = builder.build_inline(
             task=sample_task,
@@ -191,7 +218,10 @@ class TestValidatePackage:
 
 class TestExecutionPackageLoad:
     def test_load_inline_package(
-        self, builder: PackageBuilder, sample_task: Task, tmp_path: Path,
+        self,
+        builder: PackageBuilder,
+        sample_task: Task,
+        tmp_path: Path,
     ) -> None:
         pkg_dir = builder.build_inline(
             task=sample_task,
@@ -207,7 +237,10 @@ class TestExecutionPackageLoad:
         assert pkg.output_dir is not None
 
     def test_load_directory_package(
-        self, builder: PackageBuilder, directory_task: Task, tmp_path: Path,
+        self,
+        builder: PackageBuilder,
+        directory_task: Task,
+        tmp_path: Path,
     ) -> None:
         pkg_dir = builder.build_directory(
             task=directory_task,
@@ -222,7 +255,10 @@ class TestExecutionPackageLoad:
         assert len(pkg.directory_manifest.modules) == 2
 
     def test_save_and_reload(
-        self, builder: PackageBuilder, sample_task: Task, tmp_path: Path,
+        self,
+        builder: PackageBuilder,
+        sample_task: Task,
+        tmp_path: Path,
     ) -> None:
         pkg_dir = builder.build_inline(
             task=sample_task,

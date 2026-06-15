@@ -101,17 +101,28 @@ class TestProductionTemplates:
         "template_id,variables",
         [
             ("pedagogical_logic", {"title": "方程", "content": "x+1=2", "subject": "数学"}),
-            ("content_diversity", {
-                "title": "方程", "content": "x+1=2", "subject": "数学",
-                "has_formula": "是", "has_table": "否", "has_image": "否", "has_list": "是",
-            }),
+            (
+                "content_diversity",
+                {
+                    "title": "方程",
+                    "content": "x+1=2",
+                    "subject": "数学",
+                    "has_formula": "是",
+                    "has_table": "否",
+                    "has_image": "否",
+                    "has_list": "是",
+                },
+            ),
             ("style_preference", {"title": "方程", "content": "x+1=2", "subject": "数学"}),
             ("depth_preference", {"title": "方程", "content": "x+1=2", "subject": "数学"}),
-            ("request_fulfillment", {
-                "content": "x+1=2",
-                "original_request": "生成方程课件",
-                "expected_output": "完整教案",
-            }),
+            (
+                "request_fulfillment",
+                {
+                    "content": "x+1=2",
+                    "original_request": "生成方程课件",
+                    "expected_output": "完整教案",
+                },
+            ),
         ],
     )
     def test_template_renderable(
@@ -135,9 +146,7 @@ class TestProductionTemplates:
         for tid in mgr.template_ids:
             template = mgr.get(tid)
             total_weight = sum(d.weight for d in template.dimensions)
-            assert abs(total_weight - 1.0) < 0.01, (
-                f"模板 {tid} 权重之和为 {total_weight}，不为 1.0"
-            )
+            assert abs(total_weight - 1.0) < 0.01, f"模板 {tid} 权重之和为 {total_weight}，不为 1.0"
 
 
 # ─── 2. 加权分数归一化 ───
@@ -267,9 +276,12 @@ class TestBuildVariables:
     def test_teaching_logic_basic_vars(self) -> None:
         """教学逻辑 — 基础变量。"""
         evaluator = TeachingLogicEvaluator()
-        variables = evaluator._build_variables("课件内容", {
-            "task_input": {"title": "方程", "subject": "数学"},
-        })
+        variables = evaluator._build_variables(
+            "课件内容",
+            {
+                "task_input": {"title": "方程", "subject": "数学"},
+            },
+        )
         assert variables["content"] == "课件内容"
         assert variables["title"] == "方程"
         assert variables["subject"] == "数学"
@@ -310,9 +322,12 @@ class TestBuildVariables:
     def test_request_fulfillment_with_task_input(self) -> None:
         """需求满足度 — 从 task_input 提取需求。"""
         evaluator = RequestFulfillmentEvaluator()
-        variables = evaluator._build_variables("课件内容", {
-            "task_input": {"input": "生成数学课件", "expected": "完整教案"},
-        })
+        variables = evaluator._build_variables(
+            "课件内容",
+            {
+                "task_input": {"input": "生成数学课件", "expected": "完整教案"},
+            },
+        )
         assert variables["original_request"] == "生成数学课件"
         assert variables["expected_output"] == "完整教案"
 
@@ -327,12 +342,17 @@ class TestBuildVariables:
         """内容超过 max_content_chars 时截断。"""
         long_content = "x" * 10000
         sample = _prepare_output(tmp_path, long_content)
-        mock_orch = _make_mock_orchestrator({"structure": 5.0, "progression": 5.0, "engagement": 5.0})
+        mock_orch = _make_mock_orchestrator(
+            {"structure": 5.0, "progression": 5.0, "engagement": 5.0}
+        )
         evaluator = TeachingLogicEvaluator()
         result = evaluator.evaluate(
             sample,
-            {"judge_orchestrator": mock_orch, "evidence_dir": tmp_path / "ev",
-             "max_content_chars": 100},
+            {
+                "judge_orchestrator": mock_orch,
+                "evidence_dir": tmp_path / "ev",
+                "max_content_chars": 100,
+            },
         )
         # 应该正常执行，不会因内容过长而失败
         assert result.status in (EvalStatus.PASS, EvalStatus.FAIL)

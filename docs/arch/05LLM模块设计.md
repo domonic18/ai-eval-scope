@@ -74,7 +74,9 @@ class DeepSeekClient(LLMClient):
     """
 ```
 
-> **Anthropic 协议支持**：`AnthropicCompatClient` 设计保留，当前 factory 对 `provider="anthropic"` 会 raise `LLMError`。`OpenAICompatClient` 不再作为独立类，由 `DeepSeekClient` 统一覆盖 OpenAI 协议兼容场景。
+> **Provider 实现现状（Sprint 6）**：
+> - `OpenAICompatClient`（`agent_eval/llm/providers/openai_compat.py`）覆盖所有 OpenAI Chat Completions 协议兼容服务。`provider="openai"` 为通用协议值，`provider="deepseek"` 为便捷别名（未指定 base_url 时预置 DeepSeek 端点）。两者复用同一客户端类，`provider_type` 返回协议 `"openai"`（不再硬编码厂商名）。
+> - `AnthropicCompatClient`（`agent_eval/llm/providers/anthropic.py`）覆盖所有 Anthropic Messages API 协议兼容服务（Kimi/智谱/MiniMax 等通过自定义 `base_url` 接入）。协议要点：`system` 为顶层参数、`max_tokens` 必填、不支持 `seed`、usage 为 `input_tokens`/`output_tokens`（无 total_tokens，需自算）、多模态图片块 `{"type":"image","source":{...}}`。
 
 ### 1.4 Provider Pool — 多模型管理
 
@@ -141,11 +143,12 @@ class LLMClientFactory:
     def create(name: str, config: ProviderConfig) -> LLMClient:
         if config.provider in ("deepseek", "openai"):
             _check_openai_available()
-            from agent_eval.llm.providers.deepseek import DeepSeekClient
-            return DeepSeekClient(name, config)
+            from agent_eval.llm.providers.openai_compat import OpenAICompatClient
+            return OpenAICompatClient(name, config)
         elif config.provider == "anthropic":
             _check_anthropic_available()
-            raise LLMError("Anthropic 协议客户端尚未实现")
+            from agent_eval.llm.providers.anthropic import AnthropicCompatClient
+            return AnthropicCompatClient(name, config)
         else:
             raise LLMError(f"不支持的 provider 类型: {config.provider}")
 ```

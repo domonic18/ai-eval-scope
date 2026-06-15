@@ -114,7 +114,8 @@ class SUTToolsConfig(BaseModel):
     # HTTP SUT 配置
     http_base_url: str | None = Field(default=None, description="默认 HTTP SUT 地址")
     http_default_headers: dict[str, str] = Field(
-        default_factory=dict, description="默认请求头",
+        default_factory=dict,
+        description="默认请求头",
     )
     http_timeout: float = Field(default=120.0, description="默认超时（秒）")
 

@@ -40,6 +40,4 @@ class EvaluationAgent:
         Raises:
             NotImplementedError: 当前迭代尚未实现。
         """
-        raise NotImplementedError(
-            "EvaluationAgent.evaluate() 将在后续迭代中实现。"
-        )
+        raise NotImplementedError("EvaluationAgent.evaluate() 将在后续迭代中实现。")

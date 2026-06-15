@@ -285,6 +285,7 @@ class ReportGenerator:
             ("score_breakdown", "得分明细"),
             ("heading_summary", "标题结构"),
             ("checks", "检查项"),
+            ("screenshot_paths", "视觉截图"),
         ]
 
         rendered_keys: set[str] = set()
@@ -299,12 +300,22 @@ class ReportGenerator:
                 if not value:
                     continue
                 # 列表类字段
-                if key in ("checked_files", "valid_files", "files", "files_checked"):
-                    # 文件列表：紧凑显示
+                if key in (
+                    "checked_files",
+                    "valid_files",
+                    "files",
+                    "files_checked",
+                    "screenshot_paths",
+                ):
+                    # 文件/截图列表：紧凑显示
                     if len(value) <= 10:
-                        lines.append(f"- {label}（{len(value)} 个）: {', '.join(str(v) for v in value)}")
+                        lines.append(
+                            f"- {label}（{len(value)} 个）: {', '.join(str(v) for v in value)}"
+                        )
                     else:
-                        lines.append(f"- {label}（{len(value)} 个）: {', '.join(str(v) for v in value[:10])} ...等 {len(value)} 个")
+                        lines.append(
+                            f"- {label}（{len(value)} 个）: {', '.join(str(v) for v in value[:10])} ...等 {len(value)} 个"
+                        )
                 elif key in ("invalid_files", "issues", "errors"):
                     # 错误/问题列表：逐条显示
                     lines.append(f"- {label}（{len(value)} 项）:")
@@ -317,7 +328,9 @@ class ReportGenerator:
                     for item in value:
                         if isinstance(item, dict):
                             icon = "✅" if item.get("passed") else "❌"
-                            lines.append(f"  - {icon} {item.get('name', '?')}: {item.get('reason', '')}")
+                            lines.append(
+                                f"  - {icon} {item.get('name', '?')}: {item.get('reason', '')}"
+                            )
                         else:
                             lines.append(f"  - {item}")
                 else:
@@ -326,7 +339,9 @@ class ReportGenerator:
                 if key == "score_breakdown":
                     lines.append(f"- {label}:")
                     for k, v in value.items():
-                        lines.append(f"  - {k}: {v:.3f}" if isinstance(v, float) else f"  - {k}: {v}")
+                        lines.append(
+                            f"  - {k}: {v:.3f}" if isinstance(v, float) else f"  - {k}: {v}"
+                        )
                 elif key == "heading_summary":
                     lines.append(f"- {label}:")
                     for fname, headings in value.items():

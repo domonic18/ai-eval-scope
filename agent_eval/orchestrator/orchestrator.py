@@ -83,6 +83,9 @@ class Orchestrator:
         run_workspace: RunWorkspace | None = None,
         llm_provider: str | None = None,
         project: str | None = None,
+        with_vision: bool = False,
+        screenshot_renderer: Any | None = None,
+        vision_soft_weights: dict[str, float] | None = None,
     ) -> EvalResult:
         """eval-only 模式：加载 packages → 评估 → 报告。
 
@@ -93,10 +96,25 @@ class Orchestrator:
             run_workspace: 运行工作空间（可选，自动创建）。
             llm_provider: LLM Provider 名称覆盖（可选）。
             project: 项目 ID（可选，用于 workspace index）。
+            with_vision: 是否启用视觉评估器 vision.quality（默认 False）。
+                视觉为 opt-in：需同时提供 screenshot_renderer 与支持视觉的 Provider。
+            screenshot_renderer: ScreenshotRenderer 实例（with_vision=True 时必需，
+                否则视觉评估器降级为默认通过）。
+            vision_soft_weights: 启用视觉时的软约束权重映射（须含 vision.quality），
+                默认 {teaching_logic:0.4, content_diversity:0.3, vision.quality:0.3}。
 
         Returns:
             EvalResult 实例。
         """
+        # with_vision 时用含视觉评估器的管线 + 显式软约束权重（含 vision.quality）
+        if with_vision:
+            self.pipeline_engine = build_default_pipeline(registry, with_vision=True)
+            self.pipeline_engine.aggregator.soft_weights = vision_soft_weights or {
+                "soft.teaching_logic": 0.4,
+                "soft.content_diversity": 0.3,
+                "vision.quality": 0.3,
+            }
+            self.pipeline_engine.apply_rule_set_params(rule_set)
         package_dir = Path(package_dir)
         if not package_dir.exists():
             raise OrchestratorError(f"执行包目录不存在: {package_dir}")
@@ -142,6 +160,8 @@ class Orchestrator:
             extra_context["judge_orchestrator"] = judge_orchestrator
         if llm_provider is not None:
             extra_context["llm_provider"] = llm_provider
+        if screenshot_renderer is not None:
+            extra_context["screenshot_renderer"] = screenshot_renderer
 
         # 为每个包设置 evidence_dir
         # 在 evaluate_batch 中通过 extra_context 统一注入，
@@ -453,6 +473,7 @@ def eval_packages(
     output_dir: str | Path | None = None,
     llm_provider: str | None = None,
     project: str | None = None,
+    enable_vision: bool = False,
 ) -> EvalResult:
     """SDK eval 接口 — Python 可直接调用。
 
@@ -471,6 +492,8 @@ def eval_packages(
         output_dir: 输出目录（可选，默认 ./workspace）。
         llm_provider: LLM Provider 名称覆盖（可选）。
         project: 项目 ID（可选）。
+        enable_vision: 是否启用视觉评估（默认 False，opt-in）。启用时自动创建
+            PlaywrightScreenshotRenderer（需安装 vision extra）。
 
     Returns:
         EvalResult 实例。
@@ -495,13 +518,26 @@ def eval_packages(
 
     # 创建 Orchestrator 并执行
     orch = Orchestrator(workspace=workspace)
-    result = orch.eval_only(
-        Path(package_dir),
-        rule_set,
-        judge_orchestrator=judge_orch,
-        llm_provider=llm_provider,
-        project=project,
-    )
+
+    renderer = None
+    try:
+        if enable_vision:
+            from agent_eval.evaluation.vision import PlaywrightScreenshotRenderer
+
+            renderer = PlaywrightScreenshotRenderer()
+
+        result = orch.eval_only(
+            Path(package_dir),
+            rule_set,
+            judge_orchestrator=judge_orch,
+            llm_provider=llm_provider,
+            project=project,
+            with_vision=enable_vision,
+            screenshot_renderer=renderer,
+        )
+    finally:
+        if renderer is not None:
+            renderer.close()
 
     # 刷新 Langfuse trace 数据
     from agent_eval.llm.tracing import flush_traces

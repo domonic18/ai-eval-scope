@@ -62,9 +62,7 @@ class EvalPlanLoader:
         Raises:
             NotImplementedError: 当前迭代尚未实现。
         """
-        raise NotImplementedError(
-            "EvalPlanLoader.load() 将在后续迭代中实现。"
-        )
+        raise NotImplementedError("EvalPlanLoader.load() 将在后续迭代中实现。")
 
     @staticmethod
     def parse(content: str) -> EvalPlan:
@@ -79,6 +77,4 @@ class EvalPlanLoader:
         Raises:
             NotImplementedError: 当前迭代尚未实现。
         """
-        raise NotImplementedError(
-            "EvalPlanLoader.parse() 将在后续迭代中实现。"
-        )
+        raise NotImplementedError("EvalPlanLoader.parse() 将在后续迭代中实现。")

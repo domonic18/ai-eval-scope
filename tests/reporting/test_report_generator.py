@@ -347,9 +347,12 @@ class TestDetailsBlockRendering:
         """errors 列表渲染。"""
         gen = ReportGenerator()
         lines: list[str] = []
-        gen._render_details_block(lines, {
-            "errors": ["标签未闭合", "属性值缺少引号"],
-        })
+        gen._render_details_block(
+            lines,
+            {
+                "errors": ["标签未闭合", "属性值缺少引号"],
+            },
+        )
         text = "\n".join(lines)
         assert "错误" in text
         assert "标签未闭合" in text
@@ -358,12 +361,15 @@ class TestDetailsBlockRendering:
         """checks 列表渲染（含 dict 条目）。"""
         gen = ReportGenerator()
         lines: list[str] = []
-        gen._render_details_block(lines, {
-            "checks": [
-                {"name": "算术等式校验", "passed": True, "reason": "通过"},
-                {"name": "符号校验", "passed": False, "reason": "变量不匹配"},
-            ],
-        })
+        gen._render_details_block(
+            lines,
+            {
+                "checks": [
+                    {"name": "算术等式校验", "passed": True, "reason": "通过"},
+                    {"name": "符号校验", "passed": False, "reason": "变量不匹配"},
+                ],
+            },
+        )
         text = "\n".join(lines)
         assert "算术等式校验" in text
         assert "✅" in text
@@ -373,12 +379,15 @@ class TestDetailsBlockRendering:
         """heading_summary dict 渲染。"""
         gen = ReportGenerator()
         lines: list[str] = []
-        gen._render_details_block(lines, {
-            "heading_summary": {
-                "module1.md": [(1, "第一章 基础"), (2, "1.1 概念")],
-                "module2.md": [(1, "第二章 进阶")],
+        gen._render_details_block(
+            lines,
+            {
+                "heading_summary": {
+                    "module1.md": [(1, "第一章 基础"), (2, "1.1 概念")],
+                    "module2.md": [(1, "第二章 进阶")],
+                },
             },
-        })
+        )
         text = "\n".join(lines)
         assert "标题结构" in text
         assert "第一章 基础" in text
@@ -387,9 +396,12 @@ class TestDetailsBlockRendering:
         """score_breakdown dict 渲染。"""
         gen = ReportGenerator()
         lines: list[str] = []
-        gen._render_details_block(lines, {
-            "score_breakdown": {"s1": 0.85, "s2": 0.92},
-        })
+        gen._render_details_block(
+            lines,
+            {
+                "score_breakdown": {"s1": 0.85, "s2": 0.92},
+            },
+        )
         text = "\n".join(lines)
         assert "得分明细" in text
         assert "0.850" in text
@@ -398,9 +410,12 @@ class TestDetailsBlockRendering:
         """files 列表超过 10 个时截断。"""
         gen = ReportGenerator()
         lines: list[str] = []
-        gen._render_details_block(lines, {
-            "files": [f"file_{i}.md" for i in range(15)],
-        })
+        gen._render_details_block(
+            lines,
+            {
+                "files": [f"file_{i}.md" for i in range(15)],
+            },
+        )
         text = "\n".join(lines)
         assert "15 个" in text
 
@@ -408,10 +423,13 @@ class TestDetailsBlockRendering:
         """未特殊处理的字段渲染。"""
         gen = ReportGenerator()
         lines: list[str] = []
-        gen._render_details_block(lines, {
-            "custom_field": "custom_value",
-            "count": 42,
-        })
+        gen._render_details_block(
+            lines,
+            {
+                "custom_field": "custom_value",
+                "count": 42,
+            },
+        )
         text = "\n".join(lines)
         assert "custom_field: custom_value" in text
         assert "count: 42" in text
@@ -420,9 +438,12 @@ class TestDetailsBlockRendering:
         """未特殊处理的长列表截断。"""
         gen = ReportGenerator()
         lines: list[str] = []
-        gen._render_details_block(lines, {
-            "some_list": [f"item_{i}" for i in range(20)],
-        })
+        gen._render_details_block(
+            lines,
+            {
+                "some_list": [f"item_{i}" for i in range(20)],
+            },
+        )
         text = "\n".join(lines)
         assert "20 项" in text
 

@@ -50,9 +50,7 @@ class EvaluatorRegistry:
 
         return decorator
 
-    def create(
-        self, evaluator_id: str, params: dict[str, Any] | None = None
-    ) -> BaseEvaluator:
+    def create(self, evaluator_id: str, params: dict[str, Any] | None = None) -> BaseEvaluator:
         """工厂方法：根据 ID 创建评估器实例。
 
         Args:
@@ -66,9 +64,7 @@ class EvaluatorRegistry:
             EvaluatorNotFoundError: 评估器 ID 未注册。
         """
         if evaluator_id not in self._registry:
-            raise EvaluatorNotFoundError(
-                evaluator_id, available=list(self._registry.keys())
-            )
+            raise EvaluatorNotFoundError(evaluator_id, available=list(self._registry.keys()))
         evaluator = self._registry[evaluator_id]()
         if params:
             evaluator.setup(params)

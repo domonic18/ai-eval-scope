@@ -115,9 +115,7 @@ class SampleResult:
         return {
             "sample_id": self.sample_id,
             "status": self.status.value,
-            "stage_results": {
-                k: v.to_dict() for k, v in self.stage_results.items()
-            },
+            "stage_results": {k: v.to_dict() for k, v in self.stage_results.items()},
             "s_format": self.s_format,
             "s_common": self.s_common,
             "s_soft": self.s_soft,

@@ -84,13 +84,15 @@ def build_formula_index(domain_facts: dict[str, Any]) -> list[dict[str, Any]]:
             norm_name = normalize_formula_name(name)
             norm_formula = normalize_formula(formula)
             variables = set(re.findall(r"[a-zA-Z]", norm_formula))
-            results.append({
-                "original_name": name,
-                "canonical_name": norm_name,
-                "formula": formula,
-                "normalized_formula": norm_formula,
-                "variables": variables,
-                "category": category,
-                "description": entry.get("description", ""),
-            })
+            results.append(
+                {
+                    "original_name": name,
+                    "canonical_name": norm_name,
+                    "formula": formula,
+                    "normalized_formula": norm_formula,
+                    "variables": variables,
+                    "category": category,
+                    "description": entry.get("description", ""),
+                }
+            )
     return results

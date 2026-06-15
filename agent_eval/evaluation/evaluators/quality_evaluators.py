@@ -49,7 +49,6 @@ def _collect_text_content(output_dir: Path) -> str:
     return "\n\n".join(texts)
 
 
-
 # ─── LLM Judge 评估器 ───
 
 
@@ -105,17 +104,14 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
         if len(text) > max_chars:
             text = text[:max_chars] + "\n\n[...内容已截断...]"
 
-        # 构建模板变量
-        variables = self._build_variables(text, context)
-
-        # 调用 JudgeOrchestrator
+        # 调用 JudgeOrchestrator（通过钩子，视觉等子类可覆盖以传 images）
         try:
-            scores, record = orchestrator.judge(
-                constraint_id=self.evaluator_id,
-                sample_id=context.get("sample_id", "unknown"),
-                template_id=self.template_id,
-                variables=variables,
-                evidence_dir=Path(evidence_dir) if not isinstance(evidence_dir, Path) else evidence_dir,
+            scores, record, extra_details = self._invoke_judge(
+                orchestrator,
+                sample=sample,
+                text=text,
+                context=context,
+                evidence_dir=evidence_dir,
                 provider_name=self.params.get("llm_provider"),
             )
         except Exception as e:
@@ -133,9 +129,7 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
         template = orchestrator.templates.get(self.template_id)
         if template and template.dimensions:
             total_weight = sum(d.weight for d in template.dimensions)
-            weighted_score = sum(
-                scores.get(d.dim_id, 0.0) * d.weight for d in template.dimensions
-            )
+            weighted_score = sum(scores.get(d.dim_id, 0.0) * d.weight for d in template.dimensions)
             normalized = (weighted_score / total_weight / 10.0) if total_weight > 0 else 0.0
         else:
             # 无维度信息，取平均
@@ -162,6 +156,9 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
             "scores": scores,
             "confidence": record.confidence if record else {},
         }
+        # 合并子类附加的详情（如视觉截图路径）
+        if extra_details:
+            details.update(extra_details)
         if record and hasattr(record, "summary"):
             details["summary"] = record.summary
         if template and template.dimensions:
@@ -197,6 +194,37 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
             judge_model=record.model if record else None,
             judge_record_path=record_path,
         )
+
+    def _invoke_judge(
+        self,
+        orchestrator: Any,
+        *,
+        sample: Any,
+        text: str,
+        context: dict[str, Any],
+        evidence_dir: Any,
+        provider_name: str | None,
+    ) -> tuple[dict[str, Any], Any, dict[str, Any]]:
+        """调用 JudgeOrchestrator 执行评估（钩子）。
+
+        默认实现：构建模板变量后调用 orchestrator.judge()。
+        子类（如视觉评估器）可覆盖以传入 images 等额外参数。
+
+        Returns:
+            (scores, JudgeRecord, extra_details) 三元组。
+            extra_details 为附加到 ConstraintResult.details 的字段（可空 dict）。
+        """
+        variables = self._build_variables(text, context)
+        ev = Path(evidence_dir) if not isinstance(evidence_dir, Path) else evidence_dir
+        scores, record = orchestrator.judge(
+            constraint_id=self.evaluator_id,
+            sample_id=context.get("sample_id", "unknown"),
+            template_id=self.template_id,
+            variables=variables,
+            evidence_dir=ev,
+            provider_name=provider_name,
+        )
+        return scores, record, {}
 
     def _build_variables(self, text: str, context: dict[str, Any]) -> dict[str, Any]:
         """构建 Prompt 模板变量。子类可覆盖以添加特定变量。"""

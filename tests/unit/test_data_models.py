@@ -336,8 +336,13 @@ class TestRuleSet:
             version="2.0",
             rules=[
                 Rule(
-                    id="R1", name="Rule 1", dimension="f", stage="s",
-                    evaluator="e", params={"min": 1}, weight=0.5,
+                    id="R1",
+                    name="Rule 1",
+                    dimension="f",
+                    stage="s",
+                    evaluator="e",
+                    params={"min": 1},
+                    weight=0.5,
                 ),
             ],
         )

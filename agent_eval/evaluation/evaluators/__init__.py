@@ -26,6 +26,11 @@ from agent_eval.evaluation.evaluators.quality_evaluators import (  # noqa: F401
     TeachingLogicEvaluator,
 )
 
+# 导入视觉评估器（opt-in，--enable-vision 时使用）
+from agent_eval.evaluation.evaluators.vision_evaluators import (  # noqa: F401
+    VisionQualityEvaluator,
+)
+
 __all__ = [
     # 格式评估器
     "ResponseFormatEvaluator",
@@ -45,4 +50,6 @@ __all__ = [
     "StylePreferenceEvaluator",
     "DepthPreferenceEvaluator",
     "RequestFulfillmentEvaluator",
+    # 视觉评估器
+    "VisionQualityEvaluator",
 ]

@@ -75,9 +75,7 @@ class TestEvalPackagesSDK:
                 output_dir=tmp_path / "workspace",
             )
 
-    def test_eval_packages_with_project(
-        self, golden_package: Path, tmp_path: Path
-    ) -> None:
+    def test_eval_packages_with_project(self, golden_package: Path, tmp_path: Path) -> None:
         """SDK eval 带 project 参数。"""
         output_dir = tmp_path / "workspace"
         result = eval_packages(
@@ -92,9 +90,7 @@ class TestEvalPackagesSDK:
         index_file = Path(output_dir) / "index" / "runs_index.json"
         assert index_file.exists()
         index = json.loads(index_file.read_text(encoding="utf-8"))
-        assert any(
-            r.get("project") == "math_course_v2" for r in index["runs"]
-        )
+        assert any(r.get("project") == "math_course_v2" for r in index["runs"])
 
 
 class TestCLIEval:
@@ -143,9 +139,7 @@ class TestCLIEval:
         result = runner.invoke(app, ["eval"])
         assert result.exit_code != 0
 
-    def test_eval_full_execution(
-        self, golden_package: Path, tmp_path: Path
-    ) -> None:
+    def test_eval_full_execution(self, golden_package: Path, tmp_path: Path) -> None:
         """CLI eval 完整执行流程：加载包 → 评估 → 输出报告。"""
         from typer.testing import CliRunner
 
@@ -162,9 +156,12 @@ class TestCLIEval:
             app,
             [
                 "eval",
-                "--package-dir", str(golden_package),
-                "--rule-set", str(rule_set_path),
-                "--output-dir", str(output_dir),
+                "--package-dir",
+                str(golden_package),
+                "--rule-set",
+                str(rule_set_path),
+                "--output-dir",
+                str(output_dir),
             ],
         )
 
@@ -175,9 +172,7 @@ class TestCLIEval:
         assert (Path(output_dir) / "runs").is_dir()
         assert (Path(output_dir) / "index" / "runs_index.json").exists()
 
-    def test_eval_with_verbose(
-        self, golden_package: Path, tmp_path: Path
-    ) -> None:
+    def test_eval_with_verbose(self, golden_package: Path, tmp_path: Path) -> None:
         """CLI eval --verbose 模式。"""
         from typer.testing import CliRunner
 
@@ -194,9 +189,12 @@ class TestCLIEval:
             app,
             [
                 "eval",
-                "--package-dir", str(golden_package),
-                "--rule-set", str(rule_set_path),
-                "--output-dir", str(output_dir),
+                "--package-dir",
+                str(golden_package),
+                "--rule-set",
+                str(rule_set_path),
+                "--output-dir",
+                str(output_dir),
                 "--verbose",
             ],
         )
@@ -266,9 +264,12 @@ class TestCLIPack:
             app,
             [
                 "pack",
-                "--files", str(f1),
-                "--files", str(f2),
-                "--output-dir", str(output_dir),
+                "--files",
+                str(f1),
+                "--files",
+                str(f2),
+                "--output-dir",
+                str(output_dir),
             ],
         )
 
@@ -293,11 +294,16 @@ class TestCLIPack:
             app,
             [
                 "pack",
-                "--source-dir", str(src),
-                "--task-id", "custom_id",
-                "--task-title", "自定义标题",
-                "--task-subject", "math",
-                "--output-dir", str(output_dir),
+                "--source-dir",
+                str(src),
+                "--task-id",
+                "custom_id",
+                "--task-title",
+                "自定义标题",
+                "--task-subject",
+                "math",
+                "--output-dir",
+                str(output_dir),
             ],
         )
 
@@ -339,8 +345,10 @@ class TestCLIPack:
             app,
             [
                 "pack",
-                "--source-dir", str(src),
-                "--output-dir", str(output_dir),
+                "--source-dir",
+                str(src),
+                "--output-dir",
+                str(output_dir),
                 "--validate",
             ],
         )
@@ -369,10 +377,14 @@ class TestCLIPack:
             app,
             [
                 "pack",
-                "--files", str(golden / "index.md"),
-                "--files", str(golden / "chapter_01.md"),
-                "--task-id", "e2e_test",
-                "--output-dir", str(pack_dir),
+                "--files",
+                str(golden / "index.md"),
+                "--files",
+                str(golden / "chapter_01.md"),
+                "--task-id",
+                "e2e_test",
+                "--output-dir",
+                str(pack_dir),
             ],
         )
         assert result.exit_code == 0, f"Pack failed: {result.output}"
@@ -383,9 +395,12 @@ class TestCLIPack:
             app,
             [
                 "eval",
-                "--package-dir", str(pack_dir / "e2e_test"),
-                "--rule-set", str(rule_set),
-                "--output-dir", str(eval_ws),
+                "--package-dir",
+                str(pack_dir / "e2e_test"),
+                "--rule-set",
+                str(rule_set),
+                "--output-dir",
+                str(eval_ws),
             ],
         )
         assert result.exit_code == 0, f"Eval failed: {result.output}"

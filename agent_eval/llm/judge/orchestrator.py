@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -21,6 +22,18 @@ from agent_eval.llm.pool import ProviderPool
 from agent_eval.llm.tracing import create_trace
 
 logger = structlog.get_logger("judge.orchestrator")
+
+
+def _hash_images(images: list[str]) -> list[str]:
+    """计算图片引用的哈希列表（用于溯源，不含图片本体）。
+
+    data URI 取 base64 数据部分；URL 直接取哈希。
+    """
+    hashes: list[str] = []
+    for img in images:
+        payload = img.split(",", 1)[-1] if img.startswith("data:") else img
+        hashes.append(hashlib.sha256(payload.encode()).hexdigest()[:16])
+    return hashes
 
 
 class JudgeOrchestrator:
@@ -64,6 +77,7 @@ class JudgeOrchestrator:
         variables: dict[str, Any],
         evidence_dir: Path,
         provider_name: str | None = None,
+        images: list[str] | None = None,
     ) -> tuple[dict[str, Any], JudgeRecord]:
         """执行完整 judge pipeline。
 
@@ -74,6 +88,8 @@ class JudgeOrchestrator:
             variables: 模板变量。
             evidence_dir: 证据保存目录。
             provider_name: 指定 Provider 名称。None 使用默认。
+            images: 多模态图片引用列表（data URI 或 URL）。非空时走
+                chat_with_vision（视觉评估），None 时走普通 chat。
 
         Returns:
             (scores_dict, JudgeRecord) 元组。
@@ -114,7 +130,11 @@ class JudgeOrchestrator:
                 generation = root_span.start_observation(
                     name=f"sample_{sample_index}",
                     as_type="generation",
-                    input={"system": system_prompt, "user": user_prompt},
+                    input={
+                        "system": system_prompt,
+                        "user": user_prompt,
+                        **({"num_images": len(images)} if images else {}),
+                    },
                     model=f"{provider_info.name}/{provider_info.model}",
                     model_parameters={
                         "temperature": template.temperature,
@@ -122,11 +142,19 @@ class JudgeOrchestrator:
                     },
                 )
 
-            response = client.chat(
-                messages,
-                seed=template.seed + sample_index,
-                temperature=template.temperature,
-            )
+            if images:
+                response = client.chat_with_vision(
+                    messages,
+                    images,
+                    seed=template.seed + sample_index,
+                    temperature=template.temperature,
+                )
+            else:
+                response = client.chat(
+                    messages,
+                    seed=template.seed + sample_index,
+                    temperature=template.temperature,
+                )
 
             # Langfuse Generation — 更新输出和 token 用量
             if generation:
@@ -163,9 +191,11 @@ class JudgeOrchestrator:
                     result[key] = parsed[key]
             return result
 
-        # 5. 稳定性控制 — 多次采样
+        # 5. 稳定性控制 — 多次采样（采样次数由模板指定，视觉模板可设 num_samples=1）
         start_time = time.monotonic()
-        stable_result = self.stability.evaluate_stable(single_judge, template.dimensions)
+        stable_result = self.stability.evaluate_stable(
+            single_judge, template.dimensions, num_samples=template.num_samples
+        )
         total_duration_ms = (time.monotonic() - start_time) * 1000
 
         # 6. 生成 JudgeRecord
@@ -190,6 +220,7 @@ class JudgeOrchestrator:
             total_duration_ms=total_duration_ms,
             token_usage=total_tokens,
             timestamp=timestamp,
+            image_hashes=_hash_images(images) if images else [],
         )
 
         # 7. 结束 Langfuse Trace
