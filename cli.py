@@ -318,11 +318,46 @@ def serve(
     workspace_dir: str = typer.Option("./workspace", "--workspace", help="Workspace 目录"),
 ) -> None:
     """启动 Web Portal。"""
-    rprint(f"[blue]Web Portal:[/blue] http://{host}:{port}")
-    rprint(f"[blue]Workspace:[/blue] {workspace_dir}")
+    import os
+    import subprocess
 
-    # Sprint 7a 完整实现
-    rprint("[yellow]serve 命令将在 Sprint 7a 中实现。[/yellow]")
+    from agent_eval.config.paths import PROJECT_ROOT
+
+    workspace_path = Path(workspace_dir).resolve()
+    backend_dir = PROJECT_ROOT / "web" / "backend"
+    public_dir = backend_dir / "public"
+
+    if not public_dir.exists() or not (public_dir / "index.html").exists():
+        rprint(
+            "[bold red]❌ 前端构建产物不存在。请先执行：[/bold red]\n"
+            "  cd web/frontend && npm install && npm run build\n"
+            "  cp -r web/frontend/dist/* web/backend/public/"
+        )
+        raise typer.Exit(code=1)
+
+    env = os.environ.copy()
+    env["WORKSPACE_DIR"] = str(workspace_path)
+    env["PORT"] = str(port)
+    env["HOST"] = host
+
+    rprint(f"[blue]Web Portal:[/blue] http://{host}:{port}")
+    rprint(f"[blue]Workspace:[/blue] {workspace_path}")
+
+    try:
+        subprocess.run(
+            ["node", "server.js"],
+            cwd=backend_dir,
+            env=env,
+            check=True,
+        )
+    except KeyboardInterrupt:
+        rprint("\n[dim]Web Portal 已停止[/dim]")
+    except FileNotFoundError:
+        rprint("[bold red]❌ 未找到 Node.js，请安装 Node.js 以使用 Web Portal[/bold red]")
+        raise typer.Exit(code=1) from None
+    except subprocess.CalledProcessError as e:
+        rprint(f"[bold red]❌ Web Portal 启动失败: {e}[/bold red]")
+        raise typer.Exit(code=1) from e
 
 
 @app.command()
@@ -330,10 +365,19 @@ def index(
     workspace_dir: str = typer.Option("./workspace", "--workspace", help="Workspace 目录"),
 ) -> None:
     """重建 Workspace 索引（用于 Web Portal）。"""
-    rprint(f"[blue]重建索引:[/blue] {workspace_dir}")
+    from agent_eval.web.indexer import rebuild_index
 
-    # Sprint 7a 完整实现
-    rprint("[yellow]index 命令将在 Sprint 7a 中实现。[/yellow]")
+    workspace_path = Path(workspace_dir).resolve()
+    rprint(f"[blue]重建索引:[/blue] {workspace_path}")
+
+    try:
+        stats = rebuild_index(workspace_path)
+        rprint("[green]✅ 索引重建完成[/green]")
+        rprint(f"  项目数: {stats['project_count']}")
+        rprint(f"  运行数: {stats['run_count']}")
+    except Exception as e:
+        rprint(f"[bold red]❌ 索引重建失败: {e}[/bold red]")
+        raise typer.Exit(code=1) from e
 
 
 @app.command()
