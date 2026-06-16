@@ -31,6 +31,11 @@ from agent_eval.evaluation.evaluators.vision_evaluators import (  # noqa: F401
     VisionQualityEvaluator,
 )
 
+# 自动发现插件评估器（plugins/ 目录下的 .py 文件）
+from agent_eval.evaluation.evaluators.plugins import discover_plugins  # noqa: F401
+
+discover_plugins()
+
 __all__ = [
     # 格式评估器
     "ResponseFormatEvaluator",

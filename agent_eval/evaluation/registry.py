@@ -82,6 +82,17 @@ class EvaluatorRegistry:
         """获取评估器类（不实例化）。"""
         return self._registry.get(evaluator_id)
 
+    def unregister(self, evaluator_id: str) -> bool:
+        """注销指定评估器（主要用于测试清理）。
+
+        Returns:
+            是否成功注销。
+        """
+        if evaluator_id in self._registry:
+            del self._registry[evaluator_id]
+            return True
+        return False
+
 
 # 全局单例
 registry = EvaluatorRegistry()
