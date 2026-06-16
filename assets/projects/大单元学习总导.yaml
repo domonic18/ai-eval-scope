@@ -1,0 +1,7 @@
+project:
+  id: "大单元学习总导"
+  name: "大单元学习总导"
+  description: "大单元学习总导课件生成评估项目"
+  default_rule_set: "courseware_v1"
+  default_task_set: "courseware_subject_coverage"
+  created_at: "2026-06-09T00:00:00Z"
