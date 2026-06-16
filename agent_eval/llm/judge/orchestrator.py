@@ -14,7 +14,7 @@ from typing import Any
 
 import structlog
 
-from agent_eval.llm.config import JUDGE_ID_DATETIME_FORMAT
+from agent_eval.config import JUDGE_ID_DATETIME_FORMAT
 from agent_eval.llm.judge.recorder import JudgeRecorder
 from agent_eval.llm.judge.stability import StabilityController
 from agent_eval.llm.judge.structured_output import StructuredOutputParser

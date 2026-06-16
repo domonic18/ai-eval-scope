@@ -14,6 +14,7 @@ import yaml
 from jsonschema import ValidationError
 from jsonschema import validate as jsonschema_validate
 
+from agent_eval.config.llm import LLMConfig
 from agent_eval.config.paths import paths
 from agent_eval.core.exceptions import (
     ConfigError,
@@ -21,7 +22,6 @@ from agent_eval.core.exceptions import (
     SchemaValidationError,
 )
 from agent_eval.execution.models import TaskSet
-from agent_eval.llm.config import LLMConfig
 from agent_eval.rules.models import RuleSet
 
 

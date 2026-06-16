@@ -8,8 +8,8 @@ from typing import Any
 
 import jsonschema
 
+from agent_eval.config import STRUCTURED_OUTPUT_DEFAULTS
 from agent_eval.core.exceptions import LLMResponseError
-from agent_eval.llm.config import STRUCTURED_OUTPUT_DEFAULTS
 
 
 class StructuredOutputParser:

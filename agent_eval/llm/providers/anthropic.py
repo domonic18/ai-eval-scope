@@ -18,9 +18,9 @@ from typing import Any
 
 import anthropic
 
+from agent_eval.config import ProviderConfig, resolve_api_key
 from agent_eval.core.exceptions import LLMError
 from agent_eval.llm.client import LLMClient
-from agent_eval.llm.config import ProviderConfig, resolve_api_key
 from agent_eval.llm.models import LLMResponse, Message, TokenUsage
 
 

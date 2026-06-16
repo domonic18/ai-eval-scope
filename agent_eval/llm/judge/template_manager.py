@@ -10,8 +10,8 @@ import jinja2
 import structlog
 import yaml
 
+from agent_eval.config import JUDGE_DEFAULTS
 from agent_eval.core.exceptions import LLMError
-from agent_eval.llm.config import JUDGE_DEFAULTS
 
 logger = structlog.get_logger("template_manager")
 

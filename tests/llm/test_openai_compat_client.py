@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from agent_eval.llm.config import ProviderConfig
+from agent_eval.config import ProviderConfig
 from agent_eval.llm.models import Message
 
 

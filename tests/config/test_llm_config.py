@@ -6,7 +6,7 @@ import os
 
 import pytest
 
-from agent_eval.llm.config import (
+from agent_eval.config import (
     JUDGE_DEFAULTS,
     JUDGE_ID_DATETIME_FORMAT,
     JUDGE_RECORD_DEFAULTS,

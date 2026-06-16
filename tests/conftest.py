@@ -11,8 +11,9 @@ import pytest
 # Mock langfuse 模块（避免未安装时导入报错）
 sys.modules.setdefault("langfuse", MagicMock())
 
-from agent_eval.core.types import ConstraintTier, EvalStatus
-from agent_eval.evaluation.models import (
+from agent_eval.config import LLMConfig, ProviderConfig  # noqa: E402
+from agent_eval.core.types import ConstraintTier, EvalStatus  # noqa: E402
+from agent_eval.evaluation.models import (  # noqa: E402
     ConstraintResult,
     MetricsReport,
     SampleResult,
@@ -179,4 +180,26 @@ def metrics_report() -> MetricsReport:
             ),
         ],
         failure_breakdown={"format.response_format": 1},
+    )
+
+
+@pytest.fixture
+def llm_config() -> LLMConfig:
+    """多 Provider LLM 配置（全局 fixture，供 config/llm 等测试复用）。"""
+    return LLMConfig(
+        default="deepseek_judge",
+        providers={
+            "deepseek_judge": ProviderConfig(
+                provider="deepseek",
+                model="deepseek-chat",
+                api_key="test-key-ds",
+                base_url="https://api.deepseek.com/v1",
+            ),
+            "openai_judge": ProviderConfig(
+                provider="openai",
+                model="gpt-4",
+                api_key="test-key-oai",
+                base_url="https://api.openai.com/v1",
+            ),
+        },
     )

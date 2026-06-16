@@ -11,6 +11,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
+from agent_eval.config import AGENT_DEFAULTS, SUT_TOOLS_DEFAULTS, TASK_DEFAULTS
+
 
 class Task(BaseModel):
     """单个评测任务 — 定义被测 Agent 需要完成的输入与期望。"""
@@ -29,7 +31,7 @@ class Task(BaseModel):
     )
     # 目录模式字段
     input_mode: str = Field(
-        default="inline",
+        default=TASK_DEFAULTS.input_mode,
         description='输入模式: "inline"（默认）或 "directory"（目录模式）',
     )
     directory_path: str | None = Field(
@@ -37,7 +39,7 @@ class Task(BaseModel):
         description="目录路径（input_mode=directory 时必填）",
     )
     file_patterns: list[str] = Field(
-        default_factory=lambda: ["*.html"],
+        default_factory=lambda: list(TASK_DEFAULTS.file_patterns),
         description="文件匹配模式（如 [*.html, *.htm]）",
     )
 
@@ -117,15 +119,19 @@ class SUTToolsConfig(BaseModel):
         default_factory=dict,
         description="默认请求头",
     )
-    http_timeout: float = Field(default=120.0, description="默认超时（秒）")
+    http_timeout: float = Field(
+        default=SUT_TOOLS_DEFAULTS.http_timeout, description="默认超时（秒）"
+    )
 
     # CLI SUT 配置
-    cli_default_timeout: float = Field(default=120.0, description="默认超时（秒）")
+    cli_default_timeout: float = Field(
+        default=SUT_TOOLS_DEFAULTS.cli_default_timeout, description="默认超时（秒）"
+    )
     cli_working_dir: str | None = Field(default=None, description="默认工作目录")
 
     # 目录收集配置
     file_patterns: list[str] = Field(
-        default_factory=lambda: ["*.html", "*.htm"],
+        default_factory=lambda: list(SUT_TOOLS_DEFAULTS.file_patterns),
         description="默认文件匹配模式",
     )
 
@@ -135,24 +141,24 @@ class AgentConfig(BaseModel):
 
     # Agent 执行参数
     max_turns: int = Field(
-        default=20,
+        default=AGENT_DEFAULTS.max_turns,
         gt=0,
         description="单任务最大交互轮次",
     )
     max_budget_usd: float = Field(
-        default=1.0,
+        default=AGENT_DEFAULTS.max_budget_usd,
         ge=0.0,
         description="单任务最大预算（美元）",
     )
     max_retries: int = Field(
-        default=3,
+        default=AGENT_DEFAULTS.max_retries,
         ge=0,
         description="工具调用失败最大重试次数",
     )
 
     # 模型配置
     model: str = Field(
-        default="claude-sonnet-4-20250514",
+        default=AGENT_DEFAULTS.model,
         description="Agent 使用的模型",
     )
 
@@ -164,26 +170,18 @@ class AgentConfig(BaseModel):
 
     # 工作空间
     workspace_dir: Path = Field(
-        default=Path("./workspace"),
+        default=AGENT_DEFAULTS.workspace_dir,
         description="执行包输出目录",
     )
 
     # 权限模式
     permission_mode: str = Field(
-        default="accept_edits",
+        default=AGENT_DEFAULTS.permission_mode,
         description="Agent 权限模式",
     )
 
     # 允许的工具列表
     allowed_tools: list[str] = Field(
-        default_factory=lambda: [
-            "invoke_http_sut",
-            "invoke_cli_sut",
-            "scan_directory",
-            "read_file",
-            "collect_results",
-            "write_package",
-            "list_files",
-        ],
+        default_factory=lambda: list(AGENT_DEFAULTS.allowed_tools),
         description="Agent 允许使用的工具列表",
     )

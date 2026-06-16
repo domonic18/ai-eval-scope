@@ -12,6 +12,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from agent_eval.config import EVALUATOR_DEFAULTS
 from agent_eval.core.types import ConstraintTier, EvalMethod, EvalStatus
 from agent_eval.evaluation.base import BaseEvaluator
 from agent_eval.evaluation.registry import registry
@@ -33,7 +34,7 @@ class ResponseFormatEvaluator(BaseEvaluator):
         import time
 
         start = time.monotonic()
-        allowed = set(self.params.get("allowed_formats", ["md", "html"]))
+        allowed = set(self.params.get("allowed_formats", EVALUATOR_DEFAULTS.allowed_formats))
         allowed_exts = set()
         for fmt in allowed:
             fmt = fmt.lower().strip(".")

@@ -6,8 +6,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from agent_eval.config import LLMConfig, ProviderConfig
 from agent_eval.core.exceptions import ProviderNotFoundError
-from agent_eval.llm.config import LLMConfig, ProviderConfig
 from agent_eval.llm.models import ProviderInfo
 from agent_eval.llm.pool import ProviderPool
 

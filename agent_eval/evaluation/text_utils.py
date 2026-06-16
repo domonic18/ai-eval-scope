@@ -19,6 +19,8 @@ import re
 from html.parser import HTMLParser
 from pathlib import Path
 
+from agent_eval.config import EVALUATOR_DEFAULTS
+
 # 其内容应整体丢弃的标签（连同子内容）。这些标签都有配对的关闭标签，可安全用
 # 深度计数丢弃。注意：自闭合无内容标签（meta/link/br/hr 等）**不放入此集合**——它们
 # 无 `</tag>` 配对，若放入会让深度计数器只增不减，吞掉后续所有正文。
@@ -26,11 +28,42 @@ _DROP_TAGS = frozenset({"script", "style", "head", "noscript", "template"})
 # 块级/换行标签：遇到则插入换行，保留文档可读结构
 _BLOCK_TAGS = frozenset(
     {
-        "p", "div", "section", "article", "main", "header", "footer", "nav", "aside",
-        "li", "ul", "ol", "dl", "dt", "dd",
-        "h1", "h2", "h3", "h4", "h5", "h6",
-        "tr", "table", "thead", "tbody", "tfoot", "td", "th",
-        "br", "hr", "blockquote", "pre", "figure", "figcaption", "details", "summary",
+        "p",
+        "div",
+        "section",
+        "article",
+        "main",
+        "header",
+        "footer",
+        "nav",
+        "aside",
+        "li",
+        "ul",
+        "ol",
+        "dl",
+        "dt",
+        "dd",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "tr",
+        "table",
+        "thead",
+        "tbody",
+        "tfoot",
+        "td",
+        "th",
+        "br",
+        "hr",
+        "blockquote",
+        "pre",
+        "figure",
+        "figcaption",
+        "details",
+        "summary",
     }
 )
 
@@ -107,7 +140,7 @@ def file_to_text(path: Path) -> str:
     return raw
 
 
-_DOC_EXTS = ("*.md", "*.markdown", "*.html", "*.htm")
+_DOC_EXTS = tuple(EVALUATOR_DEFAULTS.text_collection_patterns)
 
 
 def collect_text_content(output_dir: Path) -> str:

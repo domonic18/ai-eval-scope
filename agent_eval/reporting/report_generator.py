@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from agent_eval.config import METRIC_THRESHOLDS, REPORTING_DEFAULTS
 from agent_eval.core.types import EvalStatus
 from agent_eval.evaluation.models import (
     ConstraintResult,
@@ -16,11 +17,11 @@ from agent_eval.evaluation.models import (
     SampleResult,
 )
 
-# 默认阈值
+# 默认阈值（集中维护于 agent_eval.config.evaluation）
 _DEFAULT_THRESHOLDS: dict[str, float] = {
-    "DR": 0.95,
-    "CPR": 0.90,
-    "avg_reward": 0.70,
+    "DR": METRIC_THRESHOLDS.dr,
+    "CPR": METRIC_THRESHOLDS.cpr,
+    "avg_reward": METRIC_THRESHOLDS.avg_reward,
 }
 
 # 指标中文名映射
@@ -308,20 +309,20 @@ class ReportGenerator:
                     "screenshot_paths",
                 ):
                     # 文件/截图列表：紧凑显示
-                    if len(value) <= 10:
+                    if len(value) <= REPORTING_DEFAULTS.summary_list_max_items:
                         lines.append(
                             f"- {label}（{len(value)} 个）: {', '.join(str(v) for v in value)}"
                         )
                     else:
                         lines.append(
-                            f"- {label}（{len(value)} 个）: {', '.join(str(v) for v in value[:10])} ...等 {len(value)} 个"
+                            f"- {label}（{len(value)} 个）: {', '.join(str(v) for v in value[: REPORTING_DEFAULTS.summary_list_max_items])} ...等 {len(value)} 个"
                         )
                 elif key in ("invalid_files", "issues", "errors"):
                     # 错误/问题列表：逐条显示
                     lines.append(f"- {label}（{len(value)} 项）:")
-                    for item in value[:20]:
+                    for item in value[: REPORTING_DEFAULTS.error_list_max_items]:
                         lines.append(f"  - {item}")
-                    if len(value) > 20:
+                    if len(value) > REPORTING_DEFAULTS.error_list_max_items:
                         lines.append(f"  - ... 共 {len(value)} 项")
                 elif key == "checks":
                     lines.append(f"- {label}:")
@@ -346,7 +347,10 @@ class ReportGenerator:
                     lines.append(f"- {label}:")
                     for fname, headings in value.items():
                         if isinstance(headings, list) and headings:
-                            heading_strs = [f"H{h[0]}: {h[1][:30]}" for h in headings[:5]]
+                            heading_strs = [
+                                f"H{h[0]}: {h[1][:30]}"
+                                for h in headings[: REPORTING_DEFAULTS.heading_summary_max_items]
+                            ]
                             lines.append(f"  - {fname}: {', '.join(heading_strs)}")
                 else:
                     lines.append(f"- {label}: {value}")
@@ -359,7 +363,9 @@ class ReportGenerator:
                 continue
             if isinstance(value, (str, int, float, bool)):
                 lines.append(f"- {key}: {value}")
-            elif isinstance(value, list) and len(value) <= 10:
+            elif (
+                isinstance(value, list) and len(value) <= REPORTING_DEFAULTS.summary_list_max_items
+            ):
                 lines.append(f"- {key}: {value}")
             elif isinstance(value, list):
                 lines.append(f"- {key}: [{len(value)} 项]")

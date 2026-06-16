@@ -6,8 +6,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from agent_eval.config import ProviderConfig
 from agent_eval.core.exceptions import LLMError
-from agent_eval.llm.config import ProviderConfig
 from agent_eval.llm.factory import LLMClientFactory
 
 

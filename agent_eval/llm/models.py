@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from agent_eval.llm.config import JUDGE_RECORD_DEFAULTS
+from agent_eval.config import JUDGE_RECORD_DEFAULTS
 
 
 @dataclass

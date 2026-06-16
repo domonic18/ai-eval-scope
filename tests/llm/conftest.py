@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from agent_eval.llm.config import LLMConfig, ProviderConfig
+from agent_eval.config import ProviderConfig
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"
 
@@ -20,28 +20,6 @@ def deepseek_config() -> ProviderConfig:
         api_key="test-api-key",
         base_url="https://api.deepseek.com/v1",
         max_tokens=4096,
-    )
-
-
-@pytest.fixture
-def llm_config() -> LLMConfig:
-    """多 Provider LLM 配置。"""
-    return LLMConfig(
-        default="deepseek_judge",
-        providers={
-            "deepseek_judge": ProviderConfig(
-                provider="deepseek",
-                model="deepseek-chat",
-                api_key="test-key-ds",
-                base_url="https://api.deepseek.com/v1",
-            ),
-            "openai_judge": ProviderConfig(
-                provider="openai",
-                model="gpt-4",
-                api_key="test-key-oai",
-                base_url="https://api.openai.com/v1",
-            ),
-        },
     )
 
 

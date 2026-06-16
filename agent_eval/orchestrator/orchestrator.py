@@ -20,6 +20,7 @@ load_dotenv()
 
 # 确保所有评估器注册到 registry（触发 @registry.register 装饰器）
 import agent_eval.evaluation.evaluators  # noqa: F401
+from agent_eval.config import SCORE_AGGREGATION_WEIGHTS
 from agent_eval.core.exceptions import OrchestratorError
 from agent_eval.evaluation.engine import PipelineEngine, build_default_pipeline
 from agent_eval.evaluation.models import (
@@ -39,9 +40,6 @@ from agent_eval.storage.package import (
 from agent_eval.storage.workspace import RunWorkspace, Workspace
 
 logger = structlog.get_logger("orchestrator")
-
-# 默认阈值
-_DEFAULT_THRESHOLDS = {"DR": 0.95, "CPR": 0.90, "avg_reward": 0.70}
 
 
 @dataclass
@@ -109,11 +107,9 @@ class Orchestrator:
         # with_vision 时用含视觉评估器的管线 + 显式软约束权重（含 vision.quality）
         if with_vision:
             self.pipeline_engine = build_default_pipeline(registry, with_vision=True)
-            self.pipeline_engine.aggregator.soft_weights = vision_soft_weights or {
-                "soft.teaching_logic": 0.4,
-                "soft.content_diversity": 0.3,
-                "vision.quality": 0.3,
-            }
+            self.pipeline_engine.aggregator.soft_weights = vision_soft_weights or dict(
+                SCORE_AGGREGATION_WEIGHTS.vision_soft_weights
+            )
             self.pipeline_engine.apply_rule_set_params(rule_set)
         package_dir = Path(package_dir)
         if not package_dir.exists():
@@ -460,7 +456,7 @@ def _init_judge_orchestrator(
         return None
 
     try:
-        from agent_eval.llm.config import LLMConfig
+        from agent_eval.config import LLMConfig
         from agent_eval.llm.judge.orchestrator import JudgeOrchestrator
         from agent_eval.llm.judge.stability import StabilityController
         from agent_eval.llm.judge.structured_output import StructuredOutputParser

@@ -14,6 +14,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+from agent_eval.config import EVALUATOR_DEFAULTS
 from agent_eval.core.types import ConstraintTier, EvalMethod, EvalStatus
 from agent_eval.evaluation.base import BaseEvaluator
 from agent_eval.evaluation.registry import registry
@@ -250,7 +251,7 @@ class InfoAccuracyEvaluator(BaseEvaluator):
         r"(\d+\.?\d*)\s*÷\s*(\d+\.?\d*)\s*=\s*(\d+\.?\d*)\s*余\s*(\d+\.?\d*)"
     )
     # 算术表达式周围的上下文窗口大小（字符数）
-    _ARITH_CONTEXT_WINDOW = 40
+    _ARITH_CONTEXT_WINDOW = EVALUATOR_DEFAULTS.arith_context_window
 
     def evaluate(self, sample: Any, context: dict[str, Any]) -> Any:
         start = time.monotonic()
@@ -352,7 +353,7 @@ class InfoAccuracyEvaluator(BaseEvaluator):
                 checks += 1
                 # 验证: dividend == quotient × divisor + remainder
                 expected = quotient * divisor + remainder
-                if abs(expected - dividend) > 0.01:
+                if abs(expected - dividend) > EVALUATOR_DEFAULTS.arith_tolerance:
                     findings.append(
                         {
                             "file": filename,
@@ -394,7 +395,7 @@ class InfoAccuracyEvaluator(BaseEvaluator):
                     continue
 
                 checks += 1
-                if abs(expected - result_val) > 0.01:
+                if abs(expected - result_val) > EVALUATOR_DEFAULTS.arith_tolerance:
                     findings.append(
                         {
                             "file": filename,
@@ -430,7 +431,7 @@ class InfoAccuracyEvaluator(BaseEvaluator):
                 continue
 
             value = const.get("value", 0)
-            tolerance = const.get("tolerance", 0.01)
+            tolerance = const.get("tolerance", EVALUATOR_DEFAULTS.arith_tolerance)
             name = const.get("name", "未知常数")
 
             for filename, text in file_texts.items():
@@ -846,7 +847,7 @@ class InfoAccuracyEvaluator(BaseEvaluator):
                 else evidence_dir,
                 provider_name=self.params.get("llm_provider"),
             )
-        except Exception as e:
+        except Exception:
             # LLM 调用失败，回退到 Phase 1-2 的结果
             return self._compute_result(file_texts, findings, start, checks_total=0)
 
@@ -1084,7 +1085,7 @@ class LogicalConsistencyEvaluator(BaseEvaluator):
             avg_score = (sum(vals) / len(vals) / 10.0) if vals else 1.0
 
         # HARD_SCORE: 6 分以上算通过
-        passed = avg_score >= 0.6
+        passed = avg_score >= EVALUATOR_DEFAULTS.logical_consistency_pass_threshold
         score = 1.0 if passed else 0.0
 
         record_path = None
@@ -1364,7 +1365,7 @@ class MathFormulaEvaluator(BaseEvaluator):
                     continue
                 arith_checks += 1
                 expected = quotient * divisor + remainder
-                if abs(expected - dividend) > 0.01:
+                if abs(expected - dividend) > EVALUATOR_DEFAULTS.arith_tolerance:
                     errors.append(
                         f"{filename}: 除法余数错误 "
                         f"{float(dividend_s):g} ÷ {float(divisor_s):g} "
@@ -1389,7 +1390,7 @@ class MathFormulaEvaluator(BaseEvaluator):
                 if expected is None:
                     continue
                 arith_checks += 1
-                if abs(expected - result_val) > 0.01:
+                if abs(expected - result_val) > EVALUATOR_DEFAULTS.arith_tolerance:
                     errors.append(
                         f"{filename}: 算术错误 {lhs_expr.strip()} = {result_s}（应为 {expected:g}）"
                     )

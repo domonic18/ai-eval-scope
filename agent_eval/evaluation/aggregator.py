@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+from agent_eval.config import SCORE_AGGREGATION_WEIGHTS
 from agent_eval.core.types import EvalStatus
 from agent_eval.evaluation.models import SampleResult, SampleScore
 
@@ -21,22 +22,16 @@ class ScoreAggregator:
 
     def __init__(
         self,
-        w3: float = 1.0,
-        w4: float = 1.0,
+        w3: float = SCORE_AGGREGATION_WEIGHTS.w3,
+        w4: float = SCORE_AGGREGATION_WEIGHTS.w4,
         soft_weights: dict[str, float] | None = None,
         pref_weights: dict[str, float] | None = None,
     ) -> None:
         self.w3 = w3
         self.w4 = w4
-        self.soft_weights = soft_weights or {
-            "soft.teaching_logic": 0.5,
-            "soft.content_diversity": 0.5,
-        }
-        self.pref_weights = pref_weights or {
-            "pref.style_preference": 0.33,
-            "pref.depth_preference": 0.33,
-            "pref.request_fulfillment": 0.34,
-        }
+        weights = SCORE_AGGREGATION_WEIGHTS
+        self.soft_weights = soft_weights or dict(weights.soft_weights)
+        self.pref_weights = pref_weights or dict(weights.pref_weights)
 
     def aggregate(self, result: SampleResult) -> SampleScore:
         """将 SampleResult 聚合为 SampleScore。
@@ -68,20 +63,22 @@ class ScoreAggregator:
 
         全通过 → +1，任一失败 → -3。
         """
+        weights = SCORE_AGGREGATION_WEIGHTS
         s = r.stage_results.get("format")
         if not s or s.status == EvalStatus.SKIP:
             return 0.0
-        return 1.0 if s.status == EvalStatus.PASS else -3.0
+        return weights.format_pass if s.status == EvalStatus.PASS else weights.format_fail
 
     def _commonsense(self, r: SampleResult) -> float:
         """计算常识约束得分。
 
         全通过 → +1，任一失败 → 0。
         """
+        weights = SCORE_AGGREGATION_WEIGHTS
         s = r.stage_results.get("commonsense")
         if not s or s.status in (EvalStatus.SKIP, EvalStatus.FAIL):
-            return 0.0
-        return 1.0
+            return weights.commonsense_fail
+        return weights.commonsense_pass
 
     def _weighted(
         self,

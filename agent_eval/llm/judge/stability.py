@@ -6,7 +6,7 @@ import statistics
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
-from agent_eval.llm.config import STABILITY_DEFAULTS
+from agent_eval.config import STABILITY_DEFAULTS
 from agent_eval.llm.judge.template_manager import JudgeDimension
 
 

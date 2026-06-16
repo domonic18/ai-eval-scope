@@ -17,6 +17,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+from agent_eval.config import EVALUATOR_DEFAULTS
 from agent_eval.core.types import ConstraintTier, EvalMethod, EvalStatus
 from agent_eval.evaluation.evaluators.quality_evaluators import (
     BaseLLMJudgeEvaluator,
@@ -27,7 +28,7 @@ from agent_eval.evaluation.registry import registry
 from agent_eval.evaluation.vision import png_to_data_uri
 
 # 视觉不可用时的降级分数（与文本 LLM 降级一致）
-_DEGRADE_SCORE = 0.7
+_DEGRADE_SCORE = EVALUATOR_DEFAULTS.llm_degrade_score
 
 
 def _collect_doc_files(output_dir: Path) -> list[Path]:
@@ -182,7 +183,7 @@ class VisionQualityEvaluator(BaseLLMJudgeEvaluator):
     ) -> ConstraintResult:
         """将逐文档分数按维度取均值，归一化并构造 ConstraintResult。"""
         ok_docs = [d for d in per_doc if d.get("ok")]
-        dims = _VISUAL_DIMS  # (dim_id, name, weight)
+        dims = EVALUATOR_DEFAULTS.vision_quality_dimensions  # (dim_id, name, weight)
         # 逐文档均值聚合的置信度：覆盖率高（无失败文档）=high，否则 low
         dim_confidence = "high" if len(ok_docs) == total_docs and total_docs > 0 else "low"
 
@@ -257,7 +258,9 @@ class VisionQualityEvaluator(BaseLLMJudgeEvaluator):
             constraint_id=self.evaluator_id,
             name=self.name,
             tier=self.tier,
-            status=EvalStatus.PASS if normalized >= 0.4 else EvalStatus.FAIL,
+            status=EvalStatus.PASS
+            if normalized >= EVALUATOR_DEFAULTS.llm_judge_pass_threshold
+            else EvalStatus.FAIL,
             score=normalized,
             reason=reason,
             details=details,
@@ -266,12 +269,3 @@ class VisionQualityEvaluator(BaseLLMJudgeEvaluator):
             judge_model=model_name or None,
             judge_record_path=record_path,
         )
-
-
-# 视觉模板维度定义（与 assets/prompts/visual_quality.yaml 对齐）
-_VISUAL_DIMS: list[tuple[str, str, float]] = [
-    ("layout", "排版", 0.3),
-    ("color_scheme", "配色", 0.25),
-    ("information_hierarchy", "信息层级", 0.25),
-    ("readability", "可读性", 0.2),
-]

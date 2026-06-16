@@ -11,6 +11,7 @@ import json
 from dataclasses import dataclass, field
 from typing import Any
 
+from agent_eval.config import PIPELINE_DEFAULTS
 from agent_eval.core.types import ConstraintTier, EvalStatus
 from agent_eval.evaluation.aggregator import ScoreAggregator
 from agent_eval.evaluation.base import BaseEvaluator
@@ -34,7 +35,9 @@ class StageConfig:
 
     id: str  # "format" | "commonsense" | "quality"
     evaluators: list[EvaluatorConfig] = field(default_factory=list)
-    short_circuit_policy: str = "fail_fast"  # "fail_fast" | "continue_all"
+    short_circuit_policy: str = (
+        PIPELINE_DEFAULTS.short_circuit_policy
+    )  # "fail_fast" | "continue_all"
 
 
 @dataclass
@@ -42,7 +45,9 @@ class PipelineConfig:
     """管线配置。"""
 
     stages: list[StageConfig] = field(default_factory=list)
-    reward_weights: dict[str, float] = field(default_factory=lambda: {"w3": 1.0, "w4": 1.0})
+    reward_weights: dict[str, float] = field(
+        default_factory=lambda: dict(PIPELINE_DEFAULTS.reward_weights)
+    )
 
 
 class PipelineEngine:

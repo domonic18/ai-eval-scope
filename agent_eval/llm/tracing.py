@@ -20,7 +20,7 @@ from typing import Any
 
 import structlog
 
-from agent_eval.llm.config import LANGFUSE_DEFAULTS
+from agent_eval.config import LANGFUSE_DEFAULTS
 
 logger = structlog.get_logger("tracing")
 

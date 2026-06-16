@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from agent_eval.config import LLMConfig
 from agent_eval.core.exceptions import ProviderNotFoundError
 from agent_eval.llm.client import LLMClient
-from agent_eval.llm.config import LLMConfig
 from agent_eval.llm.factory import LLMClientFactory
 from agent_eval.llm.models import ProviderInfo
 

@@ -14,6 +14,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from agent_eval.config import EVALUATOR_DEFAULTS
 from agent_eval.core.types import ConstraintTier, EvalMethod, EvalStatus
 from agent_eval.evaluation.base import BaseEvaluator
 from agent_eval.evaluation.evaluators.commonsense_evaluators import _get_output_dir
@@ -51,8 +52,8 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
                 name=self.name,
                 tier=self.tier,
                 status=EvalStatus.PASS,
-                score=0.7,
-                reason=f"{self.name}（LLM 不可用，降级模式默认 0.7）",
+                score=EVALUATOR_DEFAULTS.llm_degrade_score,
+                reason=f"{self.name}（LLM 不可用，降级模式默认 {EVALUATOR_DEFAULTS.llm_degrade_score}）",
                 duration_ms=elapsed,
             )
 
@@ -72,7 +73,7 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
             )
 
         # 截断过长内容（避免超过 token 限制）
-        max_chars = self.params.get("max_content_chars", 8000)
+        max_chars = self.params.get("max_content_chars", EVALUATOR_DEFAULTS.max_content_chars)
         if len(text) > max_chars:
             text = text[:max_chars] + "\n\n[...内容已截断...]"
 
@@ -157,7 +158,9 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
             constraint_id=self.evaluator_id,
             name=self.name,
             tier=self.tier,
-            status=EvalStatus.PASS if normalized >= 0.4 else EvalStatus.FAIL,
+            status=EvalStatus.PASS
+            if normalized >= EVALUATOR_DEFAULTS.llm_judge_pass_threshold
+            else EvalStatus.FAIL,
             score=normalized,
             reason=reason,
             details=details,
