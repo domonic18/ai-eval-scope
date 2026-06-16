@@ -810,8 +810,8 @@ class InfoAccuracyEvaluator(BaseEvaluator):
         from pathlib import Path
 
         # 拼接文本，每文件截断
-        max_file_chars = self.params.get("max_file_chars", 4000)
-        max_total_chars = self.params.get("max_content_chars", 8000)
+        max_file_chars = self.params.get("max_file_chars", EVALUATOR_DEFAULTS.max_file_chars)
+        max_total_chars = self.params.get("max_content_chars", EVALUATOR_DEFAULTS.max_content_chars)
         combined_parts: list[str] = []
         total_chars = 0
         for fname, text in file_texts.items():
@@ -830,7 +830,7 @@ class InfoAccuracyEvaluator(BaseEvaluator):
         errors = [f["message"] for f in findings if f["severity"] == "error"]
 
         variables = {
-            "content": combined_text[:6000],
+            "content": combined_text[: EVALUATOR_DEFAULTS.llm_judge_combined_content_chars],
             "title": context.get("task_input", {}).get("title", "未知标题"),
             "subject": context.get("task_input", {}).get("subject", "未知学科"),
             "warnings": warnings + errors,
@@ -1042,12 +1042,12 @@ class LogicalConsistencyEvaluator(BaseEvaluator):
         """使用 LLM 进行逻辑一致性评估。"""
         from pathlib import Path
 
-        max_chars = self.params.get("max_content_chars", 8000)
+        max_chars = self.params.get("max_content_chars", EVALUATOR_DEFAULTS.max_content_chars)
         if len(text) > max_chars:
             text = text[:max_chars] + "\n\n[...内容已截断...]"
 
         variables = {
-            "content": text[:4000],
+            "content": text[: EVALUATOR_DEFAULTS.llm_judge_content_chars],
             "title": context.get("task_input", {}).get("title", "未知标题"),
         }
 

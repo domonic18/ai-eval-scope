@@ -105,6 +105,18 @@ class TestEvaluatorDefaults:
         """算术/等式验证默认容差。"""
         assert EVALUATOR_DEFAULTS.arith_tolerance == 0.01
 
+    def test_llm_judge_content_chars(self) -> None:
+        """LLM Judge prompt content 默认最大字符数。"""
+        assert EVALUATOR_DEFAULTS.llm_judge_content_chars == 4000
+
+    def test_llm_judge_combined_content_chars(self) -> None:
+        """多文件 LLM Judge 组合文本默认最大字符数。"""
+        assert EVALUATOR_DEFAULTS.llm_judge_combined_content_chars == 6000
+
+    def test_max_file_chars(self) -> None:
+        """单文件文本截断默认最大字符数。"""
+        assert EVALUATOR_DEFAULTS.max_file_chars == 4000
+
     def test_vision_quality_dimensions(self) -> None:
         """视觉质量评估默认维度与权重。"""
         dims = EVALUATOR_DEFAULTS.vision_quality_dimensions

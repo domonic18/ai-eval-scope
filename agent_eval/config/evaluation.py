@@ -97,6 +97,12 @@ class EvaluatorDefaults:
     llm_judge_pass_threshold: float = 0.4
     # 算术/等式验证容差
     arith_tolerance: float = 0.01
+    # LLM Judge prompt 变量中 content 字段的默认最大字符数
+    llm_judge_content_chars: int = 4000
+    # 多文件 LLM Judge（如 info_accuracy）组合文本默认最大字符数
+    llm_judge_combined_content_chars: int = 6000
+    # 单文件文本截断默认最大字符数（如 info_accuracy per-file）
+    max_file_chars: int = 4000
     # 视觉质量评估默认维度（dim_id, display_name, weight）
     vision_quality_dimensions: list[tuple[str, str, float]] = field(
         default_factory=lambda: [

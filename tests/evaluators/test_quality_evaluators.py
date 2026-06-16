@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock
 
 from agent_eval.core.types import ConstraintTier, EvalMethod, EvalStatus
@@ -245,3 +246,219 @@ class TestThreeStageCascade:
         for eval_id in expected:
             e = registry.create(eval_id, {})
             assert e is not None, f"评估器 {eval_id} 未注册"
+
+
+def _make_e2e_mock_orchestrator() -> MagicMock:
+    """构造一个可响应所有 LLM Judge 模板的 Mock Orchestrator。"""
+    dimensions_by_template: dict[str, list[tuple[str, str, float]]] = {
+        "pedagogical_logic": [
+            ("structure", "结构完整性", 0.4),
+            ("progression", "知识递进", 0.3),
+            ("engagement", "互动设计", 0.3),
+        ],
+        "content_diversity": [
+            ("media_variety", "媒体多样性", 0.4),
+            ("topic_breadth", "主题广度", 0.3),
+            ("example_richness", "示例丰富度", 0.3),
+        ],
+        "style_preference": [
+            ("language_style", "语言风格", 0.4),
+            ("formatting", "排版风格", 0.3),
+            ("tone", "语气风格", 0.3),
+        ],
+        "depth_preference": [
+            ("knowledge_depth", "知识深度", 0.4),
+            ("detail_level", "细节程度", 0.3),
+            ("rigor", "严谨程度", 0.3),
+        ],
+        "request_fulfillment": [
+            ("completeness", "完整性", 0.4),
+            ("relevance", "相关性", 0.3),
+            ("quality", "质量", 0.3),
+        ],
+        "logical_consistency": [
+            ("internal_consistency", "内部一致性", 0.5),
+            ("causal_logic", "因果逻辑", 0.3),
+            ("classification_logic", "分类逻辑", 0.2),
+        ],
+        "info_accuracy": [
+            ("factual_correctness", "事实验证", 0.6),
+            ("statement_accuracy", "陈述准确性", 0.4),
+        ],
+    }
+
+    def _make_dim(dim_id: str, name: str, weight: float) -> MagicMock:
+        d = MagicMock()
+        d.dim_id = dim_id
+        d.name = name
+        d.weight = weight
+        return d
+
+    def _judge_side_effect(*args: Any, **kwargs: Any) -> tuple[dict[str, float], MagicMock]:
+        template_id = kwargs.get("template_id", "unknown")
+        dims = dimensions_by_template.get(template_id, [])
+        scores = {dim_id: 8.0 for dim_id, _, _ in dims} if dims else {"score": 8.0}
+
+        record = MagicMock()
+        record.judge_id = f"judge_{template_id}_001"
+        record.provider_name = "deepseek_judge"
+        record.model = "deepseek-chat"
+        record.confidence = {k: "high" for k in scores}
+        record.summary = f"{template_id} 评估总结：表现良好。"
+        record.raw_response = {"summary": record.summary}
+        return scores, record
+
+    def _templates_get(template_id: str) -> MagicMock | None:
+        dims = dimensions_by_template.get(template_id)
+        if dims is None:
+            return None
+        template = MagicMock()
+        template.dimensions = [_make_dim(*d) for d in dims]
+        return template
+
+    mock_orch = MagicMock()
+    mock_orch.judge.side_effect = _judge_side_effect
+    mock_orch.templates.get.side_effect = _templates_get
+    return mock_orch
+
+
+class TestFullCascadeEndToEnd:
+    """端到端三阶段级联测试：format → commonsense → quality 全部执行。"""
+
+    def _build_package(self, tmp_path: Path) -> Path:
+        """构造一个可通过格式/常识门控的 ExecutionPackage 目录。"""
+        pkg = tmp_path / "package"
+        pkg.mkdir(parents=True)
+        output = pkg / "output"
+        output.mkdir(parents=True)
+        # 有效的 Markdown + HTML 文件
+        (output / "index.md").write_text(
+            "# 一元一次方程\n\n"
+            "本节课学习一元一次方程的解法。\n\n"
+            "## 教学目标\n"
+            "- 理解一元一次方程的概念\n"
+            "- 掌握移项、合并同类项的方法\n\n"
+            "## 例题\n"
+            "解方程 $2x + 4 = 10$。\n"
+            "移项得 $2x = 6$，所以 $x = 3$。\n",
+            encoding="utf-8",
+        )
+        (output / "guide.html").write_text(
+            "<html><body><h1>学习指南</h1><p>请先阅读教材，再完成练习。</p></body></html>",
+            encoding="utf-8",
+        )
+        return pkg
+
+    def test_full_cascade_all_stages_execute(self, tmp_path: Path) -> None:
+        """默认管线完整执行三阶段， quality 阶段 LLM Judge 结果带溯源。"""
+        from agent_eval.evaluation.engine import build_default_pipeline
+
+        pkg = self._build_package(tmp_path)
+        engine = build_default_pipeline(registry)
+        mock_orch = _make_e2e_mock_orchestrator()
+        evidence_dir = tmp_path / "evidence"
+        evidence_dir.mkdir()
+
+        result = engine.evaluate_sample(
+            pkg,
+            {
+                "sample_id": "e2e_sample",
+                "judge_orchestrator": mock_orch,
+                "evidence_dir": evidence_dir,
+                "task_input": {"title": "一元一次方程", "subject": "数学"},
+            },
+        )
+
+        # 三阶段均执行（未被短路）
+        assert "format" in result.stage_results
+        assert "commonsense" in result.stage_results
+        assert "quality" in result.stage_results
+
+        # 格式门控通过
+        assert result.stage_results["format"].status == EvalStatus.PASS
+        assert result.stage_results["format"].gate_passed is True
+
+        # quality 阶段包含 5 个 LLM Judge 评估器结果
+        quality_results = result.stage_results["quality"].constraint_results
+        assert len(quality_results) == 5
+        expected_ids = {
+            "soft.teaching_logic",
+            "soft.content_diversity",
+            "pref.style_preference",
+            "pref.depth_preference",
+            "pref.request_fulfillment",
+        }
+        actual_ids = {cr.constraint_id for cr in quality_results}
+        assert actual_ids == expected_ids
+
+        # LLM Judge 溯源字段完整
+        for cr in quality_results:
+            assert cr.judge_provider == "deepseek_judge"
+            assert cr.judge_model == "deepseek-chat"
+            assert cr.judge_record_path is not None
+            assert cr.judge_record_path.startswith("evidence/")
+
+        # 评分聚合正确计算
+        assert result.s_format == 1.0
+        assert result.s_common == 1.0
+        assert result.s_soft > 0.0
+        assert result.s_pref > 0.0
+        assert result.reward > 0.0
+
+    def test_full_cascade_short_circuit_on_format_fail(self, tmp_path: Path) -> None:
+        """格式门控失败时 commonsense/quality 被 SKIP。"""
+        from agent_eval.evaluation.engine import build_default_pipeline
+
+        pkg = tmp_path / "package"
+        pkg.mkdir()
+        output = pkg / "output"
+        output.mkdir()
+        # 非法格式：txt 文件
+        (output / "bad.txt").write_text("not valid format", encoding="utf-8")
+
+        engine = build_default_pipeline(registry)
+        mock_orch = _make_e2e_mock_orchestrator()
+
+        result = engine.evaluate_sample(
+            pkg,
+            {
+                "sample_id": "e2e_short_circuit",
+                "judge_orchestrator": mock_orch,
+                "evidence_dir": tmp_path / "ev",
+            },
+        )
+
+        assert result.stage_results["format"].status == EvalStatus.FAIL
+        assert result.stage_results["commonsense"].status == EvalStatus.SKIP
+        assert result.stage_results["quality"].status == EvalStatus.SKIP
+        assert result.s_format == -3.0
+        # 短路后 soft/pref 得 0 分
+        assert result.s_soft == 0.0
+        assert result.s_pref == 0.0
+
+    def test_full_cascade_metrics_report(self, tmp_path: Path) -> None:
+        """批量评估可产出 MetricsReport，且指标计算正确。"""
+        from agent_eval.evaluation.engine import build_default_pipeline
+
+        pkg1 = self._build_package(tmp_path / "pkg1")
+        pkg2 = self._build_package(tmp_path / "pkg2")
+        engine = build_default_pipeline(registry)
+        mock_orch = _make_e2e_mock_orchestrator()
+        evidence_dir = tmp_path / "evidence"
+        evidence_dir.mkdir()
+
+        report = engine.evaluate_batch(
+            [pkg1, pkg2],
+            extra_context={
+                "judge_orchestrator": mock_orch,
+                "evidence_dir": evidence_dir,
+                "task_input": {"title": "一元一次方程", "subject": "数学"},
+            },
+            run_id="e2e_run",
+        )
+
+        assert report.total_samples == 2
+        assert report.dr == 1.0
+        assert report.cpr == 1.0
+        assert report.avg_reward > 0.0
+        assert report.run_id == "e2e_run"

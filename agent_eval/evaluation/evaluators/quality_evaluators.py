@@ -205,7 +205,7 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
     def _build_variables(self, text: str, context: dict[str, Any]) -> dict[str, Any]:
         """构建 Prompt 模板变量。子类可覆盖以添加特定变量。"""
         return {
-            "content": text[:4000],
+            "content": text[: EVALUATOR_DEFAULTS.llm_judge_content_chars],
             "title": context.get("task_input", {}).get("title", "未知标题"),
             "subject": context.get("task_input", {}).get("subject", "未知学科"),
         }
