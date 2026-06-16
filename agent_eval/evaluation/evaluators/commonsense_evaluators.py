@@ -62,92 +62,29 @@ def _collect_file_texts(output_dir: Path) -> dict[str, str]:
     return collect_file_texts(output_dir)
 
 
-# ─── 事实知识库缓存（多文件、按学科加载） ───
+# ─── 事实知识库（委托给 KnowledgeBaseManager） ───
 
-_fact_db_cache: dict[str, dict] = {}
+_knowledge_manager = None
 
 
-def _merge_fact_section(source: dict[str, Any] | None, target: dict[str, Any]) -> None:
-    """将 source 中的 constants/misconceptions/domain_facts 合并到 target。
+def _get_knowledge_manager() -> Any:
+    """获取默认 KnowledgeBaseManager 单例。"""
+    global _knowledge_manager
+    if _knowledge_manager is None:
+        from agent_eval.knowledge.manager import KnowledgeBaseManager
 
-    constants 和 misconceptions 是 list，做 extend 合并。
-    domain_facts 是嵌套 dict，按子 key 递归合并。
-    """
-    if source is None:
-        return
-    for key in ("constants", "misconceptions"):
-        items = source.get(key, [])
-        if items:
-            target.setdefault(key, []).extend(items)
-    # domain_facts 是嵌套 dict（如 {math_formulas: {plane_figures: [...]}}），
-    # 不能用 extend 否则只追加 dict 的 key 字符串。
-    df = source.get("domain_facts")
-    if df and isinstance(df, dict):
-        existing = target.setdefault("domain_facts", {})
-        for sub_key, sub_val in df.items():
-            if isinstance(sub_val, list):
-                existing.setdefault(sub_key, []).extend(sub_val)
-            elif isinstance(sub_val, dict):
-                existing.setdefault(sub_key, {}).update(sub_val)
-            else:
-                existing[sub_key] = sub_val
+        _knowledge_manager = KnowledgeBaseManager()
+    return _knowledge_manager
 
 
 def _load_fact_db(subjects: list[str] | None = None) -> dict:
-    """加载事实知识库（多文件、模块级缓存）。
-
-    始终加载 _defaults.yaml（跨学科通用规则），
-    然后按需加载学科文件（subjects=None 时加载全部）。
-
-    Args:
-        subjects: 学科标识列表，如 ["math", "history"]。
-                  为 None 时加载所有学科文件。
-
-    Returns:
-        合并后的 dict，包含 constants、misconceptions、domain_facts。
-    """
-    cache_key = ",".join(sorted(subjects)) if subjects else "__all__"
-    if cache_key in _fact_db_cache:
-        return _fact_db_cache[cache_key]
-
-    import yaml
-
-    from agent_eval.config.paths import paths
-
-    knowledge_dir = paths.assets_dir / "knowledge"
-    merged: dict[str, Any] = {
-        "constants": [],
-        "misconceptions": [],
-        "domain_facts": {},
-    }
-
-    # 1. 始终加载 _defaults.yaml
-    defaults_path = knowledge_dir / "_defaults.yaml"
-    if defaults_path.exists():
-        with open(defaults_path, encoding="utf-8") as f:
-            _merge_fact_section(yaml.safe_load(f), merged)
-
-    # 2. 加载学科文件（排除 _ 前缀）
-    for yaml_file in sorted(knowledge_dir.glob("[!_]*.yaml")):
-        try:
-            with open(yaml_file, encoding="utf-8") as f:
-                data = yaml.safe_load(f)
-        except (OSError, yaml.YAMLError):
-            continue
-        if data is None:
-            continue
-        file_subject = data.get("subject", "")
-        if subjects is None or file_subject in subjects:
-            _merge_fact_section(data, merged)
-
-    _fact_db_cache[cache_key] = merged
-    return merged
+    """加载事实知识库（兼容旧接口，委托给 KnowledgeBaseManager）。"""
+    return _get_knowledge_manager().load(subjects)
 
 
 def _reset_fact_db_cache() -> None:
-    """重置事实知识库缓存（供测试使用）。"""
-    global _fact_db_cache
-    _fact_db_cache = {}
+    """重置事实知识库缓存（兼容旧接口）。"""
+    _get_knowledge_manager().invalidate_cache()
 
 
 # ─── 算术表达式求值 ───
