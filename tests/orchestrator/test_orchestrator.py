@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -179,23 +181,59 @@ class TestEvalOnly:
         )
         assert index["runs"][0]["project"] == "math_course"
 
-    def test_eval_only_saves_cache(
+    def test_eval_only_creates_run_trace_and_passes_trace_id(
         self,
         golden_package: Path,
         workspace: Workspace,
     ) -> None:
-        """eval_only 保存缓存到磁盘。"""
+        """eval_only 为每次运行创建独立 Langfuse trace，并将 trace_id 注入 context。"""
         orch = Orchestrator(workspace=workspace)
-        orch.eval_only(golden_package)
 
-        cache_file = workspace.cache_dir / "evaluation_cache.json"
-        assert cache_file.exists()
+        mock_span = MagicMock()
+        captured_contexts: list[dict] = []
+        original_evaluate_sample = orch.pipeline_engine.evaluate_sample
 
-        cache_data = json.loads(cache_file.read_text(encoding="utf-8"))
-        assert len(cache_data) > 0
+        def _capture_and_call(pkg: ExecutionPackage, context: dict) -> Any:
+            captured_contexts.append(context)
+            return original_evaluate_sample(pkg, context)
 
+        with (
+            patch("agent_eval.llm.tracing.create_trace") as mock_create_trace,
+            patch.object(
+                orch.pipeline_engine, "evaluate_sample", side_effect=_capture_and_call
+            ) as _,
+        ):
+            mock_create_trace.return_value = (mock_span, {"trace_id": "run-trace-abc"})
+            result = orch.eval_only(golden_package)
 
-class TestLoadPackagesErrorPaths:
+        assert isinstance(result, EvalResult)
+        # 创建了一次运行级 trace
+        mock_create_trace.assert_called_once()
+        call_kwargs = mock_create_trace.call_args.kwargs
+        assert call_kwargs["name"].startswith("eval:")
+        assert call_kwargs["metadata"]["mode"] == "eval_only"
+        assert call_kwargs["metadata"]["with_vision"] is False
+        # trace_id 被传入 evaluate_sample 的 context
+        assert len(captured_contexts) >= 1
+        assert captured_contexts[0].get("trace_id") == "run-trace-abc"
+
+    def test_eval_only_continues_when_trace_creation_fails(
+        self,
+        golden_package: Path,
+        workspace: Workspace,
+    ) -> None:
+        """Langfuse trace 创建失败不应中断评估流程。"""
+        orch = Orchestrator(workspace=workspace)
+
+        with patch(
+            "agent_eval.llm.tracing.create_trace",
+            side_effect=RuntimeError("langfuse down"),
+        ):
+            result = orch.eval_only(golden_package)
+
+        assert isinstance(result, EvalResult)
+        assert result.report.total_samples == 1
+
     """包加载错误路径测试。"""
 
     def test_load_single_package_with_invalid_manifest(self, tmp_path: Path) -> None:
@@ -325,7 +363,7 @@ class TestWorkspaceIndexErrorPaths:
 
     def test_index_update_with_readonly_file(self, tmp_path: Path) -> None:
         """索引文件写入失败时不崩溃。"""
-        from agent_eval.evaluation.models import MetricsReport, SampleScore
+        from agent_eval.evaluation.models import MetricsReport
 
         ws = Workspace(root_dir=tmp_path / "ws")
         ws.ensure_dirs()

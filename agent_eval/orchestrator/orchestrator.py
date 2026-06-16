@@ -137,20 +137,42 @@ class Orchestrator:
 
         logger.info("开始 eval-only 评估", run_id=run_id, package_dir=str(package_dir))
 
-        # 2. 加载 ExecutionPackage 列表
+        # 2. 为本次评测运行创建 Langfuse Trace
+        # 同一运行内的所有 LLM/视觉 LLM 调用都归到这个 trace 下；
+        # 不同运行使用不同 trace_id，实现任务级隔离。
+        trace_id: str | None = None
+        try:
+            from agent_eval.llm.tracing import create_trace
+
+            trace_info = create_trace(
+                name=f"eval:{run_id}",
+                metadata={
+                    "run_id": run_id,
+                    "mode": "eval_only",
+                    "package_dir": str(package_dir),
+                    "project": project,
+                    "with_vision": with_vision,
+                },
+            )
+            if trace_info is not None:
+                trace_id = trace_info[1]["trace_id"]
+        except Exception:
+            logger.warning("创建 Langfuse trace 失败，将继续无追踪运行", exc_info=True)
+
+        # 3. 加载 ExecutionPackage 列表
         packages = self._load_packages(package_dir)
         if not packages:
             raise OrchestratorError(f"未找到有效的 ExecutionPackage: {package_dir}")
 
         logger.info("加载执行包", count=len(packages))
 
-        # 3. 用 RuleSet 参数覆盖评估器默认参数
+        # 4. 用 RuleSet 参数覆盖评估器默认参数
         self.pipeline_engine.apply_rule_set_params(rule_set)
 
-        # 4. 加载缓存
+        # 5. 加载缓存
         self._load_cache(self.workspace, self.pipeline_engine)
 
-        # 5. 构建 extra_context
+        # 6. 构建 extra_context
         rule_set_version = ""
         if rule_set is not None and hasattr(rule_set, "version"):
             rule_set_version = rule_set.version
@@ -162,13 +184,15 @@ class Orchestrator:
             extra_context["llm_provider"] = llm_provider
         if screenshot_renderer is not None:
             extra_context["screenshot_renderer"] = screenshot_renderer
+        if trace_id is not None:
+            extra_context["trace_id"] = trace_id
 
         # 为每个包设置 evidence_dir
         # 在 evaluate_batch 中通过 extra_context 统一注入，
         # 但每个包的 evidence_dir 不同，需要在循环中单独处理
         # 使用 per-sample context override
 
-        # 6. 逐样本评估
+        # 7. 逐样本评估
         sample_results: list[SampleResult] = []
         result_map: dict[str, EvaluationResult] = {}
 
@@ -186,7 +210,7 @@ class Orchestrator:
             sample_result = self.pipeline_engine.evaluate_sample(pkg, context)
             sample_results.append(sample_result)
 
-            # 7. 转为 EvaluationResult 并保存
+            # 8. 转为 EvaluationResult 并保存
             eval_result = self._sample_to_evaluation_result(
                 sample_result,
                 pkg,
@@ -203,13 +227,13 @@ class Orchestrator:
                 reward=sample_result.reward,
             )
 
-        # 8. 计算聚合指标
+        # 9. 计算聚合指标
         metrics_report = self.pipeline_engine.metrics_calculator.compute(
             sample_results,
             run_id=run_id,
         )
 
-        # 9. 生成聚合报告
+        # 10. 生成聚合报告
         summary_md, summary_json = self.report_generator.generate_summary_report(
             metrics_report,
         )
@@ -222,10 +246,10 @@ class Orchestrator:
             encoding="utf-8",
         )
 
-        # 10. 保存缓存
+        # 11. 保存缓存
         self._save_cache(self.workspace, self.pipeline_engine)
 
-        # 11. 更新 workspace index
+        # 12. 更新 workspace index
         self._update_workspace_index(
             self.workspace,
             run_workspace,
