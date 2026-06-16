@@ -1,0 +1,23 @@
+{
+  "name": "agent-eval-web-backend",
+  "version": "0.1.0",
+  "description": "Agent Eval Web Portal backend (Express)",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "WORKSPACE_DIR=${WORKSPACE_DIR:-./workspace} PORT=${PORT:-3000} node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "js-yaml": "^4.1.0",
+    "serverless-http": "^3.2.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
+  }
+}
