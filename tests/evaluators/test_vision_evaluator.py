@@ -155,8 +155,24 @@ class TestVisionQualityEvaluator:
         orchestrator = MagicMock()
         # 两次调用返回不同分数
         orchestrator.judge.side_effect = [
-            ({"layout": 6.0, "color_scheme": 6.0, "information_hierarchy": 6.0, "readability": 6.0}, _make_record()),
-            ({"layout": 8.0, "color_scheme": 8.0, "information_hierarchy": 8.0, "readability": 8.0}, _make_record()),
+            (
+                {
+                    "layout": 6.0,
+                    "color_scheme": 6.0,
+                    "information_hierarchy": 6.0,
+                    "readability": 6.0,
+                },
+                _make_record(),
+            ),
+            (
+                {
+                    "layout": 8.0,
+                    "color_scheme": 8.0,
+                    "information_hierarchy": 8.0,
+                    "readability": 8.0,
+                },
+                _make_record(),
+            ),
         ]
 
         ev = VisionQualityEvaluator()
@@ -200,7 +216,15 @@ class TestVisionQualityEvaluator:
         orchestrator = MagicMock()
         orchestrator.judge.side_effect = [
             RuntimeError("doc0 vision fail"),
-            ({"layout": 8.0, "color_scheme": 8.0, "information_hierarchy": 8.0, "readability": 8.0}, _make_record()),
+            (
+                {
+                    "layout": 8.0,
+                    "color_scheme": 8.0,
+                    "information_hierarchy": 8.0,
+                    "readability": 8.0,
+                },
+                _make_record(),
+            ),
         ]
 
         ev = VisionQualityEvaluator()
