@@ -44,3 +44,9 @@ Thumbs.db
 
 # mypy
 .mypy_cache/
+
+# Web Portal (Node.js build artifacts)
+web/backend/node_modules/
+web/frontend/node_modules/
+web/frontend/dist/
+web/backend/public/
