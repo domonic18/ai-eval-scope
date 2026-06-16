@@ -15,16 +15,17 @@ Langfuse v4 API:
 from __future__ import annotations
 
 import os
-from typing import Any, Optional
+import uuid
+from typing import Any
 
 import structlog
 
 logger = structlog.get_logger("tracing")
 
-_langfuse_client: Optional[Langfuse] = None
+_langfuse_client: Any | None = None
 
 
-def get_langfuse() -> Optional[Langfuse]:
+def get_langfuse() -> Any | None:
     """获取 Langfuse 客户端单例。
 
     首次调用时从环境变量读取配置并初始化客户端。
@@ -61,11 +62,14 @@ def get_langfuse() -> Optional[Langfuse]:
 
 def create_trace(
     name: str, metadata: dict[str, Any] | None = None
-) -> Optional[tuple[Any, dict[str, str]]]:
+) -> tuple[Any, dict[str, str]] | None:
     """创建 Langfuse Trace（根 Span）。
 
+    每次调用生成全局唯一的 trace_id（UUID），确保不同评测任务/运行不会共享同一个
+    Langfuse trace。
+
     Args:
-        name: Trace 名称，如 "judge:logical_consistency"。
+        name: Trace 显示名称，如 "eval:run_xxx" 或 "judge:logical_consistency"。
         metadata: Trace 元数据。
 
     Returns:
@@ -75,8 +79,8 @@ def create_trace(
     if langfuse is None:
         return None
 
-    trace_id = langfuse.create_trace_id(seed=name)
-    # TraceContext 是 TypedDict，等价于 {"trace_id": str}
+    # 使用 UUID 生成唯一 trace_id，避免不同运行/任务因同名而共享 trace
+    trace_id = uuid.uuid4().hex
     trace_ctx: dict[str, str] = {"trace_id": trace_id}
 
     span = langfuse.start_observation(
@@ -86,6 +90,35 @@ def create_trace(
         metadata=metadata or {},
     )
     return span, trace_ctx
+
+
+def create_span(
+    name: str,
+    trace_id: str,
+    metadata: dict[str, Any] | None = None,
+) -> Any | None:
+    """在已有 Trace 下创建子 Span。
+
+    用于把多个相关观察（如一次评测运行中的多次 LLM Judge）归到同一个 trace 下。
+
+    Args:
+        name: Span 名称。
+        trace_id: 父 Trace ID。
+        metadata: Span 元数据。
+
+    Returns:
+        Span 对象，或 None（未启用时）。
+    """
+    langfuse = get_langfuse()
+    if langfuse is None:
+        return None
+
+    return langfuse.start_observation(
+        name=name,
+        trace_context={"trace_id": trace_id},
+        as_type="span",
+        metadata=metadata or {},
+    )
 
 
 def is_tracing_enabled() -> bool:

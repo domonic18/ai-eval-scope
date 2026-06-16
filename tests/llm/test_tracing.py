@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from agent_eval.llm.tracing import (
+    create_span,
     create_trace,
     flush_traces,
     get_langfuse,
@@ -196,15 +197,19 @@ class TestCreateTrace:
         assert result is None
 
     def test_creates_trace_when_enabled(self) -> None:
-        """启用时创建 trace 并返回 (span, trace_ctx) 元组。"""
+        """启用时创建唯一 trace 并返回 (span, trace_ctx) 元组。"""
         mock_span = MagicMock()
 
         mock_cls, mock_instance, pm = _setup_env_and_mock()
-        mock_instance.create_trace_id.return_value = "abc123"
         mock_instance.start_observation.return_value = mock_span
 
         env = {"LANGFUSE_PUBLIC_KEY": "pk-lf-test", "LANGFUSE_SECRET_KEY": "sk-lf-test"}
-        with patch.dict(os.environ, env, clear=False), pm:
+        with (
+            patch.dict(os.environ, env, clear=False),
+            pm,
+            patch("agent_eval.llm.tracing.uuid.uuid4") as mock_uuid,
+        ):
+            mock_uuid.return_value.hex = "abc123"
             result = create_trace("judge:test", metadata={"key": "val"})
 
         assert result is not None
@@ -212,10 +217,60 @@ class TestCreateTrace:
         assert span is mock_span
         assert trace_ctx == {"trace_id": "abc123"}
 
-        mock_instance.create_trace_id.assert_called_once_with(seed="judge:test")
+        # 不再调用确定性的 create_trace_id(seed=name)，而是使用 UUID 保证每次唯一
+        mock_instance.create_trace_id.assert_not_called()
         mock_instance.start_observation.assert_called_once_with(
             name="judge:test",
             trace_context={"trace_id": "abc123"},
+            as_type="span",
+            metadata={"key": "val"},
+        )
+
+    def test_creates_unique_trace_per_call(self) -> None:
+        """连续调用 create_trace 应生成不同的 trace_id。"""
+        mock_span = MagicMock()
+
+        mock_cls, mock_instance, pm = _setup_env_and_mock()
+        mock_instance.start_observation.return_value = mock_span
+
+        env = {"LANGFUSE_PUBLIC_KEY": "pk-lf-test", "LANGFUSE_SECRET_KEY": "sk-lf-test"}
+        with patch.dict(os.environ, env, clear=False), pm:
+            result1 = create_trace("judge:test")
+            result2 = create_trace("judge:test")
+
+        assert result1 is not None
+        assert result2 is not None
+        assert result1[1]["trace_id"] != result2[1]["trace_id"]
+
+
+class TestCreateSpan:
+    """测试 create_span() 在已有 trace 下创建 span。"""
+
+    def test_returns_none_when_disabled(self) -> None:
+        """未启用时返回 None。"""
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("LANGFUSE_PUBLIC_KEY", None)
+            os.environ.pop("LANGFUSE_SECRET_KEY", None)
+            reset_langfuse()
+            result = create_span("inner", trace_id="abc123")
+
+        assert result is None
+
+    def test_creates_span_within_trace(self) -> None:
+        """在指定 trace_id 下创建 span。"""
+        mock_span = MagicMock()
+
+        mock_cls, mock_instance, pm = _setup_env_and_mock()
+        mock_instance.start_observation.return_value = mock_span
+
+        env = {"LANGFUSE_PUBLIC_KEY": "pk-lf-test", "LANGFUSE_SECRET_KEY": "sk-lf-test"}
+        with patch.dict(os.environ, env, clear=False), pm:
+            result = create_span("judge:test", trace_id="run-trace-123", metadata={"key": "val"})
+
+        assert result is mock_span
+        mock_instance.start_observation.assert_called_once_with(
+            name="judge:test",
+            trace_context={"trace_id": "run-trace-123"},
             as_type="span",
             metadata={"key": "val"},
         )
