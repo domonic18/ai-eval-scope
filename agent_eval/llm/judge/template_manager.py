@@ -11,6 +11,7 @@ import structlog
 import yaml
 
 from agent_eval.core.exceptions import LLMError
+from agent_eval.llm.config import JUDGE_DEFAULTS
 
 logger = structlog.get_logger("template_manager")
 
@@ -23,7 +24,7 @@ class JudgeDimension:
     name: str
     description: str
     weight: float = 1.0
-    score_range: tuple[float, float] = (0.0, 10.0)
+    score_range: tuple[float, float] = field(default_factory=lambda: JUDGE_DEFAULTS.score_range)
 
 
 @dataclass
@@ -36,9 +37,9 @@ class JudgeTemplate:
     system_prompt: str = ""
     user_prompt_template: str = ""
     output_schema: dict[str, Any] = field(default_factory=dict)
-    temperature: float = 0.0
-    seed: int = 42
-    num_samples: int = 3
+    temperature: float = JUDGE_DEFAULTS.temperature
+    seed: int = JUDGE_DEFAULTS.seed
+    num_samples: int = JUDGE_DEFAULTS.num_samples
 
 
 class TemplateManager:
@@ -134,7 +135,7 @@ class TemplateManager:
                 name=d["name"],
                 description=d.get("description", ""),
                 weight=d.get("weight", 1.0),
-                score_range=tuple(d.get("score_range", [0.0, 10.0])),
+                score_range=tuple(d.get("score_range", JUDGE_DEFAULTS.score_range)),
             )
             for d in data.get("dimensions", [])
         ]
@@ -146,8 +147,8 @@ class TemplateManager:
             system_prompt=data.get("system_prompt", ""),
             user_prompt_template=data.get("user_prompt_template", ""),
             output_schema=data.get("output_schema", {}),
-            temperature=data.get("temperature", 0.0),
-            seed=data.get("seed", 42),
-            num_samples=data.get("num_samples", 3),
+            temperature=data.get("temperature", JUDGE_DEFAULTS.temperature),
+            seed=data.get("seed", JUDGE_DEFAULTS.seed),
+            num_samples=data.get("num_samples", JUDGE_DEFAULTS.num_samples),
         )
         self._templates[template.template_id] = template

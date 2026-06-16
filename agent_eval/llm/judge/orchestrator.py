@@ -14,6 +14,7 @@ from typing import Any
 
 import structlog
 
+from agent_eval.llm.config import JUDGE_ID_DATETIME_FORMAT
 from agent_eval.llm.judge.recorder import JudgeRecorder
 from agent_eval.llm.judge.stability import StabilityController
 from agent_eval.llm.judge.structured_output import StructuredOutputParser
@@ -251,7 +252,9 @@ class JudgeOrchestrator:
         timestamp = datetime.now(tz=UTC).isoformat()
         last_parsed = stable_result.all_samples[-1] if stable_result.all_samples else {}
         summary_text = str(last_parsed.get("summary", ""))
-        judge_id = f"judge_{constraint_id}_{datetime.now(tz=UTC).strftime('%Y%m%d_%H%M%S')}"
+        judge_id = (
+            f"judge_{constraint_id}_{datetime.now(tz=UTC).strftime(JUDGE_ID_DATETIME_FORMAT)}"
+        )
         if judge_id_suffix:
             # 后缀只允许安全字符，避免污染文件名
             safe_suffix = re.sub(r"[^A-Za-z0-9_.-]", "_", judge_id_suffix)

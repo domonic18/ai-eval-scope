@@ -20,6 +20,8 @@ from typing import Any
 
 import structlog
 
+from agent_eval.llm.config import LANGFUSE_DEFAULTS
+
 logger = structlog.get_logger("tracing")
 
 _langfuse_client: Any | None = None
@@ -47,7 +49,7 @@ def get_langfuse() -> Any | None:
     try:
         from langfuse import Langfuse
 
-        host = os.environ.get("LANGFUSE_HOST", "https://cloud.langfuse.com")
+        host = os.environ.get("LANGFUSE_HOST", LANGFUSE_DEFAULTS.host)
         _langfuse_client = Langfuse(
             public_key=public_key,
             secret_key=secret_key,

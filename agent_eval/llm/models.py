@@ -9,6 +9,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from agent_eval.llm.config import JUDGE_RECORD_DEFAULTS
+
 
 @dataclass
 class TokenUsage:
@@ -108,8 +110,8 @@ class JudgeRecord:
     model: str  # 实际模型 ID，如 "deepseek-chat"
     # 调用参数
     template_id: str  # 使用的 Prompt 模板
-    temperature: float = 0.0
-    seed: int = 42
+    temperature: float = field(default_factory=lambda: JUDGE_RECORD_DEFAULTS.temperature)
+    seed: int = field(default_factory=lambda: JUDGE_RECORD_DEFAULTS.seed)
     # 结果
     raw_response: str = ""
     parsed_scores: dict[str, Any] = field(default_factory=dict)
@@ -118,7 +120,7 @@ class JudgeRecord:
     # LLM 评价总结（可解释性说明）
     summary: str = ""
     # 统计
-    num_samples: int = 1
+    num_samples: int = field(default_factory=lambda: JUDGE_RECORD_DEFAULTS.num_samples)
     total_duration_ms: float = 0.0
     token_usage: TokenUsage | None = None
     timestamp: str = ""  # ISO 8601

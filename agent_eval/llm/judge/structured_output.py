@@ -9,6 +9,7 @@ from typing import Any
 import jsonschema
 
 from agent_eval.core.exceptions import LLMResponseError
+from agent_eval.llm.config import STRUCTURED_OUTPUT_DEFAULTS
 
 
 class StructuredOutputParser:
@@ -20,7 +21,7 @@ class StructuredOutputParser:
     3. 不符合时抛出 LLMResponseError
     """
 
-    def __init__(self, max_retries: int = 3) -> None:
+    def __init__(self, max_retries: int = STRUCTURED_OUTPUT_DEFAULTS.max_retries) -> None:
         """初始化解析器。
 
         Args:

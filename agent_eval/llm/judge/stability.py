@@ -6,6 +6,7 @@ import statistics
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
+from agent_eval.llm.config import STABILITY_DEFAULTS
 from agent_eval.llm.judge.template_manager import JudgeDimension
 
 
@@ -30,8 +31,8 @@ class StabilityController:
 
     def __init__(
         self,
-        num_samples: int = 3,
-        stddev_threshold: float = 1.5,
+        num_samples: int = STABILITY_DEFAULTS.num_samples,
+        stddev_threshold: float = STABILITY_DEFAULTS.stddev_threshold,
     ) -> None:
         """初始化稳定性控制器。
 

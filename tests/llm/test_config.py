@@ -6,7 +6,17 @@ import os
 
 import pytest
 
-from agent_eval.llm.config import LLMConfig, ProviderConfig, resolve_api_key
+from agent_eval.llm.config import (
+    JUDGE_DEFAULTS,
+    JUDGE_ID_DATETIME_FORMAT,
+    JUDGE_RECORD_DEFAULTS,
+    LANGFUSE_DEFAULTS,
+    STABILITY_DEFAULTS,
+    STRUCTURED_OUTPUT_DEFAULTS,
+    LLMConfig,
+    ProviderConfig,
+    resolve_api_key,
+)
 
 
 class TestResolveApiKey:
@@ -138,3 +148,37 @@ class TestLLMConfig:
         restored = LLMConfig.model_validate(data)
         assert restored.default == llm_config.default
         assert set(restored.providers.keys()) == set(llm_config.providers.keys())
+
+
+class TestDefaults:
+    """LLM Judge 相关默认参数集中配置测试。"""
+
+    def test_judge_defaults(self) -> None:
+        """Judge 模板默认参数。"""
+        assert JUDGE_DEFAULTS.temperature == 0.0
+        assert JUDGE_DEFAULTS.seed == 42
+        assert JUDGE_DEFAULTS.num_samples == 3
+        assert JUDGE_DEFAULTS.score_range == (0.0, 10.0)
+
+    def test_stability_defaults(self) -> None:
+        """稳定性控制器默认参数。"""
+        assert STABILITY_DEFAULTS.num_samples == 3
+        assert STABILITY_DEFAULTS.stddev_threshold == 1.5
+
+    def test_structured_output_defaults(self) -> None:
+        """结构化输出解析器默认参数。"""
+        assert STRUCTURED_OUTPUT_DEFAULTS.max_retries == 3
+
+    def test_langfuse_defaults(self) -> None:
+        """Langfuse 默认参数。"""
+        assert LANGFUSE_DEFAULTS.host == "https://cloud.langfuse.com"
+
+    def test_judge_record_defaults(self) -> None:
+        """JudgeRecord 默认参数。"""
+        assert JUDGE_RECORD_DEFAULTS.temperature == 0.0
+        assert JUDGE_RECORD_DEFAULTS.seed == 42
+        assert JUDGE_RECORD_DEFAULTS.num_samples == 1
+
+    def test_judge_id_datetime_format(self) -> None:
+        """Judge ID 时间戳格式。"""
+        assert JUDGE_ID_DATETIME_FORMAT == "%Y%m%d_%H%M%S"
