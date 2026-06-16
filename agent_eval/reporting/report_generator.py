@@ -122,9 +122,8 @@ class ReportGenerator:
             for cr in stage_result.constraint_results:
                 status_icon = "✅" if cr.status == EvalStatus.PASS else "❌"
                 tier_mark = _TIER_MARKERS.get(cr.tier.value, cr.tier.value)
-                reason = cr.reason[:200] + "..." if len(cr.reason) > 200 else cr.reason
                 lines.append(
-                    f"| {cr.name} | {tier_mark} | {status_icon} | {cr.score:.2f} | {reason} |"
+                    f"| {cr.name} | {tier_mark} | {status_icon} | {cr.score:.2f} | {cr.reason} |"
                 )
 
             lines.append("")
@@ -321,7 +320,13 @@ class ReportGenerator:
                     # 错误/问题列表：逐条显示
                     lines.append(f"- {label}（{len(value)} 项）:")
                     for item in value[: REPORTING_DEFAULTS.error_list_max_items]:
-                        lines.append(f"  - {item}")
+                        parsed = self._parse_error_item(item)
+                        if parsed:
+                            lines.append(f"  - **文件**: `{parsed['file']}`")
+                            lines.append(f"    - **错误内容**: `{parsed['content']}`")
+                            lines.append(f"    - **解释说明**: {parsed['explanation']}")
+                        else:
+                            lines.append(f"  - {item}")
                     if len(value) > REPORTING_DEFAULTS.error_list_max_items:
                         lines.append(f"  - ... 共 {len(value)} 项")
                 elif key == "checks":
@@ -371,6 +376,24 @@ class ReportGenerator:
                 lines.append(f"- {key}: [{len(value)} 项]")
 
         lines.append("")
+
+    def _parse_error_item(self, item: Any) -> dict[str, str] | None:
+        """解析公式/算术错误条目，提取文件、错误内容、解释说明。
+
+        预期格式："文件路径: 错误类型 表达式（应为 xxx）"
+        """
+        if not isinstance(item, str):
+            return None
+        import re
+
+        match = re.match(r"^(.+?):\s*(.+?)\s*（应为\s*(.+?)）$", item)
+        if match:
+            return {
+                "file": match.group(1).strip(),
+                "content": match.group(2).strip(),
+                "explanation": f"正确结果应为 {match.group(3).strip()}",
+            }
+        return None
 
     def constraint_to_rule_result(self, cr: ConstraintResult) -> dict[str, Any]:
         """将 ConstraintResult 转为 rule_results.json 条目格式。"""
