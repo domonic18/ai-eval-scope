@@ -23,6 +23,8 @@ from agent_eval.core.exceptions import (
 )
 from agent_eval.execution.models import TaskSet
 from agent_eval.rules.models import RuleSet
+from agent_eval.rules.template import TemplateResolver
+from agent_eval.rules.validation import RuleSetValidator
 
 
 class ConfigLoader:
@@ -130,18 +132,36 @@ class ConfigLoader:
     def load_rule_set(
         path: Path | str,
         schema_path: Path | str | None = None,
+        *,
+        resolve_templates: bool = True,
+        validate_semantics: bool = False,
     ) -> RuleSet:
         """加载规则集配置并转换为 RuleSet 模型。
 
         Args:
             path: rule_set.yaml 文件路径。
             schema_path: JSON Schema 文件路径（可选）。
+            resolve_templates: 是否解析 template_ref 模板引用（默认 True）。
+            validate_semantics: 是否执行语义校验（默认 False，保持向后兼容）。
 
         Returns:
             RuleSet 实例。
+
+        Raises:
+            ConfigError: 语义校验失败时（仅当 validate_semantics=True）。
         """
         data = ConfigLoader.load_and_validate(path, schema_path)
-        return RuleSet.model_validate(data)
+        rule_set = RuleSet.model_validate(data)
+
+        if resolve_templates and rule_set.templates:
+            rule_set = TemplateResolver(rule_set).resolve()
+
+        if validate_semantics:
+            errors = RuleSetValidator().validate(rule_set)
+            if errors:
+                raise ConfigError(f"RuleSet 语义校验失败 ({path}): {errors}")
+
+        return rule_set
 
     @staticmethod
     def load_task_set(
@@ -159,6 +179,28 @@ class ConfigLoader:
         """
         data = ConfigLoader.load_and_validate(path, schema_path)
         return TaskSet.model_validate(data)
+
+    @staticmethod
+    def load_task_set_template(
+        template_path: Path | str,
+        variables: dict[str, list[Any]] | None = None,
+        *,
+        output_path: Path | str | None = None,
+    ) -> TaskSet:
+        """加载 task_set 模板并根据变量列表生成 TaskSet。
+
+        Args:
+            template_path: task_set 模板文件路径。
+            variables: 变量名到取值列表的映射（可选）。
+            output_path: 输出文件路径（可选）。
+
+        Returns:
+            生成的 TaskSet 实例。
+        """
+        from agent_eval.execution.task_builder import TaskSetBuilder
+
+        builder = TaskSetBuilder(template_path)
+        return builder.build(variables, output_path=output_path)
 
     @staticmethod
     def load_llm_config(

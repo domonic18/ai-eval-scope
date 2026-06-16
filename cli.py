@@ -15,6 +15,10 @@ from rich.table import Table
 # 在任何配置解析之前加载 .env
 load_dotenv()
 
+# 触发所有内置评估器注册（plugins/ 下的插件也会在此自动发现）
+# 需要先 load_dotenv() 再导入，故 suppress E402
+import agent_eval.evaluation.evaluators  # noqa: E402, F401
+
 app = typer.Typer(
     name="agent-eval",
     help="Agent 能力评估系统 — 基于 Agent-Driven 架构的评测框架",
@@ -150,7 +154,7 @@ def pack(
 
         # 执行打包
         if source_dir:
-            rprint(f"[blue]模式:[/blue] 目录打包")
+            rprint("[blue]模式:[/blue] 目录打包")
             rprint(f"[blue]源目录:[/blue] {source_dir}")
             builder.build_directory(
                 task=task,
@@ -158,7 +162,7 @@ def pack(
                 package_dir=pkg_dir,
             )
         else:
-            rprint(f"[blue]模式:[/blue] 文件打包")
+            rprint("[blue]模式:[/blue] 文件打包")
             rprint(f"[blue]文件数:[/blue] {len(files)}")
             builder.build_inline(
                 task=task,
@@ -338,6 +342,174 @@ def version() -> None:
     from agent_eval import __version__
 
     rprint(f"agent-eval v{__version__}")
+
+
+# ─── Sprint 7: 规则集管理子命令 ───
+
+rule_app = typer.Typer(name="rule-set", help="规则集管理：模板、版本、diff、回滚")
+app.add_typer(rule_app)
+
+
+def _print_rule_set_diff(diff: object) -> None:
+    """Rich 打印 RuleSetDiff。"""
+    from agent_eval.rules.models import RuleSetDiff
+
+    if not isinstance(diff, RuleSetDiff):
+        return
+
+    rprint(
+        f"\n[bold blue]═══ 规则集差异 ({diff.version_from} → {diff.version_to}) ═══[/bold blue]\n"
+    )
+
+    if diff.added_rules:
+        rprint("[bold green]新增规则:[/bold green]")
+        for r in diff.added_rules:
+            rprint(f"  + {r.get('id')}: {r.get('name', '')}")
+    if diff.removed_rules:
+        rprint("\n[bold red]移除规则:[/bold red]")
+        for r in diff.removed_rules:
+            rprint(f"  - {r.get('id')}: {r.get('name', '')}")
+    if diff.modified_rules:
+        rprint("\n[bold yellow]修改规则:[/bold yellow]")
+        for m in diff.modified_rules:
+            rprint(f"  ~ {m.get('rule_id')}")
+    if not diff.added_rules and not diff.removed_rules and not diff.modified_rules:
+        rprint("[dim]无差异[/dim]")
+    rprint("")
+
+
+@rule_app.command("validate")
+def rule_validate(
+    rule_set_path: str = typer.Option(..., "--rule-set", "-r", help="规则集文件路径"),
+    resolve_templates: bool = typer.Option(
+        True, "--resolve-templates/--no-resolve", help="解析模板引用"
+    ),
+) -> None:
+    """验证规则集语义正确性。"""
+    from agent_eval.config.loader import ConfigLoader
+    from agent_eval.rules.validation import RuleSetValidator
+
+    try:
+        rs = ConfigLoader.load_rule_set(
+            rule_set_path,
+            resolve_templates=resolve_templates,
+        )
+        errors = RuleSetValidator().validate(rs)
+        if errors:
+            rprint("[bold red]❌ 规则集语义校验失败:[/bold red]")
+            for e in errors:
+                rprint(f"  • [red]{e}[/red]")
+            raise typer.Exit(code=1)
+        rprint(f"[green]✅ 规则集校验通过: {rule_set_path}[/green]")
+    except Exception as e:
+        rprint(f"[bold red]❌ 校验失败: {e}[/bold red]")
+        raise typer.Exit(code=1) from e
+
+
+@rule_app.command("diff")
+def rule_diff(
+    rule_set_path: str = typer.Option(..., "--rule-set", "-r", help="规则集文件路径"),
+    from_version: str | None = typer.Option(None, "--from", help="起始版本（默认当前磁盘版本）"),
+    to_version: str | None = typer.Option(None, "--to", help="目标版本（默认最新归档版本）"),
+) -> None:
+    """显示规则集版本差异。"""
+    from agent_eval.rules.manager import RuleSetManager
+
+    try:
+        manager = RuleSetManager(rule_set_path)
+        diff = manager.diff(from_version, to_version)
+        _print_rule_set_diff(diff)
+    except Exception as e:
+        rprint(f"[bold red]❌ diff 失败: {e}[/bold red]")
+        raise typer.Exit(code=1) from e
+
+
+@rule_app.command("apply")
+def rule_apply(
+    rule_set_path: str = typer.Option(..., "--rule-set", "-r", help="规则集文件路径"),
+    message: str = typer.Option("", "--message", "-m", help="变更说明"),
+) -> None:
+    """应用规则集变更，自动归档旧版本。"""
+    from agent_eval.config.loader import ConfigLoader
+    from agent_eval.rules.manager import RuleSetManager
+
+    try:
+        rule_set = ConfigLoader.load_rule_set(rule_set_path, resolve_templates=False)
+        manager = RuleSetManager(rule_set_path)
+        version = manager.apply(rule_set, commit_message=message)
+        rprint(f"[green]✅ 已应用规则集版本 {version}[/green]")
+    except Exception as e:
+        rprint(f"[bold red]❌ apply 失败: {e}[/bold red]")
+        raise typer.Exit(code=1) from e
+
+
+@rule_app.command("history")
+def rule_history(
+    rule_set_path: str = typer.Option(..., "--rule-set", "-r", help="规则集文件路径"),
+    limit: int = typer.Option(10, "--limit", "-n", help="显示条数"),
+) -> None:
+    """显示规则集变更历史。"""
+    from agent_eval.rules.manager import RuleSetManager
+
+    try:
+        manager = RuleSetManager(rule_set_path)
+        changes = manager.list_history()
+        if not changes:
+            rprint("[dim]暂无变更历史[/dim]")
+            return
+
+        rprint("\n[bold blue]═══ 规则集变更历史 ═══[/bold blue]\n")
+        for change in changes[-limit:]:
+            rprint(
+                f"  [{change.timestamp}] "
+                f"[cyan]{change.version}[/cyan] "
+                f"({change.change_type}): {change.description}"
+            )
+        rprint("")
+    except Exception as e:
+        rprint(f"[bold red]❌ history 失败: {e}[/bold red]")
+        raise typer.Exit(code=1) from e
+
+
+@rule_app.command("rollback")
+def rule_rollback(
+    rule_set_path: str = typer.Option(..., "--rule-set", "-r", help="规则集文件路径"),
+    version: str | None = typer.Option(
+        None, "--version", "-v", help="回滚目标版本（默认最近归档）"
+    ),
+) -> None:
+    """回滚到指定版本。"""
+    from agent_eval.rules.manager import RuleSetManager
+
+    try:
+        manager = RuleSetManager(rule_set_path)
+        rs = manager.rollback(version)
+        rprint(f"[green]✅ 已回滚到规则集版本 {rs.version}[/green]")
+    except Exception as e:
+        rprint(f"[bold red]❌ rollback 失败: {e}[/bold red]")
+        raise typer.Exit(code=1) from e
+
+
+@rule_app.command("list-templates")
+def rule_list_templates(
+    rule_set_path: str = typer.Option(..., "--rule-set", "-r", help="规则集文件路径"),
+) -> None:
+    """列出规则集中定义的模板。"""
+    from agent_eval.config.loader import ConfigLoader
+
+    try:
+        rs = ConfigLoader.load_rule_set(rule_set_path, resolve_templates=False)
+        if not rs.templates:
+            rprint("[dim]本规则集未定义模板[/dim]")
+            return
+
+        rprint("\n[bold blue]═══ 规则模板 ═══[/bold blue]\n")
+        for t in rs.templates:
+            rprint(f"  • [cyan]{t.id}[/cyan]: {t.name} ({t.evaluator})")
+        rprint("")
+    except Exception as e:
+        rprint(f"[bold red]❌ list-templates 失败: {e}[/bold red]")
+        raise typer.Exit(code=1) from e
 
 
 if __name__ == "__main__":

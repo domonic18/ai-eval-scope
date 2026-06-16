@@ -45,7 +45,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "name", "dimension", "stage", "evaluator"],
+        "required": ["id"],
         "properties": {
           "id": { "type": "string" },
           "name": { "type": "string" },
@@ -55,7 +55,61 @@
           "evaluator": { "type": "string" },
           "params": { "type": "object" },
           "weight": { "type": "number", "minimum": 0 },
+          "penalty_on_fail": { "type": ["number", "null"] },
+          "template_ref": { "type": ["string", "null"] },
+          "overrides": { "type": "object" },
+          "enabled": { "type": "boolean" },
+          "metadata": { "type": "object" }
+        }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "description": "规则集元数据与版本信息",
+      "properties": {
+        "version": { "type": "string" },
+        "description": { "type": "string" },
+        "author": { "type": "string" },
+        "created_at": { "type": "string" },
+        "updated_at": { "type": "string" },
+        "changelog": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "templates": {
+      "type": "array",
+      "description": "规则模板定义",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "dimension", "stage", "evaluator"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "dimension": { "type": "string" },
+          "stage": { "type": "string" },
+          "evaluator": { "type": "string" },
+          "params": { "type": "object" },
+          "weight": { "type": "number", "minimum": 0 },
           "penalty_on_fail": { "type": ["number", "null"] }
+        }
+      }
+    },
+    "history": {
+      "type": "array",
+      "description": "变更历史",
+      "items": {
+        "type": "object",
+        "required": ["version", "timestamp", "change_type"],
+        "properties": {
+          "version": { "type": "string" },
+          "timestamp": { "type": "string" },
+          "change_type": { "type": "string" },
+          "rule_id": { "type": ["string", "null"] },
+          "description": { "type": "string" },
+          "diff": { "type": "object" }
         }
       }
     }
