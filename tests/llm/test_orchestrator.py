@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 import yaml
@@ -290,3 +290,109 @@ class TestJudgeOrchestrator:
                 variables={"content": "test"},
                 evidence_dir=tmp_path / "ev",
             )
+
+
+class TestJudgeOrchestratorTracing:
+    """JudgeOrchestrator trace 隔离测试。"""
+
+    def test_uses_existing_trace_id_when_provided(self, tmp_path: Path) -> None:
+        """传入 trace_id 时，应在外部 trace 下创建 span，而不是新建 trace。"""
+        prompts_dir = tmp_path / "prompts"
+        prompts_dir.mkdir()
+        _setup_template(prompts_dir)
+
+        mock_client = MagicMock()
+        mock_client.chat.return_value = LLMResponse(
+            content='{"clarity": 8.0, "depth": 7.0}',
+            provider_name="ds",
+            model="m",
+            usage=TokenUsage(100, 50, 150),
+        )
+        mock_client.provider_info = MagicMock()
+        mock_client.provider_info.name = "ds"
+        mock_client.provider_info.model = "m"
+
+        mock_pool = MagicMock()
+        mock_pool.get.return_value = mock_client
+
+        tm = TemplateManager(prompts_dir)
+        tm.load_all()
+        from agent_eval.llm.judge.stability import StabilityController
+
+        orchestrator = JudgeOrchestrator(
+            pool=mock_pool,
+            template_manager=tm,
+            stability=StabilityController(num_samples=1),
+            parser=StructuredOutputParser(),
+        )
+
+        with (
+            patch("agent_eval.llm.judge.orchestrator.create_trace") as mock_create_trace,
+            patch("agent_eval.llm.judge.orchestrator.create_span") as mock_create_span,
+        ):
+            mock_fake_span = MagicMock()
+            mock_create_span.return_value = mock_fake_span
+            orchestrator.judge(
+                constraint_id="c1",
+                sample_id="s1",
+                template_id="test_judge",
+                variables={"content": "test"},
+                evidence_dir=tmp_path / "ev",
+                trace_id="run-trace-123",
+            )
+
+        # 不应新建 trace
+        mock_create_trace.assert_not_called()
+        # 应在指定 trace 下创建 span
+        mock_create_span.assert_called_once()
+        call_kwargs = mock_create_span.call_args.kwargs
+        assert call_kwargs["trace_id"] == "run-trace-123"
+        assert call_kwargs["name"] == "judge:c1"
+
+    def test_creates_new_trace_when_trace_id_not_provided(self, tmp_path: Path) -> None:
+        """未传入 trace_id 时，向后兼容新建独立 trace。"""
+        prompts_dir = tmp_path / "prompts"
+        prompts_dir.mkdir()
+        _setup_template(prompts_dir)
+
+        mock_client = MagicMock()
+        mock_client.chat.return_value = LLMResponse(
+            content='{"clarity": 8.0, "depth": 7.0}',
+            provider_name="ds",
+            model="m",
+            usage=TokenUsage(100, 50, 150),
+        )
+        mock_client.provider_info = MagicMock()
+        mock_client.provider_info.name = "ds"
+        mock_client.provider_info.model = "m"
+
+        mock_pool = MagicMock()
+        mock_pool.get.return_value = mock_client
+
+        tm = TemplateManager(prompts_dir)
+        tm.load_all()
+        from agent_eval.llm.judge.stability import StabilityController
+
+        orchestrator = JudgeOrchestrator(
+            pool=mock_pool,
+            template_manager=tm,
+            stability=StabilityController(num_samples=1),
+            parser=StructuredOutputParser(),
+        )
+
+        with (
+            patch("agent_eval.llm.judge.orchestrator.create_trace") as mock_create_trace,
+            patch("agent_eval.llm.judge.orchestrator.create_span") as mock_create_span,
+        ):
+            mock_fake_span = MagicMock()
+            mock_create_trace.return_value = (mock_fake_span, {"trace_id": "new-trace"})
+            orchestrator.judge(
+                constraint_id="c1",
+                sample_id="s1",
+                template_id="test_judge",
+                variables={"content": "test"},
+                evidence_dir=tmp_path / "ev",
+            )
+
+        mock_create_trace.assert_called_once()
+        mock_create_span.assert_not_called()

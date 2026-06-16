@@ -111,15 +111,14 @@ class VisionQualityEvaluator(BaseLLMJudgeEvaluator):
             evidence_dir=ev,
             title=task_input.get("title", "未知标题"),
             provider_name=provider_name,
+            trace_id=context.get("trace_id"),
         )
 
         elapsed = (time.monotonic() - start) * 1000
 
         # 全部文档打分失败 → 降级（避免均值无意义）
         if not per_doc:
-            return _degrade(
-                "全部文档视觉评估失败", duration_ms=elapsed
-            )
+            return _degrade("全部文档视觉评估失败", duration_ms=elapsed)
 
         return self._build_vision_result(per_doc, screenshots, len(doc_files), elapsed)
 
@@ -133,6 +132,7 @@ class VisionQualityEvaluator(BaseLLMJudgeEvaluator):
         evidence_dir: Path,
         title: str,
         provider_name: str | None,
+        trace_id: str | None = None,
     ) -> list[dict[str, Any]]:
         """逐文档调用视觉 judge，返回每文档评估记录列表。
 
@@ -153,6 +153,7 @@ class VisionQualityEvaluator(BaseLLMJudgeEvaluator):
                     provider_name=provider_name,
                     images=[png_to_data_uri(png)],
                     judge_id_suffix=f"doc{idx:03d}_{doc_name}",
+                    trace_id=trace_id,
                 )
                 records.append(
                     {
@@ -219,7 +220,9 @@ class VisionQualityEvaluator(BaseLLMJudgeEvaluator):
                     "scores": d.get("scores"),
                     **({"error": d["error"]} if not d.get("ok") and "error" in d else {}),
                     "judge_record": (
-                        f"evidence/{d['judge_id']}.json" if d.get("ok") and d.get("judge_id") else None
+                        f"evidence/{d['judge_id']}.json"
+                        if d.get("ok") and d.get("judge_id")
+                        else None
                     ),
                 }
                 for d in per_doc

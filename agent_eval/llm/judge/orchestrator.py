@@ -20,7 +20,7 @@ from agent_eval.llm.judge.structured_output import StructuredOutputParser
 from agent_eval.llm.judge.template_manager import TemplateManager
 from agent_eval.llm.models import JudgeRecord, Message, TokenUsage
 from agent_eval.llm.pool import ProviderPool
-from agent_eval.llm.tracing import create_trace
+from agent_eval.llm.tracing import create_span, create_trace
 
 logger = structlog.get_logger("judge.orchestrator")
 
@@ -106,6 +106,7 @@ class JudgeOrchestrator:
         provider_name: str | None = None,
         images: list[str] | None = None,
         judge_id_suffix: str | None = None,
+        trace_id: str | None = None,
     ) -> tuple[dict[str, Any], JudgeRecord]:
         """执行完整 judge pipeline。
 
@@ -121,6 +122,9 @@ class JudgeOrchestrator:
             judge_id_suffix: judge_id 与 evidence 文件名的附加后缀。当同一约束
                 在一次评估内被多次调用（如逐文档视觉评估）时必填，否则时间戳到秒
                 的 judge_id 会碰撞、evidence 文件互相覆盖。
+            trace_id: 外层评测运行创建的 Langfuse trace ID。传入时，本次 judge 调用
+                会作为该 trace 下的 span，而不是新建 trace。不同评测任务传入不同
+                trace_id，即可在 Langfuse 中隔离不同任务的 LLM 调用日志。
 
         Returns:
             (scores_dict, JudgeRecord) 元组。
@@ -133,17 +137,31 @@ class JudgeOrchestrator:
         template = self.templates.get(template_id)
         system_prompt, user_prompt = self.templates.render(template_id, variables)
 
-        # 3. Langfuse Trace（v4 API: create_trace_id + start_observation）
-        trace_info = create_trace(
-            name=f"judge:{constraint_id}",
-            metadata={
-                "sample_id": sample_id,
-                "template_id": template_id,
-                "provider": provider_info.name,
-                "model": provider_info.model,
-            },
-        )
-        root_span = trace_info[0] if trace_info else None
+        # 3. Langfuse Trace（v4 API: start_observation）
+        # 若外层已传入 trace_id，本次 judge 作为该 trace 下的 span；
+        # 否则新建独立 trace（向后兼容，单测/独立调用场景）。
+        if trace_id:
+            root_span = create_span(
+                name=f"judge:{constraint_id}",
+                trace_id=trace_id,
+                metadata={
+                    "sample_id": sample_id,
+                    "template_id": template_id,
+                    "provider": provider_info.name,
+                    "model": provider_info.model,
+                },
+            )
+        else:
+            trace_info = create_trace(
+                name=f"judge:{constraint_id}",
+                metadata={
+                    "sample_id": sample_id,
+                    "template_id": template_id,
+                    "provider": provider_info.name,
+                    "model": provider_info.model,
+                },
+            )
+            root_span = trace_info[0] if trace_info else None
 
         # 4. 采样并记录
         all_raw_responses: list[str] = []

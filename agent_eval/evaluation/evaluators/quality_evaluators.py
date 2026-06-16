@@ -195,6 +195,7 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
             variables=variables,
             evidence_dir=ev,
             provider_name=provider_name,
+            trace_id=context.get("trace_id"),
         )
         return scores, record, {}
 

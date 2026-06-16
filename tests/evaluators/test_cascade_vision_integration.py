@@ -12,6 +12,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
+# 触发评估器注册（含 vision）
+import agent_eval.evaluation.evaluators  # noqa: F401
 from agent_eval.evaluation.engine import (
     EvaluatorConfig,
     PipelineConfig,
@@ -19,9 +21,6 @@ from agent_eval.evaluation.engine import (
     StageConfig,
 )
 from agent_eval.evaluation.registry import registry
-
-# 触发评估器注册（含 vision）
-import agent_eval.evaluation.evaluators  # noqa: F401
 
 
 class _FakeDim:
@@ -77,6 +76,7 @@ class _FakeOrchestrator:
         provider_name=None,
         images=None,
         judge_id_suffix=None,
+        trace_id=None,
     ):
         scores = self._score_map.get(template_id, {})
         provider, model = self._pm.get(template_id, ("ds", "m"))
