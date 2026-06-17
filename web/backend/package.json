@@ -1,23 +1,49 @@
 {
   "name": "agent-eval-web-backend",
-  "version": "0.1.0",
-  "description": "Agent Eval Web Portal backend (Express)",
+  "version": "0.3.0",
+  "description": "Agent Eval observability platform backend (TypeScript + Express + Prisma + object storage)",
   "type": "commonjs",
   "engines": {
     "node": ">=18.0.0"
   },
   "scripts": {
-    "start": "node server.js",
-    "dev": "WORKSPACE_DIR=${WORKSPACE_DIR:-./workspace} PORT=${PORT:-3000} node server.js"
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "node dist/server.js",
+    "dev": "tsx watch server.ts",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "postinstall": "prisma generate || echo 'prisma generate skipped (schema/cli unavailable)'",
+    "test": "vitest run",
+    "test:cov": "vitest run --coverage"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.682.0",
+    "@aws-sdk/s3-request-presigner": "^3.682.0",
+    "@prisma/client": "^5.22.0",
+    "argon2": "^0.41.1",
     "cors": "^2.8.5",
     "express": "^4.19.2",
-    "js-yaml": "^4.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "pino": "^9.5.0",
+    "prisma": "^5.22.0",
     "serverless-http": "^3.2.0"
   },
   "devDependencies": {
-    "jest": "^29.7.0",
-    "supertest": "^7.0.0"
+    "@types/cors": "^2.8.19",
+    "@types/express": "^4.17.25",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^25.9.3",
+    "@types/supertest": "^7.2.0",
+    "pino-pretty": "^11.3.0",
+    "supertest": "^7.0.0",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
+  },
+  "prisma": {
+    "schema": "prisma/schema.prisma"
   }
 }

@@ -1,7 +1,7 @@
 "use strict";
 
 const serverless = require("serverless-http");
-const { createApp } = require("./server");
+const { createApp } = require("./dist/server");
 
 const app = createApp();
 

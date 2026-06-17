@@ -1,0 +1,240 @@
+// Agent Eval 可观测平台 — 数据模型（Sprint 7b）
+// 设计基线：docs/arch/09Web可观测平台架构设计.md §四（数据模型）/ §七.2（幂等去重）
+//
+// 说明：
+// - email 用普通 String @unique + 应用层小写归一（7c 实现注册时 lower-case），
+//   避免引入 citext 扩展 / preview feature，保证首版迁移干净可回滚。
+// - 评估数据表全部带 projectId（部分带 orgId）以支撑租户隔离过滤（§六.4）。
+// - 一等指标列（DR/CPR/Reward...）落列以利聚合/索引；半结构化字段用 JSONB。
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("PLATFORM_DATABASE_URL")
+}
+
+// ── 账号与组织 ──────────────────────────────────────────
+model User {
+  id           String          @id @default(uuid())
+  email        String          @unique
+  passwordHash String          @map("password_hash")
+  name         String?
+  createdAt    DateTime        @default(now()) @map("created_at")
+  memberships  OrgMembership[]
+
+  @@map("users")
+}
+
+model Organization {
+  id        String          @id @default(uuid())
+  name      String
+  slug      String          @unique
+  createdBy String          @map("created_by")
+  createdAt DateTime        @default(now()) @map("created_at")
+  members   OrgMembership[]
+  projects  Project[]
+
+  @@map("organizations")
+}
+
+model OrgMembership {
+  orgId     String       @map("org_id")
+  userId    String       @map("user_id")
+  role      String // owner | member
+  createdAt DateTime     @default(now()) @map("created_at")
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([orgId, userId])
+  @@map("org_memberships")
+}
+
+// ── 项目与 API Key ──────────────────────────────────────
+model Project {
+  id             String       @id @default(uuid())
+  orgId          String       @map("org_id")
+  slug           String
+  name           String
+  description    String?
+  defaultRuleSet String?      @map("default_rule_set")
+  defaultTaskSet String?      @map("default_task_set")
+  retentionDays  Int?         @map("retention_days")
+  createdBy      String       @map("created_by")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  archivedAt     DateTime?    @map("archived_at")
+  org            Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  apiKeys        ApiKey[]
+  runs           Run[]
+
+  @@unique([orgId, slug])
+  @@map("projects")
+}
+
+model ApiKey {
+  id              String    @id @default(uuid())
+  projectId       String    @map("project_id")
+  publicKey       String    @unique @map("public_key") // pk-eval-...
+  // §6.3 方案 A：哈希态用于审计/不回显；加密态用于 HMAC 验签（明文永不落库）
+  secretHash      String    @map("secret_hash")
+  secretEncrypted String    @map("secret_encrypted")
+  name            String
+  scopes          String[]  @default(["ingest"])
+  expiresAt       DateTime? @map("expires_at")
+  lastUsedAt      DateTime? @map("last_used_at")
+  lastIp          String?   @map("last_ip")
+  callCount       BigInt    @default(0) @map("call_count")
+  createdBy       String    @map("created_by")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  revokedAt       DateTime? @map("revoked_at")
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("api_keys")
+}
+
+// ── 评估数据 ────────────────────────────────────────────
+model Run {
+  id               String     @id @default(uuid())
+  projectId        String     @map("project_id")
+  externalRunId    String     @map("external_run_id") // 评估器 run_id
+  mode             String // eval_only | run | pipeline
+  status           String     @default("completed") // running|completed|failed|partial
+  totalSamples     Int        @default(0) @map("total_samples")
+  // 一等指标列（聚合/索引友好）
+  dr               Float
+  cpr              Float
+  avgReward        Float      @map("avg_reward")
+  condR            Float      @map("cond_r")
+  avgTimeMs        Float      @map("avg_time_ms")
+  ruleSetVersion   String?    @map("rule_set_version")
+  sutVersion       String?    @map("sut_version")
+  langfuseTraceId  String?    @map("langfuse_trace_id")
+  langfuseHost     String?    @map("langfuse_host")
+  failureBreakdown Json?      @map("failure_breakdown") @db.JsonB
+  thresholds       Json?      @db.JsonB
+  sourceClient     String?    @map("source_client")
+  createdAt        DateTime   @default(now()) @map("created_at") // = 评估运行时间
+  finishedAt       DateTime?  @map("finished_at")
+  project          Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  samples          Sample[]
+  artifacts        Artifact[]
+
+  @@unique([projectId, externalRunId])
+  @@index([projectId, createdAt(sort: Desc)])
+  @@map("runs")
+}
+
+model Sample {
+  id                String             @id @default(uuid())
+  runId             String             @map("run_id")
+  projectId         String             @map("project_id") // 反范式便于隔离过滤
+  externalSampleId  String             @map("external_sample_id") // task_id/sample_id
+  status            String
+  sFormat           Float              @map("s_format")
+  sCommon           Float              @map("s_common")
+  sSoft             Float              @map("s_soft")
+  sPref             Float              @map("s_pref")
+  reward            Float
+  totalDurationMs   Float              @map("total_duration_ms")
+  llmCalls          Int                @default(0) @map("llm_calls")
+  tokenUsage        Int                @default(0) @map("token_usage")
+  extra             Json?              @db.JsonB // module_results 等
+  run               Run                @relation(fields: [runId], references: [id], onDelete: Cascade)
+  constraintResults ConstraintResult[]
+  artifacts         Artifact[]
+
+  @@unique([runId, externalSampleId])
+  @@index([projectId, externalSampleId])
+  @@map("samples")
+}
+
+model ConstraintResult {
+  id              String  @id @default(uuid())
+  sampleId        String  @map("sample_id")
+  projectId       String  @map("project_id")
+  constraintId    String  @map("constraint_id")
+  ruleId          String? @map("rule_id")
+  name            String
+  tier            String // hard_gate | soft | preference
+  status          String // pass | fail | skip | error
+  passed          Boolean
+  score           Float
+  rawScore        Float?  @map("raw_score")
+  reason          String
+  durationMs      Float   @map("duration_ms")
+  judgeProvider   String? @map("judge_provider")
+  judgeModel      String? @map("judge_model")
+  judgeArtifactId String? @map("judge_artifact_id")
+  details         Json?   @db.JsonB
+  moduleResults   Json?   @map("module_results") @db.JsonB
+  sample          Sample  @relation(fields: [sampleId], references: [id], onDelete: Cascade)
+
+  @@index([sampleId])
+  @@index([projectId, constraintId])
+  @@map("constraint_results")
+}
+
+model DimensionScore {
+  // scores.json dimensions，预留扩展
+  id          String @id @default(uuid())
+  sampleId    String @map("sample_id")
+  dimensionId String @map("dimension_id")
+  name        String
+  weight      Float
+  score       Float
+  status      String
+
+  @@index([sampleId])
+  @@map("dimension_scores")
+}
+
+model Artifact {
+  id           String   @id @default(uuid())
+  projectId    String   @map("project_id")
+  runId        String   @map("run_id")
+  sampleId     String?  @map("sample_id")
+  kind         String // screenshot | judge_record | output | trace | manifest
+  objectKey    String   @map("object_key")
+  storage      String // s3 | cos | minio
+  contentType  String   @map("content_type")
+  sizeBytes    BigInt   @map("size_bytes")
+  md5          String?
+  originalName String?  @map("original_name")
+  createdAt    DateTime @default(now()) @map("created_at")
+  run          Run      @relation(fields: [runId], references: [id], onDelete: Cascade)
+  sample       Sample?  @relation(fields: [sampleId], references: [id], onDelete: Cascade)
+
+  @@index([runId])
+  @@index([sampleId])
+  @@map("artifacts")
+}
+
+model AuditLog {
+  id          BigInt   @id @default(autoincrement())
+  orgId       String?  @map("org_id")
+  actorUserId String?  @map("actor_user_id")
+  action      String // key.create | key.revoke | project.archive | member.invite ...
+  targetType  String?  @map("target_type")
+  targetId    String?  @map("target_id")
+  metadata    Json?    @db.JsonB
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([orgId, createdAt(sort: Desc)])
+  @@map("audit_logs")
+}
+
+// ── 摄取幂等去重（§7.2）──────────────────────────────────
+model IngestEvent {
+  id         BigInt   @id @default(autoincrement())
+  projectId  String   @map("project_id")
+  eventId    String   @map("event_id")
+  type       String
+  receivedAt DateTime @default(now()) @map("received_at")
+
+  @@unique([projectId, eventId]) // 幂等键
+  @@index([projectId, receivedAt])
+  @@map("ingest_events")
+}
