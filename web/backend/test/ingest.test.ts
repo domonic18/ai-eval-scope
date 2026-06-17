@@ -400,3 +400,94 @@ describe("#5 限流（独立 app，小配额令牌桶）", () => {
     expect(r3.headers["retry-after"]).toBeDefined();
   });
 });
+
+describe("回归：tier=hard_score + project_id=null（防 7e 集成缺陷）", () => {
+  // Bug 1：评估器 ConstraintTier 有第 4 档 hard_score，schema 枚举须含之。
+  // Bug 2：未设 AGENT_EVAL_PROJECT 时客户端发 project_id:null，浅层信封校验须放行。
+  it("accepts a constraint with tier=hard_score", async () => {
+    const runId = uid("run");
+    const sid = uid("s");
+    const r = await signedPost(app, {
+      url: "/api/public/ingest",
+      secretKey: key.secretKey,
+      publicKey: key.publicKey,
+      bodyObj: {
+        schema_version: "1.0",
+        events: [
+          runEvent(runId, uid("ev")),
+          sampleEvent(runId, sid, uid("ev")),
+          {
+            event_id: uid("ev"),
+            type: "constraint",
+            data: {
+              external_run_id: runId,
+              external_sample_id: sid,
+              constraint_id: "commonsense.math_formula",
+              name: "数学公式",
+              tier: "hard_score", // ← 第 4 档，曾经被 schema 拒
+              status: "fail",
+              passed: false,
+              score: 0,
+              reason: "公式错误",
+              duration_ms: 10,
+            },
+          },
+        ],
+      },
+    });
+    expect(r.status).toBe(202);
+    expect(r.body.accepted).toBe(3);
+    expect(r.body.errors).toEqual([]);
+  });
+
+  it("accepts envelope with project_id=null (key-bound project)", async () => {
+    const r = await signedPost(app, {
+      url: "/api/public/ingest",
+      secretKey: key.secretKey,
+      publicKey: key.publicKey,
+      bodyObj: {
+        schema_version: "1.0",
+        project_id: null, // ← 未指定项目，曾经被浅层校验拒
+        batch_id: null,
+        events: [runEvent(uid("run"), uid("ev"))],
+      },
+    });
+    expect(r.status).toBe(202);
+    expect(r.body.accepted).toBe(1);
+    expect(r.body.errors).toEqual([]);
+  });
+
+  it("still rejects an unknown tier (enum guard intact)", async () => {
+    const r = await signedPost(app, {
+      url: "/api/public/ingest",
+      secretKey: key.secretKey,
+      publicKey: key.publicKey,
+      bodyObj: {
+        schema_version: "1.0",
+        events: [
+          {
+            event_id: uid("ev"),
+            type: "constraint",
+            data: {
+              external_run_id: uid("run"),
+              external_sample_id: uid("s"),
+              constraint_id: "x",
+              name: "t",
+              tier: "bogus_tier", // ← 不在枚举内，须拒绝
+              status: "pass",
+              passed: true,
+              score: 1,
+              reason: "r",
+              duration_ms: 1,
+            },
+          },
+        ],
+      },
+    });
+    expect(r.status).toBe(202); // 部分接受：合法事件 0
+    expect(r.body.accepted).toBe(0);
+    expect(r.body.errors.length).toBe(1);
+    expect(r.body.errors[0].code).toBe("SCHEMA_INVALID");
+  });
+});
+
