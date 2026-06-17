@@ -35,10 +35,14 @@ from agent_eval.config.llm import (
     resolve_api_key,
 )
 from agent_eval.config.loader import ConfigLoader, get_schema_path
+from agent_eval.config.observability import OBSERVABILITY_DEFAULTS, ObservabilityDefaults
 from agent_eval.config.paths import ProjectPaths, paths
 from agent_eval.config.reporting import REPORTING_DEFAULTS, ReportingDefaults
 
 __all__ = [
+    # 可观测平台对接
+    "OBSERVABILITY_DEFAULTS",
+    "ObservabilityDefaults",
     # 路径
     "paths",
     "ProjectPaths",

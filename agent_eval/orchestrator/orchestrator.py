@@ -50,6 +50,7 @@ class EvalResult:
     results: dict[str, EvaluationResult] = field(default_factory=dict)
     run_id: str = ""
     run_workspace: RunWorkspace | None = None
+    samples: list[SampleResult] = field(default_factory=list)
 
 
 class Orchestrator:
@@ -267,6 +268,7 @@ class Orchestrator:
             results=result_map,
             run_id=run_id,
             run_workspace=run_workspace,
+            samples=sample_results,
         )
 
     def _load_packages(self, package_dir: Path) -> list[ExecutionPackage]:

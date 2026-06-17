@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import typer
 from dotenv import load_dotenv
@@ -103,6 +104,38 @@ def _print_summary(result: object) -> None:
     rprint("")
 
 
+def _flush_observability(result: object, *, upload_override: bool | None) -> None:
+    """评估完成后把结果推送到可观测平台（ResultSink，Sprint 7e）。
+
+    未配置凭据（enabled=False）→ 静默跳过。失败不阻断 eval 命令（已落本地 workspace + 入离线队列）。
+    """
+    from agent_eval.observability import ResultSink, load_config
+
+    cfg = load_config(upload_override=upload_override)
+    if not cfg.enabled:
+        return
+
+    rprint("[blue]可观测平台:[/blue] 推送结果中…")
+    run_workspace = None
+    rw = getattr(result, "run_workspace", None)
+    if rw is not None:
+        run_workspace = getattr(rw, "root", None) or (rw.path if hasattr(rw, "path") else None)
+
+    try:
+        sink = ResultSink(cfg)
+        report = sink.flush(result, run_workspace=run_workspace)  # type: ignore[arg-type]
+        if report.error:
+            rprint(f"[yellow]⚠ 推送异常（已入离线队列，后续自动重放）: {report.error}[/yellow]")
+        else:
+            rprint(
+                f"[green]✓ 已推送[/green] 事件 {report.sent}、入队 {report.queued}、"
+                f"制品 {report.artifacts_uploaded}/{report.artifacts_uploaded + report.artifacts_failed}、"
+                f"重放 {report.replayed}"
+            )
+    except Exception as exc:  # noqa: BLE001 — 推送失败不影响评估结论
+        rprint(f"[yellow]⚠ 可观测平台推送初始化失败（结果仍在本地 workspace）: {exc}[/yellow]")
+
+
 @app.command()
 def pack(
     files: list[str] | None = typer.Option(None, "--files", help="文件路径（可多次指定）"),
@@ -197,6 +230,11 @@ def eval(
     enable_vision: bool = typer.Option(
         False, "--enable-vision", help="启用多模态视觉评估（需安装 vision extra 与视觉 Provider）"
     ),
+    upload: bool | None = typer.Option(
+        None,
+        "--upload/--no-upload",
+        help="评估完成后把结果推送到可观测平台（覆盖 AGENT_EVAL_UPLOAD）",
+    ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="详细输出"),
 ) -> None:
     """对 ExecutionPackage 执行评估。"""
@@ -264,6 +302,9 @@ def eval(
 
         rprint("[green]✅ 评估完成[/green] — 结果已保存至 workspace")
 
+        # 8. 推送到可观测平台（ResultSink，Sprint 7e）
+        _flush_observability(result, upload_override=upload)
+
     except Exception as e:
         rprint(f"[bold red]❌ 评估失败: {e}[/bold red]")
         raise typer.Exit(code=1) from e
@@ -309,6 +350,105 @@ def pipeline(
 
     # Sprint 9 完整实现
     rprint("[yellow]pipeline 命令的完整逻辑将在 Sprint 9 中实现。[/yellow]")
+
+
+@app.command()
+def upload(
+    run: str = typer.Option(..., "--run", help="要回填的运行 ID（workspace/runs/{run}）"),
+    workspace: str = typer.Option("./workspace", "--workspace", help="Workspace 目录"),
+    project: str | None = typer.Option(
+        None, "--project", help="目标项目（覆盖 AGENT_EVAL_PROJECT）"
+    ),
+) -> None:
+    """把历史运行的评估结果回填到可观测平台（Sprint 7e）。
+
+    从 workspace/runs/{run}/ 的 summary.json + 各 task 的 report.json 重建事件并推送。
+    需配置 AGENT_EVAL_HOST / AGENT_EVAL_PUBLIC_KEY / AGENT_EVAL_SECRET_KEY。
+    """
+    import json as _json
+
+    from agent_eval.evaluation.models import SampleResult
+    from agent_eval.observability import ResultSink, load_config
+    from agent_eval.observability.events import (
+        build_constraint_event,
+        build_sample_event,
+    )
+
+    run_dir = Path(workspace).resolve() / "runs" / run
+    if not run_dir.exists():
+        rprint(f"[red]运行目录不存在: {run_dir}[/red]")
+        raise typer.Exit(code=1)
+
+    summary_path = run_dir / "reports" / "summary.json"
+    if not summary_path.exists():
+        rprint(f"[red]缺少 summary.json: {summary_path}[/red]")
+        raise typer.Exit(code=1)
+    summary = _json.loads(summary_path.read_text(encoding="utf-8"))
+
+    env_override: dict[str, str] = {}
+    if project:
+        env_override["AGENT_EVAL_PROJECT"] = project
+    # upload 子命令默认强制开启上传
+    cfg = load_config(upload_override=True)
+    if not cfg.has_credentials():
+        rprint(
+            "[red]未配置凭据：请设置 AGENT_EVAL_HOST / AGENT_EVAL_PUBLIC_KEY / AGENT_EVAL_SECRET_KEY[/red]"
+        )
+        raise typer.Exit(code=1)
+
+    metrics = summary.get("metrics", {})
+    events: list[dict[str, Any]] = [
+        {
+            "event_id": __import__("uuid").uuid4().hex,
+            "type": "run",
+            "data": {
+                "external_run_id": summary.get("run_id", run),
+                "mode": "eval_only",
+                "status": "completed",
+                "metrics": {
+                    "DR": metrics.get("DR", 0.0),
+                    "CPR": metrics.get("CPR", 0.0),
+                    "avg_reward": metrics.get("avg_reward", 0.0),
+                    "condR": metrics.get("condR", 0.0),
+                    "avg_time_ms": metrics.get("avg_time_ms", 0.0),
+                },
+                "total_samples": summary.get("total_samples", 0),
+                "failure_breakdown": summary.get("failure_breakdown") or None,
+                "thresholds": summary.get("thresholds") or None,
+            },
+        }
+    ]
+
+    results_dir = run_dir / "results"
+    sample_count = 0
+    if results_dir.exists():
+        for task_dir in sorted(p for p in results_dir.iterdir() if p.is_dir()):
+            report_path = task_dir / "report.json"
+            if not report_path.exists():
+                continue
+            try:
+                sample = SampleResult.from_dict(
+                    _json.loads(report_path.read_text(encoding="utf-8"))
+                )
+            except Exception as exc:  # noqa: BLE001
+                rprint(f"[yellow]跳过 {task_dir.name}: 解析失败 {exc}[/yellow]")
+                continue
+            events.append(build_sample_event(sample, external_run_id=summary.get("run_id", run)))
+            for stage in sample.stage_results.values():
+                for c in stage.constraint_results:
+                    events.append(
+                        build_constraint_event(
+                            c,
+                            external_run_id=summary.get("run_id", run),
+                            external_sample_id=sample.sample_id,
+                        )
+                    )
+            sample_count += 1
+
+    rprint(f"[blue]回填:[/blue] 运行 {run}，样本 {sample_count}，事件 {len(events)}")
+    sink = ResultSink(cfg)
+    sent, queued = sink.dispatch(events)
+    rprint(f"[green]✓ 回填完成[/green] 已发送 {sent}、入队 {queued}")
 
 
 @app.command()

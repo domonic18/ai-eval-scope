@@ -1,0 +1,164 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://agent-eval/schemas/ingest.event.v1.json",
+  "title": "Agent Eval Ingest Batch v1.0",
+  "description": "POST /api/public/ingest 请求体契约（评估器 ResultSink 与平台共享，NF-O-13 防漂移）",
+  "type": "object",
+  "required": ["schema_version", "events"],
+  "properties": {
+    "schema_version": { "type": "string", "enum": ["1.0"] },
+    "batch_id": { "type": ["string", "null"] },
+    "project_id": { "type": ["string", "null"] },
+    "events": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 500,
+      "items": { "$ref": "#/$defs/event" }
+    }
+  },
+  "$defs": {
+    "event": {
+      "oneOf": [
+        { "$ref": "#/$defs/runEvent" },
+        { "$ref": "#/$defs/sampleEvent" },
+        { "$ref": "#/$defs/constraintEvent" },
+        { "$ref": "#/$defs/artifactEvent" }
+      ],
+      "discriminator": { "propertyName": "type" }
+    },
+    "runEvent": {
+      "type": "object",
+      "required": ["event_id", "type", "data"],
+      "properties": {
+        "event_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "type": { "const": "run" },
+        "data": { "$ref": "#/$defs/runData" }
+      }
+    },
+    "sampleEvent": {
+      "type": "object",
+      "required": ["event_id", "type", "data"],
+      "properties": {
+        "event_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "type": { "const": "sample" },
+        "data": { "$ref": "#/$defs/sampleData" }
+      }
+    },
+    "constraintEvent": {
+      "type": "object",
+      "required": ["event_id", "type", "data"],
+      "properties": {
+        "event_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "type": { "const": "constraint" },
+        "data": { "$ref": "#/$defs/constraintData" }
+      }
+    },
+    "artifactEvent": {
+      "type": "object",
+      "required": ["event_id", "type", "data"],
+      "properties": {
+        "event_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "type": { "const": "artifact" },
+        "data": { "$ref": "#/$defs/artifactData" }
+      }
+    },
+    "runData": {
+      "type": "object",
+      "required": ["external_run_id", "mode", "metrics"],
+      "properties": {
+        "external_run_id": { "type": "string", "minLength": 1 },
+        "mode": { "type": "string", "enum": ["eval_only", "run", "pipeline"] },
+        "status": { "type": ["string", "null"], "enum": ["running", "completed", "failed", "partial", null] },
+        "created_at": { "type": ["string", "null"], "format": "date-time" },
+        "finished_at": { "type": ["string", "null"], "format": "date-time" },
+        "metrics": {
+          "type": "object",
+          "required": ["DR", "CPR", "avg_reward", "condR", "avg_time_ms"],
+          "properties": {
+            "DR": { "type": "number" },
+            "CPR": { "type": "number" },
+            "avg_reward": { "type": "number" },
+            "condR": { "type": "number" },
+            "avg_time_ms": { "type": "number" }
+          }
+        },
+        "total_samples": { "type": ["integer", "null"], "minimum": 0 },
+        "rule_set_version": { "type": ["string", "null"] },
+        "sut_version": { "type": ["string", "null"] },
+        "failure_breakdown": { "type": ["object", "null"] },
+        "thresholds": { "type": ["object", "null"] },
+        "langfuse_trace_id": { "type": ["string", "null"] },
+        "langfuse_host": { "type": ["string", "null"] }
+      }
+    },
+    "sampleData": {
+      "type": "object",
+      "required": ["external_run_id", "external_sample_id", "s_format", "s_common", "s_soft", "s_pref", "reward"],
+      "properties": {
+        "external_run_id": { "type": "string", "minLength": 1 },
+        "external_sample_id": { "type": "string", "minLength": 1 },
+        "status": { "type": ["string", "null"] },
+        "s_format": { "type": "number" },
+        "s_common": { "type": "number" },
+        "s_soft": { "type": "number" },
+        "s_pref": { "type": "number" },
+        "reward": { "type": "number" },
+        "total_duration_ms": { "type": ["number", "null"] },
+        "llm_calls": { "type": ["integer", "null"], "minimum": 0 },
+        "token_usage": { "type": ["integer", "null"], "minimum": 0 },
+        "dimensions": {
+          "type": ["array", "null"],
+          "items": {
+            "type": "object",
+            "required": ["dimension_id", "name", "weight", "score", "status"],
+            "properties": {
+              "dimension_id": { "type": "string" },
+              "name": { "type": "string" },
+              "weight": { "type": "number" },
+              "score": { "type": "number" },
+              "status": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "constraintData": {
+      "type": "object",
+      "required": ["external_run_id", "external_sample_id", "constraint_id", "name", "tier", "status", "passed", "score", "reason", "duration_ms"],
+      "properties": {
+        "external_run_id": { "type": "string", "minLength": 1 },
+        "external_sample_id": { "type": "string", "minLength": 1 },
+        "constraint_id": { "type": "string", "minLength": 1 },
+        "rule_id": { "type": ["string", "null"] },
+        "name": { "type": "string" },
+        "tier": { "type": "string", "enum": ["hard_gate", "hard_score", "soft", "preference"] },
+        "status": { "type": "string", "enum": ["pass", "fail", "skip", "error"] },
+        "passed": { "type": "boolean" },
+        "score": { "type": "number" },
+        "raw_score": { "type": ["number", "null"] },
+        "reason": { "type": "string" },
+        "details": {},
+        "duration_ms": { "type": "number" },
+        "judge_provider": { "type": ["string", "null"] },
+        "judge_model": { "type": ["string", "null"] },
+        "judge_record_object_key": { "type": ["string", "null"] },
+        "module_results": {}
+      }
+    },
+    "artifactData": {
+      "type": "object",
+      "required": ["external_run_id", "kind", "object_key", "content_type", "size_bytes"],
+      "properties": {
+        "external_run_id": { "type": "string", "minLength": 1 },
+        "external_sample_id": { "type": ["string", "null"] },
+        "kind": { "type": "string", "enum": ["screenshot", "judge_record", "output", "trace", "manifest"] },
+        "object_key": { "type": "string", "minLength": 1 },
+        "content_type": { "type": "string" },
+        "size_bytes": { "type": "integer", "minimum": 0 },
+        "md5": { "type": ["string", "null"] },
+        "original_name": { "type": ["string", "null"] },
+        "linked_constraint_id": { "type": ["string", "null"] }
+      }
+    }
+  }
+}
