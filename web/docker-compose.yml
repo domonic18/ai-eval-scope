@@ -1,0 +1,101 @@
+# Agent Eval 可观测平台 — 本地一键起栈（Sprint 7b，§12.1）
+#
+# 用法（在仓库根目录）：
+#   docker compose -f web/docker-compose.yml up -d
+#   # 或 cd web && docker compose up -d
+#
+# 服务：
+#   postgres  PostgreSQL 16（结构化评估数据）
+#   minio     S3 兼容对象存储（大制品，本地替代 COS/S3）
+#   minio-init 初始化桶 agent-eval（一次性）
+#   platform  Express 后端（构建前端 + Prisma 迁移 + 启动）
+#
+# 起栈后：
+#   - 后端    http://localhost:3000   健康检查 http://localhost:3000/health
+#   - MinIO   API http://localhost:9000  控制台 http://localhost:9001
+#   - Postgres localhost:5432  (eval / eval)
+
+name: agent-eval-platform
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: eval
+      POSTGRES_PASSWORD: evalpassword
+      POSTGRES_DB: agent_eval
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eval -d agent_eval"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: eval
+      MINIO_ROOT_PASSWORD: evalpassword123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 eval evalpassword123 &&
+      mc mb --ignore-existing local/agent-eval &&
+      mc anonymous set download local/agent-eval || true
+      "
+
+  platform:
+    build:
+      context: ..
+      dockerfile: web/Dockerfile
+    environment:
+      NODE_ENV: production
+      # DB（经服务名解析；本地直连经 PgBouncer 时追加 ?pgbouncer=true&connection_limit=1）
+      PLATFORM_DATABASE_URL: "postgresql://eval:evalpassword@postgres:5432/agent_eval?schema=public"
+      # 对象存储（MinIO，path-style）
+      PLATFORM_OBJECT_STORAGE: minio
+      PLATFORM_S3_ENDPOINT: "http://minio:9000"
+      PLATFORM_S3_REGION: us-east-1
+      PLATFORM_S3_BUCKET: agent-eval
+      PLATFORM_S3_ACCESS_KEY: eval
+      PLATFORM_S3_SECRET_KEY: evalpassword123
+      PLATFORM_S3_PATH_STYLE: "true"
+      # 密钥（演示值；生产务必替换并通过 secrets 注入）
+      PLATFORM_JWT_SECRET: dev-insecure-jwt-secret-change-me
+      PLATFORM_KEY_ENCRYPTION_KEY: dev-insecure-encryption-key-change-me
+      PLATFORM_ALLOW_SIGNUP: "true"
+    ports:
+      - "3000:3000"
+    volumes:
+      - workspace:/app/workspace
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:
+  miniodata:
+  workspace:

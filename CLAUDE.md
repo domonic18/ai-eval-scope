@@ -76,7 +76,8 @@ agent_eval/
 | 05LLM模块设计.md | Provider 抽象层、LLM Judge |
 | 06数据包规范.md | ExecutionPackage、EvaluationResult |
 | 07配置规范.md | pipeline.yaml、rule_set.yaml、eval_plan.md |
-| 08Web可视化层设计.md | Web Portal、趋势图 |
+| 08Web可视化层设计.md | ⚠️ 已废弃：Sprint 7a 本地 workspace 查看 MVP（前端+遗留后端路由已移除），被 09 取代 |
+| 09Web可观测平台架构设计.md | 多租户可观测平台（PostgreSQL+对象存储、Ingestion API、API Key/HMAC、ResultSink 对接），Sprint 7b–7g |
 
 迭代开发计划：`docs/plan/01迭代开发计划.md`
 

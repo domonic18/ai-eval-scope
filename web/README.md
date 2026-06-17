@@ -1,142 +1,85 @@
-# Agent Eval Web Portal
+# Agent Eval 可观测平台后端
 
-Sprint 7a 交付的 Web Portal MVP，基于 React 18 + Express + ECharts。
+仿 Langfuse 的自托管多租户可观测平台后端（**TypeScript** + Express + Prisma + 对象存储）。
+评估器（Python）经 API Key 摄取评估结果 → 落 PostgreSQL（结构化）+ 对象存储（大制品）→ 浏览器登录查看多项目趋势/详情。
+
+> 设计基线：[09Web 可观测平台架构设计](../docs/arch/09Web可观测平台架构设计.md)、需求 [03Web 可观测平台重构需求](../docs/requirement/03Web可观测平台重构需求.md)。
+> Sprint 7a 的本地 workspace 查看器 MVP（React + 读本地 JSON）已移除，前端待 Sprint 7f 按新架构重建。
 
 ## 目录结构
 
 ```
 web/
-├── backend/    Express API 服务
-└── frontend/   React SPA
+├── backend/            TypeScript API（纯 JSON）
+│   ├── src/            分层：config / middleware / infra / routes / services / repositories / types
+│   ├── prisma/         schema.prisma + 迁移
+│   ├── test/           vitest + supertest 集成测试
+│   ├── server.ts       入口（薄代理）→ 编译为 dist/server.js
+│   ├── tsconfig*.json  tsc 配置（build / 类型检查）
+│   └── vitest.config.ts
+├── docker-compose.yml  平台栈：postgres + minio + platform
+├── Dockerfile          多阶段镜像（builder 编译 TS → runtime 精简）
+└── .env.example        环境变量样例
 ```
 
-## 开发流程
+## 本地起栈（Docker Compose，推荐）
 
-### 1. 安装依赖
+一键起 postgres + minio + 后端（迁移自动应用）：
 
 ```bash
-cd web/backend && npm install
-cd web/frontend && npm install
+make docker-up          # = docker compose -f web/docker-compose.yml up -d
+curl http://localhost:3000/health
 ```
 
-### 2. 启动后端
+健康检查返回 `{ status: "ok", components: { db, object_storage } }`。
+MinIO 控制台 http://localhost:9001（eval / evalpassword123）。
+
+停止 / 日志：
 
 ```bash
-cd web/backend
-WORKSPACE_DIR=./workspace npm run dev
-```
-
-### 3. 启动前端
-
-```bash
-cd web/frontend
-npm run dev
-```
-
-前端开发服务器运行在 http://localhost:5173，API 请求通过 Vite proxy 转发到 http://localhost:3000。
-
-## 生产构建
-
-```bash
-make web-build
-```
-
-构建完成后，前端产物会复制到 `web/backend/public/`，可直接通过 `agent-eval serve` 启动。
-
-## 通过 Python CLI 启动
-
-```bash
-# 重建索引
-uv run agent-eval index --workspace ./workspace
-
-# 启动 Web Portal
-uv run agent-eval serve --workspace ./workspace --port 3000
-```
-
-## Docker 部署
-
-### 构建镜像
-
-```bash
-make docker-build
-```
-
-或手动执行：
-
-```bash
-docker build -f web/Dockerfile -t agent-eval-web:latest .
-```
-
-Dockerfile 使用 Node.js v22.15.1 多阶段构建：先构建前端，再安装后端生产依赖并复制构建产物到 `public/`。
-
-### 启动容器
-
-```bash
-make docker-up
-```
-
-或手动执行：
-
-```bash
-docker compose up -d
-```
-
-Web Portal 将运行在 http://localhost:3000。
-
-### 目录挂载说明
-
-`docker-compose.yml` 默认挂载：
-
-- `./workspace:/app/workspace` — 评估运行数据（需要可写，支持 API 重建索引）
-- `./assets:/app/assets:ro` — 项目配置（projects/*.yaml）只读
-
-启动前请确保宿主机 `workspace/` 目录存在；若不存在，Docker 会自动创建一个空目录。
-
-### 重建索引
-
-容器内 Web Portal 只读取 `workspace/index/`。启动后可通过以下方式重建索引：
-
-1. 在项目列表页点击右上角 **重建索引** 按钮
-2. 调用 API：
-
-```bash
-curl -X POST http://localhost:3000/api/index/rebuild
-```
-
-3. 在宿主机重建后再启动容器：
-
-```bash
-uv run agent-eval index --workspace ./workspace
-make docker-up
-```
-
-### 停止与日志
-
-```bash
-# 停止容器
 make docker-down
-
-# 查看日志
 make docker-logs
 ```
 
-## 腾讯云函数 SCF 部署
+## 本地开发（无 Docker）
 
-1. 执行 `make web-build`
-2. 将 `web/backend/`（含 `public/`）打包为 zip
-3. 创建 SCF，运行时选择 Node.js 18+
-4. 入口函数填写 `scf_bootstrap.main_handler`
-5. 配置 API Gateway 触发器，路由 `/*` 指向 SCF
+需本地或远端 PostgreSQL + 对象存储（MinIO）。环境变量见 `.env.example`：
 
-## API 列表
+```bash
+cd web/backend
+npm install
+export PLATFORM_DATABASE_URL="postgresql://eval:evalpassword@localhost:5432/agent_eval?schema=public"
+npm run db:migrate:dev     # 首次建表 / 迭代 schema
+npm run dev                # tsx watch server.ts（热更，PORT 默认 3000）
+```
 
-- `GET /api/projects`
-- `GET /api/projects/:id`
-- `GET /api/projects/:id/runs`
-- `GET /api/projects/:id/trends`
-- `GET /api/runs/:id`
-- `GET /api/runs/:id/tasks`
-- `GET /api/runs/:id/tasks/:task_id`
-- `GET /api/runs/:id/tasks/:task_id/evidence/:file`
-- `GET /api/runs/:id/tasks/:task_id/manifest`
-- `POST /api/index/rebuild`
+构建 / 类型检查：
+
+```bash
+npm run build              # tsc → dist/
+npm run typecheck          # tsc --noEmit
+npm start                  # node dist/server.js（生产）
+```
+
+## 测试
+
+```bash
+make web-test           # = cd web/backend && npm test（vitest run）
+make web-typecheck      # = cd web/backend && npm run typecheck
+```
+
+## API 概览
+
+- `GET /health`、`GET /api/health` — 健康检查（db + object_storage + schema_version）
+- `POST /api/v1/auth/{register,login,refresh}`、`GET /api/v1/auth/me` — 账号与 JWT
+- `GET|POST /api/v1/orgs/:org/members`、`DELETE /api/v1/orgs/:org/members/:userId` — 组织成员（owner）
+- `GET|POST /api/v1/orgs/:org/projects` — 组织下项目
+- `GET|PATCH /api/v1/projects/:id`、`POST /api/v1/projects/:id/{archive,unarchive}` — 项目管理
+- `GET|POST /api/v1/projects/:id/keys`、`POST /api/v1/projects/:id/keys/:keyId/revoke` — API Key 管理
+- `POST /api/public/ingest`（HMAC 鉴权）— 评估结果摄取（Sprint 7d）
+
+> Query API（运行/样本/趋势/制品）与前端在 Sprint 7f 落地。
+
+## 生产部署
+
+腾讯云：Express → SCF/容器（`scf_bootstrap.js` 提供 serverless-http 入口，引用 `./dist/server`），PostgreSQL → 云数据库（前置 PgBouncer），对象存储 → COS（`PLATFORM_OBJECT_STORAGE=cos`）。详见架构文档 §十二。
