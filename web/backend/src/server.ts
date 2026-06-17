@@ -8,6 +8,8 @@
  * 路由：GET /health（健康检查）；/api/v1/*（认证与多租户 + 后续 Query API）。
  */
 
+import path from "path";
+import fs from "fs";
 import express from "express";
 import cors from "cors";
 import { requestLog, getLogger, flushLogs } from "./infra/logger";
@@ -21,6 +23,12 @@ import authRouter from "./routes/auth";
 import orgsRouter from "./routes/orgs";
 import projectsRouter from "./routes/projects";
 import keysRouter from "./routes/keys";
+import runsRouter from "./routes/runs";
+import artifactsRouter from "./routes/artifacts";
+
+// ── 摄取路由（HMAC 鉴权，7d）──
+import ingestRouter from "./routes/public/ingest";
+import publicArtifactsRouter from "./routes/public/artifacts";
 
 /** 组装 Express app。供 serverless-http 复用与测试 import。 */
 export function createApp(): express.Application {
@@ -44,8 +52,25 @@ export function createApp(): express.Application {
   app.use(healthRouter); // GET /health, GET /api/health
   app.use("/api/v1/auth", authRouter); // 注册/登录/刷新/me（register·login·refresh 公开）
   app.use("/api/v1/orgs", orgsRouter); // 成员 + 组织下项目（requireAuth + orgGuard）
-  app.use("/api/v1/projects", projectsRouter); // 项目管理（requireAuth + projectGuard）
+  app.use("/api/v1/projects", projectsRouter); // 项目管理 + Query（runs/trends）
   app.use("/api/v1/projects/:id/keys", keysRouter); // API Key 管理（嵌套于项目）
+  app.use("/api/v1/runs", runsRouter); // 运行/样本详情（Query，§九）
+  app.use("/api/v1/artifacts", artifactsRouter); // 制品下载（presigned 重定向）
+
+  // ── 摄取路由（HMAC 鉴权 + 限流，7d）──
+  app.use("/api/public/ingest", ingestRouter); // POST /api/public/ingest
+  app.use("/api/public/artifacts", publicArtifactsRouter); // POST /api/public/artifacts/url
+
+  // ── 前端静态托管（生产；dev 用 vite 单独跑 :5173）──
+  // 以 cwd 为基准（host: web/backend/public；Docker: /app/web/backend/public）
+  const publicDir = path.resolve(process.cwd(), "public");
+  if (fs.existsSync(path.join(publicDir, "index.html"))) {
+    app.use(express.static(publicDir, { maxAge: 0 }));
+    // SPA 兜底：非 API/health 路径返回 index.html
+    app.get(/^(?!\/api\/|\/health).*/, (_req, res) => {
+      res.sendFile(path.join(publicDir, "index.html"));
+    });
+  }
 
   // 404 + 错误兜底（必须最后注册）
   app.use(notFound);

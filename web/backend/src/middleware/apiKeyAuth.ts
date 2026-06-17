@@ -54,7 +54,9 @@ export const requireApiKey: RequestHandler = async (req, _res, next) => {
       return next(unauthorized());
     }
     const rawBody = req.rawBody || Buffer.alloc(0);
-    const expected = signHmac(secret, req.method, req.path, rawBody);
+    // 用 originalUrl 取完整路径（子路由挂载时 req.path 是相对挂载点的，与客户端签名路径不一致）
+    const fullPath = req.originalUrl.split("?")[0];
+    const expected = signHmac(secret, req.method, fullPath, rawBody);
     if (!timingSafeEqualHex(expected, parsed.signature)) {
       return next(unauthorized("signature mismatch"));
     }
