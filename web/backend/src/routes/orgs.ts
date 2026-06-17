@@ -11,6 +11,7 @@ import { requireAuth } from "../middleware/auth";
 import { orgGuard } from "../middleware/tenantGuard";
 import { createOrgService } from "../services/org.service";
 import { createProjectService } from "../services/project.service";
+import { createQueryService } from "../services/query.service";
 
 const router = Router();
 
@@ -55,10 +56,14 @@ router.get(
   requireAuth,
   orgGuard(),
   wrap(async (req, res) => {
-    const svc = createProjectService(req.tenant!);
-    res.json({
-      projects: await svc.list({ includeArchived: req.query.archived === "1" }),
-    });
+    // 看板：每项目最新运行指标 + 运行总数（§九）。archived=1 时回退到普通列表。
+    if (req.query.archived === "1") {
+      const svc = createProjectService(req.tenant!);
+      res.json({ projects: await svc.list({ includeArchived: true }) });
+      return;
+    }
+    const q = createQueryService(req.tenant!);
+    res.json({ projects: await q.dashboard() });
   })
 );
 

@@ -68,6 +68,7 @@ model Project {
   org            Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   apiKeys        ApiKey[]
   runs           Run[]
+  artifacts      Artifact[]
 
   @@unique([orgId, slug])
   @@map("projects")
@@ -204,6 +205,7 @@ model Artifact {
   md5          String?
   originalName String?  @map("original_name")
   createdAt    DateTime @default(now()) @map("created_at")
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   run          Run      @relation(fields: [runId], references: [id], onDelete: Cascade)
   sample       Sample?  @relation(fields: [sampleId], references: [id], onDelete: Cascade)
 
