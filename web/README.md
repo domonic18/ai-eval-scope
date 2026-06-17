@@ -18,8 +18,8 @@ web/
 │   ├── tsconfig*.json  tsc 配置（build / 类型检查）
 │   └── vitest.config.ts
 ├── docker-compose.yml  平台栈：postgres + minio + platform
-├── Dockerfile          多阶段镜像（builder 编译 TS → runtime 精简）
-└── .env.example        环境变量样例
+└── Dockerfile          多阶段镜像（builder 编译 TS → runtime 精简）
+# 环境变量样例统一维护在仓库根目录 ../.env.example（含 PLATFORM_* / AGENT_EVAL_* / LLM 等）
 ```
 
 ## 本地起栈（Docker Compose，推荐）
@@ -43,7 +43,7 @@ make docker-logs
 
 ## 本地开发（无 Docker）
 
-需本地或远端 PostgreSQL + 对象存储（MinIO）。环境变量见 `.env.example`：
+需本地或远端 PostgreSQL + 对象存储（MinIO）。环境变量见仓库根目录 [`../.env.example`](../.env.example)（`PLATFORM_*` 段）：
 
 ```bash
 cd web/backend
