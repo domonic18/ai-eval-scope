@@ -17,9 +17,8 @@ web/
 │   ├── server.ts       入口（薄代理）→ 编译为 dist/server.js
 │   ├── tsconfig*.json  tsc 配置（build / 类型检查）
 │   └── vitest.config.ts
-├── docker-compose.yml  平台栈：postgres + minio + platform
-└── Dockerfile          多阶段镜像（builder 编译 TS → runtime 精简）
-# 环境变量样例统一维护在仓库根目录 ../.env.example（含 PLATFORM_* / AGENT_EVAL_* / LLM 等）
+└── frontend/           React + Vite + TS（看板/趋势/详情）
+# 部署文件在仓库根：docker-compose.yml、docker/platform/Dockerfile、.dockerignore、.env(.example)
 ```
 
 ## 本地起栈（Docker Compose，推荐）
@@ -27,7 +26,7 @@ web/
 一键起 postgres + minio + 后端（迁移自动应用）：
 
 ```bash
-make docker-up          # = docker compose -f web/docker-compose.yml up -d
+make docker-up          # = docker compose up -d（根 docker-compose.yml，读根 .env）
 curl http://localhost:3000/health
 ```
 

@@ -1,0 +1,35 @@
+# 构建上下文排除项（减小镜像构建上下文、避免缓存失效）
+**/node_modules
+**/dist
+**/.turbo
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.coverage
+**/htmlcov
+
+.git
+.gitignore
+.github
+.vscode
+.idea
+.DS_Store
+
+# 环境/密钥（绝不进镜像）
+.env
+.env.*
+!.env.example
+.secret
+
+# 文档与数据（按需）
+docs
+*.md
+!web/frontend/README.md
+workspace
+!workspace/.gitkeep
+tests
+scripts
+
+# 已构建产物（镜像内重新构建）
+web/backend/public
+web/backend/dist

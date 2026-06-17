@@ -44,16 +44,17 @@ web-test:
 web-typecheck:
 	cd web/backend && npm run typecheck
 
-# ─── Docker（平台栈：postgres + minio + platform，定义见 web/docker-compose.yml）───
+# ─── Docker（平台栈：postgres + minio + platform，配置见根 docker-compose.yml + .env）───
 
 docker-build:
-	docker compose -f web/docker-compose.yml build platform
+	docker compose build platform
 
 docker-up:
-	docker compose -f web/docker-compose.yml up -d
+	@test -f .env || { echo "❌ 缺少 .env：请先 cp .env.example .env 并填入凭据"; exit 1; }
+	docker compose up -d
 
 docker-down:
-	docker compose -f web/docker-compose.yml down
+	docker compose down
 
 docker-logs:
-	docker compose -f web/docker-compose.yml logs -f platform
+	docker compose logs -f platform

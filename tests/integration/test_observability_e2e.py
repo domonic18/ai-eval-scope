@@ -3,7 +3,7 @@
 默认跳过（需后端在跑）。显式启用：
     AGENT_EVAL_E2E=1 uv run pytest tests/integration/test_observability_e2e.py
 
-前置：docker compose -f web/docker-compose.yml up -d（postgres+minio）+
+前置：docker compose up -d（postgres+minio，根 docker-compose.yml 读 .env）+
       cd web/backend && npm run build && PLATFORM_DATABASE_URL=… node dist/server.js
       （默认指向 http://localhost:3000）
 """

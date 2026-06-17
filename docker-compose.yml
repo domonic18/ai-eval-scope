@@ -1,0 +1,90 @@
+# Agent Eval 可观测平台 — 一键起栈
+#
+# 约定（参考 SquadSight）：
+#   - docker-compose.yml 置于仓库根目录
+#   - Dockerfile 集中在 docker/<service>/ 下
+#   - 所有配置/凭据来自仓库根 .env（env_file），本文件不硬编码密钥
+#
+# 用法：
+#   cp .env.example .env   # 首次：填入凭据
+#   docker compose up -d   # 或 make docker-up
+#
+# 起栈后：
+#   后端    http://localhost:3000   健康 http://localhost:3000/health
+#   MinIO   API http://localhost:9000  控制台 http://localhost:9001
+#   Postgres localhost:5432
+
+name: agent-eval-platform
+
+services:
+  # ── PostgreSQL（结构化评估数据）──
+  postgres:
+    image: postgres:16-alpine
+    env_file: ./.env              # POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-eval} -d ${POSTGRES_DB:-agent_eval}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── MinIO（S3 兼容对象存储，本地替代 COS/S3）──
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    env_file: ./.env              # MINIO_ROOT_USER / MINIO_ROOT_PASSWORD
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── 一次性建桶（minio 起来且健康后跑，建 PLATFORM_S3_BUCKET 指定的桶）──
+  minio-init:
+    image: minio/mc:latest
+    env_file: ./.env
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 $$MINIO_ROOT_USER $$MINIO_ROOT_PASSWORD &&
+      mc mb --ignore-existing local/$$PLATFORM_S3_BUCKET &&
+      mc anonymous set download local/$$PLATFORM_S3_BUCKET || true
+      "
+
+  # ── 平台后端（Express + Prisma + 前端托管）──
+  platform:
+    build:
+      context: .
+      dockerfile: docker/platform/Dockerfile
+    env_file: ./.env              # 密钥 / 桶 / 区域 / COS 凭据等（单一配置源）
+    environment:
+      NODE_ENV: production
+      # 容器网络内用服务名（覆盖 .env 中供 host 直跑用的 localhost 值）
+      PLATFORM_DATABASE_URL: postgresql://${POSTGRES_USER:-eval}:${POSTGRES_PASSWORD:-evalpassword}@postgres:5432/${POSTGRES_DB:-agent_eval}?schema=public
+      PLATFORM_S3_ENDPOINT: http://minio:9000
+    ports:
+      - "3000:3000"
+    volumes:
+      - workspace:/app/workspace
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:
+  miniodata:
+  workspace:

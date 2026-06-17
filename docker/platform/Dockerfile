@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1
 #
-# Agent Eval 可观测平台（多阶段）：前端(Vite/React/TS) + 后端(Node/TS)。
-# Debian bookworm 自带 libssl3（Prisma 引擎依赖）；本沙箱对 binaries.prisma.sh /
-# 包仓库 CDN 不可达为已知限制，常规 CI/生产可构建。
+# Agent Eval 可观测平台镜像（多阶段）：前端(Vite/React/TS) + 后端(Node/TS)。
+# 构建上下文 = 仓库根（docker compose 的 context: .），故 COPY 路径以 web/ 开头。
+# Debian bookworm 自带 libssl3（Prisma 引擎依赖）。
 
 # ─── Stage 1: 前端构建 ───
 FROM node:22.15.1-bookworm AS frontend-builder
@@ -43,4 +43,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=5 \
     CMD node -e "require('http').get('http://localhost:3000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
 
+# 应用待决迁移后启动（migrate deploy 幂等）
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]

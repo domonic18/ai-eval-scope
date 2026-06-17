@@ -50,3 +50,6 @@ web/backend/node_modules/
 web/frontend/node_modules/
 web/frontend/dist/
 web/backend/public/
+
+# 可观测平台离线摄取队列（运行期产物）
+.ingest_queue/
