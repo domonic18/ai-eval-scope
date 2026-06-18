@@ -73,7 +73,9 @@ class TestProductionTemplates:
 
     @pytest.fixture
     def prompts_dir(self) -> Path:
-        return Path(__file__).resolve().parent.parent.parent / "assets" / "prompts"
+        from agent_eval.config.paths import paths
+
+        return paths.prompts_dir  # 包内资源（pip-installable），不硬编码 __file__ 路径
 
     @pytest.mark.parametrize(
         "template_id",

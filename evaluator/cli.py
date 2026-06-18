@@ -261,6 +261,20 @@ def eval(
         rule_set_obj = ConfigLoader.load_rule_set(rule_set)
 
         # 2. 初始化 LLM Judge（可选）
+        #    --llm-config 未指定时，按优先级查找：
+        #    a) CWD/llm_config.yaml（用户当前目录，pip install 场景）
+        #    b) 包内 assets/configs/llm_config.yaml（开发库内置，dev 场景）
+        if llm_config is None:
+            from pathlib import Path as _Path
+
+            from agent_eval.config.paths import paths
+
+            cwd_cfg = _Path.cwd() / "llm_config.yaml"
+            pkg_cfg = paths.configs_dir / "llm_config.yaml"
+            if cwd_cfg.exists():
+                llm_config = str(cwd_cfg)
+            elif pkg_cfg.exists():
+                llm_config = str(pkg_cfg)
         judge_orch = _init_judge_orchestrator(llm_config, llm_provider)
 
         # 3. 创建 Workspace

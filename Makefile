@@ -2,25 +2,26 @@
 
 # 使用 uv 进行包管理（推荐）
 # 需要先安装 uv: curl -LsSf https://astral.sh/uv/install.sh | sh
+# 评估器代码在 evaluator/ 子目录（自包含，对称 web/）
 
 install:
-	uv sync
+	cd evaluator && uv sync
 
 dev:
-	uv sync --extra dev
+	cd evaluator && uv sync --extra dev
 
 test:
-	uv run pytest tests/ -v --tb=short
+	cd evaluator && uv run pytest tests/ -v --tb=short
 
 test-cov:
-	uv run pytest tests/ -v --cov=agent_eval --cov-report=term-missing --cov-report=html
+	cd evaluator && uv run pytest tests/ -v --cov=agent_eval --cov-report=term-missing --cov-report=html
 
 lint:
-	uv run ruff check agent_eval/ tests/
+	cd evaluator && uv run ruff check agent_eval/ tests/
 
 format:
-	uv run ruff format agent_eval/ tests/
-	uv run ruff check --fix agent_eval/ tests/
+	cd evaluator && uv run ruff format agent_eval/ tests/
+	cd evaluator && uv run ruff check --fix agent_eval/ tests/
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true

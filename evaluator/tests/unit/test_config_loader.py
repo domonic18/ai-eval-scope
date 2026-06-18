@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from agent_eval.config.loader import ConfigLoader, get_schema_path
+from agent_eval.config.paths import paths
 from agent_eval.core.exceptions import (
     ConfigFileNotFoundError,
     SchemaValidationError,
@@ -12,7 +13,7 @@ from agent_eval.core.exceptions import (
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"
 CONFIGS = FIXTURES / "configs"
-SCHEMAS = Path(__file__).parent.parent.parent / "assets" / "schemas"
+SCHEMAS = paths.schemas_dir  # 包内资源（pip-installable），不硬编码 __file__ 路径
 
 
 class TestLoadYaml:

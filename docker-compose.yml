@@ -24,7 +24,8 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      # 持久化到 workspace 下，便于调试/重置/检视
+      - ./workspace/data/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-eval} -d ${POSTGRES_DB:-agent_eval}"]
       interval: 5s
@@ -40,7 +41,8 @@ services:
       - "9000:9000"
       - "9001:9001"
     volumes:
-      - miniodata:/data
+      # 持久化到 workspace 下，便于调试/重置/检视
+      - ./workspace/data/minio:/data
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
       interval: 5s
@@ -66,16 +68,18 @@ services:
     build:
       context: .
       dockerfile: docker/platform/Dockerfile
-    env_file: ./.env              # 密钥 / 桶 / 区域 / COS 凭据等（单一配置源）
+    env_file: ./.env              # PLATFORM_OBJECT_STORAGE/REGION/BUCKET/PATH_STYLE/JWT_*/INGEST_* 等
     environment:
       NODE_ENV: production
-      # 容器网络内用服务名（覆盖 .env 中供 host 直跑用的 localhost 值）
+      # 由 [4] POSTGRES_* 单一凭据源派生（容器内 host=postgres）
       PLATFORM_DATABASE_URL: postgresql://${POSTGRES_USER:-eval}:${POSTGRES_PASSWORD:-evalpassword}@postgres:5432/${POSTGRES_DB:-agent_eval}?schema=public
+      # 由 [5] MINIO_ROOT_* 单一凭据源派生（容器内 endpoint=服务名）
       PLATFORM_S3_ENDPOINT: http://minio:9000
+      PLATFORM_S3_ACCESS_KEY: ${MINIO_ROOT_USER:-eval}
+      PLATFORM_S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-evalpassword123}
+      PLATFORM_S3_BUCKET: ${PLATFORM_S3_BUCKET:-agent-eval}
     ports:
       - "3000:3000"
-    volumes:
-      - workspace:/app/workspace
     depends_on:
       postgres:
         condition: service_healthy
@@ -83,8 +87,3 @@ services:
         condition: service_healthy
       minio-init:
         condition: service_completed_successfully
-
-volumes:
-  pgdata:
-  miniodata:
-  workspace:
