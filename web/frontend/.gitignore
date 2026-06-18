@@ -3,3 +3,7 @@ node_modules/
 dist/
 .vite/
 *.tsbuildinfo
+
+# vite.config.ts 的 tsc 编译产物（tsconfig.node.json 已 noEmit，此处兜底）
+vite.config.js
+vite.config.d.ts
