@@ -12,6 +12,11 @@ import path from "path";
 import fs from "fs";
 import express from "express";
 import cors from "cors";
+
+// Prisma BigInt → JSON（sizeBytes 等字段需序列化）
+(BigInt.prototype as unknown as { toJSON: () => string }).toJSON = function () {
+  return this.toString();
+};
 import { requestLog, getLogger, flushLogs } from "./infra/logger";
 import { errorHandler, notFound } from "./middleware/errorHandler";
 import { getConfig } from "./config";

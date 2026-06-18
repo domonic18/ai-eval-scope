@@ -64,18 +64,36 @@ class ResultSink:
         )
 
     # ── 主入口 ──
-    def flush(self, result: EvalResult, *, run_workspace: Path | None = None) -> SinkReport:
+    def flush(
+        self,
+        result: EvalResult,
+        *,
+        run_workspace: Path | None = None,
+        package_dir: Path | str | None = None,
+    ) -> SinkReport:
         if not self.cfg.enabled:
             return SinkReport(enabled=False)
 
         report = SinkReport(enabled=True)
         try:
             # 先重放历史积压
-            report.replayed = self.queue.replay(self.client, batch=self.cfg.queue_replay_batch).get(
-                "sent", 0
-            )
+            report.replayed = self.queue.replay(
+                self.client, batch=self.cfg.queue_replay_batch
+            ).get("sent", 0)
 
             events = self._build_events(result, run_workspace=run_workspace, report=report)
+
+            # 上传源文件（让平台可预览原始产出物，方便排查约束失败）
+            if package_dir and result.samples:
+                sample = result.samples[0]
+                src_events = self._upload_source_files(
+                    Path(package_dir),
+                    result.run_id or result.report.run_id,
+                    sample.sample_id,
+                    report,
+                )
+                events.extend(src_events)
+
             report.sent, report.queued = self._send_in_batches(events)
         except Exception as exc:  # noqa: BLE001 — flush 不应让 eval 命令失败
             report.error = str(exc)
@@ -172,6 +190,49 @@ class ResultSink:
             report.artifacts_failed += 1
             self.log.warning("sink.artifact.upload_failed", path=str(local_path), error=str(exc))
             return None
+
+    def _upload_source_files(
+        self,
+        package_dir: Path,
+        external_run_id: str,
+        external_sample_id: str,
+        report: SinkReport,
+    ) -> list[dict[str, Any]]:
+        """上传 ExecutionPackage 的源文件（output/ 下的 HTML/MD/JSON），让平台可预览。"""
+        output_dir = package_dir / "output"
+        if not output_dir.exists():
+            output_dir = package_dir  # 兼容：output 不存在则扫整个包
+
+        events: list[dict[str, Any]] = []
+        for f in sorted(output_dir.rglob("*")):
+            if not f.is_file():
+                continue
+            if f.suffix.lower() not in (".html", ".htm", ".md", ".json", ".txt"):
+                continue
+            rel_name = str(f.relative_to(output_dir))
+            ct = "text/html" if f.suffix.lower() in (".html", ".htm") else "text/plain"
+            object_key = self._upload_artifact(
+                f,
+                external_run_id=external_run_id,
+                external_sample_id=external_sample_id,
+                kind="output",
+                content_type=ct,
+                original_name=rel_name,
+                report=report,
+            )
+            if object_key:
+                events.append(
+                    build_artifact_event(
+                        external_run_id=external_run_id,
+                        external_sample_id=external_sample_id,
+                        kind="output",
+                        object_key=object_key,
+                        content_type=ct,
+                        size_bytes=f.stat().st_size,
+                        original_name=rel_name,
+                    )
+                )
+        return events
 
     # ── 分批发送 ──
     def dispatch(self, events: list[dict[str, Any]]) -> tuple[int, int]:

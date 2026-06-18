@@ -104,7 +104,9 @@ def _print_summary(result: object) -> None:
     rprint("")
 
 
-def _flush_observability(result: object, *, upload_override: bool | None) -> None:
+def _flush_observability(
+    result: object, *, upload_override: bool | None, package_dir: str | None = None
+) -> None:
     """评估完成后把结果推送到可观测平台（ResultSink，Sprint 7e）。
 
     未配置凭据（enabled=False）→ 静默跳过。失败不阻断 eval 命令（已落本地 workspace + 入离线队列）。
@@ -123,7 +125,11 @@ def _flush_observability(result: object, *, upload_override: bool | None) -> Non
 
     try:
         sink = ResultSink(cfg)
-        report = sink.flush(result, run_workspace=run_workspace)  # type: ignore[arg-type]
+        report = sink.flush(
+            result,  # type: ignore[arg-type]
+            run_workspace=run_workspace,
+            package_dir=package_dir,
+        )
         if report.error:
             rprint(f"[yellow]⚠ 推送异常（已入离线队列，后续自动重放）: {report.error}[/yellow]")
         else:
@@ -317,7 +323,7 @@ def eval(
         rprint("[green]✅ 评估完成[/green] — 结果已保存至 workspace")
 
         # 8. 推送到可观测平台（ResultSink，Sprint 7e）
-        _flush_observability(result, upload_override=upload)
+        _flush_observability(result, upload_override=upload, package_dir=package_dir)
 
     except Exception as e:
         rprint(f"[bold red]❌ 评估失败: {e}[/bold red]")
