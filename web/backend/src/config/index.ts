@@ -13,6 +13,7 @@ export interface PlatformConfig {
   databaseUrl: string;
   objectStorage: ObjectStorageKind;
   s3Endpoint: string;
+  s3ExternalEndpoint: string; // presigned URL 对外端点（浏览器/客户端可达，可与 s3Endpoint 不同）
   s3Region: string;
   s3Bucket: string;
   s3PathStyle: boolean; // MinIO 需要 path-style
@@ -50,6 +51,11 @@ export function loadConfig(): PlatformConfig {
     databaseUrl: process.env.PLATFORM_DATABASE_URL || "",
     objectStorage: (process.env.PLATFORM_OBJECT_STORAGE as ObjectStorageKind) || "minio",
     s3Endpoint: process.env.PLATFORM_S3_ENDPOINT || "http://localhost:9000",
+    // presigned URL 走对外端点（浏览器/客户端可达）；未设置则回退内部端点，行为不变
+    s3ExternalEndpoint:
+      process.env.PLATFORM_S3_EXTERNAL_ENDPOINT ||
+      process.env.PLATFORM_S3_ENDPOINT ||
+      "http://localhost:9000",
     s3Region: process.env.PLATFORM_S3_REGION || "us-east-1",
     s3Bucket: process.env.PLATFORM_S3_BUCKET || "agent-eval",
     s3PathStyle: bool(process.env.PLATFORM_S3_PATH_STYLE, true),

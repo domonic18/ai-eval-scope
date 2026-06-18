@@ -60,6 +60,7 @@ export function projectIdFromKey(key: string): string | null {
 
 export interface S3StorageOpts {
   endpoint: string;
+  externalEndpoint?: string; // presigned URL 对外端点（浏览器/客户端可达）
   region: string;
   bucket: string;
   forcePathStyle: boolean;
@@ -74,21 +75,36 @@ export class S3Storage {
   readonly kind: "s3" | "cos" | "minio";
   readonly defaultTtlSec: number;
   private bucketEnsured = false;
+  /** 服务端 S3 操作（put/get/head/建桶/ping）用的 client，走内部端点。 */
   readonly client: S3Client;
+  /** presigned URL 用的 client，走对外端点（浏览器/客户端可达）。与内部相同时复用同一实例。 */
+  readonly presignClient: S3Client;
 
   constructor(opts: S3StorageOpts) {
     this.bucket = opts.bucket;
     this.kind = opts.kind;
     this.defaultTtlSec = opts.defaultTtlSec || 900;
+    const credentials = {
+      accessKeyId: opts.accessKey,
+      secretAccessKey: opts.secretKey,
+    };
     this.client = new S3Client({
       region: opts.region,
       endpoint: opts.endpoint,
       forcePathStyle: opts.forcePathStyle,
-      credentials: {
-        accessKeyId: opts.accessKey,
-        secretAccessKey: opts.secretKey,
-      },
+      credentials,
     });
+    // 对外端点与内部不同时，单独建一个 client 仅用于 presign；
+    // 这样返回给浏览器/客户端的 URL 才能被解析（签名 host 也会匹配对外域名）。
+    const ext = opts.externalEndpoint && opts.externalEndpoint !== opts.endpoint ? opts.externalEndpoint : null;
+    this.presignClient = ext
+      ? new S3Client({
+          region: opts.region,
+          endpoint: ext,
+          forcePathStyle: opts.forcePathStyle,
+          credentials,
+        })
+      : this.client;
   }
 
   /** 懒建桶（本地 MinIO 首次启动用，幂等）。 */
@@ -128,7 +144,7 @@ export class S3Storage {
       input.ContentMD5 = md5B64;
       headers["Content-MD5"] = md5B64;
     }
-    const url = await getSignedUrl(this.client, new PutObjectCommand(input), {
+    const url = await getSignedUrl(this.presignClient, new PutObjectCommand(input), {
       expiresIn: ttl,
     });
     return { url, method: "PUT", headers, expiresAt: epochNow() + ttl };
@@ -138,7 +154,7 @@ export class S3Storage {
   async presignGet(p: { key: string; ttlSec?: number }): Promise<PresignGetResult> {
     const ttl = Math.min(p.ttlSec || this.defaultTtlSec, 900);
     const url = await getSignedUrl(
-      this.client,
+      this.presignClient,
       new GetObjectCommand({ Bucket: this.bucket, Key: p.key }),
       { expiresIn: ttl }
     );
@@ -240,6 +256,7 @@ export function createObjectStorage(cfg?: PlatformConfig): S3Storage {
   }
   return new S3Storage({
     endpoint: config.s3Endpoint,
+    externalEndpoint: config.s3ExternalEndpoint,
     region: config.s3Region,
     bucket: config.s3Bucket,
     forcePathStyle: config.s3PathStyle,
