@@ -104,7 +104,7 @@
           <div class="stage-head">
             <span class="stage-bar" style="background:var(--success)"></span>
             <h3>格式 Format</h3><span class="chip chip-hard">HARD_GATE</span>
-            <span class="stage-score">S_format = <b style="color:var(--success)">+1.00</b><span class="explain"><button class="explain-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button><span class="explain-pop align-right"><h5>S_format <span class="code-inline">格式得分</span></h5><dl><dt>层级</dt><dd><span class="chip chip-hard">HARD_GATE</span> 硬门禁，失败即 fail-fast，后续阶段跳过。</dd><dt>取值</dt><dd>全部格式约束通过 = <span class="mono">+1.00</span>；任一失败 = <span class="mono">-3.00</span>（直接判负）。</dd></dl></span></span></span>
+            <span class="stage-score">S_format = <b style="color:var(--success)">+1.00</b><span class="explain"><button class="explain-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button><span class="explain-pop"><h5>S_format <span class="code-inline">格式得分</span></h5><dl><dt>层级</dt><dd><span class="chip chip-hard">HARD_GATE</span> 硬门禁，失败即 fail-fast，后续阶段跳过。</dd><dt>取值</dt><dd>全部格式约束通过 = <span class="mono">+1.00</span>；任一失败 = <span class="mono">-3.00</span>（直接判负）。</dd></dl></span></span></span>
           </div>
           <div class="constraint">
             <div class="c-head" onclick="this.parentElement.classList.toggle('open')">
@@ -131,7 +131,7 @@
           <div class="stage-head">
             <span class="stage-bar" style="background:var(--danger)"></span>
             <h3>常识 Commonsense</h3><span class="chip chip-hard">HARD_SCORE</span>
-            <span class="stage-score">S_common = <b style="color:var(--danger)">0.00</b><span class="explain"><button class="explain-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button><span class="explain-pop align-right"><h5>S_common <span class="code-inline">常识得分</span></h5><dl><dt>层级</dt><dd><span class="chip chip-hard">HARD_SCORE</span> 硬约束，失败不中断同阶段其它评估器，但标记门禁未过。</dd><dt>取值</dt><dd>全部常识约束通过 = <span class="mono">+1.00</span>；任一失败 = <span class="mono">0.00</span>。</dd></dl></span></span></span>
+            <span class="stage-score">S_common = <b style="color:var(--danger)">0.00</b><span class="explain"><button class="explain-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button><span class="explain-pop"><h5>S_common <span class="code-inline">常识得分</span></h5><dl><dt>层级</dt><dd><span class="chip chip-hard">HARD_SCORE</span> 硬约束，失败不中断同阶段其它评估器，但标记门禁未过。</dd><dt>取值</dt><dd>全部常识约束通过 = <span class="mono">+1.00</span>；任一失败 = <span class="mono">0.00</span>。</dd></dl></span></span></span>
           </div>
           <!-- 失败项默认展开并高亮 -->
           <div class="constraint fail open" id="c-fail">
@@ -167,7 +167,7 @@
           <div class="stage-head">
             <span class="stage-bar" style="background:var(--warning)"></span>
             <h3>质量 Quality</h3><span class="chip chip-soft">SOFT</span><span class="chip chip-pref">PREFERENCE</span>
-            <span class="stage-score">S_soft <b>0.62</b> · S_pref <b>0.55</b><span class="explain"><button class="explain-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button><span class="explain-pop align-right"><h5>S_soft / S_pref <span class="code-inline">质量得分</span></h5><dl><dt>S_soft</dt><dd><span class="chip chip-soft">SOFT</span> 软约束（如教学逻辑、内容多样性）加权平均，归一化到 <span class="mono">[0,1]</span>。</dd><dt>S_pref</dt><dd><span class="chip chip-pref">PREFERENCE</span> 偏好约束（风格、深度、需求满足）加权平均，归一化到 <span class="mono">[0,1]</span>。</dd><dt>作用</dt><dd>不影响门禁，按权重计入最终 <span class="mono">Reward</span>。</dd></dl></span></span></span>
+            <span class="stage-score">S_soft <b>0.62</b> · S_pref <b>0.55</b><span class="explain"><button class="explain-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button><span class="explain-pop"><h5>S_soft / S_pref <span class="code-inline">质量得分</span></h5><dl><dt>S_soft</dt><dd><span class="chip chip-soft">SOFT</span> 软约束（如教学逻辑、内容多样性）加权平均，归一化到 <span class="mono">[0,1]</span>。</dd><dt>S_pref</dt><dd><span class="chip chip-pref">PREFERENCE</span> 偏好约束（风格、深度、需求满足）加权平均，归一化到 <span class="mono">[0,1]</span>。</dd><dt>作用</dt><dd>不影响门禁，按权重计入最终 <span class="mono">Reward</span>。</dd></dl></span></span></span>
           </div>
           <div class="constraint">
             <div class="c-head" onclick="this.parentElement.classList.toggle('open')">

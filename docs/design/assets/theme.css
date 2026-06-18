@@ -303,8 +303,9 @@ a { color: inherit; text-decoration: none; }
 .gauge-thresh { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--text-secondary); opacity: .7; }
 
 /* --- Metric explainer (?) ------------------------------------------------
-   指标旁的「?」按钮 + 悬浮/点击说明卡。说明内容写在同级 .explain-pop 内。
-   交互见 assets/ui.js（点击切换、点击空白关闭、Esc 关闭）。
+   指标旁的「?」按钮 + 点击说明卡。说明内容写在同级 .explain-pop 内。
+   弹层用 position:fixed，开启时由 assets/ui.js 计算坐标并做视口夹取，
+   彻底规避 .metric(overflow:hidden) / .pane(overflow:auto) 等祖先裁切。
    ------------------------------------------------------------------------ */
 .explain { position: relative; display: inline-flex; vertical-align: middle; }
 .explain-btn {
@@ -318,28 +319,21 @@ a { color: inherit; text-decoration: none; }
 .explain-btn:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
 .explain.open .explain-btn { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
 .explain-pop {
-  position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%) translateY(-4px);
-  width: 288px; z-index: 80; text-align: left;
+  position: fixed; top: 0; left: 0; width: 288px; max-width: calc(100vw - 24px);
+  z-index: 200; text-align: left;
   background: var(--bg-elevated); border: 1px solid var(--border-hover);
   border-radius: var(--r-md); box-shadow: var(--shadow-lg); padding: 14px 15px;
-  opacity: 0; visibility: hidden; transition: all .15s var(--ease); pointer-events: none;
+  opacity: 0; visibility: hidden; transform: translateY(-4px);
+  transition: opacity .15s var(--ease), transform .15s var(--ease); pointer-events: none;
   white-space: normal; font-weight: 400;
 }
-.explain.open .explain-pop { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); pointer-events: auto; }
-.explain-pop::before { content: ''; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-bottom-color: var(--border-hover); }
-.explain-pop h5 { font-size: 12.5px; font-weight: 650; color: var(--text-primary); margin-bottom: 7px; display: flex; align-items: center; gap: 7px; }
+.explain.open .explain-pop { opacity: 1; visibility: visible; transform: translateY(0); pointer-events: auto; }
+.explain-pop h5 { font-size: 12.5px; font-weight: 650; color: var(--text-primary); margin-bottom: 7px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
 .explain-pop h5 .code-inline { font-size: 11px; }
 .explain-pop dl { display: grid; grid-template-columns: max-content 1fr; gap: 5px 10px; }
 .explain-pop dt { font-size: 11px; color: var(--text-tertiary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; padding-top: 1px; }
 .explain-pop dd { font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; }
 .explain-pop dd .mono { color: var(--signal); font-size: 11.5px; }
-/* 弹层靠右/靠左对齐变体（避免溢出视口边缘） */
-.explain-pop.align-left { left: 0; transform: translateX(0) translateY(-4px); }
-.explain.open .explain-pop.align-left { transform: translateX(0) translateY(0); }
-.explain-pop.align-left::before { left: 16px; }
-.explain-pop.align-right { left: auto; right: 0; transform: translateX(0) translateY(-4px); }
-.explain.open .explain-pop.align-right { transform: translateX(0) translateY(0); }
-.explain-pop.align-right::before { left: auto; right: 16px; }
 
 /* --- Badges / tags ------------------------------------------------------- */
 .badge {
