@@ -111,6 +111,9 @@ export const api = {
   artifactUrl(artifactId: string): string {
     return `/api/v1/artifacts/${artifactId}`;
   },
+  async artifactPreview(artifactId: string): Promise<{ url: string; contentType: string; filename: string }> {
+    return (await http.get(`/artifacts/${artifactId}/preview`)).data;
+  },
 };
 
 export { saveSession };

@@ -73,14 +73,19 @@ export interface SampleSummary {
 export interface ConstraintRow {
   id: string;
   constraintId: string;
+  ruleId: string | null;
   name: string;
   tier: string;
   status: string;
   passed: boolean;
   score: number;
+  rawScore: number | null;
   reason: string;
+  details: Record<string, unknown> | null;
+  durationMs: number;
   judgeProvider: string | null;
   judgeModel: string | null;
+  moduleResults: Record<string, unknown> | null;
 }
 
 export interface ArtifactRow {
