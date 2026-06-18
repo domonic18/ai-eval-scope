@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登录 — EvalScope</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  body { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .auth { z-index: 1; width: 100%; max-width: 408px; }
+  .auth-head { text-align: center; margin-bottom: 28px; }
+  .auth-head .logo { justify-content: center; margin-bottom: 22px; font-size: 17px; }
+  .auth-head .logo-mark { width: 32px; height: 32px; }
+  .auth-head h1 { font-size: 22px; font-weight: 650; margin-bottom: 6px; }
+  .auth-head p { font-size: 14px; color: var(--text-secondary); }
+  .auth-card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--r-xl); padding: 32px; }
+  .auth-foot { text-align: center; margin-top: 22px; font-size: 13px; color: var(--text-secondary); }
+  .auth-foot a { color: var(--accent); font-weight: 550; }
+  .auth-foot a:hover { text-decoration: underline; }
+  .row-between { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); cursor: pointer; }
+  .check input { accent-color: var(--accent); }
+  .back { display: inline-flex; align-items: center; gap: 6px; margin-top: 24px; font-size: 12px; color: var(--text-tertiary); }
+  .back:hover { color: var(--text-secondary); }
+</style>
+</head>
+<body>
+<div class="ambient"></div>
+
+<div class="auth">
+  <div class="auth-head">
+    <a href="index.html" class="logo">
+      <span class="logo-mark"><img src="assets/logo.svg" alt="" style="width:100%"></span>
+      <span class="logo-text">Eval<b>Scope</b></span>
+    </a>
+    <h1>欢迎回来</h1>
+    <p>登录以访问你的评估控制台</p>
+  </div>
+
+  <div class="auth-card">
+    <!-- 错误态示例（默认隐藏，演示用保留可见一行注释） -->
+    <div class="callout callout-warn" style="margin-bottom:20px;display:none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      邮箱或密码错误
+    </div>
+
+    <form onsubmit="return false">
+      <div class="field">
+        <label>邮箱</label>
+        <div class="input-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>
+          <input class="input" type="email" placeholder="you@company.com" value="dev@evalscope.io">
+        </div>
+      </div>
+      <div class="field">
+        <label>密码</label>
+        <div class="input-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input class="input" type="password" placeholder="输入密码" value="········">
+        </div>
+      </div>
+      <div class="row-between">
+        <label class="check"><input type="checkbox" checked> 记住我</label>
+        <a href="#" style="font-size:12px;color:var(--text-tertiary)">忘记密码？</a>
+      </div>
+      <a href="dashboard.html" class="btn btn-primary btn-lg" style="width:100%;justify-content:center">登录</a>
+    </form>
+  </div>
+
+  <div class="auth-foot">还没有账号？<a href="register.html">创建组织</a></div>
+  <div style="text-align:center"><a href="index.html" class="back">← 返回首页</a></div>
+</div>
+</body>
+</html>

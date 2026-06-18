@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>成员 — EvalScope</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  .role-tag { font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 100px; }
+  .role-owner { background: var(--accent-soft); color: var(--accent); }
+  .role-member { background: var(--bg-surface); color: var(--text-secondary); border: 1px solid var(--border); }
+  .mem-cell { display: flex; align-items: center; gap: 12px; }
+  .mem-av { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #fff; flex-shrink: 0; }
+  .mem-name { font-size: 13.5px; font-weight: 550; }
+  .mem-email { font-size: 12px; color: var(--text-tertiary); }
+</style>
+</head>
+<body>
+<div class="ambient"></div>
+<div class="scanlines"></div>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <a href="index.html" class="logo" style="margin-bottom:14px"><span class="logo-mark"><img src="assets/logo.svg" alt="" style="width:100%"></span><span class="logo-text">Eval<b>Scope</b></span></a>
+      <div class="org-switcher"><div class="org-avatar">智</div><div class="org-meta"><div class="org-name">智能教育研发组</div><div class="org-plan">Team · 5 项目</div></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+    </div>
+    <nav class="nav-section">
+      <a class="nav-item" href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> 项目看板</a>
+      <a class="nav-item" href="run-detail.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg> 全部运行</a>
+      <div class="nav-label">组织</div>
+      <a class="nav-item active" href="members.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg> 成员</a>
+      <a class="nav-item" href="org-settings.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> 组织设置</a>
+    </nav>
+    <div class="sidebar-foot"><a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> 接入指引</a></div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="crumbs"><span class="muted">智能教育研发组</span><span class="sep">/</span><span class="current">成员</span></div>
+      <div class="topbar-right"><div class="avatar">张</div></div>
+    </header>
+
+    <div class="page reveal">
+      <div class="page-head r-1">
+        <div class="page-title"><h1>成员</h1><div class="sub">管理组织成员及其角色 · 共 6 人</div></div>
+        <div class="page-actions"><button class="btn btn-primary" onclick="openScrim('invite')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> 邀请成员</button></div>
+      </div>
+
+      <div class="card r-2"><div class="table-wrap"><table class="data">
+        <thead><tr><th>成员</th><th>角色</th><th>加入时间</th><th>最近活跃</th><th></th></tr></thead>
+        <tbody>
+          <tr style="cursor:default"><td><div class="mem-cell"><div class="mem-av" style="background:linear-gradient(135deg,#3d6dff,#7c6cff)">张</div><div><div class="mem-name">张工 <span class="muted" style="font-weight:400">（你）</span></div><div class="mem-email">zhang@evalscope.io</div></div></div></td><td><span class="role-tag role-owner">Owner</span></td><td class="muted">2026-01-12</td><td class="muted">刚刚</td><td></td></tr>
+          <tr style="cursor:default"><td><div class="mem-cell"><div class="mem-av" style="background:linear-gradient(135deg,#e8795a,#d9465a)">李</div><div><div class="mem-name">李雨桐</div><div class="mem-email">li@evalscope.io</div></div></div></td><td><span class="role-tag role-member">Member</span></td><td class="muted">2026-02-03</td><td class="muted">2 小时前</td><td style="text-align:right"><button class="btn btn-sm">管理</button></td></tr>
+          <tr style="cursor:default"><td><div class="mem-cell"><div class="mem-av" style="background:linear-gradient(135deg,#2ea043,#238636)">王</div><div><div class="mem-name">王浩然</div><div class="mem-email">wang@evalscope.io</div></div></div></td><td><span class="role-tag role-member">Member</span></td><td class="muted">2026-02-18</td><td class="muted">昨天</td><td style="text-align:right"><button class="btn btn-sm">管理</button></td></tr>
+          <tr style="cursor:default"><td><div class="mem-cell"><div class="mem-av" style="background:linear-gradient(135deg,#8b5cf6,#6366f1)">陈</div><div><div class="mem-name">陈思琪</div><div class="mem-email">chen@evalscope.io</div></div></div></td><td><span class="role-tag role-member">Member</span></td><td class="muted">2026-03-01</td><td class="muted">3 天前</td><td style="text-align:right"><button class="btn btn-sm">管理</button></td></tr>
+        </tbody>
+      </table></div></div>
+
+      <!-- pending invites -->
+      <h3 style="font-size:13px;font-weight:600;color:var(--text-secondary);margin:24px 0 10px" class="r-3">待接受邀请</h3>
+      <div class="card r-3"><div class="table-wrap"><table class="data">
+        <thead><tr><th>邮箱</th><th>角色</th><th>邀请时间</th><th></th></tr></thead>
+        <tbody>
+          <tr style="cursor:default"><td class="mono">liu@evalscope.io</td><td><span class="role-tag role-member">Member</span></td><td class="muted">2 天前 · 张工 邀请</td><td style="text-align:right"><div class="row" style="justify-content:flex-end;gap:6px"><button class="btn btn-sm">重发</button><button class="btn btn-danger btn-sm">撤回</button></div></td></tr>
+        </tbody>
+      </table></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- invite modal -->
+<div class="scrim" id="invite" style="display:none">
+  <div class="modal">
+    <div class="modal-head"><h2>邀请成员</h2><p>通过邮箱邀请成员加入组织</p></div>
+    <div class="modal-body">
+      <div class="field"><label>邮箱</label><input class="input" placeholder="name@company.com"></div>
+      <div class="field" style="margin-bottom:0"><label>角色</label><select class="select"><option>Member — 可查看项目与运行数据</option><option>Owner — 可管理成员、项目与组织设置</option></select></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeScrim('invite')">取消</button>
+      <button class="btn btn-primary" onclick="closeScrim('invite')">发送邀请</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openScrim(id){ var e=document.getElementById(id); e.style.display='flex'; e.setAttribute('data-open',''); }
+  function closeScrim(id){ var e=document.getElementById(id); e.style.display='none'; e.removeAttribute('data-open'); }
+  document.querySelectorAll('.scrim').forEach(function(s){ s.addEventListener('click', function(e){ if(e.target===s) closeScrim(s.id); }); });
+</script>
+<script src="assets/ui.js"></script>
+</body>
+</html>

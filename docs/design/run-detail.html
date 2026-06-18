@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>运行 #run_2f8a — EvalScope</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  @media (max-width: 1000px){ .two { grid-template-columns: 1fr; } }
+  .fail-row { display: grid; grid-template-columns: 200px 1fr 44px; align-items: center; gap: 12px; padding: 9px 0; cursor: pointer; }
+  .fail-row:hover .fail-name { color: var(--text-primary); }
+  .fail-name { font-family: var(--mono); font-size: 12px; color: var(--text-secondary); transition: color .12s; }
+  .fail-track { height: 16px; background: var(--bg-surface); border-radius: var(--r-xs); overflow: hidden; }
+  .fail-fill { height: 100%; border-radius: var(--r-xs); }
+  .fail-n { font-family: var(--mono); font-size: 12px; text-align: right; font-weight: 600; }
+  .report { font-size: 13.5px; line-height: 1.75; color: var(--text-secondary); }
+  .report h4 { color: var(--text-primary); font-size: 14px; margin: 16px 0 8px; }
+  .report h4:first-child { margin-top: 0; }
+  .report ul { padding-left: 18px; margin: 6px 0; }
+  .report li { margin-bottom: 4px; }
+  .report strong { color: var(--text-primary); }
+  .report .tag-ok { color: var(--success); } .report .tag-bad { color: var(--danger); }
+  .meta-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: var(--border); border-radius: var(--r-md); overflow: hidden; margin-bottom: 16px; }
+  .meta-cell { background: var(--bg-elevated); padding: 12px 16px; }
+  .meta-lab { font-size: 11px; color: var(--text-tertiary); margin-bottom: 3px; }
+  .meta-val { font-size: 13px; font-weight: 550; }
+</style>
+</head>
+<body>
+<div class="ambient"></div>
+<div class="scanlines"></div>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <a href="index.html" class="logo" style="margin-bottom:14px"><span class="logo-mark"><img src="assets/logo.svg" alt="" style="width:100%"></span><span class="logo-text">Eval<b>Scope</b></span></a>
+      <div class="org-switcher"><div class="org-avatar">智</div><div class="org-meta"><div class="org-name">智能教育研发组</div><div class="org-plan">Team · 5 项目</div></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+    </div>
+    <nav class="nav-section">
+      <a class="nav-item" href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> 项目看板</a>
+      <a class="nav-item active" href="run-detail.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg> 全部运行</a>
+      <div class="nav-label">组织</div>
+      <a class="nav-item" href="members.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg> 成员</a>
+      <a class="nav-item" href="org-settings.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> 组织设置</a>
+    </nav>
+    <div class="sidebar-foot"><a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> 接入指引</a></div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="crumbs"><a href="dashboard.html">项目看板</a><span class="sep">/</span><a href="project-detail.html">课件生成评估</a><span class="sep">/</span><span class="current mono">#run_2f8a</span></div>
+      <div class="topbar-right"><div class="avatar">张</div></div>
+    </header>
+
+    <div class="page reveal">
+      <div class="page-head r-1">
+        <div class="page-title">
+          <h1><span class="mono">运行 #run_2f8a</span> <span class="badge badge-success" style="font-size:12px">completed</span></h1>
+          <div class="sub">eval_only 模式 · 120 个样本 · 2026-06-18 09:46</div>
+        </div>
+        <div class="page-actions">
+          <a class="btn" href="#" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg> 在 Langfuse 查看</a>
+          <button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> 下载报告</button>
+        </div>
+      </div>
+
+      <!-- run meta -->
+      <div class="meta-grid r-2">
+        <div class="meta-cell"><div class="meta-lab">外部运行 ID</div><div class="meta-val mono">run_2f8a91c0</div></div>
+        <div class="meta-cell"><div class="meta-lab">规则集版本</div><div class="meta-val mono">courseware_v2.3</div></div>
+        <div class="meta-cell"><div class="meta-lab">平均耗时 / 样本</div><div class="meta-val mono">3,184 ms</div></div>
+        <div class="meta-cell"><div class="meta-lab">SUT 版本</div><div class="meta-val mono">gpt-4o-2026</div></div>
+      </div>
+
+      <!-- metric cards with thresholds -->
+      <div class="r-3" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px">
+        <div class="metric">
+          <div class="metric-top"><span class="row" style="gap:0"><span class="metric-label">DR 交付率</span><span class="explain"><button class="explain-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button><span class="explain-pop align-left"><h5>DR · Delivery Rate <span class="code-inline">交付率</span></h5><dl><dt>定义</dt><dd>通过<b style="color:var(--text-primary)">格式硬门禁</b>的样本占比，衡量产物能否被正常交付。</dd><dt>计算</dt><dd><span class="mono">格式通过样本数 / 总样本数</span></dd><dt>标准</dt><dd>达标阈值 <span class="mono">≥ 0.95</span>；低于即判定该运行不达标。</dd></dl></span></span></span><span class="badge badge-success">达标</span></div>
+          <div class="metric-value" style="color:var(--success)">0.962</div>
+          <div class="gauge"><span class="gauge-fill" style="width:96.2%;background:var(--success)"></span><span class="gauge-thresh" style="left:95%"></span></div>
+          <div class="metric-foot"><span class="muted">阈值 ≥ 0.95</span></div>
+        </div>
+        <div class="metric">
+          <div class="metric-top"><span class="row" style="gap:0"><span class="metric-label">CPR 常识</span><span class="explain"><button class="explain-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button><span class="explain-pop align-left"><h5>CPR · Commonsense Pass Rate <span class="code-inline">常识通过率</span></h5><dl><dt>定义</dt><dd>通过<b style="color:var(--text-primary)">常识硬约束</b>（史实、数理、单位、逻辑等）的样本占比。</dd><dt>计算</dt><dd><span class="mono">常识通过样本数 / 总样本数</span></dd><dt>标准</dt><dd>达标阈值 <span class="mono">≥ 0.90</span>。</dd></dl></span></span></span><span class="badge badge-success">达标</span></div>
+          <div class="metric-value" style="color:var(--signal)">0.914</div>
+          <div class="gauge"><span class="gauge-fill" style="width:91.4%;background:var(--signal)"></span><span class="gauge-thresh" style="left:90%"></span></div>
+          <div class="metric-foot"><span class="muted">阈值 ≥ 0.90</span></div>
+        </div>
+        <div class="metric">
+          <div class="metric-top"><span class="row" style="gap:0"><span class="metric-label">Reward</span><span class="explain"><button class="explain-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button><span class="explain-pop"><h5>Reward <span class="code-inline">综合奖励</span></h5><dl><dt>定义</dt><dd>样本综合得分，聚合四个阶段得分的加权和。</dd><dt>计算</dt><dd><span class="mono">S_format + S_common + w₃·S_soft + w₄·S_pref</span> 后对全部样本取均值。</dd><dt>标准</dt><dd>达标阈值 <span class="mono">≥ 0.80</span>；反映整体质量水位。</dd></dl></span></span></span><span class="badge badge-warning">偏低</span></div>
+          <div class="metric-value" style="color:var(--warning)">0.781</div>
+          <div class="gauge"><span class="gauge-fill" style="width:78.1%;background:var(--warning)"></span><span class="gauge-thresh" style="left:80%"></span></div>
+          <div class="metric-foot"><span class="muted">阈值 ≥ 0.80</span></div>
+        </div>
+        <div class="metric">
+          <div class="metric-top"><span class="row" style="gap:0"><span class="metric-label">CondR 条件</span><span class="explain"><button class="explain-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button><span class="explain-pop align-right"><h5>CondR · Conditional Reward <span class="code-inline">条件奖励</span></h5><dl><dt>定义</dt><dd><b style="color:var(--text-primary)">同时通过格式与常识门禁</b>的样本的平均 Reward，排除「直接判负」样本的干扰。</dd><dt>计算</dt><dd><span class="mono">Σ Reward(已过门禁) / 已过门禁样本数</span></dd><dt>用途</dt><dd>反映「合格产物」的真实质量上限。</dd></dl></span></span></span></div>
+          <div class="metric-value">0.842</div>
+          <div class="gauge"><span class="gauge-fill" style="width:84.2%;background:var(--accent)"></span></div>
+          <div class="metric-foot"><span class="muted">门禁通过样本均值</span></div>
+        </div>
+      </div>
+
+      <div class="two r-4">
+        <!-- Failure breakdown -->
+        <div class="card">
+          <div class="card-head"><h3>失败分布</h3><span class="hint">按约束 · 点击下钻样本</span></div>
+          <div class="card-body" style="padding:8px 20px 16px">
+            <div class="fail-row" onclick="location.href='#samples'"><span class="fail-name chip chip-hard" style="width:max-content">commonsense.info_accuracy</span><div class="fail-track"><div class="fail-fill" style="width:100%;background:var(--danger)"></div></div><span class="fail-n">7</span></div>
+            <div class="fail-row" onclick="location.href='#samples'"><span class="fail-name chip chip-hard" style="width:max-content">format.document_count</span><div class="fail-track"><div class="fail-fill" style="width:57%;background:var(--danger)"></div></div><span class="fail-n">4</span></div>
+            <div class="fail-row" onclick="location.href='#samples'"><span class="fail-name chip chip-soft" style="width:max-content">soft.teaching_logic</span><div class="fail-track"><div class="fail-fill" style="width:43%;background:var(--warning)"></div></div><span class="fail-n">3</span></div>
+            <div class="fail-row" onclick="location.href='#samples'"><span class="fail-name chip chip-hard" style="width:max-content">commonsense.math_formula</span><div class="fail-track"><div class="fail-fill" style="width:29%;background:var(--danger)"></div></div><span class="fail-n">2</span></div>
+            <div class="fail-row" onclick="location.href='#samples'"><span class="fail-name chip chip-pref" style="width:max-content">pref.depth_preference</span><div class="fail-track"><div class="fail-fill" style="width:14%;background:var(--info)"></div></div><span class="fail-n">1</span></div>
+          </div>
+        </div>
+
+        <!-- Report summary -->
+        <div class="card">
+          <div class="card-head"><h3>报告摘要</h3><div class="row"><button class="btn btn-sm">MD</button><button class="btn btn-sm">JSON</button></div></div>
+          <div class="card-body report">
+            <h4>总体结论</h4>
+            <p>本次运行 120 个样本，<strong class="tag-ok">113 通过</strong> / <strong class="tag-bad">7 失败</strong>。交付率与常识通过率均达标，<strong>Reward 略低于阈值（0.781 &lt; 0.80）</strong>，主要受 soft.teaching_logic 拉低。</p>
+            <h4>主要问题</h4>
+            <ul>
+              <li>7 个样本在 <span class="code-inline">commonsense.info_accuracy</span> 出现史实/数据错误，集中于近代史单元。</li>
+              <li>4 个样本文档数量不足（缺少配套练习页），触发 format 硬门禁。</li>
+              <li>教学逻辑连贯性在长单元课件中评分偏低。</li>
+            </ul>
+            <h4>建议</h4>
+            <ul><li>加强生成阶段的事实核查提示词；</li><li>对多文档任务补充完整性校验。</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Samples -->
+      <div class="card r-5" id="samples">
+        <div class="card-head">
+          <h3>样本 <span class="muted" style="font-weight:400">120</span></h3>
+          <div class="row" style="gap:8px">
+            <div class="segment"><button class="active">全部</button><button>失败 7</button><button>跳过 2</button></div>
+            <select class="select btn-sm" style="width:auto"><option>按 Reward 升序</option><option>按 Reward 降序</option><option>按状态</option></select>
+          </div>
+        </div>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th>样本 (task_id)</th><th>状态</th><th class="num">Reward</th><th class="num">S_format</th><th class="num">S_common</th><th class="num">S_soft</th><th class="num">S_pref</th><th>失败约束</th></tr></thead>
+          <tbody>
+            <tr onclick="location.href='sample-detail.html'"><td class="mono">unit3_modern_history</td><td><span class="badge badge-danger">fail</span></td><td class="num t-del">0.214</td><td class="num">1.00</td><td class="num t-del">0.00</td><td class="num">0.62</td><td class="num">0.55</td><td><span class="chip chip-hard">info_accuracy</span></td></tr>
+            <tr onclick="location.href='sample-detail.html'"><td class="mono">unit5_geometry</td><td><span class="badge badge-danger">fail</span></td><td class="num t-del">0.402</td><td class="num">1.00</td><td class="num t-del">0.00</td><td class="num">0.71</td><td class="num">0.68</td><td><span class="chip chip-hard">math_formula</span></td></tr>
+            <tr onclick="location.href='sample-detail.html'"><td class="mono">unit1_intro</td><td><span class="badge badge-warning">skip</span></td><td class="num muted">—</td><td class="num t-del">-3.0</td><td class="num muted">—</td><td class="num muted">—</td><td class="num muted">—</td><td><span class="chip chip-hard">document_count</span></td></tr>
+            <tr onclick="location.href='sample-detail.html'"><td class="mono">unit2_civilization</td><td><span class="badge badge-success">pass</span></td><td class="num t-add">0.912</td><td class="num">1.00</td><td class="num">1.00</td><td class="num">0.88</td><td class="num">0.84</td><td class="muted">—</td></tr>
+            <tr onclick="location.href='sample-detail.html'"><td class="mono">unit4_ecology</td><td><span class="badge badge-success">pass</span></td><td class="num t-add">0.864</td><td class="num">1.00</td><td class="num">1.00</td><td class="num">0.79</td><td class="num">0.81</td><td class="muted">—</td></tr>
+            <tr onclick="location.href='sample-detail.html'"><td class="mono">unit6_literature</td><td><span class="badge badge-success">pass</span></td><td class="num t-add">0.890</td><td class="num">1.00</td><td class="num">1.00</td><td class="num">0.83</td><td class="num">0.86</td><td class="muted">—</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="assets/ui.js"></script>
+</body>
+</html>

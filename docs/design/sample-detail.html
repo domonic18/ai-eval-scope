@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>样本 unit3_modern_history — EvalScope</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  /* split layout fills viewport below topbar */
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 0; height: calc(100vh - 56px - 73px); }
+  @media (max-width: 1100px){ .split { grid-template-columns: 1fr; height:auto; } }
+  .pane { overflow-y: auto; }
+  .pane-left { border-right: 1px solid var(--border); padding: 20px 22px; }
+  .pane-right { background: var(--bg-inset); display: flex; flex-direction: column; }
+
+  .sample-bar { padding: 14px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-elevated); }
+
+  .stage { margin-bottom: 22px; }
+  .stage-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .stage-head h3 { font-size: 13px; font-weight: 650; }
+  .stage-head .stage-score { margin-left: auto; font-family: var(--mono); font-size: 12px; color: var(--text-secondary); }
+  .stage-bar { width: 3px; align-self: stretch; border-radius: 2px; }
+
+  .constraint { border: 1px solid var(--border); border-radius: var(--r-md); margin-bottom: 8px; overflow: hidden; transition: border-color .12s; }
+  .constraint:hover { border-color: var(--border-hover); }
+  .constraint.fail { border-color: rgba(248,81,73,0.4); }
+  .c-head { display: flex; align-items: center; gap: 10px; padding: 11px 13px; cursor: pointer; }
+  .c-head:hover { background: var(--bg-surface); }
+  .c-name { font-size: 13px; font-weight: 550; flex: 1; min-width: 0; }
+  .c-name .cid { font-family: var(--mono); font-size: 11px; color: var(--text-tertiary); display: block; margin-top: 2px; font-weight: 400; }
+  .c-score { font-family: var(--mono); font-size: 13px; font-weight: 600; }
+  .c-caret { width: 14px; height: 14px; color: var(--text-tertiary); transition: transform .15s; }
+  .constraint.open .c-caret { transform: rotate(90deg); }
+  .c-body { padding: 0 13px 13px; display: none; }
+  .constraint.open .c-body { display: block; }
+  .c-reason { font-size: 12.5px; color: var(--text-secondary); line-height: 1.6; background: var(--bg-surface); border-radius: var(--r-sm); padding: 10px 12px; margin-bottom: 10px; }
+  .c-evidence { border-left: 2px solid var(--danger); padding: 4px 0 4px 12px; margin-bottom: 10px; }
+  .c-evidence .lab { font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px; }
+  .c-evidence .quote { font-size: 12.5px; color: var(--text-primary); font-style: italic; }
+  .c-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 11px; color: var(--text-tertiary); font-family: var(--mono); }
+  .c-meta b { color: var(--text-secondary); font-weight: 500; }
+  .jump { font-size: 11px; color: var(--accent); cursor: pointer; display: inline-flex; align-items: center; gap: 3px; }
+
+  /* right preview */
+  .prev-bar { padding: 12px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--bg-elevated); }
+  .prev-tabs { display: flex; gap: 2px; }
+  .prev-tab { padding: 5px 12px; border-radius: var(--r-sm); font-size: 12px; font-weight: 550; color: var(--text-secondary); cursor: pointer; border: 1px solid transparent; }
+  .prev-tab.active { background: var(--bg-surface); color: var(--text-primary); border-color: var(--border); }
+  .prev-body { flex: 1; overflow-y: auto; padding: 22px 26px; }
+  .doc { max-width: 640px; margin: 0 auto; background: #fff; color: #1a1a1a; border-radius: var(--r-sm); padding: 40px 44px; font-family: Georgia, 'Songti SC', serif; line-height: 1.8; box-shadow: var(--shadow-md); }
+  .doc h1 { font-size: 24px; margin-bottom: 6px; color: #111; }
+  .doc .doc-sub { color: #888; font-size: 13px; margin-bottom: 24px; font-family: var(--sans); }
+  .doc h2 { font-size: 17px; margin: 22px 0 8px; color: #222; }
+  .doc p { font-size: 14px; margin-bottom: 12px; }
+  .doc .hl { background: #ffe9e9; border-bottom: 2px solid var(--danger); padding: 0 2px; }
+  .doc .hl-id { display:inline-block; font-family: var(--mono); font-size: 10px; color: var(--danger); vertical-align: super; }
+  .screenshot { max-width: 680px; margin: 0 auto; border-radius: var(--r-md); border: 1px solid var(--border); overflow: hidden; }
+</style>
+</head>
+<body>
+<div class="scanlines"></div>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <a href="index.html" class="logo" style="margin-bottom:14px"><span class="logo-mark"><img src="assets/logo.svg" alt="" style="width:100%"></span><span class="logo-text">Eval<b>Scope</b></span></a>
+      <div class="org-switcher"><div class="org-avatar">智</div><div class="org-meta"><div class="org-name">智能教育研发组</div><div class="org-plan">Team · 5 项目</div></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+    </div>
+    <nav class="nav-section">
+      <a class="nav-item" href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> 项目看板</a>
+      <a class="nav-item active" href="run-detail.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg> 全部运行</a>
+      <div class="nav-label">组织</div>
+      <a class="nav-item" href="members.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg> 成员</a>
+      <a class="nav-item" href="org-settings.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> 组织设置</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="crumbs"><a href="dashboard.html">项目看板</a><span class="sep">/</span><a href="project-detail.html">课件生成评估</a><span class="sep">/</span><a href="run-detail.html" class="mono">#run_2f8a</a><span class="sep">/</span><span class="current mono">unit3_modern_history</span></div>
+      <div class="topbar-right"><div class="avatar">张</div></div>
+    </header>
+
+    <!-- sample summary bar -->
+    <div class="sample-bar">
+      <div class="row" style="gap:10px">
+        <span class="mono" style="font-weight:650;font-size:15px">unit3_modern_history</span>
+        <span class="badge badge-danger">fail</span>
+        <span class="badge badge-neutral">Reward <b class="mono" style="color:var(--danger);margin-left:3px">0.214</b></span>
+        <span class="badge badge-danger"><span class="dot" style="background:var(--danger)"></span>1 项硬约束失败</span>
+      </div>
+      <div class="row" style="gap:8px">
+        <button class="btn btn-sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg> 上一个</button>
+        <button class="btn btn-sm">下一个 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+      </div>
+    </div>
+
+    <!-- SPLIT VIEW -->
+    <div class="split reveal">
+      <!-- LEFT: constraints -->
+      <div class="pane pane-left r-1">
+        <!-- Stage: format -->
+        <div class="stage">
+          <div class="stage-head">
+            <span class="stage-bar" style="background:var(--success)"></span>
+            <h3>格式 Format</h3><span class="chip chip-hard">HARD_GATE</span>
+            <span class="stage-score">S_format = <b style="color:var(--success)">+1.00</b><span class="explain"><button class="explain-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button><span class="explain-pop align-right"><h5>S_format <span class="code-inline">格式得分</span></h5><dl><dt>层级</dt><dd><span class="chip chip-hard">HARD_GATE</span> 硬门禁，失败即 fail-fast，后续阶段跳过。</dd><dt>取值</dt><dd>全部格式约束通过 = <span class="mono">+1.00</span>；任一失败 = <span class="mono">-3.00</span>（直接判负）。</dd></dl></span></span></span>
+          </div>
+          <div class="constraint">
+            <div class="c-head" onclick="this.parentElement.classList.toggle('open')">
+              <span class="badge badge-success">PASS</span>
+              <span class="c-name">响应格式校验<span class="cid">format.response_format</span></span>
+              <span class="c-score" style="color:var(--success)">1.00</span>
+              <svg class="c-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <div class="c-body"><div class="c-reason">输出符合预期 JSON 结构，包含全部必需字段。</div><div class="c-meta"><span><b>方法</b> RULE</span><span><b>耗时</b> 4ms</span></div></div>
+          </div>
+          <div class="constraint">
+            <div class="c-head" onclick="this.parentElement.classList.toggle('open')">
+              <span class="badge badge-success">PASS</span>
+              <span class="c-name">文档数量校验<span class="cid">format.document_count</span></span>
+              <span class="c-score" style="color:var(--success)">1.00</span>
+              <svg class="c-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <div class="c-body"><div class="c-reason">生成 3 个文档，满足要求（≥3）。</div><div class="c-meta"><span><b>方法</b> RULE</span><span><b>耗时</b> 2ms</span></div></div>
+          </div>
+        </div>
+
+        <!-- Stage: commonsense -->
+        <div class="stage">
+          <div class="stage-head">
+            <span class="stage-bar" style="background:var(--danger)"></span>
+            <h3>常识 Commonsense</h3><span class="chip chip-hard">HARD_SCORE</span>
+            <span class="stage-score">S_common = <b style="color:var(--danger)">0.00</b><span class="explain"><button class="explain-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button><span class="explain-pop align-right"><h5>S_common <span class="code-inline">常识得分</span></h5><dl><dt>层级</dt><dd><span class="chip chip-hard">HARD_SCORE</span> 硬约束，失败不中断同阶段其它评估器，但标记门禁未过。</dd><dt>取值</dt><dd>全部常识约束通过 = <span class="mono">+1.00</span>；任一失败 = <span class="mono">0.00</span>。</dd></dl></span></span></span>
+          </div>
+          <!-- 失败项默认展开并高亮 -->
+          <div class="constraint fail open" id="c-fail">
+            <div class="c-head" onclick="this.parentElement.classList.toggle('open')">
+              <span class="badge badge-danger">FAIL</span>
+              <span class="c-name">信息准确性<span class="cid">commonsense.info_accuracy</span></span>
+              <span class="c-score" style="color:var(--danger)">0.00</span>
+              <svg class="c-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <div class="c-body">
+              <div class="c-reason">检测到 1 处史实错误：课件称「鸦片战争爆发于 1842 年」，正确应为 <b style="color:var(--text-primary)">1840 年</b>（1842 年为《南京条约》签订）。该错误触发硬约束，常识阶段判负。</div>
+              <div class="c-evidence">
+                <div class="lab">证据 · 原文定位</div>
+                <div class="quote">“……鸦片战争爆发于 1842 年，标志着中国近代史的开端……”</div>
+              </div>
+              <div class="row" style="margin-bottom:10px"><span class="jump" onclick="highlightDoc()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg> 在右侧原文中定位</span></div>
+              <div class="c-meta"><span><b>方法</b> FACT_VERIFY</span><span><b>Judge</b> anthropic / claude-opus-4</span><span><b>耗时</b> 1,204ms</span><span><b>证据制品</b> judge_record</span></div>
+            </div>
+          </div>
+          <div class="constraint">
+            <div class="c-head" onclick="this.parentElement.classList.toggle('open')">
+              <span class="badge badge-success">PASS</span>
+              <span class="c-name">时间顺序一致性<span class="cid">commonsense.chronological_order</span></span>
+              <span class="c-score" style="color:var(--success)">1.00</span>
+              <svg class="c-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <div class="c-body"><div class="c-reason">事件时间线整体有序，未发现矛盾。</div><div class="c-meta"><span><b>方法</b> LLM_CONSISTENCY</span><span><b>耗时</b> 890ms</span></div></div>
+          </div>
+        </div>
+
+        <!-- Stage: quality -->
+        <div class="stage">
+          <div class="stage-head">
+            <span class="stage-bar" style="background:var(--warning)"></span>
+            <h3>质量 Quality</h3><span class="chip chip-soft">SOFT</span><span class="chip chip-pref">PREFERENCE</span>
+            <span class="stage-score">S_soft <b>0.62</b> · S_pref <b>0.55</b><span class="explain"><button class="explain-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button><span class="explain-pop align-right"><h5>S_soft / S_pref <span class="code-inline">质量得分</span></h5><dl><dt>S_soft</dt><dd><span class="chip chip-soft">SOFT</span> 软约束（如教学逻辑、内容多样性）加权平均，归一化到 <span class="mono">[0,1]</span>。</dd><dt>S_pref</dt><dd><span class="chip chip-pref">PREFERENCE</span> 偏好约束（风格、深度、需求满足）加权平均，归一化到 <span class="mono">[0,1]</span>。</dd><dt>作用</dt><dd>不影响门禁，按权重计入最终 <span class="mono">Reward</span>。</dd></dl></span></span></span>
+          </div>
+          <div class="constraint">
+            <div class="c-head" onclick="this.parentElement.classList.toggle('open')">
+              <span class="badge badge-warning">0.62</span>
+              <span class="c-name">教学逻辑连贯性<span class="cid">soft.teaching_logic</span></span>
+              <span class="c-score" style="color:var(--warning)">0.62</span>
+              <svg class="c-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <div class="c-body"><div class="c-reason">章节间过渡较生硬，「背景」到「影响」缺少承接论述，建议补充因果衔接。</div><div class="c-meta"><span><b>方法</b> LLM_JUDGE</span><span><b>权重</b> 0.5</span><span><b>Judge</b> anthropic / claude-opus-4</span></div></div>
+          </div>
+          <div class="constraint">
+            <div class="c-head" onclick="this.parentElement.classList.toggle('open')">
+              <span class="badge badge-info">0.55</span>
+              <span class="c-name">深度偏好<span class="cid">pref.depth_preference</span></span>
+              <span class="c-score" style="color:var(--info)">0.55</span>
+              <svg class="c-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <div class="c-body"><div class="c-reason">内容深度偏浅，对历史事件的多角度分析不足，未达目标学段的深度偏好。</div><div class="c-meta"><span><b>方法</b> LLM_JUDGE</span><span><b>权重</b> 0.33</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: source preview -->
+      <div class="pane pane-right r-2">
+        <div class="prev-bar">
+          <div class="prev-tabs">
+            <span class="prev-tab active" onclick="switchPrev(this,'doc')">原始文档</span>
+            <span class="prev-tab" onclick="switchPrev(this,'shot')">渲染截图</span>
+            <span class="prev-tab" onclick="switchPrev(this,'trace')">执行 Trace</span>
+          </div>
+          <div class="row" style="gap:8px">
+            <select class="select btn-sm" style="width:auto"><option>unit3_main.html</option><option>unit3_exercise.html</option><option>unit3_summary.md</option></select>
+            <button class="icon-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></button>
+          </div>
+        </div>
+        <div class="prev-body" id="prev-doc">
+          <div class="doc">
+            <h1>中国近代史的开端</h1>
+            <div class="doc-sub">第三单元 · 主课件 · unit3_main.html</div>
+            <h2>一、历史背景</h2>
+            <p>19 世纪上半叶，清王朝面临内忧外患。西方列强凭借工业革命积累的实力，将目光投向古老的中国市场。</p>
+            <h2>二、鸦片战争</h2>
+            <p>为扭转贸易逆差，英国向中国大量输入鸦片。<span class="hl" id="doc-hl">鸦片战争爆发于 1842 年<span class="hl-id">①</span></span>，标志着中国近代史的开端。这场战争以清政府失败告终。</p>
+            <h2>三、深远影响</h2>
+            <p>战争失败后，中国被迫签订一系列不平等条约，逐步沦为半殖民地半封建社会。</p>
+          </div>
+        </div>
+        <div class="prev-body" id="prev-shot" style="display:none">
+          <div class="screenshot"><div style="background:#fff;color:#333;padding:48px;text-align:center;font-family:var(--sans)"><div class="muted" style="color:#aaa">课件渲染截图（screenshot 制品）</div><div style="margin-top:12px;font-size:13px;color:#666">用于多模态视觉评估的页面渲染结果</div></div></div>
+        </div>
+        <div class="prev-body" id="prev-trace" style="display:none">
+          <pre class="code-block" style="white-space:pre-wrap">{
+  <span style="color:var(--accent)">"task_id"</span>: <span style="color:var(--signal)">"unit3_modern_history"</span>,
+  <span style="color:var(--accent)">"sut_version"</span>: <span style="color:var(--signal)">"gpt-4o-2026"</span>,
+  <span style="color:var(--accent)">"llm_calls"</span>: 6,
+  <span style="color:var(--accent)">"token_usage"</span>: { <span style="color:var(--accent)">"input"</span>: 4210, <span style="color:var(--accent)">"output"</span>: 2860 },
+  <span style="color:var(--accent)">"duration_ms"</span>: 3184
+}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function switchPrev(el, id){
+    document.querySelectorAll('.prev-tab').forEach(t=>t.classList.remove('active'));
+    el.classList.add('active');
+    ['doc','shot','trace'].forEach(k=>document.getElementById('prev-'+k).style.display=(k===id?'block':'none'));
+  }
+  function highlightDoc(){
+    document.querySelector('.prev-tab').click();
+    const hl = document.getElementById('doc-hl');
+    hl.scrollIntoView({behavior:'smooth', block:'center'});
+    hl.animate([{background:'#ffd0d0'},{background:'#ffe9e9'}],{duration:1200});
+  }
+</script>
+<script src="assets/ui.js"></script>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目看板 — EvalScope</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  .proj-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 1100px) { .proj-grid { grid-template-columns: repeat(2,1fr); } }
+  @media (max-width: 720px)  { .proj-grid { grid-template-columns: 1fr; } }
+  .pc { padding: 18px; }
+  .pc-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+  .pc-name { font-size: 15px; font-weight: 650; letter-spacing: -0.01em; }
+  .pc-slug { font-family: var(--mono); font-size: 11px; color: var(--text-tertiary); margin-top: 3px; }
+  .pc-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 4px; padding: 14px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+  .pc-stat-val { font-family: var(--mono); font-size: 18px; font-weight: 700; }
+  .pc-stat-lab { font-size: 10.5px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px; }
+  .pc-foot { display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: var(--text-tertiary); }
+  .spark { height: 28px; width: 100%; margin-bottom: 2px; }
+</style>
+</head>
+<body>
+<div class="ambient"></div>
+<div class="scanlines"></div>
+<div class="shell">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <a href="index.html" class="logo" style="margin-bottom:14px">
+        <span class="logo-mark"><img src="assets/logo.svg" alt="" style="width:100%"></span>
+        <span class="logo-text">Eval<b>Scope</b></span>
+      </a>
+      <div class="org-switcher">
+        <div class="org-avatar">智</div>
+        <div class="org-meta"><div class="org-name">智能教育研发组</div><div class="org-plan">Team · 5 项目</div></div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+    <nav class="nav-section">
+      <a class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> 项目看板</a>
+      <a class="nav-item" href="run-detail.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg> 全部运行</a>
+      <div class="nav-label">组织</div>
+      <a class="nav-item" href="members.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg> 成员</a>
+      <a class="nav-item" href="org-settings.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> 组织设置</a>
+    </nav>
+    <div class="sidebar-foot">
+      <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg> 文档 &amp; 接入指引</a>
+    </div>
+  </aside>
+
+  <div class="main">
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="crumbs"><span class="current">项目看板</span></div>
+      <div class="topbar-right">
+        <button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button>
+        <button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+        <div class="avatar">张</div>
+      </div>
+    </header>
+
+    <div class="page reveal">
+      <div class="page-head r-1">
+        <div class="page-title">
+          <h1>项目看板</h1>
+          <div class="sub">组织内全部评估项目 · 最近更新 5 分钟前</div>
+        </div>
+        <div class="page-actions">
+          <button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> 刷新</button>
+          <button class="btn btn-primary" onclick="document.getElementById('newProj').style.display='flex'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> 新建项目</button>
+        </div>
+      </div>
+
+      <div class="proj-grid r-2">
+        <!-- Project card 1 -->
+        <a class="card-link pc" href="project-detail.html">
+          <div class="pc-head">
+            <div><div class="pc-name">课件生成评估</div><div class="pc-slug">courseware</div></div>
+            <span class="badge badge-success"><span class="dot" style="background:var(--success)"></span>健康</span>
+          </div>
+          <svg class="spark" viewBox="0 0 200 28" preserveAspectRatio="none"><polyline points="0,20 25,18 50,19 75,14 100,15 125,10 150,12 175,8 200,6" fill="none" stroke="var(--signal)" stroke-width="2"/></svg>
+          <div class="pc-stats">
+            <div><div class="pc-stat-val" style="color:var(--success)">0.962</div><div class="pc-stat-lab">最新 DR</div></div>
+            <div><div class="pc-stat-val">0.781</div><div class="pc-stat-lab">Reward</div></div>
+            <div><div class="pc-stat-val">128</div><div class="pc-stat-lab">运行数</div></div>
+          </div>
+          <div class="pc-foot"><span>最近运行 12 分钟前</span><span class="mono">#run_2f8a</span></div>
+        </a>
+
+        <!-- Project card 2 -->
+        <a class="card-link pc" href="project-detail.html">
+          <div class="pc-head">
+            <div><div class="pc-name">RAG 问答评估</div><div class="pc-slug">rag-qa</div></div>
+            <span class="badge badge-warning"><span class="dot" style="background:var(--warning)"></span>关注</span>
+          </div>
+          <svg class="spark" viewBox="0 0 200 28" preserveAspectRatio="none"><polyline points="0,8 25,10 50,9 75,13 100,12 125,16 150,15 175,19 200,20" fill="none" stroke="var(--warning)" stroke-width="2"/></svg>
+          <div class="pc-stats">
+            <div><div class="pc-stat-val" style="color:var(--warning)">0.883</div><div class="pc-stat-lab">最新 DR</div></div>
+            <div><div class="pc-stat-val">0.642</div><div class="pc-stat-lab">Reward</div></div>
+            <div><div class="pc-stat-val">76</div><div class="pc-stat-lab">运行数</div></div>
+          </div>
+          <div class="pc-foot"><span>最近运行 1 小时前</span><span class="mono">#run_9c1d</span></div>
+        </a>
+
+        <!-- Project card 3 -->
+        <a class="card-link pc" href="project-detail.html">
+          <div class="pc-head">
+            <div><div class="pc-name">代码生成评估</div><div class="pc-slug">codegen</div></div>
+            <span class="badge badge-success"><span class="dot" style="background:var(--success)"></span>健康</span>
+          </div>
+          <svg class="spark" viewBox="0 0 200 28" preserveAspectRatio="none"><polyline points="0,16 25,15 50,12 75,13 100,9 125,10 150,7 175,8 200,5" fill="none" stroke="var(--signal)" stroke-width="2"/></svg>
+          <div class="pc-stats">
+            <div><div class="pc-stat-val" style="color:var(--success)">0.978</div><div class="pc-stat-lab">最新 DR</div></div>
+            <div><div class="pc-stat-val">0.834</div><div class="pc-stat-lab">Reward</div></div>
+            <div><div class="pc-stat-val">203</div><div class="pc-stat-lab">运行数</div></div>
+          </div>
+          <div class="pc-foot"><span>最近运行 26 分钟前</span><span class="mono">#run_5a3e</span></div>
+        </a>
+
+        <!-- Project card 4: 无运行数据 -->
+        <a class="card-link pc" href="project-detail.html" style="opacity:.75">
+          <div class="pc-head">
+            <div><div class="pc-name">对话质量评估</div><div class="pc-slug">dialogue</div></div>
+            <span class="badge badge-neutral">未运行</span>
+          </div>
+          <div style="height:28px;display:flex;align-items:center;justify-content:center;color:var(--text-quaternary);font-size:11px">暂无趋势数据</div>
+          <div class="pc-stats">
+            <div><div class="pc-stat-val muted">—</div><div class="pc-stat-lab">最新 DR</div></div>
+            <div><div class="pc-stat-val muted">—</div><div class="pc-stat-lab">Reward</div></div>
+            <div><div class="pc-stat-val">0</div><div class="pc-stat-lab">运行数</div></div>
+          </div>
+          <div class="pc-foot"><span>等待首个运行接入</span></div>
+        </a>
+
+        <!-- New project tile -->
+        <button class="card-link pc" onclick="document.getElementById('newProj').style.display='flex'" style="border-style:dashed;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:200px;color:var(--text-tertiary);cursor:pointer;font-family:inherit">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span style="font-size:13px;font-weight:550">新建项目</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New project modal -->
+<div class="scrim" id="newProj" style="display:none">
+  <div class="modal">
+    <div class="modal-head"><h2>新建项目</h2><p>项目是评估数据的容器，对应一类被测 Agent</p></div>
+    <div class="modal-body">
+      <div class="field">
+        <label>项目名称</label>
+        <input class="input" placeholder="如：课件生成评估">
+      </div>
+      <div class="field">
+        <label>Slug（组织内唯一）</label>
+        <input class="input mono" placeholder="courseware">
+        <div class="help">用于接入标识与 URL，仅小写字母、数字、连字符</div>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label>默认规则集</label>
+        <select class="select"><option>courseware_v2 (推荐)</option><option>default</option><option>strict</option></select>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="document.getElementById('newProj').style.display='none'">取消</button>
+      <a class="btn btn-primary" href="project-detail.html">创建并配置接入</a>
+    </div>
+  </div>
+</div>
+<script src="assets/ui.js"></script>
+</body>
+</html>

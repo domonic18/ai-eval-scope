@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>组织设置 — EvalScope</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  .settings-grid { display: grid; grid-template-columns: 200px 1fr; gap: 0; }
+  .set-side { border-right: 1px solid var(--border); padding-right: 16px; }
+  .set-side a { display: block; padding: 8px 12px; border-radius: var(--r-sm); font-size: 13px; color: var(--text-secondary); margin-bottom: 2px; cursor: pointer; }
+  .set-side a.active { background: var(--accent-soft); color: var(--accent); font-weight: 550; }
+  .set-main { padding-left: 24px; }
+</style>
+</head>
+<body>
+<div class="ambient"></div>
+<div class="scanlines"></div>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <a href="index.html" class="logo" style="margin-bottom:14px"><span class="logo-mark"><img src="assets/logo.svg" alt="" style="width:100%"></span><span class="logo-text">Eval<b>Scope</b></span></a>
+      <div class="org-switcher"><div class="org-avatar">智</div><div class="org-meta"><div class="org-name">智能教育研发组</div><div class="org-plan">Team · 5 项目</div></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+    </div>
+    <nav class="nav-section">
+      <a class="nav-item" href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> 项目看板</a>
+      <a class="nav-item" href="run-detail.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg> 全部运行</a>
+      <div class="nav-label">组织</div>
+      <a class="nav-item" href="members.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg> 成员</a>
+      <a class="nav-item active" href="org-settings.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> 组织设置</a>
+    </nav>
+    <div class="sidebar-foot"><a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> 接入指引</a></div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="crumbs"><span class="muted">智能教育研发组</span><span class="sep">/</span><span class="current">组织设置</span></div>
+      <div class="topbar-right"><div class="avatar">张</div></div>
+    </header>
+
+    <div class="page reveal">
+      <div class="page-head r-1"><div class="page-title"><h1>组织设置</h1><div class="sub">管理组织信息、套餐与全局配置</div></div></div>
+
+      <div class="settings-grid r-2">
+        <div class="set-side">
+          <a class="active" onclick="showSet(this,'s-general')">通用</a>
+          <a onclick="showSet(this,'s-plan')">套餐 &amp; 用量</a>
+          <a style="color:var(--danger)" onclick="showSet(this,'s-danger')">危险区</a>
+        </div>
+
+        <!-- 通用 -->
+        <div class="set-main" id="s-general">
+          <h3 style="font-size:16px;font-weight:650;margin-bottom:4px">通用</h3>
+          <p class="muted" style="font-size:13px;margin-bottom:20px">组织的名称与标识。Slug 作为多租户隔离与访问地址的一部分。</p>
+          <div style="max-width:520px">
+            <div class="field"><label>组织名称</label><input class="input" value="智能教育研发组"></div>
+            <div class="field"><label>组织 Slug</label><input class="input mono" value="edu-rd"><div class="help">访问地址：app.evalscope.io/<span class="mono" style="color:var(--signal)">edu-rd</span>，修改会影响所有接入 URL。</div></div>
+            <div class="field"><label>组织 Logo</label><div class="row" style="gap:12px"><div class="org-avatar" style="width:44px;height:44px;border-radius:var(--r-md);font-size:18px">智</div><button class="btn btn-sm">上传图片</button></div></div>
+            <div class="row" style="justify-content:flex-end;gap:10px;margin-top:8px"><button class="btn">重置</button><button class="btn btn-primary">保存更改</button></div>
+          </div>
+        </div>
+
+        <!-- 套餐 -->
+        <div class="set-main" id="s-plan" style="display:none">
+          <h3 style="font-size:16px;font-weight:650;margin-bottom:4px">套餐 &amp; 用量</h3>
+          <p class="muted" style="font-size:13px;margin-bottom:20px">当前订阅与本月资源用量。</p>
+          <div class="card" style="margin-bottom:16px;max-width:640px"><div class="card-body spread">
+            <div><div class="row" style="gap:8px"><span style="font-weight:650;font-size:15px">Team</span><span class="badge badge-accent">当前套餐</span></div><div class="muted" style="font-size:12.5px;margin-top:3px">10 成员 · 无限项目 · 90 天数据保留</div></div>
+            <button class="btn">升级套餐</button>
+          </div></div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:640px">
+            <div class="metric"><div class="metric-top"><span class="metric-label">成员</span></div><div class="metric-value">4<span class="muted" style="font-size:14px">/10</span></div><div class="bar" style="margin-top:10px"><span style="width:40%;background:var(--accent)"></span></div></div>
+            <div class="metric"><div class="metric-top"><span class="metric-label">本月摄取事件</span></div><div class="metric-value">86.2<span class="muted" style="font-size:14px">K</span></div><div class="bar" style="margin-top:10px"><span style="width:57%;background:var(--signal)"></span></div></div>
+            <div class="metric"><div class="metric-top"><span class="metric-label">对象存储</span></div><div class="metric-value">3.4<span class="muted" style="font-size:14px">GB</span></div><div class="bar" style="margin-top:10px"><span style="width:34%;background:var(--accent)"></span></div></div>
+          </div>
+        </div>
+
+        <!-- 危险区 -->
+        <div class="set-main" id="s-danger" style="display:none">
+          <h3 style="font-size:16px;font-weight:650;margin-bottom:4px">危险区</h3>
+          <p class="muted" style="font-size:13px;margin-bottom:20px">以下操作影响整个组织，请谨慎执行。</p>
+          <div style="max-width:640px;display:flex;flex-direction:column;gap:12px">
+            <div class="card"><div class="card-body spread">
+              <div><div style="font-weight:600;font-size:13.5px;margin-bottom:2px">转移所有权</div><div class="muted" style="font-size:12.5px">将 Owner 角色转移给另一位成员。</div></div>
+              <button class="btn">转移</button>
+            </div></div>
+            <div class="card" style="border-color:rgba(248,81,73,0.3)"><div class="card-body spread">
+              <div><div style="font-weight:600;font-size:13.5px;margin-bottom:2px;color:var(--danger)">删除组织</div><div class="muted" style="font-size:12.5px">永久删除组织、全部项目与评估数据，<b style="color:var(--text-secondary)">不可恢复</b>。</div></div>
+              <button class="btn btn-danger" style="border-color:rgba(248,81,73,0.4)" onclick="openScrim('delOrg')">删除组织</button>
+            </div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="scrim" id="delOrg" style="display:none">
+  <div class="modal">
+    <div class="modal-head"><h2>删除组织</h2><p>将永久删除组织及其全部项目、运行与制品，操作不可恢复。</p></div>
+    <div class="modal-body"><div class="field" style="margin-bottom:0"><label>请输入组织 slug <span class="code-inline">edu-rd</span> 以确认</label><input class="input mono" placeholder="edu-rd"></div></div>
+    <div class="modal-foot"><button class="btn" onclick="closeScrim('delOrg')">取消</button><button class="btn btn-danger" style="border-color:rgba(248,81,73,0.4)" onclick="closeScrim('delOrg')">永久删除</button></div>
+  </div>
+</div>
+
+<script>
+  function showSet(el, id){
+    document.querySelectorAll('.set-side a').forEach(a=>a.classList.remove('active'));
+    el.classList.add('active');
+    ['s-general','s-plan','s-danger'].forEach(s=>document.getElementById(s).style.display=(s===id?'block':'none'));
+  }
+  function openScrim(id){ var e=document.getElementById(id); e.style.display='flex'; e.setAttribute('data-open',''); }
+  function closeScrim(id){ var e=document.getElementById(id); e.style.display='none'; e.removeAttribute('data-open'); }
+  document.querySelectorAll('.scrim').forEach(function(s){ s.addEventListener('click', function(e){ if(e.target===s) closeScrim(s.id); }); });
+</script>
+<script src="assets/ui.js"></script>
+</body>
+</html>
