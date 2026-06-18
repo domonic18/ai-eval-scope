@@ -10,8 +10,8 @@
 #   docker compose up -d   # 或 make docker-up
 #
 # 起栈后：
-#   后端    http://localhost:3000   健康 http://localhost:3000/health
-#   MinIO   API http://localhost:9000  控制台 http://localhost:9001
+#   Web/后端 http://localhost:9000   健康 http://localhost:9000/health（对齐腾讯云函数默认 9000）
+#   MinIO    API http://localhost:9100  控制台 http://localhost:9101
 #   Postgres localhost:5432
 
 name: agent-eval-platform
@@ -33,13 +33,15 @@ services:
       retries: 10
 
   # ── MinIO（S3 兼容对象存储，本地替代 COS/S3）──
+  # 注：宿主端口改为 9100/9101，把 9000 让给 Web（对齐腾讯云函数默认 9000）。
+  # 容器内仍监听 9000/9001，平台经内网 http://minio:9000 访问，不受影响。
   minio:
     image: minio/minio:latest
     command: server /data --console-address ":9001"
     env_file: ./.env              # MINIO_ROOT_USER / MINIO_ROOT_PASSWORD
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "9100:9000"
+      - "9101:9001"
     volumes:
       # 持久化到 workspace 下，便于调试/重置/检视
       - ./workspace/data/minio:/data
@@ -79,7 +81,7 @@ services:
       PLATFORM_S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-evalpassword123}
       PLATFORM_S3_BUCKET: ${PLATFORM_S3_BUCKET:-agent-eval}
     ports:
-      - "3000:3000"
+      - "9000:9000"
     depends_on:
       postgres:
         condition: service_healthy

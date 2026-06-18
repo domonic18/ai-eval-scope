@@ -34,14 +34,14 @@ RUN npx prisma generate
 COPY --from=backend-builder /app/web/backend/dist ./dist
 COPY --from=frontend-builder /app/web/frontend/dist ./public
 
-ENV PORT=3000 \
+ENV PORT=9000 \
     HOST=0.0.0.0 \
     NODE_ENV=production
 
-EXPOSE 3000
+EXPOSE 9000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=5 \
-    CMD node -e "require('http').get('http://localhost:3000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
+    CMD node -e "require('http').get('http://localhost:9000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
 
 # 应用待决迁移后启动（migrate deploy 幂等）
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]
