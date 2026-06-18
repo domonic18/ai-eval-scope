@@ -1,0 +1,5 @@
+# 构建产物与缓存（不入库）
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo

@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
-import { Collapse, List, Tag, Typography, Button, Space, Card, Modal, Spin } from "antd";
-import { FileOutlined, EyeOutlined } from "@ant-design/icons";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api } from "../api/client";
-import type { ConstraintRow, ArtifactRow } from "../types";
+import type { ArtifactRow, ConstraintRow } from "../types";
+import { fmt3 } from "../lib/format";
+import { SCORE_EXPLAIN, STAGES, sampleBadge, tierToChip } from "../lib/eval";
+import { Badge, Button, Empty, Explain, Select, useCrumbs, useToast } from "../components/ui";
+import { IconCaret, IconExternal } from "../components/icons";
 
 interface SampleData {
   id: string;
@@ -14,240 +16,324 @@ interface SampleData {
   artifacts: ArtifactRow[];
 }
 
-function tierColor(tier: string): string {
-  return tier === "hard_gate" || tier === "hard_score" ? "red" : tier === "soft" ? "orange" : "blue";
+type PreviewMode = "iframe" | "img" | "text" | "none";
+interface PreviewState {
+  mode: PreviewMode;
+  url?: string;
+  text?: string;
 }
+type PrevTab = "doc" | "shot" | "trace";
 
-/** 将 details JSON 渲染为可读的键值对列表 */
-function renderDetails(details: Record<string, unknown> | null) {
-  if (!details || Object.keys(details).length === 0) return null;
-  const entries = Object.entries(details);
-  return (
-    <div style={{ marginTop: 8 }}>
-      {entries.map(([key, val]) => (
-        <div key={key} style={{ marginBottom: 4 }}>
-          <Typography.Text strong style={{ fontSize: 12 }}>{key}: </Typography.Text>
-          {Array.isArray(val) ? (
-            <ul style={{ margin: "4px 0", paddingLeft: 20 }}>
-              {val.map((item, i) => (
-                <li key={i}>
-                  <Typography.Text style={{ fontSize: 12 }}>
-                    {typeof item === "object" ? JSON.stringify(item, null, 2) : String(item)}
-                  </Typography.Text>
-                </li>
-              ))}
-            </ul>
-          ) : typeof val === "object" && val !== null ? (
-            <pre style={{ fontSize: 11, margin: "4px 0", background: "#fafafa", padding: 8, borderRadius: 4, overflowX: "auto" }}>
-              {JSON.stringify(val, null, 2)}
-            </pre>
-          ) : (
-            <Typography.Text style={{ fontSize: 12 }}>{String(val)}</Typography.Text>
-          )}
-        </div>
-      ))}
-    </div>
-  );
+function avg(nums: number[]): number | undefined {
+  if (nums.length === 0) return undefined;
+  return nums.reduce((a, b) => a + b, 0) / nums.length;
 }
 
 export default function SampleDetail() {
   const { id, sid } = useParams<{ id: string; sid: string }>();
+  const { setCrumbs } = useCrumbs();
+  const toast = useToast();
   const [sample, setSample] = useState<SampleData | null>(null);
-  const [previewArt, setPreviewArt] = useState<ArtifactRow | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [textContent, setTextContent] = useState<string | null>(null);
-  const [loadingContent, setLoadingContent] = useState(false);
 
   useEffect(() => {
     if (!id || !sid) return;
-    api.sampleDetail(id, sid).then(setSample).catch(() => setSample(null));
-  }, [id, sid]);
+    api
+      .sampleDetail(id, sid)
+      .then((s) => {
+        setSample(s);
+        setCrumbs([
+          { label: "项目看板", to: "/dashboard" },
+          { label: "运行", to: `/run/${id}` },
+          { label: <span className="mono">{s.externalSampleId}</span> },
+        ]);
+      })
+      .catch(() => setSample(null));
+  }, [id, sid, setCrumbs]);
 
-  async function openPreview(art: ArtifactRow) {
-    setPreviewArt(art);
-    setPreviewUrl(null);
-    setTextContent(null);
-    setLoadingContent(true);
-    try {
-      // 先经 JWT 鉴权获取 presigned URL（短时效），再用该 URL 加载内容（无需 auth）
-      const preview = await api.artifactPreview(art.id);
-      if (art.contentType.includes("html")) {
-        setPreviewUrl(preview.url);
-      } else {
-        const resp = await fetch(preview.url);
-        setTextContent(await resp.text());
-      }
-    } catch {
-      setTextContent("（无法加载文件内容）");
-    } finally {
-      setLoadingContent(false);
-    }
+  // 阶段聚合得分（用于阶段头）—— 必须在早退 return 之前调用
+  const stageScores = useMemo(() => {
+    const cs = sample?.constraintResults ?? [];
+    const byTier = (t: string) => cs.filter((c) => c.tier === t);
+    const fmt = byTier("hard_gate");
+    const com = byTier("hard_score");
+    const soft = byTier("soft");
+    const pref = byTier("preference");
+    return {
+      sFormat: fmt.length ? (fmt.every((c) => c.passed) ? 1 : -3) : undefined,
+      sCommon: com.length ? (com.every((c) => c.passed) ? 1 : 0) : undefined,
+      sSoft: avg(soft.map((c) => c.score)),
+      sPref: avg(pref.map((c) => c.score)),
+    };
+  }, [sample]);
+
+  if (!sample) {
+    return (
+      <div className="page">
+        <Empty title="加载样本详情…" />
+      </div>
+    );
   }
 
-  if (!sample) return <Typography.Text type="secondary">加载中…</Typography.Text>;
-
   const failedCount = sample.constraintResults.filter((c) => !c.passed).length;
+  const sb = sampleBadge(sample.status);
 
   return (
     <>
-      <Space style={{ marginBottom: 16 }}>
-        <Typography.Title level={4} style={{ margin: 0 }}>
-          样本 {sample.externalSampleId}
-        </Typography.Title>
-        <Tag>{sample.status}</Tag>
-        <Tag color="green">Reward {sample.reward.toFixed(3)}</Tag>
-        {failedCount > 0 && <Tag color="red">{failedCount} 项失败</Tag>}
-      </Space>
+      <div className="scanlines" />
+      {/* 样本摘要条 */}
+      <div className="sample-bar">
+        <div className="row" style={{ gap: 10 }}>
+          <span className="mono" style={{ fontWeight: 650, fontSize: 15 }}>
+            {sample.externalSampleId}
+          </span>
+          <Badge variant={sb.variant}>{sb.label}</Badge>
+          <Badge variant="neutral">
+            Reward <b className="mono" style={{ color: "var(--danger)", marginLeft: 3 }}>{fmt3(sample.reward)}</b>
+          </Badge>
+          {failedCount > 0 && (
+            <Badge variant="danger" dot="var(--danger)">
+              {failedCount} 项约束失败
+            </Badge>
+          )}
+        </div>
+        <div className="row" style={{ gap: 8 }}>
+          <Button size="sm" onClick={() => toast.info("请在运行详情的样本表中切换样本")}>
+            上一个
+          </Button>
+          <Button size="sm" onClick={() => toast.info("请在运行详情的样本表中切换样本")}>
+            下一个
+          </Button>
+        </div>
+      </div>
 
-      <Typography.Title level={5}>约束结果（{sample.constraintResults.length} 项）</Typography.Title>
-      <List
-        bordered
-        dataSource={sample.constraintResults}
-        renderItem={(c) => {
-          const hasDetail =
-            (c.details && Object.keys(c.details).length > 0) ||
-            (c.moduleResults && Object.keys(c.moduleResults).length > 0);
+      <div className="split reveal">
+        {/* 左：约束结论 */}
+        <div className="pane pane-left r-1">
+          {STAGES.map((stage) => {
+            const constraints = sample.constraintResults.filter((c) => stage.tiers.includes(c.tier));
+            if (constraints.length === 0) return null;
+            return (
+              <div className="stage" key={stage.key}>
+                <div className="stage-head">
+                  <span className="stage-bar" style={{ background: stage.bar }} />
+                  <h3>{stage.title}</h3>
+                  {stage.chips.map((ch) => (
+                    <span key={ch.label} className={`chip chip-${ch.chip}`}>
+                      {ch.label}
+                    </span>
+                  ))}
+                  <span className="stage-score">
+                    {stage.scoreExplainKey && (
+                      <>
+                        {stage.scoreText?.(stageScores)} <Explain content={SCORE_EXPLAIN[stage.scoreExplainKey]} />
+                      </>
+                    )}
+                  </span>
+                </div>
+                {constraints.map((c) => (
+                  <ConstraintItem key={c.id} c={c} />
+                ))}
+              </div>
+            );
+          })}
+          {sample.constraintResults.length === 0 && <Empty title="无约束结果" />}
+        </div>
 
-          return (
-            <List.Item>
-              <Space direction="vertical" size={4} style={{ width: "100%" }}>
-                {/* 主行：tier / 状态 / 名称 / 分数 */}
-                <Space wrap>
-                  <Tag color={tierColor(c.tier)}>{c.tier}</Tag>
-                  <Tag color={c.passed ? "green" : "red"}>{c.passed ? "PASS" : "FAIL"}</Tag>
-                  <Typography.Text strong>{c.name}</Typography.Text>
-                  <Typography.Text type="secondary">分数 {c.score.toFixed(3)}</Typography.Text>
-                  {c.rawScore !== null && c.rawScore !== c.score && (
-                    <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                      (原始 {c.rawScore.toFixed(3)})
-                    </Typography.Text>
-                  )}
-                </Space>
+        {/* 右：制品预览 */}
+        <div className="pane pane-right r-2">
+          <PreviewPane artifacts={sample.artifacts} />
+        </div>
+      </div>
+    </>
+  );
+}
 
-                {/* 原因 */}
-                <Typography.Text>{c.reason}</Typography.Text>
-
-                {/* 元信息 */}
-                <Space size="small" style={{ fontSize: 12 }}>
-                  <Typography.Text type="secondary">{c.constraintId}</Typography.Text>
-                  {c.ruleId && c.ruleId !== c.constraintId && (
-                    <Typography.Text type="secondary">rule: {c.ruleId}</Typography.Text>
-                  )}
-                  <Typography.Text type="secondary">耗时 {c.durationMs.toFixed(0)}ms</Typography.Text>
-                  {c.judgeProvider && (
-                    <Typography.Text type="secondary">
-                      judge: {c.judgeProvider}/{c.judgeModel ?? "?"}
-                    </Typography.Text>
-                  )}
-                </Space>
-
-                {/* 可展开详情 */}
-                {hasDetail && (
-                  <Collapse
-                    ghost
-                    size="small"
-                    style={{ marginTop: 4 }}
-                    items={[
-                      {
-                        key: "detail",
-                        label: (
-                          <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                            📋 评估详情
-                          </Typography.Text>
-                        ),
-                        children: (
-                          <>
-                            {renderDetails(c.details)}
-                            {c.moduleResults && Object.keys(c.moduleResults).length > 0 && (
-                              <>
-                                <Typography.Text strong style={{ fontSize: 12, display: "block", marginTop: 8 }}>
-                                  模块结果
-                                </Typography.Text>
-                                <pre style={{ fontSize: 11, margin: "4px 0", background: "#fafafa", padding: 8, borderRadius: 4, overflowX: "auto" }}>
-                                  {JSON.stringify(c.moduleResults, null, 2)}
-                                </pre>
-                              </>
-                            )}
-                          </>
-                        ),
-                      },
-                    ]}
-                  />
-                )}
-              </Space>
-            </List.Item>
-          );
-        }}
-      />
-
-      {/* 源文件（kind=output，支持在线预览） */}
-      {(() => {
-        const sourceFiles = sample.artifacts.filter((a) => a.kind === "output");
-        const otherArts = sample.artifacts.filter((a) => a.kind !== "output");
-        return (
-          <>
-            {sourceFiles.length > 0 && (
-              <>
-                <Typography.Title level={5} style={{ marginTop: 24 }}>
-                  源文件（{sourceFiles.length} 个，可在线预览）
-                </Typography.Title>
-                <Card>
-                  <Space wrap>
-                    {sourceFiles.map((a) => (
-                      <Space key={a.id}>
-                        <Button size="small" icon={<EyeOutlined />} onClick={() => openPreview(a)}>
-                          {a.originalName || a.id}
-                        </Button>
-                      </Space>
-                    ))}
-                  </Space>
-                </Card>
-              </>
-            )}
-
-            {otherArts.length > 0 && (
-              <>
-                <Typography.Title level={5} style={{ marginTop: 24 }}>
-                  其他制品
-                </Typography.Title>
-                <Card>
-                  <Space wrap>
-                    {otherArts.map((a) => (
-                      <Button key={a.id} icon={<FileOutlined />} href={api.artifactUrl(a.id)} target="_blank">
-                        {a.originalName || a.kind} ({a.kind})
-                      </Button>
-                    ))}
-                  </Space>
-                </Card>
-              </>
-            )}
-          </>
-        );
-      })()}
-
-      {/* 文件预览 Modal */}
-      <Modal
-        title={previewArt?.originalName || "预览"}
-        open={!!previewArt}
-        onCancel={() => { setPreviewArt(null); setPreviewUrl(null); setTextContent(null); }}
-        footer={null}
-        width="85%"
-        styles={{ body: { maxHeight: "75vh", overflow: "auto" } }}
-      >
-        {loadingContent ? (
-          <div style={{ textAlign: "center", padding: 40 }}><Spin /></div>
-        ) : previewUrl ? (
-          <iframe
-            src={previewUrl}
-            style={{ width: "100%", height: "70vh", border: "1px solid #d9d9d9", borderRadius: 4 }}
-            title={previewArt?.originalName || "preview"}
-          />
-        ) : (
-          <pre style={{ fontSize: 12, whiteSpace: "pre-wrap", wordBreak: "break-all", background: "#fafafa", padding: 12, borderRadius: 4 }}>
-            {textContent}
+/** 单条约束（可展开，失败默认展开高亮）。 */
+function ConstraintItem({ c }: { c: ConstraintRow }) {
+  const [open, setOpen] = useState(!c.passed);
+  const chip = tierToChip(c.tier);
+  const method = c.judgeProvider ? "LLM_JUDGE" : "RULE";
+  return (
+    <div className={`constraint ${!c.passed ? "fail" : ""} ${open ? "open" : ""}`}>
+      <div className="c-head" onClick={() => setOpen((o) => !o)}>
+        {c.passed ? <Badge variant="success">PASS</Badge> : <Badge variant="danger">FAIL</Badge>}
+        <span className="c-name">
+          {c.name}
+          <span className="cid">{c.constraintId}</span>
+        </span>
+        <span className="c-score" style={{ color: c.passed ? "var(--success)" : "var(--danger)" }}>
+          {c.score.toFixed(2)}
+        </span>
+        <IconCaret size={14} className="c-caret" />
+      </div>
+      <div className="c-body">
+        {c.reason && <div className="c-reason">{c.reason}</div>}
+        {c.details && Object.keys(c.details).length > 0 && <DetailsBlock details={c.details} />}
+        {c.moduleResults && Object.keys(c.moduleResults).length > 0 && (
+          <pre className="code-block" style={{ margin: "0 0 10px", fontSize: 11, padding: "10px 12px" }}>
+            {JSON.stringify(c.moduleResults, null, 2)}
           </pre>
         )}
-      </Modal>
+        <div className="c-meta">
+          <span>
+            <b>方法</b> {method}
+          </span>
+          {c.judgeProvider && (
+            <span>
+              <b>Judge</b> {c.judgeProvider}/{c.judgeModel ?? "?"}
+            </span>
+          )}
+          <span>
+            <b>耗时</b> {Math.round(c.durationMs)}ms
+          </span>
+          {chip !== "hard" && (
+            <span>
+              <b>层级</b> {c.tier}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DetailsBlock({ details }: { details: Record<string, unknown> }) {
+  return (
+    <pre className="code-block" style={{ margin: "0 0 10px", fontSize: 11, padding: "10px 12px" }}>
+      {JSON.stringify(details, null, 2)}
+    </pre>
+  );
+}
+
+/** 右栏制品预览（三 Tab：原始文档 / 渲染截图 / 执行 Trace）。 */
+function PreviewPane({ artifacts }: { artifacts: ArtifactRow[] }) {
+  const [tab, setTab] = useState<PrevTab>("doc");
+  const [preview, setPreview] = useState<PreviewState>({ mode: "none" });
+  const [loading, setLoading] = useState(false);
+
+  const groups = useMemo(() => {
+    const isHtml = (a: ArtifactRow) => a.contentType.includes("html") || a.kind === "output";
+    const isImg = (a: ArtifactRow) => a.contentType.startsWith("image") || a.kind === "screenshot";
+    const isTrace = (a: ArtifactRow) => a.kind === "trace" || a.contentType.includes("json") || a.kind === "judge_record";
+    return {
+      doc: artifacts.filter(isHtml),
+      shot: artifacts.filter(isImg),
+      trace: artifacts.filter(isTrace),
+      // 其余文档归入 doc
+    };
+  }, [artifacts]);
+
+  // 当前 Tab 可选制品（doc 兜底包含非截图/非trace的文本制品）
+  const docArts = useMemo(() => {
+    const used = new Set([...groups.shot, ...groups.trace].map((a) => a.id));
+    return artifacts.filter((a) => !used.has(a.id));
+  }, [artifacts, groups]);
+
+  const listFor = (t: PrevTab): ArtifactRow[] => (t === "doc" ? docArts : t === "shot" ? groups.shot : groups.trace);
+  const [selectedId, setSelectedId] = useState<Record<PrevTab, string>>({
+    doc: "",
+    shot: "",
+    trace: "",
+  });
+
+  const currentList = listFor(tab);
+  const currentId = selectedId[tab] || currentList[0]?.id || "";
+  const current = currentList.find((a) => a.id === currentId) || currentList[0];
+
+  useEffect(() => {
+    setSelectedId((s) => ({ ...s, doc: docArts[0]?.id || "", shot: groups.shot[0]?.id || "", trace: groups.trace[0]?.id || "" }));
+  }, [docArts, groups.shot, groups.trace]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!current) {
+      setPreview({ mode: "none" });
+      return;
+    }
+    setLoading(true);
+    api
+      .artifactPreview(current.id)
+      .then(async (p) => {
+        if (cancelled) return;
+        if (p.contentType.includes("html")) {
+          setPreview({ mode: "iframe", url: p.url });
+        } else if (p.contentType.startsWith("image")) {
+          setPreview({ mode: "img", url: p.url });
+        } else {
+          try {
+            const resp = await fetch(p.url);
+            setPreview({ mode: "text", text: await resp.text() });
+          } catch {
+            setPreview({ mode: "text", text: "（无法加载文件内容）" });
+          }
+        }
+      })
+      .catch(() => !cancelled && setPreview({ mode: "text", text: "（无法加载文件内容）" }))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [current]);
+
+  const hasAny = artifacts.length > 0;
+
+  return (
+    <>
+      <div className="prev-bar">
+        <div className="prev-tabs">
+          {(
+            [
+              ["doc", "原始文档"],
+              ["shot", "渲染截图"],
+              ["trace", "执行 Trace"],
+            ] as [PrevTab, string][]
+          ).map(([k, label]) => (
+            <span key={k} className={`prev-tab ${tab === k ? "active" : ""}`} onClick={() => setTab(k)}>
+              {label}
+            </span>
+          ))}
+        </div>
+        <div className="row" style={{ gap: 8 }}>
+          {currentList.length > 0 && (
+            <Select
+              style={{ width: "auto" }}
+              value={currentId}
+              onChange={(e) => setSelectedId((s) => ({ ...s, [tab]: e.target.value }))}
+            >
+              {currentList.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.originalName || a.id}
+                </option>
+              ))}
+            </Select>
+          )}
+          {current && (
+            <a className="icon-btn" href={api.artifactUrl(current.id)} target="_blank" rel="noreferrer" style={{ display: "inline-flex", textDecoration: "none" }}>
+              <IconExternal size={15} />
+            </a>
+          )}
+        </div>
+      </div>
+
+      <div className="prev-body">
+        {!hasAny ? (
+          <Empty title="无制品" children={<>该样本暂无可预览的产出物。</>} />
+        ) : !current ? (
+          <Empty title={`暂无${tab === "doc" ? "原始文档" : tab === "shot" ? "渲染截图" : "执行 Trace"}制品`} />
+        ) : loading ? (
+          <Empty title="加载中…" />
+        ) : preview.mode === "iframe" ? (
+          <iframe src={preview.url} style={{ width: "100%", height: "70vh", border: "1px solid var(--border)", borderRadius: 8, background: "#fff" }} title="preview" />
+        ) : preview.mode === "img" ? (
+          <div style={{ maxWidth: 680, margin: "0 auto" }}>
+            <img src={preview.url} alt="screenshot" style={{ width: "100%", borderRadius: 8, border: "1px solid var(--border)" }} />
+          </div>
+        ) : (
+          <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-all", background: "var(--bg-inset)", border: "1px solid var(--border)", borderRadius: 8, padding: 16, fontSize: 12.5, color: "var(--text-secondary)" }}>
+            {preview.text}
+          </pre>
+        )}
+      </div>
     </>
   );
 }
