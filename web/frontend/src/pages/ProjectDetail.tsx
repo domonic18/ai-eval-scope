@@ -43,7 +43,6 @@ export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const nav = useNavigate();
   const { setCrumbs } = useCrumbs();
-  const toast = useToast();
 
   const [project, setProject] = useState<Project | null>(null);
   const [runs, setRuns] = useState<RunSummary[]>([]);
@@ -360,7 +359,7 @@ function SettingsTab({
 function KeysPanel({ projectId, slug }: { projectId: string; slug: string }) {
   const toast = useToast();
   const [keys, setKeys] = useState<ApiKeySafe[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [keyName, setKeyName] = useState("");
   const [issued, setIssued] = useState<IssuedApiKey | null>(null);
@@ -649,7 +648,7 @@ function RetentionPanel({ onSave }: { onSave: () => void }) {
 function DangerPanel({ projectId, slug, onArchived }: { projectId: string; slug: string; onArchived: () => void }) {
   const toast = useToast();
   const [archiveOpen, setArchiveOpen] = useState(false);
-  const [archiving, setArchiving] = useState(false);
+  const [, setArchiving] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [confirmSlug, setConfirmSlug] = useState("");
 

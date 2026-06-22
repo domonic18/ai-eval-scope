@@ -17,7 +17,11 @@
     "db:studio": "prisma studio",
     "postinstall": "prisma generate || echo 'prisma generate skipped (schema/cli unavailable)'",
     "test": "vitest run",
-    "test:cov": "vitest run --coverage"
+    "test:cov": "vitest run --coverage",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.682.0",
@@ -34,15 +38,20 @@
     "serverless-http": "^3.2.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.13.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^4.17.25",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.9.3",
     "@types/supertest": "^7.2.0",
+    "eslint": "^9.13.0",
+    "globals": "^15.11.0",
     "pino-pretty": "^11.3.0",
+    "prettier": "^3.3.3",
     "supertest": "^7.0.0",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
+    "typescript-eslint": "^8.10.0",
     "vitest": "^4.1.9"
   },
   "prisma": {

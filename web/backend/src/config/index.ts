@@ -85,7 +85,7 @@ export function loadConfig(): PlatformConfig {
 }
 
 /** 校验运行期必需变量，返回缺失项列表（空数组 = 全部就绪）。 */
-export function validate(cfg: PlatformConfig): string[] {
+export function validate(_cfg: PlatformConfig): string[] {
   const missing: string[] = [];
   for (const key of REQUIRED_AT_RUNTIME) {
     const envVal = process.env[key];

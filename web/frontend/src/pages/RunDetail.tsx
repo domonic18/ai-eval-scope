@@ -16,7 +16,6 @@ import {
   Metric,
   Segment,
   useCrumbs,
-  useToast,
 } from "../components/ui";
 import { IconDownload, IconExternal } from "../components/icons";
 
@@ -77,7 +76,6 @@ export default function RunDetail() {
   const { id } = useParams<{ id: string }>();
   const nav = useNavigate();
   const { setCrumbs } = useCrumbs();
-  const toast = useToast();
   const [run, setRun] = useState<RunData | null>(null);
   const [stageFilter, setStageFilter] = useState<StageFilter>(null);
   const [seg, setSeg] = useState<"all" | "fail" | "skip">("all");

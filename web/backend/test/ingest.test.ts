@@ -10,7 +10,6 @@
  */
 
 import express from "express";
-import request from "supertest";
 import { createApp } from "../src/server";
 import { getPrisma } from "../src/infra/prisma";
 import { requireApiKey } from "../src/middleware/apiKeyAuth";

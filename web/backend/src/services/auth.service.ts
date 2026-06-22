@@ -20,7 +20,7 @@ import { PlatformError } from "../middleware/errorHandler";
 import { slugify, uniquify } from "../utils/slug";
 
 const userRepo = new UserRepository();
-const orgRepo = new OrgRepository();
+const _orgRepo = new OrgRepository();
 
 function assertEmail(email?: string): asserts email is string {
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
