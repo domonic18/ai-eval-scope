@@ -1,0 +1,60 @@
+name: 🐞 Bug 报告
+description: 报告一个可复现的问题
+labels: [bug]
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈！提交前请先：
+        - 搜索已有 Issue，避免重复
+        - 确认在最新 `main` 分支上仍可复现
+        - 一般性使用问题请到 Discussions
+
+  - type: input
+    id: version
+    attributes:
+      label: 版本信息
+      description: 运行 `cd evaluator && uv run agent-eval --version` 的输出
+      placeholder: "agent-eval v0.1.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: env
+    attributes:
+      label: 环境信息
+      description: 操作系统、Python/Node 版本、相关依赖版本
+      placeholder: "macOS 14 / Python 3.11.5 / Node 20"
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤
+      description: 最小复现命令或脚本
+      placeholder: "1. ...\n2. ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期行为
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际行为
+      description: 请附完整错误日志 / traceback
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: 补充信息

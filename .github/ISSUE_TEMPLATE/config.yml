@@ -1,0 +1,11 @@
+# Issue 模板配置
+# 禁用空白 Issue；一般性问题引流到 Discussions
+# ⚠️ 开源后请将下面的 <owner> 替换为实际 GitHub 用户/组织名
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 一般性讨论
+    url: https://github.com/domonic18/ai-eval-scope/discussions
+    about: 使用问题、想法交流请到 Discussions
+  - name: 📖 项目文档
+    url: https://github.com/domonic18/ai-eval-scope/tree/main/docs
+    about: 架构设计、配置规范、迭代计划
