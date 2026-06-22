@@ -9,14 +9,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from agent_eval.config.loader import ConfigLoader
 from agent_eval.rules.manager import RuleSetManager
 from agent_eval.rules.models import (
     CascadeStage,
     Dimension,
     Rule,
     RuleSet,
-    RuleSetMeta,
 )
 from agent_eval.rules.template import TemplateResolver
 from agent_eval.rules.validation import RuleSetValidator

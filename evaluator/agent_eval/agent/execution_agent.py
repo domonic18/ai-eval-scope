@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from agent_eval.execution.models import AgentConfig, Task
+    from agent_eval.execution.models import AgentConfig, Task, TaskSet
     from agent_eval.storage.package import ExecutionPackage
 
 

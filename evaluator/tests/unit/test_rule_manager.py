@@ -9,7 +9,6 @@ import yaml
 
 # 触发评估器注册（apply 中的语义校验需要检查 evaluator 是否已注册）
 import agent_eval.evaluation.evaluators  # noqa: F401
-
 from agent_eval.rules.manager import RuleSetManager
 
 

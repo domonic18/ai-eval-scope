@@ -3,7 +3,7 @@
 import pytest
 
 from agent_eval.core.exceptions import EvaluatorNotFoundError
-from agent_eval.core.types import ConstraintTier, EvalMethod
+from agent_eval.core.types import ConstraintTier, EvalMethod, EvalStatus
 from agent_eval.evaluation.base import BaseEvaluator
 from agent_eval.evaluation.registry import EvaluatorRegistry, registry
 

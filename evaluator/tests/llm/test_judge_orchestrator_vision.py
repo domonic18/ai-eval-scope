@@ -5,7 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import MagicMock
 
-import pytest
 import yaml
 
 from agent_eval.llm.judge.orchestrator import JudgeOrchestrator

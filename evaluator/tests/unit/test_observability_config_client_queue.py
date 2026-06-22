@@ -7,9 +7,7 @@ import hmac
 import time
 from pathlib import Path
 
-import pytest
-
-from agent_eval.observability.client import IngestionClient, sign
+from agent_eval.observability.client import sign
 from agent_eval.observability.config import load_config
 from agent_eval.observability.queue import IngestQueue
 

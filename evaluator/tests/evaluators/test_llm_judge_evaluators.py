@@ -7,15 +7,12 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from agent_eval.core.types import ConstraintTier, EvalMethod, EvalStatus
+from agent_eval.core.types import EvalMethod, EvalStatus
 from agent_eval.evaluation.evaluators.quality_evaluators import (
     ContentDiversityEvaluator,
-    DepthPreferenceEvaluator,
     RequestFulfillmentEvaluator,
-    StylePreferenceEvaluator,
     TeachingLogicEvaluator,
 )
-from agent_eval.evaluation.models import ConstraintResult
 from agent_eval.evaluation.registry import registry
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"
