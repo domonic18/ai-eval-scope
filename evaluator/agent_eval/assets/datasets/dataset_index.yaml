@@ -1,0 +1,147 @@
+# 评测数据集索引 — 定义可下载的评测数据集及其在 HuggingFace / ModelScope 上的来源。
+#
+# 维护说明：
+#   - 增删/更新数据集只需编辑本文件，registry 启动时自动加载（无需改 Python 代码）
+#   - hf_id / ms_id 留空（null）表示该源暂不可用，可后续补充
+#   - default_source: auto（按可用性探测，国内优先 modelscope）/ huggingface / modelscope
+#
+# 注意：OpenCompass 数据集主要托管在 ModelScope，hf_id 为参考地址——部分 repo 在 HuggingFace 上
+#       并不存在（实测 opencompass/ceval-exam 在 HF 返回 404/401）。推荐优先用 modelscope 源下载。
+#
+# 数据来源：移植自 OpenCompass
+#   - 元数据（name / category / paper）：dataset-index.yml
+#   - 下载地址（hf_id / ms_id）：opencompass/utils/datasets_info.py 的 DATASETS_MAPPING
+
+version: "1.0"
+description: "评测数据集索引（精选 13 个常用集，覆盖 Examination/Understanding/Math/Code/Reasoning/Language/Knowledge）"
+
+datasets:
+  - id: ceval
+    name: C-Eval
+    category: Examination
+    paper: https://arxiv.org/pdf/2305.08322v1
+    description: 中文基础模型评测（52 学科，13986 题）
+    default_source: modelscope
+    sources:
+      hf_id: opencompass/ceval-exam
+      ms_id: opencompass/ceval-exam
+
+  - id: cmmlu
+    name: CMMLU
+    category: Understanding
+    paper: https://arxiv.org/pdf/2306.09212
+    description: 中文多任务语言理解（67 学科）
+    default_source: modelscope
+    sources:
+      hf_id: opencompass/cmmlu
+      ms_id: opencompass/cmmlu
+
+  - id: mmlu
+    name: MMLU
+    category: Understanding
+    paper: https://arxiv.org/pdf/2009.03300
+    description: 英文多任务语言理解（57 学科）
+    default_source: auto
+    sources:
+      hf_id: opencompass/mmlu
+      ms_id: opencompass/mmlu
+
+  - id: gsm8k
+    name: GSM8K
+    category: Math
+    paper: https://arxiv.org/pdf/2110.14168v2
+    description: 小学数学应用题（8.5k 训练 / 1.3k 测试）
+    default_source: auto
+    sources:
+      hf_id: opencompass/gsm8k
+      ms_id: opencompass/gsm8k
+
+  - id: mbpp
+    name: MBPP
+    category: Code
+    paper: https://arxiv.org/pdf/2108.07732
+    description: 基础 Python 编程题（974 题）
+    default_source: auto
+    sources:
+      hf_id: opencompass/mbpp
+      ms_id: opencompass/mbpp
+
+  - id: humaneval
+    name: HumanEval
+    category: Code
+    paper: https://arxiv.org/pdf/2107.03374v2
+    description: 代码生成评测（HumanEval，164 题）
+    default_source: auto
+    sources:
+      hf_id: opencompass/humaneval
+      ms_id: opencompass/humaneval
+
+  - id: agieval
+    name: AGIEval
+    category: Examination
+    paper: https://arxiv.org/pdf/2304.06364
+    description: 标准/研究生级考试（AGIEval）
+    default_source: auto
+    sources:
+      hf_id: opencompass/agieval
+      ms_id: opencompass/agieval
+
+  - id: arc
+    name: ARC
+    category: Reasoning
+    paper: https://arxiv.org/pdf/1803.05457
+    description: 初高中科学题（AI2 ARC，Challenge + Easy）
+    default_source: auto
+    sources:
+      hf_id: opencompass/ai2_arc
+      ms_id: opencompass/ai2_arc
+
+  - id: winogrande
+    name: WinoGrande
+    category: Language / WSC
+    paper: https://arxiv.org/pdf/1907.10641v2
+    description: 共指消解常识推理（WinoGrande）
+    default_source: auto
+    sources:
+      hf_id: opencompass/winogrande
+      ms_id: opencompass/winogrande
+
+  - id: hellaswag
+    name: HellaSwag
+    category: Reasoning
+    paper: https://arxiv.org/pdf/1905.07830
+    description: 常识句子补全（HellaSwag）
+    default_source: auto
+    sources:
+      hf_id: opencompass/hellaswag
+      ms_id: opencompass/hellaswag
+
+  - id: bbh
+    name: BIG-Bench Hard
+    category: Reasoning
+    paper: https://arxiv.org/pdf/2210.09261
+    description: BIG-Bench Hard（23 项硬推理任务）
+    default_source: auto
+    sources:
+      hf_id: opencompass/bbh
+      ms_id: opencompass/bbh
+
+  - id: race
+    name: RACE
+    category: Examination
+    paper: https://arxiv.org/pdf/1704.04683
+    description: 中学英语阅读理解（RACE）
+    default_source: auto
+    sources:
+      hf_id: opencompass/race
+      ms_id: opencompass/race
+
+  - id: triviaqa
+    name: TriviaQA
+    category: Knowledge
+    paper: https://arxiv.org/pdf/1705.03551v2
+    description: 百科问答阅读（TriviaQA）
+    default_source: auto
+    sources:
+      hf_id: opencompass/trivia_qa
+      ms_id: opencompass/trivia_qa
