@@ -1,105 +1,53 @@
-# CLAUDE.md — 项目开发指南
+# Agent 能力评估系统（agent-eval-system）
 
-## 项目概览
-
-Agent 能力评估系统（agent-eval-system），基于 Agent-Driven 架构的评测框架。以课件生成为切入点，支持代码生成、RAG、对话等多类 Agent 评估。
-
-- **当前阶段**：Sprint 1 已完成（项目骨架与数据模型），进入 Sprint 2（评估引擎 Rule-based）
-- **Python 版本**：3.11+
-- **包管理**：使用 `uv` 进行虚拟环境和依赖管理
-
-## 技术栈
-
-| 用途 | 工具 |
-|------|------|
-| CLI | typer |
-| 数据模型 | pydantic v2 |
-| 配置 | YAML + JSON Schema 校验 |
-| 模板 | jinja2 |
-| 日志 | structlog |
-| 测试 | pytest + pytest-cov |
-| 包管理 | uv |
-
-## 开发命令
-
-评估器代码在 `evaluator/` 子目录（自包含，对称于 `web/` 可观测平台）。
-
-```bash
-# 安装（使用 uv）
-cd evaluator && uv sync --extra dev
-
-# 运行测试
-cd evaluator && uv run pytest tests/ -v
-
-# 测试覆盖率
-cd evaluator && uv run pytest tests/ -v --cov=agent_eval --cov-report=term-missing
-
-# CLI
-cd evaluator && uv run agent-eval --help
-
-# 代码格式化
-cd evaluator && uv run ruff format agent_eval/ tests/
-cd evaluator && uv run ruff check --fix agent_eval/ tests/
-
-# 或用 Makefile（自动 cd evaluator）
-make install  # = cd evaluator && uv sync --extra dev
-make test     # = cd evaluator && uv run pytest tests/ -v
-```
+基于 Agent-Driven 架构的评测框架，以课件生成为切入点，支持代码生成、RAG、对话等多类 Agent 评估。
 
 ## 项目结构
 
 ```
 agent-eval-system/
-├── evaluator/               # 评估器（Python，自包含，pip-installable）
-│   ├── agent_eval/          # Python 包（import 不变：from agent_eval import ...）
-│   │   ├── core/            # 枚举、异常、日志
-│   │   ├── agent/           # Agent 模块（Sprint 8 骨架）
-│   │   ├── orchestrator/    # 编排调度层
-│   │   ├── evaluation/      # 评估引擎 + 评估器
-│   │   ├── llm/             # LLM Provider 抽象层
-│   │   ├── observability/   # ResultSink（评估结果推送平台，Sprint 7e）
-│   │   ├── reporting/       # 报告生成
-│   │   ├── storage/         # Workspace、数据包
-│   │   ├── config/          # 配置加载（paths.py 用 PACKAGE_ROOT，pip-installable）
-│   │   └── assets/          # 随包资源（prompts/schemas/rules/configs）
-│   ├── tests/               # 测试
-│   ├── cli.py  pyproject.toml  uv.lock
-│   └── README.md
-├── web/                     # 可观测平台（TypeScript，后端 + 前端）
-├── docker/                  # Dockerfile
-├── docs/ scripts/ cicd/
-├── workspace/               # 运行产物（gitignored；WORKSPACE_DIR 可配）
-├── docker-compose.yml  Dockerfile  .env  Makefile
-└── CLAUDE.md  README.md
+├── evaluator/          # 评估器（Python，pip-installable，uv 管理）
+├── web/                # 可观测平台（TypeScript，frontend + backend）
+├── docs/               # 架构 / 需求 / 规范文档
+├── cicd/               # 内部 CI（Jenkins + 腾讯工蜂）
+├── docker/ scripts/    # Dockerfile 与辅助脚本
+├── Makefile            # 顶层任务入口（install / test / check / hooks ...）
+└── docker-compose.yml  # 本地全栈（postgres + minio + platform）
 ```
 
-> **设计原则**：评估器 `evaluator/` 自包含、pip-installable。assets 在包内（`agent_eval/assets/`，随 wheel 发布）；workspace 按 `WORKSPACE_DIR` 环境变量或 `CWD/workspace` 定位（不硬编码项目路径）。
+## 文档索引（按需阅读，勿全量加载）
 
-## 架构文档
+- 整体架构：[`docs/arch/01整体架构设计.md`](docs/arch/01整体架构设计.md)
+- 评估引擎：[`docs/arch/04评估引擎设计.md`](docs/arch/04评估引擎设计.md)
+- 数据管理与配置：[`docs/arch/06数据管理与配置规范.md`](docs/arch/06数据管理与配置规范.md)
+- Web 可观测平台：[`docs/arch/09Web可观测平台架构设计.md`](docs/arch/09Web可观测平台架构设计.md)
+- 数据集下载：[`docs/arch/10数据集下载设计.md`](docs/arch/10数据集下载设计.md)
+- 编码规范索引：[`docs/standard/README.md`](docs/standard/README.md)
+- 贡献指南（提交 / 分支 / PR）：[`CONTRIBUTING.md`](CONTRIBUTING.md)
 
-所有架构设计文档在 `docs/arch/` 目录下：
+## 通用准则
 
-| 文档 | 内容 |
-|------|------|
-| 01整体架构设计.md | 总览、目录结构、技术选型 |
-| 02编排调度层设计.md | Orchestrator、PipelineEngine、EvaluationAgent |
-| 03执行引擎设计.md | ExecutionAgent、SUT Tools (MCP)、AgentConfig |
-| 04评估引擎设计.md | EvaluatorRegistry、17 项评估器、评分聚合 |
-| 05LLM模块设计.md | Provider 抽象层、LLM Judge |
-| 06数据包规范.md | ExecutionPackage、EvaluationResult |
-| 07配置规范.md | pipeline.yaml、rule_set.yaml、eval_plan.md |
-| 08Web可视化层设计.md | ⚠️ 已废弃：Sprint 7a 本地 workspace 查看 MVP（前端+遗留后端路由已移除），被 09 取代 |
-| 09Web可观测平台架构设计.md | 多租户可观测平台（PostgreSQL+对象存储、Ingestion API、API Key/HMAC、ResultSink 对接），Sprint 7b–7g |
+- **先读后改**：改动前阅读相关代码，优先复用现有工具（`ConfigLoader`、`Workspace`、`DatasetManager`），不臆造 API。
+- **KISS / YAGNI / DRY**：文件保持在 300 行以内；不引入未使用的依赖。
+- **测试先行**：新功能配单元测试；网络/IO 必须 mock（禁止联网测试）；用 `tmp_path` 隔离文件系统。
+- **提交纪律**：提交前 `make check`；commit 遵循 Conventional Commits（见 [`CONTRIBUTING.md`](CONTRIBUTING.md)）。
+- **安全红线**：密钥 / 凭证 / `.env` 严禁入库（已被 `.gitignore` 拦截，勿 `git add -f`）。
+- **文档同步**：行为变更须同步对应 `CLAUDE.md` 或 `docs/`。
 
-迭代开发计划：`docs/plan/01迭代开发计划.md`
+## 子项目专项规则
 
-## 编码约定
+进入对应目录时自动加载该目录的 `CLAUDE.md`：
 
-- **数据模型**：Pydantic v2 BaseModel 用于需要序列化的模型；dataclass 用于纯内存结构（如评估结果中间态）
-- **异常体系**：所有自定义异常继承 `AgentEvalError`，按模块分子类
-- **枚举**：定义在 `agent_eval/core/types.py`，统一使用 `str, Enum` 基类
-- **配置加载**：通过 `ConfigLoader` 统一加载 YAML，支持 JSON Schema 校验
-- **评估结果**：`ConstraintResult` / `StageResult` / `SampleResult` 使用 dataclass + `to_dict()`/`from_dict()` 序列化
-- **执行包**：`ExecutionPackage` 使用 Pydantic BaseModel + `save()`/`load()` 文件读写
-- **测试**：每个模块对应 `evaluator/tests/unit/test_*.py`，黄金样本在 `evaluator/tests/fixtures/golden/`
-- **agent/ 目录下的文件**：当前为骨架（`raise NotImplementedError`），Sprint 8 逐步实现
+- [`evaluator/CLAUDE.md`](evaluator/CLAUDE.md) — Python 评估器开发规范（ruff / mypy / pytest / 异常与枚举约定）
+- [`web/CLAUDE.md`](web/CLAUDE.md) — Web 可观测平台开发规范（TypeScript / eslint / prettier / vitest）
+
+## 快速命令
+
+```bash
+make install      # 安装评估器依赖
+make dev          # 安装开发依赖（含 ruff / pytest）
+make hooks        # 安装 git hooks（pre-commit + commit-msg）
+make check        # 一键质量门禁（ruff + pytest）
+make test         # 运行测试
+make docker-up    # 启动本地全栈（需先 cp .env.example .env）
+```
