@@ -4,6 +4,7 @@
 #   - 增删/更新数据集只需编辑本文件，registry 启动时自动加载（无需改 Python 代码）
 #   - hf_id / ms_id 留空（null）表示该源暂不可用，可后续补充
 #   - default_source: auto（按可用性探测，国内优先 modelscope）/ huggingface / modelscope
+#   - knowledge_mapping（可选）：标注该数据集可向哪些 knowledge 学科提取知识点，供提取脚本消费
 #
 # 注意：OpenCompass 数据集主要托管在 ModelScope，hf_id 为参考地址——部分 repo 在 HuggingFace 上
 #       并不存在（实测 opencompass/ceval-exam 在 HF 返回 404/401）。推荐优先用 modelscope 源下载。
@@ -13,7 +14,7 @@
 #   - 下载地址（hf_id / ms_id）：opencompass/utils/datasets_info.py 的 DATASETS_MAPPING
 
 version: "1.0"
-description: "评测数据集索引（精选 13 个常用集，覆盖 Examination/Understanding/Math/Code/Reasoning/Language/Knowledge）"
+description: "评测数据集索引（14 个：学科型 + 能力评测；学科型标注 knowledge_mapping 供知识点提取）"
 
 datasets:
   - id: ceval
@@ -25,6 +26,10 @@ datasets:
     sources:
       hf_id: opencompass/ceval-exam
       ms_id: opencompass/ceval-exam
+    knowledge_mapping:
+      subjects: [math, physics, chemistry, biology, history, geography, chinese]
+      levels: [senior, college]
+      extractable: [domain_facts, misconceptions]
 
   - id: cmmlu
     name: CMMLU
@@ -35,6 +40,10 @@ datasets:
     sources:
       hf_id: opencompass/cmmlu
       ms_id: opencompass/cmmlu
+    knowledge_mapping:
+      subjects: [math, physics, chemistry, biology, history, geography, chinese]
+      levels: [senior, college]
+      extractable: [domain_facts, misconceptions]
 
   - id: mmlu
     name: MMLU
@@ -45,6 +54,10 @@ datasets:
     sources:
       hf_id: opencompass/mmlu
       ms_id: opencompass/mmlu
+    knowledge_mapping:
+      subjects: [math, physics, chemistry, biology, history, geography]
+      levels: [senior, college]
+      extractable: [domain_facts]
 
   - id: gsm8k
     name: GSM8K
@@ -85,16 +98,24 @@ datasets:
     sources:
       hf_id: opencompass/agieval
       ms_id: opencompass/agieval
+    knowledge_mapping:
+      subjects: [math, physics, chemistry, biology, history, geography]
+      levels: [senior, college]
+      extractable: [misconceptions]
 
   - id: arc
     name: ARC
     category: Reasoning
     paper: https://arxiv.org/pdf/1803.05457
-    description: 初高中科学题（AI2 ARC，Challenge + Easy）
+    description: 中小学科学题（AI2 ARC，Challenge + Easy；最贴合 K-12）
     default_source: auto
     sources:
       hf_id: opencompass/ai2_arc
       ms_id: opencompass/ai2_arc
+    knowledge_mapping:
+      subjects: [physics, chemistry, biology]
+      levels: [primary, junior]
+      extractable: [domain_facts, constants]
 
   - id: winogrande
     name: WinoGrande
@@ -130,7 +151,7 @@ datasets:
     name: RACE
     category: Examination
     paper: https://arxiv.org/pdf/1704.04683
-    description: 中学英语阅读理解（RACE）
+    description: 中学英语阅读理解（RACE；knowledge 暂无 english 学科，未标 mapping）
     default_source: auto
     sources:
       hf_id: opencompass/race
@@ -145,3 +166,17 @@ datasets:
     sources:
       hf_id: opencompass/trivia_qa
       ms_id: opencompass/trivia_qa
+
+  - id: openbookqa
+    name: OpenBookQA
+    category: Science
+    paper: https://arxiv.org/pdf/1809.02789
+    description: 小学科学多选题（含科学事实；适合 K-12 知识点提取）
+    default_source: auto
+    sources:
+      hf_id: opencompass/openbookqa
+      ms_id: opencompass/openbookqa
+    knowledge_mapping:
+      subjects: [physics, chemistry, biology]
+      levels: [primary]
+      extractable: [domain_facts, constants]
