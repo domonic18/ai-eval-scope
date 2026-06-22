@@ -1,5 +1,10 @@
 # agent-eval
 
+[![CI](https://github.com/domonic18/ai-eval-scope/actions/workflows/ci.yml/badge.svg)](https://github.com/domonic18/ai-eval-scope/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
+[![Code Style: ruff](https://img.shields.io/badge/code%20style-ruff-261230.svg)](https://docs.astral.sh/ruff/)
+
 Agent 能力评估系统 — 基于 Agent-Driven 架构的评测框架。
 
 以课件生成为切入点，支持代码生成、RAG、对话等多类 Agent 评估。
@@ -7,7 +12,7 @@ Agent 能力评估系统 — 基于 Agent-Driven 架构的评测框架。
 ## 安装
 
 ```bash
-git clone <repo-url> && cd agent-eval-system
+git clone https://github.com/domonic18/ai-eval-scope.git && cd agent-eval-system
 uv sync                      # 基础安装
 uv sync --extra dev          # 开发依赖
 uv sync --extra llm          # LLM 依赖（可选）
@@ -120,6 +125,10 @@ uv run ruff format agent_eval/ tests/ && uv run ruff check --fix agent_eval/ tes
 | [docs/arch/](./docs/arch/) | 架构设计文档 |
 | [docs/plan/01迭代开发计划.md](./docs/plan/01迭代开发计划.md) | Sprint 迭代计划 |
 
+## 贡献
+
+欢迎提交 Issue 和 Pull Request！开发流程、提交规范、PR 流程见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
+
 ## License
 
-MIT
+[MIT](./LICENSE)
