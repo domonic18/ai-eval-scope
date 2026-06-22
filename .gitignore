@@ -58,3 +58,6 @@ web/backend/public/
 /llm_config.yaml
 # evaluator 真实配置（保留 .example）
 evaluator/agent_eval/assets/configs/llm_config.yaml
+
+# 覆盖全局 gitignore 的 *.md 规则——项目文档（*.md）必须纳入版本控制
+!*.md
