@@ -115,7 +115,6 @@ make docker-up                # 启动 postgres + minio + platform
 
 ![运行详情](./docs/assets/screen_snap2.png)
 
-详见 [Web 可观测平台架构设计](./docs/arch/09Web可观测平台架构设计.md)。
 
 ## 开发
 
@@ -133,14 +132,6 @@ uv run pytest tests/ -v
 uv run pytest tests/ -v --cov=agent_eval --cov-report=term-missing
 uv run ruff format agent_eval/ tests/ && uv run ruff check --fix agent_eval/ tests/
 ```
-
-## 文档
-
-| 文档 | 说明 |
-|------|------|
-| [CLAUDE.md](./CLAUDE.md) | 开发指南与编码约定 |
-| [docs/arch/](./docs/arch/) | 架构设计文档 |
-| [docs/plan/01迭代开发计划.md](./docs/plan/01迭代开发计划.md) | Sprint 迭代计划 |
 
 ## 贡献
 
