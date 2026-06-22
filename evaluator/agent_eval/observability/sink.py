@@ -77,9 +77,9 @@ class ResultSink:
         report = SinkReport(enabled=True)
         try:
             # 先重放历史积压
-            report.replayed = self.queue.replay(
-                self.client, batch=self.cfg.queue_replay_batch
-            ).get("sent", 0)
+            report.replayed = self.queue.replay(self.client, batch=self.cfg.queue_replay_batch).get(
+                "sent", 0
+            )
 
             events = self._build_events(result, run_workspace=run_workspace, report=report)
 
