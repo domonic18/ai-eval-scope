@@ -71,3 +71,10 @@ class PackageStatus(str, Enum):
     SUCCESS = "success"  # 执行成功
     PARTIAL = "partial"  # 部分成功（部分文档缺失等）
     FAILED = "failed"  # 执行失败
+
+
+class DatasetSource(str, Enum):
+    """数据集下载源 — 决定从哪个 Hub 拉取评测数据集。"""
+
+    HUGGINGFACE = "huggingface"  # HuggingFace Hub
+    MODELSCOPE = "modelscope"  # 魔搭 ModelScope（国内镜像友好）

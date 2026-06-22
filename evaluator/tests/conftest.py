@@ -8,8 +8,11 @@ from unittest.mock import MagicMock
 
 import pytest
 
-# Mock langfuse 模块（避免未安装时导入报错）
+# Mock 未安装的可选依赖（避免未安装时导入报错）
 sys.modules.setdefault("langfuse", MagicMock())
+sys.modules.setdefault("huggingface_hub", MagicMock())
+for _ms_mod in ("modelscope", "modelscope.hub", "modelscope.hub.snapshot_download"):
+    sys.modules.setdefault(_ms_mod, MagicMock())
 
 from agent_eval.config import LLMConfig, ProviderConfig  # noqa: E402
 from agent_eval.core.types import ConstraintTier, EvalStatus  # noqa: E402

@@ -716,5 +716,61 @@ def rule_list_templates(
         raise typer.Exit(code=1) from e
 
 
+# ─── 数据集下载子命令 ───
+
+dataset_app = typer.Typer(name="dataset", help="评测数据集管理：下载、查看")
+app.add_typer(dataset_app)
+
+
+@dataset_app.command("download")
+def dataset_download(
+    name: str = typer.Argument(
+        ..., help="数据集标识。预置名（如 ceval）或完整 repo id（如 opencompass/ceval-exam）"
+    ),
+    source: str | None = typer.Option(
+        None,
+        "--source",
+        "-s",
+        help="下载源：huggingface/hf 或 modelscope/ms。默认读 AGENT_EVAL_DATASET_SOURCE",
+    ),
+    output: Path | None = typer.Option(
+        None, "--output", "-o", help="下载目录。默认 {WORKSPACE_DIR}/datasets/{name}"
+    ),
+    revision: str | None = typer.Option(
+        None, "--revision", "-r", help="版本标识。HF 为 commit/branch/tag，MS 为版本号"
+    ),
+    token: str | None = typer.Option(
+        None, "--token", help="访问 token。默认读对应源的环境变量"
+    ),
+    force: bool = typer.Option(
+        False, "--force", help="目标目录已存在时强制重新下载"
+    ),
+    verbose: bool = typer.Option(False, "--verbose", "-v"),
+) -> None:
+    """从 HuggingFace / ModelScope 下载评测数据集到本地 workspace。"""
+    from agent_eval.core.logging import setup_logging
+    from agent_eval.datasets import DatasetManager
+    from agent_eval.datasets.registry import lookup
+
+    setup_logging(level="DEBUG" if verbose else "INFO")
+    try:
+        entry = lookup(name)
+        display = entry.description if entry else "(用户指定 repo id)"
+        rprint(f"[bold blue]📥 下载数据集:[/bold blue] {name} — {display}")
+        target = DatasetManager().download(
+            name=name,
+            source=source,
+            output=output,
+            revision=revision,
+            token=token,
+            force=force,
+        )
+        rprint(f"[bold green]✅ 下载完成[/bold green] → {target}")
+        rprint(f"[dim]manifest: {target / '_dataset_manifest.json'}[/dim]")
+    except Exception as e:
+        rprint(f"[bold red]❌ 下载失败: {e}[/bold red]")
+        raise typer.Exit(code=1) from e
+
+
 if __name__ == "__main__":
     app()

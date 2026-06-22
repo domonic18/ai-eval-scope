@@ -8,6 +8,9 @@ from agent_eval.core.exceptions import (
     CollectionError,
     ConfigError,
     ConfigFileNotFoundError,
+    DatasetDownloadError,
+    DatasetError,
+    DatasetNotFoundError,
     EvaluatorNotFoundError,
     ExecutionError,
     PackageNotFoundError,
@@ -17,6 +20,7 @@ from agent_eval.core.exceptions import (
 from agent_eval.core.types import (
     CascadeStageID,
     ConstraintTier,
+    DatasetSource,
     EvalMethod,
     EvalMode,
     EvalStatus,
@@ -72,6 +76,11 @@ class TestEnums:
         assert PackageStatus.SUCCESS == "success"
         assert PackageStatus.PARTIAL == "partial"
         assert PackageStatus.FAILED == "failed"
+
+    def test_dataset_source(self) -> None:
+        assert DatasetSource.HUGGINGFACE == "huggingface"
+        assert DatasetSource.MODELSCOPE == "modelscope"
+        assert DatasetSource("modelscope") is DatasetSource.MODELSCOPE
 
     def test_enum_from_string(self) -> None:
         assert RunMode("pipeline") is RunMode.PIPELINE
@@ -137,3 +146,14 @@ class TestExceptions:
     def test_workspace_error(self) -> None:
         err = WorkspaceError("ws error")
         assert isinstance(err, AgentEvalError)
+
+    def test_dataset_error_hierarchy(self) -> None:
+        assert issubclass(DatasetError, AgentEvalError)
+        assert issubclass(DatasetNotFoundError, DatasetError)
+        assert issubclass(DatasetDownloadError, DatasetError)
+
+    def test_dataset_not_found(self) -> None:
+        err = DatasetNotFoundError("ceval")
+        assert isinstance(err, DatasetError)
+        assert err.name == "ceval"
+        assert "ceval" in str(err)

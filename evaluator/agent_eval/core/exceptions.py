@@ -169,3 +169,22 @@ class OrchestratorError(AgentEvalError):
 
 class WorkspaceError(AgentEvalError):
     """Workspace 操作异常。"""
+
+
+# ─── 数据集相关 ───
+
+
+class DatasetError(AgentEvalError):
+    """数据集下载或管理异常。"""
+
+
+class DatasetNotFoundError(DatasetError):
+    """数据集不存在（注册表未命中，或指定源上未提供 id）。"""
+
+    def __init__(self, name: str):
+        super().__init__(f"数据集不存在: {name}", details={"name": name})
+        self.name = name
+
+
+class DatasetDownloadError(DatasetError):
+    """数据集下载失败（网络错误、源不可用、可选依赖缺失等）。"""

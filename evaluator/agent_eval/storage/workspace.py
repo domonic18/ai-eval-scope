@@ -3,6 +3,7 @@
 Workspace 是运行时的文件系统工作空间，结构如下：
     workspace/
     ├── runs/{run_id}/       # 各次运行的输出
+    ├── datasets/            # 评测数据集（agent-eval dataset download 下载）
     ├── index/               # Web Portal 索引
     └── cache/               # 跨运行共享缓存
 """
@@ -36,6 +37,7 @@ class Workspace:
         self.runs_dir = self.root / "runs"
         self.cache_dir = self.root / "cache"
         self.index_dir = self.root / "index"
+        self.datasets_dir = self.root / "datasets"
 
     @property
     def exists(self) -> bool:
@@ -48,6 +50,7 @@ class Workspace:
         self.runs_dir.mkdir(parents=True, exist_ok=True)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.index_dir.mkdir(parents=True, exist_ok=True)
+        self.datasets_dir.mkdir(parents=True, exist_ok=True)
 
     def create_run(self, run_id: str | None = None) -> RunWorkspace:
         """创建一次运行的工作空间。

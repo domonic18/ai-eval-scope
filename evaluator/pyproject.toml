@@ -45,6 +45,10 @@ vision = [
     "agent-eval[llm]",
     "playwright>=1.40",
 ]
+datasets = [
+    "huggingface_hub>=0.24",
+    "modelscope>=1.18",
+]
 
 [project.scripts]
 agent-eval = "cli:app"
