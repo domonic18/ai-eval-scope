@@ -54,9 +54,7 @@ class HuggingFaceDownloader(DatasetDownloader):
         try:
             from huggingface_hub import snapshot_download
         except ImportError as e:  # pragma: no cover - 依赖缺失分支
-            raise DatasetDownloadError(
-                f"huggingface_hub 未安装。{_INSTALL_HINT}"
-            ) from e
+            raise DatasetDownloadError(f"huggingface_hub 未安装。{_INSTALL_HINT}") from e
 
         target.mkdir(parents=True, exist_ok=True)
         snapshot_download(

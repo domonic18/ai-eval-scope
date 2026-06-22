@@ -35,9 +35,7 @@ def _normalize_source(source: str) -> str:
     """归一化源别名为 'huggingface' / 'modelscope'。"""
     key = source.strip().lower()
     if key not in _SOURCE_ALIASES:
-        raise DatasetError(
-            f"不支持的下载源: {source}（支持 huggingface/hf 或 modelscope/ms）"
-        )
+        raise DatasetError(f"不支持的下载源: {source}（支持 huggingface/hf 或 modelscope/ms）")
     return _SOURCE_ALIASES[key]
 
 
@@ -84,9 +82,7 @@ class DatasetManager:
         # 3. 取对应源 id
         repo_id = entry.get_id(resolved_source)
         if not repo_id:
-            raise DatasetNotFoundError(
-                f"数据集 '{name}' 在 {resolved_source} 源上未提供 id"
-            )
+            raise DatasetNotFoundError(f"数据集 '{name}' 在 {resolved_source} 源上未提供 id")
 
         # 4. 解析目标目录
         target = self._resolve_target(name, output)
@@ -96,9 +92,7 @@ class DatasetManager:
             if force:
                 shutil.rmtree(target)
             else:
-                logger.info(
-                    "dataset.exists", name=name, target=str(target)
-                )
+                logger.info("dataset.exists", name=name, target=str(target))
                 return target
 
         # 6. 下载
