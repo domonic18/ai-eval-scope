@@ -100,6 +100,23 @@ cp agent_eval/assets/configs/llm_config.example.yaml agent_eval/assets/configs/l
 - `runs/{id}/reports/summary.md` — 聚合报告（DR/CPR/Reward）
 - `cache/evaluation_cache.json` — 跨运行缓存
 
+## 可观测平台
+
+项目内置仿 Langfuse 的多租户可观测平台（`web/`），可视化追踪评估运行、管理项目与 API Key、下钻指标与样本。本地一键启动：
+
+```bash
+cp .env.example .env          # 填入 DB / 对象存储 / 安全密钥
+make docker-up                # 启动 postgres + minio + platform
+```
+
+平台界面预览：
+
+![平台概览](./docs/assets/screen_snap1.png)
+
+![运行详情](./docs/assets/screen_snap2.png)
+
+详见 [Web 可观测平台架构设计](./docs/arch/09Web可观测平台架构设计.md)。
+
 ## 开发
 
 ```bash
@@ -128,6 +145,10 @@ uv run ruff format agent_eval/ tests/ && uv run ruff check --fix agent_eval/ tes
 ## 贡献
 
 欢迎提交 Issue 和 Pull Request！开发流程、提交规范、PR 流程见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
+
+## 致谢
+
+本项目在评测数据集下载、数据集索引等设计上参考了 [OpenCompass](https://github.com/open-compass/opencompass)，部分数据集的 HuggingFace / ModelScope 来源元数据（`evaluator/agent_eval/assets/datasets/dataset_index.yaml`）移植自 OpenCompass。感谢 OpenCompass 团队优秀的开源工作。
 
 ## License
 
