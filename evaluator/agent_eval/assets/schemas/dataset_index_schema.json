@@ -1,0 +1,70 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DatasetIndex Schema",
+  "description": "评测数据集索引文件的 JSON Schema 校验定义",
+  "type": "object",
+  "required": ["version", "datasets"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "索引版本号"
+    },
+    "description": {
+      "type": "string",
+      "description": "索引描述"
+    },
+    "datasets": {
+      "type": "array",
+      "description": "数据集条目列表",
+      "items": {
+        "type": "object",
+        "required": ["id", "sources"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$",
+            "description": "数据集唯一标识（小写字母/数字/下划线）"
+          },
+          "name": {
+            "type": "string",
+            "description": "展示名"
+          },
+          "category": {
+            "type": "string",
+            "description": "能力类别"
+          },
+          "paper": {
+            "type": "string",
+            "description": "论文链接"
+          },
+          "description": {
+            "type": "string",
+            "description": "中文简介"
+          },
+          "default_source": {
+            "type": "string",
+            "enum": ["auto", "huggingface", "modelscope"],
+            "description": "默认下载源"
+          },
+          "sources": {
+            "type": "object",
+            "description": "各下载源的仓库标识",
+            "properties": {
+              "hf_id": {
+                "type": ["string", "null"],
+                "description": "HuggingFace repo_id"
+              },
+              "ms_id": {
+                "type": ["string", "null"],
+                "description": "ModelScope dataset_id"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

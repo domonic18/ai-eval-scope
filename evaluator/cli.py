@@ -755,8 +755,9 @@ def dataset_download(
     setup_logging(level="DEBUG" if verbose else "INFO")
     try:
         entry = lookup(name)
+        label = entry.name if entry else name
         display = entry.description if entry else "(用户指定 repo id)"
-        rprint(f"[bold blue]📥 下载数据集:[/bold blue] {name} — {display}")
+        rprint(f"[bold blue]📥 下载数据集:[/bold blue] {label} — {display}")
         target = DatasetManager().download(
             name=name,
             source=source,
@@ -770,6 +771,29 @@ def dataset_download(
     except Exception as e:
         rprint(f"[bold red]❌ 下载失败: {e}[/bold red]")
         raise typer.Exit(code=1) from e
+
+
+@dataset_app.command("list")
+def dataset_list(
+    verbose: bool = typer.Option(False, "--verbose", "-v"),
+) -> None:
+    """列出数据集索引中所有可下载的数据集（来源：assets/datasets/dataset_index.yaml）。"""
+    from agent_eval.datasets import list_datasets
+
+    datasets = list_datasets()
+    if not datasets:
+        rprint("[dim]数据集索引为空[/dim]")
+        return
+
+    table = Table(title=f"评测数据集索引（{len(datasets)} 个）")
+    table.add_column("ID", style="cyan")
+    table.add_column("名称")
+    table.add_column("类别")
+    table.add_column("HF repo", style="green")
+    table.add_column("MS repo", style="green")
+    for e in datasets.values():
+        table.add_row(e.id, e.name, e.category, e.hf_id or "—", e.ms_id or "—")
+    rprint(table)
 
 
 if __name__ == "__main__":
