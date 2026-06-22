@@ -1,0 +1,20 @@
+# 统一换行符为 LF（跨平台一致），自动规范化
+* text=auto eol=lf
+
+# 二进制文件不做换行/差异规范化
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.pdf binary
+*.wav binary
+*.mp3 binary
+*.zip binary
+*.gz binary
+
+# 锁文件视为文本但隐藏差异（merge=ours 或 linguist-generated）
+uv.lock linguist-generated=true
+package-lock.json linguist-generated=true
+pnpm-lock.yaml linguist-generated=true

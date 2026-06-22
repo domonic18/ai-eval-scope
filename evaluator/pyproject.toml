@@ -35,6 +35,8 @@ dev = [
     "pytest-asyncio>=0.23",
     "ruff>=0.4",
     "mypy>=1.10",
+    "pre-commit>=3.7",
+    "commitizen>=3.29",
 ]
 llm = [
     "openai>=1.30",
@@ -73,10 +75,26 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP"]
-ignore = ["E501"]
+# UP042: 项目约定统一 (str, Enum) 基类（见 CLAUDE.md），不改 StrEnum
+# N806: 函数内常量命名（_UPPER_SNAKE 风格的局部常量）
+ignore = ["E501", "UP042", "N806"]
+
+[tool.ruff.lint.per-file-ignores]
+# orchestrator 延迟 import 以规避循环依赖
+"agent_eval/orchestrator/orchestrator.py" = ["E402"]
+# tests 通过 import * 触发评估器注册（副作用）
+"tests/evaluators/*.py" = ["F403"]
 
 [tool.mypy]
 python_version = "3.11"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
+
+# commitizen：Conventional Commits 校验（commit-msg hook）+ cz bump 版本/CHANGELOG 自动化
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "v$version"
+version_scheme = "pep440"
+version_provider = "scm"
+annotated_tag = true

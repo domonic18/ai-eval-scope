@@ -1,4 +1,4 @@
-.PHONY: install dev test test-cov lint format clean golden web-install web-test web-typecheck docker-build docker-up docker-down docker-logs
+.PHONY: install dev test test-cov lint format clean golden web-install web-test web-typecheck docker-build docker-up docker-down docker-logs hooks check
 
 # 使用 uv 进行包管理（推荐）
 # 需要先安装 uv: curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -59,3 +59,15 @@ docker-down:
 
 docker-logs:
 	docker compose logs -f platform
+
+# ─── 代码规范（pre-commit + commitizen）───
+
+# 安装 git hooks：pre-commit（代码检查）+ commit-msg（提交信息校验）
+hooks:
+	pre-commit install --install-hooks -t pre-commit -t commit-msg
+	@echo "✅ git hooks 已安装（pre-commit + commit-msg）"
+
+# 一键质量门禁：ruff 静态检查 + 单元测试
+check:
+	cd evaluator && uv run ruff check agent_eval tests
+	cd evaluator && uv run pytest tests/unit -q

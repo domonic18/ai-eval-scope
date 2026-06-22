@@ -1,0 +1,74 @@
+# Pre-commit hooks — 聚合 Python(ruff) / TypeScript(eslint) / 通用检查 / commit message 校验
+#
+# 安装（在仓库根目录）：
+#   make hooks
+#   # 等价于 pre-commit install --install-hooks -t pre-commit -t commit-msg
+#
+# 手动全量检查：pre-commit run --all-files
+# 跳过本次检查：git commit --no-verify（不建议）
+
+default_install_hook_types: [pre-commit, commit-msg]
+
+repos:
+  # 通用文件检查
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=500]
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  # 拼写检查（跳过锁文件/构建产物/设计稿）
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.3.0
+    hooks:
+      - id: codespell
+        exclude: |
+          (?x)^(
+            uv\.lock|.*\.lock|
+            docs/design/.*|
+            docs/reference/大单元学习总导/.*|
+            workspace/.*
+          )$
+
+  # commit message 校验（Conventional Commits）；配置见 evaluator/pyproject.toml [tool.commitizen]
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v3.30.0
+    hooks:
+      - id: commitizen
+        stages: [commit-msg]
+
+  # 本地 hooks：ruff（用 uv 的版本，避免与本地 ruff format 漂移）+ web eslint
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check (evaluator)
+        entry: bash -c 'cd evaluator && uv run ruff check --fix agent_eval tests'
+        language: system
+        files: ^evaluator/.*\.py$
+        pass_filenames: false
+      - id: ruff-format
+        name: ruff format (evaluator)
+        entry: bash -c 'cd evaluator && uv run ruff format agent_eval tests'
+        language: system
+        files: ^evaluator/.*\.py$
+        pass_filenames: false
+      - id: web-frontend-lint
+        name: eslint (web/frontend)
+        entry: bash -c 'cd web/frontend && npm run lint'
+        language: system
+        files: ^web/frontend/.*\.(ts|tsx|js|jsx)$
+        pass_filenames: false
+      - id: web-backend-lint
+        name: eslint (web/backend)
+        entry: bash -c 'cd web/backend && npm run lint'
+        language: system
+        files: ^web/backend/.*\.(ts|js)$
+        pass_filenames: false
