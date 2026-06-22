@@ -14,160 +14,166 @@
  * upsert + 去重表 = at-least-once 投递下的精确一次生效。
  */
 
-import { Prisma } from "@prisma/client";
-import { IngestRepository, DependencyMissingError, usePrisma } from "../repositories/ingest.repository";
-import { getObjectStorage } from "../infra/objectStorage";
-import { getLogger } from "../infra/logger";
+import { Prisma } from "@prisma/client"
 import {
-  validateEnvelope,
-  validateEvent,
-  SUPPORTED_SCHEMA_VERSION,
-} from "../schemas/validate";
-import type { IngestBatch, IngestEvent } from "../schemas/events";
-import type { Tenant } from "../repositories/base.repository";
+  IngestRepository,
+  DependencyMissingError,
+  usePrisma,
+} from "../repositories/ingest.repository"
+import { getObjectStorage } from "../infra/objectStorage"
+import { getLogger } from "../infra/logger"
+import { validateEnvelope, validateEvent, SUPPORTED_SCHEMA_VERSION } from "../schemas/validate"
+import type { IngestBatch, IngestEvent } from "../schemas/events"
+import type { Tenant } from "../repositories/base.repository"
 
 export interface IngestEventError {
-  event_id: string;
-  code: string;
-  message: string;
+  event_id: string
+  code: string
+  message: string
 }
 
 export interface IngestResult {
-  accepted: number;
-  duplicates: number;
-  errors: IngestEventError[];
+  accepted: number
+  duplicates: number
+  errors: IngestEventError[]
 }
 
 export type IngestOutcome =
   | { status: "accepted"; result: IngestResult } // HTTP 202
   | { status: "version_unsupported"; got: string } // HTTP 400
   | { status: "forbidden" } // HTTP 403
-  | { status: "schema_invalid"; problems: { path: string; message: string }[] }; // HTTP 400
+  | { status: "schema_invalid"; problems: { path: string; message: string }[] } // HTTP 400
 
 export async function ingest(tenant: Tenant, body: unknown): Promise<IngestOutcome> {
   // 1. schema_version 兼容
   if (body && typeof body === "object" && "schema_version" in body) {
-    const v = (body as { schema_version?: unknown }).schema_version;
+    const v = (body as { schema_version?: unknown }).schema_version
     if (typeof v === "string" && v !== SUPPORTED_SCHEMA_VERSION) {
-      return { status: "version_unsupported", got: v };
+      return { status: "version_unsupported", got: v }
     }
   }
 
   // 2. envelope 结构校验
-  const envelope = validateEnvelope(body);
+  const envelope = validateEnvelope(body)
   if (!envelope.ok) {
-    return { status: "schema_invalid", problems: envelope.problems };
+    return { status: "schema_invalid", problems: envelope.problems }
   }
-  const batch = body as IngestBatch;
+  const batch = body as IngestBatch
 
   // 3. 跨项目拒绝
-  const effectiveProjectId = tenant.projectId!;
+  const effectiveProjectId = tenant.projectId!
   if (batch.project_id && batch.project_id !== effectiveProjectId) {
-    return { status: "forbidden" };
+    return { status: "forbidden" }
   }
 
-  const prisma = usePrisma();
-  const repo = new IngestRepository(effectiveProjectId);
-  const storage = getObjectStorage();
-  const logger = getLogger();
+  const prisma = usePrisma()
+  const repo = new IngestRepository(effectiveProjectId)
+  const storage = getObjectStorage()
+  const logger = getLogger()
 
-  const result: IngestResult = { accepted: 0, duplicates: 0, errors: [] };
+  const result: IngestResult = { accepted: 0, duplicates: 0, errors: [] }
 
   for (const ev of batch.events) {
-    const eventId = ev.event_id ?? "(missing)";
+    const eventId = ev.event_id ?? "(missing)"
 
     // 4. 逐事件 schema 校验
-    const evCheck = validateEvent(ev);
+    const evCheck = validateEvent(ev)
     if (!evCheck.ok) {
       result.errors.push({
         event_id: eventId,
         code: "SCHEMA_INVALID",
         message: evCheck.problems.map((p) => `${p.path}: ${p.message}`).join("; "),
-      });
-      continue;
+      })
+      continue
     }
 
     // 5. artifact：事务前 HEAD 校验对象存在
     if (ev.type === "artifact") {
-      const head = await storage.head({ key: ev.data.object_key }).catch(() => null);
+      const head = await storage.head({ key: ev.data.object_key }).catch(() => null)
       if (!head) {
         result.errors.push({
           event_id: eventId,
           code: "DEPENDENCY_MISSING",
           message: `artifact object not found: ${ev.data.object_key}`,
-        });
-        continue;
+        })
+        continue
       }
     }
 
     // 6. 逐事件事务：幂等键 → 业务 upsert
     try {
       await prisma.$transaction(async (tx) => {
-        await repo.tryInsertIngestEvent(tx, ev.event_id, ev.type);
-        await routeEvent(tx, repo, ev);
-      });
-      result.accepted += 1;
+        await repo.tryInsertIngestEvent(tx, ev.event_id, ev.type)
+        await routeEvent(tx, repo, ev)
+      })
+      result.accepted += 1
     } catch (err) {
-      const e = err as { code?: string; name?: string; message?: string };
+      const e = err as { code?: string; name?: string; message?: string }
       if (e.code === "P2002") {
         // 幂等键冲突 → 重复事件（业务写入随事务回滚）
-        result.duplicates += 1;
+        result.duplicates += 1
       } else if (e.name === "DependencyMissingError" || e instanceof DependencyMissingError) {
         result.errors.push({
           event_id: eventId,
           code: "DEPENDENCY_MISSING",
           message: e.message || "dependency not found",
-        });
+        })
       } else {
-        logger.error({ event_id: eventId, error: e.message }, "ingest_event_failed");
+        logger.error({ event_id: eventId, error: e.message }, "ingest_event_failed")
         result.errors.push({
           event_id: eventId,
           code: "INTERNAL",
           message: e.message || "internal error",
-        });
+        })
       }
     }
   }
 
-  return { status: "accepted", result };
+  return { status: "accepted", result }
 }
 
 /** 按 type 路由到 repository upsert（依赖缺失抛 DependencyMissingError）。 */
-async function routeEvent(tx: Prisma.TransactionClient, repo: IngestRepository, ev: IngestEvent): Promise<void> {
+async function routeEvent(
+  tx: Prisma.TransactionClient,
+  repo: IngestRepository,
+  ev: IngestEvent,
+): Promise<void> {
   switch (ev.type) {
     case "run": {
-      await repo.upsertRun(tx, ev.data);
-      return;
+      await repo.upsertRun(tx, ev.data)
+      return
     }
     case "sample": {
-      const d = ev.data;
-      const runId = await repo.resolveRunId(tx, d.external_run_id);
-      if (!runId) throw new DependencyMissingError(`run not found: ${d.external_run_id}`);
-      await repo.upsertSample(tx, runId, d);
-      return;
+      const d = ev.data
+      const runId = await repo.resolveRunId(tx, d.external_run_id)
+      if (!runId) throw new DependencyMissingError(`run not found: ${d.external_run_id}`)
+      await repo.upsertSample(tx, runId, d)
+      return
     }
     case "constraint": {
-      const d = ev.data;
-      const runId = await repo.resolveRunId(tx, d.external_run_id);
-      const sampleId = runId ? await repo.resolveSampleId(tx, runId, d.external_sample_id) : null;
+      const d = ev.data
+      const runId = await repo.resolveRunId(tx, d.external_run_id)
+      const sampleId = runId ? await repo.resolveSampleId(tx, runId, d.external_sample_id) : null
       if (!runId || !sampleId) {
-        throw new DependencyMissingError(`sample not found: ${d.external_run_id}/${d.external_sample_id}`);
+        throw new DependencyMissingError(
+          `sample not found: ${d.external_run_id}/${d.external_sample_id}`,
+        )
       }
-      await repo.upsertConstraint(tx, sampleId, d);
-      return;
+      await repo.upsertConstraint(tx, sampleId, d)
+      return
     }
     case "artifact": {
-      const d = ev.data;
-      const runId = await repo.resolveRunId(tx, d.external_run_id);
-      if (!runId) throw new DependencyMissingError(`run not found: ${d.external_run_id}`);
+      const d = ev.data
+      const runId = await repo.resolveRunId(tx, d.external_run_id)
+      if (!runId) throw new DependencyMissingError(`run not found: ${d.external_run_id}`)
       const sampleId = d.external_sample_id
         ? await repo.resolveSampleId(tx, runId, d.external_sample_id)
-        : null;
-      const artifactId = await repo.upsertArtifact(tx, runId, sampleId, d);
+        : null
+      const artifactId = await repo.upsertArtifact(tx, runId, sampleId, d)
       if (d.linked_constraint_id && sampleId) {
-        await repo.linkConstraintArtifact(tx, sampleId, d.linked_constraint_id, artifactId);
+        await repo.linkConstraintArtifact(tx, sampleId, d.linked_constraint_id, artifactId)
       }
-      return;
+      return
     }
   }
 }

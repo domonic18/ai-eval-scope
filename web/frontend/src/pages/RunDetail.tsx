@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { api } from "../api/client";
-import { fmt3, fmtMsRaw, num } from "../lib/format";
-import { METRIC_EXPLAIN, THRESHOLDS, metricColor, runBadge, sampleBadge } from "../lib/eval";
-import type { MetricKey } from "../lib/eval";
+import { useEffect, useMemo, useState } from "react"
+import { useNavigate, useParams } from "react-router-dom"
+import { api } from "../api/client"
+import { fmt3, fmtMsRaw, num } from "../lib/format"
+import { METRIC_EXPLAIN, THRESHOLDS, metricColor, runBadge, sampleBadge } from "../lib/eval"
+import type { MetricKey } from "../lib/eval"
 import {
   Badge,
   Button,
@@ -16,125 +16,132 @@ import {
   Metric,
   Segment,
   useCrumbs,
-} from "../components/ui";
-import { IconDownload, IconExternal } from "../components/icons";
+} from "../components/ui"
+import { IconDownload, IconExternal } from "../components/icons"
 
 interface SampleRow {
-  id: string;
-  externalSampleId: string;
-  status: string;
-  reward: number;
-  sFormat: number;
-  sCommon: number;
-  sSoft: number;
-  sPref: number;
+  id: string
+  externalSampleId: string
+  status: string
+  reward: number
+  sFormat: number
+  sCommon: number
+  sSoft: number
+  sPref: number
 }
 interface RunData {
-  id: string;
-  externalRunId: string;
-  mode: string;
-  status: string;
-  totalSamples: number;
-  dr: number;
-  cpr: number;
-  avgReward: number;
-  condR: number;
-  avgTimeMs: number;
-  ruleSetVersion: string | null;
-  langfuseTraceId: string | null;
-  langfuseHost: string | null;
-  createdAt: string;
-  samples: SampleRow[];
+  id: string
+  externalRunId: string
+  mode: string
+  status: string
+  totalSamples: number
+  dr: number
+  cpr: number
+  avgReward: number
+  condR: number
+  avgTimeMs: number
+  ruleSetVersion: string | null
+  langfuseTraceId: string | null
+  langfuseHost: string | null
+  createdAt: string
+  samples: SampleRow[]
 }
 
-type StageFilter = "format" | "commonsense" | "soft" | "pref" | null;
+type StageFilter = "format" | "commonsense" | "soft" | "pref" | null
 
 /** 判断某阶段是否"不达标"，用于失败分布与样本筛选。 */
 function stageFail(s: SampleRow, stage: NonNullable<StageFilter>): boolean {
   switch (stage) {
     case "format":
-      return s.sFormat < 1;
+      return s.sFormat < 1
     case "commonsense":
-      return s.sCommon <= 0;
+      return s.sCommon <= 0
     case "soft":
-      return s.sSoft < 0.6;
+      return s.sSoft < 0.6
     case "pref":
-      return s.sPref < 0.6;
+      return s.sPref < 0.6
   }
 }
 
 /** 样本最差阶段（用作"失败约束"列代理 chip）。 */
 function worstStage(s: SampleRow): { chip: "hard" | "soft" | "pref"; label: string } | null {
-  if (s.sFormat < 1) return { chip: "hard", label: "format" };
-  if (s.sCommon <= 0) return { chip: "hard", label: "commonsense" };
-  if (s.sSoft < 0.6) return { chip: "soft", label: "soft" };
-  if (s.sPref < 0.6) return { chip: "pref", label: "pref" };
-  return null;
+  if (s.sFormat < 1) return { chip: "hard", label: "format" }
+  if (s.sCommon <= 0) return { chip: "hard", label: "commonsense" }
+  if (s.sSoft < 0.6) return { chip: "soft", label: "soft" }
+  if (s.sPref < 0.6) return { chip: "pref", label: "pref" }
+  return null
 }
 
 export default function RunDetail() {
-  const { id } = useParams<{ id: string }>();
-  const nav = useNavigate();
-  const { setCrumbs } = useCrumbs();
-  const [run, setRun] = useState<RunData | null>(null);
-  const [stageFilter, setStageFilter] = useState<StageFilter>(null);
-  const [seg, setSeg] = useState<"all" | "fail" | "skip">("all");
+  const { id } = useParams<{ id: string }>()
+  const nav = useNavigate()
+  const { setCrumbs } = useCrumbs()
+  const [run, setRun] = useState<RunData | null>(null)
+  const [stageFilter, setStageFilter] = useState<StageFilter>(null)
+  const [seg, setSeg] = useState<"all" | "fail" | "skip">("all")
 
   useEffect(() => {
-    if (!id) return;
+    if (!id) return
     api
       .runDetail(id)
       .then((r) => {
-        setRun(r);
-        setCrumbs([{ label: "项目看板", to: "/dashboard" }, { label: <span className="mono">#{r.externalRunId}</span> }]);
+        setRun(r)
+        setCrumbs([
+          { label: "项目看板", to: "/dashboard" },
+          { label: <span className="mono">#{r.externalRunId}</span> },
+        ])
       })
-      .catch(() => setRun(null));
-  }, [id, setCrumbs]);
+      .catch(() => setRun(null))
+  }, [id, setCrumbs])
 
   const failCounts = useMemo(() => {
-    if (!run) return null;
-    const s = run.samples;
+    if (!run) return null
+    const s = run.samples
     return {
       format: s.filter((x) => stageFail(x, "format")).length,
       commonsense: s.filter((x) => stageFail(x, "commonsense")).length,
       soft: s.filter((x) => stageFail(x, "soft")).length,
       pref: s.filter((x) => stageFail(x, "pref")).length,
-    };
-  }, [run]);
-  const failMax = failCounts ? Math.max(failCounts.format, failCounts.commonsense, failCounts.soft, failCounts.pref, 1) : 1;
+    }
+  }, [run])
+  const failMax = failCounts
+    ? Math.max(failCounts.format, failCounts.commonsense, failCounts.soft, failCounts.pref, 1)
+    : 1
 
   const filteredSamples = useMemo(() => {
-    if (!run) return [];
+    if (!run) return []
     return run.samples.filter((s) => {
-      if (seg === "fail" && s.status !== "fail" && s.status !== "failed") return false;
-      if (seg === "skip" && s.status !== "skip" && s.status !== "skipped") return false;
-      if (stageFilter && !stageFail(s, stageFilter)) return false;
-      return true;
-    });
-  }, [run, seg, stageFilter]);
+      if (seg === "fail" && s.status !== "fail" && s.status !== "failed") return false
+      if (seg === "skip" && s.status !== "skip" && s.status !== "skipped") return false
+      if (stageFilter && !stageFail(s, stageFilter)) return false
+      return true
+    })
+  }, [run, seg, stageFilter])
 
   if (!run) {
     return (
       <div className="page">
         <Empty title="加载运行详情…" />
       </div>
-    );
+    )
   }
 
   const langfuseUrl =
-    run.langfuseTraceId && run.langfuseHost ? `${run.langfuseHost}/trace/${run.langfuseTraceId}` : null;
-  const passCount = run.samples.filter((s) => s.status === "pass" || s.status === "passed").length;
-  const failCount = run.samples.filter((s) => s.status === "fail" || s.status === "failed").length;
-  const rb = runBadge(run.status);
+    run.langfuseTraceId && run.langfuseHost
+      ? `${run.langfuseHost}/trace/${run.langfuseTraceId}`
+      : null
+  const passCount = run.samples.filter((s) => s.status === "pass" || s.status === "passed").length
+  const failCount = run.samples.filter((s) => s.status === "fail" || s.status === "failed").length
+  const rb = runBadge(run.status)
 
   const metricBadge = (key: "DR" | "CPR" | "Reward") => {
-    const val = key === "DR" ? run.dr : key === "CPR" ? run.cpr : run.avgReward;
+    const val = key === "DR" ? run.dr : key === "CPR" ? run.cpr : run.avgReward
     return val >= THRESHOLDS[key] ? (
       <Badge variant="success">达标</Badge>
     ) : (
       <Badge variant="warning">{key === "Reward" ? "偏低" : "未达"}</Badge>
-    );
-  };
+    )
+  }
 
   function downloadReport(kind: "md" | "json") {
     const summary = {
@@ -144,23 +151,23 @@ export default function RunDetail() {
       metrics: { DR: run!.dr, CPR: run!.cpr, Reward: run!.avgReward, CondR: run!.condR },
       pass: passCount,
       fail: failCount,
-    };
-    let text: string;
-    let mime: string;
-    if (kind === "json") {
-      text = JSON.stringify(summary, null, 2);
-      mime = "application/json";
-    } else {
-      text = `# 运行 #${run!.externalRunId} 报告\n\n- 样本：${run!.totalSamples}（通过 ${passCount} / 失败 ${failCount}）\n- DR=${fmt3(run!.dr)}（阈值 ≥ ${THRESHOLDS.DR}）\n- CPR=${fmt3(run!.cpr)}（阈值 ≥ ${THRESHOLDS.CPR}）\n- Reward=${fmt3(run!.avgReward)}（阈值 ≥ ${THRESHOLDS.Reward}）\n- CondR=${fmt3(run!.condR)}\n`;
-      mime = "text/markdown";
     }
-    const blob = new Blob([text], { type: mime });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `run-${run!.externalRunId}.${kind}`;
-    a.click();
-    URL.revokeObjectURL(url);
+    let text: string
+    let mime: string
+    if (kind === "json") {
+      text = JSON.stringify(summary, null, 2)
+      mime = "application/json"
+    } else {
+      text = `# 运行 #${run!.externalRunId} 报告\n\n- 样本：${run!.totalSamples}（通过 ${passCount} / 失败 ${failCount}）\n- DR=${fmt3(run!.dr)}（阈值 ≥ ${THRESHOLDS.DR}）\n- CPR=${fmt3(run!.cpr)}（阈值 ≥ ${THRESHOLDS.CPR}）\n- Reward=${fmt3(run!.avgReward)}（阈值 ≥ ${THRESHOLDS.Reward}）\n- CondR=${fmt3(run!.condR)}\n`
+      mime = "text/markdown"
+    }
+    const blob = new Blob([text], { type: mime })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `run-${run!.externalRunId}.${kind}`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   return (
@@ -174,12 +181,18 @@ export default function RunDetail() {
             </Badge>
           </h1>
           <div className="sub">
-            {run.mode} 模式 · {num(run.totalSamples)} 个样本 · {new Date(run.createdAt).toLocaleString("zh-CN")}
+            {run.mode} 模式 · {num(run.totalSamples)} 个样本 ·{" "}
+            {new Date(run.createdAt).toLocaleString("zh-CN")}
           </div>
         </div>
         <div className="page-actions">
           {langfuseUrl && (
-            <LinkButton href={langfuseUrl} target="_blank" rel="noreferrer" icon={<IconExternal size={15} />}>
+            <LinkButton
+              href={langfuseUrl}
+              target="_blank"
+              rel="noreferrer"
+              icon={<IconExternal size={15} />}
+            >
               在 Langfuse 查看
             </LinkButton>
           )}
@@ -210,15 +223,16 @@ export default function RunDetail() {
       </div>
 
       {/* metric cards */}
-      <div className="r-3" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 16 }}>
-        {(
-          [
-            { k: "DR" as MetricKey, val: run.dr, thr: THRESHOLDS.DR },
-            { k: "CPR" as MetricKey, val: run.cpr, thr: THRESHOLDS.CPR },
-            { k: "Reward" as MetricKey, val: run.avgReward, thr: THRESHOLDS.Reward },
-            { k: "CondR" as MetricKey, val: run.condR, thr: undefined },
-          ]
-        ).map((m) => (
+      <div
+        className="r-3"
+        style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 16 }}
+      >
+        {[
+          { k: "DR" as MetricKey, val: run.dr, thr: THRESHOLDS.DR },
+          { k: "CPR" as MetricKey, val: run.cpr, thr: THRESHOLDS.CPR },
+          { k: "Reward" as MetricKey, val: run.avgReward, thr: THRESHOLDS.Reward },
+          { k: "CondR" as MetricKey, val: run.condR, thr: undefined },
+        ].map((m) => (
           <Metric
             key={m.k}
             label={m.k}
@@ -226,7 +240,13 @@ export default function RunDetail() {
             valueColor={m.thr ? metricColor(m.k as MetricKey, m.val) : undefined}
             explain={METRIC_EXPLAIN[m.k as MetricKey]}
             badge={m.thr ? metricBadge(m.k as "DR" | "CPR" | "Reward") : undefined}
-            gauge={<Gauge value={m.val} threshold={m.thr} color={m.thr ? metricColor(m.k as MetricKey, m.val) : "var(--accent)"} />}
+            gauge={
+              <Gauge
+                value={m.val}
+                threshold={m.thr}
+                color={m.thr ? metricColor(m.k as MetricKey, m.val) : "var(--accent)"}
+              />
+            }
             foot={
               m.thr ? (
                 <span className="muted">阈值 ≥ {m.thr}</span>
@@ -246,7 +266,8 @@ export default function RunDetail() {
             <span className="hint">按阶段 · 点击下钻样本</span>
           </div>
           <div className="card-body" style={{ padding: "8px 20px 16px" }}>
-            {failCounts && failCounts.format + failCounts.commonsense + failCounts.soft + failCounts.pref === 0 ? (
+            {failCounts &&
+            failCounts.format + failCounts.commonsense + failCounts.soft + failCounts.pref === 0 ? (
               <Empty title="无失败/偏低项" />
             ) : (
               <>
@@ -256,8 +277,8 @@ export default function RunDetail() {
                   max={failMax}
                   color="var(--danger)"
                   onClick={() => {
-                    setStageFilter(stageFilter === "format" ? null : "format");
-                    document.getElementById("samples")?.scrollIntoView({ behavior: "smooth" });
+                    setStageFilter(stageFilter === "format" ? null : "format")
+                    document.getElementById("samples")?.scrollIntoView({ behavior: "smooth" })
                   }}
                 />
                 <FailBar
@@ -266,8 +287,8 @@ export default function RunDetail() {
                   max={failMax}
                   color="var(--danger)"
                   onClick={() => {
-                    setStageFilter(stageFilter === "commonsense" ? null : "commonsense");
-                    document.getElementById("samples")?.scrollIntoView({ behavior: "smooth" });
+                    setStageFilter(stageFilter === "commonsense" ? null : "commonsense")
+                    document.getElementById("samples")?.scrollIntoView({ behavior: "smooth" })
                   }}
                 />
                 <FailBar
@@ -276,8 +297,8 @@ export default function RunDetail() {
                   max={failMax}
                   color="var(--warning)"
                   onClick={() => {
-                    setStageFilter(stageFilter === "soft" ? null : "soft");
-                    document.getElementById("samples")?.scrollIntoView({ behavior: "smooth" });
+                    setStageFilter(stageFilter === "soft" ? null : "soft")
+                    document.getElementById("samples")?.scrollIntoView({ behavior: "smooth" })
                   }}
                 />
                 <FailBar
@@ -286,8 +307,8 @@ export default function RunDetail() {
                   max={failMax}
                   color="var(--info)"
                   onClick={() => {
-                    setStageFilter(stageFilter === "pref" ? null : "pref");
-                    document.getElementById("samples")?.scrollIntoView({ behavior: "smooth" });
+                    setStageFilter(stageFilter === "pref" ? null : "pref")
+                    document.getElementById("samples")?.scrollIntoView({ behavior: "smooth" })
                   }}
                 />
               </>
@@ -311,23 +332,35 @@ export default function RunDetail() {
           <div className="card-body report">
             <h4>总体结论</h4>
             <p>
-              本次运行 {num(run.totalSamples)} 个样本，<strong className="tag-ok">{passCount} 通过</strong> /{" "}
-              <strong className="tag-bad">{failCount} 失败</strong>。DR {run.dr >= THRESHOLDS.DR ? "达标" : "未达"}（{fmt3(run.dr)}）、
-              CPR {run.cpr >= THRESHOLDS.CPR ? "达标" : "未达"}（{fmt3(run.cpr)}），Reward{" "}
+              本次运行 {num(run.totalSamples)} 个样本，
+              <strong className="tag-ok">{passCount} 通过</strong> /{" "}
+              <strong className="tag-bad">{failCount} 失败</strong>。DR{" "}
+              {run.dr >= THRESHOLDS.DR ? "达标" : "未达"}（{fmt3(run.dr)}）、 CPR{" "}
+              {run.cpr >= THRESHOLDS.CPR ? "达标" : "未达"}（{fmt3(run.cpr)}），Reward{" "}
               <strong className={run.avgReward >= THRESHOLDS.Reward ? "tag-ok" : "tag-bad"}>
-                {run.avgReward >= THRESHOLDS.Reward ? "达标" : `偏低（${fmt3(run.avgReward)} < ${THRESHOLDS.Reward}）`}
+                {run.avgReward >= THRESHOLDS.Reward
+                  ? "达标"
+                  : `偏低（${fmt3(run.avgReward)} < ${THRESHOLDS.Reward}）`}
               </strong>
               。
             </p>
             <h4>主要问题</h4>
             <ul>
-              {failCounts && failCounts.format > 0 && <li>{failCounts.format} 个样本未通过格式门禁（format）。</li>}
-              {failCounts && failCounts.commonsense > 0 && <li>{failCounts.commonsense} 个样本存在常识性错误（commonsense）。</li>}
-              {failCounts && failCounts.soft > 0 && <li>{failCounts.soft} 个样本软约束评分偏低（soft &lt; 0.6）。</li>}
-              {failCounts && failCounts.pref > 0 && <li>{failCounts.pref} 个样本偏好评分偏低（preference &lt; 0.6）。</li>}
-              {(!failCounts || (failCounts.format + failCounts.commonsense + failCounts.soft + failCounts.pref === 0)) && (
-                <li>未发现明显短板。</li>
+              {failCounts && failCounts.format > 0 && (
+                <li>{failCounts.format} 个样本未通过格式门禁（format）。</li>
               )}
+              {failCounts && failCounts.commonsense > 0 && (
+                <li>{failCounts.commonsense} 个样本存在常识性错误（commonsense）。</li>
+              )}
+              {failCounts && failCounts.soft > 0 && (
+                <li>{failCounts.soft} 个样本软约束评分偏低（soft &lt; 0.6）。</li>
+              )}
+              {failCounts && failCounts.pref > 0 && (
+                <li>{failCounts.pref} 个样本偏好评分偏低（preference &lt; 0.6）。</li>
+              )}
+              {(!failCounts ||
+                failCounts.format + failCounts.commonsense + failCounts.soft + failCounts.pref ===
+                  0) && <li>未发现明显短板。</li>}
             </ul>
             <h4>建议</h4>
             <ul>
@@ -342,7 +375,10 @@ export default function RunDetail() {
       <div className="card r-5" id="samples">
         <div className="card-head">
           <h3>
-            样本 <span className="muted" style={{ fontWeight: 400 }}>{num(run.samples.length)}</span>
+            样本{" "}
+            <span className="muted" style={{ fontWeight: 400 }}>
+              {num(run.samples.length)}
+            </span>
           </h3>
           <div className="row" style={{ gap: 8 }}>
             <Segment<"all" | "fail" | "skip">
@@ -355,7 +391,11 @@ export default function RunDetail() {
               ]}
             />
             {stageFilter && (
-              <Badge variant="accent" style={{ cursor: "pointer" }} onClick={() => setStageFilter(null)}>
+              <Badge
+                variant="accent"
+                style={{ cursor: "pointer" }}
+                onClick={() => setStageFilter(null)}
+              >
                 筛选：{stageFilter} ✕
               </Badge>
             )}
@@ -363,26 +403,55 @@ export default function RunDetail() {
         </div>
         <DataTable<SampleRow>
           columns={[
-            { key: "externalSampleId", title: "样本 (task_id)", render: (s) => <span className="mono">{s.externalSampleId}</span> },
+            {
+              key: "externalSampleId",
+              title: "样本 (task_id)",
+              render: (s) => <span className="mono">{s.externalSampleId}</span>,
+            },
             {
               key: "status",
               title: "状态",
               render: (s) => {
-                const b = sampleBadge(s.status);
-                return <Badge variant={b.variant}>{b.label}</Badge>;
+                const b = sampleBadge(s.status)
+                return <Badge variant={b.variant}>{b.label}</Badge>
               },
             },
-            { key: "reward", title: "Reward", num: true, render: (s) => <span className={s.reward < 0.5 ? "t-del" : "t-add"}>{fmt3(s.reward)}</span> },
-            { key: "sFormat", title: "S_format", num: true, render: (s) => <span className={s.sFormat < 1 ? "t-del" : ""}>{fmt3(s.sFormat)}</span> },
-            { key: "sCommon", title: "S_common", num: true, render: (s) => <span className={s.sCommon <= 0 ? "t-del" : ""}>{fmt3(s.sCommon)}</span> },
+            {
+              key: "reward",
+              title: "Reward",
+              num: true,
+              render: (s) => (
+                <span className={s.reward < 0.5 ? "t-del" : "t-add"}>{fmt3(s.reward)}</span>
+              ),
+            },
+            {
+              key: "sFormat",
+              title: "S_format",
+              num: true,
+              render: (s) => (
+                <span className={s.sFormat < 1 ? "t-del" : ""}>{fmt3(s.sFormat)}</span>
+              ),
+            },
+            {
+              key: "sCommon",
+              title: "S_common",
+              num: true,
+              render: (s) => (
+                <span className={s.sCommon <= 0 ? "t-del" : ""}>{fmt3(s.sCommon)}</span>
+              ),
+            },
             { key: "sSoft", title: "S_soft", num: true, render: (s) => fmt3(s.sSoft) },
             { key: "sPref", title: "S_pref", num: true, render: (s) => fmt3(s.sPref) },
             {
               key: "fail",
               title: "失败约束",
               render: (s) => {
-                const w = worstStage(s);
-                return w ? <Chip variant={w.chip}>{w.label}</Chip> : <span className="muted">—</span>;
+                const w = worstStage(s)
+                return w ? (
+                  <Chip variant={w.chip}>{w.label}</Chip>
+                ) : (
+                  <span className="muted">—</span>
+                )
               },
             },
           ]}
@@ -394,5 +463,5 @@ export default function RunDetail() {
         />
       </div>
     </div>
-  );
+  )
 }

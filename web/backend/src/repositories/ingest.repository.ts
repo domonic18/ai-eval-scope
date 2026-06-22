@@ -6,23 +6,23 @@
  * - 依赖解析：resolveRunId / resolveSampleId（缺失返回 null → service 计 DEPENDENCY_MISSING）。
  */
 
-import { Prisma, type PrismaClient } from "@prisma/client";
-import { getPrisma } from "../infra/prisma";
-import { PlatformError } from "../middleware/errorHandler";
+import { Prisma, type PrismaClient } from "@prisma/client"
+import { getPrisma } from "../infra/prisma"
+import { PlatformError } from "../middleware/errorHandler"
 import type {
   RunEventData,
   SampleEventData,
   ConstraintEventData,
   ArtifactEventData,
   DimensionInput,
-} from "../schemas/events";
+} from "../schemas/events"
 
-type Tx = Prisma.TransactionClient;
+type Tx = Prisma.TransactionClient
 
 export class DependencyMissingError extends Error {
   constructor(msg: string) {
-    super(msg);
-    this.name = "DependencyMissingError";
+    super(msg)
+    this.name = "DependencyMissingError"
   }
 }
 
@@ -33,7 +33,7 @@ export class IngestRepository {
   async tryInsertIngestEvent(tx: Tx, eventId: string, type: string): Promise<void> {
     await tx.ingestEvent.create({
       data: { projectId: this.projectId, eventId, type },
-    });
+    })
   }
 
   async resolveRunId(tx: Tx, externalRunId: string): Promise<string | null> {
@@ -42,16 +42,16 @@ export class IngestRepository {
         projectId_externalRunId: { projectId: this.projectId, externalRunId },
       },
       select: { id: true },
-    });
-    return r?.id ?? null;
+    })
+    return r?.id ?? null
   }
 
   async resolveSampleId(tx: Tx, runId: string, externalSampleId: string): Promise<string | null> {
     const s = await tx.sample.findUnique({
       where: { runId_externalSampleId: { runId, externalSampleId } },
       select: { id: true },
-    });
-    return s?.id ?? null;
+    })
+    return s?.id ?? null
   }
 
   /** run：按 (projectId, externalRunId) upsert。返回 runId。 */
@@ -98,8 +98,8 @@ export class IngestRepository {
         finishedAt: d.finished_at ? new Date(d.finished_at) : null,
       },
       select: { id: true },
-    });
-    return run.id;
+    })
+    return run.id
   }
 
   /** sample：按 (runId, externalSampleId) upsert；写 dimension_scores。返回 sampleId。 */
@@ -132,11 +132,11 @@ export class IngestRepository {
         tokenUsage: d.token_usage ?? 0,
       },
       select: { id: true },
-    });
+    })
 
     if (d.dimensions && d.dimensions.length) {
       // 维度：先清旧（同 sample）再插新，保证幂等
-      await tx.dimensionScore.deleteMany({ where: { sampleId: sample.id } });
+      await tx.dimensionScore.deleteMany({ where: { sampleId: sample.id } })
       await tx.dimensionScore.createMany({
         data: d.dimensions.map((dim: DimensionInput) => ({
           sampleId: sample.id,
@@ -146,9 +146,9 @@ export class IngestRepository {
           score: dim.score,
           status: dim.status,
         })),
-      });
+      })
     }
-    return sample.id;
+    return sample.id
   }
 
   /** constraint：应用层 upsert（按 sampleId+constraintId），返回 constraintRowId。 */
@@ -156,7 +156,7 @@ export class IngestRepository {
     const existing = await tx.constraintResult.findFirst({
       where: { sampleId, constraintId: d.constraint_id },
       select: { id: true },
-    });
+    })
     const data = {
       projectId: this.projectId,
       constraintId: d.constraint_id,
@@ -173,30 +173,43 @@ export class IngestRepository {
       judgeModel: d.judge_model ?? null,
       details: (d.details ?? undefined) as Prisma.InputJsonValue,
       moduleResults: (d.module_results ?? undefined) as Prisma.InputJsonValue,
-    };
-    if (existing) {
-      await tx.constraintResult.update({ where: { id: existing.id }, data });
-      return existing.id;
     }
-    const created = await tx.constraintResult.create({ data: { sampleId, ...data }, select: { id: true } });
-    return created.id;
+    if (existing) {
+      await tx.constraintResult.update({ where: { id: existing.id }, data })
+      return existing.id
+    }
+    const created = await tx.constraintResult.create({
+      data: { sampleId, ...data },
+      select: { id: true },
+    })
+    return created.id
   }
 
   /** 回填约束的 judge_artifact_id（artifact 事件带 linked_constraint_id 时）。 */
-  async linkConstraintArtifact(tx: Tx, sampleId: string, constraintId: string, artifactId: string): Promise<void> {
+  async linkConstraintArtifact(
+    tx: Tx,
+    sampleId: string,
+    constraintId: string,
+    artifactId: string,
+  ): Promise<void> {
     await tx.constraintResult.updateMany({
       where: { sampleId, constraintId },
       data: { judgeArtifactId: artifactId },
-    });
+    })
   }
 
   /** artifact：按 (runId, objectKey) 去重；存在则返回既有 id，否则创建。 */
-  async upsertArtifact(tx: Tx, runId: string, sampleId: string | null, d: ArtifactEventData): Promise<string> {
+  async upsertArtifact(
+    tx: Tx,
+    runId: string,
+    sampleId: string | null,
+    d: ArtifactEventData,
+  ): Promise<string> {
     const existing = await tx.artifact.findFirst({
       where: { runId, objectKey: d.object_key },
       select: { id: true },
-    });
-    if (existing) return existing.id;
+    })
+    if (existing) return existing.id
     const created = await tx.artifact.create({
       data: {
         projectId: this.projectId,
@@ -211,14 +224,14 @@ export class IngestRepository {
         originalName: d.original_name ?? null,
       },
       select: { id: true },
-    });
-    return created.id;
+    })
+    return created.id
   }
 }
 
 /** 便捷：取单例 PrismaClient（service 用于开启 $transaction）。 */
 export function usePrisma(): PrismaClient {
-  return getPrisma();
+  return getPrisma()
 }
 
-export { PlatformError };
+export { PlatformError }

@@ -9,39 +9,39 @@
  * - 组件探测各自捕获异常，互不短路（便于定位）。
  */
 
-import { Router, type RequestHandler } from "express";
-import { ping as dbPing } from "../infra/prisma";
-import { getObjectStorage } from "../infra/objectStorage";
-import { getConfig } from "../config";
+import { Router, type RequestHandler } from "express"
+import { ping as dbPing } from "../infra/prisma"
+import { getObjectStorage } from "../infra/objectStorage"
+import { getConfig } from "../config"
 
-const router = Router();
+const router = Router()
 
 const healthHandler: RequestHandler = async (_req, res) => {
-  const cfg = getConfig();
-  const [db, objectStorage] = await Promise.all([dbPing(), safeStoragePing()]);
+  const cfg = getConfig()
+  const [db, objectStorage] = await Promise.all([dbPing(), safeStoragePing()])
 
-  const components = { db, object_storage: objectStorage };
-  const allOk = components.db.ok && components.object_storage.ok;
-  const status = allOk ? "ok" : components.db.ok ? "degraded" : "down";
+  const components = { db, object_storage: objectStorage }
+  const allOk = components.db.ok && components.object_storage.ok
+  const status = allOk ? "ok" : components.db.ok ? "degraded" : "down"
 
   res.status(allOk ? 200 : 503).json({
     status,
     schema_version: cfg.schemaVersion,
     components,
     timestamp: new Date().toISOString(),
-  });
-};
+  })
+}
 
 async function safeStoragePing(): Promise<{ ok: boolean; bucket?: string; error?: string }> {
   try {
-    const storage = getObjectStorage();
-    return await storage.ping();
+    const storage = getObjectStorage()
+    return await storage.ping()
   } catch (err) {
-    return { ok: false, error: (err as Error).message };
+    return { ok: false, error: (err as Error).message }
   }
 }
 
-router.get("/health", healthHandler);
-router.get("/api/health", healthHandler);
+router.get("/health", healthHandler)
+router.get("/api/health", healthHandler)
 
-export default router;
+export default router

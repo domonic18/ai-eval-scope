@@ -6,25 +6,25 @@
  *  - listByProject/create/revoke：管理用，**项目级租户过滤**（强制 projectId 属于当前 org）。
  */
 
-import { ApiKey } from "@prisma/client";
-import { BaseRepository, type Tenant } from "./base.repository";
+import { ApiKey } from "@prisma/client"
+import { BaseRepository, type Tenant } from "./base.repository"
 
 export type ApiKeyWithProject = ApiKey & {
-  project: { id: string; orgId: string };
-};
+  project: { id: string; orgId: string }
+}
 
 export interface ApiKeyCreateInput {
-  projectId: string;
-  publicKey: string;
-  secretHash: string;
-  secretEncrypted: string;
-  name: string;
-  expiresAt?: Date | null;
+  projectId: string
+  publicKey: string
+  secretHash: string
+  secretEncrypted: string
+  name: string
+  expiresAt?: Date | null
 }
 
 class ApiKeyRepository extends BaseRepository {
   constructor(tenant?: Tenant) {
-    super(tenant);
+    super(tenant)
   }
 
   /** 全局按 publicKey 查（鉴权解析）。含 project 用于回填 tenant。 */
@@ -32,20 +32,20 @@ class ApiKeyRepository extends BaseRepository {
     return this.prisma.apiKey.findUnique({
       where: { publicKey },
       include: { project: { select: { id: true, orgId: true } } },
-    });
+    })
   }
 
   findById(id: string): Promise<ApiKey | null> {
-    return this.prisma.apiKey.findUnique({ where: { id } });
+    return this.prisma.apiKey.findUnique({ where: { id } })
   }
 
   /** 列出项目下 Key（强制 projectId 归属校验）。 */
   listByProject(projectId: string): Promise<ApiKey[]> {
-    const orgId = this.requireOrg();
+    const orgId = this.requireOrg()
     return this.prisma.apiKey.findMany({
       where: { projectId, project: { orgId } },
       orderBy: { createdAt: "desc" },
-    });
+    })
   }
 
   create(data: ApiKeyCreateInput): Promise<ApiKey> {
@@ -60,14 +60,14 @@ class ApiKeyRepository extends BaseRepository {
         expiresAt: data.expiresAt ?? null,
         createdBy: this.tenant.userId!,
       },
-    });
+    })
   }
 
   revoke(id: string): Promise<ApiKey> {
     return this.prisma.apiKey.update({
       where: { id },
       data: { revokedAt: new Date() },
-    });
+    })
   }
 
   /** 异步更新使用统计（鉴权通过后，非阻塞语义）。 */
@@ -79,8 +79,8 @@ class ApiKeyRepository extends BaseRepository {
         lastIp: opts.ip || null,
         callCount: { increment: 1 },
       },
-    });
+    })
   }
 }
 
-export { ApiKeyRepository };
+export { ApiKeyRepository }

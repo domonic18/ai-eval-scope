@@ -1,13 +1,13 @@
-import { useEffect } from "react";
-import { useCrumbs, Empty } from "../components/ui";
-import { IconBook } from "../components/icons";
+import { useEffect } from "react"
+import { useCrumbs, Empty } from "../components/ui"
+import { IconBook } from "../components/icons"
 
 /** 占位页：原型中尚未落地的页面（全部运行 / 成员 / 组织设置）。 */
 export default function ComingSoon({ title }: { title: string }) {
-  const { setCrumbs } = useCrumbs();
+  const { setCrumbs } = useCrumbs()
   useEffect(() => {
-    setCrumbs([{ label: title }]);
-  }, [title, setCrumbs]);
+    setCrumbs([{ label: title }])
+  }, [title, setCrumbs])
 
   return (
     <div className="page reveal">
@@ -27,5 +27,5 @@ export default function ComingSoon({ title }: { title: string }) {
         </div>
       </div>
     </div>
-  );
+  )
 }

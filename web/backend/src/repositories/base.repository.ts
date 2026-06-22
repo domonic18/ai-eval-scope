@@ -7,43 +7,43 @@
  * 业务层（services）不直接访问 PrismaClient，只能经由 repository。
  */
 
-import { PrismaClient } from "@prisma/client";
-import { getPrisma } from "../infra/prisma";
-import { PlatformError } from "../middleware/errorHandler";
+import { PrismaClient } from "@prisma/client"
+import { getPrisma } from "../infra/prisma"
+import { PlatformError } from "../middleware/errorHandler"
 
 /** 租户上下文（由 auth/apiKeyAuth/tenantGuard 注入到 req.tenant，再传给 repository）。 */
 export interface Tenant {
-  kind?: "user" | "apikey";
-  userId?: string;
-  orgId?: string;
-  projectId?: string;
-  role?: string;
-  apiKeyId?: string;
-  scopes?: string[];
+  kind?: "user" | "apikey"
+  userId?: string
+  orgId?: string
+  projectId?: string
+  role?: string
+  apiKeyId?: string
+  scopes?: string[]
 }
 
 export abstract class BaseRepository {
-  protected readonly prisma: PrismaClient;
-  protected readonly tenant: Tenant;
+  protected readonly prisma: PrismaClient
+  protected readonly tenant: Tenant
 
   constructor(tenant?: Tenant) {
-    this.prisma = getPrisma();
-    this.tenant = tenant || {};
+    this.prisma = getPrisma()
+    this.tenant = tenant || {}
   }
 
   /** 断言租户含 orgId（组织/项目级操作前置）。 */
   protected requireOrg(): string {
     if (!this.tenant.orgId) {
-      throw new PlatformError("missing org context", { status: 403, code: "FORBIDDEN" });
+      throw new PlatformError("missing org context", { status: 403, code: "FORBIDDEN" })
     }
-    return this.tenant.orgId;
+    return this.tenant.orgId
   }
 
   /** 断言租户含 projectId（项目级操作前置）。 */
   protected requireProject(): string {
     if (!this.tenant.projectId) {
-      throw new PlatformError("missing project context", { status: 403, code: "FORBIDDEN" });
+      throw new PlatformError("missing project context", { status: 403, code: "FORBIDDEN" })
     }
-    return this.tenant.projectId;
+    return this.tenant.projectId
   }
 }

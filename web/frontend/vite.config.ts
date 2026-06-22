@@ -1,5 +1,5 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite"
+import react from "@vitejs/plugin-react"
 
 // 后端在 :3000；开发期 /api 与 /health 经代理转发
 export default defineConfig({
@@ -11,4 +11,4 @@ export default defineConfig({
       "/health": { target: "http://localhost:3000", changeOrigin: true },
     },
   },
-});
+})

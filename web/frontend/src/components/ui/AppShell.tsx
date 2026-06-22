@@ -1,10 +1,10 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import type { ReactNode } from "react";
-import { api } from "../../api/client";
-import { clearSession, getActiveOrg, loadSession, setActiveOrg } from "../../store/auth";
-import type { Membership } from "../../types";
-import { initialOf } from "../../lib/format";
+import { createContext, useContext, useEffect, useState } from "react"
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom"
+import type { ReactNode } from "react"
+import { api } from "../../api/client"
+import { clearSession, getActiveOrg, loadSession, setActiveOrg } from "../../store/auth"
+import type { Membership } from "../../types"
+import { initialOf } from "../../lib/format"
 import {
   IconBell,
   IconBook,
@@ -14,71 +14,91 @@ import {
   IconRuns,
   IconSearch,
   IconSettings,
-} from "../icons";
-import { Logo } from "./Logo";
-import { OrgSwitcher } from "./OrgSwitcher";
+} from "../icons"
+import { Logo } from "./Logo"
+import { OrgSwitcher } from "./OrgSwitcher"
 
 /** 面包屑：label + 可选回跳 to。 */
 export interface Crumb {
-  label: ReactNode;
-  to?: string;
+  label: ReactNode
+  to?: string
 }
 interface CrumbsApi {
-  crumbs: Crumb[];
-  setCrumbs: (c: Crumb[]) => void;
+  crumbs: Crumb[]
+  setCrumbs: (c: Crumb[]) => void
 }
 interface OrgApi {
-  activeOrg: string | null;
-  memberships: Membership[];
-  setActive: (orgId: string) => void;
+  activeOrg: string | null
+  memberships: Membership[]
+  setActive: (orgId: string) => void
 }
 
-const CrumbsContext = createContext<CrumbsApi>({ crumbs: [], setCrumbs: () => {} });
-const OrgContext = createContext<OrgApi>({ activeOrg: null, memberships: [], setActive: () => {} });
+const CrumbsContext = createContext<CrumbsApi>({ crumbs: [], setCrumbs: () => {} })
+const OrgContext = createContext<OrgApi>({ activeOrg: null, memberships: [], setActive: () => {} })
 
-export const useCrumbs = () => useContext(CrumbsContext);
-export const useOrg = () => useContext(OrgContext);
+export const useCrumbs = () => useContext(CrumbsContext)
+export const useOrg = () => useContext(OrgContext)
 
 interface NavItem {
-  to: string;
-  icon: ReactNode;
-  label: string;
-  match: (path: string) => boolean;
+  to: string
+  icon: ReactNode
+  label: string
+  match: (path: string) => boolean
 }
 
 const NAV_MAIN: NavItem[] = [
-  { to: "/dashboard", icon: <IconDashboard size={16} />, label: "项目看板", match: (p) => p === "/dashboard" || p.startsWith("/project") },
-  { to: "/runs", icon: <IconRuns size={16} />, label: "全部运行", match: (p) => p.startsWith("/run") },
-];
+  {
+    to: "/dashboard",
+    icon: <IconDashboard size={16} />,
+    label: "项目看板",
+    match: (p) => p === "/dashboard" || p.startsWith("/project"),
+  },
+  {
+    to: "/runs",
+    icon: <IconRuns size={16} />,
+    label: "全部运行",
+    match: (p) => p.startsWith("/run"),
+  },
+]
 const NAV_ORG: NavItem[] = [
-  { to: "/members", icon: <IconMembers size={16} />, label: "成员", match: (p) => p.startsWith("/members") },
-  { to: "/settings", icon: <IconSettings size={16} />, label: "组织设置", match: (p) => p.startsWith("/settings") },
-];
+  {
+    to: "/members",
+    icon: <IconMembers size={16} />,
+    label: "成员",
+    match: (p) => p.startsWith("/members"),
+  },
+  {
+    to: "/settings",
+    icon: <IconSettings size={16} />,
+    label: "组织设置",
+    match: (p) => p.startsWith("/settings"),
+  },
+]
 
 export function AppShell() {
-  const [memberships, setMemberships] = useState<Membership[]>([]);
-  const [activeOrg, setActive] = useState<string | null>(null);
-  const [crumbs, setCrumbs] = useState<Crumb[]>([]);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const nav = useNavigate();
-  const loc = useLocation();
-  const session = loadSession();
+  const [memberships, setMemberships] = useState<Membership[]>([])
+  const [activeOrg, setActive] = useState<string | null>(null)
+  const [crumbs, setCrumbs] = useState<Crumb[]>([])
+  const [menuOpen, setMenuOpen] = useState(false)
+  const nav = useNavigate()
+  const loc = useLocation()
+  const session = loadSession()
 
   useEffect(() => {
     api
       .me()
       .then((d) => {
-        setMemberships(d.memberships);
-        setActive(getActiveOrg(d.memberships));
+        setMemberships(d.memberships)
+        setActive(getActiveOrg(d.memberships))
       })
-      .catch(() => {});
-  }, []);
+      .catch(() => {})
+  }, [])
 
   const setActiveOrgId = (orgId: string) => {
-    setActive(orgId);
-    setActiveOrg(orgId);
-    nav("/dashboard");
-  };
+    setActive(orgId)
+    setActiveOrg(orgId)
+    nav("/dashboard")
+  }
 
   return (
     <OrgContext.Provider value={{ activeOrg, memberships, setActive: setActiveOrgId }}>
@@ -93,18 +113,30 @@ export function AppShell() {
               <div style={{ marginBottom: 14 }}>
                 <Logo />
               </div>
-              <OrgSwitcher memberships={memberships} activeOrg={activeOrg} onChange={setActiveOrgId} />
+              <OrgSwitcher
+                memberships={memberships}
+                activeOrg={activeOrg}
+                onChange={setActiveOrgId}
+              />
             </div>
             <nav className="nav-section">
               {NAV_MAIN.map((it) => (
-                <Link key={it.to} to={it.to} className={`nav-item ${it.match(loc.pathname) ? "active" : ""}`}>
+                <Link
+                  key={it.to}
+                  to={it.to}
+                  className={`nav-item ${it.match(loc.pathname) ? "active" : ""}`}
+                >
                   {it.icon}
                   {it.label}
                 </Link>
               ))}
               <div className="nav-label">组织</div>
               {NAV_ORG.map((it) => (
-                <Link key={it.to} to={it.to} className={`nav-item ${it.match(loc.pathname) ? "active" : ""}`}>
+                <Link
+                  key={it.to}
+                  to={it.to}
+                  className={`nav-item ${it.match(loc.pathname) ? "active" : ""}`}
+                >
                   {it.icon}
                   {it.label}
                 </Link>
@@ -150,7 +182,10 @@ export function AppShell() {
                   </div>
                   {menuOpen && (
                     <>
-                      <div style={{ position: "fixed", inset: 0, zIndex: 60 }} onClick={() => setMenuOpen(false)} />
+                      <div
+                        style={{ position: "fixed", inset: 0, zIndex: 60 }}
+                        onClick={() => setMenuOpen(false)}
+                      />
                       <div
                         style={{
                           position: "absolute",
@@ -165,15 +200,21 @@ export function AppShell() {
                           zIndex: 61,
                         }}
                       >
-                        <div style={{ padding: "6px 10px", fontSize: 12, color: "var(--text-tertiary)" }}>
+                        <div
+                          style={{
+                            padding: "6px 10px",
+                            fontSize: 12,
+                            color: "var(--text-tertiary)",
+                          }}
+                        >
                           {session?.user.email}
                         </div>
                         <button
                           className="nav-item"
                           style={{ width: "100%", margin: 0 }}
                           onClick={() => {
-                            clearSession();
-                            nav("/login");
+                            clearSession()
+                            nav("/login")
                           }}
                         >
                           <IconLogout size={16} />
@@ -191,5 +232,5 @@ export function AppShell() {
         </div>
       </CrumbsContext.Provider>
     </OrgContext.Provider>
-  );
+  )
 }

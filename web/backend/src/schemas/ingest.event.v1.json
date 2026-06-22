@@ -68,7 +68,10 @@
       "properties": {
         "external_run_id": { "type": "string", "minLength": 1 },
         "mode": { "type": "string", "enum": ["eval_only", "run", "pipeline"] },
-        "status": { "type": ["string", "null"], "enum": ["running", "completed", "failed", "partial", null] },
+        "status": {
+          "type": ["string", "null"],
+          "enum": ["running", "completed", "failed", "partial", null]
+        },
         "created_at": { "type": ["string", "null"], "format": "date-time" },
         "finished_at": { "type": ["string", "null"], "format": "date-time" },
         "metrics": {
@@ -93,7 +96,15 @@
     },
     "sampleData": {
       "type": "object",
-      "required": ["external_run_id", "external_sample_id", "s_format", "s_common", "s_soft", "s_pref", "reward"],
+      "required": [
+        "external_run_id",
+        "external_sample_id",
+        "s_format",
+        "s_common",
+        "s_soft",
+        "s_pref",
+        "reward"
+      ],
       "properties": {
         "external_run_id": { "type": "string", "minLength": 1 },
         "external_sample_id": { "type": "string", "minLength": 1 },
@@ -124,7 +135,18 @@
     },
     "constraintData": {
       "type": "object",
-      "required": ["external_run_id", "external_sample_id", "constraint_id", "name", "tier", "status", "passed", "score", "reason", "duration_ms"],
+      "required": [
+        "external_run_id",
+        "external_sample_id",
+        "constraint_id",
+        "name",
+        "tier",
+        "status",
+        "passed",
+        "score",
+        "reason",
+        "duration_ms"
+      ],
       "properties": {
         "external_run_id": { "type": "string", "minLength": 1 },
         "external_sample_id": { "type": "string", "minLength": 1 },
@@ -151,7 +173,10 @@
       "properties": {
         "external_run_id": { "type": "string", "minLength": 1 },
         "external_sample_id": { "type": ["string", "null"] },
-        "kind": { "type": "string", "enum": ["screenshot", "judge_record", "output", "trace", "manifest"] },
+        "kind": {
+          "type": "string",
+          "enum": ["screenshot", "judge_record", "output", "trace", "manifest"]
+        },
         "object_key": { "type": "string", "minLength": 1 },
         "content_type": { "type": "string" },
         "size_bytes": { "type": "integer", "minimum": 0 },

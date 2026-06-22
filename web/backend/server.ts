@@ -8,10 +8,10 @@
  * 仅 re-export createApp / main。
  */
 
-import { createApp, main } from "./src/server";
+import { createApp, main } from "./src/server"
 
-export { createApp, main };
+export { createApp, main }
 
 if (require.main === module) {
-  main();
+  main()
 }

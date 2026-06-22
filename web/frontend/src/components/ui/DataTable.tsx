@@ -1,12 +1,12 @@
-import { useState } from "react";
-import type { CSSProperties, ReactNode } from "react";
+import { useState } from "react"
+import type { CSSProperties, ReactNode } from "react"
 
 export interface Column<T> {
-  key: string;
-  title: ReactNode;
-  num?: boolean;
-  render?: (row: T, index: number) => ReactNode;
-  style?: CSSProperties;
+  key: string
+  title: ReactNode
+  num?: boolean
+  render?: (row: T, index: number) => ReactNode
+  style?: CSSProperties
 }
 
 /** 数据表 table.data：等宽数字列右对齐、行 hover 可点、客户端分页。 */
@@ -19,20 +19,20 @@ export function DataTable<T>({
   empty,
   footer,
 }: {
-  columns: Column<T>[];
-  rows: T[];
-  rowKey?: (row: T, index: number) => string | number;
-  onRowClick?: (row: T) => void;
-  pageSize?: number;
-  empty?: ReactNode;
-  footer?: ReactNode;
+  columns: Column<T>[]
+  rows: T[]
+  rowKey?: (row: T, index: number) => string | number
+  onRowClick?: (row: T) => void
+  pageSize?: number
+  empty?: ReactNode
+  footer?: ReactNode
 }) {
-  const [page, setPage] = useState(1);
-  const total = rows.length;
-  const pages = pageSize ? Math.max(1, Math.ceil(total / pageSize)) : 1;
-  const safePage = Math.min(page, pages);
-  const start = pageSize ? (safePage - 1) * pageSize : 0;
-  const visible = pageSize ? rows.slice(start, start + pageSize) : rows;
+  const [page, setPage] = useState(1)
+  const total = rows.length
+  const pages = pageSize ? Math.max(1, Math.ceil(total / pageSize)) : 1
+  const safePage = Math.min(page, pages)
+  const start = pageSize ? (safePage - 1) * pageSize : 0
+  const visible = pageSize ? rows.slice(start, start + pageSize) : rows
 
   return (
     <>
@@ -63,7 +63,9 @@ export function DataTable<T>({
                 >
                   {columns.map((c) => (
                     <td key={c.key} className={c.num ? "num" : ""} style={c.style}>
-                      {c.render ? c.render(row, start + i) : ((row as Record<string, ReactNode>)[c.key] ?? null)}
+                      {c.render
+                        ? c.render(row, start + i)
+                        : ((row as Record<string, ReactNode>)[c.key] ?? null)}
                     </td>
                   ))}
                 </tr>
@@ -73,7 +75,10 @@ export function DataTable<T>({
         </table>
       </div>
       {(footer || (pageSize && pages > 1)) && (
-        <div className="spread" style={{ padding: "12px 16px", fontSize: 12, color: "var(--text-tertiary)" }}>
+        <div
+          className="spread"
+          style={{ padding: "12px 16px", fontSize: 12, color: "var(--text-tertiary)" }}
+        >
           <span>
             共 <span className="mono">{total}</span> 条
             {pageSize && pages > 1 && (
@@ -87,10 +92,18 @@ export function DataTable<T>({
           </span>
           {pageSize && pages > 1 && (
             <span className="row" style={{ gap: 6 }}>
-              <button className="btn btn-sm" disabled={safePage <= 1} onClick={() => setPage(safePage - 1)}>
+              <button
+                className="btn btn-sm"
+                disabled={safePage <= 1}
+                onClick={() => setPage(safePage - 1)}
+              >
                 上一页
               </button>
-              <button className="btn btn-sm" disabled={safePage >= pages} onClick={() => setPage(safePage + 1)}>
+              <button
+                className="btn btn-sm"
+                disabled={safePage >= pages}
+                onClick={() => setPage(safePage + 1)}
+              >
                 下一页
               </button>
             </span>
@@ -99,5 +112,5 @@ export function DataTable<T>({
         </div>
       )}
     </>
-  );
+  )
 }

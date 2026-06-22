@@ -7,71 +7,71 @@
  * 越权一律 404（不泄露存在性）。
  */
 
-import type { RequestHandler } from "express";
-import { OrgRepository } from "../repositories/user.repository";
-import { ProjectRepository } from "../repositories/project.repository";
-import { getPrisma } from "../infra/prisma";
-import { PlatformError } from "./errorHandler";
+import type { RequestHandler } from "express"
+import { OrgRepository } from "../repositories/user.repository"
+import { ProjectRepository } from "../repositories/project.repository"
+import { getPrisma } from "../infra/prisma"
+import { PlatformError } from "./errorHandler"
 
-const orgRepo = new OrgRepository();
-const projectRepoBootstrap = new ProjectRepository({});
-const prisma = getPrisma();
+const orgRepo = new OrgRepository()
+const projectRepoBootstrap = new ProjectRepository({})
+const prisma = getPrisma()
 
 export interface GuardOpts {
-  param?: string;
-  role?: "owner" | "member";
+  param?: string
+  role?: "owner" | "member"
 }
 
 /** 组织级守卫。 */
 export function orgGuard(opts: GuardOpts = {}): RequestHandler {
-  const param = opts.param || "org";
-  const requiredRole = opts.role || "member";
+  const param = opts.param || "org"
+  const requiredRole = opts.role || "member"
   return async (req, _res, next) => {
     try {
-      const orgId: string | undefined = req.params[param];
+      const orgId: string | undefined = req.params[param]
       if (!req.user) {
-        return next(new PlatformError("auth required", { status: 401, code: "AUTH_INVALID" }));
+        return next(new PlatformError("auth required", { status: 401, code: "AUTH_INVALID" }))
       }
-      const membership = await orgRepo.findMembership(orgId!, req.user.userId);
+      const membership = await orgRepo.findMembership(orgId!, req.user.userId)
       if (!membership) {
-        return next(new PlatformError("not found", { status: 404, code: "NOT_FOUND" }));
+        return next(new PlatformError("not found", { status: 404, code: "NOT_FOUND" }))
       }
       if (requiredRole === "owner" && membership.role !== "owner") {
-        return next(new PlatformError("owner role required", { status: 403, code: "FORBIDDEN" }));
+        return next(new PlatformError("owner role required", { status: 403, code: "FORBIDDEN" }))
       }
       req.tenant = {
         kind: "user",
         userId: req.user.userId,
         orgId,
         role: membership.role,
-      };
-      next();
+      }
+      next()
     } catch (err) {
-      next(err);
+      next(err)
     }
-  };
+  }
 }
 
 /** 项目级守卫（路由参数为 :id）。 */
 export function projectGuard(opts: GuardOpts = {}): RequestHandler {
-  const param = opts.param || "id";
-  const requiredRole = opts.role || "member";
+  const param = opts.param || "id"
+  const requiredRole = opts.role || "member"
   return async (req, _res, next) => {
     try {
-      const projectId: string | undefined = req.params[param];
+      const projectId: string | undefined = req.params[param]
       if (!req.user) {
-        return next(new PlatformError("auth required", { status: 401, code: "AUTH_INVALID" }));
+        return next(new PlatformError("auth required", { status: 401, code: "AUTH_INVALID" }))
       }
-      const project = await projectRepoBootstrap.findByIdAny(projectId!);
+      const project = await projectRepoBootstrap.findByIdAny(projectId!)
       if (!project || project.archivedAt) {
-        return next(new PlatformError("not found", { status: 404, code: "NOT_FOUND" }));
+        return next(new PlatformError("not found", { status: 404, code: "NOT_FOUND" }))
       }
-      const membership = await orgRepo.findMembership(project.orgId, req.user.userId);
+      const membership = await orgRepo.findMembership(project.orgId, req.user.userId)
       if (!membership) {
-        return next(new PlatformError("not found", { status: 404, code: "NOT_FOUND" }));
+        return next(new PlatformError("not found", { status: 404, code: "NOT_FOUND" }))
       }
       if (requiredRole === "owner" && membership.role !== "owner") {
-        return next(new PlatformError("owner role required", { status: 403, code: "FORBIDDEN" }));
+        return next(new PlatformError("owner role required", { status: 403, code: "FORBIDDEN" }))
       }
       req.tenant = {
         kind: "user",
@@ -79,12 +79,12 @@ export function projectGuard(opts: GuardOpts = {}): RequestHandler {
         orgId: project.orgId,
         projectId,
         role: membership.role,
-      };
-      next();
+      }
+      next()
     } catch (err) {
-      next(err);
+      next(err)
     }
-  };
+  }
 }
 
 /**
@@ -92,28 +92,31 @@ export function projectGuard(opts: GuardOpts = {}): RequestHandler {
  * 注入 req.tenant（含 projectId = run 所属项目）。
  */
 export function runGuard(opts: GuardOpts = {}): RequestHandler {
-  const param = opts.param || "id";
-  const requiredRole = opts.role || "member";
+  const param = opts.param || "id"
+  const requiredRole = opts.role || "member"
   return async (req, _res, next) => {
     try {
-      const runId: string | undefined = req.params[param];
+      const runId: string | undefined = req.params[param]
       if (!req.user) {
-        return next(new PlatformError("auth required", { status: 401, code: "AUTH_INVALID" }));
+        return next(new PlatformError("auth required", { status: 401, code: "AUTH_INVALID" }))
       }
-      const run = await prisma.run.findUnique({ where: { id: runId! }, select: { id: true, projectId: true } });
+      const run = await prisma.run.findUnique({
+        where: { id: runId! },
+        select: { id: true, projectId: true },
+      })
       if (!run) {
-        return next(new PlatformError("not found", { status: 404, code: "NOT_FOUND" }));
+        return next(new PlatformError("not found", { status: 404, code: "NOT_FOUND" }))
       }
-      const project = await projectRepoBootstrap.findByIdAny(run.projectId);
+      const project = await projectRepoBootstrap.findByIdAny(run.projectId)
       if (!project) {
-        return next(new PlatformError("not found", { status: 404, code: "NOT_FOUND" }));
+        return next(new PlatformError("not found", { status: 404, code: "NOT_FOUND" }))
       }
-      const membership = await orgRepo.findMembership(project.orgId, req.user.userId);
+      const membership = await orgRepo.findMembership(project.orgId, req.user.userId)
       if (!membership) {
-        return next(new PlatformError("not found", { status: 404, code: "NOT_FOUND" }));
+        return next(new PlatformError("not found", { status: 404, code: "NOT_FOUND" }))
       }
       if (requiredRole === "owner" && membership.role !== "owner") {
-        return next(new PlatformError("owner role required", { status: 403, code: "FORBIDDEN" }));
+        return next(new PlatformError("owner role required", { status: 403, code: "FORBIDDEN" }))
       }
       req.tenant = {
         kind: "user",
@@ -121,12 +124,12 @@ export function runGuard(opts: GuardOpts = {}): RequestHandler {
         orgId: project.orgId,
         projectId: run.projectId,
         role: membership.role,
-      };
-      next();
+      }
+      next()
     } catch (err) {
-      next(err);
+      next(err)
     }
-  };
+  }
 }
 
 /**
@@ -136,20 +139,20 @@ export function runGuard(opts: GuardOpts = {}): RequestHandler {
 export function artifactGuard(): RequestHandler {
   return async (req, _res, next) => {
     try {
-      const artifactId: string | undefined = req.params.id;
+      const artifactId: string | undefined = req.params.id
       if (!req.user) {
-        return next(new PlatformError("auth required", { status: 401, code: "AUTH_INVALID" }));
+        return next(new PlatformError("auth required", { status: 401, code: "AUTH_INVALID" }))
       }
       const art = await prisma.artifact.findUnique({
         where: { id: artifactId! },
         select: { id: true, project: { select: { id: true, orgId: true } } },
-      });
+      })
       if (!art) {
-        return next(new PlatformError("not found", { status: 404, code: "NOT_FOUND" }));
+        return next(new PlatformError("not found", { status: 404, code: "NOT_FOUND" }))
       }
-      const membership = await orgRepo.findMembership(art.project.orgId, req.user.userId);
+      const membership = await orgRepo.findMembership(art.project.orgId, req.user.userId)
       if (!membership) {
-        return next(new PlatformError("not found", { status: 404, code: "NOT_FOUND" }));
+        return next(new PlatformError("not found", { status: 404, code: "NOT_FOUND" }))
       }
       req.tenant = {
         kind: "user",
@@ -157,10 +160,10 @@ export function artifactGuard(): RequestHandler {
         orgId: art.project.orgId,
         projectId: art.project.id,
         role: membership.role,
-      };
-      next();
+      }
+      next()
     } catch (err) {
-      next(err);
+      next(err)
     }
-  };
+  }
 }

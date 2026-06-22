@@ -1,52 +1,46 @@
-import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { api, saveSession } from "../api/client";
-import { loadSession } from "../store/auth";
-import {
-  Button,
-  Field,
-  Input,
-  InputIconWrap,
-  Logo,
-  Segment,
-  useToast,
-} from "../components/ui";
-import { IconLock, IconMail } from "../components/icons";
+import { useEffect, useState } from "react"
+import { useLocation, useNavigate } from "react-router-dom"
+import { api, saveSession } from "../api/client"
+import { loadSession } from "../store/auth"
+import { Button, Field, Input, InputIconWrap, Logo, Segment, useToast } from "../components/ui"
+import { IconLock, IconMail } from "../components/icons"
 
-type Mode = "login" | "register";
+type Mode = "login" | "register"
 
 export default function Login() {
-  const nav = useNavigate();
-  const loc = useLocation();
-  const toast = useToast();
-  const [mode, setMode] = useState<Mode>("login");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [loading, setLoading] = useState(false);
+  const nav = useNavigate()
+  const loc = useLocation()
+  const toast = useToast()
+  const [mode, setMode] = useState<Mode>("login")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [name, setName] = useState("")
+  const [loading, setLoading] = useState(false)
 
-  const redirect = (loc.state as { from?: string } | null)?.from || "/dashboard";
+  const redirect = (loc.state as { from?: string } | null)?.from || "/dashboard"
 
   useEffect(() => {
-    if (loadSession()) nav("/dashboard", { replace: true });
-  }, [nav]);
+    if (loadSession()) nav("/dashboard", { replace: true })
+  }, [nav])
 
   async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
+    e.preventDefault()
+    setLoading(true)
     try {
       const data =
         mode === "login"
           ? await api.login(email, password)
-          : await api.register(email, password, name || email.split("@")[0]);
-      saveSession(data);
-      toast.success(mode === "login" ? "登录成功" : "注册成功，已创建默认组织");
-      nav(redirect);
+          : await api.register(email, password, name || email.split("@")[0])
+      saveSession(data)
+      toast.success(mode === "login" ? "登录成功" : "注册成功，已创建默认组织")
+      nav(redirect)
     } catch (err) {
-      const e = err as { response?: { data?: { error?: string } }; message?: string };
-      toast.error(e.response?.data?.error || e.message || (mode === "login" ? "邮箱或密码错误" : "注册失败"));
+      const e = err as { response?: { data?: { error?: string } }; message?: string }
+      toast.error(
+        e.response?.data?.error || e.message || (mode === "login" ? "邮箱或密码错误" : "注册失败"),
+      )
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   }
 
@@ -57,7 +51,11 @@ export default function Login() {
         <div className="auth-head">
           <Logo to="/" fontSize={17} />
           <h1>{mode === "login" ? "欢迎回来" : "创建你的组织"}</h1>
-          <p>{mode === "login" ? "登录以访问你的评估控制台" : "注册即创建一个组织作为评估数据的租户空间"}</p>
+          <p>
+            {mode === "login"
+              ? "登录以访问你的评估控制台"
+              : "注册即创建一个组织作为评估数据的租户空间"}
+          </p>
         </div>
 
         <div className="auth-card">
@@ -75,15 +73,28 @@ export default function Login() {
           <form onSubmit={submit}>
             {mode === "register" && (
               <Field label="姓名">
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="如：张工" />
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="如：张工"
+                />
               </Field>
             )}
             <Field label="邮箱">
               <InputIconWrap icon={<IconMail size={16} />}>
-                <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" />
+                <Input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@company.com"
+                />
               </InputIconWrap>
             </Field>
-            <Field label="密码" help={mode === "register" ? "至少 8 位，包含字母与数字" : undefined}>
+            <Field
+              label="密码"
+              help={mode === "register" ? "至少 8 位，包含字母与数字" : undefined}
+            >
               <InputIconWrap icon={<IconLock size={16} />}>
                 <Input
                   type="password"
@@ -95,7 +106,13 @@ export default function Login() {
                 />
               </InputIconWrap>
             </Field>
-            <Button type="submit" variant="primary" size="lg" disabled={loading} style={{ width: "100%", justifyContent: "center", marginTop: 4 }}>
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              disabled={loading}
+              style={{ width: "100%", justifyContent: "center", marginTop: 4 }}
+            >
               {loading ? "处理中…" : mode === "login" ? "登录" : "创建组织并进入"}
             </Button>
           </form>
@@ -114,5 +131,5 @@ export default function Login() {
         </div>
       </div>
     </div>
-  );
+  )
 }

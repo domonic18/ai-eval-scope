@@ -10,15 +10,15 @@
  * 评估器发送前用全量 schema 自校验；平台做浅层 + 逐事件，两层防御（NF-O-13 防漂移）。
  */
 
-import Ajv from "ajv";
-import addFormats from "ajv-formats";
-import batchSchema from "./ingest.event.v1.json";
+import Ajv from "ajv"
+import addFormats from "ajv-formats"
+import batchSchema from "./ingest.event.v1.json"
 
-const SCHEMA_ID = "https://agent-eval/schemas/ingest.event.v1.json";
+const SCHEMA_ID = "https://agent-eval/schemas/ingest.event.v1.json"
 
-const ajv = new Ajv({ allErrors: true, strict: false });
-addFormats(ajv);
-ajv.addSchema(batchSchema as unknown as Record<string, unknown>);
+const ajv = new Ajv({ allErrors: true, strict: false })
+addFormats(ajv)
+ajv.addSchema(batchSchema as unknown as Record<string, unknown>)
 
 // 浅层信封 schema（自包含，不引用事件的深度 $defs）
 const envelopeShallow = {
@@ -43,38 +43,38 @@ const envelopeShallow = {
       },
     },
   },
-};
+}
 
-const envelopeValidator = ajv.compile(envelopeShallow);
-const eventValidator = ajv.getSchema(`${SCHEMA_ID}#/$defs/event`)!;
+const envelopeValidator = ajv.compile(envelopeShallow)
+const eventValidator = ajv.getSchema(`${SCHEMA_ID}#/$defs/event`)!
 
-export const SUPPORTED_SCHEMA_VERSION = "1.0";
+export const SUPPORTED_SCHEMA_VERSION = "1.0"
 
 export interface SchemaProblem {
-  path: string;
-  message: string;
+  path: string
+  message: string
 }
 
 /** 信封浅层校验（结构/schema_version 存在/events 形态）。 */
 export function validateEnvelope(body: unknown): { ok: boolean; problems: SchemaProblem[] } {
-  const ok = envelopeValidator(body);
-  if (ok) return { ok: true, problems: [] };
-  return { ok: false, problems: formatErrors(envelopeValidator.errors) };
+  const ok = envelopeValidator(body)
+  if (ok) return { ok: true, problems: [] }
+  return { ok: false, problems: formatErrors(envelopeValidator.errors) }
 }
 
 /** 单事件深度校验（按 type 走对应分支）。 */
 export function validateEvent(ev: unknown): { ok: boolean; problems: SchemaProblem[] } {
-  const ok = eventValidator(ev);
-  if (ok) return { ok: true, problems: [] };
-  return { ok: false, problems: formatErrors(eventValidator.errors) };
+  const ok = eventValidator(ev)
+  if (ok) return { ok: true, problems: [] }
+  return { ok: false, problems: formatErrors(eventValidator.errors) }
 }
 
 function formatErrors(
-  errs: { instancePath?: string; schemaPath?: string; message?: string }[] | null | undefined
+  errs: { instancePath?: string; schemaPath?: string; message?: string }[] | null | undefined,
 ): SchemaProblem[] {
-  if (!errs) return [];
+  if (!errs) return []
   return errs.map((e) => ({
     path: e.instancePath || e.schemaPath || "/",
     message: e.message || "invalid",
-  }));
+  }))
 }

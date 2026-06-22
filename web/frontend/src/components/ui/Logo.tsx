@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router-dom"
 
 /** EvalScope reticle logo（.logo）。应用内点击回到看板。 */
 export function Logo({ to = "/dashboard", fontSize = 15 }: { to?: string; fontSize?: number }) {
@@ -11,5 +11,5 @@ export function Logo({ to = "/dashboard", fontSize = 15 }: { to?: string; fontSi
         Eval<b>Scope</b>
       </span>
     </Link>
-  );
+  )
 }

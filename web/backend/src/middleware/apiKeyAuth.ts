@@ -13,52 +13,47 @@
  * body 字节必须与客户端签名所用字节严格一致。
  */
 
-import type { RequestHandler } from "express";
-import { ApiKeyRepository } from "../repositories/apiKey.repository";
-import {
-  parseAuthHeader,
-  decryptSecret,
-  signHmac,
-  timingSafeEqualHex,
-} from "../infra/crypto";
-import { PlatformError } from "./errorHandler";
+import type { RequestHandler } from "express"
+import { ApiKeyRepository } from "../repositories/apiKey.repository"
+import { parseAuthHeader, decryptSecret, signHmac, timingSafeEqualHex } from "../infra/crypto"
+import { PlatformError } from "./errorHandler"
 
-const repo = new ApiKeyRepository({});
+const repo = new ApiKeyRepository({})
 
 function unauthorized(msg?: string): PlatformError {
   return new PlatformError(msg || "invalid api key or signature", {
     status: 401,
     code: "AUTH_INVALID",
-  });
+  })
 }
 
 export const requireApiKey: RequestHandler = async (req, _res, next) => {
   try {
-    const parsed = parseAuthHeader(req.get("authorization"));
-    if (!parsed) return next(unauthorized());
+    const parsed = parseAuthHeader(req.get("authorization"))
+    if (!parsed) return next(unauthorized())
 
-    const key = await repo.findByPublicKey(parsed.publicKey);
-    if (!key || !key.project) return next(unauthorized());
-    if (key.revokedAt) return next(unauthorized("key revoked"));
+    const key = await repo.findByPublicKey(parsed.publicKey)
+    if (!key || !key.project) return next(unauthorized())
+    if (key.revokedAt) return next(unauthorized("key revoked"))
     if (key.expiresAt && key.expiresAt.getTime() < Date.now()) {
-      return next(unauthorized("key expired"));
+      return next(unauthorized("key expired"))
     }
     if (!Array.isArray(key.scopes) || !key.scopes.includes("ingest")) {
-      return next(unauthorized("scope denied"));
+      return next(unauthorized("scope denied"))
     }
 
-    let secret: string;
+    let secret: string
     try {
-      secret = decryptSecret(key.secretEncrypted);
+      secret = decryptSecret(key.secretEncrypted)
     } catch {
-      return next(unauthorized());
+      return next(unauthorized())
     }
-    const rawBody = req.rawBody || Buffer.alloc(0);
+    const rawBody = req.rawBody || Buffer.alloc(0)
     // 用 originalUrl 取完整路径（子路由挂载时 req.path 是相对挂载点的，与客户端签名路径不一致）
-    const fullPath = req.originalUrl.split("?")[0];
-    const expected = signHmac(secret, req.method, fullPath, rawBody);
+    const fullPath = req.originalUrl.split("?")[0]
+    const expected = signHmac(secret, req.method, fullPath, rawBody)
     if (!timingSafeEqualHex(expected, parsed.signature)) {
-      return next(unauthorized("signature mismatch"));
+      return next(unauthorized("signature mismatch"))
     }
 
     req.tenant = {
@@ -67,15 +62,15 @@ export const requireApiKey: RequestHandler = async (req, _res, next) => {
       projectId: key.project.id,
       orgId: key.project.orgId,
       scopes: key.scopes,
-    };
+    }
 
     // 非阻塞：更新使用统计
     setImmediate(() => {
-      repo.recordUsage(key.id, { ip: req.ip }).catch(() => {});
-    });
+      repo.recordUsage(key.id, { ip: req.ip }).catch(() => {})
+    })
 
-    next();
+    next()
   } catch (err) {
-    next(err);
+    next(err)
   }
-};
+}

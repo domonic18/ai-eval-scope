@@ -6,45 +6,45 @@
  *  - GET  /me        当前用户（需鉴权）
  */
 
-import { Router, type RequestHandler } from "express";
-import { AuthService } from "../services/auth.service";
-import { requireAuth } from "../middleware/auth";
+import { Router, type RequestHandler } from "express"
+import { AuthService } from "../services/auth.service"
+import { requireAuth } from "../middleware/auth"
 
-const router = Router();
+const router = Router()
 
 const wrap =
   (fn: RequestHandler): RequestHandler =>
   (req, res, next) =>
-    Promise.resolve(fn(req, res, next)).catch(next);
+    Promise.resolve(fn(req, res, next)).catch(next)
 
 router.post(
   "/register",
   wrap(async (req, res) => {
-    const result = await AuthService.register(req.body || {});
-    res.status(201).json(result);
-  })
-);
+    const result = await AuthService.register(req.body || {})
+    res.status(201).json(result)
+  }),
+)
 
 router.post(
   "/login",
   wrap(async (req, res) => {
-    res.json(await AuthService.login(req.body || {}));
-  })
-);
+    res.json(await AuthService.login(req.body || {}))
+  }),
+)
 
 router.post(
   "/refresh",
   wrap(async (req, res) => {
-    res.json(await AuthService.refresh(req.body || {}));
-  })
-);
+    res.json(await AuthService.refresh(req.body || {}))
+  }),
+)
 
 router.get(
   "/me",
   requireAuth,
   wrap(async (req, res) => {
-    res.json(await AuthService.me(req.user!.userId));
-  })
-);
+    res.json(await AuthService.me(req.user!.userId))
+  }),
+)
 
-export default router;
+export default router

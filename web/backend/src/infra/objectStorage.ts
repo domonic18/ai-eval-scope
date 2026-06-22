@@ -10,7 +10,7 @@
  *   projects/{project_id}/runs/{run_id}/artifacts/{kind}/{name}
  */
 
-import crypto from "crypto";
+import crypto from "crypto"
 import {
   S3Client,
   PutObjectCommand,
@@ -18,85 +18,88 @@ import {
   HeadObjectCommand,
   HeadBucketCommand,
   CreateBucketCommand,
-} from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { getConfig, type PlatformConfig } from "../config";
+} from "@aws-sdk/client-s3"
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
+import { getConfig, type PlatformConfig } from "../config"
 
 export interface PresignPutResult {
-  url: string;
-  method: "PUT";
-  headers: Record<string, string>;
-  expiresAt: number;
+  url: string
+  method: "PUT"
+  headers: Record<string, string>
+  expiresAt: number
 }
 export interface PresignGetResult {
-  url: string;
-  expiresAt: number;
+  url: string
+  expiresAt: number
 }
 export interface PutResult {
-  md5: string;
-  size: number;
+  md5: string
+  size: number
 }
 export interface HeadResult {
-  size: number;
-  contentType: string;
-  etag?: string;
+  size: number
+  contentType: string
+  etag?: string
 }
 
 /** 构造制品 key（租户隔离前缀）。 */
 export function buildObjectKey(p: {
-  projectId: string;
-  runId: string;
-  kind: string;
-  name: string;
+  projectId: string
+  runId: string
+  kind: string
+  name: string
 }): string {
-  return `projects/${p.projectId}/runs/${p.runId}/artifacts/${p.kind}/${p.name}`;
+  return `projects/${p.projectId}/runs/${p.runId}/artifacts/${p.kind}/${p.name}`
 }
 
 /** 从 object_key 解析 projectId（用于下载签发前的租户校验 §6.4）。 */
 export function projectIdFromKey(key: string): string | null {
-  const m = String(key).match(/^projects\/([^/]+)\//);
-  return m ? m[1] : null;
+  const m = String(key).match(/^projects\/([^/]+)\//)
+  return m ? m[1] : null
 }
 
 export interface S3StorageOpts {
-  endpoint: string;
-  externalEndpoint?: string; // presigned URL 对外端点（浏览器/客户端可达）
-  region: string;
-  bucket: string;
-  forcePathStyle: boolean;
-  accessKey: string;
-  secretKey: string;
-  kind: "s3" | "cos" | "minio";
-  defaultTtlSec?: number;
+  endpoint: string
+  externalEndpoint?: string // presigned URL 对外端点（浏览器/客户端可达）
+  region: string
+  bucket: string
+  forcePathStyle: boolean
+  accessKey: string
+  secretKey: string
+  kind: "s3" | "cos" | "minio"
+  defaultTtlSec?: number
 }
 
 export class S3Storage {
-  readonly bucket: string;
-  readonly kind: "s3" | "cos" | "minio";
-  readonly defaultTtlSec: number;
-  private bucketEnsured = false;
+  readonly bucket: string
+  readonly kind: "s3" | "cos" | "minio"
+  readonly defaultTtlSec: number
+  private bucketEnsured = false
   /** 服务端 S3 操作（put/get/head/建桶/ping）用的 client，走内部端点。 */
-  readonly client: S3Client;
+  readonly client: S3Client
   /** presigned URL 用的 client，走对外端点（浏览器/客户端可达）。与内部相同时复用同一实例。 */
-  readonly presignClient: S3Client;
+  readonly presignClient: S3Client
 
   constructor(opts: S3StorageOpts) {
-    this.bucket = opts.bucket;
-    this.kind = opts.kind;
-    this.defaultTtlSec = opts.defaultTtlSec || 900;
+    this.bucket = opts.bucket
+    this.kind = opts.kind
+    this.defaultTtlSec = opts.defaultTtlSec || 900
     const credentials = {
       accessKeyId: opts.accessKey,
       secretAccessKey: opts.secretKey,
-    };
+    }
     this.client = new S3Client({
       region: opts.region,
       endpoint: opts.endpoint,
       forcePathStyle: opts.forcePathStyle,
       credentials,
-    });
+    })
     // 对外端点与内部不同时，单独建一个 client 仅用于 presign；
     // 这样返回给浏览器/客户端的 URL 才能被解析（签名 host 也会匹配对外域名）。
-    const ext = opts.externalEndpoint && opts.externalEndpoint !== opts.endpoint ? opts.externalEndpoint : null;
+    const ext =
+      opts.externalEndpoint && opts.externalEndpoint !== opts.endpoint
+        ? opts.externalEndpoint
+        : null
     this.presignClient = ext
       ? new S3Client({
           region: opts.region,
@@ -104,67 +107,67 @@ export class S3Storage {
           forcePathStyle: opts.forcePathStyle,
           credentials,
         })
-      : this.client;
+      : this.client
   }
 
   /** 懒建桶（本地 MinIO 首次启动用，幂等）。 */
   async ensureBucket(): Promise<void> {
-    if (this.bucketEnsured) return;
+    if (this.bucketEnsured) return
     try {
-      await this.client.send(new CreateBucketCommand({ Bucket: this.bucket }));
+      await this.client.send(new CreateBucketCommand({ Bucket: this.bucket }))
     } catch (err) {
-      const e = err as { name?: string; $metadata?: { httpStatusCode?: number } };
-      const name = e.name ?? "";
+      const e = err as { name?: string; $metadata?: { httpStatusCode?: number } }
+      const name = e.name ?? ""
       if (name !== "BucketAlreadyOwnedByYou" && name !== "BucketAlreadyExists") {
         if (!(e.$metadata && e.$metadata.httpStatusCode === 409)) {
-          throw err;
+          throw err
         }
       }
     }
-    this.bucketEnsured = true;
+    this.bucketEnsured = true
   }
 
   /** 签发上传 URL（§5.3 两段式上传 step-1）。 */
   async presignPut(p: {
-    key: string;
-    contentType: string;
-    md5?: string;
-    ttlSec?: number;
+    key: string
+    contentType: string
+    md5?: string
+    ttlSec?: number
   }): Promise<PresignPutResult> {
-    await this.ensureBucket();
-    const ttl = Math.min(p.ttlSec || this.defaultTtlSec, 900);
+    await this.ensureBucket()
+    const ttl = Math.min(p.ttlSec || this.defaultTtlSec, 900)
     const input: PutObjectCommand["input"] = {
       Bucket: this.bucket,
       Key: p.key,
       ContentType: p.contentType,
-    };
-    const headers: Record<string, string> = { "Content-Type": p.contentType };
-    const md5B64 = toBase64Md5(p.md5);
+    }
+    const headers: Record<string, string> = { "Content-Type": p.contentType }
+    const md5B64 = toBase64Md5(p.md5)
     if (md5B64) {
-      input.ContentMD5 = md5B64;
-      headers["Content-MD5"] = md5B64;
+      input.ContentMD5 = md5B64
+      headers["Content-MD5"] = md5B64
     }
     const url = await getSignedUrl(this.presignClient, new PutObjectCommand(input), {
       expiresIn: ttl,
-    });
-    return { url, method: "PUT", headers, expiresAt: epochNow() + ttl };
+    })
+    return { url, method: "PUT", headers, expiresAt: epochNow() + ttl }
   }
 
   /** 签发下载 URL（短时效 ≤15min，§十三）。 */
   async presignGet(p: { key: string; ttlSec?: number }): Promise<PresignGetResult> {
-    const ttl = Math.min(p.ttlSec || this.defaultTtlSec, 900);
+    const ttl = Math.min(p.ttlSec || this.defaultTtlSec, 900)
     const url = await getSignedUrl(
       this.presignClient,
       new GetObjectCommand({ Bucket: this.bucket, Key: p.key }),
-      { expiresIn: ttl }
-    );
-    return { url, expiresAt: epochNow() + ttl };
+      { expiresIn: ttl },
+    )
+    return { url, expiresAt: epochNow() + ttl }
   }
 
   /** 服务端兜底直传（小文件/测试）。 */
   async put(p: { key: string; body: Buffer; contentType: string }): Promise<PutResult> {
-    await this.ensureBucket();
-    const buf = Buffer.isBuffer(p.body) ? p.body : Buffer.from(p.body);
+    await this.ensureBucket()
+    const buf = Buffer.isBuffer(p.body) ? p.body : Buffer.from(p.body)
     await this.client.send(
       new PutObjectCommand({
         Bucket: this.bucket,
@@ -172,87 +175,85 @@ export class S3Storage {
         Body: buf,
         ContentType: p.contentType,
         ContentMD5: bufToBase64Md5(buf),
-      })
-    );
-    return { md5: bufToHexMd5(buf), size: buf.length };
+      }),
+    )
+    return { md5: bufToHexMd5(buf), size: buf.length }
   }
 
   /** 下载对象为 Buffer。 */
   async get(p: { key: string }): Promise<Buffer> {
-    const resp = await this.client.send(
-      new GetObjectCommand({ Bucket: this.bucket, Key: p.key })
-    );
-    return streamToBuffer(resp.Body);
+    const resp = await this.client.send(new GetObjectCommand({ Bucket: this.bucket, Key: p.key }))
+    return streamToBuffer(resp.Body)
   }
 
   /** HEAD 对象；不存在返回 null。 */
   async head(p: { key: string }): Promise<HeadResult | null> {
     try {
       const resp = await this.client.send(
-        new HeadObjectCommand({ Bucket: this.bucket, Key: p.key })
-      );
+        new HeadObjectCommand({ Bucket: this.bucket, Key: p.key }),
+      )
       return {
         size: resp.ContentLength != null ? Number(resp.ContentLength) : 0,
         contentType: resp.ContentType || "application/octet-stream",
         etag: resp.ETag || undefined,
-      };
+      }
     } catch (err) {
-      const e = err as { $metadata?: { httpStatusCode?: number }; name?: string };
-      const status = e.$metadata && e.$metadata.httpStatusCode;
-      if (status === 404 || e.name === "NotFound") return null;
-      throw err;
+      const e = err as { $metadata?: { httpStatusCode?: number }; name?: string }
+      const status = e.$metadata && e.$metadata.httpStatusCode
+      if (status === 404 || e.name === "NotFound") return null
+      throw err
     }
   }
 
   /** /health 连通性探测：HEAD bucket（轻量、校验凭证与桶可达）。 */
   async ping(): Promise<{ ok: boolean; bucket?: string; error?: string }> {
     try {
-      await this.ensureBucket();
-      await this.client.send(new HeadBucketCommand({ Bucket: this.bucket }));
-      return { ok: true, bucket: this.bucket };
+      await this.ensureBucket()
+      await this.client.send(new HeadBucketCommand({ Bucket: this.bucket }))
+      return { ok: true, bucket: this.bucket }
     } catch (err) {
-      return { ok: false, error: (err as Error).message };
+      return { ok: false, error: (err as Error).message }
     }
   }
 }
 
 /* ── helpers ── */
 function epochNow(): number {
-  return Math.floor(Date.now() / 1000);
+  return Math.floor(Date.now() / 1000)
 }
 function bufToHexMd5(buf: Buffer): string {
-  return crypto.createHash("md5").update(buf).digest("hex");
+  return crypto.createHash("md5").update(buf).digest("hex")
 }
 function bufToBase64Md5(buf: Buffer): string {
-  return crypto.createHash("md5").update(buf).digest("base64");
+  return crypto.createHash("md5").update(buf).digest("base64")
 }
 /** 接受 hex 或 base64 的 md5，统一转 base64（Content-MD5 要求 base64）。 */
 function toBase64Md5(md5?: string): string | undefined {
-  if (!md5) return undefined;
+  if (!md5) return undefined
   if (/^[A-Za-z0-9+/=]+$/.test(md5) && md5.length % 4 === 0 && md5.length > 16) {
-    return md5; // 看起来像 base64
+    return md5 // 看起来像 base64
   }
   try {
-    return Buffer.from(md5, "hex").toString("base64");
+    return Buffer.from(md5, "hex").toString("base64")
   } catch {
-    return undefined;
+    return undefined
   }
 }
 async function streamToBuffer(stream: unknown): Promise<Buffer> {
-  const chunks: Buffer[] = [];
+  const chunks: Buffer[] = []
   if (!stream || typeof (stream as AsyncIterable<Buffer>)[Symbol.asyncIterator] !== "function") {
-    throw new Error("unsupported stream body");
+    throw new Error("unsupported stream body")
   }
-  for await (const chunk of stream as AsyncIterable<Buffer>) chunks.push(chunk);
-  return Buffer.concat(chunks);
+  for await (const chunk of stream as AsyncIterable<Buffer>) chunks.push(chunk)
+  return Buffer.concat(chunks)
 }
 
 /** 工厂：按配置返回对象存储实现。 */
 export function createObjectStorage(cfg?: PlatformConfig): S3Storage {
-  const config = cfg || getConfig();
-  const kind = config.objectStorage;
+  const config = cfg || getConfig()
+  const kind = config.objectStorage
   if (!["minio", "s3", "cos"].includes(kind)) {
-    throw new Error(`unsupported PLATFORM_OBJECT_STORAGE: ${kind}`);
+    throw new Error(`unsupported PLATFORM_OBJECT_STORAGE: ${kind}`)
   }
   return new S3Storage({
     endpoint: config.s3Endpoint,
@@ -264,13 +265,13 @@ export function createObjectStorage(cfg?: PlatformConfig): S3Storage {
     secretKey: config.s3SecretKey,
     kind,
     defaultTtlSec: config.presignTtlSec,
-  });
+  })
 }
 
-let _storage: S3Storage | null = null;
+let _storage: S3Storage | null = null
 
 /** 进程级单例。 */
 export function getObjectStorage(): S3Storage {
-  if (!_storage) _storage = createObjectStorage();
-  return _storage;
+  if (!_storage) _storage = createObjectStorage()
+  return _storage
 }
