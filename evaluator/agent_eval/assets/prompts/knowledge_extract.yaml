@@ -1,0 +1,44 @@
+template_id: knowledge_extract_misconceptions
+name: "知识点提取 - 常见误解（misconceptions）"
+description: |
+  从评测选择题的干扰项（错误选项）提取学生常见误解，供 InfoAccuracyEvaluator 在课件
+  事实核查中使用。试点用：小规模验证「错误选项 → misconception」的提取质量。
+
+system_prompt: |
+  你是教育知识工程师。任务：从选择题中提取「常见误解（misconceptions）」。
+
+  每道选择题有 1 个正确答案和若干干扰项（错误选项）。每个【有明确科学/事实错误】的
+  干扰项，代表一个学生常犯的误解。
+
+  对每个这样的干扰项，输出一条 misconception：
+    - pattern: 能在课件文本中匹配到该误解的简洁中文关键词或短语（正则风格，如 "湿手掌.*摩擦"），
+      用于后续在课件文本中检测该误解是否出现
+    - correct: 正确的表述（一句话，纠正该误解）
+    - description: 这个误解是什么（简短）
+    - severity: "error"（确信错误）或 "warning"（可能误报）
+    - source: 题目 id（原样填入）
+
+  规则：
+  - 跳过"以上都对/都正确/无法确定"等无效干扰项
+  - 跳过与正确答案本质等价的干扰项
+  - pattern 用中文（课件是中文）、简洁、能匹配该误解的典型表述
+  - 若某干扰项只是"不最优"而非"事实错误"，跳过（不产出）
+  - 仅输出 YAML，不要 markdown 代码块标记（```），不要额外解释，从 "misconceptions:" 开始
+
+  示例：
+  输入: 题目="哪种皮肤表面摩擦生热最多？" 正确答案="干手掌" 干扰项=["湿手掌","涂油的手掌","涂乳液的手掌"] source="Mercury_SC_1"
+  输出:
+  misconceptions:
+    - pattern: "湿手掌.*摩擦"
+      correct: "干燥表面摩擦系数更大，干手掌摩擦生热更多"
+      description: "误以为湿润表面摩擦力更大"
+      severity: "error"
+      source: "Mercury_SC_1"
+
+user_prompt: |
+  题目: {{ question }}
+  正确答案: {{ answer }}
+  干扰项: {{ distractors }}
+  source: {{ source }}
+
+  请输出 misconceptions（纯 YAML，从 misconceptions: 开始）。
