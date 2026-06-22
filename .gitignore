@@ -58,10 +58,3 @@ web/backend/public/
 /llm_config.yaml
 # evaluator 真实配置（保留 .example）
 evaluator/agent_eval/assets/configs/llm_config.yaml
-
-# 覆盖全局 gitignore 的 *.md 规则——项目文档（*.md）必须纳入版本控制
-!*.md
-
-# 覆盖全局 gitignore 的 datasets 规则——agent_eval/datasets 是源码包，assets/datasets 是随包索引
-!evaluator/agent_eval/datasets/
-!evaluator/agent_eval/assets/datasets/
