@@ -812,7 +812,7 @@ def knowledge_convert(
     json_path: str = typer.Option(None, "--json-path", help="数据源文件路径（如周期表 JSON）"),
 ) -> None:
     """从结构化数据源转换知识点（如周期表→constants）。"""
-    from agent_eval.knowledge_pipeline.pipeline import KnowledgePipeline
+    from agent_eval.knowledge.pipeline import KnowledgePipeline
 
     try:
         kwargs = {}
@@ -847,7 +847,7 @@ def knowledge_extract(
     provider: str = typer.Option(None, "--provider", help="LLM provider 名"),
 ) -> None:
     """从评测题 LLM 提取知识点（misconceptions/constants）。"""
-    from agent_eval.knowledge_pipeline.pipeline import KnowledgePipeline
+    from agent_eval.knowledge.pipeline import KnowledgePipeline
 
     try:
         kwargs = {}
@@ -883,8 +883,8 @@ def knowledge_merge(
     dry_run: bool = typer.Option(False, "--dry-run", help="只报告不写盘"),
 ) -> None:
     """合并提取产物到 knowledge yaml。"""
-    from agent_eval.knowledge_pipeline.merger import KnowledgeMerger
-    from agent_eval.knowledge_pipeline.models import KnowledgePatch
+    from agent_eval.knowledge.merger import KnowledgeMerger
+    from agent_eval.knowledge.models import KnowledgePatch
 
     try:
         patch = KnowledgePatch.from_yaml(input_file)
@@ -907,7 +907,7 @@ def knowledge_list(
     field: str = typer.Option(None, "--field", "-f", help="字段（不指定则列出全部）"),
 ) -> None:
     """查看现有 knowledge 数据。"""
-    from agent_eval.knowledge_pipeline.merger import KnowledgeMerger
+    from agent_eval.knowledge.merger import KnowledgeMerger
 
     merger = KnowledgeMerger()
     if field:
