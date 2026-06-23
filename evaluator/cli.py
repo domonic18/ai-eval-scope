@@ -1,6 +1,6 @@
 """CLI 入口 — typer 应用框架。
 
-注册 eval、run、pipeline、serve、index 等子命令。
+注册 eval、run、pipeline、serve 等子命令。
 """
 
 from __future__ import annotations
@@ -517,26 +517,6 @@ def serve(
         raise typer.Exit(code=1) from None
     except subprocess.CalledProcessError as e:
         rprint(f"[bold red]❌ Web Portal 启动失败: {e}[/bold red]")
-        raise typer.Exit(code=1) from e
-
-
-@app.command()
-def index(
-    workspace_dir: str = typer.Option("./workspace", "--workspace", help="Workspace 目录"),
-) -> None:
-    """重建 Workspace 索引（用于 Web Portal）。"""
-    from agent_eval.web.indexer import rebuild_index
-
-    workspace_path = Path(workspace_dir).resolve()
-    rprint(f"[blue]重建索引:[/blue] {workspace_path}")
-
-    try:
-        stats = rebuild_index(workspace_path)
-        rprint("[green]✅ 索引重建完成[/green]")
-        rprint(f"  项目数: {stats['project_count']}")
-        rprint(f"  运行数: {stats['run_count']}")
-    except Exception as e:
-        rprint(f"[bold red]❌ 索引重建失败: {e}[/bold red]")
         raise typer.Exit(code=1) from e
 
 
