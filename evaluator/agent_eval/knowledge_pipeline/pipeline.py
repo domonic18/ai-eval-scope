@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -48,6 +49,10 @@ class KnowledgePipeline:
         subject: str,
         limit: int | None = None,
         apply: bool = False,
+        data_dir: str | None = None,
+        json_path: str | None = None,
+        subjects: list[str] | None = None,
+        provider: str | None = None,
         **kwargs,
     ) -> Path:
         """端到端：read → extract/convert → 输出 → （可选）merge。
@@ -58,20 +63,38 @@ class KnowledgePipeline:
             subject: 目标学科（如 chemistry）。
             limit: 限制处理数量（试点用）。
             apply: True 时自动合并到 knowledge yaml。
-            **kwargs: 传给 source/extractor/converter 的额外参数。
+            data_dir: 数据集目录（source 参数）。
+            json_path: 数据源文件路径（source 参数，如周期表 JSON）。
+            subjects: 学科筛选（source 参数，cmmlu 用）。
+            provider: LLM provider 名（extractor 参数）。
 
         Returns:
             输出 YAML 路径（待审核或已合并）。
         """
+        # 分离参数：source 专用 vs extractor 专用
+        source_kwargs: dict[str, Any] = {}
+        if data_dir is not None:
+            source_kwargs["data_dir"] = data_dir
+        if json_path is not None:
+            source_kwargs["json_path"] = json_path
+        if subjects is not None:
+            source_kwargs["subjects"] = subjects
+
+        extractor_kwargs: dict[str, Any] = {}
+        if provider is not None:
+            extractor_kwargs["provider"] = provider
+        if limit is not None:
+            extractor_kwargs["limit"] = limit
+
         # 1. 获取数据源并读取
-        source = get_source(source_name, **kwargs)
+        source = get_source(source_name, **source_kwargs)
         raw = source.read(limit=limit)
         print(f"📖 {source_name}.read() → {len(raw)} 条原始数据", file=sys.stderr)
 
         # 2. 按 kind 分支
         batch: ExtractedBatch
         if source.kind == "questions":
-            extractor = get_extractor(field, **kwargs)
+            extractor = get_extractor(field, **extractor_kwargs)
             batch = extractor.extract(raw)
         elif source.kind == "raw_items":
             converter = get_converter(source_name)
