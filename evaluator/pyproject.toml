@@ -54,7 +54,7 @@ datasets = [
 ]
 
 [project.scripts]
-agent-eval = "cli:app"
+agent-eval = "agent_eval.cli:app"
 
 [tool.hatch.build.targets.wheel]
 packages = ["agent_eval"]

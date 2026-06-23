@@ -100,7 +100,7 @@ class TestCLIEval:
         """eval --help 正常输出。"""
         from typer.testing import CliRunner
 
-        from cli import app
+        from agent_eval.cli import app
 
         runner = CliRunner()
         result = runner.invoke(app, ["eval", "--help"])
@@ -111,7 +111,7 @@ class TestCLIEval:
         """--eval-mode agent 提示未实现。"""
         from typer.testing import CliRunner
 
-        from cli import app
+        from agent_eval.cli import app
 
         runner = CliRunner()
         result = runner.invoke(
@@ -133,7 +133,7 @@ class TestCLIEval:
         """缺少必要参数时报错。"""
         from typer.testing import CliRunner
 
-        from cli import app
+        from agent_eval.cli import app
 
         runner = CliRunner()
         result = runner.invoke(app, ["eval"])
@@ -143,7 +143,7 @@ class TestCLIEval:
         """CLI eval 完整执行流程：加载包 → 评估 → 输出报告。"""
         from typer.testing import CliRunner
 
-        from cli import app
+        from agent_eval.cli import app
 
         rule_set_path = FIXTURES / "configs" / "rule_set.yaml"
         if not rule_set_path.exists():
@@ -176,7 +176,7 @@ class TestCLIEval:
         """CLI eval --verbose 模式。"""
         from typer.testing import CliRunner
 
-        from cli import app
+        from agent_eval.cli import app
 
         rule_set_path = FIXTURES / "configs" / "rule_set.yaml"
         if not rule_set_path.exists():
@@ -209,7 +209,7 @@ class TestCLIPack:
         """pack --help 正常输出。"""
         from typer.testing import CliRunner
 
-        from cli import app
+        from agent_eval.cli import app
 
         runner = CliRunner()
         result = runner.invoke(app, ["pack", "--help"])
@@ -221,7 +221,7 @@ class TestCLIPack:
         """仅 --source-dir，自动推导 id/title。"""
         from typer.testing import CliRunner
 
-        from cli import app
+        from agent_eval.cli import app
 
         # 准备源目录
         src = tmp_path / "my_course"
@@ -249,7 +249,7 @@ class TestCLIPack:
         """--files 指定文件。"""
         from typer.testing import CliRunner
 
-        from cli import app
+        from agent_eval.cli import app
 
         # 准备测试文件
         f1 = tmp_path / "doc1.md"
@@ -281,7 +281,7 @@ class TestCLIPack:
         """--task-id + --task-title 覆盖默认。"""
         from typer.testing import CliRunner
 
-        from cli import app
+        from agent_eval.cli import app
 
         src = tmp_path / "src"
         src.mkdir()
@@ -322,7 +322,7 @@ class TestCLIPack:
         """不指定 --files/--source-dir 报错。"""
         from typer.testing import CliRunner
 
-        from cli import app
+        from agent_eval.cli import app
 
         runner = CliRunner()
         result = runner.invoke(app, ["pack"])
@@ -332,7 +332,7 @@ class TestCLIPack:
         """--validate 验证打包结果。"""
         from typer.testing import CliRunner
 
-        from cli import app
+        from agent_eval.cli import app
 
         src = tmp_path / "src"
         src.mkdir()
@@ -360,7 +360,7 @@ class TestCLIPack:
         """打包 → eval 端到端。"""
         from typer.testing import CliRunner
 
-        from cli import app
+        from agent_eval.cli import app
 
         golden = FIXTURES / "golden" / "valid_docset" / "output"
         rule_set = FIXTURES / "configs" / "rule_set.yaml"
