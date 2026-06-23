@@ -1,7 +1,9 @@
 """规则 SDK — 编程式规则管理接口。
 
-提供创建、修改、校验、提交规则集的能力，便于在 Python 脚本或 Agent 中
+提供创建、修改、校验、模板解析规则集的能力，便于在 Python 脚本或 Agent 中
 程序化地维护评估规则。
+
+注：规则集版本管理（提交/差异/回滚）已迁移至 git，本 SDK 不再承担版本管理职责。
 """
 
 from __future__ import annotations
@@ -9,7 +11,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from agent_eval.rules.manager import RuleSetManager
+from agent_eval.config.loader import ConfigLoader
 from agent_eval.rules.models import (
     CascadeStage,
     Dimension,
@@ -25,7 +27,6 @@ class RuleSDK:
 
     def __init__(self, rule_set_path: Path | str) -> None:
         self.rule_set_path = Path(rule_set_path)
-        self.manager = RuleSetManager(self.rule_set_path)
         self.validator = RuleSetValidator()
 
     # ─── 创建 ───
@@ -112,32 +113,8 @@ class RuleSDK:
             return rule_set
         return TemplateResolver(rule_set).resolve()
 
-    # ─── 加载与提交 ───
+    # ─── 加载 ───
 
     def load(self, *, resolve_templates: bool = True) -> RuleSet:
         """从磁盘加载 RuleSet。"""
-        return self.manager.load(resolve_templates=resolve_templates)
-
-    def commit(self, rule_set: RuleSet, message: str = "") -> str:
-        """校验并保存 RuleSet 到磁盘（自动归档旧版本）。
-
-        Returns:
-            保存后的版本号。
-        """
-        errors = self.validate(rule_set)
-        if errors:
-            raise ValueError(f"RuleSet 语义校验失败: {errors}")
-        return self.manager.apply(rule_set, commit_message=message)
-
-    def diff(self, rule_set: RuleSet) -> Any:
-        """对比给定 RuleSet 与磁盘当前版本。"""
-        current = self.load(resolve_templates=False)
-        return self.manager._compute_diff(current, rule_set)
-
-    def bump_version(
-        self,
-        change_type: str = "patch",
-        description: str = "",
-    ) -> str:
-        """递增磁盘上 RuleSet 的版本号。"""
-        return self.manager.bump_version(change_type, description)
+        return ConfigLoader.load_rule_set(self.rule_set_path, resolve_templates=resolve_templates)

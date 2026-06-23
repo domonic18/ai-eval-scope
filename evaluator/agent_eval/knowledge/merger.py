@@ -1,7 +1,6 @@
 """KnowledgeMerger — 将提取/转换产物合并到 knowledge yaml。
 
-范式参考 rules/manager.py 的 RuleSetManager（apply/归档/写盘）。
-保持 KnowledgeBaseManager 纯读，Merger 独立负责写入。
+保持 KnowledgeBaseManager 纯读，Merger 独立负责写入（合并/去重/写盘）。
 """
 
 from __future__ import annotations

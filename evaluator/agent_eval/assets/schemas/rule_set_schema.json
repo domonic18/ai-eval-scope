@@ -71,11 +71,7 @@
         "description": { "type": "string" },
         "author": { "type": "string" },
         "created_at": { "type": "string" },
-        "updated_at": { "type": "string" },
-        "changelog": {
-          "type": "array",
-          "items": { "type": "string" }
-        }
+        "updated_at": { "type": "string" }
       }
     },
     "templates": {
@@ -94,22 +90,6 @@
           "params": { "type": "object" },
           "weight": { "type": "number", "minimum": 0 },
           "penalty_on_fail": { "type": ["number", "null"] }
-        }
-      }
-    },
-    "history": {
-      "type": "array",
-      "description": "变更历史",
-      "items": {
-        "type": "object",
-        "required": ["version", "timestamp", "change_type"],
-        "properties": {
-          "version": { "type": "string" },
-          "timestamp": { "type": "string" },
-          "change_type": { "type": "string" },
-          "rule_id": { "type": ["string", "null"] },
-          "description": { "type": "string" },
-          "diff": { "type": "object" }
         }
       }
     }
