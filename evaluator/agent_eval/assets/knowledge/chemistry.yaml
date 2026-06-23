@@ -1,169 +1,848 @@
-subject: "chemistry"
-description: "化学知识库：常量、常见误区纠正、元素/化合物/指示剂基础事实"
-version: "1.0"
-
+subject: chemistry
+description: 化学知识库：常量、常见误区纠正、元素/化合物/指示剂基础事实
+version: '1.0'
 constants:
-  - name: "水的沸点"
-    extract_pattern: "水的沸点.*?(\\d+(?:\\.\\d+)?)\\s*[°度]?C"
-    value: 100.0
-    tolerance: 0.5
-
-  - name: "水的冰点"
-    extract_pattern: "水的冰点.*?(\\d+(?:\\.\\d+)?)\\s*[°度]?C"
-    value: 0.0
-    tolerance: 0.5
-
-  - name: "水的pH值"
-    extract_pattern: "水.*?pH.*?(\\d+(?:\\.\\d+)?)"
-    value: 7.0
-    tolerance: 0.5
-
+- name: 水的沸点
+  extract_pattern: 水的沸点.*?(\d+(?:\.\d+)?)\s*[°度]?C
+  value: 100.0
+  tolerance: 0.5
+- name: 水的冰点
+  extract_pattern: 水的冰点.*?(\d+(?:\.\d+)?)\s*[°度]?C
+  value: 0.0
+  tolerance: 0.5
+- name: 水的pH值
+  extract_pattern: 水.*?pH.*?(\d+(?:\.\d+)?)
+  value: 7.0
+  tolerance: 0.5
+- name: 氢的相对原子质量
+  extract_pattern: 氢.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 1.01
+  tolerance: 0.01
+  description: 氢（H）的相对原子质量约为 1.01
+  source: periodic_table_H
+- name: 氢的沸点 (℃)
+  extract_pattern: 氢.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -252.9
+  tolerance: 0.5
+  description: 氢（H）的沸点约为 -252.9℃
+  source: periodic_table_H
+- name: 氢的熔点 (℃)
+  extract_pattern: 氢.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -259.2
+  tolerance: 0.5
+  description: 氢（H）的熔点约为 -259.2℃
+  source: periodic_table_H
+- name: 氢的密度 (g/cm³)
+  extract_pattern: 氢.*密度[^\d]*(\d+\.?\d*)
+  value: 0.08988
+  tolerance: 0.004
+  description: 氢（H）的密度约为 0.08988 g/cm³
+  source: periodic_table_H
+- name: 氦的相对原子质量
+  extract_pattern: 氦.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 4.0
+  tolerance: 0.01
+  description: 氦（He）的相对原子质量约为 4.0
+  source: periodic_table_He
+- name: 氦的沸点 (℃)
+  extract_pattern: 氦.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -268.9
+  tolerance: 0.5
+  description: 氦（He）的沸点约为 -268.9℃
+  source: periodic_table_He
+- name: 氦的熔点 (℃)
+  extract_pattern: 氦.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -272.2
+  tolerance: 0.5
+  description: 氦（He）的熔点约为 -272.2℃
+  source: periodic_table_He
+- name: 氦的密度 (g/cm³)
+  extract_pattern: 氦.*密度[^\d]*(\d+\.?\d*)
+  value: 0.1786
+  tolerance: 0.009
+  description: 氦（He）的密度约为 0.1786 g/cm³
+  source: periodic_table_He
+- name: 锂的相对原子质量
+  extract_pattern: 锂.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 6.94
+  tolerance: 0.01
+  description: 锂（Li）的相对原子质量约为 6.94
+  source: periodic_table_Li
+- name: 锂的沸点 (℃)
+  extract_pattern: 锂.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 1329.8
+  tolerance: 0.5
+  description: 锂（Li）的沸点约为 1329.8℃
+  source: periodic_table_Li
+- name: 锂的熔点 (℃)
+  extract_pattern: 锂.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 180.5
+  tolerance: 0.5
+  description: 锂（Li）的熔点约为 180.5℃
+  source: periodic_table_Li
+- name: 锂的密度 (g/cm³)
+  extract_pattern: 锂.*密度[^\d]*(\d+\.?\d*)
+  value: 0.534
+  tolerance: 0.027
+  description: 锂（Li）的密度约为 0.534 g/cm³
+  source: periodic_table_Li
+- name: 铍的相对原子质量
+  extract_pattern: 铍.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 9.01
+  tolerance: 0.01
+  description: 铍（Be）的相对原子质量约为 9.01
+  source: periodic_table_Be
+- name: 铍的沸点 (℃)
+  extract_pattern: 铍.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 2468.8
+  tolerance: 0.5
+  description: 铍（Be）的沸点约为 2468.8℃
+  source: periodic_table_Be
+- name: 铍的熔点 (℃)
+  extract_pattern: 铍.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 1286.8
+  tolerance: 0.5
+  description: 铍（Be）的熔点约为 1286.8℃
+  source: periodic_table_Be
+- name: 铍的密度 (g/cm³)
+  extract_pattern: 铍.*密度[^\d]*(\d+\.?\d*)
+  value: 1.85
+  tolerance: 0.093
+  description: 铍（Be）的密度约为 1.85 g/cm³
+  source: periodic_table_Be
+- name: 硼的相对原子质量
+  extract_pattern: 硼.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 10.81
+  tolerance: 0.01
+  description: 硼（B）的相对原子质量约为 10.81
+  source: periodic_table_B
+- name: 硼的沸点 (℃)
+  extract_pattern: 硼.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 3926.8
+  tolerance: 0.5
+  description: 硼（B）的沸点约为 3926.8℃
+  source: periodic_table_B
+- name: 硼的熔点 (℃)
+  extract_pattern: 硼.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 2075.8
+  tolerance: 0.5
+  description: 硼（B）的熔点约为 2075.8℃
+  source: periodic_table_B
+- name: 硼的密度 (g/cm³)
+  extract_pattern: 硼.*密度[^\d]*(\d+\.?\d*)
+  value: 2.08
+  tolerance: 0.104
+  description: 硼（B）的密度约为 2.08 g/cm³
+  source: periodic_table_B
+- name: 碳的相对原子质量
+  extract_pattern: 碳.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 12.01
+  tolerance: 0.01
+  description: 碳（C）的相对原子质量约为 12.01
+  source: periodic_table_C
+- name: 碳的密度 (g/cm³)
+  extract_pattern: 碳.*密度[^\d]*(\d+\.?\d*)
+  value: 1.821
+  tolerance: 0.091
+  description: 碳（C）的密度约为 1.821 g/cm³
+  source: periodic_table_C
+- name: 氮的相对原子质量
+  extract_pattern: 氮.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 14.01
+  tolerance: 0.01
+  description: 氮（N）的相对原子质量约为 14.01
+  source: periodic_table_N
+- name: 氮的沸点 (℃)
+  extract_pattern: 氮.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -195.8
+  tolerance: 0.5
+  description: 氮（N）的沸点约为 -195.8℃
+  source: periodic_table_N
+- name: 氮的熔点 (℃)
+  extract_pattern: 氮.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -210.0
+  tolerance: 0.5
+  description: 氮（N）的熔点约为 -210.0℃
+  source: periodic_table_N
+- name: 氮的密度 (g/cm³)
+  extract_pattern: 氮.*密度[^\d]*(\d+\.?\d*)
+  value: 1.251
+  tolerance: 0.063
+  description: 氮（N）的密度约为 1.251 g/cm³
+  source: periodic_table_N
+- name: 氧的相对原子质量
+  extract_pattern: 氧.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 16.0
+  tolerance: 0.01
+  description: 氧（O）的相对原子质量约为 16.0
+  source: periodic_table_O
+- name: 氧的沸点 (℃)
+  extract_pattern: 氧.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -183.0
+  tolerance: 0.5
+  description: 氧（O）的沸点约为 -183.0℃
+  source: periodic_table_O
+- name: 氧的熔点 (℃)
+  extract_pattern: 氧.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -218.8
+  tolerance: 0.5
+  description: 氧（O）的熔点约为 -218.8℃
+  source: periodic_table_O
+- name: 氧的密度 (g/cm³)
+  extract_pattern: 氧.*密度[^\d]*(\d+\.?\d*)
+  value: 1.429
+  tolerance: 0.071
+  description: 氧（O）的密度约为 1.429 g/cm³
+  source: periodic_table_O
+- name: 氟的相对原子质量
+  extract_pattern: 氟.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 19.0
+  tolerance: 0.01
+  description: 氟（F）的相对原子质量约为 19.0
+  source: periodic_table_F
+- name: 氟的沸点 (℃)
+  extract_pattern: 氟.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -188.1
+  tolerance: 0.5
+  description: 氟（F）的沸点约为 -188.1℃
+  source: periodic_table_F
+- name: 氟的熔点 (℃)
+  extract_pattern: 氟.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -219.7
+  tolerance: 0.5
+  description: 氟（F）的熔点约为 -219.7℃
+  source: periodic_table_F
+- name: 氟的密度 (g/cm³)
+  extract_pattern: 氟.*密度[^\d]*(\d+\.?\d*)
+  value: 1.696
+  tolerance: 0.085
+  description: 氟（F）的密度约为 1.696 g/cm³
+  source: periodic_table_F
+- name: 氖的相对原子质量
+  extract_pattern: 氖.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 20.18
+  tolerance: 0.01
+  description: 氖（Ne）的相对原子质量约为 20.18
+  source: periodic_table_Ne
+- name: 氖的沸点 (℃)
+  extract_pattern: 氖.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -246.0
+  tolerance: 0.5
+  description: 氖（Ne）的沸点约为 -246.0℃
+  source: periodic_table_Ne
+- name: 氖的熔点 (℃)
+  extract_pattern: 氖.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -248.6
+  tolerance: 0.5
+  description: 氖（Ne）的熔点约为 -248.6℃
+  source: periodic_table_Ne
+- name: 氖的密度 (g/cm³)
+  extract_pattern: 氖.*密度[^\d]*(\d+\.?\d*)
+  value: 0.9002
+  tolerance: 0.045
+  description: 氖（Ne）的密度约为 0.9002 g/cm³
+  source: periodic_table_Ne
+- name: 钠的相对原子质量
+  extract_pattern: 钠.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 22.99
+  tolerance: 0.01
+  description: 钠（Na）的相对原子质量约为 22.99
+  source: periodic_table_Na
+- name: 钠的沸点 (℃)
+  extract_pattern: 钠.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 882.9
+  tolerance: 0.5
+  description: 钠（Na）的沸点约为 882.9℃
+  source: periodic_table_Na
+- name: 钠的熔点 (℃)
+  extract_pattern: 钠.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 97.8
+  tolerance: 0.5
+  description: 钠（Na）的熔点约为 97.8℃
+  source: periodic_table_Na
+- name: 钠的密度 (g/cm³)
+  extract_pattern: 钠.*密度[^\d]*(\d+\.?\d*)
+  value: 0.968
+  tolerance: 0.048
+  description: 钠（Na）的密度约为 0.968 g/cm³
+  source: periodic_table_Na
+- name: 镁的相对原子质量
+  extract_pattern: 镁.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 24.3
+  tolerance: 0.01
+  description: 镁（Mg）的相对原子质量约为 24.3
+  source: periodic_table_Mg
+- name: 镁的沸点 (℃)
+  extract_pattern: 镁.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 1089.8
+  tolerance: 0.5
+  description: 镁（Mg）的沸点约为 1089.8℃
+  source: periodic_table_Mg
+- name: 镁的熔点 (℃)
+  extract_pattern: 镁.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 649.9
+  tolerance: 0.5
+  description: 镁（Mg）的熔点约为 649.9℃
+  source: periodic_table_Mg
+- name: 镁的密度 (g/cm³)
+  extract_pattern: 镁.*密度[^\d]*(\d+\.?\d*)
+  value: 1.738
+  tolerance: 0.087
+  description: 镁（Mg）的密度约为 1.738 g/cm³
+  source: periodic_table_Mg
+- name: 铝的相对原子质量
+  extract_pattern: 铝.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 26.98
+  tolerance: 0.01
+  description: 铝（Al）的相对原子质量约为 26.98
+  source: periodic_table_Al
+- name: 铝的沸点 (℃)
+  extract_pattern: 铝.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 2469.8
+  tolerance: 0.5
+  description: 铝（Al）的沸点约为 2469.8℃
+  source: periodic_table_Al
+- name: 铝的熔点 (℃)
+  extract_pattern: 铝.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 660.3
+  tolerance: 0.5
+  description: 铝（Al）的熔点约为 660.3℃
+  source: periodic_table_Al
+- name: 铝的密度 (g/cm³)
+  extract_pattern: 铝.*密度[^\d]*(\d+\.?\d*)
+  value: 2.7
+  tolerance: 0.135
+  description: 铝（Al）的密度约为 2.7 g/cm³
+  source: periodic_table_Al
+- name: 硅的相对原子质量
+  extract_pattern: 硅.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 28.09
+  tolerance: 0.01
+  description: 硅（Si）的相对原子质量约为 28.09
+  source: periodic_table_Si
+- name: 硅的沸点 (℃)
+  extract_pattern: 硅.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 3264.8
+  tolerance: 0.5
+  description: 硅（Si）的沸点约为 3264.8℃
+  source: periodic_table_Si
+- name: 硅的熔点 (℃)
+  extract_pattern: 硅.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 1413.8
+  tolerance: 0.5
+  description: 硅（Si）的熔点约为 1413.8℃
+  source: periodic_table_Si
+- name: 硅的密度 (g/cm³)
+  extract_pattern: 硅.*密度[^\d]*(\d+\.?\d*)
+  value: 2.329
+  tolerance: 0.116
+  description: 硅（Si）的密度约为 2.329 g/cm³
+  source: periodic_table_Si
+- name: 磷的相对原子质量
+  extract_pattern: 磷.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 30.97
+  tolerance: 0.01
+  description: 磷（P）的相对原子质量约为 30.97
+  source: periodic_table_P
+- name: 磷的密度 (g/cm³)
+  extract_pattern: 磷.*密度[^\d]*(\d+\.?\d*)
+  value: 1.823
+  tolerance: 0.091
+  description: 磷（P）的密度约为 1.823 g/cm³
+  source: periodic_table_P
+- name: 硫的相对原子质量
+  extract_pattern: 硫.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 32.06
+  tolerance: 0.01
+  description: 硫（S）的相对原子质量约为 32.06
+  source: periodic_table_S
+- name: 硫的沸点 (℃)
+  extract_pattern: 硫.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 444.6
+  tolerance: 0.5
+  description: 硫（S）的沸点约为 444.6℃
+  source: periodic_table_S
+- name: 硫的熔点 (℃)
+  extract_pattern: 硫.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 115.2
+  tolerance: 0.5
+  description: 硫（S）的熔点约为 115.2℃
+  source: periodic_table_S
+- name: 硫的密度 (g/cm³)
+  extract_pattern: 硫.*密度[^\d]*(\d+\.?\d*)
+  value: 2.07
+  tolerance: 0.103
+  description: 硫（S）的密度约为 2.07 g/cm³
+  source: periodic_table_S
+- name: 氯的相对原子质量
+  extract_pattern: 氯.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 35.45
+  tolerance: 0.01
+  description: 氯（Cl）的相对原子质量约为 35.45
+  source: periodic_table_Cl
+- name: 氯的沸点 (℃)
+  extract_pattern: 氯.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -34.0
+  tolerance: 0.5
+  description: 氯（Cl）的沸点约为 -34.0℃
+  source: periodic_table_Cl
+- name: 氯的熔点 (℃)
+  extract_pattern: 氯.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -101.5
+  tolerance: 0.5
+  description: 氯（Cl）的熔点约为 -101.5℃
+  source: periodic_table_Cl
+- name: 氯的密度 (g/cm³)
+  extract_pattern: 氯.*密度[^\d]*(\d+\.?\d*)
+  value: 3.2
+  tolerance: 0.16
+  description: 氯（Cl）的密度约为 3.2 g/cm³
+  source: periodic_table_Cl
+- name: 氩的相对原子质量
+  extract_pattern: 氩.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 39.95
+  tolerance: 0.01
+  description: 氩（Ar）的相对原子质量约为 39.95
+  source: periodic_table_Ar
+- name: 氩的沸点 (℃)
+  extract_pattern: 氩.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -185.8
+  tolerance: 0.5
+  description: 氩（Ar）的沸点约为 -185.8℃
+  source: periodic_table_Ar
+- name: 氩的熔点 (℃)
+  extract_pattern: 氩.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -189.3
+  tolerance: 0.5
+  description: 氩（Ar）的熔点约为 -189.3℃
+  source: periodic_table_Ar
+- name: 氩的密度 (g/cm³)
+  extract_pattern: 氩.*密度[^\d]*(\d+\.?\d*)
+  value: 1.784
+  tolerance: 0.089
+  description: 氩（Ar）的密度约为 1.784 g/cm³
+  source: periodic_table_Ar
+- name: 钾的相对原子质量
+  extract_pattern: 钾.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 39.1
+  tolerance: 0.01
+  description: 钾（K）的相对原子质量约为 39.1
+  source: periodic_table_K
+- name: 钾的沸点 (℃)
+  extract_pattern: 钾.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 758.9
+  tolerance: 0.5
+  description: 钾（K）的沸点约为 758.9℃
+  source: periodic_table_K
+- name: 钾的熔点 (℃)
+  extract_pattern: 钾.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 63.6
+  tolerance: 0.5
+  description: 钾（K）的熔点约为 63.6℃
+  source: periodic_table_K
+- name: 钾的密度 (g/cm³)
+  extract_pattern: 钾.*密度[^\d]*(\d+\.?\d*)
+  value: 0.862
+  tolerance: 0.043
+  description: 钾（K）的密度约为 0.862 g/cm³
+  source: periodic_table_K
+- name: 钙的相对原子质量
+  extract_pattern: 钙.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 40.08
+  tolerance: 0.01
+  description: 钙（Ca）的相对原子质量约为 40.08
+  source: periodic_table_Ca
+- name: 钙的沸点 (℃)
+  extract_pattern: 钙.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 1483.8
+  tolerance: 0.5
+  description: 钙（Ca）的沸点约为 1483.8℃
+  source: periodic_table_Ca
+- name: 钙的熔点 (℃)
+  extract_pattern: 钙.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 841.9
+  tolerance: 0.5
+  description: 钙（Ca）的熔点约为 841.9℃
+  source: periodic_table_Ca
+- name: 钙的密度 (g/cm³)
+  extract_pattern: 钙.*密度[^\d]*(\d+\.?\d*)
+  value: 1.55
+  tolerance: 0.078
+  description: 钙（Ca）的密度约为 1.55 g/cm³
+  source: periodic_table_Ca
+- name: 铁的相对原子质量
+  extract_pattern: 铁.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 55.85
+  tolerance: 0.01
+  description: 铁（Fe）的相对原子质量约为 55.85
+  source: periodic_table_Fe
+- name: 铁的沸点 (℃)
+  extract_pattern: 铁.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 2860.8
+  tolerance: 0.5
+  description: 铁（Fe）的沸点约为 2860.8℃
+  source: periodic_table_Fe
+- name: 铁的熔点 (℃)
+  extract_pattern: 铁.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 1537.8
+  tolerance: 0.5
+  description: 铁（Fe）的熔点约为 1537.8℃
+  source: periodic_table_Fe
+- name: 铁的密度 (g/cm³)
+  extract_pattern: 铁.*密度[^\d]*(\d+\.?\d*)
+  value: 7.874
+  tolerance: 0.394
+  description: 铁（Fe）的密度约为 7.874 g/cm³
+  source: periodic_table_Fe
+- name: 铜的相对原子质量
+  extract_pattern: 铜.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 63.55
+  tolerance: 0.01
+  description: 铜（Cu）的相对原子质量约为 63.55
+  source: periodic_table_Cu
+- name: 铜的沸点 (℃)
+  extract_pattern: 铜.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 2561.8
+  tolerance: 0.5
+  description: 铜（Cu）的沸点约为 2561.8℃
+  source: periodic_table_Cu
+- name: 铜的熔点 (℃)
+  extract_pattern: 铜.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 1084.6
+  tolerance: 0.5
+  description: 铜（Cu）的熔点约为 1084.6℃
+  source: periodic_table_Cu
+- name: 铜的密度 (g/cm³)
+  extract_pattern: 铜.*密度[^\d]*(\d+\.?\d*)
+  value: 8.96
+  tolerance: 0.448
+  description: 铜（Cu）的密度约为 8.96 g/cm³
+  source: periodic_table_Cu
+- name: 锌的相对原子质量
+  extract_pattern: 锌.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 65.38
+  tolerance: 0.01
+  description: 锌（Zn）的相对原子质量约为 65.38
+  source: periodic_table_Zn
+- name: 锌的沸点 (℃)
+  extract_pattern: 锌.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 906.9
+  tolerance: 0.5
+  description: 锌（Zn）的沸点约为 906.9℃
+  source: periodic_table_Zn
+- name: 锌的熔点 (℃)
+  extract_pattern: 锌.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 419.5
+  tolerance: 0.5
+  description: 锌（Zn）的熔点约为 419.5℃
+  source: periodic_table_Zn
+- name: 锌的密度 (g/cm³)
+  extract_pattern: 锌.*密度[^\d]*(\d+\.?\d*)
+  value: 7.14
+  tolerance: 0.357
+  description: 锌（Zn）的密度约为 7.14 g/cm³
+  source: periodic_table_Zn
+- name: 溴的相对原子质量
+  extract_pattern: 溴.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 79.9
+  tolerance: 0.01
+  description: 溴（Br）的相对原子质量约为 79.9
+  source: periodic_table_Br
+- name: 溴的沸点 (℃)
+  extract_pattern: 溴.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 58.9
+  tolerance: 0.5
+  description: 溴（Br）的沸点约为 58.9℃
+  source: periodic_table_Br
+- name: 溴的熔点 (℃)
+  extract_pattern: 溴.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -7.3
+  tolerance: 0.5
+  description: 溴（Br）的熔点约为 -7.3℃
+  source: periodic_table_Br
+- name: 溴的密度 (g/cm³)
+  extract_pattern: 溴.*密度[^\d]*(\d+\.?\d*)
+  value: 3.1028
+  tolerance: 0.155
+  description: 溴（Br）的密度约为 3.1028 g/cm³
+  source: periodic_table_Br
+- name: 银的相对原子质量
+  extract_pattern: 银.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 107.87
+  tolerance: 0.01
+  description: 银（Ag）的相对原子质量约为 107.87
+  source: periodic_table_Ag
+- name: 银的沸点 (℃)
+  extract_pattern: 银.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 2161.8
+  tolerance: 0.5
+  description: 银（Ag）的沸点约为 2161.8℃
+  source: periodic_table_Ag
+- name: 银的熔点 (℃)
+  extract_pattern: 银.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 961.8
+  tolerance: 0.5
+  description: 银（Ag）的熔点约为 961.8℃
+  source: periodic_table_Ag
+- name: 银的密度 (g/cm³)
+  extract_pattern: 银.*密度[^\d]*(\d+\.?\d*)
+  value: 10.49
+  tolerance: 0.525
+  description: 银（Ag）的密度约为 10.49 g/cm³
+  source: periodic_table_Ag
+- name: 碘的相对原子质量
+  extract_pattern: 碘.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 126.9
+  tolerance: 0.01
+  description: 碘（I）的相对原子质量约为 126.9
+  source: periodic_table_I
+- name: 碘的沸点 (℃)
+  extract_pattern: 碘.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 184.2
+  tolerance: 0.5
+  description: 碘（I）的沸点约为 184.2℃
+  source: periodic_table_I
+- name: 碘的熔点 (℃)
+  extract_pattern: 碘.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 113.7
+  tolerance: 0.5
+  description: 碘（I）的熔点约为 113.7℃
+  source: periodic_table_I
+- name: 碘的密度 (g/cm³)
+  extract_pattern: 碘.*密度[^\d]*(\d+\.?\d*)
+  value: 4.933
+  tolerance: 0.247
+  description: 碘（I）的密度约为 4.933 g/cm³
+  source: periodic_table_I
+- name: 钡的相对原子质量
+  extract_pattern: 钡.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 137.33
+  tolerance: 0.01
+  description: 钡（Ba）的相对原子质量约为 137.33
+  source: periodic_table_Ba
+- name: 钡的沸点 (℃)
+  extract_pattern: 钡.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 1844.8
+  tolerance: 0.5
+  description: 钡（Ba）的沸点约为 1844.8℃
+  source: periodic_table_Ba
+- name: 钡的熔点 (℃)
+  extract_pattern: 钡.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 726.9
+  tolerance: 0.5
+  description: 钡（Ba）的熔点约为 726.9℃
+  source: periodic_table_Ba
+- name: 钡的密度 (g/cm³)
+  extract_pattern: 钡.*密度[^\d]*(\d+\.?\d*)
+  value: 3.51
+  tolerance: 0.175
+  description: 钡（Ba）的密度约为 3.51 g/cm³
+  source: periodic_table_Ba
+- name: 金的相对原子质量
+  extract_pattern: 金.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 196.97
+  tolerance: 0.01
+  description: 金（Au）的相对原子质量约为 196.97
+  source: periodic_table_Au
+- name: 金的沸点 (℃)
+  extract_pattern: 金.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 2969.8
+  tolerance: 0.5
+  description: 金（Au）的沸点约为 2969.8℃
+  source: periodic_table_Au
+- name: 金的熔点 (℃)
+  extract_pattern: 金.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 1064.2
+  tolerance: 0.5
+  description: 金（Au）的熔点约为 1064.2℃
+  source: periodic_table_Au
+- name: 金的密度 (g/cm³)
+  extract_pattern: 金.*密度[^\d]*(\d+\.?\d*)
+  value: 19.3
+  tolerance: 0.965
+  description: 金（Au）的密度约为 19.3 g/cm³
+  source: periodic_table_Au
+- name: 汞的相对原子质量
+  extract_pattern: 汞.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 200.59
+  tolerance: 0.01
+  description: 汞（Hg）的相对原子质量约为 200.59
+  source: periodic_table_Hg
+- name: 汞的沸点 (℃)
+  extract_pattern: 汞.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 356.7
+  tolerance: 0.5
+  description: 汞（Hg）的沸点约为 356.7℃
+  source: periodic_table_Hg
+- name: 汞的熔点 (℃)
+  extract_pattern: 汞.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -38.8
+  tolerance: 0.5
+  description: 汞（Hg）的熔点约为 -38.8℃
+  source: periodic_table_Hg
+- name: 汞的密度 (g/cm³)
+  extract_pattern: 汞.*密度[^\d]*(\d+\.?\d*)
+  value: 13.534
+  tolerance: 0.677
+  description: 汞（Hg）的密度约为 13.534 g/cm³
+  source: periodic_table_Hg
+- name: 铅的相对原子质量
+  extract_pattern: 铅.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 207.21
+  tolerance: 0.01
+  description: 铅（Pb）的相对原子质量约为 207.21
+  source: periodic_table_Pb
+- name: 铅的沸点 (℃)
+  extract_pattern: 铅.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 1748.8
+  tolerance: 0.5
+  description: 铅（Pb）的沸点约为 1748.8℃
+  source: periodic_table_Pb
+- name: 铅的熔点 (℃)
+  extract_pattern: 铅.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 327.5
+  tolerance: 0.5
+  description: 铅（Pb）的熔点约为 327.5℃
+  source: periodic_table_Pb
+- name: 铅的密度 (g/cm³)
+  extract_pattern: 铅.*密度[^\d]*(\d+\.?\d*)
+  value: 11.34
+  tolerance: 0.567
+  description: 铅（Pb）的密度约为 11.34 g/cm³
+  source: periodic_table_Pb
 misconceptions:
-  # ---- 物质组成 ----
-  - pattern: "水由\\d+个氢原子和\\d+个氧原子组成"
-    correct: "水由氢元素和氧元素组成（微观上：每个水分子由2个氢原子和1个氧原子构成）"
-    description: "混淆了宏观元素组成与微观分子构成的表述"
-    severity: "warning"
-
-  - pattern: "二氧化碳是有毒气体"
-    correct: "二氧化碳无毒，但不能供给呼吸；浓度过高会导致窒息"
-    description: "二氧化碳本身无毒，属于不能供给呼吸的气体"
-    severity: "error"
-
-  # ---- 燃烧条件 ----
-  - pattern: "铁在空气中燃烧"
-    correct: "铁在纯氧中才能燃烧（在空气中不能燃烧）"
-    description: "铁在空气中不能燃烧，只有在纯氧中才能剧烈燃烧"
-    severity: "error"
-
-  # ---- 导电性 ----
-  - pattern: "纯水能导电"
-    correct: "纯水几乎不导电（天然水和溶液因含离子才导电）"
-    description: "纯水是极弱的电解质，几乎不导电"
-    severity: "error"
-
-  # ---- 原子守恒 ----
-  - pattern: "化学变化中原子种类(?:发?生)?改变"
-    correct: "化学变化中原子种类不变（原子是化学变化中的最小粒子）"
-    description: "化学变化中原子种类、数目不变，只是重新组合"
-    severity: "error"
-
-  # ---- 催化剂 ----
-  - pattern: "催化剂.*(?:质量|性质).*(?:改变|变化)"
-    correct: "催化剂能改变化学反应速率，但反应前后其质量和化学性质不变"
-    description: "催化剂在反应前后质量和化学性质不变（物理性质可能改变）"
-    severity: "error"
-
+- pattern: 水由\d+个氢原子和\d+个氧原子组成
+  correct: 水由氢元素和氧元素组成（微观上：每个水分子由2个氢原子和1个氧原子构成）
+  description: 混淆了宏观元素组成与微观分子构成的表述
+  severity: warning
+- pattern: 二氧化碳是有毒气体
+  correct: 二氧化碳无毒，但不能供给呼吸；浓度过高会导致窒息
+  description: 二氧化碳本身无毒，属于不能供给呼吸的气体
+  severity: error
+- pattern: 铁在空气中燃烧
+  correct: 铁在纯氧中才能燃烧（在空气中不能燃烧）
+  description: 铁在空气中不能燃烧，只有在纯氧中才能剧烈燃烧
+  severity: error
+- pattern: 纯水能导电
+  correct: 纯水几乎不导电（天然水和溶液因含离子才导电）
+  description: 纯水是极弱的电解质，几乎不导电
+  severity: error
+- pattern: 化学变化中原子种类(?:发?生)?改变
+  correct: 化学变化中原子种类不变（原子是化学变化中的最小粒子）
+  description: 化学变化中原子种类、数目不变，只是重新组合
+  severity: error
+- pattern: 催化剂.*(?:质量|性质).*(?:改变|变化)
+  correct: 催化剂能改变化学反应速率，但反应前后其质量和化学性质不变
+  description: 催化剂在反应前后质量和化学性质不变（物理性质可能改变）
+  severity: error
 domain_facts:
   common_elements:
-    - symbol: "H"
-      name: "氢"
-      atomic_number: 1
-    - symbol: "He"
-      name: "氦"
-      atomic_number: 2
-    - symbol: "C"
-      name: "碳"
-      atomic_number: 6
-    - symbol: "N"
-      name: "氮"
-      atomic_number: 7
-    - symbol: "O"
-      name: "氧"
-      atomic_number: 8
-    - symbol: "Na"
-      name: "钠"
-      atomic_number: 11
-    - symbol: "Mg"
-      name: "镁"
-      atomic_number: 12
-    - symbol: "Al"
-      name: "铝"
-      atomic_number: 13
-    - symbol: "Si"
-      name: "硅"
-      atomic_number: 14
-    - symbol: "P"
-      name: "磷"
-      atomic_number: 15
-    - symbol: "S"
-      name: "硫"
-      atomic_number: 16
-    - symbol: "Cl"
-      name: "氯"
-      atomic_number: 17
-    - symbol: "K"
-      name: "钾"
-      atomic_number: 19
-    - symbol: "Ca"
-      name: "钙"
-      atomic_number: 20
-    - symbol: "Fe"
-      name: "铁"
-      atomic_number: 26
-    - symbol: "Cu"
-      name: "铜"
-      atomic_number: 29
-    - symbol: "Zn"
-      name: "锌"
-      atomic_number: 30
-    - symbol: "Ag"
-      name: "银"
-      atomic_number: 47
-    - symbol: "Ba"
-      name: "钡"
-      atomic_number: 56
-    - symbol: "Au"
-      name: "金"
-      atomic_number: 79
-
+  - symbol: H
+    name: 氢
+    atomic_number: 1
+  - symbol: He
+    name: 氦
+    atomic_number: 2
+  - symbol: C
+    name: 碳
+    atomic_number: 6
+  - symbol: N
+    name: 氮
+    atomic_number: 7
+  - symbol: O
+    name: 氧
+    atomic_number: 8
+  - symbol: Na
+    name: 钠
+    atomic_number: 11
+  - symbol: Mg
+    name: 镁
+    atomic_number: 12
+  - symbol: Al
+    name: 铝
+    atomic_number: 13
+  - symbol: Si
+    name: 硅
+    atomic_number: 14
+  - symbol: P
+    name: 磷
+    atomic_number: 15
+  - symbol: S
+    name: 硫
+    atomic_number: 16
+  - symbol: Cl
+    name: 氯
+    atomic_number: 17
+  - symbol: K
+    name: 钾
+    atomic_number: 19
+  - symbol: Ca
+    name: 钙
+    atomic_number: 20
+  - symbol: Fe
+    name: 铁
+    atomic_number: 26
+  - symbol: Cu
+    name: 铜
+    atomic_number: 29
+  - symbol: Zn
+    name: 锌
+    atomic_number: 30
+  - symbol: Ag
+    name: 银
+    atomic_number: 47
+  - symbol: Ba
+    name: 钡
+    atomic_number: 56
+  - symbol: Au
+    name: 金
+    atomic_number: 79
   common_compounds:
-    - formula: "H2O"
-      name: "水"
-      common_name: "水"
-    - formula: "CO2"
-      name: "二氧化碳"
-      common_name: "干冰（固态）"
-    - formula: "NaCl"
-      name: "氯化钠"
-      common_name: "食盐"
-    - formula: "CaCO3"
-      name: "碳酸钙"
-      common_name: "石灰石/大理石主要成分"
-    - formula: "H2SO4"
-      name: "硫酸"
-      common_name: null
-    - formula: "HCl"
-      name: "盐酸（氯化氢水溶液）"
-      common_name: "盐酸"
-    - formula: "NaOH"
-      name: "氢氧化钠"
-      common_name: "烧碱/火碱/苛性钠"
-    - formula: "Ca(OH)2"
-      name: "氢氧化钙"
-      common_name: "熟石灰/消石灰"
-    - formula: "NaHCO3"
-      name: "碳酸氢钠"
-      common_name: "小苏打"
-    - formula: "Na2CO3"
-      name: "碳酸钠"
-      common_name: "纯碱/苏打"
-    - formula: "Fe2O3"
-      name: "氧化铁"
-      common_name: "铁锈主要成分"
-    - formula: "CaO"
-      name: "氧化钙"
-      common_name: "生石灰"
-    - formula: "CO"
-      name: "一氧化碳"
-      common_name: null
-
+  - formula: H2O
+    name: 水
+    common_name: 水
+  - formula: CO2
+    name: 二氧化碳
+    common_name: 干冰（固态）
+  - formula: NaCl
+    name: 氯化钠
+    common_name: 食盐
+  - formula: CaCO3
+    name: 碳酸钙
+    common_name: 石灰石/大理石主要成分
+  - formula: H2SO4
+    name: 硫酸
+    common_name: null
+  - formula: HCl
+    name: 盐酸（氯化氢水溶液）
+    common_name: 盐酸
+  - formula: NaOH
+    name: 氢氧化钠
+    common_name: 烧碱/火碱/苛性钠
+  - formula: Ca(OH)2
+    name: 氢氧化钙
+    common_name: 熟石灰/消石灰
+  - formula: NaHCO3
+    name: 碳酸氢钠
+    common_name: 小苏打
+  - formula: Na2CO3
+    name: 碳酸钠
+    common_name: 纯碱/苏打
+  - formula: Fe2O3
+    name: 氧化铁
+    common_name: 铁锈主要成分
+  - formula: CaO
+    name: 氧化钙
+    common_name: 生石灰
+  - formula: CO
+    name: 一氧化碳
+    common_name: null
   acid_base_indicators:
-    - name: "石蕊"
-      acid_color: "红色"
-      neutral_color: "紫色"
-      base_color: "蓝色"
-    - name: "酚酞"
-      acid_color: "无色"
-      neutral_color: "无色"
-      base_color: "红色"
+  - name: 石蕊
+    acid_color: 红色
+    neutral_color: 紫色
+    base_color: 蓝色
+  - name: 酚酞
+    acid_color: 无色
+    neutral_color: 无色
+    base_color: 红色
