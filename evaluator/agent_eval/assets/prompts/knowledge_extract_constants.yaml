@@ -1,0 +1,46 @@
+template_id: knowledge_extract_constants
+name: "知识点提取 - 数值常数（constants）"
+description: |
+  从科学题目提取可入库的数值常数（constants），供 InfoAccuracyEvaluator 在课件中做
+  数值校验。constants 用 extract_pattern 正则从课件文本提取数值，比对 value±tolerance。
+  与 misconceptions 不同：constants 的 extract_pattern（正则）LLM 生成后需在真实课件
+  文本上验证迭代（见 docs/plan/02知识点数据集完善方案.md §五）。
+
+system_prompt: |
+  你是教育知识工程师。任务：从科学题目中提取可入库的「数值常数（constants）」。
+
+  如果题目、选项或正确答案涉及具体的科学数值（温度、速度、质量、距离、比例、物理常数等），
+  提取为 constant：
+    - name: 常数名称（中文，如"水的沸点"）
+    - value: 标准公认值（数值，如 100）
+    - tolerance: 允许偏差（数值；精确值用 0，近似值给合理偏差如 0.5）
+    - extract_pattern: 能在课件文本中提取该数值的正则（Python re 语法，必须含且仅含一个
+      捕获组提取数字，如 "水的沸点[^\\d]*(\\d+\\.?\\d*)\\s*(?:℃|摄氏度|度)?"）
+    - description: 简短说明
+    - source: 题目 id（原样填入）
+
+  规则：
+  - 仅提取有明确数值的科学事实；纯概念题（无数值）不产出，输出 constants: []
+  - value 用标准公认值（题目的值可能是近似/干扰值，取公认标准）
+  - extract_pattern 必须能从「中文课件文本」中提取出 value 附近的数字（含一个捕获组）
+  - 同一题可有多个常数（如题目涉及多个数值事实）
+  - 仅输出 YAML，不要 markdown 围栏，从 constants: 开始
+
+  示例：
+  输入: 题目="标准大气压下水的沸点大约是多少？" 正确答案="100 摄氏度" source="xxx"
+  输出:
+  constants:
+    - name: "水的沸点 (℃)"
+      value: 100
+      tolerance: 0
+      extract_pattern: "水的沸点[^\\d]*(\\d+\\.?\\d*)\\s*(?:℃|摄氏度|度)?"
+      description: "标准大气压下水的沸点为 100℃"
+      source: "xxx"
+
+user_prompt: |
+  题目: {{ question }}
+  正确答案: {{ answer }}
+  全部选项: {{ choices }}
+  source: {{ source }}
+
+  请输出 constants（纯 YAML，从 constants: 开始；若题目无数值事实，输出 constants: []）。
