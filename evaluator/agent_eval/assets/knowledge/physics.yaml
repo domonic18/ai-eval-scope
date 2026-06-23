@@ -57,6 +57,102 @@ constants:
   value: 220
   tolerance: 20
   description: 中国家庭电路电压 = 220V
+- name: 铁的密度 (g/cm³)
+  value: 7.9
+  tolerance: 0.1
+  extract_pattern: 铁.*?密度[^\d]*(\d+\.?\d*)
+  description: 铁的密度约为 7.9 g/cm³ = 7.9×10³ kg/m³
+  source: physics_reference
+- name: 铜的密度 (g/cm³)
+  value: 8.9
+  tolerance: 0.1
+  extract_pattern: 铜.*?密度[^\d]*(\d+\.?\d*)
+  description: 铜的密度约为 8.9 g/cm³ = 8.9×10³ kg/m³
+  source: physics_reference
+- name: 铝的密度 (g/cm³)
+  value: 2.7
+  tolerance: 0.1
+  extract_pattern: 铝.*?密度[^\d]*(\d+\.?\d*)
+  description: 铝的密度约为 2.7 g/cm³ = 2.7×10³ kg/m³
+  source: physics_reference
+- name: 冰的密度 (g/cm³)
+  value: 0.9
+  tolerance: 0.05
+  extract_pattern: 冰.*?密度[^\d]*(\d+\.?\d*)
+  description: 冰的密度约为 0.9 g/cm³ = 0.9×10³ kg/m³
+  source: physics_reference
+- name: 水银的密度 (g/cm³)
+  value: 13.6
+  tolerance: 0.2
+  extract_pattern: 水银.*?密度[^\d]*(\d+\.?\d*)
+  description: 水银（汞）的密度约为 13.6 g/cm³ = 13.6×10³ kg/m³
+  source: physics_reference
+- name: 酒精的密度 (g/cm³)
+  value: 0.8
+  tolerance: 0.05
+  extract_pattern: 酒精.*?密度[^\d]*(\d+\.?\d*)
+  description: 酒精的密度约为 0.8 g/cm³ = 0.8×10³ kg/m³
+  source: physics_reference
+- name: 煤油的密度 (g/cm³)
+  value: 0.8
+  tolerance: 0.05
+  extract_pattern: 煤油.*?密度[^\d]*(\d+\.?\d*)
+  description: 煤油的密度约为 0.8 g/cm³ = 0.8×10³ kg/m³
+  source: physics_reference
+- name: 一节干电池电压 (V)
+  value: 1.5
+  tolerance: 0
+  extract_pattern: (?:一节|单节)?\s*干电池[^\d]*(\d+\.?\d*)\s*V
+  description: 一节干电池电压为 1.5V
+  source: physics_reference
+- name: 一节铅蓄电池电压 (V)
+  value: 2.0
+  tolerance: 0
+  extract_pattern: (?:一节|单节)\s*(?:铅|铅酸)?蓄电池[^\d]*(\d+\.?\d*)\s*V
+  description: 一节铅蓄电池电压为 2V
+  source: physics_reference
+- name: 汽车蓄电池电压 (V)
+  value: 12
+  tolerance: 0
+  extract_pattern: (?:汽车|轿车).*?(?:蓄电池|电瓶)[^\d]*(\d+)\s*V
+  description: 汽车蓄电池电压约为 12V（6 节铅蓄电池串联）
+  source: physics_reference
+- name: 工业动力电压 (V)
+  value: 380
+  tolerance: 5
+  extract_pattern: (?:工业|动力|三相).*?(?:线电压|电压)[^\d]*(\d+)\s*V
+  description: 工业三相动力线电压约为 380V
+  source: physics_reference
+- name: 水的折射率
+  value: 1.33
+  tolerance: 0.02
+  extract_pattern: 水.*?(?:的)?折射率[^\d]*(\d+\.?\d*)
+  description: 水的折射率约为 1.33（≈4/3）
+  source: physics_reference
+- name: 玻璃的折射率
+  value: 1.5
+  tolerance: 0.05
+  extract_pattern: 玻璃.*?(?:的)?折射率[^\d]*(\d+\.?\d*)
+  description: 普通玻璃的折射率约为 1.5
+  source: physics_reference
+- name: 标准大气压水银柱高 (cm)
+  value: 76
+  tolerance: 1
+  extract_pattern: (?:水银柱|汞柱).*?(?:高|高度|长约|约为)[^\d]*(\d+\.?\d*)\s*(?:cm|厘米)
+  description: 1 标准大气压能托起约 76cm 高的水银柱
+  source: physics_reference
+- name: 标准大气压水银柱高 (mmHg)
+  value: 760
+  tolerance: 10
+  extract_pattern: (?:水银柱|汞柱).*?(?:高|高度|长约|约为)[^\d]*(\d+)\s*(?:mm|毫米)
+  description: 1 标准大气压 = 760 mmHg
+  source: physics_reference
+- name: 人体正常体温 (℃)
+  value: 37
+  tolerance: 0.5
+  extract_pattern: (?:正常体温|人的体温|人体体温)[^\d]*(\d+\.?\d*)
+  description: 人体正常体温约为 37℃
+  source: physics_reference
 misconceptions:
 - pattern: 重力.*方向.*向下[^，。]|重力.*方向.*垂直向下
   correct: 重力的方向是竖直向下（不是'垂直向下'，垂直向下与接触面有关，竖直向下指向地心）
@@ -4059,6 +4155,12 @@ domain_facts:
     - name: 热平衡
       formula: Q_吸 = Q_放
       description: 无热损失时吸热等于放热
+    - name: 热值（燃料放热）
+      formula: Q = qm
+      description: q 为热值(J/kg)，m 为燃料质量，完全燃烧放热
+    - name: 热机效率
+      formula: η = W_有/Q_总
+      description: 有用功占燃料完全燃烧所释放能量的比例
     optics:
     - name: 光速
       formula: c = 3×10⁸ m/s
@@ -4066,6 +4168,12 @@ domain_facts:
     - name: 反射定律
       formula: 反射角 = 入射角
       description: 三线共面、法线居中、两角相等
+    - name: 折射定律
+      formula: n = sin i / sin r
+      description: 入射角正弦与折射角正弦之比为定值（折射率）
+    - name: 折射率与光速
+      formula: n = c / v
+      description: 真空光速 c 与介质中光速 v 之比，n≥1
     waves:
     - name: 波速公式
       formula: v = fλ
@@ -4073,3 +4181,98 @@ domain_facts:
     - name: 声速（空气）
       formula: v ≈ 340 m/s
       description: 15°C空气中
+    - name: 周期与频率
+      formula: T = 1/f
+      description: 周期是频率的倒数（单位：秒）
+  optical_imaging:
+    - object: 凸透镜
+      condition: u > 2f
+      image: 倒立、缩小、实像
+      position: f < v < 2f（异侧）
+      application: 照相机、摄像头
+    - object: 凸透镜
+      condition: u = 2f
+      image: 倒立、等大、实像
+      position: v = 2f（异侧）
+      application: 测焦距
+    - object: 凸透镜
+      condition: f < u < 2f
+      image: 倒立、放大、实像
+      position: v > 2f（异侧）
+      application: 投影仪、幻灯机
+    - object: 凸透镜
+      condition: u = f
+      image: 不成像（折射光线平行射出）
+      position: 无
+      application: 探照灯（平行光源）
+    - object: 凸透镜
+      condition: u < f
+      image: 正立、放大、虚像
+      position: v > u（同侧）
+      application: 放大镜
+    - object: 凹透镜
+      condition: 任意物距
+      image: 正立、缩小、虚像
+      position: 同侧
+      application: 近视眼镜
+    - object: 平面镜
+      condition: —
+      image: 正立、等大、虚像
+      position: 像距=物距（镜后）
+      application: 梳妆镜、潜望镜
+    - object: 凸面镜
+      condition: —
+      image: 正立、缩小、虚像
+      position: 镜后
+      application: 汽车后视镜（扩大视野）
+    - object: 凹面镜
+      condition: —
+      image: —（对光线有会聚作用）
+      position: —
+      application: 太阳灶、手电筒反光碗、医生头灯
+  states_of_matter:
+    - process: 熔化
+      transition: 固态→液态
+      heat: 吸热
+      condition: 晶体达到熔点且继续吸热
+      example: 冰熔化成水（熔点 0℃）
+    - process: 凝固
+      transition: 液态→固态
+      heat: 放热
+      condition: 晶体达到凝固点且继续放热
+      example: 水结成冰（凝固点 0℃）
+    - process: 汽化
+      transition: 液态→气态
+      heat: 吸热
+      forms: 蒸发（任意温度，表面）与沸腾（沸点，表面+内部）
+      example: 水沸腾（标准大气压沸点 100℃）
+    - process: 液化
+      transition: 气态→液态
+      heat: 放热
+      methods: 降温或压缩体积
+      example: 露水、水蒸气遇冷形成的"白气"
+    - process: 升华
+      transition: 固态→气态
+      heat: 吸热
+      example: 干冰升华、樟脑丸变小
+    - process: 凝华
+      transition: 气态→固态
+      heat: 放热
+      example: 霜、雪的形成、白炽灯泡壁发黑
+  magnetism:
+    - phenomenon: 奥斯特实验
+      fact: 通电导线周围存在磁场（电流的磁效应）
+      significance: 首次揭示电与磁的联系
+    - phenomenon: 安培定则（右手螺旋定则）
+      fact: 右手握住螺线管，四指弯曲方向与电流方向一致，大拇指所指为 N 极
+      application: 判断通电螺线管的极性
+    - phenomenon: 电磁感应（法拉第发现）
+      fact: 闭合电路的一部分导体在磁场中做切割磁感线运动时，产生感应电流
+      application: 发电机（机械能→电能）
+    - phenomenon: 磁场对电流的作用
+      fact: 通电导体在磁场中受到力的作用
+      application: 电动机（电能→机械能）
+    - phenomenon: 磁极相互作用
+      fact: 同名磁极相互排斥，异名磁极相互吸引
+    - phenomenon: 地磁场
+      fact: 地球周围存在磁场；地磁北极在地理南极附近（存在磁偏角）

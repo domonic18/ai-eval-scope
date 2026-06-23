@@ -109,6 +109,8 @@ def discover_builtin() -> None:
     在 __init__.py 或首次使用管道时调用。
     """
     import agent_eval.knowledge.converters.periodic_table  # noqa: F401
+    import agent_eval.knowledge.converters.physics_reference  # noqa: F401
     import agent_eval.knowledge.extractors.llm_extractor  # noqa: F401
     import agent_eval.knowledge.sources.eval_sources  # noqa: F401
+    import agent_eval.knowledge.sources.physics_reference  # noqa: F401
     import agent_eval.knowledge.sources.table_sources  # noqa: F401
