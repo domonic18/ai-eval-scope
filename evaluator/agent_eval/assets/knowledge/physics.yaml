@@ -278,11 +278,6 @@ misconceptions:
   description: 误以为哺乳动物捕食是恐龙灭绝的主要原因
   severity: error
   source: Mercury_7041615
-- pattern: 风向西吹
-  correct: 船向东北行驶，河流向北，风应向东吹才能产生东北方向的合力
-  description: 误以为风向西吹能使船向东北行驶
-  severity: error
-  source: Mercury_7041860
 - pattern: 风向向北吹
   correct: 河流已向北提供力，若风也向北，船会向北而非东北
   description: 误以为风向北吹与河流同向能使船向东北
@@ -1818,11 +1813,6 @@ misconceptions:
   description: 误以为温度相同的物体内能一定相同，忽略了质量等因素
   severity: error
   source: cmmlu_conceptual_physics_99
-- pattern: 功是矢量
-  correct: 功是标量，正负表示做功的性质（动力或阻力），不表示方向
-  description: 误认为功是矢量，将正负号理解为方向
-  severity: error
-  source: cmmlu_conceptual_physics_100
 - pattern: 平抛运动速度方向与恒力方向之间夹角不变
   correct: 平抛运动中速度方向与恒力（重力）方向之间的夹角随时间变化，越来越小
   description: 误以为平抛运动速度方向与恒力方向夹角保持不变
@@ -3233,16 +3223,6 @@ misconceptions:
   description: 误以为加速度向上时合力为m(g-a)，忽略了加速度方向与重力方向相反
   severity: error
   source: cmmlu_high_school_physics_57
-- pattern: mah
-  correct: 起重机对货物做功包括克服重力和提供加速度，总功为m(g+a)h，而非仅ma乘以h
-  description: 误以为起重机做功仅等于货物动能增量，忽略了重力势能增加
-  severity: error
-  source: cmmlu_high_school_physics_57
-- pattern: mgh
-  correct: 起重机对货物做功等于m(g+a)h，因为货物有加速度，需额外做功提供动能
-  description: 误以为匀速提升时做功为mgh，忽略了加速过程需要额外功
-  severity: error
-  source: cmmlu_high_school_physics_57
 - pattern: 16h.*t2.*t1
   correct: 重力加速度表达式为 $8h/((t_2)^2 -(t_1)^2)$
   description: 误将分子中的系数8误写为16，可能源于对时间差平方的系数计算错误
@@ -3318,21 +3298,6 @@ misconceptions:
   description: 误以为合力做功是分力做功的差值
   severity: error
   source: cmmlu_high_school_physics_62
-- pattern: 控制变量
-  correct: 质点、单摆、理想气体等概念属于理想模型，是科学方法中的理想化方法
-  description: 误将理想模型方法当作控制变量法
-  severity: error
-  source: cmmlu_high_school_physics_63
-- pattern: 等效替代
-  correct: 质点、单摆、理想气体等概念属于理想模型，是科学方法中的理想化方法
-  description: 误将理想模型方法当作等效替代法
-  severity: error
-  source: cmmlu_high_school_physics_63
-- pattern: 类比
-  correct: 质点、单摆、理想气体等概念属于理想模型，是科学方法中的理想化方法
-  description: 误将理想模型方法当作类比法
-  severity: error
-  source: cmmlu_high_school_physics_63
 - pattern: 加速度.*减小.*速度.*增大
   correct: 当牵引力逐渐增大而功率不变时，速度会逐渐减小，加速度也会逐渐减小
   description: 误以为加速度减小意味着速度增大
@@ -3833,16 +3798,6 @@ misconceptions:
   description: 误将静电防护措施当作静电应用
   severity: error
   source: cmmlu_high_school_physics_100
-- pattern: 4m/s
-  correct: 根据动量守恒，系统总动量为零，乙速度为零时甲速度也为零
-  description: 误以为球在甲手中时甲的速度会因抛接而增大
-  severity: error
-  source: cmmlu_high_school_physics_101
-- pattern: 2m/s
-  correct: 系统总动量为零，乙速度为零时甲速度必为零
-  description: 误以为甲的速度保持不变
-  severity: error
-  source: cmmlu_high_school_physics_101
 - pattern: F.*最⼤值.*导线.*与B平⾏
   correct: 当安培力最大时，通电导线一定与B垂直
   description: 误以为安培力最大时导线与磁场平行，实际上安培力最大时导线与磁场垂直
@@ -3911,16 +3866,6 @@ misconceptions:
 - pattern: 停在机场的飞机
   correct: 乘客看到树木后退是以自己乘坐的飞机为参照系
   description: 误以为以静止的飞机为参照系时树木会后退
-  severity: error
-  source: cmmlu_high_school_physics_106
-- pattern: 候机大楼
-  correct: 乘客看到树木后退是以自己乘坐的飞机为参照系
-  description: 误以为以候机大楼为参照系时树木会后退
-  severity: error
-  source: cmmlu_high_school_physics_106
-- pattern: 飞机跑道
-  correct: 乘客看到树木后退是以自己乘坐的飞机为参照系
-  description: 误以为以飞机跑道为参照系时树木会后退
   severity: error
   source: cmmlu_high_school_physics_106
 - pattern: 波速.*与.*频率成正⽐

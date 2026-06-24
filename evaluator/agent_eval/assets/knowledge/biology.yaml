@@ -766,11 +766,6 @@ misconceptions:
   description: 误以为失水过多时血浆渗透压不会升高
   severity: error
   source: cmmlu_high_school_biology_60
-- pattern: 产生渴感
-  correct: 人体失水过多时，会通过神经调节产生渴感
-  description: 误以为失水过多时不会产生渴感
-  severity: error
-  source: cmmlu_high_school_biology_60
 - pattern: 抗利尿激素含量升高
   correct: 人体失水过多时，抗利尿激素分泌增加，含量升高
   description: 误以为失水过多时抗利尿激素含量不会升高

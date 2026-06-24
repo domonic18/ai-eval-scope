@@ -905,11 +905,6 @@ misconceptions:
   description: 误以为Z是氧元素，位于ⅥA族
   severity: error
   source: cmmlu_high_school_chemistry_12
-- pattern: W2Y2
-  correct: 钠和氧气在常温下化合生成Na2O，不是Na2O2
-  description: 误以为钠和氧气常温反应生成过氧化钠
-  severity: error
-  source: cmmlu_high_school_chemistry_12
 - pattern: M、W、Y.*水溶液.*碱性
   correct: M、W、Y形成的化合物如Na2SO4水溶液呈中性
   description: 误以为钠、硫、氧形成的化合物水溶液呈碱性
@@ -2584,11 +2579,6 @@ misconceptions:
   description: 误以为直接填埋是合理的垃圾处理方式，忽视了垃圾分类和污染问题
   severity: error
   source: cmmlu_high_school_chemistry_130
-- pattern: 可逆反应
-  correct: 丹砂烧之成水银是分解反应，积变又成丹砂是化合反应，条件不同，不是可逆反应
-  description: 误以为同一物质在不同条件下能相互转化的反应是可逆反应
-  severity: error
-  source: cmmlu_high_school_chemistry_131
 - pattern: 复分解反应
   correct: 丹砂烧之成水银是分解反应，不是复分解反应
   description: 误以为该反应是复分解反应

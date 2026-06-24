@@ -53,21 +53,6 @@ misconceptions:
   description: 误以为混合所有制经济一定是非公有制经济
   severity: error
   source: cmmlu_high_school_politics_0
-- pattern: 滞后性
-  correct: 市场调节的滞后性是指市场调节是一种事后调节，从价格形成、信号反馈到产品产出有一定的时间差。
-  description: 误将矿难事故频发归因于市场调节的滞后性，而实际是市场调节的自发性（利益驱使下盲目生产）导致的。
-  severity: error
-  source: cmmlu_high_school_politics_1
-- pattern: 盲目性
-  correct: 市场调节的盲目性是指生产经营者无法掌握市场全部信息，决策带有一定盲目性。
-  description: 误将矿难事故频发归因于市场调节的盲目性，而实际是市场调节的自发性（利益驱使下忽视安全）导致的。
-  severity: error
-  source: cmmlu_high_school_politics_1
-- pattern: 基础性
-  correct: 市场在资源配置中起决定性作用，但基础性不是市场调节的固有缺陷。
-  description: 误将基础性当作市场调节的缺陷，而实际基础性是指市场在资源配置中的基础作用，并非导致矿难的原因。
-  severity: error
-  source: cmmlu_high_school_politics_1
 - pattern: 初次分配注重效率.*社会保障体系.*削弱
   correct: 初次分配处理好效率和公平的关系，有助于完善社会保障体系，而非削弱其作用
   description: 误以为初次分配强调公平会削弱社会保障体系
@@ -373,21 +358,6 @@ misconceptions:
   description: 误以为涟漪效应支持经济落后国家不应对外开放
   severity: error
   source: cmmlu_high_school_politics_26
-- pattern: 舆论手段
-  correct: 政府通过设立举报中心、公布举报电话等方式进行监管，属于行政手段，而非舆论手段
-  description: 误以为通过舆论监督（如媒体曝光）来调控价格，实际是政府直接行政干预
-  severity: error
-  source: cmmlu_high_school_politics_27
-- pattern: 法律手段
-  correct: 价格举报中心是政府行政机构直接处理举报，属于行政手段，而非通过立法或司法程序的法律手段
-  description: 误以为政府设立举报中心属于法律手段，实际是行政手段
-  severity: error
-  source: cmmlu_high_school_politics_27
-- pattern: 经济手段
-  correct: 政府直接设立举报中心并处理价格违法事件，属于行政手段，而非通过财政、货币政策等经济手段
-  description: 误以为政府通过经济杠杆（如补贴、税收）调控价格，实际是行政手段
-  severity: error
-  source: cmmlu_high_school_politics_27
 - pattern: 按劳分配.*按个体劳动者劳动成果分配
   correct: 王某转租土地的收入属于按生产要素分配（土地要素），张某经营土地的收入属于按劳分配（集体经济中的承包经营）
   description: 误将土地转租收入当作按劳分配，将承包经营收入当作个体劳动者劳动成果分配
@@ -553,11 +523,6 @@ misconceptions:
   description: 误以为国家政策调控是市场平衡运行的决定性因素，忽视了市场的基础性作用
   severity: error
   source: cmmlu_high_school_politics_41
-- pattern: 低价竞争
-  correct: 企业应通过提高产品附加值、品牌建设等方式提升竞争力，而非单纯依赖低价竞争
-  description: 误以为企业应坚持低价竞争策略
-  severity: error
-  source: cmmlu_high_school_politics_42
 - pattern: 调整产业结构
   correct: 调整产业结构是宏观层面的政策，企业层面应关注经营理念、产品设计等微观策略
   description: 混淆了企业微观策略与宏观产业结构调整
@@ -598,21 +563,6 @@ misconceptions:
   description: 认为非公有制经济与市场经济体制无关
   severity: error
   source: cmmlu_high_school_politics_44
-- pattern: bcd
-  correct: 应对贸易保护主义应熟悉世贸规则、推动科技创新、调整出口秩序、拓展经济发展空间，四个选项均正确
-  description: 误以为应对贸易保护主义不需要推动科技创新
-  severity: error
-  source: cmmlu_high_school_politics_45
-- pattern: abd
-  correct: 应对贸易保护主义应熟悉世贸规则、推动科技创新、调整出口秩序、拓展经济发展空间，四个选项均正确
-  description: 误以为应对贸易保护主义不需要调整出口秩序
-  severity: error
-  source: cmmlu_high_school_politics_45
-- pattern: acd
-  correct: 应对贸易保护主义应熟悉世贸规则、推动科技创新、调整出口秩序、拓展经济发展空间，四个选项均正确
-  description: 误以为应对贸易保护主义不需要推动科技创新
-  severity: error
-  source: cmmlu_high_school_politics_45
 - pattern: 增强.*国际竞争能力
   correct: 发展对外经济关系可以互通有无，实现资源优化配置，但不直接等同于增强国际竞争能力
   description: 误以为企业实施‘走出去’的主要作用是增强国际竞争能力，而忽略了资源优化配置的核心功能
@@ -858,11 +808,6 @@ misconceptions:
   description: 混淆了价值判断与价值选择的先后关系
   severity: error
   source: cmmlu_high_school_politics_65
-- pattern: 按劳分配
-  correct: 按劳分配适用于公有制经济中的工资、奖金等，李师傅是个体经营，属于按个体劳动者的劳动成果分配
-  description: 误以为个体经营收入属于按劳分配
-  severity: error
-  source: cmmlu_high_school_politics_66
 - pattern: 按劳动要素分配
   correct: 按劳动要素分配适用于私营或外资企业中劳动者按劳动力要素获得的收入，李师傅是个体经营，属于按个体劳动者的劳动成果分配
   description: 混淆了个体经营收入与按劳动要素分配
@@ -891,16 +836,6 @@ misconceptions:
 - pattern: 权利与义务相统一
   correct: 我国对外开放政策坚持独立自主、自力更生的原则
   description: 误以为对外开放政策的原则是权利与义务相统一
-  severity: error
-  source: cmmlu_high_school_politics_68
-- pattern: 诚实信用
-  correct: 我国对外开放政策坚持独立自主、自力更生的原则
-  description: 误以为对外开放政策的原则是诚实信用
-  severity: error
-  source: cmmlu_high_school_politics_68
-- pattern: 平等自愿
-  correct: 我国对外开放政策坚持独立自主、自力更生的原则
-  description: 误以为对外开放政策的原则是平等自愿
   severity: error
   source: cmmlu_high_school_politics_68
 - pattern: 非公有制经济.*社会主义经济.*重要组成部分
@@ -1443,11 +1378,6 @@ misconceptions:
   description: 误以为股份制必然具有公有制性质
   severity: error
   source: cmmlu_high_school_politics_115
-- pattern: 传统道德
-  correct: 思想道德建设是文化建设的灵魂，规定文化建设方向，而非仅仅是传统道德
-  description: 误以为思想道德建设等同于传统道德，忽略了其作为文化建设灵魂的核心作用
-  severity: error
-  source: cmmlu_high_school_politics_116
 - pattern: 每个时代.*相同内涵
   correct: 思想道德建设的内涵随时代发展而变化，并非在每个时代都具有相同内涵
   description: 误以为思想道德建设的内涵是固定不变的
@@ -1688,11 +1618,6 @@ misconceptions:
   description: 误将资本主义生产方式占统治地位当作世界市场形成的根本原因
   severity: error
   source: cmmlu_high_school_politics_137
-- pattern: 产业革命
-  correct: 产业革命是推动世界市场形成的重要因素，但不是根本原因
-  description: 误将产业革命当作世界市场形成的根本原因
-  severity: error
-  source: cmmlu_high_school_politics_137
 - pattern: 第三次技术革命
   correct: 第三次技术革命是推动世界市场发展的因素，但不是根本原因
   description: 误将第三次技术革命当作世界市场形成的根本原因
@@ -1788,21 +1713,6 @@ misconceptions:
   description: 误以为爱国是泛泛地热爱所有国家
   severity: error
   source: cmmlu_legal_and_moral_basis_2
-- pattern: 职业道德
-  correct: 公共生活领域应遵守社会公德，职业道德适用于职业生活领域
-  description: 误将职业道德当作公共生活领域的道德准则
-  severity: error
-  source: cmmlu_legal_and_moral_basis_3
-- pattern: 家庭道德
-  correct: 公共生活领域应遵守社会公德，家庭道德适用于家庭生活领域
-  description: 误将家庭道德当作公共生活领域的道德准则
-  severity: error
-  source: cmmlu_legal_and_moral_basis_3
-- pattern: 个人品德
-  correct: 公共生活领域应遵守社会公德，个人品德属于个人修养范畴
-  description: 误将个人品德当作公共生活领域的道德准则
-  severity: error
-  source: cmmlu_legal_and_moral_basis_3
 - pattern: 历法.*著作权
   correct: 历法不属于著作权法保护的客体，因其具有通用性和公共性
   description: 误以为历法受著作权法保护
@@ -1863,21 +1773,6 @@ misconceptions:
   description: 误将秉公办事、平等待人、清正廉洁等行为归为服务群众的要求
   severity: error
   source: cmmlu_legal_and_moral_basis_7
-- pattern: 民族主义
-  correct: 爱国主义强调对祖国的热爱和忠诚，而民族主义可能包含排外或极端倾向
-  description: 误将民族主义等同于爱国主义，混淆了二者的内涵差异
-  severity: error
-  source: cmmlu_legal_and_moral_basis_8
-- pattern: 社会主义
-  correct: 社会主义是一种社会制度或政治理论，并非所有历史人物共同的思想因素
-  description: 误以为社会主义是历史上所有杰出人物的共同思想基础
-  severity: error
-  source: cmmlu_legal_and_moral_basis_8
-- pattern: 集体主义
-  correct: 集体主义强调集体利益优先，但题目中共同思想因素是爱国主义
-  description: 误将集体主义视为历史人物壮丽人生的共同思想根源
-  severity: error
-  source: cmmlu_legal_and_moral_basis_8
 - pattern: 婚姻法.*程序法
   correct: 《中华人民共和国婚姻法》属于实体法，而非程序法
   description: 误以为婚姻法是程序法
@@ -1953,21 +1848,6 @@ misconceptions:
   description: 误将法的制裁作用当作维护统治阶级社会关系和社会秩序的作用
   severity: error
   source: cmmlu_legal_and_moral_basis_13
-- pattern: B国法律
-  correct: 中国公民在航空器内犯罪，适用中国法律
-  description: 误以为犯罪行为发生在B国上空，应适用B国法律
-  severity: error
-  source: cmmlu_legal_and_moral_basis_14
-- pattern: A国法律
-  correct: 中国公民在航空器内犯罪，适用中国法律
-  description: 误以为犯罪行为发生在A国上空，应适用A国法律
-  severity: error
-  source: cmmlu_legal_and_moral_basis_14
-- pattern: 国际法
-  correct: 中国公民在航空器内犯罪，适用中国法律
-  description: 误以为跨国航班上的犯罪应适用国际法
-  severity: error
-  source: cmmlu_legal_and_moral_basis_14
 - pattern: 司法.*主体.*国家监察机关
   correct: 司法的主体是国家审判机关和检察机关，国家监察机关属于监察机关而非司法机关
   description: 误将国家监察机关当作司法主体
@@ -2028,21 +1908,6 @@ misconceptions:
   description: 误以为具体执法人员个人可以作为行政诉讼的被告
   severity: error
   source: cmmlu_legal_and_moral_basis_18
-- pattern: 共同性
-  correct: 理想信念因个体差异而呈现多样性，而非共同性
-  description: 误以为理想信念具有共同性，忽略了个人成长环境和性格差异导致的多样性
-  severity: error
-  source: cmmlu_legal_and_moral_basis_19
-- pattern: 虚幻性
-  correct: 理想信念是现实与可能的结合，具有现实基础，并非虚幻
-  description: 误以为理想信念是虚幻的，忽视了其基于现实和可能的特性
-  severity: error
-  source: cmmlu_legal_and_moral_basis_19
-- pattern: 崇高性
-  correct: 理想信念的多样性源于个体差异，而非其崇高性
-  description: 误以为理想信念的多样性是由崇高性导致的，混淆了不同属性
-  severity: error
-  source: cmmlu_legal_and_moral_basis_19
 - pattern: 伦理道德.*人生目的
   correct: 解决人生目的和奋斗目标的问题，最根本是要靠理想信念
   description: 误以为伦理道德是解决人生目的和奋斗目标的最根本依据
@@ -2098,21 +1963,6 @@ misconceptions:
   description: 误将爱岗敬业的具体表现归为奉献社会的要求
   severity: error
   source: cmmlu_legal_and_moral_basis_23
-- pattern: 理想
-  correct: 理想是对未来事物的想象或希望，而信念是对某种思想或事物坚信不疑并身体力行的态度
-  description: 误将理想等同于信念，混淆了对未来的期望与坚定的信仰态度
-  severity: error
-  source: cmmlu_legal_and_moral_basis_24
-- pattern: 价值观
-  correct: 价值观是评价事物好坏、是非的标准，而信念是对某种思想或事物坚信不疑并身体力行的态度
-  description: 误将价值观等同于信念，混淆了评价标准与坚定信仰
-  severity: error
-  source: cmmlu_legal_and_moral_basis_24
-- pattern: 世界观
-  correct: 世界观是对世界的总体看法，而信念是对某种思想或事物坚信不疑并身体力行的态度
-  description: 误将世界观等同于信念，混淆了对世界的整体认识与具体信仰
-  severity: error
-  source: cmmlu_legal_and_moral_basis_24
 - pattern: 拘留.*强制.*到指定地点接受询问
   correct: 拘留是临时剥夺人身自由的强制措施，并非强制到指定地点接受询问
   description: 误将拘留理解为强制到指定地点接受询问的措施
@@ -2188,21 +2038,6 @@ misconceptions:
   description: 误以为这句话强调学习与思考以明白道理
   severity: error
   source: cmmlu_legal_and_moral_basis_29
-- pattern: 经济生活
-  correct: 公共生活指人们在公共领域、公有环境、公用场所中彼此开放透明且相互关联的共同活动
-  description: 误将公共生活等同于经济生活
-  severity: error
-  source: cmmlu_legal_and_moral_basis_30
-- pattern: 文化生活
-  correct: 公共生活指人们在公共领域、公有环境、公用场所中彼此开放透明且相互关联的共同活动
-  description: 误将公共生活等同于文化生活
-  severity: error
-  source: cmmlu_legal_and_moral_basis_30
-- pattern: 私人生活
-  correct: 公共生活指人们在公共领域、公有环境、公用场所中彼此开放透明且相互关联的共同活动
-  description: 误将公共生活等同于私人生活
-  severity: error
-  source: cmmlu_legal_and_moral_basis_30
 - pattern: 国务院.*军事领导
   correct: 国务院是最高国家行政机关，不领导武装力量；中央军委是最高军事领导机关
   description: 误以为国务院领导全国武装力量
@@ -2236,11 +2071,6 @@ misconceptions:
 - pattern: 发扬集体主义精神
   correct: 新时期爱国主义的主题是建设和发展中国特色社会主义
   description: 误以为集体主义精神是新时期爱国主义的主题
-  severity: error
-  source: cmmlu_legal_and_moral_basis_33
-- pattern: 救亡图存
-  correct: 救亡图存是近代中国爱国主义的主题，而非新时期
-  description: 混淆了不同历史时期爱国主义的主题
   severity: error
   source: cmmlu_legal_and_moral_basis_33
 - pattern: 实现共产主义
@@ -2308,21 +2138,6 @@ misconceptions:
   description: 误将满足自身需要的价值归为社会需求
   severity: error
   source: cmmlu_legal_and_moral_basis_37
-- pattern: 慎独自律
-  correct: 慎独自律强调在无人监督时自我约束，而非向榜样学习
-  description: 误以为慎独自律是向榜样学习的方法
-  severity: error
-  source: cmmlu_legal_and_moral_basis_38
-- pattern: 省察克治
-  correct: 省察克治指自我反省和克制私欲，而非学习榜样
-  description: 误以为省察克治是向榜样学习的方法
-  severity: error
-  source: cmmlu_legal_and_moral_basis_38
-- pattern: 积善成德
-  correct: 积善成德强调积累善行形成品德，而非直接学习榜样
-  description: 误以为积善成德是向榜样学习的方法
-  severity: error
-  source: cmmlu_legal_and_moral_basis_38
 - pattern: 法为人们的行为提供模式和方向
   correct: 法为人们的行为提供模式和方向属于法的指引作用，而非教育作用
   description: 混淆了法的指引作用与教育作用
@@ -2398,21 +2213,6 @@ misconceptions:
   description: 误将鉴定人归为民事诉讼当事人
   severity: error
   source: cmmlu_legal_and_moral_basis_44
-- pattern: 制裁作用
-  correct: 法通过调整社会关系来维护统治秩序，这属于法的社会作用，而非制裁作用
-  description: 误以为法维护统治秩序的主要方式是制裁，而忽略了法的社会调整功能
-  severity: error
-  source: cmmlu_legal_and_moral_basis_45
-- pattern: 指引作用
-  correct: 法通过调整社会关系来维护统治秩序，这属于法的社会作用，而非指引作用
-  description: 混淆了法的规范作用（指引作用）与社会作用
-  severity: error
-  source: cmmlu_legal_and_moral_basis_45
-- pattern: 规范作用
-  correct: 法通过调整社会关系来维护统治秩序，这属于法的社会作用，而非规范作用
-  description: 混淆了法的规范作用与社会作用
-  severity: error
-  source: cmmlu_legal_and_moral_basis_45
 - pattern: 主观为自己，客观为他人
   correct: 社会主义道德的基本性质是以为人民服务为核心，强调集体利益高于个人利益
   description: 误以为利己主义行为可以客观上利他，符合社会主义道德
@@ -2443,36 +2243,6 @@ misconceptions:
   description: 误以为公平正义的内涵是学术公平与信息公开
   severity: error
   source: cmmlu_legal_and_moral_basis_47
-- pattern: 法律解释
-  correct: 法律解释是对法律规范的含义和适用所作的说明，而非对规范性文件进行审查并重新确定其法律效力
-  description: 误以为法律解释包含对规范性文件的效力审查和重新确定
-  severity: error
-  source: cmmlu_legal_and_moral_basis_48
-- pattern: 法律汇编
-  correct: 法律汇编是对规范性文件进行系统编排和整理，但不改变其法律效力
-  description: 误以为法律汇编会重新确定规范性文件的法律效力
-  severity: error
-  source: cmmlu_legal_and_moral_basis_48
-- pattern: 法律编纂
-  correct: 法律编纂是对规范性文件进行系统整理并制定新法典，但题目描述的是审查并重新确定现有文件效力的活动
-  description: 误以为法律编纂等同于对规范性文件进行审查并重新确定其法律效力
-  severity: error
-  source: cmmlu_legal_and_moral_basis_48
-- pattern: 自然观
-  correct: 自然观是对自然界的根本看法，而非对人生目的和意义的根本看法和态度
-  description: 误将自然观等同于人生观
-  severity: error
-  source: cmmlu_legal_and_moral_basis_49
-- pattern: 历史观
-  correct: 历史观是对社会历史的根本看法，而非对人生目的和意义的根本看法和态度
-  description: 误将历史观等同于人生观
-  severity: error
-  source: cmmlu_legal_and_moral_basis_49
-- pattern: 科学观
-  correct: 科学观是对科学及其发展的根本看法，而非对人生目的和意义的根本看法和态度
-  description: 误将科学观等同于人生观
-  severity: error
-  source: cmmlu_legal_and_moral_basis_49
 - pattern: 个人主义传统
   correct: 中华民族凝聚力的根本在于爱国主义传统，而非个人主义
   description: 误以为个人主义是中华民族凝聚力的根本原因
@@ -2548,21 +2318,6 @@ misconceptions:
   description: 误以为多党合作与政治协商是社会主义民主政治的本质和核心
   severity: error
   source: cmmlu_legal_and_moral_basis_54
-- pattern: 法律渊源
-  correct: 法律渊源指法的表现形式（如宪法、法律、法规等），而非法律规范按部门分类构成的统一整体
-  description: 误将法律渊源等同于法律体系
-  severity: error
-  source: cmmlu_legal_and_moral_basis_55
-- pattern: 程序法
-  correct: 程序法是规定诉讼程序的法律，与实体法相对，不是法律规范按部门分类构成的整体
-  description: 误将程序法等同于法律体系
-  severity: error
-  source: cmmlu_legal_and_moral_basis_55
-- pattern: 实体法
-  correct: 实体法是规定权利义务的法律，与程序法相对，不是法律规范按部门分类构成的整体
-  description: 误将实体法等同于法律体系
-  severity: error
-  source: cmmlu_legal_and_moral_basis_55
 - pattern: 最高人民法院.*解释
   correct: 最高人民法院所作的解释属于正式解释中的司法解释
   description: 误以为最高人民法院的解释是非正式解释
@@ -2578,21 +2333,6 @@ misconceptions:
   description: 误以为国务院及其所属部门的解释是非正式解释
   severity: error
   source: cmmlu_legal_and_moral_basis_56
-- pattern: 个人史观
-  correct: 为人民服务的思想建立在唯物史观基础之上，强调人民群众是历史的创造者
-  description: 误以为个人史观是马克思主义群众观的基础
-  severity: error
-  source: cmmlu_legal_and_moral_basis_57
-- pattern: 唯心史观
-  correct: 为人民服务的思想建立在唯物史观基础之上，而非唯心史观
-  description: 误以为唯心史观是马克思主义群众观的基础
-  severity: error
-  source: cmmlu_legal_and_moral_basis_57
-- pattern: 英雄史观
-  correct: 为人民服务的思想建立在唯物史观基础之上，强调人民群众而非英雄人物是历史决定力量
-  description: 误以为英雄史观是马克思主义群众观的基础
-  severity: error
-  source: cmmlu_legal_and_moral_basis_57
 - pattern: 2/3以上提议
   correct: 宪法修改须由全国人大常委会或1/5以上全国人大代表提议
   description: 误以为宪法修改提议需要2/3以上代表同意
@@ -2668,16 +2408,6 @@ misconceptions:
   description: 误以为赔偿损失是刑事制裁措施
   severity: error
   source: cmmlu_legal_and_moral_basis_62
-- pattern: 空想
-  correct: 空想是脱离现实、无法实现的想象，而信念是基于一定认识、坚信并付诸实践的态度
-  description: 误将空想等同于信念，忽略了信念的实践性和现实基础
-  severity: error
-  source: cmmlu_legal_and_moral_basis_63
-- pattern: 道德
-  correct: 道德是社会规范和行为准则，而信念是个人对某种思想或事物的坚定态度
-  description: 误将道德等同于信念，混淆了社会规范与个人态度的概念
-  severity: error
-  source: cmmlu_legal_and_moral_basis_63
 - pattern: 认真学习科学理论
   correct: 学习科学理论是重要条件，但把理想变为现实的根本途径是积极投身社会实践
   description: 误以为仅通过学习理论就能实现理想，忽视了实践的根本作用
@@ -2708,21 +2438,6 @@ misconceptions:
   description: 误将放弃理想归因为理想否定现实，实际是现实否定理想
   severity: error
   source: cmmlu_legal_and_moral_basis_65
-- pattern: 沟通功能
-  correct: 道德通过评价等方式指导和纠正人们的行为，协调人们之间的关系，这是道德的调节功能
-  description: 误以为道德协调人际关系的作用是沟通功能
-  severity: error
-  source: cmmlu_legal_and_moral_basis_66
-- pattern: 激励功能
-  correct: 道德通过评价等方式指导和纠正人们的行为，协调人们之间的关系，这是道德的调节功能
-  description: 误以为道德协调人际关系的作用是激励功能
-  severity: error
-  source: cmmlu_legal_and_moral_basis_66
-- pattern: 认识功能
-  correct: 道德通过评价等方式指导和纠正人们的行为，协调人们之间的关系，这是道德的调节功能
-  description: 误以为道德协调人际关系的作用是认识功能
-  severity: error
-  source: cmmlu_legal_and_moral_basis_66
 - pattern: 生活领域.*理想信念
   correct: 理想的工作属于职业领域的理想信念，而非生活领域
   description: 误将职业理想归入生活领域
@@ -2788,36 +2503,6 @@ misconceptions:
   description: 误将人民民主专政制度当作根本政治制度
   severity: error
   source: cmmlu_legal_and_moral_basis_71
-- pattern: 以礼治国
-  correct: 党领导人民治理国家的基本方略是依法治国
-  description: 误以为以礼治国是基本方略
-  severity: error
-  source: cmmlu_legal_and_moral_basis_72
-- pattern: 依人治国
-  correct: 党领导人民治理国家的基本方略是依法治国，而非依人治国
-  description: 误以为依人治国是基本方略
-  severity: error
-  source: cmmlu_legal_and_moral_basis_72
-- pattern: 以德治国
-  correct: 党领导人民治理国家的基本方略是依法治国，以德治国是辅助手段而非基本方略
-  description: 误以为以德治国是基本方略
-  severity: error
-  source: cmmlu_legal_and_moral_basis_72
-- pattern: 墨守成规
-  correct: 时代精神的核心是改革创新，而非墨守成规
-  description: 误以为墨守成规是时代精神的核心
-  severity: error
-  source: cmmlu_legal_and_moral_basis_73
-- pattern: 明荣辨耻
-  correct: 时代精神的核心是改革创新，明荣辨耻属于社会主义荣辱观范畴
-  description: 误以为明荣辨耻是时代精神的核心
-  severity: error
-  source: cmmlu_legal_and_moral_basis_73
-- pattern: 趋利避害
-  correct: 时代精神的核心是改革创新，趋利避害并非时代精神的核心内涵
-  description: 误以为趋利避害是时代精神的核心
-  severity: error
-  source: cmmlu_legal_and_moral_basis_73
 - pattern: 家庭美德.*社会公共生活.*最基本.*行动准则
   correct: 家庭美德是调节家庭生活方面关系和行为的道德准则，而非社会公共生活的基本准则
   description: 误将家庭美德等同于社会公共生活的基本准则
@@ -2883,21 +2568,6 @@ misconceptions:
   description: 误以为人生态度回答的是人为什么活着
   severity: error
   source: cmmlu_legal_and_moral_basis_78
-- pattern: 外表美
-  correct: 选择恋爱对象应注重对方的内在品质，而非外表
-  description: 误以为选择恋爱对象主要看外表
-  severity: error
-  source: cmmlu_legal_and_moral_basis_79
-- pattern: 经济实力
-  correct: 选择恋爱对象应注重对方的内在品质，而非经济条件
-  description: 误以为选择恋爱对象主要看经济实力
-  severity: error
-  source: cmmlu_legal_and_moral_basis_79
-- pattern: 家庭状况
-  correct: 选择恋爱对象应注重对方的内在品质，而非家庭背景
-  description: 误以为选择恋爱对象主要看家庭状况
-  severity: error
-  source: cmmlu_legal_and_moral_basis_79
 - pattern: 互相服务.*要求
   correct: 自觉遵守规章制度、秉公办事、平等待人、清正廉洁等体现的是办事公道的要求，而非互相服务的要求
   description: 误将办事公道的具体表现（秉公办事、平等待人、清正廉洁）归为互相服务的要求
@@ -2911,11 +2581,6 @@ misconceptions:
 - pattern: 预先分析.*预测
   correct: 法的预测作用是指人们根据法律可以预先估计相互间行为的法律后果，而非指引作用
   description: 混淆了法的指引作用与预测作用
-  severity: error
-  source: cmmlu_legal_and_moral_basis_81
-- pattern: 积极影响
-  correct: 法的教育作用是指通过法的实施对一般人行为产生积极影响，而非指引作用
-  description: 混淆了法的指引作用与教育作用
   severity: error
   source: cmmlu_legal_and_moral_basis_81
 - pattern: 提供.*行为模式
@@ -2983,21 +2648,6 @@ misconceptions:
   description: 误将勇于进取的品质归为文明礼貌
   severity: error
   source: cmmlu_legal_and_moral_basis_85
-- pattern: 法律适用
-  correct: 法律适用通常指司法机关运用法律处理案件的活动，而非行政机关贯彻实施法律的活动
-  description: 误将行政机关执行法律的活动称为法律适用
-  severity: error
-  source: cmmlu_legal_and_moral_basis_86
-- pattern: 法律遵守
-  correct: 法律遵守指一切组织和个人依法办事，而非特指行政机关贯彻实施法律的活动
-  description: 误将行政机关执行法律的活动称为法律遵守
-  severity: error
-  source: cmmlu_legal_and_moral_basis_86
-- pattern: 法律制定
-  correct: 法律制定指立法机关创制法律的活动，而非行政机关贯彻实施法律的活动
-  description: 误将行政机关执行法律的活动称为法律制定
-  severity: error
-  source: cmmlu_legal_and_moral_basis_86
 - pattern: 公务员法.*经济法
   correct: 公务员法属于行政法，调整的是公务员管理关系，而非国民经济运行中的经济关系
   description: 误以为公务员法属于经济法范畴
@@ -3028,36 +2678,11 @@ misconceptions:
   description: 误以为道德源于神的启示或上帝的意志
   severity: error
   source: cmmlu_legal_and_moral_basis_88
-- pattern: 有觉悟
-  correct: 四有是指有理想、有道德、有文化、有纪律
-  description: 误将'有觉悟'作为四有内容之一
-  severity: error
-  source: cmmlu_legal_and_moral_basis_89
-- pattern: 有能力
-  correct: 四有是指有理想、有道德、有文化、有纪律
-  description: 误将'有能力'作为四有内容之一
-  severity: error
-  source: cmmlu_legal_and_moral_basis_89
 - pattern: 有信念.*有目标
   correct: 四有是指有理想、有道德、有文化、有纪律
   description: 误将'有信念'和'有目标'作为四有内容
   severity: error
   source: cmmlu_legal_and_moral_basis_89
-- pattern: 文化价值
-  correct: 个体的人生活动对自己生存和发展所具有的价值称为自我价值，而非文化价值
-  description: 误将文化价值等同于个体对自身的价值
-  severity: error
-  source: cmmlu_legal_and_moral_basis_90
-- pattern: 社会价值
-  correct: 个体的人生活动对自己生存和发展所具有的价值称为自我价值，社会价值指个体对社会的贡献
-  description: 混淆了自我价值与社会价值的概念
-  severity: error
-  source: cmmlu_legal_and_moral_basis_90
-- pattern: 经济价值
-  correct: 个体的人生活动对自己生存和发展所具有的价值称为自我价值，经济价值指物质利益方面的价值
-  description: 误将经济价值理解为个体对自身的价值
-  severity: error
-  source: cmmlu_legal_and_moral_basis_90
 - pattern: 危害结果.*犯罪构成.*必备
   correct: 危害行为是任何犯罪构成都必须具备的客观要件，危害结果不是必备要件
   description: 误以为危害结果是所有犯罪构成的必备客观要件
@@ -3303,16 +2928,6 @@ misconceptions:
   description: 误将行政机关的监督当作社会性监督
   severity: error
   source: cmmlu_legal_and_moral_basis_108
-- pattern: 法律执行
-  correct: 法律执行指行政机关执行法律的活动，而司法机关依法处理具体案件的活动称为法律适用
-  description: 混淆了法律执行与法律适用的概念，误将司法机关的活动归为法律执行
-  severity: error
-  source: cmmlu_legal_and_moral_basis_109
-- pattern: 法律制裁
-  correct: 法律制裁指对违法者实施的惩罚措施，而司法机关依法处理具体案件的活动称为法律适用
-  description: 混淆了法律制裁与法律适用的概念，误将司法机关的活动归为法律制裁
-  severity: error
-  source: cmmlu_legal_and_moral_basis_109
 - pattern: 正确的人生价值目标
   correct: 评价社会价值第一位的是对社会的责任和贡献，而非是否选择了正确目标
   description: 误以为选择正确的人生价值目标是评价社会价值的第一标准
@@ -3328,11 +2943,6 @@ misconceptions:
   description: 误以为从社会获得的尊重和满足是评价社会价值的第一标准
   severity: error
   source: cmmlu_legal_and_moral_basis_110
-- pattern: 人生观
-  correct: 人生观是关于人生目的、意义和价值的根本看法，而非对某种思想或事物坚信不疑并身体力行的态度
-  description: 混淆人生观与信念的概念，误将人生观等同于信念
-  severity: error
-  source: cmmlu_legal_and_moral_basis_111
 - pattern: 功利主义.*人生
   correct: 在中华民族历史上，爱国主义是启迪和指引历代优秀人物壮丽人生的共同思想因素
   description: 误以为功利主义是历史上指引优秀人物人生的共同思想因素
@@ -3358,11 +2968,6 @@ misconceptions:
   description: 混淆理想与现实，认为二者等同
   severity: error
   source: cmmlu_legal_and_moral_basis_113
-- pattern: 法律实施
-  correct: 法律实施包括法律遵守、法律执行和法律适用，而题目特指法律遵守
-  description: 误将法律实施等同于法律遵守，混淆了上位概念与下位概念
-  severity: error
-  source: cmmlu_legal_and_moral_basis_114
 - pattern: 法律不在于多少.*人民制定
   correct: 公民在法律面前一律平等是指法律适用上的平等，而非立法内容上的民主性
   description: 误将法律制定的民主性等同于法律适用上的平等
@@ -3593,21 +3198,6 @@ misconceptions:
   description: 误将公民基本道德规范等同于公共道德规范
   severity: error
   source: cmmlu_legal_and_moral_basis_130
-- pattern: 特别程序
-  correct: 特别程序适用于特定类型案件，如选民资格、宣告失踪等，不适用于事实清楚、争议不大的普通民事案件
-  description: 误以为特别程序可以适用于简单民事案件
-  severity: error
-  source: cmmlu_legal_and_moral_basis_131
-- pattern: 督促程序
-  correct: 督促程序适用于债权人请求债务人给付金钱、有价证券的案件，不适用于一般民事案件
-  description: 误以为督促程序可以适用于简单民事案件
-  severity: error
-  source: cmmlu_legal_and_moral_basis_131
-- pattern: 普通程序
-  correct: 普通程序适用于复杂或争议较大的民事案件，而事实清楚、争议不大的案件应适用简易程序
-  description: 误以为所有民事案件都适用普通程序
-  severity: error
-  source: cmmlu_legal_and_moral_basis_131
 - pattern: 人民当家作主.*内涵
   correct: 人民当家作主是社会主义民主政治的本质特征，而题干强调的是依法治国
   description: 误将依法治国的内涵等同于人民当家作主的内涵
@@ -3703,16 +3293,6 @@ misconceptions:
   description: 误以为现实条件不足就可以否定理想的价值
   severity: error
   source: cmmlu_legal_and_moral_basis_139
-- pattern: 外在价值
-  correct: 外在价值通常指个体行为对社会或他人的影响，而非对自身的价值
-  description: 误以为外在价值是人生对自身的价值
-  severity: error
-  source: cmmlu_legal_and_moral_basis_140
-- pattern: 群体价值
-  correct: 群体价值是指个体对所属群体或集体的贡献，而非对自身的价值
-  description: 误将群体价值等同于对自身的价值
-  severity: error
-  source: cmmlu_legal_and_moral_basis_140
 - pattern: 加强国防建设.*维护世界和平
   correct: 新时期爱国主义的主题是建设和发展中国特色社会主义
   description: 误以为加强国防建设和维护世界和平是新时期爱国主义的主题
@@ -3728,21 +3308,6 @@ misconceptions:
   description: 误以为争取民族独立、实现救亡图存是新时期爱国主义的主题，这属于近代历史任务而非新时期主题
   severity: error
   source: cmmlu_legal_and_moral_basis_141
-- pattern: 服务大局
-  correct: 人民当家作主的根本保证是党的领导
-  description: 误以为服务大局是人民当家作主的根本保证
-  severity: error
-  source: cmmlu_legal_and_moral_basis_142
-- pattern: 改革创新
-  correct: 人民当家作主的根本保证是党的领导
-  description: 误以为改革创新是人民当家作主的根本保证
-  severity: error
-  source: cmmlu_legal_and_moral_basis_142
-- pattern: 执法为民
-  correct: 人民当家作主的根本保证是党的领导
-  description: 误以为执法为民是人民当家作主的根本保证
-  severity: error
-  source: cmmlu_legal_and_moral_basis_142
 - pattern: 缺乏客观根据的想象
   correct: 理想是基于现实、有实现可能性的对未来事物的想象和追求
   description: 误以为理想是缺乏客观根据的想象
@@ -3788,21 +3353,6 @@ misconceptions:
   description: 误以为民事权利能力从18周岁开始
   severity: error
   source: cmmlu_legal_and_moral_basis_145
-- pattern: 生态安全
-  correct: 生态安全关注生态环境与资源保护，而非社会治安与灾害事故处理
-  description: 误将维护社会治安、处理违法犯罪和灾害事故归为生态安全范畴
-  severity: error
-  source: cmmlu_legal_and_moral_basis_146
-- pattern: 经济安全
-  correct: 经济安全关注经济体系稳定与金融风险防范，而非社会治安与灾害事故处理
-  description: 误将维护社会治安、处理违法犯罪和灾害事故归为经济安全范畴
-  severity: error
-  source: cmmlu_legal_and_moral_basis_146
-- pattern: 文化安全
-  correct: 文化安全关注文化传承、意识形态与价值观保护，而非社会治安与灾害事故处理
-  description: 误将维护社会治安、处理违法犯罪和灾害事故归为文化安全范畴
-  severity: error
-  source: cmmlu_legal_and_moral_basis_146
 - pattern: 与西方接轨
   correct: 在经济全球化背景下弘扬爱国主义精神，应提高民族自尊心和民族自信心，而非一切领域与西方接轨
   description: 误以为弘扬爱国主义需要全面西化，放弃民族自主性
@@ -3898,26 +3448,6 @@ misconceptions:
   description: 误将社会公共生活方面的理想信念归为职业领域
   severity: error
   source: cmmlu_legal_and_moral_basis_155
-- pattern: 由学而进
-  correct: 慎独强调在独处无监督时仍能严于律己、保持操守
-  description: 误以为通过单纯学习就能达到自觉的道德修养
-  severity: error
-  source: cmmlu_legal_and_moral_basis_156
-- pattern: 学思并重
-  correct: 慎独强调在独处无监督时仍能严于律己、保持操守
-  description: 误以为学习与思考并重等同于独处时的自律
-  severity: error
-  source: cmmlu_legal_and_moral_basis_156
-- pattern: 择善而从
-  correct: 择善而从指选择好的并跟随学习，而积善成德强调持续积累善行以形成品德
-  description: 误以为择善而从等同于通过积累善行来培养品德
-  severity: error
-  source: cmmlu_legal_and_moral_basis_157
-- pattern: 陶冶情操
-  correct: 陶冶情操指通过艺术等提升情感修养，而积善成德强调道德行为的积累
-  description: 误以为陶冶情操等同于通过善行积累品德
-  severity: error
-  source: cmmlu_legal_and_moral_basis_157
 - pattern: 社会舆论.*积极评价
   correct: 人生的社会价值主要表现为个人通过劳动、创造为社会和人民所做的贡献，而非社会舆论的评价
   description: 误以为社会舆论的积极评价是人生社会价值的主要表现
@@ -3928,21 +3458,6 @@ misconceptions:
   description: 混淆了自我价值与社会价值，将自我肯定当作社会价值
   severity: error
   source: cmmlu_legal_and_moral_basis_158
-- pattern: 道德意志
-  correct: 道德意志是克服困难、坚持道德行为的心理过程，而非产生愉悦感的内心体验
-  description: 误将道德意志等同于道德情感，混淆了意志与情感的概念
-  severity: error
-  source: cmmlu_legal_and_moral_basis_159
-- pattern: 道德认识
-  correct: 道德认识是对道德规范的理解和判断，而非助人后产生的愉悦感
-  description: 误将道德认识等同于道德情感，混淆了认知与情感的区别
-  severity: error
-  source: cmmlu_legal_and_moral_basis_159
-- pattern: 道德信念
-  correct: 道德信念是坚信并愿意践行的道德观念，而非具体的内心愉悦体验
-  description: 误将道德信念等同于道德情感，混淆了信念与情感的不同层次
-  severity: error
-  source: cmmlu_legal_and_moral_basis_159
 - pattern: 发展社会主义市场经济
   correct: 全体中国人民共同的理想信念是建设有中国特色的社会主义
   description: 误以为发展社会主义市场经济是共同的理想信念，实际上它是建设中国特色社会主义的一部分
@@ -4028,21 +3543,6 @@ misconceptions:
   description: 该干扰项本身正确，但题目要求选出错误选项，故不产出
   severity: warning
   source: cmmlu_legal_and_moral_basis_165
-- pattern: 公共道德
-  correct: 公共秩序是由一定规则维系的人们公共生活的有序化状态，而非公共道德
-  description: 误将公共道德等同于公共秩序
-  severity: error
-  source: cmmlu_legal_and_moral_basis_166
-- pattern: 公共场所
-  correct: 公共秩序是公共生活的有序化状态，而非指物理空间
-  description: 误将公共场所等同于公共秩序
-  severity: error
-  source: cmmlu_legal_and_moral_basis_166
-- pattern: 公共领域
-  correct: 公共秩序是公共生活的有序化状态，而非指社会活动领域
-  description: 误将公共领域等同于公共秩序
-  severity: error
-  source: cmmlu_legal_and_moral_basis_166
 - pattern: 人生经历.*造成
   correct: 不同的人生态度决定了对逆境的应对和顺境的感受，而非人生经历本身
   description: 误以为人生经历直接决定人的心理状态和行为选择
@@ -4073,26 +3573,6 @@ misconceptions:
   description: 误以为理想与现实的矛盾意味着理想不可实现，从而放弃追求
   severity: error
   source: cmmlu_legal_and_moral_basis_168
-- pattern: 知行统一
-  correct: 知行统一强调知识与行动一致，而非无人监督时的自律
-  description: 误将知行统一等同于无人监督时的道德自律
-  severity: error
-  source: cmmlu_legal_and_moral_basis_169
-- pattern: 法律思维
-  correct: 法治理念是指导法律制度设计和实践的思想基础和主导价值，而法律思维是运用法律方法思考和解决问题的习惯
-  description: 误将法律思维等同于法治理念，混淆了思维方法与价值理念
-  severity: error
-  source: cmmlu_legal_and_moral_basis_170
-- pattern: 法律意识
-  correct: 法治理念是系统的思想基础和主导价值，而法律意识是人们对法律现象的主观认识和态度
-  description: 误将法律意识等同于法治理念，混淆了个人主观认识与系统价值理念
-  severity: error
-  source: cmmlu_legal_and_moral_basis_170
-- pattern: 法律文化
-  correct: 法治理念是指导实践的思想基础和主导价值，而法律文化是法律传统、制度和观念的总和
-  description: 误将法律文化等同于法治理念，混淆了文化整体与核心价值理念
-  severity: error
-  source: cmmlu_legal_and_moral_basis_170
 - pattern: 道德.*易变
   correct: 道德规范具有相对稳定性，并非易变
   description: 误以为道德规范容易变化
@@ -4108,26 +3588,6 @@ misconceptions:
   description: 误以为道德能直接决定社会经济基础的性质
   severity: error
   source: cmmlu_legal_and_moral_basis_171
-- pattern: 人生价值
-  correct: 人生价值是指人的生命活动的价值，不同于人生态度
-  description: 误将人生价值等同于人生态度
-  severity: error
-  source: cmmlu_legal_and_moral_basis_172
-- pattern: 人生目的
-  correct: 人生目的是关于人为什么活着的问题，不同于人生态度
-  description: 误将人生目的等同于人生态度
-  severity: error
-  source: cmmlu_legal_and_moral_basis_172
-- pattern: 片面性
-  correct: 理想信念具有多样性，指不同人或同一个人在不同方面有不同的理想信念
-  description: 误将理想信念的多样性理解为片面性
-  severity: error
-  source: cmmlu_legal_and_moral_basis_173
-- pattern: 政治性
-  correct: 理想信念具有多样性，而非仅具有政治性
-  description: 误以为理想信念主要或仅具有政治属性
-  severity: error
-  source: cmmlu_legal_and_moral_basis_173
 - pattern: 君使臣以礼，臣事君以忠
   correct: 这句话体现的是君臣之间的礼义关系，而非心系民生苦乐、推动历史进步的爱国主义情怀
   description: 误将君臣伦理关系等同于心系民生的爱国主义品质
@@ -4218,16 +3678,6 @@ misconceptions:
   description: 误以为礼治是法治的前提
   severity: error
   source: cmmlu_legal_and_moral_basis_180
-- pattern: 公平正义
-  correct: 执法为民体现了中国共产党全心全意为人民服务的根本宗旨
-  description: 误以为公平正义是体现全心全意为人民服务根本宗旨的理念
-  severity: error
-  source: cmmlu_legal_and_moral_basis_181
-- pattern: 依法治国
-  correct: 执法为民体现了中国共产党全心全意为人民服务的根本宗旨
-  description: 误以为依法治国是体现全心全意为人民服务根本宗旨的理念
-  severity: error
-  source: cmmlu_legal_and_moral_basis_181
 - pattern: 民法.*核心地位|民法.*最高法律效力
   correct: 宪法在我国法律体系中居于核心地位，具有最高法律效力
   description: 误以为民法是法律体系的核心或具有最高效力
@@ -4408,21 +3858,6 @@ misconceptions:
   description: 误以为维护社会稳定是道德建设的核心
   severity: error
   source: cmmlu_legal_and_moral_basis_193
-- pattern: 行政解释
-  correct: 行政解释属于正式解释，而非非正式解释
-  description: 误以为行政解释是非正式解释
-  severity: error
-  source: cmmlu_legal_and_moral_basis_194
-- pattern: 司法解释
-  correct: 司法解释属于正式解释，而非非正式解释
-  description: 误以为司法解释是非正式解释
-  severity: error
-  source: cmmlu_legal_and_moral_basis_194
-- pattern: 立法解释
-  correct: 立法解释属于正式解释，而非非正式解释
-  description: 误以为立法解释是非正式解释
-  severity: error
-  source: cmmlu_legal_and_moral_basis_194
 - pattern: 规章制度.*道德
   correct: 道德规范依靠社会舆论、传统习俗和内心信念维系，而规章制度依靠组织纪律强制力
   description: 误以为规章制度与道德规范一样依靠内心信念和舆论维系
@@ -4483,11 +3918,6 @@ misconceptions:
   description: 误将抗击外敌的历史事件归因于维护国家统一和民族团结的爱国主义表现
   severity: error
   source: cmmlu_legal_and_moral_basis_199
-- pattern: 抽象性
-  correct: 共产主义远大理想具有现实性，是现实世界中可追求的未来目标
-  description: 误以为共产主义理想是抽象、不可实现的
-  severity: error
-  source: cmmlu_legal_and_moral_basis_200
 - pattern: 人民政协.*依法治国
   correct: 实现依法治国的根本保证是党的领导
   description: 误以为人民政协是依法治国的根本保证
@@ -4523,11 +3953,6 @@ misconceptions:
   description: 误以为资产阶级道德是现时代最先进的道德
   severity: error
   source: cmmlu_legal_and_moral_basis_203
-- pattern: 宗教道德
-  correct: 宗教道德基于神学信仰，社会主义道德基于科学社会主义，后者是现时代最先进的道德
-  description: 误以为宗教道德是现时代最先进的道德
-  severity: error
-  source: cmmlu_legal_and_moral_basis_203
 - pattern: 宏观调控原则
   correct: 行政法的基本原则包括行政合法性原则、合理性原则和程序正当原则，宏观调控原则不属于行政法基本原则
   description: 误将宏观调控原则当作行政法的基本原则
@@ -4543,26 +3968,6 @@ misconceptions:
   description: 误将罪刑法定原则当作行政法的基本原则
   severity: error
   source: cmmlu_legal_and_moral_basis_204
-- pattern: 国际主义
-  correct: 中华民族伟大民族精神的核心是爱国主义，而非国际主义
-  description: 误以为国际主义是中华民族精神的核心
-  severity: error
-  source: cmmlu_legal_and_moral_basis_205
-- pattern: 团结统一
-  correct: 团结统一是中华民族精神的重要内容，但核心是爱国主义
-  description: 误以为团结统一是民族精神的核心
-  severity: warning
-  source: cmmlu_legal_and_moral_basis_205
-- pattern: 爱好和平
-  correct: 爱好和平是中华民族精神的重要方面，但核心是爱国主义
-  description: 误以为爱好和平是民族精神的核心
-  severity: warning
-  source: cmmlu_legal_and_moral_basis_205
-- pattern: 学理解释
-  correct: 全国人大常委会进行的法律解释是立法解释，而非学理解释
-  description: 误将全国人大常委会的法律解释当作学理解释
-  severity: error
-  source: cmmlu_legal_and_moral_basis_206
 - pattern: 选择与社会主导价值观相一致的人生价值目标
   correct: 实现人生价值的根本途径是进行有意识、有目的的创造性实践活动，而非仅选择与价值观一致的目标
   description: 误以为选择与社会价值观一致的目标是实现人生价值的根本途径，忽视了实践活动的决定性

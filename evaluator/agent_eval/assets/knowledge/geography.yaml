@@ -313,11 +313,6 @@ misconceptions:
   description: 误以为社会主义国家等同于发展中国家，实际上社会主义国家也有发达国家
   severity: error
   source: cmmlu_high_school_geography_13
-- pattern: 发达国家
-  correct: 尼泊尔是发展中国家，其经济水平属于发展中国家范畴
-  description: 误以为尼泊尔是发达国家，实际上尼泊尔经济水平较低
-  severity: error
-  source: cmmlu_high_school_geography_13
 - pattern: 淘汰纺织业基础产业部⻔
   correct: 21世纪初期波兰纺织业转型是产业结构调整和技术升级，而非淘汰基础产业部门
   description: 误以为产业转型意味着完全淘汰基础产业部门
@@ -418,21 +413,6 @@ misconceptions:
   description: 误以为死海盐度最低，实际上死海因蒸发量大、无出口，盐度极高
   severity: error
   source: cmmlu_high_school_geography_21
-- pattern: 降低运费
-  correct: 宝钢在韩国建厂的主要目的是扩大市场，而非降低运费
-  description: 误以为在海外建厂的主要目的是降低运输成本
-  severity: error
-  source: cmmlu_high_school_geography_22
-- pattern: 保护环境
-  correct: 宝钢在韩国建厂的主要目的是扩大市场，而非保护环境
-  description: 误以为企业海外投资的主要目的是环境保护
-  severity: error
-  source: cmmlu_high_school_geography_22
-- pattern: 输出技术
-  correct: 宝钢在韩国建厂的主要目的是扩大市场，而非输出技术
-  description: 误以为企业海外投资的主要目的是技术输出
-  severity: error
-  source: cmmlu_high_school_geography_22
 - pattern: 塞上江南.*降水丰沛
   correct: 宁夏‘塞上江南’降水较少，主要依靠黄河灌溉水源发展农业
   description: 误以为‘塞上江南’降水丰沛，实际该地区降水较少
@@ -546,11 +526,6 @@ misconceptions:
 - pattern: 洗衣服时一直开着水龙头
   correct: 洗衣服时应节约用水，一直开着水龙头浪费水资源，不符合可持续发展
   description: 误以为洗衣服时一直开着水龙头是正常行为，实际上浪费水资源
-  severity: error
-  source: cmmlu_high_school_geography_30
-- pattern: 涸泽而渔
-  correct: 涸泽而渔会破坏渔业资源，不符合可持续发展理念
-  description: 误以为涸泽而渔是合理的获取资源方式，实际上会耗尽资源
   severity: error
   source: cmmlu_high_school_geography_30
 - pattern: 红海.*亚洲.*非洲.*分界线
@@ -1188,21 +1163,6 @@ misconceptions:
   description: 误以为大气反射是地表能量的来源
   severity: error
   source: cmmlu_high_school_geography_74
-- pattern: 市场条件
-  correct: 大棚蔬菜生产主要改变的是光热条件，而非市场条件
-  description: 误以为大棚蔬菜生产主要改变市场条件
-  severity: error
-  source: cmmlu_high_school_geography_75
-- pattern: 地形条件
-  correct: 大棚蔬菜生产主要改变的是光热条件，而非地形条件
-  description: 误以为大棚蔬菜生产主要改变地形条件
-  severity: error
-  source: cmmlu_high_school_geography_75
-- pattern: 土壤条件
-  correct: 大棚蔬菜生产主要改变的是光热条件，而非土壤条件
-  description: 误以为大棚蔬菜生产主要改变土壤条件
-  severity: error
-  source: cmmlu_high_school_geography_75
 - pattern: 欧洲.*丘陵
   correct: 欧洲以平原为主，丘陵不是主要地形
   description: 误以为欧洲主要地形是丘陵

@@ -179,11 +179,6 @@ misconceptions:
   description: 误以为铁器普及直接导致祭祀用牛转为农耕用牛
   severity: error
   source: cmmlu_chinese_history_2
-- pattern: 初税田
-  correct: 铁制农具普及提高了农业生产力，但‘初税田’是春秋时期鲁国的税制改革，并非铁器普及的直接社会影响
-  description: 误以为铁器普及直接导致初税亩制度的出现
-  severity: error
-  source: cmmlu_chinese_history_2
 - pattern: 经济受到鸦片战争的破坏
   correct: 鸦片战争后中国经济受到冲击，但人均消费英国棉纱棉布低的主因是小农经济自给自足
   description: 误以为鸦片战争直接导致中国棉纺织品消费低
@@ -214,11 +209,6 @@ misconceptions:
   description: 误以为香港、澳门回归是运用'和而不同'思想处理不同社会制度国家关系的范例
   severity: error
   source: cmmlu_chinese_history_4
-- pattern: 直接证据
-  correct: 传说不能作为直接证据，但能反映历史信息
-  description: 误以为传说可以直接作为历史证据
-  severity: error
-  source: cmmlu_chinese_history_5
 - pattern: 证明了.*真实存在
   correct: 传说不能证明历史人物的真实存在
   description: 误以为传说可以证明历史人物真实存在
@@ -274,21 +264,6 @@ misconceptions:
   description: 误以为遵义会议是应对民族矛盾加剧的政策调整
   severity: error
   source: cmmlu_chinese_history_8
-- pattern: 中央集权
-  correct: 《周礼·考工记》描述的王城布局体现的是中正有序的礼制思想，而非中央集权
-  description: 误将王城规划中的对称、等级秩序等同于中央集权政治制度
-  severity: error
-  source: cmmlu_chinese_history_9
-- pattern: 敬天法祖
-  correct: 《周礼·考工记》中左宗庙右社稷体现的是宗法礼制，但整体布局核心思想是中正有序
-  description: 误以为宗庙和社稷的布局直接代表敬天法祖，忽略了整体规划的中正有序原则
-  severity: warning
-  source: cmmlu_chinese_history_9
-- pattern: 君权神授
-  correct: 《周礼·考工记》的王城设计强调礼制秩序，而非君权神授的政治神学
-  description: 误将王城规划的等级秩序解释为君权神授思想
-  severity: error
-  source: cmmlu_chinese_history_9
 - pattern: 官员考核.*民本思想
   correct: 中国古代官员考核主要依据政绩、德行和法度，而非单一的民本思想
   description: 误以为官员考核的主要依据是民本思想
@@ -344,21 +319,6 @@ misconceptions:
   description: 误以为李鸿章在变相接受英国商民到重庆居住通商
   severity: error
   source: cmmlu_chinese_history_13
-- pattern: 共产风
-  correct: 陈云信中批评的是指标定得过高导致做不到，而非共产风
-  description: 误将陈云批评的高指标问题等同于共产风
-  severity: error
-  source: cmmlu_chinese_history_14
-- pattern: 浮夸风
-  correct: 陈云信中批评的是指标定得过高导致做不到，而非浮夸风
-  description: 误将陈云批评的高指标问题等同于浮夸风
-  severity: error
-  source: cmmlu_chinese_history_14
-- pattern: 高速度
-  correct: 陈云信中批评的是指标定得过高（高指标），而非高速度本身
-  description: 误将高指标与高速度混淆
-  severity: error
-  source: cmmlu_chinese_history_14
 - pattern: 社会改造道路.*一致
   correct: 当时各界团体在爱国救亡上达成共识，但在社会改造的具体道路上仍存在分歧
   description: 误以为各界团体对社会改造道路的认识完全一致
@@ -419,19 +379,9 @@ misconceptions:
   description: 误以为汉武帝改革实现了倾邻国而雄诸侯
   severity: error
   source: cmmlu_chinese_history_18
-- pattern: 慎思明辨
-  correct: 朱熹在此强调的是通过父老解说使后生弟子知所遵守，去恶从善，取是舍非，而非直接要求他们自己进行慎思明辨
-  description: 误以为朱熹要求后生弟子自己进行慎思明辨，实际上朱熹强调的是通过父老教导来遵守规范
-  severity: error
-  source: cmmlu_chinese_history_19
 - pattern: 以农兴业.*存.*天理
   correct: 朱熹在此劝农文中主要强调道德教化和社会秩序，而非直接灌输以农兴业思想来存天理
   description: 误以为朱熹劝农文的核心是以农兴业来存天理，实际上重点在于劝导百姓遵循理性生活秩序
-  severity: error
-  source: cmmlu_chinese_history_19
-- pattern: 三纲五常
-  correct: 朱熹在此文中并未直接提及三纲五常，而是强调去恶从善、取是舍非、爱惜体肤、保守家业等具体行为规范
-  description: 误以为朱熹劝农文是在教诲后生弟子遵从三纲五常，实际上文中未直接涉及三纲五常概念
   severity: error
   source: cmmlu_chinese_history_19
 - pattern: 民本.*鼓励百姓.*奋斗
@@ -594,21 +544,6 @@ misconceptions:
   description: 误以为孙中山主张推行土地革命实现耕者有其田
   severity: error
   source: cmmlu_chinese_history_30
-- pattern: 军事控制
-  correct: 清朝治理边疆的基本政策是因地制宜，而非单纯的军事控制
-  description: 误以为清朝主要依靠军事力量控制边疆
-  severity: error
-  source: cmmlu_chinese_history_31
-- pattern: 招抚授官
-  correct: 清朝治理边疆的基本政策是因地制宜，而非统一的招抚授官
-  description: 误以为清朝对边疆地区采取统一的招抚授官政策
-  severity: error
-  source: cmmlu_chinese_history_31
-- pattern: 扩大贸易
-  correct: 清朝治理边疆的基本政策是因地制宜，而非单纯扩大贸易
-  description: 误以为清朝主要通过扩大贸易来治理边疆
-  severity: error
-  source: cmmlu_chinese_history_31
 - pattern: 中国茶叶大量销往国外
   correct: 材料仅反映外商高价收购头春茶，未直接说明茶叶大量销往国外
   description: 误以为材料直接证明茶叶大量出口，实际材料未明确提及出口规模
@@ -969,21 +904,6 @@ misconceptions:
   description: 误以为红军作战直接导致粮食增产
   severity: error
   source: cmmlu_chinese_history_57
-- pattern: 现实主义
-  correct: 现实主义强调客观真实和理性再现，而非怀疑理性、探索离奇形式
-  description: 误以为现实主义符合对理性社会的怀疑和形式技巧的探索
-  severity: error
-  source: cmmlu_chinese_history_58
-- pattern: 古典主义
-  correct: 古典主义崇尚理性、秩序和规范，不怀疑理性基础
-  description: 误以为古典主义具有怀疑理性和探索离奇形式的特点
-  severity: error
-  source: cmmlu_chinese_history_58
-- pattern: 浪漫主义
-  correct: 浪漫主义强调情感和想象，但并非致力于探索离奇别致的形式技巧，也不以怀疑理性社会为核心
-  description: 误以为浪漫主义符合对理性社会的怀疑和形式技巧的探索
-  severity: error
-  source: cmmlu_chinese_history_58
 - pattern: 国企改革没有取得实质性成效
   correct: 该案例反映的是资金匮乏问题，而非国企改革整体成效
   description: 误将资金短缺问题等同于国企改革没有成效
@@ -1179,21 +1099,6 @@ misconceptions:
   description: 误以为国民党行为仅针对中共争夺领导权，实际是全面压制民主和进步思想
   severity: error
   source: cmmlu_chinese_history_72
-- pattern: 英雄史观
-  correct: 韩非主张进步史观，认为历史是不断发展的，而非由英雄人物决定
-  description: 误以为韩非强调英雄人物在历史中的作用
-  severity: error
-  source: cmmlu_chinese_history_73
-- pattern: 循环史观
-  correct: 韩非主张进步史观，认为历史是向前发展的，而非循环往复
-  description: 误以为韩非认为历史是循环的
-  severity: error
-  source: cmmlu_chinese_history_73
-- pattern: 天命史观
-  correct: 韩非主张进步史观，认为历史发展取决于人力而非天命
-  description: 误以为韩非相信天命决定历史
-  severity: error
-  source: cmmlu_chinese_history_73
 - pattern: 民族资本主义初步发展
   correct: 洋务运动创办的军事工业和民用工业属于官办或官督商办，并非民族资本主义的初步发展
   description: 误将洋务派官办企业等同于民族资本主义的发展
@@ -1297,11 +1202,6 @@ misconceptions:
 - pattern: 文明演进视角
   correct: 毛泽东从阶级斗争视角分析通商口岸，强调帝国主义剥削和买办阶级的形成
   description: 误以为毛泽东从文明演进角度看待通商口岸
-  severity: error
-  source: cmmlu_chinese_history_81
-- pattern: 全球视角
-  correct: 毛泽东从阶级斗争视角分析通商口岸，强调帝国主义剥削和买办阶级的形成
-  description: 误以为毛泽东从全球视角看待通商口岸
   severity: error
   source: cmmlu_chinese_history_81
 - pattern: 近代化视角
@@ -1529,21 +1429,6 @@ misconceptions:
   description: 误将诗界革命与后来的白话文运动混为一谈
   severity: error
   source: cmmlu_chinese_history_98
-- pattern: 治国法律
-  correct: 李鸿章主张学习西方制造技术，而非治国法律
-  description: 误以为李鸿章主张学习西方政治制度
-  severity: error
-  source: cmmlu_chinese_history_99
-- pattern: 教育之法
-  correct: 李鸿章主张学习西方制造技术，而非教育方法
-  description: 误以为李鸿章主张学习西方教育制度
-  severity: error
-  source: cmmlu_chinese_history_99
-- pattern: 经商之法
-  correct: 李鸿章主张学习西方制造技术，而非商业方法
-  description: 误以为李鸿章主张学习西方商业模式
-  severity: error
-  source: cmmlu_chinese_history_99
 - pattern: 政府官员廉洁
   correct: 晚清官场腐败，办厂需送礼才能获批，说明官员并不廉洁
   description: 误以为官员不收礼是廉洁表现，实际是因未送礼而受阻
@@ -1659,11 +1544,6 @@ misconceptions:
   description: 误以为官员与商人社会地位趋于一致
   severity: error
   source: cmmlu_chinese_history_107
-- pattern: 愚昧无知
-  correct: 学子坚持科举反映了当时社会的价值取向和功名利禄的追求，并非愚昧无知
-  description: 误以为科举制度下的学子行为是愚昧无知的表现
-  severity: error
-  source: cmmlu_chinese_history_108
 - pattern: 失去人才选拔功能
   correct: 科举制在清末仍具有人才选拔功能，但存在弊端，材料并未否定其选拔功能
   description: 误以为材料表明科举制完全失去人才选拔功能
@@ -1744,19 +1624,9 @@ misconceptions:
   description: 误以为董仲舒主张仅通过大力救济穷人解决问题
   severity: error
   source: cmmlu_chinese_history_113
-- pattern: 《民报》
-  correct: 毛泽东学生时代受《新青年》影响，而非《民报》
-  description: 误以为毛泽东欣赏的是同盟会机关报《民报》
-  severity: error
-  source: cmmlu_chinese_history_114
 - pattern: 《时务报》
   correct: 《时务报》是维新派报刊，毛泽东学生时代已不崇拜梁启超和康有为，他欣赏的是《新青年》
   description: 误以为毛泽东仍受维新派报刊《时务报》影响
-  severity: error
-  source: cmmlu_chinese_history_114
-- pattern: 《申报》
-  correct: 《申报》是商业性报纸，毛泽东学生时代欣赏的是《新青年》
-  description: 误以为毛泽东受《申报》影响
   severity: error
   source: cmmlu_chinese_history_114
 - pattern: 雕版印刷限用于官方刻书
@@ -2124,16 +1994,6 @@ misconceptions:
   description: 误以为《劝学篇》是对传统文化的全面否定
   severity: error
   source: cmmlu_chinese_history_140
-- pattern: 张扬自我
-  correct: 诗中表达的是人与万物同理、顺应自然的境界，而非张扬自我
-  description: 误以为诗中体现的是张扬自我的人生态度
-  severity: error
-  source: cmmlu_chinese_history_141
-- pattern: 无为而治
-  correct: 诗中主旨是人与万物同理，而非道家无为而治的政治理念
-  description: 误以为诗中体现的是无为而治的思想
-  severity: error
-  source: cmmlu_chinese_history_141
 - pattern: 募兵制.*加剧.*贫富分化
   correct: 募兵制通过优厚待遇养兵，并未直接加剧社会贫富分化
   description: 误以为募兵制导致贫富差距扩大
@@ -2299,11 +2159,6 @@ misconceptions:
   description: 误以为第一届全国人民代表大会才首次规定权力属于人民、人民开始成为国家主人
   severity: error
   source: cmmlu_chinese_history_153
-- pattern: 海选产生
-  correct: 第一届全国人民代表大会代表是通过普选产生，而非海选
-  description: 误以为第一届全国人民代表大会代表由海选产生
-  severity: error
-  source: cmmlu_chinese_history_153
 - pattern: 城市化.*进程.*缓慢
   correct: 一五计划期间优先发展重工业，城市化进程并非主要目标，但工业化带动了城市发展
   description: 误以为住宅建设投资减少意味着城市化进程放缓
@@ -2449,21 +2304,6 @@ misconceptions:
   description: 误以为分封制是对秦朝政治体制的彻底否定
   severity: error
   source: cmmlu_chinese_history_163
-- pattern: 贵族世袭
-  correct: 长兄如父、小儿不及长孙体现的是宗法观念，而非贵族世袭
-  description: 误将宗法观念等同于贵族世袭制度
-  severity: error
-  source: cmmlu_chinese_history_164
-- pattern: 等级秩序
-  correct: 长兄如父、小儿不及长孙体现的是宗法观念，而非一般性的等级秩序
-  description: 误将宗法观念泛化为等级秩序
-  severity: warning
-  source: cmmlu_chinese_history_164
-- pattern: 家族和睦
-  correct: 长兄如父、小儿不及长孙体现的是宗法观念，而非家族和睦
-  description: 误将宗法观念理解为家族和睦
-  severity: error
-  source: cmmlu_chinese_history_164
 - pattern: 发起新文化运动
   correct: 新文化运动是1915年由陈独秀等人发起的思想解放运动，与袁世凯当选临时大总统后的政治举措无关
   description: 误以为新文化运动是革命派为约束袁世凯而发起的政治行动
@@ -3219,31 +3059,11 @@ misconceptions:
   description: 误将九一八事变爆发的时间与太平洋战争爆发混淆
   severity: error
   source: cmmlu_chinese_history_217
-- pattern: 本质是善
-  correct: 宋明理学家认为人性本善，但因后天习染而远离善，故主张‘存天理，灭人欲’以复其善
-  description: 误以为宋明理学家主张人性本质是善，忽略了‘习远’的维度
-  severity: error
-  source: cmmlu_chinese_history_218
-- pattern: 本质为恶
-  correct: 宋明理学家继承孟子性善论，认为人性本善，而非恶
-  description: 误以为宋明理学家主张人性本质为恶
-  severity: error
-  source: cmmlu_chinese_history_218
-- pattern: 非善非恶
-  correct: 宋明理学家主张人性本善，而非非善非恶
-  description: 误以为宋明理学家主张人性非善非恶
-  severity: error
-  source: cmmlu_chinese_history_218
 - pattern: 放弃无产阶级对革命的领导权
   correct: 左倾错误表现为排斥和打击民族资产阶级，而非放弃领导权
   description: 误以为左倾错误是放弃领导权，实际上左倾错误是过度强调无产阶级领导权并排斥其他阶级
   severity: error
   source: cmmlu_chinese_history_219
-- pattern: 铁路国有
-  correct: 该章程允许华洋官商开办铁路，并非主张铁路国有
-  description: 误以为清政府主张铁路国有，实际允许民间和外商开办
-  severity: error
-  source: cmmlu_chinese_history_220
 - pattern: 不利民营铁路发展
   correct: 章程规定华商可请办铁路且华股占多数，有利于民营铁路发展
   description: 误以为章程阻碍民营铁路，实际鼓励华商参与
@@ -3269,11 +3089,6 @@ misconceptions:
   description: 误以为毛泽东和张爱萍的讲话针对的是阻挠中国恢复联合国合法席位的势力
   severity: error
   source: cmmlu_chinese_history_221
-- pattern: 加强皇权
-  correct: 王安石变法初期改革重点在于增加财政收入，而非加强皇权
-  description: 误以为王安石变法的重点是加强皇权
-  severity: error
-  source: cmmlu_chinese_history_222
 - pattern: 加强军事实力
   correct: 王安石变法初期改革重点在于增加财政收入，而非加强军事实力
   description: 误以为王安石变法的重点是加强军事实力
@@ -3302,11 +3117,6 @@ misconceptions:
 - pattern: 频繁更换工种
   correct: 唐代工匠需长期固定从事某一工种，不得随意改行
   description: 误以为唐代工匠可以频繁更换工种
-  severity: error
-  source: cmmlu_chinese_history_224
-- pattern: 临时工人
-  correct: 唐代工匠是长期在官府作坊服役的职业工匠，非临时雇佣
-  description: 误以为唐代工匠是临时工人
   severity: error
   source: cmmlu_chinese_history_224
 - pattern: 加强商人户籍管理
@@ -3399,11 +3209,6 @@ misconceptions:
   description: 误将新兴市场国家合作平台等同于全球层面的倡议
   severity: error
   source: cmmlu_chinese_history_231
-- pattern: 国家至上
-  correct: 陈独秀强调个人人格与权利对国家的重要性，并非主张国家至上
-  description: 误以为陈独秀主张国家至上，实际他批判封建伦理，强调个人价值
-  severity: error
-  source: cmmlu_chinese_history_232
 - pattern: 反对西方民主
   correct: 陈独秀提倡个人权利，这与西方民主理念一致，并非反对西方民主
   description: 误以为陈独秀反对西方民主，实际他倡导个人自由和权利
@@ -3479,26 +3284,11 @@ misconceptions:
   description: 误以为推恩令是西汉初年的政策
   severity: error
   source: cmmlu_chinese_history_238
-- pattern: 尊崇儒术
-  correct: 尊崇儒术是汉武帝时期董仲舒提出的文化改革，并非西汉初年
-  description: 误以为尊崇儒术是西汉初年的施政方针
-  severity: error
-  source: cmmlu_chinese_history_238
 - pattern: 设立.*中朝
   correct: 设立中朝是汉武帝时期为削弱相权而采取的措施，并非西汉初年
   description: 误以为设立中朝是西汉初年的制度
   severity: error
   source: cmmlu_chinese_history_238
-- pattern: 设枢密院
-  correct: 宋初设枢密院掌管军政，但扭转中央集权削弱的主要措施是文官任知州
-  description: 误以为设枢密院是宋初扭转中央集权削弱的关键措施
-  severity: error
-  source: cmmlu_chinese_history_239
-- pattern: 设三司使
-  correct: 宋初设三司使掌管财政，但扭转中央集权削弱的主要措施是文官任知州
-  description: 误以为设三司使是宋初扭转中央集权削弱的关键措施
-  severity: error
-  source: cmmlu_chinese_history_239
 - pattern: 施行将兵法
   correct: 将兵法是王安石变法内容，非宋初措施；宋初扭转中央集权削弱的主要措施是文官任知州
   description: 误以为将兵法是宋初措施，混淆了时间顺序
@@ -3553,16 +3343,6 @@ misconceptions:
   correct: 王夫之、黄宗羲、顾炎武是明末清初思想家，其主张并非维护清朝统治，而是反思明朝灭亡、关注民生
   description: 误以为明末清初思想家主张的目的是维护清朝统治
   severity: error
-  source: cmmlu_chinese_history_243
-- pattern: 重农抑商
-  correct: 这些主张关注土地分配和个体小农，但不等同于传统的重农抑商思想
-  description: 误将土地均分主张等同于重农抑商思想
-  severity: warning
-  source: cmmlu_chinese_history_243
-- pattern: 复古色彩
-  correct: 王夫之、黄宗羲、顾炎武的主张具有现实批判性，并非单纯复古
-  description: 误以为这些主张具有浓厚的复古色彩
-  severity: warning
   source: cmmlu_chinese_history_243
 - pattern: 政府管理失控
   correct: 宋代土地政策调整（如不抑兼并）导致土地集中，而非政府管理失控
@@ -3829,21 +3609,6 @@ misconceptions:
   description: 误将《共产党宣言》中的经典语句归因于《共同纲领》
   severity: error
   source: cmmlu_chinese_history_261
-- pattern: 国民革命
-  correct: 五四运动后中国革命的新方向是无产阶级革命，而非国民革命
-  description: 误以为五四运动后中国革命的新方向是国民革命
-  severity: error
-  source: cmmlu_chinese_history_262
-- pattern: 民族革命
-  correct: 五四运动后中国革命的新方向是无产阶级革命，而非民族革命
-  description: 误以为五四运动后中国革命的新方向是民族革命
-  severity: error
-  source: cmmlu_chinese_history_262
-- pattern: 武装革命
-  correct: 五四运动后中国革命的新方向是无产阶级革命，而非武装革命
-  description: 误以为五四运动后中国革命的新方向是武装革命
-  severity: error
-  source: cmmlu_chinese_history_262
 - pattern: 取士科目有所减少
   correct: 宋代科举科目并未减少，反而有所增加或调整
   description: 误以为宋代科举科目比唐代减少
@@ -3929,11 +3694,6 @@ misconceptions:
   description: 误以为魏晋南北朝时期经济重心已完全南移
   severity: error
   source: cmmlu_chinese_history_268
-- pattern: 耕战结合
-  correct: 拔河活动体现的是对阳刚与力量的推崇，而非耕战结合观念
-  description: 误以为拔河活动反映了耕战结合的政策观念
-  severity: error
-  source: cmmlu_chinese_history_269
 - pattern: 江南文化.*主流
   correct: 拔河在唐代广为流传，不能说明江南文化成为主流
   description: 误以为拔河流行代表江南文化成为主流
@@ -4114,11 +3874,6 @@ misconceptions:
   description: 误以为两者都违背公平公正原则
   severity: error
   source: cmmlu_chinese_history_281
-- pattern: 另起炉灶
-  correct: “另起炉灶”是新中国初期针对旧中国外交关系提出的方针，与二战后非殖民化浪潮无关
-  description: 误以为“另起炉灶”是针对亚非拉民族国家兴起的外交政策
-  severity: error
-  source: cmmlu_chinese_history_282
 - pattern: 打扫干净屋子再请客
   correct: “打扫干净屋子再请客”是清除帝国主义在华特权和势力的方针，不直接针对非殖民化浪潮
   description: 误以为“打扫干净屋子再请客”是应对亚非拉新兴国家的外交策略
@@ -4269,11 +4024,6 @@ misconceptions:
   description: 误以为岳麓书院受陆九渊心学影响最大
   severity: error
   source: cmmlu_chinese_history_292
-- pattern: 儒佛融合
-  correct: 李贽的着装和言行体现的是对封建礼教的批判，而非致力于儒佛融合
-  description: 误以为李贽的怪异装扮和收女弟子行为是为了融合儒佛
-  severity: error
-  source: cmmlu_chinese_history_293
 - pattern: 超然物外.*自由
   correct: 李贽的行为是积极入世地批判封建传统，而非追求超然物外的自由
   description: 误以为李贽的狂狷行为是为了追求超脱世俗的自由
@@ -4329,16 +4079,6 @@ misconceptions:
   description: 误将抗日战争时期的全民族抗战描述为土地革命时期的打土豪分田地
   severity: error
   source: cmmlu_chinese_history_296
-- pattern: 专管军务
-  correct: 军机处参与政务，并非专管军务
-  description: 误以为军机处只负责军事事务
-  severity: error
-  source: cmmlu_chinese_history_297
-- pattern: 专理刑狱
-  correct: 军机处参与政务和审理大案，但并非专理刑狱
-  description: 误以为军机处职能仅限于司法审判
-  severity: error
-  source: cmmlu_chinese_history_297
 - pattern: 削弱国民党.*敌后
   correct: 减租减息政策旨在团结各阶层共同抗日，而非针对国民党
   description: 误以为减租减息是为了削弱国民党势力
@@ -4614,11 +4354,6 @@ misconceptions:
   description: 误以为汉武帝将丞相类型从学术型改为武官型
   severity: error
   source: cmmlu_chinese_history_317
-- pattern: 提倡裹足
-  correct: 该歌词描述缠足对女性的摧残，意在反对和废止缠足
-  description: 误以为歌词在提倡裹足，实际是批判缠足
-  severity: error
-  source: cmmlu_chinese_history_318
 - pattern: 《南京条约》.*惩办.*首祸诸臣
   correct: 《南京条约》是1842年鸦片战争后签订，不涉及惩办首祸诸臣、禁止科举等内容
   description: 误以为《南京条约》包含惩办首祸诸臣等条款
@@ -4779,16 +4514,6 @@ misconceptions:
   description: 误以为戴维营协议是巴勒斯坦与以色列之间的临时和平协议
   severity: error
   source: cmmlu_world_history_6
-- pattern: 揶揄上帝
-  correct: 人文主义者反对将贫穷视为唯一美德，但并未直接嘲弄上帝
-  description: 误以为人文主义者直接嘲弄或讽刺上帝
-  severity: error
-  source: cmmlu_world_history_7
-- pattern: 鄙视贫穷
-  correct: 人文主义者反对以贫穷作为衡量品德的唯一标准，而非鄙视贫穷本身
-  description: 误以为人文主义者鄙视贫穷，实际上他们反对的是将贫穷神圣化
-  severity: error
-  source: cmmlu_world_history_7
 - pattern: 财富即道德
   correct: 人文主义者认为财富不是罪恶，但并未主张财富等同于道德
   description: 误以为人文主义者将财富直接等同于道德
@@ -5254,11 +4979,6 @@ misconceptions:
   description: 误以为列宁所说的不同方法是俄国进行二月革命走资本主义道路
   severity: error
   source: cmmlu_world_history_40
-- pattern: 联邦制
-  correct: 列宁指的是十月革命走社会主义道路，而非苏联采用联邦制
-  description: 误以为列宁所说的不同方法是苏联采用联邦制
-  severity: error
-  source: cmmlu_world_history_40
 - pattern: 妇女.*财产继承权.*自然法
   correct: 罗马法对妇女财产继承权有严格限制，自然法强调平等，但罗马法并未体现这一精神
   description: 误以为罗马法对妇女财产继承权的限制体现了自然法精神
@@ -5489,11 +5209,6 @@ misconceptions:
   description: 误以为剧中角色憎恨神即代表雅典人反对神灵崇拜
   severity: error
   source: cmmlu_world_history_56
-- pattern: 世界工厂
-  correct: 英国工业革命后逐步成为世界工厂，而非工业革命兴起的原因
-  description: 误将工业革命的结果（成为世界工厂）当作其兴起的原因
-  severity: error
-  source: cmmlu_world_history_57
 - pattern: 科学技术.*大突破
   correct: 工业革命初期主要依赖经验技术和市场需求，而非科学理论的重大突破
   description: 误以为工业革命兴起主要源于科学技术的大突破
@@ -5914,21 +5629,6 @@ misconceptions:
   description: 误以为1877年法国政体是君主专制
   severity: error
   source: cmmlu_world_history_87
-- pattern: 贵族共和
-  correct: 孟德斯鸠主张君主立宪，而非贵族共和
-  description: 误以为孟德斯鸠主张贵族共和政体
-  severity: error
-  source: cmmlu_world_history_88
-- pattern: 民主共和
-  correct: 孟德斯鸠主张君主立宪，而非民主共和
-  description: 误以为孟德斯鸠主张民主共和政体
-  severity: error
-  source: cmmlu_world_history_88
-- pattern: 君主专制
-  correct: 孟德斯鸠主张君主立宪，反对君主专制
-  description: 误以为孟德斯鸠主张君主专制政体
-  severity: error
-  source: cmmlu_world_history_88
 - pattern: 卢梭.*法律.*理性
   correct: 卢梭强调社会契约和公意，而非将法律视为人类理性在特殊场合的适用
   description: 误以为卢梭主张法律是人类理性的普遍适用
@@ -6089,11 +5789,6 @@ misconceptions:
   description: 误以为实物配给制是1921年经济失败的主要原因
   severity: error
   source: cmmlu_world_history_100
-- pattern: 大量移民
-  correct: 殖民者在拉丁美洲移植了本国生产方式，导致经济结构依附性，而非大量移民本身
-  description: 误以为大量移民是拉美发展停滞的主因
-  severity: error
-  source: cmmlu_world_history_101
 - pattern: 奴役掠夺土著居民
   correct: 殖民者移植了本国生产方式，形成依附性经济结构，而非仅奴役掠夺
   description: 误以为奴役掠夺是拉美发展停滞的主因
@@ -6129,16 +5824,6 @@ misconceptions:
   description: 误以为民主国家容易滑向君主专制，忽略了民主制度的制约机制
   severity: error
   source: cmmlu_world_history_103
-- pattern: 一致对外
-  correct: 美国1787年宪法制定主要是为了解决国内各州间的冲突和建立强有力的中央政府，而非主要为了对外
-  description: 误以为美国制宪的主要目的是为了一致对外
-  severity: error
-  source: cmmlu_world_history_104
-- pattern: 严重分歧
-  correct: 制宪过程中各州存在冲突，但并非对制定宪法本身存在严重分歧，而是对宪法具体条款有不同意见
-  description: 误以为各州对制定宪法本身存在严重分歧，实际上分歧在于具体内容
-  severity: warning
-  source: cmmlu_world_history_104
 - pattern: 殖民扩张传播着资本主义的生产方式
   correct: 殖民扩张的主要目的是掠夺财富和资源，而非主动传播先进生产方式
   description: 误以为殖民扩张的主要作用是传播资本主义生产方式
@@ -6219,11 +5904,6 @@ misconceptions:
   description: 误以为欧洲共同体是马歇尔计划后的军事保卫措施
   severity: error
   source: cmmlu_world_history_110
-- pattern: 联合国
-  correct: 联合国是二战后的国际组织，并非马歇尔计划后建立的专门保卫性措施
-  description: 误以为联合国是马歇尔计划后采取的保卫性措施
-  severity: error
-  source: cmmlu_world_history_110
 - pattern: 歌德.*统一
   correct: 歌德是文学家，并非政治家，德国统一由俾斯麦领导完成
   description: 误以为歌德参与了德国统一的政治进程
@@ -6289,26 +5969,6 @@ misconceptions:
   description: 误以为宪法中人口折算规定违背的是各州自治原则
   severity: error
   source: cmmlu_world_history_116
-- pattern: 政治
-  correct: 希腊哲学主题从宇宙本原转向了人本身
-  description: 误以为希腊哲学主题转向了政治
-  severity: error
-  source: cmmlu_world_history_117
-- pattern: 神
-  correct: 希腊哲学主题从宇宙本原转向了人本身
-  description: 误以为希腊哲学主题转向了神
-  severity: error
-  source: cmmlu_world_history_117
-- pattern: 自然
-  correct: 希腊哲学主题从宇宙本原转向了人本身
-  description: 误以为希腊哲学主题仍停留在自然领域
-  severity: error
-  source: cmmlu_world_history_117
-- pattern: 共和制度
-  correct: 该通告赞美的是联邦体制，而非共和制度
-  description: 误将联邦体制的赞美理解为对共和制度的肯定
-  severity: error
-  source: cmmlu_world_history_118
 - pattern: 迫于国内政治经济危机.*物资匮乏
   correct: 列宁号召义务劳动是为了应对国内外严重形势，取得对阶级敌人的优势，而非单纯解决物资匮乏
   description: 误以为义务劳动的主要动机是经济危机和物资短缺
@@ -6334,11 +5994,6 @@ misconceptions:
   description: 误以为宣扬民主政治是美式思维模式的根本
   severity: error
   source: cmmlu_world_history_120
-- pattern: 重视法制
-  correct: 美式思维模式的根本是强调个人自由，而非重视法制
-  description: 误以为重视法制是美式思维模式的根本
-  severity: error
-  source: cmmlu_world_history_120
 - pattern: 达尔文.*物理学
   correct: 达尔文是生物学家，提出进化论，而非物理学家
   description: 误以为达尔文对物理学有重大贡献
@@ -6354,21 +6009,6 @@ misconceptions:
   description: 误以为普朗克是题干评价的对象
   severity: warning
   source: cmmlu_world_history_121
-- pattern: 共和制
-  correct: 共和制是一种政体形式，而非政党制度；美国两党制起源于联邦党与民主共和党的竞争
-  description: 误将共和制（政体）与两党制（政党制度）混淆
-  severity: error
-  source: cmmlu_world_history_122
-- pattern: 邦联制
-  correct: 邦联制是国家结构形式，美国1787年宪法后已改为联邦制；两党制是政党制度
-  description: 误将邦联制（国家结构）与两党制（政党制度）混淆
-  severity: error
-  source: cmmlu_world_history_122
-- pattern: 议会制
-  correct: 议会制是政府组织形式（立法与行政关系），美国实行总统制；两党制是政党制度
-  description: 误将议会制（政体）与两党制（政党制度）混淆
-  severity: error
-  source: cmmlu_world_history_122
 - pattern: 卡布拉尔.*西班牙
   correct: 卡布拉尔是葡萄牙航海家，他代表葡萄牙进行探险并宣布南美洲东部为葡萄牙领地
   description: 误以为卡布拉尔属于西班牙，实际上他是葡萄牙人
@@ -6644,16 +6284,6 @@ misconceptions:
   description: 误以为德国是1890年前后兴起的新大国
   severity: error
   source: cmmlu_world_history_141
-- pattern: 城市中心
-  correct: 毛泽东找到的正确道路是工农武装割据，而非坚持城市中心革命道路
-  description: 误以为毛泽东主张的城市中心道路是正确革命道路
-  severity: error
-  source: cmmlu_world_history_142
-- pattern: 持久战
-  correct: 毛泽东找到的正确道路是工农武装割据，而非持久战战略
-  description: 误以为持久战是毛泽东在困难时代找到的根本革命道路
-  severity: error
-  source: cmmlu_world_history_142
 - pattern: 国家干预.*促进.*经济
   correct: 1923-1929年美国经济繁荣主要依靠自由市场和企业管理创新，而非国家干预
   description: 误以为当时美国经济繁荣主要得益于国家干预政策
