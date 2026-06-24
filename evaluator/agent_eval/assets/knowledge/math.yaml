@@ -48,6 +48,26 @@ constants:
     tolerance: 0
     description: "1+2+...+100 = 5050（高斯配对法：50×101）"
 
+  # ─── 常见无理数近似值 ───
+
+  - name: "根号2 (√2)"
+    extract_pattern: "(?:根号2|√2|2的算术平方根)\\s*(?:≈|＝|=|约为|约)\\s*(\\d+\\.?\\d*)"
+    value: 1.414
+    tolerance: 0.001
+    description: "√2 ≈ 1.414（勾股定理、单位正方形对角线）"
+
+  - name: "根号3 (√3)"
+    extract_pattern: "(?:根号3|√3|3的算术平方根)\\s*(?:≈|＝|=|约为|约)\\s*(\\d+\\.?\\d*)"
+    value: 1.732
+    tolerance: 0.001
+    description: "√3 ≈ 1.732"
+
+  - name: "黄金分割比"
+    extract_pattern: "(?:黄金分割|黄金比例|黄金比)\\s*(?:≈|＝|=|约为|约)\\s*(\\d+\\.?\\d*)"
+    value: 0.618
+    tolerance: 0.001
+    description: "黄金分割比 ≈ 0.618"
+
 # ─── 常见数学错误模式 ─────────────────────────────────
 # pattern: 匹配可能的错误表述
 # correct: 正确信息
@@ -230,6 +250,9 @@ domain_facts:
       - name: "圆的面积"
         formula: "S = πr²"
         description: "半径r"
+      - name: "勾股定理"
+        formula: "a² + b² = c²"
+        description: "直角三角形两直角边 a、b，斜边 c"
 
     # 立体图形
     solid_figures:
@@ -302,6 +325,66 @@ domain_facts:
       - name: "韦达定理"
         formula: "x₁+x₂=-b/a, x₁x₂=c/a"
         description: "一元二次方程根与系数关系"
+      - name: "同底数幂乘法"
+        formula: "a^m · a^n = a^(m+n)"
+        description: "底数不变，指数相加"
+      - name: "同底数幂除法"
+        formula: "a^m ÷ a^n = a^(m-n)"
+        description: "底数不变，指数相减（a≠0）"
+      - name: "幂的乘方"
+        formula: "(a^m)^n = a^(mn)"
+        description: "底数不变，指数相乘"
+
+    # 锐角三角函数（初中）
+    trigonometry:
+      - name: "正弦"
+        formula: "sinA = 对边/斜边"
+        description: "直角三角形中，∠A 的对边与斜边之比"
+      - name: "余弦"
+        formula: "cosA = 邻边/斜边"
+        description: "∠A 的邻边与斜边之比"
+      - name: "正切"
+        formula: "tanA = 对边/邻边"
+        description: "∠A 的对边与邻边之比"
+      - name: "特殊角三角函数值"
+        formula: "sin30°=1/2, cos30°=√3/2, tan45°=1, sin45°=cos45°=√2/2"
+        description: "30°/45°/60° 常用值"
+
+    # 统计
+    statistics:
+      - name: "平均数"
+        formula: "x̄ = (x₁+x₂+...+xₙ)/n"
+        description: "所有数据之和除以数据个数"
+      - name: "中位数"
+        formula: "由小到大排列取中间值"
+        description: "奇数个取正中，偶数个取中间两数平均"
+      - name: "众数"
+        formula: "出现次数最多的数"
+        description: "一组数据中可能有一个或多个众数"
+      - name: "方差"
+        formula: "s² = [(x₁-x̄)²+...+(xₙ-x̄)²]/n"
+        description: "衡量数据波动大小，方差越小越稳定"
+
+    # 概率
+    probability:
+      - name: "概率公式"
+        formula: "P(A) = m/n"
+        description: "m 为事件 A 的有利结果数，n 为所有可能结果数"
+      - name: "概率取值范围"
+        formula: "0 ≤ P(A) ≤ 1"
+        description: "必然事件 P=1，不可能事件 P=0"
+
+    # 函数
+    functions:
+      - name: "一次函数"
+        formula: "y = kx + b (k≠0)"
+        description: "k 为斜率，b 为截距；b=0 时为正比例函数"
+      - name: "反比例函数"
+        formula: "y = k/x (k≠0)"
+        description: "图象为双曲线"
+      - name: "二次函数"
+        formula: "y = ax² + bx + c (a≠0)"
+        description: "图象为抛物线，a 决定开口方向"
 
   # ─── 各年级知识点 ───
 
