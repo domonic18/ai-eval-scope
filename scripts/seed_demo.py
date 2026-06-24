@@ -11,7 +11,7 @@ import uuid
 
 import httpx
 
-HOST = "http://localhost:3000"
+HOST = "http://localhost:9000"
 DEMO_EMAIL = "demo@eval.local"
 DEMO_PASSWORD = "demo12345"
 

@@ -1,7 +1,7 @@
 """读取 AGENT_EVAL_* 环境变量，生成 ObservabilityConfig。
 
 约定（与 docs/arch/09 §12.3 评估器侧变量一致）：
-  AGENT_EVAL_HOST          平台地址（默认 http://localhost:3000）
+  AGENT_EVAL_HOST          平台地址（默认 http://localhost:9000）
   AGENT_EVAL_PUBLIC_KEY    pk-eval-...（API Key 公钥）
   AGENT_EVAL_SECRET_KEY    sk-eval-...（API Key 密钥，仅客户端持有）
   AGENT_EVAL_PROJECT       目标项目（uuid 或 slug，可选；缺省=Key 所属项目）

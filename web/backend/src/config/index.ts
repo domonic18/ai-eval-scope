@@ -70,7 +70,7 @@ export function loadConfig(): PlatformConfig {
     presignTtlSec: int(process.env.PLATFORM_PRESIGN_TTL_SEC, 900),
     retentionDefaultDays: int(process.env.PLATFORM_RETENTION_DEFAULT_DAYS, 90),
     nodeEnv: process.env.NODE_ENV || "development",
-    port: int(process.env.PORT, 3000),
+    port: int(process.env.PORT, 9000),
     host: process.env.HOST || "0.0.0.0",
     schemaVersion: "1.0",
     logLevel: process.env.LOG_LEVEL || "info",
