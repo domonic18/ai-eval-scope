@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具库脚手架 - 认知放大器</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  background: var(--bg);
+  color: var(--text);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+h1 { font-size: var(--font-h1); font-weight: 700; margin: 24px 0 16px; color: var(--primary); }
+h2 { font-size: var(--font-h2); font-weight: 600; margin: 24px 0 12px; color: var(--primary); padding-bottom: 6px; border-bottom: 2px solid var(--accent); }
+h3 { font-size: calc(var(--font-body) + 2px); font-weight: 600; margin: 16px 0 8px; color: var(--text); }
+.level-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 16px 0;
+  flex-wrap: wrap;
+}
+.level-tab {
+  padding: 10px 22px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: calc(var(--font-body) - 1px);
+  color: var(--text-secondary);
+  transition: all .2s;
+  font-weight: 500;
+}
+.level-tab.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.level-tab:hover:not(.active) { background: #e8e8e8; }
+.tools-grid {
+  display: none;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 4px;
+}
+.tools-grid.active { display: grid; }
+.tool-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  border: 1px solid var(--border);
+  transition: transform .2s, box-shadow .2s;
+  cursor: default;
+}
+.tool-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.10);
+}
+.tool-card .tool-icon { font-size: 32px; display: block; margin-bottom: 8px; }
+.tool-card .tool-name { font-size: calc(var(--font-body) + 2px); font-weight: 600; color: var(--primary); }
+.tool-card .tool-use { font-size: calc(var(--font-body) - 1px); color: var(--text-secondary); margin: 4px 0 8px; }
+.tool-card .tool-steps {
+  padding-left: 18px;
+  margin: 8px 0;
+  font-size: calc(var(--font-body) - 1px);
+}
+.tool-card .tool-steps li { margin: 3px 0; }
+.tool-card .tool-scene {
+  display: inline-block;
+  padding: 3px 10px;
+  background: var(--bg);
+  border-radius: 12px;
+  font-size: calc(var(--font-body) - 3px);
+  color: var(--primary);
+  margin-top: 6px;
+}
+.tool-card .tool-example {
+  margin-top: 10px;
+  padding: 10px;
+  background: var(--bg);
+  border-radius: 4px;
+  font-size: calc(var(--font-body) - 2px);
+  border-left: 3px solid var(--accent);
+}
+.prompt-box {
+  background: var(--bg);
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 8px 0;
+  font-family: 'Courier New', monospace;
+  font-size: calc(var(--font-body) - 2px);
+  color: var(--text);
+  cursor: pointer;
+  transition: background .2s;
+}
+.prompt-box:hover { background: #e8e8e8; }
+.prompt-box .copy-hint {
+  float: right;
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+}
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .tools-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🔧 工具库脚手架</h1>
+  <p style="color:var(--text-secondary);margin-bottom:16px;">认知放大器：选择适合你的工具，学习更高效。</p>
+
+  <div class="level-tabs">
+    <div class="level-tab active" onclick="switchLevel(this,0)">🌱 基础工具</div>
+    <div class="level-tab" onclick="switchLevel(this,1)">🚀 进阶工具</div>
+    <div class="level-tab" onclick="switchLevel(this,2)">🎯 高阶工具</div>
+  </div>
+
+  <!-- 基础工具 -->
+  <div class="tools-grid active" data-level="0">
+    <div class="tool-card">
+      <span class="tool-icon">🧠</span>
+      <div class="tool-name">思维导图 Mind Map</div>
+      <div class="tool-use">整理思路、建立知识点之间的联系</div>
+      <ol class="tool-steps">
+        <li>中心主题画在纸中央</li>
+        <li>向四周画出主干分支</li>
+        <li>每根分支延伸出次级分支</li>
+        <li>用关键词和图标标注</li>
+      </ol>
+      <div class="tool-example"><strong>示例：</strong>以"Friendship"为中心，分出 <em>Types</em> — <em>Qualities</em> — <em>Challenges</em> — <em>Benefits</em> 四个主干</div>
+      <span class="tool-scene">课前预习 · 课文梳理 · 写作构思</span>
+    </div>
+    <div class="tool-card">
+      <span class="tool-icon">📊</span>
+      <div class="tool-name">KWL 表格</div>
+      <div class="tool-use">明确已知、想知和学到的内容</div>
+      <ol class="tool-steps">
+        <li>画三列表格：K | W | L</li>
+        <li>K 栏：写出你已经知道的内容</li>
+        <li>W 栏：写出你想知道的问题</li>
+        <li>L 栏：学完后写下你新学到的</li>
+      </ol>
+      <div class="tool-example"><strong>适用：</strong>单元学习开始和结束时使用，对比前后认知变化</div>
+      <span class="tool-scene">单元学习 · 项目式学习</span>
+    </div>
+  </div>
+
+  <!-- 进阶工具 -->
+  <div class="tools-grid" data-level="1">
+    <div class="tool-card">
+      <span class="tool-icon">🤖</span>
+      <div class="tool-name">AI 辅助学习</div>
+      <div class="tool-use">获取即时反馈、进行口语练习、校对语法</div>
+      <ol class="tool-steps">
+        <li>明确你想要解决的问题</li>
+        <li>用英文输入你的问题或文本</li>
+        <li>分析 AI 的回复，判断是否采纳</li>
+        <li>追问或调整，直到满意</li>
+      </ol>
+      <div class="prompt-box" onclick="copyPrompt(this)">
+        "Please check the grammar of my essay about friendship and give suggestions."
+        <span class="copy-hint">📋 点击复制</span>
+      </div>
+      <span class="tool-scene">写作修改 · 口语练习 · 阅读理解</span>
+    </div>
+    <div class="tool-card">
+      <span class="tool-icon">🎨</span>
+      <div class="tool-name">Canva 在线设计</div>
+      <div class="tool-use">制作精美的英文海报、思维导图</div>
+      <ol class="tool-steps">
+        <li>打开 Canva 官网，选择模板</li>
+        <li>添加你的英文内容和图片</li>
+        <li>调整配色和排版设计</li>
+        <li>导出为图片或 PDF</li>
+      </ol>
+      <div class="tool-example"><strong>推荐：</strong>搜索 "Friendship Poster" 模板，快速上手</div>
+      <span class="tool-scene">成果展示 · 海报制作</span>
+    </div>
+  </div>
+
+  <!-- 高阶工具 -->
+  <div class="tools-grid" data-level="2">
+    <div class="tool-card">
+      <span class="tool-icon">🔬</span>
+      <div class="tool-name">VOSviewer 文献分析</div>
+      <div class="tool-use">分析学术文献中"friendship"研究的关键词关系</div>
+      <ol class="tool-steps">
+        <li>从学术数据库导出文献数据</li>
+        <li>导入 VOSviewer 软件</li>
+        <li>选择"Co-occurrence"分析</li>
+        <li>生成关键词共现网络图，解读聚类</li>
+      </ol>
+      <div class="tool-example"><strong>研究课题：</strong>近十年国际"friendship"研究的热点演变</div>
+      <span class="tool-scene">研究性学习 · 课题探究</span>
+    </div>
+  </div>
+
+  <div style="margin-top:24px;padding:16px;background:var(--bg);border-radius:8px;text-align:center;color:var(--text-secondary);font-size:calc(var(--font-body)-1px);">
+    💡 点击工具分类标签切换不同层级。从基础到高阶，选择最适合你的学习节奏的工具。
+  </div>
+</div>
+<script>
+function switchLevel(el, idx) {
+  var tabs = el.parentElement.children;
+  var grids = el.parentElement.parentElement.querySelectorAll('.tools-grid');
+  for(var i=0;i<tabs.length;i++) tabs[i].classList.remove('active');
+  for(var i=0;i<grids.length;i++) grids[i].classList.remove('active');
+  el.classList.add('active');
+  if(grids[idx]) grids[idx].classList.add('active');
+}
+function copyPrompt(el) {
+  var text = el.textContent.replace('📋 点击复制','').trim();
+  navigator.clipboard.writeText(text).then(function(){
+    var hint = el.querySelector('.copy-hint');
+    if(hint) { hint.textContent = '✅ 已复制'; setTimeout(function(){hint.textContent='📋 点击复制';},2000); }
+  }).catch(function(){
+    var range = document.createRange(); range.selectNodeContents(el);
+    var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+    document.execCommand('copy'); sel.removeAllRanges();
+  });
+}
+</script>
+</body>
+</html>

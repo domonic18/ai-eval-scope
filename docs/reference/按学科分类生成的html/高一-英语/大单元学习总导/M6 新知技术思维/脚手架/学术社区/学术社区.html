@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学术社区 — 学习共同体</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+h1 { font-size: var(--font-h1); color: var(--primary); margin: 0 0 16px; font-weight: 700; }
+h2 { font-size: var(--font-h2); color: var(--primary); margin: 18px 0 10px; font-weight: 600; border-left: 3px solid var(--primary); padding-left: 10px; }
+h3 { font-size: 16px; color: var(--primary-hover); margin: 12px 0 6px; font-weight: 600; }
+.card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 14px 18px; margin-bottom: 14px; border: 1px solid var(--border); }
+.topic-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.topic-btn { padding: 6px 14px; border: 1px solid var(--border); border-radius: 16px; background: var(--card-bg); cursor: pointer; font-size: 13px; transition: all 0.25s; }
+.topic-btn:hover { border-color: var(--primary); }
+.topic-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.topic-panel { display: none; }
+.topic-panel.show { display: block; }
+.role-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin: 10px 0; }
+.role-item { background: #f9f9f9; border-radius: 8px; padding: 10px 12px; text-align: center; border: 1px solid var(--border); transition: all 0.2s; cursor: default; }
+.role-item:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
+.role-item .icon { font-size: 24px; display: block; margin-bottom: 4px; }
+.role-item .name { font-weight: 600; font-size: 14px; }
+.role-item .desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.output-list { padding: 0; list-style: none; }
+.output-list li { padding: 8px 12px; margin: 4px 0; background: #f9f9f9; border-radius: 6px; border-left: 3px solid var(--primary); }
+.connect-item { background: #f9f9f9; border-radius: 6px; padding: 10px 14px; margin: 6px 0; border-left: 3px solid var(--accent); }
+.label-badge { display: inline-block; background: var(--primary); color: #fff; font-size: 11px; padding: 1px 8px; border-radius: 10px; margin-right: 4px; font-weight: 500; }
+ul { margin: 6px 0; padding-left: 20px; }
+li { margin: 4px 0; }
+.interact-hint { color: var(--text-secondary); font-size: 13px; text-align: center; margin: 4px 0; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>🌍 学术社区 · 学习共同体</h1>
+<p style="color:var(--text-secondary);margin:-8px 0 14px;">学习的最高境界不是一个人学会，而是能教会别人</p>
+
+<h2>💬 同伴讨论 · 结构化议题</h2>
+
+<div class="topic-tabs">
+  <span class="topic-btn active" onclick="switchTopic(this,'topic1')">议题 1</span>
+  <span class="topic-btn" onclick="switchTopic(this,'topic2')">议题 2</span>
+  <span class="topic-btn" onclick="switchTopic(this,'topic3')">议题 3</span>
+</div>
+
+<div class="topic-panel show" id="topic1">
+  <div class="card">
+    <h3>🎯 议题 1：线上友谊是真正的友谊吗？</h3>
+    <p><span class="label-badge">分组</span> 支持方 VS 反对方</p>
+    <p><span class="label-badge">引导问题</span></p>
+    <ul>
+      <li>线上友谊缺少什么？</li>
+      <li>线上友谊又多了什么？</li>
+      <li>如果用亚里士多德的"三种友谊"来分析，线上友谊属于哪一种？</li>
+    </ul>
+  </div>
+</div>
+
+<div class="topic-panel" id="topic2">
+  <div class="card">
+    <h3>🎯 议题 2：如何在新环境中交朋友？</h3>
+    <p><span class="label-badge">形式</span> 小组分享 + 互相补充</p>
+    <p><span class="label-badge">引导问题</span></p>
+    <ul>
+      <li>如果你到了一个陌生的环境（新学校、国外），你会怎么做？</li>
+      <li>你的经验中什么方法最有效？</li>
+      <li>Rogers 的"无条件积极关注"能帮你吗？</li>
+    </ul>
+  </div>
+</div>
+
+<div class="topic-panel" id="topic3">
+  <div class="card">
+    <h3>🎯 议题 3：教材中的友谊 vs 你的经历</h3>
+    <p><span class="label-badge">形式</span> 比较讨论</p>
+    <p><span class="label-badge">引导问题</span></p>
+    <ul>
+      <li>教材中的友谊故事和你的经历有什么异同？</li>
+      <li>哪些情节让你产生共鸣？哪些让你觉得不真实？</li>
+      <li>文化差异如何影响我们对友谊的理解？</li>
+    </ul>
+  </div>
+</div>
+
+<h2>👥 角色分工</h2>
+<div class="card">
+  <p style="margin:0 0 8px;">在小组讨论中，尝试以下角色——每轮交换一次：</p>
+  <div class="role-grid">
+    <div class="role-item"><span class="icon">📝</span><span class="name">记录员</span><span class="desc">记录要点和不同观点</span></div>
+    <div class="role-item"><span class="icon">🎙️</span><span class="name">发言人</span><span class="desc">汇报小组观点</span></div>
+    <div class="role-item"><span class="icon">❓</span><span class="name">质疑者</span><span class="desc">提出不同看法</span></div>
+    <div class="role-item"><span class="icon">🔗</span><span class="name">总结者</span><span class="desc">归纳整理成果</span></div>
+  </div>
+</div>
+
+<h2>📤 输出机制</h2>
+<div class="card">
+  <ul class="output-list">
+    <li><strong>📋 小组成果</strong> — 每个议题讨论后，形成一份英文讨论纪要</li>
+    <li><strong>📢 分享展示</strong> — 将成果在班级群或学习平台上展示</li>
+    <li><strong>🔄 互评反馈</strong> — 对其他小组的成果进行点评</li>
+  </ul>
+</div>
+
+<h2>🔗 连接与拓展</h2>
+<div class="card">
+  <div class="connect-item">
+    <strong>🏠 家校支持：</strong>采访父母的交友经验，分享他们的故事。把讨论成果带回家与父母交流。
+  </div>
+  <div class="connect-item">
+    <strong>🧑‍🏫 专家链接：</strong>推荐观看心理学家的相关讲座视频，拓展对友谊的学术理解。
+  </div>
+  <div class="connect-item">
+    <strong>🏫 机构推荐：</strong>了解学校的心理健康辅导中心资源——学会求助也是一种能力。
+  </div>
+</div>
+
+<p class="interact-hint">👆 点击议题标签切换讨论话题 · 尝试不同角色分工</p>
+</div>
+
+<script>
+function switchTopic(el, target) {
+  document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.topic-panel').forEach(p => p.classList.remove('show'));
+  document.getElementById(target).classList.add('show');
+}
+</script>
+</body>
+</html>

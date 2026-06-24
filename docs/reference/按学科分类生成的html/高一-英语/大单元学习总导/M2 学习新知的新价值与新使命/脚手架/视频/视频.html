@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视频脚手架 — 英语必修1 Friendship</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); font-size: var(--font-body); line-height: var(--line-height); }
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+.header { padding: 28px 24px; background: linear-gradient(135deg, #434343 0%, #6b6b6b 100%); color: #fff; border-radius: 0 0 16px 16px; margin: -20px -24px 24px -24px; }
+.header h1 { font-size: var(--font-h1); margin: 0 0 6px; font-weight: 700; }
+.header p { margin: 0; opacity: 0.85; font-size: 14px; }
+.section { margin-bottom: 28px; }
+.section-title { font-size: var(--font-h2); font-weight: 700; color: var(--primary); margin: 0 0 14px; padding-left: 12px; border-left: 4px solid var(--primary); }
+
+.video-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px; transition: transform 0.2s; }
+.video-card:hover { transform: translateY(-2px); }
+.video-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 3px 10px; border-radius: 12px; font-weight: 600; margin-bottom: 10px; }
+.badge-basic { background: #e8e8e8; color: #434343; }
+.badge-adv { background: #d4d4d8; color: #434343; }
+.badge-challenge { background: #434343; color: #fff; }
+.video-title { font-size: 17px; font-weight: 700; color: var(--primary); margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+.video-icon { font-size: 24px; }
+.task-section { margin: 12px 0; }
+.task-label { font-weight: 600; color: var(--primary); display: block; margin-bottom: 4px; font-size: 14px; }
+.task-text { color: var(--text); margin-bottom: 8px; }
+.question-list { padding-left: 20px; margin: 8px 0; }
+.question-list li { margin-bottom: 6px; }
+.pause-point { margin: 10px 0; padding: 10px 14px; background: #f0f0f0; border-radius: 6px; border-left: 3px solid var(--accent); cursor: pointer; transition: background 0.2s; }
+.pause-point:hover { background: #e8e8e8; }
+.pause-point strong { color: var(--primary); }
+.output-box { margin-top: 10px; padding: 12px; border: 1px dashed var(--border); border-radius: 6px; background: #fafafa; }
+.output-box textarea { width: 100%; border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-family: inherit; font-size: 14px; box-sizing: border-box; resize: vertical; min-height: 60px; }
+.source-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.source-item { padding: 14px; background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); text-align: center; }
+.source-item .emoji { font-size: 28px; display: block; margin-bottom: 6px; }
+.source-item strong { display: block; font-size: 14px; color: var(--primary); }
+.source-item span { font-size: 13px; color: var(--text-secondary); }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🎬 视频脚手架</h1>
+    <p>英语 · 必修1 · Unit 1 Friendship — 通过视频深度学习友谊主题</p>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">🌱 基础层 · 解释型视频</h2>
+
+    <div class="video-card">
+      <span class="video-badge badge-basic">🎥 解释型</span>
+      <h3 class="video-title"><span class="video-icon">🎬</span> Video 1: What Makes a Good Friend?</h3>
+      <p style="color:var(--text-secondary);font-size:14px;margin:0 0 12px;">英语学习类 · 适合入门听力练习</p>
+
+      <div class="task-section">
+        <span class="task-label">👀 观看任务</span>
+        <p class="task-text">边看边记录视频中提到的"good friend qualities"，至少列出5个关键词。</p>
+      </div>
+
+      <div class="task-section">
+        <span class="task-label">❓ 关键问题</span>
+        <ol class="question-list">
+          <li>视频中提到了哪些好朋友的品质？请用英语列出至少3个。</li>
+          <li>你最认同哪一个品质？为什么？</li>
+          <li>视频中用了哪些形容词描述朋友？记录至少4个。</li>
+        </ol>
+      </div>
+
+      <div class="pause-point" onclick="this.classList.toggle('paused')">
+        <strong>⏸️ 暂停思考点：</strong>当视频中提到 "trust" 时暂停——你对 trust 在友谊中的理解是什么？用一两句英语写下来。
+      </div>
+
+      <div class="output-box">
+        <span class="task-label">📝 输出任务</span>
+        <p style="margin:0 0 8px;font-size:14px;">用英语写一段 60词 总结，概括视频的主要观点和你学到的内容。</p>
+        <textarea placeholder="在这里写你的 60词 英语总结..." rows="3"></textarea>
+        <button onclick="var t=this.previousElementSibling;if(t.value.trim()){this.textContent='✅ 已提交！继续加油！';setTimeout(()=>this.textContent='📤 提交总结',2000)}" style="margin-top:6px;padding:6px 16px;border:none;border-radius:6px;background:var(--primary);color:#fff;cursor:pointer;font-size:13px;">📤 提交总结</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">📊 进阶层 · 分析型视频</h2>
+
+    <div class="video-card">
+      <span class="video-badge badge-adv">🔍 分析型</span>
+      <h3 class="video-title"><span class="video-icon">🎤</span> Video 2: TED Talk — The Hidden Power of Friendship</h3>
+      <p style="color:var(--text-secondary);font-size:14px;margin:0 0 12px;">专题演讲类 · 适合听力进阶练习</p>
+
+      <div class="task-section">
+        <span class="task-label">👀 观看任务</span>
+        <p class="task-text">分析演讲者的论点（argument）、证据（evidence）和结论（conclusion）。边看边做笔记。</p>
+      </div>
+
+      <div class="task-section">
+        <span class="task-label">❓ 关键问题</span>
+        <ol class="question-list">
+          <li>演讲者提出的核心观点是什么？用一句话概括。</li>
+          <li>她用了哪些研究数据或故事来支撑观点？列举至少2个。</li>
+          <li>你同意她的结论吗？为什么？用英语给出理由。</li>
+        </ol>
+      </div>
+
+      <div class="pause-point" onclick="this.classList.toggle('paused')">
+        <strong>⏸️ 暂停思考点：</strong>当演讲者引用研究数据时，按下暂停并记录数据。思考：这个数据有多可信？它能证明什么？
+      </div>
+
+      <div class="output-box">
+        <span class="task-label">📝 输出任务</span>
+        <p style="margin:0 0 8px;font-size:14px;">写一篇 80词 英语评论，包含你同意/不同意演讲者的观点，并说明理由。</p>
+        <textarea placeholder="写一篇 80词 英语评论..." rows="3"></textarea>
+        <button onclick="var t=this.previousElementSibling;if(t.value.trim()){this.textContent='✅ 已提交！';setTimeout(()=>this.textContent='📤 提交评论',2000)}" style="margin-top:6px;padding:6px 16px;border:none;border-radius:6px;background:var(--primary);color:#fff;cursor:pointer;font-size:13px;">📤 提交评论</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">🔥 挑战层 · 辩论型视频</h2>
+
+    <div class="video-card">
+      <span class="video-badge badge-challenge">⚡ 辩论型</span>
+      <h3 class="video-title"><span class="video-icon">🤖</span> Video 3: Can AI Be Your Friend?</h3>
+      <p style="color:var(--text-secondary);font-size:14px;margin:0 0 12px;">前沿话题讨论 · 适合批判性思维训练</p>
+
+      <div class="task-section">
+        <span class="task-label">👀 观看任务</span>
+        <p class="task-text">记录正反双方的核心论点和反驳。建议用 T 形图分两列记录 Pros 和 Cons。</p>
+      </div>
+
+      <div class="task-section">
+        <span class="task-label">❓ 关键问题</span>
+        <ol class="question-list">
+          <li>支持"AI 可以做朋友"的论点有哪些？列出至少2个。</li>
+          <li>反对的论点有哪些？列出至少2个。</li>
+          <li>你自己的立场是什么？用英语说明理由。</li>
+        </ol>
+      </div>
+
+      <div class="pause-point" onclick="this.classList.toggle('paused')">
+        <strong>⏸️ 暂停思考点：</strong>争论最激烈的片段——暂停视频，写下你的即时反应。你更认同哪一方的观点？为什么？
+      </div>
+
+      <div class="output-box">
+        <span class="task-label">📝 输出任务</span>
+        <p style="margin:0 0 8px;font-size:14px;">写一段 100词 的英语辩论陈词，明确你的立场并用至少2个论据支撑。</p>
+        <textarea placeholder="写一段 100词 英语辩论陈词..." rows="4"></textarea>
+        <button onclick="var t=this.previousElementSibling;if(t.value.trim()){this.textContent='✅ 辩论陈词已提交！';setTimeout(()=>this.textContent='📤 提交陈词',2000)}" style="margin-top:6px;padding:6px 16px;border:none;border-radius:6px;background:var(--primary);color:#fff;cursor:pointer;font-size:13px;">📤 提交陈词</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">📡 视频来源推荐</h2>
+    <div class="source-grid">
+      <div class="source-item">
+        <span class="emoji">📺</span>
+        <strong>YouTube 英语教学</strong>
+        <span>BBC Learning English 等频道</span>
+      </div>
+      <div class="source-item">
+        <span class="emoji">🎬</span>
+        <strong>纪录片</strong>
+        <span>Netflix "The Social Dilemma" 相关片段</span>
+      </div>
+      <div class="source-item">
+        <span class="emoji">🎤</span>
+        <strong>TED Talks</strong>
+        <span>"Friendship" 系列演讲</span>
+      </div>
+      <div class="source-item">
+        <span class="emoji">🌐</span>
+        <strong>国际学校实录</strong>
+        <span>学生采访视频资源</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:20px;padding:14px;background:#e8e8e8;border-radius:8px;text-align:center;font-size:13px;color:var(--text-secondary);">
+    💡 点击暂停思考点可标记已读 · 在文本框中写完后点击提交可模拟提交
+  </div>
+</div>
+</body>
+</html>

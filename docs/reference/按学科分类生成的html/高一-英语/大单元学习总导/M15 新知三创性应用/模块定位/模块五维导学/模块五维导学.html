@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M15 新知三创性应用 五维导学</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 100%;
+  max-width: none;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.header {
+  background: linear-gradient(135deg, #434343 0%, #595959 100%);
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+
+.header h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.header .subtitle {
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+.dim-nav {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.dim-btn {
+  flex: 1;
+  min-width: 80px;
+  padding: 12px 10px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.dim-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.dim-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(67,67,67,0.25);
+}
+
+.dim-btn .dim-icon {
+  display: block;
+  font-size: 22px;
+  margin-bottom: 4px;
+}
+
+.dim-btn .dim-label {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.panel {
+  display: none;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  animation: fadeSlideIn 0.4s ease;
+}
+
+.panel.active {
+  display: block;
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.panel h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel h2 .icon {
+  font-size: 24px;
+}
+
+.panel h3 {
+  font-size: 16px;
+  color: var(--primary);
+  margin: 14px 0 8px;
+}
+
+.panel p {
+  margin-bottom: 10px;
+}
+
+.panel ul {
+  padding-left: 20px;
+  margin-bottom: 12px;
+}
+
+.panel li {
+  margin-bottom: 6px;
+  line-height: 1.6;
+}
+
+.goal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 14px 0;
+}
+
+.goal-card {
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px;
+  transition: all 0.3s ease;
+}
+
+.goal-card:hover {
+  background: #f0f0f0;
+  transform: translateY(-2px);
+}
+
+.goal-card .goal-tag {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.goal-card .goal-text {
+  font-size: 14px;
+  color: var(--text);
+}
+
+.highlight-box {
+  background: #fafafa;
+  border-left: 4px solid var(--accent);
+  padding: 14px 18px;
+  margin: 12px 0;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+}
+
+.highlight-box .highlight-tag {
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.people-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.people-card {
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px;
+  transition: all 0.3s ease;
+}
+
+.people-card:hover {
+  background: #f0f0f0;
+}
+
+.people-card .people-name {
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.people-card .people-desc {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.footer-note {
+  text-align: center;
+  padding: 16px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  .header { padding: 20px 16px; }
+  .dim-btn { min-width: 60px; padding: 10px 6px; }
+  .dim-btn .dim-label { font-size: 12px; }
+  .goal-grid { grid-template-columns: 1fr; }
+  .people-grid { grid-template-columns: 1fr; }
+  .panel { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>M15 新知三创性应用</h1>
+  <div class="subtitle">模块五维导学 — Unit 1 Friendship · 创造性表达</div>
+</div>
+
+<div class="dim-nav">
+  <button class="dim-btn active" onclick="switchDim(0)">
+    <span class="dim-icon">🎯</span>
+    <span class="dim-label">学习目标</span>
+  </button>
+  <button class="dim-btn" onclick="switchDim(1)">
+    <span class="dim-icon">🔭</span>
+    <span class="dim-label">未来意义</span>
+  </button>
+  <button class="dim-btn" onclick="switchDim(2)">
+    <span class="dim-icon">📚</span>
+    <span class="dim-label">学习方法</span>
+  </button>
+  <button class="dim-btn" onclick="switchDim(3)">
+    <span class="dim-icon">👤</span>
+    <span class="dim-label">关键人物</span>
+  </button>
+  <button class="dim-btn" onclick="switchDim(4)">
+    <span class="dim-icon">💡</span>
+    <span class="dim-label">前沿追问</span>
+  </button>
+</div>
+
+<div class="panel active" data-dim="0">
+  <h2><span class="icon">🎯</span>模块学习目标</h2>
+
+  <div class="goal-grid">
+    <div class="goal-card">
+      <div class="goal-tag">知识理解</div>
+      <div class="goal-text">理解 Unit 1 Friendship 中关于友谊本质的深层主题——什么是真正的友谊，友谊与情感支持的关系，跨文化友谊的差异。掌握表达友谊、诉求和建议的核心句式与词汇。</div>
+    </div>
+    <div class="goal-card">
+      <div class="goal-tag">能力形成</div>
+      <div class="goal-text">能够运用创造性思维，将所学语言知识和主题理解转化为有创意的表达作品（如书信、对话、倡议书等）。能够自主设计"友谊主题"的表达方案完成输出。</div>
+    </div>
+    <div class="goal-card">
+      <div class="goal-tag">思维发展</div>
+      <div class="goal-text">从"理解友谊"上升到"创造性地表达友谊"，经历"解析→建构→创造"的思维跃迁。学会在英语语境中同时关注语言形式和思想内容的双重建构。</div>
+    </div>
+    <div class="goal-card">
+      <div class="goal-tag">表达产出</div>
+      <div class="goal-text">产出一个完整的"友谊主题"表达作品，能够展示、交流和接受评价。</div>
+    </div>
+  </div>
+</div>
+
+<div class="panel" data-dim="1">
+  <h2><span class="icon">🔭</span>高精尖价值与未来意义</h2>
+
+  <div class="highlight-box">
+    <div class="highlight-tag">🌍 现实联系</div>
+    <p>在社交媒体时代，"友谊"的内涵正在发生深刻变化。线上友谊与线下友谊有何不同？如何用英语表达和维护跨文化友谊？这些都是当代人际交往的核心能力。</p>
+  </div>
+
+  <div class="highlight-box">
+    <div class="highlight-tag">💼 未来职业</div>
+    <p>国际交流、外交、跨国企业管理、心理咨询、跨文化沟通——这些职业都建立在对"人际关系"的深层理解基础上。</p>
+  </div>
+
+  <div class="highlight-box">
+    <div class="highlight-tag">🤝 社会价值</div>
+    <p>全球化背景下，学会用英语构建和维护友谊关系，是跨文化理解和全球公民素养的重要组成部分。</p>
+  </div>
+
+  <div class="highlight-box">
+    <div class="highlight-tag">🤖 前沿议题</div>
+    <p>AI 时代人们对"友谊"的认知正在被重新定义——人类与 AI 可以成为朋友吗？这些议题为学习提供了更广阔的思考空间。</p>
+  </div>
+</div>
+
+<div class="panel" data-dim="2">
+  <h2><span class="icon">📚</span>推荐学习方式与方法</h2>
+
+  <ul>
+    <li><strong>情境归纳法：</strong>从具体的友谊情境中归纳语言模式和表达策略，而非死记硬背句型。</li>
+    <li><strong>建构产出法：</strong>每一个学习步骤都指向一个具体产出——不只是"理解"，更要"创造"。</li>
+    <li><strong>案例分析法：</strong>借助解析性导学中的案例，学习如何系统分析友谊主题语篇。</li>
+    <li><strong>同伴互评：</strong>建构完成后，与同伴交换成果并互相评价——"你从成果中看到了什么？"</li>
+    <li><strong>AI 辅助学习：</strong>使用 AI 工具模拟跨文化友谊对话场景，练习语言表达。</li>
+  </ul>
+</div>
+
+<div class="panel" data-dim="3">
+  <h2><span class="icon">👤</span>关键人物与事件</h2>
+
+  <div class="people-grid">
+    <div class="people-card">
+      <div class="people-name">Aristotle 亚里士多德</div>
+      <div class="people-desc">古希腊哲学家，最早对友谊进行系统分类（实用友谊、快乐友谊、德性友谊），你的友谊表达可以借鉴这一思想框架。</div>
+    </div>
+    <div class="people-card">
+      <div class="people-name">Dale Carnegie 戴尔·卡耐基</div>
+      <div class="people-desc">《人性的弱点》作者，其人际交往原则是观察和理解友谊的经典参考。</div>
+    </div>
+    <div class="people-card">
+      <div class="people-name">Helen Keller 海伦·凯勒</div>
+      <div class="people-desc">在黑暗和沉默中与 Anne Sullivan 建立的深厚友谊——友谊的本质可以超越一切障碍。</div>
+    </div>
+    <div class="people-card">
+      <div class="people-name">Friends 老友记</div>
+      <div class="people-desc">经典美剧中关于友谊的对话和冲突，是理解英语文化中友谊表达方式的鲜活素材。</div>
+    </div>
+  </div>
+</div>
+
+<div class="panel" data-dim="4">
+  <h2><span class="icon">💡</span>前沿追问</h2>
+
+  <p style="margin-bottom:12px;">以下问题没有标准答案，它们邀请你深入思考友谊的本质：</p>
+
+  <div class="highlight-box">
+    <p>1. 如果让你用英语设计一个"跨文化友谊促进方案"，你会怎么做？</p>
+  </div>
+  <div class="highlight-box">
+    <p>2. 在 AI 时代，人类与 AI 之间的交互能否被称为"友谊"？为什么？</p>
+  </div>
+  <div class="highlight-box">
+    <p>3. 社交媒体上的"朋友"和现实生活中的朋友有什么本质区别？</p>
+  </div>
+  <div class="highlight-box">
+    <p>4. 你如何用英语向一个完全不了解你的人介绍"友谊对你意味着什么"？</p>
+  </div>
+  <div class="highlight-box">
+    <p>5. 如果两位来自不同文化背景的人想成为朋友，可能会遇到哪些语言和文化的障碍？</p>
+  </div>
+</div>
+
+<div class="footer-note">
+  ⚡ M15 新知三创性应用 — 从理解到创造，用英语建构友谊的深层表达
+</div>
+
+</div>
+
+<script>
+function switchDim(index) {
+  var btns = document.querySelectorAll('.dim-btn');
+  var panels = document.querySelectorAll('.panel');
+  btns.forEach(function(b) { b.classList.remove('active'); });
+  panels.forEach(function(p) { p.classList.remove('active'); });
+  btns[index].classList.add('active');
+  panels[index].classList.add('active');
+}
+</script>
+</body>
+</html>

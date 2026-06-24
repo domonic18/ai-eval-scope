@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目库脚手架 - 跨文化友谊</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+
+.page-header {
+  text-align: center;
+  padding: 32px 20px 24px;
+  background: linear-gradient(135deg, #434343 0%, #6b6b6b 100%);
+  color: #fff;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  margin: -24px -20px 24px;
+}
+
+.page-header h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+
+.page-header p {
+  font-size: 14px;
+  opacity: 0.85;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.project-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 24px;
+  overflow: hidden;
+  transition: box-shadow 0.3s;
+}
+
+.project-card:hover {
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+}
+
+.project-card .card-header {
+  padding: 18px 20px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.card-header.short { background: #434343; }
+.card-header.medium { background: #595959; }
+.card-header.long { background: #262626; }
+
+.card-header h2 {
+  font-size: var(--font-h2);
+  font-weight: 600;
+}
+
+.card-header .duration {
+  font-size: 12px;
+  padding: 3px 12px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.2);
+  font-weight: 500;
+}
+
+.project-card .card-body {
+  padding: 20px;
+}
+
+.project-card .card-body h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 12px;
+}
+
+.project-card .card-body .subsection {
+  margin-bottom: 16px;
+}
+
+.project-card .card-body .subsection:last-child {
+  margin-bottom: 0;
+}
+
+.project-card .card-body .subsection-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.project-card .card-body ul {
+  list-style: none;
+  padding: 0;
+}
+
+.project-card .card-body li {
+  padding: 5px 0 5px 22px;
+  position: relative;
+  font-size: 14px;
+}
+
+.project-card .card-body li::before {
+  content: "→";
+  position: absolute;
+  left: 4px;
+  color: var(--accent);
+}
+
+.step-list {
+  counter-reset: step;
+  list-style: none;
+  padding: 0;
+}
+
+.step-list li {
+  counter-increment: step;
+  padding: 6px 0 6px 32px;
+  position: relative;
+  font-size: 14px;
+  border-bottom: 1px dashed #f0f0f0;
+}
+
+.step-list li:last-child { border-bottom: none; }
+
+.step-list li::before {
+  content: counter(step);
+  position: absolute;
+  left: 4px;
+  top: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+}
+
+.badge-pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  margin: 2px 4px 2px 0;
+  background: #f0f0f0;
+  color: var(--text-secondary);
+}
+
+.badge-pill.primary { background: #e8e8e8; color: var(--primary); }
+
+.resource-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  background: #f5f5f5;
+  border: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--primary);
+  text-decoration: none;
+  margin: 4px 8px 4px 0;
+  transition: background 0.2s;
+  cursor: default;
+}
+
+.resource-link:hover { background: #eee; }
+
+.timeline-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 12px 0;
+  padding: 8px 0;
+}
+
+.timeline-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+.timeline-line {
+  flex: 1;
+  height: 2px;
+  background: var(--border);
+}
+
+@media (max-width: 640px) {
+  .container { padding: 16px 12px; }
+  .page-header { padding: 24px 16px 20px; margin: -16px -12px 20px; }
+  .project-card .card-body { padding: 16px; }
+  .card-header { padding: 14px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="page-header">
+  <h1>🚀 项目库脚手架</h1>
+  <p>以真实问题为驱动 · 跨文化友谊</p>
+</div>
+
+<!-- 短周期 -->
+<div class="project-card">
+  <div class="card-header short">
+    <h2>📋 微项目 · 跨文化交友小调查</h2>
+    <span class="duration">⏱ 1—3 天</span>
+  </div>
+  <div class="card-body">
+    <h3>通过调查了解不同人对"朋友"定义的不同理解</h3>
+
+    <div class="subsection">
+      <div class="subsection-title">📌 阶段任务</div>
+      <ol class="step-list">
+        <li>设计调查问卷（3—5个问题）</li>
+        <li>调查至少5个不同背景的人</li>
+        <li>整理调查结果</li>
+        <li>得出结论</li>
+      </ol>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">📦 成果形式</div>
+      <p style="font-size:14px;">一页调查报告（含图表）</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">⭐ 评价标准</div>
+      <div>
+        <span class="badge-pill primary">调查覆盖面</span>
+        <span class="badge-pill primary">数据呈现清晰度</span>
+        <span class="badge-pill primary">结论是否有洞察</span>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">🔗 资源链接</div>
+      <span class="resource-link">📊 问卷星</span>
+      <span class="resource-link">📋 腾讯问卷</span>
+    </div>
+  </div>
+</div>
+
+<!-- 中周期 -->
+<div class="project-card">
+  <div class="card-header medium">
+    <h2>📖 专题项目 · 我的"跨文化友谊手册"</h2>
+    <span class="duration">⏱ 1—2 周</span>
+  </div>
+  <div class="card-body">
+    <h3>综合运用 M9 模块所学，创作一份实用的跨文化友谊指南</h3>
+
+    <div class="subsection">
+      <div class="subsection-title">📌 阶段任务</div>
+      <ol class="step-list">
+        <li>模块学习阶段：收集和分析资料（配合解析性导学）</li>
+        <li>建构阶段：设计框架和内容（配合建构性导学）</li>
+        <li>整合阶段：编写手册内容</li>
+        <li>美化阶段：排版和插图</li>
+        <li>分享阶段：在班级 / 学习平台分享</li>
+      </ol>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">📦 成果形式</div>
+      <p style="font-size:14px;">4—6页手册（可打印 / 电子版，中英双语）</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">⭐ 评价标准</div>
+      <div>
+        <span class="badge-pill primary">内容完整性</span>
+        <span class="badge-pill primary">文化理解深度</span>
+        <span class="badge-pill primary">英语表达</span>
+        <span class="badge-pill primary">版式设计</span>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">🔗 资源链接</div>
+      <span class="resource-link">🎨 Canva（设计工具）</span>
+      <span class="resource-link">📝 Notion（协作工具）</span>
+    </div>
+  </div>
+</div>
+
+<!-- 长周期 -->
+<div class="project-card">
+  <div class="card-header long">
+    <h2>🌍 综合项目 · 校园国际友谊日策划方案</h2>
+    <span class="duration">⏱ 1月+</span>
+  </div>
+  <div class="card-body">
+    <h3>设计一个旨在促进中外学生跨文化友谊的校园活动</h3>
+
+    <div class="subsection">
+      <div class="subsection-title">📌 阶段任务</div>
+      <ol class="step-list">
+        <li>调研阶段：了解本校国际学生的情况和需求（1周）</li>
+        <li>设计阶段：设计活动方案和流程（1周）</li>
+        <li>可行性分析：评估资源和时间需求（3天）</li>
+        <li>方案完善：根据反馈调整方案（3天）</li>
+      </ol>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">📦 成果形式</div>
+      <p style="font-size:14px;">完整的活动策划书（英语为主，3—5页）</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">⭐ 评价标准</div>
+      <div>
+        <span class="badge-pill primary">创意性</span>
+        <span class="badge-pill primary">可行性</span>
+        <span class="badge-pill primary">文化包容性</span>
+        <span class="badge-pill primary">英语表达能力</span>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">🔗 资源链接</div>
+      <span class="resource-link">🏫 学校国际部</span>
+      <span class="resource-link">👥 学生会</span>
+      <span class="resource-link">🌐 跨文化社团</span>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性案例 — 七阶适配建构案例</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+}
+
+.header {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 28px 32px;
+  margin-bottom: 24px;
+  border-left: 4px solid var(--primary);
+}
+
+.header h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+
+.header .subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.nav-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.nav-btn {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text);
+  transition: all 0.2s;
+}
+
+.nav-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.nav-btn.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  display: none;
+}
+
+.case-card.active {
+  display: block;
+  animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.case-card .case-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--primary);
+  color: white;
+  padding: 4px 14px;
+  border-radius: 14px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.case-card h3 {
+  font-size: 18px;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+
+.case-card .dimension-tag {
+  display: inline-block;
+  background: #e8e8e8;
+  color: var(--text);
+  padding: 2px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+
+.case-card .section-block {
+  margin: 12px 0;
+}
+
+.case-card .section-block h4 {
+  color: var(--primary);
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.case-card .scenario-box {
+  background: #fafafa;
+  border-left: 3px solid var(--accent);
+  padding: 12px 16px;
+  margin: 10px 0;
+  border-radius: 0 6px 6px 0;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.step-list {
+  list-style: none;
+  padding: 0;
+}
+
+.step-list li {
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--border);
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.step-list li::before {
+  content: attr(data-step);
+  background: var(--primary);
+  color: white;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.rubric-list {
+  list-style: none;
+  padding: 0;
+}
+
+.rubric-list li {
+  padding: 6px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.rubric-list li::before {
+  content: "☐";
+  font-size: 16px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.rubric-list li.checked::before {
+  content: "☑";
+  color: var(--primary);
+}
+
+.template-box {
+  background: #f5f5f5;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+  font-family: monospace;
+  font-size: 13px;
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+.sentence-stem {
+  background: #fafafa;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 8px 0;
+  font-style: italic;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.prev-next-nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.prev-next-nav button {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 20px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text);
+  transition: all 0.2s;
+}
+
+.prev-next-nav button:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.page-indicator {
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+}
+
+.interactive-btn {
+  display: inline-block;
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+  margin: 6px 4px 6px 0;
+}
+
+.interactive-btn:hover {
+  background: var(--primary-hover);
+}
+
+.interactive-btn.outline {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+
+.interactive-btn.outline:hover {
+  background: var(--bg);
+}
+
+.answer-area {
+  background: #f9f9f9;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  padding: 16px;
+  margin: 12px 0;
+  min-height: 50px;
+  display: none;
+}
+
+.answer-area.show {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .container { padding: 12px 16px; }
+  .header { padding: 20px; }
+  .case-card { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🏗 建构性案例 · 七阶适配建构案例</h1>
+  <div class="subtitle">模块 M4 · 新概念解析、建构与定义 · 英语必修1 · Unit 1 Friendship</div>
+  <div class="subtitle" style="margin-top:4px;">已学：建构性示例 → 建构性原理（5条） → 现在轮到你动手建构！</div>
+</div>
+
+<div class="practice-section" style="background:var(--card-bg);border-radius:var(--border-radius);box-shadow:var(--shadow);padding:20px 24px;margin-bottom:20px;border:1px solid var(--border);">
+  <p>你已经通过<strong>"建构性示例"</strong>看到了如何建构一个 Friendship 理解模型（My Friendship Compass），又在<strong>"建构性原理"</strong>中提炼了5条可迁移的方法。现在，你的任务是将这些原理应用到7个递进案例中，真正实现从<em>"看别人做"</em>到<em>"自己动手做"</em>的跨越。</p>
+  <p style="margin-top:8px;font-size:14px;color:var(--text-secondary);">每个案例都是一个独立的建构任务。点击下方标签切换案例，或按顺序依次完成。</p>
+</div>
+
+<!-- Navigation -->
+<div class="nav-bar" id="caseNav">
+  <button class="nav-btn active" onclick="switchCase(1)">📖 案例一</button>
+  <button class="nav-btn" onclick="switchCase(2)">📋 案例二</button>
+  <button class="nav-btn" onclick="switchCase(3)">🎒 案例三</button>
+  <button class="nav-btn" onclick="switchCase(4)">📊 案例四</button>
+  <button class="nav-btn" onclick="switchCase(5)">🧠 案例五</button>
+  <button class="nav-btn" onclick="switchCase(6)">📬 案例六</button>
+  <button class="nav-btn" onclick="switchCase(7)">📁 案例七</button>
+</div>
+
+<!-- Case 1 -->
+<div class="case-card active" id="case1">
+  <div class="case-badge">🧬 案例一 · 个人理解型</div>
+  <h3>"My Friendship DNA" — 友谊双螺旋模型</h3>
+  <div class="dimension-tag">个人理解情境</div>
+
+  <div class="section-block">
+    <h4>📖 真实建构情境</h4>
+    <div class="scenario-box">你在整理房间时翻到了一本小学毕业同学录，上面写着当年的好朋友给你的留言："We will be best friends forever!" 但你现在和这位朋友已经几乎不联系了。你决定不从网上搜答案，而是从自己的真实经历出发，建构一个属于自己的"友谊 DNA"模型——把塑造友谊的"基因要素"找出来。</div>
+  </div>
+
+  <div class="section-block">
+    <h4>🎯 建构任务</h4>
+    <p>建构一张 "My Friendship DNA 双螺旋结构图"，其中每条横档（rung）代表你心目中友谊的一个核心构成要素，左右两条链分别代表<strong>"给予（What I give）"</strong>和<strong>"获得（What I get）"</strong>，并用英语写一段100词以上的"Friendship DNA 说明书"。</p>
+  </div>
+
+  <div class="section-block">
+    <h4>📐 建构步骤</h4>
+    <ol class="step-list">
+      <li data-step="1"><strong>发散：</strong>在左侧列出你从友谊中"获得"的所有东西（如 emotional support, fun, advice），右侧列出你"给予"的所有东西（如 loyalty, time, honest feedback）。</li>
+      <li data-step="2"><strong>配对：</strong>从左右各选一个匹配度最高的要素，形成一组横档（如"Shared laughter ↔ Comfort in silence"）。</li>
+      <li data-step="3"><strong>排序：</strong>将配好的横档按重要性从高到低排列。</li>
+      <li data-step="4"><strong>可视化：</strong>画出双螺旋结构，每条横档标注英文要素对。</li>
+      <li data-step="5"><strong>撰写：</strong>用英语写一段说明书，解释为什么你选择了这些要素。</li>
+    </ol>
+  </div>
+
+  <div class="section-block">
+    <h4>🧰 脚手架</h4>
+    <div class="sentence-stem">"The most fundamental gene in my friendship DNA is ___ because ___."</div>
+    <div class="sentence-stem">"On the giving strand, I place ___, which matches ___ on the receiving strand."</div>
+    <div class="sentence-stem">"Without ___, the whole structure would fall apart."</div>
+  </div>
+
+  <button class="interactive-btn" onclick="toggleAnswer('dnaOutput')">✍️ 开始写说明书</button>
+  <div id="dnaOutput" class="answer-area">
+    <textarea style="width:100%;padding:10px;border:1px solid var(--border);border-radius:4px;min-height:100px;font-family:inherit;font-size:14px;" placeholder="My Friendship DNA is composed of... (100+ words)"></textarea>
+  </div>
+
+  <div class="section-block">
+    <h4>✅ 自评量规</h4>
+    <ul class="rubric-list" id="rubric1">
+      <li onclick="toggleRubric(this)">我是否画出了双螺旋结构，且清晰地标注了至少4组要素对？</li>
+      <li onclick="toggleRubric(this)">每组要素对是否体现了"给予"和"获得"的对应关系？</li>
+      <li onclick="toggleRubric(this)">我的说明书是否达到了100词以上，且包含了主题句和总结句？</li>
+      <li onclick="toggleRubric(this)">我是否至少使用了4个本单元的核心词汇（如 loyalty, mutual, bond, companionship）？</li>
+      <li onclick="toggleRubric(this)">我的模型是否真实反映了我个人的友谊经历？</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Case 2 -->
+<div class="case-card" id="case2">
+  <div class="case-badge">✅ 案例二 · 生活应用型</div>
+  <h3>"The Friendship Health Checklist" — 友谊健康自检清单</h3>
+  <div class="dimension-tag">生活应用情境</div>
+
+  <div class="section-block">
+    <h4>📖 真实建构情境</h4>
+    <div class="scenario-box">你发现身边有同学因为一段"有毒友谊"（toxic friendship）而长期不开心。你决定做一件更有用的事：设计一份"友谊健康自检清单"（Friendship Health Checklist），让你的同学可以对照清单自行判断自己的友谊是否健康。</div>
+  </div>
+
+  <div class="section-block">
+    <h4>🎯 建构任务</h4>
+    <p>设计一份包含<strong>6-8个检查项</strong>的"Friendship Health Checklist"（中英双语），每个检查项包含：一个健康信号（Green flag）和一个警示信号（Red flag），并配上一段150词的"使用指南"（英文）。</p>
+  </div>
+
+  <div class="section-block">
+    <h4>📐 建构步骤</h4>
+    <ol class="step-list">
+      <li data-step="1"><strong>提取维度：</strong>回顾你的 Friendship DNA 模型，提取3-4个关键维度。</li>
+      <li data-step="2"><strong>设计信号：</strong>为每个维度设计 Green flag 和 Red flag。</li>
+      <li data-step="3"><strong>编排格式：</strong>用表格呈现。</li>
+      <li data-step="4"><strong>写使用指南：</strong>用英语说明目的和使用建议。</li>
+      <li data-step="5"><strong>测试迭代：</strong>用清单评估自己的1-2段友谊。</li>
+    </ol>
+  </div>
+
+  <div class="section-block">
+    <h4>📋 清单模板</h4>
+    <div class="template-box">Dimension | Green Flag | Red Flag
+Communication | "TA listens when I need to talk"|"TA only talks about themselves"
+Respect | "TA values my opinions" | "TA puts me down"
+Support | "TA shows up when I need help" | "TA only reaches out when they need something"
+Growth | "We help each other improve" | "We bring out the worst in each other"</div>
+  </div>
+
+  <button class="interactive-btn" onclick="toggleAnswer('checklistOutput')">✍️ 写使用指南</button>
+  <div id="checklistOutput" class="answer-area">
+    <textarea style="width:100%;padding:10px;border:1px solid var(--border);border-radius:4px;min-height:100px;font-family:inherit;font-size:14px;" placeholder="This Friendship Health Checklist is designed to help you... (150+ words)"></textarea>
+  </div>
+
+  <div class="section-block">
+    <h4>✅ 自评量规</h4>
+    <ul class="rubric-list" id="rubric2">
+      <li onclick="toggleRubric(this)">我是否设计了至少6个检查项，覆盖了友谊的不同维度？</li>
+      <li onclick="toggleRubric(this)">每个维度是否同时包含了 Green flag 和 Red flag？</li>
+      <li onclick="toggleRubric(this)">使用指南是否达到150词以上？</li>
+      <li onclick="toggleRubric(this)">信号是否具体、可观察，而非模糊描述？</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Case 3 -->
+<div class="case-card" id="case3">
+  <div class="case-badge">🎒 案例三 · 校园问题解决型</div>
+  <h3>"The New Kid's Friendship Starter Kit" — 转学生友谊启动包</h3>
+  <div class="dimension-tag">校园问题解决情境</div>
+
+  <div class="section-block">
+    <h4>📖 真实建构情境</h4>
+    <div class="scenario-box">学校下个月将迎来一批转学生。很多转学生最焦虑的不是学习，而是"交不到朋友"。你决定为转学生设计一份实用的"Friendship Starter Kit"，帮助他们在新学校快速、健康地建立友谊。</div>
+  </div>
+
+  <div class="section-block">
+    <h4>🎯 建构任务</h4>
+    <p>设计一份双面 A4 折页式的"Friendship Starter Kit"，包含：一张<strong>"破冰对话指南"</strong>、一张<strong>"友谊养成路线图"</strong>（从陌生人到朋友的4阶段路径），以及一段<strong>英语鼓励信</strong>。</p>
+  </div>
+
+  <button class="interactive-btn" onclick="toggleAnswer('starterKit1')">💬 查看破冰对话范例</button>
+  <div id="starterKit1" class="answer-area">
+    <p><strong>Conversation starters 范例：</strong></p>
+    <p>"What's your favorite class so far?"<br>"I noticed you're really good at ___. How did you learn?"<br>"Want to grab lunch together?"<br>"Did you understand the homework? I'm a bit confused."</p>
+    <p><strong>避免的"雷区句子"：</strong>过于私人的问题、负面评价其他同学、抱怨学校。</p>
+  </div>
+
+  <button class="interactive-btn outline" onclick="toggleAnswer('starterKit2')">🗺 查看路线图模板</button>
+  <div id="starterKit2" class="answer-area">
+    <p><strong>友谊养成4阶段：</strong></p>
+    <p>Stranger（陌生人）→ Acquaintance（认识）→ Friend（朋友）→ Close Friend（挚友）</p>
+    <p>每阶段配2-3条行动建议。用箭头串联各阶段，标注预期时间。</p>
+  </div>
+
+  <button class="interactive-btn" onclick="toggleAnswer('starterKit3')">✉️ 写鼓励信</button>
+  <div id="starterKit3" class="answer-area">
+    <textarea style="width:100%;padding:10px;border:1px solid var(--border);border-radius:4px;min-height:100px;font-family:inherit;font-size:14px;" placeholder="Dear new friend, I know how you feel because I was once a new student too... (150+ words)"></textarea>
+  </div>
+</div>
+
+<!-- Case 4 -->
+<div class="case-card" id="case4">
+  <div class="case-badge">📊 案例四 · 学科表达型</div>
+  <h3>"Friendship Across Genres" — 体裁对比海报</h3>
+  <div class="dimension-tag">学科核心情境</div>
+
+  <div class="section-block">
+    <h4>📖 真实建构情境</h4>
+    <div class="scenario-box">教材 Unit 1 中包含了不同类型的文本：日记（Anne's diary）、建议信（letter of advice）、诗歌（friendship poems）、对话（daily conversations）。同样是谈论友谊，不同体裁的表达方式差别很大。你决定建构一个"同主题跨体裁对比框架"。</div>
+  </div>
+
+  <div class="section-block">
+    <h4>🎯 建构任务</h4>
+    <p>制作一张 "Friendship Across Genres" 对比海报，选取<strong>3种不同体裁</strong>的文本片段，从<strong>"语言风格""情感强度""叙事视角""核心信息"</strong>4个维度进行对比分析，并撰写一段120词的总结短文。</p>
+  </div>
+
+  <div class="section-block">
+    <h4>📋 对比框架</h4>
+    <div class="template-box">维度       | 日记 (Diary) | 建议信 (Letter) | 对话 (Dialogue)
+Language Style |              |                |
+Emotional Intensity |       |                |
+Perspective    |              |                |
+Core Message   |              |                |</div>
+  </div>
+
+  <div class="sentence-stem">"While the diary uses ___ to express ___, the letter adopts a more ___ tone."<br>"This difference suggests that ___."</div>
+
+  <button class="interactive-btn" onclick="toggleAnswer('genreOutput')">✍️ 写总结短文</button>
+  <div id="genreOutput" class="answer-area">
+    <textarea style="width:100%;padding:10px;border:1px solid var(--border);border-radius:4px;min-height:100px;font-family:inherit;font-size:14px;" placeholder="Through comparing friendship across different genres, I found that... (120+ words)"></textarea>
+  </div>
+</div>
+
+<!-- Case 5 -->
+<div class="case-card" id="case5">
+  <div class="case-badge">🧠 案例五 · 跨学科整合型</div>
+  <h3>"The Psychology of Friendship Infographic" — 友谊心理学信息图</h3>
+  <div class="dimension-tag">跨学科整合情境</div>
+
+  <div class="section-block">
+    <h4>📖 真实建构情境</h4>
+    <div class="scenario-box">你在心理课上学习了马斯洛需求层次理论（Maslow's Hierarchy of Needs），其中"爱与归属感"位于第三层。你决定将心理学的需求层次理论与你在本模块建构的友谊要素结合起来，设计一张"友谊心理学信息图"。</div>
+  </div>
+
+  <div class="section-block">
+    <h4>🎯 建构任务</h4>
+    <p>设计一张 A4 信息图，呈现你建构的<strong>"友谊需求层次金字塔"</strong>——从底层到顶层依次是：</p>
+    <div style="text-align:center;padding:16px;background:#f5f5f5;border-radius:8px;margin:10px 0;">
+      <p style="font-weight:bold;color:var(--primary);">🏆 Growth（成长感）<br>激励与共同进步</p>
+      <p style="font-weight:bold;color:var(--primary-hover);">👏 Esteem（尊重感）<br>认可与欣赏</p>
+      <p style="font-weight:bold;color:var(--accent);">🤝 Belonging（归属感）<br>陪伴与接纳</p>
+      <p style="font-weight:bold;color:#888;">🛡 Safety（安全感）<br>信任与诚实</p>
+    </div>
+  </div>
+
+  <div class="sentence-stem">"At the most basic level, friendship provides ___."<br>"Once ___ is established, friendship can address the need for ___."</div>
+
+  <button class="interactive-btn" onclick="toggleAnswer('psychOutput')">✍️ 写金字塔各层解释</button>
+  <div id="psychOutput" class="answer-area">
+    <textarea style="width:100%;padding:10px;border:1px solid var(--border);border-radius:4px;min-height:100px;font-family:inherit;font-size:14px;" placeholder="Level 1 - Safety: At the most basic level, friendship provides..."></textarea>
+  </div>
+</div>
+
+<!-- Case 6 -->
+<div class="case-card" id="case6">
+  <div class="case-badge">📬 案例六 · 社会/未来情境型</div>
+  <h3>"My Friendship Philosophy for 2035" — 友谊哲学宣言</h3>
+  <div class="dimension-tag">社会与未来情境</div>
+
+  <div class="section-block">
+    <h4>📖 真实建构情境</h4>
+    <div class="scenario-box">一家教育科技公司发起了一个"写给未来自己的信"活动：请你站在2035年的时间点（你大约25岁时），回答"十年后，你认为什么才是真正重要的友谊品质？" 你决定先建构一份"2035 Friendship Philosophy"宣言，再用信来表达。</div>
+  </div>
+
+  <div class="section-block">
+    <h4>🎯 建构任务</h4>
+    <p>完成两张A4纸的成果：</p>
+    <p><strong>纸1：</strong>"2035 Friendship Philosophy"宣言海报（包含<strong>5条核心信念</strong> + 每条阐释）</p>
+    <p><strong>纸2：</strong>一封<strong>300词</strong>的英语信"Dear 18-year-old me"，用未来视角讲述你的友谊哲学领悟。</p>
+  </div>
+
+  <div class="section-block">
+    <h4>💡 思考引导</h4>
+    <div class="scenario-box">
+      <p>想象10年后的你——经历了大学、职场、可能去了不同城市——你的友谊观会发生什么变化？</p>
+      <p>哪些今天你"觉得重要"的品质，10年后可能不那么重要？反之亦然？</p>
+      <p>10年后的你可能会更看重内在品质（integrity, empathy）还是外在品质（fun, social status）？</p>
+    </div>
+  </div>
+
+  <div class="sentence-stem">"I believe that ___."<br>"After ten years, I've learned that ___."</div>
+
+  <button class="interactive-btn" onclick="toggleAnswer('letterOutput')">✉️ 写给10年后/现在的信</button>
+  <div id="letterOutput" class="answer-area">
+    <textarea style="width:100%;padding:10px;border:1px solid var(--border);border-radius:4px;min-height:120px;font-family:inherit;font-size:14px;" placeholder="Dear 18-year-old me, ... (300+ words)"></textarea>
+  </div>
+</div>
+
+<!-- Case 7 -->
+<div class="case-card" id="case7">
+  <div class="case-badge" style="background:var(--primary-hover);">📁 案例七 · 综合创新型</div>
+  <h3>"My Complete Friendship Portfolio" — 我的友谊作品集</h3>
+  <div class="dimension-tag">综合创新情境</div>
+
+  <div class="section-block">
+    <h4>📖 真实建构情境</h4>
+    <div class="scenario-box">本模块的学习接近尾声了。你将前6个案例的成果整合成一个统一的作品——一本属于你自己的 Friendship Portfolio，并从中提炼出一个贯穿始终的、高度凝练的个人友谊定义。</div>
+  </div>
+
+  <div class="section-block">
+    <h4>🎯 建构任务</h4>
+    <p>完成一本"Friendship Portfolio"（A4纸对折成小册子，4-6页）：</p>
+    <ul style="padding-left:20px;margin:8px 0;">
+      <li><strong>封面：</strong>自创英文书名 + 副标题</li>
+      <li><strong>第1-3页：</strong>前6个案例中最优秀的3个成果的精简版</li>
+      <li><strong>第4页：</strong>200词以上的"Integrated Definition of Friendship"——融合所有建构成果的终极定义</li>
+      <li><strong>封底：</strong>一句原创英文"Friendship Quote"</li>
+      <li><strong>附录：</strong>150词"建构过程回顾"，说明定义如何一步步进化</li>
+    </ul>
+  </div>
+
+  <div class="section-block">
+    <h4>📋 作品集结构</h4>
+    <div class="template-box">封面：[自创书名] + [你的名字]
+P1：Case 成果精简版（自选1）
+P2：Case 成果精简版（自选2）
+P3：Case 成果精简版（自选3）
+P4：Integrated Definition of Friendship（200词+）
+封底：[个人原创 Quote]
+附录：Construction Journey Reflection（150词）</div>
+  </div>
+
+  <div class="sentence-stem">"Through this module, I have come to understand friendship not as ___, but as ___."<br>"Drawing from my six case studies, I define friendship as ___ because ___."</div>
+
+  <button class="interactive-btn" onclick="toggleAnswer('finalDef')">✍️ 写终极定义</button>
+  <div id="finalDef" class="answer-area">
+    <textarea style="width:100%;padding:10px;border:1px solid var(--border);border-radius:4px;min-height:120px;font-family:inherit;font-size:14px;" placeholder="Through this module, I have come to understand friendship not as... but as... (200+ words)"></textarea>
+  </div>
+
+  <button class="interactive-btn outline" onclick="toggleAnswer('reflection')">📝 建构过程回顾</button>
+  <div id="reflection" class="answer-area">
+    <textarea style="width:100%;padding:10px;border:1px solid var(--border);border-radius:4px;min-height:80px;font-family:inherit;font-size:14px;" placeholder="My understanding of friendship evolved through these 7 cases... (150+ words)"></textarea>
+  </div>
+</div>
+
+<!-- 递进逻辑说明 -->
+<div class="practice-section" style="background:var(--card-bg);border-radius:var(--border-radius);box-shadow:var(--shadow);padding:20px 24px;border:1px solid var(--border);">
+  <div class="section-title" style="margin:0 0 12px 0;border-bottom:2px solid var(--accent);">📈 总体递进逻辑</div>
+  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">
+    <span style="background:var(--primary);color:white;padding:4px 12px;border-radius:12px;font-size:12px;">个人</span>
+    <span style="background:var(--border);color:var(--text);padding:4px 12px;border-radius:12px;font-size:12px;">→</span>
+    <span style="background:var(--primary);color:white;padding:4px 12px;border-radius:12px;font-size:12px;">生活</span>
+    <span style="background:var(--border);color:var(--text);padding:4px 12px;border-radius:12px;font-size:12px;">→</span>
+    <span style="background:var(--primary);color:white;padding:4px 12px;border-radius:12px;font-size:12px;">校园</span>
+    <span style="background:var(--border);color:var(--text);padding:4px 12px;border-radius:12px;font-size:12px;">→</span>
+    <span style="background:var(--primary);color:white;padding:4px 12px;border-radius:12px;font-size:12px;">学科</span>
+    <span style="background:var(--border);color:var(--text);padding:4px 12px;border-radius:12px;font-size:12px;">→</span>
+    <span style="background:var(--primary);color:white;padding:4px 12px;border-radius:12px;font-size:12px;">跨学科</span>
+    <span style="background:var(--border);color:var(--text);padding:4px 12px;border-radius:12px;font-size:12px;">→</span>
+    <span style="background:var(--primary);color:white;padding:4px 12px;border-radius:12px;font-size:12px;">社会</span>
+    <span style="background:var(--border);color:var(--text);padding:4px 12px;border-radius:12px;font-size:12px;">→</span>
+    <span style="background:var(--primary-hover);color:white;padding:4px 12px;border-radius:12px;font-size:12px;">综合</span>
+  </div>
+  <p style="font-size:14px;color:var(--text-secondary);">案例一从最私人的经历出发 → 案例六加入时间维度展望未来 → 案例七完成对前面所有成果的整合与升华，形成最终的、个人化的 Friendship 定义与作品集。每个案例都要求你<strong>主动建构具体成果</strong>，而非被动回答问题。</p>
+</div>
+
+</div>
+
+<script>
+var currentCase = 1;
+var totalCases = 7;
+
+function switchCase(num) {
+  // Hide all
+  for (var i = 1; i <= totalCases; i++) {
+    var el = document.getElementById('case' + i);
+    if (el) el.classList.remove('active');
+  }
+  // Show selected
+  var target = document.getElementById('case' + num);
+  if (target) target.classList.add('active');
+
+  // Update nav
+  var btns = document.querySelectorAll('.nav-btn');
+  btns.forEach(function(b) { b.classList.remove('active'); });
+  if (btns[num - 1]) btns[num - 1].classList.add('active');
+
+  currentCase = num;
+}
+
+function toggleAnswer(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('show');
+}
+
+function toggleRubric(el) {
+  el.classList.toggle('checked');
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+    if (currentCase < totalCases) switchCase(currentCase + 1);
+  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    if (currentCase > 1) switchCase(currentCase - 1);
+  }
+});
+</script>
+</body>
+</html>

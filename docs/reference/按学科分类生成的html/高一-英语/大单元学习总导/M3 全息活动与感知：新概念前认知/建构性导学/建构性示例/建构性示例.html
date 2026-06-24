@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性示例</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 24px; box-sizing: border-box; }
+.page-header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff; padding: 28px 32px; border-radius: var(--border-radius); margin-bottom: 24px;
+  position: relative; overflow: hidden;
+}
+.page-header h1 { font-size: var(--font-h1); margin: 0 0 6px; font-weight: 700; }
+.page-header p { margin: 0; opacity: 0.9; font-size: 14px; }
+.page-header .subtitle { font-size: 13px; opacity: 0.75; margin-top: 8px; }
+.step-nav { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; }
+.step-dot {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--bg); color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  border: 2px solid var(--border); transition: all 0.25s;
+}
+.step-dot.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.step-dot:hover:not(.active) { border-color: var(--accent); }
+.step-label { font-size: 11px; color: var(--text-secondary); text-align: center; max-width: 60px; word-wrap: break-word; }
+.step-nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.step-panel { display: none; background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px 24px; margin-bottom: 16px; }
+.step-panel.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.step-panel h2 { font-size: var(--font-h2); color: var(--primary); margin: 0 0 12px; display: flex; align-items: center; gap: 10px; }
+.step-panel h2 .step-num { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; background: var(--primary); color: #fff; font-size: 14px; }
+.step-panel .what { margin-bottom: 6px; }
+.step-panel .what strong { color: var(--primary); }
+.step-panel .how { background: #fafafa; border-left: 4px solid var(--primary); padding: 10px 14px; margin: 8px 0; border-radius: 0 6px 6px 0; }
+.step-panel .output { background: var(--bg); border: 1px dashed var(--border); padding: 10px 14px; margin: 8px 0; border-radius: var(--border-radius); }
+.nav-buttons { display: flex; justify-content: space-between; margin-top: 16px; }
+.btn { background: var(--primary); color: #fff; border: none; padding: 8px 22px; border-radius: var(--border-radius); cursor: pointer; font-size: 14px; transition: background 0.2s; font-family: inherit; }
+.btn:hover { background: var(--primary-hover); }
+.btn:disabled { background: var(--border); cursor: not-allowed; color: var(--text-secondary); }
+.btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+.btn-outline:hover { background: var(--bg); }
+.info-box { background: #fafafa; border-left: 4px solid var(--accent); padding: 12px 16px; margin: 12px 0; border-radius: 0 6px 6px 0; font-size: 14px; }
+.tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+.tool-card { border: 1px solid var(--border); border-radius: var(--border-radius); padding: 14px; }
+.tool-card h4 { margin: 0 0 6px; color: var(--primary); font-size: 15px; }
+.checklist { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+.check-item { background: #fafafa; border: 1px solid var(--border); border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+.check-item.checked { background: var(--primary); color: #fff; border-color: var(--primary); text-decoration: line-through; }
+@media (max-width: 640px) { .tool-grid { grid-template-columns: 1fr; } .container { padding: 12px; } .step-nav { gap: 4px; } .step-dot { width: 26px; height: 26px; font-size: 11px; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="page-header">
+  <h1>建构性示例</h1>
+  <p>友谊的直觉地图：从零开始绘制我的"Friendship Concept Map"</p>
+  <div class="subtitle">建构目标：建构一份个人化的 Friendship Concept Map + 一封 150 词英文回信</div>
+</div>
+
+<div class="info-box">
+  <strong>建构情境：</strong>你收到一位新同学的英语邮件。面对这封"半懂不懂"的信，你的任务不是查字典逐句翻译，而是通过自主建构，形成自己对"Friendship"概念的理解框架，然后用英语写一封回信。
+</div>
+
+<div class="step-nav" id="stepNav"></div>
+
+<div id="step0" class="step-panel active">
+  <h2><span class="step-num">0</span> 任务概览</h2>
+  <p><strong>成果名称：</strong>Friendship Concept Map + 一封英文回信</p>
+  <p><strong>用途：</strong>为后续学习和交流提供个人化的知识框架</p>
+  <p><strong>最低标准：</strong>至少包含 6 个核心要素，5 个英语表达句，150 词的英文信</p>
+  <div style="margin-top:12px;"><strong>建构过程共 7 步：</strong></div>
+  <ol>
+    <li>感知原始材料</li>
+    <li>激活已有经验</li>
+    <li>观察情境证据</li>
+    <li>建构概念框架</li>
+    <li>语言建构</li>
+    <li>生成成果</li>
+    <li>反思与优化</li>
+  </ol>
+  <div class="nav-buttons">
+    <span></span>
+    <button class="btn" onclick="goToStep(1)">开始第一步 ▶</button>
+  </div>
+</div>
+
+<div id="step1" class="step-panel">
+  <h2><span class="step-num">1</span> 感知原始材料</h2>
+  <div class="what"><strong>做什么：</strong>通读新同学的邮件，标记"看得懂的部分"和"看不懂的部分"</div>
+  <div class="how"><strong>怎么做：</strong>用绿色笔划出已经认识的单词/短语，用红色笔标出陌生的表达</div>
+  <div class="output"><strong>生成什么：</strong>一份"已知—未知"对比记录表</div>
+  <p style="font-size:14px;color:var(--text-secondary);"><strong>提示：</strong>先不用查字典——把你已经能看懂的部分写下来，看看自己能理解多少。</p>
+  <div class="nav-buttons">
+    <button class="btn btn-outline" onclick="goToStep(0)">◀ 返回概览</button>
+    <button class="btn" onclick="goToStep(2)">下一步 ▶</button>
+  </div>
+</div>
+
+<div id="step2" class="step-panel">
+  <h2><span class="step-num">2</span> 激活已有经验</h2>
+  <div class="what"><strong>做什么：</strong>回忆你已有的友谊经历，写下你觉得"朋友"最重要的 3 个特征</div>
+  <div class="how"><strong>怎么做：</strong>用中文或简单英语写 3 个关键词（如 trust, fun, help）</div>
+  <div class="output"><strong>生成什么：</strong>3 个关键词及简单说明</div>
+  <p style="font-size:14px;color:var(--text-secondary);"><strong>思考：</strong>你心中最好的朋友是什么样的？你们为什么能成为朋友？</p>
+  <div class="nav-buttons">
+    <button class="btn btn-outline" onclick="goToStep(1)">◀ 上一步</button>
+    <button class="btn" onclick="goToStep(3)">下一步 ▶</button>
+  </div>
+</div>
+
+<div id="step3" class="step-panel">
+  <h2><span class="step-num">3</span> 观察情境证据</h2>
+  <div class="what"><strong>做什么：</strong>从邮件中找出作者对友谊的描述</div>
+  <div class="how"><strong>怎么做：</strong>摘录 3—5 句关键句如 "A true friend is someone who...", "I believe friendship means..."，尝试猜测句子的含义</div>
+  <div class="output"><strong>生成什么：</strong>关键句摘录 + 你猜测的含义</div>
+  <div class="info-box"><strong>提示：</strong>不用完全理解每句话——找出你最有感觉的句子，猜猜作者想表达什么。</div>
+  <div class="nav-buttons">
+    <button class="btn btn-outline" onclick="goToStep(2)">◀ 上一步</button>
+    <button class="btn" onclick="goToStep(4)">下一步 ▶</button>
+  </div>
+</div>
+
+<div id="step4" class="step-panel">
+  <h2><span class="step-num">4</span> 建构概念框架</h2>
+  <div class="what"><strong>做什么：</strong>将"已知经验"与"邮件证据"结合，画出 Friendship Concept Map</div>
+  <div class="how"><strong>怎么做：</strong>中心写"Friendship"，向外辐射 4 个分支：Core Elements、Types、Feelings、Actions</div>
+  <div class="output"><strong>生成什么：</strong>一份辐射状概念图</div>
+  <div class="tool-card" style="margin-top:10px;border:1px solid var(--border);border-radius:var(--border-radius);padding:12px;">
+    <h4 style="margin:0 0 6px;color:var(--primary);">🧭 概念图模板</h4>
+    <p style="font-size:14px;margin:0;">Friendship → 4 分支：Core Elements / Types / Feelings / Actions → 每个分支再展开具体内容</p>
+  </div>
+  <div class="nav-buttons">
+    <button class="btn btn-outline" onclick="goToStep(3)">◀ 上一步</button>
+    <button class="btn" onclick="goToStep(5)">下一步 ▶</button>
+  </div>
+</div>
+
+<div id="step5" class="step-panel">
+  <h2><span class="step-num">5</span> 语言建构</h2>
+  <div class="what"><strong>做什么：</strong>从邮件中总结出描述友谊的英语句型和词汇</div>
+  <div class="how"><strong>怎么做：</strong>建立自己的"Friend Talk"词汇表，分类记录</div>
+  <div class="output"><strong>生成什么：</strong>个人词汇句型表（至少 10 个词汇，5 个句型）</div>
+  <div class="tool-card" style="margin-top:10px;border:1px solid var(--border);border-radius:var(--border-radius);padding:12px;">
+    <h4 style="margin:0 0 6px;color:var(--primary);">📝 关键句式支架</h4>
+    <ul style="margin:0;font-size:14px;">
+      <li>"I think friendship means..."</li>
+      <li>"A good friend should be..."</li>
+      <li>"For me, the most important thing in a friendship is..."</li>
+      <li>"I really like it when my friend..."</li>
+      <li>"In my opinion, friendship is like..."</li>
+    </ul>
+  </div>
+  <div class="nav-buttons">
+    <button class="btn btn-outline" onclick="goToStep(4)">◀ 上一步</button>
+    <button class="btn" onclick="goToStep(6)">下一步 ▶</button>
+  </div>
+</div>
+
+<div id="step6" class="step-panel">
+  <h2><span class="step-num">6</span> 生成成果</h2>
+  <div class="what"><strong>做什么：</strong>利用概念图和词汇表，给新同学写一封英文回信</div>
+  <div class="how"><strong>怎么做：</strong>使用邮件中出现的句型，表达自己的友谊观</div>
+  <div class="output"><strong>生成什么：</strong>一封 150 词以上的英文回信（问候-主体-结尾）</div>
+  <p style="font-size:14px;color:var(--text-secondary);"><strong>建议：</strong>先画概念图，再写信；写信时反复参考概念图中的词汇。</p>
+  <div class="nav-buttons">
+    <button class="btn btn-outline" onclick="goToStep(5)">◀ 上一步</button>
+    <button class="btn" onclick="goToStep(7)">下一步 ▶</button>
+  </div>
+</div>
+
+<div id="step7" class="step-panel">
+  <h2><span class="step-num">7</span> 反思与优化</h2>
+  <div class="what"><strong>做什么：</strong>检查回信是否充分表达了自己的友谊观，概念图是否完整</div>
+  <div class="how"><strong>怎么做：</strong>对照自评检查清单逐项自评，优化终版</div>
+  <div class="output"><strong>生成什么：</strong>优化后的终版概念图和回信</div>
+  <h4 style="margin:12px 0 6px;color:var(--primary);">✅ 自我评价量表</h4>
+  <div class="checklist">
+    <span class="check-item" onclick="this.classList.toggle('checked')">概念图至少包含 4 个分支</span>
+    <span class="check-item" onclick="this.classList.toggle('checked')">从邮件中提取了至少 5 个句型并应用</span>
+    <span class="check-item" onclick="this.classList.toggle('checked')">回信超过 150 词且有完整结构</span>
+    <span class="check-item" onclick="this.classList.toggle('checked')">把已有经验和新材料结合起来了</span>
+    <span class="check-item" onclick="this.classList.toggle('checked')">对成果进行了反思和修改</span>
+  </div>
+  <div class="nav-buttons">
+    <button class="btn btn-outline" onclick="goToStep(6)">◀ 上一步</button>
+    <button class="btn" onclick="goToStep(0)">🔄 重新浏览</button>
+  </div>
+</div>
+
+<div class="card" style="background:var(--card-bg);border-radius:var(--border-radius);box-shadow:var(--shadow);padding:20px 24px;margin-top:12px;">
+  <div class="card-title" style="font-size:var(--font-h2);font-weight:600;color:var(--primary);margin:0 0 10px;">🧰 支架工具推荐</div>
+  <div class="tool-grid">
+    <div class="tool-card">
+      <h4>🗺️ 概念图模板</h4>
+      <p style="font-size:14px;">中心辐射式：Friendship→Core Elements / Types / Feelings / Actions</p>
+    </div>
+    <div class="tool-card">
+      <h4>📝 关键句式支架</h4>
+      <p style="font-size:14px;">5 个开句型式帮你组织英语表达</p>
+    </div>
+    <div class="tool-card">
+      <h4>✅ 检查清单</h4>
+      <p style="font-size:14px;">5 项自评标准，确保成果质量</p>
+    </div>
+    <div class="tool-card">
+      <h4>🎯 成果优化建议</h4>
+      <p style="font-size:14px;">检查分支遗漏 + 句式多样性 + 新表达运用</p>
+    </div>
+  </div>
+</div>
+
+<script>
+var currentStep = 0;
+var stepNav = document.getElementById('stepNav');
+var labels = ['概览','感知','经验','证据','框架','语言','成果','反思'];
+var totalSteps = 8;
+
+for (var i = 0; i < totalSteps; i++) {
+  var item = document.createElement('div');
+  item.className = 'step-nav-item';
+  var dot = document.createElement('div');
+  dot.className = 'step-dot' + (i === 0 ? ' active' : '');
+  dot.textContent = i;
+  dot.onclick = (function(idx) { return function() { goToStep(idx); }; })(i);
+  var label = document.createElement('div');
+  label.className = 'step-label';
+  label.textContent = labels[i];
+  item.appendChild(dot);
+  item.appendChild(label);
+  stepNav.appendChild(item);
+}
+
+function goToStep(n) {
+  document.querySelectorAll('.step-panel').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.step-dot').forEach(function(d) { d.classList.remove('active'); });
+  document.getElementById('step' + n).classList.add('active');
+  var dots = document.querySelectorAll('.step-dot');
+  if (dots[n]) dots[n].classList.add('active');
+  currentStep = n;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+
+</div>
+</body>
+</html>

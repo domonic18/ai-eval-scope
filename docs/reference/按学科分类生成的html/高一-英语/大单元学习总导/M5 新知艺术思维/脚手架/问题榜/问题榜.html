@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>问题榜 — 友谊主题思辨问题</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; padding: 0; font-family: var(--font-family); font-size: var(--font-body); line-height: var(--line-height); background: var(--bg); color: var(--text); }
+.container { width: 100%; max-width: none; padding: 24px 20px; box-sizing: border-box; }
+
+.page-header { margin-bottom: 24px; }
+.page-header h1 { font-size: var(--font-h1); font-weight: 700; color: var(--primary); margin: 0 0 6px; }
+.page-header p { color: var(--text-secondary); margin: 0; font-size: 14px; }
+
+/* Tier selector */
+.tier-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.tier-tab { flex: 1; min-width: 100px; padding: 10px 16px; background: var(--card-bg); border: 2px solid var(--border); border-radius: var(--border-radius); cursor: pointer; text-align: center; font-weight: 600; font-size: 14px; color: var(--text-secondary); transition: all 0.3s; }
+.tier-tab:hover { border-color: var(--accent); color: var(--primary); }
+.tier-tab.active { border-color: var(--primary); color: var(--primary); background: #ebebeb; }
+.tier-tab .count { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 11px; margin-left: 4px; background: var(--accent); color: #fff; }
+
+/* Question cards */
+.q-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); margin-bottom: 14px; overflow: hidden; transition: box-shadow 0.3s; }
+.q-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.q-card-header { padding: 14px 18px; display: flex; align-items: flex-start; gap: 12px; cursor: pointer; user-select: none; }
+.q-card-header .q-num { width: 30px; height: 30px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+.q-card-header .q-info { flex: 1; }
+.q-card-header .q-info .q-title { font-weight: 600; margin: 0; color: var(--text); }
+.q-card-header .q-info .q-type { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.q-card-header .q-arrow { font-size: 14px; color: var(--text-secondary); transition: transform 0.3s; flex-shrink: 0; margin-top: 4px; }
+.q-card-header .q-arrow.open { transform: rotate(180deg); }
+
+.q-card-body { max-height: 0; overflow: hidden; transition: max-height 0.4s ease, padding 0.3s ease; padding: 0 18px; }
+.q-card-body.open { max-height: 500px; padding: 0 18px 16px; }
+.q-card-body .guide { background: #f8f8f8; border-radius: 6px; padding: 12px; margin-top: 8px; }
+.q-card-body .guide .guide-label { font-weight: 600; font-size: 13px; color: var(--primary); margin-bottom: 4px; }
+.q-card-body .guide p { margin: 4px 0; font-size: 14px; }
+
+/* Base layer always visible */
+.tier-panel { display: none; }
+.tier-panel.active { display: block; }
+
+/* Writing area */
+.write-area { margin-top: 10px; }
+.write-area textarea { width: 100%; border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-size: 14px; font-family: var(--font-family); resize: vertical; min-height: 60px; transition: border-color 0.2s; }
+.write-area textarea:focus { outline: none; border-color: var(--primary); }
+.write-area .char-count { text-align: right; font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
+/* Progress bar */
+.progress-section { margin: 24px 0; }
+.progress-section h3 { font-size: var(--font-h2); color: var(--primary); margin: 0 0 10px; }
+.progress-bar { width: 100%; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.progress-bar .fill { height: 100%; background: var(--primary); border-radius: 4px; width: 0%; transition: width 0.5s; }
+.progress-stats { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-secondary); margin-top: 6px; }
+
+/* Footer */
+.footer-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--border); }
+.footer-nav button { padding: 8px 20px; background: var(--primary); color: #fff; border: none; border-radius: var(--border-radius); cursor: pointer; font-size: 14px; transition: background 0.2s; }
+.footer-nav button:hover { background: var(--primary-hover); }
+.footer-nav button:disabled { background: var(--border); cursor: not-allowed; }
+.footer-nav .page-indicator { font-size: 14px; color: var(--text-secondary); }
+
+@media (max-width: 600px) {
+  .container { padding: 16px 12px; }
+  .tier-tab { min-width: 70px; padding: 8px 10px; font-size: 13px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="page-header">
+  <h1>❓ 问题榜：友谊深度思辨</h1>
+  <p>基础 · 理解识别 → 进阶 · 分析应用 → 挑战 · 创造批判 · 点击问题展开引导</p>
+</div>
+
+<div class="tier-tabs" id="tierTabs">
+  <div class="tier-tab active" data-tier="0" onclick="switchTier(0)">基础层 <span class="count">3</span></div>
+  <div class="tier-tab" data-tier="1" onclick="switchTier(1)">进阶层 <span class="count">3</span></div>
+  <div class="tier-tab" data-tier="2" onclick="switchTier(2)">挑战层 <span class="count">4</span></div>
+</div>
+
+<!-- 基础层 -->
+<div class="tier-panel active" data-panel="0">
+
+  <div class="q-card">
+    <div class="q-card-header" onclick="toggleCard(this)">
+      <div class="q-num">1</div>
+      <div class="q-info">
+        <div class="q-title">What are the three most important qualities of a good friend in your opinion?</div>
+        <div class="q-type">🔓 开放性 · 从经验出发</div>
+      </div>
+      <div class="q-arrow">▼</div>
+    </div>
+    <div class="q-card-body">
+      <div class="guide">
+        <div class="guide-label">💡 引导思路</div>
+        <p>从 Anne's Diary 和你的经验中各找一个例证。比如：Anne 认为"耐心倾听"很重要——你的经历是否也印证了这一点？</p>
+      </div>
+      <div class="write-area">
+        <textarea placeholder="写下你的回答..." oninput="updateCount(this)"></textarea>
+        <div class="char-count">0 字</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-card-header" onclick="toggleCard(this)">
+      <div class="q-num">2</div>
+      <div class="q-info">
+        <div class="q-title">What did Anne Frank mean when she wrote, "Paper is more patient than people"?</div>
+        <div class="q-type">🔓 理解性 · 文本解读</div>
+      </div>
+      <div class="q-arrow">▼</div>
+    </div>
+    <div class="q-card-body">
+      <div class="guide">
+        <div class="guide-label">💡 引导思路</div>
+        <p>联系她在阁楼中的处境——为什么"纸"比"人"更有耐心？想想 Anne 和家人、藏友的相处，再想想她和 Kitty 的关系。</p>
+      </div>
+      <div class="write-area">
+        <textarea placeholder="写下你的回答..." oninput="updateCount(this)"></textarea>
+        <div class="char-count">0 字</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-card-header" onclick="toggleCard(this)">
+      <div class="q-num">3</div>
+      <div class="q-info">
+        <div class="q-title">List 5 English words you have learned from Unit 1 that can describe a good friend.</div>
+        <div class="q-type">🔓 识别性 · 词汇积累</div>
+      </div>
+      <div class="q-arrow">▼</div>
+    </div>
+    <div class="q-card-body">
+      <div class="guide">
+        <div class="guide-label">💡 引导思路</div>
+        <p>给出中文释义和例句。例如：<em>patient</em> (耐心的) — "A good friend is patient when I am upset."</p>
+      </div>
+      <div class="write-area">
+        <textarea placeholder="列出 5 个单词 + 释义 + 例句..." oninput="updateCount(this)"></textarea>
+        <div class="char-count">0 字</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 进阶层 -->
+<div class="tier-panel" data-panel="1">
+
+  <div class="q-card">
+    <div class="q-card-header" onclick="toggleCard(this)">
+      <div class="q-num">4</div>
+      <div class="q-info">
+        <div class="q-title">Why did Anne consider her diary "Kitty" as her best friend?</div>
+        <div class="q-type">🔍 分析性 · 比较分析</div>
+      </div>
+      <div class="q-arrow">▼</div>
+    </div>
+    <div class="q-card-body">
+      <div class="guide">
+        <div class="guide-label">💡 引导思路</div>
+        <p>比较 Anne 与家人的关系和 Anne 与 Kitty 的关系，从"被理解程度"角度分析。为什么身边的真人反而不如一本日记更像朋友？</p>
+      </div>
+      <div class="write-area">
+        <textarea placeholder="写下你的分析..." oninput="updateCount(this)"></textarea>
+        <div class="char-count">0 字</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-card-header" onclick="toggleCard(this)">
+      <div class="q-num">5</div>
+      <div class="q-info">
+        <div class="q-title">Compare friendship in Chinese culture vs. Western culture. What are the similarities and differences?</div>
+        <div class="q-type">🔍 对比性 · 跨文化</div>
+      </div>
+      <div class="q-arrow">▼</div>
+    </div>
+    <div class="q-card-body">
+      <div class="guide">
+        <div class="guide-label">💡 引导思路</div>
+        <p>画 Venn 图：左圈——中国文化中的友谊（如孔子"益者三友"），右圈——西方文化中的友谊（如 Anne's Diary），中间——共同点。</p>
+      </div>
+      <div class="write-area">
+        <textarea placeholder="写下你的对比分析..." oninput="updateCount(this)"></textarea>
+        <div class="char-count">0 字</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-card-header" onclick="toggleCard(this)">
+      <div class="q-num">6</div>
+      <div class="q-info">
+        <div class="q-title">How would you apply the "evidence triangle method" to analyze a real friendship problem in your class?</div>
+        <div class="q-type">🔍 应用性 · 方法迁移</div>
+      </div>
+      <div class="q-arrow">▼</div>
+    </div>
+    <div class="q-card-body">
+      <div class="guide">
+        <div class="guide-label">💡 引导思路</div>
+        <p>选一个班级中真实的友谊问题（可匿名），用三步法分析：教材证据 + 个人经历 + 观察现象。</p>
+      </div>
+      <div class="write-area">
+        <textarea placeholder="用证据三角法分析..." oninput="updateCount(this)"></textarea>
+        <div class="char-count">0 字</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 挑战层 -->
+<div class="tier-panel" data-panel="2">
+
+  <div class="q-card">
+    <div class="q-card-header" onclick="toggleCard(this)">
+      <div class="q-num">7</div>
+      <div class="q-info">
+        <div class="q-title">If Anne had social media in hiding, how would her experience of friendship be different? Would she still need "Kitty"?</div>
+        <div class="q-type">⚡ 反事实思维 · What if</div>
+      </div>
+      <div class="q-arrow">▼</div>
+    </div>
+    <div class="q-card-body">
+      <div class="guide">
+        <div class="guide-label">💡 引导思路</div>
+        <p>从"替代"和"补充"两个角度思考：现代工具是取代了 Kitty 的角色（有了真人网友就不再需要日记），还是只是补充（两者满足不同需求）？</p>
+      </div>
+      <div class="write-area">
+        <textarea placeholder="写下你的反事实分析..." oninput="updateCount(this)"></textarea>
+        <div class="char-count">0 字</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-card-header" onclick="toggleCard(this)">
+      <div class="q-num">8</div>
+      <div class="q-info">
+        <div class="q-title">"True friendship can only exist between equals." Do you agree or disagree?</div>
+        <div class="q-type">⚡ 批判性 · 立场辩驳</div>
+      </div>
+      <div class="q-arrow">▼</div>
+    </div>
+    <div class="q-card-body">
+      <div class="guide">
+        <div class="guide-label">💡 引导思路</div>
+        <p>从不同角度思考：师生之间、跨代之间、贫富之间可以有真友谊吗？"平等"是指社会地位平等，还是人格层面的平等？</p>
+      </div>
+      <div class="write-area">
+        <textarea placeholder="论证你的立场..." oninput="updateCount(this)"></textarea>
+        <div class="char-count">0 字</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-card-header" onclick="toggleCard(this)">
+      <div class="q-num">9</div>
+      <div class="q-info">
+        <div class="q-title">Design your own criteria for evaluating "true friendship." Then evaluate your own friendships.</div>
+        <div class="q-type">⚡ 创造性 · 标准设计</div>
+      </div>
+      <div class="q-arrow">▼</div>
+    </div>
+    <div class="q-card-body">
+      <div class="guide">
+        <div class="guide-label">💡 引导思路</div>
+        <p>参考孔子的"益者三友"和 Anne 对 Kitty 的依赖，设计不少于 5 条标准。然后用这些标准评估你的一段友谊——它符合几条？</p>
+      </div>
+      <div class="write-area">
+        <textarea placeholder="列出你的 5 条标准并自评..." oninput="updateCount(this)"></textarea>
+        <div class="char-count">0 字</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-card-header" onclick="toggleCard(this)">
+      <div class="q-num">10</div>
+      <div class="q-info">
+        <div class="q-title">When you analyze a story about friendship, what steps go through your mind? Can you draw a "thinking map"?</div>
+        <div class="q-type">⚡ 元认知 · 思维可视化</div>
+      </div>
+      <div class="q-arrow">▼</div>
+    </div>
+    <div class="q-card-body">
+      <div class="guide">
+        <div class="guide-label">💡 引导思路</div>
+        <p>不要描述"故事讲了什么"，而是描述"你在分析故事时脑子里发生了什么"。比如：看到情节→联想到自己的经历→对比→得出结论……画出你的思考路径！</p>
+      </div>
+      <div class="write-area">
+        <textarea placeholder="描述你的思考过程..." oninput="updateCount(this)"></textarea>
+        <div class="char-count">0 字</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Progress -->
+<div class="progress-section">
+  <h3>📊 我的答题进度</h3>
+  <div class="progress-bar"><div class="fill" id="progressFill"></div></div>
+  <div class="progress-stats">
+    <span id="doneCount">已完成：0/10</span>
+    <span id="tierProgress">基础 0/3 · 进阶 0/3 · 挑战 0/4</span>
+  </div>
+</div>
+
+<div class="footer-nav">
+  <button id="prevBtn" onclick="navigate(-1)" disabled>← 基础</button>
+  <span class="page-indicator" id="pageIndicator">基础层 · 1/3</span>
+  <button id="nextBtn" onclick="navigate(1)">进阶 →</button>
+</div>
+
+</div>
+
+<script>
+let currentTier = 0;
+
+function switchTier(idx) {
+  currentTier = idx;
+  document.querySelectorAll('.tier-tab').forEach((t, i) => t.classList.toggle('active', i === idx));
+  document.querySelectorAll('.tier-panel').forEach((p, i) => p.classList.toggle('active', i === idx));
+  document.getElementById('prevBtn').disabled = idx === 0;
+  document.getElementById('nextBtn').disabled = idx === 2;
+  const labels = ['基础层 · 1/3', '进阶层 · 2/3', '挑战层 · 3/3'];
+  document.getElementById('pageIndicator').textContent = labels[idx];
+}
+
+function navigate(dir) {
+  const next = currentTier + dir;
+  if (next >= 0 && next <= 2) switchTier(next);
+}
+
+function toggleCard(header) {
+  const body = header.nextElementSibling;
+  const arrow = header.querySelector('.q-arrow');
+  body.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+
+function updateCount(textarea) {
+  const count = textarea.value.length;
+  textarea.parentElement.querySelector('.char-count').textContent = count + ' 字';
+  updateProgress();
+}
+
+function updateProgress() {
+  const textareas = document.querySelectorAll('.write-area textarea');
+  let total = textareas.length;
+  let done = 0;
+  textareas.forEach(t => { if (t.value.trim().length > 5) done++; });
+  document.getElementById('progressFill').style.width = (done / total * 100) + '%';
+  document.getElementById('doneCount').textContent = `已完成：${done}/${total}`;
+
+  // Per tier
+  const tierTextareas = document.querySelectorAll('.tier-panel');
+  let parts = [];
+  tierTextareas.forEach(panel => {
+    const tas = panel.querySelectorAll('textarea');
+    let d = 0;
+    tas.forEach(t => { if (t.value.trim().length > 5) d++; });
+    parts.push(d + '/' + tas.length);
+  });
+  document.getElementById('tierProgress').textContent = '基础 ' + parts[0] + ' · 进阶 ' + parts[1] + ' · 挑战 ' + parts[2];
+}
+
+// Init: attach change events to all textareas
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.write-area textarea').forEach(t => {
+    t.addEventListener('input', function() { updateCount(this); });
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目社区 · 友谊主题项目实践</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  width: 100%;
+  max-width: none;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  padding: 20px;
+}
+.wrapper { width: 100%; max-width: none; }
+.header {
+  background: linear-gradient(135deg, #434343 0%, #6b6b6b 100%);
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header p { font-size: 14px; opacity: 0.85; }
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.filter-btn {
+  padding: 6px 16px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--card-bg);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+.filter-btn:hover, .filter-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.project-section { margin-bottom: 28px; }
+.project-section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.section-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.project-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 18px 20px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.25s, transform 0.2s;
+  cursor: pointer;
+}
+.project-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  transform: translateY(-1px);
+}
+.project-card h3 {
+  font-size: 16px;
+  color: var(--primary);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.project-card h3 .badge {
+  font-size: 11px;
+  background: var(--accent);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: normal;
+}
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 10px 0;
+}
+.card-grid .item {
+  font-size: 13px;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--border);
+}
+.card-grid .item strong {
+  color: var(--primary);
+}
+.project-card .score {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.project-card .score strong { color: var(--primary); }
+.project-card .resource {
+  font-size: 12px;
+  color: var(--accent);
+  margin-top: 4px;
+}
+.toggle-detail {
+  font-size: 13px;
+  color: var(--primary);
+  cursor: pointer;
+  user-select: none;
+  margin-top: 6px;
+  display: inline-block;
+}
+.toggle-detail:hover { color: var(--primary-hover); }
+.detail-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease, opacity 0.25s;
+  opacity: 0;
+}
+.detail-content.open {
+  max-height: 400px;
+  opacity: 1;
+}
+.stats-panel {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+}
+.stat-item {
+  text-align: center;
+  flex: 1;
+  min-width: 80px;
+}
+.stat-num {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--primary);
+}
+.stat-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.footer-note {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px 20px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 20px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+@media (max-width: 640px) {
+  .card-grid { grid-template-columns: 1fr; }
+  .stats-panel { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<div class="header">
+  <h1>🌍 项目社区</h1>
+  <p>友谊主题项目实践 · 选择适合你的项目，动手做起来！</p>
+</div>
+
+<div class="stats-panel">
+  <div class="stat-item"><div class="stat-num">6</div><div class="stat-label">总项目数</div></div>
+  <div class="stat-item"><div class="stat-num">2</div><div class="stat-label">短周期 (1-3天)</div></div>
+  <div class="stat-item"><div class="stat-num">2</div><div class="stat-label">中周期 (1-2周)</div></div>
+  <div class="stat-item"><div class="stat-num">2</div><div class="stat-label">长周期 (1月+)</div></div>
+</div>
+
+<div class="filter-bar">
+  <button class="filter-btn active" data-filter="all">全部</button>
+  <button class="filter-btn" data-filter="short">短周期</button>
+  <button class="filter-btn" data-filter="medium">中周期</button>
+  <button class="filter-btn" data-filter="long">长周期</button>
+</div>
+
+<!-- 短周期 -->
+<div class="project-section" data-period="short">
+  <h2>📝 短周期项目（1-3天）</h2>
+  <p class="section-desc">快速上手，适合零散时间完成</p>
+
+  <div class="project-card" data-project="A">
+    <h3>项目A：友谊名言手账 <span class="badge">1-3天</span></h3>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;">搜集关于友谊的英语名言，制作一张"名言手账"页</p>
+    <div class="card-grid">
+      <div class="item"><strong>阶段任务</strong><br>Day1: 搜索10句名言，选最喜欢的5句<br>Day2: 每句写英文注释<br>Day3: 排版设计</div>
+      <div class="item"><strong>成果形式</strong><br>A4手账页（手写或电子设计）</div>
+    </div>
+    <div class="score"><strong>评价标准：</strong>5句名言(5分) + 5句注释(5分) + 排版美观(2分)</div>
+    <div class="resource">🔗 BrainyQuote.com → 搜索 "friendship quotes"</div>
+    <span class="toggle-detail" onclick="toggleDetail(this)">▼ 展开详情</span>
+    <div class="detail-content">
+      <p style="margin-top:8px;font-size:13px;color:var(--text-secondary);">💡 <strong>操作建议：</strong>可以先在笔记本上草稿，再用Canva或手绘完成最终版。每句名言写下你为什么选它——用英语表达个人感受本身就是练习！</p>
+    </div>
+  </div>
+
+  <div class="project-card" data-project="B">
+    <h3>项目B：班级友谊小调查 <span class="badge">1-3天</span></h3>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;">用英语设计一份简短的班级友谊调查问卷，分析结果</p>
+    <div class="card-grid">
+      <div class="item"><strong>阶段任务</strong><br>Day1: 设计5个英文问题<br>Day2: 收集10份以上回答<br>Day3: 写英文总结</div>
+      <div class="item"><strong>成果形式</strong><br>调查表(英文) + 总结报告(80词+)</div>
+    </div>
+    <div class="score"><strong>评价标准：</strong>问题设计合理(4分) + 数据真实(2分) + 总结有洞察(4分)</div>
+    <div class="resource">💡 问题示例："What quality do you value most in a friend?"</div>
+    <span class="toggle-detail" onclick="toggleDetail(this)">▼ 展开详情</span>
+    <div class="detail-content">
+      <p style="margin-top:8px;font-size:13px;color:var(--text-secondary);">📊 <strong>分析技巧：</strong>把答案分类统计，比如"最看重的品质"中选"honest"的有多少人。在总结中写一个有趣的发现！</p>
+    </div>
+  </div>
+</div>
+
+<!-- 中周期 -->
+<div class="project-section" data-period="medium">
+  <h2>📋 中周期项目（1-2周）</h2>
+  <p class="section-desc">深度探索，适合有整块时间的周末</p>
+
+  <div class="project-card" data-project="C">
+    <h3>项目C：跨文化友谊对比研究 <span class="badge">1-2周</span></h3>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;">研究中西方友谊文化的异同，制作英语对比报告</p>
+    <div class="card-grid">
+      <div class="item"><strong>阶段任务</strong><br>第1周：搜集资料（教材Unit 1 + 英文文章）<br>第2周：整理对比表，写80-100词报告</div>
+      <div class="item"><strong>成果形式</strong><br>中西友谊对比表 + 英语短文报告</div>
+    </div>
+    <div class="score"><strong>评价标准：</strong>≥3个对比维度(6分) + 具体例证(4分) + 语言表达(5分)</div>
+    <div class="resource">🔗 搜索 "friendship in Chinese culture vs Western culture"</div>
+    <span class="toggle-detail" onclick="toggleDetail(this)">▼ 展开详情</span>
+    <div class="detail-content">
+      <p style="margin-top:8px;font-size:13px;color:var(--text-secondary);">🌏 <strong>对比维度建议：</strong>①交友方式(线上vs线下) ②友谊深度(广度vs深度) ③表达方式(含蓄vs直接)。用教材中的课文作为中文维度的参考！</p>
+    </div>
+  </div>
+
+  <div class="project-card" data-project="D">
+    <h3>项目D：一封真实的英文笔友信 <span class="badge">1-2周</span></h3>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;">把你在本模块写的交友信，真正寄出去</p>
+    <div class="card-grid">
+      <div class="item"><strong>阶段任务</strong><br>第1周：修改完善交友信，请老师/同学校对<br>第2周：通过国际交流项目或PenPal World寄出</div>
+      <div class="item"><strong>成果形式</strong><br>最终版英文交友信 + 发送确认</div>
+    </div>
+    <div class="score"><strong>评价标准：</strong>格式正确(3分) + 内容丰富(4分) + 语言准确(3分) + 已发出(加分项)</div>
+    <div class="resource">🔗 PenPal World (www.penpalworld.com) 或学校国际项目</div>
+    <span class="toggle-detail" onclick="toggleDetail(this)">▼ 展开详情</span>
+    <div class="detail-content">
+      <p style="margin-top:8px;font-size:13px;color:var(--text-secondary);">✉️ <strong>寄出前检查：</strong>①开头问候和自我介绍 ②为什么想交笔友 ③你的兴趣爱好 ④对笔友的期待 ⑤礼貌结尾。让老师帮忙润色一次！</p>
+    </div>
+  </div>
+</div>
+
+<!-- 长周期 -->
+<div class="project-section" data-period="long">
+  <h2>🎯 长周期项目（1月+）</h2>
+  <p class="section-desc">大型挑战，需要协作和持续投入</p>
+
+  <div class="project-card" data-project="E">
+    <h3>项目E：班级友谊纪念册 <span class="badge">1月+</span></h3>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;">全班合作制作一本英文版"班级友谊纪念册"</p>
+    <div class="card-grid">
+      <div class="item"><strong>阶段任务</strong><br>第1周：制定计划分工<br>第2周：每人写一页"最难忘的同学"<br>第3周：编辑排版<br>第4周：打印或线上发布</div>
+      <div class="item"><strong>成果形式</strong><br>≥20页英文班级友谊纪念册(PDF或打印版)</div>
+    </div>
+    <div class="score"><strong>评价标准：</strong>全员参与(10分) + 英语质量(10分) + 排版美观(5分) + 创意(5分)</div>
+    <div class="resource">🔗 Canva.com(排版) / Google Docs(协作)</div>
+    <span class="toggle-detail" onclick="toggleDetail(this)">▼ 展开详情</span>
+    <div class="detail-content">
+      <p style="margin-top:8px;font-size:13px;color:var(--text-secondary);">📖 <strong>分工建议：</strong>设立编辑组(校对英语)、设计组(排版配图)、素材组(收集照片和故事)。每人写一段100词左右的英文短文，配上照片！</p>
+    </div>
+  </div>
+
+  <div class="project-card" data-project="F">
+    <h3>项目F：Friendship Day校园英语活动 <span class="badge">1月+</span></h3>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;">策划并举办一次"Friendship Day"校园英语活动</p>
+    <div class="card-grid">
+      <div class="item"><strong>阶段任务</strong><br>第1周：写英文策划方案<br>第2周：制作英文海报和邀请函<br>第3周：准备活动材料<br>第4周：举办活动并写总结</div>
+      <div class="item"><strong>成果形式</strong><br>策划方案 + 宣传材料 + 活动照片 + 总结(全英文)</div>
+    </div>
+    <div class="score"><strong>评价标准：</strong>方案可行性(5分) + 宣传效果(5分) + 执行(5分) + 总结反思(5分)</div>
+    <div class="resource">🔗 PosterMyWall.com(海报) / 学校广播站和公告栏</div>
+    <span class="toggle-detail" onclick="toggleDetail(this)">▼ 展开详情</span>
+    <div class="detail-content">
+      <p style="margin-top:8px;font-size:13px;color:var(--text-secondary);">🎉 <strong>活动点子：</strong>友谊手环交换、英文友谊卡制作、"Find Someone Who"英语互动游戏、友谊主题英语角。别忘了拍照记录！</p>
+    </div>
+  </div>
+</div>
+
+<div class="footer-note">
+  <strong>💡 学习提示：</strong>从短周期项目开始热身，再做中周期深度探索。长周期项目适合小组合作。<br>
+  每完成一个项目，在友谊主题成长档案中记录你的成果！完成全部6个项目可获得"友谊大使"勋章 🏅
+</div>
+
+</div>
+
+<script>
+function toggleDetail(el) {
+  const content = el.nextElementSibling;
+  content.classList.toggle('open');
+  el.textContent = content.classList.contains('open') ? '▲ 收起详情' : '▼ 展开详情';
+}
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    const filter = this.dataset.filter;
+    document.querySelectorAll('.project-section').forEach(s => {
+      if (filter === 'all' || s.dataset.period === filter) {
+        s.style.display = 'block';
+      } else {
+        s.style.display = 'none';
+      }
+    });
+  });
+});
+</script>
+
+</body>
+</html>

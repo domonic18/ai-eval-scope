@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具库 — 友谊主题</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; box-sizing: border-box; }
+
+.header {
+  background: linear-gradient(135deg, #434343 0%, #595959 100%);
+  color: #fff;
+  padding: 24px 20px;
+  text-align: center;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 6px; }
+.header p { font-size: 14px; opacity: 0.85; }
+
+.section-title {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin: 28px 0 14px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+
+/* Level badges */
+.level-badge {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 12px;
+}
+.level-basic { background: var(--accent); }
+.level-adv { background: var(--primary); }
+.level-high { background: #222; }
+
+/* Tool grid */
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+@media (max-width: 800px) { .tool-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 540px) { .tool-grid { grid-template-columns: 1fr; } }
+
+.tool-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+.tool-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+.tool-card .tool-icon {
+  font-size: 28px;
+  padding: 14px 16px 4px;
+  line-height: 1;
+}
+.tool-card .tool-name {
+  padding: 4px 16px;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--primary);
+}
+.tool-card .tool-desc {
+  padding: 4px 16px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.tool-card .tool-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+}
+.tool-card.active .tool-body {
+  max-height: 600px;
+}
+.tool-card .tool-body-inner {
+  padding: 10px 16px 16px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+}
+.tool-card .tool-body-inner ol,
+.tool-card .tool-body-inner ul {
+  margin: 6px 0 6px 18px;
+}
+.tool-card .tool-body-inner li { margin-bottom: 3px; }
+.tool-card .tool-body-inner strong { color: var(--primary); }
+.tool-card .example-box {
+  background: var(--bg);
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin: 6px 0;
+  font-size: 12px;
+}
+.tool-card .example-box::before {
+  content: "📌 示例：";
+  font-weight: 600;
+}
+
+/* Demo simulation */
+.demo-sim {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  margin: 18px 0 10px;
+  border: 1px solid var(--border);
+}
+.demo-sim h4 {
+  font-size: 15px;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+.demo-sim .sim-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 6px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.25s;
+  margin: 4px 4px 4px 0;
+}
+.demo-sim .sim-btn:hover { background: var(--primary-hover); }
+.demo-sim .sim-output {
+  display: none;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: var(--card-bg);
+  border-radius: 6px;
+  font-size: 13px;
+  border-left: 3px solid var(--accent);
+}
+.demo-sim .sim-output.show { display: block; }
+
+/* Step indicator */
+.step-num {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  text-align: center;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  margin-right: 6px;
+}
+
+/* Section divider */
+.level-section {
+  margin-bottom: 20px;
+}
+.level-section .level-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.level-section .level-header h3 {
+  font-size: 17px;
+  color: var(--text);
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🧰 工具库</h1>
+  <p>基础工具 → 进阶工具 → 高阶工具，逐步升级你的学习装备</p>
+</div>
+
+<div class="container">
+
+  <!-- 基础工具 -->
+  <div class="level-section">
+    <div class="level-header">
+      <span class="level-badge level-basic">🟡 基础</span>
+      <h3>易上手工具</h3>
+    </div>
+
+    <div class="tool-grid">
+      <div class="tool-card" onclick="toggleCard(this)">
+        <div class="tool-icon">🧠</div>
+        <div class="tool-name">思维导图 (Mind Map)</div>
+        <div class="tool-desc">梳理Friendship的各种概念和关系</div>
+        <div class="tool-body">
+          <div class="tool-body-inner">
+            <p><strong>用途：</strong>头脑风暴、知识整理、观点预热</p>
+            <p><strong>使用步骤：</strong></p>
+            <ol>
+              <li>在纸中央写 "FRIENDSHIP"</li>
+              <li>画出5条主分支：Definition, Qualities, Actions, Challenges, Benefits</li>
+              <li>每条分支继续延伸子分支</li>
+              <li>用不同颜色区分不同分支</li>
+            </ol>
+            <div class="example-box">
+              FRIENDSHIP → Qualities → Honest / Loyal / Caring / Understanding
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tool-card" onclick="toggleCard(this)">
+        <div class="tool-icon">📋</div>
+        <div class="tool-name">KWL 表</div>
+        <div class="tool-desc">明确你知道什么、想知道什么、学到了什么</div>
+        <div class="tool-body">
+          <div class="tool-body-inner">
+            <p><strong>用途：</strong>单元学习前/中/后</p>
+            <p><strong>使用步骤：</strong></p>
+            <ol>
+              <li><strong>K 列：</strong>写出已知道的关于友谊的5件事</li>
+              <li><strong>W 列：</strong>写出你想知道的3个问题</li>
+              <li><strong>L 列：</strong>模块结束后，填写学到的5件新知识</li>
+            </ol>
+            <div class="example-box">
+              K=友谊需要信任 | W=不同文化的友谊观有何不同？ | L=Anne通过日记建构了友谊
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tool-card" onclick="toggleCard(this)">
+        <div class="tool-icon">⚖️</div>
+        <div class="tool-name">T 型对比表</div>
+        <div class="tool-desc">对比两种友谊观、两种文化或两个人物</div>
+        <div class="tool-body">
+          <div class="tool-body-inner">
+            <p><strong>用途：</strong>课文分析、文化对比、人物比较</p>
+            <p><strong>使用步骤：</strong></p>
+            <ol>
+              <li>左边写对比维度（定义、表达方式、评判标准）</li>
+              <li>上方写对象1（Anne Frank），右方写对象2（孔子）</li>
+              <li>逐行对比填表</li>
+            </ol>
+            <div class="example-box">
+              友谊的定义 | Anne: 被理解就是朋友 | 孔子: 互相促进成长
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 进阶工具 -->
+  <div class="level-section">
+    <div class="level-header">
+      <span class="level-badge level-adv">🟠 进阶</span>
+      <h3>专业学习工具</h3>
+    </div>
+
+    <div class="tool-grid">
+      <div class="tool-card" onclick="toggleCard(this)">
+        <div class="tool-icon">🤖</div>
+        <div class="tool-name">AI 辅助英语写作</div>
+        <div class="tool-desc">提升英语表达的准确性和丰富度</div>
+        <div class="tool-body">
+          <div class="tool-body-inner">
+            <p><strong>推荐工具：</strong>Grammarly（语法纠错）、DeepL Write（句式优化）、ChatGPT（写作框架）</p>
+            <p><strong>⚠️ 核心原则：</strong>AI 是助手，不是作者。保留你的核心观点！</p>
+            <p><strong>使用步骤：</strong></p>
+            <ol>
+              <li>先用纸笔写出初稿</li>
+              <li>输入 AI 工具检查语法和拼写错误</li>
+              <li>用 AI 生成2-3个同义表达替换表</li>
+              <li><strong>关键：</strong>保留你的核心观点和叙述逻辑</li>
+            </ol>
+            <button class="sim-btn" onclick="event.stopPropagation();showSim('aiSim')">看看 AI 润色示例</button>
+            <div id="aiSim" class="sim-output">
+              <strong>原句：</strong>Friends are important for me.<br>
+              <strong>AI 润色：</strong>Friendship plays an essential role in my life.<br>
+              <strong>AI 润色 2：</strong>Having close friends has a profound impact on my well-being.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tool-card" onclick="toggleCard(this)">
+        <div class="tool-icon">📖</div>
+        <div class="tool-name">在线英语词典</div>
+        <div class="tool-desc">准确理解友谊相关词汇的含义和用法</div>
+        <div class="tool-body">
+          <div class="tool-body-inner">
+            <p><strong>推荐工具：</strong></p>
+            <ul>
+              <li>Collins COBUILD — 英英释义最清晰</li>
+              <li>Longman Dictionary — 例句丰富实用</li>
+              <li>Thesaurus.com — 同义词查询利器</li>
+            </ul>
+            <p><strong>使用步骤：</strong></p>
+            <ol>
+              <li>查一个词的英英释义（不是英汉翻译）</li>
+              <li>看3个例句理解用法</li>
+              <li>查看同义词，丰富表达</li>
+            </ol>
+            <button class="sim-btn" onclick="event.stopPropagation();showSim('dictSim')">试试查词</button>
+            <div id="dictSim" class="sim-output">
+              <strong>查：</strong>loyalty<br>
+              <strong>Collins: </strong>"Loyalty is the quality of staying firm in your friendship or support for someone."<br>
+              <strong>同义词：</strong>faithfulness, devotion, allegiance, commitment
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tool-card" onclick="toggleCard(this)">
+        <div class="tool-icon">🎨</div>
+        <div class="tool-name">Canva 图文设计</div>
+        <div class="tool-desc">制作海报、信息图，呈现学习成果</div>
+        <div class="tool-body">
+          <div class="tool-body-inner">
+            <p><strong>平台：</strong>Canva（免费版即可）</p>
+            <p><strong>使用步骤：</strong></p>
+            <ol>
+              <li>选择海报模板（A4 或 16:9）</li>
+              <li>拖入你的英语内容</li>
+              <li>添加图标、配色、排版</li>
+              <li>导出 PDF 或图片</li>
+            </ol>
+            <p style="margin-top:6px;"><strong>💡 创意：</strong>用 Canva 设计一张"Friendship Qualities"海报，把你认为最重要的5个友谊品质用英语展示出来。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 高阶工具 -->
+  <div class="level-section">
+    <div class="level-header">
+      <span class="level-badge level-high">🔴 高阶</span>
+      <h3>研究级工具</h3>
+    </div>
+
+    <div class="tool-grid">
+      <div class="tool-card" onclick="toggleCard(this)">
+        <div class="tool-icon">🔗</div>
+        <div class="tool-name">社会网络分析 (SNA)</div>
+        <div class="tool-desc">分析群体中的人际关系网络结构</div>
+        <div class="tool-body">
+          <div class="tool-body-inner">
+            <p><strong>推荐工具：</strong>Gephi（免费开源）或 yEd Graph Editor</p>
+            <p><strong>简单用法：</strong></p>
+            <ol>
+              <li>列出班级中的人际关系（谁和谁是朋友）</li>
+              <li>输入工具生成社交网络图</li>
+              <li>观察：谁是"中心人物"？谁是"孤独节点"？</li>
+            </ol>
+            <div class="example-box">
+              输入：小明→小红，小红→小刚，小刚→小明，小丽→小红<br>
+              输出：小红是中心人物（连接最多人）
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tool-card" onclick="toggleCard(this)">
+        <div class="tool-icon">📊</div>
+        <div class="tool-name">NVivo 文本编码</div>
+        <div class="tool-desc">对文本进行主题编码分析</div>
+        <div class="tool-body">
+          <div class="tool-body-inner">
+            <p><strong>用途：</strong>对 Anne's Diary 等文本进行深度分析，提取主题模式</p>
+            <p><strong>替代方案：</strong></p>
+            <p>使用 Google Sheets 手动编码：</p>
+            <ol>
+              <li>建立表格，左列贴原文</li>
+              <li>右列写关键词标签（如：孤独、希望、友谊）</li>
+              <li>统计各类标签出现频率</li>
+            </ol>
+            <button class="sim-btn" onclick="event.stopPropagation();showSim('nVivoSim')">查看编码示例</button>
+            <div id="nVivoSim" class="sim-output">
+              <strong>原文：</strong>"I can't imagine living like Mother and Mrs. Van Pels..."<br>
+              <strong>编码标签：</strong>母女关系, 孤独, 自我认同<br><br>
+              <strong>统计：</strong>"孤独"标签出现 23 次 | "希望"出现 15 次
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tool-card" onclick="toggleCard(this)" style="background:linear-gradient(135deg,#f9f9f9,#fff);">
+        <div class="tool-icon">🛠️</div>
+        <div class="tool-name">工具选择指南</div>
+        <div class="tool-desc">根据学习目标快速选择合适工具</div>
+        <div class="tool-body">
+          <div class="tool-body-inner">
+            <p><strong>🎯 头脑风暴 →</strong> 思维导图</p>
+            <p><strong>🎯 自我评估 →</strong> KWL 表</p>
+            <p><strong>🎯 比较分析 →</strong> T 型对比表</p>
+            <p><strong>🎯 英语写作 →</strong> AI 辅助 + 词典</p>
+            <p><strong>🎯 成果展示 →</strong> Canva 海报</p>
+            <p><strong>🎯 关系研究 →</strong> SNA 网络分析</p>
+            <p><strong>🎯 文本研究 →</strong> NVivo / Google Sheets</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function toggleCard(el) {
+  el.classList.toggle('active');
+}
+function showSim(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('show');
+}
+</script>
+
+</body>
+</html>

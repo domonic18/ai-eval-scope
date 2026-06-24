@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视频 — 友谊主题英语视频学习</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --transition: 0.3s ease;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 32px 24px; }
+
+/* Header */
+.header { margin-bottom: 28px; }
+.header h1 { font-size: var(--font-h1); font-weight: 700; color: var(--primary); position: relative; padding-left: 16px; }
+.header h1::before { content: ''; position: absolute; left: 0; top: 4px; bottom: 4px; width: 4px; background: var(--primary); border-radius: 2px; }
+.header p { margin-top: 8px; color: var(--text-secondary); font-size: 14px; }
+
+/* Video Tabs */
+.video-nav { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+.video-btn { padding: 10px 20px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-secondary); font-size: 14px; border-radius: var(--border-radius); cursor: pointer; transition: var(--transition); font-family: inherit; }
+.video-btn:hover { border-color: var(--primary); color: var(--primary); }
+.video-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* Video Section */
+.video-section { display: none; }
+.video-section.active { display: block; }
+
+/* Video Card */
+.video-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); margin-bottom: 20px; box-shadow: var(--shadow); overflow: hidden; }
+.video-banner { background: var(--primary); padding: 16px 20px; color: #fff; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.video-banner h3 { font-size: var(--font-h2); font-weight: 600; }
+.video-badge { display: inline-block; padding: 2px 12px; border-radius: 12px; font-size: 12px; background: rgba(255,255,255,0.2); color: #fff; }
+.video-meta { display: flex; gap: 16px; flex-wrap: wrap; padding: 10px 20px; background: #fafafa; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text-secondary); }
+.video-meta span { display: flex; align-items: center; gap: 4px; }
+
+.video-body { padding: 20px; }
+
+/* Collapsible Section */
+.collapsible { border: 1px solid var(--border); border-radius: 6px; margin-bottom: 12px; overflow: hidden; }
+.collapsible-header { padding: 12px 16px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; font-weight: 600; font-size: 14px; background: #fafafa; transition: background var(--transition); user-select: none; }
+.collapsible-header:hover { background: #f0f0f0; }
+.collapsible-header .arrow { transition: transform var(--transition); }
+.collapsible-header.open .arrow { transform: rotate(180deg); }
+.collapsible-body { padding: 0 16px 16px; display: none; }
+.collapsible-body.open { display: block; margin-top: 10px; }
+
+.collapsible-body ul, .collapsible-body ol { padding-left: 20px; margin: 8px 0; }
+.collapsible-body li { margin-bottom: 4px; }
+.collapsible-body .question-item { padding: 6px 0; border-bottom: 1px dashed var(--border); }
+.collapsible-body .question-item:last-child { border-bottom: none; }
+.collapsible-body .question-item strong { color: var(--primary); }
+
+/* Pause Point */
+.pause-point { background: #fafafa; border-left: 3px solid var(--accent); padding: 10px 14px; margin: 10px 0; border-radius: 0 4px 4px 0; font-size: 14px; }
+.pause-point strong { color: var(--primary); }
+
+/* Task Output */
+.task-output { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; margin-top: 12px; }
+.task-output .task-label { font-size: 13px; font-weight: 600; color: var(--primary); margin-bottom: 4px; }
+
+/* Checkbox style */
+.check-item { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; cursor: pointer; }
+.check-item input[type="checkbox"] { margin-top: 4px; accent-color: var(--primary); flex-shrink: 0; }
+
+/* Animation */
+@keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+.video-card { animation: slideIn 0.4s ease both; }
+.video-card:nth-child(2) { animation-delay: 0.1s; }
+
+@media (max-width: 640px) {
+  .container { padding: 20px 14px; }
+  .video-btn { padding: 8px 14px; font-size: 13px; }
+  .video-body { padding: 16px; }
+  .video-meta { flex-direction: column; gap: 4px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>📺 视频 — 友谊主题英语视频学习</h1>
+    <p>以"观看焦点"为核心训练信息提取能力——观看前明确任务，观看中抓关键信息，观看后产出学习成果。</p>
+  </div>
+
+  <div class="video-nav">
+    <button class="video-btn active" onclick="switchVideo(this, 'v1')">🌱 基础 · 交友建议</button>
+    <button class="video-btn" onclick="switchVideo(this, 'v2')">📊 进阶 · 友谊科学</button>
+    <button class="video-btn" onclick="switchVideo(this, 'v3')">🎤 挑战 · TED 演讲</button>
+  </div>
+
+  <!-- 视频1：基础 -->
+  <div id="video-v1" class="video-section active">
+    <div class="video-card">
+      <div class="video-banner">
+        <h3>🎬 How to Make Friends in a New School</h3>
+        <span class="video-badge">解释型 · 基础</span>
+      </div>
+      <div class="video-meta">
+        <span>🔍 搜索："How to make friends in a new school"</span>
+        <span>⏱ 5 分钟</span>
+        <span>🌐 中速英语 + 字幕</span>
+        <span>👥 适合所有人</span>
+      </div>
+      <div class="video-body">
+        <div class="collapsible open">
+          <div class="collapsible-header open" onclick="toggleCollapse(this)">
+            <span>🎯 观看任务</span>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="collapsible-body open">
+            <p>在观看过程中记录下视频提到的 <strong>3 个交友建议</strong>：</p>
+            <div class="check-item" onclick="toggleCheck(this)">
+              <input type="checkbox"> 建议 1：______________
+            </div>
+            <div class="check-item" onclick="toggleCheck(this)">
+              <input type="checkbox"> 建议 2：______________
+            </div>
+            <div class="check-item" onclick="toggleCheck(this)">
+              <input type="checkbox"> 建议 3：______________
+            </div>
+          </div>
+        </div>
+
+        <div class="collapsible">
+          <div class="collapsible-header" onclick="toggleCollapse(this)">
+            <span>❓ 关键问题</span>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="collapsible-body">
+            <div class="question-item"><strong>Q1：</strong>What is the first tip for making friends in a new school?</div>
+            <div class="question-item"><strong>Q2：</strong>Why does the speaker say "be yourself" is important?</div>
+            <div class="question-item"><strong>Q3：</strong>Which tip do you think is most useful for you?</div>
+          </div>
+        </div>
+
+        <div class="collapsible">
+          <div class="collapsible-header" onclick="toggleCollapse(this)">
+            <span>⏸️ 暂停思考点</span>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="collapsible-body">
+            <div class="pause-point"><strong>1:30 处暂停：</strong>视频中主人公说 "I feel nervous"——你有过这种感觉吗？</div>
+            <div class="pause-point"><strong>3:15 处暂停：</strong>这位同学选择坐到哪里？如果是你，你会选哪里？</div>
+          </div>
+        </div>
+
+        <div class="task-output">
+          <div class="task-label">✏️ 输出任务</div>
+          <p>用 3–5 句话写一段英文回答：<em>"Which tip from the video will you try? Why?"</em></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 视频2：进阶 -->
+  <div id="video-v2" class="video-section">
+    <div class="video-card">
+      <div class="video-banner">
+        <h3>📊 TED-Ed: The Science of Friendship</h3>
+        <span class="video-badge">分析型 · 进阶</span>
+      </div>
+      <div class="video-meta">
+        <span>🔍 搜索："The science of friendship TED-Ed"</span>
+        <span>⏱ 6 分钟</span>
+        <span>🌐 标准英语 + 字幕</span>
+        <span>👥 深入理解友谊机制</span>
+      </div>
+      <div class="video-body">
+        <div class="collapsible open">
+          <div class="collapsible-header open" onclick="toggleCollapse(this)">
+            <span>🎯 观看任务</span>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="collapsible-body open">
+            <p>记录视频中提到的 <strong>3 个关于友谊的科学发现</strong>：</p>
+            <div class="check-item" onclick="toggleCheck(this)">
+              <input type="checkbox"> 发现 1：______________
+            </div>
+            <div class="check-item" onclick="toggleCheck(this)">
+              <input type="checkbox"> 发现 2：______________
+            </div>
+            <div class="check-item" onclick="toggleCheck(this)">
+              <input type="checkbox"> 发现 3：______________
+            </div>
+          </div>
+        </div>
+
+        <div class="collapsible">
+          <div class="collapsible-header" onclick="toggleCollapse(this)">
+            <span>❓ 关键问题</span>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="collapsible-body">
+            <div class="question-item"><strong>Q1：</strong>According to the video, how does the brain respond when we see a friend?</div>
+            <div class="question-item"><strong>Q2：</strong>What is "the Dunbar number" and what does it tell us about friendship?</div>
+            <div class="question-item"><strong>Q3：</strong>Why do friendships change as we grow older?</div>
+          </div>
+        </div>
+
+        <div class="collapsible">
+          <div class="collapsible-header" onclick="toggleCollapse(this)">
+            <span>⏸️ 暂停思考点</span>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="collapsible-body">
+            <div class="pause-point"><strong>2:00 处暂停：</strong>视频说"你最多能维持约 150 个社交关系"——数数你的社交好友，你认同吗？</div>
+            <div class="pause-point"><strong>4:30 处暂停：</strong>友谊的"3 个层次"——你用英语能说出其中哪几个层级？</div>
+          </div>
+        </div>
+
+        <div class="task-output">
+          <div class="task-label">✏️ 输出任务</div>
+          <p>写一段 <strong>80 词左右</strong> 的英文摘要，总结视频中你印象最深的一个科学发现。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 视频3：挑战 -->
+  <div id="video-v3" class="video-section">
+    <div class="video-card">
+      <div class="video-banner">
+        <h3>🎤 TED: The Power of Vulnerability — Brené Brown</h3>
+        <span class="video-badge">辩论型 · 挑战</span>
+      </div>
+      <div class="video-meta">
+        <span>🔍 TED.com 搜索 "Brené Brown The Power of Vulnerability"</span>
+        <span>⏱ 20 分钟</span>
+        <span>🌐 自然语速 + 字幕</span>
+        <span>👥 提升听力 + 批判性思维</span>
+      </div>
+      <div class="video-body">
+        <div class="collapsible open">
+          <div class="collapsible-header open" onclick="toggleCollapse(this)">
+            <span>🎯 观看任务</span>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="collapsible-body open">
+            <p>关注 Brown 对 <strong>"vulnerability"</strong> 的定义以及它和 <strong>connection</strong> 的关系。</p>
+          </div>
+        </div>
+
+        <div class="collapsible">
+          <div class="collapsible-header" onclick="toggleCollapse(this)">
+            <span>❓ 关键问题</span>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="collapsible-body">
+            <div class="question-item"><strong>Q1：</strong>What does vulnerability mean according to Brené Brown?</div>
+            <div class="question-item"><strong>Q2：</strong>How does vulnerability help us build deeper connections with others?</div>
+            <div class="question-item"><strong>Q3：</strong>Do you agree that "you can't have connection without vulnerability"? Why or why not?</div>
+          </div>
+        </div>
+
+        <div class="collapsible">
+          <div class="collapsible-header" onclick="toggleCollapse(this)">
+            <span>⏸️ 暂停思考点</span>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="collapsible-body">
+            <div class="pause-point"><strong>7:45 处暂停：</strong>Brown 讲了一个关于 "first date" 的故事——让你想到了什么？</div>
+            <div class="pause-point"><strong>12:30 处暂停：</strong>她提到 "whole-hearted people"——你认为"全心投入的人"具备哪些特质？</div>
+          </div>
+        </div>
+
+        <div class="task-output">
+          <div class="task-label">🎙️ 输出任务</div>
+          <p>准备一段 <strong>1 分钟</strong> 的英文口头发言，回答：<em>"Do you agree that showing weakness can help build friendships? Give an example."</em> 录下你的发言。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchVideo(el, videoId) {
+  document.querySelectorAll('.video-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.video-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('video-' + videoId).classList.add('active');
+}
+function toggleCollapse(header) {
+  header.classList.toggle('open');
+  header.nextElementSibling.classList.toggle('open');
+}
+function toggleCheck(el) {
+  const cb = el.querySelector('input[type="checkbox"]');
+  cb.checked = !cb.checked;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>研学社区 — 友谊真实性案例库</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --transition: 0.3s ease;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 32px 24px; }
+
+/* Header */
+.header { margin-bottom: 28px; }
+.header h1 { font-size: var(--font-h1); font-weight: 700; color: var(--primary); position: relative; padding-left: 16px; }
+.header h1::before { content: ''; position: absolute; left: 0; top: 4px; bottom: 4px; width: 4px; background: var(--primary); border-radius: 2px; }
+.header p { margin-top: 8px; color: var(--text-secondary); font-size: 14px; }
+
+/* Level Tabs */
+.level-nav { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+.level-btn { padding: 10px 20px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-secondary); font-size: 14px; border-radius: var(--border-radius); cursor: pointer; transition: var(--transition); font-family: inherit; }
+.level-btn:hover { border-color: var(--primary); color: var(--primary); }
+.level-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* Case Section */
+.case-section { display: none; }
+.case-section.active { display: block; }
+
+/* Case Card */
+.case-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); margin-bottom: 20px; box-shadow: var(--shadow); overflow: hidden; }
+.case-badge { display: inline-block; padding: 3px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; margin-bottom: 10px; }
+.badge-life { background: #f0f5f0; color: #389e0d; }
+.badge-history { background: #f0f0f5; color: #597ef7; }
+.badge-cross { background: #f5f0f0; color: #cf1322; }
+
+.case-inner { padding: 20px; }
+.case-inner h3 { font-size: var(--font-h2); font-weight: 600; margin-bottom: 4px; }
+.case-inner .case-sub { color: var(--text-secondary); font-size: 13px; margin-bottom: 14px; }
+.case-inner .case-bg { background: #fafafa; padding: 12px 16px; border-radius: 6px; margin-bottom: 14px; font-size: 14px; border-left: 3px solid var(--accent); }
+.case-inner .case-bg strong { color: var(--primary); }
+.case-inner .case-q { font-weight: 600; color: var(--primary); margin-bottom: 8px; }
+
+/* Decision Path */
+.decision-path { margin: 12px 0; }
+.decision-item { border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; overflow: hidden; }
+.decision-header { padding: 10px 14px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 500; transition: background var(--transition); user-select: none; }
+.decision-header:hover { background: #fafafa; }
+.decision-header .arrow { transition: transform var(--transition); }
+.decision-header.open .arrow { transform: rotate(180deg); }
+.decision-result { padding: 0 14px 12px; display: none; font-size: 14px; }
+.decision-result.open { display: block; }
+.decision-result .verdict { margin-top: 6px; padding: 6px 10px; border-radius: 4px; font-weight: 500; }
+.verdict-best { background: #f6ffed; color: #389e0d; }
+.verdict-neutral { background: #fffbe6; color: #d48806; }
+.verdict-skip { background: #fff2f0; color: #cf1322; }
+
+/* Insight */
+.insight { background: #fafafa; border-radius: 6px; padding: 12px 16px; margin: 12px 0; border: 1px dashed var(--border); }
+.insight strong { color: var(--primary); }
+
+/* Task */
+.task-box { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; margin: 14px 0; }
+.task-box .task-label { font-size: 13px; font-weight: 600; color: var(--primary); margin-bottom: 4px; }
+
+/* Multi-end */
+.multi-end { background: #fafafa; padding: 12px 16px; border-radius: 6px; margin: 12px 0; border-left: 3px solid #597ef7; }
+
+/* Animation */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.case-card { animation: fadeUp 0.45s ease both; }
+.case-card:nth-child(2) { animation-delay: 0.08s; }
+.case-card:nth-child(3) { animation-delay: 0.16s; }
+
+@media (max-width: 640px) {
+  .container { padding: 20px 14px; }
+  .level-btn { padding: 8px 14px; font-size: 13px; }
+  .case-inner { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🏛️ 研学社区 — 友谊真实性案例库</h1>
+    <p>通过真实世界的"问题—决策—结果"结构，建立知识与现实的连接。以下案例围绕友谊主题，展示不同情境下的友谊困境和解决方案。</p>
+  </div>
+
+  <div class="level-nav">
+    <button class="level-btn active" onclick="switchLevel(this, 'basic')">🌱 基础 · 生活类</button>
+    <button class="level-btn" onclick="switchLevel(this, 'intermediate')">📚 进阶 · 行业/历史</button>
+    <button class="level-btn" onclick="switchLevel(this, 'challenge')">🌍 挑战 · 跨文化</button>
+  </div>
+
+  <!-- 基础层 -->
+  <div id="level-basic" class="case-section active">
+    <div class="case-card">
+      <div class="case-inner">
+        <span class="case-badge badge-life">🌱 生活类</span>
+        <h3>案例1：新学校的交友挑战</h3>
+        <p class="case-sub">转学第一天的午餐难题</p>
+
+        <div class="case-bg">
+          <strong>背景：</strong>小明刚刚转学到一所新学校，第一天午餐时，他一个人坐在角落。他注意到旁边有几个同学在讨论篮球比赛。
+        </div>
+
+        <p class="case-q">❓ 小明该怎样主动迈出第一步？</p>
+
+        <div class="decision-path">
+          <div class="decision-item">
+            <div class="decision-header" onclick="toggleDecision(this)">
+              <span>方案 A：继续坐着等别人来找他</span>
+              <span class="arrow">▼</span>
+            </div>
+            <div class="decision-result">
+              <p>被动等待可能让你错过机会。新环境中多数人不会主动走向一个沉默的陌生人。</p>
+              <div class="verdict verdict-skip">✖ 效果不佳</div>
+            </div>
+          </div>
+          <div class="decision-item">
+            <div class="decision-header" onclick="toggleDecision(this)">
+              <span>方案 B：鼓起勇气走过去问</span>
+              <span class="arrow">▼</span>
+            </div>
+            <div class="decision-result">
+              <p>"Hi, I'm Xiao Ming. What game are you talking about?"<br>主动表达兴趣是最有效的破冰方式。</p>
+              <div class="verdict verdict-best">✔ 最有效</div>
+            </div>
+          </div>
+          <div class="decision-item">
+            <div class="decision-header" onclick="toggleDecision(this)">
+              <span>方案 C：先观察几天再行动</span>
+              <span class="arrow">▼</span>
+            </div>
+            <div class="decision-result">
+              <p>稳妥但可能错失最佳时机——第一天往往是建立第一印象的黄金窗口。</p>
+              <div class="verdict verdict-neutral">△ 可行但较慢</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="insight">
+          <strong>💡 可迁移启示：</strong>在新环境中，主动表达兴趣比等待更容易打开友谊之门。用英语说第一句话只需要 <strong>10秒的勇气</strong>。
+        </div>
+
+        <div class="task-box">
+          <div class="task-label">✏️ 任务</div>
+          <p>假设你遇到类似情况，请用英语写一句你会在食堂说的话。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 进阶层 -->
+  <div id="level-intermediate" class="case-section">
+    <div class="case-card">
+      <div class="case-inner">
+        <span class="case-badge badge-history">📚 历史类</span>
+        <h3>案例2：海伦·凯勒与安妮·莎莉文的师生友谊</h3>
+        <p class="case-sub">一段跨越障碍的终身情谊</p>
+
+        <div class="case-bg">
+          <strong>背景：</strong>海伦·凯勒（Helen Keller）自幼失明失聪，在遇到老师安妮·莎莉文（Anne Sullivan）之前，她几乎无法与外界沟通。
+        </div>
+
+        <p class="case-q">❓ 莎莉文如何突破沟通障碍，与海伦建立信任关系？</p>
+
+        <div class="decision-path">
+          <div class="decision-item">
+            <div class="decision-header" onclick="toggleDecision(this)">
+              <span>方法：通过触觉拼写建立沟通</span>
+              <span class="arrow">▼</span>
+            </div>
+            <div class="decision-result">
+              <p>莎莉文用手在海伦手掌上拼写单词。转折点发生在抽水机旁——她让海伦触摸水流的同时拼写 "W-A-T-E-R"，海伦突然理解了 <strong>"每样东西都有名字"</strong>。</p>
+              <div class="verdict verdict-best">✔ 突破性方法</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="insight">
+          <strong>💡 可迁移启示：</strong>真正的友谊在于找到对方的<strong>"沟通频道"</strong>——不只是语言，更是理解方式。
+        </div>
+
+        <div class="multi-end">
+          <strong>🎭 多结局模拟：</strong>如果莎莉文在早期受挫后放弃了，海伦的人生会怎样？想象另一种可能。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 挑战层 -->
+  <div id="level-challenge" class="case-section">
+    <div class="case-card">
+      <div class="case-inner">
+        <span class="case-badge badge-cross">🌍 跨文化类</span>
+        <h3>案例3：跨国友谊——中英中学生交流项目</h3>
+        <p class="case-sub">文化差异与语言障碍下的笔友项目</p>
+
+        <div class="case-bg">
+          <strong>背景：</strong>某中国中学与英国中学开展了为期一年的"笔友交流项目"。第一轮信件交换后，很多同学反映"不知道写什么"。
+        </div>
+
+        <p class="case-q">❓ 文化差异和语言障碍如何影响跨文化友谊的建立？</p>
+
+        <div class="decision-path">
+          <div class="decision-item">
+            <div class="decision-header" onclick="toggleDecision(this)">
+              <span>方案 A：只写学校生活</span>
+              <span class="arrow">▼</span>
+            </div>
+            <div class="decision-result">
+              <p>课程表、作业量等话题容易触及但缺乏深度，难以激发对方继续回信的兴趣。</p>
+              <div class="verdict verdict-neutral">△ 基础但平淡</div>
+            </div>
+          </div>
+          <div class="decision-item">
+            <div class="decision-header" onclick="toggleDecision(this)">
+              <span>方案 B：写兴趣爱好，关注共通点</span>
+              <span class="arrow">▼</span>
+            </div>
+            <div class="decision-result">
+              <p>音乐、运动、游戏——共同的兴趣最容易拉近距离。这是最受欢迎的策略。</p>
+              <div class="verdict verdict-best">✔ 最受欢迎</div>
+            </div>
+          </div>
+          <div class="decision-item">
+            <div class="decision-header" onclick="toggleDecision(this)">
+              <span>方案 C：写文化独特性</span>
+              <span class="arrow">▼</span>
+            </div>
+            <div class="decision-result">
+              <p>节日、食物、习俗等文化差异话题适合在熟悉之后深入交流，不宜作为开场。</p>
+              <div class="verdict verdict-neutral">△ 适合中期</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="insight">
+          <strong>💡 可迁移启示：</strong>跨文化友谊的起点不是"差异"，而是<strong>"共通"</strong>——先用共同兴趣建立连接，再交流文化差异。
+        </div>
+
+        <div class="task-box">
+          <div class="task-label">✏️ "如果你是决策者"任务</div>
+          <p>请用英语设计一个"破冰话题清单"，列出 5 个能快速拉近距离的话题（包含至少 1 个共通类话题）。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchLevel(el, levelId) {
+  document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.case-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('level-' + levelId).classList.add('active');
+}
+function toggleDecision(header) {
+  header.classList.toggle('open');
+  const result = header.nextElementSibling;
+  result.classList.toggle('open');
+}
+</script>
+</body>
+</html>

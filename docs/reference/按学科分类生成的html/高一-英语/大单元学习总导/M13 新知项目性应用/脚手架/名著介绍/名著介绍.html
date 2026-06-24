@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名著介绍 — 友谊主题</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  padding: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+
+.header {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 24px 32px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--primary);
+}
+
+.header h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+
+.header p {
+  color: var(--text-secondary);
+  font-size: var(--font-body);
+}
+
+.section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px 28px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+
+.section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bg);
+}
+
+.quote-card {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-bottom: 14px;
+  border-left: 3px solid var(--accent);
+  cursor: pointer;
+  transition: box-shadow 0.3s ease;
+}
+
+.quote-card:hover {
+  box-shadow: var(--shadow);
+}
+
+.quote-card .quote-text {
+  font-style: italic;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.quote-card .quote-author {
+  color: var(--text-secondary);
+  font-size: 0.9em;
+}
+
+.trigger-btn {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 14px;
+  font-size: 0.9em;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background 0.2s;
+  font-family: var(--font-family);
+}
+
+.trigger-btn:hover {
+  background: var(--primary-hover);
+}
+
+.trigger-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+  background: #fefefe;
+  border-radius: 4px;
+  padding: 0 14px;
+  margin-top: 0;
+  border: 1px solid transparent;
+}
+
+.trigger-answer.show {
+  max-height: 200px;
+  padding: 12px 14px;
+  margin-top: 8px;
+  border-color: var(--border);
+}
+
+.book-card {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+  transition: transform 0.2s;
+}
+
+.book-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.book-card h3 {
+  font-size: calc(var(--font-body) + 2px);
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+
+.book-card .core-q {
+  font-weight: 600;
+  color: var(--text);
+  margin: 8px 0 4px;
+  font-size: 0.95em;
+}
+
+.book-card .detail {
+  color: var(--text-secondary);
+  font-size: 0.9em;
+  margin: 3px 0;
+}
+
+.level-badge {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 3px;
+  padding: 2px 10px;
+  font-size: 0.8em;
+  margin-right: 6px;
+}
+
+.resource-link {
+  color: var(--primary);
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+
+.resource-link:hover {
+  color: var(--primary-hover);
+}
+
+.table-wrap {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95em;
+}
+
+th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 500;
+}
+
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+tr:hover td {
+  background: var(--bg);
+}
+
+@media (max-width: 640px) {
+  .container { padding: 12px 16px; }
+  .header { padding: 16px 18px; }
+  .section { padding: 14px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>📚 名著介绍</h1>
+  <p>通过名言触发器与名著结构化导读，构建对"友谊"主题的深度认知</p>
+</div>
+
+<div class="section">
+  <h2>💬 名言触发思考</h2>
+  <p style="color:var(--text-secondary);margin-bottom:12px;">点击按钮查看引导问题——先自己想一想，再点开参考答案对照</p>
+
+  <div class="quote-card">
+    <div class="quote-text">"Friendship is born at that moment when one person says to another, 'What! You too? I thought I was the only one.'"</div>
+    <div class="quote-author">— C.S. Lewis</div>
+    <button class="trigger-btn" onclick="toggleAnswer(this)">💡 触发问题</button>
+    <div class="trigger-answer">你在什么时候对一个朋友说过或听过"你也这样想？"——那种"原来你也一样"的瞬间，常常是友谊的开始。</div>
+  </div>
+
+  <div class="quote-card">
+    <div class="quote-text">"The only way to have a friend is to be one."</div>
+    <div class="quote-author">— Ralph Waldo Emerson</div>
+    <button class="trigger-btn" onclick="toggleAnswer(this)">💡 触发问题</button>
+    <div class="trigger-answer">你认为自己是一个好朋友吗？为什么？友谊是一种主动行为，而不是被动等待。</div>
+  </div>
+
+  <div class="quote-card">
+    <div class="quote-text">"A friend to all is a friend to none."</div>
+    <div class="quote-author">— Aristotle</div>
+    <button class="trigger-btn" onclick="toggleAnswer(this)">💡 触发问题</button>
+    <div class="trigger-answer">一个人对所有人都友善，是不是意味着TA没有真正的朋友？亚里士多德认为，真正的友谊需要深度和选择。</div>
+  </div>
+
+  <div class="quote-card">
+    <div class="quote-text">"Walking with a friend in the dark is better than walking alone in the light."</div>
+    <div class="quote-author">— Helen Keller</div>
+    <button class="trigger-btn" onclick="toggleAnswer(this)">💡 触发问题</button>
+    <div class="trigger-answer">你在困难时有没有被朋友帮助过？这种"黑暗中的同行"比独自在光明中更有力量。</div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>📖 三部名著导读</h2>
+
+  <div class="book-card">
+    <h3>📜 《论语》（Analects）— 友谊相关选段</h3>
+    <div class="core-q">❓ 核心问题：孔子眼中的友谊是什么样的？</div>
+    <div class="detail"><strong>选段</strong>："益者三友，损者三友。友直，友谅，友多闻，益矣。"</div>
+    <div class="detail"><strong>核心观点</strong>：友谊的基础是正直（upright）、诚信（honest）和见识（knowledgeable）</div>
+    <div class="detail"><strong>关键片段</strong>：英文版中关于"友直"（upright friend）的段落</div>
+    <div class="detail"><span class="level-badge">基础</span> 适合入门阅读</div>
+    <div class="detail"><span class="resource-link">🔗 免费获取：Chinese Text Project (ctext.org)</span></div>
+  </div>
+
+  <div class="book-card">
+    <h3>🦊 《The Little Prince》— Antoine de Saint-Exupéry</h3>
+    <div class="core-q">❓ 核心问题：什么是驯服（taming）？和友谊有什么关系？</div>
+    <div class="detail"><strong>核心章节</strong>：第21章（狐狸的对话）</div>
+    <div class="detail"><strong>核心观点</strong>："It is the time you have wasted for your rose that makes your rose so important."</div>
+    <div class="detail"><strong>关键片段</strong>：关于 "tame"、"ritual"、"responsible forever" 的段落</div>
+    <div class="detail"><span class="level-badge">基础</span><span class="level-badge" style="background:#595959;">进阶</span> 适合所有水平</div>
+    <div class="detail"><span class="resource-link">🔗 免费获取：Project Gutenberg</span></div>
+  </div>
+
+  <div class="book-card">
+    <h3>🧠 《The Social Animal》— Elliot Aronson</h3>
+    <div class="core-q">❓ 核心问题：社会心理学如何解释友谊的形成和维持？</div>
+    <div class="detail"><strong>选段</strong>：邻近效应、相似性、互惠原则</div>
+    <div class="detail"><strong>核心观点</strong>：友谊不是偶然的——它有规律可循</div>
+    <div class="detail"><strong>关键片段</strong>：关于"喜欢和爱的心理学"章节</div>
+    <div class="detail"><span class="level-badge" style="background:#595959;">进阶</span><span class="level-badge" style="background:#262626;">挑战</span> 适合深入研究</div>
+    <div class="detail"><span class="resource-link">🔗 电子书：Amazon Kindle</span></div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>📋 获取路径汇总</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>著作</th>
+          <th>纸质书</th>
+          <th>电子书</th>
+          <th>免费资源</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>《论语》</td>
+          <td>双语版</td>
+          <td>Kindle / 微信读书</td>
+          <td>ctext.org</td>
+        </tr>
+        <tr>
+          <td>小王子</td>
+          <td>各大书店</td>
+          <td>Kindle</td>
+          <td>Project Gutenberg</td>
+        </tr>
+        <tr>
+          <td>The Social Animal</td>
+          <td>当当 / Amazon</td>
+          <td>Kindle</td>
+          <td>图书馆借阅</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</div>
+
+<script>
+function toggleAnswer(btn) {
+  var answer = btn.nextElementSibling;
+  if (answer.classList.contains('show')) {
+    answer.classList.remove('show');
+  } else {
+    answer.classList.add('show');
+  }
+}
+</script>
+</body>
+</html>

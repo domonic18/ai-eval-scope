@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性示例 — Unit 1 Friendship</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+.header {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 28px 32px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--primary);
+}
+.header h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+.header .meta {
+  color: var(--text-secondary);
+  font-size: 13px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.header .meta span {
+  background: var(--bg);
+  padding: 2px 10px;
+  border-radius: 4px;
+}
+.section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 24px 28px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--border);
+  font-weight: 600;
+}
+.section h3 {
+  font-size: calc(var(--font-body) + 2px);
+  color: var(--primary);
+  margin: 16px 0 8px;
+  font-weight: 600;
+}
+.section p {
+  margin-bottom: 10px;
+  text-indent: 2em;
+}
+.section p.no-indent { text-indent: 0; }
+.step-card {
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px 20px;
+  margin-bottom: 14px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: default;
+}
+.step-card:hover {
+  transform: translateX(4px);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+.step-card .step-num {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  width: 26px;
+  height: 26px;
+  line-height: 26px;
+  text-align: center;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 700;
+  margin-right: 8px;
+}
+.step-card .step-title { font-weight: 700; color: var(--primary); font-size: calc(var(--font-body) + 1px); }
+.step-card .step-do { margin-top: 6px; font-weight: 600; color: var(--text); }
+.step-card .step-how { margin-top: 4px; color: var(--text-secondary); padding-left: 12px; border-left: 3px solid var(--accent); }
+.step-card .step-output { margin-top: 4px; }
+.step-card .step-output strong { color: var(--primary); }
+.step-card .step-demo { margin-top: 8px; padding: 10px 14px; background: #fff; border-radius: 4px; border: 1px dashed var(--accent); font-style: italic; color: #555; }
+.tool-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-top: 12px; }
+.tool-item { background: #fafafa; border: 1px solid var(--border); border-radius: 6px; padding: 14px; transition: background 0.2s; }
+.tool-item:hover { background: #f0f0f0; }
+.tool-item h4 { font-size: var(--font-body); color: var(--primary); margin-bottom: 6px; }
+.tool-item ul { padding-left: 18px; color: var(--text-secondary); font-size: 13px; }
+.tool-item ul li { margin-bottom: 4px; }
+.example-box { background: #f9f9f9; border: 2px solid var(--primary); border-radius: 8px; padding: 18px 22px; margin: 14px 0; }
+.example-box h4 { color: var(--primary); margin-bottom: 8px; }
+.example-box .letter { font-family: 'Georgia', 'Times New Roman', serif; padding: 12px; background: #fff; border-radius: 4px; line-height: 1.8; }
+.checklist { list-style: none; padding: 0; }
+.checklist li { padding: 8px 12px; margin-bottom: 6px; background: #fafafa; border-radius: 4px; border-left: 3px solid var(--accent); cursor: pointer; transition: background 0.2s; }
+.checklist li:hover { background: #f0f0f0; }
+.checklist li::before { content: "⬜ "; }
+.checklist li.checked::before { content: "✅ "; }
+.self-eval { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 12px; }
+.eval-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; background: #fafafa; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
+.eval-item:hover { background: #f0f0f0; }
+.eval-item .checkbox { width: 20px; height: 20px; border: 2px solid var(--accent); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; color: transparent; transition: all 0.2s; }
+.eval-item.active .checkbox { background: var(--primary); border-color: var(--primary); color: #fff; }
+.key-sentences { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+.key-sentence { background: #eef; border-radius: 20px; padding: 6px 16px; font-size: 13px; color: var(--primary); border: 1px solid #ddd; }
+@media (max-width: 600px) {
+  .container { padding: 12px 16px; }
+  .header { padding: 18px; }
+  .section { padding: 16px; }
+  .tool-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>建构性示例 — 友谊的和解信</h1>
+  <div class="meta">
+    <span>M16 新知应用与创新中的真善美思维与反思</span>
+    <span>Unit 1 Friendship</span>
+    <span>英语 · 必修1 · 人教版</span>
+    <span>学生版导学案</span>
+  </div>
+</div>
+
+<div class="section">
+  <h2>一、建构性示例标题</h2>
+  <p><strong>「从误会到理解——写给朋友的一封和解信」</strong></p>
+  <p>这个示例将带你完整经历一遍"建构"的过程：从一个真实的友谊困境出发，一步步搭建思路、组织语言，最终产出一封有温度的英语书信。看完这个示例，你就能自己动手建构属于你的友谊作品了。</p>
+</div>
+
+<div class="section">
+  <h2>二、真实建构情境</h2>
+  <p>你和最好的朋友小李因为一次小组合作产生了误会。你觉得他没有认真完成分内任务，在小组讨论时说了一句"你总是拖后腿"。小李当时没说什么，但之后几天都不怎么理你。你意识到自己的话可能伤了他，想主动和解，却不知道怎么开口。</p>
+  <p style="background:#fff3e0;padding:10px 14px;border-radius:4px;border-left:4px solid #ff9800;text-indent:0;"><strong>💡 张力点：</strong>你既想维护自己的感受（他的确没有及时完成任务），又不想失去这个朋友——这种"既要表达自己，又要顾及对方"的张力，正是建构性学习的起点。</p>
+</div>
+
+<div class="section">
+  <h2>三、建构目标</h2>
+  <p>建构一份 <strong>A Letter of Reconciliation（和解信）</strong>，用英语清晰、真诚地表达你的歉意和对这份友谊的珍视。</p>
+</div>
+
+<div class="section">
+  <h2>四、建构任务说明</h2>
+  <ul style="padding-left:20px;margin-bottom:6px;">
+    <li><strong>成果名称：</strong>A Letter of Reconciliation</li>
+    <li><strong>用途：</strong>交到朋友手中，或作为自己的情感梳理记录</li>
+    <li><strong>面向对象：</strong>你的朋友（读者是 Ta）</li>
+    <li><strong>形式：</strong>英语书信，200词左右</li>
+    <li><strong>最低标准：</strong>包含问候、原因说明、情感表达、和解意愿、结尾祝福五个要素</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>五、建构过程示范</h2>
+
+  <div class="step-card">
+    <span class="step-num">1</span><span class="step-title">梳理事件，明确核心问题</span>
+    <div class="step-do">🎯 <strong>做什么：</strong>回想整件事的来龙去脉，搞清楚自己真正的感受</div>
+    <div class="step-how">📌 <strong>怎么做：</strong>用"发生了什么 → 我的感受 → 对方的感受 → 我想要什么"四个问题梳理</div>
+    <div class="step-output"><strong>✅ 生成：</strong>事件梳理笔记</div>
+    <div class="step-demo">"我因为小李在小组作业中进度落后而感到着急，在讨论时脱口而出了伤人的话。现在我觉得后悔，我真正想要的是修复我们的关系。"</div>
+  </div>
+
+  <div class="step-card">
+    <span class="step-num">2</span><span class="step-title">确定书信基调与结构</span>
+    <div class="step-do">🎯 <strong>做什么：</strong>决定这封信的语调和整体框架</div>
+    <div class="step-how">📌 <strong>怎么做：</strong>选择诚恳但不卑微的语调；按"问候→说明写信原因→表达歉意→表达珍惜→提出和解→祝福"搭建框架</div>
+    <div class="step-output"><strong>✅ 生成：</strong>信件结构提纲</div>
+    <div class="step-demo">"我决定用诚恳和平等的语气，不是单纯道歉，而是表达我想和他一起解决问题的意愿。"</div>
+  </div>
+
+  <div class="step-card">
+    <span class="step-num">3</span><span class="step-title">收集关键词汇与句式</span>
+    <div class="step-do">🎯 <strong>做什么：</strong>从Unit 1中提取可用于书信的友谊相关词汇和句型</div>
+    <div class="step-how">📌 <strong>怎么做：</strong>翻阅教材和笔记，标记出表达歉意、感谢、珍惜友谊的表达</div>
+    <div class="step-output"><strong>✅ 生成：</strong>词汇句型和表达清单</div>
+    <div class="step-demo">"I truly value our friendship… / I feel sorry for… / I hope we can… / You mean a lot to me…"</div>
+  </div>
+
+  <div class="step-card">
+    <span class="step-num">4</span><span class="step-title">写出初稿</span>
+    <div class="step-do">🎯 <strong>做什么：</strong>按照提纲，用英语写出第一版完整信件</div>
+    <div class="step-how">📌 <strong>怎么做：</strong>不用追求完美，先写出来。卡住的地方用中文代替或留空</div>
+    <div class="step-output"><strong>✅ 生成：</strong>信件初稿</div>
+    <div class="step-demo">"Dear Xiao Li, I hope this letter finds you well. I'm writing because I want to talk about what happened in our group work…"</div>
+  </div>
+
+  <div class="step-card">
+    <span class="step-num">5</span><span class="step-title">打磨润色</span>
+    <div class="step-do">🎯 <strong>做什么：</strong>检查语言表达是否准确、情感是否到位</div>
+    <div class="step-how">📌 <strong>怎么做：</strong>核对词汇拼写和语法；检查情感是否真诚；替换重复表达</div>
+    <div class="step-output"><strong>✅ 生成：</strong>修改后的二稿</div>
+    <div class="step-demo">"I was too anxious about the deadline and didn't express myself well. That was my fault. You are more than a teammate to me — you are a true friend."</div>
+  </div>
+
+  <div class="step-card">
+    <span class="step-num">6</span><span class="step-title">朗读检验</span>
+    <div class="step-do">🎯 <strong>做什么：</strong>把信大声朗读一遍，感受语气是否自然</div>
+    <div class="step-how">📌 <strong>怎么做：</strong>找没人的地方读出声，标记不顺口的地方</div>
+    <div class="step-output"><strong>✅ 生成：</strong>最终定稿</div>
+    <div class="step-demo">"Reading it aloud helped me find two places where the sentences felt too formal. I changed 'I apologize for' to 'I'm sorry about' — it sounds more like me."</div>
+  </div>
+
+  <div class="step-card">
+    <span class="step-num">7</span><span class="step-title">发送与反思</span>
+    <div class="step-do">🎯 <strong>做什么：</strong>决定是否发送，并记录这次建构的收获</div>
+    <div class="step-how">📌 <strong>怎么做：</strong>如果决定发送，选择一个合适的时机；无论是否发送，写下三段反思</div>
+    <div class="step-output"><strong>✅ 生成：</strong>反思日志</div>
+    <div class="step-demo">"通过这次建构，我学会了如何用英语表达复杂情感。不只是语法和词汇——我学会了在表达中保持真诚和尊重。"</div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>六、支架工具推荐</h2>
+  <div class="tool-grid">
+    <div class="tool-item">
+      <h4>📄 书信结构模板</h4>
+      <ul>
+        <li><strong>Salutation:</strong> Dear [Name],</li>
+        <li><strong>Opening:</strong> I hope this letter finds you well...</li>
+        <li><strong>Reason:</strong> I'm writing because...</li>
+        <li><strong>Feeling:</strong> I feel sorry / I truly value...</li>
+        <li><strong>Hope:</strong> I hope we can...</li>
+        <li><strong>Closing:</strong> Best wishes / Yours sincerely,</li>
+      </ul>
+    </div>
+    <div class="tool-item">
+      <h4>💬 关键句式</h4>
+      <ul>
+        <li><strong>表达歉意：</strong> I'm sorry for / It was my fault that...</li>
+        <li><strong>表达珍惜：</strong> You mean a lot to me / I truly value our friendship</li>
+        <li><strong>提出和解：</strong> I hope we can... / Let's...</li>
+        <li><strong>表达感谢：</strong> Thank you for always being there for me</li>
+      </ul>
+    </div>
+    <div class="tool-item">
+      <h4>✅ 检查清单</h4>
+      <ul>
+        <li>☐ 信件包含开头、正文、结尾</li>
+        <li>☐ 使用了至少3个友谊相关词汇</li>
+        <li>☐ 语法拼写检查完成</li>
+        <li>☐ 语气自然，读起来像自己说的话</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>七、建构成果样例</h2>
+  <div class="example-box">
+    <h4>A Letter of Reconciliation（样例节选）</h4>
+    <div class="letter">
+      <p>Dear Xiao Li,</p>
+      <p>I hope this letter finds you well. I'm writing because I've been thinking about what happened during our group project, and I want to be honest with you.</p>
+      <p>I'm sorry for the words I said. I was stressed about the deadline, but that's no excuse. You've always been a good friend, and I truly value our friendship. Losing it is not something I want.</p>
+      <p>I hope we can talk about this face to face. Let me make it up to you.</p>
+      <p>Best wishes,<br>[Your Name]</p>
+    </div>
+  </div>
+  <p><strong>评价要求：</strong>科学性（语言准确）✓ 完整性（结构完整）✓ 美观性（排版清晰）✓</p>
+  <p><strong>建议：</strong>将前几步的阶段性产出（词汇清单→提纲→初稿→修改稿）整合起来，最终形成成品。</p>
+</div>
+
+<div class="section">
+  <h2>八、成果优化建议</h2>
+  <p><strong>语言润色：</strong>检查是否有中式英语表达，可以用英语词典或AI工具辅助校对；<strong>逻辑梳理：</strong>确保事件描述清晰、情感变化合理过渡；<strong>情感强化：</strong>加入具体细节（如"还记得我们一起去图书馆的那些下午吗"）让信件更有温度。</p>
+</div>
+
+<div class="section">
+  <h2>九、自我评价量表</h2>
+  <p>完成信件后，逐条对照检查：</p>
+  <div class="self-eval">
+    <div class="eval-item" onclick="this.classList.toggle('active')">
+      <div class="checkbox">✓</div>
+      <div>我是否使用了至少3个Unit 1学过的友谊相关词汇（如 loyal, understanding, supportive）？</div>
+    </div>
+    <div class="eval-item" onclick="this.classList.toggle('active')">
+      <div class="checkbox">✓</div>
+      <div>我的信件是否包含开头、正文、结尾三个部分？</div>
+    </div>
+    <div class="eval-item" onclick="this.classList.toggle('active')">
+      <div class="checkbox">✓</div>
+      <div>我的表达是否清楚地传达了我的情感和想法？</div>
+    </div>
+    <div class="eval-item" onclick="this.classList.toggle('active')">
+      <div class="checkbox">✓</div>
+      <div>我是否检查了语法和拼写错误？</div>
+    </div>
+    <div class="eval-item" onclick="this.classList.toggle('active')">
+      <div class="checkbox">✓</div>
+      <div>如果我是收信人，这封信让我感觉真诚吗？</div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

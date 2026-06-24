@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目社区 — 友谊哲学项目库</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); font-size: var(--font-body); line-height: var(--line-height); }
+.container { width: 100%; max-width: none; padding: 20px; box-sizing: border-box; }
+header { background: linear-gradient(135deg, #434343 0%, #595959 100%); color: #fff; padding: 28px 24px; border-radius: var(--border-radius); margin-bottom: 24px; }
+header h1 { font-size: var(--font-h1); margin: 0 0 6px 0; }
+header p { margin: 0; opacity: 0.85; font-size: 14px; }
+.section-title { font-size: var(--font-h2); color: var(--primary); margin: 28px 0 12px 0; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: flex; align-items: center; gap: 8px; }
+.project-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 20px; }
+.project-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 20px; box-shadow: var(--shadow); transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; }
+.project-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+.project-card .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; margin-bottom: 10px; }
+.badge-short { background: #e8e8e8; color: #434343; }
+.badge-medium { background: #d9d9d9; color: #262626; }
+.badge-long { background: #434343; color: #fff; }
+.project-card h3 { font-size: 16px; margin: 0 0 8px 0; color: var(--primary); }
+.project-card .meta { font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; }
+.detail-panel { display: none; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 20px; margin-top: 12px; box-shadow: var(--shadow); }
+.detail-panel.active { display: block; }
+.detail-panel h4 { color: var(--primary); margin: 16px 0 8px 0; font-size: 15px; }
+.detail-panel h4:first-child { margin-top: 0; }
+.detail-panel ul { margin: 6px 0; padding-left: 18px; }
+.detail-panel li { margin-bottom: 4px; font-size: 14px; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; }
+th { background: #f0f0f0; color: var(--primary); font-weight: 600; }
+.nav-guide { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 18px; margin: 20px 0; }
+.nav-guide table { margin: 0; }
+.driving-question { background: #f0f0f0; border-left: 4px solid var(--primary); padding: 14px 18px; border-radius: 0 var(--border-radius) var(--border-radius) 0; margin: 16px 0; font-style: italic; }
+.btn-toggle { background: var(--primary); color: #fff; border: none; padding: 6px 16px; border-radius: 4px; cursor: pointer; font-size: 13px; transition: background 0.2s; }
+.btn-toggle:hover { background: var(--primary-hover); }
+@media (max-width: 640px) { .project-grid { grid-template-columns: 1fr; } header { padding: 20px 16px; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>📂 项目社区 · 友谊哲学项目库</h1>
+  <p>Unit 1 Friendship · 用哲学思维审视"友谊"——从柏拉图的"友爱"到当代的"数字化友谊"</p>
+</header>
+
+<div class="driving-question">
+  <strong>🌍 驱动问题：</strong>What does it truly mean to be a friend in the 21st century?
+</div>
+
+<div class="section-title">📌 项目总览</div>
+<p style="color:var(--text-secondary);margin-bottom:16px;">三类项目均围绕"友谊哲学"展开——从跨文化比较到伦理思辨，从个人经验到社会观察，用项目实践回答"友谊究竟是什么"。</p>
+
+<div class="project-grid">
+  <div class="project-card" onclick="toggleDetail('p1')">
+    <span class="badge badge-short">⚡ 短周期 · 1-3天</span>
+    <h3>Friendship Across Cultures</h3>
+    <p style="font-size:14px;color:var(--text-secondary);">对比中西方友谊名言与价值观，制作双栏英语海报</p>
+    <div class="meta">📋 对比海报 · 个人完成</div>
+    <button class="btn-toggle" onclick="event.stopPropagation();toggleDetail('p1')">查看详情</button>
+  </div>
+  <div class="card" onclick="toggleDetail('p2')">
+    <span class="badge badge-medium">📝 中周期 · 1-2周</span>
+    <h3>The Ethics of Friendship</h3>
+    <p style="font-size:14px;color:var(--text-secondary);">围绕"友谊是否需要平等"等议题撰写500词哲学论说文</p>
+    <div class="meta">📄 论说文 · 个人+同伴互评</div>
+    <button class="btn-toggle" onclick="event.stopPropagation();toggleDetail('p2')">查看详情</button>
+  </div>
+  <div class="project-card" onclick="toggleDetail('p3')">
+    <span class="badge badge-long">🎬 长周期 · 1月+</span>
+    <h3>The Friendship Project</h3>
+    <p style="font-size:14px;color:var(--text-secondary);">制作英语纪录短片 + 配套研究报告，完成完整探究闭环</p>
+    <div class="meta">🎥 纪录片+报告 · 团队协作</div>
+    <button class="btn-toggle" onclick="event.stopPropagation();toggleDetail('p3')">查看详情</button>
+  </div>
+</div>
+
+<div id="p1" class="detail-panel">
+  <h4>🎯 项目目标</h4>
+  <p>回答"Does friendship mean the same thing in every culture?" 对比中西方友谊名言和价值观，制作双栏英语海报。</p>
+  <h4>📅 阶段任务</h4>
+  <ul>
+    <li><strong>Day 1</strong> — 搜集3-5条中国友谊名言 + 3-5条西方经典名言，用英语释义</li>
+    <li><strong>Day 2</strong> — 从"目的""表达方式""持续时间"三维度比较，撰写150词对比短文</li>
+    <li><strong>Day 3</strong> — 合并为A3双栏海报，加上核心结论</li>
+  </ul>
+  <h4>📊 评价标准</h4>
+  <table>
+    <tr><th>维度</th><th>标准</th></tr>
+    <tr><td>内容</td><td>每栏≥3条英译文名言，维度对比清晰</td></tr>
+    <tr><td>分析</td><td>至少2个有深度的哲学维度对比</td></tr>
+    <tr><td>语言</td><td>使用本单元词汇≥8个，语法准确率≥90%</td></tr>
+    <tr><td>思辨</td><td>包含个人结论句，体现独立思考</td></tr>
+  </table>
+</div>
+
+<div id="p2" class="detail-panel">
+  <h4>🎯 项目目标</h4>
+  <p>围绕"友谊是否需要平等"或"AI能成为真正的朋友吗"等议题，撰写500词英语论说文。</p>
+  <h4>📅 阶段任务</h4>
+  <ul>
+    <li><strong>W1 D1-2</strong> — 哲学议题导入，阅读Aristotle vs. Montaigne观点，填写对比表</li>
+    <li><strong>W1 D3-4</strong> — 立论：写出清晰thesis statement + 3个支撑论据</li>
+    <li><strong>W2 D1-2</strong> — 完成500词论说文初稿（引言+正文3段+结论）</li>
+    <li><strong>W2 D3-4</strong> — 使用"CER"框架同伴互评，修改后提交终稿</li>
+    <li><strong>W2 D5</strong> — 迷你哲学研讨会，投票选出"最深刻论点"</li>
+  </ul>
+  <h4>📊 评价标准</h4>
+  <table>
+    <tr><th>维度</th><th>标准</th></tr>
+    <tr><td>论点清晰度</td><td>Thesis statement明确、有争议性</td></tr>
+    <tr><td>论证质量</td><td>每条论点都有Evidence + Reasoning</td></tr>
+    <tr><td>哲学深度</td><td>至少引用1位哲学家观点并作出回应</td></tr>
+  </table>
+</div>
+
+<div id="p3" class="detail-panel">
+  <h4>🎯 项目目标</h4>
+  <p>以"数字时代的友谊"为主题，制作8-10分钟英语纪录短片 + 800词研究报告。</p>
+  <h4>📅 阶段任务</h4>
+  <ul>
+    <li><strong>Week 1</strong> — 调研选题：阅读3篇哲学科普短文，确定纪录片方向</li>
+    <li><strong>Week 2</strong> — 设计采访问题，每组采访≥5人，整理关键quote</li>
+    <li><strong>Week 3</strong> — 撰写研究报告 + 纪录片解说词脚本</li>
+    <li><strong>Week 4</strong> — 剪辑成片，班级展映会 + 英语QA</li>
+  </ul>
+  <h4>🏆 奖项设置</h4>
+  <p>最具哲学深度奖 · 最佳叙事奖 · 最佳制作奖</p>
+</div>
+
+<div class="section-title">🧭 项目导航建议</div>
+<div class="nav-guide">
+<table>
+  <tr><th>项目类型</th><th>适合人群</th><th>推荐用时</th><th>核心产出</th></tr>
+  <tr><td>⚡ 微项目</td><td>初次接触哲学思维</td><td>1-3天</td><td>双栏对比海报</td></tr>
+  <tr><td>📝 专题项目</td><td>有英语写作基础</td><td>1-2周</td><td>500词哲学论说文</td></tr>
+  <tr><td>🎬 综合项目</td><td>高水平/团队协作</td><td>1月+</td><td>纪录片+研究报告</td></tr>
+</table>
+</div>
+
+<div class="section-title">💡 教师提示</div>
+<p style="font-size:14px;color:var(--text-secondary);">三个项目可独立完成，也可串联为一条学习主线：海报→论文→纪录片，层层递进。建议鼓励学生主动引用Unit 1课文（Anne's Diary）中关于"孤独中友谊"的片段，将教材与哲学思辨贯通。</p>
+
+</div>
+<script>
+function toggleDetail(id) {
+  var panel = document.getElementById(id);
+  panel.classList.toggle('active');
+}
+</script>
+</body>
+</html>

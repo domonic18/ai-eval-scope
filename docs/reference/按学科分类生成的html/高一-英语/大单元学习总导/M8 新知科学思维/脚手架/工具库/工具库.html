@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具库 — 友谊主题学习工具箱</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --transition: 0.3s ease;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 32px 24px; }
+
+/* Header */
+.header { margin-bottom: 28px; }
+.header h1 { font-size: var(--font-h1); font-weight: 700; color: var(--primary); position: relative; padding-left: 16px; }
+.header h1::before { content: ''; position: absolute; left: 0; top: 4px; bottom: 4px; width: 4px; background: var(--primary); border-radius: 2px; }
+.header p { margin-top: 8px; color: var(--text-secondary); font-size: 14px; }
+
+/* Tab Navigation */
+.tab-nav { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+.tab-btn { padding: 10px 20px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-secondary); font-size: 14px; border-radius: var(--border-radius); cursor: pointer; transition: var(--transition); font-family: inherit; }
+.tab-btn:hover { border-color: var(--primary); color: var(--primary); }
+.tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* Tool Section */
+.tool-section { display: none; }
+.tool-section.active { display: block; }
+.section-label { font-size: 15px; font-weight: 600; color: var(--primary); margin-bottom: 16px; padding: 6px 14px; background: var(--card-bg); border-left: 3px solid var(--primary); border-radius: 0 4px 4px 0; display: inline-block; }
+
+/* Tool Card */
+.tool-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); margin-bottom: 16px; box-shadow: var(--shadow); overflow: hidden; }
+.tool-card-header { padding: 16px 20px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none; transition: background var(--transition); }
+.tool-card-header:hover { background: #fafafa; }
+.tool-card-header h3 { font-size: var(--font-h2); font-weight: 600; color: var(--text); }
+.tool-card-header .toggle-icon { font-size: 18px; color: var(--text-secondary); transition: transform var(--transition); }
+.tool-card-header.open .toggle-icon { transform: rotate(180deg); }
+.tool-card-body { padding: 0 20px 20px; display: none; }
+.tool-card-body.open { display: block; }
+.tool-tag { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; margin-left: 10px; }
+.tag-easy { background: #f0f5f0; color: #389e0d; }
+.tag-advanced { background: #f0f0f5; color: #597ef7; }
+.tag-pro { background: #f5f0f0; color: #cf1322; }
+.tool-card-body ul, .tool-card-body ol { padding-left: 20px; margin: 8px 0; }
+.tool-card-body li { margin-bottom: 4px; }
+.tool-card-body .example { background: #fafafa; border-left: 3px solid var(--accent); padding: 10px 14px; margin: 10px 0; border-radius: 0 4px 4px 0; font-size: 14px; }
+.tool-card-body .example strong { color: var(--primary); }
+
+/* Table */
+.table-wrap { overflow-x: auto; margin: 12px 0; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { background: var(--primary); color: #fff; padding: 10px 12px; text-align: left; font-weight: 600; }
+td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+tr:last-child td { border-bottom: none; }
+tr:nth-child(even) td { background: #fafafa; }
+
+/* Hint */
+.hint { font-size: 13px; color: var(--text-secondary); margin-top: 10px; padding: 8px 12px; background: #fafafa; border-radius: 4px; border: 1px dashed var(--border); }
+
+/* Animation */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.tool-card { animation: fadeIn 0.4s ease both; }
+.tool-card:nth-child(2) { animation-delay: 0.06s; }
+.tool-card:nth-child(3) { animation-delay: 0.12s; }
+.tool-card:nth-child(4) { animation-delay: 0.18s; }
+
+@media (max-width: 640px) {
+  .container { padding: 20px 14px; }
+  .tab-btn { padding: 8px 14px; font-size: 13px; }
+  .tool-card-header { padding: 12px 16px; }
+  .tool-card-body { padding: 0 16px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🛠️ 工具库 — 友谊主题学习工具箱</h1>
+    <p>工具是你的"认知放大器"。以下工具按 <strong>基础→进阶→高阶</strong> 分层，帮你更高效地完成 Unit 1 Friendship 的解析和建构任务。</p>
+  </div>
+
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab(this, 'basic')">🔰 基础工具</button>
+    <button class="tab-btn" onclick="switchTab(this, 'intermediate')">⚡ 进阶工具</button>
+    <button class="tab-btn" onclick="switchTab(this, 'advanced')">🏆 高阶工具</button>
+  </div>
+
+  <!-- 基础工具 -->
+  <div id="tab-basic" class="tool-section active">
+    <span class="section-label">🔰 基础工具 · 易上手</span>
+
+    <div class="tool-card">
+      <div class="tool-card-header" onclick="toggleCard(this)">
+        <h3>工具1：友谊主题思维导图模板 <span class="tool-tag tag-easy">基础</span></h3>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="tool-card-body">
+        <p><strong>用途：</strong>快速整理关于友谊的核心词汇和表达</p>
+        <p><strong>使用步骤：</strong></p>
+        <ol>
+          <li>在纸中央写下 <strong>"FRIENDSHIP"</strong></li>
+          <li>往外发散 5 个分支：<em>Qualities, Actions, Feelings, Problems, Culture</em></li>
+          <li>在每个分支下写英语词汇和短语</li>
+        </ol>
+        <div class="example">
+          <strong>示例：</strong>Qualities 分支 → honest, loyal, caring, funny, trustworthy<br>
+          <strong>适用场景：</strong>写作前的头脑风暴、阅读前的背景激活
+        </div>
+      </div>
+    </div>
+
+    <div class="tool-card">
+      <div class="tool-card-header" onclick="toggleCard(this)">
+        <h3>工具2：书信格式卡片 <span class="tool-tag tag-easy">基础</span></h3>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="tool-card-body">
+        <p><strong>用途：</strong>写英文书信时对照格式</p>
+        <p><strong>使用步骤：</strong></p>
+        <ol>
+          <li>对照卡片写：<strong>称呼 → 正文 → 结尾 → 署名</strong></li>
+          <li>写完后逐项检查格式完整性</li>
+        </ol>
+        <div class="example">
+          <strong>适用场景：</strong>建构性导学中写交友信
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 进阶工具 -->
+  <div id="tab-intermediate" class="tool-section">
+    <span class="section-label">⚡ 进阶工具 · 专业</span>
+
+    <div class="tool-card">
+      <div class="tool-card-header" onclick="toggleCard(this)">
+        <h3>工具3：英语句式库（友谊主题） <span class="tool-tag tag-advanced">进阶</span></h3>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="tool-card-body">
+        <p><strong>用途：</strong>丰富作文和对话中的句型表达</p>
+        <p><strong>使用步骤：</strong></p>
+        <ol>
+          <li>按功能查找所需句式</li>
+          <li>替换关键词</li>
+          <li>组合到自己的写作中</li>
+        </ol>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>功能</th>
+                <th>句式</th>
+                <th>示例</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>自我介绍</td>
+                <td>I am a… year-old student who…</td>
+                <td>I am a 15-year-old student who loves reading.</td>
+              </tr>
+              <tr>
+                <td>描述朋友</td>
+                <td>What I value most about… is…</td>
+                <td>What I value most about my friend is his honesty.</td>
+              </tr>
+              <tr>
+                <td>表达观点</td>
+                <td>In my opinion, true friendship…</td>
+                <td>In my opinion, true friendship requires trust.</td>
+              </tr>
+              <tr>
+                <td>发出邀请</td>
+                <td>I would love to…</td>
+                <td>I would love to hear from you soon.</td>
+              </tr>
+              <tr>
+                <td>表达情感</td>
+                <td>I feel… when…</td>
+                <td>I feel grateful when my friend helps me.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="hint">适用场景：所有英语写作和口语表达</p>
+      </div>
+    </div>
+
+    <div class="tool-card">
+      <div class="tool-card-header" onclick="toggleCard(this)">
+        <h3>工具4：GPT/AI 辅助写作提示词 <span class="tool-tag tag-advanced">进阶</span></h3>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="tool-card-body">
+        <p><strong>用途：</strong>使用 AI 工具辅助但不替代思考</p>
+        <p><strong>使用步骤：</strong></p>
+        <ol>
+          <li><strong>先自己写草稿</strong>——不要依赖 AI 生成</li>
+          <li>用以下提示词让 AI 检查：<br>
+          <span class="example"><em>"Please check my English letter for grammar errors: [你的草稿]"</em></span></li>
+          <li>理解 AI 给出的<strong>每个修改建议</strong>，不要直接复制</li>
+        </ol>
+        <p class="hint">适用场景：成果修改和语言润色</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 高阶工具 -->
+  <div id="tab-advanced" class="tool-section">
+    <span class="section-label">🏆 高阶工具 · 研究级</span>
+
+    <div class="tool-card">
+      <div class="tool-card-header" onclick="toggleCard(this)">
+        <h3>工具5：语料库工具（COCA / BNC） <span class="tool-tag tag-pro">高阶</span></h3>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="tool-card-body">
+        <p><strong>用途：</strong>查询真实英语语料中 "friendship" 相关词汇的搭配和用法</p>
+        <p><strong>使用步骤：</strong></p>
+        <ol>
+          <li>访问 <strong>corpus.byu.edu/coca</strong></li>
+          <li>搜索 <code>"friendship" + "ADJ"</code> 查看形容词搭配</li>
+          <li>记录最常用的 3–5 个搭配</li>
+        </ol>
+        <div class="example">
+          <strong>示例：</strong>常见搭配有 <em>close friendship</em>, <em>lasting friendship</em>, <em>genuine friendship</em><br>
+          <strong>适用场景：</strong>拓展阅读和学术英语写作
+        </div>
+      </div>
+    </div>
+
+    <div class="tool-card">
+      <div class="tool-card-header" onclick="toggleCard(this)">
+        <h3>工具6：Google Ngram Viewer <span class="tool-tag tag-pro">高阶</span></h3>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="tool-card-body">
+        <p><strong>用途：</strong>查看 "friendship" 相关词汇在历史上的使用频率变化</p>
+        <p><strong>使用步骤：</strong></p>
+        <ol>
+          <li>访问 <strong>books.google.com/ngrams</strong></li>
+          <li>输入 <code>"friendship, relationship, connection"</code></li>
+          <li>观察这些词的使用趋势变化</li>
+        </ol>
+        <p class="hint">适用场景：文化研究和语言变迁探究</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchTab(el, tabId) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.tool-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-' + tabId).classList.add('active');
+}
+function toggleCard(header) {
+  header.classList.toggle('open');
+  const body = header.nextElementSibling;
+  body.classList.toggle('open');
+}
+</script>
+</body>
+</html>

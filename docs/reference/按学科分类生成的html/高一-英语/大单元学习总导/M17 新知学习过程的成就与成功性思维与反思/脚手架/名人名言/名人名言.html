@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名人名言 — 认知突破脚手架</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, #2d2d2d 0%, #595959 100%);
+  color: #fff;
+  padding: 32px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  text-align: center;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 8px 0;
+  font-weight: 700;
+}
+.header .subtitle {
+  font-size: 14px;
+  opacity: 0.85;
+  margin: 0;
+}
+.figure-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  margin-bottom: 18px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.figure-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.figure-card-header {
+  padding: 16px 20px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.figure-card-header.aristotle { background: #4a4a4a; }
+.figure-card-header.lewis { background: #595959; }
+.figure-card-header.turkle { background: #6b6b6b; }
+.figure-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.figure-name {
+  font-weight: 600;
+  font-size: var(--font-h2);
+}
+.figure-tag {
+  font-size: 12px;
+  opacity: 0.8;
+}
+.figure-card-body {
+  padding: 16px 20px;
+}
+.figure-q {
+  background: var(--bg);
+  border-left: 3px solid var(--accent);
+  padding: 10px 14px;
+  margin: 8px 0;
+  font-style: italic;
+  border-radius: 0 4px 4px 0;
+}
+.figure-breakthrough {
+  margin: 8px 0;
+  padding: 10px 14px;
+  background: #f0f0f0;
+  border-radius: var(--border-radius);
+  border-left: 3px solid var(--primary);
+}
+.figure-breakthrough strong { color: var(--primary); }
+.figure-controversy {
+  margin: 8px 0;
+  padding: 10px 14px;
+  background: #fafafa;
+  border-radius: var(--border-radius);
+  border-left: 3px solid #bbb;
+  font-size: 14px;
+}
+.figure-insight {
+  margin: 8px 0;
+  padding: 10px 14px;
+  border-radius: var(--border-radius);
+  border: 1px dashed var(--accent);
+  text-align: center;
+}
+.reading-section {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 18px 20px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow);
+}
+.reading-section h3 {
+  margin: 0 0 12px 0;
+  color: var(--primary);
+  font-size: var(--font-h2);
+}
+.reading-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+.reading-cat {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 12px;
+}
+.reading-cat h4 {
+  margin: 0 0 6px 0;
+  font-size: 14px;
+  color: var(--primary);
+}
+.reading-cat ul {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 13px;
+}
+.reading-cat li { margin-bottom: 4px; }
+.think-task {
+  background: linear-gradient(135deg, #f5f5f5 0%, #eaeaea 100%);
+  border: 2px solid var(--primary);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-bottom: 18px;
+  text-align: center;
+}
+.think-task h3 {
+  margin: 0 0 10px 0;
+  color: var(--primary);
+  font-size: var(--font-h2);
+}
+.think-task textarea {
+  width: 100%;
+  max-width: 500px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  box-sizing: border-box;
+  margin-top: 8px;
+}
+.flip-container {
+  perspective: 800px;
+  margin: 8px 0;
+}
+.flip-inner {
+  position: relative;
+  width: 100%;
+  min-height: 60px;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+  cursor: pointer;
+}
+.flip-inner.flipped {
+  transform: rotateX(180deg);
+}
+.flip-front, .flip-back {
+  position: absolute;
+  width: 100%;
+  backface-visibility: hidden;
+  border-radius: var(--border-radius);
+  padding: 14px;
+  box-sizing: border-box;
+}
+.flip-front {
+  background: var(--primary);
+  color: #fff;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60px;
+}
+.flip-back {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  transform: rotateX(180deg);
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.footer-note {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-top: 24px;
+  padding: 16px;
+  border-top: 1px solid var(--border);
+}
+@media (max-width: 600px) {
+  .container { padding: 16px 12px; }
+  .header { padding: 24px 16px; }
+  .reading-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>名人名言 · 认知突破</h1>
+  <p class="subtitle">关于友谊的思想家 — 从古希腊到数字时代</p>
+</div>
+
+<div class="figure-card">
+  <div class="figure-card-header aristotle">
+    <div class="figure-avatar">亚</div>
+    <div>
+      <div class="figure-name">亚里士多德</div>
+      <div class="figure-tag">古希腊哲学家 · 公元前 384-322</div>
+    </div>
+  </div>
+  <div class="figure-card-body">
+    <div class="figure-q">"什么是真正的友谊？友谊是利益关系还是灵魂关系？"</div>
+    <div class="figure-breakthrough">
+      <strong>&#128161; 思维突破点：</strong>首次将友谊分为三种——<strong>功利型</strong>、<strong>快乐型</strong>和<strong>德性型</strong>，指出只有基于"善"的友谊才是持久的。
+    </div>
+    <div class="figure-controversy">
+      <strong>&#9888;&#65039; 争议：</strong>他的观点被后世批评为过于理想化，但至今仍是西方友谊哲学的基石。
+    </div>
+    <div class="flip-container">
+      <div class="flip-inner" onclick="this.classList.toggle('flipped')">
+        <div class="flip-front">&#128073; 点击翻转查看对当下的启示</div>
+        <div class="flip-back">在选择朋友时，可以想一想：这段友谊是基于什么建立的？利益、快乐还是共同的价值观？</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="figure-card">
+  <div class="figure-card-header lewis">
+    <div class="figure-avatar">刘</div>
+    <div>
+      <div class="figure-name">C.S. 刘易斯</div>
+      <div class="figure-tag">文学家/思想家 · 1898-1963</div>
+    </div>
+  </div>
+  <div class="figure-card-body">
+    <div class="figure-q">"友谊与其他类型的爱（亲情、爱情）有什么本质不同？"</div>
+    <div class="figure-breakthrough">
+      <strong>&#128161; 思维突破点：</strong>提出<strong>"友谊之眼"</strong>概念——朋友是那些"看到和你一样的真相"的人。
+    </div>
+    <div class="figure-controversy">
+      <strong>&#9888;&#65039; 争议：</strong>他的宗教背景使他的友谊观带有强烈的神学色彩，但这并不影响其深刻的洞察力。
+    </div>
+    <div class="flip-container">
+      <div class="flip-inner" onclick="this.classList.toggle('flipped')">
+        <div class="flip-front">&#128073; 点击翻转查看对当下的启示</div>
+        <div class="flip-back">真正的朋友不是那些对你好的人，而是那些和你一起"看向同一个方向"的人。</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="figure-card">
+  <div class="figure-card-header turkle">
+    <div class="figure-avatar">T</div>
+    <div>
+      <div class="figure-name">Sherry Turkle</div>
+      <div class="figure-tag">MIT 社会心理学家 · 当代</div>
+    </div>
+  </div>
+  <div class="figure-card-body">
+    <div class="figure-q">"数字时代，手机和社交媒体在改变着友谊——是拉近还是拉远了我们？"</div>
+    <div class="figure-breakthrough">
+      <strong>&#128161; 思维突破点：</strong>提出<strong>"alone together"</strong>概念——我们在一起，但是各自看手机。
+    </div>
+    <div class="figure-controversy">
+      <strong>&#9888;&#65039; 争议：</strong>被批评为"技术悲观主义"，忽视了数字社交带来的积极价值。
+    </div>
+    <div class="flip-container">
+      <div class="flip-inner" onclick="this.classList.toggle('flipped')">
+        <div class="flip-front">&#128073; 点击翻转查看对当下的启示</div>
+        <div class="flip-back">你在社交软件上有多少"朋友"？真正的朋友和点赞之交有什么区别？</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="reading-section">
+  <h3>&#128214; 深度阅读路径</h3>
+  <div class="reading-grid">
+    <div class="reading-cat">
+      <h4>传记</h4>
+      <ul>
+        <li>《亚里士多德》W.D. Ross</li>
+        <li>《C.S. 刘易斯传》A.N. Wilson</li>
+      </ul>
+    </div>
+    <div class="reading-cat">
+      <h4>原著</h4>
+      <ul>
+        <li>《尼各马可伦理学》第八卷</li>
+        <li>《四种爱》C.S. 刘易斯</li>
+        <li>《Alone Together》Turkle</li>
+      </ul>
+    </div>
+    <div class="reading-cat">
+      <h4>访谈</h4>
+      <ul>
+        <li>Sherry Turkle TED 演讲</li>
+        <li>"Connected, but alone?"</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="think-task">
+  <h3>&#129504; "如果你是他" 思考任务</h3>
+  <p>假如你是 <strong>Sherry Turkle</strong>，你要对一位每天刷手机 6 小时的 teenager 说一句话，你会说什么？为什么？</p>
+  <textarea rows="3" placeholder="写下你的思考..." style="width:100%;max-width:500px;padding:10px;border:1px solid var(--border);border-radius:var(--border-radius);font-family:inherit;font-size:14px;box-sizing:border-box;"></textarea>
+  <br><br>
+  <button onclick="var v=this.previousElementSibling.previousElementSibling.value.trim();if(v){alert('✅ 感谢你的思考！你已经像一个真正的思想家一样在思考这个问题了。');}else{alert('请先写下你的想法！');}" style="background:var(--primary);color:#fff;border:none;padding:10px 28px;border-radius:var(--border-radius);font-size:15px;cursor:pointer;">提交我的思考</button>
+</div>
+
+<div class="footer-note">
+  <p><strong>思考越深，收获越大。</strong> 这些思想家的观点并不需要你全盘接受——批判性地阅读，形成你自己的友谊观。</p>
+</div>
+
+</div>
+</body>
+</html>

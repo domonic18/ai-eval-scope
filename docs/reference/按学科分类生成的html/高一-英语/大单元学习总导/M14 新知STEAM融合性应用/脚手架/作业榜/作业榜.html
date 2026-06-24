@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>作业榜 — Friendship STEAM Showcase</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+.header {
+  background: var(--primary);
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 8px;
+  font-weight: 700;
+}
+.header p {
+  margin: 4px 0;
+  opacity: 0.9;
+  font-size: 14px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+.level-tag {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 1px;
+  margin-right: 8px;
+}
+.level-a { background: #d48806; color: #fff; }
+.level-b { background: #1677ff; color: #fff; }
+.level-c { background: #52c41a; color: #fff; }
+.task-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  margin-top: 12px;
+}
+@media (max-width: 768px) {
+  .task-grid { grid-template-columns: 1fr; }
+  .container { padding: 16px; }
+}
+.task-card {
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: default;
+}
+.task-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+}
+.task-card h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  color: var(--primary);
+}
+.task-card p { margin: 4px 0; font-size: 14px; color: var(--text-secondary); }
+.task-card ul {
+  margin: 8px 0 0; padding-left: 16px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.btn-show {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 6px 16px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-show:hover { background: var(--primary-hover); }
+.rubric-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 12px;
+}
+.rubric-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 600;
+}
+.rubric-table td {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  vertical-align: top;
+}
+.rubric-table tr:nth-child(even) td { background: #fafafa; }
+.rubric-table tr:hover td { background: #f0f0f0; }
+.submit-box {
+  background: #f0f0f0;
+  border-left: 4px solid var(--primary);
+  padding: 16px 20px;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  margin-top: 12px;
+}
+.submit-box ul { margin: 4px 0; padding-left: 16px; }
+.submit-box li { margin: 2px 0; }
+.final-remark {
+  background: linear-gradient(135deg, #434343 0%, #595959 100%);
+  color: #fff;
+  padding: 20px 24px;
+  border-radius: var(--border-radius);
+  font-size: 15px;
+  line-height: 1.8;
+  text-align: center;
+  margin-top: 20px;
+}
+.option-detail {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+}
+.option-detail.expanded {
+  max-height: 300px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🏆 作业榜</h1>
+  <p>M14 新知STEAM融合性应用 · 英语必修1 Unit 1 Friendship</p>
+  <p>展示与表彰 · 分层评价 · 创意表达空间</p>
+</div>
+
+<div class="card">
+  <h2>📋 任务总览</h2>
+  <p>经过前面多个模块的学习，你已经围绕 <strong>"Friendship"</strong> 完成了理解、分析、设计和产出。现在是时候把你的最佳成果搬上作业榜了！</p>
+  <p style="margin:8px 0 0;color:var(--text-secondary);font-size:14px;">💡 从以下三个层级中选择你的挑战路径</p>
+</div>
+
+<!-- 基础层 -->
+<div class="card">
+  <h2><span class="level-tag level-c">C级 · 全员必选</span> 基础层：再现与理解</h2>
+  <p><strong>任务：</strong>用英文完成一份 <strong>"Friendship Core Map"</strong> — 梳理本单元关于友谊的核心词汇、关键句型和主题观点。</p>
+  <p><strong>要求：</strong></p>
+  <ul>
+    <li>包含至少 <strong>8个</strong> 单元核心词汇（如 trust, betray, share, forgive, communicate）</li>
+    <li>包含 <strong>2个</strong> 本单元重点句型（如直接引语/间接引语转换）</li>
+    <li>用思维导图或表格形式呈现</li>
+  </ul>
+  <p style="color:var(--text-secondary);font-size:14px;">🎨 表达形式：A4纸手绘思维导图 / Canva数字海报</p>
+</div>
+
+<!-- 分层任务层 -->
+<div class="card">
+  <h2><span class="level-tag level-b">B级 · 三选一</span> 分层任务层：差异化选择</h2>
+  <p>根据你的兴趣和特长，从以下三项中选择一项完成：</p>
+  <div class="task-grid">
+    <div class="task-card" onclick="toggleDetail('optA')">
+      <h3>✏️ 选项A · 写作型</h3>
+      <p><em>A Letter About Friendship</em></p>
+      <p>给一位对你影响深远的人写一封英文信，分享你对"友谊"的新理解。</p>
+      <ul>
+        <li>150-200词</li>
+        <li>包含至少3个本单元所学表达</li>
+        <li>手写信件或电子文档</li>
+      </ul>
+    </div>
+    <div class="task-card" onclick="toggleDetail('optB')">
+      <h3>📊 选项B · 图示型</h3>
+      <p><em>Friendship Infographic</em></p>
+      <p>用信息图展示"友谊的科学"——将STEAM视角与英语表达结合。</p>
+      <ul>
+        <li>至少4个学科视角</li>
+        <li>每个配英文说明20-30词</li>
+        <li>A3海报 / Canva / PPT单页</li>
+      </ul>
+    </div>
+    <div class="task-card" onclick="toggleDetail('optC')">
+      <h3>🎤 选项C · 视频/演讲型</h3>
+      <p><em>My Friendship Speech</em></p>
+      <p>录制一段英文演讲，主题自选。</p>
+      <ul>
+        <li>2-3分钟</li>
+        <li>有开场白、主体论点(≥2)、结束语</li>
+        <li>配合肢体语言或辅助道具</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 开放层 -->
+<div class="card">
+  <h2><span class="level-tag level-a">A级 · 挑战项</span> 开放层：创造性表达</h2>
+  <p><strong>任务：</strong>围绕 <strong>"Friendship + STEAM"</strong> 主题，创作一份完全由你设计的原创作品。</p>
+  <p><strong>方向参考：</strong></p>
+  <ul>
+    <li>🎬 2分钟英文"Friendship"主题短片（动画/实拍/混剪）</li>
+    <li>📐 设计"友谊指数"测量工具（问卷 + 数据分析图表，英文呈现）</li>
+    <li>🎵 创作英文短诗/说唱，配背景音乐录制</li>
+    <li>🖼️ 英文漫画（4-8格），讲述一个友谊故事</li>
+    <li>🎮 英文互动游戏（如友谊知识问答卡）</li>
+  </ul>
+  <p style="color:var(--primary);font-weight:600;margin-top:10px;">✨ 额外加分项：在作品中展示从STEAM融合中学到的跨学科洞察</p>
+</div>
+
+<!-- 评价标准 -->
+<div class="card">
+  <h2>📐 评价标准（Rubric）</h2>
+  <div style="overflow-x:auto;">
+  <table class="rubric-table">
+    <thead>
+      <tr><th>维度</th><th>A级 超越 (9-10分)</th><th>B级 达到 (7-8分)</th><th>C级 接近 (5-6分)</th><th>D级 需改进 (0-4分)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>语言质量</strong></td><td>英文准确自然，词汇丰富，句式多样</td><td>少量错误，使用了核心词汇</td><td>较多错误，能传达基本意思</td><td>错误严重，难以理解</td></tr>
+      <tr><td><strong>内容深度</strong></td><td>独特见解，体现STEAM跨学科思考</td><td>内容完整，有清晰观点</td><td>内容基本完整但缺乏个人思考</td><td>不完整或偏离主题</td></tr>
+      <tr><td><strong>结构逻辑</strong></td><td>结构清晰，层层递进</td><td>结构完整，衔接自然</td><td>有基本结构但衔接不畅</td><td>结构混乱</td></tr>
+      <tr><td><strong>创意与形式</strong></td><td>形式服务内容，设计精美有创意</td><td>形式恰当，完成度好</td><td>形式基本恰当但平淡</td><td>形式不当或完成度低</td></tr>
+      <tr><td><strong>反思与成长</strong></td><td>清晰表达跨学科认知</td><td>提到学习收获</td><td>简单提及不够具体</td><td>未提及反思</td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<!-- 提交说明 -->
+<div class="card">
+  <h2>📬 提交说明</h2>
+  <div class="submit-box">
+    <p><strong>📎 命名格式：</strong><code>姓名_作品类型_作品名称</code></p>
+    <p><strong>📥 提交方式：</strong></p>
+    <ul>
+      <li>纸质作品 → 教室"作业榜"展板</li>
+      <li>电子作品 → 班级群指定相册</li>
+    </ul>
+    <p><strong>⏰ 截止时间：</strong>请参照教师通知</p>
+    <p><strong>🏅 展示安排：</strong>优秀作品将在班级展区及年级STEAM成果展中亮相</p>
+  </div>
+</div>
+
+<div class="final-remark">
+  <p style="font-size:16px;font-weight:600;margin:0 0 8px;">💬 最后一句</p>
+  <p style="margin:0;">作业榜不只是交作业的地方——它是你的学习足迹，也是你向全班展示<strong>"我如何用英语和STEAM重新理解了友谊"</strong>的舞台。<br>大胆去创作吧！</p>
+</div>
+
+</div>
+<script>
+function toggleDetail(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('expanded');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名著介绍 - 名言及名著脚手架</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  background: var(--bg);
+  color: var(--text);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+h1 { font-size: var(--font-h1); font-weight: 700; margin: 24px 0 16px; color: var(--primary); }
+h2 { font-size: var(--font-h2); font-weight: 600; margin: 24px 0 12px; color: var(--primary); padding-bottom: 6px; border-bottom: 2px solid var(--accent); }
+h3 { font-size: calc(var(--font-body) + 2px); font-weight: 600; margin: 16px 0 8px; color: var(--text); }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin: 16px 0;
+  border: 1px solid var(--border);
+}
+.quote-block {
+  background: var(--card-bg);
+  border-left: 4px solid var(--primary);
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+}
+.quote-block .quote-text {
+  font-style: italic;
+  font-size: calc(var(--font-body) + 1px);
+  color: var(--text);
+}
+.quote-block .quote-source {
+  display: block;
+  color: var(--text-secondary);
+  font-size: calc(var(--font-body) - 1px);
+  margin-top: 6px;
+}
+.thinking-btn {
+  display: inline-block;
+  padding: 6px 16px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: calc(var(--font-body) - 1px);
+  transition: background .2s;
+  margin-top: 10px;
+}
+.thinking-btn:hover { background: var(--primary-hover); }
+.thinking-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .4s ease, padding .3s ease;
+  padding: 0 16px;
+  background: var(--bg);
+  border-radius: 4px;
+  margin-top: 0;
+}
+.thinking-content.open {
+  max-height: 300px;
+  padding: 12px 16px;
+  margin-top: 10px;
+}
+.book-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 16px 0 0;
+  flex-wrap: wrap;
+}
+.book-tab {
+  padding: 8px 18px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  font-size: calc(var(--font-body) - 1px);
+  color: var(--text-secondary);
+  transition: all .2s;
+}
+.book-tab.active {
+  background: var(--card-bg);
+  color: var(--primary);
+  border-bottom-color: var(--card-bg);
+  font-weight: 600;
+}
+.book-tab:hover:not(.active) { background: #e8e8e8; }
+.book-panel { display: none; padding: 20px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 0 8px 8px 8px; margin-top: -1px; }
+.book-panel.active { display: block; }
+.book-panel ul { padding-left: 20px; margin: 8px 0; }
+.book-panel li { margin: 4px 0; color: var(--text); }
+.tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: calc(var(--font-body) - 3px);
+  margin-right: 6px;
+  font-weight: 500;
+}
+.tag-conflict { background: #fff2f0; color: #cf1322; }
+.tag-inspire { background: #f0f5ff; color: #1677ff; }
+.tag-critic { background: #fff7e6; color: #d46b08; }
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .book-tabs { flex-direction: column; }
+  .book-tab { border-radius: 6px; }
+  .book-panel { border-radius: 8px; margin-top: 4px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📚 名言及名著脚手架</h1>
+  <p style="color:var(--text-secondary);margin-bottom:24px;">围绕"友谊"主题，从名言触发思考，从名著深入理解。</p>
+
+  <h2>💬 名言部分（思想触发器）</h2>
+  <p style="color:var(--text-secondary);margin-bottom:12px;">点击按钮展开你的思考，看看不同角度的碰撞会产生什么火花。</p>
+
+  <div class="quote-block">
+    <span class="tag tag-conflict">冲突型</span>
+    <div class="quote-text">"真正的朋友是这样一种人——他们了解你最糟糕的一面，但仍然喜欢你。"</div>
+    <span class="quote-source">—— 无署名</span>
+    <div><button class="thinking-btn" onclick="toggleThink(this)">🤔 展开思考</button></div>
+    <div class="thinking-content">你同意吗？朋友需要"了解最糟糕的一面"才算真朋友吗？有人认为真正的好友恰恰是见过彼此最差一面的人；也有人认为友谊的关键在于共同成长而非知晓黑暗面。你的经历更倾向于哪一边？</div>
+  </div>
+
+  <div class="quote-block">
+    <span class="tag tag-inspire">启发型</span>
+    <div class="quote-text">"友谊的根本价值在于，它为一个人的自我认知提供了一面镜子。"</div>
+    <span class="quote-source">—— Cicero（古罗马哲学家）</span>
+    <div><button class="thinking-btn" onclick="toggleThink(this)">🤔 展开思考</button></div>
+    <div class="thinking-content">从朋友身上，你看到了自己什么样的特质？西塞罗认为，朋友就像一面镜子，照出我们自己看不到的侧面——优点、缺点、甚至潜在的可能性。</div>
+  </div>
+
+  <div class="quote-block">
+    <span class="tag tag-critic">批判型</span>
+    <div class="quote-text">"我们活在这样一个时代：人们有上千个'好友'，却没有一个真正的朋友。"</div>
+    <span class="quote-source">—— 匿名</span>
+    <div><button class="thinking-btn" onclick="toggleThink(this)">🤔 展开思考</button></div>
+    <div class="thinking-content">你对这句话有什么看法？社交媒体的"好友"和真正的朋友有什么区别？试着列出你心目中的"真朋友"清单——不在人数多少，而在深度几何。</div>
+  </div>
+
+  <div class="quote-block">
+    <span class="tag tag-inspire">启发型</span>
+    <div class="quote-text">"Walking with a friend in the dark is better than walking alone in the light."</div>
+    <span class="quote-source">—— Helen Keller</span>
+    <div><button class="thinking-btn" onclick="toggleThink(this)">✏️ 展开写作</button></div>
+    <div class="thinking-content">用英文写下你对这句话的理解，不少于 30 词。提示：可以围绕 companionship、courage、support 等关键词展开。写完后可以和同桌互相分享。</div>
+  </div>
+
+  <h2>📖 名著部分</h2>
+  <p style="color:var(--text-secondary);margin-bottom:12px;">点击标签切换，了解三部经典著作中关于"友谊"的核心观点。</p>
+
+  <div class="book-tabs">
+    <div class="book-tab active" onclick="switchTab(this,0)">📜 论语·朋友篇</div>
+    <div class="book-tab" onclick="switchTab(this,1)">🌟 小王子</div>
+    <div class="book-tab" onclick="switchTab(this,2)">🧠 Friend · Dunbar</div>
+  </div>
+
+  <div class="book-panel active">
+    <h3>📜 中国著作：《论语》"朋友"篇选读</h3>
+    <p><strong>核心问题：</strong>儒家思想中，朋友扮演什么角色？如何选择朋友？</p>
+    <p><strong>经典名句：</strong></p>
+    <ul>
+      <li>"有朋自远方来，不亦乐乎"—— 志同道合者的到来本身就是快乐</li>
+      <li>"友直、友谅、友多闻，益矣"—— 正直、诚信、博学的朋友有益</li>
+      <li>"益者三友，损者三友"—— 值得思考：古今友谊观的异同</li>
+    </ul>
+    <p><strong>核心观点：</strong>朋友是道德修养的镜子，要交"三益之友"——正直的朋友（友直）、诚信的朋友（友谅）、博学多闻的朋友（友多闻）。</p>
+    <p><strong>📌 获取路径：</strong>纸质书推荐中华书局版《论语译注》；免费电子版在"古诗文网"可查阅。</p>
+  </div>
+
+  <div class="book-panel">
+    <h3>🌟 外国经典：《小王子》（The Little Prince）</h3>
+    <p><strong>核心问题：</strong>什么是"驯服"（taming）？友谊是偶然的还是需要经营的？</p>
+    <p><strong>篇章定位：</strong>第21章——狐狸与小王子关于"驯服"的经典对话。</p>
+    <p><strong>核心观点：</strong></p>
+    <blockquote style="border-left:3px solid var(--accent);padding-left:14px;margin:10px 0;font-style:italic;">"It is the time you have wasted for your rose that makes your rose so important."</blockquote>
+    <p>友谊需要投入时间、建立仪式感、承担"驯服"的责任。</p>
+    <p><strong>📌 获取路径：</strong>英汉对照版推荐华东理工大学出版社；免费电子版在 Project Gutenberg 可获取。</p>
+  </div>
+
+  <div class="book-panel">
+    <h3>🧠 跨学科/当代作品：《Friend》by Robin Dunbar</h3>
+    <p><strong>核心问题：</strong>人类为什么需要朋友？大脑容量决定了我们最多能维持多少个朋友？</p>
+    <p><strong>核心观点：</strong><strong>Dunbar's Number（邓巴数）</strong>—— 人类社交关系数量的认知上限约为 <strong>150 人</strong>。其中亲密朋友（真正可以倾诉心事的人）通常不超过 5 人。</p>
+    <p>邓巴从神经科学和进化心理学角度解释了友谊的生物学基础：我们的大脑新皮层大小决定了社交网络规模的上限。</p>
+    <p><strong>📌 获取路径：</strong>英文原版在 Amazon 可购买；中文版《朋友》在当当/京东有售。</p>
+  </div>
+
+  <div style="margin-top:32px;padding:16px;background:var(--bg);border-radius:8px;text-align:center;color:var(--text-secondary);font-size:calc(var(--font-body)-1px);">
+    💡 选择一部你最感兴趣的名著，完成一篇 80 词左右的英文读后感，在下节课与同学分享。
+  </div>
+</div>
+<script>
+function toggleThink(btn) {
+  var content = btn.parentElement.nextElementSibling;
+  if(content && content.classList.contains('thinking-content')){
+    content.classList.toggle('open');
+    btn.textContent = content.classList.contains('open') ? '🙈 收起' : (btn.textContent.includes('写作')?'✏️ 展开写作':'🤔 展开思考');
+  }
+}
+function switchTab(el, idx) {
+  var tabs = el.parentElement.children;
+  var panels = el.parentElement.parentElement.querySelectorAll('.book-panel');
+  for(var i=0;i<tabs.length;i++) tabs[i].classList.remove('active');
+  for(var i=0;i<panels.length;i++) panels[i].classList.remove('active');
+  el.classList.add('active');
+  if(panels[idx]) panels[idx].classList.add('active');
+}
+</script>
+</body>
+</html>

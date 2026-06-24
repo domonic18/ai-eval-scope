@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VR 脚手架 — Friendship 概念具象化</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container { width: 100%; max-width: none; padding: 24px 32px; }
+h1 { font-size: var(--font-h1); color: var(--primary); margin: 20px 0 12px; font-weight: 700; }
+h2 { font-size: var(--font-h2); color: var(--primary); margin: 24px 0 10px; font-weight: 600; border-left: 4px solid var(--accent); padding-left: 12px; }
+h3 { font-size: calc(var(--font-body) + 2px); color: var(--primary-hover); margin: 18px 0 8px; font-weight: 600; }
+p { margin: 10px 0; }
+.card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px 24px; margin: 16px 0; border: 1px solid var(--border); }
+.card-vr { border-left: 4px solid #6b7280; }
+.badge { display: inline-block; background: var(--accent); color: #fff; font-size: 12px; padding: 2px 10px; border-radius: 12px; margin-right: 6px; }
+.badge-l1 { background: #22c55e; }
+.badge-l2 { background: #f59e0b; }
+.badge-l3 { background: #ef4444; }
+.tag { display: inline-block; background: var(--bg); color: var(--primary); font-size: 12px; padding: 2px 10px; border-radius: 12px; border: 1px solid var(--border); margin: 2px 3px; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 10px 12px; text-align: left; vertical-align: top; }
+th { background: var(--bg); color: var(--primary); font-weight: 600; }
+.level-grid { display: flex; gap: 14px; flex-wrap: wrap; margin: 14px 0; }
+.level-card { flex: 1; min-width: 250px; background: var(--card-bg); border-radius: var(--border-radius); padding: 16px; border: 1px solid var(--border); box-shadow: var(--shadow); transition: transform 0.2s; }
+.level-card:hover { transform: translateY(-2px); }
+.level-card .level-header { font-weight: 700; font-size: 15px; padding-bottom: 8px; border-bottom: 2px solid; margin-bottom: 10px; }
+.level-card .task-item { padding: 6px 0 6px 20px; position: relative; font-size: 14px; }
+.level-card .task-item::before { content: "›"; position: absolute; left: 0; font-weight: 700; color: var(--accent); }
+.tab-nav { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin: 16px 0 0; flex-wrap: wrap; }
+.tab-btn { padding: 10px 18px; background: transparent; border: none; border-bottom: 2px solid transparent; margin-bottom: -2px; cursor: pointer; font-size: 14px; color: var(--text-secondary); transition: all 0.3s; }
+.tab-btn:hover { color: var(--primary); }
+.tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+.tab-content { display: none; padding: 12px 0; }
+.tab-content.active { display: block; }
+.accordion { margin: 8px 0; }
+.accordion summary { cursor: pointer; font-weight: 600; padding: 10px 0; color: var(--primary); }
+.accordion[open] summary { color: var(--primary-hover); }
+.flex-row { display: flex; gap: 12px; flex-wrap: wrap; margin: 10px 0; }
+.alt-card { flex: 1; min-width: 200px; background: var(--bg); border-radius: var(--border-radius); padding: 14px; border: 1px solid var(--border); }
+.alt-card h4 { font-size: 14px; color: var(--primary); margin-bottom: 4px; }
+.alt-card p { font-size: 13px; color: var(--text-secondary); }
+.choice-log { background: var(--card-bg); border: 2px dashed var(--accent); border-radius: var(--border-radius); padding: 14px 18px; margin: 12px 0; }
+.choice-option { background: var(--bg); padding: 10px 14px; margin: 6px 0; border-radius: 6px; cursor: pointer; transition: all 0.3s; border: 1px solid transparent; }
+.choice-option:hover { border-color: var(--primary); background: #eaeaea; }
+.choice-option.selected { border-color: var(--primary); background: #e0e0e0; font-weight: 600; }
+.choice-option .path-label { font-weight: 700; color: var(--primary); }
+.choice-result { display: none; margin-top: 6px; padding: 8px; background: var(--card-bg); border-radius: 4px; font-size: 13px; }
+.choice-option.selected .choice-result { display: block; }
+.btn { display: inline-block; background: var(--primary); color: #fff; padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; transition: background 0.3s; }
+.btn:hover { background: var(--primary-hover); }
+.tip { background: var(--bg); border-radius: 6px; padding: 12px 16px; margin: 10px 0; font-size: 14px; border: 1px solid var(--border); }
+.tip strong { color: var(--primary); }
+.resource-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+.resource-item { flex: 1; min-width: 180px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; text-align: center; }
+.resource-item .icon { font-size: 28px; }
+.resource-item .name { font-weight: 600; font-size: 13px; margin: 4px 0; }
+.resource-item .desc { font-size: 12px; color: var(--text-secondary); }
+.record-box { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px; margin: 10px 0; }
+.record-box .field { display: flex; gap: 8px; margin: 6px 0; font-size: 13px; }
+.record-box .field .key { font-weight: 600; min-width: 100px; color: var(--primary); }
+@media (max-width: 768px) { .container { padding: 16px; } .level-card { min-width: 100%; } .tab-btn { padding: 8px 12px; font-size: 13px; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>🥽 VR 脚手架</h1>
+  <p style="color:var(--text-secondary); font-size:14px; margin-top:-8px;">Friendship 概念具象化 · Unit 1 · M4 新概念解析、建构与定义 · 英语 必修1</p>
+
+  <!-- 设计定位 -->
+  <div class="card card-vr">
+    <h2>🎯 设计定位</h2>
+    <p>通过沉浸式虚拟环境，将抽象的 <strong>friendship</strong> 概念转化为可观察、可操作、可记录的具体体验。在 VR 情境中理解友谊的多维属性（信任、互助、冲突、和解），并积累描述友谊的语言素材。</p>
+  </div>
+
+  <!-- 推荐 VR 资源 -->
+  <div class="card">
+    <h2>📡 推荐 VR 资源</h2>
+    <div class="resource-grid">
+      <div class="resource-item"><div class="icon">🎮</div><div class="name">Engage VR</div><div class="desc">教育类 VR 平台，可创建校园社交场景</div></div>
+      <div class="resource-item"><div class="icon">🌐</div><div class="name">Mozilla Hubs</div><div class="desc">免费浏览器打开，快速搭建 3D 场景</div></div>
+      <div class="resource-item"><div class="icon">🏫</div><div class="name">CoSpaces Edu</div><div class="desc">适配 K12，师生共建友谊主题场景</div></div>
+      <div class="resource-item"><div class="icon">📹</div><div class="name">YouTube 360°</div><div class="desc">搜索 "School Life 360 VR"</div></div>
+    </div>
+  </div>
+
+  <!-- 三层任务 Tab -->
+  <h2>🎮 三层任务结构</h2>
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchLevel(0)">🌱 基础层</button>
+    <button class="tab-btn" onclick="switchLevel(1)">🔥 进阶层</button>
+    <button class="tab-btn" onclick="switchLevel(2)">🏆 挑战层</button>
+  </div>
+
+  <!-- 基础层 -->
+  <div class="tab-content active" id="level0">
+    <div class="card">
+      <h3>🌱 基础层：场景还原 — "进入友谊的世界"</h3>
+      <p><strong>VR 场景</strong>：校园走廊 / 教室 360° 全景视频或 3D 场景</p>
+
+      <details class="accordion">
+        <summary>👁️ 观察任务（Observe）</summary>
+        <div class="record-box">
+          <p>找出至少 <strong>5 个</strong> 与 friendship 相关的视觉元素（交谈、分享、结伴同行），用英文记录：</p>
+          <div class="field"><span class="key">Scene:</span><span>___________ (e.g. classroom / hallway)</span></div>
+          <div class="field"><span class="key">Friendly actions:</span><span>1. _________ 2. _________ 3. _________</span></div>
+          <div class="field"><span class="key">Body language:</span><span>☐ smile  ☐ hug  ☐ wave  ☐ high-five  ☐ nod</span></div>
+          <div class="field"><span class="key">My feeling:</span><span>I felt _______ because _______.</span></div>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary>🖱️ 操作任务（Operate）</summary>
+        <p>漫游 VR 场景，点击 3 个"友谊故事标记点"（共享课桌、篮球、长椅），朗读弹出的英文对话并录制音频。将场景中混乱元素重新摆放成和谐社交画面。</p>
+      </details>
+
+      <details class="accordion">
+        <summary>📝 记录任务（Record）</summary>
+        <div class="record-box">
+          <p><strong>VR Friendship Observation Chart</strong></p>
+          <div class="field"><span class="key">Scene name:</span><span>_______________</span></div>
+          <div class="field"><span class="key">Friendly behaviors:</span><span>I saw two students _______.</span></div>
+          <div class="field"><span class="key">My feeling:</span><span>It made me feel _______.</span></div>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <!-- 进阶层 -->
+  <div class="tab-content" id="level1">
+    <div class="card">
+      <h3>🔥 进阶层：系统模拟 — "友谊的选择"</h3>
+      <p><strong>VR 场景</strong>：互动式情景模拟——友谊困境场景</p>
+
+      <div class="choice-log">
+        <p><strong>情景</strong>：你的朋友抄了你的作业，老师找你们谈话。你选择：</p>
+        <div class="choice-option" onclick="selectChoice(this)">
+          <span class="path-label">A. 告发朋友</span> → <em>诚实路径</em>
+          <div class="choice-result">🗣️ 你选择了 honesty。朋友可能会生气，但老师了解了真相。结局：友谊暂时受损，但诚实最终被尊重。</div>
+        </div>
+        <div class="choice-option" onclick="selectChoice(this)">
+          <span class="path-label">B. 替朋友隐瞒</span> → <em>保护路径</em>
+          <div class="choice-result">🤫 你选择了 loyalty。朋友暂时安全，但你们都有了"秘密"。结局：短期友谊稳固，但信任基础变得脆弱。</div>
+        </div>
+        <div class="choice-option" onclick="selectChoice(this)">
+          <span class="path-label">C. 建议朋友一起承认</span> → <em>成长路径</em>
+          <div class="choice-result">🌱 你选择了 growth。你和朋友共同面对。结局：友谊在诚实和勇气中加深，你们变得更亲密。</div>
+        </div>
+      </div>
+
+      <details class="accordion">
+        <summary>📋 Choice &amp; Consequence Log</summary>
+        <div class="record-box">
+          <div class="field"><span class="key">Path A keywords:</span><span>honesty, truth, consequence</span></div>
+          <div class="field"><span class="key">Path B keywords:</span><span>loyalty, secret, protection</span></div>
+          <div class="field"><span class="key">Path C keywords:</span><span>growth, courage, together</span></div>
+          <div class="field"><span class="key">My reflection (50+ words):</span><span>I think the best choice is _______ because _______. In a true friendship, _______ and _______ are both important.</span></div>
+          <p style="font-size:12px; color:var(--text-secondary); margin-top:6px;">重点词汇提示：<span class="tag">trust</span> <span class="tag">honesty</span> <span class="tag">forgiveness</span> <span class="tag">loyalty</span> <span class="tag">respect</span></p>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <!-- 挑战层 -->
+  <div class="tab-content" id="level2">
+    <div class="card">
+      <h3>🏆 挑战层：角色体验 — "成为朋友"</h3>
+      <p><strong>VR 场景</strong>：角色扮演——你是一个转学生，一周内建立新友谊</p>
+
+      <details class="accordion">
+        <summary>👁️ 观察任务</summary>
+        <p>列出至少 <strong>4 种</strong> 社交策略及其英文表达：</p>
+        <div class="record-box">
+          <div class="field"><span class="key">1. Greeting</span><span>"Hi, I'm ___." / "Nice to meet you!"</span></div>
+          <div class="field"><span class="key">2. Small talk</span><span>"Do you like ___?" / "How was your weekend?"</span></div>
+          <div class="field"><span class="key">3. Invitation</span><span>"Would you like to ___?"</span></div>
+          <div class="field"><span class="key">4. Help offer</span><span>"Need a hand?" / "I can help you with ___."</span></div>
+        </div>
+        <p>对比 VR 中不同角色对新生的态度：<span class="tag">friendly</span> <span class="tag">indifferent</span> <span class="tag">hostile</span></p>
+      </details>
+
+      <details class="accordion">
+        <summary>🖱️ 自由社交互动任务链</summary>
+        <ol style="padding-left:20px;">
+          <li><strong>Greet &amp; introduce yourself</strong> — 自我介绍</li>
+          <li><strong>Find a common interest</strong> — 找到共同兴趣</li>
+          <li><strong>Make a plan together</strong> — 一起制定计划（study together / play basketball）</li>
+        </ol>
+        <p>系统根据社交策略有效性给出 <strong>Friendliness Score</strong>（0-100）：<span style="display:inline-block; background:var(--bg); padding:2px 10px; border-radius:4px;">你的得分：___ / 100</span></p>
+      </details>
+
+      <details class="accordion">
+        <summary>📝 Friendship Journal（友谊日记）</summary>
+        <div class="record-box">
+          <p>以转学生视角撰写 80 词以上日记：</p>
+          <p><em>Dear Diary,</em></p>
+          <p>Today I met _______. At first, _______. But then we found out we both _______. I felt _______ because _______. A good friend should be _______ and _______.</p>
+          <p>核心词汇：<span class="tag">share</span> <span class="tag">support</span> <span class="tag">understand</span> <span class="tag">forgive</span> <span class="tag">respect</span> <span class="tag">trust</span></p>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <!-- 替代方案 -->
+  <div class="card">
+    <h2>🔄 替代方案（无 VR 设备时）</h2>
+    <div class="flex-row">
+      <div class="alt-card"><h4>💻 3D 场景探索</h4><p>用 CoSpaces Edu 或 Mozilla Hubs（Web 模式）浏览同一场景，鼠标/触摸操作完成观察任务。</p></div>
+      <div class="alt-card"><h4>📱 360° 视频</h4><p>手机 + 纸盒眼镜，或拖动 YouTube 360° 视频观看，配合纸质观察表。</p></div>
+      <div class="alt-card"><h4>🎭 角色扮演卡片</h4><p>情景卡片+小组 Role Play，演绎分支剧情，记录 Choice & Consequence 表格。</p></div>
+      <div class="alt-card"><h4>🎲 桌游式模拟</h4><p>"转学生社交棋盘"——掷骰子走格子，触发社交事件，记录友谊日记。</p></div>
+    </div>
+  </div>
+
+  <!-- 使用建议 -->
+  <div class="card">
+    <h2>📌 使用建议</h2>
+    <div class="tip"><strong>⏱ 设备准备</strong>：课前 1 天测试 VR 头显或 Web 端链接，每组 1-2 人佩戴头显。</div>
+    <div class="tip"><strong>👥 分组策略</strong>：4 人一组，轮流佩戴 VR（每人 5-8 分钟），非佩戴者完成观察表。</div>
+    <div class="tip"><strong>🗣️ 语言支架</strong>：VR 任务前发放 <strong>VR Language Toolkit</strong>，包含本单元重点词汇配场景截图。</div>
+    <div class="tip"><strong>💬 反思环节</strong>：VR 体验后 10 分钟小组讨论，用英文分享"最打动自己的 VR 友谊瞬间"。</div>
+    <div class="tip"><strong>📈 分层实施</strong>：基础层全员完成；进阶层至少体验 1 条路径；挑战层作为课后拓展。</div>
+  </div>
+
+  <!-- 与模块目标关联 -->
+  <div class="card card-vr">
+    <h2>🔗 与模块目标关联</h2>
+    <div class="flex-row">
+      <div class="alt-card" style="min-width:140px;"><h4>🎯 概念具象化</h4><p>将 friendship 从抽象词汇转化为具身体验</p></div>
+      <div class="alt-card" style="min-width:140px;"><h4>💬 情境语言习得</h4><p>自然习得话题词汇与功能性表达</p></div>
+      <div class="alt-card" style="min-width:140px;"><h4>🧠 批判性思维</h4><p>分支选择促使思考友谊中的伦理与价值判断</p></div>
+      <div class="alt-card" style="min-width:140px;"><h4>✍️ 产出导向</h4><p>Friendship Journal 对接单元写作任务</p></div>
+    </div>
+  </div>
+
+  <p style="text-align:center; color:var(--text-secondary); font-size:13px; padding:20px 0;">VR 脚手架 · M4 新概念解析、建构与定义 · Unit 1 Friendship · 英语 必修1 · 节点 21028</p>
+</div>
+<script>
+function switchLevel(idx) {
+  document.querySelectorAll('.tab-content').forEach((el, i) => el.classList.toggle('active', i === idx));
+  document.querySelectorAll('.tab-btn').forEach((el, i) => el.classList.toggle('active', i === idx));
+}
+function selectChoice(el) {
+  document.querySelectorAll('.choice-option').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+</script>
+</body>
+</html>

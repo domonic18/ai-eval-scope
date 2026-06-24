@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性原理 — 从示例到方法</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%; padding: 0;
+}
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+header {
+  background: linear-gradient(135deg, #434343 0%, #595959 100%);
+  color: #fff; padding: 28px 24px;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  margin-bottom: 20px;
+}
+header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 6px; }
+header p { font-size: 14px; opacity: 0.85; }
+.intro-box {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: var(--border-radius); padding: 16px 20px; margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+.principle-card {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: var(--border-radius); margin-bottom: 16px;
+  overflow: hidden; box-shadow: var(--shadow);
+}
+.principle-header {
+  padding: 14px 20px; cursor: pointer;
+  display: flex; justify-content: space-between; align-items: center;
+  transition: background 0.2s;
+}
+.principle-header:hover { background: #f0f0f0; }
+.principle-header h2 { font-size: var(--font-h2); font-weight: 600; color: var(--primary); }
+.principle-toggle {
+  font-size: 14px; color: var(--text-secondary);
+  transition: transform 0.3s; user-select: none;
+}
+.principle-card.open .principle-toggle { transform: rotate(180deg); }
+.principle-body { max-height: 0; overflow: hidden; transition: max-height 0.45s ease; }
+.principle-card.open .principle-body { max-height: 800px; }
+.principle-inner { padding: 0 20px 20px; }
+.principle-inner p { margin-bottom: 8px; }
+.principle-inner strong { color: var(--primary); }
+.meta-tag {
+  display: inline-block; font-size: 11px; padding: 1px 10px;
+  border-radius: 10px; margin-right: 4px; margin-bottom: 6px;
+}
+.tag-structure { background: #e8f0fe; color: #1a5cc8; }
+.tag-evidence { background: #fef3e2; color: #b8860b; }
+.tag-emotion { background: #fce8e8; color: #b91c1c; }
+.tag-strategy { background: #e8fce8; color: #1a7a1a; }
+.migrate-box {
+  background: #f0f0f0; border-radius: 4px; padding: 8px 14px;
+  margin: 8px 0; font-size: 13px;
+}
+.migrate-box strong { color: var(--text); }
+.reminder-box {
+  background: #fef9e7; border: 1px solid #f0d78c;
+  border-radius: 4px; padding: 8px 14px; margin: 8px 0;
+  font-size: 13px; color: #8a6d1b;
+}
+.practice-section {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: var(--border-radius); padding: 20px; margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.practice-section h2 { font-size: var(--font-h2); font-weight: 600; color: var(--primary); margin-bottom: 12px; }
+.practice-card {
+  background: var(--bg); border-radius: 6px; padding: 14px 16px;
+  margin-bottom: 12px; border-left: 3px solid var(--accent);
+}
+.practice-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.checklist-box { list-style: none; padding: 0; }
+.checklist-box li {
+  padding: 8px 0 8px 32px; position: relative;
+  border-bottom: 1px dashed var(--border); font-size: 14px;
+}
+.checklist-box li:last-child { border-bottom: none; }
+.checklist-box li::before {
+  content: "□"; position: absolute; left: 4px; color: var(--primary);
+  font-size: 18px; top: 7px;
+}
+.checklist-box li.checked::before { content: "☑"; color: #1a7a1a; }
+.fade-in { animation: fadeIn 0.4s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 640px) {
+  .container { padding: 12px; }
+  header { padding: 20px 16px; }
+  .principle-inner { padding: 0 14px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <header class="fade-in">
+    <h1>🔬 解析性原理</h1>
+    <p>把一次成功分析的"经验"，转化为可以重复使用的"方法"</p>
+  </header>
+
+  <div class="intro-box fade-in">
+    <p>上一节点"解析性示例"带你分析了李明的一封告别信。分析这封信的过程中，你用到的思维方法其实可以迁移到很多其他场景。这就是提炼<strong>"解析性原理"</strong>的价值——<strong>把一次成功分析的经验，转化成可以重复使用的方法</strong>。</p>
+    <p style="margin-top:8px;font-size:14px;color:var(--text-secondary);">👇 点击每个原理卡片查看详细内容</p>
+  </div>
+
+  <div class="principle-card open fade-in">
+    <div class="principle-header" onclick="togglePrinciple(this)">
+      <h2>📐 原理1：三层解析法（结构—内容—技巧）</h2>
+      <span class="principle-toggle">▲</span>
+    </div>
+    <div class="principle-body" style="max-height:800px;">
+      <div class="principle-inner">
+        <span class="meta-tag tag-structure">核心原理</span>
+        <p><strong>原理说明：</strong>分析任何文本或材料时，按"先看整体结构→再看核心内容→最后看表达技巧"的顺序进行，避免逐字逐句的碎片化理解。</p>
+        <p><strong>在本示例中的体现：</strong>先看信的5段结构（问候—回忆—定义—祝愿—告别），再看关键信息（具体事例、对比情感），最后看语言技巧（平行结构、格言式结尾）。</p>
+        <p><strong>如何使用：</strong>拿到任何英语阅读材料，先用30秒扫读结构（标题/段落/开头结尾），再细读内容，最后精读你认为写得好的句子。</p>
+        <div class="migrate-box"><strong>🔄 可迁移到：</strong>阅读理解、英语写作分析、演讲分析、电影/视频内容分析、甚至数学题（先看题型结构）。</div>
+        <div class="reminder-box"><strong>⚠️ 使用提醒：</strong>不要跳过"结构层"直接进入内容——先看骨架再看血肉。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="principle-card fade-in">
+    <div class="principle-header" onclick="togglePrinciple(this)">
+      <h2>🔍 原理2：证据锚定法</h2>
+      <span class="principle-toggle">▼</span>
+    </div>
+    <div class="principle-body">
+      <div class="principle-inner">
+        <span class="meta-tag tag-evidence">证据思维</span>
+        <p><strong>原理说明：</strong>你的每一个分析结论都必须有文本中的具体证据支撑——"从材料中来，回材料中去"。</p>
+        <p><strong>在本示例中的体现：</strong>在分析告别信时，我们从信中提取了 "mixed feelings" "more than a classmate" "A friend is someone who..." 等具体句子作为证据，才得出"作者用了具体细节代替抽象抒情"的结论。</p>
+        <p><strong>如何使用：</strong>写分析笔记时，先列出"证据句"，在每个句子下方写你的分析。格式：<code>&gt; [原文引用] → [你的分析和判断]</code>。</p>
+        <div class="migrate-box"><strong>🔄 可迁移到：</strong>议论文写作、辩论准备、科学实验报告分析、历史史料解读。</div>
+        <div class="reminder-box"><strong>⚠️ 使用提醒：</strong>小心"过度解读"——证据只能支持一个合理的结论，不要让你的想象超出证据范围。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="principle-card fade-in">
+    <div class="principle-header" onclick="togglePrinciple(this)">
+      <h2>📈 原理3：情感弧线追踪法</h2>
+      <span class="principle-toggle">▼</span>
+    </div>
+    <div class="principle-body">
+      <div class="principle-inner">
+        <span class="meta-tag tag-emotion">情感分析</span>
+        <p><strong>原理说明：</strong>分析情感类文本时，画出情感的变化轨迹（从开头到结尾的情绪起伏），而非停留在"感动/难过"等单一标签上。</p>
+        <p><strong>在本示例中的体现：</strong>告别信的情感在"微笑→难过→希望→坚信"之间波动，形成了一条"温暖而不沉重"的情感弧线。</p>
+        <p><strong>如何使用：</strong>用箭头和关键词画情感变化图：开头情绪 → 中间转折 → 结尾情绪。注意对比（冲突）和高潮点。</p>
+        <div class="migrate-box"><strong>🔄 可迁移到：</strong>电影影评、小说人物分析、演讲稿分析、广告文案分析。</div>
+        <div class="reminder-box"><strong>⚠️ 使用提醒：</strong>情感弧线不是每个文本都有——新闻报道和信息类文本更注重事实，情感弧线小是正常的。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="principle-card fade-in">
+    <div class="principle-header" onclick="togglePrinciple(this)">
+      <h2>🛠 原理4：策略归因法</h2>
+      <span class="principle-toggle">▼</span>
+    </div>
+    <div class="principle-body">
+      <div class="principle-inner">
+        <span class="meta-tag tag-strategy">策略思维</span>
+        <p><strong>原理说明：</strong>不从"好不好"评价一个文本，而是从"作者用了什么策略来达到效果"来分析——把感受转化为可描述的技术。</p>
+        <p><strong>在本示例中的体现：</strong>不说"这封信写得好感人"，而是说"作者用了具体回忆策略增强了真实感，用了平行结构增强了节奏感，用了格言式结尾增强了余韵"。</p>
+        <p><strong>如何使用：</strong>分析时问自己三个问题：作者想达到什么效果？用了什么具体策略？这个策略为什么有效？</p>
+        <div class="migrate-box"><strong>🔄 可迁移到：</strong>广告分析（为什么这个广告打动你）、演讲分析（为什么这个演讲有说服力）、艺术设计分析。</div>
+        <div class="reminder-box"><strong>⚠️ 使用提醒：</strong>策略归因需要一定的词汇积累——建议建立"分析工具箱"词汇库（如：对比、排比、递进、转折、举例、比喻等）。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="practice-section fade-in">
+    <h2>🔄 解析性原理应用</h2>
+    <div class="practice-card">
+      <h3>练习1：分析一段英语电影对白</h3>
+      <p>你最喜欢的英语电影中有一段关于友谊的经典对白。使用<strong>三层解析法</strong>和<strong>策略归因法</strong>，分析这段对白"说了什么"和"为什么好"。</p>
+      <p style="font-size:14px;color:var(--text-secondary);margin-top:4px;">建议原理：原理1 + 原理4 · 写一篇100词以上的分析笔记</p>
+    </div>
+    <div class="practice-card">
+      <h3>练习2：分析两个不同文本对"友谊"的不同表达方式</h3>
+      <p>对比教材Unit 1中的一段对话和李明的告别信，看它们如何谈论友谊。使用<strong>证据锚定法</strong>和<strong>情感弧线追踪法</strong>，比较两种文本在表达友谊时的异同。</p>
+      <p style="font-size:14px;color:var(--text-secondary);margin-top:4px;">建议原理：原理2 + 原理3 · 用表格呈现对比结果</p>
+    </div>
+  </div>
+
+  <div class="practice-section fade-in">
+    <h2>✅ 自我检测</h2>
+    <ul class="checklist-box">
+      <li onclick="toggleCheck(this)">我能否用"三层解析法"分析一段我从没看过的英语短文？</li>
+      <li onclick="toggleCheck(this)">我能否说出"证据锚定法"和"过度解读"的区别？</li>
+      <li onclick="toggleCheck(this)">我是否能在分析中画出文本的"情感弧线"？</li>
+      <li onclick="toggleCheck(this)">我能否把一个模糊的感受（"写得好"）转化为具体的策略归因（"用了平行结构"）？</li>
+      <li onclick="toggleCheck(this)">我能否在迁移练习中独立运用至少2条解析性原理？</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+function togglePrinciple(el) {
+  var card = el.closest('.principle-card');
+  card.classList.toggle('open');
+  var icon = card.querySelector('.principle-toggle');
+  icon.textContent = card.classList.contains('open') ? '▲' : '▼';
+}
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+}
+</script>
+</body>
+</html>

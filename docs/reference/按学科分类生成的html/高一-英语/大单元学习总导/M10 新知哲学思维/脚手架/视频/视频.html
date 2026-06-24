@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视频观影导学 — Viewing with Purpose</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px 40px;
+  box-sizing: border-box;
+}
+.header {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 24px 28px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--primary);
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 6px;
+  color: var(--primary);
+}
+.header .subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.section-title {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 32px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--border);
+}
+.section-title .level-badge {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 12px;
+  border-radius: 10px;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+.level-basic { background:#e6f7ff; color:#1890ff; border:1px solid #91d5ff; }
+.level-adv { background:#fff7e6; color:#d46b08; border:1px solid #ffd591; }
+.level-challenge { background:#f6f0ff; color:#722ed1; border:1px solid #d3adf7; }
+.video-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+.video-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+.video-card .level-tag {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  margin-bottom: 6px;
+}
+.video-card h3 {
+  font-size: 16px;
+  margin: 0 0 6px;
+  color: var(--primary);
+}
+.video-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+.video-meta span {
+  background: var(--bg);
+  padding: 2px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+.video-section {
+  margin-top: 12px;
+}
+.video-section .vs-label {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+.video-section p, .video-section li {
+  font-size: 14px;
+}
+.video-section ul {
+  padding-left: 18px;
+  margin: 4px 0;
+}
+.video-section ul li {
+  margin-bottom: 3px;
+}
+.pause-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin: 8px 0;
+}
+.pause-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+}
+.pause-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.pause-table tr:hover td {
+  background: var(--bg);
+}
+.output-box {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 14px 16px;
+  margin-top: 10px;
+  border-left: 3px solid var(--accent);
+  font-size: 14px;
+}
+.output-box::before {
+  content: "📝 输出任务";
+  display: block;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+.reflect-box {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  margin: 20px 0;
+}
+.reflect-box h3 {
+  font-size: 16px;
+  margin: 0 0 10px;
+  color: var(--primary);
+}
+.reflect-box ol {
+  padding-left: 18px;
+  font-size: 14px;
+}
+.reflect-box ol li {
+  margin-bottom: 8px;
+}
+.resource-list {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  font-size: 14px;
+}
+.resource-list .res-item {
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.resource-list .res-item:last-child {
+  border-bottom: none;
+}
+.res-item .res-type {
+  display: inline-block;
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--primary);
+  white-space: nowrap;
+}
+.interact-toggle { display: none; }
+.interact-label {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  padding: 6px 16px;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  margin: 6px 0;
+  transition: background 0.2s;
+  user-select: none;
+}
+.interact-label:hover { background: var(--primary-hover); }
+.interact-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+}
+.interact-toggle:checked ~ .interact-content {
+  max-height: 800px;
+  padding: 10px 0;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🎬 视频观影导学</h1>
+  <div class="subtitle">英语 · 必修1 · Unit 1 Friendship | M10 新知哲学思维 · 脚手架</div>
+  <div class="subtitle" style="margin-top:4px;">Viewing with Purpose — 三个递进层级，从提取信息到批判思辨</div>
+</div>
+
+<!-- 资源总览 -->
+<div class="section-title">视频资源总览</div>
+<div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:20px;">
+<div class="video-card" style="margin-bottom:0;">
+  <span class="level-tag level-basic" style="background:#e6f7ff; color:#1890ff; border:1px solid #91d5ff;">Basic</span>
+  <h3>TED-Ed: "The Science of Making Friends"</h3>
+  <div class="video-meta">
+    <span>⏱ ~6 min</span>
+    <span>📊 CEFR A2-B1</span>
+    <span>💬 交朋友的心理机制</span>
+  </div>
+  <p style="font-size:14px; margin:0;">交朋友的科学策略与心理机制，适合基础层理解和提取信息。</p>
+</div>
+<div class="video-card" style="margin-bottom:0;">
+  <span class="level-tag level-adv" style="background:#fff7e6; color:#d46b08; border:1px solid #ffd591;">Advanced</span>
+  <h3>TED Talk: "The Secret to Making Friends as an Adult" — Marisa G. Franco</h3>
+  <div class="video-meta">
+    <span>⏱ ~14 min</span>
+    <span>📊 CEFR B1-B2</span>
+    <span>💬 成人友谊心理学</span>
+  </div>
+  <p style="font-size:14px; margin:0;">成人交友的三大迷思与科学真相，训练分析与评价能力。</p>
+</div>
+<div class="video-card" style="margin-bottom:0;">
+  <span class="level-tag level-challenge" style="background:#f6f0ff; color:#722ed1; border:1px solid #d3adf7;">Challenge</span>
+  <h3>MOOC: "Understanding Cross-Cultural Friendship" (Univ. of London)</h3>
+  <div class="video-meta">
+    <span>⏱ ~10 min</span>
+    <span>📊 CEFR B2-C1</span>
+    <span>💬 跨文化沟通障碍</span>
+  </div>
+  <p style="font-size:14px; margin:0;">跨文化友谊中的沟通误解与调适策略，培养批判与思辨能力。</p>
+</div>
+</div>
+
+<!-- Level 1 -->
+<div class="section-title">Level 1: Basic — 理解与提取 <span class="level-badge level-basic">Explanatory Viewing</span></div>
+
+<div class="video-card">
+  <h3>🔍 Friendship Detectives</h3>
+  <p style="font-size:14px; margin-bottom:10px;">从 TED-Ed 动画视频中找出并记录交朋友的四步科学策略。边看边填"侦探记录表"。</p>
+
+  <div class="video-section">
+    <div class="vs-label">🎯 Pre-viewing warm-up (3 min)</div>
+    <ul>
+      <li>Think-Pair-Share: "What was the last time you made a new friend? How did it happen?"</li>
+      <li>Pre-teach vocabulary: <em>approach, initiate, mutual, vulnerability, bond</em></li>
+    </ul>
+  </div>
+
+  <div class="video-section">
+    <div class="vs-label">❓ Key Questions</div>
+    <ol style="padding-left:18px; margin:4px 0; font-size:14px;">
+      <li>What are the four key steps to making a new friend? List them in order.</li>
+      <li>Why does the video say "proximity" is important for friendship?</li>
+      <li>What is the role of "self-disclosure" in deepening a friendship?</li>
+    </ol>
+  </div>
+
+  <div class="video-section">
+    <div class="vs-label">⏸ Pause-and-Think Points</div>
+    <table class="pause-table">
+      <thead><tr><th>时间</th><th>暂停点</th><th>思考任务</th></tr></thead>
+      <tbody>
+        <tr><td>0:45</td><td>两个陌生人分开坐的画面</td><td>Why does the narrator say "proximity is the first step"?</td></tr>
+        <tr><td>2:30</td><td>"repetition → familiarity → liking" 图示</td><td>Can you think of someone you started liking just because you saw them often?</td></tr>
+        <tr><td>4:15</td><td>角色向新朋友透露秘密</td><td>Why is sharing personal things risky but necessary?</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="output-box">
+    <strong>My Friendship Recipe Card</strong> — 设计一张"友谊配方卡"（60—80 词），总结视频中的四步策略加一条个人建议。至少使用三个预学词汇。
+  </div>
+</div>
+
+<!-- Level 2 -->
+<div class="section-title">Level 2: Advanced — 分析与评价 <span class="level-badge level-adv">Analytical Viewing</span></div>
+
+<div class="video-card">
+  <h3>🔍 The Friendship Mythbuster</h3>
+  <p style="font-size:14px; margin-bottom:10px;">观看 Marisa Franco 的 TED 演讲，记录她提出的"成人交友"三大迷思以及对应的科学真相。</p>
+
+  <div class="video-section">
+    <div class="vs-label">🎯 Pre-viewing warm-up (5 min)</div>
+    <ul>
+      <li>Discussion: "Do you think making friends becomes harder as we grow up? Why?"</li>
+      <li>Vocabulary preview: <em>assumption, scarcity mindset, taking initiative, rejection sensitivity</em></li>
+    </ul>
+  </div>
+
+  <div class="video-section">
+    <div class="vs-label">❓ Key Questions</div>
+    <ol style="padding-left:18px; margin:4px 0; font-size:14px;">
+      <li>What is the "scarcity mindset" Franco describes? How does it stop us?</li>
+      <li>Why does Franco argue that "taking initiative" is the single most important skill?</li>
+      <li>What is the relationship between vulnerability and belonging?</li>
+    </ol>
+  </div>
+
+  <div class="video-section">
+    <div class="vs-label">⏸ Pause-and-Think Points</div>
+    <table class="pause-table">
+      <thead><tr><th>时间</th><th>暂停点</th><th>思考任务</th></tr></thead>
+      <tbody>
+        <tr><td>3:20</td><td>"We assume friendship happens naturally — it doesn't."</td><td>Have you ever waited for friendship to "just happen"?</td></tr>
+        <tr><td>7:50</td><td>演讲者搬到新城市感到孤独的故事</td><td>What did she do differently? What does this tell us about initiative?</td></tr>
+        <tr><td>11:30</td><td>"liking gap" 现象</td><td>Have you ever underestimated how much someone liked you?</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <input type="checkbox" id="togglePhrases" class="interact-toggle">
+  <label for="togglePhrases" class="interact-label">📖 学术表达参考</label>
+  <div class="interact-content">
+    <p style="font-size:14px;">输出时使用以下短语：<br><em>The speaker argues that… / One key finding is… / This resonates with my experience because… / However, I wonder whether…</em></p>
+  </div>
+
+  <div class="output-box">
+    <strong>TED Talk Reflection — 3-2-1 Response</strong>（120—150 词）<br>
+    <strong>3</strong> key insights | <strong>2</strong> connections to your life | <strong>1</strong> question for Marisa Franco
+  </div>
+</div>
+
+<!-- Level 3 -->
+<div class="section-title">Level 3: Challenge — 批判与思辨 <span class="level-badge level-challenge">Debate Viewing</span></div>
+
+<div class="video-card">
+  <h3>🔍 Cross-Cultural Friendship Case Study</h3>
+  <p style="font-size:14px; margin-bottom:10px;">观看 MOOC 课程片段，聚焦跨文化友谊中的沟通误解与调适策略。完成"高语境 vs 低语境文化"对比分析表。</p>
+
+  <div class="video-section">
+    <div class="vs-label">🎯 Pre-viewing warm-up (5 min)</div>
+    <ul>
+      <li>Think-Pair-Share: "What misunderstandings might happen with a friend from a different culture?"</li>
+      <li>Key concepts: <em>high-context culture, low-context culture, direct vs. indirect communication, face-saving</em></li>
+    </ul>
+  </div>
+
+  <div class="video-section">
+    <div class="vs-label">❓ Key Questions</div>
+    <ol style="padding-left:18px; margin:4px 0; font-size:14px;">
+      <li>How does the course distinguish between high-context and low-context communication?</li>
+      <li>What misunderstandings arise when friends from these two styles interact?</li>
+      <li>What three strategies are suggested for bridging cross-cultural gaps?</li>
+    </ol>
+  </div>
+
+  <div class="video-section">
+    <div class="vs-label">⏸ Pause-and-Think Points</div>
+    <table class="pause-table">
+      <thead><tr><th>时间</th><th>暂停点</th><th>思考任务</th></tr></thead>
+      <tbody>
+        <tr><td>2:10</td><td>日本学生和美国学生约见面</td><td>Was the misunderstanding about time — or something deeper?</td></tr>
+        <tr><td>5:30</td><td>"direct feedback" vs "indirect feedback"</td><td>When is direct feedback better? When might it hurt?</td></tr>
+        <tr><td>8:15</td><td>中国学生分享与西方朋友相处经验</td><td>She had to learn to "say no directly." Why was that hard?</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="output-box">
+    <strong>Cross-Cultural Friendship Playbook</strong>（150—180 词）<br>
+    Part A: 高语境 vs 低语境友谊期望对比表（至少 3 个维度）<br>
+    Part B: 一段短文回答 —— "If you were to befriend someone from a different culture, what three communication rules would you set?"
+  </div>
+</div>
+
+<!-- 元认知反思 -->
+<div class="reflect-box">
+  <h3>📝 元认知反思</h3>
+  <p style="font-size:14px; margin-bottom:8px;">完成以上观影后，选择至少 2 个问题用英语作答（每题 30—50 词）：</p>
+  <ol>
+    <li>三个层级的观影任务中，哪一个视频对你的触动最大？为什么？</li>
+    <li>你在做"暂停思考"练习时，更容易在哪个方面深入思考？提取信息、分析观点，还是提出质疑？</li>
+    <li>观看前发的词汇，你在输出时实际用上了几个？哪些还需要更多练习？</li>
+    <li>让你给还没看过的同学写一句话推荐，你会说什么？</li>
+  </ol>
+</div>
+
+<!-- 拓展资源 -->
+<div class="section-title">📚 拓展资源推荐</div>
+<div class="resource-list">
+  <div class="res-item"><span class="res-type">🎙 Podcast</span> <em>The Friendship Files</em> (The Atlantic) — 真实的跨文化友谊故事</div>
+  <div class="res-item"><span class="res-type">🎬 Movie clip</span> <em>The Farewell</em> (2019) — 中美文化差异在家庭中的体现</div>
+  <div class="res-item"><span class="res-type">📄 Article</span> "How to Make Friends Across Cultures" (BBC Worklife) — 阅读 + 视频联动</div>
+  <div class="res-item"><span class="res-type">📱 TikTok</span> @culturechatter — 短平快的跨文化沟通视频</div>
+</div>
+
+</div>
+</body>
+</html>

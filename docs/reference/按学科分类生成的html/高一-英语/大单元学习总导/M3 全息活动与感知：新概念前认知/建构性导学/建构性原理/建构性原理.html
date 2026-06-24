@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性原理</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 24px; box-sizing: border-box; }
+.page-header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff; padding: 28px 32px; border-radius: var(--border-radius); margin-bottom: 24px;
+}
+.page-header h1 { font-size: var(--font-h1); margin: 0 0 6px; font-weight: 700; }
+.page-header p { margin: 0; opacity: 0.9; font-size: 14px; }
+.card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px 24px; margin-bottom: 16px; }
+.card-title { font-size: var(--font-h2); font-weight: 600; color: var(--primary); margin: 0 0 8px; display: flex; align-items: center; gap: 8px; }
+.card-title .badge { display: inline-block; background: var(--primary); color: #fff; font-size: 12px; padding: 2px 10px; border-radius: 12px; margin-left: 8px; }
+.tag { display: inline-block; background: var(--bg); color: var(--primary); font-size: 12px; padding: 2px 10px; border-radius: 12px; margin: 2px; border: 1px solid var(--border); }
+.info-box { background: #fafafa; border-left: 4px solid var(--primary); padding: 12px 16px; margin: 12px 0; border-radius: 0 6px 6px 0; font-size: 14px; }
+.info-box strong { color: var(--primary); }
+.btn { display: inline-block; background: var(--primary); color: #fff; border: none; padding: 8px 20px; border-radius: var(--border-radius); cursor: pointer; font-size: 14px; transition: background 0.2s; font-family: inherit; }
+.btn:hover { background: var(--primary-hover); }
+.btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+.btn-outline:hover { background: var(--bg); }
+.toggle-content { display: none; margin-top: 12px; padding: 12px; background: var(--bg); border-radius: var(--border-radius); border: 1px solid var(--border); }
+.toggle-content.open { display: block; }
+.exercise-card { border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px; margin: 12px 0; }
+.exercise-card h4 { margin: 0 0 6px; color: var(--primary); }
+ul, ol { padding-left: 20px; margin: 8px 0; }
+li { margin-bottom: 4px; }
+.reflect-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 640px) { .reflect-grid { grid-template-columns: 1fr; } .container { padding: 12px; } }
+.collapsible { cursor: pointer; user-select: none; }
+.collapsible::before { content: "▶ "; color: var(--accent); font-size: 12px; transition: transform 0.2s; }
+.collapsible.open::before { content: "▼ "; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="page-header">
+  <h1>建构性原理</h1>
+  <p>从示例中提炼的 5 条可迁移建构原理 · 英语 · 必修1</p>
+</div>
+
+<p style="margin-bottom: 20px; color: var(--text-secondary);">基于上一节点"建构性示例"中的建构过程，提炼出以下可迁移的建构性原理。每条原理都配有来源说明、适用情境和注意事项。点击每条原理可查看更多细节。</p>
+
+<div class="card">
+  <div class="card-title"><span>🔗</span> 原理1：感知—联结原理 <span class="badge">基础</span></div>
+  <p><strong>原理说明：</strong>新知识的建构始于对原始材料的感知，但不止于感知——你需要将新感知的信息与已有经验和知识进行联结，才能形成个人化的理解。</p>
+  <div class="info-box"><strong>来源：</strong>在示例的 Step 1（感知原始材料）和 Step 2（激活已有经验）中，你先通读邮件标记已知/未知，然后回忆自己的友谊经历。这就是"感知→联结"的典型应用。</div>
+  <p><strong>适用情境：</strong>学习任何新话题时（如阅读一篇新文章、接触一个新概念），先感知材料，再联结已有经验。</p>
+  <p><strong>注意事项：</strong>避免"只看不联"（只看材料不思考自己已有的经验），也不要"只联不看"（只凭旧经验胡思乱想，脱离材料证据）。</p>
+  <button class="btn btn-outline" onclick="this.nextElementSibling.classList.toggle('open')">📖 看示例</button>
+  <div class="toggle-content">通读邮件 → 标记已知/未知 → 回忆自己的友谊经历 → 写下你觉得"朋友"最重要的 3 个特征</div>
+</div>
+
+<div class="card">
+  <div class="card-title"><span>🧩</span> 原理2：证据提取—框架建构原理 <span class="badge">核心</span></div>
+  <p><strong>原理说明：</strong>从材料中提取关键证据（关键句、关键词），然后以此为"建筑材料"建构自己的概念框架，形成结构化的知识体系。</p>
+  <div class="info-box"><strong>来源：</strong>示例的 Step 3（观察情境证据→提取关键句）和 Step 4（建构概念框架→画出辐射状概念图）完整展示了这一过程。</div>
+  <p><strong>适用情境：</strong>整理信息类任务（如做读书笔记、准备发言提纲、整理知识结构）。</p>
+  <p><strong>注意事项：</strong>证据提取要"精准"而非"求全"，框架建构要"合理"而非"花哨"。</p>
+  <button class="btn btn-outline" onclick="this.nextElementSibling.classList.toggle('open')">📖 看示例</button>
+  <div class="toggle-content">从邮件中找 3—5 句关键句（如 "A true friend is someone who..."）→ 猜测含义 → 绘制概念图（Friendship → 4 个分支）</div>
+</div>
+
+<div class="card">
+  <div class="card-title"><span>🔄</span> 原理3：输入—输出转化原理 <span class="badge">核心</span></div>
+  <p><strong>原理说明：</strong>真正的建构发生在你将"被动输入"转化为"主动输出"的时刻。只有当你用自己的语言/形式重新表达所学内容时，知识才算真正被建构。</p>
+  <div class="info-box"><strong>来源：</strong>示例的 Step 5（语言建构→总结句型和词汇）和 Step 6（生成成果→写英文回信）体现了从输入到输出的完整转化。</div>
+  <p><strong>适用情境：</strong>巩固学习成果时（如学完一个单元后写总结、学完表达后写日记）。</p>
+  <p><strong>注意事项：</strong>不要只在脑中想象"我懂了"，一定要动手输出可检查的成果。</p>
+  <button class="btn btn-outline" onclick="this.nextElementSibling.classList.toggle('open')">📖 看示例</button>
+  <div class="toggle-content">建立个人词汇句型表（10+词汇，5+句型）→ 写 150 词英文回信，使用邮件中学到的新表达</div>
+</div>
+
+<div class="card">
+  <div class="card-title"><span>🪞</span> 原理4：反思—优化原理</div>
+  <p><strong>原理说明：</strong>建构不是一次完成的——真正的理解在"建构→反思→优化→再建构"的迭代中逐步深化。</p>
+  <div class="info-box"><strong>来源：</strong>示例的 Step 7（反思与优化）和成果优化建议部分体现了这一原理。</div>
+  <p><strong>适用情境：</strong>任何需要改进的学习成果（如修改作文、优化设计方案、调整学习计划）。</p>
+  <p><strong>注意事项：</strong>反思要具体（"哪里不够好？怎么改？"），不要只说"我要再努力"。</p>
+  <button class="btn btn-outline" onclick="this.nextElementSibling.classList.toggle('open')">📖 看示例</button>
+  <div class="toggle-content">检查回信是否充分表达了自己的友谊观 → 对照自评检查清单逐项自评 → 优化终版</div>
+</div>
+
+<div class="card">
+  <div class="card-title"><span>🧰</span> 原理5：工具—支架原理</div>
+  <p><strong>原理说明：</strong>有效的建构需要借助思维工具和表达支架——好的工具不是限制你的思考，而是帮你把思考变得可操作、可呈现。</p>
+  <div class="info-box"><strong>来源：</strong>示例提供了概念图模板、关键句式支架、检查清单，帮助完成了建构任务。</div>
+  <p><strong>适用情境：</strong>遇到复杂任务不知如何下手时，先寻找或设计适合的工具/模板。</p>
+  <p><strong>注意事项：</strong>工具是脚手架，不是答案本身——要用工具辅助思考，而不是被工具束缚。</p>
+  <button class="btn btn-outline" onclick="this.nextElementSibling.classList.toggle('open')">📖 看示例</button>
+  <div class="toggle-content">概念图模板（中心辐射式）→ 关键句式支架（5 个句型）→ 检查清单（4 项自评）</div>
+</div>
+
+<div class="card">
+  <div class="card-title"><span>✏️</span> 迁移应用练习</div>
+
+  <div class="exercise-card">
+    <h4>📝 练习1：你的英语学习地图</h4>
+    <p><strong>情境：</strong>你发现自己英语阅读时经常被生词卡住，想知道如何系统梳理自己的英语学习状况。</p>
+    <p><strong>建构任务：</strong>用"感知—联结原理"和"证据提取—框架建构原理"，绘制一份"我的英语学习 Map"。</p>
+    <p><span class="tag">建议原理：原理1 + 原理2</span></p>
+    <button class="btn" onclick="document.getElementById('scaffold1').classList.toggle('open'); this.textContent = this.textContent === '🪜 看脚手架提示' ? '🪜 收起提示' : '🪜 看脚手架提示'">🪜 看脚手架提示</button>
+    <div id="scaffold1" class="toggle-content">
+      <ol>
+        <li>先感知：收集一份你做过的英语试卷或阅读材料</li>
+        <li>标记：圈出"你掌握的"和"你还需要学的"</li>
+        <li>联结：回忆你是如何学会那些已掌握内容的</li>
+        <li>画图：用辐射状结构呈现你的英语学习地图</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="exercise-card">
+    <h4>🎤 练习2：我的"理想友谊"英语演讲提纲</h4>
+    <p><strong>情境：</strong>班级要举办"My Ideal Friendship"英语演讲活动。</p>
+    <p><strong>建构任务：</strong>用"输入—输出转化原理"和"工具—支架原理"，建构一份演讲提纲及开场白。</p>
+    <p><span class="tag">建议原理：原理3 + 原理5</span></p>
+    <button class="btn" onclick="document.getElementById('scaffold2').classList.toggle('open'); this.textContent = this.textContent === '🪜 看脚手架提示' ? '🪜 收起提示' : '🪜 看脚手架提示'">🪜 看脚手架提示</button>
+    <div id="scaffold2" class="toggle-content">
+      <ol>
+        <li>先做输入：回忆或查找 2—3 个关于友情的英文名言/例句</li>
+        <li>再建框架：用概念图模板组织演讲结构（开头-主体-结尾）</li>
+        <li>然后输出：写一个 50 词的英语开场白</li>
+        <li>最后优化：读两遍，修改不顺畅的地方</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title"><span>🤔</span> 元认知反思</div>
+  <p style="color: var(--text-secondary);">请思考以下问题，把你的答案写在笔记本上：</p>
+  <div class="reflect-grid">
+    <div class="info-box">1. 在"建构性示例"的学习中，哪一步是你觉得最"恍然大悟"的？为什么？</div>
+    <div class="info-box">2. 你以前有没有无意中用过上面某条原理？当时你是如何做的？</div>
+    <div class="info-box">3. 在应用原理完成迁移练习时，哪条原理你用得最顺手？哪条还不太会用？</div>
+    <div class="info-box">4. 你觉得"建构"和"背诵"最大的区别是什么？</div>
+  </div>
+  <div class="info-box" style="margin-top: 8px;">5. 如果你要教一位同学使用"证据提取—框架建构原理"，你会怎么教？</div>
+</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块定位画像</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.container { width: 100%; max-width: none; padding: 20px; box-sizing: border-box; }
+.header { background: linear-gradient(135deg, #434343 0%, #6b6b6b 100%); color: #fff; padding: 32px 24px; border-radius: var(--border-radius); margin-bottom: 24px; text-align: center; }
+.header h1 { font-size: var(--font-h1); margin: 0 0 8px; font-weight: 700; }
+.header p { font-size: calc(var(--font-body) + 1px); opacity: .85; margin: 0; }
+.section-title { font-size: var(--font-h2); font-weight: 600; color: var(--primary); margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: flex; align-items: center; gap: 8px; }
+.section-title .badge { font-size: 12px; background: var(--primary); color: #fff; border-radius: 12px; padding: 2px 10px; font-weight: 400; }
+
+/* Module grid */
+.modules-grid { display: flex; flex-direction: column; gap: 8px; }
+.module-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 14px 18px; cursor: pointer; transition: all .25s ease; position: relative; overflow: hidden; }
+.module-card:hover { border-color: var(--primary); box-shadow: 0 2px 12px rgba(67,67,67,.12); transform: translateX(4px); }
+.module-card .card-header { display: flex; align-items: center; gap: 12px; }
+.module-card .module-num { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: #fff; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+.module-card .module-title { font-weight: 600; font-size: calc(var(--font-body) + 1px); color: var(--text); flex: 1; }
+.module-card .module-role { font-size: calc(var(--font-body) - 1px); color: var(--text-secondary); background: var(--bg); padding: 2px 10px; border-radius: 4px; white-space: nowrap; }
+.module-card .expand-icon { color: var(--text-secondary); font-size: 14px; transition: transform .3s; }
+.module-card.expanded .expand-icon { transform: rotate(180deg); }
+.module-card .card-detail { max-height: 0; overflow: hidden; transition: max-height .4s ease, padding .3s; }
+.module-card.expanded .card-detail { max-height: 200px; padding-top: 12px; }
+.module-card .card-detail .core { font-size: calc(var(--font-body) - 1px); color: var(--text-secondary); padding: 8px 0 0 44px; border-top: 1px solid var(--border); margin-top: 8px; }
+.module-card .stage-tag { position: absolute; top: 0; right: 0; font-size: 11px; padding: 2px 10px; border-radius: 0 8px 0 8px; color: #fff; font-weight: 500; }
+.stage-sense { background: #5b8def; }
+.stage-think { background: #e8a838; }
+.stage-apply { background: #52b788; }
+.stage-reflect { background: #c77dff; }
+.stage-integrate { background: #f06595; }
+
+/* Phase summary */
+.phase-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 12px; margin: 20px 0; }
+.phase-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px; text-align: center; transition: transform .2s; }
+.phase-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.phase-card .phase-icon { font-size: 28px; margin-bottom: 6px; }
+.phase-card .phase-name { font-weight: 600; font-size: calc(var(--font-body) + 1px); }
+.phase-card .phase-range { font-size: calc(var(--font-body) - 2px); color: var(--text-secondary); margin-top: 4px; }
+
+/* Core competence */
+.competence-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.competence-tag { background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; padding: 6px 16px; font-size: calc(var(--font-body) - 1px); color: var(--primary); transition: all .2s; cursor: default; }
+.competence-tag:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container { padding: 12px; }
+  .header { padding: 20px 16px; }
+  .module-card .card-header { flex-wrap: wrap; }
+  .module-card .module-role { white-space: normal; }
+  .phase-summary { grid-template-columns: repeat(2,1fr); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>📋 大单元模块定位画像</h1>
+    <p>英语 · 必修1 · 大单元学习总导 · 完整模块递进体系</p>
+  </div>
+
+  <div class="section-title">
+    📌 模块一览 <span class="badge">19个模块</span>
+  </div>
+  <p style="color:var(--text-secondary);margin:0 0 16px;">点击任一模块卡片展开详情，查看核心内容定位。</p>
+
+  <div class="phase-summary">
+    <div class="phase-card"><div class="phase-icon">🔍</div><div class="phase-name">感知与建构</div><div class="phase-range">模块 2 – 4</div></div>
+    <div class="phase-card"><div class="phase-icon">🧠</div><div class="phase-name">多思维拓展</div><div class="phase-range">模块 5 – 11</div></div>
+    <div class="phase-card"><div class="phase-icon">✍️</div><div class="phase-name">应用与实践</div><div class="phase-range">模块 12 – 15</div></div>
+    <div class="phase-card"><div class="phase-icon">💎</div><div class="phase-name">反思与升华</div><div class="phase-range">模块 16 – 18</div></div>
+    <div class="phase-card"><div class="phase-icon">🔗</div><div class="phase-name">系统整合与学术总结</div><div class="phase-range">模块 19 – 20</div></div>
+  </div>
+
+  <div class="modules-grid" id="moduleGrid">
+    <div class="module-card expanded" onclick="toggleModule(this)">
+      <div class="card-header">
+        <span class="module-num">1</span>
+        <span class="module-title">大单元学习总导</span>
+        <span class="module-role">总起定位</span>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="card-detail"><div class="core"><strong>核心内容</strong>：学习目标总览、模块导航路径、学习方法建议。为后续所有模块奠定认知框架。</div></div>
+    </div>
+    <div class="module-card" onclick="toggleModule(this)">
+      <span class="stage-tag stage-sense">感知阶段</span>
+      <div class="card-header">
+        <span class="module-num">2</span>
+        <span class="module-title">学习新知的新价值与新使命</span>
+        <span class="module-role">动机启动</span>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="card-detail"><div class="core"><strong>核心定位</strong>：回答"为什么学"——激发内在学习动力。<br><strong>英语适配</strong>：英语学习的时代价值、跨文化沟通使命、语言自信。</div></div>
+    </div>
+    <div class="module-card" onclick="toggleModule(this)">
+      <span class="stage-tag stage-sense">感知阶段</span>
+      <div class="card-header">
+        <span class="module-num">3</span>
+        <span class="module-title">全息活动与感知：新概念前认知</span>
+        <span class="module-role">前认知激活</span>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="card-detail"><div class="core"><strong>核心定位</strong>：调动已有经验和直觉，为正式学习做铺垫。<br><strong>英语适配</strong>：主题背景知识激活、话题词汇预热、语境感知。</div></div>
+    </div>
+    <div class="module-card" onclick="toggleModule(this)">
+      <span class="stage-tag stage-sense">感知阶段</span>
+      <div class="card-header">
+        <span class="module-num">4</span>
+        <span class="module-title">新概念解析、建构与定义</span>
+        <span class="module-role">核心建构</span>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="card-detail"><div class="core"><strong>核心定位</strong>：精确掌握新概念的内涵、边界和语言表达。<br><strong>英语适配</strong>：单元核心语言概念的定义、语篇中的概念使用情境。</div></div>
+    </div>
+    <div class="module-card" onclick="toggleModule(this)">
+      <span class="stage-tag stage-think">思维拓展</span>
+      <div class="card-header">
+        <span class="module-num">5</span>
+        <span class="module-title">新知艺术思维</span>
+        <span class="module-role">审美拓展</span>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="card-detail"><div class="core"><strong>核心定位</strong>：从艺术视角理解和表达单元主题。<br><strong>英语适配</strong>：英语诗歌、歌词、戏剧对白的赏析与模仿创作。</div></div>
+    </div>
+    <div class="module-card" onclick="toggleModule(this)">
+      <span class="stage-tag stage-think">思维拓展</span>
+      <div class="card-header">
+        <span class="module-num">6</span>
+        <span class="module-title">新知技术思维</span>
+        <span class="module-role">技术赋能</span>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="card-detail"><div class="core"><strong>核心定位</strong>：借助数字工具提升语言学习效率。<br><strong>英语适配</strong>：AI辅助学习工具、语音识别、智能批改、在线协作平台。</div></div>
+    </div>
+    <div class="module-card" onclick="toggleModule(this)">
+      <span class="stage-tag stage-think">思维拓展</span>
+      <div class="card-header">
+        <span class="module-num">7</span>
+        <span class="module-title">新知数学思维</span>
+        <span class="module-role">逻辑训练</span>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="card-detail"><div class="core"><strong>核心定位</strong>：用结构化思维理解和表达英语语篇。<br><strong>英语适配</strong>：语篇结构分析、逻辑连接词、数据图表英语表达。</div></div>
+    </div>
+    <div class="module-card" onclick="toggleModule(this)">
+      <span class="stage-tag stage-think">思维拓展</span>
+      <div class="card-header">
+        <span class="module-num">8</span>
+        <span class="module-title">新知科学思维</span>
+        <span class="module-role">科学探究</span>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="card-detail"><div class="core"><strong>核心定位</strong>：通过英语语篇培养实证和推理能力。<br><strong>英语适配</strong>：科普类语篇阅读、实验报告英语写作、证据提取。</div></div>
+    </div>
+    <div class="module-card" onclick="toggleModule(this)">
+      <span class="stage-tag stage-think">思维拓展</span>
+      <div class="card-header">
+        <span class="module-num">9</span>
+        <span class="module-title">新知文化思维</span>
+        <span class="module-role">文化理解</span>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="card-detail"><div class="core"><strong>核心定位</strong>：比较中外文化，培养跨文化交际意识。<br><strong>英语适配</strong>：中西文化对比、文化负载词、跨文化交际策略。</div></div>
+    </div>
+    <div class="module-card" onclick="toggleModule(this)">
+      <span class="stage-tag stage-think">思维拓展</span>
+      <div class="card-header">
+        <span class="module-num">10</span>
+        <span class="module-title">新知哲学思维</span>
+        <span class="module-role">深度思考</span>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="card-detail"><div class="core"><strong>核心定位</strong>：追问语言与思维、语言与存在的关系。<br><strong>英语适配</strong>：语言相对论、概念隐喻、语篇背后的价值观分析。</div></div>
+    </div>
+    <div class="module-card" onclick="toggleModule(this)">
+      <span class="stage-tag stage-think">思维拓展</span>
+      <div class="card-header">
+        <span class="module-num">11</span>
+        <span class="module-title">新知美术思维</span>
+        <span class="module-role">视觉表达</span>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="card-detail"><div class="core"><strong>核心定位</strong>：用图像、色彩和设计增强语言表达效果。<br><strong>英语适配</strong>：英文海报设计、视觉笔记、信息图表英语制作。</div></div>
+    </div>
+    <div class="module-card" onclick="toggleModule(this)">
+      <span class="stage-tag stage-apply">应用实践</span>
+      <div class="card-header">
+        <span class="module-num">12</span>
+        <span class="module-title">新知书面性应用</span>
+        <span class="module-role">书面输出</span>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="card-detail"><div class="core"><strong>核心定位</strong>：从模仿到创作，系统训练写作能力。<br><strong>英语适配</strong>：段落写作、应用文写作、观点论述文写作。</div></div>
+    </div>
+    <div class="module-card" onclick="toggleModule(this)">
+      <span class="stage-tag stage-apply">应用实践</span>
+      <div class="card-header">
+        <span class="module-num">13</span>
+        <span class="module-title">新知项目性应用</span>
+        <span class="module-role">项目实践</span>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="card-detail"><div class="core"><strong>核心定位</strong>：综合运用语言完成一个完整项目。<br><strong>英语适配</strong>：英语项目全流程：选题→调研→实施→展示→反思。</div></div>
+    </div>
+    <div class="module-card" onclick="toggleModule(this)">
+      <span class="stage-tag stage-apply">应用实践</span>
+      <div class="card-header">
+        <span class="module-num">14</span>
+        <span class="module-title">新知STEAM融合性应用</span>
+        <span class="module-role">跨学科融合</span>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="card-detail"><div class="core"><strong>核心定位</strong>：将英语与科学、技术、工程、艺术、数学融合。<br><strong>英语适配</strong>：STEAM主题英语项目、跨学科语篇阅读、整合性表达。</div></div>
+    </div>
+    <div class="module-card" onclick="toggleModule(this)">
+      <span class="stage-tag stage-apply">应用实践</span>
+      <div class="card-header">
+        <span class="module-num">15</span>
+        <span class="module-title">新知三创性应用</span>
+        <span class="module-role">创新创造</span>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="card-detail"><div class="core"><strong>核心定位</strong>：培养创意、创新、创业三种能力。<br><strong>英语适配</strong>：创意写作、创新方案设计、创业计划书英语撰写。</div></div>
+    </div>
+    <div class="module-card" onclick="toggleModule(this)">
+      <span class="stage-tag stage-reflect">反思升华</span>
+      <div class="card-header">
+        <span class="module-num">16</span>
+        <span class="module-title">新知应用与创新中的真善美思维与反思</span>
+        <span class="module-role">价值反思</span>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="card-detail"><div class="core"><strong>核心定位</strong>：审视应用创新中的伦理和美学维度。<br><strong>英语适配</strong>：语言使用的伦理、跨文化交流中的尊重与包容、语言之美。</div></div>
+    </div>
+    <div class="module-card" onclick="toggleModule(this)">
+      <span class="stage-tag stage-reflect">反思升华</span>
+      <div class="card-header">
+        <span class="module-num">17</span>
+        <span class="module-title">新知学习过程的成就与成功性思维与反思</span>
+        <span class="module-role">成就体验</span>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="card-detail"><div class="core"><strong>核心定位</strong>：回顾成长轨迹，建立学习自信。<br><strong>英语适配</strong>：学习目标达成度评估、能力提升自评、学习策略优化。</div></div>
+    </div>
+    <div class="module-card" onclick="toggleModule(this)">
+      <span class="stage-tag stage-reflect">反思升华</span>
+      <div class="card-header">
+        <span class="module-num">18</span>
+        <span class="module-title">新知学习收获的幸福与福祉性思维与反思</span>
+        <span class="module-role">幸福感受</span>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="card-detail"><div class="core"><strong>核心定位</strong>：体验学习带来的快乐和充实感。<br><strong>英语适配</strong>：语言学习带来的幸福感、跨文化友谊、全球视野的喜悦。</div></div>
+    </div>
+    <div class="module-card" onclick="toggleModule(this)">
+      <span class="stage-tag stage-integrate">系统整合</span>
+      <div class="card-header">
+        <span class="module-num">19</span>
+        <span class="module-title">新知全面的系统性思维与智能化思维</span>
+        <span class="module-role">系统整合</span>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="card-detail"><div class="core"><strong>核心定位</strong>：用系统思维串联所有学习模块。<br><strong>英语适配</strong>：大单元知识体系整合、智能学习路径优化、元认知策略。</div></div>
+    </div>
+    <div class="module-card" onclick="toggleModule(this)">
+      <span class="stage-tag stage-integrate">系统整合</span>
+      <div class="card-header">
+        <span class="module-num">20</span>
+        <span class="module-title">新知的理论和学术性总结与表达</span>
+        <span class="module-role">学术升华</span>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="card-detail"><div class="core"><strong>核心定位</strong>：形成系统的理论认知和学术表达能力。<br><strong>英语适配</strong>：学术小论文写作、研究成果展示、学习成果的综合表达。</div></div>
+    </div>
+  </div>
+
+  <div class="section-title" style="margin-top:40px;">🎯 核心素养四维覆盖</div>
+  <p style="color:var(--text-secondary);margin:0 0 12px;">全部模块围绕英语学科四大核心素养设计：</p>
+  <div class="competence-bar">
+    <span class="competence-tag">🗣️ 语言能力</span>
+    <span class="competence-tag">🌍 文化意识</span>
+    <span class="competence-tag">🧠 思维品质</span>
+    <span class="competence-tag">📚 学习能力</span>
+  </div>
+
+  <div class="section-title" style="margin-top:40px;">🔄 完整递进路径</div>
+  <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:var(--border-radius);padding:20px;">
+    <p style="margin:0 0 12px;"><strong>模块1</strong>（总导）→ <strong>模块2-4</strong>（感知与建构阶段：动机启动→前认知激活→核心建构）→ <strong>模块5-11</strong>（多思维拓展阶段：艺术→技术→数学→科学→文化→哲学→美术）→ <strong>模块12-15</strong>（应用与实践阶段：书面→项目→STEAM→三创）→ <strong>模块16-18</strong>（反思与升华阶段：真善美→成就→幸福）→ <strong>模块19-20</strong>（系统整合与学术总结阶段）</p>
+  </div>
+</div>
+<script>
+function toggleModule(el) {
+  el.classList.toggle('expanded');
+}
+</script>
+</body>
+</html>

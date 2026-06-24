@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>友谊主题名人名言 — 认知突破</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --quote-bg: #f9f9f9;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  width: 100%;
+  max-width: none;
+  padding: 24px;
+}
+.container { width: 100%; max-width: none; margin: 0 auto; }
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 8px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--primary);
+}
+h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 28px 0 12px;
+  padding-left: 10px;
+  border-left: 3px solid var(--primary);
+}
+p { margin-bottom: 8px; }
+.desc-box {
+  background: #fafafa;
+  border-left: 3px solid var(--accent);
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  border-radius: 0 6px 6px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.person-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 22px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.person-header {
+  background: var(--primary);
+  color: #fff;
+  padding: 14px 20px;
+  font-size: 17px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.person-header:hover { background: var(--primary-hover); }
+.person-header .arrow {
+  margin-left: auto;
+  transition: transform 0.3s;
+}
+.person-header .arrow.open { transform: rotate(180deg); }
+.person-body { padding: 18px 20px; }
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 14px;
+  font-size: 14px;
+}
+.info-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.info-table td:first-child {
+  font-weight: 600;
+  color: var(--primary);
+  width: 110px;
+  white-space: nowrap;
+}
+.quote-block {
+  background: var(--quote-bg);
+  border-left: 4px solid var(--accent);
+  padding: 12px 16px;
+  margin: 12px 0;
+  border-radius: 0 6px 6px 0;
+}
+.quote-block .quote-text {
+  font-size: 16px;
+  font-style: italic;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+.quote-block .quote-source {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.think-task {
+  background: #faf8f0;
+  border: 1px dashed #d9c9a0;
+  border-radius: var(--border-radius);
+  padding: 14px;
+  margin: 12px 0;
+  transition: all 0.3s;
+}
+.think-task h4 {
+  font-size: 14px;
+  color: #8c7a4a;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.think-task p { font-size: 14px; color: var(--text); }
+.reading-path {
+  background: #f0f5ff;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 8px 0;
+  font-size: 13px;
+}
+.reading-path strong { color: var(--primary); }
+.btn-toggle {
+  display: inline-block;
+  padding: 6px 14px;
+  border: 1px solid var(--primary);
+  border-radius: var(--border-radius);
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+  margin-top: 6px;
+}
+.btn-toggle:hover {
+  background: var(--primary);
+  color: #fff;
+}
+.collapsible { display: none; }
+.collapsible.open { display: block; }
+.insight-badge {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-right: 6px;
+}
+@media (max-width: 600px) {
+  body { padding: 12px; }
+  .info-table td:first-child { width: 80px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>💬 名人名言脚手架：友谊主题认知突破</h1>
+<div class="desc-box">
+  <strong>📌 设计理念</strong><br>
+  不讲"故事"，讲"认知跃迁"。以下人物在思考友谊时都曾面临核心问题，他们的突破对你今天的英语学习和友谊理解有什么启示？<br>
+  点击每位人物的标题栏展开/收起详细内容。
+</div>
+
+<!-- 人物1：亚里士多德 -->
+<div class="person-card">
+  <div class="person-header" onclick="togglePerson(this)">
+    <span>🏛️ 奠基人物：亚里士多德（Aristotle）</span>
+    <span class="arrow open">▼</span>
+  </div>
+  <div class="person-body collapsible open" id="person1">
+    <table class="info-table">
+      <tr><td>关键问题</td><td>"什么是真正的友谊？它和其他人际关系有什么本质区别？"</td></tr>
+      <tr>
+        <td>思维突破点</td>
+        <td>将友谊分为三类：<strong>utility friendship</strong>（功利型）、<strong>pleasure friendship</strong>（快乐型）、<strong>virtue friendship</strong>（美德型），认为只有美德型友谊是真正持久、有价值的友谊。</td>
+      </tr>
+    </table>
+
+    <div class="quote-block">
+      <div class="quote-text">"Friendship is a single soul dwelling in two bodies."</div>
+      <div class="quote-source">— Aristotle</div>
+    </div>
+
+    <p><strong>💡 对当下的启示</strong></p>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:10px;">你在交笔友时，是出于实用目的（练习英语）、快乐目的（聊得来），还是因为认同对方的品格？不同类型决定了友谊的质量。</p>
+
+    <div class="reading-path">
+      <strong>📚 深度阅读路径</strong><br>
+      • 《尼各马可伦理学》（Nicomachean Ethics）第八、九卷<br>
+      • 搜索关键词："Aristotle three types of friendship"
+    </div>
+
+    <div class="think-task">
+      <h4>🤔 "如果你是他" 思考任务</h4>
+      <p>假设你是亚里士多德，如何用英文向现代高中生解释"为什么美德型友谊更持久"？请写出3句话。</p>
+      <textarea placeholder="Write your 3 sentences here..." style="width:100%;margin-top:8px;padding:10px;border:1px solid var(--border);border-radius:6px;min-height:70px;font-family:inherit;font-size:14px;resize:vertical;"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- 人物2：C.S.刘易斯 -->
+<div class="person-card">
+  <div class="person-header" onclick="togglePerson(this)">
+    <span>✝️ 跨界人物：C. S. 刘易斯（C. S. Lewis）</span>
+    <span class="arrow open">▼</span>
+  </div>
+  <div class="person-body collapsible open" id="person2">
+    <table class="info-table">
+      <tr><td>关键问题</td><td>"友谊之爱和其他类型的爱有什么不同？"</td></tr>
+      <tr>
+        <td>思维突破点</td>
+        <td>提出友谊是"两个人共同注视同一个方向"（<em>standing side by side, looking in the same direction</em>），而非像爱情那样"面对面注视"。友谊产生于共同的热爱和追求。</td>
+      </tr>
+    </table>
+
+    <div class="quote-block">
+      <div class="quote-text">"Friendship is born at that moment when one person says to another: 'What! You too? I thought I was the only one.'"</div>
+      <div class="quote-source">— C. S. Lewis</div>
+    </div>
+
+    <p><strong>💡 对当下的启示</strong></p>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:10px;">你和朋友的共同兴趣是什么？共同的爱好是友谊最自然的起点。</p>
+
+    <div class="reading-path">
+      <strong>📚 深度阅读路径</strong><br>
+      • 《四种爱》（The Four Loves），第四章 "友谊"<br>
+      • 英文原版节选阅读
+    </div>
+
+    <div class="think-task">
+      <h4>🤔 "如果你是他" 思考任务</h4>
+      <p>用一段60词的英文回答：你和你最好的朋友共同"注视"什么？你们的共同兴趣是什么？</p>
+      <textarea placeholder="Write 60 words about what you and your best friend share..." style="width:100%;margin-top:8px;padding:10px;border:1px solid var(--border);border-radius:6px;min-height:70px;font-family:inherit;font-size:14px;resize:vertical;"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- 人物3：Brené Brown -->
+<div class="person-card">
+  <div class="person-header" onclick="togglePerson(this)">
+    <span>🔬 当代人物：Brené Brown</span>
+    <span class="arrow open">▼</span>
+  </div>
+  <div class="person-body collapsible open" id="person3">
+    <table class="info-table">
+      <tr><td>关键问题</td><td>"什么真正阻碍了人与人之间的深层连接？"</td></tr>
+      <tr>
+        <td>思维突破点</td>
+        <td>发现"脆弱性"（<em>vulnerability</em>）恰恰是建立深层关系的通道——敢于暴露自己的不完美，反而更容易获得真正的友谊。</td>
+      </tr>
+    </table>
+
+    <div class="quote-block">
+      <div class="quote-text">"Connection is why we're here; it's what gives purpose and meaning to our lives."</div>
+      <div class="quote-source">— Brené Brown</div>
+    </div>
+
+    <p><strong>💡 对当下的启示</strong></p>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:10px;">写交友信时不一定要展示自己最好的一面——诚实地表达"我有时也会紧张"反而让友谊更真实。</p>
+
+    <div class="reading-path">
+      <strong>📚 深度阅读路径</strong><br>
+      • TED演讲：<em>The Power of Vulnerability</em>（可在YouTube观看，带英文字幕）<br>
+      • 著作：《Daring Greatly》
+    </div>
+
+    <div class="think-task">
+      <h4>🤔 "如果你是他" 思考任务</h4>
+      <p>请用英文回答：在交友信中，你愿意分享一个小缺点或一次失败经历吗？为什么？</p>
+      <textarea placeholder="Would you share a weakness in a pen pal letter? Why or why not?" style="width:100%;margin-top:8px;padding:10px;border:1px solid var(--border);border-radius:6px;min-height:70px;font-family:inherit;font-size:14px;resize:vertical;"></textarea>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:24px;padding:16px;background:#f0f0f0;border-radius:var(--border-radius);text-align:center;">
+  <p style="color:var(--text-secondary);font-size:14px;">💬 完成所有思考任务后，与同学分享你的回答，听听他们的不同视角</p>
+</div>
+
+</div>
+<script>
+function togglePerson(header) {
+  const body = header.nextElementSibling;
+  const arrow = header.querySelector('.arrow');
+  body.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+</script>
+</body>
+</html>

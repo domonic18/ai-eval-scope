@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>研学社区 — 友谊与STEAM研学案例</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+/* Header */
+.header {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 28px 32px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+  border-left: 5px solid var(--primary);
+}
+
+.header h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+
+.header .subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+/* Level tabs */
+.level-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.level-tab {
+  padding: 10px 24px;
+  border: none;
+  border-radius: var(--border-radius);
+  background: var(--card-bg);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s;
+  box-shadow: var(--shadow);
+}
+
+.level-tab:hover { background: #e8e8e8; }
+.level-tab.active { background: var(--primary); color: #fff; }
+
+.level-tab .level-icon { margin-right: 6px; }
+
+/* Case Study Cards */
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  display: none;
+}
+
+.case-card.active { display: block; }
+
+.case-header {
+  padding: 20px 24px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid transparent;
+  transition: background 0.2s;
+}
+
+.case-header:hover { background: var(--bg); }
+
+.case-header .case-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.case-header .toggle-icon {
+  font-size: 18px;
+  transition: transform 0.3s;
+  color: var(--text-secondary);
+}
+
+.case-header.expanded .toggle-icon { transform: rotate(180deg); }
+
+.case-body {
+  padding: 0 24px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s ease;
+}
+
+.case-body.open { max-height: 5000px; }
+.case-body-inner { padding: 20px 0; }
+
+/* Section styles in case body */
+.case-body h4 {
+  font-size: 15px;
+  color: var(--primary);
+  margin: 16px 0 8px;
+  font-weight: 700;
+}
+
+.case-body h4:first-child { margin-top: 0; }
+
+.case-body p {
+  margin-bottom: 10px;
+  color: var(--text);
+  line-height: 1.8;
+}
+
+.case-body .bg-box {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 14px 18px;
+  margin-bottom: 12px;
+  border-left: 3px solid var(--accent);
+}
+
+/* Decision Table */
+.decision-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0 16px;
+  font-size: 14px;
+}
+
+.decision-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+}
+
+.decision-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.decision-table tr:hover { background: var(--bg); }
+
+.decision-table .highlight {
+  background: #fff8e1;
+  font-weight: 600;
+}
+
+/* Decision buttons */
+.decision-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+
+.decision-btn {
+  padding: 10px 20px;
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+  font-weight: 500;
+}
+
+.decision-btn:hover {
+  border-color: var(--primary);
+  background: var(--bg);
+}
+
+.decision-btn.selected-a { border-color: #e65100; background: #fff3e0; }
+.decision-btn.selected-b { border-color: #2e7d32; background: #e8f5e9; }
+.decision-btn.selected-c { border-color: #1565c0; background: #e3f2fd; }
+
+.result-box {
+  padding: 16px;
+  border-radius: var(--border-radius);
+  display: none;
+  margin: 12px 0;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.result-box.show { display: block; }
+.result-box.outcome-a { background: #fff3e0; border: 1px solid #ffcc80; }
+.result-box.outcome-b { background: #e8f5e9; border: 1px solid #a5d6a7; }
+.result-box.outcome-c { background: #e3f2fd; border: 1px solid #90caf9; }
+
+/* Insight box */
+.insight-box {
+  background: #f5f5f5;
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin: 16px 0;
+  border: 1px dashed var(--primary);
+}
+
+.insight-box .icon { font-size: 20px; margin-right: 8px; }
+
+/* English Phrase Toolbox */
+.toolbox {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  margin-bottom: 24px;
+}
+
+.toolbox h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 16px;
+}
+
+.phrase-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.phrase-item {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 12px 16px;
+  border-left: 3px solid var(--primary);
+}
+
+.phrase-item .scene { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+.phrase-item .eng { font-size: 14px; font-weight: 600; font-style: italic; color: var(--primary); }
+
+/* Reflection Section */
+.reflection {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  margin-bottom: 24px;
+}
+
+.reflection h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 16px;
+}
+
+.reflection ol {
+  padding-left: 20px;
+  line-height: 2.2;
+}
+
+.reflection ol li { margin-bottom: 6px; }
+
+.reflection textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 12px;
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  margin-top: 12px;
+  transition: border-color 0.3s;
+}
+
+.reflection textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* Progress tracker */
+.progress-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.progress-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.progress-step .circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--border);
+}
+
+.progress-step.done .circle { background: var(--primary); }
+.progress-step.active .circle { background: var(--accent); }
+.progress-step .connector { color: var(--border); }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.case-card.active { animation: fadeIn 0.4s ease; }
+
+.footer {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  .header { padding: 20px; }
+  .decision-table { font-size: 13px; }
+  .phrase-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>🌍 研学社区</h1>
+    <div class="subtitle">英语必修1 · Unit 1 Friendship</div>
+    <p style="margin-top:6px;font-size:13px;color:var(--text-secondary);">通过真实世界案例，在决策中提升英语思辨能力与社会洞察力</p>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-bar" id="progressBar">
+    <div class="progress-step active" id="step1"><span class="circle">1</span>跨国笔友</div>
+    <span class="connector">→</span>
+    <div class="progress-step" id="step2"><span class="circle">2</span>科研友谊</div>
+    <span class="connector">→</span>
+    <div class="progress-step" id="step3"><span class="circle">3</span>和平友谊营</div>
+  </div>
+
+  <!-- Level Tabs -->
+  <div class="level-tabs">
+    <button class="level-tab active" onclick="switchCase('case1', this)"><span class="level-icon">✉️</span>基础 · 跨国笔友</button>
+    <button class="level-tab" onclick="switchCase('case2', this)"><span class="level-icon">🔬</span>进阶 · 科研友谊</button>
+    <button class="level-tab" onclick="switchCase('case3', this)"><span class="level-icon">🕊️</span>挑战 · 和平友谊营</button>
+  </div>
+
+  <!-- Case 1: 跨国笔友 -->
+  <div class="case-card active" id="case1">
+    <div class="case-header" onclick="toggleBody(this)">
+      <span class="case-title">✉️ 案例一：跨国笔友项目</span>
+      <span class="toggle-icon">▼</span>
+    </div>
+    <div class="case-body open">
+      <div class="case-body-inner">
+
+        <h4>📖 背景</h4>
+        <div class="bg-box">
+          你所在的学校与澳大利亚墨尔本一所中学建立了"笔友交换计划"。你的笔友 Ethan 第一次来信说他喜欢滑板和电子游戏。你却对这两项都不太了解，第一次回信该写什么？
+        </div>
+
+        <h4>🎯 核心问题</h4>
+        <p><strong>写一封能让对方愿意继续聊下去的回信</strong>——不能说谎，也不能让对方觉得你没意思。如何用英文表达"我不懂你的兴趣，但我愿意了解你"？</p>
+
+        <h4>📋 决策路径</h4>
+        <table class="decision-table">
+          <tr><th style="width:18%">方案</th><th style="width:30%">做法</th><th style="width:30%">英文表达示例</th><th>可能结果</th></tr>
+          <tr><td>A. 假装感兴趣</td><td>说自己也很喜欢滑板，问几个肤浅问题</td><td><em>"I also like skateboarding. It's cool."</em></td><td>对方很快发现你在敷衍，回复变短</td></tr>
+          <tr class="highlight"><td>B. 坦诚并转向</td><td>说明自己不懂滑板，主动介绍自己爱好</td><td><em>"I don't know much about skateboarding, but I love drawing. Have you tried it?"</em></td><td>对话双向展开</td></tr>
+          <tr><td>C. 绕过话题</td><td>不回应滑板，只聊学校和天气</td><td><em>"Our school is big. How about yours?"</em></td><td>对话停留在表面</td></tr>
+        </table>
+
+        <h4>🤔 你选择哪个方案？</h4>
+        <div class="decision-buttons">
+          <button class="decision-btn" onclick="showOutcome('outcome1a', this, 'case1')">A. 假装感兴趣</button>
+          <button class="decision-btn" onclick="showOutcome('outcome1b', this, 'case1')">B. 坦诚并转向</button>
+          <button class="decision-btn" onclick="showOutcome('outcome1c', this, 'case1')">C. 绕过话题</button>
+        </div>
+
+        <div class="result-box" id="outcome1a">
+          <strong>结果 A：</strong>第三周后收不到回复了。对方能感觉到你的敷衍——真正的友谊不需要假装。
+        </div>
+        <div class="result-box" id="outcome1b">
+          <strong>✓ 最佳选择！</strong>大部分选方案B的同学与笔友建立了长期稳定的通信关系，学期末双方交换了手绘明信片和小礼物。用英语表达好奇比假装有共同点更能建立真诚的连接。
+        </div>
+        <div class="result-box" id="outcome1c">
+          <strong>结果 C：</strong>对话停留在表面，难以深入。安全但错失了深入了解对方的机会。
+        </div>
+
+        <div class="insight-box">
+          <span class="icon">💡</span><strong>可迁移启示：</strong>友谊的第一步不是"相同"，而是"好奇"。用英语表达好奇（"I'd love to know more about…" / "That sounds interesting, tell me more…"）比假装有共同点更能建立真诚的连接。
+        </div>
+
+        <h4>📝 拓展任务</h4>
+        <p>Ethan 和你通了6封信后，突然来信说他父母要离婚了，他很低落。你怎么回复？点击查看不同结局：</p>
+        <div class="decision-buttons">
+          <button class="decision-btn" onclick="showOutcome('outcome1d', this, 'case1')">A. 鼓励型</button>
+          <button class="decision-btn" onclick="showOutcome('outcome1e', this, 'case1')">B. 陪伴型</button>
+          <button class="decision-btn" onclick="showOutcome('outcome1f', this, 'case1')">C. 求助型</button>
+        </div>
+        <div class="result-box" id="outcome1d"><strong>结局A：</strong>"Everything will be fine. Stay strong!" 对方觉得你过于乐观，没有真正理解他的痛苦。</div>
+        <div class="result-box" id="outcome1e"><strong>✓ 结局B：</strong>"I'm here for you. You can talk to me anytime." 关系更加深厚，Ethan 开始主动分享更多心事。</div>
+        <div class="result-box" id="outcome1f"><strong>结局C：</strong>"Maybe you should talk to your school counselor." 虽然理性正确，但对方感到被推开。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Case 2: 科研友谊 -->
+  <div class="case-card" id="case2">
+    <div class="case-header" onclick="toggleBody(this)">
+      <span class="case-title">🔬 案例二：科学家合作中的"科研友谊"</span>
+      <span class="toggle-icon">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="case-body-inner">
+
+        <h4>📖 背景</h4>
+        <div class="bg-box">
+          1950年代，英国生化学家 Francis Crick 和美国年轻科学家 James Watson 在剑桥大学共用实验室。性格迥异——Watson 冲动、口无遮拦；Crick 严谨、话多爱争论。但他们有一个共同目标：解开 DNA 的结构之谜。
+        </div>
+
+        <h4>🎯 核心问题</h4>
+        <p>性格完全不同的两个人，如何在日常摩擦中维持合作？争吵不断时，是拆伙各自研究，还是找到一种"吵架却不散伙"的相处模式？</p>
+
+        <h4>📋 决策路径</h4>
+        <table class="decision-table">
+          <tr><th>方案</th><th>做法</th><th>结果</th></tr>
+          <tr><td>分头研究</td><td>每人做各自的方向，避免冲突</td><td>可能永远解不出DNA结构</td></tr>
+          <tr><td>第三方仲裁</td><td>找导师协调矛盾</td><td>依赖外部调解，合作不持久</td></tr>
+          <tr class="highlight"><td>建立"争吵规则"</td><td>约定：可以激烈争论观点，但不对人攻击；每天午餐一起散步</td><td>成为科学史上最著名搭档之一</td></tr>
+          <tr><td>一方退出</td><td>Watson 或 Crick 离开实验室</td><td>历史将被改写</td></tr>
+        </table>
+
+        <h4>🤔 你选择哪个方案？</h4>
+        <div class="decision-buttons">
+          <button class="decision-btn" onclick="showOutcome('outcome2a', this, 'case2')">分头研究</button>
+          <button class="decision-btn" onclick="showOutcome('outcome2b', this, 'case2')">第三方仲裁</button>
+          <button class="decision-btn" onclick="showOutcome('outcome2c', this, 'case2')">建立争吵规则</button>
+          <button class="decision-btn" onclick="showOutcome('outcome2d', this, 'case2')">一方退出</button>
+        </div>
+
+        <div class="result-box" id="outcome2a"><strong>另外一种可能：</strong>避免冲突也意味着失去了从争论中催生创意的机会。</div>
+        <div class="result-box" id="outcome2b"><strong>另外一种可能：</strong>导师调解只能短期有效，长期合作需要内在机制。</div>
+        <div class="result-box" id="outcome2c">
+          <strong>✓ 历史真实选择！</strong>1962年，Watson 和 Crick 因发现DNA双螺旋结构获得诺贝尔奖。两人说："我们吵架的次数比其他任何组合都多，但我们从不让争吵过夜。"
+        </div>
+        <div class="result-box" id="outcome2d"><strong>另外一种可能：</strong>如果一方退出，DNA结构的发现可能推迟数年。</div>
+
+        <div class="insight-box">
+          <span class="icon">💡</span><strong>可迁移启示：</strong>真正的友谊不是没有冲突，而是有处理冲突的机制。在小组合作学习中，"对事不对人"的分歧规则同样重要。用英语表达不同意见：<em>"I see your point, but have you considered…"</em> / <em>"That's interesting, but I think differently because…"</em>
+        </div>
+
+        <h4>📝 拓展任务</h4>
+        <p>你和一位同学合作完成"友谊指数"数据可视化网页，对方负责数据分析连续两天没交数据，你该怎么办？</p>
+        <div class="decision-buttons">
+          <button class="decision-btn" onclick="showOutcome('outcome2e', this, 'case2')">A. 沉默等待</button>
+          <button class="decision-btn" onclick="showOutcome('outcome2f', this, 'case2')">B. 报告老师</button>
+          <button class="decision-btn" onclick="showOutcome('outcome2g', this, 'case2')">C. 主动沟通+调整分工</button>
+        </div>
+        <div class="result-box" id="outcome2e"><strong>结局A：</strong>项目拖延到最后一刻，两人都拿了低分。</div>
+        <div class="result-box" id="outcome2f"><strong>结局B：</strong>老师介入后对方产生抵触情绪，合作破裂。</div>
+        <div class="result-box" id="outcome2g"><strong>✓ 结局C：</strong>重新分配任务，你帮他做部分数据分析，他承诺按时交付；项目最终获得班级优秀奖。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Case 3: 和平友谊营 -->
+  <div class="case-card" id="case3">
+    <div class="case-header" onclick="toggleBody(this)">
+      <span class="case-title">🕊️ 案例三：跨国青少年和平友谊营</span>
+      <span class="toggle-icon">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="case-body-inner">
+
+        <h4>📖 背景</h4>
+        <div class="bg-box">
+          联合国教科文组织发起"Youth Peace Camp"，邀请来自以色列、巴勒斯坦、美国、中国、肯尼亚的16名青少年（14-17岁），在瑞士进行10天交流。其中一些国家的同龄人在现实中是"敌对方"，第一天就不愿意坐在同一张餐桌旁。
+        </div>
+
+        <h4>🎯 核心问题</h4>
+        <p>如何设计一套活动方案，让有历史仇恨背景的青少年愿意互相接触，甚至建立真实的友谊？你需要用英语策划3个破冰活动，每个活动须包含STEAM元素。</p>
+
+        <h4>📋 活动方案对比</h4>
+        <table class="decision-table">
+          <tr><th>活动</th><th>STEAM元素</th><th>心理原理</th><th>预期效果</th></tr>
+          <tr><td>A. "Friendship Algorithm" 编程挑战</td><td>技术+数学：用Scratch编写友谊配对小程序</td><td>共同完成任务比直接聊天更自然</td><td>中度破冰，需一定编程基础</td></tr>
+          <tr><td>B. "My World in Numbers" 数据墙</td><td>数学+艺术：每人用3个数据制作可视化卡片</td><td>非敏感信息建立"人类共同点"</td><td>低压力，适合第一天</td></tr>
+          <tr><td>C. "One Photo, One Story" 摄影交换</td><td>艺术+技术：拍立得拍照后用英文写故事</td><td>间接展示自我，建立深度理解</td><td>需更多信任基础，适合第三天</td></tr>
+          <tr class="highlight"><td>D. "Bridge Building" 工程挑战</td><td>科学+工程：用意大利面和胶带搭塔，底座必须共享</td><td>物理协作触发信任</td><td>高风险但高回报</td></tr>
+        </table>
+
+        <h4>🤔 你选择哪个组合方案？</h4>
+        <div class="decision-buttons">
+          <button class="decision-btn" onclick="showOutcome('outcome3a', this, 'case3')">A + C 组合</button>
+          <button class="decision-btn" onclick="showOutcome('outcome3b', this, 'case3')">B + D 组合</button>
+          <button class="decision-btn" onclick="showOutcome('outcome3c', this, 'case3')">只用数据墙</button>
+        </div>
+
+        <div class="result-box" id="outcome3a"><strong>结果：</strong>A+C 组合对参与者要求较高，编程+摄影对部分人门槛大。</div>
+        <div class="result-box" id="outcome3b">
+          <strong>✓ 主办方最终采用！</strong>第一天用"数据墙"让大家在无压力下发现相似之处，第三天用"搭桥挑战"让敌对背景的青少年不得不物理协作。第7天，12人自愿组成"跨文化友谊小组"。也有1名以色列女孩因家庭压力提前离开。
+        </div>
+        <div class="result-box" id="outcome3c"><strong>结果：</strong>数据墙安全有效，但缺乏深度协作环节，破冰深度不够。</div>
+
+        <div class="insight-box">
+          <span class="icon">💡</span><strong>可迁移启示：</strong>友谊在最难的地方，恰恰最需要创造性的方法。当语言、文化、甚至历史障碍摆在面前时，STEAM工具（数据、工程、编程）可以成为"中立的第三条路"——绕过直接碰撞，在"一起做点什么"的过程中自然建立连接。
+        </div>
+
+        <h4>📝 拓展任务</h4>
+        <p>作为和平营策划者，你是否允许提前离开的以色列女孩用Zoom远程参与后续活动？</p>
+        <div class="decision-buttons">
+          <button class="decision-btn" onclick="showOutcome('outcome3d', this, 'case3')">A. 不允许</button>
+          <button class="decision-btn" onclick="showOutcome('outcome3e', this, 'case3')">B. 允许但不设规则</button>
+          <button class="decision-btn" onclick="showOutcome('outcome3f', this, 'case3')">C. 允许+远程承诺</button>
+        </div>
+        <div class="result-box" id="outcome3d"><strong>结局A：</strong>女孩完全退出，与营地失联，回家后更被孤立。</div>
+        <div class="result-box" id="outcome3e"><strong>结局B：</strong>她远程参与两次后就不再上线，线上线下衔接困难。</div>
+        <div class="result-box" id="outcome3f"><strong>✓ 结局C：</strong>她承诺每周参加2次线上讨论，并完成"用英语录制我的日常生活"视频作业；最终视频被选入营地成果展。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- English Phrase Toolbox -->
+  <div class="toolbox">
+    <h2>🗣 英语表达工具箱</h2>
+    <div class="phrase-grid">
+      <div class="phrase-item"><div class="scene">表达好奇</div><div class="eng">"I'd love to know more about…"</div></div>
+      <div class="phrase-item"><div class="scene">得体不同意见</div><div class="eng">"I see your point, but have you considered…"</div></div>
+      <div class="phrase-item"><div class="scene">主动沟通冲突</div><div class="eng">"I noticed we haven't been on the same page lately. Can we talk about it?"</div></div>
+      <div class="phrase-item"><div class="scene">发出协作邀请</div><div class="eng">"What if we start by doing something together before talking?"</div></div>
+      <div class="phrase-item"><div class="scene">表达支持但不越界</div><div class="eng">"I'm here if you need me. No pressure to talk."</div></div>
+      <div class="phrase-item"><div class="scene">表达好奇（扩展）</div><div class="eng">"That sounds really different from my experience…"</div></div>
+    </div>
+  </div>
+
+  <!-- Reflection -->
+  <div class="reflection">
+    <h2>📝 课后反思（元认知）</h2>
+    <ol>
+      <li>这三个案例中，哪一个让你觉得最"似曾相识"？为什么？</li>
+      <li>在笔友案例中，如果你的笔友发来的兴趣你完全不懂，你会选择哪个方案？理由是什么？</li>
+      <li>Watson 和 Crick 的"争吵规则"如果用在你的小组合作中，你觉得会有效吗？</li>
+      <li>和平营的案例让你对"友谊能否跨越冲突"这个问题的看法有什么变化？</li>
+      <li>请用英文写一句话：<strong>What's the most important thing you learned about friendship from these cases?</strong></li>
+    </ol>
+    <textarea placeholder="在这里写下你的思考…"></textarea>
+  </div>
+
+  <div class="footer">
+    英语必修1 · Unit 1 Friendship · STEAM 融合性应用 · 研学社区
+  </div>
+</div>
+
+<script>
+function switchCase(caseId, btn) {
+  document.querySelectorAll('.case-card').forEach(c => c.classList.remove('active'));
+  document.getElementById(caseId).classList.add('active');
+
+  document.querySelectorAll('.level-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+
+  /* Reset body collapsed state */
+  document.querySelectorAll('.case-body').forEach(b => b.classList.remove('open'));
+  document.querySelectorAll('.case-header').forEach(h => h.classList.remove('expanded'));
+
+  const activeBody = document.querySelector('#' + caseId + ' .case-body');
+  const activeHeader = document.querySelector('#' + caseId + ' .case-header');
+  if (activeBody) activeBody.classList.add('open');
+  if (activeHeader) activeHeader.classList.add('expanded');
+
+  /* Update progress */
+  const stepMap = { case1: 'step1', case2: 'step2', case3: 'step3' };
+  for (let i = 1; i <= 3; i++) {
+    const s = document.getElementById('step' + i);
+    s.classList.remove('active', 'done');
+    if (i < parseInt(caseId.replace('case', ''))) s.classList.add('done');
+  }
+  document.getElementById(stepMap[caseId]).classList.add('active');
+}
+
+function toggleBody(header) {
+  header.classList.toggle('expanded');
+  const body = header.nextElementSibling;
+  body.classList.toggle('open');
+}
+
+function showOutcome(id, btn, caseId) {
+  /* Hide all outcomes in this case */
+  document.querySelectorAll('#' + caseId + ' .result-box').forEach(r => r.classList.remove('show'));
+  /* Show selected */
+  document.getElementById(id).classList.add('show');
+  /* Reset buttons in same case */
+  document.querySelectorAll('#' + caseId + ' .decision-btn').forEach(b => b.className = 'decision-btn');
+  /* Highlight selected */
+  btn.classList.add('selected-' + (id.includes('a') ? 'a' : id.includes('b') ? 'b' : 'c'));
+}
+
+/* Open first case by default */
+document.querySelector('#case1 .case-header').classList.add('expanded');
+</script>
+</body>
+</html>

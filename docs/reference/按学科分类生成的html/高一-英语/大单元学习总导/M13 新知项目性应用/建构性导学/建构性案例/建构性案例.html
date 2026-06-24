@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性案例 — 七阶递进练习</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+
+.wrapper {
+  width: 100%;
+  max-width: none;
+  padding: 20px 28px;
+  box-sizing: border-box;
+}
+
+.header {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--primary);
+}
+
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 6px 0;
+  color: var(--primary);
+}
+
+.header .subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.filter-btn {
+  padding: 5px 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.filter-btn:hover, .filter-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 18px 22px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+  border-left: 3px solid var(--accent);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.case-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  border-left-color: var(--primary);
+}
+
+.case-card .case-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.case-card .case-num {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  margin-right: 10px;
+  white-space: nowrap;
+}
+
+.case-card .case-title {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--text);
+}
+
+.case-card .case-toggle {
+  color: var(--accent);
+  font-size: 20px;
+  transition: transform 0.3s;
+  user-select: none;
+}
+
+.case-card.expanded .case-toggle {
+  transform: rotate(180deg);
+}
+
+.case-card .case-body {
+  display: none;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--bg);
+}
+
+.case-card.expanded .case-body {
+  display: block;
+}
+
+.case-body .cb-section {
+  margin-bottom: 10px;
+}
+
+.case-body .cb-label {
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 13px;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.tag {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  margin-right: 4px;
+}
+
+.progress-bar {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.prog-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.prog-dot.done {
+  background: var(--primary);
+}
+
+.prog-dot.current {
+  background: var(--accent);
+  transform: scale(1.15);
+}
+
+.footer {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+  padding: 20px 0 10px;
+  border-top: 1px solid var(--border);
+  margin-top: 20px;
+}
+
+@media (max-width: 640px) {
+  .wrapper { padding: 12px 14px; }
+  .header { padding: 16px 18px; }
+  .case-card { padding: 14px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<div class="header">
+  <h1>🏗️ 建构性案例 — 七阶递进练习</h1>
+  <div class="subtitle">从个人理解到综合创新，运用建构性原理独立创作</div>
+</div>
+
+<div class="card" style="background:var(--card-bg);border-radius:8px;padding:14px 18px;margin-bottom:16px;box-shadow:var(--shadow)">
+  <p style="margin:0;font-size:14px;color:var(--text-secondary)">
+    <strong>💡 使用建议：</strong>7 个案例难度递进。建议你从案例 1 开始逐一完成，也可以根据你的水平自由挑选。点击每个案例展开详情。
+    <span style="display:block;margin-top:6px">✅ 已完成标记会自动记录在浏览器中。</span>
+  </p>
+</div>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<div class="filter-bar">
+  <button class="filter-btn active" onclick="filterCases('all')">全部</button>
+  <button class="filter-btn" onclick="filterCases('easy')">⭐ 入门</button>
+  <button class="filter-btn" onclick="filterCases('medium')">⭐⭐ 进阶</button>
+  <button class="filter-btn" onclick="filterCases('hard')">⭐⭐⭐ 挑战</button>
+</div>
+
+<!-- 案例 1 -->
+<div class="case-card" data-level="easy" onclick="toggleCase(this)">
+  <div class="case-header">
+    <div>
+      <span class="case-num">案例 1 ⭐</span>
+      <span class="case-title">我的友谊画像 — My Ideal Friendship</span>
+    </div>
+    <span class="case-toggle">▼</span>
+  </div>
+  <div class="case-body">
+    <div class="cb-section">
+      <span class="cb-label">🎯 情境</span>
+      你在新班级认识了一位好朋友，想用英语给 TA 写一段自我介绍和友谊画像——你心中最理想的友谊是什么样的？
+    </div>
+    <div class="cb-section">
+      <span class="cb-label">📋 建构任务</span>
+      写一段 150 词的"My Ideal Friendship"陈述，表达你对友谊的理解和期待。
+    </div>
+    <div class="cb-section">
+      <span class="cb-label">🔧 原理调用</span>
+      <span class="tag">情境锚定法</span>
+      <span class="tag">方案建构与英语表达</span>
+    </div>
+    <div class="cb-section">
+      <span class="cb-label">📝 建构步骤</span>
+      ① 回忆你和这位朋友相处的 2—3 个具体瞬间 → ② 确定你认为友谊最重要的 3 个品质 → ③ 用关键词汇（loyal, trustworthy, supportive, honest, caring）组织语言 → ④ 配上简单的插画或照片，做成友谊画像卡片
+    </div>
+    <div class="cb-section">
+      <span class="cb-label">✅ 自评</span>
+      [ ] 我是否使用了至少 5 个描述品质的形容词？<br>
+      [ ] 我是否写了一个具体的回忆事例而不是空谈？
+    </div>
+  </div>
+</div>
+
+<!-- 案例 2 -->
+<div class="case-card" data-level="easy" onclick="toggleCase(this)">
+  <div class="case-header">
+    <div>
+      <span class="case-num">案例 2 ⭐</span>
+      <span class="case-title">解决一个小矛盾</span>
+    </div>
+    <span class="case-toggle">▼</span>
+  </div>
+  <div class="case-body">
+    <div class="cb-section">
+      <span class="cb-label">🎯 情境</span>
+      你和朋友因为周末安排产生了分歧：你想去看电影，TA 想去打篮球。双方都坚持己见，气氛有点尴尬。
+    </div>
+    <div class="cb-section">
+      <span class="cb-label">📋 建构任务</span>
+      用英语写一封 200 词的沟通邮件，理性友善地表达你的想法并邀请对方商量。
+    </div>
+    <div class="cb-section">
+      <span class="cb-label">🔧 原理调用</span>
+      <span class="tag">需求拆解策略</span>
+      <span class="tag">证据收集与共情表达</span>
+    </div>
+    <div class="cb-section">
+      <span class="cb-label">📝 建构步骤</span>
+      ① 描述事实（"Last Saturday we had a disagreement about..."）→ ② 表达你的感受并猜测对方的感受 → ③ 提出折中方案（"What if we go to the movie first, then play basketball?"）→ ④ 邀请对方回复
+    </div>
+    <div class="cb-section">
+      <span class="cb-label">✅ 自评</span>
+      [ ] 我是否用了"I understand..."句式表达共情？<br>
+      [ ] 我是否提出了至少 1 个可执行的具体方案？
+    </div>
+  </div>
+</div>
+
+<!-- 案例 3 -->
+<div class="case-card" data-level="medium" onclick="toggleCase(this)">
+  <div class="case-header">
+    <div>
+      <span class="case-num">案例 3 ⭐⭐</span>
+      <span class="case-title">班级友谊调查与行动建议</span>
+    </div>
+    <span class="case-toggle">▼</span>
+  </div>
+  <div class="case-body">
+    <div class="cb-section">
+      <span class="cb-label">🎯 情境</span>
+      你发现班级里有一些同学在课间总是一个人待着，似乎被孤立了。你想了解情况并提出改进建议。
+    </div>
+    <div class="cb-section">
+      <span class="cb-label">📋 建构任务</span>
+      完成一份英文"Class Friendship Survey & Action Plan"：先记录你观察到的情况，再给出 3 条具体的行动建议。
+    </div>
+    <div class="cb-section">
+      <span class="cb-label">🔧 原理调用</span>
+      <span class="tag">所有已学原理</span>
+    </div>
+    <div class="cb-section">
+      <span class="cb-label">📝 建构步骤</span>
+      ① 观察并记录 2—3 个具体现象 → ② 分析可能的原因（交友困难？性格内向？）→ ③ 提出 3 条具体行动建议（如 pairing system, lunch group rotation）→ ④ 用英语写成简报
+    </div>
+    <div class="cb-section">
+      <span class="cb-label">✅ 自评</span>
+      [ ] 我的建议是否基于观察到的具体现象？<br>
+      [ ] 我是否至少用了 3 个本单元的功能句型？
+    </div>
+  </div>
+</div>
+
+<!-- 案例 4 -->
+<div class="case-card" data-level="medium" onclick="toggleCase(this)">
+  <div class="case-header">
+    <div>
+      <span class="case-num">案例 4 ⭐⭐</span>
+      <span class="case-title">教材人物书信重写</span>
+    </div>
+    <span class="case-toggle">▼</span>
+  </div>
+  <div class="case-body">
+    <div class="cb-section">
+      <span class="cb-label">🎯 情境</span>
+      教材 Unit 1 中的人物 Anne 收到了一封朋友的回信，但回信写得太简短了。Anne 需要一封更完整、更有温度的回信。
+    </div>
+    <div class="cb-section">
+      <span class="cb-label">📋 建构任务</span>
+      以教材中某个人物的身份，给 Anne 写一封 250 词的英文回信，表达关心、分享自己的经历、给出建议。
+    </div>
+    <div class="cb-section">
+      <span class="cb-label">🔧 原理调用</span>
+      <span class="tag">情境锚定法</span>
+      <span class="tag">共情表达</span>
+    </div>
+    <div class="cb-section">
+      <span class="cb-label">📝 建构步骤</span>
+      ① 分析你要扮演的人物的性格特点 → ② 确定写信目的（安慰/建议/分享）→ ③ 模仿教材中的语言风格 → ④ 完成书信并检查格式
+    </div>
+    <div class="cb-section">
+      <span class="cb-label">✅ 自评</span>
+      [ ] 我写的是否符合该人物的身份和口吻？<br>
+      [ ] 书信格式是否正确（日期、称呼、正文、落款）？
+    </div>
+  </div>
+</div>
+
+<!-- 案例 5 -->
+<div class="case-card" data-level="medium" onclick="toggleCase(this)">
+  <div class="case-header">
+    <div>
+      <span class="case-num">案例 5 ⭐⭐</span>
+      <span class="case-title">友谊心理学英语小报</span>
+    </div>
+    <span class="case-toggle">▼</span>
+  </div>
+  <div class="case-body">
+    <div class="cb-section">
+      <span class="cb-label">🎯 情境</span>
+      心理学研究表明，友谊的建立通常经历 3 个阶段：接触→了解→信任。你能否用英语向同学们介绍这个有趣的发现？
+    </div>
+    <div class="cb-section">
+      <span class="cb-label">📋 建构任务</span>
+      设计一份 A4 大小的英文"Friendship Knowledge"小报，包含定义、三个阶段说明、一个研究案例和插图。
+    </div>
+    <div class="cb-section">
+      <span class="cb-label">🔧 原理调用</span>
+      <span class="tag">方案建构与英语表达</span>
+      <span class="tag">成果自检与优化</span>
+    </div>
+    <div class="cb-section">
+      <span class="cb-label">📝 建构步骤</span>
+      ① 搜集友谊三阶段的信息 → ② 设计小报布局（标题→定义→阶段图→案例→名言）→ ③ 用英语写出各板块内容 → ④ 添加手绘插图
+    </div>
+    <div class="cb-section">
+      <span class="cb-label">✅ 自评</span>
+      [ ] 我的小报是否包含 3 个以上的信息板块？<br>
+      [ ] 语言是否准确且适合同龄人阅读？
+    </div>
+  </div>
+</div>
+
+<!-- 案例 6 -->
+<div class="case-card" data-level="hard" onclick="toggleCase(this)">
+  <div class="case-header">
+    <div>
+      <span class="case-num">案例 6 ⭐⭐⭐</span>
+      <span class="case-title">国际笔友通信计划</span>
+    </div>
+    <span class="case-toggle">▼</span>
+  </div>
+  <div class="case-body">
+    <div class="cb-section">
+      <span class="cb-label">🎯 情境</span>
+      学校与国外友好学校开展了笔友项目。你被分配了一位美国笔友，TA 对中国文化很感兴趣。
+    </div>
+    <div class="cb-section">
+      <span class="cb-label">📋 建构任务</span>
+      写一封 250—300 词的英文交友信，介绍中国文化的一个有趣方面，同时询问对方的文化。
+    </div>
+    <div class="cb-section">
+      <span class="cb-label">🔧 原理调用</span>
+      <span class="tag">证据收集与共情表达</span>
+      <span class="tag">方案建构与英语表达</span>
+    </div>
+    <div class="cb-section">
+      <span class="cb-label">📝 建构步骤</span>
+      ① 选一个你想介绍的文化主题（中秋/书法/火锅）→ ② 用具体事例说明它的特别之处 → ③ 表达你对美国文化的兴趣并提问 → ④ 用书信格式完成
+    </div>
+    <div class="cb-section">
+      <span class="cb-label">✅ 自评</span>
+      [ ] 我是否介绍了中国文化的一个具体方面而不仅是笼统描述？<br>
+      [ ] 我是否提出了 2—3 个关于对方文化的问题以促进对话？
+    </div>
+  </div>
+</div>
+
+<!-- 案例 7 -->
+<div class="case-card" data-level="hard" onclick="toggleCase(this)">
+  <div class="case-header">
+    <div>
+      <span class="case-num">案例 7 ⭐⭐⭐</span>
+      <span class="case-title">班级友谊文化建设方案</span>
+    </div>
+    <span class="case-toggle">▼</span>
+  </div>
+  <div class="case-body">
+    <div class="cb-section">
+      <span class="cb-label">🎯 情境</span>
+      你被选为班级文化建设的负责人。你想在下个月举办一个"友谊月"活动，通过系列活动增进同学之间的了解和信任。
+    </div>
+    <div class="cb-section">
+      <span class="cb-label">📋 建构任务</span>
+      完成英文版"Friendship Month Proposal"，包含活动名称、目的、至少 3 项活动流程和简单预算。
+    </div>
+    <div class="cb-section">
+      <span class="cb-label">🔧 原理调用</span>
+      <span class="tag">需求拆解策略</span>
+      <span class="tag">方案建构与英语表达</span>
+      <span class="tag">成果自检与优化</span>
+    </div>
+    <div class="cb-section">
+      <span class="cb-label">📝 建构步骤</span>
+      ① 分析班级现状：同学们之间有什么友谊问题？→ ② 确定活动目标 → ③ 设计 3—4 项具体活动（如"Secret Friend"一周配对、"Friendship Story"分享会）→ ④ 用英语写成提案 → ⑤ 自检完善
+    </div>
+    <div class="cb-section">
+      <span class="cb-label">✅ 自评</span>
+      [ ] 我的提案是否包含活动名称、目的、流程和预算？<br>
+      [ ] 我的活动方案是否切实可行、适合班级实际情况？<br>
+      [ ] 我是否使用了连接词让提案结构清晰？
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  M13 新知项目性应用 · 建构性导学 · 英语 · 必修1<br>
+  点击案例查看详情 · 完成 7 个案例即通关 🏆
+</div>
+
+</div>
+
+<script>
+// 展开/收起
+function toggleCase(el) {
+  el.classList.toggle('expanded');
+  updateProgress();
+}
+
+// 筛选
+function filterCases(level) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  document.querySelectorAll('.case-card').forEach(c => {
+    if (level === 'all') {
+      c.style.display = 'block';
+    } else {
+      c.style.display = c.dataset.level === level ? 'block' : 'none';
+    }
+  });
+}
+
+// 进度标记（使用 localStorage）
+function updateProgress() {
+  var dots = document.querySelectorAll('.prog-dot');
+  var cards = document.querySelectorAll('.case-card');
+  var completed = 0;
+  cards.forEach(function(c, i) {
+    if (c.classList.contains('expanded')) {
+      dots[i].classList.add('done');
+      completed++;
+    } else {
+      dots[i].classList.remove('done');
+    }
+  });
+  // 在进度条下方显示进度数字
+  var pBar = document.getElementById('progressBar');
+  var info = pBar.querySelector('.prog-info');
+  if (!info) {
+    info = document.createElement('div');
+    info.className = 'prog-info';
+    info.style.cssText = 'text-align:center;font-size:13px;color:var(--text-secondary);width:100%';
+    pBar.appendChild(info);
+  }
+  info.textContent = '已展开 ' + completed + ' / 7 个案例';
+}
+
+// 初始化进度条
+(function initProgress() {
+  var pBar = document.getElementById('progressBar');
+  for (var i = 1; i <= 7; i++) {
+    var dot = document.createElement('div');
+    dot.className = 'prog-dot';
+    dot.textContent = i;
+    dot.title = '案例 ' + i;
+    dot.onclick = function(idx) {
+      return function() {
+        var cards = document.querySelectorAll('.case-card');
+        if (cards[idx]) {
+          cards[idx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      };
+    }(i - 1);
+    pBar.appendChild(dot);
+  }
+  updateProgress();
+})();
+</script>
+</body>
+</html>

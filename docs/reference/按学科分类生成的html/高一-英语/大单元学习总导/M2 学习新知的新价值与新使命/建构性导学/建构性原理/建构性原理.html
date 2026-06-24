@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性原理 · 内在驱动力引擎</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --font-h1: 22px;
+  --engine-orange: #f59e0b;
+  --engine-gold: #fbbf24;
+  --engine-copper: #d97706;
+  --engine-dark: #1c1917;
+  --engine-bg: #1a120b;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 30%, #fbbf24 70%, #f59e0b 100%);
+  min-height: 100vh;
+}
+
+.container { width: 100%; max-width: none; padding: 16px; }
+
+/* ===== Header ===== */
+.header {
+  text-align: center; padding: 20px; margin-bottom: 16px;
+  background: linear-gradient(135deg, rgba(28,25,23,.85), rgba(120,90,60,.8));
+  border-radius: var(--border-radius);
+  border: 1px solid rgba(251,191,36,.3);
+}
+.header h1 {
+  font-size: var(--font-h1); color: var(--engine-gold); font-weight: 700;
+  text-shadow: 0 2px 8px rgba(251,191,36,.3);
+  margin-bottom: 6px;
+}
+.header p { color: #d4a373; font-size: 14px; }
+.header .badge {
+  display: inline-block; padding: 2px 12px; background: rgba(251,191,36,.2);
+  border: 1px solid rgba(251,191,36,.3); border-radius: 12px;
+  color: var(--engine-gold); font-size: 12px; margin-top: 8px;
+}
+
+/* ===== Engine Dashboard ===== */
+.engine-dashboard {
+  display: flex; gap: 16px; margin-bottom: 16px;
+}
+.engine-visual {
+  flex: 1;
+  background: linear-gradient(180deg, #292524 0%, #1c1917 100%);
+  border-radius: var(--border-radius);
+  border: 2px solid var(--engine-copper);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  min-height: 360px;
+}
+.engine-visual::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(ellipse at 50% 80%, rgba(251,191,36,.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.engine-title {
+  text-align: center; color: var(--engine-gold); font-size: 14px;
+  font-weight: 600; letter-spacing: 2px; margin-bottom: 14px;
+  text-transform: uppercase;
+}
+
+/* Steam-punk engine cylinders */
+.engine-block {
+  display: flex; gap: 10px; justify-content: center; align-items: flex-end;
+  height: 200px; margin-bottom: 10px;
+}
+.cylinder {
+  width: 70px; display: flex; flex-direction: column; align-items: center;
+  position: relative; cursor: pointer; transition: transform .3s;
+}
+.cylinder:hover { transform: scale(1.05); }
+.cylinder .cylinder-label {
+  font-size: 10px; color: #a8a29e; text-align: center;
+  margin-top: 6px; line-height: 1.3;
+}
+.cylinder .cylinder-body {
+  width: 100%; height: 140px; border-radius: 8px 8px 4px 4px;
+  border: 2px solid var(--engine-copper);
+  background: linear-gradient(180deg, #44403c, #292524);
+  position: relative; overflow: hidden;
+}
+.cylinder .cylinder-fill {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 20%;
+  background: linear-gradient(0deg, var(--engine-gold), var(--engine-orange));
+  transition: height 1s ease;
+  border-radius: 0 0 4px 4px;
+}
+.cylinder .cylinder-fill::after {
+  content: ''; position: absolute; top: -2px; left: 0; right: 0;
+  height: 3px; background: rgba(255,255,255,.6);
+  filter: blur(2px);
+}
+.cylinder .cylinder-glow {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 6px;
+  box-shadow: inset 0 0 12px rgba(251,191,36,.15);
+  transition: box-shadow .5s;
+}
+.cylinder.active .cylinder-glow {
+  box-shadow: inset 0 0 20px rgba(251,191,36,.4), 0 0 16px rgba(251,191,36,.2);
+}
+.cylinder .cylinder-cap {
+  width: 80px; height: 12px;
+  background: linear-gradient(180deg, #78716c, #57534e);
+  border-radius: 4px; border: 1px solid var(--engine-copper);
+  margin-bottom: 2px;
+}
+
+/* Energy ball tray */
+.energy-tray {
+  display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+  padding: 12px 0; border-top: 1px solid rgba(251,191,36,.2);
+}
+.energy-ball {
+  width: 48px; height: 48px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: #fff; font-weight: 600;
+  cursor: grab; transition: all .3s; user-select: none;
+  position: relative;
+  animation: float 3s ease-in-out infinite;
+}
+.energy-ball:hover { transform: scale(1.15); filter: brightness(1.2); }
+.energy-ball.dragging { opacity: .5; }
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+.energy-ball .ball-label {
+  position: absolute; bottom: -18px; font-size: 9px; color: #a8a29e;
+  white-space: nowrap;
+}
+
+/* Engine controls */
+.engine-controls {
+  width: 300px;
+  background: linear-gradient(180deg, #292524 0%, #1c1917 100%);
+  border-radius: var(--border-radius);
+  border: 2px solid var(--engine-copper);
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.engine-btn {
+  padding: 10px; border: 2px solid var(--engine-copper);
+  border-radius: 6px; background: linear-gradient(180deg, #44403c, #292524);
+  color: var(--engine-gold); font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: all .3s; text-align: center;
+}
+.engine-btn:hover { background: linear-gradient(180deg, #57534e, #44403c); border-color: var(--engine-gold); }
+.engine-btn:disabled { opacity: .4; cursor: not-allowed; }
+.engine-btn.ignite { background: linear-gradient(180deg, #d97706, #92400e); border-color: #f59e0b; color: #fff; font-size: 16px; }
+.engine-btn.ignite:hover { background: linear-gradient(180deg, #f59e0b, #b45309); }
+
+.power-meter {
+  text-align: center; padding: 10px;
+  background: rgba(0,0,0,.3); border-radius: 4px;
+}
+.power-meter .meter-label { font-size: 11px; color: #a8a29e; }
+.power-meter .meter-value { font-size: 20px; font-weight: 700; color: #fff; }
+.power-meter .meter-value.green { color: #52b788; }
+.power-meter .meter-value.yellow { color: var(--engine-gold); }
+
+/* ===== Principles Content Area ===== */
+.content-area {
+  background: rgba(255,255,255,.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.section-title {
+  font-size: var(--font-h2); font-weight: 700;
+  color: var(--engine-copper); margin-bottom: 14px;
+  display: flex; align-items: center; gap: 8px;
+}
+.principle-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  transition: all .3s;
+  cursor: pointer;
+  border-left: 4px solid var(--engine-copper);
+}
+.principle-card:hover { border-color: var(--engine-orange); box-shadow: 0 2px 12px rgba(251,191,36,.15); }
+.principle-card .principle-num {
+  display: inline-block; font-size: 11px; font-weight: 700;
+  background: var(--engine-copper); color: #fff;
+  padding: 1px 8px; border-radius: 4px; margin-right: 8px;
+}
+.principle-card .principle-name { font-weight: 600; font-size: calc(var(--font-body) + 1px); }
+.principle-card .principle-detail {
+  max-height: 0; overflow: hidden; transition: max-height .4s ease;
+  font-size: 14px; color: var(--text-secondary);
+}
+.principle-card.expanded .principle-detail { max-height: 300px; padding-top: 10px; border-top: 1px solid var(--border); margin-top: 10px; }
+
+/* Practice cards */
+.practice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.practice-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px;
+}
+.practice-card h4 { font-size: 14px; font-weight: 600; color: var(--primary); margin-bottom: 6px; }
+
+/* ===== Power formula card (modal) ===== */
+.recipe-overlay {
+  display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,.6); z-index: 300; justify-content: center;
+  align-items: center; backdrop-filter: blur(4px);
+}
+.recipe-overlay.show { display: flex; }
+.recipe-card {
+  background: linear-gradient(135deg, #1c1917, #292524);
+  border: 2px solid var(--engine-gold);
+  border-radius: 12px; padding: 28px; max-width: 420px;
+  width: 90%; position: relative;
+  box-shadow: 0 8px 32px rgba(251,191,36,.2);
+}
+.recipe-card .recipe-close {
+  position: absolute; top: 12px; right: 14px; color: #a8a29e;
+  cursor: pointer; font-size: 20px;
+}
+.recipe-card .recipe-title {
+  color: var(--engine-gold); font-size: 16px; font-weight: 700;
+  text-align: center; margin-bottom: 16px;
+}
+.recipe-card .recipe-section {
+  margin-bottom: 10px; padding: 10px; border-radius: 6px;
+  background: rgba(255,255,255,.05);
+}
+.recipe-card .recipe-section .rs-label {
+  font-size: 11px; color: var(--engine-gold); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 1px;
+}
+.recipe-card .recipe-section .rs-value { color: #e7e5e4; font-size: 14px; margin-top: 4px; }
+
+/* ===== Power kit ===== */
+.power-kit-overlay {
+  display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,.6); z-index: 300; justify-content: center;
+  align-items: center; backdrop-filter: blur(4px);
+}
+.power-kit-overlay.show { display: flex; }
+.power-kit {
+  background: linear-gradient(135deg, #fef3c7, #fffbeb);
+  border: 2px solid var(--engine-gold);
+  border-radius: 12px; padding: 24px; max-width: 400px;
+  width: 90%;
+}
+.power-kit h3 { color: var(--engine-copper); margin-bottom: 12px; font-size: 16px; }
+.power-kit .kit-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,.06);
+  font-size: 14px;
+}
+.power-kit .kit-item:last-child { border-bottom: none; }
+
+/* ===== Declaration ===== */
+.declaration-overlay {
+  display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,.6); z-index: 300; justify-content: center;
+  align-items: center; backdrop-filter: blur(4px);
+}
+.declaration-overlay.show { display: flex; }
+.declaration-box {
+  background: linear-gradient(135deg, #1c1917, #292524);
+  border: 2px solid var(--engine-gold);
+  border-radius: 12px; padding: 28px; max-width: 420px; width: 90%;
+  text-align: center;
+}
+.declaration-box h3 { color: var(--engine-gold); font-size: 16px; margin-bottom: 14px; }
+.declaration-box input {
+  width: 100%; padding: 10px 14px; border: 1px solid var(--engine-copper);
+  border-radius: 6px; background: rgba(255,255,255,.08);
+  color: #fff; font-size: 15px; font-family: inherit; margin-bottom: 12px;
+  outline: none;
+}
+.declaration-box input::placeholder { color: #78716c; }
+.declaration-box input:focus { border-color: var(--engine-gold); }
+.declaration-box .declaration-text {
+  color: var(--engine-gold); font-size: 18px; font-weight: 600;
+  min-height: 40px; padding: 8px;
+  border: 1px dashed rgba(251,191,36,.3); border-radius: 6px;
+  margin-top: 8px;
+}
+
+/* ===== Ignition particles ===== */
+.particle-container {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none; z-index: 400;
+}
+
+/* ===== Pie Chart ===== */
+.chart-container { margin-top: 10px; }
+.class-chart { width: 100%; height: 120px; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .engine-dashboard { flex-direction: column; }
+  .engine-visual { min-height: 300px; }
+  .engine-controls { width: 100%; }
+  .practice-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .container { padding: 8px; }
+  .engine-block { height: 160px; }
+  .cylinder { width: 50px; }
+  .cylinder .cylinder-body { height: 100px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <h1>⚙️ 建构性原理 · 内在驱动力引擎</h1>
+    <p>英语 · 必修1 · Unit 1 Friendship · 把你的学习动机转化为持久动力</p>
+    <span class="badge">🔋 激活模式</span>
+  </div>
+
+  <!-- Engine Dashboard -->
+  <div class="engine-dashboard">
+    <div class="engine-visual" id="engineVisual">
+      <div class="engine-title">🔥 驱动力引擎</div>
+      <div class="engine-block" id="engineBlock">
+        <div class="cylinder" data-cylinder="0" onclick="injectBall(0)">
+          <div class="cylinder-cap"></div>
+          <div class="cylinder-body">
+            <div class="cylinder-fill" id="fill0" style="height:15%"></div>
+            <div class="cylinder-glow"></div>
+          </div>
+          <div class="cylinder-label">认知<br>驱动</div>
+        </div>
+        <div class="cylinder" data-cylinder="1" onclick="injectBall(1)">
+          <div class="cylinder-cap"></div>
+          <div class="cylinder-body">
+            <div class="cylinder-fill" id="fill1" style="height:15%"></div>
+            <div class="cylinder-glow"></div>
+          </div>
+          <div class="cylinder-label">情感<br>驱动</div>
+        </div>
+        <div class="cylinder" data-cylinder="2" onclick="injectBall(2)">
+          <div class="cylinder-cap"></div>
+          <div class="cylinder-body">
+            <div class="cylinder-fill" id="fill2" style="height:15%"></div>
+            <div class="cylinder-glow"></div>
+          </div>
+          <div class="cylinder-label">社会<br>驱动</div>
+        </div>
+        <div class="cylinder" data-cylinder="3" onclick="injectBall(3)">
+          <div class="cylinder-cap"></div>
+          <div class="cylinder-body">
+            <div class="cylinder-fill" id="fill3" style="height:15%"></div>
+            <div class="cylinder-glow"></div>
+          </div>
+          <div class="cylinder-label">成就<br>驱动</div>
+        </div>
+        <div class="cylinder" data-cylinder="4" onclick="injectBall(4)">
+          <div class="cylinder-cap"></div>
+          <div class="cylinder-body">
+            <div class="cylinder-fill" id="fill4" style="height:15%"></div>
+            <div class="cylinder-glow"></div>
+          </div>
+          <div class="cylinder-label">价值<br>驱动</div>
+        </div>
+      </div>
+      <!-- Energy balls -->
+      <div class="energy-tray" id="energyTray">
+        <div class="energy-ball" draggable="true" data-type="0" style="background:radial-gradient(circle at 35% 35%,#93c5fd,#3b82f6);animation-delay:0s"><span class="ball-label">好奇心</span></div>
+        <div class="energy-ball" draggable="true" data-type="1" style="background:radial-gradient(circle at 35% 35%,#fca5a5,#ef4444);animation-delay:.3s"><span class="ball-label">共鸣感</span></div>
+        <div class="energy-ball" draggable="true" data-type="2" style="background:radial-gradient(circle at 35% 35%,#a7f3d0,#34d399);animation-delay:.6s"><span class="ball-label">归属感</span></div>
+        <div class="energy-ball" draggable="true" data-type="3" style="background:radial-gradient(circle at 35% 35%,#fde68a,#f59e0b);animation-delay:.9s"><span class="ball-label">成就感</span></div>
+        <div class="energy-ball" draggable="true" data-type="4" style="background:radial-gradient(circle at 35% 35%,#c4b5fd,#8b5cf6);animation-delay:1.2s"><span class="ball-label">意义感</span></div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="engine-controls">
+      <div class="power-meter">
+        <div class="meter-label">动力指数</div>
+        <div class="meter-value" id="powerMeter">—</div>
+      </div>
+      <button class="engine-btn ignite" id="igniteBtn" disabled onclick="igniteEngine()">🚀 启动引擎</button>
+      <button class="engine-btn" disabled id="recipeBtn" onclick="showRecipe()">📋 生成动力配方</button>
+      <button class="engine-btn" onclick="showKit()">🆘 动力急救包</button>
+      <button class="engine-btn" id="declareBtn" onclick="showDeclaration()">✍️ 动力宣言</button>
+
+      <!-- Class comparison -->
+      <div style="border-top:1px solid rgba(251,191,36,.2);padding-top:8px;margin-top:4px;">
+        <div style="font-size:11px;color:#a8a29e;text-align:center;margin-bottom:6px;">📊 班级动力类型分布（模拟）</div>
+        <canvas id="classChart" class="class-chart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content: 5 Principles -->
+  <div class="content-area">
+    <div class="section-title">🔧 建构性原理提炼</div>
+
+    <div class="principle-card expanded" onclick="togglePrinciple(this)">
+      <span class="principle-num">1</span>
+      <span class="principle-name">情境激活原理</span>
+      <div class="principle-detail">
+        <p><strong>核心思想</strong>：从真实的情感体验出发，而不是从语法规则出发学习英语。</p>
+        <p><strong>来源</strong>：在建构性示例中，学生从"收到外国笔友邮件"的真实情境切入，先感受再分析。</p>
+        <p><strong>适用场景</strong>：任何需要建立"情感连接"的英语学习场景——角色扮演、书信写作、观点表达。</p>
+        <p><strong>注意事项</strong>：情境要真实可信，不能虚假造作。让学生觉得"这真的会发生在我身上"。</p>
+      </div>
+    </div>
+
+    <div class="principle-card" onclick="togglePrinciple(this)">
+      <span class="principle-num">2</span>
+      <span class="principle-name">框架建构原理</span>
+      <div class="principle-detail">
+        <p><strong>核心思想</strong>：先搭骨架（结构），再填血肉（内容）。</p>
+        <p><strong>来源</strong>：语篇解析五步法提供了一个分析框架，学生按框架逐层深入。</p>
+        <p><strong>适用场景</strong>：写作教学（先给结构模板再自由创作）、阅读理解（先把握结构再分析细节）。</p>
+        <p><strong>注意事项</strong>：框架不能成为束缚——要在学生掌握后鼓励突破框架、创新表达。</p>
+      </div>
+    </div>
+
+    <div class="principle-card" onclick="togglePrinciple(this)">
+      <span class="principle-num">3</span>
+      <span class="principle-name">证据驱动原理</span>
+      <div class="principle-detail">
+        <p><strong>核心思想</strong>：用具体事例支撑抽象观点，避免空洞。</p>
+        <p><strong>来源</strong>：在解析语篇时，所有对作者立场和意图的判断都必须回到文本中找语言证据。</p>
+        <p><strong>适用场景</strong>：议论文写作、语篇分析、演讲表达——任何需要"有理有据"的英语输出。</p>
+        <p><strong>注意事项</strong>：证据要有代表性而不只是"凑数"；要学会区分"直接证据"和"间接暗示"。</p>
+      </div>
+    </div>
+
+    <div class="principle-card" onclick="togglePrinciple(this)">
+      <span class="principle-num">4</span>
+      <span class="principle-name">循环迭代原理</span>
+      <div class="principle-detail">
+        <p><strong>核心思想</strong>：写作不是一次成型，而是修改出来的。</p>
+        <p><strong>来源</strong>：建构过程中强调反馈修改环节——同伴交换解析笔记、讨论差异、完善理解。</p>
+        <p><strong>适用场景</strong>：英语写作（初稿→同伴反馈→修改→定稿）、口语表达（练习→录音→回听→改进）。</p>
+        <p><strong>注意事项</strong>：迭代要有方向——每次修改都聚焦一个具体维度（如词汇多样性、逻辑连贯性）。</p>
+      </div>
+    </div>
+
+    <div class="principle-card" onclick="togglePrinciple(this)">
+      <span class="principle-num">5</span>
+      <span class="principle-name">读者意识原理</span>
+      <div class="principle-detail">
+        <p><strong>核心思想</strong>：始终想着"我的表达是为谁而写的"。</p>
+        <p><strong>来源</strong>：从"给转学生写欢迎信"的案例中提炼——写信时要考虑对方的身份、感受和期待。</p>
+        <p><strong>适用场景</strong>：应用文写作（邮件、书信、邀请函）、海报设计、公开演讲。</p>
+        <p><strong>注意事项</strong>：不要过度揣测读者心理而失去自己的表达风格——在"读者友好"和"个性表达"之间找平衡。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content: Practice -->
+  <div class="content-area">
+    <div class="section-title">🏋️ 建构性原理迁移应用</div>
+    <div class="practice-grid">
+      <div class="practice-card">
+        <h4>📝 练习1：介绍你的友谊圈</h4>
+        <p style="font-size:13px;color:var(--text-secondary);margin:6px 0;">情境：向寄宿家庭用英语介绍你的日常友谊文化</p>
+        <p style="font-size:13px;"><strong>建议原理</strong>：情境激活 + 读者意识</p>
+        <p style="font-size:13px;color:var(--text-secondary);">脚手架：先列出3个你与朋友相处的典型场景，每个场景用2-3句英语描述</p>
+      </div>
+      <div class="practice-card">
+        <h4>🌏 练习2：中西方友谊观短评</h4>
+        <p style="font-size:13px;color:var(--text-secondary);margin:6px 0;">情境：比较中西友谊观差异，写一段80-100词英语短评</p>
+        <p style="font-size:13px;"><strong>建议原理</strong>：框架建构 + 证据驱动</p>
+        <p style="font-size:13px;color:var(--text-secondary);">脚手架：先用表格列出3个维度（交友方式、表达亲密的方式、冲突处理），再逐项展开</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content: Metacognition -->
+  <div class="content-area">
+    <div class="section-title">🔄 元认知反思</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="background:var(--bg);padding:12px;border-radius:6px;border-left:3px solid var(--engine-gold);font-size:14px;">
+        <strong>Q1</strong>：在建构过程中遇到了什么困难？是怎么解决的？
+      </div>
+      <div style="background:var(--bg);padding:12px;border-radius:6px;border-left:3px solid var(--engine-gold);font-size:14px;">
+        <strong>Q2</strong>：哪条原理对你最有帮助？为什么？
+      </div>
+      <div style="background:var(--bg);padding:12px;border-radius:6px;border-left:3px solid var(--engine-gold);font-size:14px;">
+        <strong>Q3</strong>：如果重新做一次，你会改进什么？
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recipe overlay -->
+<div class="recipe-overlay" id="recipeOverlay">
+  <div class="recipe-card">
+    <span class="recipe-close" onclick="closeRecipe()">✕</span>
+    <div class="recipe-title">📋 个人学习动力优化配方卡</div>
+    <div class="recipe-section">
+      <div class="rs-label">💪 你的动力优势</div>
+      <div class="rs-value" id="rsStrength">探索未知让你最来劲！你的好奇心驱动能帮你轻松攻克词汇和语法难关。</div>
+    </div>
+    <div class="recipe-section">
+      <div class="rs-label">⚠️ 动力短板提醒</div>
+      <div class="rs-value" id="rsWeakness">当学习内容重复枯燥时，你的动力容易下降。注意设置小目标来维持节奏。</div>
+    </div>
+    <div class="recipe-section">
+      <div class="rs-label">🛠️ 动力维护建议</div>
+      <div class="rs-value" id="rsMaintain">学不进去时：换一个学习方式（听→说→读→写循环切换），或者给自己5分钟休息。</div>
+    </div>
+    <div class="recipe-section">
+      <div class="rs-label">🚀 动力升级路径</div>
+      <div class="rs-value" id="rsUpgrade">试着把"因为老师要求"变成"因为我想知道"——为每一个学习任务找到你的"为什么"。</div>
+    </div>
+  </div>
+</div>
+
+<!-- Power kit overlay -->
+<div class="power-kit-overlay" id="kitOverlay">
+  <div class="power-kit">
+    <h3>🆘 动力急救包</h3>
+    <div class="kit-item"><span style="font-size:20px;">🧘</span>换个姿势，深呼吸30秒——身体状态影响思维状态</div>
+    <div class="kit-item"><span style="font-size:20px;">🎯</span>给自己设定一个5分钟的小目标——"就学5分钟"</div>
+    <div class="kit-item"><span style="font-size:20px;">😊</span>回想你上次学会一个东西时的快乐——那种感觉值得重温</div>
+    <div class="kit-item"><span style="font-size:20px;">🔄</span>换一个学习通道——读累了就听，听累了就说</div>
+    <div class="kit-item"><span style="font-size:20px;">🎵</span>放一首你喜欢的英文歌，边听边跟唱——语言和音乐不分家</div>
+    <button class="engine-btn" style="margin-top:10px;width:100%;" onclick="closeKit()">知道了 👍</button>
+  </div>
+</div>
+
+<!-- Declaration overlay -->
+<div class="declaration-overlay" id="declareOverlay">
+  <div class="declaration-box">
+    <h3>✍️ 我的动力宣言</h3>
+    <p style="color:#a8a29e;font-size:13px;margin-bottom:12px;">我学英语是因为：</p>
+    <input id="declareInput1" placeholder="填写你的第一个理由…" oninput="updateDeclarePreview()">
+    <input id="declareInput2" placeholder="填写你的第二个理由…" oninput="updateDeclarePreview()">
+    <div class="declaration-text" id="declarePreview">我学英语是因为 ______，______。</div>
+    <button class="engine-btn ignite" style="margin-top:12px;width:100%;" onclick="saveDeclaration()">🔒 刻上铭牌</button>
+  </div>
+</div>
+
+<!-- Particles container -->
+<canvas id="particleCanvas" class="particle-container" style="display:none;"></canvas>
+
+<script>
+// ===== Engine state =====
+let ballCount = 0;
+const cylinderFills = [15, 15, 15, 15, 15];
+const ballTypeMap = [0, 1, 2, 3, 4]; // cognitive, emotional, social, achievement, value
+
+function injectBall(cylinderIdx) {
+  if (ballCount >= 5) return;
+  // Find a ball that hasn't been injected
+  const tray = document.getElementById('energyTray');
+  const balls = tray.querySelectorAll('.energy-ball:not(.injected)');
+  if (!balls.length) return;
+
+  const ball = balls[0];
+  ball.classList.add('injected');
+  ball.style.opacity = '.3';
+  ball.style.transform = 'scale(.6)';
+
+  // Increase fill
+  cylinderFills[cylinderIdx] = Math.min(90, cylinderFills[cylinderIdx] + 18);
+  document.getElementById(`fill${cylinderIdx}`).style.height = cylinderFills[cylinderIdx] + '%';
+  document.querySelector(`[data-cylinder="${cylinderIdx}"]`).classList.add('active');
+
+  ballCount++;
+  document.getElementById('powerMeter').textContent = `${ballCount}/5`;
+
+  if (ballCount >= 5) {
+    document.getElementById('igniteBtn').disabled = false;
+    document.getElementById('powerMeter').textContent = '⚡ 就绪！';
+    document.getElementById('powerMeter').className = 'meter-value green';
+  }
+}
+
+// ===== Ignite =====
+function igniteEngine() {
+  const btn = document.getElementById('igniteBtn');
+  btn.disabled = true;
+  btn.textContent = '🔥 点火中...';
+
+  // Show particles
+  const pc = document.getElementById('particleCanvas');
+  pc.style.display = 'block';
+  pc.width = window.innerWidth;
+  pc.height = window.innerHeight;
+  const ctx = pc.getContext('2d');
+  const particles = [];
+  for (let i = 0; i < 80; i++) {
+    particles.push({
+      x: window.innerWidth / 2 + (Math.random() - .5) * 200,
+      y: window.innerHeight / 2 + (Math.random() - .5) * 100,
+      vx: (Math.random() - .5) * 8,
+      vy: -Math.random() * 10 - 2,
+      size: Math.random() * 6 + 2,
+      color: ['#f59e0b','#fbbf24','#f97316','#ef4444','#fef3c7'][Math.floor(Math.random() * 5)],
+      life: 1
+    });
+  }
+
+  let frame = 0;
+  function animateParticles() {
+    if (frame > 60) {
+      ctx.clearRect(0, 0, pc.width, pc.height);
+      pc.style.display = 'none';
+      btn.textContent = '🚀 引擎已启动！';
+      document.getElementById('recipeBtn').disabled = false;
+
+      // Show power assessment
+      const internal = cylinderFills[0] + cylinderFills[3] + cylinderFills[4];
+      const external = cylinderFills[1] + cylinderFills[2];
+      const msg = internal >= external
+        ? '🔥 你的学习动力主要来自内在驱动！这让你在学习有深度的内容时最有劲头！'
+        : '⚡ 你的动力外部驱动占比较高，试着找找学习本身的乐趣吧！';
+      document.getElementById('powerMeter').textContent = msg;
+      document.getElementById('powerMeter').className = 'meter-value ' + (internal >= external ? 'green' : 'yellow');
+      return;
+    }
+    ctx.clearRect(0, 0, pc.width, pc.height);
+    particles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += .08;
+      p.life -= .015;
+      ctx.globalAlpha = Math.max(0, p.life);
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    frame++;
+    requestAnimationFrame(animateParticles);
+  }
+  animateParticles();
+}
+
+// ===== Recipe =====
+function showRecipe() { document.getElementById('recipeOverlay').classList.add('show'); }
+function closeRecipe() { document.getElementById('recipeOverlay').classList.remove('show'); }
+
+// ===== Power kit =====
+function showKit() { document.getElementById('kitOverlay').classList.add('show'); }
+function closeKit() { document.getElementById('kitOverlay').classList.remove('show'); }
+
+// ===== Declaration =====
+function showDeclaration() { document.getElementById('declareOverlay').classList.add('show'); }
+function updateDeclarePreview() {
+  const v1 = document.getElementById('declareInput1').value || '______';
+  const v2 = document.getElementById('declareInput2').value || '______';
+  document.getElementById('declarePreview').textContent = `我学英语是因为 ${v1}，${v2}。`;
+}
+function saveDeclaration() {
+  const v1 = document.getElementById('declareInput1').value || '不断探索';
+  const v2 = document.getElementById('declareInput2').value || '连接世界';
+  document.getElementById('declareOverlay').classList.remove('show');
+  alert('🎉 动力宣言已刻上引擎铭牌！\n\n「我学英语是因为 ' + v1 + '，' + v2 + '。」');
+}
+
+// ===== Principle toggle =====
+function togglePrinciple(el) {
+  el.classList.toggle('expanded');
+}
+
+// ===== Class chart (pie) =====
+function drawClassChart() {
+  const canvas = document.getElementById('classChart');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = canvas.clientWidth * 2;
+  canvas.height = canvas.clientHeight * 2;
+  const ctx = canvas.getContext('2d');
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+  const r = 42;
+  const data = [28, 20, 18, 22, 12];
+  const colors = ['#3b82f6','#ef4444','#34d399','#f59e0b','#8b5cf6'];
+  const labels = ['认知28%','情感20%','社会18%','成就22%','价值12%'];
+  let sum = data.reduce((a,b) => a + b, 0);
+  let start = -Math.PI / 2;
+  data.forEach((v, i) => {
+    const angle = (v / sum) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start, start + angle);
+    ctx.closePath();
+    ctx.fillStyle = colors[i];
+    ctx.fill();
+    // Label
+    const mid = start + angle / 2;
+    ctx.fillStyle = '#e7e5e4';
+    ctx.font = '9px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(labels[i], cx + Math.cos(mid) * (r + 14), cy + Math.sin(mid) * (r + 14));
+    start += angle;
+  });
+  // Center
+  ctx.beginPath();
+  ctx.arc(cx, cy, 16, 0, Math.PI * 2);
+  ctx.fillStyle = '#292524';
+  ctx.fill();
+  ctx.fillStyle = '#fbbf24';
+  ctx.font = 'bold 14px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('班级', cx, cy);
+}
+drawClassChart();
+</script>
+</body>
+</html>

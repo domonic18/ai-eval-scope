@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视频脚手架 — 观看焦点训练</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  padding: 0;
+}
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+header {
+  background: linear-gradient(135deg, #434343 0%, #595959 100%);
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  margin-bottom: 20px;
+}
+header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 6px; }
+header p { font-size: 14px; opacity: 0.85; }
+.level-tabs {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 20px; border-bottom: 2px solid var(--border); padding-bottom: 12px;
+}
+.level-tab {
+  padding: 8px 18px; border-radius: 20px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--card-bg);
+  font-size: 14px; font-weight: 500; transition: all 0.25s ease;
+  color: var(--text-secondary);
+}
+.level-tab:hover { border-color: var(--primary); color: var(--primary); }
+.level-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.card {
+  background: var(--card-bg); border-radius: var(--border-radius);
+  box-shadow: var(--shadow); padding: 20px; margin-bottom: 16px;
+  border: 1px solid var(--border); display: none;
+}
+.card.show { display: block; }
+.card-badge {
+  display: inline-block; padding: 2px 12px; border-radius: 12px;
+  font-size: 12px; font-weight: 600; margin-bottom: 12px; color: #fff;
+}
+.badge-basic { background: #8c8c8c; }
+.badge-intermediate { background: #595959; }
+.badge-challenge { background: #262626; }
+.card h2 { font-size: var(--font-h2); font-weight: 600; margin-bottom: 10px; color: var(--primary); }
+.card h3 { font-size: 16px; font-weight: 600; margin: 14px 0 6px; }
+.card p { margin-bottom: 8px; }
+.task-list { list-style: none; padding: 0; }
+.task-list li {
+  position: relative; padding: 10px 12px 10px 36px;
+  margin-bottom: 6px; border-radius: 6px;
+  background: var(--bg); border-left: 3px solid var(--accent);
+}
+.task-list li::before {
+  content: "▶"; position: absolute; left: 12px;
+  color: var(--primary); font-size: 12px; top: 12px;
+}
+.question-list { list-style: none; padding: 0; }
+.question-list li {
+  padding: 8px 12px 8px 28px; margin-bottom: 6px;
+  border-radius: 6px; background: var(--card-bg);
+  border: 1px solid var(--border); position: relative;
+}
+.question-list li::before {
+  content: "Q"; position: absolute; left: 8px;
+  color: var(--primary); font-size: 11px; font-weight: 700; top: 10px;
+}
+.pause-box {
+  background: #fef9e7; border: 1px solid #f0d78c;
+  border-radius: 6px; padding: 12px 16px; margin: 12px 0;
+  font-size: 14px;
+}
+.pause-box strong { color: #b8860b; }
+.output-box {
+  background: #e8f0fe; border: 1px solid #b3cff5;
+  border-radius: 6px; padding: 12px 16px; margin: 12px 0;
+}
+.output-box strong { color: var(--primary); }
+.btn-check {
+  display: inline-block; padding: 6px 16px; border-radius: 4px;
+  background: var(--primary); color: #fff; border: none;
+  font-size: 13px; cursor: pointer; transition: background 0.2s;
+  margin-top: 6px;
+}
+.btn-check:hover { background: var(--primary-hover); }
+.hint {
+  max-height: 0; overflow: hidden; transition: max-height 0.35s ease;
+  background: #f0f0f0; border-radius: 4px; padding: 0 12px; margin-top: 4px;
+  font-size: 13px; color: var(--text-secondary);
+}
+.hint.open { max-height: 120px; padding: 10px 12px; }
+.fade-in { animation: fadeIn 0.4s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 640px) {
+  .container { padding: 12px; }
+  header { padding: 20px 16px; }
+  .card { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <header class="fade-in">
+    <h1>🎬 视频脚手架</h1>
+    <p>以"观看焦点"为核心，训练你的英语信息提取能力 · 选择适合你的层级开始</p>
+  </header>
+
+  <div class="level-tabs">
+    <div class="level-tab active" onclick="switchLevel('basic',this)">📘 基础层 · 解释型</div>
+    <div class="level-tab" onclick="switchLevel('intermediate',this)">📙 进阶层 · 分析型</div>
+    <div class="level-tab" onclick="switchLevel('challenge',this)">📕 挑战层 · 辩论型</div>
+  </div>
+
+  <div id="level-basic" class="card show fade-in">
+    <span class="card-badge badge-basic">基础层</span>
+    <h2>What is Friendship? — 2分钟英语科普动画</h2>
+    <p>从一段简短的动画开始，了解友谊的三大核心要素。适合初步建立对"友谊"概念的英语认知。</p>
+
+    <h3>🎯 观看任务</h3>
+    <p>看完后能用英语说清楚——视频中定义了友谊的哪3个核心要素？</p>
+
+    <h3>❓ 关键问题</h3>
+    <ul class="question-list">
+      <li>视频中说了友谊有哪三大要素？</li>
+      <li>它把友谊和"acquaintance"（熟人）的区别说成什么？</li>
+      <li>你同意这个定义吗？为什么？</li>
+    </ul>
+
+    <div class="pause-box">
+      <strong>⏸ 暂停思考点 · 0:45秒处</strong><br>
+      视频说 <em>"Friendship is a voluntary relationship"</em> —— 为什么强调 <strong>"voluntary"（自愿的）</strong>？
+    </div>
+
+    <div class="output-box">
+      <strong>📝 输出任务</strong><br>
+      用 <strong>3句话英语</strong> 总结 "what is friendship" —— 不要抄视频，用自己的话。
+      <br><button class="btn-check" onclick="toggleHint('hint1')">💡 看提示</button>
+      <div class="hint" id="hint1">可以围绕这三点组织：① 友谊是自愿的而非被迫的 ② 友谊建立在相互理解和信任之上 ③ 友谊需要双方共同维护</div>
+    </div>
+  </div>
+
+  <div id="level-intermediate" class="card fade-in">
+    <span class="card-badge badge-intermediate">进阶层</span>
+    <h2>The Science of Friendship — 6分钟TED-Ed动画</h2>
+    <p>从进化心理学和神经科学的角度探索友谊的本质，训练分析型观看能力。</p>
+
+    <h3>🎯 观看任务</h3>
+    <p>记录视频中提到的 <strong>3个</strong> 关于友谊的科学发现。</p>
+
+    <h3>❓ 关键问题</h3>
+    <ul class="question-list">
+      <li>为什么人类需要朋友（从进化角度）？</li>
+      <li>"Friendship Dunbar Number"是什么？和你有什么关系？</li>
+      <li>为什么说"结束一段友谊比结束一段恋情更难"？</li>
+    </ul>
+
+    <div class="pause-box">
+      <strong>⏸ 暂停思考点 · 3:15秒处</strong><br>
+      "Dunbar's number is 150" —— 你联系的人超过150个了吗？其中有几个是你真正的朋友？
+    </div>
+
+    <div class="output-box">
+      <strong>📝 输出任务</strong><br>
+      用 <strong>"三层解析法"</strong> 分析这个视频的结构（开头→主体→结尾）和信息组织方式。
+      <br><button class="btn-check" onclick="toggleHint('hint2')">💡 看提示</button>
+      <div class="hint" id="hint2">三层解析法：① 开头用了什么方式引入话题？② 主体部分用了几个科学证据支撑？③ 结尾如何收束并引发思考？</div>
+    </div>
+  </div>
+
+  <div id="level-challenge" class="card fade-in">
+    <span class="card-badge badge-challenge">挑战层</span>
+    <h2>Sherry Turkle — "Connected, But Alone?" — TED演讲（18分钟）</h2>
+    <p>一场发人深省的TED演讲。数字时代，我们到底是在连接还是在孤立？训练批判性思维和深度反思能力。</p>
+
+    <h3>🎯 观看任务</h3>
+    <p>找出Turkle的<strong>核心论点</strong>——她认为数字技术如何改变了人类的友谊。</p>
+
+    <h3>❓ 关键问题</h3>
+    <ul class="question-list">
+      <li>Turkle说 "we expect more from technology and less from each other" —— 你同意吗？</li>
+      <li>她提出了什么解决方案？你认为可行吗？</li>
+      <li>看完视频后，你对自己使用手机的习惯有什么新的认识？</li>
+    </ul>
+
+    <div class="pause-box">
+      <strong>⏸ 暂停思考点 · 8:30秒处</strong><br>
+      她提到 "conversation is the most human thing" —— 为什么"对话"而不是"发消息"才是"真正的人际连接"？试试在24小时内，用真实对话代替一次发消息，感受有什么不同。
+    </div>
+
+    <div class="output-box">
+      <strong>📝 输出任务</strong><br>
+      写一篇 <strong>150词以上</strong> 的英语反思短文，主题：<em>"Is technology helping or hurting my friendships?"</em>
+    </div>
+  </div>
+
+  <div style="text-align:center;padding:20px 0 10px;color:var(--text-secondary);font-size:13px;">
+    点击上方标签切换层级 · 每个层级都包含观看任务、关键问题和输出练习
+  </div>
+</div>
+
+<script>
+function switchLevel(level, el) {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('show'));
+  document.getElementById('level-' + level).classList.add('show');
+  document.querySelectorAll('.level-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('level-' + level).classList.add('fade-in');
+}
+function toggleHint(id) {
+  var h = document.getElementById(id);
+  h.classList.toggle('open');
+}
+</script>
+</body>
+</html>

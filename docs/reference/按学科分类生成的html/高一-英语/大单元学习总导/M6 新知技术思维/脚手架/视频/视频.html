@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视频 — 观看焦点</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; }
+.header {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+.header p { color: var(--text-secondary); font-size: 14px; }
+.video-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+  border-left: 3px solid var(--accent);
+}
+.video-card h3 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.video-card .source {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.level-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+.lv-basic { background: #e8e8e8; color: #555; }
+.lv-inter { background: #d9d9d9; color: #333; }
+.lv-challenge { background: #bfbfbf; color: #222; }
+.task-list { padding-left: 18px; margin: 6px 0; }
+.task-list li { margin-bottom: 4px; }
+.task-list li strong { color: var(--primary); }
+.pause-box {
+  background: #fafafa;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  padding: 8px 14px;
+  margin: 8px 0;
+  font-size: 14px;
+}
+.pause-box strong { color: var(--primary); }
+.output-box {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 8px 14px;
+  margin: 8px 0;
+  font-size: 14px;
+  border-left: 2px solid var(--primary);
+}
+.output-box strong { color: var(--primary); }
+.toggle-btn {
+  display: inline-block;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+  margin-top: 6px;
+}
+.toggle-btn:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.detail {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+}
+.detail.open { max-height: 400px; }
+@media (max-width: 600px) {
+  .container { padding: 12px 10px; }
+  .video-card { padding: 12px 14px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🎬 视频资源</h1>
+    <p>每个视频都配有观看任务 + 暂停思考点 + 输出任务</p>
+  </div>
+
+  <div class="video-card">
+    <span class="level-badge lv-basic">📖 基础 · 解释型</span>
+    <h3>What is Friendship?</h3>
+    <p class="source">来源：Crash Course (YouTube)</p>
+    <ul class="task-list">
+      <li><strong>观看任务：</strong>找出视频中提到的3种友谊类型</li>
+      <li><strong>关键问题：</strong>① 友谊的核心要素是什么？② 不同文化对友谊的定义有何不同？</li>
+    </ul>
+    <div class="pause-box">⏸ <strong>暂停思考 (2:30) ：</strong>你有什么补充？</div>
+    <div class="output-box">📝 <strong>输出任务：</strong>写一段60词的英文总结</div>
+    <button class="toggle-btn" onclick="toggleDetail('v1')">📌 查看关键词提示</button>
+    <div id="v1" class="detail">
+      <div class="pause-box" style="margin-top:8px;">
+        <strong>关键词提示：</strong>reciprocity, trust, shared experience, companionship
+      </div>
+    </div>
+  </div>
+
+  <div class="video-card">
+    <span class="level-badge lv-inter">🔬 进阶 · 分析型</span>
+    <h3>The Surprising Science of Friendship</h3>
+    <p class="source">来源：TED-Ed</p>
+    <ul class="task-list">
+      <li><strong>观看任务：</strong>找出友谊对健康的3个科学发现</li>
+      <li><strong>关键问题：</strong>① 朋友多为何能延长寿命？② 孤独对身体有什么影响？</li>
+    </ul>
+    <div class="pause-box">⏸ <strong>暂停思考 (4:15) ：</strong>这些研究结果让你想到什么？</div>
+    <div class="output-box">📝 <strong>输出任务：</strong>画一张"友谊与健康"因果关系图</div>
+  </div>
+
+  <div class="video-card">
+    <span class="level-badge lv-challenge">🤖 挑战 · 辩论型</span>
+    <h3>Can AI Be Your Friend?</h3>
+    <p class="source">来源：BBC Future</p>
+    <ul class="task-list">
+      <li><strong>观看任务：</strong>记录支持和反对"AI可以做朋友"的理由</li>
+      <li><strong>关键问题：</strong>① AI 能否真正理解"友谊"？② 人机友谊有何利弊？</li>
+    </ul>
+    <div class="pause-box">⏸ <strong>暂停思考 (3:00) ：</strong>你同意吗？</div>
+    <div class="output-box">📝 <strong>输出任务：</strong>写一篇100词英文观点短文（正方或反方）</div>
+    <button class="toggle-btn" onclick="toggleDetail('v3')">💬 查看辩论框架</button>
+    <div id="v3" class="detail">
+      <div class="pause-box" style="margin-top:8px;">
+        <strong>正方：</strong>AI 24/7陪伴、无评判倾听、个性化回应<br>
+        <strong>反方：</strong>无真实情感、缺乏共情、单向关系
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleDetail(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+</script>
+</body>
+</html>

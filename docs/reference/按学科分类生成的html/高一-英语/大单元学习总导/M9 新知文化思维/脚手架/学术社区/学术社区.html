@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学术社区 - 脚手架</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  background: var(--bg);
+  color: var(--text);
+  width: 100%;
+}
+
+.container { width: 100%; max-width: none; padding: 24px 20px; }
+
+h1 { font-size: var(--font-h1); font-weight: 700; color: var(--primary); margin: 0 0 8px; }
+h2 { font-size: var(--font-h2); font-weight: 600; color: var(--primary); margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 2px solid var(--accent); }
+h3 { font-size: 16px; font-weight: 600; color: var(--text); margin: 20px 0 8px; }
+
+.section-desc { color: var(--text-secondary); font-size: 14px; margin-bottom: 20px; }
+
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+  transition: box-shadow 0.3s ease;
+}
+.card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+
+.card-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 12px;
+  font-weight: 600; font-size: 16px; color: var(--primary);
+}
+
+.topic-tag {
+  display: inline-block; padding: 3px 10px; border-radius: 4px;
+  font-size: 12px; font-weight: 600; margin-right: 6px;
+}
+.topic-basic { background: #e6f7ff; color: #1890ff; }
+.topic-adv { background: #fff7e6; color: #d46b08; }
+.topic-challenge { background: #fff1f0; color: #cf1322; }
+
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+th { background: var(--primary); color: #fff; padding: 10px 12px; text-align: left; font-weight: 600; }
+td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+tr:nth-child(even) td { background: var(--bg); }
+
+ol, ul { margin: 8px 0 8px 20px; }
+li { margin-bottom: 4px; }
+
+.list-bullet { list-style: none; margin-left: 0; }
+.list-bullet li { padding: 6px 0 6px 24px; position: relative; }
+.list-bullet li::before { content: "▸"; position: absolute; left: 4px; color: var(--accent); font-weight: bold; }
+
+.showcase-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 12px 0; }
+.showcase-item { padding: 14px; background: var(--bg); border-radius: var(--border-radius); text-align: center; font-size: 14px; }
+.showcase-item .emoji { font-size: 28px; display: block; margin-bottom: 6px; }
+
+.pulse-btn {
+  display: inline-block; padding: 8px 20px; margin: 8px 0;
+  background: var(--primary); color: #fff; border: none;
+  border-radius: var(--border-radius); cursor: pointer;
+  font-size: 14px; transition: all 0.3s; animation: pulse 2s infinite;
+}
+.pulse-btn:hover { background: var(--primary-hover); animation: none; }
+@keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(67,67,67,0.4); } 50% { box-shadow: 0 0 0 8px rgba(67,67,67,0); } }
+
+.feedback-box { display: none; margin-top: 12px; padding: 14px; background: var(--bg); border-radius: var(--border-radius); border-left: 4px solid var(--accent); }
+.feedback-box.show { display: block; }
+
+@media (max-width: 640px) {
+  .container { padding: 16px 12px; }
+  .card { padding: 14px; }
+  .showcase-grid { grid-template-columns: 1fr; }
+  table { font-size: 13px; }
+  th, td { padding: 8px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🏛️ 学术社区</h1>
+<p class="section-desc">构建"学习共同体"——通过结构化讨论、角色分工和多元展示，在交流与碰撞中深化对跨文化友谊的理解。</p>
+
+<!-- 讨论议题 -->
+<h2>💡 讨论议题</h2>
+
+<div class="card">
+  <div class="card-header"><span class="topic-tag topic-basic">基础·理解型</span> 议题一</div>
+  <p><strong>问题：</strong>"你认为中国人和西方人对'朋友'的定义最大的不同是什么？"</p>
+  <ul>
+    <li><strong>准备：</strong>阅读教材 Unit 1 课文 + 结合自己的经历</li>
+    <li><strong>产出：</strong>每人准备 2 分钟发言</li>
+  </ul>
+  <button class="pulse-btn" onclick="showTip('tip1')">📋 参考思路</button>
+  <div id="tip1" class="feedback-box">
+    <p><strong>引导方向：</strong>可以从"义务感 vs 自由选择""长期性 vs 阶段性""群体导向 vs 个人导向"等角度切入。</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><span class="topic-tag topic-adv">进阶·分析型</span> 议题二</div>
+  <p><strong>问题：</strong>"文化差异是否意味着中西方之间不可能有真正的友谊？"</p>
+  <ul>
+    <li><strong>准备：</strong>阅读解析性案例材料</li>
+    <li><strong>产出：</strong>小组讨论纪要</li>
+  </ul>
+  <button class="pulse-btn" onclick="showTip('tip2')">📋 参考思路</button>
+  <div id="tip2" class="feedback-box">
+    <p><strong>引导方向：</strong>可以引入"文化智力(CQ)"概念，讨论差异是否必然导致隔阂，以及跨文化友谊需要哪些特殊能力。</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><span class="topic-tag topic-challenge">挑战·批判型</span> 议题三</div>
+  <p><strong>问题：</strong>"在全球化和社交媒体时代，中西方友谊观是在趋同还是在分化？"</p>
+  <ul>
+    <li><strong>准备：</strong>搜索相关数据和案例</li>
+    <li><strong>产出：</strong>小组辩论 + 结论报告</li>
+  </ul>
+  <button class="pulse-btn" onclick="showTip('tip3')">📋 参考思路</button>
+  <div id="tip3" class="feedback-box">
+    <p><strong>引导方向：</strong>正方（趋同）可引用全球化、社交媒体统一化趋势；反方（分化）可引用逆全球化、文化自信回潮。</p>
+  </div>
+</div>
+
+<!-- 角色分工 -->
+<h2>👥 角色分工（4人小组）</h2>
+<div class="card">
+  <table>
+    <thead>
+      <tr><th>角色</th><th>职责</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>🎤 主持人</td><td>控制讨论节奏，确保每个人都发言</td></tr>
+      <tr><td>📝 记录员</td><td>记录关键观点和分歧点</td></tr>
+      <tr><td>📢 报告人</td><td>汇总小组结论并代表发言</td></tr>
+      <tr><td>❓ 质疑人</td><td>提出不同意见，推动深度思考</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 输出机制 -->
+<h2>📤 输出机制</h2>
+<div class="card">
+  <h3>展示方式</h3>
+  <div class="showcase-grid">
+    <div class="showcase-item"><span class="emoji">🎨</span>小组讨论海报<br><small>A3纸，图文结合</small></div>
+    <div class="showcase-item"><span class="emoji">🎙️</span>口头报告<br><small>5分钟展示</small></div>
+    <div class="showcase-item"><span class="emoji">📄</span>讨论纪要<br><small>英语，200词左右</small></div>
+  </div>
+
+  <h3>分享与反馈</h3>
+  <ul class="list-bullet">
+    <li>班级群 / 学习平台上传成果</li>
+    <li>互相评论和反馈——<strong>"2 stars and 1 wish"</strong> 法（2个亮点 + 1个建议）</li>
+  </ul>
+  <button class="pulse-btn" onclick="showTip('example')">🌟 看示例</button>
+  <div id="example" class="feedback-box">
+    <p><strong>2 Stars:</strong> "你们的维恩图结构清晰，对比非常直观！引用C.S. Lewis的名言也很贴切。"</p>
+    <p><strong>1 Wish:</strong> "如果能补充一个具体的中西方交友真实案例，会让结论更有说服力。"</p>
+  </div>
+</div>
+
+<!-- 家校与社会连接 -->
+<h2>🔗 家校与社会连接</h2>
+<div class="card">
+  <div class="showcase-grid">
+    <div class="showcase-item">
+      <span class="emoji">🏠</span>
+      <strong>家校联动</strong>
+      <p style="margin-top:6px;font-size:13px;">邀请家长分享"你年轻时和现在交朋友的方式有什么不同"</p>
+    </div>
+    <div class="showcase-item">
+      <span class="emoji">🌐</span>
+      <strong>社会连接</strong>
+      <p style="margin-top:6px;font-size:13px;">联系国际交流项目学长学姐，分享跨文化交友经验</p>
+    </div>
+    <div class="showcase-item">
+      <span class="emoji">🎓</span>
+      <strong>专家资源</strong>
+      <p style="margin-top:6px;font-size:13px;">观看跨文化交际专家讲座视频或在线问答</p>
+    </div>
+  </div>
+</div>
+
+</div>
+<script>
+function showTip(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('show');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>作业榜 — M5 新知艺术思维</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+.banner {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  padding: 28px 36px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.banner h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 6px;
+}
+.banner p { margin: 0; opacity: 0.9; }
+.level-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.level-tab {
+  padding: 10px 22px;
+  border-radius: 24px;
+  border: 2px solid var(--border);
+  background: var(--card-bg);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s;
+  color: var(--text-secondary);
+}
+.level-tab:hover {
+  border-color: var(--accent);
+  color: var(--primary);
+}
+.level-tab.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.content-area {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  min-height: 200px;
+}
+.level-content { display: none; }
+.level-content.active { display: block; }
+.level-content h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.level-content .req {
+  background: var(--bg);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin: 10px 0;
+  border-left: 3px solid var(--accent);
+}
+.level-content .req strong { color: var(--primary); }
+.option-card {
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin: 10px 0;
+  transition: box-shadow 0.2s;
+}
+.option-card:hover { box-shadow: var(--shadow); }
+.option-card .opt-title {
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.rubric-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  font-size: 14px;
+}
+.rubric-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+}
+.rubric-table th:first-child { border-radius: 6px 0 0 0; }
+.rubric-table th:last-child { border-radius: 0 6px 0 0; }
+.rubric-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.rubric-table tr:hover td { background: var(--bg); }
+.star { color: #faad14; letter-spacing: 2px; }
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 4px;
+}
+.badge-basic { background: #e8f5e9; color: #2e7d32; }
+.badge-tier { background: #e3f2fd; color: #1565c0; }
+.badge-open { background: #fce4ec; color: #c62828; }
+@media (max-width: 640px) {
+  .container { padding: 16px; }
+  .content-area { padding: 16px; }
+  .rubric-table { font-size: 13px; }
+  .rubric-table th, .rubric-table td { padding: 6px 8px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="banner">
+  <h1>📋 作业榜</h1>
+  <p>M5 新知艺术思维 · Unit 1 Friendship · 自选层次，逐级挑战</p>
+</div>
+
+<div class="level-tabs">
+  <div class="level-tab active" onclick="switchTab(this,'basic')">📘 基础层</div>
+  <div class="level-tab" onclick="switchTab(this,'tier')">📗 分层任务</div>
+  <div class="level-tab" onclick="switchTab(this,'open')">📕 开放层</div>
+  <div class="level-tab" onclick="switchTab(this,'rubric')">📊 评价标准</div>
+</div>
+
+<div class="content-area">
+
+<div class="level-content active" id="tab-basic">
+  <h2>📘 基础层 — 理解与复现</h2>
+  <p><strong>任务：Anne's Friendship Story 故事复述</strong></p>
+  <p>用英语复述 Anne Frank 的故事，包含：她是谁、她遇到了什么、她把谁当作朋友、为什么。</p>
+  <div class="req">
+    <strong>📌 要求</strong>：100 词以上，使用至少 <strong>5 个</strong> 本单元 Friendship 词汇<br>
+    <span style="font-size:13px;color:var(--text-secondary);">推荐词汇：diary, secret, share, trust, true friend</span>
+  </div>
+  <div class="req" style="border-left-color:#2e7d32;">
+    <strong>🎤 表达形式</strong>：书面段落 或 录音（2 分钟以内）
+  </div>
+</div>
+
+<div class="level-content" id="tab-tier">
+  <h2>📗 分层任务 — A/B/C 三选一</h2>
+
+  <div class="option-card">
+    <div class="opt-title"><span class="badge badge-tier">A 层</span> 分析与比较</div>
+    <p><strong>任务</strong>：比较 Anne's Diary 中 Anne 对友谊的渴望，和教材建议信中写信人对友谊问题的困扰。两人的处境有什么相似和不同？</p>
+    <div class="req">
+      <strong>📌 要求</strong>：写一篇 120 词的对比分析，使用至少 2 个对比结构<br>
+      <span style="font-size:13px;color:var(--text-secondary);">推荐结构：However, In contrast, On the other hand…</span>
+    </div>
+    <p style="font-size:13px;color:var(--text-secondary);">🎨 表达形式：文字 + T 型表格对比</p>
+  </div>
+
+  <div class="option-card">
+    <div class="opt-title"><span class="badge badge-tier">B 层</span> 应用与设计</div>
+    <p><strong>任务</strong>：假设你是班级心理委员，根据 Anne 的故事和 Friendship 单元内容，设计一份"班级友谊小贴士"（Class Friendship Tips）。</p>
+    <div class="req">
+      <strong>📌 要求</strong>：包含 <strong>5 条建议</strong>，每条用 2-3 句英文说明，配一个小图标
+    </div>
+    <p style="font-size:13px;color:var(--text-secondary);">🎨 表达形式：A4 手绘海报</p>
+  </div>
+
+  <div class="option-card">
+    <div class="opt-title"><span class="badge badge-tier">C 层</span> 创意与创作</div>
+    <p><strong>任务</strong>：从以下创意项目中选择一个完成：</p>
+    <ul style="margin:6px 0;padding-left:20px;">
+      <li><strong>Option 1</strong>：写一封 150 词的英文信给 Anne——告诉她如果她生活在今天，可以如何交朋友</li>
+      <li><strong>Option 2</strong>：创作一首 8-12 行的英文诗歌，主题为 "Friendship Beyond Walls"</li>
+      <li><strong>Option 3</strong>：制作一段 2 分钟的英文 vlog 脚本，话题为 "What friendship means to me"</li>
+    </ul>
+    <p style="font-size:13px;color:var(--text-secondary);">🎨 表达形式：书信 / 诗歌 / vlog 脚本</p>
+  </div>
+</div>
+
+<div class="level-content" id="tab-open">
+  <h2>📕 开放层 — 创造性表达</h2>
+  <p><strong>任务：My "Friendship Day" Design</strong></p>
+  <p>设计一个属于你们班的 <strong>"Friendship Day"</strong> 活动方案。</p>
+  <div class="req">
+    <strong>📌 包含内容</strong>：
+    <ul style="margin:4px 0 0;padding-left:20px;">
+      <li>活动名称（<strong>英文</strong>）</li>
+      <li>3 个活动环节的描述</li>
+      <li>每个环节的英语指令语</li>
+    </ul>
+  </div>
+  <div class="req" style="border-left-color:#c62828;">
+    <strong>📌 要求</strong>：英文方案书，<strong>200 词以上</strong>（可图文结合）
+  </div>
+  <p style="font-size:13px;color:var(--text-secondary);margin-top:12px;">💡 提示：你可以参考 Friendship Day 在全球的庆祝方式，设计出独有的班级版本。</p>
+</div>
+
+<div class="level-content" id="tab-rubric">
+  <h2>📊 评价标准（Rubric）</h2>
+  <table class="rubric-table">
+    <thead>
+      <tr><th style="width:16%;">标准</th><th style="width:28%;">优秀 <span class="star">★★★</span> 3分</th><th style="width:28%;">良好 <span class="star">★★</span> 2分</th><th style="width:28%;">需改进 <span class="star">★</span> 1分</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>内容完整性</strong></td>
+        <td>完全覆盖任务要求的所有要素</td>
+        <td>覆盖大部分要素</td>
+        <td>缺少多个要素</td>
+      </tr>
+      <tr>
+        <td><strong>语言准确性</strong></td>
+        <td>语法正确，用词准确</td>
+        <td>少量语法错误但不影响理解</td>
+        <td>多处语法错误</td>
+      </tr>
+      <tr>
+        <td><strong>思维深度</strong></td>
+        <td>有个人见解，不只是复述</td>
+        <td>有一定思考</td>
+        <td>基本是复述课文</td>
+      </tr>
+      <tr>
+        <td><strong>创意表达</strong></td>
+        <td>形式有创意，体现个人风格</td>
+        <td>形式中规中矩</td>
+        <td>形式单一</td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="font-size:13px;color:var(--text-secondary);">总分 12 分，9 分以上为优秀，6-8 分为良好，5 分及以下需改进。</p>
+</div>
+
+</div>
+</div>
+<script>
+function switchTab(el, tabId) {
+  document.querySelectorAll('.level-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.level-content').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-' + tabId).classList.add('active');
+}
+</script>
+</body>
+</html>

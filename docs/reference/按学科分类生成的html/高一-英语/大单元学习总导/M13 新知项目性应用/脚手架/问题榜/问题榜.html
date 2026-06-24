@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>问题榜 — 三层问题驱动学习</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 8px 0;
+  font-weight: 700;
+}
+.header p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 14px;
+}
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.tab-btn {
+  padding: 10px 20px;
+  border: 2px solid var(--border);
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.25s;
+  color: var(--text);
+}
+.tab-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.tab-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.tab-btn .count {
+  display: inline-block;
+  width: 22px; height: 22px;
+  line-height: 22px;
+  text-align: center;
+  border-radius: 50%;
+  font-size: 12px;
+  margin-left: 6px;
+  background: rgba(0,0,0,0.1);
+}
+.tab-btn.active .count { background: rgba(255,255,255,0.25); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.question-item {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.question-item:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.question-item .q-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.question-item .q-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--bg);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+.question-item .q-text {
+  flex: 1;
+  font-weight: 500;
+}
+.question-item .q-type {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+.type-open { background: #e6f7ff; color: #1890ff; }
+.type-compare { background: #fff7e6; color: #fa8c16; }
+.type-counterfact { background: #f9f0ff; color: #722ed1; }
+.type-metacog { background: #f6ffed; color: #52c41a; }
+.type-closed { background: #fff1f0; color: #f5222d; }
+
+.question-item .q-arrow {
+  transition: transform 0.3s;
+  color: var(--text-secondary);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.question-item.open .q-arrow { transform: rotate(180deg); }
+.question-item .q-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+  padding: 0 0 0 40px;
+}
+.question-item.open .q-body {
+  max-height: 200px;
+  padding: 12px 0 0 40px;
+}
+.q-body .tip {
+  background: var(--bg);
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  border-left: 3px solid var(--accent);
+}
+
+.type-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  font-size: 14px;
+}
+.type-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px;
+  text-align: left;
+  font-weight: 600;
+}
+.type-table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.type-table tr:hover td { background: var(--bg); }
+
+.usage-card {
+  background: linear-gradient(135deg, var(--card-bg), var(--bg));
+  border: 2px dashed var(--border);
+  border-radius: var(--border-radius);
+  padding: 18px 20px;
+  margin-top: 20px;
+}
+.usage-card h3 { margin: 0 0 10px; font-size: var(--font-h2); color: var(--primary); }
+.usage-card ul { margin: 0; padding-left: 20px; }
+.usage-card li { margin-bottom: 4px; }
+
+@media (max-width: 600px) {
+  .container { padding: 12px 10px; }
+  .header { padding: 20px 16px; }
+  .tab-btn { padding: 8px 12px; font-size: 13px; }
+  .question-item .q-type { font-size: 10px; padding: 1px 6px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>❓ 问题榜</h1>
+  <p>以问题驱动学习路径，从基础理解到批判创造，培养用英语思考和表达关于友谊议题的能力</p>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('basic')">基础层 <span class="count">3</span></button>
+  <button class="tab-btn" onclick="switchTab('inter')">进阶层 <span class="count">4</span></button>
+  <button class="tab-btn" onclick="switchTab('challenge')">挑战层 <span class="count">5</span></button>
+</div>
+
+<div id="tab-basic" class="tab-panel active">
+  <div class="question-item" onclick="toggleQ(this)">
+    <div class="q-header">
+      <span class="q-num">1</span>
+      <span class="q-text">What are three qualities of a good friend? List them in English.</span>
+      <span class="q-type type-closed">闭合型</span>
+      <span class="q-arrow">▼</span>
+    </div>
+    <div class="q-body">
+      <div class="tip">💡 试着用完整的句子回答，每个品质附上简短解释。</div>
+    </div>
+  </div>
+  <div class="question-item" onclick="toggleQ(this)">
+    <div class="q-header">
+      <span class="q-num">2</span>
+      <span class="q-text">In the textbook reading "Anne's Best Friend", what problem did Anne face?</span>
+      <span class="q-type type-closed">识别型</span>
+      <span class="q-arrow">▼</span>
+    </div>
+    <div class="q-body">
+      <div class="tip">💡 回顾课文，找出 Anne 在二战期间的生活状态和她的孤独感。</div>
+    </div>
+  </div>
+  <div class="question-item" onclick="toggleQ(this)">
+    <div class="q-header">
+      <span class="q-num">3</span>
+      <span class="q-text">What does the phrase "get along with" mean? Make a sentence.</span>
+      <span class="q-type type-closed">理解型</span>
+      <span class="q-arrow">▼</span>
+    </div>
+    <div class="q-body">
+      <div class="tip">💡 用你自己的话解释，然后造一个关于你和朋友的句子。</div>
+    </div>
+  </div>
+</div>
+
+<div id="tab-inter" class="tab-panel">
+  <div class="question-item" onclick="toggleQ(this)">
+    <div class="q-header">
+      <span class="q-num">4</span>
+      <span class="q-text">Why do you think some friendships last longer than others? Give at least 2 reasons.</span>
+      <span class="q-type type-open">开放型</span>
+      <span class="q-arrow">▼</span>
+    </div>
+    <div class="q-body">
+      <div class="tip">💡 想想你自己身边的例子，什么让一段友谊长久？</div>
+    </div>
+  </div>
+  <div class="question-item" onclick="toggleQ(this)">
+    <div class="q-header">
+      <span class="q-num">5</span>
+      <span class="q-text">What's the difference between a "classmate" and a "true friend"? Use examples to explain.</span>
+      <span class="q-type type-compare">对比型</span>
+      <span class="q-arrow">▼</span>
+    </div>
+    <div class="q-body">
+      <div class="tip">💡 用 T-chart 列出两者的不同点。</div>
+    </div>
+  </div>
+  <div class="question-item" onclick="toggleQ(this)">
+    <div class="q-header">
+      <span class="q-num">6</span>
+      <span class="q-text">Your friend is upset because she failed a test. Write 3 sentences in English to comfort her.</span>
+      <span class="q-type type-open">应用型</span>
+      <span class="q-arrow">▼</span>
+    </div>
+    <div class="q-body">
+      <div class="tip">💡 想想如果你在安慰朋友，你会说什么？要真诚、具体。</div>
+    </div>
+  </div>
+  <div class="question-item" onclick="toggleQ(this)">
+    <div class="q-header">
+      <span class="q-num">7</span>
+      <span class="q-text">In the TV show Friends, how did the characters solve their misunderstandings? What can we learn?</span>
+      <span class="q-type type-open">分析型</span>
+      <span class="q-arrow">▼</span>
+    </div>
+    <div class="q-body">
+      <div class="tip">💡 结合视频任务中观看的片段，总结剧中用的沟通技巧。</div>
+    </div>
+  </div>
+</div>
+
+<div id="tab-challenge" class="tab-panel">
+  <div class="question-item" onclick="toggleQ(this)">
+    <div class="q-header">
+      <span class="q-num">8</span>
+      <span class="q-text">Can a friendship survive a big betrayal? Why or why not? Use evidence from what you've learned.</span>
+      <span class="q-type type-open">开放型</span>
+      <span class="q-arrow">▼</span>
+    </div>
+    <div class="q-body">
+      <div class="tip">💡 从课文、视频或你自己的生活经历中找证据支持你的观点。</div>
+    </div>
+  </div>
+  <div class="question-item" onclick="toggleQ(this)">
+    <div class="q-header">
+      <span class="q-num">9</span>
+      <span class="q-text">If social media didn't exist, how would people make and keep friends differently?</span>
+      <span class="q-type type-counterfact">反事实型</span>
+      <span class="q-arrow">▼</span>
+    </div>
+    <div class="q-body">
+      <div class="tip">💡 想象没有微信、Instagram 的世界——交朋友的方式会回到以前吗？</div>
+    </div>
+  </div>
+  <div class="question-item" onclick="toggleQ(this)">
+    <div class="q-header">
+      <span class="q-num">10</span>
+      <span class="q-text">If you could only have 3 friends in your lifetime, how would you choose them? Explain your criteria.</span>
+      <span class="q-type type-counterfact">反事实型</span>
+      <span class="q-arrow">▼</span>
+    </div>
+    <div class="q-body">
+      <div class="tip">💡 这是一个艰难的抉择——列出你选择朋友的最重要的 3 条标准。</div>
+    </div>
+  </div>
+  <div class="question-item" onclick="toggleQ(this)">
+    <div class="q-header">
+      <span class="q-num">11</span>
+      <span class="q-text">When you think about your own friendships, which of Aristotle's three types (utility, pleasure, virtue) do most of your friendships fall into? Why?</span>
+      <span class="q-type type-metacog">元认知型</span>
+      <span class="q-arrow">▼</span>
+    </div>
+    <div class="q-body">
+      <div class="tip">💡 亚里士多德的三种友谊——功利型、快乐型、美德型——你的友谊属于哪种？</div>
+    </div>
+  </div>
+  <div class="question-item" onclick="toggleQ(this)">
+    <div class="q-header">
+      <span class="q-num">12</span>
+      <span class="q-text">What was the most important thing you learned from analyzing friendship situations in English? How did you learn it?</span>
+      <span class="q-type type-metacog">元认知型</span>
+      <span class="q-arrow">▼</span>
+    </div>
+    <div class="q-body">
+      <div class="tip">💡 回顾整个学习过程——你最大的收获是什么？你是怎么学到的？</div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="background:var(--card-bg);border-radius:var(--border-radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px;border:1px solid var(--border);">
+  <h3 style="font-size:var(--font-h2);margin:0 0 12px;color:var(--primary);">📋 问题类型说明</h3>
+  <table class="type-table">
+    <thead><tr><th>类型</th><th>定义</th><th>题号</th></tr></thead>
+    <tbody>
+      <tr><td>开放型</td><td>没有标准答案，鼓励多元思考</td><td>4, 5, 8</td></tr>
+      <tr><td>对比型</td><td>比较两个概念 / 现象</td><td>5</td></tr>
+      <tr><td>反事实型</td><td>如果……会怎样？</td><td>9, 10</td></tr>
+      <tr><td>元认知型</td><td>反思自己的思维过程</td><td>11, 12</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="usage-card">
+  <h3>💡 使用建议</h3>
+  <ul>
+    <li>建议先完成基础层（1-3题），再进入进阶层（4-7题）</li>
+    <li>挑战层的反事实和元认知问题（8-12题）可以在完成整份建构作品后再做</li>
+    <li>每题建议用英文回答，至少写出 2-3 个完整句子</li>
+    <li>可以和同学交换答案，看看不同的思考角度</li>
+  </ul>
+</div>
+
+</div>
+<script>
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`.tab-btn[onclick*="'${tab}'"]`).classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+function toggleQ(el) {
+  el.classList.toggle('open');
+}
+</script>
+</body>
+</html>

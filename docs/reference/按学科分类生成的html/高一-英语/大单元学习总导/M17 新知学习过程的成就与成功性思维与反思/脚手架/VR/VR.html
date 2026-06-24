@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VR脚手架 — 沉浸体验</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, #2d2d2d 0%, #595959 100%);
+  color: #fff;
+  padding: 32px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  text-align: center;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 8px 0;
+  font-weight: 700;
+}
+.header .tagline {
+  font-size: 14px;
+  opacity: 0.85;
+}
+.task-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  margin-bottom: 18px overflow: hiddenbox-shadow: var(--shadow);
+  transition: transform 0.2s;
+  overflow: hidden box-shadow: var(--shadow);
+  overflow: hidden box-shadow: var(--shadow);
+}
+.task-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  margin-bottom: 18px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.task-card-header {
+  background: var(--primary);
+  color: #fff;
+  padding: 14px 20px;
+  font-weight: 600;
+  font-size: var(--font-h2);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.task-card-header .icon {
+  font-size: 20px;
+}
+.task-card-body {
+  padding: 18px 20px;
+}
+.task-card-body ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+.task-card-body li {
+  margin-bottom: 8px;
+  list-style: none;
+  padding-left: 4px;
+  position: relative;
+}
+.task-card-body li::before {
+  content: "\25CB";
+  color: var(--accent);
+  position: absolute;
+  left: -18px;
+  top: 0;
+  font-size: 14px;
+}
+.task-card-body li.checked::before {
+  content: "\2713";
+  color: var(--primary);
+  font-weight: 700;
+}
+.task-card-body li label {
+  cursor: pointer;
+  display: inline;
+}
+.task-card-body li input[type="checkbox"] {
+  margin-right: 8px;
+  accent-color: var(--accent);
+}
+.resource-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+.resource-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+.resource-card:hover {
+  border-color: var(--primary);
+}
+.resource-card .icon-big {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+.resource-card h4 {
+  margin: 0 0 4px 0;
+  color: var(--primary);
+  font-size: 15px;
+}
+.resource-card p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.scene-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 0;
+  flex-wrap: wrap;
+}
+.scene-tab {
+  flex: 1;
+  min-width: 120px;
+  padding: 10px;
+  text-align: center;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: var(--border-radius) var(--border-radius) 0 0;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s;
+  user-select: none;
+}
+.scene-tab.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.scene-tab:not(.active):hover {
+  background: #e0e0e0;
+}
+.scene-panel {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  padding: 18px 20px;
+  display: none;
+}
+.scene-panel.active {
+  display: block;
+}
+.scene-panel ul { margin: 8px 0; padding-left: 20px; }
+.scene-panel li { margin-bottom: 6px; }
+.footer-note {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-top: 24px;
+  padding: 16px;
+  border-top: 1px solid var(--border);
+}
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  margin: 16px 0;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 3px;
+  width: 0%;
+  transition: width 0.5s ease;
+}
+@media (max-width: 600px) {
+  .container { padding: 16px 12px; }
+  .header { padding: 24px 16px; }
+  .scene-tabs { flex-direction: column; }
+  .scene-tab { border-bottom: 1px solid var(--border); border-radius: var(--border-radius); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>VR 沉浸体验</h1>
+  <p class="tagline">进入虚拟校园，用英语结交朋友</p>
+</div>
+
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill"></div>
+</div>
+<p style="text-align:right;font-size:13px;color:var(--text-secondary);margin:4px 0 16px 0;">完成进度: <span id="progressCount">0</span>/10</p>
+
+<div class="task-card">
+  <div class="task-card-header">
+    <span class="icon">&#128065;</span> 观察任务
+  </div>
+  <div class="task-card-body">
+    <p style="margin-top:0;color:var(--text-secondary);">进入虚拟场景后，请完成以下观察：</p>
+    <ul>
+      <li><label><input type="checkbox" class="task-check" onchange="updateProgress()"> 观察场景中人物的<strong>距离、表情和互动方式</strong>——哪些行为暗示了"友谊正在建立"？</label></li>
+      <li><label><input type="checkbox" class="task-check" onchange="updateProgress()"> 记录场景中的<strong>对话内容和语气</strong>——运用了哪些 Unit 1 学到的表达？</label></li>
+    </ul>
+    <div style="background:var(--bg);border-radius:var(--border-radius);padding:12px;margin-top:10px;border-left:3px solid var(--accent);">
+      <strong style="font-size:13px;">&#128221; 观察记录区</strong>
+      <textarea placeholder="记录你的观察发现..." rows="2" style="width:100%;margin-top:6px;padding:8px;border:1px solid var(--border);border-radius:4px;resize:vertical;font-family:inherit;font-size:14px;box-sizing:border-box;"></textarea>
+    </div>
+  </div>
+</div>
+
+<div class="task-card">
+  <div class="task-card-header">
+    <span class="icon">&#128295;</span> 操作任务
+  </div>
+  <div class="task-card-body">
+    <ul>
+      <li><label><input type="checkbox" class="task-check" onchange="updateProgress()"> 选择不同的<strong>回应方式</strong>（友善/冷漠/友好），观察 NPC 的反应变化。</label></li>
+      <li><label><input type="checkbox" class="task-check" onchange="updateProgress()"> 完成一次<strong>"主动结交朋友"</strong>的虚拟互动任务。</label></li>
+    </ul>
+  </div>
+</div>
+
+<div class="task-card">
+  <div class="task-card-header">
+    <span class="icon">&#128203;</span> 记录任务
+  </div>
+  <div class="task-card-body">
+    <p style="margin-top:0;color:var(--text-secondary);">完成体验后，请记录你的思考：</p>
+    <ul>
+      <li><label><input type="checkbox" class="task-check" onchange="updateProgress()"> 你在虚拟场景中做出了一次什么选择？结果如何？</label></li>
+      <li><label><input type="checkbox" class="task-check" onchange="updateProgress()"> 从这个虚拟体验中，你学到了关于"主动交友"的什么新理解？</label></li>
+      <li><label><input type="checkbox" class="task-check" onchange="updateProgress()"> 对比你在真实生活中的交友方式，有什么相似或不同？</label></li>
+    </ul>
+  </div>
+</div>
+
+<div class="task-card">
+  <div class="task-card-header">
+    <span class="icon">&#128218;</span> VR 资源推荐
+  </div>
+  <div class="task-card-body">
+    <div class="resource-grid">
+      <div class="resource-card">
+        <div class="icon-big">&#127758;</div>
+        <h4>ImmerseMe</h4>
+        <p>英语社交场景模拟平台</p>
+      </div>
+      <div class="resource-card">
+        <div class="icon-big">&#127891;</div>
+        <h4>ClassVR</h4>
+        <p>教育版 VR 体验</p>
+      </div>
+      <div class="resource-card">
+        <div class="icon-big">&#128483;</div>
+        <h4>Engage VR</h4>
+        <p>多人交互场景</p>
+      </div>
+    </div>
+    <div style="background:#f0f0f0;border-radius:var(--border-radius);padding:12px;margin-top:12px;">
+      <strong style="font-size:13px;">&#128161; 无设备替代方案</strong>
+      <p style="margin:4px 0 0 0;font-size:13px;">在 Bilibili/YouTube 搜索 "Friendship scenario 3D" 观看 3D 场景视频 + 配套任务卡</p>
+    </div>
+  </div>
+</div>
+
+<div class="task-card">
+  <div class="task-card-header">
+    <span class="icon">&#127917;</span> 场景与角色适配
+  </div>
+  <div class="task-card-body">
+    <div class="scene-tabs">
+      <div class="scene-tab active" onclick="switchScene(this, 'campus')">校园场景</div>
+      <div class="scene-tab" onclick="switchScene(this, 'role')">角色扮演</div>
+    </div>
+    <div class="scene-panel active" id="scene-campus">
+      <p><strong>场景还原：</strong>复原校园交友场景</p>
+      <ul>
+        <li>食堂 — 主动与同学拼桌聊天</li>
+        <li>图书馆 — 小组讨论与学术交流</li>
+        <li>社团活动 — 兴趣社团中的自我介绍</li>
+      </ul>
+    </div>
+    <div class="scene-panel" id="scene-role">
+      <p><strong>角色体验：</strong>体验不同立场的角色互动</p>
+      <ul>
+        <li>扮演新同学 — 第一次来到陌生班级</li>
+        <li>扮演老同学 — 主动欢迎新同学</li>
+        <li>扮演班主任 — 组织班级破冰活动</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="footer-note">
+  <label><input type="checkbox" class="task-check" onchange="updateProgress()"> 我已全部完成以上 VR 体验任务</label>
+  <br><br>
+  <button onclick="var c=document.querySelectorAll('.task-check:checked').length;if(c>=10){alert('✅ VR体验完成！请转向下一个 Scaffolding环节。');}else{alert('您还剩 '	'+(10-c)+' 个任务未完成。继续加油！');}" style="background:var(--primary);color:#fff;border:none;padding:10px 28px;border-radius:var(--border-radius);font-size:15px;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='var(--primary-hover)'" onmouseout="this.style.background='var(--primary)'">提交完成状态</button>
+</div>
+
+</div>
+
+<script>
+function updateProgress() {
+  var checks = document.querySelectorAll('.task-check');
+  var checked = document.querySelectorAll('.task-check:checked').length;
+  var total = checks.length;
+  var pct = Math.round((checked / total) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressCount').textContent = checked;
+}
+
+function switchScene(el, id) {
+  var tabs = el.parentElement.querySelectorAll('.scene-tab');
+  tabs.forEach(function(t) { t.classList.remove('active'); });
+  el.classList.add('active');
+  var panels = el.parentElement.parentElement.querySelectorAll('.scene-panel');
+  panels.forEach(function(p) { p.classList.remove('active'); });
+  document.getElementById('scene-' + id).classList.add('active');
+}
+</script>
+</body>
+</html>

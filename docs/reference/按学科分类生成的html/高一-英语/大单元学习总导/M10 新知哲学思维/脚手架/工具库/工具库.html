@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具库 — 认知放大器</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px 40px;
+  box-sizing: border-box;
+}
+.header {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 24px 28px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--primary);
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 6px;
+  color: var(--primary);
+}
+.header .subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.section-title {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 32px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--border);
+  position: relative;
+}
+.section-title .badge {
+  display: inline-block;
+  font-size: 12px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 4px;
+  padding: 2px 10px;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+.tool-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+@media (min-width: 768px) {
+  .tool-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.tool-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: default;
+}
+.tool-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.tool-card .tool-type {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--primary);
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.tool-card h3 {
+  font-size: 16px;
+  margin: 0 0 10px;
+  color: var(--primary);
+}
+.tool-card .label {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 10px;
+  margin-bottom: 2px;
+}
+.tool-card p {
+  margin: 4px 0;
+  font-size: 14px;
+}
+.tool-card .step-list {
+  margin: 4px 0;
+  padding-left: 18px;
+  font-size: 14px;
+}
+.tool-card .step-list li {
+  margin-bottom: 2px;
+}
+.tool-card .example-box {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-top: 8px;
+  font-size: 13.5px;
+  border-left: 3px solid var(--accent);
+}
+.tool-card .example-box::before {
+  content: "💡 示例";
+  display: block;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+.difficulty-tag {
+  display: inline-block;
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  margin-left: 6px;
+}
+.difficulty-basic {
+  background: #e6f7ff;
+  color: #1890ff;
+  border: 1px solid #91d5ff;
+}
+.difficulty-advanced {
+  background: #fff7e6;
+  color: #d46b08;
+  border: 1px solid #ffd591;
+}
+.difficulty-high {
+  background: #f6f0ff;
+  color: #722ed1;
+  border: 1px solid #d3adf7;
+}
+.guide-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  margin: 16px 0 24px;
+}
+.guide-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 14px;
+}
+.guide-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+.guide-table tr:last-child td {
+  border-bottom: none;
+}
+.guide-table tr:hover td {
+  background: var(--bg);
+}
+.tips-box {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  margin: 20px 0;
+  border: 1px solid var(--border);
+}
+.tips-box h3 {
+  font-size: 16px;
+  margin: 0 0 12px;
+  color: var(--primary);
+}
+.tips-box ol {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+}
+.tips-box ol li {
+  margin-bottom: 6px;
+}
+.hidden-toggle {
+  display: none;
+}
+.toggle-label {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  padding: 6px 16px;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  margin: 8px 0;
+  transition: background 0.2s;
+  user-select: none;
+}
+.toggle-label:hover {
+  background: var(--primary-hover);
+}
+.toggle-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+}
+.hidden-toggle:checked ~ .toggle-content {
+  max-height: 600px;
+  padding: 12px 0;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🧰 工具库 — 认知放大器</h1>
+  <div class="subtitle">英语 · 必修1 · Unit 1 Friendship · 脚手架模块</div>
+  <div class="subtitle" style="margin-top:4px;">四类工具 × 三个难度层级，以美术思维深度分析友谊文本</div>
+</div>
+
+<!-- 基础工具 -->
+<div class="section-title">基础工具 <span class="badge">易上手</span></div>
+
+<div class="tool-grid">
+
+<div class="tool-card">
+  <span class="tool-type">🧠 思维工具</span>
+  <span class="difficulty-tag difficulty-basic">基础</span>
+  <h3>视觉思维导图</h3>
+  <div class="label">📋 用途说明</div>
+  <p>用中心辐射式图形梳理 Unit 1 Friendship 中的词汇网络、人物关系和情感线索，将抽象友谊概念转化为可视化结构。</p>
+  <div class="label">📌 使用步骤</div>
+  <ol class="step-list">
+    <li>在白纸/白板中央写下 "Friendship" 或 "Anne's Best Friend"</li>
+    <li>画出主干分支（qualities of a friend, activities, conflicts, feelings）</li>
+    <li>从课文和阅读材料中提取关键词填入分支</li>
+    <li>用彩色标记情感词汇和主题词</li>
+  </ol>
+  <div class="example-box">以 "Anne's Best Friend" 为中心，辐射出 "nature → hiding place → feelings: lonely, hopeful, free" 等分支，直观呈现 Anne 的情感变化。</div>
+  <div class="label" style="margin-top:6px;">🎯 适用场景</div>
+  <p>课前词汇预热 / 课文结构梳理 / 写作素材收集</p>
+</div>
+
+<div class="tool-card">
+  <span class="tool-type">💻 数字工具</span>
+  <span class="difficulty-tag difficulty-basic">基础</span>
+  <h3>Canva 海报制作</h3>
+  <div class="label">📋 用途说明</div>
+  <p>用 Canva 制作友谊主题的视觉化英语海报，融合图文排版锻炼美术思维与英语表达能力。</p>
+  <div class="label">📌 使用步骤</div>
+  <ol class="step-list">
+    <li>打开 Canva 选择海报模板</li>
+    <li>确定主题句（如 "A true friend is…"）</li>
+    <li>搭配图片、图标和英语文案</li>
+    <li>运用配色和排版原则完成设计</li>
+  </ol>
+  <div class="example-box">制作一份 "Friendship Qualities" 海报：图标搭配英语短句——Trust（握手图标）、Support（拥抱图标）、Honesty（对话气泡图标）。</div>
+  <div class="label" style="margin-top:6px;">🎯 适用场景</div>
+  <p>课后创意输出 / 英语文化墙布置 / 小组分享展示</p>
+</div>
+
+</div>
+
+<!-- 进阶工具 -->
+<div class="section-title">进阶工具 <span class="badge">专业</span></div>
+
+<div class="tool-grid">
+
+<div class="tool-card">
+  <span class="tool-type">📊 数据工具</span>
+  <span class="difficulty-tag difficulty-advanced">进阶</span>
+  <h3>情感色彩分析表</h3>
+  <div class="label">📋 用途说明</div>
+  <p>用颜色编码系统标注课文语篇中的情感词汇，分析友谊话题中的情感色彩分布和变化趋势。</p>
+  <div class="label">📌 使用步骤</div>
+  <ol class="step-list">
+    <li>从 Unit 1 Friendship 课文中摘取重点段落</li>
+    <li>绿色标注积极词（joy, grateful, trust），红色标注消极词（lonely, anxious, betrayed），蓝色标注中性词</li>
+    <li>统计三类词汇的数量比例</li>
+    <li>用柱状图或饼图可视化呈现</li>
+  </ol>
+  <div class="example-box">分析 Anne Frank 日记选段：消极情感词占比超 60%，绿色词汇仅出现在 "nature" 相关段落 → "Anne 在自然中寻求情感慰藉"。</div>
+  <div class="label" style="margin-top:6px;">🎯 适用场景</div>
+  <p>深度文本分析 / 情感态度理解 / 写作情感铺垫分析</p>
+</div>
+
+<div class="tool-card">
+  <span class="tool-type">🧠 思维工具</span>
+  <span class="difficulty-tag difficulty-advanced">进阶</span>
+  <h3>视觉效果分析卡</h3>
+  <div class="label">📋 用途说明</div>
+  <p>分析课文中的视觉描写手法（比喻、意象、色彩词），理解作者如何用"画面感"表达友谊情感。</p>
+  <div class="label">📌 使用步骤</div>
+  <ol class="step-list">
+    <li>选择一段文本</li>
+    <li>用方框标注视觉性词汇（颜色、形状、光影等）</li>
+    <li>用圆圈标注比喻和拟人修辞</li>
+    <li>分析这些视觉元素如何服务于情感表达</li>
+  </ol>
+  <div class="example-box">分析 "Nature is the only thing I can see out of the window"——提取视觉词 "sky, chestnut tree, roses, birds"，这些自然意象是 Anne 自由渴望的视觉化投射。</div>
+  <div class="label" style="margin-top:6px;">🎯 适用场景</div>
+  <p>文学赏析 / 修辞手法学习 / 英语写作中的细节描写训练</p>
+</div>
+
+<div class="tool-card">
+  <span class="tool-type">💻 数字工具</span>
+  <span class="difficulty-tag difficulty-advanced">进阶</span>
+  <h3>Miro 协作白板</h3>
+  <div class="label">📋 用途说明</div>
+  <p>使用 Miro 在线白板的便签、图形和连线功能，与同学合作建构友谊主题的概念地图。</p>
+  <div class="label">📌 使用步骤</div>
+  <ol class="step-list">
+    <li>创建 Miro 白板并邀请小组成员</li>
+    <li>用不同颜色便签分类记录友谊相关要素</li>
+    <li>用箭头和连线展示要素之间的因果关系</li>
+    <li>用框架功能分区域组织信息</li>
+  </ol>
+  <div class="example-box">小组共创 "What Makes a Good Friend?"——黄色便签写性格特征，蓝色写行为，粉色写结果，连线展示 "honest → trust → deeper friendship" 的逻辑链。</div>
+  <div class="label" style="margin-top:6px;">🎯 适用场景</div>
+  <p>小组协作学习 / 概念建构活动 / 课堂互动</p>
+</div>
+
+</div>
+
+<!-- 高阶工具 -->
+<div class="section-title">高阶工具 <span class="badge">研究级</span></div>
+
+<div class="tool-grid">
+
+<div class="tool-card">
+  <span class="tool-type">📊 数据工具</span>
+  <span class="difficulty-tag difficulty-high">高阶</span>
+  <h3>词汇语义网络图</h3>
+  <div class="label">📋 用途说明</div>
+  <p>用语义网络分析工具绘制 Unit 1 Friendship 核心词汇的语义关系图谱，发现词汇之间的隐含关联。</p>
+  <div class="label">📌 使用步骤</div>
+  <ol class="step-list">
+    <li>提取课文中与友谊相关的核心词汇（20—30 个）</li>
+    <li>标注词之间的关系类型（同义、反义、上下义、搭配）</li>
+    <li>用工具（Gephi 或手动绘制）生成语义网络图</li>
+    <li>分析网络中的高连接度节点（hub words）</li>
+  </ol>
+  <div class="example-box">"friend" 同时连接 "trust"、"share" 和 "loyal"，"enemy" 连接 "betray" 和 "conflict"——两个子网络形成对比，揭示课文对朋友和敌人的二元对立表达。</div>
+  <div class="label" style="margin-top:6px;">🎯 适用场景</div>
+  <p>词汇深度研究 / 语篇语义分析 / 学术英语学习</p>
+</div>
+
+<div class="tool-card">
+  <span class="tool-type">🧪 实验工具</span>
+  <span class="difficulty-tag difficulty-high">高阶</span>
+  <h3>友谊视觉日记</h3>
+  <div class="label">📋 用途说明</div>
+  <p>连续 7 天拍摄/收集代表"友谊"的照片，并用英语撰写图注，训练用视觉媒介表达抽象概念的能力。</p>
+  <div class="label">📌 使用步骤</div>
+  <ol class="step-list">
+    <li>确定每日主题（Day1: 陪伴；Day2: 分享；Day3: 成长）</li>
+    <li>每日拍摄一张能表达该主题的照片</li>
+    <li>用 50—100 词英语描述照片中的友谊元素</li>
+    <li>周末汇总成图文日记，分析自己的友谊理解演变</li>
+  </ol>
+  <div class="example-box">Day2 主题 "Sharing"——拍摄两张课桌并排的照片。图注："Two desks side by side, sharing the same sunlight. This reminds me of Anne sharing her thoughts with her diary — a different kind of sharing, but equally precious."</div>
+  <div class="label" style="margin-top:6px;">🎯 适用场景</div>
+  <p>项目式学习 / 综合语言实践 / 反思性学习</p>
+</div>
+
+<div class="tool-card">
+  <span class="tool-type">🧠 思维工具</span>
+  <span class="difficulty-tag difficulty-high">高阶</span>
+  <h3>设计思维工作坊</h3>
+  <div class="label">📋 用途说明</div>
+  <p>运用设计思维五步法——同理心→定义→构思→原型→测试，为课文中的友谊困境设计解决方案。</p>
+  <div class="label">📌 使用步骤</div>
+  <ol class="step-list">
+    <li><strong>同理心</strong>：分析人物的情感需求（Anne 需要什么？）</li>
+    <li><strong>定义</strong>：用一句话定义核心问题</li>
+    <li><strong>构思</strong>：头脑风暴 3—5 种解决方案</li>
+    <li><strong>原型</strong>：用视觉化方式呈现方案（草图、流程图）</li>
+    <li><strong>测试</strong>：回到文本检验方案是否符合人物性格和时代背景</li>
+  </ol>
+  <div class="example-box">针对 Anne Frank 的困境——同理心阶段：Anne 需要被倾听和理解；定义阶段：如何在被隔离的环境中维持情感连接？构思阶段提出"秘密语音日记"等创意方案。</div>
+  <div class="label" style="margin-top:6px;">🎯 适用场景</div>
+  <p>创造性问题解决 / 跨学科项目 / 高阶思维训练</p>
+</div>
+
+</div>
+
+<!-- 工具选择指南 -->
+<div class="section-title">工具选择指南</div>
+
+<table class="guide-table">
+  <thead>
+    <tr><th>学习需求</th><th>推荐工具</th><th>难度</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>课前预热 / 词汇梳理</td><td>视觉思维导图</td><td>基础</td></tr>
+    <tr><td>课后创意表达</td><td>Canva 海报制作</td><td>基础</td></tr>
+    <tr><td>深度文本分析</td><td>情感色彩分析表</td><td>进阶</td></tr>
+    <tr><td>文学手法赏析</td><td>视觉效果分析卡</td><td>进阶</td></tr>
+    <tr><td>小组合作建构</td><td>Miro 协作白板</td><td>进阶</td></tr>
+    <tr><td>词汇语义研究</td><td>语义网络图</td><td>高阶</td></tr>
+    <tr><td>项目式综合学习</td><td>友谊视觉日记</td><td>高阶</td></tr>
+    <tr><td>创造性问题解决</td><td>设计思维工作坊</td><td>高阶</td></tr>
+  </tbody>
+</table>
+
+<!-- 使用建议 -->
+<div class="tips-box">
+  <h3>📖 使用建议</h3>
+  <ol>
+    <li><strong>按需取用</strong>：根据当前学习任务选择合适的工具，不必一次学完所有</li>
+    <li><strong>循序渐进</strong>：从基础工具入手，熟悉美术思维方式后再尝试进阶和高阶工具</li>
+    <li><strong>记录反思</strong>：每次使用后用英语写简短反思（What tool did I use? What did I learn?）</li>
+    <li><strong>组合使用</strong>：将 2—3 种工具组合使用（如思维导图梳理 → Canva 海报输出）</li>
+  </ol>
+</div>
+
+<!-- 互动区域：工具选择器 -->
+<div style="margin-top:28px; text-align:center;">
+  <input type="checkbox" id="toggleReflect" class="hidden-toggle">
+  <label for="toggleReflect" class="toggle-label">📝 打开反思模板</label>
+  <div class="toggle-content" style="background:var(--card-bg); border-radius:var(--border-radius); padding:0 20px; box-shadow:var(--shadow); border:1px solid var(--border);">
+    <h4 style="margin:12px 0 8px; font-size:15px; color:var(--primary);">我的工具使用反思</h4>
+    <p style="font-size:14px;"><strong>Tool used:</strong> ______________</p>
+    <p style="font-size:14px;"><strong>What I learned:</strong> ______________</p>
+    <p style="font-size:14px;"><strong>How it helps me understand friendship better:</strong> ______________</p>
+    <p style="font-size:13px; color:var(--text-secondary);">✍️ 将以上内容写在笔记本上，或录入你的学习日志</p>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

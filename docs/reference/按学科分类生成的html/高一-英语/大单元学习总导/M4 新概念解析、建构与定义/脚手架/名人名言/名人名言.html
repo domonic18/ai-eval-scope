@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名人名言 — 友谊认知跃迁</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 28px 24px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, #434343 0%, #666 100%);
+  color: #fff;
+  padding: 32px 28px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  text-align: center;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 8px; }
+.header p { font-size: var(--font-body); opacity: 0.9; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+.card h3 {
+  font-size: calc(var(--font-body) + 2px);
+  color: var(--primary);
+  margin: 16px 0 10px;
+}
+.card p, .card li { margin-bottom: 8px; }
+.person-card {
+  background: #fafafa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  transition: box-shadow 0.3s;
+  cursor: default;
+}
+.person-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.person-card .person-name {
+  font-size: calc(var(--font-h2) - 1px);
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.person-card .person-era {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.person-card .person-q {
+  font-weight: 600;
+  color: var(--primary);
+  margin: 10px 0 4px;
+}
+.quote-block {
+  background: var(--bg);
+  border-left: 4px solid var(--primary);
+  padding: 14px 18px;
+  margin: 12px 0;
+  border-radius: 0 6px 6px 0;
+  font-style: italic;
+}
+.quote-block .quote-source {
+  display: block;
+  text-align: right;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  font-style: normal;
+}
+.dimension-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 12px 0;
+}
+@media (max-width: 640px) {
+  .dimension-grid { grid-template-columns: 1fr; }
+}
+.dimension-item {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  font-size: calc(var(--font-body) - 1px);
+}
+.dimension-item strong { color: var(--primary); }
+.task-box {
+  background: #fafafa;
+  border: 2px dashed var(--accent);
+  border-radius: 8px;
+  padding: 18px;
+  margin: 14px 0;
+  transition: background 0.2s;
+}
+.task-box:hover {
+  background: #f0f0f0;
+}
+.task-box .task-label {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  padding: 2px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.accordion-btn {
+  display: block;
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 12px 16px;
+  text-align: left;
+  font-size: var(--font-body);
+  font-weight: 600;
+  color: var(--primary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-bottom: 2px;
+  font-family: inherit;
+}
+.accordion-btn:hover { background: #e8e8e8; }
+.accordion-btn::after {
+  content: ' ▾';
+  float: right;
+  transition: transform 0.3s;
+}
+.accordion-btn.active::after { transform: rotate(180deg); }
+.accordion-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+}
+.accordion-panel.open { max-height: 600px; }
+.accordion-panel-inner {
+  padding: 14px 16px;
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+}
+.path-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 768px) {
+  .path-grid { grid-template-columns: 1fr; }
+}
+.path-item {
+  padding: 16px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #fafafa;
+  text-align: center;
+}
+.path-item .level {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--primary);
+  display: inline-block;
+  padding: 2px 12px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+.footer-note {
+  text-align: center;
+  padding: 16px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border);
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>💬 名人名言</h1>
+  <p>认知突破 · 从古典到当代的"友谊认知演进弧线"</p>
+  <p style="font-size:13px;margin-top:6px;opacity:0.8;">不讲人物故事 · 讲认知跃迁</p>
+</div>
+
+<div class="card">
+  <h2>🧭 脚手架定位</h2>
+  <p>本脚手架属于组一"沉浸体验组"，功能为 <strong>认知突破</strong>。在 M4 新概念解析、建构与定义的学习中，通过选取与友谊、人际关系、跨文化理解相关的关键人物及其思想路径，帮助你从浅层感性认知跃迁至深层理性建构。</p>
+  <div class="dimension-grid">
+    <div class="dimension-item"><strong>解析环节</strong><br>人物思想路径为 Friendship 概念解析提供分析素材</div>
+    <div class="dimension-item"><strong>建构环节</strong><br>名人对友谊的定义为学生建构概念地图提供参照系</div>
+    <div class="dimension-item"><strong>定义环节</strong><br>"站到名人位置"的思考任务将内化概念转化为个人化英语定义</div>
+    <div class="dimension-item"><strong>认知弧线</strong><br>从古典→现代→当代，形成完整的友谊认知演进脉络</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>🏛️ 人物一：亚里士多德（Aristotle, 384-322 BCE）</h2>
+  <div class="person-card">
+    <div class="person-name">Aristotle</div>
+    <div class="person-era">古希腊哲学家 ·《尼各马可伦理学》</div>
+    <p class="person-q">❓ 关键问题</p>
+    <p>友谊的本质是什么？它如何区分于利益关系和娱乐关系？</p>
+    <p class="person-q">💡 思维突破点</p>
+    <p>亚里士多德在《尼各马可伦理学》中首次系统划分了 <strong>三种友谊</strong>：基于功利（utility）、基于快乐（pleasure）、基于善（goodness/virtue）。只有第三种——因对方本身之善而珍视的友谊——才是完整意义上的友爱，指向共同成长而非自我满足。</p>
+    <p class="person-q">⚡ 对当下的启示</p>
+    <p>在社交媒体时代，"好友"数量被量化为数字。亚里士多德提醒我们：真正的友谊不是点赞数或互关数，而是是否能在彼此面前真实地做自己。</p>
+    <div class="quote-block">
+      "Without friends no one would choose to live, though he had all other goods."
+      <span class="quote-source">— Nicomachean Ethics</span>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>🌲 人物二：亨利·大卫·梭罗（Henry David Thoreau, 1817-1862）</h2>
+  <div class="person-card">
+    <div class="person-name">Henry David Thoreau</div>
+    <div class="person-era">美国作家 ·《瓦尔登湖》</div>
+    <p class="person-q">❓ 关键问题</p>
+    <p>人是否需要在孤独与友谊之间做出非此即彼的选择？</p>
+    <p class="person-q">💡 思维突破点</p>
+    <p>梭罗提出：<strong>深度孤独不是友谊的对立面，而是友谊的前提</strong>——只有学会与自己相处的人，才能与他人建立真正的联结。高质量的友谊建立于独立人格之上，而非相互依赖或情感索取。</p>
+    <p class="person-q">⚡ 对当下的启示</p>
+    <p>在"永远在线"的即时通讯时代，梭罗提醒我们：真正的友谊需要"留白"——不必每时每刻保持联系，高质量的友谊不惧沉默。</p>
+    <div class="quote-block">
+      "The language of friendship is not words but meanings."
+      <span class="quote-source">— A Week on the Concord and Merrimack Rivers</span>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>📱 人物三：Sherry Turkle（雪莉·特克尔，1948-）</h2>
+  <div class="person-card">
+    <div class="person-name">Sherry Turkle</div>
+    <div class="person-era">MIT 社会心理学家 ·《群体性孤独》</div>
+    <p class="person-q">❓ 关键问题</p>
+    <p>数字时代，我们是否正在用"连接"代替"对话"？</p>
+    <p class="person-q">💡 思维突破点</p>
+    <p>Turkle 提出 <strong>"Goldilocks Effect"</strong>——人们倾向于保持"刚刚好"的距离：既不被完全忽略，又不必真正投入情感。这种"碎片化联系"正在侵蚀深度友谊的根基。</p>
+    <p class="person-q">⚡ 对当下的启示</p>
+    <p>你是否在朋友面前刷手机？是否觉得网友比现实中的朋友更容易交流？友谊的质量不取决于消息条数，而在于是否有过"完整的对话"。</p>
+    <div class="quote-block">
+      "We expect more from technology and less from each other."
+      <span class="quote-source">— Alone Together</span>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>📖 深度阅读路径</h2>
+
+  <button class="accordion-btn" onclick="toggleAccordion(this)">路径一：奠基溯源 — 亚里士多德</button>
+  <div class="accordion-panel">
+    <div class="accordion-panel-inner">
+      <p><strong>文本：</strong><em>Nicomachean Ethics</em>, Books VIII–IX（节选）— Penguin Classics 英译本</p>
+      <p><strong>阅读焦点：</strong>寻找三种友谊的英文定义关键词（utility / pleasure / virtue），对比现实生活中的例子</p>
+      <p><strong>难度：</strong>中高 · 适合英语基础较好的学生</p>
+    </div>
+  </div>
+
+  <button class="accordion-btn" onclick="toggleAccordion(this)">路径二：跨界对话 — 梭罗</button>
+  <div class="accordion-panel">
+    <div class="accordion-panel-inner">
+      <p><strong>文本：</strong><em>Walden</em>, Chapter "Solitude"（节选）</p>
+      <p><strong>阅读焦点：</strong>梭罗在独处中发现了什么？他的孤独与"loneliness"有何不同？</p>
+      <p><strong>难度：</strong>中 · 语言优美，建议配朗读音频</p>
+    </div>
+  </div>
+
+  <button class="accordion-btn" onclick="toggleAccordion(this)">路径三：当代反思 — Turkle</button>
+  <div class="accordion-panel">
+    <div class="accordion-panel-inner">
+      <p><strong>文本：</strong><em>Reclaiming Conversation</em>, Introduction & Chapter 1（节选）</p>
+      <p><strong>阅读焦点：</strong>"数字化友谊"的特征——从自身经验出发验证或反驳她的观点</p>
+      <p><strong>难度：</strong>中低 · 语言通俗，案例贴近学生生活</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>✍️ "如果你是他"思考任务</h2>
+
+  <div class="task-box">
+    <div class="task-label">📝 任务一</div>
+    <p><strong>亚里士多德的友谊分类法</strong></p>
+    <p>用英文写 3 段，每段 3-5 句，把"三种友谊"翻译成高一学生能懂的英语，并为每一种配一个当下校园生活的真实例子。</p>
+    <p style="font-size:13px;color:var(--text-secondary);">词汇提示：utility friendship / pleasure friendship / virtue friendship / mutual growth / genuine care</p>
+  </div>
+
+  <div class="task-box">
+    <div class="task-label">💬 任务二</div>
+    <p><strong>梭罗的孤独实验</strong></p>
+    <p>小组讨论：如果像梭罗一样在周末完全不使用手机和社交媒体，只与自己相处——你会在"独处"中发现什么？小组代表用 1 分钟英文口头汇报。</p>
+  </div>
+
+  <div class="task-box">
+    <div class="task-label">🔬 任务三</div>
+    <p><strong>Turkle 的社交媒体实验</strong></p>
+    <p>模仿 Sherry Turkle 的方法，在班级进行"24 小时数字友谊观察"。记录真实的对话次数 vs 社交媒体互动次数，写一份 150-200 词的英文观察报告。</p>
+  </div>
+</div>
+
+<div class="card">
+  <h2>🎯 三级切入路径</h2>
+  <div class="path-grid">
+    <div class="path-item">
+      <div class="level">基础</div>
+      <p style="font-weight:600;">人物卡片 + 任务一</p>
+      <p style="font-size:13px;color:var(--text-secondary);">阅读关键金句，完成书面输出</p>
+    </div>
+    <div class="path-item">
+      <div class="level">进阶</div>
+      <p style="font-weight:600;">人物卡片 + 一条深度阅读 + 任务一+二</p>
+      <p style="font-size:13px;color:var(--text-secondary);">精读一位人物，参与小组讨论</p>
+    </div>
+    <div class="path-item">
+      <div class="level">挑战</div>
+      <p style="font-weight:600;">三人物卡片 + 两条以上阅读路径 + 全部三个任务</p>
+      <p style="font-size:13px;color:var(--text-secondary);">跨人物对比思辨，项目式产出</p>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="text-align:center;">
+  <p><strong>🧩 任务一中的英文定义片段可直接纳入 M4 建构环节的"Friendship 概念地图"</strong></p>
+  <p style="color:var(--text-secondary);margin-top:6px;">任务三的观察报告可作为 M5 综合运用与产出模块的写作素材</p>
+</div>
+
+<div class="footer-note">
+  亚里士多德奠基了友谊的分类逻辑 → 梭罗引入了孤独与独立人格的维度 → Turkle 直面数字时代的友谊困境
+</div>
+
+</div>
+
+<script>
+function toggleAccordion(btn) {
+  btn.classList.toggle('active');
+  var panel = btn.nextElementSibling;
+  panel.classList.toggle('open');
+}
+</script>
+</body>
+</html>

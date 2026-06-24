@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具库 - 脚手架</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  background: var(--bg);
+  color: var(--text);
+  width: 100%;
+}
+
+.container { width: 100%; max-width: none; padding: 24px 20px; }
+
+h1 { font-size: var(--font-h1); font-weight: 700; color: var(--primary); margin: 0 0 8px; }
+h2 { font-size: var(--font-h2); font-weight: 600; color: var(--primary); margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 2px solid var(--accent); }
+h3 { font-size: 16px; font-weight: 600; color: var(--text); margin: 20px 0 8px; }
+
+.section-desc { color: var(--text-secondary); font-size: 14px; margin-bottom: 20px; }
+
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+  transition: box-shadow 0.3s ease;
+}
+.card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+
+.card-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 12px;
+  font-weight: 600; font-size: 16px; color: var(--primary);
+}
+.card-header .icon { font-size: 20px; }
+
+.level-badge {
+  display: inline-block; padding: 3px 12px; border-radius: 12px;
+  font-size: 12px; font-weight: 600; margin-bottom: 10px;
+}
+.lv-basic { background: #e6f7ff; color: #1890ff; }
+.lv-adv { background: #f4f0ff; color: #722ed1; }
+.lv-pro { background: #fff1f0; color: #cf1322; }
+
+.step-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--primary); color: #fff; font-size: 12px; font-weight: 600;
+  margin-right: 8px; flex-shrink: 0;
+}
+
+.step-item { display: flex; align-items: flex-start; margin-bottom: 6px; font-size: 14px; }
+
+ol, ul { margin: 8px 0 8px 20px; }
+li { margin-bottom: 4px; }
+
+.tool-demo {
+  margin-top: 12px; padding: 14px; background: var(--bg);
+  border-radius: var(--border-radius); border: 1px dashed var(--border);
+}
+
+.demo-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 8px 0; text-align: center; }
+.demo-cell { padding: 12px 8px; background: var(--card-bg); border-radius: 6px; font-size: 13px; }
+.demo-cell.c1 { background: #e6f7ff; }
+.demo-cell.c2 { background: #fff7e6; }
+.demo-cell.c3 { background: #f6ffed; }
+
+.swot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
+.swot-cell { padding: 12px; border-radius: 6px; font-size: 13px; min-height: 60px; }
+.swot-s { background: #e6f7ff; border-left: 3px solid #1890ff; }
+.swot-w { background: #fff1f0; border-left: 3px solid #cf1322; }
+.swot-o { background: #f6ffed; border-left: 3px solid #52c41a; }
+.swot-t { background: #fff7e6; border-left: 3px solid #fa8c16; }
+
+.toggle-btn {
+  display: inline-block; padding: 6px 16px; margin: 8px 0;
+  background: var(--primary); color: #fff; border: none;
+  border-radius: var(--border-radius); cursor: pointer;
+  font-size: 13px; transition: background 0.3s;
+}
+.toggle-btn:hover { background: var(--primary-hover); }
+.toggle-content { display: none; padding: 12px; margin-top: 8px; background: var(--bg); border-radius: var(--border-radius); }
+.toggle-content.show { display: block; }
+
+@media (max-width: 640px) {
+  .container { padding: 16px 12px; }
+  .card { padding: 14px; }
+  .demo-grid, .swot-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🧰 工具库</h1>
+<p class="section-desc">从基础到高阶的思维工具、数字工具和研究工具，支持跨文化友谊主题的深度学习。</p>
+
+<!-- 基础工具 -->
+<h2>🔰 基础工具</h2>
+
+<div class="card">
+  <span class="level-badge lv-basic">基础</span>
+  <div class="card-header"><span class="icon">📊</span> 维恩图（Venn Diagram）</div>
+  <p><strong>用途：</strong>对比中西方友谊观的异同</p>
+  <div class="step-item"><span class="step-num">1</span>画两个交叠的圆，分别标注"中国文化""西方文化"</div>
+  <div class="step-item"><span class="step-num">2</span>在各自区域填写独有的特点</div>
+  <div class="step-item"><span class="step-num">3</span>在交叠区域填写共同点</div>
+
+  <div class="tool-demo">
+    <p style="font-weight:600;margin-bottom:6px;">📌 示例：中西方友谊观对比</p>
+    <div class="demo-grid">
+      <div class="demo-cell c1"><strong>中国文化</strong><br>注重长期关系<br>强调群体归属<br>含蓄表达</div>
+      <div class="demo-cell c3"><strong>共同点</strong><br>都需要信任<br>都需要真诚<br>都需要尊重</div>
+      <div class="demo-cell c2"><strong>西方文化</strong><br>注重个人空间<br>强调自由选择<br>直接表达</div>
+    </div>
+  </div>
+  <p style="color: var(--text-secondary);font-size:13px;margin-top:8px;">💡 适用场景：任何需要对比分析的学习任务</p>
+</div>
+
+<div class="card">
+  <span class="level-badge lv-basic">基础</span>
+  <div class="card-header"><span class="icon">🤖</span> AI 对话助手</div>
+  <p><strong>用途：</strong>练习英语跨文化对话、检查英语写作</p>
+  <div class="step-item"><span class="step-num">1</span>设定场景（如"你现在是一个来自英国的笔友"）</div>
+  <div class="step-item"><span class="step-num">2</span>用英语与AI对话</div>
+  <div class="step-item"><span class="step-num">3</span>让AI点评你的表达和文化理解</div>
+  <button class="toggle-btn" onclick="toggleSection('ai-prompt')">💬 试试这个 Prompt</button>
+  <div id="ai-prompt" class="toggle-content">
+    <p style="font-weight:600;">示例Prompt：</p>
+    <blockquote style="margin:8px 0;padding:10px;background:var(--card-bg);border-left:3px solid var(--accent);font-style:normal;">
+      "You are a British university student who wants to make friends with a Chinese international student. Start a conversation with me and see if we can become friends. After the conversation, give me feedback on my cultural awareness and English expression."
+    </blockquote>
+  </div>
+</div>
+
+<!-- 进阶工具 -->
+<h2>🔧 进阶工具</h2>
+
+<div class="card">
+  <span class="level-badge lv-adv">进阶</span>
+  <div class="card-header"><span class="icon">📈</span> SWOT 分析法</div>
+  <p><strong>用途：</strong>分析跨文化友谊中的优势、劣势、机会和威胁</p>
+  <div class="step-item"><span class="step-num">1</span>画4宫格：Strengths、Weaknesses、Opportunities、Threats</div>
+  <div class="step-item"><span class="step-num">2</span>填入跨文化友谊的情况分析</div>
+  <div class="step-item"><span class="step-num">3</span>根据分析制定行动策略</div>
+
+  <div class="tool-demo">
+    <p style="font-weight:600;margin-bottom:6px;">📌 示例：跨文化友谊 SWOT</p>
+    <div class="swot-grid">
+      <div class="swot-cell swot-s"><strong>S 优势</strong><br>文化多样性带来新鲜感<br>学习不同思维方式</div>
+      <div class="swot-cell swot-w"><strong>W 劣势</strong><br>语言障碍<br>理解偏差可能导致误会</div>
+      <div class="swot-cell swot-o"><strong>O 机会</strong><br>全球化让跨文化交友更容易<br>社交媒体降低门槛</div>
+      <div class="swot-cell swot-t"><strong>T 威胁</strong><br>刻板印象阻碍深入交流<br>文化冲突可能伤害感情</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <span class="level-badge lv-adv">进阶</span>
+  <div class="card-header"><span class="icon">📊</span> 文化维度评分表</div>
+  <p><strong>用途：</strong>用霍夫斯泰德文化维度理论定量分析文化差异</p>
+  <div class="step-item"><span class="step-num">1</span>查找中西方在个人主义指数、权力距离等维度的评分</div>
+  <div class="step-item"><span class="step-num">2</span>用柱状图对比</div>
+  <div class="step-item"><span class="step-num">3</span>分析评分与友谊表现的关系</div>
+  <button class="toggle-btn" onclick="toggleSection('hofstede')">📖 查看维度说明</button>
+  <div id="hofstede" class="toggle-content">
+    <p><strong>霍夫斯泰德关键维度：</strong></p>
+    <ul>
+      <li><strong>个人主义 vs 集体主义：</strong>西方偏个人主义（独立交友），东方偏集体主义（圈子交友）</li>
+      <li><strong>权力距离：</strong>影响友谊中的平等意识</li>
+      <li><strong>不确定性规避：</strong>影响交友中的风险偏好</li>
+    </ul>
+  </div>
+</div>
+
+<!-- 高阶工具 -->
+<h2>🚀 高阶工具</h2>
+
+<div class="card">
+  <span class="level-badge lv-pro">高阶</span>
+  <div class="card-header"><span class="icon">📓</span> 跨文化互动观察日志</div>
+  <p><strong>用途：</strong>系统记录和分析跨文化互动</p>
+  <div class="step-item"><span class="step-num">1</span>记录跨文化互动事件（时间、情境、人物、互动过程）</div>
+  <div class="step-item"><span class="step-num">2</span>标注你注意到的文化差异</div>
+  <div class="step-item"><span class="step-num">3</span>记录你的感受和思考</div>
+  <div class="step-item"><span class="step-num">4</span>定期回顾，发现模式</div>
+  <button class="toggle-btn" onclick="toggleSection('log-tpl')">📝 查看日志模板</button>
+  <div id="log-tpl" class="toggle-content">
+    <pre style="background:var(--card-bg);padding:12px;border-radius:6px;font-size:13px;overflow-x:auto;">
+日期：______  场景：______
+参与者：______（来自____文化）
+互动描述：__________________
+我注意到的文化差异：________
+我的感受：__________________
+下次可以怎么做：____________</pre>
+  </div>
+</div>
+
+<div class="card">
+  <span class="level-badge lv-pro">高阶</span>
+  <div class="card-header"><span class="icon">📋</span> 综合评价量表</div>
+  <p>可依据各案例自评量规，设计你自己的评价工具。</p>
+  <p><strong>建议评价维度：</strong></p>
+  <ul>
+    <li>内容完整性</li>
+    <li>文化深度</li>
+    <li>语言表达</li>
+    <li>呈现创意</li>
+  </ul>
+  <button class="toggle-btn" onclick="toggleSection('rubric')">📊 参考量规</button>
+  <div id="rubric" class="toggle-content">
+    <table style="width:100%;font-size:13px;border-collapse:collapse;margin-top:8px;">
+      <tr><th>维度</th><th>优秀 (4分)</th><th>良好 (3分)</th><th>需改进 (2分)</th></tr>
+      <tr><td>内容完整性</td><td>覆盖所有要点</td><td>覆盖大部分要点</td><td>遗漏多个要点</td></tr>
+      <tr><td>文化深度</td><td>有独到见解</td><td>基本理解差异</td><td>停留在表面</td></tr>
+      <tr><td>语言表达</td><td>准确流畅</td><td>基本达意</td><td>影响理解</td></tr>
+    </table>
+  </div>
+</div>
+
+</div>
+<script>
+function toggleSection(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('show');
+}
+</script>
+</body>
+</html>

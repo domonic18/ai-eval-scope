@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性示例 — Anne Frank的友谊书写</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); font-size: var(--font-body); line-height: var(--line-height); }
+.container { width: 100%; max-width: none; padding: 20px; box-sizing: border-box; }
+header { background: linear-gradient(135deg, #434343 0%, #595959 100%); color: #fff; padding: 28px 24px; border-radius: var(--border-radius); margin-bottom: 24px; }
+header h1 { font-size: var(--font-h1); margin: 0 0 6px 0; }
+header p { margin: 0; opacity: 0.85; font-size: 14px; }
+.section-title { font-size: var(--font-h2); color: var(--primary); margin: 28px 0 12px 0; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: flex; align-items: center; gap: 8px; }
+.step-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 18px; margin-bottom: 14px; box-shadow: var(--shadow); }
+.step-box h3 { color: var(--primary); margin: 0 0 10px 0; font-size: 16px; }
+.step-box h4 { color: var(--primary); margin: 12px 0 6px 0; font-size: 14px; }
+.step-box p, .step-box li { font-size: 14px; }
+.step-box ul { padding-left: 18px; margin: 6px 0; }
+.step-box li { margin-bottom: 4px; }
+.quote-box { background: #f9f9f9; border-left: 4px solid var(--accent); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 10px 0; font-style: italic; font-size: 14px; }
+.chain-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 14px; margin: 10px 0; }
+.chain-step { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--border); font-size: 14px; }
+.chain-step:last-child { border-bottom: none; }
+.chain-step .num { background: var(--primary); color: #fff; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; }
+th { background: #f0f0f0; color: var(--primary); font-weight: 600; }
+.tag-principle { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; background: #e8e8e8; color: #434343; margin: 2px; }
+.tag-p1 { background: #e3e8f0; color: #2c3e6b; }
+.tag-p2 { background: #e8f0e3; color: #3d6b2c; }
+.tag-p3 { background: #f0e8e3; color: #6b4c2c; }
+.tag-p4 { background: #e8e3f0; color: #4c2c6b; }
+.principle-bar { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
+.toggle-btn { background: var(--primary); color: #fff; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-top: 8px; }
+.toggle-btn:hover { background: var(--primary-hover); }
+.conclusion-box { display: none; background: #fafafa; border: 1px solid var(--border); border-radius: var(--border-radius); padding: 14px; margin-top: 10px; font-size: 14px; }
+.conclusion-box.active { display: block; }
+.practice-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 18px; margin-top: 14px; }
+.practice-box h4 { color: var(--primary); margin: 0 0 8px 0; }
+.warning-box { background: #fef6f0; border-left: 4px solid #d46b08; padding: 10px 14px; border-radius: 0 6px 6px 0; margin: 8px 0; font-size: 13px; }
+@media (max-width: 640px) { header { padding: 20px 16px; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>📚 解析性示例</h1>
+  <p>系统分析 Anne Frank 的友谊书写 · 人教版 必修1 Unit 1 Friendship</p>
+</header>
+
+<div class="section-title">🎯 解析任务情境</div>
+<div class="step-box">
+  <p><strong>核心追问：</strong>Anne为什么将自己的日记称为"my best friend"？这一选择反映了什么更深层的关于"友谊"的认知？</p>
+  <div class="quote-box">
+    <p>"I don't want to set down a series of facts in a diary as most people do, but I want this diary itself to be my friend, and I shall call my friend Kitty."</p>
+    <p style="margin:4px 0 0 0;font-size:12px;text-align:right;font-style:normal;">— Anne Frank, Thursday 15 June, 1944</p>
+  </div>
+  <p>Anne Frank在二战纳粹占领期间与家人躲藏在阿姆斯特丹的"秘密 annexe"中。她将日记拟人化为朋友"Kitty"，这一行为既是文学创作，也是一种生存策略。</p>
+</div>
+
+<div class="section-title">🔍 五步专家解析过程</div>
+
+<div class="step-box">
+  <h3>步骤一：全局扫描 — 找出信号点</h3>
+  <p>快速通读，不分析只标记，找出最反常、最引人注目的信号。</p>
+  <table>
+    <tr><th>信号</th><th>理由</th></tr>
+    <tr><td>"Dear Kitty"</td><td>信的开头但收信人是日记本的名字——立即提示拟人化</td></tr>
+    <tr><td>"I don't want to … but I want"</td><td>转折结构，直接点出核心观点</td></tr>
+    <tr><td>"I shall call my friend Kitty"</td><td>结尾句用"shall"宣布命名，具有宣言感</td></tr>
+    <tr><td>大量自然意象</td><td>主题是友谊但大量篇幅写自然——需要被解释</td></tr>
+    <tr><td>强烈程度副词</td><td>so crazy, never, entirely, spellbound——情感强烈</td></tr>
+  </table>
+  <button class="toggle-btn" onclick="toggleConclusion('scan-conclusion')">💡 扫描收获</button>
+  <div id="scan-conclusion" class="conclusion-box">
+    初步扫描锁定三件事：(1)文本结构是从"自然描写"过渡到"友谊宣告"的递进结构；(2)全篇充满强烈情感而非客观叙述；(3)核心动作是"命名转变"（日记→朋友）。
+  </div>
+</div>
+
+<div class="step-box">
+  <h3>步骤二：判断问题类型</h3>
+  <p>这是一个<strong>"文本策略-情感推断"型分析问题</strong>：需要分析作者用了什么文本策略来传达非常规的友谊概念，这些策略如何反映了战争隔离情境下的心理状态，以及这一案例如何挑战我们对友谊的日常理解。</p>
+  <div class="warning-box">
+    ⚠️ 常犯错误：只做"观点摘抄"不做分析；或过度解读，脱离文本证据。
+  </div>
+</div>
+
+<div class="step-box">
+  <h3>步骤三：调取分析工具箱</h3>
+  <div class="principle-bar">
+    <span class="tag-principle tag-p1">拟人化修辞分析</span>
+    <span class="tag-principle tag-p2">情感递进结构</span>
+    <span class="tag-principle tag-p3">对比-转折分析框架</span>
+    <span class="tag-principle tag-p4">背景-文本联动原则</span>
+    <span class="tag-principle tag-p1">"替代性关系"概念</span>
+  </div>
+  <p style="font-size:14px;">5个工具中，前3个聚焦文本内部（怎么写的），后2个打通文本与外部（为什么这么写）。</p>
+</div>
+
+<div class="step-box">
+  <h3>步骤四：推理链构建 — 从证据到结论</h3>
+
+  <h4>🔗 推理链A：拟人化构建的三层策略</h4>
+  <div class="chain-box">
+    <div class="chain-step"><span class="num">1</span><div><strong>称呼拟人</strong> — "Dear Kitty"：日记被赋予人名和书信格式，建立了"我与你"的对话关系</div></div>
+    <div class="chain-step"><span class="num">2</span><div><strong>功能拟人</strong> — "I want this diary itself to be my friend"：拟人化从形式变为实质</div></div>
+    <div class="chain-step"><span class="num">3</span><div><strong>命名承诺</strong> — "I shall call my friend Kitty"："shall"的庄严语气赋予命名以宣誓的分量</div></div>
+  </div>
+  <button class="toggle-btn" onclick="toggleConclusion('chainA')">📌 综合结论 A</button>
+  <div id="chainA" class="conclusion-box">
+    Anne不是"假装"日记是朋友，而是通过三重语言策略在认知上重构了日记的存在性质。这是一种主动的认知建构行为，而非被动的修辞修饰。
+  </div>
+
+  <h4 style="margin-top:16px;">🔗 推理链B：自然描写的功能</h4>
+  <div class="chain-box">
+    <div class="chain-step"><span class="num">1</span><div>大量篇幅写自然而非直接写友谊——Anne在向自己证明情感没有被战争摧毁（<strong>情感验证功能</strong>）</div></div>
+    <div class="chain-step"><span class="num">2</span><div>"held me entirely in their power"——被自然"控制"的体验正是Anne渴望在友谊中获得的一一全身心的投入和被接纳</div></div>
+    <div class="chain-step"><span class="num">3</span><div>"face to face"看夜空——将看夜景类比为"面对面遇见一个人"，暗示Anne的认知框架是关系性的</div></div>
+  </div>
+  <button class="toggle-btn" onclick="toggleConclusion('chainB')">📌 综合结论 B</button>
+  <div id="chainB" class="conclusion-box">
+    自然描写为"什么才是真正的朋友"提供了参照系——真正的朋友应该能让你感到"spellbound"（着迷）、"held in power"（被吸引）、以及"face to face"（真实的相遇）。
+  </div>
+
+  <h4 style="margin-top:16px;">🔗 推理链C：为何拒绝"事实"</h4>
+  <div class="chain-box">
+    <div class="chain-step"><span class="num">1</span><div>"I don't want to set down a series of facts"——Anne明确排斥"记录"这一功能</div></div>
+    <div class="chain-step"><span class="num">2</span><div>"as most people do"——用"大多数人的做法"作为反面参照</div></div>
+    <div class="chain-step"><span class="num">3</span><div>对比结构（not…but…）——朋友的首要功能不是功能性的，而是情感性的</div></div>
+  </div>
+  <button class="toggle-btn" onclick="toggleConclusion('chainC')">📌 综合结论 C</button>
+  <div id="chainC" class="conclusion-box">
+    Anne对友谊的核心期待是"被倾听"和"被理解"，而非"被记录"或"被使用"。这呼应了友谊哲学中的经典命题：<strong>真正的友谊是非工具性的</strong>——朋友不是你用来达到某种目的的手段，朋友本身就是目的。
+  </div>
+</div>
+
+<div class="step-box">
+  <h3>步骤五：形成综合结论</h3>
+  <div class="quote-box">
+    <p>Anne Frank的日记展示了一种在极端生存处境下"友谊的再创造"。她重新定义了"谁可以成为朋友"——不再是另一个人类个体，而是任何一个能与她建立"情感共鸣"的存在，哪怕是一本日记。</p>
+  </div>
+  <p><strong>核心哲学洞见：</strong>友谊的本质不是物理的共在，而是精神的共鸣。当环境剥夺了前者时，人类有能力创造后者。</p>
+</div>
+
+<div class="section-title">🛠️ 方法提炼</div>
+<div class="step-box">
+  <table>
+    <tr><th>编号</th><th>方法</th><th>核心操作</th><th>记忆口诀</th></tr>
+    <tr><td>M1</td><td>信号扫描法</td><td>标记最反常、重复出现、情感最强的词句</td><td>"反常即信号"</td></tr>
+    <tr><td>M2</td><td>对比解锁法</td><td>找到对比结构，作者的真实观点藏在否定中</td><td>"不做什么说明了想做什么"</td></tr>
+    <tr><td>M3</td><td>情感曲线追踪法</td><td>画出情感强度变化曲线，峰值处是关键信息</td><td>"情感峰值即关键"</td></tr>
+    <tr><td>M4</td><td>证据-推理分层法</td><td>明确区分"原文证据"和"基于证据的推理"</td><td>"先定位证据再说理"</td></tr>
+    <tr><td>M5</td><td>追问"为什么是这个词"</td><td>对关键字词追问作者为何选它而非近义词</td><td>"词汇选择不是偶然的"</td></tr>
+  </table>
+</div>
+
+<div class="section-title">⚠️ 易错提醒</div>
+<div class="step-box">
+  <div class="warning-box">
+    <strong>易错点一：混淆"文本说的"和"我猜的"</strong><br>
+    ❌ "Anne was lonely so she made the diary her friend."<br>
+    ✅ "The fact that Anne stayed awake intentionally to view the moonlight suggests her daily life lacked meaningful experiences..."
+  </div>
+  <div class="warning-box" style="border-left-color:#595959;">
+    <strong>易错点二：过度拟人化反噬分析者</strong><br>
+    始终使用分析性语言区分"文本中构建的拟人化"与"客观事实"——"Anne <strong>constructs</strong> the diary as a friend through personification"。
+  </div>
+  <div class="warning-box" style="border-left-color:#434343;">
+    <strong>易错点三：忽视文化语境</strong><br>
+    优先从历史语境和文学创作的角度分析。Anne的日记是有意识的文学创作，而非纯粹的心理记录。
+  </div>
+</div>
+
+<div class="section-title">✍️ 自主迁移练习</div>
+<div class="practice-box">
+  <h4>📧 From: Sarah — Subject: Moving away</h4>
+  <div class="quote-box" style="font-size:13px;">
+    <p>Dear Maya, I can't believe I'm writing this. My dad got a new job... I keep thinking about all the things that won't happen: no more sitting together at lunch, no more walking home together... Everyone says 'we'll stay in touch' and I know we will. But will it be the same?</p>
+    <p style="margin:4px 0 0 0;font-size:12px;text-align:right;">— 一封关于离别的友谊邮件</p>
+  </div>
+  <table>
+    <tr><th>任务</th><th>要求</th></tr>
+    <tr><td>Task A: 信号扫描</td><td>用M1方法找出3个最值得关注的信号词/句，说明重要性</td></tr>
+    <tr><td>Task B: 对比解锁</td><td>找到文中的对比结构，分析其功能</td></tr>
+    <tr><td>Task C: 核心判断</td><td>与Anne将日记视为"替代性朋友"不同，Sarah表达了什么样的友谊困境？引用至少2处原文证据</td></tr>
+  </table>
+</div>
+
+<div class="section-title">📊 学习自评</div>
+<div class="step-box">
+  <table>
+    <tr><th>#</th><th>自评问题</th><th>评分(1-5)</th></tr>
+    <tr><td>1</td><td>我是否理解"信号扫描法"的具体操作？能否在一段陌生文本中标记信号？</td><td>___ / 5</td></tr>
+    <tr><td>2</td><td>我是否能区分"原文证据"和"自己的推理推测"？</td><td>___ / 5</td></tr>
+    <tr><td>3</td><td>我是否理解拟人化分析中需要保持的元视角？</td><td>___ / 5</td></tr>
+    <tr><td>4</td><td>我能否用这些方法分析一段新的文本？</td><td>___ / 5</td></tr>
+    <tr><td>5</td><td>我是否获得了"可迁移的能力"而非只是关于Anne Frank的知识？</td><td>___ / 5</td></tr>
+  </table>
+  <p style="font-size:13px;color:var(--text-secondary);margin-top:8px;">20-25分→进入下一节点；15-19分→重温方法后练习；10-14分→重新阅读五步解析过程；5-9分→用自己的话写下"学到了什么"再继续</p>
+</div>
+
+</div>
+<script>
+function toggleConclusion(id) {
+  var el = document.getElementById(id);
+  el.classList.toggle('active');
+}
+</script>
+</body>
+</html>

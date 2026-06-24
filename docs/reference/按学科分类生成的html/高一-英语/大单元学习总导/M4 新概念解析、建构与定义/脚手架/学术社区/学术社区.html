@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学术社区 — Friendship 认知社会化建构</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 28px 24px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, #434343 0%, #666 100%);
+  color: #fff;
+  padding: 32px 28px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  text-align: center;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 8px; }
+.header p { font-size: var(--font-body); opacity: 0.9; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+.card h3 {
+  font-size: calc(var(--font-body) + 2px);
+  color: var(--primary);
+  margin: 16px 0 10px;
+}
+.card p, .card li { margin-bottom: 8px; }
+.badge {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.badge-accent {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.connection-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 768px) {
+  .connection-grid { grid-template-columns: 1fr; }
+}
+.connection-card {
+  background: #fafafa;
+  border-radius: 8px;
+  padding: 18px;
+  text-align: center;
+  border: 1px solid var(--border);
+  transition: transform 0.2s;
+}
+.connection-card:hover { transform: translateY(-3px); }
+.connection-card .icon { font-size: 32px; }
+.connection-card .title { font-weight: 700; margin: 8px 0 4px; }
+.connection-card .desc { font-size: 13px; color: var(--text-secondary); }
+.issue-card {
+  background: #fafafa;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border-left: 4px solid var(--accent);
+  transition: background 0.2s;
+}
+.issue-card:hover { background: #f0f0f0; }
+.issue-card .issue-id {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+.issue-card .issue-title {
+  font-weight: 700;
+  font-size: calc(var(--font-body) + 1px);
+  margin: 4px 0;
+}
+.issue-card .issue-q {
+  font-size: calc(var(--font-body) - 1px);
+  color: var(--text-secondary);
+}
+.role-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 640px) {
+  .role-grid { grid-template-columns: 1fr; }
+}
+.role-card {
+  padding: 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #fafafa;
+  text-align: center;
+}
+.role-card .role-icon { font-size: 26px; }
+.role-card .role-name { font-weight: 700; margin: 6px 0; }
+.role-card .role-desc { font-size: 13px; color: var(--text-secondary); }
+.timeline-flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin: 12px 0;
+}
+.timeline-step {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+  cursor: default;
+}
+.timeline-step:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.timeline-step .step-min {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+.timeline-step:hover .step-min { color: rgba(255,255,255,0.7); }
+.rules-list {
+  list-style: none;
+  padding: 0;
+}
+.rules-list li {
+  padding: 10px 14px;
+  margin-bottom: 6px;
+  background: #fafafa;
+  border-radius: 6px;
+  border-left: 3px solid var(--primary);
+  font-size: calc(var(--font-body) - 1px);
+}
+.rules-list li strong { color: var(--primary); }
+.output-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 640px) {
+  .output-grid { grid-template-columns: 1fr; }
+}
+.output-item {
+  padding: 14px;
+  background: #fafafa;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+.output-item .o-title { font-weight: 700; color: var(--primary); }
+.output-item .o-desc { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+.footer-note {
+  text-align: center;
+  padding: 16px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border);
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>👥 学术社区</h1>
+  <p>学习共同体的核心载体 · 同伴互助 · 家校联动 · 社会连接</p>
+  <p style="font-size:13px;margin-top:6px;opacity:0.8;">让友谊理解从"个人化"走向"社会化"</p>
+</div>
+
+<div class="card">
+  <h2>🎯 社区定位与价值</h2>
+  <p>将个体建构的友谊理解模型置于"学习共同体"中接受讨论、质疑与完善，实现认知从"个人化"到"社会化"的跃升。</p>
+
+  <div class="connection-grid">
+    <div class="connection-card">
+      <div class="icon">🤝</div>
+      <div class="title">同伴连接</div>
+      <div class="desc">同班/同年级同学<br>分享解析成果、互评定义、辩论友谊议题</div>
+    </div>
+    <div class="connection-card">
+      <div class="icon">🏠</div>
+      <div class="title">家校连接</div>
+      <div class="desc">家长、班主任、心理老师<br>家长分享友谊经历，班主任提供交友建议</div>
+    </div>
+    <div class="connection-card">
+      <div class="icon">🌍</div>
+      <div class="title">社会连接</div>
+      <div class="desc">外教、青少年心理专家<br>跨文化友谊观、青少年友谊心理分析</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>🗣️ 三层讨论议题</h2>
+
+  <h3>🧩 基础理解层 · What is friendship?</h3>
+  <div class="issue-card">
+    <div class="issue-id">议题 D1</div>
+    <div class="issue-title">"A friend in need is a friend indeed" — 你认同吗？</div>
+    <div class="issue-q">这句谚语是否概括了友谊的全部？有没有其他更重要特质？</div>
+  </div>
+  <div class="issue-card">
+    <div class="issue-id">议题 D2</div>
+    <div class="issue-title">信任（trust）是友谊的"地基"吗？</div>
+    <div class="issue-q">没有信任的友谊还能叫友谊吗？信任是否可以被修复？</div>
+  </div>
+  <div class="issue-card">
+    <div class="issue-id">议题 D3</div>
+    <div class="issue-title">友谊需要几个核心要素？</div>
+    <div class="issue-q">用 3-5 个关键词概括你心中的友谊，并说出排序理由</div>
+  </div>
+
+  <h3>🌏 深度辨析层 · What does friendship mean across boundaries?</h3>
+  <div class="issue-card">
+    <div class="issue-id">议题 D4</div>
+    <div class="issue-title">中西方友谊观有差异吗？</div>
+    <div class="issue-q">中国朋友之间和西方朋友之间的相处方式有什么不同？</div>
+  </div>
+  <div class="issue-card">
+    <div class="issue-id">议题 D5</div>
+    <div class="issue-title">网络友谊是"真正的友谊"吗？</div>
+    <div class="issue-q">网上认识的朋友能否拥有 trust, loyalty, support 等要素？</div>
+  </div>
+  <div class="issue-card">
+    <div class="issue-id">议题 D6</div>
+    <div class="issue-title">一段友谊可以"结束"吗？</div>
+    <div class="issue-q">友谊的结束是否意味着它"不是真正的友谊"？</div>
+  </div>
+
+  <h3>🚀 迁移应用层 · How can we put friendship into action?</h3>
+  <div class="issue-card">
+    <div class="issue-id">议题 D7</div>
+    <div class="issue-title">如何用你的友谊模型帮助朋友？</div>
+    <div class="issue-q">如果你的朋友正经历友谊困惑，你会用模型中的哪些要素和建议帮助他/她？</div>
+  </div>
+  <div class="issue-card">
+    <div class="issue-id">议题 D8</div>
+    <div class="issue-title">设计一条班级"Friendship Code"</div>
+    <div class="issue-q">基于小组讨论共识，用 5 条英语句子写一份班级友谊守则</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>🎭 三角色分工</h2>
+  <div class="role-grid">
+    <div class="role-card">
+      <div class="role-icon">🎙️</div>
+      <div class="role-name">主持人（Host）</div>
+      <div class="role-desc">宣布议题、控制时间、邀请发言、总结要点</div>
+      <div style="font-size:12px;color:var(--text-secondary);margin-top:6px;">"Let's begin with ___." / "To sum up…"</div>
+    </div>
+    <div class="role-card">
+      <div class="role-icon">✍️</div>
+      <div class="role-name">记录员（Scribe）</div>
+      <div class="role-desc">记录关键观点、分歧点和共识点，整理讨论纪要</div>
+      <div style="font-size:12px;color:var(--text-secondary);margin-top:6px;">"One key point was ___."</div>
+    </div>
+    <div class="role-card">
+      <div class="role-icon">📢</div>
+      <div class="role-name">发言人（Spokesperson）</div>
+      <div class="role-desc">代表小组汇报成果，回应提问</div>
+      <div style="font-size:12px;color:var(--text-secondary);margin-top:6px;">"Our group believes that ___."</div>
+    </div>
+    <div class="role-card">
+      <div class="role-icon">🔍</div>
+      <div class="role-name">评论员（Reviewer）</div>
+      <div class="role-desc">对其他组发言提出建设性意见或补充观点</div>
+      <div style="font-size:12px;color:var(--text-secondary);margin-top:6px;">"I appreciate your point… I would like to add ___."</div>
+    </div>
+  </div>
+  <p style="font-size:13px;color:var(--text-secondary);margin-top:12px;text-align:center;">每次讨论轮换角色，每人均需体验至少 2 个角色</p>
+</div>
+
+<div class="card">
+  <h2>⏱️ 社区运行节奏</h2>
+  <div class="timeline-flow">
+    <span class="timeline-step">破冰启动 <span class="step-min">10'</span></span>
+    <span class="timeline-step">→</span>
+    <span class="timeline-step">小组讨论 <span class="step-min">25'</span></span>
+    <span class="timeline-step">→</span>
+    <span class="timeline-step">组际展示 <span class="step-min">20'</span></span>
+    <span class="timeline-step">→</span>
+    <span class="timeline-step">全社区汇整 <span class="step-min">10'</span></span>
+    <span class="timeline-step">→</span>
+    <span class="timeline-step">反思沉淀 <span class="step-min">5'</span></span>
+  </div>
+  <p style="text-align:center;font-size:13px;color:var(--text-secondary);">每轮约 70 分钟 · 建议每周 1-2 轮 · 3 周完成全部三层议题</p>
+</div>
+
+<div class="card">
+  <h2>📋 协作规则</h2>
+  <ul class="rules-list">
+    <li><strong>🌐 英语优先原则</strong> — 交流以英语为主；遇表达困难可使用"语言急救卡"</li>
+    <li><strong>👂 尊重倾听原则</strong> — 他人发言时不打断；用"I disagree"替代"你错了"</li>
+    <li><strong>📤 成果共享原则</strong> — 所有讨论记录上传至班级共享文档，供全社区查阅引用</li>
+    <li><strong>👥 全员参与原则</strong> — 每位学生每个阶段至少发言一次</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>📦 产出与展示</h2>
+
+  <h3>小组产出</h3>
+  <div class="output-grid">
+    <div class="output-item"><div class="o-title">小组共识清单</div><div class="o-desc">基础层讨论后 · 双语列表 · 社区展示墙</div></div>
+    <div class="output-item"><div class="o-title">辩论观点纪要</div><div class="o-desc">深度辨析层 · 英语辩论记录（正反方论点）</div></div>
+    <div class="output-item"><div class="o-title">友谊行动方案</div><div class="o-desc">迁移应用层 · 英语方案文档 150-200 词</div></div>
+    <div class="output-item"><div class="o-title">班级友谊守则</div><div class="o-desc">英语海报 A3 · 5-10 条 · 教室墙面长期展示</div></div>
+  </div>
+
+  <h3>个人产出</h3>
+  <div class="output-grid">
+    <div class="output-item"><div class="o-title">个人讨论发言记录</div><div class="o-desc">英语口语或书面发言 3-5 次 · 同伴互评</div></div>
+    <div class="output-item"><div class="o-title">个人反思笔记</div><div class="o-desc">每次社区活动后英语 2-3 句 · 自评</div></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>🏡 家校社连接</h2>
+  <div class="connection-grid">
+    <div class="connection-card">
+      <div class="icon">📝</div>
+      <div class="title">家长友谊故事征集</div>
+      <div class="desc">邀请家长用文字或语音分享一段友谊经历（中英双语均可）</div>
+    </div>
+    <div class="connection-card">
+      <div class="icon">📞</div>
+      <div class="title">外教/专家连线</div>
+      <div class="desc">邀请外教分享跨文化友谊观，心理老师做微型讲座</div>
+    </div>
+    <div class="connection-card">
+      <div class="icon">🏫</div>
+      <div class="title">校园社区联动</div>
+      <div class="desc">将"班级友谊守则"投稿至校园广播站、英语报或公众号</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>🛠️ 语言急救卡</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:calc(var(--font-body)-1px);">
+    <div style="background:var(--bg);padding:8px 12px;border-radius:4px;"><strong>表达观点</strong><br>"In my opinion, ___." / "Based on my friendship model, I think ___."</div>
+    <div style="background:var(--bg);padding:8px 12px;border-radius:4px;"><strong>同意/补充</strong><br>"I agree with ___, and I would like to add ___."</div>
+    <div style="background:var(--bg);padding:8px 12px;border-radius:4px;"><strong>不同意/质疑</strong><br>"I see your point, but I think ___." / "I have a different view because ___."</div>
+    <div style="background:var(--bg);padding:8px 12px;border-radius:4px;"><strong>澄清/归纳</strong><br>"Could you explain what you mean by ___?" / "So what you're saying is ___."</div>
+  </div>
+</div>
+
+<div class="card" style="text-align:center;">
+  <p><strong>🌟 "友谊之声"社区展示日</strong></p>
+  <p style="color:var(--text-secondary);">英语海报展 + 迷你演讲（3 分钟/人）· 邀请家长和老师参与评选</p>
+</div>
+
+<div class="footer-note">
+  M4 新概念解析、建构与定义 · 人教版 必修1 · Unit 1 Friendship
+</div>
+
+</div>
+</body>
+</html>

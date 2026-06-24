@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性原理 - 跨文化友谊分析方法</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+
+.page-header {
+  text-align: center;
+  padding: 32px 20px 24px;
+  background: linear-gradient(135deg, #434343 0%, #6b6b6b 100%);
+  color: #fff;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  margin: -24px -20px 24px;
+}
+
+.page-header h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+
+.page-header p {
+  font-size: 14px;
+  opacity: 0.85;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.intro-box {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  border-left: 4px solid var(--accent);
+}
+
+.intro-box p {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.intro-box p:last-child { margin-bottom: 0; }
+
+.principle-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+  overflow: hidden;
+  transition: box-shadow 0.3s;
+}
+
+.principle-card:hover {
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+}
+
+.principle-card .principle-header {
+  padding: 16px 20px;
+  background: #434343;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.principle-card .principle-header .num {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.principle-card .principle-header h2 {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  flex: 1;
+}
+
+.principle-card .principle-header .toggle-arrow {
+  font-size: 16px;
+  transition: transform 0.3s;
+  opacity: 0.7;
+}
+
+.principle-card.collapsed .principle-body { display: none; }
+.principle-card.collapsed .toggle-arrow { transform: rotate(-90deg); }
+
+.principle-body { padding: 20px; }
+
+.principle-body .field {
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.principle-body .field:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.principle-body .field-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.principle-body .field-content {
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.principle-body .field-content .highlight {
+  background: #f5f5f5;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-style: italic;
+}
+
+/* Practice section */
+.practice-section {
+  margin-top: 30px;
+}
+
+.practice-section h2 {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--primary);
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--border);
+}
+
+.practice-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.practice-card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+
+.practice-card .scenario {
+  padding: 12px 16px;
+  background: #fafafa;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  border-left: 3px solid var(--accent);
+}
+
+.practice-card .principles-used {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.practice-card .principles-used .pill {
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 10px;
+  background: #f0f0f0;
+  color: var(--primary);
+  border: 1px solid var(--border);
+}
+
+.practice-card .hint-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  font-style: italic;
+}
+
+.write-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  border-radius: 6px;
+  border: 2px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.write-btn:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
+.write-area {
+  display: none;
+  margin-top: 12px;
+}
+
+.write-area.show { display: block; }
+
+.write-area textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.write-area textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* Self-check */
+.self-check {
+  margin-top: 30px;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+}
+
+.self-check h2 {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--primary);
+}
+
+.check-item {
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.check-item:last-child { border-bottom: none; }
+
+.check-item .checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  margin-top: 2px;
+}
+
+.check-item.checked .checkbox {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.check-item .checkbox::after {
+  content: "✓";
+  font-size: 13px;
+  font-weight: 700;
+  opacity: 0;
+}
+
+.check-item.checked .checkbox::after {
+  opacity: 1;
+}
+
+.check-item .check-text {
+  font-size: 14px;
+  flex: 1;
+}
+
+.check-item.checked .check-text {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 640px) {
+  .container { padding: 16px 12px; }
+  .page-header { padding: 24px 16px 20px; margin: -16px -12px 20px; }
+  .principle-body { padding: 16px; }
+  .practice-card { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="page-header">
+  <h1>🔬 解析性原理</h1>
+  <p>从示例到可迁移的分析方法 · 跨文化友谊</p>
+</div>
+
+<div class="intro-box">
+  <p>在解析性示例中，我们一起分析了"Anne与李华"的中西方友谊文化差异案例，看到了专家是如何一步步分析问题的——从观察到分类，从调用理论到形成判断。</p>
+  <p>现在，我们要从这一个具体的案例中，<strong>提炼出可以反复使用的分析方法</strong>。这就像学会了做一道菜后，总结出"炒菜的基本原则"——以后遇到不同的食材，你也能自己做好。</p>
+</div>
+
+<!-- 原理1 -->
+<div class="principle-card" id="principle1">
+  <div class="principle-header" onclick="togglePrinciple('principle1')">
+    <span class="num">1</span>
+    <h2>停一停原则（延迟判断）</h2>
+    <span class="toggle-arrow">▼</span>
+  </div>
+  <div class="principle-body">
+    <div class="field">
+      <div class="field-label">原理说明</div>
+      <div class="field-content">遇到让你困惑或不舒服的文化行为时，不要急于下判断。延迟你的评价，先收集信息。</div>
+    </div>
+    <div class="field">
+      <div class="field-label">在本示例中的体现</div>
+      <div class="field-content">李华没有直接认为Anne"不真诚"，而是先去寻求帮助——这就是"停一停"的体现。</div>
+    </div>
+    <div class="field">
+      <div class="field-label">如何使用</div>
+      <div class="field-content">当对方的言行让你感到困惑时，对自己说三遍：<span class="highlight">"这可能不是人品问题，可能是文化差异"</span></div>
+    </div>
+    <div class="field">
+      <div class="field-label">可迁移场景</div>
+      <div class="field-content">任何跨文化互动（留学、旅游、线上交友）；日常生活中的误解。</div>
+    </div>
+    <div class="field">
+      <div class="field-label">使用提醒</div>
+      <div class="field-content">延迟判断不是放弃判断，而是等到有了足够信息再做判断。</div>
+    </div>
+  </div>
+</div>
+
+<!-- 原理2 -->
+<div class="principle-card" id="principle2">
+  <div class="principle-header" onclick="togglePrinciple('principle2')">
+    <span class="num">2</span>
+    <h2>三问原则（现象—本国意义—对方文化意义）</h2>
+    <span class="toggle-arrow">▼</span>
+  </div>
+  <div class="principle-body">
+    <div class="field">
+      <div class="field-label">原理说明</div>
+      <div class="field-content">面对一个跨文化现象时，问三个问题：①这个行为是什么？②它在中国文化中意味着什么？③在对方文化中意味着什么？</div>
+    </div>
+    <div class="field">
+      <div class="field-label">在本示例中的体现</div>
+      <div class="field-content">分析Anne的直接表达时，先问"直接表达是什么？→在中国→在英国"。</div>
+    </div>
+    <div class="field">
+      <div class="field-label">如何使用</div>
+      <div class="field-content">用"三栏表"记录答案，对比三个问题的答案差异。</div>
+    </div>
+    <div class="field">
+      <div class="field-label">可迁移场景</div>
+      <div class="field-content">分析任何文化行为差异（礼仪、时间观念、家庭观念等）。</div>
+    </div>
+    <div class="field">
+      <div class="field-label">使用提醒</div>
+      <div class="field-content">第三问需要一定文化知识储备，平时多积累。</div>
+    </div>
+  </div>
+</div>
+
+<!-- 原理3 -->
+<div class="principle-card" id="principle3">
+  <div class="principle-header" onclick="togglePrinciple('principle3')">
+    <span class="num">3</span>
+    <h2>找框架原则（用理论解释差异）</h2>
+    <span class="toggle-arrow">▼</span>
+  </div>
+  <div class="principle-body">
+    <div class="field">
+      <div class="field-label">原理说明</div>
+      <div class="field-content">找到合适的文化理论框架，可以让你的分析更有深度和说服力。比如高/低语境文化理论、个人主义/集体主义维度。</div>
+    </div>
+    <div class="field">
+      <div class="field-label">在本示例中的体现</div>
+      <div class="field-content">用"高语境 vs 低语境"框架解释了直接表达的文化含义。</div>
+    </div>
+    <div class="field">
+      <div class="field-label">如何使用</div>
+      <div class="field-content">掌握3—5个基本文化理论（高/低语境、个人/集体、权力距离等），遇到问题时看哪个框架适用。</div>
+    </div>
+    <div class="field">
+      <div class="field-label">可迁移场景</div>
+      <div class="field-content">分析所有跨文化现象、社会现象、甚至代际差异。</div>
+    </div>
+    <div class="field">
+      <div class="field-label">使用提醒</div>
+      <div class="field-content">框架是工具，不是答案——同一个现象可以用不同框架解释，没有唯一正确答案。</div>
+    </div>
+  </div>
+</div>
+
+<!-- 原理4 -->
+<div class="principle-card" id="principle4">
+  <div class="principle-header" onclick="togglePrinciple('principle4')">
+    <span class="num">4</span>
+    <h2>重新评估原则（基于文化解释重新判断）</h2>
+    <span class="toggle-arrow">▼</span>
+  </div>
+  <div class="principle-body">
+    <div class="field">
+      <div class="field-label">原理说明</div>
+      <div class="field-content">应用文化框架解释后，回到最初的问题重新评估——对方的意图可能与你最初的感受完全不同。</div>
+    </div>
+    <div class="field">
+      <div class="field-label">在本示例中的体现</div>
+      <div class="field-content">用文化框架解释后，结论从"Anne不真诚"变为"Anne以英国方式展示友谊"。</div>
+    </div>
+    <div class="field">
+      <div class="field-label">如何使用</div>
+      <div class="field-content">完成前三步后，回到"我最初觉得TA是____，现在我觉得TA是____"。</div>
+    </div>
+    <div class="field">
+      <div class="field-label">可迁移场景</div>
+      <div class="field-content">所有需要判断他人意图的场景。</div>
+    </div>
+    <div class="field">
+      <div class="field-label">使用提醒</div>
+      <div class="field-content">文化解释不能充当所有行为的借口——真正的恶意行为与文化差异是可以区分的。</div>
+    </div>
+  </div>
+</div>
+
+<!-- 练习区 -->
+<div class="practice-section">
+  <h2>📝 应用练习</h2>
+
+  <div class="practice-card">
+    <h3>练习1：礼物文化</h3>
+    <div class="scenario">
+      <strong>情境：</strong>你的美国朋友送了你一份生日礼物，你当面打开后表示感谢。但你觉得她选的礼物"太随意了"——一本10美元的书。你心里想"她是不是不够重视我？"
+    </div>
+    <div class="principles-used">
+      <span class="pill">停一停原则</span>
+      <span class="pill">三问原则</span>
+      <span class="pill">找框架原则</span>
+    </div>
+    <div class="hint-text">💡 美国文化中送礼物更注重"心意"而非"价格"，当面拆礼物是表达欣赏的方式。中国文化中礼物的价格往往代表重视程度。</div>
+    <button class="write-btn" onclick="toggleWrite('write1')">✏️ 写下你的分析(80—100词)</button>
+    <div class="write-area" id="write1">
+      <textarea placeholder="运用上述原理分析这个情境……"></textarea>
+    </div>
+  </div>
+
+  <div class="practice-card">
+    <h3>练习2：道歉文化</h3>
+    <div class="scenario">
+      <strong>情境：</strong>你的日本同学不小心踩了你的脚。他连续说了5次"すみません"并鞠躬了好几次。你觉得"他太夸张了，有点假"。
+    </div>
+    <div class="principles-used">
+      <span class="pill">三问原则</span>
+      <span class="pill">找框架原则</span>
+    </div>
+    <div class="hint-text">💡 日本文化中"道歉"不仅是承认错误，更是表达"我在意你的感受"的方式。多次道歉表明他非常在意你的反应。</div>
+    <button class="write-btn" onclick="toggleWrite('write2')">✏️ 用英语写下分析结论(60—80词)</button>
+    <div class="write-area" id="write2">
+      <textarea placeholder="Write your analysis in English…"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- 自我检测 -->
+<div class="self-check">
+  <h2>✅ 自我检测</h2>
+  <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">点击每个条目标记为已完成</p>
+  <div class="check-item" onclick="toggleCheck(this)">
+    <div class="checkbox"></div>
+    <span class="check-text">我能不能用自己的话解释"高语境文化"和"低语境文化"的区别？</span>
+  </div>
+  <div class="check-item" onclick="toggleCheck(this)">
+    <div class="checkbox"></div>
+    <span class="check-text">当我遇到让我困惑的文化行为时，我是否知道应该先问哪三个问题？</span>
+  </div>
+  <div class="check-item" onclick="toggleCheck(this)">
+    <div class="checkbox"></div>
+    <span class="check-text">我是否能举出一个"需要用文化框架重新评估"的亲身经历？</span>
+  </div>
+  <div class="check-item" onclick="toggleCheck(this)">
+    <div class="checkbox"></div>
+    <span class="check-text">我是否能区分"文化差异"和"真正的冒犯行为"？</span>
+  </div>
+  <div class="check-item" onclick="toggleCheck(this)">
+    <div class="checkbox"></div>
+    <span class="check-text">学完这些原理后，我有没有信心用英语向外国朋友解释中国文化？</span>
+  </div>
+</div>
+
+</div>
+
+<script>
+function togglePrinciple(id) {
+  document.getElementById(id).classList.toggle('collapsed');
+}
+
+function toggleWrite(id) {
+  document.getElementById(id).classList.toggle('show');
+}
+
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+}
+</script>
+</body>
+</html>

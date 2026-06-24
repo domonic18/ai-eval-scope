@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目库脚手架 - Friendship</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+}
+.header {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 24px 28px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+  border-left: 4px solid var(--primary);
+}
+.header h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+.header p {
+  color: var(--text-secondary);
+}
+.project-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.project-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: box-shadow 0.3s;
+}
+.project-card:hover {
+  box-shadow: 0 4px 20px rgba(0,0,0,0.10);
+}
+.card-banner {
+  padding: 16px 20px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.banner-short { background: linear-gradient(135deg, #595959, #8c8c8c); }
+.banner-medium { background: linear-gradient(135deg, #434343, #595959); }
+.banner-long { background: linear-gradient(135deg, #262626, #434343); }
+.card-banner h2 {
+  font-size: var(--font-h2);
+  font-weight: 700;
+}
+.timeline-badge {
+  background: rgba(255,255,255,0.2);
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.card-body {
+  padding: 20px;
+}
+.project-detail { margin-bottom: 20px; }
+.project-detail:last-child { margin-bottom: 0; }
+.goal-box {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--bg);
+  border-radius: 6px;
+  margin-bottom: 14px;
+  align-items: flex-start;
+}
+.goal-box .goal-icon {
+  flex-shrink: 0;
+  font-size: 20px;
+}
+.goal-box .goal-text {
+  font-weight: 500;
+}
+.phase-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.phase-list li {
+  padding: 8px 12px 8px 36px;
+  position: relative;
+  background: #fafafa;
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+}
+.phase-list li .step-num {
+  position: absolute;
+  left: 10px;
+  top: 8px;
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 13px;
+}
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.detail-item {
+  padding: 10px 12px;
+  background: var(--bg);
+  border-radius: 6px;
+}
+.detail-item .label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+.detail-item .value {
+  font-size: 14px;
+  color: var(--text);
+}
+.resource-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #fafafa;
+  border-radius: 6px;
+  border: 1px dashed var(--border);
+}
+.resource-bar .r-icon { font-size: 16px; }
+.resource-bar a {
+  color: var(--primary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.resource-bar a:hover { color: var(--primary-hover); }
+.progress-tracker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border-radius: 6px;
+}
+.progress-tracker .label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.progress-bar {
+  flex: 1;
+  height: 8px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+}
+.progress-bar .fill {
+  height: 100%;
+  width: 0%;
+  background: var(--primary);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+.progress-tracker .pct {
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 32px;
+  text-align: right;
+  color: var(--primary);
+}
+@media (max-width: 600px) {
+  .container { padding: 12px 10px; }
+  .detail-grid { grid-template-columns: 1fr; }
+  .card-banner { flex-direction: column; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🚀 项目库脚手架</h1>
+    <p>从短周期到长周期——用项目化学习深度探索"友谊"主题，在实践中提升英语综合能力。</p>
+  </div>
+
+  <div class="project-grid">
+
+    <!-- 短周期 -->
+    <div class="project-card">
+      <div class="card-banner banner-short">
+        <h2>📝 Friendship Quotes Collection</h2>
+        <span class="timeline-badge">⏱ 1—3 天</span>
+      </div>
+      <div class="card-body">
+        <div class="goal-box">
+          <span class="goal-icon">🎯</span>
+          <div class="goal-text">搜集 10 条关于友谊的英文名言，为每条名言配上你的中文理解和英文评论。</div>
+        </div>
+        <ul class="phase-list">
+          <li><span class="step-num">1</span>搜索和筛选名言（线上或书籍）</li>
+          <li><span class="step-num">2</span>为每条名言写作英文评论（30—50 词）</li>
+          <li><span class="step-num">3</span>整理成一份精美的 PDF 文档或卡片集</li>
+        </ul>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <div class="label">📦 成果形式</div>
+            <div class="value">10 张"名言卡片"</div>
+          </div>
+          <div class="detail-item">
+            <div class="label">📊 评价标准</div>
+            <div class="value">来源可靠 + 个人理解 + 格式统一</div>
+          </div>
+        </div>
+        <div class="resource-bar">
+          <span class="r-icon">🔗</span>
+          <span>资源：</span>
+          <a onclick="window.open('https://brainyquote.com')">BrainyQuote.com</a>
+          <span>·</span>
+          <a onclick="window.open('https://goodreads.com')">Goodreads.com</a>
+        </div>
+        <div class="progress-tracker">
+          <span class="label">进度</span>
+          <div class="progress-bar" onclick="advanceProgress(this)">
+            <div class="fill" style="width:0%"></div>
+          </div>
+          <span class="pct">0%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 中周期 -->
+    <div class="project-card">
+      <div class="card-banner banner-medium">
+        <h2>📘 "Advice for New Students" Multimodal Guide</h2>
+        <span class="timeline-badge">⏱ 1—2 周</span>
+      </div>
+      <div class="card-body">
+        <div class="goal-box">
+          <span class="goal-icon">🎯</span>
+          <div class="goal-text">制作一份面向新生的"如何在学校交朋友"多模态指南（英文）。</div>
+        </div>
+        <ul class="phase-list">
+          <li><span class="step-num">1</span><strong>调研：</strong>采访 3—5 位同学关于"在学校交朋友的建议"</li>
+          <li><span class="step-num">2</span><strong>整理：</strong>把建议分类整理成 3—5 个板块</li>
+          <li><span class="step-num">3</span><strong>制作：</strong>用英文写成指南，并配上图片或插图</li>
+          <li><span class="step-num">4</span><strong>展示：</strong>在班级中展示并收集反馈</li>
+        </ul>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <div class="label">📦 成果形式</div>
+            <div class="value">英文指南（可打印/数字版）</div>
+          </div>
+          <div class="detail-item">
+            <div class="label">📊 评价标准</div>
+            <div class="value">内容实用 + 英文准确 + 排版清晰 + 有调研基础</div>
+          </div>
+        </div>
+        <div class="resource-bar">
+          <span class="r-icon">🔗</span>
+          <span>资源：</span>
+          <a onclick="window.open('https://canva.com')">Canva（设计工具）</a>
+          <span>·</span>
+          <span>ChatGPT（语法校对）</span>
+        </div>
+        <div class="progress-tracker">
+          <span class="label">进度</span>
+          <div class="progress-bar" onclick="advanceProgress(this)">
+            <div class="fill" style="width:0%"></div>
+          </div>
+          <span class="pct">0%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 长周期 -->
+    <div class="project-card">
+      <div class="card-banner banner-long">
+        <h2>📖 Class Friendship Journal</h2>
+        <span class="timeline-badge">⏱ 1 月+</span>
+      </div>
+      <div class="card-body">
+        <div class="goal-box">
+          <span class="goal-icon">🎯</span>
+          <div class="goal-text">全班合作撰写一份"班级友谊日志"（英文），记录一学期中班级发生的友谊故事和感悟。</div>
+        </div>
+        <ul class="phase-list">
+          <li><span class="step-num">📋</span><strong>策划期</strong> — 确定日志格式、轮值制度和内容规范（第 1 周）</li>
+          <li><span class="step-num">✍️</span><strong>执行期</strong> — 每周 2—3 位同学轮值撰写英文日志（第 2—4 周）</li>
+          <li><span class="step-num">📚</span><strong>汇编期</strong> — 全班投票选出最精彩的 10 篇，汇编成电子杂志（第 5 周）</li>
+          <li><span class="step-num">🎉</span><strong>发布期</strong> — 在班级/学校平台发布，邀请读者留言（第 6 周）</li>
+        </ul>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <div class="label">📦 成果形式</div>
+            <div class="value">电子杂志（PDF / ePub）</div>
+          </div>
+          <div class="detail-item">
+            <div class="label">📊 评价标准</div>
+            <div class="value">具体事件 + 反思 + 语言通顺 + 风格统一</div>
+          </div>
+        </div>
+        <div class="resource-bar">
+          <span class="r-icon">🔗</span>
+          <span>资源：</span>
+          <a onclick="window.open('https://canva.com')">Canva（排版设计）</a>
+          <span>·</span>
+          <a onclick="window.open('https://flipsnack.com')">Flipsnack（电子杂志）</a>
+        </div>
+        <div class="progress-tracker">
+          <span class="label">进度</span>
+          <div class="progress-bar" onclick="advanceProgress(this)">
+            <div class="fill" style="width:0%"></div>
+          </div>
+          <span class="pct">0%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function advanceProgress(el) {
+  const fill = el.querySelector('.fill');
+  const pct = el.parentElement.querySelector('.pct');
+  if (!fill || !pct) return;
+  let w = parseInt(fill.style.width) || 0;
+  w = (w + 20) % 120;
+  if (w > 100) w = 0;
+  fill.style.width = w + '%';
+  pct.textContent = w + '%';
+}
+</script>
+</body>
+</html>

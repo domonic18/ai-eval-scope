@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块五维导学：STEAM融合性应用</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, #434343 0%, #595959 100%);
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.header .subtitle {
+  font-size: calc(var(--font-body) + 1px);
+  opacity: 0.85;
+}
+.header .dim-badge {
+  display: inline-block;
+  margin-top: 10px;
+  background: rgba(255,255,255,0.2);
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: calc(var(--font-body) - 2px);
+}
+
+/* Dimension nav */
+.dim-nav {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.dim-btn {
+  flex: 1;
+  min-width: 100px;
+  padding: 10px 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  text-align: center;
+  font-size: calc(var(--font-body) - 1px);
+  transition: all 0.2s;
+  color: var(--text-secondary);
+}
+.dim-btn:hover { border-color: var(--primary); color: var(--primary); }
+.dim-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(67,67,67,0.3);
+}
+
+/* Card */
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  display: none;
+}
+.card.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+.card h2 {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--accent);
+}
+.card h3 {
+  font-size: calc(var(--font-body) + 2px);
+  font-weight: 600;
+  color: var(--primary);
+  margin: 14px 0 6px;
+}
+.card p { margin: 8px 0; }
+.card ul, .card ol { padding-left: 20px; margin: 8px 0; }
+.card li { margin-bottom: 6px; }
+
+/* Count box */
+.count-box {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 28px;
+  font-weight: 700;
+  font-size: 14px;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+/* Profile card */
+.profile-card {
+  display: flex;
+  gap: 16px;
+  background: #fafafa;
+  border-radius: var(--border-radius);
+  padding: 16px;
+  margin: 12px 0;
+  align-items: flex-start;
+  border-left: 4px solid var(--accent);
+}
+.profile-card .avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+.profile-card .info { flex: 1; }
+.profile-card .info .name { font-weight: 700; font-size: calc(var(--font-body) + 1px); }
+.profile-card .info .desc { color: var(--text-secondary); font-size: calc(var(--font-body) - 1px); margin-top: 4px; }
+
+/* Question card */
+.question-card {
+  background: #fafafa;
+  border-radius: var(--border-radius);
+  padding: 16px;
+  margin: 12px 0;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid var(--border);
+}
+.question-card:hover { border-color: var(--accent); }
+.question-card .q-label {
+  font-weight: 600;
+  color: var(--primary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.question-card .q-label .arrow { transition: transform 0.2s; }
+.question-card.expanded .q-label .arrow { transform: rotate(180deg); }
+.question-card .q-body {
+  display: none;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: calc(var(--font-body) - 1px);
+}
+.question-card.expanded .q-body { display: block; }
+
+/* Method card */
+.method-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 12px 0;
+}
+.method-card {
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  transition: transform 0.2s;
+}
+.method-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.method-card .method-icon { font-size: 28px; margin-bottom: 6px; }
+.method-card .method-title { font-weight: 600; color: var(--primary); }
+.method-card .method-desc { font-size: calc(var(--font-body) - 2px); color: var(--text-secondary); margin-top: 4px; }
+
+/* Progress bar */
+.progress-bar {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  margin: 16px 0;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 3px;
+  width: 0%;
+  transition: width 0.5s ease;
+}
+
+/* Tag */
+.tag {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: calc(var(--font-body) - 2px);
+  border: 1px solid var(--border);
+  margin: 2px;
+}
+
+/* Footer */
+.footer-action {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 20px 0;
+}
+.nav-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: calc(var(--font-body) - 1px);
+  transition: background 0.2s;
+}
+.nav-btn:hover { background: var(--primary-hover); }
+.nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+@media (max-width: 640px) {
+  .container { padding: 12px; }
+  .header { padding: 20px 16px; }
+  .card { padding: 14px 16px; }
+  .dim-btn { min-width: 70px; font-size: 13px; }
+  .profile-card { flex-direction: column; align-items: center; text-align: center; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🧭 模块五维导学</h1>
+  <div class="subtitle">模块定位：STEAM 融合性应用 — 英语必修1 · Unit 1 Friendship</div>
+  <div class="dim-badge">5 个维度 · 1 次跨界学习之旅</div>
+</div>
+
+<!-- 维度切换 -->
+<div class="dim-nav">
+  <button class="dim-btn active" data-dim="0">📚 学习目标</button>
+  <button class="dim-btn" data-dim="1">🚀 高精尖价值</button>
+  <button class="dim-btn" data-dim="2">💡 学习方法</button>
+  <button class="dim-btn" data-dim="3">👤 关键人物</button>
+  <button class="dim-btn" data-dim="4">🤔 前沿追问</button>
+</div>
+
+<!-- 进度 -->
+<div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:20%"></div></div>
+
+<!-- 维度1: 学习目标 -->
+<div class="card active" data-dim="0">
+  <h2>📚 一、模块学习目标</h2>
+  <p>完成本模块后，你将<strong>从"学英语"升级为"用英语思考、创造和探索"</strong>。</p>
+
+  <ul>
+    <li><strong>🎯 用英语表达情感</strong> — 熟练运用核心词汇和句型，描述友谊中的信任、冲突、温暖与成长，不再只会背单词，而是能说出自己的真实感受。</li>
+    <li><strong>🔗 跨学科串联</strong> — 将"友谊"与 STEAM 各学科连接：用心理学分析信任机制，用生物学理解社交对大脑的影响，用数据和图表呈现社交网络结构。</li>
+    <li><strong>🛠️ 动手做项目</strong> — 在 STEAM 融合活动中，用英语完成一项小型探究项目（如设计"友谊幸福感"调查、制作思维导图或信息海报），并在班级展示。</li>
+  </ul>
+
+  <div style="background:#f0f0f0;border-radius:var(--border-radius);padding:14px;margin-top:12px;text-align:center">
+    <p style="font-weight:600;color:var(--primary);">✍️ 给你的小挑战</p>
+    <p style="font-size:calc(var(--font-body)-1px);">用英语写出你希望在本次模块中学到的 3 个具体技能。</p>
+    <textarea placeholder="例：I want to learn how to express my feelings in English..." style="width:100%;margin-top:8px;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:var(--font-family);font-size:var(--font-body);resize:vertical;min-height:60px;" oninput="updateProgress()"></textarea>
+  </div>
+</div>
+
+<!-- 维度2: 高精尖价值 -->
+<div class="card" data-dim="1">
+  <h2>🚀 二、高精尖价值与未来意义</h2>
+  <p>你可能会想：<em>"友谊"这个话题小学就学过了，为什么到了高中还要花一个模块来学？</em></p>
+  <p>因为<strong>"友谊"从来不只是背几个单词</strong>。在未来，你会遇到这些真实的场景：</p>
+
+  <div class="method-grid">
+    <div class="method-card">
+      <div class="method-icon">🌍</div>
+      <div class="method-title">跨文化协作</div>
+      <div class="method-desc">在国际团队里工作，如何用英语建立信任、化解冲突、维持长期合作？不是语法题，而是真实的人际能力。</div>
+    </div>
+    <div class="method-card">
+      <div class="method-icon">📊</div>
+      <div class="method-title">社交网络分析</div>
+      <div class="method-desc">大数据时代，科学家用图论和算法分析人际关系网络——这些研究的起点，正是你对"友谊"本质的理解。</div>
+    </div>
+    <div class="method-card">
+      <div class="method-icon">🤖</div>
+      <div class="method-title">AI 时代的情感智能</div>
+      <div class="method-desc">AI 可以写邮件、做翻译，但无法替代人与人之间的真实连接。懂得建立和维系友谊，是未来最稀缺的能力之一。</div>
+    </div>
+  </div>
+
+  <div class="quote-box" style="background:linear-gradient(135deg,#434343,#595959);color:#fff;padding:16px 20px;border-radius:var(--border-radius);margin:12px 0;text-align:center;font-style:italic;">
+    学完这个模块，你收获的不只是英语分数，还有用多学科视角理解世界的能力。
+  </div>
+</div>
+
+<!-- 维度3: 学习方法 -->
+<div class="card" data-dim="2">
+  <h2>💡 三、推荐学习方式与方法</h2>
+
+  <div class="method-grid">
+    <div class="method-card">
+      <div class="method-icon">📝</div>
+      <div class="method-title">"3-2-1"英语输出法</div>
+      <div class="method-desc">每次学完材料：写 3 个新表达、2 个印象深刻观点、1 个追问问题。</div>
+    </div>
+    <div class="method-card">
+      <div class="method-icon">🧠</div>
+      <div class="method-title">思维导图串联法</div>
+      <div class="method-desc">把"友谊"放中心，延伸心理学、生物学、数学、艺术、技术，每个分支用英文关键词标注。</div>
+    </div>
+    <div class="method-card">
+      <div class="method-icon">🔬</div>
+      <div class="method-title">项目式学习 PBL</div>
+      <div class="method-desc">选择一个好奇的问题，设计小调查，用英语收集数据、分析结果、制作展示。</div>
+    </div>
+    <div class="method-card">
+      <div class="method-icon">👥</div>
+      <div class="method-title">同伴互评与反思</div>
+      <div class="method-desc">找学习伙伴，互相用英语分享理解，给出"更好的表达建议"。</div>
+    </div>
+  </div>
+
+  <div style="background:#f0f0f0;border-radius:var(--border-radius);padding:14px;margin-top:12px;">
+    <p style="font-weight:600;color:var(--primary);">📌 "3-2-1" 快速练习</p>
+    <p style="font-size:calc(var(--font-body)-1px);margin:6px 0;">关于"友谊"，写下：</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+      <input type="text" placeholder="3 个新表达..." style="padding:8px;border:1px solid var(--border);border-radius:6px;font-size:calc(var(--font-body)-1px);">
+      <input type="text" placeholder="2 个新观点..." style="padding:8px;border:1px solid var(--border);border-radius:6px;font-size:calc(var(--font-body)-1px);">
+      <input type="text" placeholder="1 个追问..." style="padding:8px;border:1px solid var(--border);border-radius:6px;font-size:calc(var(--font-body)-1px);">
+    </div>
+  </div>
+</div>
+
+<!-- 维度4: 关键人物 -->
+<div class="card" data-dim="3">
+  <h2>👤 四、关键人物与成果</h2>
+
+  <div class="profile-card">
+    <div class="avatar">📜</div>
+    <div class="info">
+      <div class="name">亚里士多德（Aristotle）— 友谊的哲学奠基人</div>
+      <div class="desc">在《尼各马可伦理学》中把友谊分为三种：功利之友、快乐之友、德性之友。两千多年过去了，这个分类依然能解释你身边的大多数人际关系。</div>
+      <div style="margin-top:6px;"><span class="tag">💬 试试用英语讨论：你们的友谊属于哪一种？</span></div>
+    </div>
+  </div>
+
+  <div class="profile-card">
+    <div class="avatar">🧮</div>
+    <div class="info">
+      <div class="name">罗伯特·邓巴（Robin Dunbar）— "邓巴数"提出者</div>
+      <div class="desc">发现人类能维持的稳定社交关系约150人（"邓巴数"）——来自大脑新皮层的大小。友谊的上限写在我们的生物学里。</div>
+      <div style="margin-top:6px;"><span class="tag">📊 在模块项目中验证自己的"邓巴数"</span></div>
+    </div>
+  </div>
+
+  <div class="profile-card">
+    <div class="avatar">⚡</div>
+    <div class="info">
+      <div class="name">J.K.罗琳 — 友谊的文学典范</div>
+      <div class="desc">《哈利·波特》系列证明"爱和友谊是最强大的魔法"。哈利、罗恩和赫敏的信任与包容，是友谊主题最动人的呈现之一。</div>
+      <div style="margin-top:6px;"><span class="tag">✍️ 用英语分析：是什么让他们的友谊经得起考验？</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- 维度5: 前沿追问 -->
+<div class="card" data-dim="4">
+  <h2>🤔 五、前沿追问</h2>
+  <p>以下问题没有标准答案，但它们能帮你把思维推向更深的地方。</p>
+
+  <div class="question-card" onclick="this.classList.toggle('expanded')">
+    <div class="q-label">
+      <span>📱 社交媒体让友谊变深了还是变浅了？</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="q-body">
+      微信里有几百个"好友"，但真正能深夜倾诉的有几个？科技改变了友谊的数量，但质量呢？你能用英语设计一个衡量友谊深度的"指标"吗？
+    </div>
+  </div>
+
+  <div class="question-card" onclick="this.classList.toggle('expanded')">
+    <div class="q-label">
+      <span>🤖 AI 能成为人类的朋友吗？</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="q-body">
+      如果一个 AI 能记住你所有的喜好、在你难过时说出最合适的话、24小时在线陪伴——这算友谊吗？问题不在于 AI 能否"感受"，而在于我们需要怎样的连接。
+    </div>
+  </div>
+
+  <div class="question-card" onclick="this.classList.toggle('expanded')">
+    <div class="q-label">
+      <span>🎯 如果友谊是一种"技能"，可以训练吗？</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="q-body">
+      有些人似乎天生擅长交友，有些人则不然。如果友谊像数学一样可以被拆解成可练习的技能，你会如何设计一套"友谊训练课程"？融合了心理学、教育学和社会学。
+    </div>
+  </div>
+
+  <div class="question-card" onclick="this.classList.toggle('expanded')">
+    <div class="q-label">
+      <span>🌏 跨文化友谊中，什么最重要？</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="q-body">
+      当你的朋友来自不同文化背景，语言、习俗、价值观的差异会不会成为障碍？还是反而让友谊更丰富？试着采访一位有跨文化友谊经历的人，用英文记录你的发现。
+    </div>
+  </div>
+</div>
+
+<!-- 导航 -->
+<div class="footer-action">
+  <button class="nav-btn" id="prevBtn" onclick="navigateDim(-1)" disabled>◀ 上一维度</button>
+  <span style="display:flex;align-items:center;color:var(--text-secondary);font-size:calc(var(--font-body)-1px);" id="dimCounter">1 / 5</span>
+  <button class="nav-btn" id="nextBtn" onclick="navigateDim(1)">下一维度 ▶</button>
+</div>
+
+</div>
+
+<script>
+var currentDim = 0;
+var totalDims = 5;
+
+function navigateDim(step) {
+  var cards = document.querySelectorAll('.card[data-dim]');
+  var btns = document.querySelectorAll('.dim-btn');
+  var newDim = currentDim + step;
+  if (newDim < 0 || newDim >= totalDims) return;
+
+  cards[currentDim].classList.remove('active');
+  btns[currentDim].classList.remove('active');
+  currentDim = newDim;
+  cards[currentDim].classList.add('active');
+  btns[currentDim].classList.add('active');
+
+  document.getElementById('prevBtn').disabled = currentDim === 0;
+  document.getElementById('nextBtn').disabled = currentDim === totalDims - 1;
+  document.getElementById('dimCounter').textContent = (currentDim + 1) + ' / ' + totalDims;
+  document.getElementById('progressFill').style.width = ((currentDim + 1) / totalDims * 100) + '%';
+}
+
+document.querySelectorAll('.dim-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    navigateDim(parseInt(this.getAttribute('data-dim')) - currentDim);
+  });
+});
+
+function updateProgress() {
+  var filled = 0;
+  document.querySelectorAll('textarea').forEach(function(t) {
+    if (t.value.trim().length > 0) filled++;
+  });
+}
+</script>
+</body>
+</html>

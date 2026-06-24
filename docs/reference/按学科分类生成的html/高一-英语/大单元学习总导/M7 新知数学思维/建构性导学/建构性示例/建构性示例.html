@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性示例 — 友谊关系从零构建</title>
+<style>
+  :root {
+    --primary: #434343;
+    --primary-hover: #595959;
+    --accent: #8c8c8c;
+    --bg: #f5f5f5;
+    --card-bg: #ffffff;
+    --text: rgba(0,0,0,0.88);
+    --text-secondary: rgba(0,0,0,0.45);
+    --border: #d9d9d9;
+    --border-radius: 8px;
+    --shadow: 0 2px 8px rgba(0,0,0,0.06);
+    --font-body: 15px;
+    --font-h1: 22px;
+    --font-h2: 18px;
+    --line-height: 1.65;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: var(--font-body);
+    line-height: var(--line-height);
+    color: var(--text);
+    background: var(--bg);
+    width: 100%;
+    max-width: none;
+    padding: 0;
+  }
+  .container {
+    width: 100%;
+    max-width: none;
+    padding: 24px 20px;
+    box-sizing: border-box;
+  }
+  .page-header {
+    background: linear-gradient(135deg, #434343 0%, #595959 100%);
+    color: #fff;
+    padding: 28px 24px;
+    border-radius: var(--border-radius);
+    margin-bottom: 24px;
+  }
+  .page-header h1 {
+    font-size: var(--font-h1);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .page-header p {
+    font-size: 14px;
+    opacity: 0.85;
+    margin: 0;
+  }
+  h2 {
+    font-size: var(--font-h2);
+    color: var(--primary);
+    margin: 28px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--accent);
+  }
+  h3 {
+    font-size: 16px;
+    color: var(--primary-hover);
+    margin: 16px 0 8px;
+  }
+  h4 {
+    font-size: 15px;
+    color: var(--primary);
+    margin: 12px 0 6px;
+  }
+  .example-story {
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 18px 20px;
+    margin-bottom: 16px;
+    border-left: 4px solid var(--primary);
+    position: relative;
+  }
+  .example-story .story-icon {
+    font-size: 24px;
+    margin-bottom: 8px;
+  }
+  .step-block {
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    border: 1px solid var(--border);
+    transition: all 0.3s;
+    cursor: pointer;
+  }
+  .step-block:hover {
+    border-color: var(--primary);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  }
+  .step-block .step-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .step-block .step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .step-block .step-title {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--primary);
+  }
+  .step-block .step-detail {
+    margin: 4px 0;
+    font-size: 14px;
+  }
+  .step-block .step-demo {
+    margin: 8px 0 0;
+    padding: 10px 14px;
+    background: var(--bg);
+    border-radius: 6px;
+    font-size: 14px;
+    border-left: 3px solid var(--accent);
+    display: none;
+  }
+  .step-block .step-demo.show {
+    display: block;
+  }
+  .tool-box {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 12px 0;
+  }
+  .tool-item {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    text-align: center;
+    font-size: 14px;
+    transition: all 0.2s;
+  }
+  .tool-item:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+  }
+  .tool-item .tool-icon {
+    font-size: 22px;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .sample-box {
+    background: #fafafa;
+    border: 2px dashed var(--accent);
+    border-radius: var(--border-radius);
+    padding: 16px 18px;
+    margin: 12px 0;
+  }
+  .sample-box h4 {
+    margin: 0 0 8px;
+  }
+  .btn-show {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    padding: 4px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    margin-top: 6px;
+    transition: background 0.2s;
+  }
+  .btn-show:hover {
+    background: var(--primary-hover);
+  }
+  .eval-list {
+    list-style: none;
+    padding: 0;
+  }
+  .eval-list li {
+    padding: 6px 0 6px 24px;
+    position: relative;
+    font-size: 14px;
+  }
+  .eval-list li::before {
+    content: "✅";
+    position: absolute;
+    left: 0;
+  }
+  @media (max-width: 768px) {
+    .container { padding: 16px 12px; }
+    .tool-box { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="page-header">
+  <h1>建构性示例</h1>
+  <p>从零开始建构友谊关系的完整路径示范 · 英语必修1</p>
+</div>
+
+<div class="example-story">
+  <div class="story-icon">📖</div>
+  <h3>示例故事："从同桌到朋友，再到更懂朋友"</h3>
+  <p style="font-size:14px;margin:8px 0;">高一开学第一天，李明和张华成了同桌。李明性格内向，不太主动说话；张华开朗健谈，总是先开口。第一个月，他们只是点头之交。第二个月，一次数学考试后李明忘带计算器，张华主动借给他——这是关系的转折点。之后他们开始一起吃饭、一起放学。但第三个月，李明发现张华总是打断他说话，这让他感到不被尊重。矛盾产生了……</p>
+  <p style="font-size:14px;margin:8px 0;">这个故事看起来简单，但其中包含了友谊从建立到发展的完整要素。接下来，我们要像一个研究者一样，从这个故事中"建构"出一个友谊关系发展模型。</p>
+</div>
+
+<h2 style="margin-top:20px;">建构目标</h2>
+<p style="margin-bottom:12px;">你将亲手建构一个<strong>友谊关系发展模型</strong>——它能帮助理解友谊是如何从陌生走向亲密、又如何在矛盾中调整的。</p>
+
+<div class="sample-box" style="margin-bottom:20px;">
+  <h4>🎯 建构任务说明</h4>
+  <p><strong>成果名称：</strong>友谊关系发展模型图</p>
+  <p><strong>用途：</strong>用于解释朋友之间关系变化的规律，预测可能出现的矛盾</p>
+  <p><strong>对象：</strong>写给同龄人看的，也可以向老师展示你的分析能力</p>
+  <p><strong>形式：</strong>概念图/流程图 + 英语关键词标注</p>
+  <p><strong>最低标准：</strong>至少包含3个发展阶段 + 每个阶段2个特征 + 1处转折点</p>
+</div>
+
+<h2>建构过程示范（6步）</h2>
+<p style="color:var(--text-secondary);margin-bottom:12px;">点击每个步骤查看其中的"简短示范"——展示每一步实际产出的样子。</p>
+
+<div class="step-block" onclick="toggleStep('step1')">
+  <div class="step-header">
+    <span class="step-num">1</span>
+    <span class="step-title">观察与提问</span>
+  </div>
+  <div class="step-detail"><strong>做什么：</strong>观察情境中的关键现象——两个同学的关系发生了什么变化？</div>
+  <div class="step-detail"><strong>怎么做：</strong>逐段阅读故事，记录每次关系变化的时间点和事件。</div>
+  <div class="step-detail"><strong>生成什么：</strong>观察记录表。</div>
+  <button class="btn-show" onclick="event.stopPropagation();toggleStep('step1')">查看示范</button>
+  <div class="step-demo" id="step1">
+    <strong>📋 观察记录表示范：</strong>
+    <p>第1周：初次见面，互动极少（打招呼仅2次）<br>第5周：借计算器事件，关系开始升温<br>第8周：一起吃饭、放学，互动频率上升至每天<br>第12周：打断说话事件，舒适度下降</p>
+  </div>
+</div>
+
+<div class="step-block" onclick="toggleStep('step2')">
+  <div class="step-header">
+    <span class="step-num">2</span>
+    <span class="step-title">收集与整理</span>
+  </div>
+  <div class="step-detail"><strong>做什么：</strong>从观察记录中提取友谊关系的关键要素。</div>
+  <div class="step-detail"><strong>怎么做：</strong>分类整理——哪些是"促进因素"？哪些是"阻碍因素"？</div>
+  <div class="step-detail"><strong>生成什么：</strong>信息分类表。</div>
+  <button class="btn-show" onclick="event.stopPropagation();toggleStep('step2')">查看示范</button>
+  <div class="step-demo" id="step2">
+    <strong>📊 信息分类表示范：</strong>
+    <p><strong>促进因素：</strong>主动帮助（借计算器）、共同活动（一起吃饭）、日常互动（同桌）</p>
+    <p><strong>阻碍因素：</strong>性格差异（内向vs外向）、沟通方式（被打断）、期待不一致</p>
+    <p><strong>环境因素：</strong>同桌座位安排、同一班级</p>
+  </div>
+</div>
+
+<div class="step-block" onclick="toggleStep('step3')">
+  <div class="step-header">
+    <span class="step-num">3</span>
+    <span class="step-title">建立联系</span>
+  </div>
+  <div class="step-detail"><strong>做什么：</strong>寻找要素之间的因果关系——哪个因素导致了关系变化？</div>
+  <div class="step-detail"><strong>怎么做：</strong>画关系图，用箭头表示"导致"关系。</div>
+  <div class="step-detail"><strong>生成什么：</strong>初步的关系草图。</div>
+  <button class="btn-show" onclick="event.stopPropagation();toggleStep('step3')">查看示范</button>
+  <div class="step-demo" id="step3">
+    <strong>🧩 关系草图示范：</strong>
+    <p>"主动帮助" → "信任建立" → "互动增加" → "关系升温"</p>
+    <p>"性格差异" → "沟通方式不匹配" → "被打断" → "舒适度下降" → "关系紧张"</p>
+    <p style="font-size:13px;color:var(--text-secondary);">核心发现：信任是友谊升温的燃料，而沟通方式是关系的调节器。</p>
+  </div>
+</div>
+
+<div class="step-block" onclick="toggleStep('step4')">
+  <div class="step-header">
+    <span class="step-num">4</span>
+    <span class="step-title">形成模型</span>
+  </div>
+  <div class="step-detail"><strong>做什么：</strong>将关系图转化为结构化的友谊发展阶段模型。</div>
+  <div class="step-detail"><strong>怎么做：</strong>归纳出关系发展的规律——从陌生到熟悉经历了几个阶段？</div>
+  <div class="step-detail"><strong>生成什么：</strong>友谊关系发展模型。</div>
+  <button class="btn-show" onclick="event.stopPropagation();toggleStep('step4')">查看示范</button>
+  <div class="step-demo" id="step4">
+    <strong>🏗️ 模型示范：友谊四阶段模型</strong>
+    <p><strong>阶段1 — 接触期（Contact）：</strong>日常互动但缺乏情感投入，如点头之交</p>
+    <p><strong>阶段2 — 破冰期（Break the Ice）：</strong>一个关键事件打破社交距离，如一次帮助</p>
+    <p><strong>阶段3 — 亲密期（Intimacy）：</strong>互动频率和情感深度同时增加，形成信任</p>
+    <p><strong>阶段4 — 调整期（Adjustment）：</strong>出现矛盾后需要重新调整关系模式</p>
+  </div>
+</div>
+
+<div class="step-block" onclick="toggleStep('step5')">
+  <div class="step-header">
+    <span class="step-num">5</span>
+    <span class="step-title">验证与调整</span>
+  </div>
+  <div class="step-detail"><strong>做什么：</strong>用故事中的证据检验你的模型是否站得住脚。</div>
+  <div class="step-detail"><strong>怎么做：</strong>逐段对比模型和故事事实，看是否有矛盾的地方。</div>
+  <div class="step-detail"><strong>生成什么：</strong>修订后的最终模型。</div>
+  <button class="btn-show" onclick="event.stopPropagation();toggleStep('step5')">查看示范</button>
+  <div class="step-demo" id="step5">
+    <strong>✅ 验证记录示范：</strong>
+    <p>检验1：模型说"破冰期需要关键事件" → 故事中借计算器符合 ✔</p>
+    <p>检验2：模型说"亲密期后会有调整期" → 故事中打断事件导致紧张 ✔</p>
+    <p>修正：模型增加"性格差异"作为影响所有阶段的变量 ✔</p>
+  </div>
+</div>
+
+<div class="step-block" onclick="toggleStep('step6')">
+  <div class="step-header">
+    <span class="step-num">6</span>
+    <span class="step-title">表达与优化</span>
+  </div>
+  <div class="step-detail"><strong>做什么：</strong>将最终模型用规范的形式表达出来，并优化呈现效果。</div>
+  <div class="step-detail"><strong>怎么做：</strong>画出正式版概念图，配上英语关键词和简短说明。</div>
+  <div class="step-detail"><strong>生成什么：</strong>最终成果——友谊关系发展模型图。</div>
+  <button class="btn-show" onclick="event.stopPropagation();toggleStep('step6')">查看示范</button>
+  <div class="step-demo" id="step6">
+    <strong>🎨 最终成果示范：</strong>
+    <p>标题：Friendship Development Cycle</p>
+    <p>Contact → (Key Event) → Break the Ice → (Trust) → Intimacy → (Conflict) → Adjustment → (Resolution) → Deeper Intimacy</p>
+    <p>每个阶段配上英语关键词：Greeting / Help / Trust / Misunderstanding / Adjustment</p>
+  </div>
+</div>
+
+<h2>支架工具推荐</h2>
+<div class="tool-box">
+  <div class="tool-item">
+    <span class="tool-icon">📐</span>
+    <strong>概念图模板</strong><br>
+    <small>中心发散式，适合展示要素关系</small>
+  </div>
+  <div class="tool-item">
+    <span class="tool-icon">📊</span>
+    <strong>SWOT分析表</strong><br>
+    <small>优劣势+机会威胁分析</small>
+  </div>
+  <div class="tool-item">
+    <span class="tool-icon">💬</span>
+    <strong>关键句式</strong><br>
+    <small>"I observed... This means... I infer that..."</small>
+  </div>
+  <div class="tool-item">
+    <span class="tool-icon">✅</span>
+    <strong>检查清单</strong><br>
+    <small>模型是否完整？证据是否充分？</small>
+  </div>
+</div>
+
+<h2>成果评价要求</h2>
+<div class="sample-box">
+  <h4>📌 建构成果样例</h4>
+  <p><strong>成果名称：</strong>友谊关系发展模型图</p>
+  <p><strong>评价要求：</strong></p>
+  <ul class="eval-list">
+    <li><strong>科学性</strong> — 模型的阶段划分是否合理，是否有事实依据？</li>
+    <li><strong>完整性</strong> — 是否覆盖了从建立到调整的全过程？</li>
+    <li><strong>逻辑性</strong> — 阶段之间的过渡是否有合理的因果解释？</li>
+  </ul>
+  <p><strong>推荐表达格式：</strong>流程图 + 英语文字标注</p>
+  <p><strong>完成建议：</strong>先用铅笔打草稿，用便利贴调整顺序，确认逻辑后再画正式版本。</p>
+</div>
+
+<h2>成果优化建议</h2>
+<div class="step-block" style="cursor:default;">
+  <p style="font-size:14px;">从"初稿"到"完成稿"的优化路径：</p>
+  <ul class="step-list" style="list-style:none;padding:0;margin:8px 0;">
+    <li style="padding:4px 0;font-size:14px;">① 初稿重点在完整性——先确保主要阶段都覆盖到</li>
+    <li style="padding:4px 0;font-size:14px;">② 二稿重点在逻辑性——检查每个阶段的过渡是否自然</li>
+    <li style="padding:4px 0;font-size:14px;">③ 三稿重点在表达——用英语关键词替换中文标注</li>
+    <li style="padding:4px 0;font-size:14px;">④ 终稿重点在美观——调整布局、配色和字号</li>
+  </ul>
+</div>
+
+<h2>自我评价量表</h2>
+<ul class="eval-list">
+  <li>我的模型完整覆盖了友谊从建立到调整的各个阶段</li>
+  <li>每个阶段都有来自故事的具体证据支持</li>
+  <li>我使用了至少3个英语关键词/短语进行标注</li>
+  <li>模型的逻辑清晰，别人看了能理解友谊发展的规律</li>
+  <li>我根据自我检查对初稿做了至少1次有意义的修改</li>
+</ul>
+
+</div>
+<script>
+function toggleStep(id) {
+  var el = document.getElementById(id);
+  el.classList.toggle('show');
+}
+</script>
+</body>
+</html>

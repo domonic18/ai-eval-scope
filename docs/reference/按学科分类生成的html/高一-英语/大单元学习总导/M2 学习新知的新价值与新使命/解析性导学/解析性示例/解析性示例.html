@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性示例 — M2 学习新知的新价值与新使命</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"PingFang SC","Microsoft YaHei","Noto Sans SC","Source Han Sans SC",sans-serif;font-size:var(--font-body);line-height:var(--line-height);color:var(--primary);background:var(--bg);width:100%;min-height:100vh;overflow-x:hidden}
+.container{width:100%;padding:20px 24px}
+.header{border-bottom:2px solid var(--accent);padding-bottom:12px;margin-bottom:20px}
+.tag{display:inline-block;background:var(--accent);color:#fff;font-size:12px;padding:2px 10px;border-radius:3px;letter-spacing:1px;margin-bottom:6px}
+h1{font-size:var(--font-h1);font-weight:700;color:var(--primary);margin-bottom:4px}
+.sub{font-size:13px;color:var(--accent)}
+h2{font-size:var(--font-h2);font-weight:600;color:var(--primary);margin:24px 0 10px;padding-left:10px;border-left:3px solid var(--accent)}
+h3{font-size:16px;font-weight:600;color:var(--primary);margin:16px 0 8px}
+p{margin-bottom:10px;color:var(--primary)}
+.card{background:var(--card-bg);border-radius:8px;padding:18px 20px;margin-bottom:16px;box-shadow:0 2px 6px rgba(0,0,0,0.06)}
+.card.highlight{border-left:4px solid var(--accent)}
+.card.situation{background:#fafafa;border:1px dashed var(--accent);border-radius:8px;padding:16px 20px;margin-bottom:16px}
+blockquote{font-style:italic;color:var(--primary-hover);padding:10px 16px;margin:10px 0;border-left:4px solid var(--accent);background:#f9f9f9;border-radius:0 6px 6px 0}
+table{width:100%;border-collapse:collapse;margin:12px 0 16px;font-size:14px}
+th{background:var(--accent);color:#fff;padding:10px 12px;text-align:left;font-weight:600;font-size:13px}
+td{padding:9px 12px;border-bottom:1px solid #e8e8e8;vertical-align:top}
+tr:nth-child(even) td{background:#fafafa}
+.steps{display:grid;gap:10px;margin:12px 0}
+.step{background:var(--card-bg);border-radius:6px;padding:12px 16px;border:1px solid #eee;font-size:14px}
+.step strong{display:inline-block;min-width:130px;color:var(--primary-hover)}
+.tip{background:#f0f0f0;border-radius:6px;padding:14px 16px;margin:12px 0;font-size:14px;border-left:3px solid var(--accent)}
+.tip.warn{border-left-color:#d4a017;background:#fef9e7}
+ul,ol{padding-left:20px;margin:8px 0 12px}
+li{margin-bottom:5px}
+.info-row{display:flex;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--accent);margin-bottom:12px}
+.info-row span{background:#eee;padding:2px 10px;border-radius:4px}
+
+/* -- 动机透视镜面板 -- */
+.mirror-layout{display:flex;width:100%;position:relative;align-items:flex-start}
+.chat-area{flex:1;min-width:0;transition:margin-right .35s ease}
+.panel-toggle{position:fixed;top:12px;right:12px;z-index:100;background:var(--primary);color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:13px;cursor:pointer;font-family:inherit;transition:background .2s}
+.panel-toggle:hover{background:var(--primary-hover)}
+.panel-toggle.active{right:372px}
+.mirror-panel{position:fixed;top:0;right:-360px;width:360px;height:100vh;background:rgba(30,30,35,0.92);backdrop-filter:blur(8px);color:#e0e0e0;overflow-y:auto;transition:right .35s ease;z-index:99;padding:20px 16px 30px;font-size:14px;line-height:1.6;scrollbar-width:thin;scrollbar-color:var(--accent) transparent}
+.mirror-panel.open{right:0}
+.mirror-panel::-webkit-scrollbar{width:5px}
+.mirror-panel::-webkit-scrollbar-thumb{background:var(--accent);border-radius:3px}
+.panel-title{font-size:17px;font-weight:700;color:#fff;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.15)}
+.panel-section{margin-bottom:18px}
+.panel-section h4{font-size:14px;font-weight:600;color:#ccc;margin-bottom:8px;letter-spacing:0.5px}
+.motif-card{background:rgba(255,255,255,0.07);border-radius:6px;padding:10px 12px;margin-bottom:8px;border:1px solid rgba(255,255,255,0.08)}
+.motif-card .label{font-size:12px;color:#aaa;display:block;margin-bottom:2px}
+.motif-card .val{color:#fff;font-weight:500}
+.motif-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+.motif-tag{background:rgba(255,255,255,0.06);border-radius:4px;padding:6px 8px;font-size:12px;text-align:center;cursor:grab;border:1px solid rgba(255,255,255,0.06);transition:background .2s}
+.motif-tag:hover{background:rgba(255,255,255,0.14)}
+.motif-tag.intrinsic{border-left:3px solid #7bc67e}
+.motif-tag.extrinsic{border-left:3px solid #e8a87c}
+.mindmap-node{background:rgba(255,255,255,0.07);border-radius:6px;padding:8px 12px;margin-bottom:6px;text-align:center;font-size:13px;border:1px solid rgba(255,255,255,0.1)}
+.mindmap-node.center{background:var(--accent);color:#fff;font-weight:600;border:none}
+.mindmap-arrow{text-align:center;font-size:11px;color:#666;line-height:1}
+.scanner-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:13px}
+.scanner-row input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px;flex-shrink:0}
+.scanner-row button{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#ccc;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;font-family:inherit;transition:background .2s;margin-left:auto;flex-shrink:0}
+.scanner-row button:hover{background:rgba(255,255,255,0.18);color:#fff}
+.diary-btn{display:block;text-align:center;background:rgba(255,255,255,0.08);border:1px dashed rgba(255,255,255,0.2);border-radius:6px;padding:10px;color:#ccc;font-size:13px;cursor:pointer;transition:all .2s;font-family:inherit}
+.diary-btn:hover{background:rgba(255,255,255,0.15);color:#fff;border-color:rgba(255,255,255,0.3)}
+.timeline-placeholder{background:rgba(255,255,255,0.04);border-radius:6px;padding:14px;text-align:center;font-size:12px;color:#888;border:1px dashed rgba(255,255,255,0.1)}
+.chat-bubble{padding:12px 14px;border-radius:10px;margin-bottom:10px;max-width:85%;font-size:14px;line-height:1.6}
+.chat-bubble.ai{background:#eef2f7;color:var(--primary);margin-right:auto;border-bottom-left-radius:4px}
+.chat-bubble.user{background:var(--primary);color:#fff;margin-left:auto;border-bottom-right-radius:4px;text-align:right}
+.chat-bubble .sender{font-size:11px;color:var(--accent);display:block;margin-bottom:3px;font-weight:600}
+.chat-bubble.user .sender{color:rgba(255,255,255,0.7)}
+.self-check{display:grid;gap:12px;margin:12px 0}
+.check-item{background:var(--card-bg);border-radius:6px;padding:12px 16px;border:1px solid #eee}
+.check-item .q{font-weight:500;margin-bottom:6px;font-size:14px}
+.check-item .opts{display:flex;gap:10px;font-size:13px}
+.check-item .opts label{cursor:pointer;display:flex;align-items:center;gap:4px}
+
+/* responsive */
+@media(max-width:768px){
+  .container{padding:14px 12px}
+  .mirror-panel{width:290px;right:-290px}
+  .panel-toggle.active{right:302px}
+  .motif-grid{grid-template-columns:1fr}
+  table{font-size:13px}
+  th,td{padding:7px 8px}
+  .chat-bubble{max-width:95%}
+  .step strong{min-width:80px}
+}
+@media(max-width:480px){
+  :root{--font-body:14px;--font-h1:19px;--font-h2:16px}
+  .mirror-panel{width:100%;right:-100%}
+  .panel-toggle.active{right:auto;left:auto}
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="header">
+    <span class="tag">解析性导学</span>
+    <h1>M2 学习新知的新价值与新使命</h1>
+    <div class="info-row">
+      <span>英语 · 必修1</span>
+      <span>Unit 1 Friendship</span>
+      <span>解析性示例</span>
+    </div>
+  </div>
+
+  <!-- 动机透视镜 -->
+  <button class="panel-toggle" id="panelToggle" onclick="togglePanel()">打开动机透视镜</button>
+
+  <div class="mirror-layout">
+
+    <div class="chat-area" id="chatArea">
+
+      <!-- 1. 解析任务情境 -->
+      <h2>1. 解析任务情境</h2>
+      <div class="card highlight">
+        <p>你收到了朋友李华的邮件，他说和新室友相处很困难，感到孤独和<strong>upset</strong>。他的邮件中包含了情感描述、事件叙述、困惑提问。你需要帮他分析问题的根源，并用英语回复给出建议。</p>
+      </div>
+
+      <!-- 2. 核心问题 -->
+      <h2>2. 核心问题</h2>
+      <div class="card situation">
+        <p><strong>本案例要解决的关键问题：</strong><br>
+        如何从一封英语邮件中提取关键信息、分析情感态度、推断言外之意，并形成有理有据的判断？</p>
+      </div>
+
+      <!-- 3. 关键信息提取 -->
+      <h2>3. 关键信息提取</h2>
+      <table>
+        <thead><tr><th>情境信息</th><th>这说明什么</th><th>为什么重要</th></tr></thead>
+        <tbody>
+          <tr><td>李华用了"upset"、"ignore"等词</td><td>他的情绪状态是负面的</td><td>情感词汇是理解语篇态度的关键</td></tr>
+          <tr><td>他描述了某个具体事件</td><td>事件触发负面情绪</td><td>需要还原事件全貌</td></tr>
+          <tr><td>他在邮件末尾提问"what should I do?"</td><td>他在寻求帮助</td><td>对方的需求是建议而非同情</td></tr>
+          <tr><td>邮件中出现"perhaps I'm overreacting"</td><td>他在自我怀疑</td><td>需要鼓励和确认</td></tr>
+        </tbody>
+      </table>
+
+      <!-- 专家分析对话 -->
+      <h2>AI导师对话</h2>
+      <div class="chat-bubble ai">
+        <span class="sender">AI 导师</span>
+        你好！我们来看看李华的邮件。你能先找出邮件里表达情感的词汇吗？试着圈出"upset"、"lonely"、"ignored"这类词——它们能告诉我们李华的真实感受。
+      </div>
+      <div class="chat-bubble user">
+        <span class="sender">我</span>
+        我找到了 upset, lonely, ignored, perhaps I'm overreacting...
+      </div>
+      <div class="chat-bubble ai">
+        <span class="sender">AI 导师</span>
+        很好！注意到"perhaps I'm overreacting"了吗？这个短语暗示他在自我怀疑——他既感到受伤，又担心自己太敏感了。这说明他需要的不只是建议，还需要情感上的确认。继续分析他描述的事件顺序，你能还原出时间线吗？
+      </div>
+
+      <!-- 4. 专家解析过程 -->
+      <h2>4. 专家解析过程</h2>
+      <div class="steps">
+        <div class="step"><strong>第一步：先看见什么</strong> — 整体浏览，标注情感词汇和事件关键词</div>
+        <div class="step"><strong>第二步：判断问题类型</strong> — 这是"情感表达型+问题求助型"语篇</div>
+        <div class="step"><strong>第三步：调用概念方法</strong> — 情感态度分析框架、语篇结构模式</div>
+        <div class="step"><strong>第四步：进行推理分析</strong> — 情感词汇按强度排序，事件按时间线梳理</div>
+        <div class="step"><strong>第五步：形成结论</strong> — 综合判断李华的核心需求</div>
+      </div>
+
+      <!-- 5. 结论表达 -->
+      <h2>5. 结论表达</h2>
+      <div class="card">
+        <p><strong>分析与建议（英文示例）：</strong></p>
+        <blockquote>
+          After reading your email, I can see you're feeling upset and lonely because your roommate seems to ignore you. It's understandable to feel that way. However, I suggest you try talking to him directly — maybe he doesn't realize how you feel. Don't blame yourself too much; communication is the key. You can also invite him to have dinner together or study in the library. Remember, building a good relationship takes time.
+        </blockquote>
+      </div>
+
+      <!-- 6. 方法提炼 -->
+      <h2>6. 方法提炼</h2>
+      <div class="tip">
+        <strong>以后遇到类似问题，可以这样做：</strong><br>
+        ① 扫描邮件/语篇中的情感词汇，标注强度；② 还原事件时间线，理清因果；③ 区分"事实描述"与"情感表达"；④ 推断对方的真实需求（是建议、安慰还是帮助？）；⑤ 形成结构化回复。
+      </div>
+
+      <!-- 7. 易错提醒 -->
+      <h2>7. 易错提醒</h2>
+      <div class="tip warn">
+        <ul>
+          <li>只关注单词字面意思，忽略情感色彩</li>
+          <li>只看单个句子，忽略上下文逻辑</li>
+          <li>过早下结论，没有充分提取信息</li>
+        </ul>
+      </div>
+
+      <!-- 8. 自主迁移 -->
+      <h2>8. 自主迁移小练习</h2>
+      <div class="card situation">
+        <p><strong>新情境：</strong>你的同学王芳发来邮件，她说自己最近英语成绩下滑，很焦虑（anxious），不知道该怎么提高。她写道："I used to love English, but now I feel like I'm getting worse." 她担心自己是不是没有天赋了。</p>
+        <p style="margin-top:6px;font-size:13px;color:var(--accent)">请独立分析：提取关键信息 → 判断语篇类型 → 推理分析 → 给出英文建议。</p>
+      </div>
+
+      <!-- 9. 学习自评 -->
+      <h2>9. 学习自评</h2>
+      <div class="self-check">
+        <div class="check-item">
+          <div class="q">1. 我能识别英语邮件中的情感词汇。</div>
+          <div class="opts"><label><input type="radio" name="q1"> 能</label><label><input type="radio" name="q1"> 不确定</label><label><input type="radio" name="q1"> 不能</label></div>
+        </div>
+        <div class="check-item">
+          <div class="q">2. 我能区分"事实描述"和"情感表达"。</div>
+          <div class="opts"><label><input type="radio" name="q2"> 能</label><label><input type="radio" name="q2"> 不确定</label><label><input type="radio" name="q2"> 不能</label></div>
+        </div>
+        <div class="check-item">
+          <div class="q">3. 我能按照"5步法"分析一篇语篇。</div>
+          <div class="opts"><label><input type="radio" name="q3"> 能</label><label><input type="radio" name="q3"> 不确定</label><label><input type="radio" name="q3"> 不能</label></div>
+        </div>
+        <div class="check-item">
+          <div class="q">4. 我能根据分析结果给出合理的英文建议。</div>
+          <div class="opts"><label><input type="radio" name="q4"> 能</label><label><input type="radio" name="q4"> 不确定</label><label><input type="radio" name="q4"> 不能</label></div>
+        </div>
+        <div class="check-item">
+          <div class="q">5. 我知道易错点，并能提醒自己避免。</div>
+          <div class="opts"><label><input type="radio" name="q5"> 能</label><label><input type="radio" name="q5"> 不确定</label><label><input type="radio" name="q5"> 不能</label></div>
+        </div>
+      </div>
+
+    </div><!-- /.chat-area -->
+
+    <!-- 动机解析面板 -->
+    <div class="mirror-panel" id="mirrorPanel">
+      <div class="panel-title">动机透视镜：你为什么想学（或不想学）？</div>
+
+      <!-- 动机类型识别卡 -->
+      <div class="panel-section">
+        <h4>动机类型识别卡</h4>
+        <p style="font-size:12px;color:#999;margin-bottom:8px">将左侧任务卡片拖到对应区域查看解析</p>
+        <div class="motif-grid">
+          <div class="motif-tag intrinsic" draggable="true">好奇心</div>
+          <div class="motif-tag intrinsic" draggable="true">兴趣</div>
+          <div class="motif-tag intrinsic" draggable="true">意义感</div>
+          <div class="motif-tag intrinsic" draggable="true">掌控感</div>
+          <div class="motif-tag extrinsic" draggable="true">奖励</div>
+          <div class="motif-tag extrinsic" draggable="true">认可</div>
+          <div class="motif-tag extrinsic" draggable="true">竞争</div>
+          <div class="motif-tag extrinsic" draggable="true">压力</div>
+        </div>
+      </div>
+
+      <!-- 动机来源追溯图 -->
+      <div class="panel-section">
+        <h4>动机来源追溯图</h4>
+        <div class="mindmap-node center">我为什么想学这个？</div>
+        <div class="mindmap-arrow">&#9660;</div>
+        <div class="mindmap-node">因为想读懂英文邮件</div>
+        <div class="mindmap-arrow">&#9660;</div>
+        <div class="mindmap-node">因为想跟外国朋友交流</div>
+        <div class="mindmap-arrow">&#9660;</div>
+        <div class="mindmap-node">因为想出国旅行时更自信</div>
+        <div style="margin-top:6px;text-align:center">
+          <button onclick="addMindNode()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#ccc;border-radius:4px;padding:4px 12px;font-size:12px;cursor:pointer;font-family:inherit">+ 添加节点</button>
+        </div>
+      </div>
+
+      <!-- 动机障碍扫描器 -->
+      <div class="panel-section">
+        <h4>动机障碍扫描器</h4>
+        <div class="scanner-row"><input type="checkbox" id="h1"> <label for="h1">畏难情绪</label> <button onclick="showStrategy(this)">破障</button></div>
+        <div class="scanner-row"><input type="checkbox" id="h2"> <label for="h2">缺乏关联</label> <button onclick="showStrategy(this)">破障</button></div>
+        <div class="scanner-row"><input type="checkbox" id="h3"> <label for="h3">信心不足</label> <button onclick="showStrategy(this)">破障</button></div>
+        <div class="scanner-row"><input type="checkbox" id="h4"> <label for="h4">外部干扰</label> <button onclick="showStrategy(this)">破障</button></div>
+        <div class="scanner-row"><input type="checkbox" id="h5"> <label for="h5">延迟满足难</label> <button onclick="showStrategy(this)">破障</button></div>
+      </div>
+
+      <!-- 动机日记入口 -->
+      <div class="panel-section">
+        <h4>动机日记</h4>
+        <div class="diary-btn" onclick="openDiary()">&#128221; 写一篇动机日记</div>
+      </div>
+
+      <!-- 动机可视化时间线 -->
+      <div class="panel-section">
+        <h4>动机可视化时间线</h4>
+        <div class="timeline-placeholder">
+          本周动机强度趋势<br>
+          <span style="display:inline-block;margin-top:6px;font-size:18px;letter-spacing:4px">&#9632;&#9632;&#9632;&#9632;&#9632;</span><br>
+          <span style="font-size:11px">周一 &#8226; 周二 &#8226; 周三 &#8226; 周四 &#8226; 周五</span>
+        </div>
+      </div>
+    </div><!-- /.mirror-panel -->
+
+  </div><!-- /.mirror-layout -->
+
+</div><!-- /.container -->
+
+<script>
+function togglePanel(){
+  var p = document.getElementById('mirrorPanel'), b = document.getElementById('panelToggle');
+  p.classList.toggle('open'); b.classList.toggle('active');
+  b.textContent = p.classList.contains('open') ? '关闭动机透视镜' : '打开动机透视镜';
+}
+function showStrategy(el){
+  var s = ['拆解任务，从最小的步骤开始，每完成一步给自己一个小奖励。','找到知识点与生活的连接点，问自己"这对我有什么用？"','回想上一次成功的学习经历，告诉自己"我可以！"','设定专属学习时间段，关闭通知，用番茄钟专注25分钟。','把大目标拆成小里程碑，每达成一个就庆祝一下。'];
+  var idx = Array.from(el.parentNode.parentNode.querySelectorAll('.scanner-row')).indexOf(el.parentNode);
+  if(idx >= 0 && idx < s.length) alert('破障策略：' + s[idx]);
+}
+function addMindNode(){
+  var val = prompt('你为什么想学这个？（输入一个原因）');
+  if(val && val.trim()){
+    var parent = document.querySelector('.mirror-panel .panel-section:nth-child(2)');
+    var btn = parent.querySelector('div:last-child');
+    var arrow = document.createElement('div');
+    arrow.className = 'mindmap-arrow'; arrow.textContent = '▼';
+    var node = document.createElement('div');
+    node.className = 'mindmap-node'; node.textContent = val.trim();
+    parent.insertBefore(arrow, btn);
+    parent.insertBefore(node, btn);
+  }
+}
+function openDiary(){
+  var txt = prompt('今天的学习动机是什么？有什么感受？');
+  if(txt && txt.trim()) alert('日记已保存！\n\n' + txt.trim());
+}
+
+// 拖拽示例
+document.querySelectorAll('.motif-tag').forEach(function(el){
+  el.addEventListener('dragstart', function(e){ e.dataTransfer.setData('text', this.textContent); });
+});
+document.querySelector('.chat-area').addEventListener('dragover', function(e){ e.preventDefault(); });
+document.querySelector('.chat-area').addEventListener('drop', function(e){
+  e.preventDefault();
+  var data = e.dataTransfer.getData('text');
+  if(data) alert('已将「' + data + '」拖入学习区！试着在动机透视镜中找到对应类型。');
+});
+</script>
+
+</body>
+</html>

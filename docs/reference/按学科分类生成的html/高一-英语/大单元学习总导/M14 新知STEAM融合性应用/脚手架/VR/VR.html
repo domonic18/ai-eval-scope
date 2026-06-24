@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VR — 沉浸式友谊场景体验</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+/* Header - VR theme */
+.header {
+  background: linear-gradient(135deg, #2d2d2d 0%, #434343 40%, #595959 100%);
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  overflow: hidden;
+  position: relative;
+}
+.header::before {
+  content: "🥽";
+  position: absolute;
+  right: 20px;
+  top: 10px;
+  font-size: 64px;
+  opacity: 0.2;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.header .subtitle {
+  opacity: 0.8;
+  font-size: calc(var(--font-body) + 1px);
+}
+.header .badge-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.header .badge {
+  background: rgba(255,255,255,0.15);
+  padding: 3px 12px;
+  border-radius: 14px;
+  font-size: calc(var(--font-body) - 3px);
+}
+
+/* Mission nav */
+.mission-bar {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.mission-btn {
+  flex: 1;
+  min-width: 100px;
+  padding: 12px 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  text-align: center;
+  font-size: calc(var(--font-body) - 1px);
+  transition: all 0.2s;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.mission-btn:hover { border-color: var(--primary); color: var(--primary); }
+.mission-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(67,67,67,0.3);
+}
+
+/* Card */
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  display: none;
+  animation: fadeIn 0.35s ease;
+}
+.card.active { display: block; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+.card h2 {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card h3 {
+  font-size: calc(var(--font-body) + 2px);
+  font-weight: 600;
+  color: var(--primary);
+  margin: 14px 0 6px;
+}
+.card p { margin: 8px 0; }
+.card ul, .card ol { padding-left: 20px; margin: 8px 0; }
+.card li { margin-bottom: 6px; }
+
+/* Scene cards */
+.scene-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+.scene-card {
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  text-align: center;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+.scene-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+}
+.scene-card .scene-icon { font-size: 36px; margin-bottom: 8px; }
+.scene-card .scene-title { font-weight: 600; color: var(--primary); }
+.scene-card .scene-desc { font-size: calc(var(--font-body) - 2px); color: var(--text-secondary); margin-top: 4px; }
+.scene-card.selected {
+  border-color: var(--primary);
+  background: #f0f0f0;
+  box-shadow: 0 0 0 2px var(--primary);
+}
+
+/* Journal text area */
+.journal-area {
+  background: #fafafa;
+  border: 1px dashed var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  margin: 12px 0;
+}
+.journal-area textarea {
+  width: 100%;
+  min-height: 80px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  font-family: var(--font-family);
+  font-size: calc(var(--font-body) - 1px);
+  resize: vertical;
+  margin-top: 8px;
+}
+
+/* Resource table */
+.resource-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: calc(var(--font-body) - 1px);
+  margin: 12px 0;
+}
+.resource-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+}
+.resource-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.resource-table tr:nth-child(even) td { background: #fafafa; }
+
+/* Alternative plan cards */
+.alt-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 12px 0;
+}
+.alt-card {
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  transition: transform 0.2s;
+}
+.alt-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.alt-card .alt-icon { font-size: 28px; margin-bottom: 6px; }
+.alt-card .alt-title { font-weight: 600; color: var(--primary); }
+.alt-card .alt-desc { font-size: calc(var(--font-body) - 2px); color: var(--text-secondary); margin-top: 4px; }
+
+/* Challenge cards */
+.challenge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 12px 0;
+}
+.challenge-card {
+  background: linear-gradient(135deg, #2d2d2d, #434343);
+  color: #fff;
+  border-radius: var(--border-radius);
+  padding: 16px;
+  text-align: center;
+  transition: transform 0.2s;
+}
+.challenge-card:hover { transform: translateY(-3px); }
+.challenge-card .chal-icon { font-size: 28px; margin-bottom: 6px; }
+.challenge-card .chal-title { font-weight: 600; }
+.challenge-card .chal-desc { font-size: calc(var(--font-body) - 2px); opacity: 0.8; margin-top: 4px; }
+
+/* Simulated VR experience */
+.vr-sim {
+  background: #2d2d2d;
+  border-radius: var(--border-radius);
+  padding: 24px;
+  text-align: center;
+  color: #fff;
+  margin: 16px 0;
+  position: relative;
+  overflow: hidden;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.vr-sim .vr-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  animation: float 2s ease-in-out infinite;
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.vr-sim .vr-text { font-size: calc(var(--font-body) + 1px); font-weight: 500; }
+.vr-sim .vr-hint { font-size: calc(var(--font-body) - 2px); opacity: 0.6; margin-top: 8px; }
+.vr-sim .scan-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  animation: scan 3s linear infinite;
+}
+@keyframes scan {
+  0% { top: 0; }
+  100% { top: 100%; }
+}
+
+/* Checklist */
+.mission-checklist { list-style: none; padding: 0; }
+.mission-checklist li {
+  padding: 8px 0 8px 32px;
+  position: relative;
+  cursor: pointer;
+  transition: color 0.2s;
+  border-bottom: 1px solid #f0f0f0;
+}
+.mission-checklist li::before {
+  content: "◻";
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+  font-size: 20px;
+}
+.mission-checklist li.done { color: var(--text-secondary); text-decoration: line-through; }
+.mission-checklist li.done::before { content: "◼"; color: var(--primary); }
+
+/* Navigation */
+.footer-nav {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 20px 0;
+}
+.nav-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: calc(var(--font-body) - 1px);
+  transition: background 0.2s;
+}
+.nav-btn:hover { background: var(--primary-hover); }
+.nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.nav-btn.outline {
+  background: transparent;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+}
+.nav-btn.outline:hover { background: var(--bg); }
+
+@media (max-width: 640px) {
+  .container { padding: 12px; }
+  .header { padding: 20px 16px; }
+  .header::before { font-size: 40px; }
+  .mission-btn { min-width: 70px; font-size: 13px; }
+  .card { padding: 14px 16px; }
+  .scene-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🥽 VR 沉浸式友谊场景体验</h1>
+  <div class="subtitle">概念具象化 · 情境学习 — 英语必修1 · Unit 1 Friendship</div>
+  <div class="badge-row">
+    <span class="badge">🎯 观察任务</span>
+    <span class="badge">🕹️ 操作任务</span>
+    <span class="badge">📝 记录任务</span>
+  </div>
+</div>
+
+<!-- Mission tabs -->
+<div class="mission-bar">
+  <button class="mission-btn active" data-mission="0">🎯 观察任务</button>
+  <button class="mission-btn" data-mission="1">🕹️ 操作任务</button>
+  <button class="mission-btn" data-mission="2">📝 记录任务</button>
+  <button class="mission-btn" data-mission="3">📡 VR资源</button>
+  <button class="mission-btn" data-mission="4">🆚 替代方案</button>
+  <button class="mission-btn" data-mission="5">🏆 拓展挑战</button>
+</div>
+
+<!-- Mission 0: 观察 -->
+<div class="card active" data-mission="0">
+  <h2>🎯 观察任务</h2>
+  <p>戴上 VR 设备后，仔细观察你所处的场景。注意以下细节：</p>
+
+  <div class="mission-checklist">
+    <li onclick="this.classList.toggle('done')"><strong>场景识别</strong> — 你身处什么地方？英美高中校园？国际夏令营？跨文化笔友见面会？</li>
+    <li onclick="this.classList.toggle('done')"><strong>人物关系</strong> — 场景中的人物之间是什么关系？他们正在做什么？</li>
+    <li onclick="this.classList.toggle('done')"><strong>语言表达</strong> — 记录至少 3 个与"友谊"相关的英语表达</li>
+    <li onclick="this.classList.toggle('done')"><strong>非语言信号</strong> — 表情、手势、距离——文化差异如何影响友谊的建立？</li>
+  </div>
+
+  <div class="vr-sim">
+    <div class="scan-line"></div>
+    <div class="vr-icon">👁️</div>
+    <div class="vr-text">"A good observer sees what others overlook."</div>
+    <div class="vr-hint">戴上 VR，像探索者一样观察每个细节</div>
+  </div>
+</div>
+
+<!-- Mission 1: 操作 -->
+<div class="card" data-mission="1">
+  <h2>🕹️ 操作任务</h2>
+  <p>在 VR 场景中主动参与互动，完成以下操作：</p>
+
+  <ol>
+    <li><strong>自我介绍</strong>：用英语向虚拟人物介绍自己，包含姓名、兴趣和交友邀请</li>
+    <li><strong>情境选择</strong>：从以下三个 VR 场景中任选一个：</li>
+  </ol>
+
+  <div class="scene-grid">
+    <div class="scene-card" onclick="selectScene(this)">
+      <div class="scene-icon">🍔</div>
+      <div class="scene-title">场景 A 美国高中 cafeteria</div>
+      <div class="scene-desc">与陌生同学拼桌聊天，聊出共同话题</div>
+    </div>
+    <div class="scene-card" onclick="selectScene(this)">
+      <div class="scene-icon">🏕️</div>
+      <div class="scene-title">场景 B 国际志愿者营地</div>
+      <div class="scene-desc">与不同国家的队友合作完成任务</div>
+    </div>
+    <div class="scene-card" onclick="selectScene(this)">
+      <div class="scene-icon">📹</div>
+      <div class="scene-title">场景 C 跨文化笔友视频见面</div>
+      <div class="scene-desc">用英语介绍自己文化，询问对方习俗</div>
+    </div>
+  </div>
+
+  <p style="margin-top:6px;">3. <strong>回应与追问</strong>：回应对方提问并追问一个问题，保持对话流畅。</p>
+
+  <div class="journal-area">
+    <p style="font-weight:600;">💬 对话草稿区</p>
+    <textarea placeholder="写下你的开场白和准备追问的问题... e.g. Hi, I'm [name]. I'm into basketball — wanna play together?" oninput="updateJournal('dialog')"></textarea>
+  </div>
+</div>
+
+<!-- Mission 2: 记录 -->
+<div class="card" data-mission="2">
+  <h2>📝 记录任务</h2>
+  <p>完成 VR 体验后，请记录以下内容：</p>
+
+  <div class="journal-area">
+    <label style="font-weight:600;">1️⃣ 场景描述</label>
+    <textarea placeholder="你选择了哪个场景？描述你看到的和经历的..." oninput="updateJournal('scene')"></textarea>
+  </div>
+
+  <div class="journal-area">
+    <label style="font-weight:600;">2️⃣ 对话摘要</label>
+    <textarea placeholder="写下你与虚拟人物的简短对话原文（至少4轮）..." oninput="updateJournal('dialog2')"></textarea>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+    <div class="journal-area">
+      <label style="font-weight:600;">3️⃣ 语言收获</label>
+      <textarea placeholder="3个新单词或表达..." oninput="updateJournal('words')"></textarea>
+    </div>
+    <div class="journal-area">
+      <label style="font-weight:600;">4️⃣ 文化发现</label>
+      <textarea placeholder="观察到哪些不同的社交习惯？..." oninput="updateJournal('culture')"></textarea>
+    </div>
+  </div>
+
+  <div class="journal-area">
+    <label style="font-weight:600;">5️⃣ 感受反思（中英皆可）</label>
+    <textarea placeholder="VR体验让你对'友谊'有了什么新理解？..." oninput="updateJournal('reflection')"></textarea>
+  </div>
+
+  <div id="journalProgress" style="text-align:center;color:var(--text-secondary);font-size:calc(var(--font-body)-2px);">已填写 0 / 5 项</div>
+</div>
+
+<!-- Mission 3: 资源 -->
+<div class="card" data-mission="3">
+  <h2>📡 VR 资源推荐</h2>
+  <p>以下平台提供优秀的沉浸式英语社交体验：</p>
+
+  <table class="resource-table">
+    <thead><tr><th>资源类型</th><th>推荐平台</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>社交场景模拟</td><td><strong>Mondly VR</strong> / Immerse</td><td>多语种沉浸式对话，模拟真实社交情境</td></tr>
+      <tr><td>360°实地体验</td><td><strong>Google Earth VR</strong></td><td>"走进"英美名校校园、国际社区</td></tr>
+      <tr><td>虚拟角色互动</td><td><strong>Engage VR</strong> / AltspaceVR</td><td>多人虚拟空间，可组队进入</td></tr>
+      <tr><td>英语口语训练</td><td><strong>ELSA Speak VR</strong></td><td>AI语音反馈，改善发音和流利度</td></tr>
+    </tbody>
+  </table>
+
+  <div class="vr-sim">
+    <div class="scan-line"></div>
+    <div class="vr-icon">📡</div>
+    <div class="vr-text">选择一个平台开始你的 VR 友谊之旅</div>
+    <div class="vr-hint">沉浸式学习 ≠ 玩游戏——带着任务去探索</div>
+  </div>
+</div>
+
+<!-- Mission 4: 替代方案 -->
+<div class="card" data-mission="4">
+  <h2>🆚 替代方案（无 VR 设备时）</h2>
+  <p>暂时没有 VR 设备？别担心，以下方式能获得接近的体验：</p>
+
+  <div class="alt-grid">
+    <div class="alt-card">
+      <div class="alt-icon">🎬</div>
+      <div class="alt-title">3D 沉浸式视频</div>
+      <div class="alt-desc">搜索 "360° virtual campus tour" 或 "VR friendship conversation"，配合 cardboard 眼镜即可观看</div>
+    </div>
+    <div class="alt-card">
+      <div class="alt-icon">🖱️</div>
+      <div class="alt-title">交互式视频</div>
+      <div class="alt-desc">使用 ThingLink 或 H5P Interactive Video 观看带交互热点的视频，点击选择对话选项</div>
+    </div>
+    <div class="alt-card">
+      <div class="alt-icon">🎭</div>
+      <div class="alt-title">角色扮演 + 视频</div>
+      <div class="alt-desc">两人一组，根据场景卡进行英语角色扮演，录制后回看分析</div>
+    </div>
+  </div>
+</div>
+
+<!-- Mission 5: 拓展挑战 -->
+<div class="card" data-mission="5">
+  <h2>🏆 拓展挑战</h2>
+  <p>完成基础任务后，试试这些更酷的挑战：</p>
+
+  <div class="challenge-grid">
+    <div class="challenge-card">
+      <div class="chal-icon">🎬</div>
+      <div class="chal-title">挑战一</div>
+      <div class="chal-desc">用 VR 录制一段"校园友谊"情景短片（Rec Room 或 Horizon Worlds）</div>
+    </div>
+    <div class="challenge-card">
+      <div class="chal-icon">🌏</div>
+      <div class="chal-title">挑战二</div>
+      <div class="chal-desc">对比两个不同国家的 VR 场景，写一段 100 词跨文化友谊观察笔记</div>
+    </div>
+    <div class="challenge-card">
+      <div class="chal-icon">✏️</div>
+      <div class="chal-title">挑战三</div>
+      <div class="chal-desc">设计一个"理想友谊场景"VR 概念草图，在班级分享</div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer nav -->
+<div class="footer-nav">
+  <button class="nav-btn outline" onclick="navigateMission(-1)" id="prevMissionBtn" disabled>◀ 上一任务</button>
+  <span style="display:flex;align-items:center;color:var(--text-secondary);" id="missionCounter">1 / 6</span>
+  <button class="nav-btn" onclick="navigateMission(1)" id="nextMissionBtn">下一任务 ▶</button>
+</div>
+
+<p style="text-align:center;color:var(--text-secondary);font-size:calc(var(--font-body)-2px);margin-top:8px;">
+💡 提示：VR 体验的关键不是"玩得开心"，而是带着任务去观察和互动。
+</p>
+
+</div>
+
+<script>
+var currentMission = 0;
+var totalMissions = 6;
+var selectedScene = null;
+
+function navigateMission(step) {
+  var cards = document.querySelectorAll('.card[data-mission]');
+  var btns = document.querySelectorAll('.mission-btn');
+  var newM = currentMission + step;
+  if (newM < 0 || newM >= totalMissions) return;
+
+  cards[currentMission].classList.remove('active');
+  btns[currentMission].classList.remove('active');
+  currentMission = newM;
+  cards[currentMission].classList.add('active');
+  btns[currentMission].classList.add('active');
+
+  document.getElementById('prevMissionBtn').disabled = currentMission === 0;
+  document.getElementById('nextMissionBtn').disabled = currentMission === totalMissions - 1;
+  document.getElementById('missionCounter').textContent = (currentMission + 1) + ' / ' + totalMissions;
+}
+
+document.querySelectorAll('.mission-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    navigateMission(parseInt(this.getAttribute('data-mission')) - currentMission);
+  });
+});
+
+function selectScene(el) {
+  if (selectedScene) selectedScene.classList.remove('selected');
+  el.classList.add('selected');
+  selectedScene = el;
+}
+
+function updateJournal(field) {
+  var filled = 0;
+  document.querySelectorAll('.journal-area textarea').forEach(function(t) {
+    if (t.value.trim().length > 0) filled++;
+  });
+  document.getElementById('journalProgress').textContent = '已填写 ' + filled + ' / 5 项';
+  if (filled === 5) {
+    document.getElementById('journalProgress').style.color = '#16a34a';
+    document.getElementById('journalProgress').textContent += ' ✅ 全部完成！';
+  } else {
+    document.getElementById('journalProgress').style.color = '';
+  }
+}
+</script>
+</body>
+</html>

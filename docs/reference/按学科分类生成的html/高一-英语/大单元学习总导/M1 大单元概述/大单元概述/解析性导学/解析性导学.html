@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>深度解析透镜工作台</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --warm-accent: #d46b08;
+  --warm-bg: #fff7e6;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: linear-gradient(180deg, #2c2c2c 0%, #e8e8e8 30%, #f5f5f5 100%);
+  min-height: 100vh;
+}
+
+.container { width: 100%; max-width: none; padding: 0; }
+
+/* ===== Top mini-map navigation ===== */
+.top-nav {
+  background: rgba(44,44,44,.95);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255,255,255,.1);
+  position: sticky; top: 0; z-index: 100;
+  backdrop-filter: blur(8px);
+}
+.top-nav .nav-title { color: #ccc; font-size: 13px; font-weight: 500; }
+.top-nav .nav-dots { display: flex; gap: 6px; }
+.top-nav .nav-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #555; cursor: pointer; transition: all .3s;
+}
+.top-nav .nav-dot.active { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+.top-nav .nav-dot.done { background: #52b788; }
+.top-nav .nav-breadcrumb { margin-left: auto; color: #888; font-size: 12px; }
+
+/* ===== Main workbench ===== */
+.workbench {
+  display: flex;
+  gap: 0;
+  padding: 16px 20px;
+  min-height: calc(100vh - 48px);
+  position: relative;
+}
+/* Left sidebar - analysis history tree */
+.history-sidebar {
+  width: 180px;
+  flex-shrink: 0;
+  background: rgba(255,255,255,.85);
+  border-radius: var(--border-radius);
+  padding: 14px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0,0,0,.06);
+  font-size: 13px;
+}
+.history-sidebar h3 { font-size: 14px; font-weight: 600; margin-bottom: 10px; color: var(--primary); }
+.history-tree { list-style: none; }
+.history-tree li {
+  padding: 5px 8px 5px 16px;
+  border-left: 2px solid var(--border);
+  margin-bottom: 4px;
+  cursor: pointer;
+  transition: all .2s;
+  position: relative;
+  font-size: 12px;
+}
+.history-tree li::before {
+  content: ''; position: absolute; left: -5px; top: 10px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--border);
+}
+.history-tree li.done { color: var(--text); border-left-color: #52b788; }
+.history-tree li.done::before { background: #52b788; }
+.history-tree li.active { color: var(--primary); border-left-color: #e8a838; font-weight: 600; }
+.history-tree li.active::before { background: #e8a838; box-shadow: 0 0 6px #e8a838; }
+.history-tree li.pending { color: var(--text-secondary); }
+
+/* ===== Center - knowledge cards ===== */
+.center-panel { flex: 1; padding: 0 16px; min-width: 0; }
+.center-panel .section-label {
+  font-size: 12px; color: var(--text-secondary); text-transform: uppercase;
+  letter-spacing: 1px; margin-bottom: 10px; font-weight: 500;
+}
+.center-panel .section-label .magnifier { color: var(--primary); font-size: 16px; margin-right: 4px; }
+
+.knowledge-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all .3s ease;
+  position: relative;
+  overflow: hidden;
+}
+.knowledge-card:hover { border-color: var(--primary); box-shadow: 0 2px 16px rgba(67,67,67,.1); }
+.knowledge-card.difficulty {
+  border-color: #ff4d4f;
+  animation: pulse-border 2s ease-in-out infinite;
+}
+@keyframes pulse-border {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,77,79,.3); }
+  50% { box-shadow: 0 0 0 4px rgba(255,77,79,.15); }
+}
+.knowledge-card .card-title {
+  font-weight: 600; font-size: calc(var(--font-body) + 1px);
+  display: flex; align-items: center; gap: 8px;
+}
+.knowledge-card .card-title .diff-icon {
+  font-size: 12px; background: rgba(255,77,79,.1); color: #ff4d4f;
+  padding: 1px 6px; border-radius: 4px; font-weight: 400;
+}
+.knowledge-card .onion-layers { margin-top: 0; max-height: 0; overflow: hidden; transition: max-height .5s ease; }
+.knowledge-card .onion-layers.open { max-height: 600px; }
+.knowledge-card .layer {
+  padding: 10px 12px; margin-top: 8px; border-radius: 6px;
+  border-left: 3px solid var(--accent);
+  background: var(--bg);
+  display: none;
+}
+.knowledge-card .layer.show { display: block; }
+.knowledge-card .layer .layer-label { font-size: 12px; color: var(--primary); font-weight: 600; margin-bottom: 4px; }
+.knowledge-card .layer-1 { border-left-color: #5b8def; }
+.knowledge-card .layer-2 { border-left-color: #e8a838; }
+.knowledge-card .layer-3 { border-left-color: #c77dff; }
+.knowledge-card .slow-reveal {
+  display: inline-block; margin-top: 8px; padding: 4px 12px;
+  background: #ff4d4f; color: #fff; border-radius: 4px;
+  font-size: 12px; cursor: pointer; border: none;
+}
+.knowledge-card .slow-reveal:hover { background: #ff7875; }
+.knowledge-card .question-mark {
+  position: absolute; top: 12px; right: 12px;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--bg); border: 1px solid var(--border);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 13px; transition: all .2s;
+}
+.knowledge-card .question-mark:hover { background: #fff7e6; border-color: var(--warm-accent); }
+.knowledge-card .question-mark.marked { background: var(--warm-accent); color: #fff; border-color: var(--warm-accent); }
+
+/* ===== Right panel - analysis ===== */
+.right-panel {
+  width: 340px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.analysis-panel {
+  background: rgba(255,255,255,.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0,0,0,.06);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  min-height: 200px;
+}
+.analysis-panel h3 { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--primary); }
+.analysis-panel .analysis-content { font-size: 13px; color: var(--text); line-height: 1.7; }
+.analysis-panel .analysis-content .placeholder { color: var(--text-secondary); font-style: italic; }
+
+/* Question engine */
+.question-engine { margin-top: 12px; }
+.question-engine .q-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 6px 12px; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 20px; cursor: pointer; font-size: 13px; transition: all .2s;
+}
+.question-engine .q-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+.question-panel {
+  position: fixed; top: 0; right: -400px; width: 380px; height: 100vh;
+  background: var(--card-bg); box-shadow: -4px 0 20px rgba(0,0,0,.15);
+  transition: right .35s ease; z-index: 200; padding: 24px; overflow-y: auto;
+  display: flex; flex-direction: column;
+}
+.question-panel.open { right: 0; }
+.question-panel .qp-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.question-panel .qp-header h3 { font-size: 16px; }
+.question-panel .qp-close { cursor: pointer; font-size: 20px; color: var(--text-secondary); }
+.question-panel .q-item {
+  padding: 10px 12px; background: var(--bg); border-radius: 6px; margin-bottom: 8px;
+  border-left: 3px solid var(--accent); font-size: 14px;
+}
+.question-panel .q-item .q-num { color: var(--primary); font-weight: 600; margin-right: 6px; }
+.question-panel textarea {
+  width: 100%; min-height: 60px; border: 1px solid var(--border); border-radius: 6px;
+  padding: 8px; font-family: inherit; font-size: 13px; resize: vertical; margin-top: 8px;
+}
+.question-panel .q-thought { margin-top: 12px; font-size: 12px; color: var(--text-secondary); }
+.question-panel .q-history { font-size: 12px; color: var(--text-secondary); padding: 4px 0; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+
+/* Question basket */
+.questions-basket {
+  background: rgba(255,255,255,.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0,0,0,.06);
+  border-radius: var(--border-radius);
+  padding: 14px;
+}
+.questions-basket h3 { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--primary); display: flex; align-items: center; gap: 6px; }
+.questions-basket .basket-list { list-style: none; }
+.questions-basket .basket-list li { font-size: 12px; padding: 4px 0; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
+.questions-basket .basket-list li::before { content: '📌'; font-size: 10px; }
+.questions-basket .basket-empty { font-size: 12px; color: var(--text-secondary); font-style: italic; }
+
+/* ===== Canvas area ===== */
+.canvas-area {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  margin: 0 20px 20px;
+  position: relative;
+}
+.canvas-area .canvas-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; border-bottom: 1px solid var(--border);
+}
+.canvas-area .canvas-header h3 { font-size: 14px; font-weight: 600; color: var(--primary); }
+.canvas-area .canvas-header .legend { display: flex; gap: 10px; font-size: 11px; color: var(--text-secondary); }
+.canvas-area .canvas-header .legend span { padding: 2px 6px; border-radius: 3px; background: var(--bg); }
+#conceptCanvas {
+  display: block; width: 100%; height: 300px; cursor: crosshair;
+  background: #fafafa;
+}
+
+/* ===== Question list summary ===== */
+.question-summary { display: none; }
+.question-summary.show { display: block; padding: 20px; background: var(--card-bg); border-radius: var(--border-radius); margin: 0 20px; }
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .workbench { flex-direction: column; }
+  .history-sidebar { width: 100%; flex-direction: row; overflow-x: auto; }
+  .history-sidebar .history-tree { display: flex; gap: 8px; }
+  .history-sidebar .history-tree li { border-left: none; border-bottom: 2px solid var(--border); padding: 6px 10px; white-space: nowrap; }
+  .history-sidebar .history-tree li::before { display: none; }
+  .right-panel { width: 100%; }
+  .question-panel { width: 100%; right: -100%; }
+}
+
+/* ===== Difficulty marker on cards ===== */
+.difficulty-badge {
+  display: inline-block; font-size: 11px; padding: 1px 8px;
+  border-radius: 10px; background: rgba(255,77,79,.1); color: #ff4d4f;
+  margin-left: 8px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- Top navigation -->
+  <nav class="top-nav">
+    <span class="nav-title">🗺️ 解析导学 · 技能地图</span>
+    <div class="nav-dots">
+      <span class="nav-dot done"></span>
+      <span class="nav-dot active"></span>
+      <span class="nav-dot"></span>
+      <span class="nav-dot"></span>
+      <span class="nav-dot"></span>
+      <span class="nav-dot"></span>
+      <span class="nav-dot"></span>
+    </div>
+    <div class="nav-breadcrumb">大单元总导 / 解析性导学</div>
+  </nav>
+
+  <!-- Main workbench -->
+  <div class="workbench">
+    <!-- Left: history tree -->
+    <aside class="history-sidebar">
+      <h3>🌳 我的解析路径</h3>
+      <ul class="history-tree">
+        <li class="done" onclick="jumpToNode(0)">语篇解析五步法</li>
+        <li class="active" onclick="jumpToNode(1)">字面理解</li>
+        <li class="pending" onclick="jumpToNode(2)">意图推断</li>
+        <li class="pending" onclick="jumpToNode(3)">立场识别</li>
+        <li class="pending" onclick="jumpToNode(4)">文化比较</li>
+        <li class="pending" onclick="jumpToNode(5)">批判评价</li>
+      </ul>
+    </aside>
+
+    <!-- Center: knowledge cards -->
+    <main class="center-panel">
+      <div class="section-label"><span class="magnifier">🔍</span>知识原片 · 点击卡片逐层解构</div>
+
+      <!-- Card 1: 语篇解析五步法 -->
+      <div class="knowledge-card difficulty" onclick="cycleLayer(this)" data-layer="0">
+        <span class="difficulty-badge">⚠️ 难点</span>
+        <div class="card-title">
+          📖 语篇解析五步法
+          <button class="question-mark" onclick="event.stopPropagation();toggleMark(this)">❓</button>
+        </div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-top:6px;">字面理解 → 意图推断 → 立场识别 → 文化比较 → 批判评价</p>
+        <div class="onion-layers">
+          <div class="layer layer-1"><div class="layer-label">🌱 表层含义</div><p>用五个步骤从浅到深读懂一篇文章，就像剥洋葱一样层层深入，从看得见的字词到看不见的作者意图。</p><p style="margin-top:4px;font-size:13px;color:#5b8def;"><em>生活例子：就像你看朋友发的朋友圈，先看文字写了什么（字面），再想他为什么发这个（意图），最后判断他心情怎么样（立场）。</em></p></div>
+          <div class="layer layer-2"><div class="layer-label">🧩 深层逻辑</div><p>这五步本质上是认知深度的递进：<strong>事实层（字面）→ 意图层（Why）→ 立场层（Who）→ 语境层（Where）→ 评判层（What I think）</strong>。每一步的产出成为下一步的输入，构成完整的语篇理解认知链。</p></div>
+          <div class="layer layer-3"><div class="layer-label">🔗 跨学科关联</div><p><strong>语文</strong>：文章阅读理解中的中心思想提炼方法类似<br><strong>心理学</strong>：理解他人意图与"心智理论"（Theory of Mind）相关<br><strong>传播学</strong>：立场识别对应"框架分析"（Framing Analysis）<br><strong>社会学</strong>：文化比较涉及"跨文化交际"理论</p></div>
+        </div>
+        <button class="slow-reveal" onclick="event.stopPropagation();slowReveal(this)">⏳ 慢放解析</button>
+      </div>
+
+      <!-- Card 2: 字面理解 -->
+      <div class="knowledge-card" onclick="cycleLayer(this)" data-layer="0">
+        <div class="card-title">
+          📄 字面理解
+          <button class="question-mark" onclick="event.stopPropagation();toggleMark(this)">❓</button>
+        </div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-top:6px;">梳理文章主旨大意和关键信息</p>
+        <div class="onion-layers">
+          <div class="layer layer-1"><div class="layer-label">🌱 表层含义</div><p>就是找出文章"讲了什么"——主题句在哪、每个段落的大意是什么、有哪些关键信息点。</p></div>
+          <div class="layer layer-2"><div class="layer-label">🧩 深层逻辑</div><p>字面理解不是逐词翻译，而是<strong>信息筛选与组织</strong>。好的读者会自动区分"主要信息"和"支撑细节"，在脑中构建信息层级图。这是底层认知中的<strong>图式激活</strong>过程。</p></div>
+          <div class="layer layer-3"><div class="layer-label">🔗 跨学科关联</div><p><strong>信息科学</strong>：信息提取与摘要算法（Text Summarization）<br><strong>心理学</strong>：工作记忆中的信息组块化（Chunking）</p></div>
+        </div>
+      </div>
+
+      <!-- Card 3: 意图推断 -->
+      <div class="knowledge-card" onclick="cycleLayer(this)" data-layer="0">
+        <div class="card-title">
+          🎯 意图推断
+          <button class="question-mark" onclick="event.stopPropagation();toggleMark(this)">❓</button>
+        </div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-top:6px;">分析作者选择事例和数据的目的是什么</p>
+        <div class="onion-layers">
+          <div class="layer layer-1"><div class="layer-label">🌱 表层含义</div><p>思考作者"为什么写"这篇文章——是想说服你、告知你、还是娱乐你？他为什么选这个例子而不是那个？</p></div>
+          <div class="layer layer-2"><div class="layer-label">🧩 深层逻辑</div><p>意图推断的核心是<strong>归因分析</strong>：每一个语言选择（措辞、例证、数据）都服务于某个目的。这需要读者具备<strong>元语用意识</strong>——意识到语言不仅是传递信息，更是在完成某种行为（言语行为理论）。</p></div>
+          <div class="layer layer-3"><div class="layer-label">🔗 跨学科关联</div><p><strong>修辞学</strong>：亚里士多德的ethos/pathos/logos说服三要素<br><strong>语言学</strong>：言语行为理论（Austin, Searle）<br><strong>广告学</strong>：广告文案中的意图设计</p></div>
+        </div>
+      </div>
+
+      <!-- Card 4: 立场识别 -->
+      <div class="knowledge-card difficulty" onclick="cycleLayer(this)" data-layer="0">
+        <span class="difficulty-badge">⚠️ 难点</span>
+        <div class="card-title">
+          🧐 立场识别
+          <button class="question-mark" onclick="event.stopPropagation();toggleMark(this)">❓</button>
+        </div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-top:6px;">注意用词、语气、修辞——客观报道还是带有倾向？</p>
+        <div class="onion-layers">
+          <div class="layer layer-1"><div class="layer-label">🌱 表层含义</div><p>判断作者是"站哪边的"——通过分析用词的情感色彩（褒义/贬义）、语气（积极/消极）、修辞手法来判断。</p></div>
+          <div class="layer layer-2"><div class="layer-label">🧩 深层逻辑</div><p>立场识别涉及<strong>评价理论</strong>（Appraisal Theory）：语言中的态度可以通过<strong>情感词</strong>（happy/sad）、<strong>判断词</strong>（brave/cowardly）和<strong>鉴赏词</strong>（beautiful/ugly）三个维度来标记。英语中尤其注意<strong>情态动词</strong>（must/should/might）和<strong>状语</strong>（unfortunately/clearly）的立场标记功能。</p></div>
+          <div class="layer layer-3"><div class="layer-label">🔗 跨学科关联</div><p><strong>新闻传播学</strong>：新闻框架理论（Framing Theory）<br><strong>政治学</strong>：媒体偏见分析（Media Bias）<br><strong>法学</strong>：法庭辩论中的立场建构</p></div>
+        </div>
+        <button class="slow-reveal" onclick="event.stopPropagation();slowReveal(this)">⏳ 慢放解析</button>
+      </div>
+
+      <!-- Card 5: 文化比较 -->
+      <div class="knowledge-card" onclick="cycleLayer(this)" data-layer="0">
+        <div class="card-title">
+          🌍 文化比较
+          <button class="question-mark" onclick="event.stopPropagation();toggleMark(this)">❓</button>
+        </div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-top:6px;">英美媒体反映的文化价值观与中国的异同</p>
+        <div class="onion-layers">
+          <div class="layer layer-1"><div class="layer-label">🌱 表层含义</div><p>比较不同文化背景下的表达方式差异——同一个话题，英美媒体和中文媒体可能用不同的角度、不同的例子、不同的语气来报道。</p></div>
+          <div class="layer layer-2"><div class="layer-label">🧩 深层逻辑</div><p>文化差异本质上是<strong>价值观维度</strong>的差异（Hofstede文化维度理论）：个人主义vs集体主义、权力距离、不确定性规避等。英美媒体倾向于<strong>个人视角</strong>和<strong>冲突叙事</strong>，而中文媒体更注重<strong>集体视角</strong>和<strong>和谐叙事</strong>。</p></div>
+          <div class="layer layer-3"><div class="layer-label">🔗 跨学科关联</div><p><strong>跨文化交际</strong>：Hall的高语境/低语境文化理论<br><strong>翻译学</strong>：文化负载词的处理策略（归化/异化）<br><strong>国际关系</strong>：软实力与国家形象建构</p></div>
+        </div>
+      </div>
+
+      <!-- Card 6: 批判评价 -->
+      <div class="knowledge-card" onclick="cycleLayer(this)" data-layer="0">
+        <div class="card-title">
+          ⚖️ 批判评价
+          <button class="question-mark" onclick="event.stopPropagation();toggleMark(this)">❓</button>
+        </div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-top:6px;">形成自己的判断——你同意作者吗？依据是什么？</p>
+        <div class="onion-layers">
+          <div class="layer layer-1"><div class="layer-label">🌱 表层含义</div><p>读了、分析了、比较了，最后要有自己的态度——不是被动接受作者的观点，而是主动评判：哪些同意、哪些不同意、为什么。</p></div>
+          <div class="layer layer-2"><div class="layer-label">🧩 深层逻辑</div><p>批判评价是<strong>高阶思维</strong>的核心表现（Bloom认知分类的顶层）。它要求学生从<strong>被动接收者</strong>转变为<strong>主动建构者</strong>。关键不在于"同意或反对"，而在于<strong>论证的质量</strong>——你的判断是否有证据支撑、逻辑是否自洽、是否考虑了反方观点。</p></div>
+          <div class="layer layer-3"><div class="layer-label">🔗 跨学科关联</div><p><strong>哲学</strong>：批判性思维（Critical Thinking）的论证评估标准<br><strong>逻辑学</strong>：常见逻辑谬误识别（ad hominem, straw man, false dilemma）<br><strong>教育学</strong>：Bloom认知分类的"评价"与"创造"层级</p></div>
+        </div>
+      </div>
+
+      <!-- Card 7: 解析七阶 -->
+      <div class="knowledge-card" onclick="cycleLayer(this)" data-layer="0">
+        <div class="card-title">
+          📚 解析七阶案例
+          <button class="question-mark" onclick="event.stopPropagation();toggleMark(this)">❓</button>
+        </div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-top:6px;">从个人到未来，七阶递进的语篇解析情境</p>
+        <div class="onion-layers">
+          <div class="layer layer-1"><div class="layer-label">🌱 表层含义</div><p>七个由近及远的情境：个人与家庭→学校与社区→地方与城市→区域与民族→国家→人类→未来。每个情境对应一个特定的语篇类型和解剖角度。</p></div>
+          <div class="layer layer-2"><div class="layer-label">🧩 深层逻辑</div><p>七阶设计基于<strong>认知广度递进</strong>和<strong>社会距离理论</strong>。从最贴近学生生活的"个人与家庭"（邮件情绪解析）到最抽象的"未来"（AI vs 人类语篇对比），逐步扩大认知半径，培养学生从微观到宏观的多层次分析能力。</p></div>
+          <div class="layer layer-3"><div class="layer-label">🔗 跨学科关联</div><p><strong>发展心理学</strong>：Vygotsky最近发展区（ZPD）<br><strong>地理学</strong>：空间认知的尺度递进<br><strong>语言学</strong>：语域理论（Register）——不同社会距离对应不同语体</p></div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Right panel -->
+    <aside class="right-panel">
+      <div class="analysis-panel" id="analysisPanel">
+        <h3>🔬 解析面板</h3>
+        <div class="analysis-content" id="analysisContent">
+          <p class="placeholder">👆 点击左侧任意知识点卡片开始解析</p>
+          <p class="placeholder" style="margin-top:8px;">解析层级将逐层展开并显示在这里。</p>
+        </div>
+        <!-- Question engine -->
+        <div class="question-engine">
+          <button class="q-btn" onclick="openQuestionPanel()">❓ 追问</button>
+        </div>
+      </div>
+
+      <!-- Questions basket -->
+      <div class="questions-basket">
+        <h3>📥 我的疑问 <span id="questionCount" style="font-size:12px;color:var(--text-secondary);">(0)</span></h3>
+        <ul class="basket-list" id="basketList">
+          <li class="basket-empty">点击知识点卡片的 ❓ 按钮添加疑问</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Concept relationship canvas -->
+  <div class="canvas-area">
+    <div class="canvas-header">
+      <h3>🖌️ 概念关系画布</h3>
+      <div class="legend">
+        <span>→ 因果关系</span>
+        <span>⇄ 对比关系</span>
+        <span>↓ 层级关系</span>
+        <span>= 并列关系</span>
+      </div>
+      <button style="padding:4px 12px;border:1px solid var(--border);border-radius:4px;background:var(--bg);cursor:pointer;font-size:12px;" onclick="clearCanvas()">🗑️ 清空</button>
+    </div>
+    <canvas id="conceptCanvas"></canvas>
+  </div>
+
+  <!-- Question slide panel -->
+  <div class="question-panel" id="questionPanel">
+    <div class="qp-header">
+      <h3>❓ 追问引擎</h3>
+      <span class="qp-close" onclick="closeQuestionPanel()">✕</span>
+    </div>
+    <div id="qItems">
+      <div class="q-item"><span class="q-num">Q1:</span>刚才的结论是基于什么假设？</div>
+      <div class="q-item"><span class="q-num">Q2:</span>如果换个条件（换一篇不同来源的文章），结果会怎么样？</div>
+      <div class="q-item"><span class="q-num">Q3:</span>这和之前学过的"主旨大意题"有什么联系和区别？</div>
+      <div class="q-item"><span class="q-num">Q4:</span>如果反过来说（从批判评价→字面理解），成立吗？</div>
+    </div>
+    <textarea id="qInput" placeholder="写下你的思考…"></textarea>
+    <div class="q-thought">💡 提示：点击下方"记录思考"保存你的分析轨迹</div>
+    <button style="margin-top:8px;padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:4px;cursor:pointer;" onclick="recordThought()">📝 记录思考</button>
+    <div id="thoughtHistory" style="margin-top:12px;"></div>
+  </div>
+
+  <!-- Question summary (shown when all done) -->
+  <div class="question-summary" id="questionSummary">
+    <h3 style="margin-bottom:8px;">📋 待探究问题清单</h3>
+    <ul id="questionSummaryList"></ul>
+  </div>
+</div>
+
+<script>
+// ===== Onion layer cycling =====
+function cycleLayer(card) {
+  const layers = card.querySelectorAll('.layer');
+  const onion = card.querySelector('.onion-layers');
+  let current = parseInt(card.dataset.layer) || 0;
+
+  onion.classList.add('open');
+
+  if (current < layers.length) {
+    layers[current].classList.add('show');
+    card.dataset.layer = current + 1;
+    // Update analysis panel
+    const title = card.querySelector('.card-title').textContent.replace('❓','').trim();
+    const content = layers[current].querySelector('p')?.textContent || '';
+    document.getElementById('analysisContent').innerHTML =
+      `<strong style="color:var(--primary)">${title}</strong><br><span style="font-size:13px;color:var(--text-secondary)">第${current+1}层 · ${['表层含义','深层逻辑','跨学科关联'][current]}</span><p style="margin-top:6px;">${content}</p>`;
+  } else {
+    // Reset
+    layers.forEach(l => l.classList.remove('show'));
+    card.dataset.layer = 0;
+    onion.classList.remove('open');
+    document.getElementById('analysisContent').innerHTML = '<p class="placeholder">👆 点击卡片重新解析</p>';
+  }
+}
+
+// ===== Slow reveal =====
+function slowReveal(btn) {
+  const card = btn.closest('.knowledge-card');
+  const layers = card.querySelectorAll('.layer');
+  const onion = card.querySelector('.onion-layers');
+  onion.classList.add('open');
+  let step = 0;
+  layers.forEach(l => l.classList.remove('show'));
+
+  const interval = setInterval(() => {
+    if (step < layers.length) {
+      layers[step].classList.add('show');
+      const title = card.querySelector('.card-title').textContent.replace('❓','').trim();
+      const content = layers[step].querySelector('p')?.textContent || '';
+      document.getElementById('analysisContent').innerHTML =
+        `<strong style="color:#ff4d4f">⏳ 慢放中...</strong><br><span style="font-size:13px;color:var(--text-secondary)">第${step+1}层 · ${['表层含义','深层逻辑','跨学科关联'][step]}</span><p style="margin-top:6px;">${content}</p>`;
+      step++;
+    } else {
+      clearInterval(interval);
+      document.getElementById('analysisContent').innerHTML =
+        `<strong style="color:#52b788">✅ 解析完成</strong><p style="font-size:13px;color:var(--text-secondary);margin-top:4px;">已逐层展示所有解析层次。</p>`;
+    }
+  }, 2000);
+}
+
+// ===== Question mark toggle =====
+function toggleMark(el) {
+  el.classList.toggle('marked');
+  const basket = document.getElementById('basketList');
+  const card = el.closest('.knowledge-card');
+  const title = card.querySelector('.card-title').textContent.replace('❓','').trim();
+  const count = document.getElementById('questionCount');
+
+  if (el.classList.contains('marked')) {
+    if (basket.querySelector('.basket-empty')) basket.innerHTML = '';
+    const li = document.createElement('li');
+    li.textContent = title;
+    li.dataset.q = title;
+    basket.appendChild(li);
+    count.textContent = `(${basket.children.length})`;
+  } else {
+    const items = basket.querySelectorAll('li');
+    items.forEach(item => { if (item.dataset.q === title) item.remove(); });
+    count.textContent = `(${basket.children.length})`;
+    if (!basket.children.length) {
+      basket.innerHTML = '<li class="basket-empty">点击知识点卡片的 ❓ 按钮添加疑问</li>';
+    }
+  }
+}
+
+// ===== Question panel =====
+function openQuestionPanel() { document.getElementById('questionPanel').classList.add('open'); }
+function closeQuestionPanel() { document.getElementById('questionPanel').classList.remove('open'); }
+
+function recordThought() {
+  const input = document.getElementById('qInput');
+  const text = input.value.trim();
+  if (!text) return;
+  const history = document.getElementById('thoughtHistory');
+  const entry = document.createElement('div');
+  entry.className = 'q-history';
+  entry.textContent = '🧠 ' + text;
+  history.prepend(entry);
+  input.value = '';
+}
+
+// ===== Canvas =====
+const canvas = document.getElementById('conceptCanvas');
+const ctx = canvas.getContext('2d');
+let canvasItems = [];
+let isDragging = false;
+let dragItem = null;
+let dragOffsetX = 0, dragOffsetY = 0;
+let lineStart = null;
+let nextId = 0;
+
+function resizeCanvas() {
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width - 2;
+  canvas.height = 300;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+// Add concept nodes
+const concepts = ['字面理解', '意图推断', '立场识别', '文化比较', '批判评价'];
+const colors = ['#5b8def','#e8a838','#ff4d4f','#c77dff','#52b788'];
+concepts.forEach((name, i) => {
+  canvasItems.push({
+    id: nextId++,
+    x: 60 + i * 140,
+    y: 120 + (i % 2 === 0 ? 20 : -20),
+    w: 100, h: 40,
+    text: name,
+    color: colors[i % colors.length],
+    type: 'box'
+  });
+});
+
+// Relations
+canvasItems.push({ id: nextId++, from: 0, to: 1, label: '→', relType: 'causal' });
+canvasItems.push({ id: nextId++, from: 1, to: 2, label: '→', relType: 'causal' });
+canvasItems.push({ id: nextId++, from: 2, to: 3, label: '→', relType: 'causal' });
+canvasItems.push({ id: nextId++, from: 3, to: 4, label: '→', relType: 'causal' });
+
+function drawCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw lines
+  canvasItems.filter(i => i.relType).forEach(rel => {
+    const from = canvasItems.find(i => i.id === rel.from);
+    const to = canvasItems.find(i => i.id === rel.to);
+    if (!from || !to) return;
+    ctx.beginPath();
+    ctx.moveTo(from.x + from.w/2, from.y + from.h/2);
+    ctx.lineTo(to.x + to.w/2, to.y + to.h/2);
+    ctx.strokeStyle = '#8c8c8c';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // Arrow
+    const angle = Math.atan2(to.y - from.y, to.x - from.x);
+    ctx.beginPath();
+    ctx.moveTo(to.x + to.w/2 - 8 * Math.cos(angle - 0.4), to.y + to.h/2 - 8 * Math.sin(angle - 0.4));
+    ctx.lineTo(to.x + to.w/2, to.y + to.h/2);
+    ctx.lineTo(to.x + to.w/2 - 8 * Math.cos(angle + 0.4), to.y + to.h/2 - 8 * Math.sin(angle + 0.4));
+    ctx.strokeStyle = '#8c8c8c';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Label
+    ctx.font = '14px sans-serif';
+    ctx.fillStyle = '#8c8c8c';
+    ctx.fillText(rel.label, (from.x + to.x)/2 + 50, (from.y + to.y)/2);
+  });
+
+  // Draw boxes
+  canvasItems.filter(i => i.type === 'box').forEach(item => {
+    ctx.shadowColor = 'rgba(0,0,0,0.08)';
+    ctx.shadowBlur = 8;
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = item.color;
+    ctx.lineWidth = 2;
+    roundRect(ctx, item.x, item.y, item.w, item.h, 8);
+    ctx.fill();
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = '#333';
+    ctx.font = '13px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(item.text, item.x + item.w/2, item.y + item.h/2);
+  });
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+drawCanvas();
+
+// Drag
+canvas.addEventListener('mousedown', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const boxes = canvasItems.filter(i => i.type === 'box');
+  for (let i = boxes.length - 1; i >= 0; i--) {
+    const b = boxes[i];
+    if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
+      isDragging = true;
+      dragItem = b;
+      dragOffsetX = mx - b.x;
+      dragOffsetY = my - b.y;
+      break;
+    }
+  }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (!isDragging || !dragItem) return;
+  const rect = canvas.getBoundingClientRect();
+  dragItem.x = e.clientX - rect.left - dragOffsetX;
+  dragItem.y = e.clientY - rect.top - dragOffsetY;
+  drawCanvas();
+});
+
+canvas.addEventListener('mouseup', () => { isDragging = false; dragItem = null; });
+canvas.addEventListener('mouseleave', () => { isDragging = false; dragItem = null; });
+
+// Touch support
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  const touch = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  const mx = touch.clientX - rect.left;
+  const my = touch.clientY - rect.top;
+  const boxes = canvasItems.filter(i => i.type === 'box');
+  for (let i = boxes.length - 1; i >= 0; i--) {
+    const b = boxes[i];
+    if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
+      isDragging = true;
+      dragItem = b;
+      dragOffsetX = mx - b.x;
+      dragOffsetY = my - b.y;
+      break;
+    }
+  }
+}, {passive: false});
+
+canvas.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  if (!isDragging || !dragItem) return;
+  const touch = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  dragItem.x = touch.clientX - rect.left - dragOffsetX;
+  dragItem.y = touch.clientY - rect.top - dragOffsetY;
+  drawCanvas();
+}, {passive: false});
+
+canvas.addEventListener('touchend', () => { isDragging = false; dragItem = null; });
+
+function clearCanvas() {
+  // Reset positions
+  canvasItems = [];
+  concepts.forEach((name, i) => {
+    canvasItems.push({
+      id: nextId++,
+      x: 60 + i * 140,
+      y: 120 + (i % 2 === 0 ? 20 : -20),
+      w: 100, h: 40,
+      text: name,
+      color: colors[i % colors.length],
+      type: 'box'
+    });
+  });
+  canvasItems.push({ id: nextId++, from: 0, to: 1, label: '→', relType: 'causal' });
+  canvasItems.push({ id: nextId++, from: 1, to: 2, label: '→', relType: 'causal' });
+  canvasItems.push({ id: nextId++, from: 2, to: 3, label: '→', relType: 'causal' });
+  canvasItems.push({ id: nextId++, from: 3, to: 4, label: '→', relType: 'causal' });
+  drawCanvas();
+}
+
+// History tree jump
+function jumpToNode(idx) {
+  const cards = document.querySelectorAll('.knowledge-card');
+  if (cards[idx]) {
+    cards[idx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    cards[idx].style.borderColor = '#e8a838';
+    setTimeout(() => { cards[idx].style.borderColor = ''; }, 1500);
+  }
+}
+
+// Close question panel on Escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeQuestionPanel();
+});
+</script>
+</body>
+</html>

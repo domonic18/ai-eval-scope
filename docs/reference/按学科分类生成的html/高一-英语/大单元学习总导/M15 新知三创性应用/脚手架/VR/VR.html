@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VR 脚手架 - 跨文化友谊场景沉浸体验</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px 24px;
+  box-sizing: border-box;
+}
+.banner {
+  background: linear-gradient(135deg, #434343 0%, #737373 100%);
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.banner h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 6px 0;
+  font-weight: 700;
+}
+.banner .sub {
+  font-size: 14px;
+  opacity: 0.85;
+  margin: 0;
+}
+.banner .vr-badge {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 48px;
+  opacity: 0.2;
+}
+.card-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 12px 0;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card p, .card ul {
+  margin: 8px 0;
+  color: var(--text);
+}
+.card ul {
+  padding-left: 20px;
+}
+.card ul li {
+  margin-bottom: 6px;
+}
+.tag {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  font-weight: 500;
+}
+.record-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 13px;
+}
+.record-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 500;
+}
+.record-table td {
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  background: #fafafa;
+}
+.record-table tr:last-child td {
+  background: #f0f0f0;
+  text-align: center;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+.alt-box {
+  background: #f8f8f8;
+  border: 1px dashed var(--accent);
+  border-radius: 6px;
+  padding: 14px 18px;
+  margin: 12px 0;
+}
+.alt-box ul {
+  margin: 4px 0;
+}
+.tip-box {
+  background: #f0f0f0;
+  border-radius: 6px;
+  padding: 14px 18px;
+  margin: 16px 0;
+  border-left: 4px solid var(--accent);
+}
+.tip-box h3 {
+  margin: 0 0 8px 0;
+  font-size: 15px;
+  color: var(--primary);
+}
+.scenario-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+.chip {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.chip:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.chip.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.demo-box {
+  background: #fafafa;
+  border-radius: 6px;
+  padding: 16px;
+  margin: 12px 0;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+@media (min-width: 640px) {
+  .container { padding: 28px 40px; }
+  .banner { padding: 36px 32px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="banner">
+    <h1>🕶️ VR 脚手架 — 沉浸体验</h1>
+    <p class="sub">跨文化友谊场景对比观察 · 大单元 Unit 1 Friendship</p>
+    <div class="vr-badge">VR</div>
+  </div>
+
+  <div class="card-grid">
+    <!-- 观察任务 -->
+    <div class="card">
+      <h2>🔍 观察任务</h2>
+      <p><strong>任务：</strong>你是什么文化背景下的人？仔细观察 VR 场景中的人物互动方式，重点观察他们的问候、距离、肢体语言和话题选择。</p>
+      <p><strong>观察对象：</strong>虚拟场景中呈现的两个文化背景的友谊互动（如中国茶馆场景和西方咖啡厅场景）</p>
+      <p><strong>记录要求：</strong>用英语记录至少 <span class="tag">5 个</span> 文化差异观察点</p>
+
+      <div class="scenario-chips">
+        <span class="chip active" onclick="selectScene('tea','中国茶馆')">🍵 中国茶馆</span>
+        <span class="chip" onclick="selectScene('cafe','西方咖啡厅')">☕ 西方咖啡厅</span>
+      </div>
+      <div class="demo-box" id="sceneDisplay">
+        <span style="color:var(--text-secondary);">👆 点击场景标签切换视角提示</span>
+      </div>
+    </div>
+
+    <!-- 操作任务 -->
+    <div class="card">
+      <h2>🎮 操作任务</h2>
+      <p><strong>任务：</strong>在 VR 环境中，切换不同的"友谊场景"（初次见面、朋友聚会、解决冲突），观察不同场景下的语言和行为模式。</p>
+      <p><strong>操作方式：</strong>使用 VR 手柄点击场景中的交互热点，触发不同对话片段。</p>
+      <p><strong>互动产出：</strong>选择一种场景，模拟自己的回应方式。</p>
+
+      <div class="tip-box">
+        <h3>💡 场景切换建议</h3>
+        <p>从"初次见面"开始，逐步过渡到"解决冲突"——注意每类场景中语言正式程度和情感表达方式的变化。</p>
+      </div>
+    </div>
+
+    <!-- 记录任务 -->
+    <div class="card">
+      <h2>📋 记录任务</h2>
+      <p><strong>观察记录表</strong>——请按以下结构记录你的发现：</p>
+      <table class="record-table">
+        <thead>
+          <tr><th>场景名称</th><th>文化背景</th><th>问候方式</th><th>话题选择</th><th>身体距离</th><th>你的发现</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>茶馆初遇</td><td>中国</td><td>点头微笑/握手</td><td>工作/家庭</td><td>一臂距离</td><td>话题较含蓄</td>
+          </tr>
+          <tr>
+            <td>咖啡厅聚会</td><td>西方</td><td>拥抱/击掌</td><td>个人兴趣</td><td>较近</td><td>表达直接</td>
+          </tr>
+          <tr>
+            <td colspan="6">💭 将你的实际观察填入表格，至少完成 3 行以上</td>
+          </tr>
+        </tbody>
+      </table>
+      <p><strong>产出要求：</strong>提交一份"跨文化友谊场景观察记录表"。</p>
+    </div>
+
+    <!-- VR 资源推荐 -->
+    <div class="card">
+      <h2>🔧 VR 资源推荐</h2>
+      <p><strong>平台/软件：</strong></p>
+      <ul>
+        <li>Engage VR</li>
+        <li>AltspaceVR</li>
+        <li>Horizon Worlds（可选择"社交模拟"场景）</li>
+      </ul>
+      <div class="alt-box">
+        <p><strong>🔄 替代方案（无 VR 设备时）：</strong></p>
+        <ul>
+          <li>YouTube 360° 视频：搜索 "cross-cultural friendship scenarios"</li>
+          <li>3D 情境模拟：使用在线互动视频平台（如 ThingLink）</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 使用建议 -->
+    <div class="card">
+      <h2>📌 使用建议</h2>
+      <ul>
+        <li>每次体验前先明确观察焦点（如：这次只看问候方式）</li>
+        <li>至少体验 <strong>2 个不同文化背景</strong>的场景后，再做对比分析</li>
+        <li>记录任务建议用 <strong>英语</strong>完成，积累单元主题词汇</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+function selectScene(scene, label) {
+  var chips = document.querySelectorAll('.chip');
+  chips.forEach(function(c) { c.classList.remove('active'); });
+  event.target.classList.add('active');
+  var display = document.getElementById('sceneDisplay');
+  if (scene === 'tea') {
+    display.innerHTML = '<strong>🍵 中国茶馆场景</strong><br><span style="font-size:13px;color:var(--text-secondary);">观察重点：间接问候、群体融入、话题含蓄性、手势礼节、空间距离保持</span>';
+  } else {
+    display.innerHTML = '<strong>☕ 西方咖啡厅场景</strong><br><span style="font-size:13px;color:var(--text-secondary);">观察重点：直接问候、开放式肢体语言、个人话题偏好、目光接触频率、空间距离</span>';
+  }
+}
+</script>
+</body>
+</html>

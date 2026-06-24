@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Friendship Compass — 建构我的友谊理解模型</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container { width: 100%; max-width: none; padding: 24px 32px; }
+h1 { font-size: var(--font-h1); color: var(--primary); margin: 20px 0 12px; font-weight: 700; }
+h2 { font-size: var(--font-h2); color: var(--primary); margin: 24px 0 10px; font-weight: 600; border-left: 4px solid var(--accent); padding-left: 12px; }
+h3 { font-size: calc(var(--font-body) + 2px); color: var(--primary-hover); margin: 18px 0 8px; font-weight: 600; }
+p { margin: 10px 0; }
+.card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px 24px; margin: 16px 0; border: 1px solid var(--border); }
+.badge { display: inline-block; background: var(--accent); color: #fff; font-size: 12px; padding: 2px 10px; border-radius: 12px; margin-right: 6px; }
+.tag { display: inline-block; background: var(--bg); color: var(--primary); font-size: 12px; padding: 2px 10px; border-radius: 12px; border: 1px solid var(--border); margin: 3px 4px 3px 0; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 10px 12px; text-align: left; vertical-align: top; }
+th { background: var(--bg); color: var(--primary); font-weight: 600; }
+.interactive-box { background: var(--card-bg); border: 2px dashed var(--accent); border-radius: var(--border-radius); padding: 16px 20px; margin: 16px 0; cursor: pointer; transition: all 0.3s; }
+.interactive-box:hover { border-color: var(--primary); box-shadow: var(--shadow); transform: translateY(-2px); }
+.interactive-box .hint { display: none; margin-top: 10px; padding: 10px; background: var(--bg); border-radius: 6px; font-size: 14px; color: var(--text-secondary); }
+.interactive-box.active .hint { display: block; }
+.btn { display: inline-block; background: var(--primary); color: #fff; padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; transition: background 0.3s; }
+.btn:hover { background: var(--primary-hover); }
+.btn-outline { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
+.btn-outline:hover { background: var(--bg); }
+.flex-row { display: flex; gap: 12px; flex-wrap: wrap; margin: 12px 0; }
+.step-card { flex: 1; min-width: 180px; background: var(--card-bg); border-radius: var(--border-radius); padding: 14px; box-shadow: var(--shadow); border: 1px solid var(--border); text-align: center; }
+.step-card .num { display: inline-block; width: 32px; height: 32px; line-height: 32px; border-radius: 50%; background: var(--primary); color: #fff; font-weight: 700; margin-bottom: 6px; }
+.checklist { list-style: none; }
+.checklist li { padding: 8px 0 8px 28px; position: relative; }
+.checklist li::before { content: "☐"; position: absolute; left: 0; font-size: 18px; color: var(--accent); }
+.checklist li.checked::before { content: "☑"; color: var(--primary); }
+.quote-box { background: var(--bg); border-left: 4px solid var(--primary); padding: 14px 18px; margin: 14px 0; border-radius: 0 6px 6px 0; font-style: italic; color: var(--text-secondary); }
+.model-visual { display: flex; flex-direction: column; align-items: center; margin: 16px 0; }
+.model-layer { width: 80%; padding: 14px; margin: 4px 0; border-radius: 6px; text-align: center; font-weight: 600; transition: transform 0.3s; cursor: pointer; }
+.model-layer:hover { transform: scale(1.02); }
+.model-layer.base { background: #e8e8e8; color: #333; border: 1px solid #ccc; }
+.model-layer.middle { background: #d0d0d0; color: #333; border: 1px solid #bbb; }
+.model-layer.top { background: #b0b0b0; color: #fff; border: 1px solid #999; }
+.relation-label { font-size: 12px; color: var(--text-secondary); padding: 6px 0; font-style: italic; }
+.accordion summary { cursor: pointer; font-weight: 600; padding: 10px 0; color: var(--primary); }
+.accordion[open] summary { color: var(--primary-hover); }
+.sentence-strip { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px 14px; margin: 6px 0; font-size: 14px; transition: background 0.3s; }
+.sentence-strip:hover { background: var(--bg); }
+@media (max-width: 768px) { .container { padding: 16px; } .step-card { min-width: 100%; } .model-layer { width: 95%; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>🧭 My Friendship Compass</h1>
+  <p style="color:var(--text-secondary); font-size:14px; margin-top:-8px;">建构我的友谊理解模型 · 中英文双语建构</p>
+  <p>把你的理解组织成一个有结构的模型——它不仅帮你回答"What makes a real friendship?"，更让你能<strong>用英语清晰定义友谊</strong>。</p>
+
+  <!-- 情境 -->
+  <div class="card">
+    <h2>📬 真实情境：跨国笔友的困惑</h2>
+    <div class="quote-box">
+      "Hey, I need your help. Jack and I used to be so close — we talked every day. But lately, he barely says hi. I feel confused and hurt. Is this still a friendship? What makes a <em>real</em> friendship?"<br>
+      <span style="font-style:normal; font-size:13px;">— Tom, your American pen pal</span>
+    </div>
+    <p>Tom 的问题没有"是或否"的简单答案。要帮他，你先为自己建构一套完整的友谊理解模型——然后才能用英语解释给他听。</p>
+  </div>
+
+  <!-- 建构目标 -->
+  <div class="card">
+    <h2>🎯 建构目标</h2>
+    <p><strong>总目标</strong>：建构一个 Friendship 理解模型——包含核心要素、特征描述和关系说明的结构化知识框架。</p>
+    <div class="flex-row">
+      <div class="step-card"><div class="num">1</div><strong>要素识别</strong><br><span style="font-size:13px; color:var(--text-secondary);">从阅读和生活经验中提取 key elements</span><br><span class="tag">要素维度</span></div>
+      <div class="step-card"><div class="num">2</div><strong>关系建构</strong><br><span style="font-size:13px; color:var(--text-secondary);">厘清要素间的逻辑结构</span><br><span class="tag">关系维度</span></div>
+      <div class="step-card"><div class="num">3</div><strong>语言表达</strong><br><span style="font-size:13px; color:var(--text-secondary);">用英语写出 8-12 句定义段落</span><br><span class="tag">语言维度</span></div>
+    </div>
+  </div>
+
+  <!-- 建构任务 -->
+  <div class="card">
+    <h2>📋 建构任务说明</h2>
+    <p><strong>成果名称</strong>：<span class="badge">My Friendship Definition & Model</span></p>
+    <p><strong>用途</strong>：回复 Tom 的邮件 + 展示在班级英语角</p>
+    <p><strong>形式</strong>：视觉模型图（A4）+ 文字定义（8-12句）</p>
+    <details class="accordion">
+      <summary>📌 最低标准（验收条件）</summary>
+      <ul style="margin-top:8px; padding-left:20px;">
+        <li>✅ 模型中至少包含 <strong>4 个</strong> friendship 要素</li>
+        <li>✅ 至少标注 <strong>2 组</strong> 要素间的逻辑关系</li>
+        <li>✅ 文字定义中至少使用 <strong>5 个</strong> 本单元核心词汇</li>
+        <li>✅ 文字定义有：主题句 → 展开论述 → 总结句</li>
+        <li>✅ 视觉模型与文字定义保持一致</li>
+      </ul>
+    </details>
+  </div>
+
+  <!-- 建构过程 -->
+  <div class="card">
+    <h2>🔨 建构过程（7 步）</h2>
+    <div class="interactive-box" onclick="this.classList.toggle('active')">
+      <strong>👆 点击展开 / 收起步骤详情</strong>
+      <div class="hint">
+        <table>
+          <tr><th>步骤</th><th>活动</th><th>产出</th><th>用时</th></tr>
+          <tr><td>1</td><td>头脑风暴：列出与友谊相关的所有关键词</td><td>关键词列表</td><td>5min</td></tr>
+          <tr><td>2</td><td>分类归组：将关键词归为 3-5 个类别</td><td>分类表格</td><td>5min</td></tr>
+          <tr><td>3</td><td>确定结构：选择金字塔/同心圆/网络图</td><td>草稿结构图</td><td>8min</td></tr>
+          <tr><td>4</td><td>标注关系：用英文标注要素关系</td><td>标注后结构图</td><td>5min</td></tr>
+          <tr><td>5</td><td>撰写定义：根据结构图写出定义段落</td><td>定义草稿</td><td>10min</td></tr>
+          <tr><td>6</td><td>同伴互评：用检查清单交换评价</td><td>修改建议</td><td>5min</td></tr>
+          <tr><td>7</td><td>修订定稿：优化模型和语言，形成终稿</td><td>终稿</td><td>5min</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 支架工具 -->
+  <div class="card">
+    <h2>🧰 支架工具</h2>
+    <p><strong>结构图模板选项</strong>（三选一）：</p>
+    <div class="flex-row">
+      <div class="step-card" style="cursor:pointer;" onclick="alert('金字塔模板：适用于要素有明显层级关系的场景。\n底部 = 基础要素 → 顶部 = 最高表现')">🔺<br>金字塔</div>
+      <div class="step-card" style="cursor:pointer;" onclick="alert('同心圆模板：适用于有核心与外围之分的场景。\n圆心 = 最核心要素 → 向外扩展')">⭕<br>同心圆</div>
+      <div class="step-card" style="cursor:pointer;" onclick="alert('网络图模板：适用于要素间有多向交互的场景。\n节点 = 要素，连线 = 关系类型')">🔗<br>网络图</div>
+    </div>
+    <details class="accordion">
+      <summary>📝 关键句式支架</summary>
+      <div class="sentence-strip"><em>"___ is the foundation of ___."</em></div>
+      <div class="sentence-strip"><em>"Without ___, ___ cannot exist."</em></div>
+      <div class="sentence-strip"><em>"___ and ___ mutually reinforce each other."</em></div>
+      <div class="sentence-strip"><em>"In my understanding, friendship is defined by ___."</em></div>
+      <div class="sentence-strip"><em>"First and foremost, a true friend is someone who ___."</em></div>
+    </details>
+    <details class="accordion">
+      <summary>✅ 同伴互评检查清单</summary>
+      <ul class="checklist">
+        <li>模型中是否包含至少 4 个要素？</li>
+        <li>模型中是否标注了至少 2 组要素关系？</li>
+        <li>定义段落是否有清晰的主题句？</li>
+        <li>定义中是否使用了至少 5 个单元核心词汇？</li>
+        <li>模型与定义之间是否相互对应？</li>
+        <li>定义段落是否有总结句？</li>
+      </ul>
+      <button class="btn btn-outline" onclick="document.querySelectorAll('.checklist li').forEach(el=>el.classList.toggle('checked'))">✓ 切换勾选状态</button>
+    </details>
+  </div>
+
+  <!-- 成果样例 -->
+  <div class="card">
+    <h2>🌟 成果样例</h2>
+    <p><strong>模型类型</strong>：金字塔（由底到顶）</p>
+    <div class="model-visual">
+      <div class="model-layer top">🏆 Support &amp; Sharing</div>
+      <div class="relation-label">↑ Trust and respect create safety ↑</div>
+      <div class="model-layer middle">🤝 Trust &amp; Mutual Respect</div>
+      <div class="relation-label">↑ Honest communication builds foundation ↑</div>
+      <div class="model-layer base">💬 Honesty &amp; Open Communication</div>
+    </div>
+    <div class="quote-box">
+      In my understanding, friendship is built on a three-layer foundation. At the base, <strong>honesty</strong> and open communication allow friends to share their true thoughts without fear. On top of that, <strong>trust</strong> and mutual respect develop naturally. At the highest level, friendship means <strong>support</strong> and sharing — both happy and difficult moments. A <strong>sincere</strong> friend stands by you. True friendship is a <strong>bond</strong> of honesty, trust, and support that grows stronger over time.
+    </div>
+    <p style="font-size:13px; color:var(--text-secondary);">↑ 此样例包含 5+ 核心词汇（加粗标注），对应金字塔的三层结构，符合最低标准。</p>
+  </div>
+
+  <!-- 优化建议 + 自评 -->
+  <div class="card">
+    <h2>📈 成果优化 &amp; 自我评价</h2>
+    <p><strong>深度优化</strong>：在模型中加入 <em>boundaries</em>、<em>individuality</em> 等进阶要素；使用 furthermore、as a result 等连接词提升连贯性。</p>
+    <p><strong>创意拓展</strong>：增加跨文化对比段落——"In Chinese culture, friendship may emphasize ___, while in Western culture, ___ is more valued."</p>
+    <details class="accordion">
+      <summary>📊 自我评价量表</summary>
+      <table>
+        <tr><th>标准</th><th>优秀（3分）</th><th>合格（2分）</th><th>待改进（1分）</th></tr>
+        <tr><td>要素完整性</td><td>6个以上要素，分类合理</td><td>4-5个要素</td><td>少于4个</td></tr>
+        <tr><td>关系清晰度</td><td>标注4组以上关系</td><td>标注2-3组</td><td>少于2组</td></tr>
+        <tr><td>语言准确性</td><td>使用8+核心词汇</td><td>使用5-7个</td><td>少于5个</td></tr>
+        <tr><td>结构一致性</td><td>定义逐层对应模型</td><td>大致对应</td><td>明显不一致</td></tr>
+        <tr><td>个人思考深度</td><td>有独到见解</td><td>有部分个人思考</td><td>基本照搬</td></tr>
+      </table>
+      <p style="margin-top:10px;">📝 自评后写一句"我最满意的方面"和一句"我还需要改进的方面"。</p>
+    </details>
+  </div>
+
+  <p style="text-align:center; color:var(--text-secondary); font-size:13px; padding:20px 0;">建构性示例 · 建构导学 · M4 新概念解析、建构与定义 · 英语 必修1</p>
+</div>
+</body>
+</html>

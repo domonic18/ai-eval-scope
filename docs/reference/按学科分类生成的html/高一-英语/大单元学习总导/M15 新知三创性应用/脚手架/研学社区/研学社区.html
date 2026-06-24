@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>案例库 — 友谊主题</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 24px;
+}
+.container {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 16px;
+  text-align: center;
+  position: relative;
+  padding-bottom: 12px;
+}
+h1::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+h2 {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin: 28px 0 14px;
+  padding-left: 12px;
+  border-left: 3px solid var(--accent);
+}
+h3 {
+  font-size: calc(var(--font-body) + 1px);
+  font-weight: 600;
+  margin: 18px 0 10px;
+  color: var(--text);
+}
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+.case-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.case-level {
+  padding: 6px 16px;
+  font-size: calc(var(--font-body) - 2px);
+  font-weight: 600;
+  color: #fff;
+}
+.case-level.basic { background: #2e7d32; }
+.case-level.intermediate { background: #e65100; }
+.case-level.challenge { background: #c62828; }
+.case-body { padding: 18px 20px; }
+.case-body .case-bg {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-left: 3px solid var(--accent);
+}
+.case-body .case-question {
+  font-weight: 600;
+  margin: 12px 0 8px;
+  color: var(--primary);
+}
+.case-body .case-paths {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+  margin: 10px 0;
+}
+.case-body .case-path {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 10px;
+  text-align: center;
+  border: 1px solid var(--border);
+  font-size: calc(var(--font-body) - 1px);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.case-body .case-path:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.case-body .case-insight {
+  background: #fff8e1;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-top: 10px;
+  border: 1px solid #ffe082;
+  font-size: calc(var(--font-body) - 1px);
+}
+.case-body .case-insight::before {
+  content: '💡 可迁移启示：';
+  font-weight: 600;
+}
+.branch-task {
+  background: #f3e5f5;
+  border-radius: 6px;
+  padding: 14px;
+  margin-top: 12px;
+  border: 1px solid #ce93d8;
+}
+.branch-task h4 {
+  color: #7b1fa2;
+  margin-bottom: 6px;
+}
+.btn-branch {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 6px 16px;
+  background: #7b1fa2;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: var(--font-body);
+  font-family: var(--font-family);
+  transition: background 0.2s;
+}
+.btn-branch:hover { background: #9c27b0; }
+.simulation-endings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  margin: 10px 0;
+}
+.ending-card {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+.ending-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.ending-card.chosen {
+  border-color: var(--accent);
+  background: #f5f5f5;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+}
+.tab-bar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 4px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+.tab-btn {
+  flex: 1;
+  padding: 10px;
+  text-align: center;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: var(--font-body);
+  font-family: var(--font-family);
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+.tab-btn:hover { background: var(--bg); color: var(--text); }
+.tab-btn.active { background: var(--primary); color: #fff; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+@media (max-width: 640px) {
+  body { padding: 12px; }
+  .tab-bar { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📖 案例库 · 友谊主题</h1>
+  <p style="text-align:center;color:var(--text-secondary);margin-bottom:24px;">三层案例体系 + 互动决策任务，在真实情境中思考友谊</p>
+
+  <!-- 层级切换标签 -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab(0)">🌱 基础层</button>
+    <button class="tab-btn" onclick="switchTab(1)">🌿 进阶层</button>
+    <button class="tab-btn" onclick="switchTab(2)">🔥 挑战层</button>
+  </div>
+
+  <!-- 基础层 -->
+  <div class="tab-content active" id="tab-0">
+    <div class="case-card">
+      <div class="case-level basic">🌱 基础层 · 生活类案例</div>
+      <div class="case-body">
+        <h3>🏠 "搬家后的友谊"</h3>
+        <div class="case-bg">
+          <strong>背景：</strong>小明因为家庭原因搬到了另一个城市，和最好的朋友变成了异地。一开始他们每天发消息，但渐渐地联系越来越少。
+        </div>
+        <div class="case-question">❓ 距离会改变友谊吗？异地友谊的维系需要什么？</div>
+        <div class="case-paths">
+          <div class="case-path" onclick="this.style.background='var(--primary)';this.style.color='#fff';">A. 顺其自然</div>
+          <div class="case-path" onclick="this.style.background='var(--primary)';this.style.color='#fff';">B. 定期主动联系</div>
+          <div class="case-path" onclick="this.style.background='var(--primary)';this.style.color='#fff';">C. 利用假期见面</div>
+        </div>
+        <div class="case-insight">友谊需要主动维系；距离不是友谊消失的原因，缺乏主动才是。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 进阶层 -->
+  <div class="tab-content" id="tab-1">
+    <div class="case-card">
+      <div class="case-level intermediate">🌿 进阶层 · 历史经典案例</div>
+      <div class="case-body">
+        <h3>🤝 马克思与恩格斯的友谊</h3>
+        <div class="case-bg">
+          <strong>背景：</strong>马克思与恩格斯因共同的理想相识，在一生中互相支持、默契配合。恩格斯为支持马克思写作《资本论》而从事自己并不喜欢的商业工作，长达二十年。
+        </div>
+        <div class="case-question">❓ 是什么让他们的友谊持续了一生？</div>
+        <p style="margin-bottom:8px;">—— 共同的追求、互补的能力、无条件的信任</p>
+        <div style="margin:8px 0;">
+          <p style="color:var(--text-secondary);font-size:calc(var(--font-body)-1px);"><strong>多方案视角：</strong>如果两人在学术上产生分歧怎么办？他们通过书信坦诚交流解决问题——每一次分歧反而让友谊更加牢固。</p>
+        </div>
+        <div class="case-insight">深厚友谊的基础是共同的价值观；冲突不可怕，沟通方式更重要。</div>
+
+        <div class="branch-task">
+          <h4>🧩 "如果你是决策者" 分支任务</h4>
+          <p>假设马克思和恩格斯在一个重要观点上产生了分歧——其中一人认为应该调整核心主张。如果你是其中一方，你会怎么处理？</p>
+          <p style="margin-top:6px;color:var(--text-secondary);font-size:calc(var(--font-body)-1px);">请用英语写出你的决策思路（80-120词）</p>
+          <button class="btn-branch" onclick="showBranchPrompt('marx-engels')">📝 写决策思路</button>
+          <div id="marx-engels-response" style="display:none;margin-top:10px;">
+            <textarea style="width:100%;padding:10px;border:1px solid var(--border);border-radius:4px;font-family:var(--font-family);font-size:var(--font-body);min-height:80px;" placeholder="Write your decision in English here..."></textarea>
+            <button class="btn-branch" style="margin-top:6px;" onclick="alert('✅ 已保存你的思考！可以分享到班级学习社区继续讨论。')">💾 保存思考</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 挑战层 -->
+  <div class="tab-content" id="tab-2">
+    <div class="case-card">
+      <div class="case-level challenge">🔥 挑战层 · 当代复杂系统案例</div>
+      <div class="case-body">
+        <h3>📱 社交媒体时代的友谊 —— Facebook 的"朋友"算法</h3>
+        <div class="case-bg">
+          <strong>背景：</strong>Facebook 等社交平台将关注对象定义为"朋友（friend）"。研究表明，用户在平台上平均有338个"朋友"，但真正有深度交流的不到10人。
+        </div>
+        <div class="case-question">❓ 平台定义的"朋友"和人类理解的"朋友"是否一致？这种差异带来了什么社会影响？</div>
+        <div style="margin:10px 0;">
+          <p style="font-weight:600;margin-bottom:4px;">多方案视角：</p>
+          <ul style="padding-left:20px;">
+            <li><strong>方案A</strong>：回归传统——只加真正认识的人</li>
+            <li><strong>方案B</strong>：接受定义改变——重新理解"朋友"的含义</li>
+            <li><strong>方案C</strong>：平台改进——为"朋友"分级</li>
+          </ul>
+        </div>
+        <div class="case-insight">技术改变了人际关系的基本概念；我们需要有意识地管理数字时代的友谊。</div>
+
+        <div class="branch-task" style="margin-top:14px;">
+          <h4>🧩 "如果你是决策者" 分支任务</h4>
+          <p>如果你是一家社交平台的产品经理，你如何通过产品设计鼓励"真正友谊"的形成而非表面的"朋友"关系？请设计一个功能方案，并用英语简要描述。</p>
+          <button class="btn-branch" onclick="showBranchPrompt('product-designer')">🎨 设计方案</button>
+          <div id="product-designer-response" style="display:none;margin-top:10px;">
+            <textarea style="width:100%;padding:10px;border:1px solid var(--border);border-radius:4px;font-family:var(--font-family);font-size:var(--font-body);min-height:80px;" placeholder="Describe your feature design in English..."></textarea>
+            <button class="btn-branch" style="margin-top:6px;" onclick="alert('✅ 设计已保存！与同学对比各自的设计方案。')">💾 保存设计</button>
+          </div>
+        </div>
+
+        <h4 style="margin-top:18px;">🔮 多结局模拟</h4>
+        <p style="color:var(--text-secondary);font-size:calc(var(--font-body)-1px);margin-bottom:8px;">点击选择一个结局，思考你更倾向于哪一个</p>
+        <div class="simulation-endings">
+          <div class="ending-card" onclick="selectEnding(this)">
+            <div style="font-weight:700;color:#2e7d32;">结局 A</div>
+            <p style="font-size:calc(var(--font-body)-2px);">平台增加"深度连接"功能，用户只能标记10个以内的 "close friends"</p>
+          </div>
+          <div class="ending-card" onclick="selectEnding(this)">
+            <div style="font-weight:700;color:#c62828;">结局 B</div>
+            <p style="font-size:calc(var(--font-body)-2px);">平台不做任何改变，人们越来越接受"朋友 = 关注者"</p>
+          </div>
+        </div>
+        <div id="ending-response" style="display:none;margin-top:8px;background:var(--bg);border-radius:6px;padding:12px;">
+          <p style="color:var(--text-secondary);">用英语写一段话（60-80词），解释你为什么选择这个结局。</p>
+          <textarea style="width:100%;padding:10px;border:1px solid var(--border);border-radius:4px;font-family:var(--font-family);font-size:var(--font-body);min-height:60px;margin-top:6px;" placeholder="Your reasoning..."></textarea>
+          <button class="btn-branch" style="margin-top:6px;" onclick="alert('✅ 已记录你的选择与思考！')">💾 提交</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:24px;padding:16px;background:var(--card-bg);border-radius:var(--border-radius);border:1px solid var(--border);box-shadow:var(--shadow);">
+    <p style="color:var(--text-secondary);font-size:var(--font-body);">🔁 案例没有标准答案 — 思考过程比答案更重要。用英语记录你的思考并与同学分享！</p>
+  </div>
+</div>
+<script>
+function switchTab(index) {
+  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', i === index);
+  });
+  document.querySelectorAll('.tab-content').forEach((tc, i) => {
+    tc.classList.toggle('active', i === index);
+  });
+}
+function showBranchPrompt(id) {
+  const el = document.getElementById(id + '-response');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+function selectEnding(el) {
+  document.querySelectorAll('.ending-card').forEach(c => c.classList.remove('chosen'));
+  el.classList.add('chosen');
+  document.getElementById('ending-response').style.display = 'block';
+}
+</script>
+</body>
+</html>

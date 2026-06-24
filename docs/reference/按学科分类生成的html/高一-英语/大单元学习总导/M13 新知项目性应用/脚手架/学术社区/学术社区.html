@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学术社区 — 友谊主题</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  padding: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+
+.header {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 24px 32px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--primary);
+}
+
+.header h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+
+.header p {
+  color: var(--text-secondary);
+}
+
+.section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px 28px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+
+.section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bg);
+}
+
+.section h3 {
+  font-size: calc(var(--font-body) + 3px);
+  color: var(--primary);
+  margin: 16px 0 10px;
+}
+
+.discuss-card {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  border-left: 3px solid var(--accent);
+  cursor: pointer;
+  transition: box-shadow 0.3s;
+}
+
+.discuss-card:hover {
+  box-shadow: var(--shadow);
+}
+
+.discuss-card .title {
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.discuss-card .desc {
+  color: var(--text-secondary);
+  font-size: 0.9em;
+}
+
+.detail-toggle {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 12px;
+  font-size: 0.85em;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background 0.2s;
+  font-family: var(--font-family);
+}
+
+.detail-toggle:hover {
+  background: var(--primary-hover);
+}
+
+.detail-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease, margin 0.3s ease;
+  padding: 0 12px;
+  background: #fefefe;
+  border-radius: 4px;
+  border: 1px solid transparent;
+}
+
+.detail-content.show {
+  max-height: 300px;
+  padding: 12px;
+  margin-top: 10px;
+  border-color: var(--border);
+}
+
+.feedback-box {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin: 12px 0;
+  border: 1px dashed var(--accent);
+}
+
+.feedback-box p {
+  margin: 4px 0;
+}
+
+.level-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.level-item {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 14px 16px;
+  text-align: center;
+  border: 1px solid var(--border);
+  transition: transform 0.2s;
+}
+
+.level-item:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow);
+}
+
+.level-item .level-tag {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 3px;
+  padding: 2px 12px;
+  font-size: 0.85em;
+  margin-bottom: 8px;
+}
+
+.level-item .time {
+  color: var(--text-secondary);
+  font-size: 0.85em;
+  margin-top: 6px;
+}
+
+@media (max-width: 640px) {
+  .container { padding: 12px 16px; }
+  .header { padding: 16px 18px; }
+  .section { padding: 14px 16px; }
+  .level-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🤝 学术社区</h1>
+  <p>构建学习共同体——通过讨论、家校协作和真实连接，实现友谊主题的认知社会化建构</p>
+</div>
+
+<div class="section">
+  <h2>👥 同伴连接：讨论与协作</h2>
+
+  <div class="discuss-card">
+    <div class="title">🗣️ Discussion 1：Is it easier to make friends online or offline?</div>
+    <div class="desc">准备 → 分组 → 记录</div>
+    <button class="detail-toggle" onclick="toggleDetail(this)">📋 查看流程</button>
+    <div class="detail-content">
+      <strong>步骤：</strong><br>
+      ① 用5分钟写下自己的观点和至少1个例子<br>
+      ② 4人一组，每人发言2分钟<br>
+      ③ 用英文记录组员的不同观点
+    </div>
+  </div>
+
+  <div class="discuss-card">
+    <div class="title">🗣️ Discussion 2：What should you do when a friend lets you down?</div>
+    <div class="desc">角色分工：提问者 · 记录者 · 观点总结者 · 时间管理者</div>
+    <button class="detail-toggle" onclick="toggleDetail(this)">📋 查看角色说明</button>
+    <div class="detail-content">
+      <strong>角色分配：</strong><br>
+      <strong>提问者</strong> — 引导讨论方向，追问细节<br>
+      <strong>记录者</strong> — 记录每位组员的关键观点<br>
+      <strong>观点总结者</strong> — 讨论结束后做小组总结<br>
+      <strong>时间管理者</strong> — 控制每人2分钟的发言时间
+    </div>
+  </div>
+
+  <div class="discuss-card">
+    <div class="title">🗣️ Discussion 3：Can AI be a real friend?</div>
+    <div class="desc">开放讨论——没有固定答案，重要的是用英文表达你的观点</div>
+    <button class="detail-toggle" onclick="toggleDetail(this)">💡 思考提示</button>
+    <div class="detail-content">
+      思考角度：AI能理解你的感受吗？真正的友谊需要相互性吗？<br>
+      关键词：consciousness, empathy, mutual understanding
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>🏠 家校连接：支持与反馈</h2>
+
+  <div class="feedback-box">
+    <strong>📝 给家长的一封信</strong>
+    <p>请用英语写一封短信，告诉家长你在这个模块学到了什么关于友谊的新认识。</p>
+  </div>
+
+  <div class="feedback-box">
+    <strong>💬 家庭讨论任务</strong>
+    <p>和家长聊聊"他们学生时代最好的朋友"，用英文记录对话要点，在课堂上做简短分享。</p>
+  </div>
+</div>
+
+<div class="section">
+  <h2>🌐 社会连接：真实连接</h2>
+
+  <div class="feedback-box">
+    <strong>🔬 专家了解任务</strong>
+    <p>搜索一位当代研究人际关系的心理学家（如 John Gottman），用英文写一段 100 词左右的简介，介绍其核心研究发现。</p>
+  </div>
+
+  <div class="feedback-box">
+    <strong>🏫 机构了解任务</strong>
+    <p>了解学校的心理咨询室或心理社团，用英文写一段介绍（服务内容、开放时间、联系方式等）。</p>
+  </div>
+</div>
+
+<div class="section">
+  <h2>📤 输出与互评</h2>
+
+  <h3>展示方式</h3>
+  <p style="margin-bottom:8px;">小组讨论后，总结者用英文在全班汇报（2分钟）。优秀的"给家长的信"可发布在班级英语角。</p>
+
+  <h3>互评规则</h3>
+  <p>读一位同学的"友谊沟通方案"，给出 <strong>1 个亮点</strong>和 <strong>1 个改进建议</strong>。</p>
+  <div class="feedback-box">
+    <p><strong>反馈句式模板：</strong></p>
+    <p>• "I really like the part where you..."</p>
+    <p>• "Have you considered..."</p>
+    <p>• "One suggestion I have is..."</p>
+  </div>
+</div>
+
+<div class="section">
+  <h2>🎯 三层任务结构</h2>
+  <div class="level-grid">
+    <div class="level-item">
+      <div class="level-tag">🌟 基础</div>
+      <p>参与 1 个讨论议题</p>
+      <p>+ 完成 1 次互评</p>
+      <div class="time">⏱ 20分钟</div>
+    </div>
+    <div class="level-item">
+      <div class="level-tag" style="background:var(--primary-hover);">🔥 进阶</div>
+      <p>完成全部讨论议题</p>
+      <p>+ 给家长的信</p>
+      <div class="time">⏱ 30分钟</div>
+    </div>
+    <div class="level-item">
+      <div class="level-tag" style="background:#262626;">🚀 挑战</div>
+      <p>专家了解任务</p>
+      <p>+ 制作班级"友谊沟通方案"合集</p>
+      <div class="time">⏱ 40分钟</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function toggleDetail(btn) {
+  var content = btn.nextElementSibling;
+  if (content.classList.contains('show')) {
+    content.classList.remove('show');
+  } else {
+    content.classList.add('show');
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>研学社区 — 友谊案例库</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px 40px;
+  box-sizing: border-box;
+}
+.header {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 24px 28px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--primary);
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 6px;
+  color: var(--primary);
+}
+.header .subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.section-title {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 32px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--border);
+}
+.section-title .tag {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 12px;
+  border-radius: 10px;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+.tag-basic { background:#e6f7ff; color:#1890ff; border:1px solid #91d5ff; }
+.tag-advanced { background:#fff7e6; color:#d46b08; border:1px solid #ffd591; }
+.tag-challenge { background:#f6f0ff; color:#722ed1; border:1px solid #d3adf7; }
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  transition: transform 0.2s;
+}
+.case-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+.case-card .case-num {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 2px;
+}
+.case-card h3 {
+  font-size: 16px;
+  margin: 0 0 10px;
+  color: var(--primary);
+}
+.case-card .case-section {
+  margin-bottom: 10px;
+}
+.case-card .case-label {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 2px;
+}
+.case-card .case-label .icon {
+  margin-right: 4px;
+}
+.case-card p, .case-card .decision-options {
+  margin: 4px 0;
+  font-size: 14px;
+}
+.case-card .decision-options {
+  padding-left: 18px;
+}
+.case-card .decision-options li {
+  margin-bottom: 3px;
+}
+.case-card .result-box {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-top: 8px;
+  border-left: 3px solid var(--accent);
+  font-size: 13.5px;
+}
+.case-card .result-box::before {
+  content: "✅ 决策结果";
+  display: block;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 3px;
+}
+.case-card .insight-box {
+  background: #f0fdf4;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-top: 8px;
+  border-left: 3px solid #22c55e;
+  font-size: 13.5px;
+}
+.case-card .insight-box::before {
+  content: "🌟 可迁移启示";
+  display: block;
+  font-weight: 600;
+  font-size: 12px;
+  color: #16a34a;
+  margin-bottom: 3px;
+}
+.ext-task-box {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+.ext-task-box h3 {
+  font-size: 16px;
+  margin: 0 0 10px;
+  color: var(--primary);
+}
+.ext-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin: 10px 0;
+}
+.ext-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 8px 12px;
+  text-align: left;
+}
+.ext-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.ext-table tr:hover td {
+  background: var(--bg);
+}
+.path-guide {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 16px 0 24px;
+}
+.path-item {
+  flex: 1;
+  min-width: 180px;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  text-align: center;
+}
+.path-item .path-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.path-item .path-cases {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--primary);
+  margin: 4px 0;
+}
+.path-item .path-target {
+  font-size: 13px;
+}
+.interact-toggle {
+  display: none;
+}
+.interact-label {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  padding: 6px 16px;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  margin: 6px 0;
+  transition: background 0.2s;
+  user-select: none;
+}
+.interact-label:hover {
+  background: var(--primary-hover);
+}
+.interact-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+}
+.interact-toggle:checked ~ .interact-content {
+  max-height: 1000px;
+  padding: 10px 0;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🌍 研学社区 / 案例库</h1>
+  <div class="subtitle">英语 · 必修1 · Unit 1 Friendship | M10 新知哲学思维 · 脚手架</div>
+  <div class="subtitle" style="margin-top:4px;">通过"问题—决策—结果"结构，从哲学高度审视友谊的本质、边界与价值</div>
+</div>
+
+<!-- 定位信息 -->
+<div style="background:var(--card-bg); border-radius:var(--border-radius); padding:16px 20px; margin-bottom:20px; box-shadow:var(--shadow); border:1px solid var(--border); font-size:14px;">
+  <strong>🎯 与 M10 模块对接：</strong>从哲学思维角度追问友谊的底层命题——什么是真正的朋友？友谊需要条件吗？友谊与利益能共存吗？
+</div>
+
+<!-- 基础层 -->
+<div class="section-title">基础层 · 生活类案例 <span class="tag tag-basic">贴近日常</span></div>
+
+<div class="case-card">
+  <div class="case-num">案例 1</div>
+  <h3>网络好友 vs 现实好友——谁更"真"？</h3>
+  <div class="case-section">
+    <div class="case-label"><span class="icon">📖</span>背景</div>
+    <p>高一学生小陈在游戏《原神》中结识了一位网友，两人每天聊天、组队，默契十足。但班上同学问"你有几个好朋友"时，小陈犹豫了。</p>
+  </div>
+  <div class="case-section">
+    <div class="case-label"><span class="icon">❓</span>核心问题</div>
+    <p>从未见过面的网友，算不算真正的朋友？友谊是否必须建立在面对面接触之上？</p>
+  </div>
+  <div class="case-section">
+    <div class="case-label"><span class="icon">🔀</span>决策路径</div>
+    <ul class="decision-options">
+      <li><strong>A</strong> 不算——没见过面就不算真正的朋友，需要现实共同经历</li>
+      <li><strong>B</strong> 算——心灵的共鸣比物理距离更重要</li>
+      <li><strong>C</strong> 算一种特殊的朋友——给友谊分类各有价值</li>
+    </ul>
+  </div>
+  <div class="result-box">小陈选择方案 C。他定义了两个友谊圈：现实中的"活动搭子"和网络上的"灵魂共鸣者"，两者并不冲突。</div>
+  <div class="insight-box">友谊不必只有一种定义。哲学思维的第一步，就是敢于追问"定义"本身是否合理。</div>
+</div>
+
+<div class="case-card">
+  <div class="case-num">案例 2</div>
+  <h3>"我帮你"还是"你帮我"——友谊需要公平吗？</h3>
+  <div class="case-section">
+    <div class="case-label"><span class="icon">📖</span>背景</div>
+    <p>小红英语好，经常帮小蓝改作文；小蓝数学好，考试前主动给小红讲了三道大题。小红突然觉得不舒服：朋友之间帮忙，需要等价交换吗？</p>
+  </div>
+  <div class="case-section">
+    <div class="case-label"><span class="icon">❓</span>核心问题</div>
+    <p>友谊中是否存在"公平"原则？帮助朋友时，我们是否在潜意识里记着"账"？</p>
+  </div>
+  <div class="case-section">
+    <div class="case-label"><span class="icon">🔀</span>决策路径</div>
+    <ul class="decision-options">
+      <li><strong>A</strong> 不该算账——真正的友谊就是无私帮助</li>
+      <li><strong>B</strong> 需要平衡——长期单向付出会消耗感情</li>
+      <li><strong>C</strong> 区分"互助"和"交易"——日常小事无需计较</li>
+    </ul>
+  </div>
+  <div class="result-box">小红选择方案 C。她主动说了一句"谢谢你教我"——小蓝开心地说"朋友之间说啥谢"。双方都感到自然。</div>
+  <div class="insight-box">友谊中的"公平感"不是算账，而是被看见和被珍视的体验——你不需要等价回报，但需要对方知道你的付出。</div>
+</div>
+
+<div class="case-card">
+  <div class="case-num">案例 3</div>
+  <h3>好朋友去了"快班"——友谊会变吗？</h3>
+  <div class="case-section">
+    <div class="case-label"><span class="icon">📖</span>背景</div>
+    <p>小杨和小魏从初中就是最好的朋友。高一分班考试后，小魏考入快班，小杨留在普通班。两人课间在走廊相遇，小魏总是匆匆说两句就被同学拉走了。</p>
+  </div>
+  <div class="case-section">
+    <div class="case-label"><span class="icon">❓</span>核心问题</div>
+    <p>当朋友的生活环境和节奏发生变化时，如何维持友谊？</p>
+  </div>
+  <div class="case-section">
+    <div class="case-label"><span class="icon">🔀</span>决策路径</div>
+    <ul class="decision-options">
+      <li><strong>A</strong> 算了——环境不同了，友谊自然会淡</li>
+      <li><strong>B</strong> 每天发消息主动联系——努力维持原来的亲密状态</li>
+      <li><strong>C</strong> 调整期待——接受形式的改变，保持核心连接</li>
+    </ul>
+  </div>
+  <div class="result-box">小杨选择方案 C。两人约定每周五放学后一起喝奶茶聊半小时，质量恢复，甚至比以前更成熟。</div>
+  <div class="insight-box">友谊不是一成不变的"状态"，而是需要定期经营的关系——接受形式的改变，保持核心的真诚。</div>
+</div>
+
+<!-- 进阶层 -->
+<div class="section-title">进阶层 · 行业/历史/社会案例 <span class="tag tag-advanced">深度拓展</span></div>
+
+<div class="case-card">
+  <div class="case-num">案例 4</div>
+  <h3>鲁迅与瞿秋白——"人生得一知己足矣"</h3>
+  <div class="case-section">
+    <div class="case-label"><span class="icon">📖</span>背景</div>
+    <p>1930年代，鲁迅与瞿秋白在白色恐怖中相识。两人年龄相差近20岁，仅见面数次，却通过书信建立了深厚的知己之情。</p>
+  </div>
+  <div class="case-section">
+    <div class="case-label"><span class="icon">❓</span>核心问题</div>
+    <p>友谊是否可以建立在"精神共鸣"之上，而不依赖长时间的相处？</p>
+  </div>
+  <div class="case-section">
+    <div class="case-label"><span class="icon">🔀</span>决策路径</div>
+    <ul class="decision-options">
+      <li><strong>A</strong> 不能——友谊需要时间沉淀</li>
+      <li><strong>B</strong> 能——真正的友谊是灵魂的共鸣</li>
+      <li><strong>C</strong> 可以，但需要特殊条件——对共同理想有极深的认同感时超越时空</li>
+    </ul>
+  </div>
+  <div class="result-box">鲁迅痛书"人生得一知己足矣，斯世当以同怀视之"——精神层面的认同成为中国现代史上友谊的典范。</div>
+  <div class="insight-box">友谊的深度不由相处时间决定。共同的理想和价值观，有时比朝夕相处更能造就深远的友谊。</div>
+</div>
+
+<div class="case-card">
+  <div class="case-num">案例 5</div>
+  <h3>英国"失落的南极探险队"——信任的生死考验</h3>
+  <div class="case-section">
+    <div class="case-label"><span class="icon">📖</span>背景</div>
+    <p>1910年，斯科特南极探险队在返程中遭遇暴风雪。队员奥茨因严重冻伤自知无法跟上队伍，选择自我牺牲。</p>
+  </div>
+  <div class="case-section">
+    <div class="case-label"><span class="icon">❓</span>核心问题</div>
+    <p>在生死抉择面前，友谊意味着什么？当一方愿意为另一方的生存牺牲自己，这是顶峰还是难题？</p>
+  </div>
+  <div class="case-section">
+    <div class="case-label"><span class="icon">🔀</span>决策路径</div>
+    <ul class="decision-options">
+      <li><strong>A</strong> 求生优先——每个人都应为自己争取生存机会</li>
+      <li><strong>B</strong> 集体至上——不放弃任何一个人</li>
+      <li><strong>C</strong> 理性决定——若受伤严重拖累团队，主动分离</li>
+    </ul>
+  </div>
+  <div class="result-box">奥茨说"I am just going outside and may be some time"后走入暴风雪。他们的日记成为友谊与勇气的人类学经典。</div>
+  <div class="insight-box">友谊的最高境界，有时是替对方着想的自愿牺牲。真正的友谊包含"为对方着想"的勇气。</div>
+</div>
+
+<div class="case-card">
+  <div class="case-num">案例 6</div>
+  <h3>社交媒体时代的"孤独连接"</h3>
+  <div class="case-section">
+    <div class="case-label"><span class="icon">📖</span>背景</div>
+    <p>一位华裔美国高中生博主拥有5万粉丝，每天收到数百条留言和点赞，但现实中真正能说心里话的朋友只有0—1个。</p>
+  </div>
+  <div class="case-section">
+    <div class="case-label"><span class="icon">❓</span>核心问题</div>
+    <p>社交媒体时代的"连接"是否稀释了"友谊"？关注者和朋友是一回事吗？</p>
+  </div>
+  <div class="case-section">
+    <div class="case-label"><span class="icon">🔀</span>决策路径</div>
+    <ul class="decision-options">
+      <li><strong>A</strong> 社交媒体朋友也是朋友——点赞和留言是一种社交支持</li>
+      <li><strong>B</strong> 完全不把线上关系当友谊</li>
+      <li><strong>C</strong> 区分"社交连接"和"亲密友谊"——两方面都有意识地经营</li>
+    </ul>
+  </div>
+  <div class="result-box">她选择方案 C。关闭了评论功能，保留与真正朋友的互动，同时参加线下读书会。</div>
+  <div class="insight-box">广度是连接，深度是友谊。不要把"点赞"误认为"友谊"。</div>
+</div>
+
+<!-- 挑战层 -->
+<div class="section-title">挑战层 · 复杂系统/跨领域案例 <span class="tag tag-challenge">高阶思辨</span></div>
+
+<div class="case-card">
+  <div class="case-num">案例 7</div>
+  <h3>中法"姐妹城市"的平民友谊网络</h3>
+  <div class="case-section">
+    <div class="case-label"><span class="icon">📖</span>背景</div>
+    <p>成都与蒙彼利埃是姐妹城市，30年间进行了数百次交流。一位成都学生在寄宿家庭第一周，因吃不惯奶酪被法国妈妈觉得"不尊重法国文化"。</p>
+  </div>
+  <div class="case-section">
+    <div class="case-label"><span class="icon">❓</span>核心问题</div>
+    <p>跨文化交流中，如何处理个体之间因文化差异产生的情感摩擦？</p>
+  </div>
+  <div class="case-section">
+    <div class="case-label"><span class="icon">🔀</span>决策路径</div>
+    <ul class="decision-options">
+      <li><strong>A</strong> 回避差异——忍着不说</li>
+      <li><strong>B</strong> 要求对方迁就——请做中国菜</li>
+      <li><strong>C</strong> 双方向探索——坦诚沟通，寻找双方都能适应方式</li>
+    </ul>
+  </div>
+  <div class="result-box">选择方案 C。三天做法国菜，两天做中餐，周末一起学做新菜。友谊更加深厚。</div>
+  <div class="insight-box">跨文化友谊中，差异不是障碍，而是加深理解的入口。坦诚沟通让差异成为关系的养分。</div>
+</div>
+
+<div class="case-card">
+  <div class="case-num">案例 8</div>
+  <h3>哈佛大学"友谊项目"——76年追踪研究</h3>
+  <div class="case-section">
+    <div class="case-label"><span class="icon">📖</span>背景</div>
+    <p>哈佛"格兰特研究"追踪268名男生一生，持续76年。最重要的发现：决定晚年幸福和健康的唯一关键因素是良好的人际关系质量。</p>
+  </div>
+  <div class="case-section">
+    <div class="case-label"><span class="icon">❓</span>核心问题</div>
+    <p>如果友谊是幸福的最重要因素，我们应该如何从一生尺度来规划和经营友谊？</p>
+  </div>
+  <div class="case-section">
+    <div class="case-label"><span class="icon">🔀</span>决策路径</div>
+    <ul class="decision-options">
+      <li><strong>A</strong> 一切随缘——友谊不是规划出来的</li>
+      <li><strong>B</strong> 系统规划——设定"友谊管理目标"</li>
+      <li><strong>C</strong> 随缘和经营之间找到平衡</li>
+    </ul>
+  </div>
+  <div class="result-box">研究的推荐是方案 C。主动维护核心关系的人，晚年的幸福感和健康水平显著更高。</div>
+  <div class="insight-box">友谊是你能够为自己的未来做出的最好投资。这比你的成绩单更能预测你四十年后的幸福感。</div>
+</div>
+
+<!-- 拓展任务 -->
+<div class="section-title">🧩 拓展任务设计</div>
+
+<div class="ext-task-box">
+  <h3>拓展一："如果你是决策者"分支任务</h3>
+  <p style="font-size:14px; margin-bottom:10px;">选择任一案例，重新假设一个条件改变，推演你的决策路径——用英语回答（100—150词）。</p>
+  <table class="ext-table">
+    <thead><tr><th>案例</th><th>假设条件改变</th><th>你的思考方向</th></tr></thead>
+    <tbody>
+      <tr><td>案例1</td><td>游戏网友突然失联，你发现联系不上他</td><td>还会重新定义这段关系吗？还算友谊吗？</td></tr>
+      <tr><td>案例5</td><td>如果你是奥茨，会走入暴风雪还是请求一起走？</td><td>你的选择背后体现了什么样的友谊观？</td></tr>
+      <tr><td>案例6</td><td>博主发现线上关系可以"升级"为深度友谊</td><td>线上关系升级为深度友谊需要什么条件？</td></tr>
+      <tr><td>案例7</td><td>法国妈妈坚持"客随主便"，拒绝做中餐</td><td>你对"尊重"的理解会改变吗？</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="ext-task-box">
+  <h3>拓展二：多结局模拟</h3>
+  <p style="font-size:14px;">选择案例 3 或案例 4，假设主人公选择不同决策路径，用英语写 150—200 词的"平行结局"（alternate ending）。哪种结局更接近你心目中的"好友谊"？</p>
+  <input type="checkbox" id="toggleExt2" class="interact-toggle">
+  <label for="toggleExt2" class="interact-label">💡 写作提示</label>
+  <div class="interact-content" style="font-size:14px;">
+    <p>思考方向：如果小杨选择每天发消息（方案B），友谊会变得怎样？如果鲁迅和瞿秋白有更多时间相处，他们的友谊会不同吗？</p>
+  </div>
+</div>
+
+<div class="ext-task-box">
+  <h3>拓展三：我的"友谊哲学宣言"</h3>
+  <p style="font-size:14px;">回顾以上最有共鸣的 2—3 个案例，用英语写一份"My Philosophy of Friendship"（200词左右），包含你的友谊定义、原则和判断"真友谊"的标准。</p>
+</div>
+
+<!-- 使用路径 -->
+<div class="section-title">📌 案例库使用建议</div>
+<div class="path-guide">
+  <div class="path-item">
+    <div class="path-label">基础路径</div>
+    <div class="path-cases">案例 1、2、3</div>
+    <div class="path-target">理解友谊的基本哲学命题：定义、公平与变化</div>
+  </div>
+  <div class="path-item">
+    <div class="path-label">进阶路径</div>
+    <div class="path-cases">案例 4、5、6</div>
+    <div class="path-target">从历史和跨文化视角深化对友谊复杂性的认知</div>
+  </div>
+  <div class="path-item">
+    <div class="path-label">挑战路径</div>
+    <div class="path-cases">案例 7、8 + 拓展任务</div>
+    <div class="path-target">培养系统思维，建立个人的"友谊哲学"体系</div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性导学 · 知识城堡建造师</title>
+<style>
+:root {
+  --primary: #434343;
+  --accent: #8c8c8c;
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; background:#1a1a2e; color:#e0e0e0; font-size:var(--font-body); line-height:var(--line-height); overflow-x:hidden; min-height:100vh; }
+.wrapper { width:100%; max-width:none; padding:12px; }
+
+/* Header */
+#header { text-align:center; padding:12px 0 8px; position:relative; }
+#header h1 { font-size:var(--font-h1); font-weight:700; background:linear-gradient(135deg,#ffd43b,#f59f00); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+#header p { font-size:13px; color:#888; }
+#toolbar { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin:8px 0; }
+
+/* Castle sky gradient background */
+#scene { position:relative; width:100%; max-width:900px; margin:0 auto; min-height:420px; background:linear-gradient(180deg,#0d1b2a 0%,#1b2838 40%,#2d4a3e 70%,#4a6b5a 100%); border-radius:16px; border:1px solid rgba(255,255,255,.06); overflow:hidden; }
+
+/* Castle structure */
+#castle { position:relative; width:100%; height:400px; display:flex; align-items:flex-end; justify-content:center; gap:8px; padding:0 20px 10px; }
+.castle-level { position:relative; display:flex; flex-direction:column; align-items:center; transition:all .4s; }
+.level-label { font-size:11px; color:#888; text-align:center; padding:2px 0; }
+.level-frame { border:2px dashed rgba(255,255,255,.1); border-radius:8px; padding:8px; min-width:120px; min-height:80px; transition:all .4s; display:flex; flex-wrap:wrap; gap:4px; align-content:flex-start; justify-content:center; }
+.level-frame.drop-over { border-color:#ffd43b; background:rgba(255,212,59,.08); }
+
+/* Levels */
+#baseLevel { width:320px; }
+#wallLevel { width:260px; }
+#towerLevel { width:200px; }
+
+#baseLevel .level-frame { min-height:100px; border-color:rgba(82,196,26,.3); }
+#wallLevel .level-frame { min-height:90px; border-color:rgba(22,119,255,.3); }
+#towerLevel .level-frame { min-height:80px; border-color:rgba(250,173,20,.3); }
+
+/* Castle decoration */
+.castle-roof { position:absolute; top:-30px; width:0; height:0; border-left:40px solid transparent; border-right:40px solid transparent; border-bottom:30px solid #f59f00; opacity:.7; }
+#towerLevel .castle-roof { border-left-width:30px; border-right-width:30px; }
+
+/* Knowledge bricks */
+.brick { width:56px; height:40px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:600; cursor:grab; user-select:none; transition:all .3s; border:1px solid rgba(255,255,255,.15); text-align:center; padding:2px; line-height:1.2; touch-action:none; }
+.brick:active { cursor:grabbing; }
+.brick.fact { background:rgba(82,196,26,.25); border-color:#52c41a; color:#95de64; }
+.brick.concept { background:rgba(22,119,255,.25); border-color:#1677ff; color:#91caff; }
+.brick.meta { background:rgba(250,173,20,.25); border-color:#faad14; color:#ffe58f; }
+.brick.placed { cursor:default; }
+.brick.placed.fact { opacity:.8; }
+.brick.placed.concept { opacity:.8; }
+.brick.placed.meta { opacity:.8; }
+
+/* Toolbar bricks pool */
+#brickPool { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; padding:12px 16px; background:rgba(255,255,255,.03); border-radius:10px; max-width:900px; margin:8px auto; border:1px solid rgba(255,255,255,.06); }
+#brickPool .brick { width:64px; height:44px; font-size:10px; }
+#brickPool .brick:hover { transform:translateY(-2px); }
+
+/* Controls */
+#controls { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:10px 0; }
+.btn { padding:8px 20px; border:none; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; transition:all .2s; }
+.btn-primary { background:#4dabf7; color:#fff; }
+.btn-primary:hover { background:#339af0; }
+.btn-primary:disabled { opacity:.4; cursor:not-allowed; }
+.btn-success { background:#51cf66; color:#fff; }
+.btn-success:hover { background:#40c057; }
+.btn-success:disabled { opacity:.4; cursor:not-allowed; }
+.btn-outline { background:transparent; border:1px solid rgba(255,255,255,.15); color:#ccc; }
+.btn-outline:hover { background:rgba(255,255,255,.08); }
+.btn-warn { background:#ff6b6b; color:#fff; }
+.btn-warn:hover { background:#ee5a24; }
+
+/* Status */
+#status { text-align:center; font-size:13px; color:#888; padding:6px 0; }
+#status strong { color:#ffd43b; }
+
+/* Verification effects */
+@keyframes crack { 0%{box-shadow:0 0 0 transparent} 25%{box-shadow:0 0 12px #ff6b6b, inset 0 0 12px rgba(255,107,107,.15)} 50%{box-shadow:0 0 0 transparent} 75%{box-shadow:0 0 8px #ff6b6b} 100%{box-shadow:0 0 0 transparent} }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-4px)} 40%{transform:translateX(4px)} 60%{transform:translateX(-3px)} 80%{transform:translateX(3px)} }
+.crack { animation:crack .8s 3; }
+.shake { animation:shake .5s 2; }
+.dashed-bad { border-style:solid!important; border-color:#ff6b6b!important; }
+
+/* Ghost brick */
+.ghost { border:2px dashed rgba(255,255,255,.2)!important; background:rgba(255,255,255,.04)!important; animation:pulse 1.5s infinite; cursor:pointer; }
+@keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:.8} }
+
+/* Summary panel */
+#summaryPanel { display:none; max-width:900px; margin:12px auto; background:rgba(255,255,255,.03); border-radius:12px; padding:20px; border:1px solid rgba(255,255,255,.06); }
+#summaryPanel h3 { font-size:16px; color:#ffd43b; margin-bottom:10px; }
+#summaryPanel .sum-block { padding:8px 12px; margin-bottom:6px; border-radius:6px; border-left:3px solid; font-size:13px; }
+#summaryPanel .sum-block h4 { font-size:14px; margin-bottom:4px; }
+#summaryPanel .sum-block p { color:#888; }
+
+/* Build log */
+#buildLog { position:fixed; right:16px; top:50%; transform:translateY(-50%); width:180px; max-height:50vh; overflow-y:auto; background:rgba(13,15,26,.92); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,.06); border-radius:10px; padding:12px; font-size:11px; z-index:20; display:none; }
+#buildLog h4 { color:#888; margin-bottom:6px; font-size:12px; }
+#buildLog .entry { padding:3px 0; color:#555; border-bottom:1px solid rgba(255,255,255,.03); }
+#buildLog .entry .time { color:#444; }
+#buildLog .entry .action { color:#888; }
+#buildLog:hover { display:block; }
+#logToggle { position:fixed; right:16px; bottom:20px; z-index:25; }
+
+/* Gallery */
+#gallery { max-width:900px; margin:10px auto; display:none; }
+#gallery h3 { font-size:15px; color:#888; margin-bottom:8px; }
+.gallery-track { display:flex; gap:8px; overflow-x:auto; padding:8px 0; }
+.gallery-item { flex:0 0 100px; height:80px; background:rgba(255,255,255,.04); border-radius:8px; border:1px solid rgba(255,255,255,.06); display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:10px; color:#555; cursor:pointer; transition:all .2s; }
+.gallery-item:hover { border-color:rgba(255,255,255,.15); }
+.gallery-item .score { color:#ffd43b; font-weight:600; }
+.gallery-item .bar { width:60%; height:4px; background:rgba(255,255,255,.06); border-radius:2px; margin:4px 0; overflow:hidden; }
+.gallery-item .bar .fill { height:100%; border-radius:2px; transition:width .5s; }
+
+/* Notif */
+#notif { position:fixed; bottom:30px; left:50%; transform:translateX(-50%); z-index:100; padding:10px 24px; border-radius:10px; font-size:14px; opacity:0; transition:all .4s; background:rgba(13,15,26,.95); pointer-events:none; white-space:nowrap; }
+#notif.show { opacity:1; }
+#notif.success { border:1px solid #51cf6644; color:#51cf66; }
+#notif.error { border:1px solid #ff6b6b44; color:#ff6b6b; }
+#notif.info { border:1px solid #4dabf744; color:#4dabf7; }
+
+/* Sun */
+#sun { position:absolute; top:20px; right:40px; width:50px; height:50px; background:radial-gradient(circle,#ffd43b,#f59f00); border-radius:50%; box-shadow:0 0 40px rgba(255,212,59,.3); opacity:.6; }
+
+/* Clouds */
+.cloud { position:absolute; background:rgba(255,255,255,.05); border-radius:30px; }
+.cloud1 { width:80px; height:20px; top:30px; left:20%; animation:drift 20s linear infinite; }
+.cloud2 { width:60px; height:16px; top:50px; left:60%; animation:drift 25s linear infinite; }
+@keyframes drift { 0%{transform:translateX(0)} 100%{transform:translateX(100px)} }
+
+@media (max-width:768px) {
+  #castle { flex-direction:column; align-items:center; height:auto; gap:4px; }
+  #baseLevel, #wallLevel, #towerLevel { width:90%; }
+  .level-frame { min-height:60px; }
+  #buildLog { display:none!important; }
+  #gallery { display:none!important; }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div id="header">
+    <h1>🏰 知识城堡建造师</h1>
+    <p>拖拽知识方块到对应楼层，搭建你的城堡</p>
+  </div>
+
+  <div id="brickPool">
+    <div class="brick fact" data-type="fact" draggable="true">📝 核心词汇</div>
+    <div class="brick fact" data-type="fact" draggable="true">📄 语篇信息</div>
+    <div class="brick fact" data-type="fact" draggable="true">🏮 文化事实</div>
+    <div class="brick fact" data-type="fact" draggable="true">🔤 句型结构</div>
+    <div class="brick concept" data-type="concept" draggable="true">🧩 主题意义</div>
+    <div class="brick concept" data-type="concept" draggable="true">🔗 语用规则</div>
+    <div class="brick concept" data-type="concept" draggable="true">🌍 跨文化比较</div>
+    <div class="brick concept" data-type="concept" draggable="true">📊 语篇分析</div>
+    <div class="brick meta" data-type="meta" draggable="true">🪞 学习反思</div>
+    <div class="brick meta" data-type="meta" draggable="true">💡 价值判断</div>
+    <div class="brick meta" data-type="meta" draggable="true">🎯 学习策略</div>
+  </div>
+
+  <div id="scene">
+    <div class="cloud cloud1"></div>
+    <div class="cloud cloud2"></div>
+    <div id="sun"></div>
+
+    <div id="castle">
+      <div id="baseLevel" class="castle-level">
+        <div class="level-label">🏗️ 地基 · 事实性知识</div>
+        <div class="level-frame" data-level="base"></div>
+      </div>
+      <div id="wallLevel" class="castle-level">
+        <div class="level-label">🧱 墙柱 · 概念性知识</div>
+        <div class="level-frame" data-level="wall"></div>
+      </div>
+      <div id="towerLevel" class="castle-level">
+        <div class="castle-roof"></div>
+        <div class="level-label">🗼 塔尖 · 元认知与价值</div>
+        <div class="level-frame" data-level="tower"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="status">
+    🏗️ 建造进度: <strong id="brickCount">0</strong>/11 块 |
+    地基: <span id="baseCount">0</span> |
+    墙柱: <span id="wallCount">0</span> |
+    塔尖: <span id="towerCount">0</span>
+  </div>
+
+  <div id="controls">
+    <button class="btn btn-primary" id="verifyBtn" onclick="verifyCastle()" disabled>🔍 验收城堡</button>
+    <button class="btn btn-success" id="sumBtn" onclick="showSummary()" disabled>✨ 生成单元总结</button>
+    <button class="btn btn-outline" onclick="resetCastle()">↺ 重建</button>
+  </div>
+
+  <div id="summaryPanel">
+    <h3>✨ 知识城堡总结</h3>
+    <div id="summaryContent"></div>
+    <div style="margin-top:12px;display:flex;gap:8px;">
+      <button class="btn btn-outline" onclick="document.getElementById('summaryPanel').style.display='none'">关闭</button>
+      <button class="btn btn-success" onclick="showNotif('📥 总结已保存至学习档案','success')">📥 保存总结</button>
+    </div>
+  </div>
+
+  <div id="gallery">
+    <h3>🏘️ 城堡画廊 — 其他同学的作品</h3>
+    <div class="gallery-track" id="galleryTrack"></div>
+  </div>
+
+  <div id="buildLog">
+    <h4>📋 建造日志</h4>
+    <div id="logEntries"></div>
+  </div>
+
+  <div id="notif"></div>
+</div>
+
+<script>
+const LEVEL_MAP = { fact:'base', concept:'wall', meta:'tower' };
+const LEVEL_NAMES = { base:'地基·事实性', wall:'墙柱·概念性', tower:'塔尖·元认知' };
+const LEVEL_COLORS = { base:'#52c41a', wall:'#1677ff', tower:'#faad14' };
+const TOTAL_BRICKS = 11;
+let placed = JSON.parse(localStorage.getItem('castle_placed')||'[]');
+let buildLog = JSON.parse(localStorage.getItem('castle_log')||'[]');
+
+// Drag and drop
+document.querySelectorAll('.brick[draggable]').forEach(b => {
+  b.addEventListener('dragstart', e => {
+    if(b.classList.contains('placed')) { e.preventDefault(); return; }
+    e.dataTransfer.setData('text/plain', b.dataset.type);
+    e.dataTransfer.effectAllowed = 'move';
+    b.style.opacity = '.4';
+    setTimeout(() => b.style.opacity = '', 0);
+  });
+  b.addEventListener('dragend', e => { b.style.opacity = ''; });
+
+  // Touch
+  let touchClone = null;
+  b.addEventListener('touchstart', e => {
+    if(b.classList.contains('placed')) return;
+    const t = e.touches[0];
+    touchClone = b.cloneNode(true);
+    touchClone.style.position = 'fixed';
+    touchClone.style.zIndex = '50';
+    touchClone.style.width = '64px';
+    touchClone.style.height = '44px';
+    touchClone.style.pointerEvents = 'none';
+    touchClone.style.left = (t.clientX - 32)+'px';
+    touchClone.style.top = (t.clientY - 22)+'px';
+    touchClone.style.opacity = '.8';
+    document.body.appendChild(touchClone);
+    b.dataset.touching = '1';
+  }, {passive:true});
+
+  b.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if(!touchClone) return;
+    const t = e.touches[0];
+    touchClone.style.left = (t.clientX - 32)+'px';
+    touchClone.style.top = (t.clientY - 22)+'px';
+  }, {passive:false});
+
+  b.addEventListener('touchend', e => {
+    if(!touchClone || !b.dataset.touching) return;
+    document.body.removeChild(touchClone);
+    touchClone = null;
+    delete b.dataset.touching;
+    const t = e.changedTouches[0];
+    const frames = document.querySelectorAll('.level-frame');
+    for(const frame of frames) {
+      const rect = frame.getBoundingClientRect();
+      if(t.clientX >= rect.left && t.clientX <= rect.right &&
+         t.clientY >= rect.top && t.clientY <= rect.bottom) {
+        const level = frame.dataset.level;
+        const expected = LEVEL_MAP[b.dataset.type];
+        if(level === expected) {
+          placeBrick(b, frame);
+        } else {
+          showNotif(`⚠️ "${b.textContent.trim()}" 应放在${LEVEL_NAMES[expected]}层`, 'error');
+        }
+        break;
+      }
+    }
+  }, {passive:true});
+});
+
+document.querySelectorAll('.level-frame').forEach(frame => {
+  frame.addEventListener('dragover', e => { e.preventDefault(); frame.classList.add('drop-over'); });
+  frame.addEventListener('dragleave', e => { frame.classList.remove('drop-over'); });
+  frame.addEventListener('drop', e => {
+    e.preventDefault();
+    frame.classList.remove('drop-over');
+    const type = e.dataTransfer.getData('text/plain');
+    const brick = document.querySelector(`.brick[data-type="${type}"]:not(.placed)`);
+    if(!brick) return;
+    const level = frame.dataset.level;
+    const expected = LEVEL_MAP[type];
+    if(level === expected) {
+      placeBrick(brick, frame);
+    } else {
+      showNotif(`⚠️ "${brick.textContent.trim()}" 应放在${LEVEL_NAMES[expected]}层`, 'error');
+    }
+  });
+});
+
+function placeBrick(brickEl, frame) {
+  const label = brickEl.textContent.trim();
+  const type = brickEl.dataset.type;
+  const level = frame.dataset.level;
+
+  // Check duplicates
+  if(placed.some(p => p.label === label)) return;
+
+  const clone = brickEl.cloneNode(true);
+  clone.classList.add('placed');
+  clone.draggable = false;
+  clone.style.width = '52px';
+  clone.style.height = '36px';
+  clone.style.fontSize = '8px';
+  clone.removeAttribute('data-touching');
+  frame.appendChild(clone);
+
+  brickEl.classList.add('placed');
+  brickEl.draggable = false;
+  brickEl.style.opacity = '.4';
+
+  placed.push({ label, type, level });
+  buildLog.push({ time: new Date().toLocaleTimeString(), action:`放置 "${label}" → ${LEVEL_NAMES[level]}` });
+  save();
+  updateUI();
+  showNotif(`✅ "${label}" 已放置到${LEVEL_NAMES[level]}层！`, 'success');
+}
+
+function updateUI() {
+  document.getElementById('brickCount').textContent = placed.length;
+  document.getElementById('baseCount').textContent = placed.filter(p=>p.level==='base').length;
+  document.getElementById('wallCount').textContent = placed.filter(p=>p.level==='wall').length;
+  document.getElementById('towerCount').textContent = placed.filter(p=>p.level==='tower').length;
+  document.getElementById('verifyBtn').disabled = placed.length === 0;
+  document.getElementById('sumBtn').disabled = placed.length < TOTAL_BRICKS;
+  renderLog();
+}
+
+function renderLog() {
+  const el = document.getElementById('logEntries');
+  el.innerHTML = buildLog.slice(-15).reverse().map(e =>
+    `<div class="entry"><span class="time">${e.time}</span> <span class="action">${e.action}</span></div>`
+  ).join('');
+}
+
+function resetCastle() {
+  if(!confirm('确定要重建城堡吗？所有已放置的方块将被清空。')) return;
+  placed = []; buildLog = [];
+  save();
+  document.querySelectorAll('.level-frame').forEach(f => f.innerHTML = '');
+  document.querySelectorAll('.brick').forEach(b => {
+    b.classList.remove('placed'); b.draggable = true; b.style.opacity = '';
+  });
+  document.querySelectorAll('.level-frame').forEach(f => {
+    f.classList.remove('crack','shake','dashed-bad');
+  });
+  document.getElementById('summaryPanel').style.display = 'none';
+  updateUI();
+  showNotif('🔄 城堡已重建', 'info');
+}
+
+function verifyCastle() {
+  if(placed.length === 0) return;
+  showNotif('🔍 开始验收城堡结构...', 'info');
+
+  const frames = document.querySelectorAll('.level-frame');
+  frames.forEach(f => f.classList.remove('crack','shake','dashed-bad'));
+
+  let hasIssue = false;
+  setTimeout(() => {
+    // Check base level has at least 2 bricks
+    const baseCount = placed.filter(p=>p.level==='base').length;
+    if(baseCount < 2) {
+      document.querySelector('#baseLevel .level-frame').classList.add('crack','dashed-bad');
+      showNotif('⚠️ 地基不稳！请补充至少2个事实性知识方块', 'error');
+      hasIssue = true;
+    }
+    // Check wall level
+    const wallCount = placed.filter(p=>p.level==='wall').length;
+    if(wallCount < 2) {
+      document.querySelector('#wallLevel .level-frame').classList.add('shake','dashed-bad');
+      if(!hasIssue) showNotif('⚠️ 墙柱缺少支撑！请补充概念性知识', 'error');
+      hasIssue = true;
+    }
+    // Check tower
+    const towerCount = placed.filter(p=>p.level==='tower').length;
+    if(towerCount < 1) {
+      document.querySelector('#towerLevel .level-frame').classList.add('shake','dashed-bad');
+      if(!hasIssue) showNotif('⚠️ 塔尖不稳！请补充元认知或价值知识', 'error');
+      hasIssue = true;
+    }
+
+    if(!hasIssue && placed.length < TOTAL_BRICKS) {
+      // Show ghost bricks for missing ones
+      const existing = new Set(placed.map(p=>p.label));
+      document.querySelectorAll('.brick').forEach(b => {
+        if(b.classList.contains('placed')) return;
+        const label = b.textContent.trim();
+        if(!existing.has(label)) {
+          const type = b.dataset.type;
+          const level = LEVEL_MAP[type];
+          const frame = document.querySelector(`.level-frame[data-level="${level}"]`);
+          if(!frame.querySelector(`.ghost[data-label="${label}"]`)) {
+            const ghost = document.createElement('div');
+            ghost.className = 'brick ghost';
+            ghost.dataset.label = label;
+            ghost.textContent = '? '+label;
+            ghost.style.fontSize = '8px';
+            ghost.style.width = '52px';
+            ghost.style.height = '36px';
+            ghost.onclick = () => { showNotif(`💡 回到上方工具栏找到"${label}"并拖放过来`, 'info'); };
+            frame.appendChild(ghost);
+          }
+        }
+      });
+    }
+
+    if(!hasIssue && placed.length >= TOTAL_BRICKS) {
+      showNotif('🎉 城堡验收通过！结构稳固，点击生成总结', 'success');
+    } else if(!hasIssue) {
+      showNotif('🏗️ 结构基本稳固，继续放置剩余方块吧！', 'info');
+    }
+  }, 500);
+}
+
+function showSummary() {
+  const panel = document.getElementById('summaryPanel');
+  panel.style.display = 'block';
+
+  const baseItems = placed.filter(p=>p.level==='base').map(p=>p.label);
+  const wallItems = placed.filter(p=>p.level==='wall').map(p=>p.label);
+  const towerItems = placed.filter(p=>p.level==='tower').map(p=>p.label);
+
+  document.getElementById('summaryContent').innerHTML = `
+    <div class="sum-block" style="border-color:#52c41a">
+      <h4 style="color:#52c41a">🏗️ 地基 — 事实性知识</h4>
+      <p>${baseItems.length ? '🔹 '+baseItems.join('<br>🔹 ') : '暂无'}</p>
+    </div>
+    <div class="sum-block" style="border-color:#1677ff">
+      <h4 style="color:#1677ff">🧱 墙柱 — 概念性知识</h4>
+      <p>${wallItems.length ? '🔹 '+wallItems.join('<br>🔹 ') : '暂无'}</p>
+    </div>
+    <div class="sum-block" style="border-color:#faad14">
+      <h4 style="color:#faad14">🗼 塔尖 — 元认知与价值</h4>
+      <p>${towerItems.length ? '🔹 '+towerItems.join('<br>🔹 ') : '暂无'}</p>
+    </div>
+    <div class="sum-block" style="border-color:#ffd43b;background:rgba(255,212,59,.05)">
+      <h4 style="color:#ffd43b">📐 结构概要</h4>
+      <p>总知识块: ${placed.length}/${TOTAL_BRICKS} | 完整度: ${Math.round(placed.length/TOTAL_BRICKS*100)}%</p>
+    </div>
+  `;
+
+  panel.scrollIntoView({ behavior:'smooth' });
+}
+
+function showNotif(msg, type='info') {
+  const el = document.getElementById('notif');
+  el.textContent = msg; el.className = 'show '+type;
+  clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+function save() {
+  localStorage.setItem('castle_placed', JSON.stringify(placed));
+  localStorage.setItem('castle_log', JSON.stringify(buildLog));
+}
+
+// Load saved
+function loadSaved() {
+  placed.forEach(p => {
+    const brick = document.querySelector(`.brick[data-type="${p.type}"]:not(.placed)`);
+    if(!brick) return;
+    const frame = document.querySelector(`.level-frame[data-level="${p.level}"]`);
+    if(!frame) return;
+    const clone = brick.cloneNode(true);
+    clone.classList.add('placed'); clone.draggable = false;
+    clone.style.width = '52px'; clone.style.height = '36px'; clone.style.fontSize = '8px';
+    frame.appendChild(clone);
+    brick.classList.add('placed'); brick.draggable = false; brick.style.opacity = '.4';
+  });
+  updateUI();
+}
+
+// Gallery
+function renderGallery() {
+  const track = document.getElementById('galleryTrack');
+  const galleries = [
+    { name:'同学A', score:92, fill:92, struct:'优秀' },
+    { name:'同学B', score:78, fill:78, struct:'良好' },
+    { name:'同学C', score:65, fill:65, struct:'中等' },
+    { name:'同学D', score:85, fill:85, struct:'良好' },
+    { name:'你', score:Math.round(placed.length/TOTAL_BRICKS*100), fill:Math.round(placed.length/TOTAL_BRICKS*100), struct:placed.length>=TOTAL_BRICKS?'优秀':'在建' },
+  ];
+  track.innerHTML = galleries.map(g => `
+    <div class="gallery-item" onclick="showNotif('${g.name}: 结构${g.struct}，完整度${g.score}%','info')">
+      <div style="color:#e0e0e0">${g.name}</div>
+      <div class="bar"><div class="fill" style="width:${g.fill}%;background:#ffd43b"></div></div>
+      <div class="score">${g.score}分</div>
+    </div>
+  `).join('');
+}
+
+loadSaved();
+renderGallery();
+
+// Show gallery & log on desktop
+if(window.innerWidth > 768) {
+  document.getElementById('gallery').style.display = 'block';
+  document.getElementById('buildLog').style.display = 'block';
+}
+</script>
+</body>
+</html>

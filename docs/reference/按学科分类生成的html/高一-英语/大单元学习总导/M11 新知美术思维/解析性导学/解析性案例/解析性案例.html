@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性案例 — 七阶适配案例</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 3px solid var(--accent);
+}
+h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 28px 0 12px;
+  padding-left: 12px;
+  border-left: 4px solid var(--accent);
+}
+h3 {
+  font-size: calc(var(--font-body) + 2px);
+  color: var(--primary);
+  margin: 20px 0 10px;
+  font-weight: 600;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  transition: box-shadow 0.3s;
+}
+.card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.case-tag {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--bg);
+  color: var(--primary);
+  border: 1px solid var(--accent);
+  margin-bottom: 10px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 14px;
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+th {
+  background: var(--bg);
+  color: var(--primary);
+  font-weight: 600;
+}
+tr:nth-child(even) { background: #fafafa; }
+.principle-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 4px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+  margin: 2px 4px 2px 0;
+}
+ul, ol { padding-left: 22px; margin: 8px 0; }
+li { margin-bottom: 6px; }
+.reflection-box {
+  background: #fafafa;
+  border-left: 4px solid var(--primary);
+  padding: 16px 20px;
+  margin: 20px 0;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+}
+.reflection-box ol { counter-reset: item; }
+.reflection-box li { margin-bottom: 10px; }
+.click-reveal {
+  cursor: pointer;
+  color: var(--primary-hover);
+  font-weight: 600;
+  border-bottom: 1px dashed var(--accent);
+  transition: color 0.2s;
+}
+.click-reveal:hover { color: var(--primary); }
+.reveal-content {
+  display: none;
+  margin-top: 10px;
+  padding: 12px 16px;
+  background: var(--bg);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+.reveal-content.show { display: block; }
+.case-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.case-number {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary);
+}
+.principles-list { margin: 6px 0; }
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  table { font-size: 13px; }
+  th, td { padding: 6px 8px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🔍 解析性案例 — 七阶适配案例</h1>
+<p style="color:var(--text-secondary);margin-bottom:20px;">围绕「美术思维+友谊」主题，7个难度递进的解析案例。运用四大解析性原理（视觉要素拆解、色彩—情感解码、空间结构解析、符号—意义关联）逐层深入分析。</p>
+
+<div class="card">
+  <div class="case-header">
+    <span class="case-number">案例一</span>
+    <span class="case-tag">生活情境</span>
+  </div>
+  <h3>📩 一张英语友谊贺卡</h3>
+  <p><strong>材料：</strong>一张英语贺卡，封面写着"To my best friend"，有红色爱心简笔画，内页有英语祝福语，整体用粉色和红色。</p>
+  <p><strong>解析任务：</strong>分析贺卡在色彩、图标、文字三方面的设计意图。为什么选粉红和红色？爱心为什么是"通用友谊符号"？</p>
+  <div class="principles-list">
+    <span class="principle-badge">视觉要素拆解原理</span>
+    <span class="principle-badge">色彩—情感解码原理</span>
+  </div>
+
+  <table>
+    <tr><th>视觉要素</th><th>观察到什么</th><th>可能的设计意图</th></tr>
+    <tr><td>色彩</td><td>粉红 + 红色</td><td>暖色 → 温暖 / 关爱</td></tr>
+    <tr><td>图标</td><td>爱心</td><td>代表爱 / 喜欢</td></tr>
+    <tr><td>文字</td><td>祝福语</td><td>传递核心信息</td></tr>
+  </table>
+
+  <p class="click-reveal" onclick="toggleReveal(this)">💡 点击查看参考思路</p>
+  <div class="reveal-content">粉色和红色是暖色系中代表"温暖/爱意"的颜色——友谊主题常用暖色而非冷色。爱心是人类通用的"情感符号"，不需要翻译就能被理解——这就是"符号—意义关联"。你是否还能想到其他融入文化元素的友谊符号？</div>
+</div>
+
+<div class="card">
+  <div class="case-header">
+    <span class="case-number">案例二</span>
+    <span class="case-tag">校园情境</span>
+  </div>
+  <h3>🏫 校园英语角海报分析</h3>
+  <p><strong>材料：</strong>学校英语角海报："English Corner — Every Friday 4pm — Library Room 201 — Come and Make Friends!" 上有对话气泡和握手图标，用蓝色和黄色。</p>
+  <p><strong>解析任务：</strong>用"空间结构解析原理"分析海报的信息排版结构——信息优先级是否正确？</p>
+  <div class="principles-list">
+    <span class="principle-badge">空间结构解析原理</span>
+    <span class="principle-badge">视觉要素拆解原理</span>
+  </div>
+
+  <table>
+    <tr><th>结构要素</th><th>观察到的设计</th><th>优劣分析</th></tr>
+    <tr><td>标题位置</td><td>中央偏上，字号最大</td><td>✅ 第一时间抓住注意力</td></tr>
+    <tr><td>信息层级</td><td>活动名称 → 时间 → 地点 → 邀请语</td><td>✅ 逻辑递进，合理</td></tr>
+    <tr><td>阅读顺序</td><td>从上到下，从左到右</td><td>⚠️ 需要测试是否3秒内可读完</td></tr>
+  </table>
+
+  <p class="click-reveal" onclick="toggleReveal(this)">💡 点击查看参考思路</p>
+  <div class="reveal-content">海报的信息优先级应为"活动名称→时间→地点→邀请语"——你的眼睛按什么顺序扫过这些信息？优化建议：标题字号可再放大20%，地点信息可用图标辅助，让非英语母语者也能一眼看懂。</div>
+</div>
+
+<div class="card">
+  <div class="case-header">
+    <span class="case-number">案例三</span>
+    <span class="case-tag">家庭/社区情境</span>
+  </div>
+  <h3>👥 英语友谊对话的角色关系图</h3>
+  <p><strong>材料：</strong>一段英语对话——Tom和Jerry在聊"你最好的朋友是谁"。</p>
+  <p><strong>解析任务：</strong>阅读对话文本，用"空间结构解析原理"把人物关系画成视觉关系图。</p>
+  <div class="principles-list">
+    <span class="principle-badge">空间结构解析原理</span>
+    <span class="principle-badge">符号—意义关联原理</span>
+  </div>
+
+  <table>
+    <tr><th>人物</th><th>说了什么</th><th>代表什么关系特征</th></tr>
+    <tr><td>Tom</td><td>"My best friend is Mike. We've known each other since childhood."</td><td>长久陪伴，青梅竹马</td></tr>
+    <tr><td>Jerry</td><td>"We share everything — dreams, secrets, even sandwiches!"</td><td>亲密无间，完全信任</td></tr>
+  </table>
+
+  <p class="click-reveal" onclick="toggleReveal(this)">💡 点击查看参考思路</p>
+  <div class="reveal-content">对话中的关键词（"since childhood""share""trust"）可以在关系图中用不同颜色和连线类型表示——实线代表已知关系，虚线代表情感连接，箭头方向表示对话指向。</div>
+</div>
+
+<div class="card">
+  <div class="case-header">
+    <span class="case-number">案例四</span>
+    <span class="case-tag">学科核心情境</span>
+  </div>
+  <h3>📖 课本中"Friendship"单元插画分析</h3>
+  <p><strong>材料：</strong>教材Unit 1单元首页主图/插图。</p>
+  <p><strong>解析任务：</strong>用全部4条原理分析插图设计——色彩、构图、符号在传达什么？</p>
+  <div class="principles-list">
+    <span class="principle-badge">全部4条原理</span>
+  </div>
+
+  <table>
+    <tr><th>原理维度</th><th>观察与分析</th></tr>
+    <tr><td>视觉要素</td><td>色彩柔和（蓝/白/绿）、人物表情友好、文字精炼</td></tr>
+    <tr><td>色彩—情感</td><td>蓝色主调→冷静/信任，绿色点缀→成长/希望</td></tr>
+    <tr><td>空间结构</td><td>中心构图，人物在中央，周围是对话气泡</td></tr>
+    <tr><td>符号—意义</td><td>握手→友谊，地球仪→跨文化，书本→学习</td></tr>
+  </table>
+
+  <p class="click-reveal" onclick="toggleReveal(this)">💡 点击查看参考思路</p>
+  <div class="reveal-content">英语课本插图的视觉设计一定有教学意图——不只是"好看"，更要"好懂"。想一想：如果去掉这张图，只保留文字，你对单元主题的第一印象会有什么不同？</div>
+</div>
+
+<div class="card">
+  <div class="case-header">
+    <span class="case-number">案例五</span>
+    <span class="case-tag">跨学科情境</span>
+  </div>
+  <h3>📝 英语友谊诗的视觉排版分析</h3>
+  <p><strong>材料：</strong>短诗"A Friend is Someone Who..."——分析如何排版到贺卡上。</p>
+  <p><strong>解析任务：</strong>为这首诗设计视觉排版方案（字体、颜色、排版方式）。</p>
+  <div class="principles-list">
+    <span class="principle-badge">色彩—情感解码原理</span>
+    <span class="principle-badge">视觉要素拆解原理</span>
+  </div>
+
+  <table>
+    <tr><th>设计要素</th><th>你的建议</th><th>理由</th></tr>
+    <tr><td>字体选择</td><td>手写体（如 Bradley Hand）</td><td>亲切、有温度、像亲手写的</td></tr>
+    <tr><td>主色调</td><td>暖橙色 + 米白色背景</td><td>橙色代表温暖，米白不抢文字风头</td></tr>
+    <tr><td>排版方式</td><td>居中排列，每行短句</td><td>留白充足，让每个词有"呼吸"空间</td></tr>
+  </table>
+
+  <p class="click-reveal" onclick="toggleReveal(this)">💡 点击查看参考思路</p>
+  <div class="reveal-content">诗歌排版通常需要大量"留白"，让每个词有呼吸的空间——这和课本信息的密集排版完全不同。留白不是浪费空间，而是让文字"被看见"的设计策略。</div>
+</div>
+
+<div class="card">
+  <div class="case-header">
+    <span class="case-number">案例六</span>
+    <span class="case-tag">社会/未来情境</span>
+  </div>
+  <h3>🌍 社交媒体"友谊日"活动海报分析</h3>
+  <p><strong>材料：</strong>某国际组织发布社交媒体宣传图——一双手握在一起，背景是不同肤色笑脸拼接，彩虹色主调，中央写着"Friendship Without Borders"。</p>
+  <p><strong>解析任务：</strong>用"符号—意义关联原理"分析每个视觉元素的文化含义和传播效果。</p>
+  <div class="principles-list">
+    <span class="principle-badge">符号—意义关联原理</span>
+    <span class="principle-badge">色彩—情感解码原理</span>
+  </div>
+
+  <table>
+    <tr><th>视觉元素</th><th>它在表达什么</th><th>它是"文化通用"的吗？</th></tr>
+    <tr><td>握手</td><td>友好、问候、达成一致</td><td>⚠️ 大部分文化通用，但部分文化用鞠躬/拥抱</td></tr>
+    <tr><td>不同肤色</td><td>多样性、包容性、全球化</td><td>✅ 传达"跨越种族"的友谊</td></tr>
+    <tr><td>彩虹色</td><td>多样性、希望、LGBTQ+ 等多元含义</td><td>⚠️ 在不同文化可能有不同解读</td></tr>
+  </table>
+
+  <p class="click-reveal" onclick="toggleReveal(this)">💡 点击查看参考思路</p>
+  <div class="reveal-content">握手是全世界都懂的友好手势，但不同文化中"友好"的身体语言不同——比如鞠躬 vs 拥抱 vs 握手。彩虹色在有些文化代表多样性，在其他文化可能有不同含义。设计要考虑目标受众的文化背景。</div>
+</div>
+
+<div class="card">
+  <div class="case-header">
+    <span class="case-number">案例七</span>
+    <span class="case-tag">综合迁移</span>
+  </div>
+  <h3>🎯 综合迁移 — 为陌生英语海报做"视觉解析报告"</h3>
+  <p><strong>材料：</strong>从网上、教室墙上或手机里找一张你没见过的英语友谊/社交主题海报或宣传图。</p>
+  <p><strong>解析任务：</strong>运用全部4条原理，写一份200词以上的英语"Visual Analysis Report"。</p>
+  <div class="principles-list">
+    <span class="principle-badge">全部4条解析性原理</span>
+  </div>
+
+  <p><strong>报告结构建议：</strong></p>
+  <ol>
+    <li>海报整体印象（1句话）</li>
+    <li>色彩分析</li>
+    <li>构图分析</li>
+    <li>符号分析</li>
+    <li>综合评价</li>
+  </ol>
+
+  <p><em>使用前6个案例练习过的记录表格式，综合填写完整报告。</em></p>
+</div>
+
+<div class="reflection-box">
+  <h2>🧠 七阶案例后的综合反思</h2>
+  <ol>
+    <li>哪个案例最容易分析？为什么——是因为材料简单，还是你已经掌握了对应的原理？</li>
+    <li>哪个案例你最想不出来从何下手？困难出现在哪个环节？</li>
+    <li>在这7个案例中，哪条解析性原理最常用？有没有哪个原理你几乎没有用到？</li>
+    <li>现在还不会用哪条原理？你需要什么帮助才能掌握它？</li>
+    <li>这些案例中分析的"视觉设计技巧"如何帮助你设计更好的友谊学习成果？</li>
+  </ol>
+  <p style="margin-top:10px;color:var(--text-secondary);">💡 点击任意反思问题区域可展开笔记区</p>
+  <div style="margin-top:12px;">
+    <textarea placeholder="在此写下你的反思笔记..." style="width:100%;min-height:80px;padding:12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:14px;resize:vertical;background:var(--card-bg);" rows="3"></textarea>
+  </div>
+</div>
+
+</div>
+
+<script>
+function toggleReveal(el) {
+  var content = el.nextElementSibling;
+  if (content && content.classList.contains('reveal-content')) {
+    content.classList.toggle('show');
+    el.textContent = content.classList.contains('show') ? '🙈 点击收起参考思路' : '💡 点击查看参考思路';
+  }
+}
+</script>
+</body>
+</html>

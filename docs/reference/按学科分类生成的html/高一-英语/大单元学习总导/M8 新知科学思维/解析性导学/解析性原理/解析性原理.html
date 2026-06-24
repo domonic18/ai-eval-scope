@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性原理 · 从示例到方法</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  width: 100%;
+  max-width: none;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  padding: 20px;
+}
+.wrapper { width: 100%; max-width: none; }
+.header {
+  background: linear-gradient(135deg, #434343 0%, #6b6b6b 100%);
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header p { font-size: 14px; opacity: 0.85; }
+.section-title {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 28px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--primary);
+}
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px 18px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+.card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.10); }
+.card h3 {
+  font-size: 16px;
+  color: var(--primary);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.card h3 .num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.card h3 .arrow {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition: transform 0.25s;
+}
+.card h3 .arrow.open { transform: rotate(180deg); }
+.card-body { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
+.card-body.open { max-height: 800px; }
+.card-body-inner { padding-top: 6px; }
+.card-body-inner p { font-size: 13px; margin-bottom: 6px; }
+.card-body-inner strong { color: var(--primary); }
+.tag {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--primary);
+  border: 1px solid var(--border);
+}
+.exercise-box {
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin: 14px 0;
+}
+.exercise-box h4 { font-size: 15px; color: var(--primary); margin-bottom: 6px; }
+.exercise-box p { font-size: 13px; margin-bottom: 4px; }
+.checklist {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin: 20px 0;
+  box-shadow: var(--shadow);
+}
+.checklist h4 { font-size: 15px; color: var(--primary); margin-bottom: 10px; }
+.checklist label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 14px;
+  cursor: pointer;
+}
+.checklist input[type="checkbox"] {
+  margin-top: 3px;
+  width: 16px; height: 16px;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+}
+.checklist input[type="checkbox"]:checked + span {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+.intro-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  padding: 14px 18px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  margin-bottom: 18px;
+  box-shadow: var(--shadow);
+}
+.principle-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+.principle-summary .item {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  border-radius: var(--border-radius);
+  text-align: center;
+  font-size: 13px;
+}
+.principle-summary .item strong { display: block; color: var(--primary); font-size: 14px; margin-bottom: 2px; }
+@media (max-width: 640px) {
+  .principle-summary { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<div class="header">
+  <h1>🧠 解析性原理</h1>
+  <p>从示例到方法 · 提炼可迁移的解析工具</p>
+</div>
+
+<div class="intro-text">
+  <strong>💡 回顾：</strong>在上一环节（解析性示例）中，你跟着专家一步步分析了Emma的博客文章。但学习不能停留在"看懂一个案例"——真正的学习发生在<strong>你从案例中提炼出可以反复使用的方法</strong>时。<br><br>
+  以下5条解析性原理，就是从Emma的博客分析过程中提炼出来的。下次你面对任何一篇英语文章或交际情境，都可以用它们来帮你分析。
+</div>
+
+<!-- 原理快速概览 -->
+<div class="section-title">📌 5条解析性原理速览</div>
+<div class="principle-summary">
+  <div class="item"><strong>原理1</strong>转折标记法</div>
+  <div class="item"><strong>原理2</strong>数据对比法</div>
+  <div class="item"><strong>原理3</strong>论证链构建法</div>
+  <div class="item"><strong>原理4</strong>认知转折识别法</div>
+  <div class="item"><strong>原理5</strong>论证强度判断法</div>
+</div>
+
+<div class="section-title">🔍 解析性原理详解</div>
+
+<div class="card">
+  <h3 onclick="toggleCard(this)"><span class="num">1</span> 转折标记法 <span class="tag">阅读·议论文</span><span class="arrow">▼</span></h3>
+  <div class="card-body">
+    <div class="card-body-inner">
+      <p><strong>原理说明：</strong>关注文本中的转折词（but, however, that's when, actually, yet, instead），这些词后面往往跟着作者的核心观点或论证的关键转折。</p>
+      <p><strong>在本示例中的体现：</strong>"That's when I realized"揭示了作者认知转变的关键时刻，后面跟着核心观点。</p>
+      <p><strong>如何使用：</strong>读英语文本时，先快速扫描转折词，在它们下面画线，然后回到这些划线处细读。</p>
+      <p><strong>可迁移场景：</strong>议论文、博客、新闻评论、TED演讲稿</p>
+      <p><strong>⚠️ 使用提醒：</strong>转折词不一定都表达"强烈转折"，有时只是补充说明，需要结合语境判断。</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h3 onclick="toggleCard(this)"><span class="num">2</span> 数据对比法 <span class="tag">阅读·论述</span><span class="arrow">▼</span></h3>
+  <div class="card-body">
+    <div class="card-body-inner">
+      <p><strong>原理说明：</strong>当作者使用具体数字、数据或统计时，注意对比它们之间的关系——数量对比、比例对比、预期vs实际的对比。</p>
+      <p><strong>在本示例中的体现：</strong>47个"like" vs 3个"message"的对比形成了有力的论证。</p>
+      <p><strong>如何使用：</strong>遇到数据时问三个问题——①数据是多少？②和什么对比？③这个对比支持什么结论？</p>
+      <p><strong>可迁移场景：</strong>数据分析类文章、调查报告、广告文案、学术论文</p>
+      <p><strong>⚠️ 使用提醒：</strong>注意数据是否被选择性呈现——作者可能只展示支持自己观点的数据。</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h3 onclick="toggleCard(this)"><span class="num">3</span> 论证链构建法 <span class="tag">逻辑·推理</span><span class="arrow">▼</span></h3>
+  <div class="card-body">
+    <div class="card-body-inner">
+      <p><strong>原理说明：</strong>把作者的论证拆解为"前提→证据→推理→结论"四个环节，画出逻辑链条，即可看清论证是否严密。</p>
+      <p><strong>在本示例中的体现：</strong>前提（真正的友谊=关心行为）→证据（47个like vs 3个message）→推理（表面的like≠真关心）→结论（真友谊不在屏幕上）。</p>
+      <p><strong>如何使用：</strong>在笔记本上画逻辑链：前提 → 证据 → 推理 → 结论。如果某环节缺失，说明论证有漏洞。</p>
+      <p><strong>可迁移场景：</strong>任何议论文、辩论稿、说服性演讲的分析</p>
+      <p><strong>⚠️ 使用提醒：</strong>不是所有文本都有完整的论证链——叙事类文本可能只是"讲故事"。</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h3 onclick="toggleCard(this)"><span class="num">4</span> 认知转折识别法 <span class="tag">叙事·成长</span><span class="arrow">▼</span></h3>
+  <div class="card-body">
+    <div class="card-body-inner">
+      <p><strong>原理说明：</strong>"I used to think... but now..." 这种结构表明作者在展示认知的变化过程，这是理解文本深层含义的关键。</p>
+      <p><strong>在本示例中的体现：</strong>"I used to think having 100 friends on social media meant I was popular"(旧认知) → "True friendship doesn't happen on a screen"(新认知)。</p>
+      <p><strong>如何使用：</strong>看到"used to think"、"I once believed"、"I always assumed"等表述时，标注"旧认知→新认知"的转变过程。</p>
+      <p><strong>可迁移场景：</strong>个人成长类文章、反思类博客、自传</p>
+      <p><strong>⚠️ 使用提醒：</strong>有些作者的认知转折可能是为了说服读者而设计的叙事技巧。</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h3 onclick="toggleCard(this)"><span class="num">5</span> 论证强度判断法 <span class="tag">评估·批判</span><span class="arrow">▼</span></h3>
+  <div class="card-body">
+    <div class="card-body-inner">
+      <p><strong>原理说明：</strong>判断论证的说服力，可从三个维度评估：证据的具体性（越具体越好）、证据与观点的相关性（越直接越好）、推理的逻辑性（越严密越好）。</p>
+      <p><strong>在本示例中的体现：</strong>证据具体（47和3）、相关性强（直接支持核心观点）、推理严密（从数据→对比→结论），所以论证很有说服力。</p>
+      <p><strong>如何使用：</strong>读完一段论证后，用三分制（高/中/低）给这三个维度打分，总分高的论证更强。</p>
+      <p><strong>可迁移场景：</strong>新闻评论、广告文案、演讲稿、学术观点</p>
+      <p><strong>⚠️ 使用提醒：</strong>不要只因为"数字具体"就认为论证有力——具体但不相关的数据反而会误导判断。</p>
+    </div>
+  </div>
+</div>
+
+<div class="section-title">✏️ 实践练习</div>
+
+<div class="exercise-box">
+  <h4>练习1：分析一段采访</h4>
+  <p>📄 <em>"I used to think that having a best friend meant spending every minute together. But after my best friend moved to another city, I realized that real friends don't need to be together all the time. We still call each other every week, and we're closer than ever."</em></p>
+  <p><strong>建议使用的原理：</strong>原理1（转折标记法）+ 原理4（认知转折识别法）</p>
+  <p><strong>分析提示：</strong>注意"used to think... But..."和"realized"三个关键标记。</p>
+  <p><strong>任务：</strong>用一段50词左右的英文写出你的分析。</p>
+  <p style="color:var(--text-secondary);font-size:13px;margin-top:6px;">💭 旧认知是什么？触发转变的事件？新认知是什么？</p>
+</div>
+
+<div class="exercise-box">
+  <h4>练习2：评价一段广告文案</h4>
+  <p>📄 <em>"Join FriendMatch! Over 1 million people have found meaningful friendships here. Our users report 80% satisfaction rate. 9 out of 10 members say they've made at least one real friend within the first month."</em></p>
+  <p><strong>建议使用的原理：</strong>原理2（数据对比法）+ 原理5（论证强度判断法）</p>
+  <p><strong>分析提示：</strong>这些数字看起来很可信，但缺少了对比数据——80%是和什么比？9/10的调查样本量是多少？</p>
+  <p><strong>任务：</strong>用中文或英文写一段60词左右的论证强度评估。</p>
+  <p style="color:var(--text-secondary);font-size:13px;margin-top:6px;">💭 证据的具体性打分？相关性打分？逻辑性打分？你相信这则广告吗？</p>
+</div>
+
+<div class="section-title">✅ 自我检测</div>
+<div class="checklist">
+  <h4>通过以下问题检验掌握程度：</h4>
+  <label><input type="checkbox"><span>我能否用自己的话说出"转折标记法"的核心要点？</span></label>
+  <label><input type="checkbox"><span>遇到一篇英语议论文，我是否知道从哪里开始分析？</span></label>
+  <label><input type="checkbox"><span>我能否在3分钟内为一篇200词的短文画出"论证链"？</span></label>
+  <label><input type="checkbox"><span>我能否用论证强度判断法评估一个论证是否有说服力？</span></label>
+  <label><input type="checkbox"><span>遇到"used to think...but now"文本，我能快速识别认知转变吗？</span></label>
+</div>
+
+</div>
+
+<script>
+function toggleCard(el) {
+  const body = el.parentElement.querySelector('.card-body');
+  const arrow = el.querySelector('.arrow');
+  body.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+// 默认打开第一个
+document.querySelector('.card .card-body').classList.add('open');
+document.querySelector('.card .arrow').classList.add('open');
+</script>
+
+</body>
+</html>

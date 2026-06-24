@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块定位：开启友谊与STEAM的探索之旅</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, #434343 0%, #595959 100%);
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  overflow: hidden;
+  position: relative;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.header p {
+  opacity: 0.85;
+  font-size: calc(var(--font-body) + 1px);
+}
+
+/* Section tabs */
+.tab-bar {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.tab {
+  flex: 1;
+  min-width: 120px;
+  padding: 12px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  background: var(--card-bg);
+  cursor: pointer;
+  text-align: center;
+  font-size: calc(var(--font-body) - 1px);
+  transition: all 0.2s;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.tab:hover { border-color: var(--accent); }
+.tab.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(67,67,67,0.3);
+}
+
+/* Card */
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  display: none;
+  animation: fadeIn 0.35s ease;
+}
+.card.active { display: block; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+.card h2 {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card h2 .num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.card p { margin: 10px 0; }
+.card ul { padding-left: 20px; margin: 10px 0; }
+.card li { margin-bottom: 8px; }
+
+/* Map visualization */
+.map-viz {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 20px 0;
+  position: relative;
+}
+.map-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 4px 0;
+}
+.map-node {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: calc(var(--font-body) - 2px);
+  font-weight: 500;
+  border: 2px solid var(--border);
+  background: var(--card-bg);
+  transition: all 0.2s;
+  cursor: default;
+}
+.map-node.highlight {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.map-node.muted {
+  opacity: 0.5;
+}
+.map-arrow {
+  color: var(--accent);
+  font-size: 20px;
+}
+.map-label {
+  font-size: calc(var(--font-body) - 3px);
+  color: var(--text-secondary);
+  margin-top: 6px;
+  text-align: center;
+}
+
+/* Outcome cards */
+.outcome-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+.outcome-card {
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  text-align: center;
+  transition: transform 0.2s;
+  cursor: default;
+}
+.outcome-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+.outcome-card .outcome-icon { font-size: 32px; margin-bottom: 8px; }
+.outcome-card .outcome-text { font-weight: 500; color: var(--primary); font-size: calc(var(--font-body) - 1px); }
+
+/* Accordion */
+.accordion {
+  margin: 12px 0;
+}
+.accordion-item {
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.accordion-header {
+  padding: 12px 16px;
+  background: #fafafa;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.2s;
+  color: var(--primary);
+}
+.accordion-header:hover { background: #f0f0f0; }
+.accordion-header .arrow { transition: transform 0.2s; }
+.accordion-item.open .accordion-header .arrow { transform: rotate(180deg); }
+.accordion-body {
+  display: none;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  font-size: calc(var(--font-body) - 1px);
+  color: var(--text-secondary);
+}
+.accordion-item.open .accordion-body { display: block; }
+
+/* Interactive checklist */
+.ready-check {
+  text-align: center;
+  margin: 20px 0;
+}
+.ready-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 14px 32px;
+  border-radius: var(--border-radius);
+  font-size: calc(var(--font-body) + 2px);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 600;
+}
+.ready-btn:hover { background: var(--primary-hover); transform: scale(1.03); }
+.ready-btn:active { transform: scale(0.97); }
+.ready-btn.checked {
+  background: #16a34a;
+}
+.checked-list {
+  display: none;
+  margin-top: 16px;
+  text-align: left;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.checked-list.show { display: block; }
+.checked-list li {
+  list-style: none;
+  padding: 6px 0;
+  color: #16a34a;
+  font-weight: 500;
+}
+.checked-list li::before { content: "✅ "; }
+
+/* Tooltip hint */
+.hint {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: calc(var(--font-body) - 3px);
+  cursor: help;
+}
+
+@media (max-width: 640px) {
+  .container { padding: 12px; }
+  .header { padding: 20px 16px; }
+  .tab { min-width: 80px; font-size: 13px; padding: 10px 6px; }
+  .card { padding: 14px 16px; }
+  .map-row { flex-wrap: wrap; gap: 6px; }
+  .map-node { font-size: 12px; padding: 6px 10px; }
+  .outcome-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🧭 模块定位</h1>
+  <p>开启友谊与 STEAM 的探索之旅 — 英语必修1 · Unit 1 Friendship</p>
+</div>
+
+<!-- Tabs -->
+<div class="tab-bar">
+  <button class="tab active" data-tab="0">📖 学什么</button>
+  <button class="tab" data-tab="1">❓ 为什么重要</button>
+  <button class="tab" data-tab="2">🔗 单元关系</button>
+  <button class="tab" data-tab="3">📊 前后衔接</button>
+  <button class="tab" data-tab="4">🎯 学习成果</button>
+</div>
+
+<!-- Tab 1: 学什么 -->
+<div class="card active" data-tab="0">
+  <h2><span class="num">1</span> 本模块学习什么</h2>
+  <p>欢迎来到 <strong>M14 新知STEAM融合性应用</strong> 的第一个模块！</p>
+  <p>在这个模块中，我们不会直接学习新的单词或语法，而是先一起<strong>"看清地图"</strong>——了解整个 M14 模块要做什么，以及如何将<strong>英语必修1 Unit 1 Friendship</strong> 的主题与 <strong>STEAM（科学、技术、工程、艺术、数学）</strong> 结合起来。</p>
+  <p>我们会讨论：友谊是什么？它和科学、技术、艺术有什么联系？我们又将如何用英语去表达这些有趣的联结？</p>
+
+  <div style="background:#f0f0f0;border-radius:var(--border-radius);padding:16px;margin:14px 0;">
+    <p style="font-weight:600;color:var(--primary);margin:0 0 8px 0;">🎬 想一想：</p>
+    <p style="margin:0;">如果让你用<strong>三个词</strong>来形容友谊，你会选哪三个？<br>
+    再想想——这三个词对应的<strong>英语单词</strong>是什么？你会在什么场合用到它们？</p>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <input type="text" placeholder="Word 1..." style="flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:var(--font-family);font-size:calc(var(--font-body)-1px);">
+      <input type="text" placeholder="Word 2..." style="flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:var(--font-family);font-size:calc(var(--font-body)-1px);">
+      <input type="text" placeholder="Word 3..." style="flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:var(--font-family);font-size:calc(var(--font-body)-1px);">
+    </div>
+  </div>
+</div>
+
+<!-- Tab 2: 为什么重要 -->
+<div class="card" data-tab="1">
+  <h2><span class="num">2</span> 本模块为什么重要</h2>
+  <p>如果把学习比作一次旅行，这个模块就是你的<strong>出发前的指南针</strong>。</p>
+  <p>了解"我们要去哪里"、"为什么要去"，会让后续的学习更有方向感和动力。更重要的是，它将帮助你打破<strong>"英语只是一门语言课"</strong>的刻板印象——你会发现，英语可以成为你探索科学、技术、艺术和数学的<strong>桥梁</strong>。</p>
+
+  <div class="outcome-grid">
+    <div class="outcome-card">
+      <div class="outcome-icon">🧭</div>
+      <div class="outcome-text">指南针：指明方向</div>
+    </div>
+    <div class="outcome-card">
+      <div class="outcome-icon">🔥</div>
+      <div class="outcome-text">动力源：激发好奇</div>
+    </div>
+    <div class="outcome-card">
+      <div class="outcome-icon">🌉</div>
+      <div class="outcome-text">桥梁：连接学科</div>
+    </div>
+  </div>
+
+  <div style="background:linear-gradient(135deg,#434343,#595959);color:#fff;padding:16px 20px;border-radius:var(--border-radius);margin:14px 0;text-align:center;">
+    <p style="font-weight:600;margin:0;font-size:calc(var(--font-body)+2px);">"英语是钥匙，不是终点。"</p>
+  </div>
+</div>
+
+<!-- Tab 3: 单元关系 -->
+<div class="card" data-tab="2">
+  <h2><span class="num">3</span> 本模块与大单元主题的关系</h2>
+  <p>整个大单元围绕 <strong>"Friendship"（友谊）</strong> 展开，从阅读理解什么是友谊，到学习如何用英语谈论朋友和友情。</p>
+  <p>M14 模块则将这一主题<strong>升级</strong>——我们不再只停留在"用英语聊友谊"，而是尝试用 <strong>STEAM 的多学科视角</strong>去重新审视友谊。比如：友谊的化学反应是什么？社交媒体如何改变友谊？你能为朋友设计一个怎样的创意作品？</p>
+
+  <div style="text-align:center;margin:16px 0;">
+    <div style="display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;">
+      <span style="background:#f0f0f0;padding:8px 16px;border-radius:20px;border:2px solid var(--border);">📖 Unit 1<br><small>阅读理解</small></span>
+      <span style="color:var(--accent);font-size:24px;">→</span>
+      <span style="background:#f0f0f0;padding:8px 16px;border-radius:20px;border:2px solid var(--border);">🗣️ 词汇语法<br><small>表达基础</small></span>
+      <span style="color:var(--accent);font-size:24px;">→</span>
+      <span style="background:var(--primary);color:#fff;padding:8px 16px;border-radius:20px;font-weight:600;">🚀 M14 STEAM<br><small>跨界升级</small></span>
+    </div>
+  </div>
+
+  <div class="accordion">
+    <div class="accordion-item">
+      <div class="accordion-header" onclick="toggleAccordion(this)">
+        <span>🧪 科学与友谊</span>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="accordion-body">催产素（Oxytocin）被称为"拥抱激素"，它在我们与朋友互动时释放，增强信任感和连接感。—— 这是生物学。</div>
+    </div>
+    <div class="accordion-item">
+      <div class="accordion-header" onclick="toggleAccordion(this)">
+        <span>📱 技术与友谊</span>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="accordion-body">社交媒体算法推荐"可能认识的人"，大数据分析社交网络结构。—— 这是技术。</div>
+    </div>
+    <div class="accordion-item">
+      <div class="accordion-header" onclick="toggleAccordion(this)">
+        <span>🎨 艺术与友谊</span>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="accordion-body">从《哈利·波特》到《老友记》，文学和影视作品如何描绘友谊？色彩和构图如何传递友谊的温暖？—— 这是艺术。</div>
+    </div>
+  </div>
+</div>
+
+<!-- Tab 4: 前后衔接 -->
+<div class="card" data-tab="3">
+  <h2><span class="num">4</span> 本模块与前后模块的衔接</h2>
+  <p>在之前的模块中（M1–M13），你已经掌握了 Unit 1 的核心词汇、语法（直接引语和间接引语）、阅读和写作技巧。</p>
+  <p>现在，M14 是这些知识的<strong>综合应用阶段</strong>。本模块（模块定位）之后，还会有具体的 STEAM 项目模块，我们将逐一动手实践。所以，请把这里当作<strong>"热身"和"蓝图"</strong>。</p>
+
+  <div class="map-viz">
+    <div class="map-row">
+      <div class="map-node muted">M1–M13<br>基础学习</div>
+      <span class="map-arrow">→</span>
+      <div class="map-node highlight">M14 模块定位<br>✨ 你在这里</div>
+      <span class="map-arrow">→</span>
+      <div class="map-node muted">STEAM 项目<br>动手实践</div>
+    </div>
+    <div class="map-label">基础积累 → 🧭 看清地图 → 动手创造</div>
+  </div>
+</div>
+
+<!-- Tab 5: 学习成果 -->
+<div class="card" data-tab="4">
+  <h2><span class="num">5</span> 预期学习成果</h2>
+  <p>完成本模块后，你将能够：</p>
+
+  <div class="outcome-grid">
+    <div class="outcome-card">
+      <div class="outcome-icon">🗣️</div>
+      <div class="outcome-text">用英语简要说明 M14 学习目标和整体安排</div>
+    </div>
+    <div class="outcome-card">
+      <div class="outcome-icon">🔗</div>
+      <div class="outcome-text">举例说出 STEAM 各学科与"友谊"的一个关联点</div>
+    </div>
+    <div class="outcome-card">
+      <div class="outcome-icon">🎯</div>
+      <div class="outcome-text">带着好奇心与明确方向，自信进入后续 STEAM 项目</div>
+    </div>
+  </div>
+
+  <div class="ready-check">
+    <button class="ready-btn" onclick="markReady(this)">🌟 我已准备好，开始探索！</button>
+    <ul class="checked-list" id="readyList">
+      <li>我已了解本模块学什么</li>
+      <li>我知道它为什么重要</li>
+      <li>我理解了它与大单元的关系</li>
+      <li>我清楚了前后模块的衔接</li>
+      <li>我明确了预期学习成果</li>
+    </ul>
+  </div>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('.tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    var idx = parseInt(this.getAttribute('data-tab'));
+    document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('.card[data-tab]').forEach(function(c) { c.classList.remove('active'); });
+    this.classList.add('active');
+    document.querySelector('.card[data-tab="' + idx + '"]').classList.add('active');
+  });
+});
+
+function toggleAccordion(header) {
+  var item = header.parentElement;
+  item.classList.toggle('open');
+}
+
+function markReady(btn) {
+  btn.classList.toggle('checked');
+  if (btn.classList.contains('checked')) {
+    btn.textContent = '✅ 准备就绪！';
+    document.getElementById('readyList').classList.add('show');
+  } else {
+    btn.textContent = '🌟 我已准备好，开始探索！';
+    document.getElementById('readyList').classList.remove('show');
+  }
+}
+</script>
+</body>
+</html>

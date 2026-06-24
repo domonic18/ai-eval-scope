@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目社区 — 项目库脚手架</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%; padding: 0;
+}
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+header {
+  background: linear-gradient(135deg, #434343 0%, #595959 100%);
+  color: #fff; padding: 28px 24px;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  margin-bottom: 20px;
+}
+header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 6px; }
+header p { font-size: 14px; opacity: 0.85; }
+.project-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px; margin-bottom: 20px;
+}
+.project-card {
+  background: var(--card-bg); border-radius: var(--border-radius);
+  box-shadow: var(--shadow); border: 1px solid var(--border);
+  overflow: hidden; transition: transform 0.2s, box-shadow 0.2s;
+}
+.project-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.project-header {
+  padding: 16px 20px 12px; cursor: pointer;
+  display: flex; justify-content: space-between; align-items: flex-start;
+}
+.project-header h2 { font-size: var(--font-h2); font-weight: 600; color: var(--primary); }
+.project-badge {
+  display: inline-block; padding: 2px 10px; border-radius: 10px;
+  font-size: 12px; font-weight: 600; color: #fff; white-space: nowrap;
+}
+.badge-short { background: #8c8c8c; }
+.badge-medium { background: #595959; }
+.badge-long { background: #262626; }
+.project-body { padding: 0 20px 20px; }
+.project-body p { margin-bottom: 8px; }
+.project-body h3 {
+  font-size: 14px; font-weight: 600; color: var(--primary);
+  margin: 12px 0 6px;
+}
+.stage-list { list-style: none; padding: 0; }
+.stage-list li {
+  padding: 6px 10px 6px 24px; margin-bottom: 4px;
+  border-radius: 4px; background: var(--bg);
+  font-size: 14px; position: relative;
+}
+.stage-list li::before {
+  content: "→"; position: absolute; left: 8px; color: var(--primary); font-weight: 700;
+}
+.checklist { list-style: none; padding: 0; }
+.checklist li {
+  padding: 4px 0 4px 24px; position: relative; font-size: 14px;
+}
+.checklist li::before {
+  content: "□"; position: absolute; left: 0; color: var(--primary); font-weight: 700;
+}
+.resource-link {
+  display: inline-block; padding: 4px 12px; border-radius: 4px;
+  background: var(--bg); border: 1px solid var(--border);
+  font-size: 12px; color: var(--text-secondary); margin: 2px;
+  text-decoration: none;
+}
+.resource-link:hover { border-color: var(--primary); color: var(--primary); }
+.expand-btn {
+  display: block; width: 100%; padding: 8px;
+  text-align: center; font-size: 13px; color: var(--text-secondary);
+  cursor: pointer; border: none; background: transparent;
+  border-top: 1px solid var(--border); transition: background 0.2s;
+}
+.expand-btn:hover { background: var(--bg); }
+.project-details {
+  max-height: 0; overflow: hidden; transition: max-height 0.4s ease;
+}
+.project-details.open { max-height: 1200px; }
+.fade-in { animation: fadeIn 0.4s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.progress-bar {
+  height: 4px; background: var(--border); border-radius: 2px; margin: 8px 0; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 2px; transition: width 0.8s ease;
+}
+.progress-fill.week1 { width: 20%; background: #8c8c8c; }
+.progress-fill.week2 { width: 40%; background: #8c8c8c; }
+.progress-fill.week3 { width: 60%; background: #595959; }
+.progress-fill.week4 { width: 80%; background: #434343; }
+.progress-fill.week5 { width: 100%; background: #262626; }
+@media (max-width: 640px) {
+  .container { padding: 12px; }
+  header { padding: 20px 16px; }
+  .project-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <header class="fade-in">
+    <h1>🌍 项目社区</h1>
+    <p>以真实问题驱动的长期学习 · 选择一个项目开始你的友谊探索之旅</p>
+  </header>
+
+  <div class="project-grid">
+
+    <!-- 短周期项目 -->
+    <div class="project-card fade-in">
+      <div class="project-header">
+        <div>
+          <span class="project-badge badge-short">1-3天</span>
+          <h2>我的"友谊宣言"英语海报</h2>
+        </div>
+      </div>
+      <div class="project-body">
+        <p>设计并制作一张英语海报，主题为 <strong>"My Friendship Declaration"</strong>——用英语表达你对友谊的理解和承诺。</p>
+        <div class="progress-bar"><div class="progress-fill week1"></div></div>
+        <button class="expand-btn" onclick="toggleDetails('details1',this)">📋 查看完整方案 ▼</button>
+        <div class="project-details" id="details1">
+          <h3>📅 阶段任务</h3>
+          <ul class="stage-list">
+            <li><strong>Day 1（设计构思）</strong>：写下你想表达的3个核心观点（英语）→ 画草图布局</li>
+            <li><strong>Day 2（制作）</strong>：用A4/A3纸张或Canva等工具制作海报 → 配图和排版</li>
+            <li><strong>Day 3（分享优化）</strong>：拍照分享到班级群 → 收集2位同学的反馈 → 优化</li>
+          </ul>
+          <h3>✅ 评价标准</h3>
+          <ul class="checklist">
+            <li>包含至少3个英语核心陈述句</li>
+            <li>版面设计有层次感（标题-正文-插图）</li>
+            <li>英语表达语法正确、句式丰富</li>
+            <li>展现个人风格和真实观点</li>
+          </ul>
+          <h3>🔗 资源链接</h3>
+          <span class="resource-link">Canva 海报模板</span>
+          <span class="resource-link">Pinterest 设计灵感</span>
+          <span class="resource-link">在线英语词典</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 中周期项目 -->
+    <div class="project-card fade-in">
+      <div class="project-header">
+        <div>
+          <span class="project-badge badge-medium">1-2周</span>
+          <h2>班级"友谊故事"英语采访特辑</h2>
+        </div>
+      </div>
+      <div class="project-body">
+        <p>采访3-5位同学/老师/家人，用英语整理一篇 <strong>"Friendship Stories"</strong> 特辑。</p>
+        <div class="progress-bar"><div class="progress-fill week3"></div></div>
+        <button class="expand-btn" onclick="toggleDetails('details2',this)">📋 查看完整方案 ▼</button>
+        <div class="project-details" id="details2">
+          <h3>📅 阶段任务</h3>
+          <ul class="stage-list">
+            <li><strong>第1-2天（设计采访提纲）</strong>：设计5个英语采访问题</li>
+            <li><strong>第3-5天（执行采访）</strong>：采访3-5人，录音或记笔记</li>
+            <li><strong>第6-8天（整理撰写）</strong>：将采访内容整理成英语短文（每人100词）</li>
+            <li><strong>第9-10天（编辑排版）</strong>：将所有采访汇编成一份特辑文档</li>
+            <li><strong>第11-14天（分享展示）</strong>：在班级墙/学习群展示，收集投票评选</li>
+          </ul>
+          <h3>✅ 评价标准</h3>
+          <ul class="checklist">
+            <li>完成了至少3人的采访</li>
+            <li>采访记录用英语撰写且语法基本正确</li>
+            <li>有个人反思（"从这些故事中学到了什么？"）</li>
+            <li>版面整洁美观</li>
+          </ul>
+          <h3>🔗 资源链接</h3>
+          <span class="resource-link">录音App</span>
+          <span class="resource-link">Google Docs/腾讯文档</span>
+          <span class="resource-link">Grammarly 语法检查</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 长周期项目 -->
+    <div class="project-card fade-in">
+      <div class="project-header">
+        <div>
+          <span class="project-badge badge-long">1月+</span>
+          <h2>"Better Together" 班级友谊行动计划</h2>
+        </div>
+      </div>
+      <div class="project-body">
+        <p>设计并在班级中实施一项增进友谊的行动计划，用英语记录全过程。</p>
+        <div class="progress-bar"><div class="progress-fill week5"></div></div>
+        <button class="expand-btn" onclick="toggleDetails('details3',this)">📋 查看完整方案 ▼</button>
+        <div class="project-details" id="details3">
+          <h3>📅 阶段任务</h3>
+          <ul class="stage-list">
+            <li><strong>第1周（调研诊断）</strong>：设计一份班级友谊调查问卷（英语），了解同学们的交友需求和困难</li>
+            <li><strong>第2周（方案设计）</strong>：基于调查结果设计行动方案，用英语写方案提案</li>
+            <li><strong>第3-4周（实施与记录）</strong>：执行方案，每周用英语写一份"进展日记"</li>
+            <li><strong>第5周（评估与总结）</strong>：收集反馈，用英语写一份项目总结报告</li>
+          </ul>
+          <h3>✅ 评价标准</h3>
+          <ul class="checklist">
+            <li>调查问卷回收率超过80%</li>
+            <li>方案有清晰的目标和执行步骤</li>
+            <li>进展日记不少于3篇（每篇100词以上）</li>
+            <li>总结报告包含数据分析和反思</li>
+            <li>对班级友谊氛围有实际改善</li>
+          </ul>
+          <h3>🔗 资源链接</h3>
+          <span class="resource-link">问卷星 在线调查</span>
+          <span class="resource-link">Canva 方案设计</span>
+          <span class="resource-link">班级群 实施协作</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:var(--border-radius);padding:16px 20px;">
+    <strong>💡 项目选择建议</strong><br>
+    <span style="font-size:14px;color:var(--text-secondary);">
+      首次尝试建议从短周期项目开始，建立信心后再挑战中长周期项目。三个项目可以独立完成，也可以串联成一个完整的学习旅程——先用海报表达观点，再通过采访理解他人，最后用行动计划改变班级。
+    </span>
+  </div>
+</div>
+
+<script>
+function toggleDetails(id, btn) {
+  var details = document.getElementById(id);
+  details.classList.toggle('open');
+  btn.textContent = details.classList.contains('open') ? '📋 收起方案 ▲' : '📋 查看完整方案 ▼';
+}
+</script>
+</body>
+</html>

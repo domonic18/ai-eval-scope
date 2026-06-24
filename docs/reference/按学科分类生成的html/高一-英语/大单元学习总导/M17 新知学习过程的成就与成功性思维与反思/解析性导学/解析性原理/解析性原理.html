@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性原理导学 - 分析思维</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+}
+.header {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 24px 28px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+  border-left: 4px solid var(--primary);
+}
+.header h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+.header p {
+  color: var(--text-secondary);
+}
+.intro-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+.intro-card .highlight {
+  color: var(--primary);
+  font-weight: 700;
+}
+.principle-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.principle-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: box-shadow 0.3s;
+}
+.principle-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+}
+.principle-header {
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+}
+.principle-header .num {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  color: #fff;
+}
+.principle-header .title {
+  flex: 1;
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--primary);
+}
+.principle-header .arrow {
+  transition: transform 0.3s;
+  color: var(--text-secondary);
+}
+.principle-header .arrow.open { transform: rotate(180deg); }
+.pr-body {
+  padding: 0 20px 20px;
+  display: block;
+}
+.pr-body .desc {
+  padding: 10px 14px;
+  background: var(--bg);
+  border-radius: 6px;
+  margin-bottom: 10px;
+  border-left: 3px solid var(--accent);
+}
+.pr-body .example {
+  padding: 8px 12px;
+  margin-bottom: 8px;
+}
+.pr-body .example strong {
+  color: var(--primary);
+}
+.pr-body .scenario {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 10px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 12px;
+  margin: 4px 4px 0 0;
+}
+.pr-body .reminder {
+  padding: 8px 12px;
+  background: #fef9ef;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #8c6b1a;
+  border: 1px solid #f0dca0;
+  margin-top: 8px;
+}
+.section-title {
+  font-size: var(--font-h2);
+  font-weight: 700;
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--border);
+  color: var(--primary);
+}
+.practice-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.practice-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+.practice-card .p-title {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+.practice-card .p-context {
+  margin-bottom: 10px;
+}
+.practice-card .p-principles {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.practice-card .p-principles span {
+  padding: 2px 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.practice-card .p-hint {
+  padding: 10px 14px;
+  background: #fafafa;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 6px 6px 0;
+  font-size: 14px;
+  color: var(--text);
+  display: none;
+}
+.practice-card .p-hint.show { display: block; }
+.practice-card .hint-toggle {
+  padding: 4px 14px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+.practice-card .hint-toggle:hover {
+  background: var(--bg);
+  color: var(--text);
+}
+.checklist {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+}
+.checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.checklist-item:last-child { border-bottom: none; }
+.checklist-item:hover { background: #fafafa; margin: 0 -10px; padding: 10px 10px; border-radius: 6px; }
+.checkbox {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: transparent;
+  transition: all 0.2s;
+  margin-top: 2px;
+}
+.checkbox.checked {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+@media (max-width: 600px) {
+  .container { padding: 12px 10px; }
+  .pr-body { padding: 0 14px 14px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🧠 解析性原理导学</h1>
+    <p>从具体案例中提炼可迁移的分析方法——让你面对任何分析型任务都能从容应对。</p>
+  </div>
+
+  <!-- 引言 -->
+  <div class="intro-card">
+    <p>你已经完成了解析性示例的学习——分析了如何给笔友写建议信。但"学会这一个案例"不是终点。</p>
+    <p style="margin-top:8px;">我们的目标是：<span class="highlight">从这一个案例中提炼出能反复使用的分析方法</span>，以后遇到任何类似的"分析型任务"都能用得上。</p>
+  </div>
+
+  <h2 class="section-title">📐 解析性原理提炼</h2>
+
+  <div class="principle-grid">
+    <!-- 原理1 -->
+    <div class="principle-card">
+      <div class="principle-header" onclick="togglePrincipal(this)">
+        <span class="num" style="background:#595959;">1</span>
+        <span class="title">情境定位法</span>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="pr-body">
+        <div class="desc">遇到任何需要分析的材料，第一步不是直接找答案，而是先问自己"这是什么类型的情境？"</div>
+        <div class="example"><strong>💡 在本示例中的体现：</strong>写回信前，先判断这是一个"人际交往+建议写作"的综合问题。</div>
+        <div class="example"><strong>🔧 如何使用：</strong>拿到材料后，用 30 秒判断它是 problem-solution 型、compare-contrast 型还是 cause-effect 型。</div>
+        <div>
+          <span class="scenario">阅读理解</span>
+          <span class="scenario">写作构思</span>
+          <span class="scenario">听力分析</span>
+        </div>
+        <div class="reminder">⚠️ 不要过度分类，2—3 种分类足够</div>
+      </div>
+    </div>
+
+    <!-- 原理2 -->
+    <div class="principle-card">
+      <div class="principle-header" onclick="togglePrincipal(this)">
+        <span class="num" style="background:#434343;">2</span>
+        <span class="title">要素拆解法</span>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="pr-body">
+        <div class="desc">复杂问题和材料需要拆解成小要素来分析。</div>
+        <div class="example"><strong>💡 在本示例中的体现：</strong>把笔友的邮件拆解为"环境 + 时间 + 文化 + 信任"四个关键要素。</div>
+        <div class="example"><strong>🔧 如何使用：</strong>用表格或清单列出所有相关信息点，逐一分析每个点的含义。</div>
+        <div>
+          <span class="scenario">阅读分析</span>
+          <span class="scenario">语篇分析</span>
+          <span class="scenario">问题拆解</span>
+        </div>
+        <div class="reminder">⚠️ 3—6 个要素最适合高中生的认知负荷</div>
+      </div>
+    </div>
+
+    <!-- 原理3 -->
+    <div class="principle-card">
+      <div class="principle-header" onclick="togglePrincipal(this)">
+        <span class="num" style="background:#333;">3</span>
+        <span class="title">结构匹配法</span>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="pr-body">
+        <div class="desc">不同类型的问题匹配不同的分析/表达结构。</div>
+        <div class="example"><strong>💡 在本示例中的体现：</strong>"建议信"匹配"problem-solution"结构。</div>
+        <div class="example"><strong>🔧 如何使用：</strong>识别问题类型后，从大脑中调出对应的结构模板。</div>
+        <div>
+          <span class="scenario">英语写作</span>
+          <span class="scenario">口语表达</span>
+          <span class="scenario">演讲组织</span>
+        </div>
+        <div class="reminder">⚠️ 结构是框架不是枷锁，可以根据实际需要调整</div>
+      </div>
+    </div>
+
+    <!-- 原理4 -->
+    <div class="principle-card">
+      <div class="principle-header" onclick="togglePrincipal(this)">
+        <span class="num" style="background:#262626;">4</span>
+        <span class="title">证据追溯法</span>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="pr-body">
+        <div class="desc">每个分析结论都需要追溯到原材料中的证据支持。</div>
+        <div class="example"><strong>💡 在本示例中的体现：</strong>"两周了没朋友"这个信息直接决定了建议方向（需要主动策略而非被动等待）。</div>
+        <div class="example"><strong>🔧 如何使用：</strong>在得出结论后，问自己"我的这个判断基于原文的哪句话或哪个信息？"</div>
+        <div>
+          <span class="scenario">阅读理解题</span>
+          <span class="scenario">议论文写作</span>
+          <span class="scenario">观点表达</span>
+        </div>
+        <div class="reminder">⚠️ 区分"原文直接说"和"我推测出来的"</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 应用练习 -->
+  <h2 class="section-title">📝 应用练习</h2>
+
+  <div class="practice-grid">
+    <div class="practice-card">
+      <div class="p-title">练习一：分析班级调查数据</div>
+      <div class="p-context">情境：班级做了一份"最受同学欢迎的交友方式"调查问卷，你拿到了一份调查结果数据表。</div>
+      <div class="p-principles">
+        <span>📌 建议使用：要素拆解法、证据追溯法</span>
+      </div>
+      <p style="margin-bottom:8px;"><strong>解析任务：</strong>分析数据，找出同学们最常用的 3 种交友方式和最想要改善的 1 个方面。</p>
+      <button class="hint-toggle" onclick="togglePracticeHint(this)">💡 查看分析提示</button>
+      <div class="p-hint">先分类数据（线上交友 / 线下交友 / 兴趣社团等方式），再逐一分析每个类别的数据表现。注意：不要只看最高值，也要关注趋势变化。</div>
+    </div>
+
+    <div class="practice-card">
+      <div class="p-title">练习二：分析跨文化友谊短文</div>
+      <div class="p-context">情境：老师发了一篇关于"Cross-cultural Friendships"的英文短文。</div>
+      <div class="p-principles">
+        <span>📌 建议使用：情境定位法、结构匹配法</span>
+      </div>
+      <p style="margin-bottom:8px;"><strong>解析任务：</strong>分析作者对跨文化友谊的观点、主要论证方法以及给你最重要的一个启示。</p>
+      <button class="hint-toggle" onclick="togglePracticeHint(this)">💡 查看分析提示</button>
+      <div class="p-hint">先判断文章类型（议论文 / 记叙文 / 说明文？），再分析作者使用了什么论证结构。问问自己：作者是用个人经历说服你，还是用数据和研究？</div>
+    </div>
+  </div>
+
+  <!-- 自我检测 -->
+  <h2 class="section-title">✅ 自我检测</h2>
+
+  <div class="checklist">
+    <div class="checklist-item" onclick="toggleCheck(this)">
+      <span class="checkbox">✓</span>
+      <span>我能不能说清楚"情境定位法"帮我解决了什么问题？</span>
+    </div>
+    <div class="checklist-item" onclick="toggleCheck(this)">
+      <span class="checkbox">✓</span>
+      <span>遇到一个新的分析任务，我能不能在 1 分钟内判断出它属于什么类型？</span>
+    </div>
+    <div class="checklist-item" onclick="toggleCheck(this)">
+      <span class="checkbox">✓</span>
+      <span>我能不能在分析时始终记得"我的每个结论都要有证据支撑"？</span>
+    </div>
+    <div class="checklist-item" onclick="toggleCheck(this)">
+      <span class="checkbox">✓</span>
+      <span>我能不能区分"原文信息"和"我自己的推测"？</span>
+    </div>
+  </div>
+</div>
+<script>
+function togglePrincipal(el) {
+  const body = el.nextElementSibling;
+  const arrow = el.querySelector('.arrow');
+  if (!body || !arrow) return;
+  const isHidden = body.style.display === 'none';
+  body.style.display = isHidden ? 'block' : 'none';
+  arrow.classList.toggle('open', !isHidden);
+}
+function togglePracticeHint(btn) {
+  const hint = btn.nextElementSibling;
+  if (!hint || !hint.classList) return;
+  hint.classList.toggle('show');
+}
+function toggleCheck(el) {
+  const cb = el.querySelector('.checkbox');
+  if (!cb) return;
+  cb.classList.toggle('checked');
+}
+</script>
+</body>
+</html>

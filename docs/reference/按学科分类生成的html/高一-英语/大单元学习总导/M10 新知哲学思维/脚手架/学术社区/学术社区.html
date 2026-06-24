@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学术社区 — 学习共同体·友谊哲学对话</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%; max-width: none; padding: 0;
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; box-sizing: border-box; }
+
+.header {
+  background: linear-gradient(135deg, #434343 0%, #595959 100%);
+  color: #fff;
+  padding: 32px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 6px; }
+.header .subtitle { font-size: 14px; opacity: 0.85; }
+.header .badge {
+  display: inline-block; background: rgba(255,255,255,0.2);
+  padding: 2px 12px; border-radius: 12px; font-size: 12px; margin-top: 6px;
+}
+
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+.card h3 { font-size: 16px; font-weight: 600; margin: 16px 0 8px; color: var(--primary); }
+.card h4 { font-size: 14px; font-weight: 600; margin: 12px 0 6px; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 14px;
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  text-align: left; vertical-align: top;
+}
+th { background: #f0f0f0; font-weight: 600; color: var(--primary); }
+tr:hover { background: #fafafa; }
+
+.role-card {
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px;
+  margin: 8px 0;
+  transition: all 0.2s;
+  cursor: default;
+}
+.role-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+.role-card .role-name { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+.role-card .role-desc { font-size: 14px; margin: 4px 0; }
+.role-card .role-phrase { font-style: italic; font-size: 13px; color: var(--primary); margin-top: 4px; }
+
+.tab-bar { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+.tab-btn {
+  padding: 6px 16px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+.tab-btn:hover { border-color: var(--primary); color: var(--primary); }
+.tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.acc-header {
+  cursor: pointer; user-select: none; padding: 8px 0;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.acc-header::after { content: "▾"; font-size: 12px; color: var(--accent); transition: transform 0.2s; }
+.acc-header.open::after { transform: rotate(180deg); }
+.acc-body { max-height: 0; overflow: hidden; transition: max-height 0.35s ease; }
+.acc-body.open { max-height: 600px; }
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 12px 0;
+}
+.timeline-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 8px 12px;
+  background: #fafafa;
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+}
+.timeline-item .time { font-weight: 600; color: var(--primary); min-width: 80px; font-size: 14px; }
+.timeline-item .desc { font-size: 14px; }
+
+.btn {
+  display: inline-block; background: var(--primary); color: #fff;
+  border: none; padding: 6px 16px; border-radius: 6px;
+  font-size: 13px; cursor: pointer; transition: background 0.2s; margin: 4px;
+}
+.btn:hover { background: var(--primary-hover); }
+
+.footer {
+  text-align: center; padding: 20px;
+  color: var(--text-secondary); font-size: 13px;
+  border-top: 1px solid var(--border); margin-top: 32px;
+}
+
+@media (max-width: 768px) {
+  .container { padding: 16px 12px; }
+  .header { padding: 20px 16px; }
+  .card { padding: 16px; }
+  .timeline-item { flex-direction: column; gap: 4px; }
+  .timeline-item .time { min-width: auto; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🌐 学术社区</h1>
+  <div class="subtitle">学习共同体 · 友谊哲学对话平台</div>
+  <div class="badge">🧩 脚手架 · M10 新知哲学思维 · Unit 1 Friendship</div>
+</div>
+
+<div class="card">
+  <h2>一、社区定位与价值</h2>
+  <p>在 M10 中你学习了"建构—解析—迁移"的哲学思维框架，完成了对友谊主题的深度解析。现在，你需要走进学术社区——用哲学的视角与同伴对话、向父母请教、与更广阔的世界交流。</p>
+  <p><strong>核心功能：</strong>将个体对友谊的解析与建构成果置于"学习共同体"中接受质疑、补充和完善，实现从"个人认知建构"到"社会性知识共建"的跃升。</p>
+
+  <h3>三层连接设计</h3>
+  <table>
+    <tr><th>连接类型</th><th>连接对象</th><th>在 M10 Friendship 中的应用</th></tr>
+    <tr><td>👥 同伴连接</td><td>同班/同年级同学</td><td>运用建构—解析框架进行观点辩论、协作建构友谊概念模型</td></tr>
+    <tr><td>🏠 家校连接</td><td>家长、长辈</td><td>采访不同代际的友谊观，在家庭对话中验证自己的理解模型</td></tr>
+    <tr><td>🌍 社会连接</td><td>外教、英语笔友、在线社区</td><td>接触跨文化友谊观，在真实英语情境中检验语言和认知建构能力</td></tr>
+  </table>
+</div>
+
+<!-- Discussion Topics -->
+<div class="card">
+  <h2>二、讨论议题框架</h2>
+  <p style="margin-bottom:12px;color:var(--text-secondary);">沿着"建构→解析→迁移"的哲学思维路径，设计三个层次的讨论议题。</p>
+
+  <div class="tab-bar">
+    <div class="tab-btn active" onclick="switchTab('d-build', this)">🏗️ 基础建构层</div>
+    <div class="tab-btn" onclick="switchTab('d-analyze', this)">🔎 深度解析层</div>
+    <div class="tab-btn" onclick="switchTab('d-transfer', this)">🚀 迁移建构层</div>
+  </div>
+
+  <div id="d-build" class="tab-panel active">
+    <p><strong>核心问题：</strong>How do you construct your understanding of friendship?</p>
+    <table>
+      <tr><th>编号</th><th>议题</th><th>引导问题</th></tr>
+      <tr><td>D1</td><td>"Friendship is built, not found." 你同意吗？</td><td>友谊是自然发生的，还是需要主动建构的？</td></tr>
+      <tr><td>D2</td><td>用三个词定义友谊——你的"建构块"是什么？</td><td>如果必须选三个核心要素，你会选哪三个？</td></tr>
+      <tr><td>D3</td><td>一段友谊可以"解析"吗？</td><td>从哪些维度拆解？信任？时间？共同经历？</td></tr>
+    </table>
+    <p style="margin-top:8px;font-size:13px;color:var(--text-secondary);">📝 组织形式：Think-Pair-Share（3min → 5min → 10min）</p>
+  </div>
+
+  <div id="d-analyze" class="tab-panel">
+    <p><strong>核心问题：</strong>How do contexts shape our understanding of friendship?</p>
+    <table>
+      <tr><th>编号</th><th>议题</th><th>引导问题</th></tr>
+      <tr><td>D4</td><td>你父母那一代的友谊和你们的有什么不同？</td><td>社交媒体让友谊更深还是更浅？</td></tr>
+      <tr><td>D5</td><td>"Best friend forever"——事实还是愿望？</td><td>友谊有保质期吗？</td></tr>
+      <tr><td>D6</td><td>跨文化友谊：中外朋友相处有何不同？</td><td>友谊的表达方式是否受文化影响？</td></tr>
+    </table>
+    <p style="margin-top:8px;font-size:13px;color:var(--text-secondary);">📝 组织形式：Philosophical Cafe（U形围坐·发言棒机制）</p>
+  </div>
+
+  <div id="d-transfer" class="tab-panel">
+    <p><strong>核心问题：</strong>How can we apply our learning to build better friendships?</p>
+    <table>
+      <tr><th>编号</th><th>议题</th><th>引导问题</th></tr>
+      <tr><td>D7</td><td>设计"友谊搭建指南"</td><td>为低年级学弟学妹设计一份"How to Make and Keep Friends"指南</td></tr>
+      <tr><td>D8</td><td>"朋友之间的矛盾"分析</td><td>用友谊模型给出解决建议</td></tr>
+      <tr><td>D9</td><td>建构一份"班级友谊契约"</td><td>全班共同起草英语社交行为准则</td></tr>
+    </table>
+    <p style="margin-top:8px;font-size:13px;color:var(--text-secondary);">📝 组织形式：项目协作工作坊 → Gallery Walk</p>
+  </div>
+</div>
+
+<!-- Role Assignment -->
+<div class="card">
+  <h2>三、角色分工 · 四角色轮换制</h2>
+  <p style="margin-bottom:12px;">每层议题讨论后轮换角色，每位学生至少体验 3 个角色。</p>
+
+  <div class="role-card">
+    <div class="role-name">🎯 引导员 (Facilitator)</div>
+    <div class="role-desc">提出议题、控制发言节奏、确保人人参与、做环节小结</div>
+    <div class="role-phrase">"Our question for today is..." / "Let's hear from someone who hasn't spoken yet."</div>
+  </div>
+
+  <div class="role-card">
+    <div class="role-name">📝 记录建构师 (Scribe-Architect)</div>
+    <div class="role-desc">记录观点并提炼为结构化笔记，形成"讨论建构图"</div>
+    <div class="role-phrase">"There were two opposing views on..." / "We can add this insight to our model."</div>
+  </div>
+
+  <div class="role-card">
+    <div class="role-name">🎤 发言人 (Spokesperson)</div>
+    <div class="role-desc">代表小组展示讨论成果和建构作品</div>
+    <div class="role-phrase">"Our group constructed a model based on..." / "Here is our suggested solution."</div>
+  </div>
+
+  <div class="role-card">
+    <div class="role-name">❓ 质疑者 (Questioner)</div>
+    <div class="role-desc">专门负责从不同角度提问，挑战假设，推动思考深化</div>
+    <div class="role-phrase">"What if we look at it from a different perspective?" / "Can you think of a counterexample?"</div>
+  </div>
+</div>
+
+<!-- Timeline -->
+<div class="card">
+  <h2>四、社区运行节奏</h2>
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="time">10 min</div>
+      <div class="desc"><strong>哲学启动：</strong>全体集合，提出哲学问题"What is friendship?"，重申社区规则</div>
+    </div>
+    <div class="timeline-item">
+      <div class="time">20 min</div>
+      <div class="desc"><strong>基础建构讨论：</strong>Think-Pair-Share，小组建构"友谊要素图"</div>
+    </div>
+    <div class="timeline-item">
+      <div class="time">20 min</div>
+      <div class="desc"><strong>深度解析讨论：</strong>哲学咖啡馆，围绕代际差异、友谊保质期、跨文化展开思辨</div>
+    </div>
+    <div class="timeline-item">
+      <div class="time">25 min</div>
+      <div class="desc"><strong>迁移建构工作坊：</strong>项目协作，小组完成友谊指南/矛盾分析/友谊契约</div>
+    </div>
+    <div class="timeline-item">
+      <div class="time">15 min</div>
+      <div class="desc"><strong>画廊漫步与反馈：</strong>全班巡回互评，"One Star + One Wish"模式</div>
+    </div>
+    <div class="timeline-item">
+      <div class="time">5 min</div>
+      <div class="desc"><strong>哲学反思：</strong>个人写下"今天，我的友谊理解模型发生了哪些变化？"</div>
+    </div>
+  </div>
+  <p style="font-size:13px;color:var(--text-secondary);margin-top:8px;">⏱ 每轮完整讨论约 95 分钟 · 建议 2–3 课时完成</p>
+</div>
+
+<!-- Collaboration Rules -->
+<div class="card">
+  <h2>五、协作机制</h2>
+
+  <div class="acc-header" onclick="toggleAcc(this)">协作规则</div>
+  <div class="acc-body">
+    <ul style="margin:8px 0 0 20px;">
+      <li><strong>英语优先原则：</strong>社区交流以英语为主；表达困难时使用"语言急救卡"</li>
+      <li><strong>尊重为先原则：</strong>先复述对方观点，再表达不同意见</li>
+      <li><strong>成果共享原则：</strong>所有讨论记录上传至班级共享文件夹</li>
+      <li><strong>全员建构原则：</strong>每位学生每一层至少发表一次观点</li>
+    </ul>
+  </div>
+
+  <div class="acc-header" onclick="toggleAcc(this)">认知冲突处理机制</div>
+  <div class="acc-body">
+    <table style="margin:8px 0;">
+      <tr><th>情况</th><th>处理方式</th></tr>
+      <tr><td>观点冲突</td><td>回到"友谊建构模型"寻找依据："Which element supports your view?"</td></tr>
+      <tr><td>无法达成共识</td><td>记录为开放问题——哲学讨论的正常结果</td></tr>
+      <tr><td>发现逻辑矛盾</td><td>欢迎矛盾——它是认知成长的信号</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- Outputs -->
+<div class="card">
+  <h2>六、产出与展示</h2>
+  <table>
+    <tr><th>产出项目</th><th>产生阶段</th><th>形式</th></tr>
+    <tr><td>小组友谊建构模型图</td><td>基础建构层</td><td>思维导图/概念图</td></tr>
+    <tr><td>哲学咖啡馆讨论纪要</td><td>深度解析层</td><td>英语记录 + 开放问题</td></tr>
+    <tr><td>友谊搭建指南/矛盾分析</td><td>迁移建构层</td><td>英语作品 150–200 词</td></tr>
+    <tr><td>班级友谊契约最终版</td><td>全社区汇整后</td><td>英语海报 5–8 条</td></tr>
+  </table>
+  <p style="margin-top:12px;">🏆 <strong>可选拓展：</strong>"友谊哲学展"社区展示日——英语海报展 + 迷你演讲 + 哲学角对话 + 参观者投票评选</p>
+</div>
+
+<!-- Home-School Connection -->
+<div class="card">
+  <h2>七、家校社连接</h2>
+  <div class="tab-bar">
+    <div class="tab-btn active" onclick="switchTab('c-home', this)">🏠 家校连接</div>
+    <div class="tab-btn" onclick="switchTab('c-social', this)">🌍 社会连接</div>
+  </div>
+
+  <div id="c-home" class="tab-panel active">
+    <ul style="padding-left:20px;">
+      <li><strong>家庭友谊采访：</strong>用英语采访家长："Who was your best friend at my age?" 录制 2 分钟音频</li>
+      <li><strong>家长友谊故事墙：</strong>邀请家长分享对自己影响最深的友谊故事</li>
+      <li><strong>家长参与哲学咖啡馆：</strong>邀请 2–3 位家长线上参与 D4 议题</li>
+    </ul>
+  </div>
+
+  <div id="c-social" class="tab-panel">
+    <ul style="padding-left:20px;">
+      <li><strong>外教连线：</strong>邀请外教参与 D6 跨文化友谊议题讨论</li>
+      <li><strong>英语笔友项目：</strong>通过 ePals 平台与英语母语国家同龄班级交换看法</li>
+      <li><strong>校园平台展示：</strong>优秀作品投稿至校园英语广播站或公众号</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Language Scaffolding -->
+<div class="card">
+  <h2>八、语言急救卡</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+    <div style="background:#fafafa;border:1px solid var(--border);border-radius:6px;padding:10px;">
+      <p style="font-weight:600;font-size:14px;">建构观点</p>
+      <p style="font-size:13px;">"Based on my model, I think friendship is about ___."</p>
+      <p style="font-size:13px;">"I would construct friendship as ___."</p>
+    </div>
+    <div style="background:#fafafa;border:1px solid var(--border);border-radius:6px;padding:10px;">
+      <p style="font-weight:600;font-size:14px;">回应与补充</p>
+      <p style="font-size:13px;">"That's an interesting perspective. It adds ___ to my model."</p>
+      <p style="font-size:13px;">"I agree, and I can also add ___."</p>
+    </div>
+    <div style="background:#fafafa;border:1px solid var(--border);border-radius:6px;padding:10px;">
+      <p style="font-weight:600;font-size:14px;">质疑与追问</p>
+      <p style="font-size:13px;">"What if we consider a case where ___?"</p>
+      <p style="font-size:13px;">"Your model includes ___, but what about ___?"</p>
+    </div>
+    <div style="background:#fafafa;border:1px solid var(--border);border-radius:6px;padding:10px;">
+      <p style="font-weight:600;font-size:14px;">归纳与建构</p>
+      <p style="font-size:13px;">"From today's discussion, we can construct a shared model: ___."</p>
+      <p style="font-size:13px;">"A key insight I gained today is ___."</p>
+    </div>
+  </div>
+
+  <h3>友谊建构模型模板</h3>
+  <div style="background:#f5f5f5;border-radius:6px;padding:12px;margin-top:8px;">
+    <p style="font-family:monospace;font-size:14px;">
+My Friendship Model<br>
+Core elements: 1. ______  2. ______  3. ______<br>
+How they connect: _________________________________<br>
+A real-life example: _________________________________<br>
+A question my model cannot answer yet: _________________________________
+    </p>
+  </div>
+</div>
+
+<div class="footer">
+  <p>将"建构—解析—迁移"的哲学思维框架贯穿学术社区运行，让友谊的理解在真实社会互动中被检验、丰富和升华。</p>
+</div>
+
+</div>
+
+<script>
+function switchTab(id, btn) {
+  var container = btn.closest('.card');
+  container.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  container.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  container.querySelector('#' + id).classList.add('active');
+  btn.classList.add('active');
+}
+function toggleAcc(header) {
+  header.classList.toggle('open');
+  header.nextElementSibling.classList.toggle('open');
+}
+</script>
+</body>
+</html>

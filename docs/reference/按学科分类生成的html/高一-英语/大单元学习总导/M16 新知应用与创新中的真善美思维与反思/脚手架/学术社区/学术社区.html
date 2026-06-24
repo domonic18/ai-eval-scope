@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学术社区 — 英语 必修1 Unit 1 Friendship</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px 24px;
+  box-sizing: border-box;
+}
+.header {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--primary);
+}
+.header h1 { font-size: var(--font-h1); color: var(--primary); margin-bottom: 6px; }
+.header .meta { color: var(--text-secondary); font-size: 13px; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 18px 22px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--bg);
+}
+.card h3 { font-size: 16px; color: var(--primary-hover); margin: 12px 0 8px; }
+.connection-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 20px;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+.connection-row { display: flex; align-items: flex-start; gap: 4px; margin-bottom: 14px; }
+.connection-row .content { flex: 1; }
+.step-list { list-style: none; padding: 0; }
+.step-list li {
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  background: #fafafa;
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+}
+.step-list li strong { color: var(--primary); }
+.role-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin: 10px 0; }
+.role-card {
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  text-align: center;
+  transition: box-shadow .2s;
+}
+.role-card:hover { box-shadow: var(--shadow); }
+.role-card .icon { font-size: 28px; margin-bottom: 4px; }
+.role-card .title { font-weight: 600; color: var(--primary); font-size: 14px; }
+.role-card .desc { font-size: 13px; color: var(--text-secondary); }
+.btn-group { margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
+.btn {
+  display: inline-block;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background .2s, transform .15s;
+  font-family: inherit;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-outline { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
+.btn-outline:hover { background: var(--bg); }
+.interact-area { display: none; margin-top: 14px; padding: 14px; background: #fafafa; border-radius: 6px; border: 1px dashed var(--border); }
+.interact-area.show { display: block; }
+.interact-area textarea {
+  width: 100%;
+  min-height: 70px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+}
+.rubric-box {
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+.rubric-box code { display: block; white-space: pre-wrap; font-size: 13px; color: var(--primary); }
+.checklist { list-style: none; padding: 0; }
+.checklist li { margin-bottom: 8px; display: flex; align-items: flex-start; gap: 8px; }
+.checklist label { cursor: pointer; }
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  .card { padding: 14px; }
+  .role-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🌐 学术社区</h1>
+  <div class="meta">M16 新知应用与创新中的真善美思维与反思 · Unit 1 Friendship（人教版 必修1）</div>
+</div>
+
+<!-- 同伴连接 -->
+<div class="card">
+  <div class="connection-row">
+    <div class="connection-icon">👥</div>
+    <div class="content">
+      <h2 style="border:none;padding:0;margin:0;">同伴连接：讨论与协作</h2>
+    </div>
+  </div>
+
+  <h3>🗣️ 讨论议题（用英语）</h3>
+  <ol class="step-list">
+    <li><strong>Can we truly maintain long-distance friendships in the digital age?</strong><br><span style="color:var(--text-secondary);font-size:13px;">小组讨论，每人至少发表一个观点</span></li>
+    <li><strong>What does "being a true friend" mean to you? Give an example.</strong><br><span style="color:var(--text-secondary);font-size:13px;">轮流分享，每人 1–2 分钟</span></li>
+    <li><strong>"A friend in need is a friend indeed." Do you agree?</strong><br><span style="color:var(--text-secondary);font-size:13px;">正反方辩论，尝试用英语反驳</span></li>
+  </ol>
+
+  <h3>🧑‍🤝‍🧑 角色分工（小组 3–4 人）</h3>
+  <div class="role-grid">
+    <div class="role-card">
+      <div class="icon">🎙️</div>
+      <div class="title">主持人</div>
+      <div class="desc">确保每个人都有发言机会，用英语提问引导</div>
+    </div>
+    <div class="role-card">
+      <div class="icon">📝</div>
+      <div class="title">记录员</div>
+      <div class="desc">记录关键观点和英语表达</div>
+    </div>
+    <div class="role-card">
+      <div class="icon">🗣️</div>
+      <div class="title">发言人</div>
+      <div class="desc">代表小组在班级展示讨论成果</div>
+    </div>
+  </div>
+  <div class="btn-group">
+    <button class="btn btn-outline" onclick="toggleArea('discussion-notes')">📝 记录讨论笔记</button>
+  </div>
+  <div id="discussion-notes" class="interact-area">
+    <textarea placeholder="记录你们小组讨论的关键观点和精彩英语表达…"></textarea>
+    <button class="btn btn-primary" style="margin-top:8px;" onclick="this.textContent='✅ 已保存'">保存笔记</button>
+  </div>
+</div>
+
+<!-- 家校连接 -->
+<div class="card">
+  <div class="connection-row">
+    <div class="connection-icon">🏠</div>
+    <div class="content">
+      <h2 style="border:none;padding:0;margin:0;">家校连接：支持与反馈</h2>
+    </div>
+  </div>
+
+  <div class="step-list">
+    <li><strong>🗣️ 家长访谈任务：</strong>用英语采访家人（可以是简单对话），了解他们如何看待友谊。<br>
+      <span style="color:var(--text-secondary);font-size:13px;">示例问题："What does friendship mean to you?" / "Who was your best friend when you were young?"</span>
+    </li>
+    <li><strong>💬 反馈请求：</strong>把你的英语作品给家人或朋友看，请他们用"真善美"三个维度给你写一段反馈。<br>
+      <span style="color:var(--text-secondary);font-size:13px;">True — 表达真实吗？ Good — 传递善意吗？ Beautiful — 语言优美吗？</span>
+    </li>
+  </div>
+</div>
+
+<!-- 社会连接 -->
+<div class="card">
+  <div class="connection-row">
+    <div class="connection-icon">🌍</div>
+    <div class="content">
+      <h2 style="border:none;padding:0;margin:0;">社会连接：真实连接</h2>
+    </div>
+  </div>
+
+  <div class="step-list">
+    <li><strong>📰 写作投稿：</strong>把你创作的友谊主题英语作品投稿到学校英语报或《21 世纪报》中学生版。</li>
+    <li><strong>🌏 线上交流：</strong>通过 PenPal Schools 等平台和英语国家的同龄人交流，分享各自对友谊的理解。</li>
+  </div>
+</div>
+
+<!-- 输出机制 -->
+<div class="card">
+  <h2>🎯 输出机制</h2>
+  <div class="step-list">
+    <li><strong>📌 展示：</strong>在班级英语墙 / 线上平台张贴你的作品</li>
+    <li><strong>🎉 分享会：</strong>组织一次小型 "Friendship Day" 作品分享会，每个人用英语介绍自己的创作灵感</li>
+    <li><strong>🤝 互评机制：</strong>用下面的 rubric 为同伴的作品写 2–3 句英语评价</li>
+  </div>
+
+  <div class="rubric-box">
+    <code>✨ Content: Did it express a clear idea about friendship?
+📖 Language: Did it use good vocabulary and correct grammar?
+💡 Creativity: Was the idea original and interesting?</code>
+  </div>
+
+  <div class="btn-group">
+    <button class="btn btn-primary" onclick="toggleArea('peer-review')">✏️ 开始互评</button>
+  </div>
+  <div id="peer-review" class="interact-area">
+    <p><strong>同伴名称：</strong><input type="text" style="border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:14px;width:180px;"></p>
+    <textarea placeholder="Content: ...&#10;Language: ...&#10;Creativity: ...&#10;Overall (2-3 sentences):"></textarea>
+    <button class="btn btn-primary" style="margin-top:8px;" onclick="this.textContent='✅ 已提交互评'">提交互评</button>
+  </div>
+
+  <!-- 进度清单 -->
+  <div style="margin-top:16px;">
+    <h3>📋 我的社区任务进度</h3>
+    <ul class="checklist">
+      <li><label><input type="checkbox"> 参与了小组讨论并发言</label></li>
+      <li><label><input type="checkbox"> 完成了角色分工中的任务</label></li>
+      <li><label><input type="checkbox"> 完成了家长访谈（英语）</label></li>
+      <li><label><input type="checkbox"> 请他人给出了"真善美"反馈</label></li>
+      <li><label><input type="checkbox"> 参加了作品分享会</label></li>
+      <li><label><input type="checkbox"> 完成了至少 1 份同伴互评</label></li>
+    </ul>
+  </div>
+</div>
+
+</div>
+
+<script>
+function toggleArea(id) {
+  var el = document.getElementById(id);
+  el.classList.toggle('show');
+}
+</script>
+</body>
+</html>

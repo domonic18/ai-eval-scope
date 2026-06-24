@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性七阶适配案例</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 100%;
+  max-width: none;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.header {
+  background: linear-gradient(135deg, #434343 0%, #595959 100%);
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+
+.header h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.header p {
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+.case-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.case-tab {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: var(--text-secondary);
+  font-family: inherit;
+}
+
+.case-tab:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.case-tab.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  display: none;
+  animation: fadeIn 0.4s ease;
+}
+
+.card.show {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+
+.card h3 {
+  font-size: 16px;
+  color: var(--primary);
+  margin: 14px 0 8px;
+}
+
+.card p {
+  margin-bottom: 8px;
+}
+
+.card ul {
+  padding-left: 20px;
+  margin-bottom: 10px;
+}
+
+.card li {
+  margin-bottom: 5px;
+}
+
+.tag-blue {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+  padding: 2px 12px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.steps-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.step-item {
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  transition: background 0.2s ease;
+  cursor: default;
+}
+
+.step-item:hover {
+  background: #e8e8e8;
+}
+
+.step-item .step-num {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  text-align: center;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 11px;
+  margin-right: 6px;
+}
+
+.rubric {
+  background: #fafafa;
+  border: 1px dashed var(--accent);
+  border-radius: var(--border-radius);
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+
+.rubric-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+  font-size: 14px;
+}
+
+.rubric-item::before {
+  content: "☐";
+  font-size: 18px;
+  color: var(--primary);
+}
+
+.principles-tag {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin: 6px 0;
+}
+
+.principles-tag span {
+  background: #e8e8e8;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-right: 4px;
+}
+
+.footer-note {
+  text-align: center;
+  padding: 16px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  .header { padding: 20px 16px; }
+  .card { padding: 16px; }
+  .case-nav { gap: 6px; }
+  .case-tab { font-size: 12px; padding: 4px 12px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>建构性七阶适配案例</h1>
+  <p>七个从易到难的建构性案例，覆盖个人理解、生活应用、跨学科整合等多元场景</p>
+</div>
+
+<div class="case-nav">
+  <button class="case-tab active" onclick="switchCase(0)">案例一</button>
+  <button class="case-tab" onclick="switchCase(1)">案例二</button>
+  <button class="case-tab" onclick="switchCase(2)">案例三</button>
+  <button class="case-tab" onclick="switchCase(3)">案例四</button>
+  <button class="case-tab" onclick="switchCase(4)">案例五</button>
+  <button class="case-tab" onclick="switchCase(5)">案例六</button>
+  <button class="case-tab" onclick="switchCase(6)">案例七</button>
+</div>
+
+<div class="card show" data-index="0">
+  <span class="tag-blue">个人理解型</span>
+  <h2>我的友谊价值观卡片</h2>
+  <p><strong>情境：</strong>你收到学校英语角的任务：用3句话向外国朋友解释"友谊对你意味着什么"。如何用简短英语表达友谊价值观？</p>
+  <p><strong>建构任务：</strong>制作一张 Friendship Values Card（友谊价值观卡片）</p>
+  <p class="principles-tag"><span>情境锚定原理</span><span>语言赋能原理</span></p>
+  <div class="steps-list">
+    <div class="step-item"><span class="step-num">1</span>反思个人友谊经历</div>
+    <div class="step-item"><span class="step-num">2</span>提炼核心价值词</div>
+    <div class="step-item"><span class="step-num">3</span>组织英语表达</div>
+    <div class="step-item"><span class="step-num">4</span>设计卡片版式</div>
+  </div>
+  <p><strong>成果表达：</strong>一张包含 1 句定义 + 2 句个人感悟的英语卡片</p>
+  <div class="rubric">
+    <div class="rubric-item">表达了个人真实的友谊观</div>
+    <div class="rubric-item">用到了本单元 3 个以上词汇</div>
+    <div class="rubric-item">语言简洁有力</div>
+  </div>
+</div>
+
+<div class="card" data-index="1">
+  <span class="tag-blue">生活应用型</span>
+  <h2>给室友的沟通信</h2>
+  <p><strong>情境：</strong>你和室友在作息时间上有冲突，想用英语写一封表达理解并提出解决方案的信。</p>
+  <p><strong>建构任务：</strong>写一封 Roommate Communication Letter</p>
+  <p class="principles-tag"><span>问题识别原理</span><span>经验链接原理</span></p>
+  <div class="steps-list">
+    <div class="step-item"><span class="step-num">1</span>明确冲突点</div>
+    <div class="step-item"><span class="step-num">2</span>理解对方角度</div>
+    <div class="step-item"><span class="step-num">3</span>表达自己的感受</div>
+    <div class="step-item"><span class="step-num">4</span>提出折中方案</div>
+  </div>
+  <p><strong>成果表达：</strong>英文书信（150 词以上）</p>
+  <div class="rubric">
+    <div class="rubric-item">开头表达了理解</div>
+    <div class="rubric-item">具体描述了问题</div>
+    <div class="rubric-item">提出了可操作的方案</div>
+  </div>
+</div>
+
+<div class="card" data-index="2">
+  <span class="tag-blue">校园问题解决型</span>
+  <h2>跨文化交友指南</h2>
+  <p><strong>情境：</strong>学校有来自不同国家的交换生，他们反映很难和中国学生交朋友。</p>
+  <p><strong>建构任务：</strong>制作一份 Cross-cultural Friendship Guide（跨文化交友指南）</p>
+  <p class="principles-tag"><span>经验链接原理</span><span>循环优化原理</span></p>
+  <div class="steps-list">
+    <div class="step-item"><span class="step-num">1</span>调研交友困难</div>
+    <div class="step-item"><span class="step-num">2</span>分析文化差异</div>
+    <div class="step-item"><span class="step-num">3</span>总结实用建议</div>
+    <div class="step-item"><span class="step-num">4</span>设计图文版式</div>
+  </div>
+  <p><strong>成果表达：</strong>图文并茂的迷你指南（可手绘/数字化）</p>
+  <div class="rubric">
+    <div class="rubric-item">包含至少 3 条文化差异提示</div>
+    <div class="rubric-item">每条提示有具体例子</div>
+    <div class="rubric-item">语言中性、尊重</div>
+  </div>
+</div>
+
+<div class="card" data-index="3">
+  <span class="tag-blue">学科表达型</span>
+  <h2>友谊主题英语微演讲</h2>
+  <p><strong>情境：</strong>班级要举办英语主题演讲，题目是"What Makes a True Friend"。</p>
+  <p><strong>建构任务：</strong>撰写并录制一段 3 分钟的英语演讲稿</p>
+  <p class="principles-tag"><span>情境锚定原理</span><span>语言赋能原理</span><span>循环优化原理</span></p>
+  <div class="steps-list">
+    <div class="step-item"><span class="step-num">1</span>确定演讲主线</div>
+    <div class="step-item"><span class="step-num">2</span>收集个人例子</div>
+    <div class="step-item"><span class="step-num">3</span>组织演讲稿结构</div>
+    <div class="step-item"><span class="step-num">4</span>练习语调表情</div>
+  </div>
+  <p><strong>成果表达：</strong>3 分钟英语演讲视频/音频</p>
+  <div class="rubric">
+    <div class="rubric-item">有明确的观点</div>
+    <div class="rubric-item">包含个人真实经历</div>
+    <div class="rubric-item">语速适中、发音清晰</div>
+  </div>
+</div>
+
+<div class="card" data-index="4">
+  <span class="tag-blue">跨学科整合型</span>
+  <h2>友谊的"科学 + 人文"双重解读</h2>
+  <p><strong>情境：</strong>心理学研究发现高质量友谊能延长寿命、降低压力。文学作品中也有大量歌颂友谊的篇章。</p>
+  <p><strong>建构任务：</strong>制作一份 "Friendship: A Dual Perspective" 信息图</p>
+  <p class="principles-tag"><span>问题识别原理</span><span>经验链接原理</span></p>
+  <div class="steps-list">
+    <div class="step-item"><span class="step-num">1</span>收集科学研究数据</div>
+    <div class="step-item"><span class="step-num">2</span>选取文学名言/段落</div>
+    <div class="step-item"><span class="step-num">3</span>对比科学和人文视角</div>
+    <div class="step-item"><span class="step-num">4</span>设计信息图布局</div>
+  </div>
+  <p><strong>成果表达：</strong>A4 大小的信息海报</p>
+  <div class="rubric">
+    <div class="rubric-item">包含至少 1 个科学事实</div>
+    <div class="rubric-item">包含 1 段文学引用</div>
+    <div class="rubric-item">双重视角对比清晰</div>
+  </div>
+</div>
+
+<div class="card" data-index="5">
+  <span class="tag-blue">社会/未来情境型</span>
+  <h2>线上友谊与线下友谊</h2>
+  <p><strong>情境：</strong>你的表弟沉迷社交网络，认为在网上有 200 个"朋友"，但在学校却很孤独。</p>
+  <p><strong>建构任务：</strong>设计一个 Digital vs. Real Friendship Comparison Framework 对比框架</p>
+  <p class="principles-tag"><span>情境锚定原理</span><span>循环优化原理</span></p>
+  <div class="steps-list">
+    <div class="step-item"><span class="step-num">1</span>整理线上友谊特点</div>
+    <div class="step-item"><span class="step-num">2</span>整理线下友谊特点</div>
+    <div class="step-item"><span class="step-num">3</span>设计对比维度</div>
+    <div class="step-item"><span class="step-num">4</span>形成个人结论</div>
+  </div>
+  <p><strong>成果表达：</strong>双栏对比分析表 + 个人结论</p>
+  <div class="rubric">
+    <div class="rubric-item">包含 3 个以上对比维度</div>
+    <div class="rubric-item">每个维度有具体例证</div>
+    <div class="rubric-item">结论体现了你的判断</div>
+  </div>
+</div>
+
+<div class="card" data-index="6">
+  <span class="tag-blue">综合创新型</span>
+  <h2>班级友谊文化建设方案</h2>
+  <p><strong>情境：</strong>班主任请你为班级设计一个"友谊建设计划"，用英语展示，促进班级凝聚力。</p>
+  <p><strong>建构任务：</strong>撰写一份 Class Friendship Building Plan 方案书</p>
+  <p class="principles-tag"><span>综合运用前 6 条原理</span></p>
+  <div class="steps-list">
+    <div class="step-item"><span class="step-num">1</span>调研班级现状</div>
+    <div class="step-item"><span class="step-num">2</span>设计 3 个友谊建设活动</div>
+    <div class="step-item"><span class="step-num">3</span>规划时间表和资源</div>
+    <div class="step-item"><span class="step-num">4</span>制作方案展板</div>
+  </div>
+  <p><strong>成果表达：</strong>英语方案书（含活动设计、时间表、预期效果）</p>
+  <div class="rubric">
+    <div class="rubric-item">活动设计具体可执行</div>
+    <div class="rubric-item">方案包含时间和资源规划</div>
+    <div class="rubric-item">体现了对班级现状的理解</div>
+  </div>
+</div>
+
+<div class="footer-note">
+  ⚡ 点击上方标签切换案例 — 从易到难，循序渐进
+</div>
+
+</div>
+
+<script>
+var currentIndex = 0;
+
+function switchCase(index) {
+  var tabs = document.querySelectorAll('.case-tab');
+  var cards = document.querySelectorAll('.card');
+  tabs.forEach(function(t) { t.classList.remove('active'); });
+  cards.forEach(function(c) { c.classList.remove('show'); });
+  tabs[index].classList.add('active');
+  cards[index].classList.add('show');
+  currentIndex = index;
+}
+</script>
+</body>
+</html>

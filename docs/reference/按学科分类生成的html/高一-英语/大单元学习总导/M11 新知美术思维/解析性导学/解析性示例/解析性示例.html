@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性示例 — M11 新知美术思维</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 3px solid var(--accent);
+}
+h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 28px 0 12px;
+  padding-left: 12px;
+  border-left: 4px solid var(--accent);
+}
+h3 {
+  font-size: calc(var(--font-body) + 2px);
+  color: var(--primary);
+  margin: 20px 0 10px;
+  font-weight: 600;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  transition: transform 0.2s, box-shadow 0.3s;
+}
+.card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.step-card {
+  position: relative;
+  padding-left: 60px;
+}
+.step-number {
+  position: absolute;
+  left: 16px;
+  top: 20px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+}
+.key-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin: 12px 0;
+}
+.key-info-item {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 12px;
+  border-left: 3px solid var(--accent);
+}
+.key-info-item strong {
+  display: block;
+  color: var(--primary);
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+.key-info-item p {
+  font-size: 13px;
+  color: var(--text);
+}
+.tip-box {
+  background: #fafafa;
+  border-left: 4px solid var(--primary);
+  padding: 14px 18px;
+  margin: 14px 0;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+}
+.warning-box {
+  background: #fff8f0;
+  border-left: 4px solid #d46b08;
+  padding: 14px 18px;
+  margin: 14px 0;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+}
+.success-box {
+  background: #f0fdf4;
+  border-left: 4px solid #16a34a;
+  padding: 14px 18px;
+  margin: 14px 0;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+}
+.demo-highlight {
+  background: #fffde7;
+  border: 1px solid #ffe082;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 8px 0;
+  font-size: 14px;
+}
+.checkbox-list {
+  list-style: none;
+  padding-left: 0;
+}
+.checkbox-list li {
+  padding: 6px 0 6px 28px;
+  position: relative;
+}
+.checkbox-list li::before {
+  content: '☐';
+  position: absolute;
+  left: 0;
+  font-size: 18px;
+  color: var(--primary);
+}
+ul, ol { padding-left: 22px; margin: 8px 0; }
+li { margin-bottom: 6px; }
+.scenario-box {
+  background: linear-gradient(135deg, #f5f5f5, #ebebeb);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.principle-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 4px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+  margin: 2px 4px 2px 0;
+}
+.timeline-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+.timeline-step {
+  flex: 1;
+  text-align: center;
+  padding: 8px 4px;
+  border-radius: 4px;
+  background: var(--bg);
+  font-size: 12px;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+.timeline-step.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.interactive-table td:first-child {
+  font-weight: 600;
+  color: var(--primary);
+}
+.eye-catcher {
+  text-align: center;
+  padding: 24px;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  border: 2px dashed var(--accent);
+  margin: 16px 0;
+}
+.eye-catcher .big-text {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 2px;
+}
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .key-info-grid { grid-template-columns: 1fr; }
+  .step-card { padding-left: 50px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🧠 解析性示例 — M11 新知美术思维</h1>
+
+<div class="scenario-box">
+  <h2>🎬 解析任务情境</h2>
+  <p>你经过学校美术展览区时被一张海报吸引住了。那是学校英语社设计的"Friendship Week"宣传海报——没有用繁复的英语句子，而是用色彩、图标和精炼的文字组合。你发现自己被它吸引不是因为读懂了上面的文字，而是被"视觉"本身抓住了。</p>
+  <p style="margin-top:10px;font-weight:600;font-size:16px;">这时候一个问题出现了：<span style="color:var(--primary);">一张好的英语海报，到底"好"在哪里？</span>是色彩搭配？是图标设计？还是文字排版？——你想学会如何"看懂"它，以及以后如何"设计"它。</p>
+</div>
+
+<div class="card">
+  <h2>🎯 核心问题</h2>
+  <p style="font-size:16px;line-height:1.8;">如何用"美术思维"（视觉分析的视角），解构一张英语友谊主题海报的设计逻辑——为什么它看起来舒服？什么让信息一目了然？哪些设计元素在"悄悄"告诉你关于友谊的信息？</p>
+</div>
+
+<div class="card">
+  <h2>📋 关键信息提取</h2>
+  <div class="key-info-grid">
+    <div class="key-info-item">
+      <strong>暖色调（橙/粉/黄）</strong>
+      <p>暖色传递温暖、友好、积极的情感——色彩是视觉语言的第一信息，先于文字告诉观众情绪。</p>
+    </div>
+    <div class="key-info-item">
+      <strong>醒目标题 "Friendship Week"</strong>
+      <p>标题是视觉重心，决定阅读起点——好的设计让入口一目了然。</p>
+    </div>
+    <div class="key-info-item">
+      <strong>对话气泡/握手/爱心图标</strong>
+      <p>图标替代大段文字，降低阅读负担——符号是跨语言的。</p>
+    </div>
+    <div class="key-info-item">
+      <strong>每个区块1—2个单词</strong>
+      <p>文字的"少"让信息的"精确度"更高——每个词要"一个顶十个"。</p>
+    </div>
+    <div class="key-info-item">
+      <strong>底部约1/5留白</strong>
+      <p>留白让内容有"呼吸感"——留白不是"空"，是设计的一部分。</p>
+    </div>
+  </div>
+</div>
+
+<h2 style="margin-top:32px;">🔬 专家解析过程（五步法）</h2>
+
+<div class="card step-card">
+  <div class="step-number">1</div>
+  <h3>先看见什么</h3>
+  <p><strong>专家思维：</strong>你的眼睛第一眼落在哪个位置？不是"我想要看哪里"，而是"设计让我看哪里"。</p>
+  <p><strong>为什么这样想：</strong>海报设计是有"视觉路径"的——设计师通过大小、颜色、位置决定你的阅读顺序。</p>
+  <div class="demo-highlight">
+    <strong>🎯 示范操作：</strong>退后一步看整张海报，闭上眼睛再睁开——第一眼落在"Friendship Week"标题上。标题最大、最深色、在中心偏上位置。
+  </div>
+</div>
+
+<div class="card step-card">
+  <div class="step-number">2</div>
+  <h3>判断问题属于哪一类</h3>
+  <p><strong>专家思维：</strong>这不是一份"阅读材料"，而是一份"视觉沟通材料"——评价它不能用"有没有语法错误"，而是用"信息传达是否高效"。</p>
+  <p><strong>为什么这样想：</strong>判断解读对象的核心性质，决定了你应该用什么标准和方法来分析它。</p>
+  <div class="demo-highlight">
+    <strong>🎯 示范操作：</strong>确定这是"信息型视觉设计"，分析重心在"信息层级→视觉编码→传达效率"。
+  </div>
+</div>
+
+<div class="card step-card">
+  <div class="step-number">3</div>
+  <h3>调用哪些概念、原理或方法</h3>
+  <p><strong>专家思维：</strong>需要调用"视觉设计四原则"——<span class="principle-tag">对比 Contrast</span> <span class="principle-tag">对齐 Alignment</span> <span class="principle-tag">重复 Repetition</span> <span class="principle-tag">亲密性 Proximity</span></p>
+  <p><strong>为什么这样想：</strong>这四个原则是评价任何视觉设计的通用框架——从海报到PPT到网页。</p>
+  <div class="demo-highlight">
+    <p><strong>🎯 示范操作：</strong></p>
+    <ul>
+      <li><strong>对比：</strong>标题加粗加大 vs 正文小而轻 → 信息层级清晰</li>
+      <li><strong>对齐：</strong>所有区块左对齐 → 秩序感</li>
+      <li><strong>重复：</strong>三个区块都用"图标+单词"模式 → 统一感</li>
+      <li><strong>亲密性：</strong>相关内容放在一起（"时间"和"地点"在一行）→ 逻辑清晰</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card step-card">
+  <div class="step-number">4</div>
+  <h3>如何进行推理或分析</h3>
+  <p><strong>专家思维：</strong>从观察到的现象，推理设计背后的决策逻辑。不是"它是什么"，而是"它为什么这样"。</p>
+  <p><strong>为什么这样想：</strong>分析的目标不是描述，是解释——理解设计者的意图。</p>
+  <div class="demo-highlight">
+    <p><strong>🎯 示范操作：</strong></p>
+    <ul>
+      <li>观察到：暖色调 → 推理：设计师想传达"友谊是温暖的" → 证据：友谊主题海报90%用暖色调</li>
+      <li>观察到：文字极少 → 推理：设计师想让海报在3秒内被理解 → 证据：这是走廊海报，观众经过时间只有3秒</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card step-card">
+  <div class="step-number">5</div>
+  <h3>怎样形成结论</h3>
+  <p><strong>专家思维：</strong>综合所有分析，判断这张海报的视觉设计是否"有效"——信息被清楚地传达了吗？观众有来看活动的冲动吗？</p>
+  <p><strong>为什么这样想：</strong>分析的终点不是"好看"，而是"有效"——视觉设计是功能性的。</p>
+  <div class="demo-highlight">
+    <strong>🎯 示范操作：</strong>这张海报有效传达了活动信息（时间、地点、活动主题），通过暖色调和友好图标激发了参与欲望。优秀的设计。
+  </div>
+</div>
+
+<div class="card">
+  <h2>✅ 结论表达</h2>
+  <p style="font-size:16px;line-height:1.8;">用美术思维解析一张海报，就是学会<strong style="color:var(--primary);">"看到表面之下的设计逻辑"</strong>。你不是在评价它好不好看，而是在回答三个问题：</p>
+  <div class="eye-catcher">
+    <p>设计师想让观众</p>
+    <p><span class="big-text">先看什么？</span> → <span class="big-text">再看什么？</span> → <span class="big-text">最后做什么？</span></p>
+  </div>
+  <p style="text-align:center;">当你用这三个问题分析任何视觉作品时，你就掌握了"美术思维"的核心。</p>
+</div>
+
+<div class="tip-box">
+  <h2>🧰 方法提炼</h2>
+  <p><strong>以后遇到类似问题（解析任何视觉作品），可以这样做：</strong></p>
+  <ol>
+    <li><strong>先整体感受：</strong>退后一步看第一眼印象——我的眼睛先落在哪？</li>
+    <li><strong>再拆解要素：</strong>分别分析色彩、构图、文字、图标、留白</li>
+    <li><strong>然后用原则检验：</strong>对比？对齐？重复？亲密性？</li>
+    <li><strong>最后判断效果：</strong>信息被有效传达了吗？目标观众能被吸引吗？</li>
+  </ol>
+</div>
+
+<div class="warning-box">
+  <h2>⚠️ 易错提醒</h2>
+  <ul>
+    <li><strong>❌ 误把"喜欢"当"分析"：</strong>喜欢一张海报 ≠ 能分析它。分析需要客观标准（设计四原则），不是主观感受。</li>
+    <li><strong>❌ 忽略功能目标：</strong>一张海报如果信息传达失败，再好看也是坏设计。始终把"信息传达效率"放在第一位。</li>
+    <li><strong>❌ 过度解读：</strong>不是每个设计决策都有深刻含义——有时候蓝色的选择只是因为"设计师本人喜欢蓝色"。适可而止。</li>
+  </ul>
+</div>
+
+<div class="success-box">
+  <h2>✏️ 自主迁移小练习</h2>
+  <p><strong>任务：</strong>请观察你家附近的一张广告牌或药店促销海报（不限语言），用本案例学到的"三步分析法"（先整体→再拆解→后检验）写一段150词以内的英语分析。</p>
+  <p><strong>提示：</strong>不需要写满分答案，只需要写你的真实观察——做什么看起来最明显？读起来最容易的是什么？</p>
+  <div style="margin-top:12px;">
+    <textarea placeholder="在此写下你的英语分析..." style="width:100%;min-height:80px;padding:12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:14px;resize:vertical;background:var(--card-bg);" rows="3"></textarea>
+  </div>
+</div>
+
+<div class="card" style="background:var(--bg);">
+  <h2>📊 学习自评</h2>
+  <ul class="checkbox-list">
+    <li>我能说清楚"退后一步看整体"是什么意思，以及为什么先看整体再拆细节？</li>
+    <li>我能说出"设计四原则"（对比、对齐、重复、亲密性）并举例说明吗？</li>
+    <li>看完这个案例，我能不能用类似的方法分析教室里的另一张英语海报？</li>
+    <li>我是否理解了"分析"≠"评价"——分析是描述为什么，评价是好/不好？</li>
+    <li>我能用3个英语句子概括这个案例教我的最核心的分析方法吗？</li>
+  </ul>
+  <p style="margin-top:10px;color:var(--text-secondary);font-size:14px;">💡 逐条对照，在做到的条目前面打 ✅</p>
+</div>
+
+</div>
+</body>
+</html>

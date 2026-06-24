@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视频 — 三层观看任务</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 8px 0;
+  font-weight: 700;
+}
+.header p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 14px;
+}
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.tab-btn {
+  padding: 10px 20px;
+  border: 2px solid var(--border);
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.25s;
+  color: var(--text);
+}
+.tab-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.tab-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.tab-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin-left: 6px;
+}
+.tab-btn .badge-basic { background: #e6fffb; color: #13c2c2; }
+.tab-btn .badge-inter { background: #fff7e6; color: #fa8c16; }
+.tab-btn .badge-challenge { background: #f9f0ff; color: #722ed1; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.card h3 {
+  font-size: var(--font-h2);
+  margin: 0 0 12px 0;
+  color: var(--primary);
+}
+.video-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border-radius: 6px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.video-info .badge {
+  background: var(--primary);
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+.pause-point {
+  background: #fffbe6;
+  border-left: 4px solid #faad14;
+  padding: 12px 16px;
+  border-radius: 0 6px 6px 0;
+  margin: 12px 0;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.pause-point:hover {
+  background: #fff8d6;
+}
+.pause-point .label {
+  font-weight: 600;
+  color: #d48806;
+  font-size: 13px;
+}
+.pause-point .question {
+  margin-top: 4px;
+  font-size: 14px;
+}
+.question-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+}
+.question-list li {
+  padding: 8px 0 8px 24px;
+  position: relative;
+  border-bottom: 1px dashed var(--border);
+}
+.question-list li::before {
+  content: "▸";
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+}
+.output-task {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-top: 12px;
+  font-size: 14px;
+  border: 1px dashed var(--border);
+}
+.output-task strong {
+  color: var(--primary);
+}
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+  font-size: 14px;
+}
+.summary-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+}
+.summary-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.summary-table tr:hover td {
+  background: var(--bg);
+}
+.reveal-btn {
+  display: inline-block;
+  padding: 6px 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+  color: var(--text-secondary);
+}
+.reveal-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.reveal-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+  padding: 0 12px;
+}
+.reveal-content.open {
+  max-height: 300px;
+  padding: 12px;
+}
+@media (max-width: 600px) {
+  .container { padding: 12px 10px; }
+  .header { padding: 20px 16px; }
+  .tab-btn { padding: 8px 14px; font-size: 13px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🎬 视频 — 三层观看任务</h1>
+  <p>通过聚焦型观看任务，训练从视频中提取关键信息的能力，将理解应用到友谊沟通创作中</p>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('basic')">基础层 <span class="badge-basic tab-badge">解释</span></button>
+  <button class="tab-btn" onclick="switchTab('inter')">进阶层 <span class="badge-inter tab-badge">分析</span></button>
+  <button class="tab-btn" onclick="switchTab('challenge')">挑战层 <span class="badge-challenge tab-badge">辩论</span></button>
+</div>
+
+<div id="tab-basic" class="tab-panel active">
+  <div class="card">
+    <h3>📖 基础层：解释型</h3>
+    <div class="video-info">
+      <span class="badge">TED-Ed</span>
+      <span>What makes a good friendship?</span>
+      <span style="margin-left:auto;">⏱ 4min</span>
+    </div>
+
+    <p><strong>👁 观看任务：</strong>记录视频中提到的 <strong>3个</strong> 良好友谊的特征。</p>
+
+    <ul class="question-list">
+      <li>视频中认为友谊的核心要素有哪些？</li>
+      <li>为什么说 "quality time" 对友谊很重要？</li>
+    </ul>
+
+    <div class="pause-point" onclick="toggleReveal(this)">
+      <div class="label">⏸ 暂停思考点（2:15）</div>
+      <div class="question">停在 "reciprocity" 概念出现时——<strong>你有这样的朋友吗？</strong></div>
+    </div>
+
+    <div class="output-task">
+      <strong>📝 输出任务：</strong>用英文写出 50 词总结
+    </div>
+  </div>
+</div>
+
+<div id="tab-inter" class="tab-panel">
+  <div class="card">
+    <h3>🔍 进阶层：分析型</h3>
+    <div class="video-info">
+      <span class="badge">Friends S2E8</span>
+      <span>Ross 和 Chandler 的误会与和解</span>
+      <span style="margin-left:auto;">⏱ 3min</span>
+    </div>
+
+    <p><strong>👁 观看任务：</strong>分析两人的矛盾起因和和解方式。</p>
+
+    <ul class="question-list">
+      <li>他们的误会是怎么产生的？</li>
+      <li>最后是怎么和解的？用了哪些沟通技巧？</li>
+    </ul>
+
+    <div class="pause-point" onclick="toggleReveal(this)">
+      <div class="label">⏸ 暂停思考点（1:30）</div>
+      <div class="question">停在冲突爆发点——<strong>如果你是他们，你会怎么说？</strong></div>
+    </div>
+
+    <div class="output-task">
+      <strong>📝 输出任务：</strong>用英文写出 200 词的分析，对比剧中的做法和你自己的处理方式
+    </div>
+  </div>
+</div>
+
+<div id="tab-challenge" class="tab-panel">
+  <div class="card">
+    <h3>🧠 挑战层：辩论 / 前沿型</h3>
+    <div class="video-info">
+      <span class="badge">TED Talk</span>
+      <span>Nicholas Christakis — The hidden influence of social networks</span>
+      <span style="margin-left:auto;">⏱ 18min</span>
+    </div>
+
+    <p><strong>👁 观看任务：</strong>理解社交网络如何影响个人行为和幸福感。</p>
+
+    <ul class="question-list">
+      <li>Christakis 的研究发现了关于友谊网络的什么有趣现象？</li>
+      <li>这些发现对你选择朋友有什么启示？</li>
+    </ul>
+
+    <div class="pause-point" onclick="toggleReveal(this)">
+      <div class="label">⏸ 暂停思考点（5:00）</div>
+      <div class="question">停在 "emotional contagion" 概念——<strong>你的情绪会受朋友影响吗？</strong></div>
+    </div>
+
+    <div class="output-task">
+      <strong>📝 输出任务：</strong>用英文写下你的观点：你认为"友谊是相互影响的"这个观点有多大的道理？
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:8px;">
+  <h3>📊 视频来源汇总</h3>
+  <table class="summary-table">
+    <thead><tr><th>层级</th><th>视频</th><th>时长</th><th>平台</th></tr></thead>
+    <tbody>
+      <tr><td>🟢 基础</td><td>TED-Ed: What makes a good friendship?</td><td>4min</td><td>YouTube / B站</td></tr>
+      <tr><td>🟡 进阶</td><td>Friends S2E8 片段</td><td>3min</td><td>YouTube</td></tr>
+      <tr><td>🔴 挑战</td><td>TED Talk by Nicholas Christakis</td><td>18min</td><td>TED.com</td></tr>
+    </tbody>
+  </table>
+</div>
+
+</div>
+<script>
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`.tab-btn[onclick*="'${tab}'"]`).classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+function toggleReveal(el) {
+  el.style.background = el.style.background === 'rgb(255, 248, 214)' ? '' : '#fff8d6';
+}
+</script>
+</body>
+</html>

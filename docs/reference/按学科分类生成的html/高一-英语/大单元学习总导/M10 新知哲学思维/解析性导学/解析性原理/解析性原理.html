@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性原理 — 从示例到可迁移的分析方法</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); font-size: var(--font-body); line-height: var(--line-height); }
+.container { width: 100%; max-width: none; padding: 20px; box-sizing: border-box; }
+header { background: linear-gradient(135deg, #434343 0%, #595959 100%); color: #fff; padding: 28px 24px; border-radius: var(--border-radius); margin-bottom: 24px; }
+header h1 { font-size: var(--font-h1); margin: 0 0 6px 0; }
+header p { margin: 0; opacity: 0.85; font-size: 14px; }
+.section-title { font-size: var(--font-h2); color: var(--primary); margin: 28px 0 12px 0; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: flex; align-items: center; gap: 8px; }
+.principles-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; }
+.principle-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); box-shadow: var(--shadow); overflow: hidden; transition: box-shadow 0.2s; }
+.principle-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.principle-header { background: #f0f0f0; padding: 14px 18px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; }
+.principle-header h3 { margin: 0; font-size: 15px; color: var(--primary); }
+.principle-header .arrow { transition: transform 0.3s; font-size: 14px; }
+.principle-header.active .arrow { transform: rotate(180deg); }
+.principle-body { display: none; padding: 18px; border-top: 1px solid var(--border); }
+.principle-body.active { display: block; }
+.principle-body .label { font-weight: 600; color: var(--primary); margin-top: 12px; font-size: 14px; }
+.principle-body .label:first-child { margin-top: 0; }
+.principle-body p, .principle-body li { font-size: 14px; }
+.principle-body ul { padding-left: 18px; margin: 6px 0; }
+.principle-body li { margin-bottom: 4px; }
+.tag-scene { display: inline-block; background: #e8e8e8; color: #434343; padding: 1px 8px; border-radius: 10px; font-size: 12px; margin: 2px; }
+.scenes { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 18px; margin: 12px 0; }
+.scenes h4 { color: var(--primary); margin: 0 0 8px 0; font-size: 15px; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; }
+th { background: #f0f0f0; color: var(--primary); font-weight: 600; }
+.tip-box { background: #fafafa; border-left: 4px solid var(--accent); padding: 12px 16px; border-radius: 0 var(--border-radius) var(--border-radius) 0; margin: 12px 0; font-size: 14px; }
+.tip-box strong { color: var(--primary); }
+.check-item { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px; margin-bottom: 12px; }
+.check-item h4 { color: var(--primary); margin: 0 0 6px 0; font-size: 14px; }
+.check-item .answer { display: none; margin-top: 10px; padding: 10px; background: #f9f9f9; border-radius: 6px; font-size: 13px; border-left: 3px solid var(--accent); }
+.check-item .answer.active { display: block; }
+@media (max-width: 640px) { .principles-grid { grid-template-columns: 1fr; } header { padding: 20px 16px; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>🔍 解析性原理</h1>
+  <p>从示例到可迁移的分析方法 · Unit 1 Friendship · 英语 必修1</p>
+</header>
+
+<div class="section-title">🎯 为什么需要提炼原理？</div>
+<p>一次成功的解析不等于具备了可靠的解析能力。<strong>从具体示例走向可迁移的原理</strong>，是认知从"实例层"跃迁到"方法层"的关键一步。核心追问：如果给你一篇从未见过的新文本，你能否再次完成同样高质量的解析？答案不是"靠记忆"，而是靠从示例中提炼出的<strong>可复用的解析性原理</strong>。</p>
+
+<div class="section-title">📐 五条可迁移解析原理</div>
+<p style="color:var(--text-secondary);margin-bottom:12px;">点击每条原理展开详细说明，包含解释、示例、使用步骤和可迁移场景。</p>
+
+<div class="principles-grid">
+
+<div class="principle-card">
+  <div class="principle-header" onclick="toggleBody(this)">
+    <h3>原理一：整体感知—局部聚焦</h3>
+    <span class="arrow">▼</span>
+  </div>
+  <div class="principle-body">
+    <div class="label">核心解释</div>
+    <p>先通览全篇把握大意，再将注意力聚焦于关键段落和细节。跳过整体直接切入细节容易断章取义；始终停留在整体而不深入细节则无法形成深度理解。</p>
+    <div class="label">使用步骤</div>
+    <ul>
+      <li><strong>快速通读</strong> — 第一遍不停顿，只标记"不太理解"的区域</li>
+      <li><strong>回问主旨</strong> — 用一句话回答"核心信息是什么？"</li>
+      <li><strong>选定焦点</strong> — 判断哪些细节对理解友谊主题最关键</li>
+      <li><strong>迭代检验</strong> — 深入细节后回到整体重新审视</li>
+    </ul>
+    <div class="label">可迁移场景</div>
+    <span class="tag-scene">议论文</span>
+    <span class="tag-scene">说明文</span>
+    <span class="tag-scene">故事</span>
+    <span class="tag-scene">诗歌</span>
+    <span class="tag-scene">听力理解</span>
+  </div>
+</div>
+
+<div class="principle-card">
+  <div class="principle-header" onclick="toggleBody(this)">
+    <h3>原理二：情感词汇锚定</h3>
+    <span class="arrow">▼</span>
+  </div>
+  <div class="principle-body">
+    <div class="label">核心解释</div>
+    <p>识别并分类情感词汇（积极/消极/中性），将其作为分析情感走向和作者态度的锚点。在哲学思维框架下，情感词汇分析帮助学生回答：作者对友谊持何种立场？</p>
+    <div class="label">使用步骤</div>
+    <ul>
+      <li><strong>全篇扫描</strong> — 用三种不同标记圈画情感词汇</li>
+      <li><strong>分类统计</strong> — 记录三类词汇的出现频率和分布</li>
+      <li><strong>追踪变化</strong> — 观察情感词汇在不同部分的变化趋势</li>
+      <li><strong>关联主旨</strong> — 将情感变化与文本内容建立因果关系</li>
+    </ul>
+    <div class="label">可迁移场景</div>
+    <span class="tag-scene">文学作品赏析</span>
+    <span class="tag-scene">新闻评论</span>
+    <span class="tag-scene">演讲稿分析</span>
+    <span class="tag-scene">英语写作</span>
+    <div class="tip-box"><strong>💡 注意：</strong>区分"词汇本身的情感色彩"和"语境中的情感色彩"——中性词在特定语境中可能产生强烈情感效果。</div>
+  </div>
+</div>
+
+<div class="principle-card">
+  <div class="principle-header" onclick="toggleBody(this)">
+    <h3>原理三：修辞意图追问</h3>
+    <span class="arrow">▼</span>
+  </div>
+  <div class="principle-body">
+    <div class="label">核心解释</div>
+    <p>每发现一处修辞手法，追问三个问题：作者为什么在这里使用它？它改变了什么？如果去掉它，表达效果有何不同？将修辞从"识别层面"提升到"功能分析层面"。</p>
+    <div class="label">使用步骤</div>
+    <ul>
+      <li><strong>识别标记</strong> — 圈画比喻、拟人、对比、排比、反问等</li>
+      <li><strong>追问意图</strong> — "作者为什么在这里使用它？"</li>
+      <li><strong>替换实验</strong> — 将修辞表达替换为直白陈述，比较效果差异</li>
+      <li><strong>关联主题</strong> — 修辞分析连接到对友谊主题的深层理解</li>
+    </ul>
+    <div class="label">可迁移场景</div>
+    <span class="tag-scene">文学作品分析</span>
+    <span class="tag-scene">广告说服技巧</span>
+    <span class="tag-scene">英语写作策略</span>
+    <span class="tag-scene">翻译中的修辞处理</span>
+  </div>
+</div>
+
+<div class="principle-card">
+  <div class="principle-header" onclick="toggleBody(this)">
+    <h3>原理四：证据链建构</h3>
+    <span class="arrow">▼</span>
+  </div>
+  <div class="principle-body">
+    <div class="label">核心解释</div>
+    <p>每一层解读都需要有明确的文本证据支撑，多个证据应形成一条逻辑链条：从文本事实逐步推导到深层阐释。这使解析从"我觉得……"提升到"从……可以看出……，因此……"的逻辑论证层面。</p>
+    <div class="label">使用步骤</div>
+    <ul>
+      <li><strong>提取事实</strong> — 找出2-3个与解读相关的事实信息或引语</li>
+      <li><strong>标注语言</strong> — 分析事实所使用的词汇和句式特点</li>
+      <li><strong>调用语境</strong> — 联系创作背景、作者生平、文化语境</li>
+      <li><strong>形成推论</strong> — 确保推论与证据之间有可论证的逻辑关系</li>
+      <li><strong>标记不确定度</strong> — "初步推断"vs."持续定论"</li>
+    </ul>
+    <div class="label">可迁移场景</div>
+    <span class="tag-scene">议论文写作</span>
+    <span class="tag-scene">阅读理解推断题</span>
+    <span class="tag-scene">英语辩论</span>
+    <span class="tag-scene">学术研究</span>
+  </div>
+</div>
+
+<div class="principle-card">
+  <div class="principle-header" onclick="toggleBody(this)">
+    <h3>原理五：多角度交叉验证</h3>
+    <span class="arrow">▼</span>
+  </div>
+  <div class="principle-body">
+    <div class="label">核心解释</div>
+    <p>从多个解析维度（信息、情感、修辞、背景、结构）交叉验证同一结论，可显著提高解析的可靠性。每个维度提供一块拼图碎片，只有当多块碎片吻合时，完整图景才会呈现。</p>
+    <div class="label">使用步骤</div>
+    <ul>
+      <li><strong>多维度分析</strong> — 至少从3个不同维度分析同一文本</li>
+      <li><strong>结论对照</strong> — 将各维度结论放在一起比较印证</li>
+      <li><strong>调和矛盾</strong> — 深入分析矛盾产生的原因</li>
+      <li><strong>综合判断</strong> — 形成综合性的解析结论</li>
+    </ul>
+    <div class="label">可迁移场景</div>
+    <span class="tag-scene">复杂文本深度理解</span>
+    <span class="tag-scene">历史文献解读</span>
+    <span class="tag-scene">听力多通道整合</span>
+    <span class="tag-scene">综合考试协同解题</span>
+    <div class="tip-box"><strong>💡 注意：</strong>如果不同维度持续矛盾，这可能意味着文本本身具有开放性——引导学生认识这种开放性也是一种重要的思维训练。</div>
+  </div>
+</div>
+
+</div>
+
+<div class="section-title">🔄 应用场景示例</div>
+
+<div class="scenes">
+  <h4>场景一：分析一封英文友谊邮件</h4>
+  <table>
+    <tr><th>原理</th><th>具体运用</th></tr>
+    <tr><td>整体感知—局部聚焦</td><td>先快速通读理解邮件大意，再聚焦"孤独感""新学校"等关键处</td></tr>
+    <tr><td>情感词汇锚定</td><td>圈画"lonely, missed, nervous, excited, worried"等词汇</td></tr>
+    <tr><td>修辞意图追问</td><td>如果邮件中有比喻（如"新城市像一片陌生的海洋"），追问其功能</td></tr>
+  </table>
+</div>
+
+<div class="scenes">
+  <h4>场景二：分析友谊主题英文短诗</h4>
+  <table>
+    <tr><th>原理</th><th>具体运用</th></tr>
+    <tr><td>修辞意图追问</td><td>逐句追问每个比喻（fire, star）的功能和独创性</td></tr>
+    <tr><td>证据链建构</td><td>用具体意象和词汇证据构建对"这首诗对友谊的定义"的论证</td></tr>
+    <tr><td>多角度交叉验证</td><td>比喻的确定性vs转折后意象的开放性→调和矛盾→更丰富解读</td></tr>
+  </table>
+</div>
+
+<div class="section-title">✍️ 自我检测</div>
+
+<div class="check-item">
+  <h4>题目一：概念理解</h4>
+  <p style="font-size:14px;">请解释为什么"先整体后局部"是有效的文本解析顺序？如果反过来会有什么问题？</p>
+  <button class="principle-header" style="background:#f0f0f0;border:none;border-radius:4px;padding:6px 14px;cursor:pointer;font-size:13px;" onclick="this.nextElementSibling.classList.toggle('active')">查看参考答案</button>
+  <div class="answer">
+    <strong>要点：</strong>先整体后局部避免了断章取义——没有理解主旨就去分析细节，容易错误解读细节的意义。整体把握为细节分析提供了参照框架。反过来（先细节后整体）可能导致"见木不见林"。
+  </div>
+</div>
+
+<div class="check-item">
+  <h4>题目二：应用判断</h4>
+  <p style="font-size:14px;">一名同学说"我感觉到作者对朋友很不满"，但没有引用任何文本证据。请用"证据链建构原理"给出改进建议。</p>
+  <button class="principle-header" style="background:#f0f0f0;border:none;border-radius:4px;padding:6px 14px;cursor:pointer;font-size:13px;" onclick="this.nextElementSibling.classList.toggle('active')">查看参考答案</button>
+  <div class="answer">
+    <strong>要点：</strong>"感觉"是主观感受，需要文本证据支撑。应从文本中寻找具体词语（如"always late""never listens"），判断情感色彩，结合上下文语境，构建"证据→语言分析→语境证据→合理推论"的完整证据链。
+  </div>
+</div>
+
+<div class="check-item">
+  <h4>题目三：辨别与应用</h4>
+  <p style="font-size:14px;">以下两段分析分别主要运用了哪种解析原理？<br>分析A：统计情感词汇"solitude""longing""desperate"的出现频率。<br>分析B：识别比喻并做"替换实验"追问修辞意图。</p>
+  <button class="principle-header" style="background:#f0f0f0;border:none;border-radius:4px;padding:6px 14px;cursor:pointer;font-size:13px;" onclick="this.nextElementSibling.classList.toggle('active')">查看参考答案</button>
+  <div class="answer">
+    <strong>要点：</strong>分析A运用了<strong>情感词汇锚定原理</strong>——通过圈画和统计情感词汇来分析情感核心。分析B运用了<strong>修辞意图追问原理</strong>——通过"替换实验"追问作者的修辞意图。
+  </div>
+</div>
+
+<div style="text-align:center;margin:24px 0;padding:16px;background:var(--card-bg);border-radius:var(--border-radius);border:1px solid var(--border);">
+  <p style="margin:0;font-size:14px;color:var(--text-secondary);">💡 五条原理核心记忆：<strong style="color:var(--primary);">整体感知→情感锚定→修辞追问→证据链→交叉验证</strong></p>
+</div>
+
+</div>
+<script>
+function toggleBody(header) {
+  header.classList.toggle('active');
+  var body = header.nextElementSibling;
+  body.classList.toggle('active');
+}
+</script>
+</body>
+</html>

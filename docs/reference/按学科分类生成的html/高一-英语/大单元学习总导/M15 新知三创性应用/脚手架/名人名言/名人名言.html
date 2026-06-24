@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名人名言 - 友谊主题人物卡片</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px 24px;
+  box-sizing: border-box;
+}
+.banner {
+  background: linear-gradient(135deg, #434343 0%, #6b6b6b 100%);
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.banner h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 6px 0;
+  font-weight: 700;
+}
+.banner .sub {
+  font-size: 14px;
+  opacity: 0.85;
+  margin: 0;
+}
+.card-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-top: 3px solid transparent;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 12px 0;
+  font-weight: 600;
+}
+.card p, .card ul {
+  margin: 8px 0;
+  color: var(--text);
+}
+.card ul {
+  padding-left: 20px;
+}
+.card ul li {
+  margin-bottom: 6px;
+}
+.person-card {
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin: 12px 0;
+  border-left: 4px solid var(--primary);
+}
+.person-card.aristotle { background: #f8f8f8; border-left-color: #434343; }
+.person-card.lewis { background: #f6f6f6; border-left-color: #6b6b6b; }
+.person-card.holt { background: #f4f4f4; border-left-color: #8c8c8c; }
+.person-card h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  color: var(--primary);
+}
+.person-card .label {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  margin-bottom: 6px;
+}
+.person-card .insight {
+  background: #fff;
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin: 6px 0;
+  font-style: italic;
+  border: 1px solid var(--border);
+}
+.person-card .deep-link {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+.think-task {
+  background: #f8f8f8;
+  border: 1px dashed var(--accent);
+  border-radius: 6px;
+  padding: 16px 20px;
+  margin: 12px 0;
+}
+.think-task h3 {
+  margin: 0 0 10px 0;
+  font-size: 15px;
+  color: var(--primary);
+}
+.think-item {
+  background: var(--card-bg);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid var(--border);
+}
+.think-item:hover {
+  border-color: var(--primary);
+  background: #fafafa;
+}
+.think-item .q {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.think-item .hint {
+  font-size: 13px;
+  color: var(--text-secondary);
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+.think-item .hint.show {
+  max-height: 120px;
+}
+.badge {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  margin: 2px 4px 2px 0;
+}
+@media (min-width: 640px) {
+  .container { padding: 28px 40px; }
+  .banner { padding: 36px 32px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="banner">
+    <h1>💬 名人名言 · 友谊之思</h1>
+    <p class="sub">跨时空人物对话 · 大单元 Unit 1 Friendship</p>
+  </div>
+
+  <div class="card-grid">
+    <!-- 奠基人物 -->
+    <div class="card" style="border-top-color:#434343;">
+      <h2>🏛️ 奠基人物：Aristotle（亚里士多德）—— 经典哲学视角</h2>
+      <div class="person-card aristotle">
+        <span class="label">古希腊哲学家</span>
+        <p><strong>关键问题：</strong>什么是真正的友谊？友谊分为哪几种？</p>
+        <p><strong>思维突破点：</strong>首次系统将友谊分为三类——</p>
+        <ul>
+          <li><strong>实用友谊</strong>（基于利益）</li>
+          <li><strong>快乐友谊</strong>（基于愉悦）</li>
+          <li><strong>德性友谊</strong>（基于共同的价值追求）</li>
+        </ul>
+        <div class="insight">"真正的友谊是另一个自我——朋友是和你一起追求更好生活的人。"</div>
+        <p><strong>对当下的启示：</strong>德性友谊是最持久、最珍贵的友谊形式。</p>
+        <div class="deep-link">📚 深度阅读：《尼各马可伦理学》第八、九卷</div>
+      </div>
+    </div>
+
+    <!-- 跨界人物 -->
+    <div class="card" style="border-top-color:#6b6b6b;">
+      <h2>✒️ 跨界人物：C.S. Lewis（C.S. 刘易斯）—— 文学视角</h2>
+      <div class="person-card lewis">
+        <span class="label">英国文学家 · 学者</span>
+        <p><strong>关键问题：</strong>友谊在人类情感中的独特位置是什么？</p>
+        <p><strong>思维突破点：</strong>指出友谊与其他情感（亲情、爱情）的不同——友谊是"两个人共同看向同一个方向"。</p>
+        <div class="insight">"Friendship is born when one person says to another, 'What! You too? I thought I was the only one.'"</div>
+        <p><strong>对当下的启示：</strong>共同的目标和热爱是友谊的基础。</p>
+        <div class="deep-link">📚 深度阅读：《四种爱》（The Four Loves）</div>
+      </div>
+    </div>
+
+    <!-- 当代人物 -->
+    <div class="card" style="border-top-color:#8c8c8c;">
+      <h2>🧪 当代人物：Julianne Holt-Lunstad（心理学家）—— 科学视角</h2>
+      <div class="person-card holt">
+        <span class="label">当代心理学家</span>
+        <p><strong>关键问题：</strong>社会连接如何影响人类健康？</p>
+        <p><strong>思维突破点：</strong>通过大规模研究发现，社交孤立对健康的危害相当于每天抽 15 支烟。</p>
+        <div class="insight">"Social connection is not a luxury — it is a biological necessity."</div>
+        <p><strong>对当下的启示：</strong>友谊不是奢侈品，而是健康必需品。</p>
+        <div class="deep-link">📚 深度阅读：Holt-Lunstad 在 APA 发表的社会关系与健康研究综述</div>
+      </div>
+
+      <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:4px;">
+        <span class="badge">🧠 心理学</span>
+        <span class="badge">📊 大规模研究</span>
+        <span class="badge">❤️ 社交连接</span>
+        <span class="badge">🏥 公共健康</span>
+      </div>
+    </div>
+
+    <!-- 思考任务 -->
+    <div class="card">
+      <h2>🤔 "如果你是他" 思考任务</h2>
+
+      <div class="think-task">
+        <div class="think-item" onclick="toggleHint(this)">
+          <div class="q">1️⃣ 如果让你给 Aristotle 举一个当代的"德性友谊"例子，你会举什么？为什么？</div>
+          <div class="hint">💡 提示：想想那些因为共同理想而走在一起的朋友——比如一起做公益、一起创业、一起研究某个课题的伙伴。</div>
+        </div>
+        <div class="think-item" onclick="toggleHint(this)">
+          <div class="q">2️⃣ C.S. Lewis 说友谊是"共同看向同一个方向"——你和你的朋友共同看向了什么方向？</div>
+          <div class="hint">💡 提示：可以是一次共同的比赛目标、一个一起追的爱好、或是一起想改变的事情。</div>
+        </div>
+        <div class="think-item" onclick="toggleHint(this)">
+          <div class="q">3️⃣ 面对 Holt-Lunstad 的研究数据，你会对"社交媒体时代的朋友越多越好"这一观点提出什么质疑？</div>
+          <div class="hint">💡 提示：线上"朋友"的社交深度是否等同于线下友谊？数量与质量哪个更影响健康？</div>
+        </div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-top:8px;">👆 点击每个问题可查看思考提示</p>
+      </div>
+
+      <div style="background:#f0f0f0;border-radius:6px;padding:12px 16px;margin-top:8px;">
+        <p style="margin:0;font-size:13px;"><strong>✍️ 执行建议：</strong>选择至少 2 个问题，用英语写下你的思考（各 80-120 词），作为本课时的学习产出。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleHint(el) {
+  var hint = el.querySelector('.hint');
+  hint.classList.toggle('show');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>问题榜 — 友谊主题问题驱动学习</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --transition: 0.3s ease;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 32px 24px; }
+
+/* Header */
+.header { margin-bottom: 28px; }
+.header h1 { font-size: var(--font-h1); font-weight: 700; color: var(--primary); position: relative; padding-left: 16px; }
+.header h1::before { content: ''; position: absolute; left: 0; top: 4px; bottom: 4px; width: 4px; background: var(--primary); border-radius: 2px; }
+.header p { margin-top: 8px; color: var(--text-secondary); font-size: 14px; }
+
+/* Level Tabs */
+.level-tabs { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+.level-tab { padding: 10px 20px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-secondary); font-size: 14px; border-radius: var(--border-radius); cursor: pointer; transition: var(--transition); font-family: inherit; }
+.level-tab:hover { border-color: var(--primary); color: var(--primary); }
+.level-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* Question Sections */
+.q-section { display: none; }
+.q-section.active { display: block; }
+
+/* Level Intro */
+.level-intro { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 14px 18px; margin-bottom: 16px; box-shadow: var(--shadow); font-size: 14px; line-height: 1.6; }
+.level-intro strong { color: var(--primary); }
+
+/* Question Card */
+.q-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); margin-bottom: 12px; box-shadow: var(--shadow); overflow: hidden; }
+.q-header { padding: 14px 18px; cursor: pointer; display: flex; align-items: flex-start; gap: 10px; user-select: none; transition: background var(--transition); }
+.q-header:hover { background: #fafafa; }
+.q-number { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: #fff; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+.q-text { flex: 1; font-size: 14px; line-height: 1.6; }
+.q-type { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 11px; margin-left: 6px; vertical-align: middle; }
+.type-def { background: #f0f5f0; color: #389e0d; }
+.type-recognize { background: #e6f7ff; color: #096dd9; }
+.type-compare { background: #f0f0f5; color: #597ef7; }
+.type-apply { background: #fff7e6; color: #d48806; }
+.type-analyze { background: #fff2f0; color: #cf1322; }
+.type-create { background: #f9f0ff; color: #722ed1; }
+.type-debate { background: #fffbe6; color: #d4b106; }
+.type-reflect { background: #f0f5f5; color: #13a8a8; }
+
+.q-toggle { color: var(--text-secondary); font-size: 16px; transition: transform var(--transition); flex-shrink: 0; margin-top: 4px; }
+.q-header.open .q-toggle { transform: rotate(180deg); }
+
+.q-detail { padding: 0 18px 16px; display: none; }
+.q-detail.open { display: block; }
+.q-detail p, .q-detail ul, .q-detail ol { margin: 6px 0; padding-left: 20px; }
+.q-detail li { margin-bottom: 3px; }
+
+/* Meta Box */
+.meta-box { background: #fafafa; border: 1px dashed var(--border); border-radius: 6px; padding: 12px 16px; margin: 16px 0 4px; }
+.meta-box .meta-label { font-size: 13px; font-weight: 600; color: var(--primary); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+
+/* Usage Table */
+.usage-section { margin-top: 28px; }
+.usage-section h2 { font-size: var(--font-h2); font-weight: 600; color: var(--primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.usage-table { overflow-x: auto; }
+.usage-table table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.usage-table th { background: var(--primary); color: #fff; padding: 10px 14px; text-align: left; font-weight: 600; }
+.usage-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.usage-table tr:last-child td { border-bottom: none; }
+.usage-table tr:nth-child(even) td { background: #fafafa; }
+
+/* Animations */
+@keyframes fadeInCard { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.q-card { animation: fadeInCard 0.35s ease both; }
+
+@media (max-width: 640px) {
+  .container { padding: 20px 14px; }
+  .level-tab { padding: 8px 14px; font-size: 13px; }
+  .q-header { padding: 12px 14px; }
+  .q-detail { padding: 0 14px 14px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>❓ 问题榜 — 友谊主题问题驱动学习</h1>
+    <p>问题驱动是"新知科学思维"的核心引擎。以下问题分为三个层次，帮助你从"是什么"走向"为什么"再到"还能怎样"。</p>
+  </div>
+
+  <div class="level-tabs">
+    <button class="level-tab active" onclick="switchQTab(this, 'basic')">🌱 基础 · 理解与识别</button>
+    <button class="level-tab" onclick="switchQTab(this, 'intermediate')">📈 进阶 · 分析与应用</button>
+    <button class="level-tab" onclick="switchQTab(this, 'challenge')">🔥 挑战 · 创造与批判</button>
+  </div>
+
+  <!-- 基础层 -->
+  <div id="q-basic" class="q-section active">
+    <div class="level-intro">
+      🎯 本层问题旨在<strong>检测和巩固</strong>你对本模块基本概念和方法的掌握。
+    </div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggleQ(this)">
+        <span class="q-number">Q1</span>
+        <span class="q-text">什么是解析性思维？它在英语学习中有什么用？<span class="q-type type-def">定义型</span></span>
+        <span class="q-toggle">▼</span>
+      </div>
+      <div class="q-detail">
+        <p><strong>思考提示：</strong>回顾本模块中关于"解析"的概念——拆解、分析、重组。想一想你在英语阅读和写作中是如何运用这些步骤的。</p>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggleQ(this)">
+        <span class="q-number">Q2</span>
+        <span class="q-text">一封英文交友信至少应该包含哪些部分？<span class="q-type type-recognize">识别型</span></span>
+        <span class="q-toggle">▼</span>
+      </div>
+      <div class="q-detail">
+        <p><strong>参考框架：</strong>称呼 (Greeting) → 正文 (Body) → 结尾 (Closing) → 署名 (Signature)。你能用英语写出这四部分的典型表达吗？</p>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggleQ(this)">
+        <span class="q-number">Q3</span>
+        <span class="q-text">本模块提到的 5 条建构性原理分别是什么？<span class="q-type type-recognize">回忆型</span></span>
+        <span class="q-toggle">▼</span>
+      </div>
+      <div class="q-detail">
+        <p><strong>回忆技巧：</strong>尝试用关键词法记忆——每个原理提取一个关键词，串联成一个故事。</p>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggleQ(this)">
+        <span class="q-number">Q4</span>
+        <span class="q-text">你在本模块中学到了哪些关于友谊的英语新词汇？请列出至少 5 个。<span class="q-type type-def">列举型</span></span>
+        <span class="q-toggle">▼</span>
+      </div>
+      <div class="q-detail">
+        <p><strong>建议：</strong>分类整理——描述品质的 (honest, loyal, caring)、描述情感的 (grateful, connected)、描述行为的 (support, trust)。</p>
+      </div>
+    </div>
+
+    <div class="meta-box">
+      <div class="meta-label">🧠 元认知追问</div>
+      <p>你是用什么方法记住这些新词汇的？这个方法有效吗？如果效果不佳，你打算调整为什么方法？</p>
+    </div>
+  </div>
+
+  <!-- 进阶层 -->
+  <div id="q-intermediate" class="q-section">
+    <div class="level-intro">
+      📈 本层问题要求你<strong>运用</strong>模块中学到的方法进行分析和实际问题解决。
+    </div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggleQ(this)">
+        <span class="q-number">Q5</span>
+        <span class="q-text">对比两封英文交友信：一封只写 "I like sports and music"，另一封详细写了 "I enjoy playing basketball with my teammates every Friday afternoon"。哪一封更吸引人？为什么？<span class="q-type type-compare">对比分析型</span></span>
+        <span class="q-toggle">▼</span>
+      </div>
+      <div class="q-detail">
+        <p><strong>分析角度：</strong>具体性 (specificity)、画面感 (imagery)、真诚度 (authenticity)。具体细节为什么比泛泛而谈更容易建立连接？</p>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggleQ(this)">
+        <span class="q-number">Q6</span>
+        <span class="q-text">如果你的笔友在回信中说 "I'm not very good at making friends"，你会怎么回复？请用英语写一段 50 词左右的回复。<span class="q-type type-apply">应用型</span></span>
+        <span class="q-toggle">▼</span>
+      </div>
+      <div class="q-detail">
+        <p><strong>写作思路：</strong>先表达理解 → 分享自己的经历 → 给出鼓励。记得使用本模块学到的友谊主题句式。</p>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggleQ(this)">
+        <span class="q-number">Q7</span>
+        <span class="q-text">分析以下这句话的深层含义："A true friend is someone who knows the song in your heart and can sing it back to you when you have forgotten the words." 这句话使用了什么修辞手法？它揭示了友谊的什么特质？<span class="q-type type-analyze">分析型</span></span>
+        <span class="q-toggle">▼</span>
+      </div>
+      <div class="q-detail">
+        <p><strong>修辞手法：</strong>隐喻 (metaphor) —— "the song in your heart" 比喻内心的真实自我。</p>
+        <p><strong>深层含义：</strong>真正的朋友了解你内心深处的真实，在你迷失时提醒你"你是谁"。</p>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggleQ(this)">
+        <span class="q-number">Q8</span>
+        <span class="q-text">阅读一段关于 friendship 的英文短文，提取主题句和 3 个支持细节。<span class="q-type type-apply">实操型</span></span>
+        <span class="q-toggle">▼</span>
+      </div>
+      <div class="q-detail">
+        <p><strong>操作步骤：</strong></p>
+        <ol>
+          <li>通读全文，找出第 1 段或最后 1 段的中心句</li>
+          <li>找 3 个支持中心句的具体例子或数据</li>
+          <li>用自己的话重述</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="meta-box">
+      <div class="meta-label">🧠 元认知追问</div>
+      <p>在分析 Q7 时，你是从哪个角度切入的？是什么让你选择了这个分析角度？</p>
+    </div>
+  </div>
+
+  <!-- 挑战层 -->
+  <div id="q-challenge" class="q-section">
+    <div class="level-intro">
+      🔥 本层问题鼓励你<strong>跳出常规思维</strong>，进行深度思考和创造性表达。
+    </div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggleQ(this)">
+        <span class="q-number">Q9</span>
+        <span class="q-text">如果世界上没有"朋友"这个概念，人类社会会变成什么样？请用英语写一段 60 词左右的推想。<span class="q-type type-create">反事实型</span></span>
+        <span class="q-toggle">▼</span>
+      </div>
+      <div class="q-detail">
+        <p><strong>思考方向：</strong>没有朋友，人类如何合作？情感如何寄托？语言中的"friend"一词是否会消失？</p>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggleQ(this)">
+        <span class="q-number">Q10</span>
+        <span class="q-text">你认为 AI（如 ChatGPT）能成为人类的"朋友"吗？请列出至少 2 个理由支持你的观点。<span class="q-type type-debate">开放型/辩论型</span></span>
+        <span class="q-toggle">▼</span>
+      </div>
+      <div class="q-detail">
+        <p><strong>辩论角度：</strong></p>
+        <ul>
+          <li><strong>正方：</strong>AI 能倾听、回应、记住你的喜好，提供情感支持</li>
+          <li><strong>反方：</strong>AI 没有真实情感和意识，友谊需要双向的、有意识的情感投入</li>
+        </ul>
+        <p>你的立场是什么？</p>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggleQ(this)">
+        <span class="q-number">Q11</span>
+        <span class="q-text">设计一个"友谊质量评估量表"——用英语列出 5 个判断友谊深度的标准。<span class="q-type type-create">创造型</span></span>
+        <span class="q-toggle">▼</span>
+      </div>
+      <div class="q-detail">
+        <p><strong>示例标准：</strong></p>
+        <ul>
+          <li>Trust (信任度)</li>
+          <li>Frequency of communication (沟通频率)</li>
+          <li>Emotional support (情感支持)</li>
+          <li>Shared experiences (共同经历)</li>
+          <li>Mutual respect (相互尊重)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggleQ(this)">
+        <span class="q-number">Q12</span>
+        <span class="q-text">在古代（如孔子的时代），友谊更多基于"道义"（moral duty）；在现代，友谊更多基于"情感"（emotional bond）和"利益"（mutual benefit）。你怎么看这种变化？这是进步还是退步？<span class="q-type type-analyze">批判型</span></span>
+        <span class="q-toggle">▼</span>
+      </div>
+      <div class="q-detail">
+        <p><strong>比较维度：</strong></p>
+        <ul>
+          <li><strong>道义基础：</strong>"朋友有信"——友谊是一种道德责任，承诺即永久</li>
+          <li><strong>情感基础：</strong>友谊基于自然的情感共鸣——来去自由</li>
+          <li><strong>利益基础：</strong>现代社会的社交网络——友谊也具有功能性</li>
+        </ul>
+        <p>不同时代有不同的社会环境，哪种更"好"取决于评价标准。</p>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggleQ(this)">
+        <span class="q-number">Q13</span>
+        <span class="q-text">如果让你用英语写一本关于友谊的书，你会从哪三个角度来写？为什么？<span class="q-type type-create">创造型</span></span>
+        <span class="q-toggle">▼</span>
+      </div>
+      <div class="q-detail">
+        <p><strong>写作角度参考：</strong></p>
+        <ul>
+          <li>科学角度：友谊的心理学和神经科学基础</li>
+          <li>文化角度：不同文化中的友谊观念差异</li>
+          <li>个人角度：真实的友谊故事和经验分享</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="meta-box">
+      <div class="meta-label">🧠 元认知追问</div>
+      <p>在回答 Q10 时，你是靠直觉判断还是理性分析？你的结论有过摇摆吗？什么因素让你最终做出了决定？</p>
+    </div>
+  </div>
+
+  <!-- 使用建议 -->
+  <div class="usage-section">
+    <h2>📋 问题使用建议</h2>
+    <div class="usage-table">
+      <table>
+        <thead>
+          <tr>
+            <th>学习阶段</th>
+            <th>推荐完成的问题</th>
+            <th>方式</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>📖 学习前</td>
+            <td>Q1—Q3（预习定位）</td>
+            <td>快速口头回答</td>
+          </tr>
+          <tr>
+            <td>✏️ 学习中</td>
+            <td>Q4—Q6（随学随练）</td>
+            <td>笔头记录</td>
+          </tr>
+          <tr>
+            <td>✅ 学习后</td>
+            <td>Q7—Q9（巩固提升）</td>
+            <td>仔细书面回答</td>
+          </tr>
+          <tr>
+            <td>🚀 拓展阶段</td>
+            <td>Q10—Q13（深度挑战）</td>
+            <td>选 1–2 个与同学讨论</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchQTab(el, tabId) {
+  document.querySelectorAll('.level-tab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.q-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('q-' + tabId).classList.add('active');
+}
+function toggleQ(header) {
+  header.classList.toggle('open');
+  header.nextElementSibling.classList.toggle('open');
+}
+</script>
+</body>
+</html>

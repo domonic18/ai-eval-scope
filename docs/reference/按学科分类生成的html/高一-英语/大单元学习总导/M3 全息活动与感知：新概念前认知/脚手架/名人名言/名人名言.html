@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名人名言 — 认知突破 · Friendship</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px 24px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, #2d2d2d 0%, #595959 100%);
+  border-radius: var(--border-radius);
+  padding: 28px 32px;
+  margin-bottom: 20px;
+  color: #fff;
+  box-shadow: var(--shadow);
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 6px 0;
+}
+.header p {
+  margin: 0;
+  opacity: 0.8;
+  font-size: 14px;
+}
+.thinker-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  transition: box-shadow 0.3s;
+}
+.thinker-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.thinker-head {
+  padding: 20px 24px 12px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid var(--bg);
+  cursor: pointer;
+  user-select: none;
+}
+.thinker-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.thinker-info {
+  flex: 1;
+}
+.thinker-info h2 {
+  margin: 0;
+  font-size: var(--font-h2);
+  color: var(--primary);
+}
+.thinker-info .domain {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 2px 0 0 0;
+}
+.thinker-toggle {
+  font-size: 20px;
+  color: var(--accent);
+  transition: transform 0.3s;
+}
+.thinker-card.expanded .thinker-toggle {
+  transform: rotate(180deg);
+}
+.thinker-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s ease;
+}
+.thinker-card.expanded .thinker-body {
+  max-height: 2000px;
+}
+.thinker-body-inner {
+  padding: 16px 24px 20px;
+}
+.key-insight {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 14px 16px;
+  margin: 10px 0;
+  border-left: 4px solid var(--primary);
+}
+.key-insight h4 {
+  margin: 0 0 6px 0;
+  font-size: 14px;
+  color: var(--primary);
+}
+.key-insight p {
+  margin: 0;
+  font-size: 14px;
+}
+.breakthrough {
+  background: #fafafa;
+  border-radius: 6px;
+  padding: 14px 16px;
+  margin: 10px 0;
+  border: 1px dashed var(--accent);
+}
+.breakthrough h4 {
+  margin: 0 0 6px 0;
+  font-size: 14px;
+  color: var(--primary-hover);
+}
+.breakthrough p {
+  margin: 0;
+  font-size: 14px;
+}
+.thinking-task {
+  background: #f5f5f5;
+  border-radius: 6px;
+  padding: 14px 16px;
+  margin: 12px 0;
+}
+.thinking-task h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.thinking-task .prompt {
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+.thinking-task textarea {
+  width: 100%;
+  min-height: 60px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  box-sizing: border-box;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+.thinking-task textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(67,67,67,0.12);
+}
+.reading-path {
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 8px 12px;
+  background: var(--card-bg);
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  margin: 8px 0;
+}
+.reading-path strong {
+  color: var(--primary-hover);
+}
+.progress-dots {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 16px 0;
+}
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--border);
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+}
+.dot.active, .dot:hover {
+  background: var(--primary);
+  transform: scale(1.3);
+}
+@media (max-width: 640px) {
+  .container { padding: 12px; }
+  .header { padding: 20px; }
+  .thinker-head { padding: 14px 16px; }
+  .thinker-body-inner { padding: 12px 16px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>💭 名人名言 · 认知突破</h1>
+    <p>通过三位思想家的视角，理解友谊的深层逻辑</p>
+    <div class="progress-dots">
+      <span class="dot active" onclick="scrollToThinker(0)"></span>
+      <span class="dot" onclick="scrollToThinker(1)"></span>
+      <span class="dot" onclick="scrollToThinker(2)"></span>
+    </div>
+  </div>
+
+  <div class="thinker-card expanded" id="thinker0">
+    <div class="thinker-head" onclick="toggleThinker(this)">
+      <div class="thinker-avatar">A</div>
+      <div class="thinker-info">
+        <h2>Aristotle 亚里士多德</h2>
+        <p class="domain">古希腊哲学家 · 奠基人物</p>
+      </div>
+      <span class="thinker-toggle">▼</span>
+    </div>
+    <div class="thinker-body">
+      <div class="thinker-body-inner">
+        <div class="key-insight">
+          <h4>🎯 关键问题：什么是真正的友谊？友谊有几种类型？</h4>
+          <p>在《尼各马可伦理学》中，亚里士多德将友谊分为三种：<strong>功利型友谊</strong>（因利益而交往）、<strong>快乐型友谊</strong>（因愉悦而交往）、<strong>美德型友谊</strong>（因彼此品德而互相欣赏）。</p>
+        </div>
+        <div class="breakthrough">
+          <h4>🧠 思维突破点</h4>
+          <p>他首次提出"真正的友谊"是基于美德的——不是你对我有用或你让我开心，而是"我欣赏你作为一个人的品格"。</p>
+        </div>
+        <div class="reading-path">
+          <strong>📚 深度阅读路径：</strong> 《尼各马可伦理学》第8—9卷（友谊专论）| 廖申白译注 | 或搜索"亚里士多德三种友谊"观看5分钟科普视频
+        </div>
+        <div class="thinking-task">
+          <h4>💡 "如果你是他"思考任务</h4>
+          <p class="prompt">如果你可以问亚里士多德一个问题，关于社交媒体时代的友谊，你会问什么？<br><strong>请用英语写下来。</strong></p>
+          <textarea placeholder="Write your question in English..." oninput="autoResize(this)"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="thinker-card" id="thinker1">
+    <div class="thinker-head" onclick="toggleThinker(this)">
+      <div class="thinker-avatar">L</div>
+      <div class="thinker-info">
+        <h2>C.S. Lewis</h2>
+        <p class="domain">文学家 · 神学家 · 《纳尼亚传奇》作者</p>
+      </div>
+      <span class="thinker-toggle">▼</span>
+    </div>
+    <div class="thinker-body">
+      <div class="thinker-body-inner">
+        <div class="key-insight">
+          <h4>🎯 关键问题：友谊和其他形式的关系有什么本质不同？</h4>
+          <p>在《四种爱》（<em>The Four Loves</em>）中，他认为友谊是<strong>"两个人看向同一个方向"</strong>——友谊不是互相凝视，而是并肩面对共同的目标或兴趣。</p>
+        </div>
+        <div class="breakthrough">
+          <h4>🧠 思维突破点</h4>
+          <p>Lewis 把友谊从"情感关系"重新定义为<strong>"探索关系"</strong>——朋友是因为共同热爱某件事而走到一起的。</p>
+          <p style="margin-top:6px;font-size:14px">💡 <strong>对当下的启示：</strong> 想交到真正的朋友？找到你真正热爱的事情，和志同道合的人一起做。</p>
+        </div>
+        <div class="reading-path">
+          <strong>📚 深度阅读路径：</strong> 《The Four Loves》by C.S. Lewis | 中文版：《四种爱》
+        </div>
+        <div class="thinking-task">
+          <h4>💡 "如果你是他"思考任务</h4>
+          <p class="prompt">用 Lewis 的"并肩看向同一个方向"理论，分析你和最好的朋友——你们一起"看向什么方向"？<br><strong>用 3 句英语写下来。</strong></p>
+          <textarea placeholder="Write 3 sentences in English..." oninput="autoResize(this)"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="thinker-card" id="thinker2">
+    <div class="thinker-head" onclick="toggleThinker(this)">
+      <div class="thinker-avatar">T</div>
+      <div class="thinker-info">
+        <h2>Sherry Turkle</h2>
+        <p class="domain">MIT 教授 · 心理学家 · 数字文化研究者</p>
+      </div>
+      <span class="thinker-toggle">▼</span>
+    </div>
+    <div class="thinker-body">
+      <div class="thinker-body-inner">
+        <div class="key-insight">
+          <h4>🎯 关键问题：数字技术是拉近了还是疏远了人类的友谊？</h4>
+          <p>在《群体性孤独》（<em>Alone Together</em>）中，她提出：<strong>"我们期待从技术中获得更多，却也期待从彼此身上获得更少。"</strong></p>
+        </div>
+        <div class="breakthrough">
+          <h4>🧠 思维突破点</h4>
+          <p>她指出科技让我们<strong>"永远在线，却从未真正连接"</strong>（connected, but never truly together）。</p>
+          <p style="margin-top:6px;font-size:14px">💡 <strong>对当下的启示：</strong> 下次和好朋友见面时，试试把手机放在一边——你可能会发现更深的连接。</p>
+        </div>
+        <div class="reading-path">
+          <strong>📚 深度阅读路径：</strong> 《Alone Together》by Sherry Turkle | 中文版《群体性孤独》| TED 演讲："Connected, but Alone?"（18 分钟）
+        </div>
+        <div class="thinking-task">
+          <h4>💡 "如果你是他"思考任务</h4>
+          <p class="prompt">观察你一天的手机使用——你的"朋友"有多少是通过屏幕连接的？如果一周不用社交媒体，你的人际关系会发生变化吗？<br><strong>用英语写一段观察日记。</strong></p>
+          <textarea placeholder="Write an observation diary in English..." oninput="autoResize(this)"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function toggleThinker(head) {
+  const card = head.closest('.thinker-card');
+  card.classList.toggle('expanded');
+}
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.max(60, el.scrollHeight) + 'px';
+}
+function scrollToThinker(idx) {
+  const el = document.getElementById('thinker' + idx);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    el.classList.add('expanded');
+    document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === idx));
+  }
+}
+// Auto-expand first thinker and collapse others
+document.querySelectorAll('.thinker-card').forEach((card, i) => {
+  if (i !== 0) card.classList.remove('expanded');
+});
+</script>
+</body>
+</html>

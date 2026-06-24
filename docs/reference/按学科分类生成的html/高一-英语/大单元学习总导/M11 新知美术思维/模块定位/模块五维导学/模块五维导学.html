@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块五维导学 — M11 新知美术思维</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 3px solid var(--primary);
+}
+h2 {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin: 28px 0 14px;
+  padding-left: 12px;
+  border-left: 4px solid var(--primary);
+}
+h3 {
+  font-size: calc(var(--font-body) + 2px);
+  font-weight: 600;
+  color: var(--text);
+  margin: 16px 0 8px;
+}
+.dim-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.dim-btn {
+  flex: 1;
+  min-width: 140px;
+  padding: 10px 14px;
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 500;
+  font-size: calc(var(--font-body) - 1px);
+}
+.dim-btn:hover { border-color: var(--accent); color: var(--text); }
+.dim-btn.active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+.dim-content {
+  display: none;
+  animation: fadeIn 0.4s ease;
+}
+.dim-content.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 18px 22px;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+  transition: transform 0.2s;
+}
+.card:hover { transform: translateY(-1px); }
+ul.goal-list { list-style: none; padding: 0; }
+ul.goal-list li {
+  padding: 8px 12px 8px 28px;
+  position: relative;
+  margin-bottom: 4px;
+}
+ul.goal-list li::before {
+  content: "•";
+  position: absolute;
+  left: 10px;
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 16px;
+}
+.goal-group {
+  margin: 12px 0;
+}
+.goal-group-label {
+  font-weight: 600;
+  color: var(--primary);
+  padding: 4px 0;
+  font-size: calc(var(--font-body) + 1px);
+}
+.value-box {
+  background: linear-gradient(135deg, #434343 0%, #666 100%);
+  color: #fff;
+  border-radius: var(--border-radius);
+  padding: 18px 22px;
+  margin: 12px 0;
+}
+.value-box p { color: rgba(255,255,255,0.9); margin: 4px 0; }
+.value-box strong { color: #fff; }
+.method-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.method-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+.method-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow);
+}
+.method-icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+.method-card p { flex: 1; }
+.people-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+.people-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+.people-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--accent);
+}
+.people-name {
+  font-weight: 700;
+  font-size: calc(var(--font-body) + 2px);
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.people-why {
+  font-size: calc(var(--font-body) - 1px);
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+.question-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.question-card:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow);
+}
+.question-card .q {
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.question-card .q .arrow {
+  transition: transform 0.3s;
+  font-size: 14px;
+}
+.question-card.open .q .arrow { transform: rotate(180deg); }
+.question-card .a {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+}
+.question-card.open .a {
+  max-height: 200px;
+}
+.question-card .a-inner {
+  margin-top: 10px;
+  padding: 12px 14px;
+  background: var(--bg);
+  border-radius: 6px;
+  font-size: calc(var(--font-body) - 1px);
+  color: var(--text-secondary);
+  border-left: 3px solid var(--accent);
+}
+@media (min-width: 640px) {
+  .method-grid { grid-template-columns: 1fr 1fr; }
+  .people-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>模块五维导学</h1>
+<p style="color:var(--text-secondary);margin-bottom:16px;">M11：新知美术思维 — 用视觉化方式学习和表达英语</p>
+
+<p style="margin-bottom:12px;">点击下方维度按钮，探索本模块的 5 个学习维度 👇</p>
+
+<div class="dim-nav">
+  <div class="dim-btn active" onclick="switchDim(1,this)">🎯 学习目标</div>
+  <div class="dim-btn" onclick="switchDim(2,this)">🚀 未来价值</div>
+  <div class="dim-btn" onclick="switchDim(3,this)">📖 学习方法</div>
+  <div class="dim-btn" onclick="switchDim(4,this)">👤 关键人物</div>
+  <div class="dim-btn" onclick="switchDim(5,this)">💭 前沿追问</div>
+</div>
+
+<!-- 维度1：学习目标 -->
+<div class="dim-content active" id="dim1">
+  <h2>🎯 第1维：模块学习目标</h2>
+  <p style="color:var(--text-secondary);margin-bottom:12px;">完成本模块后，你能够——</p>
+
+  <div class="goal-group">
+    <div class="goal-group-label">📚 知识理解层面</div>
+    <div class="card">
+      <ul class="goal-list">
+        <li>理解"新知美术思维"的核心内涵——用视觉化方式（色彩、构图、图标、空间排版）来学习和表达英语内容</li>
+        <li>掌握 Unit 1 Friendship 主题下的核心词汇，并能用视觉方式归类呈现（如用色块区分情感词/行为词/品质词）</li>
+        <li>了解视觉传达的基本原则（对比、对齐、重复、亲密性）及其在英语学习中的应用</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="goal-group">
+    <div class="goal-group-label">💪 能力形成层面</div>
+    <div class="card">
+      <ul class="goal-list">
+        <li>能够用"情感—色彩对应"的方法把抽象友谊概念转化为视觉语言</li>
+        <li>能够设计并制作有美感的英语主题海报、视觉笔记或思维地图</li>
+        <li>能够用"构图法"组织英语信息，让内容层次分明、易读易懂</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="goal-group">
+    <div class="goal-group-label">🧠 思维发展层面</div>
+    <div class="card">
+      <ul class="goal-list">
+        <li>发展"视觉化思维"能力——不再只是"读文字"，而是学会"看图像""看结构""看色彩"</li>
+        <li>培养设计思维——在产出学习成果时考虑受众、目标、形式和审美</li>
+        <li>能够对自己的学习成果进行审美评价和优化</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="goal-group">
+    <div class="goal-group-label">📤 表达产出层面</div>
+    <div class="card">
+      <ul class="goal-list">
+        <li>产出至少 3 项可展示的视觉化英语成果（海报、思维地图、视觉笔记等）</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 维度2：未来价值 -->
+<div class="dim-content" id="dim2">
+  <h2>🚀 第2维：高精尖价值与未来意义</h2>
+
+  <div class="value-box">
+    <p><strong>🖼️ 视觉时代的信息表达力</strong></p>
+    <p>在社交媒体和数字化时代，一张精心排版的图文比一段纯文字更有传播力。学会用视觉方式呈现信息，是你未来任何领域（学术报告、职业展示、创业路演）都需要的核心能力。</p>
+  </div>
+
+  <div class="value-box">
+    <p><strong>🤖 图像思维与 AI 协作</strong></p>
+    <p>AI 时代的核心技能之一是用视觉提示（prompt 中的图像思维）与 AI 高效沟通。理解构图、色彩和视觉层次，让你能更好地利用 AI 工具生成高质量视觉内容。</p>
+  </div>
+
+  <div class="value-box">
+    <p><strong>🌍 跨文化视觉沟通</strong></p>
+    <p>在国际交流中，语言障碍常常存在。学会用"图像 + 关键英语文字"的表达方式，能帮助你跨越语言壁垒，和来自不同文化背景的人有效沟通。</p>
+  </div>
+</div>
+
+<!-- 维度3：学习方法 -->
+<div class="dim-content" id="dim3">
+  <h2>📖 第3维：推荐学习方式与方法</h2>
+  <p style="color:var(--text-secondary);margin-bottom:10px;">点击每种方法查看详细介绍 👇</p>
+
+  <div class="method-grid">
+    <div class="method-card" onclick="alert('🎨 视觉笔记法：不要只记线性笔记，尝试用「文字+图标+箭头+色块」的方式边学边画视觉笔记。')">
+      <div class="method-icon" style="background:#fff3e0;">🎨</div>
+      <p><strong>视觉笔记法</strong><br><span style="color:var(--text-secondary);font-size:calc(var(--font-body)-2px);">文字 + 图标 + 箭头 + 色块</span></p>
+    </div>
+    <div class="method-card" onclick="alert('🌈 色彩分类法：用不同颜色标记不同类型的信息——红色=新词汇、蓝色=句法结构、绿色=文化知识，强化记忆和归类。')">
+      <div class="method-icon" style="background:#e3f2fd;">🌈</div>
+      <p><strong>色彩分类法</strong><br><span style="color:var(--text-secondary);font-size:calc(var(--font-body)-2px);">红色→词汇 / 蓝色→句法 / 绿色→文化</span></p>
+    </div>
+    <div class="method-card" onclick="alert('🖼️ 海报思维法：每学完一个主题，想象「如果我要把这件事做成海报，我会怎么设计？」——训练信息提炼和视觉表达能力。')">
+      <div class="method-icon" style="background:#e8f5e9;">🖼️</div>
+      <p><strong>海报思维法</strong><br><span style="color:var(--text-secondary);font-size:calc(var(--font-body)-2px);">信息提炼 × 视觉表达</span></p>
+    </div>
+    <div class="method-card" onclick="alert('✂️ 创意拼贴法：收集杂志或网上的友谊主题图片，配合英语文字制作拼贴风格学习墙。')">
+      <div class="method-icon" style="background:#f3e5f5;">✂️</div>
+      <p><strong>创意拼贴法</strong><br><span style="color:var(--text-secondary);font-size:calc(var(--font-body)-2px);">图片 + 英语文字 = 拼贴学习墙</span></p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:10px;">
+    <p><strong>🤖 AI 辅助创作：</strong>使用 AI 工具生成海报排版建议、配色方案或图标设计灵感，但核心内容和英语表达自己完成。</p>
+  </div>
+</div>
+
+<!-- 维度4：关键人物 -->
+<div class="dim-content" id="dim4">
+  <h2>👤 第4维：关键人物、事件与成果</h2>
+
+  <div class="people-grid">
+    <div class="people-card">
+      <div class="people-name">Sunni Brown（桑妮·布朗）</div>
+      <p>《涂鸦革命》（The Doodle Revolution）作者</p>
+      <div class="people-why">💡 为什么值得了解：她证明了边画边学不是分心，而是深度学习的方式——你的"乱画"可能正是美术思维的开端。</div>
+    </div>
+
+    <div class="people-card">
+      <div class="people-name">David McCandless（大卫·麦坎德利斯）</div>
+      <p>信息可视化大师，《信息之美》（Information is Beautiful）作者</p>
+      <div class="people-why">💡 为什么值得了解：他教你如何把复杂信息变成一眼就能看懂的可视化图表。</div>
+    </div>
+
+    <div class="people-card" style="grid-column:1/-1;">
+      <div class="people-name">📜 手绘地图与信息图表的历史</div>
+      <p>从古代航海图到现代信息可视化</p>
+      <div class="people-why">💡 为什么值得了解：人类一直在用"图像 + 文字"传递知识——"视觉思维"不是新概念，而是人类最古老的沟通方式之一。</div>
+    </div>
+  </div>
+</div>
+
+<!-- 维度5：前沿追问 -->
+<div class="dim-content" id="dim5">
+  <h2>💭 第5维：前沿追问</h2>
+  <p style="color:var(--text-secondary);margin-bottom:10px;">点击每个问题展开思考提示 👇</p>
+
+  <div class="question-card" onclick="this.classList.toggle('open')">
+    <div class="q">
+      <span>❓ 如果友谊可以"画"出来，它能被"设计"吗？</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="a">
+      <div class="a-inner">你可以设计一张海报表达友谊，但你能"设计"一段友谊吗？为什么可以/不可以？——这涉及"表达"与"创造"的根本区别。</div>
+    </div>
+  </div>
+
+  <div class="question-card" onclick="this.classList.toggle('open')">
+    <div class="q">
+      <span>❓ AI 生成的图像能表达"真实的友谊"吗？</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="a">
+      <div class="a-inner">你用 AI 生成了"friendship"图像，但它传递的情感和你自己画出来的情感相同吗？——技术可以模拟形式，但难以替代个人的情感投入。</div>
+    </div>
+  </div>
+
+  <div class="question-card" onclick="this.classList.toggle('open')">
+    <div class="q">
+      <span>❓ "好看"的海报 = "有效"的海报吗？</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="a">
+      <div class="a-inner">一张精美的英语海报能否帮助观众记住内容？审美价值和传播价值是什么关系？——真正的挑战在于让美服务于信息的传递。</div>
+    </div>
+  </div>
+
+  <div class="question-card" onclick="this.classList.toggle('open')">
+    <div class="q">
+      <span>❓ 如果只能用纯图像（无文字）表达"友谊"，你会怎么画？</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="a">
+      <div class="a-inner">这考验的是你能否跨越语言，用人类共通的视觉语言沟通——图像作为最古老的沟通方式，在今天仍然拥有超越文字的力量。</div>
+    </div>
+  </div>
+</div>
+
+<div style="background:var(--card-bg);border-radius:var(--border-radius);padding:16px 22px;margin-top:24px;border:1px solid var(--border);text-align:center;">
+  <p style="font-weight:600;color:var(--primary);font-size:calc(var(--font-body)+1px);">🌟 模块寄语</p>
+  <p style="color:var(--text-secondary);">用美术思维打开英语学习的新维度——你不是在"学英语"，你是在用视觉创造自己的理解世界。</p>
+</div>
+
+<script>
+function switchDim(n, btn) {
+  document.querySelectorAll('.dim-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.dim-content').forEach(d => d.classList.remove('active'));
+  document.getElementById('dim' + n).classList.add('active');
+}
+</script>
+
+</div>
+</body>
+</html>

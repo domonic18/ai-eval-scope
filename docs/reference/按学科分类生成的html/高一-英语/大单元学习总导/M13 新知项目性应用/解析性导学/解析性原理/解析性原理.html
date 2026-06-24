@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性原理 — 从示例到可迁移的方法</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 8px 0;
+  font-weight: 700;
+}
+.header p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 14px;
+}
+.section-title {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 28px 0 14px;
+  padding-bottom: 8px;
+  border-bottom: 3px solid var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.callout {
+  background: var(--bg);
+  border-left: 4px solid var(--primary);
+  padding: 14px 18px;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  margin-bottom: 20px;
+  font-size: 14px;
+  line-height: var(--line-height);
+}
+.principle-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  margin-bottom: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+.principle-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.principle-card .principle-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: var(--bg);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.3s;
+}
+.principle-card.open .principle-header {
+  border-bottom-color: var(--border);
+}
+.principle-card .principle-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--primary);
+}
+.principle-card .principle-header .toggle-icon {
+  transition: transform 0.3s;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.principle-card.open .principle-header .toggle-icon {
+  transform: rotate(180deg);
+}
+.principle-card .principle-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.45s ease, padding 0.3s ease;
+  padding: 0 20px;
+}
+.principle-card.open .principle-body {
+  max-height: 800px;
+  padding: 16px 20px;
+}
+.principle-body .p-section {
+  margin-bottom: 10px;
+}
+.principle-body .p-label {
+  font-weight: 600;
+  color: var(--primary);
+  display: block;
+  margin-bottom: 2px;
+}
+.principle-body .p-label i {
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+.exercise-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 2px dashed var(--accent);
+  padding: 20px;
+  margin-bottom: 16px;
+  transition: background 0.2s;
+}
+.exercise-card:hover { background: #fafafa; }
+.exercise-card h3 {
+  margin: 0 0 10px;
+  font-size: var(--font-h2);
+  color: var(--primary);
+}
+.exercise-card .scaffold {
+  background: #fffbe6;
+  border-left: 3px solid #faad14;
+  padding: 10px 14px;
+  border-radius: 0 4px 4px 0;
+  margin-top: 10px;
+  font-size: 13px;
+}
+.checklist {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.checklist li {
+  padding: 10px 0 10px 36px;
+  position: relative;
+  border-bottom: 1px dashed var(--border);
+  cursor: pointer;
+  transition: background 0.2s;
+  border-radius: 4px;
+}
+.checklist li:hover { background: var(--bg); }
+.checklist li::before {
+  content: "□";
+  position: absolute;
+  left: 8px;
+  font-size: 18px;
+  color: var(--accent);
+  transition: color 0.2s;
+}
+.checklist li.checked::before {
+  content: "☑";
+  color: #52c41a;
+}
+.checklist li.checked {
+  color: var(--text-secondary);
+}
+@media (max-width: 600px) {
+  .container { padding: 12px 10px; }
+  .header { padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🧩 解析性原理</h1>
+  <p>从具体案例中提炼可迁移的分析方法、判断规则和思维路径</p>
+</div>
+
+<div class="callout">
+  <strong>💡 为什么要提炼原理？</strong>案例是具体的、一次性的，但原理是可迁移的、反复可用的。学会从具体案例中抽象出通用方法，才是真正的学习。本节承接解析性示例中的分析示范，帮你提炼出通用原理。
+</div>
+
+<h2 class="section-title">📐 解析性原理提炼</h2>
+<p style="margin-bottom:16px;">点击每条原理查看详细说明、示例体现、使用方法和迁移场景。</p>
+
+<div class="principle-card open" onclick="togglePrinciple(this)">
+  <div class="principle-header">
+    <h3>🔍 原理1：问题定位法（Find the Core）</h3>
+    <span class="toggle-icon">▼</span>
+  </div>
+  <div class="principle-body">
+    <div class="p-section">
+      <span class="p-label">📌 说明</span>
+      <span>在友谊冲突中，先定位"真正的问题是什么"，而不是停留在表面行为上。</span>
+    </div>
+    <div class="p-section">
+      <span class="p-label">本示例中的体现</span>
+      <span>示例中先问"他们之间真正的矛盾是什么"而非仅看"吵架了"。</span>
+    </div>
+    <div class="p-section">
+      <span class="p-label">如何使用</span>
+      <span>面对一段友谊问题，先问 3 个问题——What happened? How do they feel? What do they really want?</span>
+    </div>
+    <div class="p-section">
+      <span class="p-label">可迁移到 <i>所有需要分析人际关系问题的场景（家庭矛盾、小组合作冲突等）</i></span>
+    </div>
+    <div class="p-section">
+      <span class="p-label">⚠️ 使用提醒</span>
+      <span>不要过早下结论，先收集足够的信息。</span>
+    </div>
+  </div>
+</div>
+
+<div class="principle-card" onclick="togglePrinciple(this)">
+  <div class="principle-header">
+    <h3>🔄 原理2：视角切换法（Perspective Switch）</h3>
+    <span class="toggle-icon">▼</span>
+  </div>
+  <div class="principle-body">
+    <div class="p-section">
+      <span class="p-label">📌 说明</span>
+      <span>站在双方的角度分别分析，理解各自的立场和感受。</span>
+    </div>
+    <div class="p-section">
+      <span class="p-label">本示例中的体现</span>
+      <span>示例中分别列出了小明视角和 David 视角的感受。</span>
+    </div>
+    <div class="p-section">
+      <span class="p-label">如何使用</span>
+      <span>用 T-chart 分别写出双方的感受、需求和顾虑。</span>
+    </div>
+    <div class="p-section">
+      <span class="p-label">可迁移到 <i>任何涉及多方利益的矛盾分析</i></span>
+    </div>
+    <div class="p-section">
+      <span class="p-label">⚠️ 使用提醒</span>
+      <span>视角切换 ≠ 否定自己的感受，而是先理解再沟通。</span>
+    </div>
+  </div>
+</div>
+
+<div class="principle-card" onclick="togglePrinciple(this)">
+  <div class="principle-header">
+    <h3>🧱 原理3：结构化分析法（Structure It）</h3>
+    <span class="toggle-icon">▼</span>
+  </div>
+  <div class="principle-body">
+    <div class="p-section">
+      <span class="p-label">📌 说明</span>
+      <span>把模糊的问题拆解为结构化的要素（问题 → 原因 → 影响 → 解决方案）。</span>
+    </div>
+    <div class="p-section">
+      <span class="p-label">本示例中的体现</span>
+      <span>按照"事实 → 感受 → 方案 → 期望"的结构分析。</span>
+    </div>
+    <div class="p-section">
+      <span class="p-label">如何使用</span>
+      <span>用"问题分析表"逐项填写。</span>
+    </div>
+    <div class="p-section">
+      <span class="p-label">可迁移到 <i>议论文写作、问题解决类任务</i></span>
+    </div>
+    <div class="p-section">
+      <span class="p-label">⚠️ 使用提醒</span>
+      <span>结构是工具不是枷锁，灵活调整。</span>
+    </div>
+  </div>
+</div>
+
+<div class="principle-card" onclick="togglePrinciple(this)">
+  <div class="principle-header">
+    <h3>📎 原理4：证据支撑法（Use Evidence）</h3>
+    <span class="toggle-icon">▼</span>
+  </div>
+  <div class="principle-body">
+    <div class="p-section">
+      <span class="p-label">📌 说明</span>
+      <span>分析时引用具体事实和细节，而不是笼统地判断。</span>
+    </div>
+    <div class="p-section">
+      <span class="p-label">本示例中的体现</span>
+      <span>示例用具体事例（"在准备展示时，David 没有等小明就决定了分工"）支撑判断。</span>
+    </div>
+    <div class="p-section">
+      <span class="p-label">如何使用</span>
+      <span>在写下判断前先问 "What is my evidence?"</span>
+    </div>
+    <div class="p-section">
+      <span class="p-label">可迁移到 <i>议论文写作、演讲、辩论</i></span>
+    </div>
+    <div class="p-section">
+      <span class="p-label">⚠️ 使用提醒</span>
+      <span>证据要具体、可验证。</span>
+    </div>
+  </div>
+</div>
+
+<h2 class="section-title">✏️ 解析性原理应用练习</h2>
+
+<div class="exercise-card">
+  <h3>练习1：分析一次小组合作中的矛盾</h3>
+  <p><strong>情境：</strong>你参加了一个英语小组展示，组员 A 觉得组员 B 不认真，组员 B 觉得组员 A 太专制。</p>
+  <p><strong>解析任务：</strong>用 <strong>问题定位法 + 视角切换法</strong> 分析这个矛盾。</p>
+  <p><strong>建议原理：</strong>原理1 + 原理2</p>
+  <p><strong>分析提示：</strong>不要判断谁对谁错，先列出双方可能看到的"事实"。</p>
+  <div class="scaffold">🧰 脚手架提示：用 T-chart 列出双方视角</div>
+</div>
+
+<div class="exercise-card">
+  <h3>练习2：分析一段课文中的友谊关系</h3>
+  <p><strong>情境：</strong>阅读教材中的 "Friendship in Hawaii" 篇章。</p>
+  <p><strong>解析任务：</strong>用 <strong>结构化分析法</strong> 分析夏威夷文化中的友谊观。</p>
+  <p><strong>建议原理：</strong>原理3 + 原理4</p>
+  <p><strong>分析提示：</strong>注意作者用了哪些具体例子来支撑关于"Aloha 精神"的描述。</p>
+  <div class="scaffold">🧰 脚手架提示：找出文中的 3 个关键细节</div>
+</div>
+
+<h2 class="section-title">✅ 自我检测</h2>
+<p style="margin-bottom:12px;">点击每项标记完成 ✓</p>
+<ul class="checklist">
+  <li onclick="this.classList.toggle('checked')">我能不能自己说出问题定位法的三个核心问题？</li>
+  <li onclick="this.classList.toggle('checked')">我能不能用 T-chart 分析一段友谊矛盾中的双方视角？</li>
+  <li onclick="this.classList.toggle('checked')">我能不能把一段模糊的友谊问题拆解为清晰的结构？</li>
+  <li onclick="this.classList.toggle('checked')">我在分析时是否总是能找到具体证据来支撑判断？</li>
+  <li onclick="this.classList.toggle('checked')">这些原理我还能用在哪些英语学习任务中？（想一想）</li>
+</ul>
+
+<div class="callout" style="margin-top:20px;">
+  <strong>🌟 挑战自己：</strong>试着在不看原文的情况下，用自己的话向同学解释这 4 条原理。能不能用中文或英文说清楚？这才是真正的掌握。
+</div>
+
+</div>
+<script>
+function togglePrinciple(el) {
+  el.classList.toggle('open');
+}
+</script>
+</body>
+</html>

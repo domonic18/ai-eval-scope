@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块五维导学 — M16 真善美思维与反思</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  margin: 0; padding: 0; width: 100%;
+}
+.container {
+  width: 100%; max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+.header {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 24px 28px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--primary);
+}
+.header h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+.header .meta {
+  color: var(--text-secondary);
+  font-size: 13px;
+  display: flex; flex-wrap: wrap; gap: 10px;
+}
+.header .meta span {
+  background: var(--bg);
+  padding: 2px 10px; border-radius: 4px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 22px 26px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--border);
+  font-weight: 600;
+}
+.card p { margin-bottom: 10px; }
+.card ul { padding-left: 20px; margin-bottom: 8px; }
+.card ul li { margin-bottom: 6px; }
+.tag-label {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  margin-right: 6px;
+  font-weight: 600;
+}
+.future-item {
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  transition: transform 0.2s;
+}
+.future-item:hover {
+  transform: translateX(4px);
+  border-left: 3px solid var(--accent);
+}
+.future-item .icon { font-size: 18px; margin-right: 8px; }
+.method-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px; margin-top: 10px;
+}
+.method-item {
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px;
+  transition: all 0.2s;
+  cursor: default;
+}
+.method-item:hover {
+  background: #f0f0f0;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+.method-item h4 { font-size: var(--font-body); color: var(--primary); margin-bottom: 4px; }
+.method-item p { font-size: 13px; color: var(--text-secondary); margin: 0; }
+.person-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px;
+  margin-bottom: 10px;
+  background: #fafafa;
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+  transition: background 0.2s;
+}
+.person-card:hover { background: #f0f0f0; }
+.person-card .avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 700;
+  flex-shrink: 0;
+}
+.person-card .info h4 { font-size: var(--font-body); color: var(--primary); }
+.person-card .info p { font-size: 13px; color: var(--text-secondary); margin: 0; }
+.question-box {
+  background: #fafafa;
+  border-radius: 6px;
+  padding: 14px 18px;
+  margin-bottom: 8px;
+  border-left: 3px solid var(--accent);
+  transition: background 0.2s;
+  cursor: pointer;
+}
+.question-box:hover { background: #f0f0f0; }
+.question-box::before { content: "💭 "; }
+@media (max-width: 600px) {
+  .container { padding: 12px 16px; }
+  .header, .card { padding: 16px; }
+  .method-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>模块五维导学</h1>
+  <div class="meta">
+    <span>M16 新知应用与创新中的真善美思维与反思</span>
+    <span>Unit 1 Friendship</span>
+    <span>英语 · 必修1 · 人教版</span>
+    <span>学生版导学案</span>
+  </div>
+</div>
+
+<div class="card">
+  <h2>1. 模块学习目标</h2>
+  <ul>
+    <li><span class="tag-label">知识理解</span>我能用英语准确说出至少5个描述友谊品质的词汇（如 loyal, reliable, understanding, supportive, honest），并能区分 formal 和 informal 的表达方式</li>
+    <li><span class="tag-label">能力形成</span>我能用英语写一封结构完整的情感表达类信件（开头—正文—结尾），表达自己的真实感受</li>
+    <li><span class="tag-label">思维发展</span>我能用"真善美"三个维度分析一段友谊关系或一个友谊故事</li>
+    <li><span class="tag-label">表达产出</span>我能创作一份友谊主题的英语作品（书信/演讲稿/诗歌/短剧任选），不少于150词</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>2. 高精尖价值与未来意义</h2>
+  <div class="future-item"><span class="icon">🌐</span><strong>数字时代的友谊：</strong>如何用英语在社交媒体时代维系真实友谊？Friend 的含义正在被重新定义</div>
+  <div class="future-item"><span class="icon">🧠</span><strong>哈佛75年追踪研究：</strong>"良好的人际关系"是幸福人生的首要预测因子——这项研究证明，交朋友不只是"社交"，而是健康的核心</div>
+  <div class="future-item"><span class="icon">💼</span><strong>未来职业连接：</strong>跨文化沟通能力与情商（EQ）在国际职场中被列为最受重视的软技能之一</div>
+  <div class="future-item"><span class="icon">🔍</span><strong>"真善美"思维的通用性：</strong>这一分析框架不仅能用于友谊，还能迁移到作品评价、决策分析等学习场景中</div>
+</div>
+
+<div class="card">
+  <h2>3. 推荐学习方式与方法</h2>
+  <div class="method-grid">
+    <div class="method-item">
+      <h4>🎭 情境模拟法</h4>
+      <p>想象一个真实的友谊困境，用英语写出你的应对方案和对话</p>
+    </div>
+    <div class="method-item">
+      <h4>🔍 对比分析法</h4>
+      <p>区分 pal / buddy / mate / close friend 等词汇的细微差异</p>
+    </div>
+    <div class="method-item">
+      <h4>🎯 作品驱动法</h4>
+      <p>以"最终产出友谊主题作品"为目标，倒推每个阶段做什么</p>
+    </div>
+    <div class="method-item">
+      <h4>🤖 AI辅助学习</h4>
+      <p>用AI工具模拟英语对话练习，或请AI帮你润色表达</p>
+    </div>
+    <div class="method-item">
+      <h4>📝 反思日志法</h4>
+      <p>每完成一个环节，花3分钟写下自己的收获和困惑</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>4. 关键人物、事件与成果</h2>
+  <div class="person-card">
+    <div class="avatar">A</div>
+    <div class="info">
+      <h4>Anne Frank · 安妮·弗兰克</h4>
+      <p>《安妮日记》展示了在极端困境中友谊与希望的力量。教材已有节选，建议深入阅读完整段落。</p>
+    </div>
+  </div>
+  <div class="person-card">
+    <div class="avatar">C</div>
+    <div class="info">
+      <h4>C. S. Lewis · 友谊观</h4>
+      <p>英国作家，他对友谊的经典论述是英语写作表达的绝佳素材。"Friendship is born at that moment when one person says to another: 'What! You too?'"</p>
+    </div>
+  </div>
+  <div class="person-card">
+    <div class="avatar">D</div>
+    <div class="info">
+      <h4>Dale Carnegie ·《How to Win Friends and Influence People》</h4>
+      <p>人际关系经典著作，书中关于倾听、共情和尊重的原则至今仍是沟通领域的基石。</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>5. 前沿追问</h2>
+  <div class="question-box">在社交媒体时代，"friend"这个词的含义是否正在被稀释？你如何用英语区分"真正的朋友"和"网友"？</div>
+  <div class="question-box">如果AI可以完美模拟人类对话，未来人类之间的友谊会变成什么样子？</div>
+  <div class="question-box">"真善美"三个维度中，你认为维持一段友谊最重要的是哪一个？为什么？</div>
+  <div class="question-box">不同文化中"友谊"的定义和表达方式有什么差异？这对你学习英语有什么启发？</div>
+</div>
+
+</div>
+</body>
+</html>

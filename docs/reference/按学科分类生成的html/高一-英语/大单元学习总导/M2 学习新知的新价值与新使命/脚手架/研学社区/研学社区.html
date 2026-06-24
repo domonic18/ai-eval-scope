@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>研学社区 — 英语必修1 Friendship</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); font-size: var(--font-body); line-height: var(--line-height); }
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+.header { padding: 28px 24px; background: linear-gradient(135deg, #434343 0%, #6b6b6b 100%); color: #fff; border-radius: 0 0 16px 16px; margin: -20px -24px 24px -24px; }
+.header h1 { font-size: var(--font-h1); margin: 0 0 6px; font-weight: 700; }
+.header p { margin: 0; opacity: 0.85; font-size: 14px; }
+.section { margin-bottom: 28px; }
+.section-title { font-size: var(--font-h2); font-weight: 700; color: var(--primary); margin: 0 0 14px; padding-left: 12px; border-left: 4px solid var(--primary); }
+
+.case-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px; border-left: 4px solid var(--accent); transition: transform 0.2s; }
+.case-card:hover { transform: translateY(-2px); }
+.case-card.basic { border-left-color: #8c8c8c; }
+.case-card.advanced { border-left-color: #595959; }
+.case-card.challenge { border-left-color: #434343; }
+.case-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+.case-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; background: var(--bg); }
+.case-title { margin: 0; font-size: 17px; color: var(--primary); font-weight: 700; }
+.case-level { font-size: 12px; padding: 2px 10px; border-radius: 12px; display: inline-block; margin-bottom: 10px; font-weight: 600; }
+.level-basic { background: #e8e8e8; color: #434343; }
+.level-advanced { background: #d4d4d8; color: #434343; }
+.level-challenge { background: #434343; color: #fff; }
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+@media (max-width: 600px) { .info-grid { grid-template-columns: 1fr; } }
+.info-item { padding: 10px 12px; background: var(--bg); border-radius: 6px; }
+.info-item strong { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+.info-item span { font-size: 14px; color: var(--text); }
+.insight { margin-top: 12px; padding: 12px; background: #f0f0f0; border-radius: 6px; border-left: 3px solid var(--primary); }
+.insight strong { color: var(--primary); }
+.expand-btn { padding: 8px 18px; border: 1px solid var(--primary); border-radius: 6px; background: var(--card-bg); color: var(--primary); cursor: pointer; font-size: 13px; transition: all 0.2s; margin-top: 8px; }
+.expand-btn:hover { background: var(--primary); color: #fff; }
+.extra-section { margin-top: 24px; }
+.mechanism-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 16px 20px; margin-bottom: 12px; display: flex; align-items: flex-start; gap: 12px; }
+.mechanism-card .icon { font-size: 24px; flex-shrink: 0; }
+.mechanism-card h4 { margin: 0 0 4px; font-size: 15px; color: var(--primary); }
+.mechanism-card p { margin: 0; font-size: 14px; color: var(--text); }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🌍 研学社区 · 案例库</h1>
+    <p>英语 · 必修1 · Unit 1 Friendship — 从真实案例中学习友谊的真谛</p>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">🌱 基础层 · 生活类案例</h2>
+
+    <div class="case-card basic">
+      <div class="case-header">
+        <div class="case-icon">🎒</div>
+        <div>
+          <h3 class="case-title">转学生的交友困境</h3>
+          <span class="case-level level-basic">🌟 基础</span>
+        </div>
+      </div>
+      <div class="info-grid">
+        <div class="info-item"><strong>📌 背景</strong><span>Lisa 从美国转到中国学校，语言不通、文化不熟、没有朋友</span></div>
+        <div class="info-item"><strong>🎯 核心问题</strong><span>如何用英语主动和新同学建立联系？</span></div>
+        <div class="info-item"><strong>🛤️ 决策路径</strong><span>方案A：等待别人主动 → 方案B：参加英语角 → 方案C：用英语介绍自己</span></div>
+        <div class="info-item"><strong>✅ 结果</strong><span>方案B和C的组合最有效——主动出击胜过被动等待</span></div>
+      </div>
+      <div class="insight">
+        <strong>💡 可迁移启示：</strong>主动表达善意是跨文化友谊的第一步。哪怕英语不完美，真诚的微笑和主动的问候就能打开一扇门。
+      </div>
+      <button class="expand-btn" onclick="handleDecision('basic')">🤔 如果你是 Lisa，你会选哪个方案？</button>
+      <div id="decision-basic" style="display:none;margin-top:12px;padding:14px;background:#fafafa;border-radius:8px;border:1px dashed var(--border);">
+        <p style="margin:0 0 8px;"><strong>你的选择：</strong></p>
+        <button onclick="this.parentElement.querySelector('.d-result').textContent='你选择了方案A：等待别人主动。想一想——如果每个人都选择等待，友谊还能开始吗？';this.parentElement.querySelector('.d-result').style.display='block'" style="margin:4px;padding:6px 14px;border:1px solid var(--border);border-radius:6px;background:var(--card-bg);cursor:pointer;">方案A</button>
+        <button onclick="this.parentElement.querySelector('.d-result').textContent='你选择了方案B：参加英语角。好主意！主动创造交流机会是结交朋友的最佳方式。';this.parentElement.querySelector('.d-result').style.display='block'" style="margin:4px;padding:6px 14px;border:1px solid var(--border);border-radius:6px;background:var(--card-bg);cursor:pointer;">方案B</button>
+        <button onclick="this.parentElement.querySelector('.d-result').textContent='你选择了方案C：用英语介绍自己。勇气可嘉！自我展示是打破冰层的利器。';this.parentElement.querySelector('.d-result').style.display='block'" style="margin:4px;padding:6px 14px;border:1px solid var(--border);border-radius:6px;background:var(--card-bg);cursor:pointer;">方案C</button>
+        <p class="d-result" style="display:none;margin:10px 0 0;padding:10px;background:#e8e8e8;border-radius:6px;"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">📖 进阶层 · 历史案例</h2>
+
+    <div class="case-card advanced">
+      <div class="case-header">
+        <div class="case-icon">🌏</div>
+        <div>
+          <h3 class="case-title">马可·波罗与元朝友人的跨文化友谊</h3>
+          <span class="case-level level-advanced">📌 进阶</span>
+        </div>
+      </div>
+      <div class="info-grid">
+        <div class="info-item"><strong>📌 背景</strong><span>13世纪，意大利商人马可·波罗在中国生活17年</span></div>
+        <div class="info-item"><strong>🎯 核心问题</strong><span>两个语言文化完全不同的人如何建立深厚友谊？</span></div>
+        <div class="info-item"><strong>🛤️ 决策路径</strong><span>礼物交换 → 语言学习 → 文化分享 → 逐步建立信任</span></div>
+        <div class="info-item"><strong>✅ 结果</strong><span>成就了东西方文化交流史上的经典案例</span></div>
+      </div>
+      <div class="insight">
+        <strong>💡 可迁移启示：</strong>真正的友谊超越语言障碍。不需要等到语言完美才开始交朋友——互相学习对方的文化本身就是最好的纽带。
+      </div>
+      <button class="expand-btn" onclick="document.getElementById('marco-detail').style.display=document.getElementById('marco-detail').style.display==='none'?'block':'none'">📜 查看英文关键词汇</button>
+      <div id="marco-detail" style="display:none;margin-top:12px;padding:14px;background:#fafafa;border-radius:8px;border:1px dashed var(--border);">
+        <p style="margin:0;"><strong>Key Vocabulary:</strong> cross-cultural friendship · mutual trust · cultural exchange · language barrier · merchant · diplomacy · 17-year journey</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">🚀 挑战层 · 跨领域案例</h2>
+
+    <div class="case-card challenge">
+      <div class="case-header">
+        <div class="case-icon">🛸</div>
+        <div>
+          <h3 class="case-title">国际空间站上的宇航员友谊</h3>
+          <span class="case-level level-challenge">🔥 挑战</span>
+        </div>
+      </div>
+      <div class="info-grid">
+        <div class="info-item"><strong>📌 背景</strong><span>多国宇航员在 ISS 共同生活数月，文化、语言、习惯各不相同</span></div>
+        <div class="info-item"><strong>🎯 核心问题</strong><span>在高度压力、封闭环境下如何维持团队友谊？</span></div>
+        <div class="info-item"><strong>🛤️ 决策路径</strong><span>建立沟通规则 → 共享文化节日 → 定期团队活动 → 互相尊重</span></div>
+        <div class="info-item"><strong>✅ 结果</strong><span>多数成功，但也有因文化冲突导致关系紧张的案例</span></div>
+      </div>
+      <div class="insight">
+        <strong>💡 可迁移启示：</strong>多元文化环境中，规则和尊重比"性格相投"更重要。不是所有朋友都要成为最好的朋友——但可以成为优秀的队友。
+      </div>
+      <button class="expand-btn" onclick="document.getElementById('iss-debate').style.display=document.getElementById('iss-debate').style.display==='none'?'block':'none'">💬 讨论：规则 vs 性格，哪个更重要？</button>
+      <div id="iss-debate" style="display:none;margin-top:12px;padding:14px;background:#fafafa;border-radius:8px;border:1px dashed var(--border);">
+        <p style="margin:0 0 8px;"><strong>Think in English:</strong> In a team of people from 5 different countries, what matters more — having clear rules or having similar personalities? Share your opinion in 2-3 sentences.</p>
+        <div contenteditable="true" style="padding:10px;border:1px solid var(--border);border-radius:6px;min-height:60px;background:#fff;font-size:14px;">Write your thoughts here...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section extra-section">
+    <h2 class="section-title">🎮 拓展机制</h2>
+    <div class="mechanism-card">
+      <div class="icon">🤔</div>
+      <div>
+        <h4>"如果你是决策者" 分支任务</h4>
+        <p>在每个案例中选出你的方案并说明理由——点击案例中的按钮即可参与。</p>
+      </div>
+    </div>
+    <div class="mechanism-card">
+      <div class="icon">🔄</div>
+      <div>
+        <h4>多结局模拟</h4>
+        <p>如果 Lisa 选择了方案A（等待别人主动）会怎样？思考这一选择带来的不同结果，在脑海中"重写"故事的结局。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function handleDecision(level) {
+  var el = document.getElementById('decision-' + level);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+</body>
+</html>

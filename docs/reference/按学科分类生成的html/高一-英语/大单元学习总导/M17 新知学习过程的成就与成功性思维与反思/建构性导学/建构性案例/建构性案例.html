@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性七阶适配案例导学</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; box-sizing: border-box; }
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  text-align: center;
+  margin: 0 0 24px;
+  padding-bottom: 16px;
+  border-bottom: 3px solid var(--accent);
+  position: relative;
+}
+h1::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 3px;
+  background: var(--primary);
+}
+h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 28px 0 14px;
+  padding-left: 12px;
+  border-left: 4px solid var(--accent);
+}
+h3 {
+  font-size: calc(var(--font-body) + 2px);
+  color: var(--primary-hover);
+  margin: 18px 0 8px;
+}
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+.case-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+.case-header {
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+  cursor: pointer;
+  user-select: none;
+  gap: 10px;
+  transition: background 0.2s;
+}
+.case-header:hover { background: #fafafa; }
+.case-header .case-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.case-header .case-title { flex: 1; font-weight: 600; }
+.case-header .case-icon { transition: transform 0.3s; font-size: 14px; }
+.case-header.open .case-icon { transform: rotate(180deg); }
+.case-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s ease;
+}
+.case-body.open { max-height: 3000px; }
+.case-body-inner { padding: 0 18px 18px; }
+.case-step {
+  display: flex;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px dashed #f0f0f0;
+}
+.case-step:last-child { border-bottom: none; }
+.case-step .step-num {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #f0f0f0;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+.tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  margin-right: 4px;
+  margin-bottom: 4px;
+}
+.tag-primary { background: #e8e8e8; color: var(--primary); }
+.tag-accent { background: #f0f0f0; color: #595959; }
+.rubric-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 0;
+  cursor: pointer;
+}
+.rubric-item input[type="checkbox"] { accent-color: var(--primary); margin-top: 3px; }
+.rubric-item.checked label { text-decoration: line-through; color: var(--text-secondary); }
+.overview-grid {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+@media (min-width: 768px) { .overview-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 767px) { .overview-grid { grid-template-columns: 1fr 1fr; } }
+.overview-item {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 12px 10px;
+  text-align: center;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: transform 0.2s;
+  border: 2px solid transparent;
+}
+.overview-item:hover { transform: translateY(-3px); }
+.overview-item.active { border-color: var(--primary); }
+.overview-item .ov-num {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 20px;
+}
+.overview-item .ov-label { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+.principle-tip {
+  background: #f9f9f9;
+  border-left: 3px solid var(--accent);
+  padding: 10px 14px;
+  margin: 8px 0;
+  border-radius: 0 6px 6px 0;
+  font-size: calc(var(--font-body) - 1px);
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>建构性七阶适配案例导学</h1>
+
+  <p style="color:var(--text-secondary);text-align:center;margin-bottom:20px;">
+    基于 Unit 1 Friendship 主题 · 从个人到社会 · 从简单到复杂
+  </p>
+
+  <div class="overview-grid" id="overviewGrid">
+    <div class="overview-item active" onclick="jumpToCase(0)"><div class="ov-num">1</div><div class="ov-label">个人理解</div></div>
+    <div class="overview-item" onclick="jumpToCase(1)"><div class="ov-num">2</div><div class="ov-label">生活应用</div></div>
+    <div class="overview-item" onclick="jumpToCase(2)"><div class="ov-num">3</div><div class="ov-label">问题解决</div></div>
+    <div class="overview-item" onclick="jumpToCase(3)"><div class="ov-num">4</div><div class="ov-label">学科表达</div></div>
+    <div class="overview-item" onclick="jumpToCase(4)"><div class="ov-num">5</div><div class="ov-label">跨学科</div></div>
+    <div class="overview-item" onclick="jumpToCase(5)"><div class="ov-num">6</div><div class="ov-label">社会情境</div></div>
+    <div class="overview-item" onclick="jumpToCase(6)"><div class="ov-num">7</div><div class="ov-label">综合创新</div></div>
+  </div>
+
+  <!-- Case 1 -->
+  <div class="case-card" data-index="0">
+    <div class="case-header open" onclick="toggleCase(this)">
+      <span class="case-num">1</span>
+      <span class="case-title">个人理解型成果——我的友谊定义</span>
+      <span class="case-icon">▼</span>
+    </div>
+    <div class="case-body open">
+      <div class="case-body-inner">
+        <h3>1. 真实建构情境</h3>
+        <p>你刚学完 Unit 1，课本中提到了多种形式的友谊——从同桌的日常陪伴到笔友的跨洋交流。但"友谊"对你来说到底是什么？课本给了你定义，但你自己真正的理解是什么？</p>
+        <h3>2. 建构任务</h3>
+        <p>用英文写一段 80—100 词的 "My Understanding of Friendship"，包含你自己的定义、一个真实或虚构的例子、以及你认为友谊最重要的一个品质。</p>
+        <h3>3. 原理调用提示</h3>
+        <div class="principle-tip">使用<strong>情境锚定法</strong>：回忆你亲身经历过的友谊场景，从场景中提炼你对友谊的理解。</div>
+        <h3>4. 建构步骤</h3>
+        <div class="case-step"><span class="step-num">1</span>头脑风暴：写下 5 个与 "friendship" 相关的关键词</div>
+        <div class="case-step"><span class="step-num">2</span>选择最重要的 1 个关键词作为核心观点</div>
+        <div class="case-step"><span class="step-num">3</span>回忆一个支持这个观点的具体经历</div>
+        <div class="case-step"><span class="step-num">4</span>用英文撰写初稿</div>
+        <div class="case-step"><span class="step-num">5</span>对照自评量规修改</div>
+        <h3>5. 成果表达</h3>
+        <p><strong>成果名称：</strong>My Understanding of Friendship（短文）<br>
+        <strong>格式：</strong>一段完整的英文段落，含 topic sentence + supporting details + concluding sentence</p>
+        <h3>6. 自评量规</h3>
+        <label class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"><span>我是否写出了一个明确的关于友谊的核心观点？</span></label>
+        <label class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"><span>我是否用了一个具体例子来支持我的观点？</span></label>
+        <label class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"><span>我是否至少使用了课本中的 2 个与友谊相关的表达？</span></label>
+        <label class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"><span>我的文章是否有清晰的 topic sentence 和 concluding sentence？</span></label>
+        <label class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"><span>我是否检查了语法和拼写？</span></label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Case 2 -->
+  <div class="case-card" data-index="1">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">2</span>
+      <span class="case-title">生活应用型成果——制作友谊书单</span>
+      <span class="case-icon">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="case-body-inner">
+        <h3>1. 真实建构情境</h3>
+        <p>学校图书馆要开设一个 "Friendship Corner" 阅读角，向全校征集推荐书单。你可以推荐 3 本你认为最值得阅读的关于友谊的书。</p>
+        <h3>2. 建构任务</h3>
+        <p>制作一份 "Friendship Book List" 推荐书单（英文版），包含 3 本书的封面简介、推荐理由（每本 30—50 词）和一句话书评。</p>
+        <h3>3. 原理调用提示</h3>
+        <div class="principle-tip">使用<strong>表达外显法</strong>：用简洁、有吸引力的语言把你的阅读体验表达成推荐文案。</div>
+        <h3>4. 建构步骤</h3>
+        <div class="case-step"><span class="step-num">1</span>列出你读过的关于友谊的书（包括教材中的阅读篇目）</div>
+        <div class="case-step"><span class="step-num">2</span>选择 3 本最有特色的</div>
+        <div class="case-step"><span class="step-num">3</span>为每本书写一段推荐理由</div>
+        <div class="case-step"><span class="step-num">4</span>设计整张书单的排版</div>
+        <h3>5. 自评量规</h3>
+        <label class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"><span>我是否推荐了 3 本不同的书？</span></label>
+        <label class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"><span>每本书的推荐理由是否不少于 30 词？</span></label>
+        <label class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"><span>书单整体排版是否清晰美观？</span></label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Case 3 -->
+  <div class="case-card" data-index="2">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">3</span>
+      <span class="case-title">校园问题解决型成果——友谊调解方案</span>
+      <span class="case-icon">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="case-body-inner">
+        <h3>1. 真实建构情境</h3>
+        <p>你的两个好朋友因为一场误会闹翻了，两人都不愿意主动和好。作为共同的朋友，你希望帮助他们修复友谊。</p>
+        <h3>2. 建构任务</h3>
+        <p>用英文写一份"友谊调解方案"，分析误会产生的原因，提出至少 3 条具体的调解建议，并说明每条建议为什么有助于修复关系。</p>
+        <h3>3. 原理调用提示</h3>
+        <div class="principle-tip">使用<strong>问题驱动法</strong>：以"如何帮助朋友和好"为核心问题，倒推解决方案。</div>
+        <h3>4. 建构步骤</h3>
+        <div class="case-step"><span class="step-num">1</span>分析误会根源——双方各自的立场是什么？</div>
+        <div class="case-step"><span class="step-num">2</span>列出可能的和解方式</div>
+        <div class="case-step"><span class="step-num">3</span>为每种方式写一段解释（说明为何有效）</div>
+        <div class="case-step"><span class="step-num">4</span>整理成完整的调解方案</div>
+        <h3>5. 自评量规</h3>
+        <label class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"><span>我是否分析了双方各自的立场？</span></label>
+        <label class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"><span>我是否提出了至少 3 条具体建议？</span></label>
+        <label class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"><span>每条建议是否都有理由支撑？</span></label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Case 4 -->
+  <div class="case-card" data-index="3">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">4</span>
+      <span class="case-title">学科表达型成果——Friendship Poem 创作</span>
+      <span class="case-icon">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="case-body-inner">
+        <h3>1. 真实建构情境</h3>
+        <p>学校英文校刊正在征集"Friendship Poem"专栏稿件。诗歌是最浓缩的情感表达形式，用英文写一首关于友谊的诗。</p>
+        <h3>2. 建构任务</h3>
+        <p>创作一首 8—12 行的英文友谊诗（不必押韵，但要有意象和情感）。可以选用教材中学过的词汇和修辞手法。</p>
+        <h3>3. 原理调用提示</h3>
+        <div class="principle-tip">使用<strong>情境锚定法 + 表达外显法</strong>：锚定一个具体的友谊时刻，用诗歌的形式把它呈现出来。</div>
+        <h3>4. 建构步骤</h3>
+        <div class="case-step"><span class="step-num">1</span>确定诗歌主题（如：一起淋雨的那天、深夜的聊天）</div>
+        <div class="case-step"><span class="step-num">2</span>写下 5—8 个与主题相关的意象词</div>
+        <div class="case-step"><span class="step-num">3</span>用这些意象词搭建诗句</div>
+        <div class="case-step"><span class="step-num">4</span>朗读修改，注意节奏感</div>
+        <h3>5. 自评量规</h3>
+        <label class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"><span>我的诗是否有明确的情感和主题？</span></label>
+        <label class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"><span>我是否使用了至少 3 个具体的意象？</span></label>
+        <label class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"><span>诗句读起来是否有节奏感？</span></label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Case 5 -->
+  <div class="case-card" data-index="4">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">5</span>
+      <span class="case-title">跨学科整合型成果——友谊心理学小海报</span>
+      <span class="case-icon">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="case-body-inner">
+        <h3>1. 真实建构情境</h3>
+        <p>心理课上你学到了"社会支持系统"的概念——友谊是其中最重要的组成部分。请你结合英语和心理学的知识，制作一张科普小海报。</p>
+        <h3>2. 建构任务</h3>
+        <p>用英文制作一张 "The Science of Friendship" 海报（A4 大小），包含：友谊的 3 个心理学功能、对应的生活例子、一句总结语。</p>
+        <h3>3. 原理调用提示</h3>
+        <div class="principle-tip">使用<strong>证据支撑法</strong>：用心理学研究的发现作为你海报观点的证据。</div>
+        <h3>4. 建构步骤</h3>
+        <div class="case-step"><span class="step-num">1</span>查阅友谊的心理学功能（减压、归属感、成长等）</div>
+        <div class="case-step"><span class="step-num">2</span>为每个功能配一个生活例子</div>
+        <div class="case-step"><span class="step-num">3</span>设计海报排版（标题+3个板块+总结）</div>
+        <div class="case-step"><span class="step-num">4</span>用英文撰写所有文案</div>
+        <h3>5. 自评量规</h3>
+        <label class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"><span>我是否涵盖了 3 个心理学功能？</span></label>
+        <label class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"><span>每个功能是否有生活例子支撑？</span></label>
+        <label class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"><span>英文表达是否准确清晰？</span></label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Case 6 -->
+  <div class="case-card" data-index="5">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">6</span>
+      <span class="case-title">社会或未来情境型成果——跨文化交友指南</span>
+      <span class="case-icon">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="case-body-inner">
+        <h3>1. 真实建构情境</h3>
+        <p>你的学校下个月将迎来一批国际交换生，他们来自不同文化背景（日本、巴西、法国）。作为接待志愿者，你需要帮助他们理解中国学生的交友习惯。</p>
+        <h3>2. 建构任务</h3>
+        <p>用英文制作一份 "Making Friends in China: A Guide for International Students" 指南，包含 3 个文化特点和对应的交友建议。</p>
+        <h3>3. 原理调用提示</h3>
+        <div class="principle-tip">使用<strong>问题驱动法 + 证据支撑法</strong>：从"国际生在中国交朋友会遇到什么困难"出发寻找解决方案。</div>
+        <h3>4. 建构步骤</h3>
+        <div class="case-step"><span class="step-num">1</span>思考中外交友文化的差异</div>
+        <div class="case-step"><span class="step-num">2</span>列出 3 个最有代表性的差异</div>
+        <div class="case-step"><span class="step-num">3</span>为每个差异写一段建议</div>
+        <div class="case-step"><span class="step-num">4</span>整理成完整的指南文档</div>
+        <h3>5. 自评量规</h3>
+        <label class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"><span>我是否涵盖了 3 个文化特点？</span></label>
+        <label class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"><span>每条建议是否具体可操作？</span></label>
+        <label class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"><span>语气是否友好、尊重不同文化？</span></label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Case 7 -->
+  <div class="case-card" data-index="6">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">7</span>
+      <span class="case-title">综合创新型成果——"Friendship in the Digital Age" 专题页</span>
+      <span class="case-icon">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="case-body-inner">
+        <h3>1. 真实建构情境</h3>
+        <p>社交媒体时代，"朋友"的定义正在发生变化——微信好友算朋友吗？游戏队友算朋友吗？你如何看待数字时代的友谊？</p>
+        <h3>2. 建构任务</h3>
+        <p>创建一个 "Friendship in the Digital Age" 专题页（英文），包含：一个引人思考的问题、正反两方的观点、你自己的立场和理由。</p>
+        <h3>3. 原理调用提示</h3>
+        <div class="principle-tip">使用<strong>全部五条原理的综合运用</strong>：情境锚定（数字场景）→ 问题驱动（数字友谊真实吗？）→ 证据支撑（数据/案例）→ 表达外显（专题页）→ 反思迭代（修改完善）</div>
+        <h3>4. 建构步骤</h3>
+        <div class="case-step"><span class="step-num">1</span>确定你的核心观点和立场</div>
+        <div class="case-step"><span class="step-num">2</span>收集支持你观点的证据</div>
+        <div class="case-step"><span class="step-num">3</span>考虑反方观点并准备回应</div>
+        <div class="case-step"><span class="step-num">4</span>设计并撰写专题页</div>
+        <div class="case-step"><span class="step-num">5</span>对照量规修改完善</div>
+        <h3>5. 自评量规</h3>
+        <label class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"><span>我的专题页是否提出了一个引人思考的问题？</span></label>
+        <label class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"><span>我是否呈现了正反双方的观点？</span></label>
+        <label class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"><span>我是否有明确的个人立场和理由？</span></label>
+        <label class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"><span>英文表达是否流畅且有说服力？</span></label>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:24px;padding-top:16px;border-top:1px solid var(--border);">
+    <button class="btn" onclick="expandAll()" style="display:inline-block;padding:6px 18px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;">📂 展开全部案例</button>
+    <button class="btn" onclick="collapseAll()" style="display:inline-block;padding:6px 18px;background:transparent;color:var(--primary);border:1px solid var(--primary);border-radius:6px;cursor:pointer;margin-left:8px;">📁 收起全部案例</button>
+  </div>
+</div>
+
+<script>
+function toggleCase(header) {
+  header.classList.toggle('open');
+  var body = header.nextElementSibling;
+  if (body) body.classList.toggle('open');
+}
+function toggleRubric(el) {
+  el.classList.toggle('checked');
+  var cb = el.querySelector('input[type="checkbox"]');
+  if (cb) cb.checked = !cb.checked;
+}
+function jumpToCase(index) {
+  document.querySelectorAll('.overview-item').forEach(function(el, i) {
+    el.classList.toggle('active', i === index);
+  });
+  var cards = document.querySelectorAll('.case-card');
+  cards.forEach(function(card, i) {
+    var header = card.querySelector('.case-header');
+    var body = card.querySelector('.case-body');
+    if (i === index) {
+      header.classList.add('open');
+      body.classList.add('open');
+      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      header.classList.remove('open');
+      body.classList.remove('open');
+    }
+  });
+}
+function expandAll() {
+  document.querySelectorAll('.case-header').forEach(function(h) { h.classList.add('open'); });
+  document.querySelectorAll('.case-body').forEach(function(b) { b.classList.add('open'); });
+}
+function collapseAll() {
+  document.querySelectorAll('.case-header').forEach(function(h) { h.classList.remove('open'); });
+  document.querySelectorAll('.case-body').forEach(function(b) { b.classList.remove('open'); });
+}
+</script>
+</body>
+</html>

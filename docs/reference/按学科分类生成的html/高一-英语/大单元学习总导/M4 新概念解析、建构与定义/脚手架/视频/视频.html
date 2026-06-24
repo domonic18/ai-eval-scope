@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视频脚手架 — M4 新概念解析</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-family); font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+.header { background: linear-gradient(135deg, #434343 0%, #6b6b6b 100%); color: #fff; padding: 28px 32px; border-radius: var(--border-radius); margin-bottom: 24px; }
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 8px; }
+.header p { font-size: 14px; opacity: 0.85; }
+.badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 13px; margin-right: 8px; }
+.card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 24px; margin-bottom: 20px; border: 1px solid var(--border); }
+.card h2 { font-size: var(--font-h2); color: var(--primary); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 2px solid var(--accent); }
+.card h3 { font-size: 16px; color: var(--primary); margin: 16px 0 8px; }
+.card h4 { font-size: 15px; color: var(--text); margin: 10px 0 6px; font-weight: 600; }
+.card p, .card li { font-size: var(--font-body); line-height: var(--line-height); margin-bottom: 8px; color: var(--text); }
+.card ul, .card ol { padding-left: 20px; margin-bottom: 12px; }
+.card li { margin-bottom: 4px; }
+.level-tag { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; margin-right: 6px; }
+.level-basic { background: #e6f7ff; color: #1890ff; }
+.level-intermediate { background: #fff7e6; color: #d46b08; }
+.level-advanced { background: #f6ffed; color: #52c41a; }
+.video-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 14px; }
+.video-table th, .video-table td { border: 1px solid var(--border); padding: 10px 12px; text-align: left; }
+.video-table th { background: var(--bg); color: var(--primary); font-weight: 600; white-space: nowrap; }
+.video-table tr:hover { background: #fafafa; }
+.video-table tr { transition: background 0.2s; }
+.task-box { background: #f9f9f9; border-radius: 6px; padding: 16px; margin: 10px 0; border: 1px solid var(--border); }
+.task-box .q { margin: 6px 0; padding-left: 12px; border-left: 2px solid var(--accent); }
+.pause-point { background: #fffbe6; border: 1px solid #ffe58f; border-radius: 6px; padding: 12px 16px; margin: 10px 0; font-size: 14px; }
+.pause-point::before { content: "⏸️ 暂停思考点"; display: block; font-weight: 600; color: #d46b08; margin-bottom: 4px; }
+.tab-bar { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+.tab-btn { padding: 8px 18px; border: 1px solid var(--border); background: var(--card-bg); border-radius: 6px; cursor: pointer; font-size: 14px; transition: all 0.2s; }
+.tab-btn:hover { background: #eee; }
+.tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.task-section { display: none; }
+.task-section.active { display: block; }
+@media (max-width: 768px) {
+  .container { padding: 12px 16px; }
+  .header { padding: 20px 16px; }
+  .tab-btn { padding: 6px 12px; font-size: 13px; }
+  .card { padding: 16px; }
+  .video-table { font-size: 13px; }
+  .video-table th, .video-table td { padding: 6px 8px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🎬 视频脚手架</h1>
+  <p><span class="badge">英语 · 必修1</span><span class="badge">Unit 1 Friendship</span><span class="badge">M4 新概念解析</span></p>
+  <p style="margin-top:8px;">围绕核心问题 <em>"What does friendship truly mean in a modern, globalized world?"</em> 三层递进式视频学习</p>
+</div>
+
+<div class="card" style="background: linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%);">
+  <h2>🔭 观看焦点</h2>
+  <p>本视频脚手架引导你超越"朋友就是一起玩的人"的浅层认知，从 <strong>心理学、社会学和跨文化视角</strong> 重新定义友谊。覆盖三个层次：</p>
+  <ul>
+    <li><span class="level-tag level-basic">基础</span> 理解友谊的本质属性</li>
+    <li><span class="level-tag level-intermediate">进阶</span> 分析友谊对个体成长的影响</li>
+    <li><span class="level-tag level-advanced">挑战</span> 探讨数字时代友谊的变化与挑战</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>📺 推荐视频资源</h2>
+  <table class="video-table">
+    <thead><tr><th>层级</th><th>推荐视频</th><th>来源</th><th>时长</th><th>适配原因</th></tr></thead>
+    <tbody>
+      <tr><td><span class="level-tag level-basic">基础</span></td><td><em>The Science of Friendship</em></td><td>SciShow Psych</td><td>~7 min</td><td>神经科学解释友谊机制，语言适中，有字幕</td></tr>
+      <tr><td><span class="level-tag level-intermediate">进阶</span></td><td><em>What Makes a Good Friend?</em></td><td>TED-Ed</td><td>~5 min</td><td>哲学+心理学剖析友谊三大特质，动画生动</td></tr>
+      <tr><td><span class="level-tag level-intermediate">进阶</span></td><td><em>The Secret to Making Friends as an Adult</em></td><td>TEDx</td><td>~12 min</td><td>贴近高中生社交场景，论点清晰</td></tr>
+      <tr><td><span class="level-tag level-advanced">挑战</span></td><td><em>Beware of Online "Friendship"</em></td><td>BBC / DW</td><td>~10 min</td><td>探讨社交媒体侵蚀真实友谊，思辨性强</td></tr>
+      <tr><td><span class="level-tag level-advanced">挑战</span></td><td><em>How Social Media Affects Our Relationships</em></td><td>TED Talk</td><td>~14 min</td><td>数据+案例讨论数字时代亲密关系</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2>📖 分层观看任务</h2>
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('basic')"><span class="level-tag level-basic" style="margin-right:4px;">基础</span> 解释型</button>
+    <button class="tab-btn" onclick="switchTab('intermediate')"><span class="level-tag level-intermediate" style="margin-right:4px;">进阶</span> 分析型</button>
+    <button class="tab-btn" onclick="switchTab('advanced')"><span class="level-tag level-advanced" style="margin-right:4px;">挑战</span> 辩论/前沿型</button>
+  </div>
+
+  <!-- 基础层 -->
+  <div id="task-basic" class="task-section active">
+    <p style="color:var(--text-secondary);margin-bottom:12px;">面向全体学生 · 视频：<em>The Science of Friendship</em> (SciShow Psych)</p>
+
+    <div class="task-box">
+      <h4>👁️ 观看任务</h4>
+      <p>完成"友谊事实记录表"（Facts Graphic Organizer），列出至少 <strong>5 个</strong>关于友谊的科学研究发现（如大脑中与友谊相关的区域、友谊对健康的积极影响等）。</p>
+    </div>
+
+    <div class="task-box">
+      <h4>❓ 关键问题</h4>
+      <div class="q">1. According to the video, what happens in our brain when we interact with a close friend?</div>
+      <div class="q">2. Why does the video claim that friendship is "a biological necessity, not just a social choice"?</div>
+      <div class="q">3. What three qualities are identified as the foundation of strong friendships?</div>
+    </div>
+
+    <div class="pause-point">
+      <strong>[02:15]</strong> 视频提到镜像神经元的作用。暂停并思考：Can you recall a moment when you "mirrored" a friend's emotion? Write a one-sentence example.
+    </div>
+
+    <div class="pause-point">
+      <strong>[04:30]</strong> 视频展示友谊与寿命的正相关数据。暂停并思考：Why do you think having close friends can help people live longer?
+    </div>
+
+    <div class="task-box">
+      <h4>📝 输出任务（看后产出）</h4>
+      <p>写一段 <strong>80-100 词</strong>的段落，用视频中的科学证据回答：<em>Why is friendship important for human beings?</em></p>
+      <p>完成"友谊事实记录表"并提交。</p>
+    </div>
+  </div>
+
+  <!-- 进阶层 -->
+  <div id="task-intermediate" class="task-section">
+    <p style="color:var(--text-secondary);margin-bottom:12px;">面向中等及以上学生 · 视频：<em>What Makes a Good Friend?</em> + <em>The Secret to Making Friends as an Adult</em></p>
+
+    <div class="task-box">
+      <h4>👁️ 观看任务</h4>
+      <p>对比两个视频对"什么是好朋友"的定义，完成 <strong>Venn Diagram</strong>（两个视频观点的交集与差异）。</p>
+    </div>
+
+    <div class="task-box">
+      <h4>❓ 关键问题</h4>
+      <div class="q">1. TED-Ed 提出友谊的"三大支柱"（virtue, pleasure, utility）。Which of these three do you think is the most important for a long-term friendship? Justify your answer.</div>
+      <div class="q">2. In the TEDx talk, the speaker says "friendship is a skill, not a gift." What does she mean by this? Do you agree?</div>
+      <div class="q">3. 两个视频对"主动建立友谊"的态度有何不同？Which perspective resonates more with your own experience?</div>
+    </div>
+
+    <div class="pause-point">
+      <strong>[TED-Ed 01:50]</strong> Aristotle 的三种友谊分类刚介绍完。暂停并思考：Think of one friend in your life for each category. Do any friendships fall into more than one? Explain briefly.
+    </div>
+
+    <div class="pause-point">
+      <strong>[TEDx 06:10]</strong> 演讲者提到"friendship requires intentional vulnerability"。暂停并思考：What does "intentional vulnerability" look like in a real conversation? Describe a specific scenario.
+    </div>
+
+    <div class="task-box">
+      <h4>📝 输出任务（看后产出）</h4>
+      <p>撰写一篇 <strong>150-200 词</strong>的短文（或录制 2 分钟英语口语视频），题目：<em>My Definition of a True Friend — Insights from Two Videos</em>。要求引用至少两个视频中的观点，并结合个人经历。</p>
+      <p>完成 Venn Diagram 对比图。</p>
+    </div>
+  </div>
+
+  <!-- 挑战层 -->
+  <div id="task-advanced" class="task-section">
+    <p style="color:var(--text-secondary);margin-bottom:12px;">面向学有余力学生 · 视频：<em>Beware of Online "Friendship"</em> + <em>How Social Media Affects Our Relationships</em></p>
+
+    <div class="task-box">
+      <h4>👁️ 观看任务</h4>
+      <p>完成"数字友谊利弊清单"（Pro/Con List），从 <strong>真实性（authenticity）、深度（depth）、可持续性（sustainability）</strong> 三个维度进行对比评估。</p>
+    </div>
+
+    <div class="task-box">
+      <h4>❓ 关键问题</h4>
+      <div class="q">1. 两个视频对"社交媒体上的友谊是否真实"持不同态度。What is each speaker's central argument? Which one do you find more convincing, and why?</div>
+      <div class="q">2. 纪录片提到"algorithm-driven friendship"这一概念。Do you think an algorithm can truly understand human friendship? Why or why not?</div>
+      <div class="q">3. 综合两个视频，提出你自己的观点：Can online friendships be as meaningful as offline ones? 你的答案是什么？你需要什么证据来支持它？</div>
+    </div>
+
+    <div class="pause-point">
+      <strong>[纪录片 03:40]</strong> 画面展示社交媒体"好友"数量与实际亲密好友数量的巨大差距。暂停并思考：Look at your own social media (or imagine one). How many "friends" do you have vs. how many people you could truly confide in? What does this gap tell you?
+    </div>
+
+    <div class="pause-point">
+      <strong>[TED Talk 08:20]</strong> 演讲者展示研究：面对面交流每减少 30 分钟，孤独感指数上升 X%。暂停并思考：When was the last time you spent 30 minutes talking face-to-face with a friend, without any phones? How did it feel?
+    </div>
+
+    <div class="task-box">
+      <h4>📝 输出任务（看后产出，二选一）</h4>
+      <p><strong>Option A（辩论稿）</strong>：撰写一篇 <strong>250-300 词</strong> 的辩论陈词（Debate Speech），正反立场自选，题目：<em>This House believes that online friendships are as valuable as offline friendships.</em> 要求引用至少三处视频中的证据。</p>
+      <p style="margin-top:8px;"><strong>Option B（调研报告）</strong>：在班级内完成微型调查（5-10 位同学），将数据与视频观点结合，写一份简短的调研分析报告（200-250 词）。</p>
+    </div>
+  </div>
+</div>
+
+<!-- 综合索引 -->
+<div class="card">
+  <h2>📊 视频资源综合索引</h2>
+  <table class="video-table">
+    <thead><tr><th>视频</th><th>层级</th><th>语言难度</th><th>核心词汇/表达</th><th>可衔接活动</th></tr></thead>
+    <tbody>
+      <tr><td><em>The Science of Friendship</em></td><td><span class="level-tag level-basic">基础</span></td><td>CEFR B1</td><td>mirror neuron, biological necessity, oxytocin, longevity</td><td>词汇配对、主旨概括</td></tr>
+      <tr><td><em>What Makes a Good Friend?</em></td><td><span class="level-tag level-intermediate">进阶</span></td><td>CEFR B1-B2</td><td>virtue, utility, pleasure, reciprocal, mutual</td><td>小组讨论、定义分类</td></tr>
+      <tr><td><em>The Secret to Making Friends as an Adult</em></td><td><span class="level-tag level-intermediate">进阶</span></td><td>CEFR B2</td><td>vulnerability, initiative, intimacy, social skill</td><td>角色扮演、个人反思</td></tr>
+      <tr><td><em>Beware of Online "Friendship"</em></td><td><span class="level-tag level-advanced">挑战</span></td><td>CEFR B2+</td><td>algorithm-driven, superficial, authentic, parasocial</td><td>辩论赛、立场写作</td></tr>
+      <tr><td><em>How Social Media Affects Our Relationships</em></td><td><span class="level-tag level-advanced">挑战</span></td><td>CEFR B2+</td><td>digital intimacy, social displacement, loneliness index</td><td>辩论赛、数据分析作文</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 实施建议 -->
+<div class="card">
+  <h2>✅ 课堂实施建议</h2>
+  <ul>
+    <li><strong>差异化安排</strong>：在 M4 视频环节采用"三层选看"模式，根据英语水平和兴趣选择一层</li>
+    <li><strong>时间预算</strong>：每层视频观看 + 暂停思考约 15-20 分钟，输出任务课后完成或下一课时分享</li>
+    <li><strong>语言支持</strong>：基础层提供英文字幕+关键词汇表；进阶和挑战层仅提供英文字幕；<strong>所有层均不提供中文字幕</strong></li>
+    <li><strong>成果展评</strong>：优秀输出作品可在班级展示墙或线上平台分享，计入单元过程性评价</li>
+  </ul>
+</div>
+
+</div>
+
+<script>
+function switchTab(level) {
+  document.querySelectorAll('.task-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('task-' + level).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>

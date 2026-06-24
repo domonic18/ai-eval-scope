@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>研学社区 - 脚手架</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  background: var(--bg);
+  color: var(--text);
+  width: 100%;
+}
+
+.container { width: 100%; max-width: none; padding: 24px 20px; }
+
+h1 { font-size: var(--font-h1); font-weight: 700; color: var(--primary); margin: 0 0 8px; }
+h2 { font-size: var(--font-h2); font-weight: 600; color: var(--primary); margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 2px solid var(--accent); }
+h3 { font-size: 16px; font-weight: 600; color: var(--text); margin: 20px 0 8px; }
+
+.section-desc { color: var(--text-secondary); font-size: 14px; margin-bottom: 20px; }
+
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+  transition: box-shadow 0.3s ease;
+}
+.card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+
+.card-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 12px;
+  font-weight: 600; font-size: 16px; color: var(--primary);
+}
+.card-header .icon { font-size: 20px; }
+
+.level-tag {
+  display: inline-block; padding: 3px 12px; border-radius: 12px;
+  font-size: 12px; font-weight: 600; margin-bottom: 8px;
+}
+.lv-basic { background: #e6f7ff; color: #1890ff; }
+.lv-inter { background: #f4f0ff; color: #722ed1; }
+.lv-challenge { background: #fff1f0; color: #cf1322; }
+
+ol, ul { margin: 8px 0 8px 20px; }
+li { margin-bottom: 4px; }
+
+.schema-highlight {
+  padding: 10px 14px; margin: 8px 0;
+  background: var(--bg); border-radius: var(--border-radius);
+  border-left: 4px solid var(--accent); font-size: 14px;
+}
+
+.option-group { margin: 12px 0; }
+.option-item {
+  padding: 10px 14px; margin: 6px 0;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border);
+  cursor: pointer; transition: all 0.3s;
+  font-size: 14px;
+}
+.option-item:hover { border-color: var(--primary); background: var(--bg); }
+
+.option-result { display: none; padding: 12px; margin-top: 8px; background: #f6ffed; border-radius: var(--border-radius); border-left: 4px solid #52c41a; font-size: 14px; }
+.option-result.show { display: block; }
+
+.pulse-btn {
+  display: inline-block; padding: 8px 20px; margin: 8px 0;
+  background: var(--primary); color: #fff; border: none;
+  border-radius: var(--border-radius); cursor: pointer;
+  font-size: 14px; transition: all 0.3s; animation: pulse 2s infinite;
+}
+.pulse-btn:hover { background: var(--primary-hover); animation: none; }
+@keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(67,67,67,0.4); } 50% { box-shadow: 0 0 0 8px rgba(67,67,67,0); } }
+
+.icebreaker-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 12px 0; }
+.ice-step { padding: 14px; background: var(--bg); border-radius: var(--border-radius); text-align: center; font-size: 13px; }
+.ice-step .num { font-size: 24px; font-weight: 700; color: var(--primary); display: block; margin-bottom: 4px; }
+
+@media (max-width: 640px) {
+  .container { padding: 16px 12px; }
+  .card { padding: 14px; }
+  .icebreaker-steps { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🌍 研学社区（案例库）</h1>
+<p class="section-desc">真实世界"问题→决策→结果"案例，从生活场景到国际舞台，在情境中理解跨文化友谊。</p>
+
+<!-- 基础层 -->
+<h2>📌 基础层 · 生活类案例</h2>
+
+<div class="card">
+  <span class="level-tag lv-basic">基础</span>
+  <div class="card-header"><span class="icon">🎓</span> 留学生小李的困惑</div>
+
+  <h3>背景</h3>
+  <p>中国留学生小李在美国读书，室友Jason经常邀请他参加party，但从不提前确认时间。小李觉得不被尊重，Jason觉得小李"太严肃"。</p>
+
+  <h3>🔍 核心问题</h3>
+  <p>中西方对"邀请"的理解差异——中国式邀请通常需要明确的时间和确认，西方更强调"<strong>spontaneity</strong>"（自发性）。</p>
+
+  <h3>⚖️ 决策路径</h3>
+  <div class="option-group">
+    <div class="option-item" onclick="showResult('li-a', this)">
+      <strong>方案A：</strong>直接拒绝 → 关系疏远
+    </div>
+    <div class="option-item" onclick="showResult('li-b', this)">
+      <strong>方案B：</strong>尝试理解文化差异 → 改善关系
+    </div>
+    <div class="option-item" onclick="showResult('li-c', this)">
+      <strong>方案C：</strong>双方各退一步 → 建立新规则
+    </div>
+  </div>
+
+  <div id="li-a" class="option-result"><strong>结果：</strong>虽然短期内避免了冲突，但长期来看可能错过一段珍贵的跨文化友谊。文化差异不会因为回避而消失。</div>
+  <div id="li-b" class="option-result"><strong>结果：</strong>小李尝试和Jason沟通文化差异后，两人制定了一周的"roommate schedule"。关系明显改善。</div>
+  <div id="li-c" class="option-result"><strong>结果：</strong>最理想的选择。沟通文化差异本身就能拉近距离——当你们谈论彼此的差异时，友谊已经在生长。</div>
+
+  <div class="schema-highlight">
+    <strong>💡 可迁移启示：</strong>跨文化友谊中，<strong>沟通文化差异本身就能拉近距离</strong>。差异不是障碍，而是对话的起点。
+  </div>
+</div>
+
+<!-- 进阶层 -->
+<h2>📌 进阶层 · 行业/历史案例</h2>
+
+<div class="card">
+  <span class="level-tag lv-inter">进阶</span>
+  <div class="card-header"><span class="icon">🏢</span> 华为团队的跨文化协作</div>
+
+  <h3>背景</h3>
+  <p>华为在海外扩张过程中，中方员工与欧洲员工的友谊和工作关系经历了从"礼貌疏离"到"深度信任"的转变。</p>
+
+  <h3>🔍 核心问题</h3>
+  <p>中国企业强调"奋斗者文化"和集体归属，欧洲员工更注重工作—生活平衡和个人边界——友谊如何在这种差异中生长？</p>
+
+  <h3>⚖️ 决策路径</h3>
+  <div class="option-group">
+    <div class="option-item" onclick="showResult('hw-a', this)">
+      <strong>方案A：</strong>强制统一文化 → 欧洲员工流失
+    </div>
+    <div class="option-item" onclick="showResult('hw-b', this)">
+      <strong>方案B：</strong>允许文化多样性 → 建立混合团队文化
+    </div>
+  </div>
+
+  <div id="hw-a" class="option-result"><strong>结果：</strong>强制推行单一文化导致关键人才流失，团队凝聚力下降。教训：文化不是可以简单复制粘贴的。</div>
+  <div id="hw-b" class="option-result"><strong>结果：</strong>华为采用"<strong>Glocal</strong>"（全球+本地）策略，中欧员工在互相学习中建立了真正的职场友谊。</div>
+
+  <div class="schema-highlight">
+    <strong>💡 可迁移启示：</strong>职场友谊不同于学生友谊，需要考虑更多的文化规则和边界。成功的跨文化职场友谊建立在互相尊重差异的基础上。
+  </div>
+</div>
+
+<!-- 挑战层 -->
+<h2>📌 挑战层 · 复杂系统案例</h2>
+
+<div class="card">
+  <span class="level-tag lv-challenge">挑战</span>
+  <div class="card-header"><span class="icon">🌐</span> 联合国青年论坛的中外代表对话</div>
+
+  <h3>背景</h3>
+  <p>来自不同文化背景的青年代表在联合国论坛上讨论全球议题，休息时的"社交时间"反而成了最大挑战。</p>
+
+  <h3>🔍 核心问题</h3>
+  <p>国际场合中，友谊的建立不仅受文化影响，还受语言、权力地位、外交礼仪等复杂因素影响。</p>
+
+  <h3>🎯 关键结论</h3>
+  <p>成功的代表往往具备"<strong>文化智力</strong>"（Cultural Intelligence, CQ），能灵活切换交流方式。</p>
+
+  <div class="schema-highlight">
+    <strong>💡 可迁移启示：</strong>最高层次的跨文化友谊需要"<strong>元文化能力</strong>"——能够读懂不同文化场景并调整自己的行为。
+  </div>
+
+  <h3>🧩 互动任务：设计你的"破冰三步"</h3>
+  <p style="font-size:14px;">假如你是论坛上的一名中国青年代表，你会如何与一位德国代表和一位肯尼亚代表建立联系？</p>
+
+  <div class="icebreaker-steps">
+    <div class="ice-step">
+      <span class="num">Step 1</span>
+      <strong>找到共同话题</strong>
+      <p style="margin-top:4px;font-size:12px;color:var(--text-secondary);">从会议议题切入，而非私人问题</p>
+    </div>
+    <div class="ice-step">
+      <span class="num">Step 2</span>
+      <strong>展示文化意识</strong>
+      <p style="margin-top:4px;font-size:12px;color:var(--text-secondary);">表达对对方文化的兴趣和尊重</p>
+    </div>
+    <div class="ice-step">
+      <span class="num">Step 3</span>
+      <strong>留下开放结尾</strong>
+      <p style="margin-top:4px;font-size:12px;color:var(--text-secondary);">"I'd love to continue this conversation"</p>
+    </div>
+  </div>
+
+  <button class="pulse-btn" onclick="showResult('my-plan', null)">💡 查看参考方案</button>
+  <div id="my-plan" class="option-result">
+    <p><strong>参考方案：</strong></p>
+    <p>1. 找到德国代表谈论议程上的"可持续发展目标"——德国在此有丰富经验；</p>
+    <p>2. 找到肯尼亚代表询问其国家的青年创业故事——表达真诚的好奇心；</p>
+    <p>3. 邀请两人一起喝咖啡——用"third place"降低面对面交流的压力；</p>
+    <p>4. 关键心态：不是"展示自己有多好"，而是"我真的想了解你"。</p>
+  </div>
+</div>
+
+</div>
+<script>
+function showResult(id, el) {
+  var target = document.getElementById(id);
+  if (!target) return;
+  target.classList.toggle('show');
+  if (el) {
+    var parent = el.closest('.option-group');
+    if (parent) {
+      var siblings = parent.querySelectorAll('.option-result');
+      siblings.forEach(function(s) { if (s.id !== id) s.classList.remove('show'); });
+    }
+  }
+}
+</script>
+</body>
+</html>

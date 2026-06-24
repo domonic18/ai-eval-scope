@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性原理 - M16 真善美思维与反思</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0;
+  font-family: var(--font-family);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 24px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, #434343 0%, #595959 100%);
+  color: #fff;
+  padding: 32px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header .meta { font-size: 13px; opacity: 0.8; }
+.section-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.section-card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bg);
+}
+.principle-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 18px;
+  margin-bottom: 16px;
+  border-left: 4px solid var(--primary);
+  transition: all 0.2s;
+}
+.principle-card:hover { box-shadow: var(--shadow); }
+.principle-card .p-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+.principle-card .p-title .p-num {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 28px;
+  font-size: 13px;
+  margin-right: 8px;
+}
+.principle-card .p-section {
+  margin-top: 8px;
+}
+.principle-card .p-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary-hover);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.practice-box {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  margin: 12px 0;
+}
+.practice-box .prac-title {
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+.practice-box .prac-tag {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin: 2px 4px 2px 0;
+}
+.reflection-item {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px 16px;
+  margin: 8px 0;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.reflection-item:hover { border-color: var(--primary); }
+.reflection-item .r-q { font-weight: 600; }
+.reflection-item .r-arrow { float: right; color: var(--accent); transition: transform 0.3s; }
+.reflection-item.open .r-arrow { transform: rotate(180deg); }
+.reflection-item .r-a {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.reflection-item.open .r-a {
+  max-height: 200px;
+  padding-top: 10px;
+}
+.tag {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin: 2px 4px 2px 0;
+  border: 1px solid var(--border);
+}
+.flip-btn {
+  display: inline-block;
+  padding: 8px 20px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin: 6px 0;
+}
+.flip-btn:hover { background: var(--primary-hover); }
+.flip-card {
+  perspective: 800px;
+  margin-bottom: 16px;
+}
+.flip-card-inner {
+  width: 100%;
+  min-height: 120px;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+  position: relative;
+}
+.flip-card-inner.flipped { transform: rotateY(180deg); }
+.flip-card-front, .flip-card-back {
+  backface-visibility: hidden;
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  padding: 16px;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+}
+.flip-card-back { transform: rotateY(180deg); }
+@media (max-width: 768px) {
+  .container { padding: 12px; }
+  .header { padding: 20px 16px; }
+  .section-card { padding: 14px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🏗️ 建构性原理</h1>
+  <div class="meta">M16 新知应用与创新中的真善美思维与反思 · 英语 · 必修1</div>
+  <p style="margin-top:12px;font-size:14px;opacity:0.9;">从示例中提炼可迁移的建构方法——理解"知识是如何被建构出来的"</p>
+</div>
+
+<div class="section-card">
+  <h2>📌 内容定位</h2>
+  <p>本环节是"建构性导学"的第二步——在前一个环节的示例基础上，提炼出 <strong>3~5 条可迁移的建构性原理</strong>。这些原理是你在以后面对任何新材料、新情境时，都可以重复使用的"建构方法"。</p>
+  <p style="margin-top:8px;color:var(--text-secondary);">重点不是记住知识点，而是理解知识是如何被建构出来的。</p>
+</div>
+
+<!-- 五大建构性原理 -->
+<div class="section-card">
+  <h2>🧩 建构性原理提炼</h2>
+
+  <div class="principle-card">
+    <div class="p-title"><span class="p-num">1</span>情境卷入法</div>
+    <div class="p-section"><span class="p-label">原理说明</span><p>把自己代入真实的朋友关系问题中再动笔表达。先感受情境，再组织语言。</p></div>
+    <div class="p-section"><span class="p-label">原理来源</span><p>在示例中，Anna 的友谊困境让你设身处地思考"如果是我会怎么分析"——这种代入感让表达更真实。</p></div>
+    <div class="p-section"><span class="p-label">适用场景</span><p><span class="tag">英文写作</span><span class="tag">口语对话</span><span class="tag">角色扮演</span><span class="tag">书信表达</span></p></div>
+    <div class="p-section"><span class="p-label">注意事项</span><p>不要过度代入以致失去客观判断——要在共情与理性之间找到平衡。</p></div>
+  </div>
+
+  <div class="principle-card">
+    <div class="p-title"><span class="p-num">2</span>句型锚定法</div>
+    <div class="p-section"><span class="p-label">原理说明</span><p>用目标句型（如建议句型、情感表达句型）作为建构的脚手架，先有结构再填充内容。</p></div>
+    <div class="p-section"><span class="p-label">原理来源</span><p>示例中"先观察不评判""三层面分析法"提供了通用的分析句式框架，可迁移到任何友谊话题。</p></div>
+    <div class="p-section"><span class="p-label">适用场景</span><p><span class="tag">建议信写作</span><span class="tag">议论文</span><span class="tag">情感描写</span><span class="tag">演讲稿</span></p></div>
+    <div class="p-section"><span class="p-label">注意事项</span><p>句型是脚手架，不是模板——不要只会套用而不会灵活调整。</p></div>
+  </div>
+
+  <div class="principle-card">
+    <div class="p-title"><span class="p-num">3</span>结构先行法</div>
+    <div class="p-section"><span class="p-label">原理说明</span><p>先确定表达结构（问题—分析—方案—期望）再填充内容，确保逻辑清晰。</p></div>
+    <div class="p-section"><span class="p-label">原理来源</span><p>专家解析过程的五步推理链（事实→感受→期望→差异→方案）就是结构先行法的典型应用。</p></div>
+    <div class="p-section"><span class="p-label">适用场景</span><p><span class="tag">英文议论文</span><span class="tag">问题解决类写作</span><span class="tag">项目报告</span><span class="tag">邮件沟通</span></p></div>
+    <div class="p-section"><span class="p-label">注意事项</span><p>结构是骨架，但内容不能干瘪——每一步都要有具体的细节支撑。</p></div>
+  </div>
+
+  <div class="principle-card">
+    <div class="p-title"><span class="p-num">4</span>读者意识法</div>
+    <div class="p-section"><span class="p-label">原理说明</span><p>始终想着你的读者是谁，调整语言的口吻和情感。写给朋友和写给老师的语气完全不同。</p></div>
+    <div class="p-section"><span class="p-label">原理来源</span><p>示例中"结论表达"部分没有说"谁错了"，而是说"差异在哪里"——这就是读者意识：维护关系，而非指责。</p></div>
+    <div class="p-section"><span class="p-label">适用场景</span><p><span class="tag">英文邮件</span><span class="tag">劝说文</span><span class="tag">公共演讲</span><span class="tag">自荐信</span></p></div>
+    <div class="p-section"><span class="p-label">注意事项</span><p>不要为了迎合读者而放弃自己的核心观点——真诚比讨好更重要。</p></div>
+  </div>
+
+  <div class="principle-card">
+    <div class="p-title"><span class="p-num">5</span>反思迭代法</div>
+    <div class="p-section"><span class="p-label">原理说明</span><p>写完初稿后，从"真善美"三个维度回看修改：内容是否真实？表达是否友善？形式是否优美？</p></div>
+    <div class="p-section"><span class="p-label">原理来源</span><p>示例末尾的学习自评和自主迁移练习，本质上就是引导你反思自己的建构过程。</p></div>
+    <div class="p-section"><span class="p-label">适用场景</span><p><span class="tag">作文修改</span><span class="tag">演讲排练</span><span class="tag">项目复盘</span><span class="tag">自我评价</span></p></div>
+    <div class="p-section"><span class="p-label">注意事项</span><p>反思不是自我批评——要从"哪里可以更好"的角度出发，而非"哪里错了"。</p></div>
+  </div>
+</div>
+
+<!-- 二、迁移应用 -->
+<div class="section-card">
+  <h2>🔄 建构性原理迁移应用</h2>
+
+  <div class="practice-box">
+    <div class="prac-title">🏋️ 练习一：英文对话脚本</div>
+    <p><strong>情境：</strong>你和好朋友因为一次误会产生了隔阂，你想主动找对方聊一聊。</p>
+    <p><strong>建构任务：</strong>写一段 8~10 句的英文对话脚本，展现双方从矛盾到和解的过程。</p>
+    <p><strong>建议使用的原理：</strong><span class="prac-tag">情境卷入法</span><span class="prac-tag">读者意识法</span><span class="prac-tag">结构先行法</span></p>
+    <p><strong>脚手架提示：</strong>先用结构先行法定框架：开场表达意愿 → 陈述各自立场 → 表达感受 → 寻求共识 → 展望未来。再用读者意识法调整语气。</p>
+  </div>
+
+  <div class="practice-box">
+    <div class="prac-title">🏋️ 练习二：英文友谊维护建议清单</div>
+    <p><strong>情境：</strong>你的好朋友即将转学去另一个城市，你们想约定如何保持友谊。</p>
+    <p><strong>建构任务：</strong>写一份 "Friendship Maintenance Checklist"（5条建议），用英语呈现。</p>
+    <p><strong>建议使用的原理：</strong><span class="prac-tag">句型锚定法</span><span class="prac-tag">反思迭代法</span></p>
+    <p><strong>脚手架提示：</strong>用句型锚定法找到合适的建议句式（如 "Make sure to...", "Don\'t forget to..."），写完用反思迭代法从"真善美"角度回看。</p>
+  </div>
+</div>
+
+<!-- 三、元认知反思 -->
+<div class="section-card">
+  <h2>💭 元认知反思</h2>
+  <p style="color:var(--text-secondary);margin-bottom:10px;">点击问题展开思考引导</p>
+
+  <div class="reflection-item" onclick="toggleReflection(this)">
+    <div class="r-q">在刚才的建构过程中，哪个步骤最让你觉得"原来如此"？ <span class="r-arrow">▾</span></div>
+    <div class="r-a">可能是"先观察不评判"的那一步——原来很多冲突中我们看到的"事实"其实已经夹杂了判断。意识到这一点，分析就清晰多了。</div>
+  </div>
+
+  <div class="reflection-item" onclick="toggleReflection(this)">
+    <div class="r-q">你使用的建构性原理中，哪一条最顺手？哪一条还需要多练？ <span class="r-arrow">▾</span></div>
+    <div class="r-a">结构先行法通常最容易上手，因为框架清晰。而读者意识法最难——要真正做到换位思考需要大量的实践和反思。</div>
+  </div>
+
+  <div class="reflection-item" onclick="toggleReflection(this)">
+    <div class="r-q">如果把同样的建构方法用到一个非友谊主题的话题上，需要调整什么？ <span class="r-arrow">▾</span></div>
+    <div class="r-a">核心原理不变，但具体的情境和句型需要更换。比如换成"环保"话题，情境卷入的对象就从"朋友矛盾"变成了"环境问题"。</div>
+  </div>
+
+  <div class="reflection-item" onclick="toggleReflection(this)">
+    <div class="r-q">哪条原理你觉得最难理解？下一步可以怎么练习？ <span class="r-arrow">▾</span></div>
+    <div class="r-a">反思迭代法最难，因为它需要你写完后再回头审视。试试写完一小段后，给自己设定3个"回头看的维度"（内容、语气、结构），逐条检查。</div>
+  </div>
+</div>
+
+<div style="text-align:center;padding:20px 0 8px;color:var(--text-secondary);font-size:13px;">
+  五大原理 · 两个迁移练习 · 四个反思问题
+</div>
+
+</div>
+<script>
+function toggleReflection(el) {
+  el.classList.toggle('open');
+}
+</script>
+</body>
+</html>

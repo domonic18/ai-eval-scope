@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性案例 · 内在驱动力引擎</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --font-h1: 22px;
+  --engine-orange: #f59e0b;
+  --engine-gold: #fbbf24;
+  --engine-copper: #d97706;
+  --engine-dark: #1c1917;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 30%, #fbbf24 70%, #f59e0b 100%);
+  min-height: 100vh;
+}
+
+.container { width: 100%; max-width: none; padding: 16px; }
+
+/* Header */
+.header {
+  text-align: center; padding: 20px; margin-bottom: 16px;
+  background: linear-gradient(135deg, rgba(28,25,23,.85), rgba(120,90,60,.8));
+  border-radius: var(--border-radius);
+  border: 1px solid rgba(251,191,36,.3);
+}
+.header h1 { font-size: var(--font-h1); color: var(--engine-gold); font-weight: 700; text-shadow: 0 2px 8px rgba(251,191,36,.3); margin-bottom: 6px; }
+.header p { color: #d4a373; font-size: 14px; }
+.header .badge { display: inline-block; padding: 2px 12px; background: rgba(251,191,36,.2); border: 1px solid rgba(251,191,36,.3); border-radius: 12px; color: var(--engine-gold); font-size: 12px; margin-top: 8px; }
+
+/* Engine dashboard */
+.engine-dashboard { display: flex; gap: 16px; margin-bottom: 16px; }
+.engine-visual {
+  flex: 1;
+  background: linear-gradient(180deg, #292524 0%, #1c1917 100%);
+  border-radius: var(--border-radius);
+  border: 2px solid var(--engine-copper);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  min-height: 360px;
+}
+.engine-visual::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(ellipse at 50% 80%, rgba(251,191,36,.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+.engine-title { text-align: center; color: var(--engine-gold); font-size: 14px; font-weight: 600; letter-spacing: 2px; margin-bottom: 14px; text-transform: uppercase; }
+
+.engine-block { display: flex; gap: 10px; justify-content: center; align-items: flex-end; height: 200px; margin-bottom: 10px; }
+.cylinder {
+  width: 70px; display: flex; flex-direction: column; align-items: center;
+  position: relative; cursor: pointer; transition: transform .3s;
+}
+.cylinder:hover { transform: scale(1.05); }
+.cylinder .cylinder-label { font-size: 10px; color: #a8a29e; text-align: center; margin-top: 6px; line-height: 1.3; }
+.cylinder .cylinder-body {
+  width: 100%; height: 140px; border-radius: 8px 8px 4px 4px;
+  border: 2px solid var(--engine-copper);
+  background: linear-gradient(180deg, #44403c, #292524);
+  position: relative; overflow: hidden;
+}
+.cylinder .cylinder-fill {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 20%;
+  background: linear-gradient(0deg, var(--engine-gold), var(--engine-orange));
+  transition: height 1s ease;
+  border-radius: 0 0 4px 4px;
+}
+.cylinder .cylinder-fill::after { content: ''; position: absolute; top: -2px; left: 0; right: 0; height: 3px; background: rgba(255,255,255,.6); filter: blur(2px); }
+.cylinder .cylinder-glow { position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: 6px; box-shadow: inset 0 0 12px rgba(251,191,36,.15); transition: box-shadow .5s; }
+.cylinder.active .cylinder-glow { box-shadow: inset 0 0 20px rgba(251,191,36,.4), 0 0 16px rgba(251,191,36,.2); }
+.cylinder .cylinder-cap { width: 80px; height: 12px; background: linear-gradient(180deg, #78716c, #57534e); border-radius: 4px; border: 1px solid var(--engine-copper); margin-bottom: 2px; }
+
+.energy-tray { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; padding: 12px 0; border-top: 1px solid rgba(251,191,36,.2); }
+.energy-ball {
+  width: 48px; height: 48px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: #fff; font-weight: 600;
+  cursor: grab; transition: all .3s; user-select: none;
+  position: relative;
+  animation: float 3s ease-in-out infinite;
+}
+.energy-ball:hover { transform: scale(1.15); filter: brightness(1.2); }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+.energy-ball .ball-label { position: absolute; bottom: -18px; font-size: 9px; color: #a8a29e; white-space: nowrap; }
+
+.engine-controls {
+  width: 300px;
+  background: linear-gradient(180deg, #292524 0%, #1c1917 100%);
+  border-radius: var(--border-radius);
+  border: 2px solid var(--engine-copper);
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.engine-btn {
+  padding: 10px; border: 2px solid var(--engine-copper);
+  border-radius: 6px; background: linear-gradient(180deg, #44403c, #292524);
+  color: var(--engine-gold); font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: all .3s; text-align: center;
+}
+.engine-btn:hover { background: linear-gradient(180deg, #57534e, #44403c); border-color: var(--engine-gold); }
+.engine-btn:disabled { opacity: .4; cursor: not-allowed; }
+.engine-btn.ignite { background: linear-gradient(180deg, #d97706, #92400e); border-color: #f59e0b; color: #fff; font-size: 16px; }
+.engine-btn.ignite:hover { background: linear-gradient(180deg, #f59e0b, #b45309); }
+.power-meter { text-align: center; padding: 10px; background: rgba(0,0,0,.3); border-radius: 4px; }
+.power-meter .meter-label { font-size: 11px; color: #a8a29e; }
+.power-meter .meter-value { font-size: 16px; font-weight: 700; color: #fff; }
+.power-meter .meter-value.green { color: #52b788; }
+
+/* Content area */
+.content-area {
+  background: rgba(255,255,255,.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.section-title { font-size: var(--font-h2); font-weight: 700; color: var(--engine-copper); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+
+/* Case cards */
+.case-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px,1fr)); gap: 12px; }
+.case-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  transition: all .3s;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.case-card:hover { box-shadow: 0 4px 16px rgba(251,191,36,.15); border-color: var(--engine-orange); transform: translateY(-2px); }
+.case-card .case-num {
+  display: inline-block; font-size: 11px; font-weight: 700;
+  background: var(--engine-copper); color: #fff;
+  padding: 2px 10px; border-radius: 4px; margin-bottom: 8px;
+}
+.case-card .case-type {
+  font-size: 12px; color: var(--text-secondary);
+  margin-left: 8px; font-weight: 400;
+}
+.case-card h4 { font-size: calc(var(--font-body) + 2px); font-weight: 600; margin-bottom: 6px; }
+.case-card .case-scenario { font-size: 14px; color: var(--text-secondary); margin-bottom: 8px; }
+.case-card .case-task { font-size: 14px; color: var(--text); margin-bottom: 6px; font-weight: 500; }
+.case-card .case-principles { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+.case-card .principle-tag {
+  font-size: 11px; padding: 2px 8px; border-radius: 4px;
+  background: rgba(251,191,36,.1); color: var(--engine-copper); border: 1px solid rgba(251,191,36,.2);
+}
+.case-card .case-steps {
+  max-height: 0; overflow: hidden; transition: max-height .4s ease;
+  font-size: 14px; color: var(--text-secondary); border-top: 1px solid var(--border);
+  margin-top: 8px; padding-top: 0;
+}
+.case-card.expanded .case-steps { max-height: 400px; padding-top: 10px; }
+.case-card .case-steps ol { padding-left: 18px; margin: 6px 0; }
+.case-card .case-steps ol li { margin-bottom: 4px; }
+.case-card .case-output {
+  display: inline-block; margin-top: 8px; font-size: 12px;
+  padding: 3px 10px; background: var(--engine-gold); color: #1c1917;
+  border-radius: 4px; font-weight: 600;
+}
+
+/* ===== Recipe ===== */
+.recipe-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.6); z-index: 300; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
+.recipe-overlay.show { display: flex; }
+.recipe-card { background: linear-gradient(135deg, #1c1917, #292524); border: 2px solid var(--engine-gold); border-radius: 12px; padding: 28px; max-width: 420px; width: 90%; position: relative; box-shadow: 0 8px 32px rgba(251,191,36,.2); }
+.recipe-card .recipe-close { position: absolute; top: 12px; right: 14px; color: #a8a29e; cursor: pointer; font-size: 20px; }
+.recipe-card .recipe-title { color: var(--engine-gold); font-size: 16px; font-weight: 700; text-align: center; margin-bottom: 16px; }
+.recipe-card .recipe-section { margin-bottom: 10px; padding: 10px; border-radius: 6px; background: rgba(255,255,255,.05); }
+.recipe-card .recipe-section .rs-label { font-size: 11px; color: var(--engine-gold); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+.recipe-card .recipe-section .rs-value { color: #e7e5e4; font-size: 14px; margin-top: 4px; }
+
+/* ===== Power kit ===== */
+.kit-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.6); z-index: 300; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
+.kit-overlay.show { display: flex; }
+.power-kit { background: linear-gradient(135deg, #fef3c7, #fffbeb); border: 2px solid var(--engine-gold); border-radius: 12px; padding: 24px; max-width: 400px; width: 90%; }
+.power-kit h3 { color: var(--engine-copper); margin-bottom: 12px; font-size: 16px; }
+.power-kit .kit-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,.06); font-size: 14px; }
+.power-kit .kit-item:last-child { border-bottom: none; }
+
+/* ===== Declaration ===== */
+.declare-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.6); z-index: 300; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
+.declare-overlay.show { display: flex; }
+.declare-box { background: linear-gradient(135deg, #1c1917, #292524); border: 2px solid var(--engine-gold); border-radius: 12px; padding: 28px; max-width: 420px; width: 90%; text-align: center; }
+.declare-box h3 { color: var(--engine-gold); font-size: 16px; margin-bottom: 14px; }
+.declare-box input { width: 100%; padding: 10px 14px; border: 1px solid var(--engine-copper); border-radius: 6px; background: rgba(255,255,255,.08); color: #fff; font-size: 15px; font-family: inherit; margin-bottom: 12px; outline: none; }
+.declare-box input::placeholder { color: #78716c; }
+.declare-box input:focus { border-color: var(--engine-gold); }
+.declare-box .declaration-text { color: var(--engine-gold); font-size: 18px; font-weight: 600; min-height: 40px; padding: 8px; border: 1px dashed rgba(251,191,36,.3); border-radius: 6px; margin-top: 8px; }
+
+/* Particles */
+.particle-container { position: fixed; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 400; }
+
+@media (max-width: 900px) {
+  .engine-dashboard { flex-direction: column; }
+  .engine-visual { min-height: 300px; }
+  .engine-controls { width: 100%; }
+  .case-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .container { padding: 8px; }
+  .engine-block { height: 160px; }
+  .cylinder { width: 50px; }
+  .cylinder .cylinder-body { height: 100px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>⚙️ 建构性七阶案例 · 内在驱动力引擎</h1>
+    <p>英语 · 必修1 · Unit 1 Friendship · 在真实案例中激活你的建构力</p>
+    <span class="badge">🔋 激活模式</span>
+  </div>
+
+  <!-- Engine Dashboard -->
+  <div class="engine-dashboard">
+    <div class="engine-visual" id="engineVisual">
+      <div class="engine-title">🔥 驱动力引擎</div>
+      <div class="engine-block" id="engineBlock">
+        <div class="cylinder" data-cylinder="0" onclick="injectBall(0)">
+          <div class="cylinder-cap"></div>
+          <div class="cylinder-body"><div class="cylinder-fill" id="fill0" style="height:15%"></div><div class="cylinder-glow"></div></div>
+          <div class="cylinder-label">认知<br>驱动</div>
+        </div>
+        <div class="cylinder" data-cylinder="1" onclick="injectBall(1)">
+          <div class="cylinder-cap"></div>
+          <div class="cylinder-body"><div class="cylinder-fill" id="fill1" style="height:15%"></div><div class="cylinder-glow"></div></div>
+          <div class="cylinder-label">情感<br>驱动</div>
+        </div>
+        <div class="cylinder" data-cylinder="2" onclick="injectBall(2)">
+          <div class="cylinder-cap"></div>
+          <div class="cylinder-body"><div class="cylinder-fill" id="fill2" style="height:15%"></div><div class="cylinder-glow"></div></div>
+          <div class="cylinder-label">社会<br>驱动</div>
+        </div>
+        <div class="cylinder" data-cylinder="3" onclick="injectBall(3)">
+          <div class="cylinder-cap"></div>
+          <div class="cylinder-body"><div class="cylinder-fill" id="fill3" style="height:15%"></div><div class="cylinder-glow"></div></div>
+          <div class="cylinder-label">成就<br>驱动</div>
+        </div>
+        <div class="cylinder" data-cylinder="4" onclick="injectBall(4)">
+          <div class="cylinder-cap"></div>
+          <div class="cylinder-body"><div class="cylinder-fill" id="fill4" style="height:15%"></div><div class="cylinder-glow"></div></div>
+          <div class="cylinder-label">价值<br>驱动</div>
+        </div>
+      </div>
+      <div class="energy-tray" id="energyTray">
+        <div class="energy-ball" data-type="0" style="background:radial-gradient(circle at 35% 35%,#93c5fd,#3b82f6);animation-delay:0s"><span class="ball-label">好奇心</span></div>
+        <div class="energy-ball" data-type="1" style="background:radial-gradient(circle at 35% 35%,#fca5a5,#ef4444);animation-delay:.3s"><span class="ball-label">共鸣感</span></div>
+        <div class="energy-ball" data-type="2" style="background:radial-gradient(circle at 35% 35%,#a7f3d0,#34d399);animation-delay:.6s"><span class="ball-label">归属感</span></div>
+        <div class="energy-ball" data-type="3" style="background:radial-gradient(circle at 35% 35%,#fde68a,#f59e0b);animation-delay:.9s"><span class="ball-label">成就感</span></div>
+        <div class="energy-ball" data-type="4" style="background:radial-gradient(circle at 35% 35%,#c4b5fd,#8b5cf6);animation-delay:1.2s"><span class="ball-label">意义感</span></div>
+      </div>
+    </div>
+    <div class="engine-controls">
+      <div class="power-meter"><div class="meter-label">动力指数</div><div class="meter-value" id="powerMeter">—</div></div>
+      <button class="engine-btn ignite" id="igniteBtn" disabled onclick="igniteEngine()">🚀 启动引擎</button>
+      <button class="engine-btn" disabled id="recipeBtn" onclick="showRecipe()">📋 生成动力配方</button>
+      <button class="engine-btn" onclick="showKit()">🆘 动力急救包</button>
+      <button class="engine-btn" onclick="showDeclaration()">✍️ 动力宣言</button>
+    </div>
+  </div>
+
+  <!-- Case area -->
+  <div class="content-area">
+    <div class="section-title">📚 模块建构性七阶案例</div>
+    <p style="color:var(--text-secondary);margin:0 0 12px;font-size:14px;">点击任一案例卡片展开详细建构步骤和自评量规。</p>
+
+    <div class="case-grid">
+      <!-- Case 1 -->
+      <div class="case-card expanded" onclick="toggleCase(this)">
+        <span class="case-num">案例一</span><span class="case-type">个人理解型</span>
+        <h4>我的友谊关键词</h4>
+        <div class="case-scenario">🌐 你加入了一个国际青少年友谊论坛，需要发一篇帖子："What does friendship mean to you in three words?"</div>
+        <div class="case-task"><strong>建构任务</strong>：选3个英语关键词，每个词写一段解释（含个人经历）</div>
+        <div class="case-principles">
+          <span class="principle-tag">情境激活原理</span>
+          <span class="principle-tag">证据驱动原理</span>
+        </div>
+        <div class="case-steps">
+          <ol>
+            <li>先花1分钟回想你最好的朋友——你们之间最难忘的一件事是什么？</li>
+            <li>从这件事中提炼3个关键词（如 trust, laughter, support）</li>
+            <li>每个词写2-3句解释，包含一个具体事例</li>
+            <li>通读一遍，检查是否能让陌生人看懂你的友谊观</li>
+          </ol>
+          <span class="case-output">📄 论坛帖子 100-150词</span>
+          <div style="margin-top:8px;padding:8px;background:var(--bg);border-radius:4px;font-size:13px;">
+            <strong>✅ 自评量规</strong>：□ 关键词有个人特色 □ 每个词都有具体事例支撑 □ 语言自然不套作 □ 控制在150词以内 □ 能让陌生人理解
+          </div>
+        </div>
+      </div>
+
+      <!-- Case 2 -->
+      <div class="case-card" onclick="toggleCase(this)">
+        <span class="case-num">案例二</span><span class="case-type">生活应用型</span>
+        <h4>给转学生的欢迎信</h4>
+        <div class="case-scenario">🏫 班上来了一个从外省/国外转来的新同学，你想用英语写一封欢迎信介绍你们的班级友谊文化</div>
+        <div class="case-task"><strong>建构任务</strong>：写一封英语欢迎信（120-180词）</div>
+        <div class="case-principles">
+          <span class="principle-tag">读者意识原理</span>
+          <span class="principle-tag">框架建构原理</span>
+        </div>
+        <div class="case-steps">
+          <ol>
+            <li>确定信的结构：问候 → 自我介绍 → 班级特色 → 热情邀请 → 表达期待</li>
+            <li>先写开头和结尾——让新同学感受到温暖</li>
+            <li>中间部分介绍2-3个班级的友谊文化传统（如课间一起做的事、学习小组）</li>
+            <li>检查语气——是否够友好、够真诚？</li>
+          </ol>
+          <span class="case-output">📄 欢迎信 120-180词</span>
+        </div>
+      </div>
+
+      <!-- Case 3 -->
+      <div class="case-card" onclick="toggleCase(this)">
+        <span class="case-num">案例三</span><span class="case-type">问题解决型</span>
+        <h4>调解朋友矛盾的方案</h4>
+        <div class="case-scenario">💔 你的两个好朋友因为误会闹翻了，你用英语帮他们写一个"和解方案"</div>
+        <div class="case-task"><strong>建构任务</strong>：设计一份三步和解计划（英语）</div>
+        <div class="case-principles">
+          <span class="principle-tag">框架建构原理</span>
+          <span class="principle-tag">循环迭代原理</span>
+        </div>
+        <div class="case-steps">
+          <ol>
+            <li>Step 1: 各自陈述——每人用3句话表达自己的感受（不含指责）</li>
+            <li>Step 2: 找到共同点——列出双方都认同的2个事实</li>
+            <li>Step 3: 和解行动——提出一个双方都能接受的和解行动建议</li>
+          </ol>
+          <span class="case-output">📄 和解方案 80-120词</span>
+        </div>
+      </div>
+
+      <!-- Case 4 -->
+      <div class="case-card" onclick="toggleCase(this)">
+        <span class="case-num">案例四</span><span class="case-type">学科表达型</span>
+        <h4>友谊主题英文诗歌</h4>
+        <div class="case-scenario">🎭 英语课要举办"Friendship Poetry Corner"，每个人都创作一首关于友谊的小诗或短故事</div>
+        <div class="case-task"><strong>建构任务</strong>：创作一首6-12行的自由诗或一个100词微型故事</div>
+        <div class="case-principles">
+          <span class="principle-tag">情境激活原理</span>
+          <span class="principle-tag">循环迭代原理</span>
+        </div>
+        <div class="case-steps">
+          <ol>
+            <li>选一个具体的友谊瞬间作为主题（如一起躲雨、考试前的鼓励）</li>
+            <li>如果是诗歌：用2-3个意象（如 rain, umbrella, laughter）串联全诗</li>
+            <li>如果是微型故事：用"冲突→转折→感悟"三段式结构</li>
+            <li>朗读一遍——语言的节奏感和韵律是否自然？</li>
+          </ol>
+          <span class="case-output">📄 诗歌 6-12行 或 微型故事 ~100词</span>
+        </div>
+      </div>
+
+      <!-- Case 5 -->
+      <div class="case-card" onclick="toggleCase(this)">
+        <span class="case-num">案例五</span><span class="case-type">跨学科整合型</span>
+        <h4>友谊与心理健康海报</h4>
+        <div class="case-scenario">🏥 学校心理健康周，请你用英语制作一张"Friendship & Mental Health"海报</div>
+        <div class="case-task"><strong>建构任务</strong>：设计信息型海报（含数据+建议+引用）</div>
+        <div class="case-principles">
+          <span class="principle-tag">证据驱动原理</span>
+          <span class="principle-tag">读者意识原理</span>
+        </div>
+        <div class="case-steps">
+          <ol>
+            <li>收集资料：找人说出"好朋友让我的心理健康变得更好"的3个原因</li>
+            <li>设计结构：标题 → 核心数据（如"87%的人说朋友帮他们缓解压力"）→ 3条建议 → 名人引语</li>
+            <li>注意排版：信息要层次分明，读者一眼就能抓住重点</li>
+          </ol>
+          <span class="case-output">📄 信息型海报</span>
+        </div>
+      </div>
+
+      <!-- Case 6 -->
+      <div class="case-card" onclick="toggleCase(this)">
+        <span class="case-num">案例六</span><span class="case-type">社会/未来情境型</span>
+        <h4>跨国友谊项目策划</h4>
+        <div class="case-scenario">🌍 学校想和一所海外姊妹校建立"Pen Pal 2.0"项目，请你写一个英语策划方案</div>
+        <div class="case-task"><strong>建构任务</strong>：写一份简短的跨国友谊项目方案</div>
+        <div class="case-principles">
+          <span class="principle-tag">框架建构原理</span>
+          <span class="principle-tag">读者意识原理</span>
+        </div>
+        <div class="case-steps">
+          <ol>
+            <li>方案结构：项目名称 → 目标（2-3条）→ 活动安排（每月主题）→ 预期成果 → 所需支持</li>
+            <li>写给谁看？（校长/老师/同学？）调整语气和内容重点</li>
+            <li>加入1-2个有创意的活动点子（如"视频信交换"、"文化盲盒"）</li>
+          </ol>
+          <span class="case-output">📄 项目方案 150-200词</span>
+        </div>
+      </div>
+
+      <!-- Case 7 -->
+      <div class="case-card" onclick="toggleCase(this)">
+        <span class="case-num">案例七</span><span class="case-type">综合创新型</span>
+        <h4>"友谊博物馆"双语展板</h4>
+        <div class="case-scenario">🏛️ 学校文化节主题为"友谊"，你需要设计一张英语展板呈现"不同文化中的友谊观"</div>
+        <div class="case-task"><strong>建构任务</strong>：综合展板设计（含文字、图片说明、引语）</div>
+        <div class="case-principles">
+          <span class="principle-tag">全部建构性原理</span>
+        </div>
+        <div class="case-steps">
+          <ol>
+            <li>选定3-4种文化（如中国文化、美国文化、日本文化、非洲文化）</li>
+            <li>每种文化提炼1个友谊关键词和1个代表性习俗</li>
+            <li>设计展板布局：中央"友谊之树" → 四周文化卡片 → 底部引语墙</li>
+            <li>加入互动元素：让参观者贴便利贴写下自己的友谊观</li>
+          </ol>
+          <span class="case-output">📄 展板设计 + 讲解词</span>
+          <div style="margin-top:8px;padding:8px;background:rgba(251,191,36,.1);border-radius:4px;font-size:13px;">
+            <strong>🏆 综合挑战</strong>：本案例综合运用全部5条建构性原理——试着说出每条原理在这个案例中是如何体现的！
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Meta-reflection -->
+  <div class="content-area">
+    <div class="section-title">🔄 建构反思</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="background:var(--bg);padding:12px;border-radius:6px;border-left:3px solid var(--engine-gold);font-size:14px;"><strong>💬 思考</strong>：这7个案例中，哪个最贴近你的生活？哪个最有挑战？为什么？</div>
+      <div style="background:var(--bg);padding:12px;border-radius:6px;border-left:3px solid var(--engine-gold);font-size:14px;"><strong>💬 迁移</strong>：如果你要自己设计一个"案例八"，它会是什么主题？用到哪些原理？</div>
+    </div>
+  </div>
+</div>
+
+<!-- Recipe overlay -->
+<div class="recipe-overlay" id="recipeOverlay">
+  <div class="recipe-card">
+    <span class="recipe-close" onclick="closeRecipe()">✕</span>
+    <div class="recipe-title">📋 个人学习动力优化配方卡</div>
+    <div class="recipe-section"><div class="rs-label">💪 你的动力优势</div><div class="rs-value" id="rsStrength">案例驱动让你最有动力！通过真实情境学习英语让你的理解更深刻。</div></div>
+    <div class="recipe-section"><div class="rs-label">⚠️ 动力短板提醒</div><div class="rs-value" id="rsWeakness">当缺乏具体情境时，抽象的语法和词汇记忆容易让你感到枯燥。</div></div>
+    <div class="recipe-section"><div class="rs-label">🛠️ 动力维护建议</div><div class="rs-value" id="rsMaintain">每学一个知识点都为它找一个生活中的使用场景——"我今天能用这个句子说什么？"</div></div>
+    <div class="recipe-section"><div class="rs-label">🚀 动力升级路径</div><div class="rs-value" id="rsUpgrade">从"完成作业"到"创造作品"——把每次写作练习当作一次真实表达的机会。</div></div>
+  </div>
+</div>
+
+<!-- Kit overlay -->
+<div class="kit-overlay" id="kitOverlay">
+  <div class="power-kit">
+    <h3>🆘 动力急救包</h3>
+    <div class="kit-item"><span style="font-size:20px;">🧘</span>换个姿势，深呼吸30秒——身体状态影响思维状态</div>
+    <div class="kit-item"><span style="font-size:20px;">🎯</span>给自己设定一个5分钟的小目标——"就学5分钟"</div>
+    <div class="kit-item"><span style="font-size:20px;">😊</span>回想你上次学会一个东西时的快乐——那种感觉值得重温</div>
+    <div class="kit-item"><span style="font-size:20px;">🔄</span>换一个学习通道——读累了就听，听累了就说</div>
+    <div class="kit-item"><span style="font-size:20px;">🎵</span>放一首你喜欢的英文歌，边听边跟唱</div>
+    <button class="engine-btn" style="margin-top:10px;width:100%;" onclick="closeKit()">知道了 👍</button>
+  </div>
+</div>
+
+<!-- Declaration overlay -->
+<div class="declare-overlay" id="declareOverlay">
+  <div class="declare-box">
+    <h3>✍️ 我的动力宣言</h3>
+    <p style="color:#a8a29e;font-size:13px;margin-bottom:12px;">我学英语是因为：</p>
+    <input id="declareInput1" placeholder="填写你的第一个理由…" oninput="updateDeclare()">
+    <input id="declareInput2" placeholder="填写你的第二个理由…" oninput="updateDeclare()">
+    <div class="declaration-text" id="declarePreview">我学英语是因为 ______，______。</div>
+    <button class="engine-btn ignite" style="margin-top:12px;width:100%;" onclick="saveDeclare()">🔒 刻上铭牌</button>
+  </div>
+</div>
+
+<canvas id="particleCanvas" class="particle-container" style="display:none;"></canvas>
+
+<script>
+// ===== Engine =====
+let ballCount = 0;
+const fills = [15,15,15,15,15];
+
+function injectBall(idx) {
+  if (ballCount >= 5) return;
+  const tray = document.getElementById('energyTray');
+  const balls = tray.querySelectorAll('.energy-ball:not(.inj)');
+  if (!balls.length) return;
+  const b = balls[0];
+  b.classList.add('inj');
+  b.style.opacity = '.3';
+  b.style.transform = 'scale(.6)';
+  fills[idx] = Math.min(90, fills[idx] + 18);
+  document.getElementById(`fill${idx}`).style.height = fills[idx] + '%';
+  document.querySelector(`[data-cylinder="${idx}"]`).classList.add('active');
+  ballCount++;
+  document.getElementById('powerMeter').textContent = `${ballCount}/5`;
+  if (ballCount >= 5) {
+    document.getElementById('igniteBtn').disabled = false;
+    document.getElementById('powerMeter').textContent = '⚡ 就绪！';
+    document.getElementById('powerMeter').className = 'meter-value green';
+  }
+}
+
+function igniteEngine() {
+  const btn = document.getElementById('igniteBtn');
+  btn.disabled = true;
+  btn.textContent = '🔥 点火中...';
+  const pc = document.getElementById('particleCanvas');
+  pc.style.display = 'block';
+  pc.width = window.innerWidth;
+  pc.height = window.innerHeight;
+  const ctx = pc.getContext('2d');
+  const pts = [];
+  for (let i = 0; i < 80; i++) {
+    pts.push({
+      x: window.innerWidth/2 + (Math.random()-.5)*200,
+      y: window.innerHeight/2 + (Math.random()-.5)*100,
+      vx: (Math.random()-.5)*8, vy: -Math.random()*10-2,
+      s: Math.random()*6+2,
+      c: ['#f59e0b','#fbbf24','#f97316','#ef4444','#fef3c7'][Math.floor(Math.random()*5)],
+      l: 1
+    });
+  }
+  let f = 0;
+  function anim() {
+    if (f > 60) {
+      ctx.clearRect(0,0,pc.width,pc.height);
+      pc.style.display = 'none';
+      btn.textContent = '🚀 引擎已启动！';
+      document.getElementById('recipeBtn').disabled = false;
+      const internal = fills[0] + fills[3] + fills[4];
+      const msg = internal >= (fills[1]+fills[2])
+        ? '🔥 你的动力主要来自内在驱动！案例学习让你最有劲头！'
+        : '⚡ 外部驱动占比较高，试试为每个案例找到属于你的"为什么"';
+      document.getElementById('powerMeter').textContent = msg;
+      document.getElementById('powerMeter').className = 'meter-value ' + (internal >= 130 ? 'green' : 'yellow');
+      return;
+    }
+    ctx.clearRect(0,0,pc.width,pc.height);
+    pts.forEach(p => { p.x+=p.vx; p.y+=p.vy; p.vy+=.08; p.l-=.015;
+      ctx.globalAlpha=Math.max(0,p.l);
+      ctx.fillStyle=p.c;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.s*p.l,0,Math.PI*2); ctx.fill(); });
+    ctx.globalAlpha=1; f++; requestAnimationFrame(anim);
+  }
+  anim();
+}
+
+function showRecipe() { document.getElementById('recipeOverlay').classList.add('show'); }
+function closeRecipe() { document.getElementById('recipeOverlay').classList.remove('show'); }
+function showKit() { document.getElementById('kitOverlay').classList.add('show'); }
+function closeKit() { document.getElementById('kitOverlay').classList.remove('show'); }
+function showDeclaration() { document.getElementById('declareOverlay').classList.add('show'); }
+function updateDeclare() {
+  const v1 = document.getElementById('declareInput1').value || '______';
+  const v2 = document.getElementById('declareInput2').value || '______';
+  document.getElementById('declarePreview').textContent = `我学英语是因为 ${v1}，${v2}。`;
+}
+function saveDeclare() {
+  const v1 = document.getElementById('declareInput1').value || '不断探索';
+  const v2 = document.getElementById('declareInput2').value || '连接世界';
+  document.getElementById('declareOverlay').classList.remove('show');
+  alert('🎉 动力宣言已刻上引擎铭牌！\n\n「我学英语是因为 ' + v1 + '，' + v2 + '。」');
+}
+
+// ===== Case toggle =====
+function toggleCase(el) { el.classList.toggle('expanded'); }
+</script>
+</body>
+</html>

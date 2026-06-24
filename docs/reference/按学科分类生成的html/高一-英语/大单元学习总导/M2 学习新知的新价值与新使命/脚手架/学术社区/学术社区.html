@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学术社区 — Friendship 连接世界</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+
+h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 8px;
+  padding-bottom: 12px;
+  border-bottom: 3px solid var(--accent);
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 28px;
+}
+
+.section-title {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 16px;
+  margin-top: 32px;
+  padding-left: 12px;
+  border-left: 4px solid var(--accent);
+}
+
+.connect-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.connect-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  transition: transform 0.25s ease;
+}
+
+.connect-card:hover {
+  transform: translateY(-3px);
+}
+
+.connect-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.connect-card h3 {
+  font-size: 16px;
+  color: var(--primary);
+  margin-bottom: 12px;
+}
+
+.topic-item {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 10px;
+  cursor: default;
+  transition: background 0.2s ease;
+}
+
+.topic-item:hover {
+  background: #eaeaea;
+}
+
+.topic-item .topic-num {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--primary);
+}
+
+.topic-item p {
+  font-size: 14px;
+  margin-top: 2px;
+}
+
+.role-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.role-badge {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+.link-list {
+  list-style: none;
+  padding: 0;
+}
+
+.link-list li {
+  padding: 8px 0;
+  border-bottom: 1px dashed #eee;
+  font-size: 14px;
+}
+
+.link-list li:last-child { border-bottom: none; }
+
+.link-list li strong {
+  color: var(--primary);
+}
+
+.social-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.social-card h3 {
+  font-size: 16px;
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+
+.social-card ul {
+  list-style: none;
+  padding: 0;
+}
+
+.social-card ul li {
+  padding: 6px 0;
+  font-size: 14px;
+  position: relative;
+  padding-left: 20px;
+}
+
+.social-card ul li::before {
+  content: "•";
+  position: absolute;
+  left: 4px;
+  color: var(--accent);
+  font-weight: bold;
+}
+
+.output-section {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.output-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  text-align: center;
+}
+
+.output-card .emoji {
+  font-size: 28px;
+  margin-bottom: 6px;
+}
+
+.output-card h4 {
+  font-size: 15px;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.output-card p {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.resource-btn {
+  display: inline-block;
+  padding: 7px 18px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 6px 6px 0 0;
+}
+
+.resource-btn:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+@media (max-width: 768px) {
+  .connect-grid, .output-section { grid-template-columns: 1fr; }
+  .container { padding: 16px; }
+}
+
+.highlight {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🌐 学术社区 · Friendship</h1>
+<p class="subtitle">英语 · 必修1 · Unit 1 Friendship — 让学习连接真实世界</p>
+
+<h2 class="section-title">🔗 三类连接</h2>
+
+<div class="connect-grid">
+  <div class="connect-card">
+    <div class="connect-icon">👥</div>
+    <h3>同伴连接</h3>
+    <div class="topic-item">
+      <span class="topic-num">议题 1</span>
+      <p>"Do you think online friends are real friends?" — 班内英语辩论</p>
+    </div>
+    <div class="topic-item">
+      <span class="topic-num">议题 2</span>
+      <p>"What's the most important quality in a friend?" — 小组英文讨论</p>
+    </div>
+    <div class="topic-item">
+      <span class="topic-num">议题 3</span>
+      <p>如果你是 Anne，你会怎么做？分析课文情境</p>
+    </div>
+    <div class="role-badges">
+      <span class="role-badge">🎙️ 主持人</span>
+      <span class="role-badge">📝 记录员</span>
+      <span class="role-badge">🗣️ 发言人</span>
+      <span class="role-badge">⏱️ 计时员</span>
+    </div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-top:8px;">小组讨论前先分配好角色</p>
+  </div>
+
+  <div class="connect-card">
+    <div class="connect-icon">🏫</div>
+    <h3>家校连接</h3>
+    <div class="topic-item">
+      <span class="topic-num">👨‍👩‍👧 家长互动</span>
+      <p>采访家长："Who was your best friend in school?" 用英语记录并分享</p>
+    </div>
+    <div class="topic-item">
+      <span class="topic-num">👩‍🏫 教师反馈</span>
+      <p>提交讨论记录 / 英语短文，获取针对性点评</p>
+    </div>
+    <div class="topic-item">
+      <span class="topic-num">🤝 同伴互评</span>
+      <p>2人一组互相批改英语作文，使用评价量规</p>
+    </div>
+  </div>
+
+  <div class="connect-card">
+    <div class="connect-icon">🌍</div>
+    <h3>社会连接</h3>
+    <div class="topic-item">
+      <span class="topic-num">🎓 专家交流</span>
+      <p>联系大学英语专业留学生做线上交流</p>
+    </div>
+    <div class="topic-item">
+      <span class="topic-num">✉️ 国际笔友</span>
+      <p>推荐：PenPal World、InterPals 等国际笔友平台</p>
+    </div>
+    <div class="topic-item">
+      <span class="topic-num">🗣️ 英语角</span>
+      <p>本地 / 线上英语角信息和参与指南</p>
+    </div>
+  </div>
+</div>
+
+<h2 class="section-title">📤 输出机制</h2>
+<div class="output-section">
+  <div class="output-card">
+    <div class="emoji">📋</div>
+    <h4>讨论记录表</h4>
+    <p>英语关键词记录讨论要点</p>
+    <button class="resource-btn" onclick="showOutput('record')">查看模板</button>
+  </div>
+  <div class="output-card">
+    <div class="emoji">🎤</div>
+    <h4>小组展示</h4>
+    <p>英语口语展示讨论结论</p>
+    <button class="resource-btn" onclick="showOutput('presentation')">查看要求</button>
+  </div>
+  <div class="output-card">
+    <div class="emoji">📓</div>
+    <h4>反思日志</h4>
+    <p>文化交流体验记录</p>
+    <button class="resource-btn" onclick="showOutput('reflection')">查看模板</button>
+  </div>
+</div>
+
+<div id="output-detail" style="display:none;background:var(--card-bg);border-radius:var(--border-radius);box-shadow:var(--shadow);padding:20px;margin-bottom:20px;">
+  <h3 style="font-size:16px;color:var(--primary);margin-bottom:8px;" id="output-title">📋 详情</h3>
+  <p id="output-body" style="font-size:14px;"></p>
+</div>
+
+<h2 class="section-title">💡 如何参与？</h2>
+<div class="social-card">
+  <ul>
+    <li><strong>Step 1</strong> — 选择一个讨论议题，与同桌用英语交流5分钟</li>
+    <li><strong>Step 2</strong> — 记录关键词，尝试用英语完成讨论记录表</li>
+    <li><strong>Step 3</strong> — 回家采访家长，用英语写下"我父母学生时代的朋友故事"</li>
+    <li><strong>Step 4</strong> — 自由挑战：在国际笔友平台注册，发出第一条英文消息</li>
+  </ul>
+  <button class="resource-btn" style="margin-top:10px;" onclick="startChallenge()">🚀 接受挑战</button>
+  <p id="challenge-msg" style="margin-top:8px;font-size:13px;color:var(--text-secondary);display:none;"></p>
+</div>
+
+</div>
+
+<script>
+const outputData = {
+  record: {
+    title: '📋 讨论记录表模板',
+    body: 'Discussion Topic: ___________\nDate: ___________  Group Members: ___________\n\nKey Points Discussed:\n1. _______________________________\n2. _______________________________\n3. _______________________________\n\nConsensus / Conclusion:\n_______________________________\n\nNew Vocabulary Learned:\n_______________________________'
+  },
+  presentation: {
+    title: '🎤 小组展示要求',
+    body: '⏱️ 时长：每组 3—5 分钟\n👥 全员参与，每人至少说 30 秒\n📌 内容要求：\n  · 陈述讨论的议题和各方观点\n  · 用 2—3 个本单元新词汇\n  · 最后给出小组的结论或思考\n📊 可配合板书 / PPT / 关键词卡片'
+  },
+  reflection: {
+    title: '📓 反思日志模板',
+    body: 'Today I discussed __________________ with my classmates.\n\nI learned that ________________________.\n\nOne new idea I found interesting:\n_______________________________\n\nA question I still have:\n_______________________________\n\nMy feeling about today\'s discussion:\n☺️ 😊 😐 😟 (circle one)'
+  }
+};
+
+function showOutput(type) {
+  const area = document.getElementById('output-detail');
+  const title = document.getElementById('output-title');
+  const body = document.getElementById('output-body');
+  const data = outputData[type];
+  if (data) {
+    title.textContent = data.title;
+    body.textContent = data.body;
+    body.style.whiteSpace = 'pre-line';
+    area.style.display = 'block';
+  }
+}
+
+function startChallenge() {
+  const msg = document.getElementById('challenge-msg');
+  msg.textContent = '🎉 太棒了！你已经迈出了学术社区的第一步。结束后记得在反思日志中记录你的感受！';
+  msg.style.display = 'block';
+}
+</script>
+
+</body>
+</html>

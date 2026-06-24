@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性示例 - M15 新知三创性应用</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h2: 18px;
+  --font-h1: 22px;
+  --line-height: 1.65;
+  --font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0;
+  font-family: var(--font-family);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 24px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, #434343 0%, #595959 100%);
+  color: #fff;
+  padding: 32px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header .meta { font-size: 13px; opacity: 0.8; }
+.section-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.section-card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bg);
+}
+.section-card h3 {
+  font-size: 16px;
+  color: var(--primary-hover);
+  margin-top: 14px;
+  margin-bottom: 6px;
+}
+.step-box {
+  background: var(--bg);
+  border-left: 4px solid var(--primary);
+  padding: 14px 16px;
+  margin: 12px 0;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+}
+.step-box .step-label {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 14px;
+}
+.info-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+}
+.info-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.info-table tr:hover td { background: #fafafa; }
+.info-table .highlight-cell {
+  background: #f9f9f9;
+  font-weight: 600;
+}
+.checklist {
+  list-style: none;
+  padding: 0;
+}
+.checklist li {
+  padding: 10px 14px;
+  margin: 6px 0;
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+}
+.checklist li:hover { border-color: var(--primary); }
+.checklist li .box {
+  width: 20px; height: 20px;
+  border: 2px solid var(--primary);
+  border-radius: 4px;
+  margin-right: 12px;
+  flex-shrink: 0;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+.checklist li.checked .box {
+  background: var(--primary);
+  color: #fff;
+  content: '✓';
+}
+.checklist li.checked { color: var(--text-secondary); text-decoration: line-through; }
+.warning-box {
+  background: #fff3f3;
+  border: 1px solid #ffd4d4;
+  border-radius: var(--border-radius);
+  padding: 14px 16px;
+  margin: 10px 0;
+}
+.warning-box .w-label { font-weight: 700; color: #d4380d; }
+.mermaid-diagram {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  text-align: center;
+  font-size: 14px;
+  margin: 12px 0;
+  line-height: 2;
+}
+.mermaid-diagram .arrow-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.mermaid-diagram .node {
+  display: inline-block;
+  background: var(--card-bg);
+  border: 2px solid var(--primary);
+  border-radius: var(--border-radius);
+  padding: 6px 14px;
+  font-weight: 600;
+  font-size: 13px;
+}
+.mermaid-diagram .arrow { color: var(--accent); font-size: 18px; }
+.mermaid-diagram .sub-row { color: var(--text-secondary); font-size: 12px; margin: 2px 0; }
+.interactive-btn {
+  display: inline-block;
+  padding: 10px 24px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin: 8px 0;
+}
+.interactive-btn:hover { background: var(--primary-hover); }
+.tip-box {
+  background: #f6f6f6;
+  border: 1px dashed var(--accent);
+  border-radius: var(--border-radius);
+  padding: 14px 16px;
+  margin: 10px 0;
+}
+@media (max-width: 768px) {
+  .container { padding: 12px; }
+  .header { padding: 20px 16px; }
+  .section-card { padding: 14px; }
+  .info-table { font-size: 13px; }
+  .info-table th, .info-table td { padding: 8px 10px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>📖 解析性示例</h1>
+  <div class="meta">M15 新知三创性应用 · 英语 · 必修1 · 友谊困境解析示例</div>
+  <p style="margin-top:12px;font-size:14px;opacity:0.9;">跟着示例学习如何系统解析一段友谊关系中的矛盾</p>
+</div>
+
+<!-- 1. 情境 -->
+<div class="section-card">
+  <h2>🎬 解析任务情境</h2>
+  <p>你的好朋友 Anna 最近和另一位朋友发生了矛盾。Anna 向你倾诉：<em>"她总是在我需要她的时候不在，但当我忙的时候她又来找我。"</em></p>
+  <p style="margin-top:8px;">你发现这不是简单的互相埋怨——它涉及友谊中<strong>"期望差异"</strong>的问题。为了帮助 Anna，你需要先系统地分析这段友谊出了什么问题。</p>
+  <div class="tip-box">
+    <strong>💡 M15 模块定位：</strong>面对一段真实的友谊难题，你该如何分析它？
+  </div>
+</div>
+
+<!-- 2. 核心问题 -->
+<div class="section-card">
+  <h2>❓ 核心问题</h2>
+  <p>Anna 和朋友之间的友谊问题属于什么类型？问题出在哪里？如何系统分析一段友谊关系中的潜在矛盾？</p>
+</div>
+
+<!-- 3. 关键信息提取 -->
+<div class="section-card">
+  <h2>🔍 关键信息提取</h2>
+  <table class="info-table">
+    <tr>
+      <th style="width:30%">情境信息</th>
+      <th style="width:35%">这个信息说明什么</th>
+      <th style="width:35%">为什么重要</th>
+    </tr>
+    <tr>
+      <td>Anna说"她总是在我需要她的时候不在"</td>
+      <td>Anna对朋友有特定期望（需要时支持）</td>
+      <td>期望未被满足是矛盾源</td>
+    </tr>
+    <tr>
+      <td>"当我忙的时候她又来找我"</td>
+      <td>朋友的期望可能不同（Anna忙时也需要联系）</td>
+      <td>双方期望不匹配</td>
+    </tr>
+    <tr>
+      <td>"最近发生了矛盾"</td>
+      <td>矛盾是累积的结果而非单一事件</td>
+      <td>需追溯矛盾演变过程</td>
+    </tr>
+    <tr>
+      <td>两人是朋友关系</td>
+      <td>存在情感纽带和长期关系投资</td>
+      <td>解决方式不能伤害关系基础</td>
+    </tr>
+  </table>
+</div>
+
+<!-- 4. 专家解析过程 -->
+<div class="section-card">
+  <h2>🧠 专家解析过程</h2>
+
+  <div class="step-box">
+    <div class="step-label">第一步 · 先看见什么</div>
+    <p>先看到表层现象——两人因为"陪伴时间"发生了矛盾。<strong>不要急于给建议</strong>，先看清"发生了什么"。</p>
+  </div>
+
+  <div class="step-box">
+    <div class="step-label">第二步 · 判断问题属于哪一类</div>
+    <p>这不是"谁对谁错"的问题，而是<strong>友谊期望管理问题</strong>（friendship expectation mismatch）。友谊矛盾通常可以归为：期望差异、沟通问题、信任问题、边界问题等类别。</p>
+  </div>
+
+  <div class="step-box">
+    <div class="step-label">第三步 · 调用哪些概念或方法</div>
+    <p>调用<strong>"友谊期望理论"</strong>——不同人对友谊中"支持""陪伴""沟通"的期望是不同的。分析需要区分：<strong>事实层面</strong>（发生了什么）、<strong>感受层面</strong>（各自的感受）、<strong>期望层面</strong>（各自认为朋友应该怎么做）。</p>
+  </div>
+
+  <div class="step-box">
+    <div class="step-label">第四步 · 如何进行推理</div>
+    <div class="mermaid-diagram">
+      <div class="arrow-row">
+        <span class="node">事实</span>
+        <span class="arrow">→</span>
+        <span class="node">感受</span>
+        <span class="arrow">→</span>
+        <span class="node">期望</span>
+        <span class="arrow">→</span>
+        <span class="node">差异</span>
+        <span class="arrow">→</span>
+        <span class="node">方案</span>
+      </div>
+      <div class="sub-row">发生了什么具体事件？→ 各自感受如何？→ 认为朋友应该怎么做？→ 哪里不匹配？→ 如何调整？</div>
+    </div>
+  </div>
+
+  <div class="step-box">
+    <div class="step-label">第五步 · 怎样形成结论</div>
+    <p>结论不是"谁错了"，而是"<strong>差异在哪里</strong>"。基于分析提出：双方可以如何调整各自的期望和行为来改善关系。</p>
+  </div>
+</div>
+
+<!-- 5. 结论 -->
+<div class="section-card">
+  <h2>✅ 结论表达</h2>
+  <p>Anna 和朋友的矛盾主要源于<strong>"友谊期望差异"</strong>——</p>
+  <ul style="padding-left:20px;margin:8px 0;">
+    <li>Anna 期望的是"有需要时立刻出现"的<strong>支持型友谊</strong></li>
+    <li>朋友期望的是"经常保持联系"的<strong>陪伴型友谊</strong></li>
+  </ul>
+  <p>两者<strong>没有对错</strong>，但需要沟通和调整。</p>
+</div>
+
+<!-- 6. 方法提炼 -->
+<div class="section-card">
+  <h2>🎯 方法提炼</h2>
+  <p>以后遇到类似问题，可以这样做：</p>
+  <ol style="padding-left:20px;margin:8px 0;">
+    <li><strong>先观察不评判</strong>：描述事实而不是判断对错</li>
+    <li><strong>分类分析</strong>：将矛盾归入期望/沟通/信任等类别</li>
+    <li><strong>三层面分析法</strong>：区分事实、感受、期望三个层面</li>
+    <li><strong>寻找差异点</strong>：双方的理解和期望在哪里不一致</li>
+  </ol>
+</div>
+
+<!-- 7. 易错提醒 -->
+<div class="section-card">
+  <h2>⚠️ 易错提醒</h2>
+  <div class="warning-box">
+    <div class="w-label">❌ 容易直接站在Anna这边</div>
+    <p>分析的第一步是保持中立——不要先入为主地认定谁对谁错。</p>
+  </div>
+  <div class="warning-box">
+    <div class="w-label">❌ 容易直接给建议</div>
+    <p>要先分析清楚问题是什么，再想解决方案。跳过分析直接给建议往往是无效的。</p>
+  </div>
+  <div class="warning-box">
+    <div class="w-label">❌ 容易忽略文化因素</div>
+    <p>不同文化对友谊的期望可能不同。比如，集体主义文化和个人主义文化中"朋友"的含义差异很大。</p>
+  </div>
+</div>
+
+<!-- 8. 迁移练习 -->
+<div class="section-card">
+  <h2>🏋️ 自主迁移小练习</h2>
+  <p style="margin-bottom:6px;"><strong>情境：</strong>你的朋友经常在最后一分钟取消与你的约定。</p>
+  <p><strong>任务：</strong>用三层面分析法（事实—感受—期望）分析这个问题。</p>
+  <table class="info-table">
+    <tr><th>三层面</th><th>你的分析</th></tr>
+    <tr><td>📌 事实层</td><td>朋友已经3次在约定前30分钟内取消...</td></tr>
+    <tr><td>❤️ 感受层</td><td>你觉得不被重视，但又不好发作...</td></tr>
+    <tr><td>🎯 期望层</td><td>你希望朋友提前告知或更重视约定...</td></tr>
+  </table>
+  <button class="interactive-btn" onclick="showHint()">💡 看看提示</button>
+  <div id="practiceHint" style="display:none;margin-top:8px;color:var(--text-secondary);">
+    提示：先区分"事实"（确实发生的取消行为）和"感受"（你觉得失望或被忽视），再分析"期望"（你希望对方怎么做）。这三层经常被混在一起。
+  </div>
+</div>
+
+<!-- 9. 学习自评 -->
+<div class="section-card">
+  <h2>📋 学习自评</h2>
+  <p>点击以下条目检查自己的理解：</p>
+  <ul class="checklist" id="selfCheck">
+    <li onclick="toggleCheck(this)">
+      <span class="box"></span>
+      我能否区分"事实""感受""期望"三个分析层面？
+    </li>
+    <li onclick="toggleCheck(this)">
+      <span class="box"></span>
+      我能否在分析中保持中立，不急于站队？
+    </li>
+    <li onclick="toggleCheck(this)">
+      <span class="box"></span>
+      我能否说清楚这个分析过程背后的思考逻辑？
+    </li>
+  </ul>
+</div>
+
+<div style="text-align:center;padding:16px 0;color:var(--text-secondary);font-size:13px;">
+  完成以上自评后，可以进入下一环节的学习
+</div>
+
+</div>
+<script>
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+  var box = el.querySelector('.box');
+  if (el.classList.contains('checked')) {
+    box.textContent = '✓';
+  } else {
+    box.textContent = '';
+  }
+}
+function showHint() {
+  var hint = document.getElementById('practiceHint');
+  if (hint) hint.style.display = hint.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+</body>
+</html>

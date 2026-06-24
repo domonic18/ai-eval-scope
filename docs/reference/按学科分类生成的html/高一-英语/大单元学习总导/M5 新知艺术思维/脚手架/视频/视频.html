@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视频 — 友谊主题</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; padding: 0; font-family: var(--font-family); font-size: var(--font-body); line-height: var(--line-height); background: var(--bg); color: var(--text); }
+.container { width: 100%; max-width: none; padding: 24px 20px; box-sizing: border-box; }
+
+/* Header */
+.page-header { margin-bottom: 28px; }
+.page-header h1 { font-size: var(--font-h1); font-weight: 700; color: var(--primary); margin: 0 0 6px; }
+.page-header p { color: var(--text-secondary); margin: 0; font-size: 14px; }
+
+/* Level selector tabs */
+.level-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.level-tab { flex: 1; min-width: 120px; padding: 10px 16px; background: var(--card-bg); border: 2px solid var(--border); border-radius: var(--border-radius); cursor: pointer; text-align: center; font-weight: 600; font-size: 14px; color: var(--text-secondary); transition: all 0.3s; }
+.level-tab:hover { border-color: var(--accent); color: var(--primary); }
+.level-tab.active { border-color: var(--primary); color: var(--primary); background: #efefef; }
+.level-tab .badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 11px; margin-left: 4px; background: var(--accent); color: #fff; }
+
+/* Level panels */
+.level-panel { display: none; }
+.level-panel.active { display: block; }
+
+/* Video card */
+.video-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); margin-bottom: 20px; overflow: hidden; }
+.video-card-header { padding: 16px 20px 12px; border-bottom: 1px solid var(--border); }
+.video-card-header h3 { margin: 0 0 4px; font-size: var(--font-h2); color: var(--primary); }
+.video-card-header .meta { font-size: 13px; color: var(--text-secondary); }
+.video-card-body { padding: 16px 20px; }
+.section-label { font-weight: 600; color: var(--primary); font-size: 13px; margin: 12px 0 6px; }
+.section-label:first-child { margin-top: 0; }
+.section-content { margin: 0 0 8px; padding-left: 12px; border-left: 3px solid var(--accent); }
+.section-content p { margin: 4px 0; }
+
+/* Key question block */
+.key-q { background: #f8f8f8; border-radius: 6px; padding: 12px 16px; margin: 10px 0; }
+.key-q .q { font-weight: 600; margin-bottom: 4px; }
+.key-q .q::before { content: "❓ "; }
+
+/* Pause point */
+.pause-point { background: #efefef; border-radius: 6px; padding: 12px 16px; margin: 10px 0; display: flex; align-items: flex-start; gap: 10px; }
+.pause-point .pause-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+.pause-point .pause-text { margin: 0; }
+.pause-point .pause-text strong { color: var(--primary); }
+
+/* Output task */
+.output-task { background: var(--primary); color: #fff; border-radius: 6px; padding: 12px 16px; margin: 10px 0; }
+.output-task .ot-label { font-size: 12px; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.5px; }
+.output-task .ot-text { font-weight: 600; margin-top: 2px; }
+
+/* Source link */
+.source-link { font-size: 13px; color: var(--text-secondary); margin-top: 8px; }
+.source-link a { color: var(--primary); text-decoration: none; }
+.source-link a:hover { text-decoration: underline; }
+
+/* Interactive checklist */
+.checklist { margin-top: 24px; }
+.checklist h3 { font-size: var(--font-h2); color: var(--primary); margin: 0 0 12px; }
+.check-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; background: var(--card-bg); border-radius: 6px; margin-bottom: 6px; cursor: pointer; transition: background 0.2s; }
+.check-item:hover { background: #ebebeb; }
+.check-item input[type="checkbox"] { margin-top: 3px; width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
+.check-item .item-text { margin: 0; flex: 1; }
+.check-item.checked .item-text { text-decoration: line-through; color: var(--text-secondary); }
+
+/* Footer nav */
+.footer-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--border); }
+.footer-nav button { padding: 8px 20px; background: var(--primary); color: #fff; border: none; border-radius: var(--border-radius); cursor: pointer; font-size: 14px; transition: background 0.2s; }
+.footer-nav button:hover { background: var(--primary-hover); }
+.footer-nav button:disabled { background: var(--border); cursor: not-allowed; }
+.footer-nav .page-indicator { font-size: 14px; color: var(--text-secondary); }
+
+/* Responsive */
+@media (max-width: 600px) {
+  .container { padding: 16px 12px; }
+  .level-tab { min-width: 80px; padding: 8px 10px; font-size: 13px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="page-header">
+  <h1>🎬 友谊主题视频资源</h1>
+  <p>三阶递进：基础理解 → 深度分析 → 前沿思辨 · 选择适合你的层级开始学习</p>
+</div>
+
+<div class="level-tabs" id="levelTabs">
+  <div class="level-tab active" data-level="0" onclick="switchLevel(0)">基础 <span class="badge">解释型</span></div>
+  <div class="level-tab" data-level="1" onclick="switchLevel(1)">进阶 <span class="badge">分析型</span></div>
+  <div class="level-tab" data-level="2" onclick="switchLevel(2)">挑战 <span class="badge">辩论型</span></div>
+</div>
+
+<!-- 基础层：解释型 -->
+<div class="level-panel active" data-panel="0">
+  <div class="video-card">
+    <div class="video-card-header">
+      <h3>What Makes a Good Friend?</h3>
+      <div class="meta">TED-Ed · 约 5 分钟 · 动画科普</div>
+    </div>
+    <div class="video-card-body">
+      <div class="section-label">🎯 观看任务</div>
+      <div class="section-content">
+        <p>观看时记录 <strong>3 个"出乎你意料"</strong>的友谊科学发现，写在笔记本上。</p>
+      </div>
+
+      <div class="key-q">
+        <div class="q">视频中提到哪三个关键因素让两个人成为朋友？</div>
+        <div class="q">你对哪个因素印象最深？为什么？</div>
+      </div>
+
+      <div class="pause-point">
+        <div class="pause-icon">⏸️</div>
+        <p class="pause-text"><strong>暂停思考点（2:30）</strong><br>视频说"我们更容易和与自己相似的人成为朋友"。暂停想一想：你最好的朋友和你有多少相似之处？</p>
+      </div>
+
+      <div class="output-task">
+        <div class="ot-label">📝 输出任务</div>
+        <div class="ot-text">用英文写一段 50 词的短文 "Three Things I Learned About Friendship"</div>
+      </div>
+
+      <div class="source-link">🔗 来源：YouTube 搜索 "What Makes a Good Friend? TED-Ed"</div>
+    </div>
+  </div>
+</div>
+
+<!-- 进阶层：分析型 -->
+<div class="level-panel" data-panel="1">
+  <div class="video-card">
+    <div class="video-card-header">
+      <h3>Anne Frank: The Diary of a Young Girl</h3>
+      <div class="meta">BBC / National Geographic · 建议 10-15 分钟 · 纪录片</div>
+    </div>
+    <div class="video-card-body">
+      <div class="section-label">🎯 观看任务</div>
+      <div class="section-content">
+        <p>用 <strong>T 型表格</strong>记录：左边列"Anne 在日记中表达的需求"，右边列"她在现实生活中是否得到满足"。</p>
+      </div>
+
+      <div class="key-q">
+        <div class="q">Anne 的处境对她理解"友谊"有什么影响？</div>
+        <div class="q">如果你是她，你会像她一样把日记当作朋友吗？</div>
+      </div>
+
+      <div class="pause-point">
+        <div class="pause-icon">⏸️</div>
+        <p class="pause-text"><strong>暂停思考点（7:45）</strong><br>片段展示 Anne 在阁楼窗边望向外面的镜头。暂停想一想：她当时最渴望的是什么？</p>
+      </div>
+
+      <div class="output-task">
+        <div class="ot-label">📝 输出任务</div>
+        <div class="ot-text">写一段 100 词的分析短文 "Why Anne Frank Called Her Diary 'Kitty'"</div>
+      </div>
+
+      <div class="source-link">🔗 来源：Bilibili / YouTube 搜索 "Anne Frank Documentary BBC"</div>
+    </div>
+  </div>
+</div>
+
+<!-- 挑战层：辩论型 -->
+<div class="level-panel" data-panel="2">
+  <div class="video-card">
+    <div class="video-card-header">
+      <h3>Can AI Be Your Friend?</h3>
+      <div class="meta">TED Talk · 约 12 分钟 · 前沿思辨</div>
+    </div>
+    <div class="video-card-body">
+      <div class="section-label">🎯 观看任务</div>
+      <div class="section-content">
+        <p>记录 <strong>演讲者的主要观点</strong> + 你 <strong>同意/不同意的理由</strong>。</p>
+      </div>
+
+      <div class="key-q">
+        <div class="q">演讲者认为 AI 可以取代人类朋友吗？你怎么看？</div>
+        <div class="q">如果一个人和 AI 聊天机器人建立了深厚"感情"，这是真正的友谊吗？</div>
+      </div>
+
+      <div class="pause-point">
+        <div class="pause-icon">⏸️</div>
+        <p class="pause-text"><strong>暂停思考点（5:00）</strong><br>演讲者展示了一个人与 AI 聊天的温馨片段。暂停想一想：这种"温暖的感觉"是否等于"友谊"？</p>
+      </div>
+
+      <div class="output-task">
+        <div class="ot-label">📝 输出任务</div>
+        <div class="ot-text">写一篇 150 词的英文短评 "My Response: Can AI Be a True Friend?"</div>
+      </div>
+
+      <div class="source-link">🔗 来源：TED.com 搜索 "Can AI be your friend?" 或 YouTube 搜索 "Can AI replace human friendship?"</div>
+    </div>
+  </div>
+</div>
+
+<!-- 已完成视频列表 -->
+<div class="checklist">
+  <h3>✅ 我的视频学习清单</h3>
+  <label class="check-item" onclick="toggleCheck(this)">
+    <input type="checkbox"> <span class="item-text">基础：看完 "What Makes a Good Friend?" 并完成 50 词短文</span>
+  </label>
+  <label class="check-item" onclick="toggleCheck(this)">
+    <input type="checkbox"> <span class="item-text">进阶：看完 Anne Frank 纪录片并完成 T 型表格和 100 词分析</span>
+  </label>
+  <label class="check-item" onclick="toggleCheck(this)">
+    <input type="checkbox"> <span class="item-text">挑战：看完 "Can AI Be Your Friend?" 并完成 150 词英文短评</span>
+  </label>
+</div>
+
+<div class="footer-nav">
+  <button id="prevBtn" onclick="navigate(-1)" disabled>← 上一个</button>
+  <span class="page-indicator" id="pageIndicator">基础 · 1/3</span>
+  <button id="nextBtn" onclick="navigate(1)">下一个 →</button>
+</div>
+
+</div>
+
+<script>
+let currentLevel = 0;
+
+function switchLevel(idx) {
+  currentLevel = idx;
+  // tabs
+  document.querySelectorAll('.level-tab').forEach((t, i) => t.classList.toggle('active', i === idx));
+  // panels
+  document.querySelectorAll('.level-panel').forEach((p, i) => p.classList.toggle('active', i === idx));
+  // nav
+  document.getElementById('prevBtn').disabled = idx === 0;
+  document.getElementById('nextBtn').disabled = idx === 2;
+  const labels = ['基础 · 1/3', '进阶 · 2/3', '挑战 · 3/3'];
+  document.getElementById('pageIndicator').textContent = labels[idx];
+}
+
+function navigate(dir) {
+  const next = currentLevel + dir;
+  if (next >= 0 && next <= 2) switchLevel(next);
+}
+
+function toggleCheck(el) {
+  const cb = el.querySelector('input[type="checkbox"]');
+  cb.checked = !cb.checked;
+  el.classList.toggle('checked', cb.checked);
+}
+</script>
+</body>
+</html>

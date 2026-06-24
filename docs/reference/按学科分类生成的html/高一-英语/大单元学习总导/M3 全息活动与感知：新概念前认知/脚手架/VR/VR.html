@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VR脚手架 — 沉浸体验 · Friendship</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px 24px;
+  box-sizing: border-box;
+}
+.header-banner {
+  background: linear-gradient(135deg, #434343 0%, #6b6b6b 100%);
+  border-radius: var(--border-radius);
+  padding: 32px;
+  margin-bottom: 20px;
+  color: #fff;
+  box-shadow: var(--shadow);
+}
+.header-banner h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 6px 0;
+}
+.header-banner p {
+  margin: 0;
+  opacity: 0.85;
+  font-size: 14px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.2s;
+}
+.card:hover {
+  box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bg);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.task-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.task-list li {
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  background: var(--bg);
+  border-radius: 6px;
+  border-left: 3px solid var(--primary);
+  transition: background 0.2s;
+  cursor: default;
+}
+.task-list li:hover {
+  background: #ebebeb;
+}
+.task-list li .task-label {
+  font-weight: 600;
+  color: var(--primary-hover);
+}
+.check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--border);
+  cursor: pointer;
+  user-select: none;
+}
+.check-item:last-child {
+  border-bottom: none;
+}
+.check-item .check-box {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--accent);
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, border-color 0.2s;
+  font-size: 12px;
+  color: #fff;
+}
+.check-item.checked .check-box {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.check-item.checked .check-box::after {
+  content: "✓";
+}
+.check-item.checked .check-text {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+.table-wrap {
+  overflow-x: auto;
+  margin: 12px 0;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 500;
+}
+table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+table tr:hover td {
+  background: var(--bg);
+}
+table td:first-child {
+  font-weight: 500;
+  white-space: nowrap;
+}
+.resource-card {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 12px 0;
+}
+.resource-item {
+  flex: 1;
+  min-width: 200px;
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 14px;
+  border-top: 3px solid var(--accent);
+}
+.resource-item h4 {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  color: var(--primary);
+}
+.resource-item p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.alternative-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.tab-btn {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+.tab-btn.active, .tab-btn:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.tab-content {
+  display: none;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: 6px;
+}
+.tab-content.active {
+  display: block;
+}
+.output-area {
+  position: relative;
+}
+textarea {
+  width: 100%;
+  min-height: 120px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+  box-sizing: border-box;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(67,67,67,0.15);
+}
+.word-count {
+  text-align: right;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+@media (max-width: 640px) {
+  .container { padding: 12px; }
+  .header-banner { padding: 20px; }
+  .card { padding: 14px; }
+  .resource-item { min-width: 100%; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header-banner">
+    <h1>🥽 VR 沉浸体验</h1>
+    <p>Friendship · 新概念前认知 · 观察 · 操作 · 记录 · 反思</p>
+  </div>
+
+  <div class="card">
+    <h2>🔍 观察任务</h2>
+    <p>在虚拟环境中，你将身临其境地体验友谊相关场景。请仔细观察以下三个维度：</p>
+    <ul class="task-list">
+      <li><span class="task-label">🌍 环境观察</span> — 场景中的人物在做什么？物理距离和心理距离是怎样的？</li>
+      <li><span class="task-label">💬 语言观察</span> — 人物之间用了哪些英语交流？语气是正式还是随意？</li>
+      <li><span class="task-label">❤️ 情感观察</span> — 注意表情、肢体语言和互动方式，它们传递了什么情感信号？</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>🎮 操作任务</h2>
+    <div class="check-item" onclick="this.classList.toggle('checked')">
+      <span class="check-box"></span>
+      <span class="check-text">选择一段对话中"最像朋友之间会说的话"并标记它</span>
+    </div>
+    <div class="check-item" onclick="this.classList.toggle('checked')">
+      <span class="check-box"></span>
+      <span class="check-text">在场景中找到3个体现"友谊"的关键瞬间（互相帮助、一起分享、解决冲突），并截图/记录</span>
+    </div>
+    <div class="check-item" onclick="this.classList.toggle('checked')">
+      <span class="check-box"></span>
+      <span class="check-text">尝试用英语和场景中的虚拟角色进行1次简单互动，说一句关于友谊的话</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📝 记录任务</h2>
+    <p>请完成以下 VR 体验记录表（点击填空可编辑）：</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th style="width:20%">观察维度</th><th style="width:40%">你看到了/听到了什么</th><th style="width:40%">你的分析</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>环境与人物</td>
+            <td contenteditable="true" style="min-height:40px;background:#fafafa;border-radius:4px;padding:4px 8px">✏️ 点击输入</td>
+            <td contenteditable="true" style="min-height:40px;background:#fafafa;border-radius:4px;padding:4px 8px">✏️ 点击输入</td>
+          </tr>
+          <tr>
+            <td>英语对话</td>
+            <td contenteditable="true" style="min-height:40px;background:#fafafa;border-radius:4px;padding:4px 8px">✏️ 点击输入</td>
+            <td contenteditable="true" style="min-height:40px;background:#fafafa;border-radius:4px;padding:4px 8px">✏️ 点击输入</td>
+          </tr>
+          <tr>
+            <td>情感信号</td>
+            <td contenteditable="true" style="min-height:40px;background:#fafafa;border-radius:4px;padding:4px 8px">✏️ 点击输入</td>
+            <td contenteditable="true" style="min-height:40px;background:#fafafa;border-radius:4px;padding:4px 8px">✏️ 点击输入</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📺 VR 资源推荐</h2>
+    <div class="resource-card">
+      <div class="resource-item">
+        <h4>Engage VR</h4>
+        <p>沉浸式社交场景，提供真实的跨文化社交互动。官网注册免费体验。</p>
+      </div>
+      <div class="resource-item">
+        <h4>Immerse</h4>
+        <p>ESL 虚拟现实英语学习平台。需账号（有免费试用）。</p>
+      </div>
+      <div class="resource-item">
+        <h4>Youtube VR</h4>
+        <p>搜索 "A day at an American high school" 体验校园社交。手机 + Youtube App 即可。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🔄 替代方案（无 VR 设备时）</h2>
+    <div class="alternative-tabs">
+      <span class="tab-btn active" onclick="switchTab(this,'alt1')">3D 视频方案</span>
+      <span class="tab-btn" onclick="switchTab(this,'alt2')">视频方案</span>
+      <span class="tab-btn" onclick="switchTab(this,'alt3')">角色扮演方案</span>
+    </div>
+    <div id="alt1" class="tab-content active">
+      <p>在 Youtube 上搜索 360° 全景视频 <strong>"Friendship conversation"</strong>，用手机 + 纸盒 VR 眼镜观看，完成同样的观察和记录任务。</p>
+    </div>
+    <div id="alt2" class="tab-content">
+      <p>观看一段真实的英语朋友对话视频（如英语学习频道 Easy English 的 "Friendship" 对话视频），完成观察和记录任务。</p>
+    </div>
+    <div id="alt3" class="tab-content">
+      <p>和一位同学用英语即兴表演一段"交朋友"的场景，互相观察和记录。</p>
+    </div>
+  </div>
+
+  <div class="card output-area">
+    <h2>✍️ 输出任务</h2>
+    <p>完成体验后，用英语写一段 <strong>100 词以上</strong> 的 "VR 体验总结"：</p>
+    <ul style="font-size:14px;color:var(--text-secondary);margin-bottom:12px">
+      <li>你在虚拟场景中学到了什么新的英语表达？</li>
+      <li>虚拟体验和真实生活中的交友有什么不同？</li>
+      <li>你觉得 VR 可以如何帮助英语学习？</li>
+    </ul>
+    <textarea placeholder="Start writing your VR experience summary in English here..." oninput="updateCount(this)"></textarea>
+    <div class="word-count">Words: <span id="wordCount">0</span></div>
+  </div>
+</div>
+<script>
+function switchTab(btn, id) {
+  const parent = btn.closest('.card');
+  parent.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  parent.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(id).classList.add('active');
+}
+function updateCount(el) {
+  const text = el.value.trim();
+  const words = text ? text.split(/\s+/).filter(w => w.length > 0).length : 0;
+  document.getElementById('wordCount').textContent = words;
+}
+</script>
+</body>
+</html>

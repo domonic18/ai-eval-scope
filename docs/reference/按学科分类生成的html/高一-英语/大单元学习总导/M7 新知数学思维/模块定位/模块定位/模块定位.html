@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块定位 — M7 新知数学思维</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+}
+.header {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--primary);
+}
+.header h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+.header .subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: default;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card h2 .q-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.card p, .card li {
+  color: var(--text);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+}
+.card ul {
+  list-style: none;
+  padding: 0;
+}
+.card ul li {
+  padding: 6px 0 6px 20px;
+  position: relative;
+}
+.card ul li::before {
+  content: "▸";
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+  font-weight: bold;
+}
+.badge {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  margin-right: 6px;
+}
+.highlight-box {
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px 16px;
+  margin-top: 12px;
+}
+.highlight-box .label {
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+.interactive-tip {
+  background: var(--card-bg);
+  border: 2px dashed var(--accent);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-top: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+.interactive-tip:hover {
+  background: #ebebeb;
+}
+.interactive-tip .tip-title {
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+.interactive-tip .tip-content {
+  color: var(--text-secondary);
+  font-size: 14px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+}
+.interactive-tip.active .tip-content {
+  max-height: 200px;
+  margin-top: 10px;
+}
+.footer-note {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+  padding: 20px 0 8px;
+  border-top: 1px solid var(--border);
+  margin-top: 20px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>📍 模块定位</h1>
+  <div class="subtitle">M7 新知数学思维 · Unit 1 Friendship · 必修1</div>
+</div>
+
+<div class="card" onclick="toggleAnswer(this)">
+  <h2><span class="q-icon">1</span> 本模块学习什么？</h2>
+  <p>用数学思维（<strong>分类、比较、模式识别、关系建模</strong>）来分析 Unit 1 Friendship 中关于友谊的主题。将"感觉"转化为"结构"——拆解友谊关系的要素、类型和发展模式，掌握用英语结构化表达人际关系的方法。</p>
+  <div class="highlight-box">
+    <div class="label">🔑 核心关键词</div>
+    分类 · 模式 · 关系 · 模型 · 结构化表达
+  </div>
+</div>
+
+<div class="card" onclick="toggleAnswer(this)">
+  <h2><span class="q-icon">2</span> 本模块为什么重要？</h2>
+  <ul>
+    <li><strong>跨学科思维训练</strong> — 英语学习不只是语言，更是思维方式的拓展</li>
+    <li><strong>可迁移的能力</strong> — 结构化分析人际关系，可应用到团队合作、社交管理</li>
+    <li><strong>深度学习</strong> — 从"学英语"升级为"用英语思考"，分析真实世界问题</li>
+  </ul>
+</div>
+
+<div class="card" onclick="toggleAnswer(this)">
+  <h2><span class="q-icon">3</span> 本模块与大单元主题的关系？</h2>
+  <p>Unit 1 Friendship 的主题是"友谊"，M7 则从<strong>思维工具</strong>的角度切入。前序模块已积累词汇、阅读和表达素材，M7 的任务就是用数学思维的"新眼镜"重新审视这些素材，发现更深层的规律。</p>
+</div>
+
+<div class="card" onclick="toggleAnswer(this)">
+  <h2><span class="q-icon">4</span> 本模块与前后模块的衔接？</h2>
+  <ul>
+    <li><span class="badge">前序</span> 积累友谊的语言知识、阅读素材和写作能力</li>
+    <li><span class="badge">本模块</span> 整合语言能力与思维工具，从"会说会写"到"会思考会分析"</li>
+    <li><span class="badge">后续</span> 将分析结果转化为实际行动方案和最终成果</li>
+  </ul>
+</div>
+
+<div class="card" onclick="toggleAnswer(this)">
+  <h2><span class="q-icon">5</span> 本模块预期学习成果？</h2>
+  <ul>
+    <li><strong>📄 产出：</strong>一份友谊关系分析报告（英语，含可视化图表）</li>
+    <li><strong>🧠 能力：</strong>具备用结构化方法分析人际关系的基本能力</li>
+    <li><strong>🎨 作品：</strong>一个完整的友谊关系模型（概念图 / 思维导图形式）</li>
+  </ul>
+</div>
+
+<div class="interactive-tip" onclick="this.classList.toggle('active')">
+  <div class="tip-title">💡 点击这里 — 学习小提示</div>
+  <div class="tip-content">
+    学习 M7 时，试着用"分类"的眼光看身边的人际关系。<br>
+    你最好的朋友属于哪种友谊类型？你的微信好友列表里，真正称得上"朋友"的有几个？<br>
+    带着这些问题进入学习，你会收获更多！
+  </div>
+</div>
+
+<div class="footer-note">M7 新知数学思维 · 模块定位 · 点击每个卡片展开思考</div>
+
+</div>
+
+<script>
+function toggleAnswer(el) {
+  el.classList.toggle('active');
+}
+</script>
+
+</body>
+</html>

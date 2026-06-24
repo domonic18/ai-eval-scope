@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性案例 — 友谊关系七阶建构</title>
+<style>
+  :root {
+    --primary: #434343;
+    --primary-hover: #595959;
+    --accent: #8c8c8c;
+    --bg: #f5f5f5;
+    --card-bg: #ffffff;
+    --text: rgba(0,0,0,0.88);
+    --text-secondary: rgba(0,0,0,0.45);
+    --border: #d9d9d9;
+    --border-radius: 8px;
+    --shadow: 0 2px 8px rgba(0,0,0,0.06);
+    --font-body: 15px;
+    --font-h1: 22px;
+    --font-h2: 18px;
+    --line-height: 1.65;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: var(--font-body);
+    line-height: var(--line-height);
+    color: var(--text);
+    background: var(--bg);
+    width: 100%;
+    max-width: none;
+    padding: 0;
+  }
+  .container {
+    width: 100%;
+    max-width: none;
+    padding: 24px 20px;
+    box-sizing: border-box;
+  }
+  .page-header {
+    background: linear-gradient(135deg, #434343 0%, #595959 100%);
+    color: #fff;
+    padding: 28px 24px;
+    border-radius: var(--border-radius);
+    margin-bottom: 24px;
+  }
+  .page-header h1 {
+    font-size: var(--font-h1);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .page-header p {
+    font-size: 14px;
+    opacity: 0.85;
+    margin: 0;
+  }
+  .phase-indicator {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 24px;
+  }
+  .phase-dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--card-bg);
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 13px;
+    border: 2px solid var(--border);
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .phase-dot:hover, .phase-dot.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+    transform: scale(1.1);
+  }
+  h2 {
+    font-size: var(--font-h2);
+    color: var(--primary);
+    margin: 28px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--accent);
+  }
+  h3 {
+    font-size: 16px;
+    color: var(--primary-hover);
+    margin: 0 0 10px;
+  }
+  .case-card {
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 18px 20px;
+    margin-bottom: 16px;
+    border-left: 4px solid var(--accent);
+    transition: all 0.3s;
+    display: none;
+  }
+  .case-card.visible {
+    display: block;
+  }
+  .case-card.active {
+    border-left-color: var(--primary);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  }
+  .case-card .level-badge {
+    display: inline-block;
+    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: 10px;
+    background: var(--primary);
+    color: #fff;
+    margin-bottom: 8px;
+  }
+  .case-card p {
+    margin: 4px 0;
+    font-size: 14px;
+  }
+  .case-card .info-row {
+    margin: 6px 0;
+    padding: 6px 10px;
+    background: var(--bg);
+    border-radius: 6px;
+  }
+  .case-card .info-row strong {
+    color: var(--primary);
+    display: inline-block;
+    min-width: 80px;
+  }
+  .nav-buttons {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .nav-btn {
+    padding: 8px 18px;
+    border: 1px solid var(--primary);
+    background: var(--card-bg);
+    color: var(--primary);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+  }
+  .nav-btn:hover {
+    background: var(--primary);
+    color: #fff;
+  }
+  .nav-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .step-list {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0;
+  }
+  .step-list li {
+    padding: 4px 0 4px 20px;
+    position: relative;
+    font-size: 14px;
+  }
+  .step-list li::before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    color: var(--primary);
+    font-weight: 700;
+  }
+  .rubric {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin: 8px 0;
+    font-size: 13px;
+  }
+  .rubric-item {
+    background: var(--bg);
+    padding: 6px 10px;
+    border-radius: 4px;
+  }
+  .rubric-item span {
+    font-weight: 600;
+    color: var(--primary);
+  }
+  @media (max-width: 768px) {
+    .container { padding: 16px 12px; }
+    .rubric { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="page-header">
+  <h1>建构性案例</h1>
+  <p>七阶递进式建构案例 · 友谊与人际关系 · 英语必修1</p>
+</div>
+
+<div class="nav-buttons">
+  <button class="nav-btn" id="prevBtn" onclick="changeCase(-1)">◀ 上一个案例</button>
+  <span style="line-height:36px;font-weight:600;color:var(--primary);" id="caseCounter">1 / 7</span>
+  <button class="nav-btn" id="nextBtn" onclick="changeCase(1)">下一个案例 ▶</button>
+</div>
+
+<div class="phase-indicator" id="phaseDots">
+  <span class="phase-dot active" data-index="0" onclick="goToCase(0)">1</span>
+  <span class="phase-dot" data-index="1" onclick="goToCase(1)">2</span>
+  <span class="phase-dot" data-index="2" onclick="goToCase(2)">3</span>
+  <span class="phase-dot" data-index="3" onclick="goToCase(3)">4</span>
+  <span class="phase-dot" data-index="4" onclick="goToCase(4)">5</span>
+  <span class="phase-dot" data-index="5" onclick="goToCase(5)">6</span>
+  <span class="phase-dot" data-index="6" onclick="goToCase(6)">7</span>
+</div>
+
+<!-- 案例1 -->
+<div class="case-card visible active" data-index="0">
+  <span class="level-badge">🧑 个人理解型</span>
+  <h3>案例1：我的友谊观自画像</h3>
+  <div class="info-row"><strong>真实情境</strong> 你刚刚进入高中，面对全新的同学群体。回顾过去交朋友的成功与失败经历，你需要形成一份属于自己的友谊观梳理。</div>
+  <div class="info-row"><strong>建构任务</strong> 完成一份"我的友谊观自画像"——用概念图+英语关键词表达你对友谊核心要素的理解。</div>
+  <div class="info-row"><strong>原理调用</strong> 情境锚定原理 · 经验联结原理</div>
+  <strong style="font-size:14px;color:var(--primary);">建构步骤：</strong>
+  <ul class="step-list">
+    <li>回忆你人生中3段印象深刻的友谊（好的或不好的）</li>
+    <li>从每段经历中提炼出1个关键词（如信任、陪伴、冲突）</li>
+    <li>思考这些关键词之间的关系，用连线画出概念图</li>
+    <li>在概念图下方用3-5句英语写出你的友谊观</li>
+  </ul>
+  <div class="info-row"><strong>脚手架推荐</strong> 概念图模板（中心词"Friendship" + 分支关键词）</div>
+  <div class="info-row"><strong>成果表达</strong> A4纸手绘/电子概念图 + 英语短文</div>
+  <strong style="font-size:14px;color:var(--primary);">自评量规：</strong>
+  <div class="rubric">
+    <div class="rubric-item"><span>✓</span> 至少包含5个关键词</div>
+    <div class="rubric-item"><span>✓</span> 关键词之间有合理的逻辑连线</div>
+    <div class="rubric-item"><span>✓</span> 英语句子语法基本正确</div>
+    <div class="rubric-item"><span>✓</span> 观点包含个人真实经历</div>
+    <div class="rubric-item"><span>✓</span> 整体布局清晰美观</div>
+  </div>
+</div>
+
+<!-- 案例2 -->
+<div class="case-card" data-index="1">
+  <span class="level-badge">🏠 生活应用型</span>
+  <h3>案例2：友谊能量加油站</h3>
+  <div class="info-row"><strong>真实情境</strong> 你发现最近好朋友情绪低落，不愿意和任何人交流。你想主动关心TA，但不知道如何开口才不会让对方有压力。</div>
+  <div class="info-row"><strong>建构任务</strong> 设计一套"友谊能量加油站"方案，包含情绪识别、沟通方式和后续跟进三个环节。</div>
+  <div class="info-row"><strong>原理调用</strong> 问题驱动原理 · 证据迭代原理</div>
+  <strong style="font-size:14px;color:var(--primary);">建构步骤：</strong>
+  <ul class="step-list">
+    <li>列出你观察到的3个TA情绪低落的信号</li>
+    <li>设计2种不同的开口方式（直接询问 vs 间接关心）</li>
+    <li>为每种方式写一段英语对话示例</li>
+    <li>设计后续跟进计划（如：每周一次一起散步）</li>
+    <li>请另一位同学给出反馈并修改方案</li>
+  </ul>
+  <div class="info-row"><strong>脚手架推荐</strong> "I notice... I wonder... Would you like..." 句式模板</div>
+  <div class="info-row"><strong>成果表达</strong> 一份方案清单（中英双语）+ 两段对话示例</div>
+  <strong style="font-size:14px;color:var(--primary);">自评量规：</strong>
+  <div class="rubric">
+    <div class="rubric-item"><span>✓</span> 情绪信号具体可观察</div>
+    <div class="rubric-item"><span>✓</span> 对话符合真实人际交往情境</div>
+    <div class="rubric-item"><span>✓</span> 方案考虑了对方感受</div>
+    <div class="rubric-item"><span>✓</span> 包含后续跟进计划</div>
+    <div class="rubric-item"><span>✓</span> 至少收到1份同学反馈</div>
+  </div>
+</div>
+
+<!-- 案例3 -->
+<div class="case-card" data-index="2">
+  <span class="level-badge">🏫 校园问题解决型</span>
+  <h3>案例3：三人友谊的平衡难题</h3>
+  <div class="info-row"><strong>真实情境</strong> 你和两个好朋友组成了一个"三人组"，但你越来越觉得"你们两个人在聊天时，我像是局外人"。你开始怀疑自己是不是多余的。</div>
+  <div class="info-row"><strong>建构任务</strong> 分析三人友谊中的失衡原因，提出改善方案，并制作一份"三人友谊相处指南"。</div>
+  <div class="info-row"><strong>原理调用</strong> 情境锚定原理 · 表达外化原理</div>
+  <strong style="font-size:14px;color:var(--primary);">建构步骤：</strong>
+  <ul class="step-list">
+    <li>记录一周内三人相处的5次互动，标注你的感受（用1-5分的舒适度）</li>
+    <li>找出让你感到被排除的具体行为模式</li>
+    <li>查阅资料了解"三人友谊动力学"</li>
+    <li>设计3条具体的改善策略</li>
+    <li>将策略整理成一份"三人友谊指南"</li>
+  </ul>
+  <div class="info-row"><strong>脚手架推荐</strong> 感受记录表 + "三人友谊角色分析"模板</div>
+  <div class="info-row"><strong>成果表达</strong> 一份图示化指南，包含问题分析图 + 策略清单</div>
+  <strong style="font-size:14px;color:var(--primary);">自评量规：</strong>
+  <div class="rubric">
+    <div class="rubric-item"><span>✓</span> 包含具体的互动记录数据</div>
+    <div class="rubric-item"><span>✓</span> 策略有可操作性</div>
+    <div class="rubric-item"><span>✓</span> 指南图文并茂</div>
+    <div class="rubric-item"><span>✓</span> 包含至少1条心理学依据</div>
+  </div>
+</div>
+
+<!-- 案例4 -->
+<div class="case-card" data-index="3">
+  <span class="level-badge">📖 学科表达型</span>
+  <h3>案例4：A Letter to My Best Friend</h3>
+  <div class="info-row"><strong>真实情境</strong> 英语课上，老师要求写一封英语信给一位对你影响深远的朋友。你需要用英语准确表达你的情感和感激。</div>
+  <div class="info-row"><strong>建构任务</strong> 写一封结构完整的英语信件（约200词），包含开场白、回忆片段、感谢表达和祝福语。</div>
+  <div class="info-row"><strong>原理调用</strong> 经验联结原理 · 表达外化原理</div>
+  <strong style="font-size:14px;color:var(--primary);">建构步骤：</strong>
+  <ul class="step-list">
+    <li>用中文列出你想对朋友说的3个核心内容</li>
+    <li>为每个内容匹配英语关键词和句型</li>
+    <li>写出信件初稿（不必完美）</li>
+    <li>用"信件检查清单"逐项修改</li>
+    <li>请一位同学帮忙校对</li>
+    <li>誊写终稿并配上插图</li>
+  </ul>
+  <div class="info-row"><strong>脚手架推荐</strong> 信件模板 + 情感词汇表（grateful / inspired / unforgettable 等）</div>
+  <div class="info-row"><strong>成果表达</strong> 一封正式的英语信件（手写或打印）</div>
+  <strong style="font-size:14px;color:var(--primary);">自评量规：</strong>
+  <div class="rubric">
+    <div class="rubric-item"><span>✓</span> 信件格式完整（日期、称呼、正文、落款）</div>
+    <div class="rubric-item"><span>✓</span> 包含至少2个具体回忆细节</div>
+    <div class="rubric-item"><span>✓</span> 使用3个以上情感词汇</div>
+    <div class="rubric-item"><span>✓</span> 语法错误不超过3处</div>
+    <div class="rubric-item"><span>✓</span> 能让人感受到真挚情感</div>
+  </div>
+</div>
+
+<!-- 案例5 -->
+<div class="case-card" data-index="4">
+  <span class="level-badge">🔬 跨学科整合型</span>
+  <h3>案例5：友谊的心理学与社会学分析</h3>
+  <div class="info-row"><strong>真实情境</strong> 你发现朋友圈中有些人朋友很多但都不深，有些人朋友很少但关系很深。你好奇：友谊的"数量"和"质量"之间存在什么关系？</div>
+  <div class="info-row"><strong>建构任务</strong> 融合心理学与社会学视角，制作一份"友谊质量-数量关系分析报告"。</div>
+  <div class="info-row"><strong>原理调用</strong> 证据迭代原理 · 情境锚定原理</div>
+  <strong style="font-size:14px;color:var(--primary);">建构步骤：</strong>
+  <ul class="step-list">
+    <li>在班级做一个小型调查（至少10人），收集每位同学的"好友数量"和"最信任朋友数"</li>
+    <li>将数据整理成表格，计算平均值和中位数</li>
+    <li>查阅邓巴数理论（150人社交上限）</li>
+    <li>用英语写一段分析：为什么数量和质量难以兼得？</li>
+    <li>提出你的结论并用数据支持</li>
+  </ul>
+  <div class="info-row"><strong>脚手架推荐</strong> 调查问卷模板 + 数据统计表 + 分析框架："数据→发现→解释→结论"</div>
+  <div class="info-row"><strong>成果表达</strong> A3尺寸分析海报，含数据可视化图表 + 英语分析文字</div>
+  <strong style="font-size:14px;color:var(--primary);">自评量规：</strong>
+  <div class="rubric">
+    <div class="rubric-item"><span>✓</span> 调查数据来自至少10人</div>
+    <div class="rubric-item"><span>✓</span> 包含数据图表</div>
+    <div class="rubric-item"><span>✓</span> 引用至少1个理论支持</div>
+    <div class="rubric-item"><span>✓</span> 英语分析逻辑清晰</div>
+  </div>
+</div>
+
+<!-- 案例6 -->
+<div class="case-card" data-index="5">
+  <span class="level-badge">🌐 社会/未来情境型</span>
+  <h3>案例6：社交媒体时代的友谊图谱</h3>
+  <div class="info-row"><strong>真实情境</strong> 你有500个微信好友，但深夜想找人聊天时却不知道该@谁。社交媒体让"朋友"变多了，"友谊"却变浅了。</div>
+  <div class="info-row"><strong>建构任务</strong> 分析社交媒体对友谊质量的影响，提出一份"数字化友谊健康指南"。</div>
+  <div class="info-row"><strong>原理调用</strong> 问题驱动原理 · 全部原理综合</div>
+  <strong style="font-size:14px;color:var(--primary);">建构步骤：</strong>
+  <ul class="step-list">
+    <li>统计你的社交App好友，按"经常聊天""偶尔联系""从未私聊"分类</li>
+    <li>采访2-3位同学，问他们"上一次和好朋友深度聊天是什么时候"</li>
+    <li>列出社交媒体对友谊的3个好处和3个坏处</li>
+    <li>参考相关研究报告（可搜索"social media friendship quality"）</li>
+    <li>设计5条"数字友谊健康守则"</li>
+    <li>制作成一份双语指南</li>
+  </ul>
+  <div class="info-row"><strong>脚手架推荐</strong> 好友分类统计表 + 五条守则模板</div>
+  <div class="info-row"><strong>成果表达</strong> 一份折页指南（正反面），含统计数据、分析图表和健康守则</div>
+  <strong style="font-size:14px;color:var(--primary);">自评量规：</strong>
+  <div class="rubric">
+    <div class="rubric-item"><span>✓</span> 包含真实的社交数据统计</div>
+    <div class="rubric-item"><span>✓</span> 包含同伴访谈记录</div>
+    <div class="rubric-item"><span>✓</span> 守则可执行、可衡量</div>
+    <div class="rubric-item"><span>✓</span> 中英文版本匹配</div>
+  </div>
+</div>
+
+<!-- 案例7 -->
+<div class="case-card" data-index="6">
+  <span class="level-badge">🚀 综合创新型</span>
+  <h3>案例7：FriendLink — 未来友谊连接器</h3>
+  <div class="info-row"><strong>真实情境</strong> 如果让你设计一个全新的社交产品来"提升友谊质量而非数量"，它会是什么样子？它不是为了获取更多"好友"，而是帮助人们维护深度友谊。</div>
+  <div class="info-row"><strong>建构任务</strong> 设计"FriendLink"概念产品——包含核心功能、用户界面草图和运营理念的产品方案书。</div>
+  <div class="info-row"><strong>原理调用</strong> 综合运用全部5条建构性原理</div>
+  <strong style="font-size:14px;color:var(--primary);">建构步骤：</strong>
+  <ul class="step-list">
+    <li>基于前6个案例的发现，列出你的产品设计原则（至少3条）</li>
+    <li>画出产品核心功能界面草图（手绘或数字）</li>
+    <li>用英语写一段"产品宣言"（Product Manifesto）解释核心理念</li>
+    <li>设计1个具体的"友谊维护"功能并描述用法</li>
+    <li>制作产品方案书（A3纸）</li>
+    <li>向3位同学展示并收集反馈</li>
+  </ul>
+  <div class="info-row"><strong>脚手架推荐</strong> 产品方案书模板 + "如果…将会…"迁移思考框架</div>
+  <div class="info-row"><strong>成果表达</strong> 产品方案书（含界面草图 + 功能说明 + 英语宣言）</div>
+  <strong style="font-size:14px;color:var(--primary);">自评量规：</strong>
+  <div class="rubric">
+    <div class="rubric-item"><span>✓</span> 产品理念与友谊质量相关</div>
+    <div class="rubric-item"><span>✓</span> 包含至少3个核心功能</div>
+    <div class="rubric-item"><span>✓</span> 有界面示意图</div>
+    <div class="rubric-item"><span>✓</span> 产品宣言英语表达清晰</div>
+    <div class="rubric-item"><span>✓</span> 收到至少3份反馈并标注改进</div>
+  </div>
+</div>
+
+</div>
+
+<script>
+var currentIndex = 0;
+var totalCases = 7;
+
+function showCase(index) {
+  var cards = document.querySelectorAll('.case-card');
+  var dots = document.querySelectorAll('.phase-dot');
+  cards.forEach(function(c) { c.classList.remove('visible', 'active'); });
+  dots.forEach(function(d) { d.classList.remove('active'); });
+  cards[index].classList.add('visible', 'active');
+  dots[index].classList.add('active');
+  document.getElementById('caseCounter').textContent = (index + 1) + ' / ' + totalCases;
+  document.getElementById('prevBtn').disabled = (index === 0);
+  document.getElementById('nextBtn').disabled = (index === totalCases - 1);
+}
+
+function changeCase(delta) {
+  var newIndex = currentIndex + delta;
+  if (newIndex < 0 || newIndex >= totalCases) return;
+  currentIndex = newIndex;
+  showCase(currentIndex);
+}
+
+function goToCase(index) {
+  currentIndex = index;
+  showCase(currentIndex);
+}
+</script>
+</body>
+</html>

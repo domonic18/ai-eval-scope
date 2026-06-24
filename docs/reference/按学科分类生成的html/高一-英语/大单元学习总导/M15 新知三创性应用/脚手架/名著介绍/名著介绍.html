@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名著介绍 — 友谊主题</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 24px;
+}
+.container {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 16px;
+  text-align: center;
+  position: relative;
+  padding-bottom: 12px;
+}
+h1::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+h2 {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin: 28px 0 14px;
+  padding-left: 12px;
+  border-left: 3px solid var(--accent);
+}
+h3 {
+  font-size: calc(var(--font-body) + 1px);
+  font-weight: 600;
+  margin: 18px 0 10px;
+  color: var(--text);
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  transition: box-shadow 0.2s;
+}
+.card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.quote-block {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  border-left: 4px solid var(--primary);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.quote-block:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.quote-block .quote-text {
+  font-style: italic;
+  font-size: calc(var(--font-body) + 2px);
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+.quote-block .quote-author {
+  font-size: calc(var(--font-body) - 2px);
+  color: var(--text-secondary);
+  text-align: right;
+}
+.quote-block .think-trigger {
+  display: none;
+  margin-top: 10px;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: 6px;
+  font-size: var(--font-body);
+  color: var(--text);
+  border: 1px dashed var(--accent);
+}
+.quote-block.active .think-trigger {
+  display: block;
+}
+.book-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.book-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 80px;
+  height: 80px;
+  background: var(--bg);
+  border-radius: 0 0 0 80px;
+  opacity: 0.5;
+}
+.book-card .book-title {
+  font-size: calc(var(--font-body) + 4px);
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.book-card .book-subtitle {
+  font-size: calc(var(--font-body) - 1px);
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.book-card .book-question {
+  font-weight: 600;
+  margin: 10px 0 6px;
+  color: var(--text);
+}
+.book-card .book-summary {
+  margin-bottom: 8px;
+}
+.book-card .book-detail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: calc(var(--font-body) - 3px);
+  background: var(--bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+.tag.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.tag.accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+.book-path {
+  font-size: calc(var(--font-body) - 2px);
+  color: var(--accent);
+  margin-top: 8px;
+  word-break: break-all;
+}
+.book-path::before {
+  content: '📖 ';
+}
+.btn-think {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 6px 16px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: var(--font-body);
+  font-family: var(--font-family);
+  transition: background 0.2s;
+}
+.btn-think:hover {
+  background: var(--primary-hover);
+}
+.level-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: calc(var(--font-body) - 3px);
+  font-weight: 600;
+  margin-left: 8px;
+}
+.level-basic { background: #e8f5e9; color: #2e7d32; }
+.level-intermediate { background: #fff3e0; color: #e65100; }
+.level-challenge { background: #fce4ec; color: #c62828; }
+@media (max-width: 640px) {
+  body { padding: 12px; }
+  .book-card { padding: 14px; }
+  .book-card::before { width: 50px; height: 50px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📚 名著介绍 · 友谊主题</h1>
+  <p style="text-align:center;color:var(--text-secondary);margin-bottom:24px;">点击名言触发思考，开启深度阅读之旅</p>
+
+  <h2>💬 名言 · 触发思考</h2>
+  <p style="margin-bottom:14px;color:var(--text-secondary);">点击每句名言，展开背后的思考问题</p>
+
+  <div class="quote-block" onclick="toggleQuote(this)">
+    <div class="quote-text">"A friend to all is a friend to none."</div>
+    <div class="quote-author">— Aristotle</div>
+    <div class="think-trigger"><strong>触发思考：</strong>朋友多就一定好吗？广泛社交与深度友谊之间如何取舍？亚里士多德的这句名言指向了一个深刻的悖论——当一个人试图成为所有人的朋友时，他可能对谁都不是真正的朋友。</div>
+    <button class="btn-think" onclick="event.stopPropagation();toggleQuote(this.parentElement)">💡 思考</button>
+  </div>
+
+  <div class="quote-block" onclick="toggleQuote(this)">
+    <div class="quote-text">"Friendship is born at that moment when one person says to another, 'What! You too? I thought I was the only one.'"</div>
+    <div class="quote-author">— C.S. Lewis</div>
+    <div class="think-trigger"><strong>触发思考：</strong>友谊的本质是"发现同类"吗？C.S. Lewis认为友谊始于发现共同点的惊喜时刻。你在生活中有过这种"原来你也这样想"的瞬间吗？</div>
+    <button class="btn-think" onclick="event.stopPropagation();toggleQuote(this.parentElement)">💡 思考</button>
+  </div>
+
+  <div class="quote-block" onclick="toggleQuote(this)">
+    <div class="quote-text">"The language of friendship is not words but meanings."</div>
+    <div class="quote-author">— Henry David Thoreau</div>
+    <div class="think-trigger"><strong>触发思考：</strong>友谊更多的是语言问题还是理解问题？梭罗提醒我们，真正的友谊不在表面的寒暄，而在于彼此心领神会的默契。</div>
+    <button class="btn-think" onclick="event.stopPropagation();toggleQuote(this.parentElement)">💡 思考</button>
+  </div>
+
+  <div class="quote-block" onclick="toggleQuote(this)">
+    <div class="quote-text">"Walking with a friend in the dark is better than walking alone in the light."</div>
+    <div class="quote-author">— Helen Keller</div>
+    <div class="think-trigger"><strong>触发思考：</strong>你愿意在困难时陪伴朋友吗？海伦·凯勒用黑暗与光明的对比，道出了友谊最珍贵的品质——共担风雨。</div>
+    <button class="btn-think" onclick="event.stopPropagation();toggleQuote(this.parentElement)">💡 思考</button>
+  </div>
+
+  <h2>📖 名著推荐（三本）</h2>
+
+  <div class="book-card">
+    <div class="book-title">《论语》—— 孔子论友</div>
+    <div class="book-subtitle">中国古典 · 基础层 <span class="level-badge level-basic">基础</span></div>
+    <div class="book-question">❓ 什么是有益的朋友？什么是损害你的朋友？</div>
+    <div class="book-summary">"益者三友，损者三友。友直，友谅，友多闻，益矣。友便辟，友善柔，友便佞，损矣。" —— 孔子在《论语·季氏篇》中提出了关于友谊道德的经典论述：正直的朋友、诚信的朋友、博学的朋友使人受益；而谄媚逢迎、阳奉阴违、巧言善辩的人则是有害的。</div>
+    <div class="book-detail">
+      <span class="tag primary">中国经典</span>
+      <span class="tag">选读语录</span>
+      <span class="tag">修身</span>
+    </div>
+    <div class="book-path">中华书局《论语译注》/ 微信读书电子版</div>
+  </div>
+
+  <div class="book-card">
+    <div class="book-title">《The Four Loves》（四种爱）</div>
+    <div class="book-subtitle">C.S. Lewis · 进阶层 <span class="level-badge level-intermediate">进阶</span></div>
+    <div class="book-question">❓ 亲情、友情、爱情、信仰之爱有什么区别？</div>
+    <div class="book-summary">C.S. Lewis提出一个精妙的观点：友谊是"并肩式"的爱——两个人面对同一方向，而非面对面。真正的友谊不是凝视对方，而是共同凝视同一个目标。第四章 Friendship 系统阐述了友谊的独特本质：友谊是最少"本能驱动"的爱，它因共同的兴趣、价值观和追求而自发产生。</div>
+    <div class="book-detail">
+      <span class="tag primary">西方经典</span>
+      <span class="tag">英文原版</span>
+      <span class="tag">哲学</span>
+    </div>
+    <div class="book-path">HarperOne 纸质版 / 英文原版电子书 / Audible 有声书</div>
+  </div>
+
+  <div class="book-card">
+    <div class="book-title">《Alone Together》（一起孤独）</div>
+    <div class="book-subtitle">Sherry Turkle · 挑战层 <span class="level-badge level-challenge">挑战</span></div>
+    <div class="book-question">❓ 数字时代，我们究竟是更连接了还是更孤独了？</div>
+    <div class="book-summary">Sherry Turkle通过大量访谈研究发现：社交媒体给人虚幻的连接感，却削弱了真实的深度交流能力。我们发消息越来越多，真正的对话却越来越少。第二部分深入探讨了友谊和社交网络的关系——当每个人都有几百个"朋友"时，"朋友"这个词的含义正在被重塑。</div>
+    <div class="book-detail">
+      <span class="tag primary">当代研究</span>
+      <span class="tag">跨学科</span>
+      <span class="tag">数字人文</span>
+    </div>
+    <div class="book-path">Basic Books / 中译本《群体性孤独》/ TED演讲同名</div>
+  </div>
+
+  <div style="text-align:center;margin-top:28px;padding:16px;background:var(--bg);border-radius:var(--border-radius);border:1px solid var(--border);">
+    <p style="color:var(--text-secondary);font-size:var(--font-body);">📝 选择一个你感兴趣的思考题，将你的理解和感悟用英语写一段 100 词左右的短文</p>
+  </div>
+</div>
+<script>
+function toggleQuote(el) {
+  el.classList.toggle('active');
+}
+</script>
+</body>
+</html>

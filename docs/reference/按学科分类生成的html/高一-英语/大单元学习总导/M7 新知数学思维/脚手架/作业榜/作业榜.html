@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>作业榜 — 友谊关系分析任务</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+}
+.header {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--primary);
+}
+.header h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+.header .subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.tier {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.tier-header {
+  padding: 16px 20px;
+  font-weight: 700;
+  font-size: var(--font-h2);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+  user-select: none;
+}
+.tier-header .arrow {
+  transition: transform 0.3s ease;
+  font-size: 12px;
+}
+.tier-header.active .arrow {
+  transform: rotate(90deg);
+}
+.tier-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+}
+.tier-body.open {
+  max-height: 600px;
+}
+.tier-body-inner {
+  padding: 0 20px 20px;
+}
+.tier-body-inner ul {
+  list-style: none;
+  padding: 0;
+}
+.tier-body-inner ul li {
+  padding: 8px 0 8px 22px;
+  position: relative;
+}
+.tier-body-inner ul li::before {
+  content: "▸";
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+  font-weight: bold;
+}
+.tier-tag {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 12px;
+  border-radius: 12px;
+  color: #fff;
+  margin-left: 8px;
+}
+.tier-base .tier-header { background: #f5f5f5; }
+.tier-base .tier-tag { background: #8c8c8c; }
+.tier-base .tier-header:hover { background: #eee; }
+
+.tier-a .tier-header { background: #f0f5ff; }
+.tier-a .tier-tag { background: #597ef7; }
+.tier-a .tier-header:hover { background: #e6eeff; }
+
+.tier-b .tier-header { background: #f6ffed; }
+.tier-b .tier-tag { background: #52c41a; }
+.tier-b .tier-header:hover { background: #edffe0; }
+
+.tier-c .tier-header { background: #fff7e6; }
+.tier-c .tier-tag { background: #fa8c16; }
+.tier-c .tier-header:hover { background: #ffefd5; }
+
+.open-tasks {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.open-tasks h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+}
+.open-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.open-item {
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.open-item:hover {
+  background: #efefef;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+.open-item .o-icon { font-size: 24px; margin-bottom: 6px; }
+.open-item .o-title { font-weight: 600; color: var(--primary); font-size: 14px; }
+.open-item .o-desc { color: var(--text-secondary); font-size: 13px; margin-top: 4px; }
+
+.rubric {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+.rubric h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+}
+.rubric-bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.rubric-bar .label {
+  width: 100px;
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.rubric-bar .track {
+  flex: 1;
+  height: 20px;
+  background: #f0f0f0;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+.rubric-bar .fill {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.6s ease;
+}
+.rubric-bar .pct {
+  width: 48px;
+  text-align: right;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+.footer-note {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+  padding: 20px 0 8px;
+  border-top: 1px solid var(--border);
+  margin-top: 20px;
+}
+@media (max-width: 600px) {
+  .open-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🏆 作业榜</h1>
+  <div class="subtitle">M7 新知数学思维 · 友谊关系分析 · 三层任务体系</div>
+</div>
+
+<div class="tier tier-base">
+  <div class="tier-header" onclick="toggleTier(this)">
+    <span class="arrow">▶</span> 基础层：理解与再现 <span class="tier-tag">必做</span>
+  </div>
+  <div class="tier-body">
+    <div class="tier-body-inner">
+      <ul>
+        <li>用英语叙述一个朋友的友谊故事，运用本单元的关键词汇和句型（约 80 词）</li>
+        <li>从给定的友谊关系文本中提取关键要素：信任、支持、冲突、共同兴趣等</li>
+        <li>完成友谊关系要素分类表——将提取的要素归入不同友谊类型</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="tier tier-a">
+  <div class="tier-header" onclick="toggleTier(this)">
+    <span class="arrow">▶</span> A 级：基础挑战 <span class="tier-tag">A</span>
+  </div>
+  <div class="tier-body">
+    <div class="tier-body-inner">
+      <ul>
+        <li>制作一份友谊关系的<strong>词语思维导图</strong>（含 10 个以上关键术语）</li>
+        <li>导图需包含友谊类型、品质、动词短语三个分支</li>
+        <li>每分支至少 3 个相关词汇/短语</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="tier tier-b">
+  <div class="tier-header" onclick="toggleTier(this)">
+    <span class="arrow">▶</span> B 级：进阶分析 <span class="tier-tag">B</span>
+  </div>
+  <div class="tier-body">
+    <div class="tier-body-inner">
+      <ul>
+        <li>用英语写一篇 <strong>100 词短文</strong>，分析你和你最好的朋友之间的友谊模式</li>
+        <li>运用亚里士多德的"三种友谊"分类来分析这段关系</li>
+        <li>在文末列出 2–3 个体现你分析中思维方法的关键词</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="tier tier-c">
+  <div class="tier-header" onclick="toggleTier(this)">
+    <span class="arrow">▶</span> C 级：挑战创造 <span class="tier-tag">C</span>
+  </div>
+  <div class="tier-body">
+    <div class="tier-body-inner">
+      <ul>
+        <li>用<strong>概念图或流程图</strong>展示一段友谊关系的演变过程</li>
+        <li>用英语口头介绍你的图示（录制视频或课堂展示均可）</li>
+        <li>分析转折点：什么事件改变了这段友谊的走向？</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="open-tasks">
+  <h2>🌟 开放任务：创造性表达</h2>
+  <p style="margin-bottom:12px;color:var(--text-secondary);">选择你最感兴趣的一种方式，展示你对友谊的独特理解：</p>
+  <div class="open-grid">
+    <div class="open-item" onclick="highlight(this)">
+      <div class="o-icon">✉️</div>
+      <div class="o-title">写信</div>
+      <div class="o-desc">给未来朋友的英语信</div>
+    </div>
+    <div class="open-item" onclick="highlight(this)">
+      <div class="o-icon">📊</div>
+      <div class="o-title">图示</div>
+      <div class="o-desc">友谊关系发展模型图</div>
+    </div>
+    <div class="open-item" onclick="highlight(this)">
+      <div class="o-icon">🎬</div>
+      <div class="o-title">视频</div>
+      <div class="o-desc">3分钟英语演讲录制</div>
+    </div>
+    <div class="open-item" onclick="highlight(this)">
+      <div class="o-icon">🎤</div>
+      <div class="o-title">演示</div>
+      <div class="o-desc">班级展示分析成果</div>
+    </div>
+  </div>
+</div>
+
+<div class="rubric">
+  <h2>📐 评价标准（Rubric）</h2>
+  <div class="rubric-bar">
+    <span class="label">内容完整性</span>
+    <div class="track"><div class="fill" style="width:40%;background:var(--primary);"></div></div>
+    <span class="pct">40%</span>
+  </div>
+  <div class="rubric-bar">
+    <span class="label">语言准确性</span>
+    <div class="track"><div class="fill" style="width:30%;background:var(--accent);"></div></div>
+    <span class="pct">30%</span>
+  </div>
+  <div class="rubric-bar">
+    <span class="label">思维深度</span>
+    <div class="track"><div class="fill" style="width:20%;background:#595959;"></div></div>
+    <span class="pct">20%</span>
+  </div>
+  <div class="rubric-bar">
+    <span class="label">创意表达</span>
+    <div class="track"><div class="fill" style="width:10%;background:#8c8c8c;"></div></div>
+    <span class="pct">10%</span>
+  </div>
+</div>
+
+<div class="footer-note">从基础到挑战 · 每一层都是成长 · 选择适合你的任务</div>
+
+</div>
+
+<script>
+function toggleTier(header) {
+  header.classList.toggle('active');
+  const body = header.nextElementSibling;
+  body.classList.toggle('open');
+}
+function highlight(el) {
+  el.style.background = '#e6e6e6';
+  setTimeout(() => { el.style.background = ''; }, 500);
+}
+</script>
+
+</body>
+</html>

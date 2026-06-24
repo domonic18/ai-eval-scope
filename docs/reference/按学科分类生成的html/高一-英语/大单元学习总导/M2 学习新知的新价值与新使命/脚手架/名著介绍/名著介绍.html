@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名著介绍 — Friendship 经典阅读</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+
+h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 8px;
+  padding-bottom: 12px;
+  border-bottom: 3px solid var(--accent);
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 28px;
+}
+
+.section-title {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 16px;
+  margin-top: 32px;
+  padding-left: 12px;
+  border-left: 4px solid var(--accent);
+}
+
+.quote-carousel {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.quote-nav {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.quote-tab {
+  padding: 5px 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card-bg);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text);
+}
+
+.quote-tab:hover { background: var(--bg); }
+.quote-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.quote-display {
+  padding: 16px 18px;
+  background: var(--bg);
+  border-radius: 6px;
+  min-height: 80px;
+  font-size: 15px;
+  line-height: 1.7;
+  transition: opacity 0.3s ease;
+}
+
+.quote-display .quote-text {
+  font-style: italic;
+  margin-bottom: 6px;
+}
+
+.quote-display .quote-source {
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-align: right;
+}
+
+.quote-display .quote-hint {
+  font-size: 13px;
+  color: var(--primary);
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border);
+}
+
+.book-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.book-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: transform 0.25s ease;
+}
+
+.book-card:hover {
+  transform: translateY(-3px);
+}
+
+.book-header {
+  background: var(--primary);
+  color: #fff;
+  padding: 14px 18px;
+}
+
+.book-header .book-num {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.book-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.book-tag {
+  display: inline-block;
+  background: rgba(255,255,255,0.2);
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+.book-body {
+  padding: 16px 18px 18px;
+}
+
+.book-body .label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  margin-top: 8px;
+  margin-bottom: 2px;
+}
+
+.book-body p {
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.book-body .path {
+  display: inline-block;
+  background: var(--bg);
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+
+.flip-card-btn {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 6px 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  color: var(--primary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.flip-card-btn:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+@media (max-width: 768px) {
+  .book-grid { grid-template-columns: 1fr; }
+  .container { padding: 16px; }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>📖 名著介绍 · Friendship</h1>
+<p class="subtitle">英语 · 必修1 · Unit 1 Friendship — 穿越时空的友谊之书</p>
+
+<h2 class="section-title">💬 名言集锦</h2>
+<div class="quote-carousel">
+  <div class="quote-nav">
+    <button class="quote-tab active" onclick="showQuote(0, this)">冲突型</button>
+    <button class="quote-tab" onclick="showQuote(1, this)">启发型</button>
+    <button class="quote-tab" onclick="showQuote(2, this)">批判型</button>
+    <button class="quote-tab" onclick="showQuote(3, this)">反思型</button>
+  </div>
+  <div class="quote-display fade-in" id="quote-display">
+    <div class="quote-text">"The opposite of love is not hate, it's indifference."</div>
+    <div class="quote-source">— Elie Wiesel</div>
+    <div class="quote-hint">💡 引发对"友谊的反面是什么"的思考：冷漠比仇恨更可怕</div>
+  </div>
+</div>
+
+<h2 class="section-title">📚 名著阅读书单</h2>
+<div class="book-grid">
+  <div class="book-card" id="book1">
+    <div class="book-header">
+      <span class="book-num">第1本 · 中国著作</span>
+      <h3>《论语》— 友谊章节</h3>
+      <span class="book-tag">基础级</span>
+    </div>
+    <div class="book-body" id="book1-body">
+      <div class="label">核心问题</div>
+      <p>孔子如何看待朋友的价值和选择标准？</p>
+      <div class="label">关键观点</div>
+      <p>"有朋自远方来，不亦乐乎""益者三友，损者三友"——友直、友谅、友多闻</p>
+      <div class="label">导读建议</div>
+      <p>选读3—5则关于友谊的论语，体会儒家交友观</p>
+      <span class="path">📎 推荐：杨伯峻译注版 / 国学网站</span>
+      <br>
+      <button class="flip-card-btn" onclick="flipBook(1)">📝 阅读笔记</button>
+    </div>
+  </div>
+
+  <div class="book-card" id="book2">
+    <div class="book-header">
+      <span class="book-num">第2本 · 外国经典</span>
+      <h3>《小王子》— Antoine de Saint-Exupéry</h3>
+      <span class="book-tag">基础—进阶级</span>
+    </div>
+    <div class="book-body" id="book2-body">
+      <div class="label">核心问题</div>
+      <p>什么是"驯服"？友谊需要什么？</p>
+      <div class="label">关键观点</div>
+      <p>"It is the time you have wasted for your rose that makes your rose so important."</p>
+      <div class="label">导读建议</div>
+      <p>重点阅读狐狸和小王子的对话片段</p>
+      <span class="path">📎 纸质书 / 电子书 / 有声书</span>
+      <br>
+      <button class="flip-card-btn" onclick="flipBook(2)">📝 阅读笔记</button>
+    </div>
+  </div>
+
+  <div class="book-card" id="book3">
+    <div class="book-header">
+      <span class="book-num">第3本 · 跨学科/当代</span>
+      <h3>《社会学视野下的友谊》节选</h3>
+      <span class="book-tag">挑战级</span>
+    </div>
+    <div class="book-body" id="book3-body">
+      <div class="label">核心问题</div>
+      <p>现代社会的友谊发生了怎样的变化？</p>
+      <div class="label">关键观点</div>
+      <p>从"面对面"到"线上连接"，友谊的形式在演变</p>
+      <div class="label">导读建议</div>
+      <p>思考：社交媒体时代的友谊是更丰富还是更脆弱？</p>
+      <span class="path">📎 学术数据库 / 图书馆</span>
+      <br>
+      <button class="flip-card-btn" onclick="flipBook(3)">📝 阅读笔记</button>
+    </div>
+  </div>
+</div>
+
+<div id="note-area" style="display:none;background:var(--card-bg);border-radius:var(--border-radius);box-shadow:var(--shadow);padding:20px;margin-bottom:20px;">
+  <h3 style="font-size:16px;color:var(--primary);margin-bottom:8px;" id="note-title">📝 阅读笔记</h3>
+  <p id="note-body" style="font-size:14px;"></p>
+</div>
+
+</div>
+
+<script>
+const quotes = [
+  {
+    text: '"The opposite of love is not hate, it\'s indifference."',
+    source: '— Elie Wiesel',
+    hint: '💡 引发对"友谊的反面是什么"的思考：冷漠比仇恨更可怕'
+  },
+  {
+    text: '"A friend is one who knows you and loves you just the same."',
+    source: '— Elbert Hubbard',
+    hint: '💡 真正的友谊是接纳你的全部，包括你的不完美'
+  },
+  {
+    text: '"False friendship, like the ivy, decays and ruins the walls it embraces."',
+    source: '— Thomas Fuller',
+    hint: '💡 警惕虚伪的友谊——它像常春藤一样，看似依附实则摧毁'
+  },
+  {
+    text: '"The language of friendship is not words but meanings."',
+    source: '— Henry David Thoreau',
+    hint: '💡 友谊的语言不在于说了什么，而在于彼此理解的默契'
+  }
+];
+
+const books = {
+  1: { title: '《论语》友谊章节', note: '孔子的交友智慧：友直（正直）、友谅（诚信）、友多闻（博学）。思考：用这个标准衡量你身边的友谊，你能找出你的"三友"吗？' },
+  2: { title: '《小王子》', note: '狐狸说："驯服"就是建立联系。小王子驯服了狐狸，也驯服了玫瑰。友谊不是占有，而是彼此"成为独一无二"。你有被你"驯服"的朋友吗？' },
+  3: { title: '《社会学视野下的友谊》', note: '核心洞察：从"熟人社会"到"陌生人社会"，友谊正在从深度转向广度。你的微信好友里，有多少是真正意义上的朋友？' }
+};
+
+function showQuote(index, btn) {
+  document.querySelectorAll('.quote-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  const display = document.getElementById('quote-display');
+  display.classList.remove('fade-in');
+  void display.offsetWidth;
+  const q = quotes[index];
+  display.innerHTML = '<div class="quote-text">' + q.text + '</div><div class="quote-source">' + q.source + '</div><div class="quote-hint">' + q.hint + '</div>';
+  display.classList.add('fade-in');
+}
+
+function flipBook(id) {
+  const area = document.getElementById('note-area');
+  const title = document.getElementById('note-title');
+  const body = document.getElementById('note-body');
+  const book = books[id];
+  if (book) {
+    title.textContent = '📝 阅读笔记 · ' + book.title;
+    body.textContent = book.note;
+    area.style.display = 'block';
+    area.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具库 — Unit 1 Friendship</title>
+<style>
+  :root {
+    --primary: #434343;
+    --primary-hover: #595959;
+    --accent: #8c8c8c;
+    --bg: #f5f5f5;
+    --card-bg: #ffffff;
+    --text: rgba(0,0,0,0.88);
+    --text-secondary: rgba(0,0,0,0.45);
+    --border: #d9d9d9;
+    --border-radius: 8px;
+    --shadow: 0 2px 8px rgba(0,0,0,0.06);
+    --font-body: 15px;
+    --font-h1: 22px;
+    --font-h2: 18px;
+    --line-height: 1.65;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: var(--font-body);
+    line-height: var(--line-height);
+    color: var(--text);
+    background: var(--bg);
+    width: 100%;
+    padding: 20px;
+  }
+  .container { width: 100%; max-width: none; }
+  h1 {
+    font-size: var(--font-h1);
+    color: var(--primary);
+    margin-bottom: 8px;
+    border-bottom: 3px solid var(--accent);
+    padding-bottom: 10px;
+  }
+  .subtitle {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+  h2 {
+    font-size: var(--font-h2);
+    color: var(--primary);
+    margin: 28px 0 16px;
+    padding-left: 12px;
+    border-left: 4px solid var(--accent);
+  }
+  .tool-list { display: flex; flex-direction: column; gap: 16px; }
+  .tool-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .tool-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  }
+  .tool-card h3 {
+    font-size: 17px;
+    color: var(--primary);
+    margin-bottom: 6px;
+  }
+  .tool-badge {
+    display: inline-block;
+    font-size: 12px;
+    color: #fff;
+    background: var(--primary);
+    padding: 2px 10px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+  }
+  .tool-badge.adv { background: #8c8c8c; }
+  .tool-badge.high { background: #595959; }
+  .tool-card p, .tool-card li { font-size: 14px; }
+  .tool-card ul, .tool-card ol { padding-left: 20px; margin: 8px 0; }
+  .tool-card li { margin-bottom: 4px; }
+  .step-list { counter-reset: step; }
+  .step-list li { list-style: none; position: relative; padding-left: 28px; }
+  .step-list li::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute; left: 0;
+    width: 20px; height: 20px;
+    background: var(--accent); color: #fff;
+    border-radius: 50%;
+    font-size: 12px; text-align: center; line-height: 20px;
+  }
+  .example-box {
+    background: #fafafa;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    margin: 10px 0;
+    font-size: 14px;
+  }
+  .example-box code {
+    background: #eee;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 13px;
+  }
+  .template-box {
+    background: #f8f8f8;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px;
+    margin: 10px 0;
+    font-size: 14px;
+    white-space: pre-wrap;
+  }
+  .tag {
+    display: inline-block;
+    font-size: 12px;
+    color: var(--primary);
+    background: #e8e8e8;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-right: 4px;
+  }
+  .interactive-toggle {
+    margin-top: 12px;
+  }
+  .interactive-toggle summary {
+    cursor: pointer;
+    color: var(--primary-hover);
+    font-weight: 600;
+    font-size: 14px;
+    padding: 6px 0;
+    user-select: none;
+  }
+  .interactive-toggle summary:hover { color: var(--primary); }
+  .interactive-toggle[open] summary { margin-bottom: 8px; }
+  .practice-area {
+    width: 100%;
+    min-height: 80px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    margin-top: 8px;
+    transition: border-color 0.2s;
+  }
+  .practice-area:focus { outline: none; border-color: var(--primary); }
+  .btn {
+    display: inline-block;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 8px;
+  }
+  .btn:hover { background: var(--primary-hover); }
+  .btn-sm { padding: 4px 12px; font-size: 12px; }
+  .feedback-box {
+    display: none;
+    margin-top: 8px;
+    padding: 10px;
+    background: #fffbe6;
+    border: 1px solid #ffe58f;
+    border-radius: 6px;
+    font-size: 13px;
+  }
+  .feedback-box.show { display: block; }
+  .level-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    padding: 2px 10px;
+    border-radius: 10px;
+    display: inline-block;
+    margin-bottom: 8px;
+  }
+  .level-basic { background: #8c8c8c; }
+  .level-adv { background: #595959; }
+  .level-high { background: #434343; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🔧 工具库</h1>
+  <div class="subtitle">M16 · Unit 1 Friendship · 人教版 英语 必修1</div>
+
+  <h2>✨ 基础工具</h2>
+  <div class="tool-list">
+
+    <div class="tool-card">
+      <div class="level-label level-basic">基础</div>
+      <h3>🧠 思维导图模板（Friendship Web）</h3>
+      <p><strong>用途</strong>：梳理关于友谊的想法和词汇，为写作做准备</p>
+      <p><strong>使用步骤</strong>：</p>
+      <ol class="step-list">
+        <li>中心写 <strong>"Friendship"</strong></li>
+        <li>第一圈分支：<span class="tag">Qualities</span> <span class="tag">Activities</span> <span class="tag">Challenges</span> <span class="tag">Feelings</span></li>
+        <li>每个分支再扩展 3—5 个英语词汇或短语</li>
+      </ol>
+      <div class="example-box">
+        <strong>示例</strong>：Qualities → helpful, honest, reliable, caring, supportive
+      </div>
+      <div class="interactive-toggle">
+        <details>
+          <summary>✏️ 自己试试画一个</summary>
+          <p style="font-size:13px;color:var(--text-secondary);margin-bottom:4px;">在下方写下你的思维导图内容：</p>
+          <textarea class="practice-area" placeholder="Friendship&#10;  ├─ Qualities: ...&#10;  ├─ Activities: ...&#10;  ├─ Challenges: ...&#10;  └─ Feelings: ..."></textarea>
+        </details>
+      </div>
+    </div>
+
+    <div class="tool-card">
+      <div class="level-label level-basic">基础</div>
+      <h3>✉️ 写作脚手架模板（书信结构）</h3>
+      <p><strong>用途</strong>：写英文友谊信件时确保结构完整</p>
+      <div class="template-box"><strong>书信模板</strong>
+开头问候：Dear [Name], / Hi [Name],
+
+正文：
+  第一段 → 寒暄 + 写作目的
+  第二段 → 主要内容和感受
+  第三段 → 期望和邀请回复
+
+结尾：Best wishes, / Yours sincerely, / Love,
+       + 签名</div>
+      <div class="interactive-toggle">
+        <details>
+          <summary>✏️ 用模板写一封短信</summary>
+          <textarea class="practice-area" placeholder="Dear ___,&#10;&#10;How are you? I'm writing to...&#10;&#10;...&#10;&#10;Best wishes,&#10;___"></textarea>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <h2>🚀 进阶工具</h2>
+  <div class="tool-list">
+
+    <div class="tool-card">
+      <div class="level-label level-adv">进阶</div>
+      <h3>🤖 AI 协作写作助手</h3>
+      <p><strong>用途</strong>：辅助英语写作，润色表达</p>
+      <ol class="step-list">
+        <li>用中文写出你的想法</li>
+        <li>请 AI 帮你翻译成英语初稿</li>
+        <li>自己修改初稿，加入个人风格</li>
+        <li>请 AI 检查语法和表达</li>
+      </ol>
+      <div class="example-box">
+        <strong>示例提示词</strong>：<br>
+        <code>"Please help me check the grammar and suggest better ways to express my feelings about friendship in this paragraph."</code>
+      </div>
+      <p style="font-size:13px;color:var(--text-secondary);margin-top:6px;">推荐工具：ChatGPT / Kimi / DeepSeek（用英语提问效果更好）</p>
+      <div class="interactive-toggle">
+        <details>
+          <summary>🎯 模拟 AI 润色练习</summary>
+          <textarea class="practice-area" placeholder="写一段关于友谊的英语文字，然后想象AI会如何帮你改进……"></textarea>
+        </details>
+      </div>
+    </div>
+
+    <div class="tool-card">
+      <div class="level-label level-adv">进阶</div>
+      <h3>📖 在线词典与语料库</h3>
+      <p><strong>工具</strong>：Cambridge Dictionary / Oxford Learner's Dictionary</p>
+      <p><strong>用途</strong>：查词汇搭配（collocations），比如 <code>build friendship</code> vs <code>establish friendship</code></p>
+      <div class="interactive-toggle">
+        <details>
+          <summary>🔍 查词练习</summary>
+          <p style="font-size:14px;margin-bottom:6px;">用在线词典查以下搭配，哪个更地道？</p>
+          <ul style="font-size:14px;padding-left:20px;">
+            <li><code>make friends</code> vs <code>do friends</code></li>
+            <li><code>close friend</code> vs <code>near friend</code></li>
+            <li><code>strengthen friendship</code> vs <code>make friendship stronger</code></li>
+          </ul>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <h2>🔬 高阶工具</h2>
+  <div class="tool-list">
+    <div class="tool-card">
+      <div class="level-label level-high">高阶</div>
+      <h3>📊 语料分析工具</h3>
+      <p><strong>工具</strong>：COCA（美国当代英语语料库）或 Google Ngram Viewer</p>
+      <p><strong>用途</strong>：研究 "friendship" 在不同历史时期的使用频率变化</p>
+      <div class="example-box">
+        <strong>示例任务</strong>：搜索 "close friend" vs "best friend" 哪个更常用？
+      </div>
+      <div class="interactive-toggle">
+        <details>
+          <summary>📈 尝试分析</summary>
+          <p style="font-size:14px;margin-bottom:6px;">你猜猜下面的结果会是什么？点击按钮查看猜测。</p>
+          <button class="btn btn-sm" onclick="document.getElementById('ngram-feedback').classList.toggle('show')">查看推测</button>
+          <div id="ngram-feedback" class="feedback-box">根据语料库统计，"best friend" 的使用频率大约是 "close friend" 的 2 倍，尤其在口语中更为常见。"close friend" 则更多出现在书面语中。</div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+  <div style="text-align:center;color:var(--text-secondary);font-size:13px;padding:10px 0;">
+    🛠️ 选择适合你的工具，逐步提升英语写作能力
+  </div>
+</div>
+<script>
+  // Enable all details/summary interactive elements
+  document.querySelectorAll('.btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      const target = document.getElementById(this.dataset.target);
+      if (target) target.classList.toggle('show');
+    });
+  });
+</script>
+</body>
+</html>

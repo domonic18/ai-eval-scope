@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>解析性示例 — 像专家一样分析友谊</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body { margin:0; padding:0; font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; font-size:var(--font-body); line-height:var(--line-height); color:var(--text); background:var(--bg); }
+.container { width:100%; max-width:none; padding:20px; box-sizing:border-box; }
+.header { background:linear-gradient(135deg,var(--primary),var(--primary-hover)); color:#fff; padding:24px 20px; border-radius:var(--border-radius); margin-bottom:20px; }
+.header h1 { font-size:var(--font-h1); margin:0 0 8px; }
+.header p { margin:0; opacity:.85; font-size:14px; }
+.card { background:var(--card-bg); border-radius:var(--border-radius); box-shadow:var(--shadow); padding:20px; margin-bottom:16px; border:1px solid var(--border); }
+.card h2 { font-size:var(--font-h2); color:var(--primary); margin:0 0 12px; border-left:4px solid var(--primary); padding-left:12px; }
+.card h3 { font-size:16px; color:var(--primary); margin:16px 0 8px; }
+table { width:100%; border-collapse:collapse; margin:12px 0; font-size:14px; }
+table th { background:var(--primary); color:#fff; padding:8px 12px; text-align:left; font-weight:500; }
+table td { padding:8px 12px; border-bottom:1px solid var(--border); }
+table tr:hover td { background:var(--bg); }
+.step-box { background:var(--bg); border-radius:var(--border-radius); padding:14px; margin:10px 0; border:1px solid var(--border); transition:all .3s ease; }
+.step-box:hover { border-color:var(--accent); }
+.step-num { display:inline-block; background:var(--primary); color:#fff; font-size:12px; font-weight:600; padding:2px 10px; border-radius:10px; margin-bottom:6px; }
+.pitfall { background:#fff2f0; border:1px solid #ffccc7; border-radius:var(--border-radius); padding:12px 16px; margin:8px 0; }
+.pitfall strong { color:#cf1322; }
+.practice-box { background:var(--bg); border:2px dashed var(--primary); border-radius:var(--border-radius); padding:18px; margin:16px 0; }
+.practice-box h3 { color:var(--primary); margin:0 0 10px; }
+.check-list { margin:12px 0; }
+.check-item { display:flex; align-items:flex-start; padding:6px 0; cursor:pointer; }
+.check-item input { margin-right:10px; margin-top:4px; accent-color:var(--primary); }
+.check-item label { cursor:pointer; flex:1; }
+.mistake-btn { display:inline-block; margin:4px; background:var(--card-bg); border:1px solid var(--border); padding:4px 14px; border-radius:16px; cursor:pointer; font-size:13px; transition:all .2s; }
+.mistake-btn:hover { border-color:var(--primary); color:var(--primary); }
+.conclusion-box { background:linear-gradient(135deg,#f5f5f5,#ffffff); border:1px solid var(--border); border-radius:var(--border-radius); padding:16px; margin:12px 0; text-align:center; }
+.conclusion-box p { margin:0; font-size:16px; color:var(--primary); font-weight:500; }
+@media(max-width:600px){ .container{padding:12px;} .card{padding:14px;} table{font-size:13px;} }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🧠 解析性示例</h1>
+  <p>像专家一样拆解友谊问题 · 五步解析路径演示</p>
+</div>
+
+<div class="card">
+  <h2>📖 解析任务情境</h2>
+  <div style="background:var(--bg);border-radius:var(--border-radius);padding:16px;border-left:4px solid var(--primary);">
+    <p style="margin:0;font-style:italic;">"小明有两个非常好的朋友，但相处方式完全不同：朋友A和他一起打游戏、聊天，很轻松；朋友B会指出他的缺点、督促他学习。小明困惑了：<strong>到底哪一个才是真正的朋友？</strong>"</p>
+  </div>
+  <p style="margin-top:12px;"><strong>核心问题：</strong>"如何区分不同类型的友谊？什么样的友谊才值得珍惜？"</p>
+
+  <h3>📊 关键信息提取</h3>
+  <div class="step-box">
+  <table>
+    <tr><th>情境信息</th><th>说明什么</th><th>为什么重要</th></tr>
+    <tr><td>和朋友A打游戏、聊天</td><td>关系基于共同娱乐</td><td>需要判断这是否是友谊的全部</td></tr>
+    <tr><td>朋友B指出缺点、督促学习</td><td>关系基于互相提升</td><td>需要理解朋友的不同功能</td></tr>
+    <tr><td>小明感到困惑</td><td>存在认知冲突</td><td>说明需要分析工具来澄清</td></tr>
+  </table>
+  </div>
+</div>
+
+<div class="card">
+  <h2>🔬 专家解析过程（5步）</h2>
+
+  <div class="step-box">
+    <span class="step-num">第一步</span>
+    <h3>先看见什么</h3>
+    <p>识别表面现象：小明有朋友，但感到困惑。关键要问：<strong>困惑的根源是什么？</strong><br>→ 答案：不是"有没有朋友"，而是"如何理解不同类型的朋友"。</p>
+  </div>
+
+  <div class="step-box">
+    <span class="step-num">第二步</span>
+    <h3>判断问题属于哪一类</h3>
+    <p>这不是"有没有朋友"的问题，而是<strong>分类分析和价值判断问题</strong>。需要用分类标准来区分不同类型的友谊，然后评估每种类型的价值。</p>
+  </div>
+
+  <div class="step-box">
+    <span class="step-num">第三步</span>
+    <h3>调用哪些概念、原理或方法</h3>
+    <p><strong>亚里士多德"三种友谊"分类法：</strong></p>
+    <ul>
+      <li><strong>快乐友谊</strong>（基于共同兴趣和快乐）——朋友A</li>
+      <li><strong>功利友谊</strong>（基于互相帮助）——需判断</li>
+      <li><strong>美德友谊</strong>（基于互相促进成长）——朋友B</li>
+    </ul>
+    <p style="margin-top:8px;"><strong>邓巴"社交圈层"理论：</strong>不同圈层的友谊有不同功能和支持强度。</p>
+  </div>
+
+  <div class="step-box">
+    <span class="step-num">第四步</span>
+    <h3>如何进行推理或分析</h3>
+    <ol>
+      <li><strong>对号入座：</strong>朋友A属于"快乐友谊"，朋友B接近"美德友谊"</li>
+      <li><strong>需求分析：</strong>朋友A满足了小明放松和娱乐的需求；朋友B满足了小明成长和进步的需求</li>
+      <li><strong>比较价值：</strong>快乐友谊提供即时的情感满足，美德友谊提供长期的发展支持</li>
+      <li><strong>综合判断：</strong>两种友谊都有价值，关键在于小明是否能认识到它们的差异并各取所需</li>
+    </ol>
+  </div>
+
+  <div class="step-box">
+    <span class="step-num">第五步</span>
+    <h3>怎样形成结论</h3>
+    <div class="conclusion-box">
+      <p>💡 不同类型的友谊都有价值，关键是认识到它们的差异。真正值得珍惜的不是单一类型的友谊，而是能够提供<strong>多样支持的关系网络</strong>。</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>🎯 方法提炼</h2>
+  <p>以后遇到类似的友谊关系分析问题，你可以这样做：</p>
+  <ol>
+    <li><strong>先停一停：</strong>不要急着下判断，先问"这个问题的本质是什么？"</li>
+    <li><strong>分分类：</strong>用已有的分类框架（如亚里士多德三种友谊）对号入座</li>
+    <li><strong>对对表：</strong>分析每个对象满足了你什么需求</li>
+    <li><strong>找关联：</strong>画出关系图，看各要素之间如何相互影响</li>
+    <li><strong>下结论：</strong>基于前面的分析形成有依据的判断</li>
+  </ol>
+</div>
+
+<div class="card">
+  <h2>⚠️ 易错提醒</h2>
+  <div class="pitfall"><strong>易错1：</strong>以为所有友谊都是一样的 → 事实：友谊可以分为快乐型、功利型和美德型，每种都有自己的价值</div>
+  <div class="pitfall"><strong>易错2：</strong>用单一标准判断友谊质量 → 事实：好的友谊不一定都是"互相督促"的，轻松愉快也很重要</div>
+  <div class="pitfall"><strong>易错3：</strong>忽视情境对友谊类型的影响 → 事实：同一个人在不同情境下可能扮演不同的朋友角色</div>
+</div>
+
+<div class="card practice-box">
+  <h2>✏️ 自主迁移小练习</h2>
+  <p><strong>新情境：</strong>小红有两个要好的网友——一个在游戏里认识、一个在学习群里认识。她从未见过他们，但每天聊天。她的妈妈说："网友不算真朋友。"小红很困惑。</p>
+  <p><strong>请你尝试：</strong>用上面学到的五步解析法分析小红的问题。</p>
+  <button class="mistake-btn" onclick="document.getElementById('hint1').style.display='block';this.style.display='none'">💡 查看提示</button>
+  <div id="hint1" style="display:none;margin-top:10px;background:var(--card-bg);padding:12px;border-radius:8px;border:1px solid var(--border);">
+    <p style="margin:0;"><strong>提示思路：</strong>第一步——小红的困惑本质是"虚拟关系是否具有友谊的实质"；第二步——属于分类分析和价值判断问题；第三步——可调用"友谊核心要素"框架（互信、互惠、情感连接、共同经历）；第四步——逐条比对虚拟友谊满足了多少要素；第五步——形成有依据的判断。</p>
+  </div>
+</div>
+
+<div class="card">
+  <h2>📋 学习自评</h2>
+  <p>完成学习后，对照检查自己的掌握情况：</p>
+  <div class="check-list">
+    <div class="check-item"><input type="checkbox" id="q1"><label for="q1">我能说清楚解析性分析的完整5步路径</label></div>
+    <div class="check-item"><input type="checkbox" id="q2"><label for="q2">我能用亚里士多德三种友谊分类解释朋友关系</label></div>
+    <div class="check-item"><input type="checkbox" id="q3"><label for="q3">我能区分"快乐友谊"和"美德友谊"的不同价值</label></div>
+    <div class="check-item"><input type="checkbox" id="q4"><label for="q4">我能在新情境中独立应用五步解析法</label></div>
+    <div class="check-item"><input type="checkbox" id="q5"><label for="q5">我知道分析友谊问题时容易犯哪三种错误</label></div>
+  </div>
+  <div style="margin-top:12px;text-align:center;">
+    <button class="mistake-btn" onclick="var c=this.parentElement.parentElement.querySelectorAll('input:checked').length;alert('你已完成 '+c+'/5 项自评，继续加油！')">📊 查看完成进度</button>
+  </div>
+</div>
+
+</div>
+<script>
+document.querySelectorAll('.check-item input').forEach(function(cb){cb.addEventListener('change',function(){this.parentElement.style.opacity=this.checked?'0.6':'1';});});
+</script>
+</body>
+</html>

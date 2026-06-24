@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具库 — 认知放大器</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.header {
+  background: var(--card-bg);
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+  border-left: 4px solid var(--primary);
+}
+
+.header h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+
+.header .subtitle {
+  font-size: var(--font-body);
+  color: var(--text-secondary);
+}
+
+.tier-section {
+  margin-bottom: 28px;
+}
+
+.tier-label {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 3px 14px;
+  border-radius: 12px;
+  margin-bottom: 14px;
+  letter-spacing: 0.5px;
+}
+
+.tier-label.tier-basic { background: var(--primary); }
+.tier-label.tier-adv { background: var(--accent); }
+.tier-label.tier-high { background: #262626; }
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  border: 1px solid var(--border);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: default;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+}
+
+.card h3 {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bg);
+}
+
+.card .tag {
+  display: inline-block;
+  font-size: 12px;
+  background: var(--bg);
+  color: var(--text-secondary);
+  padding: 2px 10px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.card .desc {
+  color: var(--text-secondary);
+  font-size: calc(var(--font-body) - 1px);
+  margin-bottom: 12px;
+}
+
+.steps {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+
+.steps .step {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: calc(var(--font-body) - 1px);
+}
+
+.steps .step:last-child { margin-bottom: 0; }
+
+.step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.scene-tag {
+  display: inline-block;
+  background: #e8e8e8;
+  color: var(--text-secondary);
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  margin-top: 8px;
+}
+
+.code-block {
+  background: #2d2d2d;
+  color: #e6e6e6;
+  font-family: "SF Mono", "Fira Code", monospace;
+  font-size: 13px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin: 10px 0;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.copy-btn {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background 0.2s;
+}
+
+.copy-btn:hover {
+  background: var(--primary-hover);
+}
+
+.copy-btn.copied {
+  background: #52c41a;
+}
+
+@media (max-width: 640px) {
+  .container { padding: 12px; }
+  .card-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🧰 工具库</h1>
+  <div class="subtitle">认知放大器 — 借助工具，让思考与写作更高效</div>
+</div>
+
+<!-- 基础工具 -->
+<div class="tier-section">
+  <span class="tier-label tier-basic">基础工具 · 易上手</span>
+  <div class="card-grid">
+
+    <div class="card">
+      <h3>✍️ 写作思路整理表</h3>
+      <div class="desc">动笔前快速梳理写作思路，让结构更清晰</div>
+      <div class="steps">
+        <div class="step"><span class="step-num">1</span>填"我想写什么主题"</div>
+        <div class="step"><span class="step-num">2</span>填"我要用哪2个事例"</div>
+        <div class="step"><span class="step-num">3</span>填"我最想表达的核心情感"</div>
+        <div class="step"><span class="step-num">4</span>形成段落提纲</div>
+      </div>
+      <span class="scene-tag">📌 适用：书信/短文/故事的写前构思</span>
+    </div>
+
+    <div class="card">
+      <h3>📖 核心词汇一览表</h3>
+      <div class="desc">查阅友谊主题的核心词汇和例句</div>
+      <div class="steps">
+        <div class="step"><span class="step-num">1</span>找到你要用的主题词</div>
+        <div class="step"><span class="step-num">2</span>参考例句</div>
+        <div class="step"><span class="step-num">3</span>在自己的写作中使用</div>
+      </div>
+      <span class="scene-tag">📌 适用：写作中需要词汇参考时</span>
+    </div>
+
+  </div>
+</div>
+
+<!-- 进阶工具 -->
+<div class="tier-section">
+  <span class="tier-label tier-adv">进阶工具 · 专业</span>
+  <div class="card-grid">
+
+    <div class="card">
+      <h3>🤖 AI 写作助手</h3>
+      <div class="desc">辅助语法检查和词句润色</div>
+      <div class="steps">
+        <div class="step"><span class="step-num">1</span>写完初稿</div>
+        <div class="step"><span class="step-num">2</span>提交给AI检查语法</div>
+        <div class="step"><span class="step-num">3</span>获取同义替换建议</div>
+        <div class="step"><span class="step-num">4</span>自己判断选择</div>
+      </div>
+      <div class="code-block">Please help me check the grammar of this paragraph: [你的段落]</div>
+      <button class="copy-btn" onclick="copyCode(this)">📋 复制提示词</button>
+      <span class="scene-tag">📌 适用：修改环节</span>
+    </div>
+
+    <div class="card">
+      <h3>🔗 连接词/过渡词清单</h3>
+      <div class="desc">让段落之间衔接自然</div>
+      <div class="steps">
+        <div class="step"><span class="step-num">1</span>确定你需要什么逻辑关系</div>
+        <div class="step"><span class="step-num">2</span>从清单中选择</div>
+        <div class="step"><span class="step-num">3</span>插入句子之间</div>
+      </div>
+      <div style="margin-top:10px;font-size:13px;color:var(--text-secondary);">
+        <strong style="color:var(--text);">常用分类：</strong>递进（Moreover, Furthermore）、转折（However, Nevertheless）、因果（Therefore, As a result）、举例（For instance, such as）
+      </div>
+      <span class="scene-tag">📌 适用：修改稿中检查逻辑衔接</span>
+    </div>
+
+  </div>
+</div>
+
+<!-- 高阶工具 -->
+<div class="tier-section">
+  <span class="tier-label tier-high">高阶工具 · 研究级</span>
+  <div class="card-grid">
+
+    <div class="card">
+      <h3>📈 Google Ngram Viewer</h3>
+      <div class="desc">检查英语表达的常用程度和搭配习惯</div>
+      <div class="steps">
+        <div class="step"><span class="step-num">1</span>输入你要查的词组</div>
+        <div class="step"><span class="step-num">2</span>查看它的使用频率</div>
+        <div class="step"><span class="step-num">3</span>选择更自然的表达</div>
+      </div>
+      <span class="scene-tag">📌 适用：确认表达是否地道</span>
+    </div>
+
+    <div class="card">
+      <h3>📚 英语语料库（COCA / BNC）</h3>
+      <div class="desc">查询单词在真实语境中的使用方式</div>
+      <div class="steps">
+        <div class="step"><span class="step-num">1</span>输入关键词</div>
+        <div class="step"><span class="step-num">2</span>查看真实例句</div>
+        <div class="step"><span class="step-num">3</span>仿学使用</div>
+      </div>
+      <span class="scene-tag">📌 适用：确定搭配是否正确时</span>
+    </div>
+
+  </div>
+</div>
+
+</div>
+
+<script>
+function copyCode(btn) {
+  const code = btn.previousElementSibling;
+  if (!code || !code.textContent) return;
+  navigator.clipboard.writeText(code.textContent.trim()).then(() => {
+    btn.textContent = '✅ 已复制';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = '📋 复制提示词';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名著介绍 - 名言及名著脚手架</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  min-height: 100vh;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+
+.header {
+  background: linear-gradient(135deg, #434343 0%, #595959 100%);
+  color: #fff;
+  border-radius: var(--border-radius);
+  padding: 28px 32px;
+  margin-bottom: 28px;
+  position: relative;
+  overflow: hidden;
+}
+
+.header::after {
+  content: "❝";
+  position: absolute;
+  right: 24px;
+  bottom: -10px;
+  font-size: 80px;
+  color: rgba(255,255,255,0.1);
+  line-height: 1;
+}
+
+.header h1 {
+  font-size: var(--font-h1);
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+
+.header p {
+  font-size: calc(var(--font-body) - 1px);
+  opacity: 0.85;
+}
+
+.section-title {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin: 28px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title .icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  margin-bottom: 16px;
+  overflow: hidden;
+  transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+
+.card-header {
+  padding: 14px 20px;
+  background: #fafafa;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.card-header .tag {
+  display: inline-block;
+  font-size: 12px;
+  padding: 1px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+  background: var(--accent);
+  color: #fff;
+}
+
+.card-body {
+  padding: 16px 20px;
+}
+
+.quote-block {
+  background: #f9f9f9;
+  border-left: 4px solid var(--primary);
+  padding: 14px 18px;
+  margin: 12px 0;
+  border-radius: 0 6px 6px 0;
+  font-style: italic;
+  position: relative;
+}
+
+.quote-block .author {
+  display: block;
+  margin-top: 8px;
+  text-align: right;
+  font-style: normal;
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.quote-block .author::before {
+  content: "— ";
+}
+
+.reflect-box {
+  background: #f0f0f0;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+  border: 1px dashed var(--border);
+}
+
+.reflect-box .label {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--primary);
+  margin-bottom: 4px;
+  display: block;
+}
+
+.book-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.book-card .book-title {
+  font-size: calc(var(--font-body) + 1px);
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.book-card .book-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.book-card .book-meta .meta-item {
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  background: #e8e8e8;
+  color: #555;
+}
+
+.book-card .book-question {
+  font-weight: 500;
+  margin: 6px 0 2px;
+  color: var(--text);
+}
+
+.book-card .book-path {
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 6px 10px;
+  background: #f6f6f6;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+.hidden-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+}
+
+.card-header.active + .hidden-content {
+  max-height: 600px;
+}
+
+.toggle-btn {
+  margin-left: auto;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.toggle-btn:hover {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.interact-area {
+  background: linear-gradient(135deg, #f5f5f5 0%, #eaeaea 100%);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin: 20px 0;
+  text-align: center;
+}
+
+.interact-area button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 6px;
+  font-size: calc(var(--font-body) - 1px);
+  cursor: pointer;
+  transition: all 0.2s;
+  margin: 4px;
+}
+
+.interact-area button:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.interact-area button.secondary {
+  background: var(--card-bg);
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+
+.interact-area button.secondary:hover {
+  background: var(--bg);
+}
+
+.random-quote-display {
+  min-height: 60px;
+  padding: 14px;
+  background: var(--card-bg);
+  border-radius: 6px;
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  font-style: italic;
+  transition: all 0.3s;
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 640px) {
+  .container { padding: 16px 12px; }
+  .header { padding: 20px; }
+  .card-body { padding: 12px 14px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>📖 名言及名著脚手架</h1>
+  <p>通过"名言触发器 + 名著载体"，建立你对友谊主题的深层思考和美学感悟</p>
+</div>
+
+<!-- 名言部分 -->
+<div class="section-title"><span class="icon">❝</span> 名言触发器</div>
+
+<div class="card">
+  <div class="card-header" onclick="this.classList.toggle('active')">
+    <span>🔥 冲突型名言</span>
+    <span class="tag">反思</span>
+    <button class="toggle-btn" onclick="event.stopPropagation();this.closest('.card-header').classList.toggle('active')">展开 ▼</button>
+  </div>
+  <div class="hidden-content">
+    <div class="card-body">
+      <div class="quote-block">
+        "A friend to all is a friend to none."
+        <span class="author">Aristotle</span>
+      </div>
+      <p><strong>冲突点：</strong>朋友多 ≠ 真朋友。你有100个"好友"，但有几个人能深夜倾诉？</p>
+      <div class="reflect-box">
+        <span class="label">💭 反思起点</span>
+        你微信/QQ上的"好友"哪些是真实的朋友？试着列出3个真正可以倾诉的人。
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header" onclick="this.classList.toggle('active')">
+    <span>💡 启发型名言</span>
+    <span class="tag">共情</span>
+    <button class="toggle-btn" onclick="event.stopPropagation();this.closest('.card-header').classList.toggle('active')">展开 ▼</button>
+  </div>
+  <div class="hidden-content">
+    <div class="card-body">
+      <div class="quote-block">
+        "Friendship is born at that moment when one person says to another: 'What! You too? I thought I was the only one.'"
+        <span class="author">C.S. Lewis</span>
+      </div>
+      <p><strong>概念引子：</strong>共同的经历和感受是友谊的催化剂</p>
+      <div class="reflect-box">
+        <span class="label">💭 反思起点</span>
+        你和一个朋友成为好朋友的"那个时刻"是什么？闭上眼睛，回忆那个画面。
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header" onclick="this.classList.toggle('active')">
+    <span>🔍 批判型名言</span>
+    <span class="tag">思辨</span>
+    <button class="toggle-btn" onclick="event.stopPropagation();this.closest('.card-header').classList.toggle('active')">展开 ▼</button>
+  </div>
+  <div class="hidden-content">
+    <div class="card-body">
+      <div class="quote-block">
+        "The language of friendship is not words but meanings."
+        <span class="author">Henry David Thoreau</span>
+      </div>
+      <p><strong>冲突点：</strong>友谊的语言不需要华丽辞藻，而是背后的意义</p>
+      <div class="reflect-box">
+        <span class="label">💭 反思起点</span>
+        这和本模块"美术思维"有什么关系？——也许图像比文字更能传递"意义"。
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header" onclick="this.classList.toggle('active')">
+    <span>🚀 行动型名言</span>
+    <span class="tag">应用</span>
+    <button class="toggle-btn" onclick="event.stopPropagation();this.closest('.card-header').classList.toggle('active')">展开 ▼</button>
+  </div>
+  <div class="hidden-content">
+    <div class="card-body">
+      <div class="quote-block">
+        "A friend is someone who knows the song in your heart and can sing it back to you when you have forgotten the words."
+        <span class="author">Unknown</span>
+      </div>
+      <p><strong>启发点：</strong>真正的朋友是记住你"本来样子"的人</p>
+      <div class="reflect-box">
+        <span class="label">💡 可迁移应用</span>
+        你可以用这句话作为你友谊海报的标题，配合温暖的配色和手绘插图。
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 随机名言互动 -->
+<div class="interact-area">
+  <p style="margin-bottom:10px;font-weight:500;">🎲 随机名言生成器</p>
+  <button onclick="showRandomQuote()">随机展示一句名言</button>
+  <button class="secondary" onclick="document.getElementById('quoteDisplay').innerHTML='点击上方按钮获取随机名言'">清空</button>
+  <div id="quoteDisplay" class="random-quote-display">点击上方按钮获取随机名言</div>
+</div>
+
+<!-- 名著部分 -->
+<div class="section-title"><span class="icon">📚</span> 名著载体</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="book-card">
+      <div class="book-title">1. 《论语》选篇（中国著作）</div>
+      <div class="book-meta">
+        <span class="meta-item">基础</span>
+        <span class="meta-item">中国经典</span>
+      </div>
+      <p class="book-question">❓ 孔子如何看待"朋友"和"交友之道"？</p>
+      <p><strong>核心观点：</strong>"有朋自远方来，不亦乐乎""益者三友，损者三友"</p>
+      <p><strong>关键片段导读：</strong>季氏第十六篇中关于"益者三友，损者三友"的论述——友直、友谅、友多闻，益矣；友便辟、友善柔、友便佞，损矣。</p>
+      <div class="book-path">📎 获取路径：纸质书推荐中华书局版 · 电子书微信读书可搜</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="book-card">
+      <div class="book-title">2. 《尼各马可伦理学》— Aristotle（外国经典）</div>
+      <div class="book-meta">
+        <span class="meta-item">进阶</span>
+        <span class="meta-item">哲学经典</span>
+      </div>
+      <p class="book-question">❓ 友谊的本质是什么？什么是"完美友谊"？</p>
+      <p><strong>核心观点：</strong>友谊分三类——快乐型、功利型、美德型，只有美德型友谊是持久的。</p>
+      <p><strong>关键片段导读：</strong>第八卷和第九卷关于友谊的专门论述，Aristotle系统分析了三种友谊的异同。</p>
+      <div class="book-path">📎 获取路径：商务印书馆中文版 · Kindle有英汉对照版</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="book-card">
+      <div class="book-title">3. 《信息之美》— David McCandless（当代/跨学科作品）</div>
+      <div class="book-meta">
+        <span class="meta-item">所有层次</span>
+        <span class="meta-item">跨学科</span>
+      </div>
+      <p class="book-question">❓ 如何让信息变得美丽且易懂？</p>
+      <p><strong>核心观点：</strong>数据可视化不只是画图，而是揭示隐藏在数据中的模式和故事。</p>
+      <p><strong>关键片段导读：</strong>书中关于"情感关系"的数据可视化章节，展示了友谊和爱情关系的视觉化表达。</p>
+      <div class="book-path">📎 获取路径：中信出版社中文版 · informationisbeautiful.net 有部分免费内容</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const quotes = [
+  { text: "A friend to all is a friend to none.", author: "Aristotle" },
+  { text: "Friendship is born at that moment when one person says to another: 'What! You too? I thought I was the only one.'", author: "C.S. Lewis" },
+  { text: "The language of friendship is not words but meanings.", author: "Henry David Thoreau" },
+  { text: "A friend is someone who knows the song in your heart and can sing it back to you when you have forgotten the words.", author: "Unknown" }
+];
+
+function showRandomQuote() {
+  const q = quotes[Math.floor(Math.random() * quotes.length)];
+  const display = document.getElementById('quoteDisplay');
+  display.innerHTML = '<div class="fade-in">"' + q.text + '"<br><span style="display:block;text-align:right;margin-top:8px;font-size:13px;color:#888;">— ' + q.author + '</span></div>';
+}
+</script>
+</body>
+</html>

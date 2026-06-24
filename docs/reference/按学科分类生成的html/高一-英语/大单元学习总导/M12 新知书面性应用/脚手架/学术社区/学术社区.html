@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>社区脚手架 — 学习共同体</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  text-align: center;
+  padding: 32px 20px;
+  background: linear-gradient(135deg, #434343 0%, #6b6b6b 100%);
+  color: #fff;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+.header h1 { font-size: var(--font-h1); margin: 0 0 6px; }
+.header p { margin: 0; opacity: 0.85; font-size: 14px; }
+.section { margin-bottom: 32px; }
+.section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  border-left: 4px solid var(--primary);
+  padding-left: 12px;
+  margin: 0 0 16px;
+}
+.section h2 .icon { margin-right: 6px; }
+
+.conn-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  margin-bottom: 16px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.conn-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+}
+.conn-card h3 {
+  font-size: 17px;
+  margin: 0 0 10px;
+  color: var(--primary);
+}
+.conn-card p { margin: 6px 0; font-size: 14px; }
+
+.discuss-item {
+  background: #f8f8f8;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+  border-left: 3px solid var(--primary);
+  transition: background 0.2s;
+}
+.discuss-item:hover {
+  background: #efefef;
+}
+.discuss-item .label {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--primary);
+  display: block;
+  margin-bottom: 4px;
+}
+.discuss-item p { margin: 0; font-size: 14px; }
+
+.role-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+.role-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  text-align: center;
+  transition: all 0.2s;
+}
+.role-card:hover {
+  border-color: var(--primary);
+  background: #fafafa;
+}
+.role-card .role-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--primary);
+}
+.role-card p { margin: 6px 0 0; font-size: 13px; color: var(--text-secondary); }
+
+.platform-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.platform-item {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px;
+  text-align: center;
+  transition: all 0.2s;
+  cursor: default;
+}
+.platform-item:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.platform-item h4 { margin: 0 0 6px; font-size: 15px; color: var(--primary); }
+.platform-item p { margin: 0; font-size: 13px; color: var(--text-secondary); }
+
+.output-section {
+  background: linear-gradient(135deg, #f5f5f5 0%, #ececec 100%);
+  border: 2px dashed var(--primary);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-top: 16px;
+}
+.output-section h3 { margin: 0 0 10px; color: var(--primary); }
+.output-section ul {
+  margin: 6px 0;
+  padding-left: 20px;
+}
+.output-section li {
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+.output-section li strong { color: var(--primary); }
+
+.footer {
+  text-align: center;
+  padding: 16px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  border-top: 1px solid var(--border);
+  margin-top: 28px;
+}
+@media (max-width: 640px) {
+  .container { padding: 14px 10px; }
+  .role-grid { grid-template-columns: 1fr 1fr; }
+  .platform-list { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🌐 学术社区 · 学习共同体</h1>
+    <p>同伴讨论 · 家校协作 · 社会连接 — 让写作在对话中生长</p>
+  </div>
+
+  <!-- 同伴连接 -->
+  <div class="section">
+    <h2><span class="icon">👥</span> 同伴连接 · 讨论与协作</h2>
+
+    <div class="conn-card">
+      <h3>💬 讨论议题</h3>
+      <div class="discuss-item">
+        <span class="label">📌 议题一</span>
+        <p>你觉得 "True friendship" 和 "Online friendship" 有本质区别吗？在什么情况下网络友谊也能成为真友谊？</p>
+      </div>
+      <div class="discuss-item">
+        <span class="label">📌 议题二</span>
+        <p>是否同意亚里士多德的"三种友谊"分类？你认为现在的社交关系属于哪种？</p>
+      </div>
+    </div>
+
+    <div class="conn-card">
+      <h3>🤝 协作任务 · 同伴互评</h3>
+      <p>两人一组，互相朗读对方的友谊主题短文，用英语写一段 Feedback（评价 + 建议）。</p>
+      <div class="role-grid">
+        <div class="role-card">
+          <div class="role-name">🎤 朗读者</div>
+          <p>朗读自己的作品</p>
+        </div>
+        <div class="role-card">
+          <div class="role-name">🔍 反馈者 1</div>
+          <p>关注内容：主题是否感人？事例是否具体？</p>
+        </div>
+        <div class="role-card">
+          <div class="role-name">📝 反馈者 2</div>
+          <p>关注语言：词汇是否丰富？语法是否准确？</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 家校连接 -->
+  <div class="section">
+    <h2><span class="icon">🏠</span> 家校连接 · 支持与反馈</h2>
+    <div class="conn-card">
+      <h3>👨‍👩‍👧 家庭任务</h3>
+      <p>把完成的友谊主题短文 <strong>读给家人听</strong>，请家人用中文说说读后的感受，并记录下家人的反馈。</p>
+      <div class="discuss-item">
+        <span class="label">💡 反馈记录要点</span>
+        <p>家人觉得文章最打动人的地方是什么？有没有修改建议？</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 社会连接 -->
+  <div class="section">
+    <h2><span class="icon">🌍</span> 社会连接 · 真实连接</h2>
+    <div class="platform-list">
+      <div class="platform-item">
+        <h4>✉️ 书信交换</h4>
+        <p>与兄弟/姐妹学校同龄人进行英语书信交换，体验真实的"笔友"交流</p>
+      </div>
+      <div class="platform-item">
+        <h4>📝 Write&Improve</h4>
+        <p>剑桥英语写作练习平台，提交作文获得自动评分和反馈</p>
+      </div>
+      <div class="platform-item">
+        <h4>🌐 Lang-8 / 英语论坛</h4>
+        <p>发布作品并获得母语者的修改建议</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 输出机制 -->
+  <div class="section">
+    <h2><span class="icon">🏆</span> 输出机制</h2>
+    <div class="output-section">
+      <h3>🎯 让作品被看见</h3>
+      <ul>
+        <li><strong>班级展板</strong> — 将优秀作品张贴在教室 "Friendship Wall" 上</li>
+        <li><strong>作品集</strong> — 整理自己的全部作品，制作个人 "Friendship Writing Portfolio"</li>
+      </ul>
+      <p style="font-size: 14px; color: var(--text-secondary); margin-top: 12px;">✨ 写作不是孤立的行为——每一次分享和反馈，都在让友谊的表达更加深刻。</p>
+    </div>
+  </div>
+
+  <div class="footer">
+    🌟 连接他人，连接世界 — 在对话中学会友谊的表达
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块定位 — M5 新知艺术思维</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  padding: 32px 40px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+header::after {
+  content: "M5";
+  position: absolute;
+  right: 24px;
+  bottom: -10px;
+  font-size: 80px;
+  font-weight: 900;
+  opacity: 0.12;
+  color: #fff;
+  pointer-events: none;
+}
+header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 8px;
+  letter-spacing: 1px;
+}
+header p {
+  font-size: var(--font-body);
+  margin: 0;
+  opacity: 0.9;
+}
+.section-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  transition: box-shadow 0.3s;
+}
+.section-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.section-card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 14px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--bg);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-card h2 .icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px; height: 28px;
+  background: var(--bg);
+  border-radius: 50%;
+  font-size: 14px;
+  color: var(--primary);
+}
+.section-card ul, .section-card ol {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+.section-card li {
+  margin-bottom: 6px;
+}
+.role-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: var(--font-body);
+}
+.role-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+}
+.role-table th:first-child { border-radius: 6px 0 0 0; }
+.role-table th:last-child { border-radius: 0 6px 0 0; }
+.role-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.role-table tr:last-child td { border-bottom: none; }
+.role-table tr:hover td { background: var(--bg); }
+.outcome-box {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin: 14px 0;
+}
+.outcome-item {
+  background: var(--bg);
+  border-left: 4px solid var(--primary);
+  padding: 14px 16px;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.outcome-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+.outcome-item .num {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  width: 22px; height: 22px;
+  line-height: 22px;
+  text-align: center;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  margin-right: 8px;
+}
+.outcome-item strong {
+  display: block;
+  margin-top: 6px;
+  color: var(--primary);
+}
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 12px 0;
+}
+@media (max-width: 640px) {
+  .container { padding: 16px; }
+  header { padding: 20px 24px; }
+  .section-card { padding: 16px; }
+  .two-col { grid-template-columns: 1fr; }
+  .outcome-box { grid-template-columns: 1fr; }
+}
+.check-btn {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 8px 20px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: var(--font-body);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.check-btn:hover { background: var(--primary-hover); }
+.check-btn:active { transform: scale(0.97); }
+.highlight {
+  background: #fff8e1;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+.tag {
+  display: inline-block;
+  padding: 2px 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 2px 4px 2px 0;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>📌 模块定位</h1>
+  <p>M5 新知艺术思维 · Unit 1 Friendship · 必修1 · 英语</p>
+</header>
+
+<div class="section-card">
+  <h2><span class="icon">1</span> 本模块学习什么？</h2>
+  <p><strong>M5 新知艺术思维</strong>教你两件事：</p>
+  <div class="two-col">
+    <div class="outcome-item" onclick="this.style.borderLeftColor='var(--primary-hover)'">
+      <strong>🔍 学会"解析"</strong>
+      <p style="margin:6px 0 0;font-size:14px;">当友谊语篇放在你面前，你能看出门道：故事为什么这么写？人物为什么这样做？作者想传达什么信息？</p>
+    </div>
+    <div class="outcome-item" onclick="this.style.borderLeftColor='var(--primary-hover)'">
+      <strong>🏗️ 学会"建构"</strong>
+      <p style="margin:6px 0 0;font-size:14px;">你能用英语建构出自己的理解和成果——友谊宣言、交友方案、跨文化友谊地图。</p>
+    </div>
+  </div>
+  <p style="margin-top:12px;">简言之：<span class="highlight">本模块不教"友谊的英语单词"，而是教你"如何用英语思考和表达友谊"。</span></p>
+</div>
+
+<div class="section-card">
+  <h2><span class="icon">❓</span> 本模块为什么重要？</h2>
+  <p>你已经学了 Friendship 相关词汇（trust, honest, share secrets…）和语法（Direct Speech & Indirect Speech），但你知道怎么用它们来表达你<strong>自己</strong>对友谊的理解吗？</p>
+  <p>M5 就是连接<strong>"学到"</strong>和<strong>"用到"</strong>的那座桥：</p>
+  <ul>
+    <li>它让你从 <span class="tag">看懂课文</span> 走到 <span class="tag">产出自己的内容</span></li>
+    <li>它让你从 <span class="tag">知道友谊很重要</span> 走到 <span class="tag">理解友谊为什么重要</span></li>
+    <li>它让你从 <span class="tag">跟着老师学</span> 走到 <span class="tag">自己建构知识</span></li>
+  </ul>
+  <p><strong>它教的是思维方式，不是知识点。</strong></p>
+</div>
+
+<div class="section-card">
+  <h2><span class="icon">2</span> 本模块与大单元主题的关系</h2>
+  <p>大单元主题：<strong>Unit 1 Friendship</strong></p>
+  <table class="role-table">
+    <thead>
+      <tr><th>阶段</th><th>内容</th><th>M5 的角色</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>前期模块</td>
+        <td>认识 Friendship 基本词汇、阅读 Anne's Diary、学习 Direct/Indirect Speech</td>
+        <td>打基础</td>
+      </tr>
+      <tr style="background:var(--bg);">
+        <td><strong>M5 新知艺术思维</strong></td>
+        <td><strong>解析友谊故事、建构友谊理解、产出个人成果</strong></td>
+        <td><strong>思维跃迁</strong></td>
+      </tr>
+      <tr>
+        <td>后续模块</td>
+        <td>应用友谊话题进行综合表达和项目产出</td>
+        <td>用方法</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>M5 是整个单元的"<span class="highlight">思维引擎</span>"——没有它，你掌握的只是单词和语法，而不是"用英语思考和表达友谊"的能力。</p>
+</div>
+
+<div class="section-card">
+  <h2><span class="icon">3</span> 模块衔接</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+    <div style="flex:1;min-width:150px;background:var(--bg);padding:12px;border-radius:var(--border-radius);text-align:center;">
+      <div style="font-size:24px;">📖</div>
+      <div style="font-size:13px;color:var(--text-secondary);">前序模块</div>
+      <div style="font-weight:600;font-size:14px;">了解 Anne Frank<br>转述语法 · 形容词</div>
+    </div>
+    <div style="flex:1;min-width:150px;background:var(--primary);color:#fff;padding:12px;border-radius:var(--border-radius);text-align:center;">
+      <div style="font-size:24px;">⚡</div>
+      <div style="font-size:13px;opacity:0.85;">本模块</div>
+      <div style="font-weight:600;font-size:14px;">解析与建构<br>形成自己的友谊观</div>
+    </div>
+    <div style="flex:1;min-width:150px;background:var(--bg);padding:12px;border-radius:var(--border-radius);text-align:center;">
+      <div style="font-size:24px;">🚀</div>
+      <div style="font-size:13px;color:var(--text-secondary);">后续模块</div>
+      <div style="font-weight:600;font-size:14px;">综合表达<br>项目成果输出</div>
+    </div>
+  </div>
+</div>
+
+<div class="section-card">
+  <h2><span class="icon">🎯</span> 预期学习成果</h2>
+  <p>完成本模块后，你可以拿出以下 <strong>3 样东西</strong>证明你的学习收获：</p>
+  <div class="outcome-box">
+    <div class="outcome-item" onclick="toggleDetail(this)">
+      <span class="num">1</span>
+      <strong>📝 My Friendship Manifesto</strong>
+      <p style="margin:4px 0 0;font-size:14px;color:var(--text-secondary);">用英语写出的、属于你自己的友谊宣言</p>
+      <div class="detail" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:14px;">
+        点击后展开：你的宣言可以回答——友谊对你意味着什么？你最看重朋友身上的什么品质？
+      </div>
+    </div>
+    <div class="outcome-item" onclick="toggleDetail(this)">
+      <span class="num">2</span>
+      <strong>🧰 建构与解析的方法</strong>
+      <p style="margin:4px 0 0;font-size:14px;color:var(--text-secondary);">知道如何拆解文章、建构自己的观点</p>
+      <div class="detail" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:14px;">
+        点击后展开：你将掌握一套可迁移的分析框架，未来面对任何语篇都能用上。
+      </div>
+    </div>
+    <div class="outcome-item" onclick="toggleDetail(this)">
+      <span class="num">3</span>
+      <strong>📂 案例分析或方案设计</strong>
+      <p style="margin:4px 0 0;font-size:14px;color:var(--text-secondary);">从7个递进案例中选择至少1个完成</p>
+      <div class="detail" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:14px;">
+        点击后展开：你的成果将证明你能把方法应用到具体情境中——比任何考试分数更能说明学习收获。
+      </div>
+    </div>
+  </div>
+  <button class="check-btn" onclick="this.textContent=this.textContent==='✅ 我已了解模块定位'?'📌 模块定位':'✅ 我已了解模块定位'">✅ 我已了解模块定位</button>
+</div>
+
+</div>
+<script>
+function toggleDetail(el) {
+  const detail = el.querySelector('.detail');
+  if (detail) {
+    detail.style.display = detail.style.display === 'none' ? 'block' : 'none';
+  }
+}
+</script>
+</body>
+</html>

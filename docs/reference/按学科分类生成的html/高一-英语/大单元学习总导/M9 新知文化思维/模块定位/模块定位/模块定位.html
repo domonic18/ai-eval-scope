@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块定位 — M9 新知文化思维</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0 0 6px 0;
+  letter-spacing: 0.02em;
+}
+h2 {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin: 28px 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+h2::before {
+  content: "";
+  display: inline-block;
+  width: 4px;
+  height: 18px;
+  background: var(--primary);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+h3 {
+  font-size: calc(var(--font-body) + 1px);
+  font-weight: 600;
+  color: var(--text);
+  margin: 18px 0 8px 0;
+}
+.subtitle {
+  font-size: calc(var(--font-body) - 1px);
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  transform: translateY(-1px);
+}
+.tag {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: calc(var(--font-body) - 2px);
+  font-weight: 500;
+  margin-right: 6px;
+  border: 1px solid var(--border);
+}
+.highlight-box {
+  background: #fafafa;
+  border-left: 4px solid var(--primary);
+  padding: 14px 18px;
+  border-radius: 0 6px 6px 0;
+  margin: 12px 0;
+}
+.highlight-box.warning {
+  border-left-color: #d46b08;
+  background: #fff7e6;
+}
+.highlight-box.success {
+  border-left-color: #16a34a;
+  background: #f0fdf4;
+}
+ul, ol {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+li {
+  margin-bottom: 4px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+  margin: 12px 0;
+}
+.result-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  text-align: center;
+  transition: all 0.25s;
+  cursor: default;
+}
+.result-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  transform: translateY(-2px);
+}
+.result-card .icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+.result-card h4 {
+  margin: 0 0 6px 0;
+  font-size: calc(var(--font-body) + 1px);
+  color: var(--primary);
+}
+.result-card p {
+  margin: 0;
+  font-size: calc(var(--font-body) - 1px);
+  color: var(--text-secondary);
+}
+.accordion-btn {
+  display: block;
+  width: 100%;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 12px 16px;
+  font-size: var(--font-body);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text);
+  transition: all 0.2s;
+  margin-bottom: 6px;
+}
+.accordion-btn:hover {
+  background: var(--bg);
+  border-color: var(--primary);
+}
+.accordion-btn .arrow {
+  float: right;
+  transition: transform 0.3s;
+}
+.accordion-btn.active .arrow {
+  transform: rotate(180deg);
+}
+.accordion-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease, padding 0.3s ease;
+  padding: 0 16px;
+  background: var(--card-bg);
+  border: 1px solid transparent;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  margin-top: -6px;
+  margin-bottom: 6px;
+}
+.accordion-content.open {
+  max-height: 600px;
+  padding: 14px 16px;
+  border-color: var(--border);
+  border-top-color: transparent;
+}
+@media (max-width: 640px) {
+  .container { padding: 16px; }
+  .card { padding: 14px; }
+  .grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>M9 新知文化思维</h1>
+  <div class="subtitle">模块学习总体概要 · 必修1 · Unit 1 Friendship</div>
+
+  <!-- 交互引导标签 -->
+  <div>
+    <span class="tag">📌 模块定位</span>
+    <span class="tag">🌏 文化视角</span>
+    <span class="tag">🧠 思维升级</span>
+  </div>
+
+  <!-- 1. 本模块学习什么 -->
+  <h2>本模块学习什么</h2>
+  <div class="card">
+    <p>本模块的主题是<strong>"新知文化思维"</strong>——简单来说，就是学习<strong>如何从文化差异的视角来理解和分析"友谊"这个看似熟悉的概念</strong>。</p>
+    <div class="grid">
+      <div class="result-card" onclick="this.style.borderColor='#434343'">
+        <div class="icon">🌍</div>
+        <h4>中西方朋友观</h4>
+        <p>"朋友"的定义有何不同？</p>
+      </div>
+      <div class="result-card" onclick="this.style.borderColor='#434343'">
+        <div class="icon">🤝</div>
+        <h4>交友方式差异</h4>
+        <p>建立和维系友谊的方式</p>
+      </div>
+      <div class="result-card" onclick="this.style.borderColor='#434343'">
+        <div class="icon">🔍</div>
+        <h4>深层文化原因</h4>
+        <p>差异背后的文化根源</p>
+      </div>
+      <div class="result-card" onclick="this.style.borderColor='#434343'">
+        <div class="icon">✍️</div>
+        <h4>英语表达</h4>
+        <p>用英语表达你的理解</p>
+      </div>
+    </div>
+
+    <div class="highlight-box warning">
+      <strong>❌ 你不会</strong>：简单背诵单词句式 · 重复阅读课文回答问题
+    </div>
+    <div class="highlight-box success">
+      <strong>✅ 你将会</strong>：分析跨文化友谊案例 · 提炼分析方法 · 建构友谊文化理解成果
+    </div>
+  </div>
+
+  <!-- 2. 本模块为什么重要 -->
+  <h2>本模块为什么重要</h2>
+  <div class="card">
+    <p>点击下方按钮，展开每个视角：</p>
+    <button class="accordion-btn" onclick="toggleAccordion(this)">
+      🌐 英语学习的视角
+      <span class="arrow">▾</span>
+    </button>
+    <div class="accordion-content">
+      <p>很多同学背了大量单词，但遇到外国人时仍不知如何开启真正对话。原因不是语言能力不够，而是<strong>缺乏对文化差异的理解</strong>。本模块帮你填补这个"文化空白"。</p>
+    </div>
+    <button class="accordion-btn" onclick="toggleAccordion(this)">
+      🌱 个人成长的视角
+      <span class="arrow">▾</span>
+    </button>
+    <div class="accordion-content">
+      <p>跨文化理解力是21世纪核心素养。无论你将来是否出国，你都会在新闻、社交媒体、游戏中接触不同文化的人。<strong>学会理解他们，才能更好地与这个世界相处</strong>。</p>
+    </div>
+    <button class="accordion-btn" onclick="toggleAccordion(this)">
+      📝 考试的视角
+      <span class="arrow">▾</span>
+    </button>
+    <div class="accordion-content">
+      <p>高考英语阅读理解和写作越来越注重<strong>"文化意识"和"思维品质"</strong>——这正是本模块要训练的能力。</p>
+    </div>
+  </div>
+
+  <!-- 3. 本模块与大单元主题的关系 -->
+  <h2>本模块与大单元主题的关系</h2>
+  <div class="card">
+    <p><strong>大单元主题</strong>：Unit 1 Friendship（友谊）</p>
+    <div class="highlight-box">
+      <p>前8个模块是<strong>地基、墙体、门窗</strong>（语言基础）<br>
+      M9 就是<strong>装修和设计</strong>（文化视角和文化思维）</p>
+    </div>
+    <p>它让你从<strong>"学英语"</strong>升级为<strong>"用英语思考文化"</strong>。</p>
+  </div>
+
+  <!-- 4. 本模块与前后模块的衔接 -->
+  <h2>模块衔接</h2>
+  <div class="card">
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; justify-content:center; text-align:center;">
+      <div style="background:#e8e8e8; padding:8px 16px; border-radius:6px; flex:1; min-width:120px;">
+        <span style="font-size:13px; color:var(--text-secondary);">M1—M8</span><br>
+        <strong>语言基础</strong>
+      </div>
+      <div style="font-size:24px; color:var(--accent);">→</div>
+      <div style="background:var(--primary); color:#fff; padding:8px 16px; border-radius:6px; flex:1; min-width:120px;">
+        <span style="font-size:13px; opacity:0.85;">M9</span><br>
+        <strong>文化思维</strong>
+      </div>
+      <div style="font-size:24px; color:var(--accent);">→</div>
+      <div style="background:#e8e8e8; padding:8px 16px; border-radius:6px; flex:1; min-width:120px;">
+        <span style="font-size:13px; color:var(--text-secondary);">后续模块</span><br>
+        <strong>融会贯通</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. 预期学习成果 -->
+  <h2>预期学习成果</h2>
+  <div class="grid">
+    <div class="result-card">
+      <div class="icon">🧠</div>
+      <h4>中西方友谊观对比框架</h4>
+      <p>思维导图形式，展示结构化理解</p>
+    </div>
+    <div class="result-card">
+      <div class="icon">📝</div>
+      <h4>英语短文（150—200词）</h4>
+      <p>表达对中西方友谊观差异的分析</p>
+    </div>
+    <div class="result-card">
+      <div class="icon">📔</div>
+      <h4>跨文化友谊手册</h4>
+      <p>综合运用所学，创造个人工具书</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function toggleAccordion(btn) {
+  btn.classList.toggle('active');
+  var content = btn.nextElementSibling;
+  content.classList.toggle('open');
+}
+</script>
+</body>
+</html>

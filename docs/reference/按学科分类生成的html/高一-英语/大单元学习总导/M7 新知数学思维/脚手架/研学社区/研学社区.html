@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>研学社区（案例库）</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 24px 32px; }
+.page-title {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0 0 6px;
+  padding-bottom: 12px;
+  border-bottom: 3px solid var(--primary);
+}
+.page-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 24px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 14px;
+  display: flex; align-items: center; gap: 8px;
+}
+.card h2::before {
+  content: '';
+  display: inline-block;
+  width: 4px; height: 18px;
+  background: var(--primary);
+  border-radius: 2px;
+}
+.card h3 {
+  font-size: 16px;
+  color: var(--text);
+  margin: 14px 0 8px;
+}
+.card p { margin: 8px 0; }
+.case-card {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 18px;
+  margin: 12px 0;
+  border-left: 4px solid var(--primary);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.case-card:hover {
+  box-shadow: var(--shadow);
+  transform: translateX(4px);
+}
+.case-card .case-level {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 10px;
+  border-radius: 8px;
+  color: #fff;
+  margin-bottom: 6px;
+}
+.level-life { background: #8c8c8c; }
+.level-history { background: #595959; }
+.level-challenge { background: #262626; }
+.case-card .case-title {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--primary);
+}
+.case-card .case-q {
+  font-weight: 600;
+  margin: 6px 0;
+}
+.fade-in {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s ease;
+}
+.fade-in.show { max-height: 800px; }
+.tag {
+  display: inline-block;
+  background: var(--card-bg);
+  color: var(--primary);
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--primary);
+  margin: 2px;
+}
+.branch-task {
+  background: var(--card-bg);
+  border: 2px dashed var(--accent);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin: 16px 0;
+  text-align: center;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+.branch-task:hover {
+  border-color: var(--primary);
+  background: var(--bg);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+.flow-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+}
+.flow-step .step-icon {
+  flex-shrink: 0;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+}
+.flow-step .step-content { flex: 1; }
+.flow-step .step-label { font-weight: 600; }
+.flow-step .step-desc { font-size: 13px; color: var(--text-secondary); }
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .card { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1 class="page-title">🏛️ 研学社区 · 案例库</h1>
+  <p class="page-subtitle">通过真实世界的"问题—决策—结果"案例，建立友谊理论与现实的连接</p>
+
+  <!-- 基础层 -->
+  <div class="card">
+    <h2>基础层 · 生活类案例</h2>
+
+    <div class="case-card" onclick="this.querySelector('.fade-in').classList.toggle('show')">
+      <span class="case-level level-life">生活案例</span>
+      <div class="case-title">朋友说"我需要你"——界限与支持的平衡</div>
+      <div class="case-q">核心问题：当朋友遇到困难反复求助，如何平衡支持与自我边界？</div>
+      <div class="fade-in" style="margin-top:10px;">
+        <p><strong>📋 背景：</strong>小A的好友小C最近失恋了，每天都找小A倾诉到深夜。小A很心疼朋友，但自己最近也在准备重要考试，作息被打乱后白天上课精神不济。</p>
+        <p><strong>🤔 可选方案：</strong></p>
+        <ul>
+          <li><strong>方案一：</strong>牺牲自己的学习时间，全力陪伴——可能影响学业，但确保朋友不孤单</li>
+          <li><strong>方案二：</strong>坦诚沟通，约定固定倾诉时间——尊重自己的需求也帮助朋友</li>
+          <li><strong>方案三：</strong>推荐朋友寻求老师或心理辅导——专业帮助可能更有效</li>
+        </ul>
+        <p><strong>✅ 可迁移启示：</strong>真正的友谊不是无条件牺牲，而是找到让双方都能健康持续的平衡点。学会说"我需要调整一下，但我们一起想办法"反而是更成熟的友谊表现。</p>
+      </div>
+      <span style="font-size:13px;color:var(--text-secondary);">👆 点击展开案例详情</span>
+    </div>
+
+    <div class="case-card" onclick="this.querySelector('.fade-in').classList.toggle('show')">
+      <span class="case-level level-life">生活案例</span>
+      <div class="case-title">三个人的友谊——"二人成行，一人落单"的困境</div>
+      <div class="case-q">核心问题：三人友谊中，当两个人走得更近时，第三人如何应对？</div>
+      <div class="fade-in" style="margin-top:10px;">
+        <p><strong>📋 背景：</strong>小D、小E和小F从初中开始就是铁三角。但进入高中后，小D和小E选了同一个社团，相处时间更多，小F感到被冷落，三人关系变得微妙。</p>
+        <p><strong>🤔 可选方案：</strong></p>
+        <ul>
+          <li><strong>方案一：</strong>小F主动退出，寻找新朋友——维护自尊但可能失去友谊</li>
+          <li><strong>方案二：</strong>三人开诚布公谈一次——表达感受，找到新的相处模式</li>
+          <li><strong>方案三：</strong>小D和小E主动调整，刻意邀请小F参与更多活动</li>
+        </ul>
+        <p><strong>✅ 可迁移启示：</strong>友谊不是静态的，它需要随着生活变化而调整。三人的友谊更考验每个成员的情商和包容度。</p>
+      </div>
+      <span style="font-size:13px;color:var(--text-secondary);">👆 点击展开案例详情</span>
+    </div>
+  </div>
+
+  <!-- 进阶层 -->
+  <div class="card">
+    <h2>进阶层 · 历史经典案例</h2>
+
+    <div class="case-card" onclick="this.querySelector('.fade-in').classList.toggle('show')">
+      <span class="case-level level-history">历史案例</span>
+      <div class="case-title">马克思与恩格斯——跨越阶级的毕生友谊</div>
+      <div class="case-q">核心问题：一个富商之子与一个贫困学者如何建立并维系四十年的友谊？</div>
+      <div class="fade-in" style="margin-top:10px;">
+        <p><strong>📋 背景：</strong>恩格斯出身纺织厂主家庭，马克思则是流亡学者，生活拮据。两人因共同的理想相识，恩格斯不仅与马克思共同撰写《共产党宣言》，还在经济上长期资助马克思。</p>
+        <p><strong>📊 友谊要素分析：</strong></p>
+        <ul>
+          <li><strong>共同方向：</strong>两人都坚信资本主义批判和工人解放——C.S. Lewis所说的"看向同一方向"</li>
+          <li><strong>互补互助：</strong>恩格斯提供经济支持，马克思提供理论深度——非对称但互惠</li>
+          <li><strong>坦诚分歧：</strong>两人在具体策略上常有争论，但从不影响根本信任</li>
+        </ul>
+        <p><strong>✅ 可迁移启示：</strong>伟大的友谊不需要"势均力敌"，而需要"志同道合"。你可以和朋友在不同方面各自贡献，重要的是共同的方向和相互的尊重。</p>
+      </div>
+      <span style="font-size:13px;color:var(--text-secondary);">👆 点击展开案例详情</span>
+    </div>
+  </div>
+
+  <!-- 挑战层 -->
+  <div class="card">
+    <h2>挑战层 · 复杂系统案例</h2>
+
+    <div class="case-card" onclick="this.querySelector('.fade-in').classList.toggle('show')">
+      <span class="case-level level-challenge">复杂系统</span>
+      <div class="case-title">社交媒体中的大规模友谊网络</div>
+      <div class="case-q">核心问题：当"朋友"变成数字关系中的一个节点，友谊的本质发生了什么变化？</div>
+      <div class="fade-in" style="margin-top:10px;">
+        <p><strong>📋 背景：</strong>社交媒体的兴起改变了人际关系的拓扑结构。一个普通用户的社交网络可能包含：500+"好友"→ 20-30个经常互动的人 → 3-5个亲密好友。</p>
+        <p><strong>🔍 分析框架（邓巴数理论）：</strong></p>
+        <ul>
+          <li>150人——一个人能维持稳定社交关系的上限（邓巴数）</li>
+          <li>50人——经常联系的朋友</li>
+          <li>15人——值得信任的密友</li>
+          <li>5人——最亲密的知己</li>
+        </ul>
+        <p><strong>✅ 可迁移启示：</strong>数字时代我们看似拥有更多"朋友"，但亲密关系的深度并没有增加。你需要有意识地选择和投入——将有限的时间和精力放在真正重要的人身上。</p>
+      </div>
+      <span style="font-size:13px;color:var(--text-secondary);">👆 点击展开案例详情</span>
+    </div>
+  </div>
+
+  <!-- 分支任务 -->
+  <div class="card">
+    <h2>🎯 "如果你是决策者" 分支任务</h2>
+
+    <div class="branch-task" onclick="document.getElementById('decision-task').classList.toggle('show')">
+      <strong>🧠 决策挑战</strong>
+      <p>看完以上案例，选择一个你最有感触的情境，用"决策框架"重新推演。</p>
+      <span style="font-size:13px;color:var(--text-secondary);">👆 点击展开决策框架</span>
+    </div>
+    <div id="decision-task" class="fade-in" style="margin-top:8px;">
+      <div class="flow-step">
+        <div class="step-icon">1</div>
+        <div class="step-content">
+          <div class="step-label">情境选择</div>
+          <div class="step-desc">从以上案例中选择一个你最有感触的情境</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-icon">2</div>
+        <div class="step-content">
+          <div class="step-label">问题界定</div>
+          <div class="step-desc">用一句话说清：这个友谊困局的本质是什么？</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-icon">3</div>
+        <div class="step-content">
+          <div class="step-label">方案生成</div>
+          <div class="step-desc">提出2-3个可能的解决方案，不评判好坏</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-icon">4</div>
+        <div class="step-content">
+          <div class="step-label">工具辅助</div>
+          <div class="step-desc">用"工具库"中的SWOT分析或思维导图辅助决策</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-icon">5</div>
+        <div class="step-content">
+          <div class="step-label">反思迁移</div>
+          <div class="step-desc">这个推演对你自己的友谊有什么启发？</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin:16px 0;">
+      <span class="tag">SWOT分析</span>
+      <span class="tag">思维导图</span>
+      <span class="tag">概念图</span>
+      <span class="tag">角色扮演</span>
+    </div>
+  </div>
+
+  <div style="text-align:center;padding:20px 0;color:var(--text-secondary);font-size:13px;">
+    研学社区 · 友谊主题学习模块
+  </div>
+</div>
+</body>
+</html>

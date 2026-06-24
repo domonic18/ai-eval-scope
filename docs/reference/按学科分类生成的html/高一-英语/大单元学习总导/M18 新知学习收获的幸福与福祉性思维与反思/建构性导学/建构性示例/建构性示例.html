@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性示例：我的学习幸福感图谱</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px;
+  box-sizing: border-box;
+}
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin: 0 0 6px 0;
+  font-weight: 700;
+}
+h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 28px 0 12px 0;
+  font-weight: 600;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--accent);
+}
+h3 {
+  font-size: calc(var(--font-body) + 2px);
+  color: var(--primary);
+  margin: 20px 0 10px 0;
+  font-weight: 600;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.subtitle {
+  color: var(--text-secondary);
+  font-size: calc(var(--font-body) - 1px);
+  margin-bottom: 20px;
+}
+.step-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 12px 0;
+}
+.step-item {
+  flex: 1 1 280px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px 16px;
+  cursor: default;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.step-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+.step-num {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  text-align: center;
+  line-height: 26px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-right: 8px;
+}
+.perma-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+.perma-tag {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.2s, opacity 0.2s;
+}
+.perma-tag:hover {
+  transform: scale(1.05);
+  opacity: 0.85;
+}
+.perma-p { background: #fadb14; color: #333; }
+.perma-e { background: #1677ff; }
+.perma-r { background: #f5222d; }
+.perma-m { background: #52c41a; color: #333; }
+.perma-a { background: #fa8c16; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: calc(var(--font-body) - 1px);
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+th {
+  background: var(--bg);
+  font-weight: 600;
+  color: var(--primary);
+}
+.checklist {
+  list-style: none;
+  padding: 0;
+}
+.checklist li {
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.checklist li::before {
+  content: "☐ ";
+  font-size: 16px;
+  margin-right: 6px;
+  color: var(--primary);
+}
+.quote-box {
+  background: var(--bg);
+  border-left: 4px solid var(--accent);
+  padding: 12px 16px;
+  margin: 12px 0;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  font-style: italic;
+  color: var(--text-secondary);
+}
+.btn {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn:hover {
+  background: var(--primary-hover);
+}
+.accordion-toggle {
+  cursor: pointer;
+  user-select: none;
+}
+.accordion-toggle::after {
+  content: " ▼";
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.accordion-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+}
+.accordion-body.open {
+  max-height: 600px;
+}
+@media (max-width: 600px) {
+  .container { padding: 16px; }
+  .step-item { flex: 1 1 100%; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="card">
+  <h1>建构性示例导学</h1>
+  <div class="subtitle">建构我的学习幸福感图谱 · Unit 1 Friendship</div>
+  <p>从"学过了"到"学幸福了"——构建属于你的学习幸福感图谱。</p>
+</div>
+
+<div class="card">
+  <h2>一、真实建构情境</h2>
+  <p>你刚刚完成了 Unit 1 Friendship 的全部学习。今天回想起来，你会发现——整个过程中有些时刻让你特别开心，有些时刻让你觉得很充实，还有些时刻你甚至不记得是"在学习"还是"在玩"。这些时刻就是你的<strong>"学习幸福时刻"</strong>。</p>
+  <p>现在，你受邀在班级的"学习幸福分享会"上做 5 分钟分享。你需要一个<strong>可视化的工具</strong>，把你的学习幸福故事讲得生动、有层次。这就是你的建构任务：<strong>建构一份"我的学习幸福感图谱"</strong>。</p>
+</div>
+
+<div class="card">
+  <h2>二、建构任务速览</h2>
+  <table>
+    <tr><th>项目</th><th>内容</th></tr>
+    <tr><td><strong>成果名称</strong></td><td>我的学习幸福感图谱（My Learning Happiness Map）</td></tr>
+    <tr><td><strong>用途</strong></td><td>班级分享会展示，也让未来的自己看到"学习曾经如此美好"</td></tr>
+    <tr><td><strong>形式</strong></td><td>A4 纸手绘 / 电子画板 / PPT 一页</td></tr>
+    <tr><td><strong>最低标准</strong></td><td>至少标注 3 个幸福时刻，每个说明幸福感类型和来源</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h2>三、建构六步法</h2>
+  <p class="accordion-toggle" onclick="toggleAccordion(this)">点击展开/收起详细步骤</p>
+
+  <div class="accordion-body open" id="steps-body">
+    <div class="step-grid">
+      <div class="step-item">
+        <span class="step-num">1</span><strong>回忆</strong>——画时间线
+        <p style="font-size:13px;color:var(--text-secondary);margin:8px 0 0;">回顾整个 Unit 1 学习过程，标注 5—8 个关键节点。</p>
+      </div>
+      <div class="step-item">
+        <span class="step-num">2</span><strong>标记</strong>——幸福指数
+        <p style="font-size:13px;color:var(--text-secondary);margin:8px 0 0;">每个节点标注幸福感（1—10 分）并简单说明。</p>
+      </div>
+      <div class="step-item">
+        <span class="step-num">3</span><strong>归类</strong>——PERMA 色标
+        <p style="font-size:13px;color:var(--text-secondary);margin:8px 0 0;">用颜色标注幸福类型：P/积极情绪、E/投入、R/关系、M/意义、A/成就。</p>
+      </div>
+      <div class="step-item">
+        <span class="step-num">4</span><strong>分析</strong>——来源追踪
+        <p style="font-size:13px;color:var(--text-secondary);margin:8px 0 0;">对得分最高的 2—3 个时刻，写 50—80 字分析。</p>
+      </div>
+      <div class="step-item">
+        <span class="step-num">5</span><strong>绘制</strong>——完成图谱
+        <p style="font-size:13px;color:var(--text-secondary);margin:8px 0 0;">整合到一张 A4 纸上，中心时间线 + 标注。</p>
+      </div>
+      <div class="step-item">
+        <span class="step-num">6</span><strong>表达</strong>——英语分享稿
+        <p style="font-size:13px;color:var(--text-secondary);margin:8px 0 0;">准备一段 80—120 词的英语分享稿。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>四、PERMA 幸福色标</h2>
+  <p>点击色标查看对应类型说明：</p>
+  <div class="perma-bar">
+    <span class="perma-tag perma-p" onclick="alert('P = 积极情绪 Positive Emotion\n例：课堂上的笑声、读到有趣内容的愉悦')">P 积极情绪</span>
+    <span class="perma-tag perma-e" onclick="alert('E = 投入专注 Engagement\n例：完全沉浸在阅读中忘记时间')">E 投入专注</span>
+    <span class="perma-tag perma-r" onclick="alert('R = 关系认可 Relationships\n例：被同学称赞、老师肯定你的发言')">R 关系认可</span>
+    <span class="perma-tag perma-m" onclick="alert('M = 意义感 Meaning\n例：发现英语能帮你了解世界文化')">M 意义感</span>
+    <span class="perma-tag perma-a" onclick="alert('A = 成就感 Achievement\n例：背完一篇课文、考试进步')">A 成就感</span>
+  </div>
+</div>
+
+<div class="card">
+  <h2>五、支架工具</h2>
+  <ul>
+    <li><strong>幸福时刻记录表模板</strong>：纸质本或手机备忘录，随时记录"此刻学得很开心"的瞬间。</li>
+    <li><strong>关键句式</strong>："I felt happy when…" / "The reason why I enjoyed this moment is…" / "This experience made me realize that learning can bring…"</li>
+    <li><strong>PERMA 色标卡</strong>：可打印贴在桌边（黄色=P、蓝色=E、红色=R、绿色=M、橙色=A）。</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>六、成果样例与评价</h2>
+  <div class="quote-box">
+    <strong>成果名称</strong>：My Learning Happiness Map of Unit 1 Friendship<br>
+    <strong>评价标准</strong>：① 科学性——分类是否合理（符合 PERMA）② 完整性——至少 3 个时刻，各有分数、色标、分析 ③ 美观性——图文结合，标注清晰
+  </div>
+  <p><strong>推荐布局</strong>：A4 纸横用，中心绘时间线；上方标注分数（⭐ 或数字），下方用彩色圆点标注分类；高分时刻外围画"放大镜"区域写分析；右上角写一句"学习幸福宣言"。</p>
+</div>
+
+<div class="card">
+  <h2>七、优化建议</h2>
+  <ul>
+    <li><strong>幸福时刻太少</strong>：回顾得更仔细——不一定是"课堂高光"，也可以是"一个人做题时突然懂了"的安静时刻。</li>
+    <li><strong>分析太浅</strong>：追问自己"然后呢？"——不只是"我很开心"，而是"开心之后我做了什么？"</li>
+    <li><strong>想升级</strong>：把 PERMA 数据做成雷达图，直观展示你的"学习幸福感结构"。</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>八、自我评价</h2>
+  <ul class="checklist">
+    <li>我的图谱上至少有 3 个标注了分数和色标的幸福时刻</li>
+    <li>每个幸福时刻我都写清楚了"发生了什么"和"为什么感到幸福"</li>
+    <li>我使用了 PERMA 模型（或类似框架）对幸福时刻进行了分类</li>
+    <li>我准备了一段 80 词以上的英语分享稿</li>
+    <li>我的图谱看起来整洁、有色彩、让人想停下来仔细看</li>
+  </ul>
+</div>
+
+</div>
+<script>
+function toggleAccordion(el) {
+  var body = document.getElementById('steps-body');
+  body.classList.toggle('open');
+  el.innerHTML = body.classList.contains('open') ? '点击收起详细步骤' : '点击展开详细步骤';
+}
+</script>
+</body>
+</html>

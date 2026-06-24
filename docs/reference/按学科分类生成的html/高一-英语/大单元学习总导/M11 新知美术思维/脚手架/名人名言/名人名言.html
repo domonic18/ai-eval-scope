@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名人名言 — 视觉思维与友谊</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); font-size: var(--font-body); line-height: var(--line-height); }
+
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+
+.hero { background: linear-gradient(135deg, #434343 0%, #595959 100%); color: #fff; padding: 36px 32px; border-radius: var(--border-radius); margin-bottom: 24px; text-align: center; }
+.hero h1 { font-size: var(--font-h1); margin: 0 0 6px; }
+.hero .subtitle { font-size: 15px; opacity: 0.85; margin: 0; }
+.hero .badge { display: inline-block; background: rgba(255,255,255,0.18); padding: 4px 14px; border-radius: 20px; font-size: 13px; margin-top: 10px; }
+
+/* 人物卡片 */
+.person-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 22px 26px; margin-bottom: 18px; border: 1px solid var(--border); transition: box-shadow 0.3s; }
+.person-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.person-card .person-header { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.person-card .avatar { width: 48px; height: 48px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.person-card .person-name { font-size: 17px; font-weight: 700; color: var(--primary); }
+.person-card .person-tag { font-size: 13px; color: var(--text-secondary); }
+.person-card h3 { font-size: 15px; color: var(--text); margin: 14px 0 4px; }
+.person-card p { margin: 0 0 8px; }
+.person-card .insight { background: #f0f0f0; border-radius: 6px; padding: 12px 16px; margin: 8px 0; border-left: 3px solid var(--accent); }
+
+/* 阅读路径 */
+.reading-path { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 22px 26px; margin-bottom: 18px; border: 1px solid var(--border); }
+.reading-path h2 { font-size: var(--font-h2); color: var(--primary); margin: 0 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); }
+.path-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px dashed var(--border); }
+.path-item:last-child { border-bottom: none; }
+.path-level { font-size: 13px; padding: 2px 10px; border-radius: 12px; background: #e8e8e8; white-space: nowrap; height: fit-content; }
+.path-level.basic { background: #d4d4d4; }
+.path-level.advanced { background: #bdbdbd; color: #fff; }
+.path-level.extra { background: var(--accent); color: #fff; }
+
+/* 思考任务 */
+.think-task { background: #fafafa; border: 2px dashed var(--border); border-radius: var(--border-radius); padding: 20px 24px; margin: 18px 0; }
+.think-task h3 { font-size: 16px; color: var(--primary); margin: 0 0 12px; }
+
+/* 翻转卡片交互 */
+.flip-area { perspective: 1000px; margin: 14px 0; }
+.flip-inner { position: relative; width: 100%; min-height: 80px; transition: transform 0.6s; transform-style: preserve-3d; cursor: pointer; }
+.flip-inner.flipped { transform: rotateX(180deg); }
+.flip-front, .flip-back { position: absolute; width: 100%; backface-visibility: hidden; border-radius: 6px; padding: 14px; box-sizing: border-box; }
+.flip-front { background: #f0f0f0; z-index: 2; }
+.flip-back { background: #e0e0e0; transform: rotateX(180deg); }
+
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .hero { padding: 24px 16px; }
+  .person-card, .reading-path { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="hero">
+    <span class="badge">名人 · 传记 · 思维</span>
+    <h1>🧠 视觉思维与友谊研究的关键人物</h1>
+    <p class="subtitle">从亚里士多德到信息可视化大师——把智慧迁移到你的英语学习中</p>
+  </div>
+
+  <!-- 人物 1：亚里士多德 -->
+  <div class="person-card">
+    <div class="person-header">
+      <div class="avatar">🏛️</div>
+      <div>
+        <div class="person-name">Aristotle（亚里士多德）</div>
+        <div class="person-tag">希腊哲学家 · 公元前384—322年</div>
+      </div>
+    </div>
+
+    <h3>❓ 关键问题</h3>
+    <p>友谊的本质是什么？友谊有没有"等级"？</p>
+
+    <h3>💡 思维突破点</h3>
+    <p>在《尼各马可伦理学》中，他最早将友谊分为三类——<strong>功利型（utility）</strong>、<strong>快乐型（pleasure）</strong>和<strong>美德型（virtue）</strong>，定义了"真正的友谊"是基于美德的。</p>
+
+    <div class="insight">
+      <strong>🔗 对当下的启示</strong>：你的朋友圈里有不同的朋友，你可以用亚里士多德的分类法来理解和描述它们。用英语说说看：<em>"…is a friend of utility, …is a friend of pleasure, and …is a friend of virtue."</em>
+    </div>
+
+    <div class="flip-area">
+      <div class="flip-inner" onclick="this.classList.toggle('flipped')" style="height: 80px;">
+        <div class="flip-front" style="text-align: center; line-height: 52px;">
+          👆 点击翻转查看精简卡片
+        </div>
+        <div class="flip-back" style="text-align: center; line-height: 52px;">
+          🏛️ 希腊哲学家 · 第一个系统研究友谊本质的思想家
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 人物 2：Sunni Brown -->
+  <div class="person-card">
+    <div class="person-header">
+      <div class="avatar">✏️</div>
+      <div>
+        <div class="person-name">Sunni Brown（桑妮·布朗）</div>
+        <div class="person-tag">美国作家 · 视觉思维研究者</div>
+      </div>
+    </div>
+
+    <h3>❓ 关键问题</h3>
+    <p>涂鸦（doodling）是浪费时间吗？它能否帮助学习？</p>
+
+    <h3>💡 思维突破点</h3>
+    <p>她在 <em>The Doodle Revolution</em>《涂鸦革命》中证明，<strong>视觉涂鸦不是分心</strong>，而是深度信息处理的方式——当你在课堂上画图时，你的大脑正在以更高层次处理信息。</p>
+
+    <div class="insight">
+      <strong>🔗 对当下的启示</strong>：用涂鸦、画图、标记的方式学英语，比单纯抄写更有效——这正是本模块"美术思维"的理论基础。
+    </div>
+
+    <div class="flip-area">
+      <div class="flip-inner" onclick="this.classList.toggle('flipped')" style="height: 80px;">
+        <div class="flip-front" style="text-align: center; line-height: 52px;">
+          👆 点击翻转查看精简卡片
+        </div>
+        <div class="flip-back" style="text-align: center; line-height: 52px;">
+          ✏️《涂鸦革命》作者 · 视觉涂鸦是深度信息处理方式
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 人物 3：David McCandless -->
+  <div class="person-card">
+    <div class="person-header">
+      <div class="avatar">📊</div>
+      <div>
+        <div class="person-name">David McCandless（大卫·麦坎德利斯）</div>
+        <div class="person-tag">英国信息可视化设计师</div>
+      </div>
+    </div>
+
+    <h3>❓ 关键问题</h3>
+    <p>如何把复杂信息变得一目了然？</p>
+
+    <h3>💡 思维突破点</h3>
+    <p>他用<strong>信息可视化（infographics）</strong>将枯燥的数据变成吸引人的视觉故事。他的作品证明：好的设计能让信息在 3 秒内被理解。</p>
+
+    <div class="insight">
+      <strong>🔗 对当下的启示</strong>：你学到的友谊词汇和句型，也可以通过可视化方式变成让别人愿意看的内容。试试把 Unit 1 的课文画成一张信息图！
+    </div>
+
+    <div class="flip-area">
+      <div class="flip-inner" onclick="this.classList.toggle('flipped')" style="height: 80px;">
+        <div class="flip-front" style="text-align: center; line-height: 52px;">
+          👆 点击翻转查看精简卡片
+        </div>
+        <div class="flip-back" style="text-align: center; line-height: 52px;">
+          📊《信息之美》作者 · 信息可视化让复杂数据一目了然
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 深度阅读路径 -->
+  <div class="reading-path">
+    <h2>📚 深度阅读路径</h2>
+    <div class="path-item">
+      <span class="path-level basic">基础</span>
+      <div><strong>《涂鸦革命》</strong>（Sunni Brown 著，中文版）— 了解视觉思维的基本理念</div>
+    </div>
+    <div class="path-item">
+      <span class="path-level advanced">进阶</span>
+      <div><strong>David McCandless 个人网站</strong> — <a href="https://informationisbeautiful.net" target="_blank" style="color: var(--primary);">informationisbeautiful.net</a> — 看信息可视化的顶级案例</div>
+    </div>
+    <div class="path-item">
+      <span class="path-level extra">扩展</span>
+      <div>搜索 <strong>"Visual Thinking + Education"</strong> TED 演讲视频</div>
+    </div>
+  </div>
+
+  <!-- 思考任务 -->
+  <div class="think-task">
+    <h3>💭 "如果你是他" 思考任务</h3>
+    <p><strong>任务 1</strong>：如果你是 Sunni Brown，你如何说服一位英语老师让学生在课堂上画图？请你用英语写一段 <strong>3 分钟</strong>的演讲提纲。</p>
+    <p><strong>任务 2</strong>：如果你是 David McCandless，你会怎样把 Unit 1 Friendship 的课文"可视化"成一张信息图？<strong>画出你的初步想法</strong>。</p>
+    <div style="text-align: center; margin-top: 14px;">
+      <button class="flip-btn" style="background: var(--primary); color: #fff; border: none; padding: 8px 24px; border-radius: 6px; cursor: pointer; font-size: 14px;" onclick="showExample()">💡 查看示例思路</button>
+    </div>
+    <div id="example-ideas" style="display: none; margin-top: 14px; padding: 14px; background: #fff; border-radius: 6px; border: 1px solid var(--border);">
+      <p><strong>🎤 任务 1 示例提纲</strong>：① Attention：展示一张涂鸦前后的笔记对比 → ② 科学研究数据：记忆留存率 +65% → ③ 具体建议：每节课 5 分钟视觉笔记时间 → ④ 承诺成果</p>
+      <p><strong>📊 任务 2 示例</strong>：中心放 "FRIENDSHIP" 大字 → 四周放射 4 个分支：Qualities（形容词）/ Activities（动名词短语）/ Proverbs（谚语）/ My Story（一段 personal anecdote）→ 用不同颜色区分</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function showExample() {
+  const el = document.getElementById('example-ideas');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+</body>
+</html>

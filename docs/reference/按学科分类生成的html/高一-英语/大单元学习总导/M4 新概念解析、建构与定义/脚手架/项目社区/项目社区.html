@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目社区 - Friendship PBL Projects</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.wrapper {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+}
+.header {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  border-left: 4px solid var(--primary);
+}
+.header h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+.header .subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.section-title {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 28px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--border);
+}
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+}
+.card .dimension-tag {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  color: #fff;
+}
+.tag-a { background: #5b8def; }
+.tag-b { background: #52c41a; }
+.tag-c { background: #fa8c16; }
+.card h3 {
+  font-size: 16px;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+.card .meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+.card p {
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+.card .skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.card .skills span {
+  font-size: 12px;
+  background: var(--bg);
+  padding: 2px 8px;
+  border-radius: 10px;
+  color: var(--text-secondary);
+}
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.tab-btn {
+  padding: 8px 18px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+.tab-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.tab-btn:hover:not(.active) {
+  background: var(--bg);
+}
+.tab-content {
+  display: none;
+  background: var(--card-bg);
+  border-radius: 0 8px 8px 8px;
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+.tab-content.active { display: block; }
+.detail-section {
+  margin-bottom: 16px;
+}
+.detail-section h4 {
+  font-size: 15px;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+.detail-section ul {
+  padding-left: 20px;
+  font-size: 14px;
+}
+.detail-section ul li { margin-bottom: 4px; }
+.steps {
+  counter-reset: step;
+  padding: 0;
+}
+.steps li {
+  list-style: none;
+  position: relative;
+  padding-left: 36px;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+.steps li::before {
+  counter-increment: step;
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 26px;
+  height: 26px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 26px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.checklist label {
+  display: block;
+  padding: 6px 0;
+  font-size: 14px;
+  cursor: pointer;
+}
+.checklist input[type="checkbox"] {
+  margin-right: 8px;
+  accent-color: var(--primary);
+}
+.checklist input[type="checkbox"]:checked + span {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+.choice-guide {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+.choice-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px;
+  transition: all 0.2s;
+}
+.choice-card:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow);
+}
+.choice-card .label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.choice-card .desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.resource-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 12px 0;
+}
+.resource-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 500;
+}
+.resource-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.resource-table tr:hover td {
+  background: var(--bg);
+}
+.collapse-toggle {
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: var(--primary);
+  cursor: pointer;
+  padding: 4px 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.collapse-toggle:hover { color: var(--primary-hover); }
+.collapse-toggle .arrow {
+  display: inline-block;
+  transition: transform 0.2s;
+}
+.collapse-toggle.open .arrow { transform: rotate(90deg); }
+.collapse-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+.collapse-body.open { max-height: 2000px; }
+@media (max-width: 600px) {
+  .wrapper { padding: 12px 10px; }
+  .project-grid { grid-template-columns: 1fr; }
+  .header { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<div class="header">
+  <h1>🌐 Project Community</h1>
+  <p class="subtitle">Unit 1 Friendship · 人教版必修1 · M4 项目社区脚手架</p>
+  <p style="margin-top:10px;font-size:14px;color:var(--text)">将 Friendship 概念转化为真实行动——选择你的项目路径，在探究中深化理解、综合运用英语。</p>
+</div>
+
+<!-- Tab Navigation -->
+<div class="tabs">
+  <button class="tab-btn active" data-tab="overview">项目总览</button>
+  <button class="tab-btn" data-tab="short">短周期 1-3天</button>
+  <button class="tab-btn" data-tab="medium">中周期 1-2周</button>
+  <button class="tab-btn" data-tab="long">长周期 1月+</button>
+  <button class="tab-btn" data-tab="resources">资源工具</button>
+</div>
+
+<!-- Tab: 项目总览 -->
+<div class="tab-content active" id="tab-overview">
+  <h3 style="font-size:16px;color:var(--primary);margin-bottom:12px;">三维度三层级项目矩阵</h3>
+  <p style="font-size:14px;margin-bottom:16px;">三个维度覆盖"分析问题 → 创造作品 → 推动改变"的全光谱学习路径。点击下方卡片或切换标签查看详情。</p>
+  <div class="project-grid">
+    <div class="card" onclick="switchTab('short')">
+      <span class="dimension-tag tag-a">A · 探案</span>
+      <h3>解析身边的友谊现象</h3>
+      <p>友谊语录解码 · 校园微调查 · 语料库研究</p>
+      <div class="skills">
+        <span>🔍 分析</span><span>📊 研究</span><span>✍️ 写作</span>
+      </div>
+    </div>
+    <div class="card" onclick="switchTab('short')">
+      <span class="dimension-tag tag-b">B · 建构</span>
+      <h3>创造友谊主题作品</h3>
+      <p>友谊海报 · 广播剧 · 英文杂志</p>
+      <div class="skills">
+        <span>🎨 创作</span><span>🎙️ 表达</span><span>📖 编辑</span>
+      </div>
+    </div>
+    <div class="card" onclick="switchTab('short')">
+      <span class="dimension-tag tag-c">C · 行动</span>
+      <h3>推动友谊正向改变</h3>
+      <p>友谊日计划 · 笔友计划 · 友善大使</p>
+      <div class="skills">
+        <span>🤝 行动</span><span>📋 策划</span><span>📈 评估</span>
+      </div>
+    </div>
+  </div>
+
+  <h4 style="font-size:15px;color:var(--primary);margin:16px 0 10px;">🎯 项目选择建议</h4>
+  <div class="choice-guide">
+    <div class="choice-card">
+      <div class="label">📘 基础一般 · 时间有限</div>
+      <div class="desc">推荐 A1 或 B1（短周期），单任务、低门槛，快速建立成就感。</div>
+    </div>
+    <div class="choice-card">
+      <div class="label">📗 基础良好 · 愿意合作</div>
+      <div class="desc">推荐 A2 或 B2（中周期），小组合作，产出有展示价值。</div>
+    </div>
+    <div class="choice-card">
+      <div class="label">📕 能力强 · 追求深度</div>
+      <div class="desc">推荐 A3 或 C3（长周期），研究性/行动性项目，要求综合能力。</div>
+    </div>
+  </div>
+
+  <div style="background:var(--bg);border-radius:var(--border-radius);padding:16px;margin-top:16px;">
+    <h4 style="font-size:15px;color:var(--primary);margin-bottom:8px;">💡 核心目标</h4>
+    <ul style="padding-left:20px;font-size:14px;">
+      <li><strong>概念迁移</strong>：将 M4 建构的 Friendship 模型应用于真实情境</li>
+      <li><strong>语言综合运用</strong>：听说读写全流程使用英语</li>
+      <li><strong>深度学习能力</strong>：问题界定、信息搜集、数据分析、成果呈现</li>
+      <li><strong>社会情感学习</strong>：反思友谊的现实意义，培养同理心与公民意识</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Tab: 短周期 -->
+<div class="tab-content" id="tab-short">
+  <!-- A1 -->
+  <div class="detail-section">
+    <h4><span class="dimension-tag tag-a" style="font-size:11px;padding:1px 8px;margin-right:6px;">A1</span> 友谊语录解码 · Friendship Quotes Deck</h4>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">搜集 10-15 条中英文友谊经典语录，分类并撰写英文评论，完成一套语录卡牌。</p>
+    <button class="collapse-toggle" onclick="toggleCollapse(this)"><span class="arrow">▶</span> 展开任务详情</button>
+    <div class="collapse-body">
+      <ol class="steps" style="margin-top:12px;">
+        <li><strong>搜集</strong>（30分钟）：从教材语篇、经典文献或在线资源搜集 10-15 条英文友谊语录，附中文翻译。</li>
+        <li><strong>分类</strong>（20分钟）：按 Trust / Support / Communication / Forgiveness / Shared Joy 分类，每类 2-3 条。</li>
+        <li><strong>评论</strong>（30分钟）：为每条语录写 1-2 句英文个人评论。</li>
+        <li><strong>呈现</strong>（40分钟）：制作实体卡牌或数字版（Canva/Google Slides）。</li>
+      </ol>
+      <div class="checklist" style="margin-top:10px;">
+        <p style="font-size:13px;font-weight:600;margin-bottom:4px;">✅ 评价标准</p>
+        <label><input type="checkbox"><span>语录 ≥ 10 条，标注出处</span></label>
+        <label><input type="checkbox"><span>覆盖 ≥ 3 个友谊主题类别</span></label>
+        <label><input type="checkbox"><span>每条配有英文评论（语法基本正确）</span></label>
+        <label><input type="checkbox"><span>呈现美观，有基本排版设计</span></label>
+      </div>
+    </div>
+  </div>
+
+  <!-- B1 -->
+  <div class="detail-section" style="margin-top:20px;">
+    <h4><span class="dimension-tag tag-b" style="font-size:11px;padding:1px 8px;margin-right:6px;">B1</span> 友谊主题海报 · Friendship Poster</h4>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">设计一张英文海报，以视觉化方式呈现自己对 Friendship 的定义和理解。</p>
+    <button class="collapse-toggle" onclick="toggleCollapse(this)"><span class="arrow">▶</span> 展开任务详情</button>
+    <div class="collapse-body">
+      <ol class="steps" style="margin-top:12px;">
+        <li><strong>构思</strong>（20分钟）：回顾 M4 建构的 Friendship 模型，选择 1-2 个核心要素。</li>
+        <li><strong>设计</strong>（60分钟）：设计海报布局——标题、核心定义句、3-5 个要素配图标。</li>
+        <li><strong>制作</strong>（60分钟）：使用 Canva/PPT/手绘完成，所有文字为英文。</li>
+        <li><strong>展示</strong>：拍照上传班级论坛或张贴在"Friendship Wall"上。</li>
+      </ol>
+      <div class="checklist" style="margin-top:10px;">
+        <p style="font-size:13px;font-weight:600;margin-bottom:4px;">✅ 评价标准</p>
+        <label><input type="checkbox"><span>包含清晰的核心定义句（如 "Friendship is built on ___ and ___"）</span></label>
+        <label><input type="checkbox"><span>包含 ≥ 3 个友谊要素，配有视觉元素</span></label>
+        <label><input type="checkbox"><span>英文表达准确，无重大语法错误</span></label>
+        <label><input type="checkbox"><span>整体视觉效果吸引人，排版合理</span></label>
+      </div>
+    </div>
+  </div>
+
+  <!-- C1 -->
+  <div class="detail-section" style="margin-top:20px;">
+    <h4><span class="dimension-tag tag-c" style="font-size:11px;padding:1px 8px;margin-right:6px;">C1</span> 友谊日行动计划 · Friendship Day Plan</h4>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">策划一个班级层面的 Friendship Day 活动方案，用英文撰写完整计划书。</p>
+    <button class="collapse-toggle" onclick="toggleCollapse(this)"><span class="arrow">▶</span> 展开任务详情</button>
+    <div class="collapse-body">
+      <ol class="steps" style="margin-top:12px;">
+        <li><strong>调研</strong>（30分钟）：采访 3-5 位同学，了解他们认为最能增进友谊的活动。</li>
+        <li><strong>策划</strong>（40分钟）：设计 45 分钟活动方案，含名称、流程（3-4 环节）、材料、分工。</li>
+        <li><strong>撰写</strong>（45分钟）：英文计划书（200-300 词），含 Background, Objectives, Activity Design 等。</li>
+        <li><strong>展示</strong>（3分钟）：英文展示方案，全班投票选出最佳方案并执行。</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<!-- Tab: 中周期 -->
+<div class="tab-content" id="tab-medium">
+  <div class="detail-section">
+    <h4><span class="dimension-tag tag-a" style="font-size:11px;padding:1px 8px;margin-right:6px;">A2</span> 校园友谊微调查 · Friendship Survey</h4>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">开展关于"中学生友谊观"的小规模问卷调查，收集 30-50 份问卷，用英文撰写调查报告。</p>
+    <button class="collapse-toggle" onclick="toggleCollapse(this)"><span class="arrow">▶</span> 展开任务详情</button>
+    <div class="collapse-body">
+      <ol class="steps" style="margin-top:12px;">
+        <li><strong>问卷设计</strong>（1-2天）：8-10 题英文问卷（5-6 选择题 + 2-3 开放题）</li>
+        <li><strong>数据收集</strong>（3-6天）：发放问卷，目标 30-50 份有效问卷</li>
+        <li><strong>数据分析</strong>（7-8天）：计算百分比，提取开放题关键词并归类</li>
+        <li><strong>报告撰写</strong>（9-10天）：英文调查报告（400-500 词），含 Introduction, Methodology, Findings 等，≥ 3 个图表</li>
+        <li><strong>成果发布</strong>（11-14天）：在班级或英语角展示</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="detail-section" style="margin-top:20px;">
+    <h4><span class="dimension-tag tag-b" style="font-size:11px;padding:1px 8px;margin-right:6px;">B2</span> 友谊之声广播剧 · Friendship Podcast</h4>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">编写并录制一段 5-8 分钟的英文广播剧，包含旁白和角色对话。</p>
+    <button class="collapse-toggle" onclick="toggleCollapse(this)"><span class="arrow">▶</span> 展开任务详情</button>
+    <div class="collapse-body">
+      <ol class="steps" style="margin-top:12px;">
+        <li><strong>剧本创作</strong>（1-4天）：小组合作编写英文剧本（800-1000 词）</li>
+        <li><strong>排练</strong>（5-7天）：分配角色，注意语音语调和情感表达</li>
+        <li><strong>录制制作</strong>（8-10天）：使用手机/Audacity 录制，添加背景音乐和音效</li>
+        <li><strong>上线</strong>（11-14天）：上传至班级平台，写英文作品简介</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="detail-section" style="margin-top:20px;">
+    <h4><span class="dimension-tag tag-c" style="font-size:11px;padding:1px 8px;margin-right:6px;">C2</span> 跨班笔友计划 · Pen Pal Project</h4>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">与另一个班级建立笔友关系，完成 4 轮英文书信往来 + 1 篇反思报告。</p>
+    <button class="collapse-toggle" onclick="toggleCollapse(this)"><span class="arrow">▶</span> 展开任务详情</button>
+    <div class="collapse-body">
+      <ol class="steps" style="margin-top:12px;">
+        <li><strong>配对</strong>（1-2天）：学生一对一配对，交换电子邮箱</li>
+        <li><strong>第一封信</strong>（第3天）：自我介绍信（80-120 词）</li>
+        <li><strong>第二封信</strong>（第5天）：讨论"What makes a good friend"（100-150 词）</li>
+        <li><strong>第三封信</strong>（第7天）：讨论友谊中的"两难情境"（100-150 词）</li>
+        <li><strong>第四封信</strong>（第9天）：笔友友谊总结信（120-180 词）</li>
+        <li><strong>反思报告</strong>（10-14天）：英文反思报告（200-300 词）</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<!-- Tab: 长周期 -->
+<div class="tab-content" id="tab-long">
+  <div class="detail-section">
+    <h4><span class="dimension-tag tag-a" style="font-size:11px;padding:1px 8px;margin-right:6px;">A3</span> 友谊话语语料库研究 · Friendship Discourse Corpus</h4>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">建立一个小型"Friendship Discourse Corpus"，收集 20-30 篇友谊主题文本，进行语言特征分析。</p>
+    <button class="collapse-toggle" onclick="toggleCollapse(this)"><span class="arrow">▶</span> 展开任务详情</button>
+    <div class="collapse-body">
+      <ol class="steps" style="margin-top:12px;">
+        <li><strong>语料搜集</strong>（第1周）：20-30 篇英文友谊主题文本（歌曲歌词、电影台词、演讲稿等）</li>
+        <li><strong>关键词提取</strong>（第2周）：使用 AntConc 提取频率最高的 20 个 friendship 相关关键词</li>
+        <li><strong>话语模式分析</strong>（第3周）：分析高频搭配、隐喻用法、情感词汇极性</li>
+        <li><strong>报告撰写</strong>（第4周）：英文研究报告（800-1000 词），含 Background, Findings, Discussion 等</li>
+        <li><strong>成果展示</strong>：A1 海报 + 5 分钟英文演讲</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="detail-section" style="margin-top:20px;">
+    <h4><span class="dimension-tag tag-b" style="font-size:11px;padding:1px 8px;margin-right:6px;">B3</span> 友谊主题英文杂志 · Friendship Spectrum</h4>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">小组创办一本英文电子杂志，包含 6-10 篇原创文章，涵盖多种体裁。</p>
+    <button class="collapse-toggle" onclick="toggleCollapse(this)"><span class="arrow">▶</span> 展开任务详情</button>
+    <div class="collapse-body">
+      <ol class="steps" style="margin-top:12px;">
+        <li><strong>编辑部组建</strong>（第1周）：分配角色（主编/栏目编辑/美术编辑/校对），确定栏目设置</li>
+        <li><strong>内容创作</strong>（第2-3周）：Feature Story / Interview / Fiction / Poetry / Art Gallery / Reader's Voice</li>
+        <li><strong>编辑排版</strong>（第3周）：使用 Canva / Issuu 统一排版</li>
+        <li><strong>出版推广</strong>（第4周）：发布电子杂志，举办"杂志发布派对"</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="detail-section" style="margin-top:20px;">
+    <h4><span class="dimension-tag tag-c" style="font-size:11px;padding:1px 8px;margin-right:6px;">C3</span> 校园友善大使 · Kindness Initiative</h4>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">设计并实施一个校园友善倡议行动，完成方案、实施、评估全流程。</p>
+    <button class="collapse-toggle" onclick="toggleCollapse(this)"><span class="arrow">▶</span> 展开任务详情</button>
+    <div class="collapse-body">
+      <ol class="steps" style="margin-top:12px;">
+        <li><strong>问题诊断与方案设计</strong>（第1周）：调查校园不友善现象，设计 Kindness Initiative 方案</li>
+        <li><strong>行动实施</strong>（第2-3周）：执行 4-6 项具体行动（Kindness Challenge / Friendship Bench 等）</li>
+        <li><strong>效果评估</strong>（第4周）：前后对比调查，收集反馈，撰写评估报告（500-700 词）</li>
+        <li><strong>成果展示</strong>：展示板 + 5-8 分钟英文展示 + 可复制工具包</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<!-- Tab: 资源工具 -->
+<div class="tab-content" id="tab-resources">
+  <h3 style="font-size:16px;color:var(--primary);margin-bottom:12px;">🛠️ 语言支持资源</h3>
+  <table class="resource-table">
+    <thead><tr><th>资源类型</th><th>资源名称</th><th>用途</th></tr></thead>
+    <tbody>
+      <tr><td>核心词汇表</td><td>Unit 1 Friendship 核心词汇</td><td>项目写作基础词汇支撑</td></tr>
+      <tr><td>句式支架</td><td>书信/报告/演讲稿常用句式库</td><td>降低学术写作门槛</td></tr>
+      <tr><td>语篇参考</td><td>教材语篇 + Anne's Diary 全文</td><td>语言模仿与风格参考</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="font-size:16px;color:var(--primary);margin:20px 0 12px;">🔧 技术工具推荐</h3>
+  <table class="resource-table">
+    <thead><tr><th>工具</th><th>用途</th><th>适合项目</th></tr></thead>
+    <tbody>
+      <tr><td>Google Forms / 问卷星</td><td>问卷调查、数据收集</td><td>A2, C3</td></tr>
+      <tr><td>Canva</td><td>海报设计、杂志排版</td><td>B1, B3</td></tr>
+      <tr><td>Audacity（免费）</td><td>音频录制与编辑</td><td>B2</td></tr>
+      <tr><td>AntConc（免费）</td><td>文本分析、词频统计</td><td>A3</td></tr>
+      <tr><td>Google Sites / Issuu</td><td>电子杂志发布</td><td>B3</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="font-size:16px;color:var(--primary);margin:20px 0 12px;">📚 拓展阅读</h3>
+  <ul style="padding-left:20px;font-size:14px;">
+    <li><em>Friendship</em> by Ralph Waldo Emerson</li>
+    <li><em>Of Friendship</em> by Francis Bacon</li>
+    <li><em>The Friendship Test</em> by Elizabeth Noble</li>
+    <li>TED Talk: "The secret to making friends as an adult" by Shasta Nelson</li>
+    <li>BBC Learning English — 6 Minute English: "Friendship" 系列</li>
+  </ul>
+</div>
+
+</div>
+<script>
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.querySelector('[data-tab="' + tab + '"]').classList.add('active');
+}
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    switchTab(this.getAttribute('data-tab'));
+  });
+});
+function toggleCollapse(btn) {
+  btn.classList.toggle('open');
+  var body = btn.nextElementSibling;
+  body.classList.toggle('open');
+}
+</script>
+</body>
+</html>

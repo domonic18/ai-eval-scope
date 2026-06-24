@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块五维导学</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; box-sizing: border-box; }
+
+.page-header {
+  text-align: center;
+  padding: 36px 20px;
+  background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+  border-bottom: 2px solid var(--border);
+  margin: -24px -20px 28px -20px;
+}
+.page-header h1 { font-size: var(--font-h1); color: var(--primary); font-weight: 700; }
+.page-header .subtitle { color: var(--text-secondary); margin-top: 6px; font-size: 14px; }
+.page-header .badge {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  padding: 3px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  margin-top: 8px;
+  font-weight: 600;
+}
+
+/* Dimension Navigation */
+.dim-nav {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.dim-btn {
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text);
+  transition: all 0.2s;
+  box-shadow: var(--shadow);
+}
+.dim-btn:hover { border-color: var(--primary); }
+.dim-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.dim-panel { display: none; }
+.dim-panel.active { display: block; animation: fadeIn 0.35s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 28px 0 14px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+h3 { font-size: 16px; color: var(--primary); margin: 16px 0 10px; }
+h4 { font-size: 15px; color: var(--primary-hover); margin: 12px 0 6px; }
+p { margin-bottom: 10px; }
+
+.goal-box {
+  background: #f9f9f9;
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin-bottom: 12px;
+}
+.goal-box .g-label {
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+.goal-box p { font-size: 14px; margin-bottom: 6px; padding-left: 4px; }
+
+.case-block {
+  border-left: 4px solid var(--accent);
+  padding: 12px 16px;
+  margin: 12px 0;
+  background: #fafafa;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+}
+.case-block strong { color: var(--primary); }
+.case-block p { font-size: 14px; }
+
+.method-card {
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  background: var(--card-bg);
+  box-shadow: var(--shadow);
+  transition: border-color 0.2s;
+}
+.method-card:hover { border-color: var(--accent); }
+.method-card h4 { font-size: 14px; margin-bottom: 4px; }
+.method-card p { font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
+.method-card ol, .method-card ul { font-size: 13px; color: var(--text-secondary); padding-left: 18px; margin-top: 4px; }
+.method-card li { margin-bottom: 2px; }
+
+.person-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.2s;
+}
+.person-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.person-card .avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.person-card .info h4 { font-size: 14px; margin-bottom: 2px; }
+.person-card .info p { font-size: 13px; color: var(--text-secondary); margin-bottom: 0; }
+.tag {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  margin: 2px 2px 0 0;
+}
+
+.qa-item {
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  margin-bottom: 10px;
+  background: var(--card-bg);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  cursor: pointer;
+}
+.qa-item .q {
+  padding: 14px 16px;
+  font-weight: 500;
+  font-size: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.2s;
+}
+.qa-item .q:hover { background: #fafafa; }
+.qa-item .q .arrow { color: var(--accent); transition: transform 0.3s; font-size: 12px; }
+.qa-item.open .q .arrow { transform: rotate(180deg); }
+.qa-item .a {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+  padding: 0 16px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  border-top: 0 solid var(--border);
+}
+.qa-item.open .a {
+  max-height: 300px;
+  padding: 12px 16px;
+  border-top-width: 1px;
+}
+
+@media (max-width: 640px) {
+  .container { padding: 16px 12px; }
+  .page-header { padding: 24px 16px; margin: -16px -12px 20px -12px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="page-header">
+  <h1>模块五维导学</h1>
+  <p class="subtitle">M5：M5 新知艺术思维 · 英语 · 必修1 · Unit 1 Friendship</p>
+  <span class="badge">五维导航：目标 · 价值 · 方法 · 人物 · 追问</span>
+</div>
+
+<div class="dim-nav" id="dimNav">
+  <button class="dim-btn active" data-idx="0">🎯 学习目标</button>
+  <button class="dim-btn" data-idx="1">🔮 高精尖价值</button>
+  <button class="dim-btn" data-idx="2">📚 学习方式</button>
+  <button class="dim-btn" data-idx="3">👤 关键人物</button>
+  <button class="dim-btn" data-idx="4">💡 前沿追问</button>
+</div>
+
+<!-- 维度 1: 学习目标 -->
+<div class="dim-panel active">
+  <div class="goal-box">
+    <div class="g-label">📖 知识理解目标</div>
+    <p>• 能用英语说出 Unit 1 Friendship 中关于友谊的核心词汇（<em>trust, honesty, loyal, understanding, share feelings</em> 等），并在建构成果中主动使用</p>
+    <p>• 能理解 Anne's Diary 和其他阅读材料中关于友谊的多层次含义——不只是表面情节，更是人物对友谊的深层渴望</p>
+    <p>• 能区分"友谊的描述"和"友谊的建构"——前者是复述课文，后者是你主动形成的理解</p>
+  </div>
+
+  <div class="goal-box">
+    <div class="g-label">🛠️ 能力形成目标</div>
+    <p>• <strong>建构能力：</strong>从一个具体情境出发，经历"观察→提问→收集证据→形成观点→表达产出"的完整建构过程</p>
+    <p>• <strong>解析能力：</strong>对关于友谊的英语文本进行分层分析，识别关键信息、情感态度和论证逻辑</p>
+    <p>• <strong>迁移能力：</strong>把本模块的建构原理和解析原理用到下一个模块和其他学科中去</p>
+  </div>
+
+  <div class="goal-box">
+    <div class="g-label">🧠 思维发展目标</div>
+    <p>• 从"学友谊"跃迁到<strong>"像友谊研究者一样思考"</strong>——看到文本背后的建构过程，而非只关注表面内容</p>
+    <p>• 体验"新知艺术思维"的核心：知识不是被灌进来的，而是被<strong>建构和解析</strong>出来的</p>
+  </div>
+
+  <div class="goal-box">
+    <div class="g-label">📝 表达产出目标</div>
+    <p>• 用英语写出一篇 100-150 词的 <strong>My Friendship Manifesto</strong>（友谊宣言）</p>
+    <p>• 用英语完成一份 <strong>Cross-Cultural Friendship Map</strong>（跨文化友谊地图）海报</p>
+  </div>
+</div>
+
+<!-- 维度 2: 高精尖价值 -->
+<div class="dim-panel">
+
+  <h3>🧩 与现代社会的情感能力发展</h3>
+  <div class="case-block">
+    <strong>为什么重要：</strong>在 AI 时代，技术可以替代很多重复性脑力劳动，但<strong>理解他人、建立信任、维系友谊</strong>的能力是机器无法替代的人类核心能力。学习 Friendship 话题，不只是学英语，更是为未来的社交能力打基础。
+    <p><strong>真实案例：</strong>哈佛大学历时 85 年的"成人发展研究"发现，决定一个人晚年幸福指数的不是财富或名气，而是<strong>高质量的人际关系</strong>。</p>
+  </div>
+
+  <h3>🌐 与跨文化沟通能力的联系</h3>
+  <div class="case-block">
+    <strong>为什么重要：</strong>在全球化的今天，你未来的朋友可能来自不同国家和文化。学习用英语表达对友谊的理解，是你未来参与国际交流的基本功。
+    <p><strong>真实案例：</strong>许多跨国公司招聘时特别看重候选人的 <strong>Cultural Empathy（文化共情）</strong>能力——理解和尊重不同文化背景下的人际关系模式。</p>
+  </div>
+
+  <h3>💼 与未来职业的关联</h3>
+  <div class="case-block">
+    <strong>为什么重要：</strong>从心理咨询到外交谈判，从团队管理到客户服务，几乎所有与人打交道的职业都需要"分析人际关系、建构有效沟通"的能力。
+    <p><strong>真实案例：</strong>Google 的"Project Aristotle"研究发现，高效团队最关键的成功因素是 <strong>Psychological Safety（心理安全感）</strong>——团队成员彼此信任，敢于表达不同意见。</p>
+  </div>
+</div>
+
+<!-- 维度 3: 学习方式 -->
+<div class="dim-panel">
+
+  <div class="method-card">
+    <h4>🏗️ 建构式学习法</h4>
+    <p>不要只是"读课文、背单词、做练习"。在每个学习环节中问自己：<strong>"我如何用自己的方式理解这个？"</strong></p>
+    <ul>
+      <li>读完 Anne's Diary 后，不只总结内容，而是问："如果我是 Anne，我会怎么定义朋友？"</li>
+      <li>学完建议信后，不只分析结构，而是问："我可以用这个结构写一封给朋友的英文信吗？"</li>
+    </ul>
+  </div>
+
+  <div class="method-card">
+    <h4>🔍 解析式学习法</h4>
+    <p>面对一篇文本或一个案例，用"整体→部分→关系"的方法逐步拆解。</p>
+    <ol>
+      <li>通读全文，看整体的中心意思</li>
+      <li>分段，看每段的核心信息</li>
+      <li>找信息之间的关系（因果、对比、递进）</li>
+      <li>判断作者的态度和意图</li>
+    </ol>
+  </div>
+
+  <div class="method-card">
+    <h4>🔄 对比学习法</h4>
+    <p>把不同文本中关于友谊的描述放在一起对比。把 Anne's Diary 中对友谊的渴望，和教材中建议信作者对友谊问题的分析放在一起对比：两人的友谊观有什么不同？你更认同谁？为什么？</p>
+  </div>
+
+  <div class="method-card">
+    <h4>🤖 AI 辅助学习法（可选）</h4>
+    <p>用 AI 工具辅助但不替代你的思考。</p>
+    <ul>
+      <li>把 My Friendship Manifesto 初稿输入 AI 检查语法</li>
+      <li>用 AI 生成 3 个不同的写作框架，选择最合适的继续创作</li>
+      <li>记住：<strong>AI 是工具，你的观点才是核心</strong></li>
+    </ul>
+  </div>
+</div>
+
+<!-- 维度 4: 关键人物 -->
+<div class="dim-panel">
+
+  <div class="person-card">
+    <div class="avatar">A</div>
+    <div class="info">
+      <h4>Anne Frank（安妮·弗兰克）</h4>
+      <p>Unit 1 Friendship 的核心人物。二战期间躲在阁楼里两年多，把日记本当作最好的朋友。她的故事是"友谊可以超越物理限制"的极致证明。<br><span class="tag">拓展</span> 阅读日记原文选段，观察她如何通过文字与"纸上的朋友"建立深厚联系。</p>
+    </div>
+  </div>
+
+  <div class="person-card">
+    <div class="avatar">R</div>
+    <div class="info">
+      <h4>Robert Selman（罗伯特·塞尔曼）</h4>
+      <p>哈佛大学心理学家，提出了"友谊发展阶段理论"。解释了为什么不同年龄的孩子对友谊的理解不一样——从"一起玩"到"互相理解"再到"彼此支持"的逐步深化。<br><span class="tag">拓展</span> 查一查 Selman 的"友谊五阶段"理论，看你处于哪个阶段。</p>
+    </div>
+  </div>
+
+  <div class="person-card">
+    <div class="avatar">C</div>
+    <div class="info">
+      <h4>孔子（Confucius）</h4>
+      <p>"益者三友，损者三友"（友直、友谅、友多闻）——中国文化中最经典的友谊观之一。对比他的观点和 Anne 的观点，你会发现东西方文化的趣味差异。<br><span class="tag">拓展</span> 阅读《论语》中关于友谊的章节，用英语写一段你的理解。</p>
+    </div>
+  </div>
+
+  <div class="person-card">
+    <div class="avatar">H</div>
+    <div class="info">
+      <h4>哈佛成人发展研究</h4>
+      <p>世界上持续时间最长的人类幸福感研究（85 年）。结论直指核心："Good relationships keep us happier and healthier."——这就是你正在学习的 Friendship 话题的终极科学依据。<br><span class="tag">拓展</span> 在 TED 搜索 Robert Waldinger 的演讲 "What makes a good life?"</p>
+    </div>
+  </div>
+</div>
+
+<!-- 维度 5: 前沿追问 -->
+<div class="dim-panel">
+
+  <div class="qa-item open" onclick="this.classList.toggle('open')">
+    <div class="q">
+      <span>📱 在社交媒体时代，友谊是变得更深刻还是更肤浅了？</span>
+      <span class="arrow">▾</span>
+    </div>
+    <div class="a">你有几百个"好友"和"粉丝"，但遇到真正的困难时可以向谁倾诉？Anne 只有 Kitty 一个"朋友"，但她们有极深的情感连接。<strong>数量和质量，哪个更重要？</strong></div>
+  </div>
+
+  <div class="qa-item" onclick="this.classList.toggle('open')">
+    <div class="q">
+      <span>🤖 AI 可以成为人类的朋友吗？</span>
+      <span class="arrow">▾</span>
+    </div>
+    <div class="a">有越来越多的 AI 聊天机器人（如 Replika）被设计为"AI 朋友"。如果一个人每天和 AI 聊天并感到被理解，这算不算真正的友谊？<strong>你的判断标准是什么？</strong></div>
+  </div>
+
+  <div class="qa-item" onclick="this.classList.toggle('open')">
+    <div class="q">
+      <span>📲 如果 Anne 生活在今天有智能手机的时代，她还会把日记当作朋友吗？</span>
+      <span class="arrow">▾</span>
+    </div>
+    <div class="a">她可能会发朋友圈、刷社交媒体、和远方的笔友视频通话。这些现代工具会让她不那么孤独吗？<strong>还是会带来新的问题？</strong></div>
+  </div>
+
+  <div class="qa-item" onclick="this.classList.toggle('open')">
+    <div class="q">
+      <span>🧬 友谊是一种"技能"还是"天赋"？</span>
+      <span class="arrow">▾</span>
+    </div>
+    <div class="a">有人天生善于交友，有人则比较困难。你觉得交友能力<strong>可以练习和提升</strong>吗？通过什么方法？</div>
+  </div>
+
+  <div class="qa-item" onclick="this.classList.toggle('open')">
+    <div class="q">
+      <span>🌍 跨文化友谊面临的最大挑战是什么？</span>
+      <span class="arrow">▾</span>
+    </div>
+    <div class="a">如果你和一位英国或美国学生结成笔友，除了语言障碍，你们在友谊观念上可能有什么差异？<strong>你如何弥合这些差异？</strong></div>
+  </div>
+
+</div>
+
+<p style="text-align:center;font-size:13px;color:var(--text-secondary);padding:16px 0;border-top:1px solid var(--border);margin-top:8px;">M5 新知艺术思维 · 模块五维导学 · 点击各维度标签切换</p>
+
+<script>
+(function(){
+  var btns = document.querySelectorAll('.dim-btn');
+  var panels = document.querySelectorAll('.dim-panel');
+  btns.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      btns.forEach(function(b){ b.classList.remove('active'); });
+      panels.forEach(function(p){ p.classList.remove('active'); });
+      var idx = parseInt(this.getAttribute('data-idx'));
+      this.classList.add('active');
+      panels[idx].classList.add('active');
+    });
+  });
+})();
+</script>
+
+</div>
+</body>
+</html>

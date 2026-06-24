@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学术社区 — 友谊主题</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 24px;
+}
+.container {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 16px;
+  text-align: center;
+  position: relative;
+  padding-bottom: 12px;
+}
+h1::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+h2 {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin: 28px 0 14px;
+  padding-left: 12px;
+  border-left: 3px solid var(--accent);
+}
+h3 {
+  font-size: calc(var(--font-body) + 1px);
+  font-weight: 600;
+  margin: 18px 0 10px;
+  color: var(--text);
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  transition: box-shadow 0.2s;
+}
+.card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.connection-section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.connection-header {
+  padding: 16px 20px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.2s;
+  user-select: none;
+}
+.connection-header:hover { background: var(--bg); }
+.connection-header .icon { font-size: 20px; }
+.connection-header .arrow {
+  transition: transform 0.3s;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.connection-header.active .arrow { transform: rotate(180deg); }
+.connection-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+  padding: 0 20px;
+}
+.connection-body.open { max-height: 1200px; padding: 0 20px 20px; }
+.issue-card {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 14px;
+  margin-bottom: 10px;
+  border-left: 3px solid var(--accent);
+  transition: transform 0.2s;
+  cursor: default;
+}
+.issue-card:hover {
+  transform: translateX(3px);
+}
+.issue-card .issue-num {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+  text-align: center;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  margin-right: 8px;
+}
+.role-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+.role-item {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 12px;
+  text-align: center;
+  border: 1px solid var(--border);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: default;
+}
+.role-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.role-item .role-name {
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.role-item .role-desc {
+  font-size: calc(var(--font-body) - 2px);
+  color: var(--text-secondary);
+}
+.task-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.task-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--accent);
+}
+.task-card h4 {
+  margin-bottom: 8px;
+  color: var(--primary);
+}
+.channel-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--primary);
+  border: 1px solid var(--border);
+  margin: 4px 4px 4px 0;
+  font-size: calc(var(--font-body) - 2px);
+}
+.channel-tag:hover {
+  background: var(--primary);
+  color: #fff;
+  transition: background 0.2s;
+}
+.btn-action {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 8px 20px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: var(--font-body);
+  font-family: var(--font-family);
+  transition: background 0.2s;
+}
+.btn-action:hover { background: var(--primary-hover); }
+@media (max-width: 640px) {
+  body { padding: 12px; }
+  .role-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🌐 学术社区 · 友谊主题</h1>
+  <p style="text-align:center;color:var(--text-secondary);margin-bottom:24px;">从同伴到家校再到社会，三层连接拓展你的友谊认知</p>
+
+  <!-- 同伴连接 -->
+  <div class="connection-section">
+    <div class="connection-header" onclick="toggleSection(this)">
+      <span><span class="icon">🤝</span> 同伴连接 · 讨论议题</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="connection-body open">
+      <h3>讨论议题（结构化）</h3>
+      <div class="issue-card">
+        <span class="issue-num">1</span>
+        <strong>你的文化中，"好朋友"的标准是什么？</strong> 与其他同学的文化背景有什么不同？对比一下，你会发现友谊的文化差异远比你想象的大。
+      </div>
+      <div class="issue-card">
+        <span class="issue-num">2</span>
+        <strong>如果你和好朋友发生了矛盾，你通常会怎么处理？</strong> 你的方式有效吗？有没有更好的处理方法值得尝试？
+      </div>
+      <div class="issue-card">
+        <span class="issue-num">3</span>
+        <strong>社交媒体上的"朋友"算真正的朋友吗？</strong> 为什么？请用英语阐述你的立场，并至少引用一个例子支持你的观点。
+      </div>
+
+      <h3 style="margin-top:16px;">角色分工（小组合作参考）</h3>
+      <div class="role-grid">
+        <div class="role-item">
+          <div class="role-name">🎯 发起人</div>
+          <div class="role-desc">提出讨论话题，控制时间进度</div>
+        </div>
+        <div class="role-item">
+          <div class="role-name">📝 记录员</div>
+          <div class="role-desc">用英语记录组员的核心观点</div>
+        </div>
+        <div class="role-item">
+          <div class="role-name">🎤 发言人</div>
+          <div class="role-desc">代表小组向全班/社区分享成果</div>
+        </div>
+        <div class="role-item">
+          <div class="role-name">❓ 质疑者</div>
+          <div class="role-desc">提出不同角度的反问，促进深度讨论</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 家校连接 -->
+  <div class="connection-section">
+    <div class="connection-header" onclick="toggleSection(this)">
+      <span><span class="icon">🏠</span> 家校连接 · 访谈任务</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="connection-body">
+      <div class="task-card">
+        <h4>🗣️ 家长/抚养人访谈任务</h4>
+        <p>询问一位你信任的长辈：<strong>"你年轻时最重要的朋友是谁？为什么？"</strong></p>
+        <p style="margin-top:8px;color:var(--text-secondary);">用英语记录访谈内容，并在班级共享文档中分享。通过长辈的故事，你可能发现跨越时代的友谊真谛。</p>
+        <button class="btn-action" onclick="alert('📋 访谈记录模板：\n1. 受访者与你的关系\n2. 他/她最重要的朋友是谁\n3. 他们如何认识的\n4. 为什么这段友谊如此重要\n5. 你从中学到了什么？')">📋 查看记录模板</button>
+      </div>
+      <p style="color:var(--text-secondary);font-size:calc(var(--font-body)-1px);">📎 反馈机制：将访谈记录上传至班级共享文档，互相阅读并给出至少一条有意义的评论。</p>
+    </div>
+  </div>
+
+  <!-- 社会连接 -->
+  <div class="connection-section">
+    <div class="connection-header" onclick="toggleSection(this)">
+      <span><span class="icon">🌍</span> 社会连接 · 真实交流</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="connection-body">
+      <h3>推荐渠道</h3>
+      <div style="margin-bottom:12px;">
+        <span class="channel-tag" onclick="alert('PenPal World: https://www.penpalworld.com')">📧 PenPal World</span>
+        <span class="channel-tag" onclick="alert('Tandem: 语言交换社区App，支持文字/语音/视频')">💬 Tandem</span>
+      </div>
+      <div class="task-card">
+        <h4>📨 国际笔友任务</h4>
+        <p>与一位英语为母语的笔友交换一封关于"友谊"主题的邮件，对比你们的文化差异。用英语完成并保存邮件副本作为学习成果。</p>
+      </div>
+
+      <h3>📤 输出机制</h3>
+      <div style="background:var(--bg);border-radius:6px;padding:14px;margin-top:8px;">
+        <ul style="padding-left:20px;margin:0;">
+          <li>将讨论和访谈成果整理成 <strong>英语短文</strong>，发布在班级博客/学习平台上</li>
+          <li>每人至少 <strong>阅读和评论</strong> 2位同学的分享</li>
+          <li>期末汇总形成 <strong>"友谊主题班级文集"</strong> 电子书</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:24px;padding:16px;background:var(--card-bg);border-radius:var(--border-radius);border:1px solid var(--border);box-shadow:var(--shadow);">
+    <p style="color:var(--text-secondary);font-size:var(--font-body);">💡 从身边的对话到跨文化的交流，每一步都是对友谊理解的拓展</p>
+  </div>
+</div>
+<script>
+function toggleSection(header) {
+  header.classList.toggle('active');
+  const body = header.nextElementSibling;
+  body.classList.toggle('open');
+}
+</script>
+</body>
+</html>

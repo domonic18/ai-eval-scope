@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性示例 · 示范分析过程</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px;
+  box-sizing: border-box;
+}
+.header {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--primary);
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 4px;
+  color: var(--primary);
+}
+.header .meta { font-size: 13px; color: var(--text-secondary); }
+.sec-title {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 20px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--border);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sec-title::after {
+  content: "▼";
+  font-size: 11px;
+  color: var(--accent);
+  transition: transform 0.3s;
+}
+.sec-title.collapsed::after { transform: rotate(-90deg); }
+.sec-body {
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+  max-height: none;
+}
+.sec-body.collapsed { max-height: 0; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+.card h3 {
+  font-size: 16px;
+  margin: 0 0 6px;
+  color: var(--primary);
+}
+.scenario-box {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 8px 0;
+  font-size: 14px;
+}
+.scenario-box strong { color: #d48806; }
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 8px 0;
+}
+.info-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 500;
+}
+.info-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.info-table tr:nth-child(even) td { background: #fafafa; }
+.step-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--accent);
+}
+.step-card .step-label {
+  font-size: 12px;
+  color: #fff;
+  background: var(--primary);
+  display: inline-block;
+  border-radius: 4px;
+  padding: 1px 8px;
+  margin-bottom: 6px;
+}
+.step-card p { margin: 4px 0; font-size: 14px; }
+.conclusion {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+  font-size: 14px;
+}
+.conclusion strong { color: #389e0d; }
+.warn-box {
+  background: #fff2f0;
+  border: 1px solid #ffccc7;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 8px 0;
+  font-size: 13px;
+}
+.warn-box strong { color: #cf1322; }
+.practice-box {
+  background: #e6f7ff;
+  border: 1px solid #91d5ff;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+  font-size: 13px;
+}
+.practice-box strong { color: #096dd9; }
+.check-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 640px) { .check-grid { grid-template-columns: 1fr; } }
+.check-item {
+  background: var(--card-bg);
+  border-radius: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13px;
+}
+.check-item:hover { border-color: var(--primary); }
+.check-item.done {
+  background: var(--bg);
+  border-color: var(--accent);
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+.check-item::before {
+  content: "☐ ";
+  font-size: 16px;
+}
+.check-item.done::before { content: "☑ "; color: var(--primary); }
+.method-tip {
+  background: #f9f0ff;
+  border: 1px solid #d3adf7;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 8px 0;
+  font-size: 13px;
+}
+.method-tip strong { color: #722ed1; }
+.footer-hint {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 12px;
+  margin-top: 16px;
+  border-top: 1px solid var(--border);
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>📖 解析性示例</h1>
+    <div class="meta">M16 · 新知应用与创新中的真善美思维与反思 &nbsp;|&nbsp; Unit 1 Friendship · 必修1</div>
+    <p style="margin:8px 0 0;font-size:14px;color:var(--text-secondary);">看专家如何逐层拆解友谊主题素材 —— 点击标题折叠/展开各模块</p>
+  </div>
+
+  <!-- 1. 解析任务情境 -->
+  <div class="sec-title" onclick="toggleSec(this)">1. 解析任务情境</div>
+  <div class="sec-body">
+    <div class="card">
+      <div class="scenario-box">
+        <strong>📋 情境案例：</strong><br>
+        小明和高一是最好的朋友，但最近因为一件小事闹了矛盾。上周小明生日，高一没有像往年一样准时送上祝福，直到晚上才发了一条简短的"Happy Birthday"。小明觉得很失落——"他是不是不在意我了？"而高一解释说最近在准备竞赛，真的太忙了。请你分析这段友谊矛盾中，<strong>根本原因是什么？</strong>
+      </div>
+      <p style="font-size:13px;color:var(--text-secondary);margin:8px 0 0;">这个情境贴近校园生活，涉及"期待 vs 现实""忙碌 vs 在乎"的核心矛盾，适合用"真善美"框架进行分析。</p>
+    </div>
+  </div>
+
+  <!-- 2. 核心问题 -->
+  <div class="sec-title" onclick="toggleSec(this)">2. 核心问题</div>
+  <div class="sec-body">
+    <div class="card">
+      <p><strong>🔑 核心问题：</strong>"这段友谊矛盾中，<strong>根本原因</strong>是什么？—— 是高一不够在乎小明，还是小明对友谊的期待需要调整？"</p>
+      <p style="font-size:13px;color:var(--text-secondary);">这个问题直指"真善美"三个维度：事实（真）、动机（善）、感受（美）。</p>
+    </div>
+  </div>
+
+  <!-- 3. 关键信息提取 -->
+  <div class="sec-title" onclick="toggleSec(this)">3. 关键信息提取</div>
+  <div class="sec-body">
+    <div class="card">
+      <table class="info-table">
+        <tr><th>情境信息</th><th>这个信息说明什么</th><th>为什么重要</th></tr>
+        <tr><td>"最好的朋友"</td><td>两人关系亲密，对彼此有较高的期待</td><td>期待越高，落差带来的失落越大</td></tr>
+        <tr><td>"没有像往年一样准时"</td><td>过去一直是准时的——这是第一次"迟到"</td><td>行为模式发生了变化，值得关注</td></tr>
+        <tr><td>"直到晚上才发了一条简短的祝福"</td><td>不是完全忘记，而是延迟且简单</td><td>说明高一记得这件事，但投入的精力有限</td></tr>
+        <tr><td>"最近在准备竞赛"</td><td>高一处于高度忙碌状态</td><td>忙碌程度影响了社交精力分配</td></tr>
+        <tr><td>"他是不是不在意我了？"</td><td>小明将延迟解读为"不被在乎"</td><td>这是核心误解——推测而非事实</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- 4. 专家解析过程 -->
+  <div class="sec-title" onclick="toggleSec(this)">4. 专家解析过程（5步）</div>
+  <div class="sec-body">
+    <div class="step-card">
+      <span class="step-label">第一步 · 整体感知</span>
+      <p><strong>先看见什么：</strong>这段关系出现了"一方期待落空，一方感到被误解"的典型矛盾模式。</p>
+      <p style="font-size:13px;color:var(--text-secondary);"><strong>为什么这样想：</strong>矛盾双方通常都会从自己的视角出发——小明看到的是"不被在乎"，高一看到的是"我已经很努力了"。抓住这个模式就抓住了分析的核心。</p>
+    </div>
+    <div class="step-card">
+      <span class="step-label">第二步 · 问题归类</span>
+      <p><strong>判断问题属于哪一类：</strong>这是一个"<strong>真</strong>"（事实层面）与"<strong>美</strong>"（情感感受层面）的匹配问题。</p>
+      <p style="font-size:13px;color:var(--text-secondary);"><strong>为什么这样想：</strong>"真"——高一确实发了祝福（事实）；"善"——高一的出发点不是恶意；"美"——小明的感受是"失落"。问题的关键在于"事实"和"感受"之间的落差，不在"善"的层面。</p>
+    </div>
+    <div class="step-card">
+      <span class="step-label">第三步 · 调用概念</span>
+      <p><strong>调用哪些概念：</strong></p>
+      <ul style="font-size:13px;margin:4px 0;">
+        <li><strong>期待差距理论</strong> — 关系越亲密，期待越高，落差越大</li>
+        <li><strong>因果归因</strong> — 小明把"晚祝福"归因为"不被在乎"（内部归因），高一把它归因为"太忙"（外部归因）</li>
+        <li><strong>情感表达方式</strong> — 不同的人表达"在乎"的方式不同（行动 vs 语言）</li>
+      </ul>
+      <p style="font-size:13px;color:var(--text-secondary);"><strong>为什么这样想：</strong>这些概念来自 Unit 1 中学习的人际沟通相关内容，直接将课本知识与真实情境连接起来。</p>
+    </div>
+    <div class="step-card">
+      <span class="step-label">第四步 · 推理分析</span>
+      <p><strong>如何进行推理：</strong></p>
+      <p style="font-size:13px;">① 因果链追因：晚祝福（表面原因）→ 高一太忙（直接原因）→ 时间和精力分配变动（深层原因）→ 两人对友谊表达的期待不匹配（根本原因）</p>
+      <p style="font-size:13px;">② 视角对比：从小明的视角看，朋友的祝福是"在意"的证明；从高一的视角看，"记得祝福"已经是一种努力。两种视角没有对错，只有差异。</p>
+      <p style="font-size:13px;">③ 证据检验：小明的"不被在乎"有证据吗？事实证据是——高一发了祝福，只是晚了。所以"不被在乎"是<strong>推测</strong>，不是<strong>事实</strong>。</p>
+      <p style="font-size:13px;color:var(--text-secondary);"><strong>为什么这样想：</strong>推理要求每步有依据——不跳步、不猜测、把隐含的逻辑链条显性化。</p>
+    </div>
+    <div class="step-card">
+      <span class="step-label">第五步 · 得出结论</span>
+      <p><strong>怎样形成结论：</strong>综合以上分析，矛盾的根本原因不是"高一不在乎"，而是<strong>两人对"友谊的表达方式"有不同期待</strong>——小明期待的是"准时、用心的祝福"，高一认为"记得发祝福"就够了。</p>
+      <div class="conclusion">
+        <strong>✅ 最终结论：</strong>矛盾的根源不是感情变淡，而是<strong>友谊表达方式的错位</strong>。解决方向是：双方坦诚沟通彼此对"在乎"的定义和期待，建立适合当前节奏的新表达方式。
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. 结论表达 -->
+  <div class="sec-title" onclick="toggleSec(this)">5. 结论表达</div>
+  <div class="sec-body">
+    <div class="card">
+      <p style="font-size:14px;">"小明和小高的友谊没有变淡，但他们的友谊表达方式需要升级。就像手机系统需要更新一样，友谊也需要随着生活的变化找到新的'沟通节奏'。小明的失落是可以理解的，但不等同于友谊的结束——这更像是一个信号，提醒他们该聊聊彼此的需要了。"</p>
+    </div>
+  </div>
+
+  <!-- 6. 方法提炼 -->
+  <div class="sec-title" onclick="toggleSec(this)">6. 方法提炼</div>
+  <div class="sec-body">
+    <div class="card">
+      <div class="method-tip">
+        <strong>🧠 以后遇到类似问题，可以这样做：</strong><br>
+        1. 先停下"感觉判断"——问自己"事实是什么？"<br>
+        2. 列出所有"已知信息"和"我的推测"，区分两者<br>
+        3. 从至少两个角度（自己和对方）看同一个问题<br>
+        4. 用"真善美"三维框架逐一检查——事实、动机、情感表达<br>
+        5. 找到"根本原因"而非停留在"表面原因"<br>
+        6. 得出结论前，确认每个判断都有证据支撑
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. 易错提醒 -->
+  <div class="sec-title" onclick="toggleSec(this)">7. 易错提醒</div>
+  <div class="sec-body">
+    <div class="card">
+      <div class="warn-box">
+        <strong>⚠️ 常见错误 1：凭感觉下结论，忽略关键证据</strong><br>
+        如：直接说"高一小气/不在乎"——但文本证据显示他发了祝福，只是晚了。感觉不能替代证据。
+      </div>
+      <div class="warn-box">
+        <strong>⚠️ 常见错误 2：把"不同"当作"错误"</strong><br>
+        小高认为"记得发祝福=在乎"，小明认为"精心准备=在乎"——两种方式不同，不是谁对谁错。文化差异同理。
+      </div>
+      <div class="warn-box">
+        <strong>⚠️ 常见错误 3：只用"真假"判断，忽略"善"和"美"</strong><br>
+        如果只分析"他到底发没发祝福"（真），就错过了"动机是否善意"（善）和"表达方式是否恰当"（美）这两个关键维度。
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. 自主迁移小练习 -->
+  <div class="sec-title" onclick="toggleSec(this)">8. 自主迁移小练习</div>
+  <div class="sec-body">
+    <div class="card">
+      <div class="practice-box">
+        <strong>📝 练习任务：</strong><br>
+        你的朋友最近经常在和你聊天的时候"已读不回"——看了消息但不回复。你感到不舒服。请用同样的分析方法：<br>
+        🔹 找出关键信息（你有哪些已知事实？）<br>
+        🔹 区分"事实"和"推测"<br>
+        🔹 从至少两个视角分析<br>
+        🔹 尝试用"真善美"三维框架分析<br>
+        🔹 得出一个有理有据的初步结论
+      </div>
+      <p style="font-size:13px;color:var(--text-secondary);">💡 <strong>提示：</strong>"已读不回"和"忘记生日"是类似的表面行为。想想——背后的原因可能有哪些？你有足够的信息判断吗？</p>
+    </div>
+  </div>
+
+  <!-- 9. 学习自评 -->
+  <div class="sec-title" onclick="toggleSec(this)">9. 学习自评</div>
+  <div class="sec-body">
+    <div class="card">
+      <p style="font-size:14px;font-weight:bold;margin-bottom:10px;">点击以下条目标记你的掌握情况：</p>
+      <div class="check-grid">
+        <div class="check-item" onclick="this.classList.toggle('done')">我是否找到了文本中的关键信息？</div>
+        <div class="check-item" onclick="this.classList.toggle('done')">我是否能区分"事实陈述"和"观点表达"？</div>
+        <div class="check-item" onclick="this.classList.toggle('done')">我是否从"真善美"三个维度都进行了分析？</div>
+        <div class="check-item" onclick="this.classList.toggle('done')">我能否解释为什么"感觉≠证据"？</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-hint">
+    💡 点击各模块标题折叠/展开 · 点击自评条目标记掌握进度 · 示例的目的不是"记住答案"，而是"学会方法"
+  </div>
+</div>
+
+<script>
+function toggleSec(titleEl) {
+  const body = titleEl.nextElementSibling;
+  titleEl.classList.toggle('collapsed');
+  body.classList.toggle('collapsed');
+}
+</script>
+</body>
+</html>

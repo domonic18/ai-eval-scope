@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性案例 — 学习动机透视镜</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --panel-bg: rgba(30,30,35,0.92);
+  --panel-border: #555;
+  --panel-accent: #00e5a0;
+  --panel-warn: #ffab40;
+  --panel-highlight: #40c4ff;
+  --timeline-dot: #434343;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  width: 100%;
+  overflow-x: hidden;
+}
+.container { width: 100%; max-width: none; padding: 20px; }
+h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 16px; }
+h2 { font-size: var(--font-h2); font-weight: 600; margin: 24px 0 12px; }
+
+/* ---- 聊天界面主布局 ---- */
+.chat-layout {
+  display: flex;
+  width: 100%;
+  position: relative;
+  transition: all 0.4s;
+}
+.chat-main {
+  flex: 1;
+  min-width: 0;
+  transition: flex 0.4s, margin 0.4s, padding 0.4s;
+  padding: 0 20px 20px 0;
+}
+.chat-main.panel-open {
+  flex: 0 0 58%;
+  padding-right: 12px;
+}
+
+/* ---- 动机解析面板 ---- */
+.motivation-panel {
+  display: none;
+  flex: 0 0 42%;
+  background: var(--panel-bg);
+  border-left: 2px solid var(--panel-border);
+  border-radius: 12px 0 0 12px;
+  padding: 16px;
+  overflow-y: auto;
+  max-height: calc(100vh - 40px);
+  position: sticky;
+  top: 20px;
+  color: #e0e0e0;
+  font-size: 13px;
+  line-height: 1.55;
+  box-shadow: -4px 0 20px rgba(0,0,0,0.15);
+}
+.motivation-panel.open { display: block; animation: slideIn 0.35s ease-out; }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+.panel-header {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--panel-accent);
+  border-bottom: 1px solid var(--panel-border);
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.panel-header span { font-size: 11px; font-weight: 400; color: #888; }
+.btn-close-panel {
+  background: none; border: none; color: #888; font-size: 18px;
+  cursor: pointer; padding: 2px 6px; border-radius: 4px;
+}
+.btn-close-panel:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+/* ---- 面板内卡片流 ---- */
+.panel-card {
+  background: rgba(255,255,255,0.06);
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: all 0.3s;
+}
+.panel-card:hover { background: rgba(255,255,255,0.09); border-color: var(--panel-accent); }
+.panel-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--panel-accent);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ---- 动机类型识别卡 ---- */
+.motif-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.motif-category { font-size: 11px; font-weight: 600; color: #aaa; margin-bottom: 4px; }
+.motif-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  margin: 2px;
+  cursor: grab;
+  transition: all 0.2s;
+  user-select: none;
+}
+.motif-tag:hover { transform: scale(1.05); }
+.motif-tag.inner { background: rgba(0,229,160,0.2); color: var(--panel-accent); border: 1px solid rgba(0,229,160,0.3); }
+.motif-tag.outer { background: rgba(255,171,64,0.2); color: var(--panel-warn); border: 1px solid rgba(255,171,64,0.3); }
+.motif-dropzone {
+  min-height: 60px;
+  border: 1px dashed rgba(255,255,255,0.15);
+  border-radius: 6px;
+  padding: 8px;
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  transition: all 0.3s;
+  font-size: 11px;
+  color: #666;
+}
+.motif-dropzone.drag-over { border-color: var(--panel-accent); background: rgba(0,229,160,0.08); }
+.motif-dropzone .drop-result {
+  background: rgba(0,229,160,0.12);
+  color: var(--panel-accent);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  display: inline-block;
+}
+
+/* ---- 动机来源追溯图 ---- */
+.trace-map {
+  position: relative;
+  min-height: 100px;
+  padding: 8px;
+}
+.trace-center {
+  text-align: center;
+  padding: 10px;
+  background: rgba(64,196,255,0.12);
+  border: 1px solid var(--panel-highlight);
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--panel-highlight);
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.trace-center:hover { background: rgba(64,196,255,0.2); }
+.trace-branch {
+  padding-left: 20px;
+  border-left: 1px solid rgba(255,255,255,0.1);
+  margin-left: 8px;
+}
+.trace-node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 12px;
+  color: #ccc;
+}
+.trace-node:hover { color: #fff; }
+.trace-node::before { content: '↳'; color: var(--panel-accent); font-size: 12px; }
+.trace-node .node-del {
+  color: #888; cursor: pointer; font-size: 12px; margin-left: 4px;
+  background: none; border: none; padding: 0 4px;
+}
+.trace-node .node-del:hover { color: #ff5252; }
+.trace-add {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 10px;
+  background: none;
+  border: 1px dashed rgba(255,255,255,0.2);
+  color: #888;
+  border-radius: 10px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.trace-add:hover { border-color: var(--panel-accent); color: var(--panel-accent); }
+
+/* ---- 动机障碍扫描器 ---- */
+.scanner-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.scanner-item input[type="checkbox"] {
+  accent-color: var(--panel-accent);
+  width: 14px; height: 14px;
+  cursor: pointer;
+}
+.scanner-item .scanner-label { flex: 1; font-size: 12px; color: #ccc; cursor: pointer; }
+.scanner-item .scanner-label.checked { color: var(--panel-accent); }
+.scanner-strategy {
+  display: none;
+  margin-top: 8px;
+  padding: 10px;
+  background: rgba(0,229,160,0.08);
+  border-radius: 6px;
+  border-left: 3px solid var(--panel-accent);
+  font-size: 12px;
+  color: #b0b0b0;
+}
+.scanner-strategy.show { display: block; animation: fadeInUp 0.3s; }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ---- AI导师对话 ---- */
+.ai-chat-box {
+  background: rgba(255,255,255,0.04);
+  border-radius: 8px;
+  padding: 10px;
+  margin-top: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  font-size: 12px;
+}
+.ai-msg {
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  line-height: 1.5;
+}
+.ai-msg.ai { background: rgba(64,196,255,0.1); text-align: left; color: #c0dfff; }
+.ai-msg.user { background: rgba(0,229,160,0.08); text-align: right; color: #b0e8d0; }
+.ai-msg .sender { font-size: 10px; font-weight: 600; margin-bottom: 2px; }
+.ai-input-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+.ai-input-row input {
+  flex: 1;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: #e0e0e0;
+  outline: none;
+  font-family: inherit;
+}
+.ai-input-row input:focus { border-color: var(--panel-accent); }
+.ai-input-row button {
+  background: var(--panel-accent);
+  border: none;
+  border-radius: 14px;
+  padding: 6px 14px;
+  font-size: 12px;
+  color: #000;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.ai-input-row button:hover { opacity: 0.85; }
+
+/* ---- 动机日记入口 ---- */
+.diary-entry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.diary-entry:hover { background: rgba(255,255,255,0.08); }
+.diary-entry .diary-icon { font-size: 24px; }
+.diary-entry .diary-text { flex: 1; }
+.diary-entry .diary-text .title { font-size: 13px; font-weight: 600; color: #e0e0e0; }
+.diary-entry .diary-text .subtitle { font-size: 11px; color: #888; }
+.diary-entry .diary-arrow { color: #888; font-size: 16px; }
+
+.diary-modal {
+  display: none;
+  position: fixed;
+  z-index: 300;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6);
+  align-items: center;
+  justify-content: center;
+}
+.diary-modal.open { display: flex; }
+.diary-modal-content {
+  background: #2a2a30;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  color: #e0e0e0;
+}
+.diary-modal-content h3 { color: var(--panel-accent); font-size: 16px; margin-bottom: 12px; }
+.diary-modal-content textarea {
+  width: 100%;
+  min-height: 120px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 12px;
+  color: #e0e0e0;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+}
+.diary-modal-content textarea:focus { outline: none; border-color: var(--panel-accent); }
+.btn-diary-save {
+  margin-top: 10px;
+  background: var(--panel-accent);
+  border: none;
+  border-radius: 6px;
+  padding: 8px 20px;
+  font-size: 13px;
+  color: #000;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-diary-save:hover { opacity: 0.85; }
+.btn-diary-close {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px;
+  padding: 8px 20px;
+  font-size: 13px;
+  color: #888;
+  cursor: pointer;
+  margin-left: 8px;
+}
+
+/* ---- 动机可视化时间线 ---- */
+.timeline-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 0;
+}
+.timeline-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+.timeline-row .tl-label { width: 50px; color: #aaa; text-align: right; flex-shrink: 0; }
+.timeline-row .tl-bar-track {
+  flex: 1;
+  height: 12px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+.timeline-row .tl-bar-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 1s ease;
+}
+.tl-bar-fill.intrinsic { background: linear-gradient(90deg, #00e5a0, #69f0ae); }
+.tl-bar-fill.extrinsic { background: linear-gradient(90deg, #ffab40, #ffd180); }
+
+/* ---- 聊天消息气泡 ---- */
+.chat-bubble {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 12px 0;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  position: relative;
+}
+.chat-bubble .bubble-tag {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+.chat-bubble .bubble-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.btn-sm {
+  display: inline-block;
+  padding: 6px 16px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 16px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.btn-sm:hover { background: var(--primary-hover); }
+.btn-sm-outline {
+  background: transparent;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+}
+.btn-sm-outline:hover { background: var(--primary); color: #fff; }
+
+/* ---- 案例卡片 ---- */
+.case-card {
+  background: var(--card-bg);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 12px 0;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+.case-card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--primary);
+}
+.case-card .case-meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.case-card .case-task {
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.case-card .case-principles {
+  font-size: 12px;
+  color: var(--accent);
+  font-style: italic;
+}
+
+/* ---- 综合分析表 ---- */
+.analysis-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 12px 0;
+}
+.analysis-table th, .analysis-table td {
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  text-align: left;
+}
+.analysis-table th {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+.analysis-table td { background: var(--card-bg); }
+
+/* ---- 反思区块 ---- */
+.reflect-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.reflect-item {
+  background: var(--card-bg);
+  border-radius: 8px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+.reflect-item .q { font-weight: 600; font-size: 13px; margin-bottom: 6px; color: var(--primary); }
+.reflect-item textarea {
+  width: 100%;
+  min-height: 50px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  color: var(--text);
+  background: var(--bg);
+}
+.reflect-item textarea:focus { outline: none; border-color: var(--primary); }
+
+/* ---- 面板操作按钮 ---- */
+.btn-toggle-panel {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 50;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 52px;
+  height: 52px;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-toggle-panel:hover { background: var(--primary-hover); transform: scale(1.05); }
+.btn-toggle-panel.open { background: #2a2a30; }
+.btn-toggle-panel.open:hover { background: #3a3a40; }
+
+.tag-badge {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #e0e0e0; }
+::-webkit-scrollbar-thumb { background: #999; border-radius: 3px; }
+
+@media (max-width: 900px) {
+  .chat-main.panel-open { flex: 0 0 100%; padding-right: 0; }
+  .motivation-panel {
+    position: fixed;
+    z-index: 100;
+    top: 0; right: 0;
+    max-height: 100vh;
+    height: 100vh;
+    border-radius: 0;
+    width: 85%;
+    flex: none;
+  }
+  .motivation-panel.open { display: block; }
+  .motif-grid { grid-template-columns: 1fr; }
+  .reflect-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h1>🔍 解析性案例</h1>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+  <span class="tag-badge">英语 · 必修1</span>
+  <span class="tag-badge">Unit 1 Friendship</span>
+  <span class="tag-badge">解析性导学</span>
+</div>
+<p style="color:var(--text-secondary);margin-bottom:20px;font-size:14px;">
+  前置：已完成解析性示例、解析性原理。本案例将七阶情境与解析性原理结合，培养深度解析能力。
+</p>
+
+<!-- 聊天布局 -->
+<div class="chat-layout">
+  <!-- 左侧聊天区 -->
+  <div class="chat-main" id="chatMain">
+
+    <!-- 案例1 -->
+    <div class="chat-bubble">
+      <div class="bubble-tag">案例1 · 生活情境</div>
+      <h3 style="font-size:16px;margin-bottom:6px;">微信聊天中的友谊信号</h3>
+      <p style="font-size:13px;color:var(--text-secondary);">案例材料：一段朋友间的中英夹杂微信聊天记录</p>
+      <div class="case-card" style="margin:10px 0;">
+        <p style="font-size:13px;"><strong>Anna:</strong> Hey girl! 好久不见！！想死你啦 😭❤️<br>
+        <strong>Mei:</strong> 哈哈哈我也想你！！你最近怎么样？<br>
+        <strong>Anna:</strong> Busy busy busy... 但看到你消息立马开心了 ✨<br>
+        <strong>Mei:</strong> 我也是！我们真的得约咖啡了，等你好久了 😏<br>
+        <strong>Anna:</strong> Deal! Friday? 老地方?<br>
+        <strong>Mei:</strong> 妥妥的！等你哦～**hug**</p>
+      </div>
+      <div class="case-task"><strong>解析任务：</strong>分析对话中哪些信号表明双方关系亲密。</div>
+      <div class="case-principles">调用原理：情感信号识别原理 + 上下文推演原理</div>
+      <div class="bubble-actions">
+        <button class="btn-sm" onclick="openPanel()">🔍 用动机透视镜分析</button>
+        <button class="btn-sm btn-sm-outline" onclick="toggleAnalysis('a1')">📋 查看分析</button>
+      </div>
+      <div id="a1" style="display:none;margin-top:8px;padding:10px;background:var(--bg);border-radius:8px;font-size:13px;">
+        <table class="analysis-table">
+          <tr><th>情感信号</th><th>互动模式</th></tr>
+          <tr><td>😭❤️ 表情符号 + 感叹号 — 强烈情感</td><td>轮流邀请（约咖啡）</td></tr>
+          <tr><td>"想死你啦" — 夸张亲密表达</td><td>谐调确认（Deal! / 妥妥的!）</td></tr>
+          <tr><td>✨🌟 闪光强调 — 积极情绪</td><td>肢体语言符号（**hug**）</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- 案例2 -->
+    <div class="chat-bubble">
+      <div class="bubble-tag">案例2 · 校园情境</div>
+      <h3 style="font-size:16px;margin-bottom:6px;">英语社团的招募文案</h3>
+      <p style="font-size:13px;color:var(--text-secondary);">案例材料：一份英语社团的新成员招募通知</p>
+      <div class="case-card" style="margin:10px 0;">
+        <p style="font-size:13px;"><strong>🌟 Join Our English Club! 🌟</strong><br>
+        "Tired of studying English alone? Looking for friends who share your passion? Our English Club is more than a club — it's a family! We watch movies together, discuss topics, and grow together. No pressure, just fun! Come make friends and improve your English at the same time. See you every Friday at 4pm in Room 201!"</p>
+      </div>
+      <div class="case-task"><strong>解析任务：</strong>分析这份文案如何利用"友情"主题吸引人。</div>
+      <div class="case-principles">调用原理：语篇结构拆解原理 + 证据—结论匹配原理</div>
+      <div class="bubble-actions">
+        <button class="btn-sm" onclick="openPanel()">🔍 用动机透视镜分析</button>
+        <button class="btn-sm btn-sm-outline" onclick="toggleAnalysis('a2')">📋 查看分析</button>
+      </div>
+      <div id="a2" style="display:none;margin-top:8px;padding:10px;background:var(--bg);border-radius:8px;font-size:13px;">
+        <p><strong>语篇结构拆解：</strong>问题（孤独学习）→ 解决方案（俱乐部=家庭）→ 活动列举（电影、讨论）→ 低门槛承诺（No pressure）→ 行动号召（Friday 4pm Room 201）</p>
+        <p><strong>情感钩子：</strong>"more than a club — it's a family" 利用归属感需求，"make friends" 直接与单元主题"友谊"共鸣。</p>
+      </div>
+    </div>
+
+    <!-- 案例3 -->
+    <div class="chat-bubble">
+      <div class="bubble-tag">案例3 · 家庭/社区情境</div>
+      <h3 style="font-size:16px;margin-bottom:6px;">邻居间的日常英语对话</h3>
+      <p style="font-size:13px;color:var(--text-secondary);">案例材料：一段邻居间关于借东西的英语对话</p>
+      <div class="case-card" style="margin:10px 0;">
+        <p style="font-size:13px;"><strong>Mrs. Wang:</strong> Excuse me, Mrs. Smith? I'm so sorry to bother you.<br>
+        <strong>Mrs. Smith:</strong> Not at all! How can I help you?<br>
+        <strong>Mrs. Wang:</strong> I was wondering if you might have a cup of sugar I could borrow? I'm in the middle of baking and I've run out.<br>
+        <strong>Mrs. Smith:</strong> Of course! Come in, come in! Would you like to stay for a cup of tea?<br>
+        <strong>Mrs. Wang:</strong> Oh that's very kind, but I don't want to impose. Are you sure?<br>
+        <strong>Mrs. Smith:</strong> Absolutely! I've just made some cookies too.</p>
+      </div>
+      <div class="case-task"><strong>解析任务：</strong>分析对话中的礼貌策略和关系信号。</div>
+      <div class="case-principles">调用原理：跨文化视角原理 + 情感信号识别原理</div>
+      <div class="bubble-actions">
+        <button class="btn-sm" onclick="openPanel()">🔍 用动机透视镜分析</button>
+        <button class="btn-sm btn-sm-outline" onclick="toggleAnalysis('a3')">📋 查看分析</button>
+      </div>
+      <div id="a3" style="display:none;margin-top:8px;padding:10px;background:var(--bg);border-radius:8px;font-size:13px;">
+        <p><strong>礼貌策略：</strong>"Excuse me"、"I'm so sorry to bother you" — 面子保全策略；间接请求 "I was wondering if..." 比直接问更礼貌。</p>
+        <p><strong>关系信号：</strong>主动邀请喝茶+提供饼干 — 从工具性接触（借糖）升级为社交接触，标志关系从<strong>陌生人→熟人</strong>的转化。</p>
+      </div>
+    </div>
+
+    <!-- 案例4 -->
+    <div class="chat-bubble">
+      <div class="bubble-tag">案例4 · 学科核心情境</div>
+      <h3 style="font-size:16px;margin-bottom:6px;">教材课文深度解析 — "Anne's Best Friend"</h3>
+      <p style="font-size:13px;color:var(--text-secondary);">案例材料：Unit 1 Friendship 主课文</p>
+      <div class="case-card" style="margin:10px 0;">
+        <p style="font-size:13px;"><em>"Anne Frank kept a diary during World War II. She made her diary her best friend because she had no one else to talk to. She wrote: 'I haven't written for a few days... I've been sad. / I want to write, but more than that, I want to bring out the real me. / Will I ever be able to become what I really am? / I think I know how to do it — I can feel it — but how to express it?'"</em></p>
+      </div>
+      <div class="case-task"><strong>解析任务：</strong>分析安妮在困境中如何理解和定义友谊。</div>
+      <div class="case-principles">调用原理：全部原理综合运用</div>
+      <div class="bubble-actions">
+        <button class="btn-sm" onclick="openPanel()">🔍 用动机透视镜分析</button>
+        <button class="btn-sm btn-sm-outline" onclick="toggleAnalysis('a4')">📋 查看分析</button>
+      </div>
+      <div id="a4" style="display:none;margin-top:8px;padding:10px;background:var(--bg);border-radius:8px;font-size:13px;">
+        <p><strong>核心洞察：</strong>安妮将日记拟人化为"最好的朋友"——在极端困境中，友谊的本质是<strong>被倾听、被理解、自由表达</strong>。</p>
+        <p><strong>情感信号：</strong>"I've been sad"（孤独）、"bring out the real me"（渴望真实）、"how to express it"（表达挣扎）。</p>
+        <p><strong>上下文推演：</strong>二战背景下，安妮的友谊观超越了社交功能，成为<strong>精神存续的支柱</strong>。</p>
+      </div>
+    </div>
+
+    <!-- 案例5 -->
+    <div class="chat-bubble">
+      <div class="bubble-tag">案例5 · 跨学科情境</div>
+      <h3 style="font-size:16px;margin-bottom:6px;">友谊的心理学研究短文</h3>
+      <p style="font-size:13px;color:var(--text-secondary);">案例材料：一篇关于"Friendship and Well-being"的英语科普短文</p>
+      <div class="case-card" style="margin:10px 0;">
+        <p style="font-size:13px;"><em>"Studies show that people with strong friendships are happier and live longer. A 2020 study of 7,000 adults found that those with close friends had 50% lower risk of depression. Why? Friends provide emotional support and a sense of belonging. However, the <strong>quality</strong> of friendship matters more than the <strong>quantity</strong>. One close friend can be more valuable than ten acquaintances."</em></p>
+      </div>
+      <div class="case-task"><strong>解析任务：</strong>分析文章的观点、证据和论证逻辑。</div>
+      <div class="case-principles">调用原理：证据—结论匹配原理 + 语篇结构拆解原理</div>
+      <div class="bubble-actions">
+        <button class="btn-sm" onclick="openPanel()">🔍 用动机透视镜分析</button>
+        <button class="btn-sm btn-sm-outline" onclick="toggleAnalysis('a5')">📋 查看分析</button>
+      </div>
+      <div id="a5" style="display:none;margin-top:8px;padding:10px;background:var(--bg);border-radius:8px;font-size:13px;">
+        <p><strong>论点：</strong>强友谊让人更快乐更长寿。<strong>证据：</strong>7000名成年人研究（抑郁症风险降低50%）。<strong>论证逻辑：</strong>因果链——友谊→情感支持+归属感→幸福感→更长寿。关键区分：质量>数量。</p>
+      </div>
+    </div>
+
+    <!-- 案例6 -->
+    <div class="chat-bubble">
+      <div class="bubble-tag">案例6 · 社会/未来情境</div>
+      <h3 style="font-size:16px;margin-bottom:6px;">社交媒体上的"好友"定义</h3>
+      <p style="font-size:13px;color:var(--text-secondary);">案例材料：一篇讨论"Social media friends vs. real friends"的英语博文</p>
+      <div class="case-card" style="margin:10px 0;">
+        <p style="font-size:13px;"><em>"I have 1,200 friends on Facebook. But how many of them are real friends? Social media friends are easy to collect — a click, a follow, a like. But real friends are the ones who show up when you're in trouble. They don't just like your posts; they <strong>care</strong> about your life. In a world of digital connections, we need to remember the difference between a follower and a friend."</em></p>
+      </div>
+      <div class="case-task"><strong>解析任务：</strong>分析两种友谊的异同和作者的态度。</div>
+      <div class="case-principles">调用原理：跨文化视角原理 + 上下文推演原理</div>
+      <div class="bubble-actions">
+        <button class="btn-sm" onclick="openPanel()">🔍 用动机透视镜分析</button>
+        <button class="btn-sm btn-sm-outline" onclick="toggleAnalysis('a6')">📋 查看分析</button>
+      </div>
+      <div id="a6" style="display:none;margin-top:8px;padding:10px;background:var(--bg);border-radius:8px;font-size:13px;">
+        <p><strong>对比：</strong>线上好友（容易收集、点赞关注）vs 真实好友（困难时刻出现、真正关心）。作者态度明确——警惕数字化友谊的<strong>表面化</strong>，强调深度连接的价值。</p>
+      </div>
+    </div>
+
+    <!-- 案例7 -->
+    <div class="chat-bubble">
+      <div class="bubble-tag">案例7 · 综合迁移情境</div>
+      <h3 style="font-size:16px;margin-bottom:6px;">跨国友谊书信对比分析</h3>
+      <p style="font-size:13px;color:var(--text-secondary);">案例材料：两封来自不同国家学生的友谊主题书信</p>
+      <div class="case-card" style="margin:10px 0;">
+        <p style="font-size:13px;"><strong>Letter A (Japanese student Yuki):</strong> "Dear friend, I value our friendship deeply. In Japan, we say 'a true friend is someone who silently understands your heart.' Thank you for always sensing my feelings without words. <em>I am grateful for your silent support.</em>"</p>
+        <p style="font-size:13px;"><strong>Letter B (Brazilian student Carlos):</strong> "My friend! You are amazing! In Brazil, friendship means laughter, loud music, and sharing every moment together. When you're happy, I'm happy. When you cry, I cry with you. <em>That's what friends are for — to feel together!</em>"</p>
+      </div>
+      <div class="case-task"><strong>解析任务：</strong>比较分析两封信中的情感表达和文化差异。</div>
+      <div class="case-principles">调用原理：全部解析性原理综合运用</div>
+      <div class="bubble-actions">
+        <button class="btn-sm" onclick="openPanel()">🔍 用动机透视镜分析</button>
+        <button class="btn-sm btn-sm-outline" onclick="toggleAnalysis('a7')">📋 查看分析</button>
+      </div>
+      <div id="a7" style="display:none;margin-top:8px;padding:10px;background:var(--bg);border-radius:8px;font-size:13px;">
+        <p><strong>对比：</strong>Yuki（日本）— 含蓄、默契、内敛，强调"无声的理解"；Carlos（巴西）— 外放、热烈、共情，强调"一起感受"。跨文化视角：东西方友谊观差异——<strong>默契vs表达、内敛vs外放、深度vs广度</strong>。</p>
+      </div>
+    </div>
+
+    <!-- 综合反思 -->
+    <h2 style="margin-top:30px;">💭 综合反思</h2>
+    <div class="reflect-grid">
+      <div class="reflect-item">
+        <div class="q">1. 哪个案例最容易分析？为什么？</div>
+        <textarea placeholder="写下你的反思..."></textarea>
+      </div>
+      <div class="reflect-item">
+        <div class="q">2. 哪个案例最难？困难在哪里？</div>
+        <textarea placeholder="写下你的反思..."></textarea>
+      </div>
+      <div class="reflect-item">
+        <div class="q">3. 哪条解析性原理最常用？</div>
+        <textarea placeholder="写下你的反思..."></textarea>
+      </div>
+      <div class="reflect-item">
+        <div class="q">4. 哪条原理还不会用？</div>
+        <textarea placeholder="写下你的反思..."></textarea>
+      </div>
+      <div class="reflect-item" style="grid-column:1/-1;">
+        <div class="q">5. 这些案例如何帮助你完成大单元最终成果？</div>
+        <textarea placeholder="写下你的反思..." style="min-height:60px;"></textarea>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 右侧动机解析面板 -->
+  <div class="motivation-panel" id="motivationPanel">
+    <div class="panel-header">
+      <span>🔍 动机透视镜：你为什么想学（或不想学）？</span>
+      <button class="btn-close-panel" onclick="closePanel()">✕</button>
+    </div>
+
+    <!-- 动机类型识别卡 -->
+    <div class="panel-card">
+      <div class="panel-card-title">🎯 动机类型识别卡</div>
+      <p style="font-size:11px;color:#888;margin-bottom:8px;">从左侧聊天区拖拽学习任务到对应的动机类型区域</p>
+      <div class="motif-grid">
+        <div>
+          <div class="motif-category">🧠 内在动机</div>
+          <div>
+            <span class="motif-tag inner" draggable="true">好奇心</span>
+            <span class="motif-tag inner" draggable="true">兴趣</span>
+            <span class="motif-tag inner" draggable="true">意义感</span>
+            <span class="motif-tag inner" draggable="true">掌控感</span>
+          </div>
+          <div class="motif-dropzone" id="dropInner" ondragover="dragoverHandler(event)" ondrop="dropHandler(event,'inner')">
+            拖入内在动机任务
+          </div>
+        </div>
+        <div>
+          <div class="motif-category">🏅 外在动机</div>
+          <div>
+            <span class="motif-tag outer" draggable="true">奖励</span>
+            <span class="motif-tag outer" draggable="true">认可</span>
+            <span class="motif-tag outer" draggable="true">竞争</span>
+            <span class="motif-tag outer" draggable="true">压力</span>
+          </div>
+          <div class="motif-dropzone" id="dropOuter" ondragover="dragoverHandler(event)" ondrop="dropHandler(event,'outer')">
+            拖入外在动机任务
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 动机来源追溯图 -->
+    <div class="panel-card">
+      <div class="panel-card-title">🌳 动机来源追溯图</div>
+      <div class="trace-map" id="traceMap">
+        <div class="trace-center" onclick="addTraceNode()">❓ 我为什么想学这个？</div>
+        <div class="trace-branch" id="traceBranch"></div>
+      </div>
+    </div>
+
+    <!-- 动机障碍扫描器 -->
+    <div class="panel-card">
+      <div class="panel-card-title">⚠️ 动机障碍扫描器</div>
+      <p style="font-size:11px;color:#888;margin-bottom:6px;">勾选你遇到的障碍，查看破障策略</p>
+      <div id="scannerList">
+        <div class="scanner-item">
+          <input type="checkbox" id="sc1" onchange="scanBarrier('sc1')">
+          <label class="scanner-label" for="sc1">畏难情绪 — "太难了，我做不到"</label>
+        </div>
+        <div class="scanner-item">
+          <input type="checkbox" id="sc2" onchange="scanBarrier('sc2')">
+          <label class="scanner-label" for="sc2">缺乏关联 — "这跟我有什么关系？"</label>
+        </div>
+        <div class="scanner-item">
+          <input type="checkbox" id="sc3" onchange="scanBarrier('sc3')">
+          <label class="scanner-label" for="sc3">信心不足 — "我不擅长这个"</label>
+        </div>
+        <div class="scanner-item">
+          <input type="checkbox" id="sc4" onchange="scanBarrier('sc4')">
+          <label class="scanner-label" for="sc4">外部干扰 — "手机/游戏更吸引我"</label>
+        </div>
+        <div class="scanner-item">
+          <input type="checkbox" id="sc5" onchange="scanBarrier('sc5')">
+          <label class="scanner-label" for="sc5">延迟满足难 — "学习效果太慢了"</label>
+        </div>
+      </div>
+      <div id="strategyDisplay"></div>
+    </div>
+
+    <!-- AI导师动机对话 -->
+    <div class="panel-card">
+      <div class="panel-card-title">🤖 AI导师动机对话</div>
+      <div class="ai-chat-box" id="aiChatBox">
+        <div class="ai-msg ai"><span class="sender">🤖 AI导师</span>嗨！我是你的动机教练。你正在学习"友谊"这个单元——你觉得这个话题对你有吸引力吗？还是感觉提不起兴趣？</div>
+      </div>
+      <div class="ai-input-row">
+        <input type="text" id="aiInput" placeholder="输入你的想法..." onkeydown="if(event.key==='Enter')sendAiMsg()">
+        <button onclick="sendAiMsg()">发送</button>
+      </div>
+    </div>
+
+    <!-- 动机日记入口 -->
+    <div class="panel-card">
+      <div class="panel-card-title">📝 动机日记</div>
+      <div class="diary-entry" onclick="openDiary()">
+        <span class="diary-icon">📓</span>
+        <div class="diary-text">
+          <div class="title">今天的动机日记</div>
+          <div class="subtitle">记录你的学习心情和动机变化</div>
+        </div>
+        <span class="diary-arrow">→</span>
+      </div>
+    </div>
+
+    <!-- 动机可视化时间线 -->
+    <div class="panel-card">
+      <div class="panel-card-title">📊 动机可视化时间线</div>
+      <p style="font-size:11px;color:#888;margin-bottom:6px;">你对本单元各维度的动机水平（0-100）</p>
+      <div class="timeline-chart">
+        <div class="timeline-row">
+          <span class="tl-label">好奇心</span>
+          <div class="tl-bar-track"><div class="tl-bar-fill intrinsic" id="tlCuriosity" style="width:70%"></div></div>
+        </div>
+        <div class="timeline-row">
+          <span class="tl-label">兴趣度</span>
+          <div class="tl-bar-track"><div class="tl-bar-fill intrinsic" id="tlInterest" style="width:55%"></div></div>
+        </div>
+        <div class="timeline-row">
+          <span class="tl-label">意义感</span>
+          <div class="tl-bar-track"><div class="tl-bar-fill intrinsic" id="tlMeaning" style="width:40%"></div></div>
+        </div>
+        <div class="timeline-row">
+          <span class="tl-label">考试压力</span>
+          <div class="tl-bar-track"><div class="tl-bar-fill extrinsic" id="tlPressure" style="width:80%"></div></div>
+        </div>
+        <div class="timeline-row">
+          <span class="tl-label">社交认可</span>
+          <div class="tl-bar-track"><div class="tl-bar-fill extrinsic" id="tlSocial" style="width:50%"></div></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px;margin-top:6px;font-size:10px;">
+        <span style="color:#00e5a0;">■ 内在动机</span>
+        <span style="color:#ffab40;">■ 外在动机</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</div>
+
+<!-- 浮窗按钮 -->
+<button class="btn-toggle-panel" id="togglePanelBtn" onclick="togglePanel()">🔍</button>
+
+<!-- 动机日记模态框 -->
+<div class="diary-modal" id="diaryModal">
+  <div class="diary-modal-content">
+    <h3>📓 动机日记</h3>
+    <p style="font-size:12px;color:#888;margin-bottom:10px;">今天你对"友谊"这个单元的学习动机如何？有什么想法和感受？</p>
+    <textarea id="diaryText" placeholder="写写你此刻的学习心情...&#10;例如：今天读了Anne的故事，我有点感动。虽然学英语很难，但我觉得通过别人的故事理解友谊很有意思。"></textarea>
+    <div style="margin-top:10px;text-align:right;">
+      <button class="btn-diary-save" onclick="saveDiary()">💾 保存日记</button>
+      <button class="btn-diary-close" onclick="closeDiary()">取消</button>
+    </div>
+    <div id="diarySaved" style="display:none;margin-top:10px;padding:10px;background:rgba(0,229,160,0.1);border-radius:8px;font-size:12px;color:var(--panel-accent);">✅ 日记已保存！继续加油～</div>
+  </div>
+</div>
+
+<script>
+// 面板控制
+function togglePanel() {
+  const panel = document.getElementById('motivationPanel');
+  const main = document.getElementById('chatMain');
+  const btn = document.getElementById('togglePanelBtn');
+  const isOpen = panel.classList.contains('open');
+  if (isOpen) {
+    panel.classList.remove('open');
+    main.classList.remove('panel-open');
+    btn.classList.remove('open');
+    btn.textContent = '🔍';
+  } else {
+    panel.classList.add('open');
+    main.classList.add('panel-open');
+    btn.classList.add('open');
+    btn.textContent = '✕';
+  }
+}
+function openPanel() {
+  const panel = document.getElementById('motivationPanel');
+  const main = document.getElementById('chatMain');
+  const btn = document.getElementById('togglePanelBtn');
+  if (!panel.classList.contains('open')) {
+    panel.classList.add('open');
+    main.classList.add('panel-open');
+    btn.classList.add('open');
+    btn.textContent = '✕';
+  }
+  panel.scrollTop = 0;
+}
+function closePanel() {
+  const panel = document.getElementById('motivationPanel');
+  const main = document.getElementById('chatMain');
+  const btn = document.getElementById('togglePanelBtn');
+  panel.classList.remove('open');
+  main.classList.remove('panel-open');
+  btn.classList.remove('open');
+  btn.textContent = '🔍';
+}
+
+// 分析切换
+function toggleAnalysis(id) {
+  const el = document.getElementById(id);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+// 拖拽 — 动机标签
+document.querySelectorAll('.motif-tag').forEach(tag => {
+  tag.addEventListener('dragstart', e => {
+    e.dataTransfer.setData('text/plain', tag.textContent);
+    e.dataTransfer.effectAllowed = 'move';
+  });
+});
+function dragoverHandler(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; e.currentTarget.classList.add('drag-over'); }
+function dropHandler(e, type) {
+  e.preventDefault();
+  const dropzone = e.currentTarget;
+  dropzone.classList.remove('drag-over');
+  const text = e.dataTransfer.getData('text/plain');
+  const badge = document.createElement('span');
+  badge.className = 'drop-result';
+  badge.textContent = '✓ ' + text + ' → ' + (type === 'inner' ? '内在动机' : '外在动机');
+  dropzone.appendChild(badge);
+  // 弹出解析
+  const parsedType = type === 'inner' ? '内在动机' : '外在动机';
+  setTimeout(() => {
+    alert('🔍 解析结果：\n"' + text + '" 属于【' + parsedType + '】\n' + (type === 'inner'
+      ? parsedType + '驱动学习更持久，建议在日常学习中多寻找与好奇心、兴趣的连接点！'
+      : parsedType + '在短期内有效，但建议结合内在动机来获得更持久的学习动力。'));
+  }, 200);
+}
+
+// 动机来源追溯图
+let traceCount = 0;
+function addTraceNode() {
+  const branch = document.getElementById('traceBranch');
+  const answer = prompt('你为什么想学这个？\n输入一个原因：', traceCount === 0 ? '因为我想了解友谊在不同文化中的含义' : '');
+  if (!answer || answer.trim() === '') return;
+  traceCount++;
+  const node = document.createElement('div');
+  node.className = 'trace-node';
+  node.innerHTML = answer + ' <button class="node-del" onclick="deleteTraceNode(this)">✕</button>';
+  node.onclick = function(e) {
+    if (e.target.tagName === 'BUTTON') return;
+    const deeper = prompt('追问：为什么"' + answer + '"对你来说是重要的？');
+    if (deeper && deeper.trim() !== '') {
+      addSubNode(this, deeper);
+    }
+  };
+  branch.appendChild(node);
+}
+function addSubNode(parentEl, text) {
+  const sub = document.createElement('div');
+  sub.style.paddingLeft = '20px';
+  sub.className = 'trace-node';
+  sub.innerHTML = text + ' <button class="node-del" onclick="deleteTraceNode(this)">✕</button>';
+  sub.onclick = function(e) {
+    if (e.target.tagName === 'BUTTON') return;
+    const deeper = prompt('为什么"' + text + '"对你来说是重要的？');
+    if (deeper && deeper.trim() !== '') {
+      addSubNode(this, deeper);
+    }
+  };
+  parentEl.parentNode.insertBefore(sub, parentEl.nextSibling);
+}
+function deleteTraceNode(btn) {
+  if (confirm('删除这个追溯节点？')) {
+    btn.parentNode.remove();
+    traceCount--;
+  }
+}
+
+// 动机障碍扫描
+const strategies = {
+  sc1: { label: '畏难情绪', tip: '🧩 拆分任务：把大任务切分成3-5个小步骤，每完成一步就给自己一个鼓励。用"10分钟启动法"——告诉自己先做10分钟，往往就停不下来了。' },
+  sc2: { label: '缺乏关联', tip: '🔗 找连接点：问自己"这个知识和我的生活/爱好/未来有什么关系？"试着找到一个具体的应用场景。例如，学友谊相关的英语，可以想想怎么向外国朋友介绍你的好朋友。' },
+  sc3: { label: '信心不足', tip: '🌟 记录小胜利：准备一个"成就笔记本"，每天记录3件你做得好的事。回顾过去你成功学会的东西——你以前觉得难的，不也过来了吗？' },
+  sc4: { label: '外部干扰', tip: '📵 番茄工作法：25分钟专注学习+5分钟休息。把手机放到另一个房间。用"2分钟规则"——想做别的事时，先等2分钟，冲动往往会过去。' },
+  sc5: { label: '延迟满足难', tip: '🎯 设立里程碑奖励：把长期目标分解为周目标，每周完成就给自己一个小奖励。用进度条可视化你的学习轨迹，看到进步本身就是动力。' }
+};
+function scanBarrier(id) {
+  const cb = document.getElementById(id);
+  const label = cb.nextElementSibling;
+  const display = document.getElementById('strategyDisplay');
+  if (cb.checked) {
+    label.classList.add('checked');
+    const s = strategies[id];
+    const card = document.createElement('div');
+    card.className = 'scanner-strategy show';
+    card.id = 'strategy-' + id;
+    card.innerHTML = '<strong>🔧 破障策略：' + s.label + '</strong><br>' + s.tip;
+    display.appendChild(card);
+  } else {
+    label.classList.remove('checked');
+    const card = document.getElementById('strategy-' + id);
+    if (card) card.remove();
+  }
+}
+
+// AI导师对话
+const aiResponses = [
+  "嗯，我理解。学习语言确实需要时间和耐心。但你知道吗？当你学会用英语表达自己的感受时，你就能和全世界的人做朋友了！",
+  "有趣的观点！你觉得为什么这个话题吸引你（或不吸引你）？是和你的个人经历有关吗？",
+  "对，就是这种感觉！当知识和你自己的生活联系起来，学习就变得有意义了。想想看，你最想用英语和谁聊天？",
+  "每个人都有自己的节奏。重要的是不要和别人比，而是和昨天的自己比。你今天比昨天多知道了一个单词，那就是进步！",
+  "你提到Anne的故事让你感动——这就是情感连接的力量。当你对内容有感觉时，大脑会记得更牢。",
+  "试试看：闭眼想象一下，3个月后你能用英语和一个外国朋友聊友谊这个话题——那种感觉怎么样？",
+];
+let aiIndex = 0;
+function sendAiMsg() {
+  const input = document.getElementById('aiInput');
+  const text = input.value.trim();
+  if (!text) return;
+  const box = document.getElementById('aiChatBox');
+  const userMsg = document.createElement('div');
+  userMsg.className = 'ai-msg user';
+  userMsg.innerHTML = '<span class="sender">🧑 你</span>' + text;
+  box.appendChild(userMsg);
+  input.value = '';
+  box.scrollTop = box.scrollHeight;
+  setTimeout(() => {
+    const aiMsg = document.createElement('div');
+    aiMsg.className = 'ai-msg ai';
+    const reply = aiResponses[aiIndex % aiResponses.length];
+    aiIndex++;
+    aiMsg.innerHTML = '<span class="sender">🤖 AI导师</span>' + reply;
+    box.appendChild(aiMsg);
+    box.scrollTop = box.scrollHeight;
+  }, 600);
+}
+
+// 动机日记
+function openDiary() {
+  document.getElementById('diaryModal').classList.add('open');
+  document.getElementById('diarySaved').style.display = 'none';
+}
+function closeDiary() {
+  document.getElementById('diaryModal').classList.remove('open');
+}
+function saveDiary() {
+  const text = document.getElementById('diaryText').value.trim();
+  if (!text) { alert('请先写下你的想法再保存！'); return; }
+  document.getElementById('diarySaved').style.display = 'block';
+  document.getElementById('diaryText').value = '';
+  setTimeout(closeDiary, 1500);
+}
+
+// 允许动机标签拖拽时保持原有内部拖动
+document.querySelectorAll('.motif-tag[draggable]').forEach(el => {
+  el.addEventListener('dragstart', function(e) {
+    e.dataTransfer.setData('text/plain', this.textContent);
+  });
+});
+
+// 点击模态框外部关闭
+document.getElementById('diaryModal').addEventListener('click', function(e) {
+  if (e.target === this) closeDiary();
+});
+
+// 窗口resize
+window.addEventListener('resize', function() {
+  // 在移动端关闭面板自动切换回全宽
+  if (window.innerWidth <= 900) {
+    const panel = document.getElementById('motivationPanel');
+    if (panel.classList.contains('open')) {
+      // keep it open but it will be fixed positioning
+    }
+  }
+});
+</script>
+</body>
+</html>

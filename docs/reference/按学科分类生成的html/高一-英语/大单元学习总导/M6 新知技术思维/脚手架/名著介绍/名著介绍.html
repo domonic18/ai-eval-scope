@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名著介绍 — 友谊的智慧</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+h1 { font-size: var(--font-h1); color: var(--primary); margin: 0 0 16px; font-weight: 700; }
+h2 { font-size: var(--font-h2); color: var(--primary); margin: 18px 0 10px; font-weight: 600; border-left: 3px solid var(--primary); padding-left: 10px; }
+h3 { font-size: 16px; color: var(--primary-hover); margin: 10px 0 6px; font-weight: 600; }
+h4 { font-size: 14px; color: var(--primary); margin: 8px 0 4px; font-weight: 600; }
+.card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 14px 18px; margin-bottom: 14px; border: 1px solid var(--border); }
+.quote-card { background: linear-gradient(135deg, #f9f9f9 0%, #fff 100%); border-left: 4px solid var(--primary); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-bottom: 10px; }
+.quote-text { font-style: italic; font-size: 16px; line-height: 1.6; margin: 0 0 6px; }
+.quote-author { font-size: 13px; color: var(--text-secondary); text-align: right; }
+.quote-trigger { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 10px; background: #ebebeb; color: var(--primary); cursor: pointer; margin: 4px 0; transition: all 0.2s; }
+.quote-trigger:hover { background: var(--primary); color: #fff; }
+.quote-hint { display: none; margin-top: 6px; padding: 8px 12px; background: #f5f5f5; border-radius: 6px; font-size: 14px; border: 1px dashed var(--accent); }
+.quote-hint.show { display: block; }
+.book-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.book-btn { padding: 5px 14px; border: 1px solid var(--border); border-radius: 16px; background: var(--card-bg); cursor: pointer; font-size: 13px; transition: all 0.25s; }
+.book-btn:hover { border-color: var(--primary); }
+.book-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.book-panel { display: none; }
+.book-panel.show { display: block; }
+.tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 10px; background: #ebebeb; color: var(--text-secondary); margin-right: 4px; }
+ul { margin: 6px 0; padding-left: 20px; }
+li { margin: 3px 0; }
+.interact-hint { color: var(--text-secondary); font-size: 13px; text-align: center; margin: 4px 0; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>📚 名著介绍 · 友谊的思想深度</h1>
+<p style="color:var(--text-secondary);margin:-8px 0 14px;">名言是思想的触发器，名著是系统思想的载体</p>
+
+<h2>💬 名言部分</h2>
+
+<div class="quote-card">
+  <p class="quote-text">"A friend to all is a friend to none."</p>
+  <p class="quote-author">— Aristotle</p>
+  <span class="quote-trigger" onclick="toggleHint(this)">💡 思考触发器</span>
+  <div class="quote-hint">朋友多就等于友谊深吗？量 vs 质——你在生活中更看重哪一个？</div>
+</div>
+
+<div class="quote-card">
+  <p class="quote-text">"The only way to have a friend is to be one."</p>
+  <p class="quote-author">— Ralph Waldo Emerson</p>
+  <span class="quote-trigger" onclick="toggleHint(this)">💡 思考触发器</span>
+  <div class="quote-hint">友谊是"得到"还是"付出"？你上一次为朋友做了什么？</div>
+</div>
+
+<div class="quote-card">
+  <p class="quote-text">"Social media made us more connected, yet less connected."</p>
+  <p class="quote-author">— 匿名</p>
+  <span class="quote-trigger" onclick="toggleHint(this)">💡 思考触发器</span>
+  <div class="quote-hint">数字时代的友谊真的更好了吗？在线聊天 vs 面对面——哪种让你感到真正的连接？</div>
+</div>
+
+<h2>📖 名著部分</h2>
+
+<div class="book-tabs">
+  <span class="book-btn active" onclick="switchBook(this,'nicomachean')">《尼各马可伦理学》</span>
+  <span class="book-btn" onclick="switchBook(this,'carnegie')">《人性的弱点》</span>
+  <span class="book-btn" onclick="switchBook(this,'friendship')">《朋友之间》</span>
+</div>
+
+<div class="book-panel show" id="book-nicomachean">
+  <div class="card">
+    <h3>📜 尼各马可伦理学 <span class="tag">亚里士多德</span><span class="tag">中国经典</span></h3>
+    <p><strong>核心问题：</strong>什么是"好"的生活？友谊在其中扮演什么角色？</p>
+    <p><strong>核心观点：</strong>最高形式的友谊是基于"美德"的友谊——两个好人因为彼此的优秀品质而成为朋友。</p>
+    <p><strong>关键章节：</strong>第八卷（友谊的种类）→ 第九卷（友谊与幸福）</p>
+    <p><strong>适读建议：</strong>基础 → 导读版 | 进阶 → 原文全本</p>
+    <p><strong>获取路径：</strong>纸质书（商务印书馆版）· 电子书（微信读书）</p>
+  </div>
+</div>
+
+<div class="book-panel" id="book-carnegie">
+  <div class="card">
+    <h3>🤝 人性的弱点 <span class="tag">Dale Carnegie</span><span class="tag">外国经典</span></h3>
+    <p><strong>核心问题：</strong>如何赢得朋友并影响他人？</p>
+    <p><strong>核心观点：</strong>真诚的关心和倾听是建立关系的核心。</p>
+    <p><strong>关键章节：</strong>"真诚地关心他人"——这是整本书最有力量的一章。</p>
+    <p><strong>适读建议：</strong>基础 → 中文版 | 挑战 → 英文原版</p>
+    <p><strong>获取路径：</strong>纸质书 · 电子书 · 有声书（喜马拉雅）</p>
+  </div>
+</div>
+
+<div class="book-panel" id="book-friendship">
+  <div class="card">
+    <h3>🌐 朋友之间 <span class="tag">Friendship: A History</span><span class="tag">跨学科</span></h3>
+    <p><strong>核心问题：</strong>友谊的概念在历史上是如何变化的？</p>
+    <p><strong>核心观点：</strong>友谊的定义随着社会和科技不断演变——从古希腊到数字时代。</p>
+    <p><strong>内容脉络：</strong>古希腊友谊 → 中世纪友谊 → 现代友谊 → 数字时代友谊</p>
+    <p><strong>适读建议：</strong>进阶（建议前两本读完后挑战）</p>
+    <p><strong>获取路径：</strong>图书馆或线上书店</p>
+  </div>
+</div>
+
+<p class="interact-hint">👆 点击名言旁的触发器进行思考 · 点击标签切换名著介绍</p>
+</div>
+
+<script>
+function toggleHint(el) {
+  const hint = el.nextElementSibling;
+  hint.classList.toggle('show');
+  el.textContent = hint.classList.contains('show') ? '🙌 思考中...' : '💡 思考触发器';
+}
+function switchBook(el, target) {
+  document.querySelectorAll('.book-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.book-panel').forEach(p => p.classList.remove('show'));
+  document.getElementById('book-' + target).classList.add('show');
+}
+</script>
+</body>
+</html>

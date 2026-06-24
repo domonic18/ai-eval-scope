@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性原理 — 可迁移的分析方法</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; }
+.header {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 28px 24px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--primary);
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+.header .sub { color: var(--text-secondary); font-size: 14px; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bg);
+}
+.card h3 { font-size: 16px; font-weight: 600; margin: 16px 0 8px; color: var(--primary-hover); }
+.card h4 { font-size: 15px; font-weight: 600; margin: 12px 0 6px; color: var(--text); }
+.tag {
+  display: inline-block;
+  background: #e8e8e8;
+  color: var(--primary);
+  padding: 3px 14px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-right: 6px;
+}
+.tag.gold { background: #fff7e6; color: #d46b08; }
+.tag.blue { background: #f0f5ff; color: #1677ff; }
+.tag.green { background: #f0fdf4; color: #16a34a; }
+.principe-card {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 16px 18px;
+  margin: 12px 0;
+  border-left: 3px solid var(--primary);
+  transition: box-shadow 0.2s;
+  cursor: pointer;
+}
+.principe-card:hover { box-shadow: var(--shadow); }
+.principe-card .num { font-size: 20px; font-weight: 700; color: var(--primary); margin-right: 8px; }
+.principe-card .title { font-weight: 600; font-size: 16px; }
+.principe-card .detail { margin-top: 8px; color: var(--text-secondary); font-size: 14px; display: none; }
+.principe-card .detail.show { display: block; }
+.principe-card .toggle-btn {
+  background: none; border: none; color: var(--primary); cursor: pointer;
+  font-size: 13px; padding: 4px 0; margin-top: 6px; text-decoration: underline;
+}
+.quiz-item {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px 16px;
+  margin: 10px 0;
+}
+.quiz-item .q { font-weight: 500; margin-bottom: 8px; }
+.quiz-item .options { display: flex; gap: 12px; }
+.quiz-item .options button {
+  padding: 6px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card-bg);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+.quiz-item .options button:hover { border-color: var(--primary); }
+.quiz-item .options button.selected { background: var(--primary); color: #fff; border-color: var(--primary); }
+.quiz-item .explanation {
+  margin-top: 8px; padding: 8px 12px; background: #fafafa;
+  border-radius: 6px; font-size: 14px; color: var(--text-secondary);
+  display: none;
+}
+.quiz-item .explanation.show { display: block; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 10px 0; }
+th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+th { background: var(--bg); color: var(--primary); font-weight: 600; }
+ul, ol { padding-left: 20px; margin: 8px 0; }
+li { margin-bottom: 4px; }
+.transfer-box {
+  background: linear-gradient(135deg, #f5f5f5, #fafafa);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  margin: 12px 0;
+  border: 1px dashed var(--accent);
+}
+.step-box {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 12px 16px;
+  margin: 8px 0;
+  border: 1px solid var(--border);
+  transition: transform 0.2s;
+}
+.step-box:hover { transform: translateX(4px); }
+.step-box .step-label { font-weight: 600; color: var(--primary); font-size: 14px; }
+@media (max-width: 640px) {
+  .container { padding: 12px 10px; }
+  .header { padding: 18px 14px; }
+  .card { padding: 14px 12px; }
+  .quiz-item .options { flex-direction: column; gap: 6px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+<h1>🔍 解析性原理</h1>
+<div class="sub">M14 新知STEAM融合性应用 · 英语必修1 Unit 1 Friendship</div>
+<div class="sub" style="margin-top:4px;">从具体案例中提炼可反复使用的分析方法，面对任何文本都能找到清晰的切入路径</div>
+</div>
+
+<div class="card">
+<h2>💡 从示例到原理</h2>
+<p>学习不能止步于"看懂一个例子"。如果只记住某篇范文的分析结论，换一篇新文章又会无从下手。<strong>解析性原理</strong>就是从具体案例中提炼出<strong>可反复使用的分析方法</strong>，让你在面对任何文本时都能找到清晰的切入路径。</p>
+<p style="margin-top:8px;color:var(--text-secondary);">点击下方每一条原理，查看详细说明与可迁移场景。</p>
+</div>
+
+<div class="card">
+<h2>📐 五大解析性原理</h2>
+
+<div class="principe-card" onclick="toggleDetail(this)">
+<span class="num">01</span><span class="title">三层透视法</span>
+<div class="detail">
+<p><strong>原理说明：</strong>任何文本都可以从"字面层—含义层—意图层"三个层次进行拆解。字面层关注 what（写了什么），含义层关注 how（怎么写的），意图层关注 why（为什么这样写）。</p>
+<p><strong>迁移场景：</strong>阅读理解深层含义推断、写作中的读者意识训练、议论文论点分析。</p>
+<p><strong>💡 使用提醒：</strong>不要跳过字面层直接跳到意图层——忽略细节的推测容易变成主观臆断。</p>
+</div>
+<button class="toggle-btn">展开详情 ▾</button>
+</div>
+
+<div class="principe-card" onclick="toggleDetail(this)">
+<span class="num">02</span><span class="title">关键词锚定法</span>
+<div class="detail">
+<p><strong>原理说明：</strong>找准文本中反复出现或情感浓度最高的关键词，以其为"锚点"辐射全篇，快速锁定主题和情感基调。</p>
+<p><strong>迁移场景：</strong>诗歌情感分析、演讲稿主旨提炼、阅读理解主旨大意题。</p>
+<p><strong>💡 使用提醒：</strong>关键词不是越多越好——每个段落选 1-2 个最能概括句意的词即可，否则会失去焦点。</p>
+</div>
+<button class="toggle-btn">展开详情 ▾</button>
+</div>
+
+<div class="principe-card" onclick="toggleDetail(this)">
+<span class="num">03</span><span class="title">设问驱动法</span>
+<div class="detail">
+<p><strong>原理说明：</strong>用一系列递进式问题牵引自己的分析过程，从浅层事实走向深层理解。</p>
+<p><strong>迁移场景：</strong>课文预习时自主提问、作文审题时的立意挖掘、小组讨论中的深度追问。</p>
+<p><strong>💡 使用提醒：</strong>问题之间要有逻辑递进，不要跳跃——从"为什么"直接跳到"这意味着什么"容易丢失推理链条。</p>
+</div>
+<button class="toggle-btn">展开详情 ▾</button>
+</div>
+
+<div class="principe-card" onclick="toggleDetail(this)">
+<span class="num">04</span><span class="title">结构拆解法</span>
+<div class="detail">
+<p><strong>原理说明：</strong>将文本按"开头—发展—转折—收束"的结构单元拆开，分析每个部分的功能和它们之间的衔接关系。</p>
+<p><strong>迁移场景：</strong>完形填空中的语篇逻辑题、写作中的段落布局、长难阅读的快速定位。</p>
+<p><strong>💡 使用提醒：</strong>结构功能不是固定的——同一段落可能兼具"转折"和"情感铺陈"双重功能，灵活判断而非机械套用。</p>
+</div>
+<button class="toggle-btn">展开详情 ▾</button>
+</div>
+
+<div class="principe-card" onclick="toggleDetail(this)">
+<span class="num">05</span><span class="title">跨学科迁移法</span>
+<div class="detail">
+<p><strong>原理说明：</strong>将一个学科中的分析工具迁移到英语文本分析中，从不同角度激活理解。</p>
+<p><strong>迁移场景：</strong>跨学科主题阅读（STEAM 项目）、议论文论证素材的多元引用、综合性学习任务。</p>
+<p><strong>💡 使用提醒：</strong>跨学科迁移的前提是你对该学科的基本概念有所了解——不要为了"跨"而硬套不熟悉的概念。</p>
+</div>
+<button class="toggle-btn">展开详情 ▾</button>
+</div>
+
+</div>
+
+<div class="card">
+<h2>🔄 应用练习</h2>
+<div class="transfer-box">
+<h3 style="margin-bottom:6px;">📝 应用一：分析网络友谊博客</h3>
+<p>阅读一篇题为 <em>"The Friends We've Never Met: Online Friendship in the 21st Century"</em> 的博客文章，运用关键词锚定法 + 三层透视法 + 结构拆解法进行分析，并与 Unit 1 中 Anne 对友谊的理解进行对比。</p>
+<p style="font-size:14px;color:var(--text-secondary);margin-top:6px;">建议输出：一段 120 词左右的英语短文，开头用 "In both texts, friendship is portrayed as…" 或 "Unlike Anne, the 21st-century blogger sees…"</p>
+</div>
+<div class="transfer-box">
+<h3 style="margin-bottom:6px;">🎬 应用二：解析电影对白（Inside Out）</h3>
+<p>观看 <em>Inside Out</em>（头脑特工队）中 Joy 和 Sadness 围绕"记忆"的争论片段，运用设问驱动法和跨学科迁移法，解析情感冲突如何反映人际关系中的核心矛盾。</p>
+<p style="font-size:14px;color:var(--text-secondary);margin-top:6px;">建议输出：以英语角色扮演方式写一段 3-5 轮的对话。</p>
+</div>
+</div>
+
+<div class="card">
+<h2>✅ 自我检测</h2>
+<p style="color:var(--text-secondary);margin-bottom:10px;">判断下列说法是否正确，点击选项查看解析（建议用时：8 分钟）</p>
+
+<div class="quiz-item">
+<div class="q">1. 三层透视法中的"意图层"分析可以跳过字面层直接进行，因为意图最重要。</div>
+<div class="options">
+<button onclick="checkQuiz(this,false,'q1')">正确</button>
+<button onclick="checkQuiz(this,true,'q1')">错误</button>
+</div>
+<div class="explanation" id="q1">❌ 错误。意图层必须建立在字面层和含义层的准确理解之上，跳过细节的推测容易变成主观臆断。</div>
+</div>
+
+<div class="quiz-item">
+<div class="q">2. 关键词锚定法要求将文中所有出现的名词都作为关键词进行分析。</div>
+<div class="options">
+<button onclick="checkQuiz(this,false,'q2')">正确</button>
+<button onclick="checkQuiz(this,true,'q2')">错误</button>
+</div>
+<div class="explanation" id="q2">❌ 错误。关键词应关注高频词、情感色彩强烈的词和转折前后核心词，不宜过多。</div>
+</div>
+
+<div class="quiz-item">
+<div class="q">3. 结构拆解法只适用于完整的文章，不适用于段落级别的文本。</div>
+<div class="options">
+<button onclick="checkQuiz(this,false,'q3')">正确</button>
+<button onclick="checkQuiz(this,true,'q3')">错误</button>
+</div>
+<div class="explanation" id="q3">❌ 错误。任何一个段落内部也可以拆解为"引入—展开—收束"的结构单元，适用于各种文本尺度。</div>
+</div>
+
+<div class="quiz-item">
+<div class="q">4. 设问驱动法的提问链应该遵循"是什么→为什么→意味着什么→与我何关"的递进顺序。</div>
+<div class="options">
+<button onclick="checkQuiz(this,true,'q4')">正确</button>
+<button onclick="checkQuiz(this,false,'q4')">错误</button>
+</div>
+<div class="explanation" id="q4">✅ 正确。这一递进顺序保证了从浅层事实到深层理解的逻辑通路。</div>
+</div>
+
+</div>
+
+<div class="card">
+<h2>🎯 方法提炼：三步走</h2>
+<div class="step-box"><span class="step-label">Step 1</span> 问自己三个问题：这段话在语言上有什么特点？它来自什么文化背景？它反映了什么社会关系？</div>
+<div class="step-box"><span class="step-label">Step 2</span> 找"反常处"——文本中让你觉得"不太一样"的地方往往就是分析的突破口。</div>
+<div class="step-box"><span class="step-label">Step 3</span> 从语言出发，向文化和社会延伸——层层推理，不要跳步。</div>
+</div>
+
+</div>
+
+<script>
+function toggleDetail(el) {
+  const detail = el.querySelector('.detail');
+  const btn = el.querySelector('.toggle-btn');
+  detail.classList.toggle('show');
+  btn.textContent = detail.classList.contains('show') ? '收起详情 ▴' : '展开详情 ▾';
+}
+function checkQuiz(btn, isCorrect, id) {
+  const parent = btn.closest('.quiz-item');
+  parent.querySelectorAll('.options button').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const exp = document.getElementById(id);
+  if (exp) exp.classList.add('show');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目社区 — My Friendship Vocabulary Poster</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+
+header {
+  text-align: center;
+  padding: 32px 20px;
+  background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+  border-bottom: 2px solid var(--border);
+}
+
+header h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+
+header p {
+  color: var(--text-secondary);
+  font-size: calc(var(--font-body) - 1px);
+}
+
+.section-title {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 28px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title .badge {
+  font-size: calc(var(--font-body) - 3px);
+  background: var(--accent);
+  color: #fff;
+  border-radius: 10px;
+  padding: 0 10px;
+  line-height: 20px;
+}
+
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.project-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.project-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+
+.card-header {
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.card-header .icon {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.icon-short { background: #e8f5e9; color: #2e7d32; }
+.icon-mid { background: #fff3e0; color: #e65100; }
+.icon-long { background: #e3f2fd; color: #1565c0; }
+
+.card-header .duration {
+  font-size: calc(var(--font-body) - 3px);
+  color: var(--text-secondary);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.card-body {
+  padding: 0 16px 16px;
+}
+
+.card-body h3 {
+  font-size: calc(var(--font-body) + 2px);
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+
+.card-body .goal {
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.card-body .stage-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+}
+
+.card-body .stage-list li {
+  padding: 3px 0 3px 20px;
+  position: relative;
+  font-size: calc(var(--font-body) - 1px);
+}
+
+.card-body .stage-list li::before {
+  content: "→";
+  position: absolute;
+  left: 2px;
+  color: var(--accent);
+}
+
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.meta-tag {
+  font-size: calc(var(--font-body) - 3px);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 8px;
+  color: var(--text-secondary);
+}
+
+.btn-resource {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-size: calc(var(--font-body) - 1px);
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 8px;
+}
+
+.btn-resource:hover { background: var(--primary-hover); }
+
+/* accordion detail */
+.detail-area {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+}
+
+.detail-area.open {
+  max-height: 600px;
+}
+
+.detail-inner {
+  padding: 12px 16px;
+  font-size: calc(var(--font-body) - 1px);
+}
+
+.detail-inner p { margin-bottom: 6px; }
+
+.expand-icon {
+  transition: transform 0.3s;
+  margin-left: auto;
+}
+
+.expand-icon.rotated {
+  transform: rotate(180deg);
+}
+
+.intro-text {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin: 16px 0;
+  box-shadow: var(--shadow);
+}
+
+@media (max-width: 640px) {
+  .container { padding: 16px 12px; }
+  .project-grid { grid-template-columns: 1fr; }
+  header { padding: 24px 12px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🏗️ 项目社区</h1>
+  <p>英语 · 必修1 · Unit 1 Friendship — 从微项目到综合项目，用英语探索友谊</p>
+</header>
+
+<div class="container">
+
+  <div class="intro-text">
+    <p>欢迎来到<strong>项目社区</strong>！这里有三个不同周期的项目供你选择。每个项目都围绕 Unit 1 Friendship 展开，帮助你用英语真实地表达、交流和创造。点击卡片标题展开详细任务说明。</p>
+  </div>
+
+  <div class="section-title">
+    📋 三类项目
+    <span class="badge">可选</span>
+  </div>
+
+  <div class="project-grid">
+
+    <!-- 短周期 -->
+    <div class="project-card">
+      <div class="card-header" onclick="toggleDetail(0)">
+        <span class="icon icon-short">📝</span>
+        <strong>微项目</strong>
+        <span class="duration">1-3 天</span>
+        <span class="expand-icon" id="arrow-0">▼</span>
+      </div>
+      <div class="card-body">
+        <h3>My Friendship Vocabulary Poster</h3>
+        <p class="goal">🎯 用视觉化方式呈现本单元关于友谊的核心词汇</p>
+        <ul class="stage-list">
+          <li>从课文中提取 20 个关于友谊的词汇/短语</li>
+          <li>分类：positive / neutral / negative feelings</li>
+          <li>设计海报布局</li>
+          <li>完成图文并茂的英文词汇海报</li>
+        </ul>
+        <div class="meta-row">
+          <span class="meta-tag">A4/A3 海报</span>
+          <span class="meta-tag">≥20 词汇</span>
+          <span class="meta-tag">分类正确性</span>
+        </div>
+        <button class="btn-resource" onclick="alert('📎 推荐工具：Canva 设计模板 + 本单元词汇表')">🔗 查看资源</button>
+      </div>
+      <div class="detail-area" id="detail-0">
+        <div class="detail-inner">
+          <p><strong>📌 评价标准：</strong>词汇量 ≥20 个、分类正确性、视觉美观度</p>
+          <p><strong>💡 小提示：</strong>用不同颜色区分 positive / neutral / negative，配上小图标更有趣！</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 中周期 -->
+    <div class="project-card">
+      <div class="card-header" onclick="toggleDetail(1)">
+        <span class="icon icon-mid">✉️</span>
+        <strong>专题项目</strong>
+        <span class="duration">1-2 周</span>
+        <span class="expand-icon" id="arrow-1">▼</span>
+      </div>
+      <div class="card-body">
+        <h3>International Pen Pal Letter Exchange</h3>
+        <p class="goal">🎯 写一封真实的英语信件给海外笔友，介绍中国的友谊文化</p>
+        <ul class="stage-list">
+          <li>注册国际笔友平台或匹配写信对象</li>
+          <li>收集中国友谊文化素材（成语、故事、传统）</li>
+          <li>用英语撰写初稿（自我介绍 + 友谊观 + 一个问题）</li>
+          <li>同伴互评修改</li>
+          <li>正式发送并等待回复</li>
+        </ul>
+        <div class="meta-row">
+          <span class="meta-tag">200+ 词</span>
+          <span class="meta-tag">信封格式</span>
+          <span class="meta-tag">同伴互评</span>
+        </div>
+        <button class="btn-resource" onclick="alert('📎 推荐平台：InterPals, PenPal World / 友谊文化素材库')">🔗 查看资源</button>
+      </div>
+      <div class="detail-area" id="detail-1">
+        <div class="detail-inner">
+          <p><strong>📌 评价标准：</strong>格式规范、内容充实、语言准确、文化表达恰当</p>
+          <p><strong>💡 小提示：</strong>先写中文大纲再翻译成英文，注意英文信件的开头和结尾格式。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 长周期 -->
+    <div class="project-card">
+      <div class="card-header" onclick="toggleDetail(2)">
+        <span class="icon icon-long">🎬</span>
+        <strong>综合项目</strong>
+        <span class="duration">1 月+</span>
+        <span class="expand-icon" id="arrow-2">▼</span>
+      </div>
+      <div class="card-body">
+        <h3>Our Class Friendship Documentary</h3>
+        <p class="goal">🎯 制作一部 5 分钟的英语纪录片，记录班级同学的友谊故事</p>
+        <ul class="stage-list">
+          <li>策划团队（编导组 / 采访组 / 拍摄组 / 剪辑组）</li>
+          <li>设计采访提纲（英语问题）</li>
+          <li>拍摄采访素材</li>
+          <li>撰写英语旁白脚本</li>
+          <li>剪辑制作成片</li>
+          <li>班级首映式 🎉</li>
+        </ul>
+        <div class="meta-row">
+          <span class="meta-tag">5 分钟短片</span>
+          <span class="meta-tag">英语字幕</span>
+          <span class="meta-tag">团队协作</span>
+        </div>
+        <button class="btn-resource" onclick="alert('📎 推荐工具：剪映 / iMovie / Canva Video + 采访提纲模板')">🔗 查看资源</button>
+      </div>
+      <div class="detail-area" id="detail-2">
+        <div class="detail-inner">
+          <p><strong>📌 评价标准：</strong>英语表达流畅度、内容真实感人、技术制作质量、团队协作</p>
+          <p><strong>💡 小提示：</strong>先做采访再写旁白，这样旁白可以呼应采访中的真实片段。</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="section-title">
+    📌 项目选择指南
+  </div>
+
+  <div class="intro-text" style="margin-top:0;">
+    <ul style="padding-left:20px;">
+      <li><strong>短周期</strong> — 适合零碎时间，快速产出成就感</li>
+      <li><strong>中周期</strong> — 适合想要一次真实跨文化体验的你</li>
+      <li><strong>长周期</strong> — 适合团队合作，挑战综合英语应用能力</li>
+    </ul>
+    <p style="margin-top:8px;color:var(--text-secondary);">💬 你可以选择其中一个完成，也可以组合多个项目。完成后别忘了在班级分享你的成果！</p>
+  </div>
+
+</div>
+
+<script>
+function toggleDetail(i) {
+  const detail = document.getElementById('detail-' + i);
+  const arrow = document.getElementById('arrow-' + i);
+  detail.classList.toggle('open');
+  arrow.classList.toggle('rotated');
+}
+</script>
+
+</body>
+</html>

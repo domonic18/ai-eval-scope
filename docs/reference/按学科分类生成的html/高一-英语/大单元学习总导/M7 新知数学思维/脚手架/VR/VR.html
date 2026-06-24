@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VR 脚手架 — 友谊互动观察</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+}
+.header {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--primary);
+}
+.header h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+.header .subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section h2 .icon {
+  font-size: 20px;
+}
+.section p, .section li {
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+}
+.section ul {
+  list-style: none;
+  padding: 0;
+}
+.section ul li {
+  padding: 8px 0 8px 22px;
+  position: relative;
+}
+.section ul li::before {
+  content: "◆";
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+  font-size: 10px;
+  top: 12px;
+}
+.record-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 14px;
+}
+.record-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+}
+.record-table th:first-child { border-radius: 6px 0 0 0; }
+.record-table th:last-child { border-radius: 0 6px 0 0; }
+.record-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.record-table tr:hover td {
+  background: #fafafa;
+}
+.record-table .empty-row td {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+.alt-box {
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px 16px;
+  margin-top: 12px;
+}
+.alt-box .alt-title {
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+.resource-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 10px;
+}
+.resource-card {
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px;
+  transition: background 0.2s ease;
+  cursor: default;
+}
+.resource-card:hover {
+  background: #efefef;
+}
+.resource-card .r-title {
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+.resource-card .r-desc {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.sim-toggle {
+  display: block;
+  width: 100%;
+  background: var(--card-bg);
+  border: 2px dashed var(--accent);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  margin-top: 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  font-size: 15px;
+  color: var(--primary);
+  font-weight: 600;
+}
+.sim-toggle:hover {
+  background: #ebebeb;
+}
+.sim-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+  background: var(--card-bg);
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  border: 1px solid var(--border);
+  border-top: none;
+}
+.sim-content.open {
+  max-height: 400px;
+  padding: 16px;
+}
+.sim-content p {
+  margin-bottom: 8px;
+}
+.sim-content .scenario {
+  background: #fafafa;
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin: 8px 0;
+  border-left: 3px solid var(--accent);
+}
+.footer-note {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+  padding: 20px 0 8px;
+  border-top: 1px solid var(--border);
+  margin-top: 20px;
+}
+@media (max-width: 600px) {
+  .resource-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🥽 VR 脚手架</h1>
+  <div class="subtitle">M7 新知数学思维 · 友谊互动观察 · 沉浸式学习体验</div>
+</div>
+
+<div class="section">
+  <h2><span class="icon">🔍</span> 观察任务</h2>
+  <p>在 VR 场景中"走进"友谊互动的真实场景，将抽象概念具体化：</p>
+  <ul>
+    <li>观察朋友之间的<strong>非语言互动</strong>（表情、姿态、距离）</li>
+    <li>记录不同友谊关系中的<strong>互动模式差异</strong></li>
+    <li>注意<strong>对话节奏</strong>——谁在主导话题？谁在倾听？</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2><span class="icon">🎮</span> 操作任务</h2>
+  <ul>
+    <li>改变某一变量（如交流频率、共享活动），观察友谊关系的变化</li>
+    <li>模拟解决友谊冲突的<strong>决策路径</strong>——不同选择带来不同结果</li>
+    <li>调整场景中的<strong>社交距离</strong>，体验它对互动舒适度的影响</li>
+  </ul>
+
+  <div class="sim-toggle" onclick="toggleSim()">🎬 点击进入模拟场景</div>
+  <div class="sim-content" id="simContent">
+    <p><strong>场景一：咖啡馆重逢</strong></p>
+    <div class="scenario">两位老朋友久别重逢。A 热情拥抱，B 略显拘谨。观察：空间距离、眼神接触、对话话题的变化轨迹。</div>
+    <p><strong>场景二：冲突调解</strong></p>
+    <div class="scenario">两位好友因误会争吵。尝试选择不同的调解方式：冷静沟通 vs 第三方介入，观察关系修复的速度差异。</div>
+  </div>
+</div>
+
+<div class="section">
+  <h2><span class="icon">📋</span> 记录任务</h2>
+  <p>用结构化表格记录观察到的友谊互动要素：</p>
+  <table class="record-table">
+    <thead>
+      <tr><th>场景类型</th><th>互动要素</th><th>观察到的模式</th><th>友谊类型推断</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>亲密朋友</td><td>眼神接触、身体距离</td><td>_______</td><td>_______</td></tr>
+      <tr><td>普通朋友</td><td>话题广度、礼貌程度</td><td>_______</td><td>_______</td></tr>
+      <tr><td>同学关系</td><td>合作方式、交流频率</td><td>_______</td><td>_______</td></tr>
+      <tr class="empty-row"><td colspan="4">✍️ 在 VR 体验中填写你的观察记录</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h2><span class="icon">📺</span> VR 资源推荐</h2>
+  <div class="resource-grid">
+    <div class="resource-card">
+      <div class="r-title">AltspaceVR</div>
+      <div class="r-desc">社交模拟场景，可多人互动观察</div>
+    </div>
+    <div class="resource-card">
+      <div class="r-title">VR Chat</div>
+      <div class="r-desc">丰富的社交场景，适合观察自然互动</div>
+    </div>
+    <div class="resource-card">
+      <div class="r-title">Engage VR</div>
+      <div class="r-desc">教育平台，含社交技能训练模块</div>
+    </div>
+    <div class="resource-card">
+      <div class="r-title">vTime XR</div>
+      <div class="r-desc">沉浸式社交体验，适合友谊关系观察</div>
+    </div>
+  </div>
+
+  <div class="alt-box">
+    <div class="alt-title">🔄 无 VR 设备替代方案</div>
+    <ul>
+      <li><strong>3D 动画视频：</strong>YouTube 搜索"social interaction simulation animation"</li>
+      <li><strong>360° 全景视频：</strong>通过手机观看社交场景全景视频，获得部分沉浸感</li>
+      <li><strong>角色扮演：</strong>与同学搭档，面对面模拟 VR 中的互动场景</li>
+    </ul>
+  </div>
+</div>
+
+<div class="footer-note">在 VR 中观察 · 在记录中思考 · 从沉浸到理解</div>
+
+</div>
+
+<script>
+function toggleSim() {
+  const content = document.getElementById('simContent');
+  content.classList.toggle('open');
+}
+</script>
+
+</body>
+</html>

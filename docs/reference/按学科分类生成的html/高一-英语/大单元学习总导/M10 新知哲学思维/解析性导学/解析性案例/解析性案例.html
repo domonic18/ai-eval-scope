@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性案例 — 七阶递进分析训练</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); font-size: var(--font-body); line-height: var(--line-height); }
+.container { width: 100%; max-width: none; padding: 20px; box-sizing: border-box; }
+header { background: linear-gradient(135deg, #434343 0%, #595959 100%); color: #fff; padding: 28px 24px; border-radius: var(--border-radius); margin-bottom: 24px; }
+header h1 { font-size: var(--font-h1); margin: 0 0 6px 0; }
+header p { margin: 0; opacity: 0.85; font-size: 14px; }
+.section-title { font-size: var(--font-h2); color: var(--primary); margin: 28px 0 12px 0; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: flex; align-items: center; gap: 8px; }
+.overview-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.overview-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 14px; box-shadow: var(--shadow); text-align: center; cursor: pointer; transition: all 0.2s; }
+.overview-card:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.1); border-color: var(--primary); }
+.overview-card .level { font-size: 28px; font-weight: 700; color: var(--primary); }
+.overview-card .level-label { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.overview-card .title { font-size: 14px; font-weight: 600; margin: 6px 0; }
+.overview-card .topic { font-size: 12px; color: var(--text-secondary); }
+.overview-card .diff { font-size: 13px; margin-top: 6px; }
+.case-panel { display: none; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 20px; margin: 12px 0 20px 0; box-shadow: var(--shadow); }
+.case-panel.active { display: block; }
+.case-panel h3 { color: var(--primary); margin: 0 0 10px 0; font-size: 16px; }
+.case-panel h4 { color: var(--primary); margin: 14px 0 6px 0; font-size: 14px; }
+.case-panel p, .case-panel li { font-size: 14px; }
+.case-panel ul { padding-left: 18px; margin: 4px 0; }
+.case-panel li { margin-bottom: 3px; }
+.case-text { background: #f9f9f9; border: 1px solid var(--border); border-radius: 6px; padding: 14px; margin: 10px 0; font-size: 13.5px; line-height: 1.7; }
+.case-text p { margin: 0 0 6px 0; }
+.principle-tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin: 2px; background: #e8e8e8; color: #434343; }
+.principle-tag.p1 { background: #e3e8f0; color: #2c3e6b; }
+.principle-tag.p2 { background: #e8f0e3; color: #3d6b2c; }
+.principle-tag.p3 { background: #f0e8e3; color: #6b4c2c; }
+.principle-tag.p4 { background: #e8e3f0; color: #4c2c6b; }
+table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13.5px; }
+th, td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; }
+th { background: #f0f0f0; color: var(--primary); font-weight: 600; }
+.back-btn { background: var(--primary); color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 13px; margin-top: 10px; }
+.back-btn:hover { background: var(--primary-hover); }
+@media (max-width: 640px) { .overview-grid { grid-template-columns: 1fr 1fr; } header { padding: 20px 16px; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>📖 解析性案例 · 七阶递进训练</h1>
+  <p>M10 新知哲学思维 · 友谊主题英语文本系统分析 · 英语 必修1</p>
+</header>
+
+<div class="section-title">📌 板块定位</div>
+<p>在完成"解析性示例"和"解析性原理"之后，本环节通过 <strong>7 个递进案例</strong>，让你在不同友谊主题英语文本情境中系统练习解析性原理的运用。四大核心原则贯穿始终：结构拆解法 · 情感线索追踪法 · 语言策略识别法 · 证据链构建法。</p>
+
+<div class="section-title">🗂️ 七阶总览</div>
+<p style="color:var(--text-secondary);margin-bottom:10px;">点击每个案例进入详细文本和分析任务。</p>
+
+<div class="overview-grid">
+  <div class="overview-card" onclick="showCase('c1')">
+    <div class="level">1</div>
+    <div class="level-label">★☆☆☆☆</div>
+    <div class="title">同桌的日记</div>
+    <div class="topic">日常生活 · 日记</div>
+  </div>
+  <div class="overview-card" onclick="showCase('c2')">
+    <div class="level">2</div>
+    <div class="level-label">★★☆☆☆</div>
+    <div class="title">篮球场上的裂痕</div>
+    <div class="topic">校园生活 · 邮件</div>
+  </div>
+  <div class="overview-card" onclick="showCase('c3')">
+    <div class="level">3</div>
+    <div class="level-label">★★☆☆☆</div>
+    <div class="title">妈妈的旧照片</div>
+    <div class="topic">家庭 · 书信</div>
+  </div>
+  <div class="overview-card" onclick="showCase('c4')">
+    <div class="level">4</div>
+    <div class="level-label">★★★☆☆</div>
+    <div class="title">Anne日记续篇</div>
+    <div class="topic">学科核心 · 续写</div>
+  </div>
+  <div class="overview-card" onclick="showCase('c5')">
+    <div class="level">5</div>
+    <div class="level-label">★★★★☆</div>
+    <div class="title">友谊的化学方程式</div>
+    <div class="topic">跨学科 · 科普</div>
+  </div>
+  <div class="overview-card" onclick="showCase('c6')">
+    <div class="level">6</div>
+    <div class="level-label">★★★★☆</div>
+    <div class="title">屏幕背后的朋友</div>
+    <div class="topic">社会 · 辩论+数据</div>
+  </div>
+  <div class="overview-card" onclick="showCase('c7')">
+    <div class="level">7</div>
+    <div class="level-label">★★★★★</div>
+    <div class="title">友谊之桥</div>
+    <div class="topic">综合 · 多文本混合</div>
+  </div>
+</div>
+
+<div id="c1" class="case-panel">
+  <h3>第1阶：同桌的日记 — 友谊从一次借笔开始</h3>
+  <p><span class="principle-tag p1">结构拆解法</span><span class="principle-tag p2">情感线索追踪法</span></p>
+  <div class="case-text">
+    <p><strong>October 15th, Tuesday</strong></p>
+    <p>Today was my first day at this new school. Everything felt strange and unfamiliar. During math class, I suddenly realized I had forgotten my pencil case at home. I felt so stupid and embarrassed...</p>
+    <p>Then the girl sitting next to me — her name is Zhang Lin — quietly pushed a pencil toward me. She didn't say a word, just a small smile and a gentle nod...</p>
+    <p>When I got home tonight, I wrote this in my diary. I don't know if Zhang Lin realized it, but that small pencil was more than just a pencil. It was a hand reaching out in the dark.</p>
+  </div>
+  <h4>🎯 分析任务</h4>
+  <p>运用结构拆解法和情感线索追踪法，分析日记的叙事结构和作者的情感变化轨迹。核心问题：这篇日记如何通过"小事"来表现友谊的萌芽？</p>
+  <h4>🔑 分析路径</h4>
+  <ul>
+    <li><strong>结构拆解</strong> — 按时间线分为"上课前→数学课→午餐→回家后"，标注各阶段功能</li>
+    <li><strong>情感标记</strong> — 圈画情感词汇，用🟢🟡🔴标注积极/中性/消极</li>
+    <li><strong>绘制情感曲线</strong> — 按照行文顺序标出情感强度值，呈现"V形反转"曲线</li>
+  </ul>
+  <h4>💡 参考思路</h4>
+  <p>日记的"以小见大"策略值得注意。结尾比喻句"a hand reaching out in the dark"是全篇文眼——将一支铅笔升华为友谊的象征，完成了从具体叙述到抽象感悟的跃升。</p>
+  <button class="back-btn" onclick="hideAll()">← 返回总览</button>
+</div>
+
+<div id="c2" class="case-panel">
+  <h3>第2阶：篮球场上的裂痕 — 写给教练的邮件</h3>
+  <p><span class="principle-tag p2">情感线索追踪法</span><span class="principle-tag p3">语言策略识别法</span></p>
+  <div class="case-text">
+    <p><strong>Subject: A concern about what happened after the basketball game</strong></p>
+    <p>Dear Mr. Chen, I'm writing because I need some advice about a situation with my friend Wang Hao. Yesterday our class played against Class 3... I passed the ball to Wang Hao, but instead of shooting, he passed it back. By the time I caught it, the defender was already on me. I tried to shoot but missed. We lost by one point.</p>
+    <p>After the game, I said to Wang Hao, "Why didn't you take the shot? You had the better angle!" He just turned around and walked away... I feel terrible now. I know I shouldn't have blamed him in front of everyone.</p>
+  </div>
+  <h4>🎯 分析任务</h4>
+  <p>分析李明在邮件中的情感变化和语言策略。核心问题：语言选择如何反映从"自我辩护"到"真诚反思"的内心转变？</p>
+  <h4>🔑 分析关键</h4>
+  <ul>
+    <li><strong>情感弧线</strong> — 礼貌克制(0)→客观叙述(-1)→愤怒峰值(-4)→内疚(-2)→恳切(-1)，呈W形波动</li>
+    <li><strong>虚拟语气信号</strong> — "shouldn't have blamed him"标志认知转折的关键语言信号</li>
+    <li><strong>人称变化</strong> — "we lost" vs. "he missed" 之间的隐含对比</li>
+  </ul>
+  <button class="back-btn" onclick="hideAll()">← 返回总览</button>
+</div>
+
+<div id="c3" class="case-panel">
+  <h3>第3阶：妈妈的旧照片 — 一段友谊的跨国延续</h3>
+  <p><span class="principle-tag p1">结构拆解法</span><span class="principle-tag p4">证据链构建法</span></p>
+  <div class="case-text">
+    <p><strong>Dear Xiaoming,</strong></p>
+    <p>My name is Sarah Johnson, and I was your mother's pen pal from 1993 to 1998... I found an old photo yesterday — it was taken in the summer of 1995, when your mother and I finally met in person. She was wearing a red jacket and carrying a huge suitcase...</p>
+    <p>We spent those three weeks exploring New York City, eating pizza in Brooklyn... But then life happened. Our letters became fewer and fewer. The last letter I received from her was in 1998.</p>
+    <p>Friendship, I've learned, does not require constant contact. It requires a moment of genuine connection that time cannot erase.</p>
+  </div>
+  <h4>🎯 分析任务</h4>
+  <p>分析信件的结构设计和作者如何通过具体证据支撑"跨越时空的友谊"这一主题。</p>
+  <h4>🔑 证据链示意图</h4>
+  <p style="font-size:13px;">[旧照片] → "我们真的见过面" → 友谊真实<br>
+  [红夹克/大行李箱] → "我记得每个细节" → 意义重大<br>
+  [披萨/渡轮] → "我们分享了生活" → 深层互动<br>
+  [1998年最后一封信] → "但我们失去了联系" → 友谊不在频率<br>
+  [从未忘记] → "时间无法抹去" → <strong>真正的友谊超越时间</strong></p>
+  <button class="back-btn" onclick="hideAll()">← 返回总览</button>
+</div>
+
+<div id="c4" class="case-panel">
+  <h3>第4阶：Anne的日记续篇 — 当友情遭遇考验</h3>
+  <p><span class="principle-tag p1">结构拆解法</span><span class="principle-tag p2">情感线索追踪法</span><span class="principle-tag p3">语言策略识别法</span><span class="principle-tag p4">证据链构建法</span></p>
+  <div class="case-text">
+    <p>Anne Frank与Peter van Daan发生争执后的日记片段："Something happened today that I never expected — Peter and I had a fight." Peter snap at her: "You think everyone wants to talk about their feelings like you do, Anne?" But later he knocks on her door, hands her a note: "I'm sorry. I'm not good with words like you. But you are the only person who makes this hiding place feel like a home."</p>
+  </div>
+  <table>
+    <tr><th>阶段</th><th>情感</th><th>运用原理</th></tr>
+    <tr><td>冲突爆发</td><td>震惊·受伤</td><td>结构拆解+情感追踪</td></tr>
+    <tr><td>情感反应</td><td>痛苦·退缩</td><td>情感线索追踪</td></tr>
+    <tr><td>内心独白</td><td>怀疑·自省</td><td>语言策略识别</td></tr>
+    <tr><td>和解信号</td><td>感动·释然</td><td>证据链构建</td></tr>
+    <tr><td>主题升华</td><td>理解·成熟</td><td>综合运用</td></tr>
+  </table>
+  <h4>💡 核心洞见</h4>
+  <p>Peter的行为变化本身就是最强证据链："snapped at me"→"knocked on the door"→"handed a note"→"Please don't give up on me"。这一行为链就是"冲突修复"最有力的叙事证据。</p>
+  <button class="back-btn" onclick="hideAll()">← 返回总览</button>
+</div>
+
+<div id="c5" class="case-panel">
+  <h3>第5阶：友谊的化学方程式 — 神经科学英文摘要</h3>
+  <p><span class="principle-tag p3">语言策略识别法</span><span class="principle-tag p4">证据链构建法</span></p>
+  <div class="case-text">
+    <p>为什么友谊有益健康？当你和朋友交谈时，大脑释放催产素（"cuddle chemical"），同时减少皮质醇——压力激素。Oxford研究发现与朋友握手可减轻20%疼痛。Harvard 80年追踪研究显示，50岁时对友谊满意的人在80岁时显著更健康。而慢性孤独使早逝风险增加26%——相当于每天吸15支烟的效果。</p>
+  </div>
+  <h4>🔑 证据递进逻辑</h4>
+  <p>从<strong>短时生化反应</strong>（催产素，几分钟）到<strong>实验证据</strong>（疼痛实验，实验室环境）到<strong>纵向追踪</strong>（Harvard 80年研究），证据的时间尺度逐步拉长，使论证更具说服力。反面证据（孤独的危害=15支烟）作为一种"反证"策略进一步强化正面论证。</p>
+  <button class="back-btn" onclick="hideAll()">← 返回总览</button>
+</div>
+
+<div id="c6" class="case-panel">
+  <h3>第6阶：屏幕背后的朋友 — 社交媒体辩论与数据</h3>
+  <p><span class="principle-tag p2">情感线索追踪法</span><span class="principle-tag p4">证据链构建法</span></p>
+  <div class="case-text">
+    <p><strong>@DigitalNative (Pro):</strong> 社交媒体让跨国友谊得以维系，还能找到小众兴趣同好。</p>
+    <p><strong>@RealTalk (Con):</strong> 点赞≠真实对话。847个粉丝中有几个会在你需要时出现？<5个。</p>
+    <p><strong>@DataGirl (Data):</strong> 校内调查(n=120)：78%认为社交媒体帮助维持远距友谊，45%感觉刷完后更孤独。</p>
+    <p><strong>@DeepThinker (Meta):</strong> 关键不是社交媒体好还是坏，而是我们在用它还是它在用我们。</p>
+  </div>
+  <h4>🔑 辩论升级路径</h4>
+  <p><strong>个人体验</strong>→<strong>逻辑批判</strong>→<strong>数据呈现</strong>→<strong>框架转换</strong>。最"聪明"的不是提出最多数据的人，而是改变讨论框架的人(@DeepThinker的"锤子比喻")。学会识别"框架转换"策略本身就是高阶解析能力。</p>
+  <button class="back-btn" onclick="hideAll()">← 返回总览</button>
+</div>
+
+<div id="c7" class="case-panel">
+  <h3>第7阶："友谊之桥" — 国际救援行动的多视角文本</h3>
+  <p><span class="principle-tag p1">结构拆解法</span><span class="principle-tag p2">情感线索追踪法</span><span class="principle-tag p3">语言策略识别法</span><span class="principle-tag p4">证据链构建法</span></p>
+  <div class="case-text">
+    <p><strong>文本A（救援人员日记）</strong>："I met Ahmed today... when we lifted that concrete slab together and pulled out a 6-year-old girl who was still breathing, we didn't need words. He looked at me; I looked at him. We were both crying."</p>
+    <p><strong>文本B（新闻短报道）</strong>：90多个国家的11000名国际救援人员在土耳其地震区形成深厚友谊。"When you're working 20 hours a day in the rubble, nationality doesn't matter."</p>
+    <p><strong>文本C（社交媒体帖子）</strong>："She wrote on a piece of paper: 'Friend.' I still have that paper. I will keep it forever."</p>
+  </div>
+  <table>
+    <tr><th>对比维度</th><th>文本A 日记</th><th>文本B 新闻</th><th>文本C 社交帖</th></tr>
+    <tr><td>叙事视角</td><td>第一人称参与者</td><td>第三人称观察者</td><td>第一人称亲历者</td></tr>
+    <tr><td>情感强度</td><td>高（持续渲染）</td><td>中低（客观叙述）</td><td>极高（一个细节引爆）</td></tr>
+    <tr><td>核心策略</td><td>细节渲染+独白</td><td>引语+数据+权威</td><td>符号化+标签化</td></tr>
+    <tr><td>建构目的</td><td>个人记忆与反思</td><td>公共知识与认知</td><td>情感连接与传播</td></tr>
+  </table>
+  <h4>💡 核心追问</h4>
+  <p>如果只能用<strong>一个词</strong>概括三个文本共同表达的友谊本质，这个词应该是什么？可能的答案："无言的信任""跨越边界的连接""危难中的陪伴"——答案没有对错，论证过程才是解析性思维的核心训练。</p>
+  <button class="back-btn" onclick="hideAll()">← 返回总览</button>
+</div>
+
+<div class="section-title">🧠 元认知反思</div>
+<table>
+  <tr><th>问题</th><th>引导</th></tr>
+  <tr><td>哪个案例最容易/最困难？</td><td>是词汇量的问题还是分析任务本身的问题？跨学科案例是否比日常生活案例更难？</td></tr>
+  <tr><td>哪条原理使用最多/最少？</td><td>有没有在某个案例中突然觉得某条原理"就是为它量身定做的"？</td></tr>
+  <tr><td>策略迁移</td><td>这些原理是否可迁移到中文古诗分析（如李白的《赠汪伦》）？如何调整？</td></tr>
+  <tr><td>文体比较</td><td>日记、新闻报道、社交媒体——三种文体表达友谊各有什么优劣？</td></tr>
+</table>
+
+</div>
+<script>
+function showCase(id) { hideAll(); document.getElementById(id).classList.add('active'); }
+function hideAll() {
+  var panels = document.querySelectorAll('.case-panel');
+  for (var i = 0; i < panels.length; i++) { panels[i].classList.remove('active'); }
+}
+</script>
+</body>
+</html>

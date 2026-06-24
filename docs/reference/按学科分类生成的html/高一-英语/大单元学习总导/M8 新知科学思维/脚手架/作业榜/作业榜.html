@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>友谊主题分层作业</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --success: #52c41a;
+  --warning: #faad14;
+  --danger: #ff4d4f;
+  --info: #1677ff;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  width: 100%;
+  max-width: none;
+  padding: 24px;
+}
+.container { width: 100%; max-width: none; margin: 0 auto; }
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 8px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--primary);
+}
+h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 28px 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+h2 .badge {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  color: #fff;
+  font-weight: 400;
+}
+.badge-basic { background: var(--accent); }
+.badge-tier { background: var(--warning); color: #333; }
+.badge-open { background: var(--success); }
+p { margin-bottom: 10px; color: var(--text); }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  transition: box-shadow 0.2s;
+}
+.card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.desc-box {
+  background: #fafafa;
+  border-left: 3px solid var(--primary);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border-radius: 0 6px 6px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.task-item {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  transition: all 0.2s;
+}
+.task-item:hover { border-color: var(--primary); }
+.task-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+.task-label input[type="checkbox"] {
+  margin-top: 3px;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+}
+.task-label .task-text { flex: 1; }
+.task-label .task-done {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+.radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 12px 0;
+}
+.radio-card {
+  flex: 1;
+  min-width: 130px;
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 12px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+  position: relative;
+}
+.radio-card.selected {
+  border-color: var(--primary);
+  background: #f9f9f9;
+}
+.radio-card .level { font-weight: 600; color: var(--primary); font-size: 16px; }
+.radio-card .level-desc { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+.radio-card input[type="radio"] { display: none; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 14px;
+}
+th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 500;
+}
+td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+tr:hover td { background: #fafbfc; }
+.rubric-table th { background: #434343; }
+.rubric-table td { text-align: center; }
+.rubric-table td:first-child { text-align: left; font-weight: 500; }
+.layered-card {
+  display: none;
+  margin-top: 12px;
+  padding: 14px;
+  background: #fafafa;
+  border-radius: var(--border-radius);
+  border: 1px dashed var(--border);
+}
+.layered-card.active { display: block; }
+.btn {
+  display: inline-block;
+  padding: 8px 18px;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn:hover { background: var(--primary-hover); }
+.btn-outline {
+  background: transparent;
+  color: var(--primary);
+}
+.btn-outline:hover { background: #f0f0f0; }
+.choice-badge {
+  display: inline-block;
+  font-size: 12px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: #f0f0f0;
+  color: var(--text-secondary);
+  margin-right: 6px;
+}
+@media (max-width: 600px) {
+  body { padding: 12px; }
+  .radio-group { flex-direction: column; }
+  table { font-size: 13px; }
+  th, td { padding: 8px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>📋 友谊主题分层作业</h1>
+<div class="desc-box">
+  <strong>📌 设计说明</strong><br>
+  通过三层结构的任务设计，帮助你从"理解"到"应用"再到"创造性表达"，逐步内化 Unit 1 <em>Friendship</em> 的核心知识和技能。请按顺序完成各层任务。
+</div>
+
+<!-- 基础层 -->
+<h2><span class="badge badge-basic">基础层</span> 再现与理解</h2>
+<p style="color:var(--text-secondary);font-size:14px;">🎯 目标：检测你对本模块核心知识和方法的掌握</p>
+
+<div class="card">
+  <h3 style="font-size:16px;margin-bottom:10px;color:var(--primary);">✅ 任务 A · 概念梳理（必选）</h3>
+  <p>请用英语完成以下句子，勾选即表示你已填写完成：</p>
+  <div class="task-item">
+    <label class="task-label">
+      <input type="checkbox" onchange="toggleDone(this)">
+      <span class="task-text">1. Analytical thinking means <u style="color:var(--accent);">________________</u>.</span>
+    </label>
+  </div>
+  <div class="task-item">
+    <label class="task-label">
+      <input type="checkbox" onchange="toggleDone(this)">
+      <span class="task-text">2. Constructive thinking means <u style="color:var(--accent);">________________</u>.</span>
+    </label>
+  </div>
+  <div class="task-item">
+    <label class="task-label">
+      <input type="checkbox" onchange="toggleDone(this)">
+      <span class="task-text">3. When writing a letter to a pen pal, I should include <u style="color:var(--accent);">________</u>, <u style="color:var(--accent);">________</u> and <u style="color:var(--accent);">________</u>.</span>
+    </label>
+  </div>
+</div>
+
+<div class="card">
+  <h3 style="font-size:16px;margin-bottom:10px;color:var(--primary);">✅ 任务 B · 文本解析（必选）</h3>
+  <p>阅读以下关于友谊的英语短文片段，完成解析表：</p>
+  <div style="background:#f9f9f9;padding:12px;border-radius:6px;margin-bottom:10px;font-style:italic;border-left:3px solid var(--accent);">
+    "Friendship is not about who you have known the longest. It's about who walked into your life, said 'I'm here for you,' and proved it."
+  </div>
+  <table>
+    <tr><th>分析维度</th><th>你的回答</th></tr>
+    <tr>
+      <td>主题句 (Topic Sentence)</td>
+      <td><input type="text" placeholder="写出主题句..." style="width:100%;border:none;border-bottom:1px solid var(--border);padding:4px;outline:none;font-family:inherit;"></td>
+    </tr>
+    <tr>
+      <td>支持细节 #1</td>
+      <td><input type="text" placeholder="写出第一个细节..." style="width:100%;border:none;border-bottom:1px solid var(--border);padding:4px;outline:none;font-family:inherit;"></td>
+    </tr>
+    <tr>
+      <td>支持细节 #2</td>
+      <td><input type="text" placeholder="写出第二个细节..." style="width:100%;border:none;border-bottom:1px solid var(--border);padding:4px;outline:none;font-family:inherit;"></td>
+    </tr>
+    <tr>
+      <td>作者态度 (Author's Attitude)</td>
+      <td><input type="text" placeholder="判断作者对友谊的态度..." style="width:100%;border:none;border-bottom:1px solid var(--border);padding:4px;outline:none;font-family:inherit;"></td>
+    </tr>
+  </table>
+  <p style="font-size:13px;color:var(--text-secondary);margin-top:8px;">⭐ 评价标准：每项回答正确得1分，满分5分</p>
+</div>
+
+<!-- 分层层 -->
+<h2><span class="badge badge-tier">分层层</span> 差异化任务（三选一）</h2>
+<p style="color:var(--text-secondary);font-size:14px;">🎯 目标：根据自身水平选择适合自己的写作挑战</p>
+
+<div class="card">
+  <div class="radio-group" id="tierGroup">
+    <label class="radio-card" onclick="selectTier(this, 'a')">
+      <input type="radio" name="tier" value="a">
+      <div class="level">A 级 · 基础</div>
+      <div class="level-desc">用模板写 40—60词英文交友信</div>
+    </label>
+    <label class="radio-card" onclick="selectTier(this, 'b')">
+      <input type="radio" name="tier" value="b">
+      <div class="level">B 级 · 进阶</div>
+      <div class="level-desc">不看模板，写 60—80词交友信</div>
+    </label>
+    <label class="radio-card" onclick="selectTier(this, 'c')">
+      <input type="radio" name="tier" value="c">
+      <div class="level">C 级 · 挑战</div>
+      <div class="level-desc">80—100词 + 线上vs线下友谊观点</div>
+    </label>
+  </div>
+
+  <div class="layered-card" id="tierA">
+    <p><strong>A 级 · 基础模板</strong></p>
+    <p style="font-style:italic;color:var(--text-secondary);">Dear ____,<br>My name is ____. I am ____ years old and I live in ____. My hobbies include ____. I would like to be your pen pal because ____. I hope to hear from you soon!<br><br>Yours,<br>____</p>
+  </div>
+  <div class="layered-card" id="tierB">
+    <p><strong>B 级 · 进阶要求</strong></p>
+    <p style="color:var(--text-secondary);">不使用模板，独立设计内容。包含自我介绍、兴趣爱好、期望建立的友谊类型。字数：60—80词。</p>
+  </div>
+  <div class="layered-card" id="tierC">
+    <p><strong>C 级 · 挑战要求</strong></p>
+    <p style="color:var(--text-secondary);">除了自我介绍外，还需表达你对 "online friendship vs offline friendship" 的看法。字数：80—100词。鼓励使用本单元所学词汇和句型。</p>
+  </div>
+</div>
+
+<div class="card">
+  <h3 style="font-size:16px;margin-bottom:8px;color:var(--primary);">📏 评价标准（分层任务通用）</h3>
+  <table>
+    <tr><th>维度</th><th>分值</th></tr>
+    <tr><td>格式正确（称呼、正文、结尾、署名）</td><td>各1分（共4分）</td></tr>
+    <tr><td>内容丰富（每个信息点）</td><td>满分4分</td></tr>
+    <tr><td>语言准确（无明显语法错误）</td><td>2分</td></tr>
+    <tr><td>创意表达（使用1个以上本单元所学句型）</td><td>1分</td></tr>
+  </table>
+  <p style="font-size:13px;color:var(--text-secondary);margin-top:6px;">🏆 总分：11分</p>
+</div>
+
+<!-- 开放层 -->
+<h2><span class="badge badge-open">开放层</span> 创造性表达</h2>
+<p style="color:var(--text-secondary);font-size:14px;">🎯 目标：围绕 <strong>"What Friendship Means to Me"</strong> 进行个性化表达</p>
+
+<div class="card">
+  <div class="radio-group" id="openGroup">
+    <label class="radio-card" onclick="selectOpen(this)">
+      <input type="radio" name="open" value="writing">
+      <div class="level">✏️ 写作</div>
+      <div class="level-desc">120词英语短文</div>
+    </label>
+    <label class="radio-card" onclick="selectOpen(this)">
+      <input type="radio" name="open" value="mindmap">
+      <div class="level">🧠 图示</div>
+      <div class="level-desc">8+节点思维导图</div>
+    </label>
+    <label class="radio-card" onclick="selectOpen(this)">
+      <input type="radio" name="open" value="video">
+      <div class="level">🎥 视频</div>
+      <div class="level-desc">2分钟英语口语</div>
+    </label>
+    <label class="radio-card" onclick="selectOpen(this)">
+      <input type="radio" name="open" value="speech">
+      <div class="level">🎤 演讲</div>
+      <div class="level-desc">演讲稿+录音</div>
+    </label>
+  </div>
+  <p style="font-size:13px;color:var(--text-secondary);margin-top:8px;">💡 选择其中一种形式完成，点击卡片即可选中</p>
+</div>
+
+<div class="card">
+  <h3 style="font-size:16px;margin-bottom:10px;color:var(--primary);">📊 评价量规（Rubric）</h3>
+  <div style="overflow-x:auto;">
+  <table class="rubric-table">
+    <tr>
+      <th>维度</th>
+      <th>优秀 (4分)</th>
+      <th>良好 (3分)</th>
+      <th>及格 (2分)</th>
+      <th>需改进 (1分)</th>
+    </tr>
+    <tr>
+      <td>内容充实度</td>
+      <td>至少4个观点，有个人例子</td>
+      <td>3个观点，有例子</td>
+      <td>2个观点</td>
+      <td>1个观点</td>
+    </tr>
+    <tr>
+      <td>语言准确性</td>
+      <td>无语法错误</td>
+      <td>1-2处小错</td>
+      <td>3-4处错误</td>
+      <td>多处错误</td>
+    </tr>
+    <tr>
+      <td>结构组织</td>
+      <td>逻辑清晰，有开头主体结尾</td>
+      <td>结构基本完整</td>
+      <td>结构不清晰</td>
+      <td>无结构</td>
+    </tr>
+    <tr>
+      <td>创造性</td>
+      <td>有独特视角或表达</td>
+      <td>较有创意</td>
+      <td>常规表达</td>
+      <td>照搬模板</td>
+    </tr>
+  </table>
+  </div>
+  <p style="font-size:13px;color:var(--text-secondary);margin-top:6px;">🏆 总分：4—16分</p>
+</div>
+
+<div style="margin-top:24px;padding:16px;background:#f0f0f0;border-radius:var(--border-radius);text-align:center;">
+  <p style="color:var(--text-secondary);font-size:14px;">📝 完成后请将作业提交给老师或上传至班级学习平台</p>
+</div>
+
+</div>
+<script>
+function toggleDone(checkbox) {
+  const text = checkbox.nextElementSibling;
+  if (checkbox.checked) {
+    text.classList.add('task-done');
+  } else {
+    text.classList.remove('task-done');
+  }
+}
+function selectTier(el, tier) {
+  document.querySelectorAll('#tierGroup .radio-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  ['tierA','tierB','tierC'].forEach(id => document.getElementById(id).classList.remove('active'));
+  if (tier === 'a') document.getElementById('tierA').classList.add('active');
+  else if (tier === 'b') document.getElementById('tierB').classList.add('active');
+  else if (tier === 'c') document.getElementById('tierC').classList.add('active');
+}
+function selectOpen(el) {
+  document.querySelectorAll('#openGroup .radio-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+</script>
+</body>
+</html>

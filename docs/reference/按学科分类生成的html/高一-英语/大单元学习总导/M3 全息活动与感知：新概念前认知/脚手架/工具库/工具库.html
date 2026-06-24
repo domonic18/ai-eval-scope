@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具库 — 友谊主题 Scaffold</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 32px 24px;
+  box-sizing: border-box;
+}
+h1 { font-size: var(--font-h1); color: var(--primary); margin-bottom: 20px; font-weight: 700; }
+h2 { font-size: var(--font-h2); color: var(--primary); margin: 28px 0 12px; font-weight: 600; }
+h3 { font-size: calc(var(--font-body) + 2px); color: var(--primary-hover); margin: 18px 0 8px; font-weight: 600; }
+p { margin-bottom: 12px; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.level-tag {
+  display: inline-block;
+  color: #fff;
+  font-size: calc(var(--font-body) - 3px);
+  padding: 2px 14px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+.tag-basic { background: #8c8c8c; }
+.tag-adv { background: #595959; }
+.tag-pro { background: #434343; }
+.steps {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin: 10px 0;
+}
+.steps ol { margin-bottom: 0; }
+.steps li { margin-bottom: 4px; }
+.code-example {
+  background: #2d2d2d;
+  color: #f8f8f8;
+  padding: 10px 14px;
+  border-radius: var(--border-radius);
+  font-family: 'Menlo', 'Consolas', monospace;
+  font-size: calc(var(--font-body) - 2px);
+  margin: 8px 0;
+  overflow-x: auto;
+}
+.btn-toggle {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: var(--border-radius);
+  font-size: var(--font-body);
+  cursor: pointer;
+  transition: background 0.2s;
+  margin: 6px 0;
+}
+.btn-toggle:hover { background: var(--primary-hover); }
+.btn-toggle-outline {
+  display: inline-block;
+  background: transparent;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+  padding: 6px 18px;
+  border-radius: var(--border-radius);
+  font-size: var(--font-body);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  margin: 6px 0;
+}
+.btn-toggle-outline:hover { background: var(--primary); color: #fff; }
+ul, ol { padding-left: 22px; margin-bottom: 12px; }
+li { margin-bottom: 6px; }
+.fold-section { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
+.fold-section.show { max-height: 800px; }
+.interact-trigger {
+  background: var(--card-bg);
+  border: 2px dashed var(--accent);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin: 16px 0;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.3s, border-color 0.3s;
+}
+.interact-trigger:hover { background: var(--bg); border-color: var(--primary); }
+.checklist-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+@media (max-width: 640px) {
+  .container { padding: 16px 12px; }
+  .card { padding: 14px 16px; }
+  .checklist-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🧰 工具库</h1>
+<p style="color:var(--text-secondary);margin-bottom:24px;">提供"认知放大器"，帮你更高效地思考和表达。</p>
+
+<!-- ===== 基础工具 ===== -->
+<h2>🟢 基础工具</h2>
+
+<div class="card">
+  <span class="level-tag tag-basic">易上手</span>
+  <h3 style="margin-top:4px;">🧠 思维导图工具 — XMind</h3>
+  <p><strong>用途：</strong>用辐射状结构组织关于"Friendship"的零散想法，理清思路。</p>
+  <div class="steps">
+    <ol>
+      <li>中心写上 <strong>Friendship</strong></li>
+      <li>向外辐射 <strong>4 个一级分支</strong>：定义 / 类型 / 品质 / 行动</li>
+      <li>每个分支继续延伸二级分支</li>
+      <li>用不同颜色区分</li>
+    </ol>
+  </div>
+  <p><strong>示例：</strong>一级分支"品质"下延伸 → (honest, caring, funny, loyal)</p>
+  <p><strong>适用场景：</strong>头脑风暴、整理概念、写作前构思</p>
+</div>
+
+<div class="card">
+  <span class="level-tag tag-basic">自检</span>
+  <h3 style="margin-top:4px;">📋 概念图检查清单</h3>
+  <p><strong>用途：</strong>检查你的 Concept Map 是否完整。</p>
+  <div class="checklist-grid" id="cmChecklist">
+    <label style="display:flex;align-items:center;gap:8px;padding:6px 0;"><input type="checkbox" onchange="updateCMLabel()"> 中心概念明确（Friendship）</label>
+    <label style="display:flex;align-items:center;gap:8px;padding:6px 0;"><input type="checkbox" onchange="updateCMLabel()"> 至少 4 个一级分支</label>
+    <label style="display:flex;align-items:center;gap:8px;padding:6px 0;"><input type="checkbox" onchange="updateCMLabel()"> 每个分支有 2—3 个关键词</label>
+    <label style="display:flex;align-items:center;gap:8px;padding:6px 0;"><input type="checkbox" onchange="updateCMLabel()"> 使用了连接词 / 箭头表示关系</label>
+    <label style="display:flex;align-items:center;gap:8px;padding:6px 0;"><input type="checkbox" onchange="updateCMLabel()"> 有示例说明</label>
+  </div>
+  <p style="margin-top:8px;font-weight:600;">完成进度：<span id="cmProgress">0</span> / 5</p>
+</div>
+
+<!-- ===== 进阶工具 ===== -->
+<h2>🟡 进阶工具</h2>
+
+<div class="card">
+  <span class="level-tag tag-adv">专业</span>
+  <h3 style="margin-top:4px;">🤖 AI 写作助手 — ChatGPT / Claude / Kimi</h3>
+  <p><strong>用途：</strong>辅助英语写作——不是让 AI 替你写，而是让 AI 帮你检查和润色。</p>
+  <div class="steps">
+    <ol>
+      <li>自己写完初稿</li>
+      <li>输入："Please check my English writing and suggest improvements"</li>
+      <li>把 AI 建议和你的原文对比，决定采纳哪些</li>
+    </ol>
+  </div>
+  <p><strong>示例对比：</strong></p>
+  <div class="code-example">你写：I very like my friend.<br>AI 提示：I really like my friend.</div>
+  <p><strong>适用场景：</strong>英语写作后的自我修改</p>
+</div>
+
+<div class="card">
+  <span class="level-tag tag-adv">专业</span>
+  <h3 style="margin-top:4px;">📘 在线词典 — Cambridge Dictionary / Collins</h3>
+  <p><strong>用途：</strong>查单词不只是看中文意思，还要看英文释义、例句和搭配。</p>
+  <div class="steps">
+    <ol>
+      <li>输入单词</li>
+      <li>看英文释义（English definition）</li>
+      <li>看 2—3 个例句</li>
+      <li>看常见搭配（collocations）</li>
+    </ol>
+  </div>
+  <p><strong>示例：</strong>查 "friendship" 可以看到 → <em>strike up a friendship</em> / <em>friendship group</em> / <em>a lifelong friendship</em></p>
+  <p><strong>适用场景：</strong>学习新词汇、确认用法</p>
+</div>
+
+<!-- ===== 高阶工具 ===== -->
+<h2>🔴 高阶工具（研究级）</h2>
+
+<div class="card">
+  <span class="level-tag tag-pro">研究级</span>
+  <h3 style="margin-top:4px;">📊 词频分析器 — VocabProfile</h3>
+  <p><strong>用途：</strong>分析你的英语写作中使用了什么水平的词汇。</p>
+  <div class="steps">
+    <ol>
+      <li>把你的英语作文粘贴到网站</li>
+      <li>它会给出 K1（最基础）、K2、学术词汇占比</li>
+      <li>如果大部分是 K1 词汇，尝试升级词汇</li>
+    </ol>
+  </div>
+  <p><strong>升级示例：</strong><em>good</em> → <em>trustworthy</em> ｜ <em>nice</em> → <em>considerate</em></p>
+  <p><strong>适用场景：</strong>想提升写作词汇丰富度时</p>
+</div>
+
+<div class="card">
+  <span class="level-tag tag-pro">研究级</span>
+  <h3 style="margin-top:4px;">🔍 语料库 — COCA</h3>
+  <p><strong>用途：</strong>查一个词在真实英语中是如何使用的。</p>
+  <div class="steps">
+    <ol>
+      <li>搜索 "friendship"</li>
+      <li>可以看到数百条来自杂志、新闻、学术文章的真实例句</li>
+      <li>模仿这些例句使用</li>
+    </ol>
+  </div>
+  <p><strong>适用场景：</strong>想确认某个表达是否地道时</p>
+</div>
+
+<!-- ===== 互动选择器 ===== -->
+<div class="interact-trigger" onclick="toggleToolSelector()">
+  <div class="btn-toggle-outline">🎯 帮我推荐工具</div>
+</div>
+<div class="fold-section" id="toolSelector">
+  <div class="card">
+    <h3 style="margin-top:0;">你的学习目标是什么？</h3>
+    <p style="color:var(--text-secondary);">点击下方按钮获取工具推荐</p>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;">
+      <button class="btn-toggle" onclick="recommend('写作前构思')">📝 写作前构思</button>
+      <button class="btn-toggle" onclick="recommend('修改作文')">✏️ 修改作文</button>
+      <button class="btn-toggle" onclick="recommend('查单词')">📖 查单词</button>
+      <button class="btn-toggle" onclick="recommend('提升词汇')">🚀 提升词汇</button>
+    </div>
+    <p id="toolRec" style="margin-top:12px;font-weight:600;color:var(--primary);"></p>
+  </div>
+</div>
+
+</div>
+
+<script>
+function updateCMLabel() {
+  var checks = document.querySelectorAll('#cmChecklist input[type="checkbox"]');
+  var done = 0;
+  checks.forEach(function(c) { if (c.checked) done++; });
+  document.getElementById('cmProgress').textContent = done;
+}
+function toggleToolSelector() {
+  document.getElementById('toolSelector').classList.toggle('show');
+}
+function recommend(target) {
+  var map = {
+    '写作前构思': '推荐：XMind 思维导图 → 用辐射图理清 Friendship 的各个维度',
+    '修改作文': '推荐：AI 写作助手（ChatGPT/Claude/Kimi）→ 请 AI 检查语法和表达',
+    '查单词': '推荐：Cambridge Dictionary → 看英文释义 + 搭配 + 例句',
+    '提升词汇': '推荐：VocabProfile 分析 → 替换 K1 词汇为更高级表达'
+  };
+  document.getElementById('toolRec').textContent = map[target] || '请选择一个目标';
+}
+</script>
+</body>
+</html>

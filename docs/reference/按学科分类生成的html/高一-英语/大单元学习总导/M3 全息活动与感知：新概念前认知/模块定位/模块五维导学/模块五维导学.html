@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块五维导学</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 24px; box-sizing: border-box; }
+.page-header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff; padding: 28px 32px; border-radius: var(--border-radius); margin-bottom: 24px;
+}
+.page-header h1 { font-size: var(--font-h1); margin: 0 0 6px; font-weight: 700; }
+.page-header p { margin: 0; opacity: 0.9; font-size: 14px; }
+.dim-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+.dim-tab {
+  flex: 1; min-width: 60px; text-align: center;
+  padding: 10px 12px; border-radius: var(--border-radius);
+  background: var(--card-bg); color: var(--text-secondary);
+  border: 1px solid var(--border); cursor: pointer; transition: all 0.25s;
+  font-size: 13px; font-weight: 500; font-family: inherit;
+}
+.dim-tab:hover { border-color: var(--accent); }
+.dim-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.dim-panel { display: none; background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px 24px; margin-bottom: 16px; }
+.dim-panel.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.dim-panel h2 { font-size: var(--font-h2); color: var(--primary); margin: 0 0 12px; }
+.dim-panel h3 { font-size: 16px; color: var(--text); margin: 14px 0 6px; }
+.dim-panel ul, .dim-panel ol { padding-left: 20px; margin: 6px 0; }
+.dim-panel li { margin-bottom: 5px; }
+.tag { display: inline-block; background: var(--bg); color: var(--primary); font-size: 12px; padding: 2px 10px; border-radius: 12px; margin: 2px; border: 1px solid var(--border); }
+.info-box { background: #fafafa; border-left: 4px solid var(--primary); padding: 12px 16px; margin: 12px 0; border-radius: 0 6px 6px 0; font-size: 14px; }
+.info-box strong { color: var(--primary); }
+.info-box-accent { background: #fafafa; border-left: 4px solid var(--accent); padding: 12px 16px; margin: 12px 0; border-radius: 0 6px 6px 0; font-size: 14px; }
+.figure-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 14px; margin: 10px 0; }
+.figure-card h4 { margin: 0 0 4px; color: var(--primary); }
+.figure-card .figure-tag { display: inline-block; font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; }
+.question-card { border: 1px dashed var(--border); border-radius: var(--border-radius); padding: 14px; margin: 10px 0; cursor: pointer; transition: all 0.2s; }
+.question-card:hover { border-color: var(--accent); background: var(--bg); }
+.question-card h4 { margin: 0 0 4px; color: var(--text); }
+.question-card .answer { display: none; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); font-size: 14px; color: var(--text-secondary); }
+.question-card .answer.open { display: block; }
+.goal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 10px 0; }
+.goal-card { border: 1px solid var(--border); border-radius: var(--border-radius); padding: 14px; }
+.goal-card h4 { margin: 0 0 4px; color: var(--primary); font-size: 14px; }
+.btn { background: var(--primary); color: #fff; border: none; padding: 8px 20px; border-radius: var(--border-radius); cursor: pointer; font-size: 14px; transition: background 0.2s; font-family: inherit; }
+.btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+.btn-outline:hover { background: var(--bg); }
+@media (max-width: 640px) { .goal-grid { grid-template-columns: 1fr; } .dim-tab { font-size: 12px; padding: 8px; } .container { padding: 12px; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="page-header">
+  <h1>模块五维导学</h1>
+  <p>M3：全息活动与感知：新概念前认知 · Unit 1 Friendship · 英语 · 必修1</p>
+</div>
+
+<div class="dim-tabs">
+  <div class="dim-tab active" onclick="switchDim(0,this)">🎯 第1维<br>学习目标</div>
+  <div class="dim-tab" onclick="switchDim(1,this)">🚀 第2维<br>价值与意义</div>
+  <div class="dim-tab" onclick="switchDim(2,this)">📚 第3维<br>学习方法</div>
+  <div class="dim-tab" onclick="switchDim(3,this)">👤 第4维<br>关键人物</div>
+  <div class="dim-tab" onclick="switchDim(4,this)">💡 第5维<br>前沿追问</div>
+</div>
+
+<div class="dim-panel active" id="dim0">
+  <h2>🎯 第1维：模块学习目标</h2>
+  <p>完成本模块后，你能够——</p>
+
+  <div class="goal-grid">
+    <div class="goal-card">
+      <h4>📖 知识理解层面</h4>
+      <ol>
+        <li>理解"认识一个新概念"的完整认知过程（从感知→理解→表达）</li>
+        <li>掌握 Unit 1 Friendship 主题下的核心词汇和表达（trust, honest, loyal, share, support 等）</li>
+        <li>了解友谊在英语文化中的表达方式和跨文化差异</li>
+      </ol>
+    </div>
+    <div class="goal-card">
+      <h4>🛠️ 能力形成层面</h4>
+      <ol>
+        <li>能够绘制个人化的 Friendship Concept Map，建立知识结构</li>
+        <li>能够运用建构性原理，从情境材料中自主建构新理解</li>
+        <li>能够用英语表达自己对友谊的观点，写一封 150 词以上的英文邮件或短文</li>
+      </ol>
+    </div>
+    <div class="goal-card">
+      <h4>🧠 思维发展层面</h4>
+      <ol>
+        <li>发展"感知—联结—建构—反思"的元认知能力</li>
+        <li>学会从材料中提取证据并建构自己的框架</li>
+        <li>能够对比分析和判断不同文化中的友谊观</li>
+      </ol>
+    </div>
+    <div class="goal-card">
+      <h4>🎨 表达产出层面</h4>
+      <ol>
+        <li>产出至少 3 项可展示的学习成果（概念图、英文短文、演讲提纲等）</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<div class="dim-panel" id="dim1">
+  <h2>🚀 第2维：模块相关的高精尖价值与未来意义</h2>
+  <p style="color:var(--text-secondary);">为什么现在和未来仍需要学习"友谊"这个话题？</p>
+
+  <div class="info-box">
+    <strong>🤝 社交智能与人际关系</strong><br>
+    心理学研究表明，友谊不是可有可无的"课外话题"，而是影响人一生幸福的关键能力。哈佛大学一项持续 85 年的追踪研究发现，良好的人际关系是人健康快乐的最重要预测因素。学会用英语讨论友谊，意味着你获得了跨文化社交的能力基础。
+  </div>
+
+  <div class="info-box-accent">
+    <strong>🌍 全球化时代的跨文化沟通</strong><br>
+    在未来，你可能需要与来自不同文化背景的人共事。理解"friendship"在不同文化中的表达方式（中国人含蓄、西方人直接），能让你成为更高效、更有同理心的全球公民。
+  </div>
+
+  <div class="info-box">
+    <strong>🤖 AI 与情感联结</strong><br>
+    在 AI 日益普及的未来，人类独有的情感联结能力（共情、信任、支持）将变得更加珍贵。学习友谊的英语表达，不只是学语言，更是练习一种人类最核心的能力——建立和维系关系。
+  </div>
+</div>
+
+<div class="dim-panel" id="dim2">
+  <h2>📚 第3维：模块推荐学习方式与方法</h2>
+  <ol>
+    <li><strong>体验式学习：</strong>先不要急着背单词，而是通过"读一封邮件→画概念图→写回信"的完整建构过程来体验学习</li>
+    <li><strong>概念图法：</strong>用辐射状或层级式概念图整理友谊相关知识，比线性笔记更利于理解和记忆</li>
+    <li><strong>情境代入法：</strong>在每一个建构案例中，把自己代入真实情境："如果我是这个情境中的人，我会怎么做？"</li>
+    <li><strong>同伴对话法：</strong>找一位同学用英语交流"友谊话题"，互相分享自己的概念图和想法</li>
+    <li><strong>AI 辅助学习：</strong>使用 AI 工具检查英语表达是否自然，查询不熟悉的词汇用法，但建构过程（画图、思考、组织）一定要自己完成</li>
+  </ol>
+  <div class="info-box" style="margin-top:12px;">
+    <strong>📌 核心建议：</strong>本模块的学习重点不是"记住多少单词"，而是"体验一次完整的建构过程"。走完 7 步建构流程，比背 50 个单词收获更大。
+  </div>
+</div>
+
+<div class="dim-panel" id="dim3">
+  <h2>👤 第4维：值得了解的关键人物、事件、成果</h2>
+
+  <div class="figure-card">
+    <div class="figure-tag">📜 古希腊哲学家</div>
+    <h4>Aristotle（亚里士多德）</h4>
+    <p>最早系统研究友谊本质的思想家。他的《尼各马可伦理学》中将友谊分为"利益型""快乐型"和"美德型"三类。</p>
+    <p><strong>为什么值得了解：</strong>帮助你思考友谊的不同层次，为你的 Friendship Concept Map 提供理论视角。</p>
+  </div>
+
+  <div class="figure-card">
+    <div class="figure-tag">🌟 传奇友谊案例</div>
+    <h4>Helen Keller & Anne Sullivan</h4>
+    <p>海伦·凯勒与她的老师安妮·莎莉文的传奇友谊。一个失明失聪，一个从未放弃。</p>
+    <p><strong>为什么值得了解：</strong>这是一个超越师生关系的伟大友谊案例，证明真正的友谊可以跨越障碍。</p>
+  </div>
+
+  <div class="figure-card">
+    <div class="figure-tag">🔬 科学研究</div>
+    <h4>哈佛大学成人发展研究</h4>
+    <p>持续 85 年的追踪研究，揭示人际关系是幸福生活的核心。</p>
+    <p><strong>为什么值得了解：</strong>为"友谊为什么重要"提供了科学证据，可以写进你的 Portfolio 或演讲中。</p>
+  </div>
+</div>
+
+<div class="dim-panel" id="dim4">
+  <h2>💡 第5维：模块相关的前沿追问</h2>
+  <p style="color:var(--text-secondary);">这些问题没有标准答案——思考过程本身就是学习。点击每个问题展开思考提示。</p>
+
+  <div class="question-card" onclick="toggleAnswer(this)">
+    <h4>📱 社交媒体时代的友谊还是"真正的友谊"吗？</h4>
+    <p style="font-size:14px;color:var(--text-secondary);">你有 1000 个微信好友，但遇到困难时能找谁聊？</p>
+    <div class="answer"><strong>思考角度：</strong>社交媒体改变了友谊的定义和形式——扩大了社交圈但可能牺牲了深度。真正的友谊需要真实的互动和情感投入，而不仅仅是点赞和评论。</div>
+  </div>
+
+  <div class="question-card" onclick="toggleAnswer(this)">
+    <h4>🤖 AI 可以成为人类的"朋友"吗？</h4>
+    <p style="font-size:14px;color:var(--text-secondary);">如果 AI 能完美模拟共情和对话，人和 AI 之间能建立真正的友谊吗？</p>
+    <div class="answer"><strong>思考角度：</strong>友谊需要"真实的情感"还是"被感知到的理解"就够了？如果 AI 能让你感觉被倾听、被理解，这是否算友谊？这个问题关乎"什么是真正的情感"。</div>
+  </div>
+
+  <div class="question-card" onclick="toggleAnswer(this)">
+    <h4>⏳ 如果友谊有"保质期"</h4>
+    <p style="font-size:14px;color:var(--text-secondary);">有些朋友注定只会出现在人生的某个阶段。</p>
+    <div class="answer"><strong>思考角度：</strong>长大后的友谊和童年时期的友谊，哪个更"真实"？阶段性友谊并不比终身友谊"低级"——人生不同阶段需要的支持不同，每段友谊都有其独特的价值。</div>
+  </div>
+
+  <div class="question-card" onclick="toggleAnswer(this)">
+    <h4>🌏 英语 "friend" 和中文"朋友"是同一个概念吗？</h4>
+    <p style="font-size:14px;color:var(--text-secondary);">你如何用英语向外国人解释中国人的"哥们儿""闺蜜""酒肉朋友"？</p>
+    <div class="answer"><strong>思考角度：</strong>中文中"朋友"的用法比英语 "friend" 更广泛（可以称呼陌生人"朋友"），但表达亲密关系时又有更细致的分类（闺蜜、铁哥们）。英语中对不同层次的友谊也有区分：acquaintance, friend, close friend, best friend。跨文化对比能帮你更精准地使用英语表达。</div>
+  </div>
+</div>
+
+<script>
+function switchDim(idx, tab) {
+  document.querySelectorAll('.dim-panel').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.dim-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.getElementById('dim' + idx).classList.add('active');
+  tab.classList.add('active');
+}
+function toggleAnswer(el) {
+  var answer = el.querySelector('.answer');
+  answer.classList.toggle('open');
+}
+</script>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VR 脚手架：学习幸福感沉浸体验</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px;
+  box-sizing: border-box;
+}
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin: 0 0 6px 0;
+  font-weight: 700;
+}
+h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 28px 0 12px 0;
+  font-weight: 600;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--accent);
+}
+h3 {
+  font-size: calc(var(--font-body) + 2px);
+  color: var(--primary);
+  margin: 20px 0 10px 0;
+  font-weight: 600;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.subtitle {
+  color: var(--text-secondary);
+  font-size: calc(var(--font-body) - 1px);
+  margin-bottom: 20px;
+}
+.task-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.tab-btn {
+  padding: 8px 18px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s, border-color 0.2s;
+  color: var(--text);
+}
+.tab-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.tab-btn:hover:not(.active) {
+  background: var(--bg);
+}
+.tab-content {
+  display: none;
+  padding: 0;
+}
+.tab-content.active {
+  display: block;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: calc(var(--font-body) - 1px);
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+th {
+  background: var(--bg);
+  font-weight: 600;
+  color: var(--primary);
+}
+.resource-card {
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px 16px;
+  margin: 10px 0;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: default;
+}
+.resource-card:hover {
+  transform: translateX(4px);
+  box-shadow: var(--shadow);
+}
+.resource-tag {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 4px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 6px;
+}
+.alt-tag {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 4px;
+  padding: 2px 10px;
+  font-size: 12px;
+  margin-right: 6px;
+}
+.action-btn {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 8px;
+}
+.action-btn:hover {
+  background: var(--primary-hover);
+}
+.record-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+  margin: 4px 0;
+}
+.record-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(67,67,67,0.15);
+}
+@media (max-width: 600px) {
+  .container { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="card">
+  <h1>VR 脚手架</h1>
+  <div class="subtitle">沉浸体验 · 学习幸福感探索 · Unit 1 Friendship</div>
+  <p>在虚拟环境中观察、体验和记录"学习幸福感"，从全新的视角理解学习中的幸福时刻。</p>
+</div>
+
+<div class="card">
+  <h2>三大核心任务</h2>
+
+  <div class="task-tabs">
+    <button class="tab-btn active" onclick="switchTab('observe', this)">👁️ 观察任务</button>
+    <button class="tab-btn" onclick="switchTab('operate', this)">🕹️ 操作任务</button>
+    <button class="tab-btn" onclick="switchTab('record', this)">📋 记录任务</button>
+  </div>
+
+  <div id="observe" class="tab-content active">
+    <h3>观察任务</h3>
+    <p>在 VR 或 3D 模拟环境中观察"学习幸福感"相关场景：</p>
+    <ul>
+      <li>观察一个人在图书馆安静阅读时的面部表情、身体姿态变化</li>
+      <li>观察小组成员协作学习时的互动模式——什么时候大家最投入？</li>
+      <li>观察一位老师分享知识时，ta 和学生之间的能量流动</li>
+    </ul>
+    <p><strong>记录要点：</strong></p>
+    <ul>
+      <li>你观察到了哪几种"学习幸福"的外在表现？（如：微笑、点头、身体前倾）</li>
+      <li>哪种学习场景中，人的幸福感最明显？</li>
+      <li>你从观察中获得了什么启发？</li>
+    </ul>
+    <button class="action-btn" onclick="alert('📝 观察提示：\n\n尝试用英语记录观察结果。\n例如：\n"I noticed that when the student understood the text, her eyes lit up and she smiled."\n\n这不仅是观察练习，也是英语表达练习！')">💡 观察提示</button>
+  </div>
+
+  <div id="operate" class="tab-content">
+    <h3>操作任务</h3>
+    <p>在 VR 环境中亲自操作和体验：</p>
+    <ol>
+      <li><strong>虚拟课堂体验：</strong>主动发言、与虚拟同学互动，感受"在安全环境中表达自己"的幸福体验。</li>
+      <li><strong>虚拟教学体验：</strong>尝试在 VR 中教一位虚拟学习者一个英语单词，体验"教"带来的幸福感。</li>
+      <li><strong>学习环境设计：</strong>在 VR 中布置一个"让你最幸福的学习空间"，选择颜色、家具、光线、音乐等要素。</li>
+    </ol>
+    <p><strong>操作指南：</strong></p>
+    <ul>
+      <li>每个操作后暂停 30 秒，记录自己的情绪变化</li>
+      <li>对比"VR 中的幸福感"和"现实中的幸福感"有什么不同</li>
+    </ul>
+    <button class="action-btn" onclick="alert('🕹️ 操作提醒：\n\n试试在 VR 中用英语打招呼："Hello everyone! I\'d like to share my learning experience."\n\n虚拟环境的好处是——说错了也没关系，大胆尝试！')">🎤 试试用英语</button>
+  </div>
+
+  <div id="record" class="tab-content">
+    <h3>记录任务</h3>
+    <p>创建一个"VR 学习幸福感体验记录表"：</p>
+    <table>
+      <tr>
+        <th>VR 场景</th>
+        <th>我的操作</th>
+        <th>感受（1—10 分）</th>
+        <th>幸福感来源分析</th>
+        <th>与现实学习异同</th>
+      </tr>
+      <tr>
+        <td>虚拟课堂发言</td>
+        <td><input class="record-input" placeholder="你做了什么？" style="width:100%;"></td>
+        <td><input class="record-input" placeholder="1-10" style="width:60px;"></td>
+        <td><input class="record-input" placeholder="为什么感到幸福？" style="width:100%;"></td>
+        <td><input class="record-input" placeholder="和现实有什么不同？" style="width:100%;"></td>
+      </tr>
+      <tr>
+        <td>虚拟教学</td>
+        <td><input class="record-input" placeholder="你做了什么？" style="width:100%;"></td>
+        <td><input class="record-input" placeholder="1-10" style="width:60px;"></td>
+        <td><input class="record-input" placeholder="为什么感到幸福？" style="width:100%;"></td>
+        <td><input class="record-input" placeholder="和现实有什么不同？" style="width:100%;"></td>
+      </tr>
+      <tr>
+        <td>学习空间设计</td>
+        <td><input class="record-input" placeholder="你设计了什么？" style="width:100%;"></td>
+        <td><input class="record-input" placeholder="1-10" style="width:60px;"></td>
+        <td><input class="record-input" placeholder="为什么感到幸福？" style="width:100%;"></td>
+        <td><input class="record-input" placeholder="和现实有什么不同？" style="width:100%;"></td>
+      </tr>
+    </table>
+    <button class="action-btn" onclick="alert('✅ 记录表填写后，截图保存或拍照留存。\n\n它将成为你"学习幸福感图谱"的素材来源！')">💾 保存提示</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>VR 资源推荐</h2>
+
+  <div class="resource-card">
+    <span class="resource-tag">VR 平台</span>
+    <strong>AltspaceVR</strong>（免费）
+    <p style="font-size:13px;color:var(--text-secondary);margin:6px 0 0;">提供虚拟教室和社交学习空间，可参与英语角活动。</p>
+  </div>
+
+  <div class="resource-card">
+    <span class="resource-tag">VR 平台</span>
+    <strong>Engage VR</strong>（教育版免费）
+    <p style="font-size:13px;color:var(--text-secondary);margin:6px 0 0;">专为教育设计的 VR 平台，支持虚拟课堂。</p>
+  </div>
+
+  <div class="resource-card">
+    <span class="resource-tag">VR 平台</span>
+    <strong>Mozilla Hubs</strong>（免费浏览器版）
+    <p style="font-size:13px;color:var(--text-secondary);margin:6px 0 0;">无需 VR 设备，在浏览器中即可体验 3D 虚拟空间。</p>
+  </div>
+
+  <h3 style="margin-top:20px;">替代方案（无 VR 设备时）</h3>
+
+  <div class="resource-card">
+    <span class="alt-tag">替代方案</span>
+    <strong>Minecraft 教育版</strong>
+    <p style="font-size:13px;color:var(--text-secondary);margin:6px 0 0;">搭建属于你的学习空间，在其中体验"沉浸式学习"的感觉。</p>
+  </div>
+
+  <div class="resource-card">
+    <span class="alt-tag">替代方案</span>
+    <strong>360° 视频</strong>
+    <p style="font-size:13px;color:var(--text-secondary);margin:6px 0 0;">在 YouTube 搜索 "360° classroom experience" 或 "virtual study with me"。</p>
+  </div>
+
+  <div class="resource-card">
+    <span class="alt-tag">替代方案</span>
+    <strong>沉浸式音频 App</strong>
+    <p style="font-size:13px;color:var(--text-secondary);margin:6px 0 0;">使用「潮汐 App」的"专注学习"场景，通过声音营造沉浸感。</p>
+  </div>
+</div>
+
+</div>
+<script>
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
+</body>
+</html>

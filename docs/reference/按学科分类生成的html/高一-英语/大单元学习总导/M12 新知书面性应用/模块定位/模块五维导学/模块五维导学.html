@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块五维导学 — M12 新知书面性应用</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.container { width: 100%; max-width: none; padding: 20px; box-sizing: border-box; }
+.header { background: linear-gradient(135deg, var(--primary) 0%, #666 100%); color: #fff; padding: 28px 32px; border-radius: var(--border-radius); margin-bottom: 24px; }
+.header h1 { font-size: var(--font-h1); margin: 0 0 6px; font-weight: 700; }
+.header .subtitle { font-size: 14px; opacity: 0.85; }
+.header .dim { display: inline-block; background: rgba(255,255,255,0.2); padding: 3px 12px; border-radius: 12px; font-size: 13px; margin-top: 8px; }
+.card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px 24px; margin-bottom: 16px; border: 1px solid var(--border); }
+.card h2 { font-size: var(--font-h2); color: var(--primary); margin: 0 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--bg); display: flex; align-items: center; gap: 8px; }
+.card h2 .dim-badge { display: inline-block; background: var(--primary); color: #fff; font-size: 12px; padding: 1px 8px; border-radius: 10px; font-weight: 400; margin-left: 8px; }
+.card h3 { font-size: 16px; color: var(--text); margin: 16px 0 8px; }
+.card p { margin: 8px 0; }
+.card ul, .card ol { margin: 6px 0; padding-left: 20px; }
+.card li { margin: 5px 0; line-height: 1.7; }
+.dim-icon { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--bg); border-radius: 50%; font-size: 14px; }
+.target-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 600px) { .target-grid { grid-template-columns: 1fr; } }
+.target-item { background: var(--bg); padding: 12px 16px; border-radius: var(--border-radius); border-left: 3px solid var(--primary); }
+.target-item .target-label { font-weight: 600; font-size: 14px; color: var(--primary); }
+.target-item .target-desc { font-size: 14px; margin-top: 4px; }
+.fig-card { display: flex; gap: 12px; align-items: flex-start; background: var(--bg); padding: 12px 16px; border-radius: var(--border-radius); margin: 8px 0; }
+.fig-card .fig-icon { font-size: 24px; flex-shrink: 0; }
+.fig-card .fig-name { font-weight: 600; }
+.fig-card .fig-desc { font-size: 14px; color: var(--text-secondary); }
+.question-box { background: #fafafa; border: 1px dashed var(--border); border-radius: var(--border-radius); padding: 14px 18px; margin: 8px 0; }
+.question-box .q-label { font-weight: 600; color: var(--primary); font-size: 14px; }
+.tip-icon { display: inline-block; background: var(--accent); color: #fff; border-radius: 50%; width: 20px; height: 20px; text-align: center; line-height: 20px; font-size: 12px; font-weight: 700; margin-right: 6px; }
+.btn-collapse { background: transparent; border: 1px solid var(--border); padding: 6px 16px; border-radius: var(--border-radius); cursor: pointer; font-size: 14px; color: var(--primary); transition: all 0.2s; margin-top: 8px; }
+.btn-collapse:hover { background: var(--bg); }
+@media (max-width: 600px) { .header { padding: 20px; } .card { padding: 16px; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🔭 M12 新知书面性应用</h1>
+  <div class="subtitle">模块五维导学 · 高一英语 · Unit 1 Friendship</div>
+  <div class="dim">五维学习框架：目标 → 价值 → 方法 → 人物 → 追问</div>
+</div>
+
+<div class="card">
+  <h2><span class="dim-icon">🎯</span> 维度一：模块学习目标</h2>
+  <div class="target-grid">
+    <div class="target-item">
+      <div class="target-label">📖 知识理解</div>
+      <div class="target-desc">掌握友谊主题核心词汇（friendship, trust, share, understanding, loyal, reliable）和常用句式，理解英语书信、短文等书面文体的基本结构</div>
+    </div>
+    <div class="target-item">
+      <div class="target-label">✍️ 能力形成</div>
+      <div class="target-desc">独立完成一篇 80—120 词的友谊主题短文，做到结构完整、主题明确、语言基本正确</div>
+    </div>
+    <div class="target-item">
+      <div class="target-label">🧠 思维发展</div>
+      <div class="target-desc">在写作中锻炼"主题确立→素材选择→结构组织→语言表达→修改反思"的完整思维链</div>
+    </div>
+    <div class="target-item">
+      <div class="target-label">📬 表达产出</div>
+      <div class="target-desc">完成至少1篇友谊主题的完整英语书面作品（书信/短文/故事/诗歌）</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2><span class="dim-icon">💎</span> 维度二：高精尖价值与未来意义</h2>
+  <ul>
+    <li><strong>交友方式的巨变</strong>——从线下到线上，从同城到跨洋。但无论技术如何发展，"真诚表达"依然是维系友谊的核心能力</li>
+    <li><strong>国际交往</strong>——能用英语真实表达自己的情感和观点，是一项重要的跨文化沟通技能</li>
+    <li><strong>AI 时代的人类价值</strong>——"写出有真情实感的文字"恰恰是人类区别于机器的独特价值，友谊主题写作是训练情感表达的最佳载体</li>
+    <li><strong>未来职场</strong>——写邮件、写报告、写提案——所有书面沟通都需要你具备本文所学的写作建构能力</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2><span class="dim-icon">📚</span> 维度三：推荐学习方式与方法</h2>
+  <ul>
+    <li><strong>范文拆解法</strong>：先分析一篇优秀范文，理解写作的"门道"，再动手写</li>
+    <li><strong>脚手架写作法</strong>：利用模板和句式库降低起步难度，从填空式写作逐步过渡到独立写作</li>
+    <li><strong>Iterative 修改法</strong>：先完成初稿再反复修改，每次聚焦一个方面（内容→结构→语言）</li>
+    <li><strong>AI 辅助学习</strong>：利用 AI 检查语法错误、提供同义替换建议，但保持情感内容的原创性</li>
+    <li><strong>同伴互评</strong>：把写好的作品分享给同学，互相阅读和评价——真实的读者反馈是最好的修改动力</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2><span class="dim-icon">👤</span> 维度四：关键人物与故事</h2>
+
+  <div class="fig-card">
+    <div class="fig-icon">📖</div>
+    <div><div class="fig-name">Anne Frank（安妮·弗兰克）</div>
+    <div class="fig-desc">《安妮日记》作者。她把日记当作最好的"朋友"，在极端困境中用文字保持了精神的自由——她的故事是 Unit 1 选读文章，也是"文字作为友谊载体"的典范</div></div>
+  </div>
+
+  <div class="fig-card">
+    <div class="fig-icon">✒️</div>
+    <div><div class="fig-name">C.S. Lewis（刘易斯）</div>
+    <div class="fig-desc">英国作家。他在《四种爱》中深刻剖析了友爱（Friendship）的独特价值——友爱的核心是"共同看向同一个方向"</div></div>
+  </div>
+
+  <div class="fig-card">
+    <div class="fig-icon">📺</div>
+    <div><div class="fig-name">《Friends》（老友记）</div>
+    <div class="fig-desc">经典美剧，用10年时间讲述友谊的故事，是理解英语国家"友谊文化"的绝佳素材</div></div>
+  </div>
+
+  <div class="fig-card">
+    <div class="fig-icon">🏮</div>
+    <div><div class="fig-name">伯牙绝弦 · 管鲍之交</div>
+    <div class="fig-desc">中国古代友谊故事，虽是中国文化背景，但对"理解和信任"的阐释具有跨文化的共通性</div></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2><span class="dim-icon">❓</span> 维度五：前沿追问</h2>
+  <p style="margin-bottom:12px;">点击每个问题展开你的思考：</p>
+
+  <div class="question-box">
+    <div class="q-label">🤖 追问一</div>
+    <p>如果 AI 可以写出完美的友谊主题作文，你和我写的区别在哪里？人类写作的"不可替代价值"是什么？</p>
+    <button class="btn-collapse" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='block'?'none':'block'">💭 展开思考</button>
+    <div style="display:none;margin-top:8px;font-size:14px;color:var(--text-secondary);padding:8px 12px;background:var(--bg);border-radius:4px;">AI 可以写出语法正确、结构完整的文章，但它从未真正"感受"过友谊。你的文字里有你独特的经历、真实的感动和只属于你的故事——这才是写作不可替代的价值。</div>
+  </div>
+
+  <div class="question-box">
+    <div class="q-label">📱 追问二</div>
+    <p>社交媒体上你有几百个"好友"，但你真正能谈心的有几个？"数字友谊"和"传统友谊"有本质区别吗？</p>
+    <button class="btn-collapse" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='block'?'none':'block'">💭 展开思考</button>
+    <div style="display:none;margin-top:8px;font-size:14px;color:var(--text-secondary);padding:8px 12px;background:var(--bg);border-radius:4px;">数字友谊降低了交友的门槛，但深层次的理解和信任——那些需要时间和共同经历来培养的东西——在任何时代都是友谊的核心。</div>
+  </div>
+
+  <div class="question-box">
+    <div class="q-label">🌍 追问三</div>
+    <p>你觉得跨文化友谊（和来自不同国家的人做朋友）比同文化友谊更难还是更容易？为什么？</p>
+    <button class="btn-collapse" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='block'?'none':'block'">💭 展开思考</button>
+    <div style="display:none;margin-top:8px;font-size:14px;color:var(--text-secondary);padding:8px 12px;background:var(--bg);border-radius:4px;">跨文化友谊需要克服语言障碍和文化差异，但它也让你从全新的视角理解世界——有时候，差异本身恰恰是友谊的起点。</div>
+  </div>
+
+  <div class="question-box">
+    <div class="q-label">🌌 追问四</div>
+    <p>未来如果我们生活在元宇宙中，虚拟人和真人可以是朋友吗？"友谊"的定义是否需要修订？</p>
+    <button class="btn-collapse" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='block'?'none':'block'">💭 展开思考</button>
+    <div style="display:none;margin-top:8px;font-size:14px;color:var(--text-secondary);padding:8px 12px;background:var(--bg);border-radius:4px;">这是一个开放问题。如果友谊的核心是"相互理解、支持和信任"，那么只要这些要素存在，友谊的载体是什么也许并不重要。你怎么看？</div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

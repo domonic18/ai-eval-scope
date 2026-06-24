@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性原理 — 学习动机透视镜</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --panel-bg: rgba(30,30,40,0.92);
+  --panel-border: rgba(255,255,255,0.08);
+  --panel-card: rgba(255,255,255,0.06);
+  --panel-card-hover: rgba(255,255,255,0.1);
+  --text-light: #e0e0e0;
+  --text-muted: #a0a0b0;
+  --tag-intrinsic: #6bcf7f;
+  --tag-extrinsic: #f0b34b;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "PingFang SC","Microsoft YaHei","Noto Sans SC","Hiragino Sans GB","WenQuanYi Micro Hei",sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  background: var(--bg);
+  color: var(--primary);
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.wrapper {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+  position: relative;
+  transition: all 0.35s cubic-bezier(0.4,0,0.2,1);
+}
+
+.wrapper.panel-open {
+  transform: translateX(-320px);
+}
+
+/* --- 左侧聊天区 --- */
+.chat-area {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  padding: 24px 30px 40px;
+  transition: all 0.35s cubic-bezier(0.4,0,0.2,1);
+  overflow-y: auto;
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 2px solid var(--accent);
+}
+
+.chat-header h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 1px;
+}
+
+.chat-header .meta-tag {
+  font-size: 12px;
+  background: var(--accent);
+  color: #fff;
+  padding: 2px 12px;
+  border-radius: 12px;
+  letter-spacing: 0.5px;
+}
+
+.btn-panel-toggle {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.btn-panel-toggle:hover {
+  background: var(--primary-hover);
+}
+
+/* --- 消息气泡 --- */
+.msg {
+  max-width: 780px;
+  margin-bottom: 18px;
+  animation: msgIn 0.3s ease-out;
+}
+
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.msg.system {
+  text-align: center;
+  color: var(--accent);
+  font-size: 13px;
+  margin: 12px 0;
+  letter-spacing: 0.3px;
+}
+
+.msg.system::before,
+.msg.system::after {
+  content: "——";
+  margin: 0 8px;
+  color: var(--accent);
+  opacity: 0.4;
+}
+
+.msg.bubble {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  border-left: 3px solid var(--accent);
+}
+
+.msg.bubble.ai {
+  border-left-color: var(--primary);
+}
+
+.msg.bubble .sender {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.msg.bubble.ai .sender {
+  color: var(--primary);
+}
+
+.msg.bubble .sender .badge {
+  font-size: 10px;
+  background: var(--accent);
+  color: #fff;
+  padding: 0 8px;
+  border-radius: 8px;
+  font-weight: 400;
+}
+
+.msg.bubble.ai .sender .badge {
+  background: var(--primary);
+}
+
+.msg.bubble p {
+  margin-bottom: 8px;
+}
+
+.msg.bubble p:last-child {
+  margin-bottom: 0;
+}
+
+/* --- 学习任务卡片（可拖拽） --- */
+.task-card {
+  display: inline-block;
+  background: var(--card-bg);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  padding: 12px 18px;
+  margin: 8px 4px;
+  cursor: grab;
+  user-select: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  transition: transform 0.15s, box-shadow 0.15s;
+  font-size: 14px;
+}
+
+.task-card:active {
+  cursor: grabbing;
+  transform: scale(1.03);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+}
+
+.task-card .task-label {
+  font-size: 11px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.task-card .task-title {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* --- 原理卡片组 --- */
+.principles h2 {
+  font-size: var(--font-h2);
+  font-weight: 700;
+  margin: 28px 0 14px;
+  color: var(--primary);
+  padding-left: 10px;
+  border-left: 3px solid var(--primary);
+}
+
+.principles h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 18px 0 8px;
+  color: var(--primary-hover);
+}
+
+.principles .principle-card {
+  background: var(--card-bg);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.principles .principle-card:hover {
+  border-color: var(--accent);
+}
+
+.principles .principle-card .p-title {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+
+.principles .principle-card .p-desc {
+  color: var(--primary-hover);
+  margin-bottom: 6px;
+}
+
+.principles .principle-card .p-detail {
+  font-size: 13px;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.principles .principle-card .p-detail strong {
+  color: var(--primary);
+}
+
+/* --- 练习 / 检测 --- */
+.exercise-box,
+.quiz-box {
+  background: var(--card-bg);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin: 16px 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border-left: 3px solid var(--primary);
+}
+
+.exercise-box .num,
+.quiz-box .num {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+  padding: 0 10px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+}
+
+.quiz-box .q-item {
+  margin: 10px 0;
+  padding: 8px 12px;
+  background: var(--bg);
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+/* --- 右侧动机解析面板 --- */
+.panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 320px;
+  height: 100vh;
+  background: var(--panel-bg);
+  border-left: 1px solid var(--panel-border);
+  backdrop-filter: blur(12px);
+  transform: translateX(100%);
+  transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+  overflow-y: auto;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel.open {
+  transform: translateX(0);
+}
+
+.panel-header {
+  padding: 18px 16px 12px;
+  border-bottom: 1px solid var(--panel-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.panel-header h2 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-light);
+  line-height: 1.4;
+}
+
+.panel-header .btn-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.panel-body {
+  padding: 14px 16px 30px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* --- 动机类型卡片 --- */
+.motivation-section {
+  margin-bottom: 18px;
+}
+
+.motivation-section h3 {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.motivation-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.motivation-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 14px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.motivation-chip.intrinsic {
+  background: rgba(107,207,127,0.15);
+  color: var(--tag-intrinsic);
+  border-color: rgba(107,207,127,0.3);
+}
+
+.motivation-chip.intrinsic:hover,
+.motivation-chip.intrinsic.drag-over {
+  background: rgba(107,207,127,0.25);
+  border-color: var(--tag-intrinsic);
+}
+
+.motivation-chip.extrinsic {
+  background: rgba(240,179,75,0.15);
+  color: var(--tag-extrinsic);
+  border-color: rgba(240,179,75,0.3);
+}
+
+.motivation-chip.extrinsic:hover,
+.motivation-chip.extrinsic.drag-over {
+  background: rgba(240,179,75,0.25);
+  border-color: var(--tag-extrinsic);
+}
+
+.motivation-chip .icon {
+  font-size: 13px;
+}
+
+/* --- 动机来源追溯图 --- */
+.trace-map {
+  margin-bottom: 18px;
+}
+
+.trace-map .center-node {
+  background: rgba(107,207,127,0.12);
+  border: 1px solid rgba(107,207,127,0.3);
+  color: var(--tag-intrinsic);
+  text-align: center;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.trace-map .trace-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.trace-map .trace-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--panel-card);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-light);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.trace-map .trace-item:hover {
+  background: var(--panel-card-hover);
+}
+
+.trace-map .trace-item .arrow {
+  color: var(--accent);
+  font-size: 10px;
+}
+
+.trace-map .btn-add-trace {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 6px;
+  background: var(--panel-card);
+  border: 1px dashed var(--panel-border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.trace-map .btn-add-trace:hover {
+  background: var(--panel-card-hover);
+  color: var(--text-light);
+}
+
+/* --- 动机障碍扫描器 --- */
+.obstacle-scanner {
+  margin-bottom: 18px;
+}
+
+.obstacle-scanner .obstacle-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  background: var(--panel-card);
+  border-radius: 6px;
+  margin-bottom: 5px;
+  font-size: 12px;
+  color: var(--text-light);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.obstacle-scanner .obstacle-item:hover {
+  background: var(--panel-card-hover);
+}
+
+.obstacle-scanner .obstacle-item input[type="checkbox"] {
+  accent-color: var(--tag-extrinsic);
+}
+
+.obstacle-scanner .obstacle-item .strategy {
+  display: none;
+  font-size: 11px;
+  color: var(--tag-intrinsic);
+  margin-left: auto;
+  padding-left: 6px;
+}
+
+.obstacle-scanner .obstacle-item.checked .strategy {
+  display: inline;
+}
+
+/* --- 动机日记入口 --- */
+.diary-entry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--panel-card);
+  border-radius: 8px;
+  margin-bottom: 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.diary-entry:hover {
+  background: var(--panel-card-hover);
+}
+
+.diary-entry .diary-icon {
+  font-size: 22px;
+}
+
+.diary-entry .diary-text {
+  color: var(--text-light);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.diary-entry .diary-sub {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+/* --- 动机可视化时间线 --- */
+.timeline {
+  margin-bottom: 10px;
+}
+
+.timeline .tl-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--panel-border);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.timeline .tl-item .tl-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--tag-intrinsic);
+  flex-shrink: 0;
+}
+
+.timeline .tl-item .tl-label {
+  color: var(--text-light);
+  font-weight: 500;
+}
+
+/* --- 面板底部 --- */
+.panel-footer {
+  padding: 10px 16px 14px;
+  border-top: 1px solid var(--panel-border);
+  flex-shrink: 0;
+}
+
+.panel-footer .ai-prompt {
+  display: flex;
+  gap: 6px;
+}
+
+.panel-footer .ai-prompt input {
+  flex: 1;
+  background: var(--panel-card);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: var(--text-light);
+  font-size: 12px;
+  outline: none;
+}
+
+.panel-footer .ai-prompt input::placeholder {
+  color: var(--text-muted);
+}
+
+.panel-footer .ai-prompt button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.panel-footer .ai-prompt button:hover {
+  background: var(--primary-hover);
+}
+
+/* --- AI对话弹窗 --- */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal-box {
+  background: var(--card-bg);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 480px;
+  max-height: 70vh;
+  padding: 20px;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+
+.modal-box h3 {
+  font-size: 16px;
+  margin-bottom: 12px;
+  color: var(--primary);
+}
+
+.modal-box .modal-msg {
+  margin-bottom: 10px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border-radius: 8px;
+  font-size: 14px;
+  border-left: 3px solid var(--accent);
+}
+
+.modal-box .modal-msg.ai-msg {
+  border-left-color: var(--primary);
+  background: #eef;
+}
+
+.modal-box .modal-input-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.modal-box .modal-input-row input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+}
+
+.modal-box .modal-close-btn {
+  display: inline-block;
+  margin-top: 10px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+/* --- 滚动条美化 --- */
+.panel-body::-webkit-scrollbar,
+.modal-box::-webkit-scrollbar {
+  width: 4px;
+}
+
+.panel-body::-webkit-scrollbar-thumb,
+.modal-box::-webkit-scrollbar-thumb {
+  background: var(--panel-border);
+  border-radius: 4px;
+}
+
+/* --- 响应式 --- */
+@media (max-width: 768px) {
+  .chat-area {
+    padding: 16px 16px 30px;
+  }
+
+  .chat-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .chat-header h1 {
+    font-size: 18px;
+  }
+
+  .panel {
+    width: 280px;
+  }
+
+  .wrapper.panel-open {
+    transform: translateX(-280px);
+  }
+
+  .msg.bubble {
+    padding: 12px 14px;
+  }
+
+  .task-card {
+    font-size: 13px;
+    padding: 10px 14px;
+  }
+
+  .modal-box {
+    width: 95%;
+    padding: 16px;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="wrapper" id="wrapper">
+  <!-- 左侧聊天区 -->
+  <div class="chat-area">
+    <div class="chat-header">
+      <div>
+        <h1>解析性原理</h1>
+        <span style="font-size:12px;color:var(--accent);">英语 · 必修1 · Unit 1 Friendship</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="meta-tag">解析性导学</span>
+        <button class="btn-panel-toggle" id="btnTogglePanel">🔍 动机透视镜</button>
+      </div>
+    </div>
+
+    <!-- 对话气泡 -->
+    <div class="msg system">今日学习目标：从示例中提炼解析性原理，学会迁移应用</div>
+
+    <div class="msg bubble">
+      <div class="sender">📘 导学助手</div>
+      <p>我们已经完成了"解析性示例"的学习——你分析了李华写给王老师的邮件。现在，我们要从那个案例中<strong>提炼出可迁移的解析性原理</strong>。</p>
+      <p>原理就像是"思维工具箱"里的工具。有了它们，你不仅能分析这一封邮件，还能分析任何类似的语篇。</p>
+    </div>
+
+    <div class="msg system">👇 拖拽下面的任务卡片到右侧面板的动机类型区，配对后查看解析</div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 18px;">
+      <div class="task-card" draggable="true" data-task="情感分析">
+        <div class="task-label">📋 学习任务</div>
+        <div class="task-title">情感信号识别</div>
+      </div>
+      <div class="task-card" draggable="true" data-task="结构拆解">
+        <div class="task-label">📋 学习任务</div>
+        <div class="task-title">语篇结构拆解</div>
+      </div>
+      <div class="task-card" draggable="true" data-task="上下文推断">
+        <div class="task-label">📋 学习任务</div>
+        <div class="task-title">上下文推演</div>
+      </div>
+      <div class="task-card" draggable="true" data-task="证据匹配">
+        <div class="task-label">📋 学习任务</div>
+        <div class="task-title">证据—结论匹配</div>
+      </div>
+      <div class="task-card" draggable="true" data-task="跨文化">
+        <div class="task-label">📋 学习任务</div>
+        <div class="task-title">跨文化视角</div>
+      </div>
+    </div>
+
+    <!-- 原理内容 -->
+    <div class="principles">
+      <h2>（一）从示例到原理</h2>
+      <div class="msg bubble">
+        <p>为什么要从案例中提炼原理？因为一个个案是"孤例"，原理才是可迁移的"思维框架"。好比学会了做一道菜，更重要的是掌握"炒、煎、炖"的烹饪原理，以后遇到任何食材都能应对。</p>
+        <p>下面这<strong>5条原理</strong>，就是从李华的邮件解析中提炼出来的核心方法。</p>
+      </div>
+
+      <h2>（二）解析性原理提炼</h2>
+
+      <div class="principle-card">
+        <div class="p-title">原理1：情感信号识别原理</div>
+        <div class="p-desc">通过标注情感词汇（upset, grateful, lonely等）判断作者态度。</div>
+        <div class="p-detail"><strong>在本示例中的体现：</strong>圈出邮件中所有情感词汇作为分析起点。</div>
+        <div class="p-detail"><strong>如何使用：</strong>标注所有情感词 → 按正面/负面分类 → 分析情感强度 → 判断态度。</div>
+        <div class="p-detail"><strong>可迁移场景：</strong>分析新闻评论、读后感、社交媒体帖子等。</div>
+        <div class="p-detail"><strong>使用提醒：</strong>注意文化差异导致的情感表达方式不同。</div>
+      </div>
+
+      <div class="principle-card">
+        <div class="p-title">原理2：语篇结构拆解原理</div>
+        <div class="p-desc">将语篇按功能拆分为"叙述—表达—诉求"等模块。</div>
+        <div class="p-detail"><strong>在本示例中的体现：</strong>将李华的邮件拆分为事件叙述、情感表达、求助诉求三部分。</div>
+        <div class="p-detail"><strong>如何使用：</strong>通读全文 → 判断各段落功能 → 标注结构标记词 → 绘制结构图。</div>
+        <div class="p-detail"><strong>可迁移场景：</strong>分析英语作文、演讲稿、信件等。</div>
+        <div class="p-detail"><strong>使用提醒：</strong>有些语篇结构不是线性的，可能有穿插。</div>
+      </div>
+
+      <div class="principle-card">
+        <div class="p-title">原理3：上下文推演原理</div>
+        <div class="p-desc">不孤立看一句话，而是放在上下文中理解含义。</div>
+        <div class="p-detail"><strong>在本示例中的体现：</strong>某个看似抱怨的句子在上下文中可能是求助信号。</div>
+        <div class="p-detail"><strong>如何使用：</strong>找到关键句 → 读前后文 → 推断真实意图 → 验证推断。</div>
+        <div class="p-detail"><strong>可迁移场景：</strong>阅读理解推断题、听力理解态度判断。</div>
+        <div class="p-detail"><strong>使用提醒：</strong>避免过度推断，要有文本证据支撑。</div>
+      </div>
+
+      <div class="principle-card">
+        <div class="p-title">原理4：证据—结论匹配原理</div>
+        <div class="p-desc">判断一个结论是否有足够证据支撑。</div>
+        <div class="p-detail"><strong>在本示例中的体现：</strong>分析"李华认为新室友不好"这个结论是否有足够证据。</div>
+        <div class="p-detail"><strong>如何使用：</strong>找出结论 → 列出所有证据 → 判断证据充分性 → 评估结论可信度。</div>
+        <div class="p-detail"><strong>可迁移场景：</strong>议论文分析、辩论逻辑判断。</div>
+        <div class="p-detail"><strong>使用提醒：</strong>分清客观事实和主观感受。</div>
+      </div>
+
+      <div class="principle-card">
+        <div class="p-title">原理5：跨文化视角原理</div>
+        <div class="p-desc">注意中西方表达方式的差异。</div>
+        <div class="p-detail"><strong>在本示例中的体现：</strong>英语中表达情感的方式和中文有何不同。</div>
+        <div class="p-detail"><strong>如何使用：</strong>对比同一情境的中英文表达 → 分析差异原因 → 调整理解方式。</div>
+        <div class="p-detail"><strong>可迁移场景：</strong>跨文化交际、中英互译。</div>
+        <div class="p-detail"><strong>使用提醒：</strong>不要用自己的文化标准评判另一种文化的表达。</div>
+      </div>
+
+      <h2>（三）解析性原理应用</h2>
+
+      <div class="exercise-box">
+        <span class="num">练习 1</span>
+        <p><strong>分析一封来自美国笔友的"求助信"</strong></p>
+        <p>建议使用：<strong>情感信号识别</strong> + <strong>语篇结构拆解</strong></p>
+        <p style="font-size:13px;color:var(--accent);">试着先找出信中的情感词汇，再将信件按功能分段。</p>
+      </div>
+
+      <div class="exercise-box">
+        <span class="num">练习 2</span>
+        <p><strong>分析一篇关于"online friendship"的英语短文</strong></p>
+        <p>建议使用：<strong>上下文推演</strong> + <strong>证据—结论匹配</strong></p>
+        <p style="font-size:13px;color:var(--accent);">找出作者的核心观点，判断支撑观点的证据是否充分。</p>
+      </div>
+
+      <h2>（四）自我检测</h2>
+
+      <div class="quiz-box">
+        <div class="q-item"><strong>1.</strong> 哪个原理最适合分析一封抱怨信？<br><span style="font-size:12px;color:var(--accent);">提示：注意信中的情感色彩和结构。</span></div>
+        <div class="q-item"><strong>2.</strong> 情感信号识别时最容易犯什么错误？<br><span style="font-size:12px;color:var(--accent);">提示：文化差异、主观臆断。</span></div>
+        <div class="q-item"><strong>3.</strong> 证据—结论匹配的核心是什么？<br><span style="font-size:12px;color:var(--accent);">提示：区分客观事实与主观感受。</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 右侧动机解析面板 -->
+<div class="panel" id="panel">
+  <div class="panel-header">
+    <h2>🔍 动机透视镜：你为什么会想学（或不想学）？</h2>
+    <button class="btn-close" id="btnClosePanel">&times;</button>
+  </div>
+  <div class="panel-body">
+
+    <!-- 动机类型识别卡 -->
+    <div class="motivation-section">
+      <h3>🧠 内在动机</h3>
+      <div class="motivation-row" id="intrinsicZone">
+        <span class="motivation-chip intrinsic" data-type="curiosity"><span class="icon">⭐</span> 好奇心</span>
+        <span class="motivation-chip intrinsic" data-type="interest"><span class="icon">🔥</span> 兴趣</span>
+        <span class="motivation-chip intrinsic" data-type="meaning"><span class="icon">🎯</span> 意义感</span>
+        <span class="motivation-chip intrinsic" data-type="mastery"><span class="icon">💪</span> 掌控感</span>
+      </div>
+      <h3>🏆 外在动机</h3>
+      <div class="motivation-row" id="extrinsicZone">
+        <span class="motivation-chip extrinsic" data-type="reward"><span class="icon">🎁</span> 奖励</span>
+        <span class="motivation-chip extrinsic" data-type="recognition"><span class="icon">👏</span> 认可</span>
+        <span class="motivation-chip extrinsic" data-type="competition"><span class="icon">⚔️</span> 竞争</span>
+        <span class="motivation-chip extrinsic" data-type="pressure"><span class="icon">📌</span> 压力</span>
+      </div>
+    </div>
+
+    <!-- 动机来源追溯图 -->
+    <div class="trace-map">
+      <div class="center-node">❓ 我为什么想学这个？</div>
+      <div class="trace-list" id="traceList">
+        <div class="trace-item"><span class="arrow">└─</span> 因为考试要考</div>
+        <div class="trace-item"><span class="arrow">└─</span> 因为觉得有用</div>
+        <div class="trace-item"><span class="arrow">   └─</span> 对交友话题感兴趣</div>
+      </div>
+      <button class="btn-add-trace" id="btnAddTrace">+ 添加追问节点</button>
+    </div>
+
+    <!-- 动机障碍扫描器 -->
+    <div class="obstacle-scanner">
+      <h3 style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">⚠️ 动机障碍扫描器</h3>
+      <div class="obstacle-item" data-strategy="分解任务，从最简单的步骤开始">
+        <input type="checkbox"> 畏难情绪
+        <span class="strategy">💡 分解任务</span>
+      </div>
+      <div class="obstacle-item" data-strategy="建立个人与学习内容的关联">
+        <input type="checkbox"> 缺乏关联
+        <span class="strategy">💡 建立联系</span>
+      </div>
+      <div class="obstacle-item" data-strategy="回顾以往成功经验，肯定自我">
+        <input type="checkbox"> 信心不足
+        <span class="strategy">💡 回顾成功</span>
+      </div>
+      <div class="obstacle-item" data-strategy="设定专注时段，关闭干扰源">
+        <input type="checkbox"> 外部干扰
+        <span class="strategy">💡 设定专注区</span>
+      </div>
+      <div class="obstacle-item" data-strategy="将长期目标拆解为即时小奖励">
+        <input type="checkbox"> 延迟满足难
+        <span class="strategy">💡 即时小奖励</span>
+      </div>
+    </div>
+
+    <!-- 动机日记入口 -->
+    <div class="diary-entry" id="btnDiary">
+      <span class="diary-icon">📓</span>
+      <div>
+        <div class="diary-text">动机日记</div>
+        <div class="diary-sub">记录你今天的学习感受</div>
+      </div>
+    </div>
+
+    <!-- 动机可视化时间线 -->
+    <div class="timeline">
+      <h3 style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">📈 动机时间线</h3>
+      <div class="tl-item">
+        <span class="tl-dot" style="background:var(--tag-extrinsic);"></span>
+        <span>开始前：<span class="tl-label">好奇</span>（新话题吸引）</span>
+      </div>
+      <div class="tl-item">
+        <span class="tl-dot"></span>
+        <span>进行中：<span class="tl-label">困惑</span> → <span class="tl-label">理解</span></span>
+      </div>
+      <div class="tl-item">
+        <span class="tl-dot" style="background:var(--tag-extrinsic);"></span>
+        <span>完成后：<span class="tl-label">成就感</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 面板底部AI对话 -->
+  <div class="panel-footer">
+    <div class="ai-prompt">
+      <input type="text" placeholder="💬 和AI导师聊聊你的动机..." id="aiInput">
+      <button id="btnAiSend">发送</button>
+    </div>
+  </div>
+</div>
+
+<!-- AI对话弹窗 -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <h3>🤖 AI导师动机对话</h3>
+    <div id="modalMessages">
+      <div class="modal-msg ai-msg">你好！今天我们学习"解析性原理"。能告诉我，你目前对这个内容的学习动机是什么吗？是觉得有用、感兴趣，还是因为考试压力？</div>
+    </div>
+    <div class="modal-input-row">
+      <input type="text" placeholder="输入你的想法..." id="modalInput">
+      <button style="background:var(--primary);color:#fff;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;" id="modalSend">发送</button>
+    </div>
+    <button class="modal-close-btn" id="modalClose">关闭</button>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const wrapper = document.getElementById('wrapper');
+  const panel = document.getElementById('panel');
+  const btnToggle = document.getElementById('btnTogglePanel');
+  const btnClose = document.getElementById('btnClosePanel');
+  const modalOverlay = document.getElementById('modalOverlay');
+  const modalClose = document.getElementById('modalClose');
+  const modalSend = document.getElementById('modalSend');
+  const modalInput = document.getElementById('modalInput');
+  const modalMessages = document.getElementById('modalMessages');
+  const aiInput = document.getElementById('aiInput');
+  const btnAiSend = document.getElementById('btnAiSend');
+  const btnDiary = document.getElementById('btnDiary');
+  const btnAddTrace = document.getElementById('btnAddTrace');
+  const traceList = document.getElementById('traceList');
+
+  // 面板开关
+  function openPanel() {
+    wrapper.classList.add('panel-open');
+    panel.classList.add('open');
+  }
+
+  function closePanel() {
+    wrapper.classList.remove('panel-open');
+    panel.classList.remove('open');
+  }
+
+  btnToggle.addEventListener('click', function() {
+    if (panel.classList.contains('open')) {
+      closePanel();
+    } else {
+      openPanel();
+    }
+  });
+
+  btnClose.addEventListener('click', closePanel);
+
+  // 拖拽任务卡片到动机类型区域
+  document.querySelectorAll('.task-card').forEach(function(card) {
+    card.addEventListener('dragstart', function(e) {
+      e.dataTransfer.setData('text/plain', this.getAttribute('data-task') || this.querySelector('.task-title').textContent);
+    });
+  });
+
+  document.querySelectorAll('.motivation-chip').forEach(function(chip) {
+    chip.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      this.classList.add('drag-over');
+    });
+    chip.addEventListener('dragleave', function() {
+      this.classList.remove('drag-over');
+    });
+    chip.addEventListener('drop', function(e) {
+      e.preventDefault();
+      this.classList.remove('drag-over');
+      const task = e.dataTransfer.getData('text/plain');
+      const type = this.classList.contains('intrinsic') ? '内在动机' : '外在动机';
+      alert('✅ 配对成功！\n\n任务：「' + task + '」\n匹配动机类型：' + type + ' - ' + this.textContent.trim() + '\n\n解析：该学习任务与你的' + type + '「' + this.textContent.trim() + '」相关联。继续加油！');
+    });
+  });
+
+  // 动机障碍扫描器
+  document.querySelectorAll('.obstacle-item').forEach(function(item) {
+    var cb = item.querySelector('input[type="checkbox"]');
+    cb.addEventListener('change', function() {
+      if (this.checked) {
+        item.classList.add('checked');
+      } else {
+        item.classList.remove('checked');
+      }
+    });
+  });
+
+  // 添加追溯节点
+  btnAddTrace.addEventListener('click', function() {
+    var question = prompt('请输入你的追问（如：因为和同学们一起学）：');
+    if (question && question.trim()) {
+      var item = document.createElement('div');
+      item.className = 'trace-item';
+      item.innerHTML = '<span class="arrow">└─</span> ' + question.trim();
+      traceList.appendChild(item);
+    }
+  });
+
+  // AI对话（面板底部输入 -> 弹窗）
+  function openModalWithMessage(msg) {
+    if (msg) {
+      var div = document.createElement('div');
+      div.className = 'modal-msg';
+      div.textContent = msg;
+      modalMessages.appendChild(div);
+    }
+    modalOverlay.classList.add('active');
+    modalInput.focus();
+  }
+
+  btnAiSend.addEventListener('click', function() {
+    var msg = aiInput.value.trim();
+    if (msg) {
+      openModalWithMessage('你：' + msg);
+      aiInput.value = '';
+    } else {
+      openModalWithMessage();
+    }
+  });
+
+  aiInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      btnAiSend.click();
+    }
+  });
+
+  // 模态窗发送
+  modalSend.addEventListener('click', function() {
+    var text = modalInput.value.trim();
+    if (!text) return;
+    var userDiv = document.createElement('div');
+    userDiv.className = 'modal-msg';
+    userDiv.textContent = '你：' + text;
+    modalMessages.appendChild(userDiv);
+    modalInput.value = '';
+
+    // AI自动回复
+    var replies = [
+      '很有意思的角度！继续说说你的想法？',
+      '我理解了。动机往往不是单一的，多种因素交织在一起。',
+      '这个想法很棒！有没有想过把这个和今天的解析性原理联系起来？',
+      '谢谢分享。建议你把这些感受记到动机日记里。'
+    ];
+    var aiDiv = document.createElement('div');
+    aiDiv.className = 'modal-msg ai-msg';
+    aiDiv.textContent = 'AI导师：' + replies[Math.floor(Math.random() * replies.length)];
+    modalMessages.appendChild(aiDiv);
+    modalMessages.scrollTop = modalMessages.scrollHeight;
+  });
+
+  modalInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') modalSend.click();
+  });
+
+  modalClose.addEventListener('click', function() {
+    modalOverlay.classList.remove('active');
+  });
+
+  modalOverlay.addEventListener('click', function(e) {
+    if (e.target === this) {
+      modalOverlay.classList.remove('active');
+    }
+  });
+
+  // 动机日记入口
+  btnDiary.addEventListener('click', function() {
+    var entry = prompt('📓 动机日记\n\n写下你今天的学习感受（如：我今天觉得…）：');
+    if (entry && entry.trim()) {
+      alert('✅ 日记已保存！\n\n"' + entry.trim() + '"\n\n你的每一份感受都是成长的足迹。');
+    }
+  });
+
+  // 动机类型点击提示
+  document.querySelectorAll('.motivation-chip').forEach(function(chip) {
+    chip.addEventListener('click', function() {
+      var type = this.classList.contains('intrinsic') ? '内在动机' : '外在动机';
+      alert('💡 ' + type + '：' + this.textContent.trim() + '\n\n拖拽左侧的学习任务卡片到这里，可以配对分析。');
+    });
+  });
+
+})();
+</script>
+</body>
+</html>

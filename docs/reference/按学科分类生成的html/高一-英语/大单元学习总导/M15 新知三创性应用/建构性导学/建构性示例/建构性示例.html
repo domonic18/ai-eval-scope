@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性示例导学</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 100%;
+  max-width: none;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.header {
+  background: linear-gradient(135deg, #434343 0%, #595959 100%);
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+
+.header h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.header p {
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+}
+
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+
+.card h3 {
+  font-size: 16px;
+  color: var(--primary);
+  margin: 14px 0 8px;
+}
+
+.card p {
+  margin-bottom: 8px;
+}
+
+.card ul, .card ol {
+  padding-left: 20px;
+  margin-bottom: 10px;
+}
+
+.card li {
+  margin-bottom: 6px;
+}
+
+.step-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.step-card {
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.step-card:hover {
+  background: #f0f0f0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.step-card .step-number {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.step-card .step-title {
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.step-card .step-desc {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.step-card .step-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #fff;
+  transition: all 0.3s ease;
+}
+
+.step-card.done .step-check {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.step-card.done .step-check::after {
+  content: "✓";
+  color: #fff;
+  font-weight: bold;
+}
+
+.tool-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.tool-box {
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px;
+  transition: all 0.3s ease;
+}
+
+.tool-box:hover {
+  background: #e8e8e8;
+}
+
+.tool-box .tool-title {
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.tool-box .tool-desc {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.letter-preview {
+  background: #fafafa;
+  border-left: 4px solid var(--accent);
+  padding: 16px 20px;
+  margin: 12px 0;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  font-style: normal;
+}
+
+.letter-preview .letter-label {
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+
+.checklist {
+  margin: 12px 0;
+}
+
+.check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 12px;
+  margin: 4px 0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.check-item:hover {
+  background: #f0f0f0;
+}
+
+.check-item .checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.check-item.checked .checkbox {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.check-item.checked .checkbox::after {
+  content: "✓";
+  color: #fff;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.check-item.checked .check-text {
+  color: var(--text-secondary);
+  text-decoration: line-through;
+}
+
+.footer-note {
+  text-align: center;
+  padding: 16px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  .header { padding: 20px 16px; }
+  .card { padding: 16px; }
+  .step-grid { grid-template-columns: 1fr; }
+  .tool-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>建构性示例导学</h1>
+  <p>"一封给远方朋友的信"——建构自己的友谊表达方案</p>
+</div>
+
+<div class="card">
+  <h2>真实建构情境</h2>
+  <p>你有一位外国笔友（来自英语国家），你们通过国际笔友项目建立了联系。最近，这位笔友在邮件中向你倾诉了一件令她困扰的事：</p>
+  <div class="letter-preview">
+    <div class="letter-label">✉ 笔友来信概要</div>
+    <p>"……我在学校遇到了人际关系的困扰，感觉被小团体排斥，不知道该如何处理。在你的文化中，人们是如何处理类似问题的？我也想听听你的建议。"</p>
+  </div>
+  <p>你的任务不是简单地"回复邮件"，而是要通过一个完整的学习过程，建构出属于你自己的友谊主题表达成果。</p>
+</div>
+
+<div class="card">
+  <h2>建构目标</h2>
+  <p><strong>建构一份"友谊困境回应方案"</strong>——用英语回应一位外国笔友的情感诉求，展示你对友谊的理解、文化的反思和真诚的建议。</p>
+  <ul>
+    <li><strong>成果名称：</strong>友谊困境回应书信</li>
+    <li><strong>对象：</strong>一位正在经历友谊困扰的英语国家同龄笔友</li>
+    <li><strong>最低标准：</strong>不少于 200 词，包含情感回应、文化对比、具体建议三个部分</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>建构过程示范（6步）</h2>
+  <p>点击每一步可标记完成：</p>
+  <div class="step-grid">
+    <div class="step-card" onclick="toggleStep(this)">
+      <div class="step-number">1</div>
+      <div class="step-title">情境解读</div>
+      <div class="step-desc">仔细阅读笔友来信，圈画关键信息和情感线索</div>
+      <div class="step-check"></div>
+    </div>
+    <div class="step-card" onclick="toggleStep(this)">
+      <div class="step-number">2</div>
+      <div class="step-title">问题分析</div>
+      <div class="step-desc">识别核心问题：被排斥感、归属感缺失、文化差异等</div>
+      <div class="step-check"></div>
+    </div>
+    <div class="step-card" onclick="toggleStep(this)">
+      <div class="step-number">3</div>
+      <div class="step-title">经验联想</div>
+      <div class="step-desc">回顾你自己或他人处理类似困境的经验</div>
+      <div class="step-check"></div>
+    </div>
+    <div class="step-card" onclick="toggleStep(this)">
+      <div class="step-number">4</div>
+      <div class="step-title">语言准备</div>
+      <div class="step-desc">整理表达共情、建议、鼓励的句式和词汇</div>
+      <div class="step-check"></div>
+    </div>
+    <div class="step-card" onclick="toggleStep(this)">
+      <div class="step-number">5</div>
+      <div class="step-title">方案建构</div>
+      <div class="step-desc">在分析基础上，建构回应内容：共情→理解→建议→鼓励</div>
+      <div class="step-check"></div>
+    </div>
+    <div class="step-card" onclick="toggleStep(this)">
+      <div class="step-number">6</div>
+      <div class="step-title">表达优化</div>
+      <div class="step-desc">检查语言准确性、情感温度和文化适宜性</div>
+      <div class="step-check"></div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>支架工具推荐</h2>
+  <div class="tool-grid">
+    <div class="tool-box">
+      <div class="tool-title">共情表达句式库</div>
+      <div class="tool-desc">"I can imagine how you feel…"<br>"It must be really hard…"<br>"That sounds so challenging…"</div>
+    </div>
+    <div class="tool-box">
+      <div class="tool-title">建议表达句型</div>
+      <div class="tool-desc">"Have you considered…?"<br>"One thing that might help is…"<br>"You could try…"</div>
+    </div>
+    <div class="tool-box">
+      <div class="tool-title">文化对比关键词</div>
+      <div class="tool-desc">individualism vs. collectivism<br>direct vs. indirect communication</div>
+    </div>
+    <div class="tool-box">
+      <div class="tool-title">成果检查清单</div>
+      <div class="tool-desc">共情是否到位？建议是否具体？文化视角是否体现？</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>建构成果样例</h2>
+  <p><strong>成果名称：</strong>一封回应友谊困境的英文书信</p>
+  <p><strong>推荐格式：</strong>书信格式（日期、称呼、正文、结束语、署名），正文分三段</p>
+  <p><strong>评价要求：</strong></p>
+  <ul>
+    <li>情感回应自然真诚（1 分）</li>
+    <li>建议具体可操作（1 分）</li>
+    <li>体现文化对比视角（1 分）</li>
+    <li>语言表达准确流畅（1 分）</li>
+  </ul>
+  <p><strong>完成建议：</strong>将建构过程中的思考笔记整合成正文初稿，然后润色语言。</p>
+</div>
+
+<div class="card">
+  <h2>成果优化建议</h2>
+  <ul>
+    <li>请一位同学阅读你的草稿，问ta"读完后你有什么感受？"</li>
+    <li>检查是否回答了笔友的核心问题——你理解她的困扰了吗？</li>
+    <li>优化文化对比部分——你的文化视角是否有深度？</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>自我评价量表</h2>
+  <p>点击每一项进行自我检查：</p>
+  <div class="checklist">
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="checkbox"></div>
+      <span class="check-text">我是否在回信中明确回应了笔友的情感（共情部分）？</span>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="checkbox"></div>
+      <span class="check-text">我是否提供了至少 2 条具体的建议或行动方案？</span>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="checkbox"></div>
+      <span class="check-text">我是否融入了对自己文化中友谊观念的反思考察？</span>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="checkbox"></div>
+      <span class="check-text">我是否使用了本单元学习的最新词汇和句式？</span>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="checkbox"></div>
+      <span class="check-text">我是否检查了语言错误，确保信件自然流畅？</span>
+    </div>
+  </div>
+</div>
+
+<div class="footer-note">
+  ⚡ 建构性示例 — 跟着这 6 步，建构属于你自己的友谊表达成果
+</div>
+
+</div>
+
+<script>
+function toggleStep(el) {
+  el.classList.toggle('done');
+}
+
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+}
+</script>
+</body>
+</html>

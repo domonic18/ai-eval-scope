@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>作业榜 — 作业库脚手架</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, #434343 0%, #737373 100%);
+  color: #fff;
+  padding: 32px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  text-align: center;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 8px 0;
+  font-weight: 700;
+}
+.header .subtitle {
+  font-size: 14px;
+  opacity: 0.85;
+}
+.level-section {
+  margin-bottom: 20px;
+}
+.level-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px;
+  border-radius: var(--border-radius) var(--border-radius) 0 0;
+  color: #fff;
+  font-weight: 600;
+  font-size: var(--font-h2);
+  cursor: pointer;
+  user-select: none;
+}
+.level-header .arrow {
+  transition: transform 0.3s;
+  font-size: 12px;
+}
+.level-header .level-tag {
+  font-size: 12px;
+  background: rgba(255,255,255,0.25);
+  padding: 2px 10px;
+  border-radius: 12px;
+}
+.level-basic .level-header { background: #595959; }
+.level-tiered .level-header { background: #434343; }
+.level-open .level-header { background: #2d2d2d; }
+.level-body {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  padding: 0 18px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.45s ease, padding 0.3s ease;
+}
+.level-body.open {
+  max-height: 1500px;
+  padding: 16px 18px;
+}
+.task-item {
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  transition: border-color 0.2s, background 0.2s;
+}
+.task-item:hover {
+  border-color: var(--accent);
+  background: #fafafa;
+}
+.task-item .task-label {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  margin-right: 6px;
+}
+.task-item .task-label.a { background: #8c8c8c; }
+.task-item .task-label.b { background: #595959; }
+.task-item .task-label.c { background: #434343; }
+.task-item h4 {
+  margin: 6px 0 4px 0;
+  color: var(--text);
+}
+.task-item p {
+  margin: 4px 0 0 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.rubric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+.rubric-item {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 12px;
+  text-align: center;
+}
+.rubric-item .rubric-score {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary);
+}
+.rubric-item .rubric-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.format-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+.format-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 8px 14px;
+  font-size: 13px;
+}
+.info-block {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 18px 20px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow);
+}
+.info-block h3 {
+  margin: 0 0 12px 0;
+  color: var(--primary);
+  font-size: var(--font-h2);
+}
+.footer-note {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-top: 24px;
+  padding: 16px;
+  border-top: 1px solid var(--border);
+}
+.start-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 10px 28px;
+  border-radius: var(--border-radius);
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.start-btn:hover { background: var(--primary-hover); }
+@media (max-width: 600px) {
+  .container { padding: 16px 12px; }
+  .header { padding: 24px 16px; }
+  .rubric-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>作业库</h1>
+  <p class="subtitle">Unit 1 &middot; Friendship &middot; 分级任务 scaffold</p>
+</div>
+
+<div class="level-section level-basic">
+  <div class="level-header" onclick="toggleLevel(this)">
+    <span>&#128218; 基础层：再现与理解</span>
+    <span><span class="level-tag">必做</span><span class="arrow">&#9660;</span></span>
+  </div>
+  <div class="level-body open">
+    <div class="task-item">
+      <span class="task-label a">A 级 &middot; 必做</span>
+      <h4>阅读理解 &mdash; Anne&rsquo;s Best Friend</h4>
+      <p>根据 Unit 1 课文内容，回答 5 个关于 Anne&rsquo;s Best Friend 的阅读理解问题。</p>
+    </div>
+    <div class="task-item">
+      <span class="task-label b">B 级 &middot; 选做</span>
+      <h4>词汇运用</h4>
+      <p>用英文列出 5 个描述友谊品质的形容词，并为每个词配一个例句。</p>
+    </div>
+  </div>
+</div>
+
+<div class="level-section level-tiered">
+  <div class="level-header" onclick="toggleLevel(this)">
+    <span>&#127891; 分层层：差异化任务 <span style="font-weight:400;font-size:13px;opacity:0.8;">（三选一）</span></span>
+    <span class="arrow">&#9660;</span>
+  </div>
+  <div class="level-body">
+    <div class="task-item">
+      <span class="task-label a">A 级任务</span>
+      <h4>描写你的好朋友</h4>
+      <p>写一篇 60&ndash;80 词的短文，描述你最好的朋友的一个特点。</p>
+    </div>
+    <div class="task-item">
+      <span class="task-label b">B 级任务</span>
+      <h4>给新同学的建议</h4>
+      <p>根据所给情境（新同学不知如何交友），用英文写 3&ndash;5 条建议。</p>
+    </div>
+    <div class="task-item">
+      <span class="task-label c">C 级任务</span>
+      <h4>篇章结构分析</h4>
+      <p>分析 Unit 1 阅读文章的篇章结构，画出一份结构图并用英文标注。</p>
+    </div>
+  </div>
+</div>
+
+<div class="level-section level-open">
+  <div class="level-header" onclick="toggleLevel(this)">
+    <span>&#127775; 开放层：创造性表达 <span style="font-weight:400;font-size:13px;opacity:0.8;">（三选一挑战）</span></span>
+    <span class="arrow">&#9660;</span>
+  </div>
+  <div class="level-body">
+    <div class="task-item">
+      <span class="task-label c">任务一</span>
+      <h4>&#128221; 英语短文写作</h4>
+      <p>以 &ldquo;A Friend in Need Is a Friend Indeed&rdquo; 为主题，写一篇 100 词以上的英语短文。</p>
+    </div>
+    <div class="task-item">
+      <span class="task-label b">任务二</span>
+      <h4>&#128220; Friendship Web 思维导图</h4>
+      <p>画一幅 &ldquo;Friendship Web&rdquo; 思维导图，展示友谊对你的意义。</p>
+    </div>
+    <div class="task-item">
+      <span class="task-label a">任务三</span>
+      <h4>&#127916; 口语视频分享</h4>
+      <p>录制一段 2 分钟的口语视频，分享你的一次交友经历及其启发。</p>
+    </div>
+  </div>
+</div>
+
+<div class="info-block">
+  <h3>&#128202; 评价标准（Rubric）</h3>
+  <div class="rubric-grid">
+    <div class="rubric-item">
+      <div class="rubric-score">0&ndash;5</div>
+      <div class="rubric-label">内容完整度</div>
+      <div style="font-size:11px;color:var(--text-secondary);">是否包含核心内容</div>
+    </div>
+    <div class="rubric-item">
+      <div class="rubric-score">0&ndash;5</div>
+      <div class="rubric-label">语言准确性</div>
+      <div style="font-size:11px;color:var(--text-secondary);">语法、词汇使用是否正确</div>
+    </div>
+    <div class="rubric-item">
+      <div class="rubric-score">0&ndash;5</div>
+      <div class="rubric-label">逻辑清晰度</div>
+      <div style="font-size:11px;color:var(--text-secondary);">结构是否合理、条理是否清晰</div>
+    </div>
+    <div class="rubric-item">
+      <div class="rubric-score">0&ndash;5</div>
+      <div class="rubric-label">创造性表达</div>
+      <div style="font-size:11px;color:var(--text-secondary);">是否有个人见解或创意</div>
+    </div>
+  </div>
+</div>
+
+<div class="info-block">
+  <h3>&#128196; 提交形式</h3>
+  <div class="format-badges">
+    <div class="format-badge">&#128196; PDF / Word 文档</div>
+    <div class="format-badge">&#128220; 手绘拍照 / 数字绘图</div>
+    <div class="format-badge">&#127916; 3 分钟以内横屏视频</div>
+  </div>
+</div>
+
+<div class="footer-note">
+  <p style="margin:0 0 12px 0;"><strong>选择你的挑战等级，开始吧！</strong></p>
+  <button class="start-btn" onclick="startHomework()">开始做作业</button>
+</div>
+
+</div>
+
+<script>
+function toggleLevel(header) {
+  var body = header.nextElementSibling;
+  var arrow = header.querySelector('.arrow');
+  body.classList.toggle('open');
+  arrow.style.transform = body.classList.contains('open') ? 'rotate(180deg)' : 'rotate(0deg)';
+}
+
+function startHomework() {
+  var choice = prompt('请选择你要挑战的层级：\n1 - 基础层（必做）\n2 - 分层层（三选一）\n3 - 开放层（三选一）\n输入 1、2 或 3：');
+  if (choice === '1') alert('开始基础层任务！加油！');
+  else if (choice === '2') alert('开始分层层任务！在三个任务中挑选一个你最有信心的！');
+  else if (choice === '3') alert('挑战开放层！展示你的创造性表达！');
+  else if (choice !== null) alert('请输入 1、2 或 3。');
+}
+</script>
+</body>
+</html>

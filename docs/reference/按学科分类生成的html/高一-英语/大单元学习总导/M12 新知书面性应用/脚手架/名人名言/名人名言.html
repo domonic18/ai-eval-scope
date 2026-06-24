@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名人及推荐传记 — 友谊主题认知突破</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  text-align: center;
+  padding: 32px 20px;
+  background: linear-gradient(135deg, #434343 0%, #6b6b6b 100%);
+  color: #fff;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+.header h1 { font-size: var(--font-h1); margin: 0 0 6px; }
+.header p { margin: 0; opacity: 0.85; font-size: 14px; }
+.section { margin-bottom: 32px; }
+.section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  border-left: 4px solid var(--primary);
+  padding-left: 12px;
+  margin: 0 0 16px;
+}
+.fig-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  margin-bottom: 16px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+.fig-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+}
+.fig-card h3 {
+  font-size: 17px;
+  margin: 0 0 4px;
+  color: var(--primary);
+}
+.fig-card .subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.fig-card .question {
+  font-weight: 600;
+  color: var(--primary);
+  margin: 10px 0 4px;
+  font-size: 14px;
+}
+.fig-card p { margin: 6px 0; font-size: 14px; }
+.quote-block {
+  background: #f0f0f0;
+  border-left: 4px solid var(--primary);
+  padding: 14px 18px;
+  margin: 12px 0;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  font-style: italic;
+  font-size: 15px;
+  color: #333;
+  transition: background 0.3s;
+}
+.quote-block:hover {
+  background: #e6e6e6;
+}
+.path-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.path-item {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+  transition: all 0.2s;
+  text-align: center;
+}
+.path-item:hover {
+  border-color: var(--primary);
+  background: #fafafa;
+}
+.path-item .level {
+  display: inline-block;
+  padding: 2px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #fff;
+}
+.level-basic { background: #8c8c8c; }
+.level-adv { background: #595959; }
+.level-challenge { background: #434343; }
+.path-item h4 { margin: 4px 0; font-size: 15px; }
+.path-item p { margin: 4px 0; font-size: 13px; color: var(--text-secondary); }
+
+.thinking-task {
+  background: linear-gradient(135deg, #f5f5f5 0%, #ececec 100%);
+  border: 2px dashed var(--primary);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-top: 20px;
+}
+.thinking-task h3 { margin: 0 0 10px; color: var(--primary); }
+.thinking-task p { margin: 6px 0; font-size: 14px; }
+.thinking-task .prompt-box {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px;
+  margin-top: 10px;
+  font-style: italic;
+  color: #555;
+}
+
+.footer {
+  text-align: center;
+  padding: 16px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  border-top: 1px solid var(--border);
+  margin-top: 28px;
+}
+@media (max-width: 640px) {
+  .container { padding: 14px 10px; }
+  .path-list { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🧠 名人 · 认知突破</h1>
+    <p>通过思想者的眼睛，重新理解"友谊表达"的深层逻辑</p>
+  </div>
+
+  <!-- 人物卡片 -->
+  <div class="section">
+    <h2>👤 人物卡片</h2>
+
+    <div class="fig-card" onclick="this.classList.toggle('active')">
+      <h3>🏛️ Aristotle · 亚里士多德</h3>
+      <div class="subtitle">古希腊哲学家 · 伦理学奠基人</div>
+      <p class="question">💡 关键问题：友谊的本质是什么？友谊分几种？</p>
+      <p><strong>思维突破点：</strong>亚里士多德在《尼各马可伦理学》中首次系统将友谊分为三类——"有用之友"、"快乐之友"、"德性之友"。他认为只有德性之友才是最持久、最真实的友谊。</p>
+      <p><strong>当下启示：</strong>你在交朋友时，有没有想过友谊属于哪种类型？"点赞之交"属于哪一类？</p>
+      <div class="quote-block">"Friendship is a single soul dwelling in two bodies." — Aristotle</div>
+    </div>
+
+    <div class="fig-card" onclick="this.classList.toggle('active')">
+      <h3>📖 C.S. Lewis · C.S.刘易斯</h3>
+      <div class="subtitle">英国作家 · 文学学者</div>
+      <p class="question">💡 关键问题：友爱和亲情、爱情有什么区别？</p>
+      <p><strong>思维突破点：</strong>刘易斯在《四种爱》中指出，友爱的核心不是"彼此对视"，而是"一起朝同一个方向看"。朋友是因共同热爱某件事而走到一起的人。</p>
+      <p><strong>当下启示：</strong>你和朋友是因为什么共同的爱好或追求而在一起的？这个视角如何帮助你描写友谊？</p>
+      <div class="quote-block">"Friendship is born at that moment when one person says to another, 'What! You too? I thought I was the only one.'" — C.S. Lewis</div>
+    </div>
+
+    <div class="fig-card" onclick="this.classList.toggle('active')">
+      <h3>🧬 Robin Dunbar · 罗宾·邓巴</h3>
+      <div class="subtitle">英国人类学家 · 进化心理学家</div>
+      <p class="question">💡 关键问题：人类最多能维持多少段友谊？</p>
+      <p><strong>思维突破点：</strong>邓巴研究发现，人类大脑能维持的稳定社交关系上限约为150人（邓巴数）。真正亲密的友谊不超过5人。</p>
+      <p><strong>当下启示：</strong>社交媒体时代我们有数百个"好友"，但真正值得珍惜的友谊其实很少。写作友谊主题时，应该写"深度"而非"广度"。</p>
+      <div class="quote-block">"The number of people you can have a genuine, trusting relationship with is limited by the size of your brain." — Robin Dunbar</div>
+    </div>
+  </div>
+
+  <!-- 深度阅读路径 -->
+  <div class="section">
+    <h2>📚 深度阅读路径</h2>
+    <div class="path-list">
+      <div class="path-item">
+        <span class="level level-basic">基础</span>
+        <h4>《尼各马可伦理学》</h4>
+        <p>第八卷 · 友谊段落节选</p>
+      </div>
+      <div class="path-item">
+        <span class="level level-adv">进阶</span>
+        <h4>《四种爱》</h4>
+        <p>C.S. Lewis · "友爱"章节</p>
+      </div>
+      <div class="path-item">
+        <span class="level level-challenge">挑战</span>
+        <h4>How Many Friends Does One Person Need?</h4>
+        <p>Robin Dunbar 原著</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 思考任务 -->
+  <div class="thinking-task">
+    <h3>✍️ "如果你是他" 思考任务</h3>
+    <p>假设你是 <strong>C.S. Lewis</strong>，你要给一个 15 岁的正在经历友谊困惑的学生写一封回信。你会用英语怎么表达你的思想？</p>
+    <div class="prompt-box">
+      <p><strong>任务：</strong>写一段 80 词左右的英语回信。参考刘易斯关于"共同看向同一个方向"的观点。</p>
+      <p style="color: var(--text-secondary); margin-top: 10px;">💡 提示：可以用 "What! You too?" 的共鸣感作为开头</p>
+    </div>
+  </div>
+
+  <div class="footer">
+    📖 与伟大的思想对话，找到属于你的友谊表达
+  </div>
+</div>
+</body>
+</html>

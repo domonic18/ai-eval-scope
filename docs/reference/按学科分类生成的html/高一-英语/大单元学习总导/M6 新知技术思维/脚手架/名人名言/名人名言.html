@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名人名言 — 友谊与认知突破</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+h1 { font-size: var(--font-h1); color: var(--primary); margin: 0 0 16px; font-weight: 700; }
+h2 { font-size: var(--font-h2); color: var(--primary); margin: 18px 0 10px; font-weight: 600; border-left: 3px solid var(--primary); padding-left: 10px; }
+h3 { font-size: 16px; color: var(--primary-hover); margin: 12px 0 6px; font-weight: 600; }
+.card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 14px 18px; margin-bottom: 14px; border: 1px solid var(--border); }
+.thinker-nav { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.thinker-btn { padding: 6px 14px; border: 1px solid var(--border); border-radius: 16px; background: var(--card-bg); cursor: pointer; font-size: 13px; transition: all 0.25s; }
+.thinker-btn:hover { border-color: var(--primary); }
+.thinker-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.thinker-panel { display: none; }
+.thinker-panel.show { display: block; }
+.label { display: inline-block; background: #ebebeb; color: var(--primary); font-size: 12px; padding: 1px 8px; border-radius: 10px; margin-right: 4px; font-weight: 500; }
+.insight { background: #f9f9f9; border-left: 3px solid var(--accent); padding: 8px 12px; margin: 8px 0; border-radius: 0 4px 4px 0; font-size: 14px; }
+.think-btn { display: inline-block; margin-top: 8px; padding: 6px 18px; border: 1px solid var(--primary); border-radius: 16px; background: transparent; cursor: pointer; font-size: 13px; color: var(--primary); transition: all 0.2s; }
+.think-btn:hover { background: var(--primary); color: #fff; }
+.think-content { display: none; margin-top: 8px; padding: 10px 14px; background: #fafafa; border-radius: 6px; border: 1px dashed var(--accent); font-size: 14px; }
+.think-content.open { display: block; }
+.interact-hint { color: var(--text-secondary); font-size: 13px; text-align: center; margin: 4px 0; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>🧠 认知突破 · 友谊思想家</h1>
+<p style="color:var(--text-secondary);margin:-8px 0 14px;">不讲故事，讲"认知跃迁"——三位思想家如何重塑我们对友谊的理解</p>
+
+<div class="thinker-nav">
+  <span class="thinker-btn active" onclick="switchThinker(this,'aristotle')">亚里士多德</span>
+  <span class="thinker-btn" onclick="switchThinker(this,'rogers')">Carl Rogers</span>
+  <span class="thinker-btn" onclick="switchThinker(this,'dunbar')">Robin Dunbar</span>
+</div>
+
+<div class="thinker-panel show" id="panel-aristotle">
+  <div class="card">
+    <h3>🏛️ 亚里士多德 <span style="font-weight:400;font-size:13px;color:var(--text-secondary);">奠基人物 · 公元前 384–322</span></h3>
+    <p><span class="label">关键问题</span> 友谊的本质是什么？友谊分几种？</p>
+    <p><span class="label">思维突破</span> 提出 <strong>"三种友谊"</strong> 理论：基于利益的友谊、基于快乐的友谊、基于美德的友谊。</p>
+    <p><span class="label">争议</span> 理论基于古希腊社会，不一定完全适用于今天。</p>
+    <p><span class="label">当下启示</span> 帮你判断自己的友谊属于哪种类型。</p>
+    <div class="insight">💡 <strong>核心洞见：</strong>只有"基于美德的友谊"才是最高形式——朋友因彼此的优秀品质而相互吸引。</div>
+    <div>
+      <button class="think-btn" onclick="toggleThink(this)">🤔 如果你是他...</button>
+      <div class="think-content">
+        <p>假设你是亚里士多德，身处今天的社交媒体时代——你会怎么重新定义"三种友谊"？微信好友算哪一种？</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="thinker-panel" id="panel-rogers">
+  <div class="card">
+    <h3>🧑‍⚕️ Carl Rogers <span style="font-weight:400;font-size:13px;color:var(--text-secondary);">跨界人物 · 1902–1987</span></h3>
+    <p><span class="label">关键问题</span> 什么样的关系能促进人的成长？</p>
+    <p><span class="label">思维突破</span> 提出 <strong>"无条件积极关注"</strong>（Unconditional Positive Regard）——真正的接纳是关系的基础。</p>
+    <p><span class="label">争议</span> 理论在临床中效果显著，但在日常友谊中是否过于理想化？</p>
+    <p><span class="label">当下启示</span> 教你什么是真正的"倾听"和"接纳"。</p>
+    <div class="insight">💡 <strong>核心洞见：</strong>不带评判的倾听是最难得的礼物——你能做到吗？</div>
+    <div>
+      <button class="think-btn" onclick="toggleThink(this)">🤔 如果你是他...</button>
+      <div class="think-content">
+        <p>如果让你设计一个"理想友谊"的实验，你会怎么控制变量？什么条件下友谊最容易发生？</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="thinker-panel" id="panel-dunbar">
+  <div class="card">
+    <h3>🧬 Robin Dunbar <span style="font-weight:400;font-size:13px;color:var(--text-secondary);">当代人物 · 1947–</span></h3>
+    <p><span class="label">关键问题</span> 一个人能维持多少段友谊？</p>
+    <p><span class="label">思维突破</span> 提出 <strong>"Dunbar 数"</strong>——人类社交圈上限约 150 人。</p>
+    <p><span class="label">争议</span> 数字社交时代，这个数字会被突破吗？</p>
+    <p><span class="label">当下启示</span> 帮你看清自己社交圈的合理大小——朋友圈 500 好友 ≠ 500 段友谊。</p>
+    <div class="insight">💡 <strong>核心洞见：</strong>你真正亲密的朋友不会超过 5 人，核心圈约 15 人。数量不是友谊的度量单位。</div>
+    <div>
+      <button class="think-btn" onclick="toggleThink(this)">🤔 如果你是他...</button>
+      <div class="think-content">
+        <p>数字社交时代，Dunbar 数会被打破吗？你的微信好友里，真正称得上"朋友"的有多少人？</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:8px;">
+  <h3>📚 深度阅读路径</h3>
+  <ul>
+    <li><strong>传记</strong> — 《Aristotle: A Very Short Introduction》</li>
+    <li><strong>论文</strong> — Harlow 的猴子实验相关研究</li>
+    <li><strong>演讲</strong> — Dunbar 在 TED 的演讲 "The Social Brain"</li>
+  </ul>
+</div>
+
+<p class="interact-hint">👆 点击上方人物标签切换思想家 · 点击"如果你是他"触发思考任务</p>
+</div>
+
+<script>
+function switchThinker(el, target) {
+  document.querySelectorAll('.thinker-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.thinker-panel').forEach(p => p.classList.remove('show'));
+  document.getElementById('panel-' + target).classList.add('show');
+}
+function toggleThink(btn) {
+  const content = btn.nextElementSibling;
+  content.classList.toggle('open');
+  btn.textContent = content.classList.contains('open') ? '🙌 思考中...' : '🤔 如果你是他...';
+}
+</script>
+</body>
+</html>

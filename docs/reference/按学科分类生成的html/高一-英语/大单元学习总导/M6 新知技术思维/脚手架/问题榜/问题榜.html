@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>问题榜 — 问题驱动学习</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; }
+.header {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+.header p { color: var(--text-secondary); font-size: 14px; }
+.stats {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.stat-item {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 10px 18px;
+  box-shadow: var(--shadow);
+  text-align: center;
+  flex: 1;
+  min-width: 80px;
+}
+.stat-item .num {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--primary);
+}
+.stat-item .label { font-size: 12px; color: var(--text-secondary); }
+.level-header {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  padding: 8px 0;
+  margin-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+.q-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  box-shadow: var(--shadow);
+  margin-bottom: 10px;
+  transition: all 0.2s;
+  border-left: 3px solid var(--border);
+  cursor: pointer;
+}
+.q-card:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.08); }
+.q-card .q-num {
+  display: inline-block;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  text-align: center;
+  line-height: 26px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-right: 8px;
+}
+.q-card .q-type {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  margin-left: 6px;
+}
+.type-understand { background: #e8e8e8; color: #555; }
+.type-analyze { background: #d9d9d9; color: #333; }
+.type-create { background: #bfbfbf; color: #222; }
+.q-card .q-text {
+  margin-top: 6px;
+  padding-left: 34px;
+  color: var(--text);
+}
+.hint-box {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  padding-left: 34px;
+}
+.hint-box.open { max-height: 120px; }
+.hint-inner {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 8px 14px;
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+@media (max-width: 600px) {
+  .container { padding: 12px 10px; }
+  .q-card { padding: 10px 14px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>❓ 问题榜</h1>
+    <p>点击问题卡片查看思考提示 · 问题是最好的学习引擎</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat-item"><div class="num">3</div><div class="label">基础 · 理解</div></div>
+    <div class="stat-item"><div class="num">2</div><div class="label">进阶 · 分析</div></div>
+    <div class="stat-item"><div class="num">4</div><div class="label">挑战 · 创造</div></div>
+  </div>
+
+  <div class="level-header">🌱 基础层 · 理解与识别</div>
+
+  <div class="q-card" onclick="toggleHint('h1')">
+    <span class="q-num">1</span><span class="q-type type-understand">理解型</span>
+    <div class="q-text">用你自己的话解释，什么是建构性学习？</div>
+    <div id="h1" class="hint-box">
+      <div class="hint-inner"><strong>💡 思考路径：</strong>回想"建构"这个词的含义——像搭积木一样，在已有知识上搭建新的理解。</div>
+    </div>
+  </div>
+
+  <div class="q-card" onclick="toggleHint('h2')">
+    <span class="q-num">2</span><span class="q-type type-understand">识别型</span>
+    <div class="q-text">教材中关于友谊的课文用了哪些方法来描述人物关系？</div>
+    <div id="h2" class="hint-box">
+      <div class="hint-inner"><strong>💡 思考路径：</strong>注意对话、动作描写和细节——哪些词提示了人物之间的关系远近？</div>
+    </div>
+  </div>
+
+  <div class="q-card" onclick="toggleHint('h3')">
+    <span class="q-num">3</span><span class="q-type type-understand">复述型</span>
+    <div class="q-text">建构性原理中"从问题出发"是什么意思？请举一个教材中的例子。</div>
+    <div id="h3" class="hint-box">
+      <div class="hint-inner"><strong>💡 思考路径：</strong>回想单元导入部分是否有一个"驱动问题"？学习就是从回答这个问题开始的。</div>
+    </div>
+  </div>
+
+  <div class="level-header">🔍 进阶层 · 分析与应用</div>
+
+  <div class="q-card" onclick="toggleHint('h4')">
+    <span class="q-num">4</span><span class="q-type type-analyze">分析型</span>
+    <div class="q-text">比较"线上友谊"和"线下友谊"的异同，至少从3个角度分析。</div>
+    <div id="h4" class="hint-box">
+      <div class="hint-inner"><strong>💡 角度建议：</strong>沟通方式、信任建立速度、情感深度、持久性</div>
+    </div>
+  </div>
+
+  <div class="q-card" onclick="toggleHint('h5')">
+    <span class="q-num">5</span><span class="q-type type-analyze">应用型</span>
+    <div class="q-text">如果你要帮一个不会说英语的新同学交朋友，你会运用哪条建构性原理？具体怎么做？</div>
+    <div id="h5" class="hint-box">
+      <div class="hint-inner"><strong>💡 思考路径：</strong>试试"从问题出发"——他的核心问题是沟通，可以先从非语言交流（共同活动）开始。</div>
+    </div>
+  </div>
+
+  <div class="level-header">🚀 挑战层 · 创造与批判</div>
+
+  <div class="q-card" onclick="toggleHint('h6')">
+    <span class="q-num">6</span><span class="q-type type-create">开放型</span>
+    <div class="q-text">你认为"AI 能不能成为人类真正的朋友"？从情感、互动、陪伴三个角度展开。</div>
+    <div id="h6" class="hint-box">
+      <div class="hint-inner"><strong>💡 参考：</strong>先给每个角度下定义，再判断 AI 是否符合你的定义。</div>
+    </div>
+  </div>
+
+  <div class="q-card" onclick="toggleHint('h7')">
+    <span class="q-num">7</span><span class="q-type type-create">对比型</span>
+    <div class="q-text">比较亚里士多德的"三种友谊"理论和现代社交媒体上的"友谊"现象。最根本的区别是什么？</div>
+    <div id="h7" class="hint-box">
+      <div class="hint-inner"><strong>💡 亚里士多德三友：</strong>利益之友、快乐之友、美德之友。哪种在今天最常见？</div>
+    </div>
+  </div>
+
+  <div class="q-card" onclick="toggleHint('h8')">
+    <span class="q-num">8</span><span class="q-type type-create">反事实型</span>
+    <div class="q-text">如果人类没有语言能力，友谊还会存在吗？你会用什么方式建立友谊？</div>
+    <div id="h8" class="hint-box">
+      <div class="hint-inner"><strong>💡 思考：</strong>动物之间是否存在友谊？观察动物的互动方式给你什么启发？</div>
+    </div>
+  </div>
+
+  <div class="q-card" onclick="toggleHint('h9')">
+    <span class="q-num">9</span><span class="q-type type-create">元认知型</span>
+    <div class="q-text">你怎么判断一个人是不是"真正的朋友"？如果把这个标准用在判断自己的学习成果上，会怎样？</div>
+    <div id="h9" class="hint-box">
+      <div class="hint-inner"><strong>💡 深层思考：</strong>你对朋友的判断标准，其实反映了你的价值观——这也决定了你如何评价自己的成长。</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleHint(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+</script>
+</body>
+</html>

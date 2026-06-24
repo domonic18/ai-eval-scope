@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>作业榜 — 美术思维友谊主题</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); font-size: var(--font-body); line-height: var(--line-height); }
+
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+
+.hero { background: linear-gradient(135deg, #434343 0%, #595959 100%); color: #fff; padding: 36px 32px; border-radius: var(--border-radius); margin-bottom: 24px; text-align: center; }
+.hero h1 { font-size: var(--font-h1); margin: 0 0 6px; }
+.hero .subtitle { font-size: 15px; opacity: 0.85; margin: 0; }
+.hero .badge { display: inline-block; background: rgba(255,255,255,0.18); padding: 4px 14px; border-radius: 20px; font-size: 13px; margin-top: 10px; }
+
+/* 层级卡片 */
+.level-section { margin-bottom: 22px; }
+.level-header { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-radius: var(--border-radius) var(--border-radius) 0 0; background: var(--primary); color: #fff; cursor: pointer; user-select: none; transition: background 0.2s; }
+.level-header:hover { background: var(--primary-hover); }
+.level-header .arrow { transition: transform 0.3s; font-size: 14px; }
+.level-header.collapsed .arrow { transform: rotate(-90deg); }
+.level-body { background: var(--card-bg); border: 1px solid var(--border); border-top: none; border-radius: 0 0 var(--border-radius) var(--border-radius); padding: 20px 24px; overflow: hidden; transition: max-height 0.4s ease; max-height: 2000px; }
+.level-body.hidden { max-height: 0; padding: 0 24px; }
+
+/* 任务卡片 */
+.task-card { background: #fafafa; border: 1px solid var(--border); border-radius: 6px; padding: 14px 18px; margin: 10px 0; }
+.task-card h4 { margin: 0 0 6px; color: var(--primary); font-size: 15px; }
+.task-card p { margin: 0 0 6px; font-size: 14px; }
+.task-card .tag { display: inline-block; font-size: 12px; padding: 2px 10px; border-radius: 12px; background: #e8e8e8; margin-right: 6px; }
+
+/* 表格 */
+.rubric-table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+.rubric-table th, .rubric-table td { border: 1px solid var(--border); padding: 10px 12px; text-align: left; }
+.rubric-table th { background: #f0f0f0; font-weight: 600; }
+
+/* 选择按钮 */
+.select-btn { background: var(--card-bg); border: 1px solid var(--primary); color: var(--primary); padding: 6px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: all 0.2s; margin-top: 6px; }
+.select-btn:hover { background: var(--primary); color: #fff; }
+.select-btn.selected { background: var(--primary); color: #fff; }
+
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .hero { padding: 24px 16px; }
+  .level-body { padding: 14px 16px; }
+  .rubric-table { font-size: 13px; }
+  .rubric-table th, .rubric-table td { padding: 6px 8px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="hero">
+    <span class="badge">作业库 · 三层递进</span>
+    <h1>📋 友谊主题 · 美术思维作业库</h1>
+    <p class="subtitle">从基础到创造，用视觉方式展现你的英语学习成果</p>
+  </div>
+
+  <!-- 基础层 -->
+  <div class="level-section">
+    <div class="level-header">
+      <span class="arrow">▼</span>
+      <strong>🌱 基础层：再现与理解</strong>
+      <span style="margin-left: auto; font-size: 13px; opacity: 0.8;">必选</span>
+    </div>
+    <div class="level-body">
+      <div class="task-card">
+        <h4>🎯 任务 A（必选）</h4>
+        <p><strong>"My Friendship Keywords"</strong> 词汇卡片</p>
+        <p>从教材 Unit 1 中选择至少 <strong>8 个</strong>核心友谊相关词汇，给每个词配一个简单图标和一句英语例句。</p>
+        <p><span class="tag">A6 卡片尺寸</span><span class="tag">每张含词汇+音标+图标+例句</span></p>
+        <button class="select-btn" onclick="toggleSelect(this)">✓ 标记为已选</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 分层层 -->
+  <div class="level-section">
+    <div class="level-header">
+      <span class="arrow">▼</span>
+      <strong>🌿 分层层：差异化任务</strong>
+      <span style="margin-left: auto; font-size: 13px; opacity: 0.8;">三选一</span>
+    </div>
+    <div class="level-body">
+      <div class="task-card">
+        <h4>🎨 任务 B1（视觉表达型）</h4>
+        <p><strong>"Friendship Visual Map"</strong> — A4 尺寸，用色彩和图标呈现你对友谊的理解结构</p>
+        <button class="select-btn" onclick="toggleSelect(this)">✓ 标记为已选</button>
+      </div>
+      <div class="task-card">
+        <h4>✍️ 任务 B2（文字表达型）</h4>
+        <p><strong>"My View on Friendship"</strong> — 150 词以上英语短文，配一张手绘插图</p>
+        <button class="select-btn" onclick="toggleSelect(this)">✓ 标记为已选</button>
+      </div>
+      <div class="task-card">
+        <h4>🎤 任务 B3（口语表达型）</h4>
+        <p><strong>"Friendship in My Eyes"</strong> — 3 分钟英语演讲视频，配合视觉辅助材料展示</p>
+        <button class="select-btn" onclick="toggleSelect(this)">✓ 标记为已选</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 开放层 -->
+  <div class="level-section">
+    <div class="level-header">
+      <span class="arrow">▼</span>
+      <strong>🔥 开放层：创造性表达</strong>
+      <span style="margin-left: auto; font-size: 13px; opacity: 0.8;">必选（形式任选）</span>
+    </div>
+    <div class="level-body">
+      <div class="task-card">
+        <h4>🎭 任务 C（必选）</h4>
+        <p>以 <strong>"Friendship"</strong> 为主题，创作一份英语视觉作品。</p>
+        <p><strong>形式选项</strong>：海报 / 手工书 / 拼贴画 / 数字设计 / 漫画故事</p>
+        <p><strong>最低要求</strong>：至少 5 个英语句子 + 视觉元素覆盖</p>
+        <button class="select-btn" onclick="toggleSelect(this)">✓ 标记为已选</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rubric 评价表 -->
+  <div class="level-section">
+    <div class="level-header">
+      <span class="arrow">▼</span>
+      <strong>📊 评价标准（Rubric）</strong>
+    </div>
+    <div class="level-body">
+      <table class="rubric-table">
+        <thead>
+          <tr>
+            <th>维度</th>
+            <th>优秀（3分）</th>
+            <th>合格（2分）</th>
+            <th>待改进（1分）</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>内容完整性</td>
+            <td>涵盖 7 个以上要素</td>
+            <td>涵盖 4—6 个要素</td>
+            <td>涵盖 3 个以下要素</td>
+          </tr>
+          <tr>
+            <td>英语表达</td>
+            <td>语法正确，表达自然</td>
+            <td>少量语法错误不影响理解</td>
+            <td>语法错误影响理解</td>
+          </tr>
+          <tr>
+            <td>视觉呈现</td>
+            <td>有明确配色和视觉设计</td>
+            <td>有基本视觉区分</td>
+            <td>仅有文字堆砌</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style="background: #f0f0f0; border-radius: 6px; padding: 14px; margin-top: 10px;">
+        <strong>📌 计分参考</strong>：任务 A（3分）+ 任务 B（3分）+ 任务 C（3分）= 总分 9 分。<br>7 分以上为优秀，5-6 分为合格，4 分及以下需改进。
+      </div>
+    </div>
+  </div>
+
+  <!-- 进度自测 -->
+  <div style="text-align: center; margin: 20px 0;">
+    <button class="select-btn" style="padding: 10px 28px; font-size: 15px;" onclick="showProgress()">📈 查看我的完成进度</button>
+    <div id="progress-display" style="display: none; margin-top: 16px; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 20px; max-width: 400px; margin-left: auto; margin-right: auto;">
+      <div style="font-size: 14px; margin-bottom: 8px;">已选任务：<span id="selected-count">0</span> / 5</div>
+      <div style="height: 12px; background: #e8e8e8; border-radius: 6px; overflow: hidden;">
+        <div id="progress-bar" style="height: 100%; width: 0%; background: var(--primary); border-radius: 6px; transition: width 0.4s;"></div>
+      </div>
+      <p id="progress-tip" style="font-size: 13px; color: var(--text-secondary); margin-top: 10px;"></p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function toggleSelect(btn) {
+  btn.classList.toggle('selected');
+  btn.textContent = btn.classList.contains('selected') ? '✓ 已选择' : '✓ 标记为已选';
+}
+
+function showProgress() {
+  const display = document.getElementById('progress-display');
+  display.style.display = display.style.display === 'none' ? 'block' : 'none';
+  updateProgress();
+}
+
+function updateProgress() {
+  const selected = document.querySelectorAll('.select-btn.selected').length;
+  document.getElementById('selected-count').textContent = selected;
+  const pct = Math.min(100, Math.round(selected / 5 * 100));
+  document.getElementById('progress-bar').style.width = pct + '%';
+
+  const tip = document.getElementById('progress-tip');
+  if (selected === 0) tip.textContent = '💡 至少选择基础层任务 A 开始吧！';
+  else if (selected < 3) tip.textContent = '👍 继续加油，别忘了分层层要三选一哦！';
+  else if (selected === 4) tip.textContent = '🌟 还差一项就全部完成啦！';
+  else if (selected >= 5) tip.textContent = '🎉 太棒了！所有任务已选择完毕！';
+}
+</script>
+</body>
+</html>

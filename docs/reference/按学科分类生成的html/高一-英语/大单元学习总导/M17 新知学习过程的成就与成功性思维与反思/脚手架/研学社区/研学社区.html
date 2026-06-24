@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>研学社区脚手架 - 案例库</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  background: var(--bg);
+  color: var(--text);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+h1 { font-size: var(--font-h1); font-weight: 700; margin: 24px 0 16px; color: var(--primary); }
+h2 { font-size: var(--font-h2); font-weight: 600; margin: 24px 0 12px; color: var(--primary); padding-bottom: 6px; border-bottom: 2px solid var(--accent); }
+h3 { font-size: calc(var(--font-body) + 2px); font-weight: 600; margin: 16px 0 8px; color: var(--text); }
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin: 16px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.case-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  cursor: pointer;
+  user-select: none;
+  transition: background .2s;
+}
+.case-header:hover { background: var(--bg); }
+.case-header .level-badge {
+  padding: 3px 12px;
+  border-radius: 12px;
+  font-size: calc(var(--font-body) - 3px);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.level-basic { background: #f0fdf4; color: #16a34a; }
+.level-inter { background: #fff7e6; color: #d46b08; }
+.level-advanced { background: #fef2f2; color: #dc2626; }
+.case-header .title-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.case-header .title-group .case-icon { font-size: 22px; }
+.case-header .arrow {
+  font-size: 14px;
+  color: var(--accent);
+  transition: transform .3s;
+  flex-shrink: 0;
+}
+.case-header .arrow.open { transform: rotate(180deg); }
+.case-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .5s ease, padding .3s ease;
+  padding: 0 20px;
+}
+.case-body.open {
+  max-height: 2000px;
+  padding: 0 20px 20px;
+}
+.case-body p { margin: 8px 0; }
+.case-body strong { color: var(--primary); }
+.path-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+.path-card {
+  padding: 12px;
+  background: var(--bg);
+  border-radius: 6px;
+  text-align: center;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all .3s;
+}
+.path-card:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.path-card .path-num {
+  display: inline-block;
+  width: 24px; height: 24px;
+  line-height: 24px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+.path-card:hover .path-num { background: rgba(255,255,255,0.3); }
+.path-result {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .35s ease, padding .2s ease;
+  padding: 0 14px;
+  background: var(--bg);
+  border-radius: 4px;
+  margin-top: 0;
+  font-size: calc(var(--font-body) - 1px);
+}
+.path-result.open {
+  max-height: 120px;
+  padding: 10px 14px;
+  margin-top: 8px;
+}
+.extend-btn {
+  display: inline-block;
+  padding: 8px 20px;
+  margin: 6px 6px 0 0;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: calc(var(--font-body) - 1px);
+  transition: all .2s;
+  color: var(--text);
+}
+.extend-btn:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.extend-area {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .4s ease, padding .3s ease;
+  padding: 0 16px;
+  border-radius: 6px;
+  margin-top: 0;
+}
+.extend-area.open {
+  max-height: 400px;
+  padding: 12px 16px;
+  margin-top: 10px;
+  background: var(--bg);
+}
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .path-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📚 研学社区脚手架</h1>
+  <p style="color:var(--text-secondary);margin-bottom:16px;">案例库：从生活到历史，再到复杂系统，层层递进理解友谊。</p>
+
+  <!-- 基础层 -->
+  <h2>🌱 基础层：生活类案例</h2>
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <div class="title-group">
+        <span class="case-icon">💔</span>
+        <span>一次友谊的修复</span>
+        <span class="level-badge level-basic">生活案例</span>
+      </div>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <p><strong>背景：</strong>两位好朋友因为一次误会（A 没邀请 B 参加生日聚会）陷入了冷战。双方都不愿意先开口。</p>
+      <p><strong>核心问题：</strong>如何修复这段友谊？谁应该先主动？</p>
+      <p><strong>决策路径：</strong>点击每种方案查看可能的走向</p>
+      <div class="path-grid">
+        <div class="path-card" onclick="showResult(this,'r1')"><span class="path-num">1</span> A 主动道歉</div>
+        <div class="path-card" onclick="showResult(this,'r2')"><span class="path-num">2</span> B 主动沟通</div>
+        <div class="path-card" onclick="showResult(this,'r3')"><span class="path-num">3</span> 第三方调解</div>
+        <div class="path-card" onclick="showResult(this,'r4')"><span class="path-num">4</span> 就这样算了</div>
+      </div>
+      <div id="r1" class="path-result">✅ <strong>方案 1 结果：</strong>A 主动道歉后，B 感受到被尊重，两人坦诚沟通，关系修复甚至比以前更好。</div>
+      <div id="r2" class="path-result">✅ <strong>方案 2 结果：</strong>B 主动沟通后发现 A 其实有苦衷（家庭原因），误会解除，友谊加深了。</div>
+      <div id="r3" class="path-result">⚠️ <strong>方案 3 结果：</strong>第三方调解有时有效，但两人如果缺乏主动性，调解后可能仍会回避核心问题。</div>
+      <div id="r4" class="path-result">❌ <strong>方案 4 结果：</strong>冷战时间越长，双方越难以开口。很多友谊就是这样无声地结束了。</div>
+      <p style="margin-top:8px;color:var(--text-secondary);"><strong>可迁移启示：</strong>友谊修复的核心不是"谁对谁错"，而是"谁更在乎这段关系"。</p>
+    </div>
+  </div>
+
+  <!-- 进阶层 -->
+  <h2>📈 进阶层：行业/历史案例</h2>
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <div class="title-group">
+        <span class="case-icon">🤝</span>
+        <span>马克思与恩格斯的友谊</span>
+        <span class="level-badge level-inter">历史案例</span>
+      </div>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <p><strong>背景：</strong>马克思和恩格斯合作 40 年。恩格斯在经济上资助马克思完成《资本论》，两人在思想上的碰撞改变了世界。</p>
+      <p><strong>核心问题：</strong>是"志同道合"重要还是"性格互补"重要？</p>
+      <p><strong>决策路径：</strong>两人在生活中并非没有矛盾——恩格斯曾对马克思的生活方式感到不满，马克思也曾抱怨恩格斯过于务实。但他们选择"相互成就"而非"计较得失"。</p>
+      <p style="margin-top:6px;color:var(--text-secondary);"><strong>可迁移启示：</strong>真正持久的友谊建立在共同的价值观和相互成全的意愿上。不是没有矛盾，而是选择在矛盾中继续并肩。</p>
+    </div>
+  </div>
+
+  <!-- 挑战层 -->
+  <h2>🔥 挑战层：复杂系统案例</h2>
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <div class="title-group">
+        <span class="case-icon">📱</span>
+        <span>社交媒体对 Z 世代友谊的影响</span>
+        <span class="level-badge level-advanced">复杂系统</span>
+      </div>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <p><strong>背景：</strong>调查显示 90% 的 Z 世代青少年表示"友谊主要在线上维持"。从 QQ、微信到 Instagram、Discord，线上社交已成为日常。</p>
+      <p><strong>核心问题：</strong>线上友谊和线下友谊的质感和深度有区别吗？这种趋势是好是坏？</p>
+      <p><strong>决策路径：</strong>不同研究者有不同结论——有的认为线上友谊同样真实，可以跨越地理限制；有的认为这本质上是"弱连接"的替代品，缺乏真实的身体语言和情感共振。</p>
+      <p style="margin-top:6px;color:var(--text-secondary);"><strong>可迁移启示：</strong>重要的不是"线上还是线下"，而是"你为这段友谊投入了多少真实的时间和情感"。线上只是渠道，投入才是关键。</p>
+    </div>
+  </div>
+
+  <h2>🧩 拓展机制</h2>
+  <div class="card" style="background:var(--card-bg);border-radius:var(--border-radius);box-shadow:var(--shadow);padding:20px;margin:16px 0;border:1px solid var(--border);">
+    <div style="display:flex;flex-wrap:wrap;gap:10px;">
+      <span class="extend-btn" onclick="toggleExtend(this,'ext1')">🤔 如果你是决策者</span>
+      <span class="extend-btn" onclick="toggleExtend(this,'ext2')">🔄 多结局模拟</span>
+    </div>
+    <div id="ext1" class="extend-area">
+      <strong>"如果你是决策者"分支任务：</strong>选择上面一个案例，假如你是案例中的一个人物，你会怎么选择？为什么？用英文写出你的决策理由（不少于 50 词）。
+    </div>
+    <div id="ext2" class="extend-area">
+      <strong>多结局模拟：</strong>尝试写出同一个案例在不同决策下的不同结局。例如"友谊修复"案例中，如果 A 和 B 选择了不同的方案组合会怎样？你会如何改写这个故事？
+    </div>
+  </div>
+
+  <div style="margin-top:24px;padding:16px;background:var(--bg);border-radius:8px;text-align:center;color:var(--text-secondary);font-size:calc(var(--font-body)-1px);">
+    🌟 案例不是标准答案，而是思考的起点。在讨论中建构你对友谊的理解。
+  </div>
+</div>
+<script>
+function toggleCase(header) {
+  var arrow = header.querySelector('.arrow');
+  var body = header.nextElementSibling;
+  if(body && body.classList.contains('case-body')){
+    body.classList.toggle('open');
+    if(arrow) arrow.classList.toggle('open');
+  }
+}
+function showResult(el, id) {
+  var allResults = el.parentElement.parentElement.querySelectorAll('.path-result');
+  for(var i=0;i<allResults.length;i++) allResults[i].classList.remove('open');
+  var target = document.getElementById(id);
+  if(target) target.classList.add('open');
+}
+function toggleExtend(el, id) {
+  var area = document.getElementById(id);
+  if(!area) return;
+  area.classList.toggle('open');
+}
+</script>
+</body>
+</html>

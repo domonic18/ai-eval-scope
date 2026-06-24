@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性示例 — 三维分析示范</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; }
+.header {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 28px 24px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--primary);
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+.header .sub { color: var(--text-secondary); font-size: 14px; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bg);
+}
+.card h3 { font-size: 16px; font-weight: 600; margin: 16px 0 8px; color: var(--primary-hover); }
+.card h4 { font-size: 15px; font-weight: 600; margin: 10px 0 4px; }
+.tag {
+  display: inline-block;
+  background: #e8e8e8;
+  color: var(--primary);
+  padding: 3px 14px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-right: 6px;
+}
+.tag.lang { background: #f0f5ff; color: #1677ff; }
+.tag.cult { background: #fff7e6; color: #d46b08; }
+.tag.soc { background: #f0fdf4; color: #16a34a; }
+.quote-box {
+  background: #fafafa; border: 1px solid var(--border);
+  border-radius: var(--border-radius); padding: 14px 18px; margin: 10px 0;
+  border-left: 4px solid var(--primary);
+  font-style: italic;
+  position: relative;
+}
+.quote-box::before {
+  content: '"'; font-size: 36px; color: var(--accent);
+  position: absolute; top: -4px; left: 8px; opacity: 0.3;
+}
+table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 10px 0; }
+th, td { border: 1px solid var(--border); padding: 10px 12px; text-align: left; vertical-align: top; }
+th { background: var(--bg); color: var(--primary); font-weight: 600; }
+tr:hover { background: #fafafa; }
+ul, ol { padding-left: 20px; margin: 8px 0; }
+li { margin-bottom: 4px; }
+.flow-diagram {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  padding: 14px; background: var(--bg); border-radius: var(--border-radius);
+  margin: 12px 0;
+}
+.flow-node {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 6px; padding: 8px 14px; font-size: 13px;
+  text-align: center; flex: 1; min-width: 80px;
+}
+.flow-arrow { color: var(--accent); font-size: 18px; }
+.flow-node.highlight { border-color: var(--primary); background: #f0f0f0; font-weight: 600; }
+.step-box {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px 16px;
+  margin: 10px 0;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.step-box:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow);
+}
+.step-box .step-title { font-weight: 600; color: var(--primary); font-size: 15px; }
+.step-box .step-detail { margin-top: 6px; color: var(--text-secondary); font-size: 14px; }
+.step-box .step-detail.hidden { display: none; }
+.pitfall-table td:first-child { font-weight: 500; color: #cf1322; background: #fff1f0; }
+.pitfall-table td:last-child { background: #f0fdf4; }
+.self-rating {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 12px 0;
+}
+.rating-item {
+  background: var(--bg); border-radius: var(--border-radius);
+  padding: 12px; text-align: center; transition: transform 0.2s;
+}
+.rating-item:hover { transform: scale(1.04); }
+.rating-item .stars {
+  display: flex; justify-content: center; gap: 4px; margin: 8px 0;
+}
+.rating-item .star {
+  font-size: 22px; cursor: pointer; color: #ddd; transition: color 0.2s;
+}
+.rating-item .star.active { color: #faad14; }
+.rating-item .r-label { font-size: 13px; color: var(--text-secondary); }
+.practice-box {
+  background: linear-gradient(135deg, #f5f5f5, #fafafa);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  margin: 12px 0;
+  border: 1px dashed var(--accent);
+}
+@media (max-width: 640px) {
+  .container { padding: 12px 10px; }
+  .header { padding: 18px 14px; }
+  .card { padding: 14px 12px; }
+  .flow-diagram { flex-direction: column; }
+  .flow-arrow { transform: rotate(90deg); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+<h1>📖 解析性示例</h1>
+<div class="sub">M14 新知STEAM融合性应用 · 英语必修1 Unit 1 Friendship</div>
+<div class="sub" style="margin-top:4px;">通过典型真实情境案例，示范如何从语言、文化、社会三个维度分析友谊主题材料</div>
+</div>
+
+<div class="card">
+<h2>🎬 解析任务情境</h2>
+<p>你是一名校刊《青春视角》的实习编辑。本期专栏主题是 <strong>"Friendship Across Time and Space"</strong>。主编交给你一份素材——教材课文 <strong>"Anne's Best Friend"</strong>（安妮的日记节选），要求你从 <strong>语言、文化、社会</strong> 三个维度写一篇解析短评。</p>
+
+<div class="quote-box">
+<p><strong>素材摘要：</strong></p>
+<ul>
+<li><strong>作者：</strong>Anne Frank，二战时期犹太少女</li>
+<li><strong>背景：</strong>为躲避纳粹迫害，藏身于阿姆斯特丹密室两年</li>
+<li><strong>文本形式：</strong>写给虚构朋友"Kitty"的日记</li>
+<li><strong>核心句子：</strong>"I don't want to set down a series of facts in a diary the way most people do, but I want the diary to be my friend."</li>
+</ul>
+</div>
+
+<h4>核心问题</h4>
+<p><strong>如何从语言、文化、社会三个维度，解析"Anne's Best Friend"这篇文本的深层意义？</strong></p>
+</div>
+
+<div class="card">
+<h2>📋 关键信息提取</h2>
+<div class="table-wrap">
+<table>
+<tr><th>情境信息</th><th>说明什么</th><th>为什么重要</th></tr>
+<tr>
+<td>Anne 把日记命名为 "Kitty"，像写信一样写日记</td>
+<td><span class="tag lang">语言</span>她用拟人化语言创造了一个"朋友"</td>
+<td>揭示语言的情感功能——语言不仅是传递信息，更是建立关系</td>
+</tr>
+<tr>
+<td>二战期间犹太人被迫躲藏（1942–1944）</td>
+<td><span class="tag cult">文化</span>纳粹迫害下的生存状态</td>
+<td>帮助理解文本诞生的历史语境，避免孤立地读文字</td>
+</tr>
+<tr>
+<td>13 岁少女在密室中不能与外界接触</td>
+<td><span class="tag soc">社会</span>被隔离的青少年身份</td>
+<td>说明"友谊"对她而言不是奢侈品，而是生存必需</td>
+</tr>
+<tr>
+<td>战后日记出版，成为全球经典</td>
+<td><span class="tag soc">社会</span>从私人文本变为公共文化符号</td>
+<td>展现个体叙事如何转化为集体记忆</td>
+</tr>
+</table>
+</div>
+</div>
+
+<div class="card">
+<h2>🔬 专家解析过程</h2>
+<p style="color:var(--text-secondary);margin-bottom:10px;">点击每个步骤查看详细推理：</p>
+
+<div class="step-box" onclick="toggleStep(this)">
+<div class="step-title">Step 1 — 先看见什么</div>
+<div class="step-detail hidden">"这篇课文最显眼的特点：日记写给了虚构对象 'Kitty'，而不是传统日记式的自言自语。"<br>这是<strong>文本表层特征</strong>：人称、称呼、语气都不同于普通日记。</div>
+</div>
+
+<div class="step-box" onclick="toggleStep(this)">
+<div class="step-title">Step 2 — 判断问题类型</div>
+<div class="step-detail hidden">"这是典型的 <strong>'文本策略分析'</strong> 问题——作者用了什么写作手法，为什么这样写。"<br>类型归属：文学性文本的语用分析（pragmatic analysis）<br>需调用：语言功能分析 + 历史语境知识</div>
+</div>
+
+<div class="step-box" onclick="toggleStep(this)">
+<div class="step-title">Step 3 — 调用什么概念</div>
+<div class="step-detail hidden">
+<strong>三个分析工具：</strong><br>
+<span class="tag lang">语言维度</span>拟人化（personification）、呼语（apostrophe）、情感词汇<br>
+<span class="tag cult">文化维度</span>二战犹太人大屠杀的历史背景、日记文体传统<br>
+<span class="tag soc">社会维度</span>个体叙事与社会记忆、身份认同与隔离
+</div>
+</div>
+
+<div class="step-box" onclick="toggleStep(this)">
+<div class="step-title">Step 4 — 如何推理</div>
+<div class="step-detail hidden">
+<div class="flow-diagram">
+<span class="flow-node highlight">语言层证据</span>
+<span class="flow-arrow">→</span>
+<span class="flow-node">创造对话</span>
+<span class="flow-arrow">→</span>
+<span class="flow-node">为什么需要对话？</span>
+<span class="flow-arrow">→</span>
+<span class="flow-node">文化层：无真实对话对象</span>
+<span class="flow-arrow">→</span>
+<span class="flow-node">社会层：隔离剥夺社会关系</span>
+<span class="flow-arrow">→</span>
+<span class="flow-node highlight">结论：三重维度同时起作用</span>
+</div>
+</div>
+</div>
+
+<div class="step-box" onclick="toggleStep(this)">
+<div class="step-title">Step 5 — 形成结论</div>
+<div class="step-detail hidden">Anne 通过一个看似简单的"给日记起名字"的举动，完成了<strong>语言上的人际功能、文化上的历史记录、社会上的身份重建</strong>。她不是写了一本日记，而是创造了一个<strong>友谊的符号</strong>。</div>
+</div>
+
+</div>
+
+<div class="card">
+<h2>📝 结论表达</h2>
+<div class="quote-box">
+<p><strong>短评示例（核心段落）：</strong></p>
+<p>Anne Frank 的日记表面上是一个少女的秘密记录，但从语言看，"Dear Kitty"这一称呼完成了文本从独白到对话的转变；从文化看，它承载了二战时期犹太人被迫隐匿的集体记忆；从社会看，它让一个已故者的个体声音穿越时空，成为人类共同的精神遗产。三个维度交织，使"Anne's Best Friend"不仅仅是一篇课文，更是一面镜子——让我们看到友谊在极端环境下的另一种可能形态。</p>
+</div>
+</div>
+
+<div class="card">
+<h2>💡 方法提炼</h2>
+<ol>
+<li><strong>问自己三个问题：</strong>这段话在语言上有什么特点？它来自什么文化背景？它反映了什么社会关系？</li>
+<li><strong>找"反常处"：</strong>文本中让你觉得"不太一样"的地方往往就是分析的突破口（比如 Anne 叫日记 Kitty）</li>
+<li><strong>从语言出发，向文化和社会延伸：</strong>先把语言现象看清楚，再追问"为什么会有这样的语言现象"</li>
+<li><strong>画三层圈图：</strong>中心是语言特征，中间层是文化语境，最外层是社会意义——层层推理，不要跳步</li>
+</ol>
+</div>
+
+<div class="card">
+<h2>⚠️ 易错提醒</h2>
+<div class="table-wrap">
+<table class="pitfall-table">
+<tr><th style="width:35%">易错点</th><th>正确做法</th></tr>
+<tr><td>只分析语言修辞，忽略文化语境（如只讲"拟人"，不提二战背景）</td><td>必须把语言现象放在历史和文化背景中解释</td></tr>
+<tr><td>把"社会维度"等同于"社会背景"，忘记分析社会关系与身份</td><td>社会维度关注的是人与人之间的权力、角色、关系变化——Anne 从"学生"到"藏匿者"的身份转变</td></tr>
+<tr><td>先入为主地背结论，而不是从文本出发推理</td><td>即使你熟悉 Anne 的故事，也要先看文本中具体有什么信息，再推导意义</td></tr>
+</table>
+</div>
+</div>
+
+<div class="card">
+<h2>✍️ 自主迁移练习</h2>
+<div class="practice-box">
+<p><strong>任务：</strong>下面是一段来自 <em>The Diary of a Young Girl</em> 的另一个片段。请仿照上述三维分析法，写一个 200 词的解析段落。</p>
+<div class="quote-box">
+"I can shake off everything as I write; my sorrows disappear, my courage is reborn. But, and that's the big question, will I ever be able to write something great?"
+</div>
+<p style="font-size:14px;color:var(--text-secondary);">💡 <strong>提示：</strong>关注语言上的转折（But）、情感对比（sorrows ↔ courage）、以及 Anne 对自我价值的追问（社会身份认同）。</p>
+<button class="step-box" style="cursor:pointer;border:none;background:var(--bg);text-align:center;padding:10px;" onclick="showHint()">点击查看参考分析框架</button>
+<div id="hintArea" style="display:none;margin-top:8px;padding:12px;background:#f0f5ff;border-radius:6px;font-size:14px;">
+<strong>参考框架：</strong><br>
+1. <strong>语言层：</strong>"shake off everything" 是强烈的清除隐喻，"sorrows disappear, courage is reborn" 形成工整的对比结构。"But" 之后的转折引入不确定——"the big question"。<br>
+2. <strong>文化层：</strong>在藏匿环境中，写作是 Anne 唯一的精神出口。她的勇气在书写中"重生"——这解释了写作对她的生存意义。<br>
+3. <strong>社会层：</strong>Anne 追问"will I ever be able to write something great"——这不仅是文学抱负，更是一个被社会隔离的青少年对<strong>自我价值的确认</strong>。她需要证明自己的存在有意义。
+</div>
+</div>
+</div>
+
+<div class="card">
+<h2>📊 学习自评</h2>
+<p style="color:var(--text-secondary);margin-bottom:10px;">请给自己打分（点击星星，1=不太清楚 → 5=非常清楚）：</p>
+<div class="self-rating">
+<div class="rating-item">
+<div class="r-label">语言维度的分析起点</div>
+<div class="stars" data-idx="0">
+<span class="star" onclick="rate(0,1)">★</span>
+<span class="star" onclick="rate(0,2)">★</span>
+<span class="star" onclick="rate(0,3)">★</span>
+<span class="star" onclick="rate(0,4)">★</span>
+<span class="star" onclick="rate(0,5)">★</span>
+</div>
+<div class="r-label" id="ratingLabel0">点击评分</div>
+</div>
+<div class="rating-item">
+<div class="r-label">区分文化与社会的维度</div>
+<div class="stars" data-idx="1">
+<span class="star" onclick="rate(1,1)">★</span>
+<span class="star" onclick="rate(1,2)">★</span>
+<span class="star" onclick="rate(1,3)">★</span>
+<span class="star" onclick="rate(1,4)">★</span>
+<span class="star" onclick="rate(1,5)">★</span>
+</div>
+<div class="r-label" id="ratingLabel1">点击评分</div>
+</div>
+<div class="rating-item">
+<div class="r-label">三层推理步骤</div>
+<div class="stars" data-idx="2">
+<span class="star" onclick="rate(2,1)">★</span>
+<span class="star" onclick="rate(2,2)">★</span>
+<span class="star" onclick="rate(2,3)">★</span>
+<span class="star" onclick="rate(2,4)">★</span>
+<span class="star" onclick="rate(2,5)">★</span>
+</div>
+<div class="r-label" id="ratingLabel2">点击评分</div>
+</div>
+<div class="rating-item">
+<div class="r-label">独立完成新文本分析</div>
+<div class="stars" data-idx="3">
+<span class="star" onclick="rate(3,1)">★</span>
+<span class="star" onclick="rate(3,2)">★</span>
+<span class="star" onclick="rate(3,3)">★</span>
+<span class="star" onclick="rate(3,4)">★</span>
+<span class="star" onclick="rate(3,5)">★</span>
+</div>
+<div class="r-label" id="ratingLabel3">点击评分</div>
+</div>
+</div>
+</div>
+
+</div>
+
+<script>
+function toggleStep(el) {
+  const detail = el.querySelector('.step-detail');
+  detail.classList.toggle('hidden');
+}
+function showHint() {
+  const h = document.getElementById('hintArea');
+  h.style.display = h.style.display === 'none' ? 'block' : 'none';
+}
+function rate(idx, score) {
+  const container = document.querySelectorAll('.stars')[idx];
+  const stars = container.querySelectorAll('.star');
+  stars.forEach((s, i) => {
+    s.classList.toggle('active', i < score);
+  });
+  const labels = ['语言维度起点','维度区分能力','推理步骤掌握','独立分析能力'];
+  document.getElementById('ratingLabel' + idx).textContent = score + '/5 - ' + labels[idx];
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性案例 — 七阶适配案例</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.hero {
+  background: linear-gradient(135deg, #434343 0%, #6b6b6b 100%);
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  text-align: center;
+}
+.hero h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 6px; }
+.hero p { font-size: 14px; opacity: 0.9; }
+.section { margin-bottom: 28px; }
+.section-title {
+  font-size: var(--font-h2);
+  font-weight: 700;
+  color: var(--primary);
+  padding-bottom: 8px;
+  border-bottom: 3px solid var(--accent);
+  margin-bottom: 16px;
+}
+/* Case card with accordion */
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.case-header {
+  padding: 14px 20px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background .2s;
+  user-select: none;
+}
+.case-header:hover { background: var(--bg); }
+.case-header .case-num {
+  display: inline-flex;
+  align-items: center; justify-content: center;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+.case-header .case-title-group { display: flex; align-items: center; flex: 1; }
+.case-header h3 { font-size: 15px; color: var(--primary); font-weight: 600; }
+.case-header .case-tag {
+  font-size: 11px;
+  background: var(--bg);
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  margin-left: 8px;
+  white-space: nowrap;
+}
+.case-header .arrow { transition: transform .3s; font-size: 14px; color: var(--text-secondary); }
+.case-header .arrow.open { transform: rotate(90deg); }
+.case-body { display: none; padding: 0 20px 16px; }
+.case-body.open { display: block; }
+.case-body .cb-label { font-weight: 600; color: var(--primary); margin-top: 10px; margin-bottom: 3px; font-size: 13px; }
+.case-body p, .case-body li { font-size: 13px; }
+.case-body ul { padding-left: 16px; }
+.case-body ul li { margin-bottom: 3px; }
+.case-body .quote {
+  background: var(--bg);
+  border-left: 3px solid var(--accent);
+  padding: 10px 14px;
+  border-radius: 0 6px 6px 0;
+  margin: 8px 0;
+  font-size: 13px;
+  font-style: italic;
+}
+.case-body .principle-tags { margin: 6px 0; }
+.case-body .principle-tags span {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #f0f0f0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 11px;
+  margin: 2px;
+}
+/* Analysis table */
+.analysis-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+  font-size: 13px;
+}
+.analysis-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 6px 10px;
+  text-align: left;
+  font-weight: 600;
+}
+.analysis-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.analysis-table tr:last-child td { border-bottom: none; }
+.analysis-table tr:hover td { background: var(--bg); }
+/* Path steps */
+.path-steps { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.path-step {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  display: flex; align-items: center; gap: 4px;
+}
+.path-step .step-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--primary);
+  flex-shrink: 0;
+}
+/* Reflection section */
+.reflect-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  border: 1px solid var(--border);
+}
+.reflect-card h3 { font-size: 15px; color: var(--primary); margin-bottom: 10px; }
+.reflect-card ol { padding-left: 18px; }
+.reflect-card ol li { font-size: 13px; margin-bottom: 8px; cursor: pointer; }
+.reflect-card ol li:hover { color: var(--primary); }
+.reflect-card .reflect-hint {
+  display: none; margin-top: 4px; padding: 8px 12px;
+  background: var(--bg); border-radius: 6px; font-size: 12px; color: var(--text-secondary);
+}
+.reflect-card .reflect-hint.show { display: block; }
+/* Footer */
+.footer-nav {
+  margin-top: 32px;
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="hero">
+    <h1>📚 解析性七阶适配案例</h1>
+    <p>从生活情境到综合迁移 · 多维度训练解析能力</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">模块七阶解析性适配案例</div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">点击每个案例展开详情，按照"识别 → 拆解 → 分析 → 结论"的路径逐步学习。</p>
+
+    <!-- 案例一 -->
+    <div class="case-card">
+      <div class="case-header" onclick="toggleCase('c1')">
+        <div class="case-title-group">
+          <span class="case-num">1</span>
+          <h3>A Friend's WeChat Message</h3>
+          <span class="case-tag">生活情境</span>
+        </div>
+        <span class="arrow" id="arrow-c1">▶</span>
+      </div>
+      <div class="case-body" id="c1">
+        <div class="cb-label">📱 案例材料</div>
+        <div class="quote">"I don't know what happened. Yesterday we were laughing together, but today she ignored me in the hallway. Did I say something wrong? Should I ask her or just wait?"</div>
+        <div class="cb-label">🎯 解析任务</div>
+        <p>分析Lisa的困惑属于什么类型的友谊问题？她需要什么样的帮助？</p>
+        <div class="cb-label">🗺️ 解析路径</div>
+        <div class="path-steps">
+          <span class="path-step"><span class="step-dot"></span>识别情感（困惑+焦虑）</span>
+          <span class="path-step"><span class="step-dot"></span>确定对象（断裂的友谊）</span>
+          <span class="path-step"><span class="step-dot"></span>拆解要素（冲突+未说明原因）</span>
+          <span class="path-step"><span class="step-dot"></span>梳理过程（昨天→今天）</span>
+          <span class="path-step"><span class="step-dot"></span>解释原因（可能是误会）</span>
+          <span class="path-step"><span class="step-dot"></span>提出结论（建议主动询问）</span>
+        </div>
+        <div class="principle-tags">
+          <span>#情感基调识别</span>
+          <span>#结构拆分原理</span>
+        </div>
+        <div class="cb-label">📊 分析记录表</div>
+        <table class="analysis-table">
+          <tr><th>情感信号</th><th>事实信息</th><th>隐含需求</th></tr>
+          <tr><td>"I don't know" 困惑</td><td>昨天在笑今天被忽视</td><td>想知道原因</td></tr>
+          <tr><td>"Did I say something wrong?" 自责</td><td>对方主动回避</td><td>需要安全感</td></tr>
+        </table>
+        <p style="font-size:12px;color:var(--text-secondary);margin-top:6px;">💡 参考思路：Lisa需要的不是偏袒，而是帮她理清是否有明确事件还是误会</p>
+      </div>
+    </div>
+
+    <!-- 案例二 -->
+    <div class="case-card">
+      <div class="case-header" onclick="toggleCase('c2')">
+        <div class="case-title-group">
+          <span class="case-num">2</span>
+          <h3>Classroom Debate about Friendship</h3>
+          <span class="case-tag">校园情境</span>
+        </div>
+        <span class="arrow" id="arrow-c2">▶</span>
+      </div>
+      <div class="case-body" id="c2">
+        <div class="cb-label">🎤 案例材料</div>
+        <p>英语课上讨论"Can online friendship replace real-life friendship?" 正方认为可以——网络减少距离；反方认为不可以——缺乏真实互动。双方都没有充分论证。</p>
+        <div class="cb-label">🎯 解析任务</div>
+        <p>分析正反双方观点背后的逻辑：他们分别认为"友谊的核心"是什么？</p>
+        <div class="cb-label">🗺️ 解析路径</div>
+        <div class="path-steps">
+          <span class="path-step"><span class="step-dot"></span>识别冲突（线上vs线下）</span>
+          <span class="path-step"><span class="step-dot"></span>确定对象（两种友谊观的分歧）</span>
+          <span class="path-step"><span class="step-dot"></span>拆解要素（正方：效率/反方：深度）</span>
+          <span class="path-step"><span class="step-dot"></span>判断前提假设</span>
+        </div>
+        <div class="principle-tags">
+          <span>#关键词定位</span>
+          <span>#结构拆分原理</span>
+        </div>
+        <div class="cb-label">📊 分析记录表</div>
+        <table class="analysis-table">
+          <tr><th>立场</th><th>核心论证</th><th>对友谊的定义</th><th>逻辑漏洞</th></tr>
+          <tr><td>正方</td><td>网络消除距离</td><td>维持联系=友谊</td><td>忽略情感深度</td></tr>
+          <tr><td>反方</td><td>缺乏真实互动</td><td>面对面=真友谊</td><td>忽略网络深度交流的可能</td></tr>
+        </table>
+        <p style="font-size:12px;color:var(--text-secondary);margin-top:6px;">💡 关键不在于选边站，而在于理解两种友谊观对"友谊核心"的定义不同</p>
+      </div>
+    </div>
+
+    <!-- 案例三 -->
+    <div class="case-card">
+      <div class="case-header" onclick="toggleCase('c3')">
+        <div class="case-title-group">
+          <span class="case-num">3</span>
+          <h3>A Parent-Child Disagreement</h3>
+          <span class="case-tag">家庭情境</span>
+        </div>
+        <span class="arrow" id="arrow-c3">▶</span>
+      </div>
+      <div class="case-body" id="c3">
+        <div class="cb-label">🏠 案例材料</div>
+        <div class="quote">妈妈："你那些网友都是陌生人，不算真朋友！真正的朋友应该是你身边的同学。"<br>小李："我和网友认识两年了，分享的东西比和同学分享的还多。你根本不懂。"</div>
+        <div class="cb-label">🎯 解析任务</div>
+        <p>分析妈妈和小李关于"真友谊"的定义分歧在哪里？每个人基于什么证据得出自己的结论？</p>
+        <div class="cb-label">🗺️ 解析路径</div>
+        <div class="path-steps">
+          <span class="path-step"><span class="step-dot"></span>识别冲突（两代人标准不同）</span>
+          <span class="path-step"><span class="step-dot"></span>确定对象（"真友谊"定义分歧）</span>
+          <span class="path-step"><span class="step-dot"></span>妈妈：安全+物理在场</span>
+          <span class="path-step"><span class="step-dot"></span>小李：情感+表达自由</span>
+          <span class="path-step"><span class="step-dot"></span>寻找各自背后的经验证据</span>
+        </div>
+        <div class="principle-tags"><span>#共情-分析-建议结构</span></div>
+        <p style="font-size:12px;color:var(--text-secondary);margin-top:6px;">💡 试着用"共情→分析→建议"结构模拟一段调解文字</p>
+      </div>
+    </div>
+
+    <!-- 案例四 -->
+    <div class="case-card">
+      <div class="case-header" onclick="toggleCase('c4')">
+        <div class="case-title-group">
+          <span class="case-num">4</span>
+          <h3>Anne's Diary Entry</h3>
+          <span class="case-tag">学科核心</span>
+        </div>
+        <span class="arrow" id="arrow-c4">▶</span>
+      </div>
+      <div class="case-body" id="c4">
+        <div class="cb-label">📖 案例材料 (Unit 1)</div>
+        <div class="quote">"I don't want to think about all the misery, but about the beauty that still remains... it's a wonder I haven't abandoned all my ideals, they seem so absurd and impractical. Yet I cling to them because I still believe, in spite of everything, that people are truly good at heart."</div>
+        <div class="cb-label">🎯 解析任务</div>
+        <p>分析Anne如何通过"写给日记"来维持精神上的"友谊"？她把日记当作朋友，这种写作行为为什么能帮助她？</p>
+        <div class="cb-label">🗺️ 解析路径</div>
+        <div class="path-steps">
+          <span class="path-step"><span class="step-dot"></span>识别情感基调（超越痛苦保持希望）</span>
+          <span class="path-step"><span class="step-dot"></span>确定对象（"日记作为朋友"的机制）</span>
+          <span class="path-step"><span class="step-dot"></span>拆解（极端环境+写作+自我对话）</span>
+          <span class="path-step"><span class="step-dot"></span>解释机制：写作如何成为情感释放通道</span>
+        </div>
+        <div class="principle-tags">
+          <span>#情感基调识别</span>
+          <span>#关键词定位</span>
+          <span>#结构拆分</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 案例五 -->
+    <div class="case-card">
+      <div class="case-header" onclick="toggleCase('c5')">
+        <div class="case-title-group">
+          <span class="case-num">5</span>
+          <h3>Friendship in Two Cultures</h3>
+          <span class="case-tag">跨文化</span>
+        </div>
+        <span class="arrow" id="arrow-c5">▶</span>
+      </div>
+      <div class="case-body" id="c5">
+        <div class="cb-label">🌏 案例材料</div>
+        <p>中西方"友谊文化"对比：中国朋友常说"有空一起吃饭"但可能很久不约；美国朋友常说"Let's hang out sometime"却可能是客套话。中国朋友之间借钱不问原因，美国朋友之间借钱会被认为很奇怪。</p>
+        <div class="cb-label">🎯 解析任务</div>
+        <p>分析中西方友谊表达方式差异背后的文化价值观。</p>
+        <div class="cb-label">🗺️ 解析路径</div>
+        <div class="path-steps">
+          <span class="path-step"><span class="step-dot"></span>识别差异现象</span>
+          <span class="path-step"><span class="step-dot"></span>确定对象（文化价值观）</span>
+          <span class="path-step"><span class="step-dot"></span>中国：集体主义+互惠义务</span>
+          <span class="path-step"><span class="step-dot"></span>西方：个人主义+边界清晰</span>
+        </div>
+        <div class="principle-tags"><span>#结构拆分原理</span></div>
+        <p style="font-size:12px;color:var(--text-secondary);margin-top:6px;">💡 将文化差异拆为"行为层面+价值观层面"两个维度分析</p>
+      </div>
+    </div>
+
+    <!-- 案例六 -->
+    <div class="case-card">
+      <div class="case-header" onclick="toggleCase('c6')">
+        <div class="case-title-group">
+          <span class="case-num">6</span>
+          <h3>The Friendship Paradox</h3>
+          <span class="case-tag">社会现象</span>
+        </div>
+        <span class="arrow" id="arrow-c6">▶</span>
+      </div>
+      <div class="case-body" id="c6">
+        <div class="cb-label">📊 案例材料</div>
+        <p><strong>友谊悖论（Friendship Paradox）：</strong>你的朋友平均拥有的朋友数比你多。拥有很多朋友的人更容易被"计算"为别人的朋友。你可能觉得自己朋友不够多，但其实你的朋友比你更"社交"。</p>
+        <div class="cb-label">🎯 解析任务</div>
+        <p>分析友谊悖论如何影响我们对自身社交关系的认知？这个现象的启示是什么？</p>
+        <div class="cb-label">🗺️ 解析路径</div>
+        <div class="path-steps">
+          <span class="path-step"><span class="step-dot"></span>识别现象（统计学发现）</span>
+          <span class="path-step"><span class="step-dot"></span>确定对象（认知偏差）</span>
+          <span class="path-step"><span class="step-dot"></span>拆解（计算方式/样本偏差/心理感受）</span>
+          <span class="path-step"><span class="step-dot"></span>解释为什么这个悖论让人感觉"我的朋友比我更受欢迎"</span>
+        </div>
+        <div class="principle-tags"><span>#关键词定位</span><span>#结构拆分</span></div>
+      </div>
+    </div>
+
+    <!-- 案例七 -->
+    <div class="case-card">
+      <div class="case-header" onclick="toggleCase('c7')">
+        <div class="case-title-group">
+          <span class="case-num">7</span>
+          <h3>综合迁移案例</h3>
+          <span class="case-tag">综合</span>
+        </div>
+        <span class="arrow" id="arrow-c7">▶</span>
+      </div>
+      <div class="case-body" id="c7">
+        <div class="cb-label">📝 案例材料</div>
+        <div class="quote">"I moved to a new country last year. I was lonely at first. Then I joined the school's book club. Now I have friends from 5 different countries. We share books, ideas, and stories. I realize that friendship doesn't need a common language—it needs a common interest."</div>
+        <div class="cb-label">🎯 解析任务</div>
+        <p>综合运用所有解析性原理，分析小红的友谊故事——它属于哪种友谊类型？关键转折点是什么？如何引用到友谊主题写作中？</p>
+        <div class="cb-label">🗺️ 解析路径</div>
+        <div class="path-steps">
+          <span class="path-step"><span class="step-dot"></span>全文分析</span>
+          <span class="path-step"><span class="step-dot"></span>多层次归纳</span>
+          <span class="path-step"><span class="step-dot"></span>写作迁移</span>
+        </div>
+        <div class="principle-tags"><span>#全部5条原理</span></div>
+        <p style="font-size:12px;color:var(--text-secondary);margin-top:6px;">💡 这是最高难度的综合练习，建议完成前6个案例后再来挑战</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 七阶反思 -->
+  <div class="section">
+    <div class="section-title">七阶案例 · 综合反思</div>
+    <div class="reflect-card">
+      <h3>点击以下问题触发思考</h3>
+      <ol>
+        <li onclick="toggleReflect('r1')">1. 哪个案例最容易分析？为什么？
+          <div class="reflect-hint" id="r1">可能是案例一（微信消息），因为它最贴近日常生活，情感信号明显，结构清晰。试想一下你平时如何分析朋友的消息？</div>
+        </li>
+        <li onclick="toggleReflect('r2')">2. 哪个案例最难？困难在哪里？
+          <div class="reflect-hint" id="r2">案例四（Anne Frank）需要背景知识，案例六（友谊悖论）涉及统计学。困难往往来自"不熟悉的话题"或"需要跨学科知识"。</div>
+        </li>
+        <li onclick="toggleReflect('r3')">3. 哪条解析性原理最常用、最实用？
+          <div class="reflect-hint" id="r3">大多数同学认为"情感基调识别"和"共情-分析-建议结构"最实用，因为它们可以直接用在日常沟通和写作中。</div>
+        </li>
+        <li onclick="toggleReflect('r4')">4. 哪条原理你还不太会用？
+          <div class="reflect-hint" id="r4">"具体化替代"需要刻意练习——写完后反问自己"我的建议对方能执行吗"是一个好习惯。</div>
+        </li>
+        <li onclick="toggleReflect('r5')">5. 这些案例如何帮助你完成友谊主题写作？
+          <div class="reflect-hint" id="r5">每个案例都为你提供了不同的角度：个人经历（案例一）、社会现象（案例六）、文化对比（案例五）——你的友谊主题写作可以融合这些视角。</div>
+        </li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="footer-nav">
+    🔍 点击案例展开分析 · 点击反思问题查看提示 · 完成全部7个案例后进入综合写作
+  </div>
+</div>
+
+<script>
+function toggleCase(id) {
+  const body = document.getElementById(id);
+  const arrow = document.getElementById('arrow-' + id);
+  body.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+function toggleReflect(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('show');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块五维导学 — M7 新知数学思维</title>
+<style>
+  :root {
+    --primary: #434343;
+    --primary-hover: #595959;
+    --accent: #8c8c8c;
+    --bg: #f5f5f5;
+    --card-bg: #ffffff;
+    --text: rgba(0,0,0,0.88);
+    --text-secondary: rgba(0,0,0,0.45);
+    --border: #d9d9d9;
+    --border-radius: 8px;
+    --shadow: 0 2px 8px rgba(0,0,0,0.06);
+    --font-body: 15px;
+    --font-h1: 22px;
+    --font-h2: 18px;
+    --line-height: 1.65;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: var(--font-body);
+    line-height: var(--line-height);
+    color: var(--text);
+    background: var(--bg);
+    width: 100%;
+    max-width: none;
+    padding: 0;
+  }
+  .container {
+    width: 100%;
+    max-width: none;
+    padding: 24px 20px;
+    box-sizing: border-box;
+  }
+  .page-header {
+    background: linear-gradient(135deg, #434343 0%, #595959 100%);
+    color: #fff;
+    padding: 28px 24px;
+    border-radius: var(--border-radius);
+    margin-bottom: 24px;
+  }
+  .page-header h1 {
+    font-size: var(--font-h1);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .page-header p {
+    font-size: 14px;
+    opacity: 0.85;
+    margin: 0;
+  }
+  .dimension-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .dim-btn {
+    flex: 1;
+    min-width: 100px;
+    padding: 10px 8px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    transition: all 0.3s;
+  }
+  .dim-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+  .dim-btn.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+  }
+  .dim-btn .dim-icon {
+    display: block;
+    font-size: 20px;
+    margin-bottom: 4px;
+  }
+  .dim-panel {
+    display: none;
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 20px 22px;
+    margin-bottom: 16px;
+    animation: fadeIn 0.3s ease;
+  }
+  .dim-panel.active {
+    display: block;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .dim-panel h2 {
+    font-size: var(--font-h2);
+    color: var(--primary);
+    margin-bottom: 14px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--accent);
+  }
+  .dim-panel h3 {
+    font-size: 15px;
+    color: var(--primary-hover);
+    margin: 12px 0 6px;
+  }
+  .dim-panel p, .dim-panel li {
+    font-size: 14px;
+  }
+  .dim-panel ul {
+    padding-left: 18px;
+    margin: 6px 0;
+  }
+  .dim-panel li {
+    margin: 4px 0;
+  }
+  .goal-box {
+    background: var(--bg);
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin: 8px 0;
+  }
+  .goal-box strong {
+    color: var(--primary);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .tag-pill {
+    display: inline-block;
+    font-size: 12px;
+    background: var(--accent);
+    color: #fff;
+    padding: 2px 10px;
+    border-radius: 10px;
+    margin: 2px 0;
+  }
+  .highlight-box {
+    background: linear-gradient(135deg, var(--bg), #fff);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin: 8px 0;
+    font-size: 14px;
+  }
+  .highlight-box .q {
+    font-weight: 700;
+    color: var(--primary);
+  }
+  @media (max-width: 768px) {
+    .container { padding: 16px 12px; }
+    .dim-btn { min-width: calc(50% - 8px); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="page-header">
+  <h1>模块五维导学</h1>
+  <p>M7 新知数学思维 · 友谊关系建构 · 英语必修1</p>
+</div>
+
+<div class="dimension-nav">
+  <div class="dim-btn active" data-dim="0" onclick="switchDim(0)">
+    <span class="dim-icon">🎯</span>学习目标
+  </div>
+  <div class="dim-btn" data-dim="1" onclick="switchDim(1)">
+    <span class="dim-icon">🔮</span>未来价值
+  </div>
+  <div class="dim-btn" data-dim="2" onclick="switchDim(2)">
+    <span class="dim-icon">📚</span>学习方法
+  </div>
+  <div class="dim-btn" data-dim="3" onclick="switchDim(3)">
+    <span class="dim-icon">👤</span>关键人物
+  </div>
+  <div class="dim-btn" data-dim="4" onclick="switchDim(4)">
+    <span class="dim-icon">❓</span>前沿追问
+  </div>
+</div>
+
+<div class="dim-panel active" data-dim="0">
+  <h2>🎯 模块学习目标</h2>
+
+  <div class="goal-box">
+    <strong>📖 知识理解目标</strong>
+    <p>掌握与友谊关系分析相关的英语词汇和句型，如 trust, intimacy, conflict, resolution 等核心概念词，以及 "I notice that... / This suggests that..." 等分析句式。理解用数学思维——分类、比较、模式识别——来分析人际关系的基本方法。</p>
+  </div>
+
+  <div class="goal-box">
+    <strong>🛠️ 能力形成目标</strong>
+    <p>能够用结构化方式分析英语文本中的友谊关系案例，拆解出阶段、要素和因果关系。能够用概念图和流程图等可视化工具，将抽象的友谊模式直观地表达出来。</p>
+  </div>
+
+  <div class="goal-box">
+    <strong>🧠 思维发展目标</strong>
+    <p>养成"先拆解再建构"的思维习惯——面对一个复杂的人际关系情境时，不急于下结论，而是先分解要素，找出规律，再形成自己的判断。发展跨学科的类比推理和模式识别能力。</p>
+  </div>
+
+  <div class="goal-box">
+    <strong>🎤 表达产出目标</strong>
+    <p>能用英语完整表达自己对友谊关系的分析过程和结论，产出可视化的思维成果（概念图/流程图 + 英语文字说明），做到"图有逻辑、文有依据"。</p>
+  </div>
+</div>
+
+<div class="dim-panel" data-dim="1">
+  <h2>🔮 高精尖价值与未来意义</h2>
+  <div class="highlight-box">
+    <p><strong>跨学科价值</strong> — 数学思维不只是用来解方程，它还能帮我们理解人类社交行为。分类、比较、模式识别——这些工具同样适用于分析朋友圈的互动模式。</p>
+  </div>
+  <div class="highlight-box">
+    <p><strong>科技前沿</strong> — 社交网络分析（SNA）正被广泛应用于社交媒体推荐算法、AI心理健康助手和群体行为预测。你在本模块练习的"关系分析"方法，正是这些前沿技术的底层思维。</p>
+  </div>
+  <div class="highlight-box">
+    <p><strong>未来职业</strong> — 数据分析师、心理咨询师、用户体验研究员、社交产品经理——这些职业都需要"从复杂人际关系中发现模式"的能力。</p>
+  </div>
+  <div class="highlight-box">
+    <p><strong>现实意义</strong> — 在数字化社交时代，微信好友几百个但真朋友没几个——学会区分"社交连接"和"真实友谊"，对建立健康的社交生活至关重要。</p>
+  </div>
+</div>
+
+<div class="dim-panel" data-dim="2">
+  <h2>📚 推荐学习方式与方法</h2>
+  <ul>
+    <li><strong>概念图法</strong> — 用思维导图梳理友谊关系的核心要素（信任、沟通、陪伴等），观察它们之间的联系。</li>
+    <li><strong>比较分析法</strong> — 对比不同友谊模式（深交 vs 泛交）在沟通频率、情感投入上的差异。</li>
+    <li><strong>模式识别法</strong> — 从多个友谊案例中寻找共同的阶段规律，比如"帮助事件往往是关系转折点"。</li>
+    <li><strong>AI辅助学习</strong> — 用AI工具（如ChatGPT）模拟友谊对话场景，或请AI对你的英语表达做语法修正。</li>
+    <li><strong>合作讨论</strong> — 与同学分享你的建构成果，听听别人眼中的"友谊模型"和你的有什么不同。</li>
+  </ul>
+</div>
+
+<div class="dim-panel" data-dim="3">
+  <h2>👤 关键人物、事件与成果</h2>
+  <div class="highlight-box">
+    <p><span class="q">亚里士多德（Aristotle）</span> — 古希腊哲学家，最早系统研究友谊的人。他将友谊分为三类：实用友谊（为利益）、快乐友谊（为愉悦）、美德友谊（为彼此好）。这一分类至今仍是友谊研究的基石。</p>
+  </div>
+  <div class="highlight-box">
+    <p><span class="q">罗宾·邓巴（Robin Dunbar）</span> — 英国人类学家，提出著名的"邓巴数"理论：人类能维持稳定社交关系的上限约为150人。其中核心密友通常不超过5人。你想过你的"邓巴数"是多少吗？</p>
+  </div>
+  <div class="highlight-box">
+    <p><span class="q">斯坦利·米尔格拉姆（Stanley Milgram）</span> — 社会心理学家，通过"小世界实验"提出"六度分隔"理论——任意两个陌生人之间最多通过6个人就能建立联系。社交网络的连接比你想象的更紧密。</p>
+  </div>
+  <div class="highlight-box">
+    <p><span class="q">当代研究</span> — 近年来多项研究表明，社交媒体使用频率与青少年友谊质量呈倒U型关系：适度使用促进友谊，过度使用反而降低亲密度。</p>
+  </div>
+</div>
+
+<div class="dim-panel" data-dim="4">
+  <h2>❓ 前沿追问</h2>
+  <p style="margin-bottom:8px;">这些问题没有标准答案，但它们代表了这个领域最前沿的思考方向：</p>
+  <div class="highlight-box">
+    <p><span class="q">🤖 在AI时代，人与AI的"友谊"算真正的友谊吗？</span><br>如果你可以向AI倾诉心事、获得安慰，这满足友谊的功能吗？友谊的实现必须要有"另一个意识"吗？</p>
+  </div>
+  <div class="highlight-box">
+    <p><span class="q">📐 如果友谊可以用数学建模，那友谊中最不可量化的部分是什么？</span><br>我们可以量化互动频率、信息交换量，但"心有灵犀""默契"——这些能被数据捕捉到吗？</p>
+  </div>
+  <div class="highlight-box">
+    <p><span class="q">📱 社交媒体的"好友"数量和真实友谊质量之间有什么关系？</span><br>当你朋友圈有500个"好友"时，这500和亚里士多德的"美德友谊"是同一个概念吗？</p>
+  </div>
+  <div class="highlight-box">
+    <p><span class="q">📊 如何用数据分析方法预测一段友谊能否持久？</span><br>如果让你设计一个"友谊持久度预测模型"，你会选取哪些变量？互动频率？情感表达？共同时刻？</p>
+  </div>
+</div>
+
+</div>
+
+<script>
+var currentDim = 0;
+
+function switchDim(index) {
+  currentDim = index;
+  var panels = document.querySelectorAll('.dim-panel');
+  var btns = document.querySelectorAll('.dim-btn');
+  panels.forEach(function(p, i) {
+    p.classList.toggle('active', i === index);
+  });
+  btns.forEach(function(b, i) {
+    b.classList.toggle('active', i === index);
+  });
+}
+</script>
+</body>
+</html>

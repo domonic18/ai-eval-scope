@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性案例 - M16 真善美思维与反思</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0;
+  font-family: var(--font-family);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 24px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, #434343 0%, #595959 100%);
+  color: #fff;
+  padding: 32px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header .meta { font-size: 13px; opacity: 0.8; }
+.header .filter-bar { margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap; }
+.header .filter-btn {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.3);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.header .filter-btn:hover, .header .filter-btn.active { background: rgba(255,255,255,0.3); }
+
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+}
+.case-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.case-header {
+  padding: 16px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--card-bg);
+  transition: background 0.2s;
+}
+.case-header:hover { background: #fafafa; }
+.case-header .left { display: flex; align-items: center; gap: 12px; }
+.case-header .stage-badge {
+  background: var(--primary);
+  color: #fff;
+  border-radius: 16px;
+  padding: 3px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.case-header .case-title {
+  font-weight: 700;
+  font-size: 16px;
+}
+.case-header .toggle-icon {
+  color: var(--accent);
+  font-size: 20px;
+  transition: transform 0.3s;
+}
+.case-header.open .toggle-icon { transform: rotate(180deg); }
+
+.case-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s ease;
+  border-top: 1px solid transparent;
+}
+.case-body.open {
+  max-height: 2000px;
+  border-top-color: var(--border);
+}
+.case-inner { padding: 16px 20px 20px; }
+
+.case-inner .section-label {
+  font-weight: 700;
+  color: var(--primary-hover);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 14px;
+  margin-bottom: 4px;
+}
+.case-inner .section-label:first-child { margin-top: 0; }
+
+.tag {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  margin: 2px 4px 2px 0;
+}
+.steps-box {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 12px 16px;
+  margin: 8px 0;
+}
+.steps-box ol, .steps-box ul { padding-left: 20px; }
+.steps-box li { margin: 4px 0; }
+.rubric-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  font-size: 13px;
+}
+.rubric-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+}
+.rubric-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.rubric-table .check { color: #16a34a; font-weight: 700; }
+.rubric-table .cross { color: #dc2626; }
+
+.level-indicator {
+  display: flex;
+  gap: 4px;
+  margin: 8px 0;
+}
+.level-indicator .dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--border);
+}
+.level-indicator .dot.filled { background: var(--primary); }
+
+.interactive-btn {
+  display: inline-block;
+  padding: 8px 20px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 8px;
+}
+.interactive-btn:hover { background: var(--primary-hover); }
+.interactive-btn.small { padding: 5px 14px; font-size: 13px; }
+
+.case-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+  .container { padding: 12px; }
+  .header { padding: 20px 16px; }
+  .case-header { padding: 12px 14px; }
+  .case-inner { padding: 12px 14px; }
+  .case-header .case-title { font-size: 14px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🏗️ 建构性七阶适配案例</h1>
+  <div class="meta">M16 新知应用与创新中的真善美思维与反思 · 英语 · 必修1 · 7阶递进</div>
+  <p style="margin-top:12px;font-size:14px;opacity:0.9;">
+    运用建构性原理，亲自动手建构不同的友谊主题成果——从个人理解到社会创新，逐步升级
+  </p>
+  <div class="filter-bar">
+    <span style="font-size:13px;opacity:0.8;line-height:32px;">快速定位：</span>
+    <button class="filter-btn" onclick="scrollToCase(0)">1️⃣ 个人理解</button>
+    <button class="filter-btn" onclick="scrollToCase(1)">2️⃣ 生活应用</button>
+    <button class="filter-btn" onclick="scrollToCase(2)">3️⃣ 校园问题</button>
+    <button class="filter-btn" onclick="scrollToCase(3)">4️⃣ 学科表达</button>
+    <button class="filter-btn" onclick="scrollToCase(4)">5️⃣ 跨学科</button>
+    <button class="filter-btn" onclick="scrollToCase(5)">6️⃣ 社会/未来</button>
+    <button class="filter-btn" onclick="scrollToCase(6)">7️⃣ 综合创新</button>
+  </div>
+</div>
+
+<!-- 第一阶 -->
+<div class="case-card" id="case0">
+  <div class="case-header" onclick="toggleCase(this)">
+    <div class="left">
+      <span class="stage-badge">第一阶</span>
+      <span class="case-title">个人理解型——"我的友谊定义"</span>
+    </div>
+    <span class="toggle-icon">▾</span>
+  </div>
+  <div class="case-body">
+    <div class="case-inner">
+      <div class="section-label">📋 情境</div>
+      <p>你被邀请为学校英语广播站撰写一段关于 "What friendship means to me" 的短文。</p>
+      <div class="section-label">🎯 建构任务</div>
+      <p>写一篇 <strong>150词</strong> 的英文短稿，表达你对友谊的个人理解。</p>
+      <div class="section-label">🔧 调用原理</div>
+      <p><span class="tag">#情境卷入法</span><span class="tag">#句型锚定法</span></p>
+      <div class="section-label">📝 建构步骤</div>
+      <div class="steps-box">
+        <ol>
+          <li>用情境卷入法回想一个让你感受到友谊真谛的瞬间</li>
+          <li>用句型锚定法找到表达情感的句式（"Friendship means...", "For me, a true friend is..."）</li>
+          <li>写出核心句子作为段落主题句</li>
+          <li>围绕主题句展开，加入具体细节或小故事</li>
+          <li>调整语气，确保适合广播朗读——口语化、有节奏</li>
+        </ol>
+      </div>
+      <div class="section-label">📊 自评量规</div>
+      <table class="rubric-table">
+        <tr><th>标准</th><th>自评</th></tr>
+        <tr><td>内容表达了个人对友谊的真实理解</td><td class="check">✓ / ✗</td></tr>
+        <tr><td>使用了至少2个友谊相关句型</td><td class="check">✓ / ✗</td></tr>
+        <tr><td>结构清晰（开头—主体—结尾）</td><td class="check">✓ / ✗</td></tr>
+        <tr><td>语言适合广播朗读</td><td class="check">✓ / ✗</td></tr>
+        <tr><td>字数控制在140~160词</td><td class="check">✓ / ✗</td></tr>
+      </table>
+      <div class="section-label">🏆 成果形式</div>
+      <p>英文广播稿短稿（可录制成音频分享）</p>
+      <div class="level-indicator"><span class="dot filled"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+      <div class="case-footer">
+        <span>⭐ 难度：★☆☆☆☆</span>
+        <button class="interactive-btn small" onclick="event.stopPropagation();alert('建议用时：15~20分钟\n先用5分钟回想，再用10分钟写作，最后5分钟修改')">⏱ 建议用时</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 第二阶 -->
+<div class="case-card" id="case1">
+  <div class="case-header" onclick="toggleCase(this)">
+    <div class="left">
+      <span class="stage-badge">第二阶</span>
+      <span class="case-title">生活应用型——"朋友冲突解决指南"</span>
+    </div>
+    <span class="toggle-icon">▾</span>
+  </div>
+  <div class="case-body">
+    <div class="case-inner">
+      <div class="section-label">📋 情境</div>
+      <p>你发现好朋友最近和你疏远了，你想用英语写一封邮件主动沟通。</p>
+      <div class="section-label">🎯 建构任务</div>
+      <p>写一封英语邮件，真诚表达你的感受并邀请对方坦诚交流。</p>
+      <div class="section-label">🔧 调用原理</div>
+      <p><span class="tag">#读者意识法</span><span class="tag">#结构先行法</span></p>
+      <div class="section-label">📝 建构步骤</div>
+      <div class="steps-box">
+        <ol>
+          <li>用结构先行法确定邮件框架：寒暄 → 表达关心 → 陈述感受 → 邀请沟通</li>
+          <li>用读者意识法考虑收件人的感受——语气要温和，避免指责</li>
+          <li>写出初稿，注意使用"I feel..."而非"You always..."句式</li>
+          <li>从读者角度重读一遍，调整措辞</li>
+        </ol>
+      </div>
+      <div class="section-label">💡 脚手架提示</div>
+      <div class="steps-box">
+        <p>可用句式：</p>
+        <ul>
+          <li>"I\'ve noticed that we haven\'t been as close lately..."</li>
+          <li>"I really value our friendship, and I miss how things used to be."</li>
+          <li>"Would you be open to having a honest conversation?"</li>
+        </ul>
+      </div>
+      <div class="case-footer">
+        <span>⭐ 难度：★★☆☆☆</span>
+        <button class="interactive-btn small" onclick="event.stopPropagation();alert('建议用时：20~25分钟')">⏱ 建议用时</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 第三阶 -->
+<div class="case-card" id="case2">
+  <div class="case-header" onclick="toggleCase(this)">
+    <div class="left">
+      <span class="stage-badge">第三阶</span>
+      <span class="case-title">校园问题解决型——"友谊支持小组方案"</span>
+    </div>
+    <span class="toggle-icon">▾</span>
+  </div>
+  <div class="case-body">
+    <div class="case-inner">
+      <div class="section-label">📋 情境</div>
+      <p>学校里有同学因为社交困难感到孤独，你所在的英语社打算发起一个 Peer Friendship Support 项目。</p>
+      <div class="section-label">🎯 建构任务</div>
+      <p>设计一个英语宣传海报（含标题、标语、活动介绍）。</p>
+      <div class="section-label">🔧 调用原理</div>
+      <p><span class="tag">#读者意识法</span><span class="tag">#结构先行法</span></p>
+      <div class="section-label">📝 建构步骤</div>
+      <div class="steps-box">
+        <ol>
+          <li>确定海报的受众（感到孤独的同学）——用读者意识法思考他们需要什么</li>
+          <li>设计吸引眼球的标题（如 "You Are Not Alone — Join Peer Friendship Support"）</li>
+          <li>写出标语：一句温暖有力的话</li>
+          <li>列出活动内容（2~3项），语言简洁有感染力</li>
+        </ol>
+      </div>
+      <div class="section-label">🏆 成果形式</div>
+      <p>英语海报（可用 A4/A3 纸设计，或使用数字工具制作）</p>
+      <div class="case-footer">
+        <span>⭐ 难度：★★★☆☆</span>
+        <button class="interactive-btn small" onclick="event.stopPropagation();alert('建议用时：25~30分钟')">⏱ 建议用时</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 第四阶 -->
+<div class="case-card" id="case3">
+  <div class="case-header" onclick="toggleCase(this)">
+    <div class="left">
+      <span class="stage-badge">第四阶</span>
+      <span class="case-title">学科表达型——"人物故事写作"</span>
+    </div>
+    <span class="toggle-icon">▾</span>
+  </div>
+  <div class="case-body">
+    <div class="case-inner">
+      <div class="section-label">📋 情境</div>
+      <p>教材中提到了 Anne 和她的日记——关于在困境中的友谊。请你以 "I want to thank a friend" 为题写作。</p>
+      <div class="section-label">🎯 建构任务</div>
+      <p>写一篇 <strong>200词</strong> 左右的英语短文，讲述一个真实或虚构的友谊故事。</p>
+      <div class="section-label">🔧 调用原理</div>
+      <p><span class="tag">#情境卷入法</span><span class="tag">#反思迭代法</span></p>
+      <div class="section-label">📝 建构步骤</div>
+      <div class="steps-box">
+        <ol>
+          <li>选定一个让你感动的友谊瞬间（真实的或想象的）</li>
+          <li>用情境卷入法让自己进入故事氛围</li>
+          <li>按叙事结构写：背景 → 冲突 → 转折 → 感悟</li>
+          <li>初稿完成后用反思迭代法从"真善美"三角度修改</li>
+        </ol>
+      </div>
+      <div class="case-footer">
+        <span>⭐ 难度：★★★☆☆</span>
+        <button class="interactive-btn small" onclick="event.stopPropagation();alert('建议用时：30~35分钟')">⏱ 建议用时</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 第五阶 -->
+<div class="case-card" id="case4">
+  <div class="case-header" onclick="toggleCase(this)">
+    <div class="left">
+      <span class="stage-badge">第五阶</span>
+      <span class="case-title">跨学科整合型——"友谊心理学英文报告"</span>
+    </div>
+    <span class="toggle-icon">▾</span>
+  </div>
+  <div class="case-body">
+    <div class="case-inner">
+      <div class="section-label">📋 情境</div>
+      <p>结合心理学中关于"维持友谊的五个关键因素"的研究，做一份英语简报。</p>
+      <div class="section-label">🎯 建构任务</div>
+      <p>阅读一段简单的英语心理学材料，提取要点，写成一份 <strong>100词摘要 + 个人评论</strong>。</p>
+      <div class="section-label">🔧 调用原理</div>
+      <p><span class="tag">#结构先行法</span><span class="tag">#反思迭代法</span></p>
+      <div class="section-label">📝 建构步骤</div>
+      <div class="steps-box">
+        <ol>
+          <li>阅读材料，标记5个关键因素</li>
+          <li>用结构先行法组织摘要：总起句 → 5个因素 → 简要总结</li>
+          <li>写出个人评论：哪个因素最让你惊讶？为什么？</li>
+          <li>回看检查：摘要是否准确？评论是否有自己的思考？</li>
+        </ol>
+      </div>
+      <div class="section-label">💡 脚手架提示</div>
+      <div class="steps-box">
+        <p>关键因素举例：<strong>Positivity（积极互动）, Support（支持）, Openness（坦诚）, Shared Interests（共同兴趣）, Conflict Resolution（冲突解决）</strong></p>
+      </div>
+      <div class="case-footer">
+        <span>⭐ 难度：★★★★☆</span>
+        <button class="interactive-btn small" onclick="event.stopPropagation();alert('建议用时：30~40分钟')">⏱ 建议用时</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 第六阶 -->
+<div class="case-card" id="case5">
+  <div class="case-header" onclick="toggleCase(this)">
+    <div class="left">
+      <span class="stage-badge">第六阶</span>
+      <span class="case-title">社会/未来情境型——"跨文化友谊指南"</span>
+    </div>
+    <span class="toggle-icon">▾</span>
+  </div>
+  <div class="case-body">
+    <div class="case-inner">
+      <div class="section-label">📋 情境</div>
+      <p>你有一个来自英语国家的笔友，你们在交流中发现了文化差异对友谊的影响。</p>
+      <div class="section-label">🎯 建构任务</div>
+      <p>写一份 "A Guide to Cross-cultural Friendship" 英语指南（<strong>5条建议</strong>）。</p>
+      <div class="section-label">🔧 调用原理</div>
+      <p><span class="tag">#情境卷入法</span><span class="tag">#读者意识法</span><span class="tag">#反思迭代法</span></p>
+      <div class="section-label">📝 建构步骤</div>
+      <div class="steps-box">
+        <ol>
+          <li>回想你与笔友交流中遇到的文化差异</li>
+          <li>思考不同文化对友谊的理解有何不同（隐私观念、表达方式等）</li>
+          <li>用读者意识法：如果你的笔友读到这份指南，会觉得被理解吗？</li>
+          <li>写出5条建议，每一条从"问题→建议→例子"三部分构成</li>
+          <li>用反思迭代法从跨文化视角回看修改</li>
+        </ol>
+      </div>
+      <div class="case-footer">
+        <span>⭐ 难度：★★★★☆</span>
+        <button class="interactive-btn small" onclick="event.stopPropagation();alert('建议用时：35~45分钟')">⏱ 建议用时</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 第七阶 -->
+<div class="case-card" id="case6">
+  <div class="case-header" onclick="toggleCase(this)">
+    <div class="left">
+      <span class="stage-badge">第七阶</span>
+      <span class="case-title">综合创新型——"友谊主题创意作品"</span>
+    </div>
+    <span class="toggle-icon">▾</span>
+  </div>
+  <div class="case-body">
+    <div class="case-inner">
+      <div class="section-label">📋 情境</div>
+      <p>学校英语文化节征集友谊主题创意作品（诗歌、短剧、微电影剧本均可）。</p>
+      <div class="section-label">🎯 建构任务</div>
+      <p>自由选择一种体裁，创作一件完整的英语原创作品。</p>
+      <div class="section-label">🔧 调用原理</div>
+      <p><span class="tag">#全系列原理综合运用</span></p>
+      <div class="section-label">📝 建构步骤</div>
+      <div class="steps-box">
+        <ol>
+          <li><strong>选体裁：</strong>诗歌/短剧/微电影剧本——选你最擅长的</li>
+          <li><strong>定主题：</strong>围绕友谊的一个具体侧面（如宽恕、陪伴、成长）</li>
+          <li><strong>用情境卷入法：</strong>让自己进入创作情境，感受要表达的情感</li>
+          <li><strong>用结构先行法：</strong>搭建作品框架（诗歌：意象递进；短剧：起承转合）</li>
+          <li><strong>用句型锚定法：</strong>找到适合该体裁的英语表达方式</li>
+          <li><strong>用读者意识法：</strong>考虑评委和观众的感受</li>
+          <li><strong>反复迭代：</strong>用反思迭代法修改至少2轮</li>
+        </ol>
+      </div>
+      <div class="section-label">🏆 成果形式</div>
+      <p>完整的英语原创作品（可提交参评学校英语文化节）</p>
+      <div class="level-indicator"><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span></div>
+      <div class="case-footer">
+        <span>⭐ 难度：★★★★★</span>
+        <button class="interactive-btn small" onclick="event.stopPropagation();alert('建议用时：45~60分钟（可分多次完成）')">⏱ 建议用时</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center;padding:24px 0 8px;color:var(--text-secondary);font-size:13px;">
+  7阶递进 · 从个人理解到综合创新 · 运用建构性原理，产出真实成果
+</div>
+
+</div>
+<script>
+function toggleCase(header) {
+  header.classList.toggle('open');
+  var body = header.nextElementSibling;
+  if (body) body.classList.toggle('open');
+}
+
+function scrollToCase(index) {
+  var el = document.getElementById('case' + index);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Auto-expand
+    var header = el.querySelector('.case-header');
+    var body = el.querySelector('.case-body');
+    if (header && body && !body.classList.contains('open')) {
+      header.classList.add('open');
+      body.classList.add('open');
+    }
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VR 脚手架 — 友谊情境体验</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 3px solid var(--accent);
+}
+h2 {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin: 20px 0 10px;
+  padding-left: 10px;
+  border-left: 3px solid var(--accent);
+}
+h3 {
+  font-size: calc(var(--font-body) + 1px);
+  font-weight: 600;
+  color: var(--primary);
+  margin: 14px 0 6px;
+}
+p { margin: 6px 0; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 16px 20px;
+  margin: 12px 0;
+  border: 1px solid var(--border);
+}
+.task-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 16px 20px;
+  margin: 10px 0;
+  border-left: 4px solid var(--accent);
+  transition: transform 0.2s;
+}
+.task-card:hover { transform: translateY(-2px); }
+.task-icon {
+  font-size: 28px;
+  margin-bottom: 6px;
+}
+.scene-box {
+  background: linear-gradient(135deg, #f5f5f5, #ebebeb);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  text-align: center;
+  margin: 12px 0;
+  border: 1px dashed var(--border);
+}
+.scene-box .emoji-big { font-size: 48px; }
+.option-btn {
+  display: inline-block;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 18px;
+  margin: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+.option-btn:hover {
+  border-color: var(--accent);
+  background: var(--bg);
+  transform: scale(1.02);
+}
+.option-btn.selected {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+.feedback-box {
+  background: #fafafa;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+  min-height: 40px;
+  border: 1px solid var(--border);
+}
+.record-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  font-size: 14px;
+}
+.record-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 8px 12px;
+  text-align: left;
+}
+.record-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.record-table tr:hover td { background: var(--bg); }
+.resource-tag {
+  display: inline-block;
+  background: var(--bg);
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  margin: 3px;
+  font-size: 13px;
+}
+.resource-tag strong { color: var(--primary); }
+.interactive-box {
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  margin: 16px 0;
+  text-align: center;
+}
+.interactive-box button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 24px;
+  border-radius: 4px;
+  font-size: var(--font-body);
+  cursor: pointer;
+  transition: background 0.2s;
+  margin: 4px;
+}
+.interactive-box button:hover { background: var(--primary-hover); }
+#feedback-text {
+  margin-top: 10px;
+  padding: 10px;
+  min-height: 36px;
+  transition: opacity 0.3s;
+}
+@media (max-width: 600px) {
+  .container { padding: 16px 12px; }
+  .record-table { font-size: 12px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🥽 VR 脚手架：进入友谊情境</h1>
+<p>体验不同的社交场景，观察人们如何建立友谊，在虚拟互动中练习英语表达。</p>
+
+<h2>一、🌍 场景设定</h2>
+<div class="scene-box">
+  <div class="emoji-big">🏫</div>
+  <p style="font-weight:600; font-size:18px;">国际学校活动日</p>
+  <p>地点：国际学校食堂 · 教室 · 运动场<br>
+  角色：来自不同国家的学生（美国、日本、法国、巴西、中国）<br>
+  时间：新学期第一周的午餐时间</p>
+</div>
+
+<h2>二、🔍 观察任务</h2>
+<div class="task-card">
+  <div class="task-icon">👀</div>
+  <h3>观察重点</h3>
+  <p>注意不同文化背景的学生如何开启对话、如何建立联系。在下方记录至少 <strong>3 种</strong>"开启友谊"的方式。</p>
+  <table class="record-table">
+    <thead><tr><th>#</th><th>观察到的行为</th><th>文化背景</th><th>你的思考</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>微笑并直接打招呼："Hi, I'm Tom! What's your name?"</td><td>美国</td><td>直接、开放的风格</td></tr>
+      <tr><td>2</td><td>先观察，然后借问路/借东西开启对话</td><td>日本</td><td>更间接的方式</td></tr>
+      <tr><td>3</td><td>分享食物："Want to try my snack?"</td><td>巴西</td><td>通过"分享"建立联系</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>三、🕹️ 操作任务：选择你的对话策略</h2>
+<div class="task-card">
+  <div class="task-icon">💬</div>
+  <h3>你看到了一个独自吃饭的新同学，你会怎么开启对话？</h3>
+  <p style="color:var(--text-secondary); font-size:13px;">选择一种策略，看看对方的可能反应：</p>
+  <div>
+    <span class="option-btn" onclick="chooseOption(this, 'strategy1')">"Hi, mind if I sit here?"</span>
+    <span class="option-btn" onclick="chooseOption(this, 'strategy2')">"Is this seat taken?"</span>
+    <span class="option-btn" onclick="chooseOption(this, 'strategy3')">"Hey, I like your backpack!"</span>
+    <span class="option-btn" onclick="chooseOption(this, 'strategy4')">(沉默) 先坐旁边，等一下再开口</span>
+  </div>
+  <div id="feedback-box-1" class="feedback-box">💡 点击一种策略，查看反馈</div>
+</div>
+
+<div class="task-card">
+  <div class="task-icon">🗣️</div>
+  <h3>当对方回应后，下一步你怎么说？</h3>
+  <p style="color:var(--text-secondary); font-size:13px;">选择后续对话策略：</p>
+  <div>
+    <span class="option-btn" onclick="chooseOption2(this, 'follow1')">"What class do you have next?"</span>
+    <span class="option-btn" onclick="chooseOption2(this, 'follow2')">"Do you like sports?"</span>
+    <span class="option-btn" onclick="chooseOption2(this, 'follow3')">"Where are you from?"</span>
+    <span class="option-btn" onclick="chooseOption2(this, 'follow4')">沉默微笑，等对方先开口</span>
+  </div>
+  <div id="feedback-box-2" class="feedback-box">💡 选择后续策略，了解不同效果</div>
+</div>
+
+<h2>四、📝 记录任务</h2>
+<div class="task-card">
+  <div class="task-icon">📋</div>
+  <h3>"社交互动观察记录表"</h3>
+  <table class="record-table">
+    <thead><tr><th>文化背景</th><th>开启友谊的典型方式</th><th>对你的启示</th></tr></thead>
+    <tbody>
+      <tr><td>🇺🇸 美国</td><td>直接问候、分享兴趣</td><td>自信主动可以快速破冰</td></tr>
+      <tr><td>🇯🇵 日本</td><td>先观察、间接接近</td><td>尊重对方的社交边界</td></tr>
+      <tr><td>🇫🇷 法国</td><td>通过共同话题（音乐、食物）深入</td><td>共同兴趣是最好的桥梁</td></tr>
+      <tr><td>🇧🇷 巴西</td><td>热情分享食物和笑容</td><td>肢体语言和表情传递友善</td></tr>
+      <tr><td style="background:#fafafa;">🇨🇳 你</td><td style="background:#fafafa;">_____________</td><td style="background:#fafafa;">_____________</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>五、🎮 VR 资源推荐</h2>
+<div class="card">
+  <p><strong>推荐 VR 平台：</strong></p>
+  <div>
+    <span class="resource-tag"><strong>Google Expeditions</strong> — 跨文化交际场景</span>
+    <span class="resource-tag"><strong>ClassVR</strong> — 社交情境模拟</span>
+    <span class="resource-tag"><strong>VR Chat（教育版）</strong> — 多人社交互动</span>
+  </div>
+</div>
+
+<h2>六、🔄 替代方案（无 VR 设备时）</h2>
+<div class="card">
+  <p>没有 VR 设备？完全不影响！试试以下替代方式：</p>
+  <ul style="margin:8px 0 0 20px;">
+    <li><strong>📺 3D 模拟视频：</strong>YouTube 搜索 "cross-cultural friendship scenarios"</li>
+    <li><strong>🎭 角色扮演：</strong>和同学面对面演练不同开场方式，互相给反馈</li>
+    <li><strong>💻 互动情景模拟：</strong>通过在线工具（如 Kahoot! 情境问答）完成类似任务</li>
+    <li><strong>📖 案例阅读：</strong>阅读教材中关于不同文化背景下的友谊建立案例</li>
+  </ul>
+</div>
+
+<!-- 交互汇总 -->
+<div class="interactive-box">
+  <p style="font-weight:600; margin-bottom:8px;">🔁 重置所有选择，重新体验不同策略</p>
+  <button onclick="resetAll()">🔄 重新开始</button>
+  <p id="reset-hint" style="color:var(--text-secondary); font-size:13px; margin-top:8px;">尝试不同的对话策略组合，观察社交互动中的文化差异</p>
+</div>
+
+</div>
+
+<script>
+const feedbackMap = {
+  strategy1: '✅ 对方抬眼微笑说："Sure! Thanks." 直接开放的问候最容易被接受——这是英语文化中最常见的社交开场。',
+  strategy2: '✅ 对方点头："Yeah, go ahead." 这是一个安全的中性开场，不会给对方压力。适合在不确定对方是否愿意聊天时使用。',
+  strategy3: '🌟 对方笑了："Oh thanks! I got it from a small shop." 赞美对方会迅速拉近距离！人类对"被欣赏"天然有好感。',
+  strategy4: '🤔 对方继续吃饭，没有主动开口。——在某些文化中，沉默等待可能被理解为"不想被打扰"。不妨尝试一个简单的问候。'
+};
+const feedbackMap2 = {
+  follow1: '👍 对方回答并反问："I have History. You?" —— 关于"下一步"的轻松话题，很自然地延续对话。',
+  follow2: '⭐ 对方眼睛一亮："Yes! I play basketball." —— 找到共同兴趣！友谊常常从这里萌芽。',
+  follow3: '👌 对方回答并反问："I\'m from Japan. Have you been there?" —— 文化背景是个好话题，可以聊很久。',
+  follow4: '🤔 你们之间陷入沉默，气氛有点尴尬。—— 主动提问远比等待更有效。大胆开口吧！'
+};
+function chooseOption(el, id) {
+  document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('feedback-box-1').innerHTML = feedbackMap[id] || '💡 试试其他策略';
+}
+function chooseOption2(el, id) {
+  document.querySelectorAll('.task-card:nth-child(2) .option-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('feedback-box-2').innerHTML = feedbackMap2[id] || '💡 试试其他后续策略';
+}
+function resetAll() {
+  document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('feedback-box-1').innerHTML = '💡 点击一种策略，查看反馈';
+  document.getElementById('feedback-box-2').innerHTML = '💡 选择后续策略，了解不同效果';
+  document.getElementById('reset-hint').textContent = '✅ 已重置！尝试全新的策略组合吧。';
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>研学社区 — 友谊主题</title>
+<style>
+:root {
+  --primary: #434343;
+  --primary-hover: #595959;
+  --accent: #8c8c8c;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  padding: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+
+.header {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 24px 32px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--primary);
+}
+
+.header h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+
+.header p {
+  color: var(--text-secondary);
+}
+
+.section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px 28px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+
+.section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bg);
+}
+
+.level-tab {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 3px;
+  padding: 2px 12px;
+  font-size: 0.82em;
+  margin-bottom: 10px;
+}
+
+.case-card {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.case-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.case-card h3 {
+  font-size: calc(var(--font-body) + 2px);
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+
+.case-card .label {
+  color: var(--text-secondary);
+  font-size: 0.88em;
+  margin: 5px 0;
+}
+
+.case-card .label strong {
+  color: var(--text);
+}
+
+.decision-path {
+  background: #fefefe;
+  border-radius: 4px;
+  padding: 10px 14px;
+  margin: 8px 0;
+  border-left: 3px solid var(--accent);
+  font-size: 0.9em;
+}
+
+.path-option {
+  display: inline-block;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 10px;
+  margin: 2px 4px;
+  font-size: 0.88em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.path-option:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.insight {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: var(--card-bg);
+  border-radius: 4px;
+  font-size: 0.9em;
+  border: 1px dashed var(--accent);
+  color: var(--text);
+}
+
+.expand-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 14px;
+  font-size: 0.85em;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background 0.2s;
+  font-family: var(--font-family);
+}
+
+.expand-btn:hover {
+  background: var(--primary-hover);
+}
+
+.expand-area {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.45s ease, padding 0.3s ease, margin 0.3s ease;
+}
+
+.expand-area.open {
+  max-height: 400px;
+}
+
+.outcome-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 12px 14px;
+  margin: 8px 0;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.outcome-card:hover {
+  box-shadow: var(--shadow);
+  transform: translateX(4px);
+}
+
+.outcome-card .outcome-label {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.outcome-card .outcome-desc {
+  font-size: 0.9em;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.outcome-result {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+  font-size: 0.88em;
+  color: var(--text);
+  padding-left: 10px;
+  border-left: 2px solid var(--accent);
+  margin-top: 0;
+}
+
+.outcome-result.show {
+  max-height: 100px;
+  margin-top: 6px;
+  padding: 6px 10px;
+  background: var(--bg);
+  border-radius: 3px;
+}
+
+@media (max-width: 640px) {
+  .container { padding: 12px 16px; }
+  .header { padding: 16px 18px; }
+  .section { padding: 14px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🔍 研学社区</h1>
+  <p>通过分析真实世界"问题→决策→结果"案例，建立友谊主题与现实生活的连接</p>
+</div>
+
+<div class="section">
+  <h2>🌱 基础：生活类案例</h2>
+
+  <div class="case-card">
+    <div class="level-tab" style="background:var(--accent);">🌟 基础</div>
+    <h3>案例：小明和小华的小组合作冲突</h3>
+
+    <div class="label"><strong>背景：</strong>两人在准备英语展示时，一人想做PPT，另一人想写剧本</div>
+    <div class="label"><strong>核心问题：</strong>合作中意见不合，如何达成共识？</div>
+
+    <div class="decision-path">
+      <strong>决策路径：</strong><br>
+      <span class="path-option">方案A：轮流决定</span>
+      <span class="path-option">方案B：每人负责一部分 ✓</span>
+      <span class="path-option">方案C：请教老师</span>
+    </div>
+
+    <div class="label"><strong>结果：</strong>选择方案B，每人做自己擅长的事，展示效果很好</div>
+
+    <div class="insight">
+      <strong>💡 可迁移启示：</strong>友谊≠完全一致，而是尊重差异、合理分工
+    </div>
+
+    <button class="expand-btn" onclick="toggleExpand(this)">🏋️ 如果你是决策者</button>
+    <div class="expand-area">
+      <div class="insight" style="margin-top:8px;">
+        <strong>任务：</strong>如果你是小明，你会怎么做来避免冲突升级？<br>
+        提示：可以先倾听对方的理由，再提出折中方案
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>📖 进阶：历史/文化类案例</h2>
+
+  <div class="case-card">
+    <div class="level-tab" style="background:var(--primary-hover);">🔥 进阶</div>
+    <h3>案例：海伦·凯勒和安妮·莎莉文的师生友谊</h3>
+
+    <div class="label"><strong>背景：</strong>海伦·凯勒是聋盲人，安妮是她的家庭教师</div>
+    <div class="label"><strong>核心问题：</strong>一个无法沟通的人，如何建立深厚的情感连接？</div>
+
+    <div class="decision-path">
+      <strong>决策路径：</strong><br>
+      安妮用触觉字母教海伦拼写 → 海伦突破"水"的概念 → 建立信任 → 形成终身友谊
+    </div>
+
+    <div class="label"><strong>结果：</strong>海伦成为作家和社会活动家</div>
+
+    <div class="insight">
+      <strong>💡 可迁移启示：</strong>真正的友谊建立在相互理解和信任上——即使没有语言也能连接
+    </div>
+
+    <button class="expand-btn" onclick="toggleExpand(this)">🏋️ 如果你是决策者</button>
+    <div class="expand-area">
+      <div class="insight" style="margin-top:8px;">
+        <strong>任务：</strong>如果你是安妮·莎莉文，在海伦不理解"水"这个词时，你会怎么做？<br>
+        提示：想想还有哪些感官途径可以建立理解
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>🧩 挑战：复杂系统类案例</h2>
+
+  <div class="case-card">
+    <div class="level-tab" style="background:#262626;">🚀 挑战</div>
+    <h3>案例：一个班级的友谊网络分析</h3>
+
+    <div class="label"><strong>背景：</strong>一个40人班级中，有些学生被孤立，有些是社交中心</div>
+    <div class="label"><strong>核心问题：</strong>如何改善班级整体的友谊氛围？</div>
+
+    <div class="decision-path">
+      <strong>决策路径：</strong><br>
+      绘制社交关系图 → 找到孤立学生 → 设计结对活动 → 评估效果
+    </div>
+
+    <div class="label"><strong>结果：</strong>经过3个月的结对计划，班级社交网络更加均衡</div>
+
+    <div class="insight">
+      <strong>💡 可迁移启示：</strong>友谊不仅是个人的事，更是一个系统问题——关注被忽视的人
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>🎭 多结局模拟</h2>
+  <p style="color:var(--text-secondary);margin-bottom:12px;">情境：你无意中听到好朋友在背后说你坏话——你会怎么做？</p>
+
+  <div class="outcome-card" onclick="toggleResult(this)">
+    <div class="outcome-label">结局A：直接当面质问</div>
+    <div class="outcome-desc">点击查看后果分析 →</div>
+    <div class="outcome-result">后果：关系可能破裂。虽然表达了自己的情绪，但没有给对方解释的机会。<br>⭐ 评价：直接但风险高</div>
+  </div>
+
+  <div class="outcome-card" onclick="toggleResult(this)">
+    <div class="outcome-label">结局B：冷静后写信表达感受</div>
+    <div class="outcome-desc">点击查看后果分析 →</div>
+    <div class="outcome-result">后果：给对方时间和空间理解你的感受，关系可能修复甚至更牢固。<br>⭐ 评价：成熟且有效（推荐）</div>
+  </div>
+
+  <div class="outcome-card" onclick="toggleResult(this)">
+    <div class="outcome-label">结局C：装作不知道</div>
+    <div class="outcome-desc">点击查看后果分析 →</div>
+    <div class="outcome-result">后果：心里一直不舒服，积压的情绪可能在其他时候爆发。<br>⭐ 评价：短期避免冲突但长期不利</div>
+  </div>
+
+  <div class="insight" style="margin-top:14px;">
+    <strong>📝 任务：</strong>用英文评价每个结局可能的后果，选出你认为最好的处理方式
+  </div>
+</div>
+
+</div>
+
+<script>
+function toggleExpand(btn) {
+  var area = btn.nextElementSibling;
+  if (area.classList.contains('open')) {
+    area.classList.remove('open');
+  } else {
+    area.classList.add('open');
+  }
+}
+
+function toggleResult(el) {
+  var result = el.querySelector('.outcome-result');
+  if (result.classList.contains('show')) {
+    result.classList.remove('show');
+  } else {
+    result.classList.add('show');
+  }
+}
+</script>
+</body>
+</html>
