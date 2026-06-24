@@ -12,7 +12,6 @@ from agent_eval.evaluation.evaluators.commonsense_evaluators import (  # noqa: F
 from agent_eval.evaluation.evaluators.format_evaluators import (  # noqa: F401
     HtmlValidityEvaluator,
     ResponseFormatEvaluator,
-    StructureComplianceEvaluator,
 )
 
 # 自动发现插件评估器（plugins/ 目录下的 .py 文件）
@@ -38,7 +37,6 @@ discover_plugins()
 __all__ = [
     # 格式评估器
     "ResponseFormatEvaluator",
-    "StructureComplianceEvaluator",
     "HtmlValidityEvaluator",
     # 常识评估器
     "InfoAccuracyEvaluator",

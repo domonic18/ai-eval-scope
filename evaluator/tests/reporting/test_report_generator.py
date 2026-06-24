@@ -199,8 +199,8 @@ class TestConstraintToRuleResult:
         """module_results 字段保留。"""
         gen = ReportGenerator()
         cr = ConstraintResult(
-            constraint_id="format.structure_compliance",
-            name="结构规范性检查",
+            constraint_id="format.html_validity",
+            name="HTML 有效性检查",
             tier=ConstraintTier.HARD_GATE,
             status=EvalStatus.PASS,
             score=1.0,

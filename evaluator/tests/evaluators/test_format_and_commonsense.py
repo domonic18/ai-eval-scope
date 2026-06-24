@@ -75,40 +75,6 @@ class TestResponseFormatEvaluator:
         assert result.status == EvalStatus.FAIL
 
 
-class TestStructureComplianceEvaluator:
-    def test_valid_md_structure(self, tmp_path: Path) -> None:
-        out = _prepare_output(tmp_path)
-        (out / "index.md").write_text("# Title\n\n## Section 1\n\n### Subsection\n\n## Section 2\n")
-
-        ev = registry.create("format.structure_compliance", {"max_heading_depth": 4})
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.PASS
-
-    def test_heading_too_deep(self, tmp_path: Path) -> None:
-        out = _prepare_output(tmp_path)
-        (out / "deep.md").write_text("# H1\n## H2\n### H3\n#### H4\n##### H5\n###### H6\n")
-
-        ev = registry.create("format.structure_compliance", {"max_heading_depth": 4})
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.FAIL
-
-    def test_no_headings(self, tmp_path: Path) -> None:
-        out = _prepare_output(tmp_path)
-        (out / "flat.md").write_text("Just some text without any headings.")
-
-        ev = registry.create("format.structure_compliance")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.FAIL
-
-    def test_valid_html_structure(self, tmp_path: Path) -> None:
-        out = _prepare_output(tmp_path)
-        (out / "index.html").write_text("<html><body><h1>Title</h1><h2>Section</h2></body></html>")
-
-        ev = registry.create("format.structure_compliance", {"max_heading_depth": 4})
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.PASS
-
-
 class TestHtmlValidityEvaluator:
     def test_valid_html(self, tmp_path: Path) -> None:
         out = _prepare_output(tmp_path)

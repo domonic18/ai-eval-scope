@@ -296,7 +296,6 @@ class TestPipelineEngine:
                     evaluators=[
                         EvaluatorConfig("format.response_format", {"allowed_formats": ["md"]}),
                         EvaluatorConfig("format.html_validity"),
-                        EvaluatorConfig("format.structure_compliance"),
                     ],
                 ),
             ]
@@ -353,7 +352,6 @@ class TestPipelineEngine:
                     evaluators=[
                         EvaluatorConfig("format.response_format", {"allowed_formats": ["md"]}),
                         EvaluatorConfig("format.html_validity"),
-                        EvaluatorConfig("format.structure_compliance"),
                     ],
                 ),
             ]
@@ -363,28 +361,6 @@ class TestPipelineEngine:
 
         assert result.stage_results["format"].gate_passed is True
         assert result.s_format == 1.0
-
-    def test_golden_format_invalid(self) -> None:
-        """黄金样本：格式异常文档集被门控拦截。"""
-        pkg_dir = GOLDEN / "format_invalid"
-        if not pkg_dir.exists():
-            pytest.skip("黄金样本不存在")
-
-        config = PipelineConfig(
-            stages=[
-                StageConfig(
-                    id="format",
-                    short_circuit_policy="fail_fast",
-                    evaluators=[
-                        EvaluatorConfig("format.structure_compliance"),
-                    ],
-                ),
-            ]
-        )
-        engine = PipelineEngine(config, registry)
-        result = engine.evaluate_sample(pkg_dir, {"sample_id": "golden_fmt_invalid"})
-
-        assert result.stage_results["format"].gate_passed is False
 
     def test_cache_hit(self, tmp_path: Path) -> None:
         """相同输入重复评估命中缓存。"""

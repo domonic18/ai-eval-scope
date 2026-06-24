@@ -211,8 +211,8 @@ class TestConstraintResult:
 
     def test_with_module_results(self) -> None:
         cr = ConstraintResult(
-            constraint_id="format.structure_compliance",
-            name="结构规范性",
+            constraint_id="format.html_validity",
+            name="HTML 有效性",
             tier=ConstraintTier.HARD_GATE,
             status=EvalStatus.PASS,
             score=1.0,
