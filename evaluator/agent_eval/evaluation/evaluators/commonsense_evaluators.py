@@ -395,10 +395,11 @@ class InfoAccuracyEvaluator(BaseEvaluator):
     def _check_misconceptions(
         self, file_texts: dict[str, str], fact_db: dict
     ) -> tuple[list[dict[str, Any]], int]:
-        """检测文档中的常见事实错误模式。
+        """检测文档中的常见事实错误模式（疑似线索，不参与 pass/fail 判定）。
 
-        误解检测不计入 checks 计数——仅当模式匹配时产出 findings。
-        这避免了大量无匹配的误解模式稀释 raw_score。
+        misconception pattern 多来自评测题错误选项标记，匹配正常教学文本易误报，
+        故统一降为 warning 级：仍记录在 findings 供报告/LLM 参考，但不进入
+        rule_errors 一票否决 pass/fail。
 
         Returns:
             (findings, checks_count) — checks_count 始终为 0。
@@ -417,7 +418,7 @@ class InfoAccuracyEvaluator(BaseEvaluator):
 
             correct = entry.get("correct", "")
             description = entry.get("description", "疑似常识错误")
-            severity = entry.get("severity", "warning")
+            original_severity = entry.get("severity", "warning")
 
             for filename, text in file_texts.items():
                 if pattern.search(text):
@@ -425,7 +426,8 @@ class InfoAccuracyEvaluator(BaseEvaluator):
                         {
                             "file": filename,
                             "check_type": "misconception",
-                            "severity": severity,
+                            "severity": "warning",  # effective: 不参与 pass/fail
+                            "rule_severity": original_severity,  # 原始 severity，报告/审计用
                             "message": f"{description}（正确: {correct}）",
                         }
                     )
