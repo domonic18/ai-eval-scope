@@ -317,7 +317,6 @@ def build_default_pipeline(
                 short_circuit_policy="fail_fast",
                 evaluators=[
                     EvaluatorConfig("format.response_format", {"allowed_formats": ["md", "html"]}),
-                    EvaluatorConfig("format.document_count", {}),
                     EvaluatorConfig("format.structure_compliance", {}),
                     EvaluatorConfig("format.html_validity", {"check_html_only": True}),
                 ],

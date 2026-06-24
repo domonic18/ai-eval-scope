@@ -54,7 +54,7 @@ class TestPipelineStage:
         (output / "bad.txt").write_text("bad")
 
         ev1 = registry.create("format.response_format", {"allowed_formats": ["md"]})
-        ev2 = registry.create("format.document_count", {"min": 5, "max": 10})
+        ev2 = registry.create("format.html_validity", {})
 
         stage = PipelineStage("format", [ev1, ev2], "continue_all")
         result = stage.execute(tmp_path, {})
@@ -295,7 +295,7 @@ class TestPipelineEngine:
                     short_circuit_policy="fail_fast",
                     evaluators=[
                         EvaluatorConfig("format.response_format", {"allowed_formats": ["md"]}),
-                        EvaluatorConfig("format.document_count", {"min": 1, "max": 10}),
+                        EvaluatorConfig("format.html_validity"),
                         EvaluatorConfig("format.structure_compliance"),
                     ],
                 ),
@@ -352,7 +352,7 @@ class TestPipelineEngine:
                     short_circuit_policy="fail_fast",
                     evaluators=[
                         EvaluatorConfig("format.response_format", {"allowed_formats": ["md"]}),
-                        EvaluatorConfig("format.document_count", {"min": 1, "max": 10}),
+                        EvaluatorConfig("format.html_validity"),
                         EvaluatorConfig("format.structure_compliance"),
                     ],
                 ),
@@ -427,7 +427,7 @@ class TestPipelineEngine:
                     short_circuit_policy="fail_fast",
                     evaluators=[
                         EvaluatorConfig("format.response_format", {"allowed_formats": ["md"]}),
-                        EvaluatorConfig("format.document_count", {"min": 1, "max": 10}),
+                        EvaluatorConfig("format.html_validity"),
                     ],
                 ),
             ]

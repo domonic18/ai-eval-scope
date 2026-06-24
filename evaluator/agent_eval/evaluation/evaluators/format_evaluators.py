@@ -1,7 +1,6 @@
-"""格式约束评估器（4 项）— HARD_GATE。
+"""格式约束评估器（3 项）— HARD_GATE。
 
 - format.response_format: 文件格式检查（MD/HTML）
-- format.document_count: 文档数量检查
 - format.structure_compliance: 结构规范性（标题层级）
 - format.html_validity: HTML 标签有效性
 """
@@ -143,69 +142,6 @@ class ResponseFormatEvaluator(BaseEvaluator):
         import time
 
         return (time.monotonic() - start) * 1000
-
-
-@registry.register("format.document_count")
-class DocumentCountEvaluator(BaseEvaluator):
-    """文档数量检查 — 验证输出文档数量在约束范围内。"""
-
-    evaluator_id = "format.document_count"
-    name = "文档数量检查"
-    tier = ConstraintTier.HARD_GATE
-    method = EvalMethod.RULE
-
-    def evaluate(self, sample: Any, context: dict[str, Any]) -> Any:
-        import time
-
-        start = time.monotonic()
-
-        constraints = context.get("constraints", {})
-        min_docs = self.params.get("min_documents", constraints.get("min_documents", 1))
-        max_docs = self.params.get("max_documents", constraints.get("max_documents", 20))
-        # 也支持 min/max 简写
-        min_docs = self.params.get("min", min_docs)
-        max_docs = self.params.get("max", max_docs)
-
-        output_dir = self._get_output_dir(sample)
-        if output_dir is None or not output_dir.exists():
-            elapsed = (time.monotonic() - start) * 1000
-            return self._make_result(
-                status=EvalStatus.FAIL,
-                score=0.0,
-                reason="输出目录不存在",
-                duration_ms=elapsed,
-            )
-
-        # 统计文件数（排除 _manifest.json）
-        files = [f for f in output_dir.rglob("*") if f.is_file() and f.name != "_manifest.json"]
-        actual = len(files)
-        elapsed = (time.monotonic() - start) * 1000
-
-        passed = min_docs <= actual <= max_docs
-        return self._make_result(
-            status=EvalStatus.PASS if passed else EvalStatus.FAIL,
-            score=1.0 if passed else 0.0,
-            reason=f"实际 {actual} 个文档，要求 [{min_docs}, {max_docs}]",
-            details={
-                "actual": actual,
-                "min": min_docs,
-                "max": max_docs,
-                "checked_files": [f.name for f in files],
-            },
-            duration_ms=elapsed,
-        )
-
-    def _get_output_dir(self, sample: Any) -> Path | None:
-        if isinstance(sample, Path):
-            return sample / "output" if sample.is_dir() else sample.parent / "output"
-        if hasattr(sample, "output_dir") and sample.output_dir is not None:
-            return Path(sample.output_dir)
-        if isinstance(sample, dict):
-            p = sample.get("package_dir") or sample.get("output_dir")
-            if p:
-                p = Path(p)
-                return p / "output" if p.is_dir() and (p / "output").exists() else p
-        return None
 
 
 @registry.register("format.structure_compliance")

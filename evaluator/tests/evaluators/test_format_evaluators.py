@@ -88,7 +88,6 @@ class TestGlobalRegistry:
     def test_format_evaluators_registered(self) -> None:
         for eid in [
             "format.response_format",
-            "format.document_count",
             "format.structure_compliance",
             "format.html_validity",
         ]:

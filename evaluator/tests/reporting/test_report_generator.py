@@ -183,8 +183,8 @@ class TestConstraintToRuleResult:
         """无 LLM 字段时不包含。"""
         gen = ReportGenerator()
         cr = ConstraintResult(
-            constraint_id="format.document_count",
-            name="文档数量检查",
+            constraint_id="format.response_format",
+            name="文件格式检查",
             tier=ConstraintTier.HARD_GATE,
             status=EvalStatus.FAIL,
             score=0.0,

@@ -182,8 +182,8 @@ class TestAgentConfig:
 class TestConstraintResult:
     def test_basic(self) -> None:
         cr = ConstraintResult(
-            constraint_id="format.document_count",
-            name="文档数量",
+            constraint_id="format.response_format",
+            name="文件格式",
             tier=ConstraintTier.HARD_GATE,
             status=EvalStatus.PASS,
             score=1.0,

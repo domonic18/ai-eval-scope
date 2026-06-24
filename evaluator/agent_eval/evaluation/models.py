@@ -16,7 +16,7 @@ from agent_eval.core.types import ConstraintTier, EvalStatus
 class ConstraintResult:
     """单项约束检查结果。"""
 
-    constraint_id: str  # 如 "format.document_count"
+    constraint_id: str  # 如 "format.response_format"
     name: str
     tier: ConstraintTier
     status: EvalStatus

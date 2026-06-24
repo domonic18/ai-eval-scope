@@ -470,7 +470,7 @@ constraint_results
   id*              uuid
   sample_id        uuid FK samples
   project_id       uuid FK projects
-  constraint_id    text             -- "format.document_count"
+  constraint_id    text             -- "format.response_format"
   rule_id          text
   name             text
   tier             text             -- hard_gate | hard_score | soft | preference（评估器 ConstraintTier 四档）
@@ -610,9 +610,9 @@ X-Eval-Client: agent-eval/0.x
 - **constraint**：对齐 `rule_results.json` 元素（ConstraintResult）
   ```jsonc
   { "external_sample_id": "大单元学习总导",
-    "constraint_id": "format.document_count", "rule_id": "format.document_count",
-    "name": "文档数量检查", "tier": "hard_gate", "status": "pass", "passed": true,
-    "score": 1.0, "reason": "实际 24 个文档，要求 [1, 30]",
+    "constraint_id": "format.response_format", "rule_id": "format.response_format",
+    "name": "文件格式检查", "tier": "hard_gate", "status": "pass", "passed": true,
+    "score": 1.0, "reason": "输出为有效的 Markdown/HTML",
     "details": { "actual": 24, "min": 1, "max": 30 },
     "duration_ms": 1.1, "judge_provider": null, "judge_model": null,
     "judge_record_object_key": null, "module_results": null }

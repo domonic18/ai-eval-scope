@@ -75,35 +75,6 @@ class TestResponseFormatEvaluator:
         assert result.status == EvalStatus.FAIL
 
 
-class TestDocumentCountEvaluator:
-    def test_count_within_range(self, tmp_path: Path) -> None:
-        out = _prepare_output(tmp_path)
-        for i in range(5):
-            (out / f"doc_{i}.md").write_text(f"# Doc {i}")
-
-        ev = registry.create("format.document_count", {"min": 1, "max": 10})
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.PASS
-
-    def test_count_too_few(self, tmp_path: Path) -> None:
-        out = _prepare_output(tmp_path)
-        (out / "only.md").write_text("# Only")
-
-        ev = registry.create("format.document_count", {"min": 3, "max": 10})
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.FAIL
-        assert result.score == 0.0
-
-    def test_count_too_many(self, tmp_path: Path) -> None:
-        out = _prepare_output(tmp_path)
-        for i in range(25):
-            (out / f"doc_{i}.md").write_text(f"# Doc {i}")
-
-        ev = registry.create("format.document_count", {"min": 1, "max": 20})
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.FAIL
-
-
 class TestStructureComplianceEvaluator:
     def test_valid_md_structure(self, tmp_path: Path) -> None:
         out = _prepare_output(tmp_path)

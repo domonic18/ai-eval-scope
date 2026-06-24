@@ -28,15 +28,3 @@ rules:
       allowed_formats: ["md", "html"]
     weight: 1.0
     penalty_on_fail: -3
-
-  - id: FMT_002
-    name: "文档数量合规"
-    dimension: functional
-    stage: format_gate
-    description: "输出文档数量应在任务要求的范围内"
-    evaluator: format.document_count
-    params:
-      min: 1
-      max: 30
-    weight: 1.0
-    penalty_on_fail: -3

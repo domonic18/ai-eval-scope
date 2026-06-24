@@ -10,7 +10,6 @@ from agent_eval.evaluation.evaluators.commonsense_evaluators import (  # noqa: F
     UnitConsistencyEvaluator,
 )
 from agent_eval.evaluation.evaluators.format_evaluators import (  # noqa: F401
-    DocumentCountEvaluator,
     HtmlValidityEvaluator,
     ResponseFormatEvaluator,
     StructureComplianceEvaluator,
@@ -39,7 +38,6 @@ discover_plugins()
 __all__ = [
     # 格式评估器
     "ResponseFormatEvaluator",
-    "DocumentCountEvaluator",
     "StructureComplianceEvaluator",
     "HtmlValidityEvaluator",
     # 常识评估器
