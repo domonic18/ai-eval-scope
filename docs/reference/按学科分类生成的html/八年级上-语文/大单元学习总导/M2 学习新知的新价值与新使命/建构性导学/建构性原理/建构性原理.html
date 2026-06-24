@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性原理</title>
+<style>
+:root {
+  --primary: #d46b08;
+  --primary-hover: #e8710a;
+  --accent: #fa8c16;
+  --bg: #fff7e6;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+.header h1 { font-size: var(--font-h1); margin: 0 0 6px; }
+.header .sub { opacity: .85; font-size: 14px; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 22px;
+  margin-bottom: 20px;
+  border-left: 4px solid var(--primary);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card h2 .num {
+  display: inline-flex;
+  width: 28px; height: 28px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.principle {
+  background: #fffaf0;
+  border: 1px solid #ffe0b3;
+  border-radius: 6px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  transition: transform .2s, box-shadow .2s;
+  cursor: default;
+}
+.principle:hover {
+  transform: translateX(4px);
+  box-shadow: 0 2px 12px rgba(212,107,8,.12);
+}
+.principle .p-name {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+.principle .p-desc { margin-bottom: 6px; }
+.principle .p-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.principle .p-meta span { background: #fff0d6; padding: 2px 8px; border-radius: 4px; }
+.tag {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  padding: 1px 10px;
+  border-radius: 10px;
+  margin-right: 4px;
+}
+.exercise {
+  background: #f0f9ff;
+  border: 1px dashed var(--primary);
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.exercise h3 { color: var(--primary); font-size: 16px; margin-bottom: 6px; }
+.exercise .hint {
+  background: #fff;
+  border-left: 3px solid var(--accent);
+  padding: 8px 12px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.reflect-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 640px) {
+  .reflect-grid { grid-template-columns: 1fr; }
+}
+.reflect-item {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px;
+  transition: background .2s;
+  cursor: pointer;
+}
+.reflect-item:hover { background: #fffaf0; }
+.reflect-item .q { font-weight: 600; margin-bottom: 4px; }
+.reflect-item .tip { font-size: 13px; color: var(--text-secondary); }
+.reflect-item textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  margin-top: 8px;
+  resize: vertical;
+  min-height: 50px;
+}
+.reflect-item textarea:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(212,107,8,.15);
+}
+.btn {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background .2s, transform .1s;
+}
+.btn:hover { background: var(--primary-hover); transform: scale(1.02); }
+.btn:active { transform: scale(.97); }
+.footer {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+  padding: 20px 0 10px;
+  border-top: 1px solid var(--border);
+  margin-top: 10px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>建构性原理</h1>
+  <div class="sub">从示例中提炼 · 让方法可迁移</div>
+</div>
+
+<div class="card">
+  <h2><span class="num">1</span> 提炼可迁移的建构性原理</h2>
+  <p style="margin-bottom:12px;">回顾你在"建构性示例"中完成新闻稿的全过程——从确定选题到最终定稿。在这个过程中，你有没有发现一些"通用方法"？我们一起来提炼出 <strong>5 条建构性原理</strong>，它们能帮你应对更多的学习挑战。</p>
+
+  <div class="principle">
+    <div class="p-name">原理一：情境锚定</div>
+    <div class="p-desc">从一个真实问题或现象出发，让建构有根可循。你之所以能写出一篇有深度的新闻评论，是因为你从"学校食堂推出学生推荐菜"这个真实事件开始——不是凭空编造，而是有真实的张力。写作文、做研究、设计方案，第一步永远是：找到一个让你真正感兴趣的问题。</div>
+    <div class="p-meta"><span>📌 来源：示例第1步"确定选题角度"</span><span>🎯 适用：任何需要确定写作主题或研究方向的任务</span><span>⚠️ 注意：要选你真正好奇的问题，不是老师给的标准答案</span></div>
+  </div>
+
+  <div class="principle">
+    <div class="p-name">原理二：要素拆解</div>
+    <div class="p-desc">将复杂任务拆解为可操作的步骤。新闻评论看起来很"大"，但拆开后就是"观点→论据1→论据2→结尾"。用 5W1H 工具去拆——Who、What、When、Where、Why、How，任何复杂信息都可以被"庖丁解牛"。</div>
+    <div class="p-meta"><span>📌 来源：示例第4步"搭建文章结构"</span><span>🎯 适用：分析信息、设计方案、理解复杂概念</span><span>⚠️ 注意：拆解要适度，不是越细越好——找到关键要素即可</span></div>
+  </div>
+
+  <div class="principle">
+    <div class="p-name">原理三：证据支撑</div>
+    <div class="p-desc">每个观点或判断必须有事实依据。写新闻评论时，你采访了同学、记录了原话——这就是"证据"。没有证据的观点只是个人感受，有了证据的观点才有说服力。写议论文、做调研报告、辩论，这条原理都通用。</div>
+    <div class="p-meta"><span>📌 来源：示例第2步"收集事实证据"</span><span>🎯 适用：议论文写作、研究报告、科学探究、辩论</span><span>⚠️ 注意：证据要多元——至少找2~3个不同来源交叉验证</span></div>
+  </div>
+
+  <div class="principle">
+    <div class="p-name">原理四：表达转化</div>
+    <div class="p-desc">将内在理解转化为可视化的外在成果。你脑海中的想法再精彩，别人也看不见——你必须把它"变出来"。把你的采访笔记变成一篇结构清晰的新闻稿，把你的思维导图变成一段有条理的发言，把你的实验记录变成一份报告。</div>
+    <div class="p-meta"><span>📌 来源：示例第5步"撰写初稿"</span><span>🎯 适用：所有需要输出成果的学习活动</span><span>⚠️ 注意：先完成再完美——先把想法倒出来，再慢慢打磨</span></div>
+  </div>
+
+  <div class="principle">
+    <div class="p-name">原理五：反思迭代</div>
+    <div class="p-desc">通过自我评价和他人反馈持续改进成果。你写完初稿后大声朗读、对照量规检查、请同学提意见——每一次修改都让成果更好。好文章不是"写"出来的，是"改"出来的。好作品也同样如此。</div>
+    <div class="p-meta"><span>📌 来源：示例第6步"修改完善"和第7步"对照标准自评"</span><span>🎯 适用：所有需要修改完善的任务——作文、设计、代码、方案</span><span>⚠️ 注意：迭代有终点——改3~4遍就够，不要无限追求完美</span></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2><span class="num">2</span> 原理迁移应用 · 小试牛刀</h2>
+
+  <div class="exercise">
+    <h3>🏫 练习一：校园新闻评论</h3>
+    <p><strong>情境：</strong>学校图书馆新开放了一个"自由阅读角"，可以躺着看书、听音乐看书，引发同学热议。有同学支持，有同学觉得"不像图书馆了"。</p>
+    <p><strong>建构任务：</strong>写一篇 <strong>300 字左右</strong>的新闻评论。</p>
+    <p><span class="tag">建议用</span> <strong>情境锚定 + 证据支撑</strong></p>
+    <div class="hint">💡 脚手架提示：先明确你的观点——你支持还是反对（或有条件的支持）？然后去采访至少 2 位同学，记录他们的真实看法，再用事实来支撑你的论点。</div>
+  </div>
+
+  <div class="exercise">
+    <h3>📱 练习二：社区信息辨别</h3>
+    <p><strong>情境：</strong>社区微信群流传一条"因管道维修，明早 6:00—20:00 全小区停水"的通知，落款是"物业办公室"，但没有公章，也没有联系电话。</p>
+    <p><strong>建构任务：</strong>设计一个信息真伪判断方案。</p>
+    <p><span class="tag">建议用</span> <strong>要素拆解 + 证据支撑 + 表达转化</strong></p>
+    <div class="hint">💡 脚手架提示：先用量表拆解通知中的要素——停水时间、范围、发布单位、联系方式。然后设计验证步骤（打物业电话、问邻居、查官方群），最后把你的判断结论写成一段"信息核实说明"发到家庭群。</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2><span class="num">3</span> 元认知反思</h2>
+  <p style="margin-bottom:12px;">下面 5 个问题，请你花 5 分钟认真想一想。不用写长篇大论，但每个问题都值得你诚实地回答自己——因为"思考自己怎么思考"，才是最高级的学习能力。</p>
+  <div class="reflect-grid">
+    <div class="reflect-item">
+      <div class="q">🤔 问题 1</div>
+      <div>回顾你建构成果的过程，哪一个步骤花费的时间最长？为什么？</div>
+      <textarea placeholder="写下你的思考……"></textarea>
+    </div>
+    <div class="reflect-item">
+      <div class="q">💪 问题 2</div>
+      <div>你在建构过程中遇到了什么困难？你是怎么解决的？</div>
+      <textarea placeholder="写下你的思考……"></textarea>
+    </div>
+    <div class="reflect-item">
+      <div class="q">🗣️ 问题 3</div>
+      <div>如果用一句话向同学介绍"建构性学习"，你会怎么说？</div>
+      <textarea placeholder="写下你的思考……"></textarea>
+    </div>
+    <div class="reflect-item">
+      <div class="q">🏆 问题 4</div>
+      <div>你认为这次建构的成果中，哪一个部分最能体现你的思考？</div>
+      <textarea placeholder="写下你的思考……"></textarea>
+    </div>
+    <div class="reflect-item" style="grid-column: 1/-1;">
+      <div class="q">🔄 问题 5</div>
+      <div>如果再给你一次机会，你会改变哪个环节的做法？</div>
+      <textarea placeholder="写下你的思考……"></textarea>
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:16px;">
+    <button class="btn" onclick="alert('你已经完成了建构性原理的学习！带着这 5 条原理，去挑战「建构性案例」吧 💪')">完成反思 ✓</button>
+  </div>
+</div>
+
+<div class="footer">
+  八年级上 · 语文 · 统编版五四制 · 第一单元（新闻阅读与写作）
+</div>
+
+</div>
+</body>
+</html>

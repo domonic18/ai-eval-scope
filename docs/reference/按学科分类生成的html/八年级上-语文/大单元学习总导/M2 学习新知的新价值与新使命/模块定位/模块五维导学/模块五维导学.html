@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块五维导学</title>
+<style>
+:root {
+  --primary: #d46b08;
+  --primary-hover: #e8710a;
+  --accent: #fa8c16;
+  --bg: #fff7e6;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+  text-align: center;
+}
+.header h1 { font-size: var(--font-h1); margin: 0 0 6px; }
+.header .sub { opacity: .85; font-size: 14px; }
+.dim-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+@media (max-width: 700px) {
+  .dim-grid { grid-template-columns: 1fr; }
+}
+.dim-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  border-top: 3px solid var(--primary);
+  transition: transform .2s;
+}
+.dim-card:hover { transform: translateY(-2px); }
+.dim-card.full { grid-column: 1/-1; }
+.dim-card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dim-card h2 .d-num {
+  display: inline-flex;
+  width: 24px; height: 24px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.dim-card ul, .dim-card ol { margin-left: 18px; }
+.dim-card li { margin-bottom: 6px; }
+.dim-card li strong { color: var(--primary); }
+.goal-item {
+  background: #fffaf0;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+}
+.goal-item .g-label {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+  padding: 1px 8px;
+  border-radius: 4px;
+  margin-right: 6px;
+}
+.future-card {
+  background: linear-gradient(135deg, #fff7e6, #fff0d6);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+}
+.future-card strong { color: var(--primary); }
+.method-tag {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  padding: 2px 12px;
+  border-radius: 12px;
+  margin-right: 4px;
+  margin-bottom: 4px;
+}
+.key-person {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.key-person:hover { border-color: var(--primary); background: #fffaf0; }
+.key-person .avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.key-person .info { flex: 1; }
+.key-person .name { font-weight: 700; }
+.key-person .why { font-size: 13px; color: var(--text-secondary); }
+.question-item {
+  background: var(--card-bg);
+  border: 1px dashed var(--primary);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.question-item:hover { background: #fffaf0; }
+.question-item .q-icon { color: var(--primary); margin-right: 6px; }
+.question-item .q-text { font-weight: 600; }
+.question-item .q-expand {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .4s ease;
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+.question-item.active .q-expand { max-height: 200px; }
+.footer {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+  padding: 20px 0 10px;
+  border-top: 1px solid var(--border);
+  margin-top: 10px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>M2：学习新知的新价值与新使命</h1>
+  <div class="sub">模块五维导学 —— 看清"为什么学"，再出发</div>
+</div>
+
+<div class="dim-grid">
+
+  <!-- 维度一 -->
+  <div class="dim-card full">
+    <h2><span class="d-num">1</span> 模块学习目标</h2>
+    <p style="margin-bottom:10px;">学完这个模块，你将能做到以下 4 件事——每一条你都可以用自己的行动来证明：</p>
+    <div class="goal-item">
+      <span class="g-label">目标 1</span>
+      <strong>理解"新闻"的本质</strong> —— 你能区分一篇报道中的"事实"和"观点"，能快速找出一条新闻的 5W1H 要素，还能说清楚"新闻到底有什么用"。
+    </div>
+    <div class="goal-item">
+      <span class="g-label">目标 2</span>
+      <strong>掌握分析方法</strong> —— 给你任意一则新闻，你能用 5W1H 拆解它、分析它的语言特点、判断它有没有隐含的立场倾向。
+    </div>
+    <div class="goal-item">
+      <span class="g-label">目标 3</span>
+      <strong>建构表达成果</strong> —— 你能根据真实素材写出一篇结构完整、观点清晰的校园新闻评论，让别人读完后说"有道理"。
+    </div>
+    <div class="goal-item">
+      <span class="g-label">目标 4</span>
+      <strong>形成元认知</strong> —— 你能说出"我是怎么学会写新闻评论的"，并且知道这套"解析→建构"的方法还可以用到其他学科去。
+    </div>
+  </div>
+
+  <!-- 维度二 -->
+  <div class="dim-card full">
+    <h2><span class="d-num">2</span> 高精尖价值与未来意义</h2>
+    <div class="future-card">
+      <strong>🤖 新闻与人工智能</strong><br>
+      AI 可以在 1 秒内生成一篇"新闻"，但你能看出来吗？本模块培养的"信息辨别力"就是你面对 AI 生成内容时的"防骗疫苗"——当全班同学都在转发 AI 编的假新闻时，你一眼就能识别出破绽。
+    </div>
+    <div class="future-card">
+      <strong>🌐 新闻与社会治理</strong><br>
+      "信息素养"是这个时代公民的基本功。你在这两周学会的"事实核查意识"，到了大学、职场甚至退休后都用得上——不轻信、不盲从、先验证再转发。
+    </div>
+    <div class="future-card">
+      <strong>💼 新闻与职业发展</strong><br>
+      新媒体运营、内容策划、舆情分析师……这些新兴职业的核心能力都是"新闻素养"的延伸。学会写一条好新闻，你就已经摸到了很多职业的大门。
+    </div>
+    <div class="future-card">
+      <strong>🇨🇳 新闻与国家战略</strong><br>
+      "讲好中国故事"是今天中国最需要的能力之一。懂新闻、会表达的人，在任何行业都是稀缺人才。
+    </div>
+  </div>
+
+  <!-- 维度三 -->
+  <div class="dim-card">
+    <h2><span class="d-num">3</span> 推荐学习方法</h2>
+    <div>
+      <span class="method-tag">📐 5W1H 分析法</span>
+      <span class="method-tag">🔑 事实-观点二分法</span>
+      <span class="method-tag">📰 对比阅读法</span>
+      <span class="method-tag">🎤 采访实践法</span>
+      <span class="method-tag">✍️ 写作工作坊</span>
+    </div>
+    <ul style="margin-top:10px;">
+      <li><strong>5W1H 分析法</strong> —— 拿到任何新闻，先找出 Who / What / When / Where / Why / How</li>
+      <li><strong>事实-观点二分法</strong> —— 阅读时随时标注哪些是事实，哪些是观点</li>
+      <li><strong>对比阅读法</strong> —— 找同一事件的不同媒体报道，分析立场差异</li>
+      <li><strong>采访实践法</strong> —— 走出教室，真实采访身边的同学</li>
+      <li><strong>写作工作坊</strong> —— 写完后找同学互评，迭代修改</li>
+    </ul>
+  </div>
+
+  <!-- 维度四 -->
+  <div class="dim-card">
+    <h2><span class="d-num">4</span> 关键人物与事件</h2>
+    <div class="key-person">
+      <div class="avatar">穆</div>
+      <div class="info">
+        <div class="name">穆青</div>
+        <div class="why">中国新闻界先驱，"勿忘人民"理念的倡导者</div>
+      </div>
+    </div>
+    <div class="key-person">
+      <div class="avatar">普</div>
+      <div class="info">
+        <div class="name">普利策</div>
+        <div class="why">普利策新闻奖创立者，设立"为公众服务"奖</div>
+      </div>
+    </div>
+    <div class="key-person">
+      <div class="avatar">水</div>
+      <div class="info">
+        <div class="name">水门事件报道</div>
+        <div class="why">两名记者用调查报道改变了美国政治</div>
+      </div>
+    </div>
+    <div class="key-person">
+      <div class="avatar">邹</div>
+      <div class="info">
+        <div class="name">邹韬奋</div>
+        <div class="why">中国新闻出版先驱，倡导"新闻为大众"</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 维度五 -->
+  <div class="dim-card full">
+    <h2><span class="d-num">5</span> 前沿追问</h2>
+    <p style="margin-bottom:10px;">下面的问题没有标准答案——它们是为了让你的大脑"烧"起来。点开每个问题，想想你的答案。</p>
+    <div class="question-item" onclick="this.classList.toggle('active')">
+      <span class="q-icon">💭</span><span class="q-text">如果你的手机每天只推给你"算法认为你喜欢看的新闻"，你会看到怎样的世界？</span>
+      <div class="q-expand">你想过吗——如果只看"你想看的"，你就永远不会看到"你应该看的"。这就是"信息茧房"。</div>
+    </div>
+    <div class="question-item" onclick="this.classList.toggle('active')">
+      <span class="q-icon">💭</span><span class="q-text">如果一条假新闻比真新闻传播快10倍，我们该怎么办？</span>
+      <div class="q-expand">研究显示假新闻在 Twitter 上的传播速度比真新闻快 6 倍。如果每个人都是"慢三秒再转发"的核查员，假新闻还会跑得那么快吗？</div>
+    </div>
+    <div class="question-item" onclick="this.classList.toggle('active')">
+      <span class="q-icon">💭</span><span class="q-text">新闻的"客观性"真的存在吗？每条新闻都有隐含的立场吗？</span>
+      <div class="q-expand">同一场球赛，主队媒体和客队媒体的报道可以完全不同。"客观"可能只是一个目标，不是现实。重要的是：你能识别出立场吗？</div>
+    </div>
+    <div class="question-item" onclick="this.classList.toggle('active')">
+      <span class="q-icon">💭</span><span class="q-text">AI 写的新闻和人类写的新闻，你能区分吗？你的标准是什么？</span>
+      <div class="q-expand">试试看：读完两篇新闻，猜猜哪篇是 AI 写的。然后问自己——你的判断是基于什么线索？语言风格？事实错误？还是直觉？</div>
+    </div>
+    <div class="question-item" onclick="this.classList.toggle('active')">
+      <span class="q-icon">💭</span><span class="q-text">"学习新闻"这件事本身，对你理解"学习"有什么启发？</span>
+      <div class="q-expand">你从"看懂一条新闻"到"写一篇新闻评论"再到"创办一个新闻角"——这个过程本身，是不是也在教你"学习是怎么发生的"？</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  八年级上 · 语文 · 统编版五四制 · 第一单元（新闻阅读与写作）<br>
+  五个维度看完，你应该对本模块"为什么要学"有了清晰的认识。出发吧！
+</div>
+
+</div>
+</body>
+</html>

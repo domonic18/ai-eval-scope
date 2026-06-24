@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具库 — 脚手架</title>
+<style>
+:root {
+  --primary: #d46b08;
+  --primary-hover: #e8710a;
+  --accent: #fa8c16;
+  --bg: #fff7e6;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 20px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff; padding: 24px 28px; border-radius: var(--border-radius);
+  margin-bottom: 24px; text-align: center;
+}
+.header h1 { font-size: var(--font-h1); margin: 0 0 6px; }
+.header p { margin: 0; opacity: 0.9; font-size: 14px; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2); color: var(--primary);
+  margin: 0 0 14px; padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+  display: flex; align-items: center; gap: 8px;
+}
+.level-label {
+  display: inline-block; padding: 2px 14px; border-radius: 12px;
+  font-size: 12px; font-weight: 600; margin-bottom: 12px;
+}
+.level-basic { background: #d4edda; color: #155724; }
+.level-adv { background: #cce5ff; color: #004085; }
+.level-high { background: #f8d7da; color: #721c24; }
+.tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.tool-card {
+  background: #fefaf0; border-radius: var(--border-radius); padding: 16px;
+  border: 1px solid var(--border); transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+.tool-card:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(212,107,8,0.1); }
+.tool-card h3 { color: var(--primary); margin: 0 0 6px; font-size: 16px; }
+.tool-card .usage { font-size: 14px; color: var(--text-secondary); margin: 4px 0; }
+.tool-card .steps { font-size: 13px; color: var(--text); margin: 8px 0 0; padding-left: 16px; }
+.tool-card .steps li { margin: 4px 0; }
+.tool-detail { display: none; padding: 12px; background: var(--bg); border-radius: 6px; margin-top: 10px; font-size: 14px; }
+.tool-detail.show { display: block; }
+.full-width { grid-column: 1 / -1; }
+.bridge { font-size: 14px; color: var(--text-secondary); margin-top: 16px; padding: 12px; background: var(--bg); border-radius: 6px; }
+.interact-btn {
+  display: inline-block; background: var(--primary); color: #fff;
+  border: none; padding: 6px 16px; border-radius: 20px;
+  font-size: 13px; cursor: pointer; transition: background 0.2s; margin-top: 8px;
+}
+.interact-btn:hover { background: var(--primary-hover); }
+.demo-box {
+  background: var(--card-bg); border: 1px dashed var(--primary);
+  border-radius: 6px; padding: 12px; margin-top: 8px; font-size: 14px;
+}
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  .header { padding: 18px 16px; }
+  .card { padding: 14px 16px; }
+  .tool-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🧰 工具库</h1>
+  <p>新闻阅读与写作 · 第一单元 · 统编版五四制 八年级上</p>
+</div>
+
+<div class="card">
+  <h2>🟢 基础工具</h2>
+  <span class="level-label level-basic">易上手 · 人人可用</span>
+  <div class="tool-grid">
+
+    <div class="tool-card" onclick="this.querySelector('.tool-detail').classList.toggle('show')">
+      <h3>📊 5W1H分析表</h3>
+      <div class="usage">快速锁定新闻核心信息</div>
+      <ol class="steps">
+        <li>Who 谁</li>
+        <li>What 什么事</li>
+        <li>When 何时</li>
+        <li>Where 何地</li>
+        <li>Why 为什么</li>
+        <li>How 怎么发生的</li>
+      </ol>
+      <div class="tool-detail">
+        <strong>示例：</strong>分析《我三十万大军胜利南渡长江》——
+        Who: 解放军 / What: 南渡长江 / When: 1949年 / Where: 长江流域 / Why: 解放全中国 / How: 分三路渡江
+      </div>
+    </div>
+
+    <div class="tool-card" onclick="this.querySelector('.tool-detail').classList.toggle('show')">
+      <h3>🔵🔴 事实-观点标注法</h3>
+      <div class="usage">区分客观信息和主观判断</div>
+      <ol class="steps">
+        <li>🔵 蓝色标 = 事实（可验证的陈述）</li>
+        <li>🔴 红色标 = 观点（作者的个人判断）</li>
+      </ol>
+      <div class="tool-detail">
+        <strong>示例：</strong>"今天气温35℃"（🔵事实）→ "今天热死了"（🔴观点）。同一件事，事实和观点的表述完全不同。
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="card">
+  <h2>🟡 进阶工具</h2>
+  <span class="level-label level-adv">专业 · 需要练习</span>
+  <div class="tool-grid">
+
+    <div class="tool-card" onclick="this.querySelector('.tool-detail').classList.toggle('show')">
+      <h3>📰 新闻要素分析模板</h3>
+      <div class="usage">深度拆解一篇新闻的结构</div>
+      <ol class="steps">
+        <li>标题 → 概括主旨</li>
+        <li>导语 → 核心信息</li>
+        <li>主体 → 展开细节</li>
+        <li>背景 → 补充信息</li>
+        <li>结语 → 收束全文</li>
+      </ol>
+      <div class="tool-detail">
+        按"标题→导语→主体→背景→结语"逐段分析每部分的功能。适用于教材新闻分析和任何新闻报道。
+      </div>
+    </div>
+
+    <div class="tool-card" onclick="this.querySelector('.tool-detail').classList.toggle('show')">
+      <h3>🔍 事实核查四步法</h3>
+      <div class="usage">判断一条消息是否可信</div>
+      <ol class="steps">
+        <li>① 确定信息来源</li>
+        <li>② 追溯原始出处</li>
+        <li>③ 寻找佐证</li>
+        <li>④ 交叉验证</li>
+      </ol>
+      <div class="tool-detail">
+        <strong>示例：</strong>朋友圈说"喝醋能杀死病毒"→①来源是"养生群"→②查不到权威出处→③WHO没有相关说法→④多家辟谣平台已辟谣。结论：假消息！
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="card">
+  <h2>🔴 高阶工具</h2>
+  <span class="level-label level-high">研究级 · 挑战自我</span>
+  <div class="tool-grid">
+
+    <div class="tool-card" onclick="this.querySelector('.tool-detail').classList.toggle('show')">
+      <h3>⚖️ 报道立场分析矩阵</h3>
+      <div class="usage">比较不同媒体的报道立场</div>
+      <ol class="steps">
+        <li>选择同一事件的2—3篇报道</li>
+        <li>比较用词选择</li>
+        <li>比较信息取舍</li>
+        <li>比较情感倾向</li>
+      </ol>
+      <div class="tool-detail">
+        同一事件，不同媒体的标题、选用的引语、突出的细节可能完全不同。对比之后你会发现"立场"如何塑造了"故事"。
+      </div>
+    </div>
+
+    <div class="tool-card" onclick="this.querySelector('.tool-detail').classList.toggle('show')">
+      <h3>🤖 AI辅助分析工具</h3>
+      <div class="usage">借助AI快速提取新闻关键信息</div>
+      <ol class="steps">
+        <li>将新闻文本输入AI</li>
+        <li>用提示词让AI提取5W1H</li>
+        <li>人工核对准确性</li>
+      </ol>
+      <div class="tool-detail">
+        <div class="demo-box">
+          <strong>提示词示例：</strong>"请提取以下新闻的6个要素（5W1H），并用表格输出。"<br>
+          输出后——<strong>最关键的一步：</strong>人工核验AI输出的每个要素是否准确。
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="bridge">
+  <strong>🔗 与脚手架体系的衔接：</strong>
+  工具库为"作业榜"提供方法支持；工具使用演示可配合"视频"脚手架；回答"问题榜"中的问题时可参考此处方法。
+  <br>
+  <button class="interact-btn" onclick="alert('选择一篇新闻，尝试用5W1H分析表 + 事实核查四步法组合使用')">🎯 试试组合工具</button>
+</div>
+
+</div>
+</body>
+</html>

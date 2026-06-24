@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VR 脚手架 — 走进新闻现场</title>
+<style>
+:root {
+  --primary: #d46b08;
+  --primary-hover: #e8710a;
+  --accent: #fa8c16;
+  --bg: #fff7e6;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+
+.wrapper {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+}
+
+.container { max-width: 860px; margin: 0 auto; }
+
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+h1 .subtitle {
+  display: block;
+  font-size: var(--font-body);
+  color: var(--text-secondary);
+  font-weight: normal;
+  margin-top: 4px;
+}
+
+h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 20px 0 10px;
+  padding-left: 12px;
+  border-left: 3px solid var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+h2 .badge {
+  display: inline-block;
+  font-size: 12px;
+  background: var(--primary);
+  color: #fff;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-weight: normal;
+}
+
+p { margin-bottom: 10px; }
+
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 14px;
+}
+
+.task-list {
+  list-style: none;
+  padding: 0;
+}
+
+.task-list li {
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  background: var(--bg);
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.task-list li strong {
+  color: var(--primary);
+}
+
+.resource-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.resource-card {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  text-align: center;
+}
+
+.resource-card .name {
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.resource-card .platform {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.resource-card .desc {
+  font-size: 13px;
+  margin-top: 6px;
+}
+
+.alt-card {
+  background: var(--card-bg);
+  border: 1px dashed var(--accent);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  margin-bottom: 10px;
+}
+
+.alt-card h3 {
+  font-size: 15px;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+
+.toggle-btn {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 18px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin: 8px 0;
+}
+
+.toggle-btn:hover { background: var(--primary-hover); }
+
+.recording-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  font-size: 14px;
+}
+
+.recording-table th, .recording-table td {
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.recording-table th {
+  background: var(--bg);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 14px;
+}
+
+.check-item input[type="checkbox"] {
+  margin-top: 3px;
+  accent-color: var(--primary);
+}
+
+@media (max-width: 680px) {
+  .resource-grid { grid-template-columns: 1fr; }
+  .wrapper { padding: 16px 12px; }
+  .card { padding: 14px; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+<div class="container">
+
+<h1>
+  🎥 走进新闻现场
+  <span class="subtitle">VR 沉浸式学习脚手架</span>
+</h1>
+
+<p style="color:var(--text-secondary);margin-bottom:14px;">戴上 VR 眼镜，亲身体验新闻采编、发布会实况等场景，把抽象的新闻概念变得看得见、摸得着。</p>
+
+<!-- 观察任务 -->
+<div class="card">
+  <h2>🔍 观察任务</h2>
+  <ul class="task-list">
+    <li><strong>场景观察</strong> — 在VR场景中找出至少3个新闻元素（采访话筒、摄像机、记者证、新闻稿……），记录它们的位置和作用。</li>
+    <li><strong>角色观察</strong> — 观察记者、摄影师、受访者、编辑的行为和分工，用表格记录各自职责。</li>
+    <li><strong>环境观察</strong> — 注意新闻发生地的光线、声音、人群等环境细节，思考它们如何影响新闻呈现。</li>
+  </ul>
+</div>
+
+<!-- 操作任务 -->
+<div class="card">
+  <h2>🎮 操作任务 <span class="badge">互动体验</span></h2>
+  <ul class="task-list">
+    <li><strong>虚拟采访</strong> — 与VR场景中的受访者互动，选择合适的问题提问，记录回答的关键信息。</li>
+    <li><strong>要素标注</strong> — 在VR场景中点击/标注新闻要素（5W1H：Who、What、When、Where、Why、How），系统会判断标注是否准确。</li>
+    <li><strong>稿件速写</strong> — VR体验结束后，根据观察和操作所得信息，快速写出一段 <strong>100–200字</strong> 的新闻短讯。</li>
+  </ul>
+</div>
+
+<!-- 记录任务 -->
+<div class="card">
+  <h2>📝 记录任务</h2>
+  <p>使用下方"VR新闻体验记录表"记录你的发现，任务结束后提交记录表 + 短讯稿件。</p>
+  <table class="recording-table">
+    <tr><th>场景名称</th><th>观察到的要素</th><th>操作完成情况</th><th>关键信息</th><th>个人感受</th></tr>
+    <tr><td style="color:var(--text-secondary);">（填写）</td>
+        <td style="color:var(--text-secondary);">（填写）</td>
+        <td style="color:var(--text-secondary);">（填写）</td>
+        <td style="color:var(--text-secondary);">（填写）</td>
+        <td style="color:var(--text-secondary);">（填写）</td></tr>
+  </table>
+</div>
+
+<!-- 推荐VR资源 -->
+<div class="card">
+  <h2>📡 推荐 VR 资源</h2>
+  <div class="resource-grid">
+    <div class="resource-card">
+      <div class="name">新华社 VR频道</div>
+      <div class="platform">新华网 / 新华网客户端</div>
+      <div class="desc">新闻现场全景视频</div>
+    </div>
+    <div class="resource-card">
+      <div class="name">人民日报 "虚实之间"</div>
+      <div class="platform">人民网VR频道</div>
+      <div class="desc">新闻场景还原体验</div>
+    </div>
+    <div class="resource-card">
+      <div class="name">新闻博物馆 VR 导览</div>
+      <div class="platform">Newseum.org（线上存档版）</div>
+      <div class="desc">美国新闻博物馆虚拟参观</div>
+    </div>
+  </div>
+</div>
+
+<!-- 替代方案 + 手风琴效果 -->
+<div class="card">
+  <h2>🔄 无VR设备？替代方案在这里</h2>
+
+  <div class="alt-card">
+    <h3>方案一：360°全景视频</h3>
+    <p>在B站搜索"新闻现场 360度"或"全景新闻"，用手机或电脑拖动视角观看，同样可以自主观察环境细节。</p>
+  </div>
+
+  <div class="alt-card">
+    <h3>方案二：图文虚拟导览</h3>
+    <p>使用"新华社现场云"等平台的图文直播，模拟新闻现场的时序体验，按时间线还原事件过程。</p>
+  </div>
+
+  <div class="alt-card">
+    <h3>方案三：角色扮演 + 桌面排演</h3>
+    <p>分小组模拟"新闻编辑室"——设定突发新闻事件，一人当编辑，其余人当记者，通过<strong>桌面推演</strong>完成从采集到发布的全流程。每个环节都要记录决策理由。</p>
+    <button class="toggle-btn" onclick="toggleDetail()">📋 查看角色扮演记录模板</button>
+    <div id="roleplay-detail" style="display:none;margin-top:10px;padding:12px;background:#fefaf0;border-radius:6px;border:1px solid var(--accent);">
+      <p><strong>记录模板（每环节一栏）：</strong></p>
+      <p>📌 新闻事件：___________ | 角色分配：编辑___ 记者A___ 记者B___</p>
+      <p>① 选题决策：为什么选这个事件？</p>
+      <p>② 信息采集：采访了谁？拿到了什么信息？</p>
+      <p>③ 稿件撰写：导语怎么写？事实和观点分开了吗？</p>
+      <p>④ 编辑审核：修改了什么？为什么改？</p>
+    </div>
+  </div>
+</div>
+
+<!-- 学习成果清单 -->
+<div class="card" style="border-left-color:var(--primary);">
+  <h2>✅ 学习成果清单</h2>
+  <div class="check-item"><input type="checkbox"><span>一份填好的"VR新闻体验记录表"</span></div>
+  <div class="check-item"><input type="checkbox"><span>一篇 100–200 字的新闻短讯或现场观察笔记</span></div>
+  <div class="check-item"><input type="checkbox"><span>（选做）角色扮演记录表 + 小组复盘心得</span></div>
+</div>
+
+<script>
+function toggleDetail() {
+  var el = document.getElementById('roleplay-detail');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+
+</div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名著介绍 — 脚手架</title>
+<style>
+:root {
+  --primary: #d46b08;
+  --primary-hover: #e8710a;
+  --accent: #fa8c16;
+  --bg: #fff7e6;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 20px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff; padding: 24px 28px; border-radius: var(--border-radius);
+  margin-bottom: 24px; text-align: center;
+}
+.header h1 { font-size: var(--font-h1); margin: 0 0 6px; }
+.header p { margin: 0; opacity: 0.9; font-size: 14px; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2); color: var(--primary);
+  margin: 0 0 14px; padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+  display: flex; align-items: center; gap: 8px;
+}
+.quote-box {
+  background: #fefaf0; border-left: 4px solid var(--accent);
+  padding: 14px 18px; margin: 12px 0; border-radius: 0 6px 6px 0;
+}
+.quote-box .quote { font-style: italic; font-size: 15px; }
+.quote-box .author { text-align: right; font-size: 13px; color: var(--text-secondary); margin-top: 6px; }
+.quote-box .reflection {
+  background: var(--bg); padding: 8px 12px; border-radius: 6px;
+  font-size: 14px; margin-top: 8px; cursor: pointer; transition: background 0.2s;
+}
+.quote-box .reflection:hover { background: #ffe7ba; }
+.book-card {
+  background: #fefaf0; border-radius: var(--border-radius);
+  padding: 16px; margin: 12px 0; border: 1px solid var(--border);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.book-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(212,107,8,0.12); }
+.book-card h3 { color: var(--primary); margin: 0 0 8px; font-size: 17px; }
+.book-card .detail { font-size: 14px; color: var(--text-secondary); margin: 4px 0; }
+.book-card .detail strong { color: var(--text); }
+.tag {
+  display: inline-block; padding: 2px 10px; border-radius: 12px;
+  font-size: 12px; font-weight: 600; margin-right: 6px;
+}
+.tag-basic { background: #d4edda; color: #155724; }
+.tag-adv { background: #cce5ff; color: #004085; }
+.tag-challenge { background: #f8d7da; color: #721c24; }
+.link-row {
+  margin: 14px 0 0; padding-top: 10px; border-top: 1px dashed var(--border);
+  font-size: 14px; color: var(--text-secondary);
+}
+.interact-btn {
+  display: inline-block; background: var(--primary); color: #fff;
+  border: none; padding: 8px 20px; border-radius: 20px;
+  font-size: 14px; cursor: pointer; transition: background 0.2s;
+}
+.interact-btn:hover { background: var(--primary-hover); }
+.toggle-target { display: none; padding: 10px 0; }
+.toggle-target.show { display: block; }
+.bridge { font-size: 14px; color: var(--text-secondary); margin-top: 16px; padding: 12px; background: var(--bg); border-radius: 6px; }
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  .header { padding: 18px 16px; }
+  .card { padding: 14px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>📚 名言与名著</h1>
+  <p>新闻阅读与写作 · 第一单元 · 统编版五四制 八年级上</p>
+</div>
+
+<div class="card">
+  <h2>💬 关于真相与新闻的名言</h2>
+
+  <div class="quote-box">
+    <div class="quote">"当真相在穿鞋的时候，谎言已经跑遍了半个世界。"</div>
+    <div class="author">——马克·吐温</div>
+    <div class="reflection" onclick="const n=this.nextElementSibling; n.classList.toggle('show')">
+      🤔 点击思考：为什么假新闻传播得比真相快？
+    </div>
+    <div class="toggle-target"><p>因为谎言往往更简单、更情绪化、更容易被转发。真相需要核实，需要证据，而谎言只需一键发送。社交媒体时代，这种差距被放大了百倍。</p></div>
+  </div>
+
+  <div class="quote-box">
+    <div class="quote">"新闻是历史的初稿。"</div>
+    <div class="author">——菲利普·格雷厄姆</div>
+    <div class="reflection" onclick="const n=this.nextElementSibling; n.classList.toggle('show')">
+      🤔 点击思考：今天我们写的"校园新闻"会变成"校园史"吗？
+    </div>
+    <div class="toggle-target"><p>每一篇校园新闻都是学校生活的切片。多年后回看，它们就是最鲜活的校史素材。你今天的记录，就是明天的历史。</p></div>
+  </div>
+
+  <div class="quote-box">
+    <div class="quote">"在不了解事实的情况下，你无法判断好坏；在没有信息的情况下，你无法做出决策。"</div>
+    <div class="author">——沃尔特·李普曼</div>
+    <div class="reflection" onclick="const n=this.nextElementSibling; n.classList.toggle('show')">
+      🤔 点击思考：我们每天看到的信息，足够做出判断吗？
+    </div>
+    <div class="toggle-target"><p>算法只推送你"喜欢"的内容，而不是你"需要"的内容。主动搜索、多方对比，才能接近真相。</p></div>
+  </div>
+
+  <div class="quote-box">
+    <div class="quote">"有新闻的地方就有真相？不对——有新闻的地方，只有选择性地呈现。"</div>
+    <div class="author">——改编自迈克尔·舒德森</div>
+    <div class="reflection" onclick="const n=this.nextElementSibling; n.classList.toggle('show')">
+      🤔 点击思考：新闻呈现的"事实"是全部事实吗？
+    </div>
+    <div class="toggle-target"><p>媒体受版面、立场、读者偏好影响，只能呈现事实的一个侧面。读者需要自己拼图。</p></div>
+  </div>
+
+  <div class="quote-box">
+    <div class="quote">"人人都是记者，但没有人工编辑的时代，谁来当真相的守门人？"</div>
+    <div class="reflection" onclick="const n=this.nextElementSibling; n.classList.toggle('show')">
+      🤔 点击思考：社交媒体时代，谁来辨别真伪？
+    </div>
+    <div class="toggle-target"><p>当每个人都拥有麦克风，辨别真伪的责任就从少数编辑转移到了每个读者身上。——你自己，就是守门人。</p></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>📖 中国著作：《中国的西北角》</h2>
+  <div class="book-card">
+    <h3>范长江 · 纪实经典</h3>
+    <p>1930年代，一位年轻记者徒步深入西北，用眼睛还原了一个真实的中国。他的报道不仅记录历史，更改变了人们对西北的认知。</p>
+    <div class="detail"><strong>核心问题：</strong>30年代中国西北到底发生了什么？</div>
+    <div class="detail"><strong>路线：</strong>成都→川西北→兰州→西安</div>
+    <div class="detail"><strong>适读：</strong><span class="tag tag-basic">基础</span></div>
+    <div class="detail"><strong>获取：</strong>三联书店版 / 微信读书</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>📖 外国经典：《1984》</h2>
+  <div class="book-card">
+    <h3>乔治·奥威尔 · 反乌托邦</h3>
+    <p>语言被控制后，真相还存在吗？温斯顿的挣扎揭示了权力如何改写过去、操控思想。</p>
+    <div class="detail"><strong>核心问题：</strong>谁控制过去，谁就控制未来；谁控制现在，谁就控制过去</div>
+    <div class="detail"><strong>精华导读：</strong>"新话"与"双重思想"——语言的边界就是思想的边界</div>
+    <div class="detail"><strong>适读：</strong><span class="tag tag-adv">进阶</span>（建议初中高年级）</div>
+    <div class="detail"><strong>获取：</strong>各版本纸质书 / 电子书 / 喜马拉雅有声书</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>📖 当代必读：《真相》</h2>
+  <div class="book-card">
+    <h3>比尔·科瓦奇 &amp; 汤姆·罗森斯蒂尔</h3>
+    <p>信息超载时代，如何知道该相信什么？本书提出了"怀疑性认知"六步法，教你像记者一样核实信息。</p>
+    <div class="detail"><strong>核心问题：</strong>在海量信息中，如何判断什么是真的？</div>
+    <div class="detail"><strong>操作步骤：</strong>如何核实一条消息——从源头到交叉验证</div>
+    <div class="detail"><strong>适读：</strong><span class="tag tag-challenge">挑战</span>（学有余力者）</div>
+    <div class="detail"><strong>获取：</strong>纸质书 / Kindle / 图书馆借阅</div>
+  </div>
+</div>
+
+<div class="bridge">
+  <strong>🔗 与脚手架体系的衔接：</strong>
+  名言可配合"名人名言"脚手架使用；名著中的核心问题可作为"问题榜"素材。
+  <br>
+  <button class="interact-btn" onclick="alert('前往「问题榜」脚手架，将名著核心问题转化为讨论题')">前往问题榜 →</button>
+</div>
+
+</div>
+</body>
+</html>

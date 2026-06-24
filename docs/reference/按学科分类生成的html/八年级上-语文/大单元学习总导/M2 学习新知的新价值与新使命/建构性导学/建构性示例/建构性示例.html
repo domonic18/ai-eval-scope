@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性示例</title>
+<style>
+:root {
+  --primary: #d46b08;
+  --primary-hover: #e8710a;
+  --accent: #fa8c16;
+  --bg: #fff7e6;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+.header h1 { font-size: var(--font-h1); margin: 0 0 6px; }
+.header .sub { opacity: .85; font-size: 14px; }
+.header .target {
+  background: rgba(255,255,255,.18);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-top: 12px;
+  font-size: 14px;
+}
+.header .target strong { color: #fff; }
+.section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 22px;
+  margin-bottom: 20px;
+  border-left: 4px solid var(--primary);
+}
+.section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.step-badge {
+  display: inline-flex;
+  width: 32px; height: 32px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.step {
+  background: #fffaf0;
+  border: 1px solid #ffe0b3;
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 14px;
+  transition: transform .2s;
+}
+.step:hover { transform: translateX(3px); }
+.step h3 {
+  font-size: 16px;
+  color: var(--primary);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.step .do { margin-bottom: 4px; }
+.step .how { color: var(--text-secondary); font-size: 14px; margin-bottom: 6px; }
+.step .demo {
+  background: #fff;
+  border-left: 3px solid var(--accent);
+  padding: 8px 12px;
+  margin-top: 6px;
+  font-size: 14px;
+  border-radius: 0 4px 4px 0;
+}
+.step .demo strong { color: var(--primary); }
+.info-box {
+  background: #fff7e6;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+.info-box strong { color: var(--primary); }
+.checklist {
+  background: #f6ffed;
+  border-radius: 6px;
+  padding: 12px 16px;
+}
+.checklist label {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  cursor: pointer;
+  margin-bottom: 4px;
+}
+.checklist input[type="checkbox"] { accent-color: var(--primary); transform: scale(1.1); flex-shrink: 0; margin-top: 3px; }
+.tool-tip {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  margin-right: 4px;
+}
+.demo-toggle {
+  display: inline-block;
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+  padding: 3px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  margin-top: 6px;
+  transition: all .2s;
+}
+.demo-toggle:hover { background: var(--primary); color: #fff; }
+.footer {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+  padding: 20px 0 10px;
+  border-top: 1px solid var(--border);
+  margin-top: 10px;
+}
+@media (max-width: 640px) {
+  .container { padding: 16px 12px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>建构性示例</h1>
+  <div class="sub">从"食堂学生推荐菜"出发，建构一篇有深度、有温度的校园新闻评论</div>
+  <div class="target">
+    <strong>建构目标：</strong>完成一篇不少于400字的校园新闻评论，观点鲜明、有事实依据、结构完整。完成后你将拥有自己的第一篇"新闻评论作品"。
+  </div>
+</div>
+
+<div class="section">
+  <h2>📰 建构任务说明</h2>
+  <div class="info-box">
+    <p><strong>成果名称：</strong>校园新闻评论《从"学生推荐菜"看校园民主》</p>
+    <p><strong>用途：</strong>发布在班级公众号 / 校园简报</p>
+    <p><strong>对象：</strong>全校师生</p>
+    <p><strong>形式：</strong>新闻评论（不是新闻报道——你要表达观点，不是只陈述事实）</p>
+    <p><strong>最低标准：</strong></p>
+    <ul style="margin-left:20px;margin-top:4px;">
+      <li>有明确的核心观点</li>
+      <li>包含至少3个同学的采访意见</li>
+      <li>不少于400字</li>
+      <li>标题能吸引人阅读</li>
+    </ul>
+  </div>
+</div>
+
+<div class="section">
+  <h2>🎬 真实建构情境</h2>
+  <p>这周学校食堂贴出一张通知：<strong>"本月起，每月最后一周的周四，食堂将根据学生投票结果推出一款'学生推荐菜'。"</strong>消息在年级群里炸开了锅——</p>
+  <p style="margin:8px 0;">有人说："终于有发言权了，我要投糖醋排骨！"<br>
+  有人说："投票会不会有暗箱操作？谁知道票数是真的还是假的？"<br>
+  还有人质疑："为什么不能每周都做？一个月一次也太少了！"</p>
+  <p>你发现，这不仅仅是一条"食堂通知"。它背后涉及 <strong>参与感、信任机制、民主管理</strong> 这些更深层次的话题——这正是新闻评论可以深度挖掘的素材。</p>
+</div>
+
+<div class="section">
+  <h2>🛠️ 建构过程示范（7步）</h2>
+
+  <div class="step">
+    <h3><span class="step-badge">1</span> 确定选题角度</h3>
+    <div class="do"><strong>你要做什么：</strong>从热点事件中提炼可评论的切入点。</div>
+    <div class="how"><strong>怎么做：</strong>问自己"这个事件除了表面信息之外，还涉及什么更深的问题？"</div>
+    <div class="demo">
+      <strong>示范：</strong>食堂通知 → 角度A（好吃不好吃）→ 角度B（学生参与管理）→ 角度C（信任机制）→ <strong>选角度B</strong><br>
+      <span style="color:var(--text-secondary);">👇 你来试试：列出你感兴趣的3个角度</span>
+    </div>
+  </div>
+
+  <div class="step">
+    <h3><span class="step-badge">2</span> 收集事实证据</h3>
+    <div class="do"><strong>你要做什么：</strong>围绕选定的角度收集信息。</div>
+    <div class="how"><strong>怎么做：</strong>采访同学（至少3人）、观察食堂现场、记录关键事实。</div>
+    <div class="demo">
+      <strong>示范采访记录：</strong><br>
+      同学A（七年级）："我觉得挺好的，终于能吃到自己想吃的菜了。"<br>
+      同学B（八年级）："投票挺好的，但希望过程透明一点，能看到票数。"<br>
+      同学C（九年级）："关键是这个机制能不能持续，别搞一个月就没了。"<br>
+      <span style="color:var(--text-secondary);">👇 现在轮到你：采访身边的同学，记录他们的原话</span>
+    </div>
+  </div>
+
+  <div class="step">
+    <h3><span class="step-badge">3</span> 确立核心观点</h3>
+    <div class="do"><strong>你要做什么：</strong>基于收集到的证据，形成自己的核心判断。</div>
+    <div class="how"><strong>怎么做：</strong>问自己"这些事实说明了什么？我的立场是什么？"</div>
+    <div class="demo">
+      <strong>示范核心观点：</strong>"学生参与食堂菜单制定，不仅是口味的选择，更是校园民主的一次小小演练。"<br>
+      <span style="color:var(--text-secondary);">👇 写下你的一句话核心观点：</span>
+    </div>
+  </div>
+
+  <div class="step">
+    <h3><span class="step-badge">4</span> 搭建文章结构</h3>
+    <div class="do"><strong>你要做什么：</strong>设计新闻评论的框架。</div>
+    <div class="how"><strong>怎么做：</strong>标题 → 导语（引出事件+观点）→ 论据1 → 论据2 → 论据3 → 结尾（升华）</div>
+    <div class="demo">
+      <strong>示范提纲：</strong><br>
+      📌 标题：《一道菜里的"投票权"》<br>
+      📌 导语：食堂新措施引发讨论——"学生推荐菜"到底意味着什么？<br>
+      📌 正文：①参与的获得感（同学A的采访）②信任的建立（同学B的采访）③民主意识的萌发（同学C的采访）<br>
+      📌 结尾：小菜一碟，大义在其中
+    </div>
+  </div>
+
+  <div class="step">
+    <h3><span class="step-badge">5</span> 撰写初稿</h3>
+    <div class="do"><strong>你要做什么：</strong>按照提纲写初稿。</div>
+    <div class="how"><strong>怎么做：</strong>专注表达，不要停，先完成再修改。</div>
+    <div class="demo">
+      <strong>导语示范：</strong><br>
+      "本周一，学校食堂门口贴出一张粉色通知：'本月起，每月最后一周的周四，食堂将根据学生投票推出一款学生推荐菜。'消息传到年级群，群里炸开了锅。有人欢呼'终于有发言权了'，有人质疑'投票到底透不透明'。表面上看，这是一道菜的事；但仔细想想，这背后其实藏着一个更大的话题——学生能不能参与学校管理？该怎么参与？"<br>
+      <span style="color:var(--text-secondary);">👇 继续往下写！记住：先写出来再说。</span>
+    </div>
+  </div>
+
+  <div class="step">
+    <h3><span class="step-badge">6</span> 修改完善</h3>
+    <div class="do"><strong>你要做什么：</strong>检查逻辑、语言、事实准确性。</div>
+    <div class="how"><strong>怎么做：</strong>大声朗读一遍 → 检查事实是否有误 → 删减冗余表达。</div>
+    <div class="demo">
+      <strong>修改对比示范：</strong><br>
+      <span style="text-decoration:line-through;color:#999;">"所以我认为这个活动非常好，非常棒，大家都应该支持。"</span><br>
+      → <span style="color:var(--primary);">"从三位同学的回答中可以看出，学生对这项活动的支持建立在两个条件上：参与感得到尊重、过程保持透明。"</span><br>
+      <span style="color:var(--text-secondary);">你看，把个人的"我觉得"变成从证据中推出的结论，说服力就上来了。</span>
+    </div>
+  </div>
+
+  <div class="step">
+    <h3><span class="step-badge">7</span> 对照标准自评</h3>
+    <div class="do"><strong>你要做什么：</strong>用量表逐条检查。</div>
+    <div class="how"><strong>怎么做：</strong>逐项勾选，不达标之处标记修改。</div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>🧰 支架工具推荐</h2>
+  <div class="info-box">
+    <p><strong>建构模板：</strong>新闻评论结构 = 标题 → 导语 → 论点 → 论据 → 结尾</p>
+    <p><strong>关键句式：</strong></p>
+    <ul style="margin-left:20px;">
+      <li>"然而，在这条通知背后……"（从现象到本质的转折）</li>
+      <li>"更值得关注的是……"（引出更深层次的问题）</li>
+      <li>"正如采访中一位同学所说……"（引入采访证据）</li>
+    </ul>
+    <p><strong>检查清单：</strong>观点是否鲜明？事实是否准确？结构是否完整？语言是否简洁？</p>
+  </div>
+</div>
+
+<div class="section">
+  <h2>📋 自我评价量表</h2>
+  <div class="checklist">
+    <label><input type="checkbox"> 我的新闻评论有明确的核心观点吗？</label>
+    <label><input type="checkbox"> 我至少采访了3位同学并引用了他们的原话吗？</label>
+    <label><input type="checkbox"> 我的文章结构包含"标题—导语—正文—结尾"四个部分吗？</label>
+    <label><input type="checkbox"> 我检查了文中所有事实信息是否准确吗？</label>
+    <label><input type="checkbox"> 我的标题能让同学有点进去看的欲望吗？</label>
+  </div>
+  <div style="margin-top:14px;">
+    <button class="demo-toggle" onclick="var items=this.parentElement.parentElement.querySelectorAll('input[type=checkbox]');items.forEach(function(c){c.checked=!c.checked})">✔ 一键切换勾选</button>
+  </div>
+</div>
+
+<div class="section">
+  <h2>💡 成果优化建议</h2>
+  <ol style="margin-left:20px;">
+    <li style="margin-bottom:6px;"><strong>检查开头：</strong>前3句话抓住读者的注意力了吗？如果没有，换个更有冲击力的开头。</li>
+    <li style="margin-bottom:6px;"><strong>检查证据：</strong>每个观点都有事实支撑吗？如果有一段全是"我觉得"，那你可能需要补充采访或数据。</li>
+    <li style="margin-bottom:6px;"><strong>找人试读：</strong>请一位同学读一遍，问TA"你能理解我的观点吗？"——如果对方能复述出你的核心观点，说明你写清楚了。</li>
+  </ol>
+</div>
+
+<div class="footer">
+  八年级上 · 语文 · 统编版五四制 · 第一单元（新闻阅读与写作）<br>
+  建构完成后，带着你的作品进入"建构性原理"环节，提炼可迁移的方法！
+</div>
+
+</div>
+</body>
+</html>

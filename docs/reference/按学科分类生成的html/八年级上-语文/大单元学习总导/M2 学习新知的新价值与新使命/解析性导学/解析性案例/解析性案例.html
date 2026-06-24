@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性案例 — 七阶递进训练</title>
+<style>
+:root {
+  --primary: #d46b08;
+  --primary-hover: #e8710a;
+  --accent: #fa8c16;
+  --bg: #fff7e6;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px 40px;
+  box-sizing: border-box;
+}
+
+/* Header */
+.header {
+  text-align: center;
+  padding: 32px 20px 20px;
+  background: linear-gradient(135deg, #fff7e6 0%, #fff3d6 100%);
+  border-bottom: 3px solid var(--primary);
+  margin: -24px -20px 28px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+.header .subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* Meta bar */
+.meta-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+.meta-tag {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 20px;
+  background: var(--card-bg);
+  border: 1px solid var(--accent);
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Intro card */
+.intro-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  border-left: 4px solid var(--primary);
+}
+.intro-card p { margin-bottom: 8px; }
+.intro-card p:last-child { margin-bottom: 0; }
+
+/* Case accordion */
+.case-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.case-item {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  transition: border-color 0.2s;
+}
+.case-item:hover { border-color: var(--accent); }
+
+.case-toggle {
+  display: none;
+}
+
+.case-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text);
+}
+.case-label:hover { background: #fffaf0; }
+
+.case-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.case-arrow {
+  margin-left: auto;
+  transition: transform 0.3s;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.case-toggle:checked + .case-label .case-arrow {
+  transform: rotate(90deg);
+}
+
+.case-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease, padding 0.3s ease;
+  padding: 0 20px;
+}
+
+.case-toggle:checked ~ .case-body {
+  max-height: 1200px;
+  padding: 0 20px 18px;
+}
+
+.case-body .case-material {
+  background: #fef9ef;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  border-left: 3px solid var(--accent);
+  font-size: 14px;
+}
+.case-body .case-material strong { color: var(--primary); }
+
+.task-box {
+  background: #f0f5ff;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  border-left: 3px solid #1677ff;
+  font-size: 14px;
+}
+.task-box strong { color: #1677ff; }
+
+.principles-box {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+.principles-box span {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  background: #fff0d6;
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.hint-box {
+  background: #f6ffed;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-top: 8px;
+  border-left: 3px solid #52c41a;
+  font-size: 13px;
+  color: #135200;
+}
+.hint-box::before {
+  content: "💡 参考思路：";
+  font-weight: 600;
+  color: #389e0d;
+}
+
+/* Table styling */
+.table-wrap {
+  overflow-x: auto;
+  margin: 10px 0;
+}
+.table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.table-wrap th {
+  background: var(--primary);
+  color: #fff;
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+}
+.table-wrap td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.table-wrap tr:nth-child(even) td {
+  background: #fef9ef;
+}
+
+/* Reflection section */
+.reflection {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-top: 24px;
+  border: 1px solid var(--border);
+}
+.reflection h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.reflection ol {
+  padding-left: 20px;
+}
+.reflection li {
+  margin-bottom: 10px;
+  padding: 10px 14px;
+  background: #fef9ef;
+  border-radius: 6px;
+  list-style-position: inside;
+}
+.reflection li::marker {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+/* Progress indicator */
+.progress-bar-wrap {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+.progress-bar-wrap p {
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.progress-track {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+.progress-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.progress-dot.completed {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.progress-dot:hover {
+  border-color: var(--accent);
+  transform: scale(1.1);
+}
+
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 16px;
+  margin-top: 28px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 640px) {
+  .container { padding: 16px 12px 32px; }
+  .header { margin: -16px -12px 20px; padding: 24px 16px; }
+  .case-body { font-size: 14px; }
+  .table-wrap table { font-size: 12px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>📰 七阶解析力训练</h1>
+    <div class="subtitle">从一条朋友圈到一场"信息战"——逐步升级的新闻分析实战</div>
+  </div>
+
+  <div class="meta-bar">
+    <span class="meta-tag">📘 语文 · 八年级上</span>
+    <span class="meta-tag">📖 统编版五四制</span>
+    <span class="meta-tag">🏷️ 解析性导学</span>
+    <span class="meta-tag">🎯 7个递进案例</span>
+  </div>
+
+  <div class="intro-card">
+    <p><strong>👋 欢迎进入七阶解析训练营！</strong> 你将经历从 <strong>熟悉→陌生、简单→复杂、个体→社会</strong> 的完整分析升级之路。每个案例都有真实材料、具体任务和参考思路，点击展开即可开始。</p>
+    <p style="color:var(--text-secondary);font-size:13px;margin-top:6px;">✅ 建议按序号顺序学习，逐步积累分析经验。</p>
+  </div>
+
+  <!-- Progress tracker -->
+  <div class="progress-bar-wrap">
+    <p>📊 学习进度</p>
+    <div class="progress-track" id="progressTrack">
+      <span class="progress-dot" data-case="1">1</span>
+      <span class="progress-dot" data-case="2">2</span>
+      <span class="progress-dot" data-case="3">3</span>
+      <span class="progress-dot" data-case="4">4</span>
+      <span class="progress-dot" data-case="5">5</span>
+      <span class="progress-dot" data-case="6">6</span>
+      <span class="progress-dot" data-case="7">7</span>
+    </div>
+  </div>
+
+  <div class="case-list">
+
+    <!-- Case 1 -->
+    <div class="case-item">
+      <input type="checkbox" class="case-toggle" id="case1">
+      <label class="case-label" for="case1">
+        <span class="case-number">1</span>
+        生活情境 · 朋友圈"新闻"真假辨
+        <span class="case-arrow">▶</span>
+      </label>
+      <div class="case-body">
+        <div class="case-material"><strong>📄 案例材料：</strong>你的朋友圈突然被一条"紧急通知"刷屏——"XX超市即将关闭，商品打折清仓！"消息没有落款，没有具体日期，但配了一张模糊的超市照片。</div>
+        <div class="task-box"><strong>🎯 解析任务：</strong>判断这条信息的真实性，并写出你的判断依据。</div>
+        <div class="principles-box">
+          <span>5W1H定位原理</span>
+          <span>事实-观点分离原理</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <tr><th>分析要素</th><th>你的发现</th></tr>
+            <tr><td>信息来源</td><td style="color:var(--text-secondary);">点击展开后填写 →</td></tr>
+            <tr><td>发布者身份</td><td style="color:var(--text-secondary);">→</td></tr>
+            <tr><td>是否有具体时间地点</td><td style="color:var(--text-secondary);">→</td></tr>
+            <tr><td>是否有佐证</td><td style="color:var(--text-secondary);">→</td></tr>
+          </table>
+        </div>
+        <div class="hint-box">从"谁发布的""证据在哪里""目的可能是什么"三个角度思考。注意：模糊的照片不一定证明事件真实存在。</div>
+      </div>
+    </div>
+
+    <!-- Case 2 -->
+    <div class="case-item">
+      <input type="checkbox" class="case-toggle" id="case2">
+      <label class="case-label" for="case2">
+        <span class="case-number">2</span>
+        校园情境 · 同一校运会，两篇报道
+        <span class="case-arrow">▶</span>
+      </label>
+      <div class="case-body">
+        <div class="case-material"><strong>📄 案例材料：</strong>校运会结束后，学校官网发文《我校第38届运动会圆满落幕》，侧重"打破纪录×项""精神文明奖"；校广播站播报《赛场上的那些感动》，侧重"志愿者默默付出""运动员带伤坚持"。说的是同一件事，读起来却像两个世界。</div>
+        <div class="task-box"><strong>🎯 解析任务：</strong>比较两篇报道的差异，分析各自的报道意图。</div>
+        <div class="principles-box">
+          <span>语境-意图推断原理</span>
+          <span>语言特征分析原理</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <tr><th>对比维度</th><th>官网报道</th><th>广播站报道</th></tr>
+            <tr><td>标题特点</td><td style="color:var(--text-secondary);">→</td><td style="color:var(--text-secondary);">→</td></tr>
+            <tr><td>选用素材</td><td style="color:var(--text-secondary);">→</td><td style="color:var(--text-secondary);">→</td></tr>
+            <tr><td>用词风格</td><td style="color:var(--text-secondary);">→</td><td style="color:var(--text-secondary);">→</td></tr>
+          </table>
+        </div>
+        <div class="hint-box">关注"选择性报道"——每个媒体都在选择性地呈现信息。选择什么、不选择什么，本身就是一种立场。</div>
+      </div>
+    </div>
+
+    <!-- Case 3 -->
+    <div class="case-item">
+      <input type="checkbox" class="case-toggle" id="case3">
+      <label class="case-label" for="case3">
+        <span class="case-number">3</span>
+        社区情境 · 物业费公告拆解
+        <span class="case-arrow">▶</span>
+      </label>
+      <div class="case-body">
+        <div class="case-material"><strong>📄 案例材料：</strong>小区公告栏贴出一则"关于物业费调整的公告"——先说"为提升小区环境和服务品质"，然后列出"新增服务项目"，最后才提"费用调整为每平米2.8元"。</div>
+        <div class="task-box"><strong>🎯 解析任务：</strong>分析公告中的事实信息和说服策略，看它是如何让你"更容易接受"涨价的。</div>
+        <div class="principles-box">
+          <span>事实-观点分离原理</span>
+          <span>结构-功能对应原理</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <tr><th>公告结构</th><th>功能分析</th></tr>
+            <tr><td>开头：提升服务品质</td><td style="color:var(--text-secondary);">→ 先建立情感认同</td></tr>
+            <tr><td>中间：新增服务项目</td><td style="color:var(--text-secondary);">→ 让涨价"有理由"</td></tr>
+            <tr><td>末尾：费用调整为2.8元</td><td style="color:var(--text-secondary);">→ 核心信息最后出现</td></tr>
+          </table>
+        </div>
+        <div class="hint-box">关注"为什么先把好的说在前面"——这种编排顺序本身就是一种说服策略。找出公告中哪些是客观事实，哪些是观点/宣传。</div>
+      </div>
+    </div>
+
+    <!-- Case 4 -->
+    <div class="case-item">
+      <input type="checkbox" class="case-toggle" id="case4">
+      <label class="case-label" for="case4">
+        <span class="case-number">4</span>
+        学科核心 · 经典新闻的力量
+        <span class="case-arrow">▶</span>
+      </label>
+      <div class="case-body">
+        <div class="case-material"><strong>📄 案例材料：</strong>毛泽东《我三十万大军胜利南渡长江》——全文不到200字，却被奉为新闻写作典范。"英勇的人民解放军二十一日已有大约三十万人渡过长江""不到二十四小时，三十万人民解放军即已突破敌阵，占领南岸广大地区"。<br><span style="color:var(--text-secondary);font-size:13px;">（教材原文节选）</span></div>
+        <div class="task-box"><strong>🎯 解析任务：</strong>分析这则消息如何在短短200字内传递大量信息并展现气势。</div>
+        <div class="principles-box">
+          <span>结构-功能对应原理</span>
+          <span>语言特征分析原理</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <tr><th>分析维度</th><th>你的发现</th></tr>
+            <tr><td>每句话的功能</td><td style="color:var(--text-secondary);">→</td></tr>
+            <tr><td>关键词选择</td><td style="color:var(--text-secondary);">→</td></tr>
+            <tr><td>时间线索</td><td style="color:var(--text-secondary);">→</td></tr>
+            <tr><td>力量感来源</td><td style="color:var(--text-secondary);">→</td></tr>
+          </table>
+        </div>
+        <div class="hint-box">关注动词的力量感（"突破""占领""渡过"）和"三十万大军"等数据的表达效果。两句话都用了"三十万"，重复本身就是一种修辞。</div>
+      </div>
+    </div>
+
+    <!-- Case 5 -->
+    <div class="case-item">
+      <input type="checkbox" class="case-toggle" id="case5">
+      <label class="case-label" for="case5">
+        <span class="case-number">5</span>
+        跨学科 · 科普新闻中的"翻译"
+        <span class="case-arrow">▶</span>
+      </label>
+      <div class="case-body">
+        <div class="case-material"><strong>📄 案例材料：</strong>一则"基因编辑技术新突破"的科普新闻写道："科学家像一把'分子剪刀'，精准剪掉了坏基因。"但原文论文中的表述是"CRISPR-Cas9系统实现sgRNA引导的靶向序列切割"。</div>
+        <div class="task-box"><strong>🎯 解析任务：</strong>分析作者如何将专业概念"翻译"给普通读者，翻译是否准确？有没有过度简化或误导？</div>
+        <div class="principles-box">
+          <span>语言特征分析原理</span>
+          <span>语境-意图推断原理</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <tr><th>专业术语</th><th>通俗化表达</th><th>是否准确？</th></tr>
+            <tr><td>CRISPR-Cas9</td><td>"分子剪刀"</td><td style="color:var(--text-secondary);">→</td></tr>
+            <tr><td>sgRNA引导靶向切割</td><td>"剪掉坏基因"</td><td style="color:var(--text-secondary);">→</td></tr>
+          </table>
+        </div>
+        <div class="hint-box">"比喻"在科普中既帮助理解，也可能带来误解。思考："分子剪刀"的比喻忽略了什么重要细节？</div>
+      </div>
+    </div>
+
+    <!-- Case 6 -->
+    <div class="case-item">
+      <input type="checkbox" class="case-toggle" id="case6">
+      <label class="case-label" for="case6">
+        <span class="case-number">6</span>
+        社会议题 · 同一事件，三种声音
+        <span class="case-arrow">▶</span>
+      </label>
+      <div class="case-body">
+        <div class="case-material"><strong>📄 案例材料：</strong>某城市发生一起交通管制事件。官方媒体标题《为保障重大活动，部分路段实施临时管制》→ 侧重"秩序"；自媒体标题《今早全城大堵车！你被堵在路上了吗？》→ 侧重"影响"；外媒标题《中国某市大规模交通管制引发市民不满》→ 侧重"争议"。</div>
+        <div class="task-box"><strong>🎯 解析任务：</strong>从报道角度、用词选择、信息取舍三个维度对比分析三篇报道的立场差异。</div>
+        <div class="principles-box">
+          <span>综合运用全部5条原理</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <tr><th>维度</th><th>官方媒体</th><th>自媒体</th><th>外媒</th></tr>
+            <tr><td>报道角度</td><td style="color:var(--text-secondary);">→</td><td style="color:var(--text-secondary);">→</td><td style="color:var(--text-secondary);">→</td></tr>
+            <tr><td>关键词</td><td style="color:var(--text-secondary);">→</td><td style="color:var(--text-secondary);">→</td><td style="color:var(--text-secondary);">→</td></tr>
+            <tr><td>信息取舍</td><td style="color:var(--text-secondary);">→</td><td style="color:var(--text-secondary);">→</td><td style="color:var(--text-secondary);">→</td></tr>
+          </table>
+        </div>
+        <div class="hint-box">不仅看"说了什么"，还要看"没说什么"。三篇报道各自省略了什么信息？这些省略是否影响了你对事件的理解？</div>
+      </div>
+    </div>
+
+    <!-- Case 7 -->
+    <div class="case-item">
+      <input type="checkbox" class="case-toggle" id="case7">
+      <label class="case-label" for="case7">
+        <span class="case-number">7</span>
+        综合迁移 · "信息战"中的一条消息
+        <span class="case-arrow">▶</span>
+      </label>
+      <div class="case-body">
+        <div class="case-material"><strong>📄 案例材料：</strong>你是班级信息员，班级群突然出现一条消息："紧急通知：因不明原因，明天全校停课，请大家互相转告！"——没有发件人署名，没有校方盖章。</div>
+        <div class="task-box"><strong>🎯 解析任务：</strong>运用全部解析性原理，制定一份完整的"消息核实方案"。</div>
+        <div class="principles-box">
+          <span>综合运用全部5条原理</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <tr><th>核实步骤</th><th>运用的原理</th><th>判断结果</th></tr>
+            <tr><td>第1步：要素核对</td><td style="color:var(--text-secondary);">→</td><td style="color:var(--text-secondary);">→</td></tr>
+            <tr><td>第2步：来源追溯</td><td style="color:var(--text-secondary);">→</td><td style="color:var(--text-secondary);">→</td></tr>
+            <tr><td>第3步：交叉验证</td><td style="color:var(--text-secondary);">→</td><td style="color:var(--text-secondary);">→</td></tr>
+          </table>
+        </div>
+        <div class="hint-box">设计一个"三步验证法"：要素核对（缺少5W1H中的哪些要素？）→ 来源追溯（消息源头是谁？）→ 交叉验证（有其他渠道可以确认吗？）</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Reflection -->
+  <div class="reflection">
+    <h2>🤔 完成七阶训练后，请你反思</h2>
+    <ol>
+      <li>哪个案例最容易分析？为什么？——每个案例的"难度感知"能帮你了解自己的分析偏好</li>
+      <li>哪个案例最难？困难在哪里？——识别自己的分析盲区，就是进步的起点</li>
+      <li>哪条解析性原理最常用？哪条用得还不太熟练？——原理不是背出来的，是用出来的</li>
+      <li>经过这7个案例，你对"新闻与信息"的认知发生了哪些变化？——请写下你最真实的感受</li>
+      <li>这些案例分析能力如何帮助你完成大单元的最终成果？——学以致用，才是学习的终点</li>
+    </ol>
+  </div>
+
+  <div class="footer">
+    📚 语文 · 统编版五四制 · 八年级上 | M2 解析性导学 · 七阶案例训练
+  </div>
+
+</div>
+
+<script>
+// Progress tracking — mark cases as "completed" when toggled open
+document.querySelectorAll('.case-toggle').forEach(function(toggle) {
+  toggle.addEventListener('change', function() {
+    var num = this.id.replace('case', '');
+    var dot = document.querySelector('.progress-dot[data-case="' + num + '"]');
+    if (this.checked) {
+      dot.classList.add('completed');
+    } else {
+      dot.classList.remove('completed');
+    }
+  });
+});
+</script>
+
+</body>
+</html>
