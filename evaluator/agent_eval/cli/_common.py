@@ -5,10 +5,18 @@
 
 from __future__ import annotations
 
+import typer
 from rich import print as rprint
 from rich.table import Table
 
-__all__ = ["Table", "rprint", "_flush_observability", "_init_judge_orchestrator", "_print_summary"]
+__all__ = [
+    "Table",
+    "rprint",
+    "_check_llm_availability",
+    "_flush_observability",
+    "_init_judge_orchestrator",
+    "_print_summary",
+]
 
 
 def _init_judge_orchestrator(
@@ -45,6 +53,34 @@ def _init_judge_orchestrator(
     except Exception as e:
         rprint(f"[yellow]⚠ LLM Judge 初始化失败，LLM 评估器将降级: {e}[/yellow]")
         return None
+
+
+def _check_llm_availability(
+    rule_set_obj: object, judge_orch: object | None, require_llm: bool
+) -> None:
+    """预检：rule_set 含 LLM 评估器但 Judge 未配置时提示/阻断。
+
+    LLM 评估器：soft.*/pref.* 与 commonsense.logical_consistency。
+
+    - 默认（require_llm=False）：警告列出将跳过的评估器，继续执行（降级为 SKIP，不计分）
+    - require_llm=True：阻断退出，提示用户先配置 LLM
+    """
+    llm_prefixes = ("soft.", "pref.")
+    llm_exact = {"commonsense.logical_consistency"}
+    llm_evaluators = [
+        r.evaluator  # type: ignore[attr-defined]
+        for r in rule_set_obj.rules  # type: ignore[attr-defined]
+        if getattr(r, "enabled", True)
+        and (r.evaluator.startswith(llm_prefixes) or r.evaluator in llm_exact)  # type: ignore[attr-defined]
+    ]
+    if not llm_evaluators or judge_orch is not None:
+        return
+
+    rprint("[yellow]⚠ 以下评估器依赖 LLM 但 Judge 未配置，将跳过（不计入得分）：[/yellow]")
+    rprint(f"[yellow]   {', '.join(llm_evaluators)}[/yellow]")
+    rprint("[yellow]   请通过 --llm-config 配置 LLM 后重试。[/yellow]")
+    if require_llm:
+        raise typer.Exit(code=1)
 
 
 def _print_summary(result: object) -> None:

@@ -12,6 +12,7 @@ import typer
 from dotenv import load_dotenv
 
 from agent_eval.cli._common import (
+    _check_llm_availability,
     _flush_observability,
     _init_judge_orchestrator,
     _print_summary,
@@ -131,6 +132,9 @@ def eval(
         "--upload/--no-upload",
         help="评估完成后把结果推送到可观测平台（覆盖 AGENT_EVAL_UPLOAD）",
     ),
+    require_llm: bool = typer.Option(
+        False, "--require-llm", help="要求 LLM 可用（质量/偏好评估依赖）；不可用时阻断退出"
+    ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="详细输出"),
 ) -> None:
     """对 ExecutionPackage 执行评估。"""
@@ -172,6 +176,9 @@ def eval(
             elif pkg_cfg.exists():
                 llm_config = str(pkg_cfg)
         judge_orch = _init_judge_orchestrator(llm_config, llm_provider)
+
+        # LLM 可用性预检：rule_set 含 LLM 评估器但 Judge 未配置时提示/阻断
+        _check_llm_availability(rule_set_obj, judge_orch, require_llm)
 
         # 3. 创建 Workspace
         ws = Workspace(output_dir) if output_dir else Workspace()
