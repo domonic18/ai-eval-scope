@@ -144,11 +144,12 @@ class PipelineEngine:
         Returns:
             SampleResult 实例。
         """
-        # 1. 缓存检查
+        # 1. 缓存检查（--no-cache 时跳过，强制重新评估）
         cache_key = self._compute_cache_key(sample, context)
-        cached = self._cache.get(cache_key)
-        if cached is not None:
-            return cached
+        if not context.get("no_cache"):
+            cached = self._cache.get(cache_key)
+            if cached is not None:
+                return cached
 
         sample_id = context.get("sample_id", "unknown")
         result = SampleResult(sample_id=sample_id, status=EvalStatus.PASS)
@@ -228,8 +229,9 @@ class PipelineEngine:
         # 视觉评估的截图内容随渲染器/CSS 变化，纳入 cache key 避免命中陈旧结果。
         # 默认空（非视觉场景不影响 key），调用方按需注入 vision_snapshot_hash。
         vision_hash = context.get("vision_snapshot_hash", "")
+        llm_signature = context.get("llm_signature", "")
         content_str = (
-            f"{content}:{rule_version}:{vision_hash}:"
+            f"{content}:{rule_version}:{vision_hash}:{llm_signature}:"
             f"{json.dumps(context.get('constraints', {}), sort_keys=True)}"
         )
         return hashlib.sha256(content_str.encode()).hexdigest()

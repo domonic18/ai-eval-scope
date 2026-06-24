@@ -135,6 +135,9 @@ def eval(
     require_llm: bool = typer.Option(
         False, "--require-llm", help="要求 LLM 可用（质量/偏好评估依赖）；不可用时阻断退出"
     ),
+    no_cache: bool = typer.Option(
+        False, "--no-cache", help="跳过评估缓存，强制重新评估（含 LLM 调用）"
+    ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="详细输出"),
 ) -> None:
     """对 ExecutionPackage 执行评估。"""
@@ -177,6 +180,14 @@ def eval(
                 llm_config = str(pkg_cfg)
         judge_orch = _init_judge_orchestrator(llm_config, llm_provider)
 
+        # 构造 LLM 指纹（纳入 cache_key，LLM 配置/可用性变更时缓存自动失效）
+        import hashlib
+
+        if judge_orch is not None and llm_config:
+            llm_signature = hashlib.sha256(Path(llm_config).read_bytes()).hexdigest()[:12]
+        else:
+            llm_signature = "no-llm"
+
         # LLM 可用性预检：rule_set 含 LLM 评估器但 Judge 未配置时提示/阻断
         _check_llm_availability(rule_set_obj, judge_orch, require_llm)
 
@@ -204,6 +215,8 @@ def eval(
                 project=project,
                 with_vision=enable_vision,
                 screenshot_renderer=renderer,
+                llm_signature=llm_signature,
+                no_cache=no_cache,
             )
         finally:
             if renderer is not None:

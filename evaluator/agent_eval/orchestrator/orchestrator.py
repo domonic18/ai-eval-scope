@@ -85,6 +85,8 @@ class Orchestrator:
         with_vision: bool = False,
         screenshot_renderer: Any | None = None,
         vision_soft_weights: dict[str, float] | None = None,
+        llm_signature: str = "",
+        no_cache: bool = False,
     ) -> EvalResult:
         """eval-only 模式：加载 packages → 评估 → 报告。
 
@@ -183,6 +185,10 @@ class Orchestrator:
             extra_context["screenshot_renderer"] = screenshot_renderer
         if trace_id is not None:
             extra_context["trace_id"] = trace_id
+        # LLM 配置指纹（纳入 cache_key，LLM 配置/可用性变更时缓存自动失效）
+        extra_context["llm_signature"] = llm_signature
+        if no_cache:
+            extra_context["no_cache"] = True
 
         # 为每个包设置 evidence_dir
         # 在 evaluate_batch 中通过 extra_context 统一注入，

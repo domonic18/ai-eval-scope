@@ -386,6 +386,39 @@ class TestPipelineEngine:
         # 应返回缓存的同一结果
         assert r1.sample_id == r2.sample_id
 
+    def test_cache_key_includes_llm_signature(self, tmp_path: Path) -> None:
+        """LLM 指纹不同 → cache_key 不同（LLM 配置变更时缓存自动失效）。"""
+        config = PipelineConfig(stages=[StageConfig(id="format")])
+        engine = PipelineEngine(config, registry)
+        k1 = engine._compute_cache_key(tmp_path, {"llm_signature": "sig-a"})
+        k2 = engine._compute_cache_key(tmp_path, {"llm_signature": "sig-b"})
+        k3 = engine._compute_cache_key(tmp_path, {"llm_signature": "sig-a"})
+        assert k1 != k2  # 不同 LLM 配置 → 不同 key
+        assert k1 == k3  # 相同 LLM 配置 → 相同 key
+
+    def test_no_cache_forces_reevaluation(self, tmp_path: Path) -> None:
+        """no_cache 时跳过缓存读取，强制重新评估。"""
+        output = tmp_path / "output"
+        output.mkdir()
+        (output / "doc.md").write_text("# Title")
+
+        config = PipelineConfig(
+            stages=[
+                StageConfig(
+                    id="format",
+                    short_circuit_policy="fail_fast",
+                    evaluators=[
+                        EvaluatorConfig("format.response_format", {"allowed_formats": ["md"]}),
+                    ],
+                ),
+            ]
+        )
+        engine = PipelineEngine(config, registry)
+        engine.evaluate_sample(tmp_path, {"sample_id": "nc_test"})  # 写入缓存
+        assert len(engine._cache) == 1
+        r = engine.evaluate_sample(tmp_path, {"sample_id": "nc_test", "no_cache": True})
+        assert r.sample_id == "nc_test"  # 跳过缓存仍正常评估
+
     def test_batch_evaluation(self, tmp_path: Path) -> None:
         """批量评估返回 MetricsReport。"""
         for i in range(3):
