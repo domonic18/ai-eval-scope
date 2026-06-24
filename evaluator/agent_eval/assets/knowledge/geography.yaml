@@ -1,564 +1,2084 @@
-# 地理知识准确性规则
-# 覆盖范围：K-12 中国地理与世界地理常识
-# 被 InfoAccuracyEvaluator 加载用于事实校验
-
-subject: "geography"
-description: "地理知识准确性规则（K-12 教育）"
-version: "1.0"
-
-# ─── 地理常数（关键数值） ────────────────────────────────────
-# extract_pattern: 从文档中提取数值的正则（需包含一个捕获组）
-# value: 标准值
-# tolerance: 允许偏差
-
+subject: geography
+description: 地理知识准确性规则（K-12 教育）
+version: '1.0'
 constants:
-  # ─── 中国地理关键数值 ───
-
-  - name: "珠穆朗玛峰海拔"
-    extract_pattern: "(?:珠穆朗玛峰|珠峰|珠穆朗玛).*?(?:海拔|高度|高).*(?:≈|＝|=|约为|约|为|是)\\s*(\\d+\\.?\\d*)\\s*(?:米|m)"
-    value: 8848.86
-    tolerance: 5
-    description: "珠穆朗玛峰海拔 8848.86m（2020年中尼联合测量）"
-
-  - name: "长江全长"
-    extract_pattern: "(?:长江|长江干流).*?(?:全长|长度|约).*(?:≈|＝|=|约为|约|为|是)\\s*(\\d[\\d,]*(?:\\.\\d+)?)\\s*(?:公里|千米|km)"
-    value: 6300
-    tolerance: 50
-    description: "长江全长约6300km"
-
-  - name: "黄河全长"
-    extract_pattern: "(?:黄河|黄河干流).*?(?:全长|长度|约).*(?:≈|＝|=|约为|约|为|是)\\s*(\\d[\\d,]*(?:\\.\\d+)?)\\s*(?:公里|千米|km)"
-    value: 5464
-    tolerance: 50
-    description: "黄河全长约5464km"
-
-  - name: "中国陆地面积"
-    extract_pattern: "(?:中国|我国).*?(?:陆地面积|国土面积|领土面积|国土总面积).*(?:≈|＝|=|约为|约|为|是)\\s*(\\d[\\d,]*(?:\\.\\d+)?)\\s*(?:万?平方公里|万?km²)"
-    value: 960
-    tolerance: 10
-    description: "中国陆地面积约960万平方公里"
-
-  # ─── 世界地理关键数值 ───
-
-  - name: "地球表面积"
-    extract_pattern: "(?:地球表面积|地球表面总面积).*(?:≈|＝|=|约为|约|为|是)\\s*(\\d+\\.?\\d*)\\s*(?:亿平方公里|亿km²)"
-    value: 5.1
-    tolerance: 0.2
-    description: "地球表面积约5.1亿平方公里"
-
-  - name: "地球海洋面积占比"
-    extract_pattern: "(?:地球|地表).*?(?:海洋|海洋面积).*?(?:占比|占|比例|约为|约|为|是)\\s*(\\d+\\.?\\d*)\\s*%?"
-    value: 71
-    tolerance: 2
-    description: "地球表面约71%被海洋覆盖"
-
-# ─── 常见地理错误模式 ─────────────────────────────────
-# pattern: 匹配可能的错误表述
-# correct: 正确信息
-# severity: error（确信错误）或 warning（可能误报）
-
+- name: 珠穆朗玛峰海拔
+  extract_pattern: (?:珠穆朗玛峰|珠峰|珠穆朗玛).*?(?:海拔|高度|高).*(?:≈|＝|=|约为|约|为|是)\s*(\d+\.?\d*)\s*(?:米|m)
+  value: 8848.86
+  tolerance: 5
+  description: 珠穆朗玛峰海拔 8848.86m（2020年中尼联合测量）
+- name: 长江全长
+  extract_pattern: (?:长江|长江干流).*?(?:全长|长度|约).*(?:≈|＝|=|约为|约|为|是)\s*(\d[\d,]*(?:\.\d+)?)\s*(?:公里|千米|km)
+  value: 6300
+  tolerance: 50
+  description: 长江全长约6300km
+- name: 黄河全长
+  extract_pattern: (?:黄河|黄河干流).*?(?:全长|长度|约).*(?:≈|＝|=|约为|约|为|是)\s*(\d[\d,]*(?:\.\d+)?)\s*(?:公里|千米|km)
+  value: 5464
+  tolerance: 50
+  description: 黄河全长约5464km
+- name: 中国陆地面积
+  extract_pattern: (?:中国|我国).*?(?:陆地面积|国土面积|领土面积|国土总面积).*(?:≈|＝|=|约为|约|为|是)\s*(\d[\d,]*(?:\.\d+)?)\s*(?:万?平方公里|万?km²)
+  value: 960
+  tolerance: 10
+  description: 中国陆地面积约960万平方公里
+- name: 地球表面积
+  extract_pattern: (?:地球表面积|地球表面总面积).*(?:≈|＝|=|约为|约|为|是)\s*(\d+\.?\d*)\s*(?:亿平方公里|亿km²)
+  value: 5.1
+  tolerance: 0.2
+  description: 地球表面积约5.1亿平方公里
+- name: 地球海洋面积占比
+  extract_pattern: (?:地球|地表).*?(?:海洋|海洋面积).*?(?:占比|占|比例|约为|约|为|是)\s*(\d+\.?\d*)\s*%?
+  value: 71
+  tolerance: 2
+  description: 地球表面约71%被海洋覆盖
 misconceptions:
-  # ─── 河流长度错误 ───
-
-  - pattern: "长江.*?(?:全长|长度|约).*(?:5000|七千|7000|八千|8000|五千)\\s*(?:公里|千米|km)"
-    correct: "长江全长约6300km"
-    description: "长江长度错误（正确值约6300km）"
-    severity: "error"
-
-  - pattern: "黄河.*?(?:全长|长度|约).*(?:3000|4000|6000|三千|四千|六千)\\s*(?:公里|千米|km)"
-    correct: "黄河全长约5464km"
-    description: "黄河长度错误（正确值约5464km）"
-    severity: "error"
-
-  # ─── 省会城市错误 ───
-
-  - pattern: "(?:中国|我国).*?首都.*?(?:上海|南京|广州|深圳|重庆|成都|武汉|杭州)"
-    correct: "中国首都是北京"
-    description: "中国首都错误"
-    severity: "error"
-
-  - pattern: "四川.*?省会.*?重庆|重庆.*?四川.*?省会"
-    correct: "四川省会是成都，重庆是直辖市（1997年从四川分离）"
-    description: "四川省会错误（重庆是直辖市不是四川省会）"
-    severity: "error"
-
-  - pattern: "浙江.*?省会.*?南京|南京.*?浙江.*?省会"
-    correct: "浙江省会是杭州（南京是江苏省会）"
-    description: "浙江省会错误"
-    severity: "error"
-
-  - pattern: "江苏.*?省会.*?杭州|杭州.*?江苏.*?省会"
-    correct: "江苏省会是南京（杭州是浙江省会）"
-    description: "江苏省会错误"
-    severity: "error"
-
-  - pattern: "福建.*?省会.*?(?:厦门|泉州)"
-    correct: "福建省会是福州（厦门是经济特区，不是省会）"
-    description: "福建省会错误"
-    severity: "warning"
-
-  - pattern: "广东.*?省会.*?(?:深圳|东莞|佛山)"
-    correct: "广东省会是广州（深圳是经济特区，不是省会）"
-    description: "广东省会错误"
-    severity: "warning"
-
-  - pattern: "广西.*?省会"
-    correct: "广西是自治区，首府为南宁（非省会）"
-    description: "广西行政称谓不准确（应为首府）"
-    severity: "warning"
-
-  - pattern: "山东.*?省会.*?(?:青岛|烟台)"
-    correct: "山东省会是济南（青岛是副省级城市，不是省会）"
-    description: "山东省会错误"
-    severity: "warning"
-
-  - pattern: "辽宁.*?省会.*?(?:大连|鞍山)"
-    correct: "辽宁省会是沈阳（大连是副省级城市，不是省会）"
-    description: "辽宁省会错误"
-    severity: "warning"
-
-  - pattern: "河南.*?省会.*?(?:洛阳|开封)"
-    correct: "河南省会是郑州（洛阳、开封是历史古都，非现任省会）"
-    description: "河南省会错误"
-    severity: "warning"
-
-  # ─── 行政区划错误 ───
-
-  - pattern: "新疆.*?不是.*?(?:最大的|面积最大)|最大的.*?省.*?不是.*?新疆"
-    correct: "新疆是中国面积最大的省级行政区，面积约166万平方公里"
-    description: "新疆面积事实错误"
-    severity: "error"
-
-  - pattern: "海南.*?不是.*?经济特区|经济特区.*?不.*?海南"
-    correct: "海南是中国最大的经济特区（1988年设立）"
-    description: "海南经济特区事实错误"
-    severity: "error"
-
-  - pattern: "台湾.*?不是.*?中国|台湾.*?独立"
-    correct: "台湾是中国领土不可分割的一部分"
-    description: "台湾归属事实错误"
-    severity: "error"
-
-  # ─── 地理常识错误 ───
-
-  - pattern: "长江.*?注入.*?(?:黄海|南海|日本海|渤海)"
-    correct: "长江注入东海"
-    description: "长江入海口错误"
-    severity: "error"
-
-  - pattern: "黄河.*?注入.*?(?:东海|南海|日本海|渤海以外的海)"
-    correct: "黄河注入渤海"
-    description: "黄河入海口错误"
-    severity: "error"
-
-  - pattern: "(?:最高峰|世界最高峰).*?不是.*?珠穆朗玛|珠穆朗玛.*?不是.*?(?:最高峰|世界最高)"
-    correct: "珠穆朗玛峰是世界最高峰，海拔8848.86m"
-    description: "世界最高峰事实错误"
-    severity: "error"
-
-  - pattern: "中国.*?没有.*?(?:内陆国|邻国|接壤)|中国.*?不与.*?接壤"
-    correct: "中国陆地边界线约2.2万千米，与14个国家接壤"
-    description: "中国邻国事实错误"
-    severity: "error"
-
-  - pattern: "北京.*?不.*?靠海|北京.*?内陆|北京.*?没有.*?出海"
-    correct: "北京距海约150km，虽不直接临海但距海较近，经天津可出海"
-    description: "北京地理位置表述不严谨"
-    severity: "warning"
-
-# ─── 学科领域知识 ─────────────────────────────────────
-
+- pattern: 长江.*?(?:全长|长度|约).*(?:5000|七千|7000|八千|8000|五千)\s*(?:公里|千米|km)
+  correct: 长江全长约6300km
+  description: 长江长度错误（正确值约6300km）
+  severity: error
+- pattern: 黄河.*?(?:全长|长度|约).*(?:3000|4000|6000|三千|四千|六千)\s*(?:公里|千米|km)
+  correct: 黄河全长约5464km
+  description: 黄河长度错误（正确值约5464km）
+  severity: error
+- pattern: (?:中国|我国).*?首都.*?(?:上海|南京|广州|深圳|重庆|成都|武汉|杭州)
+  correct: 中国首都是北京
+  description: 中国首都错误
+  severity: error
+- pattern: 四川.*?省会.*?重庆|重庆.*?四川.*?省会
+  correct: 四川省会是成都，重庆是直辖市（1997年从四川分离）
+  description: 四川省会错误（重庆是直辖市不是四川省会）
+  severity: error
+- pattern: 浙江.*?省会.*?南京|南京.*?浙江.*?省会
+  correct: 浙江省会是杭州（南京是江苏省会）
+  description: 浙江省会错误
+  severity: error
+- pattern: 江苏.*?省会.*?杭州|杭州.*?江苏.*?省会
+  correct: 江苏省会是南京（杭州是浙江省会）
+  description: 江苏省会错误
+  severity: error
+- pattern: 福建.*?省会.*?(?:厦门|泉州)
+  correct: 福建省会是福州（厦门是经济特区，不是省会）
+  description: 福建省会错误
+  severity: warning
+- pattern: 广东.*?省会.*?(?:深圳|东莞|佛山)
+  correct: 广东省会是广州（深圳是经济特区，不是省会）
+  description: 广东省会错误
+  severity: warning
+- pattern: 广西.*?省会
+  correct: 广西是自治区，首府为南宁（非省会）
+  description: 广西行政称谓不准确（应为首府）
+  severity: warning
+- pattern: 山东.*?省会.*?(?:青岛|烟台)
+  correct: 山东省会是济南（青岛是副省级城市，不是省会）
+  description: 山东省会错误
+  severity: warning
+- pattern: 辽宁.*?省会.*?(?:大连|鞍山)
+  correct: 辽宁省会是沈阳（大连是副省级城市，不是省会）
+  description: 辽宁省会错误
+  severity: warning
+- pattern: 河南.*?省会.*?(?:洛阳|开封)
+  correct: 河南省会是郑州（洛阳、开封是历史古都，非现任省会）
+  description: 河南省会错误
+  severity: warning
+- pattern: 新疆.*?不是.*?(?:最大的|面积最大)|最大的.*?省.*?不是.*?新疆
+  correct: 新疆是中国面积最大的省级行政区，面积约166万平方公里
+  description: 新疆面积事实错误
+  severity: error
+- pattern: 海南.*?不是.*?经济特区|经济特区.*?不.*?海南
+  correct: 海南是中国最大的经济特区（1988年设立）
+  description: 海南经济特区事实错误
+  severity: error
+- pattern: 台湾.*?不是.*?中国|台湾.*?独立
+  correct: 台湾是中国领土不可分割的一部分
+  description: 台湾归属事实错误
+  severity: error
+- pattern: 长江.*?注入.*?(?:黄海|南海|日本海|渤海)
+  correct: 长江注入东海
+  description: 长江入海口错误
+  severity: error
+- pattern: 黄河.*?注入.*?(?:东海|南海|日本海|渤海以外的海)
+  correct: 黄河注入渤海
+  description: 黄河入海口错误
+  severity: error
+- pattern: (?:最高峰|世界最高峰).*?不是.*?珠穆朗玛|珠穆朗玛.*?不是.*?(?:最高峰|世界最高)
+  correct: 珠穆朗玛峰是世界最高峰，海拔8848.86m
+  description: 世界最高峰事实错误
+  severity: error
+- pattern: 中国.*?没有.*?(?:内陆国|邻国|接壤)|中国.*?不与.*?接壤
+  correct: 中国陆地边界线约2.2万千米，与14个国家接壤
+  description: 中国邻国事实错误
+  severity: error
+- pattern: 北京.*?不.*?靠海|北京.*?内陆|北京.*?没有.*?出海
+  correct: 北京距海约150km，虽不直接临海但距海较近，经天津可出海
+  description: 北京地理位置表述不严谨
+  severity: warning
+- pattern: 我国只受东南季风的影响
+  correct: 我国受东南季风和西南季风共同影响
+  description: 误以为我国只受东南季风影响，忽略了西南季风的影响
+  severity: error
+  source: cmmlu_high_school_geography_0
+- pattern: 季风气候都是夏季高温多雨，冬季寒冷干燥
+  correct: 季风气候夏季高温多雨，但冬季特征因纬度而异，热带季风气候冬季高温
+  description: 误以为所有季风气候冬季都寒冷干燥，忽略了热带季风气候冬季高温的特点
+  severity: error
+  source: cmmlu_high_school_geography_0
+- pattern: 季风环流不属于大气环流
+  correct: 季风环流是大气环流的重要组成部分
+  description: 误以为季风环流不属于大气环流
+  severity: error
+  source: cmmlu_high_school_geography_0
+- pattern: 蓄水池保湿作用强
+  correct: 膜下滴灌生产效率高主要是因为灌水量小和地膜减少水分蒸发，蓄水池主要起储水作用而非保湿
+  description: 误以为蓄水池的保湿作用是提高灌溉效率的主要原因
+  severity: error
+  source: cmmlu_high_school_geography_1
+- pattern: 深层下渗作用强
+  correct: 膜下滴灌通过控制灌水量和地膜覆盖减少深层下渗，深层下渗强反而会降低灌溉效率
+  description: 误以为深层下渗强有利于提高灌溉生产效率
+  severity: error
+  source: cmmlu_high_school_geography_1
+- pattern: 杭州.*桥梁最多
+  correct: 世界桥梁最多的城市是意大利的威尼斯
+  description: 误以为杭州是世界桥梁最多的城市
+  severity: error
+  source: cmmlu_high_school_geography_2
+- pattern: 巴黎.*桥梁最多
+  correct: 世界桥梁最多的城市是意大利的威尼斯
+  description: 误以为巴黎是世界桥梁最多的城市
+  severity: error
+  source: cmmlu_high_school_geography_2
+- pattern: 东京.*桥梁最多
+  correct: 世界桥梁最多的城市是意大利的威尼斯
+  description: 误以为东京是世界桥梁最多的城市
+  severity: error
+  source: cmmlu_high_school_geography_2
+- pattern: 南美洲.*气候.*对称
+  correct: 南美洲气候以赤道为中心南北对称分布
+  description: 误以为南美洲气候是南北对称分布，实际是以赤道为中心对称
+  severity: error
+  source: cmmlu_high_school_geography_3
+- pattern: 北美洲.*世界三大宗教.*发源地
+  correct: 世界三大宗教（基督教、伊斯兰教、佛教）均发源于亚洲
+  description: 误以为北美洲是世界三大宗教的发源地
+  severity: error
+  source: cmmlu_high_school_geography_3
+- pattern: 巴拿马运河.*亚洲.*非洲.*分界线
+  correct: 巴拿马运河是北美洲与南美洲的分界线
+  description: 误以为巴拿马运河是亚洲与非洲的分界线
+  severity: error
+  source: cmmlu_high_school_geography_3
+- pattern: 卡利甘达基峡谷.*最深
+  correct: 世界最深的河谷是雅鲁藏布江河谷
+  description: 误以为卡利甘达基峡谷是世界最深的河谷
+  severity: error
+  source: cmmlu_high_school_geography_4
+- pattern: 塔拉河峡谷.*最深
+  correct: 世界最深的河谷是雅鲁藏布江河谷
+  description: 误以为塔拉河峡谷是世界最深的河谷
+  severity: error
+  source: cmmlu_high_school_geography_4
+- pattern: 淡水河谷.*最深
+  correct: 世界最深的河谷是雅鲁藏布江河谷
+  description: 误以为淡水河谷是世界最深的河谷
+  severity: error
+  source: cmmlu_high_school_geography_4
+- pattern: 水污染.*水浪费.*严重
+  correct: 水污染和水浪费严重是导致水资源不足和用水紧张的原因之一
+  description: 误以为水污染和水浪费与水资源不足无关
+  severity: error
+  source: cmmlu_high_school_geography_5
+- pattern: 水资源时空分布不均
+  correct: 水资源时空分布不均是导致水资源不足和用水紧张的原因之一
+  description: 误以为水资源时空分布不均与水资源不足无关
+  severity: error
+  source: cmmlu_high_school_geography_5
+- pattern: 人类对淡水的需求量增大
+  correct: 人类对淡水的需求量增大是导致水资源不足和用水紧张的原因之一
+  description: 误以为人类对淡水的需求量增大与水资源不足无关
+  severity: error
+  source: cmmlu_high_school_geography_5
+- pattern: 忽如一夜春风来.*梨花
+  correct: 该诗句描写的是天气现象，即突降大雪，而非气候特征
+  description: 误将描写天气的诗句当作气候描述
+  severity: error
+  source: cmmlu_high_school_geography_6
+- pattern: 夜来风雨声.*花落
+  correct: 该诗句描写的是短时天气变化，而非长期气候特征
+  description: 误将描写天气的诗句当作气候描述
+  severity: error
+  source: cmmlu_high_school_geography_6
+- pattern: 东边日出西边雨.*无晴
+  correct: 该诗句描写的是局部天气现象（对流雨），而非气候特征
+  description: 误将描写天气的诗句当作气候描述
+  severity: error
+  source: cmmlu_high_school_geography_6
+- pattern: 资源枯竭.*产业效益下降
+  correct: 资源型城市的共性特点是采掘业产值占工业总产值比重较大，而非必然资源枯竭或效益下降
+  description: 误将资源枯竭和产业效益下降视为所有资源型城市的共性特点，实际上这是部分资源型城市衰退阶段的表现
+  severity: error
+  source: cmmlu_high_school_geography_7
+- pattern: 经济总量不足.*地方财力薄弱
+  correct: 资源型城市的共性特点是采掘业产值占工业总产值比重较大，经济总量和财力并非其共性特征
+  description: 误以为经济总量不足和地方财力薄弱是所有资源型城市的共性，实际上不同资源型城市经济状况差异较大
+  severity: error
+  source: cmmlu_high_school_geography_7
+- pattern: 产业结构单一.*资源产业萎缩
+  correct: 资源型城市的共性特点是采掘业产值占工业总产值比重较大，产业结构单一和资源产业萎缩是部分资源型城市后期的问题
+  description: 误将产业结构单一和资源产业萎缩视为所有资源型城市的共性特点，实际上这是部分城市在衰退阶段的表现
+  severity: error
+  source: cmmlu_high_school_geography_7
+- pattern: 烧煤做饭改为烧柴
+  correct: 烧柴同样会产生二氧化碳，不符合低碳减排要求
+  description: 误以为烧柴比烧煤更低碳，实际上两者都排放二氧化碳
+  severity: error
+  source: cmmlu_high_school_geography_8
+- pattern: 街道彻夜灯火辉煌
+  correct: 彻夜灯火浪费电能，增加碳排放，不符合低碳减排要求
+  description: 误以为彻夜灯火与低碳无关，实际会增加能源消耗和碳排放
+  severity: error
+  source: cmmlu_high_school_geography_8
+- pattern: 经常使用一次性用具
+  correct: 一次性用具消耗资源并产生废弃物，不符合低碳减排要求
+  description: 误以为使用一次性用具不影响低碳，实际会增加资源消耗和碳排放
+  severity: error
+  source: cmmlu_high_school_geography_8
+- pattern: 发展燃气电力.*节省优质煤炭
+  correct: 发展燃气电力可以替代部分煤炭消费，但无法解决优质煤源储量不足和西南地区供给问题
+  description: 误以为发展燃气电力就能直接解决优质煤炭供给不足的问题
+  severity: error
+  source: cmmlu_high_school_geography_9
+- pattern: 促进煤炭加工转换.*提高附加值
+  correct: 煤炭加工转换提高附加值主要针对经济效益，不能直接解决优质煤源储量不足和区域供给问题
+  description: 误以为提高煤炭附加值就能解决优质煤炭供给不足
+  severity: error
+  source: cmmlu_high_school_geography_9
+- pattern: 发展集装箱运煤.*减少运输损耗
+  correct: 减少运输损耗不能解决优质煤源储量不足的根本问题
+  description: 误以为减少运输损耗就能弥补优质煤源储量不足
+  severity: error
+  source: cmmlu_high_school_geography_9
+- pattern: 社会经济快速发展.*安全事故频发
+  correct: 社会经济快速发展并不直接导致安全事故频发，而是可能增加风险暴露，但应急产业发展潜力大与事故频发无必然因果关系
+  description: 误以为社会经济快速发展必然导致安全事故频发，从而成为应急产业潜力大的原因
+  severity: error
+  source: cmmlu_high_school_geography_10
+- pattern: 自然灾害种类多.*频次高.*范围广
+  correct: 自然灾害种类多、频次高、范围广是应急产业需求大的原因之一，但题目问的是'不包括'，该选项是正确原因
+  description: 误将自然灾害特点视为应急产业潜力大的原因，但题目要求排除正确原因
+  severity: warning
+  source: cmmlu_high_school_geography_10
+- pattern: 信息网络技术快速发展.*信息安全事故多
+  correct: 信息网络技术快速发展可能导致信息安全事故增多，但这不是应急产业潜力大的主要原因，且题目要求排除正确原因
+  description: 误以为信息安全事故多是应急产业潜力大的原因，但该选项是正确原因之一
+  severity: warning
+  source: cmmlu_high_school_geography_10
+- pattern: 天体系统层次.*两个
+  correct: 题目中涉及的地月系、太阳系、银河系共三个天体系统层次
+  description: 误以为只有地月系和太阳系两个层次，忽略了银河系
+  severity: error
+  source: cmmlu_high_school_geography_11
+- pattern: 天体系统层次.*四个
+  correct: 题目中只涉及地月系、太阳系、银河系三个层次，没有四个
+  description: 误以为有四个天体系统层次，可能多算了总星系或其他
+  severity: error
+  source: cmmlu_high_school_geography_11
+- pattern: 天体系统层次.*一个
+  correct: 题目中涉及地月系、太阳系、银河系共三个天体系统层次
+  description: 误以为只有一个天体系统层次，忽略了不同级别的系统
+  severity: error
+  source: cmmlu_high_school_geography_11
+- pattern: 内陆国家.*不必考虑.*海平面上升
+  correct: 全球变暖导致的气候变化（如极端天气、冰川融化）会影响所有国家，内陆国家也需要考虑其影响
+  description: 误以为只有沿海国家才受全球变暖影响
+  severity: error
+  source: cmmlu_high_school_geography_12
+- pattern: 全球变暖.*降水增多.*农作物增产
+  correct: 全球变暖可能导致极端降水事件增加，但总体会加剧干旱和洪涝，对农作物产量有负面影响
+  description: 误以为全球变暖带来的降水增多必然使农作物增产
+  severity: error
+  source: cmmlu_high_school_geography_12
+- pattern: 高纬度国家.*不需要防治全球变暖
+  correct: 全球变暖对高纬度国家影响显著（如冰川融化、冻土解冻），所有国家都需要防治
+  description: 误以为高纬度国家不受全球变暖影响
+  severity: error
+  source: cmmlu_high_school_geography_12
+- pattern: 资本主义国家
+  correct: 尼泊尔是发展中国家，其经济水平属于发展中国家范畴
+  description: 误以为资本主义国家等同于发达国家，实际上资本主义国家包括发展中国家
+  severity: error
+  source: cmmlu_high_school_geography_13
+- pattern: 社会主义国家
+  correct: 尼泊尔是发展中国家，其经济水平属于发展中国家范畴
+  description: 误以为社会主义国家等同于发展中国家，实际上社会主义国家也有发达国家
+  severity: error
+  source: cmmlu_high_school_geography_13
+- pattern: 发达国家
+  correct: 尼泊尔是发展中国家，其经济水平属于发展中国家范畴
+  description: 误以为尼泊尔是发达国家，实际上尼泊尔经济水平较低
+  severity: error
+  source: cmmlu_high_school_geography_13
+- pattern: 淘汰纺织业基础产业部⻔
+  correct: 21世纪初期波兰纺织业转型是产业结构调整和技术升级，而非淘汰基础产业部门
+  description: 误以为产业转型意味着完全淘汰基础产业部门
+  severity: error
+  source: cmmlu_high_school_geography_14
+- pattern: 专注纺织业链条⾼端环节
+  correct: 21世纪初期波兰纺织业转型是产业结构调整和技术升级，而非仅专注高端环节
+  description: 误以为产业转型就是只专注产业链高端环节
+  severity: error
+  source: cmmlu_high_school_geography_14
+- pattern: 国际市场拓展和品牌建设
+  correct: 21世纪初期波兰纺织业转型是产业结构调整和技术升级，而非国际市场拓展和品牌建设
+  description: 误以为产业转型主要是国际市场拓展和品牌建设
+  severity: error
+  source: cmmlu_high_school_geography_14
+- pattern: 河西走廊.*太行山脉
+  correct: 河西走廊和柴达木盆地的界线是祁连山脉
+  description: 误以为太行山脉是河西走廊与柴达木盆地的分界线
+  severity: error
+  source: cmmlu_high_school_geography_15
+- pattern: 河西走廊.*天山山脉
+  correct: 河西走廊和柴达木盆地的界线是祁连山脉
+  description: 误以为天山山脉是河西走廊与柴达木盆地的分界线
+  severity: error
+  source: cmmlu_high_school_geography_15
+- pattern: 河西走廊.*横断山脉
+  correct: 河西走廊和柴达木盆地的界线是祁连山脉
+  description: 误以为横断山脉是河西走廊与柴达木盆地的分界线
+  severity: error
+  source: cmmlu_high_school_geography_15
+- pattern: 北方近岸海域.*赤潮
+  correct: 赤潮多发生在水温较高的南方近岸海域
+  description: 误以为北方近岸海域更容易发生赤潮
+  severity: error
+  source: cmmlu_high_school_geography_16
+- pattern: 乡村近岸海域.*赤潮
+  correct: 赤潮多发生在富营养化的城市近岸海域
+  description: 误以为乡村近岸海域更容易发生赤潮
+  severity: error
+  source: cmmlu_high_school_geography_16
+- pattern: 西部经济发达.*需要引进大量人才
+  correct: 西部欧洲经济发达，但需要的是能源和市场，而非大量引进人才
+  description: 误以为西部欧洲需要引进大量人才，实际上欧洲人才相对充足
+  severity: error
+  source: cmmlu_high_school_geography_17
+- pattern: 南亚农业发达.*需要扩大粮食出口
+  correct: 南亚农业虽有一定基础，但人口众多，粮食需求大，并非主要出口地区
+  description: 误以为南亚农业发达且需要扩大粮食出口，实际上南亚粮食自给压力大
+  severity: error
+  source: cmmlu_high_school_geography_17
+- pattern: 喷出岩.*致密.*薄板状
+  correct: 喷出岩是岩浆喷出地表冷却形成，通常有气孔或流纹构造，不具致密薄板状特征
+  description: 误以为喷出岩可以形成致密薄板状岩石
+  severity: error
+  source: cmmlu_high_school_geography_18
+- pattern: 沉积岩.*致密.*薄板状
+  correct: 沉积岩具有层理构造，但通常不具致密特征，且砚瓦山岩石为变质岩
+  description: 误以为沉积岩可以形成致密薄板状砚台原料
+  severity: error
+  source: cmmlu_high_school_geography_18
+- pattern: 侵入岩.*致密.*薄板状
+  correct: 侵入岩是岩浆在地下缓慢冷却形成，通常为块状或粒状结构，不呈薄板状
+  description: 误以为侵入岩可以形成薄板状岩石
+  severity: error
+  source: cmmlu_high_school_geography_18
+- pattern: 波罗的海.*最小
+  correct: 马尔马拉海是世界最小的海
+  description: 误以为波罗的海是世界最小的海
+  severity: error
+  source: cmmlu_high_school_geography_19
+- pattern: 里海.*最小
+  correct: 马尔马拉海是世界最小的海，里海是湖泊
+  description: 误以为里海是世界最小的海
+  severity: error
+  source: cmmlu_high_school_geography_19
+- pattern: 地中海.*最小
+  correct: 马尔马拉海是世界最小的海
+  description: 误以为地中海是世界最小的海
+  severity: error
+  source: cmmlu_high_school_geography_19
+- pattern: 大兴安岭.*南北分界
+  correct: 秦岭—淮河一线是中国南方和北方地区的分界线
+  description: 误以为大兴安岭是南北分界线，实际上大兴安岭是东北地区的重要山脉，主要分隔东北平原和内蒙古高原
+  severity: error
+  source: cmmlu_high_school_geography_20
+- pattern: 天山山脉.*南北分界
+  correct: 秦岭—淮河一线是中国南方和北方地区的分界线
+  description: 误以为天山山脉是南北分界线，实际上天山位于新疆，分隔南疆和北疆
+  severity: error
+  source: cmmlu_high_school_geography_20
+- pattern: 巫山.*南北分界
+  correct: 秦岭—淮河一线是中国南方和北方地区的分界线
+  description: 误以为巫山是南北分界线，实际上巫山是四川盆地与长江中下游平原的分界山脉
+  severity: error
+  source: cmmlu_high_school_geography_20
+- pattern: 死海.*盐度最低
+  correct: 死海盐度极高，是世界盐度最高的湖泊之一；世界盐度最低的海是波罗的海
+  description: 误以为死海盐度最低，实际上死海因蒸发量大、无出口，盐度极高
+  severity: error
+  source: cmmlu_high_school_geography_21
+- pattern: 降低运费
+  correct: 宝钢在韩国建厂的主要目的是扩大市场，而非降低运费
+  description: 误以为在海外建厂的主要目的是降低运输成本
+  severity: error
+  source: cmmlu_high_school_geography_22
+- pattern: 保护环境
+  correct: 宝钢在韩国建厂的主要目的是扩大市场，而非保护环境
+  description: 误以为企业海外投资的主要目的是环境保护
+  severity: error
+  source: cmmlu_high_school_geography_22
+- pattern: 输出技术
+  correct: 宝钢在韩国建厂的主要目的是扩大市场，而非输出技术
+  description: 误以为企业海外投资的主要目的是技术输出
+  severity: error
+  source: cmmlu_high_school_geography_22
+- pattern: 塞上江南.*降水丰沛
+  correct: 宁夏‘塞上江南’降水较少，主要依靠黄河灌溉水源发展农业
+  description: 误以为‘塞上江南’降水丰沛，实际该地区降水较少
+  severity: error
+  source: cmmlu_high_school_geography_23
+- pattern: 塞上江南.*光照资源.*不
+  correct: 宁夏‘塞上江南’光照资源丰富，是发展农业的优势条件之一
+  description: 误以为光照资源不是‘塞上江南’农业的优势条件
+  severity: error
+  source: cmmlu_high_school_geography_23
+- pattern: 塞上江南.*地势.*不平坦
+  correct: 宁夏‘塞上江南’地势平坦，是发展农业的优势条件之一
+  description: 误以为地势平坦不是‘塞上江南’农业的优势条件
+  severity: error
+  source: cmmlu_high_school_geography_23
+- pattern: 岩石圈.*最活跃
+  correct: 生物圈是地球环境中最活跃的圈层，因为其包含生命活动和物质循环
+  description: 误以为岩石圈（地壳和地幔顶部）是地球环境中最活跃的圈层
+  severity: error
+  source: cmmlu_high_school_geography_24
+- pattern: 水圈.*最活跃
+  correct: 生物圈是地球环境中最活跃的圈层，水圈虽然活跃但不如生物圈
+  description: 误以为水圈（海洋、河流等）是地球环境中最活跃的圈层
+  severity: error
+  source: cmmlu_high_school_geography_24
+- pattern: 大气圈.*最活跃
+  correct: 生物圈是地球环境中最活跃的圈层，大气圈虽活跃但不如生物圈
+  description: 误以为大气圈是地球环境中最活跃的圈层
+  severity: error
+  source: cmmlu_high_school_geography_24
+- pattern: 宁夏.*季风区向非季风区过渡
+  correct: 宁夏自南向北体现了从季风区向非季风区的过渡
+  description: 误以为宁夏地理环境变化不体现季风区向非季风区的过渡
+  severity: error
+  source: cmmlu_high_school_geography_25
+- pattern: 宁夏.*半湿润区.*半干旱区.*干旱区过渡
+  correct: 宁夏自南向北体现了从半湿润区、半干旱区向干旱区的过渡
+  description: 误以为宁夏地理环境变化不体现干湿地区的过渡
+  severity: error
+  source: cmmlu_high_school_geography_25
+- pattern: 宁夏.*农耕区向游牧区过渡
+  correct: 宁夏自南向北体现了从农耕区向游牧区的过渡
+  description: 误以为宁夏地理环境变化不体现农业类型的过渡
+  severity: error
+  source: cmmlu_high_school_geography_25
+- pattern: 图兰平原.*面积最大
+  correct: 世界面积最大的平原是亚马逊平原
+  description: 误以为图兰平原是世界面积最大的平原
+  severity: error
+  source: cmmlu_high_school_geography_26
+- pattern: 西西伯利亚平原.*面积最大
+  correct: 世界面积最大的平原是亚马逊平原
+  description: 误以为西西伯利亚平原是世界面积最大的平原
+  severity: error
+  source: cmmlu_high_school_geography_26
+- pattern: 东欧平原.*面积最大
+  correct: 世界面积最大的平原是亚马逊平原
+  description: 误以为东欧平原是世界面积最大的平原
+  severity: error
+  source: cmmlu_high_school_geography_26
+- pattern: 墨西哥.*狭长
+  correct: 智利是世界上最狭长的国家，南北长约4300公里，东西最窄处仅约90公里
+  description: 误以为墨西哥是世界上最狭长的国家
+  severity: error
+  source: cmmlu_high_school_geography_27
+- pattern: 阿根廷.*狭长
+  correct: 智利是世界上最狭长的国家，阿根廷虽然南北较长但东西宽度较大
+  description: 误以为阿根廷是世界上最狭长的国家
+  severity: error
+  source: cmmlu_high_school_geography_27
+- pattern: 秘鲁.*狭长
+  correct: 智利是世界上最狭长的国家，秘鲁地形虽狭长但不及智利
+  description: 误以为秘鲁是世界上最狭长的国家
+  severity: error
+  source: cmmlu_high_school_geography_27
+- pattern: 质量和体积适中
+  correct: 地球的特殊性在于有生命物质存在，而非质量和体积适中
+  description: 误以为质量和体积适中是地球区别于其他行星的特殊性
+  severity: error
+  source: cmmlu_high_school_geography_28
+- pattern: 只有一颗卫星
+  correct: 地球的特殊性在于有生命物质存在，而非卫星数量
+  description: 误以为只有一颗卫星是地球的特殊性
+  severity: error
+  source: cmmlu_high_school_geography_28
+- pattern: 自转和公转方向相同
+  correct: 地球的特殊性在于有生命物质存在，而非自转公转方向
+  description: 误以为自转和公转方向相同是地球的特殊性
+  severity: error
+  source: cmmlu_high_school_geography_28
+- pattern: 印度洋海啸
+  correct: 该电缆位于大西洋，印度洋海啸不会直接影响其安全运行
+  description: 误以为印度洋海啸会影响大西洋海底电缆
+  severity: error
+  source: cmmlu_high_school_geography_29
+- pattern: 北冰洋浮冰
+  correct: 该电缆位于大西洋低纬度海域，北冰洋浮冰不会影响其安全运行
+  description: 误以为北冰洋浮冰会影响低纬度海底电缆
+  severity: error
+  source: cmmlu_high_school_geography_29
+- pattern: 环太平洋火山
+  correct: 该电缆位于大西洋，环太平洋火山活动不会直接影响其安全运行
+  description: 误以为环太平洋火山活动会影响大西洋海底电缆
+  severity: error
+  source: cmmlu_high_school_geography_29
+- pattern: 推广使用一次性木筷
+  correct: 使用一次性木筷消耗大量木材资源，不符合可持续发展理念
+  description: 误以为推广一次性木筷是可持续的，实际上会加剧森林砍伐
+  severity: error
+  source: cmmlu_high_school_geography_30
+- pattern: 洗衣服时一直开着水龙头
+  correct: 洗衣服时应节约用水，一直开着水龙头浪费水资源，不符合可持续发展
+  description: 误以为洗衣服时一直开着水龙头是正常行为，实际上浪费水资源
+  severity: error
+  source: cmmlu_high_school_geography_30
+- pattern: 涸泽而渔
+  correct: 涸泽而渔会破坏渔业资源，不符合可持续发展理念
+  description: 误以为涸泽而渔是合理的获取资源方式，实际上会耗尽资源
+  severity: error
+  source: cmmlu_high_school_geography_30
+- pattern: 红海.*亚洲.*非洲.*分界线
+  correct: 红海是亚洲与非洲之间的海域，但分界线通常指苏伊士运河，红海本身不是分界线
+  description: 误以为红海是亚洲与非洲的分界线
+  severity: error
+  source: cmmlu_high_school_geography_31
+- pattern: 曼德海峡.*亚洲.*非洲.*分界线
+  correct: 曼德海峡连接红海和亚丁湾，位于亚洲和非洲之间，但不是亚洲与非洲的正式分界线
+  description: 误以为曼德海峡是亚洲与非洲的分界线
+  severity: error
+  source: cmmlu_high_school_geography_31
+- pattern: 苏伊士运河.*亚洲.*非洲.*分界线
+  correct: 苏伊士运河是亚洲与非洲的正式分界线
+  description: 误以为苏伊士运河不是亚洲与非洲的分界线
+  severity: error
+  source: cmmlu_high_school_geography_31
+- pattern: 汽车厂.*化纤厂
+  correct: 汽车厂与化纤厂之间没有直接的投入—产出工业联系，不应集聚
+  description: 误以为汽车厂和化纤厂有上下游工业联系
+  severity: error
+  source: cmmlu_high_school_geography_32
+- pattern: 自行车厂.*电视机厂
+  correct: 自行车厂与电视机厂之间没有直接的投入—产出工业联系，不应集聚
+  description: 误以为自行车厂和电视机厂有上下游工业联系
+  severity: error
+  source: cmmlu_high_school_geography_32
+- pattern: 钢铁厂.*印染厂
+  correct: 钢铁厂与印染厂之间没有直接的投入—产出工业联系，不应集聚
+  description: 误以为钢铁厂和印染厂有上下游工业联系
+  severity: error
+  source: cmmlu_high_school_geography_32
+- pattern: 延长原有产业链
+  correct: 资源型城市新生期应培育新经济增长点，而非仅延长原有产业链
+  description: 误以为资源型城市转型只需延长原有产业链，而忽视了培育新经济增长点
+  severity: error
+  source: cmmlu_high_school_geography_33
+- pattern: 拓宽资源进口通道
+  correct: 资源型城市新生期应培育新经济增长点，而非依赖拓宽资源进口通道
+  description: 误以为资源型城市转型可通过拓宽资源进口通道解决，而忽视了培育新经济增长点
+  severity: error
+  source: cmmlu_high_school_geography_33
+- pattern: 关闭重污染企业
+  correct: 资源型城市新生期应培育新经济增长点，而非仅关闭重污染企业
+  description: 误以为资源型城市转型只需关闭重污染企业，而忽视了培育新经济增长点
+  severity: error
+  source: cmmlu_high_school_geography_33
+- pattern: 摸清耕地资源分布
+  correct: 永久基本农田划定的主要目的是保障国家粮食安全，而非摸清耕地资源分布
+  description: 误以为永久基本农田划定是为了调查耕地分布情况
+  severity: error
+  source: cmmlu_high_school_geography_34
+- pattern: 优化农业⽣产布局
+  correct: 永久基本农田划定的主要目的是保障国家粮食安全，而非优化农业生产布局
+  description: 误以为永久基本农田划定是为了调整农业生产布局
+  severity: error
+  source: cmmlu_high_school_geography_34
+- pattern: 统筹我国城乡规划
+  correct: 永久基本农田划定的主要目的是保障国家粮食安全，而非统筹城乡规划
+  description: 误以为永久基本农田划定是为了协调城乡发展
+  severity: error
+  source: cmmlu_high_school_geography_34
+- pattern: 长江中下游平原.*华北平原.*界线.*黄河
+  correct: 长江中下游平原与华北平原的界线是淮河
+  description: 误以为黄河是长江中下游平原与华北平原的分界线
+  severity: error
+  source: cmmlu_high_school_geography_35
+- pattern: 长江中下游平原.*华北平原.*界线.*长江
+  correct: 长江中下游平原与华北平原的界线是淮河
+  description: 误以为长江是长江中下游平原与华北平原的分界线
+  severity: error
+  source: cmmlu_high_school_geography_35
+- pattern: 长江中下游平原.*华北平原.*界线.*海河
+  correct: 长江中下游平原与华北平原的界线是淮河
+  description: 误以为海河是长江中下游平原与华北平原的分界线
+  severity: error
+  source: cmmlu_high_school_geography_35
+- pattern: 耕作层浅薄疏松.*人类活动
+  correct: 熟化后水稻土耕作层深厚肥沃，人类活动影响大是熟化过程的表现，而非结构特点
+  description: 误以为熟化后耕作层浅薄疏松
+  severity: error
+  source: cmmlu_high_school_geography_36
+- pattern: 表土层软糊.*扎根立足
+  correct: 熟化后水稻土表土层（耕作层）疏松肥沃，而非软糊；软糊是未熟化或渍水过度的表现
+  description: 误以为熟化后表土层软糊有利于扎根
+  severity: error
+  source: cmmlu_high_school_geography_36
+- pattern: 母岩层较薄.*阻断有机界与无机界
+  correct: 母岩层位于土壤最底层，厚度与熟化无关，且不阻断有机界与无机界的联系
+  description: 误以为母岩层薄会阻断有机界与无机界联系
+  severity: error
+  source: cmmlu_high_school_geography_36
+- pattern: 银河系.*包含火星
+  correct: 火星位于太阳系内，太阳系属于银河系，因此银河系包含火星
+  description: 误以为银河系不包含火星
+  severity: error
+  source: cmmlu_high_school_geography_37
+- pattern: 总星系.*不包含火星
+  correct: 总星系包含银河系及所有河外星系，太阳系和火星都在总星系内
+  description: 误以为总星系不包含火星
+  severity: error
+  source: cmmlu_high_school_geography_37
+- pattern: 太阳系.*不包含火星
+  correct: 火星是太阳系八大行星之一，太阳系包含火星
+  description: 误以为太阳系不包含火星
+  severity: error
+  source: cmmlu_high_school_geography_37
+- pattern: 砾石.*沉积.*而成
+  correct: 壶穴是急流、旋涡夹带砾石磨蚀河床形成的，而非沉积作用
+  description: 误以为壶穴是河流沉积作用形成的
+  severity: error
+  source: cmmlu_high_school_geography_38
+- pattern: 冰川作用.*遗迹
+  correct: 壶穴是流水侵蚀作用形成的，与冰川作用无关
+  description: 误以为壶穴是冰川作用的历史遗迹
+  severity: error
+  source: cmmlu_high_school_geography_38
+- pattern: 地壳抬升.*风化
+  correct: 壶穴是流水侵蚀（磨蚀）形成的，而非地壳抬升后的风化作用
+  description: 误以为壶穴是地壳抬升后沉积物被风化形成的
+  severity: error
+  source: cmmlu_high_school_geography_38
+- pattern: 中国.*最早.*日出
+  correct: 斐济位于国际日期变更线西侧，是世界上最早迎来日出的国家
+  description: 误以为中国是地球上最早迎来日出的国家
+  severity: error
+  source: cmmlu_high_school_geography_39
+- pattern: 美国.*最早.*日出
+  correct: 斐济位于国际日期变更线西侧，是世界上最早迎来日出的国家
+  description: 误以为美国是地球上最早迎来日出的国家
+  severity: error
+  source: cmmlu_high_school_geography_39
+- pattern: 冰岛.*最早.*日出
+  correct: 斐济位于国际日期变更线西侧，是世界上最早迎来日出的国家
+  description: 误以为冰岛是地球上最早迎来日出的国家
+  severity: error
+  source: cmmlu_high_school_geography_39
+- pattern: 山西.*煤.*水路运输
+  correct: 山西到北京运煤应选择铁路或公路运输，山西不靠海，无法全程水路运输
+  description: 误以为山西有便利的水路可运煤到北京
+  severity: error
+  source: cmmlu_high_school_geography_40
+- pattern: 成都.*钢材.*拉萨.*铁路运输
+  correct: 成都到拉萨的铁路（青藏铁路）运输能力有限，高海拔、地形复杂，钢材等重货不适合铁路运输，应选择公路或航空
+  description: 误以为青藏铁路可大规模运输重货如钢材
+  severity: error
+  source: cmmlu_high_school_geography_40
+- pattern: 深圳.*急救药品.*香港.*飞机运输
+  correct: 深圳到香港距离很近，急救药品应选择公路运输（如货车或救护车），飞机运输不必要且效率低
+  description: 误以为短距离紧急运输必须用飞机
+  severity: error
+  source: cmmlu_high_school_geography_40
+- pattern: 伊斯兰.*西欧.*东欧
+  correct: 新丝绸之路自东向西依次经过伊斯兰文化圈、东欧文化圈、西欧文化圈
+  description: 误以为西欧文化圈位于东欧文化圈之前
+  severity: error
+  source: cmmlu_high_school_geography_41
+- pattern: 东欧.*伊斯兰.*西欧
+  correct: 新丝绸之路自东向西依次经过伊斯兰文化圈、东欧文化圈、西欧文化圈
+  description: 误以为东欧文化圈位于伊斯兰文化圈之前
+  severity: error
+  source: cmmlu_high_school_geography_41
+- pattern: 西欧.*东欧.*伊斯兰
+  correct: 新丝绸之路自东向西依次经过伊斯兰文化圈、东欧文化圈、西欧文化圈
+  description: 误以为西欧文化圈位于最东侧
+  severity: error
+  source: cmmlu_high_school_geography_41
+- pattern: 温带海洋性气候.*季节移动
+  correct: 温带海洋性气候全年受西风带控制，成因与气压带风带季节移动无关
+  description: 误以为温带海洋性气候的成因与气压带风带季节移动有关
+  severity: error
+  source: cmmlu_high_school_geography_42
+- pattern: 亚热带季风气候.*季节移动
+  correct: 亚热带季风气候成因是海陆热力性质差异，与气压带风带季节移动无关
+  description: 误以为亚热带季风气候的成因与气压带风带季节移动有关
+  severity: error
+  source: cmmlu_high_school_geography_42
+- pattern: 热带雨林气候.*季节移动
+  correct: 热带雨林气候全年受赤道低气压带控制，成因与气压带风带季节移动无关
+  description: 误以为热带雨林气候的成因与气压带风带季节移动有关
+  severity: error
+  source: cmmlu_high_school_geography_42
+- pattern: 人均物质消费量.*制约环境承载力
+  correct: 制约环境承载力的首要因素是资源总量，而非人均物质消费量
+  description: 误以为人均物质消费量是制约环境承载力的首要因素
+  severity: error
+  source: cmmlu_high_school_geography_43
+- pattern: 科技水平.*制约环境承载力
+  correct: 制约环境承载力的首要因素是资源总量，科技水平是影响因素但不是首要因素
+  description: 误以为科技水平是制约环境承载力的首要因素
+  severity: error
+  source: cmmlu_high_school_geography_43
+- pattern: 人口数量.*制约环境承载力
+  correct: 制约环境承载力的首要因素是资源总量，人口数量是受承载力制约的对象而非首要制约因素
+  description: 误以为人口数量是制约环境承载力的首要因素
+  severity: error
+  source: cmmlu_high_school_geography_43
+- pattern: 屋顶农庄.*地形
+  correct: 屋顶农庄的经营主要关注市场需求，而非地形条件
+  description: 误以为屋顶农庄的经营重点在于地形因素
+  severity: error
+  source: cmmlu_high_school_geography_44
+- pattern: 屋顶农庄.*土壤
+  correct: 屋顶农庄的经营主要关注市场需求，土壤是次要条件
+  description: 误以为屋顶农庄的经营重点在于土壤因素
+  severity: error
+  source: cmmlu_high_school_geography_44
+- pattern: 屋顶农庄.*劳动力
+  correct: 屋顶农庄的经营主要关注市场需求，劳动力不是核心关注点
+  description: 误以为屋顶农庄的经营重点在于劳动力因素
+  severity: error
+  source: cmmlu_high_school_geography_44
+- pattern: 东亚.*南亚.*光热资源
+  correct: 中亚、西亚光热资源丰富且严重缺水，适合太阳能海水淡化
+  description: 误以为东亚、南亚光热资源丰富且缺水
+  severity: error
+  source: cmmlu_high_school_geography_45
+- pattern: 大洋洲.*西欧.*光热资源
+  correct: 中亚、西亚光热资源丰富且严重缺水，适合太阳能海水淡化
+  description: 误以为大洋洲、西欧光热资源丰富且缺水
+  severity: error
+  source: cmmlu_high_school_geography_45
+- pattern: 东欧.*东南亚.*光热资源
+  correct: 中亚、西亚光热资源丰富且严重缺水，适合太阳能海水淡化
+  description: 误以为东欧、东南亚光热资源丰富且缺水
+  severity: error
+  source: cmmlu_high_school_geography_45
+- pattern: 青奥会.*昼短夜长
+  correct: 8月16日至28日太阳直射北半球，北半球昼长夜短
+  description: 误以为8月南京昼短夜长
+  severity: error
+  source: cmmlu_high_school_geography_46
+- pattern: 青奥会.*昼夜等长
+  correct: 8月16日至28日太阳直射北半球，北半球昼长夜短，并非昼夜等长
+  description: 误以为8月南京昼夜等长
+  severity: error
+  source: cmmlu_high_school_geography_46
+- pattern: 降低.*铝.*成本
+  correct: 进口铝土矿需要运输成本，不一定降低我国铝产业生产成本
+  description: 误以为进口铝土矿必然降低生产成本，忽略了运输等成本因素
+  severity: error
+  source: cmmlu_high_school_geography_47
+- pattern: 提高.*几内亚.*附加值
+  correct: 开采铝土矿属于初级产品出口，并未提高其附加值
+  description: 误以为开采铝土矿能提高几内亚铝土矿的附加值
+  severity: error
+  source: cmmlu_high_school_geography_47
+- pattern: 提高.*我国.*自给率
+  correct: 进口铝土矿不能提高我国铝土矿的自给率，反而可能降低
+  description: 误以为进口铝土矿能提高我国铝土矿的自给率
+  severity: error
+  source: cmmlu_high_school_geography_47
+- pattern: 农矿产品直接出口经济效益高
+  correct: 农矿产品直接出口附加值低，经济效益通常低于加工后出口
+  description: 误以为直接出口原材料比加工后出口经济效益更高
+  severity: error
+  source: cmmlu_high_school_geography_48
+- pattern: 几内亚市场对铝制品需求量小
+  correct: 几内亚铝土矿几乎全部出口的主要原因是工业化水平低、加工能力不足，而非本地市场需求小
+  description: 将出口原因归因于本地市场需求小，忽略了工业化水平和加工能力这一根本因素
+  severity: warning
+  source: cmmlu_high_school_geography_48
+- pattern: 中国市场对铝土矿的需求量大
+  correct: 几内亚铝土矿出口的主要原因是本国工业化水平低、加工能力不足，而非外部市场需求
+  description: 误以为外部市场需求是铝土矿全部出口的主要原因，忽略了本国供给侧的制约
+  severity: warning
+  source: cmmlu_high_school_geography_48
+- pattern: 太空试验站.*天体
+  correct: 太空试验站是人造物体，不属于自然天体
+  description: 误将人造物体（如太空试验站）视为天体
+  severity: error
+  source: cmmlu_high_school_geography_49
+- pattern: 松花江.*含沙量最大
+  correct: 黄河是世界含沙量最大的河流
+  description: 误以为松花江含沙量最大
+  severity: error
+  source: cmmlu_high_school_geography_50
+- pattern: 海河.*含沙量最大
+  correct: 黄河是世界含沙量最大的河流
+  description: 误以为海河含沙量最大
+  severity: error
+  source: cmmlu_high_school_geography_50
+- pattern: 长江.*含沙量最大
+  correct: 黄河是世界含沙量最大的河流
+  description: 误以为长江含沙量最大
+  severity: error
+  source: cmmlu_high_school_geography_50
+- pattern: 岩石圈包括地壳和整个地幔
+  correct: 岩石圈包括地壳和上地幔顶部（软流层以上），不包括整个地幔
+  description: 误以为岩石圈包含整个地幔，实际上只包含地壳和上地幔顶部
+  severity: error
+  source: cmmlu_high_school_geography_51
+- pattern: 生物圈是地球上所有生物的总称
+  correct: 生物圈是地球上所有生物与其生存环境的总称，包括生物及其环境
+  description: 误以为生物圈仅指生物本身，忽略了其生存环境
+  severity: error
+  source: cmmlu_high_school_geography_51
+- pattern: 水圈是连续而又规则的圈层
+  correct: 水圈是连续但不规则的圈层
+  description: 误以为水圈是规则的圈层，实际上水圈分布连续但形态不规则
+  severity: error
+  source: cmmlu_high_school_geography_51
+- pattern: 沿线低山丘陵广布.*架桥.*保证运营速度
+  correct: 京沪高铁沿线以平原为主，桥梁占比高主要是为了减少对地面交通和城镇的分割，以及适应软土路基等地质条件
+  description: 误以为京沪高铁沿线多低山丘陵，需要架桥来保证速度
+  severity: error
+  source: cmmlu_high_school_geography_52
+- pattern: 运行时速小于设计时速.*因地制宜
+  correct: 京沪高铁运营时速300-350千米，设计时速350千米，实际运营时速接近设计时速，并非因因地制宜而降低
+  description: 误以为京沪高铁实际运行速度低于设计速度是因地制宜的体现
+  severity: error
+  source: cmmlu_high_school_geography_52
+- pattern: 铁路线贯穿南北.*山脉平行
+  correct: 喀麦隆铁路线并不贯穿南北且与山脉平行，其铁路主要连接经济中心
+  description: 误以为喀麦隆铁路线贯穿南北并与山脉平行
+  severity: error
+  source: cmmlu_high_school_geography_53
+- pattern: 地处东非高原.*最高峰超过4000米
+  correct: 喀麦隆位于西非和中非交界处，不属于东非高原
+  description: 误以为喀麦隆地处东非高原
+  severity: error
+  source: cmmlu_high_school_geography_53
+- pattern: 沿岸.*寒流影响.*多海雾
+  correct: 喀麦隆沿岸主要受几内亚暖流影响，而非寒流
+  description: 误以为喀麦隆沿岸受寒流影响
+  severity: error
+  source: cmmlu_high_school_geography_53
+- pattern: 星际空间.*气体.*尘埃
+  correct: 星际空间的气体和尘埃属于天体
+  description: 误以为星际空间的气体和尘埃不是天体
+  severity: error
+  source: cmmlu_high_school_geography_54
+- pattern: 轮廓模糊.*星云
+  correct: 轮廓模糊的星云属于天体
+  description: 误以为轮廓模糊的星云不是天体
+  severity: error
+  source: cmmlu_high_school_geography_54
+- pattern: 人类的家园.*地球
+  correct: 地球属于天体
+  description: 误以为地球不是天体
+  severity: error
+  source: cmmlu_high_school_geography_54
+- pattern: 亚⻢孙河⼝.*盐度季节变化⼤
+  correct: 亚马孙河入海口受巨大径流量影响，盐度常年很低，季节变化小
+  description: 误以为亚马孙河口盐度受蒸发与降水影响而季节变化大，忽略了径流量的主导作用
+  severity: error
+  source: cmmlu_high_school_geography_55
+- pattern: 潮涌⼩于阿拉⽠利河⼝.*⻛⼒⼩
+  correct: 亚马孙河口潮涌大于阿拉瓜利河口，主要受喇叭形河口和巨大径流量影响，而非风力大小
+  description: 误以为亚马孙河口潮涌小于阿拉瓜利河口且原因是风力小，实际亚马孙河口潮涌更大
+  severity: error
+  source: cmmlu_high_school_geography_55
+- pattern: 潮涌⼤于阿拉⽠利河⼝.*多沙洲
+  correct: 亚马孙河口潮涌大于阿拉瓜利河口，主要原因是喇叭形河口和巨大径流量，而非多沙洲
+  description: 误以为亚马孙河口潮涌大于阿拉瓜利河口是因为多沙洲，实际沙洲会削弱潮涌
+  severity: error
+  source: cmmlu_high_school_geography_55
+- pattern: 人口老龄化速度加快
+  correct: 广场舞争议主要反映的是城市公共空间不足和城市化发展快的问题，而非人口老龄化速度加快
+  description: 误以为广场舞争议直接反映人口老龄化速度加快
+  severity: error
+  source: cmmlu_high_school_geography_56
+- pattern: 城市公共用地不足
+  correct: 广场舞争议确实反映了城市公共用地不足的问题
+  description: 误以为城市公共用地不足不是广场舞争议反映的问题
+  severity: error
+  source: cmmlu_high_school_geography_56
+- pattern: 城市化发展快
+  correct: 广场舞争议确实反映了城市化发展快的问题
+  description: 误以为城市化发展快不是广场舞争议反映的问题
+  severity: error
+  source: cmmlu_high_school_geography_56
+- pattern: 400毫米等降水量线.*兰州
+  correct: 400毫米等降水量线大致经过大兴安岭—张家口—兰州—拉萨一线，兰州位于该线上
+  description: 误以为兰州不在400毫米等降水量线上
+  severity: error
+  source: cmmlu_high_school_geography_57
+- pattern: 400毫米等降水量线.*大兴安岭
+  correct: 400毫米等降水量线大致经过大兴安岭，是大兴安岭的重要地理分界线
+  description: 误以为大兴安岭不在400毫米等降水量线上
+  severity: error
+  source: cmmlu_high_school_geography_57
+- pattern: 400毫米等降水量线.*张家口
+  correct: 400毫米等降水量线大致经过张家口，张家口位于该线上
+  description: 误以为张家口不在400毫米等降水量线上
+  severity: error
+  source: cmmlu_high_school_geography_57
+- pattern: 秘鲁上升流消失
+  correct: 拉尼娜现象发生时，秘鲁上升流增强而非消失
+  description: 误以为拉尼娜现象会导致秘鲁上升流消失
+  severity: error
+  source: cmmlu_high_school_geography_58
+- pattern: 西风漂流减弱
+  correct: 拉尼娜现象发生时，西风漂流增强而非减弱
+  description: 误以为拉尼娜现象会导致西风漂流减弱
+  severity: error
+  source: cmmlu_high_school_geography_58
+- pattern: 北太平洋暖流减弱
+  correct: 拉尼娜现象发生时，北太平洋暖流增强而非减弱
+  description: 误以为拉尼娜现象会导致北太平洋暖流减弱
+  severity: error
+  source: cmmlu_high_school_geography_58
+- pattern: 赤潮.*寒冷沿岸流.*污染区域更集中
+  correct: 寒冷沿岸流会使污染区域更分散，减轻污染程度
+  description: 误以为寒冷沿岸流会使赤潮污染区域更集中
+  severity: error
+  source: cmmlu_high_school_geography_59
+- pattern: 赤潮.*寒冷沿岸流.*加剧污染程度
+  correct: 寒冷沿岸流会降低水温，抑制赤潮生物繁殖，从而减轻污染程度
+  description: 误以为寒冷沿岸流会加剧赤潮污染程度
+  severity: error
+  source: cmmlu_high_school_geography_59
+- pattern: 海外华人.*南亚
+  correct: 海外华人最集中的地区是东南亚
+  description: 误以为南亚是海外华人最集中的地区
+  severity: error
+  source: cmmlu_high_school_geography_60
+- pattern: 海外华人.*欧洲西部
+  correct: 海外华人最集中的地区是东南亚
+  description: 误以为欧洲西部是海外华人最集中的地区
+  severity: error
+  source: cmmlu_high_school_geography_60
+- pattern: 海外华人.*西亚
+  correct: 海外华人最集中的地区是东南亚
+  description: 误以为西亚是海外华人最集中的地区
+  severity: error
+  source: cmmlu_high_school_geography_60
+- pattern: 形成水系.*便利通道.*航运
+  correct: 该工程主要目的是灌溉，而非航运
+  description: 误以为跨流域调水工程的主要目的是形成航运通道
+  severity: error
+  source: cmmlu_high_school_geography_61
+- pattern: 为东部.*工业.*城市.*提供.*用水
+  correct: 该工程主要目的是灌溉耕地，改善农业生产条件，而非为工业城市供水
+  description: 误以为调水工程的主要目的是为工业和城市提供生产生活用水
+  severity: error
+  source: cmmlu_high_school_geography_61
+- pattern: 调节尼罗河.*径流量.*季节分配.*防治洪涝
+  correct: 该工程是引水灌溉工程，并非调节尼罗河径流季节分配或防洪
+  description: 误以为该调水工程的主要目的是调节径流和防洪
+  severity: error
+  source: cmmlu_high_school_geography_61
+- pattern: 赤潮.*12月到2月
+  correct: 我国沿海赤潮一般发生在6月到8月，此时水温较高、光照充足、营养盐丰富
+  description: 误以为赤潮发生在冬季
+  severity: error
+  source: cmmlu_high_school_geography_62
+- pattern: 赤潮.*9月到11月
+  correct: 我国沿海赤潮一般发生在6月到8月，此时水温较高、光照充足、营养盐丰富
+  description: 误以为赤潮发生在秋季
+  severity: error
+  source: cmmlu_high_school_geography_62
+- pattern: 赤潮.*3月到5月
+  correct: 我国沿海赤潮一般发生在6月到8月，此时水温较高、光照充足、营养盐丰富
+  description: 误以为赤潮发生在春季
+  severity: error
+  source: cmmlu_high_school_geography_62
+- pattern: 寻求完善的配套设施
+  correct: 欧洲制造业向东转移的主要驱动力是降低生产成本，而非完善的配套设施
+  description: 误以为完善的配套设施是制造业转移的主要原因
+  severity: error
+  source: cmmlu_high_school_geography_63
+- pattern: 人才向东流动
+  correct: 欧洲制造业向东转移的主要原因是降低生产成本，而非人才流动
+  description: 误以为人才向东流动是制造业转移的主要原因
+  severity: error
+  source: cmmlu_high_school_geography_63
+- pattern: 受高科技产业的吸引
+  correct: 欧洲制造业向东转移的主要原因是降低生产成本，而非高科技产业吸引
+  description: 误以为高科技产业吸引是制造业转移的主要原因
+  severity: error
+  source: cmmlu_high_school_geography_63
+- pattern: 不含腐殖质
+  correct: 水稻土含有腐殖质，但含量和组成与自然土壤不同
+  description: 误以为水稻土中不含腐殖质
+  severity: error
+  source: cmmlu_high_school_geography_64
+- pattern: 枯枝落叶层增厚
+  correct: 水稻土由于长期淹水耕作，枯枝落叶层通常较薄或缺失
+  description: 误以为水稻土的枯枝落叶层比自然土壤更厚
+  severity: error
+  source: cmmlu_high_school_geography_64
+- pattern: 肥力水平下降
+  correct: 水稻土经过长期耕作和施肥，肥力水平通常较高
+  description: 误以为水稻土肥力水平低于自然土壤
+  severity: error
+  source: cmmlu_high_school_geography_64
+- pattern: 人口东多西少
+  correct: 我国坚持计划生育基本国策的根本原因是人口基数大，而非人口分布不均
+  description: 误以为人口分布不均是计划生育的根本原因
+  severity: error
+  source: cmmlu_high_school_geography_65
+- pattern: 人口出现负增长
+  correct: 我国人口并未出现负增长，且计划生育基本国策的根本原因是人口基数大
+  description: 误以为人口负增长是计划生育的原因
+  severity: error
+  source: cmmlu_high_school_geography_65
+- pattern: 人口基数小
+  correct: 我国人口基数大，这是坚持计划生育基本国策的根本原因
+  description: 误以为我国人口基数小
+  severity: error
+  source: cmmlu_high_school_geography_65
+- pattern: 评剧.*秦腔.*安徽
+  correct: 评剧主要流行于华北、东北地区，秦腔主要流行于西北地区，安徽省南部传统地方戏曲是黄梅戏、徽剧等
+  description: 误以为评剧和秦腔是安徽省南部的地方戏曲
+  severity: error
+  source: cmmlu_high_school_geography_66
+- pattern: 妈祖.*安徽
+  correct: 妈祖文化主要盛行于福建、台湾等沿海地区，安徽省南部不盛行妈祖文化
+  description: 误以为妈祖文化在安徽省南部盛行
+  severity: error
+  source: cmmlu_high_school_geography_66
+- pattern: 泥草房.*吊脚楼.*安徽
+  correct: 泥草房多见于北方或贫困地区，吊脚楼主要分布在西南山区如湘西、贵州等地，安徽省南部传统民居是徽派建筑（白墙黑瓦、马头墙）
+  description: 误以为泥草房和吊脚楼是安徽省南部的传统民居
+  severity: error
+  source: cmmlu_high_school_geography_66
+- pattern: 地热能.*太阳辐射
+  correct: 地热能来源于地球内部放射性元素衰变，与太阳辐射无关
+  description: 误以为地热能形成与太阳辐射有关
+  severity: error
+  source: cmmlu_high_school_geography_67
+- pattern: 核能.*太阳辐射
+  correct: 核能来源于原子核裂变或聚变，与太阳辐射无关
+  description: 误以为核能形成与太阳辐射有关
+  severity: error
+  source: cmmlu_high_school_geography_67
+- pattern: 潮汐能.*太阳辐射
+  correct: 潮汐能来源于月球和太阳的引力，与太阳辐射无关
+  description: 误以为潮汐能形成与太阳辐射有关
+  severity: error
+  source: cmmlu_high_school_geography_67
+- pattern: 平行于等压线.*指向高压区
+  correct: 水平气压梯度力垂直于等压线，指向低压区
+  description: 误以为水平气压梯度力平行于等压线且指向高压区
+  severity: error
+  source: cmmlu_high_school_geography_68
+- pattern: 垂直于等压线.*指向高压区
+  correct: 水平气压梯度力垂直于等压线，指向低压区
+  description: 误以为水平气压梯度力垂直于等压线但指向高压区
+  severity: error
+  source: cmmlu_high_school_geography_68
+- pattern: 平行于等压线.*指向低压区
+  correct: 水平气压梯度力垂直于等压线，指向低压区
+  description: 误以为水平气压梯度力平行于等压线且指向低压区
+  severity: error
+  source: cmmlu_high_school_geography_68
+- pattern: 海⽔含盐⾼.*腐蚀
+  correct: 海水含盐高、腐蚀性强是海洋工程普遍面临的挑战，并非港珠澳大桥沉管隧道铺设难度大的特有原因
+  description: 误将海水腐蚀性作为沉管隧道铺设难度大的主要原因
+  severity: error
+  source: cmmlu_high_school_geography_69
+- pattern: 海沟.*深
+  correct: 港珠澳大桥沉管隧道所在海域并无特别深的海沟，水深条件并非铺设难度大的主要原因
+  description: 误以为沉管隧道需经过水深很大的海沟
+  severity: error
+  source: cmmlu_high_school_geography_69
+- pattern: 环太平洋地震带
+  correct: 港珠澳大桥虽位于环太平洋地震带附近，但地震带因素并非沉管隧道铺设难度大的直接原因
+  description: 误将地震带因素作为沉管隧道铺设难度大的主要原因
+  severity: error
+  source: cmmlu_high_school_geography_69
+- pattern: 赤道以北地区.*正午太阳高度.*最大
+  correct: 6月22日太阳直射北回归线，北回归线及其以北地区正午太阳高度达到一年中最大值
+  description: 误以为整个北半球（赤道以北）在夏至日正午太阳高度都达到最大值，实际上只有北回归线及其以北地区满足
+  severity: error
+  source: cmmlu_high_school_geography_70
+- pattern: 赤道附近地区.*正午太阳高度.*最大
+  correct: 6月22日太阳直射北回归线，赤道附近地区正午太阳高度并非最大，而是接近最小值
+  description: 误以为赤道附近在夏至日正午太阳高度最大，实际上赤道附近在春分和秋分时正午太阳高度最大
+  severity: error
+  source: cmmlu_high_school_geography_70
+- pattern: 南北回归线之间地区.*正午太阳高度.*最大
+  correct: 6月22日太阳直射北回归线，南北回归线之间地区只有北回归线以北部分正午太阳高度达到最大，其他区域并非最大
+  description: 误以为整个南北回归线之间地区在夏至日正午太阳高度都达到最大值，实际上只有北回归线及其以北地区满足
+  severity: error
+  source: cmmlu_high_school_geography_70
+- pattern: 沉积物.*堆积.*洋脊
+  correct: 洋脊形成于海底扩张处岩浆涌出，而非沉积物堆积
+  description: 误以为洋脊是由沉积物大量堆积形成的
+  severity: error
+  source: cmmlu_high_school_geography_71
+- pattern: 地震.*海底.*凹陷.*洋脊
+  correct: 洋脊形成于海底扩张处岩浆涌出，与地震导致的海底凹陷无关
+  description: 误以为洋脊是地震导致海底中间凹陷形成的
+  severity: error
+  source: cmmlu_high_school_geography_71
+- pattern: 地震.*海底.*抬升.*洋脊
+  correct: 洋脊形成于海底扩张处岩浆涌出，而非地震使海底抬升
+  description: 误以为洋脊是地震使海底抬升形成的
+  severity: error
+  source: cmmlu_high_school_geography_71
+- pattern: 距海远.*海水影响小
+  correct: 南海诸岛面积小，任何地点距海都不远，但降水多、淋溶作用强才是含盐量低的主因
+  description: 误以为南海诸岛内陆地区距海远导致海水影响小
+  severity: error
+  source: cmmlu_high_school_geography_72
+- pattern: 气温低.*蒸发弱
+  correct: 南海诸岛热量充足，气温高，蒸发强，但降水更多，淋溶作用强于蒸发
+  description: 误以为南海诸岛气温低、蒸发弱导致土壤含盐量低
+  severity: error
+  source: cmmlu_high_school_geography_72
+- pattern: 植物多.*吸收盐分
+  correct: 植物吸收盐分对土壤含盐量影响有限，主要原因是降水多、淋溶作用强
+  description: 误以为植物吸收盐分是土壤含盐量低的主要原因
+  severity: error
+  source: cmmlu_high_school_geography_72
+- pattern: 赤道以南的地区
+  correct: 正午影子始终朝南的地区是南回归线以南至南极圈以北，而非整个赤道以南
+  description: 误以为赤道以南所有地区正午影子都朝南，忽略了赤道与南回归线之间地区正午影子可能朝北
+  severity: error
+  source: cmmlu_high_school_geography_73
+- pattern: 北回归线以北的地区
+  correct: 北回归线以北地区正午影子始终朝北，而非朝南
+  description: 误以为北回归线以北地区正午影子朝南，实际应朝北
+  severity: error
+  source: cmmlu_high_school_geography_73
+- pattern: 北回归线以北至北极圈以南之间的地区
+  correct: 该地区正午影子始终朝北，而非朝南
+  description: 误以为北回归线以北至北极圈以南地区正午影子朝南，实际应朝北
+  severity: error
+  source: cmmlu_high_school_geography_73
+- pattern: 地球内部.*能量
+  correct: 地球表面能量主要来源于太阳辐射
+  description: 误以为地球内部是地表能量的主要来源
+  severity: error
+  source: cmmlu_high_school_geography_74
+- pattern: 大气辐射.*能量
+  correct: 大气辐射的能量最终也来源于太阳辐射，地球表面能量主要来源于太阳辐射
+  description: 误以为大气辐射是地表能量的主要来源
+  severity: error
+  source: cmmlu_high_school_geography_74
+- pattern: 大气反射.*能量
+  correct: 大气反射将太阳辐射反射回太空，不是地表能量的来源
+  description: 误以为大气反射是地表能量的来源
+  severity: error
+  source: cmmlu_high_school_geography_74
+- pattern: 市场条件
+  correct: 大棚蔬菜生产主要改变的是光热条件，而非市场条件
+  description: 误以为大棚蔬菜生产主要改变市场条件
+  severity: error
+  source: cmmlu_high_school_geography_75
+- pattern: 地形条件
+  correct: 大棚蔬菜生产主要改变的是光热条件，而非地形条件
+  description: 误以为大棚蔬菜生产主要改变地形条件
+  severity: error
+  source: cmmlu_high_school_geography_75
+- pattern: 土壤条件
+  correct: 大棚蔬菜生产主要改变的是光热条件，而非土壤条件
+  description: 误以为大棚蔬菜生产主要改变土壤条件
+  severity: error
+  source: cmmlu_high_school_geography_75
+- pattern: 欧洲.*丘陵
+  correct: 欧洲以平原为主，丘陵不是主要地形
+  description: 误以为欧洲主要地形是丘陵
+  severity: error
+  source: cmmlu_high_school_geography_76
+- pattern: 欧洲.*高原
+  correct: 欧洲以平原为主，高原不是主要地形
+  description: 误以为欧洲主要地形是高原
+  severity: error
+  source: cmmlu_high_school_geography_76
+- pattern: 欧洲.*山地
+  correct: 欧洲以平原为主，山地不是主要地形
+  description: 误以为欧洲主要地形是山地
+  severity: error
+  source: cmmlu_high_school_geography_76
+- pattern: 逐步关停高耗能重污染的工厂
+  correct: 逐步关停高耗能重污染的工厂符合节约资源、保护环境的发展方向
+  description: 误以为关停高耗能重污染工厂与珍惜地球资源主题不符
+  severity: error
+  source: cmmlu_high_school_geography_77
+- pattern: 垃圾分类，资源再利用
+  correct: 垃圾分类和资源再利用是提高资源利用效益的有效措施
+  description: 误以为垃圾分类和资源再利用与珍惜地球资源主题不符
+  severity: error
+  source: cmmlu_high_school_geography_77
+- pattern: 大力发展节水农业和节水工业
+  correct: 大力发展节水农业和节水工业有助于提高资源利用效益
+  description: 误以为发展节水农业和节水工业与珍惜地球资源主题不符
+  severity: error
+  source: cmmlu_high_school_geography_77
+- pattern: 太阳辐射.*随纬度.*减少
+  correct: 到达地球大气上界的太阳辐射随纬度的增大而减少
+  description: 误以为太阳辐射随纬度增大而增多，实际是随纬度增大而减少
+  severity: error
+  source: cmmlu_high_school_geography_78
+- pattern: 正午太阳高度.*逐渐增大
+  correct: 8月16日至28日太阳直射点南移，北半球正午太阳高度逐渐减小
+  description: 误以为8月中下旬北半球正午太阳高度仍在增大
+  severity: error
+  source: cmmlu_high_school_geography_79
+- pattern: 正午太阳高度.*先增大后减小
+  correct: 8月16日至28日太阳直射点持续南移，正午太阳高度单调减小
+  description: 误以为该时段内正午太阳高度有先增后减的变化
+  severity: error
+  source: cmmlu_high_school_geography_79
+- pattern: 正午太阳高度.*先减小后增大
+  correct: 8月16日至28日太阳直射点持续南移，正午太阳高度单调减小
+  description: 误以为该时段内正午太阳高度有先减后增的变化
+  severity: error
+  source: cmmlu_high_school_geography_79
+- pattern: 地震和火山
+  correct: 大陆板块碰撞主要导致地震和断裂，火山活动通常出现在板块张裂或俯冲带
+  description: 误以为大陆板块碰撞同时普遍引发火山活动
+  severity: error
+  source: cmmlu_high_school_geography_80
+- pattern: 火山和断裂
+  correct: 大陆板块碰撞主要导致地震和断裂，火山活动不是主要现象
+  description: 误以为火山是大陆板块碰撞的主要现象之一
+  severity: error
+  source: cmmlu_high_school_geography_80
+- pattern: 火山和褶皱
+  correct: 大陆板块碰撞主要导致地震和断裂，褶皱是缓慢变形而非主要地壳运动现象
+  description: 误以为火山和褶皱是大陆板块碰撞的主要地壳运动现象
+  severity: error
+  source: cmmlu_high_school_geography_80
+- pattern: 行使.*管辖权.*钻井平台
+  correct: 钻井平台的成功钻探并不直接等同于行使对周边海域的管辖权，管辖权需通过法律和外交手段确立
+  description: 误以为深海钻井平台的建设自动赋予对周边海域的管辖权
+  severity: error
+  source: cmmlu_high_school_geography_81
+- pattern: 宣示.*主权.*钻井
+  correct: 钻井平台的成功钻探本身不是宣示主权的主要方式，主权宣示需通过外交声明、法律文件等综合手段
+  description: 误以为深海钻井活动直接等同于主权宣示
+  severity: error
+  source: cmmlu_high_school_geography_81
+- pattern: 标志.*独立.*深海油气
+  correct: 首座深水钻井平台的成功钻探标志着我国具备深海油气资源开发能力，但并非完全独立，可能涉及国际合作
+  description: 误以为首钻成功意味着完全独立开发，忽略了技术合作的可能性
+  severity: warning
+  source: cmmlu_high_school_geography_81
+- pattern: 黑子.*耀斑.*能量来源
+  correct: 太阳能量来源于内部的核聚变反应，黑子和耀斑只是太阳活动的表现
+  description: 误以为太阳能量来自黑子和耀斑的强烈活动
+  severity: error
+  source: cmmlu_high_school_geography_82
+- pattern: 太阳.*核裂变
+  correct: 太阳能量来源于核聚变（轻核结合成重核），而非核裂变（重核分裂）
+  description: 混淆核聚变与核裂变，误以为太阳能量来自核裂变
+  severity: error
+  source: cmmlu_high_school_geography_82
+- pattern: 放射性元素衰变.*太阳
+  correct: 太阳能量来源于核聚变，而非放射性元素衰变
+  description: 误以为太阳能量来自放射性元素衰变产生的热能
+  severity: error
+  source: cmmlu_high_school_geography_82
+- pattern: 工业制造技术先进
+  correct: 19世纪20年代罗兹市纺织工业快速发展的重要条件是廉价劳动力丰富，而非技术先进
+  description: 误以为19世纪20年代罗兹市纺织工业发展依赖先进技术
+  severity: error
+  source: cmmlu_high_school_geography_83
+- pattern: 波兰纺织市场广阔
+  correct: 19世纪20年代罗兹市纺织工业快速发展的重要条件是廉价劳动力丰富，而非市场广阔
+  description: 误以为19世纪20年代罗兹市纺织工业发展依赖本地市场广阔
+  severity: error
+  source: cmmlu_high_school_geography_83
+- pattern: 市政基础设施完善
+  correct: 19世纪20年代罗兹市纺织工业快速发展的重要条件是廉价劳动力丰富，而非基础设施完善
+  description: 误以为19世纪20年代罗兹市纺织工业发展依赖完善的基础设施
+  severity: error
+  source: cmmlu_high_school_geography_83
+- pattern: 热力环流.*dbac
+  correct: 热力环流的正确顺序是：近地面空气受热或冷却 → 气流的上升或下降运动 → 同一水平面上产生气压差异 → 形成大气的水平运动
+  description: 误以为先有气压差异再有垂直运动，实际上垂直运动是因受热或冷却直接引起的
+  severity: error
+  source: cmmlu_high_school_geography_84
+- pattern: 热力环流.*abcd
+  correct: 热力环流的正确顺序是：近地面空气受热或冷却 → 气流的上升或下降运动 → 同一水平面上产生气压差异 → 形成大气的水平运动
+  description: 误以为气压差异直接导致垂直运动，实际上垂直运动先于水平气压差异形成
+  severity: error
+  source: cmmlu_high_school_geography_84
+- pattern: 热力环流.*acbd
+  correct: 热力环流的正确顺序是：近地面空气受热或冷却 → 气流的上升或下降运动 → 同一水平面上产生气压差异 → 形成大气的水平运动
+  description: 误以为水平运动先于气压差异形成，实际上水平运动是气压差异的结果
+  severity: error
+  source: cmmlu_high_school_geography_84
+- pattern: 资金实力雄厚
+  correct: SKA选址主要考虑无线电干扰小，而非资金实力
+  description: 误以为资金实力雄厚是射电望远镜选址的主要优势条件
+  severity: error
+  source: cmmlu_high_school_geography_85
+- pattern: 科学技术发达
+  correct: SKA选址主要考虑无线电干扰小，而非科学技术发达
+  description: 误以为科学技术发达是射电望远镜选址的主要优势条件
+  severity: error
+  source: cmmlu_high_school_geography_85
+- pattern: 可利用土地广
+  correct: SKA选址主要考虑无线电干扰小，而非可利用土地广
+  description: 误以为可利用土地广是射电望远镜选址的主要优势条件
+  severity: error
+  source: cmmlu_high_school_geography_85
+- pattern: 光化学反应.*释放能量
+  correct: 温室气体通过吸收地面放出的红外线长波辐射来产生温室效应，而不是通过光化学反应释放能量
+  description: 误以为温室气体通过光化学反应释放能量导致温室效应
+  severity: error
+  source: cmmlu_high_school_geography_86
+- pattern: 吸收太阳辐射.*增温
+  correct: 温室气体主要吸收地面放出的红外线长波辐射，而不是直接吸收太阳辐射
+  description: 误以为温室气体通过吸收太阳辐射使大气增温
+  severity: error
+  source: cmmlu_high_school_geography_86
+- pattern: 温室气体.*相互反应.*放出能量
+  correct: 温室气体通过吸收地面放出的红外线长波辐射来产生温室效应，而不是通过相互反应放出能量
+  description: 误以为温室气体通过相互反应放出能量导致温室效应
+  severity: error
+  source: cmmlu_high_school_geography_86
+- pattern: 地球.*卫星.*生命
+  correct: 地球只有一颗卫星与生命出现无关，生命出现的条件包括适宜的温度、液态水和大气等
+  description: 误以为地球的卫星数量是生命出现的必要条件
+  severity: error
+  source: cmmlu_high_school_geography_87
+- pattern: 增强雨岛效应
+  correct: 屋顶农庄通过植被蒸腾和遮荫降低局部温度，有助于缓和热岛效应，而非增强雨岛效应
+  description: 误以为屋顶绿化会增强城市雨岛效应，实际上屋顶农庄主要缓解热岛效应
+  severity: error
+  source: cmmlu_high_school_geography_88
+- pattern: 削弱紫外辐射
+  correct: 屋顶农庄主要通过植被覆盖和蒸腾作用降低温度、改善微气候，并不直接削弱紫外辐射
+  description: 误以为屋顶农庄能削弱紫外辐射，实际其环境效益主要是缓解热岛效应
+  severity: error
+  source: cmmlu_high_school_geography_88
+- pattern: 减少灰霾污染
+  correct: 屋顶农庄主要缓解热岛效应，对减少灰霾污染的直接作用有限
+  description: 误以为屋顶农庄能显著减少灰霾污染，实际其核心环境效益是缓和热岛效应
+  severity: error
+  source: cmmlu_high_school_geography_88
+- pattern: 长江中下游平原.*莫霍面
+  correct: 莫霍面深度与地壳厚度相关，青藏高原地壳最厚，地震波传播路径最长，因此最迟接收到反射波
+  description: 误以为地势低平地区地壳更薄，地震波传播更快
+  severity: error
+  source: cmmlu_high_school_geography_89
+- pattern: 华北平原.*莫霍面
+  correct: 莫霍面深度与地壳厚度相关，青藏高原地壳最厚，地震波传播路径最长，因此最迟接收到反射波
+  description: 误以为地势低平地区地壳更薄，地震波传播更快
+  severity: error
+  source: cmmlu_high_school_geography_89
+- pattern: 四川盆地.*莫霍面
+  correct: 莫霍面深度与地壳厚度相关，青藏高原地壳最厚，地震波传播路径最长，因此最迟接收到反射波
+  description: 误以为盆地地区地壳较薄，地震波传播更快
+  severity: error
+  source: cmmlu_high_school_geography_89
+- pattern: 宁夏.*牧场畜牧业
+  correct: 宁夏农业以旱作农业为主，而非牧场畜牧业
+  description: 误以为宁夏属于牧场畜牧业，实际上宁夏主要发展旱作农业
+  severity: error
+  source: cmmlu_high_school_geography_90
+- pattern: 宁夏.*游牧畜牧业
+  correct: 宁夏农业以旱作农业为主，而非游牧畜牧业
+  description: 误以为宁夏属于游牧畜牧业，实际上宁夏主要发展旱作农业
+  severity: error
+  source: cmmlu_high_school_geography_90
+- pattern: 宁夏.*水田农业
+  correct: 宁夏农业以旱作农业为主，而非水田农业
+  description: 误以为宁夏属于水田农业，实际上宁夏地处西北干旱区，以旱作农业为主
+  severity: error
+  source: cmmlu_high_school_geography_90
+- pattern: 大气圈.*水圈.*岩石圈.*生物圈.*污染.*全球性
+  correct: 大气圈、水圈、岩石圈、生物圈等人类赖以生存的环境遭到污染，已成为全球性的问题
+  description: 误以为该表述不正确，实际上这是正确的环境问题描述
+  severity: error
+  source: cmmlu_high_school_geography_91
+- pattern: 环境问题.*人口.*资源.*发展.*实质.*发展问题
+  correct: 环境问题是伴随着人口、资源、发展问题出现的，其实质就是发展问题
+  description: 误以为该表述不正确，实际上这是正确的环境问题本质阐述
+  severity: error
+  source: cmmlu_high_school_geography_91
+- pattern: 世界环境问题.*依赖.*发达国家.*发展中国家.*共同努力
+  correct: 世界环境问题的解决要依赖发达国家和发展中国家携手共同努力
+  description: 误以为该表述不正确，实际上这是正确的国际合作观点
+  severity: error
+  source: cmmlu_high_school_geography_91
+- pattern: 降低钢铁⽣产能耗
+  correct: 降低钢铁生产能耗是提高竞争力的有效措施
+  description: 误以为降低能耗不能提高竞争力
+  severity: error
+  source: cmmlu_high_school_geography_92
+- pattern: 建⽴境外铁矿⽯基地
+  correct: 建立境外铁矿石基地可以保障原料供应，提高竞争力
+  description: 误以为建立境外原料基地不能提高竞争力
+  severity: error
+  source: cmmlu_high_school_geography_92
+- pattern: 加⼤产品研发投⼊
+  correct: 加大产品研发投入可以提升产品附加值，提高竞争力
+  description: 误以为加大研发投入不能提高竞争力
+  severity: error
+  source: cmmlu_high_school_geography_92
+- pattern: 自然带重新演化.*首要影响因素.*地形
+  correct: 火山喷发后自然带重新演化的首要影响因素是火山喷发物覆盖厚度和土壤条件，而非地形
+  description: 误以为地形是火山喷发后自然带演化的首要因素，忽略了喷发物覆盖的影响
+  severity: error
+  source: cmmlu_high_school_geography_93
+- pattern: 火山大规模喷发.*主导风向.*东南风
+  correct: 根据东坡浮石和火山灰覆盖最厚，可推断主导风向为西风或西北风
+  description: 误以为火山喷发期间主导风向是东南风，实际应依据喷发物覆盖厚度分布推断风向
+  severity: error
+  source: cmmlu_high_school_geography_93
+- pattern: 火山灰.*增强大气逆辐射.*气温升高
+  correct: 火山灰会削弱太阳辐射，导致气温降低，而非增强大气逆辐射使气温升高
+  description: 误以为火山灰通过增强大气逆辐射使气温升高，实际火山灰主要削弱太阳辐射导致降温
+  severity: error
+  source: cmmlu_high_school_geography_93
+- pattern: 印度洋.*北美洲.*南美洲.*欧洲
+  correct: 大西洋被北美洲、南美洲和欧洲包围
+  description: 误以为印度洋位于北美洲、南美洲和欧洲之间
+  severity: error
+  source: cmmlu_high_school_geography_94
+- pattern: 北冰洋.*北美洲.*南美洲.*欧洲
+  correct: 大西洋被北美洲、南美洲和欧洲包围
+  description: 误以为北冰洋位于北美洲、南美洲和欧洲之间
+  severity: error
+  source: cmmlu_high_school_geography_94
+- pattern: 太平洋.*北美洲.*南美洲.*欧洲
+  correct: 大西洋被北美洲、南美洲和欧洲包围
+  description: 误以为太平洋位于北美洲、南美洲和欧洲之间
+  severity: error
+  source: cmmlu_high_school_geography_94
+- pattern: 有农社区.*控制城市用地规模
+  correct: 有农社区将农业引入城市空间，不会直接控制城市用地规模，反而可能增加农业用地
+  description: 误以为有农社区能控制城市用地规模
+  severity: error
+  source: cmmlu_high_school_geography_95
+- pattern: 有农社区.*增加城市能源消耗
+  correct: 有农社区通过本地化生产减少运输能耗，通常不会增加城市能源消耗
+  description: 误以为有农社区会增加能源消耗
+  severity: error
+  source: cmmlu_high_school_geography_95
+- pattern: 有农社区.*完善社区商业布局
+  correct: 有农社区主要涉及农业生产与城市空间融合，不直接完善社区商业布局
+  description: 误以为有农社区能完善商业布局
+  severity: error
+  source: cmmlu_high_school_geography_95
+- pattern: 促进都市农业健康发展
+  correct: 城市周边划定永久基本农田的主要目的是限制城市用地无序扩张，而非促进都市农业
+  description: 误以为划定永久基本农田是为了促进都市农业，实际是控制城市蔓延
+  severity: error
+  source: cmmlu_high_school_geography_96
+- pattern: 保证城市农副产品供应
+  correct: 城市周边划定永久基本农田的主要目的是限制城市用地无序扩张，而非保证农副产品供应
+  description: 误以为划定永久基本农田是为了保障城市食品供应，实际是约束城市扩张
+  severity: error
+  source: cmmlu_high_school_geography_96
+- pattern: 限制农业人口迁入城市
+  correct: 城市周边划定永久基本农田的主要目的是限制城市用地无序扩张，而非限制人口迁移
+  description: 误以为划定永久基本农田是为了限制农业人口进城，实际是控制城市用地
+  severity: error
+  source: cmmlu_high_school_geography_96
+- pattern: 黄赤交角.*气压带.*风带.*移动
+  correct: 黄赤交角是气压带和风带季节移动的根本原因之一，它导致太阳直射点移动，进而引起气压带风带移动
+  description: 误以为黄赤交角与气压带风带移动无关
+  severity: error
+  source: cmmlu_high_school_geography_97
+- pattern: 太阳直射点.*移动.*气压带.*风带
+  correct: 太阳直射点的移动是气压带和风带季节移动的直接原因
+  description: 误以为太阳直射点移动与气压带风带移动无关
+  severity: error
+  source: cmmlu_high_school_geography_97
+- pattern: 地球公转.*气压带.*风带.*移动
+  correct: 地球公转导致太阳直射点移动，是气压带和风带季节移动的原因
+  description: 误以为地球公转与气压带风带移动无关
+  severity: error
+  source: cmmlu_high_school_geography_97
+- pattern: 元旦.*昼夜长短
+  correct: 元旦（1月1日）接近冬至，北京昼短夜长，昼夜长短相差较大
+  description: 误以为元旦时昼夜长短相差最小
+  severity: error
+  source: cmmlu_high_school_geography_98
+- pattern: 国际劳动节.*昼夜长短
+  correct: 国际劳动节（5月1日）接近春分后，北京昼夜长短相差较大
+  description: 误以为国际劳动节时昼夜长短相差最小
+  severity: error
+  source: cmmlu_high_school_geography_98
+- pattern: 教师节.*昼夜长短
+  correct: 我国教师节（9月10日）接近秋分前，北京昼夜长短相差较大
+  description: 误以为教师节时昼夜长短相差最小
+  severity: error
+  source: cmmlu_high_school_geography_98
+- pattern: 海上少云.*昼夜温差
+  correct: 海上多云的地区昼夜温差最小，因为云层能有效减少夜间地面辐射散热
+  description: 误以为少云地区昼夜温差更小，实际上少云地区白天太阳辐射强、夜间散热快，温差更大
+  severity: error
+  source: cmmlu_high_school_geography_99
+- pattern: 陆上多云.*昼夜温差
+  correct: 海上多云的地区昼夜温差最小，陆地比热容小，多云时温差仍大于海上
+  description: 误以为陆上多云时昼夜温差最小，忽略了海洋比热容大、调节作用更强
+  severity: error
+  source: cmmlu_high_school_geography_99
+- pattern: 陆上少云.*昼夜温差
+  correct: 海上多云的地区昼夜温差最小，陆上少云时白天升温快、夜间降温快，温差最大
+  description: 误以为陆上少云地区昼夜温差最小，实际上这是温差最大的情况
+  severity: error
+  source: cmmlu_high_school_geography_99
+- pattern: 水平气压梯度力.*大气作用在海平面上产生的压力
+  correct: 水平气压梯度力是单位距离内气压差产生的力，不是大气作用在海平面上的压力
+  description: 误将水平气压梯度力等同于海平面气压
+  severity: error
+  source: cmmlu_high_school_geography_100
+- pattern: 印度洋板块.*太平洋板块.*交界
+  correct: 尼泊尔位于亚欧板块与印度洋板块的交界地带
+  description: 误以为尼泊尔地震与太平洋板块有关
+  severity: error
+  source: cmmlu_high_school_geography_101
+- pattern: 亚欧板块.*太平洋板块.*交界
+  correct: 尼泊尔位于亚欧板块与印度洋板块的交界地带
+  description: 误以为尼泊尔地震与太平洋板块有关
+  severity: error
+  source: cmmlu_high_school_geography_101
+- pattern: 亚欧板块.*非洲板块.*交界
+  correct: 尼泊尔位于亚欧板块与印度洋板块的交界地带
+  description: 误以为尼泊尔地震与非洲板块有关
+  severity: error
+  source: cmmlu_high_school_geography_101
+- pattern: 冰雪品牌.*知名度
+  correct: 张家口市更接近广阔的消费市场，而非冰雪品牌知名度更高
+  description: 误以为张家口市冰雪品牌知名度高于哈尔滨
+  severity: error
+  source: cmmlu_high_school_geography_102
+- pattern: 冰雪资源存留时间.*更长
+  correct: 哈尔滨纬度更高，冰雪资源存留时间更长
+  description: 误以为张家口市冰雪资源存留时间比哈尔滨更长
+  severity: error
+  source: cmmlu_high_school_geography_102
+- pattern: 冰雪活动.*更加丰富
+  correct: 哈尔滨冰雪活动更加丰富多样，如冰雪大世界等
+  description: 误以为张家口市冰雪活动比哈尔滨更丰富多样
+  severity: error
+  source: cmmlu_high_school_geography_102
+- pattern: 早婚.*盛行.*初婚年龄.*偏低
+  correct: 发达国家普遍晚婚，初婚年龄较高
+  description: 误以为发达国家早婚盛行、初婚年龄偏低
+  severity: error
+  source: cmmlu_high_school_geography_103
+- pattern: 崇尚多育多子.*重男轻女
+  correct: 发达国家普遍少育，性别平等观念较强
+  description: 误以为发达国家崇尚多育多子和重男轻女传统观念
+  severity: error
+  source: cmmlu_high_school_geography_103
+- pattern: 宗教.*反对人口增殖
+  correct: 发达国家宗教通常不反对人口增殖，甚至鼓励生育
+  description: 误以为发达国家宗教普遍反对人口增殖
+  severity: error
+  source: cmmlu_high_school_geography_103
+- pattern: 凌汛.*解冻
+  correct: 凌汛是冰凌阻塞河道导致水位上涨的现象，解冻季节冰凌融化，凌汛现象会减弱或消失
+  description: 误以为解冻季节凌汛现象仍然容易出现
+  severity: error
+  source: cmmlu_high_school_geography_104
+- pattern: 解冻.*水位暴涨
+  correct: 解冻季节冰雪融化，河流水量增加，水位可能上涨
+  description: 误以为解冻季节水位不会暴涨
+  severity: warning
+  source: cmmlu_high_school_geography_104
+- pattern: 解冻.*河岸决堤
+  correct: 解冻季节冰雪融化可能导致河水泛滥，河岸决堤是可能发生的现象
+  description: 误以为解冻季节河岸不会决堤
+  severity: warning
+  source: cmmlu_high_school_geography_104
+- pattern: 汽车尾气.*排放量小
+  correct: 汽车尾气和生产、生活废气排放量大是光化学烟雾的重要成因
+  description: 误以为光化学烟雾事件发生时污染物排放量小
+  severity: error
+  source: cmmlu_high_school_geography_105
+- pattern: 多气旋活动.*影响扩散
+  correct: 气旋活动通常有利于污染物扩散，而非加重污染
+  description: 误以为气旋活动会阻碍污染气体扩散
+  severity: error
+  source: cmmlu_high_school_geography_105
+- pattern: 温室效应.*光化学烟雾
+  correct: 温室效应与光化学烟雾的成因和机制不同，不是直接原因
+  description: 混淆温室效应与光化学烟雾的成因
+  severity: error
+  source: cmmlu_high_school_geography_105
+- pattern: 雪资源丰富
+  correct: 张家口市冰雪经济发展的主要契机是政府大力推动，而非仅靠雪资源
+  description: 误以为自然资源丰富是冰雪经济发展的直接契机，忽略了政策因素
+  severity: error
+  source: cmmlu_high_school_geography_106
+- pattern: 交通网络完善
+  correct: 交通网络完善是冰雪经济发展的结果或条件，而非2015年后的主要契机
+  description: 误以为交通基础设施完善是冰雪经济迅速发展的直接契机
+  severity: error
+  source: cmmlu_high_school_geography_106
+- pattern: 基础设施齐全
+  correct: 基础设施齐全通常是冰雪经济发展的结果，而非最初的发展契机
+  description: 误以为基础设施齐全能直接触发冰雪经济迅速发展
+  severity: error
+  source: cmmlu_high_school_geography_106
+- pattern: 有农社区.*美化.*环境
+  correct: 有农社区最主要的意义是实现物质的循环利用，而非单纯美化环境
+  description: 误以为有农社区的主要功能是美化生活环境
+  severity: error
+  source: cmmlu_high_school_geography_107
+- pattern: 有农社区.*便捷.*食物供应
+  correct: 有农社区最主要的意义是实现物质的循环利用，而非提供便捷的食物供应
+  description: 误以为有农社区的主要目的是提供便捷的食物供应
+  severity: error
+  source: cmmlu_high_school_geography_107
+- pattern: 有农社区.*改变.*生产方式
+  correct: 有农社区最主要的意义是实现物质的循环利用，而非改变居民的生产方式
+  description: 误以为有农社区的主要意义是改变居民的生产方式
+  severity: error
+  source: cmmlu_high_school_geography_107
+- pattern: 网上书店.*影响.*电信公司
+  correct: 网上书店主要影响实体书店和实体银行，对电信公司影响较小
+  description: 误以为网上书店会直接冲击电信公司业务
+  severity: error
+  source: cmmlu_high_school_geography_108
+- pattern: 网上书店.*影响.*航空公司
+  correct: 网上书店主要影响实体书店和实体银行，对航空公司影响较小
+  description: 误以为网上书店会直接冲击航空公司业务
+  severity: error
+  source: cmmlu_high_school_geography_108
+- pattern: 相对高度.*相加
+  correct: 相对高度是两地的海拔高度之差，即8844米减去1934米等于6910米
+  description: 误以为相对高度是两座山峰海拔高度之和
+  severity: error
+  source: cmmlu_high_school_geography_109
+- pattern: 相对高度.*减错
+  correct: 相对高度是8844米减去1934米等于6910米
+  description: 计算相对高度时数值计算错误，可能混淆了数字
+  severity: warning
+  source: cmmlu_high_school_geography_109
+- pattern: 劳动⼒.*⾃然条件.*⽓候资源
+  correct: 影响农业的三大区位因素是自然条件、社会经济和科学技术
+  description: 误将劳动力、自然条件和气候资源作为农业的三大区位因素，忽略了社会经济和科学技术的重要性
+  severity: error
+  source: cmmlu_high_school_geography_110
+- pattern: 热量.*光照.*⽔分
+  correct: 影响农业的三大区位因素是自然条件、社会经济和科学技术
+  description: 误将热量、光照和水分作为农业的三大区位因素，这些只是自然条件中的具体要素
+  severity: error
+  source: cmmlu_high_school_geography_110
+- pattern: ⽓候.*市场.*交通
+  correct: 影响农业的三大区位因素是自然条件、社会经济和科学技术
+  description: 误将气候、市场和交通作为农业的三大区位因素，气候属于自然条件，市场和交通属于社会经济，但缺少科学技术
+  severity: error
+  source: cmmlu_high_school_geography_110
+- pattern: 安徽南部.*海鲜
+  correct: 安徽省南部地处内陆山区，不靠海，传统菜肴选料以山货和腌腊制品为主
+  description: 误以为安徽南部靠海，传统菜肴选料多用海鲜
+  severity: error
+  source: cmmlu_high_school_geography_111
+- pattern: 安徽南部.*牛羊肉
+  correct: 安徽省南部以山地为主，耕地稀少，传统菜肴选料以山货和腌腊制品为主，而非牛羊肉
+  description: 误以为安徽南部传统菜肴选料多用牛羊肉
+  severity: error
+  source: cmmlu_high_school_geography_111
+- pattern: 极地高气压带.*切断
+  correct: 1月份北半球被明显切断的是副极地低气压带，而非极地高气压带
+  description: 误以为极地高气压带在1月份会被切断
+  severity: error
+  source: cmmlu_high_school_geography_112
+- pattern: 副热带高气压带.*切断
+  correct: 1月份北半球被明显切断的是副极地低气压带，而非副热带高气压带
+  description: 误以为副热带高气压带在1月份会被切断
+  severity: error
+  source: cmmlu_high_school_geography_112
+- pattern: 植物死亡分解.*磷
+  correct: 南海诸岛土壤中磷的主要来源是鸟粪和鸟类残体，而非植物死亡分解
+  description: 误以为植物死亡分解是南海诸岛土壤富磷的主要来源
+  severity: error
+  source: cmmlu_high_school_geography_113
+- pattern: 鱼类死亡分解.*磷
+  correct: 南海诸岛土壤中磷的主要来源是鸟粪和鸟类残体，而非鱼类死亡分解
+  description: 误以为鱼类死亡分解是南海诸岛土壤富磷的主要来源
+  severity: error
+  source: cmmlu_high_school_geography_113
+- pattern: 珊瑚.*贝壳碎屑.*磷
+  correct: 南海诸岛土壤中磷的主要来源是鸟粪和鸟类残体，而非珊瑚、贝壳碎屑
+  description: 误以为珊瑚、贝壳碎屑是南海诸岛土壤富磷的主要来源
+  severity: error
+  source: cmmlu_high_school_geography_113
+- pattern: 制造业高度发达
+  correct: 清代东北地区地广人稀，有大量可开垦的土地，而非制造业发达
+  description: 误以为闯关东是因为东北制造业发达
+  severity: error
+  source: cmmlu_high_school_geography_114
+- pattern: 畜牧业水平高
+  correct: 闯关东的主要原因是东北有大量可开垦的土地，而非畜牧业水平高
+  description: 误以为闯关东是因为东北畜牧业发达
+  severity: error
+  source: cmmlu_high_school_geography_114
+- pattern: 大量征兵抗战
+  correct: 闯关东发生在清代，主要原因是东北有大量可开垦的土地，而非征兵抗战
+  description: 误以为闯关东与抗战时期的征兵有关
+  severity: error
+  source: cmmlu_high_school_geography_114
+- pattern: 1月.*南亚.*东南风
+  correct: 1月份南亚受冬季风影响，主要风向为东北风
+  description: 误以为1月份南亚盛行东南风
+  severity: error
+  source: cmmlu_high_school_geography_115
+- pattern: 1月.*南亚.*西北风
+  correct: 1月份南亚受冬季风影响，主要风向为东北风
+  description: 误以为1月份南亚盛行西北风
+  severity: error
+  source: cmmlu_high_school_geography_115
+- pattern: 1月.*南亚.*西南风
+  correct: 1月份南亚受冬季风影响，主要风向为东北风
+  description: 误以为1月份南亚盛行西南风（西南风为夏季风）
+  severity: error
+  source: cmmlu_high_school_geography_115
+- pattern: 200毫米等降水量线.*阴山
+  correct: 200毫米等降水量线大致经过阴山、祁连山、巴颜喀拉山一线
+  description: 误以为200毫米等降水量线不经过阴山
+  severity: error
+  source: cmmlu_high_school_geography_116
+- pattern: 200毫米等降水量线.*祁连山
+  correct: 200毫米等降水量线大致经过阴山、祁连山、巴颜喀拉山一线
+  description: 误以为200毫米等降水量线不经过祁连山
+  severity: error
+  source: cmmlu_high_school_geography_116
+- pattern: 200毫米等降水量线.*巴颜喀拉山
+  correct: 200毫米等降水量线大致经过阴山、祁连山、巴颜喀拉山一线
+  description: 误以为200毫米等降水量线不经过巴颜喀拉山
+  severity: error
+  source: cmmlu_high_school_geography_116
+- pattern: 替代煤和石油.*减轻.*大气污染
+  correct: 可燃冰燃烧也会产生二氧化碳等污染物，只是比煤和石油污染小，不能完全消除大气污染
+  description: 误以为可燃冰完全无污染，可完全替代煤和石油并消除大气污染
+  severity: error
+  source: cmmlu_high_school_geography_117
+- pattern: 取代水电站.*改善大气质量
+  correct: 水电站本身不排放污染物，可燃冰燃烧仍会产生二氧化碳，不能改善大气质量
+  description: 误以为可燃冰可替代清洁的水电站并改善大气质量
+  severity: error
+  source: cmmlu_high_school_geography_117
+- pattern: 无CO2排放.*减轻温室效应
+  correct: 可燃冰主要成分是甲烷，燃烧会产生二氧化碳，不能减轻温室效应
+  description: 误以为可燃冰燃烧不产生二氧化碳，可减轻温室效应
+  severity: error
+  source: cmmlu_high_school_geography_117
 domain_facts:
-
-  # ─── 省级行政区划及省会/首府 ───
-
   provincial_capitals:
-    description: "中国34个省级行政区及其省会/首府"
+    description: 中国34个省级行政区及其省会/首府
     divisions:
-      # 23个省
-      - name: "河北省"
-        short: "冀"
-        capital: "石家庄"
-        type: "省"
-
-      - name: "山西省"
-        short: "晋"
-        capital: "太原"
-        type: "省"
-
-      - name: "辽宁省"
-        short: "辽"
-        capital: "沈阳"
-        type: "省"
-
-      - name: "吉林省"
-        short: "吉"
-        capital: "长春"
-        type: "省"
-
-      - name: "黑龙江省"
-        short: "黑"
-        capital: "哈尔滨"
-        type: "省"
-
-      - name: "江苏省"
-        short: "苏"
-        capital: "南京"
-        type: "省"
-
-      - name: "浙江省"
-        short: "浙"
-        capital: "杭州"
-        type: "省"
-
-      - name: "安徽省"
-        short: "皖"
-        capital: "合肥"
-        type: "省"
-
-      - name: "福建省"
-        short: "闽"
-        capital: "福州"
-        type: "省"
-
-      - name: "江西省"
-        short: "赣"
-        capital: "南昌"
-        type: "省"
-
-      - name: "山东省"
-        short: "鲁"
-        capital: "济南"
-        type: "省"
-
-      - name: "河南省"
-        short: "豫"
-        capital: "郑州"
-        type: "省"
-
-      - name: "湖北省"
-        short: "鄂"
-        capital: "武汉"
-        type: "省"
-
-      - name: "湖南省"
-        short: "湘"
-        capital: "长沙"
-        type: "省"
-
-      - name: "广东省"
-        short: "粤"
-        capital: "广州"
-        type: "省"
-
-      - name: "海南省"
-        short: "琼"
-        capital: "海口"
-        type: "省"
-
-      - name: "四川省"
-        short: "川/蜀"
-        capital: "成都"
-        type: "省"
-
-      - name: "贵州省"
-        short: "黔/贵"
-        capital: "贵阳"
-        type: "省"
-
-      - name: "云南省"
-        short: "滇/云"
-        capital: "昆明"
-        type: "省"
-
-      - name: "陕西省"
-        short: "陕/秦"
-        capital: "西安"
-        type: "省"
-
-      - name: "甘肃省"
-        short: "甘/陇"
-        capital: "兰州"
-        type: "省"
-
-      - name: "青海省"
-        short: "青"
-        capital: "西宁"
-        type: "省"
-
-      - name: "台湾省"
-        short: "台"
-        capital: "台北"
-        type: "省"
-
-      # 5个自治区
-      - name: "内蒙古自治区"
-        short: "蒙"
-        capital: "呼和浩特"
-        type: "自治区"
-
-      - name: "广西壮族自治区"
-        short: "桂"
-        capital: "南宁"
-        type: "自治区"
-
-      - name: "西藏自治区"
-        short: "藏"
-        capital: "拉萨"
-        type: "自治区"
-
-      - name: "宁夏回族自治区"
-        short: "宁"
-        capital: "银川"
-        type: "自治区"
-
-      - name: "新疆维吾尔自治区"
-        short: "新"
-        capital: "乌鲁木齐"
-        type: "自治区"
-
-      # 4个直辖市
-      - name: "北京市"
-        short: "京"
-        capital: "北京"
-        type: "直辖市"
-
-      - name: "天津市"
-        short: "津"
-        capital: "天津"
-        type: "直辖市"
-
-      - name: "上海市"
-        short: "沪"
-        capital: "上海"
-        type: "直辖市"
-
-      - name: "重庆市"
-        short: "渝"
-        capital: "重庆"
-        type: "直辖市"
-
-      # 2个特别行政区
-      - name: "香港特别行政区"
-        short: "港"
-        capital: "香港"
-        type: "特别行政区"
-
-      - name: "澳门特别行政区"
-        short: "澳"
-        capital: "澳门"
-        type: "特别行政区"
-
-  # ─── 中国主要河流 ───
-
+    - name: 河北省
+      short: 冀
+      capital: 石家庄
+      type: 省
+    - name: 山西省
+      short: 晋
+      capital: 太原
+      type: 省
+    - name: 辽宁省
+      short: 辽
+      capital: 沈阳
+      type: 省
+    - name: 吉林省
+      short: 吉
+      capital: 长春
+      type: 省
+    - name: 黑龙江省
+      short: 黑
+      capital: 哈尔滨
+      type: 省
+    - name: 江苏省
+      short: 苏
+      capital: 南京
+      type: 省
+    - name: 浙江省
+      short: 浙
+      capital: 杭州
+      type: 省
+    - name: 安徽省
+      short: 皖
+      capital: 合肥
+      type: 省
+    - name: 福建省
+      short: 闽
+      capital: 福州
+      type: 省
+    - name: 江西省
+      short: 赣
+      capital: 南昌
+      type: 省
+    - name: 山东省
+      short: 鲁
+      capital: 济南
+      type: 省
+    - name: 河南省
+      short: 豫
+      capital: 郑州
+      type: 省
+    - name: 湖北省
+      short: 鄂
+      capital: 武汉
+      type: 省
+    - name: 湖南省
+      short: 湘
+      capital: 长沙
+      type: 省
+    - name: 广东省
+      short: 粤
+      capital: 广州
+      type: 省
+    - name: 海南省
+      short: 琼
+      capital: 海口
+      type: 省
+    - name: 四川省
+      short: 川/蜀
+      capital: 成都
+      type: 省
+    - name: 贵州省
+      short: 黔/贵
+      capital: 贵阳
+      type: 省
+    - name: 云南省
+      short: 滇/云
+      capital: 昆明
+      type: 省
+    - name: 陕西省
+      short: 陕/秦
+      capital: 西安
+      type: 省
+    - name: 甘肃省
+      short: 甘/陇
+      capital: 兰州
+      type: 省
+    - name: 青海省
+      short: 青
+      capital: 西宁
+      type: 省
+    - name: 台湾省
+      short: 台
+      capital: 台北
+      type: 省
+    - name: 内蒙古自治区
+      short: 蒙
+      capital: 呼和浩特
+      type: 自治区
+    - name: 广西壮族自治区
+      short: 桂
+      capital: 南宁
+      type: 自治区
+    - name: 西藏自治区
+      short: 藏
+      capital: 拉萨
+      type: 自治区
+    - name: 宁夏回族自治区
+      short: 宁
+      capital: 银川
+      type: 自治区
+    - name: 新疆维吾尔自治区
+      short: 新
+      capital: 乌鲁木齐
+      type: 自治区
+    - name: 北京市
+      short: 京
+      capital: 北京
+      type: 直辖市
+    - name: 天津市
+      short: 津
+      capital: 天津
+      type: 直辖市
+    - name: 上海市
+      short: 沪
+      capital: 上海
+      type: 直辖市
+    - name: 重庆市
+      short: 渝
+      capital: 重庆
+      type: 直辖市
+    - name: 香港特别行政区
+      short: 港
+      capital: 香港
+      type: 特别行政区
+    - name: 澳门特别行政区
+      short: 澳
+      capital: 澳门
+      type: 特别行政区
   major_rivers:
-    description: "中国主要河流及其长度"
+    description: 中国主要河流及其长度
     rivers:
-      - name: "长江"
-        length_km: 6300
-        source: "青藏高原唐古拉山"
-        mouth: "东海"
-        note: "中国第一长河，世界第三长河"
-
-      - name: "黄河"
-        length_km: 5464
-        source: "青藏高原巴颜喀拉山"
-        mouth: "渤海"
-        note: "中国第二长河，母亲河"
-
-      - name: "黑龙江"
-        length_km: 4478
-        source: "肯特山"
-        mouth: "鞑靼海峡"
-        note: "中俄界河（中国境内部分）"
-
-      - name: "珠江"
-        length_km: 2320
-        source: "云贵高原"
-        mouth: "南海"
-        note: "中国第三大河，水量第二"
-
-      - name: "澜沧江"
-        length_km: 2153
-        source: "青藏高原唐古拉山"
-        mouth: "南海（出境后称湄公河）"
-        note: "国际河流"
-
-      - name: "塔里木河"
-        length_km: 2137
-        source: "天山和喀喇昆仑山"
-        mouth: "台特玛湖"
-        note: "中国最长的内陆河"
-
-      - name: "雅鲁藏布江"
-        length_km: 2057
-        source: "西藏西南部喜马拉雅山"
-        mouth: "孟加拉湾（出境后称布拉马普特拉河）"
-        note: "世界最深峡谷——雅鲁藏布大峡谷"
-
-      - name: "怒江"
-        length_km: 2013
-        source: "青藏高原唐古拉山"
-        mouth: "安达曼海（出境后称萨尔温江）"
-        note: "国际河流"
-
-      - name: "松花江"
-        length_km: 1927
-        source: "长白山天池"
-        mouth: "黑龙江"
-        note: "黑龙江最大支流"
-
-      - name: "汉江"
-        length_km: 1577
-        source: "陕西秦岭"
-        mouth: "长江"
-        note: "长江最长支流"
-
-  # ─── 中国主要山脉 ───
-
+    - name: 长江
+      length_km: 6300
+      source: 青藏高原唐古拉山
+      mouth: 东海
+      note: 中国第一长河，世界第三长河
+    - name: 黄河
+      length_km: 5464
+      source: 青藏高原巴颜喀拉山
+      mouth: 渤海
+      note: 中国第二长河，母亲河
+    - name: 黑龙江
+      length_km: 4478
+      source: 肯特山
+      mouth: 鞑靼海峡
+      note: 中俄界河（中国境内部分）
+    - name: 珠江
+      length_km: 2320
+      source: 云贵高原
+      mouth: 南海
+      note: 中国第三大河，水量第二
+    - name: 澜沧江
+      length_km: 2153
+      source: 青藏高原唐古拉山
+      mouth: 南海（出境后称湄公河）
+      note: 国际河流
+    - name: 塔里木河
+      length_km: 2137
+      source: 天山和喀喇昆仑山
+      mouth: 台特玛湖
+      note: 中国最长的内陆河
+    - name: 雅鲁藏布江
+      length_km: 2057
+      source: 西藏西南部喜马拉雅山
+      mouth: 孟加拉湾（出境后称布拉马普特拉河）
+      note: 世界最深峡谷——雅鲁藏布大峡谷
+    - name: 怒江
+      length_km: 2013
+      source: 青藏高原唐古拉山
+      mouth: 安达曼海（出境后称萨尔温江）
+      note: 国际河流
+    - name: 松花江
+      length_km: 1927
+      source: 长白山天池
+      mouth: 黑龙江
+      note: 黑龙江最大支流
+    - name: 汉江
+      length_km: 1577
+      source: 陕西秦岭
+      mouth: 长江
+      note: 长江最长支流
   major_mountains:
-    description: "中国著名山脉与山峰"
+    description: 中国著名山脉与山峰
     mountains:
-      - name: "珠穆朗玛峰"
-        height_m: 8848.86
-        location: "中尼边境"
-        note: "世界最高峰"
-
-      - name: "乔戈里峰（K2）"
-        height_m: 8611
-        location: "中巴边境"
-        note: "世界第二高峰"
-
-      - name: "贡嘎山"
-        height_m: 7556
-        location: "四川"
-        note: "蜀山之王"
-
-      - name: "慕士塔格峰"
-        height_m: 7546
-        location: "新疆"
-        note: "冰山之父"
-
-      - name: "泰山"
-        height_m: 1532.7
-        location: "山东泰安"
-        note: "五岳之首"
-
-      - name: "华山"
-        height_m: 2154.9
-        location: "陕西渭南"
-        note: "五岳之西岳，以险著称"
-
-      - name: "衡山"
-        height_m: 1300.2
-        location: "湖南衡阳"
-        note: "五岳之南岳"
-
-      - name: "恒山"
-        height_m: 2016.1
-        location: "山西大同"
-        note: "五岳之北岳"
-
-      - name: "嵩山"
-        height_m: 1491.7
-        location: "河南郑州"
-        note: "五岳之中岳"
-
-      - name: "黄山"
-        height_m: 1864.8
-        location: "安徽黄山"
-        note: "天下第一奇山"
-
-  # ─── 中国主要湖泊 ───
-
+    - name: 珠穆朗玛峰
+      height_m: 8848.86
+      location: 中尼边境
+      note: 世界最高峰
+    - name: 乔戈里峰（K2）
+      height_m: 8611
+      location: 中巴边境
+      note: 世界第二高峰
+    - name: 贡嘎山
+      height_m: 7556
+      location: 四川
+      note: 蜀山之王
+    - name: 慕士塔格峰
+      height_m: 7546
+      location: 新疆
+      note: 冰山之父
+    - name: 泰山
+      height_m: 1532.7
+      location: 山东泰安
+      note: 五岳之首
+    - name: 华山
+      height_m: 2154.9
+      location: 陕西渭南
+      note: 五岳之西岳，以险著称
+    - name: 衡山
+      height_m: 1300.2
+      location: 湖南衡阳
+      note: 五岳之南岳
+    - name: 恒山
+      height_m: 2016.1
+      location: 山西大同
+      note: 五岳之北岳
+    - name: 嵩山
+      height_m: 1491.7
+      location: 河南郑州
+      note: 五岳之中岳
+    - name: 黄山
+      height_m: 1864.8
+      location: 安徽黄山
+      note: 天下第一奇山
   major_lakes:
-    description: "中国主要湖泊及其面积"
+    description: 中国主要湖泊及其面积
     lakes:
-      - name: "青海湖"
-        area_sqkm: 4543
-        location: "青海"
-        note: "中国最大咸水湖"
-
-      - name: "鄱阳湖"
-        area_sqkm: 3150
-        location: "江西"
-        note: "中国最大淡水湖"
-
-      - name: "洞庭湖"
-        area_sqkm: 2579
-        location: "湖南"
-        note: "中国第二大淡水湖"
-
-      - name: "太湖"
-        area_sqkm: 2427
-        location: "江苏"
-        note: "中国第三大淡水湖"
-
-      - name: "纳木错"
-        area_sqkm: 1920
-        location: "西藏"
-        note: "西藏三大圣湖之一"
-
-      - name: "色林错"
-        area_sqkm: 2391
-        location: "西藏"
-        note: "西藏最大湖泊（已超纳木错）"
-
-      - name: "洪泽湖"
-        area_sqkm: 1597
-        location: "江苏"
-        note: "中国第四大淡水湖"
-
-  # ─── 中国陆上邻国 ───
-
+    - name: 青海湖
+      area_sqkm: 4543
+      location: 青海
+      note: 中国最大咸水湖
+    - name: 鄱阳湖
+      area_sqkm: 3150
+      location: 江西
+      note: 中国最大淡水湖
+    - name: 洞庭湖
+      area_sqkm: 2579
+      location: 湖南
+      note: 中国第二大淡水湖
+    - name: 太湖
+      area_sqkm: 2427
+      location: 江苏
+      note: 中国第三大淡水湖
+    - name: 纳木错
+      area_sqkm: 1920
+      location: 西藏
+      note: 西藏三大圣湖之一
+    - name: 色林错
+      area_sqkm: 2391
+      location: 西藏
+      note: 西藏最大湖泊（已超纳木错）
+    - name: 洪泽湖
+      area_sqkm: 1597
+      location: 江苏
+      note: 中国第四大淡水湖
   neighboring_countries:
-    description: "中国14个陆上邻国（按方位排列）"
+    description: 中国14个陆上邻国（按方位排列）
     count: 14
     countries:
-      # 东北
-      - name: "朝鲜"
-        border_direction: "东北"
-
-      - name: "俄罗斯"
-        border_direction: "东北/西北"
-
-      # 北
-      - name: "蒙古"
-        border_direction: "北"
-
-      # 西北
-      - name: "哈萨克斯坦"
-        border_direction: "西北"
-
-      - name: "吉尔吉斯斯坦"
-        border_direction: "西北"
-
-      - name: "塔吉克斯坦"
-        border_direction: "西北"
-
-      # 西
-      - name: "阿富汗"
-        border_direction: "西"
-
-      - name: "巴基斯坦"
-        border_direction: "西"
-
-      # 西南
-      - name: "印度"
-        border_direction: "西南"
-
-      - name: "尼泊尔"
-        border_direction: "西南"
-
-      - name: "不丹"
-        border_direction: "西南"
-
-      - name: "缅甸"
-        border_direction: "西南"
-
-      # 南
-      - name: "老挝"
-        border_direction: "南"
-
-      - name: "越南"
-        border_direction: "南"
+    - name: 朝鲜
+      border_direction: 东北
+    - name: 俄罗斯
+      border_direction: 东北/西北
+    - name: 蒙古
+      border_direction: 北
+    - name: 哈萨克斯坦
+      border_direction: 西北
+    - name: 吉尔吉斯斯坦
+      border_direction: 西北
+    - name: 塔吉克斯坦
+      border_direction: 西北
+    - name: 阿富汗
+      border_direction: 西
+    - name: 巴基斯坦
+      border_direction: 西
+    - name: 印度
+      border_direction: 西南
+    - name: 尼泊尔
+      border_direction: 西南
+    - name: 不丹
+      border_direction: 西南
+    - name: 缅甸
+      border_direction: 西南
+    - name: 老挝
+      border_direction: 南
+    - name: 越南
+      border_direction: 南
