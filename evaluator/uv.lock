@@ -33,8 +33,12 @@ datasets = [
     { name = "pyarrow" },
 ]
 dev = [
+    { name = "anthropic" },
     { name = "commitizen" },
+    { name = "langfuse" },
     { name = "mypy" },
+    { name = "openai" },
+    { name = "playwright" },
     { name = "pre-commit" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -55,7 +59,9 @@ vision = [
 
 [package.metadata]
 requires-dist = [
+    { name = "agent-eval", extras = ["llm"], marker = "extra == 'dev'" },
     { name = "agent-eval", extras = ["llm"], marker = "extra == 'vision'" },
+    { name = "agent-eval", extras = ["vision"], marker = "extra == 'dev'" },
     { name = "anthropic", marker = "extra == 'llm'", specifier = ">=0.30" },
     { name = "beautifulsoup4", specifier = ">=4.12" },
     { name = "commitizen", marker = "extra == 'dev'", specifier = ">=3.29" },
