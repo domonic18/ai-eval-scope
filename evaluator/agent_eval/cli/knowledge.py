@@ -112,6 +112,70 @@ def knowledge_merge(
         raise typer.Exit(code=1) from e
 
 
+@knowledge_app.command("audit")
+def knowledge_audit(
+    subject: str = typer.Option(None, "--subject", help="指定学科（默认全部，不含 _defaults）"),
+    max_len: int = typer.Option(
+        4, "--max-len", help="「超短」阈值：裸词字符数 ≤ 该值视为超短（默认 4）"
+    ),
+    keep_misspellings: bool = typer.Option(
+        True,
+        help="保留错别字/用字纠正类 pattern（真阳检测）；--no-keep-misspellings 一并删除",
+    ),
+    weak_anchored: bool = typer.Option(
+        True,
+        help="清理弱锚定通配（因为.*所以/不是.*而是/购.*买 等功能词·双单字）；--no-weak-anchored 仅清裸词",
+    ),
+    apply: bool = typer.Option(False, "--apply", help="执行删除并写盘（默认仅审计报告）"),
+) -> None:
+    """审计 / 清理 misconception 中的「无有效锚定」pattern（误报根因）。
+
+    涵盖两类（根因相同：仅靠短字面子串匹配，正常文本讨论/使用即误报）：
+    1. 超短裸词——概念名词（理想/信念/滞后性/价值观）；
+    2. 弱锚定通配——`.*` 仅连短片段（因为.*所以/不是.*而是/购.*买/翦.*剪）。
+
+    保留：带字符类/分组/定位的、长裸词的、含内容词的概念辨析（三英.*赵云），以及
+    错别字/用字纠正类（真阳）。格式保留（不动注释与缩进）。
+
+    用法：
+      agent-eval knowledge audit                       # 仅报告
+      agent-eval knowledge audit --apply               # 执行清理（git diff 复核）
+      agent-eval knowledge audit --no-weak-anchored    # 仅清超短裸词
+    """
+    from agent_eval.knowledge.auditor import audit_all
+
+    subjects = [subject] if subject else None
+    reports = audit_all(
+        max_len=max_len,
+        keep_misspellings=keep_misspellings,
+        weak_anchored=weak_anchored,
+        apply=apply,
+        subjects=subjects,
+    )
+
+    total_removed = sum(r.removed_count for _, _, r in reports)
+    total_kept = sum(r.kept_anchored_or_long for _, _, r in reports)
+    mode = (
+        "[bold red]已写盘[/bold red]" if apply else "[dim]（dry-run 未写盘，加 --apply 执行）[/dim]"
+    )
+
+    rprint(
+        f"\n[bold green]✅ 审计完成[/bold green] {mode} | "
+        f"删除 {total_removed} 条无有效锚定 pattern | 保留 {total_kept} 条"
+        f"（max_len={max_len}, keep_misspellings={keep_misspellings}, "
+        f"weak_anchored={weak_anchored}）\n"
+    )
+    rprint("[bold]按学科分布：[/bold]")
+    for subject_name, _, report in reports:
+        rprint(
+            f"  {subject_name:12} 删除 {report.removed_count:4} | "
+            f"保留 {report.kept_anchored_or_long:4}"
+        )
+    if apply and total_removed:
+        rprint("\n[dim]已修改对应 *.yaml，请用 git diff 复核改动。[/dim]")
+    rprint("")
+
+
 @knowledge_app.command("list")
 def knowledge_list(
     subject: str = typer.Option(..., "--subject", help="学科"),
