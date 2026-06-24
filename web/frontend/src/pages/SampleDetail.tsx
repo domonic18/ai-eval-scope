@@ -307,7 +307,7 @@ function PreviewPane({
           {(
             [
               ["doc", "原始文档"],
-              ["shot", "渲染截图"],
+              ...(isMultimodal ? ([["shot", "渲染截图"]] as [PrevTab, string][]) : []),
               ["trace", "执行 Trace"],
             ] as [PrevTab, string][]
           ).map(([k, label]) => (
@@ -352,20 +352,9 @@ function PreviewPane({
         {!hasAny ? (
           <Empty title="无制品" children={<>该样本暂无可预览的产出物。</>} />
         ) : !current ? (
-          tab === "shot" && !isMultimodal ? (
-            <Empty
-              title="未使用多模态评估"
-              children={
-                <>该样本未使用多模态 LLM 评估，渲染截图仅多模态评估项（vision.quality）可用。</>
-              }
-            />
-          ) : (
-            <Empty
-              title={`暂无${
-                tab === "doc" ? "原始文档" : tab === "shot" ? "渲染截图" : "执行 Trace"
-              }制品`}
-            />
-          )
+          <Empty
+            title={`暂无${tab === "doc" ? "原始文档" : tab === "shot" ? "渲染截图" : "执行 Trace"}制品`}
+          />
         ) : loading ? (
           <Empty title="加载中…" />
         ) : preview.mode === "iframe" ? (

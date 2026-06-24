@@ -208,7 +208,7 @@ class VisionQualityEvaluator(BaseLLMJudgeEvaluator):
 
         details: dict[str, Any] = {
             "scores": avg_scores,
-            "screenshot_paths": [f"evidence/{p.name}" for p in screenshots],
+            "screenshot_paths": [str(p) for p in screenshots],
             "total_documents": total_docs,
             "evaluated_documents": len(ok_docs),
             "per_document": [
