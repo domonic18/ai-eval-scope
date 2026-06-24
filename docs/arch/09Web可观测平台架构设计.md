@@ -745,7 +745,7 @@ CREATE INDEX ON project_trends_mv (project_id, day);
 services:
   postgres: { image: postgres:16, env: [POSTGRES_PASSWORD=...], volumes: ["pgdata:/var/lib/postgresql/data"] }
   minio:    { image: minio/minio, command: server /data, ports: ["9000:9000"], env: [MINIO_ROOT_USER=..., MINIO_ROOT_PASSWORD=...] }
-  platform: { build: ./web/backend, env_file: .env, ports: ["3000:3000"], depends_on: [postgres, minio] }
+  web: { build: ./web/backend, env_file: .env, ports: ["9000:9000"], depends_on: [postgres, minio] }
 volumes: { pgdata: {} }
 ```
 

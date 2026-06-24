@@ -359,7 +359,6 @@ web/
 │   │   ├── workspace-reader.js         #     Workspace 文件读取服务
 │   │   ├── indexer.js                  #     索引构建与维护
 │   │   └── trends.js                   #     趋势数据聚合计算
-│   ├── scf_bootstrap.js                #   腾讯云函数入口适配
 │   └── package.json                    #   后端依赖（express, cors 等）
 │
 ├── frontend/                           # React SPA 前端
@@ -393,7 +392,7 @@ web/
 **前后端协作**：
 
 ```
-frontend (Vite dev :5173) ───proxy /api──→ backend (Express :3000) ──→ workspace/
+frontend (Vite dev :5173) ───proxy /api──→ backend (Express :9000) ──→ workspace/
                                            │
 frontend build → backend/public/ ──────────┘  (生产模式: Express 同时托管静态资源)
 ```
@@ -555,33 +554,10 @@ CLI（Python）                    Web Portal（Node.js）
 
 ### 8.3 云函数入口适配
 
-```javascript
-// web/backend/scf_bootstrap.js
-const express = require('express');
-const path = require('path');
-const app = express();
-
-// 静态资源
-app.use(express.static(path.join(__dirname, 'public')));
-
-// API 路由
-const projectsRouter = require('./routes/projects');
-const runsRouter = require('./routes/runs');
-const reportsRouter = require('./routes/reports');
-
-app.use('/api/projects', projectsRouter);
-app.use('/api/runs', runsRouter);
-app.use('/api/reports', reportsRouter);
-
-// SPA 回退
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// SCF 入口
-const serverless = require('serverless-http');
-module.exports.main_handler = serverless(app);
-```
+> **变更说明**：已移除 `web/backend/scf_bootstrap.js`（serverless-http 入口）与 `serverless-http` 依赖。
+> 后端现为标准 Node HTTP 服务（`node dist/server.js`，默认监听 `PORT=9000`），统一走容器化部署
+> （`docker/web/Dockerfile` + 根 `docker-compose.yml`）。若需重新接入腾讯云 SCF，可在
+> `createApp()`（见 `src/server.ts`）之上再加一层 `serverless-http` 适配器。
 
 ### 8.4 数据持久化策略
 

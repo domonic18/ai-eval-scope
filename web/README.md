@@ -18,7 +18,7 @@ web/
 │   ├── tsconfig*.json  tsc 配置（build / 类型检查）
 │   └── vitest.config.ts
 └── frontend/           React + Vite + TS（看板/趋势/详情）
-# 部署文件在仓库根：docker-compose.yml、docker/platform/Dockerfile、.dockerignore、.env(.example)
+# 部署文件在仓库根：docker-compose.yml、docker/web/Dockerfile、.dockerignore、.env(.example)
 ```
 
 ## 本地起栈（Docker Compose，推荐）
@@ -27,7 +27,7 @@ web/
 
 ```bash
 make docker-up          # = docker compose up -d（根 docker-compose.yml，读根 .env）
-curl http://localhost:3000/health
+curl http://localhost:9000/health
 ```
 
 健康检查返回 `{ status: "ok", components: { db, object_storage } }`。
@@ -49,7 +49,7 @@ cd web/backend
 npm install
 export PLATFORM_DATABASE_URL="postgresql://eval:evalpassword@localhost:5432/agent_eval?schema=public"
 npm run db:migrate:dev     # 首次建表 / 迭代 schema
-npm run dev                # tsx watch server.ts（热更，PORT 默认 3000）
+npm run dev                # tsx watch server.ts（热更，PORT 默认 9000）
 ```
 
 构建 / 类型检查：
@@ -81,4 +81,4 @@ make web-typecheck      # = cd web/backend && npm run typecheck
 
 ## 生产部署
 
-腾讯云：Express → SCF/容器（`scf_bootstrap.js` 提供 serverless-http 入口，引用 `./dist/server`），PostgreSQL → 云数据库（前置 PgBouncer），对象存储 → COS（`PLATFORM_OBJECT_STORAGE=cos`）。详见架构文档 §十二。
+腾讯云：Express 容器化部署（`node dist/server.js`，默认监听 `PORT=9000`，镜像见 `docker/web/Dockerfile`），PostgreSQL → 云数据库（前置 PgBouncer），对象存储 → COS（`PLATFORM_OBJECT_STORAGE=cos`）。详见架构文档 §十二。

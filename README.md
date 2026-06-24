@@ -106,7 +106,7 @@ cp agent_eval/assets/configs/llm_config.example.yaml agent_eval/assets/configs/l
 
 ```bash
 cp .env.example .env          # 填入 DB / 对象存储 / 安全密钥
-make docker-up                # 启动 postgres + minio + platform
+make docker-up                # 启动 postgres + minio + web
 ```
 
 平台界面预览：
