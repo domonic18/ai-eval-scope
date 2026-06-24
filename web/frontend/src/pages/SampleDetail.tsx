@@ -145,7 +145,10 @@ export default function SampleDetail() {
 
         {/* 右：制品预览 */}
         <div className="pane pane-right r-2">
-          <PreviewPane artifacts={sample.artifacts} />
+          <PreviewPane
+            artifacts={sample.artifacts}
+            isMultimodal={sample.constraintResults.some((c) => c.constraintId?.includes("vision"))}
+          />
         </div>
       </div>
     </>
@@ -213,7 +216,13 @@ function DetailsBlock({ details }: { details: Record<string, unknown> }) {
 }
 
 /** 右栏制品预览（三 Tab：原始文档 / 渲染截图 / 执行 Trace）。 */
-function PreviewPane({ artifacts }: { artifacts: ArtifactRow[] }) {
+function PreviewPane({
+  artifacts,
+  isMultimodal,
+}: {
+  artifacts: ArtifactRow[]
+  isMultimodal: boolean
+}) {
   const [tab, setTab] = useState<PrevTab>("doc")
   const [preview, setPreview] = useState<PreviewState>({ mode: "none" })
   const [loading, setLoading] = useState(false)
@@ -343,9 +352,20 @@ function PreviewPane({ artifacts }: { artifacts: ArtifactRow[] }) {
         {!hasAny ? (
           <Empty title="无制品" children={<>该样本暂无可预览的产出物。</>} />
         ) : !current ? (
-          <Empty
-            title={`暂无${tab === "doc" ? "原始文档" : tab === "shot" ? "渲染截图" : "执行 Trace"}制品`}
-          />
+          tab === "shot" && !isMultimodal ? (
+            <Empty
+              title="未使用多模态评估"
+              children={
+                <>该样本未使用多模态 LLM 评估，渲染截图仅多模态评估项（vision.quality）可用。</>
+              }
+            />
+          ) : (
+            <Empty
+              title={`暂无${
+                tab === "doc" ? "原始文档" : tab === "shot" ? "渲染截图" : "执行 Trace"
+              }制品`}
+            />
+          )
         ) : loading ? (
           <Empty title="加载中…" />
         ) : preview.mode === "iframe" ? (
