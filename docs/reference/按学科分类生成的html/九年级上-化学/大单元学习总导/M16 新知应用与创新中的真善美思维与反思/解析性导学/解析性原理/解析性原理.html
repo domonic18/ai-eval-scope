@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性原理导学</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+  --success: #52c41a;
+  --warning: #faad14;
+  --error: #ff4d4f;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 20px; box-sizing: border-box; }
+.header {
+  text-align: center; padding: 30px 20px 20px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  margin: -20px -20px 24px -20px;
+  color: #fff;
+}
+.header h1 { font-size: var(--font-h1); margin: 0 0 8px; font-weight: 700; }
+.header p { margin: 0; opacity: 0.9; font-size: 14px; }
+
+/* 原理卡片 */
+.principle-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.principle-header {
+  padding: 14px 18px;
+  cursor: pointer;
+  display: flex; justify-content: space-between; align-items: center;
+  transition: background 0.2s;
+  border-left: 4px solid var(--primary);
+}
+.principle-header:hover { background: #fafafa; }
+.principle-header h3 { margin: 0; font-size: 16px; color: var(--primary); }
+.principle-header .num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--primary); color: #fff; font-size: 14px; font-weight: 700;
+  margin-right: 10px; flex-shrink: 0;
+}
+.principle-body {
+  padding: 0 18px;
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.45s ease, padding 0.3s;
+}
+.principle-body.open { max-height: 1200px; padding: 8px 18px 16px; }
+.principle-body p { margin: 8px 0; font-size: 14px; }
+.principle-body .sub-label { color: var(--primary); font-weight: 600; }
+
+/* 练习区 */
+.exercise-box {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.exercise-box h4 { margin: 0 0 8px; font-size: 15px; color: var(--primary); }
+.toggle-icon { color: var(--text-secondary); font-size: 18px; transition: transform 0.3s; }
+
+/* 交互按钮 */
+.btn-primary {
+  background: var(--primary); color: #fff; border: none;
+  padding: 6px 16px; border-radius: 6px; cursor: pointer;
+  font-size: 13px; transition: background 0.2s;
+}
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-outline {
+  background: transparent; color: var(--primary); border: 1px solid var(--primary);
+  padding: 6px 16px; border-radius: 6px; cursor: pointer;
+  font-size: 13px; transition: all 0.2s;
+}
+.btn-outline:hover { background: var(--primary); color: #fff; }
+
+/* 练习结果显示 */
+.result-box {
+  padding: 10px 14px; border-radius: 6px; margin-top: 8px;
+  font-size: 14px; min-height: 30px; display: none;
+}
+.result-box.show { display: block; }
+.result-box.correct { background: #f6ffed; border: 1px solid #b7eb8f; color: #135200; }
+.result-box.hint { background: #fff7e6; border: 1px solid #ffd591; color: #873800; }
+
+/* 自我检测 */
+.check-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px; margin: 14px 0;
+}
+.check-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px;
+  transition: box-shadow 0.3s;
+}
+.check-card:hover { box-shadow: var(--shadow); }
+.check-card .q-num {
+  display: inline-block; background: var(--accent); color: #fff;
+  border-radius: 50%; width: 24px; height: 24px; text-align: center;
+  line-height: 24px; font-size: 13px; margin-bottom: 6px;
+}
+.check-card p { margin: 6px 0; font-size: 13px; }
+.check-card .show-answer-btn { font-size: 12px; color: var(--primary); cursor: pointer; text-decoration: underline; }
+.check-card .answer-text { font-size: 13px; color: var(--text-secondary); display: none; padding: 6px; background: #f5f5f5; border-radius: 4px; margin-top: 6px; }
+.check-card .answer-text.show { display: block; }
+
+/* 示例区高亮 */
+.highlight-box {
+  background: #e6fffb;
+  border: 1px solid #87e8de;
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 8px 0;
+  font-size: 13px;
+}
+
+/* 迁移提醒 */
+.migration-tip {
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: 20px;
+  padding: 5px 12px;
+  display: inline-block;
+  font-size: 12px;
+  margin: 4px 4px 4px 0;
+}
+.migration-tip::before { content: "🔄 "; }
+
+/* 动画 */
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.principle-card { animation: slideDown 0.4s ease both; }
+.principle-card:nth-child(1) { animation-delay: 0.05s; }
+.principle-card:nth-child(2) { animation-delay: 0.1s; }
+.principle-card:nth-child(3) { animation-delay: 0.15s; }
+.principle-card:nth-child(4) { animation-delay: 0.2s; }
+
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  .header { margin: -12px -12px 16px -12px; padding: 20px 12px; }
+  .check-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🧠 解析性原理导学</h1>
+  <p>从示例到原理 — 提炼可重复使用的化学创新分析方法</p>
+</div>
+
+<div style="background:#e6fffb;border:1px solid #87e8de;border-radius:var(--border-radius);padding:14px 18px;margin-bottom:20px;font-size:14px;">
+  <strong>📖 从示例到原理</strong><br>
+  通过PHBV可降解塑料的案例分析，你已经看到了如何用真善美思维"解剖"一个化学创新。但分析能力不是天生的，它需要一套可重复使用的方法。本模块将带你从示例中提炼出<strong style="color:var(--primary);">4条解析性原理</strong>，能够在面对各种化学应用与创新时反复使用。
+</div>
+
+<!-- 原理1 -->
+<div class="principle-card">
+  <div class="principle-header" onclick="togglePrinciple(this)">
+    <div style="display:flex;align-items:center;">
+      <span class="num">1</span>
+      <h3>三维审视法 — 从真善美三个维度系统分析</h3>
+    </div>
+    <span class="toggle-icon">▶</span>
+  </div>
+  <div class="principle-body">
+    <p><span class="sub-label">📌 原理说明：</span>任何化学应用或创新都不是"好"或"坏"的一元判断，而是一个多维度的复合体。三维审视法要求你从"科学性（真）、伦理性（善）、审美性（美）"三个角度分别提问，再做综合判断。</p>
+    <div class="highlight-box">
+      <strong>🎯 在本示例中的体现：</strong>分析PHBV时，我们分别从降解原理的科学性（真）、成本效益和环境影响（善）、设计理念的循环之美（美）三个维度展开。
+    </div>
+    <p><span class="sub-label">💡 如何使用：</span>① 面对一个化学创新案例，先列出真善美三个标题 → ② 在每个标题下写下2-3个具体问题 → ③ 逐个找证据回答问题 → ④ 最后做综合评分。</p>
+    <p><span class="sub-label">🔗 可迁移到：</span><span class="migration-tip">评估新产品</span><span class="migration-tip">评估新技术</span><span class="migration-tip">社会政策分析</span></p>
+    <p><span class="sub-label">⚠️ 使用提醒：</span>三个维度不一定同等重要，根据分析对象的特点灵活分配权重。</p>
+  </div>
+</div>
+
+<!-- 原理2 -->
+<div class="principle-card">
+  <div class="principle-header" onclick="togglePrinciple(this)">
+    <div style="display:flex;align-items:center;">
+      <span class="num">2</span>
+      <h3>证据链追踪法 — 追溯创新背后的数据和支撑</h3>
+    </div>
+    <span class="toggle-icon">▶</span>
+  </div>
+  <div class="principle-body">
+    <p><span class="sub-label">📌 原理说明：</span>很多化学创新听起来很美好，但真相藏在证据里。证据链追踪法要求你追问："这个结论的依据是什么？数据在哪里？实验可重复吗？"</p>
+    <div class="highlight-box">
+      <strong>🎯 在本示例中的体现：</strong>质疑"6个月完全降解"——追问：在什么条件下？谁做的测试？数据是否公开？
+    </div>
+    <p><span class="sub-label">💡 如何使用：</span>① 识别每个关键声明的背后证据 → ② 判断证据类型（实验/统计/理论推导） → ③ 评估证据强度（直接/间接/传闻） → ④ 找出证据链条中最薄弱的环节</p>
+    <p><span class="sub-label">🔗 可迁移到：</span><span class="migration-tip">新闻阅读</span><span class="migration-tip">广告判断</span><span class="migration-tip">学术观点评估</span></p>
+    <p><span class="sub-label">⚠️ 使用提醒：</span>不要陷入"过度怀疑"——合理质疑不等于全盘否定。</p>
+  </div>
+</div>
+
+<!-- 原理3 -->
+<div class="principle-card">
+  <div class="principle-header" onclick="togglePrinciple(this)">
+    <div style="display:flex;align-items:center;">
+      <span class="num">3</span>
+      <h3>利益相关者分析法 — 识别谁受益、谁受损</h3>
+    </div>
+    <span class="toggle-icon">▶</span>
+  </div>
+  <div class="principle-body">
+    <p><span class="sub-label">📌 原理说明：</span>一个化学创新从来不是"对所有人都有益"。利益相关者分析法要求你问：这个方案影响了哪些人/环境/社会？各自是受益还是受损？</p>
+    <div class="highlight-box">
+      <strong>🎯 在本示例中的体现：</strong>分析PHBV时考虑了化工企业（盈利）、消费者（成本）、环境（降解产物）、农民（土壤影响）等多方利益。
+    </div>
+    <p><span class="sub-label">💡 如何使用：</span>① 列出所有受影响的群体（人+环境）→ ② 分析每个群体的受益/受损情况 → ③ 评估受益和受损是否公平分配。</p>
+    <p><span class="sub-label">🔗 可迁移到：</span><span class="migration-tip">社会议题分析</span><span class="migration-tip">消费选择</span><span class="migration-tip">工程决策</span></p>
+    <p><span class="sub-label">⚠️ 使用提醒：</span>注意"看不见的利益相关者"——未来的后代、远处的生态系统。</p>
+  </div>
+</div>
+
+<!-- 原理4 -->
+<div class="principle-card">
+  <div class="principle-header" onclick="togglePrinciple(this)">
+    <div style="display:flex;align-items:center;">
+      <span class="num">4</span>
+      <h3>系统效应分析法 — 考虑短期效益和长期影响</h3>
+    </div>
+    <span class="toggle-icon">▶</span>
+  </div>
+  <div class="principle-body">
+    <p><span class="sub-label">📌 原理说明：</span>化学创新往往有"短期好、长期坏"或"这里好、那里坏"的特点。系统效应分析法要求你跳出眼前的优点，思考系统性的连锁反应。</p>
+    <div class="highlight-box">
+      <strong>🎯 在本示例中的体现：</strong>不仅分析了PHBV的降解效果，还推断了大规模推广后对土壤微生物群落、农业成本的连锁影响。
+    </div>
+    <p><span class="sub-label">💡 如何使用：</span>① 先列出方案的直接效益 → ② 思考这些效益可能带来的二级、三级效应 → ③ 区分短期影响和长期影响 → ④ 寻找"意料之外"的后果。</p>
+    <p><span class="sub-label">🔗 可迁移到：</span><span class="migration-tip">工程设计</span><span class="migration-tip">政策分析</span><span class="migration-tip">职业规划</span></p>
+    <p><span class="sub-label">⚠️ 使用提醒：</span>避免"滑坡谬误"——合理预测不等于无限推演。</p>
+  </div>
+</div>
+
+<!-- 应用练习区 -->
+<h2 style="font-size:18px;margin:24px 0 12px;padding-left:10px;border-left:3px solid var(--primary);">📝 解析性原理应用练习</h2>
+
+<div class="exercise-box" data-group="exercise1">
+  <h4>练习1：分析"无磷洗衣粉"广告</h4>
+  <p style="font-size:13px;color:var(--text-secondary);">你在超市看到某品牌洗衣粉包装上写着"无磷配方，环保更健康"。售价是普通洗衣粉的2倍。</p>
+  <p style="font-size:13px;"><strong>任务：</strong>运用三维审视法+利益相关者分析法，评价这款洗衣粉是否真的值得购买。</p>
+  <div style="margin:8px 0;">
+    <button class="btn-outline" onclick="showHint(this, 'hint1')">💡 分析提示</button>
+    <button class="btn-outline" onclick="showHint(this, 'hint1b')">📋 参考思路</button>
+  </div>
+  <div class="result-box hint" id="hint1">
+    <strong>分析提示：</strong>想一想——无磷为什么就环保了？含磷洗衣粉的危害是什么？价格翻倍是否合理？
+    <br><strong>建议使用的原理：</strong>三维审视法（真：无磷的科学原理？善：环保是否真实？美：包装设计是否过度？）+ 利益相关者分析法（消费者、水体环境、洗衣粉企业）
+  </div>
+  <div class="result-box hint" id="hint1b">
+    <strong>参考思路：</strong>含磷洗衣粉中的磷会导致水体富营养化→藻类疯狂生长→鱼类缺氧死亡。无磷洗衣粉从源头减少了磷排放，但"环保"不等于"完全无害"——还需要看其他成分。价格翻倍是否合理，要结合成分和去污效果综合判断。
+  </div>
+</div>
+
+<div class="exercise-box" data-group="exercise2">
+  <h4>练习2：分析"石墨烯电池"媒体报道</h4>
+  <p style="font-size:13px;color:var(--text-secondary);">你看到一则新闻"石墨烯电池即将上市，充电5分钟续航1000公里"，评论区一片叫好。</p>
+  <p style="font-size:13px;"><strong>任务：</strong>运用证据链追踪法+系统效应分析法，判断这则新闻的可信度。</p>
+  <div style="margin:8px 0;">
+    <button class="btn-outline" onclick="showHint(this, 'hint2')">💡 分析提示</button>
+    <button class="btn-outline" onclick="showHint(this, 'hint2b')">📋 参考判断</button>
+  </div>
+  <div class="result-box hint" id="hint2">
+    <strong>分析提示：</strong>搜索一下——石墨烯电池目前处于什么阶段？类似的新闻之前出现过多少次？
+    <br><strong>建议使用的原理：</strong>证据链追踪法（"充电5分钟续航1000公里"的实验条件是什么？数据是否公开？）+ 系统效应分析法（如果为真，对传统电池产业、充电桩行业、电网负荷有什么影响？）
+  </div>
+  <div class="result-box hint" id="hint2b">
+    <strong>参考判断：</strong>这类新闻需要高度警惕。石墨烯电池目前仍处于实验室研究阶段，距离量产还有很大距离。"充电5分钟续航1000公里"的说法缺乏公开的、可复现的实验数据支持。建议用<strong>证据链追踪法</strong>找出原始研究论文，核实实验条件和数据。
+  </div>
+</div>
+
+<!-- 自我检测 -->
+<h2 style="font-size:18px;margin:24px 0 12px;padding-left:10px;border-left:3px solid var(--primary);">✅ 自我检测</h2>
+
+<div class="check-grid">
+  <div class="check-card">
+    <div class="q-num">1</div>
+    <p>"面对一个化学创新新闻，你是否能自动想到从真善美三个角度分别提3个问题？试着写出来"</p>
+    <span class="show-answer-btn" onclick="toggleAnswer(this)">查看参考 →</span>
+    <div class="answer-text">
+      <strong>参考：</strong>真维度问题示例——"这个技术建立在什么科学原理上？" "数据来源可靠吗？" "实验是否可重复？"<br>
+      善维度——"对谁有好处？对谁有坏处？" "成本可接受吗？" "环境负担如何？"<br>
+      美维度——"设计是否简洁优雅？" "是否遵循自然循环逻辑？" "方案是否整体协调？"
+    </div>
+  </div>
+  <div class="check-card">
+    <div class="q-num">2</div>
+    <p>"你能否区分'实验数据'和'企业宣传语'之间的强度差别？写一个例子"</p>
+    <span class="show-answer-btn" onclick="toggleAnswer(this)">查看参考 →</span>
+    <div class="answer-text">
+      <strong>参考：</strong>实验数据（强证据）——"某大学实验室在温度25℃、湿度60%条件下测试，PHBV薄膜在土壤中180天降解率达97.3%，测试报告发表在《环境科学》2023年第5期"。企业宣传语（弱证据）——"我们的产品6个月完全降解，环保安全"。
+    </div>
+  </div>
+  <div class="check-card">
+    <div class="q-num">3</div>
+    <p>"如果一项化学技术对10亿人有益，但会损害某个小岛国的生态环境——你会怎么判断？这涉及哪条原理？"</p>
+    <span class="show-answer-btn" onclick="toggleAnswer(this)">查看参考 →</span>
+    <div class="answer-text">
+      <strong>参考：</strong>这涉及<strong>利益相关者分析法</strong>（识别受益者和受损者）和<strong>系统效应分析法</strong>（区分短期和长期影响）。这是典型的"多数人受益 vs 少数人受损"的伦理困境，不能简单说"好"或"坏"，需要综合评估公平性和替代方案。
+    </div>
+  </div>
+  <div class="check-card">
+    <div class="q-num">4</div>
+    <p>"你能否找出生活中一个'短期好、长期坏'的化学产品例子？用系统效应分析法画出影响"</p>
+    <span class="show-answer-btn" onclick="toggleAnswer(this)">查看参考 →</span>
+    <div class="answer-text">
+      <strong>参考：</strong>传统一次性塑料餐具——短期：方便、卫生、成本低。长期：白色污染、微塑料进入食物链、石油资源消耗。系统效应：塑料进入海洋→被海洋生物误食→通过食物链回到人体→影响健康。
+    </div>
+  </div>
+  <div class="check-card">
+    <div class="q-num">5</div>
+    <p>"以上4条原理中，你觉得自己最容易运用哪一条？最难运用哪一条？为什么？"</p>
+    <span class="show-answer-btn" onclick="toggleAnswer(this)">查看参考 →</span>
+    <div class="answer-text">
+      <strong>反思指引：</strong>这是开放性问题，没有标准答案。建议你动手写一写——把自己最擅长和最不擅长的原理写下来，然后针对薄弱原理找一个生活中的案例专门练习。比如，如果你觉得"系统效应分析法"最难，可以试着分析"电动车电池"的长期社会影响。
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function togglePrinciple(headerEl) {
+  var body = headerEl.nextElementSibling;
+  var icon = headerEl.querySelector('.toggle-icon');
+  if (!body || !icon) return;
+  body.classList.toggle('open');
+  icon.textContent = body.classList.contains('open') ? '▼' : '▶';
+}
+
+function showHint(btn, hintId) {
+  var hint = document.getElementById(hintId);
+  if (!hint) return;
+  var isCurrentlyVisible = hint.style.display !== 'none';
+  var hints = hint.parentElement.querySelectorAll('.result-box');
+  hints.forEach(function(h) { h.style.display = 'none'; h.classList.remove('show'); });
+  if (!isCurrentlyVisible) {
+    hint.style.display = 'block';
+    hint.classList.add('show');
+  }
+}
+
+function toggleAnswer(el) {
+  var answer = el.nextElementSibling;
+  if (!answer) return;
+  answer.classList.toggle('show');
+  el.textContent = answer.classList.contains('show') ? '收起 →' : '查看参考 →';
+}
+</script>
+</body>
+</html>

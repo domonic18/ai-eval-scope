@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性案例 - 化学书面表达七阶训练</title>
+<style>
+  :root {
+    --primary: #1677ff;
+    --primary-hover: #4096ff;
+    --accent: #69b1ff;
+    --bg: #f0f5ff;
+    --card-bg: #ffffff;
+    --font-body: 15px;
+    --font-h1: 24px;
+    --font-h2: 19px;
+    --line-height: 1.7;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+    font-size: var(--font-body);
+    line-height: var(--line-height);
+    background: var(--bg);
+    color: #1f1f1f;
+  }
+
+  .container { width: 100%; padding: 20px 24px 60px; }
+
+  h1 {
+    font-size: var(--font-h1);
+    color: var(--primary);
+    text-align: center;
+    margin-bottom: 12px;
+    font-weight: 700;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 28px;
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 16px;
+  }
+
+  h2 {
+    font-size: var(--font-h2);
+    color: var(--primary);
+    margin: 24px 0 14px;
+    padding-left: 12px;
+    border-left: 4px solid var(--primary);
+  }
+
+  h3 {
+    font-size: 17px;
+    color: var(--primary-hover);
+    margin: 18px 0 10px;
+  }
+
+  /* ---- 选项卡 ---- */
+  .tab-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 16px;
+  }
+
+  .tab-btn {
+    padding: 8px 14px;
+    font-size: 13px;
+    border: 1px solid var(--accent);
+    background: var(--card-bg);
+    color: var(--primary);
+    border-radius: 6px 6px 0 0;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex: 0 0 auto;
+  }
+
+  .tab-btn:hover { background: #e6f0ff; }
+
+  .tab-btn.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ---- 卡片 ---- */
+  .card {
+    background: var(--card-bg);
+    border-radius: 10px;
+    padding: 20px 22px;
+    margin-bottom: 18px;
+    box-shadow: 0 2px 8px rgba(22,119,255,0.08);
+    border: 1px solid #e8f0fe;
+  }
+
+  .case-label {
+    display: inline-block;
+    background: var(--primary);
+    color: #fff;
+    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+  }
+
+  .task-box {
+    background: #fffbe6;
+    border-left: 4px solid #faad14;
+    padding: 12px 16px;
+    margin: 12px 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 14px;
+  }
+
+  .task-box strong { color: #d48806; }
+
+  /* ---- 折叠详情 ---- */
+  .detail-toggle {
+    color: var(--primary);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    user-select: none;
+    display: inline-block;
+    margin: 6px 0;
+    padding: 4px 0;
+  }
+
+  .detail-toggle:hover { color: var(--primary-hover); }
+
+  .detail-content {
+    display: none;
+    background: #fafcff;
+    border: 1px dashed var(--accent);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 8px 0 14px;
+    font-size: 14px;
+  }
+
+  .detail-content.open { display: block; }
+
+  .analysis-point {
+    margin: 6px 0;
+    padding-left: 20px;
+    position: relative;
+  }
+
+  .analysis-point::before {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: 8px;
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+
+  .check-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 8px 0;
+    font-size: 14px;
+  }
+
+  .check-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+    cursor: pointer;
+    margin-top: 3px;
+    flex-shrink: 0;
+  }
+
+  /* ---- 分析记录表 ---- */
+  .analysis-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 14px;
+  }
+
+  .analysis-table th {
+    background: var(--primary);
+    color: #fff;
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 600;
+  }
+
+  .analysis-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #e8f0fe;
+    vertical-align: top;
+  }
+
+  .analysis-table textarea {
+    width: 100%;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 13px;
+    resize: vertical;
+    min-height: 48px;
+    font-family: inherit;
+    line-height: 1.5;
+  }
+
+  .analysis-table textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(22,119,255,0.1);
+  }
+
+  .reset-btn {
+    background: var(--card-bg);
+    border: 1px solid #d9d9d9;
+    color: #666;
+    padding: 6px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    margin-top: 8px;
+  }
+
+  .reset-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+
+  /* ---- 使用建议 ---- */
+  .advice-list {
+    list-style: none;
+    padding: 0;
+  }
+
+  .advice-list li {
+    padding: 6px 0 6px 24px;
+    position: relative;
+    font-size: 14px;
+  }
+
+  .advice-list li::before {
+    content: "";
+    position: absolute;
+    left: 6px;
+    top: 14px;
+    width: 8px;
+    height: 8px;
+    background: var(--primary);
+    border-radius: 50%;
+  }
+
+  /* ---- 进度指示 ---- */
+  .progress-hint {
+    font-size: 13px;
+    color: #888;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+
+  /* ---- 响应式 ---- */
+  @media (max-width: 600px) {
+    .container { padding: 14px 12px 40px; }
+    .card { padding: 14px; }
+    .tab-btn { padding: 6px 10px; font-size: 12px; }
+    .analysis-table { font-size: 13px; }
+    .analysis-table th,
+    .analysis-table td { padding: 6px 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>解析性案例</h1>
+  <div class="subtitle">化学书面表达 · 七阶实战训练</div>
+
+  <p style="font-size:14px;color:#555;margin-bottom:16px;">
+    本环节承接"解析性示例"的五步解析法模型，共设七个实战案例。每个案例围绕化学书面表达中的典型问题展开，请逐一完成解析分析，由"看懂示例"迈向"独立分析"。
+  </p>
+
+  <div class="progress-hint">点击下方阶次标签切换案例</div>
+
+  <!-- ========== 选项卡导航 ========== -->
+  <div class="tab-bar" data-group="cases">
+    <button class="tab-btn active" data-tab="1" onclick="switchTab('cases',1)">第1阶</button>
+    <button class="tab-btn" data-tab="2" onclick="switchTab('cases',2)">第2阶</button>
+    <button class="tab-btn" data-tab="3" onclick="switchTab('cases',3)">第3阶</button>
+    <button class="tab-btn" data-tab="4" onclick="switchTab('cases',4)">第4阶</button>
+    <button class="tab-btn" data-tab="5" onclick="switchTab('cases',5)">第5阶</button>
+    <button class="tab-btn" data-tab="6" onclick="switchTab('cases',6)">第6阶</button>
+    <button class="tab-btn" data-tab="7" onclick="switchTab('cases',7)">第7阶</button>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 第1阶 -->
+  <!-- ============================================================ -->
+  <div class="tab-panel active" data-panel="cases-1">
+    <div class="card">
+      <span class="case-label">第1阶 · 生活情境</span>
+      <h3>食醋说明书分析</h3>
+      <p style="font-size:14px;color:#333;"><strong>案例材料：</strong></p>
+      <blockquote style="background:#f9f9f9;padding:12px 16px;border-radius:6px;margin:8px 0;font-size:14px;color:#333;border-left:3px solid #ccc;">
+        某品牌食醋瓶身说明——"含醋酸（乙酸）约3.5g/100mL。醋酸是一种有机酸，具有刺激性气味。可用作调味品，也可用于去除水垢。注意：请勿与碱性物质混合使用，以免失效。"
+      </blockquote>
+      <div class="task-box"><strong>解析任务：</strong>分析准确性、规范性。关注浓度表达是否规范、"失效"含义是否科学。</div>
+
+      <div class="detail-toggle" onclick="toggleDetail('detail1')">[+] 查看解析要点</div>
+      <div class="detail-content" id="detail1">
+        <div class="analysis-point">浓度表达：'3.5g/100mL' 是日常生活中常见写法，学术上应写为 '3.5 g/100 mL'（空格），或质量分数形式。此处基本可接受。</div>
+        <div class="analysis-point">'失效'一词不够精确：醋酸与碱性物质中和生成盐和水，只是失去了酸性（失效），但并非化学上的'失效'。更准确的表述应为'以免降低去污效果'或'以免中和失效'。</div>
+        <div class="analysis-point">整体描述基本准确，规范性略有不足，科学性基本正确。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 第2阶 -->
+  <!-- ============================================================ -->
+  <div class="tab-panel" data-panel="cases-2">
+    <div class="card">
+      <span class="case-label">第2阶 · 校园情境</span>
+      <h3>实验报告互评</h3>
+      <p style="font-size:14px;color:#333;"><strong>案例材料（李华同学"探究蜡烛燃烧产物"实验记录）：</strong></p>
+      <blockquote style="background:#f9f9f9;padding:12px 16px;border-radius:6px;margin:8px 0;font-size:14px;color:#333;border-left:3px solid #ccc;">
+        "点燃蜡烛，用干燥烧杯罩在火焰上方，看到内壁有水珠。再用沾有澄清石灰水的烧杯罩上去，看到石灰水变浑浊。所以蜡烛燃烧产物是水和二氧化碳。"
+      </blockquote>
+      <div class="task-box"><strong>解析任务：</strong>分析完整性、逻辑性、规范性。关注推理严谨性、是否缺乏对照实验。</div>
+
+      <div class="detail-toggle" onclick="toggleDetail('detail2')">[+] 查看解析要点</div>
+      <div class="detail-content" id="detail2">
+        <div class="analysis-point">推理有逻辑跳跃：仅凭水珠和石灰水变浑浊就断定产物，缺少'产物是什么'的排除性论证。</div>
+        <div class="analysis-point">缺少对照实验：未用空烧杯做空白对照，无法排除空气中水蒸气的影响。</div>
+        <div class="analysis-point">操作描述不规范：'用沾有澄清石灰水的烧杯罩上去'——石灰水只是沾在杯壁还是盛在杯内？应明确表述。</div>
+        <div class="analysis-point">改进建议：增加空白对照，描述具体操作细节，结论措辞改为'可以推断……'更严谨。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 第3阶 -->
+  <!-- ============================================================ -->
+  <div class="tab-panel" data-panel="cases-3">
+    <div class="card">
+      <span class="case-label">第3阶 · 家庭/社区情境</span>
+      <h3>安全用气说明</h3>
+      <p style="font-size:14px;color:#333;"><strong>案例材料（社区安全宣传栏）：</strong></p>
+      <blockquote style="background:#f9f9f9;padding:12px 16px;border-radius:6px;margin:8px 0;font-size:14px;color:#333;border-left:3px solid #ccc;">
+        "天然气主要成分是甲烷。泄漏时会闻到特殊气味。此时要立即开灯检查，打开窗户通风。如果发现有人中毒，立即进行人工呼吸。"
+      </blockquote>
+      <div class="task-box"><strong>解析任务：</strong>分析安全性准确性。关注"开灯检查"在泄漏环境下是否安全、"人工呼吸"是否合适。</div>
+
+      <div class="detail-toggle" onclick="toggleDetail('detail3')">[+] 查看解析要点</div>
+      <div class="detail-content" id="detail3">
+        <div class="analysis-point">严重安全性错误：'立即开灯检查'——开灯产生的电火花可能引燃泄漏的甲烷与空气混合物，导致爆炸。正确做法是严禁开关任何电器，立即关闭阀门、打开窗户。</div>
+        <div class="analysis-point">'人工呼吸'不当：发现有人中毒，应先将其转移到通风处，再判断呼吸心跳情况；若直接人工呼吸，施救者也可能吸入有毒气体。</div>
+        <div class="analysis-point">建议修改：'泄漏时切勿开关任何电器，立即关阀开窗。若有人员不适，迅速转移至通风处并拨打急救电话。'</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 第4阶 -->
+  <!-- ============================================================ -->
+  <div class="tab-panel" data-panel="cases-4">
+    <div class="card">
+      <span class="case-label">第4阶 · 学科核心情境</span>
+      <h3>氧气制取实验描述</h3>
+      <p style="font-size:14px;color:#333;"><strong>案例材料：</strong></p>
+      <blockquote style="background:#f9f9f9;padding:12px 16px;border-radius:6px;margin:8px 0;font-size:14px;color:#333;border-left:3px solid #ccc;">
+        "将高锰酸钾放入试管中，塞上带导管的单孔橡皮塞，固定在铁架台上。用酒精灯对着试管底部加热，用排水法收集气体。"
+      </blockquote>
+      <div class="task-box"><strong>解析任务：</strong>全面分析规范性。关注试管口方向、预热、棉花团、收集时机、结束操作顺序。</div>
+
+      <div class="detail-toggle" onclick="toggleDetail('detail4')">[+] 查看解析要点</div>
+      <div class="detail-content" id="detail4">
+        <div class="analysis-point">试管口方向未说明：应略向下倾斜，防止冷凝水回流炸裂试管。</div>
+        <div class="analysis-point">缺少预热步骤：直接'对着试管底部加热'易导致局部受热不均炸裂。</div>
+        <div class="analysis-point">缺少棉花团：高锰酸钾制氧气时试管口应塞一团棉花，防止粉末进入导管。</div>
+        <div class="analysis-point">收集时机不明确：应在导管口气泡连续均匀时才开始收集（先排尽空气）。</div>
+        <div class="analysis-point">结束操作顺序：应先从水槽中移出导管，再停止加热，防止倒吸。</div>
+        <div class="analysis-point">该描述缺少多个关键操作细节，完整度不足。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 第5阶 -->
+  <!-- ============================================================ -->
+  <div class="tab-panel" data-panel="cases-5">
+    <div class="card">
+      <span class="case-label">第5阶 · 跨学科情境</span>
+      <h3>观察日记分析</h3>
+      <p style="font-size:14px;color:#333;"><strong>案例材料（校园牵牛花观察记录）：</strong></p>
+      <blockquote style="background:#f9f9f9;padding:12px 16px;border-radius:6px;margin:8px 0;font-size:14px;color:#333;border-left:3px solid #ccc;">
+        "牵牛花在早晨是蓝色的，下午变成红色。细胞中含有花青素，遇酸变红遇碱变蓝。光合作用消耗CO₂，CO₂减少，碱性增强，所以花变蓝。"
+      </blockquote>
+      <div class="task-box"><strong>解析任务：</strong>跨学科角度分析。关注花青素指示剂性质描述是否正确、因果逻辑是否完整。</div>
+
+      <div class="detail-toggle" onclick="toggleDetail('detail5')">[+] 查看解析要点</div>
+      <div class="detail-content" id="detail5">
+        <div class="analysis-point">花青素性质描述有误：花青素遇酸变红、遇碱变蓝是正确的指示剂性质，但牵牛花实际从蓝变红是因为夜间呼吸作用积累CO₂，使细胞液酸性增强，花青素变红；早晨光合作用消耗CO₂，酸性减弱，花变蓝。</div>
+        <div class="analysis-point">因果逻辑方向反了：文中说'碱性增强，所以花变蓝'方向正确，但缺少中间环节——CO₂减少使酸性减弱（pH升高呈弱碱性），花青素显蓝色。</div>
+        <div class="analysis-point">整体逻辑链条不完整，需补充呼吸作用和光合作用的昼夜交替如何影响细胞酸碱度。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 第6阶 -->
+  <!-- ============================================================ -->
+  <div class="tab-panel" data-panel="cases-6">
+    <div class="card">
+      <span class="case-label">第6阶 · 社会/未来情境</span>
+      <h3>环保倡议书分析</h3>
+      <p style="font-size:14px;color:#333;"><strong>案例材料（学校环保社团倡议书节选）：</strong></p>
+      <blockquote style="background:#f9f9f9;padding:12px 16px;border-radius:6px;margin:8px 0;font-size:14px;color:#333;border-left:3px solid #ccc;">
+        "工厂排放的废气中含有大量一氧化碳、二氧化硫等有害气体。一氧化碳有毒，二氧化硫溶于水形成酸雨。这些气体都会破坏臭氧层，导致全球变暖。"
+      </blockquote>
+      <div class="task-box"><strong>解析任务：</strong>化学知识准确性分析。关注"破坏臭氧层"和"全球变暖"的概念混淆。</div>
+
+      <div class="detail-toggle" onclick="toggleDetail('detail6')">[+] 查看解析要点</div>
+      <div class="detail-content" id="detail6">
+        <div class="analysis-point">概念混淆：一氧化碳和二氧化硫并非破坏臭氧层的主要物质。破坏臭氧层的主要是氟氯烃（CFCs）、氮氧化物等。</div>
+        <div class="analysis-point">二氧化硫导致酸雨正确，但酸雨与臭氧层破坏是两类不同的环境问题。</div>
+        <div class="analysis-point">'导致全球变暖'：一氧化碳和二氧化硫都不是主要的温室气体。CO和SO₂对全球变暖贡献极小，主要温室气体是CO₂、CH₄等。</div>
+        <div class="analysis-point">正确表述：'一氧化碳有毒，二氧化硫是形成酸雨的主要原因之一。这些气体的排放对环境和人体健康有严重危害。'</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 第7阶 -->
+  <!-- ============================================================ -->
+  <div class="tab-panel" data-panel="cases-7">
+    <div class="card">
+      <span class="case-label">第7阶 · 综合迁移情境</span>
+      <h3>综合实践报告评审</h3>
+      <p style="font-size:14px;color:#333;"><strong>案例材料（"学校附近水质调查"报告节选）：</strong></p>
+      <blockquote style="background:#f9f9f9;padding:12px 16px;border-radius:6px;margin:8px 0;font-size:14px;color:#333;border-left:3px solid #ccc;">
+        "用pH试纸测了酸碱度，试纸变绿，说明水是中性偏碱的。加热闻到有淡淡的气味，说明水里有有机物。用显微镜看到了微生物。结论：水质不太好，有污染。"
+      </blockquote>
+      <div class="task-box"><strong>解析任务：</strong>综合运用五个维度（准确性、规范性、完整性、逻辑性、安全性）全面解析。关注检测方法合理性、结论是否缺乏依据。</div>
+
+      <div class="detail-toggle" onclick="toggleDetail('detail7')">[+] 查看解析要点</div>
+      <div class="detail-content" id="detail7">
+        <div class="analysis-point"><strong>准确性：</strong>'试纸变绿'——pH试纸变绿通常对应pH约7-8，说'中性偏碱'基本合理。但绿色在不同批次试纸上可能对应不同pH范围，应说明具体数值或对照比色卡读数。</div>
+        <div class="analysis-point"><strong>规范性：</strong>缺少pH试纸使用的标准操作描述（如用玻璃棒蘸取、点在试纸上、半秒内比色等）。</div>
+        <div class="analysis-point"><strong>完整性：</strong>加热闻到气味不能单纯说明'有有机物'——很多无机物也有气味；显微镜看到微生物属于生物指标，缺乏定量数据；未检测氨氮、COD等常规水质指标。</div>
+        <div class="analysis-point"><strong>逻辑性：</strong>结论'水质不太好，有污染'缺乏充分证据。检测项目有限，不足以支撑污染定性，结论过于主观宽泛。</div>
+        <div class="analysis-point"><strong>安全性：</strong>加热水样时应注意通风，避免吸入不明气体；取样应有安全防护措施。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 分析记录表 -->
+  <!-- ============================================================ -->
+  <h2>分析记录表</h2>
+  <p style="font-size:14px;color:#555;margin-bottom:10px;">在下方填写你的分析要点，每个案例一条记录。</p>
+
+  <div id="recordContainer">
+    <table class="analysis-table" data-group="records">
+      <thead>
+        <tr>
+          <th style="width:14%;">阶次</th>
+          <th style="width:36%;">发现的问题</th>
+          <th style="width:36%;">修改建议</th>
+          <th style="width:14%;">状态</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>第1阶</td>
+          <td><textarea data-record="1-issue" placeholder="输入你发现的问题…"></textarea></td>
+          <td><textarea data-record="1-fix" placeholder="输入你的修改建议…"></textarea></td>
+          <td><input type="checkbox" data-record="1-done" onchange="markDone(this)"></td>
+        </tr>
+        <tr>
+          <td>第2阶</td>
+          <td><textarea data-record="2-issue" placeholder="输入你发现的问题…"></textarea></td>
+          <td><textarea data-record="2-fix" placeholder="输入你的修改建议…"></textarea></td>
+          <td><input type="checkbox" data-record="2-done" onchange="markDone(this)"></td>
+        </tr>
+        <tr>
+          <td>第3阶</td>
+          <td><textarea data-record="3-issue" placeholder="输入你发现的问题…"></textarea></td>
+          <td><textarea data-record="3-fix" placeholder="输入你的修改建议…"></textarea></td>
+          <td><input type="checkbox" data-record="3-done" onchange="markDone(this)"></td>
+        </tr>
+        <tr>
+          <td>第4阶</td>
+          <td><textarea data-record="4-issue" placeholder="输入你发现的问题…"></textarea></td>
+          <td><textarea data-record="4-fix" placeholder="输入你的修改建议…"></textarea></td>
+          <td><input type="checkbox" data-record="4-done" onchange="markDone(this)"></td>
+        </tr>
+        <tr>
+          <td>第5阶</td>
+          <td><textarea data-record="5-issue" placeholder="输入你发现的问题…"></textarea></td>
+          <td><textarea data-record="5-fix" placeholder="输入你的修改建议…"></textarea></td>
+          <td><input type="checkbox" data-record="5-done" onchange="markDone(this)"></td>
+        </tr>
+        <tr>
+          <td>第6阶</td>
+          <td><textarea data-record="6-issue" placeholder="输入你发现的问题…"></textarea></td>
+          <td><textarea data-record="6-fix" placeholder="输入你的修改建议…"></textarea></td>
+          <td><input type="checkbox" data-record="6-done" onchange="markDone(this)"></td>
+        </tr>
+        <tr>
+          <td>第7阶</td>
+          <td><textarea data-record="7-issue" placeholder="输入你发现的问题…"></textarea></td>
+          <td><textarea data-record="7-fix" placeholder="输入你的修改建议…"></textarea></td>
+          <td><input type="checkbox" data-record="7-done" onchange="markDone(this)"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <button class="reset-btn" onclick="resetRecords()">清空所有记录</button>
+
+  <!-- ============================================================ -->
+  <!-- 使用建议 -->
+  <!-- ============================================================ -->
+  <h2>案例使用建议</h2>
+  <div class="card">
+    <ul class="advice-list">
+      <li>按序推进，从第1阶到第7阶逐步完成</li>
+      <li>前3阶重在准确性，中间2阶重在完整性和规范性，最后2阶重在综合运用</li>
+      <li>前3阶每个约10-15分钟，后4阶每个约15-20分钟</li>
+    </ul>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+(function() {
+
+  // ---- 选项卡切换 ----
+  window.switchTab = function(group, idx) {
+    // 切换按钮状态
+    var btns = document.querySelectorAll('.tab-btn[data-group="' + group + '"]');
+    if (btns) {
+      for (var i = 0; i < btns.length; i++) {
+        btns[i].classList.remove('active');
+      }
+    }
+    var activeBtn = document.querySelector('.tab-btn[data-group="' + group + '"][data-tab="' + idx + '"]');
+    if (activeBtn) activeBtn.classList.add('active');
+
+    // 切换面板
+    var panels = document.querySelectorAll('.tab-panel[data-panel^="' + group + '-"]');
+    if (panels) {
+      for (var j = 0; j < panels.length; j++) {
+        panels[j].classList.remove('active');
+      }
+    }
+    var activePanel = document.querySelector('.tab-panel[data-panel="' + group + '-' + idx + '"]');
+    if (activePanel) activePanel.classList.add('active');
+  };
+
+  // ---- 折叠详情 ----
+  window.toggleDetail = function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('open');
+    // 更新按钮文字
+    var toggles = document.querySelectorAll('.detail-toggle');
+    for (var i = 0; i < toggles.length; i++) {
+      var t = toggles[i];
+      var sibling = t.nextElementSibling;
+      if (sibling && sibling.id === id) {
+        t.textContent = sibling.classList.contains('open') ? '[-] 收起解析要点' : '[+] 查看解析要点';
+      }
+    }
+  };
+
+  // ---- 勾选标记 ----
+  window.markDone = function(cb) {
+    if (!cb) return;
+    // 视觉反馈通过 checkbox 的 checked 状态本身已体现
+  };
+
+  // ---- 重置记录表 ----
+  window.resetRecords = function() {
+    var textareas = document.querySelectorAll('textarea[data-record]');
+    if (textareas) {
+      for (var i = 0; i < textareas.length; i++) {
+        textareas[i].value = '';
+      }
+    }
+    var checkboxes = document.querySelectorAll('input[type="checkbox"][data-record]');
+    if (checkboxes) {
+      for (var j = 0; j < checkboxes.length; j++) {
+        checkboxes[j].checked = false;
+      }
+    }
+  };
+
+})();
+</script>
+
+</body>
+</html>

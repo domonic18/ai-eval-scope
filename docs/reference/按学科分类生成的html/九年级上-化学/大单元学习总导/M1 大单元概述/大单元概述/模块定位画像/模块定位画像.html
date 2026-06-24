@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块定位画像 - 第一单元 走进化学世界</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 20px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, #1677ff 0%, #4096ff 100%);
+  color: #fff;
+  padding: 32px 40px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header .meta { font-size: 14px; opacity: 0.85; }
+.header .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.header .tags span {
+  background: rgba(255,255,255,0.2);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.card h2 { font-size: var(--font-h2); color: var(--primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+
+/* 递进流程图 */
+.flow-chain {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  padding: 16px 0;
+  justify-content: center;
+}
+.flow-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: 2px solid transparent;
+  min-width: 70px;
+}
+.flow-node:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(22,119,255,0.2); }
+.flow-node .phase-label { font-size: 11px; font-weight: 400; opacity: 0.7; margin-top: 2px; }
+.flow-node.phase-meaning { background: #e6f7ff; color: #1890ff; }
+.flow-node.phase-cognition { background: #f0f5ff; color: #1677ff; }
+.flow-node.phase-thinking { background: #f6ffed; color: #52c41a; }
+.flow-node.phase-apply { background: #fff7e6; color: #fa8c16; }
+.flow-node.phase-reflect { background: #fff1f0; color: #ff4d4f; }
+.flow-node.phase-summary { background: #f9f0ff; color: #722ed1; }
+.flow-arrow {
+  font-size: 18px;
+  color: var(--text-secondary);
+  padding: 0 2px;
+}
+
+/* 表格 */
+.table-wrapper { overflow-x: auto; }
+.table-wrapper table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table-wrapper th {
+  background: #fafafa;
+  color: var(--text);
+  font-weight: 600;
+  padding: 12px 10px;
+  text-align: left;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.table-wrapper td {
+  padding: 10px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: top;
+}
+.table-wrapper tr:hover td { background: #f0f5ff; }
+.table-wrapper tr.expanded td { background: #e6f7ff; }
+.module-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.module-header { display: flex; align-items: center; gap: 8px; }
+.module-header .module-title { font-weight: 600; }
+.tag-position {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.tag-meaning { background: #e6f7ff; color: #1890ff; }
+.tag-cognition { background: #f0f5ff; color: #1677ff; }
+.tag-thinking { background: #f6ffed; color: #52c41a; }
+.tag-apply { background: #fff7e6; color: #fa8c16; }
+.tag-reflect { background: #fff1f0; color: #ff4d4f; }
+.tag-summary { background: #f9f0ff; color: #722ed1; }
+
+/* 筛选栏 */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #fafafa;
+  border-radius: 6px;
+  align-items: center;
+}
+.filter-bar label { font-size: 13px; color: var(--text-secondary); }
+.filter-btn {
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+  color: var(--text);
+}
+.filter-btn:hover { border-color: var(--primary); color: var(--primary); }
+.filter-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.search-input {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 14px;
+  flex: 1;
+  min-width: 180px;
+  outline: none;
+}
+.search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(22,119,255,0.1); }
+
+/* 统计 */
+.stats-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.stat-item .num { font-weight: 700; color: var(--text); font-size: 18px; }
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .container { padding: 10px; }
+  .header { padding: 20px; }
+  .flow-chain { gap: 2px; }
+  .flow-node { padding: 4px 8px; font-size: 12px; min-width: 50px; }
+  .table-wrapper table { font-size: 13px; }
+  .table-wrapper th, .table-wrapper td { padding: 8px 6px; }
+}
+
+/* 交互 */
+.detail-toggle {
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 13px;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.detail-toggle:hover { color: var(--primary-hover); }
+.detail-content { display: none; margin-top: 8px; padding: 8px; background: #fafafa; border-radius: 4px; font-size: 13px; }
+.detail-content.show { display: block; }
+
+/* tooltip 交互 */
+.tooltip-trigger {
+  border-bottom: 1px dashed var(--primary);
+  cursor: help;
+}
+
+/* 返回顶部 */
+.back-top {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  z-index: 100;
+}
+.back-top.show { display: flex; }
+.back-top:hover { background: var(--primary-hover); }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🔬 模块定位画像</h1>
+  <div class="meta">大单元2-20模块的适配内容定位</div>
+  <div class="tags">
+    <span>📘 化学</span>
+    <span>📖 九年级上</span>
+    <span>📚 人教版</span>
+    <span>🧪 第一单元 走进化学世界</span>
+  </div>
+</div>
+
+<div class="card">
+  <h2>📊 整体概览</h2>
+  <p style="color:var(--text-secondary);margin-bottom:12px;">M2-M20 十九个模块形成从"意义激活"到"学术总结"的完整学习进化链。点击模块编号可查看详情。</p>
+  <div class="stats-bar">
+    <div class="stat-item"><span class="num">19</span> 个模块</div>
+    <div class="stat-item"><span class="num">6</span> 大阶段</div>
+    <div class="stat-item"><span class="num">M2→M20</span> 递进路径</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>🔄 学习进化链</h2>
+  <div class="flow-chain" id="flowChain">
+    <div class="flow-node phase-meaning" data-phase="meaning" onclick="filterByPhase('meaning')">🎯 意义激活<div class="phase-label">M2</div></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-node phase-cognition" data-phase="cognition" onclick="filterByPhase('cognition')">🧠 认知建立<div class="phase-label">M3-M4</div></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-node phase-thinking" data-phase="thinking" onclick="filterByPhase('thinking')">💡 多维思维<div class="phase-label">M5-M11</div></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-node phase-apply" data-phase="apply" onclick="filterByPhase('apply')">🔧 多元应用<div class="phase-label">M12-M15</div></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-node phase-reflect" data-phase="reflect" onclick="filterByPhase('reflect')">🪞 价值反思<div class="phase-label">M16-M18</div></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-node phase-summary" data-phase="summary" onclick="filterByPhase('summary')">📗 总结升华<div class="phase-label">M19-M20</div></div>
+  </div>
+  <div style="text-align:center;margin-top:4px;"><button class="filter-btn" onclick="clearFilter()" id="clearFilterBtn" style="display:none;">↩ 显示全部</button></div>
+</div>
+
+<div class="card">
+  <h2>📋 模块定位详情</h2>
+  <div class="filter-bar">
+    <label>🔍 搜索：</label>
+    <input class="search-input" id="searchInput" placeholder="输入模块名称或关键词..." oninput="filterTable()">
+    <label>阶段：</label>
+    <button class="filter-btn active" data-phase="all" onclick="setPhaseFilter('all',this)">全部</button>
+    <button class="filter-btn" data-phase="meaning" onclick="setPhaseFilter('meaning',this)">意义激活</button>
+    <button class="filter-btn" data-phase="cognition" onclick="setPhaseFilter('cognition',this)">认知建立</button>
+    <button class="filter-btn" data-phase="thinking" onclick="setPhaseFilter('thinking',this)">多维思维</button>
+    <button class="filter-btn" data-phase="apply" onclick="setPhaseFilter('apply',this)">多元应用</button>
+    <button class="filter-btn" data-phase="reflect" onclick="setPhaseFilter('reflect',this)">价值反思</button>
+    <button class="filter-btn" data-phase="summary" onclick="setPhaseFilter('summary',this)">总结升华</button>
+  </div>
+  <div class="table-wrapper">
+    <table id="moduleTable">
+      <thead>
+        <tr>
+          <th style="width:60px;">编号</th>
+          <th style="width:160px;">模块主题</th>
+          <th>功能定位</th>
+          <th>核心内容</th>
+        </tr>
+      </thead>
+      <tbody id="moduleBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <h2>🧭 学习路径建议</h2>
+  <p>你在完成模块1（大单元概述）的学习后，可以根据自己的学习路径选择，从 M2 开始，沿着进化链逐级而上，也可以根据自己的基础和兴趣跳转。</p>
+  <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;padding:16px;background:linear-gradient(135deg,#f0f5ff,#e6f7ff);border-radius:8px;">
+    <div style="flex:1;min-width:200px;">
+      <div style="font-weight:600;color:var(--primary);margin-bottom:4px;">🚀 推荐路径（新手）</div>
+      <div style="font-size:13px;color:var(--text-secondary);">M2 → M3 → M4 → M5 → M6 → ... 逐级而上</div>
+    </div>
+    <div style="flex:1;min-width:200px;">
+      <div style="font-weight:600;color:var(--primary);margin-bottom:4px;">⚡ 快速路径（有基础）</div>
+      <div style="font-size:13px;color:var(--text-secondary);">M2 → M4 → M8 → M12 → M19 → M20</div>
+    </div>
+    <div style="flex:1;min-width:200px;">
+      <div style="font-weight:600;color:var(--primary);margin-bottom:4px;">🎨 兴趣驱动（按需跳转）</div>
+      <div style="font-size:13px;color:var(--text-secondary);">根据自身兴趣选择任一模块开始</div>
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:16px;color:var(--text-secondary);font-style:italic;">每一条路都是通往化学世界的大门，选择权在你手上。</div>
+</div>
+
+<button class="back-top" id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+</div>
+
+<script>
+(function(){
+const phaseMap = {
+  2:'meaning',3:'cognition',4:'cognition',
+  5:'thinking',6:'thinking',7:'thinking',8:'thinking',9:'thinking',10:'thinking',11:'thinking',
+  12:'apply',13:'apply',14:'apply',15:'apply',
+  16:'reflect',17:'reflect',18:'reflect',
+  19:'summary',20:'summary'
+};
+const phaseLabels = {
+  meaning:'意义激活',cognition:'认知建立',thinking:'多维思维',
+  apply:'多元应用',reflect:'价值反思',summary:'总结升华'
+};
+const tagClass = {
+  meaning:'tag-meaning',cognition:'tag-cognition',thinking:'tag-thinking',
+  apply:'tag-apply',reflect:'tag-reflect',summary:'tag-summary'
+};
+
+const modules = [
+  {num:2, title:'学习新知的新价值与新使命', pos:'意义激活', core:'化学与生活的关系、化学的社会价值、化学家的责任、走进化学世界的学习承诺', detail:'让学生从"为什么要学化学"出发，理解化学在实现个人成长、科技发展和社会进步中的使命担当。'},
+  {num:3, title:'全息活动与感知：新概念前认知', pos:'前概念唤醒', core:'日常现象观察、感官感知训练、变化的前概念（什么变了、什么没变）', detail:'调动学生已有生活经验（水的沸腾、铁生锈、蜡烛燃烧等），建立对"变化"的感性认知基础。'},
+  {num:4, title:'新概念解析、建构与定义', pos:'核心概念建立', core:'物理变化 vs 化学变化、化学性质 vs 物理性质、观察与描述方法', detail:'系统解析物理变化与化学变化的本质区别，建构"化学变化"的精确科学定义。'},
+  {num:5, title:'新知艺术思维', pos:'审美化理解', core:'化学变化中的色彩变化（焰色反应、沉淀颜色等）、晶体形态、化学的"艺术语言"', detail:'用艺术视角观察化学变化中的色彩、形态、节奏之美，培养对化学现象的审美感知。'},
+  {num:6, title:'新知技术思维', pos:'技术化操作', core:'试管、酒精灯、量筒等仪器的使用、加热/过滤/蒸发等基本操作、实验安全规范', detail:'学习化学实验的基本技术和仪器操作规范，培养"动手做化学"的技术素养。'},
+  {num:7, title:'新知数学思维', pos:'量化分析', core:'测量与误差、实验数据的记录与处理、质量守恒的初步量化感知', detail:'在化学实验中引入定量思维（测量、记录、计算），培养数据意识和数学表达。'},
+  {num:8, title:'新知科学思维', pos:'科学方法论', core:'科学探究的基本流程、控制变量法、证据推理、实验结论的可靠性判断', detail:'建立"提出问题→猜想假设→设计方案→收集证据→分析结论→反思交流"的完整科学探究链。'},
+  {num:9, title:'新知文化思维', pos:'文化视野拓展', core:'中国古代化学成就、传统工艺中的化学原理、化学与文明的互动', detail:'从化学视角理解中华文明中的化学智慧（冶炼、陶瓷、火药、酿酒等），培养文化自信。'},
+  {num:10, title:'新知哲学思维', pos:'哲学反思', core:'物质不灭思想、变化的条件性、偶然与必然、从现象到本质的思维跃迁', detail:'从哲学高度思考"变化与守恒""现象与本质""量变与质变"等范畴，培养辩证思维。'},
+  {num:11, title:'新知美术思维', pos:'可视化表达', core:'原子/分子示意图绘制、化学反应图解、概念视觉化设计', detail:'用图像、符号、色彩等美术手段表达化学概念和变化过程，培养"化学可视化"能力。'},
+  {num:12, title:'新知书面性应用', pos:'学科写作', core:'实验报告写作、化学现象的描述性表达、化学知识短文写作', detail:'用规范的文字表达化学知识和实验成果，训练化学学科语言和书面表达能力。'},
+  {num:13, title:'新知项目性应用', pos:'项目驱动学习', core:'问题定义→方案设计→制作实施→测试反馈→成果展示的完整项目流程', detail:'基于真实问题开展项目式学习，在解决实际问题中应用化学知识。'},
+  {num:14, title:'新知STEAM融合性应用', pos:'跨学科融合', core:'STEAM项目设计、跨学科问题解决、综合创新能力培养', detail:'整合科学、技术、工程、艺术、数学，开展跨学科项目。'},
+  {num:15, title:'新知三创性应用', pos:'创意·创新·创业', core:'创造性思维训练、微创新案例研究、化学在创意产品中的应用', detail:'鼓励学生从化学视角发现创新机会，将学习成果转化为创意方案或微型项目。'},
+  {num:16, title:'新知应用与创新中的真善美思维与反思', pos:'价值反思', core:'化学与伦理（如塑料污染的反思）、化学的"美"的判断标准、负责任的创新', detail:'在应用和创新中反思化学的"真"（科学性）、"善"（伦理与责任）、"美"（和谐与创造）。'},
+  {num:17, title:'新知学习过程的成就与成功性思维与反思', pos:'成就激励', core:'学习成果盘点、成长轨迹记录、自我效能感培养、"我能学好化学"的信心建立', detail:'引导学生回顾学习历程，识别个人成长和突破，建立学业成就感。'},
+  {num:18, title:'新知学习收获的幸福与福祉性思维与反思', pos:'幸福感知', core:'学习的幸福感来源、化学与美好生活的关系、从"学会"到"乐学"的转变', detail:'引导学生感受化学学习带来的精神愉悦、认知满足和人生意义体悟。'},
+  {num:19, title:'新知全面的系统性思维与智能化思维', pos:'系统整合', core:'单元知识系统图（概念网络）、AI辅助学习梳理化学知识、系统思维方法', detail:'将本单元所有概念和方法整合为一个完整的认知系统，并借助AI工具实现智能化学习。'},
+  {num:20, title:'新知的理论和学术性总结与表达', pos:'学术总结', core:'单元学术总结报告写作、核心概念与思维方法的结构化表达、学习成果的学术化呈现', detail:'以学术化的语言对本单元所学进行系统总结，形成可传播、可评价的学术成果。'}
+];
+
+function renderTable(data) {
+  const tbody = document.getElementById('moduleBody');
+  tbody.innerHTML = '';
+  data.forEach(function(m) {
+    const ph = phaseMap[m.num];
+    const tr = document.createElement('tr');
+    tr.dataset.phase = ph;
+    tr.innerHTML = '<td><div class="module-header"><span class="module-num">'+m.num+'</span></div></td>'+
+      '<td><div class="module-header"><span class="module-title">'+m.title+'</span></div><span class="tag-position '+tagClass[ph]+'" style="margin-top:4px;display:inline-block;">'+phaseLabels[ph]+'</span></td>'+
+      '<td><strong>'+m.pos+'</strong><br><span style="font-size:13px;color:var(--text-secondary);">'+m.detail+'</span></td>'+
+      '<td><span style="font-size:13px;">'+m.core+'</span></td>';
+    tbody.appendChild(tr);
+  });
+}
+
+renderTable(modules);
+
+let currentPhase = 'all';
+let currentSearch = '';
+
+window.setPhaseFilter = function(phase, btn) {
+  currentPhase = phase;
+  document.querySelectorAll('.filter-bar .filter-btn').forEach(function(b){b.classList.remove('active');});
+  if(btn) btn.classList.add('active');
+  applyFilters();
+};
+
+window.filterByPhase = function(phase) {
+  currentPhase = phase;
+  document.querySelectorAll('.filter-bar .filter-btn').forEach(function(b){
+    b.classList.remove('active');
+    if(b.dataset.phase === phase) b.classList.add('active');
+  });
+  applyFilters();
+  document.getElementById('clearFilterBtn').style.display = 'inline-block';
+  document.querySelector('.flow-chain').scrollIntoView({behavior:'smooth'});
+};
+
+window.clearFilter = function() {
+  currentPhase = 'all';
+  document.querySelectorAll('.filter-bar .filter-btn').forEach(function(b){
+    b.classList.remove('active');
+    if(b.dataset.phase === 'all') b.classList.add('active');
+  });
+  document.getElementById('searchInput').value = '';
+  currentSearch = '';
+  document.getElementById('clearFilterBtn').style.display = 'none';
+  applyFilters();
+};
+
+window.filterTable = function() {
+  currentSearch = document.getElementById('searchInput').value.trim().toLowerCase();
+  applyFilters();
+};
+
+function applyFilters() {
+  const rows = document.querySelectorAll('#moduleBody tr');
+  rows.forEach(function(row){
+    let show = true;
+    if(currentPhase !== 'all' && row.dataset.phase !== currentPhase) show = false;
+    if(show && currentSearch) {
+      var txt = row.textContent.toLowerCase();
+      if(txt.indexOf(currentSearch) === -1) show = false;
+    }
+    row.style.display = show ? '' : 'none';
+  });
+  document.getElementById('clearFilterBtn').style.display = (currentPhase !== 'all' || currentSearch) ? 'inline-block' : 'none';
+}
+
+// back to top
+window.addEventListener('scroll', function(){
+  var btn = document.getElementById('backTop');
+  if(window.scrollY > 400) btn.classList.add('show'); else btn.classList.remove('show');
+});
+})();
+</script>
+</body>
+</html>

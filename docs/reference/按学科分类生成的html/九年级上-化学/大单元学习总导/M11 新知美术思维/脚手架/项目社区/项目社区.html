@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目社区 — 化学项目化学习</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+  --font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin: 0 0 8px;
+  padding-bottom: 12px;
+  border-bottom: 3px solid var(--accent);
+}
+
+h2 {
+  font-size: var(--font-h2);
+  color: var(--text);
+  margin: 28px 0 12px;
+  padding-left: 12px;
+  border-left: 4px solid var(--primary);
+}
+
+h3 {
+  font-size: calc(var(--font-body) + 2px);
+  color: var(--primary);
+  margin: 16px 0 8px;
+}
+
+h4 {
+  font-size: var(--font-body);
+  color: var(--text);
+  margin: 12px 0 6px;
+  font-weight: 600;
+}
+
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+
+.project-badge {
+  display: inline-block;
+  padding: 3px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 10px;
+}
+
+.badge-short {
+  background: #52c41a;
+}
+
+.badge-mid {
+  background: var(--primary);
+}
+
+.badge-long {
+  background: #722ed1;
+}
+
+.period-tag {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  margin-right: 6px;
+}
+
+.stage-list {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0;
+}
+
+.stage-list li {
+  padding: 6px 0 6px 24px;
+  position: relative;
+}
+
+.stage-list li::before {
+  content: "▸";
+  color: var(--primary);
+  position: absolute;
+  left: 4px;
+  top: 6px;
+}
+
+.stage-list li.done::before {
+  content: "✓";
+  color: #52c41a;
+  font-weight: 600;
+}
+
+.stage-list li.done {
+  color: #52c41a;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 12px;
+  margin: 12px 0;
+  font-size: 14px;
+}
+
+.info-grid .label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.info-grid .value {
+  color: var(--text);
+}
+
+.star-rating {
+  display: flex;
+  gap: 6px;
+  margin: 10px 0;
+}
+
+.star-rating span {
+  font-size: 28px;
+  cursor: pointer;
+  transition: transform 0.15s, color 0.15s;
+  color: #d9d9d9;
+  user-select: none;
+}
+
+.star-rating span.active {
+  color: #faad14;
+  transform: scale(1.15);
+}
+
+.star-rating span:hover {
+  transform: scale(1.25);
+}
+
+.progress-tracker {
+  display: flex;
+  gap: 12px;
+  margin: 14px 0;
+  flex-wrap: wrap;
+}
+
+.progress-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  padding: 4px 12px;
+  border-radius: 16px;
+  background: #f5f5f5;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid var(--border);
+}
+
+.progress-step:hover {
+  background: var(--bg);
+}
+
+.progress-step.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.progress-step.done {
+  background: #f6ffed;
+  color: #52c41a;
+  border-color: #b7eb8f;
+}
+
+.resource-link {
+  display: inline-block;
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-size: 13px;
+  color: #d46b08;
+  margin: 4px;
+  cursor: default;
+}
+
+.cooperation-note {
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 12px 0;
+  font-size: 14px;
+}
+
+.cooperation-note strong {
+  color: #d46b08;
+}
+
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  .card { padding: 14px; }
+  .progress-tracker { gap: 6px; }
+  .progress-step { font-size: 12px; padding: 3px 10px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🏗️ 项目社区：用化学改造世界</h1>
+
+<div class="note-info" style="background:#e6f7ff;border:1px solid #91d5ff;border-radius:6px;padding:12px 16px;margin:0 0 20px;font-size:14px;">
+  <strong>📌 任务定位：</strong>以真实问题为驱动的长期学习机制，通过项目化学习综合运用本模块所学。选择感兴趣的项目开始吧！
+</div>
+
+<!-- 短周期微项目 -->
+<h2>🌱 短周期（1-3天）：微项目</h2>
+<div class="card">
+  <div>
+    <span class="project-badge badge-short">短周期 · 1-3天</span>
+    <span class="period-tag">🏠 家中探索</span>
+  </div>
+
+  <h3>项目名称：我家中的化学变化地图</h3>
+
+  <div class="info-grid">
+    <span class="label">🎯 项目目标</span>
+    <span class="value">找到家中至少 <strong>5处</strong> 正在发生或可能发生的化学变化</span>
+  </div>
+
+  <h4>📋 阶段任务</h4>
+  <ul class="stage-list" id="stageList1">
+    <li data-stage="1">在家中各区域（厨房、卫生间、阳台）做观察</li>
+    <li data-stage="2">拍照或记录现象</li>
+    <li data-stage="3">判断变化类型并说明依据</li>
+  </ul>
+
+  <div class="progress-tracker" id="progress1">
+    <span class="progress-step" onclick="toggleStage(this,'stageList1')">🔍 观察</span>
+    <span class="progress-step" onclick="toggleStage(this,'stageList1')">📸 记录</span>
+    <span class="progress-step" onclick="toggleStage(this,'stageList1')">📝 判断</span>
+  </div>
+
+  <h4>📦 成果形式</h4>
+  <p>一张 <strong>A4纸手绘地图</strong>，标注各位置的化学变化类型</p>
+
+  <h4>📊 评价标准</h4>
+  <div class="star-rating" id="star1">
+    <span data-star="1" onclick="rate(this,1)">★</span>
+    <span data-star="2" onclick="rate(this,2)">★</span>
+    <span data-star="3" onclick="rate(this,3)">★</span>
+    <span data-star="4" onclick="rate(this,4)">★</span>
+    <span data-star="5" onclick="rate(this,5)">★</span>
+  </div>
+  <div style="font-size:14px;color:var(--text-secondary);margin-top:4px;">
+    自评标准：正确性 ⭐ | 数量≥5处 ⭐ | 表达清晰度 ⭐
+  </div>
+
+  <div class="cooperation-note">
+    <strong>💡 观察小贴士：</strong>厨房（铁锅生锈、切开的苹果变色、小苏打+醋反应）→ 卫生间（肥皂和硬水反应、漂白剂氧化）→ 阳台（植物光合作用、橡胶老化）
+  </div>
+</div>
+
+<!-- 中周期专题项目 -->
+<h2>📐 中周期（1-2周）：专题项目</h2>
+<div class="card">
+  <div>
+    <span class="project-badge badge-mid">中周期 · 1-2周</span>
+    <span class="period-tag">🧪 化学链条</span>
+  </div>
+
+  <h3>项目名称：铁的"一生"——从铁矿石到铁锈</h3>
+
+  <div class="info-grid">
+    <span class="label">🎯 项目目标</span>
+    <span class="value">完整追踪铁从开采到锈蚀的化学变化链条</span>
+  </div>
+
+  <h4>📋 阶段任务</h4>
+  <ul class="stage-list" id="stageList2">
+    <li data-stage="1">研究铁矿石 → 生铁 → 熟铁 → 铁制品 → 铁锈的化学变化过程</li>
+    <li data-stage="2">记录每个环节的变化类型和化学原理</li>
+    <li data-stage="3">设计一套减缓铁制品生锈的方案</li>
+  </ul>
+
+  <div class="progress-tracker" id="progress2">
+    <span class="progress-step" onclick="toggleStage(this,'stageList2')">📖 研究</span>
+    <span class="progress-step" onclick="toggleStage(this,'stageList2')">📝 记录</span>
+    <span class="progress-step" onclick="toggleStage(this,'stageList2')">🛡️ 防锈方案</span>
+  </div>
+
+  <h4>📦 成果形式</h4>
+  <p>信息图表（含文字说明）+ 防锈方案书</p>
+
+  <h4>📊 评价标准</h4>
+  <p>科学性 · 完整性 · 创意性</p>
+  <div style="margin-top:8px;">
+    <span class="resource-link">📎 参考：铁矿石种类（磁铁矿Fe₃O₄、赤铁矿Fe₂O₃）</span>
+    <span class="resource-link">📎 参考：高炉炼铁原理</span>
+    <span class="resource-link">📎 参考：电化学腐蚀原理</span>
+  </div>
+</div>
+
+<!-- 长周期综合项目 -->
+<h2>🌟 长周期（1月+）：综合项目</h2>
+<div class="card">
+  <div>
+    <span class="project-badge badge-long">长周期 · 1月+</span>
+    <span class="period-tag">🔬 校园调查</span>
+  </div>
+
+  <h3>项目名称：校园化学安全侦探</h3>
+
+  <div class="info-grid">
+    <span class="label">🎯 项目目标</span>
+    <span class="value">调查校园中化学品使用和管理情况，提出改进建议</span>
+  </div>
+
+  <h4>📋 阶段任务</h4>
+  <ul class="stage-list" id="stageList3">
+    <li data-stage="1">调查实验室、生物园、清洁间等处的化学品存放情况</li>
+    <li data-stage="2">分析每种化学品可能发生的化学变化和风险</li>
+    <li data-stage="3">制作"校园化学安全手册"</li>
+  </ul>
+
+  <div class="progress-tracker" id="progress3">
+    <span class="progress-step" onclick="toggleStage(this,'stageList3')">🔎 调查</span>
+    <span class="progress-step" onclick="toggleStage(this,'stageList3')">⚠️ 风险评估</span>
+    <span class="progress-step" onclick="toggleStage(this,'stageList3')">📘 制作手册</span>
+  </div>
+
+  <h4>📦 成果形式</h4>
+  <p>调查报告 + 安全手册（可打印分发）</p>
+
+  <h4>🔗 资源链接</h4>
+  <div>
+    <span class="resource-link">📋 学校实验室安全守则</span>
+    <span class="resource-link">📋 MSDS化学品安全数据库</span>
+    <span class="resource-link">📋 危险化学品管理条例</span>
+  </div>
+</div>
+
+<!-- 反思区 -->
+<div class="card" style="margin-top:24px;">
+  <h3>📝 项目反思</h3>
+  <p style="color:var(--text-secondary);font-size:14px;">完成项目后，问自己：</p>
+  <ul class="stage-list">
+    <li>我通过这个项目学到了什么新的化学知识？</li>
+    <li>在项目中遇到了什么困难？是如何解决的？</li>
+    <li>我的成果是否可以改进？如何改进？</li>
+    <li>我是否可以用同样的方法研究其他物质（如铜、铝）的"一生"？</li>
+  </ul>
+</div>
+
+</div>
+
+<script>
+function toggleStage(el, listId) {
+  var list = document.getElementById(listId);
+  if (!list) return;
+  var idx = Array.from(el.parentNode.children).indexOf(el);
+  var items = list.querySelectorAll('li');
+  if (idx >= 0 && idx < items.length) {
+    items[idx].classList.toggle('done');
+  }
+  el.classList.toggle('done');
+}
+
+function rate(el, star) {
+  var container = el.parentNode;
+  var stars = container.querySelectorAll('span');
+  for (var i = 0; i < stars.length; i++) {
+    stars[i].classList.toggle('active', i < star);
+  }
+}
+</script>
+</body>
+</html>

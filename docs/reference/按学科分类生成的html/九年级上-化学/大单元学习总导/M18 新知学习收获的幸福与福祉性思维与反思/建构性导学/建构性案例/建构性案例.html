@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性案例：七阶难度情境实战</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+}
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 6px; }
+.header .sub { opacity: .85; font-size: calc(var(--font-body) - 1px); }
+.level-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+.level-tab {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: calc(var(--font-body) - 2px);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  transition: all .2s;
+  user-select: none;
+}
+.level-tab:hover { border-color: var(--primary); color: var(--primary); }
+.level-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.level-content { display: none; }
+.level-content.active { display: block; }
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--primary);
+}
+.case-card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.case-card .difficulty {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+.case-card .stars { color: #faad14; letter-spacing: 2px; }
+.case-card p { margin-bottom: 8px; }
+.case-card .section-label {
+  font-weight: 600;
+  color: var(--text);
+  margin-top: 12px;
+  margin-bottom: 4px;
+  display: block;
+}
+.case-card .section-label::before { margin-right: 6px; }
+.case-card .principle-hint {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 8px 0;
+  font-size: calc(var(--font-body) - 1px);
+}
+.case-card .principle-hint::before { content: "💡 原理提示"; display: block; font-weight: 600; color: var(--primary); margin-bottom: 4px; }
+.case-card .outcome {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 8px 0;
+  font-size: calc(var(--font-body) - 1px);
+}
+.case-card .outcome::before { content: "🎯 预期成果"; display: block; font-weight: 600; color: #389e0d; margin-bottom: 4px; }
+.model-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: calc(var(--font-body) - 1px);
+}
+.model-table th, .model-table td {
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  text-align: left;
+}
+.model-table th { background: var(--bg); font-weight: 600; color: var(--primary); }
+.construct-list { list-style: none; padding: 0; margin: 12px 0; }
+.construct-list li {
+  padding: 8px 12px;
+  margin: 4px 0;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  user-select: none;
+  transition: all .2s;
+}
+.construct-list li:hover { border-color: var(--primary); }
+.construct-list li .box {
+  width: 16px; height: 16px;
+  border: 2px solid var(--border);
+  border-radius: 3px;
+  flex-shrink: 0;
+  transition: all .2s;
+  display: flex; align-items: center; justify-content: center;
+}
+.construct-list li.done { background: #f6ffed; border-color: #b7eb8f; color: #135200; }
+.construct-list li.done .box { background: var(--primary); border-color: var(--primary); color: #fff; }
+.construct-list li.done .box::after { content: "✓"; font-size: 12px; font-weight: 700; }
+.summary-box {
+  background: linear-gradient(135deg, #f0f5ff, #e6f7ff);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-top: 20px;
+}
+.summary-box h2 { font-size: var(--font-h2); color: var(--primary); margin-bottom: 10px; }
+.recorder-box {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+.recorder-box::before { content: "📝 建构任务记录区"; display: block; font-weight: 600; color: #ad6800; margin-bottom: 6px; }
+.recorder-box textarea {
+  width: 100%;
+  min-height: 80px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  font-family: inherit;
+  font-size: calc(var(--font-body) - 1px);
+  resize: vertical;
+  box-sizing: border-box;
+}
+.recorder-box textarea:focus { outline: none; border-color: var(--primary); }
+@media (max-width: 640px) {
+  .container { padding: 12px; }
+  .header { padding: 20px 16px; }
+  .case-card { padding: 14px; }
+  .level-tab { padding: 6px 10px; font-size: 12px; }
+  .model-table { font-size: 13px; }
+  .model-table th, .model-table td { padding: 6px 8px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>⚗️ 建构性案例：七阶难度情境实战</h1>
+  <div class="sub">运用六步法完成独立的知识建构 · 化学 九年级上</div>
+</div>
+
+<p style="margin-bottom:16px;">运用Slot 2中习得的"六步法"，在七个由浅入深的化学情境中完成独立的知识建构。点击标签切换不同难度情境。</p>
+
+<div class="level-tabs" id="tabs">
+  <div class="level-tab active" onclick="switchLevel(0)">★ 第一阶</div>
+  <div class="level-tab" onclick="switchLevel(1)">★★ 第二阶</div>
+  <div class="level-tab" onclick="switchLevel(2)">★★★ 第三阶</div>
+  <div class="level-tab" onclick="switchLevel(3)">★★★★ 第四阶</div>
+  <div class="level-tab" onclick="switchLevel(4)">★★★★ 第五阶</div>
+  <div class="level-tab" onclick="switchLevel(5)">★★★★★ 第六阶</div>
+  <div class="level-tab" onclick="switchLevel(6)">★★★★★ 第七阶</div>
+</div>
+
+<!-- 第一阶 -->
+<div class="level-content active" data-index="0">
+  <div class="case-card">
+    <h2>第一阶：基础观察型 <span class="stars">★☆☆☆☆</span></h2>
+    <p><strong>情境描述：</strong>你拿到一枚铁钉和一截镁条。铁钉表面呈银灰色有光泽；镁条也呈银白色但表面有些发暗。将两者暴露在空气中三天：铁钉出现红棕色斑点，镁条表面变暗区域扩大了。</p>
+    <span class="section-label">建构任务</span>
+    <p>运用六步法，完成"金属在空气中发生的变化"这一概念建构。请记录每一步的思考内容。</p>
+    <div class="principle-hint">原理一（情境→问题）：现象对比中发现了什么差异？<br>原理二（问题→观察）：需要重点关注哪些具体变化？</div>
+    <div class="outcome">形成"金属与空气中的某些成分发生了反应"的初步认知。</div>
+    <div class="recorder-box">
+      <textarea placeholder="在这里记录你的建构思考……"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- 第二阶 -->
+<div class="level-content" data-index="1">
+  <div class="case-card">
+    <h2>第二阶：因果推演型 <span class="stars">★★☆☆☆</span></h2>
+    <p><strong>情境描述：</strong>给你一杯水、一杯食用油和一个密封真空袋。将铁钉分别放入这三个环境中，一周后观察：水中的铁钉生锈严重，油中的铁钉无明显变化，真空袋中的铁钉几乎无变化。</p>
+    <span class="section-label">建构任务</span>
+    <p>思考：铁钉生锈需要什么条件？请设计一个对比实验方案来检验你的假设。</p>
+    <div class="principle-hint">原理三（观察→假设）：空气和水哪个才是关键？<br>原理四（假设→验证）：三组实验构成了怎样的对照逻辑？</div>
+    <div class="outcome">建构"铁生锈需要同时接触水和氧气"的概念。</div>
+    <div class="recorder-box">
+      <textarea placeholder="设计你的对比实验方案……"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- 第三阶 -->
+<div class="level-content" data-index="2">
+  <div class="case-card">
+    <h2>第三阶：类比迁移型 <span class="stars">★★★☆☆</span></h2>
+    <p><strong>情境描述：</strong>切开一个苹果，暴露在空气中一段时间后果肉变黄变褐；用保鲜膜包好的另一半保持原色。削皮的土豆在水里泡着就没有明显变色。</p>
+    <span class="section-label">建构任务</span>
+    <p>类比铁生锈的建构过程，探究苹果变色的原因和条件。你的"假设→验证"路径如何设计？</p>
+    <div class="principle-hint">原理五（验证→概念）：这个概念与铁生锈的概念有何异同？<br>迁移思考：化学中的"反应"概念是否可以跨现象统一？</div>
+    <div class="outcome">建构"氧化反应"的广义概念，理解不同物质与氧气反应的表现可以完全不同。</div>
+    <div class="recorder-box">
+      <textarea placeholder="写出你的类比推理路径……"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- 第四阶 -->
+<div class="level-content" data-index="3">
+  <div class="case-card">
+    <h2>第四阶：变量控制型 <span class="stars">★★★★☆</span></h2>
+    <p><strong>情境描述：</strong>三个不透明的密封集气瓶，分别装有空气、纯氧气和纯氮气。将点燃的蜡烛依次伸入瓶中：空气瓶→蜡烛持续燃烧，氧气瓶→燃烧更旺、发出白光，氮气瓶→立刻熄灭。</p>
+    <span class="section-label">建构任务</span>
+    <p>"燃烧到底需要什么？"运用变量控制思维设计探究方案。哪些变量是相同的（控制变量）？哪些是不同的（自变量）？结论是什么（因变量）？</p>
+    <div class="principle-hint">全六步法综合运用。特别关注"控制变量"在假设验证中的作用。</div>
+    <div class="outcome">建构"燃烧需要氧气（助燃气体）"和"氮气不支持燃烧"的概念。</div>
+    <div class="recorder-box">
+      <textarea placeholder="填写你的变量控制方案……"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- 第五阶 -->
+<div class="level-content" data-index="4">
+  <div class="case-card">
+    <h2>第五阶：跨现象建模型 <span class="stars">★★★★☆</span></h2>
+    <p><strong>情境描述：</strong>回顾前面所有情境——铁钉生锈（需要水+氧气）、苹果变色（需要接触空气）、蜡烛燃烧（需要氧气）。这三个现象看起来完全不同，但都涉及同一种物质——氧气。</p>
+    <span class="section-label">建构任务</span>
+    <p>建立一个统一的"氧气参与反应"模型框架，将这三个现象纳入其中。用你自己的方式（文字描述、流程图或示意图）构建这个模型。</p>
+    <div class="principle-hint">六步法中的"概念"步骤需要升级为"模型构建"。关注抽象和概括思维。</div>
+    <div class="outcome">建构一个初步的"化学反应类型模型"，根据物质与氧气反应的方式不同进行分类。</div>
+    <div class="recorder-box">
+      <textarea placeholder="写出你的模型框架……"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- 第六阶 -->
+<div class="level-content" data-index="5">
+  <div class="case-card">
+    <h2>第六阶：实验设计型 <span class="stars">★★★★★</span></h2>
+    <p><strong>情境描述：</strong>实验室有两瓶无色气体，标签脱落，已知分别是氧气和二氧化碳。不能直接闻，也不能直接尝。你需要自己设计实验来鉴别它们。</p>
+    <span class="section-label">建构任务</span>
+    <p>完成完整的自主实验设计，包含：问题提出、假设、验证方案设计、预期结果判断。详细写出每一步。</p>
+    <div class="principle-hint">六步法完整独立运用。回忆第四阶中氧气和氮气对燃烧的不同影响。</div>
+    <div class="outcome">完成"鉴别氧气和二氧化碳"的完整实验方案，建构"不同气体支持燃烧程度不同"的认知。</div>
+    <div class="recorder-box">
+      <textarea placeholder="写出完整的实验设计方案……"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- 第七阶 -->
+<div class="level-content" data-index="6">
+  <div class="case-card">
+    <h2>第七阶：综合建模与反思型 <span class="stars">★★★★★</span></h2>
+    <p><strong>情境描述：</strong>站在"走进化学世界"的高度，回顾所有现象和概念：</p>
+    <table class="model-table">
+      <tr><th>现象/概念</th><th>与什么有关</th><th>属于什么类型</th></tr>
+      <tr><td>铁钉生锈</td><td>水+氧气</td><td>缓慢氧化</td></tr>
+      <tr><td>镁条燃烧</td><td>氧气</td><td>剧烈氧化（燃烧）</td></tr>
+      <tr><td>蜡烛燃烧</td><td>氧气</td><td>燃烧，有焰</td></tr>
+      <tr><td>苹果变色</td><td>氧气</td><td>酶促氧化</td></tr>
+      <tr><td>酒精灯分层</td><td>氧气接触程度</td><td>燃烧结构</td></tr>
+      <tr><td>气体鉴别</td><td>气体性质差异</td><td>物质检验</td></tr>
+    </table>
+    <span class="section-label">建构任务</span>
+    <p>创建一个"化学变化全息图谱"，将所有概念以你的方式组织在一起。至少包含三个维度：变化类型、条件、宏观表现。反思你的思维方式和幸福感发生了什么变化。</p>
+    <div class="principle-hint">全部六步法+跨情境综合建模。元认知反思：自己的建构过程本身。</div>
+    <div class="outcome">一张个性化的"第1章化学变化概念图谱"，以及一份"我的建构之路"反思记录。</div>
+    <div class="recorder-box">
+      <textarea placeholder="画出你的概念图谱，写下反思记录……"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- 小结 -->
+<div class="summary-box">
+  <h2>📌 本Slot小结</h2>
+  <p>在这七阶训练中，你从最基本的观察描述逐步升级到综合建模和元认知反思。每一次进阶都在用六步建构法解决更复杂的问题。建构性原理不再是纸上谈兵，而内化成了你的思维方式。</p>
+  <p style="font-weight:600;margin:10px 0 8px;color:var(--primary);">在后续学习中，无论面对什么新知识，请始终记得：</p>
+  <p style="font-size:calc(var(--font-body)+2px);font-weight:700;text-align:center;color:var(--primary);padding:8px;background:#fff;border-radius:8px;">"没有建构过的知识，不是真正的知识。"</p>
+  <ul class="construct-list">
+    <li onclick="toggleConstructCheck(this)"><span class="box"></span>我完成了全部七阶建构任务（从★到★★★★★）</li>
+    <li onclick="toggleConstructCheck(this)"><span class="box"></span>我能在每个情境中独立运用六步法</li>
+    <li onclick="toggleConstructCheck(this)"><span class="box"></span>我建立了跨章节的概念关联模型</li>
+    <li onclick="toggleConstructCheck(this)"><span class="box"></span>我反思并记录了自己的建构过程</li>
+    <li onclick="toggleConstructCheck(this)"><span class="box"></span>我感受到主动建构带来的思维幸福</li>
+  </ul>
+</div>
+
+</div>
+<script>
+function switchLevel(idx) {
+  var tabs = document.querySelectorAll('.level-tab');
+  var contents = document.querySelectorAll('.level-content');
+  tabs.forEach(function(t, i) { t.classList.toggle('active', i === idx); });
+  contents.forEach(function(c, i) { c.classList.toggle('active', i === idx); });
+}
+function toggleConstructCheck(el) {
+  el.classList.toggle('done');
+}
+</script>
+</body>
+</html>

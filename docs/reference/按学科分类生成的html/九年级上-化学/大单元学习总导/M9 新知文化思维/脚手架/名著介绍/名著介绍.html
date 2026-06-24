@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名著介绍 · 化学</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); font-size: var(--font-body); line-height: var(--line-height); }
+.container { width: 100%; max-width: none; padding: 24px 20px; box-sizing: border-box; }
+h1 { font-size: var(--font-h1); color: var(--primary); margin: 0 0 8px; }
+h2 { font-size: var(--font-h2); color: var(--primary); margin: 24px 0 12px; padding-bottom: 6px; border-bottom: 2px solid var(--accent); }
+.card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 16px 20px; margin-bottom: 16px; border-left: 4px solid var(--primary); transition: transform .2s; }
+.card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(22,119,255,.12); }
+.card .label { display: inline-block; background: var(--accent); color: #fff; font-size: 12px; padding: 2px 10px; border-radius: 10px; margin-bottom: 6px; }
+blockquote { margin: 10px 0 10px 16px; padding: 8px 14px; border-left: 3px solid var(--primary); background: #f6f9ff; border-radius: 0 6px 6px 0; color: var(--text); font-style: italic; }
+blockquote .source { display: block; text-align: right; font-size: 13px; color: var(--text-secondary); margin-top: 4px; font-style: normal; }
+.btn { display: inline-block; padding: 8px 20px; background: var(--primary); color: #fff; border: none; border-radius: 20px; cursor: pointer; font-size: 14px; transition: background .2s; margin: 4px 4px 4px 0; }
+.btn:hover { background: var(--primary-hover); }
+.tag { display: inline-block; background: #e6f4ff; color: var(--primary); font-size: 12px; padding: 2px 10px; border-radius: 10px; margin: 2px 4px 2px 0; }
+.book-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 16px 20px; margin-bottom: 16px; border-top: 3px solid var(--primary); transition: box-shadow .3s; }
+.book-card.expanded { box-shadow: 0 4px 20px rgba(22,119,255,.18); }
+.book-card h3 { margin: 0 0 6px; color: var(--primary); font-size: 17px; }
+.book-card .meta { font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; }
+.book-card .path { font-size: 13px; color: var(--primary); cursor: pointer; }
+.book-card .path:hover { text-decoration: underline; }
+.book-detail { max-height: 0; overflow: hidden; transition: max-height .4s ease, padding .3s; padding: 0; }
+.book-detail.open { max-height: 600px; padding: 10px 0 0; }
+.quote-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 640px) { .quote-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🧪 化学名言 · 名著导读</h1>
+  <p style="color:var(--text-secondary);margin:0 0 20px;">九年级上 · 第1章 走进化学世界 · 新知文化思维</p>
+
+  <h2>📜 化学名言</h2>
+  <div class="quote-grid">
+    <blockquote>在科学上没有平坦的大道，只有不畏劳苦沿着陡峭山路攀登的人，才有希望达到光辉的顶点。<span class="source">—— 马克思</span></blockquote>
+    <blockquote>化学是一门关于变化的科学——它研究物质如何转变，以及转变中发生了什么。<span class="source">—— 彼得·阿特金斯</span></blockquote>
+    <blockquote>实验室是化学家最重要的战场。<span class="source">—— 居里夫人</span></blockquote>
+    <blockquote>没有观察就没有科学，没有实验就没有进步。<span class="source">—— 拉瓦锡</span></blockquote>
+  </div>
+
+  <h2>📚 化学名著</h2>
+
+  <div class="book-card" data-book="1">
+    <div class="tag">中国经典</div>
+    <h3>《天工开物》 · 宋应星</h3>
+    <div class="meta">明末 · 三卷18章 · 选读片段</div>
+    <p><strong>核心问题：</strong>古代中国有哪些化工生产技术？</p>
+    <p>技术来源于对物质变化规律的观察和掌握。涵盖食品、纺织、冶铸、造纸、制糖等。</p>
+    <div class="path" onclick="toggleBook(1)">📖 查看关键片段导读 ↓</div>
+    <div class="book-detail" id="detail-1">
+      <p><strong>石灰烧制：</strong>将石灰石（碳酸钙）高温煅烧，分解为生石灰（氧化钙）和二氧化碳。古人虽不知化学式，却已熟练掌握了这一化学变化。</p>
+      <p><strong>陶瓷烧制：</strong>黏土在高温下发生脱水、氧化、玻璃化等多重化学变化，最终成为坚硬致密的陶瓷。这一过程至今仍是材料化学的研究课题。</p>
+      <p><span class="path">获取：</span>人民教育出版社出版 / 微信读书</p>
+    </div>
+  </div>
+
+  <div class="book-card" data-book="2">
+    <div class="tag">外国经典</div>
+    <h3>《科学的旅程》 · 雷·斯潘根贝格</h3>
+    <div class="meta">科学史 · 基础—进阶</div>
+    <p><strong>核心问题：</strong>科学是如何一步步发展成今天这个样子的？</p>
+    <p>科学不是真理的堆积，而是不断修正的探索过程。</p>
+    <div class="path" onclick="toggleBook(2)">📖 查看关键片段导读 ↓</div>
+    <div class="book-detail" id="detail-2">
+      <p><strong>第5章"化学的诞生"：</strong>从炼金术到现代化学的转变——炼金术士在寻找"点石成金"的过程中积累了丰富的物质变化知识，波义耳将化学确立为一门独立的科学，拉瓦锡用定量实验推翻了燃素说。化学的每一步进步，都是对旧观念的"革命"。</p>
+      <p><span class="path">获取：</span>各大书店 / 电子书平台</p>
+    </div>
+  </div>
+
+  <div class="book-card" data-book="3">
+    <div class="tag">当代科普</div>
+    <h3>《元素的盛宴》 · 山姆·基恩</h3>
+    <div class="meta">趣味科普 · 基础</div>
+    <p><strong>核心问题：</strong>元素周期表中的每个元素有什么有趣故事？</p>
+    <p>元素背后的人、事、物构成了化学的精彩世界。</p>
+    <div class="path" onclick="toggleBook(3)">📖 查看关键片段导读 ↓</div>
+    <div class="book-detail" id="detail-3">
+      <p><strong>第1章"战争中的元素"：</strong>火药的发明改变了世界格局——硫磺、木炭和硝石按比例混合，点燃时发生剧烈氧化还原反应，瞬间产生大量气体推动弹丸。火药中的化学看似简单，却蕴含着氧化剂、还原剂、燃烧反应的核心原理。</p>
+      <p><span class="path">获取：</span>中信出版社 / 得到APP有声书</p>
+    </div>
+  </div>
+
+  <div style="background:var(--card-bg);border-radius:var(--border-radius);box-shadow:var(--shadow);padding:16px 20px;margin-top:20px;text-align:center;">
+    <p style="margin:0 0 10px;"><strong>💡 阅读任务</strong></p>
+    <button class="btn" onclick="pickRandom()">🎲 随机推荐一本书</button>
+    <span id="recommend" style="display:inline-block;margin-left:12px;font-weight:bold;color:var(--primary);"></span>
+  </div>
+</div>
+
+<script>
+function toggleBook(id) {
+  var detail = document.getElementById('detail-' + id);
+  var card = document.querySelector('.book-card[data-book="' + id + '"]');
+  if (!detail || !card) return;
+  detail.classList.toggle('open');
+  card.classList.toggle('expanded');
+  var path = card.querySelector('.path');
+  if (path) path.textContent = detail.classList.contains('open') ? '📖 收起导读 ↑' : '📖 查看关键片段导读 ↓';
+}
+function pickRandom() {
+  var books = ['《天工开物》——感受古代中国的化工智慧', '《科学的旅程》——了解化学如何从炼金术走向现代', '《元素的盛宴》——发现每个元素背后的有趣故事'];
+  var pick = books[Math.floor(Math.random() * books.length)];
+  var el = document.getElementById('recommend');
+  if (el) el.textContent = '推荐阅读：' + pick;
+}
+</script>
+</body>
+</html>

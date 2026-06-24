@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性原理 — 解析七步法</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px 24px;
+  box-sizing: border-box;
+}
+.header-banner {
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header-banner h1 { margin: 0 0 8px; font-size: var(--font-h1); }
+.header-banner p { margin: 0; opacity: 0.85; font-size: 14px; }
+.principles-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.principles-nav button {
+  padding: 8px 16px;
+  border: 1px solid var(--primary);
+  background: var(--card-bg);
+  color: var(--primary);
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+.principles-nav button:hover, .principles-nav button.active {
+  background: var(--primary);
+  color: #fff;
+}
+.principle-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 18px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  display: none;
+}
+.principle-card.active {
+  display: block;
+}
+.principle-card .card-head {
+  background: linear-gradient(135deg, var(--bg), #e6f0ff);
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.principle-card .card-head h3 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--primary);
+}
+.principle-card .card-head .subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+.principle-card .card-body {
+  padding: 16px 20px;
+}
+.principle-card .card-body p { margin: 8px 0; }
+.principle-card .card-body strong { color: var(--primary); }
+.principle-card .tag {
+  display: inline-block;
+  background: #fff7e6;
+  color: #d46b08;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  margin: 4px 4px 4px 0;
+}
+.flowchart {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin: 20px 0;
+  border: 1px dashed var(--accent);
+}
+.flowchart .step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+}
+.flowchart .step-num {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.flowchart .step-text {
+  flex: 1;
+  padding: 10px 14px;
+  background: var(--card-bg);
+  border-radius: 6px;
+  border-left: 3px solid var(--primary);
+}
+.flowchart .step-arrow {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.practice-section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  border: 1px solid var(--border);
+  margin-top: 20px;
+}
+.practice-section h3 {
+  color: var(--primary);
+  margin: 0 0 12px;
+  font-size: var(--font-h2);
+}
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.tab-btn {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+.tab-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.reflect-list { padding-left: 20px; }
+.reflect-list li { margin: 8px 0; }
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  .header-banner { padding: 20px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header-banner">
+  <h1>🧩 解析性原理</h1>
+  <p>从前面的"铁丝在氧气中燃烧"解析示例中，提炼出6条可迁移的解析性原理——你的化学分析"通用工具箱"</p>
+</div>
+
+<p style="margin-bottom:16px;">以下6条原理构成了<strong>解析七步法</strong>的核心框架。点击按钮可快速跳转到每条原理，你也可以通过下方的练习来检验自己的掌握程度。</p>
+
+<div class="principles-nav">
+  <button class="active" onclick="showPrinciple(0)">① 情境信息提取法</button>
+  <button onclick="showPrinciple(1)">② 关键要素分解法</button>
+  <button onclick="showPrinciple(2)">③ 关系梳理法</button>
+  <button onclick="showPrinciple(3)">④ 证据检验法</button>
+  <button onclick="showPrinciple(4)">⑤ 逻辑推导法</button>
+  <button onclick="showPrinciple(5)">⑥ 结论形成与反思法</button>
+  <button onclick="showPrinciple(6)">📊 七步法总览</button>
+</div>
+
+<div class="principle-card active" data-index="0">
+  <div class="card-head">
+    <h3>原理1：情境信息提取法</h3>
+    <div class="subtitle">先观察，后判断——把"事实"和"推测"分开</div>
+  </div>
+  <div class="card-body">
+    <p><strong>说明：</strong>在展开任何分析之前，先客观、全面地收集和记录所有可观察到的信息，将"观察事实"与"主观推测"严格分开。</p>
+    <p><strong>示例体现：</strong>在铁丝燃烧示例中，先记录了"铁丝是银白色""火柴引燃""火星四射""生成黑色固体"等客观信息，没有直接跳入"产物是Fe₃O₄"的判断。</p>
+    <p><strong>如何使用：</strong>用<strong>"五感提问法"</strong>——我看到了什么？听到了什么？把观察按顺序写下，每条标注"事实"或"推测"。</p>
+    <p><span class="tag">🎯 适用：首次接触实验</span><span class="tag">⚠️ 别用后学知识替代观察</span></p>
+  </div>
+</div>
+
+<div class="principle-card" data-index="1">
+  <div class="card-head">
+    <h3>原理2：关键要素分解法</h3>
+    <div class="subtitle">复杂现象拆成独立要素，让问题变"有结构"</div>
+  </div>
+  <div class="card-body">
+    <p><strong>说明：</strong>将复杂现象按维度拆解为可分析的独立要素——反应物、生成物、条件、现象、装置、环境等。</p>
+    <p><strong>示例体现：</strong>将铁丝燃烧分解为"反应物（Fe+O₂）""条件（高温/纯氧）""现象（白光+火星+黑色固体）""生成物（Fe₃O₄）""装置（集气瓶+水/沙）"五大要素。</p>
+    <p><strong>如何使用：</strong>画一张<strong>"要素分解表"</strong>，列出5—8个维度，把信息填入对应单元格。缺失的信息标记"待查"。</p>
+    <p><span class="tag">🎯 适用：分析复杂实验</span><span class="tag">⚠️ 别遗漏"条件"维度</span></p>
+  </div>
+</div>
+
+<div class="principle-card" data-index="2">
+  <div class="card-head">
+    <h3>原理3：关系梳理法</h3>
+    <div class="subtitle">用箭头把要素连接起来——发现因果链条</div>
+  </div>
+  <div class="card-body">
+    <p><strong>说明：</strong>找到各要素之间存在的因果关系、条件关系、对应关系，用箭头或图示把它们连接起来。</p>
+    <p><strong>示例体现：</strong>"高温条件→铁丝达到着火点→与氧气反应→放出大量热→产生白光和火星→生成四氧化三铁"——典型因果链。</p>
+    <p><strong>如何使用：</strong>用<strong>箭头发问法</strong>——"A和B之间是什么关系？A导致B吗？"用"→"或"←→"画在纸上。</p>
+    <p><span class="tag">🎯 适用：理解反应机理</span><span class="tag">⚠️ 区分因果 vs 相关</span></p>
+  </div>
+</div>
+
+<div class="principle-card" data-index="3">
+  <div class="card-head">
+    <h3>原理4：证据检验法</h3>
+    <div class="subtitle">每个判断都要追问——"证据是什么？"</div>
+  </div>
+  <div class="card-body">
+    <p><strong>说明：</strong>对每一个分析和判断，追问"证据是什么"，判断证据的可靠性等级，确认推理站得住脚。</p>
+    <p><strong>示例体现：</strong>铁丝燃烧生成Fe₃O₄——证据是教材明确记载；黑色固体不是碳——证据是铁丝不含碳。证据按可靠度排序：实验观察 &gt; 教材/文献 &gt; 逻辑推断 &gt; 猜测。</p>
+    <p><strong>如何使用：</strong>用<strong>"证据三问法"</strong>：(1)我凭什么这么说？(2)证据来自哪里？(3)有其他证据支持或反驳吗？</p>
+    <p><span class="tag">🎯 适用：写实验结论</span><span class="tag">⚠️ 警惕"我以为"混淆"证据"</span></p>
+  </div>
+</div>
+
+<div class="principle-card" data-index="4">
+  <div class="card-head">
+    <h3>原理5：逻辑推导法</h3>
+    <div class="subtitle">环环相扣的推理链条——从已知到未知</div>
+  </div>
+  <div class="card-body">
+    <p><strong>说明：</strong>将前四步的成果串联为推理链条，从已知前提推导出科学结论。每个推导步骤都要有明确的前提支撑。</p>
+    <p><strong>示例体现：</strong>从"空气中氧气浓度低""纯氧中氧气浓度高""燃烧剧烈程度与氧气浓度有关"三个前提，推导出"铁丝在空气中不燃烧是因为氧气浓度不够"的结论。</p>
+    <p><strong>如何使用：</strong>用<strong>"三段式推导"</strong>——前提1（已知事实）+ 前提2（已知原理）→ 推导出的新认识。</p>
+    <p><span class="tag">🎯 适用：解释化学现象</span><span class="tag">⚠️ 检查每个步骤是否有漏洞</span></p>
+  </div>
+</div>
+
+<div class="principle-card" data-index="5">
+  <div class="card-head">
+    <h3>原理6：结论形成与反思法</h3>
+    <div class="subtitle">简洁准确 + 追问边界——不盲目推广</div>
+  </div>
+  <div class="card-body">
+    <p><strong>说明：</strong>将推导结果整合为简洁、完整、准确的科学结论，并对结论的适用范围和局限性进行反思。</p>
+    <p><strong>示例体现：</strong>形成结论"铁丝在纯氧中高温条件下剧烈燃烧生成Fe₃O₄"，同时反思"这个结论适用于所有金属吗？铝会怎样？"</p>
+    <p><strong>如何使用：</strong>用<strong>"一句话公式"</strong>——主语 + 条件 + 动作 + 结果。然后追问三个反思问题。</p>
+    <p><span class="tag">🎯 适用：实验报告、知识总结</span><span class="tag">⚠️ 不要过度概括</span></p>
+  </div>
+</div>
+
+<div class="principle-card" data-index="6">
+  <div class="card-head">
+    <h3>📊 解析七步法总览</h3>
+    <div class="subtitle">六条原理串联为可迁移的分析流程</div>
+  </div>
+  <div class="card-body">
+    <div class="flowchart">
+      <div class="step"><span class="step-num">1</span><span class="step-text"><strong>现象描述</strong> — 客观记录观察事实</span></div>
+      <div class="step-arrow">↓</div>
+      <div class="step"><span class="step-num">2</span><span class="step-text"><strong>要素分解</strong> — 按维度拆解要素</span></div>
+      <div class="step-arrow">↓</div>
+      <div class="step"><span class="step-num">3</span><span class="step-text"><strong>关系梳理</strong> — 建立要素间因果链</span></div>
+      <div class="step-arrow">↓</div>
+      <div class="step"><span class="step-num">4</span><span class="step-text"><strong>证据检验</strong> — 核查每个判断的支撑</span></div>
+      <div class="step-arrow">↓</div>
+      <div class="step"><span class="step-num">5</span><span class="step-text"><strong>逻辑推导</strong> — 形成推理链条</span></div>
+      <div class="step-arrow">↓</div>
+      <div class="step"><span class="step-num">6</span><span class="step-text"><strong>结论形成</strong> — 简洁准确输出</span></div>
+      <div class="step-arrow">↓</div>
+      <div class="step"><span class="step-num">7</span><span class="step-text"><strong>反思局限</strong> — 追问条件边界</span></div>
+    </div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-top:12px;">💡 七步法不是死板的流水线——你可以在步骤2和步骤3之间来回调整，在步骤4发现证据不足时回到步骤1重新观察。<strong>灵活使用</strong>是解析的更高境界。</p>
+  </div>
+</div>
+
+<div class="practice-section">
+  <h3>✏️ 练习：用七步法分析"水的电解"</h3>
+  <p>在电解器中加入水（加少量稀硫酸增强导电性），接通直流电后，两个电极上都有气泡产生。与负极相连的电极上气体体积大约是正极的两倍。</p>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab(0)">📝 练习1</button>
+    <button class="tab-btn" onclick="showTab(1)">🔬 练习2</button>
+    <button class="tab-btn" onclick="showTab(2)">🤔 元认知反思</button>
+  </div>
+  <div class="tab-content active">
+    <p><strong>练习1：水的电解</strong></p>
+    <p>按七步法完整解析"水的电解"现象，并回答：根据"水→氢气+氧气"的反应事实，水由什么元素组成？</p>
+    <div id="hint1" style="display:none;background:#f6ffed;padding:12px;border-radius:6px;margin-top:10px;border:1px solid #b7eb8f;">
+      <strong>提示：</strong>正极产生O₂（木条复燃），负极产生H₂（淡蓝色火焰），体积比1:2。水中加稀硫酸只增强导电性，不参与反应。水由氢和氧两种元素组成。
+    </div>
+    <button onclick="toggleHint('hint1')" style="margin-top:10px;padding:6px 16px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;">💡 查看提示</button>
+  </div>
+  <div class="tab-content">
+    <p><strong>练习2：铁钉生锈</strong></p>
+    <p>三颗铁钉分别放在：A-干燥空气，B-一半浸在自来水，C-完全浸在煮沸冷却的蒸馏水中。一周后B严重生锈，A几乎没变化，C只有浸没线以上生锈。</p>
+    <div id="hint2" style="display:none;background:#f6ffed;padding:12px;border-radius:6px;margin-top:10px;border:1px solid #b7eb8f;">
+      <strong>提示：</strong>铁钉生锈需要水+氧气同时存在（B满足两者，A无水，C无氧）。铁锈是Fe₂O₃·xH₂O，化学变化。防锈措施：保持干燥、涂油、刷漆。
+    </div>
+    <button onclick="toggleHint('hint2')" style="margin-top:10px;padding:6px 16px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;">💡 查看提示</button>
+  </div>
+  <div class="tab-content">
+    <p><strong>元认知反思</strong></p>
+    <ol class="reflect-list">
+      <li>七步法中，你哪一步做得最轻松？哪一步最费力？</li>
+      <li>如果用七步法分析一个完全没见过的化学现象（如"镁条燃烧"），哪个原理最管用？</li>
+      <li>你觉得"分析（拆解）"和"建构（组装）"之间是什么关系？先拆后建？</li>
+    </ol>
+  </div>
+</div>
+
+</div>
+<script>
+var currentPrinciple = 0;
+function showPrinciple(index) {
+  var cards = document.querySelectorAll('.principle-card');
+  cards.forEach(function(c) { c.classList.remove('active'); });
+  var target = document.querySelector('.principle-card[data-index="'+index+'"]');
+  if (target) target.classList.add('active');
+  var btns = document.querySelectorAll('.principles-nav button');
+  btns.forEach(function(b) { b.classList.remove('active'); });
+  if (btns[index]) btns[index].classList.add('active');
+  currentPrinciple = index;
+}
+function showTab(index) {
+  var contents = document.querySelectorAll('.tab-content');
+  contents.forEach(function(c) { c.classList.remove('active'); });
+  if (contents[index]) contents[index].classList.add('active');
+  var btns = document.querySelectorAll('.tab-btn');
+  btns.forEach(function(b) { b.classList.remove('active'); });
+  if (btns[index]) btns[index].classList.add('active');
+}
+function toggleHint(id) {
+  var el = document.getElementById(id);
+  if (el) el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'block' : 'none';
+}
+</script>
+</body>
+</html>

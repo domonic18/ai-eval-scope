@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块定位 — M6 新知技术思维</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%; min-height: 100vh;
+}
+.container {
+  width: 100%; max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff; border-radius: var(--border-radius);
+  padding: 24px 32px; margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin: 0 0 8px; line-height: 1.3; }
+.header .subtitle { opacity: 0.9; font-size: 14px; }
+.card {
+  background: var(--card-bg); border-radius: var(--border-radius);
+  padding: 20px 24px; margin-bottom: 16px;
+  box-shadow: var(--shadow); border: 1px solid var(--border);
+  transition: all 0.3s;
+}
+.card h2 {
+  font-size: var(--font-h2); color: var(--primary); margin: 0 0 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.card h3 { font-size: 16px; color: var(--text); margin: 12px 0 8px; }
+.card ul { padding-left: 20px; margin: 8px 0; }
+.card li { margin-bottom: 8px; }
+.card p { margin: 8px 0; }
+.accordion-header {
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; user-select: none;
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+  transition: color 0.2s;
+}
+.accordion-header:hover { color: var(--primary); }
+.accordion-header:first-child { padding-top: 0; }
+.accordion-header .arrow {
+  font-size: 14px; transition: transform 0.3s;
+  color: var(--text-secondary);
+}
+.accordion-header.open .arrow { transform: rotate(90deg); }
+.accordion-body {
+  display: none; padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.accordion-body.open { display: block; }
+.accordion-body:last-child, .accordion-header:last-child { border-bottom: none; }
+.section-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--bg); color: var(--primary);
+  font-size: 16px; flex-shrink: 0;
+}
+.outcome-list { margin: 12px 0; }
+.outcome-check {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 12px; cursor: pointer; border-radius: var(--border-radius);
+  transition: all 0.2s; user-select: none;
+}
+.outcome-check:hover { background: var(--bg); }
+.outcome-check input[type="checkbox"] {
+  width: 18px; height: 18px; margin-top: 4px; cursor: pointer;
+  accent-color: var(--primary);
+}
+.outcome-check.done .outcome-text { text-decoration: line-through; color: var(--text-secondary); }
+.outcome-check.done { background: #f6ffed; }
+.connector-line {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 16px; margin: 6px 0;
+  background: var(--bg); border-radius: var(--border-radius);
+  border-left: 3px solid var(--primary);
+}
+.connector-line .badge {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 12px; font-weight: 600; flex-shrink: 0;
+}
+.badge-blue { background: var(--primary); color: #fff; }
+.badge-green { background: #52c41a; color: #fff; }
+.badge-orange { background: #fa8c16; color: #fff; }
+.progress-bar {
+  width: 100%; height: 6px; background: var(--border);
+  border-radius: 3px; margin: 12px 0; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; background: var(--primary);
+  border-radius: 3px; transition: width 0.5s;
+  width: 0%;
+}
+.highlight-box {
+  padding: 14px 18px; background: var(--bg);
+  border-radius: var(--border-radius); margin: 12px 0;
+  border-left: 4px solid var(--primary);
+}
+.highlight-box p { margin: 4px 0; }
+@media (max-width: 768px) {
+  .container { padding: 12px 16px; }
+  .header { padding: 16px; }
+  .card { padding: 14px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>📍 模块定位</h1>
+    <div class="subtitle">第1章 走进化学世界 · M6 新知技术思维 · 九年级化学</div>
+  </div>
+
+  <div class="card" id="accordionContainer">
+    <h2>🗺️ 本模块全景</h2>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">点击各板块展开了解模块定位详情：</p>
+
+    <div class="accordion-header" onclick="toggleAccordion(this)">
+      <span><span class="section-icon">📖</span> 一、本模块学习什么</span>
+      <span class="arrow">▶</span>
+    </div>
+    <div class="accordion-body">
+      <p>本模块是"走进化学世界"的收尾模块——<strong>新知技术思维</strong>。你将站在更高的视角回望整章内容，系统梳理：</p>
+      <ul>
+        <li>化学变化与物理变化</li>
+        <li>化学性质与物理性质</li>
+        <li>科学探究的方法与步骤</li>
+      </ul>
+      <p>同时了解化学学科对人类文明发展的深远影响，认识化学前沿技术如何改变我们的生活，并尝试用科学思维框架去分析身边的化学问题。</p>
+    </div>
+
+    <div class="accordion-header" onclick="toggleAccordion(this)">
+      <span><span class="section-icon">❓</span> 二、本模块为什么重要</span>
+      <span class="arrow">▶</span>
+    </div>
+    <div class="accordion-body">
+      <div class="highlight-box">
+        <p><strong>如果把化学学习比作建造一座大厦，本模块就是<em>蓝图和望远镜</em>。</strong></p>
+      </div>
+      <p>前面的课程帮你认识了"砖块"（基本概念），本模块则带你站上高处，看清这些砖块如何拼成宏伟建筑，以及建筑之外还有怎样的风景。它帮助你建立对化学学科的整体认知格局——这是从"学化学"到"用化学看世界"的关键一跃。</p>
+    </div>
+
+    <div class="accordion-header" onclick="toggleAccordion(this)">
+      <span><span class="section-icon">🔗</span> 三、与大单元主题的关系</span>
+      <span class="arrow">▶</span>
+    </div>
+    <div class="accordion-body">
+      <p>本单元"走进化学世界"的核心任务是<strong>建立化学学科的基本认知框架</strong>：</p>
+      <div class="connector-line">
+        <span class="badge badge-blue">M1-M5</span>
+        <span>具体概念：变化、性质、科学探究过程</span>
+      </div>
+      <div class="connector-line">
+        <span class="badge badge-green">M6</span>
+        <span>整合升华：从"是什么"走向"为什么"和"还能怎样"</span>
+      </div>
+      <p style="margin-top:8px;">完成从知识积累到<strong>思维方式</strong>的跃迁。</p>
+    </div>
+
+    <div class="accordion-header" onclick="toggleAccordion(this)">
+      <span><span class="section-icon">🧩</span> 四、与前后模块的衔接</span>
+      <span class="arrow">▶</span>
+    </div>
+    <div class="accordion-body">
+      <div class="connector-line">
+        <span class="badge badge-blue">← 前接 M1-M5</span>
+        <span>变化与性质区分、科学探究步骤、实验基本操作</span>
+      </div>
+      <div class="connector-line">
+        <span class="badge badge-green">后接 后续章节 →</span>
+        <span>空气、氧气、物质构成的奥秘……提供方法论支撑</span>
+      </div>
+      <p style="margin-top:8px;">培养的"宏观—微观—符号"三重表征思维和科学探究素养，将持续为后续学习输出方法论支持。</p>
+    </div>
+
+    <div class="accordion-header" onclick="toggleAccordion(this)">
+      <span><span class="section-icon">🏆</span> 五、预期学习成果</span>
+      <span class="arrow">▶</span>
+    </div>
+    <div class="accordion-body">
+      <p style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">完成本模块后，对照检查你是否达成：</p>
+      <div class="outcome-list">
+        <div class="outcome-check" onclick="toggleOutcomeCheck(this)">
+          <input type="checkbox"> <span class="outcome-text">用思维导图独立梳理整章核心概念及其逻辑关系</span>
+        </div>
+        <div class="outcome-check" onclick="toggleOutcomeCheck(this)">
+          <input type="checkbox"> <span class="outcome-text">运用"变→因→规→用"框架分析1-2个生活中的化学现象</span>
+        </div>
+        <div class="outcome-check" onclick="toggleOutcomeCheck(this)">
+          <input type="checkbox"> <span class="outcome-text">口述或书面阐述化学学科对人类文明的两项重要贡献</span>
+        </div>
+        <div class="outcome-check" onclick="toggleOutcomeCheck(this)">
+          <input type="checkbox"> <span class="outcome-text">对化学前沿技术产生兴趣，并提出至少1个有价值的追问</span>
+        </div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text-secondary);">
+        <span><span id="progressCount">0</span>/4 已完成</span>
+        <button onclick="resetOutcomes()" style="background:none;border:none;color:var(--primary);cursor:pointer;padding:0;font-size:13px;">🔄 重置</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📌 模块速览卡</h2>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">本模块核心定位一目了然：</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div style="padding:12px;background:var(--bg);border-radius:var(--border-radius);">
+        <div style="font-size:12px;color:var(--text-secondary);">模块类型</div>
+        <div style="font-weight:600;">收尾整合模块</div>
+      </div>
+      <div style="padding:12px;background:var(--bg);border-radius:var(--border-radius);">
+        <div style="font-size:12px;color:var(--text-secondary);">核心任务</div>
+        <div style="font-weight:600;">从知识到思维跃迁</div>
+      </div>
+      <div style="padding:12px;background:var(--bg);border-radius:var(--border-radius);">
+        <div style="font-size:12px;color:var(--text-secondary);">关键方法</div>
+        <div style="font-weight:600;">变→因→规→用</div>
+      </div>
+      <div style="padding:12px;background:var(--bg);border-radius:var(--border-radius);">
+        <div style="font-size:12px;color:var(--text-secondary);">培养思维</div>
+        <div style="font-weight:600;">宏观—微观—符号</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleAccordion(header) {
+  var body = header.nextElementSibling;
+  if (!body || !body.classList.contains('accordion-body')) return;
+  var isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  header.classList.toggle('open', !isOpen);
+}
+function toggleOutcomeCheck(el) {
+  var cb = el.querySelector('input[type="checkbox"]');
+  if (!cb) return;
+  cb.checked = !cb.checked;
+  el.classList.toggle('done', cb.checked);
+  updateProgress();
+}
+function updateProgress() {
+  var items = document.querySelectorAll('.outcome-check');
+  var done = document.querySelectorAll('.outcome-check.done').length;
+  var total = items.length;
+  var pct = total > 0 ? (done / total) * 100 : 0;
+  var fill = document.getElementById('progressFill');
+  var count = document.getElementById('progressCount');
+  if (fill) fill.style.width = pct + '%';
+  if (count) count.textContent = done;
+}
+function resetOutcomes() {
+  document.querySelectorAll('.outcome-check').forEach(function(el) {
+    var cb = el.querySelector('input[type="checkbox"]');
+    el.classList.remove('done');
+    if (cb) cb.checked = false;
+  });
+  updateProgress();
+}
+</script>
+</body>
+</html>

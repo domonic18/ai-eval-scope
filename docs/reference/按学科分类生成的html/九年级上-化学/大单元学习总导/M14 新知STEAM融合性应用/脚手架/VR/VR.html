@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VR脚手架 — 沉浸式化学体验</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --font-h3: 17px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+.wrapper {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, #141414 0%, #2d2d2d 100%);
+  color: #fff;
+  border-radius: var(--border-radius);
+  padding: 28px 32px;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.header::after {
+  content: "VR";
+  position: absolute;
+  right: 20px;
+  bottom: -10px;
+  font-size: 72px;
+  font-weight: 900;
+  opacity: 0.12;
+  color: #fff;
+  letter-spacing: -4px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 6px; }
+.header .sub { opacity: 0.85; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+.card h3 {
+  font-size: var(--font-h3);
+  color: var(--text);
+  margin: 16px 0 8px;
+}
+.card p { margin-bottom: 8px; }
+.card ul, .card ol { margin: 6px 0 10px 18px; }
+.card li { margin-bottom: 5px; }
+.vr-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #1677ff, #4096ff);
+  color: #fff;
+  padding: 4px 14px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.obs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 12px 0;
+}
+.obs-card {
+  background: #f6f8fc;
+  border-radius: 6px;
+  padding: 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: 1px solid transparent;
+}
+.obs-card:hover {
+  border-color: var(--primary);
+  background: #e6f0ff;
+  transform: translateY(-3px);
+}
+.obs-card .emoji { font-size: 32px; margin-bottom: 8px; }
+.obs-card .title { font-weight: 700; color: var(--primary); }
+.obs-card .desc { color: var(--text-secondary); font-size: 13px; margin-top: 4px; }
+.obs-card.completed {
+  border-color: #52c41a;
+  background: #f6ffed;
+}
+.obs-card.completed .title { color: #52c41a; }
+.level-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 14px 0;
+  flex-wrap: wrap;
+}
+.level-tab {
+  padding: 10px 20px;
+  border-radius: 6px;
+  border: 2px solid var(--border);
+  background: var(--card-bg);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 600;
+  text-align: center;
+  flex: 1;
+  min-width: 120px;
+}
+.level-tab:hover { border-color: var(--primary); }
+.level-tab.active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+.level-content {
+  display: none;
+  padding: 16px;
+  background: #f6f8fc;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin: 10px 0;
+}
+.level-content.active { display: block; }
+.record-table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+.record-table th, .record-table td {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+.record-table th { background: var(--primary); color: #fff; }
+.record-table td { background: var(--card-bg); }
+.resource-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  background: #f6f8fc;
+  border-radius: 6px;
+  margin: 8px 0;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.resource-card:hover { background: #e6f0ff; }
+.resource-card .r-icon { font-size: 28px; flex-shrink: 0; }
+.resource-card .r-info { flex: 1; }
+.resource-card .r-name { font-weight: 700; }
+.resource-card .r-desc { font-size: 13px; color: var(--text-secondary); }
+.btn {
+  display: inline-block;
+  padding: 10px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: var(--font-body);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--primary);
+  color: #fff;
+}
+.btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
+.btn-outline {
+  background: transparent;
+  border: 2px solid var(--primary);
+  color: var(--primary);
+}
+.btn-outline:hover { background: #e6f0ff; }
+@media (max-width: 600px) {
+  .wrapper { padding: 16px 12px; }
+  .header { padding: 20px; }
+  .card { padding: 16px; }
+  .obs-grid { grid-template-columns: 1fr 1fr; }
+  .level-tabs { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <h1>🥽 VR脚手架</h1>
+    <p class="sub">沉浸式化学体验 · 走进微观世界</p>
+  </div>
+
+  <p style="margin-bottom:16px;color:var(--text-secondary);">
+    通过VR/3D技术，"走进"化学微观世界，把抽象的概念变成可以观察和操作的具象场景。
+  </p>
+
+  <!-- 三重层级 -->
+  <div class="card">
+    <h2>🎯 三重层级设计</h2>
+    <p>根据自己的基础选择起点，点击切换层级：</p>
+    <div class="level-tabs" id="levelTabs">
+      <div class="level-tab active" data-level="basic" onclick="switchLevel('basic')">🌱 基础<br><small>场景还原</small></div>
+      <div class="level-tab" data-level="inter" onclick="switchLevel('inter')">📈 进阶<br><small>系统模拟</small></div>
+      <div class="level-tab" data-level="adv" onclick="switchLevel('adv')">🏆 挑战<br><small>角色体验</small></div>
+    </div>
+    <div id="levelBasic" class="level-content active">
+      <p><strong>🌱 基础：场景还原——走进化学实验室</strong></p>
+      <ul>
+        <li>360°漫游一个标准的化学实验室环境</li>
+        <li>观察实验台、仪器柜、通风橱等设施</li>
+        <li>点击仪器查看名称和用途（酒精灯、试管、铁架台等）</li>
+        <li><strong>时长：</strong>约8分钟</li>
+      </ul>
+    </div>
+    <div id="levelInter" class="level-content">
+      <p><strong>📈 进阶：系统模拟——模拟化学反应微观过程</strong></p>
+      <ul>
+        <li>观察"铁在氧气中燃烧"的微观粒子运动</li>
+        <li>操作面板：可调节温度、浓度等参数</li>
+        <li>实时观察参数变化对反应速率和产物形态的影响</li>
+        <li><strong>时长：</strong>约15分钟</li>
+      </ul>
+    </div>
+    <div id="levelAdv" class="level-content">
+      <p><strong>🏆 挑战：角色体验——扮演化学工程师完成虚拟项目</strong></p>
+      <ul>
+        <li>角色：你是一名"绿色化工工程师"</li>
+        <li>任务：设计一个铁制品防锈方案，在虚拟环境中测试不同防锈方法的效果</li>
+        <li>评估指标：防锈效率、成本、环保性</li>
+        <li><strong>时长：</strong>约20分钟</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 观察任务 -->
+  <div class="card">
+    <h2>🔍 1. 观察任务</h2>
+    <p>进入VR场景后，重点观察以下内容：</p>
+    <div class="obs-grid">
+      <div class="obs-card" onclick="completeObs(this)">
+        <div class="emoji">🧪</div>
+        <div class="title">铁在氧气中燃烧</div>
+        <div class="desc">观察铁丝的燃烧现象：火星四射、生成黑色固体</div>
+      </div>
+      <div class="obs-card" onclick="completeObs(this)">
+        <div class="emoji">⚛️</div>
+        <div class="title">微观粒子运动</div>
+        <div class="desc">观察铁原子与氧分子在反应中的碰撞和重组过程</div>
+      </div>
+      <div class="obs-card" onclick="completeObs(this)">
+        <div class="emoji">🌡️</div>
+        <div class="title">能量变化</div>
+        <div class="desc">观察反应过程中温度/能量的变化指示</div>
+      </div>
+      <div class="obs-card" onclick="completeObs(this)">
+        <div class="emoji">📏</div>
+        <div class="title">反应条件对比</div>
+        <div class="desc">对比不同温度/浓度下的反应差异</div>
+      </div>
+    </div>
+    <p style="color:var(--text-secondary);font-size:13px;">👆 点击卡片标记为"已完成"</p>
+  </div>
+
+  <!-- 操作任务 -->
+  <div class="card">
+    <h2>🕹️ 2. 操作任务</h2>
+    <p>在VR环境中进行以下操作并记录发现：</p>
+    <ol>
+      <li><strong>调整温度：</strong>使用滑块将反应环境温度从 25°C 升至 500°C，观察粒子运动速度的变化</li>
+      <li><strong>拆解分子模型：</strong>用手柄抓取 Fe₂O₃ 分子模型，拆解后观察铁原子和氧原子的排布方式</li>
+      <li><strong>切换视角：</strong>从宏观视角切换到微观视角，对比两种尺度下看到的现象</li>
+      <li><strong>记录数据：</strong>完成下面记录表中的内容</li>
+    </ol>
+  </div>
+
+  <!-- 记录任务 -->
+  <div class="card">
+    <h2>📝 3. 记录任务</h2>
+    <p><strong>VR体验记录表</strong></p>
+    <table class="record-table">
+      <tr><th width="30%">记录项目</th><th>我的记录</th></tr>
+      <tr><td>我观察到的宏观现象</td><td><textarea rows="2" placeholder="如：铁丝在氧气中剧烈燃烧，火星四射，放出大量热，生成黑色固体" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:var(--font-body);"></textarea></td></tr>
+      <tr><td>我操作了什么参数</td><td><textarea rows="2" placeholder="如：我将温度从25°C调到了500°C，观察到粒子运动明显加快" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:var(--font-body);"></textarea></td></tr>
+      <tr><td>我的重要发现</td><td><textarea rows="2" placeholder="如：原来铁燃烧时，铁原子和氧分子在高温下快速碰撞并重新组合成氧化铁分子" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:var(--font-body);"></textarea></td></tr>
+    </table>
+    <button class="btn btn-outline" onclick="clearRecords()" style="margin-top:8px;">🔄 清空所有记录</button>
+  </div>
+
+  <!-- 资源推荐 -->
+  <div class="card">
+    <h2>📚 4. 资源推荐</h2>
+
+    <h3>VR 平台推荐</h3>
+    <div class="resource-card" onclick="highlightResource(this)">
+      <div class="r-icon">📱</div>
+      <div class="r-info">
+        <div class="r-name">化学VR实验室 · MEL Chemistry VR</div>
+        <div class="r-desc">沉浸式化学实验模拟，支持Oculus Quest / SteamVR</div>
+      </div>
+      <span class="vr-badge">推荐</span>
+    </div>
+    <div class="resource-card" onclick="highlightResource(this)">
+      <div class="r-icon">💻</div>
+      <div class="r-info">
+        <div class="r-name">3D分子模拟 · MolView</div>
+        <div class="r-desc">在线3D分子结构浏览器，无需安装，浏览器直接使用</div>
+      </div>
+    </div>
+    <div class="resource-card" onclick="highlightResource(this)">
+      <div class="r-icon">🌐</div>
+      <div class="r-info">
+        <div class="r-name">PhET互动模拟 (科罗拉多大学)</div>
+        <div class="r-desc">免费的化学、物理互动模拟，支持中文，适合无VR设备时使用</div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:16px;">🔄 替代方案（无VR设备时）</h3>
+    <ul>
+      <li><strong>360°全景视频：</strong>在YouTube/B站搜索"化学实验室 360°"或"化学反应 虚拟现实"</li>
+      <li><strong>3D模型互动：</strong>使用 MolView (molview.org) 搜索 Fe₂O₃、O₂、Fe 等分子结构</li>
+      <li><strong>优质实验动画：</strong>观看"美丽化学"系列视频（中国科学技术大学制作），展示4K超高清化学反应显微影像</li>
+      <li><strong>互动模拟：</strong>PhET化学模拟 (phet.colorado.edu/zh_CN/) — "化学反应与方程式"模块</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+function switchLevel(level) {
+  var tabs = document.querySelectorAll('.level-tab');
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].classList.remove('active');
+  }
+  var activeTab = document.querySelector('.level-tab[data-level="' + level + '"]');
+  if (activeTab) activeTab.classList.add('active');
+
+  var contents = ['basic', 'inter', 'adv'];
+  for (var j = 0; j < contents.length; j++) {
+    var el = document.getElementById('level' + contents[j].charAt(0).toUpperCase() + contents[j].slice(1));
+    if (el) {
+      el.classList.remove('active');
+    }
+  }
+  var targetMap = {basic: 'levelBasic', inter: 'levelInter', adv: 'levelAdv'};
+  var target = document.getElementById(targetMap[level]);
+  if (target) target.classList.add('active');
+}
+function completeObs(el) {
+  el.classList.toggle('completed');
+}
+function clearRecords() {
+  var textareas = document.querySelectorAll('.record-table textarea');
+  for (var i = 0; i < textareas.length; i++) {
+    textareas[i].value = '';
+  }
+}
+function highlightResource(el) {
+  el.style.background = '#d6e4ff';
+  setTimeout(function(){ el.style.background = '#f6f8fc'; }, 400);
+}
+</script>
+</body>
+</html>

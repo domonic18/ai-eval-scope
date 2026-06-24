@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性示例 — 完整化学解析示范案例</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+  --step-bg: #e6f4ff;
+  --success: #52c41a;
+  --warning: #fa8c16;
+  --danger: #ff4d4f;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+.header { text-align: center; padding: 24px 0 12px; }
+.header h1 { font-size: var(--font-h1); color: var(--primary); margin: 0 0 4px; }
+.header .subtitle { color: var(--text-secondary); margin: 0; font-size: 14px; }
+
+.goal-card { background: linear-gradient(135deg, var(--primary) 0%, #4096ff 100%); color: #fff; border-radius: var(--border-radius); padding: 18px 24px; margin-bottom: 24px; box-shadow: var(--shadow); }
+.goal-card h2 { font-size: var(--font-h2); margin: 0 0 6px; color: #fff; }
+.goal-card p { margin: 0; opacity: 0.92; }
+
+.section-title { font-size: var(--font-h2); color: var(--text); margin: 28px 0 14px; padding-left: 12px; border-left: 4px solid var(--primary); }
+
+/* Scenario card */
+.scenario-box { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 16px; }
+.scenario-box .highlight { background: #fff7e6; border: 1px solid #ffd591; border-radius: 6px; padding: 12px 16px; margin: 10px 0; }
+
+/* Table styling */
+.data-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+.data-table th { background: var(--primary); color: #fff; padding: 10px 14px; text-align: left; font-weight: 600; }
+.data-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: #f0f5ff; }
+.data-table .col-info { font-weight: 500; }
+.data-table .col-meaning { color: var(--text); }
+.data-table .col-why { color: var(--text-secondary); font-size: 13px; }
+
+/* Step cards */
+.step-list { display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
+.step-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); overflow: hidden; }
+.step-header { padding: 14px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px; user-select: none; }
+.step-header:hover { background: rgba(22,119,255,0.03); }
+.step-header .arrow { transition: transform .3s; font-size: 12px; color: var(--text-secondary); }
+.step-header.open .arrow { transform: rotate(90deg); }
+.step-header .s-num { display: inline-flex; width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: #fff; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0; }
+.step-header .s-title { font-weight: 600; font-size: 16px; flex: 1; }
+.step-body { max-height: 0; overflow: hidden; transition: max-height .5s ease; }
+.step-body.open { max-height: 1200px; }
+.step-inner { padding: 0 20px 20px; }
+.step-inner p { margin: 6px 0; }
+.step-inner .think-label { font-weight: 600; color: var(--primary); font-size: 13px; margin-top: 10px; }
+.step-inner .think-label:first-child { margin-top: 0; }
+.step-inner .think-box { background: #f6ffed; border: 1px solid #b7eb8f; border-radius: 6px; padding: 12px 16px; margin: 8px 0; }
+
+/* Conclusion box */
+.conclusion-box { background: linear-gradient(135deg, #f6ffed, #f0f5ff); border: 1px solid #b7eb8f; border-radius: var(--border-radius); padding: 20px; margin-bottom: 16px; }
+
+/* Method card */
+.method-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 16px; }
+.method-card .method-item { display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-start; }
+.method-card .method-item .m-num { display: inline-flex; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+
+/* Mistake cards */
+.mistake-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin: 12px 0; }
+.mistake-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 16px 18px; border-left: 4px solid var(--danger); }
+.mistake-card .m-title { font-weight: 600; color: var(--danger); }
+.mistake-card .m-avoid { margin-top: 6px; font-size: 13px; color: var(--success); }
+
+/* Practice box */
+.practice-box { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 16px; }
+.practice-box .p-hint { background: #fffbe6; border: 1px solid #ffe58f; border-radius: 6px; padding: 12px 16px; margin-top: 10px; display: none; }
+.practice-box .p-hint.show { display: block; }
+.practice-box .hint-toggle { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 6px 14px; cursor: pointer; font-size: 13px; color: var(--primary); margin-top: 8px; }
+.practice-box .hint-toggle:hover { background: #e6f4ff; }
+
+/* Self assessment */
+.assessment-list { display: flex; flex-direction: column; gap: 10px; margin: 12px 0 20px; }
+.assess-item { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 14px 18px; display: flex; align-items: center; gap: 12px; }
+.assess-item .a-check { width: 20px; height: 20px; border: 2px solid var(--border); border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #fff; transition: all .2s; flex-shrink: 0; }
+.assess-item .a-check.checked { background: var(--success); border-color: var(--success); }
+.assess-item .a-check.checked::after { content: "✓"; }
+.assess-item .a-text { flex: 1; }
+
+.footer-note { text-align: center; color: var(--text-secondary); font-size: 13px; padding: 16px 0 28px; border-top: 1px solid var(--border); margin-top: 12px; }
+
+@media (max-width: 640px) {
+  .container { padding: 16px; }
+  .data-table { font-size: 12px; }
+  .data-table th, .data-table td { padding: 6px 8px; }
+  .mistake-list { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🔬 解析性示例</h1>
+  <p class="subtitle">M8 新知科学思维 — 完整化学解析示范案例</p>
+</div>
+
+<div class="goal-card">
+  <h2>🎯 学习目标</h2>
+  <p>通过一个完整的化学解析示范案例，学习"专家如何分析问题"，理解从观察到结论的完整思维过程，并获得可迁移的方法。</p>
+</div>
+
+<!-- 1. 解析任务情境 -->
+<h2 class="section-title">一、解析任务情境</h2>
+<div class="scenario-box">
+  <p>你在化学实验室整理药品柜时，发现一瓶白色固体粉末，标签已脱落，无法直接知道它是什么物质。实验室可能存在的白色固体有：<strong>碳酸钙（CaCO₃）</strong>、<strong>碳酸钠（Na₂CO₃）</strong>、<strong>氯化钠（NaCl）</strong>、<strong>氢氧化钠（NaOH）</strong>。</p>
+  <div class="highlight">
+    <p><strong>🧪 情境设定：</strong>你面前只有这瓶白色粉末和实验室常见的试剂（稀盐酸、蒸馏水、pH试纸、澄清石灰水、酒精灯等）。需要你像一位化学侦探一样，一步步缩小范围，最终锁定它到底是什么。</p>
+  </div>
+</div>
+
+<!-- 2. 核心问题 -->
+<h2 class="section-title">二、核心问题</h2>
+<div class="scenario-box" style="background:#fff7e6;border:1px solid #ffd591;">
+  <p style="font-size:18px;font-weight:600;color:#d46b08;text-align:center;">如何通过化学方法一步步推断这瓶白色粉末的身份？</p>
+  <p style="text-align:center;color:var(--text-secondary);margin-top:6px;">—— 核心思维：不是"它是什么"，而是"我怎样证明它是什么"</p>
+</div>
+
+<!-- 3. 关键信息提取 -->
+<h2 class="section-title">三、关键信息提取</h2>
+<div class="scenario-box">
+  <p style="margin-bottom:10px;">在动手实验前，先整理已有的信息，明确每一条信息对解决问题的价值：</p>
+  <table class="data-table">
+    <tr>
+      <th style="width:28%;">情境信息</th>
+      <th style="width:36%;">这个信息说明什么</th>
+      <th style="width:36%;">为什么对解决问题重要</th>
+    </tr>
+    <tr>
+      <td class="col-info">白色粉末状固体</td>
+      <td class="col-meaning">四种候选物质都是白色固体，仅凭颜色无法区分</td>
+      <td class="col-why">需要通过其他性质进一步鉴别，不能仅靠外观下结论</td>
+    </tr>
+    <tr>
+      <td class="col-info">标签已脱落</td>
+      <td class="col-meaning">无法直接获知物质名称，必须通过实验验证</td>
+      <td class="col-why">这是问题的起源——我们需要设计实验来"重新确认"它的身份</td>
+    </tr>
+    <tr>
+      <td class="col-info">可能来自化学实验室</td>
+      <td class="col-meaning">候选范围是可溶性或微溶性的常见化学试剂</td>
+      <td class="col-why">可以列出可能物质的清单，缩小鉴定范围</td>
+    </tr>
+    <tr>
+      <td class="col-info">四种候选物质的化学性质差异</td>
+      <td class="col-meaning">CaCO₃不溶于水；Na₂CO₃水溶液呈碱性；NaCl中性；NaOH强碱性且有腐蚀性</td>
+      <td class="col-why">每种物质的独特性质就是鉴别的"钥匙"——找到差异点就能逐一排除</td>
+    </tr>
+  </table>
+</div>
+
+<!-- 4. 专家解析过程 -->
+<h2 class="section-title">四、专家解析过程</h2>
+<p style="color:var(--text-secondary);margin-bottom:12px;">点击每一步展开详细分析，注意每一步末尾的<strong>"为什么这样想"</strong>说明</p>
+
+<div class="step-list">
+
+  <!-- 步骤1 -->
+  <div class="step-card">
+    <div class="step-header" onclick="toggleStep(this)">
+      <span class="arrow">▶</span>
+      <span class="s-num">1</span>
+      <span class="s-title">先看见什么 — 观察</span>
+    </div>
+    <div class="step-body">
+      <div class="step-inner">
+        <p>首先对白色粉末进行<strong>直接观察</strong>：</p>
+        <ul style="padding-left:18px;">
+          <li><strong>颜色和状态：</strong>白色、粉末状、无特殊气味</li>
+          <li><strong>取少量放入水中：</strong>大部分溶解了，但有一些细小颗粒不溶</li>
+        </ul>
+        <div class="think-label">🤔 为什么关注这些信息？</div>
+        <div class="think-box">
+          <p>因为四种候选物质在水中的溶解性不同！<strong>碳酸钙（CaCO₃）难溶于水</strong>，而碳酸钠、氯化钠、氢氧化钠都易溶于水。如果白色粉末在水中完全溶解，就可以先排除碳酸钙；如果部分不溶，反而提示可能是碳酸钙。</p>
+          <p>在本案例中，<strong>大部分溶解但有少量不溶</strong>——这个现象很关键，说明可能存在少量杂质，但主要成分是可溶性的。所以碳酸钙的可能性降低，但仍不能完全排除。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 步骤2 -->
+  <div class="step-card">
+    <div class="step-header" onclick="toggleStep(this)">
+      <span class="arrow">▶</span>
+      <span class="s-num">2</span>
+      <span class="s-title">判断问题属于哪一类 — 归类</span>
+    </div>
+    <div class="step-body">
+      <div class="step-inner">
+        <p>这是一个<strong>物质鉴别类问题</strong>——需要在多个可能物质中确定唯一正确的那一个。</p>
+        <p><strong>这类问题的通用特征：</strong></p>
+        <ul style="padding-left:18px;">
+          <li>给出一个待鉴定的物质和若干候选物质</li>
+          <li>候选物质在某些性质上相似，在某些性质上有差异</li>
+          <li>需要利用差异点设计实验来逐一排除</li>
+        </ul>
+        <div class="think-label">🤔 为什么这样归类？</div>
+        <div class="think-box">
+          <p>识别出问题类型后，就可以调用该类问题的<strong>标准解题框架</strong>：<em>"列出候选 → 找差异点 → 设计实验 → 逐项排除 → 最终确认"</em>。这比"试试看这样做行不行"要高效得多。</p>
+          <p>类似于你在数学中识别出"这是一个一元二次方程"后，就会用公式法或配方法来解——<strong>归类让我们能调用已经验证过的解题策略</strong>。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 步骤3 -->
+  <div class="step-card">
+    <div class="step-header" onclick="toggleStep(this)">
+      <span class="arrow">▶</span>
+      <span class="s-num">3</span>
+      <span class="s-title">调用哪些概念、原理或方法 — 知识检索</span>
+    </div>
+    <div class="step-body">
+      <div class="step-inner">
+        <p>解决这个问题需要调用的核心化学概念：</p>
+        <ul style="padding-left:18px;">
+          <li><strong>溶解性：</strong>CaCO₃难溶于水，其他三种易溶</li>
+          <li><strong>酸碱性：</strong>NaOH强碱性（pH≈13）、Na₂CO₃弱碱性（pH≈10）、NaCl中性（pH=7）、CaCO₃悬浊液弱碱性</li>
+          <li><strong>与酸反应：</strong>碳酸盐（CaCO₃、Na₂CO₃）与盐酸反应产生CO₂气体；NaCl、NaOH不与盐酸产生气体</li>
+          <li><strong>特定离子反应：</strong>Ca²⁺与CO₃²⁻结合生成白色沉淀</li>
+        </ul>
+        <div class="think-label">🤔 为什么选择这些概念？</div>
+        <div class="think-box">
+          <p>选择的标准很明确：<strong>这个概念是否能帮助我们区分候选物质？</strong>比如"颜色"不能区分（都是白色），就不值得关注；而"溶解性""酸碱性""与酸反应"这三个维度上四种物质的表现各不相同，就是有价值的鉴别维度。</p>
+          <p><strong>原理调用：现象→本质法</strong> — 物质的宏观性质（溶解性、酸碱性）是由其微观结构和化学组成决定的，反过来我们可以通过测试宏观性质来反推微观组成。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 步骤4 -->
+  <div class="step-card">
+    <div class="step-header" onclick="toggleStep(this)">
+      <span class="arrow">▶</span>
+      <span class="s-num">4</span>
+      <span class="s-title">如何进行推理或分析 — 逻辑推演</span>
+    </div>
+    <div class="step-body">
+      <div class="step-inner">
+        <p>设计推理路线：<strong>从最容易测试的性质开始，逐步缩小范围。</strong></p>
+        <p><strong>推理步骤：</strong></p>
+        <ul style="padding-left:18px;">
+          <li><strong>实验①：溶解性测试</strong><br>
+            取少量样品于试管中，加蒸馏水振荡。<br>
+            → 观察：<strong>大部分溶解</strong>（但有极少量不溶）<br>
+            → 推断：主要成分不是CaCO₃（CaCO₃几乎不溶），但仍需进一步确认</li>
+          <li><strong>实验②：酸碱度测试</strong><br>
+            用玻璃棒蘸取样品溶液，点在pH试纸上，与标准比色卡对比。<br>
+            → 观察：pH ≈ 10（弱碱性）<br>
+            → 推断：不是NaCl（中性），也不是NaOH（强碱性，pH≈13），很可能是Na₂CO₃</li>
+          <li><strong>实验③：与盐酸反应</strong><br>
+            取少量样品于试管中，滴加稀盐酸，将产生的气体通入澄清石灰水。<br>
+            → 观察：产生大量气泡，澄清石灰水变浑浊<br>
+            → 推断：气体是CO₂，样品是碳酸盐。Na₂CO₃ + 2HCl → 2NaCl + H₂O + CO₂↑</li>
+        </ul>
+        <div class="think-label">🤔 为什么这样推理？</div>
+        <div class="think-box">
+          <p><strong>原理调用：证据链法 + 溯因推理法</strong></p>
+          <p>每一步都在做"排除"——每做完一个实验，候选物质就少几个：</p>
+          <p style="margin-top:4px;">候选4种 → (溶解性测试) → 排除CaCO₃ → (pH测试) → 排除NaCl和NaOH → (与酸反应) → 确认是Na₂CO₃ ✅</p>
+          <p>三个实验各提供了一条独立的证据，三条证据指向同一个结论——这就是<strong>证据链</strong>的力量。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 步骤5 -->
+  <div class="step-card">
+    <div class="step-header" onclick="toggleStep(this)">
+      <span class="arrow">▶</span>
+      <span class="s-num">5</span>
+      <span class="s-title">怎样形成结论 — 综合判断</span>
+    </div>
+    <div class="step-body">
+      <div class="step-inner">
+        <p><strong>综合三条证据：</strong></p>
+        <ul style="padding-left:18px;">
+          <li>✅ 易溶于水 → <em>排除了CaCO₃</em></li>
+          <li>✅ 水溶液呈弱碱性（pH≈10） → <em>排除了NaCl和NaOH</em></li>
+          <li>✅ 与盐酸反应产生CO₂ → <em>确认是碳酸盐</em></li>
+        </ul>
+        <p><strong>最终结论：</strong>这瓶白色粉末是<strong>碳酸钠（Na₂CO₃）</strong>。</p>
+        <p style="margin-top:6px;"><strong>验证方法（模型检验）：</strong>取少量样品溶液，滴加氯化钙溶液。如果产生白色沉淀（CaCO₃），则进一步确认是碳酸钠——因为Na₂CO₃ + CaCl₂ → CaCO₃↓ + 2NaCl。</p>
+        <div class="think-label">🤔 结论为什么可靠？</div>
+        <div class="think-box">
+          <p><strong>原理调用：模型检验法</strong></p>
+          <p>真正的科学结论不仅仅是"我猜它是Na₂CO₃"，而是"我根据它的性质做了预测，实验验证了预测"。结论的可靠性来源于：</p>
+          <p>① <strong>多证据交叉验证</strong>（不是只靠一个实验）</p>
+          <p>② <strong>逐层排除</strong>（每步减少可能性，而不是直接跳到结论）</p>
+          <p>③ <strong>可验证</strong>（别人用同样的方法能得到同样的结果）</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 5. 结论表达 -->
+<h2 class="section-title">五、结论表达</h2>
+<div class="conclusion-box">
+  <p style="font-size:16px;font-weight:600;">🔬 本案解析结论</p>
+  <p style="margin-top:6px;">通过溶解性测试、pH测定、与酸反应三个递进实验，综合判断这瓶未知白色粉末为<strong>碳酸钠（Na₂CO₃）</strong>。碳酸钠俗称<strong>纯碱</strong>或<strong>苏打</strong>，是实验室常用的碱性试剂，它的水溶液呈弱碱性，能与酸反应产生二氧化碳气体，与含Ca²⁺或Ba²⁺的溶液反应生成白色沉淀。</p>
+</div>
+
+<!-- 6. 方法提炼 -->
+<h2 class="section-title">六、方法提炼</h2>
+<div class="method-card">
+  <p style="margin-bottom:10px;"><strong>以后遇到"未知物质鉴定"类问题，可以这样做：</strong></p>
+  <div class="method-item"><span class="m-num">1</span> <span><strong>列清单</strong> — 列出所有可能是什么物质（缩小范围）</span></div>
+  <div class="method-item"><span class="m-num">2</span> <span><strong>找差异</strong> — 找出这些物质在物理/化学性质上的不同点</span></div>
+  <div class="method-item"><span class="m-num">3</span> <span><strong>定顺序</strong> — 从最简单、最安全的实验开始，逐步推进</span></div>
+  <div class="method-item"><span class="m-num">4</span> <span><strong>做排除</strong> — 每做一个实验就排除一批候选，缩小范围</span></div>
+  <div class="method-item"><span class="m-num">5</span> <span><strong>交叉验</strong> — 至少用2-3条独立证据指向同一个结论</span></div>
+  <div class="method-item"><span class="m-num">6</span> <span><strong>再验证</strong> — 用预测验证法（模型检验）确认结论无误</span></div>
+  <p style="color:var(--primary);margin-top:8px;">💡 这个方法不仅适用于化学鉴别题，也适用于任何"从多个选项中找出正确的那一个"的问题情境！</p>
+</div>
+
+<!-- 7. 易错提醒 -->
+<h2 class="section-title">七、易错提醒</h2>
+<div class="mistake-list">
+  <div class="mistake-card">
+    <div class="m-title">❌ 误区一：只看一个证据就下结论</div>
+    <p style="margin-top:4px;">有些人做完"加盐酸冒气泡"就断定是碳酸钠。但碳酸钙加盐酸也冒泡！如果没有先做溶解性测试和pH测试，就可能把碳酸钙误判为碳酸钠。</p>
+    <div class="m-avoid">✅ <strong>如何避免：</strong>坚持"至少两条独立证据"原则。</div>
+  </div>
+  <div class="mistake-card">
+    <div class="m-title">❌ 误区二：忽略"排除"的价值</div>
+    <p style="margin-top:4px;">有些人总想"直接证明它是什么"，但实际上"证明它不是其他物质"往往更容易操作。四个选项中排除三个，剩下的就是答案。</p>
+    <div class="m-avoid">✅ <strong>如何避免：</strong>先列出候选清单，然后逐条排除，而非试图一步到位。</div>
+  </div>
+  <div class="mistake-card">
+    <div class="m-title">❌ 误区三：忘记验证自己的结论</div>
+    <p style="margin-top:4px;">得出"是碳酸钠"的结论后，直接写入实验报告，没有再做一个验证实验来确认。科学不能只靠"觉得对"——要主动寻找支持或反驳的证据。</p>
+    <div class="m-avoid">✅ <strong>如何避免：</strong>问自己"如果它真的是Na₂CO₃，它还会有什么性质？"然后动手验证这个预测。</div>
+  </div>
+</div>
+
+<!-- 8. 自主迁移小练习 -->
+<h2 class="section-title">八、自主迁移小练习</h2>
+<div class="practice-box">
+  <p style="font-weight:600;">🧪 练习任务：</p>
+  <p>你在家里发现一包白色颗粒状的粉末，标签写着"可用来清洗水果"。它可能是小苏打（NaHCO₃）或食用碱（Na₂CO₃）。<strong>请设计一个家庭可行的实验方案来区分它们。</strong></p>
+  <p style="margin-top:8px;color:var(--text-secondary);">（提示：小苏打和食用碱都是碳酸盐，但它们的稳定性不同——加热时小苏打会分解，食用碱不会。）</p>
+  <button class="hint-toggle" onclick="togglePracticeHint(this)">💡 查看必要提示</button>
+  <div class="p-hint">
+    <p><strong>可用的方法参考：</strong></p>
+    <p>① 取少量样品于耐热容器中，用白醋代替盐酸（家庭没有盐酸），观察气泡产生的剧烈程度——小苏打反应更剧烈？还是食用碱？</p>
+    <p>② 取少量样品放在铝箔上，用蜡烛加热，观察是否有气体产生、固体是否变色——小苏打加热分解：2NaHCO₃ → Na₂CO₃ + H₂O + CO₂↑</p>
+    <p>③ 各取少量样品溶解于水，用pH试纸测试——两者水溶液都呈碱性，但碱性强弱略有差异。</p>
+    <p><strong>⚠️ 注意：</strong>这里只给了方向，不给完整答案——真正的学习发生在你自己尝试解决问题的过程中。</p>
+  </div>
+</div>
+
+<!-- 9. 学习自评 -->
+<h2 class="section-title">九、学习自评</h2>
+<p style="color:var(--text-secondary);margin-bottom:10px;">点击下方的复选框，检验自己是否真正理解了这个解析过程：</p>
+
+<div class="assessment-list" id="assessList">
+  <div class="assess-item">
+    <div class="a-check" onclick="toggleCheck(this)"></div>
+    <div class="a-text">我能说清楚"为什么第一步要做溶解性测试"而不做别的实验</div>
+  </div>
+  <div class="assess-item">
+    <div class="a-check" onclick="toggleCheck(this)"></div>
+    <div class="a-text">我能理解"排除法"在物质鉴别中的作用——排除三个，剩下就是答案</div>
+  </div>
+  <div class="assess-item">
+    <div class="a-check" onclick="toggleCheck(this)"></div>
+    <div class="a-text">我至少能说出两条解析性原理在本案例中是如何运用的</div>
+  </div>
+  <div class="assess-item">
+    <div class="a-check" onclick="toggleCheck(this)"></div>
+    <div class="a-text">我遇到新物质鉴别题时，知道按照"列清单→找差异→定顺序→做排除→交叉验→再验证"来思考</div>
+  </div>
+  <div class="assess-item">
+    <div class="a-check" onclick="toggleCheck(this)"></div>
+    <div class="a-text">我已经尝试了"自主迁移小练习"，并且有了自己的实验方案</div>
+  </div>
+</div>
+
+<div style="text-align:center;padding:10px;color:var(--text-secondary);" id="assessStatus">已勾选 0/5 项</div>
+<button style="display:block;margin:0 auto 20px;padding:8px 28px;background:var(--primary);color:#fff;border:none;border-radius:var(--border-radius);cursor:pointer;font-size:14px;" onclick="resetAssess()">🔄 重置</button>
+
+<div class="footer-note">🔬 解析性示例 · 像科学家一样思考</div>
+</div>
+
+<script>
+function toggleStep(header) {
+  header.classList.toggle('open');
+  var body = header.nextElementSibling;
+  if (body) body.classList.toggle('open');
+}
+
+function togglePracticeHint(btn) {
+  var box = btn.nextElementSibling;
+  if (box) {
+    box.classList.toggle('show');
+    btn.textContent = box.classList.contains('show') ? '🙈 隐藏提示' : '💡 查看必要提示';
+  }
+}
+
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+  updateAssess();
+}
+
+function updateAssess() {
+  var checked = document.querySelectorAll('#assessList .a-check.checked').length;
+  document.getElementById('assessStatus').textContent = '已勾选 ' + checked + '/5 项' + (checked === 5 ? ' —— 全部掌握！🎉' : '');
+}
+
+function resetAssess() {
+  document.querySelectorAll('#assessList .a-check').forEach(function(el) {
+    el.classList.remove('checked');
+  });
+  document.getElementById('assessStatus').textContent = '已勾选 0/5 项';
+}
+</script>
+</body>
+</html>

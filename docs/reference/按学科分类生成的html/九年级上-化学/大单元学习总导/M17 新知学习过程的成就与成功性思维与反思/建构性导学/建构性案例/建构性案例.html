@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性案例</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+}
+
+.page-header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  padding: 28px 36px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+
+.page-header h1 {
+  margin: 0 0 6px 0;
+  font-size: var(--font-h1);
+  font-weight: 700;
+}
+
+.page-header .subtitle {
+  opacity: 0.9;
+  font-size: 14px;
+}
+
+.section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+.section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 16px 0;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--accent);
+}
+
+.case-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.case-filter-btn {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.case-filter-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.case-filter-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.case-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  margin-bottom: 16px;
+  overflow: hidden;
+  transition: box-shadow 0.2s, opacity 0.3s;
+}
+
+.case-card.faded {
+  opacity: 0.4;
+}
+
+.case-card:hover {
+  box-shadow: 0 4px 16px rgba(22,119,255,0.1);
+}
+
+.case-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  cursor: pointer;
+  user-select: none;
+  background: var(--bg);
+  transition: background 0.2s;
+}
+
+.case-header:hover {
+  background: #e6f4ff;
+}
+
+.case-header .case-icon {
+  font-size: 24px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.case-header .case-type {
+  font-size: 12px;
+  color: var(--primary);
+  background: #e6f4ff;
+  padding: 2px 10px;
+  border-radius: 10px;
+  display: inline-block;
+}
+
+.case-header .case-title {
+  flex: 1;
+  font-weight: 600;
+  font-size: 16px;
+  margin: 0;
+}
+
+.case-header .expand-icon {
+  font-size: 16px;
+  transition: transform 0.3s;
+  color: var(--text-secondary);
+}
+
+.case-card.open .expand-icon {
+  transform: rotate(180deg);
+}
+
+.case-body {
+  display: none;
+  padding: 0 20px 20px 20px;
+  border-top: 1px solid var(--border);
+}
+
+.case-card.open .case-body {
+  display: block;
+}
+
+.case-body p { margin: 10px 0; }
+
+.case-body .step-list {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+  counter-reset: step;
+}
+
+.case-body .step-item {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.case-body .step-item::before {
+  counter-increment: step;
+  content: "第" counter(step) "步";
+  white-space: nowrap;
+  color: var(--primary);
+  font-weight: 600;
+  min-width: 52px;
+}
+
+.case-body .principle-badge {
+  display: inline-block;
+  background: #e6f4ff;
+  color: var(--primary);
+  font-size: 12px;
+  padding: 3px 12px;
+  border-radius: 12px;
+  margin: 2px 4px 2px 0;
+}
+
+.case-body .output-box {
+  background: #fffbe6;
+  border: 1px solid #fadb14;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 10px 0;
+  font-size: 13px;
+}
+
+.case-body .output-box strong {
+  color: #d48806;
+}
+
+.legend-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.legend-item {
+  font-size: 12px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-header">
+    <h1>建构性案例</h1>
+    <div class="subtitle">化学 · 九年级上 · 七阶适配案例：从个人理解到综合创新</div>
+  </div>
+
+  <div class="section">
+    <h2>建构性七阶适配案例</h2>
+    <p style="margin-top:-8px;margin-bottom:12px;color:var(--text-secondary);font-size:14px;">7 个不同维度的建构任务，点击展开查看完整设计。完成全部 7 个案例后，你将拥有一份属于自己的"化学学习成功思维手册"。</p>
+
+    <div class="legend-row">
+      <span class="legend-item">🔵 点击标题栏展开/收起</span>
+      <span class="legend-item">🟢 每个案例包含情境、任务、步骤、成果</span>
+    </div>
+
+    <div class="case-filters">
+      <button class="case-filter-btn active" onclick="filterCases('all', this)">📋 全部</button>
+      <button class="case-filter-btn" onclick="filterCases('个人', this)">🧑 个人理解</button>
+      <button class="case-filter-btn" onclick="filterCases('生活', this)">🏠 生活应用</button>
+      <button class="case-filter-btn" onclick="filterCases('校园', this)">🏫 校园问题</button>
+      <button class="case-filter-btn" onclick="filterCases('学科', this)">🎤 学科表达</button>
+      <button class="case-filter-btn" onclick="filterCases('跨学科', this)">🔗 跨学科</button>
+      <button class="case-filter-btn" onclick="filterCases('社会', this)">🌍 社会未来</button>
+      <button class="case-filter-btn" onclick="filterCases('综合', this)">🌟 综合创新</button>
+    </div>
+
+    <!-- Case 1 -->
+    <div class="case-card open" data-type="个人">
+      <div class="case-header" onclick="toggleCase(this)">
+        <div class="case-icon">🧑</div>
+        <div>
+          <span class="case-type">个人理解型</span>
+          <p class="case-title">我的"走进化学世界"概念图</p>
+        </div>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="case-body">
+        <p><strong>建构情境：</strong>你刚学完化学的定义——化学是研究物质的组成、结构、性质及变化规律的科学。但"组成、结构、性质、变化规律"这四个词对你来说还很抽象。你需要用自己的方式理解它们之间的关系。</p>
+        <p><strong>建构任务：</strong>绘制一张"化学研究对象关系图"，用你自己的逻辑把"组成—结构—性质—变化规律"串联起来。</p>
+        <p><strong>原理调用：</strong><span class="principle-badge">证据驱动法</span><span class="principle-badge">表达外化法</span></p>
+        <div class="step-list">
+          <div class="step-item">收集关键概念</div>
+          <div class="step-item">找关系</div>
+          <div class="step-item">画关系</div>
+          <div class="step-item">标注例子</div>
+          <div class="step-item">完善</div>
+        </div>
+        <div class="output-box"><strong>📐 成果表达：</strong>A4纸手绘概念图，至少包含8个关键术语和5条连接关系，每条关系旁标注简短解释。</div>
+      </div>
+    </div>
+
+    <!-- Case 2 -->
+    <div class="case-card" data-type="生活">
+      <div class="case-header" onclick="toggleCase(this)">
+        <div class="case-icon">🏠</div>
+        <div>
+          <span class="case-type">生活应用型</span>
+          <p class="case-title">厨房里的化学物质检验方案</p>
+        </div>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="case-body">
+        <p><strong>建构情境：</strong>妈妈怀疑家里的食盐（氯化钠）里混入了小苏打（碳酸氢钠），但无法确定。你学过化学变化的基本特征，可以设计一个简单方案帮妈妈检验。</p>
+        <p><strong>建构任务：</strong>设计一份"厨房化学检验方案说明书"，包含检验原理、步骤、预期现象和结论判断标准。</p>
+        <p><strong>原理调用：</strong><span class="principle-badge">情境锚定法</span><span class="principle-badge">证据驱动法</span></p>
+        <div class="step-list">
+          <div class="step-item">明确问题</div>
+          <div class="step-item">查阅资料</div>
+          <div class="step-item">设计方案</div>
+          <div class="step-item">预测现象</div>
+          <div class="step-item">完善安全提示</div>
+        </div>
+        <div class="output-box"><strong>📐 成果表达：</strong>一张说明书卡片，正面是操作步骤，背面是原理说明。</div>
+      </div>
+    </div>
+
+    <!-- Case 3 -->
+    <div class="case-card" data-type="校园">
+      <div class="case-header" onclick="toggleCase(this)">
+        <div class="case-icon">🏫</div>
+        <div>
+          <span class="case-type">校园问题解决型</span>
+          <p class="case-title">实验室药品分类存放建议</p>
+        </div>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="case-body">
+        <p><strong>建构情境：</strong>你发现学校化学实验室的药品柜里，固体和液体混放在一起，有些瓶子的标签已经模糊。老师请你帮忙设计一个合理的分类存放方案。</p>
+        <p><strong>建构任务：</strong>设计一份"化学实验室药品分类存放建议方案"，考虑分类依据、存放原则和安全注意事项。</p>
+        <p><strong>原理调用：</strong><span class="principle-badge">经验激活法</span><span class="principle-badge">反思迭代法</span></p>
+        <div class="step-list">
+          <div class="step-item">调研现状</div>
+          <div class="step-item">确定分类标准</div>
+          <div class="step-item">绘制布局图</div>
+          <div class="step-item">标注注意事项</div>
+          <div class="step-item">安全自查</div>
+          <div class="step-item">同行评审</div>
+        </div>
+        <div class="output-box"><strong>📐 成果表达：</strong>药品柜分层布局手绘图 + 分类说明文字。</div>
+      </div>
+    </div>
+
+    <!-- Case 4 -->
+    <div class="case-card" data-type="学科">
+      <div class="case-header" onclick="toggleCase(this)">
+        <div class="case-icon">🎤</div>
+        <div>
+          <span class="case-type">学科表达型</span>
+          <p class="case-title">"化学变化与物理变化"三分钟讲解稿</p>
+        </div>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="case-body">
+        <p><strong>建构情境：</strong>学校科技节上，你需要用3分钟给低年级同学讲清"化学变化和物理变化的区别"，但不能用专业术语吓跑他们。</p>
+        <p><strong>建构任务：</strong>创作一份"三分钟科普讲解稿+配套演示方案"，用生活中的例子说清核心概念。</p>
+        <p><strong>原理调用：</strong><span class="principle-badge">经验激活法</span><span class="principle-badge">表达外化法</span></p>
+        <div class="step-list">
+          <div class="step-item">确定2—3个核心要点</div>
+          <div class="step-item">设计生活类比</div>
+          <div class="step-item">配简易演示</div>
+          <div class="step-item">写讲解稿</div>
+          <div class="step-item">试讲优化</div>
+        </div>
+        <div class="output-box"><strong>📐 成果表达：</strong>讲解稿（300—500字）+ 一套简易演示动作或道具说明。</div>
+      </div>
+    </div>
+
+    <!-- Case 5 -->
+    <div class="case-card" data-type="跨学科">
+      <div class="case-header" onclick="toggleCase(this)">
+        <div class="case-icon">🔗</div>
+        <div>
+          <span class="case-type">跨学科整合型</span>
+          <p class="case-title">金属生锈的"侦探报告"</p>
+        </div>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="case-body">
+        <p><strong>建构情境：</strong>你家阳台的铁栏杆生锈了，但同材质的不锈钢水龙头却没有。你想从化学、物理和日常使用环境角度综合分析：为什么同样的材料在不同地方命运不同？</p>
+        <p><strong>建构任务：</strong>撰写一份"铁栏杆生锈侦探分析报告"，融合化学（铁生锈的条件）、物理（接触面积、湿度）、环境（位置差异）等多角度分析。</p>
+        <p><strong>原理调用：</strong><span class="principle-badge">证据驱动法</span><span class="principle-badge">情境锚定法</span></p>
+        <div class="step-list">
+          <div class="step-item">现场观察记录</div>
+          <div class="step-item">假设影响因素</div>
+          <div class="step-item">设计验证方案</div>
+          <div class="step-item">分析原因</div>
+          <div class="step-item">提出防锈建议</div>
+        </div>
+        <div class="output-box"><strong>📐 成果表达：</strong>A4纸侦探报告，包含现场手绘图、分析流程图、防锈建议。</div>
+      </div>
+    </div>
+
+    <!-- Case 6 -->
+    <div class="case-card" data-type="社会">
+      <div class="case-header" onclick="toggleCase(this)">
+        <div class="case-icon">🌍</div>
+        <div>
+          <span class="case-type">社会/未来情境型</span>
+          <p class="case-title">"绿色化学实验室"设计提案</p>
+        </div>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="case-body">
+        <p><strong>建构情境：</strong>你了解到化学工业给环境带来了污染，但现代化学正在向"绿色化学"转型——从源头减少有害物质的使用和产生。假如你有机会设计一个理想中的绿色化学实验室，你会怎么设计？</p>
+        <p><strong>建构任务：</strong>设计一份"中学生绿色化学实验室设计方案"，包含环保材料选择、废液处理、节能措施和实验安全教育四个维度。</p>
+        <p><strong>原理调用：</strong><span class="principle-badge">反思迭代法</span><span class="principle-badge">表达外化法</span></p>
+        <div class="step-list">
+          <div class="step-item">研究绿色化学原则</div>
+          <div class="step-item">设计空间布局</div>
+          <div class="step-item">选择环保方案</div>
+          <div class="step-item">设计废液处理</div>
+          <div class="step-item">安全评估</div>
+          <div class="step-item">可视化表达</div>
+        </div>
+        <div class="output-box"><strong>📐 成果表达：</strong>A3纸设计效果图 + 分项说明文字（每个维度100字以内）。</div>
+      </div>
+    </div>
+
+    <!-- Case 7 -->
+    <div class="case-card" data-type="综合">
+      <div class="case-header" onclick="toggleCase(this)">
+        <div class="case-icon">🌟</div>
+        <div>
+          <span class="case-type">综合创新型</span>
+          <p class="case-title">"我的化学学习成功思维手册"终章</p>
+        </div>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="case-body">
+        <p><strong>建构情境：</strong>通过前面6个案例的建构练习，你已经积累了不少"如何学化学"的心得。现在是时候把这些经验和策略整合成一份属于你自己的学习哲学了。</p>
+        <p><strong>建构任务：</strong>汇编一份"我的化学学习成功思维手册"，包含你的建构性原理清单、最有效的学习方法总结、以及一个"遇到化学难题时的自救流程图"。</p>
+        <p><strong>原理调用：</strong><span class="principle-badge">复合运用所有5条建构性原理</span></p>
+        <div class="step-list">
+          <div class="step-item">回顾前6个案例</div>
+          <div class="step-item">提炼个人学习策略</div>
+          <div class="step-item">绘制自救流程图</div>
+          <div class="step-item">设计手册排版</div>
+          <div class="step-item">加入个人反思</div>
+          <div class="step-item">美化呈现</div>
+        </div>
+        <div class="output-box"><strong>📐 成果表达：</strong>小册子（2—4页，折叠或装订），包含文字、图表和流程图，风格个性化。</div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+function toggleCase(header) {
+  var card = header.closest('.case-card');
+  if (!card) return;
+  card.classList.toggle('open');
+}
+
+function filterCases(type, btn) {
+  var cards = document.querySelectorAll('.case-card');
+  var buttons = document.querySelectorAll('.case-filter-btn');
+
+  buttons.forEach(function(b) { b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+
+  cards.forEach(function(card) {
+    if (type === 'all') {
+      card.classList.remove('faded');
+    } else {
+      var cardType = card.getAttribute('data-type');
+      if (cardType === type) {
+        card.classList.remove('faded');
+      } else {
+        card.classList.add('faded');
+      }
+    }
+  });
+}
+</script>
+</body>
+</html>

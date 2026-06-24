@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>解析性示例 — 区分白糖和食盐</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  background: var(--bg);
+  color: var(--text);
+  margin: 0; padding: 0; width: 100%;
+}
+.container { width: 100%; max-width: none; padding: 20px; box-sizing: border-box; }
+.header { background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: #fff; padding: 24px; border-radius: var(--border-radius); margin-bottom: 24px; }
+.header h1 { font-size: var(--font-h1); margin-bottom: 6px; }
+.header p { font-size: 14px; opacity: 0.9; }
+.story-box { background: #fff; border-radius: var(--border-radius); padding: 20px; margin-bottom: 24px; box-shadow: var(--shadow); border: 1px solid var(--border); position: relative; }
+.story-box .scene-icon { font-size: 48px; text-align: center; margin-bottom: 12px; }
+.story-box h3 { text-align: center; margin-bottom: 12px; }
+.story-box p { font-size: 14px; margin-bottom: 10px; }
+.story-box .highlight { background: #fffbe6; border: 1px solid #ffe58f; border-radius: 8px; padding: 12px 16px; text-align: center; font-weight: 600; font-size: 15px; color: #d48806; margin-top: 12px; }
+.section-title { font-size: var(--font-h2); font-weight: 600; margin: 32px 0 16px; color: var(--primary); padding-left: 12px; border-left: 3px solid var(--primary); }
+.step-tabs { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+.step-tab { flex: 1; min-width: 80px; padding: 10px 8px; text-align: center; border-radius: 8px; font-size: 13px; background: #fff; border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; transition: all 0.3s; }
+.step-tab:hover { border-color: var(--primary); }
+.step-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); font-weight: 600; }
+.step-tab .step-num { display: block; font-size: 18px; font-weight: 700; }
+.step-panel { display: none; }
+.step-panel.active { display: block; }
+.step-content { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; border: 1px solid var(--border); margin-bottom: 16px; }
+.step-content .think-bubble { background: #e6f7ff; border-radius: 12px; padding: 14px; margin: 12px 0; border-left: 4px solid var(--primary); font-size: 14px; }
+.step-content .think-bubble strong { color: var(--primary); }
+.info-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+.info-table th { background: var(--primary); color: #fff; padding: 8px; text-align: left; }
+.info-table td { padding: 8px; border-bottom: 1px solid var(--border); }
+.info-table tr:nth-child(even) { background: #fafafa; }
+.method-list { margin: 12px 0; list-style: none; }
+.method-list li { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 10px; cursor: pointer; transition: all 0.2s; }
+.method-list li:hover { border-color: var(--primary); }
+.method-list li .m-icon { font-size: 20px; flex-shrink: 0; }
+.method-list li .m-text { flex: 1; }
+.method-list li .m-text .m-title { font-weight: 600; }
+.method-list li .m-text .m-desc { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+.method-list li .m-result { font-size: 12px; padding: 2px 8px; border-radius: 4px; background: #f0f0f0; flex-shrink: 0; }
+.method-list li.valid { border-color: #b7eb8f; background: #f6ffed; }
+.method-list li.valid .m-result { background: #b7eb8f; color: #16a34a; }
+.method-list li.invalid { border-color: #ffa39e; background: #fff1f0; }
+.method-list li.invalid .m-result { background: #ffa39e; color: #cf1322; }
+.conclusion-box { background: linear-gradient(135deg, #f6ffed, #fff); border: 1px solid #b7eb8f; border-radius: var(--border-radius); padding: 16px; margin: 16px 0; }
+.conclusion-box h4 { color: #16a34a; margin-bottom: 8px; }
+.conclusion-box p { font-size: 14px; }
+.summary-box { background: var(--card-bg); border-radius: var(--border-radius); padding: 20px; border: 1px solid var(--border); box-shadow: var(--shadow); margin-bottom: 16px; }
+.summary-box ol { padding-left: 20px; margin: 8px 0; }
+.summary-box li { margin-bottom: 6px; font-size: 14px; }
+.trap-box { background: #fff2f0; border: 1px solid #ffbbb4; border-radius: var(--border-radius); padding: 14px; margin: 12px 0; }
+.trap-box h5 { color: #cf1322; margin-bottom: 6px; }
+.trap-box p { font-size: 14px; margin-bottom: 4px; }
+.practice-question { background: var(--card-bg); border-radius: var(--border-radius); padding: 20px; border: 2px dashed var(--primary); box-shadow: var(--shadow); margin-bottom: 16px; }
+.practice-question h4 { color: var(--primary); margin-bottom: 8px; }
+.practice-question p { font-size: 14px; margin-bottom: 10px; }
+.practice-question .hint-btn { background: transparent; border: 1px dashed var(--primary); color: var(--primary); padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 13px; margin-right: 8px; transition: all 0.2s; }
+.practice-question .hint-btn:hover { background: var(--bg); }
+.practice-hint { display: none; background: var(--bg); padding: 12px; border-radius: 6px; margin-top: 10px; font-size: 14px; }
+.practice-hint.show { display: block; }
+.self-check-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.check-item { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.check-item:hover { border-color: var(--primary); }
+.check-item .c-box { width: 20px; height: 20px; border: 2px solid var(--border); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.2s; color: #fff; font-size: 12px; }
+.check-item.done { border-color: var(--primary); background: #e6f7ff; }
+.check-item.done .c-box { background: var(--primary); border-color: var(--primary); }
+.check-item.done .c-box::after { content: '✓'; }
+.nav-btns { display: flex; justify-content: space-between; align-items: center; margin: 20px 0; }
+.nav-btn { background: var(--card-bg); border: 1px solid var(--border); padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; transition: all 0.2s; color: var(--text); }
+.nav-btn:hover { border-color: var(--primary); color: var(--primary); }
+.nav-btn:disabled { opacity: 0.4; cursor: not-allowed; border-color: var(--border); color: var(--text-secondary); }
+.page-indicator { font-size: 14px; color: var(--text-secondary); font-weight: 600; }
+.footer { text-align: center; padding: 20px; color: var(--text-secondary); font-size: 13px; margin-top: 32px; }
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+  <h1>🧪 解析性示例</h1>
+  <p>如何区分白糖和食盐？—— 一堂化学分析思维课</p>
+</div>
+
+<div class="story-box">
+  <div class="scene-icon">🧂 ✦ 🍬</div>
+  <h3>实验室里的"双胞胎"难题</h3>
+  <p>你走进实验室，桌上有两堆白色粉末——一堆是白糖，一堆是食盐。它们看起来几乎一模一样，但你知道它们是截然不同的物质。化学老师交给你一个任务：<strong>在不直接品尝的情况下，如何区分这两堆粉末？</strong></p>
+  <p>这个看似简单的问题，其实包含了化学分析的核心方法——你需要学习的不是"白糖是甜的，食盐是咸的"这个答案，而是<strong>"如何通过观察、推理和实验来获得答案"的思维过程</strong>。</p>
+  <div class="highlight">💡 核心问题：如何通过科学的观察、分析和实验，区分看起来相似的两种物质？</div>
+</div>
+
+<div class="section-title">🔎 跟着专家一步步分析</div>
+
+<div class="step-tabs">
+  <div class="step-tab active" data-step="0" onclick="goToStep(0)"><span class="step-num">①</span>先看见什么</div>
+  <div class="step-tab" data-step="1" onclick="goToStep(1)"><span class="step-num">②</span>判断问题类型</div>
+  <div class="step-tab" data-step="2" onclick="goToStep(2)"><span class="step-num">③</span>调用概念方法</div>
+  <div class="step-tab" data-step="3" onclick="goToStep(3)"><span class="step-num">④</span>推理分析</div>
+  <div class="step-tab" data-step="4" onclick="goToStep(4)"><span class="step-num">⑤</span>得出结论</div>
+</div>
+
+<div class="step-panel active" data-step="0">
+  <div class="step-content">
+    <h3 style="font-size:17px;margin-bottom:10px;">第一步：先看见什么</h3>
+    <p>两种粉末都是白色、细小、无显著气味。表面视觉信息不足以区分。</p>
+    <div class="think-bubble">
+      <strong>💭 为什么这样想：</strong>科学分析的第一步是"全面描述观察对象"——不遗漏任何可能的信息。虽然外观相似本身不是答案，但"确认了外观无法区分"这个结论告诉你：需要寻找更深层的差异。
+    </div>
+    <table class="info-table">
+      <tr><th>情境信息</th><th>说明什么</th><th>为什么重要</th></tr>
+      <tr><td>两堆白色粉末外观相似</td><td>仅凭肉眼无法区分</td><td>需要借助其他感官或实验方法</td></tr>
+      <tr><td>已知是食盐和白糖</td><td>涉及不同类别物质</td><td>需要调用物质的性质知识</td></tr>
+      <tr><td>不能直接品尝</td><td>排除简单方法</td><td>需要间接的化学分析方法</td></tr>
+      <tr><td>物质有物理和化学性质</td><td>可以从多维度分析</td><td>提供了分析问题的切入角度</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="step-panel" data-step="1">
+  <div class="step-content">
+    <h3 style="font-size:17px;margin-bottom:10px;">第二步：判断问题属于哪一类</h3>
+    <p>这是一个<strong>"物质鉴别"</strong>问题，属于化学中"性质应用"的范畴。</p>
+    <div class="think-bubble">
+      <strong>💭 为什么这样想：</strong>问题问的是"如何区分"，这就要用到物质的不同性质来进行鉴别。知道问题类型，就能调用相应的知识和工具。这就好比医生先判断"这是发烧还是骨折"，再决定用什么方法检查。
+    </div>
+  </div>
+</div>
+
+<div class="step-panel" data-step="2">
+  <div class="step-content">
+    <h3 style="font-size:17px;margin-bottom:10px;">第三步：调用哪些概念、原理或方法</h3>
+    <p>需要调用：<strong>物理性质</strong>（溶解性、熔点、导电性）和<strong>化学性质</strong>（能否发生某种化学反应）。</p>
+    <div class="think-bubble">
+      <strong>💭 为什么这样想：</strong>区分物质就是利用物质之间的性质差异。既然不能尝味道，就找其他的性质差异。白糖和食盐虽然外观相似，但它们的化学组成完全不同（白糖是C₁₂H₂₂O₁₁，食盐是NaCl），一定存在某些性质上的差异。
+    </div>
+  </div>
+</div>
+
+<div class="step-panel" data-step="3">
+  <div class="step-content">
+    <h3 style="font-size:17px;margin-bottom:10px;">第四步：如何进行推理或分析</h3>
+    <p>逐一尝试可能的区分方案——看看哪些有效，哪些无效：</p>
+    <ul class="method-list">
+      <li class="invalid" onclick="this.classList.toggle('invalid');this.querySelector('.m-result').textContent=this.classList.contains('invalid')?'❌ 无效':'✔ 无效';">
+        <span class="m-icon">💧</span>
+        <span class="m-text"><span class="m-title">方案一：溶解性测试</span><span class="m-desc">将两种粉末分别溶于水中</span></span>
+        <span class="m-result">❌ 无效</span>
+      </li>
+      <li class="valid" onclick="this.classList.toggle('valid');this.querySelector('.m-result').textContent=this.classList.contains('valid')?'✔ 有效':'✔ 有效';">
+        <span class="m-icon">🔥</span>
+        <span class="m-text"><span class="m-title">方案二：加热观察</span><span class="m-desc">将两种粉末分别加热，白糖会焦化变黑</span></span>
+        <span class="m-result">✔ 有效</span>
+      </li>
+      <li class="valid" onclick="this.classList.toggle('valid');this.querySelector('.m-result').textContent=this.classList.contains('valid')?'✔ 有效':'✔ 有效';">
+        <span class="m-icon">⚡</span>
+        <span class="m-text"><span class="m-title">方案三：导电性测试</span><span class="m-desc">检测溶液的导电性，食盐溶液导电，白糖不导电</span></span>
+        <span class="m-result">✔ 有效</span>
+      </li>
+    </ul>
+    <div class="think-bubble">
+      <strong>💭 为什么这样想：</strong>要找到一组"有差异的性质"，逐一排除无效方案，筛选出能有效区分的方法。溶解性测试失败的原因是白糖和食盐都易溶于水——它们在这一点上没有差异。
+    </div>
+  </div>
+</div>
+
+<div class="step-panel" data-step="4">
+  <div class="step-content">
+    <h3 style="font-size:17px;margin-bottom:10px;">第五步：怎样形成结论</h3>
+    <div class="conclusion-box">
+      <h4>✅ 最终结论</h4>
+      <p><strong>方法一（化学方法）：</strong>加热时发生焦化反应（碳化）的是白糖，不变的是食盐。</p>
+      <p><strong>方法二（物理方法）：</strong>测导电性——导电的是食盐溶液（电解质），不导电的是白糖溶液（非电解质）。</p>
+      <p style="margin-top:8px;">最可靠的物理方法是测导电性，最直观的化学方法是加热观察变化。物质的鉴别需要综合利用物理性质和化学性质，找到两种物质之间"最显著的差异点"。</p>
+    </div>
+    <div class="think-bubble">
+      <strong>💭 为什么这样想：</strong>结论必须基于证据，且证据要可靠、可复现。白糖加热变黑（碳化）是因为发生了化学反应：C₁₂H₂₂O₁₁ → 12C + 11H₂O；而NaCl加热不分解。这个证据链清晰、可信。
+    </div>
+  </div>
+</div>
+
+<div class="nav-btns">
+  <button class="nav-btn" id="prevStepBtn" onclick="prevStep()">◀ 上一步</button>
+  <span class="page-indicator" id="stepIndicator">1 / 5</span>
+  <button class="nav-btn" id="nextStepBtn" onclick="nextStep()">下一步 ▶</button>
+</div>
+
+<div class="section-title">📝 方法提炼</div>
+<div class="summary-box">
+  <p style="font-size:14px;margin-bottom:8px;">以后遇到"区分两种相似物质"的问题，可以这样做：</p>
+  <ol>
+    <li><strong>全面观察：</strong>先看外观、闻气味（安全前提下）</li>
+    <li><strong>找差异点：</strong>列出两种物质已知的性质差异</li>
+    <li><strong>设计方案：</strong>利用差异设计简单的实验</li>
+    <li><strong>实施验证：</strong>做实验，记录现象</li>
+    <li><strong>得出结论：</strong>基于证据做出判断</li>
+  </ol>
+</div>
+
+<div class="section-title">⚠️ 易错提醒</div>
+<div class="trap-box">
+  <h5>🚨 易错点一：只想到一种方法</h5>
+  <p>很多鉴别问题不止一个答案，要多角度思考。比如区分白糖和食盐，至少可以想到加热法、导电性法等多种方法。</p>
+</div>
+<div class="trap-box" style="margin-top:8px;">
+  <h5>🚨 易错点二：混淆"物理方法"和"化学方法"</h5>
+  <p>不产生新物质的方法是物理方法（如测导电性），产生新物质的方法是化学方法（如加热使糖碳化）。区分这一点对理解化学变化的概念非常重要。</p>
+</div>
+<div class="trap-box" style="margin-top:8px;">
+  <h5>🚨 易错点三：忽略安全因素</h5>
+  <p>不能直接品尝化学药品，加热操作要注意安全。安全永远是化学实验的第一原则。</p>
+</div>
+
+<div class="section-title">🏋️ 自主迁移小练习</div>
+<div class="practice-question">
+  <h4>区分两瓶无色液体——清水 vs 白醋</h4>
+  <p>你的任务是区分两瓶无色液体——一瓶是清水，一瓶是白醋。</p>
+  <p style="font-size:13px;color:var(--text-secondary);">你有哪些方法？分别属于物理方法还是化学方法？哪种最快最可靠？</p>
+  <button class="hint-btn" onclick="togglePracticeHint('h1')">💡 方法一提示</button>
+  <button class="hint-btn" onclick="togglePracticeHint('h2')">💡 方法二提示</button>
+  <button class="hint-btn" onclick="togglePracticeHint('h3')">💡 方法三提示</button>
+  <div class="practice-hint" id="h1"><strong>👃 闻气味（物理方法）：</strong>白醋有刺激性酸味，清水无味。这是最快的方法！</div>
+  <div class="practice-hint" id="h2"><strong>🧪 加小苏打测试（化学方法）：</strong>白醋与小苏打反应产生CO₂气泡，清水无反应。</div>
+  <div class="practice-hint" id="h3"><strong>🔥 加热蒸发（物理方法）：</strong>清水蒸发无残留，白醋蒸发后有少量残留物（但较慢）。</div>
+</div>
+
+<div class="section-title">📌 学习自评</div>
+<div class="self-check-grid">
+  <div class="check-item" onclick="this.classList.toggle('done')"><span class="c-box"></span>我理解了"利用性质差异区分物质"的分析思路</div>
+  <div class="check-item" onclick="this.classList.toggle('done')"><span class="c-box"></span>我能说出至少3种区分白糖和食盐的方法</div>
+  <div class="check-item" onclick="this.classList.toggle('done')"><span class="c-box"></span>我理解了物理方法和化学方法的区别</div>
+  <div class="check-item" onclick="this.classList.toggle('done')"><span class="c-box"></span>我能把"找差异点→设计方案→验证"应用到其他问题</div>
+</div>
+
+<div class="footer">化学 · 九年级上 · M20 解析性示例 | 学会分析，而不是记住答案</div>
+</div>
+
+<script>
+var currentStep = 0;
+var totalSteps = 5;
+
+function goToStep(idx) {
+  if (idx < 0 || idx >= totalSteps) return;
+  currentStep = idx;
+  var panels = document.querySelectorAll('.step-panel');
+  var tabs = document.querySelectorAll('.step-tab');
+  panels.forEach(function(p, i) { p.classList.toggle('active', i === idx); });
+  tabs.forEach(function(t, i) { t.classList.toggle('active', i === idx); });
+  document.getElementById('stepIndicator').textContent = (idx + 1) + ' / ' + totalSteps;
+  document.getElementById('prevStepBtn').disabled = (idx === 0);
+  document.getElementById('nextStepBtn').disabled = (idx === totalSteps - 1);
+}
+
+function prevStep() { if (currentStep > 0) goToStep(currentStep - 1); }
+function nextStep() { if (currentStep < totalSteps - 1) goToStep(currentStep + 1); }
+
+function togglePracticeHint(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('show');
+}
+</script>
+</body>
+</html>

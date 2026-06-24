@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学术社区 · 科学共同体协作空间</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:var(--font-body);
+  line-height:var(--line-height);
+  color:var(--text);
+  background:var(--bg);
+  width:100%;
+  min-height:100vh;
+}
+.container{width:100%;max-width:none;padding:24px 20px;box-sizing:border-box}
+.header{
+  text-align:center;
+  padding:32px 16px 24px;
+  background:linear-gradient(135deg,#e6f0ff,#f0f5ff);
+  border-bottom:1px solid var(--border);
+}
+.header h1{
+  font-size:var(--font-h1);
+  color:var(--primary);
+  margin-bottom:8px;
+  letter-spacing:2px;
+}
+.header p{color:var(--text-secondary);font-size:14px;}
+
+.connection-tabs{
+  display:flex;
+  gap:12px;
+  justify-content:center;
+  margin:24px auto 20px;
+  flex-wrap:wrap;
+}
+.connection-tabs button{
+  padding:12px 28px;
+  border:2px solid var(--primary);
+  border-radius:var(--border-radius);
+  background:var(--card-bg);
+  color:var(--primary);
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+  transition:all .3s;
+}
+.connection-tabs button.active{
+  background:var(--primary);
+  color:#fff;
+  box-shadow:0 4px 14px rgba(22,119,255,.3);
+}
+.connection-tabs button:hover:not(.active){background:#e6f0ff;}
+
+.connection-panel{display:none}
+.connection-panel.show{display:block}
+
+/* 通用卡片 */
+.section-card{
+  background:var(--card-bg);
+  border-radius:var(--border-radius);
+  box-shadow:var(--shadow);
+  margin-bottom:20px;
+  overflow:hidden;
+}
+.section-card .card-header{
+  padding:16px 20px;
+  background:linear-gradient(135deg,#e6f0ff,#f0f5ff);
+  border-bottom:1px solid var(--border);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  cursor:pointer;
+}
+.section-card .card-header h3{font-size:17px;color:var(--primary);}
+.section-card .card-header .arrow{
+  transition:transform .3s;
+  color:var(--text-secondary);
+}
+.section-card .card-header .arrow.rotated{transform:rotate(180deg);}
+.section-card .card-body{
+  max-height:0;
+  overflow:hidden;
+  transition:max-height .5s ease;
+}
+.section-card .card-body.open{max-height:2000px;padding:20px;}
+
+/* 角色卡片网格 */
+.role-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:14px;
+  margin:12px 0;
+}
+.role-card{
+  background:#fafbff;
+  border-radius:8px;
+  padding:16px;
+  border:1px solid var(--border);
+  text-align:center;
+  transition:box-shadow .3s;
+  cursor:pointer;
+}
+.role-card:hover{box-shadow:0 4px 12px rgba(22,119,255,.1);}
+.role-card .role-icon{font-size:32px;margin-bottom:8px;}
+.role-card .role-name{font-weight:700;color:var(--primary);font-size:15px;}
+.role-card .role-desc{font-size:13px;color:var(--text-secondary);margin-top:4px;}
+.role-card .role-output{
+  font-size:12px;
+  color:var(--primary);
+  margin-top:8px;
+  padding:4px 8px;
+  background:#e6f0ff;
+  border-radius:4px;
+  display:inline-block;
+}
+
+/* 讨论议题 */
+.topic-item{
+  padding:14px 16px;
+  margin-bottom:10px;
+  background:#fafbff;
+  border-radius:6px;
+  border-left:3px solid var(--accent);
+}
+.topic-item .topic-label{font-weight:700;color:var(--text);font-size:14px;}
+.topic-item .topic-desc{color:var(--text-secondary);font-size:14px;margin-top:4px;}
+.topic-item .topic-hint{
+  max-height:0;
+  overflow:hidden;
+  transition:max-height .4s ease;
+  background:#fff;
+  border-radius:6px;
+  margin-top:0;
+}
+.topic-item .topic-hint.open{
+  max-height:500px;
+  padding:12px;
+  margin-top:10px;
+  background:#fff6e6;
+  border-radius:6px;
+}
+.topic-item .topic-hint ul{padding-left:18px;}
+.topic-item .topic-hint li{margin-bottom:4px;font-size:14px;}
+
+/* 表格 */
+.table-wrap{overflow-x:auto;margin:12px 0;}
+table{width:100%;border-collapse:collapse;font-size:14px;}
+th,td{
+  border:1px solid var(--border);
+  padding:10px 14px;
+  text-align:left;
+}
+th{background:var(--primary);color:#fff;font-weight:600;}
+td{background:var(--card-bg);}
+tr:nth-child(even) td{background:#f8faff;}
+
+/* 输出表格 */
+.output-box{
+  background:var(--card-bg);
+  border-radius:var(--border-radius);
+  box-shadow:var(--shadow);
+  padding:20px;
+  margin:20px 0;
+}
+.output-box h3{
+  font-size:var(--font-h2);
+  color:var(--primary);
+  margin-bottom:14px;
+  padding-bottom:8px;
+  border-bottom:2px solid var(--accent);
+}
+
+/* 实验卡片 - 家校连接 */
+.exp-card{
+  background:#fafbff;
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:16px;
+  margin-bottom:12px;
+  transition:box-shadow .3s;
+  cursor:pointer;
+}
+.exp-card:hover{box-shadow:0 4px 12px rgba(22,119,255,.1);}
+.exp-card h4{color:var(--primary);font-size:15px;margin-bottom:6px;}
+.exp-card p{color:var(--text-secondary);font-size:14px;}
+
+/* 学术会议卡片 */
+.conf-card{
+  background:linear-gradient(135deg,#e6f0ff,#f0f5ff);
+  border-radius:var(--border-radius);
+  padding:18px;
+  margin-bottom:14px;
+  border:1px solid var(--accent);
+}
+.conf-card h4{color:var(--primary);font-size:15px;margin-bottom:6px;}
+.conf-card p{color:var(--text);font-size:14px;}
+.conf-card .conf-tag{
+  display:inline-block;
+  padding:2px 10px;
+  border-radius:10px;
+  background:var(--primary);
+  color:#fff;
+  font-size:12px;
+  margin-top:8px;
+}
+
+.tip-box{
+  background:linear-gradient(135deg,#e6f0ff,#f0f5ff);
+  border-radius:var(--border-radius);
+  padding:16px 20px;
+  margin-bottom:16px;
+  border-left:4px solid var(--primary);
+}
+.tip-box .tip-icon{font-weight:700;color:var(--primary);margin-right:6px;}
+
+@media(max-width:640px){
+  .container{padding:16px 12px;}
+  .header{padding:24px 12px 16px;}
+  .connection-tabs button{padding:10px 20px;font-size:13px;}
+  .role-grid{grid-template-columns:1fr 1fr;}
+  .section-card .card-body.open{padding:14px;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🔬 学术社区</h1>
+  <p>模拟科学共同体 · 在讨论中催生素材 · 在评议中打磨质量 · 在角色中锻炼表达</p>
+</div>
+
+<div class="container">
+
+<div class="connection-tabs" id="connectionTabs">
+  <button class="active" data-connection="peer">👥 同伴连接</button>
+  <button data-connection="home">🏠 家校连接</button>
+  <button data-connection="society">🌐 社会连接</button>
+</div>
+
+<!-- ========== 同伴连接 ========== -->
+<div class="connection-panel show" id="cxn-peer">
+
+  <div class="section-card">
+    <div class="card-header" onclick="toggleSection('peer-role')">
+      <h3>🔄 角色分工 · 4 人一组轮换</h3>
+      <span class="arrow" id="peer-role-icon">▼</span>
+    </div>
+    <div class="card-body open" id="peer-role">
+      <div class="role-grid">
+        <div class="role-card" onclick="highlightRole(1)" id="roleCard1">
+          <div class="role-icon">📝</div>
+          <div class="role-name">实验记录员</div>
+          <div class="role-desc">记录小组讨论/实验的完整过程</div>
+          <div class="role-output">📄 实验记录</div>
+        </div>
+        <div class="role-card" onclick="highlightRole(2)" id="roleCard2">
+          <div class="role-icon">✍️</div>
+          <div class="role-name">报告撰写员</div>
+          <div class="role-desc">整理小组观点形成书面报告</div>
+          <div class="role-output">📄 小组报告</div>
+        </div>
+        <div class="role-card" onclick="highlightRole(3)" id="roleCard3">
+          <div class="role-icon">🔍</div>
+          <div class="role-name">质疑评价员</div>
+          <div class="role-desc">对组内观点提出质疑和补充</div>
+          <div class="role-output">📄 评论意见书</div>
+        </div>
+        <div class="role-card" onclick="highlightRole(4)" id="roleCard4">
+          <div class="role-icon">🎯</div>
+          <div class="role-name">总结汇报员</div>
+          <div class="role-desc">综合各方观点形成最终结论</div>
+          <div class="role-output">📄 总结陈述稿</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <div class="card-header" onclick="toggleSection('peer-topic')">
+      <h3>💬 讨论议题</h3>
+      <span class="arrow" id="peer-topic-icon">▼</span>
+    </div>
+    <div class="card-body open" id="peer-topic">
+      <div class="topic-item">
+        <div class="topic-label">议题一 · 物理变化与化学变化的本质区别</div>
+        <div class="topic-desc">请用准确的文字界定二者边界</div>
+        <button class="action-btn" onclick="toggleHint('topicHint1')" style="margin-top:6px;padding:4px 14px;border:none;border-radius:4px;background:var(--primary);color:#fff;font-size:13px;cursor:pointer;">💡 思路引导</button>
+        <div class="topic-hint" id="topicHint1">
+          <ul>
+            <li>核心判断标准：是否有新物质生成</li>
+            <li>举例：蜡烛熔化（物理）vs 蜡烛燃烧（化学）</li>
+            <li>写作要求：用"是否……"句式精确定义</li>
+          </ul>
+        </div>
+      </div>
+      <div class="topic-item">
+        <div class="topic-label">议题二 · "蜡烛燃烧"的证据链</div>
+        <div class="topic-desc">哪些现象可以证明产生了新物质？请列出证据链</div>
+        <button class="action-btn" onclick="toggleHint('topicHint2')" style="margin-top:6px;padding:4px 14px;border:none;border-radius:4px;background:var(--primary);color:#fff;font-size:13px;cursor:pointer;">💡 思路引导</button>
+        <div class="topic-hint" id="topicHint2">
+          <ul>
+            <li>证据 1：蜡烛燃烧产生水（烧杯壁有水滴）</li>
+            <li>证据 2：蜡烛燃烧产生 CO₂（澄清石灰水变浑浊）</li>
+            <li>证据 3：蜡烛质量减少（部分转化为新物质）</li>
+          </ul>
+        </div>
+      </div>
+      <div class="topic-item">
+        <div class="topic-label">议题三 · "化学变化中原子不变"的论证</div>
+        <div class="topic-desc">你怎么证明这句话？写一篇微型论证</div>
+        <button class="action-btn" onclick="toggleHint('topicHint3')" style="margin-top:6px;padding:4px 14px;border:none;border-radius:4px;background:var(--primary);color:#fff;font-size:13px;cursor:pointer;">💡 思路引导</button>
+        <div class="topic-hint" id="topicHint3">
+          <ul>
+            <li>理论依据：化学反应的实质是原子的重新组合</li>
+            <li>实验依据：质量守恒定律（反应前后总质量不变）</li>
+            <li>微观示例：2H₂ + O₂ → 2H₂O，原子数量不变</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <div class="card-header" onclick="toggleSection('peer-output')">
+      <h3>📤 输出机制</h3>
+      <span class="arrow" id="peer-output-icon">▼</span>
+    </div>
+    <div class="card-body open" id="peer-output">
+      <ul style="padding-left:20px;margin:8px 0;">
+        <li style="margin-bottom:8px;">✍️ 每次讨论后，每位成员提交<strong>"个人思考笔记"</strong>（100-200 字）</li>
+        <li style="margin-bottom:8px;">👥 小组共同完成一份<strong>"讨论纪要"</strong>或<strong>"小组报告"</strong>（300-500 字）</li>
+        <li style="margin-bottom:8px;">🔄 轮换角色，确保每位学生体验过所有角色</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 家校连接 ========== -->
+<div class="connection-panel" id="cxn-home">
+
+  <div class="section-card">
+    <div class="card-header" onclick="toggleSection('home-exp')">
+      <h3>🧪 家庭科学实验项目</h3>
+      <span class="arrow" id="home-exp-icon">▼</span>
+    </div>
+    <div class="card-body open" id="home-exp">
+      <div class="exp-card" onclick="toggleExpDetail('exp1')">
+        <h4>🥄 食醋与小苏打反应</h4>
+        <p>产生二氧化碳，观察气泡现象</p>
+        <div id="exp1" style="display:none;margin-top:8px;padding:10px;background:#fff6e6;border-radius:6px;">
+          <p><strong>化学原理：</strong>CH₃COOH + NaHCO₃ → CH₃COONa + H₂O + CO₂↑</p>
+          <p><strong>书面任务：</strong>撰写实验报告 + 以"写给家长的信"解释原理</p>
+        </div>
+      </div>
+      <div class="exp-card" onclick="toggleExpDetail('exp2')">
+        <h4>🔮 紫甘蓝汁做酸碱指示剂</h4>
+        <p>观察不同酸碱性溶液中的颜色变化</p>
+        <div id="exp2" style="display:none;margin-top:8px;padding:10px;background:#fff6e6;border-radius:6px;">
+          <p><strong>化学原理：</strong>紫甘蓝中的花青素在不同 pH 下结构变化导致颜色变化</p>
+          <p><strong>书面任务：</strong>记录颜色变化表格 + 解释背后的化学原理</p>
+        </div>
+      </div>
+      <div class="exp-card" onclick="toggleExpDetail('exp3')">
+        <h4>🥚 鸡蛋壳与醋反应</h4>
+        <p>观察碳酸盐与酸的反应现象</p>
+        <div id="exp3" style="display:none;margin-top:8px;padding:10px;background:#fff6e6;border-radius:6px;">
+          <p><strong>化学原理：</strong>CaCO₃ + 2CH₃COOH → (CH₃COO)₂Ca + H₂O + CO₂↑</p>
+          <p><strong>书面任务：</strong>描述实验现象 + 解释反应本质</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <div class="card-header" onclick="toggleSection('home-task')">
+      <h3>✍️ 书面任务</h3>
+      <span class="arrow" id="home-task-icon">▼</span>
+    </div>
+    <div class="card-body open" id="home-task">
+      <div class="topic-item">
+        <div class="topic-label">任务 A · 家庭实验报告</div>
+        <div class="topic-desc">按标准格式撰写，家长签字确认实验过程</div>
+      </div>
+      <div class="topic-item">
+        <div class="topic-label">任务 B · 写给家长的一封信</div>
+        <div class="topic-desc">用通俗的语言解释实验中的化学原理——"翻译"能力是对理解深度的检验</div>
+      </div>
+      <div class="topic-item">
+        <div class="topic-label">任务 C · 视频讲解 + 文字脚本</div>
+        <div class="topic-desc">录制实验讲解视频并附上完整文字脚本</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tip-box">
+    <span class="tip-icon">💡</span>
+    家校连接的核心价值：将化学书面表达"翻译"成通俗语言，这是对理解深度的真正检验。
+  </div>
+</div>
+
+<!-- ========== 社会连接 ========== -->
+<div class="connection-panel" id="cxn-society">
+
+  <div class="conf-card">
+    <h4>🎤 模拟学术会议 · "小化学家论坛"</h4>
+    <p>每月一次，学生提交"会议论文"（500 字左右），设置论文评审、海报展示、口头报告等环节</p>
+    <span class="conf-tag">🏆 最佳论文奖</span>
+    <span class="conf-tag" style="margin-left:8px;">🏆 最佳表达奖</span>
+  </div>
+
+  <div class="conf-card">
+    <h4>📰 模拟期刊投稿 · "化学小论文"电子期刊</h4>
+    <p>学生投稿 → 同伴盲审 → 修改 → 发表。发表后可获得"期刊引用积分"</p>
+    <span class="conf-tag">📋 同伴盲审制</span>
+    <span class="conf-tag" style="margin-left:8px;">📈 引用积分</span>
+  </div>
+
+  <div class="tip-box" style="margin-top:12px;">
+    <span class="tip-icon">💡</span>
+    社会连接的价值：让学生体验"公开发表"的严肃性，从而更加重视书面表达的质量。
+  </div>
+</div>
+
+<!-- 角色分工详表 -->
+<div class="output-box">
+  <h3>📋 角色分工详表</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>角色</th><th>每周任务</th><th>书面产出</th><th>周期</th></tr></thead>
+      <tbody>
+        <tr><td>📝 记录员</td><td>记录实验现象和讨论要点</td><td>实验记录本</td><td>每课时</td></tr>
+        <tr><td>✍️ 撰稿员</td><td>撰写小组研究报告</td><td>研究简报</td><td>每周</td></tr>
+        <tr><td>🔍 评审员</td><td>对其他小组报告提出书面评议</td><td>评审意见</td><td>每两周</td></tr>
+        <tr><td>📰 主编</td><td>编辑和整合班级期刊</td><td>期刊稿件</td><td>每月</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 输出机制 -->
+<div class="output-box">
+  <h3>📤 输出机制速览</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>输出形式</th><th>频率</th><th>字数</th><th>要求</th></tr></thead>
+      <tbody>
+        <tr><td>个人思考笔记</td><td>每次课后</td><td>100-200</td><td>真实、有个人观点</td></tr>
+        <tr><td>小组讨论纪要</td><td>每周 1 次</td><td>300-500</td><td>结构清晰、观点分明</td></tr>
+        <tr><td>实验报告</td><td>每实验 1 次</td><td>400-600</td><td>按标准格式撰写</td></tr>
+        <tr><td>学术论文</td><td>每月 1 次</td><td>500-800</td><td>有论点、论据、论证</td></tr>
+        <tr><td>评审意见</td><td>每两周一评</td><td>200-300</td><td>有建设性、有评分</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="tip-box">
+  <span class="tip-icon">💡</span>
+  <strong>使用建议：</strong>
+  ① 小步启动——先从同伴连接开始，再逐步引入家校连接和社会连接。<br>
+  ② 角色均衡——确保每位学生在一学期内都体验过所有角色。<br>
+  ③ 书面产出是硬指标——讨论可以口头，但最终必须有文字记录。<br>
+  ④ 与作业榜联动——社区产出的文字可直接投稿至作业榜开放层任务！
+</div>
+
+</div>
+
+<script>
+// 三个面板切换
+document.querySelectorAll('#connectionTabs button').forEach(btn => {
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('#connectionTabs button').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    document.querySelectorAll('.connection-panel').forEach(p => p.classList.remove('show'));
+    document.getElementById('cxn-' + this.dataset.connection).classList.add('show');
+  });
+});
+
+// 展开/收起 section 卡片
+function toggleSection(id){
+  const body = document.getElementById(id);
+  const icon = document.getElementById(id + '-icon');
+  if(!body || !icon) return;
+  body.classList.toggle('open');
+  icon.classList.toggle('rotated');
+}
+
+// 高亮角色卡片
+function highlightRole(n){
+  document.querySelectorAll('.role-card').forEach(c => {
+    c.style.borderColor = 'var(--border)';
+    c.style.background = '#fafbff';
+  });
+  const card = document.getElementById('roleCard' + n);
+  if(card){
+    card.style.borderColor = 'var(--primary)';
+    card.style.background = '#e6f0ff';
+  }
+}
+
+// 切换讨论议题提示
+function toggleHint(id){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.classList.toggle('open');
+}
+
+// 切换实验详情
+function toggleExpDetail(id){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+</body>
+</html>

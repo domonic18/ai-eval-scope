@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学术社区 — 化学学习共同体</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  padding: 0;
+}
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 6px; }
+.header p { font-size: 14px; opacity: 0.9; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bg);
+}
+.card h3 {
+  font-size: 16px;
+  color: var(--text);
+  margin: 16px 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.discussion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.discussion-item {
+  background: var(--bg);
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  overflow: hidden;
+  transition: all 0.3s;
+}
+.discussion-item:hover { border-color: var(--accent); }
+.discussion-item .discuss-header {
+  padding: 14px 16px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.discussion-item .discuss-header .discuss-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+.discussion-item .discuss-header .discuss-icon {
+  font-size: 18px;
+  transition: transform 0.3s;
+}
+.discussion-item.expanded .discuss-icon { transform: rotate(180deg); }
+.discussion-item .discuss-body {
+  display: none;
+  padding: 0 16px 14px;
+  border-top: 1px dashed var(--border);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.discussion-item.expanded .discuss-body { display: block; }
+.discuss-body .hint {
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-top: 8px;
+  font-size: 13px;
+}
+.role-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 640px) { .role-grid { grid-template-columns: 1fr; } }
+.role-card {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 14px;
+  text-align: center;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.role-card:hover { border-color: var(--primary); }
+.role-card.selected {
+  border-color: var(--primary);
+  background: #e6f0ff;
+}
+.role-card .role-emoji { font-size: 28px; display: block; }
+.role-card .role-name { font-size: 14px; font-weight: 600; margin-top: 4px; }
+.role-card .role-desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.connection-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 768px) { .connection-grid { grid-template-columns: 1fr; } }
+.connection-item {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: 2px solid var(--border);
+}
+.connection-item:hover { border-color: var(--primary); }
+.connection-item .conn-icon { font-size: 28px; }
+.connection-item .conn-title { font-size: 15px; font-weight: 600; margin: 6px 0 4px; }
+.connection-item .conn-desc { font-size: 13px; color: var(--text-secondary); }
+.connection-item .conn-detail {
+  display: none;
+  margin-top: 10px;
+  padding: 10px;
+  background: var(--card-bg);
+  border-radius: 6px;
+  font-size: 13px;
+}
+.connection-item .conn-detail.show { display: block; }
+.output-section {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 12px;
+}
+.output-section ul {
+  list-style: none;
+  padding: 0;
+}
+.output-section ul li {
+  padding: 8px 0;
+  padding-left: 24px;
+  position: relative;
+  font-size: 14px;
+}
+.output-section ul li::before {
+  content: "🏆";
+  position: absolute;
+  left: 0;
+}
+.action-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+.btn {
+  padding: 10px 22px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-outline { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
+.btn-outline:hover { background: var(--bg); }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🌐 学术社区</h1>
+    <p>学习共同体 · 化学概念认知的社会化建构</p>
+  </div>
+
+  <div class="card">
+    <h2>💬 同伴连接 · 讨论议题</h2>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">点击议题展开讨论引导，和同学一起探索：</p>
+    <div class="discussion-list">
+      <div class="discussion-item" onclick="toggleDiscuss(this)">
+        <div class="discuss-header">
+          <span class="discuss-title">🔥 议题一：蜡烛熔化 vs 蜡烛燃烧</span>
+          <span class="discuss-icon">▼</span>
+        </div>
+        <div class="discuss-body">
+          <p>如果只有文字描述没有现场实验，你怎么向同学证明它们属于<strong>不同类型的变化</strong>？</p>
+          <div class="hint">
+            💡 <strong>思考路径：</strong>描述蜡烛熔化时的状态变化（固体→液体，冷却后又变回固体）和蜡烛燃烧时的现象（发光、发热、产生气体）。从"是否有新物质生成"这个核心标准出发来论证。
+          </div>
+        </div>
+      </div>
+      <div class="discussion-item" onclick="toggleDiscuss(this)">
+        <div class="discuss-header">
+          <span class="discuss-title">🎨 议题二：颜色变化都是化学变化吗？</span>
+          <span class="discuss-icon">▼</span>
+        </div>
+        <div class="discuss-body">
+          <p>有人说"所有颜色变化的都是化学变化"——<strong>你同意吗？找反例。</strong></p>
+          <div class="hint">
+            💡 <strong>反例提示：</strong>红墨水滴入水中扩散使水变红——颜色变了，但没有新物质生成，属于物理变化。所以不能仅凭颜色变化来判断变化类型。
+          </div>
+        </div>
+      </div>
+      <div class="discussion-item" onclick="toggleDiscuss(this)">
+        <div class="discuss-header">
+          <span class="discuss-title">👃 议题三：物质有"气味"属于什么性质？</span>
+          <span class="discuss-icon">▼</span>
+        </div>
+        <div class="discuss-body">
+          <p>一种物质有"气味"，这属于<strong>物理性质还是化学性质？</strong>为什么？</p>
+          <div class="hint">
+            💡 <strong>分析：</strong>气味是物质本身固有的属性，不需要通过化学变化就能感知。就像颜色、密度、熔点一样，属于物理性质。区分的关键是：该性质是否需要通过化学变化来体现。
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>👥 角色分工 · 小组协作</h2>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:10px;">点击选择你的角色（每人选一项）：</p>
+    <div class="role-grid">
+      <div class="role-card" onclick="selectRole(this)">
+        <span class="role-emoji">🔍</span>
+        <span class="role-name">证据搜集员</span>
+        <span class="role-desc">负责查找教材和网络资料中的证据</span>
+      </div>
+      <div class="role-card" onclick="selectRole(this)">
+        <span class="role-emoji">💡</span>
+        <span class="role-name">案例提供者</span>
+        <span class="role-desc">分享生活中观察到的相关现象</span>
+      </div>
+      <div class="role-card" onclick="selectRole(this)">
+        <span class="role-emoji">🔗</span>
+        <span class="role-name">逻辑检查员</span>
+        <span class="role-desc">检查辩论过程中的逻辑是否严密</span>
+      </div>
+      <div class="role-card" onclick="selectRole(this)">
+        <span class="role-emoji">📝</span>
+        <span class="role-name">记录总结员</span>
+        <span class="role-desc">整理讨论要点和结论</span>
+      </div>
+    </div>
+    <div class="action-bar">
+      <button class="btn btn-outline" onclick="clearRoles()">🔄 清除选择</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🔗 连接 · 家校与社会</h2>
+    <div class="connection-grid">
+      <div class="connection-item" onclick="toggleConn(this)">
+        <div class="conn-icon">🏠</div>
+        <div class="conn-title">家校连接</div>
+        <div class="conn-desc">家庭任务 + 反馈机制</div>
+        <div class="conn-detail">
+          <p><strong>家庭任务：</strong>请家长协助完成一个小实验——加热白糖，观察颜色变化和气味，记录变化类型并讨论。</p>
+          <p style="margin-top:6px;"><strong>反馈机制：</strong>将讨论中无法解决的问题提交到班级学习平台，等待老师回应。</p>
+        </div>
+      </div>
+      <div class="connection-item" onclick="toggleConn(this)">
+        <div class="conn-icon">🎓</div>
+        <div class="conn-title">专家资源</div>
+        <div class="conn-desc">B站科普UP主 + 数字科技馆</div>
+        <div class="conn-detail">
+          <p><strong>推荐UP主：</strong>"真·凤舞九天"——丰富的化学实验视频，生动直观。</p>
+          <p style="margin-top:6px;"><strong>线上资源：</strong>中国数字科技馆化学展区，可在线浏览虚拟化学实验。</p>
+        </div>
+      </div>
+      <div class="connection-item" onclick="toggleConn(this)">
+        <div class="conn-icon">🏭</div>
+        <div class="conn-title">行业连接</div>
+        <div class="conn-desc">了解化学工程师如何区分变化</div>
+        <div class="conn-detail">
+          <p>在化工生产中，工程师需要精确区分物理变化（如蒸馏分离石油）和化学变化（如催化裂化）。物理变化用于分离提纯，化学变化用于制造新材料。理解这个区别是化工厂安全高效运行的基础。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📤 输出机制</h2>
+    <div class="output-section">
+      <ul>
+        <li>小组讨论成果以<strong>"思维导图+口头报告"</strong>形式展示</li>
+        <li>最佳讨论组获得 <strong>"化学侦探"</strong> 称号</li>
+        <li>讨论记录存入班级化学学习档案</li>
+      </ul>
+    </div>
+    <div class="action-bar">
+      <button class="btn btn-primary" onclick="alert('讨论准备就绪！请小组长组织角色分工，选择议题开始讨论。')">🚀 开始小组讨论</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleDiscuss(el) {
+  el.classList.toggle('expanded');
+}
+function selectRole(el) {
+  el.classList.toggle('selected');
+}
+function clearRoles() {
+  document.querySelectorAll('.role-card').forEach(function(r) { r.classList.remove('selected'); });
+}
+function toggleConn(el) {
+  var detail = el.querySelector('.conn-detail');
+  if (detail) {
+    detail.classList.toggle('show');
+  }
+}
+</script>
+</body>
+</html>

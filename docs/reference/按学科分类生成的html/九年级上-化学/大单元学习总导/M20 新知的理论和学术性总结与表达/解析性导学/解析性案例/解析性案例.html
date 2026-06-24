@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>解析性案例 — 七阶化学分析实战</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  background: var(--bg);
+  color: var(--text);
+  margin: 0; padding: 0; width: 100%;
+}
+.container { width: 100%; max-width: none; padding: 20px; box-sizing: border-box; }
+.header { background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: #fff; padding: 24px; border-radius: var(--border-radius); margin-bottom: 24px; }
+.header h1 { font-size: var(--font-h1); margin-bottom: 6px; }
+.header p { font-size: 14px; opacity: 0.9; }
+.subhead { background: #fff; border-radius: var(--border-radius); padding: 16px 20px; margin-bottom: 24px; box-shadow: var(--shadow); border: 1px solid var(--border); font-size: 14px; }
+.subhead strong { color: var(--primary); }
+.progress-bar { display: flex; gap: 4px; margin-bottom: 24px; flex-wrap: wrap; }
+.progress-step { flex: 1; min-width: 80px; padding: 8px 6px; text-align: center; border-radius: 6px; font-size: 12px; background: #fff; border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; transition: all 0.2s; }
+.progress-step:hover { border-color: var(--primary); }
+.progress-step.active { background: var(--primary); color: #fff; border-color: var(--primary); font-weight: 600; }
+.progress-step.done { background: #e6f7ff; border-color: var(--accent); color: var(--primary); }
+.case-panel { display: none; }
+.case-panel.active { display: block; }
+.case-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; border: 1px solid var(--border); margin-bottom: 16px; }
+.case-card .level { display: inline-block; background: var(--primary); color: #fff; padding: 2px 10px; border-radius: 12px; font-size: 12px; margin-bottom: 10px; }
+.case-card h3 { font-size: 17px; margin-bottom: 8px; }
+.case-card .case-meta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.case-meta .tag { background: var(--bg); color: var(--primary); padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+.case-meta .principles { background: #fff7e6; color: #d46b08; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+.case-card .material { background: #fafafa; border-radius: 6px; padding: 12px; margin: 10px 0; font-size: 14px; border-left: 3px solid var(--primary); }
+.case-card .material strong { color: var(--primary); }
+.case-card .task { background: #fffbe6; border: 1px solid #ffe58f; border-radius: 6px; padding: 10px 12px; margin: 10px 0; font-size: 14px; }
+.case-card .task strong { color: #d48806; }
+.case-card .path { font-size: 13px; color: var(--text-secondary); margin: 8px 0; }
+.case-card .path strong { color: var(--text); }
+.toggle-table-btn { background: var(--primary); color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 13px; transition: background 0.2s; margin-top: 8px; }
+.toggle-table-btn:hover { background: var(--primary-hover); }
+.table-content { display: none; margin-top: 10px; overflow-x: auto; }
+.table-content.show { display: block; }
+.table-content table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.table-content th { background: var(--primary); color: #fff; padding: 6px 8px; text-align: left; }
+.table-content td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+.table-content tr:nth-child(even) { background: #fafafa; }
+.nav-btns { display: flex; justify-content: space-between; align-items: center; margin: 20px 0; }
+.nav-btn { background: var(--card-bg); border: 1px solid var(--border); padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; transition: all 0.2s; color: var(--text); }
+.nav-btn:hover { border-color: var(--primary); color: var(--primary); }
+.nav-btn:disabled { opacity: 0.4; cursor: not-allowed; border-color: var(--border); color: var(--text-secondary); }
+.page-indicator { font-size: 14px; color: var(--text-secondary); font-weight: 600; }
+.reflection-box { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; border: 1px solid var(--border); margin-top: 24px; }
+.reflection-box h4 { font-size: 16px; color: var(--primary); margin-bottom: 12px; }
+.reflection-box ol { padding-left: 20px; }
+.reflection-box li { margin-bottom: 8px; cursor: pointer; padding: 4px 0; }
+.reflection-box li .reflect-hint { display: none; font-size: 13px; color: var(--text-secondary); margin-top: 4px; padding: 8px; background: var(--bg); border-radius: 4px; }
+.reflection-box li .reflect-hint.show { display: block; }
+.reflection-box li:hover { color: var(--primary); }
+.footer { text-align: center; padding: 20px; color: var(--text-secondary); font-size: 13px; margin-top: 32px; }
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+  <h1>🧪 解析性案例 · 七阶实战</h1>
+  <p>7个由浅入深的案例，运用解析性原理分析化学现象</p>
+</div>
+
+<div class="subhead">
+  <strong>📖 使用说明：</strong>点击下方的步骤按钮切换案例。每个案例包含案例材料 → 解析任务 → 解析路径 → 原理提示 → 分析记录表。先自己思考，再查看表格参考。
+</div>
+
+<div class="progress-bar" id="progressBar">
+  <div class="progress-step active" data-case="0" onclick="goToCase(0)">生活情境</div>
+  <div class="progress-step" data-case="1" onclick="goToCase(1)">校园情境</div>
+  <div class="progress-step" data-case="2" onclick="goToCase(2)">家庭情境</div>
+  <div class="progress-step" data-case="3" onclick="goToCase(3)">学科核心</div>
+  <div class="progress-step" data-case="4" onclick="goToCase(4)">跨学科</div>
+  <div class="progress-step" data-case="5" onclick="goToCase(5)">社会议题</div>
+  <div class="progress-step" data-case="6" onclick="goToCase(6)">综合迁移</div>
+</div>
+
+<!-- Case 1: 生活情境 -->
+<div class="case-panel active" data-case="0">
+<div class="case-card">
+  <span class="level">案例一 · 生活情境</span>
+  <h3>🥩 铁钉生锈是化学变化吗？</h3>
+  <div class="case-meta">
+    <span class="tag">🏠 生活化学</span>
+    <span class="principles">🔧 全面观察法 + 证据链构建</span>
+  </div>
+  <div class="material">
+    <strong>📝 案例材料：</strong>你发现一枚放在院子里的铁钉，表面出现了红褐色的锈斑。和钉子原有的银白色表面相比，生锈的部分变得松软、粗糙。爸爸说"这是铁被氧化了"，妈妈说"这就是铁烂了"。
+  </div>
+  <div class="task">
+    <strong>🎯 解析任务：</strong>请分析铁钉生锈的过程属于哪种变化类型？你的判断依据是什么？
+  </div>
+  <p class="path"><strong>🔗 解析路径：</strong>识别现象 → 确定分析对象 → 拆解要素 → 寻找证据 → 判断结论</p>
+  <button class="toggle-table-btn" onclick="toggleTable(this,'t1')">📊 查看分析记录表</button>
+  <div class="table-content" id="t1">
+    <table>
+      <tr><th>项目</th><th>变化前</th><th>变化后</th><th>新物质生成？</th><th>结论</th></tr>
+      <tr><td>颜色</td><td>银白色</td><td>红褐色</td><td>是</td><td rowspan="3" style="background:#e6f7ff;font-weight:600;">化学变化</td></tr>
+      <tr><td>成分</td><td>Fe</td><td>Fe₂O₃</td><td>是</td></tr>
+      <tr><td>性质</td><td>坚硬</td><td>松软</td><td>是</td></tr>
+    </table>
+  </div>
+</div>
+</div>
+
+<!-- Case 2: 校园情境 -->
+<div class="case-panel" data-case="1">
+<div class="case-card">
+  <span class="level">案例二 · 校园情境</span>
+  <h3>🔥 酒精灯燃烧的现象分析</h3>
+  <div class="case-meta">
+    <span class="tag">🏫 课堂实验</span>
+    <span class="principles">🔧 多维度分析 + 排除法思维</span>
+  </div>
+  <div class="material">
+    <strong>📝 案例材料：</strong>化学课上，老师点燃了酒精灯。你观察到：灯芯上的酒精先变成蒸汽，然后蒸汽燃烧产生蓝色火焰。同时，烧杯底部出现了黑色的炭黑。玻璃棒伸到火焰中取出后，发现玻璃棒上也有黑色物质。
+  </div>
+  <div class="task">
+    <strong>🎯 解析任务：</strong>请分析酒精燃烧的过程中，哪些环节属于物理变化，哪些属于化学变化？炭黑的出现说明了什么？
+  </div>
+  <p class="path"><strong>🔗 解析路径：</strong>观察现象 → 区分变化类型 → 分析原因 → 得出结论</p>
+  <button class="toggle-table-btn" onclick="toggleTable(this,'t2')">📊 查看分析记录表</button>
+  <div class="table-content" id="t2">
+    <table>
+      <tr><th>现象</th><th>变化类型</th><th>判断依据</th></tr>
+      <tr><td>酒精受热变成蒸汽</td><td>物理变化</td><td>状态改变，无新物质生成</td></tr>
+      <tr><td>蒸汽燃烧产生蓝色火焰</td><td>化学变化</td><td>生成CO₂和H₂O</td></tr>
+      <tr><td>烧杯底出现黑色炭黑</td><td>化学变化</td><td>不完全燃烧生成碳单质</td></tr>
+      <tr><td>玻璃棒上附着的黑色物质</td><td>化学变化</td><td>同样为碳单质（新物质）</td></tr>
+    </table>
+    <p style="margin-top:6px;font-size:13px;color:var(--text-secondary);"><strong>💡 炭黑的启示：</strong>酒精不完全燃烧会生成碳，说明燃烧的条件（氧气量）会影响产物。</p>
+  </div>
+</div>
+</div>
+
+<!-- Case 3: 家庭情境 -->
+<div class="case-panel" data-case="2">
+<div class="case-card">
+  <span class="level">案例三 · 家庭情境</span>
+  <h3>🧪 厨房里的"生气"现象</h3>
+  <div class="case-meta">
+    <span class="tag">🍳 生活化学</span>
+    <span class="principles">🔧 全面观察法 + 结论规范化表达</span>
+  </div>
+  <div class="material">
+    <strong>📝 案例材料：</strong>你在厨房中发现妈妈用小苏打（碳酸氢钠）和白醋混合去除了水壶中的水垢。混合时产生了大量气泡，水垢逐渐消失了。妈妈告诉你，这叫"酸碱中和"。
+  </div>
+  <div class="task">
+    <strong>🎯 解析任务：</strong>请分析这个过程中发生了什么类型的化学反应？产生气泡和去除水垢分别对应什么化学过程？
+  </div>
+  <p class="path"><strong>🔗 解析路径：</strong>识别现象 → 分析反应类型 → 解释原理</p>
+  <button class="toggle-table-btn" onclick="toggleTable(this,'t3')">📊 查看分析记录表</button>
+  <div class="table-content" id="t3">
+    <table>
+      <tr><th>现象</th><th>反应物</th><th>生成物</th><th>变化类型</th><th>解释</th></tr>
+      <tr><td>产生大量气泡</td><td>碳酸氢钠+醋酸</td><td>CO₂气体</td><td>化学变化</td><td>酸与碳酸盐反应生成CO₂</td></tr>
+      <tr><td>水垢消失</td><td>水垢+醋酸</td><td>可溶性醋酸盐</td><td>化学变化</td><td>酸碱中和反应</td></tr>
+    </table>
+    <p style="margin-top:6px;font-size:13px;color:var(--text-secondary);"><strong>💡 规范化表达：</strong>碳酸氢钠（NaHCO₃）与醋酸（CH₃COOH）反应，生成醋酸钠（CH₃COONa）、二氧化碳（CO₂）和水（H₂O）。</p>
+  </div>
+</div>
+</div>
+
+<!-- Case 4: 学科核心 -->
+<div class="case-panel" data-case="3">
+<div class="case-card">
+  <span class="level">案例四 · 学科核心情境</span>
+  <h3>⚛️ 物理变化 vs 化学变化的本质对比</h3>
+  <div class="case-meta">
+    <span class="tag">📚 核心概念</span>
+    <span class="principles">🔧 证据链构建 + 多维度分析</span>
+  </div>
+  <div class="material">
+    <strong>📝 案例材料：</strong>以下3组实验：<br>
+    <strong>实验A：</strong>水加热沸腾变成水蒸气，冷凝后变回水。<br>
+    <strong>实验B：</strong>镁条点燃发出耀眼白光，生成白色粉末（氧化镁）。<br>
+    <strong>实验C：</strong>食盐溶在水中，蒸发后食盐重新出现。
+  </div>
+  <div class="task">
+    <strong>🎯 解析任务：</strong>分析三组实验的变化类型，从"分子/原子"层面解释物理变化和化学变化的本质区别。
+  </div>
+  <p class="path"><strong>🔗 解析路径：</strong>识别实验 → 判断变化类型 → 分析分子层面本质 → 总结规律</p>
+  <button class="toggle-table-btn" onclick="toggleTable(this,'t4')">📊 查看对比表格</button>
+  <div class="table-content" id="t4">
+    <table>
+      <tr><th>实验</th><th>变化类型</th><th>宏观证据</th><th>微观本质</th></tr>
+      <tr><td>A. 水→水蒸气→水</td><td>物理变化</td><td>状态改变，无新物质</td><td>分子间距离改变，分子种类不变</td></tr>
+      <tr><td>B. 镁条燃烧</td><td>化学变化</td><td>生成白色粉末（MgO）</td><td>原子重新组合，分子种类改变</td></tr>
+      <tr><td>C. 食盐溶解再蒸发</td><td>物理变化</td><td>食盐重新出现，无新物质</td><td>离子分散再聚集，分子种类不变</td></tr>
+    </table>
+    <p style="margin-top:6px;font-size:13px;color:var(--text-secondary);"><strong>💡 本质区别：</strong>化学变化中分子被破坏，原子重新组合成新分子；物理变化中分子本身不变。</p>
+  </div>
+</div>
+</div>
+
+<!-- Case 5: 跨学科 -->
+<div class="case-panel" data-case="4">
+<div class="case-card">
+  <span class="level">案例五 · 跨学科情境</span>
+  <h3>🌬️ 生物呼吸中的化学变化</h3>
+  <div class="case-meta">
+    <span class="tag">🧬 化学×生物</span>
+    <span class="principles">🔧 多维度分析 + 结论规范化表达</span>
+  </div>
+  <div class="material">
+    <strong>📝 案例材料：</strong>人在呼吸时，吸入的是含氧气的空气，呼出的是含二氧化碳的气体。生物老师告诉你，这叫"细胞呼吸"——葡萄糖在细胞内与氧气反应，释放能量的过程。
+  </div>
+  <div class="task">
+    <strong>🎯 解析任务：</strong>从化学变化的角度分析细胞呼吸：它符合化学变化的特征吗？反应物和生成物分别是什么？能量如何转化？
+  </div>
+  <p class="path"><strong>🔗 解析路径：</strong>列出反应物和生成物 → 判断是否为新物质 → 分析能量变化</p>
+  <button class="toggle-table-btn" onclick="toggleTable(this,'t5')">📊 查看分析记录表</button>
+  <div class="table-content" id="t5">
+    <table>
+      <tr><th>反应物</th><th>反应条件</th><th>生成物</th><th>变化类型</th><th>能量变化</th></tr>
+      <tr><td>葡萄糖（C₆H₁₂O₆）+ 氧气（O₂）</td><td>酶催化</td><td>CO₂ + H₂O + 能量</td><td>化学变化</td><td>化学能→热能（维持体温）+ ATP（供细胞使用）</td></tr>
+    </table>
+    <p style="margin-top:6px;font-size:13px;color:var(--text-secondary);"><strong>💡 跨学科联系：</strong>化学反应式 C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + 能量，这说明生物体的生命活动本质上也是化学反应过程。</p>
+  </div>
+</div>
+</div>
+
+<!-- Case 6: 社会议题 -->
+<div class="case-panel" data-case="5">
+<div class="case-card">
+  <span class="level">案例六 · 社会议题情境</span>
+  <h3>🔋 废旧电池为什么不能随便扔？</h3>
+  <div class="case-meta">
+    <span class="tag">🌍 环境化学</span>
+    <span class="principles">🔧 证据链构建 + 全面观察法</span>
+  </div>
+  <div class="material">
+    <strong>📝 案例材料：</strong>小区垃圾分类宣传栏写着"废旧电池属于有害垃圾"。电池外壳印着"含汞、镉、铅等重金属"。环保专家说，一节电池可以污染60万升水。
+  </div>
+  <div class="task">
+    <strong>🎯 解析任务：</strong>分析重金属如何进入环境？涉及什么化学变化？为什么重金属对环境有害？
+  </div>
+  <p class="path"><strong>🔗 解析路径：</strong>分析电池构成 → 追踪重金属的"去向" → 分析化学变化 → 判断环境影响</p>
+  <button class="toggle-table-btn" onclick="toggleTable(this,'t6')">📊 查看分析表</button>
+  <div class="table-content" id="t6">
+    <table>
+      <tr><th>原因</th><th>过程</th><th>化学变化</th><th>环境影响</th></tr>
+      <tr><td>电池外壳腐蚀破裂</td><td>重金属（Hg、Cd、Pb）泄漏到土壤和水中</td><td>金属被氧化为离子（Hg²⁺、Cd²⁺、Pb²⁺）</td><td>重金属离子被生物吸收，沿食物链富集</td></tr>
+      <tr><td>垃圾填埋或焚烧</td><td>重金属进入地下水或大气</td><td>部分转化为毒性更强的化合物</td><td>污染水源，危害人体健康</td></tr>
+    </table>
+    <p style="margin-top:6px;font-size:13px;color:var(--text-secondary);"><strong>💡 化学视角：</strong>重金属离子的毒性在于它们能与人体内的蛋白质结合，使之失去正常功能——这是化学变化在环境问题中的体现。</p>
+  </div>
+</div>
+</div>
+
+<!-- Case 7: 综合迁移 -->
+<div class="case-panel" data-case="6">
+<div class="case-card">
+  <span class="level">案例七 · 综合迁移情境</span>
+  <h3>🔄 从实验现象到理论总结</h3>
+  <div class="case-meta">
+    <span class="tag">🎯 综合运用</span>
+    <span class="principles">🔧 综合运用全部解析性原理</span>
+  </div>
+  <div class="material">
+    <strong>📝 案例材料：</strong>化学课上你做了以下实验：<br>
+    <strong>实验一：</strong>将铜丝在酒精灯上加热，表面变黑。<br>
+    <strong>实验二：</strong>将变黑的铜丝放到氢气中加热，铜丝恢复原来的颜色。
+  </div>
+  <div class="task">
+    <strong>🎯 解析任务：</strong>分析两次加热分别发生了什么化学变化？写出文字表达式。从"得氧"和"失氧"角度发现规律。
+  </div>
+  <p class="path"><strong>🔗 解析路径：</strong>观察现象 → 分析反应物和生成物 → 寻找规律 → 总结原理</p>
+  <button class="toggle-table-btn" onclick="toggleTable(this,'t7')">📊 查看分析记录表</button>
+  <div class="table-content" id="t7">
+    <table>
+      <tr><th>实验阶段</th><th>现象</th><th>反应物</th><th>生成物</th><th>变化类型</th><th>规律发现</th></tr>
+      <tr><td>加热铜丝</td><td>表面变黑</td><td>Cu + O₂</td><td>CuO</td><td>化学变化</td><td>铜获得氧 → 被氧化</td></tr>
+      <tr><td>黑铜丝+H₂加热</td><td>恢复铜色</td><td>CuO + H₂</td><td>Cu + H₂O</td><td>化学变化</td><td>氧化铜失去氧 → 被还原</td></tr>
+    </table>
+    <p style="margin-top:6px;font-size:13px;color:var(--text-secondary);"><strong>💡 核心规律：</strong>物质"得氧"的过程是氧化反应，物质"失氧"的过程是还原反应。氧化和还原是同时发生的——这就是"氧化还原反应"的本质。</p>
+  </div>
+</div>
+</div>
+
+<div class="nav-btns">
+  <button class="nav-btn" id="prevBtn" onclick="prevCase()">◀ 上一个案例</button>
+  <span class="page-indicator" id="pageIndicator">1 / 7</span>
+  <button class="nav-btn" id="nextBtn" onclick="nextCase()">下一个案例 ▶</button>
+</div>
+
+<div class="reflection-box">
+  <h4>💭 综合反思</h4>
+  <ol>
+    <li onclick="toggleReflect(this)">以上7个案例中，哪个最容易分析？为什么？
+      <div class="reflect-hint">仔细对比每个案例的复杂度和你熟悉的程度。最简单的通常是你最熟悉的生活场景。</div>
+    </li>
+    <li onclick="toggleReflect(this)">哪个案例最难？困难在哪里？
+      <div class="reflect-hint">跨学科或综合迁移案例往往需要调用更多的知识储备，这正是练习的意义所在。</div>
+    </li>
+    <li onclick="toggleReflect(this)">哪个解析性原理你在多个案例中都用了？它最有用吗？
+      <div class="reflect-hint">证据链构建和全面观察法几乎贯穿所有案例——它们是最基础的分析工具。</div>
+    </li>
+    <li onclick="toggleReflect(this)">哪个原理你还不太会用？需要怎样练习？
+      <div class="reflect-hint">如果结论规范化表达有困难，可以多练习"现象→分析→结论"的三段式写法。</div>
+    </li>
+    <li onclick="toggleReflect(this)">这些案例如何帮助你完成最终的"化学新知理论总结报告"？
+      <div class="reflect-hint">每个案例都是一个小型研究报告的缩影——你已经在练习"提出问题→收集证据→得出结论"的完整学术表达链。</div>
+    </li>
+  </ol>
+</div>
+
+<div class="footer">化学 · 九年级上 · M20 解析性案例 | 7个案例，7次思维进阶</div>
+</div>
+
+<script>
+var currentCase = 0;
+var totalCases = 7;
+
+function goToCase(idx) {
+  var panels = document.querySelectorAll('.case-panel');
+  var steps = document.querySelectorAll('.progress-step');
+  if (idx < 0 || idx >= totalCases) return;
+  currentCase = idx;
+  panels.forEach(function(p, i) {
+    p.classList.toggle('active', i === idx);
+  });
+  steps.forEach(function(s, i) {
+    s.classList.toggle('active', i === idx);
+    if (i < idx) { s.classList.add('done'); s.classList.remove('active'); }
+    else { s.classList.remove('done'); }
+  });
+  document.getElementById('pageIndicator').textContent = (idx + 1) + ' / ' + totalCases;
+  document.getElementById('prevBtn').disabled = (idx === 0);
+  document.getElementById('nextBtn').disabled = (idx === totalCases - 1);
+  var openTables = document.querySelectorAll('.table-content.show');
+  openTables.forEach(function(t) { t.classList.remove('show'); });
+  var openBtns = document.querySelectorAll('.toggle-table-btn');
+  openBtns.forEach(function(b) { b.textContent = '📊 查看分析记录表'; });
+}
+
+function prevCase() { if (currentCase > 0) goToCase(currentCase - 1); }
+function nextCase() { if (currentCase < totalCases - 1) goToCase(currentCase + 1); }
+
+function toggleTable(btn, id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('show');
+  btn.textContent = el.classList.contains('show') ? '🙈 收起表格' : '📊 查看分析记录表';
+}
+
+function toggleReflect(li) {
+  var hint = li.querySelector('.reflect-hint');
+  if (hint) hint.classList.toggle('show');
+}
+</script>
+</body>
+</html>

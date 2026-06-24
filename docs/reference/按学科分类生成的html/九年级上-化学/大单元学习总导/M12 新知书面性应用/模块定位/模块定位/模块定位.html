@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块定位 - M12 新知书面性应用</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  padding: 0;
+  margin: 0;
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; }
+.header {
+  background: linear-gradient(135deg, #0958d9, var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+  text-align: center;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header .subtitle { font-size: 14px; opacity: 0.85; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  transition: transform 0.2s;
+}
+.card:hover { transform: translateY(-1px); }
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card h2 .badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.card p { margin-bottom: 10px; }
+.card ul { padding-left: 22px; margin: 8px 0 12px; }
+.card li { margin-bottom: 6px; }
+.roadmap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+  padding: 16px;
+  background: var(--bg);
+  border-radius: var(--border-radius);
+}
+.roadmap-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s;
+  min-width: 80px;
+}
+.roadmap-node:hover, .roadmap-node.active {
+  border-color: var(--primary);
+  background: #e6f4ff;
+  transform: scale(1.05);
+}
+.roadmap-node .node-label { font-weight: 600; color: var(--text); }
+.roadmap-node .node-sub { font-size: 11px; color: var(--text-secondary); }
+.roadmap-arrow {
+  color: var(--text-secondary);
+  font-size: 18px;
+  padding: 0 2px;
+}
+.skill-tag {
+  display: inline-block;
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  color: var(--primary);
+  border-radius: 16px;
+  padding: 4px 14px;
+  font-size: 13px;
+  margin: 4px 4px 4px 0;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.skill-tag:hover, .skill-tag.active {
+  background: var(--primary);
+  color: #fff;
+}
+.why-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin: 12px 0;
+}
+.why-card {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  text-align: center;
+  border-top: 4px solid var(--primary);
+  transition: transform 0.2s;
+}
+.why-card:hover { transform: translateY(-3px); }
+.why-card .icon { font-size: 28px; margin-bottom: 6px; }
+.why-card h4 { color: var(--text); margin-bottom: 6px; font-size: 15px; }
+.why-card p { font-size: 14px; color: var(--text-secondary); margin: 0; }
+.result-list {
+  counter-reset: result;
+  list-style: none;
+  padding: 0;
+}
+.result-list li {
+  counter-increment: result;
+  padding: 10px 14px 10px 44px;
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  margin-bottom: 8px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.result-list li:hover { background: #e6f4ff; }
+.result-list li::before {
+  content: counter(result);
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+}
+.result-list li.done {
+  background: #f0fdf4;
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+.result-list li.done::before { background: #52c41a; }
+.btn {
+  display: inline-block;
+  padding: 8px 20px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 8px;
+}
+.btn:hover { background: var(--primary-hover); }
+.connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+  padding: 14px;
+  background: linear-gradient(90deg, var(--bg), #fff, var(--bg));
+  border-radius: var(--border-radius);
+}
+.connector-item {
+  text-align: center;
+  padding: 6px 12px;
+  font-size: 14px;
+}
+.connector-item .conn-label { font-weight: 600; color: var(--primary); }
+.connector-item .conn-desc { font-size: 12px; color: var(--text-secondary); }
+.connector-arrow { color: var(--accent); font-size: 20px; }
+.footer {
+  text-align: center;
+  padding: 16px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+@media (max-width: 640px) {
+  .why-grid { grid-template-columns: 1fr; }
+  .roadmap { flex-direction: column; }
+  .roadmap-arrow { transform: rotate(90deg); }
+  .container { padding: 16px 12px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>📌 M12 新知书面性应用</h1>
+  <div class="subtitle">模块定位 · 化学 · 九年级上 · 人教版 · 第一单元 走进化学世界</div>
+</div>
+
+<div class="card">
+  <h2><span class="badge">1</span> 本模块学什么</h2>
+  <p>M12训练你的<strong>化学书面表达能力</strong>——不是学新知识，而是学<em>"把已知知识用书面方式说清楚"</em>。具体有三类技能：</p>
+  <div>
+    <span class="skill-tag" onclick="toggleSkill(this)">🧪 实验现象描述</span>
+    <span class="skill-tag" onclick="toggleSkill(this)">🧱 物质性质说明</span>
+    <span class="skill-tag" onclick="toggleSkill(this)">📖 化学概念解释</span>
+  </div>
+  <div id="skillDetail" style="margin-top:10px;min-height:30px;font-size:14px;color:var(--text-secondary);">
+    💡 点击上面的标签查看详情
+  </div>
+</div>
+
+<div class="card">
+  <h2><span class="badge">⭐</span> 为什么重要</h2>
+  <div class="why-grid">
+    <div class="why-card">
+      <div class="icon">📌</div>
+      <h4>让知识定下来</h4>
+      <p>能说清楚的知识才是真正掌握的</p>
+    </div>
+    <div class="why-card">
+      <div class="icon">👁️</div>
+      <h4>让思维看得见</h4>
+      <p>你写出的每个词都反映了思考逻辑</p>
+    </div>
+    <div class="why-card">
+      <div class="icon">🤝</div>
+      <h4>让交流有标准</h4>
+      <p>科学进步建立在"可重复"基础上，前提就是实验报告足够清楚</p>
+    </div>
+  </div>
+  <p style="margin-top:8px;font-size:14px;">✍️ 总结：书面表达 = 知识的"安检门"——说得清，才算真懂。</p>
+</div>
+
+<div class="card">
+  <h2><span class="badge">🔗</span> 与大单元的关系</h2>
+  <p>第1章帮你建立了化学基础概念框架。M12是把前面知识积累<strong>转化为输出能力</strong>的关键一步——前面让你"知道了"，本模块让你"写得出"。</p>
+  <div class="connector">
+    <div class="connector-item">
+      <div class="conn-label">📚 第1章</div>
+      <div class="conn-desc">建立化学概念框架<br>物质变化 · 性质 · 实验基础</div>
+    </div>
+    <div class="connector-arrow">→</div>
+    <div class="connector-item">
+      <div class="conn-label" style="color:#d46b08;">✍️ M12（本模块）</div>
+      <div class="conn-desc" style="color:#d46b08;">知识转化为书面表达<br>实验记录 · 物质说明 · 概念解释</div>
+    </div>
+    <div class="connector-arrow">→</div>
+    <div class="connector-item">
+      <div class="conn-label">🚀 M13-M14</div>
+      <div class="conn-desc">独立项目 + 跨学科方案<br>综合应用书面表达能力</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2><span class="badge">⛓️</span> 前后的衔接</h2>
+
+  <div class="roadmap">
+    <div class="roadmap-node" onclick="highlightNode(this)">
+      <span class="node-label">M8-M11</span>
+      <span class="node-sub">认知框架</span>
+    </div>
+    <div class="roadmap-arrow">▶</div>
+    <div class="roadmap-node active" onclick="highlightNode(this)">
+      <span class="node-label" style="color:var(--primary);font-weight:700;">M12 ✍️</span>
+      <span class="node-sub">书面性应用</span>
+    </div>
+    <div class="roadmap-arrow">▶</div>
+    <div class="roadmap-node" onclick="highlightNode(this)">
+      <span class="node-label">M13-M14</span>
+      <span class="node-sub">项目+跨学科</span>
+    </div>
+  </div>
+
+  <p><strong>前置模块（M8-M11）</strong>帮你建立了多层次的认知框架。M12将这些认知<strong>转化为书面表达能力</strong>。</p>
+  <p><strong>后置模块（M13-M14）</strong>要求你独立完成项目和跨学科方案，离不开书面表达。M12是后续学习的<strong>"基础设施"</strong>。</p>
+</div>
+
+<div class="card">
+  <h2><span class="badge">🏆</span> 预期学习成果</h2>
+  <p>完成本模块后，你将能够——点击可标记为"已完成"：</p>
+  <ol class="result-list">
+    <li onclick="markDone(this)">完成一份合格的化学实验记录——格式规范、现象描述准确</li>
+    <li onclick="markDone(this)">写出一份物质性质说明书——分类清晰、信息完整</li>
+    <li onclick="markDone(this)">用通俗语言解释一个化学概念——既科学又好懂</li>
+    <li onclick="markDone(this)">识别并修改书面表达的常见问题——描述不完整、用词模糊等</li>
+    <li onclick="markDone(this)">养成"先想后写"的表达习惯——明确类型、拆解要素、组织结构，再落笔成文</li>
+  </ol>
+  <button class="btn" onclick="resetResults()">🔄 重置进度</button>
+</div>
+
+<div class="footer">
+  化学 · 九年级上 · 人教版 · M12 新知书面性应用 · 模块定位
+</div>
+
+</div>
+<script>
+function toggleSkill(el) {
+  const detail = document.getElementById('skillDetail');
+  document.querySelectorAll('.skill-tag').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  const texts = {
+    '🧪 实验现象描述': '用准确规范的语言记录化学实验所见，强调"变化前→变化中→变化后"的三段式描述结构。',
+    '🧱 物质性质说明': '按"物理性质→化学性质"的结构介绍物质特征，涵盖颜色、状态、气味、溶解性等要素。',
+    '📖 化学概念解释': '用通俗不失准确的语言解释化学概念，既保证科学性又让读者容易理解。'
+  };
+  detail.textContent = '📝 ' + (texts[el.textContent.trim()] || '点击上方标签了解具体技能');
+}
+
+function highlightNode(el) {
+  document.querySelectorAll('.roadmap-node').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function markDone(el) {
+  el.classList.toggle('done');
+}
+
+function resetResults() {
+  document.querySelectorAll('.result-list li').forEach(li => li.classList.remove('done'));
+}
+</script>
+</body>
+</html>

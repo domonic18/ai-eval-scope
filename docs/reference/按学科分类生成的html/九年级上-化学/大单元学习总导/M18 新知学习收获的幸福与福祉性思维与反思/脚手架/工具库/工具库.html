@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具库 —— 认知放大器工具集</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  border-radius: var(--border-radius);
+  padding: 28px 32px;
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header p { font-size: 14px; opacity: 0.9; line-height: 1.6; }
+.level-tabs {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;
+}
+.level-tab {
+  padding: 8px 20px; border-radius: 20px; border: 1px solid var(--border);
+  background: var(--card-bg); cursor: pointer; font-size: 14px;
+  transition: all .3s; font-family: inherit;
+}
+.level-tab:hover { border-color: var(--primary); color: var(--primary); }
+.level-tab.active {
+  background: var(--primary); color: #fff; border-color: var(--primary);
+}
+.tool-card {
+  background: var(--card-bg); border-radius: var(--border-radius);
+  box-shadow: var(--shadow); padding: 20px 24px; margin-bottom: 16px;
+  border-left: 4px solid var(--primary); transition: all .3s;
+  display: none;
+}
+.tool-card.visible { display: block; }
+.tool-card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.12); }
+.tool-card .badge {
+  display: inline-block; padding: 2px 10px; border-radius: 10px;
+  font-size: 12px; font-weight: 600; margin-bottom: 8px;
+}
+.badge-think { background: #e6f7ff; color: #1677ff; }
+.badge-data { background: #f6ffed; color: #16a34a; }
+.badge-digital { background: #fff7e6; color: #d46b08; }
+.tool-card h3 { font-size: var(--font-h2); margin-bottom: 6px; }
+.tool-card .meta { font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; }
+.tool-card .desc { margin-bottom: 10px; }
+.tool-card .steps { background: var(--bg); padding: 12px 16px; border-radius: 6px; margin: 10px 0; }
+.tool-card .steps ol { padding-left: 20px; margin: 6px 0; }
+.tool-card .steps li { margin-bottom: 4px; }
+.tool-card .example { background: #fffbe6; padding: 12px 16px; border-radius: 6px; border-left: 3px solid #faad14; margin: 10px 0; font-size: 14px; }
+.tool-card .scene { margin-top: 10px; }
+.tool-card .scene span { display: inline-block; background: var(--bg); padding: 2px 10px; border-radius: 10px; font-size: 13px; margin: 2px 4px 2px 0; }
+.expand-btn {
+  background: none; border: none; color: var(--primary); cursor: pointer;
+  font-size: 14px; padding: 4px 0; font-family: inherit;
+}
+.expand-btn:hover { color: var(--primary-hover); }
+.expand-content { max-height: 0; overflow: hidden; transition: max-height .4s ease; }
+.expand-content.open { max-height: 600px; }
+.comparison-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14px; }
+.comparison-table th, .comparison-table td {
+  border: 1px solid var(--border); padding: 8px 12px; text-align: left;
+}
+.comparison-table th { background: var(--primary); color: #fff; font-weight: 600; }
+.comparison-table tr:nth-child(even) { background: #fafafa; }
+.section-title {
+  font-size: var(--font-h2); color: var(--primary); margin: 24px 0 12px;
+  padding-bottom: 8px; border-bottom: 2px solid var(--accent);
+}
+@media (max-width: 640px) {
+  .container { padding: 12px; }
+  .header { padding: 20px; }
+  .tool-card { padding: 16px; }
+  .level-tab { padding: 6px 14px; font-size: 13px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🧰 工具库</h1>
+    <p>认知放大器工具集——化学学习中的高效思考、分析、实验与表达工具。按难度分层，随取随用。</p>
+  </div>
+
+  <div class="level-tabs">
+    <button class="level-tab active" data-level="base" onclick="switchLevel('base')">📘 基础层</button>
+    <button class="level-tab" data-level="adv" onclick="switchLevel('adv')">📗 进阶层</button>
+    <button class="level-tab" data-level="challenge" onclick="switchLevel('challenge')">📕 挑战层</button>
+  </div>
+
+  <!-- 基础层 -->
+  <div class="level-group" data-level="base">
+    <h2 class="section-title">🔧 基础工具</h2>
+
+    <div class="tool-card visible">
+      <span class="badge badge-think">思维工具</span>
+      <h3>2.1 思维导图</h3>
+      <p class="meta">将零散的化学知识点用中心辐射结构可视化</p>
+      <div class="desc"><strong>📌 用途：</strong>理清概念之间的关系，建立知识网络。</div>
+      <div class="steps">
+        <strong>使用步骤：</strong>
+        <ol>
+          <li>在中心写下主题（如"化学变化"）；</li>
+          <li>向外辐射一级分支（物理变化、化学变化、伴随现象）；</li>
+          <li>继续展开二级分支（发光、放热、变色、生成气体等）；</li>
+          <li>使用关键词、色彩和图标强化记忆。</li>
+        </ol>
+      </div>
+      <div class="example">💡 <strong>示例：</strong>以"走进化学世界"为中心，辐射出"实验仪器""药品取用""加热操作""安全规则"四大分支。</div>
+      <div class="scene"><strong>适用场景：</strong><span>预习梳理</span><span>复习总结</span><span>实验前知识准备</span></div>
+      <button class="expand-btn" onclick="toggleExpand(this)">▸ 查看完整示例展开</button>
+      <div class="expand-content">
+        <div style="padding:12px 0;">
+          <p style="margin-bottom:8px;font-size:14px;">👇 以下是一个思维导图的文字结构示意：</p>
+          <pre style="background:var(--bg);padding:12px;border-radius:6px;font-size:13px;line-height:1.6;overflow-x:auto;">
+                 ┌─ 实验仪器（试管、酒精灯、量筒...）
+          ┌─ 走进 ── 药品取用（固体：一横二放三慢竖）
+          │  化学世界│ 液体：一倒二向三紧挨）
+    主题 ─┤         └─ 加热操作（预热、外焰加热）
+          │         ┌─ 安全规则（三不原则、余火处理）
+          └─ 化学变化 ─ 伴随现象：发光、放热、变色、生成气体/沉淀
+          </pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="tool-card visible">
+      <span class="badge badge-data">数据工具</span>
+      <h3>2.2 表格对比法</h3>
+      <p class="meta">通过横向对比表格清晰呈现相似概念的异同</p>
+      <div class="desc"><strong>📌 用途：</strong>减少概念混淆，快速抓住差异点和共同点。</div>
+      <div class="steps">
+        <strong>使用步骤：</strong>
+        <ol>
+          <li>确定对比维度（定义、示例、特点、注意事项）；</li>
+          <li>在表头列出要对比的概念；</li>
+          <li>逐行填充差异与共同点。</li>
+        </ol>
+      </div>
+      <div class="example">
+        <strong>💡 示例：物理变化 vs. 化学变化</strong>
+        <table class="comparison-table">
+          <tr><th>维度</th><th>物理变化</th><th>化学变化</th></tr>
+          <tr><td>定义</td><td>无新物质生成</td><td>有新物质生成</td></tr>
+          <tr><td>示例</td><td>水结冰、瓷碗破碎</td><td>铁生锈、木炭燃烧</td></tr>
+          <tr><td>伴随现象</td><td>形状/状态改变</td><td>发光/放热/变色/产气</td></tr>
+        </table>
+      </div>
+      <div class="scene"><strong>适用场景：</strong><span>易混概念辨析</span><span>实验现象记录</span><span>性质对比</span></div>
+    </div>
+  </div>
+
+  <!-- 进阶层 -->
+  <div class="level-group" data-level="adv" style="display:none;">
+    <h2 class="section-title">⚙️ 进阶工具</h2>
+
+    <div class="tool-card visible">
+      <span class="badge badge-think">思维工具</span>
+      <h3>3.1 5W1H 分析框架</h3>
+      <p class="meta">从六个维度系统分析一个化学问题</p>
+      <div class="desc"><strong>📌 用途：</strong>建立对一个化学对象或现象的完整认知。</div>
+      <div class="steps">
+        <strong>使用步骤：</strong>
+        <ol>
+          <li>明确分析对象（如"酒精灯的使用"）；</li>
+          <li>依次追问六个问题并记录答案。</li>
+        </ol>
+      </div>
+      <div class="example">
+        <strong>💡 示例——酒精灯</strong>
+        <table class="comparison-table">
+          <tr><th>维度</th><th>答案</th></tr>
+          <tr><td>What（是什么）</td><td>化学实验室常用加热工具</td></tr>
+          <tr><td>Why（为什么）</td><td>提供稳定高温热源</td></tr>
+          <tr><td>When（何时用）</td><td>需要加热药品时</td></tr>
+          <tr><td>Where（在哪里）</td><td>实验台通风处</td></tr>
+          <tr><td>Who（谁操作）</td><td>实验操作者</td></tr>
+          <tr><td>How（怎么做）</td><td>用外焰加热，严禁用嘴吹灭</td></tr>
+        </table>
+      </div>
+      <div class="scene"><strong>适用场景：</strong><span>探究性实验设计</span><span>实验事故分析</span><span>新概念深度学习</span></div>
+    </div>
+
+    <div class="tool-card visible">
+      <span class="badge badge-think">思维工具</span>
+      <h3>3.2 概念图</h3>
+      <p class="meta">用节点-连线-连接词展示知识网络</p>
+      <div class="desc"><strong>📌 用途：</strong>比思维导图更强调概念间的逻辑关系（如"导致""属于""包含"）。</div>
+      <div class="scene"><strong>适用场景：</strong><span>单元复习</span><span>跨章节知识整合</span><span>构建知识体系</span></div>
+      <button class="expand-btn" onclick="toggleExpand(this)">▸ 查看概念图示例</button>
+      <div class="expand-content">
+        <div style="padding:12px 0;font-size:14px;">
+          <p>以"物质分类"为例：</p>
+          <pre style="background:var(--bg);padding:12px;border-radius:6px;font-size:13px;line-height:1.7;">
+    物质 ──属于──▶ 纯净物 ──属于──▶ 单质（如 O₂、Fe）
+          │                    └─属于──▶ 化合物（如 H₂O、CO₂）
+          │
+          └─属于──▶ 混合物（如空气、食醋）
+          </pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 挑战层 -->
+  <div class="level-group" data-level="challenge" style="display:none;">
+    <h2 class="section-title">🚀 挑战工具</h2>
+
+    <div class="tool-card visible">
+      <span class="badge badge-digital">数字工具</span>
+      <h3>4.1 AI 对话助手</h3>
+      <p class="meta">借助生成式 AI 进行化学概念答疑、实验设计辅助</p>
+      <div class="desc"><strong>📌 用途：</strong>7×24小时智能学习伙伴，随时解答疑惑。</div>
+      <div class="steps">
+        <strong>使用步骤：</strong>
+        <ol>
+          <li>提出具体问题（如"为什么铁丝在氧气中燃烧要预先在集气瓶底放水？"）；</li>
+          <li>要求 AI 分步骤解释；</li>
+          <li>追问验证，交叉对比教材内容。</li>
+        </ol>
+      </div>
+      <div class="example" style="border-left-color:#1677ff;">
+        ⚠️ <strong>注意事项：</strong>AI 可能出错，务必以教材和教师讲解为准。不盲信、不依赖，保持批判性思维。
+      </div>
+      <div class="scene"><strong>适用场景：</strong><span>课后答疑</span><span>错题分析</span><span>实验方案头脑风暴</span></div>
+    </div>
+
+    <div class="tool-card visible">
+      <span class="badge badge-digital">数字工具</span>
+      <h3>4.2 虚拟仿真实验</h3>
+      <p class="meta">在线上安全、无消耗地模拟实验操作</p>
+      <div class="desc"><strong>📌 用途：</strong>不用进实验室也能"动手"做实验，反复练习操作。</div>
+      <div class="steps">
+        <strong>推荐平台：</strong>
+        <ul style="padding-left:20px;margin:8px 0;">
+          <li><strong>PhET 模拟实验室</strong>（免费，科罗拉多大学）—— 适合概念理解</li>
+          <li><strong>NOBOOK 虚拟实验</strong>（国内平台）—— 操作仿真度高</li>
+        </ul>
+      </div>
+      <div class="scene"><strong>适用场景：</strong><span>实验预习</span><span>危险实验模拟</span><span>操作训练</span><span>课后复习</span></div>
+    </div>
+  </div>
+
+  <div style="margin-top:24px;padding:16px 20px;background:var(--card-bg);border-radius:var(--border-radius);box-shadow:var(--shadow);font-size:14px;color:var(--text-secondary);text-align:center;">
+    💡 点击上方的层级标签切换工具集 · 点击"展开"查看详情
+  </div>
+</div>
+
+<script>
+function switchLevel(level) {
+  document.querySelectorAll('.level-tab').forEach(function(tab) {
+    tab.classList.toggle('active', tab.dataset.level === level);
+  });
+  document.querySelectorAll('.level-group').forEach(function(g) {
+    g.style.display = g.dataset.level === level ? 'block' : 'none';
+  });
+}
+function toggleExpand(btn) {
+  var content = btn.nextElementSibling;
+  if (!content || !content.classList) return;
+  var open = content.classList.toggle('open');
+  btn.textContent = open ? '▾ 收起' : '▸ 查看完整示例展开';
+}
+</script>
+</body>
+</html>

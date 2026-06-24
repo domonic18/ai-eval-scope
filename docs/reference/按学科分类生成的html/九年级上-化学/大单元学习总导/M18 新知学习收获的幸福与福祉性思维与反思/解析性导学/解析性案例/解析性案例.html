@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性案例 — 七阶适配案例导学</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px 24px;
+  box-sizing: border-box;
+}
+.header-banner {
+  background: linear-gradient(135deg, #391085, #531dab);
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header-banner h1 { margin: 0 0 8px; font-size: var(--font-h1); }
+.header-banner p { margin: 0; opacity: 0.85; font-size: 14px; }
+.case-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+.case-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.case-card .card-head {
+  padding: 14px 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.2s;
+}
+.case-card .card-head:hover { background: var(--bg); }
+.case-card .card-head h3 {
+  margin: 0;
+  font-size: 15px;
+  color: var(--primary);
+}
+.case-card .card-head .num-badge {
+  display: inline-block;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  text-align: center;
+  line-height: 28px;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.case-card .card-body {
+  padding: 0 18px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s;
+}
+.case-card .card-body.open {
+  max-height: 1200px;
+  padding: 14px 18px;
+}
+.case-card .card-body p { margin: 6px 0; }
+.case-card .card-body strong { color: var(--primary); }
+.case-card .scene-tag {
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: var(--bg);
+  padding: 2px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: 6px;
+}
+.table-wrap {
+  overflow-x: auto;
+  margin: 10px 0;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+table th, table td {
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  text-align: left;
+}
+table th {
+  background: var(--bg);
+  color: var(--primary);
+  font-weight: 600;
+}
+table tr:hover { background: #fafafa; }
+.mid-section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  border: 1px solid var(--border);
+  margin: 20px 0;
+}
+.mid-section h3 {
+  color: var(--primary);
+  margin: 0 0 12px;
+  font-size: var(--font-h2);
+}
+.step-progress {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+.step-progress .dot {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.step-progress .dot.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.step-progress .dot.done {
+  background: #52c41a;
+  color: #fff;
+  border-color: #52c41a;
+}
+.step-progress .line {
+  width: 20px;
+  height: 2px;
+  background: var(--border);
+}
+.reflect-section { padding-left: 20px; }
+.reflect-section li { margin: 8px 0; }
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  .case-grid { grid-template-columns: 1fr; }
+  .header-banner { padding: 20px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header-banner">
+  <h1>🧪 解析性案例</h1>
+  <p>七阶解析性适配案例导学——从生活到学科，从校园到社会，由浅入深练习解析七步法</p>
+</div>
+
+<p style="margin-bottom:16px;">以下7个案例围绕<strong>"走进化学世界"</strong>设计，运用解析性原理和七步法，由浅入深引导你在不同情境中实践解析能力。点击案例标题展开内容。</p>
+
+<div class="case-grid">
+
+<div class="case-card">
+  <div class="card-head" onclick="toggleCase(this)">
+    <h3>🥤 案例一：热水瓶为什么结水垢？</h3>
+    <span class="num-badge">1</span>
+  </div>
+  <div class="card-body">
+    <span class="scene-tag">🏠 生活情境</span>
+    <p>热水瓶用了几个月后内壁出现灰白色硬质固体。小刀刮下一点，白色粉末加白醋后冒泡。</p>
+    <p><strong>解析任务：</strong>水垢是什么？怎么形成的？为什么醋能去除？</p>
+    <p><strong>参考思路：</strong>水垢主要成分为碳酸钙CaCO₃和氢氧化镁Mg(OH)₂。加醋冒泡是碳酸盐与酸反应产生CO₂的特征——醋酸与水垢反应生成可溶物和气体，从而实现去除。</p>
+    <p><span class="scene-tag" style="background:#fff7e6;color:#d46b08;">💡 重点原理：要素分解法 + 证据检验法</span></p>
+  </div>
+</div>
+
+<div class="case-card">
+  <div class="card-head" onclick="toggleCase(this)">
+    <h3>🏃 案例二：操场单杠为什么会生锈？</h3>
+    <span class="num-badge">2</span>
+  </div>
+  <div class="card-body">
+    <span class="scene-tag">🏫 校园情境</span>
+    <p>室外铁制单杠：接触地面部分生锈最严重，经常手握的部分反而光亮，新刷油漆的部分完全没生锈。</p>
+    <p><strong>解析任务：</strong>分析原因和影响因素，提出防锈建议。</p>
+    <p><strong>参考思路：</strong>铁生锈三要素——铁(Fe)+水(H₂O)+氧气(O₂)。地面部分湿气重→生锈重；手握部分摩擦+油脂→光亮；油漆隔绝水+氧→不生锈。建议：定期刷漆、底座防潮处理。</p>
+    <p><span class="scene-tag" style="background:#fff7e6;color:#d46b08;">💡 重点原理：关系梳理法 + 逻辑推导法</span></p>
+  </div>
+</div>
+
+<div class="case-card">
+  <div class="card-head" onclick="toggleCase(this)">
+    <h3>🗑️ 案例三：有害垃圾的化学解析</h3>
+    <span class="num-badge">3</span>
+  </div>
+  <div class="card-body">
+    <span class="scene-tag">🏘️ 社区情境</span>
+    <p>红色有害垃圾桶里有废电池、过期药品、废荧光灯管等。乱扔会污染土壤和地下水。</p>
+    <p><strong>解析任务：</strong>选择一种有害垃圾（如废电池），解析其有害化学物质、危害及正确处理方式。</p>
+    <p><strong>参考思路：</strong>废干电池含锌、锰、汞等。汞(Hg)是有毒重金属→进入土壤→食物链富集→危害人体神经系统。专门回收→安全填埋+回收有用金属→防止污染。</p>
+    <p><span class="scene-tag" style="background:#fff7e6;color:#d46b08;">💡 重点原理：证据检验法 + 结论形成法</span></p>
+  </div>
+</div>
+
+<div class="case-card">
+  <div class="card-head" onclick="toggleCase(this)">
+    <h3>🔥 案例四：化学变化的四大判断依据</h3>
+    <span class="num-badge">4</span>
+  </div>
+  <div class="card-body">
+    <span class="scene-tag">📖 学科核心</span>
+    <p>六个现象：水结冰、铁钉生锈、纸张燃烧、食盐溶于水、小苏打加醋冒泡、灯泡发光发热。逐一判断是物理变化还是化学变化。</p>
+    <div class="table-wrap">
+    <table>
+      <tr><th>现象</th><th>变化前</th><th>变化后</th><th>是否新物质</th><th>类型</th></tr>
+      <tr><td>水结冰</td><td>H₂O(液)</td><td>H₂O(固)</td><td>否</td><td>物理</td></tr>
+      <tr><td>铁钉生锈</td><td>Fe</td><td>Fe₂O₃·xH₂O</td><td>是</td><td>化学</td></tr>
+      <tr><td>纸张燃烧</td><td>纤维素</td><td>CO₂+H₂O+灰烬</td><td>是</td><td>化学</td></tr>
+      <tr><td>食盐溶于水</td><td>NaCl+H₂O</td><td>NaCl溶液</td><td>否</td><td>物理</td></tr>
+      <tr><td>小苏打+醋</td><td>NaHCO₃+CH₃COOH</td><td>CO₂+...等</td><td>是</td><td>化学</td></tr>
+      <tr><td>灯泡发光</td><td>钨丝</td><td>钨丝(高温)</td><td>否</td><td>物理</td></tr>
+    </table>
+    </div>
+    <p><strong>四大核心依据：</strong>颜色变化 · 气体产生 · 温度变化 · 沉淀生成</p>
+    <p><span class="scene-tag" style="background:#fff7e6;color:#d46b08;">💡 重点原理：要素分解法 + 逻辑推导法</span></p>
+  </div>
+</div>
+
+<div class="case-card">
+  <div class="card-head" onclick="toggleCase(this)">
+    <h3>🌿 案例五：光合作用 × 呼吸作用</h3>
+    <span class="num-badge">5</span>
+  </div>
+  <div class="card-body">
+    <span class="scene-tag">🔗 跨学科·化学生物</span>
+    <p>密闭玻璃钟罩内放一盆绿植，光照4小时后罩内O₂上升，CO₂下降。</p>
+    <p><strong>解析任务：</strong>光合作用涉及哪些化学反应？呼吸作用与光合作用的关系？</p>
+    <p><strong>参考思路：</strong>光合作用：6CO₂+6H₂O →(光,叶绿素)→ C₆H₁₂O₆+6O₂；呼吸作用：C₆H₁₂O₆+6O₂ → 6CO₂+6H₂O+能量。两者互为逆过程，形成碳氧循环。</p>
+    <p><span class="scene-tag" style="background:#fff7e6;color:#d46b08;">💡 重点原理：关系梳理法 + 结论形成法</span></p>
+  </div>
+</div>
+
+<div class="case-card">
+  <div class="card-head" onclick="toggleCase(this)">
+    <h3>🛍️ 案例六：为什么"限塑令"？</h3>
+    <span class="num-badge">6</span>
+  </div>
+  <div class="card-body">
+    <span class="scene-tag">🌍 社会议题</span>
+    <p>塑料主要成分是聚乙烯等高分子化合物，化学性质非常稳定——自然环境中数百年不分解。</p>
+    <p><strong>解析任务：</strong>塑料为什么难降解？焚烧和填埋的危害？可降解塑料的"降解"涉及什么化学变化？</p>
+    <p><strong>参考思路：</strong>聚乙烯分子链长→化学稳定性强→难分解。焚烧产生二噁英等有害气体，填埋占用土地。可降解塑料通过添加特殊成分，使分子链在特定条件断裂——这是化学变化。</p>
+    <p><span class="scene-tag" style="background:#fff7e6;color:#d46b08;">💡 重点原理：证据检验法 + 逻辑推导法</span></p>
+  </div>
+</div>
+
+<div class="case-card">
+  <div class="card-head" onclick="toggleCase(this)">
+    <h3>🔥 案例七：家庭火灾的化学解析</h3>
+    <span class="num-badge">7</span>
+  </div>
+  <div class="card-body">
+    <span class="scene-tag">🧩 综合迁移</span>
+    <p>汤溢出浇灭煤气灶火焰，燃气继续泄漏；重新点火时"噗"一声——发生燃气爆燃。</p>
+    <p><strong>解析任务：</strong>从化学角度完整解析爆燃事件的成因，写一条"家庭燃气安全使用建议"。</p>
+    <p><strong>参考思路：</strong>燃气（CH₄）+O₂→点火→燃烧。汤灭火→燃气泄漏→浓度上升→达爆炸极限→瞬间剧烈燃烧。安全建议：煮汤不离厨房，灭火后立即关阀并开窗通风。</p>
+    <p><span class="scene-tag" style="background:#fff7e6;color:#d46b08;">💡 重点原理：综合运用全部6条原理</span></p>
+  </div>
+</div>
+
+</div>
+
+<div class="mid-section">
+  <h3>📋 实战记录：用水垢案例走一遍七步法</h3>
+  <p>点击每一步来推进解析过程：</p>
+  <div class="step-progress">
+    <div class="dot active" onclick="goStep(0)">1</div><div class="line"></div>
+    <div class="dot" onclick="goStep(1)">2</div><div class="line"></div>
+    <div class="dot" onclick="goStep(2)">3</div><div class="line"></div>
+    <div class="dot" onclick="goStep(3)">4</div><div class="line"></div>
+    <div class="dot" onclick="goStep(4)">5</div><div class="line"></div>
+    <div class="dot" onclick="goStep(5)">6</div><div class="line"></div>
+    <div class="dot" onclick="goStep(6)">7</div>
+  </div>
+  <div id="stepDisplay" style="background:var(--bg);padding:14px;border-radius:6px;margin-top:10px;">
+    <strong>步骤1：现象描述</strong>
+    <p>热水瓶内壁有灰白色硬质固体，白色粉末加白醋冒泡。</p>
+  </div>
+  <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+    <button onclick="prevStep()" style="padding:6px 14px;border:1px solid var(--border);background:var(--card-bg);border-radius:6px;cursor:pointer;">◀ 上一步</button>
+    <button onclick="nextStep()" style="padding:6px 14px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;">下一步 ▶</button>
+    <button onclick="resetSteps()" style="padding:6px 14px;border:1px solid var(--border);background:var(--card-bg);border-radius:6px;cursor:pointer;">🔄 重置</button>
+  </div>
+</div>
+
+<div class="mid-section">
+  <h3>🤔 综合反思</h3>
+  <ol class="reflect-section">
+    <li>从案例一到七，哪个最容易上手？哪个挑战最大？</li>
+    <li>7个案例中，你用得最多的解析性原理是哪一条？用最少的是哪一条？</li>
+    <li>现在你能"用化学的眼光"分析生活中的现象了吗？举一个例子。</li>
+    <li>用一个比喻描述"解析"和"建构"的关系——"解析像解剖，建构像组装"</li>
+  </ol>
+  <button onclick="document.getElementById('reflection').style.display='block'" style="padding:8px 20px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;margin-top:6px;">📝 写出你的思考</button>
+  <div id="reflection" style="display:none;margin-top:12px;">
+    <textarea placeholder="在这里写下你的反思..." style="width:100%;min-height:80px;padding:10px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:14px;box-sizing:border-box;"></textarea>
+    <button onclick="this.parentElement.style.display='none';alert('✅ 思考已记录！继续加油！')" style="margin-top:8px;padding:6px 16px;background:#52c41a;color:#fff;border:none;border-radius:6px;cursor:pointer;">保存</button>
+  </div>
+</div>
+
+</div>
+<script>
+var caseData = [
+  "步骤1：现象描述 — 热水瓶内壁灰白色硬质固体，白色粉末加白醋冒泡",
+  "步骤2：要素分解 — 反应物（水垢+醋酸）；条件（常温）；现象（冒泡=产生CO₂）；生成物（可溶性醋酸钙+水+CO₂）",
+  "步骤3：关系梳理 — 水垢不溶于水→附着内壁；醋与水垢反应生成可溶物→醋能去除水垢",
+  "步骤4：证据检验 — 白醋泡水垢冒泡→碳酸盐与酸反应的典型特征（产生新物质=化学变化）",
+  "步骤5：逻辑推导 — 水垢含碳酸盐→加酸产生CO₂→醋中的醋酸能与水垢反应→实现去除",
+  "步骤6：结论形成 — 水垢主要成分是CaCO₃和Mg(OH)₂，醋酸能与它们反应生成可溶物和气体",
+  "步骤7：反思局限 — 此方法对所有水垢都有效吗？如果水垢太厚，一次浸泡够吗？"
+];
+var currentStep = 0;
+
+function toggleCase(head) {
+  var body = head.nextElementSibling;
+  if (body.classList.contains('open')) {
+    body.classList.remove('open');
+  } else {
+    body.classList.add('open');
+  }
+}
+function goStep(idx) {
+  currentStep = idx;
+  updateStepDisplay();
+}
+function updateStepDisplay() {
+  var display = document.getElementById('stepDisplay');
+  display.innerHTML = '<strong>步骤'+(currentStep+1)+'：</strong><p>'+caseData[currentStep].split('—')[1]||caseData[currentStep]+'</p>';
+  var dots = document.querySelectorAll('.step-progress .dot');
+  dots.forEach(function(d, i) {
+    d.classList.remove('active','done');
+    if (i < currentStep) d.classList.add('done');
+    else if (i === currentStep) d.classList.add('active');
+  });
+}
+function nextStep() {
+  if (currentStep < caseData.length - 1) {
+    currentStep++;
+    updateStepDisplay();
+  }
+}
+function prevStep() {
+  if (currentStep > 0) {
+    currentStep--;
+    updateStepDisplay();
+  }
+}
+function resetSteps() {
+  currentStep = 0;
+  var dots = document.querySelectorAll('.step-progress .dot');
+  dots.forEach(function(d) { d.classList.remove('active','done'); });
+  if (dots[0]) dots[0].classList.add('active');
+  document.getElementById('stepDisplay').innerHTML = '<strong>步骤1：现象描述</strong><p>热水瓶内壁灰白色硬质固体，白色粉末加白醋冒泡。</p>';
+}
+</script>
+</body>
+</html>

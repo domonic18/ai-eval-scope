@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VR 脚手架 - 沉浸化学体验</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 10px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  margin: 0; padding: 0;
+  min-height: 100vh;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* ===== Header ===== */
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  border-radius: var(--border-radius);
+  padding: 32px 24px;
+  margin-bottom: 24px;
+  color: #fff;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.header::before {
+  content: '🔬';
+  position: absolute;
+  right: 20px;
+  top: 10px;
+  font-size: 60px;
+  opacity: 0.15;
+}
+.header::after {
+  content: '🧪';
+  position: absolute;
+  left: 20px;
+  bottom: 10px;
+  font-size: 50px;
+  opacity: 0.12;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin-bottom: 6px;
+  position: relative;
+  z-index: 1;
+}
+.header p {
+  font-size: 14px;
+  opacity: 0.85;
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== Cards ===== */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 24px;
+  margin: 16px 0;
+  box-shadow: var(--shadow);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(22,119,255,0.12);
+}
+.card .card-icon {
+  font-size: 36px;
+  margin-bottom: 8px;
+  display: block;
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+.card p, .card li {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.8;
+}
+.card ul {
+  padding-left: 20px;
+}
+.card li {
+  margin: 6px 0;
+}
+
+/* ===== Task Steps ===== */
+.task-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin: 16px 0;
+}
+.task-step {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  text-align: center;
+  box-shadow: var(--shadow);
+  transition: all 0.3s;
+  cursor: pointer;
+}
+.task-step:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 20px rgba(22,119,255,0.15);
+}
+.task-step .step-icon {
+  font-size: 40px;
+  display: block;
+  margin-bottom: 8px;
+}
+.task-step h3 {
+  font-size: 16px;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+.task-step p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ===== Interactive Detail ===== */
+.detail-panel {
+  display: none;
+  background: var(--card-bg);
+  border: 2px solid var(--accent);
+  border-radius: var(--border-radius);
+  padding: 24px;
+  margin: 16px 0;
+  animation: panelIn 0.4s ease-out;
+}
+.detail-panel.show { display: block; }
+@keyframes panelIn {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.detail-panel h3 {
+  color: var(--primary);
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+.detail-panel .detail-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+  align-items: flex-start;
+}
+.detail-panel .detail-item:last-child { border-bottom: none; }
+.detail-panel .detail-num {
+  width: 24px; height: 24px;
+  line-height: 24px;
+  text-align: center;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.detail-panel .detail-text {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.6;
+}
+.detail-panel .close-btn {
+  float: right;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  padding: 4px;
+}
+
+/* ===== Resource Cards ===== */
+.resource-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 12px 0;
+}
+.resource-card {
+  background: #f0f5ff;
+  border: 1px solid #e0ebff;
+  border-radius: 8px;
+  padding: 14px;
+  text-align: center;
+}
+.resource-card .res-icon {
+  font-size: 28px;
+  display: block;
+  margin-bottom: 4px;
+}
+.resource-card .res-name {
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--primary);
+}
+.resource-card .res-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* ===== Alternative Accordion ===== */
+.alternative-section {
+  margin: 16px 0;
+}
+.alt-toggle {
+  width: 100%;
+  padding: 14px 20px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  font-size: 15px;
+  font-weight: bold;
+  color: var(--primary);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: all 0.3s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.alt-toggle:hover {
+  border-color: var(--primary);
+  background: #f5f8ff;
+}
+.alt-toggle .arrow {
+  transition: transform 0.3s;
+  font-size: 12px;
+}
+.alt-toggle.active .arrow { transform: rotate(180deg); }
+.alt-content {
+  display: none;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  padding: 20px;
+}
+.alt-content.show { display: block; }
+.alt-content .alt-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.alt-content .alt-item:last-child { border-bottom: none; }
+.alt-content .alt-icon { font-size: 20px; flex-shrink: 0; }
+.alt-content .alt-text { font-size: 13px; color: var(--text); }
+.alt-content .alt-text strong { color: var(--primary); }
+
+/* ===== VR Demo Interactive ===== */
+.vr-demo-area {
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border-radius: var(--border-radius);
+  padding: 30px 20px;
+  text-align: center;
+  margin: 16px 0;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.vr-demo-area .vr-stars {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+}
+.vr-demo-area .vr-content {
+  position: relative;
+  z-index: 1;
+}
+.vr-demo-area .vr-icon {
+  font-size: 60px;
+  display: block;
+  margin-bottom: 12px;
+  animation: float 3s ease-in-out infinite;
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.vr-demo-area .vr-title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+.vr-demo-area .vr-subtitle {
+  font-size: 13px;
+  opacity: 0.7;
+  margin-bottom: 16px;
+}
+.vr-demo-area .molecule-viewer {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.vr-demo-area .molecule {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  animation: pulse 2s ease-in-out infinite;
+  position: relative;
+}
+.vr-demo-area .molecule::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 2px dashed rgba(255,255,255,0.3);
+  animation: spin 8s linear infinite;
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+.molecule.h2o { background: radial-gradient(circle, #4096ff, #1677ff); }
+.molecule.o2 { background: radial-gradient(circle, #ff4d4f, #cf1322); }
+.molecule.co2 { background: radial-gradient(circle, #52c41a, #389e0d); }
+
+/* ===== Buttons ===== */
+.btn {
+  display: inline-block;
+  padding: 10px 24px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.3s;
+  font-weight: 500;
+}
+.btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.btn-primary:hover {
+  background: var(--primary-hover);
+  color: #fff;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 600px) {
+  .task-steps { grid-template-columns: 1fr; }
+  .resource-grid { grid-template-columns: 1fr; }
+  .header { padding: 24px 16px; }
+  .header h1 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>🥽 VR 化学沉浸体验</h1>
+    <p>M2 · 走进微观世界 — 分子、原子与化学变化的3D之旅</p>
+  </div>
+
+  <!-- VR Demo Area -->
+  <div class="vr-demo-area">
+    <div class="vr-content">
+      <span class="vr-icon">🥽</span>
+      <div class="vr-title">🧪 化学 VR 实验室</div>
+      <div class="vr-subtitle">戴上 VR 眼镜，走进分子的微观世界</div>
+      <div class="molecule-viewer">
+        <div class="molecule h2o">H₂O<br><small style="font-size:9px;opacity:0.8;">水分子</small></div>
+        <div class="molecule o2">O₂<br><small style="font-size:9px;opacity:0.8;">氧分子</small></div>
+        <div class="molecule co2">CO₂<br><small style="font-size:9px;opacity:0.8;">二氧化碳</small></div>
+      </div>
+      <p style="font-size:12px;opacity:0.6;margin-top:8px;">👆 在 VR 中，你可以用手"抓住"这些分子，旋转观察它们的立体结构</p>
+    </div>
+  </div>
+
+  <!-- Task Steps -->
+  <h2 style="color:var(--primary);margin:20px 0 10px;font-size:var(--font-h2);">🎯 VR 体验任务</h2>
+  <div class="task-steps">
+    <div class="task-step" onclick="showDetail('observe')" style="cursor:pointer;">
+      <span class="step-icon">👁️</span>
+      <h3>观察任务</h3>
+      <p>在VR环境中观察物质的微观粒子形态</p>
+    </div>
+    <div class="task-step" onclick="showDetail('operate')" style="cursor:pointer;">
+      <span class="step-icon">🖐️</span>
+      <h3>操作任务</h3>
+      <p>通过VR操作模拟化学实验</p>
+    </div>
+    <div class="task-step" onclick="showDetail('record')" style="cursor:pointer;">
+      <span class="step-icon">📝</span>
+      <h3>记录任务</h3>
+      <p>在VR体验中实时记录观察和发现</p>
+    </div>
+  </div>
+
+  <!-- Detail Panel -->
+  <div class="detail-panel" id="detailPanel">
+    <button class="close-btn" onclick="closeDetail()">✕</button>
+    <h3 id="detailTitle">任务详情</h3>
+    <div id="detailContent"></div>
+  </div>
+
+  <!-- Resource Recommendations -->
+  <div class="card">
+    <span class="card-icon">🛠️</span>
+    <h2>VR 资源推荐</h2>
+    <div class="resource-grid">
+      <div class="resource-card">
+        <span class="res-icon">🧪</span>
+        <div class="res-name">NChemVR</div>
+        <div class="res-desc">专业化学VR实验室</div>
+      </div>
+      <div class="resource-card">
+        <span class="res-icon">🔬</span>
+        <div class="res-name">Labster Chemistry</div>
+        <div class="res-desc">全球领先的虚拟实验室</div>
+      </div>
+      <div class="resource-card">
+        <span class="res-icon">💻</span>
+        <div class="res-name">Chem3D Web</div>
+        <div class="res-desc">3D分子模型网页版</div>
+      </div>
+      <div class="resource-card">
+        <span class="res-icon">📱</span>
+        <div class="res-name">PhET模拟</div>
+        <div class="res-desc">科罗拉多大学互动模拟</div>
+      </div>
+    </div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-top:10px;">
+      📋 <strong>设备需求：</strong>VR头显（Oculus Quest系列、Pico系列）或手机VR盒子
+    </p>
+  </div>
+
+  <!-- Alternative -->
+  <div class="alternative-section">
+    <button class="alt-toggle" id="altToggle" onclick="toggleAlternative()">
+      <span>📱 无 VR 设备？点击查看替代方案</span>
+      <span class="arrow">▼</span>
+    </button>
+    <div class="alt-content" id="altContent">
+      <div class="alt-item">
+        <span class="alt-icon">🖱️</span>
+        <div class="alt-text"><strong>3D交互方案</strong> — 用"化学3D分子模型"网页版（如 Chem3D Web）拖拽观察分子结构，鼠标旋转查看三维立体构型</div>
+      </div>
+      <div class="alt-item">
+        <span class="alt-icon">📺</span>
+        <div class="alt-text"><strong>视频方案</strong> — 观看 BBC《化学史》纪录片中关于物质构成的动画演示，视觉化理解分子与原子</div>
+      </div>
+      <div class="alt-item">
+        <span class="alt-icon">🎮</span>
+        <div class="alt-text"><strong>模拟方案</strong> — 使用 PhET 互动模拟（科罗拉多大学）中的"物质状态"模拟模块，调节温度和压力观察粒子运动变化</div>
+      </div>
+      <div class="alt-item">
+        <span class="alt-icon">📱</span>
+        <div class="alt-text"><strong>手机方案</strong> — 使用手机 VR 盒子（如 Google Cardboard），配合化学 VR APP 也能获得不错的沉浸体验</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Observation Guide -->
+  <div class="card">
+    <span class="card-icon">📋</span>
+    <h2>🔬 VR 观察指南</h2>
+    <p><strong>在VR中，你将看到：</strong></p>
+    <ul>
+      <li>物质的微观粒子形态——分子、原子的三维立体结构</li>
+      <li>化学变化中粒子如何重新组合——如蜡烛燃烧时蜡分子与氧气分子的反应过程</li>
+      <li>物理变化中粒子只是分离或靠近，没有改变——如水的三态变化微观视角</li>
+    </ul>
+    <p style="margin-top:10px;"><strong>💡 观察要点：</strong></p>
+    <ul>
+      <li>注意化学变化前后原子的种类是否改变</li>
+      <li>观察物理变化中分子本身是否发生变化</li>
+      <li>记录你发现的关键区别</li>
+    </ul>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const detailData = {
+    observe: {
+      title: '👁️ 观察任务',
+      items: [
+        '在VR环境中观察物质的微观粒子形态——分子、原子的三维立体结构',
+        '观察化学变化中粒子如何重新组合（如蜡烛燃烧时蜡分子与氧气分子的反应过程）',
+        '观察物理变化中粒子只是分离或靠近，没有改变（如水的三态变化微观视角）',
+        '重点关注：化学变化前后 <strong>原子的种类是否改变</strong>？'
+      ]
+    },
+    operate: {
+      title: '🖐️ 操作任务',
+      items: [
+        '用虚拟烧杯和试管进行物质混合实验',
+        '安全地"点燃"虚拟物质，观察燃烧反应全过程',
+        '调节温度、浓度等变量，观察反应速率变化',
+        '记录每次操作后观察到的现象和变化'
+      ]
+    },
+    record: {
+      title: '📝 记录任务',
+      items: [
+        '记录观察到的粒子行为——分子如何运动、如何结合',
+        '记录自己的疑问和发现——哪些现象让你感到惊讶？',
+        '记录操作中的变量变化与效果',
+        '完成记录后，尝试用自己的语言描述：化学变化和物理变化的微观区别是什么？'
+      ]
+    }
+  };
+
+  window.showDetail = function(key) {
+    const data = detailData[key];
+    if (!data) return;
+    document.getElementById('detailTitle').textContent = data.title;
+    const content = document.getElementById('detailContent');
+    content.innerHTML = data.items.map((item, i) =>
+      `<div class="detail-item"><span class="detail-num">${i + 1}</span><span class="detail-text">${item}</span></div>`
+    ).join('');
+    const panel = document.getElementById('detailPanel');
+    panel.classList.remove('show');
+    void panel.offsetWidth;
+    panel.classList.add('show');
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  };
+
+  window.closeDetail = function() {
+    document.getElementById('detailPanel').classList.remove('show');
+  };
+
+  window.toggleAlternative = function() {
+    const toggle = document.getElementById('altToggle');
+    const content = document.getElementById('altContent');
+    toggle.classList.toggle('active');
+    content.classList.toggle('show');
+  };
+
+  // Check if any onclick has target defined
+  // All onclick handlers reference global functions defined above
+})();
+</script>
+</body>
+</html>

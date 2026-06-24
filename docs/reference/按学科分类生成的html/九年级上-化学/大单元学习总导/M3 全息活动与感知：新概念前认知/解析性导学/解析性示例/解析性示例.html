@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性示例 — 木柴燃烧的化学变化分析</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  text-align: center;
+  padding: 28px 20px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.header .subtitle {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+/* 任务情境卡 */
+.scenario-box {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 24px;
+  border-left: 4px solid var(--primary);
+  position: relative;
+}
+.scenario-box h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+.scenario-box p { margin-bottom: 10px; }
+.scenario-box .task-tag {
+  display: inline-block;
+  padding: 4px 14px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* 核心问题 */
+.core-q {
+  background: #fff8e6;
+  border: 1px solid #ffd666;
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  font-weight: 600;
+  font-size: 16px;
+  color: #d48806;
+}
+
+/* 信息表格 */
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.info-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+}
+.info-table td {
+  padding: 10px 14px;
+  font-size: 13.5px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.info-table tr:last-child td { border-bottom: none; }
+.info-table tr:hover td { background: #f6f9ff; }
+
+/* 分步解析 */
+.steps-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.step-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--border);
+  overflow: hidden;
+  transition: box-shadow 0.3s ease;
+}
+.step-card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.12); }
+.step-card.done { border-left-color: var(--primary); }
+.step-card.done .step-header { background: #f6f9ff; }
+
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+.step-header:hover { background: #fafafa; }
+.step-num {
+  min-width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--border);
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+.step-card.done .step-num { background: var(--primary); }
+.step-name { font-size: 15px; font-weight: 600; flex: 1; }
+.step-status {
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: #f5f5f5;
+  padding: 2px 10px;
+  border-radius: 10px;
+}
+.step-card.done .step-status {
+  background: #e6f7ff;
+  color: var(--primary);
+}
+.step-toggle {
+  font-size: 16px;
+  color: var(--text-secondary);
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+}
+.step-card.expanded .step-toggle { transform: rotate(90deg); }
+
+.step-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+  padding: 0 20px;
+}
+.step-card.expanded .step-body {
+  max-height: 600px;
+  padding: 0 20px 18px;
+}
+.step-body p {
+  font-size: 13.5px;
+  margin-bottom: 8px;
+  line-height: 1.75;
+}
+.step-body .highlight {
+  background: #fff7e6;
+  border-left: 3px solid #fa8c16;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin: 8px 0;
+  font-size: 13px;
+}
+.step-body .think-label {
+  font-size: 12px;
+  color: var(--primary);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+/* 结论区 */
+.conclusion-box {
+  background: linear-gradient(135deg, #f6ffed 0%, #e6f7ff 100%);
+  border: 1px solid #b7eb8f;
+  border-radius: var(--border-radius);
+  padding: 18px 20px;
+  margin-bottom: 24px;
+}
+.conclusion-box h3 {
+  font-size: 16px;
+  color: #389e0d;
+  margin-bottom: 8px;
+}
+.conclusion-box ul { padding-left: 18px; }
+.conclusion-box ul li {
+  margin-bottom: 5px;
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+.conclusion-box ul li::marker { color: #52c41a; }
+
+/* 方法提炼 */
+.method-box {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 24px;
+}
+.method-box h3 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+.method-box ol { padding-left: 20px; }
+.method-box ol li {
+  margin-bottom: 6px;
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+.method-box ol li strong { color: var(--primary); }
+
+/* 易错提醒 */
+.warn-box {
+  background: #fff2f0;
+  border: 1px solid #ffccc7;
+  border-radius: var(--border-radius);
+  padding: 18px 20px;
+  margin-bottom: 24px;
+}
+.warn-box h3 {
+  font-size: 16px;
+  color: #cf1322;
+  margin-bottom: 8px;
+}
+.warn-item {
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  background: #fff;
+  border-radius: 6px;
+  border-left: 3px solid #ff4d4f;
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+.warn-item:last-child { margin-bottom: 0; }
+.warn-item strong { color: #cf1322; }
+
+/* 迁移小练习 */
+.practice-box {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 24px;
+  border-top: 4px solid var(--primary);
+}
+.practice-box h3 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+.practice-box p { font-size: 13.5px; margin-bottom: 8px; line-height: 1.7; }
+
+/* 自评 */
+.checklist {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 24px;
+}
+.checklist h3 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+.check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.check-item:last-child { border-bottom: none; }
+.check-item .cb {
+  min-width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+  transition: all 0.2s;
+  font-size: 12px;
+  color: transparent;
+  flex-shrink: 0;
+}
+.check-item.checked .cb {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.check-item.checked { color: var(--text-secondary); text-decoration: line-through; }
+
+/* 重置按钮 */
+.btn-reset {
+  display: inline-block;
+  padding: 8px 24px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.2s;
+  margin-top: 12px;
+}
+.btn-reset:hover { background: var(--primary-hover); }
+
+@media (max-width: 640px) {
+  .container { padding: 12px 10px; }
+  .header { padding: 20px 14px; }
+  .info-table th, .info-table td { padding: 8px 10px; font-size: 12.5px; }
+  .step-header { padding: 12px 14px; }
+}
+
+/* 按钮启动动画 */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.step-card.expanded .step-body { animation: fadeSlideUp 0.35s ease; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🔥 解析性示例：木柴燃烧</h1>
+  <div class="subtitle">化学变化·九年级上 — 像科学家一样分析日常现象</div>
+</div>
+
+<!-- 情境 -->
+<div class="scenario-box">
+  <h2>🏕️ 解析任务情境</h2>
+  <p>周末你和家人去野餐，路上看到一堆燃烧的篝火残骸——木柴变成了灰烬、周围有烧黑的石头、空气中还有一股烟味。妈妈随口说："木头烧没了。"你的科学课上学过"物质不灭"，但眼前的灰烬让你困惑：木头真的消失了吗？还是变成了别的什么？</p>
+  <p><span class="task-tag">🎯 你的任务</span> 像科学家一样，对"木柴燃烧"这个日常现象进行一次完整的解析分析——观察发生了什么、提取关键信息、调用已有知识、推理判断，最终给出科学的解释。</p>
+</div>
+
+<div class="core-q">❓ 核心问题：木柴燃烧后，物质是消失了，还是变成了其他形式？如果是变成了其他形式，证据是什么？</div>
+
+<!-- 信息表格 -->
+<h2 style="font-size:var(--font-h2); color:var(--primary); margin-bottom:10px;">📊 关键信息提取</h2>
+<table class="info-table">
+  <thead>
+    <tr><th>情境信息</th><th>这个信息说明什么</th><th>为什么重要</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>木柴燃烧后剩余灰烬</td>
+      <td>木柴没有完全消失，留下了残留物</td>
+      <td>说明"消失"的说法不准确，物质以不同形式存在</td>
+    </tr>
+    <tr>
+      <td>燃烧时有烟和气体释放到空气中</td>
+      <td>部分物质以气体形式离开</td>
+      <td>气体产物容易被忽视，它们正是"消失"的那部分</td>
+    </tr>
+    <tr>
+      <td>灰烬比原始木柴轻</td>
+      <td>燃烧过程中质量减少了</td>
+      <td>减少的质量以气体形式跑掉了</td>
+    </tr>
+    <tr>
+      <td>篝火周围石头变黑</td>
+      <td>燃烧产生了烟尘和碳颗粒</td>
+      <td>部分燃烧产物附着在其他物体上</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- 分步解析 -->
+<h2 style="font-size:var(--font-h2); color:var(--primary); margin-bottom:12px;">🔍 专家解析过程</h2>
+<p style="font-size:13px; color:var(--text-secondary); margin-bottom:14px;">点击每一步展开查看详细推理过程，完成后可标记为"已掌握"。</p>
+
+<div class="steps-container" id="stepsContainer">
+
+  <div class="step-card" data-step="1">
+    <div class="step-header" onclick="toggleStep(this)">
+      <span class="step-num">1</span>
+      <span class="step-name">先看见什么</span>
+      <span class="step-status">点击展开</span>
+      <span class="step-toggle">▶</span>
+    </div>
+    <div class="step-body">
+      <p><strong>观察要点：</strong>不要只看"木柴烧完了"，要系统观察——灰烬的颜色和重量、是否有烟、周围物体的变化、燃烧后留下的味道。</p>
+      <div class="highlight">
+        <div class="think-label">💡 为什么这样想</div>
+        <p>科学的观察不是看你想看的，而是看你应该看的。科学家会列一个"观察清单"，确保不遗漏重要信息。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="step-card" data-step="2">
+    <div class="step-header" onclick="toggleStep(this)">
+      <span class="step-num">2</span>
+      <span class="step-name">判断问题属于哪一类</span>
+      <span class="step-status">点击展开</span>
+      <span class="step-toggle">▶</span>
+    </div>
+    <div class="step-body">
+      <p><strong>问题归类：</strong>这是一个"物质变化"类问题——需要判断它是物理变化还是化学变化。</p>
+      <div class="highlight">
+        <div class="think-label">💡 为什么这样想</div>
+        <p>当你遇到"什么变了"的问题时，先问最核心的问题：物质种类变了吗？如果是，就是化学变化。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="step-card" data-step="3">
+    <div class="step-header" onclick="toggleStep(this)">
+      <span class="step-num">3</span>
+      <span class="step-name">调用概念和方法</span>
+      <span class="step-status">点击展开</span>
+      <span class="step-toggle">▶</span>
+    </div>
+    <div class="step-body">
+      <p><strong>核心工具：</strong></p>
+      <ul>
+        <li>化学变化的核心判断依据：是否有新物质生成</li>
+        <li>质量守恒思想：物质既不会凭空产生，也不会凭空消失</li>
+        <li>对比法：对比燃烧前后的物质状态</li>
+      </ul>
+      <div class="highlight">
+        <div class="think-label">💡 为什么这样想</div>
+        <p>这些概念是判断化学变化的"工具"。就像修车师傅有不同的扳手，你有这些概念作为分析工具。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="step-card" data-step="4">
+    <div class="step-header" onclick="toggleStep(this)">
+      <span class="step-num">4</span>
+      <span class="step-name">进行推理和分析</span>
+      <span class="step-status">点击展开</span>
+      <span class="step-toggle">▶</span>
+    </div>
+    <div class="step-body">
+      <p><strong>推理链：</strong></p>
+      <p>1. 木柴燃烧后产生了灰烬 → 灰烬是木柴中没有完全燃烧的矿物质 → <strong>有新物质出现</strong></p>
+      <p>2. 燃烧时产生烟和气体 → 这些气体中有一氧化碳、二氧化碳和水蒸气 → <strong>都是新物质</strong></p>
+      <p>3. 木柴的主要成分是碳和氢的化合物 + 空气中的氧气 → 反应生成了二氧化碳和水</p>
+      <p>4. <strong>结论：有新物质生成，所以木柴燃烧是化学变化</strong></p>
+      <div class="highlight">
+        <div class="think-label">💡 为什么这样想</div>
+        <p>推理不是猜测，而是"证据→中间判断→最终结论"的逻辑链。每一步都有证据支撑。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="step-card" data-step="5">
+    <div class="step-header" onclick="toggleStep(this)">
+      <span class="step-num">5</span>
+      <span class="step-name">形成结论</span>
+      <span class="step-status">点击展开</span>
+      <span class="step-toggle">▶</span>
+    </div>
+    <div class="step-body">
+      <p><strong>结论表达：</strong>木柴燃烧是一个化学变化。木柴（主要成分是碳和氢的化合物）与空气中的氧气在高温下反应，生成了二氧化碳、水蒸气和灰烬。物质没有消失，只是从一种形式转化成了另一种形式。</p>
+      <div class="highlight">
+        <div class="think-label">💡 为什么这样想</div>
+        <p>一个好的结论应该能回答最初的问题，并且逻辑清晰、有证据支撑。</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 结论 -->
+<div class="conclusion-box">
+  <h3>✅ 结论：木柴燃烧是化学变化</h3>
+  <ul>
+    <li>产生了新物质——灰烬（不同于木柴的物质）</li>
+    <li>产生了气体产物——二氧化碳和水蒸气</li>
+    <li>反应中放出了光和热（化学变化的常见伴随现象）</li>
+    <li>用质量守恒定律解释：木柴的质量被拆分到了灰烬、二氧化碳和水蒸气中</li>
+  </ul>
+</div>
+
+<!-- 方法提炼 -->
+<div class="method-box">
+  <h3>🧰 方法提炼</h3>
+  <p style="font-size:13.5px; margin-bottom:8px;">以后遇到类似问题，可以这样做：</p>
+  <ol>
+    <li><strong>先系统观察</strong>：不要只看主要现象，要关注所有伴随的现象（气味、温度、残留物等）</li>
+    <li><strong>判断变化类型</strong>：问自己"有没有新物质生成"</li>
+    <li><strong>寻找多重证据</strong>：不要只依赖一个证据，找2-3个互相支持的证据</li>
+    <li><strong>建立推理链</strong>：把你的推理过程一步步写出来</li>
+    <li><strong>用核心概念检验</strong>：你的结论能用学过的核心概念（如质量守恒）来检验吗？</li>
+  </ol>
+</div>
+
+<!-- 易错提醒 -->
+<div class="warn-box">
+  <h3>⚠️ 易错提醒</h3>
+  <div class="warn-item"><strong>易错1：</strong>认为"有烟雾就是化学变化"——水烧开时也有"白雾"，但那只是水蒸气液化，是<strong>物理变化</strong>。关键不是"有雾"，而是"雾是什么物质"。</div>
+  <div class="warn-item"><strong>易错2：</strong>认为"没有火焰就不是化学变化"——铁生锈没有火焰，但它是化学变化。判断依据不是有没有火，而是<strong>有没有新物质</strong>。</div>
+  <div class="warn-item"><strong>易错3：</strong>认为"灰烬就是木柴"——灰烬和木柴在颜色、质地、成分上都不同，它们<strong>不是同一种物质</strong>。</div>
+</div>
+
+<!-- 迁移小练习 -->
+<div class="practice-box">
+  <h3>🏃 自主迁移小练习</h3>
+  <p><strong>新情境：</strong>你观察到蛋糕在烤箱中逐渐变黄、膨胀、散发出香味。妈妈从烤箱里拿出了比原来大了一倍的蛋糕。</p>
+  <p><strong>提示：</strong>请你分析——这是不是化学变化？关键证据是什么？注意3个现象：颜色变化、体积变化、新气味的产生。</p>
+</div>
+
+<!-- 自评 -->
+<div class="checklist" id="checklist">
+  <h3>📋 学习自评</h3>
+  <p style="font-size:13px; color:var(--text-secondary); margin-bottom:6px;">点击每项标记为已掌握：</p>
+  <div class="check-item" onclick="toggleCheck(this)">
+    <span class="cb">✓</span>
+    <span>我是否理解了"有没有新物质生成"是判断化学变化的核心标准？</span>
+  </div>
+  <div class="check-item" onclick="toggleCheck(this)">
+    <span class="cb">✓</span>
+    <span>我是否能在木柴燃烧的案例中，找到至少3个新物质生成的证据？</span>
+  </div>
+  <div class="check-item" onclick="toggleCheck(this)">
+    <span class="cb">✓</span>
+    <span>我是否能用自己的话，把木柴燃烧的推理过程讲一遍？</span>
+  </div>
+  <div class="check-item" onclick="toggleCheck(this)">
+    <span class="cb">✓</span>
+    <span>我是否能区分：哪些现象是化学变化的证据，哪些只是伴随现象？</span>
+  </div>
+  <div class="check-item" onclick="toggleCheck(this)">
+    <span class="cb">✓</span>
+    <span>我是否能用同样的分析方法，分析其他类似现象？</span>
+  </div>
+  <button class="btn-reset" onclick="resetChecklist()">🔄 重置自评</button>
+</div>
+
+</div>
+
+<script>
+function toggleStep(el) {
+  var card = el.closest('.step-card');
+  if (!card) return;
+  card.classList.toggle('expanded');
+  var statusEl = card.querySelector('.step-status');
+  if (statusEl) {
+    statusEl.textContent = card.classList.contains('expanded') ? '展开中' : '点击展开';
+  }
+}
+
+function toggleCheck(el) {
+  if (!el) return;
+  el.classList.toggle('checked');
+}
+
+function resetChecklist() {
+  var items = document.querySelectorAll('#checklist .check-item');
+  for (var i = 0; i < items.length; i++) {
+    items[i].classList.remove('checked');
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性原理 — 化学变化分析</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px;
+  box-sizing: border-box;
+}
+.header {
+  text-align: center;
+  padding: 32px 20px;
+  background: linear-gradient(135deg, #1677ff 0%, #4096ff 100%);
+  color: #fff;
+  border-radius: 0 0 24px 24px;
+  margin: -20px -20px 24px -20px;
+}
+.header h1 { margin: 0 0 8px; font-size: var(--font-h1); font-weight: 700; }
+.header p { margin: 0; opacity: 0.9; font-size: 14px; }
+.badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.2);
+  padding: 2px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+.section-nav {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 4px;
+  box-shadow: var(--shadow);
+  flex-wrap: wrap;
+}
+.section-btn {
+  flex: 1;
+  text-align: center;
+  padding: 8px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 12px;
+  transition: all 0.3s;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  min-width: 60px;
+}
+.section-btn:hover { background: var(--bg); color: var(--text); }
+.section-btn.active {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(22,119,255,0.3);
+}
+.section-btn .sicon { display: block; font-size: 16px; margin-bottom: 1px; }
+
+.section-panel { display: none; }
+.section-panel.active { display: block; animation: fadeIn 0.35s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+.intro-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  border: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.intro-card h3 { margin: 0 0 10px; font-size: var(--font-h2); color: var(--primary); }
+.intro-card p { margin: 6px 0; }
+.intro-card .example-box {
+  background: #e6f7ff;
+  border-left: 4px solid var(--primary);
+  padding: 12px 16px;
+  border-radius: 4px;
+  margin: 10px 0;
+}
+.intro-card .example-box strong { color: var(--primary); }
+
+.principle-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.principle-header {
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+.principle-header:hover { background: var(--bg); }
+.principle-num {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.principle-title { flex: 1; font-weight: 600; }
+.principle-arrow { color: var(--text-secondary); font-size: 12px; transition: transform 0.3s; }
+.principle-arrow.open { transform: rotate(180deg); }
+
+.principle-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.25s ease;
+  padding: 0 20px;
+}
+.principle-body.open {
+  max-height: 800px;
+  padding: 0 20px 16px;
+}
+.principle-body .p-item { margin-bottom: 8px; }
+.principle-body .p-item:last-child { margin-bottom: 0; }
+.principle-body .p-label {
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 13px;
+  display: block;
+  margin-bottom: 2px;
+}
+.principle-body p { margin: 3px 0; }
+
+.practice-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.practice-header {
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  background: #fffbe6;
+  border-bottom: 1px solid var(--border);
+}
+.practice-header:hover { background: #fff8d6; }
+.practice-num {
+  width: 30px; height: 30px;
+  background: #faad14;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.practice-title { flex: 1; font-weight: 600; }
+.practice-arrow { color: var(--text-secondary); font-size: 12px; transition: transform 0.3s; }
+.practice-arrow.open { transform: rotate(180deg); }
+
+.practice-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.25s ease;
+  padding: 0 20px;
+}
+.practice-body.open {
+  max-height: 1000px;
+  padding: 16px 20px;
+}
+.practice-body .p-section { margin-bottom: 12px; }
+.practice-body .p-section:last-child { margin-bottom: 0; }
+.practice-body .p-label {
+  font-weight: 600;
+  color: #d46b08;
+  font-size: 13px;
+  display: block;
+  margin-bottom: 4px;
+}
+.practice-body p { margin: 4px 0; }
+.practice-body ul { padding-left: 18px; margin: 4px 0; }
+
+.self-check-list { list-style: none; padding: 0; margin: 0; }
+.self-check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+.self-check-item:hover { border-color: var(--primary); }
+.self-check-item .check-box {
+  width: 22px; height: 22px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  font-size: 13px;
+  margin-top: 2px;
+}
+.self-check-item.done .check-box {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.self-check-item.done .check-text {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+.self-check-item .check-text { flex: 1; }
+
+.progress-bar-wrap {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  border: 1px solid var(--border);
+  margin-top: 20px;
+  text-align: center;
+}
+.progress-bar-wrap h3 { margin: 0 0 10px; font-size: var(--font-h2); color: var(--primary); }
+.progress-track {
+  height: 10px;
+  background: var(--bg);
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  border-radius: 5px;
+  width: 0%;
+  transition: width 0.5s ease;
+}
+.progress-text { font-size: 13px; color: var(--text-secondary); }
+.reset-btn {
+  margin-top: 8px;
+  padding: 6px 20px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+.reset-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+@media (max-width: 600px) {
+  .section-btn { font-size: 11px; min-width: 50px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🔬 解析性原理导学</h1>
+    <p>第1章 · 走进化学世界 · 从案例到原理的思维提炼</p>
+    <span class="badge">九年级上 · 化学 · 学生版</span>
+  </div>
+
+  <div class="section-nav">
+    <button class="section-btn active" data-section="intro" onclick="switchSection('intro')">
+      <span class="sicon">📖</span>原理总览
+    </button>
+    <button class="section-btn" data-section="principles" onclick="switchSection('principles')">
+      <span class="sicon">💡</span>三大原理
+    </button>
+    <button class="section-btn" data-section="practice" onclick="switchSection('practice')">
+      <span class="sicon">✍️</span>应用练习
+    </button>
+    <button class="section-btn" data-section="check" onclick="switchSection('check')">
+      <span class="sicon">✅</span>自我检测
+    </button>
+  </div>
+
+  <!-- 一、从示例到原理 -->
+  <div class="section-panel active" data-section="intro">
+    <div class="intro-card">
+      <h3>📖 从示例到原理</h3>
+      <p>学习化学变化，光看案例是不够的。<strong>解析性原理</strong>就是从具体的案例中提炼出的通用方法——掌握了它们，你就能把今天学到的分析能力用到任何新场景中。</p>
+      <div class="example-box">
+        <strong>🍲 案例："铁锅煮苹果汤"</strong><br>
+        · 现象：苹果汤煮着煮着变成了黑褐色<br>
+        · 疑问：这汤还能喝吗？是"营养流失"还是发生了化学变化？<br>
+        · 分析：铁锅中的铁离子 + 苹果中的鞣酸 → 鞣酸铁（黑褐色）<br>
+        · 启示：<strong>从具体案例→提炼通用方法</strong>，这就是解析性原理的价值
+      </div>
+      <p>以下 <strong>3 条解析性原理</strong> 就是从这个案例中提炼出来的分析工具，点击每一条深入了解它们如何帮助你分析生活中的化学变化。</p>
+    </div>
+  </div>
+
+  <!-- 二、解析性原理提炼 -->
+  <div class="section-panel" data-section="principles">
+
+    <div class="principle-card">
+      <div class="principle-header" onclick="togglePrinciple(this)">
+        <span class="principle-num">1</span>
+        <span class="principle-title">变化类型优先判断法</span>
+        <span class="principle-arrow">▼</span>
+      </div>
+      <div class="principle-body open">
+        <div class="p-item">
+          <span class="p-label">📌 说明</span>
+          <p>遇到物质变化现象时，先判断是物理变化还是化学变化</p>
+        </div>
+        <div class="p-item">
+          <span class="p-label">🍲 在示例中的体现</span>
+          <p>从"汤变黑"入手，先判断是否生成新物质</p>
+        </div>
+        <div class="p-item">
+          <span class="p-label">🔧 如何使用</span>
+          <p>观察 → 问"有新物质生成吗？"→ 找证据</p>
+        </div>
+        <div class="p-item">
+          <span class="p-label">🔄 可迁移到</span>
+          <p>所有生活化学现象的分析判断</p>
+        </div>
+        <div class="p-item">
+          <span class="p-label">⚠️ 使用提醒</span>
+          <p>有些变化同时包含物理和化学变化，需要分别分析</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="principle-card">
+      <div class="principle-header" onclick="togglePrinciple(this)">
+        <span class="principle-num">2</span>
+        <span class="principle-title">反应物—条件—产物分析法</span>
+        <span class="principle-arrow">▼</span>
+      </div>
+      <div class="principle-body">
+        <div class="p-item">
+          <span class="p-label">📌 说明</span>
+          <p>把化学变化拆解为"什么物质（反应物）+ 什么条件 → 产生了什么（产物）"</p>
+        </div>
+        <div class="p-item">
+          <span class="p-label">🍲 在示例中的体现</span>
+          <p>铁 + 鞣酸 + 高温/酸性条件 → 鞣酸铁</p>
+        </div>
+        <div class="p-item">
+          <span class="p-label">🔧 如何使用</span>
+          <p>列出所有参与物质 → 分析反应条件 → 推断产物</p>
+        </div>
+        <div class="p-item">
+          <span class="p-label">🔄 可迁移到</span>
+          <p>化学方程式的分析、实验现象的解释</p>
+        </div>
+        <div class="p-item">
+          <span class="p-label">⚠️ 使用提醒</span>
+          <p>产物需要证据支持，不能凭空猜测</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="principle-card">
+      <div class="principle-header" onclick="togglePrinciple(this)">
+        <span class="principle-num">3</span>
+        <span class="principle-title">科学判断 vs 直觉判断区分法</span>
+        <span class="principle-arrow">▼</span>
+      </div>
+      <div class="principle-body">
+        <div class="p-item">
+          <span class="p-label">📌 说明</span>
+          <p>区分"这是我觉得的"和"这是证据证明的"</p>
+        </div>
+        <div class="p-item">
+          <span class="p-label">🍲 在示例中的体现</span>
+          <p>妈妈的"营养流失"是直觉判断，化学分析是科学判断</p>
+        </div>
+        <div class="p-item">
+          <span class="p-label">🔧 如何使用</span>
+          <p>先列出直觉判断，再查找科学证据验证</p>
+        </div>
+        <div class="p-item">
+          <span class="p-label">🔄 可迁移到</span>
+          <p>日常决策、广告判断、新闻分析</p>
+        </div>
+        <div class="p-item">
+          <span class="p-label">⚠️ 使用提醒</span>
+          <p>科学判断也不等于绝对真理，需要持续检验</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 三、解析性原理应用 -->
+  <div class="section-panel" data-section="practice">
+    <p style="margin-top:0;font-size:14px;color:var(--text-secondary);">尝试用学到的 3 条原理解析以下两个新情境。</p>
+
+    <div class="practice-card">
+      <div class="practice-header" onclick="togglePractice(this)">
+        <span class="practice-num">1</span>
+        <span class="practice-title">紫甘蓝汁变色之谜</span>
+        <span class="practice-arrow">▼</span>
+      </div>
+      <div class="practice-body">
+        <div class="p-section">
+          <span class="p-label">🧪 情境</span>
+          <p>紫甘蓝汁分别滴入白醋和小苏打水中，颜色变得不同</p>
+        </div>
+        <div class="p-section">
+          <span class="p-label">🎯 解析任务</span>
+          <p>分析颜色变化的原因，判断是物理变化还是化学变化</p>
+        </div>
+        <div class="p-section">
+          <span class="p-label">💡 建议原理</span>
+          <p>变化类型优先判断法 + 反应物—条件—产物分析法</p>
+        </div>
+        <div class="p-section">
+          <span class="p-label">🔎 分析提示</span>
+          <p>紫甘蓝汁是一种酸碱指示剂——颜色变化可能与pH有关，但这本身就是化学反应吗？</p>
+        </div>
+        <div class="p-section">
+          <span class="p-label">✍️ 表达方式</span>
+          <p>用图表 + 文字说明你的分析过程</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="practice-card">
+      <div class="practice-header" onclick="togglePractice(this)">
+        <span class="practice-num">2</span>
+        <span class="practice-title">84消毒液的使用禁忌</span>
+        <span class="practice-arrow">▼</span>
+      </div>
+      <div class="practice-body">
+        <div class="p-section">
+          <span class="p-label">🧪 情境</span>
+          <p>新闻称"84消毒液和洁厕灵混合会产生有毒气体"</p>
+        </div>
+        <div class="p-section">
+          <span class="p-label">🎯 解析任务</span>
+          <p>分析混合后发生了什么化学变化，为什么会产生有毒气体</p>
+        </div>
+        <div class="p-section">
+          <span class="p-label">💡 建议原理</span>
+          <p>反应物—条件—产物分析法 + 科学判断vs直觉判断区分法</p>
+        </div>
+        <div class="p-section">
+          <span class="p-label">🔎 分析提示</span>
+          <p>两种清洁剂分别含有什么成分？可能的化学反应是什么？</p>
+        </div>
+        <div class="p-section">
+          <span class="p-label">✍️ 表达方式</span>
+          <p>制作安全使用指南卡</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 四、自我检测 -->
+  <div class="section-panel" data-section="check">
+    <div class="intro-card" style="margin-bottom:12px;">
+      <h3>✅ 学习成果自检</h3>
+      <p>点击以下问题进行自我评估——诚实回答，每完成一项就打勾 ✅</p>
+    </div>
+
+    <ul class="self-check-list" id="selfCheckList">
+      <li class="self-check-item" onclick="toggleCheckItem(this)">
+        <span class="check-box">✓</span>
+        <span class="check-text">我能说出"变化类型优先判断法"的使用步骤</span>
+      </li>
+      <li class="self-check-item" onclick="toggleCheckItem(this)">
+        <span class="check-box">✓</span>
+        <span class="check-text">面对一个未知现象，我知道从哪些角度入手分析</span>
+      </li>
+      <li class="self-check-item" onclick="toggleCheckItem(this)">
+        <span class="check-box">✓</span>
+        <span class="check-text">我能在分析过程中区分"观察事实"和"推测"</span>
+      </li>
+      <li class="self-check-item" onclick="toggleCheckItem(this)">
+        <span class="check-box">✓</span>
+        <span class="check-text">我能把今天学到的分析方法用到其他学科</span>
+      </li>
+      <li class="self-check-item" onclick="toggleCheckItem(this)">
+        <span class="check-box">✓</span>
+        <span class="check-text">我理解了从案例中提炼原理的价值</span>
+      </li>
+    </ul>
+
+    <div class="progress-bar-wrap">
+      <h3>📊 学习进度</h3>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <span class="progress-text" id="progressText">已完成 0 / 5 项</span>
+      <br>
+      <button class="reset-btn" onclick="resetAllCheck()">🔄 重新开始</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchSection(section) {
+  document.querySelectorAll('.section-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.section === section);
+  });
+  document.querySelectorAll('.section-panel').forEach(function(p) {
+    p.classList.toggle('active', p.dataset.section === section);
+  });
+}
+
+function togglePrinciple(header) {
+  var body = header.nextElementSibling;
+  var arrow = header.querySelector('.principle-arrow');
+  body.classList.toggle('open');
+  if (arrow) arrow.classList.toggle('open');
+}
+
+function togglePractice(header) {
+  var body = header.nextElementSibling;
+  var arrow = header.querySelector('.practice-arrow');
+  body.classList.toggle('open');
+  if (arrow) arrow.classList.toggle('open');
+}
+
+function toggleCheckItem(el) {
+  el.classList.toggle('done');
+  updateProgress();
+}
+
+function updateProgress() {
+  var items = document.querySelectorAll('.self-check-item');
+  var done = document.querySelectorAll('.self-check-item.done').length;
+  var total = items.length;
+  var pct = total > 0 ? Math.round(done / total * 100) : 0;
+  var fill = document.getElementById('progressFill');
+  var text = document.getElementById('progressText');
+  if (fill) fill.style.width = pct + '%';
+  if (text) text.textContent = '已完成 ' + done + ' / ' + total + ' 项';
+}
+
+function resetAllCheck() {
+  document.querySelectorAll('.self-check-item.done').forEach(function(el) {
+    el.classList.remove('done');
+  });
+  updateProgress();
+}
+</script>
+</body>
+</html>

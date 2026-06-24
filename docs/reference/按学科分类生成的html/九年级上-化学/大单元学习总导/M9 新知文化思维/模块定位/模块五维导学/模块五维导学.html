@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块五维导学 — 化学</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body); line-height: var(--line-height);
+  color: var(--text); background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff; padding: 28px 24px; border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 8px; }
+.header .subtitle { font-size: 14px; opacity: 0.9; margin-bottom: 6px; }
+.header .meta { font-size: 13px; opacity: 0.85; }
+.header .meta span { display: inline-block;  margin-right: 16px; }
+.section-title {
+  font-size: var(--font-h2); font-weight: 600; color: var(--primary);
+  border-bottom: 2px solid var(--accent); padding-bottom: 8px;
+  margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+}
+.card {
+  background: var(--card-bg); border-radius: var(--border-radius);
+  // comments are fine shadow: var(--shadow); padding: 20px; margin-bottom: 16px;
+  border: 1px solid var(--border); transition: box-shadow 0.2s;
+}
+.card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.card h3 { font-size: 16px; font-weight: 600; color: var(--primary); margin-bottom: 10px; }
+.card p, .card li { font-size: var(--font-body); line-height: var(--line-height); }
+.card ul, .card ol { padding-left: 20px; margin: 8px 0; }
+.card li { margin-bottom: 6px; }
+.tag {
+  display: inline-block; background: var(--bg); color: var(--primary);
+  padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 500;
+  margin-right: 4px; margin-bottom: 4px;
+}
+
+/* Goal cards */
+.goal-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.goal-item {
+  display: flex; gap: 14px; padding: 14px 16px;
+  background: var(--card-bg); border-radius: var(--border-radius);
+  border: 1px solid var(--border); cursor: pointer; transition: all 0.2s;
+}
+.goal-item:hover { border-color: var(--primary); box-shadow: var(--shadow); }
+.goal-item .goal-icon {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.goal-item .goal-body { flex: 1; }
+.goal-item .goal-body .goal-label { font-size: 13px; font-weight: 600; color: var(--primary); }
+.goal-item .goal-body p { font-size: 14px; color: var(--text-secondary); margin-top: 2px; }
+.goal-item .goal-check {
+  width: 22px; height: 22px; border: 2px solid var(--border);
+  border-radius: 50%; flex-shrink: 0; margin-top: 6px;
+  transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+}
+.goal-item.done .goal-check {
+  background: #52c41a; border-color: #52c41a;
+}
+.goal-item.done .goal-check::after { content: "✓"; color: #fff; font-size: 13px; font-weight: 700; }
+.goal-item.done .goal-body p { color: var(--text); }
+
+.value-card { border-left: 4px solid var(--accent); }
+.value-card .value-icon { font-size: 22px; margin-bottom: 4px; }
+
+.method-card { border-left: 4px solid #52c41a; }
+.method-card .method-num {
+  width: 24px; height: 24px; border-radius: 50%; background: #52c41a;
+  color: #fff; display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; margin-right: 6px;
+}
+
+.figure-card {
+  border-left: 4px solid #fa8c16; display: flex; gap: 14px;
+}
+.figure-card .figure-avatar {
+  width: 48px; height: 48px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; background: #fff7e6;
+}
+
+.qa-toggle { margin-top: 8px; }
+.qa-toggle-btn {
+  background: transparent; color: var(--primary); border: 1px solid var(--primary);
+  padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 13px;
+  transition: all 0.2s;
+}
+.qa-toggle-btn:hover { background: var(--primary); color: #fff; }
+.qa-answer {
+  display: none; margin-top: 10px; padding: 12px;
+  background: #f8faff; border-radius: 6px; border: 1px dashed var(--accent);
+}
+.qa-answer.show { display: block; }
+
+.reset-btn {
+  background: transparent; color: var(--text-secondary); border: 1px solid var(--border);
+  padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px;
+  transition: all 0.2s; margin-top: 10px;
+}
+.reset-btn:hover { color: var(--primary); border-color: var(--primary); }
+
+@media (max-width: 600px) {
+  .container { padding: 16px 12px; }
+  .header { padding: 20px 16px; }
+  .card { padding: 16px; }
+  .figure-card { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>模块五维导学</h1>
+    <div class="subtitle">M9 新知文化思维 · 化学：走进化学世界</div>
+    <div class="meta">
+      <span>🔬 化学 · 九年级上</span>
+      <span>📖 第1章 走进化学世界</span>
+      <span>🎯 模块定位</span>
+    </div>
+  </div>
+
+  <p style="margin-bottom:20px;color:var(--text-secondary);">
+    这个模块将带你从「看见变化」到「理解变化」，建立化学思维的基本框架。点击每个目标前的圆圈，标记你的学习进度。
+  </p>
+
+  <div class="card" style="padding:0;border:none;box-shadow:none;background:transparent;">
+    <div class="section-title">🎯 模块学习目标（5维度）</div>
+    <div class="goal-grid" id="goalList">
+      <div class="goal-item" onclick="toggleGoal(this)">
+        <div class="goal-icon" style="background:#f0f5ff;">🧠</div>
+        <div class="goal-body">
+          <div class="goal-label">目标1 · 知识理解</div>
+          <p>你能说出物理变化与化学变化的本质区别，能列举至少5种常见的化学变化现象，并解释其发生的条件。</p>
+        </div>
+        <div class="goal-check"></div>
+      </div>
+      <div class="goal-item" onclick="toggleGoal(this)">
+        <div class="goal-icon" style="background:#f6ffed;">🔬</div>
+        <div class="goal-body">
+          <div class="goal-label">目标2 · 能力形成</div>
+          <p>你能从日常现象中提炼出可探究的化学问题，设计简单的验证方案，并用证据支持自己的结论。</p>
+        </div>
+        <div class="goal-check"></div>
+      </div>
+      <div class="goal-item" onclick="toggleGoal(this)">
+        <div class="goal-icon" style="background:#fff7e6;">🧩</div>
+        <div class="goal-body">
+          <div class="goal-label">目标3 · 思维发展</div>
+          <p>你能建立"变化前→变化中→变化后"的化学变化分析框架，用证据推理而不是直觉判断来认识物质变化。</p>
+        </div>
+        <div class="goal-check"></div>
+      </div>
+      <div class="goal-item" onclick="toggleGoal(this)">
+        <div class="goal-icon" style="background:#fff0f6;">📊</div>
+        <div class="goal-body">
+          <div class="goal-label">目标4 · 表达产出</div>
+          <p>你能用概念图、流程图或模型图，清晰展示一种化学变化的发生条件、过程和结果。</p>
+        </div>
+        <div class="goal-check"></div>
+      </div>
+      <div class="goal-item" onclick="toggleGoal(this)">
+        <div class="goal-icon" style="background:#f9f0ff;">🔄</div>
+        <div class="goal-body">
+          <div class="goal-label">目标5 · 方法掌握</div>
+          <p>你掌握"观察→提问→假设→验证→结论"的科学探究基本方法，并能在新情境中主动运用。</p>
+        </div>
+        <div class="goal-check"></div>
+      </div>
+    </div>
+    <button class="reset-btn" onclick="resetGoals()">↻ 重置学习目标进度</button>
+  </div>
+
+  <div class="card">
+    <div class="section-title">🌍 高精尖价值与未来意义</div>
+    <p style="margin-bottom:12px;color:var(--text-secondary);">化学变化原理在当代科技中无处不在——点击每张卡片展开详情：</p>
+
+    <div class="value-card card" style="margin-bottom:12px;">
+      <div class="value-icon">⚡</div>
+      <h3>材料科学领域</h3>
+      <p>化学变化原理是新材料研发的基础。锂电池的充放电、可降解塑料的合成、纳米材料的制备，本质上都是<strong>化学变化过程</strong>。</p>
+    </div>
+    <div class="value-card card" style="margin-bottom:12px;">
+      <div class="value-icon">🌱</div>
+      <h3>环境治理</h3>
+      <p>空气质量监测、污水处理、碳中和——这些重大社会议题的核心都是<strong>化学变化</strong>。理解化学原理，才能设计更环保的解决方案。</p>
+    </div>
+    <div class="value-card card" style="margin-bottom:12px;">
+      <div class="value-icon">💊</div>
+      <h3>医学与生命科学</h3>
+      <p>药物的作用机制、人体内的新陈代谢，都是<strong>化学变化在生命体中的体现</strong>。没有化学，就没有现代医学。</p>
+    </div>
+    <div class="value-card card">
+      <div class="value-icon">☀️</div>
+      <h3>能源革命</h3>
+      <p>氢能源、太阳能电池、核能——<strong>理解化学变化是开发清洁能源的前提</strong>。未来能源问题的答案，藏在化学原理中。</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">📚 推荐学习方式与方法</div>
+    <p style="margin-bottom:12px;color:var(--text-secondary);">尝试以下方法，找到最适合你的学习路径：</p>
+
+    <div class="method-card card" style="margin-bottom:10px;">
+      <h3><span class="method-num">1</span> 观察对照法</h3>
+      <p>选择 2—3 个生活中的化学变化，设计对照观察方案（有/无某种条件），记录差异。</p>
+    </div>
+    <div class="method-card card" style="margin-bottom:10px;">
+      <h3><span class="method-num">2</span> 概念建模法</h3>
+      <p>用思维导图工具，将"化学变化"相关的概念组织成网络图，建立知识结构。</p>
+    </div>
+    <div class="method-card card" style="margin-bottom:10px;">
+      <h3><span class="method-num">3</span> 实验探究法</h3>
+      <p>利用家庭可获得的材料（小苏打、白醋、食盐等）设计微型实验，亲身体验化学变化。</p>
+    </div>
+    <div class="method-card card" style="margin-bottom:10px;">
+      <h3><span class="method-num">4</span> 跨学科联想法</h3>
+      <p>联系生物（光合作用）、物理（能量转化）学科的知识交叉点，拓展思维边界。</p>
+    </div>
+    <div class="method-card card">
+      <h3><span class="method-num">5</span> AI 辅助学习</h3>
+      <p>用 AI 工具搜索"化学变化在生活中的应用"案例，整理成自己的案例库。</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">👤 值得了解的关键人物与事件</div>
+
+    <div class="figure-card card" style="margin-bottom:12px;">
+      <div class="figure-avatar">🔬</div>
+      <div>
+        <h3>拉瓦锡（Antoine Lavoisier）</h3>
+        <p><strong>近代化学之父</strong>，通过定量实验确立了质量守恒定律。他的实验方法——精确称量、控制变量——直到今天仍是化学研究的基本方法。</p>
+        <div class="qa-toggle">
+          <button class="qa-toggle-btn" onclick="toggleQA(this)">💡 他的方法给我什么启发？</button>
+          <div class="qa-answer">
+            <p>拉瓦锡告诉我们：化学不是靠"感觉"而是靠"数据"说话的。当你看到一种变化时，问问自己——<em>我能测量什么？我能控制什么变量？</em></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="figure-card card" style="margin-bottom:12px;">
+      <div class="figure-avatar">📊</div>
+      <div>
+        <h3>门捷列夫（Dmitri Mendeleev）</h3>
+        <p><strong>元素周期表的创立者</strong>。他的伟大之处在于，他根据规律预测了尚未发现的元素。启示：化学规律可以帮助我们<strong>预测未知</strong>。</p>
+        <div class="qa-toggle">
+          <button class="qa-toggle-btn" onclick="toggleQA(this)">💡 门捷列夫式的思维是什么？</button>
+          <div class="qa-answer">
+            <p><em>"当我发现规律后，我敢用这个规律去预测还不存在的东西。"</em> 这是科学思维的顶峰——从已知推导未知，然后验证它。你建构的化学变化模型，也可以用来预测新现象。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="figure-card card">
+      <div class="figure-avatar">🏮</div>
+      <div>
+        <h3>我国古代炼丹术</h3>
+        <p>虽然目标（长生不老）没有实现，但炼丹家们意外发现了许多化学变化规律，积累了宝贵的实验方法。这是<strong>实践出真知</strong>的最好例证。</p>
+        <div class="qa-toggle">
+          <button class="qa-toggle-btn" onclick="toggleQA(this)">💡 炼丹术对现代化学有何贡献？</button>
+          <div class="qa-answer">
+            <p>炼丹家发明了蒸馏、升华、过滤等基本实验操作，发现了硫磺、火药等物质的化学性质。这说明——<em>即使目标错了，严谨的实验也能积累真正的知识。</em></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">🚀 前沿追问</div>
+    <p style="margin-bottom:12px;color:var(--text-secondary);">这些问题没有标准答案——它们是为了激发你更深层的思考：</p>
+
+    <div id="questionList">
+      <div class="goal-item" onclick="toggleGoal(this)" style="margin-bottom:8px;">
+        <div class="goal-icon" style="background:#fef7e6;font-size:16px;">🤔</div>
+        <div class="goal-body">
+          <p style="color:var(--text);">如果世界上所有的化学反应都停止了，我们的生活变成什么样？</p>
+        </div>
+        <div class="goal-check"></div>
+      </div>
+      <div class="goal-item" onclick="toggleGoal(this)" style="margin-bottom:8px;">
+        <div class="goal-icon" style="background:#fef7e6;font-size:16px;">🤖</div>
+        <div class="goal-body">
+          <p style="color:var(--text);">AI 能"发现"新的化学反应吗？如果可以，还需要人类化学家吗？</p>
+        </div>
+        <div class="goal-check"></div>
+      </div>
+      <div class="goal-item" onclick="toggleGoal(this)" style="margin-bottom:8px;">
+        <div class="goal-icon" style="background:#fef7e6;font-size:16px;">🌌</div>
+        <div class="goal-body">
+          <p style="color:var(--text);">"化学变化"和"物理变化"的界限真的那么清晰吗？有没有既是物理又是化学的变化？</p>
+        </div>
+        <div class="goal-check"></div>
+      </div>
+      <div class="goal-item" onclick="toggleGoal(this)">
+        <div class="goal-icon" style="background:#fef7e6;font-size:16px;">🪐</div>
+        <div class="goal-body">
+          <p style="color:var(--text);">在火星上，化学变化的规律和地球上一样吗？</p>
+        </div>
+        <div class="goal-check"></div>
+      </div>
+    </div>
+    <button class="reset-btn" onclick="resetQuestions()">↻ 重置追问记录</button>
+  </div>
+</div>
+
+<script>
+function toggleGoal(el) {
+  el.classList.toggle('done');
+}
+
+function resetGoals() {
+  var items = document.querySelectorAll('#goalList .goal-item');
+  items.forEach(function(i) { i.classList.remove('done'); });
+}
+
+function resetQuestions() {
+  var items = document.querySelectorAll('#questionList .goal-item');
+  items.forEach(function(i) { i.classList.remove('done'); });
+}
+
+function toggleQA(btn) {
+  var answer = btn.nextElementSibling;
+  if (answer && answer.classList) {
+    answer.classList.toggle('show');
+    btn.textContent = answer.classList.contains('show') ? '🙈 收起' : '💡 他的方法给我什么启发？';
+
+    // Reset text for figure cards (the button text is different per card)
+    if (answer.classList.contains('show')) {
+      btn.textContent = '🙈 收起';
+    } else {
+      var card = btn.closest('.figure-card');
+      if (card) {
+        var heading = card.querySelector('h3');
+        if (heading && heading.textContent.indexOf('拉瓦锡') !== -1) btn.textContent = '💡 他的方法给我什么启发？';
+        else if (heading && heading.textContent.indexOf('门捷列夫') !== -1) btn.textContent = '💡 门捷列夫式的思维是什么？';
+        else if (heading) btn.textContent = '💡 炼丹术对现代化学有何贡献？';
+      }
+    }
+  }
+}
+</script>
+</body>
+</html>

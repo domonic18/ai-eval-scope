@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视频脚手架 - 走进化学世界</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+  --success: #52c41a;
+  --warning: #faad14;
+  --danger: #ff4d4f;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+}
+.container { width: 100%; max-width: none; padding: 20px 24px; }
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 3px solid var(--accent);
+}
+h2 {
+  font-size: var(--font-h2);
+  color: var(--text);
+  margin: 24px 0 12px;
+  padding-left: 12px;
+  border-left: 4px solid var(--primary);
+}
+h3 {
+  font-size: calc(var(--font-body) + 2px);
+  color: var(--primary);
+  margin: 16px 0 8px;
+}
+.level-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 16px 0;
+  flex-wrap: wrap;
+}
+.level-tab {
+  padding: 8px 18px;
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: var(--font-body);
+  transition: all 0.25s;
+}
+.level-tab:hover { border-color: var(--primary); color: var(--primary); }
+.level-tab.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.level-group { display: none; }
+.level-group.active { display: block; }
+.video-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.video-card .source {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.video-card .task-list { list-style: none; padding: 0; }
+.video-card .task-list li {
+  position: relative;
+  padding: 6px 0 6px 28px;
+  cursor: pointer;
+  transition: color 0.2s;
+  user-select: none;
+}
+.video-card .task-list li::before {
+  content: "◻";
+  position: absolute;
+  left: 0;
+  color: var(--text-secondary);
+  font-size: 16px;
+}
+.video-card .task-list li.done {
+  color: var(--text-secondary);
+  text-decoration: line-through;
+}
+.video-card .task-list li.done::before {
+  content: "✅";
+  left: 0;
+}
+.video-card .question {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 8px 0;
+}
+.video-card .question strong { color: var(--warning); }
+.pause-point {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 8px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.pause-point::before {
+  content: "⏸";
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.output-task {
+  background: #e6f7ff;
+  border: 1px solid #91d5ff;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 8px 0;
+}
+.output-task::before { content: "✏️ 输出任务："; font-weight: 700; color: var(--primary); }
+.toggle-btn {
+  display: inline-block;
+  padding: 4px 14px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  margin-top: 8px;
+}
+.toggle-btn:hover { background: var(--primary-hover); }
+.details-content { display: none; margin-top: 8px; }
+.details-content.open { display: block; }
+.progress-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0;
+  padding: 12px 16px;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+}
+.progress-track {
+  flex: 1;
+  height: 8px;
+  background: var(--bg);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  width: 0%;
+  border-radius: 4px;
+  transition: width 0.5s;
+}
+.progress-text { font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
+.reset-btn {
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.reset-btn:hover { border-color: var(--primary); color: var(--primary); }
+@media (max-width: 640px) {
+  .container { padding: 12px 14px; }
+  .video-card { padding: 12px 14px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🎬 视频脚手架</h1>
+  <p style="color:var(--text-secondary);margin-bottom:12px;">边看视频边思考，完成观看任务和输出任务。点击任务项标记完成。</p>
+
+  <div class="progress-bar">
+    <span style="font-size:13px;">学习进度</span>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <span class="progress-text" id="progressText">0 / 0</span>
+    <button class="reset-btn" onclick="resetAll()">↻ 重置</button>
+  </div>
+
+  <div class="level-tabs">
+    <div class="level-tab active" data-level="basic" onclick="switchLevel('basic',this)">📖 基础层</div>
+    <div class="level-tab" data-level="advanced" onclick="switchLevel('advanced',this)">🔬 进阶层</div>
+    <div class="level-tab" data-level="challenge" onclick="switchLevel('challenge',this)">⚡ 挑战层</div>
+  </div>
+
+  <div class="level-group active" data-level="basic">
+    <h2>基础层：解释型</h2>
+
+    <div class="video-card">
+      <h3>① 化学是什么？——走进化学世界</h3>
+      <div class="source">🔗 B站 · 约8分钟</div>
+      <ul class="task-list" data-group="basic">
+        <li onclick="toggleTask(this)">边看边列出：视频中提到了哪些化学改变生活的例子？</li>
+        <li onclick="toggleTask(this)">思考：化学变化和物理变化的根本区别是什么？</li>
+        <li onclick="toggleTask(this)">思考：视频中哪个例子让你最印象深刻？为什么？</li>
+      </ul>
+      <div class="pause-point">2分30秒处（讲到化学变化时）：暂停一下，想一想你身边还有没有视频中没提到的化学变化？</div>
+      <div class="output-task">看完后写一段50字以内的"我眼中的化学"，用你自己的话定义化学是什么</div>
+    </div>
+
+    <div class="video-card">
+      <h3>② 物质的性格——物理性质和化学性质</h3>
+      <div class="source">🔗 B站/YouTube · 约6分钟</div>
+      <ul class="task-list" data-group="basic">
+        <li onclick="toggleTask(this)">准备两张纸条：左边写"物理性质"，右边写"化学性质"，看视频时把提到的性质分别记在对应侧</li>
+        <li onclick="toggleTask(this)">思考："颜色"是物理性质还是化学性质？</li>
+        <li onclick="toggleTask(this)">思考："能燃烧"是物理性质还是化学性质？你怎么判断的？</li>
+      </ul>
+      <div class="pause-point">3分20秒处（举例"铁能生锈"时）：暂停，想一想"铁是银白色的"和"铁能生锈"分别属于哪类性质</div>
+      <div class="output-task">画一个"性质分类图"：中心写"物质的性质"，分两大分支（物理/化学），每支再列举3—5个例子</div>
+    </div>
+  </div>
+
+  <div class="level-group" data-level="advanced">
+    <h2>进阶层：分析型</h2>
+
+    <div class="video-card">
+      <h3>③ 舌尖上的化学——馒头里的膨松剂</h3>
+      <div class="source">🔗 B站 · 约12分钟</div>
+      <ul class="task-list" data-group="advanced">
+        <li onclick="toggleTask(this)">记录视频中提到的3种膨松剂及它们产生气体的化学原理</li>
+        <li onclick="toggleTask(this)">思考：小苏打和酵母粉的膨松原理有什么不同？</li>
+        <li onclick="toggleTask(this)">思考：为什么有的配方里要加"白醋"？</li>
+        <li onclick="toggleTask(this)">思考：这个视频如何印证了"性质决定用途"？</li>
+      </ul>
+      <div class="pause-point">5分00秒处（演示小苏打+醋反应时）：暂停，想一想——除了做馒头，这个反应还能用在什么地方？</div>
+      <div class="output-task">用表格对比小苏打和酵母粉的膨松原理、适用场景和优缺点</div>
+      <button class="toggle-btn" onclick="toggleDetails('detail3')">📊 查看对比表格</button>
+      <div class="details-content" id="detail3">
+        <table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:14px;">
+          <tr style="background:var(--primary);color:#fff;"><th style="padding:8px;border:1px solid var(--border);">对比项</th><th style="padding:8px;border:1px solid var(--border);">小苏打（碳酸氢钠）</th><th style="padding:8px;border:1px solid var(--border);">酵母粉</th></tr>
+          <tr><td style="padding:8px;border:1px solid var(--border);">膨松原理</td><td style="padding:8px;border:1px solid var(--border);">受热分解产生CO₂（化学变化）</td><td style="padding:8px;border:1px solid var(--border);">微生物发酵产生CO₂（生物+化学）</td></tr>
+          <tr><td style="padding:8px;border:1px solid var(--border);">适用场景</td><td style="padding:8px;border:1px solid var(--border);">快速发酵（蛋糕、饼干）</td><td style="padding:8px;border:1px solid var(--border);">传统面食（馒头、面包）</td></tr>
+          <tr><td style="padding:8px;border:1px solid var(--border);">优点</td><td style="padding:8px;border:1px solid var(--border);">速度快、操作简单</td><td style="padding:8px;border:1px solid var(--border);">口感好、有发酵香味</td></tr>
+          <tr><td style="padding:8px;border:1px solid var(--border);">缺点</td><td style="padding:8px;border:1px solid var(--border);">需配合酸性物质，过量有碱味</td><td style="padding:8px;border:1px solid var(--border);">耗时长，需控制温度</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="video-card">
+      <h3>④ 从矿石到手机——化学如何改变世界</h3>
+      <div class="source">🔗 B站 · 约15分钟（纪录片风格）</div>
+      <ul class="task-list" data-group="advanced">
+        <li onclick="toggleTask(this)">记录：制作一部智能手机用到了多少种化学元素？</li>
+        <li onclick="toggleTask(this)">记录：哪些环节涉及化学变化？</li>
+        <li onclick="toggleTask(this)">思考：手机屏幕里的"稀土元素"为什么要用化学方法提取？</li>
+        <li onclick="toggleTask(this)">思考：锂电池的"充放电"是化学变化还是物理变化？</li>
+      </ul>
+      <div class="pause-point">8分50秒处（展示锂电池内部结构时）：暂停，根据你看到的"锂离子在正负极之间移动"——你能解释为什么电池会"用完"吗？</div>
+      <div class="output-task">画一幅"手机背后的化学元素地图"：A4纸中间画一部手机，周围辐射标注各部件用到的化学元素/材料</div>
+    </div>
+  </div>
+
+  <div class="level-group" data-level="challenge">
+    <h2>挑战层：辩论/前沿型</h2>
+
+    <div class="video-card">
+      <h3>⑤ 化学品的"罪与罚"——环保与发展的平衡</h3>
+      <div class="source">🔗 B站/纪录片频道 · 约20分钟</div>
+      <ul class="task-list" data-group="challenge">
+        <li onclick="toggleTask(this)">记录视频中提到的"化学品的正面贡献"至少3个</li>
+        <li onclick="toggleTask(this)">记录视频中提到的"负面影响"至少3个</li>
+        <li onclick="toggleTask(this)">思考：化学污染事件，是因为化学本身"坏"，还是因为人没有正确使用化学？</li>
+        <li onclick="toggleTask(this)">思考：如果让你在"不用化学产品"和"接受一定环境风险"之间选择，你怎么选？为什么？</li>
+      </ul>
+      <div class="pause-point">12分00秒处（讨论"白色污染"时）：暂停，把你身边的塑料制品列个清单——没有它们生活会怎样？有了它们环境会怎样？</div>
+      <div class="output-task">写一篇200字的"我的化学伦理立场"，表达你对"化学品使用"的观点，要求有论点、论据和结论</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchLevel(level, el) {
+  document.querySelectorAll('.level-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.level-group').forEach(g => g.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelector('.level-group[data-level="'+level+'"]').classList.add('active');
+}
+
+function toggleTask(el) {
+  el.classList.toggle('done');
+  updateProgress();
+}
+
+function toggleDetails(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('open');
+}
+
+function updateProgress() {
+  const allTasks = document.querySelectorAll('.task-list li');
+  const doneTasks = document.querySelectorAll('.task-list li.done');
+  const total = allTasks.length;
+  const done = doneTasks.length;
+  const pct = total > 0 ? Math.round(done / total * 100) : 0;
+  const fill = document.getElementById('progressFill');
+  const text = document.getElementById('progressText');
+  if (fill) fill.style.width = pct + '%';
+  if (text) text.textContent = done + ' / ' + total;
+}
+
+function resetAll() {
+  document.querySelectorAll('.task-list li.done').forEach(el => el.classList.remove('done'));
+  document.querySelectorAll('.details-content.open').forEach(el => el.classList.remove('open'));
+  updateProgress();
+}
+
+document.addEventListener('DOMContentLoaded', updateProgress);
+</script>
+</body>
+</html>

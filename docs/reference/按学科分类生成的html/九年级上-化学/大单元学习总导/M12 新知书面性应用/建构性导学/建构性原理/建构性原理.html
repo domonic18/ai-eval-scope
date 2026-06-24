@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性原理 — 化学 九年级上</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0;
+  width: 100%;
+  max-width: none;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.wrapper { width: 100%; max-width: none; padding: 24px 20px; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin: 0 0 6px; }
+.header .meta { opacity: 0.85; font-size: 14px; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.card h2 { font-size: var(--font-h2); color: var(--primary); margin-bottom: 10px; }
+.card h3 { font-size: 17px; color: var(--primary); margin: 16px 0 8px; }
+.card h4 { font-size: 15px; color: var(--primary); margin: 12px 0 6px; }
+.card p { margin-bottom: 8px; }
+.card ul, .card ol { padding-left: 20px; margin-bottom: 8px; }
+.card li { margin-bottom: 4px; }
+.step-nav {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;
+}
+.step-btn {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.step-btn:hover { border-color: var(--primary); color: var(--primary); }
+.step-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.step-content { display: none; padding: 14px; background: var(--bg); border-radius: 6px; margin-bottom: 12px; }
+.step-content.active { display: block; }
+.compact-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14px; }
+.compact-table th, .compact-table td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; }
+.compact-table th { background: var(--primary); color: #fff; font-weight: 600; }
+.compact-table tr:nth-child(even) { background: #fafafa; }
+.compact-table td:first-child { font-weight: 600; }
+.example-box {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+  padding: 14px;
+  margin: 10px 0;
+}
+.example-box h4 { color: #d48806; }
+.template-box {
+  background: #f0f5ff;
+  border: 1px solid #adc6ff;
+  border-radius: 6px;
+  padding: 14px;
+  margin: 10px 0;
+  font-family: inherit;
+  white-space: pre-wrap;
+}
+.scale-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14px; }
+.scale-table th, .scale-table td { border: 1px solid var(--border); padding: 6px 10px; text-align: center; }
+.scale-table th { background: var(--bg); color: var(--primary); font-weight: 600; }
+.scale-table .excellent { background: #f6ffed; }
+.scale-table .pass { background: #fffbe6; }
+.scale-table .improve { background: #fff2f0; }
+.tool-box { display: flex; flex-direction: column; gap: 12px; margin: 10px 0; }
+.tool-item {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+.tool-item:hover { box-shadow: 0 2px 8px rgba(22,119,255,0.1); }
+.tool-item h4 { margin: 0 0 4px; font-size: 15px; display: flex; align-items: center; gap: 6px; }
+.tool-item .tool-body { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); font-size: 14px; }
+.tool-item .tool-body.open { display: block; }
+.check-list { list-style: none; padding: 0; }
+.check-list li { padding: 6px 0 6px 28px; position: relative; cursor: pointer; }
+.check-list li::before { content: '⬜'; position: absolute; left: 0; }
+.check-list li.done { color: var(--text-secondary); text-decoration: line-through; }
+.check-list li.done::before { content: '✅'; }
+.self-score { display: flex; gap: 10px; align-items: center; margin: 8px 0; flex-wrap: wrap; }
+.score-btn {
+  padding: 6px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--card-bg);
+  transition: all 0.2s;
+}
+.score-btn:hover { border-color: var(--primary); }
+.score-btn.chosen { background: var(--primary); color: #fff; border-color: var(--primary); }
+@media (min-width: 640px) { .wrapper { padding: 32px 40px; } }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <h1>📝 建构性原理 · 化学书面表达建构</h1>
+    <div class="meta">化学 · 九年级上 · 人教版 · 第一单元 走进化学世界</div>
+    <div style="margin-top:8px;font-size:14px;opacity:0.9;">从镁条燃烧到一段规范的化学现象描述——从观察到表达的完整建构过程</div>
+  </div>
+
+  <div class="card">
+    <h2>🎯 建构目标</h2>
+    <p>完成本导学案后，你将能够：</p>
+    <ol>
+      <li><strong>写出规范完整的实验现象描述</strong>——准确描述"反应前→反应中→反应后"的全过程</li>
+      <li><strong>用化学语言解释现象的本质</strong>——正确判断变化类型，使用化学方程式</li>
+      <li><strong>掌握化学书面表达的一般建构流程</strong>——从"观察→梳理→构架→写作→优化"的完整方法</li>
+      <li><strong>建立自查意识</strong>——写完后能对照标准检查自己的表达是否准确、完整、规范</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>🧪 真实建构情境</h2>
+    <div style="background:#fff7e6;border:1px solid #ffd591;border-radius:6px;padding:14px;margin-bottom:10px;">
+      <p>你刚刚在化学实验室完成了一个简单的实验：<strong>镁条在空气中燃烧</strong>。你看到了耀眼的白光，观察到燃烧后留下白色粉末。老师问你：</p>
+      <p style="margin:8px 0;font-style:italic;color:var(--primary);">"镁条燃烧是什么变化？你看到了什么现象？请用一段规范的化学语言写下来。"</p>
+      <p>你拿起笔，却发现自己似乎有很多话想说，但不知道从哪里开始——"耀眼的白光"应该写在前面还是后面？"放出大量热"要不要写？"白色粉末"叫什么名字？要用化学方程式吗？</p>
+    </div>
+    <p>这是每个刚开始学习化学的同学都会遇到的困惑：<strong>我们看到了现象，却不知道如何把它变成规范的书面表达。</strong></p>
+  </div>
+
+  <div class="card">
+    <h2>🏗️ 建构任务</h2>
+    <div class="highlight" style="background:var(--bg);border:1px solid var(--accent);border-radius:6px;padding:14px;">
+      <p><strong>任务：</strong>撰写一段"镁条燃烧实验现象描述与解释"的书面表达（150-300字），要求包含：</p>
+      <ul style="margin-top:6px;">
+        <li>实验前镁条的状态和外观</li>
+        <li>实验过程中观察到的现象（至少3个看点）</li>
+        <li>实验后的产物特征</li>
+        <li>对变化的分类判断及判断依据</li>
+        <li>用化学方程式表示变化本质</li>
+        <li>整段文字逻辑清晰、用语规范</li>
+      </ul>
+      <p style="margin-top:6px;color:var(--text-secondary);font-size:14px;">📖 写作对象：假设读者是另一位还没有做过这个实验的同学</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>👣 建构过程（7步示范）</h2>
+    <p style="color:var(--text-secondary);margin-bottom:10px;">点击下方步骤按钮，跟随每一步的建构示范：</p>
+
+    <div class="step-nav">
+      <button class="step-btn" onclick="showStep(1)">步骤1</button>
+      <button class="step-btn" onclick="showStep(2)">步骤2</button>
+      <button class="step-btn" onclick="showStep(3)">步骤3</button>
+      <button class="step-btn" onclick="showStep(4)">步骤4</button>
+      <button class="step-btn" onclick="showStep(5)">步骤5</button>
+      <button class="step-btn" onclick="showStep(6)">步骤6</button>
+      <button class="step-btn" onclick="showStep(7)">步骤7</button>
+    </div>
+
+    <div class="step-content" id="step1">
+      <h4>📥 步骤1：收集原始观察素材</h4>
+      <p>你在实验中实际看到了什么？先不要考虑"应该怎么写"，先把所有印象写下来：</p>
+      <ul>
+        <li>镁条是银白色的、有金属光泽的固体条状物</li>
+        <li>用坩埚钳夹住，在酒精灯上点燃</li>
+        <li>点燃后发出耀眼的白光，非常刺眼</li>
+        <li>放出大量的热，靠近时能感觉到灼热</li>
+        <li>镁条在燃烧过程中逐渐变短、最后消失</li>
+        <li>燃烧后产生白色粉末状物质</li>
+        <li>白色粉末和原来的镁条看起来完全不一样</li>
+      </ul>
+      <div class="tip" style="font-size:14px;color:var(--text-secondary);margin-top:8px;">💡 <strong>技巧：</strong>这是"素材收集"阶段——先把所有观察到的信息写下来，不要筛选，不要加工。常见错误是"还没想清楚写了什么，就急着想怎么写得好"。</div>
+    </div>
+
+    <div class="step-content" id="step2">
+      <h4>🏷️ 步骤2：为素材"贴标签"</h4>
+      <p>用化学知识审视观察素材，判断每个观察对应的化学概念：</p>
+      <table class="compact-table">
+        <tr><th style="width:35%;">观察素材</th><th style="width:35%;">对应的化学概念</th><th>能否写入</th></tr>
+        <tr><td>银白色、有金属光泽</td><td>物理性质（镁的色态）</td><td>是——反应物描述</td></tr>
+        <tr><td>发出耀眼白光</td><td>燃烧的现象特征</td><td>是——核心现象</td></tr>
+        <tr><td>放出大量热</td><td>化学变化伴随的能量变化</td><td>是——重要现象</td></tr>
+        <tr><td>镁条变短直至消失</td><td>反应物被消耗</td><td>是——过程描述</td></tr>
+        <tr><td>产生白色粉末</td><td>生成新物质（氧化镁）</td><td>是——关键证据</td></tr>
+        <tr><td>白色粉末不同于镁条</td><td>有新物质生成→化学变化</td><td>是——判断依据</td></tr>
+        <tr><td>用坩埚钳夹住等</td><td>实验操作方法</td><td>可省略</td></tr>
+      </table>
+      <div class="tip" style="font-size:14px;color:var(--text-secondary);margin-top:8px;">💡 <strong>技巧：</strong>这一步是将"看到的"转化为"化学的"——用学过的化学概念重新审视观察。</div>
+    </div>
+
+    <div class="step-content" id="step3">
+      <h4>🏗️ 步骤3：搭建写作框架</h4>
+      <p>化学现象描述通常采用"三段式"结构：</p>
+      <div style="background:#fff;border:1px solid var(--border);border-radius:6px;padding:14px;margin:8px 0;">
+        <p><strong>第一段：反应物描述</strong><br>写什么：实验前镁条的状态、外观<br>关键词：银白色、固体、金属光泽</p>
+        <p style="margin-top:6px;"><strong>第二段：反应过程描述（核心段落）</strong><br>写什么：点燃后的现象变化——从点燃到反应结束<br>关键词：点燃、耀眼白光、放热、逐渐变短、产生白色粉末</p>
+        <p style="margin-top:6px;"><strong>第三段：分析与结论</strong><br>写什么：判断变化类型，给出依据，写出化学方程式<br>关键词：化学变化、新物质生成、镁+氧气→氧化镁</p>
+      </div>
+      <div class="tip" style="font-size:14px;color:var(--text-secondary);margin-top:8px;">💡 <strong>技巧：</strong>框架是表达的骨架。有了骨架，你的文字就不会散乱。"反应前—反应中—反应后"是最常用的框架。</div>
+    </div>
+
+    <div class="step-content" id="step4">
+      <h4>✏️ 步骤4：完成初稿</h4>
+      <p>根据框架填充具体内容，写第一版：</p>
+      <div class="example-box">
+        <h4>📄 初稿</h4>
+        <p>镁条是一种银白色的固体，有金属光泽。用酒精灯点燃镁条后，发出耀眼的白光，放出大量的热。镁条越烧越短，最后完全消失，产生了白色粉末。这个变化是化学变化，因为产生了新物质氧化镁。反应的化学方程式是：2Mg + O₂ → 点燃 2MgO。</p>
+      </div>
+      <div class="tip" style="font-size:14px;color:var(--text-secondary);margin-top:8px;">💡 <strong>技巧：</strong>初稿不求完美，先求完整。"写了"比"写好"重要——因为你后面有机会修改。</div>
+    </div>
+
+    <div class="step-content" id="step5">
+      <h4>✅ 步骤5：对照规范检查</h4>
+      <p>用化学书面表达的"5项规范"检查初稿：</p>
+      <table class="compact-table">
+        <tr><th style="width:100px;">检查项</th><th>具体要求</th><th>初稿检查</th></tr>
+        <tr><td>1.准确性</td><td>用词是否准确？现象描述是否真实？</td><td>"耀眼白光"准确；"完全消失"不准确——实际上质量并未消失</td></tr>
+        <tr><td>2.完整性</td><td>是否遗漏重要现象？</td><td>缺少"有大量热放出"的完整表述；"逐渐变短"可以更具体</td></tr>
+        <tr><td>3.逻辑性</td><td>叙述顺序是否合理？</td><td>基本合理，但可在"产生白色粉末"前加"同时"标明时间关系</td></tr>
+        <tr><td>4.规范性</td><td>术语是否规范？符号是否正确？</td><td>基本规范；方程式中"点燃"应写在箭头上方</td></tr>
+        <tr><td>5.简洁性</td><td>是否有冗余表达？</td><td>可以更精炼</td></tr>
+      </table>
+    </div>
+
+    <div class="step-content" id="step6">
+      <h4>✨ 步骤6：修改优化，完成定稿</h4>
+      <div class="example-box">
+        <h4>📄 定稿</h4>
+        <p>镁条是一种银白色的固体，具有金属光泽。用坩埚钳夹持镁条在酒精灯上点燃，镁条剧烈燃烧，发出耀眼的白光，放出大量热。燃烧过程中，镁条逐渐变短，同时产生白色粉末状固体——氧化镁（MgO）。镁条燃烧后剩余的白色粉末与原来的镁条外观完全不同，说明有新物质生成，因此该变化属于化学变化。化学方程式为：2Mg + O₂ 点燃 2MgO。该反应同时放出光和热，属于放热反应。</p>
+      </div>
+      <div class="tip" style="font-size:14px;color:var(--text-secondary);margin-top:8px;">💡 <strong>技巧：</strong>对比初稿和定稿——定稿的主要改进不是"多了好词好句"，而是"更准确、更完整、更符合化学规范"。</div>
+    </div>
+
+    <div class="step-content" id="step7">
+      <h4>🤔 步骤7：反思建构过程</h4>
+      <p>回顾刚才的6个步骤，思考以下问题：</p>
+      <ul>
+        <li>我平时写化学现象描述时，容易漏掉哪个环节？（多数同学容易跳过步骤2，直接开始写）</li>
+        <li>这次建构中最有用的是哪一步？（如果你觉得"框架搭建"帮助最大，以后每次写之前都可以先画框架）</li>
+        <li>我对自己写出的定稿满意吗？哪些地方还可以改进？</li>
+      </ul>
+      <textarea style="width:100%;min-height:80px;border:1px solid var(--border);border-radius:6px;padding:10px;font-size:14px;font-family:inherit;resize:vertical;margin-top:8px;" placeholder="写下你的反思..."></textarea>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🧰 支架工具</h2>
+    <div class="tool-box">
+      <div class="tool-item" onclick="toggleTool(this)">
+        <h4>🛠️ 工具1：三段落模板</h4>
+        <div class="tool-body">
+          <div class="template-box">【反应物描述】______是一种______色的______（状态），具有______。
+【反应过程】将______（操作），观察到______（现象1），同时______（现象2）。随着反应进行，______（变化过程）。
+【分析结论】该变化属于______变化，判断依据是______。化学方程式为：______。</div>
+        </div>
+      </div>
+      <div class="tool-item" onclick="toggleTool(this)">
+        <h4>🛠️ 工具2：5W1H 检查表</h4>
+        <div class="tool-body">
+          <table class="compact-table">
+            <tr><th>维度</th><th>问题</th><th>示例（镁条燃烧）</th></tr>
+            <tr><td>What</td><td>发生了什么？</td><td>镁条燃烧，产生白光和热</td></tr>
+            <tr><td>When</td><td>何时发生？顺序如何？</td><td>点燃后立刻燃烧，持续约5-8秒</td></tr>
+            <tr><td>Where</td><td>现象出现在哪里？</td><td>镁条表面→整个燃烧区域</td></tr>
+            <tr><td>Why</td><td>为什么会这样？</td><td>镁与氧气发生氧化反应</td></tr>
+            <tr><td>How</td><td>变化如何发生？</td><td>发光放热→固体转化</td></tr>
+            <tr><td>How much</td><td>程度如何？</td><td>剧烈燃烧、耀眼白光</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="tool-item" onclick="toggleTool(this)">
+        <h4>🛠️ 工具3：三步自查法</h4>
+        <div class="tool-body">
+          <ol>
+            <li><strong>第一步（准确性检查）</strong>：我写的每个术语、每个化学式是否正确？</li>
+            <li><strong>第二步（完整性检查）</strong>：重要现象都写了吗？有没有遗漏？</li>
+            <li><strong>第三步（读者视角检查）</strong>：没看过实验的人能理解我的描述吗？</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📝 自我评价量表</h2>
+    <table class="scale-table">
+      <tr><th style="width:80px;">维度</th><th class="excellent">优秀（3分）</th><th class="pass">达标（2分）</th><th class="improve">待改进（1分）</th></tr>
+      <tr><td>准确性</td><td>所有术语、化学式、现象描述完全准确</td><td>有个别不准确的表述</td><td>有多处明显错误</td></tr>
+      <tr><td>完整性</td><td>包含反应物、过程、产物、判断、解释全部要素</td><td>包含大部分要素</td><td>遗漏重要要素</td></tr>
+      <tr><td>逻辑性</td><td>时间顺序清晰，衔接自然，段落分明</td><td>基本有序，有少量跳跃</td><td>顺序混乱，难以理解</td></tr>
+      <tr><td>规范性</td><td>术语规范，单位/符号正确，句式标准</td><td>基本规范，有个别问题</td><td>存在多处不规范</td></tr>
+      <tr><td>简洁性</td><td>无冗余，每个句子都有信息价值</td><td>有个别冗余</td><td>啰嗦，重点不突出</td></tr>
+    </table>
+    <div style="margin-top:12px;">
+      <p style="font-weight:600;">给你的定稿打分：</p>
+      <div class="self-score">
+        <button class="score-btn" onclick="selectScore(this)">准确性：__/3</button>
+        <button class="score-btn" onclick="selectScore(this)">完整性：__/3</button>
+        <button class="score-btn" onclick="selectScore(this)">逻辑性：__/3</button>
+        <button class="score-btn" onclick="selectScore(this)">规范性：__/3</button>
+        <button class="score-btn" onclick="selectScore(this)">简洁性：__/3</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showStep(n) {
+  var buttons = document.querySelectorAll('.step-btn');
+  var contents = document.querySelectorAll('.step-content');
+  for (var i = 0; i < contents.length; i++) {
+    contents[i].classList.remove('active');
+    if (buttons[i]) buttons[i].classList.remove('active');
+  }
+  var content = document.getElementById('step' + n);
+  if (content) content.classList.add('active');
+  if (buttons[n-1]) buttons[n-1].classList.add('active');
+}
+function toggleTool(el) {
+  var body = el.querySelector('.tool-body');
+  if (body) body.classList.toggle('open');
+}
+function selectScore(el) {
+  var current = el.textContent;
+  var parts = current.split('：');
+  if (parts.length !== 2) return;
+  var label = parts[0];
+  var score = parts[1];
+  if (score === '__/3') {
+    el.textContent = label + '：1/3';
+  } else if (score === '1/3') {
+    el.textContent = label + '：2/3';
+  } else if (score === '2/3') {
+    el.textContent = label + '：3/3';
+  } else {
+    el.textContent = label + '：__/3';
+  }
+}
+</script>
+</body>
+</html>

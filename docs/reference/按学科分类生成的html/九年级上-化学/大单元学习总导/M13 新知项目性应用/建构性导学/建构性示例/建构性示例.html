@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性示例 — 化学·九年级上</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+  padding: 20px;
+}
+.container { width: 100%; max-width: none; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 24px 28px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 6px; }
+.header .meta { font-size: 13px; opacity: 0.85; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--bg);
+}
+.card h3 {
+  font-size: 16px;
+  color: var(--text);
+  margin: 12px 0 6px;
+}
+.step-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14px; }
+.step-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 500;
+}
+.step-table td {
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  vertical-align: top;
+}
+.step-table tr:nth-child(even) { background: #fafafa; }
+.step-table tr:hover { background: #e6f4ff; }
+.tag-blue {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  padding: 1px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin: 2px 4px 2px 0;
+}
+.checkbox-list { list-style: none; padding: 0; }
+.checkbox-list li {
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.checkbox-list li:hover { border-color: var(--primary); }
+.checkbox-list li .box {
+  display: inline-flex;
+  width: 20px; height: 20px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+.checkbox-list li.done .box {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.demo-box {
+  background: #fafafa;
+  border-left: 3px solid var(--primary);
+  padding: 10px 14px;
+  margin: 6px 0;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  font-size: 14px;
+}
+.sentence-frame {
+  background: #fffbe6;
+  border: 1px dashed #faad14;
+  padding: 10px 14px;
+  border-radius: var(--border-radius);
+  margin: 8px 0;
+}
+.btn-toggle {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 18px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  margin: 4px 0;
+}
+.btn-toggle:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.fade-in { animation: fadeIn 0.4s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.collapse-content { display: none; padding: 8px 0; }
+.collapse-content.open { display: block; }
+@media (max-width: 600px) {
+  body { padding: 10px; }
+  .card { padding: 14px 16px; }
+  .header { padding: 16px; }
+  .step-table, .step-table th, .step-table td { font-size: 13px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header fade-in">
+  <h1>建构性示例 — 蜡烛燃烧的化学秘密</h1>
+  <div class="meta">化学 · 九年级上 · 第1章 走进化学世界 · M13 新知项目性应用</div>
+</div>
+
+<!-- 一、建构性示例标题 -->
+<div class="card fade-in">
+  <h2>一、建构性示例：蜡烛燃烧是化学变化吗？</h2>
+  <p>本示例围绕一个生活中最常见的化学现象——<strong>蜡烛燃烧</strong>展开，完整演示"从观察到建构"的学习路径。你将看到如何从一个看似简单的问题出发，通过系统性观察、证据收集、假设验证和模型化表达，最终建构出"判断化学变化的方法"这一核心理解。</p>
+  <p><span class="tag-blue">功能定位</span> 新知项目性应用 · 第1章核心概念建构</p>
+</div>
+
+<!-- 二、真实建构情境 -->
+<div class="card fade-in">
+  <h2>二、真实建构情境</h2>
+  <p>晚饭后，家里突然停电了。你点亮了一支蜡烛，微弱的火光在黑暗中摇曳。你静静地看着蜡烛燃烧——火焰跳动着，烛身一点点变短，蜡油顺着烛身流下，在烛台边缘凝结成白色的蜡滴。你伸手靠近火焰，感受到一股灼热；用玻璃杯罩住火焰，不一会儿火就熄灭了，杯壁上出现了一层水雾……</p>
+  <p>你忍不住思考：<strong>蜡烛燃烧时，它还在吗？烛身变短是消失了，还是变成了别的东西？这究竟是一种物理变化，还是化学变化？</strong></p>
+  <div class="demo-box">
+    <strong>💡 激发建构需要：</strong> 分辨"物理变化"和"化学变化"是学习化学的第一把钥匙。你将从蜡烛燃烧这个熟悉的现象开始，亲手建构这一区分标准。
+  </div>
+</div>
+
+<!-- 三、建构目标 -->
+<div class="card fade-in">
+  <h2>三、建构目标</h2>
+  <p>通过本示例，你将建构以下核心理解与能力：</p>
+  <ul style="padding-left:20px;">
+    <li><strong>概念目标：</strong>能区分物理变化与化学变化的本质特征，掌握判断化学变化的关键依据——是否有新物质生成。</li>
+    <li><strong>方法目标：</strong>掌握科学探究的基本路径：观察→提问→假设→验证→结论→表达。</li>
+    <li><strong>思维目标：</strong>形成基于证据推理的科学思维方式，不凭感觉下结论。</li>
+    <li><strong>表达目标：</strong>能用概念图、表格等形式结构化呈现自己的理解。</li>
+  </ul>
+</div>
+
+<!-- 四、建构任务说明 -->
+<div class="card fade-in">
+  <h2>四、建构任务说明</h2>
+  <ul style="padding-left:20px;">
+    <li><strong>成果名称：</strong>《物理变化与化学变化区分指南》——包含判断标准、关键特征、实例对比和概念图。</li>
+    <li><strong>用途和对象：</strong>帮助同学快速掌握物理变化与化学变化的区分方法，用于第1章的学习自测。</li>
+    <li><strong>形式和最低标准：</strong>A4纸单页（电子版或手绘均可），必须包含：①两种变化的定义对比 ②至少各3个实例 ③一张概念关系图 ④判断关键词（"是否有新物质生成"）。</li>
+  </ul>
+</div>
+
+<!-- 五、建构过程示范 -->
+<div class="card fade-in">
+  <h2>五、建构过程示范（7步）</h2>
+  <p style="margin-bottom:8px;color:var(--text-secondary);">点击每行查看该步骤的详细示范。</p>
+
+  <table class="step-table">
+    <thead>
+      <tr><th style="width:10%">步骤</th><th style="width:18%">做什么</th><th style="width:22%">怎么做</th><th style="width:22%">生成什么</th><th style="width:28%">简短示范</th></tr>
+    </thead>
+    <tbody>
+      <tr style="cursor:pointer;" onclick="toggleStep(this)">
+        <td><strong>第1步</strong></td>
+        <td>观察情境，发现问题</td>
+        <td>从情境中识别关键现象</td>
+        <td>问题记录</td>
+        <td>"蜡烛燃烧时烛身变短、蜡油熔化、火焰发光发热——这些现象中，哪些表明有新物质生成？"</td>
+      </tr>
+      <tr class="step-detail" style="display:none;"><td colspan="5"><div class="demo-box"><strong>示范：</strong>你不只是看"蜡烛在燃烧"，而是有目的地观察：①火焰颜色分层（外焰橙黄、内焰淡蓝）；②烛身不断变短；③杯壁上出现水珠；④凑近闻有特殊气味。把这些现象逐一记下来，标出"可能是变化的证据"。</div></td></tr>
+
+      <tr style="cursor:pointer;" onclick="toggleStep(this)">
+        <td><strong>第2步</strong></td>
+        <td>收集证据，调用经验</td>
+        <td>查阅教材/回忆已有知识</td>
+        <td>证据清单</td>
+        <td>"回忆物理变化（冰融化、纸撕碎）的特征是形状/状态改变但物质不变；查阅教材发现化学变化的特征是生成新物质。"</td>
+      </tr>
+      <tr class="step-detail" style="display:none;"><td colspan="5"><div class="demo-box"><strong>示范：</strong>打开教材第1章，找到物理变化和化学变化的定义。列一个对比清单：物理变化→无新物质生成（冰→水）；化学变化→有新物质生成（木柴燃烧→灰烬+气体）。回忆生活经验：冰化成水还是水，但食物腐败后变酸变臭——产生了新物质。将蜡烛燃烧的现象对照这两类变化进行初步归类。</div></td></tr>
+
+      <tr style="cursor:pointer;" onclick="toggleStep(this)">
+        <td><strong>第3步</strong></td>
+        <td>提出假设，设计思路</td>
+        <td>基于证据形成初步解释</td>
+        <td>建构思路图</td>
+        <td>"假设：蜡烛燃烧涉及化学变化，因为产生了水（杯壁水珠）和二氧化碳（能使石灰水变浑浊）。"</td>
+      </tr>
+      <tr class="step-detail" style="display:none;"><td colspan="5"><div class="demo-box"><strong>示范：</strong>你的假设是"蜡烛燃烧是化学变化"——因为观察到水珠（新物质）和气味（新物质）。如果只是熔化和汽化（物理变化），蜡烛应该还能变回原状，但实际上不能。画出思路图：蜡烛+氧气 → 水+二氧化碳+其他产物？列出还需要验证的点。</div></td></tr>
+
+      <tr style="cursor:pointer;" onclick="toggleStep(this)">
+        <td><strong>第4步</strong></td>
+        <td>验证调整，完善方案</td>
+        <td>对照证据检验假设</td>
+        <td>修正记录</td>
+        <td>"用干燥烧杯罩在火焰上方→出现水珠（验证生成水）；用澄清石灰水润湿烧杯壁→变浑浊（验证生成二氧化碳）。"</td>
+      </tr>
+      <tr class="step-detail" style="display:none;"><td colspan="5"><div class="demo-box"><strong>示范：</strong>①用干燥冷烧杯罩在蜡烛火焰上方10秒→杯壁出现水雾（水蒸气冷凝）→证明蜡烛燃烧生成了水。②在烧杯内壁涂一层澄清石灰水再罩上→石灰水变浑浊→证明蜡烛燃烧生成了二氧化碳。③修正记录：蜡烛+氧气点燃→水+二氧化碳+……（确认是化学变化）</div></td></tr>
+
+      <tr style="cursor:pointer;" onclick="toggleStep(this)">
+        <td><strong>第5步</strong></td>
+        <td>形成成果，清晰表达</td>
+        <td>组织语言/图示</td>
+        <td>完整成果</td>
+        <td>"绘制概念图：中央为'物质变化'，分出'物理变化'（无新物质）和'化学变化'（有新物质），分别列出3-4个实例。"</td>
+      </tr>
+      <tr class="step-detail" style="display:none;"><td colspan="5"><div class="demo-box"><strong>示范：</strong>用A4纸绘制概念图——<br>①中心：物质变化<br>②左分支：物理变化（特点：状态/形状改变，无新物质；实例：冰融化、水蒸发、玻璃破碎、铁熔化）<br>③右分支：化学变化（特点：有新物质生成；实例：蜡烛燃烧、铁钉生锈、食物腐败、木柴燃烧）<br>④底部标注判断方法："是否有新物质生成？"</div></td></tr>
+
+      <tr style="cursor:pointer;" onclick="toggleStep(this)">
+        <td><strong>第6步</strong></td>
+        <td>反思过程，提炼方法</td>
+        <td>回顾建构路径</td>
+        <td>方法笔记</td>
+        <td>"整个建构过程遵循：真实情境→观察现象→调用已有知识→提出假设→实验验证→得出结论→可视化表达。"</td>
+      </tr>
+      <tr class="step-detail" style="display:none;"><td colspan="5"><div class="demo-box"><strong>示范：</strong>写一段方法笔记——"我今天建构知识的过程不是背课本，而是：从停电点蜡烛的真实经历出发→观察到水珠和气味→回想起物理变化的定义→提出蜡烛燃烧可能有化学变化的假设→用烧杯和石灰水验证→得出结论→画出概念图。这个过程可以用到其他化学知识的学习中。"</div></td></tr>
+
+      <tr style="cursor:pointer;" onclick="toggleStep(this)">
+        <td><strong>第7步</strong></td>
+        <td>拓展联系，迁移应用</td>
+        <td>思考同类问题</td>
+        <td>迁移记录</td>
+        <td>"除了蜡烛燃烧，还有哪些日常现象可以用'是否有新物质生成'来判断？铁钉生锈、食物变质、酒精挥发……"</td>
+      </tr>
+      <tr class="step-detail" style="display:none;"><td colspan="5"><div class="demo-box"><strong>示范：</strong>列一个迁移清单——①铁钉生锈：铁锈是新物质→化学变化；②酒精挥发：酒精从液态变气态但没有新物质→物理变化；③纸张燃烧：变成灰烬和气体→化学变化；④食盐溶解：食盐仍存在于水中可析出→物理变化。这个判断框架可以应用到所有后续化学学习中。</div></td></tr>
+    </tbody>
+  </table>
+
+  <button class="btn-toggle" onclick="expandAllSteps()">展开所有步骤详情</button>
+  <button class="btn-toggle" onclick="collapseAllSteps()">收起所有步骤详情</button>
+</div>
+
+<!-- 六、支架工具推荐 -->
+<div class="card fade-in">
+  <h2>六、支架工具推荐</h2>
+
+  <h3>建构模板（半开放句式）</h3>
+  <div class="sentence-frame">
+    <p><strong>我观察到了</strong> ___________________________ （描述现象）</p>
+    <p><strong>我注意到这与</strong> ___________________________ （已有知识/经验）</p>
+    <p><strong>所以我猜想</strong> ___________________________ （初步假设）</p>
+    <p><strong>为了验证，我</strong> ___________________________ （实验/查阅/对比）</p>
+    <p><strong>最终我发现</strong> ___________________________ （结论）</p>
+    <p><strong>由此我建构出</strong> ___________________________ （核心理解）</p>
+  </div>
+
+  <h3>关键句式</h3>
+  <div class="demo-box">
+    "我观察到……<strong>因为</strong>……所以我建构出……"
+  </div>
+
+  <h3>检查清单</h3>
+  <ul class="checkbox-list" id="toolChecklist">
+    <li onclick="toggleCheck(this)"><span class="box">✓</span> 我是否从真实情境中发现了至少1个值得探究的问题？</li>
+    <li onclick="toggleCheck(this)"><span class="box">✓</span> 我是否收集了至少3条独立的证据来支撑结论？</li>
+    <li onclick="toggleCheck(this)"><span class="box">✓</span> 我是否用"有无新物质生成"作为判断标准？</li>
+    <li onclick="toggleCheck(this)"><span class="box">✓</span> 我是否用概念图/表格的形式呈现了我的理解？</li>
+    <li onclick="toggleCheck(this)"><span class="box">✓</span> 我是否思考了如何将这个方法应用到其他情境？</li>
+  </ul>
+  <button class="btn-toggle" onclick="resetChecklist()">重置检查清单</button>
+</div>
+
+<!-- 七、建构成果样例 -->
+<div class="card fade-in">
+  <h2>七、建构成果样例</h2>
+  <p><strong>成果名称：</strong>《化学变化特征概念图》——物理变化 vs 化学变化对比指南</p>
+  <p><strong>成果评价要求：</strong></p>
+  <ul style="padding-left:20px;">
+    <li><strong>科学性：</strong>概念定义准确，实例分类正确，无知识错误</li>
+    <li><strong>完整性：</strong>包含两种变化的定义、特征、判断方法、不少于6个实例</li>
+    <li><strong>美观性：</strong>布局清晰，配色协调，文字工整或打印清晰</li>
+  </ul>
+  <p><strong>推荐表达格式：</strong>概念图 + 对比表格。中央为"物质变化"，左右分支展开两类变化，底部标注判断流程。</p>
+  <p><strong>完成建议：</strong></p>
+  <ul style="padding-left:20px;">
+    <li>建议先用草稿纸梳理所有素材，再誊写到成稿上</li>
+    <li>实例可以从教材和生活经验中各选一半，增强实用性</li>
+  </ul>
+</div>
+
+<!-- 八、成果优化建议 -->
+<div class="card fade-in">
+  <h2>八、成果优化建议</h2>
+  <ul style="padding-left:20px;">
+    <li><strong>深化区分：</strong>在概念图中增加"容易混淆的实例"专区，如"酒精挥发（物理）vs 酒精燃烧（化学）"的对比，强化辨析能力。</li>
+    <li><strong>增加应用层：</strong>在概念图底部添加一个"判断三步法"操作框：①问"有新的物质产生吗？"②如有→化学变化，如无→物理变化 ③用实验验证判断。</li>
+    <li><strong>美化提示：</strong>用两种对比色区分两类变化（如蓝色→物理、橙色→化学），并在实例旁加简笔画或图标，增强记忆效果。</li>
+  </ul>
+</div>
+
+<!-- 九、自我评价量表 -->
+<div class="card fade-in">
+  <h2>九、自我评价量表</h2>
+  <ul class="checkbox-list" id="selfEval">
+    <li onclick="toggleCheck(this)"><span class="box">✓</span> 我能准确说出物理变化和化学变化的本质区别（有无新物质生成）</li>
+    <li onclick="toggleCheck(this)"><span class="box">✓</span> 我能为每种变化至少举出3个生活实例，并正确分类</li>
+    <li onclick="toggleCheck(this)"><span class="box">✓</span> 我完成了概念图，结构清晰，包含所有必要要素</li>
+    <li onclick="toggleCheck(this)"><span class="box">✓</span> 我能用自己的话解释为什么蜡烛燃烧属于化学变化</li>
+    <li onclick="toggleCheck(this)"><span class="box">✓</span> 我学会了用"观察→假设→验证"的科学方法建构新知识</li>
+  </ul>
+  <button class="btn-toggle" onclick="resetSelfEval()">重置评价</button>
+</div>
+
+</div>
+<script>
+function toggleStep(clickedRow) {
+  var detail = clickedRow.nextElementSibling;
+  if (detail && detail.classList.contains('step-detail')) {
+    detail.style.display = detail.style.display === 'none' ? 'table-row' : 'none';
+  }
+}
+function expandAllSteps() {
+  document.querySelectorAll('.step-detail').forEach(function(el) {
+    el.style.display = 'table-row';
+  });
+}
+function collapseAllSteps() {
+  document.querySelectorAll('.step-detail').forEach(function(el) {
+    el.style.display = 'none';
+  });
+}
+function toggleCheck(el) {
+  el.classList.toggle('done');
+}
+function resetChecklist() {
+  document.querySelectorAll('#toolChecklist li').forEach(function(li) {
+    li.classList.remove('done');
+  });
+}
+function resetSelfEval() {
+  document.querySelectorAll('#selfEval li').forEach(function(li) {
+    li.classList.remove('done');
+  });
+}
+</script>
+</body>
+</html>

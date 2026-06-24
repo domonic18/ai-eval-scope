@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名著介绍 — 化学思想经典导读</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+  --success: #52c41a;
+  --warning: #faad14;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); font-size: var(--font-body); line-height: var(--line-height); }
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+
+.header { background: linear-gradient(135deg, #0d2137 0%, #1a3f6a 50%, var(--primary) 100%); color: #fff; padding: 28px 36px; border-radius: var(--border-radius); margin-bottom: 24px; }
+.header h1 { margin: 0 0 6px; font-size: var(--font-h1); font-weight: 700; }
+.header .subtitle { font-size: 14px; opacity: 0.85; }
+.header .badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 2px 12px; border-radius: 12px; font-size: 12px; margin-top: 8px; }
+
+.card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px 24px; margin-bottom: 20px; border: 1px solid var(--border); transition: box-shadow 0.2s; }
+.card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.1); }
+.card-title { font-size: var(--font-h2); font-weight: 600; color: var(--primary); margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+
+/* Quote */
+.quote-grid { display: grid; gap: 16px; }
+.quote-item { position: relative; padding: 16px 20px 16px 56px; border-radius: 8px; cursor: pointer; transition: all 0.3s; border: 1px solid var(--border); }
+.quote-item:hover { border-color: var(--primary); box-shadow: 0 2px 8px rgba(22,119,255,0.08); }
+.quote-item .qi-icon { position: absolute; left: 14px; top: 16px; font-size: 22px; }
+.quote-item .qi-text { font-style: italic; font-size: 14px; line-height: 1.6; }
+.quote-item .qi-author { font-style: normal; font-weight: 600; font-size: 13px; color: var(--primary); margin-top: 4px; }
+.quote-item .qi-reflection { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; margin-top: 0; font-size: 13px; color: var(--text-secondary); }
+.quote-item.expanded { background: #f0f5ff; border-color: var(--primary); }
+.quote-item.expanded .qi-reflection { max-height: 200px; margin-top: 8px; }
+
+.quote-item:nth-child(1) { border-left: 4px solid var(--primary); }
+.quote-item:nth-child(2) { border-left: 4px solid var(--success); }
+.quote-item:nth-child(3) { border-left: 4px solid var(--warning); }
+.quote-item:nth-child(4) { border-left: 4px solid #722ed1; }
+
+/* Book cards */
+.book-grid { display: grid; gap: 20px; }
+.book-card { border: 1px solid var(--border); border-radius: var(--border-radius); overflow: hidden; transition: all 0.3s; }
+.book-card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.12); transform: translateY(-2px); }
+.book-header { padding: 14px 20px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: background 0.2s; }
+.book-header:hover { background: #fafafa; }
+.book-level { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 8px; flex-shrink: 0; }
+.level-basic { background: #e6f7ff; color: #1890ff; }
+.level-advanced { background: #fff7e6; color: #d46b08; }
+.level-challenge { background: #f9f0ff; color: #722ed1; }
+.book-icon { font-size: 28px; flex-shrink: 0; }
+.book-info { flex: 1; }
+.book-info .book-name { font-weight: 600; }
+.book-info .book-meta { font-size: 12px; color: var(--text-secondary); }
+.book-arrow { transition: transform 0.3s; font-size: 14px; color: var(--text-secondary); }
+.book-header.open .book-arrow { transform: rotate(180deg); }
+.book-body { max-height: 0; overflow: hidden; transition: max-height 0.5s ease; }
+.book-body.open { max-height: 600px; }
+.book-body-inner { padding: 0 20px 16px; font-size: 14px; line-height: 1.8; }
+.book-body-inner p { margin: 6px 0; }
+.book-body-inner .label { font-weight: 600; color: var(--primary); }
+
+/* Section divider */
+.section-divider { display: flex; align-items: center; gap: 12px; margin: 24px 0 16px; }
+.section-divider::before, .section-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.section-divider-text { font-size: 14px; font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
+
+/* Read status badges */
+.read-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 10px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); background: var(--card-bg); transition: all 0.2s; font-family: inherit; }
+.read-badge.read { background: var(--success); color: #fff; border-color: var(--success); }
+.read-badge.reading { background: var(--warning); color: #fff; border-color: var(--warning); }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container { padding: 12px 16px; }
+  .header { padding: 20px; }
+  .card { padding: 14px 16px; }
+  .quote-item { padding: 12px 14px 12px 48px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>📚 名著介绍</h1>
+    <div class="subtitle">思想触发器 × 系统思想载体 — 用经典建构化学认知深度</div>
+    <div class="badge">九年级上 · 化学 · M10 新知哲学思维</div>
+  </div>
+
+  <!-- 名言部分 -->
+  <div class="card">
+    <div class="card-title">💬 思想触发器 · 四句名言</div>
+    <p style="font-size:14px;color:var(--text-secondary);margin:0 0 12px;">👆 点击每条名言展开反思起点</p>
+
+    <div class="quote-grid">
+      <!-- 1 -->
+      <div class="quote-item" onclick="toggleQuote(this)">
+        <span class="qi-icon">🔥</span>
+        <div class="qi-text">"物质本身既不能被创造也不能被消灭，它只是改变了形式。"</div>
+        <div class="qi-author">—— 拉瓦锡</div>
+        <div class="qi-reflection">💡 反思起点：蜡烛燃烧后"消失"了，但真的消失了吗？拉瓦锡用天平告诉我们：蜡烛中的碳原子与氧气结合成二氧化碳，氢原子与氧气结合成水蒸气——原子只是重新组合，从未消失。这就是<strong>质量守恒定律</strong>的雏形。</div>
+      </div>
+      <!-- 2 -->
+      <div class="quote-item" onclick="toggleQuote(this)">
+        <span class="qi-icon">🔍</span>
+        <div class="qi-text">"科学不是一种静止的知识体系，而是一种动态的探究过程。"</div>
+        <div class="qi-author">—— 卡尔·波普尔</div>
+        <div class="qi-reflection">💡 概念引子：你学到的每一个化学结论——从元素符号到化学方程式——都曾是人类"探究"的结果。科学不是背下来的，是"问"出来的。波普尔说，科学理论必须能被<strong>证伪</strong>——燃素说被氧化说证伪，这就是科学的进步。</div>
+      </div>
+      <!-- 3 -->
+      <div class="quote-item" onclick="toggleQuote(this)">
+        <span class="qi-icon">👁️</span>
+        <div class="qi-text">"最重要的不是亲眼看到了什么，而是理解了看到的东西意味着什么。"</div>
+        <div class="qi-author">—— 普里斯特利（实际他错过了理解）</div>
+        <div class="qi-reflection">💡 冲突触发器：普里斯特利用凸透镜加热氧化汞制得了氧气，他观察到蜡烛在这种气体中燃烧更剧烈——但他用"燃素说"解释为"这种气体吸收了更少的燃素"。为什么看到了现象，却做错了结论？因为<strong>观察需要理论的指引。</strong></div>
+      </div>
+      <!-- 4 -->
+      <div class="quote-item" onclick="toggleQuote(this)">
+        <span class="qi-icon">⚡</span>
+        <div class="qi-text">"给我一个支点，我将撬动地球。"</div>
+        <div class="qi-author">—— 阿基米德（启发式改编）</div>
+        <div class="qi-reflection">💡 反思起点：化学的"支点"是什么？是<strong>观察→假设→验证→结论</strong>这个完整的方法链。拉瓦锡的"天平"是支点，道尔顿的"原子模型"是支点，门捷列夫的"周期表"是支点。找到你的"支点"，你也可以撬动化学世界！</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider">
+    <span class="section-divider-text">📖 名著推荐</span>
+  </div>
+
+  <!-- 名著一 -->
+  <div class="card">
+    <div class="card-title">📖 推荐阅读</div>
+    <div class="book-grid">
+      <div class="book-card">
+        <div class="book-header" onclick="toggleBook(this)">
+          <span class="book-icon">🧪</span>
+          <div class="book-info">
+            <div class="book-name">《元素的故事》</div>
+            <div class="book-meta">依·尼查叶夫 · 少年儿童出版社</div>
+          </div>
+          <span class="book-level level-basic">必读级</span>
+          <span class="book-arrow">▼</span>
+        </div>
+        <div class="book-body">
+          <div class="book-body-inner">
+            <p><span class="label">核心问题：</span>元素到底是什么？人类是如何一步步认识各种元素的？</p>
+            <p><span class="label">目录结构：</span>①火与土的时代 → ②炼金术士的探索 → ③拉瓦锡的革新 → ④电解法的突破 → ⑤光谱分析的诞生 → ⑥元素周期表的诞生</p>
+            <p><span class="label">核心观点：</span>每一种元素的发现都是人类"观察→假设→验证→修正"认知循环的产物。</p>
+            <p><span class="label">关键片段导读：</span>推荐第3章"拉瓦锡的革新"——看拉瓦锡如何用一个天平推翻了统治化学界100年的燃素说！</p>
+            <p><span class="label">适读建议：</span>初中基础级，语言生动易懂。</p>
+            <p><span class="label">获取路径：</span>纸质书（少年儿童出版社）/ 微信读书电子版 / 喜马拉雅有声书</p>
+            <div style="margin-top:8px;">
+              <button class="read-badge" onclick="toggleReadStatus(this, event)">📌 标记为想读</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 名著二 -->
+      <div class="book-card">
+        <div class="book-header" onclick="toggleBook(this)">
+          <span class="book-icon">⚖️</span>
+          <div class="book-info">
+            <div class="book-name">《化学基础论》</div>
+            <div class="book-meta">拉瓦锡 · 商务出版社汉译名著系列</div>
+          </div>
+          <span class="book-level level-advanced">进阶级</span>
+          <span class="book-arrow">▼</span>
+        </div>
+        <div class="book-body">
+          <div class="book-body-inner">
+            <p><span class="label">核心问题：</span>化学反应的本质是什么？我们如何系统地研究化学？</p>
+            <p><span class="label">目录结构：</span>①关于物质和实体 → ②关于空气和气体 → ③关于酸和碱 → ④关于化学亲和力</p>
+            <p><span class="label">核心观点：</span>拉瓦锡在书中首次建立了"元素不可再分"的定义，彻底奠定了现代化学的基础。</p>
+            <p><span class="label">关键片段导读：</span><strong>序言部分</strong>——拉瓦锡说"我们只相信实验呈现的事实"——这句话就是本模块"新知哲学思维"的精髓！</p>
+            <p><span class="label">适读建议：</span>进阶级，建议在教师/家长引导下阅读关键章节。</p>
+            <p><span class="label">获取路径：</span>商务出版社汉译名著系列 / 百度百科"化学基础论"词条摘要</p>
+            <div style="margin-top:8px;">
+              <button class="read-badge" onclick="toggleReadStatus(this, event)">📌 标记为想读</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 名著三 -->
+      <div class="book-card">
+        <div class="book-header" onclick="toggleBook(this)">
+          <span class="book-icon">🔄</span>
+          <div class="book-info">
+            <div class="book-name">《科学革命的结构》</div>
+            <div class="book-meta">托马斯·库恩 · 北京大学出版社</div>
+          </div>
+          <span class="book-level level-challenge">挑战级</span>
+          <span class="book-arrow">▼</span>
+        </div>
+        <div class="book-body">
+          <div class="book-body-inner">
+            <p><span class="label">核心问题：</span>科学知识是怎么"进步"的？是慢慢积累，还是不断"推翻重来"？</p>
+            <p><span class="label">目录结构：</span>①科学的常规时期 → ②反常 → ③危机 → ④科学革命 → ⑤新范式</p>
+            <p><span class="label">核心观点：</span>库恩提出"范式革命"——科学不是新知识慢慢加进去，而是<strong>旧理论被推翻、新理论取代</strong>。就像"燃素说"被"氧化说"取代！</p>
+            <p><span class="label">关键片段导读：</span>第7章"革命的本质"——与化学史上拉瓦锡的革命完美对应。</p>
+            <p><span class="label">适读建议：</span>挑战级，适合对哲学和科学史感兴趣的同学。</p>
+            <p><span class="label">获取路径：</span>北京大学出版社 / 微信读书 / B站搜索"库恩 范式革命"解读视频</p>
+            <div style="margin-top:8px;">
+              <button class="read-badge" onclick="toggleReadStatus(this, event)">📌 标记为想读</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 阅读路径 -->
+  <div class="card" style="background:linear-gradient(135deg,#f0f5ff,#e6f7ff);">
+    <div class="card-title">🗺️ 阅读路线图</div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:200px;padding:12px 16px;background:var(--card-bg);border-radius:8px;border:1px solid var(--border);">
+        <div style="font-size:14px;font-weight:600;color:#1890ff;">🟢 基础路线</div>
+        <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">《元素的故事》→ 名言卡片 → 知识复习</div>
+      </div>
+      <div style="flex:1;min-width:200px;padding:12px 16px;background:var(--card-bg);border-radius:8px;border:1px solid var(--border);">
+        <div style="font-size:14px;font-weight:600;color:#d46b08;">🟠 进阶路线</div>
+        <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">名言思考 → 《化学基础论》导读 → 讨论</div>
+      </div>
+      <div style="flex:1;min-width:200px;padding:12px 16px;background:var(--card-bg);border-radius:8px;border:1px solid var(--border);">
+        <div style="font-size:14px;font-weight:600;color:#722ed1;">🔴 挑战路线</div>
+        <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">《科学革命的结构》→ 对比分析 → 论文</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function toggleQuote(el) {
+  el.classList.toggle('expanded');
+}
+
+function toggleBook(el) {
+  el.classList.toggle('open');
+  const body = el.nextElementSibling;
+  if (body) body.classList.toggle('open');
+}
+
+function toggleReadStatus(el, event) {
+  if (event) event.stopPropagation();
+  el.classList.toggle('read');
+  el.textContent = el.classList.contains('read') ? '✅ 已标记' : '📌 标记为想读';
+}
+</script>
+</body>
+</html>

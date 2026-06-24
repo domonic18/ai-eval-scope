@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性案例 — 解析性导学</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary) 0%, #0050b3 100%);
+  color: #fff;
+  padding: 32px 20px;
+  text-align: center;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 6px; }
+.header p { font-size: 14px; opacity: .85; }
+.intro-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+  margin: 14px 0;
+  border-left: 4px solid var(--primary);
+  font-size: 14px;
+}
+.case-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 14px 0;
+}
+.case-btn {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all .25s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.case-btn:hover { border-color: var(--primary); color: var(--primary); }
+.case-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.case-btn.done { background: #e6f7ff; border-color: #13a8a8; color: #13a8a8; }
+.case-label { width: auto; padding: 0 12px; border-radius: 20px; font-size: 13px; }
+.case-content { display: none; }
+.case-content.active { display: block; }
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+.case-card h3 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+.case-card h4 {
+  font-size: 15px;
+  color: var(--text);
+  margin: 12px 0 4px;
+}
+.case-card p, .case-card ul { margin: 4px 0; font-size: 14px; }
+.case-card ul { padding-left: 18px; }
+.case-card li { margin: 3px 0; }
+.difficulty {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.diff-1 { background: #f6ffed; color: #52c41a; }
+.diff-2 { background: #fff7e6; color: #d46b08; }
+.diff-3 { background: #fff1f0; color: #f5222d; }
+.tag-principle {
+  display: inline-block;
+  background: #e6f7ff;
+  color: #13a8a8;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  margin: 2px;
+}
+.reveal-btn {
+  padding: 6px 16px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background .2s;
+  margin: 6px 0;
+}
+.reveal-btn:hover { background: var(--primary-hover); }
+.reveal-box {
+  display: none;
+  margin: 8px 0;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: 6px;
+  font-size: 14px;
+  border: 1px solid var(--border);
+}
+.reveal-box.show { display: block; }
+.reflect-grid {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0;
+}
+.reflect-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.reflect-item input[type="checkbox"] {
+  margin-top: 4px;
+  width: 16px; height: 16px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+.reflect-item.done { opacity: .5; text-decoration: line-through; }
+.progress-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 10px 0 4px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 2px;
+  transition: width .5s;
+  width: 0%;
+}
+@media (max-width: 640px) {
+  .header { padding: 24px 16px; }
+  .header h1 { font-size: 20px; }
+  .case-nav { gap: 4px; }
+  .case-btn { width: 34px; height: 34px; font-size: 12px; }
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🧪 解析性案例</h1>
+  <p>7个情境 · 从生活到科学史 · 自主运用5条解析性原理</p>
+</div>
+<div class="container">
+
+  <div class="intro-card">
+    <p>掌握了5条解析性原理之后，现在进入<strong>7个不同层级的情境</strong>，自主运用这些原理进行分析、判断和得出结论。点击数字切换案例，<strong>完成分析后用✅标记</strong>，追踪你的进度。</p>
+  </div>
+
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+  <div class="case-nav" id="caseNav">
+    <button class="case-btn active" onclick="switchCase(1)">1</button>
+    <button class="case-btn" onclick="switchCase(2)">2</button>
+    <button class="case-btn" onclick="switchCase(3)">3</button>
+    <button class="case-btn" onclick="switchCase(4)">4</button>
+    <button class="case-btn" onclick="switchCase(5)">5</button>
+    <button class="case-btn" onclick="switchCase(6)">6</button>
+    <button class="case-btn" onclick="switchCase(7)">7</button>
+    <button class="case-btn case-label" onclick="switchCase(8)" style="flex:0 0 auto;">💭 反思</button>
+  </div>
+
+  <!-- 案例 1 -->
+  <div class="case-content active" id="case-1">
+    <div class="case-card">
+      <span class="difficulty diff-1">★ 生活情境</span>
+      <h3>暖宝宝为什么会发热</h3>
+      <p><strong>案例材料：</strong>一片打开的暖宝宝暴露在空气中后逐渐发热，内含铁粉、活性炭、食盐等成分。请你分析它的发热原理。</p>
+      <p><strong>解析任务：</strong>暖宝宝的发热原理是什么？这是物理变化还是化学变化？证据是什么？</p>
+      <div><span class="tag-principle">原理一：分类优先</span><span class="tag-principle">原理四：证据链闭合</span></div>
+      <button class="reveal-btn" onclick="toggleReveal('ref1')">🔍 参考思路</button>
+      <div class="reveal-box" id="ref1">
+        <p><strong>参考思路：</strong>铁粉在空气中会生锈——这是一个缓慢氧化过程，属于化学变化。铁与氧气和水反应生成铁锈（Fe₂O₃·xH₂O）并<strong>放热</strong>。活性炭和食盐起催化加速作用。多个证据：①温度升高（发热）②铁粉消耗（质量变化）③铁锈生成（颜色变化）。</p>
+      </div>
+      <button class="reveal-btn" onclick="markDone(1)" style="background:#52c41a;">✅ 完成分析</button>
+    </div>
+  </div>
+
+  <!-- 案例 2 -->
+  <div class="case-content" id="case-2">
+    <div class="case-card">
+      <span class="difficulty diff-1">★ 校园情境</span>
+      <h3>实验台上的白色粉末是什么</h3>
+      <p><strong>案例材料：</strong>三个未贴标签的试剂瓶，分别装着白色粉末——可能是食盐（NaCl）、小苏打（NaHCO₃）、淀粉。请设计不用品尝的方案区分它们。</p>
+      <p><strong>解析任务：</strong>设计一套实验方案，区分三种白色粉末。</p>
+      <div><span class="tag-principle">原理一：分类优先</span><span class="tag-principle">原理二：假设验证</span><span class="tag-principle">原理三：对比排除</span></div>
+      <button class="reveal-btn" onclick="toggleReveal('ref2')">🔍 参考思路</button>
+      <div class="reveal-box" id="ref2">
+        <p><strong>参考思路：</strong>原理一：先分类——三种白色粉末属于不同类物质（盐、碳酸盐、糖类）。<br>原理二：假设"小苏打遇酸产气"→加白醋验证；假设"淀粉遇碘变蓝"→加碘酒验证。<br>原理三：三种样品做平行对比实验——哪个加醋冒泡？哪个加碘变蓝？哪个都不反应→食盐。</p>
+      </div>
+      <button class="reveal-btn" onclick="markDone(2)" style="background:#52c41a;">✅ 完成分析</button>
+    </div>
+  </div>
+
+  <!-- 案例 3 -->
+  <div class="case-content" id="case-3">
+    <div class="case-card">
+      <span class="difficulty diff-2">★★ 家庭情境</span>
+      <h3>铁锅生锈的"重灾区"在哪</h3>
+      <p><strong>案例材料：</strong>一把铁锅使用后发现——锅底中心锈蚀最严重，锅壁次之，带涂层的边缘和锅盖几乎没锈。</p>
+      <p><strong>解析任务：</strong>分析锈蚀程度差异的原因，用对比思维解释。</p>
+      <div><span class="tag-principle">原理三：对比排除</span><span class="tag-principle">原理五：反向追溯</span></div>
+      <button class="reveal-btn" onclick="toggleReveal('ref3')">🔍 参考思路</button>
+      <div class="reveal-box" id="ref3">
+        <p><strong>参考思路：</strong>铁生锈需要水和氧气。原理三：对比不同区域的"水+氧"条件——锅底中心接触水最多（经常泡水）；锅壁接触水和氧中等；带涂层边缘有保护层隔绝；锅盖几乎不接触水。原理五：从"锈蚀程度"反向追溯→水和氧接触越多的区域锈蚀越严重。</p>
+      </div>
+      <button class="reveal-btn" onclick="markDone(3)" style="background:#52c41a;">✅ 完成分析</button>
+    </div>
+  </div>
+
+  <!-- 案例 4 -->
+  <div class="case-content" id="case-4">
+    <div class="case-card">
+      <span class="difficulty diff-2">★★ 学科核心</span>
+      <h3>镁带燃烧的"一白一黑"</h3>
+      <p><strong>案例材料：</strong>镁带在空气中燃烧发出耀眼白光，产生白色粉末（氧化镁）。将镁带放入充满CO₂的集气瓶中点燃，镁带继续燃烧，瓶壁出现黑色颗粒。</p>
+      <p><strong>解析任务：</strong>分析两实验中白色和黑色产物分别是什么，说明化学反应发生的依据。</p>
+      <div><span class="tag-principle">原理二：假设验证</span><span class="tag-principle">原理四：证据链</span><span class="tag-principle">原理五：反向追溯</span></div>
+      <button class="reveal-btn" onclick="toggleReveal('ref4')">🔍 参考思路</button>
+      <div class="reveal-box" id="ref4">
+        <p><strong>参考思路：</strong>镁是活泼金属。空气中燃烧：2Mg+O₂→2MgO（白色粉末）。CO₂中燃烧：2Mg+CO₂→2MgO+C（黑色颗粒是碳）。原理二：假设"CO₂中也能燃烧"→实验验证→确实燃烧，推翻"燃烧必须氧气"的误解。原理四：白光（放热证据）+白色/黑色产物（新物质）=完整证据链。原理五：从黑色颗粒反向追溯→碳来自CO₂分解。</p>
+      </div>
+      <button class="reveal-btn" onclick="markDone(4)" style="background:#52c41a;">✅ 完成分析</button>
+    </div>
+  </div>
+
+  <!-- 案例 5 -->
+  <div class="case-content" id="case-5">
+    <div class="case-card">
+      <span class="difficulty diff-2">★★ 跨学科</span>
+      <h3>"琥珀"是化学变化还是物理变化</h3>
+      <p><strong>案例材料：</strong>几千万年前松树分泌的树脂滴落，包含了昆虫或叶片，经过漫长地质作用变成了琥珀。</p>
+      <p><strong>解析任务：</strong>从化学角度分析"树脂变成琥珀"是否发生了化学变化？如何判断？</p>
+      <div><span class="tag-principle">原理一：分类优先</span><span class="tag-principle">原理五：反向追溯</span></div>
+      <button class="reveal-btn" onclick="toggleReveal('ref5')">🔍 参考思路</button>
+      <div class="reveal-box" id="ref5">
+        <p><strong>参考思路：</strong>原理一：先判断类型——树脂的主要成分是萜类有机物，变成琥珀涉及氧化聚合反应，分子结构发生了改变，因此是<strong>化学变化</strong>（尽管保留了外观形态）。原理五：从"琥珀的物理性质（硬度高、不溶于水）"反向追溯→这些性质与新鲜树脂不同→证明了化学变化的发生。注意区分"形态变化"（物理）和"分子结构变化"（化学）。</p>
+      </div>
+      <button class="reveal-btn" onclick="markDone(5)" style="background:#52c41a;">✅ 完成分析</button>
+    </div>
+  </div>
+
+  <!-- 案例 6 -->
+  <div class="case-content" id="case-6">
+    <div class="case-card">
+      <span class="difficulty diff-3">★★★ 社会情境</span>
+      <h3>"甲醛检测盒"的工作原理</h3>
+      <p><strong>案例材料：</strong>家用甲醛检测盒的原理——甲醛与盒中的某种化学试剂反应，使试剂颜色变化（如从无色变蓝色）。</p>
+      <p><strong>解析任务：</strong>分析检测方法背后的化学原理，评价它是否可靠（可能存在哪些干扰？）。</p>
+      <div><span class="tag-principle">原理二：假设验证</span><span class="tag-principle">原理三：对比排除</span><span class="tag-principle">原理四：证据链</span></div>
+      <button class="reveal-btn" onclick="toggleReveal('ref6')">🔍 参考思路</button>
+      <div class="reveal-box" id="ref6">
+        <p><strong>参考思路：</strong>原理二：假设"甲醛与试剂反应产生颜色变化"→验证：在已知浓度的甲醛溶液中测试→颜色深度与浓度相关。原理三：对比排除——其他挥发性气体（如酒精、醋）是否也会使试剂变色？如果也变色，则检测不特异。原理四：单一颜色变化不足以定量→需要标准比色卡和对照实验才能形成可靠证据链。</p>
+      </div>
+      <button class="reveal-btn" onclick="markDone(6)" style="background:#52c41a;">✅ 完成分析</button>
+    </div>
+  </div>
+
+  <!-- 案例 7 -->
+  <div class="case-content" id="case-7">
+    <div class="case-card">
+      <span class="difficulty diff-3">★★★ 综合迁移</span>
+      <h3>"氧气的发现"科学史分析</h3>
+      <p><strong>案例材料：</strong>1774年普里斯特利加热氧化汞产生了一种气体（后来拉瓦锡命名为"氧气"），这种气体使蜡烛燃烧更旺，使小鼠存活更久。</p>
+      <p><strong>解析任务：</strong>分析普里斯特利和拉瓦锡是如何通过"实验证据→推理分析→得出结论"的，重建他们的思维过程。</p>
+      <div><span class="tag-principle">全部5条原理综合运用</span></div>
+      <button class="reveal-btn" onclick="toggleReveal('ref7')">🔍 参考思路</button>
+      <div class="reveal-box" id="ref7">
+        <p><strong>参考思路：</strong>原理一（分类优先）：首先判断"使蜡烛燃烧更旺"说明这种气体不同于普通空气。原理二（假设验证）：假设"这是一种支持燃烧的特殊气体"→验证：插入带火星木条→复燃。原理三（对比排除）：比较空气、CO₂、这种"新气体"对燃烧的影响。原理四（证据链）：燃烧更旺+小鼠存活更久+木条复燃→多角度证据。原理五（反向追溯）：从"氧化汞受热产生气体"反向推断→汞与这种气体结合形成了氧化汞。注意区分"观察到什么现象"和"这些现象意味着什么"。</p>
+      </div>
+      <button class="reveal-btn" onclick="markDone(7)" style="background:#52c41a;">✅ 完成分析</button>
+    </div>
+  </div>
+
+  <!-- 反思 -->
+  <div class="case-content" id="case-8">
+    <div class="case-card">
+      <h3>💭 综合反思</h3>
+      <p>完成所有案例后，回顾一下自己的学习过程：</p>
+      <div class="reflect-grid">
+        <label class="reflect-item"><input type="checkbox" onchange="toggleReflect(this)"> 哪个案例最容易分析？为什么？（提示：生活类的往往最容易，因为贴近经验）</label>
+        <label class="reflect-item"><input type="checkbox" onchange="toggleReflect(this)"> 哪个案例最难？困难在哪里？（提示：涉及多步推理的案例通常更具挑战）</label>
+        <label class="reflect-item"><input type="checkbox" onchange="toggleReflect(this)"> 哪条解析性原理最常用？（提示：原理一"分类优先"几乎是每个案例的起点）</label>
+        <label class="reflect-item"><input type="checkbox" onchange="toggleReflect(this)"> 哪条原理你还不太会用？（可以回到原理页再复习）</label>
+        <label class="reflect-item"><input type="checkbox" onchange="toggleReflect(this)"> 这些案例是如何帮助你"走近化学世界"的？</label>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+var completed = new Set();
+var totalCases = 7;
+
+function switchCase(n) {
+  document.querySelectorAll('.case-content').forEach(el => el.classList.remove('active'));
+  document.getElementById('case-' + n).classList.add('active');
+  document.querySelectorAll('.case-btn').forEach((el, i) => {
+    if (i + 1 === n || (n === 8 && i === 7)) el.classList.add('active');
+    else if (i < 7) el.classList.remove('active');
+  });
+}
+
+function toggleReveal(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('show');
+}
+
+function markDone(n) {
+  if (completed.has(n)) {
+    completed.delete(n);
+  } else {
+    completed.add(n);
+  }
+  var btn = document.querySelectorAll('.case-btn')[n - 1];
+  if (btn) btn.classList.toggle('done');
+  updateProgress();
+}
+
+function toggleReflect(el) {
+  el.closest('.reflect-item').classList.toggle('done');
+}
+
+function updateProgress() {
+  var pct = (completed.size / totalCases) * 100;
+  var fill = document.getElementById('progressFill');
+  if (fill) fill.style.width = pct + '%';
+}
+</script>
+</body>
+</html>

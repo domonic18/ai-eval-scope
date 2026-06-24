@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>作业榜 — 走进化学世界</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, #fa8c16, #f5222d);
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 6px;
+}
+.header p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 14px;
+}
+.section-title {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 28px 0 16px;
+  padding-left: 12px;
+  border-left: 4px solid var(--primary);
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.tab-btn {
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  cursor: pointer;
+  border-radius: 8px 8px 0 0;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  color: var(--text-secondary);
+  font-family: inherit;
+}
+.tab-btn:hover {
+  color: var(--primary);
+  border-color: var(--accent);
+}
+.tab-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.tab-panel {
+  display: none;
+  background: var(--card-bg);
+  border-radius: 0 8px 8px 8px;
+  box-shadow: var(--shadow);
+  padding: 20px;
+  border: 1px solid var(--border);
+}
+.tab-panel.active {
+  display: block;
+}
+.tab-panel h3 {
+  margin-top: 0;
+  font-size: 17px;
+  color: var(--primary);
+}
+.tab-panel ul, .tab-panel ol {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+.tab-panel li {
+  margin-bottom: 8px;
+}
+.tab-panel .sub-item {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 8px 0;
+  border-left: 3px solid var(--primary);
+}
+.opt-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+.opt-btn {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+.opt-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.opt-btn.selected {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.opt-detail {
+  display: none;
+  margin-top: 10px;
+  padding: 14px;
+  background: var(--bg);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+.opt-detail.show {
+  display: block;
+}
+/* Rubric table */
+.rubric-wrap {
+  overflow-x: auto;
+  margin-top: 16px;
+}
+.rubric-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 500px;
+}
+.rubric-wrap th, .rubric-wrap td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+.rubric-wrap th {
+  background: var(--bg);
+  font-weight: 600;
+}
+.rubric-wrap tr.clickable {
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.rubric-wrap tr.clickable:hover {
+  background: #e6f7ff;
+}
+.rubric-wrap tr.clickable.selected {
+  background: #e6f7ff;
+  outline: 2px solid var(--primary);
+}
+.rubric-score {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 12px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>📝 作业榜</h1>
+    <p>分层作业 · 知识内化与表达 · 走进化学世界</p>
+  </div>
+
+  <h2 class="section-title">🎯 任务定位</h2>
+  <div class="card">
+    通过分层作业实现知识的 <strong>"内化与表达"</strong>。你可以根据自己的学习水平选择适合的层次，逐步巩固对"走进化学世界"核心内容的理解。
+  </div>
+
+  <!-- 三层作业 -->
+  <h2 class="section-title">三层作业结构</h2>
+
+  <div class="tabs" id="tabHeaders">
+    <button class="tab-btn active" data-tab="basic" onclick="switchTab('basic')">🌱 基础层</button>
+    <button class="tab-btn" data-tab="middle" onclick="switchTab('middle')">🌿 分层层</button>
+    <button class="tab-btn" data-tab="open" onclick="switchTab('open')">🌟 开放层</button>
+  </div>
+
+  <!-- 基础层 -->
+  <div class="tab-panel active" id="panel-basic">
+    <h3>🌱 基础层：再现与理解</h3>
+    <p style="color:var(--text-secondary);font-size:13px;">全体同学必做，巩固基础知识</p>
+
+    <div class="sub-item">
+      <strong>1. 概念辨析</strong><br>
+      判断下列现象是物理变化还是化学变化，并说明你的判断依据：
+      <ol style="margin-top:6px;">
+        <li>冰融化成水</li>
+        <li>蜡烛燃烧</li>
+        <li>铁棒被磁铁吸引</li>
+        <li>食物腐烂</li>
+      </ol>
+      <button class="opt-btn" onclick="toggleHint(this)" style="margin-top:6px;">💡 查看提示</button>
+      <div class="opt-detail">
+        <strong>提示：</strong>判断关键是有无 <strong>新物质生成</strong>。<br>
+        ① 冰→水：无新物质（物理变化）<br>
+        ② 蜡烛燃烧：有新物质 CO₂ 和水（化学变化）<br>
+        ③ 铁棒被磁铁吸引：无新物质（物理变化）<br>
+        ④ 食物腐烂：有新物质生成（化学变化）
+      </div>
+    </div>
+
+    <div class="sub-item">
+      <strong>2. 知识填空</strong><br>
+      化学变化的基本特征是 <strong style="color:var(--text-secondary);">______</strong>。<br>
+      物理变化和化学变化的本质区别是 <strong style="color:var(--text-secondary);">______</strong>。<br>
+      <button class="opt-btn" onclick="toggleHint(this)" style="margin-top:6px;">💡 查看答案</button>
+      <div class="opt-detail">
+        <strong>答案：</strong>化学变化的基本特征是 <strong>有新物质生成</strong>。本质区别是 <strong>是否有新物质生成</strong>。
+      </div>
+    </div>
+
+    <div class="sub-item">
+      <strong>3. 观察描述</strong><br>
+      描述你身边的一个化学变化和一个物理变化，每种变化至少写 3 个观察特征。
+    </div>
+  </div>
+
+  <!-- 分层层 -->
+  <div class="tab-panel" id="panel-middle">
+    <h3>🌿 分层层（三选一）</h3>
+    <p style="color:var(--text-secondary);font-size:13px;">选择最适合你的方案完成</p>
+
+    <div class="opt-group" id="middleOptions">
+      <button class="opt-btn" data-opt="a" onclick="selectMiddleOpt('a')">📊 A方案（图文型）</button>
+      <button class="opt-btn" data-opt="b" onclick="selectMiddleOpt('b')">✏️ B方案（写作型）</button>
+      <button class="opt-btn" data-opt="c" onclick="selectMiddleOpt('c')">🧪 C方案（实践型）</button>
+    </div>
+
+    <div class="opt-detail show" id="detail-a">
+      <strong>A方案（图文型）</strong><br>
+      画一幅 <strong>"物理变化 vs 化学变化"</strong> 的海报，至少包含 3 组对比案例，每组用图文结合的方式展示变化前、变化后的状态及判断依据。
+    </div>
+    <div class="opt-detail" id="detail-b">
+      <strong>B方案（写作型）</strong><br>
+      写一段 <strong>"化学侦探"</strong> 故事，找出故事中出现的所有化学变化并分析。要求：至少包含 3 个化学变化，每个变化说明判断依据。
+    </div>
+    <div class="opt-detail" id="detail-c">
+      <strong>C方案（实践型）</strong><br>
+      在家里做一个小实验（如醋+小苏打 🧪），记录完整观察过程并分类。<br>
+      <strong>步骤：</strong>准备材料 → 记录实验前状态 → 操作 → 记录实验后状态 → 判断变化类型 → 说明理由
+    </div>
+  </div>
+
+  <!-- 开放层 -->
+  <div class="tab-panel" id="panel-open">
+    <h3>🌟 开放层：创造性表达</h3>
+    <div class="sub-item">
+      <strong>任务</strong><br>
+      用你最喜欢的形式（视频 / 漫画 / 流程图 / 小论文）回答这个问题：<br>
+      <p style="font-size:18px;text-align:center;padding:12px;background:var(--bg);border-radius:8px;margin:12px 0;">
+        "如果没有化学变化，世界会是什么样子？"
+      </p>
+      要求至少运用本模块学到的 <strong>3 个化学概念</strong>。
+    </div>
+  </div>
+
+  <!-- 评价标准 -->
+  <h2 class="section-title">📊 评价标准（Rubric）</h2>
+  <div class="card">
+    <p style="margin-top:0;font-size:13px;color:var(--text-secondary);">点击任意行查看该维度的详细说明</p>
+    <div class="rubric-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:18%;">标准</th>
+            <th style="width:27%;">优秀（3 分）</th>
+            <th style="width:27%;">合格（2 分）</th>
+            <th style="width:27%;">待改进（1 分）</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="clickable" onclick="toggleRubricRow(this)">
+            <td><strong>正确性</strong></td>
+            <td>所有判断正确，依据充分</td>
+            <td>大部分正确</td>
+            <td>有较多错误</td>
+          </tr>
+          <tr class="clickable" onclick="toggleRubricRow(this)">
+            <td><strong>完整性</strong></td>
+            <td>完成所选层次全部任务</td>
+            <td>完成大部分</td>
+            <td>只完成部分</td>
+          </tr>
+          <tr class="clickable" onclick="toggleRubricRow(this)">
+            <td><strong>表达清晰度</strong></td>
+            <td>条理清晰，表达流畅</td>
+            <td>基本可读</td>
+            <td>表达混乱</td>
+          </tr>
+          <tr class="clickable" onclick="toggleRubricRow(this)">
+            <td><strong>创意（开放层）</strong></td>
+            <td>形式新颖，有独立见解</td>
+            <td>有一定创意</td>
+            <td>简单复述教材</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script>
+function switchTab(name) {
+  var btns = document.querySelectorAll('.tab-btn');
+  btns.forEach(function(b) { b.classList.remove('active'); });
+  var activeBtn = document.querySelector('.tab-btn[data-tab="' + name + '"]');
+  if (activeBtn) activeBtn.classList.add('active');
+
+  var panels = document.querySelectorAll('.tab-panel');
+  panels.forEach(function(p) { p.classList.remove('active'); });
+  var panel = document.getElementById('panel-' + name);
+  if (panel) panel.classList.add('active');
+}
+
+function toggleHint(btn) {
+  var detail = btn.nextElementSibling;
+  if (detail && detail.classList.contains('opt-detail')) {
+    detail.classList.toggle('show');
+  }
+}
+
+function selectMiddleOpt(opt) {
+  var btns = document.querySelectorAll('#middleOptions .opt-btn');
+  btns.forEach(function(b) { b.classList.remove('selected'); });
+  var sel = document.querySelector('#middleOptions .opt-btn[data-opt="' + opt + '"]');
+  if (sel) sel.classList.add('selected');
+
+  var details = document.querySelectorAll('.tab-panel.active .opt-detail');
+  details.forEach(function(d) { d.classList.remove('show'); });
+  var detail = document.getElementById('detail-' + opt);
+  if (detail) detail.classList.add('show');
+}
+
+function toggleRubricRow(row) {
+  if (row) row.classList.toggle('selected');
+}
+</script>
+</body>
+</html>

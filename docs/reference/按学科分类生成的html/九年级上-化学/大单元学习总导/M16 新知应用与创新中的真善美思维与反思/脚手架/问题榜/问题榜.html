@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>问题榜 — 问题驱动学习</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 6px; }
+.header p { font-size: 14px; opacity: 0.9; }
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.tab-btn {
+  padding: 8px 18px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--card-bg);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+.tab-btn:hover { border-color: var(--primary); color: var(--primary); }
+.tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.question-section { display: none; }
+.question-section.active { display: block; }
+
+.q-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.q-card .q-num {
+  display: inline-block;
+  width: 28px; height: 28px;
+  line-height: 28px;
+  text-align: center;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  margin-right: 8px;
+}
+.q-card .q-text { font-size: 15px; margin-bottom: 8px; }
+.q-card .q-sub { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+.hint-btn {
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+}
+.hint-btn:hover { border-color: var(--primary); color: var(--primary); }
+.hint-content { display: none; margin-top: 8px; padding: 10px; background: #fafafa; border-radius: 6px; font-size: 14px; border-left: 3px solid var(--accent); }
+.hint-content.show { display: block; }
+
+.multi-option { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.multi-option .opt {
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.15s;
+  background: var(--card-bg);
+}
+.multi-option .opt.selected { background: var(--primary); color: #fff; border-color: var(--primary); }
+.multi-option .opt.correct-seen { background: #f6ffed; border-color: #16a34a; color: #16a34a; font-weight: 600; }
+
+.guide-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+.guide-table th, .guide-table td { border: 1px solid var(--border); padding: 6px 10px; text-align: left; }
+.guide-table th { background: var(--bg); font-weight: 600; }
+
+/* 自评清单 */
+.checklist {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  padding: 16px;
+  margin-top: 12px;
+}
+.checklist h2 { font-size: var(--font-h2); color: var(--primary); margin-bottom: 10px; }
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  cursor: pointer;
+  font-size: 14px;
+}
+.check-item input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary); }
+.check-item.done { color: var(--text-secondary); text-decoration: line-through; }
+.reset-btn {
+  margin-top: 10px;
+  padding: 6px 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text);
+}
+.reset-btn:hover { border-color: var(--primary); color: var(--primary); }
+.footer { text-align: center; color: var(--text-secondary); font-size: 13px; padding: 20px 0 8px; border-top: 1px solid var(--border); margin-top: 12px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>❓ 问题榜</h1>
+    <p>以问题驱动学习路径，用不同类型的提问激发你的思考和探索欲</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab(this, 'basic')">📖 理解与识别</button>
+    <button class="tab-btn" onclick="switchTab(this, 'adv')">🔍 分析与应用</button>
+    <button class="tab-btn" onclick="switchTab(this, 'challenge')">🧠 创造与批判</button>
+  </div>
+
+  <!-- 基础层 -->
+  <div class="question-section active" id="sec-basic">
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">🎯 目标：检验你是否理解了真善美思维的基本概念</p>
+
+    <div class="q-card">
+      <span class="q-num">1</span>
+      <span class="q-text">请用自己的话解释：化学中的"真"指的是什么？和"真理"是一个概念吗？</span>
+      <div><button class="hint-btn" onclick="toggleHint(this)">💡 思考提示</button></div>
+      <div class="hint-content">想想"真"在科学语境下指的是客观事实和规律，而"真理"更偏向哲学层面。可以从化学实验的可重复性角度切入。</div>
+    </div>
+
+    <div class="q-card">
+      <span class="q-num">2</span>
+      <span class="q-text">以下哪些属于"化学之善"的范畴？（多选）</span>
+      <div class="multi-option" data-group="q2">
+        <span class="opt" onclick="toggleOpt(this)">A. 开发环保材料</span>
+        <span class="opt" onclick="toggleOpt(this)">B. 实验数据造假</span>
+        <span class="opt" onclick="toggleOpt(this)">C. 降低生产成本</span>
+        <span class="opt" onclick="toggleOpt(this)">D. 减少有毒排放</span>
+      </div>
+      <div><button class="hint-btn" onclick="showAnswer(this, 'q2')">✓ 查看答案</button></div>
+    </div>
+
+    <div class="q-card">
+      <span class="q-num">3</span>
+      <span class="q-text">你能从教材第1章中找出一个同时体现"真"和"美"的化学现象吗？</span>
+      <div><button class="hint-btn" onclick="toggleHint(this)">💡 思考提示</button></div>
+      <div class="hint-content">注意观察化学实验中的现象——比如晶体形成、颜色变化等，既有科学原理（真）又有视觉美感（美）。</div>
+    </div>
+
+    <div class="q-card">
+      <span class="q-num">4</span>
+      <span class="q-text">判断以下说法是否正确："只要科学原理是对的，这个化学创新就是好的。"——为什么？</span>
+      <div><button class="hint-btn" onclick="toggleHint(this)">💡 思考提示</button></div>
+      <div class="hint-content">从真善美三个维度思考：科学原理正确只满足了"真"，还需要考虑伦理影响（善）和设计合理性（美）。</div>
+    </div>
+  </div>
+
+  <!-- 进阶层 -->
+  <div class="question-section" id="sec-adv">
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">🎯 目标：运用真善美框架分析具体问题</p>
+
+    <div class="q-card">
+      <span class="q-num">5</span>
+      <span class="q-text">假如你是一家化工企业的CEO，你的研发团队开发出了一种高效的塑料降解催化剂，但成本很高。你会如何用真善美思维做决策？</span>
+      <div><button class="hint-btn" onclick="toggleHint(this)">💡 思考提示</button></div>
+      <div class="hint-content">真：技术原理是否可靠？善：环保价值有多大？美：方案是否简洁可行？成本与收益如何平衡？</div>
+    </div>
+
+    <div class="q-card">
+      <span class="q-num">6</span>
+      <span class="q-text">塑料焚烧发电和塑料化学回收两种方案，在"善"的维度上哪个更优？请列出你的分析依据。</span>
+      <div><button class="hint-btn" onclick="toggleHint(this)">💡 思考提示</button></div>
+      <div class="hint-content">从环境友好性、资源利用率、副作用等角度对比。化学回收能保留材料价值，但能耗高；焚烧产生电能但排放废气。</div>
+    </div>
+
+    <div class="q-card">
+      <span class="q-num">7</span>
+      <span class="q-text">如果人类从来没有发明塑料，今天的世界会是什么样的？从化学和环保角度分别分析。</span>
+      <div><button class="hint-btn" onclick="toggleHint(this)">💡 思考提示</button></div>
+      <div class="hint-content">没有塑料意味着：医疗器材、电子产品、包装方式都将完全不同。但也没有白色污染。请列出3个正面和3个负面的变化。</div>
+    </div>
+
+    <div class="q-card">
+      <span class="q-num">8</span>
+      <span class="q-text">你的朋友说"化学都是有毒的"，你会如何用真善美思维来回应他？</span>
+      <div><button class="hint-btn" onclick="toggleHint(this)">💡 思考提示</button></div>
+      <div class="hint-content">先承认确实有一些化学物质有毒（真），但化学也带来了药物和净水技术（善），而且化学反应的规律本身有简洁之美（美）。</div>
+    </div>
+  </div>
+
+  <!-- 挑战层 -->
+  <div class="question-section" id="sec-challenge">
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">🎯 目标：进行高阶思考和创造性批判</p>
+
+    <div class="q-card">
+      <span class="q-num">9</span>
+      <span class="q-text">如果让你设计一门"真善美化学"课程，你会设置哪3个核心内容模块？</span>
+      <div><button class="hint-btn" onclick="toggleHint(this)">💡 思考提示</button></div>
+      <div class="hint-content">可以考虑：模块1-化学发现的故事（真），模块2-化学与社会责任（善），模块3-化学中的对称与秩序（美）。</div>
+    </div>
+
+    <div class="q-card">
+      <span class="q-num">10</span>
+      <span class="q-text">你认为"真善美"思维框架有什么局限性？在什么情况下这个框架可能不适用？</span>
+      <div><button class="hint-btn" onclick="toggleHint(this)">💡 思考提示</button></div>
+      <div class="hint-content">每个框架都有边界。真善美是定性分析，难以量化；某些纯粹技术问题可能不需要伦理（善）维度；审美标准因人而异。</div>
+    </div>
+
+    <div class="q-card">
+      <span class="q-num">11</span>
+      <span class="q-text">回顾M16模块的学习过程，你的思维方式发生了哪些变化？和开始时比，你现在看待化学问题的角度有什么不同？</span>
+      <div><button class="hint-btn" onclick="toggleHint(this)">💡 思考提示</button></div>
+      <div class="hint-content">可以从"原来只看答案对不对"到"现在会思考背后的伦理影响和设计美感"这个转变来回答。</div>
+    </div>
+
+    <div class="q-card">
+      <span class="q-num">12</span>
+      <span class="q-text">用真善美思维框架重新审视一个你之前做过的化学题目——你发现当初漏掉了什么重要的分析维度吗？</span>
+      <div><button class="hint-btn" onclick="toggleHint(this)">💡 思考提示</button></div>
+      <div class="hint-content">找一个你印象深刻的老题目，想想如果现在用真善美三重视角去分析，会不会有不同的发现？</div>
+    </div>
+  </div>
+
+  <!-- 使用指南 -->
+  <table class="guide-table">
+    <tr><th>类型</th><th>适合场景</th><th>建议用时</th></tr>
+    <tr><td>理解与识别</td><td>学习新知后的自我检测</td><td>每个问题2-3分钟</td></tr>
+    <tr><td>分析与应用</td><td>案例分析时的深度思考</td><td>每个问题5-8分钟</td></tr>
+    <tr><td>创造与批判</td><td>学完模块后的综合反思</td><td>每个问题8-10分钟</td></tr>
+  </table>
+
+  <!-- 自评清单 -->
+  <div class="checklist">
+    <h2>✅ 自评清单</h2>
+    <label class="check-item"><input type="checkbox" onchange="checkToggle(this)"> 我是否回答了至少2个基础层问题？</label>
+    <label class="check-item"><input type="checkbox" onchange="checkToggle(this)"> 我是否回答了至少1个进阶层问题？</label>
+    <label class="check-item"><input type="checkbox" onchange="checkToggle(this)"> 我是否尝试了挑战层问题？</label>
+    <label class="check-item"><input type="checkbox" onchange="checkToggle(this)"> 我是否将问题的答案记录下来，形成了文字？</label>
+    <label class="check-item"><input type="checkbox" onchange="checkToggle(this)"> 哪个问题让我思考最深？我从中发现了什么？</label>
+    <button class="reset-btn" onclick="resetChecklist()">🔄 重置</button>
+  </div>
+
+  <div class="footer">
+    化学 · 九年级上 · M16 新知应用与创新中的真善美思维与反思
+  </div>
+</div>
+<script>
+function switchTab(btn, tab) {
+  var btns = document.querySelectorAll('.tab-btn');
+  btns.forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  var secs = document.querySelectorAll('.question-section');
+  secs.forEach(function(s) { s.classList.remove('active'); });
+  var target = document.getElementById('sec-' + tab);
+  if (target) target.classList.add('active');
+}
+function toggleHint(btn) {
+  var hint = btn.nextElementSibling;
+  if (hint && hint.classList.contains('hint-content')) {
+    hint.classList.toggle('show');
+  }
+}
+function toggleOpt(el) {
+  el.classList.toggle('selected');
+}
+function showAnswer(btn, group) {
+  var parent = btn.closest('.q-card');
+  if (!parent) return;
+  var opts = parent.querySelectorAll('.multi-option .opt');
+  opts.forEach(function(o) { o.classList.remove('selected'); });
+  if (group === 'q2') {
+    opts.forEach(function(o) {
+      var txt = o.textContent.trim();
+      if (txt.startsWith('A') || txt.startsWith('C') || txt.startsWith('D')) {
+        o.classList.add('correct-seen');
+      }
+    });
+  }
+}
+function checkToggle(el) {
+  var parent = el.closest('.check-item');
+  if (parent) parent.classList.toggle('done', el.checked);
+}
+function resetChecklist() {
+  var items = document.querySelectorAll('.check-item');
+  items.forEach(function(item) {
+    item.classList.remove('done');
+    var cb = item.querySelector('input[type="checkbox"]');
+    if (cb) cb.checked = false;
+  });
+}
+</script>
+</body>
+</html>

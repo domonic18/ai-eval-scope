@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VR 脚手架 — 微观化学变化探索</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+}
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+
+.hero {
+  background: linear-gradient(135deg, #1677ff 0%, #4096ff 100%);
+  color: #fff;
+  padding: 36px 44px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::after {
+  content: "🔬";
+  position: absolute;
+  right: 30px;
+  bottom: -10px;
+  font-size: 100px;
+  opacity: 0.15;
+}
+.hero h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.hero .subtitle { font-size: 15px; opacity: 0.9; }
+.hero .meta { margin-top: 14px; display: flex; gap: 12px; flex-wrap: wrap; font-size: 13px; }
+.hero .meta span { background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; }
+
+.task-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; margin-bottom: 24px; }
+
+.task-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  padding: 20px 22px;
+  transition: all 0.25s;
+  cursor: pointer;
+  position: relative;
+}
+.task-card:hover { transform: translateY(-2px); box-shadow: 0 5px 16px rgba(22,119,255,0.12); }
+.task-card.active { border-color: var(--primary); background: #fafcff; }
+.task-card .tc-icon { font-size: 28px; margin-bottom: 6px; }
+.task-card h3 { font-size: 16px; color: var(--primary); margin-bottom: 6px; }
+.task-card p { font-size: 14px; color: var(--text); margin-bottom: 6px; }
+.task-card .tc-steps { font-size: 13px; color: var(--text-secondary); padding-left: 16px; margin: 4px 0; }
+.task-card .tc-steps li { margin-bottom: 3px; }
+
+.expand-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, opacity 0.3s ease, margin 0.3s ease;
+  opacity: 0;
+  margin: 0;
+}
+.expand-content.open {
+  max-height: 500px;
+  opacity: 1;
+  margin: 10px 0 0;
+}
+.expand-content .ec-inner {
+  background: #fafcff;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--primary);
+  border-radius: 6px;
+  padding: 14px 18px;
+  font-size: 14px;
+}
+
+.resource-section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  padding: 22px 24px;
+  margin-bottom: 20px;
+}
+.resource-section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.resource-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.resource-item {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px 16px;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.resource-item:hover { border-color: var(--primary); box-shadow: 0 2px 8px rgba(22,119,255,0.1); }
+.resource-item h4 { font-size: 14px; color: var(--primary); margin-bottom: 4px; }
+.resource-item p { font-size: 13px; color: var(--text-secondary); }
+
+.goal-box {
+  background: linear-gradient(135deg, #e6f4ff 0%, #f0f5ff 100%);
+  border: 1.5px solid var(--accent);
+  border-radius: var(--border-radius);
+  padding: 18px 22px;
+  margin-top: 20px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.goal-box .gb-icon { font-size: 28px; flex-shrink: 0; }
+.goal-box .gb-text { font-size: 14px; }
+.goal-box .gb-text strong { color: var(--primary); }
+
+.tag { display: inline-block; font-size: 11px; background: #e6f4ff; color: var(--primary); padding: 2px 10px; border-radius: 10px; }
+.tag.green { background: #e6f7ed; color: #16a34a; }
+.tag.orange { background: #fff2e5; color: #d46b08; }
+.tag.purple { background: #f4e7ff; color: #722ed1; }
+
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .hero { padding: 24px 20px; }
+  .hero h1 { font-size: 20px; }
+  .hero::after { display: none; }
+  .task-grid { grid-template-columns: 1fr; }
+  .resource-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="hero">
+  <h1>🥽 VR 脚手架：微观化学变化探索</h1>
+  <div class="subtitle">"看见"分子层面的变化——让看不见的化学反应变得触手可及</div>
+  <div class="meta">
+    <span>🧪 化学 · 九年级上</span>
+    <span>📖 第1章 走进化学世界</span>
+    <span>🏗️ 脚手架 · VR</span>
+  </div>
+</div>
+
+<div class="task-grid">
+
+  <!-- 观察任务 -->
+  <div class="task-card" onclick="toggleTask(1)">
+    <div class="tc-icon">👁️</div>
+    <h3>观察任务</h3>
+    <p>在VR中"走进"化学反应内部，亲眼观察分子层面的变化过程。</p>
+    <ul class="tc-steps">
+      <li>醋酸 + 碳酸氢钠 → 分子碰撞分解</li>
+      <li>燃烧反应 → 燃料 + 氧气动态转化</li>
+    </ul>
+    <span class="tag">微观可视化</span>
+    <div id="task1" class="expand-content">
+      <div class="ec-inner">
+        <p><strong>🔬 观察要点：</strong></p>
+        <ul>
+          <li>分子如何碰撞、分解、重新组合</li>
+          <li>化学键的断裂与形成过程</li>
+          <li>反应物如何转化为生成物</li>
+          <li>能量以热/光形式释放的微观表现</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 操作任务 -->
+  <div class="task-card" onclick="toggleTask(2)">
+    <div class="tc-icon">🖐️</div>
+    <h3>操作任务</h3>
+    <p>在虚拟环境中"动手"操作化学实验，改变条件观察结果。</p>
+    <ul class="tc-steps">
+      <li>镁带燃烧、铁丝在氧气中燃烧</li>
+      <li>水的电解实验</li>
+    </ul>
+    <span class="tag green">交互式实验</span>
+    <div id="task2" class="expand-content">
+      <div class="ec-inner">
+        <p><strong>🎮 可调节变量：</strong></p>
+        <ul>
+          <li><strong>温度：</strong>升高/降低 → 反应速率变化</li>
+          <li><strong>浓度：</strong>增加反应物浓度 → 碰撞频率增加</li>
+          <li><strong>催化剂：</strong>添加催化剂 → 观察反应活化能变化</li>
+          <li>记录每组变量组合对应的现象变化</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 记录任务 -->
+  <div class="task-card" onclick="toggleTask(3)">
+    <div class="tc-icon">📝</div>
+    <h3>记录任务</h3>
+    <p>系统记录每次VR实验中的"变量—现象"对应关系。</p>
+    <ul class="tc-steps">
+      <li>截图关键变化步骤</li>
+      <li>标注反应物→产物、能量变化</li>
+    </ul>
+    <span class="tag orange">数据整理</span>
+    <div id="task3" class="expand-content">
+      <div class="ec-inner">
+        <p><strong>📋 记录模板：</strong></p>
+        <ul>
+          <li><strong>实验名称：</strong>________</li>
+          <li><strong>反应条件：</strong>温度___浓度___</li>
+          <li><strong>观察现象（微观）：</strong>________</li>
+          <li><strong>反应物→生成物：</strong>________</li>
+          <li><strong>能量变化：</strong>吸热/放热</li>
+          <li><strong>与你预测的对比：</strong>________</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 资源推荐 -->
+<div class="resource-section">
+  <h2>📚 VR资源推荐</h2>
+  <div class="resource-grid">
+    <div class="resource-item" onclick="toggleReveal('res1')">
+      <h4>🧪 Labster</h4>
+      <p>虚拟化学实验室，提供分子级3D模拟的化学反应</p>
+      <span class="tag">VR 首选</span>
+      <div id="res1" class="expand-content">
+        <div class="ec-inner">
+          <p>支持数百种化学反应的3D分子模拟，可在分子层面观察化学键的形成与断裂，支持调节反应条件。</p>
+        </div>
+      </div>
+    </div>
+    <div class="resource-item" onclick="toggleReveal('res2')">
+      <h4>🧬 MEL Chemistry VR</h4>
+      <p>观察分子结构和化学变化过程</p>
+      <span class="tag">分子可视化</span>
+      <div id="res2" class="expand-content">
+        <div class="ec-inner">
+          <p>专注于分子结构的沉浸式展示，适合观察有机分子和无机化合物的三维结构。</p>
+        </div>
+      </div>
+    </div>
+    <div class="resource-item" onclick="toggleReveal('res3')">
+      <h4>💻 PhET 互动模拟</h4>
+      <p>科罗拉多大学出品 · 无VR也可用</p>
+      <span class="tag green">替代方案</span>
+      <div id="res3" class="expand-content">
+        <div class="ec-inner">
+          <p>免费、无需安装。支持酸碱反应、气体生成、分子极性等模拟。网址：phet.colorado.edu</p>
+        </div>
+      </div>
+    </div>
+    <div class="resource-item" onclick="toggleReveal('res4')">
+      <h4>📱 人教版配套电子资源</h4>
+      <p>3D动画版化学实验演示</p>
+      <span class="tag purple">教材配套</span>
+      <div id="res4" class="expand-content">
+        <div class="ec-inner">
+          <p>教材附带的3D动画演示，涵盖九年级全部核心实验。无需VR设备即可在电脑/平板上使用。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VR使用流程 -->
+<div class="resource-section" style="padding:20px 24px;">
+  <h2>🔄 VR/替代方案使用流程</h2>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center;padding:12px 0;">
+    <span class="tag" style="font-size:13px;padding:6px 14px;">1️⃣ 选择实验</span>
+    <span style="color:var(--primary);font-weight:700;">→</span>
+    <span class="tag green" style="font-size:13px;padding:6px 14px;">2️⃣ 设定参数</span>
+    <span style="color:var(--primary);font-weight:700;">→</span>
+    <span class="tag orange" style="font-size:13px;padding:6px 14px;">3️⃣ 观察记录</span>
+    <span style="color:var(--primary);font-weight:700;">→</span>
+    <span class="tag purple" style="font-size:13px;padding:6px 14px;">4️⃣ 分析对比</span>
+    <span style="color:var(--primary);font-weight:700;">→</span>
+    <span class="tag" style="font-size:13px;padding:6px 14px;">5️⃣ 建立联系</span>
+  </div>
+  <p style="text-align:center;font-size:14px;color:var(--text-secondary);margin-top:4px;">从宏观现象 → 到微观机制 → 再到化学符号表达</p>
+</div>
+
+<!-- 学习目标 -->
+<div class="goal-box">
+  <div class="gb-icon">🎯</div>
+  <div class="gb-text">
+    <strong>学习目标：</strong>通过VR/替代方案，让学生<strong>"看见"</strong>白醋+小苏打反应中CO₂分子生成的微观过程，将宏观现象（气泡）与微观机制（分子分解重组）建立联系。<br>
+    <span style="font-size:13px;color:var(--text-secondary);display:block;margin-top:6px;">🧪 宏观现象：产生大量气泡 → 微观机制：HCO₃⁻ + H⁺ → H₂CO₃ → H₂O + CO₂↑</span>
+  </div>
+</div>
+
+</div>
+<script>
+function toggleTask(n) {
+  var el = document.getElementById('task' + n);
+  if (!el) return;
+  el.classList.toggle('open');
+  var cards = document.querySelectorAll('.task-card');
+  if (cards[n-1]) cards[n-1].classList.toggle('active');
+}
+function toggleReveal(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('open');
+}
+</script>
+</body>
+</html>

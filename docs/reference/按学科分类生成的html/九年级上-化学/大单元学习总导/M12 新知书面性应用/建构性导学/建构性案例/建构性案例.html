@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性七阶案例 — 化学 九年级上</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0;
+  width: 100%;
+  max-width: none;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.wrapper { width: 100%; max-width: none; padding: 24px 20px; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin: 0 0 6px; }
+.header .meta { opacity: 0.85; font-size: 14px; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.card h2 { font-size: var(--font-h2); color: var(--primary); margin-bottom: 10px; }
+.card h3 { font-size: 17px; color: var(--primary); margin: 16px 0 8px; }
+.card h4 { font-size: 15px; color: var(--primary); margin: 12px 0 6px; }
+.card p { margin-bottom: 8px; }
+.card ul, .card ol { padding-left: 20px; margin-bottom: 8px; }
+.card li { margin-bottom: 4px; }
+.case-tabs {
+  display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 16px;
+}
+.case-tab {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px 6px 0 0;
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  transition: all 0.2s;
+  text-align: center;
+}
+.case-tab:hover { border-color: var(--primary); color: var(--primary); }
+.case-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.case-panel { display: none; padding: 16px; background: var(--bg); border-radius: 0 6px 6px 6px; margin-bottom: 12px; }
+.case-panel.active { display: block; }
+.info-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0;
+}
+.info-item { padding: 8px; background: var(--card-bg); border-radius: 6px; border: 1px solid var(--border); font-size: 14px; }
+.info-item strong { display: block; color: var(--text-secondary); font-size: 12px; }
+.rubric-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; }
+.rubric-table th, .rubric-table td { border: 1px solid var(--border); padding: 6px 8px; text-align: center; }
+.rubric-table th { background: var(--primary); color: #fff; font-weight: 600; }
+.rubric-table .excellent { background: #f6ffed; }
+.rubric-table .pass { background: #fffbe6; }
+.rubric-table .improve { background: #fff2f0; }
+.output-box {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+  padding: 12px;
+  margin: 10px 0;
+  font-size: 14px;
+}
+.scaffold {
+  background: #f0f5ff;
+  border: 1px solid #adc6ff;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 8px 0;
+  font-size: 14px;
+}
+.expand-toggle {
+  display: inline-block;
+  padding: 6px 16px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+  margin: 4px 0;
+}
+.expand-toggle:hover { background: var(--primary-hover); }
+.expand-toggle.outline { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
+.expand-toggle.outline:hover { background: var(--bg); }
+.expand-content { display: none; margin-top: 8px; padding: 12px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; }
+.expand-content.open { display: block; }
+textarea { width: 100%; min-height: 60px; border: 1px solid var(--border); border-radius: 6px; padding: 8px; font-size: 14px; font-family: inherit; resize: vertical; margin: 6px 0; }
+textarea:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px rgba(22,119,255,0.1); }
+.progress-bar {
+  display: flex; gap: 2px; margin-bottom: 16px;
+}
+.prog-step {
+  flex: 1;
+  text-align: center;
+  padding: 6px 0;
+  font-size: 12px;
+  background: var(--border);
+  color: var(--text-secondary);
+  border-radius: 4px;
+  transition: all 0.3s;
+}
+.prog-step.done { background: var(--primary); color: #fff; }
+.prog-step.current { background: var(--accent); color: #fff; }
+@media (min-width: 640px) { .wrapper { padding: 32px 40px; } }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <h1>🧪 建构性七阶案例</h1>
+    <div class="meta">化学 · 九年级上 · 人教版 · 第一单元 走进化学世界 · M12 新知书面性应用</div>
+    <div style="margin-top:8px;font-size:14px;opacity:0.9;">7个不同类型的书面表达建构任务，从个人理解→生活应用→校园→学科→跨学科→社会→综合创新</div>
+  </div>
+
+  <div class="card">
+    <h2>📋 案例总述</h2>
+    <p>在"建构性示例"中，你已经跟随示范完整经历了一次化学书面表达的建构过程。现在，你将要独自面对<strong>7个不同类型的建构情境</strong>。</p>
+    <p style="margin-top:6px;">这些案例按照进阶顺序排列：从最贴近你个人认知的情境开始，逐步延伸到生活、校园、学科、跨学科，最终到社会应用和综合创新。每个案例都是一个独立的书面表达建构任务，你可以选择其中2-3个做深度练习，也可以全部完成。</p>
+    <p style="margin-top:6px;color:var(--text-secondary);">📌 每个案例的建构流程：<strong>阅读情境 → 明确任务 → 调用建构原理 → 按步骤建构 → 借助脚手架 → 完成成果表达 → 自评量规对照</strong></p>
+  </div>
+
+  <div class="progress-bar">
+    <div class="prog-step current" id="pbar-0">案例一</div>
+    <div class="prog-step" id="pbar-1">案例二</div>
+    <div class="prog-step" id="pbar-2">案例三</div>
+    <div class="prog-step" id="pbar-3">案例四</div>
+    <div class="prog-step" id="pbar-4">案例五</div>
+    <div class="prog-step" id="pbar-5">案例六</div>
+    <div class="prog-step" id="pbar-6">案例七</div>
+  </div>
+
+  <div class="case-tabs">
+    <button class="case-tab active" data-case="0" onclick="switchCase(0)">案例一</button>
+    <button class="case-tab" data-case="1" onclick="switchCase(1)">案例二</button>
+    <button class="case-tab" data-case="2" onclick="switchCase(2)">案例三</button>
+    <button class="case-tab" data-case="3" onclick="switchCase(3)">案例四</button>
+    <button class="case-tab" data-case="4" onclick="switchCase(4)">案例五</button>
+    <button class="case-tab" data-case="5" onclick="switchCase(5)">案例六</button>
+    <button class="case-tab" data-case="6" onclick="switchCase(6)">案例七</button>
+  </div>
+
+  <!-- 案例一 -->
+  <div class="case-panel active" id="case-0">
+    <h3>案例一 · 个人理解型</h3>
+    <div class="info-grid">
+      <div class="info-item"><strong>难度</strong>★☆☆ 基础</div>
+      <div class="info-item"><strong>字数</strong>150-200字</div>
+    </div>
+    <h4>📖 情境</h4>
+    <p>你刚学完"物理变化与化学变化"的概念。同桌好奇地问你：<em>"物理变化和化学变化到底怎么区分？我老是搞混。你能用最简单的话给我说明白吗？"</em></p>
+    <h4>🎯 任务</h4>
+    <p>写一段150-200字的说明性文字，帮助同学区分物理变化和化学变化。要求包含：两个概念的定义、区分的核心依据（有无新物质生成）、分别给出2个例子（至少1个来自日常生活）、总结一句"判断口诀"。</p>
+    <h4>📖 原理调用</h4>
+    <ul>
+      <li>建构性示例中"三段式"结构：概念说明→区分方法→实例佐证</li>
+      <li>先收集素材再组织：先列出你知道的变化例子，再判断哪个最有说服力</li>
+      <li>读者意识：你的读者是"搞混了"的同学，表达要通俗易懂</li>
+    </ul>
+    <h4>🧩 脚手架</h4>
+    <div class="scaffold">
+      <strong>概念模板：</strong>"______变化是指______过程中______的变化。例如，______就是______变化。"<br>
+      <strong>对比表格：</strong>在文字中加入简单的对比能让概念更清晰
+    </div>
+    <button class="expand-toggle outline" onclick="toggleExpand(this)">📄 查看成果样例</button>
+    <div class="expand-content">
+      <div class="output-box">
+        <p>物理变化是指没有新物质生成的变化，如水变成冰、蔗糖溶于水，只是形态或状态改变。化学变化是指有新物质生成的变化，如镁条燃烧生成氧化镁、铁生锈生成铁锈，物质的种类发生了改变。区分的关键是看"有没有新物质生成"——记住：物理变化易复原，化学变化变新物。</p>
+      </div>
+    </div>
+    <h4 style="margin-top:12px;">✏️ 你的写作练习</h4>
+    <textarea placeholder="在此写下你的说明性文字..."></textarea>
+    <h4>📊 自评量规</h4>
+    <table class="rubric-table">
+      <tr><th>维度</th><th class="excellent">优秀</th><th class="pass">达标</th><th class="improve">待改进</th></tr>
+      <tr><td>概念准确</td><td>定义完全正确，术语规范</td><td>基本正确</td><td>有概念混淆</td></tr>
+      <tr><td>举例恰当</td><td>例子典型，能支持定义</td><td>例子正确</td><td>例子不匹配</td></tr>
+      <tr><td>逻辑清晰</td><td>从定义到例子再到总结，层层递进</td><td>基本有序</td><td>缺乏逻辑结构</td></tr>
+    </table>
+  </div>
+
+  <!-- 案例二 -->
+  <div class="case-panel" id="case-1">
+    <h3>案例二 · 生活应用型</h3>
+    <div class="info-grid">
+      <div class="info-item"><strong>难度</strong>★★☆ 进阶</div>
+      <div class="info-item"><strong>字数</strong>200-300字</div>
+    </div>
+    <h4>📖 情境</h4>
+    <p>你妈妈看到厨房里的铁锅生锈了，随口问了一句："这个锈是怎么回事？能不能用醋洗掉？"你刚刚在化学课上学过"铁生锈是化学变化"以及"酸能与某些金属氧化物反应"，你知道这个知识点。妈妈等着你的回答——不是随便说一句，而是给她一份<strong>"铁锅除锈小指南"</strong>。</p>
+    <h4>🎯 任务</h4>
+    <p>写一份200-300字的"铁锅除锈小指南"，面向家庭读者。内容包含：铁锈是什么（化学本质）、铁生锈的原因（化学变化过程）、如何用醋除锈（简单操作说明）、如何预防铁锅再生锈。要求用通俗的语言但保持化学准确性。</p>
+    <h4>📖 原理调用</h4>
+    <ul>
+      <li>建构性示例中的"5W1H"检查表：确保涵盖"是什么、为什么、怎么做"</li>
+      <li>优化建议中的"让术语更规范"：写给家人看，化学术语仍需准确</li>
+      <li>从日常现象出发、用化学知识解释的建构思路</li>
+    </ul>
+    <h4>🧩 脚手架</h4>
+    <div class="scaffold">
+      <strong>框架建议：</strong>"是什么（铁锈）→为什么生锈→怎么除锈→怎么预防"<br>
+      <strong>操作步骤模板：</strong>用"首先/接着/最后"写清楚除锈步骤
+    </div>
+    <button class="expand-toggle outline" onclick="toggleExpand(this)">📄 查看参考思路</button>
+    <div class="expand-content">
+      <div><strong>铁锈化学本质：</strong>Fe₂O₃·xH₂O（氧化铁水合物）<br><strong>除锈原理：</strong>Fe₂O₃ + 6CH₃COOH → 2Fe(CH₃COO)₃ + 3H₂O<br><strong>预防方法：</strong>保持干燥、涂食用油隔绝空气和水分</div>
+    </div>
+    <textarea placeholder="在此写下你的铁锅除锈小指南..."></textarea>
+    <h4>📊 自评量规</h4>
+    <table class="rubric-table">
+      <tr><th>维度</th><th class="excellent">优秀</th><th class="pass">达标</th><th class="improve">待改进</th></tr>
+      <tr><td>科学准确</td><td>化学原理准确，无知识错误</td><td>基本准确</td><td>有明显错误</td></tr>
+      <tr><td>可读性</td><td>语言通俗易懂，家人能看懂</td><td>部分需要解释</td><td>过于晦涩</td></tr>
+      <tr><td>实用性</td><td>步骤清楚，操作可行</td><td>基本可行</td><td>缺乏可操作性</td></tr>
+    </table>
+  </div>
+
+  <!-- 案例三 -->
+  <div class="case-panel" id="case-2">
+    <h3>案例三 · 校园问题解决型</h3>
+    <div class="info-grid">
+      <div class="info-item"><strong>难度</strong>★★☆ 进阶</div>
+      <div class="info-item"><strong>字数</strong>200-250字</div>
+    </div>
+    <h4>📖 情境</h4>
+    <p>学校实验室的废液缸中，不知谁倒入了过氧化氢溶液（H₂O₂）。你发现废液缸边上有几根用过但未清洗的铁钉，铁钉表面有气泡冒出。你意识到这个现象值得探究，但你需要写一份实验观察记录提交给化学老师。</p>
+    <h4>🎯 任务</h4>
+    <p>写一份200-250字的"实验观察记录与初步分析"，格式参考科学实验记录的标准格式（日期/观察人/观察现象/初步分析/待探究问题）。要求：准确描述气泡现象，推测气泡成分并说明推测依据，提出至少1个值得进一步探究的问题。</p>
+    <button class="expand-toggle outline" onclick="toggleExpand(this)">📄 参考分析</button>
+    <div class="expand-content">
+      <div>H₂O₂在金属（铁）催化下分解：2H₂O₂ → 2H₂O + O₂↑。气泡成分很可能是氧气(O₂)。待探究问题：铁钉是否起了催化作用？</div>
+    </div>
+    <textarea placeholder="在此写实验观察记录..."></textarea>
+    <h4>📊 自评量规</h4>
+    <table class="rubric-table">
+      <tr><th>维度</th><th class="excellent">优秀</th><th class="pass">达标</th><th class="improve">待改进</th></tr>
+      <tr><td>观察描述</td><td>具体、准确、有细节</td><td>基本完整</td><td>过于笼统</td></tr>
+      <tr><td>分析推理</td><td>有理有据，逻辑严密</td><td>有基本推理</td><td>缺乏证据支撑</td></tr>
+      <tr><td>记录规范</td><td>格式标准，要素齐全</td><td>格式基本正确</td><td>缺少关键要素</td></tr>
+    </table>
+  </div>
+
+  <!-- 案例四 -->
+  <div class="case-panel" id="case-3">
+    <h3>案例四 · 学科表达型</h3>
+    <div class="info-grid">
+      <div class="info-item"><strong>难度</strong>★★☆ 进阶</div>
+      <div class="info-item"><strong>字数</strong>250-350字</div>
+    </div>
+    <h4>📖 情境</h4>
+    <p>化学课上老师展示了"水的电解"实验——通直流电后，两个电极上都有气泡产生，正极产生约5mL气体，负极产生约10mL气体。正极气体能使带火星的木条复燃，负极气体能燃烧发出淡蓝色火焰。</p>
+    <h4>🎯 任务</h4>
+    <p>写一段250-350字的实验现象描述与结论分析。要求：准确描述正负极的现象和差异，说明两种气体的验证方法及结果，写出水的电解化学方程式，分析该实验说明的结论，讨论变化类型并说明理由。</p>
+    <button class="expand-toggle outline" onclick="toggleExpand(this)">📄 参考信息</button>
+    <div class="expand-content">
+      <div>化学方程式：2H₂O 通电 2H₂↑ + O₂↑。正极（O₂）：使带火星木条复燃；负极（H₂）：燃烧产生淡蓝色火焰。体积比 H₂:O₂ = 2:1。说明水由氢元素和氧元素组成。</div>
+    </div>
+    <textarea placeholder="在此写水的电解实验现象描述..."></textarea>
+    <h4>📊 自评量规</h4>
+    <table class="rubric-table">
+      <tr><th>维度</th><th class="excellent">优秀</th><th class="pass">达标</th><th class="improve">待改进</th></tr>
+      <tr><td>现象描述</td><td>有数据、有对比、有细节</td><td>基本完整</td><td>缺少关键现象</td></tr>
+      <tr><td>气体检验</td><td>验证方法正确，结果准确</td><td>基本正确</td><td>方法或结果有误</td></tr>
+      <tr><td>结论分析</td><td>推理严密，结论准确</td><td>结论正确</td><td>推理跳跃</td></tr>
+    </table>
+  </div>
+
+  <!-- 案例五 -->
+  <div class="case-panel" id="case-4">
+    <h3>案例五 · 跨学科整合型</h3>
+    <div class="info-grid">
+      <div class="info-item"><strong>难度</strong>★★★ 挑战</div>
+      <div class="info-item"><strong>字数</strong>200-300字</div>
+    </div>
+    <h4>📖 情境</h4>
+    <p>你在生物课上学到"植物的光合作用"，化学课上刚学了"化学变化中质量守恒"。你突然发现——光合作用同时涉及生物和化学两个学科的知识。你想写一篇短文，从化学的视角解释光合作用为什么是一个化学变化，并运用质量守恒定律分析反应物和生成物的关系。</p>
+    <h4>🎯 任务</h4>
+    <p>写一篇200-300字的跨学科短文，主题为"从化学视角看光合作用"。要求：写出光合作用的化学方程式，指明反应物和生成物，解释为什么光合作用是化学变化，用质量守恒定律分析反应前后元素种类不变，提出"生物视角"和"化学视角"的异同点。</p>
+    <button class="expand-toggle outline" onclick="toggleExpand(this)">📄 参考信息</button>
+    <div class="expand-content">
+      <div>光合作用：6CO₂ + 6H₂O 光能/叶绿体 C₆H₁₂O₆ + 6O₂。反应物（CO₂、H₂O）和生成物（葡萄糖、O₂）种类不同 → 化学变化。碳、氢、氧元素在反应前后种类、质量不变 → 质量守恒。</div>
+    </div>
+    <textarea placeholder="在此写跨学科短文..."></textarea>
+    <h4>📊 自评量规</h4>
+    <table class="rubric-table">
+      <tr><th>维度</th><th class="excellent">优秀</th><th class="pass">达标</th><th class="improve">待改进</th></tr>
+      <tr><td>化学知识</td><td>方程式正确，质量守恒分析准确</td><td>基本正确</td><td>有错误</td></tr>
+      <tr><td>跨学科理解</td><td>明确指出两个学科的联系与区别</td><td>有联系但不够深入</td><td>只讲了化学部分</td></tr>
+      <tr><td>表达创意</td><td>角度新颖，引人思考</td><td>较常规</td><td>缺乏个人思考</td></tr>
+    </table>
+  </div>
+
+  <!-- 案例六 -->
+  <div class="case-panel" id="case-5">
+    <h3>案例六 · 社会/未来情境型</h3>
+    <div class="info-grid">
+      <div class="info-item"><strong>难度</strong>★★★ 挑战</div>
+      <div class="info-item"><strong>字数</strong>200-300字</div>
+    </div>
+    <h4>📖 情境</h4>
+    <p>你和家人一起看新闻，报道说"城市空气质量指数(AQI)达到重度污染"。你对化学课上学过的"空气组成"有了感觉——你知道空气中本来有氮气、氧气、稀有气体等成分，污染物是什么？它们从哪里来？你想写一段说明文字，帮助家人理解空气质量报告中的"化学信息"。</p>
+    <h4>🎯 任务</h4>
+    <p>写一段200-300字的"空气质量化学解读"。要求：说明空气的正常组成成分，列举2-3种常见空气污染物及其主要来源，用化学知识解释CO为什么是有毒气体，提出2条基于化学知识的空气保护建议。</p>
+    <button class="expand-toggle outline" onclick="toggleExpand(this)">📄 参考信息</button>
+    <div class="expand-content">
+      <div>空气组成：N₂ 78%、O₂ 21%、稀有气体 0.94%、CO₂ 0.03%。污染物：PM2.5（颗粒物）、SO₂（燃煤产生）、NOₓ（汽车尾气）、CO（不完全燃烧）。CO与血红蛋白结合能力比O₂强200倍→缺氧中毒。</div>
+    </div>
+    <textarea placeholder="在此写空气质量化学解读..."></textarea>
+    <h4>📊 自评量规</h4>
+    <table class="rubric-table">
+      <tr><th>维度</th><th class="excellent">优秀</th><th class="pass">达标</th><th class="improve">待改进</th></tr>
+      <tr><td>科学知识</td><td>空气组成准确，污染物描述正确</td><td>基本准确</td><td>有知识错误</td></tr>
+      <tr><td>社会关联</td><td>能联系实际生活，有现实意义</td><td>有联系</td><td>脱离实际</td></tr>
+      <tr><td>建议可行性</td><td>建议具体、可操作</td><td>基本可行</td><td>过于空泛</td></tr>
+    </table>
+  </div>
+
+  <!-- 案例七 -->
+  <div class="case-panel" id="case-6">
+    <h3>案例七 · 综合创新型</h3>
+    <div class="info-grid">
+      <div class="info-item"><strong>难度</strong>★★★ 挑战</div>
+      <div class="info-item"><strong>字数</strong>400-500字</div>
+    </div>
+    <h4>📖 情境</h4>
+    <p>学校要举办"化学与生活"科学小报比赛，你决定报名参加。小报的主题是<strong>"水——最普通的化学物质"</strong>。你需要写一篇500字以内的科普短文，面向全校同学（包括未学过化学的低年级同学），从化学角度介绍"水"。你不能只是罗列事实，而要用一个"故事线"把水的化学知识串联起来。</p>
+    <h4>🎯 任务</h4>
+    <p>写一篇400-500字的科普短文。要求：用一个吸引人的标题，设计一个叙事线索（如"一滴水的旅程"），包含水的化学式及含义、水的物理性质和化学性质、水的分解与合成、水在生活中的重要性。语言要生动但不失准确。</p>
+    <h4>📖 原理调用</h4>
+    <ul>
+      <li>综合运用前6个案例习得的所有建构技巧</li>
+      <li>面向低年级读者的"可读性"要求最高</li>
+      <li>叙事线索的建构：不是"写成一篇化学论文"，而是"讲一个化学故事"</li>
+    </ul>
+    <h4>🧩 建议步骤</h4>
+    <ol>
+      <li>确定一个有趣的叙事线索（如"从一杯水出发，探索它的化学秘密"）</li>
+      <li>列出你想涵盖的化学知识点：H₂O的含义、沸点冰点、水的电解、水的合成</li>
+      <li>把知识点"串"到故事线中</li>
+      <li>写初稿，注意语言既要准确又要有画面感</li>
+      <li>请一位低年级同学试读：他/她感兴趣吗？能看懂吗？</li>
+    </ol>
+    <textarea placeholder="在此写你的科普短文..." style="min-height:120px;"></textarea>
+    <h4>📊 自评量规</h4>
+    <table class="rubric-table">
+      <tr><th>维度</th><th class="excellent">优秀</th><th class="pass">达标</th><th class="improve">待改进</th></tr>
+      <tr><td>科学内容</td><td>知识准确丰富，有深度</td><td>知识正确</td><td>内容不够或错误</td></tr>
+      <tr><td>创意表达</td><td>叙事线吸引人，语言生动</td><td>有基本叙事</td><td>平铺直叙</td></tr>
+      <tr><td>面向读者</td><td>让没学过化学的同学也能读懂</td><td>大部分能理解</td><td>过于专业或简单</td></tr>
+      <tr><td>综合运用</td><td>综合运用多种建构方法</td><td>运用了部分方法</td><td>建构方法单一</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>🎯 小结</h2>
+    <p>七阶案例从"帮同学区分概念"到"写科普短文"，难度逐步升级。你可以根据自己的情况选择适合的起点：</p>
+    <ul>
+      <li>如果对概念还不够清晰，从<strong>案例一</strong>开始，逐步推进</li>
+      <li>如果已经有一定基础，可以从<strong>案例三或案例四</strong>开始</li>
+      <li>如果希望挑战自己，直接尝试<strong>案例七</strong>——它将检验你综合运用所有建构技巧的能力</li>
+    </ul>
+    <p style="margin-top:8px;color:var(--text-secondary);">每个案例完成后，请务必对照自评量规进行自我评价，找到你最需要改进的方向。</p>
+  </div>
+</div>
+
+<script>
+function switchCase(n) {
+  var tabs = document.querySelectorAll('.case-tab');
+  var panels = document.querySelectorAll('.case-panel');
+  for (var i = 0; i < panels.length; i++) {
+    panels[i].classList.remove('active');
+    if (tabs[i]) tabs[i].classList.remove('active');
+  }
+  var panel = document.getElementById('case-' + n);
+  if (panel) panel.classList.add('active');
+  if (tabs[n]) tabs[n].classList.add('active');
+
+  var pbar = document.querySelectorAll('.prog-step');
+  for (var j = 0; j < pbar.length; j++) {
+    pbar[j].classList.remove('current');
+    pbar[j].classList.remove('done');
+    if (j < n) pbar[j].classList.add('done');
+  }
+  if (pbar[n]) pbar[n].classList.add('current');
+}
+function toggleExpand(btn) {
+  var content = btn.nextElementSibling;
+  if (content && content.classList) content.classList.toggle('open');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>化学视频脚手架·三层进阶学习</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  margin: 0; padding: 0;
+}
+
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 32px 40px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 8px; }
+.header p { font-size: 14px; opacity: 0.9; }
+
+/* Progress bar */
+.progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  background: var(--card-bg);
+  padding: 12px 20px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+}
+.progress-bar {
+  flex: 1;
+  height: 6px;
+  background: #e8e8e8;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+.progress-label { font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
+
+/* Layer tabs */
+.layer-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.layer-tab {
+  flex: 1;
+  min-width: 140px;
+  padding: 14px 16px;
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+}
+.layer-tab:hover { border-color: var(--primary); color: var(--primary); }
+.layer-tab.active {
+  border-color: var(--primary);
+  background: linear-gradient(135deg, #e6f4ff, #f0f5ff);
+  color: var(--primary);
+}
+
+/* Layer content cards */
+.layer { display: none; }
+.layer.active { display: block; }
+
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.card h3 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bg);
+}
+.card h4 { font-size: 14px; font-weight: 700; color: var(--text); margin: 16px 0 8px; }
+.card p, .card li { margin-bottom: 6px; }
+
+.tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 6px;
+}
+.tag-basic { background: #e6f4ff; color: var(--primary); }
+.tag-adv { background: #fff7e6; color: #d46b08; }
+.tag-challenge { background: #f9f0ff; color: #722ed1; }
+
+.pause-point {
+  background: #fffbe6;
+  border-left: 4px solid #faad14;
+  padding: 12px 16px;
+  margin: 12px 0;
+  border-radius: 4px;
+}
+.pause-point strong { color: #d48806; }
+
+/* Toggle answer */
+.q-item {
+  margin: 10px 0;
+  padding: 12px 16px;
+  background: #fafafa;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+.q-item .q { font-weight: 600; margin-bottom: 6px; }
+.answer-btn {
+  display: inline-block;
+  padding: 6px 16px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.2s;
+}
+.answer-btn:hover { background: var(--primary-hover); }
+.answer-content {
+  display: none;
+  margin-top: 10px;
+  padding: 12px;
+  background: #e6f4ff;
+  border-radius: 4px;
+  font-size: 14px;
+}
+.answer-content.revealed { display: block; }
+
+/* Output task box */
+.output-box {
+  background: linear-gradient(135deg, #f0f5ff, #e6f4ff);
+  border: 1px solid var(--primary);
+  border-radius: 6px;
+  padding: 16px;
+  margin: 16px 0;
+}
+.output-box h4 { color: var(--primary); }
+
+/* Checklist interactive */
+.checklist { margin: 12px 0; }
+.checklist label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  cursor: pointer;
+}
+.checklist input[type="checkbox"] {
+  margin-top: 4px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+.checklist label.done span { text-decoration: line-through; color: var(--text-secondary); }
+
+/* Navigation */
+.nav-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+.nav-btn {
+  padding: 10px 28px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+.nav-btn:hover { background: var(--primary-hover); }
+.nav-btn:disabled { background: #d9d9d9; cursor: not-allowed; }
+.nav-btn.secondary { background: var(--card-bg); color: var(--text); border: 1px solid var(--border); }
+.nav-btn.secondary:hover { border-color: var(--primary); color: var(--primary); }
+
+/* Tip box */
+.tip {
+  background: #f6ffed;
+  border-left: 4px solid #52c41a;
+  padding: 12px 16px;
+  margin: 12px 0;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container { padding: 12px 16px; }
+  .header { padding: 20px; }
+  .layer-tabs { flex-direction: column; }
+  .layer-tab { min-width: auto; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>🎬 化学视频脚手架</h1>
+    <p>三层进阶式视频学习 · 从看懂到会用到能思辨</p>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap">
+    <span class="progress-label">学习进度</span>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+    <span class="progress-label" id="progressText">0 / 3</span>
+  </div>
+
+  <!-- Layer Tabs -->
+  <div class="layer-tabs">
+    <div class="layer-tab active" data-layer="0" onclick="switchLayer(0)"><span class="tag tag-basic">基础</span> 解释型视频</div>
+    <div class="layer-tab" data-layer="1" onclick="switchLayer(1)"><span class="tag tag-adv">进阶</span> 分析型视频</div>
+    <div class="layer-tab" data-layer="2" onclick="switchLayer(2)"><span class="tag tag-challenge">挑战</span> 辩论型视频</div>
+  </div>
+
+  <!-- Layer 1: 基础层 -->
+  <div class="layer active" id="layer0">
+    <div class="card">
+      <h3>📺 《化学变化与物理变化——一张图说清楚》</h3>
+      <p><strong>来源：</strong>B站 / YouTube 科普频道</p>
+      <p><strong>时长：</strong>约8分钟</p>
+      <p><strong>观看目标：</strong>看完后能画出区分化学变化和物理变化的"标准判断流程图"</p>
+    </div>
+
+    <div class="card">
+      <h3>📝 关键问题</h3>
+      <div class="q-item">
+        <div class="q">① 视频中用什么例子来区分化学变化和物理变化？</div>
+        <button class="answer-btn" onclick="toggleAnswer(this)">💡 查看提示</button>
+        <div class="answer-content">视频中用了蜡烛燃烧、铁器生锈、纸张撕碎、冰块融化等日常例子。核心判断标准是：<strong>有没有新物质生成</strong>。有新物质的是化学变化，没有的是物理变化。例如纸张撕碎只是形状改变（物理），但纸张燃烧生成二氧化碳和水（化学）。</div>
+      </div>
+      <div class="q-item">
+        <div class="q">② 如果只用一句话告诉家人"什么是化学变化"，你会怎么说？</div>
+        <button class="answer-btn" onclick="toggleAnswer(this)">💡 查看参考</button>
+        <div class="answer-content">参考示例："化学变化就是物质变成另外一种物质的过程——比如铁变成了铁锈，木头变成了灰，它们'变'成了完全不同的新东西。" 你可以用自己的话写下来！</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>⏸️ 暂停思考点</h3>
+      <div class="pause-point">
+        <strong>⏱️ 02:15 暂停</strong>
+        <p>写下你自己的判断标准，再继续看视频中给出的判断标准。比较一下：你的标准和视频的有哪些不同？</p>
+      </div>
+      <div class="pause-point">
+        <strong>⏱️ 05:30 暂停</strong>
+        <p>视频展示了蜡烛燃烧既有化学变化又有物理变化。在继续看之前，你能先自己列出两者各自的证据吗？</p>
+        <p style="margin-top:6px;font-size:13px;">🤔 提示：先观察蜡烛燃烧时有哪些现象，再判断哪些是物理变化引起的，哪些是化学变化引起的。</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>📌 输出任务</h3>
+      <div class="output-box">
+        <h4>✏️ 写一段"化学变化快速判断口诀"</h4>
+        <p>要求：约100字，朗朗上口，能帮助自己或同学快速区分化学变化和物理变化。</p>
+        <p style="font-size:13px;color:var(--text-secondary);margin-top:6px;">参考示例：<em>"有新物质生成，就是化学变化；无新物质生成，就是物理变化。燃烧生锈都叫化，撕碎融化都是物。颜色改变要警惕，产生气体更留意——本质看，新物质是否出现。"</em></p>
+        <div class="tip" style="margin-top:10px;">
+          <strong>✅ 完成标准：</strong>你的口诀用起来顺口吗？读完一遍需要几秒？给同桌读一遍，他能立刻理解吗？
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Layer 2: 进阶层 -->
+  <div class="layer" id="layer1">
+    <div class="card">
+      <h3>🧪 《铁丝在氧气中燃烧——实验全程分析》</h3>
+      <p><strong>来源：</strong>化学实验教学视频</p>
+      <p><strong>时长：</strong>约6分钟</p>
+      <p><strong>观看目标：</strong>记录实验中每一步操作的<em>目的</em>（不要只记操作本身）</p>
+    </div>
+
+    <div class="card">
+      <h3>🔍 关键问题</h3>
+      <div class="q-item">
+        <div class="q">① 为什么铁丝要打磨？为什么缠成螺旋状？为什么瓶底要放水或细沙？</div>
+        <button class="answer-btn" onclick="toggleAnswer(this)">💡 查看解析</button>
+        <div class="answer-content">
+          <ul style="margin-left:16px;">
+            <li><strong>打磨铁丝：</strong>去除表面的氧化膜（Fe₂O₃），露出纯净的铁，便于燃烧。</li>
+            <li><strong>缠成螺旋状：</strong>增大铁丝与氧气的接触面积，同时有利于集中热量。</li>
+            <li><strong>瓶底放水或细沙：</strong>防止高温熔融物溅落炸裂集气瓶底。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="q-item">
+        <div class="q">② 如果实验失败了（铁丝没有燃烧），可能的原因有哪些？</div>
+        <button class="answer-btn" onclick="toggleAnswer(this)">💡 查看分析</button>
+        <div class="answer-content">
+          <p>可能原因：①氧气纯度不够（集气瓶中空气未排尽）；②铁丝未打磨干净；③铁丝太粗；④火柴燃尽太快，未引燃铁丝（应待火柴快燃尽时再伸入）；⑤集气瓶未盖玻璃片，氧气逸出。</p>
+        </div>
+      </div>
+      <div class="q-item">
+        <div class="q">③ 这个实验证明了氧气的什么性质？</div>
+        <button class="answer-btn" onclick="toggleAnswer(this)">💡 查看结论</button>
+        <div class="answer-content">
+          <p>铁丝在空气中不能燃烧（只能红热），但在氧气中能剧烈燃烧——证明氧气具有<strong>助燃性</strong>（支持燃烧），是一种化学性质比较活泼的气体。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>⏸️ 暂停思考点</h3>
+      <div class="pause-point">
+        <strong>⏱️ 03:00（操作前）暂停</strong>
+        <p>预测：如果铁丝不打磨，直接进行实验会怎样？你的理由是什么？</p>
+      </div>
+      <div class="pause-point">
+        <strong>⏱️ 04:20（点燃时）暂停</strong>
+        <p>仔细观察现象，用下面的"T型思考表"记录：</p>
+        <div style="background:#fff;border:1px solid var(--border);border-radius:4px;padding:10px;margin-top:8px;">
+          <table style="width:100%;border-collapse:collapse;">
+            <tr><td style="padding:6px;border:1px solid #d9d9d9;font-weight:700;width:50%;">观察到的现象（观察）</td><td style="padding:6px;border:1px solid #d9d9d9;font-weight:700;">这些现象说明什么？（解释）</td></tr>
+            <tr><td style="padding:6px;border:1px solid #d9d9d9;">火星四射</td><td style="padding:6px;border:1px solid #d9d9d9;">铁在氧气中剧烈燃烧</td></tr>
+            <tr><td style="padding:6px;border:1px solid #d9d9d9;">放出大量热</td><td style="padding:6px;border:1px solid #d9d9d9;">反应为放热反应</td></tr>
+            <tr><td style="padding:6px;border:1px solid #d9d9d9;">生成黑色固体</td><td style="padding:6px;border:1px solid #d9d9d9;">生成四氧化三铁（Fe₃O₄）</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>📌 输出任务</h3>
+      <div class="output-box">
+        <h4>📊 绘制"铁丝燃烧实验"全流程分析图</h4>
+        <p>包含四列：<strong>操作 → 目的 → 现象 → 解释</strong></p>
+        <p style="font-size:13px;color:var(--text-secondary);margin-top:4px;">建议手绘在笔记本上，或使用思维导图工具完成。</p>
+        <div class="checklist" style="margin-top:10px;">
+          <p style="font-weight:600;margin-bottom:6px;">✅ 你的分析图应包含以下要点：</p>
+          <label onclick="checkItem(this)">
+            <input type="checkbox"> 打磨铁丝的操作及目的
+          </label>
+          <label onclick="checkItem(this)">
+            <input type="checkbox"> 盘成螺旋状的操作及目的
+          </label>
+          <label onclick="checkItem(this)">
+            <input type="checkbox"> 瓶底放水/沙的操作及目的
+          </label>
+          <label onclick="checkItem(this)">
+            <input type="checkbox"> 火柴引燃的操作及目的
+          </label>
+          <label onclick="checkItem(this)">
+            <input type="checkbox"> 全部现象与化学解释
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Layer 3: 挑战层 -->
+  <div class="layer" id="layer2">
+    <div class="card">
+      <h3>🎤 TED演讲《为什么你应该从小学化学？》</h3>
+      <p><strong>来源：</strong>TED-Ed</p>
+      <p><strong>时长：</strong>约12分钟</p>
+      <p><strong>观看目标：</strong>找出演讲者对"化学教育意义"的三个核心论点，写下你的赞同或反驳</p>
+    </div>
+
+    <div class="card">
+      <h3>💬 深度思辨问题</h3>
+      <div class="q-item">
+        <div class="q">① 演讲者认为化学和日常生活的关系是什么？你同意吗？有没有你觉得他忽略的方面？</div>
+        <button class="answer-btn" onclick="toggleAnswer(this)">🤔 思考框架</button>
+        <div class="answer-content">
+          <p>思考框架：</p>
+          <ul style="margin-left:16px;">
+            <li>演讲者列举了哪些日常生活中的化学应用？</li>
+            <li>这些应用在你自己的生活中真实存在吗？</li>
+            <li>你觉得他忽略的方面——可能是化学的负面影响（污染）？还是化学学习的困难？</li>
+          </ul>
+        </div>
+      </div>
+      <div class="q-item">
+        <div class="q">② 如果你要反驳他，你会从哪个角度切入？</div>
+        <button class="answer-btn" onclick="toggleAnswer(this)">📎 反驳角度参考</button>
+        <div class="answer-content">
+          <p>可能的反驳角度：①化学入门门槛高，过早接触可能让一些学生失去兴趣；②化学实验有安全风险；③演讲者可能过度乐观地描绘了化学的"美好一面"，忽略了化学工业的环境问题；④化学需要数学基础，数学薄弱的学生可能感到挫败。</p>
+        </div>
+      </div>
+      <div class="q-item">
+        <div class="q">③ 视频中提到的化学应用案例，有多少是你在本单元已学过的？</div>
+        <button class="answer-btn" onclick="toggleAnswer(this)">📋 记录表</button>
+        <div class="answer-content">
+          <p>建议用表格整理：</p>
+          <table style="width:100%;border-collapse:collapse;margin-top:6px;">
+            <tr><td style="padding:4px 8px;border:1px solid #d9d9d9;font-weight:700;">案例</td><td style="padding:4px 8px;border:1px solid #d9d9d9;font-weight:700;">已学到？</td><td style="padding:4px 8px;border:1px solid #d9d9d9;font-weight:700;">你的备注</td></tr>
+            <tr><td style="padding:4px 8px;border:1px solid #d9d9d9;"></td><td style="padding:4px 8px;border:1px solid #d9d9d9;">✓ / ✗</td><td style="padding:4px 8px;border:1px solid #d9d9d9;"></td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>⏸️ 暂停思考点</h3>
+      <div class="pause-point">
+        <strong>⏱️ 06:10 暂停</strong>
+        <p>在演讲者展示"未来化学"之前，先自己畅想一下：化学在未来可能会解决哪3个问题？</p>
+        <p style="font-size:13px;margin-top:6px;">方向参考：能源问题、环保问题、医药问题、材料问题……</p>
+      </div>
+      <div class="pause-point">
+        <strong>⏱️ 10:00 暂停</strong>
+        <p>重温演讲者提到的"化学思维"概念。问自己：学完本单元后，你的"化学思维"有什么变化？</p>
+        <p style="font-size:13px;margin-top:6px;">💡 比如：你现在看到铁锈还会只是觉得"脏了"吗？看到冒泡的饮料会想到什么？</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>📌 输出任务</h3>
+      <div class="output-box">
+        <h4>✉️ 写一封"给TED演讲者的回信"</h4>
+        <p>要求：300字以内，表达你对他观点的态度——</p>
+        <ul style="margin-left:20px;margin-top:6px;">
+          <li>你同意哪些观点？为什么？</li>
+          <li>你质疑哪些观点？你的理由是什么？</li>
+          <li>你想补充什么？</li>
+        </ul>
+        <div class="tip" style="margin-top:10px;">
+          <strong>💡 小提示：</strong>一个好的"回信"不一定要全盘同意或全盘否定。最有价值的思辨往往是"我同意你这一点，但另外一点我持不同看法"。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="nav-buttons">
+    <button class="nav-btn secondary" onclick="prevLayer()" id="prevBtn">← 上一层</button>
+    <button class="nav-btn" onclick="nextLayer()" id="nextBtn">下一层 →</button>
+  </div>
+
+</div>
+
+<script>
+var currentLayer = 0;
+var totalLayers = 3;
+var completedLayers = new Set();
+
+function switchLayer(idx) {
+  document.querySelectorAll('.layer').forEach(function(el, i) {
+    el.classList.toggle('active', i === idx);
+  });
+  document.querySelectorAll('.layer-tab').forEach(function(el, i) {
+    el.classList.toggle('active', i === idx);
+  });
+  currentLayer = idx;
+  updateNav();
+  updateProgress();
+}
+
+function nextLayer() {
+  if (currentLayer < totalLayers - 1) {
+    completedLayers.add(currentLayer);
+    switchLayer(currentLayer + 1);
+  }
+}
+
+function prevLayer() {
+  if (currentLayer > 0) {
+    switchLayer(currentLayer - 1);
+  }
+}
+
+function updateNav() {
+  document.getElementById('prevBtn').disabled = (currentLayer === 0);
+  document.getElementById('nextBtn').disabled = (currentLayer === totalLayers - 1);
+  var nextText = currentLayer === totalLayers - 1 ? '已完成 ✓' : '下一层 →';
+  document.getElementById('nextBtn').textContent = nextText;
+}
+
+function updateProgress() {
+  var pct = completedLayers.size > 0 ? Math.round((completedLayers.size / totalLayers) * 100) : (currentLayer > 0 ? Math.round((currentLayer / totalLayers) * 100) : 0);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = completedLayers.size + ' / ' + totalLayers;
+}
+
+function toggleAnswer(btn) {
+  var content = btn.nextElementSibling;
+  if (!content) return;
+  content.classList.toggle('revealed');
+  btn.textContent = content.classList.contains('revealed') ? '🙈 收起' : '💡 查看提示';
+}
+
+function checkItem(label) {
+  var cb = label.querySelector('input[type="checkbox"]');
+  if (!cb) return;
+  cb.checked = !cb.checked;
+  label.classList.toggle('done', cb.checked);
+}
+
+updateNav();
+</script>
+</body>
+</html>

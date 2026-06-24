@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性原理 — 化学·九年级上</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+  padding: 20px;
+}
+.container { width: 100%; max-width: none; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 24px 28px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 6px; }
+.header .meta { font-size: 13px; opacity: 0.85; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--bg);
+}
+.card h3 {
+  font-size: 16px;
+  color: var(--text);
+  margin: 12px 0 6px;
+}
+.prin-label {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  padding: 2px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.tag {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  padding: 1px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin: 2px 4px 2px 0;
+}
+.exercise-box {
+  background: #fafafa;
+  border-left: 3px solid var(--primary);
+  padding: 12px 16px;
+  margin: 8px 0;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+}
+.reflect-list { list-style: none; padding: 0; }
+.reflect-list li {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.reflect-list li:hover {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.reflect-list li.revealed {
+  border-color: var(--primary);
+  background: #e6f4ff;
+}
+.reflect-list li .hint {
+  display: inline-block;
+  color: var(--primary);
+  font-size: 13px;
+  margin-left: 6px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.reflect-list li.revealed .hint { opacity: 1; }
+.btn-reset {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 18px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  margin-top: 10px;
+}
+.btn-reset:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.fade-in { animation: fadeIn 0.4s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 600px) {
+  body { padding: 10px; }
+  .card { padding: 14px 16px; }
+  .header { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header fade-in">
+  <h1>建构性原理</h1>
+  <div class="meta">化学 · 九年级上 · 第1章 走进化学世界 · M13 新知项目性应用</div>
+</div>
+
+<!-- 板块一：建构性原理提炼 -->
+<div class="card fade-in">
+  <h2>一、建构性原理提炼</h2>
+  <p style="margin-bottom:12px;color:var(--text-secondary);">从"建构性示例"中的完整建构过程，提炼出 4 条可迁移的建构性原理。</p>
+
+  <span class="prin-label">原理 1</span>
+  <h3>观察驱动原理</h3>
+  <p><strong>原理说明：</strong>一切科学建构始于细致、有目的的观察。从现象中识别关键信息，是建构新理解的第一步。</p>
+  <p><strong>原理来源：</strong>在建构性示例中，学生通过观察蜡烛燃烧时的火焰分层、烛身变化、产物凝结等现象，发现了"变化前后的物质差异"这一核心问题，从而启动了完整的建构流程。</p>
+  <p><strong>适用的其他学习情境：</strong>铁钉生锈实验观察、食物腐败过程记录、不同水质的外观差异比较</p>
+  <p><strong>使用注意事项：</strong>观察不能停留在"看到什么"，而要追问"这意味着什么"。容易陷入只看表面现象而忽略关键细节的误区。</p>
+
+  <span class="prin-label" style="margin-top:14px;">原理 2</span>
+  <h3>证据链建构原理</h3>
+  <p><strong>原理说明：</strong>科学结论需要由多条相互支撑的证据构成证据链，单一证据不足以支撑可靠结论。</p>
+  <p><strong>原理来源：</strong>在示例中，学生通过收集"火焰温度差异""烛蜡熔化""杯壁水珠""石灰水变浑浊"等多条证据，交叉验证后得出"蜡烛燃烧是化学变化"的结论，而非仅凭单一现象判断。</p>
+  <p><strong>适用的其他学习情境：</strong>判断物质是否发生化学变化的实验设计、探究植物光合作用产物的验证、鉴别物质成分的多重检测</p>
+  <p><strong>使用注意事项：</strong>证据之间应相互独立而非冗余。两条相同类型的证据不等于两条独立证据，易高估证据强度。</p>
+
+  <span class="prin-label" style="margin-top:14px;">原理 3</span>
+  <h3>假设—验证循环原理</h3>
+  <p><strong>原理说明：</strong>先基于已有知识和证据提出合理解释（假设），再通过新证据或实验检验假设的正确性，循环迭代直到假设与所有证据一致。</p>
+  <p><strong>原理来源：</strong>示例中学生先假设"蜡烛燃烧只发生物理变化"，但通过检验"新物质生成"的证据后修正为"是化学变化"，经历了完整的假设提出→验证→修正过程。</p>
+  <p><strong>适用的其他学习情境：</strong>探究金属活动性顺序、推断反应类型、预测物质性质</p>
+  <p><strong>使用注意事项：</strong>要区分"假设"和"随意猜测"。假设需要基于已有知识逻辑推理得出，不能凭空想象。</p>
+
+  <span class="prin-label" style="margin-top:14px;">原理 4</span>
+  <h3>模型化表达原理</h3>
+  <p><strong>原理说明：</strong>将建构出的理解转化为可视化、结构化的表达形式（图示、表格、概念图、模型），有助于深化理解和迁移应用。</p>
+  <p><strong>原理来源：</strong>示例中学生最终用"化学变化特征概念图"呈现了物理变化与化学变化的区分标准，将零散知识系统化、可视化。</p>
+  <p><strong>适用的其他学习情境：</strong>物质分类的树状图、化学反应类型对比表格、科学探究流程图、分子原子结构示意图</p>
+  <p><strong>使用注意事项：</strong>模型应简洁清晰而非面面俱到。过度追求美观而牺牲准确性是常见误区。</p>
+</div>
+
+<!-- 板块二：建构性原理迁移应用 -->
+<div class="card fade-in">
+  <h2>二、建构性原理迁移应用</h2>
+
+  <div class="exercise-box">
+    <h3>迁移练习 1 · 铁钉生锈探究</h3>
+    <p><strong>情境：</strong>周末你在院子里发现一枚铁钉，部分表面出现了红褐色的锈斑。用手触摸，锈斑处的铁钉表面变得粗糙、疏松。</p>
+    <p><strong>建构任务：</strong>设计一个对比实验方案，证明铁钉生锈是化学变化，并找出导致生锈的关键条件。</p>
+    <p><strong>可用证据：</strong>三根相同的铁钉、三个透明杯、水、食用油、干燥剂（氯化钙）、标签纸。铁钉的原始状态（银白色、表面光滑）。</p>
+    <p><strong>建议使用的原理：</strong>原理1（观察驱动）+ 原理2（证据链建构）+ 原理3（假设—验证循环）</p>
+    <p><strong>建构脚手架提示：</strong>思考"生锈前后的铁钉有什么不同？""如果缺少水或空气，铁钉还会生锈吗？""如何设计对照实验验证？"</p>
+    <p><strong>表达：</strong>用表格形式呈现实验设计方案，包含：实验组别、条件设置、预测现象、实际观察记录、结论。</p>
+  </div>
+
+  <div class="exercise-box">
+    <h3>迁移练习 2 · 自制酸碱指示剂</h3>
+    <p><strong>情境：</strong>紫甘蓝（紫包菜）切碎后用热水浸泡，得到紫色的汁液。你发现向其中滴入白醋后汁液变红，滴入小苏打水后汁液变绿。</p>
+    <p><strong>建构任务：</strong>基于观察现象，建构"酸碱指示剂变色规律"模型，并预测生活中常见液体（柠檬汁、肥皂水、食盐水）的酸碱性。</p>
+    <p><strong>可用证据：</strong>紫甘蓝汁液在不同液体中的颜色变化记录表、pH试纸的对比测试结果。</p>
+    <p><strong>建议使用的原理：</strong>原理1（观察驱动）+ 原理3（假设—验证循环）+ 原理4（模型化表达）</p>
+    <p><strong>建构脚手架提示：</strong>"颜色变化与液体的酸碱性有什么对应关系？""能否建立一个颜色—酸碱性的对照表？"</p>
+    <p><strong>表达：</strong>制作一份"紫甘蓝指示剂变色对照卡"，包含液体名称、颜色变化、酸碱性判断。用图文结合方式呈现。</p>
+  </div>
+
+  <button class="btn-reset" onclick="resetExerciseHints()">展开所有提示</button>
+</div>
+
+<!-- 板块三：元认知反思 -->
+<div class="card fade-in">
+  <h2>三、元认知反思</h2>
+  <p style="margin-bottom:12px;color:var(--text-secondary);">点击每条反思问题，查看引导性思考线索。</p>
+  <ul class="reflect-list" id="reflectList">
+    <li onclick="toggleReflect(this)" data-index="0">
+      1. 在刚才的建构过程中，你是如何从情境中发现问题的？
+      <span class="hint">→ 关注"意料之外"的现象，追问"为什么不同""为什么会这样"。</span>
+    </li>
+    <li onclick="toggleReflect(this)" data-index="1">
+      2. 你使用了哪些证据来支持你的建构成果？
+      <span class="hint">→ 回顾你收集的每条证据：是直接观察还是推理得出的？是否足够支撑你的结论？</span>
+    </li>
+    <li onclick="toggleReflect(this)" data-index="2">
+      3. 如果在建构过程中遇到困难，你是如何调整的？
+      <span class="hint">→ 回到原始现象重新观察，或查阅教材补充背景信息，或调整假设方向。</span>
+    </li>
+    <li onclick="toggleReflect(this)" data-index="3">
+      4. 这次建构的经验可以迁移到哪些其他学习场景？
+      <span class="hint">→ 任何需要从现象推理本质的情境：生物观察、物理实验、数学问题建模……</span>
+    </li>
+    <li onclick="toggleReflect(this)" data-index="4">
+      5. 如果让你重新做一次，你会改进什么？
+      <span class="hint">→ 更系统的证据记录？更严谨的对照实验？更清晰的成果表达？</span>
+    </li>
+  </ul>
+  <button class="btn-reset" onclick="resetReflect()">收起所有线索</button>
+</div>
+
+</div>
+<script>
+function toggleReflect(el) {
+  el.classList.toggle('revealed');
+}
+function resetReflect() {
+  document.querySelectorAll('#reflectList li').forEach(function(li) {
+    li.classList.remove('revealed');
+  });
+}
+function resetExerciseHints() {
+  var msg = document.querySelector('.exercise-box:first-child p:last-child');
+  if (msg) msg.scrollIntoView({ behavior: 'smooth' });
+  window.alert('提示：两个练习的建构脚手架提示信息已在上方呈现，可对照完成建构任务。');
+}
+</script>
+</body>
+</html>

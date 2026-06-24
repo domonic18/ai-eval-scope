@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视频 — 从屏幕中提取化学智慧</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff; padding: 28px 24px; border-radius: var(--border-radius); margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header p { font-size: var(--font-body); opacity: 0.9; }
+.watch-tip {
+  background: rgba(255,255,255,0.2); padding: 10px 16px; border-radius: 8px; margin-top: 12px;
+  font-size: 14px; display: flex; align-items: center; gap: 8px;
+}
+.video-list { display: grid; gap: 20px; }
+.video-card {
+  background: var(--card-bg); border-radius: var(--border-radius); padding: 20px;
+  box-shadow: var(--shadow); border: 1px solid var(--border);
+}
+.video-card .level-tag {
+  display: inline-block; font-size: 12px; padding: 2px 10px; border-radius: 10px; color: #fff; margin-bottom: 8px;
+}
+.lv-explain { background: #52c41a; }
+.lv-analyze { background: #fa8c16; }
+.lv-debate { background: #f5222d; }
+.video-card h3 { font-size: 17px; color: var(--text); margin-bottom: 4px; }
+.video-card .source { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+.task-item {
+  background: var(--bg); padding: 10px 14px; border-radius: 6px; margin: 10px 0; font-size: 14px;
+}
+.task-item label { cursor: pointer; display: flex; align-items: flex-start; gap: 8px; }
+.task-item input[type="checkbox"] { margin-top: 3px; cursor: pointer; }
+.task-item.done label { text-decoration: line-through; color: var(--text-secondary); }
+.pause-point {
+  background: #fff7e6; border-left: 3px solid #fa8c16; padding: 8px 14px; margin: 8px 0;
+  border-radius: 0 6px 6px 0; font-size: 14px;
+}
+.pause-point strong { color: #d46b08; }
+.output-task {
+  background: #f0fdf4; border: 1px solid #b7eb8f; border-radius: 6px; padding: 10px 14px; margin: 8px 0;
+  font-size: 14px; color: #135200;
+}
+.video-card .toggle-tasks {
+  display: inline-block; margin-top: 8px; color: var(--primary); cursor: pointer;
+  font-size: 14px; user-select: none;
+}
+.video-card .extra-tasks { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); }
+.video-card.open .extra-tasks { display: block; }
+.progress-bar {
+  height: 4px; background: var(--border); border-radius: 2px; margin-top: 12px; overflow: hidden;
+}
+.progress-bar .fill {
+  height: 100%; background: var(--primary); border-radius: 2px; transition: width 0.3s;
+  width: 0%;
+}
+.progress-text { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+.reset-btn {
+  display: inline-block; margin-top: 16px; padding: 6px 18px; background: var(--primary);
+  color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;
+  transition: background 0.2s;
+}
+.reset-btn:hover { background: var(--primary-hover); }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🎬 视频</h1>
+    <p>带着"观看焦点"看电影，训练从视频中提取化学信息的能力</p>
+    <div class="watch-tip">
+      <span>💡</span>
+      <span><strong>观看原则：</strong>每看一段视频前，先阅读"观看任务"，带着问题去看！</span>
+    </div>
+  </div>
+
+  <div class="video-list">
+    <div class="video-card open" data-group="video1">
+      <span class="level-tag lv-explain">基础·解释型</span>
+      <h3>📺 3 分钟看懂物理变化和化学变化</h3>
+      <div class="source">🔍 B站搜索"物理变化化学变化 动画"</div>
+
+      <div class="task-item" onclick="toggleCheck(this)">
+        <label><input type="checkbox" onchange="toggleCheck(this)"> 记录视频中展示了哪 3 个物理变化和 3 个化学变化的例子</label>
+      </div>
+      <div class="task-item" onclick="toggleCheck(this)">
+        <label><input type="checkbox" onchange="toggleCheck(this)"> 回答：视频用"什么标准"来判断变化类型？</label>
+      </div>
+      <div class="pause-point">
+        <strong>⏸️ 暂停思考（1:30）：</strong>看到蜡烛燃烧的画面时暂停，先自己判断再继续看
+      </div>
+      <div class="output-task">
+        📝 <strong>输出任务：</strong>画一张"变化分类"迷你海报
+      </div>
+
+      <div class="toggle-tasks" onclick="toggleExtra(this)">📋 展开更多任务</div>
+      <div class="extra-tasks">
+        <div class="task-item" onclick="toggleCheck(this)">
+          <label><input type="checkbox" onchange="toggleCheck(this)"> 用自己的话写一段"物理变化和化学变化的判断口诀"</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="video-card" data-group="video2">
+      <span class="level-tag lv-analyze">进阶·分析型</span>
+      <h3>📺 BBC 纪录片《化学史》第一集——发现元素</h3>
+      <div class="source">🔍 B站搜索"BBC 化学史"</div>
+
+      <div class="task-item" onclick="toggleCheck(this)">
+        <label><input type="checkbox" onchange="toggleCheck(this)"> 列出拉瓦锡做了哪些实验来推翻燃素说</label>
+      </div>
+      <div class="task-item" onclick="toggleCheck(this)">
+        <label><input type="checkbox" onchange="toggleCheck(this)"> 思考：为什么拉瓦锡的实验比前人更有说服力？</label>
+      </div>
+      <div class="pause-point">
+        <strong>⏸️ 暂停思考（15:00）：</strong>拉瓦锡的钟罩实验——注意他测量了什么变量？
+      </div>
+      <div class="output-task">
+        📝 <strong>输出任务：</strong>写一段 200 字分析："为什么说定量实验是化学革命的真正武器"
+      </div>
+
+      <div class="toggle-tasks" onclick="toggleExtra(this)">📋 展开更多任务</div>
+      <div class="extra-tasks">
+        <div class="task-item" onclick="toggleCheck(this)">
+          <label><input type="checkbox" onchange="toggleCheck(this)"> 查找：拉瓦锡之前，人们认为燃烧是什么原因？</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="video-card" data-group="video3">
+      <span class="level-tag lv-debate">挑战·辩论型</span>
+      <h3>📺 TED 演讲——"化学如何改变我们对世界的理解"</h3>
+      <div class="source">🔍 TED 官网或网易公开课</div>
+
+      <div class="task-item" onclick="toggleCheck(this)">
+        <label><input type="checkbox" onchange="toggleCheck(this)"> 列出演讲者提到的 3 个最让你惊讶的化学事实</label>
+      </div>
+      <div class="task-item" onclick="toggleCheck(this)">
+        <label><input type="checkbox" onchange="toggleCheck(this)"> 思考：如果完全不懂"物理变化和化学变化"的区别，能否理解这些前沿化学？</label>
+      </div>
+      <div class="pause-point">
+        <strong>⏸️ 暂停思考（5:00）：</strong>演讲者谈到"我们从不知道物质可以转换"——这不正是我们今天学的吗？
+      </div>
+      <div class="output-task">
+        📝 <strong>输出任务：</strong>写一段"化学变化观后感"，联系视频内容反思变化观念的重要性
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:16px;">
+    <div class="progress-bar"><div class="fill" id="progressFill"></div></div>
+    <div class="progress-text" id="progressText">已完成 0 / 12 个任务</div>
+  </div>
+
+  <div style="text-align:center;margin-top:12px;">
+    <button class="reset-btn" onclick="resetTasks()">🔄 重置所有任务</button>
+  </div>
+</div>
+
+<script>
+function toggleCheck(el) {
+  var label = el.tagName === 'LABEL' ? el : el.querySelector('label');
+  var item = el.closest('.task-item');
+  if (!item) item = el.tagName === 'DIV' && el.classList.contains('task-item') ? el : null;
+  if (!item) return;
+  var cb = item.querySelector('input[type="checkbox"]');
+  if (cb) {
+    cb.checked = !cb.checked;
+    if (cb.checked) { item.classList.add('done'); } else { item.classList.remove('done'); }
+  }
+  updateProgress();
+}
+function toggleExtra(el) {
+  var card = el.closest('.video-card');
+  if (card) card.classList.toggle('open');
+}
+function updateProgress() {
+  var all = document.querySelectorAll('.task-item');
+  var done = document.querySelectorAll('.task-item.done');
+  var total = all.length;
+  var completed = done.length;
+  var pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+  var fill = document.getElementById('progressFill');
+  var text = document.getElementById('progressText');
+  if (fill) fill.style.width = pct + '%';
+  if (text) text.textContent = '已完成 ' + completed + ' / ' + total + ' 个任务';
+}
+function resetTasks() {
+  document.querySelectorAll('.task-item.done').forEach(function(item) {
+    item.classList.remove('done');
+    var cb = item.querySelector('input[type="checkbox"]');
+    if (cb) cb.checked = false;
+  });
+  document.querySelectorAll('.video-card.open').forEach(function(c) { c.classList.remove('open'); });
+  updateProgress();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>项目社区 — 化学知识项目库</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  background: var(--bg);
+  color: var(--text);
+  margin: 0; padding: 0;
+  width: 100%;
+}
+.container { width: 100%; max-width: none; padding: 20px; box-sizing: border-box; }
+.header { background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: #fff; padding: 28px 24px; border-radius: var(--border-radius); margin-bottom: 24px; }
+.header h1 { font-size: var(--font-h1); margin-bottom: 6px; }
+.header p { font-size: 14px; opacity: 0.9; }
+.section-title { font-size: var(--font-h2); font-weight: 600; margin: 32px 0 16px; color: var(--primary); padding-left: 12px; border-left: 3px solid var(--primary); }
+.project-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+.project-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; border: 1px solid var(--border); transition: box-shadow 0.3s; }
+.project-card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.15); }
+.project-card .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; margin-bottom: 10px; }
+.badge-short { background: #e6f7ff; color: #1677ff; }
+.badge-mid { background: #fff7e6; color: #d46b08; }
+.badge-long { background: #f6ffed; color: #16a34a; }
+.project-card h3 { font-size: 17px; margin-bottom: 8px; }
+.project-card .meta { font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; }
+.project-card p { margin-bottom: 10px; }
+.toggle-btn { background: var(--primary); color: #fff; border: none; padding: 6px 16px; border-radius: 4px; cursor: pointer; font-size: 13px; transition: background 0.2s; }
+.toggle-btn:hover { background: var(--primary-hover); }
+.detail-content { display: none; margin-top: 12px; padding: 12px; background: var(--bg); border-radius: 6px; font-size: 14px; }
+.detail-content.show { display: block; }
+.detail-content ul { padding-left: 18px; margin: 6px 0; }
+.detail-content li { margin-bottom: 4px; }
+.eval-box { background: #f6ffed; border: 1px solid #b7eb8f; border-radius: 6px; padding: 10px; margin-top: 10px; font-size: 13px; }
+.eval-box strong { color: #16a34a; }
+.resource-link { display: inline-block; margin-top: 8px; color: var(--primary); text-decoration: none; font-size: 13px; cursor: pointer; }
+.resource-link:hover { text-decoration: underline; }
+.reset-btn { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 6px 16px; border-radius: 4px; cursor: pointer; font-size: 13px; margin-top: 16px; transition: all 0.2s; }
+.reset-btn:hover { border-color: var(--primary); color: var(--primary); }
+.footer { text-align: center; padding: 20px; color: var(--text-secondary); font-size: 13px; margin-top: 32px; }
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+  <h1>🧪 项目社区 · 化学项目库</h1>
+  <p>M20 · 走进化学世界 — 从实践中理解化学，用项目表达新知</p>
+</div>
+
+<p style="margin-bottom:24px;font-size:14px;color:var(--text-secondary);">选择一个适合你的项目，点击「查看详情」了解完整任务说明。完成项目后，将成果提交到项目社区展览墙。</p>
+
+<div class="section-title">📋 短周期项目 · 1-3天</div>
+<div class="project-grid">
+<div class="project-card" data-group="short">
+  <span class="badge badge-short">⚡ 短周期</span>
+  <h3>化学知识卡片制作</h3>
+  <div class="meta">⏱ 1-3天 · 个人完成</div>
+  <p>将「走进化学世界」核心概念制作成一套知识卡片，方便随时翻阅和复习。</p>
+  <button class="toggle-btn" onclick="toggleDetail(this)">查看详情</button>
+  <div class="detail-content">
+    <p><strong>项目目标：</strong>制作一套知识卡片，覆盖第1章核心概念。</p>
+    <p><strong>阶段任务：</strong></p>
+    <ul>
+      <li>选择8-10个核心概念（化学变化、物理变化、化学性质、物理性质、质量守恒等）</li>
+      <li>为每个概念设计卡片（正面：概念名称；背面：定义+关键特征+例子）</li>
+      <li>检查卡片内容的准确性和表达的规范性</li>
+    </ul>
+    <p><strong>成果形式：</strong>一套纸质或电子知识卡片</p>
+    <div class="eval-box">
+      <strong>✅ 评价标准</strong>
+      <ul>
+        <li>覆盖至少8个核心概念</li>
+        <li>定义准确，使用规范的化学语言</li>
+        <li>每个概念配1-2个生活例子</li>
+      </ul>
+    </div>
+    <span class="resource-link" onclick="alert('卡片模板：A4纸折成8等份，每份一张卡片。电子版可用PPT或Canva制作。')">📎 资源：卡片模板下载</span>
+  </div>
+</div>
+</div>
+
+<div class="section-title">📊 中周期项目 · 1-2周</div>
+<div class="project-grid">
+<div class="project-card" data-group="mid">
+  <span class="badge badge-mid">🔥 中周期</span>
+  <h3>生活中的化学变化调查报告</h3>
+  <div class="meta">⏱ 10天 · 个人或小组（2-3人）</div>
+  <p>调查并整理日常生活中5-8个化学变化实例，用化学语言进行系统分析和学术表达。</p>
+  <button class="toggle-btn" onclick="toggleDetail(this)">查看详情</button>
+  <div class="detail-content">
+    <p><strong>项目目标：</strong>发现身边的化学，学会用化学视角观察世界。</p>
+    <p><strong>阶段任务：</strong></p>
+    <ul>
+      <li><strong>第1-2天：</strong>确定调查范围和方向（厨房、卫生间、花园、街道……）</li>
+      <li><strong>第3-4天：</strong>实地调查，拍照记录，收集现象和数据</li>
+      <li><strong>第5-6天：</strong>分析每个现象，判断变化类型，寻找背后的化学原理</li>
+      <li><strong>第7-8天：</strong>撰写调查报告，使用规范的化学术语和学术表达</li>
+      <li><strong>第9-10天：</strong>修改完善，制作展示材料</li>
+    </ul>
+    <p><strong>成果形式：</strong>图文结合的调查报告</p>
+    <div class="eval-box">
+      <strong>✅ 评价标准</strong>
+      <ul>
+        <li>至少包含5个化学变化实例</li>
+        <li>每个实例都有准确的现象描述和科学的化学解释</li>
+        <li>报告结构完整，使用了规范的化学语言</li>
+        <li>有学生的个人见解和反思</li>
+      </ul>
+    </div>
+    <span class="resource-link" onclick="alert('参考教材第1章 +「生活中的化学」科普网站。推荐搜索关键词：日常化学变化、厨房化学。')">📎 资源：参考教材 + 科普网站</span>
+  </div>
+</div>
+</div>
+
+<div class="section-title">🎪 长周期项目 · 1个月+</div>
+<div class="project-grid">
+<div class="project-card" data-group="long">
+  <span class="badge badge-long">🌱 长周期</span>
+  <h3>化学新知学术展览</h3>
+  <div class="meta">⏱ 4周 · 小组合作（3-4人）</div>
+  <p>策划并完成一场「化学新知学术展览」，向全校师生展示你从「走进化学世界」中学到的新知识。</p>
+  <button class="toggle-btn" onclick="toggleDetail(this)">查看详情</button>
+  <div class="detail-content">
+    <p><strong>项目目标：</strong>综合运用所学知识，以展览形式进行学术表达。</p>
+    <p><strong>阶段任务：</strong></p>
+    <ul>
+      <li><strong>第1周：</strong>确定展览主题和展示框架，分工协作</li>
+      <li><strong>第2周：</strong>收集素材，包括核心概念图和化学变化案例</li>
+      <li><strong>第3周：</strong>制作展板内容（图文并茂，学术语言表达）</li>
+      <li><strong>第4周：</strong>排练讲解词，布置展区，开幕展示</li>
+    </ul>
+    <p><strong>成果形式：</strong></p>
+    <ul>
+      <li>2-3张学术展板（含核心概念、实验案例、化学变化图解）</li>
+      <li>一份展览宣传册</li>
+      <li>3分钟口头讲解</li>
+    </ul>
+    <div class="eval-box">
+      <strong>✅ 评价标准</strong>
+      <ul>
+        <li>展板内容覆盖第1章核心知识</li>
+        <li>学术表达准确规范，语言面向听众</li>
+        <li>视觉效果清晰美观</li>
+        <li>讲解自然流畅，能回答观众提问</li>
+      </ul>
+    </div>
+    <span class="resource-link" onclick="alert('参考科学展览布展指南 + 海报设计模板。推荐工具：Canva、PowerPoint 制作展板。')">📎 资源：布展指南 + 设计模板</span>
+  </div>
+</div>
+</div>
+
+<button class="reset-btn" onclick="resetAll()">🔄 收起全部详情</button>
+
+<div class="footer">化学 · 九年级上 · M20 项目社区 | 完成项目后提交到班级展览墙</div>
+</div>
+
+<script>
+function toggleDetail(btn) {
+  var detail = btn.nextElementSibling;
+  if (!detail || !detail.classList) return;
+  detail.classList.toggle('show');
+  btn.textContent = detail.classList.contains('show') ? '收起详情' : '查看详情';
+}
+function resetAll() {
+  var btns = document.querySelectorAll('.toggle-btn');
+  btns.forEach(function(b) {
+    var d = b.nextElementSibling;
+    if (d && d.classList) {
+      d.classList.remove('show');
+      b.textContent = '查看详情';
+    }
+  });
+}
+</script>
+</body>
+</html>

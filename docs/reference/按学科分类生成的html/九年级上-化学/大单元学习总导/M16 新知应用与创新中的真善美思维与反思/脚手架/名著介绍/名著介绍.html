@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名著介绍 - 化学中的真善美</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px 24px 40px;
+  box-sizing: border-box;
+}
+.header {
+  text-align: center;
+  padding: 28px 0 12px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin: 0 0 6px;
+}
+.header .sub {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  padding: 18px 20px;
+  transition: box-shadow .25s;
+}
+.section:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--accent);
+}
+.quote-card {
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px;
+  margin: 10px 0;
+  cursor: pointer;
+  transition: all .25s;
+  position: relative;
+}
+.quote-card:hover {
+  border-color: var(--primary);
+}
+.quote-card.revealed {
+  background: #e6f4ff;
+  border-color: var(--primary);
+}
+.quote-card .quote-type {
+  display: inline-block;
+  font-size: 12px;
+  padding: 1px 10px;
+  border-radius: 10px;
+  color: #fff;
+  margin-bottom: 4px;
+}
+.quote-type.conflict { background: #ff4d4f; }
+.quote-type.inspire { background: #52c41a; }
+.quote-type.critical { background: #722ed1; }
+.quote-card blockquote {
+  margin: 6px 0;
+  font-style: italic;
+  font-size: 16px;
+  color: var(--text);
+  border-left: 3px solid var(--accent);
+  padding-left: 12px;
+}
+.quote-card .trigger {
+  display: none;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #fafafa;
+  border-radius: 6px;
+  font-size: 14px;
+}
+.quote-card.revealed .trigger {
+  display: block;
+}
+.quote-card .hint {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+.book-section {
+  margin: 12px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+.book-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #fafafa;
+  cursor: pointer;
+  user-select: none;
+  transition: background .2s;
+}
+.book-header:hover {
+  background: #f0f5ff;
+}
+.book-header .arrow {
+  margin-left: auto;
+  transition: transform .3s;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.book-header.open .arrow {
+  transform: rotate(90deg);
+}
+.book-header h3 {
+  margin: 0;
+  font-size: 17px;
+  color: var(--primary);
+}
+.book-body {
+  display: none;
+  padding: 12px 16px;
+}
+.book-body.open {
+  display: block;
+}
+.book-body p {
+  margin: 6px 0;
+  font-size: 14px;
+}
+.book-body strong {
+  color: var(--primary);
+}
+.level-tag {
+  display: inline-block;
+  font-size: 12px;
+  padding: 1px 8px;
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--primary);
+  margin: 2px 2px;
+  border: 1px solid var(--accent);
+}
+.connection-box {
+  background: linear-gradient(135deg, #fff7e6, #fffbe6);
+  border: 1px solid #ffd666;
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin: 14px 0;
+}
+.connection-box h3 {
+  margin: 0 0 6px;
+  font-size: 17px;
+  color: #d46b08;
+}
+@media (max-width: 640px) {
+  .container { padding: 12px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>📚 名著介绍</h1>
+    <p class="sub">从经典阅读中理解化学与人类文明的深层关系</p>
+  </div>
+
+  <div class="section">
+    <h2>💬 名言触发思考</h2>
+    <p style="font-size:14px;color:var(--text-secondary);margin:0 0 8px;">点击名言卡片，揭示背后的思考触发器</p>
+
+    <div class="quote-card" onclick="revealQuote(this)">
+      <span class="quote-type conflict">冲突型</span>
+      <blockquote>"化学是一门使人快乐的科学。"——巴甫洛夫</blockquote>
+      <p class="hint">👆 点击查看思考</p>
+      <div class="trigger">
+        <strong>为什么是冲突型？</strong> 很多人觉得化学=枯燥公式+危险实验，巴甫洛夫直接挑战这个刻板印象。<br>
+        <strong>思考：</strong>你觉得化学让你快乐过吗？什么时候？
+      </div>
+    </div>
+
+    <div class="quote-card" onclick="revealQuote(this)">
+      <span class="quote-type inspire">启发型</span>
+      <blockquote>"大自然是最伟大的化学家。"——阿西莫夫</blockquote>
+      <p class="hint">👆 点击查看思考</p>
+      <div class="trigger">
+        <strong>为什么是启发型？</strong> 把化学从"实验室"扩展到"整个自然界"。<br>
+        <strong>思考：</strong>想想光合作用、岩石风化、海水中的盐循环——这些自然界的化学反应比人工合成的更精巧吗？
+      </div>
+    </div>
+
+    <div class="quote-card" onclick="revealQuote(this)">
+      <span class="quote-type critical">批判型</span>
+      <blockquote>"不能为了技术的可能性而放弃对后果的思考。"——汉斯·约纳斯</blockquote>
+      <p class="hint">👆 点击查看思考</p>
+      <div class="trigger">
+        <strong>为什么是批判型？</strong> 直接挑战"技术至上"的观念。<br>
+        <strong>思考：</strong>用真善美来解读——"技术的可能性"代表"真"，"后果的思考"代表"善"。
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>📖 名著精读</h2>
+
+    <div class="book-section">
+      <div class="book-header" onclick="toggleBook(this)">
+        <span style="font-size:20px;">🏺</span>
+        <h3>《天工开物》· 宋应星</h3>
+        <span class="arrow">▶</span>
+      </div>
+      <div class="book-body">
+        <p><strong>核心问题：</strong>古代中国人如何利用自然物质进行生产和创造？</p>
+        <p><strong>核心观点：</strong>世界上一切有用的物品都来源于自然，"天工"（自然力）与"开物"（人工利用）的结合。</p>
+        <p><strong>关键导读：</strong>"陶埏篇"中描述陶瓷烧制——黏土→成型→窑火→陶瓷，一个完整的化学变化过程。</p>
+        <p><strong>适读建议：</strong><span class="level-tag">基础：白话文节选</span><span class="level-tag">进阶：全本阅读</span><span class="level-tag">挑战：古今工艺对比</span></p>
+        <p style="font-size:13px;color:var(--text-secondary);">📱 微信读书 / 豆瓣阅读 搜索"天工开物注释本"</p>
+      </div>
+    </div>
+
+    <div class="book-section">
+      <div class="book-header" onclick="toggleBook(this)">
+        <span style="font-size:20px;">🌿</span>
+        <h3>《寂静的春天》· 蕾切尔·卡逊</h3>
+        <span class="arrow">▶</span>
+      </div>
+      <div class="book-body">
+        <p><strong>核心问题：</strong>化学农药（如DDT）的滥用会对生态系统造成什么不可逆的伤害？</p>
+        <p><strong>核心观点：</strong>DDT等化学农药在杀死害虫的同时，会通过食物链富集，最终威胁包括人类在内的整个生态系统。</p>
+        <p><strong>关键导读：</strong>第一章"明天的寓言"——一个原本生机勃勃的小镇因为化学农药的使用变得寂静无声。</p>
+        <p><strong>适读建议：</strong><span class="level-tag">基础：导读版</span><span class="level-tag">进阶：全本阅读</span><span class="level-tag">挑战：写"真善美"短评</span></p>
+        <p style="font-size:13px;color:var(--text-secondary);">📱 得到 / 微信读书 搜索"寂静的春天"</p>
+      </div>
+    </div>
+
+    <div class="book-section">
+      <div class="book-header" onclick="toggleBook(this)">
+        <span style="font-size:20px;">🔬</span>
+        <h3>《科学的历程》· 吴国盛</h3>
+        <span class="arrow">▶</span>
+      </div>
+      <div class="book-body">
+        <p><strong>核心问题：</strong>科学——包括化学——是如何从古至今一步步发展起来的？</p>
+        <p><strong>核心观点：</strong>科学不是一蹴而就的，而是人类在解决实际问题中逐步积累的智慧结晶。</p>
+        <p><strong>关键导读：</strong>近代化学部分——拉瓦锡如何用定量实验推翻燃素说，建立现代化学的基础。</p>
+        <p><strong>适读建议：</strong><span class="level-tag">基础：插图版</span><span class="level-tag">进阶：全本阅读</span><span class="level-tag">挑战：画科学发展时间线</span></p>
+        <p style="font-size:13px;color:var(--text-secondary);">📱 京东读书 / 微信读书 搜索"科学的历程"</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="connection-box">
+    <h3>🔗 名言与名著的连接思考</h3>
+    <p>把上面的三句名言和三本书联系起来：你觉得《寂静的春天》最能体现哪句名言的精神？《天工开物》又和哪句名言有共鸣？</p>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:0;">💡 提示：试着将"批判型名言"与《寂静的春天》对应——它们都关注技术可能带来的后果。</p>
+  </div>
+</div>
+
+<script>
+function revealQuote(el) {
+  var isRevealed = el.classList.contains('revealed');
+  document.querySelectorAll('.quote-card.revealed').forEach(function(c) {
+    if (c !== el) c.classList.remove('revealed');
+  });
+  if (!isRevealed) {
+    el.classList.add('revealed');
+  } else {
+    el.classList.remove('revealed');
+  }
+}
+
+function toggleBook(header) {
+  var body = header.nextElementSibling;
+  var isOpen = body.classList.contains('open');
+  if (isOpen) {
+    body.classList.remove('open');
+    header.classList.remove('open');
+  } else {
+    body.classList.add('open');
+    header.classList.add('open');
+  }
+}
+</script>
+</body>
+</html>

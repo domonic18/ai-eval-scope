@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M3 解析性原理导学 — 化学变化的分析工具</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; }
+h1 { font-size: var(--font-h1); font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+.subtitle { color: var(--text-secondary); margin-bottom: 20px; }
+h2 { font-size: var(--font-h2); font-weight: 600; margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 2px solid var(--accent); display: flex; align-items: center; gap: 8px; }
+h2 .num { font-size: 14px; background: var(--primary); color: #fff; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+h3 { font-size: calc(var(--font-body) + 2px); font-weight: 600; color: var(--primary); margin: 14px 0 6px; }
+.intro-box {
+  background: linear-gradient(135deg, #e6f4ff, #f0f5ff);
+  border-radius: var(--border-radius);
+  padding: 18px 22px;
+  margin-bottom: 20px;
+  border-left: 4px solid var(--primary);
+}
+.principle-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+  border-left: 4px solid var(--primary);
+  transition: transform 0.2s;
+  cursor: pointer;
+}
+.principle-card:hover { transform: translateX(4px); }
+.principle-card .p-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.principle-card .p-label {
+  font-size: 13px;
+  color: #fff;
+  background: var(--primary);
+  padding: 2px 12px;
+  border-radius: 10px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.principle-card .p-name {
+  font-size: calc(var(--font-body) + 3px);
+  font-weight: 700;
+  color: var(--primary);
+}
+.p-body {
+  display: none;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.p-body.show { display: block; }
+.p-desc { margin-bottom: 8px; }
+.p-section { margin: 8px 0; }
+.p-section .tag {
+  display: inline-block;
+  font-size: 12px;
+  padding: 1px 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.tag-example { background: #e6f4ff; color: #1677ff; }
+.tag-how { background: #f0fff0; color: #16a34a; }
+.tag-transfer { background: #fff7e6; color: #d46b08; }
+.tag-warn { background: #fff1f0; color: #f5222d; }
+.p-section p { font-size: 14px; padding: 2px 0; }
+.p-section ul { padding-left: 20px; font-size: 14px; }
+.p-section ul li { padding: 2px 0; }
+.transfer-link {
+  display: inline-block;
+  background: #f0f5ff;
+  border: 1px dashed var(--primary);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: var(--primary);
+  margin: 4px 0;
+}
+.practice-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+  margin-bottom: 14px;
+}
+.practice-card .prac-title {
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 6px;
+  font-size: 16px;
+}
+.practice-card .prac-scenario {
+  background: #fffbe6;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 8px 0;
+  border-left: 3px solid #faad14;
+}
+.solve-btn {
+  padding: 4px 14px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.2s;
+  margin-top: 6px;
+}
+.solve-btn:hover { background: var(--primary-hover); }
+.solve-content {
+  display: none;
+  margin-top: 8px;
+  padding: 10px 14px;
+  background: #e6f4ff;
+  border-radius: 6px;
+  font-size: 14px;
+}
+.solve-content.show { display: block; }
+.self-check {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+  margin: 20px 0;
+}
+.self-check h3 { margin-bottom: 10px; }
+.check-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+}
+.check-row:last-child { border-bottom: none; }
+.check-row .dot {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  margin-top: 2px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+.check-row.done .dot {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.check-row.done .dot::after { content: "✓"; }
+.check-row.done .q-text { color: var(--text-secondary); text-decoration: line-through; }
+@media (max-width: 640px) {
+  .container { padding: 16px 12px; }
+  .principle-card { padding: 14px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🧠 解析性原理导学</h1>
+  <p class="subtitle">从"看会了"到"会分析"——提炼可迁移的5条解析性原理</p>
+
+  <div class="intro-box">
+    <p>在"木柴燃烧"的解析案例中，你看到了专家如何一步步拆解化学变化。但光"看会了"还不够——你需要从中提炼出<strong>可迁移的方法</strong>，让它成为你面对任何新现象时都可以反复使用的分析工具。</p>
+    <p style="margin-top:8px;">👇 点击每条原理展开详情</p>
+  </div>
+
+  <!-- 原理1 -->
+  <div class="principle-card" onclick="togglePrinciple(this)">
+    <div class="p-header">
+      <span class="p-label">原理1</span>
+      <span class="p-name">系统观察法</span>
+    </div>
+    <div class="p-body">
+      <div class="p-desc"><strong>原理说明：</strong>不只看"最明显的"，而是列出一份"观察清单"，系统地收集所有相关信息。</div>
+
+      <div class="p-section">
+        <span class="tag tag-example">📌 在本示例中的体现</span>
+        <p>专家不只看到"木柴烧成灰"，还注意到烟、气味、周围石头的变色、灰烬的重量变化——全面观察才有全面判断。</p>
+      </div>
+
+      <div class="p-section">
+        <span class="tag tag-how">🛠️ 如何使用</span>
+        <p>面对任何现象，先问自己：我能从视觉、听觉、嗅觉、触觉等多个角度观察到什么？请至少列出5个观察点。</p>
+      </div>
+
+      <div class="p-section">
+        <span class="tag tag-transfer">🔀 可迁移到</span>
+        <p>化学实验（观察反应现象）、物理实验（观察运动变化）、生物观察（观察动植物行为）</p>
+      </div>
+
+      <div class="p-section">
+        <span class="tag tag-warn">⚠️ 使用提醒</span>
+        <p>观察要先<strong>客观记录</strong>（"看到灰色粉末"），再<strong>主观判断</strong>（"那是灰烬"），不要混淆。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 原理2 -->
+  <div class="principle-card" onclick="togglePrinciple(this)">
+    <div class="p-header">
+      <span class="p-label">原理2</span>
+      <span class="p-name">核心判断准则法</span>
+    </div>
+    <div class="p-body">
+      <div class="p-desc"><strong>原理说明：</strong>用一条最核心的判断标准来决策，不被次要信息干扰。</div>
+
+      <div class="p-section">
+        <span class="tag tag-example">📌 在本示例中的体现</span>
+        <p>判断是不是化学变化，专家始终抓住一条核心标准——<strong>"有没有新物质生成"</strong>，而不是被"有没有火焰""有没有颜色变化"等次要因素干扰。</p>
+      </div>
+
+      <div class="p-section">
+        <span class="tag tag-how">🛠️ 如何使用</span>
+        <p>面对分类判断问题时，先找到那个"一票决定"的核心标准，用它来检验所有候选选项。</p>
+      </div>
+
+      <div class="p-section">
+        <span class="tag tag-transfer">🔀 可迁移到</span>
+        <p>判断物理变化 vs 化学变化、判断纯净物 vs 混合物、判断化合物 vs 单质</p>
+      </div>
+
+      <div class="p-section">
+        <span class="tag tag-warn">⚠️ 使用提醒</span>
+        <p>核心标准往往是最简单的那一个——如果标准太复杂，可能不是真标准。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 原理3 -->
+  <div class="principle-card" onclick="togglePrinciple(this)">
+    <div class="p-header">
+      <span class="p-label">原理3</span>
+      <span class="p-name">多重证据交叉验证</span>
+    </div>
+    <div class="p-body">
+      <div class="p-desc"><strong>原理说明：</strong>不用一个证据下结论，而是找2-3个互相独立的证据来交叉验证。</div>
+
+      <div class="p-section">
+        <span class="tag tag-example">📌 在本示例中的体现</span>
+        <p>证明"木柴燃烧是化学变化"，专家用了灰烬（固体新物质）、气体产物（需要特殊方法检测）、光和热（伴随现象）三重证据。</p>
+      </div>
+
+      <div class="p-section">
+        <span class="tag tag-how">🛠️ 如何使用</span>
+        <p>做出判断后，反问自己："除了这个证据，我还能找到另一个独立的证据吗？"</p>
+      </div>
+
+      <div class="p-section">
+        <span class="tag tag-transfer">🔀 可迁移到</span>
+        <p>实验结论验证、信息真实性判断、决策分析</p>
+      </div>
+
+      <div class="p-section">
+        <span class="tag tag-warn">⚠️ 使用提醒</span>
+        <p>"独立"证据指来源不同、角度不同的证据——同一个证据用不同方式说两遍不算两个证据。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 原理4 -->
+  <div class="principle-card" onclick="togglePrinciple(this)">
+    <div class="p-header">
+      <span class="p-label">原理4</span>
+      <span class="p-name">推理链构建法</span>
+    </div>
+    <div class="p-body">
+      <div class="p-desc"><strong>原理说明：</strong>把你的思考过程拆解成"观察→中间判断→最终结论"的完整链条。</div>
+
+      <div class="p-section">
+        <span class="tag tag-example">📌 在本示例中的体现</span>
+        <p>专家从"木柴有灰烬→灰烬不是木柴→有新物质生成→所以是化学变化"，每一步都清晰可追溯。</p>
+      </div>
+
+      <div class="p-section">
+        <span class="tag tag-how">🛠️ 如何使用</span>
+        <p>在纸上画出你的推理链：我看到了什么 → 这说明什么 → 这又说明了什么 → 最终结论是什么。</p>
+      </div>
+
+      <div class="p-section">
+        <span class="tag tag-transfer">🔀 可迁移到</span>
+        <p>解数学证明题、写议论文、分析社会问题</p>
+      </div>
+
+      <div class="p-section">
+        <span class="tag tag-warn">⚠️ 使用提醒</span>
+        <p>推理链中的每一环都要有证据支撑，"我觉得"不是证据。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 原理5 -->
+  <div class="principle-card" onclick="togglePrinciple(this)">
+    <div class="p-header">
+      <span class="p-label">原理5</span>
+      <span class="p-name">概念检验法</span>
+    </div>
+    <div class="p-body">
+      <div class="p-desc"><strong>原理说明：</strong>用已经学过的科学概念和方法来检验你的结论是否站得住脚。</div>
+
+      <div class="p-section">
+        <span class="tag tag-example">📌 在本示例中的体现</span>
+        <p>专家用<strong>"质量守恒定律"</strong>来检验结论——如果木柴真的"消失"了，质量去哪儿了？这个检验让结论更加牢固。</p>
+      </div>
+
+      <div class="p-section">
+        <span class="tag tag-how">🛠️ 如何使用</span>
+        <p>得出初步结论后，问自己："我的结论和学过的哪个核心概念有关？这个概念支持还是反对我的结论？"</p>
+      </div>
+
+      <div class="p-section">
+        <span class="tag tag-transfer">🔀 可迁移到</span>
+        <p>任何学科——物理（能量守恒）、生物（细胞学说）、数学（公理体系）</p>
+      </div>
+
+      <div class="p-section">
+        <span class="tag tag-warn">⚠️ 使用提醒</span>
+        <p>不要生搬硬套——确认你调用的概念确实适用于当前情境。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 练习 -->
+  <h2 style="margin-top:32px;">📝 应用练习</h2>
+
+  <div class="practice-card">
+    <div class="prac-title">练习1：冰与"干冰"</div>
+    <div class="prac-scenario">
+      <p>你看到两种"冒白气"的物质：一个是冰箱里拿出的冰块，一个是舞台上用的干冰（固体二氧化碳）。</p>
+      <p style="margin-top:4px;"><strong>判断：</strong>冰块融化和干冰升华是物理变化还是化学变化？用证据支持你的判断。</p>
+    </div>
+    <button class="solve-btn" onclick="showSolve(this)">💡 查看分析</button>
+    <div class="solve-content">
+      <p><strong>两者都是物理变化！</strong></p>
+      <p>① <strong>冰块融化：</strong>冰（H₂O固态）→ 水（H₂O液态），<strong>没有新物质生成</strong>，只是状态改变。</p>
+      <p>② <strong>干冰升华：</strong>干冰（CO₂固态）→ 二氧化碳气体（CO₂气态），<strong>没有新物质生成</strong>，只是状态改变。</p>
+      <p>🔑 关键：虽然两者都"冒白气"看起来很相似，但核心标准是——<strong>物质种类变了吗？</strong>没变，所以都是物理变化。</p>
+      <p><strong>使用的原理：</strong>核心判断准则法（有没有新物质生成）+ 多重证据交叉验证（白气是水蒸气凝结的小水滴，不是新物质）</p>
+    </div>
+  </div>
+
+  <div class="practice-card">
+    <div class="prac-title">练习2：铁钉在盐水中的变化</div>
+    <div class="prac-scenario">
+      <p>你把一枚铁钉放入盐水中，3天后看到铁钉表面出现了红褐色物质，盐水变成了浅黄色。</p>
+      <p style="margin-top:4px;"><strong>分析：</strong>这一过程中发生了哪些变化？判断是否有化学变化发生。</p>
+    </div>
+    <button class="solve-btn" onclick="showSolve(this)">💡 查看分析</button>
+    <div class="solve-content">
+      <p><strong>发生了化学变化！</strong></p>
+      <p>① <strong>现象：</strong>铁钉表面出现红褐色物质 → 这是<strong>铁锈</strong>（Fe₂O₃·xH₂O），是新物质</p>
+      <p>② <strong>现象：</strong>盐水变浅黄色 → 可能是Fe²⁺/Fe³⁺离子进入溶液，也是新物质出现的证据</p>
+      <p>③ <strong>推理链：</strong>铁（银白色）→ 铁锈（红褐色）→ 颜色不同且成分不同 → 有新物质生成 → 化学变化</p>
+      <p><strong>使用的原理：</strong>系统观察法（同时观察铁钉和溶液的变化）+ 推理链构建法（观察→中间判断→结论）</p>
+    </div>
+  </div>
+
+  <!-- 自我检测 -->
+  <div class="self-check">
+    <h3>✅ 自我检测</h3>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">点击完成每项自检，确认你已掌握这些原理</p>
+    <div class="check-row" onclick="toggleCheck(this)">
+      <span class="dot"></span>
+      <span class="q-text">我能说出"系统观察法"和"随便看看"的根本区别是什么</span>
+    </div>
+    <div class="check-row" onclick="toggleCheck(this)">
+      <span class="dot"></span>
+      <span class="q-text">面对一个变化，我能在5秒内说出判断是不是化学变化的"核心标准"</span>
+    </div>
+    <div class="check-row" onclick="toggleCheck(this)">
+      <span class="dot"></span>
+      <span class="q-text">我能举出一个"看起来像化学变化，但实际上是物理变化"的反例</span>
+    </div>
+    <div class="check-row" onclick="toggleCheck(this)">
+      <span class="dot"></span>
+      <span class="q-text">我的推理链能经得起别人的质疑吗？有没有哪一环证据不足？</span>
+    </div>
+    <div class="check-row" onclick="toggleCheck(this)">
+      <span class="dot"></span>
+      <span class="q-text">如果用概念检验法检验"蜡烛燃烧"的结论，我会用哪个核心概念？</span>
+    </div>
+  </div>
+</div>
+
+<script>
+function togglePrinciple(el) {
+  if (!el) return;
+  var body = el.querySelector('.p-body');
+  if (body) body.classList.toggle('show');
+}
+
+function showSolve(btn) {
+  if (!btn) return;
+  var content = btn.nextElementSibling;
+  if (content && content.classList) {
+    content.classList.toggle('show');
+    btn.textContent = content.classList.contains('show') ? '🙈 收起分析' : '💡 查看分析';
+  }
+}
+
+function toggleCheck(el) {
+  if (!el) return;
+  el.classList.toggle('done');
+}
+</script>
+</body>
+</html>

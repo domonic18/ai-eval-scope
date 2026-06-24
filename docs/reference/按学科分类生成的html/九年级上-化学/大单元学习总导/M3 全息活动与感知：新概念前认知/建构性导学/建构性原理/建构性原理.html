@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性原理导学 — 化学 九年级上</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+  --font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  text-align: center;
+  padding: 32px 20px 20px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  margin: -24px -20px 24px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header .subtitle { font-size: 14px; opacity: 0.85; }
+.section { margin-bottom: 28px; }
+.section-title {
+  font-size: var(--font-h2);
+  font-weight: 700;
+  color: var(--primary);
+  padding-bottom: 10px;
+  border-bottom: 3px solid var(--accent);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+  margin-bottom: 14px;
+  border-left: 4px solid var(--primary);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card:hover { transform: translateX(4px); box-shadow: 0 4px 16px rgba(22,119,255,0.12); }
+.card .card-num {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+.card h3 { font-size: 17px; color: var(--primary); margin-bottom: 6px; }
+.card p, .card li { color: var(--text); margin-bottom: 4px; }
+.card ul { padding-left: 18px; }
+.card .tag {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin: 2px 4px 2px 0;
+}
+.practice-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+  margin-bottom: 14px;
+  border-left: 4px solid #fa8c16;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.practice-card:hover { box-shadow: 0 4px 16px rgba(250,140,22,0.15); }
+.practice-card.expanded { border-left-color: var(--primary); }
+.practice-card h3 { font-size: 17px; color: #d46b08; margin-bottom: 6px; }
+.practice-card .practice-content { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); }
+.practice-card.expanded .practice-content { display: block; }
+.practice-card .expand-hint { font-size: 13px; color: var(--text-secondary); margin-top: 8px; }
+.reflection-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+.reflection-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  transition: border-color 0.3s;
+}
+.reflection-card:hover { border-color: var(--primary); }
+.reflection-card .q { font-weight: 600; color: var(--primary); margin-bottom: 4px; }
+.reflection-card .prompt {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+.reflection-card .reveal-btn {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 4px 14px;
+  font-size: 13px;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.reflection-card .reveal-btn:hover { background: var(--primary); color: #fff; }
+.reflection-card .reflection-hint { display: none; margin-top: 8px; padding: 8px 12px; background: var(--bg); border-radius: 4px; font-size: 13px; color: var(--text-secondary); }
+.reflection-card .reflection-hint.show { display: block; }
+@media (min-width: 640px) { .reflection-grid { grid-template-columns: 1fr 1fr; } .container { padding: 28px 32px; } }
+@media (min-width: 900px) { .reflection-grid { grid-template-columns: 1fr 1fr 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🧱 建构性原理</h1>
+  <div class="subtitle">M3 全息活动与感知：新概念前认知 · 化学·九年级上</div>
+</div>
+
+<div class="section">
+  <div class="section-title">📐 五大建构性原理</div>
+  <p style="margin-bottom:14px;color:var(--text-secondary);">基于"蜡烛燃烧的化学变化解释模型"建构过程，提炼出5条可迁移的建构性原理——点击每条卡片查看更多细节。</p>
+
+  <div class="card">
+    <div class="card-num">原理 1</div>
+    <h3>🔍 现象驱动法</h3>
+    <p><strong>说明：</strong>从真实的、可观察的现象出发，让现象本身引导你提出问题。</p>
+    <p><strong>来源：</strong>蜡烛燃烧案例中，"蜡烛越烧越短"这个日常现象激发了"物质去哪儿了"的追问。</p>
+    <p><span class="tag">适用情境</span> 任何科学概念的学习，从生活对应现象开始</p>
+    <p><span class="tag">注意事项</span> 不要停留在表面观察，要把"看到了什么"转化为"为什么这样"</p>
+  </div>
+
+  <div class="card">
+    <div class="card-num">原理 2</div>
+    <h3>🔗 证据链建构</h3>
+    <p><strong>说明：</strong>不凭空猜测结论，通过设计实验或查找资料建立"证据→推理→结论"的逻辑链。</p>
+    <p><strong>来源：</strong>罩冷烧杯和石灰水两个实验，收集了水和二氧化碳的生成证据。</p>
+    <p><span class="tag">适用情境</span> 需要证明或证伪一个想法时，先找证据再下结论</p>
+    <p><span class="tag">注意事项</span> 单一证据可能不够，要寻找多个独立证据交叉验证</p>
+  </div>
+
+  <div class="card">
+    <div class="card-num">原理 3</div>
+    <h3>📊 可视化模型法</h3>
+    <p><strong>说明：</strong>把抽象的关系用图示、表格或模型"画出来"，让看不见的变化变得可见。</p>
+    <p><strong>来源：</strong>用图示和箭头标注"反应物→生成物"，让气体产物的变化关系一目了然。</p>
+    <p><span class="tag">适用情境</span> 理解复杂系统、过程变化或因果关系时</p>
+    <p><span class="tag">注意事项</span> 模型是对现实的简化，要标注"哪些是证据、哪些是推论"</p>
+  </div>
+
+  <div class="card">
+    <div class="card-num">原理 4</div>
+    <h3>🔄 检验修正循环</h3>
+    <p><strong>说明：</strong>建构的模型不是终点，要用新证据不断检验、修正和完善。</p>
+    <p><strong>来源：</strong>完成初步模型后，用"能否解释所有现象"自检，发现不足后修订。</p>
+    <p><span class="tag">适用情境</span> 任何需要迭代改进的学习成果或设计方案</p>
+    <p><span class="tag">注意事项</span> 不要怕修改，每一次修正都代表理解更深了一层</p>
+  </div>
+
+  <div class="card">
+    <div class="card-num">原理 5</div>
+    <h3>💬 表达即理解</h3>
+    <p><strong>说明：</strong>真正的理解发生在你能把想法清楚表达出来的时候。</p>
+    <p><strong>来源：</strong>最终要求把模型"讲给同桌听"，在表达中发现了之前没想清楚的地方。</p>
+    <p><span class="tag">适用情境</span> 复习巩固、小组分享、完成作业时</p>
+    <p><span class="tag">注意事项</span> 表达时要用自己的语言，不能照搬课本原话</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">🧪 建构性原理迁移应用</div>
+
+  <div class="practice-card" onclick="togglePractice(this)">
+    <h3>📌 练习1：铁钉生锈的秘密</h3>
+    <p>你发现厨房里的一枚铁钉放置一段时间后表面出现了红褐色的物质……</p>
+    <div class="practice-content">
+      <p><strong>建构任务：</strong>建构"铁钉生锈的条件"解释模型</p>
+      <p><strong>可用证据：</strong></p>
+      <ul>
+        <li>干燥的铁钉不生锈</li>
+        <li>浸在水中的铁钉生锈更快</li>
+        <li>涂油的铁钉不生锈</li>
+      </ul>
+      <p><strong>建议使用的原理：</strong><span class="tag">现象驱动法</span> + <span class="tag">证据链建构</span></p>
+      <p><strong>脚手架提示：</strong>设计对比实验时需要控制哪些变量？试着列出你的实验设计。</p>
+    </div>
+    <div class="expand-hint">👆 点击展开/收起详细任务</div>
+  </div>
+
+  <div class="practice-card" onclick="togglePractice(this)">
+    <h3>📌 练习2：厨房里的"化学变化"侦探</h3>
+    <p>妈妈用食醋清洗水壶中的水垢，发现有气泡产生……</p>
+    <div class="practice-content">
+      <p><strong>建构任务：</strong>建构"醋除水垢"的化学变化过程模型</p>
+      <p><strong>可用证据：</strong></p>
+      <ul>
+        <li>食醋的成分（醋酸）</li>
+        <li>水垢的主要成分（碳酸钙）</li>
+        <li>气泡的性质（使澄清石灰水变浑浊 → 二氧化碳）</li>
+      </ul>
+      <p><strong>建议使用的原理：</strong><span class="tag">可视化模型法</span> + <span class="tag">检验修正循环</span></p>
+      <p><strong>脚手架提示：</strong>把"反应前"和"反应后"的物质分别列出来，再建立对应关系。</p>
+    </div>
+    <div class="expand-hint">👆 点击展开/收起详细任务</div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">🤔 元认知反思</div>
+  <p style="margin-bottom:12px;color:var(--text-secondary);">点击每个问题下方的按钮，查看思考提示。</p>
+  <div class="reflection-grid">
+    <div class="reflection-card">
+      <div class="q">Q1</div>
+      <p>在建构蜡烛燃烧模型的过程中，哪一个步骤让你觉得最难？为什么？</p>
+      <button class="reveal-btn" onclick="showHint(this)">💡 思考提示</button>
+      <div class="reflection-hint">回想一下：是观察现象时无从下手？找证据时不知道该做什么实验？还是把证据和结论联系起来时逻辑不通？每个人都有卡住的地方——这正是学习的契机。</div>
+    </div>
+    <div class="reflection-card">
+      <div class="q">Q2</div>
+      <p>你是如何从"看到现象"到"提出可探究的问题"的？这个过程能总结成一句话吗？</p>
+      <button class="reveal-btn" onclick="showHint(this)">💡 思考提示</button>
+      <div class="reflection-hint">试着把过程压缩成一句话公式：比如"看到异常→追问原因→设计验证"，或者"发生了什么→为什么会这样→如何证明"。</div>
+    </div>
+    <div class="reflection-card">
+      <div class="q">Q3</div>
+      <p>你的模型最初版本和最终版本有什么不同？是什么促使你做了修改？</p>
+      <button class="reveal-btn" onclick="showHint(this)">💡 思考提示</button>
+      <div class="reflection-hint">如果两个版本没有不同，说明你可能跳过了"检验修正"这一步。想一想：是否有某个现象你的模型解释不了？那就是推动你修改的原动力。</div>
+    </div>
+    <div class="reflection-card">
+      <div class="q">Q4</div>
+      <p>如果你是老师，你会用哪条原理帮助同学理解化学变化？为什么？</p>
+      <button class="reveal-btn" onclick="showHint(this)">💡 思考提示</button>
+      <div class="reflection-hint">不同的原理适合不同的同学：喜欢动手的同学可能适合"现象驱动法"，善于画图的同学可能适合"可视化模型法"——你选哪一条？</div>
+    </div>
+    <div class="reflection-card">
+      <div class="q">Q5</div>
+      <p>这次建构经历让你对"化学变化"的理解发生了什么改变？</p>
+      <button class="reveal-btn" onclick="showHint(this)">💡 思考提示</button>
+      <div class="reflection-hint">有没有一种"以前觉得化学变化就是变魔术，现在觉得是有规律可循"的感觉？试着对比学之前和学之后你对"蜡烛燃烧"的认识差异。</div>
+    </div>
+  </div>
+</div>
+
+</div>
+<script>
+function togglePractice(el) {
+  el.classList.toggle('expanded');
+}
+function showHint(btn) {
+  var hint = btn.nextElementSibling;
+  if (hint && hint.classList) {
+    hint.classList.toggle('show');
+    btn.textContent = hint.classList.contains('show') ? '🙈 收起提示' : '💡 思考提示';
+  }
+}
+</script>
+</body>
+</html>

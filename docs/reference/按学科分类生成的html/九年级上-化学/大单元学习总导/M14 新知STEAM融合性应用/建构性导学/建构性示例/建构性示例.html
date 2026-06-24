@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性示例 — STEAM融合案例</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --font-h3: 17px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+.wrapper {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  border-radius: var(--border-radius);
+  padding: 28px 32px;
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header p { opacity: 0.92; font-size: var(--font-body); }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+.card h3 {
+  font-size: var(--font-h3);
+  color: var(--text);
+  margin: 16px 0 8px;
+}
+.card p { margin-bottom: 10px; }
+.card ul, .card ol { margin: 8px 0 12px 20px; }
+.card li { margin-bottom: 6px; }
+.step-box {
+  background: #f6f8fc;
+  border-left: 4px solid var(--primary);
+  padding: 14px 16px;
+  margin: 12px 0;
+  border-radius: 0 6px 6px 0;
+}
+.step-box .step-num {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: calc(var(--font-body) + 2px);
+}
+.tag {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  margin: 2px 4px 2px 0;
+}
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 12px 0;
+}
+.tool-item {
+  background: #f6f8fc;
+  border-radius: 6px;
+  padding: 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+.tool-item:hover {
+  border-color: var(--primary);
+  background: #e6f0ff;
+  transform: translateY(-2px);
+}
+.tool-item .icon { font-size: 28px; margin-bottom: 6px; }
+.tool-item .label { font-weight: 600; color: var(--primary); }
+.checklist { list-style: none; margin: 10px 0; }
+.checklist li {
+  padding: 8px 12px;
+  background: #f9fafb;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.checklist li::before {
+  content: "⬜";
+  flex-shrink: 0;
+  font-size: 16px;
+}
+.checklist li.checked {
+  background: #e6f7e6;
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+.checklist li.checked::before { content: "✅"; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+th, td { padding: 10px 12px; border: 1px solid var(--border); text-align: left; }
+th { background: var(--primary); color: #fff; font-weight: 600; }
+td { background: var(--card-bg); }
+tr:nth-child(even) td { background: #f8faff; }
+.btn {
+  display: inline-block;
+  padding: 10px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: var(--font-body);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--primary);
+  color: #fff;
+}
+.btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
+.btn-outline {
+  background: transparent;
+  border: 2px solid var(--primary);
+  color: var(--primary);
+}
+.btn-outline:hover { background: #e6f0ff; }
+.interactive-area {
+  background: #f6f8fc;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 14px 0;
+  border: 1px dashed var(--accent);
+}
+.sample-box {
+  background: linear-gradient(135deg, #fff7e6 0%, #fffbe6 100%);
+  border: 2px solid #ffd666;
+  border-radius: 8px;
+  padding: 18px;
+  margin: 14px 0;
+}
+.sample-box h4 { color: #d48806; margin-bottom: 8px; }
+.rating-scale { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+.rating-item {
+  flex: 1;
+  min-width: 160px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+.rating-item:hover { border-color: var(--primary); }
+.rating-item.selected { border-color: var(--primary); background: #e6f0ff; }
+.rating-item .level { font-weight: 700; color: var(--primary); font-size: 18px; }
+@media (max-width: 600px) {
+  .wrapper { padding: 16px 12px; }
+  .header { padding: 20px; }
+  .card { padding: 16px; }
+  .tool-grid { grid-template-columns: 1fr 1fr; }
+  .rating-scale { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <h1>🧪 建构性示例</h1>
+    <p>化学变化中的可视化表达 — 一个完整的 STEAM 融合建构案例</p>
+  </div>
+
+  <!-- 阶段一 -->
+  <div class="card">
+    <h2>一、情境引入</h2>
+    <p><strong>真实问题情境：</strong>你是一位"科学展览馆"的小讲解员。展馆里有一面"化学变化墙"，但观众只能看到静态的化学方程式和文字说明，反馈说"太抽象了，看不见变化的过程"。馆长请你设计一个<strong>可视化作品</strong>，让参观者能直观"看到"化学变化是如何发生的。</p>
+    <div class="interactive-area">
+      <p><strong>🤔 核心建构问题：</strong></p>
+      <blockquote style="font-style:italic; border-left: 4px solid var(--primary); padding-left: 14px; margin: 8px 0;">
+        如何将一种<strong>看不见、摸不着的化学变化</strong>，转化为一件<strong>看得见、可互动</strong>的作品，让普通观众也能理解？
+      </blockquote>
+      <button class="btn btn-outline" onclick="toggleContext()" style="margin-top:8px;">📌 点击记录我的初步想法</button>
+      <div id="ideaArea" style="display:none; margin-top:10px;">
+        <textarea rows="3" placeholder="在这里写下你对核心问题的初步想法……" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:6px; font-family:inherit; font-size:var(--font-body);"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- 阶段二 -->
+  <div class="card">
+    <h2>二、建构目标</h2>
+    <div class="step-box">
+      <span class="step-num">🎯 目标成果：</span>一份"化学变化过程可视化模型"<br>
+      <strong>形式：</strong>层叠式翻页海报 + 配套解说卡片<br>
+      <strong>服务对象：</strong>科学展览馆的普通观众（含中小学生）<br>
+      <strong>用途：</strong>通过视觉化的方式展示化学变化的宏观现象与微观本质
+    </div>
+  </div>
+
+  <!-- 阶段三 -->
+  <div class="card">
+    <h2>三、建构过程（7步示范）</h2>
+    <p>我们以 <strong>"铁钉生锈"</strong> 这一生活中常见的化学变化为例，完成整个建构。</p>
+
+    <div class="step-box">
+      <div class="step-num">🔎 Step 1：观察现象，记录证据</div>
+      <p><strong>任务：</strong>找一根生锈的铁钉（或查看图片），仔细观察并记录：</p>
+      <ul>
+        <li>铁锈的颜色、质地、分布位置</li>
+        <li>有铁锈的部位和没有铁锈的部位有什么不同</li>
+        <li>联想：铁钉原本是什么样子的？</li>
+      </ul>
+      <p><strong>记录表：</strong></p>
+      <table>
+        <tr><th>观察对象</th><th>变化前</th><th>变化后</th></tr>
+        <tr><td>颜色</td><td>银白色</td><td>红棕色</td></tr>
+        <tr><td>表面</td><td>光滑</td><td>粗糙、疏松</td></tr>
+        <tr><td>硬度</td><td>坚硬</td><td>易剥落</td></tr>
+      </table>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">❓ Step 2：提出问题，确定建构方向</div>
+      <p><strong>驱动问题：</strong>铁钉为什么会生锈？"生锈"这个变化过程中，铁原子发生了什么？</p>
+      <p><strong>建构方向：</strong>用"<strong>三层海报</strong>"展示——</p>
+      <ul>
+        <li>第一层：宏观现象（铁锈的样子）</li>
+        <li>第二层：微观解释（铁原子与氧原子的结合）</li>
+        <li>第三层：化学语言（化学方程式）</li>
+      </ul>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">📚 Step 3：调用化学知识和多学科工具</div>
+      <p><strong>化学知识：</strong></p>
+      <ul>
+        <li>铁 + 氧气 + 水 → 铁锈（主要成分 Fe₂O₃·xH₂O）</li>
+        <li>化学变化：原子重新组合，生成新物质</li>
+      </ul>
+      <p><strong>多学科工具：</strong></p>
+      <div class="tool-grid">
+        <div class="tool-item" onclick="highlightTool(this)">
+          <div class="icon">🔬</div>
+          <div class="label">科学 (S)</div>
+          <div style="font-size:13px;color:var(--text-secondary);">化学反应原理</div>
+        </div>
+        <div class="tool-item" onclick="highlightTool(this)">
+          <div class="icon">🖍️</div>
+          <div class="label">技术 (T)</div>
+          <div style="font-size:13px;color:var(--text-secondary);">层叠海报制作</div>
+        </div>
+        <div class="tool-item" onclick="highlightTool(this)">
+          <div class="icon">📐</div>
+          <div class="label">工程 (E)</div>
+          <div style="font-size:13px;color:var(--text-secondary);">结构设计与布局</div>
+        </div>
+        <div class="tool-item" onclick="highlightTool(this)">
+          <div class="icon">🎨</div>
+          <div class="label">艺术 (A)</div>
+          <div style="font-size:13px;color:var(--text-secondary);">色彩与视觉表达</div>
+        </div>
+        <div class="tool-item" onclick="highlightTool(this)">
+          <div class="icon">📊</div>
+          <div class="label">数学 (M)</div>
+          <div style="font-size:13px;color:var(--text-secondary);">比例与空间规划</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">✏️ Step 4：设计方案或模型草图</div>
+      <p><strong>三层翻页海报结构设计：</strong></p>
+      <div class="interactive-area">
+        <p><strong>📐 草图框架</strong></p>
+        <pre style="background:#f0f2f5;padding:12px;border-radius:6px;font-size:13px;white-space:pre-wrap;">
+┌─────────────────────────────────┐
+│  封面：标题 "铁钉生锈——看得见的化学变化"  │
+├─────────────────────────────────┤
+│  第一层（翻页A）：宏观现象       │
+│  · 图片/绘图：生锈铁钉 vs 新铁钉  │
+│  · 文字标注：颜色、质地变化      │
+├─────────────────────────────────┤
+│  第二层（翻页B）：微观解释       │
+│  · 原子示意图：Fe + O₂ → Fe₂O₃  │
+│  · 用圆圈贴纸表示原子重新组合    │
+├─────────────────────────────────┤
+│  第三层（翻页C）：化学语言       │
+│  · 化学方程式 + 变化条件说明     │
+│  · 关键概念：新物质、化学变化    │
+└─────────────────────────────────┘
+        </pre>
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">🎨 Step 5：制作与呈现</div>
+      <p><strong>材料准备：</strong>卡纸（3张不同颜色）、彩笔、剪刀、胶棒、透明胶带</p>
+      <p><strong>制作步骤：</strong></p>
+      <ol>
+        <li>将3张卡纸裁成相同大小（A3或A4）</li>
+        <li>每张卡纸分别绘制"宏观层""微观层""化学语言层"</li>
+        <li>用胶带将3张卡纸的上边缘粘贴在一起，形成翻页效果</li>
+        <li>封面标注标题，添加装饰</li>
+      </ol>
+      <p>👇 点击下方按钮查看"翻页效果模拟"</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-outline" onclick="showLayer('layer1')">🔍 宏观层</button>
+        <button class="btn btn-outline" onclick="showLayer('layer2')">🔬 微观层</button>
+        <button class="btn btn-outline" onclick="showLayer('layer3')">📝 化学语言层</button>
+      </div>
+      <div id="layerDisplay" style="margin-top:12px;padding:16px;background:#f0f5ff;border-radius:6px;border:1px solid var(--accent);min-height:60px;">
+        👆 点击上方按钮切换查看各层内容
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">✅ Step 6：检验与改进</div>
+      <p><strong>检验问题清单（逐条自检）：</strong></p>
+      <ul class="checklist" id="checklist">
+        <li onclick="toggleCheck(this)">海报是否展示了"变化前"和"变化后"的对比？</li>
+        <li onclick="toggleCheck(this)">微观解释是否与宏观现象对应？</li>
+        <li onclick="toggleCheck(this)">化学方程式书写是否正确？</li>
+        <li onclick="toggleCheck(this)">视觉设计是否清晰、美观、适合观众阅读？</li>
+        <li onclick="toggleCheck(this)">如果给同学看，他/她能理解吗？</li>
+      </ul>
+      <button class="btn" onclick="resetChecklist()">🔄 重置自检</button>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">🗣️ Step 7：最终表达</div>
+      <p><strong>为你的作品写一段"解说词"：</strong></p>
+      <div class="interactive-area">
+        <textarea rows="4" placeholder="例如：大家好！欢迎来到科学展览馆。今天我为大家展示的是'铁钉生锈'的化学变化过程。请看，这是一根全新的铁钉，银白色、表面光滑……" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:var(--font-body);"></textarea>
+        <p style="color:var(--text-secondary);font-size:13px;margin-top:6px;">💡 提示：解说词要包含现象描述、微观解释、化学原理三个层次。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 阶段四 -->
+  <div class="card">
+    <h2>四、支架工具</h2>
+    <h3>📋 建构模板格式</h3>
+    <table>
+      <tr><th>环节</th><th>我的记录</th></tr>
+      <tr><td>我观察到了什么？</td><td style="color:var(--text-secondary);">(记录现象)</td></tr>
+      <tr><td>我想解决的问题是什么？</td><td style="color:var(--text-secondary);">(驱动问题)</td></tr>
+      <tr><td>我用了哪些知识？</td><td style="color:var(--text-secondary);">(学科工具列表)</td></tr>
+      <tr><td>我的方案/模型长什么样？</td><td style="color:var(--text-secondary);">(草图或描述)</td></tr>
+      <tr><td>我如何验证它？</td><td style="color:var(--text-secondary);">(检验方法)</td></tr>
+    </table>
+
+    <h3>💬 关键思考句式</h3>
+    <div class="tool-grid">
+      <div class="tool-item" onclick="highlightTool(this)">"我注意到……这让我想到……"</div>
+      <div class="tool-item" onclick="highlightTool(this)">"如果……那么……"</div>
+      <div class="tool-item" onclick="highlightTool(this)">"这和……有什么联系？"</div>
+      <div class="tool-item" onclick="highlightTool(this)">"我能用什么方式把这个表达出来？"</div>
+    </div>
+  </div>
+
+  <!-- 阶段五 -->
+  <div class="card">
+    <h2>五、成果样例</h2>
+    <div class="sample-box">
+      <h4>📦 学生作品示例："酸与碱的色彩魔术"翻页海报</h4>
+      <p><strong>成果名称：</strong>《酸碱指示剂变色可视化模型》</p>
+      <p><strong>作品简介：</strong>以紫甘蓝汁为指示剂，展示了白醋（酸性）、水（中性）、小苏打溶液（碱性）三种液体中指示剂的颜色变化。海报翻页分别展示了：实物颜色照片 → 微观粒子示意图（H⁺ 和 OH⁻ 的作用）→ 化学原理说明。</p>
+      <p><strong>评价要求：</strong>现象真实可重复、微观与宏观对应清晰、表达美观得体</p>
+      <p><strong>完成建议：</strong>先在家里用紫甘蓝、白醋和小苏打做一次实验并拍照，再制作翻页海报。</p>
+    </div>
+  </div>
+
+  <!-- 阶段六 -->
+  <div class="card">
+    <h2>六、自我评价量表</h2>
+    <p>请根据你的完成情况，为每一项选择等级：</p>
+    <div class="rating-scale" id="ratingScale">
+      <div class="rating-item" onclick="selectRating(this, 'criteria1')" data-criteria="criteria1">
+        <div class="level">⭐</div>
+        <div>能够识别化学变化的现象特征</div>
+      </div>
+      <div class="rating-item" onclick="selectRating(this, 'criteria2')" data-criteria="criteria2">
+        <div class="level">⭐⭐</div>
+        <div>能用微观原理解释宏观现象</div>
+      </div>
+      <div class="rating-item" onclick="selectRating(this, 'criteria3')" data-criteria="criteria3">
+        <div class="level">⭐⭐⭐</div>
+        <div>作品清晰呈现"现象→原理→表达"的建构逻辑</div>
+      </div>
+      <div class="rating-item" onclick="selectRating(this, 'criteria4')" data-criteria="criteria4">
+        <div class="level">⭐⭐⭐⭐</div>
+        <div>作品具有视觉吸引力，适合展示给观众</div>
+      </div>
+      <div class="rating-item" onclick="selectRating(this, 'criteria5')" data-criteria="criteria5">
+        <div class="level">⭐⭐⭐⭐⭐</div>
+        <div>能独立反思改进方向，提出下一步探究问题</div>
+      </div>
+    </div>
+    <div id="ratingFeedback" style="margin-top:10px;color:var(--text-secondary);font-style:italic;">
+      👆 点击评价项查看完成建议
+    </div>
+
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+      <h3>📝 跟学笔记</h3>
+      <p>跟着示例完成后，请写下你的建构思考过程：</p>
+      <textarea rows="5" placeholder="例如：我跟着示例走了一遍铁钉生锈的案例，发现建构的关键是要把宏观和微观联系起来。在Step 4我设计了一个三层结构的模型……" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:var(--font-body);"></textarea>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleContext() {
+  var area = document.getElementById('ideaArea');
+  area.style.display = area.style.display === 'none' ? 'block' : 'none';
+}
+function highlightTool(el) {
+  el.style.background = '#d6e4ff';
+  setTimeout(function(){ el.style.background = '#f6f8fc'; }, 400);
+}
+var layers = {
+  layer1: '🔍 <strong>宏观层：铁钉生锈前后对比</strong><br><br>变化前：银白色、光滑、坚硬<br>变化后：红棕色、粗糙疏松、易剥落<br><br>📌 关键词：颜色变化、表面状态变化、新物质生成',
+  layer2: '🔬 <strong>微观层：原子重新组合</strong><br><br>铁原子（Fe）+ 氧分子（O₂）→ 氧化铁分子（Fe₂O₃）<br><br>铁原子从有序排列变为与氧原子结合<br>📌 关键词：原子重组、化学键、新分子',
+  layer3: '📝 <strong>化学语言层：化学方程式</strong><br><br>4Fe + 3O₂ + 6H₂O → 4Fe(OH)₃<br>Fe(OH)₃ 脱水后生成 Fe₂O₃·xH₂O（铁锈）<br><br>📌 关键词：反应物、生成物、反应条件'
+};
+function showLayer(layer) {
+  document.getElementById('layerDisplay').innerHTML = layers[layer];
+}
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+}
+function resetChecklist() {
+  var items = document.querySelectorAll('#checklist li');
+  for (var i = 0; i < items.length; i++) { items[i].classList.remove('checked'); }
+}
+var ratingFeedback = {
+  criteria1: '✅ 你能识别化学变化的现象特征了。试着用一句话描述你观察到的变化。',
+  criteria2: '✅ 很棒！尝试用"原子重新组合"这个核心概念来解释你看到的现象。',
+  criteria3: '✅ 你的建构逻辑很清晰！下一步可以尝试更多元化的表达方式。',
+  criteria4: '✅ 作品很有视觉冲击力！考虑添加互动元素让观众参与进来。',
+  criteria5: '✅ 你已经具备独立探究的能力了！给自己设计一个"进阶版"建构挑战吧。'
+};
+function selectRating(el, criteria) {
+  var group = document.getElementById('ratingScale');
+  var allItems = group.querySelectorAll('.rating-item');
+  for (var i = 0; i < allItems.length; i++) {
+    allItems[i].classList.remove('selected');
+  }
+  el.classList.add('selected');
+  var fb = document.getElementById('ratingFeedback');
+  fb.innerHTML = ratingFeedback[criteria] || '👆 点击评价项查看完成建议';
+  }
+}
+</script>
+</body>
+</html>

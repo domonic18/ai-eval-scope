@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具库 — 化学学习工具</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  background: var(--bg);
+  color: var(--text);
+  width: 100%;
+  padding: 20px;
+}
+.container { width: 100%; max-width: none; }
+h1 { font-size: var(--font-h1); color: var(--primary); margin-bottom: 12px; }
+h2 { font-size: var(--font-h2); color: var(--primary); margin: 16px 0 8px; }
+.header-desc { color: var(--text-secondary); margin-bottom: 20px; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.tab-btn {
+  padding: 8px 16px; border: 1px solid var(--border); border-radius: var(--border-radius);
+  background: var(--card-bg); cursor: pointer; font-size: 14px;
+  transition: all .2s;
+}
+.tab-btn:hover { border-color: var(--primary); color: var(--primary); }
+.tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.panel { display: none; }
+.panel.active { display: block; }
+.card {
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius);
+  padding: 14px; margin-bottom: 12px; box-shadow: var(--shadow);
+}
+.card h3 { font-size: 16px; color: var(--primary); margin-bottom: 6px; }
+.badge {
+  display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 10px;
+  margin-bottom: 6px; font-weight: 600;
+}
+.badge-basic { background: #e6f4ff; color: #1677ff; }
+.badge-adv { background: #f6ffed; color: #389e0d; }
+.badge-high { background: #fff7e6; color: #d46b08; }
+.steps { padding-left: 18px; margin: 6px 0; }
+.steps li { margin-bottom: 4px; }
+.tag { display: inline-block; background: #f0f5ff; color: var(--primary); padding: 2px 8px; border-radius: 4px; font-size: 12px; margin: 2px; }
+.btn-toggle {
+  margin-top: 8px; padding: 4px 12px; border: 1px solid var(--border); border-radius: 4px;
+  background: var(--card-bg); cursor: pointer; font-size: 13px; transition: all .2s;
+}
+.btn-toggle:hover { border-color: var(--primary); color: var(--primary); }
+.detail { display: none; margin-top: 8px; padding: 10px; background: #fafafa; border-radius: 4px; font-size: 14px; }
+.detail.show { display: block; }
+.footer { text-align: center; color: var(--text-secondary); font-size: 13px; margin-top: 20px; padding: 10px 0; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🧰 工具库</h1>
+  <p class="header-desc">化学学习需要好工具。从思维方法到数字资源，助你高效建构新知。</p>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="thinking" onclick="switchTab('thinking')">💡 思维工具</button>
+    <button class="tab-btn" data-tab="digital" onclick="switchTab('digital')">🖥️ 数字工具</button>
+    <button class="tab-btn" data-tab="lab" onclick="switchTab('lab')">🧪 实验工具</button>
+  </div>
+
+  <!-- 思维工具 -->
+  <div class="panel active" id="panel-thinking">
+    <div class="card">
+      <span class="badge badge-basic">基础</span>
+      <h3>📊 双栏对比表</h3>
+      <p>快速对比两个相似概念，找出关键区别。</p>
+      <ol class="steps">
+        <li>画两栏，分别标注两个概念</li>
+        <li>列出各自特征（各3条以上）</li>
+        <li>对比找出核心区别</li>
+      </ol>
+      <p><strong>示例：</strong>左栏"物理变化"→形状改变、无新物质、可逆；右栏"化学变化"→有新物质、不可逆、伴随能量变化</p>
+      <span class="tag">概念辨析</span><span class="tag">物质分类</span>
+    </div>
+
+    <div class="card">
+      <span class="badge badge-adv">进阶</span>
+      <h3>🧠 思维导图</h3>
+      <p>建立知识网络，可视化概念间的关系。</p>
+      <ol class="steps">
+        <li>中心词（如"化学变化"）</li>
+        <li>一级分支（特征、例子、判断依据）</li>
+        <li>二级分支细化</li>
+        <li>关联连线标注关系</li>
+      </ol>
+      <span class="tag">单元复习</span><span class="tag">概念梳理</span>
+    </div>
+
+    <div class="card">
+      <span class="badge badge-high">高阶</span>
+      <h3>🔗 TOC 思维树</h3>
+      <p>分析复杂问题，从现象追溯根本原因。</p>
+      <p>当前现象 → 中间原因 → 根本原因。适用于实验失败原因分析、复杂现象解释。</p>
+      <button class="btn-toggle" onclick="toggleDetail('toc-detail')">查看示例</button>
+      <div class="detail" id="toc-detail">
+        <p><strong>示例：</strong>酒精灯加热实验现象异常 → 温度不够高（中间原因1）→ 酒精量不足 / 灯芯过短（根本原因）</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 数字工具 -->
+  <div class="panel" id="panel-digital">
+    <div class="card">
+      <span class="badge badge-basic">基础</span>
+      <h3>🤖 AI 对话工具</h3>
+      <p>用 DeepSeek、通义千问等验证化学理解。</p>
+      <ol class="steps">
+        <li>写下自己的理解</li>
+        <li>向AI提问"我的理解对吗？"</li>
+        <li>对比AI反馈，找出差异</li>
+        <li>修正完善自己的认知</li>
+      </ol>
+      <button class="btn-toggle" onclick="toggleDetail('ai-detail')">查看示例</button>
+      <div class="detail" id="ai-detail">
+        <p>建构完物理/化学变化概念后，请AI给出3个新例子检验自己。例如：<em>"蜡烛熔化"是什么变化？</em></p>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="badge badge-adv">进阶</span>
+      <h3>🔬 分子3D可视化</h3>
+      <p>用 MolView、Chem3D 查看分子立体结构，理解化学变化中分子的变化。</p>
+      <ol class="steps">
+        <li>输入化学式（如 H₂O）</li>
+        <li>旋转观察三维结构</li>
+        <li>截图记录关键结构</li>
+        <li>标注原子和化学键</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <span class="badge badge-high">高阶</span>
+      <h3>🎮 PhET 互动模拟</h3>
+      <p>科罗拉多大学出品，在虚拟环境中做化学实验。</p>
+      <ol class="steps">
+        <li>选择模拟模块</li>
+        <li>调整参数（温度、浓度等）</li>
+        <li>记录实验现象</li>
+        <li>分析变化规律</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- 实验工具 -->
+  <div class="panel" id="panel-lab">
+    <div class="card">
+      <span class="badge badge-basic">基础</span>
+      <h3>🏠 家庭实验工具包</h3>
+      <p>在家安全进行基础化学实验的必备清单：</p>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;">
+        <span class="tag">白醋</span><span class="tag">小苏打</span><span class="tag">紫甘蓝</span>
+        <span class="tag">杯子</span><span class="tag">勺子</span><span class="tag">pH试纸</span>
+      </div>
+      <p><strong>实验示例：</strong>紫甘蓝汁是一种天然酸碱指示剂——加入白醋变红，加入小苏打水变蓝绿。</p>
+    </div>
+
+    <div class="card">
+      <span class="badge badge-adv">进阶</span>
+      <h3>🧫 实验室器材认识</h3>
+      <p>常见器材的名称、用途和使用注意事项：</p>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;">
+        <span class="tag">试管 — 少量反应</span><span class="tag">酒精灯 — 加热</span>
+        <span class="tag">烧杯 — 盛液</span><span class="tag">量筒 — 量体积</span>
+      </div>
+      <p><strong>安全提醒：</strong>酒精灯要用外焰加热，用完用灯帽盖灭，不可吹灭。</p>
+    </div>
+  </div>
+
+  <div class="footer">化学 · 九年级上 · 第1章 走进化学世界</div>
+</div>
+
+<script>
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.tab-btn[data-tab="' + name + '"]').classList.add('active');
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+}
+function toggleDetail(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('show');
+}
+</script>
+</body>
+</html>

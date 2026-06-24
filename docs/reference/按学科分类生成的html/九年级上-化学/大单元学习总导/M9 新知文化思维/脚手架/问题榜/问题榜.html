@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>化学问题库 — 走进化学世界</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px;
+  box-sizing: border-box;
+}
+.header {
+  text-align: center;
+  padding: 32px 20px;
+  background: linear-gradient(135deg, #1677ff 0%, #4096ff 100%);
+  color: #fff;
+  border-radius: 0 0 24px 24px;
+  margin: -20px -20px 24px -20px;
+}
+.header h1 {
+  margin: 0 0 8px;
+  font-size: var(--font-h1);
+  font-weight: 700;
+}
+.header p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 14px;
+}
+.badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.2);
+  padding: 2px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin-top: 8px;
+}
+.level-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 4px;
+  box-shadow: var(--shadow);
+}
+.level-tab {
+  flex: 1;
+  text-align: center;
+  padding: 10px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.3s;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+}
+.level-tab:hover { background: var(--bg); color: var(--text); }
+.level-tab.active {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(22,119,255,0.3);
+}
+.level-tab .icon { display: block; font-size: 18px; margin-bottom: 2px; }
+.questions-panel { display: none; }
+.questions-panel.active { display: block; animation: fadeIn 0.35s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+.q-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.q-card-header {
+  padding: 14px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+.q-card-header:hover { background: var(--bg); }
+.q-num {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.q-num.basic { background: #1890ff; }
+.q-num.adv { background: #d46b08; }
+.q-num.challenge { background: #722ed1; }
+.q-text { flex: 1; font-weight: 500; }
+.q-badge {
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+.q-badge.basic { background: #e6f7ff; color: #1890ff; }
+.q-badge.adv { background: #fff7e6; color: #d46b08; }
+.q-badge.challenge { background: #f9f0ff; color: #722ed1; }
+.q-arrow { color: var(--text-secondary); font-size: 12px; transition: transform 0.3s; flex-shrink: 0; margin-top: 4px; }
+.q-arrow.open { transform: rotate(180deg); }
+
+.q-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease, padding 0.25s ease;
+  padding: 0 20px;
+}
+.q-body.open {
+  max-height: 600px;
+  padding: 0 20px 16px;
+}
+.q-body .hint {
+  background: #fffbe6;
+  border-left: 3px solid #faad14;
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-size: 14px;
+  margin-top: 10px;
+}
+.q-body .hint::before {
+  content: "💡 思考提示：";
+  font-weight: 600;
+}
+.q-body .answer {
+  background: #f6ffed;
+  border-left: 3px solid #52c41a;
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-size: 14px;
+  margin-top: 10px;
+  display: none;
+}
+.q-body .answer.revealed { display: block; }
+.reveal-btn {
+  margin-top: 10px;
+  padding: 6px 16px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.2s;
+}
+.reveal-btn:hover { background: var(--primary-hover); }
+
+.usage-section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  border: 1px solid var(--border);
+  margin-top: 20px;
+}
+.usage-section h3 {
+  margin: 0 0 12px;
+  font-size: var(--font-h2);
+  color: var(--primary);
+}
+.usage-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+.usage-item {
+  padding: 12px;
+  border-radius: 6px;
+  background: var(--bg);
+  text-align: center;
+}
+.usage-item .icon { font-size: 24px; }
+.usage-item .label { font-weight: 600; font-size: 14px; margin-top: 4px; }
+.usage-item .desc { font-size: 12px; color: var(--text-secondary); }
+@media (max-width: 600px) {
+  .usage-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🧪 化学问题库</h1>
+    <p>第1章 · 走进化学世界 · 三层进阶自测</p>
+    <span class="badge">九年级上 · 化学</span>
+  </div>
+
+  <div class="level-tabs">
+    <button class="level-tab active" data-level="basic" onclick="switchPanel('basic')">
+      <span class="icon">🌱</span>基础层
+    </button>
+    <button class="level-tab" data-level="adv" onclick="switchPanel('adv')">
+      <span class="icon">🔥</span>进阶层
+    </button>
+    <button class="level-tab" data-level="challenge" onclick="switchPanel('challenge')">
+      <span class="icon">🚀</span>挑战层
+    </button>
+  </div>
+
+  <!-- 基础层 -->
+  <div class="questions-panel active" data-level="basic">
+    <div class="q-card">
+      <div class="q-card-header" onclick="toggleQuestion(this)">
+        <span class="q-num basic">1</span>
+        <span class="q-text">下列变化中，哪些属于化学变化？为什么？<br>冰融化成水、纸张燃烧、食盐溶解在水中、铁钉生锈、灯泡发光</span>
+        <span class="q-badge basic">基础</span>
+        <span class="q-arrow">▼</span>
+      </div>
+      <div class="q-body">
+        <div class="hint">从"是否有新物质生成"这个核心标准去判断。先快速筛选每个变化，再确认理由。</div>
+        <button class="reveal-btn" onclick="revealAnswer(event, this)">查看参考答案</button>
+        <div class="answer">
+          <strong>参考答案：</strong><br>
+          化学变化：<strong>纸张燃烧</strong>（生成二氧化碳、水等新物质）、<strong>铁钉生锈</strong>（生成氧化铁等新物质）。<br>
+          物理变化：冰融化成水（状态改变）、食盐溶解（分子分散，可回收）、灯泡发光（电能→光能，无新物质）。<br>
+          ✅ 判断关键：看是否有新物质生成，而不是看变化是否剧烈或明显。
+        </div>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-card-header" onclick="toggleQuestion(this)">
+        <span class="q-num basic">2</span>
+        <span class="q-text">化学变化的本质特征是什么？请用一句话概括。</span>
+        <span class="q-badge basic">基础</span>
+        <span class="q-arrow">▼</span>
+      </div>
+      <div class="q-body">
+        <div class="hint">回忆视频中提到的"化学变化三要素"：变化过程中有没有新物质出现？</div>
+        <button class="reveal-btn" onclick="revealAnswer(event, this)">查看参考答案</button>
+        <div class="answer">
+          <strong>参考答案：</strong><br>
+          化学变化的本质特征是：<strong>有新物质生成</strong>（即原来物质的分子被破坏，原子重新组合成新的分子/物质）。<br>
+          与之相对，物理变化只是物质形态或状态的改变，没有新物质生成。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 进阶层 -->
+  <div class="questions-panel" data-level="adv">
+    <div class="q-card">
+      <div class="q-card-header" onclick="toggleQuestion(this)">
+        <span class="q-num adv">3</span>
+        <span class="q-text">有人说"化学变化就是物质改变了形态"，你认为这个说法对吗？为什么？</span>
+        <span class="q-badge adv">进阶 · 开放</span>
+        <span class="q-arrow">▼</span>
+      </div>
+      <div class="q-body">
+        <div class="hint">想一想："水结成冰"改变了形态，是化学变化吗？"铁生锈"也改变了形态，和前者有什么本质区别？</div>
+        <button class="reveal-btn" onclick="revealAnswer(event, this)">查看参考思路</button>
+        <div class="answer">
+          <strong>参考思路：</strong><br>
+          这个说法<strong>不准确</strong>。改变形态≠化学变化。<br>
+          · 物理变化也能改变形态（如冰融化、玻璃破碎），但没有新物质生成。<br>
+          · 化学变化的核心是<strong>物质组成和结构的改变</strong>，即分子中的原子重新组合，生成全新的物质。<br>
+          · 形态改变只是外在表现，不能作为判断依据。
+        </div>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-card-header" onclick="toggleQuestion(this)">
+        <span class="q-num adv">4</span>
+        <span class="q-text">比较"火柴燃烧"和"灯泡发光"，分析为什么一个被归为化学变化，另一个是物理变化？</span>
+        <span class="q-badge adv">进阶 · 对比</span>
+        <span class="q-arrow">▼</span>
+      </div>
+      <div class="q-body">
+        <div class="hint">从"能量转化方式"和"有无新物质"两个角度对比。火柴烧完变成了什么？灯泡用完还是原来的钨丝吗？</div>
+        <button class="reveal-btn" onclick="revealAnswer(event, this)">查看参考答案</button>
+        <div class="answer">
+          <strong>参考答案：</strong><br>
+          <strong>火柴燃烧</strong> → 化学变化：火柴头的化学物质与氧气反应，生成二氧化碳、水蒸气、灰烬等新物质，同时释放热量。<br>
+          <strong>灯泡发光</strong> → 物理变化：电流通过钨丝产生热和光，钨丝仍然是钨丝（可能升华变细，但仍然是钨原子），没有新物质生成。<br>
+          🔑 核心区别：<strong>物质是否发生了质变</strong>。
+        </div>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-card-header" onclick="toggleQuestion(this)">
+        <span class="q-num adv">5</span>
+        <span class="q-text">如果没有化学变化，地球上的生命还能存在吗？为什么？</span>
+        <span class="q-badge adv">进阶 · 反事实</span>
+        <span class="q-arrow">▼</span>
+      </div>
+      <div class="q-body">
+        <div class="hint">想一想生物体维持生命需要哪些"变化"——呼吸、消化、光合作用，这些是化学变化还是物理变化？</div>
+        <button class="reveal-btn" onclick="revealAnswer(event, this)">查看参考思路</button>
+        <div class="answer">
+          <strong>参考思路：</strong><br>
+          不能。生命的基础就是化学变化：<br>
+          · <strong>呼吸作用</strong>：葡萄糖 + 氧气 → 二氧化碳 + 水 + 能量（化学变化）<br>
+          · <strong>光合作用</strong>：二氧化碳 + 水 → 葡萄糖 + 氧气（化学变化）<br>
+          · <strong>消化吸收</strong>：大分子食物被分解成小分子（化学变化）<br>
+          没有化学变化，就没有能量代谢、物质合成和生命延续。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 挑战层 -->
+  <div class="questions-panel" data-level="challenge">
+    <div class="q-card">
+      <div class="q-card-header" onclick="toggleQuestion(this)">
+        <span class="q-num challenge">6</span>
+        <span class="q-text">设计一个包含至少2步化学变化的生活场景，用流程图展示每一步发生了什么变化。</span>
+        <span class="q-badge challenge">挑战 · 创造</span>
+        <span class="q-arrow">▼</span>
+      </div>
+      <div class="q-body">
+        <div class="hint">想想厨房里的场景：做饭过程中有哪些步骤涉及化学变化？比如"生火→煮饭→炒菜"每个环节发生了什么？</div>
+        <button class="reveal-btn" onclick="revealAnswer(event, this)">查看示例方案</button>
+        <div class="answer">
+          <strong>示例：野外烧烤</strong><br>
+          🥩 <strong>步骤①</strong>：木炭燃烧 — 碳 + 氧气 <u>高温</u>→ 二氧化碳（化学变化：产生新物质CO₂和热量）<br>
+          ↓<br>
+          🥩 <strong>步骤②</strong>：烤肉变熟 — 蛋白质在加热下变性+美拉德反应（化学变化：蛋白质结构改变，产生新香味物质）<br>
+          ↓<br>
+          🥩 同时伴随物理变化：肉中的水蒸发（水从液态变气态）<br>
+          <strong>你的任务：</strong>选择一个不同的生活场景，画出你自己的流程图！
+        </div>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-card-header" onclick="toggleQuestion(this)">
+        <span class="q-num challenge">7</span>
+        <span class="q-text">当你判断一个现象是不是化学变化时，你最先看的是什么？这个优先顺序合理吗？</span>
+        <span class="q-badge challenge">挑战 · 元认知</span>
+        <span class="q-arrow">▼</span>
+      </div>
+      <div class="q-body">
+        <div class="hint">反思自己的思维过程：你是先看颜色变化？先闻气味？还是先问"有没有新物质"？哪个指标最可靠？</div>
+        <button class="reveal-btn" onclick="revealAnswer(event, this)">查看反思引导</button>
+        <div class="answer">
+          <strong>反思引导：</strong><br>
+          很多同学会<strong>先看"现象是否剧烈"</strong>（发光、发热、变色）——但这不准确！<br>
+          · ❌ 灯泡发光很剧烈，但它是物理变化<br>
+          · ✅ 铁钉生锈很缓慢，但它绝对是化学变化<br>
+          <strong>更合理的顺序：</strong>先问"有没有新物质生成"，再找证据（颜色、气味、沉淀、气泡等是辅助线索，不是判断标准本身）。
+        </div>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-card-header" onclick="toggleQuestion(this)">
+        <span class="q-num challenge">8</span>
+        <span class="q-text">教材说"有新物质生成的变化是化学变化"，但你怎么判断"新物质"真的"新"？需要什么证据？</span>
+        <span class="q-badge challenge">挑战 · 批判</span>
+        <span class="q-arrow">▼</span>
+      </div>
+      <div class="q-body">
+        <div class="hint">这就触及了"科学证据"的问题——科学家是怎么证明一种物质是"新的"？靠看、闻、摸够吗？</div>
+        <button class="reveal-btn" onclick="revealAnswer(event, this)">查看批判性分析</button>
+        <div class="answer">
+          <strong>批判性分析：</strong><br>
+          "新物质"的判断需要<strong>多重证据</strong>：<br>
+          · <strong>感官证据</strong>：颜色变化、气味产生、沉淀生成、气泡冒出（初步线索）<br>
+          · <strong>性质测试</strong>：熔沸点、密度、硬度是否改变（更强证据）<br>
+          · <strong>化学分析</strong>：光谱分析、色谱分析，确认分子结构（科学界公认标准）<br>
+          所以"新"不是一个简单判断，而是需要证据链。这也是"科学判断vs直觉判断"的分水岭！
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="usage-section">
+    <h3>📋 问题使用建议</h3>
+    <div class="usage-grid">
+      <div class="usage-item">
+        <div class="icon">🌱</div>
+        <div class="label">基础层</div>
+        <div class="desc">用于新课开始前自测</div>
+      </div>
+      <div class="usage-item">
+        <div class="icon">🔥</div>
+        <div class="label">进阶层</div>
+        <div class="desc">用于课堂讨论或小组探究</div>
+      </div>
+      <div class="usage-item">
+        <div class="icon">🚀</div>
+        <div class="label">挑战层</div>
+        <div class="desc">用于学有余力的拓展训练</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchPanel(level) {
+  document.querySelectorAll('.level-tab').forEach(function(t) {
+    t.classList.toggle('active', t.dataset.level === level);
+  });
+  document.querySelectorAll('.questions-panel').forEach(function(p) {
+    p.classList.toggle('active', p.dataset.level === level);
+  });
+}
+
+function toggleQuestion(header) {
+  var body = header.nextElementSibling;
+  var arrow = header.querySelector('.q-arrow');
+  body.classList.toggle('open');
+  if (arrow) arrow.classList.toggle('open');
+}
+
+function revealAnswer(event, btn) {
+  event.stopPropagation();
+  var answer = btn.nextElementSibling;
+  if (answer && answer.classList.contains('answer')) {
+    answer.classList.toggle('revealed');
+    btn.textContent = answer.classList.contains('revealed') ? '收起答案' : '查看参考答案';
+  }
+}
+</script>
+</body>
+</html>

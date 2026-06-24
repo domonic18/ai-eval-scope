@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视频脚手架 - 化学变化与微观世界</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; box-sizing: border-box; }
+header { text-align: center; padding: 32px 20px 20px; background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; border-radius: 0 0 16px 16px; margin: -24px -20px 24px; }
+header h1 { font-size: var(--font-h1); margin: 0 0 6px; }
+header p { margin: 0; opacity: .85; font-size: 14px; }
+.level-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.level-tab { padding: 8px 18px; border: 2px solid var(--primary); border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: 600; background: var(--card-bg); color: var(--primary); transition: all .25s; }
+.level-tab:hover { background: var(--bg); }
+.level-tab.active { background: var(--primary); color: #fff; }
+.video-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 16px; display: none; }
+.video-card.visible { display: block; animation: fadeIn .35s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.video-card h3 { font-size: var(--font-h2); color: var(--primary); margin: 0 0 8px; }
+.video-card .badge { display: inline-block; background: var(--accent); color: #fff; font-size: 12px; padding: 2px 10px; border-radius: 10px; margin-bottom: 10px; }
+.video-card .task-list { padding-left: 18px; margin: 8px 0; }
+.video-card .task-list li { margin-bottom: 6px; }
+.key-questions { background: var(--bg); border-left: 3px solid var(--primary); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 10px 0; }
+.key-questions p { margin: 4px 0; font-weight: 600; }
+.key-questions ul { margin: 4px 0; padding-left: 18px; }
+.pause-point { background: #fff7e6; border: 1px dashed #fa8c16; border-radius: 6px; padding: 10px 14px; margin: 10px 0; display: flex; align-items: flex-start; gap: 8px; }
+.pause-point::before { content: "⏸"; font-size: 18px; flex-shrink: 0; }
+.output-task { background: #f6ffed; border: 1px solid #52c41a; border-radius: 6px; padding: 10px 14px; margin: 10px 0; display: flex; gap: 8px; align-items: flex-start; }
+.output-task::before { content: "✏️"; font-size: 16px; flex-shrink: 0; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; }
+th { background: var(--primary); color: #fff; font-weight: 600; }
+tr:nth-child(even) { background: #fafafa; }
+.resource-table { margin-top: 20px; }
+.resource-table th { background: var(--text-secondary); }
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<h1>🎬 视频脚手架</h1>
+<p>观看 · 思考 · 记录 — 在视频中学会"化学式思维"</p>
+</header>
+
+<div class="level-tabs">
+<span class="level-tab active" data-level="basic" onclick="switchLevel('basic')">📖 基础层</span>
+<span class="level-tab" data-level="advanced" onclick="switchLevel('advanced')">🔬 进阶层</span>
+<span class="level-tab" data-level="challenge" onclick="switchLevel('challenge')">🚀 挑战层</span>
+</div>
+
+<!-- 基础层 -->
+<div id="cards-basic" class="cards-group">
+<div class="video-card visible">
+  <span class="badge">基础 · 3分钟</span>
+  <h3>视频1：化学变化与物理变化</h3>
+  <p><strong>🎯 观看任务：</strong>区分视频中所有现象，哪些是化学变化，哪些是物理变化。</p>
+
+  <div class="key-questions">
+    <p>❓ 关键问题</p>
+    <ul>
+      <li>视频中哪些现象说明"产生了新物质"？</li>
+      <li>有没有一个现象既有物理变化又有化学变化？</li>
+    </ul>
+  </div>
+
+  <div class="pause-point">
+    <div><strong>@1:15 暂停思考</strong><br>铁钉生锈——你认为这属于哪种变化？你的依据是什么？</div>
+  </div>
+
+  <div class="output-task">
+    <div><strong>输出任务：</strong>列出视频中出现的5种现象，分别标注变化类型 + 判断依据。</div>
+  </div>
+</div>
+
+<div class="video-card">
+  <span class="badge">基础 · 5分钟</span>
+  <h3>视频2：走进微观世界——原子与分子</h3>
+  <p><strong>🎯 观看任务：</strong>画出水分子（H₂O）和二氧化碳分子（CO₂）的结构示意图。</p>
+
+  <div class="key-questions">
+    <p>❓ 关键问题</p>
+    <ul>
+      <li>分子和原子是什么关系？</li>
+      <li>化学变化中原子会变吗？</li>
+    </ul>
+  </div>
+
+  <div class="pause-point">
+    <div><strong>@2:30 暂停思考</strong><br>猜一猜：氧气分子由几个原子组成？</div>
+  </div>
+
+  <div class="output-task">
+    <div><strong>输出任务：</strong>用纸笔画出3个不同分子的结构，并用文字说明"化学变化中原子如何重新组合"。</div>
+  </div>
+</div>
+</div>
+
+<!-- 进阶层 -->
+<div id="cards-advanced" class="cards-group" style="display:none;">
+<div class="video-card visible">
+  <span class="badge">进阶 · 8分钟（纪录片）</span>
+  <h3>视频3：拉瓦锡的燃烧实验</h3>
+  <p><strong>🎯 观看任务：</strong>记录拉瓦锡实验的3个关键步骤。</p>
+
+  <div class="key-questions">
+    <p>❓ 关键问题</p>
+    <ul>
+      <li>为什么拉瓦锡要用"密封容器"？</li>
+      <li>他的实验如何证明质量守恒？</li>
+    </ul>
+  </div>
+
+  <div class="pause-point">
+    <div><strong>@5:10 暂停思考</strong><br>在你知道结果之前，先预测：加热后总重量会变吗？</div>
+  </div>
+
+  <div class="output-task">
+    <div><strong>输出任务：</strong>用"问题→假设→方法→证据→结论"五步法，分析拉瓦锡的实验。</div>
+  </div>
+</div>
+</div>
+
+<!-- 挑战层 -->
+<div id="cards-challenge" class="cards-group" style="display:none;">
+<div class="video-card visible">
+  <span class="badge">挑战 · 15分钟（TED演讲）</span>
+  <h3>视频4：AI如何帮助化学家发现新材料</h3>
+  <p><strong>🎯 观看任务：</strong>找出AI在化学研究中承担了什么角色。</p>
+
+  <div class="key-questions">
+    <p>❓ 关键问题</p>
+    <ul>
+      <li>AI能替代化学家吗？不能替代的部分是什么？</li>
+      <li>你从这个视频中学到了什么"新的思考方式"？</li>
+    </ul>
+  </div>
+
+  <div class="pause-point">
+    <div><strong>@8:00 暂停思考</strong><br>如果让你用AI设计一种新材料，你会怎么向AI描述需求？</div>
+  </div>
+
+  <div class="output-task">
+    <div><strong>输出任务：</strong>写一段150字的小短文"当化学遇见AI——我的思考"。</div>
+  </div>
+</div>
+</div>
+
+<div class="resource-table">
+<table>
+<thead><tr><th>平台</th><th>搜索关键词</th></tr></thead>
+<tbody>
+<tr><td>B站</td><td>"化学变化与物理变化 动画"、"拉瓦锡 纪录片"</td></tr>
+<tr><td>网易公开课</td><td>"Crash Course Chemistry"（英文中字）</td></tr>
+<tr><td>TED</td><td>"How AI is discovering new materials"</td></tr>
+<tr><td>可汗学院</td><td>"Chemical reactions introduction"</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<script>
+function switchLevel(level) {
+  document.querySelectorAll('.level-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('.level-tab[data-level="' + level + '"]').classList.add('active');
+  document.querySelectorAll('.cards-group').forEach(g => g.style.display = 'none');
+  document.getElementById('cards-' + level).style.display = 'block';
+}
+</script>
+</body>
+</html>

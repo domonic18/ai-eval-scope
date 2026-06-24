@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块五维导学 — M13 新知项目性应用</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+  padding: 20px;
+}
+.container { width: 100%; max-width: none; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 24px 28px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 6px; }
+.header .meta { font-size: 13px; opacity: 0.85; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--bg);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dim-num {
+  display: inline-flex;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+ul { padding-left: 20px; margin: 6px 0; }
+ul li { margin-bottom: 4px; }
+.quest-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.quest-item {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+.quest-item:hover {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.quest-item .q-label {
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+.quest-item .q-ans {
+  display: none;
+  margin-top: 6px;
+  padding: 8px;
+  background: var(--card-bg);
+  border-radius: 6px;
+  border: 1px dashed var(--accent);
+  font-size: 13px;
+}
+.quest-item.reveal .q-ans { display: block; animation: fadeIn 0.3s ease; }
+.tag {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  padding: 1px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin: 2px 4px 2px 0;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.fade-in { animation: fadeIn 0.4s ease; }
+@media (max-width: 600px) {
+  body { padding: 10px; }
+  .card { padding: 14px 16px; }
+  .header { padding: 16px; }
+  .quest-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header fade-in">
+  <h1>模块五维导学</h1>
+  <div class="meta">M13 新知项目性应用 · 化学 · 九年级上 · 第1章 走进化学世界</div>
+</div>
+
+<!-- 维度1：模块学习目标 -->
+<div class="card fade-in">
+  <h2><span class="dim-num">1</span>模块学习目标</h2>
+  <p style="color:var(--text-secondary); margin-bottom: 10px;">完成本模块后，你将在以下四个层面获得提升：</p>
+
+  <p><strong>📖 知识理解</strong></p>
+  <ul>
+    <li>巩固物理变化与化学变化的区分标准——核心为"是否有新物质生成"</li>
+    <li>掌握化学性质与物理性质的判断方法（如颜色、状态、熔点 vs 酸碱性、可燃性）</li>
+    <li>理解科学探究的基本步骤（观察→提问→假设→实验→结论→表达）</li>
+  </ul>
+
+  <p><strong>🔧 能力形成</strong></p>
+  <ul>
+    <li>能够运用科学探究方法设计简单的实验方案</li>
+    <li>能对生活中的化学现象进行有目的的观察、准确记录和初步解释</li>
+    <li>能基于收集的证据进行合理推理并得出结论</li>
+  </ul>
+
+  <p><strong>🧠 思维发展</strong></p>
+  <ul>
+    <li>形成"现象→问题→假设→证据→结论"的科学思维路径</li>
+    <li>培养"凡事讲证据、不凭感觉下结论"的科学态度</li>
+  </ul>
+
+  <p><strong>✏️ 表达产出</strong></p>
+  <ul>
+    <li>能用化学语言（文字描述、表格记录、图示表达）清晰呈现探究过程和结果</li>
+    <li>能完成一份结构完整的科学探究小报告</li>
+  </ul>
+</div>
+
+<!-- 维度2：高精尖价值与未来意义 -->
+<div class="card fade-in">
+  <h2><span class="dim-num">2</span>高精尖价值与未来意义</h2>
+
+  <p><strong>🧪 化学与新材料</strong><br>你知道"物理变化"和"化学变化"这两个基本概念如何与新材料的制备相关吗？例如，纳米材料（粒径1-100nm）的制备往往涉及化学变化——前驱体通过化学反应转化为所需纳米颗粒，这是现代电子、医药、能源领域的基础。</p>
+
+  <p><strong>⚡ 化学与能源</strong><br>新能源开发的核心是理解和利用化学变化。锂电池充放电本质上是锂离子在正负极之间的化学嵌入与脱出；氢燃料电池通过氢气与氧气的化学变化产生电能，洁净高效。掌握化学变化规律，就是掌握未来能源的密码。</p>
+
+  <p><strong>🌍 化学与环境</strong><br>环境监测依赖化学方法检测污染物浓度（如重金属离子的化学显色反应）；污水处理中絮凝沉淀、氧化消毒等都是典型的化学变化。每一位环境工程师都需要扎实的化学基本功。</p>
+
+  <p><strong>💼 化学与未来职业</strong><br>学习化学为你打开多扇职业之门：化学家研发新材料新药物，材料工程师设计功能性材料，环境检测师监控水质空气质量，食品科学家保障食品安全……"走进化学世界"是你探索这些可能性的第一步。</p>
+</div>
+
+<!-- 维度3：推荐学习方式与方法 -->
+<div class="card fade-in">
+  <h2><span class="dim-num">3</span>推荐学习方式与方法</h2>
+
+  <p>本模块"新知项目性应用"的特色在于<strong>「在做中学，在建构中理解」</strong>。以下方法特别推荐：</p>
+
+  <ul>
+    <li><strong>🔍 观察法：</strong>有目的地观察生活中的化学现象。例如，观察蜡烛燃烧→记录火焰分层、蜡泪凝结、杯壁水珠——通过这些观察引出化学变化的核心问题。</li>
+    <li><strong>⚖️ 比较法：</strong>将"物理变化"与"化学变化"并排对比，找出本质差异。制作双栏对比表，把每个新学到的实例放进对应的栏目。</li>
+    <li><strong>🧪 实验探究法：</strong>按科学探究的完整步骤设计简单实验。例如：铁钉生锈条件的探究——设置对照实验，分别控制水和空气变量。</li>
+    <li><strong>🗺️ 概念图法：</strong>用图示整理化学概念之间的关系。将"物质变化""物理变化""化学变化""物理性质""化学性质"用箭头和层级关系连接成一个知识网络。</li>
+    <li><strong>📋 案例分析法：</strong>从真实化学情境（如本模块的7个递进案例）中提取化学原理，带着具体问题去学习，而非孤立地背诵概念。</li>
+  </ul>
+</div>
+
+<!-- 维度4：关键人物、事件、成果 -->
+<div class="card fade-in">
+  <h2><span class="dim-num">4</span>关键人物·事件·成果</h2>
+
+  <p><strong>🔬 拉瓦锡（Antoine Lavoisier, 1743-1794）</strong><br>被称为"现代化学之父"。他通过定量实验——精确称量反应前后物质的质量——推翻了统治化学界近百年的"燃素说"，建立了氧化理论。他的名言："我从不凭感觉判断，我只相信天平。"这正是科学精神的核心。</p>
+
+  <p><strong>⚛️ 道尔顿（John Dalton, 1766-1844）</strong><br>提出了近代原子学说，使化学从描述现象走向理论解释。他认为所有物质由原子构成，不同元素的原子不同。这是"走进化学世界"后你会遇到的重要理论框架。</p>
+
+  <p><strong>💣 诺贝尔（Alfred Nobel, 1833-1896）</strong><br>发明了安全炸药——将硝化甘油吸附在硅藻土中，使其可安全运输和使用。他的发明改变了世界（采矿、建筑、战争），也展示了化学变化如何被人类利用。诺贝尔奖至今仍是科学界的最高荣誉。</p>
+
+  <p><strong>🌿 屠呦呦（1930—）</strong><br>中国药学家，首位获得诺贝尔科学奖项的中国本土科学家。她从古籍中得到启发，用乙醚低温提取青蒿素——这一方法利用了化学中的萃取原理（物理变化与化学变化的综合运用）。她的故事说明：化学方法能拯救数百万人生命。</p>
+</div>
+
+<!-- 维度5：前沿追问 -->
+<div class="card fade-in">
+  <h2><span class="dim-num">5</span>前沿追问</h2>
+  <p style="color:var(--text-secondary); margin-bottom:10px;">点击每个问题查看思考线索，不求标准答案，重在打开思路。</p>
+  <div class="quest-grid">
+    <div class="quest-item" onclick="toggleQuest(this)">
+      <div class="q-label">❓ 追问一</div>
+      <div>如果地球上没有化学变化，世界会是什么样子？</div>
+      <div class="q-ans">没有化学变化意味着：没有燃烧（不能生火做饭）、没有呼吸（氧气与血红蛋白的结合是化学变化）、没有光合作用（植物无法生长）、没有消化（食物分解是化学变化）……地球将是一个静止的、没有生命的世界。反过来想，正是化学变化让世界充满活力。</div>
+    </div>
+    <div class="quest-item" onclick="toggleQuest(this)">
+      <div class="q-label">❓ 追问二</div>
+      <div>人工智能如何帮助化学家发现新材料？</div>
+      <div class="q-ans">AI可以快速筛选海量可能的材料组合，预测哪些组合能形成稳定、有用的新材料。例如DeepMind的GNoME项目发现了38万种新稳定晶体材料。但AI的预测最终仍需要化学家通过实验验证——"假设—验证循环"依然成立，只是速度大大提升了。</div>
+    </div>
+    <div class="quest-item" onclick="toggleQuest(this)">
+      <div class="q-label">❓ 追问三</div>
+      <div>你每天接触的物品中，哪些是由化学变化创造的？</div>
+      <div class="q-ans">几乎一切！塑料瓶（石油的化学加工→聚合反应）、衣服布料（合成纤维的化学聚合）、手机电池（锂离子在电极间的化学反应）、药品（化学合成）、肥皂（油脂的皂化反应）……如果没有化学变化，你身边可能只剩下石头和木头。</div>
+    </div>
+    <div class="quest-item" onclick="toggleQuest(this)">
+      <div class="q-label">❓ 追问四</div>
+      <div>"化学变化"和"物理变化"的界限真的那么清晰吗？</div>
+      <div class="q-ans">大多数情况下清晰可辨，但存在"灰色地带"。例如：溶解过程——食盐溶于水是物理变化（可析出），但有些物质溶解时发生解离或与水反应（如CO₂溶于水生成碳酸），则涉及化学变化。科学中常见这种情况：基础概念清晰，但真实世界往往更复杂——这也正是科学探究的魅力所在。</div>
+    </div>
+  </div>
+  <button style="background:var(--card-bg);border:1px solid var(--border);color:var(--text);padding:6px 18px;border-radius:var(--border-radius);cursor:pointer;font-size:14px;transition:all 0.2s;margin-top:10px;" onclick="collapseAllQuests()" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'">收起所有追问线索</button>
+</div>
+
+</div>
+<script>
+function toggleQuest(el) {
+  el.classList.toggle('reveal');
+}
+function collapseAllQuests() {
+  document.querySelectorAll('.quest-item').forEach(function(q) {
+    q.classList.remove('reveal');
+  });
+}
+</script>
+</body>
+</html>

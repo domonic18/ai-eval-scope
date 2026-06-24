@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性七阶案例 — 化学 九年级上</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+  --font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --level-colors: #1677ff, #16a34a, #d46b08, #722ed1, #eb2f96, #fa8c16, #1a1a2e;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  text-align: center;
+  padding: 32px 20px 20px;
+  background: linear-gradient(135deg, #1677ff 0%, #4096ff 100%);
+  color: #fff;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  margin: -24px -20px 24px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header .subtitle { font-size: 14px; opacity: 0.85; }
+.header .badge-row { margin-top: 12px; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.header .badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 12px; }
+.section { margin-bottom: 28px; }
+.section-title {
+  font-size: var(--font-h2);
+  font-weight: 700;
+  color: var(--primary);
+  padding-bottom: 10px;
+  border-bottom: 3px solid var(--accent);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.case-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+  border-left: 4px solid var(--primary);
+  transition: all 0.3s;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.case-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(22,119,255,0.12); }
+.case-card .level-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 8px;
+}
+.level-1 { background: #1677ff; }
+.level-2 { background: #16a34a; }
+.level-3 { background: #d46b08; }
+.level-4 { background: #722ed1; }
+.level-5 { background: #eb2f96; }
+.level-6 { background: #fa8c16; }
+.level-7 { background: #1a1a2e; }
+.case-card .case-num { font-size: 12px; color: var(--text-secondary); margin-bottom: 2px; }
+.case-card h3 { font-size: 17px; color: var(--primary); margin-bottom: 6px; }
+.case-card .case-detail { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); }
+.case-card.expanded .case-detail { display: block; }
+.case-card .case-detail p { margin-bottom: 4px; }
+.case-card .case-detail ul { padding-left: 18px; margin-bottom: 6px; }
+.case-card .case-detail li { margin-bottom: 2px; }
+.case-card .principle-badge {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin: 2px 3px;
+}
+.case-card .expand-arrow {
+  position: absolute;
+  right: 16px;
+  top: 18px;
+  font-size: 18px;
+  color: var(--text-secondary);
+  transition: transform 0.3s;
+}
+.case-card.expanded .expand-arrow { transform: rotate(180deg); }
+.reflection-list { list-style: none; padding: 0; }
+.reflection-list li {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  transition: border-color 0.3s;
+}
+.reflection-list li:hover { border-color: var(--primary); }
+.reflection-list .num {
+  flex-shrink: 0;
+  width: 26px; height: 26px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+.progress-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.progress-bar .step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color 0.3s;
+}
+.progress-bar .step .dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--border);
+  margin-bottom: 4px;
+  transition: all 0.3s;
+}
+.progress-bar .step.active .dot { background: var(--primary); transform: scale(1.4); }
+.progress-bar .step.active { color: var(--primary); font-weight: 600; }
+.progress-bar .step.completed .dot { background: var(--accent); }
+@media (min-width: 640px) { .case-grid { grid-template-columns: 1fr 1fr; } .container { padding: 28px 32px; } }
+@media (min-width: 960px) { .case-grid { grid-template-columns: 1fr 1fr 1fr; } .reflection-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>📋 建构性七阶适配案例</h1>
+  <div class="subtitle">M3 全息活动与感知：新概念前认知 · 化学·九年级上</div>
+  <div class="badge-row">
+    <span class="badge">🏆 7个递进任务</span>
+    <span class="badge">🎯 从个人理解到综合创新</span>
+    <span class="badge">🧩 阶梯式成长</span>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">🗺️ 案例路径概览</div>
+  <div class="progress-bar" id="progressBar">
+    <span class="step active" data-step="1" onclick="jumpToCase(1)"><span class="dot"></span>案例1</span>
+    <span class="step" data-step="2" onclick="jumpToCase(2)"><span class="dot"></span>案例2</span>
+    <span class="step" data-step="3" onclick="jumpToCase(3)"><span class="dot"></span>案例3</span>
+    <span class="step" data-step="4" onclick="jumpToCase(4)"><span class="dot"></span>案例4</span>
+    <span class="step" data-step="5" onclick="jumpToCase(5)"><span class="dot"></span>案例5</span>
+    <span class="step" data-step="6" onclick="jumpToCase(6)"><span class="dot"></span>案例6</span>
+    <span class="step" data-step="7" onclick="jumpToCase(7)"><span class="dot"></span>案例7</span>
+  </div>
+  <p style="color:var(--text-secondary);font-size:13px;text-align:center;">点击进度点可直接跳转 · 点击案例卡片展开详情</p>
+</div>
+
+<div class="section">
+  <div class="section-title">🧪 七阶递进案例</div>
+  <div class="case-grid">
+
+    <div class="case-card" onclick="toggleCase(this);updateProgress(1)">
+      <span class="expand-arrow">▼</span>
+      <div><span class="level-tag level-1">个人理解型</span></div>
+      <div class="case-num">案例 1 / 7</div>
+      <h3>我的"化学变化"概念图</h3>
+      <p>把"什么是化学变化"用自己的方式整理出来。</p>
+      <div class="case-detail">
+        <p><strong>情境：</strong>学完蜡烛燃烧后，需要将"化学变化"的概念系统整理。</p>
+        <p><strong>建构任务：</strong>绘制"化学变化"核心概念图——定义、判断依据、与物理变化的区别、3个生活例子。</p>
+        <p><strong>原理调用：</strong><span class="principle-badge">📊 可视化模型法</span></p>
+        <p><strong>建构步骤：</strong>整理概念 → 确定层级 → 建立关系 → 加入实例 → 检查完整性</p>
+        <p><strong>📎 成果：</strong>化学变化核心概念图（手绘或电子版）</p>
+      </div>
+    </div>
+
+    <div class="case-card" onclick="toggleCase(this);updateProgress(2)">
+      <span class="expand-arrow">▼</span>
+      <div><span class="level-tag level-2">生活应用型</span></div>
+      <div class="case-num">案例 2 / 7</div>
+      <h3>家庭物品变化观察报告</h3>
+      <p>判断5种物品变化是化学变化还是物理变化。</p>
+      <div class="case-detail">
+        <p><strong>情境：</strong>你找到5种物品：苹果变褐、铁锅生锈、冰块融化、酒精挥发、纸张燃烧。</p>
+        <p><strong>建构任务：</strong>判断哪些是化学/物理变化，说明判断依据。</p>
+        <p><strong>原理调用：</strong><span class="principle-badge">🔍 现象驱动法</span> + <span class="principle-badge">🔗 证据链建构</span></p>
+        <p><strong>建构步骤：</strong>列出物品 → 观察变化 → 判断有无新物质生成 → 分类 → 制作对照表</p>
+        <p><strong>📎 成果：</strong>变化分类报告（对照表+判断依据）</p>
+      </div>
+    </div>
+
+    <div class="case-card" onclick="toggleCase(this);updateProgress(3)">
+      <span class="expand-arrow">▼</span>
+      <div><span class="level-tag level-3">校园问题解决型</span></div>
+      <div class="case-num">案例 3 / 7</div>
+      <h3>校园实验安全指南</h3>
+      <p>设计化学实验安全操作要点指南。</p>
+      <div class="case-detail">
+        <p><strong>情境：</strong>为新同学制作"化学实验安全指南"海报。</p>
+        <p><strong>建构任务：</strong>设计包含"5个化学变化实验的安全操作要点"的指南。</p>
+        <p><strong>原理调用：</strong><span class="principle-badge">🔄 检验修正循环</span></p>
+        <p><strong>建构步骤：</strong>确定实验清单 → 分析风险点 → 制定措施 → 设计版面 → 互检修订</p>
+        <p><strong>📎 成果：</strong>化学实验安全指南海报</p>
+      </div>
+    </div>
+
+    <div class="case-card" onclick="toggleCase(this);updateProgress(4)">
+      <span class="expand-arrow">▼</span>
+      <div><span class="level-tag level-4">学科表达型</span></div>
+      <div class="case-num">案例 4 / 7</div>
+      <h3>实验现象"翻译官"</h3>
+      <p>用规范化学语言描述"镁条燃烧"实验。</p>
+      <div class="case-detail">
+        <p><strong>情境：</strong>做了"镁条燃烧"实验，观察到耀眼白光、白色粉末生成。</p>
+        <p><strong>建构任务：</strong>规范实验报告——目的、步骤、现象、结论。</p>
+        <p><strong>原理调用：</strong><span class="principle-badge">💬 表达即理解</span> + <span class="principle-badge">🔗 证据链建构</span></p>
+        <p><strong>建构步骤：</strong>回忆实验 → 关键词记录现象 → 专业术语描述 → 现象→结论对应 → 撰写报告</p>
+        <p><strong>📎 成果：</strong>镁条燃烧实验的规范报告</p>
+      </div>
+    </div>
+
+    <div class="case-card" onclick="toggleCase(this);updateProgress(5)">
+      <span class="expand-arrow">▼</span>
+      <div><span class="level-tag level-5">跨学科整合型</span></div>
+      <div class="case-num">案例 5 / 7</div>
+      <h3>跨学科"变化"主题研究</h3>
+      <p>化学、物理、生物中的"变化"对比。</p>
+      <div class="case-detail">
+        <p><strong>情境：</strong>"变化"不仅发生在化学中——水循环（物理）、铁生锈（化学）、树木生长（生物）。</p>
+        <p><strong>建构任务：</strong>制作"不同学科中的变化"对比海报。</p>
+        <p><strong>原理调用：</strong><span class="principle-badge">📊 可视化模型法</span> + <span class="principle-badge">🔍 现象驱动法</span></p>
+        <p><strong>建构步骤：</strong>列出各学科案例 → 分析特征 → 找联系与区别 → 设计对比框架 → 呈现成果</p>
+        <p><strong>📎 成果：</strong>跨学科"变化"对比海报</p>
+      </div>
+    </div>
+
+    <div class="case-card" onclick="toggleCase(this);updateProgress(6)">
+      <span class="expand-arrow">▼</span>
+      <div><span class="level-tag level-6">社会情境型</span></div>
+      <div class="case-num">案例 6 / 7</div>
+      <h3>社区环保"化学侦探"</h3>
+      <p>设计水质污染化学检测方案。</p>
+      <div class="case-detail">
+        <p><strong>情境：</strong>小区河水颜色异常，怀疑有工厂排放污染物。</p>
+        <p><strong>建构任务：</strong>设计"用化学方法检测水质污染"的简易方案（方案设计，不需实际检测）。</p>
+        <p><strong>原理调用：</strong><span class="principle-badge">🔗 证据链建构</span> + <span class="principle-badge">🔄 检验修正循环</span></p>
+        <p><strong>建构步骤：</strong>确定检测目标 → 设计检测方法 → 预测现象 → 分析可靠性 → 撰写方案</p>
+        <p><strong>📎 成果：</strong>水质污染检测方案（含指标、方法、预期现象、判断标准）</p>
+      </div>
+    </div>
+
+    <div class="case-card" onclick="toggleCase(this);updateProgress(7)">
+      <span class="expand-arrow">▼</span>
+      <div><span class="level-tag level-7">综合创新型</span></div>
+      <div class="case-num">案例 7 / 7</div>
+      <h3>"化学变化"互动展品设计</h3>
+      <p>设计让参观者亲身体验的互动展品方案。</p>
+      <div class="case-detail">
+        <p><strong>情境：</strong>学校科技节征集"化学变化"主题互动展品方案。</p>
+        <p><strong>建构任务：</strong>设计互动展品方案——让参观者亲身体验化学变化。</p>
+        <p><strong>原理调用：</strong><span class="principle-badge">🔍 现象驱动法</span> <span class="principle-badge">🔗 证据链建构</span> <span class="principle-badge">📊 可视化模型法</span> <span class="principle-badge">🔄 检验修正循环</span> <span class="principle-badge">💬 表达即理解</span></p>
+        <p><strong>建构步骤：</strong>确定主题 → 设计互动 → 规划材料 → 评估安全 → 设计展板 → 检查科学性</p>
+        <p><strong>📎 成果：</strong>互动展品设计方案（主题、流程、材料清单、展板内容）</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">💭 综合反思</div>
+  <ul class="reflection-list">
+    <li><span class="num">1</span> <span>哪个案例最容易完成？你用了哪条原理？</span></li>
+    <li><span class="num">2</span> <span>案例6和案例7对你来说最大的挑战是什么？</span></li>
+    <li><span class="num">3</span> <span>七阶案例中，你的建构能力有什么变化？</span></li>
+    <li><span class="num">4</span> <span>这些建构成果如何帮助你更好地理解"走进化学世界"这一章？</span></li>
+  </ul>
+</div>
+
+</div>
+<script>
+function toggleCase(el) {
+  el.classList.toggle('expanded');
+}
+function updateProgress(step) {
+  var steps = document.querySelectorAll('#progressBar .step');
+  steps.forEach(function(s, i) {
+    s.classList.remove('active', 'completed');
+    if (i + 1 < step) s.classList.add('completed');
+    if (i + 1 === step) s.classList.add('active');
+  });
+}
+function jumpToCase(step) {
+  var cards = document.querySelectorAll('.case-card');
+  if (cards[step - 1]) {
+    cards[step - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    updateProgress(step);
+  }
+}
+</script>
+</body>
+</html>

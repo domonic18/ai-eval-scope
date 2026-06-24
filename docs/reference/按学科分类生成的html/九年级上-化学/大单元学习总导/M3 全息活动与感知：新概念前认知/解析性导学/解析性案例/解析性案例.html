@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>七阶解析性案例导学 — 化学变化</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  text-align: center;
+  padding: 28px 20px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.header p {
+  font-size: 14px;
+  opacity: 0.9;
+}
+.case-list { display: flex; flex-direction: column; gap: 16px; }
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--primary);
+  overflow: hidden;
+  transition: box-shadow 0.3s ease;
+}
+.case-card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.15); }
+.case-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+.case-header:hover { background: #f6f9ff; }
+.case-badge {
+  min-width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.case-title { font-size: 16px; font-weight: 600; flex: 1; }
+.case-level {
+  font-size: 12px;
+  color: var(--primary);
+  background: var(--bg);
+  padding: 2px 10px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+.case-toggle {
+  font-size: 18px;
+  color: var(--text-secondary);
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+}
+.case-card.active .case-toggle { transform: rotate(180deg); }
+.case-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+  padding: 0 20px;
+}
+.case-card.active .case-body {
+  max-height: 900px;
+  padding: 0 20px 20px;
+}
+.case-section {
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  background: #fafafa;
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+}
+.case-section:last-child { margin-bottom: 0; }
+.case-section h4 {
+  font-size: 14px;
+  color: var(--primary);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.case-section p, .case-section ul {
+  font-size: 13.5px;
+  color: var(--text);
+  line-height: 1.7;
+}
+.case-section ul { padding-left: 18px; }
+.case-section ul li { margin-bottom: 3px; }
+.reflection {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-top: 28px;
+  border-top: 4px solid var(--primary);
+}
+.reflection h3 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+}
+.reflection ul { padding-left: 20px; }
+.reflection ul li {
+  margin-bottom: 8px;
+  line-height: 1.7;
+}
+.reflection ul li::marker { color: var(--primary); }
+@media (max-width: 640px) {
+  .container { padding: 12px 10px; }
+  .header { padding: 20px 14px; }
+  .case-header { padding: 12px 14px; flex-wrap: wrap; }
+  .case-badge { min-width: 30px; height: 30px; font-size: 12px; }
+  .case-title { font-size: 14px; }
+  .case-level { font-size: 11px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🔬 七阶解析性案例导学</h1>
+  <p>化学变化·九年级上 — 从生活到科学，逐步构建分析能力</p>
+</div>
+
+<div class="case-list" id="caseList">
+
+  <!-- 案例1 -->
+  <div class="case-card" data-index="0">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-badge">1</span>
+      <span class="case-title">早餐桌上的化学</span>
+      <span class="case-level">生活情境</span>
+      <span class="case-toggle">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="case-section">
+        <h4>📋 案例情境</h4>
+        <p>早上你倒了一杯牛奶，喝了一口后放在桌上。晚上回家发现牛奶结块了，散发出酸味。冰箱里的同一盒牛奶却没有变化。</p>
+      </div>
+      <div class="case-section">
+        <h4>🎯 解析任务</h4>
+        <p>判断牛奶变酸是不是化学变化，并分析"温度"在这个变化中扮演了什么角色。</p>
+      </div>
+      <div class="case-section">
+        <h4>🧩 解析路径</h4>
+        <p>识别现象 → 确定解析对象（牛奶酸败过程）→ 拆解要素（温度、微生物、时间）→ 判断是否有新物质生成 → 寻找证据</p>
+      </div>
+      <div class="case-section">
+        <h4>⚙️ 原理调用</h4>
+        <p><strong>核心判断准则法</strong>（有没有新物质生成？）+ <strong>多重证据交叉验证</strong>（结块、气味变化是两个独立证据）</p>
+      </div>
+      <div class="case-section">
+        <h4>💡 参考思路</h4>
+        <p>牛奶变酸涉及乳酸菌将乳糖转化为乳酸——有新物质生成。温度影响了微生物的活性。可以对比冰箱内外牛奶的不同结果来分析。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 案例2 -->
+  <div class="case-card" data-index="1">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-badge">2</span>
+      <span class="case-title">校园垃圾桶的"怪味"</span>
+      <span class="case-level">校园情境</span>
+      <span class="case-toggle">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="case-section">
+        <h4>📋 案例情境</h4>
+        <p>学校食堂的厨余垃圾桶在夏天总会散发出难闻的气味，而纸类垃圾桶几乎没有气味。</p>
+      </div>
+      <div class="case-section">
+        <h4>🎯 解析任务</h4>
+        <p>分析"气味"的来源——这些气味物质是垃圾中本来就有的，还是后来通过化学变化新产生的？</p>
+      </div>
+      <div class="case-section">
+        <h4>🧩 解析路径</h4>
+        <p>建立"有气味的垃圾 vs 无气味的垃圾"对比 → 分析垃圾成分 → 推理气味产生条件 → 判断变化类型</p>
+      </div>
+      <div class="case-section">
+        <h4>⚙️ 原理调用</h4>
+        <p><strong>系统观察法</strong>（全面观察不同垃圾桶）+ <strong>推理链构建法</strong>（气味来源的推理链）</p>
+      </div>
+      <div class="case-section">
+        <h4>💡 参考思路</h4>
+        <p>厨余垃圾中的有机物在微生物作用下发生分解（化学变化），产生了氨气、硫化氢等有气味的新物质。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 案例3 -->
+  <div class="case-card" data-index="2">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-badge">3</span>
+      <span class="case-title">妈妈的银手镯变黑了</span>
+      <span class="case-level">家庭情境</span>
+      <span class="case-toggle">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="case-section">
+        <h4>📋 案例情境</h4>
+        <p>妈妈一直戴的一只银手镯最近变黑了。她怀疑是质量问题，但店员说"银和空气中的某些物质发生了反应"。</p>
+      </div>
+      <div class="case-section">
+        <h4>🎯 解析任务</h4>
+        <p>判断银手镯变黑是物理变化还是化学变化，并找出"凶手"是什么物质。</p>
+      </div>
+      <div class="case-section">
+        <h4>🧩 解析路径</h4>
+        <p>识别变化（颜色变化）→ 收集信息（银的性质、空气成分）→ 分析可能的反应 → 寻找证据 → 形成判断</p>
+      </div>
+      <div class="case-section">
+        <h4>⚙️ 原理调用</h4>
+        <p><strong>核心判断准则法</strong> + <strong>概念检验法</strong></p>
+      </div>
+      <div class="case-section">
+        <h4>💡 参考思路</h4>
+        <p>银变黑是因为银与空气中的硫化氢反应生成黑色硫化银——有新物质生成，所以是化学变化。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 案例4 -->
+  <div class="case-card" data-index="3">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-badge">4</span>
+      <span class="case-title">水的"变身"三部曲</span>
+      <span class="case-level">学科核心</span>
+      <span class="case-toggle">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="case-section">
+        <h4>📋 案例情境</h4>
+        <p>将冰块放入烧杯加热：冰→水→水蒸气。将一张白纸点燃：纸→灰烬+烟。</p>
+      </div>
+      <div class="case-section">
+        <h4>🎯 解析任务</h4>
+        <p>为什么水和纸的变化看似类似，但一个是物理变化一个是化学变化？请用核心标准详细对比分析。</p>
+      </div>
+      <div class="case-section">
+        <h4>🧩 解析路径</h4>
+        <p>对比两种变化 → 关注"物质种类是否改变" → 分析变化过程中的产物 → 总结本质区别</p>
+      </div>
+      <div class="case-section">
+        <h4>⚙️ 原理调用</h4>
+        <p><strong>核心判断准则法</strong> + <strong>推理链构建法</strong></p>
+      </div>
+      <div class="case-section">
+        <h4>💡 参考思路</h4>
+        <p>水的三态变化中物质种类（都是H₂O）没有变；纸燃烧生成了新物质。核心区别在于分子种类是否改变。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 案例5 -->
+  <div class="case-card" data-index="4">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-badge">5</span>
+      <span class="case-title">光合作用——地球的"空气净化器"</span>
+      <span class="case-level">跨学科</span>
+      <span class="case-toggle">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="case-section">
+        <h4>📋 案例情境</h4>
+        <p>植物在阳光照射下，吸收二氧化碳和水，产生氧气和葡萄糖。这个过程被称为"光合作用"。</p>
+      </div>
+      <div class="case-section">
+        <h4>🎯 解析任务</h4>
+        <p>从化学变化的角度分析光合作用——为什么它既是化学变化，又是地球上最重要的化学反应之一？</p>
+      </div>
+      <div class="case-section">
+        <h4>🧩 解析路径</h4>
+        <p>确定变化发生场所（叶绿体）→ 识别反应物和生成物 → 分析能量变化 → 评估意义</p>
+      </div>
+      <div class="case-section">
+        <h4>⚙️ 原理调用</h4>
+        <p><strong>系统观察法</strong> + <strong>概念检验法</strong>（用质量守恒检验原子种类和数量是否相等）</p>
+      </div>
+      <div class="case-section">
+        <h4>💡 参考思路</h4>
+        <p>CO₂在植物体内变成了O₂和营养物质——这是典型的化学变化。光合作用将无机物转化为有机物，是生命的基础。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 案例6 -->
+  <div class="case-card" data-index="5">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-badge">6</span>
+      <span class="case-title">空气污染中的"化学"</span>
+      <span class="case-level">社会情境</span>
+      <span class="case-toggle">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="case-section">
+        <h4>📋 案例情境</h4>
+        <p>某城市PM2.5超标，主要污染物是SO₂和氮氧化物。这些污染物进一步发生化学变化生成酸雨。</p>
+      </div>
+      <div class="case-section">
+        <h4>🎯 解析任务</h4>
+        <p>分析"从工厂排放的气体到酸雨"的过程中发生了哪些化学变化，画出变化链。</p>
+      </div>
+      <div class="case-section">
+        <h4>🧩 解析路径</h4>
+        <p>确定污染源 → 追踪化学转化路径 → 分析最终产物 → 评估影响</p>
+      </div>
+      <div class="case-section">
+        <h4>⚙️ 原理调用</h4>
+        <p><strong>多重证据交叉验证</strong> + <strong>推理链构建法</strong></p>
+      </div>
+      <div class="case-section">
+        <h4>💡 参考思路</h4>
+        <p>SO₂ + H₂O + O₂ → H₂SO₄（硫酸），这是一个完整的化学变化链。可以从酸雨对建筑/土壤的影响寻找证据。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 案例7 -->
+  <div class="case-card" data-index="6">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-badge">7</span>
+      <span class="case-title">综合迁移——用思维分析热点新闻</span>
+      <span class="case-level">综合迁移</span>
+      <span class="case-toggle">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="case-section">
+        <h4>📋 案例情境</h4>
+        <p>选择一则近期与化学相关的新闻（如"新型电池技术突破""可降解塑料研发""碳捕集技术"等）。</p>
+      </div>
+      <div class="case-section">
+        <h4>🎯 解析任务</h4>
+        <p>运用本模块学到的所有解析方法，对新闻中涉及的化学变化进行全面分析，并撰写一篇分析短文。</p>
+      </div>
+      <div class="case-section">
+        <h4>🧩 解析路径</h4>
+        <p>提取新闻中的化学变化信息 → 运用全部5条原理 → 建立完整的分析框架 → 得出结论</p>
+      </div>
+      <div class="case-section">
+        <h4>⚙️ 原理调用</h4>
+        <p><strong>全部5条原理综合运用</strong>：核心判断准则法、多重证据交叉验证、系统观察法、推理链构建法、概念检验法</p>
+      </div>
+      <div class="case-section">
+        <h4>💡 参考思路</h4>
+        <p>可以从"变化类型判断→变化过程分析→影响评估→未来展望"四个维度展开分析。</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 综合反思 -->
+<div class="reflection">
+  <h3>💭 综合反思</h3>
+  <ul>
+    <li>这7个案例中，哪一个最容易分析？为什么它最容易？</li>
+    <li>哪一个案例最难？困难来自哪里？你是如何克服的？</li>
+    <li>你用得最多的解析原理是哪一条？最少用的是哪一条？</li>
+    <li>你觉得哪条原理还需要更多练习才能掌握？</li>
+    <li>这些分析经验对你完成大单元最终成果有什么帮助？</li>
+  </ul>
+</div>
+
+</div>
+
+<script>
+function toggleCase(el) {
+  var card = el.closest('.case-card');
+  if (!card) return;
+  card.classList.toggle('active');
+}
+</script>
+</body>
+</html>

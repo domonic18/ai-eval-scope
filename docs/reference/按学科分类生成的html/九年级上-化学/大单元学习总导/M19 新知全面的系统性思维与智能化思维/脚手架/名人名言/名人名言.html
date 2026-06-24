@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名人名言 — 化学大师的思维密码</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body); line-height: var(--line-height);
+  color: var(--text); background: var(--bg); margin: 0; padding: 0;
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, #003a8c 0%, var(--primary) 100%);
+  color: #fff; border-radius: var(--border-radius); padding: 28px 24px; margin-bottom: 20px;
+}
+.header h1 { font-size: var(--font-h1); margin: 0 0 6px; font-weight: 700; }
+.header .subtitle { font-size: 13px; opacity: 0.85; }
+.card {
+  background: var(--card-bg); border-radius: var(--border-radius); padding: 20px 22px;
+  margin-bottom: 16px; box-shadow: var(--shadow); border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2); color: var(--primary); margin-bottom: 12px;
+  padding-bottom: 8px; border-bottom: 2px solid var(--accent);
+}
+.card h3 { font-size: 17px; margin: 14px 0 8px; }
+.sci-card {
+  border-radius: var(--border-radius); overflow: hidden; margin-bottom: 14px;
+  border: 1px solid var(--border); transition: box-shadow 0.3s;
+}
+.sci-card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.12); }
+.sci-card-header {
+  padding: 14px 16px; cursor: pointer; user-select: none;
+  display: flex; align-items: center; justify-content: space-between;
+  font-weight: 600; font-size: 17px; transition: background 0.2s;
+}
+.sci-card-header:hover { filter: brightness(0.95); }
+.sci-card-body { padding: 0 16px 16px; }
+.sci-card-body.hidden { display: none; }
+.sci-table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 14px; }
+.sci-table td { border: 1px solid var(--border); padding: 8px 10px; vertical-align: top; }
+.sci-table td:first-child { font-weight: 600; width: 100px; background: var(--bg); color: var(--primary); }
+.sci-table tr:hover td { background: #fafafa; }
+.sci-table tr:hover td:first-child { background: #e6f0ff; }
+.insight-box {
+  background: linear-gradient(135deg, #fff7e6, #fffbe6); border: 1px solid #ffe58f;
+  border-radius: 6px; padding: 12px 14px; margin: 8px 0; font-size: 14px;
+}
+.insight-box strong { color: #d48806; }
+.think-section {
+  background: var(--bg); border-radius: 6px; padding: 16px; margin-top: 10px;
+  border: 1px dashed var(--primary);
+}
+.think-section h3 { color: var(--primary); font-size: 16px; margin: 0 0 10px; }
+.think-step {
+  margin-bottom: 10px; padding: 10px 12px; background: #fff; border-radius: 6px;
+  cursor: pointer; transition: all 0.2s; border-left: 3px solid var(--accent);
+}
+.think-step:hover { background: #e6f0ff; }
+.think-step.revealed { border-left-color: #52c41a; background: #f6ffed; }
+.think-step .step-q { font-weight: 600; font-size: 14px; }
+.think-step .step-a { display: none; margin-top: 6px; font-size: 13px; color: var(--text-secondary); }
+.think-step.revealed .step-a { display: block; }
+.diary-area {
+  width: 100%; min-height: 80px; border: 1px solid var(--border); border-radius: 6px;
+  padding: 12px; font-size: 14px; font-family: inherit; resize: vertical;
+  margin: 8px 0; box-sizing: border-box;
+}
+.diary-area:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(22,119,255,0.15); }
+.reading-list { list-style: none; padding: 0; }
+.reading-list li {
+  padding: 10px 14px; margin-bottom: 8px; background: var(--bg); border-radius: 6px;
+  border-left: 3px solid var(--primary); font-size: 14px;
+}
+.reading-list li strong { color: var(--primary); }
+.btn-primary {
+  display: inline-block; background: var(--primary); color: #fff; border: none;
+  padding: 8px 20px; border-radius: 6px; font-size: 14px; cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-outline {
+  display: inline-block; background: transparent; color: var(--primary); border: 1px solid var(--primary);
+  padding: 7px 19px; border-radius: 6px; font-size: 14px; cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-outline:hover { background: var(--bg); }
+.author-tag { font-size: 12px; padding: 3px 10px; border-radius: 10px; color: #fff; display: inline-block; }
+.author-lavoisier { background: #c0392b; }
+.author-dalton { background: #2980b9; }
+.author-tu { background: #27ae60; }
+@media (max-width: 600px) {
+  .container { padding: 12px 10px; }
+  .header { padding: 18px 16px; }
+  .card { padding: 14px 14px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🏛️ 化学大师的思维密码</h1>
+  <div class="subtitle">从拉瓦锡到屠呦呦 — 三位改变化学史的科学家教你"如何思考"</div>
+</div>
+
+<div class="card">
+  <h2>🧑‍🔬 人物一：拉瓦锡（1743—1794）</h2>
+  <p style="margin-bottom:8px;"><span class="author-tag author-lavoisier">现代化学之父</span> 法国 · 定量分析奠基人</p>
+  <div class="sci-card">
+    <div class="sci-card-header" onclick="toggleScientist(this)" style="background:#fff2f0;">
+      <span>📜 核心档案</span>
+      <span>▼</span>
+    </div>
+    <div class="sci-card-body hidden">
+      <table class="sci-table">
+        <tr><td>关键问题</td><td>物质燃烧时发生了什么？当时流行的"燃素说"是对的吗？</td></tr>
+        <tr><td>思维突破点</td><td>用定量方法——<strong>称量</strong>反应前后所有物质的质量，发现质量守恒。这不是新理论，而是新方法：用数据说话</td></tr>
+        <tr><td>失败/争议点</td><td>他的氧化学说最初遭到法国科学院多位权威反对，直到重复实验后逐渐被接受</td></tr>
+        <tr><td>对当下的启示</td><td>当你面对一个有争议的问题时，是相信"大家都这么说"，还是自己动手找证据？拉瓦锡选择后者</td></tr>
+      </table>
+      <div class="insight-box">
+        <strong>💡 拉瓦锡名言：</strong>"在任何科学中，只有通过实验和观察才能获得确定的知识。"
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>🧑‍🔬 人物二：道尔顿（1766—1844）</h2>
+  <p style="margin-bottom:8px;"><span class="author-tag author-dalton">原子论奠基人</span> 英国 · 从气象学闯入化学的"门外汉"</p>
+  <div class="sci-card">
+    <div class="sci-card-header" onclick="toggleScientist(this)" style="background:#e6f0ff;">
+      <span>📜 核心档案</span>
+      <span>▼</span>
+    </div>
+    <div class="sci-card-body hidden">
+      <table class="sci-table">
+        <tr><td>关键问题</td><td>物质为什么会有不同的性质？能不能用"最基础的小颗粒"来解释一切？</td></tr>
+        <tr><td>思维突破点</td><td>把"原子"从哲学概念变成科学理论。他不是第一个提出"原子"的人，但他是第一个用实验证据（气体溶解度、倍比定律）支撑这一理论的人</td></tr>
+        <tr><td>失败/争议点</td><td>他坚持原子不可再分，这个观点后来被卢瑟福等人的实验修正——科学就是在不断"打脸"中前进的</td></tr>
+        <tr><td>对当下的启示</td><td>一个正确但不完善的模型（道尔顿原子论）比一个完美但无法检验的猜想（古希腊原子说）更有价值</td></tr>
+      </table>
+      <div class="insight-box">
+        <strong>💡 道尔顿名言：</strong>"我所有的成就，都源于对细小事实的不懈关注。"
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>🧑‍🔬 人物三：屠呦呦（1930—）</h2>
+  <p style="margin-bottom:8px;"><span class="author-tag author-tu">诺贝尔奖获得者</span> 中国 · 青蒿素发现者</p>
+  <div class="sci-card">
+    <div class="sci-card-header" onclick="toggleScientist(this)" style="background:#f0fff0;">
+      <span>📜 核心档案</span>
+      <span>▼</span>
+    </div>
+    <div class="sci-card-body hidden">
+      <table class="sci-table">
+        <tr><td>关键问题</td><td>疟疾肆虐，传统药物失效，如何从古老的中医药中找到新的抗疟药物？</td></tr>
+        <tr><td>思维突破点</td><td>从古籍《肘后备急方》中"青蒿一握，以水二升渍，绞取汁"获得灵感——低温提取（而不是高温煎煮）才能保住有效成分。陈旧的古籍+现代的化学提取方法=诺奖级别的发现</td></tr>
+        <tr><td>失败/争议点</td><td>团队做了190次实验才成功提取出青蒿素，期间她自己还以身试药</td></tr>
+        <tr><td>对当下的启示</td><td>知识放在那里不会自动解决问题，你需要<strong>用正确的方法去激活它</strong>。屠呦呦激活了古籍，就像你需要激活教材上的知识</td></tr>
+      </table>
+      <div class="insight-box">
+        <strong>💡 屠呦呦名言：</strong>"没有行不行，只有肯不肯坚持。"
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>🤔 "如果你是他"思考任务</h2>
+  <p style="margin-bottom:10px;font-size:14px;">选择以上三位中的一位，代入他的时代和核心问题。点击下方问题揭示参考答案：</p>
+
+  <div class="think-section">
+    <h3>选择一位科学家，代入思考</h3>
+    <div class="think-step" onclick="revealStep(this)">
+      <div class="step-q">🔧 第1步：你手上有什么工具（当时的技术条件）？</div>
+      <div class="step-a">拉瓦锡时代：天平、玻璃仪器、加热装置。没有电子显微镜，没有光谱仪。<br>道尔顿时代：简单天平、气体收集装置、湿度计。<br>屠呦呦时代：提取设备、色谱分析、动物模型。有现代化学工具但缺乏分子生物学手段。</div>
+    </div>
+    <div class="think-step" onclick="revealStep(this)">
+      <div class="step-q">🔍 第2步：你从哪里入手寻找答案？</div>
+      <div class="step-a">拉瓦锡：先设计可重复的燃烧实验方案，确保每次能精确称量所有反应物和产物。<br>道尔顿：从最简洁的假设开始——如果原子存在，气体的溶解度和化学反应的质量关系应该遵循简单整数比。<br>屠呦呦：从古籍筛选开始，寻找有明确记载的抗疟方法，再结合现代化学提取技术验证。</div>
+    </div>
+    <div class="think-step" onclick="revealStep(this)">
+      <div class="step-q">🔄 第3步：如果你的第一直觉是错的，如何发现自己错了？</div>
+      <div class="step-a">关键方法：<strong>重复实验</strong> + <strong>公开数据让同行检验</strong>。拉瓦锡之前的科学家都相信燃素说，是因为他们只做了定性观察（看到了火焰）而没有做定量测量（称量了质量）。如果你发现实验数据与主流理论矛盾，要么是实验有误，要么是理论需要修正——重复实验是检验的唯一标准。</div>
+    </div>
+    <div class="think-step" onclick="revealStep(this)">
+      <div class="step-q">✏️ 第4步：写一段50—80字的"科学思考日记"</div>
+      <div class="step-a">示例（拉瓦锡视角）：<br>"1785年3月，我再次称量了磷燃烧前后的质量。密闭容器内总质量没有变化！增加的质量来自空气。燃素说明明无法解释这个现象——为什么没人愿意称一称呢？也许真理不在复杂的理论中，而在简单的天平上。明天我要设计一个更精确的实验。"</div>
+    </div>
+  </div>
+
+  <div style="margin-top:12px;">
+    <p style="font-size:14px;margin-bottom:4px;"><strong>写下你的"科学思考日记"：</strong></p>
+    <textarea class="diary-area" id="diaryText" placeholder="选择一位科学家，写一段 50—80 字的科学思考日记，模拟他最关键的科学思考时刻..."></textarea>
+    <div>
+      <button class="btn-primary" onclick="saveDiary()">💾 保存日记</button>
+      <button class="btn-outline" onclick="document.getElementById('diaryText').value='';">🗑️ 清空</button>
+      <span id="diaryMsg" style="margin-left:10px;font-size:13px;color:var(--text-secondary);"></span>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>📚 深度阅读路径</h2>
+  <ul class="reading-list">
+    <li><strong>🔴 拉瓦锡</strong> — 《化学基础论》（拉瓦锡著，商务印书馆）——这是现代化学的第一本教材，语言比想象中好懂</li>
+    <li><strong>🔵 道尔顿</strong> — 《化学哲学新体系》前两章（中译本，北京大学出版社）</li>
+    <li><strong>🟢 屠呦呦</strong> — 纪录片《屠呦呦：青蒿素的发现》（央视网可观看，约45分钟）</li>
+    <li><strong>📖 跨学科推荐</strong> — 《科学革命的结构》（托马斯·库恩）——讲科学思维是怎么"升级换代"的</li>
+  </ul>
+</div>
+
+</div>
+
+<script>
+function toggleScientist(el) {
+  var body = el.nextElementSibling;
+  if (!body) return;
+  body.classList.toggle('hidden');
+  var arrow = el.querySelector('span:last-child');
+  if (arrow) arrow.textContent = body.classList.contains('hidden') ? '▶' : '▼';
+}
+
+function revealStep(el) {
+  if (!el) return;
+  el.classList.toggle('revealed');
+}
+
+function saveDiary() {
+  var diary = document.getElementById('diaryText');
+  var msg = document.getElementById('diaryMsg');
+  if (!msg) return;
+  if (diary && diary.value.trim().length > 20) {
+    msg.textContent = '✅ 日记已保存！长度：' + diary.value.trim().length + ' 字';
+  } else {
+    msg.textContent = '请写一段至少 20 字的思考日记再保存';
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名人名言 — 科学思维认知突破故事</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin: 0 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+h1::before { content: "💡"; font-size: 26px; }
+.subtitle {
+  color: var(--text-secondary);
+  margin: 0 0 24px;
+  font-size: 14px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 人物卡片 */
+.person-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.person-card {
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+  background: var(--card-bg);
+}
+.person-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.person-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--bg);
+  font-weight: 600;
+  font-size: 15px;
+}
+.person-header .avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  background: var(--accent);
+  color: #fff;
+  flex-shrink: 0;
+}
+.person-body {
+  padding: 0 14px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease, padding 0.35s ease;
+}
+.person-card.expanded .person-body {
+  max-height: 420px;
+  padding: 12px 14px 16px;
+}
+.person-body p {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+.person-body .tag {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin: 2px 4px 2px 0;
+}
+.person-body .label {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 13px;
+  display: block;
+  margin: 6px 0 2px;
+}
+.expand-hint {
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-align: center;
+  padding: 6px;
+  border-top: 1px solid var(--border);
+  display: none;
+}
+.person-card:not(.expanded) .expand-hint {
+  display: block;
+}
+
+/* 思考任务 */
+.think-task {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin-top: 8px;
+  border-left: 3px solid var(--primary);
+}
+.think-task p {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+.think-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  border: 1px solid var(--primary);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--primary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  margin-top: 6px;
+}
+.think-btn:hover {
+  background: var(--primary);
+  color: #fff;
+}
+.think-reveal {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: var(--card-bg);
+  border-radius: 6px;
+  font-size: 14px;
+  display: none;
+  border: 1px dashed var(--accent);
+}
+.think-reveal.show {
+  display: block;
+}
+
+/* 阅读路径 */
+.read-path {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+}
+.read-path li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 14px;
+  color: var(--text);
+}
+.read-path li::before {
+  content: "📚";
+  font-size: 16px;
+}
+
+@media (max-width: 600px) {
+  .container { padding: 16px 12px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>名人名言</h1>
+<p class="subtitle">科学家的认知突破故事 · 点击卡片展开详情</p>
+
+<div class="card">
+  <h2>👥 人物卡片</h2>
+  <div class="person-grid">
+
+    <div class="person-card" onclick="togglePerson(this)">
+      <div class="person-header">
+        <span class="avatar">🔬</span>
+        拉瓦锡 · 定量实验推翻燃素说
+      </div>
+      <div class="person-body">
+        <span class="label">🧩 关键问题</span>
+        <p>物质燃烧时发生了什么？燃素说正确吗？</p>
+        <span class="label">💡 思维突破点</span>
+        <p>用定量实验（称量）证明质量守恒，推翻了燃素说</p>
+        <span class="label">⚡ 失败 / 争议</span>
+        <p>因税务官身份在法国大革命中被处决</p>
+        <span class="label">🌟 对当下的启示</span>
+        <p>只有用数据说话，才能打破旧观念</p>
+        <span class="tag">18世纪</span>
+        <span class="tag">化学革命</span>
+        <span class="tag">质量守恒</span>
+      </div>
+      <div class="expand-hint">▼ 点击展开</div>
+    </div>
+
+    <div class="person-card" onclick="togglePerson(this)">
+      <div class="person-header">
+        <span class="avatar">🧪</span>
+        凯库勒 · 梦中苯环结构
+      </div>
+      <div class="person-body">
+        <span class="label">🧩 关键问题</span>
+        <p>苯分子中的碳原子如何排列？</p>
+        <span class="label">💡 思维突破点</span>
+        <p>从梦境中获得灵感，提出苯环结构</p>
+        <span class="label">⚡ 失败 / 争议</span>
+        <p>早期因缺乏实验证据被质疑</p>
+        <span class="label">🌟 对当下的启示</span>
+        <p>科学发现需要逻辑 + 想象力</p>
+        <span class="tag">19世纪</span>
+        <span class="tag">有机化学</span>
+        <span class="tag">苯环</span>
+      </div>
+      <div class="expand-hint">▼ 点击展开</div>
+    </div>
+
+    <div class="person-card" onclick="togglePerson(this)">
+      <div class="person-header">
+        <span class="avatar">🌿</span>
+        屠呦呦 · 古籍寻药获诺奖
+      </div>
+      <div class="person-body">
+        <span class="label">🧩 关键问题</span>
+        <p>如何从古籍中找到治疗疟疾的有效成分？</p>
+        <span class="label">💡 思维突破点</span>
+        <p>从东晋葛洪《肘后备急方》中获得低温提取的灵感</p>
+        <span class="label">⚡ 失败 / 争议</span>
+        <p>早期实验效果不稳定，反复优化才成功</p>
+        <span class="label">🌟 对当下的启示</span>
+        <p>跨学科知识和坚持探索的精神</p>
+        <span class="tag">当代</span>
+        <span class="tag">诺贝尔奖</span>
+        <span class="tag">青蒿素</span>
+      </div>
+      <div class="expand-hint">▼ 点击展开</div>
+    </div>
+
+  </div>
+</div>
+
+<div class="card">
+  <h2>📖 深度阅读路径</h2>
+  <ul class="read-path">
+    <li>拉瓦锡传记 —— 《化学革命：拉瓦锡传》</li>
+    <li>凯库勒 —— 科普文章《梦中的化学结构》</li>
+    <li>屠呦呦 —— 访谈视频与纪录片《攻占疟疾》</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>🤔 "如果你是他" 思考任务</h2>
+  <div class="think-task">
+    <p><strong>任务一：</strong>如果你是拉瓦锡，面对当时主流的燃素说，你会如何设计实验证明自己的观点？</p>
+    <button class="think-btn" onclick="revealHint(this, 'hint1')">💬 查看提示</button>
+    <div class="think-reveal" id="hint1">提示：想一想质量守恒定律——反应前后物质总质量不变。你可以设计一个密闭容器中的燃烧实验，称量反应前后总质量。</div>
+  </div>
+  <div class="think-task" style="margin-top:10px;">
+    <p><strong>任务二：</strong>如果实验室中遇到无法解释的异常数据，你会像哪位科学家一样处理？</p>
+    <button class="think-btn" onclick="revealHint(this, 'hint2')">💬 查看提示</button>
+    <div class="think-reveal" id="hint2">提示：像拉瓦锡一样用数据说话，像屠呦呦一样反复验证优化，像凯库勒一样保持想象力——科学思维需要三者的结合。</div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function togglePerson(el) {
+  el.classList.toggle('expanded');
+}
+
+function revealHint(btn, id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('show');
+  btn.textContent = el.classList.contains('show') ? '🙈 收起提示' : '💬 查看提示';
+}
+</script>
+</body>
+</html>

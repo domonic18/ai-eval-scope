@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具库 — STEAM 认知放大器</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.wrapper {
+  width: 100%;
+  max-width: none;
+  padding: 20px;
+  box-sizing: border-box;
+}
+.header {
+  text-align: center;
+  padding: 32px 20px 20px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 8px;
+  font-weight: 700;
+}
+.header p {
+  margin: 0;
+  font-size: var(--font-body);
+  opacity: 0.9;
+}
+.section {
+  margin-bottom: 32px;
+}
+.section-title {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  padding-left: 14px;
+  border-left: 4px solid var(--primary);
+  margin: 28px 0 16px;
+}
+.level-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.level-tab {
+  padding: 6px 18px;
+  border: 2px solid var(--border);
+  border-radius: 20px;
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: all .3s;
+}
+.level-tab:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.level-tab.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+.tool-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  transition: transform .2s, box-shadow .2s;
+  cursor: default;
+}
+.tool-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(22,119,255,0.12);
+}
+.tool-card .tool-icon {
+  display: inline-flex;
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: #fff;
+  background: var(--accent);
+  margin-bottom: 10px;
+}
+.tool-card h3 {
+  margin: 0 0 6px;
+  font-size: 17px;
+  color: var(--text);
+}
+.tool-card .tool-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.badge-basic { background: #e6f7ff; color: #1677ff; }
+.badge-advanced { background: #fff7e6; color: #d46b08; }
+.badge-expert { background: #f9f0ff; color: #722ed1; }
+.tool-card .usage {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin: 0 0 8px;
+}
+.tool-card .steps {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: var(--text);
+}
+.tool-card .steps li {
+  margin-bottom: 4px;
+}
+.tool-card .apply-btn {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 6px 16px;
+  border: none;
+  border-radius: 6px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background .2s;
+}
+.tool-card .apply-btn:hover {
+  background: var(--primary-hover);
+}
+.tool-card .apply-detail {
+  display: none;
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.tool-card .apply-detail.show {
+  display: block;
+}
+.flow-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+.flow-step {
+  flex: 1;
+  min-width: 100px;
+  text-align: center;
+  padding: 10px 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text);
+  transition: background .2s;
+  cursor: default;
+}
+.flow-step:hover {
+  background: var(--accent);
+  color: #fff;
+}
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 13px;
+}
+.comparison-table th, .comparison-table td {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+.comparison-table th {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+.comparison-table tr:nth-child(even) td {
+  background: var(--bg);
+}
+.template-box {
+  background: var(--card-bg);
+  border: 2px dashed var(--accent);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin: 12px 0;
+}
+.template-box h4 {
+  margin: 0 0 8px;
+  color: var(--primary);
+}
+.template-box pre {
+  background: #f6f8fa;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+@media (max-width: 640px) {
+  .wrapper { padding: 12px; }
+  .tool-grid { grid-template-columns: 1fr; }
+  .flow-row { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<div class="header">
+  <h1>🧰 工具库</h1>
+  <p>四类认知放大器 × 三层难度适配 — 选对工具，事半功倍</p>
+</div>
+
+<!-- 分层筛选 -->
+<div class="level-tabs">
+  <span class="level-tab active" data-level="all" onclick="filterLevel(this,'all')">🌟 全部</span>
+  <span class="level-tab" data-level="basic" onclick="filterLevel(this,'basic')">基础工具</span>
+  <span class="level-tab" data-level="advanced" onclick="filterLevel(this,'advanced')">进阶工具</span>
+  <span class="level-tab" data-level="expert" onclick="filterLevel(this,'expert')">高阶工具</span>
+</div>
+
+<!-- 思维工具 -->
+<div class="section">
+<div class="section-title">🧠 思维工具</div>
+<div class="tool-grid">
+
+<div class="tool-card" data-level="basic">
+  <div class="tool-icon">🧩</div>
+  <span class="tool-badge badge-basic">基础</span>
+  <h3>XMind · 幕布 — 思维导图</h3>
+  <p class="usage">将零散知识结构化，理清概念之间的层级和关联。</p>
+  <div class="flow-row">
+    <div class="flow-step">① 定中心</div>
+    <div class="flow-step">② 发散分支</div>
+    <div class="flow-step">③ 补充关键词</div>
+    <div class="flow-step">④ 连线关联</div>
+  </div>
+  <button class="apply-btn" onclick="toggleDetail(this)">查看示例</button>
+  <div class="apply-detail"><strong>示例：</strong>将"化学变化 vs 物理变化"绘制为思维导图，中心写"物质变化"，左分支展开物理变化特征，右分支展开化学变化特征。</div>
+</div>
+
+<div class="tool-card" data-level="basic">
+  <div class="tool-icon">📊</div>
+  <span class="tool-badge badge-basic">基础</span>
+  <h3>T-Chart / 比较表</h3>
+  <p class="usage">两个对象对比分析时，并列列出异同点。</p>
+  <table class="comparison-table">
+    <tr><th>比较维度</th><th>物理变化</th><th>化学变化</th></tr>
+    <tr><td>本质</td><td>分子不变</td><td>分子改变</td></tr>
+    <tr><td>新物质</td><td>无</td><td>有</td></tr>
+    <tr><td>例子</td><td>冰融化</td><td>铁生锈</td></tr>
+  </table>
+  <button class="apply-btn" onclick="toggleDetail(this)">📝 空白模板</button>
+  <div class="apply-detail"><pre>| 比较维度 | 对象A | 对象B |
+|---------|-------|-------|
+|         |       |       |</pre>复制到笔记中填写。</div>
+</div>
+
+<div class="tool-card" data-level="advanced">
+  <div class="tool-icon">🗺️</div>
+  <span class="tool-badge badge-advanced">进阶</span>
+  <h3>概念图绘制</h3>
+  <p class="usage">用节点 + 连线 + 标签表示概念之间的因果或逻辑关系。</p>
+  <div class="steps">
+    <li>列出核心概念（不超过 8 个）</li>
+    <li>按"一般→具体"排列层级</li>
+    <li>用箭头连接概念，在连线上写关系词（"导致""包含""例如"）</li>
+  </div>
+  <button class="apply-btn" onclick="toggleDetail(this)">查看示例</button>
+  <div class="apply-detail"><strong>示例：</strong>燃烧概念图：<br>可燃物 →（需要）→ 氧气 →（达到）→ 着火点 →（产生）→ 新物质 + 能量</div>
+</div>
+
+</div></div>
+
+<!-- 数字工具 -->
+<div class="section">
+<div class="section-title">💻 数字工具</div>
+<div class="tool-grid">
+
+<div class="tool-card" data-level="basic">
+  <div class="tool-icon">🤖</div>
+  <span class="tool-badge badge-basic">基础</span>
+  <h3>AI 辅助学习</h3>
+  <p class="usage">用 AI 查资料、整理思路、生成练习。不是代替思考，而是加速探索。<br><br><strong>使用原则：</strong>① 先自己思考 → ② 向 AI 提问 → ③ 批判地吸收 → ④ 记录你的判断</p>
+  <button class="apply-btn" onclick="toggleDetail(this)">示例问题</button>
+  <div class="apply-detail"><strong>示例提问：</strong><br>"请列出化学变化和物理变化的 5 个区别，并用生活中的例子说明。""请帮我梳理燃烧三要素之间的关系，用概念图的形式。"</div>
+</div>
+
+<div class="tool-card" data-level="basic">
+  <div class="tool-icon">📽️</div>
+  <span class="tool-badge badge-basic">基础</span>
+  <h3>演示工具 — PPT / Canva</h3>
+  <p class="usage">将你的研究成果用视觉化方式呈现给他人。</p>
+  <div class="steps">
+    <li>封面：标题 + 作者 + 一句核心观点</li>
+    <li>目录页：展示结构</li>
+    <li>内容页：一页一个核心观点 + 图表或图片</li>
+    <li>总结页：回顾要点 + 你的收获</li>
+  </div>
+</div>
+
+<div class="tool-card" data-level="advanced">
+  <div class="tool-icon">📈</div>
+  <span class="tool-badge badge-advanced">进阶</span>
+  <h3>Excel / WPS 数据图表</h3>
+  <p class="usage">将实验数据转化为可视化图表，发现趋势和规律。</p>
+  <table class="comparison-table">
+    <tr><th>图表类型</th><th>适用场景</th><th>示例</th></tr>
+    <tr><td>柱状图</td><td>分类对比</td><td>不同催化剂下的反应速率</td></tr>
+    <tr><td>折线图</td><td>连续趋势</td><td>温度随时间的变化</td></tr>
+    <tr><td>饼图</td><td>占比分析</td><td>空气中各成分体积分数</td></tr>
+  </table>
+  <button class="apply-btn" onclick="toggleDetail(this)">制作步骤</button>
+  <div class="apply-detail">① 整理数据到表格（行=实验组，列=变量）<br>② 选中数据 → 插入图表<br>③ 选择图表类型<br>④ 添加标题和轴标签</div>
+</div>
+
+</div></div>
+
+<!-- 数据工具 -->
+<div class="section">
+<div class="section-title">📊 数据工具</div>
+<div class="tool-grid">
+
+<div class="tool-card" data-level="basic">
+  <div class="tool-icon">📋</div>
+  <span class="tool-badge badge-basic">基础</span>
+  <h3>实验数据记录模板</h3>
+  <p class="usage">每次实验前先复制这个模板，确保记录完整。</p>
+  <div class="template-box">
+    <h4>📄 实验记录表</h4>
+    <pre>实验名称：
+实验日期：
+实验目的：
+假设：
+
+| 步骤 | 观察现象 | 数据记录 |
+|------|---------|---------|
+| 1    |         |         |
+
+结论：
+反思：</pre>
+  </div>
+</div>
+
+<div class="tool-card" data-level="expert">
+  <div class="tool-icon">🔬</div>
+  <span class="tool-badge badge-expert">高阶</span>
+  <h3>图表深度分析方法</h3>
+  <p class="usage">不只是"看图说话"，而是从数据中挖掘规律、异常和假设。</p>
+  <div class="steps">
+    <li><strong>描述</strong>：你看到了什么？（趋势、极值、异常点）</li>
+    <li><strong>解释</strong>：为什么会这样？（联系化学原理）</li>
+    <li><strong>预测</strong>：如果继续会怎样？（外推趋势）</li>
+    <li><strong>质疑</strong>：数据可靠吗？有干扰因素吗？</li>
+  </div>
+</div>
+
+</div></div>
+
+<!-- 实验工具 -->
+<div class="section">
+<div class="section-title">🧪 实验工具</div>
+<div class="tool-grid">
+
+<div class="tool-card" data-level="basic">
+  <div class="tool-icon">🧴</div>
+  <span class="tool-badge badge-basic">基础</span>
+  <h3>基本化学仪器清单</h3>
+  <p class="usage">九年级上必备实验仪器及其用途速查。</p>
+  <table class="comparison-table">
+    <tr><th>仪器</th><th>用途</th><th>注意事项</th></tr>
+    <tr><td>试管</td><td>少量物质反应</td><td>加热前预热</td></tr>
+    <tr><td>酒精灯</td><td>加热工具</td><td>禁止用嘴吹灭</td></tr>
+    <tr><td>烧杯</td><td>配制/盛放溶液</td><td>加热需垫石棉网</td></tr>
+    <tr><td>量筒</td><td>量取液体体积</td><td>视线与凹液面最低处平齐</td></tr>
+    <tr><td>铁架台</td><td>固定装置</td><td>夹持位置要适中</td></tr>
+  </table>
+</div>
+
+<div class="tool-card" data-level="advanced">
+  <div class="tool-icon">🌐</div>
+  <span class="tool-badge badge-advanced">进阶</span>
+  <h3>虚拟实验平台推荐</h3>
+  <p class="usage">无法到实验室时，用数字模拟完成实验探究。</p>
+  <div class="steps">
+    <li><strong>PhET 互动模拟</strong>（科罗拉多大学）— 免费，涵盖化学、物理多个主题</li>
+    <li><strong>NOBOOK 虚拟实验</strong> — 国内平台，支持初高中化学实验</li>
+    <li><strong>中央电化教育馆虚拟实验</strong> — 国家平台资源</li>
+  </div>
+  <button class="apply-btn" onclick="toggleDetail(this)">使用建议</button>
+  <div class="apply-detail">先用虚拟实验熟悉操作流程，再进实验室操作。虚拟实验可以大胆尝试"如果加多一倍试剂会怎样"——试错成本为零。</div>
+</div>
+
+</div></div>
+
+<!-- 使用建议区 -->
+<div style="background:var(--card-bg);border-radius:var(--border-radius);padding:20px;box-shadow:var(--shadow);margin-top:20px;">
+  <h3 style="color:var(--primary);margin:0 0 12px;">💡 工具使用建议</h3>
+  <p style="margin:0 0 8px;">1. 接到任务时先问自己：<strong>我需要"想清楚"（思维工具）还是"做出来"（数字工具）？</strong></p>
+  <p style="margin:0 0 8px;">2. <strong>组合使用</strong>效果更好：先画思维导图理清思路 → 用 Excel 整理数据 → 用 Canva 呈现结论。</p>
+  <p style="margin:0;">3. 选工具不贪多：基础工具熟练后再挑战进阶和高阶。</p>
+</div>
+
+</div><!-- .wrapper -->
+
+<script>
+function toggleDetail(btn) {
+  var detail = btn.nextElementSibling;
+  if (detail && detail.classList) {
+    detail.classList.toggle('show');
+    btn.textContent = detail.classList.contains('show') ? '收起' : (btn.dataset.origText || '查看示例');
+    if (!btn.dataset.origText) btn.dataset.origText = '查看示例';
+  }
+}
+
+function filterLevel(el, level) {
+  document.querySelectorAll('.level-tab').forEach(function(tab){ tab.classList.remove('active'); });
+  el.classList.add('active');
+  document.querySelectorAll('.tool-card').forEach(function(card){
+    if (level === 'all') { card.style.display = ''; }
+    else { card.style.display = card.getAttribute('data-level') === level ? '' : 'none'; }
+  });
+}
+</script>
+</body>
+</html>

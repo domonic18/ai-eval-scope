@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>作业榜 — 三创性应用分层训练</title>
+  <style>
+    :root {
+      --primary: #1677ff;
+      --primary-hover: #4096ff;
+      --accent: #69b1ff;
+      --bg: #f0f5ff;
+      --card-bg: #ffffff;
+      --text: rgba(0,0,0,0.88);
+      --text-secondary: rgba(0,0,0,0.45);
+      --border: #d9d9d9;
+      --border-radius: 8px;
+      --shadow: 0 2px 8px rgba(0,0,0,0.06);
+
+      --font-body: 15px;
+      --font-h1: 24px;
+      --font-h2: 19px;
+      --line-height: 1.7;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      font-size: var(--font-body);
+      line-height: var(--line-height);
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    .container {
+      width: 100%;
+      max-width: none;
+      padding: 24px 32px;
+      box-sizing: border-box;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #096dd9 0%, #1890ff 100%);
+      border-radius: var(--border-radius);
+      padding: 28px 36px;
+      margin-bottom: 24px;
+      color: #fff;
+    }
+
+    .hero h1 {
+      font-size: var(--font-h1);
+      margin: 0 0 6px;
+    }
+
+    .hero p {
+      margin: 0;
+      opacity: 0.9;
+    }
+
+    .level-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .level-tab {
+      padding: 10px 24px;
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      background: var(--card-bg);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s;
+      font-family: inherit;
+      flex: 1;
+      text-align: center;
+      min-width: 120px;
+    }
+
+    .level-tab:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .level-tab.selected {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .level-panel {
+      display: none;
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      padding: 24px 28px;
+      margin-bottom: 20px;
+      animation: slideIn 0.3s ease;
+    }
+
+    .level-panel.active {
+      display: block;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .level-panel h3 {
+      font-size: var(--font-h2);
+      margin: 0 0 14px;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .level-panel .badge {
+      display: inline-block;
+      font-size: 12px;
+      padding: 2px 10px;
+      border-radius: 12px;
+      background: var(--bg);
+      color: var(--primary);
+      font-weight: 400;
+    }
+
+    .task-item {
+      padding: 12px 16px;
+      margin-bottom: 10px;
+      background: var(--bg);
+      border-radius: 6px;
+      border-left: 4px solid var(--primary);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .task-item .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      background: var(--primary);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 13px;
+      font-weight: 600;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .task-item .task-text {
+      flex: 1;
+    }
+
+    .diff-level {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-right: 8px;
+    }
+
+    .diff-A { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+    .diff-B { background: #fff7e6; color: #fa8c16; border: 1px solid #ffd591; }
+    .diff-C { background: #fff1f0; color: #f5222d; border: 1px solid #ffa39e; }
+
+    .rubric-section {
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      padding: 20px 24px;
+    }
+
+    .rubric-section h3 {
+      font-size: var(--font-h2);
+      margin: 0 0 14px;
+      color: var(--primary);
+    }
+
+    .rubric-bar {
+      margin-bottom: 14px;
+    }
+
+    .rubric-bar:last-child {
+      margin-bottom: 0;
+    }
+
+    .rubric-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .rubric-track {
+      height: 10px;
+      background: #f0f0f0;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .rubric-fill {
+      height: 100%;
+      border-radius: 5px;
+      transition: width 0.6s ease;
+    }
+
+    .fill-science { width: 40%; background: var(--primary); }
+    .fill-complete { width: 30%; background: #52c41a; }
+    .fill-clarity { width: 30%; background: #fa8c16; }
+
+    @media (max-width: 640px) {
+      .container { padding: 16px; }
+      .level-tabs { flex-direction: column; }
+      .level-tab { min-width: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="hero">
+      <h1>📋 作业榜 — 三创性应用训练</h1>
+      <p>从基础到创造，逐级递进。点击标签切换层级，选择适合你的挑战！</p>
+    </div>
+
+    <div class="level-tabs" id="tabContainer">
+      <button class="level-tab selected" data-level="basic" onclick="switchLevel('basic')">🌱 基础层 · 再现</button>
+      <button class="level-tab" data-level="diff" onclick="switchLevel('diff')">📈 分层层 · 差异化</button>
+      <button class="level-tab" data-level="open" onclick="switchLevel('open')">🚀 开放层 · 创造</button>
+    </div>
+
+    <div class="level-panel active" id="panel-basic">
+      <h3>🌱 基础层 <span class="badge">再现与理解</span></h3>
+      <div class="task-item">
+        <span class="num">1</span>
+        <div class="task-text">识别生活中 <strong>3 个化学变化</strong> 的例子，并说明你的判断依据是什么。</div>
+      </div>
+      <div class="task-item">
+        <span class="num">2</span>
+        <div class="task-text">辨析 <strong>物理性质</strong> 与 <strong>化学性质</strong> 的异同，各举 2 个例子对比说明。</div>
+      </div>
+      <div style="margin-top:12px;padding:12px 16px;background:#f6ffed;border-radius:6px;border:1px solid #b7eb8f;font-size:14px;">
+        ✅ <strong>达标标准：</strong>准确区分物理与化学变化，概念理解无误即可进入分层挑战。
+      </div>
+    </div>
+
+    <div class="level-panel" id="panel-diff">
+      <h3>📈 分层层 <span class="badge">按能力选择难度</span></h3>
+      <div class="task-item">
+        <span class="num">A</span>
+        <div class="task-text">
+          <span class="diff-level diff-A">A 级</span>
+          根据给定实验现象，判断发生了何种变化（物理/化学），并说明理由。
+        </div>
+      </div>
+      <div class="task-item">
+        <span class="num">B</span>
+        <div class="task-text">
+          <span class="diff-level diff-B">B 级</span>
+          设计简单的<strong>化学变化分类体系图</strong>（思维导图/表格均可），涵盖至少 5 种变化类型。
+        </div>
+      </div>
+      <div class="task-item">
+        <span class="num">C</span>
+        <div class="task-text">
+          <span class="diff-level diff-C">C 级</span>
+          分析一个生活中常见的化学变化全过程：从反应物→条件→现象→生成物，完整描述其化学本质。
+        </div>
+      </div>
+      <div style="margin-top:12px;font-size:14px;color:var(--text-secondary);">💡 建议从 A 级开始，逐级挑战。能完成 C 级的同学可以直接冲刺开放层！</div>
+    </div>
+
+    <div class="level-panel" id="panel-open">
+      <h3>🚀 开放层 <span class="badge">创造性表达</span></h3>
+      <div class="task-item">
+        <span class="num">★</span>
+        <div class="task-text">自选一种化学现象，创作一份 <strong>"化学变化说明书"</strong>（图文结合）。<br>形式可选：<span style="display:inline-flex;gap:6px;flex-wrap:wrap;margin-top:4px;">
+          <span style="background:#f0f5ff;padding:2px 10px;border-radius:12px;">✍️ 写作</span>
+          <span style="background:#f0f5ff;padding:2px 10px;border-radius:12px;">📊 图示</span>
+          <span style="background:#f0f5ff;padding:2px 10px;border-radius:12px;">🎬 短视频脚本</span>
+          <span style="background:#f0f5ff;padding:2px 10px;border-radius:12px;">🎤 演讲提纲</span>
+        </span></div>
+      </div>
+      <div style="margin-top:12px;padding:12px 16px;background:#fff7e6;border-radius:6px;border:1px solid #ffd591;font-size:14px;">
+        💡 <strong>小提示：</strong>选择你日常生活中亲眼见过、觉得"神奇"的化学现象来写，越贴近生活越有感染力！
+      </div>
+    </div>
+
+    <div class="rubric-section">
+      <h3>📐 评价标准（Rubric）</h3>
+      <div class="rubric-bar">
+        <div class="rubric-label">
+          <span>🔬 科学性（概念准确）</span>
+          <span><strong>40%</strong></span>
+        </div>
+        <div class="rubric-track">
+          <div class="rubric-fill fill-science"></div>
+        </div>
+      </div>
+      <div class="rubric-bar">
+        <div class="rubric-label">
+          <span>📦 完整性（要素齐全）</span>
+          <span><strong>30%</strong></span>
+        </div>
+        <div class="rubric-track">
+          <div class="rubric-fill fill-complete"></div>
+        </div>
+      </div>
+      <div class="rubric-bar">
+        <div class="rubric-label">
+          <span>🗣️ 表达清晰度（逻辑通顺）</span>
+          <span><strong>30%</strong></span>
+        </div>
+        <div class="rubric-track">
+          <div class="rubric-fill fill-clarity"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function switchLevel(level) {
+      var panels = ['basic', 'diff', 'open'];
+      for (var i = 0; i < panels.length; i++) {
+        var panel = document.getElementById('panel-' + panels[i]);
+        var tab = document.querySelector('.level-tab[data-level="' + panels[i] + '"]');
+        if (panel) {
+          if (panels[i] === level) {
+            panel.classList.add('active');
+            if (tab) tab.classList.add('selected');
+          } else {
+            panel.classList.remove('active');
+            if (tab) tab.classList.remove('selected');
+          }
+        }
+      }
+    }
+  </script>
+</body>
+</html>

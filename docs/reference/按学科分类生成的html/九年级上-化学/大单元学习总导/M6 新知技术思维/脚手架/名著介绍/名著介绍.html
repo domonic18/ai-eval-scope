@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名著介绍 — 化学学科视野</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  padding: 0;
+}
+.wrapper { width: 100%; max-width: none; padding: 24px; }
+
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 6px; }
+.header .sub { font-size: 13px; opacity: 0.85; }
+
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  border-left: 4px solid var(--primary);
+  padding-left: 12px;
+  margin-bottom: 14px;
+}
+.card h3 { font-size: 16px; color: var(--text); margin: 12px 0 8px; font-weight: 600; }
+
+/* Quote */
+.quote-box {
+  padding: 14px 18px; margin-bottom: 12px;
+  border-radius: 6px; cursor: pointer; transition: all 0.2s;
+}
+.quote-box:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.quote-box .quote { font-size: 16px; font-weight: 600; line-height: 1.6; font-style: italic; }
+.quote-box .source { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+.quote-box .reflect { display: none; margin-top: 8px; padding: 10px; border-radius: 4px; font-size: 14px; }
+.quote-box .reflect.show { display: block; }
+.quote-box.conflict { background: linear-gradient(135deg, #f0f5ff, #e6f4ff); border-left: 4px solid var(--primary); }
+.quote-box.conflict .reflect { background: #e6f4ff; color: #0958d9; }
+.quote-box.inspire { background: linear-gradient(135deg, #f6ffed, #f0fdf4); border-left: 4px solid #52c41a; }
+.quote-box.inspire .reflect { background: #f6ffed; color: #389e0d; }
+.quote-box.critical { background: linear-gradient(135deg, #fff7e6, #fffbe6); border-left: 4px solid #fa8c16; }
+.quote-box.critical .reflect { background: #fff7e6; color: #d46b08; }
+.quote-box.action { background: linear-gradient(135deg, #fff2f0, #fff0f0); border-left: 4px solid #ff4d4f; }
+.quote-box.action .reflect { background: #fff2f0; color: #cf1322; }
+
+/* Book */
+.book-card {
+  background: var(--bg); border-radius: var(--border-radius);
+  padding: 16px; margin-bottom: 14px;
+  border: 1px solid var(--border); transition: all 0.2s;
+  cursor: pointer;
+}
+.book-card:hover { border-color: var(--primary); }
+.book-card .book-title { font-size: 17px; font-weight: 700; color: var(--primary); }
+.book-card .book-author { font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; }
+.book-card .book-tag {
+  display: inline-block; padding: 1px 8px; border-radius: 10px;
+  font-size: 11px; font-weight: 600; margin-right: 4px;
+}
+.book-card .book-tag.cn { background: #e6f4ff; color: var(--primary); }
+.book-card .book-tag.foreign { background: #f6ffed; color: #389e0d; }
+.book-card .book-tag.cross { background: #fff7e6; color: #d46b08; }
+.book-card .book-detail { display: none; margin-top: 10px; }
+.book-card .book-detail.show { display: block; }
+
+/* Book Info Table */
+.book-table { width: 100%; border-collapse: collapse; margin: 6px 0; font-size: 14px; }
+.book-table td { border: 1px solid var(--border); padding: 6px 10px; vertical-align: top; }
+.book-table td:first-child { font-weight: 600; white-space: nowrap; width: 22%; color: var(--primary); background: #fafafa; }
+
+/* Task selection */
+.task-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(140px,1fr)); gap: 10px; margin: 12px 0; }
+.task-item {
+  padding: 14px 10px; border: 1.5px solid var(--border); border-radius: 6px;
+  text-align: center; cursor: pointer; transition: all 0.2s;
+}
+.task-item:hover { border-color: var(--primary); background: #e6f4ff; }
+.task-item.selected { border-color: var(--primary); background: var(--primary); color: #fff; }
+.task-item .icon { font-size: 24px; }
+.task-item .label { font-size: 14px; font-weight: 600; margin-top: 4px; }
+
+.btn {
+  display: inline-block; padding: 8px 20px; border-radius: 6px;
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  border: none; transition: all 0.2s;
+}
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+.btn-outline:hover { background: #e6f4ff; }
+
+.text-sm { font-size: 13px; }
+.text-muted { color: var(--text-secondary); }
+.mb-8 { margin-bottom: 8px; }
+.mt-8 { margin-top: 8px; }
+.flex { display: flex; gap: 10px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<div class="header">
+  <h1>📖 名著介绍 · 学科视野</h1>
+  <div class="sub">化学 · 九年级上 · M6 新知技术思维 — 思想深度型脚手架</div>
+  <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;">
+    <span class="book-tag cn">中国经典</span>
+    <span class="book-tag foreign">外国经典</span>
+    <span class="book-tag cross">跨学科</span>
+  </div>
+</div>
+
+<!-- 名言精选 -->
+<div class="card">
+  <h2>💬 化学相关名言（精选 4 句）</h2>
+  <p class="text-muted text-sm mb-8">点击名言卡片展开思考引导。</p>
+
+  <div class="quote-box conflict" onclick="toggleQuote(this)">
+    <div class="quote">"化学的成就，一部分是发现，一部分是发明。"</div>
+    <div class="source">—— 法拉第（Michael Faraday）</div>
+    <div class="reflect">💭 思考：发现与发明有何区别？你学过的化学知识中，哪些属于"发现"，哪些属于"发明"？</div>
+  </div>
+
+  <div class="quote-box inspire" onclick="toggleQuote(this)">
+    <div class="quote">"在科学上，没有平坦的大道，只有不畏劳苦沿着陡峭山路攀登的人，才有希望达到光辉的顶点。"</div>
+    <div class="source">—— 马克思（Karl Marx）</div>
+    <div class="reflect">💭 思考：化学学习中，你遇到过什么样的"陡峭山路"？你是如何攀爬的？</div>
+  </div>
+
+  <div class="quote-box critical" onclick="toggleQuote(this)">
+    <div class="quote">"把一切现象都归结为机械运动的做法，对化学来说是不够的。"</div>
+    <div class="source">—— 恩格斯（Friedrich Engels）</div>
+    <div class="reflect">💭 思考：为什么化学不能只用物理定律解释？化学的"独特性"在哪里？</div>
+  </div>
+
+  <div class="quote-box action" onclick="toggleQuote(this)">
+    <div class="quote">"实验是最有力的证人。"</div>
+    <div class="source">—— 拉瓦锡（Antoine Lavoisier）</div>
+    <div class="reflect">💭 思考：拉瓦锡用实验否定了延续百年的理论——今天你敢用实验挑战一个常识吗？</div>
+  </div>
+</div>
+
+<!-- 推荐名著 -->
+<div class="card">
+  <h2>📚 推荐名著（3 本）</h2>
+  <p class="text-muted text-sm mb-8">至少读 1 本，推荐完成 2 本。点击书名展开详细信息。</p>
+
+  <!-- 天工开物 -->
+  <div class="book-card" onclick="toggleBook(this)">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <span class="book-tag cn">中国著作</span>
+      <span class="book-title">《天工开物》</span>
+      <span class="book-author">宋应星（明）</span>
+    </div>
+    <p class="text-sm" style="margin-top:4px;">"穷究试验"——古人如何利用化学原理制陶、冶炼、火药？</p>
+    <div class="book-detail">
+      <table class="book-table">
+        <tr><td>核心问题</td><td>古人如何利用化学原理进行生产（制陶、冶炼、火药）？</td></tr>
+        <tr><td>核心观点</td><td>"穷究试验"——一切工艺技术源于反复试验与经验积累</td></tr>
+        <tr><td>关键片段</td><td>第十五卷《冶铁》中"生铁淋口"工艺：利用碳含量变化改变金属硬度，与现代钢铁冶金原理相通</td></tr>
+        <tr><td>适读建议</td><td>初中生建议读白话插图版（选读"陶埏""五金""燔石"三章即可）</td></tr>
+        <tr><td>获取路径</td><td>微信读书免费 / 京东当当 20 元以内白话版 / 学校图书馆</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- 化学基础论 -->
+  <div class="book-card" onclick="toggleBook(this)">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <span class="book-tag foreign">外国经典</span>
+      <span class="book-title">《化学基础论》</span>
+      <span class="book-author">拉瓦锡（法）</span>
+    </div>
+    <p class="text-sm" style="margin-top:4px;">化学如何从炼金术变成一门科学？</p>
+    <div class="book-detail">
+      <table class="book-table">
+        <tr><td>核心问题</td><td>化学如何从炼金术变成一门科学？</td></tr>
+        <tr><td>核心观点</td><td>化学必须以精确实验和定量测量为基础；提出元素定义并列出第一个元素表</td></tr>
+        <tr><td>关键片段</td><td>导言：拉瓦锡强调"没有一个实验是最终的，一切结论都可被新实验推翻"——体现 M6"新知技术思维"核心精神</td></tr>
+        <tr><td>适读建议</td><td>难度较大，建议只读导言 + 第 1 章，配合微视频讲解</td></tr>
+        <tr><td>获取路径</td><td>商务印书馆"汉译世界学术名著丛书"版 / 超星电子书</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- 元素的盛宴 -->
+  <div class="book-card" onclick="toggleBook(this)">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <span class="book-tag cross">跨学科</span>
+      <span class="book-title">《元素的盛宴》</span>
+      <span class="book-author">山姆·基恩（美）</span>
+    </div>
+    <p class="text-sm" style="margin-top:4px;">元素周期表中每一种元素的"不为人知的故事"。</p>
+    <div class="book-detail">
+      <table class="book-table">
+        <tr><td>核心问题</td><td>元素周期表中的每一种元素都有什么"不为人知的故事"？</td></tr>
+        <tr><td>核心观点</td><td>化学元素的历史是一幅交织着战争、阴谋、爱情与疯狂的画卷</td></tr>
+        <tr><td>关键片段</td><td>第 1 章《火焰与元素》：讲述古人如何通过火焰发现和分离各种元素——火焰是人类最早的"化学实验工具"</td></tr>
+        <tr><td>适读建议</td><td>最适合初中生的化学课外读物！语言幽默，每章可独立阅读</td></tr>
+        <tr><td>获取路径</td><td>中信出版社 / 微信读书 / 各大书店约 39 元</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- 阅读任务 -->
+<div class="card">
+  <h2>🎯 阅读任务（选做其一）</h2>
+  <p class="text-muted text-sm mb-8">选择你感兴趣的任务形式完成。</p>
+
+  <div class="task-grid">
+    <div class="task-item" onclick="selectTask(this, 0)">
+      <div class="icon">🖼️</div>
+      <div class="label">名言海报</div>
+      <div class="text-sm">A4 手绘/排版设计</div>
+    </div>
+    <div class="task-item" onclick="selectTask(this, 1)">
+      <div class="icon">📇</div>
+      <div class="label">读书卡片</div>
+      <div class="text-sm">电子/纸质卡片</div>
+    </div>
+    <div class="task-item" onclick="selectTask(this, 2)">
+      <div class="icon">🎙️</div>
+      <div class="label">阅读对谈</div>
+      <div class="text-sm">3 分钟搭档音频</div>
+    </div>
+  </div>
+
+  <div id="taskResult" class="text-sm text-muted mt-8">👆 点击选择你要挑战的任务形式</div>
+
+  <div style="margin-top:12px;padding:12px;background:var(--bg);border-radius:6px;">
+    <p class="text-sm"><strong>📌 任务要求提示：</strong></p>
+    <ul style="margin:6px 0 0 16px;font-size:14px;">
+      <li><strong>名言海报</strong>：选一句名言，配化学相关插图，附 50 字感悟</li>
+      <li><strong>读书卡片</strong>：写清书名、核心观点、最有启发的一段话</li>
+      <li><strong>阅读对谈</strong>：一人扮"古人"（宋应星/拉瓦锡），一人主持提问</li>
+    </ul>
+  </div>
+</div>
+
+</div><!-- wrapper -->
+
+<script>
+function toggleQuote(el) {
+  const reflect = el.querySelector('.reflect');
+  document.querySelectorAll('.quote-box .reflect.show').forEach(r => {
+    if (r !== reflect) r.classList.remove('show');
+  });
+  reflect.classList.toggle('show');
+}
+
+function toggleBook(el) {
+  const detail = el.querySelector('.book-detail');
+  document.querySelectorAll('.book-card .book-detail.show').forEach(d => {
+    if (d !== detail) d.classList.remove('show');
+  });
+  detail.classList.toggle('show');
+}
+
+let selectedTaskIdx = -1;
+
+function selectTask(el, idx) {
+  document.querySelectorAll('.task-item').forEach(t => t.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedTaskIdx = idx;
+  const labels = ['名言海报', '读书卡片', '阅读对谈'];
+  document.getElementById('taskResult').textContent = '✅ 已选择「' + labels[idx] + '」，完成阅读后动手实践吧！';
+}
+</script>
+</body>
+</html>

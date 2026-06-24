@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性案例 — M7 新知数学思维</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header p { font-size: 14px; opacity: 0.9; }
+.header .meta { font-size: 13px; opacity: 0.75; margin-top: 8px; }
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  transition: box-shadow 0.2s;
+}
+.case-card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.12); }
+.case-header {
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+  cursor: pointer;
+  user-select: none;
+  gap: 12px;
+  background: var(--card-bg);
+  transition: background 0.2s;
+}
+.case-header:hover { background: #f6f8ff; }
+.case-header .icon {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+.case-header .title-area { flex: 1; }
+.case-header .title-area h3 { font-size: var(--font-h2); color: var(--text); font-weight: 600; }
+.case-header .title-area .difficulty { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+.case-header .arrow {
+  font-size: 18px;
+  color: var(--text-secondary);
+  transition: transform 0.3s;
+  flex-shrink: 0;
+}
+.case-card.open .case-header .arrow { transform: rotate(180deg); }
+.case-card.open .case-header { background: #f0f5ff; }
+.case-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+  padding: 0 18px;
+  border-top: 0 solid var(--border);
+}
+.case-card.open .case-body {
+  max-height: 3000px;
+  padding: 16px 18px;
+  border-top-width: 1px;
+}
+.case-body .section-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-top: 12px;
+  margin-bottom: 4px;
+}
+.case-body .section-label:first-child { margin-top: 0; }
+.case-body p { margin-bottom: 8px; font-size: 14px; }
+.table-wrap {
+  overflow-x: auto;
+  margin: 8px 0 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+table th, table td {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  text-align: center;
+}
+table th {
+  background: var(--bg);
+  font-weight: 600;
+  color: var(--text);
+}
+table td { color: var(--text); }
+.tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background: #e6f4ff;
+  color: var(--primary);
+  margin-right: 4px;
+  margin-bottom: 4px;
+}
+.reflection-section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-top: 20px;
+  border: 1px solid var(--border);
+}
+.reflection-section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+}
+.reflection-section ol {
+  padding-left: 20px;
+  font-size: 14px;
+}
+.reflection-section ol li { margin-bottom: 8px; }
+.reflection-section ol li strong { color: var(--text); }
+.nav-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 20px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.nav-dot {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.nav-dot:hover { border-color: var(--primary); color: var(--primary); }
+.nav-dot.active { border-color: var(--primary); background: var(--primary); color: #fff; }
+@media (max-width: 600px) {
+  .container { padding: 12px 10px; }
+  .header { padding: 18px 16px; }
+  .case-body { padding: 0 12px; }
+  .case-card.open .case-body { padding: 12px; }
+  .nav-bar { padding: 8px 10px; gap: 4px; }
+  .nav-dot { width: 28px; height: 28px; font-size: 11px; }
+}
+</style>
+</head>
+<body>
+<div class="nav-bar" id="navBar">
+  <span style="font-size:13px;color:var(--text-secondary);margin-right:8px;align-self:center;">案例导航</span>
+</div>
+<div class="container">
+  <div class="header">
+    <h1>🔬 解析性案例</h1>
+    <p>运用数学思维破解化学与生活中的定量问题——7个层级递进的解析性案例</p>
+    <div class="meta">M7 新知数学思维 · 解析性导学 · 九年级化学</div>
+  </div>
+
+  <!-- 案例1 -->
+  <div class="case-card" data-case="1">
+    <div class="case-header" onclick="toggleCase(this)">
+      <div class="icon">1</div>
+      <div class="title-area">
+        <h3>早餐的营养成分标签</h3>
+        <div class="difficulty">⭐ 难度：★☆☆☆☆ · 调用：比例推理法</div>
+      </div>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="section-label">📋 情境材料</div>
+      <p>一盒牛奶的营养成分表：蛋白质3.0g/100mL、脂肪3.5g/100mL、碳水化合物5.0g/100mL</p>
+      <div class="section-label">🎯 解析任务</div>
+      <p>你喝了一盒250mL的牛奶，请解析你摄入了多少蛋白质、脂肪和碳水化合物。</p>
+      <div class="section-label">⚙️ 调用原理</div>
+      <p><span class="tag">比例推理法</span></p>
+      <div class="section-label">🔍 解析路径</div>
+      <p>识别数据 → 确认100mL基准 → 计算250mL对应值 → 判断是否满足营养需求</p>
+      <div class="section-label">📊 分析记录表</div>
+      <div class="table-wrap">
+        <table>
+          <tr><th>营养成分</th><th>每100mL含量</th><th>250mL摄入量</th><th>成年人每日推荐量</th><th>满足度</th></tr>
+          <tr><td>蛋白质</td><td>3.0g</td><td>7.5g</td><td>50-65g</td><td>≈12%</td></tr>
+          <tr><td>脂肪</td><td>3.5g</td><td>8.75g</td><td>60-75g</td><td>≈13%</td></tr>
+          <tr><td>碳水化合物</td><td>5.0g</td><td>12.5g</td><td>250-300g</td><td>≈4.5%</td></tr>
+        </table>
+      </div>
+      <div class="section-label">💡 启示</div>
+      <p>一盒牛奶提供的营养素占全天需求比例不大，但蛋白质比例相对较高——早餐搭配时还需配合谷物和水果。</p>
+    </div>
+  </div>
+
+  <!-- 案例2 -->
+  <div class="case-card" data-case="2">
+    <div class="case-header" onclick="toggleCase(this)">
+      <div class="icon">2</div>
+      <div class="title-area">
+        <h3>操场跑步的心率变化</h3>
+        <div class="difficulty">⭐ 难度：★★☆☆☆ · 调用：变量提取法 + 基准参照法</div>
+      </div>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="section-label">📋 情境材料</div>
+      <p>小明记录了自己在操场上跑400米时的心率：<br>静止时72次/分、跑完100米时135次/分、跑完200米时150次/分、跑完300米时158次/分、跑完400米时162次/分、休息3分钟后88次/分</p>
+      <div class="section-label">🎯 解析任务</div>
+      <p>请用数据解析运动强度与心率之间的数量关系。</p>
+      <div class="section-label">⚙️ 调用原理</div>
+      <p><span class="tag">变量提取法</span><span class="tag">基准参照法</span></p>
+      <div class="section-label">🔍 解析路径</div>
+      <p>识别变量（距离、心率）→ 发现心率随距离的增加趋势 → 分析"增量"→ 判断心率恢复速率</p>
+      <div class="section-label">📊 距离—心率对应表</div>
+      <div class="table-wrap">
+        <table>
+          <tr><th>距离（m）</th><th>心率（次/分）</th><th>心率增量</th><th>增幅</th></tr>
+          <tr><td>0（静止）</td><td>72</td><td>—</td><td>—</td></tr>
+          <tr><td>100</td><td>135</td><td>+63</td><td>+87.5%</td></tr>
+          <tr><td>200</td><td>150</td><td>+15</td><td>+11.1%</td></tr>
+          <tr><td>300</td><td>158</td><td>+8</td><td>+5.3%</td></tr>
+          <tr><td>400</td><td>162</td><td>+4</td><td>+2.5%</td></tr>
+          <tr><td>休息3min</td><td>88</td><td>−74</td><td>−45.7%</td></tr>
+        </table>
+      </div>
+      <div class="section-label">💡 启示</div>
+      <p>心率上升速度随距离增加而减缓（边际递增递减规律），且恢复速率很快——身体具有出色的自我调节能力。</p>
+    </div>
+  </div>
+
+  <!-- 案例3 -->
+  <div class="case-card" data-case="3">
+    <div class="case-header" onclick="toggleCase(this)">
+      <div class="icon">3</div>
+      <div class="title-area">
+        <h3>家里水费突然涨了</h3>
+        <div class="difficulty">⭐ 难度：★★★☆☆ · 调用：比例推理法 + 对比验证法</div>
+      </div>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="section-label">📋 情境材料</div>
+      <p>小张家上个月水费80元，这个月水费120元。本地水价3.5元/吨，且按阶梯收费：0—15吨3.5元/吨、15—25吨5元/吨、25吨以上7元/吨。</p>
+      <div class="section-label">🎯 解析任务</div>
+      <p>请解析小张家两个月用水量的变化，并判断是否进入了新的收费阶梯。</p>
+      <div class="section-label">⚙️ 调用原理</div>
+      <p><span class="tag">比例推理法</span><span class="tag">对比验证法</span></p>
+      <div class="section-label">🔍 解析路径</div>
+      <p>将水费转化为用水量 → 计算两个月用水量 → 判断是否跨阶梯 → 分析涨幅原因</p>
+      <div class="section-label">📊 月份—费用—用水量对比表</div>
+      <div class="table-wrap">
+        <table>
+          <tr><th>月份</th><th>水费（元）</th><th>用水量（吨）</th><th>所处阶梯</th><th>费用构成</th></tr>
+          <tr><td>上个月</td><td>80</td><td>22.9</td><td>第二阶梯</td><td>15×3.5 + 7.9×5 = 92</td></tr>
+          <tr><td>这个月</td><td>120</td><td>29</td><td>第三阶梯</td><td>15×3.5 + 10×5 + 4×7 = 130.5</td></tr>
+        </table>
+      </div>
+      <div class="section-label">💡 启示</div>
+      <p>跨阶梯后用水量仅增加约27%，但水费却上涨了50%——阶梯定价对节约用水有明显的经济杠杆作用。</p>
+    </div>
+  </div>
+
+  <!-- 案例4 -->
+  <div class="case-card" data-case="4">
+    <div class="case-header" onclick="toggleCase(this)">
+      <div class="icon">4</div>
+      <div class="title-area">
+        <h3>铁和硫反应的质量关系</h3>
+        <div class="difficulty">⭐ 难度：★★★☆☆ · 调用：对比验证法 + 比例推理法</div>
+      </div>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="section-label">📋 情境材料</div>
+      <p>课堂上老师演示：7g铁粉和4g硫粉混合加热，生成黑色硫化亚铁（FeS），称量生成物质量为11g。如果换成14g铁粉和4g硫粉混合，生成物质量变不变？</p>
+      <div class="section-label">🎯 解析任务</div>
+      <p>请用定量思维解析"反应物质量比例"对生成物质量的影响。</p>
+      <div class="section-label">⚙️ 调用原理</div>
+      <p><span class="tag">对比验证法</span><span class="tag">比例推理法</span></p>
+      <div class="section-label">🔍 解析路径</div>
+      <p>记录反应物质量 → 计算质量比 → 分析过量问题 → 寻找质量守恒的边界条件</p>
+      <div class="section-label">📊 三组质量配比实验数据对比</div>
+      <div class="table-wrap">
+        <table>
+          <tr><th>组次</th><th>铁粉</th><th>硫粉</th><th>Fe:S质量比</th><th>生成物质量</th><th>剩余物</th></tr>
+          <tr><td>①</td><td>7g</td><td>4g</td><td>1.75:1</td><td>11g（完全反应）</td><td>无</td></tr>
+          <tr><td>②</td><td>14g</td><td>4g</td><td>3.5:1</td><td>11g</td><td>7g铁剩余</td></tr>
+          <tr><td>③</td><td>7g</td><td>8g</td><td>0.875:1</td><td>11g</td><td>4g硫剩余</td></tr>
+        </table>
+      </div>
+      <div class="section-label">💡 启示</div>
+      <p>Fe + S → FeS 中，Fe与S按质量比7:4恰好完全反应。反应物的过量部分不参与反应——这是质量守恒定律在化学方程式中的定量体现。</p>
+    </div>
+  </div>
+
+  <!-- 案例5 -->
+  <div class="case-card" data-case="5">
+    <div class="case-header" onclick="toggleCase(this)">
+      <div class="icon">5</div>
+      <div class="title-area">
+        <h3>不同品牌矿泉水的矿物质含量</h3>
+        <div class="difficulty">⭐ 难度：★★☆☆☆ · 调用：基准参照法 + 对比验证法</div>
+      </div>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="section-label">📋 情境材料</div>
+      <p>三个品牌矿泉水营养成分表：<br>品牌A：含钙5mg/L、镁2mg/L<br>品牌B：含钙20mg/L、镁8mg/L<br>品牌C：含钙0.5mg/L、镁0.3mg/L</p>
+      <div class="section-label">🎯 解析任务</div>
+      <p>每天喝2L水，请解析哪种品牌能提供更多的矿物质补充。</p>
+      <div class="section-label">⚙️ 调用原理</div>
+      <p><span class="tag">基准参照法</span><span class="tag">对比验证法</span></p>
+      <div class="section-label">🔍 解析路径</div>
+      <p>读取数据 → 统一单位 → 计算每日摄入量 → 对比"充足"标准 → 给出合理建议</p>
+      <div class="section-label">📊 品牌—钙含量—每日摄入量对比</div>
+      <div class="table-wrap">
+        <table>
+          <tr><th>品牌</th><th>钙含量（mg/L）</th><th>每日摄入量（2L）</th><th>占推荐量比例</th><th>镁每日摄入量</th></tr>
+          <tr><td>品牌A</td><td>5</td><td>10mg</td><td>1%</td><td>4mg</td></tr>
+          <tr><td>品牌B</td><td>20</td><td>40mg</td><td>4%</td><td>16mg</td></tr>
+          <tr><td>品牌C</td><td>0.5</td><td>1mg</td><td>0.1%</td><td>0.6mg</td></tr>
+        </table>
+      </div>
+      <div class="section-label">💡 启示</div>
+      <p>即使是矿物质含量最高的品牌B，每天喝2L也只补充了每日所需钙的4%——矿物质主要来源还是食物而非饮用水。</p>
+    </div>
+  </div>
+
+  <!-- 案例6 -->
+  <div class="case-card" data-case="6">
+    <div class="case-header" onclick="toggleCase(this)">
+      <div class="icon">6</div>
+      <div class="title-area">
+        <h3>汽车尾气中的有害成分</h3>
+        <div class="difficulty">⭐ 难度：★★★☆☆ · 调用：定性→定量两步法 + 对比验证法</div>
+      </div>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="section-label">📋 情境材料</div>
+      <p>一辆汽车怠速时尾气检测数据：CO 0.5%、NOx 0.08%、HC 0.03%（体积分数）。行驶状态下：CO 0.2%、NOx 0.15%、HC 0.02%。国家排放标准：CO≤0.3%、NOx≤0.1%、HC≤0.05%。</p>
+      <div class="section-label">🎯 解析任务</div>
+      <p>请解析汽车在不同状态下排放是否达标，并分析"怠速转行驶"后各成分的变化趋势。</p>
+      <div class="section-label">⚙️ 调用原理</div>
+      <p><span class="tag">定性→定量两步法</span><span class="tag">对比验证法</span></p>
+      <div class="section-label">🔍 解析路径</div>
+      <p>识别两种状态的差异 → 逐项对比与标准值 → 分析变化趋势 → 做出达标判断</p>
+      <div class="section-label">📊 排放数据达标分析</div>
+      <div class="table-wrap">
+        <table>
+          <tr><th>成分</th><th>怠速</th><th>行驶</th><th>国标限值</th><th>怠速达标？</th><th>行驶达标？</th><th>变化趋势</th></tr>
+          <tr><td>CO</td><td>0.5%</td><td>0.2%</td><td>≤0.3%</td><td>❌ 超标</td><td>✅ 达标</td><td>↓ 降低60%</td></tr>
+          <tr><td>NOx</td><td>0.08%</td><td>0.15%</td><td>≤0.1%</td><td>✅ 达标</td><td>❌ 超标</td><td>↑ 升高87.5%</td></tr>
+          <tr><td>HC</td><td>0.03%</td><td>0.02%</td><td>≤0.05%</td><td>✅ 达标</td><td>✅ 达标</td><td>↓ 降低33.3%</td></tr>
+        </table>
+      </div>
+      <div class="section-label">💡 启示</div>
+      <p>不同行驶状态下污染物的排放规律不同：怠速时CO高（燃烧不充分），行驶时NOx高（高温燃烧产生）——治理策略也要"对症下药"。</p>
+    </div>
+  </div>
+
+  <!-- 案例7 -->
+  <div class="case-card" data-case="7">
+    <div class="case-header" onclick="toggleCase(this)">
+      <div class="icon">7</div>
+      <div class="title-area">
+        <h3>综合迁移——谁家的"含盐量"更高？</h3>
+        <div class="difficulty">⭐ 难度：★★★★★ · 调用：综合运用全部5条原理</div>
+      </div>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="section-label">📋 情境材料</div>
+      <p>你从网上找到了三个"自制番茄酱"配方：<br>配方A：5个番茄+1勺盐（约5g）→ 成品200g<br>配方B：8个番茄+2勺盐 → 成品350g<br>配方C：6个番茄+半勺盐 → 成品250g<br>已知1勺盐≈5g。</p>
+      <div class="section-label">🎯 解析任务</div>
+      <p>请设计一个完整的数据分析方法，判断哪个配方的番茄酱"含盐量"更高，哪个更低。</p>
+      <div class="section-label">⚙️ 调用原理</div>
+      <p><span class="tag">比例推理法</span><span class="tag">变量提取法</span><span class="tag">基准参照法</span><span class="tag">对比验证法</span><span class="tag">定性→定量两步法</span></p>
+      <div class="section-label">🔍 解析路径</div>
+      <p>提取变量 → 统一基准 → 计算含盐百分比 → 对比 → 得出结论并解释原因</p>
+      <div class="section-label">📊 含盐量对比分析</div>
+      <div class="table-wrap">
+        <table>
+          <tr><th>配方</th><th>番茄数</th><th>盐量（g）</th><th>成品量（g）</th><th>含盐百分比</th><th>排名</th></tr>
+          <tr><td>A</td><td>5个</td><td>5</td><td>200</td><td>2.5%</td><td>🥇</td></tr>
+          <tr><td>B</td><td>8个</td><td>10</td><td>350</td><td>2.86%</td><td>🥇最高</td></tr>
+          <tr><td>C</td><td>6个</td><td>2.5</td><td>250</td><td>1.0%</td><td>最低</td></tr>
+        </table>
+      </div>
+      <div class="section-label">💡 启示</div>
+      <p>配方B含盐百分比最高（2.86%），配方C最低（1.0%）。单纯看盐的用量会误判——必须统一到"每单位成品中的含盐量"才能公平比较。</p>
+    </div>
+  </div>
+
+  <!-- 综合反思 -->
+  <div class="reflection-section">
+    <h2>💭 综合反思</h2>
+    <ol>
+      <li><strong>哪个案例最容易分析？为什么？</strong><br>案例1（营养成分标签）最容易——数据直接对应100mL基准，只需简单乘除法，不涉及多变量或复杂转换。</li>
+      <li><strong>哪个案例最难？困难在哪里？</strong><br>案例7（含盐量）最难——需要综合运用全部5条原理，且存在"隐含变量陷阱"（盐量翻倍但成品量不同，不能直接比盐的绝对用量）。</li>
+      <li><strong>哪条解析性原理最常用？</strong><br>比例推理法和对比验证法几乎在每个案例中都用到了——它们是最核心的定量分析工具。</li>
+      <li><strong>这些案例如何帮助你完成"走进化学世界"这个大单元的学习目标？</strong><br>化学不仅是"发生了什么"，更是"发生了多少"。这7个案例训练了从数据中发现规律、用比例建立关系、通过对比验证判断的能力——这些正是化学定量分析的基本功。</li>
+    </ol>
+  </div>
+</div>
+
+<script>
+function toggleCase(el) {
+  var card = el.closest('.case-card');
+  var isOpen = card.classList.toggle('open');
+  var arrow = el.querySelector('.arrow');
+  if (arrow) arrow.textContent = isOpen ? '▲' : '▼';
+  updateNavDots();
+}
+
+function updateNavDots() {
+  var dots = document.querySelectorAll('.nav-dot');
+  dots.forEach(function(dot) {
+    var idx = parseInt(dot.getAttribute('data-idx'));
+    var card = document.querySelector('.case-card[data-case="' + idx + '"]');
+    if (card && card.classList.contains('open')) {
+      dot.classList.add('active');
+    } else {
+      dot.classList.remove('active');
+    }
+  });
+}
+
+function jumpToCase(idx) {
+  var card = document.querySelector('.case-card[data-case="' + idx + '"]');
+  if (!card) return;
+  var isOpen = card.classList.contains('open');
+  if (!isOpen) {
+    var header = card.querySelector('.case-header');
+    if (header) toggleCase(header);
+  }
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// 生成导航点
+(function buildNav() {
+  var navBar = document.getElementById('navBar');
+  if (!navBar) return;
+  for (var i = 1; i <= 7; i++) {
+    var dot = document.createElement('button');
+    dot.className = 'nav-dot';
+    dot.setAttribute('data-idx', i);
+    dot.textContent = i;
+    dot.onclick = (function(idx) { return function() { jumpToCase(idx); }; })(i);
+    navBar.appendChild(dot);
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性原理</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+h1 { font-size: var(--font-h1); color: var(--primary); margin: 0 0 4px; }
+h2 { font-size: var(--font-h2); color: var(--primary); margin: 22px 0 10px; }
+h3 { font-size: calc(var(--font-h2) - 2px); color: var(--text); margin: 14px 0 8px; }
+p { margin: 6px 0; }
+
+.principle-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); margin: 8px 0; box-shadow: var(--shadow); overflow: hidden; }
+.principle-card .card-header { padding: 12px 16px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.25s; user-select: none; }
+.principle-card .card-header:hover { background: #f0f5ff; }
+.principle-card .card-header .num { display: inline-block; background: var(--primary); color: #fff; border-radius: 50%; width: 26px; height: 26px; text-align: center; line-height: 26px; font-size: 13px; font-weight: 700; margin-right: 10px; flex-shrink: 0; }
+.principle-card .card-header .arrow { transition: transform 0.3s; font-size: 14px; color: var(--text-secondary); }
+.principle-card .card-header.open .arrow { transform: rotate(180deg); }
+.principle-card .card-body { display: none; padding: 0 16px 14px; border-top: 1px solid var(--border); }
+.principle-card .card-body.open { display: block; }
+.principle-card .card-body .label { color: var(--primary); font-weight: 600; margin-top: 8px; }
+.principle-card .card-body ul { margin: 4px 0; padding-left: 20px; }
+.principle-card .card-body li { margin: 2px 0; }
+
+.practice-box { background: var(--card-bg); border: 2px dashed var(--primary); border-radius: var(--border-radius); padding: 14px 16px; margin: 10px 0; }
+.practice-box h3 { margin-top: 0; color: var(--primary); }
+.scaffold { background: #f6ffed; border: 1px solid #b7eb8f; border-radius: var(--border-radius); padding: 10px 14px; margin: 8px 0; font-size: 14px; }
+
+.reflect-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 14px 16px; margin: 10px 0; }
+.reflect-box label { display: block; padding: 4px 0; cursor: pointer; }
+.reflect-box input[type="checkbox"] { margin-right: 8px; accent-color: var(--primary); }
+
+.btn-primary { margin: 8px 4px 8px 0; padding: 7px 18px; background: var(--primary); color: #fff; border: none; border-radius: var(--border-radius); cursor: pointer; font-size: 14px; font-family: inherit; transition: all 0.25s; }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-outline { margin: 8px 4px; padding: 7px 18px; background: var(--card-bg); color: var(--primary); border: 1px solid var(--primary); border-radius: var(--border-radius); cursor: pointer; font-size: 14px; font-family: inherit; transition: all 0.25s; }
+.btn-outline:hover { background: #f0f5ff; }
+.tag { display: inline-block; background: #e6f7ff; color: var(--primary); padding: 2px 10px; border-radius: 12px; font-size: 12px; margin-right: 4px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🛠️ 建构性原理</h1>
+  <p>从"示例"中提炼出可迁移的建构方法——无论你面对什么建构任务，这些原理都能帮你更高效地产出成果。</p>
+
+  <h2>📐 四大建构性原理</h2>
+  <p style="color:var(--text-secondary);font-size:14px;">点击每条原理展开详细说明</p>
+
+  <!-- 原理1 -->
+  <div class="principle-card">
+    <div class="card-header" onclick="togglePrinciple(this)">
+      <span><span class="num">1</span><strong>问题锚定法</strong> — 从真实冲突出发定位建构方向</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="card-body">
+      <p><span class="label">原理说明：</span>任何一个有价值的建构都始于一个真实的问题/冲突。先找准问题，再设计方案——不要跳过问题诊断直接动手。</p>
+      <p><span class="label">在示例中的体现：</span>从"实验室废液不能直接排放"这个冲突出发，锚定了"设计处理方案"的建构方向</p>
+      <p><span class="label">适用情境：</span>任何需要你设计方案、创造作品、解决问题的任务</p>
+      <p><span class="label">注意事项：</span>区分"真问题"和"假问题"——真实冲突是"不做就会有后果"，假问题可能是"老师布置的作业"</p>
+    </div>
+  </div>
+
+  <!-- 原理2 -->
+  <div class="principle-card">
+    <div class="card-header" onclick="togglePrinciple(this)">
+      <span><span class="num">2</span><strong>三维目标法</strong> — 用真·善·美设定建构标准</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="card-body">
+      <p><span class="label">原理说明：</span>在建构之前，先设定三个层次的评价标准：科学性（真）、伦理性（善）、审美性（美）。这样建构出来的成果才有深度。</p>
+      <p><span class="label">在示例中的体现：</span>方案同时考虑了科学可行、安全环保、创意表达三个维度</p>
+      <p><span class="label">适用情境：</span>需要产出创新型解决方案的任务</p>
+      <p><span class="label">注意事项：</span>三个维度不必平均用力，根据任务侧重点灵活分配权重</p>
+    </div>
+  </div>
+
+  <!-- 原理3 -->
+  <div class="principle-card">
+    <div class="card-header" onclick="togglePrinciple(this)">
+      <span><span class="num">3</span><strong>证据链法</strong> — 用多源数据支撑方案</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="card-body">
+      <p><span class="label">原理说明：</span>建构不是凭空想象，而是基于证据的创造性活动。每一条方案建议背后都要有证据支撑。</p>
+      <p><span class="label">在示例中的体现：</span>通过pH检测、教科书原理查阅、小规模实验验证等方式收集证据</p>
+      <p><span class="label">适用情境：</span>需要提出科学方案、研究报告、论证性成果的任务</p>
+      <p><span class="label">注意事项：</span>证据的来源要多元（教材、实验、专家访谈、网络资源），但也要注意甄别可信度</p>
+    </div>
+  </div>
+
+  <!-- 原理4 -->
+  <div class="principle-card">
+    <div class="card-header" onclick="togglePrinciple(this)">
+      <span><span class="num">4</span><strong>迭代优化法</strong> — 通过"建构—检验—修正"循环完善成果</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="card-body">
+      <p><span class="label">原理说明：</span>理想的方案不是一次建成的。先出一个粗糙版本，对照标准检验，发现问题后再修改——循环3次以上。</p>
+      <p><span class="label">在示例中的体现：</span>第5步"评估优化"——用真善美自检后发现了创意转化的空间</p>
+      <p><span class="label">适用情境：</span>涉及方案设计、作品创作、项目规划的任务</p>
+      <p><span class="label">注意事项：</span>每个循环聚焦"最需要改进的那个点"，不要试图一次改完所有问题</p>
+    </div>
+  </div>
+
+  <h2>📝 应用练习</h2>
+
+  <div class="practice-box">
+    <h3>练习1：校园垃圾分类改良方案</h3>
+    <p><strong>情境：</strong>学校垃圾桶虽然分成了"可回收"和"不可回收"，但大部分同学仍然乱扔。请你设计一个"真善美"垃圾分类改良方案。</p>
+    <p><strong>建议使用的原理：</strong><span class="tag">问题锚定法</span><span class="tag">三维目标法</span></p>
+    <div class="scaffold">
+      <strong>🧱 建构脚手架：</strong><br>
+      • 先观察一周：哪个时间段、哪个位置、哪种垃圾被扔错最多？<br>
+      • 访谈同学：为什么不分类？是不知道还是不想？<br>
+      • 参考案例：其他学校是怎么做的？
+    </div>
+    <p><strong>成果表达：</strong>方案说明书（问题分析+解决方案+效果预估）</p>
+  </div>
+
+  <div class="practice-box">
+    <h3>练习2：家庭"绿色化学"日用品改造</h3>
+    <p><strong>情境：</strong>你家厨房里有一些"不够绿色"的日常用品（如含磷洗涤剂、塑料保鲜膜）。请你设计一个"真善美"替代方案。</p>
+    <p><strong>建议使用的原理：</strong><span class="tag">证据链法</span><span class="tag">迭代优化法</span></p>
+    <div class="scaffold">
+      <strong>🧱 建构脚手架：</strong><br>
+      • 查看产品成分表，标记可疑成分<br>
+      • 用手机搜索"XX成分 环境影响"<br>
+      • 设计替代方案时考虑：效果一样好？成本更低？制作方便？
+    </div>
+    <p><strong>成果表达：</strong>家庭绿色生活改造计划表</p>
+  </div>
+
+  <h2>💭 元认知反思</h2>
+  <div class="reflect-box" id="reflectBox">
+    <label><input type="checkbox" onchange="updateMcCount()"> 1. 我是先确定目标再动手，还是边做边想？哪种方式更适合我？</label>
+    <label><input type="checkbox" onchange="updateMcCount()"> 2. 在"真善美"三个维度中，哪一个最容易？哪一个最困难？</label>
+    <label><input type="checkbox" onchange="updateMcCount()"> 3. 发现方案有漏洞时，我的第一反应是修改还是放弃重来？</label>
+    <label><input type="checkbox" onchange="updateMcCount()"> 4. 建构过程中我最大的收获是最终的成果，还是过程中的思考？</label>
+    <label><input type="checkbox" onchange="updateMcCount()"> 5. 如果再做一次，我会在哪个环节投入更多时间？</label>
+    <p style="margin-top:8px;color:var(--text-secondary);font-size:14px;">已反思：<span id="mcCount">0</span>/5</p>
+    <button class="btn-outline" onclick="resetMc()">重置</button>
+  </div>
+</div>
+
+<script>
+function togglePrinciple(header) {
+  header.classList.toggle('open');
+  var body = header.nextElementSibling;
+  body.classList.toggle('open');
+}
+function updateMcCount() {
+  var checked = document.querySelectorAll('#reflectBox input[type="checkbox"]:checked');
+  document.getElementById('mcCount').textContent = checked.length;
+}
+function resetMc() {
+  var boxes = document.querySelectorAll('#reflectBox input[type="checkbox"]');
+  for (var i = 0; i < boxes.length; i++) {
+    boxes[i].checked = false;
+  }
+  document.getElementById('mcCount').textContent = '0';
+}
+</script>
+</body>
+</html>

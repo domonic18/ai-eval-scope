@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>七阶解析性适配案例导学</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+}
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin: 0 0 8px 0;
+  font-weight: 700;
+  position: relative;
+  padding-left: 16px;
+}
+h1::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 4px;
+  background: var(--primary);
+  border-radius: 2px;
+}
+h2 {
+  font-size: var(--font-h2);
+  color: var(--text);
+  margin: 16px 0 12px 0;
+  font-weight: 600;
+}
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 20px;
+  padding-left: 16px;
+}
+.intro-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border-left: 4px solid var(--primary);
+}
+.intro-card p { margin: 8px 0; }
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  transition: box-shadow 0.3s;
+}
+.case-card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.12); }
+.case-header {
+  padding: 16px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+  -webkit-user-select: none;
+  background: var(--card-bg);
+  transition: background 0.2s;
+}
+.case-header:hover { background: #f6f8fa; }
+.case-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary);
+  flex: 1;
+}
+.case-toggle {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--primary);
+  transition: transform 0.3s;
+  flex-shrink: 0;
+}
+.case-card.open .case-toggle { transform: rotate(180deg); }
+.case-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+  padding: 0 20px;
+}
+.case-card.open .case-body {
+  max-height: 6000px;
+  padding: 0 20px 20px;
+}
+.case-body p { margin: 10px 0; }
+.case-body strong { color: var(--primary); }
+.tag {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-right: 6px;
+}
+.table-wrap {
+  overflow-x: auto;
+  margin: 12px 0;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+th {
+  background: var(--primary);
+  color: #fff;
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+}
+td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+tr:nth-child(even) td { background: #fafafa; }
+tr:hover td { background: #f0f5ff; }
+.principle-box {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 12px 0;
+  font-size: 14px;
+}
+.principle-box strong { color: #389e0d; }
+.ref-box {
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 12px 0;
+  font-size: 14px;
+}
+.ref-box strong { color: #d46b08; }
+.path-list {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+.path-list li { margin: 6px 0; }
+.badge {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+.reflection-section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-top: 24px;
+  border-left: 4px solid #722ed1;
+}
+.reflection-section h2 { color: #722ed1; }
+.q-item {
+  padding: 12px 16px;
+  margin: 8px 0;
+  background: #f9f0ff;
+  border-radius: 6px;
+  border-left: 3px solid #722ed1;
+}
+.q-item strong { color: #722ed1; }
+.ctrl-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.btn {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+}
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-outline {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+.btn-outline:hover { background: var(--bg); }
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .case-header { padding: 12px 16px; }
+  .case-card.open .case-body { padding: 0 16px 16px; }
+  th, td { padding: 6px 8px; font-size: 13px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>七阶解析性适配案例导学</h1>
+<div class="subtitle">走进化学世界 · 系统性思维与智能化思维训练</div>
+
+<div class="intro-card">
+  <p>本系列 <strong>7 个案例</strong>基于"走进化学世界"第 1 章内容，围绕<strong>「系统性思维与智能化思维」</strong>定位，运用前文提炼的 <strong>5 条解析性原理</strong>（现象初判法、类型定位法、要素拆解法、关系揭示法、质疑验证法），由浅入深地训练你的分析能力。</p>
+  <p>💡 点击每个案例标题展开详细内容。完成所有案例后，别忘了做最后的综合反思！</p>
+</div>
+
+<div class="ctrl-bar">
+  <button class="btn btn-primary" onclick="expandAll()">展开全部案例</button>
+  <button class="btn btn-outline" onclick="collapseAll()">收起全部</button>
+</div>
+
+<!-- 案例一 -->
+<div class="case-card" data-case="1">
+  <div class="case-header" onclick="toggleCase(this)">
+    <span class="badge">1</span>
+    <h3>为什么湿衣服在通风处干得更快？</h3>
+    <span class="case-toggle">▼</span>
+  </div>
+  <div class="case-body">
+    <p><strong>📋 案例材料：</strong>你洗了一件 T 恤晾在阳台上。今天刮风，不到 2 小时就干了。没有风的阴天，同样一件衣服可能要晾半天才干。为什么风能加快干燥速度？</p>
+
+    <p><strong>🔍 解析任务：</strong>运用解析性原理分析"为什么风能加快衣物干燥"——是化学变化还是物理变化？涉及哪些要素？要素之间是什么关系？</p>
+
+    <p><strong>📌 解析路径：</strong></p>
+    <ul class="path-list">
+      <li>识别核心问题：风如何影响水的蒸发速度？</li>
+      <li>确定解析对象：水的蒸发过程</li>
+      <li>拆解关键要素：水、空气、风、温度</li>
+      <li>梳理关系：风→带走水蒸气→空气中水蒸气减少→促进水继续蒸发</li>
+      <li>寻找证据：阴天无风时衣服干得慢→这个现象支持上述关系吗？</li>
+      <li>迁移判断：从"风吹干衣服"到"怎么让实验仪器更快干燥"——方法可以迁移吗？</li>
+    </ul>
+
+    <div class="principle-box"><strong>🔬 原理调用提示：</strong>重点使用「现象初判法」（先客观描述干燥过程的快慢差异）+「要素拆解法」（水、空气、风）+「关系揭示法」（风怎么影响蒸发）</div>
+
+    <p><strong>📊 分析记录表：</strong></p>
+    <div class="table-wrap">
+      <table>
+        <tr><th>我的观察</th><th>涉及要素</th><th>要素关系</th><th>结论</th></tr>
+        <tr><td>有风时衣服干得快</td><td>水、空气、风</td><td>风带走水蒸气</td><td>风加速蒸发</td></tr>
+        <tr><td>无风时干得慢</td><td>水、空气</td><td>水蒸气积聚</td><td>蒸发速率降低</td></tr>
+      </table>
+    </div>
+
+    <div class="ref-box"><strong>💡 参考思路：</strong>蒸发是物理变化（水从液态变气态，没有新物质生成）。风的作用是"加速"而不是"改变"——它加快的是蒸发速率，而不是蒸发的本质。这个分析框架可以迁移到很多类似问题中（如"为什么碾碎的药品溶解更快？"——涉及的是"接触面积"要素）。</div>
+  </div>
+</div>
+
+<!-- 案例二 -->
+<div class="case-card" data-case="2">
+  <div class="case-header" onclick="toggleCase(this)">
+    <span class="badge">2</span>
+    <h3>为什么柠檬汁涂在苹果上能防变褐？</h3>
+    <span class="case-toggle">▼</span>
+  </div>
+  <div class="case-body">
+    <p><strong>📋 案例材料：</strong>你把一个苹果切开，一半直接放在空气中，10 分钟后表面变成了褐色；另一半涂上柠檬汁，过了 30 分钟颜色变化很小。柠檬汁为什么能让苹果"不变色"？</p>
+
+    <p><strong>🔍 解析任务：</strong>分析"苹果变褐"和"柠檬汁防褐变"分别是什么变化？柠檬汁中的什么物质起了作用？</p>
+
+    <p><strong>📌 解析路径：</strong></p>
+    <ul class="path-list">
+      <li>识别核心问题：苹果变褐的原因是什么？柠檬汁如何阻止它？</li>
+      <li>确定解析对象：苹果表面的化学反应</li>
+      <li>拆解关键要素：苹果中的多酚类物质、空气中的氧气、柠檬酸</li>
+      <li>梳理关系：多酚+氧气→褐色物质（氧化反应）；柠檬酸阻止多酚与氧气接触</li>
+      <li>寻找证据：只有切开的苹果会褐变（完整苹果有果皮保护）→说明氧气是必要条件</li>
+    </ul>
+
+    <div class="principle-box"><strong>🔬 原理调用提示：</strong>「类型定位法」（苹果褐变是化学变化——产生了颜色不同的新物质）+「要素拆解法」（多酚、氧气、柠檬酸）</div>
+
+    <div class="table-wrap">
+      <table>
+        <tr><th>现象</th><th>变化类型</th><th>关键要素</th><th>要素关系</th></tr>
+        <tr><td>苹果变褐</td><td>化学变化（氧化）</td><td>多酚+氧气</td><td>多酚遇氧气被氧化</td></tr>
+        <tr><td>柠檬汁防变褐</td><td>化学抑制</td><td>柠檬酸加入</td><td>柠檬酸阻止了氧化</td></tr>
+      </table>
+    </div>
+
+    <div class="ref-box"><strong>💡 参考思路：</strong>"变褐"是因为产生了新物质——所以这是化学变化，不是物理变化。柠檬汁中的维生素 C 也是抗氧化剂。这个原理可以迁移到："为什么食品包装中要放脱氧剂？"——同样的"隔绝氧气"思路。</div>
+  </div>
+</div>
+
+<!-- 案例三 -->
+<div class="case-card" data-case="3">
+  <div class="case-header" onclick="toggleCase(this)">
+    <span class="badge">3</span>
+    <h3>小区直饮水机为什么标着"pH=7.2"？</h3>
+    <span class="case-toggle">▼</span>
+  </div>
+  <div class="case-body">
+    <p><strong>📋 案例材料：</strong>小区直饮水机上标着"pH 值 7.2，TDS 值 50mg/L"。爷爷说："这水是弱碱性的，对身体好！"但你觉得 pH=7.2 其实非常接近中性（7.0）。到底谁说得对？</p>
+
+    <p><strong>🔍 解析任务：</strong>用解析性原理分析直饮水机上的水质数据，判断爷爷的说法是否准确。</p>
+
+    <p><strong>📌 解析路径：</strong></p>
+    <ul class="path-list">
+      <li>识别核心问题：pH=7.2 的水属于什么性质的水？对人体有何影响？</li>
+      <li>确定解析对象：水的 pH 值和 TDS 值</li>
+      <li>拆解关键要素：pH 值（酸碱度指标）、TDS 值（溶解固体总量）、国家饮用水标准</li>
+      <li>梳理关系：pH=7→中性；pH&lt;7→酸性；pH&gt;7→碱性；7.2 属于"极弱碱性"</li>
+      <li>寻找证据：国家饮用水标准 pH 为 6.5—8.5，所以 7.2 完全符合标准</li>
+    </ul>
+
+    <div class="principle-box"><strong>🔬 原理调用提示：</strong>「质疑验证法」（对"弱碱水有益"的说法提出质疑，寻找科学依据）+「要素拆解法」（pH、TDS、国家标准）</div>
+
+    <div class="table-wrap">
+      <table>
+        <tr><th>数据项</th><th>数据值</th><th>含义</th><th>国家标准</th><th>是否达标</th></tr>
+        <tr><td>pH 值</td><td>7.2</td><td>极弱碱性</td><td>6.5—8.5</td><td>✅</td></tr>
+        <tr><td>TDS</td><td>50mg/L</td><td>溶解固体总量</td><td>&lt;1000mg/L</td><td>✅</td></tr>
+      </table>
+    </div>
+
+    <div class="ref-box"><strong>💡 参考思路：</strong>pH=7.2 从化学角度说是"弱碱性"，但从生物学角度，人体胃酸 pH≈2，弱碱性水进入胃中会被中和。这告诉我们：解析一个问题可能需要不同学科的知识共同参与（化学 + 生物）。分析别人提出的观点时，"质疑验证法"尤其重要——不要因为"大家都这么说"就接受。</div>
+  </div>
+</div>
+
+<!-- 案例四 -->
+<div class="case-card" data-case="4">
+  <div class="case-header" onclick="toggleCase(this)">
+    <span class="badge">4</span>
+    <h3>为什么酒精能杀灭细菌？</h3>
+    <span class="case-toggle">▼</span>
+  </div>
+  <div class="case-body">
+    <p><strong>📋 案例材料：</strong>75% 的酒精消毒效果最好，而不是浓度越高越好。95% 的浓酒精反而杀菌效果不如 75% 的酒精。为什么实际效果却相反？</p>
+
+    <p><strong>🔍 解析任务：</strong>分析"75% 酒精杀菌效果最好"背后的化学和生物学原理。</p>
+
+    <p><strong>📌 解析路径：</strong></p>
+    <ul class="path-list">
+      <li>识别核心问题：为什么不是浓度越高效果越好？</li>
+      <li>确定解析对象：酒精（乙醇）的杀菌机制</li>
+      <li>拆解关键要素：酒精、水、细菌蛋白质</li>
+      <li>梳理关系：酒精能使蛋白质变性；水能帮助酒精穿透细胞膜；95% 酒精含水量太少，接触细菌表面后使表面蛋白质迅速凝固，反而形成"保护层"</li>
+      <li>寻找证据：医院消毒都使用 75% 酒精→实际应用中的证据</li>
+    </ul>
+
+    <div class="principle-box"><strong>🔬 原理调用提示：</strong>「类型定位法」（这是一个"浓度影响效果"的分析问题）+「要素拆解法」（酒精、水、蛋白质、细胞膜）+「关系揭示法」（浓度→穿透能力→杀菌效果的关系链）</div>
+
+    <div class="table-wrap">
+      <table>
+        <tr><th>酒精浓度</th><th>含水量</th><th>蛋白质变性速度</th><th>穿透能力</th><th>综合杀菌效果</th></tr>
+        <tr><td>95%</td><td>5%</td><td>太快</td><td>弱（表面凝固）</td><td>较差</td></tr>
+        <tr><td>75%</td><td>25%</td><td>适中</td><td>强（能渗透）</td><td>最佳</td></tr>
+        <tr><td>50%</td><td>50%</td><td>太慢</td><td>强但变性能力不足</td><td>较差</td></tr>
+      </table>
+    </div>
+
+    <div class="ref-box"><strong>💡 参考思路：</strong>这个案例展示了"系统性思维"的关键：不能仅仅看一个因素（浓度），要看多个因素的交互作用。75% 酒精效果好不是因为"酒精多"，而是因为"酒精和水的比例刚好让两者都发挥最佳作用"。可以迁移思考："为什么冲奶粉不是越浓越好？"</div>
+  </div>
+</div>
+
+<!-- 案例五 -->
+<div class="case-card" data-case="5">
+  <div class="case-header" onclick="toggleCase(this)">
+    <span class="badge">5</span>
+    <h3>跨学科——光合作用中的"原料→产物"分析</h3>
+    <span class="case-toggle">▼</span>
+  </div>
+  <div class="case-body">
+    <p><strong>📋 案例材料：</strong>绿萝吸收二氧化碳（CO₂）和水（H₂O），在光照下合成葡萄糖（C₆H₁₂O₆）和氧气（O₂）。这是一个涉及化学、生物和物理学的复杂系统。</p>
+
+    <p><strong>🔍 解析任务：</strong>用系统性思维从化学角度解析光合作用的"原料→条件→产物"链条，并分析与"燃烧反应"的关系。</p>
+
+    <p><strong>📌 解析路径：</strong></p>
+    <ul class="path-list">
+      <li>识别核心问题：光合作用的化学本质是什么？它和燃烧有什么关系？</li>
+      <li>确定解析对象：光合作用这个化学变化过程</li>
+      <li>拆解关键要素：CO₂、H₂O、光照、叶绿素、葡萄糖、O₂</li>
+      <li>梳理关系：CO₂+H₂O →(光照/叶绿素)→ 葡萄糖+O₂（光能→化学能）</li>
+      <li>迁移判断：光合作用几乎是燃烧的逆过程！</li>
+    </ul>
+
+    <div class="principle-box"><strong>🔬 原理调用提示：</strong>「要素拆解法」+「关系揭示法」（找出反应物和生成物的对应关系）+「质疑验证法」（光合和燃烧真的是"可逆"的吗？条件不同，能量形式不同）</div>
+
+    <div class="table-wrap">
+      <table>
+        <tr><th>过程</th><th>反应物</th><th>条件</th><th>生成物</th><th>能量变化</th></tr>
+        <tr><td>光合作用</td><td>CO₂、H₂O</td><td>光照、叶绿素</td><td>葡萄糖、O₂</td><td>光能→化学能（储能）</td></tr>
+        <tr><td>燃烧</td><td>葡萄糖、O₂</td><td>点燃</td><td>CO₂、H₂O</td><td>化学能→热能（放能）</td></tr>
+      </table>
+    </div>
+
+    <div class="ref-box"><strong>💡 参考思路：</strong>光合作用和燃烧构成了自然界中一个完美的"碳循环"。这就是系统性思维的精髓：不是孤立地看光合作用或燃烧，而是把它们联系起来，看到更大尺度的"碳氧平衡系统"。</div>
+  </div>
+</div>
+
+<!-- 案例六 -->
+<div class="case-card" data-case="6">
+  <div class="case-header" onclick="toggleCase(this)">
+    <span class="badge">6</span>
+    <h3>社会议题——塑料的"白色污染"与"可降解塑料"</h3>
+    <span class="case-toggle">▼</span>
+  </div>
+  <div class="case-body">
+    <p><strong>📋 案例材料：</strong>中国每天消耗约 30 亿个塑料袋。这些塑料在自然环境中可以存在数百年不分解。"可降解塑料"声称可以在特定条件下被微生物分解成 CO₂ 和 H₂O。但这真的解决问题了吗？</p>
+
+    <p><strong>🔍 解析任务：</strong>分析"传统塑料为什么不分解"和"可降解塑料怎么分解"的化学原理，并对"可降解塑料是否是最佳解决方案"形成你的判断。</p>
+
+    <p><strong>📌 解析路径：</strong></p>
+    <ul class="path-list">
+      <li>识别核心问题：传统塑料为什么不分解？可降解塑料如何分解？</li>
+      <li>确定解析对象：塑料的化学结构和分解条件</li>
+      <li>拆解关键要素：聚合物分子链、碳碳键、微生物、酶、水分、温度</li>
+      <li>梳理关系：传统塑料→分子链极长且稳定→微生物无法分解→数百年不降解</li>
+      <li>迁移判断：解决了"降解问题"就解决了一切吗？</li>
+    </ul>
+
+    <div class="principle-box"><strong>🔬 原理调用提示：</strong>「要素拆解法」（结构差异、分解条件）+「关系揭示法」（结构→性质→变化的关系链）+「质疑验证法」（"可降解"是真的彻底分解还是变成更小的碎片？）</div>
+
+    <div class="table-wrap">
+      <table>
+        <tr><th>塑料类型</th><th>化学结构特点</th><th>分解条件</th><th>分解产物</th><th>存在的争议</th></tr>
+        <tr><td>传统塑料</td><td>长链高分子，C-C 键稳定</td><td>极苛刻（数百年缓慢降解）</td><td>微塑料</td><td>难以降解，污染环境</td></tr>
+        <tr><td>可降解塑料</td><td>含易断裂化学键</td><td>特定条件（工业堆肥 50-70°C）</td><td>CO₂+H₂O+生物质</td><td>降解条件严格，家庭环境可能不满足</td></tr>
+      </table>
+    </div>
+
+    <div class="ref-box"><strong>💡 参考思路：</strong>传统塑料的稳定性在生活中是优点（耐用），但在环境中是缺点（不分解）。"可降解"不等于"随便丢在地上就能分解"——需要特定条件。系统性思维要求：不要只看到"替代方案"的积极面，同时要考虑它的局限性和副作用。</div>
+  </div>
+</div>
+
+<!-- 案例七 -->
+<div class="case-card" data-case="7">
+  <div class="case-header" onclick="toggleCase(this)">
+    <span class="badge">7</span>
+    <h3>综合迁移——分析"纳米自清洁材料"的神奇原理</h3>
+    <span class="case-toggle">▼</span>
+  </div>
+  <div class="case-body">
+    <p><strong>📋 案例材料：</strong>"纳米自清洁玻璃"模仿了"荷叶效应"：荷叶表面的微观结构和蜡质涂层让水无法铺展，水滴滚落时带走灰尘。</p>
+
+    <p><strong>🔍 解析任务：</strong>综合运用全部 5 条解析性原理，系统分析"荷叶效应"的化学和物理原理，并评价"纳米自清洁玻璃"是否真的能替代人工清洗。</p>
+
+    <p><strong>📌 解析路径：</strong></p>
+    <ul class="path-list">
+      <li>识别核心问题：荷叶表面的什么特性让水呈球状滚落？</li>
+      <li>确定解析对象：固体表面的润湿性（亲水/疏水）</li>
+      <li>拆解关键要素：微观结构（纳米级突起）、蜡质层、水的表面张力、灰尘附着力</li>
+      <li>梳理关系：微观突起→增加粗糙度→减少接触面积→搭配蜡质→水成球状→带走灰尘</li>
+      <li>寻找证据：显微镜下荷叶表面的 SEM 照片；对比普通玻璃和自清洁玻璃上的水滴形状</li>
+    </ul>
+
+    <div class="principle-box"><strong>🔬 原理调用提示：</strong><br>
+    • 「现象初判法」：描述荷叶上的水滴形状（球状）→ 对比普通表面的水滴形状（铺展）<br>
+    • 「类型定位法」：这是一个"表面性质"类问题 → 涉及物理和化学<br>
+    • 「要素拆解法」：荷叶、水、灰尘、微观结构、蜡质<br>
+    • 「关系揭示法」：微观结构+蜡质→超疏水→水珠滚落→带走灰尘<br>
+    • 「质疑验证法」：自清洁玻璃在什么情况下可能失效？</div>
+
+    <div class="table-wrap">
+      <table>
+        <tr><th>观察现象</th><th>要素分析</th><th>要素关系</th><th>原理阐释</th></tr>
+        <tr><td>荷叶上水呈球状</td><td>荷叶表面、水</td><td>表面排斥水→水收缩成球</td><td>疏水性</td></tr>
+        <tr><td>水珠滚落带走灰尘</td><td>水珠、灰尘</td><td>水对灰尘附着力 &gt; 灰尘对叶面附着力</td><td>自清洁</td></tr>
+        <tr><td>玻璃复制荷叶效应</td><td>玻璃、纳米涂层</td><td>人工制造相似微观+化学结构</td><td>仿生学</td></tr>
+        <tr><td>可能的局限性</td><td>涂层磨损、强酸碱</td><td>物理破坏或化学腐蚀→失去效果</td><td>需持续维护</td></tr>
+      </table>
+    </div>
+
+    <div class="ref-box"><strong>💡 参考思路：</strong>"荷叶效应"的本质是微观物理结构（纳米突起）+ 化学性质（疏水蜡质）的组合，两者缺一不可。这种从大自然中学习的思路叫做"仿生学"。要全面评价"纳米自清洁玻璃"，还需要考虑：制造成本、涂层耐久性、是否适用于所有气候环境。这要求你运用"系统性思维"——看到优点也看到局限。</div>
+  </div>
+</div>
+
+<!-- 综合反思 -->
+<div class="reflection-section">
+  <h2>📝 七阶案例后的综合反思</h2>
+  <p>完成全部 7 个案例分析后，请认真思考以下问题，写在你的学习笔记中：</p>
+
+  <div class="q-item">
+    <strong>问题 1：</strong>哪个案例最容易分析？为什么？是因为你熟悉那个情境，还是因为涉及的原理比较简单？
+  </div>
+  <div class="q-item">
+    <strong>问题 2：</strong>哪个案例最难？困难在哪里？是信息不足？还是概念理解有困难？你是怎么克服的？
+  </div>
+  <div class="q-item">
+    <strong>问题 3：</strong>7 个案例中，你用得最多的解析性原理是哪一条？最少用的是哪一条？为什么？
+  </div>
+  <div class="q-item">
+    <strong>问题 4：</strong>你还不敢确定会用的原理是哪条？如果是"质疑验证法"不太会用——试试在明天的化学课上主动对老师的某个结论说"老师，我有个疑问……"（哪怕在脑子里默默质疑也行）。
+  </div>
+  <div class="q-item">
+    <strong>问题 5：</strong>这些案例如何帮助你完成大单元最终成果？这个单元结束后你需要完成什么项目或报告？这些分析方法和经验可以怎样用上去？
+  </div>
+</div>
+
+</div>
+
+<script>
+function toggleCase(header) {
+  var card = header.parentElement;
+  card.classList.toggle('open');
+}
+
+function expandAll() {
+  var cards = document.querySelectorAll('.case-card');
+  for (var i = 0; i < cards.length; i++) {
+    cards[i].classList.add('open');
+  }
+}
+
+function collapseAll() {
+  var cards = document.querySelectorAll('.case-card');
+  for (var i = 0; i < cards.length; i++) {
+    cards[i].classList.remove('open');
+  }
+}
+</script>
+</body>
+</html>

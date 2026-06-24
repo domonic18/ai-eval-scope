@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>问题榜 - 化学思维训练</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+  --success: #52c41a;
+  --warning: #faad14;
+  --tag-green: #f6ffed;
+  --tag-blue: #e6f7ff;
+  --tag-orange: #fff7e6;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+}
+.container { width: 100%; max-width: none; padding: 20px 24px; }
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 3px solid var(--accent);
+}
+h2 {
+  font-size: var(--font-h2);
+  color: var(--text);
+  margin: 24px 0 12px;
+  padding-left: 12px;
+  border-left: 4px solid var(--primary);
+}
+.level-nav {
+  display: flex;
+  gap: 10px;
+  margin: 16px 0;
+  flex-wrap: wrap;
+}
+.level-btn {
+  padding: 10px 20px;
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: var(--font-body);
+  transition: all 0.25s;
+  font-weight: 500;
+}
+.level-btn:hover { border-color: var(--primary); color: var(--primary); }
+.level-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.question-section { display: none; }
+.question-section.active { display: block; }
+.q-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 16px 20px;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+  transition: box-shadow 0.2s;
+}
+.q-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.q-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 8px;
+}
+.q-badge.understanding { background: var(--tag-green); color: #389e0d; }
+.q-badge.recognition { background: var(--tag-blue); color: #096dd9; }
+.q-badge.analysis { background: var(--tag-orange); color: #d48806; }
+.q-badge.application { background: #f0f5ff; color: var(--primary); }
+.q-badge.comparison { background: #f9f0ff; color: #722ed1; }
+.q-badge.open { background: #fff1f0; color: #cf1322; }
+.q-badge.counterfactual { background: #f0f0f0; color: #595959; }
+.q-badge.metacognition { background: #e6fffb; color: #08979c; }
+.q-badge.creative { background: #fff7e6; color: #d46b08; }
+.q-number {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 14px;
+  margin-right: 8px;
+}
+.q-card h3 {
+  font-size: calc(var(--font-body) + 1px);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.q-body { margin: 8px 0; }
+.q-hint {
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin: 8px 0;
+  display: none;
+}
+.q-hint.show { display: block; }
+.q-hint::before { content: "💡 提示："; font-weight: 600; color: var(--primary); }
+.hint-btn {
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-right: 6px;
+}
+.hint-btn:hover { border-color: var(--primary); color: var(--primary); }
+.done-btn {
+  padding: 4px 14px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  background: var(--bg);
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+.done-btn.completed {
+  background: var(--success);
+  color: #fff;
+}
+.done-btn:hover { opacity: 0.8; }
+.sub-points { padding-left: 20px; margin: 6px 0; color: var(--text-secondary); font-size: 14px; }
+.sub-points li { margin: 4px 0; }
+.progress-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0;
+  padding: 12px 16px;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  flex-wrap: wrap;
+}
+.progress-bar {
+  flex: 1;
+  min-width: 120px;
+  height: 8px;
+  background: var(--bg);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  width: 0%;
+  border-radius: 4px;
+  transition: width 0.5s;
+}
+.progress-label { font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
+.reset-btn {
+  padding: 4px 14px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.reset-btn:hover { border-color: var(--primary); color: var(--primary); }
+@media (max-width: 640px) {
+  .container { padding: 12px 14px; }
+  .q-card { padding: 12px 14px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>❓ 问题榜</h1>
+  <p style="color:var(--text-secondary);margin-bottom:8px;">完成问题，点击"已完成"按钮标记进度。可用提示帮助思考。</p>
+
+  <div class="progress-strip">
+    <span style="font-size:13px;font-weight:600;">做题进度</span>
+    <div class="progress-bar"><div class="progress-fill" id="qProgressFill"></div></div>
+    <span class="progress-label" id="qProgressLabel">0 / 11</span>
+    <button class="reset-btn" onclick="resetQuestions()">↻ 重置</button>
+  </div>
+
+  <div class="level-nav">
+    <button class="level-btn active" data-level="basic" onclick="switchQLevel('basic',this)">📘 基础层</button>
+    <button class="level-btn" data-level="intermediate" onclick="switchQLevel('intermediate',this)">📗 进阶层</button>
+    <button class="level-btn" data-level="challenge" onclick="switchQLevel('challenge',this)">📕 挑战层</button>
+  </div>
+
+  <!-- 基础层 -->
+  <div class="question-section active" data-level="basic">
+    <h2>基础层：理解与识别</h2>
+
+    <div class="q-card">
+      <h3><span class="q-number">1</span><span class="q-badge understanding">理解型</span>化学变化和物理变化的本质区别是什么？</h3>
+      <div class="q-body">
+        <p>判断以下变化各属于哪一类：</p>
+        <ul class="sub-points">
+          <li>① 蜡烛燃烧</li>
+          <li>② 蜡烛熔化</li>
+          <li>③ 铁水铸成铁锅</li>
+          <li>④ 铁锅生锈</li>
+        </ul>
+      </div>
+      <button class="hint-btn" onclick="toggleHint('hint1')">💡 提示</button>
+      <button class="done-btn" onclick="markDone(this)" data-q="q1">已完成</button>
+      <div class="q-hint" id="hint1">本质区别是：是否有<strong>新物质生成</strong>。化学变化产生新物质（如燃烧、生锈），物理变化只改变形态或状态（如熔化、铸造）。</div>
+    </div>
+
+    <div class="q-card">
+      <h3><span class="q-number">2</span><span class="q-badge recognition">识别型</span>以下哪些是化学性质？哪些是物理性质？</h3>
+      <div class="q-body">
+        <ul class="sub-points">
+          <li>① 水的沸点是100°C</li>
+          <li>② 铁能在潮湿空气中生锈</li>
+          <li>③ 铜是紫红色的</li>
+          <li>④ 天然气可以燃烧</li>
+          <li>⑤ 酒精易挥发</li>
+        </ul>
+      </div>
+      <button class="hint-btn" onclick="toggleHint('hint2')">💡 提示</button>
+      <button class="done-btn" onclick="markDone(this)" data-q="q2">已完成</button>
+      <div class="q-hint" id="hint2">物理性质：不需要化学变化就能表现出来的性质（颜色、沸点、挥发性）。化学性质：在化学变化中表现出来的性质（能燃烧、能生锈）。</div>
+    </div>
+
+    <div class="q-card">
+      <h3><span class="q-number">3</span><span class="q-badge understanding">理解型</span>什么是系统性思维？</h3>
+      <div class="q-body">
+        <p>请用你自己的话给"系统性思维"下一个定义，并给出一个你在生活中使用系统性思维的例子（不限于化学）。</p>
+      </div>
+      <button class="hint-btn" onclick="toggleHint('hint3')">💡 提示</button>
+      <button class="done-btn" onclick="markDone(this)" data-q="q3">已完成</button>
+      <div class="q-hint" id="hint3">系统性思维 = 把事物看作一个<strong>整体系统</strong>，关注各个组成部分之间的<strong>关联和相互作用</strong>，而不是孤立地看每个部分。例如：安排一天的学习计划时，考虑各科任务量、难度、精力分配之间的关系。</div>
+    </div>
+  </div>
+
+  <!-- 进阶层 -->
+  <div class="question-section" data-level="intermediate">
+    <h2>进阶层：分析与应用</h2>
+
+    <div class="q-card">
+      <h3><span class="q-number">4</span><span class="q-badge analysis">分析型</span>"物质的性质决定用途"</h3>
+      <div class="q-body">
+        <p>请用这个观点分析：为什么铜常用于做电线（而不是铁或银）？</p>
+        <p style="font-size:13px;color:var(--text-secondary);margin-top:4px;">提示：需要从导电性、成本、延展性、耐腐蚀性等多角度分析</p>
+      </div>
+      <button class="hint-btn" onclick="toggleHint('hint4')">💡 提示</button>
+      <button class="done-btn" onclick="markDone(this)" data-q="q4">已完成</button>
+      <div class="q-hint" id="hint4">银导电性最好但太贵；铁导电性较差且易生锈；铜导电性好、价格适中、延展性好易拉成丝、耐腐蚀性较好——综合性质最优。</div>
+    </div>
+
+    <div class="q-card">
+      <h3><span class="q-number">5</span><span class="q-badge application">应用型</span>家庭安全顾问</h3>
+      <div class="q-body">
+        <p>得知一个家庭把84消毒液和洁厕灵混合使用。请从化学反应的角度分析：</p>
+        <ul class="sub-points">
+          <li>① 可能发生什么反应？</li>
+          <li>② 产生什么后果？</li>
+          <li>③ 你会给这个家庭什么建议？</li>
+        </ul>
+      </div>
+      <button class="hint-btn" onclick="toggleHint('hint5')">💡 提示</button>
+      <button class="done-btn" onclick="markDone(this)" data-q="q5">已完成</button>
+      <div class="q-hint" id="hint5">84消毒液（含次氯酸钠）和洁厕灵（含盐酸）混合会发生氧化还原反应，产生<strong>有毒的氯气（Cl₂）</strong>。氯气会强烈刺激呼吸道，严重时可致中毒。建议：绝对不要混合使用！</div>
+    </div>
+
+    <div class="q-card">
+      <h3><span class="q-number">6</span><span class="q-badge comparison">对比型</span>小苏打 vs 纯碱</h3>
+      <div class="q-body">
+        <p>比较"小苏打（碳酸氢钠）"和"纯碱（碳酸钠）"：</p>
+        <ul class="sub-points">
+          <li>① 它们的化学式分别是什么？</li>
+          <li>② 它们的性质有哪些相同和不同？</li>
+          <li>③ 它们的用途有什么对应的差异？</li>
+        </ul>
+      </div>
+      <button class="hint-btn" onclick="toggleHint('hint6')">💡 提示</button>
+      <button class="done-btn" onclick="markDone(this)" data-q="q6">已完成</button>
+      <div class="q-hint" id="hint6">小苏打 = NaHCO₃，纯碱 = Na₂CO₃。相同：都是钠盐、水溶液呈碱性。不同：小苏打受热易分解（产生CO₂），纯碱热稳定性好。用途：小苏打用于烘焙膨松剂，纯碱用于玻璃制造和洗涤剂。</div>
+    </div>
+
+    <div class="q-card">
+      <h3><span class="q-number">7</span><span class="q-badge analysis">分析型</span>自来水pH值分析</h3>
+      <div class="q-body">
+        <p>学校自来水检测报告显示pH值为6.8（略偏酸性）。请分析：</p>
+        <ul class="sub-points">
+          <li>① 这可能是什么原因造成的？</li>
+          <li>② 这个pH值安全吗？</li>
+          <li>③ 如果要调整为中性（pH=7.0），可以加入什么物质？</li>
+        </ul>
+      </div>
+      <button class="hint-btn" onclick="toggleHint('hint7')">💡 提示</button>
+      <button class="done-btn" onclick="markDone(this)" data-q="q7">已完成</button>
+      <div class="q-hint" id="hint7">pH=6.8接近中性（饮用水标准6.5–8.5），安全。略偏酸性可能是水中溶解了CO₂（形成碳酸）或管网老化。要调至中性可加入微量碱性物质如小苏打（NaHCO₃）。</div>
+    </div>
+  </div>
+
+  <!-- 挑战层 -->
+  <div class="question-section" data-level="challenge">
+    <h2>挑战层：创造与批判</h2>
+
+    <div class="q-card">
+      <h3><span class="q-number">8</span><span class="q-badge open">开放型</span>设计一种"新物质"</h3>
+      <div class="q-body">
+        <p>如果你可以设计一种"新物质"，你希望它具备什么性质？描述它的外观、物理性质、化学性质，并说明：你为什么需要它？它可以用来做什么？</p>
+      </div>
+      <button class="done-btn" onclick="markDone(this)" data-q="q8">已完成</button>
+    </div>
+
+    <div class="q-card">
+      <h3><span class="q-number">9</span><span class="q-badge counterfactual">反事实型</span>如果没有化学这门科学</h3>
+      <div class="q-body">
+        <p>今天的教室会是什么样子？提示：可以从建筑材料、照明设备、课桌椅材料、电子产品、服装面料等角度思考——哪些"理所当然"存在的东西其实完全依赖化学？</p>
+      </div>
+      <button class="hint-btn" onclick="toggleHint('hint9')">💡 提示</button>
+      <button class="done-btn" onclick="markDone(this)" data-q="q9">已完成</button>
+      <div class="q-hint" id="hint9">想想：塑料课桌椅（石油化工）、LED灯（半导体化学）、白板/马克笔（高分子化学）、运动鞋的鞋底（合成橡胶）、手机屏幕（稀土提纯）……几乎一切现代人造物都离不开化学。</div>
+    </div>
+
+    <div class="q-card">
+      <h3><span class="q-number">10</span><span class="q-badge metacognition">元认知型</span>回溯你的思考过程</h3>
+      <div class="q-body">
+        <p>完成以上1—9题后，选择其中一道题，回溯你的思考过程：</p>
+        <ul class="sub-points">
+          <li>你从哪里入手思考的？</li>
+          <li>遇到了什么困难？怎么解决的？</li>
+          <li>有没有"突然想通"的时刻？是什么让你想通的？</li>
+          <li>如果再给你10分钟，你会在哪个问题上继续深入？为什么？</li>
+        </ul>
+      </div>
+      <button class="done-btn" onclick="markDone(this)" data-q="q10">已完成</button>
+    </div>
+
+    <div class="q-card">
+      <h3><span class="q-number">11</span><span class="q-badge creative">创造型</span>提出一个AI不会想到的化学问题</h3>
+      <div class="q-body">
+        <p>"AI能快速回答化学问题，但有些问题只有人才能提出。"——请根据本模块的学习内容，提出<strong>一个AI不会想到</strong>的化学问题，并说明为什么这个问题有意义。</p>
+      </div>
+      <button class="done-btn" onclick="markDone(this)" data-q="q11">已完成</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchQLevel(level, el) {
+  document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.question-section').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelector('.question-section[data-level="'+level+'"]').classList.add('active');
+}
+
+function toggleHint(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('show');
+}
+
+function markDone(el) {
+  el.classList.toggle('completed');
+  el.textContent = el.classList.contains('completed') ? '✅ 已完成' : '已完成';
+  updateQProgress();
+}
+
+function updateQProgress() {
+  const all = document.querySelectorAll('.done-btn');
+  const done = document.querySelectorAll('.done-btn.completed');
+  const total = all.length;
+  const count = done.length;
+  const pct = total > 0 ? Math.round(count / total * 100) : 0;
+  const fill = document.getElementById('qProgressFill');
+  const label = document.getElementById('qProgressLabel');
+  if (fill) fill.style.width = pct + '%';
+  if (label) label.textContent = count + ' / ' + total;
+}
+
+function resetQuestions() {
+  document.querySelectorAll('.done-btn.completed').forEach(el => {
+    el.classList.remove('completed');
+    el.textContent = '已完成';
+  });
+  document.querySelectorAll('.q-hint.show').forEach(el => el.classList.remove('show'));
+  updateQProgress();
+}
+
+document.addEventListener('DOMContentLoaded', updateQProgress);
+</script>
+</body>
+</html>

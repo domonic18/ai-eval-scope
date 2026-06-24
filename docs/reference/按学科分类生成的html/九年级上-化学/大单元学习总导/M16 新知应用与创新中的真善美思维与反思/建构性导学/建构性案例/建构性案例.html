@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性七阶案例</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+h1 { font-size: var(--font-h1); color: var(--primary); margin: 0 0 4px; }
+h2 { font-size: var(--font-h2); color: var(--primary); margin: 22px 0 10px; }
+h3 { font-size: calc(var(--font-h2) - 2px); color: var(--text); margin: 14px 0 6px; }
+h4 { font-size: calc(var(--font-body) + 1px); color: var(--primary); margin: 10px 0 4px; }
+p { margin: 6px 0; }
+
+.nav-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+.nav-tabs button { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 7px 12px; font-size: 13px; cursor: pointer; transition: all 0.25s; font-family: inherit; }
+.nav-tabs button:hover { border-color: var(--primary); color: var(--primary); }
+.nav-tabs button.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.case-detail { display: none; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px 20px; margin: 10px 0; box-shadow: var(--shadow); }
+.case-detail.show { display: block; }
+
+.difficulty { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+.difficulty.easy { background: #f6ffed; color: #389e0d; }
+.difficulty.medium { background: #fff7e6; color: #d46b08; }
+.difficulty.hard { background: #fff2f0; color: #cf1322; }
+
+.principle-tip { background: #fffbe6; border: 1px solid #ffe58f; border-radius: var(--border-radius); padding: 8px 12px; margin: 8px 0; font-size: 14px; }
+.principle-tip strong { color: #d46b08; }
+
+.steps { list-style: none; padding: 0; margin: 6px 0; }
+.steps li { padding: 3px 0 3px 18px; position: relative; }
+.steps li::before { content: "→"; position: absolute; left: 0; color: var(--primary); }
+
+.rubric { background: #f0f5ff; border: 1px solid var(--border); border-radius: var(--border-radius); padding: 10px 14px; margin: 8px 0; font-size: 14px; }
+.rubric-item { display: block; padding: 2px 0; }
+
+.reflect-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 14px 16px; margin: 10px 0; }
+.reflect-box label { display: block; padding: 4px 0; cursor: pointer; }
+.reflect-box input[type="checkbox"] { margin-right: 8px; accent-color: var(--primary); }
+
+.btn-primary { margin: 8px 4px 8px 0; padding: 7px 18px; background: var(--primary); color: #fff; border: none; border-radius: var(--border-radius); cursor: pointer; font-size: 14px; font-family: inherit; transition: all 0.25s; }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-outline { margin: 8px 4px; padding: 7px 18px; background: var(--card-bg); color: var(--primary); border: 1px solid var(--primary); border-radius: var(--border-radius); cursor: pointer; font-size: 14px; font-family: inherit; transition: all 0.25s; }
+.btn-outline:hover { background: #f0f5ff; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🧩 建构性七阶案例</h1>
+  <p>7个不同层级的建构任务，运用真善美思维创造属于你的化学成果。</p>
+
+  <div class="nav-tabs" id="caseTabs">
+    <button data-case="0" class="active" onclick="switchCase(0)">案例一</button>
+    <button data-case="1" onclick="switchCase(1)">案例二</button>
+    <button data-case="2" onclick="switchCase(2)">案例三</button>
+    <button data-case="3" onclick="switchCase(3)">案例四</button>
+    <button data-case="4" onclick="switchCase(4)">案例五</button>
+    <button data-case="5" onclick="switchCase(5)">案例六</button>
+    <button data-case="6" onclick="switchCase(6)">案例七</button>
+  </div>
+
+  <!-- 案例一 -->
+  <div class="case-detail show" data-case="0">
+    <h2>🌱 案例一 · 个人理解型</h2>
+    <p><span class="difficulty easy">★ 入门</span></p>
+    <p><strong>真实建构情境：</strong>你已经学习了"走进化学世界"的核心内容，也了解了真善美思维框架。现在，请你用一张概念图把这两者整合起来——画出你心中的"真善美化学"是什么样子的。</p>
+    <p><strong>建构任务：</strong>制作一张A4概念图，展示你对"化学中的真善美"的个性化理解</p>
+    <div class="principle-tip"><strong>🔬 原理调用：</strong>三维目标法——以"真、善、美"为三个一级分支，从每个分支延伸出具体的化学实例</div>
+    <p><strong>建构步骤：</strong></p>
+    <ul class="steps">
+      <li>中心主题定位——确定"真善美化学"为核心</li>
+      <li>三级分支展开——真（科学事实）、善（环保安全）、美（神奇之美）</li>
+      <li>化学实例填充——每个分支至少连接2个实例</li>
+      <li>视觉美化——布局清晰，颜色区分</li>
+    </ul>
+    <p><strong>成果表达：</strong>A4概念图（手绘或XMind）</p>
+    <div class="rubric">
+      <strong>✅ 自评量规：</strong>
+      <span class="rubric-item">[ ] 是否体现了3个维度？</span>
+      <span class="rubric-item">[ ] 每个维度是否至少连接2个化学实例？</span>
+      <span class="rubric-item">[ ] 整体布局是否清晰美观？</span>
+    </div>
+  </div>
+
+  <!-- 案例二 -->
+  <div class="case-detail" data-case="1">
+    <h2>🏠 案例二 · 生活应用型</h2>
+    <p><span class="difficulty easy">★ 入门</span></p>
+    <p><strong>真实建构情境：</strong>你家厨房里有小苏打（NaHCO₃）、纯碱（Na₂CO₃）和烧碱（NaOH）。奶奶分不清它们，有一次差点用烧碱洗菜。请你设计一张"厨房用碱安全指南"。</p>
+    <p><strong>建构任务：</strong>为家人设计一份图文并茂的厨房用碱安全指南</p>
+    <div class="principle-tip"><strong>🔬 原理调用：</strong>证据链法（查清每种碱的化学性质）+ 问题锚定法（聚焦"误用"风险）</div>
+    <p><strong>建构步骤：</strong></p>
+    <ul class="steps">
+      <li>调查家中厨房用品种类</li>
+      <li>查清每种碱的化学性质与安全性</li>
+      <li>设计对比表格（名称、性质、用途、安全等级）</li>
+      <li>标注安全注意事项</li>
+      <li>设计误用后的紧急处理指南</li>
+    </ul>
+    <p><strong>成果表达：</strong>A4安全指南海报</p>
+    <div class="rubric">
+      <strong>✅ 自评量规：</strong>
+      <span class="rubric-item">[ ] 是否包含了3种碱的化学名称和俗名？</span>
+      <span class="rubric-item">[ ] 是否标注了每种碱的安全等级？</span>
+      <span class="rubric-item">[ ] 是否有误用后的紧急处理步骤？</span>
+    </div>
+  </div>
+
+  <!-- 案例三 -->
+  <div class="case-detail" data-case="2">
+    <h2>🧪 案例三 · 校园问题型</h2>
+    <p><span class="difficulty medium">★★ 进阶</span></p>
+    <p><strong>真实建构情境：</strong>学校化学实验室的废液桶里经常被乱倒各类废液（酸、碱、有机溶剂混合），存在安全隐患。实验老师请你设计一套学生容易执行的分类投放方案。</p>
+    <p><strong>建构任务：</strong>设计校园化学实验室废弃物分类投放指南</p>
+    <div class="principle-tip"><strong>🔬 原理调用：</strong>问题锚定法（先分析乱倒的原因）+ 迭代优化法（先出方案，请同学试读后改进）</div>
+    <p><strong>建构步骤：</strong></p>
+    <ul class="steps">
+      <li>调查实验室常见废弃物种类</li>
+      <li>设计分类标准</li>
+      <li>设计视觉标识系统</li>
+      <li>制定简易操作流程</li>
+      <li>同学试用反馈并改进</li>
+    </ul>
+    <p><strong>成果表达：</strong>分类指南手册（A4 1页海报 + 1-2张贴纸图样）</p>
+    <div class="rubric">
+      <strong>✅ 自评量规：</strong>
+      <span class="rubric-item">[ ] 是否包含了主要废弃物类别和处理方式？</span>
+      <span class="rubric-item">[ ] 是否有清晰的操作流程图？</span>
+      <span class="rubric-item">[ ] 标识贴纸是否一目了然？</span>
+      <span class="rubric-item">[ ] 是否征求了同学的意见并做了改进？</span>
+    </div>
+  </div>
+
+  <!-- 案例四 -->
+  <div class="case-detail" data-case="3">
+    <h2>🎨 案例四 · 学科表达型</h2>
+    <p><span class="difficulty medium">★★ 进阶</span></p>
+    <p><strong>真实建构情境：</strong>学校科技节需要化学展板，但文字太多没人看。请你设计一套"一句话 + 一个图"的科普卡片系列。</p>
+    <p><strong>建构任务：</strong>设计3张科普卡片，分别展现化学中的"真·善·美"</p>
+    <div class="principle-tip"><strong>🔬 原理调用：</strong>三维目标法（每个卡片对应一个维度）</div>
+    <p><strong>建构步骤：</strong></p>
+    <ul class="steps">
+      <li>选择3个化学知识点（分别对应真、善、美）</li>
+      <li>为每个知识点设计"一句话抓住眼球"</li>
+      <li>配示意图</li>
+      <li>设计统一风格模板</li>
+    </ul>
+    <p><strong>成果表达：</strong>3张统一风格的科普卡片（手绘或电脑制作）</p>
+    <div class="rubric">
+      <strong>✅ 自评量规：</strong>
+      <span class="rubric-item">[ ] 每张卡片是否不超过20个字？</span>
+      <span class="rubric-item">[ ] 是否图文匹配？</span>
+      <span class="rubric-item">[ ] 3张卡片是否风格统一？</span>
+    </div>
+  </div>
+
+  <!-- 案例五 -->
+  <div class="case-detail" data-case="4">
+    <h2>🌍 案例五 · 跨学科整合型</h2>
+    <p><span class="difficulty medium">★★ 进阶</span></p>
+    <p><strong>真实建构情境：</strong>学校要举办"环保周"，化学组负责展示"化学如何帮助环境保护"。仅仅展示负面信息效果不好，需要从"真（科学原理）善（环保价值）美（创意表达）"三个角度来设计。</p>
+    <p><strong>建构任务：</strong>设计一份结合化学、美术、信息技术的"绿色化学"宣传方案</p>
+    <div class="principle-tip"><strong>🔬 原理调用：</strong>三维目标法（同时考虑科学准确、环保价值、视觉美感）</div>
+    <p><strong>建构步骤：</strong></p>
+    <ul class="steps">
+      <li>确定3个绿色化学核心信息</li>
+      <li>为每个信息设计科学原理说明</li>
+      <li>设计视觉呈现方案（展板草稿）</li>
+      <li>设计互动环节（小实验或问答）</li>
+      <li>整合成"展位方案书"</li>
+    </ul>
+    <p><strong>成果表达：</strong>展位方案书（含展板草稿+互动环节描述）</p>
+    <div class="rubric">
+      <strong>✅ 自评量规：</strong>
+      <span class="rubric-item">[ ] 是否包含至少3个绿色化学的科学原理？</span>
+      <span class="rubric-item">[ ] 是否有互动设计？</span>
+      <span class="rubric-item">[ ] 方案是否同时考虑了真善美三个维度？</span>
+    </div>
+  </div>
+
+  <!-- 案例六 -->
+  <div class="case-detail" data-case="5">
+    <h2>🏭 案例六 · 社会情境型</h2>
+    <p><span class="difficulty hard">★★★ 挑战</span></p>
+    <p><strong>真实建构情境：</strong>你选择一种日常生活中常见的化工产品（如塑料瓶、洗衣液、保鲜膜），它的"一生"——从石油开采到生产、使用、废弃——对环境和人类有什么影响？</p>
+    <p><strong>建构任务：</strong>选择一个化工产品，完成其"从摇篮到坟墓"的全生命周期真善美评价</p>
+    <div class="principle-tip"><strong>🔬 原理调用：</strong>证据链法（搜索全生命周期数据）+ 三维目标法（从真善美三个角度评价）</div>
+    <p><strong>建构步骤：</strong></p>
+    <ul class="steps">
+      <li>选择一个日常化工产品</li>
+      <li>画出生命周期流程图（开采→生产→使用→废弃）</li>
+      <li>在每个环节标注环境影响</li>
+      <li>从真（科学）角度分析</li>
+      <li>从善（伦理）角度评价</li>
+      <li>从美角度提出改进建议</li>
+    </ul>
+    <p><strong>成果表达：</strong>A4生命周期评价海报</p>
+    <div class="rubric">
+      <strong>✅ 自评量规：</strong>
+      <span class="rubric-item">[ ] 是否画出了完整的生命周期流程？</span>
+      <span class="rubric-item">[ ] 是否标注了每个环节的环境影响？</span>
+      <span class="rubric-item">[ ] 是否从真善美三个维度分别提出了见解？</span>
+    </div>
+  </div>
+
+  <!-- 案例七 -->
+  <div class="case-detail" data-case="6">
+    <h2>🚀 案例七 · 综合创新型</h2>
+    <p><span class="difficulty hard">★★★ 挑战</span></p>
+    <p><strong>真实建构情境：</strong>如果你是一位化学工程师，公司给你一个任务——设计一款"真善美满分"的化学产品。你可以从解决一个现实问题出发（如"夏天冰淇淋融化太快"、"塑料垃圾太多"），自由发挥。</p>
+    <p><strong>建构任务：</strong>设计一份体现真善美思维的化学创新产品方案</p>
+    <div class="principle-tip"><strong>🔬 原理调用：</strong>综合运用全部4条建构性原理</div>
+    <p><strong>建构步骤：</strong></p>
+    <ul class="steps">
+      <li>确定要解决的现实问题</li>
+      <li>设定真善美三维目标</li>
+      <li>收集相关化学原理和数据</li>
+      <li>设计产品概念（成分+形态+用法）</li>
+      <li>设计生产工艺流程</li>
+      <li>评估产品影响（真善美）</li>
+      <li>输出方案说明书</li>
+    </ul>
+    <p><strong>成果表达：</strong>"我的理想化学产品"方案说明书</p>
+    <div class="rubric">
+      <strong>✅ 自评量规：</strong>
+      <span class="rubric-item">[ ] 问题是否真实且有意义？</span>
+      <span class="rubric-item">[ ] 产品设计是否基于化学原理？</span>
+      <span class="rubric-item">[ ] 是否同时考虑了真善美三个维度？</span>
+      <span class="rubric-item">[ ] 方案是否具有可行性？</span>
+      <span class="rubric-item">[ ] 表达是否清晰美观？</span>
+    </div>
+  </div>
+
+  <h2>💡 综合反思</h2>
+  <div class="reflect-box" id="reflectBox">
+    <label><input type="checkbox" onchange="updateRCount()"> 1. 哪个任务让你最兴奋？为什么？</label>
+    <label><input type="checkbox" onchange="updateRCount()"> 2. 哪个案例最困难？困难在哪里？</label>
+    <label><input type="checkbox" onchange="updateRCount()"> 3. 你发现哪条建构性原理最常用？哪条最难用？</label>
+    <label><input type="checkbox" onchange="updateRCount()"> 4. 这些建构任务如何帮你理解"化学中的真善美"？</label>
+    <label><input type="checkbox" onchange="updateRCount()"> 5. 如果能再来一次，你会在哪个案例上投入更多时间？</label>
+    <p style="margin-top:8px;color:var(--text-secondary);font-size:14px;">已反思：<span id="rCount">0</span>/5</p>
+    <button class="btn-outline" onclick="resetReflect()">重置</button>
+  </div>
+</div>
+
+<script>
+var currentCase = 0;
+function switchCase(idx) {
+  currentCase = idx;
+  var tabs = document.querySelectorAll('#caseTabs button');
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].classList.toggle('active', i === idx);
+  }
+  var details = document.querySelectorAll('.case-detail');
+  for (var j = 0; j < details.length; j++) {
+    details[j].classList.toggle('show', j === idx);
+  }
+}
+function updateRCount() {
+  var checked = document.querySelectorAll('#reflectBox input[type="checkbox"]:checked');
+  document.getElementById('rCount').textContent = checked.length;
+}
+function resetReflect() {
+  var boxes = document.querySelectorAll('#reflectBox input[type="checkbox"]');
+  for (var i = 0; i < boxes.length; i++) {
+    boxes[i].checked = false;
+  }
+  document.getElementById('rCount').textContent = '0';
+}
+</script>
+</body>
+</html>

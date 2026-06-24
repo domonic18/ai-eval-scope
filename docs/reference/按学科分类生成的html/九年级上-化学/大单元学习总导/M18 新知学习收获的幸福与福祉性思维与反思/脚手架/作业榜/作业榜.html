@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>作业榜 | 三层练习结构</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  background: var(--bg);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+}
+
+.container {
+  width: 100%;
+  padding: 24px 16px;
+}
+
+.section-title {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0 0 6px 0;
+}
+
+.section-subtitle {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--text);
+  margin: 28px 0 12px 0;
+  padding-left: 12px;
+  border-left: 4px solid var(--primary);
+}
+
+.intro-text {
+  font-size: var(--font-body);
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  padding: 16px 20px;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+}
+
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.card h3 {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  margin: 0 0 10px 0;
+  color: var(--primary);
+}
+
+.badge {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 12px;
+  margin-left: 8px;
+}
+
+.badge-required {
+  background: #fa8c16;
+}
+
+.badge-optional {
+  background: #52c41a;
+}
+
+.badge-star {
+  background: #722ed1;
+}
+
+.btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.btn {
+  display: inline-block;
+  padding: 6px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.content-panel {
+  display: none;
+  padding: 14px 16px;
+  background: var(--bg);
+  border-radius: 6px;
+  margin-top: 10px;
+  border-left: 3px solid var(--primary);
+}
+
+.content-panel.show {
+  display: block;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 14px;
+}
+
+th, td {
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  background: var(--bg);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.star-rating {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.star {
+  cursor: pointer;
+  font-size: 20px;
+  color: #d9d9d9;
+  transition: color 0.2s;
+}
+
+.star.active {
+  color: #faad14;
+}
+
+.star-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-left: 8px;
+}
+
+.toggle-row {
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-row .arrow {
+  display: inline-block;
+  transition: transform 0.2s;
+  margin-right: 6px;
+}
+
+.toggle-row .arrow.open {
+  transform: rotate(90deg);
+}
+
+.toggle-content {
+  display: none;
+  padding: 10px 0 0 0;
+}
+
+.toggle-content.show {
+  display: block;
+}
+
+.step-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.step-list li {
+  padding: 6px 0 6px 24px;
+  position: relative;
+}
+
+.step-list li::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 13px;
+  width: 8px;
+  height: 8px;
+  background: var(--primary);
+  border-radius: 50%;
+}
+
+.path-label {
+  display: inline-block;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.path-label.easy {
+  background: #52c41a;
+}
+
+.path-label.medium {
+  background: #fa8c16;
+}
+
+.path-label.hard {
+  background: #722ed1;
+}
+
+.quote-block {
+  background: linear-gradient(135deg, var(--bg), #e6f0ff);
+  border-left: 4px solid var(--primary);
+  padding: 16px 20px;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  margin-top: 24px;
+  font-style: italic;
+  color: var(--text);
+}
+
+.quote-block strong {
+  color: var(--primary);
+}
+
+.checklist {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+}
+
+.checklist li {
+  padding: 4px 0 4px 28px;
+  position: relative;
+}
+
+.checklist li::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 8px;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--primary);
+  border-radius: 3px;
+}
+
+.checklist li.checked::before {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.checklist li.checked::after {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 11px;
+  width: 6px;
+  height: 3px;
+  border-left: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(-45deg);
+}
+
+.reset-btn {
+  display: inline-block;
+  padding: 4px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+
+.reset-btn:hover {
+  border-color: #ff4d4f;
+  color: #ff4d4f;
+}
+
+/* Project pill nav */
+.pill-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.pill-nav .pill {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pill-nav .pill.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.pill-nav .pill:hover:not(.active) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.responsive-table-wrapper {
+  overflow-x: auto;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 20px 0;
+}
+</style>
+</head>
+<body>
+
+<div class="container" id="app">
+
+  <!-- 标题 -->
+  <h1 class="section-title">作业榜</h1>
+  <div class="intro-text">
+    作业不是终点，而是你成长的"路标"。本节点提供三种层次的练习选择，你可以根据自己的节奏和目标，选择适合的挑战路径。
+  </div>
+
+  <!-- 第1层 -->
+  <h2 class="section-subtitle">第1层：基础层 — 再现与理解 <span class="badge badge-required">全体必做</span></h2>
+  <div class="card">
+    <p style="color:var(--text-secondary);">目标：巩固课堂所学，确保核心概念过关。</p>
+    <div class="responsive-table-wrapper">
+      <table>
+        <thead>
+          <tr><th>形式</th><th>题目示例</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>写作</td><td>用你自己的话解释：什么是物理变化？什么是化学变化？各举2个生活中的例子。</td></tr>
+          <tr><td>图示</td><td>画出"蜡烛燃烧"的流程图，标注出哪些是物理变化、哪些是化学变化。</td></tr>
+          <tr><td>问答</td><td>完成10道选择题（小程序/纸质），涉及：化学研究内容、变化分类、仪器识别。</td></tr>
+          <tr><td>角色扮演脚本</td><td>写一段2分钟的"化学变化 vs 物理变化"对话脚本，A同学扮演物理变化，B同学扮演化学变化。</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="btn-group" data-group="layer1">
+      <button class="btn" data-target="writing" onclick="togglePanel(this, 'layer1')">写作</button>
+      <button class="btn" data-target="diagram" onclick="togglePanel(this, 'layer1')">图示</button>
+      <button class="btn" data-target="qa" onclick="togglePanel(this, 'layer1')">问答</button>
+      <button class="btn" data-target="script" onclick="togglePanel(this, 'layer1')">角色扮演</button>
+      <button class="reset-btn" onclick="resetGroup('layer1')">重置</button>
+    </div>
+
+    <div id="panel-layer1-writing" class="content-panel" data-group="layer1">
+      <strong>写作提示：</strong>请围绕"物理变化与化学变化的区别"展开，举例需源于生活，如冰融化成水（物理变化）、铁锅生锈（化学变化）。字数建议：200~400字。
+    </div>
+    <div id="panel-layer1-diagram" class="content-panel" data-group="layer1">
+      <strong>图示提示：</strong>蜡烛燃烧包含多个阶段——烛芯熔化（物理变化）、石蜡燃烧（化学变化）、蜡油凝固（物理变化）。可用流程图或图文结合方式呈现。
+    </div>
+    <div id="panel-layer1-qa" class="content-panel" data-group="layer1">
+      <strong>问答提示：</strong>10道选择题涵盖：①化学的研究对象；②物理变化与化学变化的判断；③常见仪器名称与用途。完成后可对照答案自查。
+    </div>
+    <div id="panel-layer1-script" class="content-panel" data-group="layer1">
+      <strong>脚本提示：</strong>2分钟对话，建议结构：自我介绍 → 各自陈述特点 → 生活中的例子 → 互相提问 → 总结。可以有幽默元素。
+    </div>
+  </div>
+
+  <!-- 第2层 -->
+  <h2 class="section-subtitle">第2层：分层任务 — 差异化挑战 <span class="badge badge-star">三选一</span></h2>
+  <div class="card">
+    <div class="pill-nav" data-group="layer2">
+      <button class="pill active" data-target="pathA" onclick="switchPill(this, 'layer2')">A 实验复盘者 ★★</button>
+      <button class="pill" data-target="pathB" onclick="switchPill(this, 'layer2')">B 生活侦探 ★★★</button>
+      <button class="pill" data-target="pathC" onclick="switchPill(this, 'layer2')">C 概念联结者 ★★★★</button>
+      <button class="reset-btn" onclick="resetGroup('layer2')">重置</button>
+    </div>
+
+    <div id="panel-layer2-pathA" class="content-panel show" data-group="layer2">
+      <span class="path-label easy">挑战难度 ★★</span>
+      <h4 style="margin:8px 0 4px 0;">实验复盘者</h4>
+      <p style="color:var(--text-secondary);">选择一个课堂实验（如"对蜡烛及其燃烧的探究"），写成一份图文并茂的实验报告。要求：含目的、步骤、现象、结论，并标注出你的"观察失误时刻"——当时看错了什么，后来怎么纠正的。</p>
+    </div>
+    <div id="panel-layer2-pathB" class="content-panel" data-group="layer2">
+      <span class="path-label medium">挑战难度 ★★★</span>
+      <h4 style="margin:8px 0 4px 0;">生活侦探</h4>
+      <p style="color:var(--text-secondary);">在家中找到3个与化学有关的物品/现象（如铁锈、小苏打冒泡、水垢等），拍照记录。分析每个现象是物理变化还是化学变化，写出你的分析依据。可制作成"生活中的化学"小海报或短视频。</p>
+    </div>
+    <div id="panel-layer2-pathC" class="content-panel" data-group="layer2">
+      <span class="path-label hard">挑战难度 ★★★★</span>
+      <h4 style="margin:8px 0 4px 0;">概念联结者</h4>
+      <p style="color:var(--text-secondary);">选择第1章中的任意3个核心概念，用思维导图将它们联系起来。要求：每个概念配1个生活实例，连线处标注关系说明（如"因果关系""递进关系""对比关系"）。形式不限（手绘/幕布/XMind均可）。</p>
+    </div>
+  </div>
+
+  <!-- 第3层 -->
+  <h2 class="section-subtitle">第3层：开放层 — 创造性表达 <span class="badge badge-optional">自选加分</span></h2>
+  <div class="card">
+    <p style="color:var(--text-secondary);">你的选择无限——以下仅为启发：</p>
+    <div class="responsive-table-wrapper">
+      <table>
+        <thead>
+          <tr><th>形式</th><th>描述</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>写作</td><td>写一篇800字的科幻微小说，主题为"假如世界上没有化学变化"。</td></tr>
+          <tr><td>视频</td><td>拍摄3分钟的"化学第一课"趣味讲解视频，风格自定（脱口秀/动画/实拍）。</td></tr>
+          <tr><td>演讲</td><td>准备5分钟课堂演讲"我身边的化学"，面向班级展示。</td></tr>
+          <tr><td>图示</td><td>创作一幅"化学世界地图"——用图画+关键词展现第1章的知识全景。</td></tr>
+          <tr><td>手工</td><td>制作一套"化学变化识别卡"（扑克牌大小，每张写一个变化及其分类）。</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="btn-group" data-group="layer3">
+      <button class="btn" data-target="writing3" onclick="togglePanel(this, 'layer3')">写作</button>
+      <button class="btn" data-target="video" onclick="togglePanel(this, 'layer3')">视频</button>
+      <button class="btn" data-target="speech" onclick="togglePanel(this, 'layer3')">演讲</button>
+      <button class="btn" data-target="map" onclick="togglePanel(this, 'layer3')">图示</button>
+      <button class="btn" data-target="card" onclick="togglePanel(this, 'layer3')">手工</button>
+      <button class="reset-btn" onclick="resetGroup('layer3')">重置</button>
+    </div>
+
+    <div id="panel-layer3-writing3" class="content-panel" data-group="layer3">
+      <strong>写作提示：</strong>科幻微小说需要设定一个合理的世界观——没有化学变化的世界是什么样的？食物不会变质，但也无法被消化；铁不会生锈，但也无法冶炼。试着辩证思考。
+    </div>
+    <div id="panel-layer3-video" class="content-panel" data-group="layer3">
+      <strong>视频提示：</strong>3分钟"化学第一课"可用趣味实验片段、动画讲解或脱口秀形式呈现。建议准备脚本，确保包含至少3个化学知识点。
+    </div>
+    <div id="panel-layer3-speech" class="content-panel" data-group="layer3">
+      <strong>演讲提示：</strong>5分钟演讲"我身边的化学"，可从厨房、卫生间、阳台等场景切入，用生活中的化学现象引起共鸣。建议配PPT或实物展示。
+    </div>
+    <div id="panel-layer3-map" class="content-panel" data-group="layer3">
+      <strong>图示提示：</strong>"化学世界地图"可以是思维导图、手绘地图或信息图。中心为"第1章 化学使世界更美好"，分支涵盖物质变化、化学性质、实验仪器等。
+    </div>
+    <div id="panel-layer3-card" class="content-panel" data-group="layer3">
+      <strong>手工提示：</strong>"化学变化识别卡"每张卡片包含：变化名称、化学/物理属性、生活实例、示意图。建议制作8~12张，可正面印变化名称、反面印分类和实例。
+    </div>
+  </div>
+
+  <!-- 评价标准 -->
+  <h2 class="section-subtitle">评价标准指导</h2>
+
+  <div class="card">
+    <h3>基础层评价 <span style="font-weight:400;font-size:14px;color:var(--text-secondary);">（通过 / 待改进）</span></h3>
+    <ul class="checklist" id="checklist-base">
+      <li onclick="toggleCheck(this)">核心概念理解正确，无科学错误</li>
+      <li onclick="toggleCheck(this)">举例恰当，来自生活</li>
+      <li onclick="toggleCheck(this)">表达清晰，他人看得懂</li>
+    </ul>
+    <button class="reset-btn" onclick="resetChecklist('checklist-base')">重置清单</button>
+  </div>
+
+  <div class="card">
+    <h3>分层任务评价 <span style="font-weight:400;font-size:14px;color:var(--text-secondary);">（星级制：1-5星）</span></h3>
+    <div class="responsive-table-wrapper">
+      <table>
+        <thead>
+          <tr><th>维度</th><th>1星</th><th>3星</th><th>5星</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>准确性</td><td>有2处以上错误</td><td>1处轻微错误</td><td>完全正确</td></tr>
+          <tr><td>完整性</td><td>缺少关键要素</td><td>要素基本齐全</td><td>内容全面有细节</td></tr>
+          <tr><td>创新性</td><td>照搬课本</td><td>有个人思考</td><td>有独特视角或形式</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="margin:12px 0 6px 0;font-weight:600;">自评打分</p>
+    <div class="btn-group" data-group="self-rating">
+      <span class="star" data-value="1" onclick="setStar(this, 1)">&#9733;</span>
+      <span class="star" data-value="2" onclick="setStar(this, 2)">&#9733;</span>
+      <span class="star" data-value="3" onclick="setStar(this, 3)">&#9733;</span>
+      <span class="star" data-value="4" onclick="setStar(this, 4)">&#9733;</span>
+      <span class="star" data-value="5" onclick="setStar(this, 5)">&#9733;</span>
+      <span class="star-text" id="star-text">点击星标评分</span>
+      <button class="reset-btn" onclick="resetStars()">重置</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>开放层评价 <span style="font-weight:400;font-size:14px;color:var(--text-secondary);">（班级互评 + 教师点评）</span></h3>
+    <ul class="step-list">
+      <li>创意分（40%）：想法是否新奇有趣？</li>
+      <li>表达分（40%）：呈现是否清晰有感染力？</li>
+      <li>化学含量分（20%）：是否有至少3个正确的化学知识点？</li>
+    </ul>
+  </div>
+
+  <!-- 结语 -->
+  <div class="quote-block">
+    <strong>完成这一关，你将获得：</strong>三份自己亲手完成的作品——它们是你学习化学的第一份"成长档案"。无论选择哪条路，重要的是你在思考，在表达，在进步！
+  </div>
+
+</div>
+
+<script>
+/* === 第1层 / 第3层：按钮切换面板（data-group 隔离） === */
+function togglePanel(btn, group) {
+  var parent = btn.closest ? btn.closest('[data-group="' + group + '"]') : null;
+  if (!parent) parent = document.querySelector('.btn-group[data-group="' + group + '"]');
+  var btns = parent.querySelectorAll('.btn');
+  btns.forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+
+  var target = btn.getAttribute('data-target');
+  var panels = document.querySelectorAll('.content-panel[data-group="' + group + '"]');
+  panels.forEach(function(p) { p.classList.remove('show'); });
+  var panel = document.getElementById('panel-' + group + '-' + target);
+  if (panel) panel.classList.add('show');
+}
+
+/* === 第2层：药丸导航切换 === */
+function switchPill(pill, group) {
+  var parent = pill.closest ? pill.closest('[data-group="' + group + '"]') : null;
+  if (!parent) parent = document.querySelector('.pill-nav[data-group="' + group + '"]');
+  var pills = parent.querySelectorAll('.pill');
+  pills.forEach(function(p) { p.classList.remove('active'); });
+  pill.classList.add('active');
+
+  var target = pill.getAttribute('data-target');
+  var panels = document.querySelectorAll('.content-panel[data-group="' + group + '"]');
+  panels.forEach(function(p) { p.classList.remove('show'); });
+  var panel = document.getElementById('panel-' + group + '-' + target);
+  if (panel) panel.classList.add('show');
+}
+
+/* === 重置函数：覆盖 class + textContent + inline style + input value === */
+function resetGroup(group) {
+  // 重置按钮状态
+  var btnGroups = document.querySelectorAll('.btn-group[data-group="' + group + '"]');
+  btnGroups.forEach(function(g) {
+    var btns = g.querySelectorAll('.btn');
+    btns.forEach(function(b) { b.classList.remove('active'); });
+  });
+
+  var pillNavs = document.querySelectorAll('.pill-nav[data-group="' + group + '"]');
+  pillNavs.forEach(function(g) {
+    var pills = g.querySelectorAll('.pill');
+    pills.forEach(function(p) { p.classList.remove('active'); });
+  });
+
+  // 重置面板
+  var panels = document.querySelectorAll('.content-panel[data-group="' + group + '"]');
+  panels.forEach(function(p) { p.classList.remove('show'); });
+
+  // 如果是第2层，默认显示A路径
+  if (group === 'layer2') {
+    var firstPill = document.querySelector('.pill-nav[data-group="layer2"] .pill');
+    if (firstPill) {
+      firstPill.classList.add('active');
+      var target = firstPill.getAttribute('data-target');
+      var panel = document.getElementById('panel-layer2-' + target);
+      if (panel) panel.classList.add('show');
+    }
+  }
+}
+
+/* === 清单切换 === */
+function toggleCheck(item) {
+  item.classList.toggle('checked');
+}
+
+function resetChecklist(id) {
+  var items = document.getElementById(id).querySelectorAll('li');
+  items.forEach(function(li) { li.classList.remove('checked'); });
+}
+
+/* === 星级评分 === */
+var currentStar = 0;
+
+function setStar(el, value) {
+  var parent = el.closest('.btn-group[data-group="self-rating"]');
+  if (!parent) return;
+  var stars = parent.querySelectorAll('.star');
+  stars.forEach(function(s, idx) {
+    if (idx < value) s.classList.add('active');
+    else s.classList.remove('active');
+  });
+  currentStar = value;
+  document.getElementById('star-text').textContent = value + ' 星';
+}
+
+function resetStars() {
+  var parent = document.querySelector('.btn-group[data-group="self-rating"]');
+  if (!parent) return;
+  var stars = parent.querySelectorAll('.star');
+  stars.forEach(function(s) { s.classList.remove('active'); });
+  currentStar = 0;
+  document.getElementById('star-text').textContent = '点击星标评分';
+}
+</script>
+
+</body>
+</html>

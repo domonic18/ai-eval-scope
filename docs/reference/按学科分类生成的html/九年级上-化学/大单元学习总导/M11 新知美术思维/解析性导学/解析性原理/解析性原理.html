@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性原理 — 化学分析的思维工具箱</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+  --font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin: 0 0 8px;
+  padding-bottom: 12px;
+  border-bottom: 3px solid var(--accent);
+}
+
+h2 {
+  font-size: var(--font-h2);
+  color: var(--text);
+  margin: 28px 0 12px;
+  padding-left: 12px;
+  border-left: 4px solid var(--primary);
+}
+
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  /* ...existing properties (commented intentionally as placeholder, will override below with dup selector, keeping clean approach: just define once: */
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow); /* only override needed, rest unchanged via cascade */
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+
+.principle-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 18px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  transition: border-color 0.2s;
+}
+
+.principle-card:nth-child(2) { border-left-color: #52c41a; }
+.principle-card:nth-child(3) { border-left-color: #faad14; }
+.principle-card:nth-child(4) { border-left-color: #722ed1; }
+
+.principle-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.principle-header h3 {
+  margin: 0;
+  font-size: 17px;
+  color: var(--primary);
+  flex: 1;
+}
+
+.principle-header .arrow {
+  transition: transform 0.25s;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.principle-card.open .principle-header .arrow {
+  transform: rotate(180deg);
+}
+
+.principle-body {
+  display: none;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border);
+}
+
+.principle-card.open .principle-body {
+  display: block;
+}
+
+.principle-body p {
+  margin: 6px 0;
+}
+
+.principle-body .label {
+  font-weight: 600;
+  color: var(--text);
+  display: inline-block;
+  margin-top: 8px;
+}
+
+.principle-body .highlight {
+  background: #f6ffed;
+  border-left: 3px solid #52c41a;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  margin: 8px 0;
+}
+
+.principle-body .warning {
+  background: #fff7e6;
+  border-left: 3px solid #faad14;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  margin: 8px 0;
+}
+
+.exercise-box {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 2px dashed var(--primary);
+}
+
+.exercise-box h3 {
+  margin-top: 0;
+  color: var(--primary);
+}
+
+.exercise-box .hint-btn {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 8px;
+  font-family: var(--font-family);
+  transition: background 0.2s;
+}
+
+.exercise-box .hint-btn:hover {
+  background: var(--primary-hover);
+}
+
+.exercise-box .hint-content {
+  display: none;
+  margin-top: 12px;
+  padding: 12px;
+  background: #f6ffed;
+  border-radius: 6px;
+  font-size: 14px;
+  border-left: 3px solid #52c41a;
+}
+
+.exercise-box .hint-content.show {
+  display: block;
+}
+
+.checklist {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+}
+
+.checklist li {
+  padding: 8px 0 8px 32px;
+  position: relative;
+  cursor: pointer;
+  transition: color 0.2s;
+  user-select: none;
+}
+
+.checklist li::before {
+  content: "○";
+  position: absolute;
+  left: 4px;
+  top: 8px;
+  font-size: 16px;
+  color: var(--primary);
+  transition: all 0.2s;
+}
+
+.checklist li.checked {
+  color: var(--text-secondary);
+  text-decoration: line-through;
+}
+
+.checklist li.checked::before {
+  content: "●";
+  color: #52c41a;
+}
+
+.intro-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 4px 16px;
+  border-radius: 16px;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  .card { padding: 14px; }
+  .principle-card { padding: 14px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🧠 解析性原理：化学分析的思维工具箱</h1>
+
+<div style="background:#e6f7ff;border:1px solid #91d5ff;border-radius:6px;padding:12px 16px;margin:0 0 20px;font-size:14px;">
+  <strong>📌 任务定位：</strong>从"解析性示例"中提炼可迁移的分析方法。从示例中抓出 <strong>3-5条通用的分析规则</strong>——以后遇到任何化学现象，都可以用这些方法自己拆解分析。
+</div>
+
+<span class="intro-badge">💡 点击卡片标题展开详细内容</span>
+
+<!-- 原理1 -->
+<div class="principle-card open" id="principle1">
+  <div class="principle-header" onclick="togglePrinciple('principle1')">
+    <h3>🔬 原理1：现象分层法</h3>
+    <span class="arrow">▼</span>
+  </div>
+  <div class="principle-body">
+    <p><strong>说明：</strong>把一个复杂的现象分成"表面特征"和"本质特征"两个层次</p>
+    <div class="highlight">
+      <strong>本示例中的体现：</strong>① 外观相同（表面）② 反应结果不同（本质）
+    </div>
+    <p><span class="label">🛠️ 如何使用：</span>面对任何现象，先问自己"我看到的是什么层面？"</p>
+    <p><span class="label">🎯 可迁移到：</span>鉴别物质、分析实验现象、解读数据图表</p>
+    <div class="warning">
+      <strong>⚠️ 使用提醒：</strong>不要忽视表面特征——表面差异往往是本质差异的线索
+    </div>
+  </div>
+</div>
+
+<!-- 原理2 -->
+<div class="principle-card" id="principle2">
+  <div class="principle-header" onclick="togglePrinciple('principle2')">
+    <h3>⚖️ 原理2：差异对比法</h3>
+    <span class="arrow">▼</span>
+  </div>
+  <div class="principle-body">
+    <p><strong>说明：</strong>让两个事物在相同条件下"比试"，差异就是突破口</p>
+    <div class="highlight">
+      <strong>本示例中的体现：</strong>白醋和白开水+小苏打，一个反应一个不反应
+    </div>
+    <p><span class="label">🛠️ 如何使用：</span>设计一个"对比实验"，控制其他条件相同，只改变一个变量</p>
+    <p><span class="label">🎯 可迁移到：</span>区分相似概念、做科学实验、决策选择</p>
+    <div class="warning">
+      <strong>⚠️ 使用提醒：</strong>对比条件要公平，不能拿"苹果和橘子"比
+    </div>
+  </div>
+</div>
+
+<!-- 原理3 -->
+<div class="principle-card" id="principle3">
+  <div class="principle-header" onclick="togglePrinciple('principle3')">
+    <h3>🔗 原理3：证据链推理法</h3>
+    <span class="arrow">▼</span>
+  </div>
+  <div class="principle-body">
+    <p><strong>说明：</strong>现象（证据）→ 逻辑推理 → 结论，每一步都问"这个证据说明了什么"</p>
+    <div class="highlight">
+      <strong>本示例中的体现：</strong>气泡 → 产生了气体 → 气体从哪里来 → 两种物质反应 → 说明成分不同
+    </div>
+    <p><span class="label">🛠️ 如何使用：</span>从观察结果出发，一步步向前推原因</p>
+    <p><span class="label">🎯 可迁移到：</span>解推理题、分析实验失败原因、读懂科学报道</p>
+    <div class="warning">
+      <strong>⚠️ 使用提醒：</strong>不要跳步，"感觉上应该是"不是证据
+    </div>
+  </div>
+</div>
+
+<!-- 原理4 -->
+<div class="principle-card" id="principle4">
+  <div class="principle-header" onclick="togglePrinciple('principle4')">
+    <h3>🧪 原理4：性质驱动法</h3>
+    <span class="arrow">▼</span>
+  </div>
+  <div class="principle-body">
+    <p><strong>说明：</strong>物质的行为由其性质决定——有什么性质就有什么表现</p>
+    <div class="highlight">
+      <strong>本示例中的体现：</strong>醋酸的酸性与碳酸氢钠反应 → 气泡
+    </div>
+    <p><span class="label">🛠️ 如何使用：</span>分析化学现象时，用"什么性质 → 什么现象"的框架</p>
+    <p><span class="label">🎯 可迁移到：</span>预测反应、选择鉴别方法、解释日常现象</p>
+    <div class="warning">
+      <strong>⚠️ 使用提醒：</strong>不能想当然，性质需要从已知信息或实验中获得
+    </div>
+  </div>
+</div>
+
+<!-- 应用练习 -->
+<h2>✏️ 原理应用练习</h2>
+
+<div class="exercise-box">
+  <h3>练习1：用"差异对比法 + 证据链推理法"分析</h3>
+  <p><strong>问题：</strong>为什么铁锅"干烧"（无食物）时容易损坏，而煮水时不会？</p>
+  <button class="hint-btn" onclick="toggleHint('hint1')">💡 查看提示</button>
+  <div id="hint1" class="hint-content">
+    <p><strong>差异对比法：</strong>比较"有水和没水"时锅的温度、热传导方式的差异。</p>
+    <p><strong>证据链推理：</strong></p>
+    <p>① 有水时，水温最高100°C（沸腾），锅的温度不会大幅超过100°C → 铁锅受热均匀</p>
+    <p>② 干烧时，锅底直接受火，温度持续升高可达400°C以上 → 局部过热</p>
+    <p>③ 高温下铁与氧气反应（Fe + O₂ → Fe₂O₃/Fe₃O₄），表面氧化层脱落</p>
+    <p>④ 局部温差导致铁的热胀冷缩不均匀 → 铁锅变形甚至开裂</p>
+    <p><strong>结论：</strong>水起到了"温度缓冲"和"限温"的作用，干烧则缺乏这种保护。</p>
+  </div>
+</div>
+
+<div class="exercise-box">
+  <h3>练习2：用"性质驱动法"分析</h3>
+  <p><strong>问题：</strong>为什么油和水不能混合，而糖和水可以？</p>
+  <button class="hint-btn" onclick="toggleHint('hint2')">💡 查看提示</button>
+  <div id="hint2" class="hint-content">
+    <p><strong>性质驱动分析：</strong></p>
+    <p><strong>关键性质——极性：</strong></p>
+    <p>① 水是 <strong>极性分子</strong>（O-H键极性不对称，分子一端带正电一端带负电）</p>
+    <p>② 糖也是 <strong>极性分子</strong>（含多个羟基-OH，与水形成氢键）→ "相似相溶" → 糖溶于水</p>
+    <p>③ 油是 <strong>非极性分子</strong>（C-H键极性弱且对称分布）→ 与水极性差异大 → 不互溶</p>
+    <p><strong>扩展思考：</strong>洗衣粉/洗洁精为什么能去油？因为它们的分子一端亲水（极性）、一端亲油（非极性），充当了水和油之间的"桥梁"。</p>
+  </div>
+</div>
+
+<!-- 自我检测 -->
+<h2>📋 自我检测</h2>
+<div class="card">
+  <p style="color:var(--text-secondary);font-size:14px;">点击逐条确认：</p>
+  <ul class="checklist" id="checklist">
+    <li onclick="toggleCheck(this)">我能说出4条解析性原理中每一条的核心含义吗？</li>
+    <li onclick="toggleCheck(this)">我能用"差异对比法"设计一个简单的对比实验吗？</li>
+    <li onclick="toggleCheck(this)">我能用"证据链推理法"解释一个日常现象吗？</li>
+    <li onclick="toggleCheck(this)">哪条原理我最熟悉？哪条还需要练习？</li>
+  </ul>
+  <button class="hint-btn" onclick="resetChecks()" style="background:var(--text-secondary);">🔄 重置</button>
+</div>
+
+</div>
+
+<script>
+function togglePrinciple(id) {
+  var el = document.getElementById(id);
+  if (el) {
+    el.classList.toggle('open');
+  }
+}
+
+function toggleHint(id) {
+  var el = document.getElementById(id);
+  if (el) {
+    el.classList.toggle('show');
+  }
+}
+
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+}
+
+function resetChecks() {
+  var items = document.querySelectorAll('#checklist li');
+  for (var i = 0; i < items.length; i++) {
+    items[i].classList.remove('checked');
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具库 — 化学认知放大器</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 24px; box-sizing: border-box; }
+.page-title {
+  font-size: var(--font-h1); font-weight: 700;
+  color: var(--primary); text-align: center;
+  margin: 0 0 8px; padding-bottom: 12px;
+  border-bottom: 3px solid var(--accent);
+}
+.page-subtitle { text-align: center; color: var(--text-secondary); margin: 0 0 28px; font-size: 14px; }
+h2 {
+  font-size: var(--font-h2); font-weight: 600;
+  color: var(--primary); margin: 28px 0 16px;
+  padding-left: 12px; border-left: 4px solid var(--primary);
+}
+
+/* 分类筛选标签 */
+.filter-bar {
+  display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;
+}
+.filter-btn {
+  padding: 6px 18px; border-radius: 20px; border: 1px solid var(--border);
+  background: var(--card-bg); cursor: pointer; font-size: 13px;
+  transition: all 0.3s ease; color: var(--text-secondary);
+}
+.filter-btn:hover { border-color: var(--primary); color: var(--primary); }
+.filter-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* 工具卡片网格 */
+.tool-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px;
+}
+
+.tool-card {
+  background: var(--card-bg); border-radius: var(--border-radius);
+  box-shadow: var(--shadow); padding: 20px;
+  border: 1px solid var(--border);
+  transition: all 0.3s ease;
+  position: relative;
+}
+.tool-card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.12); transform: translateY(-2px); }
+
+.tool-level {
+  display: inline-block; font-size: 11px; padding: 2px 10px;
+  border-radius: 10px; color: #fff; margin-bottom: 8px;
+}
+.level-basic { background: #52c41a; }
+.level-adv { background: var(--primary); }
+.level-high { background: #722ed1; }
+
+.tool-card h3 { margin: 0 0 8px; font-size: 16px; color: var(--text); }
+.tool-card .tool-purpose { font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; }
+.tool-card .tool-steps { display: none; margin: 10px 0; }
+.tool-card .tool-steps.open { display: block; }
+.tool-card .step-item { padding: 6px 0; font-size: 13px; display: flex; gap: 8px; }
+.tool-card .step-num { color: var(--primary); font-weight: 600; flex-shrink: 0; }
+.tool-card .tool-example {
+  margin-top: 10px; padding: 10px; background: #f6f8fa; border-radius: 6px;
+  font-size: 13px; display: none; border-left: 3px solid var(--accent);
+}
+.tool-card .tool-example.open { display: block; }
+.tool-card .tool-scene {
+  margin-top: 8px; font-size: 12px; color: var(--text-secondary);
+  display: flex; align-items: center; gap: 6px;
+}
+
+.expand-btn {
+  display: inline-block; margin-top: 8px; padding: 4px 14px;
+  border: 1px solid var(--primary); border-radius: 14px;
+  color: var(--primary); background: transparent; cursor: pointer;
+  font-size: 12px; transition: all 0.3s ease;
+}
+.expand-btn:hover { background: var(--primary); color: #fff; }
+
+/* 标签样式 */
+.card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.card-tag {
+  font-size: 11px; padding: 1px 8px; border-radius: 8px;
+  background: #f0f5ff; color: var(--primary); border: 1px solid #d6e4ff;
+}
+
+/* 隐藏 */
+.tool-card.hidden { display: none; }
+
+@media (max-width: 640px) {
+  .tool-grid { grid-template-columns: 1fr; }
+  .container { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1 class="page-title">🧰 化学工具库</h1>
+<p class="page-subtitle">提供"认知放大器" — 更高效地思考和表达化学创造性成果</p>
+
+<!-- 筛选栏 -->
+<div class="filter-bar">
+  <button class="filter-btn active" onclick="filterTools('all', this)">📋 全部工具</button>
+  <button class="filter-btn" onclick="filterTools('basic', this)">⭐ 基础工具</button>
+  <button class="filter-btn" onclick="filterTools('adv', this)">🚀 进阶工具</button>
+  <button class="filter-btn" onclick="filterTools('high', this)">🎯 高阶工具</button>
+</div>
+
+<!-- 工具列表 -->
+<div class="tool-grid">
+
+  <!-- 基础：思维导图 -->
+  <div class="tool-card" data-level="basic">
+    <span class="tool-level level-basic">⭐ 基础工具</span>
+    <div class="card-tags">
+      <span class="card-tag">思维导图</span>
+      <span class="card-tag">概念梳理</span>
+    </div>
+    <h3>🧠 思维导图工具</h3>
+    <div class="tool-purpose">用途：梳理化学概念关系，构建知识网络图</div>
+    <div class="tool-steps">
+      <div class="step-item"><span class="step-num">①</span>中心主题：在纸中央写下"物质的变化"</div>
+      <div class="step-item"><span class="step-num">②</span>分支概念：向外延伸分支——"化学变化""物理变化"</div>
+      <div class="step-item"><span class="step-num">③</span>连接关系：在分支下加入特征、实例、条件</div>
+      <div class="step-item"><span class="step-num">④</span>用颜色、图标区分不同类型的变化</div>
+    </div>
+    <div class="tool-example">
+      <strong>📌 示例：</strong><br>
+      中心「物质的变化」→ 左分支「物理变化：冰融化、食盐溶解、灯泡发光」→ 右分支「化学变化：铁生锈、木炭燃烧、食物变质」→ 中间连接区「化学变化常伴随物理变化」
+    </div>
+    <div class="tool-scene">📎 适用场景：整理"物质变化"分类体系</div>
+    <button class="expand-btn" onclick="toggleTool(this)">展开步骤</button>
+  </div>
+
+  <!-- 基础：双气泡对比图 -->
+  <div class="tool-card" data-level="basic">
+    <span class="tool-level level-basic">⭐ 基础工具</span>
+    <div class="card-tags">
+      <span class="card-tag">对比分析</span>
+      <span class="card-tag">双气泡图</span>
+    </div>
+    <h3>🔁 双气泡对比图</h3>
+    <div class="tool-purpose">用途：对比化学变化与物理变化的异同</div>
+    <div class="tool-steps">
+      <div class="step-item"><span class="step-num">①</span>在左侧气泡写"物理变化"，右侧写"化学变化"</div>
+      <div class="step-item"><span class="step-num">②</span>中间共享气泡写两者共同点</div>
+      <div class="step-item"><span class="step-num">③</span>两侧独特气泡写各自的特征</div>
+      <div class="step-item"><span class="step-num">④</span>每个特征气泡下方附实例</div>
+    </div>
+    <div class="tool-example">
+      <strong>📌 示例：</strong><br>
+      【物理变化】← 无新物质生成 / 分子不变 ← <strong>共同点</strong> → 物质状态改变 / 能量变化 → 【化学变化】→ 有新物质生成 / 分子改变
+    </div>
+    <div class="tool-scene">📎 适用场景：辨析易混淆概念</div>
+    <button class="expand-btn" onclick="toggleTool(this)">展开步骤</button>
+  </div>
+
+  <!-- 进阶：AI辅助学习 -->
+  <div class="tool-card" data-level="adv">
+    <span class="tool-level level-adv">🚀 进阶工具</span>
+    <div class="card-tags">
+      <span class="card-tag">AI</span>
+      <span class="card-tag">数字工具</span>
+    </div>
+    <h3>🤖 AI 辅助学习</h3>
+    <div class="tool-purpose">用途：用AI生成化学知识小结、概念解释和练习</div>
+    <div class="tool-steps">
+      <div class="step-item"><span class="step-num">①</span>确定主题：如"水的电解"</div>
+      <div class="step-item"><span class="step-num">②</span>向AI提问："请用表格对比水电解实验中正负极产生的气体"</div>
+      <div class="step-item"><span class="step-num">③</span>审阅AI回答，用课本验证准确性</div>
+      <div class="step-item"><span class="step-num">④</span>将AI输出整理到你的笔记中</div>
+    </div>
+    <div class="tool-example">
+      <strong>📌 示例提问：</strong><br>
+      "请解释为什么水电解产生氢气和氧气的体积比是2:1，从化学方程式的角度分析。"<br>
+      <span style="color:var(--text-secondary);font-size:12px;">💡 提示：AI工具只是辅助，关键知识须以教材为准</span>
+    </div>
+    <div class="tool-scene">📎 适用场景：快速生成知识小结、查漏补缺</div>
+    <button class="expand-btn" onclick="toggleTool(this)">展开步骤</button>
+  </div>
+
+  <!-- 进阶：图表工具 -->
+  <div class="tool-card" data-level="adv">
+    <span class="tool-level level-adv">🚀 进阶工具</span>
+    <div class="card-tags">
+      <span class="card-tag">图表</span>
+      <span class="card-tag">数据可视化</span>
+    </div>
+    <h3>📊 物质性质对比表</h3>
+    <div class="tool-purpose">用途：制作物质性质对比表，一目了然</div>
+    <div class="tool-steps">
+      <div class="step-item"><span class="step-num">①</span>列出需要对比的物质（如：氧气、氢气、二氧化碳）</div>
+      <div class="step-item"><span class="step-num">②</span>确定对比维度（颜色、状态、密度、溶解性、化学性质）</div>
+      <div class="step-item"><span class="step-num">③</span>用表格工具（Excel/Word/手绘）绘制对比表</div>
+      <div class="step-item"><span class="step-num">④</span>用颜色高亮关键差异</div>
+    </div>
+    <div class="tool-example">
+      <strong>📌 示例（三气对比表）：</strong><br>
+      │ 气体 │ 颜色 │ 密度 vs 空气 │ 是否支持燃烧 │ 溶解性 │<br>
+      │ O₂ │ 无色 │ 略大 │ 支持 │ 不易溶 │<br>
+      │ H₂ │ 无色 │ 最小 │ 可燃 │ 难溶 │<br>
+      │ CO₂ │ 无色 │ 大于空气 │ 不支持 │ 溶于水 │
+    </div>
+    <div class="tool-scene">📎 适用场景：复习总结、实验报告整理</div>
+    <button class="expand-btn" onclick="toggleTool(this)">展开步骤</button>
+  </div>
+
+  <!-- 进阶：虚拟实验室 -->
+  <div class="tool-card" data-level="adv">
+    <span class="tool-level level-adv">🚀 进阶工具</span>
+    <div class="card-tags">
+      <span class="card-tag">虚拟实验</span>
+      <span class="card-tag">模拟</span>
+    </div>
+    <h3>🔬 虚拟实验室软件</h3>
+    <div class="tool-purpose">用途：模拟实验操作，安全探索化学变化</div>
+    <div class="tool-steps">
+      <div class="step-item"><span class="step-num">①</span>打开虚拟实验室平台（如 PhET、NOBOOK）</div>
+      <div class="step-item"><span class="step-num">②</span>选择实验类型（化学变化/物理变化）</div>
+      <div class="step-item"><span class="step-num">③</span>拖拽实验器材，按步骤操作</div>
+      <div class="step-item"><span class="step-num">④</span>观察并记录现象，对比不同条件下的反应差异</div>
+    </div>
+    <div class="tool-example">
+      <strong>📌 推荐平台：</strong><br>
+      • PhET 互动模拟（科罗拉多大学）— 免费，中文版可用<br>
+      • NOBOOK 虚拟实验室 — 操作界面逼真<br>
+      • 烧杯 App（BEAKER）— 手机上的化学实验室
+    </div>
+    <div class="tool-scene">📎 适用场景：实验预习、安全实验探索、课后复习</div>
+    <button class="expand-btn" onclick="toggleTool(this)">展开步骤</button>
+  </div>
+
+  <!-- 高阶：数据分析 -->
+  <div class="tool-card" data-level="high">
+    <span class="tool-level level-high">🎯 高阶工具</span>
+    <div class="card-tags">
+      <span class="card-tag">数据分析</span>
+      <span class="card-tag">图表制作</span>
+    </div>
+    <h3>📈 实验数据分析工具</h3>
+    <div class="tool-purpose">用途：处理化学实验数据，制作分析图表</div>
+    <div class="tool-steps">
+      <div class="step-item"><span class="step-num">①</span>收集实验数据（温度变化、质量变化、气体体积等）</div>
+      <div class="step-item"><span class="step-num">②</span>用表格整理原始数据</div>
+      <div class="step-item"><span class="step-num">③</span>选择图表类型：折线图（趋势）/ 柱状图（对比）</div>
+      <div class="step-item"><span class="step-num">④</span>分析图表规律，得出实验结论</div>
+    </div>
+    <div class="tool-example">
+      <strong>📌 示例：</strong><br>
+      加热高锰酸钾制取氧气实验：记录"时间-气体体积"数据，绘制折线图，分析反应速率变化规律（先快后慢，因为反应物浓度逐渐降低）。
+    </div>
+    <div class="tool-scene">📎 适用场景：实验报告撰写、探究性学习</div>
+    <button class="expand-btn" onclick="toggleTool(this)">展开步骤</button>
+  </div>
+
+</div>
+</div>
+
+<script>
+function toggleTool(btn) {
+  var card = btn.closest('.tool-card');
+  if (!card) return;
+  var steps = card.querySelector('.tool-steps');
+  var example = card.querySelector('.tool-example');
+  if (!steps || !example) return;
+
+  var isOpen = steps.classList.contains('open');
+  if (isOpen) {
+    steps.classList.remove('open');
+    example.classList.remove('open');
+    btn.textContent = '展开步骤';
+  } else {
+    steps.classList.add('open');
+    example.classList.add('open');
+    btn.textContent = '收起步骤';
+  }
+}
+
+function filterTools(level, btn) {
+  var cards = document.querySelectorAll('.tool-card');
+  var btns = document.querySelectorAll('.filter-btn');
+
+  btns.forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+
+  cards.forEach(function(card) {
+    if (level === 'all') {
+      card.classList.remove('hidden');
+    } else {
+      if (card.getAttribute('data-level') === level) {
+        card.classList.remove('hidden');
+      } else {
+        card.classList.add('hidden');
+      }
+    }
+  });
+}
+</script>
+</body>
+</html>

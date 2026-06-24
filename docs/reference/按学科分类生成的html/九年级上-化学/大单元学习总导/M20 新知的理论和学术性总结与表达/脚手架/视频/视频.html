@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视频任务 — 化学学习脚手架</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  min-height: 100vh;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 6px; }
+.header p { font-size: 14px; opacity: 0.9; }
+
+.level-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.level-tab {
+  padding: 8px 20px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text-secondary);
+}
+
+.level-tab:hover { border-color: var(--primary); color: var(--primary); }
+
+.level-tab.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.video-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  margin-bottom: 20px;
+  overflow: hidden;
+  display: none;
+}
+
+.video-card.visible {
+  display: block;
+  animation: fadeSlideIn 0.35s ease;
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.video-card-header {
+  background: linear-gradient(135deg, #f0f5ff, #e6f4ff);
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.video-card-header .level-tag {
+  font-size: 12px;
+  padding: 2px 12px;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: 500;
+}
+
+.level-tag-basic { background: #52c41a; }
+.level-tag-intermediate { background: #fa8c16; }
+.level-tag-challenge { background: #f5222d; }
+
+.video-card-header h3 { font-size: 17px; font-weight: 600; flex: 1; }
+
+.video-card-body { padding: 0 24px 20px; }
+
+.section-block {
+  margin-top: 16px;
+}
+
+.section-block .block-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.section-block p, .section-block li { font-size: 14px; }
+
+.section-block ul { padding-left: 20px; }
+.section-block ul li { margin-bottom: 4px; }
+
+.pause-point {
+  background: #fff7e6;
+  border-left: 3px solid #fa8c16;
+  padding: 10px 14px;
+  margin: 10px 0;
+  border-radius: 0 6px 6px 0;
+  font-size: 14px;
+}
+
+.pause-point strong { color: #d46b08; }
+
+.task-box {
+  background: #f0f5ff;
+  border: 1px dashed var(--accent);
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin: 12px 0 6px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.task-box .task-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.task-box .task-text { font-size: 14px; }
+
+.task-box .task-text strong { color: var(--primary); }
+
+.task-status {
+  display: inline-block;
+  padding: 2px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  background: var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 6px;
+}
+
+.task-status.done {
+  background: var(--primary);
+  color: #fff;
+}
+
+.source-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg);
+  padding: 4px 14px;
+  border-radius: 16px;
+  font-size: 13px;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .header { padding: 20px; }
+  .video-card-header { padding: 14px 16px; }
+  .video-card-body { padding: 0 16px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🎬 视频任务</h1>
+  <p>化学学习脚手架 · M20 新知的理论和学术性总结与表达 · 九年级上</p>
+</div>
+
+<!-- 层级筛选 -->
+<div class="level-tabs">
+  <span class="level-tab active" data-level="all" onclick="filterVideo('all', this)">📺 全部视频</span>
+  <span class="level-tab" data-level="basic" onclick="filterVideo('basic', this)">🌱 基础层</span>
+  <span class="level-tab" data-level="intermediate" onclick="filterVideo('intermediate', this)">📊 进阶层</span>
+  <span class="level-tab" data-level="challenge" onclick="filterVideo('challenge', this)">🚀 挑战层</span>
+</div>
+
+<!-- 视频1: 基础层 -->
+<div class="video-card visible" data-level="basic">
+  <div class="video-card-header">
+    <span class="level-tag level-tag-basic">基础</span>
+    <h3>化学变化与物理变化</h3>
+  </div>
+  <div class="video-card-body">
+    <div class="source-box">🔍 bilibili搜索"初中化学·化学变化与物理变化"</div>
+
+    <div class="section-block">
+      <span class="block-label">👁️ 观看任务</span>
+      <p>找出视频中列举的每一个变化例子，判断类型并写出判断依据。</p>
+    </div>
+
+    <div class="section-block">
+      <span class="block-label">❓ 关键问题</span>
+      <ul>
+        <li>视频中用了什么方法区分物理变化和化学变化？</li>
+        <li>有哪些例子是你之前没想到过的？</li>
+      </ul>
+    </div>
+
+    <div class="section-block">
+      <span class="block-label">⏸️ 暂停思考点</span>
+      <div class="pause-point">
+        <strong>⏱️ 02:15 暂停：</strong>看完"纸张燃烧"的例子，你认为纸张燃烧后留下的灰烬和原来的纸张是一样的物质吗？
+      </div>
+      <div class="pause-point">
+        <strong>⏱️ 05:30 暂停：</strong>为什么说"电灯发光"是物理变化？
+      </div>
+    </div>
+
+    <div class="section-block">
+      <span class="block-label">📝 输出任务</span>
+      <div class="task-box">
+        <span class="task-icon">✍️</span>
+        <div class="task-text">
+          <strong>写一段100字左右的总结</strong>，用你自己的语言解释物理变化和化学变化的本质区别。
+        </div>
+      </div>
+      <span class="task-status" onclick="toggleTaskStatus(this)">○ 标记为已完成</span>
+    </div>
+  </div>
+</div>
+
+<!-- 视频2: 进阶层 -->
+<div class="video-card visible" data-level="intermediate">
+  <div class="video-card-header">
+    <span class="level-tag level-tag-intermediate">进阶</span>
+    <h3>拉瓦锡的生平与科学贡献</h3>
+  </div>
+  <div class="video-card-body">
+    <div class="source-box">🎥 央视纪录片频道 / bilibili搜索"拉瓦锡与化学革命"</div>
+
+    <div class="section-block">
+      <span class="block-label">👁️ 观看任务</span>
+      <p>分析拉瓦锡的"钟罩实验"设计逻辑，画出实验装置简图。</p>
+    </div>
+
+    <div class="section-block">
+      <span class="block-label">❓ 关键问题</span>
+      <ul>
+        <li>拉瓦锡在实验前测量了什么数据？实验中测量了什么数据？实验后又测量了什么？</li>
+        <li>如果拉瓦锡的实验数据出现偏差，他可能会提出什么样的错误结论？</li>
+      </ul>
+    </div>
+
+    <div class="section-block">
+      <span class="block-label">⏸️ 暂停思考点</span>
+      <div class="pause-point">
+        <strong>⏱️ 08:00 暂停：</strong>如果锡在密封容器中加热后质量略微增加了，你能想到可能的原因吗？
+      </div>
+    </div>
+
+    <div class="section-block">
+      <span class="block-label">📝 输出任务</span>
+      <div class="task-box">
+        <span class="task-icon">🧠</span>
+        <div class="task-text">
+          <strong>做一个"拉瓦锡实验分析"的概念图</strong>，展示实验要素、数据和结论之间的关系。
+        </div>
+      </div>
+      <span class="task-status" onclick="toggleTaskStatus(this)">○ 标记为已完成</span>
+    </div>
+  </div>
+</div>
+
+<!-- 视频3: 挑战层 -->
+<div class="video-card visible" data-level="challenge">
+  <div class="video-card-header">
+    <span class="level-tag level-tag-challenge">挑战</span>
+    <h3>化学的未来：分子机器与自组装材料</h3>
+  </div>
+  <div class="video-card-body">
+    <div class="source-box">🔬 bilibili搜索"中科院·化学前沿科普"</div>
+
+    <div class="section-block">
+      <span class="block-label">👁️ 观看任务</span>
+      <p>找出视频中提到的3个化学前沿研究方向，思考它们与本模块"理论总结与学术表达"的关系。</p>
+    </div>
+
+    <div class="section-block">
+      <span class="block-label">❓ 关键问题</span>
+      <ul>
+        <li>前沿化学家们在发现新现象后，如何将它们的发现表达出来让世界理解？</li>
+        <li>你觉得未来的化学"理论总结"会是什么形式（文字、数据、AI模型……）？</li>
+      </ul>
+    </div>
+
+    <div class="section-block">
+      <span class="block-label">⏸️ 暂停思考点</span>
+      <div class="pause-point">
+        <strong>⏱️ 03:00 暂停：</strong>想象一下"分子机器"是做什么的——它和宏观世界的机器有什么不同？
+      </div>
+      <div class="pause-point">
+        <strong>⏱️ 06:45 暂停：</strong>科学家如何用化学术语描述"分子医生"这个概念？
+      </div>
+    </div>
+
+    <div class="section-block">
+      <span class="block-label">📝 输出任务</span>
+      <div class="task-box">
+        <span class="task-icon">🚀</span>
+        <div class="task-text">
+          <strong>写一段120字左右的"未来化学畅想"</strong>，描述20年后一位化学家如何总结他的新发现。
+        </div>
+      </div>
+      <span class="task-status" onclick="toggleTaskStatus(this)">○ 标记为已完成</span>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function filterVideo(level, el) {
+  if (!el) return;
+  var tabs = document.querySelectorAll('.level-tab');
+  tabs.forEach(function(t) { t.classList.remove('active'); });
+  el.classList.add('active');
+
+  var cards = document.querySelectorAll('.video-card');
+  cards.forEach(function(card) {
+    if (level === 'all' || card.getAttribute('data-level') === level) {
+      card.classList.add('visible');
+    } else {
+      card.classList.remove('visible');
+    }
+  });
+}
+
+function toggleTaskStatus(el) {
+  if (!el) return;
+  el.classList.toggle('done');
+  if (el.classList.contains('done')) {
+    el.textContent = '✅ 已完成';
+  } else {
+    el.textContent = '○ 标记为已完成';
+  }
+}
+</script>
+</body>
+</html>

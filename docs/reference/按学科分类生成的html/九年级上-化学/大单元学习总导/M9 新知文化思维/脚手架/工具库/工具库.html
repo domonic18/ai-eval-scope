@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具库 · 化学</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); font-size: var(--font-body); line-height: var(--line-height); }
+.container { width: 100%; max-width: none; padding: 24px 20px; box-sizing: border-box; }
+h1 { font-size: var(--font-h1); color: var(--primary); margin: 0 0 8px; }
+h2 { font-size: var(--font-h2); color: var(--primary); margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 2px solid var(--accent); }
+h3 { font-size: 17px; color: var(--primary); margin: 14px 0 6px; }
+.card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 16px 20px; margin-bottom: 14px; transition: transform .2s; }
+.card:hover { transform: translateY(-2px); }
+.card.level-basic { border-left: 4px solid #52c41a; }
+.card.level-mid { border-left: 4px solid #fa8c16; }
+.card.level-high { border-left: 4px solid #722ed1; }
+.level-badge { display: inline-block; font-size: 12px; padding: 2px 10px; border-radius: 10px; margin-bottom: 6px; color: #fff; }
+.level-basic .level-badge { background: #52c41a; }
+.level-mid .level-badge { background: #fa8c16; }
+.level-high .level-badge { background: #722ed1; }
+.step { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.step-item { background: #e6f4ff; color: var(--primary); padding: 4px 12px; border-radius: 14px; font-size: 13px; cursor: pointer; transition: all .2s; border: 1.5px solid transparent; }
+.step-item.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.btn { display: inline-block; padding: 8px 20px; background: var(--primary); color: #fff; border: none; border-radius: 20px; cursor: pointer; font-size: 14px; transition: background .2s; margin: 4px 4px 4px 0; }
+.btn:hover { background: var(--primary-hover); }
+.btn-sm { padding: 5px 14px; font-size: 13px; }
+.tool-demo { background: #f6f9ff; border-radius: 6px; padding: 12px 16px; margin-top: 10px; max-height: 0; overflow: hidden; transition: max-height .4s ease, padding .3s; padding: 0 16px; }
+.tool-demo.open { max-height: 400px; padding: 12px 16px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0; }
+th, td { border: 1px solid var(--border); padding: 6px 10px; text-align: left; }
+th { background: #e6f4ff; color: var(--primary); font-weight: 600; }
+@media (max-width: 640px) { .step { flex-direction: column; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🧰 化学工具库</h1>
+  <p style="color:var(--text-secondary);margin:0 0 20px;">九年级上 · 第1章 走进化学世界 · 新知文化思维</p>
+
+  <h2>🟢 基础工具</h2>
+
+  <div class="card level-basic">
+    <span class="level-badge">思维导图</span>
+    <h3>🧠 思维导图工具</h3>
+    <p><strong>用途：</strong>梳理化学概念之间的层级关系</p>
+    <div class="step">
+      <span class="step-item" onclick="toggleStep(this,0)">1️⃣ 确定中心词</span>
+      <span class="step-item" onclick="toggleStep(this,1)">2️⃣ 添加分支</span>
+      <span class="step-item" onclick="toggleStep(this,2)">3️⃣ 标注连接词</span>
+      <span class="step-item" onclick="toggleStep(this,3)">4️⃣ 着色分类</span>
+    </div>
+    <p><strong>示例：</strong>以"物质变化"为中心词 → 分支展开"物理变化""化学变化""判断依据"</p>
+    <button class="btn btn-sm" onclick="toggleDemo('demo1')">💡 查看示例导图</button>
+    <div class="tool-demo" id="demo1">
+      <p style="margin:0;">🌳 <strong>物质变化</strong>（中心）</p>
+      <p style="margin:4px 0 0 20px;">├─ 🔄 物理变化：冰融化、水蒸发、玻璃破碎</p>
+      <p style="margin:4px 0 0 20px;">├─ ⚗️ 化学变化：铁生锈、木炭燃烧、食物腐败</p>
+      <p style="margin:4px 0 0 20px;">└─ ❓ 判断依据：有无新物质生成</p>
+      <p style="margin:8px 0 0;font-size:13px;color:var(--text-secondary);">推荐工具：XMind / 幕布 / 手绘</p>
+    </div>
+  </div>
+
+  <div class="card level-basic">
+    <span class="level-badge">对比表格</span>
+    <h3>📊 对比表格</h3>
+    <p><strong>用途：</strong>清晰对比两类事物的异同</p>
+    <button class="btn btn-sm" onclick="toggleDemo('demo2')">📋 展开对比表</button>
+    <div class="tool-demo" id="demo2">
+      <table>
+        <tr><th>对比项</th><th>物理变化</th><th>化学变化</th></tr>
+        <tr><td>定义</td><td>没有新物质生成</td><td>有新物质生成</td></tr>
+        <tr><td>特征</td><td>形态改变，成分不变</td><td>成分改变</td></tr>
+        <tr><td>示例</td><td>冰→水，玻璃破碎</td><td>铁生锈，蜡烛燃烧</td></tr>
+        <tr><td>判断依据</td><td>无新物质产生</td><td>有新物质产生</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <h2>🟠 进阶工具</h2>
+
+  <div class="card level-mid">
+    <span class="level-badge">流程图</span>
+    <h3>🔁 流程图工具</h3>
+    <p><strong>用途：</strong>展示变化过程或实验步骤的顺序关系</p>
+    <p><strong>使用步骤：</strong>开始 → 步骤1 → 判断 → 步骤2 → 结束</p>
+    <button class="btn btn-sm" onclick="toggleDemo('demo3')">🔬 查看实验流程图</button>
+    <div class="tool-demo" id="demo3">
+      <p style="margin:0;">🟢 <strong>开始</strong> → 观察铁钉表面</p>
+      <p style="margin:4px 0 0 20px;">↓</p>
+      <p style="margin:4px 0 0 20px;">🔵 <strong>步骤1</strong>：将铁钉放入试管，加水浸没一半</p>
+      <p style="margin:4px 0 0 20px;">↓</p>
+      <p style="margin:4px 0 0 20px;">🔵 <strong>步骤2</strong>：静置3天观察</p>
+      <p style="margin:4px 0 0 20px;">↓</p>
+      <p style="margin:4px 0 0 20px;">🔶 <strong>判断</strong>：铁钉是否生锈？→ 是 → 记录现象</p>
+      <p style="margin:4px 0 0 20px;">↓</p>
+      <p style="margin:4px 0 0 20px;">🟢 <strong>结论</strong>：铁生锈与水和空气有关</p>
+      <p style="margin:8px 0 0;font-size:13px;color:var(--text-secondary);">推荐工具：ProcessOn / Draw.io / PowerPoint</p>
+    </div>
+  </div>
+
+  <div class="card level-mid">
+    <span class="level-badge">实验模板</span>
+    <h3>🧪 实验设计模板</h3>
+    <p><strong>用途：</strong>系统设计化学实验方案</p>
+    <p><strong>模板结构：</strong>实验目的 → 假设 → 材料 → 步骤 → 数据记录 → 结论</p>
+    <button class="btn btn-sm" onclick="toggleDemo('demo4')">📝 查看实验模板</button>
+    <div class="tool-demo" id="demo4">
+      <p><strong>实验目的：</strong>探究铁生锈的条件<br>
+      <strong>假设：</strong>铁生锈需要水和空气<br>
+      <strong>材料：</strong>铁钉×3、试管×3、水、植物油、干燥剂<br>
+      <strong>步骤：</strong>①试管1：铁钉+水（半浸）②试管2：铁钉+干燥剂 ③试管3：铁钉+煮沸后水（去空气），加油封<br>
+      <strong>记录：</strong>每天观察并拍照<br>
+      <strong>结论：</strong>铁生锈需要水和氧气同时存在</p>
+    </div>
+  </div>
+
+  <h2>🟣 高阶工具</h2>
+
+  <div class="card level-high">
+    <span class="level-badge">方程式</span>
+    <h3>⚗️ 化学方程式书写工具</h3>
+    <p><strong>用途：</strong>快速检索和书写化学方程式</p>
+    <p>推荐：化学方程式App（手机端）/ 中学化学助手小程序</p>
+  </div>
+
+  <div class="card level-high">
+    <span class="level-badge">数据可视化</span>
+    <h3>📈 数据可视化工具</h3>
+    <p><strong>用途：</strong>将实验数据转化为图表，发现规律</p>
+    <p>推荐：Excel / Canva图表</p>
+    <button class="btn btn-sm" onclick="toggleDemo('demo5')">📊 查看示例图表数据</button>
+    <div class="tool-demo" id="demo5">
+      <table>
+        <tr><th>天数</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr>
+        <tr><td>生锈面积 %</td><td>5%</td><td>15%</td><td>35%</td><td>55%</td><td>80%</td></tr>
+      </table>
+      <p style="font-size:13px;color:var(--text-secondary);margin:6px 0 0;">将数据输入Excel → 插入折线图 → 观察变化趋势</p>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:20px;">
+    <button class="btn" onclick="resetAll()">🔄 收起所有示例</button>
+  </div>
+</div>
+
+<script>
+function toggleStep(el, idx) {
+  if (!el) return;
+  var parent = el.parentElement;
+  if (!parent) return;
+  var items = parent.querySelectorAll('.step-item');
+  items.forEach(function(item, i) {
+    if (i <= idx) item.classList.toggle('active');
+  });
+}
+function toggleDemo(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('open');
+}
+function resetAll() {
+  var demos = document.querySelectorAll('.tool-demo');
+  demos.forEach(function(d) { d.classList.remove('open'); });
+  var steps = document.querySelectorAll('.step-item');
+  steps.forEach(function(s) { s.classList.remove('active'); });
+}
+</script>
+</body>
+</html>

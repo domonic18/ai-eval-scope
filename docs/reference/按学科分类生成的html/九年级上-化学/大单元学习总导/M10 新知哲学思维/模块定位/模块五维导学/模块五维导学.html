@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块五维导学 — M10 新知哲学思维</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+}
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+
+.hero {
+  background: linear-gradient(135deg, #1677ff 0%, #4096ff 100%);
+  color: #fff;
+  padding: 36px 44px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+.hero h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.hero .subtitle { font-size: 16px; opacity: 0.9; margin-bottom: 12px; }
+.hero .meta { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; }
+.hero .meta span { background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; }
+
+.dim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.dim-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  padding: 22px 24px;
+  transition: all 0.25s;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.dim-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(22,119,255,0.15); }
+.dim-card.active { border-color: var(--primary); }
+.dim-card .dim-icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+.dim-card .dim-num {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--accent);
+  opacity: 0.2;
+  line-height: 1;
+}
+.dim-card h3 { font-size: 17px; color: var(--primary); margin-bottom: 8px; }
+.dim-card p, .dim-card li { font-size: 14px; color: var(--text); }
+.dim-card ul { padding-left: 18px; margin: 6px 0; }
+.dim-card ul li { margin-bottom: 4px; }
+.dim-card .dim-tag {
+  display: inline-block;
+  font-size: 11px;
+  background: var(--bg);
+  color: var(--primary);
+  padding: 2px 10px;
+  border-radius: 10px;
+  margin-top: 8px;
+}
+
+.reveal-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.45s ease, opacity 0.35s ease, margin 0.35s ease;
+  opacity: 0;
+  margin: 0;
+}
+.reveal-panel.open {
+  max-height: 1200px;
+  opacity: 1;
+  margin: 16px 0 0;
+}
+.reveal-panel .rp-content {
+  background: #fafcff;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  border-radius: 6px;
+  padding: 18px 22px;
+}
+.reveal-panel .rp-content ul { padding-left: 20px; margin: 6px 0; }
+.reveal-panel .rp-content ul li { margin-bottom: 4px; font-size: 14px; }
+
+.key-person {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px 18px;
+  margin: 8px 0;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.key-person:hover { border-color: var(--primary); box-shadow: 0 2px 8px rgba(22,119,255,0.1); }
+.key-person .kp-icon { font-size: 32px; flex-shrink: 0; }
+.key-person .kp-info h4 { font-size: 15px; color: var(--primary); margin-bottom: 2px; }
+.key-person .kp-info p { font-size: 13px; color: var(--text-secondary); }
+
+.frontier-q {
+  background: var(--card-bg);
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  padding: 14px 18px;
+  margin: 8px 0;
+  transition: all 0.2s;
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.frontier-q:hover { border-color: var(--primary); background: #fafcff; }
+.frontier-q .fq-icon { font-size: 20px; flex-shrink: 0; }
+.frontier-q .fq-text { font-size: 14px; }
+.frontier-q.done { background: #e6f7ed; border-color: #16a34a; }
+.frontier-q.done .fq-text { text-decoration: line-through; color: var(--text-secondary); }
+
+.interactive-btn {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s, transform 0.15s;
+  margin-top: 8px;
+}
+.interactive-btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
+.interactive-btn.outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+.interactive-btn.outline:hover { background: var(--bg); }
+.tag {
+  display: inline-block;
+  font-size: 11px;
+  background: #e6f4ff;
+  color: var(--primary);
+  padding: 2px 10px;
+  border-radius: 10px;
+}
+.tag.green { background: #e6f7ed; color: #16a34a; }
+.tag.orange { background: #fff2e5; color: #d46b08; }
+
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .hero { padding: 24px 20px; }
+  .hero h1 { font-size: 20px; }
+  .dim-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="hero">
+  <h1>🧭 M10 新知哲学思维 · 五维导学</h1>
+  <div class="subtitle">走进化学世界的第一步：不是学结论，而是学如何得出结论</div>
+  <div class="meta">
+    <span>🧪 化学 · 九年级上</span>
+    <span>📖 人教版 第1章</span>
+    <span>🏗️ 模块定位 · 五维导学</span>
+  </div>
+</div>
+
+<div class="dim-grid">
+
+  <!-- 维度1 -->
+  <div class="dim-card" onclick="toggleDim(1)">
+    <div class="dim-icon">🎯</div>
+    <div class="dim-num">1</div>
+    <h3>模块学习目标</h3>
+    <ul>
+      <li><strong>知识：</strong>说出化学变化本质（有新物质生成）</li>
+      <li><strong>能力：</strong>从日常现象提取科学问题</li>
+      <li><strong>思维：</strong>从感性认知升级为理性追问</li>
+      <li><strong>表达：</strong>用示意图+文字呈现变化模型</li>
+    </ul>
+    <span class="dim-tag">4 维目标体系</span>
+    <div id="dim1" class="reveal-panel">
+      <div class="rp-content">
+        <p><strong>🔍 详细解读：</strong></p>
+        <ul>
+          <li><strong>知识理解：</strong>能说出"化学变化"的本质特征（有新物质生成），理解"化学变化"与"物理变化"的根本区别</li>
+          <li><strong>能力形成：</strong>能对简单化学变化进行"输入→变化→输出"的分解分析</li>
+          <li><strong>思维发展：</strong>从"它怎么了"升级到"它变了吗？怎么变的？变了什么？"</li>
+          <li><strong>表达产出：</strong>用示意图+文字说明呈现化学变化全过程模型</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 维度2 -->
+  <div class="dim-card" onclick="toggleDim(2)">
+    <div class="dim-icon">🚀</div>
+    <div class="dim-num">2</div>
+    <h3>高精尖价值与未来意义</h3>
+    <ul>
+      <li>⚛️ 催化剂设计与材料合成</li>
+      <li>🌱 人工光合作用、CO₂资源化</li>
+      <li>💊 药物研发工程师的工作本质</li>
+      <li>🌍 "双碳"战略——管理碳的"走向"</li>
+    </ul>
+    <span class="dim-tag">前沿连接</span>
+    <div id="dim2" class="reveal-panel">
+      <div class="rp-content">
+        <p><strong>🔍 现代科技关联：</strong>现代化学工业的核心——催化剂设计、材料合成、新能源开发——底层逻辑就是理解"物质如何转化"。</p>
+        <p><strong>🔍 国家战略："双碳"战略</strong>的本质——管理碳元素在化学变化中的"走向"。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 维度3 -->
+  <div class="dim-card" onclick="toggleDim(3)">
+    <div class="dim-icon">📚</div>
+    <div class="dim-num">3</div>
+    <h3>推荐学习方式与方法</h3>
+    <ul>
+      <li>👁️ 观察—记录—追问法</li>
+      <li>⚖️ 对比分析法（物理 vs 化学）</li>
+      <li>🧩 模型建构法（方框+箭头可视化）</li>
+      <li>🤖 AI辅助学习法</li>
+    </ul>
+    <span class="dim-tag">方法工具箱</span>
+    <div id="dim3" class="reveal-panel">
+      <div class="rp-content">
+        <p><strong>🔍 详细说明：</strong></p>
+        <ul>
+          <li><strong>观察—记录—追问法：</strong>每遇到一个化学现象，先记录"看到了什么"，再追问"这说明了什么"</li>
+          <li><strong>对比分析法：</strong>将物理变化和化学变化随时对比，找出关键区分点</li>
+          <li><strong>模型建构法：</strong>用"方框+箭头"的输入—输出模型可视化每个化学变化</li>
+          <li><strong>AI辅助学习法：</strong>用AI搜索化学史中经典发现案例</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 维度4 -->
+  <div class="dim-card" onclick="toggleDim(4)">
+    <div class="dim-icon">👤</div>
+    <div class="dim-num">4</div>
+    <h3>关键人物 · 事件 · 成果</h3>
+    <ul>
+      <li>⚗️ 拉瓦锡——质量守恒定律</li>
+      <li>⚛️ 道尔顿——原子理论</li>
+      <li>📊 门捷列夫——元素周期表</li>
+      <li>🔬 波义耳——科学实验方法</li>
+    </ul>
+    <span class="dim-tag">化学史巡礼</span>
+    <div id="dim4" class="reveal-panel">
+      <div class="rp-content">
+        <div class="key-person" onclick="event.stopPropagation();toggleReveal('lavoisier')">
+          <div class="kp-icon">⚗️</div>
+          <div class="kp-info">
+            <h4>拉瓦锡（Antoine Lavoisier）</h4>
+            <p>现代化学之父，用精确称重推翻"燃素说"，建立质量守恒定律</p>
+          </div>
+        </div>
+        <div id="lavoisier" class="reveal-panel"><div class="rp-content" style="border-left-color:#16a34a;">💡 <strong>为什么值得了解：</strong>他是用"实验证据建构新理论"的完美榜样——不轻信权威，用数据和逻辑说话。</div></div>
+        <div style="font-size:13px;color:var(--text-secondary);margin-top:6px;">
+          <span class="tag">道尔顿 — 气体反应实验数据分析</span>
+          <span class="tag green">门捷列夫 — 已有证据+大胆预测</span>
+          <span class="tag orange">波义耳 — 确立化学为科学</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 维度5 - 跨两列 -->
+  <div class="dim-card" onclick="toggleDim(5)" style="grid-column:1/3;">
+    <div class="dim-icon">💭</div>
+    <div class="dim-num">5</div>
+    <h3>前沿追问</h3>
+    <p style="margin-bottom:6px;">点击每个问题标记为"已思考"：</p>
+    <div class="frontier-q" data-q="1" onclick="event.stopPropagation();toggleFrontier(this)">
+      <span class="fq-icon">🔥</span>
+      <span class="fq-text">蜡烛燃烧后质量变轻，是否违背质量守恒定律？</span>
+    </div>
+    <div class="frontier-q" data-q="2" onclick="event.stopPropagation();toggleFrontier(this)">
+      <span class="fq-icon">🤖</span>
+      <span class="fq-text">AI能"预测"化学反应吗？预测的是产物还是路径？</span>
+    </div>
+    <div class="frontier-q" data-q="3" onclick="event.stopPropagation();toggleFrontier(this)">
+      <span class="fq-icon">🌿</span>
+      <span class="fq-text">光合作用与蜡烛燃烧有何"可逆"关系？</span>
+    </div>
+    <div class="frontier-q" data-q="4" onclick="event.stopPropagation();toggleFrontier(this)">
+      <span class="fq-icon">🧬</span>
+      <span class="fq-text">未来在原子级别"组装"物质，物理变化和化学变化还分吗？</span>
+    </div>
+    <div id="dim5" class="reveal-panel">
+      <div class="rp-content">
+        <p><strong>💡 引导思考：</strong></p>
+        <ul>
+          <li>蜡烛燃烧后气体逸散，但质量总和不变——这正是质量守恒的体现</li>
+          <li>AI预测化学反应是当前最热门的研究方向之一</li>
+          <li>光合作用：CO₂+H₂O→葡萄糖+O₂；蜡烛燃烧：石蜡+O₂→CO₂+H₂O——物质流动方向相反</li>
+        </ul>
+      </div>
+    </div>
+    <span class="dim-tag" id="frontier-progress">已思考 0/4</span>
+    <button class="interactive-btn outline" onclick="event.stopPropagation();resetFrontier()" style="margin-left:8px;">🔄 重置</button>
+  </div>
+
+</div>
+
+</div>
+<script>
+function toggleDim(n) {
+  var panel = document.getElementById('dim' + n);
+  if (!panel) return;
+  panel.classList.toggle('open');
+  var card = panel.closest ? panel.closest('.dim-card') : null;
+  if (card) card.classList.toggle('active');
+}
+function toggleReveal(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('open');
+}
+function toggleFrontier(el) {
+  if (!el) return;
+  el.classList.toggle('done');
+  updateFrontierProgress();
+}
+function resetFrontier() {
+  var items = document.querySelectorAll('.frontier-q');
+  items.forEach(function(el) { el.classList.remove('done'); });
+  updateFrontierProgress();
+}
+function updateFrontierProgress() {
+  var items = document.querySelectorAll('.frontier-q');
+  var done = 0;
+  items.forEach(function(el) { if (el.classList.contains('done')) done++; });
+  var prog = document.getElementById('frontier-progress');
+  if (prog) prog.textContent = '已思考 ' + done + '/4';
+}
+</script>
+</body>
+</html>

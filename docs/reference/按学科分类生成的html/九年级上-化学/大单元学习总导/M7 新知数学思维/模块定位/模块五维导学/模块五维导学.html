@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块五维导学 — 化学定量分析</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.wrapper {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.title-block {
+  text-align: center;
+  padding: 32px 20px 20px;
+  background: linear-gradient(135deg, var(--bg) 0%, #d6e4ff 100%);
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.title-block h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin: 0 0 8px;
+}
+.title-block p {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: 14px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  transition: box-shadow 0.2s;
+}
+.card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dim-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.dim-tab {
+  padding: 8px 18px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-secondary);
+  transition: all 0.25s;
+}
+.dim-tab.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.dim-tab:hover:not(.active) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.dim-panel {
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+.dim-panel.active {
+  display: block;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.dim-panel ul {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+.dim-panel li {
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.dim-panel li strong {
+  color: var(--text);
+}
+.person-card {
+  display: flex;
+  gap: 16px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  margin-bottom: 12px;
+  background: var(--bg);
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+.person-card:hover {
+  box-shadow: var(--shadow);
+}
+.person-avatar {
+  flex-shrink: 0;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: #fff;
+}
+.person-info h4 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  color: var(--text);
+}
+.person-info p {
+  margin: 2px 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.person-detail {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+}
+.person-detail.open {
+  max-height: 300px;
+}
+.person-detail p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  padding: 0 0 0 76px;
+}
+.ques-toggle {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 12px 16px;
+  width: 100%;
+  text-align: left;
+  font-size: 15px;
+  cursor: pointer;
+  color: var(--text);
+  margin-bottom: 6px;
+  transition: background 0.2s;
+}
+.ques-toggle:hover {
+  background: var(--bg);
+}
+.ques-toggle .arrow {
+  float: right;
+  transition: transform 0.3s;
+}
+.ques-toggle .arrow.rotated {
+  transform: rotate(180deg);
+}
+.ques-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+  padding: 0 16px;
+}
+.ques-answer.open {
+  max-height: 400px;
+  padding: 8px 16px 12px;
+}
+.ques-answer p {
+  margin: 4px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<div class="title-block">
+  <h1>🧭 模块五维导学</h1>
+  <p>M7 新知数学思维 → 模块定位 | 化学定量分析入门</p>
+</div>
+
+<div class="card">
+  <h2>📐 五维导航</h2>
+  <p style="margin:0 0 12px; color:var(--text-secondary); font-size:14px;">点击维度标签切换</p>
+
+  <div class="dim-tabs">
+    <button class="dim-tab active" data-dim="0" onclick="switchDim(0)">🎯 学习目标</button>
+    <button class="dim-tab" data-dim="1" onclick="switchDim(1)">🚀 高精尖价值</button>
+    <button class="dim-tab" data-dim="2" onclick="switchDim(2)">📖 学习方法</button>
+    <button class="dim-tab" data-dim="3" onclick="switchDim(3)">👤 关键人物</button>
+    <button class="dim-tab" data-dim="4" onclick="switchDim(4)">💭 前沿追问</button>
+  </div>
+
+  <div class="dim-panel active" data-dim="0">
+    <p><strong>模块学习目标</strong></p>
+    <ul>
+      <li>理解化学中定量分析的基本意义，知道为什么化学离不开数学</li>
+      <li>学会用表格、图表整理和呈现化学实验数据</li>
+      <li>能从化学现象中识别可测量的变量（质量、体积、温度、时间等）</li>
+      <li>初步建立用比例、公式表达化学规律的意识</li>
+      <li>能设计简单的定量实验方案并解释数据</li>
+    </ul>
+  </div>
+
+  <div class="dim-panel" data-dim="1">
+    <p><strong>现代化学的"数学革命"</strong></p>
+    <p>从拉瓦锡用天平建立质量守恒定律，到今天用大数据和AI预测新分子——数学工具一直在推动化学前进。</p>
+    <p><strong>生活中的定量：</strong>药品说明书上的剂量、食品标签上的营养成分、空气质量指数——这些数字背后都是化学定量分析。</p>
+    <p><strong>未来职业链接：</strong>药物研发需要精确计算药效与剂量关系；环境监测需要分析污染物浓度变化趋势；材料科学需要从数据中寻找最佳配方。</p>
+  </div>
+
+  <div class="dim-panel" data-dim="2">
+    <p><strong>推荐学习方法</strong></p>
+    <ul>
+      <li><strong>实验记录法：</strong>每次动手实验后，用"变量—数据—图表—结论"四步法整理</li>
+      <li><strong>对比分析法：</strong>遇到任何化学现象，先问"和什么比""差别有多大"</li>
+      <li><strong>量化描述法：</strong>训练自己用"多少克、多少毫升、多少℃"而不是"很多、很少"来描述</li>
+      <li><strong>数据可视化：</strong>尝试用柱状图、折线图、饼图呈现数据，发现"一眼看不出的规律"</li>
+      <li><strong>AI辅助学习：</strong>用AI工具检查数据计算是否正确、帮助选择合适的图表类型</li>
+    </ul>
+  </div>
+
+  <div class="dim-panel" data-dim="3">
+    <p><strong>关键人物</strong>（点击卡片展开详情）</p>
+
+    <div class="person-card" onclick="togglePerson(this)">
+      <div class="person-avatar">🧪</div>
+      <div class="person-info">
+        <h4>拉瓦锡（1743—1794）</h4>
+        <p>"现代化学之父" · 质量守恒定律</p>
+      </div>
+    </div>
+    <div class="person-detail">
+      <p>第一个系统使用天平做化学实验，通过定量测量推翻了燃素说，建立了质量守恒定律。他用"称一称"这个简单动作改写了化学史。</p>
+    </div>
+
+    <div class="person-card" onclick="togglePerson(this)">
+      <div class="person-avatar">⚛️</div>
+      <div class="person-info">
+        <h4>道尔顿（1766—1844）</h4>
+        <p>原子论提出者 · 化学计量学先驱</p>
+      </div>
+    </div>
+    <div class="person-detail">
+      <p>通过测量不同气体和元素的质量关系，提出了原子论。他把数学比例思想第一次带进了化学微观世界。</p>
+    </div>
+
+    <div class="person-card" onclick="togglePerson(this)">
+      <div class="person-avatar">📊</div>
+      <div class="person-info">
+        <h4>门捷列夫（1834—1907）</h4>
+        <p>元素周期律发现者</p>
+      </div>
+    </div>
+    <div class="person-detail">
+      <p>发现了元素周期律，并成功用周期表预测了尚未发现的元素。他是"通过数据排列发现规律"的典范。</p>
+    </div>
+  </div>
+
+  <div class="dim-panel" data-dim="4">
+    <p><strong>前沿追问</strong>（点击展开思考引导）</p>
+
+    <div>
+      <button class="ques-toggle" onclick="toggleQues(this)">
+        问题1：如果有一台超级精确的天平，连一个原子都能称出来，你觉得化学研究会变成什么样？
+        <span class="arrow">▾</span>
+      </button>
+      <div class="ques-answer">
+        <p>💡 提示：那就能直接"数"原子个数、实时跟踪化学反应中每个原子的去向，化学方程式将不再是抽象的比例关系，而是可逐个验证的事实。</p>
+      </div>
+    </div>
+
+    <div>
+      <button class="ques-toggle" onclick="toggleQues(this)">
+        问题2：AI能不能帮助化学家从海量实验数据中发现新的化学规律？
+        <span class="arrow">▾</span>
+      </button>
+      <div class="ques-answer">
+        <p>💡 提示：和门捷列夫发现周期律相似的是——都需要在数据中寻找规律；不同的是——AI可以处理人脑无法想象的超大规模数据集，发现隐藏的非线性关系。</p>
+      </div>
+    </div>
+
+    <div>
+      <button class="ques-toggle" onclick="toggleQues(this)">
+        问题3：为什么我们常说"没有测量就没有科学"？
+        <span class="arrow">▾</span>
+      </button>
+      <div class="ques-answer">
+        <p>💡 提示：例子——古代"燃素说"之所以被接受了几百年，就是因为缺少精确测量。拉瓦锡用天平测量了燃烧前后的质量变化，才证明了燃素根本不存在。</p>
+      </div>
+    </div>
+
+    <div>
+      <button class="ques-toggle" onclick="toggleQues(this)">
+        问题4：如果发明了"化学计算器"，还需要学化学定量分析吗？
+        <span class="arrow">▾</span>
+      </button>
+      <div class="ques-answer">
+        <p>💡 提示：即使有计算器，你仍然需要理解"为什么要称量""称量什么""数据意味着什么"——定量思维比计算能力更重要。工具能算得准，但只有人能问对问题。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+var currentDim = 0;
+
+function switchDim(idx) {
+  currentDim = idx;
+  var tabs = document.querySelectorAll('.dim-tab');
+  var panels = document.querySelectorAll('.dim-panel');
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].classList.remove('active');
+    if (panels[i]) panels[i].classList.remove('active');
+  }
+  if (tabs[idx]) tabs[idx].classList.add('active');
+  if (panels[idx]) panels[idx].classList.add('active');
+}
+
+function togglePerson(card) {
+  var detail = card.parentElement.querySelector('.person-detail');
+  if (!detail) {
+    detail = card.nextElementSibling;
+  }
+  if (detail && detail.classList) {
+    detail.classList.toggle('open');
+  }
+}
+
+function toggleQues(btn) {
+  var answer = btn.nextElementSibling;
+  var arrow = btn.querySelector('.arrow');
+  if (!answer || !arrow) return;
+  answer.classList.toggle('open');
+  arrow.classList.toggle('rotated');
+}
+</script>
+</body>
+</html>

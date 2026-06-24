@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VR脚手架（沉浸体验）— 化学实验室漫游与微观世界</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 3px solid var(--accent);
+}
+h2 {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin: 24px 0 12px;
+  padding-left: 12px;
+  border-left: 4px solid var(--primary);
+}
+h3 {
+  font-size: calc(var(--font-body) + 2px);
+  font-weight: 600;
+  color: var(--text);
+  margin: 16px 0 8px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.card.highlight {
+  border-left: 4px solid var(--primary);
+  background: linear-gradient(135deg, var(--card-bg) 0%, #f6fbff 100%);
+}
+.card.vr-card {
+  background: linear-gradient(135deg, #f0f5ff 0%, #f0fff0 100%);
+  border-color: var(--accent);
+}
+.card.alt-card {
+  background: linear-gradient(135deg, #fff7e6 0%, #fff0f0 100%);
+  border-color: #fa8c16;
+}
+.task-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.task-tab {
+  padding: 8px 18px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.25s;
+  font-family: inherit;
+  color: var(--text-secondary);
+}
+.task-tab:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.task-tab.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.task-panel {
+  display: none;
+  animation: fadeIn 0.4s ease;
+}
+.task-panel.active {
+  display: block;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.step-list {
+  list-style: none;
+  padding: 0;
+  counter-reset: step;
+}
+.step-list li {
+  counter-increment: step;
+  padding: 12px 16px 12px 48px;
+  position: relative;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.step-list li:hover {
+  border-color: var(--primary);
+}
+.step-list li::before {
+  content: counter(step);
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+.step-list li.done {
+  background: #f0f9ff;
+  border-color: var(--primary);
+}
+.step-list li.done::after {
+  content: "✓";
+  position: absolute;
+  right: 14px;
+  top: 12px;
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 16px;
+}
+.observe-points {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+@media (min-width: 640px) {
+  .observe-points { grid-template-columns: 1fr 1fr; }
+}
+.observe-item {
+  padding: 14px;
+  background: #f8fbff;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.observe-item:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+.observe-item .o-icon {
+  font-size: 24px;
+  display: block;
+  margin-bottom: 6px;
+}
+.observe-item h4 {
+  font-size: 15px;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.observe-item p {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.record-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin: 10px 0;
+}
+.record-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+}
+.record-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.record-table tr:hover td {
+  background: #f0f9ff;
+}
+.record-table .row-label {
+  font-weight: 600;
+  color: var(--primary);
+}
+.tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  margin: 2px;
+}
+.tag.blue { background: #e6f4ff; color: #1677ff; }
+.tag.green { background: #e6fff2; color: #16a34a; }
+.tag.orange { background: #fff7e6; color: #d46b08; }
+.tag.purple { background: #f0e6ff; color: #722ed1; }
+.resource-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px;
+  background: #f8fbff;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  border-left: 3px solid var(--primary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.resource-card:hover {
+  background: #e6f4ff;
+  transform: translateX(4px);
+}
+.resource-card .r-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+.resource-card h4 {
+  font-size: 15px;
+  color: var(--primary);
+  margin-bottom: 2px;
+}
+.resource-card p {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.resource-card .r-detail {
+  display: none;
+  margin-top: 6px;
+  padding: 8px;
+  background: var(--card-bg);
+  border-radius: 6px;
+  font-size: 14px;
+  border: 1px solid var(--border);
+}
+.resource-card.expanded .r-detail {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+.btn {
+  display: inline-block;
+  padding: 10px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: var(--font-body);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(22,119,255,0.3);
+}
+.btn-outline {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+.btn-outline:hover {
+  background: #e6f4ff;
+}
+.progress-bar {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0;
+}
+.progress-bar .p-step {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--border);
+  transition: background 0.3s;
+}
+.progress-bar .p-step.done {
+  background: var(--primary);
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>🥽 VR脚手架 · 沉浸体验</h1>
+  <p style="font-size:16px;color:var(--text-secondary);margin-bottom:8px;">M20：新知的理论和学术性总结与表达</p>
+  <p style="font-size:14px;color:var(--text-secondary);margin-bottom:20px;">化学 · 九年级上 · 走进化学世界</p>
+
+  <!-- 任务导航 -->
+  <div class="task-tabs" id="taskTabs">
+    <button class="task-tab active" onclick="switchTask(0)">👁️ 观察任务</button>
+    <button class="task-tab" onclick="switchTask(1)">🖐️ 操作任务</button>
+    <button class="task-tab" onclick="switchTask(2)">📋 记录任务</button>
+    <button class="task-tab" onclick="switchTask(3)">🎮 VR资源推荐</button>
+  </div>
+
+  <!-- ========== 观察任务 ========== -->
+  <div class="task-panel active" data-task="0">
+    <div class="card vr-card">
+      <h2>👁️ 任务一：化学实验室虚拟漫游</h2>
+      <p><strong>目标：</strong>在VR环境中"走进"一个标准的化学实验室，熟悉实验器材的摆放位置和使用场景。</p>
+      <p style="margin-top:8px;"><strong>观察要点：</strong></p>
+      <div class="observe-points">
+        <div class="observe-item" onclick="highlightItem(this)">
+          <span class="o-icon">🧪</span>
+          <h4>实验台布局</h4>
+          <p>观察实验台的区域划分，了解各项功能区的分布</p>
+        </div>
+        <div class="observe-item" onclick="highlightItem(this)">
+          <span class="o-icon">🔬</span>
+          <h4>常见仪器</h4>
+          <p>试管、酒精灯、烧杯、量筒等的外观和存放位置</p>
+        </div>
+        <div class="observe-item" onclick="highlightItem(this)">
+          <span class="o-icon">🛡️</span>
+          <h4>安全设施</h4>
+          <p>灭火器、洗眼器、通风橱的位置和使用方法</p>
+        </div>
+        <div class="observe-item" onclick="highlightItem(this)">
+          <span class="o-icon">🧴</span>
+          <h4>试剂存放</h4>
+          <p>化学试剂的分类存放方式和标签规范</p>
+        </div>
+      </div>
+      <div style="margin-top:12px;padding:12px;background:#fff;border-radius:6px;border:1px dashed var(--accent);">
+        <p><strong>📝 记录要求：</strong>画出你观察到的实验室布局简图，标注至少 <strong>8种</strong> 仪器的位置。</p>
+      </div>
+      <div class="progress-bar" id="progressObserve">
+        <div class="p-step"></div><div class="p-step"></div><div class="p-step"></div><div class="p-step"></div>
+      </div>
+    </div>
+
+    <div class="card vr-card">
+      <h2>🔬 任务二：微观粒子世界</h2>
+      <p><strong>目标：</strong>通过VR进入物质的微观世界，观察分子、原子的运动。</p>
+      <p style="margin-top:8px;"><strong>观察要点：</strong></p>
+      <ul style="padding-left:20px;">
+        <li>不同状态下粒子的排列方式（固态、液态、气态）</li>
+        <li>粒子间距离的变化</li>
+        <li>粒子的运动方式（振动、移动、自由运动）</li>
+      </ul>
+      <div style="margin-top:12px;padding:12px;background:#fff;border-radius:6px;border:1px dashed var(--accent);">
+        <p><strong>📝 记录要求：</strong>画出三种状态下粒子的排列示意图，标注你的发现。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 操作任务 ========== -->
+  <div class="task-panel" data-task="1">
+    <div class="card">
+      <h2>🖐️ 虚拟实验操作：碳酸氢铵加热分解</h2>
+      <p><strong>目标：</strong>在VR环境中完成"碳酸氢铵加热分解"虚拟实验。</p>
+      <p style="margin-top:8px;"><strong>操作步骤（点击标记完成 👇）：</strong></p>
+      <div id="progressExp" class="progress-bar">
+        <div class="p-step"></div><div class="p-step"></div><div class="p-step"></div><div class="p-step"></div><div class="p-step"></div>
+      </div>
+      <ul class="step-list" id="expSteps">
+        <li onclick="toggleExpStep(this)">选择并安装实验仪器</li>
+        <li onclick="toggleExpStep(this)">取用碳酸氢铵</li>
+        <li onclick="toggleExpStep(this)">加热操作</li>
+        <li onclick="toggleExpStep(this)">观察并收集生成的气体</li>
+        <li onclick="toggleExpStep(this)">检验生成物</li>
+      </ul>
+      <div style="margin-top:12px;text-align:center;">
+        <button class="btn btn-outline" onclick="resetExpSteps()">🔄 重置进度</button>
+      </div>
+      <div style="margin-top:12px;padding:12px;background:#fff;border-radius:6px;border:1px dashed var(--accent);">
+        <p><strong>📝 记录要求：</strong>记录每一步的操作要点和观察到的现象。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 记录任务 ========== -->
+  <div class="task-panel" data-task="2">
+    <div class="card highlight">
+      <h2>📋 记录任务</h2>
+      <p>在VR体验过程中，请填写以下实验记录表：</p>
+      <div style="overflow-x:auto;margin-top:12px;">
+        <table class="record-table">
+          <thead>
+            <tr>
+              <th>实验阶段</th>
+              <th>操作内容</th>
+              <th>观察到的现象</th>
+              <th>变化类型判断</th>
+              <th>判断依据</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="row-label">加热前</td>
+              <td><em>请填写</em></td>
+              <td><em>请填写</em></td>
+              <td><em>请填写</em></td>
+              <td><em>请填写</em></td>
+            </tr>
+            <tr>
+              <td class="row-label">加热中</td>
+              <td><em>请填写</em></td>
+              <td><em>请填写</em></td>
+              <td><em>请填写</em></td>
+              <td><em>请填写</em></td>
+            </tr>
+            <tr>
+              <td class="row-label">加热后</td>
+              <td><em>请填写</em></td>
+              <td><em>请填写</em></td>
+              <td><em>请填写</em></td>
+              <td><em>请填写</em></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== VR资源推荐 ========== -->
+  <div class="task-panel" data-task="3">
+    <div class="card alt-card">
+      <h2>🎮 VR资源推荐</h2>
+      <p style="color:var(--text-secondary);margin-bottom:10px;">点击卡片查看详情 👇</p>
+
+      <div class="resource-card" onclick="toggleResource(this)">
+        <span class="r-icon">🧪</span>
+        <div style="flex:1;">
+          <h4>"化学家"VR（Chemist VR）</h4>
+          <p>基础的化学实验室模拟，适合入门观察</p>
+          <div class="r-detail">
+            <p><strong>推荐理由：</strong>专为化学教育设计的VR应用，提供高度还原的化学实验室环境和基本的实验操作体验。适合初次接触VR化学实验的同学。</p>
+            <p style="margin-top:4px;"><span class="tag blue">入门</span> <span class="tag green">实验室模拟</span></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="resource-card" onclick="toggleResource(this)">
+        <span class="r-icon">🌐</span>
+        <div style="flex:1;">
+          <h4>"分子世界"（Molecule World）</h4>
+          <p>微观粒子模拟，适合理解分子结构</p>
+          <div class="r-detail">
+            <p><strong>推荐理由：</strong>直观展示分子、原子在三维空间中的结构和运动方式。特别适合完成本模块"微观粒子世界"观察任务。</p>
+            <p style="margin-top:4px;"><span class="tag purple">微观</span> <span class="tag blue">3D可视化</span></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="resource-card" onclick="toggleResource(this)">
+        <span class="r-icon">🇨🇳</span>
+        <div style="flex:1;">
+          <h4>百度VR · 化学实验</h4>
+          <p>国内平台，中文界面，含多个初中化学实验</p>
+          <div class="r-detail">
+            <p><strong>推荐理由：</strong>全中文操作界面，内容严格匹配国内初中化学课程标准，网络访问更流畅。</p>
+            <p style="margin-top:4px;"><span class="tag orange">中文</span> <span class="tag green">匹配课标</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 替代方案 -->
+    <div class="card alt-card">
+      <h2>🔄 替代方案（无VR设备时）</h2>
+      <div style="display:grid;grid-template-columns:1fr;gap:10px;">
+        <div style="padding:12px;background:#fff;border-radius:6px;border:1px solid var(--border);">
+          <strong>🎬 3D动画资源：</strong>在 bilibili 搜索"化学实验3D模拟"
+        </div>
+        <div style="padding:12px;background:#fff;border-radius:6px;border:1px solid var(--border);">
+          <strong>💻 虚拟实验室网站：</strong><span style="color:var(--primary);">PhET互动模拟（phet.colorado.edu/zh_CN/）</span>
+        </div>
+        <div style="padding:12px;background:#fff;border-radius:6px;border:1px solid var(--border);">
+          <strong>📺 教学视频：</strong>搜索"走进微观世界"系列科普视频
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+var currentTask = 0;
+
+function switchTask(index) {
+  currentTask = index;
+  var tabs = document.querySelectorAll('#taskTabs .task-tab');
+  var panels = document.querySelectorAll('.task-panel');
+  tabs.forEach(function(t, i) { t.classList.toggle('active', i === index); });
+  panels.forEach(function(p, i) { p.classList.toggle('active', i === index); });
+}
+
+function toggleExpStep(el) {
+  el.classList.toggle('done');
+  updateExpProgress();
+}
+
+function resetExpSteps() {
+  document.querySelectorAll('#expSteps li').forEach(function(li) {
+    li.classList.remove('done');
+  });
+  updateExpProgress();
+}
+
+function updateExpProgress() {
+  var items = document.querySelectorAll('#expSteps li');
+  var steps = document.querySelectorAll('#progressExp .p-step');
+  var done = 0;
+  items.forEach(function(li) { if (li.classList.contains('done')) done++; });
+  steps.forEach(function(s, i) { s.classList.toggle('done', i < done); });
+}
+
+function highlightItem(el) {
+  var siblings = el.parentElement.querySelectorAll('.observe-item');
+  siblings.forEach(function(s) {
+    s.style.borderColor = 'var(--border)';
+    s.style.background = '#f8fbff';
+  });
+  el.style.borderColor = 'var(--primary)';
+  el.style.background = '#e6f4ff';
+
+  var idx = Array.prototype.indexOf.call(siblings, el);
+  var steps = document.getElementById('progressObserve').querySelectorAll('.p-step');
+  steps.forEach(function(s, i) { s.classList.toggle('done', i <= idx); });
+}
+
+function toggleResource(el) {
+  el.classList.toggle('expanded');
+}
+</script>
+</body>
+</html>

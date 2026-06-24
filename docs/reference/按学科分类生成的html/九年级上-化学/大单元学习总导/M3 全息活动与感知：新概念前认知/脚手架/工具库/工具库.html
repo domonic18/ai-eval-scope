@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具库 - 化学学习脚手架</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+}
+.page-title {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  text-align: center;
+  margin-bottom: 8px;
+}
+.page-sub {
+  text-align: center;
+  color: var(--text-secondary);
+  margin-bottom: 28px;
+  font-size: 14px;
+}
+
+/* 层级标签 */
+.level-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.level-tab {
+  flex: 1;
+  min-width: 100px;
+  padding: 10px 0;
+  text-align: center;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 2px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  transition: all 0.25s;
+  font-family: inherit;
+  user-select: none;
+}
+.level-tab:hover { border-color: var(--accent); color: var(--primary); }
+.level-tab.active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+.level-tab .badge {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+.level-content { display: none; }
+.level-content.active { display: block; }
+
+/* 工具卡片 */
+.tool-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+  border-left: 4px solid var(--primary);
+  transition: box-shadow 0.25s;
+}
+.tool-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.09); }
+.tool-card:last-child { margin-bottom: 0; }
+.tool-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+.tool-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+}
+.tool-tag {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.tool-tag.easy { background: #16a34a; }
+.tool-tag.mid { background: #1677ff; }
+.tool-tag.hard { background: #d46b08; }
+.tool-toggle {
+  font-size: 20px;
+  color: var(--text-secondary);
+  transition: transform 0.3s;
+  user-select: none;
+}
+.tool-toggle.open { transform: rotate(180deg); }
+.tool-usage {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+.tool-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+  padding: 0 4px;
+}
+.tool-body.open {
+  max-height: 800px;
+  padding: 14px 4px 0;
+}
+.tool-body p { font-size: 14px; margin-bottom: 8px; }
+.tool-body p:last-child { margin-bottom: 0; }
+.tool-body strong { color: var(--primary); }
+
+/* 对比表格 */
+.compact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin: 10px 0;
+}
+.compact-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 600;
+}
+.compact-table th:first-child { border-radius: 6px 0 0 0; }
+.compact-table th:last-child { border-radius: 0 6px 0 0; }
+.compact-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.compact-table tr:last-child td:first-child { border-radius: 0 0 0 6px; }
+.compact-table tr:last-child td:last-child { border-radius: 0 0 6px 0; }
+.compact-table tr:hover td { background: var(--bg); }
+
+/* 实验记录 */
+.exp-box {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.exp-box .arrow { color: var(--primary); font-weight: 600; }
+
+/* AI注意 */
+.ai-note {
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #d46b08;
+  margin-top: 8px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1 class="page-title">🧰 工具库</h1>
+<p class="page-sub">按难度筛选工具 · 点击卡片标题展开详情</p>
+
+<!-- 层级筛选 -->
+<div class="level-tabs">
+  <div class="level-tab active" data-level="all" onclick="filterTool('all', this)">全部</div>
+  <div class="level-tab" data-level="easy" onclick="filterTool('easy', this)">
+    基础 <span class="badge">易上手</span>
+  </div>
+  <div class="level-tab" data-level="mid" onclick="filterTool('mid', this)">
+    进阶 <span class="badge">专业工具</span>
+  </div>
+  <div class="level-tab" data-level="hard" onclick="filterTool('hard', this)">
+    高阶 <span class="badge">研究级</span>
+  </div>
+</div>
+
+<!-- 全部内容（按层级分组展示） -->
+<div class="level-content active" id="tools-all">
+
+  <!-- 基础工具：对比表格 -->
+  <div class="tool-card" data-tag="easy">
+    <div class="tool-header" onclick="toggleTool(this)">
+      <div>
+        <div class="tool-name">📊 对比表格</div>
+        <div class="tool-usage">快速对比物理变化和化学变化的区别</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="tool-tag easy">基础</span>
+        <span class="tool-toggle">▼</span>
+      </div>
+    </div>
+    <div class="tool-body">
+      <p><strong>使用步骤：</strong>列出对比维度（定义、特征、例子、判断依据），逐项填写。</p>
+      <table class="compact-table">
+        <tr><th>对比维度</th><th>物理变化</th><th>化学变化</th></tr>
+        <tr><td>定义</td><td>没有新物质生成</td><td>有新物质生成</td></tr>
+        <tr><td>特征</td><td>形态/状态改变</td><td>颜色/气味/温度变化</td></tr>
+        <tr><td>例子</td><td>冰融化、水蒸发</td><td>铁生锈、蜡烛燃烧</td></tr>
+        <tr><td>判断依据</td><td>物质种类不变</td><td>物质种类改变</td></tr>
+      </table>
+      <p><strong>适用场景：</strong>预习、复习、概念辨析</p>
+    </div>
+  </div>
+
+  <!-- 基础工具：思维导图 -->
+  <div class="tool-card" data-tag="easy">
+    <div class="tool-header" onclick="toggleTool(this)">
+      <div>
+        <div class="tool-name">🧠 思维导图</div>
+        <div class="tool-usage">围绕"化学变化"展开关联知识</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="tool-tag easy">基础</span>
+        <span class="tool-toggle">▼</span>
+      </div>
+    </div>
+    <div class="tool-body">
+      <p><strong>使用步骤：</strong>中心写"化学变化"→ 一级分支（定义、特征、例子、判断方法、与物理变化的关系）→ 二级分支继续细化。</p>
+      <p><strong>工具推荐：</strong>手绘、XMind、幕布等。</p>
+      <p><strong>适用场景：</strong>知识梳理、头脑风暴</p>
+    </div>
+  </div>
+
+  <!-- 进阶工具：实验记录模板 -->
+  <div class="tool-card" data-tag="mid">
+    <div class="tool-header" onclick="toggleTool(this)">
+      <div>
+        <div class="tool-name">🔬 实验记录模板</div>
+        <div class="tool-usage">规范记录每一次化学实验的完整过程</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="tool-tag mid">进阶</span>
+        <span class="tool-toggle">▼</span>
+      </div>
+    </div>
+    <div class="tool-body">
+      <p><strong>模板结构：</strong>实验名称 → 实验目的 → 实验器材 → 实验步骤 → 实验现象 → 分析与结论</p>
+      <p><strong>示例（蜡烛燃烧实验）：</strong></p>
+      <div class="exp-box">
+        【实验现象】火焰上方冷烧杯内壁出现水雾 <span class="arrow">→</span> 说明燃烧生成了水<br>
+        【实验现象】澄清石灰水变浑浊 <span class="arrow">→</span> 说明燃烧生成了二氧化碳<br>
+        【分析与结论】蜡烛燃烧是化学变化，生成了水和二氧化碳
+      </div>
+      <p><strong>适用场景：</strong>所有实验课、家庭小实验</p>
+    </div>
+  </div>
+
+  <!-- 进阶工具：AI辅助 -->
+  <div class="tool-card" data-tag="mid">
+    <div class="tool-header" onclick="toggleTool(this)">
+      <div>
+        <div class="tool-name">🤖 AI 辅助学习</div>
+        <div class="tool-usage">用AI生成案例、检验判断、解答疑惑</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="tool-tag mid">进阶</span>
+        <span class="tool-toggle">▼</span>
+      </div>
+    </div>
+    <div class="tool-body">
+      <p><strong>推荐工具：</strong>DeepSeek、ChatGPT 等 AI 助手。</p>
+      <p><strong>使用步骤：</strong></p>
+      <p>① 提问："判断以下变化是否为化学变化并说明理由：……"</p>
+      <p>② 请AI检查你的解释模型："我建构的蜡烛燃烧模型还不完整，请从科学角度提建议"</p>
+      <div class="ai-note">⚠️ AI的回答仅供参考，最终要以教材和实验证据为准。</div>
+    </div>
+  </div>
+
+  <!-- 高阶工具：数据比较分析 -->
+  <div class="tool-card" data-tag="hard">
+    <div class="tool-header" onclick="toggleTool(this)">
+      <div>
+        <div class="tool-name">📈 数据比较分析</div>
+        <div class="tool-usage">用质量变化、温度变化作为判断化学变化的证据</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="tool-tag hard">高阶</span>
+        <span class="tool-toggle">▼</span>
+      </div>
+    </div>
+    <div class="tool-body">
+      <p><strong>使用步骤：</strong>测量实验前后物质的质量 → 计算变化量 → 判断是否有新物质生成。</p>
+      <p><strong>适用场景：</strong>需要定量分析的实验或探究活动。</p>
+    </div>
+  </div>
+
+  <!-- 高阶工具：可视化建模 -->
+  <div class="tool-card" data-tag="hard">
+    <div class="tool-header" onclick="toggleTool(this)">
+      <div>
+        <div class="tool-name">🎨 可视化建模</div>
+        <div class="tool-usage">用图示表达化学变化的微观过程</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="tool-tag hard">高阶</span>
+        <span class="tool-toggle">▼</span>
+      </div>
+    </div>
+    <div class="tool-body">
+      <p><strong>使用步骤：</strong>确定反应物 → 用图形/符号表示 → 用箭头表示转化方向 → 标注生成物。</p>
+      <p><strong>适用场景：</strong>理解"物质转化"关系、展示化学变化本质。</p>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center;color:var(--text-secondary);font-size:13px;padding:16px 0;border-top:1px solid var(--border);margin-top:8px;">
+  💡 点击工具卡片展开详细使用说明
+</div>
+
+</div>
+
+<script>
+function toggleTool(el) {
+  var card = el.closest('.tool-card');
+  var body = card.querySelector('.tool-body');
+  var toggleIcon = card.querySelector('.tool-toggle');
+  if (body) {
+    body.classList.toggle('open');
+  }
+  if (toggleIcon) {
+    toggleIcon.classList.toggle('open');
+    toggleIcon.textContent = body.classList.contains('open') ? '▲' : '▼';
+  }
+}
+
+function filterTool(level, el) {
+  // 更新标签高亮
+  document.querySelectorAll('.level-tab').forEach(function(t) {
+    t.classList.toggle('active', t === el);
+  });
+
+  // 显示/隐藏工具卡片
+  var cards = document.querySelectorAll('.tool-card');
+  cards.forEach(function(c) {
+    if (level === 'all') {
+      c.style.display = 'block';
+    } else {
+      c.style.display = c.dataset.tag === level ? 'block' : 'none';
+    }
+  });
+}
+</script>
+</body>
+</html>

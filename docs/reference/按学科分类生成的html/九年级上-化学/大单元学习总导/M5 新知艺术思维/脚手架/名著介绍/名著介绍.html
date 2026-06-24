@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名著介绍 — 化学思维必修课</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+}
+.container { width: 100%; max-width: none; }
+h1 { font-size: var(--font-h1); color: var(--primary); margin: 0 0 16px; padding-bottom: 10px; border-bottom: 3px solid var(--accent); }
+h2 { font-size: var(--font-h2); color: var(--primary); margin: 28px 0 12px; }
+h3 { font-size: 17px; color: var(--text); margin: 20px 0 8px; }
+p, li { font-size: var(--font-body); color: var(--text); margin-bottom: 10px; }
+
+/* 名言轮播 */
+.quote-carousel { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 24px; margin-bottom: 28px; }
+.quote-slide { display: none; padding: 10px 0; }
+.quote-slide.active { display: block; animation: fadeIn .4s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.quote-text { font-size: 17px; font-style: italic; color: var(--primary); border-left: 4px solid var(--primary); padding-left: 16px; margin-bottom: 8px; }
+.quote-think { color: var(--text-secondary); font-size: 14px; margin-top: 4px; }
+.quote-nav { display: flex; gap: 8px; justify-content: center; margin-top: 16px; }
+.quote-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); border: none; cursor: pointer; transition: .2s; }
+.quote-dot.active { background: var(--primary); transform: scale(1.3); }
+
+/* 名著卡片 */
+.book-grid { display: flex; flex-direction: column; gap: 20px; }
+.book-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; border-left: 4px solid var(--primary); transition: .2s; }
+.book-card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.12); transform: translateY(-2px); }
+.book-title { font-size: 17px; font-weight: 700; color: var(--primary); }
+.book-tag { display: inline-block; background: var(--bg); color: var(--primary); font-size: 12px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
+.book-meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 10px; }
+.meta-item { background: var(--bg); padding: 2px 10px; border-radius: 12px; font-size: 13px; color: var(--text-secondary); }
+.book-question { font-weight: 600; color: var(--text); margin: 8px 0 4px; }
+.book-dir { background: #fafafa; border-radius: 6px; padding: 12px 16px; margin: 10px 0; font-size: 14px; }
+.book-frag { background: #f9f9ff; border-radius: 6px; padding: 12px 16px; margin: 10px 0; font-size: 14px; border-left: 3px solid var(--accent); }
+
+/* 水平标签 */
+.level-tabs { display: flex; gap: 8px; margin: 8px 0; }
+.level-tab { padding: 4px 14px; border-radius: 14px; border: 1px solid var(--border); background: transparent; cursor: pointer; font-size: 13px; transition: .2s; }
+.level-tab.selected { background: var(--primary); color: #fff; border-color: var(--primary); }
+.level-tab:hover:not(.selected) { border-color: var(--primary); }
+
+/* 展开 / 折叠 */
+.expand-btn { background: none; border: 1px solid var(--primary); color: var(--primary); padding: 6px 18px; border-radius: 6px; cursor: pointer; font-size: 14px; transition: .2s; margin-top: 8px; }
+.expand-btn:hover { background: var(--primary); color: #fff; }
+.expand-content { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+.expand-content.open { display: block; animation: fadeIn .3s ease; }
+
+/* 获取路径 */
+.path-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+.path-item { background: var(--bg); padding: 4px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>📚 名著介绍</h1>
+<p style="font-size:14px;color:var(--text-secondary);margin-bottom:20px;">化学 · 九年级上 · M5 新知艺术思维</p>
+
+<!-- 名言轮播 -->
+<div class="quote-carousel">
+  <h3 style="margin:0 0 12px;">💡 思想触发器</h3>
+  <div class="quote-slide active" data-q="0">
+    <div class="quote-text">"我从不发表没有足够实验证据支持的结论。"</div>
+    <p style="font-weight:600;color:var(--text);">—— 拉瓦锡</p>
+    <p class="quote-think">🤔 思考：在信息爆炸的时代，你有"足够证据"才下结论吗？</p>
+  </div>
+  <div class="quote-slide" data-q="1">
+    <div class="quote-text">"想象力比知识更重要，因为知识是有限的，而想象力概括着世界的一切。"</div>
+    <p style="font-weight:600;color:var(--text);">—— 爱因斯坦</p>
+    <p class="quote-think">🤔 思考：在化学学习中，你的想象力用在哪里？</p>
+  </div>
+  <div class="quote-slide" data-q="2">
+    <div class="quote-text">"科学的标志不是可验证性，而是可证伪性。"</div>
+    <p style="font-weight:600;color:var(--text);">—— 波普尔</p>
+    <p class="quote-think">🤔 思考：你相信的化学知识，有没有可能被证伪？</p>
+  </div>
+  <div class="quote-nav" id="quoteNav">
+    <button class="quote-dot active" data-i="0" onclick="goQuote(0)"></button>
+    <button class="quote-dot" data-i="1" onclick="goQuote(1)"></button>
+    <button class="quote-dot" data-i="2" onclick="goQuote(2)"></button>
+  </div>
+</div>
+
+<!-- 名著一 -->
+<div class="book-grid">
+<div class="book-card">
+  <div class="book-title">《化学基础论》 <span class="book-tag">译著</span></div>
+  <div style="font-size:14px;color:var(--text-secondary);margin-bottom:6px;">拉瓦锡 著</div>
+  <div class="book-meta">
+    <span class="meta-item">📖 基础</span>
+    <span class="meta-item">📖 进阶</span>
+  </div>
+  <div class="book-question">❓ 化学如何从神秘术变成一门精确科学？</div>
+  <div class="book-dir"><strong>目录速览：</strong>气体及其组合 → 酸的组合 → 盐类的组合</div>
+  <div class="book-frag"><strong>关键片段：</strong>拉瓦锡著名的"十二天实验"——在密封容器中加热锡和铅，发现总重量完全不变，由此提出<strong>质量守恒定律</strong>。</div>
+  <button class="expand-btn" onclick="toggleExpand('path1')">📎 获取路径</button>
+  <div class="expand-content" id="path1">
+    <div class="path-row">
+      <span class="path-item">📘 商务印书馆"汉译世界学术名著丛书"</span>
+      <span class="path-item">📱 微信读书（电子版）</span>
+    </div>
+  </div>
+</div>
+
+<!-- 名著二 -->
+<div class="book-card">
+  <div class="book-title">《原子的奥德赛》 <span class="book-tag">外国经典</span></div>
+  <div style="font-size:14px;color:var(--text-secondary);margin-bottom:6px;">西蒙·辛格 著</div>
+  <div class="book-meta">
+    <span class="meta-item">📖 进阶</span>
+    <span class="meta-item">⏳ 2000 年旅程</span>
+  </div>
+  <div class="book-question">❓ 人类如何发现"物质是由原子构成的"？</div>
+  <div class="book-dir"><strong>目录速览：</strong>古希腊猜想 → 道尔顿证据 → 爱因斯坦证明 → 现代显微镜"看到"原子</div>
+  <div class="book-frag"><strong>关键片段：</strong>爱因斯坦如何用数学证明原子的存在——不要被数学吓到，重点看他的推理思路：从布朗运动反推原子大小。</div>
+  <div class="level-tabs" id="level2">
+    <button class="level-tab selected" onclick="selectLevel('level2','basic',this)">📘 基础导读</button>
+    <button class="level-tab" onclick="selectLevel('level2','adv',this)">🔬 深入阅读</button>
+  </div>
+  <p id="level2_basic" style="font-size:14px;color:var(--text-secondary);">读关键章节（古希腊猜想 + 道尔顿证据），配合导读手册理解推理脉络。</p>
+  <p id="level2_adv" style="display:none;font-size:14px;color:var(--text-secondary);">完整阅读全书，重点关注爱因斯坦的数学推导与当代原子力显微镜成像对比。</p>
+  <button class="expand-btn" onclick="toggleExpand('path2')">📎 获取路径</button>
+  <div class="expand-content" id="path2">
+    <div class="path-row">
+      <span class="path-item">📘 中信出版社（原版/译版）</span>
+      <span class="path-item">🎧 喜马拉雅（有声书）</span>
+    </div>
+  </div>
+</div>
+
+<!-- 名著三 -->
+<div class="book-card">
+  <div class="book-title">《那些古怪又让人忧心的问题》 <span class="book-tag">跨学科</span></div>
+  <div style="font-size:14px;color:var(--text-secondary);margin-bottom:6px;">兰道尔·门罗 著</div>
+  <div class="book-meta">
+    <span class="meta-item">📖 全水平</span>
+    <span class="meta-item">😂 轻松好读</span>
+  </div>
+  <div class="book-question">❓ 怎样用科学思维回答各种"奇奇怪怪"的问题？</div>
+  <div class="book-dir"><strong>目录速览：</strong>从化学到物理到生物——跨学科问题集 → "如果……会怎样"的思维方法</div>
+  <div class="book-frag"><strong>关键片段：</strong>"如果全世界的人都同时跳起来会怎样？"看作者如何用化学+物理知识分析——计算总体重、重心偏移、地面震动……结论令人意外！</div>
+  <div class="expand-content" id="path3">
+    <div class="path-row">
+      <span class="path-item">📘 北京联合出版公司</span>
+      <span class="path-item">📱 得到App（电子书）</span>
+    </div>
+  </div>
+  <button class="expand-btn" onclick="toggleExpand('path3')">📎 获取路径</button>
+</div>
+
+</div>
+
+</div>
+
+<script>
+function goQuote(i) {
+  document.querySelectorAll('.quote-slide').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.quote-dot').forEach(el => el.classList.remove('active'));
+  const slide = document.querySelector('.quote-slide[data-q="'+i+'"]');
+  const dot = document.querySelector('.quote-dot[data-i="'+i+'"]');
+  if (slide) slide.classList.add('active');
+  if (dot) dot.classList.add('active');
+}
+function toggleExpand(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('open');
+}
+function selectLevel(grp, val, btn) {
+  document.querySelectorAll('#'+grp+' .level-tab').forEach(b => b.classList.remove('selected'));
+  if (btn) btn.classList.add('selected');
+  document.querySelectorAll('[id^="'+grp+'_"]').forEach(p => p.style.display = 'none');
+  const target = document.getElementById(grp+'_'+val);
+  if (target) target.style.display = 'block';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名人名言 — 化学STEAM认知突破</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.wrapper { width: 100%; max-width: none; padding: 24px 20px; box-sizing: border-box; }
+.header {
+  text-align: center; padding: 32px 20px 24px;
+  background: linear-gradient(135deg, var(--primary) 0%, #0050b3 100%);
+  color: #fff; border-radius: 12px; margin-bottom: 28px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; letter-spacing: 2px; }
+.header p { font-size: 14px; opacity: 0.85; }
+.section-title {
+  font-size: var(--font-h2); color: var(--primary);
+  padding-bottom: 10px; border-bottom: 3px solid var(--accent);
+  margin: 32px 0 18px; display: flex; align-items: center; gap: 8px;
+}
+.person-card {
+  background: var(--card-bg); border-radius: var(--border-radius);
+  box-shadow: var(--shadow); margin-bottom: 20px;
+  border: 1px solid var(--border); overflow: hidden;
+}
+.person-hero {
+  display: flex; align-items: center; gap: 20px;
+  padding: 20px; cursor: pointer;
+  transition: background 0.2s;
+}
+.person-hero:hover { background: rgba(22,119,255,0.04); }
+.person-icon {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  font-size: 28px; flex-shrink: 0;
+}
+.person-summary { flex: 1; }
+.person-summary h3 { font-size: 17px; color: var(--primary); margin-bottom: 2px; }
+.person-summary .subtitle { font-size: 13px; color: var(--text-secondary); }
+.person-summary .tagline {
+  margin-top: 4px; font-size: 14px; font-style: italic;
+  color: var(--text); padding: 6px 12px; background: var(--bg);
+  border-radius: 6px; border-left: 3px solid var(--primary);
+}
+.person-toggle {
+  font-size: 20px; color: var(--text-secondary);
+  transition: transform 0.3s; flex-shrink: 0;
+}
+.person-card.open .person-toggle { transform: rotate(180deg); }
+.person-detail { display: none; padding: 0 20px 20px; }
+.person-card.open .person-detail { display: block; }
+.detail-section {
+  padding: 12px 16px; margin-bottom: 10px;
+  background: var(--bg); border-radius: 6px;
+  border-left: 3px solid var(--accent);
+}
+.detail-section h4 {
+  font-size: 14px; color: var(--primary); margin-bottom: 6px;
+}
+.detail-section p, .detail-section li { font-size: 14px; line-height: 1.7; }
+.detail-section ul { padding-left: 18px; }
+.detail-section ul li { margin-bottom: 4px; }
+.think-btn {
+  display: inline-block; margin: 8px 0 4px; padding: 8px 20px;
+  background: var(--primary); color: #fff; border: none;
+  border-radius: 6px; cursor: pointer; font-size: 14px;
+  transition: background 0.2s;
+}
+.think-btn:hover { background: var(--primary-hover); }
+.think-box {
+  display: none; margin-top: 10px; padding: 14px 16px;
+  background: #fff8e6; border: 1px solid #ffd591; border-radius: 6px;
+}
+.think-box.show { display: block; }
+.think-box p { font-size: 14px; margin-bottom: 8px; }
+.think-box textarea {
+  width: 100%; min-height: 80px; padding: 10px;
+  border: 1px solid var(--border); border-radius: 6px;
+  font-family: inherit; font-size: 14px; resize: vertical;
+  box-sizing: border-box;
+}
+.read-path {
+  padding: 10px 14px; background: #f0f0f0; border-radius: 6px;
+  font-size: 13px;
+}
+.read-path a { color: var(--primary); text-decoration: none; }
+.read-path a:hover { text-decoration: underline; }
+.footer {
+  text-align: center; padding: 24px 0 8px; color: var(--text-secondary);
+  font-size: 13px; border-top: 1px solid var(--border); margin-top: 32px;
+}
+@media (max-width: 640px) {
+  .wrapper { padding: 16px 12px; }
+  .header { padding: 24px 16px; }
+  .person-hero { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <h1>💡 名人名言</h1>
+    <p>认知突破 · 化学家如何思考世界</p>
+  </div>
+
+  <div class="section-title">🧑‍🔬 奠基人物 · 经典</div>
+
+  <div class="person-card open" id="card-lavoisier">
+    <div class="person-hero" onclick="togglePerson('card-lavoisier')">
+      <div class="person-icon">🔬</div>
+      <div class="person-summary">
+        <h3>安托万·拉瓦锡</h3>
+        <div class="subtitle">Antoine Lavoisier · 1743-1794 · 法国</div>
+        <div class="tagline">"没有精确的测量，就没有科学。"</div>
+      </div>
+      <span class="person-toggle">▾</span>
+    </div>
+    <div class="person-detail">
+      <div class="detail-section">
+        <h4>🔑 核心贡献</h4>
+        <p>现代化学之父。推翻了燃素说，发现氧气在燃烧中的作用，提出元素定义和化学命名体系，确立质量守恒定律。</p>
+      </div>
+      <div class="detail-section">
+        <h4>🤔 关键问题</h4>
+        <p>物质在燃烧前后质量如何变化？拉瓦锡通过精密的封闭容器实验证明：燃烧前后总质量不变——这是化学史上第一次用"定量方法"回答问题。</p>
+      </div>
+      <div class="detail-section">
+        <h4>🧠 思维突破点</h4>
+        <p>引入定量研究方法。在拉瓦锡之前，化学家只关心物质"变成了什么"；拉瓦锡追问"变的过程中重量怎么变"。他把天平从工具升格为方法——这种思维转变比具体发现更重要。</p>
+      </div>
+      <div class="detail-section">
+        <h4>⚠️ 争议与失败</h4>
+        <p>拉瓦锡在化学革命中与普里斯特利、舍勒存在发现优先权之争。他未能预见热质说的局限，晚年因税务官身份在法国大革命中被处死——一个具有悲剧色彩的科学巨人。</p>
+      </div>
+      <div class="detail-section">
+        <h4>💡 对当下的启示</h4>
+        <p>精确测量在科学中具有根本性作用。在STEAM学习中，拉瓦锡提醒我们：跨学科的创新不是靠灵感，而是靠方法论上的严谨和精确。</p>
+      </div>
+      <div class="read-path">📖 深度阅读：<a href="#">《怀疑的化学家》</a> 波义耳 · <a href="#">《化学哲学新体系》</a> 道尔顿 · BBC纪录片《化学史》第一集</div>
+      <button class="think-btn" onclick="toggleThink('think-lavoisier')">💭 如果你是他</button>
+      <div class="think-box" id="think-lavoisier">
+        <p>假设你是18世纪的拉瓦锡，面对当时大多数化学家相信的"燃素说"，你观察到金属燃烧后质量<strong>增加</strong>（而非减少），这与主流理论完全矛盾。你会怎么做？</p>
+        <textarea placeholder="写下你的思考...（100-200字）"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">🎨 跨界人物 · 连接性</div>
+
+  <div class="person-card" id="card-davinci">
+    <div class="person-hero" onclick="togglePerson('card-davinci')">
+      <div class="person-icon">🎭</div>
+      <div class="person-summary">
+        <h3>列奥纳多·达·芬奇</h3>
+        <div class="subtitle">Leonardo da Vinci · 1452-1519 · 意大利</div>
+        <div class="tagline">"观察自然是一切知识的源头。"</div>
+      </div>
+      <span class="person-toggle">▾</span>
+    </div>
+    <div class="person-detail">
+      <div class="detail-section">
+        <h4>🔑 核心贡献</h4>
+        <p>文艺复兴时期的天才，将绘画观察与工程分析、解剖研究、地质探索深度融合。他的笔记中包含着远超时代的科学洞察。</p>
+      </div>
+      <div class="detail-section">
+        <h4>🤔 关键问题</h4>
+        <p>如何通过观察自然来理解原理？达·芬奇画水流不是为了画得"像"，而是为了理解湍流的数学规律；解剖尸体不是为了画人体结构，而是为了理解骨骼杠杆的力学原理。</p>
+      </div>
+      <div class="detail-section">
+        <h4>🧠 思维突破点</h4>
+        <p>将艺术观察与工程分析结合。在达·芬奇这里，"看"和"算"不是对立的——他用画笔记录数据，用工程思维指导创作。这种融合正是STEAM教育的精神源头。</p>
+      </div>
+      <div class="detail-section">
+        <h4>💡 对当下的启示</h4>
+        <p>STEAM有深厚的历史渊源。达·芬奇告诉我们：学科分类是人为的，真实世界的问题从来不按学科划分。在化学学习中，不妨问自己：这个现象如果让一个艺术家来看、让一个工程师来测量、让一个生物学家来分类——会有什么不同的视角？</p>
+      </div>
+      <div class="read-path">📖 深度阅读：<a href="#">《达·芬奇笔记》</a>（手稿原版影印本）· <a href="#">《列奥纳多·达·芬奇传》</a> 沃尔特·艾萨克森</div>
+      <button class="think-btn" onclick="toggleThink('think-davinci')">💭 如果你是他</button>
+      <div class="think-box" id="think-davinci">
+        <p>假设你是达·芬奇，今天被邀请参与一个"化学+艺术"STEAM项目——用天然植物色素制作一幅会随时间变色的画。你会从哪些角度入手？如何用艺术家的眼睛选颜色，同时用科学家的思维预测变化？</p>
+        <textarea placeholder="写下你的融合思路...（100-200字）"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">🏆 当代人物 · 现实性</div>
+
+  <div class="person-card" id="card-tu">
+    <div class="person-hero" onclick="togglePerson('card-tu')">
+      <div class="person-icon">🏅</div>
+      <div class="person-summary">
+        <h3>屠呦呦</h3>
+        <div class="subtitle">1930- · 中国 · 诺贝尔生理学或医学奖得主</div>
+        <div class="tagline">"中医药是一个伟大的宝库，应当努力发掘。"</div>
+      </div>
+      <span class="person-toggle">▾</span>
+    </div>
+    <div class="person-detail">
+      <div class="detail-section">
+        <h4>🔑 核心贡献</h4>
+        <p>发现青蒿素——一种基于青蒿提取物的抗疟药物，拯救了全球数百万人的生命。2015年获得诺贝尔生理学或医学奖。</p>
+      </div>
+      <div class="detail-section">
+        <h4>🤔 关键问题</h4>
+        <p>如何从古籍中找到现代药物的线索？屠呦呦从葛洪《肘后备急方》"青蒿一握，以水二升渍，绞取汁，尽服之"中受到启发——注意到"绞取汁"意味着不能高温加热，从而改用乙醚低温提取，成功获得活性成分。</p>
+      </div>
+      <div class="detail-section">
+        <h4>🧠 思维突破点</h4>
+        <p>跨学科研究方法的运用。屠呦呦的团队融合了：① 中医文献学（筛选2000余个药方）② 植物化学（提取分离）③ 药理学（活性筛选）④ 临床医学（验证疗效）。没有一个学科能独立完成这个发现。</p>
+      </div>
+      <div class="detail-section">
+        <h4>💡 对当下的启示</h4>
+        <p>多学科整合如何带来真正突破。屠呦呦的发现不是偶然的——它是系统性的跨学科协作的结果。在做STEAM项目时，想想你的方案融合了哪些学科的视角？有没有可能引入一个你从未想过会相关的领域？</p>
+      </div>
+      <div class="read-path">📖 深度阅读：<a href="#">《青蒿素：从中国传统医药到全球抗疟新药》</a> · 纪录片《屠呦呦：中国女科学家之路》</div>
+      <button class="think-btn" onclick="toggleThink('think-tu')">💭 如果你是她</button>
+      <div class="think-box" id="think-tu">
+        <p>假设你是屠呦呦，面对190次实验失败，第191次时你读到古籍中"绞取汁"三个字。低温提取的想法与当时主流的高温提取法完全不同。你会如何说服团队成员尝试这个"不合常规"的方案？</p>
+        <textarea placeholder="写下你的说服策略...（100-200字）"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    M14 新知 · STEAM融合性应用 · 化学 ｜ 名人名言
+  </div>
+</div>
+
+<script>
+function togglePerson(id) {
+  var card = document.getElementById(id);
+  if (card) { card.classList.toggle('open'); }
+}
+function toggleThink(id) {
+  var box = document.getElementById(id);
+  if (box) { box.classList.toggle('show'); }
+}
+</script>
+</body>
+</html>

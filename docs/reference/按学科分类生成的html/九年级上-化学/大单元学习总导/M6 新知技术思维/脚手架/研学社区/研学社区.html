@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>研学社区 — 真实连接型脚手架</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+  --tag-lv1: #e6f7ff;
+  --tag-lv1-text: #1677ff;
+  --tag-lv2: #f6ffed;
+  --tag-lv2-text: #16a34a;
+  --tag-lv3: #fff7e6;
+  --tag-lv3-text: #d46b08;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  padding: 0;
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header p { font-size: 14px; opacity: 0.9; }
+.section { margin-bottom: 28px; }
+.section-title {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  border-left: 4px solid var(--primary);
+  padding-left: 12px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.case-list { display: flex; flex-direction: column; gap: 18px; }
+.case-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.2s;
+}
+.case-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.case-level {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 12px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
+.lv1 { background: var(--tag-lv1); color: var(--tag-lv1-text); }
+.lv2 { background: var(--tag-lv2); color: var(--tag-lv2-text); }
+.lv3 { background: var(--tag-lv3); color: var(--tag-lv3-text); }
+.case-card h3 { font-size: 17px; margin-bottom: 8px; color: var(--text); }
+.case-card .meta { font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; }
+.case-card .q-block {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+  padding: 12px;
+  margin: 10px 0;
+  font-size: 14px;
+}
+.case-card .q-block strong { color: #d46b08; }
+.case-card .path {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 12px;
+  margin: 8px 0;
+  font-size: 13px;
+  border-left: 3px solid var(--accent);
+}
+.case-card .path strong { color: var(--primary); }
+.case-card .result {
+  margin: 8px 0;
+  padding: 10px 14px;
+  background: #f6ffed;
+  border-radius: 6px;
+  font-size: 13px;
+  border-left: 3px solid #52c41a;
+}
+.case-card .insight {
+  margin: 8px 0;
+  padding: 10px 14px;
+  background: #f0f5ff;
+  border-radius: 6px;
+  font-size: 13px;
+  border-left: 3px solid var(--primary);
+}
+.decision-btn {
+  margin-top: 10px;
+  padding: 6px 18px;
+  font-size: 13px;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.decision-btn:hover { background: var(--primary); color: #fff; }
+.decision-box { display: none; margin-top: 12px; padding: 14px; background: #fff7e6; border-radius: 6px; font-size: 14px; border: 1px solid #ffe58f; }
+.decision-box.show { display: block; }
+.decision-box textarea {
+  width: 100%;
+  min-height: 60px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  margin-top: 8px;
+}
+.ending-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 10px 0; }
+.ending-card {
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  text-align: center;
+}
+.ending-a { background: #fff1f0; border: 1px solid #ffa39e; }
+.ending-b { background: #fff7e6; border: 1px solid #ffd591; }
+.ending-c { background: #f6ffed; border: 1px solid #b7eb8f; }
+.footer { text-align: center; padding: 20px; font-size: 13px; color: var(--text-secondary); }
+@media (max-width: 640px) {
+  .container { padding: 16px 12px; }
+  .ending-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🌍 研学社区</h1>
+  <p>真实连接型脚手架 · 化学 · 九年级上</p>
+</div>
+
+<!-- 一、基础层 -->
+<div class="section">
+  <div class="section-title"><span>🔍 基础层 · 生活案例</span></div>
+  <div class="case-list">
+    <div class="case-card">
+      <span class="case-level lv1">生活案例</span>
+      <h3>为什么铁制品会生锈？</h3>
+      <div class="meta">随处可见的铁锈背后藏着化学原理</div>
+      <div class="q-block"><strong>核心问题：</strong>铁生锈需要什么条件？能否防止？</div>
+      <div class="path"><strong>决策路径：</strong>观察现象 → 提出假设（水/空气/温度）→ 设计对照实验（铁钉在不同环境）→ 记录 → 结论</div>
+      <div class="result"><strong>结论：</strong>铁生锈是铁与氧气、水共同作用的结果；涂油、镀层可防锈。</div>
+      <div class="insight"><strong>可迁移启示：</strong>生活中防锈措施的原理（如自行车链条涂油）；化学变化受多种条件影响。</div>
+      <button class="decision-btn" onclick="toggleDecision('dec-1')">🤔 如果你是决策者</button>
+      <div class="decision-box" id="dec-1">
+        <strong>假如你是桥梁维护工程师：</strong>如何延长钢桥的使用寿命？请从化学防护角度列出你的方案。
+        <textarea placeholder="写下你的思路..."></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 二、进阶层 -->
+<div class="section">
+  <div class="section-title"><span>📜 进阶层 · 行业 / 历史案例</span></div>
+  <div class="case-list">
+    <div class="case-card">
+      <span class="case-level lv2">历史案例</span>
+      <h3>拉瓦锡与氧气的发现</h3>
+      <div class="meta">18世纪 · 化学革命的开端</div>
+      <div class="q-block"><strong>核心问题：</strong>燃烧的本质是什么？是否存在"燃素"？</div>
+      <div class="path"><strong>决策路径：</strong>质疑燃素说 → 设计汞+空气加热实验 → 测量密闭容器质量变化 → 发现氧气 → 建立氧化说</div>
+      <div class="result"><strong>结果：</strong>推翻燃素说，化学革命的开端。</div>
+      <div class="insight"><strong>可迁移启示：</strong>科学进步来自对既有理论的质疑与实验验证；质量守恒是化学反应的基石。</div>
+      <button class="decision-btn" onclick="toggleDecision('dec-2')">🤔 如果你是决策者</button>
+      <div class="decision-box" id="dec-2">
+        <strong>如果你身处18世纪：</strong>你会接受燃素说还是支持拉瓦锡？列出证据支持你的选择。
+        <textarea placeholder="写下你的思路..."></textarea>
+      </div>
+    </div>
+    <div class="case-card">
+      <span class="case-level lv2">历史案例</span>
+      <h3>联合制碱法——侯德榜的化学智慧</h3>
+      <div class="meta">20世纪初 · 打破国际垄断</div>
+      <div class="q-block"><strong>核心问题：</strong>如何用国产原料高效制碱？</div>
+      <div class="path"><strong>决策路径：</strong>分析索尔维法制碱缺点（副产品CaCl₂浪费）→ 改良为联合制碱 → 同步生产纯碱和化肥 → 技术无偿公开</div>
+      <div class="result"><strong>结果：</strong>中国人自主掌握制碱技术，打破国际垄断。</div>
+      <div class="insight"><strong>可迁移启示：</strong>化学技术创新可以解决国计民生问题；资源循环利用的思想。</div>
+      <button class="decision-btn" onclick="toggleDecision('dec-3')">🤔 如果你是决策者</button>
+      <div class="decision-box" id="dec-3">
+        <strong>如果你是企业负责人：</strong>你会将新技术公开还是申请专利盈利？请说明理由。
+        <textarea placeholder="写下你的思路..."></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 三、挑战层 -->
+<div class="section">
+  <div class="section-title"><span>🌐 挑战层 · 跨领域案例</span></div>
+  <div class="case-list">
+    <div class="case-card">
+      <span class="case-level lv3">跨领域案例</span>
+      <h3>臭氧层空洞——从发现到全球行动</h3>
+      <div class="meta">1970年代至今 · 环境化学与全球治理</div>
+      <div class="q-block"><strong>核心问题：</strong>臭氧层为何被破坏？人类如何应对？</div>
+      <div class="path"><strong>决策路径：</strong>监测数据异常 → 提出CFCs破坏假说 → 化学机理研究（Cl原子催化分解臭氧）→ 实验室模拟验证 → 国际谈判 → 蒙特利尔议定书 → 替代品研发</div>
+      <div class="result"><strong>结果：</strong>全球禁用CFCs，臭氧层逐步修复。</div>
+      <div class="insight"><strong>可迁移启示：</strong>化学与环境政策密切相关；科学数据推动全球治理；科技进步需要配套监管机制。</div>
+      <div style="margin:12px 0;font-size:14px;font-weight:600;">📊 多结局模拟</div>
+      <div class="ending-grid">
+        <div class="ending-card ending-a"><strong>结局 A</strong><br>未达成国际协议 → 臭氧层持续破坏，皮肤癌发病率大幅上升</div>
+        <div class="ending-card ending-b"><strong>结局 B</strong><br>替代技术未成熟 → 部分国家退出协议，修复进程缓慢</div>
+        <div class="ending-card ending-c"><strong>结局 C（真实历史）</strong><br>技术进步与政策协同，臭氧层2050年有望完全修复</div>
+      </div>
+      <button class="decision-btn" onclick="toggleDecision('dec-4')">🤔 如果你是决策者</button>
+      <div class="decision-box" id="dec-4">
+        <strong>如果你是1987年蒙特利尔会议代表：</strong>你的国家靠CFCs产业支撑经济，你会投赞成票还是反对票？请阐述理由。
+        <textarea placeholder="写下你的思路..."></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">📌 历史是一面镜子——从真实案例中汲取化学思维的力量</div>
+</div>
+
+<script>
+function toggleDecision(id) {
+  var box = document.getElementById(id);
+  if (!box) return;
+  box.classList.toggle('show');
+}
+</script>
+</body>
+</html>

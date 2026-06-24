@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性案例</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 30px 24px;
+  box-sizing: border-box;
+}
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 24px 0 12px;
+  font-weight: 600;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--accent);
+}
+.subtitle {
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+.case-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.case-tab {
+  padding: 6px 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.case-tab:hover { border-color: var(--primary); color: var(--primary); }
+.case-tab.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.case-tab .diff {
+  font-size: 11px;
+  margin-left: 3px;
+}
+.case-content {
+  display: none;
+}
+.case-content.active {
+  display: block;
+}
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.case-card h3 {
+  font-size: 17px;
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+.case-card h4 {
+  font-size: 14px;
+  color: var(--text);
+  margin: 12px 0 6px;
+  font-weight: 600;
+}
+.case-card .meta-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.case-card .meta-line .tag {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 12px;
+}
+.case-card .meta-line .tag.level1 { background: #f6ffed; color: #389e0d; }
+.case-card .meta-line .tag.level2 { background: #fff7e6; color: #d46b08; }
+.case-card .meta-line .tag.level3 { background: #fff1f0; color: #cf1322; }
+.case-card .meta-line .tag.level4 { background: #f9f0ff; color: #722ed1; }
+.step-list {
+  list-style: none;
+  counter-reset: step;
+  padding: 0;
+}
+.step-list li {
+  counter-increment: step;
+  padding: 8px 0 8px 32px;
+  position: relative;
+  border-bottom: 1px dashed var(--border);
+  font-size: 14px;
+}
+.step-list li:last-child { border-bottom: none; }
+.step-list li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+.rubric {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-top: 10px;
+}
+.rubric li {
+  padding: 4px 0;
+  font-size: 13px;
+  list-style: none;
+  position: relative;
+  padding-left: 22px;
+}
+.rubric li::before {
+  content: "☑";
+  position: absolute;
+  left: 0;
+  color: var(--primary);
+}
+.scaffold-box {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+  font-size: 14px;
+}
+.scaffold-box strong { color: #d48806; }
+.principle-ref {
+  color: var(--primary);
+  font-weight: 500;
+  font-size: 13px;
+}
+.toggle-steps {
+  color: var(--primary-hover);
+  cursor: pointer;
+  font-size: 13px;
+  user-select: none;
+}
+.steps-collapsed .step-list { display: none; }
+.btn-reset {
+  display: inline-block;
+  padding: 8px 20px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 16px;
+}
+.btn-reset:hover { background: var(--primary-hover); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>🧪 建构性七阶案例</h1>
+  <div class="subtitle">M15 新知三创性应用 · 化学 · 九年级上</div>
+
+  <p>下面有 <strong>7个不同层级</strong>的真实情境案例。逐阶挑战，每完成一阶，你就在建构能力的天梯上又上一级！点击标签切换案例。</p>
+
+  <!-- 案例切换标签 -->
+  <div class="case-tabs" id="caseTabs">
+    <span class="case-tab active" data-case="0" onclick="switchCase(0)">第1阶<span class="diff">★</span></span>
+    <span class="case-tab" data-case="1" onclick="switchCase(1)">第2阶<span class="diff">★★</span></span>
+    <span class="case-tab" data-case="2" onclick="switchCase(2)">第3阶<span class="diff">★★</span></span>
+    <span class="case-tab" data-case="3" onclick="switchCase(3)">第4阶<span class="diff">★★★</span></span>
+    <span class="case-tab" data-case="4" onclick="switchCase(4)">第5阶<span class="diff">★★★</span></span>
+    <span class="case-tab" data-case="5" onclick="switchCase(5)">第6阶<span class="diff">★★★★</span></span>
+    <span class="case-tab" data-case="6" onclick="switchCase(6)">第7阶<span class="diff">★★★★</span></span>
+  </div>
+
+  <!-- 案例1 -->
+  <div class="case-content active" data-case="0">
+    <div class="case-card">
+      <h3>第1阶 · 个人理解型：物质变化概念图创作</h3>
+      <div class="meta-line">
+        <span class="tag level1">个人经验</span>
+        <span class="tag level1">★ 基础</span>
+        <span class="tag">概念解释/模型图</span>
+      </div>
+      <p><strong>真实建构情境：</strong>你刚学完"物理变化与化学变化"的概念，但翻书时发现两者很容易混淆。你的同桌问你："冰融化成水是什么变化？蜡烛燃烧又是什么变化？你怎么判断的？"</p>
+      <h4>🎯 建构任务</h4>
+      <p>创作一张<strong>"物质变化分类概念图"</strong>，用你自己的逻辑清晰地展示物理变化与化学变化的判断路径。</p>
+      <p class="principle-ref">建议调用原理：原理③ 模型建构 + 原理④ 表达输出</p>
+      <h4>📋 建构步骤</h4>
+      <ol class="step-list">
+        <li>列出课本中提到的所有变化实例（熔化成水、铁生锈、木柴燃烧、酒精挥发……），至少10个</li>
+        <li>按"物理变化 / 化学变化"初步分类，标注你的判断依据</li>
+        <li>提炼两类变化的本质区别（有无新物质生成），提炼判断关键词</li>
+        <li>画出概念图——可以是树状图、Venn图或流程图，标注关键特征</li>
+        <li>用你自己的实例验证概念图（至少找3个新例子测试）</li>
+        <li>完善并工整呈现最终版本</li>
+      </ol>
+      <div class="scaffold-box">
+        <strong>🧰 脚手架推荐：</strong>用"是 → 否"二分法画判断流程图：有新物质生成？→ 化学变化；无新物质生成？→ 物理变化。每个分支附上2个实例。
+      </div>
+      <h4>📤 成果表达</h4>
+      <p><strong>成果名称：</strong>"我的物质变化概念图"<br>
+      <strong>格式：</strong>A4纸手绘或数字绘图<br>
+      <strong>呈现建议：</strong>中心写"物质变化"，两大分支为"物理变化"和"化学变化"，每个分支下至少5个实例和判断依据。</p>
+      <div class="rubric">
+        <strong>自评量规：</strong>
+        <li>我的概念图包含物理变化和化学变化两大分支</li>
+        <li>每个分支至少列出5个实例</li>
+        <li>每个实例旁边标注了判断依据</li>
+        <li>概念图有清晰的层次结构，别人能看懂</li>
+        <li>我自己用这张图能准确判断任意新实例</li>
+      </div>
+    </div>
+  </div>
+
+  <!-- 案例2 -->
+  <div class="case-content" data-case="1">
+    <div class="case-card">
+      <h3>第2阶 · 生活应用型：厨房化学安全指南</h3>
+      <div class="meta-line">
+        <span class="tag level2">家庭/社区</span>
+        <span class="tag level2">★★ 进阶</span>
+        <span class="tag">生活化学方案</span>
+      </div>
+      <p><strong>真实建构情境：</strong>妈妈在厨房里用白醋除水垢（水垢主要成分是碳酸钙），你注意到白醋倒下去时冒出很多气泡。你立刻联想到课本中"化学变化伴随现象"的内容。你决定给家人写一份<strong>"厨房化学安全操作指南"</strong>。</p>
+      <h4>🎯 建构任务</h4>
+      <p>基于化学变化原理，制作一份面向家人的"厨房化学安全指南"，重点解释3种常见的厨房化学变化及其安全操作要点。</p>
+      <p class="principle-ref">建议调用原理：原理① 情境感知 + 原理④ 表达输出</p>
+      <ol class="step-list">
+        <li>观察厨房中至少3种涉及化学变化的现象（如：小苏打+醋产生气泡、切开的苹果变褐、铁锅生锈）</li>
+        <li>查资料确认这些变化背后的化学反应原理</li>
+        <li>针对每个变化，分析可能的安全隐患（如：两种清洁剂混用可能产生有毒气体）</li>
+        <li>为每个变化编写"安全操作建议"和"应急处理方法"</li>
+        <li>将上述内容整理成一份图文并茂的"厨房化学安全卡"</li>
+      </ol>
+      <div class="scaffold-box">
+        <strong>🧰 脚手架推荐：</strong>用"现象→原理→风险→建议"四栏表格整理。关键句模板："当你看到____时，说明发生了化学变化，因为____。需要注意____。"
+      </div>
+      <h4>📤 成果表达</h4>
+      <p><strong>成果名称：</strong>"我家厨房化学安全指南"<br>
+      <strong>格式：</strong>一页A4折页或卡片<br>
+      <strong>呈现建议：</strong>用图标+短句，贴在家里厨房显眼处。</p>
+      <div class="rubric">
+        <strong>自评量规：</strong>
+        <li>包含至少3种厨房化学变化及其原理说明</li>
+        <li>每种变化都有安全操作建议</li>
+        <li>语言通俗，家人能看懂</li>
+        <li>有应急处理的提示</li>
+        <li>设计美观，适合贴在厨房</li>
+      </div>
+    </div>
+  </div>
+
+  <!-- 案例3 -->
+  <div class="case-content" data-case="2">
+    <div class="case-card">
+      <h3>第3阶 · 校园问题解决型：实验室药品标识改进方案</h3>
+      <div class="meta-line">
+        <span class="tag level2">学校</span>
+        <span class="tag level2">★★ 进阶</span>
+        <span class="tag">校园化学建议</span>
+      </div>
+      <p><strong>真实建构情境：</strong>在学校化学实验室里，你发现有些试剂瓶的标签已经模糊不清，甚至脱落了。老师告诉大家："这些未知药品不能随意丢弃或混合。"化学实验室需要一套更科学的标识系统。</p>
+      <h4>🎯 建构任务</h4>
+      <p>为学校化学实验室设计一份<strong>"药品标识改进方案"</strong>，包括标识分类标准、标签内容模板和摆放建议。</p>
+      <p class="principle-ref">建议调用原理：原理② 证据驱动 + 原理③ 模型建构</p>
+      <ol class="step-list">
+        <li>实地调查实验室药品柜现状，记录标识问题（模糊、缺失、不统一等）</li>
+        <li>收集证据：哪种药品的标签最容易损坏？损坏的原因是什么？</li>
+        <li>设计分类标准——按物理性质/化学性质/危险性分类</li>
+        <li>制作标签模板：药品名称、化学式、性质类别、安全图标、存放位置</li>
+        <li>形成完整的改进方案书</li>
+      </ol>
+      <div class="scaffold-box">
+        <strong>🧰 脚手架推荐：</strong>参考化学危险品标识符号。用"问题→原因→解决方案"三栏分析法。
+      </div>
+      <h4>📤 成果表达</h4>
+      <p><strong>成果名称：</strong>"实验室药品标识改进方案"<br>
+      <strong>格式：</strong>方案书（含设计图和文字说明）<br>
+      <strong>呈现建议：</strong>包含现状分析、设计方案和预期效果三部分。</p>
+      <div class="rubric">
+        <strong>自评量规：</strong>
+        <li>有实验室现状调查记录</li>
+        <li>分类标准有化学原理依据</li>
+        <li>标签模板完整，包含必要信息</li>
+        <li>方案可操作、好落地</li>
+        <li>考虑了药品存放的安全要求</li>
+      </div>
+    </div>
+  </div>
+
+  <!-- 案例4 -->
+  <div class="case-content" data-case="3">
+    <div class="case-card">
+      <h3>第4阶 · 学科表达型：蜡烛燃烧深度分析报告</h3>
+      <div class="meta-line">
+        <span class="tag level3">学科领域</span>
+        <span class="tag level3">★★★ 挑战</span>
+        <span class="tag">化学分析报告</span>
+      </div>
+      <p><strong>真实建构情境：</strong>蜡烛燃烧看似简单，但背后涉及复杂的化学变化过程。假设你是化学小研究员，需要写一份关于"蜡烛燃烧中的化学变化"的深度分析报告，呈现你对这一常见现象的化学理解深度。</p>
+      <h4>🎯 建构任务</h4>
+      <p>撰写<strong>"蜡烛燃烧化学分析报告"</strong>，从物质变化、能量变化、产物检验三个维度展开。</p>
+      <p class="principle-ref">建议调用原理：原理① 情境感知 + 原理② 证据驱动 + 原理④ 表达输出</p>
+      <ol class="step-list">
+        <li>仔细观察蜡烛燃烧全过程（火焰分层、烛泪、黑烟、气味……），记录至少8个现象</li>
+        <li>区分物理变化（蜡烛熔化）和化学变化（燃烧反应），标注每个现象的类型</li>
+        <li>设计产物检验方案：用干燥烧杯罩在火焰上方检验水，用涂石灰水的烧杯检验二氧化碳</li>
+        <li>分析能量变化——化学能转化为光能和热能</li>
+        <li>写出"变化方程式"（文字表达式）：石蜡+氧气 → 二氧化碳+水+能量</li>
+        <li>整合分析维度，形成完整报告</li>
+      </ol>
+      <div class="scaffold-box">
+        <strong>🧰 脚手架推荐：</strong>用"现象记录表"+"分类判断"+"实验验证"三步法。报告框架：引言→现象记录→变化分析→实验验证→结论。
+      </div>
+      <h4>📤 成果表达</h4>
+      <p><strong>成果名称：</strong>"蜡烛燃烧化学分析报告"<br>
+      <strong>格式：</strong>短报告（500字左右，含实验数据）<br>
+      <strong>呈现建议：</strong>配燃烧示意图和产物检验实验图。</p>
+      <div class="rubric">
+        <strong>自评量规：</strong>
+        <li>记录了至少8个燃烧现象</li>
+        <li>正确区分了物理变化和化学变化</li>
+        <li>有产物检验的实验设计</li>
+        <li>分析报告有逻辑结构</li>
+        <li>得出了有证据支撑的结论</li>
+      </div>
+    </div>
+  </div>
+
+  <!-- 案例5 -->
+  <div class="case-content" data-case="4">
+    <div class="case-card">
+      <h3>第5阶 · 跨学科整合型：厨房"小苏打"的多维研究</h3>
+      <div class="meta-line">
+        <span class="tag level3">多学科交叉</span>
+        <span class="tag level3">★★★ 挑战</span>
+        <span class="tag">整合方案</span>
+      </div>
+      <p><strong>真实建构情境：</strong>小苏打（碳酸氢钠）是厨房常备品——烘焙用它发面，清洁用它去污，甚至有人用它做简易灭火器。为什么同一种物质有这么多用途？这背后关联着化学、物理、生物等多学科知识。</p>
+      <h4>🎯 建构任务</h4>
+      <p>制作一份<strong>"小苏打跨学科研究档案"</strong>，从化学性质出发，辐射到3个以上学科的应用解释。</p>
+      <p class="principle-ref">建议调用原理：原理③ 模型建构 + 原理⑤ 反思优化</p>
+      <ol class="step-list">
+        <li>查资料确认小苏打的化学性质（受热分解、与酸反应、水溶液呈弱碱性）</li>
+        <li>将每种性质映射到实际用途（受热分解→烘焙发面；与酸反应→去污）</li>
+        <li>跨学科扩展：生物（消化中的酸碱中和）、物理（灭火器原理——产生CO₂）、环境（绿色清洁）</li>
+        <li>以"小苏打"为中心，画出跨学科知识网络图</li>
+        <li>反思：还有什么用途可以补充？你的网络图有哪些连接可以强化？</li>
+      </ol>
+      <div class="scaffold-box">
+        <strong>🧰 脚手架推荐：</strong>中心辐射式思维导图：中心写"小苏打NaHCO₃"，辐射分支为"化学性质→应用领域→学科连接"。每个分支标注引用来源。
+      </div>
+      <h4>📤 成果表达</h4>
+      <p><strong>成果名称：</strong>"小苏打跨学科研究档案"<br>
+      <strong>格式：</strong>思维导图+简短文字说明<br>
+      <strong>呈现建议：</strong>用不同颜色区分不同学科，连线上标注"如何连接"。
+      </p>
+      <div class="rubric">
+        <strong>自评量规：</strong>
+        <li>小苏打的化学性质描述准确</li>
+        <li>至少覆盖3个学科</li>
+        <li>每个跨学科连接有合理解释</li>
+        <li>思维导图层次清晰</li>
+        <li>有反思和改进空间</li>
+      </div>
+    </div>
+  </div>
+
+  <!-- 案例6 -->
+  <div class="case-content" data-case="5">
+    <div class="case-card">
+      <h3>第6阶 · 社会/未来情境型：未来城市"零锈蚀"方案</h3>
+      <div class="meta-line">
+        <span class="tag level4">社会/未来</span>
+        <span class="tag level4">★★★★ 高阶</span>
+        <span class="tag">社会化学建议</span>
+      </div>
+      <p><strong>真实建构情境：</strong>据统计，中国每年因金属锈蚀造成的经济损失高达数千亿元。埃菲尔铁塔每隔7年就要彻底除锈重漆。假设你是"未来城市材料"规划师，请设计一份面向2060年的<strong>"零锈蚀城市"方案</strong>。</p>
+      <h4>🎯 建构任务</h4>
+      <p>撰写<strong>"未来城市零锈蚀可行性方案"</strong>，分析锈蚀原理，提出至少3种防锈策略，评估其可行性和成本。</p>
+      <p class="principle-ref">建议调用原理：原理① 情境感知 + 原理② 证据驱动 + 原理⑤ 反思优化</p>
+      <ol class="step-list">
+        <li>分析金属锈蚀的化学原理（铁与氧气、水反应生成铁锈）</li>
+        <li>调研现有防锈技术（涂层、镀层、合金、阴极保护等），收集优缺点</li>
+        <li>提出至少3种创新防锈方案（如：自修复涂层、超疏水材料、微生物防锈）</li>
+        <li>为每种方案做"可行性评估"（成本、效果、环保性、寿命）</li>
+        <li>撰写方案总结，提出个人推荐方案</li>
+      </ol>
+      <div class="scaffold-box">
+        <strong>🧰 脚手架推荐：</strong>用"原理→方案→评估→推荐"四段结构。用SWOT分析法评估每种方案。
+      </div>
+      <h4>📤 成果表达</h4>
+      <p><strong>成果名称：</strong>"未来城市零锈蚀方案"<br>
+      <strong>格式：</strong>提案报告（含对比评估表）<br>
+      <strong>呈现建议：</strong>用对比表格展示3种方案的各项指标得分。</p>
+      <div class="rubric">
+        <strong>自评量规：</strong>
+        <li>锈蚀原理解释准确</li>
+        <li>至少提出3种防锈方案</li>
+        <li>每种方案有可行性评估</li>
+        <li>方案有创新性和未来感</li>
+        <li>整体方案逻辑自洽</li>
+      </div>
+    </div>
+  </div>
+
+  <!-- 案例7 -->
+  <div class="case-content" data-case="6">
+    <div class="case-card">
+      <h3>第7阶 · 综合创新型：设计一个化学探究项目</h3>
+      <div class="meta-line">
+        <span class="tag level4">综合</span>
+        <span class="tag level4">★★★★ 高阶</span>
+        <span class="tag">完整创新成果</span>
+      </div>
+      <p><strong>真实建构情境：</strong>学校要举办"校园科技节"，你在化学实验室发现了几种常见物质——白醋、小苏打、铁钉、铜丝、石灰水。你需要利用这些材料，设计一个有科学价值的<strong>原创化学探究项目</strong>，在科技节上展示。</p>
+      <h4>🎯 建构任务</h4>
+      <p>设计并呈现一个完整的<strong>原创化学探究项目</strong>（从提出问题→设计方案→预期成果→展示方案）。</p>
+      <p class="principle-ref">建议调用原理：全部5条原理综合运用</p>
+      <ol class="step-list">
+        <li>从给定材料中发现问题（如：铁钉在不同溶液中的腐蚀速度？小苏打和白醋的比例与产气量的关系？）</li>
+        <li>提出可探究的科学问题，形成假设</li>
+        <li>设计实验方案（变量控制、步骤设计、数据记录表）</li>
+        <li>运用原理②（证据驱动）设计数据记录方式</li>
+        <li>预期成果建模——预测可能的实验结果并准备多套解释方案</li>
+        <li>设计科技节展示方案（展板、互动、讲解词）</li>
+        <li>反思优化：这个项目可能有什么局限？怎么改进？</li>
+      </ol>
+      <div class="scaffold-box">
+        <strong>🧰 脚手架推荐：</strong>用"PBL项目设计模板"：驱动问题→探究目标→实验设计→数据收集→结论展示。加入"如果……会怎样？"的思维实验。
+      </div>
+      <h4>📤 成果表达</h4>
+      <p><strong>成果名称：</strong>"校园科技节化学探究项目方案"<br>
+      <strong>格式：</strong>项目计划书+展板设计草图<br>
+      <strong>呈现建议：</strong>包含海报、实验演示视频脚本、互动提问卡。</p>
+      <div class="rubric">
+        <strong>自评量规：</strong>
+        <li>提出了一个有探究价值的科学问题</li>
+        <li>实验方案有变量控制设计</li>
+        <li>考虑了多套可能的实验结果</li>
+        <li>展示方案有互动性和吸引力</li>
+        <li>体现了建构性原理的综合运用</li>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align: center; margin-top: 20px;">
+    <button class="btn-reset" onclick="resetToFirst()">🔄 回到第1阶</button>
+  </div>
+
+</div>
+
+<script>
+var currentCase = 0;
+
+function switchCase(index) {
+  currentCase = index;
+  var tabs = document.querySelectorAll('.case-tab');
+  var contents = document.querySelectorAll('.case-content');
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].classList.toggle('active', i === index);
+  }
+  for (var j = 0; j < contents.length; j++) {
+    contents[j].classList.toggle('active', j === index);
+  }
+}
+
+function resetToFirst() {
+  switchCase(0);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>作业榜 — 知识内化与表达</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  padding: 0;
+}
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 6px; }
+.header p { font-size: 14px; opacity: 0.9; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bg);
+}
+.card h3 {
+  font-size: 16px;
+  color: var(--text);
+  margin: 14px 0 8px;
+}
+.task-icon {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  margin-right: 8px;
+}
+.icon-basic { background: #52c41a; }
+.icon-middle { background: #fa8c16; }
+.icon-open { background: #722ed1; }
+.level-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.level-tab {
+  padding: 8px 18px;
+  border-radius: 20px;
+  border: 2px solid var(--border);
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: all 0.3s;
+}
+.level-tab:hover { border-color: var(--primary); color: var(--primary); }
+.level-tab.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.task-panel { display: none; }
+.task-panel.active { display: block; }
+.task-list { list-style: none; padding: 0; }
+.task-list li {
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: var(--bg);
+  border-radius: 6px;
+  border-left: 3px solid var(--primary);
+  font-size: 14px;
+}
+.task-list li::before { content: "◆ "; color: var(--primary); }
+.task-abc { display: flex; flex-direction: column; gap: 10px; }
+.task-abc .abc-item {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--accent);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.task-abc .abc-item:hover { background: #e6f0ff; }
+.task-abc .abc-item .abc-label {
+  font-weight: 700;
+  display: inline-block;
+  width: 60px;
+  color: var(--primary);
+}
+.task-abc .abc-item .abc-detail { display: none; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); font-size: 14px; color: var(--text-secondary); }
+.task-abc .abc-item.revealed .abc-detail { display: block; }
+.rubric-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 640px) { .rubric-grid { grid-template-columns: 1fr; } }
+.rubric-item {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 12px;
+  text-align: center;
+}
+.rubric-item .rubric-name { font-size: 14px; font-weight: 600; }
+.rubric-item .rubric-weight { font-size: 20px; font-weight: 700; color: var(--primary); margin: 4px 0; }
+.rubric-item .rubric-desc { font-size: 12px; color: var(--text-secondary); }
+.action-bar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.btn {
+  padding: 10px 22px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-outline { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
+.btn-outline:hover { background: var(--bg); }
+.creative-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 640px) { .creative-options { grid-template-columns: 1fr; } }
+.creative-card {
+  text-align: center;
+  padding: 16px 12px;
+  border-radius: 6px;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.creative-card:hover { border-color: var(--primary); background: var(--bg); }
+.creative-card.selected { border-color: var(--primary); background: #e6f0ff; }
+.creative-card .emoji { font-size: 32px; display: block; margin-bottom: 6px; }
+.creative-card .label { font-size: 14px; font-weight: 600; }
+.creative-card .desc { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>📋 作业榜</h1>
+    <p>三层任务设计 · 知识内化与表达 · 化学·九年级</p>
+  </div>
+
+  <div class="card">
+    <h2>🧩 选择你的挑战层级</h2>
+    <div class="level-tabs">
+      <div class="level-tab active" data-level="basic" onclick="switchLevel('basic')">基础层</div>
+      <div class="level-tab" data-level="abc" onclick="switchLevel('abc')">分层任务</div>
+      <div class="level-tab" data-level="open" onclick="switchLevel('open')">开放层</div>
+      <div class="level-tab" data-level="rubric" onclick="switchLevel('rubric')">评价标准</div>
+    </div>
+
+    <div class="task-panel active" id="panel-basic">
+      <h3><span class="task-icon icon-basic">基</span> 再现与理解</h3>
+      <ul class="task-list">
+        <li>列举5个生活中常见的<strong>物理变化</strong>和5个<strong>化学变化</strong>，并说明你的判断依据</li>
+        <li>完成概念填空：物理变化是指<strong>没有生成其他物质</strong>的变化，化学变化是指<strong>生成了其他物质</strong>的变化</li>
+        <li>对照教材，填写常见化学仪器的名称和用途匹配表</li>
+      </ul>
+    </div>
+
+    <div class="task-panel" id="panel-abc">
+      <h3><span class="task-icon icon-middle">分</span> 分层任务（A / B / C 选一题）</h3>
+      <div class="task-abc">
+        <div class="abc-item" onclick="toggleAbc(this)">
+          <div><span class="abc-label">A层 · 基础巩固</span>给出一组现象描述（如"玻璃破碎""纸张燃烧"），分类并说明理由</div>
+          <div class="abc-detail">💡 提示：注意区分现象和本质。玻璃破碎只是形状变化，没有新物质生成；纸张燃烧产生了新物质（如二氧化碳、水蒸气）。</div>
+        </div>
+        <div class="abc-item" onclick="toggleAbc(this)">
+          <div><span class="abc-label">B层 · 应用分析</span>给出一段生活场景描述（如"铁锅生锈""食物冷藏"），分析其中的变化类型和性质</div>
+          <div class="abc-detail">💡 提示：铁锅生锈是化学变化（铁与空气中的氧气、水反应生成铁锈），食物冷藏是物理变化（温度降低，没有新物质生成）。</div>
+        </div>
+        <div class="abc-item" onclick="toggleAbc(this)">
+          <div><span class="abc-label">C层 · 综合探究</span>设计一个家庭小实验，验证"食盐溶解在水中是物理变化还是化学变化"</div>
+          <div class="abc-detail">💡 提示：可以将食盐水加热蒸发，观察是否有白色固体析出。如果析出的固体就是食盐本身，说明溶解过程没有产生新物质，属于物理变化。</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="task-panel" id="panel-open">
+      <h3><span class="task-icon icon-open">创</span> 创造性表达（选一项完成）</h3>
+      <div class="creative-options">
+        <div class="creative-card" onclick="selectCreative(this)">
+          <span class="emoji">✍️</span>
+          <span class="label">化学日记</span>
+          <span class="desc">写一篇"我的化学变化日记"，记录一天中遇到的所有变化</span>
+        </div>
+        <div class="creative-card" onclick="selectCreative(this)">
+          <span class="emoji">🎨</span>
+          <span class="label">比较海报</span>
+          <span class="desc">绘制"物理变化与化学变化"比较海报（A3尺寸）</span>
+        </div>
+        <div class="creative-card" onclick="selectCreative(this)">
+          <span class="emoji">🎬</span>
+          <span class="label">短视频</span>
+          <span class="desc">录制3分钟短视频，用3个生活例子讲解变化区分方法</span>
+        </div>
+        <div class="creative-card" onclick="selectCreative(this)">
+          <span class="emoji">🎤</span>
+          <span class="label">口头报告</span>
+          <span class="desc">2分钟口头报告："为什么说化学变化是物质世界的引擎"</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="task-panel" id="panel-rubric">
+      <h3>📊 评价标准（Rubric）</h3>
+      <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">所有作业按以下四个维度评价，点击可查看详细说明：</p>
+      <div class="rubric-grid">
+        <div class="rubric-item" onclick="highlightRubric(this)" style="cursor:pointer;">
+          <div class="rubric-name">科学性</div>
+          <div class="rubric-weight">40%</div>
+          <div class="rubric-desc">概念使用准确，无知识性错误</div>
+        </div>
+        <div class="rubric-item" onclick="highlightRubric(this)" style="cursor:pointer;">
+          <div class="rubric-name">完整性</div>
+          <div class="rubric-weight">30%</div>
+          <div class="rubric-desc">覆盖要求的所有内容要素</div>
+        </div>
+        <div class="rubric-item" onclick="highlightRubric(this)" style="cursor:pointer;">
+          <div class="rubric-name">表达性</div>
+          <div class="rubric-weight">20%</div>
+          <div class="rubric-desc">清晰、有条理、有创意</div>
+        </div>
+        <div class="rubric-item" onclick="highlightRubric(this)" style="cursor:pointer;">
+          <div class="rubric-name">反思性</div>
+          <div class="rubric-weight">10%</div>
+          <div class="rubric-desc">能指出自己的困惑或新发现</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📝 提交说明</h2>
+    <ul class="task-list">
+      <li>基础层任务：课堂完成，当堂互批</li>
+      <li>分层任务：课后选一题完成，下次课前提交</li>
+      <li>开放层任务：本周内完成，可选个人或小组合作</li>
+    </ul>
+    <div class="action-bar">
+      <button class="btn btn-primary" onclick="alert('作业清单已保存！请按层级要求完成并提交。')">📥 保存作业清单</button>
+      <button class="btn btn-outline" onclick="resetAll()">🔄 重置选择</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchLevel(level) {
+  document.querySelectorAll('.level-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.task-panel').forEach(p => p.classList.remove('active'));
+  document.querySelector('.level-tab[data-level="'+level+'"]').classList.add('active');
+  document.getElementById('panel-'+level).classList.add('active');
+}
+function toggleAbc(el) {
+  el.classList.toggle('revealed');
+}
+function selectCreative(el) {
+  el.classList.toggle('selected');
+}
+function highlightRubric(el) {
+  document.querySelectorAll('.rubric-item').forEach(r => r.style.background = '');
+  el.style.background = '#e6f0ff';
+}
+function resetAll() {
+  document.querySelectorAll('.creative-card').forEach(c => c.classList.remove('selected'));
+  document.querySelectorAll('.abc-item').forEach(a => a.classList.remove('revealed'));
+  document.querySelectorAll('.rubric-item').forEach(r => r.style.background = '');
+  switchLevel('basic');
+}
+</script>
+</body>
+</html>

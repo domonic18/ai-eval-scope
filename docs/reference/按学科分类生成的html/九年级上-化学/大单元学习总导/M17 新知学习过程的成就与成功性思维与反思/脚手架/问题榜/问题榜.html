@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>化学问题榜·三层进阶闯关</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+  --score-color: #52c41a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  margin: 0; padding: 0;
+}
+
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 32px 40px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 6px; }
+.header p { font-size: 14px; opacity: 0.9; }
+
+/* Layer Tabs */
+.tier-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.tier-tab {
+  flex: 1;
+  min-width: 160px;
+  padding: 14px 16px;
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+}
+.tier-tab:hover { border-color: var(--primary); color: var(--primary); }
+.tier-tab.active {
+  border-color: var(--primary);
+  background: linear-gradient(135deg, #e6f4ff, #f0f5ff);
+  color: var(--primary);
+}
+
+/* Score display */
+.score-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--card-bg);
+  padding: 12px 20px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.score-bar .label { font-weight: 600; font-size: 14px; }
+.score-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 14px;
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--score-color);
+}
+.score-badge span { font-size: 18px; }
+
+/* Tier content */
+.tier { display: none; }
+.tier.active { display: block; }
+
+/* Question card */
+.q-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 20px;
+  border-left: 4px solid var(--primary);
+}
+.q-card.q-basic { border-left-color: var(--primary); }
+.q-card.q-adv { border-left-color: #d46b08; }
+.q-card.q-challenge { border-left-color: #722ed1; }
+
+.q-card .q-number {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+.q-card.q-basic .q-number { background: #e6f4ff; color: var(--primary); }
+.q-card.q-adv .q-number { background: #fff7e6; color: #d46b08; }
+.q-card.q-challenge .q-number { background: #f9f0ff; color: #722ed1; }
+
+.q-card h3 { font-size: 15px; margin-bottom: 8px; line-height: 1.6; }
+
+/* Sticky note style for tips */
+.qa-hint {
+  background: #fffbe6;
+  border: 1px dashed #faad14;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.qa-hint:hover { background: #fff8d6; }
+.qa-hint .hint-label { color: #d48806; font-weight: 700; }
+.qa-hint .hint-body { display: none; margin-top: 8px; color: var(--text); }
+.qa-hint .hint-body.revealed { display: block; }
+
+/* Interaction - self rating */
+.rating-row {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+  flex-wrap: wrap;
+}
+.rating-btn {
+  padding: 6px 18px;
+  border: 2px solid var(--border);
+  border-radius: 20px;
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+  color: var(--text-secondary);
+}
+.rating-btn:hover { border-color: var(--primary); color: var(--primary); }
+.rating-btn.selected {
+  border-color: var(--primary);
+  background: #e6f4ff;
+  color: var(--primary);
+  font-weight: 700;
+}
+.rating-btn.green.selected { border-color: var(--score-color); background: #f6ffed; color: #389e0d; }
+.rating-btn.orange.selected { border-color: #fa8c16; background: #fff7e6; color: #d46b08; }
+.rating-btn.red.selected { border-color: #ff4d4f; background: #fff1f0; color: #cf1322; }
+
+/* Collapsible analysis */
+.analysis-toggle {
+  margin-top: 12px;
+  border-top: 1px dashed var(--border);
+  padding-top: 12px;
+}
+.analysis-toggle .toggle-btn {
+  background: none;
+  border: none;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 4px 0;
+}
+.analysis-toggle .toggle-btn:hover { color: var(--primary-hover); }
+.analysis-body {
+  display: none;
+  margin-top: 10px;
+  padding: 14px;
+  background: #fafafa;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.analysis-body.revealed { display: block; }
+.analysis-body ul, .analysis-body ol { margin-left: 20px; }
+.analysis-body li { margin-bottom: 4px; }
+
+/* Special: metacognition highlight */
+.meta-box {
+  background: linear-gradient(135deg, #f9f0ff, #f0f5ff);
+  border: 2px solid #722ed1;
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin: 16px 0;
+}
+.meta-box h4 { color: #722ed1; font-size: 15px; margin-bottom: 10px; }
+
+/* Notes input */
+.note-input {
+  width: 100%;
+  min-height: 60px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  margin-top: 10px;
+  transition: border-color 0.2s;
+}
+.note-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(22,119,255,0.1);
+}
+
+/* Reset btn */
+.reset-btn {
+  display: inline-block;
+  padding: 8px 24px;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+.reset-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container { padding: 12px 16px; }
+  .header { padding: 20px; }
+  .tier-tabs { flex-direction: column; }
+  .tier-tab { min-width: auto; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>📋 化学问题榜</h1>
+    <p>三层递进式闯关 · 从基础识别到元认知反思</p>
+  </div>
+
+  <!-- Score Bar -->
+  <div class="score-bar">
+    <span class="label">🏆 自评得分</span>
+    <div class="score-badge">
+      <span id="scoreDisplay">0</span> / 9
+    </div>
+    <span style="font-size:13px;color:var(--text-secondary);" id="scoreHint">完成问题后点击自评按钮计分</span>
+    <button class="reset-btn" onclick="resetAll()" style="margin-left:auto;">🔄 重置</button>
+  </div>
+
+  <!-- Tier Tabs -->
+  <div class="tier-tabs">
+    <div class="tier-tab active" onclick="switchTier(0)">🌱 基础层 · 理解与识别</div>
+    <div class="tier-tab" onclick="switchTier(1)">🌿 进阶层 · 分析与应用</div>
+    <div class="tier-tab" onclick="switchTier(2)">🔥 挑战层 · 创造与批判</div>
+  </div>
+
+  <!-- 基础层 -->
+  <div class="tier active" id="tier0">
+    <div class="q-card q-basic">
+      <div class="q-number">Q1 · 识别</div>
+      <h3>下面的描述中，哪个属于化学变化？哪个属于物理变化？并说明判断依据。</h3>
+      <p style="margin-bottom:8px;">冰雪融化、铁器生锈、蜡烛燃烧、纸张撕碎</p>
+      <div class="rating-row">
+        <button class="rating-btn green" data-q="1" data-score="1" onclick="selfRate(this)">✅ 我能准确区分</button>
+        <button class="rating-btn orange" data-q="1" data-score="0.5" onclick="selfRate(this)">🤔 大部分正确</button>
+        <button class="rating-btn red" data-q="1" data-score="0" onclick="selfRate(this)">❌ 需要复习</button>
+      </div>
+      <div class="qa-hint" onclick="toggleHint(this)">
+        <div class="hint-label">💡 点击查看解析</div>
+        <div class="hint-body">
+          <ul>
+            <li><strong>冰雪融化</strong>——物理变化（状态变化，H₂O 没有变成新物质）</li>
+            <li><strong>铁器生锈</strong>——化学变化（铁与氧气反应生成 Fe₂O₃，新物质出现）</li>
+            <li><strong>蜡烛燃烧</strong>——化学变化（蜡烛燃烧生成 CO₂ 和 H₂O）</li>
+            <li><strong>纸张撕碎</strong>——物理变化（形状变化，没有新物质生成）</li>
+          </ul>
+          <p style="margin-top:6px;"><strong>判断依据：</strong>核心标准是<strong>有无新物质生成</strong>，变化前后物质的化学组成是否改变。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="q-card q-basic">
+      <div class="q-number">Q2 · 判断</div>
+      <h3>有人说"一切化学变化都伴随着能量的变化"，这句话正确吗？请举例说明。</h3>
+      <div class="rating-row">
+        <button class="rating-btn green" data-q="2" data-score="1" onclick="selfRate(this)">✅ 我能准确判断并举例</button>
+        <button class="rating-btn orange" data-q="2" data-score="0.5" onclick="selfRate(this)">🤔 基本正确但举例不够</button>
+        <button class="rating-btn red" data-q="2" data-score="0" onclick="selfRate(this)">❌ 不确定</button>
+      </div>
+      <div class="qa-hint" onclick="toggleHint(this)">
+        <div class="hint-label">💡 点击查看解析</div>
+        <div class="hint-body">
+          <p><strong>正确。</strong>一切化学变化都伴随能量变化。</p>
+          <ul style="margin-top:6px;">
+            <li><strong>放热反应：</strong>铁丝燃烧放出大量热；中和反应（酸+碱）放热</li>
+            <li><strong>吸热反应：</strong>碳与二氧化碳反应生成一氧化碳（C+CO₂→2CO）需要吸热；多数分解反应需要加热</li>
+          </ul>
+          <p style="margin-top:6px;">能量变化通常以<strong>热能</strong>形式表现，但也可能是光能（发光）、电能（原电池）等形式。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="q-card q-basic">
+      <div class="q-number">Q3 · 分类</div>
+      <h3>将下列变化按照"化合反应、分解反应、置换反应"分类：</h3>
+      <p>① 铁 + 氧气 → 四氧化三铁 <br> ② 水 → 氢气 + 氧气 <br> ③ 锌 + 盐酸 → 氯化锌 + 氢气</p>
+      <div class="rating-row">
+        <button class="rating-btn green" data-q="3" data-score="1" onclick="selfRate(this)">✅ 全部正确分类</button>
+        <button class="rating-btn orange" data-q="3" data-score="0.5" onclick="selfRate(this)">🤔 部分正确</button>
+        <button class="rating-btn red" data-q="3" data-score="0" onclick="selfRate(this)">❌ 需要复习</button>
+      </div>
+      <div class="qa-hint" onclick="toggleHint(this)">
+        <div class="hint-label">💡 点击查看解析</div>
+        <div class="hint-body">
+          <ul>
+            <li>① 铁 + 氧气 → 四氧化三铁：<strong>化合反应</strong>（多变一）</li>
+            <li>② 水 → 氢气 + 氧气：<strong>分解反应</strong>（一变多）</li>
+            <li>③ 锌 + 盐酸 → 氯化锌 + 氢气：<strong>置换反应</strong>（单质+化合物→新单质+新化合物）</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 进阶层 -->
+  <div class="tier" id="tier1">
+    <div class="q-card q-adv">
+      <div class="q-number">Q4 · 开放设计</div>
+      <h3>如果给你一杯未知的透明液体，你最少需要做哪些测试才能确定它"可能是什么"？请设计一个检测方案。</h3>
+      <div class="rating-row">
+        <button class="rating-btn green" data-q="4" data-score="1" onclick="selfRate(this)">✅ 方案完整且逻辑清晰</button>
+        <button class="rating-btn orange" data-q="4" data-score="0.5" onclick="selfRate(this)">🤔 方案基本可行</button>
+        <button class="rating-btn red" data-q="4" data-score="0" onclick="selfRate(this)">❌ 没思路</button>
+      </div>
+      <div class="qa-hint" onclick="toggleHint(this)">
+        <div class="hint-label">💡 点击查看参考方案</div>
+        <div class="hint-body">
+          <p><strong>检测方案框架：</strong></p>
+          <ol>
+            <li><strong>第一步（物理性质）：</strong>观察颜色、闻气味（安全操作：扇闻法）、测量pH</li>
+            <li><strong>第二步（pH/酸碱性）：</strong>用pH试纸或紫色石蕊试液检测</li>
+            <li><strong>第三步（离子检验）：</strong>根据前期线索选择试剂——如加入AgNO₃（检验Cl⁻）、加入BaCl₂（检验SO₄²⁻）</li>
+            <li><strong>第四步（对比验证）：</strong>用已知物质做相同测试，对比现象</li>
+          </ol>
+          <p style="margin-top:6px;"><strong>最少测试：</strong>pH测试 + 焰色反应 + 特异性沉淀反应，3项测试可大致锁定范围。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="q-card q-adv">
+      <div class="q-number">Q5 · 对比分析</div>
+      <h3>都说"化学变化和物理变化的区别是有没有新物质生成"，但"蜡烛燃烧"同时包含两种变化。请分析：为什么同一种现象可以同时包含两种变化？它们是如何交织在一起的？</h3>
+      <div class="rating-row">
+        <button class="rating-btn green" data-q="5" data-score="1" onclick="selfRate(this)">✅ 能清晰分析交织关系</button>
+        <button class="rating-btn orange" data-q="5" data-score="0.5" onclick="selfRate(this)">🤔 理解但表达不够</button>
+        <button class="rating-btn red" data-q="5" data-score="0" onclick="selfRate(this)">❌ 需要帮助</button>
+      </div>
+      <div class="qa-hint" onclick="toggleHint(this)">
+        <div class="hint-label">💡 点击查看分析</div>
+        <div class="hint-body">
+          <p><strong>交织机制：</strong></p>
+          <p><strong>物理变化部分：</strong>蜡烛受热熔化（固态蜡→液态蜡→气态蜡），这是状态变化，没有新物质生成。</p>
+          <p><strong>化学变化部分：</strong>气态蜡（主要成分是烃类）与氧气发生燃烧反应，生成 CO₂ 和 H₂O，有新物质生成。</p>
+          <p style="margin-top:6px;"><strong>交织关系：</strong>物理变化为化学变化"铺路"——蜡必须先熔化、气化，才能与氧气充分接触燃烧。化学变化释放的热量又反过来维持物理变化继续发生。两者形成<strong>循环支撑</strong>的关系。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="q-card q-adv">
+      <div class="q-number">Q6 · 反事实假设</div>
+      <h3>如果地球上没有氧气，拉瓦锡还能不能推翻"燃素说"？你对化学的认识会有哪些不同？</h3>
+      <div class="rating-row">
+        <button class="rating-btn green" data-q="6" data-score="1" onclick="selfRate(this)">✅ 推理深刻</button>
+        <button class="rating-btn orange" data-q="6" data-score="0.5" onclick="selfRate(this)">🤔 有想法但不完整</button>
+        <button class="rating-btn red" data-q="6" data-score="0" onclick="selfRate(this)">❌ 不知从何说起</button>
+      </div>
+      <div class="qa-hint" onclick="toggleHint(this)">
+        <div class="hint-label">💡 点击查看思考方向</div>
+        <div class="hint-body">
+          <p><strong>思考方向：</strong></p>
+          <ul>
+            <li>如果没有氧气，燃烧现象就不存在，拉瓦锡无法通过燃烧实验发现氧气的存在</li>
+            <li>燃素说可能会被更晚地推翻，或通过其他反应（如金属与酸反应）被发现</li>
+            <li>元素周期表中氧元素可能不存在（或称为另一种元素），整个化学体系会完全不同</li>
+            <li>生命形式也会完全不同（因为没有有氧呼吸），可能根本不会有"人类"来研究化学</li>
+          </ul>
+          <p style="margin-top:6px;">💡 这是一个典型的<strong>反事实思考</strong>练习，考察你对核心概念在科学体系中"锚定作用"的理解深度。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 挑战层 -->
+  <div class="tier" id="tier2">
+    <div class="q-card q-challenge">
+      <div class="q-number">Q7 · 创造设计</div>
+      <h3>设计一个你理想中的"化学元素周期表展示墙"，不一定要和门捷列夫的一样，但一定要能说明"元素之间的规律关系"。你会用什么方式来展示？</h3>
+      <div class="rating-row">
+        <button class="rating-btn green" data-q="7" data-score="1" onclick="selfRate(this)">✅ 创意十足且有规律说明</button>
+        <button class="rating-btn orange" data-q="7" data-score="0.5" onclick="selfRate(this)">🤔 有想法但规律不够</button>
+        <button class="rating-btn red" data-q="7" data-score="0" onclick="selfRate(this)">❌ 还没想好</button>
+      </div>
+      <div class="qa-hint" onclick="toggleHint(this)">
+        <div class="hint-label">💡 点击查看创意参考</div>
+        <div class="hint-body">
+          <p><strong>创意方向参考：</strong></p>
+          <ul>
+            <li><strong>3D 立体建筑式：</strong>每层楼代表一个周期，层高随电子层数增加，元素按原子序数在楼层中排列</li>
+            <li><strong>彩虹光谱式：</strong>元素按族排列成彩虹色谱，颜色变化代表金属性-非金属性的渐变</li>
+            <li><strong>生态树状图：</strong>主干代表电子构型，分支伸展出各族的元素，树叶大小代表原子半径变化</li>
+            <li><strong>音乐键盘式：</strong>每个元素是一个琴键，音高代表原子序数，和声代表同族元素的相似性</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="q-card q-challenge">
+      <div class="q-number">Q8 · 批判思维</div>
+      <h3>有人说"化学都是人造的，和我们日常生活没关系"。请用至少3个例子论证这个观点是错误的。然后再想想——为什么会有这么多人这样认为？</h3>
+      <div class="rating-row">
+        <button class="rating-btn green" data-q="8" data-score="1" onclick="selfRate(this)">✅ 能举3个以上例子并有深度分析</button>
+        <button class="rating-btn orange" data-q="8" data-score="0.5" onclick="selfRate(this)">🤔 例子够但分析不够深入</button>
+        <button class="rating-btn red" data-q="8" data-score="0" onclick="selfRate(this)">❌ 缺乏论据</button>
+      </div>
+      <div class="qa-hint" onclick="toggleHint(this)">
+        <div class="hint-label">💡 点击查看参考思路</div>
+        <div class="hint-body">
+          <p><strong>反驳例子：</strong></p>
+          <ol>
+            <li><strong>呼吸作用：</strong>人体吸入氧气呼出二氧化碳，这是最日常的化学反应——有氧呼吸（C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O）</li>
+            <li><strong>烹饪：</strong>食物加热时的美拉德反应、蛋白质变性，全是化学变化</li>
+            <li><strong>药物：</strong>你吃的任何药（感冒药、维生素）都基于化学原理在体内起作用</li>
+          </ol>
+          <p style="margin-top:6px;"><strong>为什么有人会这么认为？</strong>可能原因：①学校教育中将化学"锁"在实验室中，和生活脱节；②媒体报道常聚焦化学污染和危险品，负面印象固化；③化学概念抽象，日常中看不见"分子、原子"，感觉遥远。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="q-card q-challenge">
+      <div class="q-number">Q9 · 元认知反思 ⭐</div>
+      <div class="meta-box">
+        <h4>🧠 元认知问题——和本模块主题最相关</h4>
+        <p style="margin-bottom:10px;"><strong>A.</strong> 你从"不懂"到"懂"一个化学概念，通常经历了哪几个阶段？</p>
+        <p style="margin-bottom:10px;"><strong>B.</strong> 你明明知道"化学变化和物理变化的区别"这个概念，但在实际判断时还是会出错。你觉得是哪个环节出了问题？</p>
+        <p><strong>C.</strong> 如果让你给昨天的自己讲一遍"如何判断化学变化"，你会怎么讲？你今天的讲法和昨天的理解有什么不同？这个变化说明了什么？</p>
+      </div>
+      <p style="font-size:14px;color:var(--text-secondary);margin-bottom:10px;">✍️ 把你的思考写下来（自由记录）：</p>
+      <textarea class="note-input" placeholder="写下你的元认知反思..." id="metaReflect"></textarea>
+      <div class="rating-row" style="margin-top:12px;">
+        <button class="rating-btn green" data-q="9" data-score="1" onclick="selfRate(this)">✅ 已完成深度反思</button>
+        <button class="rating-btn orange" data-q="9" data-score="0.5" onclick="selfRate(this)">🤔 部分反思</button>
+        <button class="rating-btn red" data-q="9" data-score="0" onclick="selfRate(this)">❌ 暂未思考</button>
+      </div>
+      <div class="qa-hint" onclick="toggleHint(this)">
+        <div class="hint-label">💡 点击查看引导示例</div>
+        <div class="hint-body">
+          <p><strong>示例回答：</strong></p>
+          <p><strong>A.</strong> 我通常经历："死记定义 → 能判断简单例子 → 遇到混合型（如蜡烛燃烧）就乱 → 反复练习后终于理解本质"</p>
+          <p><strong>B.</strong> 问题出在"只看表面现象"——看到"冒烟、发光"就以为是化学变化，但没问自己"有没有新物质生成？"</p>
+          <p><strong>C.</strong> 昨天我会说"有新物质就是化学变化"，今天我还会加一句"但有些变化同时有物理和化学（如蜡烛），要分开分析"。这个变化说明我<strong>从"知道定义"进步到了"理解分析维度"</strong>。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+var scores = {};
+var currentTier = 0;
+
+function switchTier(idx) {
+  document.querySelectorAll('.tier').forEach(function(el, i) {
+    el.classList.toggle('active', i === idx);
+  });
+  document.querySelectorAll('.tier-tab').forEach(function(el, i) {
+    el.classList.toggle('active', i === idx);
+  });
+  currentTier = idx;
+}
+
+function toggleHint(el) {
+  var body = el.querySelector('.hint-body');
+  if (!body) return;
+  body.classList.toggle('revealed');
+}
+
+function selfRate(btn) {
+  var group = btn.parentElement;
+  var qId = btn.getAttribute('data-q');
+  if (!qId) return;
+
+  // Deselect all siblings in the same group
+  group.querySelectorAll('.rating-btn').forEach(function(b) {
+    b.classList.remove('selected');
+  });
+
+  // Select this one
+  btn.classList.add('selected');
+
+  // Save score
+  var score = parseFloat(btn.getAttribute('data-score')) || 0;
+  scores[qId] = score;
+
+  // Check if all 9 questions have been rated
+  updateScore();
+}
+
+function updateScore() {
+  var total = 0;
+  var count = 0;
+  for (var k in scores) {
+    if (scores.hasOwnProperty(k)) {
+      total += scores[k];
+      count++;
+    }
+  }
+  document.getElementById('scoreDisplay').textContent = total.toFixed(1);
+  var hint = document.getElementById('scoreHint');
+  if (count >= 9) {
+    hint.textContent = '🎉 全部完成！得分：' + total.toFixed(1) + '/9';
+  } else {
+    hint.textContent = '已完成 ' + count + '/9 题自评';
+  }
+}
+
+function resetAll() {
+  scores = {};
+  document.querySelectorAll('.rating-btn').forEach(function(b) {
+    b.classList.remove('selected');
+  });
+  document.getElementById('scoreDisplay').textContent = '0';
+  document.getElementById('scoreHint').textContent = '完成问题后点击自评按钮计分';
+  document.querySelectorAll('.hint-body').forEach(function(h) {
+    h.classList.remove('revealed');
+  });
+  var ta = document.getElementById('metaReflect');
+  if (ta) ta.value = '';
+}
+</script>
+</body>
+</html>

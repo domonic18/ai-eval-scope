@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性原理 — 可迁移的分析方法</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+  --success: #52c41a;
+  --warning: #fa8c16;
+  --danger: #ff4d4f;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+.header { text-align: center; padding: 24px 0 12px; }
+.header h1 { font-size: var(--font-h1); color: var(--primary); margin: 0 0 4px; }
+.header p { color: var(--text-secondary); margin: 0; font-size: 14px; }
+
+.goal-card { background: linear-gradient(135deg, var(--primary) 0%, #4096ff 100%); color: #fff; border-radius: var(--border-radius); padding: 18px 24px; margin-bottom: 24px; box-shadow: var(--shadow); }
+.goal-card h2 { font-size: var(--font-h2); margin: 0 0 6px; color: #fff; }
+.goal-card p { margin: 0; opacity: 0.92; }
+
+.section-title { font-size: var(--font-h2); color: var(--text); margin: 28px 0 14px; padding-left: 12px; border-left: 4px solid var(--primary); }
+
+/* Principle cards */
+.principle-list { display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px; }
+.principle-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); border-left: 4px solid var(--primary); overflow: hidden; }
+.principle-card .p-header { padding: 14px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px; user-select: none; }
+.principle-card .p-header:hover { background: rgba(22,119,255,0.04); }
+.principle-card .p-header .arrow { transition: transform .3s; font-size: 12px; color: var(--text-secondary); }
+.principle-card .p-header.open .arrow { transform: rotate(90deg); }
+.principle-card .p-header .p-num { display: inline-flex; width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: #fff; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+.principle-card .p-header .p-name { font-weight: 600; font-size: 16px; flex: 1; }
+.principle-card .p-body { max-height: 0; overflow: hidden; transition: max-height .45s ease; }
+.principle-card .p-body.open { max-height: 900px; }
+.principle-card .p-inner { padding: 0 20px 18px; }
+.principle-card .p-inner p { margin: 6px 0; }
+.principle-card .p-inner .label { font-weight: 600; color: var(--primary); font-size: 13px; margin-top: 8px; }
+.principle-card .p-inner .tag { display: inline-block; background: #e6f4ff; color: var(--primary); padding: 2px 10px; border-radius: 10px; font-size: 12px; margin: 2px; }
+
+/* Application exercises */
+.app-exercise { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 16px; }
+.app-exercise .ex-header { font-weight: 600; font-size: 16px; color: var(--primary); margin-bottom: 8px; }
+.app-exercise .ex-detail { margin: 4px 0; }
+.app-exercise .ex-detail .key { color: var(--text-secondary); font-size: 13px; }
+.app-exercise .hint-box { background: #fffbe6; border: 1px solid #ffe58f; border-radius: 6px; padding: 12px 16px; margin-top: 10px; display: none; }
+.app-exercise .hint-box.show { display: block; }
+.app-exercise .hint-btn { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 6px 14px; cursor: pointer; font-size: 13px; color: var(--primary); margin-top: 8px; }
+.app-exercise .hint-btn:hover { background: #e6f4ff; }
+
+/* Self check */
+.check-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin: 16px 0 20px; }
+.check-item { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 16px 18px; display: flex; align-items: flex-start; gap: 10px; }
+.check-item .check-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+.check-item .check-text { flex: 1; }
+.check-item .check-rate { display: flex; gap: 6px; margin-top: 8px; }
+.check-item .rate-btn { width: 36px; height: 30px; border: 1px solid var(--border); border-radius: 4px; background: var(--card-bg); cursor: pointer; font-size: 13px; transition: all .2s; }
+.check-item .rate-btn:hover { border-color: var(--primary); }
+.check-item .rate-btn.selected { background: var(--primary); color: #fff; border-color: var(--primary); }
+.score-display { text-align: center; padding: 12px; font-size: 18px; font-weight: 600; color: var(--primary); }
+
+.footer-note { text-align: center; color: var(--text-secondary); font-size: 13px; padding: 16px 0 28px; border-top: 1px solid var(--border); margin-top: 12px; }
+
+@media (max-width: 640px) {
+  .container { padding: 16px; }
+  .check-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🔍 解析性原理</h1>
+  <p>从案例中提炼可迁移的分析方法</p>
+</div>
+
+<div class="goal-card">
+  <h2>🎯 学习目标</h2>
+  <p>从解析性示例中提炼3-5条可迁移的解析性原理，形成一套你可以重复使用的分析方法。</p>
+</div>
+
+<!-- 一、从示例到原理 -->
+<h2 class="section-title">一、从示例到原理</h2>
+<div style="background:var(--card-bg);border-radius:var(--border-radius);box-shadow:var(--shadow);padding:18px 20px;margin-bottom:20px;">
+  <p>化学学习不仅仅是记住方程式和概念——真正的科学思维在于<strong>如何分析问题</strong>。每一个你遇到的化学案例，都隐藏着可以反复使用的方法。</p>
+  <p style="margin-top:10px;"><strong>为什么要从案例中提炼原理？</strong> 因为原理是"可迁移的"——学会一套分析方法，就能应对一类问题，而不仅仅是解决一道题。</p>
+  <p style="margin-top:8px;color:var(--text-secondary);">💡 <strong>核心思维</strong>：不是"这个题怎么做"，而是"这类题怎么分析"。</p>
+</div>
+
+<!-- 二、解析性原理提炼 -->
+<h2 class="section-title">二、解析性原理提炼</h2>
+<p style="color:var(--text-secondary);margin-bottom:12px;">点击每条原理展开详细内容，了解它的使用方法</p>
+
+<div class="principle-list">
+
+  <!-- 原理1 -->
+  <div class="principle-card">
+    <div class="p-header" onclick="togglePrinciple(this)">
+      <span class="arrow">▶</span>
+      <span class="p-num">1</span>
+      <span class="p-name">现象→本质法</span>
+    </div>
+    <div class="p-body">
+      <div class="p-inner">
+        <p><strong>原理说明：</strong>透过化学现象（颜色变化、沉淀、气泡等）识别背后的科学本质——化学反应类型、物质性质变化。</p>
+        <div class="label">🧪 在示例中的体现</div>
+        <p>解析白色固体身份时，首先观察它的物理性质（颜色、状态），再通过实验现象（加酸是否冒泡、加碱是否有沉淀）推测其化学身份。</p>
+        <div class="label">📋 如何使用</div>
+        <p>① 记录所有可观察的现象 → ② 为每个现象列出至少一种可能的化学解释 → ③ 设计验证实验排除不正确的解释 → ④ 得出最合理的结论</p>
+        <div class="label">🔄 可迁移到</div>
+        <p><span class="tag">未知物鉴定</span> <span class="tag">实验现象分析</span> <span class="tag">物质性质推断</span></p>
+        <div class="label">⚠️ 常见误区</div>
+        <p>不要只看一个现象就下结论！多个现象交叉验证才能确保推理可靠。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 原理2 -->
+  <div class="principle-card">
+    <div class="p-header" onclick="togglePrinciple(this)">
+      <span class="arrow">▶</span>
+      <span class="p-num">2</span>
+      <span class="p-name">证据链法</span>
+    </div>
+    <div class="p-body">
+      <div class="p-inner">
+        <p><strong>原理说明：</strong>用多个独立的证据相互印证，形成完整的推理链条，而不是依赖单一证据得出结论。</p>
+        <div class="label">🧪 在示例中的体现</div>
+        <p>推断白色固体时，不只看"它和酸反应冒泡"这一个证据，还结合"它溶于水放热""焰色反应呈黄色"等多条证据，交叉验证后锁定是碳酸钠。</p>
+        <div class="label">📋 如何使用</div>
+        <p>① 列出所有已获得的证据 → ② 评估每条证据的可靠性 → ③ 检查证据之间是否有矛盾 → ④ 找出能同时解释所有证据的结论</p>
+        <div class="label">🔄 可迁移到</div>
+        <p><span class="tag">实验结论论证</span> <span class="tag">化学方程式的验证</span> <span class="tag">物质鉴别题</span></p>
+        <div class="label">⚠️ 常见误区</div>
+        <p>不要因为找到了一个支持的证据就停止探索。真实的科学推理需要至少2-3条独立的证据链。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 原理3 -->
+  <div class="principle-card">
+    <div class="p-header" onclick="togglePrinciple(this)">
+      <span class="arrow">▶</span>
+      <span class="p-num">3</span>
+      <span class="p-name">比较分析法</span>
+    </div>
+    <div class="p-body">
+      <div class="p-inner">
+        <p><strong>原理说明：</strong>通过对比两个或多个相似概念、现象或物质，找出它们的相同点和不同点，从而精准区分易混淆的内容。</p>
+        <div class="label">🧪 在示例中的体现</div>
+        <p>在分析物理变化和化学变化时，将"水沸腾"（物理变化）和"铁生锈"（化学变化）并排放置，对比是否有新物质生成，从而明确区分标准。</p>
+        <div class="label">📋 如何使用</div>
+        <p>① 确定需要对比的两个或多个对象 → ② 列出对比维度（如：是否有新物质、是否放热、是否可逆）→ ③ 逐维度填充对比表 → ④ 归纳核心差异</p>
+        <div class="label">🔄 可迁移到</div>
+        <p><span class="tag">物理变化 vs 化学变化</span> <span class="tag">混合物 vs 纯净物</span> <span class="tag">化合 vs 分解反应</span></p>
+        <div class="label">⚠️ 常见误区</div>
+        <p>对比维度要全面，不能只选"想证明差异"的那几个维度，否则结论会有偏差。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 原理4 -->
+  <div class="principle-card">
+    <div class="p-header" onclick="togglePrinciple(this)">
+      <span class="arrow">▶</span>
+      <span class="p-num">4</span>
+      <span class="p-name">溯因推理法</span>
+    </div>
+    <div class="p-body">
+      <div class="p-inner">
+        <p><strong>原理说明：</strong>从观察到的结果（现象、数据）反推原因，在多个可能的原因中逐步排除，找到最合理的那个。</p>
+        <div class="label">🧪 在示例中的体现</div>
+        <p>观察到"白色固体加盐酸后产生使澄清石灰水变浑浊的气体"，反推该气体是CO₂，进而推断白色固体可能是碳酸盐，再用其他实验确认具体是哪一种。</p>
+        <div class="label">📋 如何使用</div>
+        <p>① 明确观测到的结果 → ② 列出所有可能导致该结果的原因 → ③ 逐一设计排除实验 → ④ 找到唯一未被排除的原因 → ⑤ 用新实验验证</p>
+        <div class="label">🔄 可迁移到</div>
+        <p><span class="tag">实验现象归因</span> <span class="tag">化学事故分析</span> <span class="tag">环境问题溯源</span></p>
+        <div class="label">⚠️ 常见误区</div>
+        <p>最常见的错误是"想当然"——第一个冒出来的原因往往不是正确答案，务必列出所有可能性后再排除。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 原理5 -->
+  <div class="principle-card">
+    <div class="p-header" onclick="togglePrinciple(this)">
+      <span class="arrow">▶</span>
+      <span class="p-num">5</span>
+      <span class="p-name">模型检验法</span>
+    </div>
+    <div class="p-body">
+      <div class="p-inner">
+        <p><strong>原理说明：</strong>建构一个假设或模型来解释化学现象，然后设计实验来检验这个模型的准确性，根据检验结果修正模型。</p>
+        <div class="label">🧪 在示例中的体现</div>
+        <p>先假设白色固体是碳酸钠，然后预测"如果它是碳酸钠，那么它和氯化钙反应会产生白色沉淀"，进行实验验证，观察现象是否与预测一致。</p>
+        <div class="label">📋 如何使用</div>
+        <p>① 提出假设模型（"我认为它是……"）→ ② 基于模型做出预测（"如果是，那么……就会……"）→ ③ 设计实验检验预测 → ④ 实验后判断：模型被支持还是被推翻？→ ⑤ 必要时修正模型并重新检验</p>
+        <div class="label">🔄 可迁移到</div>
+        <p><span class="tag">物质鉴别方案设计</span> <span class="tag">反应产物预测</span> <span class="tag">实验方案评价</span></p>
+        <div class="label">⚠️ 常见误区</div>
+        <p>检验结果支持模型≠证明模型正确，只能说"目前没有证据推翻它"。真正的科学家会持续寻找反例。</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 三、应用练习 -->
+<h2 class="section-title">三、解析性原理应用</h2>
+<p style="color:var(--text-secondary);margin-bottom:12px;">在新情境中调用学到的原理，点击"显示提示"查看分析线索。</p>
+
+<div class="app-exercise">
+  <div class="ex-header">练习一：厨房中的"紫甘蓝变色"</div>
+  <p class="ex-detail"><strong>情境：</strong>你在厨房用紫甘蓝煮水，得到紫色的汁液。你把汁液分别滴入白醋、小苏打水和纯水中，发现白醋中变红，小苏打水中变绿，纯水中仍为紫色。</p>
+  <p class="ex-detail"><strong>解析任务：</strong>分析紫甘蓝汁液变色的原因，判断它可能有什么性质，并推测白醋和小苏打水的化学性质差异。</p>
+  <p class="ex-detail"><span class="key">建议使用的原理：</span>现象→本质法、比较分析法</p>
+  <p class="ex-detail"><span class="key">成果形式：</span>实验记录表 + 推理说明</p>
+  <button class="hint-btn" onclick="toggleHint(this)">💡 显示分析提示</button>
+  <div class="hint-box">
+    <p><strong>破题密码：</strong>紫甘蓝汁液在不同pH环境下显示不同颜色——它是一种天然酸碱指示剂。白醋呈酸性（pH&lt;7），小苏打水呈碱性（pH&gt;7），纯水为中性（pH=7）。</p>
+    <p><strong>思考切入点：</strong>① 变红和变绿分别说明什么？② 如果换成柠檬汁和肥皂水，你会预测什么颜色？③ 生活中还有哪些天然指示剂？</p>
+  </div>
+</div>
+
+<div class="app-exercise">
+  <div class="ex-header">练习二：探究蜡烛燃烧的产物</div>
+  <p class="ex-detail"><strong>情境：</strong>点燃一支蜡烛，在火焰上方罩一个干燥的冷烧杯，烧杯内壁出现水雾；迅速将烧杯翻转，倒入少量澄清石灰水并振荡，石灰水变浑浊。</p>
+  <p class="ex-detail"><strong>解析任务：</strong>根据两个实验现象，推断蜡烛燃烧的产物，写出可能的化学变化表达式。</p>
+  <p class="ex-detail"><span class="key">建议使用的原理：</span>证据链法、溯因推理法</p>
+  <p class="ex-detail"><span class="key">成果形式：</span>证据链图 + 结论 + 化学方程式</p>
+  <button class="hint-btn" onclick="toggleHint(this)">💡 显示分析提示</button>
+  <div class="hint-box">
+    <p><strong>破题密码：</strong>水雾（H₂O）+ 石灰水变浑浊（CO₂）= 蜡烛燃烧产生水和二氧化碳。蜡烛主要含C、H元素，与O₂反应生成CO₂和H₂O。</p>
+    <p><strong>思考切入点：</strong>① 为什么用"干燥"的烧杯？② 两个实验的顺序能调换吗？为什么？③ 这个反应是物理变化还是化学变化？</p>
+  </div>
+</div>
+
+<!-- 四、自我检测 -->
+<h2 class="section-title">四、自我检测</h2>
+<p style="color:var(--text-secondary);margin-bottom:12px;">点击自评按钮，检查自己是否真正掌握了这些原理。</p>
+
+<div class="check-grid" id="checkGrid">
+  <div class="check-item">
+    <div class="check-icon">📌</div>
+    <div class="check-text">
+      <strong>我能说清楚每条解析性原理的含义吗？</strong>
+      <div class="check-rate" data-q="1">
+        <button class="rate-btn" onclick="rate(this,1)">1分</button>
+        <button class="rate-btn" onclick="rate(this,2)">2分</button>
+        <button class="rate-btn" onclick="rate(this,3)">3分</button>
+        <button class="rate-btn" onclick="rate(this,4)">4分</button>
+        <button class="rate-btn" onclick="rate(this,5)">5分</button>
+      </div>
+    </div>
+  </div>
+  <div class="check-item">
+    <div class="check-icon">📌</div>
+    <div class="check-text">
+      <strong>我能举出一个新例子来说明每条原理吗？</strong>
+      <div class="check-rate" data-q="2">
+        <button class="rate-btn" onclick="rate(this,1)">1分</button>
+        <button class="rate-btn" onclick="rate(this,2)">2分</button>
+        <button class="rate-btn" onclick="rate(this,3)">3分</button>
+        <button class="rate-btn" onclick="rate(this,4)">4分</button>
+        <button class="rate-btn" onclick="rate(this,5)">5分</button>
+      </div>
+    </div>
+  </div>
+  <div class="check-item">
+    <div class="check-icon">📌</div>
+    <div class="check-text">
+      <strong>我能在新情境中主动调用这些原理吗？</strong>
+      <div class="check-rate" data-q="3">
+        <button class="rate-btn" onclick="rate(this,1)">1分</button>
+        <button class="rate-btn" onclick="rate(this,2)">2分</button>
+        <button class="rate-btn" onclick="rate(this,3)">3分</button>
+        <button class="rate-btn" onclick="rate(this,4)">4分</button>
+        <button class="rate-btn" onclick="rate(this,5)">5分</button>
+      </div>
+    </div>
+  </div>
+  <div class="check-item">
+    <div class="check-icon">📌</div>
+    <div class="check-text">
+      <strong>我能区分不同原理的适用场景吗？</strong>
+      <div class="check-rate" data-q="4">
+        <button class="rate-btn" onclick="rate(this,1)">1分</button>
+        <button class="rate-btn" onclick="rate(this,2)">2分</button>
+        <button class="rate-btn" onclick="rate(this,3)">3分</button>
+        <button class="rate-btn" onclick="rate(this,4)">4分</button>
+        <button class="rate-btn" onclick="rate(this,5)">5分</button>
+      </div>
+    </div>
+  </div>
+  <div class="check-item">
+    <div class="check-icon">📌</div>
+    <div class="check-text">
+      <strong>我在使用原理时发现了哪些容易出错的地方？</strong>
+      <div class="check-rate" data-q="5">
+        <button class="rate-btn" onclick="rate(this,1)">1分</button>
+        <button class="rate-btn" onclick="rate(this,2)">2分</button>
+        <button class="rate-btn" onclick="rate(this,3)">3分</button>
+        <button class="rate-btn" onclick="rate(this,4)">4分</button>
+        <button class="rate-btn" onclick="rate(this,5)">5分</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="score-display" id="scoreDisplay">已自评 0/5 项</div>
+<button style="display:block;margin:0 auto 20px;padding:8px 28px;background:var(--primary);color:#fff;border:none;border-radius:var(--border-radius);cursor:pointer;font-size:14px;" onclick="resetAll()">🔄 重置自评</button>
+
+<div class="footer-note">🔍 解析性原理 · 把分析方法变成你的习惯</div>
+</div>
+
+<script>
+function togglePrinciple(header) {
+  header.classList.toggle('open');
+  var body = header.nextElementSibling;
+  if (body) body.classList.toggle('open');
+}
+
+function toggleHint(btn) {
+  var box = btn.nextElementSibling;
+  if (box) {
+    box.classList.toggle('show');
+    btn.textContent = box.classList.contains('show') ? '🙈 隐藏提示' : '💡 显示分析提示';
+  }
+}
+
+var ratings = {};
+
+function rate(btn, score) {
+  var group = btn.closest('.check-rate');
+  if (!group) return;
+  var q = group.dataset.q;
+  group.querySelectorAll('.rate-btn').forEach(function(b) { b.classList.remove('selected'); });
+  btn.classList.add('selected');
+  ratings[q] = score;
+  updateScore();
+}
+
+function updateScore() {
+  var done = Object.keys(ratings).length;
+  document.getElementById('scoreDisplay').textContent = '已自评 ' + done + '/5 项' + (done === 5 ? ' —— 全部完成！🎉' : '');
+}
+
+function resetAll() {
+  ratings = {};
+  document.querySelectorAll('.rate-btn').forEach(function(b) { b.classList.remove('selected'); });
+  document.getElementById('scoreDisplay').textContent = '已自评 0/5 项';
+}
+</script>
+</body>
+</html>

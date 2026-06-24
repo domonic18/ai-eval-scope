@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性原理 — 走进化学世界</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  margin: 0;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px;
+  box-sizing: border-box;
+}
+.header {
+  text-align: center;
+  padding: 24px 16px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header .meta { font-size: 14px; opacity: 0.9; }
+.section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bg);
+}
+.section h3 { font-size: 16px; margin: 14px 0 8px; font-weight: 600; }
+.section p { margin-bottom: 10px; }
+.principle-card {
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  margin-bottom: 14px;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+.principle-card:hover { border-color: var(--primary); }
+.principle-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  cursor: pointer;
+  background: var(--card-bg);
+  transition: background 0.2s;
+}
+.principle-header:hover { background: var(--bg); }
+.principle-header .p-title {
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 15px;
+  flex: 1;
+}
+.principle-header .p-icon {
+  font-size: 18px;
+  transition: transform 0.3s;
+  color: var(--text-secondary);
+}
+.principle-card.open .p-icon { transform: rotate(180deg); }
+.principle-body {
+  display: none;
+  padding: 0 16px 16px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  font-size: 14px;
+}
+.principle-card.open .principle-body { display: block; }
+.principle-body .p-example {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 10px;
+  margin: 8px 0;
+  font-size: 13px;
+  border-left: 3px solid var(--accent);
+}
+.principle-body .p-tip {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-top: 6px;
+}
+.exercise-box {
+  background: #f0f5ff;
+  border: 1px solid #adc6ff;
+  border-radius: var(--border-radius);
+  padding: 18px;
+  margin: 12px 0;
+}
+.exercise-box .ex-title {
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+.exercise-box .btn {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  margin-top: 8px;
+  transition: background 0.2s;
+}
+.exercise-box .btn:hover { background: var(--primary-hover); }
+.ex-hint {
+  display: none;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px;
+  margin-top: 10px;
+  font-size: 14px;
+}
+.ex-hint.show { display: block; }
+.reflect-item {
+  margin-bottom: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+.reflect-item:hover { border-color: var(--primary); background: var(--bg); }
+.reflect-item .r-q { font-weight: 500; }
+.reflect-item .r-a { display: none; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); color: var(--text-secondary); }
+.reflect-item .r-a.show { display: block; }
+.reflect-item .r-hint { font-size: 12px; color: var(--accent); margin-top: 4px; }
+.tag-blue {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  .section { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🧩 建构性原理</h1>
+    <div class="meta">化学 · 九年级上 · 第1章 走进化学世界 | M10 新知哲学思维 · 建构性导学</div>
+  </div>
+
+  <!-- 一、原理简介 -->
+  <div class="section">
+    <h2>📌 内容定位</h2>
+    <p>建构性原理承接建构性示例，从示例中提炼 <strong>5条可迁移的建构性原理</strong>。你不仅要知道"这个案例是怎么建构的"，更要学会——<strong>以后遇到新问题，我也可以这样建构</strong>。</p>
+  </div>
+
+  <!-- 二、5条原理 -->
+  <div class="section">
+    <h2>🔑 建构性原理提炼（5条）</h2>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">点击每条原理展开详细说明：</p>
+
+    <div class="principle-card">
+      <div class="principle-header" onclick="togglePrinciple(this)">
+        <span class="p-title">🧲 原理一：现象→问题转化原理</span>
+        <span class="p-icon">▾</span>
+      </div>
+      <div class="principle-body">
+        <p><strong>原理说明：</strong>将日常现象转化为可检验的科学问题，是建构的第一步。</p>
+        <div class="p-example">
+          <strong>在示例中的体现：</strong>从"蜡烛烧完了"这个日常观察，转化为"烧完的物质去哪了"这个科学问题。
+        </div>
+        <p><strong>适用情境：</strong>任何化学/科学现象观察</p>
+        <p class="p-tip">⚠️ 问题必须具体、可检验，避免"为什么"泛泛提问。例如不说"为什么会燃烧"而说"燃烧过程中产生了什么物质"。</p>
+      </div>
+    </div>
+
+    <div class="principle-card">
+      <div class="principle-header" onclick="togglePrinciple(this)">
+        <span class="p-title">🔗 原理二：证据链建构原理</span>
+        <span class="p-icon">▾</span>
+      </div>
+      <div class="principle-body">
+        <p><strong>原理说明：</strong>一个结论需要多条相互印证的证据来支撑。</p>
+        <div class="p-example">
+          <strong>在示例中的体现：</strong>水雾（冷凝实验）+ 黑烟（收集实验）+ 质量变化（称重实验）——三条证据共同指向"生成新物质"。
+        </div>
+        <p><strong>适用情境：</strong>实验探究、现象解释</p>
+        <p class="p-tip">⚠️ 证据之间要独立，不能是同一来源的重复。假如三个实验都用同一个试管做，就不是三条独立证据。</p>
+      </div>
+    </div>
+
+    <div class="principle-card">
+      <div class="principle-header" onclick="togglePrinciple(this)">
+        <span class="p-title">🔄 原理三：模型建构与迭代原理</span>
+        <span class="p-icon">▾</span>
+      </div>
+      <div class="principle-body">
+        <p><strong>原理说明：</strong>先建一个初步模型，再用新证据修正它——科学知识是不断迭代的。</p>
+        <div class="p-example">
+          <strong>在示例中的体现：</strong>最初模型"蜡烛变成烟"→ 观察到水雾后修正为"蜡烛+氧气→水+其他"→ 最终修正为完整的燃烧模型。
+        </div>
+        <p><strong>适用情境：</strong>概念学习、问题解决</p>
+        <p class="p-tip">⚠️ 不要追求一次性完美。先完成再完善——第一次模型可以有漏洞，后面慢慢补。</p>
+      </div>
+    </div>
+
+    <div class="principle-card">
+      <div class="principle-header" onclick="togglePrinciple(this)">
+        <span class="p-title">📝 原理四：证据—解释—术语三阶转化原理</span>
+        <span class="p-icon">▾</span>
+      </div>
+      <div class="principle-body">
+        <p><strong>原理说明：</strong>从原始观察到科学语言，需要经历"证据→自己的解释→标准术语"三阶转化。</p>
+        <div class="p-example">
+          <strong>在示例中的体现：</strong>白雾（证据）→ "有水生成"（自己解释）→ "生成物中有水"（化学术语：H₂O）。
+        </div>
+        <p><strong>适用情境：</strong>化学实验报告、科学写作</p>
+        <p class="p-tip">⚠️ 不要直接抄术语，先用自己话说清楚，再对接术语。理解比记忆更重要。</p>
+      </div>
+    </div>
+
+    <div class="principle-card">
+      <div class="principle-header" onclick="togglePrinciple(this)">
+        <span class="p-title">📐 原理五：结果表达的结构化原理</span>
+        <span class="p-icon">▾</span>
+      </div>
+      <div class="principle-body">
+        <p><strong>原理说明：</strong>好的科学表达遵循"发生了什么→我观察到了什么→我认为这意味着什么→我还想验证什么"的逻辑结构。</p>
+        <div class="p-example">
+          <strong>在示例中的体现：</strong>最终成果包含"输入—过程—输出"三阶段，清晰呈现了整个建构过程。
+        </div>
+        <p><strong>适用情境：</strong>实验报告、演讲展示、项目汇报</p>
+        <p class="p-tip">⚠️ 结构不等于模板。结构是思维方式，模板是把思维套进固定格式——要根据实际情况灵活调整。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 三、迁移应用 -->
+  <div class="section">
+    <h2>🏋️ 建构性原理迁移应用</h2>
+
+    <div class="exercise-box">
+      <div class="ex-title">📌 练习一：铁钉生锈</div>
+      <p>一根铁钉放在潮湿空气中几天后表面出现红棕色物质。请运用建构性原理，建构"铁锈是什么"的初步解释模型。</p>
+      <p><strong>建议使用：</strong>原理一（现象→问题）+ 原理二（证据链）</p>
+      <p style="font-size:13px;color:var(--text-secondary);">🔍 你能设计几个对比实验来排除"只是脏了"的可能？</p>
+      <button class="btn" onclick="toggleExerciseHint(this, 0)">💡 查看脚手架提示</button>
+      <div class="ex-hint" data-ex="0">
+        <p><strong>对比实验设计参考：</strong></p>
+        <ol style="padding-left:20px;">
+          <li><strong>实验组：</strong>铁钉放在潮湿空气中（正常生锈）</li>
+          <li><strong>对照组1：</strong>铁钉放在干燥空气中（无水）——如果不生锈，证明水是必要条件</li>
+          <li><strong>对照组2：</strong>铁钉放在煮沸后冷却的水中（无氧气）——如果不生锈，证明氧气是必要条件</li>
+        </ol>
+        <p style="margin-top:8px;"><strong>建构步骤提示：</strong></p>
+        <ul style="padding-left:20px;">
+          <li>观察现象 → 提出问题："红棕色物质是什么？"（原理一）</li>
+          <li>设计三组对比实验收集多条独立证据（原理二）</li>
+          <li>证据指向：铁锈是一种新物质（Fe₂O₃·xH₂O）</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="exercise-box">
+      <div class="ex-title">📌 练习二：水的沸腾</div>
+      <p>一壶水烧开时，壶嘴冒出大量"白气"。请建构"白气"是什么的解释模型（物理变化还是化学变化？）。</p>
+      <p><strong>建议使用：</strong>原理三（模型迭代）+ 原理四（三阶转化）</p>
+      <p style="font-size:13px;color:var(--text-secondary);">💡 注意区分"水蒸气"（看不见）和"白气"（看得见）——这是最容易被忽视的关键！</p>
+      <button class="btn" onclick="toggleExerciseHint(this, 1)">💡 查看脚手架提示</button>
+      <div class="ex-hint" data-ex="1">
+        <p><strong>初步模型 → 迭代过程：</strong></p>
+        <p><strong>初始直觉：</strong>"白气是水蒸气"（❌ 不对）</p>
+        <p><strong>新证据：</strong>水蒸气是无色透明的，看不见——壶嘴冒出的"白气"是<strong>看得见</strong>的</p>
+        <p><strong>修正后模型：</strong>白气是水蒸气遇冷凝结成的<strong>小水滴</strong>（物理变化）</p>
+        <p style="margin-top:8px;"><strong>三阶转化练习：</strong></p>
+        <ul style="padding-left:20px;">
+          <li><strong>证据：</strong>壶嘴冒出白色雾状物质，靠近冷玻璃杯时凝结成水珠</li>
+          <li><strong>自己的解释：</strong>"白气"不是气，是很多很小的水珠飘在空气中</li>
+          <li><strong>科学术语：</strong>水蒸气遇冷液化形成小液滴（物理变化）</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 四、元认知反思 -->
+  <div class="section">
+    <h2>🤔 元认知反思</h2>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">点击每个问题展开思考提示：</p>
+
+    <div class="reflect-item" onclick="toggleReflect(this)">
+      <div class="r-q">❓ 在做练习时，你是先凭直觉回答，还是先收集了证据？</div>
+      <div class="r-a">提示：很多人第一反应是猜测。科学建构的关键是先收集证据再下结论——回想你刚才做练习时的思考过程。</div>
+      <div class="r-hint">👆 点击展开/收起</div>
+    </div>
+    <div class="reflect-item" onclick="toggleReflect(this)">
+      <div class="r-q">❓ 你的模型经历了"修正"吗？是什么证据促使你修正的？</div>
+      <div class="r-a">提示：练习二中从"白气=水蒸气"到"白气=小水滴"就是一个典型的修正过程。科学思维的精髓就是愿意根据新证据改变自己的看法。</div>
+      <div class="r-hint">👆 点击展开/收起</div>
+    </div>
+    <div class="reflect-item" onclick="toggleReflect(this)">
+      <div class="r-q">❓ 在建构过程中，最难的是哪一步？为什么？</div>
+      <div class="r-a">提示：常见的困难包括——不知道从哪开始（现象→问题转化难）、证据不够多（证据链建构难）、不敢修正自己的模型（心理上难接受"错了"）。</div>
+      <div class="r-hint">👆 点击展开/收起</div>
+    </div>
+    <div class="reflect-item" onclick="toggleReflect(this)">
+      <div class="r-q">❓ 使用化学术语时，你是直接套用还是先理解再使用？</div>
+      <div class="r-a">提示：最好的习惯是先用自己的话说清楚，再对接科学术语。如果直接套用术语但说不清意思，说明还没真正理解。</div>
+      <div class="r-hint">👆 点击展开/收起</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function togglePrinciple(header) {
+  var card = header.parentElement;
+  card.classList.toggle('open');
+}
+function toggleExerciseHint(btn, idx) {
+  var parent = btn.parentElement;
+  var hints = parent.querySelectorAll('.ex-hint');
+  for (var i = 0; i < hints.length; i++) {
+    if (hints[i].dataset.ex == idx || !hints[i].dataset.ex) {
+      hints[i].classList.toggle('show');
+      btn.textContent = hints[i].classList.contains('show') ? '🙈 收起提示' : '💡 查看脚手架提示';
+    }
+  }
+}
+function toggleReflect(el) {
+  var answer = el.querySelector('.r-a');
+  if (answer) answer.classList.toggle('show');
+}
+</script>
+</body>
+</html>

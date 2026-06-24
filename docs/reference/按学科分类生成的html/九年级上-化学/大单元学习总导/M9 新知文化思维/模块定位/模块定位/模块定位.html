@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块定位 - M9 新知文化思维</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+* { box-sizing: border-box; }
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+}
+.module-header {
+  background: linear-gradient(135deg, var(--primary) 0%, #0050b3 100%);
+  color: #fff;
+  padding: 32px 40px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.module-header::after {
+  content: "🧪";
+  position: absolute;
+  right: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 64px;
+  opacity: 0.2;
+}
+.module-header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+.module-header .subtitle {
+  font-size: 13px;
+  opacity: 0.85;
+  margin: 0;
+}
+.module-header .badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.2);
+  padding: 2px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin-top: 10px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  transition: box-shadow 0.25s;
+}
+.card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+.card p { margin: 0 0 10px; }
+.card ul {
+  padding-left: 20px;
+  margin: 6px 0;
+}
+.card li { margin-bottom: 6px; }
+.connection-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.flow-node {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 10px 14px;
+  text-align: center;
+  font-size: 13px;
+  min-width: 100px;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+.flow-node:hover {
+  border-color: var(--primary);
+  background: #e6f4ff;
+  transform: translateY(-2px);
+}
+.flow-node.active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+.flow-arrow {
+  font-size: 18px;
+  color: var(--text-secondary);
+  user-select: none;
+}
+.outcomes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+.outcome-item {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.25s;
+  text-align: center;
+}
+.outcome-item:hover {
+  background: #d9f7be;
+  transform: translateY(-2px);
+}
+.outcome-item .check { color: #52c41a; font-weight: bold; }
+.outcome-item.done {
+  background: #d9f7be;
+  border-color: #52c41a;
+}
+.accordion-toggle {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.2s;
+  margin-top: 6px;
+}
+.accordion-toggle:hover { background: var(--primary-hover); }
+.accordion-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+}
+.accordion-content.open { max-height: 600px; }
+@media (max-width: 600px) {
+  .container { padding: 12px 16px; }
+  .module-header { padding: 20px; }
+  .module-header::after { font-size: 40px; right: 16px; }
+  .connection-flow { flex-direction: column; }
+  .flow-arrow { transform: rotate(90deg); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="module-header">
+  <h1>📘 模块定位：M9 新知文化思维</h1>
+  <p class="subtitle">第1章 走进化学世界 · 九年级化学 · 人教版</p>
+  <span class="badge">模块学习总体概要 · 学生版</span>
+</div>
+
+<div class="card">
+  <h2>🔬 本模块学习什么</h2>
+  <p>M9 新知文化思维不是让你背诵化学变化的定义，而是带你经历一次<strong>「认知升级」</strong>——学会用化学思维的方式来看待周围的世界。</p>
+  <button class="accordion-toggle" onclick="toggleAccordion(this,'learn-detail')">展开详细内容</button>
+  <div id="learn-detail" class="accordion-content">
+    <ul>
+      <li>如何区分<strong>「物理变化」</strong>和<strong>「化学变化」</strong>——不只是背定义，而是建立判断框架</li>
+      <li>如何从日常现象中发现化学问题，并主动建构自己的理解</li>
+      <li>化学家思考问题的方式：<strong>观察 → 假设 → 实验 → 证据 → 结论</strong></li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <h2>⭐ 本模块为什么重要</h2>
+  <p>这是你九年级化学学习中最关键的一步。化学不仅是「背方程式」，更是一种思维方式。本模块帮你建立的不是知识库，而是<strong>思维操作系统</strong>——有了科学的思维方式，后续学习元素、化合物、化学方程式才会事半功倍。</p>
+  <p style="color:var(--text-secondary);font-size:13px;background:#fff7e6;padding:10px 14px;border-radius:6px;border-left:3px solid #fa8c16;">💡 没有这个「操作系统」，化学就只是一堆需要死记硬背的符号和概念。</p>
+</div>
+
+<div class="card">
+  <h2>🔗 本模块与大单元主题的关系</h2>
+  <p>「走进化学世界」这个大单元的目的是带你入门化学。入门的关键不是记住多少知识点，而是<strong>建立化学思维方式</strong>。M9 新知文化思维就是这个「思维方式建立」的专项训练模块。它处于大单元的核心位置：</p>
+  <div class="connection-flow">
+    <div class="flow-node">👣 前接<br><small>化学初步印象</small></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-node active">🧠 M9<br><small>新知文化思维</small></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-node">🚀 后启<br><small>元素·反应学习</small></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>🧩 本模块与前后模块的衔接</h2>
+  <ul>
+    <li><strong>前置模块：</strong>帮助你了解化学的研究对象和基本方法</li>
+    <li><strong>本模块（M9）：</strong>帮助你建立化学思维，学会主动建构知识</li>
+    <li><strong>后续模块：</strong>你将带着本模块建立的思维框架，去认识和理解具体的化学物质和化学反应</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>🎯 本模块预期学习成果</h2>
+  <p>完成本模块后，你将会拥有：</p>
+  <div class="outcomes-grid">
+    <div class="outcome-item" onclick="toggleDone(this)">
+      <span class="check">✅</span> 你自己建构的「化学变化判断模型图」
+    </div>
+    <div class="outcome-item" onclick="toggleDone(this)">
+      <span class="check">✅</span> 一套可复用的建构性原理（思维工具箱）
+    </div>
+    <div class="outcome-item" onclick="toggleDone(this)">
+      <span class="check">✅</span> 一份化学探究项目方案
+    </div>
+    <div class="outcome-item" onclick="toggleDone(this)">
+      <span class="check">✅</span> 对不同化学变化的分析判断能力
+    </div>
+    <div class="outcome-item" onclick="toggleDone(this)">
+      <span class="check">✅</span> 对化学学科前沿的基本认知和兴趣
+    </div>
+  </div>
+  <p style="font-size:13px;color:var(--text-secondary);margin-top:8px;">👆 点击每一项可标记为「已完成」</p>
+  <button class="accordion-toggle" style="background:#8c8c8c;" onclick="resetOutcomes()">重置进度</button>
+</div>
+
+</div>
+<script>
+function toggleAccordion(btn, id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var isOpen = el.classList.toggle('open');
+  btn.textContent = isOpen ? '收起详细内容' : '展开详细内容';
+}
+function toggleDone(el) {
+  el.classList.toggle('done');
+}
+function resetOutcomes() {
+  document.querySelectorAll('.outcome-item').forEach(function(el) {
+    el.classList.remove('done');
+  });
+}
+</script>
+</body>
+</html>

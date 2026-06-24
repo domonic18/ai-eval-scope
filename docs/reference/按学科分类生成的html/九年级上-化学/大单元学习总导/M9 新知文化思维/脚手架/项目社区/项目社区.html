@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>化学项目社区 — 走进化学世界</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px;
+  box-sizing: border-box;
+}
+.header {
+  text-align: center;
+  padding: 32px 20px;
+  background: linear-gradient(135deg, #1677ff 0%, #4096ff 100%);
+  color: #fff;
+  border-radius: 0 0 24px 24px;
+  margin: -20px -20px 24px -20px;
+}
+.header h1 {
+  margin: 0 0 8px;
+  font-size: var(--font-h1);
+  font-weight: 700;
+}
+.header p { margin: 0; opacity: 0.9; font-size: 14px; }
+.badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.2);
+  padding: 2px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+.project-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 4px;
+  box-shadow: var(--shadow);
+}
+.project-tab {
+  flex: 1;
+  text-align: center;
+  padding: 10px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.3s;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+}
+.project-tab:hover { background: var(--bg); color: var(--text); }
+.project-tab.active {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(22,119,255,0.3);
+}
+.project-tab .picon { display: block; font-size: 18px; margin-bottom: 2px; }
+.project-tab .ptime { font-size: 11px; opacity: 0.7; }
+
+.panel { display: none; }
+.panel.active { display: block; animation: fadeIn 0.35s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+.project-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.project-card-banner {
+  padding: 16px 20px;
+  color: #fff;
+  position: relative;
+}
+.project-card-banner.short { background: linear-gradient(135deg, #1890ff, #69b1ff); }
+.project-card-banner.medium { background: linear-gradient(135deg, #d46b08, #fa8c16); }
+.project-card-banner.long { background: linear-gradient(135deg, #722ed1, #b37feb); }
+.project-card-banner h3 { margin: 0 0 4px; font-size: 18px; }
+.project-card-banner .duration {
+  display: inline-block;
+  background: rgba(255,255,255,0.2);
+  padding: 1px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.project-card-body { padding: 16px 20px; }
+
+.section-block { margin-bottom: 14px; }
+.section-block:last-child { margin-bottom: 0; }
+.section-block .s-label {
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 13px;
+  display: block;
+  margin-bottom: 4px;
+}
+.section-block p, .section-block ul { margin: 4px 0; }
+.section-block ul { padding-left: 18px; }
+.section-block ul li { margin-bottom: 3px; }
+
+.stage-list { counter-reset: stage; list-style: none; padding: 0; }
+.stage-list li {
+  counter-increment: stage;
+  padding: 6px 0 6px 28px;
+  position: relative;
+  border-bottom: 1px dashed var(--border);
+}
+.stage-list li:last-child { border-bottom: none; }
+.stage-list li::before {
+  content: counter(stage);
+  position: absolute; left: 0; top: 6px;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 11px;
+  border: 1px solid var(--primary);
+}
+
+.eval-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.eval-item {
+  padding: 8px 12px;
+  background: var(--bg);
+  border-radius: 6px;
+  font-size: 13px;
+  text-align: center;
+}
+.eval-item .e-icon { font-size: 16px; }
+.eval-item .e-label { font-weight: 600; font-size: 12px; }
+
+.resource-section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  border: 1px solid var(--border);
+  margin-top: 20px;
+}
+.resource-section h3 {
+  margin: 0 0 12px;
+  font-size: var(--font-h2);
+  color: var(--primary);
+}
+.resource-list { list-style: none; padding: 0; margin: 0; }
+.resource-list li {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.resource-list li:last-child { border-bottom: none; }
+.resource-list li::before { content: "🔗"; }
+
+.project-cta {
+  margin-top: 16px;
+  text-align: center;
+}
+.project-cta button {
+  padding: 8px 24px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.project-cta button:hover { background: var(--primary-hover); }
+.project-cta button:active { transform: scale(0.97); }
+
+.interest-panel {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 6px;
+  display: none;
+  font-size: 14px;
+  text-align: center;
+}
+.interest-panel.show { display: block; animation: fadeIn 0.3s ease; }
+
+@media (max-width: 600px) {
+  .eval-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🧪 化学项目社区</h1>
+    <p>第1章 · 走进化学世界 · 实践探究项目库</p>
+    <span class="badge">九年级上 · 化学</span>
+  </div>
+
+  <div class="project-tabs">
+    <button class="project-tab active" data-cycle="short" onclick="switchProject('short')">
+      <span class="picon">⚡</span>短周期
+      <span class="ptime">1–3天</span>
+    </button>
+    <button class="project-tab" data-cycle="medium" onclick="switchProject('medium')">
+      <span class="picon">🔥</span>中周期
+      <span class="ptime">1–2周</span>
+    </button>
+    <button class="project-tab" data-cycle="long" onclick="switchProject('long')">
+      <span class="picon">🚀</span>长周期
+      <span class="ptime">1月+</span>
+    </button>
+  </div>
+
+  <!-- 短周期 -->
+  <div class="panel active" data-cycle="short">
+    <div class="project-card">
+      <div class="project-card-banner short">
+        <h3>🏠 家庭化学变化寻宝</h3>
+        <span class="duration">⏱ 1–3 天 · 微项目</span>
+      </div>
+      <div class="project-card-body">
+        <div class="section-block">
+          <span class="s-label">🎯 项目目标</span>
+          <p>在家庭环境中找到至少 <strong>5 种化学变化</strong>，用照片/视频 + 文字记录</p>
+        </div>
+        <div class="section-block">
+          <span class="s-label">📋 阶段任务</span>
+          <ol class="stage-list">
+            <li>浏览家中各区域（厨房、卫生间、阳台等）</li>
+            <li>记录发现的变化现象</li>
+            <li>判断是否属于化学变化并说明理由</li>
+            <li>整理成"家庭化学变化地图"</li>
+          </ol>
+        </div>
+        <div class="section-block">
+          <span class="s-label">📦 成果形式</span>
+          <p>图文记录表（含照片、变化描述、判断依据）</p>
+        </div>
+        <div class="section-block">
+          <span class="s-label">⭐ 评价标准</span>
+          <div class="eval-grid">
+            <div class="eval-item"><span class="e-icon">🎯</span><br><span class="e-label">判断准确率</span></div>
+            <div class="eval-item"><span class="e-icon">📝</span><br><span class="e-label">记录完整性</span></div>
+            <div class="eval-item"><span class="e-icon">🔬</span><br><span class="e-label">理由科学性</span></div>
+            <div class="eval-item"><span class="e-icon">🎨</span><br><span class="e-label">呈现美观性</span></div>
+          </div>
+        </div>
+        <div class="project-cta">
+          <button onclick="showInterest('short')">✅ 我对这个项目感兴趣！</button>
+          <div class="interest-panel" id="interest-short">
+            🎉 太棒了！从厨房开始探索吧——铁锅生锈、小苏打+醋冒泡都是经典的化学变化！
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 中周期 -->
+  <div class="panel" data-cycle="medium">
+    <div class="project-card">
+      <div class="project-card-banner medium">
+        <h3>📖 生活防化学变化指南</h3>
+        <span class="duration">⏱ 1–2 周 · 专题项目</span>
+      </div>
+      <div class="project-card-body">
+        <div class="section-block">
+          <span class="s-label">🎯 项目目标</span>
+          <p>针对生活中 <strong>3 种不受欢迎的化学变化</strong>（如铁生锈、食物腐败、塑料老化），研究预防方法，制作实用指南</p>
+        </div>
+        <div class="section-block">
+          <span class="s-label">📋 阶段任务</span>
+          <ol class="stage-list">
+            <li>选择 3 种"不受欢迎的化学变化"</li>
+            <li>研究它们发生的条件</li>
+            <li>查找或设计预防方案</li>
+            <li>制作成图文并茂的指南</li>
+          </ol>
+        </div>
+        <div class="section-block">
+          <span class="s-label">📦 成果形式</span>
+          <p>"防化学变化指南"（小册子 / 海报 / PPT）</p>
+        </div>
+        <div class="section-block">
+          <span class="s-label">⭐ 评价标准</span>
+          <div class="eval-grid">
+            <div class="eval-item"><span class="e-icon">🔬</span><br><span class="e-label">科学性</span></div>
+            <div class="eval-item"><span class="e-icon">💡</span><br><span class="e-label">实用性</span></div>
+            <div class="eval-item"><span class="e-icon">🎨</span><br><span class="e-label">美观性</span></div>
+            <div class="eval-item"><span class="e-icon">📚</span><br><span class="e-label">完整性</span></div>
+          </div>
+        </div>
+        <div class="project-cta">
+          <button onclick="showInterest('medium')">✅ 我对这个项目感兴趣！</button>
+          <div class="interest-panel" id="interest-medium">
+            🎉 好选择！铁生锈是最经典的案例——从"隔绝氧气和水"入手去设计方案吧！
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 长周期 -->
+  <div class="panel" data-cycle="long">
+    <div class="project-card">
+      <div class="project-card-banner long">
+        <h3>🔬 未来材料设计师</h3>
+        <span class="duration">⏱ 1月+ · 综合项目</span>
+      </div>
+      <div class="project-card-body">
+        <div class="section-block">
+          <span class="s-label">🎯 项目目标</span>
+          <p>基于化学变化原理，设计一种具有特定功能的<strong>新型材料概念方案</strong></p>
+        </div>
+        <div class="section-block">
+          <span class="s-label">📋 阶段任务</span>
+          <ol class="stage-list">
+            <li><strong>调研</strong>：了解当前材料科学的 3 个前沿方向</li>
+            <li><strong>选题</strong>：确定你想"设计"的材料类型</li>
+            <li><strong>设计</strong>：画出材料结构概念图和制备流程</li>
+            <li><strong>论证</strong>：说明这种材料的工作原理（涉及什么化学变化）</li>
+            <li><strong>展示</strong>：制作展板或演示文稿</li>
+          </ol>
+        </div>
+        <div class="section-block">
+          <span class="s-label">📦 成果形式</span>
+          <p>材料设计方案 + 展示海报</p>
+        </div>
+        <div class="section-block">
+          <span class="s-label">⭐ 评价标准</span>
+          <div class="eval-grid">
+            <div class="eval-item"><span class="e-icon">💡</span><br><span class="e-label">创新性</span></div>
+            <div class="eval-item"><span class="e-icon">🔬</span><br><span class="e-label">科学性</span></div>
+            <div class="eval-item"><span class="e-icon">✅</span><br><span class="e-label">可行性</span></div>
+            <div class="eval-item"><span class="e-icon">🎤</span><br><span class="e-label">展示表现力</span></div>
+          </div>
+        </div>
+        <div class="project-cta">
+          <button onclick="showInterest('long')">✅ 我对这个项目感兴趣！</button>
+          <div class="interest-panel" id="interest-long">
+            🎉 挑战自我！可以从"自修复材料"或"环保降解塑料"入手，这些是材料科学的热门方向！
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="resource-section">
+    <h3>🔗 资源链接</h3>
+    <ul class="resource-list">
+      <li>中国工程院"材料科学"科普专题</li>
+      <li>科普中国"新材料"专栏</li>
+      <li>学校化学实验室（可申请做验证实验）</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+function switchProject(cycle) {
+  document.querySelectorAll('.project-tab').forEach(function(t) {
+    t.classList.toggle('active', t.dataset.cycle === cycle);
+  });
+  document.querySelectorAll('.panel').forEach(function(p) {
+    p.classList.toggle('active', p.dataset.cycle === cycle);
+  });
+}
+
+function showInterest(cycle) {
+  var panel = document.getElementById('interest-' + cycle);
+  if (panel) {
+    panel.classList.toggle('show');
+    var btn = panel.previousElementSibling;
+    if (panel.classList.contains('show')) {
+      btn.textContent = '❌ 取消选择';
+    } else {
+      btn.textContent = '✅ 我对这个项目感兴趣！';
+    }
+  }
+}
+</script>
+</body>
+</html>

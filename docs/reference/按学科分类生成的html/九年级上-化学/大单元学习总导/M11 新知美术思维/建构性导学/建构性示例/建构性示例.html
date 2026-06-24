@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性示例 — 化学 九年级上</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+.header p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 14px;
+}
+.section-title {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin: 28px 0 14px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--accent);
+}
+
+/* 步骤递进式展示 */
+.step-progress {
+  display: flex;
+  justify-content: space-between;
+  margin: 20px 0 16px;
+  padding: 0;
+  list-style: none;
+  gap: 4px;
+}
+.step-progress li {
+  flex: 1;
+  text-align: center;
+  padding: 8px 4px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+}
+.step-progress li .step-num {
+  display: block;
+  width: 26px; height: 26px;
+  line-height: 26px;
+  margin: 0 auto 4px;
+  background: #f0f0f0;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  transition: all 0.3s;
+}
+.step-progress li.active {
+  border-color: var(--primary);
+  background: #f0f5ff;
+  color: var(--primary);
+}
+.step-progress li.active .step-num {
+  background: var(--primary);
+  color: #fff;
+}
+.step-progress li.done {
+  border-color: #b7eb8f;
+  background: #f6ffed;
+  color: #389e0d;
+}
+.step-progress li.done .step-num {
+  background: #52c41a;
+  color: #fff;
+}
+
+.step-card {
+  display: none;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  box-shadow: var(--shadow);
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  animation: fadeIn 0.3s ease;
+}
+.step-card.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.step-card h4 {
+  font-size: 17px;
+  color: var(--primary);
+  margin: 0 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.step-card h4 .tag {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 4px;
+}
+.step-card p, .step-card li { font-size: 14px; line-height: 1.8; }
+.step-card ul { padding-left: 18px; }
+
+.step-nav {
+  display: flex;
+  justify-content: space-between;
+  margin: 16px 0;
+}
+.step-nav button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 22px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.step-nav button:hover { background: var(--primary-hover); }
+.step-nav button:disabled {
+  background: #d9d9d9;
+  color: #999;
+  cursor: not-allowed;
+}
+.step-nav button:disabled:hover { background: #d9d9d9; }
+
+.step-indicator {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 10px 0;
+}
+
+/* 观察记录表 */
+.obs-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 14px;
+}
+.obs-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 600;
+}
+.obs-table td {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+}
+.obs-table tr:nth-child(even) td { background: #fafafa; }
+
+/* 思维句架 */
+.sentence-frame {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin: 12px 0;
+  font-size: 14px;
+}
+.sentence-frame strong { color: #d46b08; }
+
+/* 支架工具 */
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+.tool-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tool-card:hover { border-color: var(--primary); }
+.tool-card h5 { margin: 0 0 6px; color: var(--primary); font-size: 14px; }
+.tool-card p { margin: 0; font-size: 13px; color: var(--text-secondary); }
+.tool-card .tool-detail {
+  display: none;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+  font-size: 13px;
+  color: var(--text);
+}
+.tool-card.active .tool-detail { display: block; }
+
+.btn-reset {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-reset:hover { background: var(--primary-hover); }
+
+@media (max-width: 640px) {
+  .container { padding: 14px; }
+  .header { padding: 18px 16px; }
+  .step-progress { flex-wrap: wrap; }
+  .step-progress li { flex: 0 0 calc(50% - 4px); }
+  .tool-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🔬 建构性示例</h1>
+  <p>跟着示范走一遍建构流程 · 区分物理变化与化学变化 · 九年级上</p>
+</div>
+
+<p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">
+  你收到两瓶"神秘液体"——一瓶是水（H₂O），一瓶是白醋（CH₃COOH）。你的任务是通过观察和实验，自己建构出两者的分类标准。<br>
+  🖱️ <strong>点击下方步骤编号</strong>，一步步跟着示范走。
+</p>
+
+<div class="section-title">📖 建构六步走</div>
+
+<ul class="step-progress" id="stepProgress">
+  <li class="active" data-step="1" onclick="goToStep(1)">
+    <span class="step-num">1</span>观察与记录
+  </li>
+  <li data-step="2" onclick="goToStep(2)">
+    <span class="step-num">2</span>提出问题
+  </li>
+  <li data-step="3" onclick="goToStep(3)">
+    <span class="step-num">3</span>收集证据
+  </li>
+  <li data-step="4" onclick="goToStep(4)">
+    <span class="step-num">4</span>分析推理
+  </li>
+  <li data-step="5" onclick="goToStep(5)">
+    <span class="step-num">5</span>建构概念
+  </li>
+  <li data-step="6" onclick="goToStep(6)">
+    <span class="step-num">6</span>表达验证
+  </li>
+</ul>
+
+<div class="step-indicator" id="stepIndicator">第 1 步 / 共 6 步</div>
+
+<!-- 步骤卡片 -->
+<div class="step-card active" data-step="1" id="step1">
+  <h4><span class="tag">步骤 1</span> 👀 观察与记录</h4>
+  <p><strong>核心问题：</strong>我看到了什么？</p>
+  <p>用五感 + 工具对两瓶液体进行完整观察：</p>
+  <table class="obs-table">
+    <tr><th>观察维度</th><th>液体 A（标签：水）</th><th>液体 B（标签：白醋）</th></tr>
+    <tr><td>颜色</td><td>无色透明</td><td>无色透明</td></tr>
+    <tr><td>气味</td><td>无味</td><td>有刺激性酸味</td></tr>
+    <tr><td>状态</td><td>液态，流动性好</td><td>液态，流动性好</td></tr>
+    <tr><td>触感（安全前提下）</td><td>无滑腻感</td><td>有轻微涩感</td></tr>
+  </table>
+  <p><strong>🔑 建构要点：</strong>先不做判断，先做完整描述。这就是<strong>观察锚定法</strong>的起点。</p>
+</div>
+
+<div class="step-card" data-step="2" id="step2">
+  <h4><span class="tag">步骤 2</span> ❓ 提出问题</h4>
+  <p><strong>核心问题：</strong>我想知道什么？</p>
+  <ul>
+    <li>怎么区分这两种液体？</li>
+    <li>它们发生变化的「方式」一样吗？</li>
+    <li>如果我把它们分别加热，会有什么不同？</li>
+    <li>如果分别和小苏打混合，会发生什么？</li>
+  </ul>
+  <p><strong>🔑 建构要点：</strong>好问题驱动好建构。把"不知道的"变成"想知道的"，是建构的发动机。</p>
+</div>
+
+<div class="step-card" data-step="3" id="step3">
+  <h4><span class="tag">步骤 3</span> 🔬 收集证据</h4>
+  <p><strong>核心问题：</strong>我可以通过什么实验来验证？</p>
+  <p>设计两个简单实验：</p>
+  <table class="obs-table">
+    <tr><th>实验</th><th>操作方法</th><th>水（预测）</th><th>白醋（预测）</th></tr>
+    <tr><td><strong>实验一：加热</strong></td><td>分别取少量于蒸发皿，加热至沸腾</td><td>沸腾变成水蒸气，冷凝后还是水</td><td>先沸腾，继续加热可能留下固体残留</td></tr>
+    <tr><td><strong>实验二：加小苏打</strong></td><td>分别加入少量小苏打（NaHCO₃）</td><td>小苏打溶解，无气泡</td><td>迅速产生大量气泡（CO₂）</td></tr>
+  </table>
+  <p><strong>🔑 建构要点：</strong>实验是化学家的"证据收集器"。<strong>证据驱动法</strong>的核心——用事实说话。</p>
+</div>
+
+<div class="step-card" data-step="4" id="step4">
+  <h4><span class="tag">步骤 4</span> 🧠 分析推理</h4>
+  <p><strong>核心问题：</strong>这些证据说明了什么？</p>
+  <div class="sentence-frame">
+    <strong>思维句架：</strong>我观察到 <u>水加热沸腾后冷凝仍为水</u>，这说明 <u>没有新物质生成</u>，因此我判断 <u>水的状态变化属于物理变化</u>。<br><br>
+    我观察到 <u>白醋加热后有固体残留</u>，且 <u>与小苏打混合产生大量气泡</u>，这说明 <u>有新物质生成</u>，因此我判断 <u>白醋的变化属于化学变化</u>。
+  </div>
+  <p><strong>🔑 建构要点：</strong>用"我观察到…，这说明…，因此我判断…"的句式，强迫自己<strong>证据驱动</strong>每一个结论。</p>
+</div>
+
+<div class="step-card" data-step="5" id="step5">
+  <h4><span class="tag">步骤 5</span> ✍️ 建构概念</h4>
+  <p><strong>核心问题：</strong>我能不能自己下定义？</p>
+  <p><strong>📝 我的建构（用自定文法）：</strong></p>
+  <table class="obs-table">
+    <tr><th>概念</th><th>我的定义（用自己的话）</th><th>教材标准定义</th></tr>
+    <tr><td><strong>物理变化</strong></td><td>物质的样子变了，但还是原来的物质。比如水变成水蒸气，本质还是水。</td><td>没有新物质生成的变化</td></tr>
+    <tr><td><strong>化学变化</strong></td><td>物质变了，变成了全新的物质。比如白醋加小苏打产生气泡，气泡是新的气体。</td><td>有新物质生成的变化</td></tr>
+  </table>
+  <p><strong>🔑 建构要点：</strong>用自己的话说一遍，再对比教材标准定义。你的版本和标准版本有什么不同？这意味着什么？这就是<strong>自定文法</strong>。</p>
+</div>
+
+<div class="step-card" data-step="6" id="step6">
+  <h4><span class="tag">步骤 6</span> 📊 表达验证</h4>
+  <p><strong>核心问题：</strong>我能不能让别人看懂？</p>
+  <p><strong>分类锚图：</strong></p>
+  <table class="obs-table">
+    <tr><th>对比维度</th><th>物理变化</th><th>化学变化</th></tr>
+    <tr><td>是否有新物质生成</td><td>❌ 否</td><td>✅ 是</td></tr>
+    <tr><td>例子</td><td>水结冰、玻璃破碎、糖溶解</td><td>铁生锈、蜡烛燃烧、食物变质</td></tr>
+    <tr><td>判断依据</td><td>变化后物质不变</td><td>变化后产生新物质</td></tr>
+    <tr><td>实验证据</td><td>加热水→冷凝仍为水</td><td>醋+小苏打→产生CO₂气体</td></tr>
+  </table>
+  <p><strong>🔑 建构要点：</strong>最终成果要让别人一看就懂。如果讲不清楚，说明建构得还不够深——回去再修正！这就是<strong>检验修正法</strong>。</p>
+</div>
+
+<div class="step-nav">
+  <button id="prevBtn" onclick="prevStep()">◀ 上一步</button>
+  <button id="nextBtn" onclick="nextStep()">下一步 ▶</button>
+</div>
+
+<div class="section-title">🧰 支架工具</div>
+<div class="tool-grid">
+  <div class="tool-card" onclick="toggleTool(this)">
+    <h5>📋 观察记录表</h5>
+    <p>现象 | 变化前 | 变化后 | 是否有新物质生成</p>
+    <div class="tool-detail">用表格形式记录每一次实验：<br>① 变化前物质特征<br>② 变化中观察到的现象<br>③ 变化后物质特征<br>④ 判断是否有新物质</div>
+  </div>
+  <div class="tool-card" onclick="toggleTool(this)">
+    <h5>🏷️ 分类锚图</h5>
+    <p>物理变化 vs 化学变化的对照框架</p>
+    <div class="tool-detail">用"两组对比"的方式：<br>把易混淆的概念放在一张对照表中，从多个维度对比区分。</div>
+  </div>
+  <div class="tool-card" onclick="toggleTool(this)">
+    <h5>💬 思维句架</h5>
+    <p>"我观察到…，这说明…，因此我判断…"</p>
+    <div class="tool-detail">这个句式帮你把<strong>证据</strong>和<strong>结论</strong>连接起来。每做一个判断，都强制自己用这个句架说一遍。</div>
+  </div>
+</div>
+
+<div class="section-title">📌 学习建议</div>
+<div style="background:var(--card-bg);border-radius:var(--border-radius);padding:16px 20px;box-shadow:var(--shadow);">
+  <ul style="font-size:14px;padding-left:18px;">
+    <li>先自己试着建构，再看示范对比——看之前你自己能做到哪一步</li>
+    <li>重点看"专家是怎么想的"，不是背答案</li>
+    <li>记下你认为最有用的"建构方法"，供后续原理提炼使用</li>
+    <li>完成全部步骤后，回顾一次：哪一步最让你有"原来如此"的感觉？</li>
+  </ul>
+</div>
+
+</div>
+
+<script>
+var currentStep = 1;
+var totalSteps = 6;
+
+function goToStep(n) {
+  if (n < 1 || n > totalSteps) return;
+  currentStep = n;
+  updateUI();
+}
+
+function nextStep() {
+  if (currentStep < totalSteps) {
+    currentStep++;
+    updateUI();
+  }
+}
+
+function prevStep() {
+  if (currentStep > 1) {
+    currentStep--;
+    updateUI();
+  }
+}
+
+function updateUI() {
+  // 步骤指示
+  document.getElementById('stepIndicator').textContent = '第 ' + currentStep + ' 步 / 共 ' + totalSteps + ' 步';
+
+  // 进度条
+  var steps = document.querySelectorAll('.step-progress li');
+  steps.forEach(function(li, idx) {
+    var n = idx + 1;
+    li.classList.remove('active', 'done');
+    if (n === currentStep) li.classList.add('active');
+    else if (n < currentStep) li.classList.add('done');
+  });
+
+  // 卡片
+  document.querySelectorAll('.step-card').forEach(function(card) {
+    card.classList.remove('active');
+  });
+  var activeCard = document.getElementById('step' + currentStep);
+  if (activeCard) activeCard.classList.add('active');
+
+  // 按钮状态
+  document.getElementById('prevBtn').disabled = (currentStep === 1);
+  document.getElementById('nextBtn').disabled = (currentStep === totalSteps);
+}
+
+function toggleTool(el) {
+  el.classList.toggle('active');
+}
+</script>
+</body>
+</html>

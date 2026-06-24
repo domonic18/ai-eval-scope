@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块定位 — M3 全息活动与感知</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.wrapper { width: 100%; max-width: none; padding: 24px; box-sizing: border-box; }
+.banner {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff; border-radius: var(--border-radius);
+  padding: 28px 32px; margin-bottom: 24px;
+}
+.banner h1 { font-size: var(--font-h1); margin: 0 0 8px; }
+.banner p { margin: 4px 0 0; opacity: 0.92; font-size: 14px; }
+.banner .tag {
+  display: inline-block; background: rgba(255,255,255,0.2);
+  padding: 2px 12px; border-radius: 12px; font-size: 13px; margin-top: 10px;
+}
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+@media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
+.card {
+  background: var(--card-bg); border-radius: var(--border-radius);
+  box-shadow: var(--shadow); padding: 20px; box-sizing: border-box;
+  border: 1px solid var(--border);
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); transform: translateY(-2px); }
+.card h2 {
+  font-size: var(--font-h2); margin: 0 0 10px; color: var(--primary);
+  display: flex; align-items: center; gap: 8px;
+}
+.card h2 .icon { font-size: 20px; }
+.card p, .card li { margin: 6px 0; color: var(--text); }
+.card ul { padding-left: 20px; margin: 6px 0; }
+.card li { list-style: disc; }
+
+.outcome-list { list-style: none; padding: 0; margin: 8px 0; }
+.outcome-list li {
+  padding: 8px 12px; margin: 6px 0;
+  background: var(--bg); border-radius: 6px;
+  border-left: 3px solid var(--primary);
+  cursor: pointer; transition: background 0.2s;
+}
+.outcome-list li:hover { background: #e6f0ff; }
+.outcome-list li.done {
+  background: #f6ffed; border-left-color: #52c41a;
+  text-decoration: line-through; color: var(--text-secondary);
+}
+.outcome-list li .check { float: right; cursor: pointer; user-select: none; }
+
+.full-width { grid-column: 1 / -1; }
+
+.tip-box {
+  background: #fff7e6; border: 1px solid #ffd591;
+  border-radius: var(--border-radius); padding: 14px 18px; margin-top: 16px;
+}
+.tip-box strong { color: #d46b08; }
+
+.summary-cta {
+  display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin: 20px 0 10px;
+}
+.cta-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--primary); color: #fff; border: none;
+  padding: 10px 24px; border-radius: 20px; font-size: 14px;
+  cursor: pointer; transition: background 0.2s, transform 0.15s;
+}
+.cta-btn:hover { background: var(--primary-hover); transform: scale(1.03); }
+.cta-btn.outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+.cta-btn.outline:hover { background: var(--bg); }
+
+.progress-bar {
+  background: var(--border); border-radius: 10px; height: 8px; margin: 12px 0 4px; overflow: hidden;
+}
+.progress-bar .fill {
+  height: 100%; background: var(--primary); border-radius: 10px;
+  width: 0%; transition: width 0.5s ease;
+}
+.progress-label { font-size: 13px; color: var(--text-secondary); text-align: right; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="banner">
+    <h1>🧪 M3 全息活动与感知：新概念前认知</h1>
+    <p>模块定位 | 化学 · 九年级上</p>
+    <span class="tag">📌 核心模块 · 走进化学世界</span>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2><span class="icon">🔍</span> 本模块学习什么</h2>
+      <p>用你的眼睛、鼻子、手和大脑，<strong>全方位"感知"化学变化</strong>到底是什么。</p>
+      <ul>
+        <li>观察真实的化学现象（蜡烛燃烧等）</li>
+        <li>学习"专家是怎么分析这些现象的"</li>
+        <li>自己动手建构对"化学变化"的解释模型</li>
+        <li>在7个不同情境中反复练习分析能力</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2><span class="icon">💡</span> 为什么重要</h2>
+      <p>"化学变化"是整个化学学科的<strong>核心概念</strong>。</p>
+      <p>不理解化学变化，后面学的一切（元素、分子、化学反应方程式）都会像建在沙子上的城堡。</p>
+      <p>本模块让你<strong>先拥有对化学变化的感性体验</strong>，再理解它的科学含义。</p>
+    </div>
+
+    <div class="card">
+      <h2><span class="icon">🧩</span> 与大单元的关系</h2>
+      <p>大单元"第1章 走进化学世界"的目标是带你打开化学的大门。本模块就是你迈进大门后的<strong>"第一课"</strong>——让你真实地体验和感知"化学变化"。</p>
+      <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:13px;color:var(--text-secondary)">
+        <span>← 前序：建立化学印象</span>
+        <span style="color:var(--primary);font-weight:600">★ 本模块：感知化学变化</span>
+        <span>后续：实验操作 →</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="icon">🔗</span> 前后衔接</h2>
+      <ul>
+        <li><strong>前序模块</strong>：建立对化学学科的初步印象</li>
+        <li><strong>本模块</strong>：通过感知活动，建立对"化学变化"的感性认识和基本判断力</li>
+        <li><strong>后续模块</strong>：学习实验操作规范、物质的性质与变化规律</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card full-width">
+    <h2><span class="icon">🎯</span> 预期学习成果</h2>
+    <p>点击右侧 ✓ 标记你的完成进度：</p>
+    <ul class="outcome-list" id="outcomeList">
+      <li data-index="0">一份"蜡烛燃烧的化学变化解释模型"（图文结合）<span class="check" onclick="toggleOutcome(this)">✅</span></li>
+      <li data-index="1">一份"化学变化 vs 物理变化"对照表<span class="check" onclick="toggleOutcome(this)">⬜</span></li>
+      <li data-index="2">掌握"观察→提问→找证据→推理→表达"五步分析法<span class="check" onclick="toggleOutcome(this)">⬜</span></li>
+      <li data-index="3">完成7个递进式建构任务中的至少3个成果<span class="check" onclick="toggleOutcome(this)">⬜</span></li>
+    </ul>
+    <div class="progress-bar"><div class="fill" id="progressFill" style="width:25%"></div></div>
+    <div class="progress-label" id="progressLabel">已完成 1 / 4</div>
+    <div style="text-align:right;margin-top:4px">
+      <button class="cta-btn outline" style="padding:4px 14px;font-size:12px" onclick="resetOutcomes()">↻ 重置</button>
+    </div>
+  </div>
+
+  <div class="card full-width">
+    <h2><span class="icon">🚀</span> 五步分析法速览</h2>
+    <p style="margin-bottom:12px">你将在本模块反复使用的核心分析框架——点击每一步查看提示：</p>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+      <button class="cta-btn" style="padding:6px 16px;font-size:13px;background:#1677ff" onclick="showTip(0)">👀 观察</button>
+      <button class="cta-btn" style="padding:6px 16px;font-size:13px;background:#13c2c2" onclick="showTip(1)">❓ 提问</button>
+      <button class="cta-btn" style="padding:6px 16px;font-size:13px;background:#52c41a" onclick="showTip(2)">🔎 找证据</button>
+      <button class="cta-btn" style="padding:6px 16px;font-size:13px;background:#fa8c16" onclick="showTip(3)">🧠 推理</button>
+      <button class="cta-btn" style="padding:6px 16px;font-size:13px;background:#722ed1" onclick="showTip(4)">📝 表达</button>
+    </div>
+    <div id="stepTip" style="background:var(--bg);border-radius:6px;padding:12px 16px;min-height:48px;color:var(--text-secondary);font-style:italic;transition:all 0.2s">
+      点击上方按钮查看每个步骤的提示
+    </div>
+  </div>
+
+  <div class="tip-box">
+    <strong>📖 学习建议：</strong>本模块重在"感知"而非"记忆"。不要急着背概念，先用心观察每一个实验现象，用自己的语言描述你看到的、闻到的、感受到的。科学思维始于好奇——保持你的好奇心！
+  </div>
+</div>
+
+<script>
+function toggleOutcome(el) {
+  var li = el.parentElement;
+  var idx = parseInt(li.dataset.index);
+  if (li.classList.contains('done')) {
+    li.classList.remove('done');
+    el.textContent = '⬜';
+  } else {
+    li.classList.add('done');
+    el.textContent = '✅';
+  }
+  updateProgress();
+}
+function updateProgress() {
+  var items = document.querySelectorAll('#outcomeList li');
+  var done = document.querySelectorAll('#outcomeList li.done').length;
+  var total = items.length;
+  var pct = Math.round((done / total) * 100);
+  var fill = document.getElementById('progressFill');
+  var label = document.getElementById('progressLabel');
+  if (fill) fill.style.width = pct + '%';
+  if (label) label.textContent = '已完成 ' + done + ' / ' + total;
+}
+function resetOutcomes() {
+  var items = document.querySelectorAll('#outcomeList li');
+  items.forEach(function(li) {
+    li.classList.remove('done');
+    var check = li.querySelector('.check');
+    if (check) check.textContent = '⬜';
+  });
+  updateProgress();
+}
+function showTip(idx) {
+  var tips = [
+    '👀 <strong>观察</strong>：用五感（视觉、嗅觉、听觉、触觉、味觉——只用前四个！）描述现象。注意发光、发热、颜色变化、气体产生、沉淀生成等。',
+    '❓ <strong>提问</strong>：看到现象后问自己——"为什么会这样？""这与我的预期一致吗？""我还有什么不明白的？"',
+    '🔎 <strong>找证据</strong>：哪些观察结果能支持你的想法？哪些否定了它？数据、现象、资料都可以作为证据。',
+    '🧠 <strong>推理</strong>：基于证据，你能得出什么结论？注意区分"我看到的"和"我推测的"。',
+    '📝 <strong>表达</strong>：用清晰的语言（文字、图示、口头表达）把你的发现和结论分享出来。表达的过程就是深化理解的过程。'
+  ];
+  var el = document.getElementById('stepTip');
+  if (el) el.innerHTML = tips[idx];
+}
+</script>
+</body>
+</html>

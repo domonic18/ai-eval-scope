@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块五维导学</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 30px 24px;
+  box-sizing: border-box;
+}
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 24px 0 12px;
+  font-weight: 600;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--accent);
+}
+.subtitle {
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+.dim-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin: 12px 0;
+}
+@media (min-width: 640px) {
+  .dim-grid { grid-template-columns: 1fr 1fr; }
+}
+.dim-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.dim-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.10); }
+.dim-card .dim-icon {
+  font-size: 28px;
+  margin-bottom: 6px;
+}
+.dim-card .dim-title {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.dim-card .dim-body {
+  font-size: 14px;
+  color: var(--text);
+  max-height: 48px;
+  overflow: hidden;
+  transition: max-height 0.3s;
+}
+.dim-card.expanded .dim-body {
+  max-height: 300px;
+}
+.dim-card .dim-toggle {
+  font-size: 12px;
+  color: var(--accent);
+  margin-top: 6px;
+  cursor: pointer;
+}
+.content-block {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+}
+.content-block h3 {
+  font-size: 16px;
+  color: var(--primary);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.figure-list {
+  list-style: none;
+  padding: 0;
+}
+.figure-list li {
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--border);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.figure-list li:last-child { border-bottom: none; }
+.figure-list .fl-name {
+  font-weight: 600;
+  font-size: 14px;
+}
+.figure-list .fl-reason {
+  font-size: 13px;
+  color: var(--text-secondary);
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s;
+}
+.figure-list li.expanded .fl-reason {
+  max-height: 80px;
+  margin-top: 6px;
+}
+.figure-list .fl-arrow {
+  transition: transform 0.2s;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.figure-list li.expanded .fl-arrow {
+  transform: rotate(180deg);
+}
+.question-list {
+  list-style: none;
+  padding: 0;
+}
+.question-list li {
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+.question-list li:hover { border-color: var(--primary); }
+.question-list li .ql-hint {
+  display: none;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border);
+}
+.question-list li.expanded .ql-hint { display: block; }
+.method-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+.method-tags .mt {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.method-tags .mt.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.method-tags .mt:hover:not(.active) { border-color: var(--primary); color: var(--primary); }
+.method-detail {
+  display: none;
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 12px 16px;
+  font-size: 14px;
+  margin-top: 8px;
+}
+.method-detail.visible { display: block; }
+.btn-reset {
+  padding: 8px 20px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 16px;
+}
+.btn-reset:hover { background: var(--primary-hover); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>🧭 模块五维导学</h1>
+  <div class="subtitle">M15 新知三创性应用 · 化学 · 九年级上</div>
+
+  <p style="margin-bottom: 16px;">M15的核心功能是<strong>"三创性应用"</strong>——不是被动学知识，而是主动<strong>创造性地运用化学知识</strong>。下面从五个维度带你全面了解这个模块。</p>
+
+  <!-- 维度一：学习目标 -->
+  <h2>一、模块学习目标</h2>
+  <p>点击卡片展开详细目标描述。</p>
+  <div class="dim-grid">
+    <div class="dim-card" onclick="this.classList.toggle('expanded')">
+      <div class="dim-icon">📖</div>
+      <div class="dim-title">知识理解</div>
+      <div class="dim-body">我能准确区分物理变化与化学变化，说出化学变化的基本特征（有新物质生成），能列举化学变化伴随的常见现象。</div>
+      <div class="dim-toggle">点击展开 ▾</div>
+    </div>
+    <div class="dim-card" onclick="this.classList.toggle('expanded')">
+      <div class="dim-icon">🔧</div>
+      <div class="dim-title">能力形成</div>
+      <div class="dim-body">我能运用建构性方法（观察→提问→建模→验证→表达）完成一个化学探究任务，独立设计简单的对比实验方案。</div>
+      <div class="dim-toggle">点击展开 ▾</div>
+    </div>
+    <div class="dim-card" onclick="this.classList.toggle('expanded')">
+      <div class="dim-icon">🧠</div>
+      <div class="dim-title">思维发展</div>
+      <div class="dim-body">我能建立"现象—证据—结论"的逻辑链，形成分类与比较、模型建构与反思优化的化学思维方式。</div>
+      <div class="dim-toggle">点击展开 ▾</div>
+    </div>
+    <div class="dim-card" onclick="this.classList.toggle('expanded')">
+      <div class="dim-icon">✍️</div>
+      <div class="dim-title">表达产出</div>
+      <div class="dim-body">我能用图示、文字或方案书的形式，清晰表达自己在化学建构过程中的理解与成果。</div>
+      <div class="dim-toggle">点击展开 ▾</div>
+    </div>
+  </div>
+
+  <!-- 维度二：高精尖价值 -->
+  <h2>二、高精尖价值与未来意义</h2>
+  <div class="content-block">
+    <p>你可能会问："为什么要学物质变化和化学实验基本操作？这跟我未来有什么关系？"</p>
+    <p style="margin-top: 8px;">化学的力量远不止课本——</p>
+    <ul style="margin: 8px 0 0 20px;">
+      <li><strong>材料科学：</strong>超导材料、碳纳米管、可降解塑料——它们的诞生都始于对"物质变化"的深刻理解</li>
+      <li><strong>环境保护：</strong>水质净化中的絮凝沉淀、汽车尾气催化转化——本质就是化学变化的控制与利用</li>
+      <li><strong>医药研发：</strong>新冠mRNA疫苗的脂质纳米递送系统、抗癌靶向药的设计——每一步都基于化学变化原理</li>
+    </ul>
+    <p style="margin-top: 10px;">你现在学习的"走进化学世界"第1章，就是为理解这些前沿科技<strong>打下的第一块基石</strong>。</p>
+  </div>
+
+  <!-- 维度三：学习方法 -->
+  <h2>三、推荐学习方式与方法</h2>
+  <p>点击下面的方法标签，查看具体说明。</p>
+  <div class="method-tags">
+    <span class="mt active" onclick="showMethod(this, 'obs')">👁️ 观察法</span>
+    <span class="mt" onclick="showMethod(this, 'comp')">⚖️ 比较法</span>
+    <span class="mt" onclick="showMethod(this, 'model')">🧩 建模法</span>
+    <span class="mt" onclick="showMethod(this, 'exp')">🔬 实验探究</span>
+    <span class="mt" onclick="showMethod(this, 'case')">📋 案例分析法</span>
+  </div>
+
+  <div class="method-detail visible" id="method_obs">
+    <strong>👁️ 观察法</strong> — 带着化学家的眼睛看世界。每次实验前，先花3分钟观察：看到了什么？闻到了什么？摸到了什么？记录一切"异常"。这是建构的起点。
+  </div>
+  <div class="method-detail" id="method_comp">
+    <strong>⚖️ 比较法</strong> — 不孤立看事物，而是对比着看：物理变化 vs 化学变化、燃烧前 vs 燃烧后、铁钉在空气中 vs 在水中。比较让你看到本质。
+  </div>
+  <div class="method-detail" id="method_model">
+    <strong>🧩 建模法</strong> — 把零散信息画成图、做成表。M15特别强调"产出可视化的建构成果"——一张好图胜过十段文字。
+  </div>
+  <div class="method-detail" id="method_exp">
+    <strong>🔬 实验探究</strong> — 不只是"照步骤做"，而是先问"我想知道什么"，再设计实验去找答案。M15鼓励你像科学家一样思考。
+  </div>
+  <div class="method-detail" id="method_case">
+    <strong>📋 案例分析法</strong> — 从7个不同层级的真实案例入手，在解决具体问题中建构知识。案例递进设计，由易到难。
+  </div>
+
+  <!-- 维度四：关键人物 -->
+  <h2>四、关键人物、事件与成果</h2>
+  <p>点击条目了解详情。</p>
+  <ul class="figure-list">
+    <li onclick="this.classList.toggle('expanded')">
+      <div>
+        <div class="fl-name">⚗️ 拉瓦锡 — 化学革命的开创者</div>
+        <div class="fl-reason">拉瓦锡通过著名的"钟罩实验"推翻了燃素说，证明了燃烧是物质与氧气的反应。他建立的质量守恒定律是化学成为科学的重要标志。为什么值得了解？因为他的研究方法——<strong>定量实验+证据推理</strong>——就是你现在学习的"建构性原理"的典范。</div>
+      </div>
+      <span class="fl-arrow">▾</span>
+    </li>
+    <li onclick="this.classList.toggle('expanded')">
+      <div>
+        <div class="fl-name">📊 门捷列夫 — 元素周期表的创造者</div>
+        <div class="fl-reason">门捷列夫不是第一个发现元素规律的人，但他是第一个用<strong>系统化模型</strong>把所有元素组织起来的人。他甚至在周期表上预留空位，预测了未知元素的性质——这就是模型建构的力量！</div>
+      </div>
+      <span class="fl-arrow">▾</span>
+    </li>
+    <li onclick="this.classList.toggle('expanded')">
+      <div>
+        <div class="fl-name">🔬 居里夫人 — 从放射性现象到新元素</div>
+        <div class="fl-reason">居里夫人在成吨的沥青铀矿中提取出微量的镭——用<strong>耐心、数据和逻辑</strong>建构了放射性理论。她的故事说明：伟大的建构往往始于对"异常现象"的深度追问。</div>
+      </div>
+      <span class="fl-arrow">▾</span>
+    </li>
+  </ul>
+
+  <!-- 维度五：前沿追问 -->
+  <h2>五、前沿追问</h2>
+  <p>点击每个问题，看看背后的思考脉络。</p>
+  <ul class="question-list">
+    <li onclick="this.classList.toggle('expanded')">
+      <strong>🤔 如果世界上不存在"化学变化"，生活会是怎样的？</strong>
+      <div class="ql-hint">没有燃烧、没有光合作用、没有消化、没有电池……生命本身就是一个巨大的化学反应系统。这个问题帮你理解化学变化<strong>无处不在</strong>的本质。</div>
+    </li>
+    <li onclick="this.classList.toggle('expanded')">
+      <strong>🤔 科学家怎么知道月球上没有生命？他们用了什么"变化"作为证据？</strong>
+      <div class="ql-hint">月球样本分析显示：没有水和有机物的存在证据，没有微生物代谢产生的气体——"没有变化"本身就是一种重要证据。</div>
+    </li>
+    <li onclick="this.classList.toggle('expanded')">
+      <strong>🤔 如果你可以"设计"一种新物质，你希望它有什么性质？如何实现？</strong>
+      <div class="ql-hint">这是材料科学家每天都在做的事！从"想要的性质"出发，设计分子结构，预测变化反应。你的想象力+化学知识=未来新材料。</div>
+    </li>
+  </ul>
+
+  <div style="text-align: center; margin-top: 20px;">
+    <button class="btn-reset" onclick="resetAll()">🔄 重置所有状态</button>
+  </div>
+
+</div>
+
+<script>
+function showMethod(el, id) {
+  var tags = document.querySelectorAll('.method-tags .mt');
+  for (var i = 0; i < tags.length; i++) {
+    tags[i].classList.remove('active');
+  }
+  el.classList.add('active');
+
+  var details = document.querySelectorAll('.method-detail');
+  for (var j = 0; j < details.length; j++) {
+    details[j].classList.remove('visible');
+  }
+  var target = document.getElementById('method_' + id);
+  if (target) {
+    target.classList.add('visible');
+  }
+}
+
+function resetAll() {
+  document.querySelectorAll('.dim-card.expanded').forEach(function(c) { c.classList.remove('expanded'); });
+  document.querySelectorAll('.figure-list li.expanded').forEach(function(l) { l.classList.remove('expanded'); });
+  document.querySelectorAll('.question-list li.expanded').forEach(function(l) { l.classList.remove('expanded'); });
+  var firstTag = document.querySelector('.method-tags .mt');
+  if (firstTag) {
+    showMethod(firstTag, 'obs');
+  }
+}
+</script>
+</body>
+</html>

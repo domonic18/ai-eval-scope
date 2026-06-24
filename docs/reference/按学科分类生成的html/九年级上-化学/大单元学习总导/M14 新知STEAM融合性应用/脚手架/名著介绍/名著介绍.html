@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名著介绍 — 化学STEAM思想资源</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.wrapper { width: 100%; max-width: none; padding: 24px 20px; box-sizing: border-box; }
+.header {
+  text-align: center; padding: 32px 20px 24px;
+  background: linear-gradient(135deg, var(--primary) 0%, #0050b3 100%);
+  color: #fff; border-radius: 12px; margin-bottom: 28px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; letter-spacing: 2px; }
+.header p { font-size: 14px; opacity: 0.85; }
+.section-title {
+  font-size: var(--font-h2); color: var(--primary);
+  padding-bottom: 10px; border-bottom: 3px solid var(--accent);
+  margin: 32px 0 18px; display: flex; align-items: center; gap: 8px;
+}
+.section-title .badge {
+  display: inline-block; font-size: 12px; padding: 2px 10px;
+  border-radius: 12px; color: #fff; background: var(--primary);
+  margin-left: 8px;
+}
+
+/* 名言区域 */
+.quote-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 640px) { .quote-grid { grid-template-columns: 1fr; } }
+.quote-card {
+  background: var(--card-bg); border-radius: var(--border-radius);
+  box-shadow: var(--shadow); padding: 18px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  cursor: pointer; transition: all 0.2s;
+}
+.quote-card:hover { box-shadow: 0 4px 12px rgba(22,119,255,0.15); }
+.quote-card .quote-text {
+  font-size: 15px; font-style: italic; line-height: 1.7;
+  margin-bottom: 8px; position: relative; padding-left: 20px;
+}
+.quote-card .quote-text::before {
+  content: '"'; position: absolute; left: 0; top: -4px;
+  font-size: 28px; color: var(--primary); line-height: 1;
+}
+.quote-card .quote-source {
+  font-size: 13px; color: var(--text-secondary); text-align: right;
+}
+.quote-card .quote-type {
+  display: inline-block; font-size: 11px; padding: 1px 8px;
+  border-radius: 10px; color: #fff; margin-top: 6px;
+}
+.quote-type.conflict { background: #f5222d; }
+.quote-type.inspire { background: #52c41a; }
+.quote-type.critical { background: #fa8c16; }
+.quote-trigger {
+  margin-top: 8px; font-size: 13px; color: var(--text-secondary);
+  display: none; padding: 8px 10px; background: var(--bg);
+  border-radius: 6px;
+}
+.quote-card.reveal .quote-trigger { display: block; }
+
+/* 名著区域 */
+.book-card {
+  background: var(--card-bg); border-radius: var(--border-radius);
+  box-shadow: var(--shadow); margin-bottom: 20px;
+  border: 1px solid var(--border); overflow: hidden;
+}
+.book-hero {
+  display: flex; align-items: center; gap: 16px;
+  padding: 18px 20px; cursor: pointer;
+  transition: background 0.2s;
+}
+.book-hero:hover { background: rgba(22,119,255,0.04); }
+.book-icon {
+  width: 48px; height: 48px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex-shrink: 0;
+}
+.book-summary { flex: 1; }
+.book-summary h3 { font-size: 16px; color: var(--primary); margin-bottom: 2px; }
+.book-summary .subtitle { font-size: 13px; color: var(--text-secondary); }
+.book-toggle {
+  font-size: 20px; color: var(--text-secondary);
+  transition: transform 0.3s; flex-shrink: 0;
+}
+.book-card.open .book-toggle { transform: rotate(180deg); }
+.book-detail { display: none; padding: 0 20px 20px; }
+.book-card.open .book-detail { display: block; }
+.book-section {
+  margin-bottom: 12px; padding: 10px 14px;
+  background: var(--bg); border-radius: 6px;
+  border-left: 3px solid var(--accent);
+}
+.book-section h4 {
+  font-size: 14px; color: var(--primary); margin-bottom: 4px;
+}
+.book-section p, .book-section li { font-size: 14px; line-height: 1.7; }
+.book-section ul { padding-left: 18px; }
+.book-section ul li { margin-bottom: 3px; }
+.book-access {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+}
+.book-access .tag {
+  display: inline-block; padding: 3px 10px; font-size: 12px;
+  background: var(--primary); color: #fff; border-radius: 12px;
+}
+.footer {
+  text-align: center; padding: 24px 0 8px; color: var(--text-secondary);
+  font-size: 13px; border-top: 1px solid var(--border); margin-top: 32px;
+}
+@media (max-width: 640px) {
+  .wrapper { padding: 16px 12px; }
+  .header { padding: 24px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <h1>📚 名著介绍</h1>
+    <p>名言是思想的火花 · 名著是系统的智慧</p>
+  </div>
+
+  <div class="section-title">
+    💬 名言触发器
+    <span class="badge">3条</span>
+  </div>
+  <div class="quote-grid">
+    <div class="quote-card" onclick="this.classList.toggle('reveal')">
+      <div class="quote-text">科学不是一种信仰，而是一种质疑的习惯。</div>
+      <div class="quote-source">—— 卡尔·萨根，《魔鬼出没的世界》</div>
+      <span class="quote-type inspire">启发型</span>
+      <div class="quote-trigger">🤔 这条名言让你联想到什么？在化学实验中，哪些"理所当然"的现象值得你再多问一个"为什么"？</div>
+    </div>
+    <div class="quote-card" onclick="this.classList.toggle('reveal')">
+      <div class="quote-text">在观察的领域中，机遇只偏爱那种有准备的头脑。</div>
+      <div class="quote-source">—— 路易·巴斯德，法国化学家、微生物学家</div>
+      <span class="quote-type critical">批判型</span>
+      <div class="quote-trigger">🤔 "有准备的头脑"意味着什么？回顾你最近的一次实验——你是否因为"没准备好"而错过了某个有趣的现象？</div>
+    </div>
+    <div class="quote-card" onclick="this.classList.toggle('reveal')">
+      <div class="quote-text">所有科学的尽头都是艺术；所有艺术的尽头都是科学。</div>
+      <div class="quote-source">—— 菲利普·加尔斯顿，天体物理学家</div>
+      <span class="quote-type inspire">启发型</span>
+      <div class="quote-trigger">🤔 你如何理解"科学的尽头是艺术"？在本模块的STEAM融合方案中，你在哪些地方可以同时运用科学思维和艺术表达？</div>
+    </div>
+    <div class="quote-card" onclick="this.classList.toggle('reveal')">
+      <div class="quote-text">天工，人其代之——自然的造化，人用智慧去模仿和超越。</div>
+      <div class="quote-source">—— 《天工开物》题解</div>
+      <span class="quote-type conflict">冲突型</span>
+      <div class="quote-trigger">🤔 古人说"人其代之"——用今天的眼光看，人类的"代"是征服自然还是在理解自然的基础上与之协作？这个界限在哪里？</div>
+    </div>
+  </div>
+
+  <div class="section-title">
+    📖 名著 · 深度导读
+    <span class="badge">3本</span>
+  </div>
+
+  <!-- 天工开物 -->
+  <div class="book-card open" id="book-tiangong">
+    <div class="book-hero" onclick="toggleBook('book-tiangong')">
+      <div class="book-icon">🏯</div>
+      <div class="book-summary">
+        <h3>《天工开物》</h3>
+        <div class="subtitle">宋应星 · 明末 · 中国古代科技百科全书</div>
+      </div>
+      <span class="book-toggle">▾</span>
+    </div>
+    <div class="book-detail">
+      <div class="book-section">
+        <h4>🎯 核心问题</h4>
+        <p>古人是如何运用多学科知识解决生产问题的？从粮食加工到金属冶炼，每种工艺背后都隐藏着化学、物理和工程学的原始智慧。</p>
+      </div>
+      <div class="book-section">
+        <h4>📑 简化目录</h4>
+        <ul>
+          <li>上卷：乃粒（谷物）· 乃服（纺织）· 彰施（染色）· 粹精（粮食加工）</li>
+          <li>中卷：陶埏（陶瓷）· 冶铸（铸造）· 锤锻（锻造）· 燔石（烧制石灰/硫磺）</li>
+          <li>下卷：五金（金属）· 佳兵（兵器）· 丹青（颜料）· 珠玉</li>
+        </ul>
+      </div>
+      <div class="book-section">
+        <h4>💡 核心观点摘要</h4>
+        <p>"天工"指自然造化之力，"开物"指人类认识并利用自然规律制造器物。全书贯穿一个思想：理解自然规律（科学）是制造器物的前提（技术），而器物最终服务于人的生产生活（应用）。——这正是STEAM精神的东方古典表达。</p>
+      </div>
+      <div class="book-section">
+        <h4>🔍 关键片段导读</h4>
+        <p><strong>"燔石"章·石灰烧制</strong>：宋应星详细记载了石灰石经高温煅烧分解为生石灰（CaO），遇水放热转化为熟石灰（Ca(OH)₂）的过程。这一分解与化合的循环利用，与今天的工业钙循环完全一致——300年前的中国人已经掌握了这个化学原理并规模化应用。</p>
+      </div>
+      <div class="book-section">
+        <h4>👥 适读人群</h4>
+        <p><strong>基础</strong>：阅读白话精选版（配插图），重点关注"陶瓷""冶金"章节，结合化学课本中"物质的转化"内容对照学习。<br><strong>进阶</strong>：阅读原文节选，分析每个工艺流程中涉及的化学变化与物理变化。</p>
+      </div>
+      <div class="book-section">
+        <h4>🔗 获取路径</h4>
+        <div class="book-access">
+          <span class="tag">纸质书：中华书局《天工开物》译注本</span>
+          <span class="tag">电子书：微信读书 / 京东读书</span>
+          <span class="tag">免费资源：国学网全文在线</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 化学简史 -->
+  <div class="book-card" id="book-chemhist">
+    <div class="book-hero" onclick="toggleBook('book-chemhist')">
+      <div class="book-icon">⚗️</div>
+      <div class="book-summary">
+        <h3>《化学简史》</h3>
+        <div class="subtitle">J.R. 柏廷顿 · 现代化学发展全景</div>
+      </div>
+      <span class="book-toggle">▾</span>
+    </div>
+    <div class="book-detail">
+      <div class="book-section">
+        <h4>🎯 核心问题</h4>
+        <p>化学这门学科是如何从炼金术的迷雾中一步步走出来的？每一个概念（元素、原子、分子）背后经历了怎样的认知革命？</p>
+      </div>
+      <div class="book-section">
+        <h4>📑 简化目录</h4>
+        <ul>
+          <li>古代化学：从火的利用到炼金术传统</li>
+          <li>17-18世纪：波义耳与拉瓦锡的化学革命</li>
+          <li>19世纪：道尔顿原子论 → 门捷列夫元素周期表</li>
+          <li>20世纪：量子化学与分子生物学的兴起</li>
+        </ul>
+      </div>
+      <div class="book-section">
+        <h4>💡 核心观点摘要</h4>
+        <p>化学的进步不是线性累积，而是范式革命驱动的。拉瓦锡用天平推翻燃素说，道尔顿用原子论统一分散的现象，门捷列夫用周期表预测未发现的元素——每个突破都来自对既有框架的重新审视。这与STEAM教育倡导的"批判性思维"一脉相承。</p>
+      </div>
+      <div class="book-section">
+        <h4>🔍 关键片段导读</h4>
+        <p><strong>门捷列夫的梦中周期表</strong>：门捷列夫自称在梦中看到了元素按原子量排列的表格，醒来后立即记录下来。这个故事的真实性存疑，但它揭示了一个深层的认知机制——长期沉浸式思考后的"灵感涌现"。你的STEAM方案是否也需要一段"沉浸期"？</p>
+      </div>
+      <div class="book-section">
+        <h4>👥 适读人群</h4>
+        <p><strong>基础</strong>：阅读第一章（古代化学）+ 第四章（近代化学革命），配合化学课本前两章学习。<br><strong>进阶</strong>：完整阅读，重点关注"错误的路径"——那些曾经被接受后被推翻的理论，思考它们为什么在当时看起来是合理的。</p>
+      </div>
+      <div class="book-section">
+        <h4>🔗 获取路径</h4>
+        <div class="book-access">
+          <span class="tag">纸质书：广西师范大学出版社</span>
+          <span class="tag">电子书：Kindle / 得到电子书</span>
+          <span class="tag">有声书：喜马拉雅"科学简史"系列</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 跨学科作品 -->
+  <div class="book-card" id="book-steam">
+    <div class="book-hero" onclick="toggleBook('book-steam')">
+      <div class="book-icon">🌉</div>
+      <div class="book-summary">
+        <h3>《知识的边界》</h3>
+        <div class="subtitle">史蒂文·约翰逊 · 创新的跨学科起源</div>
+      </div>
+      <span class="book-toggle">▾</span>
+    </div>
+    <div class="book-detail">
+      <div class="book-section">
+        <h4>🎯 核心问题</h4>
+        <p>为什么最重大的创新往往发生在学科交叉处？什么环境最有利于跨学科思维的诞生？</p>
+      </div>
+      <div class="book-section">
+        <h4>📑 简化目录</h4>
+        <ul>
+          <li>相邻可能：创新如何在已有知识的"边缘"涌现</li>
+          <li>液态网络：思想在不同学科间的流动与碰撞</li>
+          <li>慢思维：为什么长时间的酝酿比"灵感突现"更重要</li>
+          <li>错误的价值：从失败中发现意外突破</li>
+        </ul>
+      </div>
+      <div class="book-section">
+        <h4>💡 核心观点摘要</h4>
+        <p>真正颠覆性的创新很少来自一个学科内部的深耕，而是来自"相邻可能"——当两个相距较远的领域意外交叉时，新的可能性被释放。约翰逊用大量案例证明：跨学科环境、开放交流和允许失败的文化是创新的土壤。</p>
+      </div>
+      <div class="book-section">
+        <h4>🔍 关键片段导读</h4>
+        <p><strong>"液态网络"章节</strong>：约翰逊分析了伦敦皇家学会和硅谷为什么能成为创新中心——前者在咖啡馆里让化学家、天文学家和商人自由交谈，后者在车库里让工程师、设计师和投资人碰撞想法。这个模式对你的STEAM小组合作有什么启发？</p>
+      </div>
+      <div class="book-section">
+        <h4>👥 适读人群</h4>
+        <p><strong>基础</strong>：阅读"引言"和第1-2章，关注书中的案例故事。<br><strong>进阶</strong>：完整阅读后，用书中提出的框架分析你正在做的STEAM项目——你的方案利用了哪些"相邻可能"？</p>
+      </div>
+      <div class="book-section">
+        <h4>🔗 获取路径</h4>
+        <div class="book-access">
+          <span class="tag">纸质书：中信出版社</span>
+          <span class="tag">电子书：微信读书 / 得到</span>
+          <span class="tag">解读资源：B站"书评"系列视频</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    M14 新知 · STEAM融合性应用 · 化学 ｜ 名著介绍
+  </div>
+</div>
+
+<script>
+function toggleBook(id) {
+  var card = document.getElementById(id);
+  if (card) { card.classList.toggle('open'); }
+}
+</script>
+</body>
+</html>

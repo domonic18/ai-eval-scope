@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名人名言 - 化学思维之光</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+* { box-sizing: border-box; }
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+}
+.header {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  color: #fff;
+  padding: 28px 36px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.header::after {
+  content: "💡";
+  position: absolute;
+  right: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 54px;
+  opacity: 0.12;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+.header .subtitle {
+  font-size: 13px;
+  opacity: 0.8;
+  margin: 0;
+}
+
+.people-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.person-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: transform 0.25s, box-shadow 0.25s;
+}
+.person-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+}
+.person-card .card-head {
+  padding: 16px 20px;
+  color: #fff;
+  cursor: pointer;
+  position: relative;
+}
+.person-card .card-head h3 {
+  margin: 0;
+  font-size: 16px;
+}
+.person-card .card-head .years {
+  font-size: 12px;
+  opacity: 0.8;
+}
+.person-card .card-head .expand-icon {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  transition: transform 0.3s;
+}
+.person-card .card-head .expand-icon.flipped {
+  transform: translateY(-50%) rotate(180deg);
+}
+.person-card .card-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+}
+.person-card .card-body.open {
+  max-height: 800px;
+}
+.person-card .card-inner {
+  padding: 14px 20px 20px;
+  border-top: 0;
+}
+.person-card .insight {
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.person-card .insight label {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 2px;
+}
+.think-section {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: var(--border-radius);
+  padding: 22px 28px;
+  color: #fff;
+  margin-bottom: 16px;
+}
+.think-section h2 {
+  font-size: var(--font-h2);
+  margin: 0 0 12px;
+}
+.think-section .think-item {
+  background: rgba(255,255,255,0.12);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: background 0.25s;
+}
+.think-section .think-item:hover {
+  background: rgba(255,255,255,0.2);
+}
+.think-section .think-item.revealed {
+  background: rgba(255,255,255,0.25);
+}
+.think-section .think-hint {
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.35s ease;
+  font-size: 13px;
+  margin-top: 0;
+  border-top: 1px solid rgba(255,255,255,0.2);
+  padding-top: 8px;
+}
+.think-section .think-item.revealed .think-hint {
+  opacity: 1;
+  max-height: 200px;
+  margin-top: 8px;
+}
+
+@media (max-width: 600px) {
+  .container { padding: 12px 16px; }
+  .header { padding: 18px; }
+  .header::after { font-size: 36px; right: 14px; }
+  .people-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>💡 名人及推荐传记</h1>
+  <p class="subtitle">化学思维之光 · M9 新知文化思维 · 第1章 走进化学世界</p>
+</div>
+
+<div class="people-grid">
+  <div class="person-card">
+    <div class="card-head" onclick="toggleCard(this)" style="background:linear-gradient(135deg,#2c3e50,#4ca1af);">
+      <h3>拉瓦锡 <span style="font-weight:400;">Antoine Lavoisier</span></h3>
+      <span class="years">1743 — 1794</span>
+      <span class="expand-icon">▾</span>
+    </div>
+    <div class="card-body">
+      <div class="card-inner">
+        <div class="insight" style="background:#e6f4ff;">
+          <label>🔑 关键问题</label>
+          <span>物质在燃烧中真的会「消失」吗？</span>
+        </div>
+        <div class="insight" style="background:#f6ffed;">
+          <label>🧠 思维突破点</label>
+          <span>用精密天平称量反应前后的总质量，发现<strong>质量守恒</strong>——物质不会凭空消失</span>
+        </div>
+        <div class="insight" style="background:#fff7e6;">
+          <label>⚡ 失败/争议</label>
+          <span>曾因税务官身份在法国大革命中被处决</span>
+        </div>
+        <div class="insight" style="background:#f9f0ff;">
+          <label>💡 对当下的启示</label>
+          <span>一个精确的测量工具（天平）改变了对世界的认知</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="person-card">
+    <div class="card-head" onclick="toggleCard(this)" style="background:linear-gradient(135deg,#373b44,#4286f4);">
+      <h3>法拉第 <span style="font-weight:400;">Michael Faraday</span></h3>
+      <span class="years">1791 — 1867</span>
+      <span class="expand-icon">▾</span>
+    </div>
+    <div class="card-body">
+      <div class="card-inner">
+        <div class="insight" style="background:#e6f4ff;">
+          <label>🔑 关键问题</label>
+          <span>电和化学之间有什么联系？</span>
+        </div>
+        <div class="insight" style="background:#f6ffed;">
+          <label>🧠 思维突破点</label>
+          <span>发现<strong>电解定律</strong>，将电学与化学联系起来</span>
+        </div>
+        <div class="insight" style="background:#fff7e6;">
+          <label>⚡ 失败/争议</label>
+          <span>出身贫寒，自学成才，早期不被主流学界认可</span>
+        </div>
+        <div class="insight" style="background:#f9f0ff;">
+          <label>💡 对当下的启示</label>
+          <span>跨学科连接是科学创新的源泉</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="person-card">
+    <div class="card-head" onclick="toggleCard(this)" style="background:linear-gradient(135deg,#8e2de2,#4a00e0);">
+      <h3>屠呦呦</h3>
+      <span class="years">1930 —</span>
+      <span class="expand-icon">▾</span>
+    </div>
+    <div class="card-body">
+      <div class="card-inner">
+        <div class="insight" style="background:#e6f4ff;">
+          <label>🔑 关键问题</label>
+          <span>如何从中草药中提取有效成分治疗疟疾？</span>
+        </div>
+        <div class="insight" style="background:#f6ffed;">
+          <label>🧠 思维突破点</label>
+          <span>受东晋葛洪《肘后备急方》启发，用<strong>低温乙醚提取法</strong>成功提取青蒿素</span>
+        </div>
+        <div class="insight" style="background:#fff7e6;">
+          <label>⚡ 失败/争议</label>
+          <span>早期实验条件简陋，影响了部分数据记录</span>
+        </div>
+        <div class="insight" style="background:#f9f0ff;">
+          <label>💡 对当下的启示</label>
+          <span>现代科学方法 + 传统经验的结合，可以解决重大医疗问题</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="think-section">
+  <h2>🤔 「如果你是他」思考任务</h2>
+  <div class="think-item" onclick="revealThink(this)">
+    <strong>任务一：</strong>如果你是拉瓦锡，没有精密天平，你会怎样证明质量不守恒？
+    <div class="think-hint">💡 提示思路：可以用简易杠杆或气球测量气体产物的质量变化，关键是比较反应前后的总质量而不让气体逸散。</div>
+  </div>
+  <div class="think-item" onclick="revealThink(this)">
+    <strong>任务二：</strong>如果你是法拉第，你会怎样把电学和化学联系起来？
+    <div class="think-hint">💡 提示思路：观察通电后溶液的变化——气泡产生、金属析出、颜色变化。关键在于记录电流强弱与析出物质量的关系。</div>
+  </div>
+  <p style="font-size:12px;opacity:0.7;margin:8px 0 0;">👆 点击任务查看提示</p>
+</div>
+
+</div>
+<script>
+function toggleCard(head) {
+  var card = head.closest('.person-card');
+  if (!card) return;
+  var body = card.querySelector('.card-body');
+  var icon = head.querySelector('.expand-icon');
+  if (!body || !icon) return;
+  body.classList.toggle('open');
+  icon.classList.toggle('flipped');
+}
+function revealThink(el) {
+  if (!el) return;
+  el.classList.toggle('revealed');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性案例 — 7个情境分析训练</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px 24px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 12px;
+  text-align: center;
+}
+h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 10px;
+  margin-top: 6px;
+}
+h3 {
+  font-size: calc(var(--font-body) + 2px);
+  color: var(--text);
+  margin-bottom: 6px;
+}
+p { margin-bottom: 8px; }
+.case-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.case-btn {
+  padding: 12px 8px;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border);
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: var(--card-bg);
+  font-size: 14px;
+}
+.case-btn:hover {
+  border-color: var(--primary);
+  background: #e6f4ff;
+}
+.case-btn.active {
+  border-color: var(--primary);
+  background: #e6f4ff;
+  box-shadow: 0 2px 6px rgba(22,119,255,0.2);
+}
+.case-btn .num {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 18px;
+  display: block;
+}
+.case-btn .label { display: block; margin-top: 2px; }
+.case-btn .sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+  display: block;
+  margin-top: 2px;
+}
+.case-panel {
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+.case-panel.show { display: block; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.tag {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  padding: 1px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  margin-right: 4px;
+}
+.principle-tag {
+  background: #f6ffed;
+  color: #52c41a;
+  padding: 1px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  display: inline-block;
+  margin-right: 4px;
+}
+.reflect-item {
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--border);
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.reflect-item:hover { background: var(--bg); padding-left: 8px; border-radius: 4px; }
+.reflect-item .q-icon {
+  color: var(--primary);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.reflect-item .hint {
+  display: none;
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  padding: 8px;
+  background: var(--bg);
+  border-radius: 4px;
+}
+.reflect-item .hint.show { display: block; }
+.btn {
+  display: inline-block;
+  padding: 8px 20px;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: var(--primary);
+  color: #fff;
+}
+.btn:hover { background: var(--primary-hover); }
+.center { text-align: center; }
+.mt-12 { margin-top: 12px; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+  font-size: 14px;
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  text-align: left;
+}
+th { background: var(--bg); color: var(--text); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <h1>🧩 解析性案例</h1>
+    <p style="text-align:center;color:var(--text-secondary);">7个情境 · 从生活到社会 · 独立运用解析性原理</p>
+    <p>在学过解析示例和解析性原理之后，现在是独立实战的时候了。点击下方案例编号开始分析：</p>
+  </div>
+
+  <div class="card">
+    <h2>📌 案例选择</h2>
+    <div class="case-grid">
+      <div class="case-btn" onclick="showCase(0)"><span class="num">案例1</span><span class="label">生活情境</span><span class="sub">日常现象</span></div>
+      <div class="case-btn" onclick="showCase(1)"><span class="num">案例2</span><span class="label">校园情境</span><span class="sub">学校场景</span></div>
+      <div class="case-btn" onclick="showCase(2)"><span class="num">案例3</span><span class="label">社区情境</span><span class="sub">家庭社区</span></div>
+      <div class="case-btn" onclick="showCase(3)"><span class="num">案例4</span><span class="label">学科核心</span><span class="sub">化学学科</span></div>
+      <div class="case-btn" onclick="showCase(4)"><span class="num">案例5</span><span class="label">跨学科</span><span class="sub">多学科交叉</span></div>
+      <div class="case-btn" onclick="showCase(5)"><span class="num">案例6</span><span class="label">社会/未来</span><span class="sub">社会议题</span></div>
+      <div class="case-btn" onclick="showCase(6)"><span class="num">案例7</span><span class="label">综合迁移</span><span class="sub">综合应用</span></div>
+    </div>
+
+    <div id="caseContainer">
+      <div class="case-panel show" data-case="0">
+        <h3>案例1：为什么苹果切开后会变褐？ <span class="tag">生活情境</span></h3>
+        <p><strong>案例材料：</strong>小明切了一个苹果准备做水果沙拉，5分钟后发现苹果切面变成了褐色。他记得柠檬汁可以防止变色，但家里没有柠檬。</p>
+        <p><strong>解析任务：</strong>分析苹果变褐的原因，并设计一个用家中常见材料防止变色的方案。</p>
+        <p><strong>建议原理：</strong><span class="principle-tag">因果链追踪法</span><span class="principle-tag">要素拆解法</span></p>
+        <p><strong>解析路径提示：</strong>识别核心问题（酶促褐变）→ 拆解要素（苹果中的酶+氧气+酚类物质）→ 思考如何阻断反应链。家中可用食醋或盐水替代柠檬汁（酸性环境抑制酶活性）。</p>
+        <p><strong>分析记录：</strong>建议用表格记录：观察到的现象 → 涉及的化学原理 → 可采取的措施 → 预期效果。</p>
+      </div>
+
+      <div class="case-panel" data-case="1">
+        <h3>案例2：实验室通风橱的使用 <span class="tag">校园情境</span></h3>
+        <p><strong>案例材料：</strong>化学实验室的通风橱在使用时有三个开窗高度档位。有同学认为开得越大越好，有同学认为调到最小挡才安全。</p>
+        <p><strong>解析任务：</strong>分析通风橱的工作原理，确定不同实验应选择哪一档开窗高度，并说明理由。</p>
+        <p><strong>建议原理：</strong><span class="principle-tag">因果链追踪法</span><span class="principle-tag">视角切换法</span></p>
+        <p><strong>解析路径提示：</strong>通风橱靠负压排气——开窗太大降低风速（安全风险），开窗太小操作不便。需平衡安全与操作需求：挥发剧烈实验用小开口，一般操作用中档。</p>
+        <p><strong>分析记录：</strong>建议从"安全"和"操作便利"两个视角对比分析三档的利弊。</p>
+      </div>
+
+      <div class="case-panel" data-case="2">
+        <h3>案例3：家庭除垢剂的科学 <span class="tag">社区情境</span></h3>
+        <p><strong>案例材料：</strong>妈妈发现水壶底部积了厚厚一层白色水垢。邻居推荐用白醋除垢，也有朋友说用小苏打更有效。</p>
+        <p><strong>解析任务：</strong>分析水垢的化学成分，判断白醋和小苏打哪个更有效，并用化学方程式解释原因。</p>
+        <p><strong>建议原理：</strong><span class="principle-tag">对比分析法</span><span class="principle-tag">要素拆解法</span></p>
+        <p><strong>解析路径提示：</strong>水垢主要是CaCO₃和Mg(OH)₂。白醋（醋酸）与之反应生成可溶性盐，小苏打（弱碱）无法有效分解碳酸钙。醋酸除垢：CaCO₃+2CH₃COOH→(CH₃COO)₂Ca+H₂O+CO₂↑。</p>
+        <p><strong>分析记录：</strong>从反应类型、反应速度、安全性、成本四个维度对比两种方法。</p>
+      </div>
+
+      <div class="case-panel" data-case="3">
+        <h3>案例4：金属活动性顺序的验证 <span class="tag">学科核心</span></h3>
+        <p><strong>案例材料：</strong>教材给出金属活动性顺序：K Ca Na Mg Al Zn Fe Sn Pb (H) Cu Hg Ag Pt Au。实验室提供了铁钉、铜丝、硫酸铜溶液和稀盐酸。</p>
+        <p><strong>解析任务：</strong>设计2个以上实验验证铁和铜在活动性顺序中的相对位置，预测现象并分析原理。</p>
+        <p><strong>建议原理：</strong><span class="principle-tag">要素拆解法</span><span class="principle-tag">证据分级法</span></p>
+        <p><strong>解析路径提示：</strong>思路一：铁钉+硫酸铜溶液→铁表面出现红色铜（Fe+CuSO₄→FeSO₄+Cu）。思路二：铁+稀盐酸→产生气泡（Fe+2HCl→FeCl₂+H₂↑）；铜+稀盐酸→无现象。两个实验互为证据。</p>
+        <p><strong>分析记录：</strong>填写实验目的→操作步骤→预测现象→实际现象→结论→证据等级。</p>
+      </div>
+
+      <div class="case-panel" data-case="4">
+        <h3>案例5：光合作用与化学 <span class="tag">跨学科</span></h3>
+        <p><strong>案例材料：</strong>植物光合作用产生葡萄糖（C₆H₁₂O₆），化学方程式：6CO₂+6H₂O→光照/叶绿素→C₆H₁₂O₆+6O₂。</p>
+        <p><strong>解析任务：</strong>从化学视角分析光合作用的反应类型、能量转化和物质变化，并探讨如何通过调控条件提高光合作用效率。</p>
+        <p><strong>建议原理：</strong><span class="principle-tag">要素拆解法</span><span class="principle-tag">视角切换法</span></p>
+        <p><strong>解析路径提示：</strong>化学视角看反应类型（氧化还原+吸热）→ 生物视角看酶的作用 → 环境视角看CO₂浓度的影响 → 工程视角看温室调控。</p>
+        <p><strong>分析记录：</strong>从S（化学方程式分析）、E（温室设计）、M（效率计算）三维度填写。</p>
+      </div>
+
+      <div class="case-panel" data-case="5">
+        <h3>案例6：塑料的"可降解"争议 <span class="tag">社会议题</span></h3>
+        <p><strong>案例材料：</strong>"可降解塑料"被宣传为白色污染的解决方案。但研究发现很多可降解塑料在自然环境中需要数十年才能降解，且降解产物可能含微塑料。</p>
+        <p><strong>解析任务：</strong>区分不同类型"可降解塑料"的降解机制和条件，从多角度评价是否应全面推广可降解塑料。</p>
+        <p><strong>建议原理：</strong><span class="principle-tag">证据分级法</span><span class="principle-tag">视角切换法</span></p>
+        <p><strong>解析路径提示：</strong>区分生物降解塑料（需特定菌群+温湿度）和光降解塑料（需紫外线）。区分不同主体的立场：生产商、消费者、环保部门、科学家。查阅标准：GB/T 20197-2006。</p>
+        <p><strong>分析记录：</strong>事实与观点分开列；为每条证据标注等级（A/B/C）；按角色列出各方的核心关切。</p>
+      </div>
+
+      <div class="case-panel" data-case="6">
+        <h3>案例7：新能源汽车的"锂"程碑 <span class="tag">综合应用</span></h3>
+        <p><strong>案例材料：</strong>锂电池电动车快速发展，但锂矿开采（南美盐湖/澳大利亚矿山）存在生态影响。同时废旧锂电池的回收处理面临技术难题——传统回收法效率低且污染大。</p>
+        <p><strong>解析任务：</strong>综合运用多条解析性原理，从化学原理、环境影响、技术路线、经济成本四个角度分析锂电池"全生命周期"的可持续性。</p>
+        <p><strong>建议原理：</strong><span class="principle-tag">全部5条原理</span></p>
+        <p><strong>解析路径提示：</strong>要素拆解法分解S/T/E/A/M维度→因果链追踪法分析开矿→电池→回收的环境影响→证据分级法评估不同回收技术的优劣→对比分析法比较锂电池vs其他电池→视角切换法从不同角色（矿工、车企、环保组织）看问题。</p>
+        <p><strong>分析记录：</strong>用综合表格完成"全生命周期分析"，覆盖开采→制造→使用→回收4个阶段。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>💭 综合反思</h2>
+    <p>点击问题展开思考提示：</p>
+    <div class="reflect-item" onclick="toggleHint(this)">
+      <span class="q-icon">Q1</span>
+      <div>
+        <span>哪个案例最容易分析？为什么？</span>
+        <div class="hint">提示：回顾案例1（苹果褐变），生活经验最丰富，因果关系直观——你有没有从它开始做？</div>
+      </div>
+    </div>
+    <div class="reflect-item" onclick="toggleHint(this)">
+      <span class="q-icon">Q2</span>
+      <div>
+        <span>哪个案例最难？困难在哪里？</span>
+        <div class="hint">提示：案例6（可降解塑料）和案例7（锂电池）信息量大、涉及多方立场——难点在于筛选可靠信息和平衡不同视角。</div>
+      </div>
+    </div>
+    <div class="reflect-item" onclick="toggleHint(this)">
+      <span class="q-icon">Q3</span>
+      <div>
+        <span>哪条解析性原理最常用？</span>
+        <div class="hint">提示：要素拆解法在多数案例中都有用——把复杂问题拆成可控的组成部分是分析的第一步。</div>
+      </div>
+    </div>
+    <div class="reflect-item" onclick="toggleHint(this)">
+      <span class="q-icon">Q4</span>
+      <div>
+        <span>哪条原理还不太会用？</span>
+        <div class="hint">提示：证据分级法需要大量练习——试试在日常新闻阅读中给每条信息标等级（A/B/C）。</div>
+      </div>
+    </div>
+    <div class="reflect-item" onclick="toggleHint(this)">
+      <span class="q-icon">Q5</span>
+      <div>
+        <span>这些案例如何帮助你完成大单元最终成果？</span>
+        <div class="hint">提示：每个案例训练了不同的分析技能——这些技能组合起来就是你完成大单元最终项目的方法工具箱。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card center">
+    <button class="btn" onclick="resetCases()">🔄 重置到案例1</button>
+  </div>
+</div>
+<script>
+var panels = document.querySelectorAll('.case-panel');
+var buttons = document.querySelectorAll('.case-btn');
+
+function showCase(index) {
+  panels.forEach(function(p) { p.classList.remove('show'); });
+  buttons.forEach(function(b) { b.classList.remove('active'); });
+  var target = document.querySelector('.case-panel[data-case="' + index + '"]');
+  var btn = buttons[index];
+  if (target) target.classList.add('show');
+  if (btn) btn.classList.add('active');
+}
+
+function toggleHint(el) {
+  var hint = el.querySelector('.hint');
+  if (hint) hint.classList.toggle('show');
+}
+
+function resetCases() {
+  showCase(0);
+}
+</script>
+</body>
+</html>

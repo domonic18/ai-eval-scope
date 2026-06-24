@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名人名言 — 科学思维突破</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  padding: 0;
+}
+.wrapper { width: 100%; max-width: none; padding: 24px; }
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 6px; }
+.header .sub { font-size: 13px; opacity: 0.85; }
+
+/* Card */
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  transition: box-shadow 0.2s;
+}
+.card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  border-left: 4px solid var(--primary);
+  padding-left: 12px;
+  margin-bottom: 14px;
+}
+
+/* Scientist Card */
+.scientist-card {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 16px 18px;
+  margin-bottom: 14px;
+  border-left: 4px solid var(--primary);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.scientist-card:hover { border-left-color: var(--primary-hover); background: #e6f4ff; }
+.scientist-card .name { font-size: 17px; font-weight: 700; color: var(--primary); }
+.scientist-card .title { font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; }
+.scientist-card .badge-era {
+  display: inline-block; padding: 1px 8px; border-radius: 10px;
+  font-size: 11px; font-weight: 600; background: var(--primary); color: #fff;
+}
+.scientist-card .detail { display: none; margin-top: 10px; padding: 12px; background: var(--card-bg); border-radius: 6px; border: 1px solid var(--border); }
+.scientist-card .detail.show { display: block; }
+
+/* Table */
+.info-table { width: 100%; border-collapse: collapse; margin: 6px 0; font-size: 14px; }
+.info-table td { border: 1px solid var(--border); padding: 6px 10px; vertical-align: top; }
+.info-table td:first-child { font-weight: 600; white-space: nowrap; width: 30%; color: var(--primary); }
+.info-table tr:nth-child(even) { background: #fafafa; }
+
+/* Reading Path */
+.path-step {
+  display: flex; align-items: flex-start; gap: 12px; padding: 10px 0;
+  border-bottom: 1px dashed #e8e8e8;
+}
+.path-step:last-child { border-bottom: none; }
+.path-num {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--primary); color: #fff; display: flex;
+  align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.path-num.green { background: #52c41a; }
+.path-num.orange { background: #fa8c16; }
+
+/* Thinking Task */
+.think-card {
+  background: linear-gradient(135deg, #fff7e6, #fffbe6);
+  border: 1.5px solid #fa8c16;
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin: 12px 0;
+}
+.think-card h3 { color: #d46b08; margin-bottom: 8px; }
+.think-option {
+  padding: 10px 14px; margin-bottom: 8px;
+  background: var(--card-bg); border: 1.5px solid var(--border);
+  border-radius: 6px; cursor: pointer; transition: all 0.2s;
+  font-size: 14px;
+}
+.think-option:hover { border-color: #fa8c16; background: #fff7e6; }
+.think-option.selected { border-color: #fa8c16; background: #fff7e6; box-shadow: 0 0 0 2px rgba(250,140,22,0.2); }
+.think-option .label { font-weight: 600; color: #d46b08; }
+
+/* Buttons */
+.btn {
+  display: inline-block; padding: 8px 20px; border-radius: 6px;
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  border: none; transition: all 0.2s;
+}
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+.btn-outline:hover { background: #e6f4ff; }
+
+.text-sm { font-size: 13px; }
+.text-muted { color: var(--text-secondary); }
+.mb-8 { margin-bottom: 8px; }
+.mt-8 { margin-top: 8px; }
+.flex { display: flex; gap: 10px; flex-wrap: wrap; }
+.tag {
+  display: inline-block; padding: 2px 10px; border-radius: 12px;
+  font-size: 12px; font-weight: 600;
+}
+.tag-blue { background: #e6f4ff; color: var(--primary); }
+.tag-orange { background: #fff7e6; color: #d46b08; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<div class="header">
+  <h1>💡 名人名言 · 认知突破</h1>
+  <div class="sub">化学 · 九年级上 · M6 新知技术思维 — 科学家的思维革命</div>
+  <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;">
+    <span class="tag tag-blue">科学思维</span>
+    <span class="tag tag-orange">认知工具</span>
+  </div>
+</div>
+
+<!-- 人物卡片 -->
+<div class="card">
+  <h2>🧑‍🔬 人物卡片</h2>
+  <p class="text-muted text-sm mb-8">点击科学家卡片展开详细信息。</p>
+
+  <!-- 拉瓦锡 -->
+  <div class="scientist-card" onclick="toggleScientist(this)">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span class="badge-era">奠基人物</span>
+      <span class="name">拉瓦锡</span>
+      <span class="title">Antoine Lavoisier · 1743–1794</span>
+    </div>
+    <p style="margin-top:4px;font-size:14px;">"现代化学之父"——引入定量方法，否定燃素说，提出氧化说</p>
+    <div class="detail">
+      <table class="info-table">
+        <tr><td>关键问题</td><td>燃烧的本质是什么？物质变化前后质量守恒吗？</td></tr>
+        <tr><td>思维突破</td><td>引入精密天平，用数据而非直觉判断；否定"燃素说"提出"氧化说"</td></tr>
+        <tr><td>失败/争议</td><td>因税务官身份在法国大革命中被处决；氧气发现存在优先权争议</td></tr>
+        <tr><td>当下启示</td><td>科学进步需要定量思维和实验验证精神</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- 法拉第 -->
+  <div class="scientist-card" onclick="toggleScientist(this)">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span class="badge-era" style="background:#52c41a;">跨界人物</span>
+      <span class="name">法拉第</span>
+      <span class="title">Michael Faraday · 1791–1867</span>
+    </div>
+    <p style="margin-top:4px;font-size:14px;">从装订工到科学巨匠——发现电解定律，开创电化学</p>
+    <div class="detail">
+      <table class="info-table">
+        <tr><td>关键问题</td><td>电与化学之间是否存在联系？</td></tr>
+        <tr><td>思维突破</td><td>发现电解定律，开创电化学；从物理跨到化学，证明自然力可以相互转化</td></tr>
+        <tr><td>失败/争议</td><td>仅有小学学历，被皇家学会多次拒绝；早年研究因资金不足夭折</td></tr>
+        <tr><td>当下启示</td><td>跨学科思维是重大发现的源泉；出身不决定上限</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- 屠呦呦 -->
+  <div class="scientist-card" onclick="toggleScientist(this)">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span class="badge-era" style="background:#fa8c16;">当代人物</span>
+      <span class="name">屠呦呦</span>
+      <span class="title">1930–</span>
+    </div>
+    <p style="margin-top:4px;font-size:14px;">诺贝尔奖得主——从古籍中提取青蒿素，拯救数百万生命</p>
+    <div class="detail">
+      <table class="info-table">
+        <tr><td>关键问题</td><td>如何从中草药中发现治疗疟疾的有效成分？</td></tr>
+        <tr><td>思维突破</td><td>从古籍《肘后备急方》获得灵感，用乙醚低温萃取法提取青蒿素</td></tr>
+        <tr><td>失败/争议</td><td>研究历经 190 次失败；青蒿素发现归属曾引发争议</td></tr>
+        <tr><td>当下启示</td><td>现代化学要与传统智慧结合；失败是科学探索的常态</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- 深度阅读路径 -->
+<div class="card">
+  <h2>📚 深度阅读路径</h2>
+  <p class="text-muted text-sm mb-8">按自己的节奏选择学习路径。</p>
+
+  <div class="path-step">
+    <div class="path-num">1</div>
+    <div>
+      <div style="font-weight:600;">入门 <span class="text-muted text-sm">（10 分钟）</span></div>
+      <p class="text-sm">阅读课本人物小传 + 观看 B 站科普视频《拉瓦锡的化学革命》</p>
+      <button class="btn btn-outline" style="padding:3px 12px;font-size:12px;margin-top:4px;" onclick="toggleDone(this)">✅ 已完成</button>
+    </div>
+  </div>
+
+  <div class="path-step">
+    <div class="path-num green">2</div>
+    <div>
+      <div style="font-weight:600;">进阶 <span class="text-muted text-sm">（30 分钟）</span></div>
+      <p class="text-sm">阅读《科学的旅程》中相关章节，完成人物时间线绘制</p>
+      <button class="btn btn-outline" style="padding:3px 12px;font-size:12px;margin-top:4px;" onclick="toggleDone(this)">✅ 已完成</button>
+    </div>
+  </div>
+
+  <div class="path-step">
+    <div class="path-num orange">3</div>
+    <div>
+      <div style="font-weight:600;">挑战 <span class="text-muted text-sm">（自定）</span></div>
+      <p class="text-sm">阅读原典——拉瓦锡《化学基础论》节选，标注核心论证段落</p>
+      <button class="btn btn-outline" style="padding:3px 12px;font-size:12px;margin-top:4px;" onclick="toggleDone(this)">✅ 已完成</button>
+    </div>
+  </div>
+</div>
+
+<!-- "如果你是他"思考任务 -->
+<div class="card">
+  <h2>🤔 "如果你是他"思考任务</h2>
+  <p class="text-muted text-sm mb-8">代入科学家视角，从三个情境中任选一个（200 字左右）。</p>
+
+  <div class="think-card">
+    <h3>🎭 选择你要代入的角色</h3>
+
+    <div class="think-option" onclick="selectScenario(0,this)">
+      <div class="label">选项一 · 拉瓦锡</div>
+      <p class="text-sm">面对满朝学者都相信燃素说，你如何用一次实验说服他们？</p>
+    </div>
+
+    <div class="think-option" onclick="selectScenario(1,this)">
+      <div class="label">选项二 · 法拉第</div>
+      <p class="text-sm">装订店里读到的一本科学书改变了你的一生——那本书最打动你的是哪句话？</p>
+    </div>
+
+    <div class="think-option" onclick="selectScenario(2,this)">
+      <div class="label">选项三 · 屠呦呦</div>
+      <p class="text-sm">在第 100 次实验失败时，你心里想的是什么？是什么支撑你继续第 101 次？</p>
+    </div>
+
+    <div id="scenarioResult" class="text-sm text-muted mt-8">👆 点击选择你要代入的角色</div>
+  </div>
+
+  <textarea id="thinkText" placeholder="写下你的回答（200 字左右）……" style="width:100%;min-height:100px;padding:10px;border:1.5px solid var(--border);border-radius:6px;font-family:inherit;font-size:14px;line-height:1.6;resize:vertical;margin-top:8px;"></textarea>
+
+  <div class="flex mt-8">
+    <button class="btn btn-primary" onclick="submitThink()">📤 提交思考</button>
+    <button class="btn btn-outline" onclick="resetThink()">🔄 重置</button>
+  </div>
+  <div id="thinkFeedback" class="text-sm mt-8"></div>
+</div>
+
+<!-- 名言金句 -->
+<div class="card">
+  <h2>✨ 科学名言精选</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;">
+    <div style="padding:12px;background:var(--bg);border-radius:6px;border-left:3px solid var(--primary);">
+      <p style="font-weight:600;font-size:14px;">"实验是最有力的证人。"</p>
+      <p class="text-sm text-muted">—— 拉瓦锡</p>
+    </div>
+    <div style="padding:12px;background:var(--bg);border-radius:6px;border-left:3px solid #52c41a;">
+      <p style="font-weight:600;font-size:14px;">"不要只去读科学，要去创造科学。"</p>
+      <p class="text-sm text-muted">—— 法拉第</p>
+    </div>
+    <div style="padding:12px;background:var(--bg);border-radius:6px;border-left:3px solid #fa8c16;">
+      <p style="font-weight:600;font-size:14px;">"没有平坦的大道，只有不畏劳苦攀登的人。"</p>
+      <p class="text-sm text-muted">—— 马克思</p>
+    </div>
+  </div>
+</div>
+
+</div><!-- wrapper -->
+
+<script>
+function toggleScientist(el) {
+  const detail = el.querySelector('.detail');
+  const allDetails = document.querySelectorAll('.scientist-card .detail.show');
+  allDetails.forEach(d => { if (d !== detail) d.classList.remove('show'); });
+  detail.classList.toggle('show');
+}
+
+function toggleDone(el) {
+  if (el.textContent.includes('已完成')) {
+    el.textContent = '⬜ 未完成';
+    el.style.opacity = '0.6';
+  } else {
+    el.textContent = '✅ 已完成';
+    el.style.opacity = '1';
+  }
+}
+
+let selectedScenarioIdx = -1;
+
+function selectScenario(idx, el) {
+  document.querySelectorAll('.think-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedScenarioIdx = idx;
+  const labels = ['拉瓦锡', '法拉第', '屠呦呦'];
+  document.getElementById('scenarioResult').textContent = '✅ 你选择了 ' + labels[idx] + '，请在下方写出你的回答。';
+}
+
+function submitThink() {
+  const text = document.getElementById('thinkText').value.trim();
+  if (selectedScenarioIdx < 0) {
+    document.getElementById('thinkFeedback').textContent = '⚠️ 请先选择一个角色！';
+    document.getElementById('thinkFeedback').style.color = '#ff4d4f';
+    return;
+  }
+  if (text.length < 10) {
+    document.getElementById('thinkFeedback').textContent = '✍️ 再写详细一些吧，至少 10 个字哦！';
+    document.getElementById('thinkFeedback').style.color = '#fa8c16';
+    return;
+  }
+  const labels = ['拉瓦锡', '法拉第', '屠呦呦'];
+  document.getElementById('thinkFeedback').textContent = '🎉 太棒了！你已经完成了对' + labels[selectedScenarioIdx] + '的共情思考。把这份答案带到课堂上和同学分享吧！';
+  document.getElementById('thinkFeedback').style.color = '#389e0d';
+  document.querySelector('.btn-primary').textContent = '✅ 已提交';
+}
+
+function resetThink() {
+  selectedScenarioIdx = -1;
+  document.getElementById('thinkText').value = '';
+  document.querySelectorAll('.think-option').forEach(o => o.classList.remove('selected'));
+  document.getElementById('scenarioResult').textContent = '👆 点击选择你要代入的角色';
+  document.getElementById('thinkFeedback').textContent = '';
+  document.querySelector('.btn-primary').textContent = '📤 提交思考';
+}
+</script>
+</body>
+</html>

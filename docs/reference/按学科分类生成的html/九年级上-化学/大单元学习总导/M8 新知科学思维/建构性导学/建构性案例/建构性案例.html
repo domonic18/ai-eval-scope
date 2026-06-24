@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性案例 — M8 新知科学思维</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header p { font-size: 14px; opacity: 0.9; }
+.header .meta { font-size: 13px; opacity: 0.75; margin-top: 8px; }
+.header .progress { font-size: 13px; margin-top: 10px; opacity: 0.85; }
+
+/* Nav */
+.nav-bar {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.nav-btn {
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: 2px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.nav-btn:hover { border-color: var(--primary); color: var(--primary); }
+.nav-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.nav-btn .diff-dots { display: flex; gap: 2px; }
+.nav-btn .diff-dots span {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.4;
+}
+.nav-btn.active .diff-dots span { opacity: 0.7; }
+
+/* Case card */
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  padding: 20px;
+  display: none;
+}
+.case-card.active { display: block; }
+.case-card .case-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--bg);
+}
+.case-card .case-top .diff-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--bg);
+  color: var(--primary);
+}
+.case-card .case-top .principle-tag {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.case-card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.case-card h3 {
+  font-size: 16px;
+  color: var(--text);
+  margin: 14px 0 6px;
+}
+.case-card p { margin-bottom: 8px; font-size: 14px; }
+.case-card ul, .case-card ol { padding-left: 18px; margin-bottom: 8px; font-size: 14px; }
+.case-card li { margin-bottom: 4px; }
+
+/* Info box */
+.info-box {
+  background: #e6f4ff;
+  border-left: 4px solid var(--primary);
+  padding: 10px 14px;
+  border-radius: 0 6px 6px 0;
+  margin: 8px 0;
+  font-size: 14px;
+}
+.info-box.success {
+  background: #f6ffed;
+  border-left-color: #52c41a;
+}
+
+/* Rubric */
+.rubric {
+  margin: 10px 0;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.rubric-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.rubric-item:last-child { border-bottom: none; }
+.rubric-item:hover { background: var(--bg); }
+.rubric-item .cb {
+  width: 18px; height: 18px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  transition: all 0.2s;
+}
+.rubric-item.done .cb {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+.btn {
+  padding: 8px 20px;
+  border-radius: 6px;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  background: var(--primary);
+  color: #fff;
+  transition: background 0.2s;
+}
+.btn:hover { background: var(--primary-hover); }
+.btn-outline {
+  background: transparent;
+  border: 2px solid var(--border);
+  color: var(--text);
+}
+.btn-outline:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: transparent;
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.btn:disabled:hover { background: var(--primary); }
+
+@media (max-width: 600px) {
+  .container { padding: 12px 10px; }
+  .header { padding: 18px 16px; }
+  .nav-btn { font-size: 12px; padding: 6px 10px; }
+  .case-card { padding: 14px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🧪 建构性案例</h1>
+    <p>在7个不同层级的情境中，运用建构性原理动手完成建构任务——从个人理解到综合创新</p>
+    <div class="meta">M8 新知科学思维 · 建构性导学 · 九年级化学</div>
+    <div class="progress" id="progressBar">当前进度：案例 1 / 7</div>
+  </div>
+
+  <!-- 导航 -->
+  <div class="nav-bar" id="navBar"></div>
+
+  <!-- 案例容器 -->
+  <div id="caseContainer"></div>
+</div>
+
+<script>
+var cases = [
+  {
+    id: 1,
+    title: '1. 蜡烛为什么会熄灭？',
+    diff: '★☆☆☆☆',
+    principle: '从现象到问题 + 从证据到解释',
+    content: [
+      { type: 'h3', text: '📖 真实建构情境' },
+      { type: 'p', text: '你点燃了一支蜡烛，用烧杯扣住它。几分钟后，蜡烛熄灭了。同桌说"因为没有氧气了"，但你注意到：烧杯壁上出现了水珠，蜡烛熄灭前火焰变弱变黄。这些细节让你觉得"原因没那么简单"。' },
+      { type: 'h3', text: '🎯 建构任务' },
+      { type: 'p', text: '建构你自己的"蜡烛熄灭解释模型"——不仅要回答"为什么熄灭"，还要解释"熄灭了为什么会有水珠"和"为什么火焰会先变弱变黄"。' },
+      { type: 'h3', text: '📌 原理调用提示' },
+      { type: 'p', text: '用【从现象到问题】把3个观察转化为3个具体问题；用【从证据到解释】为每个问题寻找证据链。' },
+      { type: 'h3', text: '🪜 建构步骤' },
+      { type: 'ol', items: ['列出你观察到的3个现象', '针对每个现象提出"为什么"', '寻找每个问题的可能答案', '用"一根蜡烛"的故事把3个答案串起来', '画一张简单的示意图展示你的解释模型'] },
+      { type: 'h3', text: '🧰 脚手架推荐' },
+      { type: 'p', text: '搜索或回顾"蜡烛燃烧的化学方程式"（石蜡+氧气→二氧化碳+水）、"空气中氧气含量"、"火焰的结构（外焰/内焰/焰心）"等概念。' },
+      { type: 'h3', text: '✍️ 成果表达' },
+      { type: 'p', text: '一份"A4纸大小的蜡烛熄灭解释图"：包含①现象列表 ②3个问题 ③你的解释模型（图文结合） ④一个"我还不太确定"的标注（体现科学诚实）。' },
+      { type: 'h3', text: '📋 自评量规' },
+      { type: 'rubric', items: [
+        '我是否列出了至少3个不同的观察现象？',
+        '我是否为每个现象提出了一个"为什么"问题？',
+        '我的解释是否基于化学知识而非凭空猜测？',
+        '我是否把3个分解释串成了一个连贯的整体？',
+        '我是否标注了自己还不能确定的部分？'
+      ]}
+    ]
+  },
+  {
+    id: 2,
+    title: '2. 铁钉为什么会生锈？',
+    diff: '★★☆☆☆',
+    principle: '从证据到解释 + 从经验到模型',
+    content: [
+      { type: 'h3', text: '📖 真实建构情境' },
+      { type: 'p', text: '你的自行车淋了一场雨之后，车把上出现了锈斑。你想知道：铁钉生锈到底需要哪些条件？于是你找了三枚相同的铁钉，分别放入：①干燥试管（密封）、②装满煮沸后冷却的水（密封）、③半试管水（敞口，铁钉一半浸在水里一半暴露在空气中）。三天后，只有③中的铁钉生锈了。' },
+      { type: 'h3', text: '🎯 建构任务' },
+      { type: 'p', text: '基于实验结果，设计一个"铁生锈条件验证"的完整方案，并用模型解释为什么③会生锈而①②没生锈。' },
+      { type: 'h3', text: '📌 原理调用提示' },
+      { type: 'p', text: '用【从证据到解释】分析3个实验的结果差异；用【从经验到模型】把"铁生锈的条件"抽象成一个可迁移的判断框架。' },
+      { type: 'h3', text: '🪜 建构步骤' },
+      { type: 'ol', items: ['记录3支试管的实验条件和结果', '对比分析：哪支试管具备了什么条件才生锈？', '归纳铁生锈的充要条件', '设计一个"防锈建议清单"'] },
+      { type: 'h3', text: '🧰 脚手架推荐' },
+      { type: 'p', text: '参考"控制变量法"的实验设计原则、查阅"铁锈的主要成分是Fe₂O₃·xH₂O"的化学信息。' },
+      { type: 'h3', text: '✍️ 成果表达' },
+      { type: 'p', text: '一份"铁生锈条件实验报告"：包括实验目的、三组实验的对比数据表、条件归纳图、防锈建议3条。' },
+      { type: 'h3', text: '📋 自评量规' },
+      { type: 'rubric', items: [
+        '我是否清晰记录了三支试管的实验条件和结果？',
+        '我是否能用对比方法分析出生锈的必要条件？',
+        '我的结论是否有实验数据支撑？',
+        '我设计的防锈建议是否基于实验结论？',
+        '我是否能够向同学解释"水+空气"为什么缺一不可？'
+      ]}
+    ]
+  },
+  {
+    id: 3,
+    title: '3. 实验室里的未知溶液',
+    diff: '★★★☆☆',
+    principle: '从现象到问题 + 从证据到解释',
+    content: [
+      { type: 'h3', text: '📖 真实建构情境' },
+      { type: 'p', text: '化学实验室里，老师给了你一瓶没有标签的无色溶液，说它可能是稀盐酸（HCl）、稀硫酸（H₂SO₄）或氯化钠溶液（NaCl）。你面前有：紫色石蕊试液、碳酸钠粉末、氯化钡溶液和一根铁丝。' },
+      { type: 'h3', text: '🎯 建构任务' },
+      { type: 'p', text: '设计一套完整的实验方案来鉴别这瓶未知溶液是什么，并预测每个步骤中你将会观察到的现象。' },
+      { type: 'h3', text: '📌 原理调用提示' },
+      { type: 'p', text: '用【从现象到问题】设计"每一步实验回答什么问题"；用【从证据到解释】确保每个结论都有对应的实验现象支撑。' },
+      { type: 'h3', text: '🪜 建构步骤' },
+      { type: 'ol', items: ['列出三种溶液可能的化学性质差异', '设计鉴别流程（先做什么实验、再做什么）', '预测每一步会看到什么现象', '根据预测结果倒推：如果看到X现象说明是哪种溶液', '把你的方案画成流程图'] },
+      { type: 'h3', text: '🧰 脚手架推荐' },
+      { type: 'p', text: '回顾酸的通性（使石蕊变红、与碳酸盐反应产生CO₂、与金属反应产生H₂）、硫酸根的鉴别方法（BaCl₂生成白色沉淀BaSO₄）。' },
+      { type: 'h3', text: '✍️ 成果表达' },
+      { type: 'p', text: '一份"未知溶液鉴别方案"，包含：实验流程图（决策树形式）、每个步骤的预测现象、各现象对应的结论。' },
+      { type: 'h3', text: '📋 自评量规' },
+      { type: 'rubric', items: [
+        '我的鉴别方案是否覆盖了全部3种可能？',
+        '每个实验步骤是否有明确的"预期结果→结论"对应关系？',
+        '方案是否考虑了"最少实验步骤"原则？',
+        '我是否能解释为什么选择这些试剂而非其他？',
+        '我是否预测了所有可能出现的实验现象？'
+      ]}
+    ]
+  },
+  {
+    id: 4,
+    title: '4. 给同学讲"质量守恒定律"',
+    diff: '★★★☆☆',
+    principle: '从经验到模型 + 从建构到表达',
+    content: [
+      { type: 'h3', text: '📖 真实建构情境' },
+      { type: 'p', text: '你的同桌因为生病落下了一节化学课，错过了"质量守恒定律"。他很着急，请你帮忙讲解。但你发现，只是背出"化学反应前后总质量不变"这句话，他完全没听懂。你需要换一种方式讲清楚。' },
+      { type: 'h3', text: '🎯 建构任务' },
+      { type: 'p', text: '创建一份可视化化学概念图解，用"积木"或"拼图"的类比来解释质量守恒定律，让没上过课的同桌也能看懂。' },
+      { type: 'h3', text: '📌 原理调用提示' },
+      { type: 'p', text: '用【从经验到模型】创造一个好理解的类比；用【从建构到表达】把抽象概念变成可视化成果。' },
+      { type: 'h3', text: '🪜 建构步骤' },
+      { type: 'ol', items: ['确定你要解释的3个核心要点', '选择一个生活化的类比（如：乐高积木拆开重拼，总积木数不变）', '用类比对应化学概念（积木块→原子，拼法→化学键）', '画一幅"类比对照图"', '写一段2分钟的讲解词'] },
+      { type: 'h3', text: '🧰 脚手架推荐' },
+      { type: 'p', text: '4个铁原子+4个硫原子→4个FeS分子的动画想象、"还原反应中氧化铜+氢气→铜+水"的具体质量数据例子。' },
+      { type: 'h3', text: '✍️ 成果表达' },
+      { type: 'p', text: '一份"质量守恒定律图解"，包含：①类比场景的示意图 ②类比→化学的对应表格 ③一句话总结（通俗版和精确版）。' },
+      { type: 'h3', text: '📋 自评量规' },
+      { type: 'rubric', items: [
+        '我的类比是否能让没学过的人听懂？',
+        '类比和化学概念之间的对应关系是否清晰？',
+        '图解是否包含了"原子种类和数量不变"的核心含义？',
+        '我是否用了具体的化学反应例子来验证？',
+        '我的讲解词是否控制在2分钟以内？'
+      ]}
+    ]
+  },
+  {
+    id: 5,
+    title: '5. 光合作用——化学与生物的交汇',
+    diff: '★★★★☆',
+    principle: '从经验到模型 + 从单例到迁移',
+    content: [
+      { type: 'h3', text: '📖 真实建构情境' },
+      { type: 'p', text: '生物课上你学到：植物通过光合作用将CO₂和H₂O转化为葡萄糖和O₂。化学课上你学到：这是一个氧化还原反应。但你注意到一个有趣的问题：为什么化学课上讲的"氧化还原反应"和生物课上讲的"光合作用"好像是同一件事？' },
+      { type: 'h3', text: '🎯 建构任务' },
+      { type: 'p', text: '建构一个跨学科的解释框架，用化学的"氧化还原"概念重新解释光合作用的本质，并说明化学视角如何帮你更深刻地理解光合作用。' },
+      { type: 'h3', text: '📌 原理调用提示' },
+      { type: 'p', text: '用【从经验到模型】把化学中的"电子转移"模型迁移到光合作用；用【从单例到迁移】找到两个学科概念的深层统一性。' },
+      { type: 'h3', text: '🪜 建构步骤' },
+      { type: 'ol', items: ['写出光合作用的总化学方程式：6CO₂+6H₂O→C₆H₁₂O₆+6O₂', '标出C和O的化合价变化（CO₂中C为+4→葡萄糖中C为0，被还原）', '判断氧化剂和还原剂', '解释"光能"在氧化还原中的作用', '总结：化学视角给生物学理解带来了什么新洞察？'] },
+      { type: 'h3', text: '🧰 脚手架推荐' },
+      { type: 'p', text: '回顾氧化还原反应的判断方法（化合价升降法）、回忆"光合作用的光反应和暗反应"的基本流程。' },
+      { type: 'h3', text: '✍️ 成果表达' },
+      { type: 'p', text: '一份"A3纸大小的跨学科概念图"，中心是光合作用方程式，左侧标注化学视角（氧化还原分析），右侧标注生物视角（光反应+暗反应），中间用箭头连接两者的对应关系。' },
+      { type: 'h3', text: '📋 自评量规' },
+      { type: 'rubric', items: [
+        '我是否准确写出了光合作用的总反应式？',
+        '我是否正确分析出了C元素的化合价变化？',
+        '我是否能判断出光合作用中谁是氧化剂谁是还原剂？',
+        '概念图是否清晰地展示了化学与生物视角的对应关系？',
+        '我是否能用自己的话解释"为什么说光合作用是氧化还原反应"？'
+      ]}
+    ]
+  },
+  {
+    id: 6,
+    title: '6. 塑料——天使还是魔鬼？',
+    diff: '★★★★☆',
+    principle: '从证据到解释 + 从建构到表达',
+    content: [
+      { type: 'h3', text: '📖 真实建构情境' },
+      { type: 'p', text: '你看到一则新闻："全球每年产生约4亿吨塑料垃圾，只有不到10%被回收利用。"同时，你的手机壳、水壶、圆珠笔都是塑料做的。你很矛盾：塑料到底是好还是不好？你的化学老师告诉你：要回答这个问题，必须先了解塑料的化学本质。' },
+      { type: 'h3', text: '🎯 建构任务' },
+      { type: 'p', text: '基于化学原理，对"塑料在环保议题中的角色"做出有理有据的分析，并提出一个具体的改进建议。' },
+      { type: 'h3', text: '📌 原理调用提示' },
+      { type: 'p', text: '用【从证据到解释】区分"好处"和"坏处"的证据；用【从建构到表达】以清晰的结构呈现你的分析。' },
+      { type: 'h3', text: '🪜 建构步骤' },
+      { type: 'ol', items: ['列出塑料在化学上的优点（稳定、轻便、易成型）和缺点（难降解、石油基原料不可再生）', '分析"为什么塑料难以被自然降解"（C-C键非常稳定，微生物难以分解）', '查阅生物可降解塑料（PLA等）的化学原理', '对比传统塑料和可降解塑料的利弊', '基于以上分析，提出你的建议'] },
+      { type: 'h3', text: '🧰 脚手架推荐' },
+      { type: 'p', text: '搜索"塑料的化学结构"（聚乙烯、聚丙烯、PET等）、"生物可降解塑料PLA的降解原理"、"微塑料的环境影响"相关信息。' },
+      { type: 'h3', text: '✍️ 成果表达' },
+      { type: 'p', text: '一份"塑料双面档案"：正面记录塑料的化学优势和应用价值，反面记录塑料的环境问题和化学原因，底部是你的3条改进建议。' },
+      { type: 'h3', text: '📋 自评量规' },
+      { type: 'rubric', items: [
+        '我是否从化学角度解释了塑料"为什么难降解"？',
+        '我是否比较了传统塑料和可降解塑料的优缺点？',
+        '我的建议是否基于化学原理而非空想？',
+        '我是否同时呈现了塑料"好"与"不好"两个方面？',
+        '我是否使用了具体的数据或案例来支撑观点？'
+      ]}
+    ]
+  },
+  {
+    id: 7,
+    title: '7. 设计一个"未来净水装置"',
+    diff: '★★★★★',
+    principle: '综合运用全部5条原理',
+    content: [
+      { type: 'h3', text: '📖 真实建构情境' },
+      { type: 'p', text: '你所在的地区有一条被污染的小河，水中含有：泥沙（不溶物）、可溶性重金属离子（如Cu²⁺、Pb²⁺）、细菌和少量油污。你被邀请参加一个"青年创新发明比赛"，任务是设计一个简单、低成本、可用于农村地区的净水装置。' },
+      { type: 'h3', text: '🎯 建构任务' },
+      { type: 'p', text: '综合运用全部5条建构性原理，从分析问题到设计原型，完成一个完整的净水方案建构。' },
+      { type: 'h3', text: '📌 原理调用提示' },
+      { type: 'p', text: '【从现象到问题】分析每种污染物需要用什么方法去除→【从证据到解释】验证每种方法的化学原理→【从经验到模型】设计净水流程模型→【从单例到迁移】借鉴已有净水技术→【从建构到表达】呈现最终方案。' },
+      { type: 'h3', text: '🪜 建构步骤' },
+      { type: 'ol', items: [
+        '分析4类污染物的化学性质',
+        '思考每种污染物的去除原理（过滤→除泥沙、活性炭吸附→除油污和异味、化学沉淀→除重金属离子、煮沸/加氯→杀菌）',
+        '设计净化流程的先后顺序（为什么某些步骤必须在其他步骤之前？）',
+        '画出一个"净水装置结构图"，标注每一层的材料和功能',
+        '写出装置的操作说明和使用注意事项'
+      ]},
+      { type: 'h3', text: '🧰 脚手架推荐' },
+      { type: 'p', text: '查阅"沉淀法去除重金属"的原理（如加NaOH使Cu²⁺转化为Cu(OH)₂↓）、活性炭的吸附原理（物理吸附+化学吸附）、家庭净水器的过滤层级结构。' },
+      { type: 'h3', text: '✍️ 成果表达' },
+      { type: 'p', text: '一份完整的"未来净水装置方案书"，包含：①问题分析表（污染物→去除方法→化学原理）②装置设计图（截面图，标注每层材料）③操作流程说明 ④成本估算 ⑤你的创新亮点（和现有净水器相比有什么不同？）。' },
+      { type: 'h3', text: '📋 自评量规' },
+      { type: 'rubric', items: [
+        '我是否覆盖了全部4类污染物的去除方案？',
+        '每种去除方法是否有对应的化学原理支撑？',
+        '净化步骤的顺序是否合理（前一步不能干扰后一步）？',
+        '我的设计是否考虑了成本和可操作性（适合农村使用）？',
+        '我是否说明了这个设计和已有方案相比的创新之处？'
+      ]}
+    ]
+  }
+];
+
+var currentCase = 0;
+
+function init() {
+  buildNav();
+  renderCase(0);
+  updateProgress();
+}
+
+function buildNav() {
+  var nav = document.getElementById('navBar');
+  if (!nav) return;
+  cases.forEach(function(c, i) {
+    var btn = document.createElement('button');
+    btn.className = 'nav-btn' + (i === 0 ? ' active' : '');
+    btn.setAttribute('data-idx', i);
+    var stars = '';
+    if (i === 0) stars = '<span class="diff-dots"><span></span></span>';
+    else if (i < 2) stars = '<span class="diff-dots"><span></span><span></span></span>';
+    else if (i < 4) stars = '<span class="diff-dots"><span></span><span></span><span></span></span>';
+    else if (i < 6) stars = '<span class="diff-dots"><span></span><span></span><span></span><span></span></span>';
+    else stars = '<span class="diff-dots"><span></span><span></span><span></span><span></span><span></span></span>';
+    btn.innerHTML = (i + 1) + ' ' + stars;
+    btn.onclick = (function(idx) { return function() { goToCase(idx); }; })(i);
+    nav.appendChild(btn);
+  });
+}
+
+function renderCase(idx) {
+  var c = cases[idx];
+  if (!c) return;
+  var container = document.getElementById('caseContainer');
+  if (!container) return;
+  var html = '<div class="case-card active">';
+  html += '<div class="case-top">';
+  html += '<h2>' + c.title + '</h2>';
+  html += '<span class="diff-badge">难度 ' + c.diff + '</span>';
+  html += '<span class="principle-tag">' + c.principle + '</span>';
+  html += '</div>';
+
+  c.content.forEach(function(block) {
+    if (block.type === 'h3') {
+      html += '<h3>' + block.text + '</h3>';
+    } else if (block.type === 'p') {
+      html += '<p>' + block.text + '</p>';
+    } else if (block.type === 'ol') {
+      html += '<ol>';
+      block.items.forEach(function(item) {
+        html += '<li>' + item + '</li>';
+      });
+      html += '</ol>';
+    } else if (block.type === 'rubric') {
+      html += '<div class="rubric" id="rubric' + idx + '">';
+      block.items.forEach(function(item, ri) {
+        html += '<div class="rubric-item" onclick="toggleRubric(this)">';
+        html += '<span class="cb"></span>';
+        html += '<span>' + item + '</span>';
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+  });
+
+  html += '<div class="controls">';
+  html += '<button class="btn" onclick="prevCase()" id="prevBtn"' + (idx === 0 ? ' disabled' : '') + '>← 上一个案例</button>';
+  html += '<button class="btn" onclick="nextCase()" id="nextBtn"' + (idx === cases.length - 1 ? ' disabled' : '') + '>下一个案例 →</button>';
+  if (idx > 0) {
+    html += '<button class="btn btn-outline" onclick="resetRubric(' + idx + ')">🔄 重置自评</button>';
+  }
+  html += '</div>';
+  html += '</div>';
+
+  container.innerHTML = html;
+}
+
+function goToCase(idx) {
+  if (idx < 0 || idx >= cases.length) return;
+  currentCase = idx;
+  renderCase(idx);
+  updateProgress();
+  // Update nav
+  var btns = document.querySelectorAll('.nav-btn');
+  btns.forEach(function(b, i) {
+    b.classList.toggle('active', i === idx);
+  });
+  document.getElementById('caseContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function nextCase() {
+  if (currentCase < cases.length - 1) goToCase(currentCase + 1);
+}
+
+function prevCase() {
+  if (currentCase > 0) goToCase(currentCase - 1);
+}
+
+function updateProgress() {
+  var prog = document.getElementById('progressBar');
+  if (prog) prog.textContent = '当前进度：案例 ' + (currentCase + 1) + ' / ' + cases.length;
+}
+
+function toggleRubric(el) {
+  if (el) el.classList.toggle('done');
+}
+
+function resetRubric(idx) {
+  var rubric = document.getElementById('rubric' + idx);
+  if (!rubric) return;
+  var items = rubric.querySelectorAll('.rubric-item');
+  items.forEach(function(item) { item.classList.remove('done'); });
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>研学社区 — 脚手架</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 8px; }
+.header p { font-size: var(--font-body); opacity: 0.9; }
+.section { margin-bottom: 28px; }
+.section-title {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title .badge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 500;
+  margin-left: 8px;
+}
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  border-left: 3px solid var(--primary);
+  transition: box-shadow 0.2s;
+  cursor: pointer;
+}
+.case-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.case-card .level-tag {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+.level-basic { background: #e6f7ff; color: #1677ff; }
+.level-adv { background: #f6ffed; color: #16a34a; }
+.level-challenge { background: #fff7e6; color: #d46b08; }
+.case-card h3 { font-size: 16px; font-weight: 600; color: var(--primary); margin-bottom: 6px; }
+.case-card .label { font-weight: 600; color: var(--text); }
+.case-card .content { margin-top: 6px; padding-left: 0; }
+.case-card .content p { margin-bottom: 6px; font-size: 14px; }
+.case-card .content .highlight {
+  background: var(--bg);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--primary);
+  margin: 8px 0;
+  border-left: 3px solid var(--accent);
+}
+.case-card .detail {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+}
+.case-card.expanded .detail { max-height: 500px; }
+.case-card.expanded { border-left-color: var(--accent); }
+.challenge-box {
+  background: linear-gradient(135deg, #fff7e6, #fffbe6);
+  border: 1px solid #ffd591;
+  border-radius: var(--border-radius);
+  padding: 18px 20px;
+  margin-top: 16px;
+}
+.challenge-box h3 { font-size: 16px; font-weight: 600; color: #d46b08; margin-bottom: 8px; }
+.challenge-box p { font-size: 14px; }
+.challenge-box .btn {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 8px 20px;
+  background: #d46b08;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.challenge-box .btn:hover { background: #e8710a; }
+.footer {
+  text-align: center;
+  padding: 16px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  border-top: 1px solid var(--border);
+  margin-top: 20px;
+}
+@media (max-width: 640px) {
+  .container { padding: 16px 12px; }
+  .header { padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🌍 研学社区</h1>
+    <p>通过真实世界的案例，建立"科学思维"与现实生活的连接。</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">基础层 <span class="badge">生活案例</span></div>
+    <div class="case-card" onclick="this.classList.toggle('expanded')">
+      <span class="level-tag level-basic">基础</span>
+      <h3>为什么铁锅会生锈？</h3>
+      <div class="content">
+        <p><span class="label">背景：</span>家里的铁锅用完后没擦干，第二天出现红褐色斑点。</p>
+        <p><span class="label">核心问题：</span>铁生锈是化学变化吗？什么条件促进了生锈？</p>
+        <div class="highlight">💡 可迁移启示：很多化学变化需要特定条件才能发生。</div>
+      </div>
+      <div class="detail">
+        <p><span class="label">决策路径：</span>观察现象 → 提出假设（水+氧气共同作用）→ 设计验证实验 → 得出结论</p>
+        <p><span class="label">结果：</span>铁在有水和氧气的环境中才会生锈，这是一个氧化还原反应。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">进阶层 <span class="badge">历史案例</span></div>
+    <div class="case-card" onclick="this.classList.toggle('expanded')">
+      <span class="level-tag level-adv">进阶</span>
+      <h3>拉瓦锡的质量守恒实验</h3>
+      <div class="content">
+        <p><span class="label">背景：</span>18世纪，燃素说主导化学界。</p>
+        <p><span class="label">核心问题：</span>物质燃烧后质量是增加还是减少？</p>
+        <div class="highlight">💡 可迁移启示：封闭系统和开放系统的差异——实验设计的关键。</div>
+      </div>
+      <div class="detail">
+        <p><span class="label">决策路径：</span>设计密闭容器实验 → 精确称量反应前后物质质量 → 发现质量不变</p>
+        <p><span class="label">结果：</span>推翻了燃素说，建立了质量守恒定律，奠定了现代化学的基础。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">挑战层 <span class="badge">跨领域案例</span></div>
+    <div class="case-card" onclick="this.classList.toggle('expanded')">
+      <span class="level-tag level-challenge">挑战</span>
+      <h3>雾霾中的化学</h3>
+      <div class="content">
+        <p><span class="label">背景：</span>城市雾霾天气的化学成分和形成机制。</p>
+        <p><span class="label">核心问题：</span>工厂排放、汽车尾气如何通过化学反应形成 PM2.5？</p>
+        <div class="highlight">💡 可迁移启示：化学知识能帮助理解和解决环境问题。</div>
+      </div>
+      <div class="detail">
+        <p><span class="label">决策路径：</span>收集空气样本 → 分析化学成分 → 追踪反应途径 → 提出治理建议</p>
+        <p><span class="label">结果：</span>理解二次污染物的形成机制，为环保决策提供科学依据。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="challenge-box">
+    <h3>🎯 如果你是决策者</h3>
+    <p>如果让你设计一个减少校园化学实验室污染的方案，你会怎么做？运用科学思维的决策路径，写出你的方案。</p>
+    <button class="btn" onclick="alert('请将你的方案写在笔记本上，与同学分享讨论！')">开始思考</button>
+  </div>
+
+  <div class="footer">
+    研学社区 · M8 新知科学思维 · 九年级化学
+  </div>
+</div>
+</body>
+</html>

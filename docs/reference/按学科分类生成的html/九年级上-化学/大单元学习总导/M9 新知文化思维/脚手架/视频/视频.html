@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>化学视频资源 — 走进化学世界</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px;
+  box-sizing: border-box;
+}
+.header {
+  text-align: center;
+  padding: 32px 20px;
+  background: linear-gradient(135deg, #1677ff 0%, #4096ff 100%);
+  color: #fff;
+  border-radius: 0 0 24px 24px;
+  margin: -20px -20px 24px -20px;
+}
+.header h1 {
+  margin: 0 0 8px;
+  font-size: var(--font-h1);
+  font-weight: 700;
+}
+.header p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 14px;
+}
+.badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.2);
+  padding: 2px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin-top: 8px;
+}
+.level-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 4px;
+  box-shadow: var(--shadow);
+}
+.level-tab {
+  flex: 1;
+  text-align: center;
+  padding: 10px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.3s;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+}
+.level-tab:hover {
+  background: var(--bg);
+  color: var(--text);
+}
+.level-tab.active {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(22,119,255,0.3);
+}
+.level-tab .level-icon {
+  display: block;
+  font-size: 18px;
+  margin-bottom: 2px;
+}
+.video-card {
+  display: none;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  animation: fadeIn 0.35s ease;
+}
+.video-card.active {
+  display: block;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.video-card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+.video-card-header:hover {
+  background: var(--bg);
+}
+.video-card-header .num {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.video-card-header .info {
+  flex: 1;
+}
+.video-card-header .info h3 {
+  margin: 0 0 2px;
+  font-size: var(--font-body);
+}
+.video-card-header .info .meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.video-card-header .arrow {
+  transition: transform 0.3s;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.video-card-header .arrow.open {
+  transform: rotate(180deg);
+}
+.video-card-body {
+  padding: 0 20px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+}
+.video-card-body.open {
+  max-height: 800px;
+  padding: 16px 20px;
+}
+.video-card-body .section {
+  margin-bottom: 14px;
+}
+.video-card-body .section:last-child {
+  margin-bottom: 0;
+}
+.video-card-body .label {
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 13px;
+  display: block;
+  margin-bottom: 4px;
+}
+.video-card-body p {
+  margin: 4px 0;
+}
+.task-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 0;
+  cursor: pointer;
+}
+.task-check input[type="checkbox"] {
+  margin-top: 3px;
+  accent-color: var(--primary);
+  width: 16px; height: 16px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.task-check.done .task-text {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+.resource-section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  border: 1px solid var(--border);
+  margin-top: 20px;
+}
+.resource-section h3 {
+  margin: 0 0 12px;
+  font-size: var(--font-h2);
+  color: var(--primary);
+}
+.resource-list {
+  list-style: none;
+  padding: 0; margin: 0;
+}
+.resource-list li {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.resource-list li:last-child {
+  border-bottom: none;
+}
+.resource-list li::before {
+  content: "📺";
+}
+.tag {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: 6px;
+}
+.tag-basic { background: #e6f7ff; color: #1890ff; }
+.tag-adv { background: #fff7e6; color: #d46b08; }
+.tag-challenge { background: #f9f0ff; color: #722ed1; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🎬 化学视频资源</h1>
+    <p>第1章 · 走进化学世界 · 分层视频学习</p>
+    <span class="badge">九年级上 · 化学</span>
+  </div>
+
+  <div class="level-tabs" role="tablist">
+    <button class="level-tab active" data-level="basic" onclick="switchLevel('basic')">
+      <span class="level-icon">🌱</span>基础层
+    </button>
+    <button class="level-tab" data-level="adv" onclick="switchLevel('adv')">
+      <span class="level-icon">🔥</span>进阶层
+    </button>
+    <button class="level-tab" data-level="challenge" onclick="switchLevel('challenge')">
+      <span class="level-icon">🚀</span>挑战层
+    </button>
+  </div>
+
+  <!-- 基础层 -->
+  <div class="video-cards" data-level="basic">
+    <div class="video-card active">
+      <div class="video-card-header" onclick="toggleCard(this)">
+        <span class="num">1</span>
+        <div class="info">
+          <h3>什么是化学变化？</h3>
+          <span class="meta">⏱ 5–8 分钟 · 科普课程 · <span class="tag tag-basic">基础</span></span>
+        </div>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="video-card-body open">
+        <div class="section">
+          <span class="label">👀 观看任务</span>
+          <p>找出视频中提到的 <strong>3 种化学变化的判断标准</strong></p>
+        </div>
+        <div class="section">
+          <span class="label">💡 关键问题</span>
+          <p>化学变化和物理变化的核心区别是什么？</p>
+        </div>
+        <div class="section">
+          <span class="label">⏸ 暂停思考点 <span style="color:var(--primary);font-weight:700;">[2:30]</span></span>
+          <p>视频中展示的"蜡烛燃烧"同时发生了物理变化和化学变化——你找出来了吗？</p>
+        </div>
+        <div class="section">
+          <span class="label">✍️ 输出任务</span>
+          <p>用你自己的话写出"<strong>化学变化三要素</strong>"</p>
+        </div>
+        <div class="section" style="border-top:1px solid var(--border);padding-top:10px;">
+          <span class="label">✅ 观看自查清单</span>
+          <div class="task-check" onclick="toggleCheck(this)">
+            <input type="checkbox"> <span class="task-text">完整观看视频</span>
+          </div>
+          <div class="task-check" onclick="toggleCheck(this)">
+            <input type="checkbox"> <span class="task-text">记录3种判断标准</span>
+          </div>
+          <div class="task-check" onclick="toggleCheck(this)">
+            <input type="checkbox"> <span class="task-text">完成暂停点思考</span>
+          </div>
+          <div class="task-check" onclick="toggleCheck(this)">
+            <input type="checkbox"> <span class="task-text">写出化学变化三要素</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 进阶层 -->
+  <div class="video-cards" data-level="adv" style="display:none;">
+    <div class="video-card active">
+      <div class="video-card-header" onclick="toggleCard(this)">
+        <span class="num">2</span>
+        <div class="info">
+          <h3>改变世界的化学反应</h3>
+          <span class="meta">⏱ 12–15 分钟 · 纪录片 · <span class="tag tag-adv">进阶</span></span>
+        </div>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="video-card-body open">
+        <div class="section">
+          <span class="label">👀 观看任务</span>
+          <p>记录视频中提到的 <strong>3 个改变了人类文明的化学反应</strong></p>
+        </div>
+        <div class="section">
+          <span class="label">💡 关键问题</span>
+          <p>为什么说"火的利用"是第一个伟大的化学革命？</p>
+        </div>
+        <div class="section">
+          <span class="label">⏸ 暂停思考点 <span style="color:var(--primary);font-weight:700;">[5:00]</span></span>
+          <p>视频展示的炼铁过程，哪些步骤是化学变化？</p>
+        </div>
+        <div class="section">
+          <span class="label">✍️ 输出任务</span>
+          <p>制作"<strong>人类文明中的化学变化</strong>"时间线图</p>
+        </div>
+        <div class="section" style="border-top:1px solid var(--border);padding-top:10px;">
+          <span class="label">✅ 观看自查清单</span>
+          <div class="task-check" onclick="toggleCheck(this)">
+            <input type="checkbox"> <span class="task-text">完整观看视频</span>
+          </div>
+          <div class="task-check" onclick="toggleCheck(this)">
+            <input type="checkbox"> <span class="task-text">记录3个改变文明的化学反应</span>
+          </div>
+          <div class="task-check" onclick="toggleCheck(this)">
+            <input type="checkbox"> <span class="task-text">完成炼铁过程分析</span>
+          </div>
+          <div class="task-check" onclick="toggleCheck(this)">
+            <input type="checkbox"> <span class="task-text">完成时间线图</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 挑战层 -->
+  <div class="video-cards" data-level="challenge" style="display:none;">
+    <div class="video-card active">
+      <div class="video-card-header" onclick="toggleCard(this)">
+        <span class="num">3</span>
+        <div class="info">
+          <h3>未来的化学：人工光合作用</h3>
+          <span class="meta">⏱ 8–10 分钟 · TED演讲/科普前沿 · <span class="tag tag-challenge">挑战</span></span>
+        </div>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="video-card-body open">
+        <div class="section">
+          <span class="label">👀 观看任务</span>
+          <p>理解"人工光合作用"模仿了什么自然化学变化</p>
+        </div>
+        <div class="section">
+          <span class="label">💡 关键问题</span>
+          <p>人工光合作用能解决什么全球性问题？</p>
+        </div>
+        <div class="section">
+          <span class="label">⏸ 暂停思考点 <span style="color:var(--primary);font-weight:700;">[3:15]</span></span>
+          <p>为什么说人工光合作用是"用阳光制造燃料"？</p>
+        </div>
+        <div class="section">
+          <span class="label">✍️ 输出任务</span>
+          <p>写一段 <strong>150 字的反思</strong>"化学变化如何帮助应对气候变化"</p>
+        </div>
+        <div class="section" style="border-top:1px solid var(--border);padding-top:10px;">
+          <span class="label">✅ 观看自查清单</span>
+          <div class="task-check" onclick="toggleCheck(this)">
+            <input type="checkbox"> <span class="task-text">完整观看视频</span>
+          </div>
+          <div class="task-check" onclick="toggleCheck(this)">
+            <input type="checkbox"> <span class="task-text">理解人工光合作用原理</span>
+          </div>
+          <div class="task-check" onclick="toggleCheck(this)">
+            <input type="checkbox"> <span class="task-text">完成暂停点思考</span>
+          </div>
+          <div class="task-check" onclick="toggleCheck(this)">
+            <input type="checkbox"> <span class="task-text">完成150字反思写作</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="resource-section">
+    <h3>📚 资源来源推荐</h3>
+    <ul class="resource-list">
+      <li>央视纪录片《门捷列夫很忙》— B站免费观看</li>
+      <li>TED-Ed 化学系列 — B站 / 网易公开课</li>
+      <li>中科院《格致论道》化学专题 — 中科院官网 / 微博</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+function switchLevel(level) {
+  document.querySelectorAll('.level-tab').forEach(function(tab) {
+    tab.classList.toggle('active', tab.dataset.level === level);
+  });
+  document.querySelectorAll('.video-cards').forEach(function(group) {
+    var show = group.dataset.level === level;
+    group.style.display = show ? 'block' : 'none';
+    if (show) {
+      group.querySelectorAll('.video-card').forEach(function(card, i) {
+        card.style.display = 'block';
+        card.style.animation = 'none';
+        card.offsetHeight;
+        card.style.animation = 'fadeIn 0.35s ease';
+      });
+    }
+  });
+}
+
+function toggleCard(header) {
+  var body = header.nextElementSibling;
+  var arrow = header.querySelector('.arrow');
+  var isOpen = body.classList.contains('open');
+  body.classList.toggle('open');
+  if (arrow) arrow.classList.toggle('open');
+}
+
+function toggleCheck(el) {
+  var cb = el.querySelector('input[type="checkbox"]');
+  if (cb) {
+    cb.checked = !cb.checked;
+    el.classList.toggle('done', cb.checked);
+  }
+}
+</script>
+</body>
+</html>

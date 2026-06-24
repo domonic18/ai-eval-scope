@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性示例 — 铁锈与白醋</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+.container { width: 100%; max-width: none; padding: 24px 32px; }
+.header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 6px; }
+.header p { font-size: 14px; opacity: 0.9; }
+.section-title {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 28px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.scenario-box {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border-left: 4px solid #fa8c16;
+  position: relative;
+}
+.scenario-box::before {
+  content: "🧪";
+  position: absolute;
+  top: -12px;
+  left: 20px;
+  font-size: 24px;
+}
+.scenario-box h3 { font-size: 16px; color: var(--text); margin-bottom: 8px; padding-top: 4px; }
+.scenario-box p { font-size: 14px; color: var(--text); line-height: var(--line-height); }
+.question-box {
+  background: linear-gradient(135deg, #fff7e6 0%, #fffbe6 100%);
+  border: 1px solid #ffd591;
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin: 16px 0;
+}
+.question-box h4 { font-size: 15px; color: #d46b08; margin-bottom: 8px; }
+.question-box li {
+  margin-left: 20px;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+.info-extract {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin: 12px 0;
+}
+.info-extract th {
+  background: var(--primary);
+  color: #fff;
+  text-align: left;
+  padding: 8px 12px;
+  border: 1px solid var(--primary);
+  font-weight: 600;
+}
+.info-extract td {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  vertical-align: top;
+}
+.info-extract tr:nth-child(even) td { background: #fafafa; }
+.step-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 0;
+}
+.step-tab {
+  padding: 10px 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: var(--border-radius) var(--border-radius) 0 0;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+  position: relative;
+  top: 1px;
+}
+.step-tab:hover { color: var(--primary); }
+.step-tab.active {
+  background: var(--card-bg);
+  color: var(--primary);
+  border-color: var(--primary);
+  font-weight: 600;
+  z-index: 1;
+}
+.step-tab .snum {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--border);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  margin-right: 4px;
+}
+.step-tab.active .snum { background: var(--primary); color: #fff; }
+.step-content {
+  background: var(--card-bg);
+  border: 1px solid var(--primary);
+  border-radius: 0 var(--border-radius) var(--border-radius) var(--border-radius);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  display: none;
+}
+.step-content.active { display: block; }
+.step-content h4 { font-size: 16px; color: var(--primary); margin-bottom: 10px; }
+.step-content .quote {
+  background: var(--bg);
+  border-left: 3px solid var(--primary);
+  padding: 10px 16px;
+  margin: 10px 0;
+  border-radius: 0 4px 4px 0;
+  font-style: italic;
+  font-size: 14px;
+}
+.equation-box {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 4px;
+  padding: 12px 16px;
+  margin: 12px 0;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: #135200;
+  letter-spacing: 1px;
+}
+.conclusion-card {
+  background: linear-gradient(135deg, #e6f7ff 0%, #f0f5ff 100%);
+  border: 1px solid var(--accent);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin: 12px 0;
+}
+.conclusion-card h5 { color: var(--primary); font-size: 15px; margin-bottom: 6px; }
+.method-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 12px 0;
+}
+.method-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px;
+  transition: transform 0.2s;
+  cursor: default;
+}
+.method-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.method-card h5 { font-size: 14px; color: var(--primary); margin-bottom: 4px; }
+.method-card p { font-size: 13px; color: var(--text-secondary); }
+.warn-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin: 12px 0;
+}
+.warn-table th {
+  background: #fff2f0;
+  color: #cf1322;
+  text-align: left;
+  padding: 8px 12px;
+  border: 1px solid #ffccc7;
+  font-weight: 600;
+}
+.warn-table td {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  vertical-align: top;
+}
+.warn-table tr:nth-child(even) td { background: #fffaf8; }
+.checklist {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 12px 0;
+}
+.check-item {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  user-select: none;
+}
+.check-item:hover { border-color: var(--primary); }
+.check-item .box {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border);
+  border-radius: 3px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #fff;
+}
+.check-item.checked .box {
+  background: #52c41a;
+  border-color: #52c41a;
+}
+.check-item.checked .box::after { content: "✓"; }
+.check-item span { font-size: 14px; }
+.practice-toggle {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  padding: 6px 18px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 8px;
+}
+.practice-toggle:hover { background: var(--primary-hover); }
+.practice-area {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+}
+.practice-area.show { max-height: 400px; }
+.practice-inner {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 4px;
+  padding: 14px 18px;
+  margin-top: 8px;
+  font-size: 14px;
+}
+@media (max-width: 768px) {
+  .container { padding: 12px 16px; }
+  .header { padding: 20px 16px; }
+  .method-grid, .checklist { grid-template-columns: 1fr; }
+  .step-tab { padding: 8px 10px; font-size: 13px; }
+  .step-content { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🔍 解析性示例</h1>
+  <p>化学 · 九年级上 · 以"铁锈+白醋"为例，完整示范5步解析法</p>
+</div>
+
+<!-- Scenario -->
+<div class="section-title">🧪 解析任务情境</div>
+<div class="scenario-box">
+  <h3>厨房里的发现</h3>
+  <p>小明在厨房里发现了一个有趣的现象——他把一枚生锈的铁钉（表面覆盖着红褐色物质）放入白醋中，几分钟后，铁钉表面的红褐色物质消失了，铁钉变得光亮，同时液体变成了浅黄色。小明很疑惑：<strong>"醋为什么能把铁锈'洗掉'？铁锈去哪儿了？"</strong></p>
+</div>
+
+<div class="question-box">
+  <h4>🎯 核心问题</h4>
+  <p style="font-weight:600; margin-bottom:8px;">白醋去除铁锈（红褐色物质）的原理是什么？在这个过程中发生了什么化学变化？</p>
+  <ul>
+    <li>铁锈是什么物质？它的化学本质是什么？</li>
+    <li>白醋是什么？它有什么化学特性？</li>
+    <li>铁锈和白醋接触后发生了什么反应？</li>
+    <li>如何验证我们的分析是否正确？</li>
+  </ul>
+</div>
+
+<!-- Info Extraction -->
+<div class="section-title">📋 关键信息提取表</div>
+<table class="info-extract">
+  <tr><th style="width:30%;">情境信息</th><th style="width:30%;">说明什么</th><th>为何重要</th></tr>
+  <tr><td>铁钉表面有红褐色物质</td><td>铁在潮湿空气中生锈，红褐色物质是铁锈的主要成分</td><td>确定了分析对象——铁锈，这是问题的起点</td></tr>
+  <tr><td>放入白醋中</td><td>白醋是酸性液体，主要成分是醋酸（CH₃COOH）</td><td>提示了关键化学性质——酸性，是反应的核心驱动力</td></tr>
+  <tr><td>红褐色物质消失</td><td>铁锈被白醋溶解或反应掉了</td><td>说明发生了化学反应，产生了新物质</td></tr>
+  <tr><td>铁钉变得光亮</td><td>铁锈被去除，露出了金属铁</td><td>证明反应消耗了铁锈但不消耗铁（短时间）</td></tr>
+  <tr><td>液体变成浅黄色</td><td>反应产生了含铁离子的新物质溶入液体中</td><td>为后续验证提供了可观察的证据</td></tr>
+</table>
+
+<!-- 5-Step Method Tabs -->
+<div class="section-title">🔄 专家解析过程（5步法）</div>
+
+<div class="step-tabs">
+  <div class="step-tab active" data-step="1" onclick="switchStep(1)">
+    <span class="snum">1</span>看见什么
+  </div>
+  <div class="step-tab" data-step="2" onclick="switchStep(2)">
+    <span class="snum">2</span>判断类型
+  </div>
+  <div class="step-tab" data-step="3" onclick="switchStep(3)">
+    <span class="snum">3</span>调用概念
+  </div>
+  <div class="step-tab" data-step="4" onclick="switchStep(4)">
+    <span class="snum">4</span>推理
+  </div>
+  <div class="step-tab" data-step="5" onclick="switchStep(5)">
+    <span class="snum">5</span>形成结论
+  </div>
+</div>
+
+<div class="step-content active" data-step="1">
+  <h4>第1步：看见什么 — 观察与描述</h4>
+  <div class="quote">"我看到了一个'去除'现象——铁锈在醋中消失了，液体变色了。"</div>
+  <table class="info-extract">
+    <tr><th style="width:100px;">观察要点</th><td>颜色变化（红褐色→消失）、状态变化（固体铁锈减少）、液体颜色变化（无色→浅黄色）</td></tr>
+    <tr><th>记录方式</th><td>用文字描述＋画简图记录反应前后的状态</td></tr>
+  </table>
+</div>
+
+<div class="step-content" data-step="2">
+  <h4>第2步：判断类型 — 归类与定位</h4>
+  <div class="quote">"这不是物理溶解，因为产生了新物质（颜色变化），属于化学变化。"</div>
+  <table class="info-extract">
+    <tr><th style="width:100px;">判断依据</th><td>有新物质生成（浅黄色液体），说明发生了化学反应</td></tr>
+    <tr><th>类型定位</th><td>酸与金属氧化物的反应（属于复分解反应的一种）</td></tr>
+  </table>
+</div>
+
+<div class="step-content" data-step="3">
+  <h4>第3步：调用概念 — 激活已有知识</h4>
+  <div class="quote">"我需要调用这些知识：铁锈的成分、醋酸的酸性和酸的化学性质。"</div>
+  <table class="info-extract">
+    <tr><th style="width:100px;">调用知识</th><th>来源</th><th>作用</th></tr>
+    <tr><td>铁锈的主要成分是Fe₂O₃（氧化铁）</td><td>课本/常识</td><td>确定反应物A</td></tr>
+    <tr><td>白醋含醋酸CH₃COOH，具有酸性</td><td>课本/常识</td><td>确定反应物B</td></tr>
+    <tr><td>酸能与金属氧化物反应生成盐和水</td><td>课本知识点</td><td>预测反应类型和产物</td></tr>
+  </table>
+</div>
+
+<div class="step-content" data-step="4">
+  <h4>第4步：推理 — 建立逻辑链</h4>
+  <div class="quote">"如果铁锈是Fe₂O₃，醋酸是酸，那么它们反应应该生成铁盐和水。"</div>
+  <p style="font-size:14px; margin-bottom:6px;"><strong>推理链：</strong></p>
+  <p style="font-size:14px; background:var(--bg); padding:10px 14px; border-radius:4px; margin-bottom:10px;">
+    白醋（醋酸）提供H⁺ → H⁺与Fe₂O₃中的O²⁻结合生成H₂O → Fe³⁺与醋酸根结合生成醋酸铁 → 醋酸铁溶解在水中，使液体呈浅黄色
+  </p>
+  <p style="font-size:14px; font-weight:600; margin-bottom:4px;">化学方程式：</p>
+  <div class="equation-box">Fe₂O₃ + 6CH₃COOH → 2Fe(CH₃COO)₃ + 3H₂O</div>
+  <p style="font-size:13px; color:var(--text-secondary); text-align:center;">（氧化铁 + 醋酸 → 醋酸铁 + 水）</p>
+</div>
+
+<div class="step-content" data-step="5">
+  <h4>第5步：形成结论 — 综合与表达</h4>
+  <div class="conclusion-card">
+    <h5>💡 结论</h5>
+    <p>白醋去除铁锈的原理是<strong>醋酸（酸性）与氧化铁（铁锈的主要成分）发生化学反应</strong>，生成可溶性的醋酸铁和水。铁锈被<strong>"转化"</strong>而非被<strong>"洗掉"</strong>——它变成了另一种物质溶解在醋中。</p>
+  </div>
+  <table class="info-extract">
+    <tr><th style="width:80px;">现象</th><td>铁锈在醋中消失，液体变浅黄</td></tr>
+    <tr><th>本质</th><td>化学反应——酸与金属氧化物的反应</td></tr>
+    <tr><th>证据</th><td>液体颜色变化证明生成了新物质</td></tr>
+    <tr><th>化学语言</th><td style="font-family:monospace;">Fe₂O₃ + 6CH₃COOH → 2Fe(CH₃COO)₃ + 3H₂O</td></tr>
+    <tr><th>意义</th><td>生活中利用化学原理解决实际问题</td></tr>
+  </table>
+</div>
+
+<!-- Method Summary -->
+<div class="section-title">🧠 方法提炼（可迁移方法）</div>
+<div class="method-grid">
+  <div class="method-card">
+    <h5>🔍 情境拆解法</h5>
+    <p>把生活现象分解为"谁（物质）→什么性质→与谁反应→产生什么"</p>
+    <p style="font-size:12px; color:var(--accent); margin-top:4px;">迁移：可应用于任何化学现象的分析</p>
+  </div>
+  <div class="method-card">
+    <h5>🎨 颜色追踪法</h5>
+    <p>颜色变化是化学反应的"信号灯"</p>
+    <p style="font-size:12px; color:var(--accent); margin-top:4px;">迁移：用于判断是否有新物质生成</p>
+  </div>
+  <div class="method-card">
+    <h5>📂 概念调用三步法</h5>
+    <p>看到现象 → 问"这是什么类型的问题" → 调用该类型的核心概念</p>
+    <p style="font-size:12px; color:var(--accent); margin-top:4px;">迁移：建立"现象—概念"的快速映射</p>
+  </div>
+  <div class="method-card">
+    <h5>🔗 证据链表达法</h5>
+    <p>结论不是说出来的是"证"出来的：现象→证据→推理→结论</p>
+    <p style="font-size:12px; color:var(--accent); margin-top:4px;">迁移：规范化学实验报告的写作</p>
+  </div>
+</div>
+
+<!-- Common Mistakes -->
+<div class="section-title">⚠️ 易错提醒</div>
+<table class="warn-table">
+  <tr><th style="width:8%;">#</th><th style="width:30%;">易错点</th><th style="width:32%;">正确理解</th><th>为什么容易错</th></tr>
+  <tr><td style="text-align:center;">1</td><td>认为铁锈是被醋"溶解"了（物理变化）</td><td>铁锈与醋发生了化学反应，生成了新物质</td><td>生活中"洗掉"一词容易让人误以为是物理过程</td></tr>
+  <tr><td style="text-align:center;">2</td><td>认为铁钉变亮说明铁钉被消耗了</td><td>短时间反应中铁锈被去除，铁本身不与醋酸快速反应</td><td>混淆了铁和氧化铁的化学性质差异</td></tr>
+  <tr><td style="text-align:center;">3</td><td>不理解浅黄色液体的来源</td><td>浅黄色来自生成的Fe³⁺离子（醋酸铁溶液的颜色）</td><td>缺乏"离子在水中呈现颜色"的概念预备</td></tr>
+</table>
+
+<!-- Practice -->
+<div class="section-title">🏋️ 自主迁移小练习</div>
+
+<div class="scenario-box" style="border-left-color: var(--primary);">
+  <h3>练习1：柠檬汁除铜锈</h3>
+  <p>妈妈用柠檬汁擦拭铜壶上的绿色铜锈（碱式碳酸铜Cu₂(OH)₂CO₃），铜锈消失了。请用今天学到的5步解析法分析这个现象。</p>
+  <button class="practice-toggle" onclick="togglePractice('p1')">💡 查看提示</button>
+  <div class="practice-area" id="p1">
+    <div class="practice-inner">
+      <strong>提示思路：</strong>铜锈主要成分Cu₂(OH)₂CO₃（碱式碳酸铜），柠檬汁含柠檬酸（酸性）。酸与碱式碳酸铜反应，生成可溶性铜盐、水和CO₂。与铁锈+白醋的反应类型类似——都是酸与金属化合物的反应。
+    </div>
+  </div>
+</div>
+
+<div class="scenario-box" style="border-left-color: var(--primary);">
+  <h3>练习2：苏打水与石蕊</h3>
+  <p>苏打水（含碳酸氢钠）滴到紫色石蕊试液上，试液变成蓝色。请分析：这说明了苏打水的什么性质？与白醋对比，两者有什么不同？</p>
+  <button class="practice-toggle" onclick="togglePractice('p2')">💡 查看提示</button>
+  <div class="practice-area" id="p2">
+    <div class="practice-inner">
+      <strong>提示思路：</strong>石蕊试液遇酸变红、遇碱变蓝。苏打水使石蕊变蓝说明呈碱性（碳酸氢钠水溶液水解呈弱碱性）。白醋呈酸性——两者性质相反。用pH试纸可以定量比较。
+    </div>
+  </div>
+</div>
+
+<!-- Self-assessment -->
+<div class="section-title">📊 学习自评</div>
+<p style="color:var(--text-secondary); margin-bottom:10px;">点击以下选项进行自我评估：完全能（3分） / 基本能（2分） / 需要帮助（1分）</p>
+<div class="checklist">
+  <div class="check-item" onclick="toggleCheck(this)">
+    <span class="box"></span>
+    <span>我能从生活现象中识别出化学问题</span>
+  </div>
+  <div class="check-item" onclick="toggleCheck(this)">
+    <span class="box"></span>
+    <span>我能用"5步法"系统分析一个化学现象</span>
+  </div>
+  <div class="check-item" onclick="toggleCheck(this)">
+    <span class="box"></span>
+    <span>我能区分物理变化和化学变化</span>
+  </div>
+  <div class="check-item" onclick="toggleCheck(this)">
+    <span class="box"></span>
+    <span>我能用化学方程式表达分析结果</span>
+  </div>
+  <div class="check-item" onclick="toggleCheck(this)">
+    <span class="box"></span>
+    <span>我能将分析方法迁移到类似现象中</span>
+  </div>
+</div>
+
+</div>
+
+<script>
+function switchStep(num) {
+  var tabs = document.querySelectorAll('.step-tab');
+  var contents = document.querySelectorAll('.step-content');
+  tabs.forEach(function(t) { t.classList.remove('active'); });
+  contents.forEach(function(c) { c.classList.remove('active'); });
+  document.querySelector('.step-tab[data-step="' + num + '"]').classList.add('active');
+  document.querySelector('.step-content[data-step="' + num + '"]').classList.add('active');
+}
+function togglePractice(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('show');
+}
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+}
+</script>
+</body>
+</html>

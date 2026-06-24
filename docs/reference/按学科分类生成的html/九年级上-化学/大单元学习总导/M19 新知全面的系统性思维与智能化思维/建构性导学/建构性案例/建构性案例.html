@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性案例 — 模块建构性七阶适配案例导学</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; }
+.header {
+  background: linear-gradient(135deg, var(--primary), #0d5bcf);
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 6px; }
+.header .subtitle { font-size: 14px; opacity: 0.85; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.card h2 { font-size: var(--font-h2); color: var(--primary); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--bg); }
+
+/* Tabs */
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.tab-btn {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition: all 0.25s;
+}
+.tab-btn:hover { border-color: var(--primary); color: var(--primary); }
+.tab-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Case sections */
+.scenario-box {
+  background: #fff7e6;
+  border-left: 3px solid #fa8c16;
+  padding: 12px 16px;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  margin-bottom: 12px;
+}
+.scenario-box .s-label { font-weight: 600; color: #d46b08; }
+.task-label { font-weight: 600; color: var(--primary); margin-top: 10px; display: block; }
+.step-list { margin: 6px 0 6px 18px; }
+.step-list li { margin-bottom: 4px; }
+.rubric { margin-top: 10px; }
+.rubric-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 5px 0; cursor: pointer;
+  font-size: 14px;
+}
+.rubric-item input[type="checkbox"] { margin-top: 4px; accent-color: var(--primary); width: 16px; height: 16px; flex-shrink: 0; }
+.rubric-item.done label { text-decoration: line-through; color: var(--text-secondary); }
+.principle-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin: 2px;
+  font-weight: 500;
+}
+.pt-blue { background: #e6f7ff; color: #1677ff; }
+.pt-orange { background: #fff7e6; color: #d46b08; }
+.pt-green { background: #f6ffed; color: #52c41a; }
+.pt-red { background: #fff1f0; color: #f5222d; }
+.pt-purple { background: #f9f0ff; color: #722ed1; }
+.express-box {
+  background: #f0f5ff;
+  border: 1px dashed var(--primary);
+  border-radius: var(--border-radius);
+  padding: 12px 16px;
+  margin-top: 10px;
+}
+.express-box .e-title { font-weight: 600; color: var(--primary); }
+.reflect-section { margin-top: 14px; }
+.reflect-q {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--bg);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.reflect-q:last-child { border-bottom: none; }
+.reflect-q:hover { color: var(--primary); }
+.reflect-q .q-num { font-weight: 700; color: var(--primary); margin-right: 6px; }
+.btn-reset {
+  margin-top: 10px;
+  padding: 5px 14px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.btn-reset:hover { background: var(--primary-hover); }
+@media (min-width: 768px) {
+  .container { padding: 32px 40px; }
+  .tabs { gap: 8px; }
+  .tab-btn { padding: 8px 18px; font-size: 14px; }
+}
+@media (min-width: 1024px) {
+  .container { padding: 40px 60px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🔬 模块建构性七阶适配案例导学</h1>
+    <div class="subtitle">基于"走进化学世界"第1章 · 围绕"系统性思维与智能化思维"定位 · 由浅入深主动建构化学认知</div>
+  </div>
+
+  <div class="card">
+    <h2>📂 7 个案例导航</h2>
+    <div class="tabs" id="caseTabs">
+      <button class="tab-btn active" data-case="0" onclick="switchCase(0)">案例一</button>
+      <button class="tab-btn" data-case="1" onclick="switchCase(1)">案例二</button>
+      <button class="tab-btn" data-case="2" onclick="switchCase(2)">案例三</button>
+      <button class="tab-btn" data-case="3" onclick="switchCase(3)">案例四</button>
+      <button class="tab-btn" data-case="4" onclick="switchCase(4)">案例五</button>
+      <button class="tab-btn" data-case="5" onclick="switchCase(5)">案例六</button>
+      <button class="tab-btn" data-case="6" onclick="switchCase(6)">案例七</button>
+    </div>
+
+    <!-- Case 1: 化学宝藏地图 -->
+    <div class="tab-content active" data-case="0">
+      <h3 style="color:var(--primary);font-size:17px;margin-bottom:10px;">案例一：我身边的"化学宝藏"地图</h3>
+      <div class="scenario-box">
+        <span class="s-label">📌 真实建构情境：</span>你的书桌上有一瓶水、一支铅笔、一块橡皮、一个玻璃杯。这4样看似普通的东西，其实都是"化学物质"。它们是由什么材料制成的？这些材料又来自哪里？
+      </div>
+      <p><strong class="task-label">建构任务：</strong>围绕书桌上的4样物品，建构一幅"化学物质来源与用途"关联图。</p>
+      <p><strong>原理调用：</strong><span class="principle-tag pt-blue">问题驱动法</span> + <span class="principle-tag pt-orange">证据锚定法</span></p>
+      <p><strong>建构步骤：</strong></p>
+      <ol class="step-list">
+        <li>观察4样物品，记录外观、手感等物理特征</li>
+        <li>猜测它们的主要成分（水瓶→塑料/高聚物，铅笔→石墨+木材，橡皮→橡胶，玻璃杯→二氧化硅）</li>
+        <li>查阅教材或资料，验证你的猜测</li>
+        <li>画一幅"物品—成分—来源"关联图</li>
+      </ol>
+      <p><strong>脚手架：</strong>用思维导图形式，中心写"我的书桌"，向外辐射4个物品分支</p>
+      <div class="express-box">
+        <span class="e-title">📄 成果表达：</span>我的"化学宝藏"地图 — A4纸，中心图+4个物品分支，每个分支标注：物品名称→成分→来源→用途。用不同颜色区分不同维度，标注查证过的资料来源。
+      </div>
+      <div class="rubric" id="rubric0">
+        <p style="font-weight:600;color:var(--primary);margin-bottom:6px;">✅ 自评量规（点击勾选）</p>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>是否列出了至少4种物品的成分？</label></div>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>每种成分是否有教材或可靠资料的依据？</label></div>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>地图是否清晰展示从"物品"到"成分"到"来源"的链条？</label></div>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>是否标注了信息来源？</label></div>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>图画是否整洁可读？</label></div>
+        <button class="btn-reset" onclick="event.stopPropagation();resetRubric('rubric0')">🔄 重置</button>
+      </div>
+    </div>
+
+    <!-- Case 2: 酸碱大侦探 -->
+    <div class="tab-content" data-case="1">
+      <h3 style="color:var(--primary);font-size:17px;margin-bottom:10px;">案例二：厨房里的"酸碱大侦探"</h3>
+      <div class="scenario-box">
+        <span class="s-label">📌 真实建构情境：</span>厨房里有白醋（酸性）、小苏打（弱碱性）、纯碱（碱性）、柠檬汁（酸性）。如果不说名字，只给你一杯"神秘液体"，你能用厨房里的材料判断它是酸性还是碱性吗？你能建构一套"家庭酸碱检测方案"吗？
+      </div>
+      <p><strong class="task-label">建构任务：</strong>设计一份"家庭酸碱检测指南"，包含检测方法、操作步骤和结果判断标准。</p>
+      <p><strong>原理调用：</strong><span class="principle-tag pt-green">系统建模法</span></p>
+      <p><strong>建构步骤：</strong></p>
+      <ol class="step-list">
+        <li>查阅教材，了解酸碱指示剂的原理</li>
+        <li>寻找家庭替代品（紫甘蓝汁、红茶、花青素等可作为天然指示剂）</li>
+        <li>设计检测流程（取样→加指示剂→观察颜色变化→判断酸碱性）</li>
+        <li>用流程图形式呈现完整的检测方案</li>
+      </ol>
+      <p><strong>脚手架：</strong>流程图模板——"开始→取样品→加指示剂→观察颜色→对照色卡→得出结论"</p>
+      <div class="express-box">
+        <span class="e-title">📄 成果表达：</span>家庭酸碱检测指南（流程图+色卡）— 包含检测原理、材料清单、操作步骤、颜色对照表、安全提示。流程图用箭头串联，色卡用彩笔标记预期颜色变化。
+      </div>
+      <div class="rubric" id="rubric1">
+        <p style="font-weight:600;color:var(--primary);margin-bottom:6px;">✅ 自评量规</p>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>是否说明了酸碱指示剂的基本原理？</label></div>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>检测步骤是否清晰可操作（其他人按步骤也能做）？</label></div>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>是否提供了至少3种家庭常见物质的预期颜色变化？</label></div>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>是否包含了安全注意事项？</label></div>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>流程图是否有明确的"开始"和"结束"标记？</label></div>
+        <button class="btn-reset" onclick="event.stopPropagation();resetRubric('rubric1')">🔄 重置</button>
+      </div>
+    </div>
+
+    <!-- Case 3: 水质体检 -->
+    <div class="tab-content" data-case="2">
+      <h3 style="color:var(--primary);font-size:17px;margin-bottom:10px;">案例三：校园水质"体检"报告</h3>
+      <div class="scenario-box">
+        <span class="s-label">📌 真实建构情境：</span>学校最近发布了直饮水检测报告，显示pH值为6.8，TDS为120mg/L。这个数据是什么意思？学校的饮用水水质到底怎么样？你作为班级"水质观察员"，需要建构一份校园用水水质分析简报。
+      </div>
+      <p><strong class="task-label">建构任务：</strong>建构一份"校园饮用水水质简易分析简报"，利用教材中的物质性质知识，解释关键水质指标的含义。</p>
+      <p><strong>原理调用：</strong><span class="principle-tag pt-orange">证据锚定法</span></p>
+      <p><strong>建构步骤：</strong></p>
+      <ol class="step-list">
+        <li>收集学校水质检测数据（找后勤老师或查看公示牌）</li>
+        <li>查阅教材和资料，了解pH值、TDS等指标的含义</li>
+        <li>对照国家饮用水标准，判断数据是否在安全范围</li>
+        <li>用通俗语言写成一句话"水质结论"，并解释为什么</li>
+      </ol>
+      <p><strong>脚手架：</strong>教材附录的国家饮用水标准；"数据—标准—判断—结论"四栏分析表</p>
+      <div class="express-box">
+        <span class="e-title">📄 成果表达：</span>校园饮用水水质简报 — 数据表格+指标解释+结论+改进建议。用"红黄绿"三色标注各指标是否达标。
+      </div>
+      <div class="rubric" id="rubric2">
+        <p style="font-weight:600;color:var(--primary);margin-bottom:6px;">✅ 自评量规</p>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>是否获取了至少3项水质检测数据？</label></div>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>每项数据是否有明确的化学含义解释？</label></div>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>是否对照了国家饮用水标准？</label></div>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>结论是否有数据和化学原理支撑？</label></div>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>简报能否让非化学专业的同学看懂？</label></div>
+        <button class="btn-reset" onclick="event.stopPropagation();resetRubric('rubric2')">🔄 重置</button>
+      </div>
+    </div>
+
+    <!-- Case 4: 化学变化分类系统 -->
+    <div class="tab-content" data-case="3">
+      <h3 style="color:var(--primary);font-size:17px;margin-bottom:10px;">案例四：构建"化学变化"分类系统</h3>
+      <div class="scenario-box">
+        <span class="s-label">📌 真实建构情境：</span>铁钉生锈→化学变化；蜡烛燃烧→化学变化；小苏打加醋冒泡→化学变化……生活中到处是化学变化，但它们的"变化方式"一样吗？一个燃烧、一个生锈、一个冒泡，你该怎么系统地区分和描述它们？
+      </div>
+      <p><strong class="task-label">建构任务：</strong>建构一套"化学变化分类系统框架"，能够把至少6种化学变化按一定标准分类。</p>
+      <p><strong>原理调用：</strong><span class="principle-tag pt-green">系统建模法</span> + <span class="principle-tag pt-red">迭代优化法</span></p>
+      <p><strong>建构步骤：</strong></p>
+      <ol class="step-list">
+        <li>列出6种以上你见过的化学变化</li>
+        <li>思考分类标准（按反应类型？按能量变化？按参与物质？）</li>
+        <li>画出分类树状图（第一级、第二级分类）</li>
+        <li>把每种变化填入对应类别</li>
+        <li>检查是否有变化无法归入——迭代补充</li>
+      </ol>
+      <p><strong>脚手架：</strong>分类树模板——"化学变化"根节点，分2—3级子节点</p>
+      <div class="express-box">
+        <span class="e-title">📄 成果表达：</span>我的化学变化分类树 — 树状图/层级图，根→一级→二级→具体实例。用不同颜色区分不同分类层级，每个实例旁边标注简短变化描述。
+      </div>
+      <div class="rubric" id="rubric3">
+        <p style="font-weight:600;color:var(--primary);margin-bottom:6px;">✅ 自评量规</p>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>是否列出了至少6种不同的化学变化？</label></div>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>分类标准是否有化学原理依据？</label></div>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>每一种变化是否能清晰归入某一类别？</label></div>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>是否存在"一个变化可归入多类"的歧义？如何处理？</label></div>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>分类树是否层次分明、一目了然？</label></div>
+        <button class="btn-reset" onclick="event.stopPropagation();resetRubric('rubric3')">🔄 重置</button>
+      </div>
+    </div>
+
+    <!-- Case 5: 跨学科视角 -->
+    <div class="tab-content" data-case="4">
+      <h3 style="color:var(--primary);font-size:17px;margin-bottom:10px;">案例五："跨学科"视角——水从源头到水杯</h3>
+      <div class="scenario-box">
+        <span class="s-label">📌 真实建构情境：</span>一杯自来水从江河湖泊到你的水杯，经历了取水→混凝→沉淀→过滤→消毒→输送的完整过程。这不仅是物理过程，更涉及大量化学原理（混凝剂的作用、消毒剂的反应、pH调节……）。你能用化学+物理+生物的综合视角，建构"一滴水的旅程"系统模型吗？
+      </div>
+      <p><strong class="task-label">建构任务：</strong>建构"一滴水的旅程"跨学科系统模型，涵盖从水源到水杯的全过程，标注每个环节涉及的化学变化和原理。</p>
+      <p><strong>原理调用：</strong><span class="principle-tag pt-green">系统建模法</span></p>
+      <p><strong>建构步骤：</strong></p>
+      <ol class="step-list">
+        <li>查阅资料，了解自来水处理的标准流程（6—8个环节）</li>
+        <li>标注每个环节的化学变化（如：加氯消毒→氧化还原反应）</li>
+        <li>用流程图+文字说明的方式呈现全链条</li>
+        <li>标注每个环节涉及的学科（化学/物理/生物）</li>
+      </ol>
+      <p><strong>脚手架：</strong>用"环节—化学原理—学科标签"三列表格辅助整理</p>
+      <div class="express-box">
+        <span class="e-title">📄 成果表达：</span>一滴水的旅程——跨学科系统模型 — 横轴为"从水源到水杯"的环节链条，纵轴标注每个环节的化学原理和涉及的学科。不同颜色代表不同学科，在每个环节节点弹出化学原理说明。
+      </div>
+      <div class="rubric" id="rubric4">
+        <p style="font-weight:600;color:var(--primary);margin-bottom:6px;">✅ 自评量规</p>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>是否完整覆盖了从取水到输送的主要环节？</label></div>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>每个环节是否标注了相关的化学变化或原理？</label></div>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>是否至少使用了2种不同学科的知识来解释同一个系统？</label></div>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>流程图是否有清晰的起点和终点？</label></div>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>模型能否让读者理解"自来水不是凭空来的"？</label></div>
+        <button class="btn-reset" onclick="event.stopPropagation();resetRubric('rubric4')">🔄 重置</button>
+      </div>
+    </div>
+
+    <!-- Case 6: 碳中和 -->
+    <div class="tab-content" data-case="5">
+      <h3 style="color:var(--primary);font-size:17px;margin-bottom:10px;">案例六：碳中和时代的"化学方案"</h3>
+      <div class="scenario-box">
+        <span class="s-label">📌 真实建构情境：</span>国家提出2060年前实现"碳中和"。作为化学学习者，你知道二氧化碳的排放和吸收都涉及化学反应吗？你能从化学角度分析：哪些反应"制造"了CO₂？哪些反应可以"吸收"CO₂？你能不能建构一个"碳循环化学方案"？
+      </div>
+      <p><strong class="task-label">建构任务：</strong>建构一份"碳循环化学方案"，列出至少3种产生CO₂的化学反应和3种吸收CO₂的化学反应，并分析哪种吸收方案最可行。</p>
+      <p><strong>原理调用：</strong><span class="principle-tag pt-blue">问题驱动法</span> + <span class="principle-tag pt-orange">证据锚定法</span></p>
+      <p><strong>建构步骤：</strong></p>
+      <ol class="step-list">
+        <li>查阅资料，列出产生CO₂的常见化学反应（燃烧、呼吸、分解等）</li>
+        <li>列出吸收CO₂的化学反应（光合作用、CO₂与碱反应、矿物碳化等）</li>
+        <li>用化学方程式表达每个反应</li>
+        <li>分析各吸收方案的优缺点（成本、效率、副产物）</li>
+        <li>写出你的"推荐方案"并说明理由</li>
+      </ol>
+      <p><strong>脚手架：</strong>用"反应名称—化学方程式—碳排放/吸收—可行性评价"四栏表格</p>
+      <div class="express-box">
+        <span class="e-title">📄 成果表达：</span>碳中和时代的"碳循环化学方案" — 产生端和吸收端双栏对比表+化学方程式+可行性评估。产生端用红色箭头，吸收端用绿色箭头，形成循环图。
+      </div>
+      <div class="rubric" id="rubric5">
+        <p style="font-weight:600;color:var(--primary);margin-bottom:6px;">✅ 自评量规</p>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>是否列出了至少3个产生CO₂和3个吸收CO₂的化学反应？</label></div>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>每个反应是否正确写出了化学方程式（或用文字描述）？</label></div>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>是否分析了哪些吸收方案更可行（结合成本、效率等因素）？</label></div>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>推荐方案是否有理有据？</label></div>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>方案是否用图表形式清晰呈现了碳循环？</label></div>
+        <button class="btn-reset" onclick="event.stopPropagation();resetRubric('rubric5')">🔄 重置</button>
+      </div>
+    </div>
+
+    <!-- Case 7: 安全手册 -->
+    <div class="tab-content" data-case="6">
+      <h3 style="color:var(--primary);font-size:17px;margin-bottom:10px;">案例七：综合创新——设计"家庭化学实验安全手册"</h3>
+      <div class="scenario-box">
+        <span class="s-label">📌 真实建构情境：</span>你有一个8岁的表妹，她喜欢在家做各种"科学小实验"。但她在网上看到的实验不一定安全——有的用了不该混合的化学品，有的操作不当有危险。你决定运用本学期学到的化学知识和系统性思维，为她设计一份安全、易懂的"家庭化学实验安全手册"。
+      </div>
+      <p><strong class="task-label">建构任务：</strong>建构一本"家庭化学实验安全手册"，包含安全原则、常见危险物质清单、安全操作指南和简易急救措施。</p>
+      <p><strong>原理调用：</strong><span class="principle-tag pt-blue">问题驱动法</span> + <span class="principle-tag pt-orange">证据锚定法</span> + <span class="principle-tag pt-green">系统建模法</span> + <span class="principle-tag pt-red">迭代优化法</span> + <span class="principle-tag pt-purple">外化表达法</span>（全部5条）</p>
+      <p><strong>建构步骤：</strong></p>
+      <ol class="step-list">
+        <li>查阅教材和资料，列出家庭常用化学品的危险组合</li>
+        <li>归纳3—5条核心安全原则</li>
+        <li>设计手册结构（封面→安全原则→危险清单→安全操作→急救措施）</li>
+        <li>用通俗语言和插图完成初稿</li>
+        <li>请表妹试读，根据反馈修改——迭代优化</li>
+        <li>形成定稿，并画一个"安全标识"封面</li>
+      </ol>
+      <p><strong>脚手架：</strong>使用"安全原则—化学原理—案例说明—操作建议"四栏格式</p>
+      <div class="express-box">
+        <span class="e-title">📄 成果表达：</span>家庭化学实验安全手册（送给表妹的礼物）— 小册子形式（A4纸对折），4—6页，包括封面页。文字+手绘简笔画，红色标注危险、绿色标注安全操作。
+      </div>
+      <div class="rubric" id="rubric6">
+        <p style="font-weight:600;color:var(--primary);margin-bottom:6px;">✅ 自评量规</p>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>是否归纳了至少3条核心安全原则？</label></div>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>每条原则是否对应了具体的化学原理或事实？</label></div>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>是否列出了至少3种不能混合的化学品组合？</label></div>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>语言是否能让8岁孩子看懂？</label></div>
+        <div class="rubric-item" onclick="toggleRubric(this)"><input type="checkbox"> <label>手册是否结构完整（封面+正文+急救措施）？</label></div>
+        <button class="btn-reset" onclick="event.stopPropagation();resetRubric('rubric6')">🔄 重置</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>💭 综合反思</h2>
+    <p style="margin-bottom:8px;">完成7个案例后，请思考以下问题：</p>
+    <div class="reflect-section">
+      <div class="reflect-q" onclick="toggleReflect(this)"><span class="q-num">1</span> 哪个案例让你觉得最容易上手？为什么？</div>
+      <div class="reflect-q" onclick="toggleReflect(this)"><span class="q-num">2</span> 哪个案例挑战最大？难在哪里？</div>
+      <div class="reflect-q" onclick="toggleReflect(this)"><span class="q-num">3</span> 你用得最多的建构性原理是哪一条？</div>
+      <div class="reflect-q" onclick="toggleReflect(this)"><span class="q-num">4</span> 从案例一到案例七，你的建构能力有没有变化？体现在哪里？</div>
+      <div class="reflect-q" onclick="toggleReflect(this)"><span class="q-num">5</span> 如果让你再做一个"化学与生活"的建构项目，你会选择什么主题？</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchCase(idx) {
+  var tabs = document.querySelectorAll('.tab-btn');
+  var contents = document.querySelectorAll('.tab-content');
+  tabs.forEach(function(t, i) {
+    t.classList.toggle('active', i === idx);
+  });
+  contents.forEach(function(c, i) {
+    c.classList.toggle('active', i === idx);
+  });
+}
+function toggleRubric(el) {
+  var cb = el.querySelector('input[type="checkbox"]');
+  if (!cb) return;
+  cb.checked = !cb.checked;
+  if (cb.checked) {
+    el.classList.add('done');
+  } else {
+    el.classList.remove('done');
+  }
+}
+function resetRubric(id) {
+  var container = document.getElementById(id);
+  if (!container) return;
+  var items = container.querySelectorAll('.rubric-item');
+  items.forEach(function(li) {
+    li.classList.remove('done');
+    var cb = li.querySelector('input[type="checkbox"]');
+    if (cb) cb.checked = false;
+  });
+}
+function toggleReflect(el) {
+  el.classList.toggle('active');
+  el.style.color = el.classList.contains('active') ? 'var(--primary)' : '';
+}
+</script>
+</body>
+</html>

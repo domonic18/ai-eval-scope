@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性原理：五条可迁移原理</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+}
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin: 0 0 8px 0;
+  font-weight: 700;
+  position: relative;
+  padding-left: 16px;
+}
+h1::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 4px;
+  background: var(--primary);
+  border-radius: 2px;
+}
+h2 {
+  font-size: var(--font-h2);
+  color: var(--text);
+  margin: 20px 0 12px 0;
+  font-weight: 600;
+}
+h3 { font-size: 16px; margin: 0 0 6px 0; }
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 20px;
+  padding-left: 16px;
+}
+
+/* 引言 */
+.intro-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border-left: 4px solid var(--primary);
+}
+
+/* 原理卡片 */
+.principle-card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  transition: box-shadow 0.3s;
+}
+.principle-card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.12); }
+.principle-header {
+  padding: 16px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  user-select: none;
+  -webkit-user-select: none;
+  background: var(--card-bg);
+  transition: background 0.2s;
+}
+.principle-header:hover { background: #f6f8fa; }
+.principle-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.principle-icon.p1 { background: #e6f7ff; }
+.principle-icon.p2 { background: #f6ffed; }
+.principle-icon.p3 { background: #fff7e6; }
+.principle-icon.p4 { background: #f9f0ff; }
+.principle-icon.p5 { background: #fff2f0; }
+.principle-title-group { flex: 1; }
+.principle-title-group h3 { margin: 0; font-size: 16px; font-weight: 600; color: var(--text); }
+.principle-title-group .p-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+.principle-toggle {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--primary);
+  transition: transform 0.3s;
+  flex-shrink: 0;
+}
+.principle-card.open .principle-toggle { transform: rotate(180deg); }
+.principle-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+  padding: 0 20px;
+}
+.principle-card.open .principle-body {
+  max-height: 1200px;
+  padding: 0 20px 20px;
+}
+.principle-body p { margin: 8px 0; }
+.principle-body strong { color: var(--primary); }
+.info-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  margin: 2px 4px 2px 0;
+}
+.info-tag.source { background: #e6f7ff; color: #1677ff; }
+.info-tag.use { background: #f6ffed; color: #389e0d; }
+.info-tag.caution { background: #fff7e6; color: #d46b08; }
+
+/* 迁移练习区 */
+.practice-section {
+  margin: 20px 0;
+}
+.practice-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  border-left: 4px solid #389e0d;
+}
+.practice-card h2 { color: #389e0d; margin-top: 0; }
+.practice-card h3 { color: var(--text); font-weight: 600; }
+.scaffold {
+  background: #f6ffed;
+  border: 1px dashed #b7eb8f;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+  font-size: 14px;
+}
+.scaffold strong { color: #389e0d; }
+
+/* 元认知 */
+.meta-section {
+  background: #f9f0ff;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin: 20px 0;
+  border-left: 4px solid #722ed1;
+}
+.meta-section h2 { color: #722ed1; }
+.meta-q {
+  padding: 10px 14px;
+  margin: 8px 0;
+  background: var(--card-bg);
+  border-radius: 6px;
+  border-left: 3px solid #722ed1;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background 0.2s;
+}
+.meta-q:hover { background: #f0f0ff; }
+.meta-q .q-text { font-weight: 500; }
+.meta-q .q-hint {
+  display: none;
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  padding: 8px 12px;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+.meta-q.open .q-hint { display: block; }
+.meta-q.open .q-text { color: #722ed1; }
+
+/* 控制按钮 */
+.ctrl-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.btn {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+}
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-outline {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+.btn-outline:hover { background: var(--bg); }
+
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .principle-header { padding: 12px 16px; }
+  .principle-card.open .principle-body { padding: 0 16px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>建构性原理</h1>
+<div class="subtitle">M20 新知的理论和学术性总结与表达 · 九年级化学</div>
+
+<div class="intro-card">
+  <p>本部分基于"蜡烛燃烧"的建构过程，从中提炼出 <strong>5 条可迁移的建构性原理</strong>，帮助你以后面对任何新的化学知识时，都能自己动手"建构"出理解。</p>
+  <p style="margin-bottom:0;">💡 点击每条原理的标题展开详细说明。</p>
+</div>
+
+<div class="ctrl-bar">
+  <button class="btn btn-primary" onclick="expandAll()">展开全部</button>
+  <button class="btn btn-outline" onclick="collapseAll()">收起全部</button>
+</div>
+
+<!-- 原理一 -->
+<div class="principle-card open" data-p="1">
+  <div class="principle-header" onclick="togglePrinciple(this)">
+    <div class="principle-icon p1">🔍</div>
+    <div class="principle-title-group">
+      <h3>原理一：现象驱动法</h3>
+      <p class="p-label">从观察出发 · 带着问题探索</p>
+    </div>
+    <span class="principle-toggle">▼</span>
+  </div>
+  <div class="principle-body">
+    <p><strong>原理说明：</strong>从具体、可观察的现象出发，带着问题去探索，而不是直接接受结论。</p>
+    <p><span class="info-tag source">📖 来源：</span>在建构性示例中，你从"点燃蜡烛"这个简单现象开始，观察到了蜡熔化（物理变化）和蜡烛燃烧（化学变化），正是这些观察引发了你的思考。</p>
+    <p><span class="info-tag use">✅ 适用情境：</span>学习任何化学概念时，先问自己"我观察到了什么现象？"</p>
+    <p><span class="info-tag caution">⚠️ 注意事项：</span>观察要有目的、有方法，不能只凭感觉。</p>
+  </div>
+</div>
+
+<!-- 原理二 -->
+<div class="principle-card" data-p="2">
+  <div class="principle-header" onclick="togglePrinciple(this)">
+    <div class="principle-icon p2">📊</div>
+    <div class="principle-title-group">
+      <h3>原理二：二分归类法</h3>
+      <p class="p-label">一分为二 · 分类分析后整合</p>
+    </div>
+    <span class="principle-toggle">▼</span>
+  </div>
+  <div class="principle-body">
+    <p><strong>原理说明：</strong>将复杂事物按照某个标准分成两类，分别分析后再整合。</p>
+    <p><span class="info-tag source">📖 来源：</span>你通过"是否有新物质生成"这个标准，将现象分为物理变化和化学变化两类。</p>
+    <p><span class="info-tag use">✅ 适用情境：</span>学习化学性质与物理性质、纯净物与混合物等概念时。</p>
+    <p><span class="info-tag caution">⚠️ 注意事项：</span>分类标准要清晰、无歧义。</p>
+  </div>
+</div>
+
+<!-- 原理三 -->
+<div class="principle-card" data-p="3">
+  <div class="principle-header" onclick="togglePrinciple(this)">
+    <div class="principle-icon p3">🔗</div>
+    <div class="principle-title-group">
+      <h3>原理三：证据链建构法</h3>
+      <p class="p-label">寻找可靠证据 · 形成完整链条</p>
+    </div>
+    <span class="principle-toggle">▼</span>
+  </div>
+  <div class="principle-body">
+    <p><strong>原理说明：</strong>不只凭感觉判断，而是寻找可靠证据，形成完整的证据链。</p>
+    <p><span class="info-tag source">📖 来源：</span>你通过查阅拉瓦锡的定量实验，找到了"质量守恒"的证据，证明蜡烛燃烧后物质并没有消失。</p>
+    <p><span class="info-tag use">✅ 适用情境：</span>任何需要论证的化学问题研究。</p>
+    <p><span class="info-tag caution">⚠️ 注意事项：</span>证据要可靠、可复现，不能道听途说。</p>
+  </div>
+</div>
+
+<!-- 原理四 -->
+<div class="principle-card" data-p="4">
+  <div class="principle-header" onclick="togglePrinciple(this)">
+    <div class="principle-icon p4">🎨</div>
+    <div class="principle-title-group">
+      <h3>原理四：模型表达法</h3>
+      <p class="p-label">可视化模型 · 结构化表达</p>
+    </div>
+    <span class="principle-toggle">▼</span>
+  </div>
+  <div class="principle-body">
+    <p><strong>原理说明：</strong>将自己建构的理解用可视化的模型或结构化文字表达出来。</p>
+    <p><span class="info-tag source">📖 来源：</span>你最终用文字 + 图示的方式完成了"蜡烛燃烧的化学变化解析报告"。</p>
+    <p><span class="info-tag use">✅ 适用情境：</span>学习原子结构、分子结构等抽象概念时。</p>
+    <p><span class="info-tag caution">⚠️ 注意事项：</span>模型要准确反映科学原理，不能为了美观牺牲科学性。</p>
+  </div>
+</div>
+
+<!-- 原理五 -->
+<div class="principle-card" data-p="5">
+  <div class="principle-header" onclick="togglePrinciple(this)">
+    <div class="principle-icon p5">📝</div>
+    <div class="principle-title-group">
+      <h3>原理五：学术语言转化法</h3>
+      <p class="p-label">日常语言 → 规范学科术语</p>
+    </div>
+    <span class="principle-toggle">▼</span>
+  </div>
+  <div class="principle-body">
+    <p><strong>原理说明：</strong>将日常语言转化为规范的学科术语和表达方式。</p>
+    <p><span class="info-tag source">📖 来源：</span>你从"蜡烛烧没了"这种日常说法，转化为"蜡烛与氧气发生氧化反应，生成二氧化碳和水"这样的化学语言。</p>
+    <p><span class="info-tag use">✅ 适用情境：</span>化学实验报告、科学论文写作等。</p>
+    <p><span class="info-tag caution">⚠️ 注意事项：</span>术语要准确，不能望文生义。</p>
+  </div>
+</div>
+
+<!-- 迁移应用 -->
+<div class="practice-section">
+  <h2>🧪 建构性原理迁移应用</h2>
+
+  <div class="practice-card">
+    <h3>📌 练习 1：铁钉生锈</h3>
+    <p><strong>情境：</strong>你家院子里的铁栅栏生锈了，请你用建构性原理解释这个过程。</p>
+    <p><strong>建构任务：</strong>写一份"铁钉生锈的化学变化解析报告"</p>
+    <div class="scaffold">
+      <strong>🔧 建构脚手架提示：</strong>注意观察生锈的位置、颜色变化、质量变化。<br>
+      <strong>建议使用的原理：</strong>现象驱动法 + 证据链建构法<br>
+      <strong>可用证据：</strong>铁钉生锈前后的照片、质量变化数据
+    </div>
+  </div>
+
+  <div class="practice-card">
+    <h3>📌 练习 2：食物腐败</h3>
+    <p><strong>情境：</strong>夏天买回来的食物如果不放冰箱，很快就会变质。</p>
+    <p><strong>建构任务：</strong>建构一个"食物腐败中的化学变化模型"</p>
+    <div class="scaffold">
+      <strong>🔧 建构脚手架提示：</strong>温度如何影响化学反应速率？<br>
+      <strong>建议使用的原理：</strong>二分归类法 + 模型表达法<br>
+      <strong>可用证据：</strong>不同温度下食物变质的速度对比
+    </div>
+  </div>
+</div>
+
+<!-- 元认知 -->
+<div class="meta-section">
+  <h2>🧠 元认知反思</h2>
+  <p>点击以下问题，展开思考提示：</p>
+
+  <div class="meta-q" onclick="toggleMeta(this)">
+    <div class="q-text">1. 在建构"蜡烛燃烧"的解释时，最关键的思考转折点是什么？</div>
+    <div class="q-hint">💡 回顾一下：是从哪个时刻开始，你从"蜡烛烧没了"转向"蜡烛和氧气反应生成了看不见的气体"？这个转折是因为你发现了什么证据，还是因为老师/教材给了你什么提示？</div>
+  </div>
+
+  <div class="meta-q" onclick="toggleMeta(this)">
+    <div class="q-text">2. 你觉得自己最擅长使用哪条建构性原理？最不擅长哪条？</div>
+    <div class="q-hint">💡 回顾一下前面的 5 条原理：现象驱动法、二分归类法、证据链建构法、模型表达法、学术语言转化法——哪一条你用起来最顺手？哪一条你觉得还需要更多练习？</div>
+  </div>
+
+  <div class="meta-q" onclick="toggleMeta(this)">
+    <div class="q-text">3. 如果没有拉瓦锡的实验证据，你还能建构出正确的解释吗？</div>
+    <div class="q-hint">💡 这提醒我们：科学的建构不是凭空想象，而是站在前人实验证据的基础上。假设没有历史实验数据，你可能需要自己设计什么实验来验证？</div>
+  </div>
+
+  <div class="meta-q" onclick="toggleMeta(this)">
+    <div class="q-text">4. 建构性学习和你以前的学习方式有什么不同？</div>
+    <div class="q-hint">💡 以前可能是"老师讲→你记→你背"；建构性学习是"你观察→你提问→你探索→你表达"。想一想，哪种方式让你对知识的理解更深刻？</div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function togglePrinciple(header) {
+  var card = header.parentElement;
+  card.classList.toggle('open');
+}
+
+function expandAll() {
+  var cards = document.querySelectorAll('.principle-card');
+  for (var i = 0; i < cards.length; i++) {
+    cards[i].classList.add('open');
+  }
+}
+
+function collapseAll() {
+  var cards = document.querySelectorAll('.principle-card');
+  for (var i = 0; i < cards.length; i++) {
+    cards[i].classList.remove('open');
+  }
+}
+
+function toggleMeta(el) {
+  el.classList.toggle('open');
+}
+</script>
+</body>
+</html>

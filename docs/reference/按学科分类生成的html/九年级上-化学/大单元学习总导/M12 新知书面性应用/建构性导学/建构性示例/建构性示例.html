@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性示例 - 化学书面表达原理导学</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  padding: 0;
+  margin: 0;
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header .meta { font-size: 13px; opacity: 0.85; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+.card h3 { font-size: 16px; color: var(--text); margin: 12px 0 8px; }
+.card p { margin-bottom: 10px; }
+.principle {
+  background: var(--bg);
+  border-left: 4px solid var(--primary);
+  padding: 14px 18px;
+  margin: 12px 0;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+}
+.principle .label {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  margin-bottom: 6px;
+}
+.tip-box {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: var(--border-radius);
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+.tag {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  padding: 2px 12px;
+  font-size: 13px;
+  margin: 2px 4px 2px 0;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tag:hover { background: var(--primary); color: #fff; }
+.tag.selected { background: var(--primary); color: #fff; }
+.btn {
+  display: inline-block;
+  padding: 8px 20px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn:hover { background: var(--primary-hover); }
+.btn-outline {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+.btn-outline:hover { background: var(--bg); }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 14px;
+}
+th { background: var(--bg); color: var(--primary); font-weight: 600; }
+tr:hover td { background: #fafafa; }
+.interact-area {
+  background: #f8f9ff;
+  border: 2px dashed var(--accent);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  margin: 12px 0;
+  text-align: center;
+}
+.interact-area textarea {
+  width: 100%;
+  min-height: 80px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  margin: 8px 0;
+}
+.interact-area textarea:focus { outline: none; border-color: var(--primary); }
+.feedback { font-size: 14px; margin-top: 8px; min-height: 24px; color: var(--primary); }
+.footer {
+  text-align: center;
+  padding: 16px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.reflection-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 640px) {
+  .reflection-grid { grid-template-columns: 1fr; }
+  .container { padding: 16px 12px; }
+  .header { padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>建构性示例：化学现象描述的原理提炼</h1>
+  <div class="meta">
+    化学 · 九年级上 · 人教版 · 第一单元 走进化学世界
+  </div>
+</div>
+
+<div class="card">
+  <h2>一、前置回顾</h2>
+  <p>在本环节之前，你已经完成了从"镁条燃烧"真实情境出发的完整建构过程：</p>
+  <p style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">
+    <span class="tag" onclick="toggleStep(this)">收集观察素材</span>
+    <span class="tag" onclick="toggleStep(this)">化学思考</span>
+    <span class="tag" onclick="toggleStep(this)">搭建框架</span>
+    <span class="tag" onclick="toggleStep(this)">填充初稿</span>
+    <span class="tag" onclick="toggleStep(this)">规范检查</span>
+    <span class="tag" onclick="toggleStep(this)">修改优化</span>
+    <span class="tag" onclick="toggleStep(this)">反思总结</span>
+  </p>
+  <p style="margin-top:8px;">点击每个步骤可标记为"已掌握" ✓</p>
+</div>
+
+<div class="card">
+  <h2>二、建构性原理提炼</h2>
+  <p>以下5条原理是从完整过程中提炼的可迁移方法，每条都配有示例体现和操作指南。</p>
+
+  <div class="principle">
+    <span class="label">原理一</span>
+    <h3>先积累素材，再组织表达</h3>
+    <p><strong>核心：</strong>动笔之前先"倒"出所有观察，不筛选不排序，先写下来。</p>
+    <p><strong>示例体现：</strong>先把镁条颜色、白光、放热、变短、白色粉末等全部记录，不急于组织语言。</p>
+    <p><strong>操作指南：</strong></p>
+    <ul style="padding-left:20px;margin:6px 0;">
+      <li>准备草稿纸或空白文档</li>
+      <li>用"我看到/听到/闻到……"句式列出原始观察</li>
+      <li>加上已知的化学知识（术语、概念）</li>
+      <li>不要急着删除任何条目</li>
+    </ul>
+  </div>
+
+  <div class="principle">
+    <span class="label">原理二</span>
+    <h3>用化学概念给素材"贴标签"</h3>
+    <p><strong>核心：</strong>将原始观察转化为化学语言——用学过的概念对素材分类和解释。</p>
+    <p><strong>示例体现：</strong>"银白色"→物理性质，"白色粉末"→新物质（氧化镁）。</p>
+    <p><strong>操作指南：</strong></p>
+    <ul style="padding-left:20px;margin:6px 0;">
+      <li>对照素材，逐个问："这对应课本上哪个概念？"</li>
+      <li>用箭头把原始观察和化学术语连接</li>
+      <li>筛选出"有化学价值的素材"</li>
+    </ul>
+  </div>
+
+  <div class="principle">
+    <span class="label">原理三</span>
+    <h3>搭建框架再填充，按时间顺序最保险</h3>
+    <p><strong>核心：</strong>先确定结构框架，再逐块填充内容。</p>
+    <p><strong>示例体现：</strong>"三段式"框架：反应物描述→反应过程描述→分析与结论。</p>
+    <p><strong>框架类型：</strong></p>
+    <ul style="padding-left:20px;margin:6px 0;">
+      <li>时间顺序型：反应前→反应中→反应后</li>
+      <li>概念解释型：定义→特征→例子→总结</li>
+      <li>问题解决型：现象→原因→方案→预防</li>
+    </ul>
+  </div>
+
+  <div class="principle">
+    <span class="label">原理四</span>
+    <h3>初稿求完整，定稿求规范——"先写完，再改好"</h3>
+    <p><strong>核心：</strong>写作分为两个阶段——第一阶段"把话说完"，第二阶段"把话说准"。</p>
+    <p><strong>操作指南：</strong></p>
+    <ul style="padding-left:20px;margin:6px 0;">
+      <li>初稿只关注完整性</li>
+      <li>修改逐项检查：准确性、规范性、简洁性、可读性</li>
+      <li>至少修改两轮——自己改一遍，再找同学看一遍</li>
+    </ul>
+  </div>
+
+  <div class="principle">
+    <span class="label">原理五</span>
+    <h3>读者意识决定表达方式</h3>
+    <p><strong>核心：</strong>写给谁看，决定怎么写。时刻问自己："我要写给谁看？"</p>
+    <p><strong>操作指南：</strong></p>
+    <ul style="padding-left:20px;margin:6px 0;">
+      <li>同学：注重可理解性</li>
+      <li>老师：注重规范性和分析深度</li>
+      <li>家人：注重通俗性，减少专业术语</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <h2>三、迁移应用挑战</h2>
+  <p>试用原理解决新问题！选择下面一个场景尝试：</p>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin:10px 0;">
+    <button class="btn" onclick="selectScenario(1)">场景A：蜡烛燃烧</button>
+    <button class="btn btn-outline" onclick="selectScenario(2)">场景B：铝锅熬醋</button>
+  </div>
+  <div id="scenarioContent" class="interact-area">
+    <p style="color:var(--text-secondary);">👆 点击上方按钮选择一个迁移场景</p>
+  </div>
+</div>
+
+<div class="card">
+  <h2>四、原理速查卡</h2>
+  <table>
+    <thead><tr><th>序号</th><th>原理名称</th><th>一句话核心</th><th>适用场景</th></tr></thead>
+    <tbody>
+      <tr onclick="highlightRow(this)"><td>1</td><td>先素材后表达</td><td>动笔前先"倒"出所有观察</td><td>实验描述</td></tr>
+      <tr onclick="highlightRow(this)"><td>2</td><td>用概念贴标签</td><td>用化学术语给素材分类</td><td>现象→化学语言转化</td></tr>
+      <tr onclick="highlightRow(this)"><td>3</td><td>先框架后填充</td><td>确定框架再逐块写</td><td>避免跑题/遗漏</td></tr>
+      <tr onclick="highlightRow(this)"><td>4</td><td>先完整再规范</td><td>初稿求全，定稿求精</td><td>各阶段用不同标准</td></tr>
+      <tr onclick="highlightRow(this)"><td>5</td><td>读者意识</td><td>写给谁看决定怎么写</td><td>有明确读者时</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:13px;color:var(--text-secondary);">💡 点击行可高亮——摘抄到笔记本首页，随时查阅</p>
+</div>
+
+<div class="footer">
+  化学 · 九年级上 · 人教版 · 建构性原理导学
+</div>
+
+</div>
+<script>
+function toggleStep(el) {
+  el.classList.toggle('selected');
+}
+
+function selectScenario(n) {
+  const div = document.getElementById('scenarioContent');
+  const btns = document.querySelectorAll('.btn');
+  btns.forEach(b => { b.classList.remove('btn-outline'); });
+  if (n === 1) {
+    btns[0].classList.remove('btn-outline');
+    btns[1].classList.add('btn-outline');
+    div.innerHTML = '<h3>🔥 场景A：描述"蜡烛燃烧"实验</h3>' +
+      '<p>你观察到：蜡烛熔化、烛芯变黑、黄色火焰分三层、有少量白烟。</p>' +
+      '<p><strong>挑战：</strong></p>' +
+      '<ul style=\"text-align:left;padding-left:20px;\">' +
+      '<li>用原理一列出至少5个观察</li>' +
+      '<li>用原理二给每个观察贴标签（物理变化or化学变化？）</li>' +
+      '<li>用原理三设计写作框架</li>' +
+      '<li>写一段150字描述，用原理四自查</li></ul>' +
+      '<textarea placeholder=\"在这里写下你的实验描述……\"></textarea>' +
+      '<div><button class=\"btn\" onclick=\"this.parentElement.previousElementSibling.value=\'我观察到蜡烛逐渐熔化（物理变化），烛芯受热变黑（化学变化），火焰呈黄色，明显分为外焰、内焰、焰心三层（物理现象），有少量白烟飘散（可能是石蜡蒸气冷凝）。\';\">查看参考思路</button></div>';
+  } else {
+    btns[0].classList.add('btn-outline');
+    btns[1].classList.remove('btn-outline');
+    div.innerHTML = '<h3>🍲 场景B：向邻居解释"为什么不能用铝锅熬醋"</h3>' +
+      '<p>邻居用铝锅熬糖醋排骨，你想到化学课上学过"铝能与酸反应"。</p>' +
+      '<p><strong>挑战：</strong></p>' +
+      '<ul style=\"text-align:left;padding-left:20px;\">' +
+      '<li>用原理五思考：读者是邻居，用什么语言风格？</li>' +
+      '<li>用原理一列出相关化学知识</li>' +
+      '<li>用原理三的"问题解决型"框架组织解释</li>' +
+      '<li>写一段100-150字说明</li></ul>' +
+      '<textarea placeholder=\"在这里写下你要对邻居说的话……\"></textarea>' +
+      '<div><button class=\"btn\" onclick=\"this.parentElement.previousElementSibling.value=\'醋里面含有醋酸（酸），铝锅的主要成分是铝。铝能和酸发生化学反应，生成铝盐和氢气（铝+醋酸→醋酸铝+氢气↑）。长期用铝锅熬醋，铝会被腐蚀，铝离子可能进入食物中，对身体不好。建议您用不锈钢锅或砂锅来熬糖醋排骨，这样既安全又不影响口味。\';\">查看参考思路</button></div>';
+  }
+}
+
+function highlightRow(el) {
+  document.querySelectorAll('tr').forEach(r => {
+    r.style.background = r === el ? '#e6f4ff' : '';
+  });
+}
+</script>
+</body>
+</html>

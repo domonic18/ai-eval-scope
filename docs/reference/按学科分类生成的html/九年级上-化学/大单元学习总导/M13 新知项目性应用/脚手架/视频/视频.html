@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视频脚手架 - 化学·九年级上</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+}
+.header {
+  text-align: center;
+  padding: 32px 20px;
+  background: linear-gradient(135deg, var(--bg) 0%, #d6e4ff 100%);
+  border-bottom: 3px solid var(--primary);
+  margin: -24px -20px 24px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+.header p {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.header .badge {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  margin-top: 10px;
+}
+.definition-box {
+  background: var(--card-bg);
+  border-left: 4px solid var(--primary);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+}
+.definition-box h2 { font-size: var(--font-h2); color: var(--primary); margin-bottom: 8px; }
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.tab-btn {
+  flex: 1;
+  min-width: 100px;
+  padding: 12px 16px;
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius) var(--border-radius) 0 0;
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: all 0.25s;
+  text-align: center;
+}
+.tab-btn:hover { color: var(--primary); border-color: var(--accent); }
+.tab-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+  border: 1px solid #f0f0f0;
+}
+.card h3 {
+  font-size: 17px;
+  color: var(--primary);
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bg);
+}
+.card h4 {
+  font-size: 15px;
+  color: var(--text);
+  margin: 12px 0 6px;
+}
+.task-list { list-style: none; padding: 0; }
+.task-list li {
+  padding: 8px 0 8px 24px;
+  position: relative;
+  border-bottom: 1px dashed #f0f0f0;
+}
+.task-list li::before {
+  content: "🎯";
+  position: absolute;
+  left: 0;
+}
+.question-item {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 8px 0;
+  cursor: pointer;
+  transition: all 0.25s;
+  border: 1px solid transparent;
+}
+.question-item:hover { border-color: var(--accent); }
+.question-item .q { font-weight: 600; color: var(--text); }
+.question-item .a {
+  display: none;
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: #fff;
+  border-radius: 6px;
+  border-left: 3px solid var(--primary);
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.question-item.revealed .a { display: block; }
+.question-item.revealed { background: #e6f4ff; }
+.pause-point {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 10px 0;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+.pause-point::before { content: "⏸️ "; }
+.pause-point .hint {
+  display: none;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #fff;
+  border-radius: 6px;
+  border-left: 3px solid #faad14;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.pause-point.revealed .hint { display: block; }
+.tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 6px;
+}
+.tag-blue { background: #e6f4ff; color: var(--primary); }
+.tag-green { background: #f6ffed; color: #52c41a; }
+.tag-orange { background: #fff7e6; color: #fa8c16; }
+.output-box {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+.output-box::before { content: "📝 输出任务："; font-weight: 600; color: #52c41a; }
+.level-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+.level1 { background: #e6f4ff; color: var(--primary); }
+.level2 { background: #f6ffed; color: #52c41a; }
+.level3 { background: #fff7e6; color: #fa8c16; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🎬 视频脚手架</h1>
+    <p>化学 · 九年级上 · 第1章 走进化学世界</p>
+    <span class="badge">以"观看焦点"驱动深度学习</span>
+  </div>
+
+  <div class="definition-box">
+    <h2>📌 什么是视频脚手架？</h2>
+    <p>视频脚手架不是"放视频让学生看"，而是以<strong>"观看焦点"</strong>为核心训练信息提取能力。每一段视频都配备明确的观看任务、关键问题和暂停思考点，让每一次观看都成为主动学习。</p>
+  </div>
+
+  <div class="tabs" id="tabHeader">
+    <button class="tab-btn active" data-tab="0" onclick="switchTab(0)">🌱 基础层</button>
+    <button class="tab-btn" data-tab="1" onclick="switchTab(1)">📊 进阶层</button>
+    <button class="tab-btn" data-tab="2" onclick="switchTab(2)">🚀 挑战层</button>
+  </div>
+
+  <!-- 基础层 -->
+  <div class="tab-content active" data-tab="0">
+    <div class="card">
+      <span class="level-indicator level1">🌱 基础层 · 解释型视频</span>
+      <h3>📺 BBC《化学史》第1集"发现元素"</h3>
+      <p style="color:var(--text-secondary);margin-bottom:10px;">从炼金术到现代化学的跨越，了解元素被发现的故事</p>
+
+      <h4>🎯 观看任务</h4>
+      <ul class="task-list">
+        <li>记录视频中提到的<strong>5种元素</strong>及其发现过程</li>
+        <li>感受科学方法如何一步步取代神秘主义</li>
+      </ul>
+
+      <h4>💡 关键问题</h4>
+      <div class="question-item" onclick="toggleReveal(this)">
+        <span class="q">Q1：古代的"炼金术"和现代化学有什么本质区别？</span>
+        <div class="a">炼金术追求"点石成金"的神秘目标，缺乏系统的方法论；现代化学以实验和定量分析为基础，追求可验证、可重复的科学规律。炼金术是"怎么做"，现代化学是"为什么"。</div>
+      </div>
+      <div class="question-item" onclick="toggleReveal(this)">
+        <span class="q">Q2：第一个被科学发现的元素是什么？是如何被发现的？</span>
+        <div class="a">磷（P）是第一个被科学发现并记录的元素。1669年，德国炼金术士亨尼格·布兰德从尿液中加热蒸馏，意外得到了会发光的白色固体。关键在于他记录了完整实验过程，使得其他科学家可以重复验证。</div>
+      </div>
+
+      <h4>⏸️ 暂停思考点</h4>
+      <div class="pause-point" onclick="toggleReveal(this)">
+        <strong>08:23</strong> —— 如果你生在那个时代，你会质疑"四元素说"吗？
+        <div class="hint">💭 当时"四元素说"（土、气、火、水）已被人们信奉了两千年。质疑它就像今天质疑"原子论"一样需要巨大的勇气和证据。试着想想：你会相信实验现象，还是相信权威说法？</div>
+      </div>
+      <div class="pause-point" onclick="toggleReveal(this)">
+        <strong>15:47</strong> —— 拉瓦锡做了什么实验推翻了燃素说？
+        <div class="hint">💭 拉瓦锡使用精密天平进行定量实验：他将锡放入密封容器中加热，发现锡变成灰烬后总质量不变。打开容器后空气涌入，质量增加。这说明燃烧是物质与空气中某种成分（氧气）结合的过程，而不是"燃素"逸出。</div>
+      </div>
+
+      <div class="output-box">用时间轴形式画出从炼金术到现代化学的发展脉络（至少包含5个关键节点）</div>
+    </div>
+  </div>
+
+  <!-- 进阶层 -->
+  <div class="tab-content" data-tab="1">
+    <div class="card">
+      <span class="level-indicator level2">📊 进阶层 · 分析型视频</span>
+      <h3>📺 TED-Ed《化学变化与物理变化的区别》</h3>
+      <p style="color:var(--text-secondary);margin-bottom:10px;">通过生动案例掌握区分化学变化与物理变化的核心标准</p>
+
+      <h4>🎯 观看任务</h4>
+      <ul class="task-list">
+        <li>记录视频中<strong>每个例子</strong>的变化特征</li>
+        <li>完成"物理变化 vs 化学变化"对比表格</li>
+      </ul>
+
+      <div style="overflow-x:auto;margin:12px 0;">
+        <table style="width:100%;border-collapse:collapse;font-size:14px;">
+          <thead>
+            <tr style="background:var(--primary);color:#fff;">
+              <th style="padding:8px 12px;border:1px solid var(--border);text-align:left;">例子</th>
+              <th style="padding:8px 12px;border:1px solid var(--border);text-align:left;">变化特征</th>
+              <th style="padding:8px 12px;border:1px solid var(--border);text-align:left;">类型</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="padding:8px 12px;border:1px solid var(--border);">纸张撕碎</td><td style="padding:8px 12px;border:1px solid var(--border);">形状改变</td><td style="padding:8px 12px;border:1px solid var(--border); color:var(--primary);font-weight:600;">物理变化</td></tr>
+            <tr><td style="padding:8px 12px;border:1px solid var(--border);">纸张燃烧</td><td style="padding:8px 12px;border:1px solid var(--border);">生成新物质（灰烬、气体）</td><td style="padding:8px 12px;border:1px solid var(--border); color:#52c41a;font-weight:600;">化学变化</td></tr>
+            <tr><td style="padding:8px 12px;border:1px solid var(--border);">冰块融化</td><td style="padding:8px 12px;border:1px solid var(--border);">状态改变，成分不变</td><td style="padding:8px 12px;border:1px solid var(--border); color:var(--primary);font-weight:600;">物理变化</td></tr>
+            <tr><td style="padding:8px 12px;border:1px solid var(--border);">铁钉生锈</td><td style="padding:8px 12px;border:1px solid var(--border);">生成新物质（铁锈）</td><td style="padding:8px 12px;border:1px solid var(--border); color:#52c41a;font-weight:600;">化学变化</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>💡 关键问题</h4>
+      <div class="question-item" onclick="toggleReveal(this)">
+        <span class="q">Q1：如何用"是否生成新物质"作为判断标准？</span>
+        <div class="a">核心判断流程：先观察变化前后物质是否相同。如果物质的种类变了（原子重新组合成新分子），就是化学变化；如果只是形态、大小、状态变了而分子本身没变，就是物理变化。简单记："变新了"是化学，"变样了"是物理。</div>
+      </div>
+      <div class="question-item" onclick="toggleReveal(this)">
+        <span class="q">Q2：有没有你无法判断的例子？为什么？</span>
+        <div class="a">常见的"灰色地带"：比如食盐溶于水——看起来消失了是物理变化还是化学变化？答案是物理变化（NaCl在水中电离成离子，但没有生成新物质，蒸发后食盐还会回来）。关键看变化是否可逆且无新物质生成。</div>
+      </div>
+
+      <h4>⏸️ 暂停思考点</h4>
+      <div class="pause-point" onclick="toggleReveal(this)">
+        <strong>03:12</strong> —— 蜡烛燃烧同时发生了物理变化和化学变化，你能分别指出吗？
+        <div class="hint">💭 物理变化：蜡烛受热熔化（蜡由固态→液态，蜡的分子没有变）。化学变化：蜡蒸气燃烧生成二氧化碳和水（新物质生成）。所以蜡烛燃烧是"物理变化伴随化学变化"的经典例子。</div>
+      </div>
+
+      <div class="output-box">在生活中找出<strong>3个</strong>例子，判断每个变化类型并说明判断依据</div>
+    </div>
+  </div>
+
+  <!-- 挑战层 -->
+  <div class="tab-content" data-tab="2">
+    <div class="card">
+      <span class="level-indicator level3">🚀 挑战层 · 前沿 / 辩论型视频</span>
+      <h3>📺《我们需要化学》系列纪录片第1集</h3>
+      <p style="color:var(--text-secondary);margin-bottom:10px;">思考化学在现代生活中的角色——从材料到环境</p>
+
+      <h4>🎯 观看任务</h4>
+      <ul class="task-list">
+        <li>收集纪录片中提到的化学在<strong>现代生活中的应用实例</strong>（至少5个）</li>
+        <li>关注化学家如何利用物质的性质创造新材料</li>
+      </ul>
+
+      <h4>💡 关键问题</h4>
+      <div class="question-item" onclick="toggleReveal(this)">
+        <span class="q">Q1：化学家如何利用物质的性质创造新材料？</span>
+        <div class="a">化学家首先研究已有物质的结构和性质，然后通过改变分子结构、组合方式或反应条件来创造新物质。例如：改变聚合物的链长和交联度可以制造出从塑料袋到防弹衣不同性能的材料；在金属中添加不同元素制造合金，性能远超纯金属。</div>
+      </div>
+      <div class="question-item" onclick="toggleReveal(this)">
+        <span class="q">Q2：如果没有化学，现代生活会是什么样？</span>
+        <div class="a">没有化学的世界：没有塑料（没有手机、电脑外壳）、没有合成纤维（只有棉麻毛丝）、没有药物（抗生素、退烧药都不存在）、没有化肥（粮食产量骤降）、没有清洁能源（没有锂电池）。化学几乎支撑了现代文明的每一个角落。</div>
+      </div>
+
+      <h4>⏸️ 暂停思考点</h4>
+      <div class="pause-point" onclick="toggleReveal(this)">
+        <strong>12:30</strong> —— "化学让生活更美好"还是"化学危害环境"？你的看法是？
+        <div class="hint">💭 这是关于化学最经典的辩论。关键在于：化学本身是中性的工具，问题在于如何使用。塑料污染不是化学的错，是不当处理方式的错。现代绿色化学正致力于从源头设计更环保的化学反应路径。你的立场是什么？用具体例子支持它。</div>
+      </div>
+
+      <div class="output-box">写一篇200字的小短文：<strong>"化学改变世界的N种方式"</strong></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function switchTab(idx) {
+  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', i === idx);
+  });
+  document.querySelectorAll('.tab-content').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+  });
+}
+function toggleReveal(el) {
+  el.classList.toggle('revealed');
+}
+</script>
+</body>
+</html>

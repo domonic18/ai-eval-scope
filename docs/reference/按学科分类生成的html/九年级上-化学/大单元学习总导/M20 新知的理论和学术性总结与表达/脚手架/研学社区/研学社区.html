@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>研学社区 — 化学案例库</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+  --level-basic: #52c41a;
+  --level-intermediate: #fa8c16;
+  --level-challenge: #f5222d;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  min-height: 100vh;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 6px; }
+.header p { font-size: 14px; opacity: 0.9; }
+
+.section-title {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--text);
+  margin: 28px 0 16px;
+  padding-left: 14px;
+  border-left: 4px solid var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.level-badge {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 12px;
+  border-radius: 12px;
+  color: #fff;
+  font-weight: 500;
+}
+
+.level-basic { background: var(--level-basic); }
+.level-intermediate { background: var(--level-intermediate); }
+.level-challenge { background: var(--level-challenge); }
+
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.case-header {
+  padding: 18px 24px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.case-header:hover { background: var(--bg); }
+
+.case-header h3 { font-size: 17px; font-weight: 600; color: var(--text); }
+
+.case-header .toggle-icon {
+  font-size: 14px;
+  color: var(--text-secondary);
+  transition: transform 0.3s;
+}
+
+.case-card.open .case-header .toggle-icon { transform: rotate(180deg); }
+
+.case-body { display: none; padding: 0 24px 20px; }
+.case-card.open .case-body { display: block; animation: fadeSlideIn 0.35s ease; }
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.case-body .sub-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  margin: 14px 0 6px;
+  display: block;
+}
+
+.case-body p, .case-body li { font-size: 14px; }
+
+.case-body ul { padding-left: 20px; margin-bottom: 6px; }
+.case-body ul li { margin-bottom: 4px; }
+
+.decision-step {
+  position: relative;
+  padding: 10px 16px 10px 40px;
+  margin-bottom: 8px;
+  background: #fafafa;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.decision-step:hover { background: var(--bg); }
+
+.decision-step .step-num {
+  position: absolute;
+  left: 12px;
+  top: 10px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--border);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  transition: background 0.3s;
+}
+
+.decision-step.done .step-num { background: var(--primary); }
+.decision-step.done .step-text { text-decoration: line-through; color: var(--text-secondary); }
+
+.transfer-box {
+  background: #f0f5ff;
+  border-left: 3px solid var(--primary);
+  padding: 12px 16px;
+  margin: 12px 0 0;
+  border-radius: 0 6px 6px 0;
+  font-size: 14px;
+}
+
+.transfer-box strong { color: var(--primary); }
+
+.btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin: 14px 0 6px; }
+
+.btn {
+  display: inline-block;
+  padding: 7px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-outline { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
+.btn-outline:hover { background: var(--bg); }
+
+.mission-box {
+  background: linear-gradient(135deg, #fff7e6, #fffbe6);
+  border: 1px solid #ffd591;
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-top: 14px;
+}
+
+.mission-box h4 { color: #d46b08; font-size: 15px; margin-bottom: 8px; }
+
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .header { padding: 20px; }
+  .case-header { padding: 14px 16px; }
+  .case-body { padding: 0 16px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🔬 研学社区 · 案例库</h1>
+  <p>化学学习脚手架 · M20 新知的理论和学术性总结与表达 · 九年级上</p>
+</div>
+
+<p style="margin-bottom:20px;color:var(--text-secondary);">点击案例标题展开详情。每个案例包含背景、核心问题、决策路径和可迁移启示。</p>
+
+<!-- ===== 基础层 ===== -->
+<h2 class="section-title">
+  基础层
+  <span class="level-badge level-basic">生活类案例</span>
+</h2>
+
+<div class="case-card open" data-case="1">
+  <div class="case-header" onclick="toggleCase(this)">
+    <h3>🔩 铁器为什么越用越少？</h3>
+    <span class="toggle-icon">▼</span>
+  </div>
+  <div class="case-body">
+    <span class="sub-label">📖 背景</span>
+    <p>你家的铁锅用久了会漏水，铁栅栏会生锈脱落。看起来铁好像"消失"了。</p>
+
+    <span class="sub-label">🎯 核心问题</span>
+    <p>铁生锈时发生了什么变化？铁真的"消失"了，还是变成了其他形态？</p>
+
+    <span class="sub-label">🔍 决策路径（点击标记完成）</span>
+    <div class="decision-step" onclick="toggleStep(this)">
+      <span class="step-num">1</span>
+      <span class="step-text">观察生锈铁器的表面变化</span>
+    </div>
+    <div class="decision-step" onclick="toggleStep(this)">
+      <span class="step-num">2</span>
+      <span class="step-text">对比生锈前后的质量变化（用天平称量）</span>
+    </div>
+    <div class="decision-step" onclick="toggleStep(this)">
+      <span class="step-num">3</span>
+      <span class="step-text">查找资料：铁锈的主要成分是 Fe₂O₃·xH₂O</span>
+    </div>
+    <div class="decision-step" onclick="toggleStep(this)">
+      <span class="step-num">4</span>
+      <span class="step-text">推理：铁与空气中的 O₂ 和 H₂O 发生了化学反应，生成了新物质</span>
+    </div>
+
+    <span class="sub-label">✅ 结果</span>
+    <p>铁并没有消失，而是变成了铁锈——这是一个典型的<strong>化学变化</strong>。</p>
+
+    <div class="transfer-box">
+      <strong>💡 可迁移启示：</strong>生活中很多看似"消失"的物质，其实是发生了化学变化，变成了另一种形式。
+    </div>
+  </div>
+</div>
+
+<!-- ===== 进阶层 ===== -->
+<h2 class="section-title">
+  进阶层
+  <span class="level-badge level-intermediate">行业/历史案例</span>
+</h2>
+
+<div class="case-card" data-case="2">
+  <div class="case-header" onclick="toggleCase(this)">
+    <h3>⚗️ 拉瓦锡的钟罩实验</h3>
+    <span class="toggle-icon">▼</span>
+  </div>
+  <div class="case-body">
+    <span class="sub-label">📖 背景</span>
+    <p>18世纪，人们普遍接受"燃素说"——认为燃烧是由于物质释放了"燃素"。</p>
+
+    <span class="sub-label">🎯 核心问题</span>
+    <p>为什么锡在密封容器中加热后，打开容器时会冲入空气？</p>
+
+    <span class="sub-label">🔍 决策路径（点击标记完成）</span>
+    <div class="decision-step" onclick="toggleStep(this)">
+      <span class="step-num">1</span>
+      <span class="step-text">拉瓦锡将锡放入密封的玻璃钟罩中加热</span>
+    </div>
+    <div class="decision-step" onclick="toggleStep(this)">
+      <span class="step-num">2</span>
+      <span class="step-text">定量测量：锡变成了灰（氧化锡），但钟罩+锡+空气的总质量不变</span>
+    </div>
+    <div class="decision-step" onclick="toggleStep(this)">
+      <span class="step-num">3</span>
+      <span class="step-text">打开容器发现：外面的空气突然冲进去——说明里面的空气变少了</span>
+    </div>
+    <div class="decision-step" onclick="toggleStep(this)">
+      <span class="step-num">4</span>
+      <span class="step-text">推理：锡和空气中的某种成分（氧气）发生了反应</span>
+    </div>
+    <div class="decision-step" onclick="toggleStep(this)">
+      <span class="step-num">5</span>
+      <span class="step-text">新概念：氧气——一种支持燃烧的气体</span>
+    </div>
+
+    <span class="sub-label">✅ 结果</span>
+    <p>拉瓦锡用<strong>定量实验</strong>推翻了燃素说，创立了<strong>氧化学说</strong>。</p>
+
+    <div class="transfer-box">
+      <strong>💡 可迁移启示：</strong>一个精确的实验设计和数据测量，可以推翻一个沿用了上百年的错误理论。
+    </div>
+  </div>
+</div>
+
+<!-- ===== 挑战层 ===== -->
+<h2 class="section-title">
+  挑战层
+  <span class="level-badge level-challenge">复杂系统/跨领域案例</span>
+</h2>
+
+<div class="case-card" data-case="3">
+  <div class="case-header" onclick="toggleCase(this)">
+    <h3>🌧️ 酸雨——看不见的化学破坏者</h3>
+    <span class="toggle-icon">▼</span>
+  </div>
+  <div class="case-body">
+    <span class="sub-label">📖 背景</span>
+    <p>20世纪以来，欧洲和北美的许多古建筑出现了快速腐蚀现象。科学家发现与空气中的污染物有关。</p>
+
+    <span class="sub-label">🎯 核心问题</span>
+    <p>空气中的污染物是如何变成酸雨的？酸雨为什么能腐蚀建筑物？</p>
+
+    <span class="sub-label">🔍 决策路径（点击标记完成）</span>
+    <div class="decision-step" onclick="toggleStep(this)">
+      <span class="step-num">1</span>
+      <span class="step-text">数据采集：检测酸雨地区的空气成分（SO₂、NOₓ 浓度偏高）</span>
+    </div>
+    <div class="decision-step" onclick="toggleStep(this)">
+      <span class="step-num">2</span>
+      <span class="step-text">化学过程分析：SO₂ + H₂O → H₂SO₃（亚硫酸），再氧化成 H₂SO₄（硫酸）</span>
+    </div>
+    <div class="decision-step" onclick="toggleStep(this)">
+      <span class="step-num">3</span>
+      <span class="step-text">影响分析：H₂SO₄ 与 CaCO₃（大理石/石灰石）反应，生成可溶性的 CaSO₄</span>
+    </div>
+    <div class="decision-step" onclick="toggleStep(this)">
+      <span class="step-num">4</span>
+      <span class="step-text">社会决策：各国制定减排政策，推广清洁能源</span>
+    </div>
+
+    <span class="sub-label">✅ 结果</span>
+    <p>理解了酸雨的化学机制后，发达国家通过<strong>减排</strong>使酸雨问题大幅改善。</p>
+
+    <div class="transfer-box">
+      <strong>💡 可迁移启示：</strong>环境问题背后隐藏着化学原理——理解了化学，就找到了解决问题的钥匙。
+    </div>
+  </div>
+</div>
+
+<!-- ===== 决策者分支任务 ===== -->
+<h2 class="section-title">🏛️ 分支任务</h2>
+
+<div class="mission-box">
+  <h4>📋 如果你是决策者</h4>
+  <p style="font-size:14px;margin-bottom:10px;">假设你是某城市的环保局局长，该城市正面临严重的酸雨问题。请运用本案例中学到的化学知识：</p>
+  <ol style="padding-left:20px;font-size:14px;">
+    <li>分析该城市酸雨的可能来源</li>
+    <li>提出至少3个切实可行的治理措施</li>
+    <li>用化学语言向市民解释"为什么要采取这些措施"</li>
+  </ol>
+  <div class="btn-group">
+    <button class="btn btn-primary" onclick="toggleMission()">📝 展开思考框架</button>
+  </div>
+  <div id="missionFramework" style="display:none;font-size:14px;margin-top:10px;padding:12px;background:#fff;border-radius:6px;border:1px dashed var(--border);">
+    <p style="margin-bottom:6px;"><strong>思考框架：</strong></p>
+    <p>① 来源分析：燃煤发电厂（SO₂）→ 汽车尾气（NOₓ）→ 工业排放</p>
+    <p>② 治理措施：安装脱硫装置 → 推广新能源车 → 增加绿化面积</p>
+    <p>③ 化学解释：SO₂ + H₂O → H₂SO₃（酸雨形成）→ 腐蚀 CaCO₃ 建筑</p>
+    <p style="color:var(--text-secondary);margin-top:6px;">💡 把你的完整方案写在纸上或文档中，然后与同学分享交流。</p>
+  </div>
+</div>
+
+</div>
+
+<script>
+function toggleCase(header) {
+  var card = header.closest('.case-card');
+  if (!card) return;
+  card.classList.toggle('open');
+}
+
+function toggleStep(step) {
+  if (!step) return;
+  step.classList.toggle('done');
+}
+
+function toggleMission() {
+  var el = document.getElementById('missionFramework');
+  if (!el) return;
+  if (el.style.display === 'none' || el.style.display === '') {
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>研学社区 — 案例库</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 6px; }
+.header p { font-size: 14px; opacity: 0.9; }
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.tab-btn {
+  padding: 8px 18px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--card-bg);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+.tab-btn:hover { border-color: var(--primary); color: var(--primary); }
+.tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  padding: 18px;
+  margin-bottom: 16px;
+  display: none;
+}
+.case-card.active { display: block; }
+.case-card h3 { font-size: var(--font-h2); color: var(--primary); margin-bottom: 8px; }
+.case-card .label {
+  display: inline-block;
+  font-size: 12px;
+  padding: 1px 10px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+.label-lv1 { background: #e6f7ff; color: #1677ff; }
+.label-lv2 { background: #fff7e6; color: #d46b08; }
+.label-lv3 { background: #f6ffed; color: #16a34a; }
+.case-card p { margin-bottom: 6px; }
+.case-card .section-title { font-weight: 600; color: var(--text); margin-top: 10px; margin-bottom: 4px; }
+.path-box {
+  background: #fafafa;
+  border-left: 3px solid var(--primary);
+  padding: 10px 14px;
+  border-radius: 0 6px 6px 0;
+  margin: 8px 0;
+  font-size: 14px;
+}
+.path-box .path-label { font-weight: 600; color: var(--primary); }
+.tip-box {
+  background: #fff7e6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 8px 0;
+  font-size: 14px;
+}
+.tip-box strong { color: #d46b08; }
+.outcome-box {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 8px 0;
+  font-size: 14px;
+}
+.outcome-box strong { color: #16a34a; }
+.ending-sim { margin-top: 10px; }
+.ending-sim .sim-item {
+  display: block;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 14px;
+}
+.ending-sim .sim-item:hover { border-color: var(--primary); background: #f0f5ff; }
+.ending-sim .sim-item.selected { border-color: var(--primary); background: #e6f7ff; font-weight: 600; }
+.footer { text-align: center; color: var(--text-secondary); font-size: 13px; padding: 20px 0 8px; border-top: 1px solid var(--border); margin-top: 12px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🔬 研学社区</h1>
+    <p>通过真实世界的"问题—决策—结果"案例，建立化学知识与现实生活的连接</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab(this, 'lv1')">🌟 生活类</button>
+    <button class="tab-btn" onclick="switchTab(this, 'lv2')">📜 行业/历史</button>
+    <button class="tab-btn" onclick="switchTab(this, 'lv3')">🧩 复杂系统</button>
+  </div>
+
+  <!-- 案例1：基础层 -->
+  <div class="case-card active" data-tab="lv1">
+    <span class="label label-lv1">基础 · 生活类</span>
+    <h3>🥤 从"可乐喷泉"到消防灭火</h3>
+    <p><strong>背景：</strong>曼妥思糖放入可乐中会产生大量气泡喷涌而出。有人开玩笑说"可以用可乐灭火"。</p>
+    <p><strong>核心问题：</strong>可乐真的能灭火吗？原理是什么？</p>
+    <div class="section-title">决策路径</div>
+    <div class="path-box">
+      <div class="path-label">方案A：</div>
+      <p>可乐喷泉产生大量CO₂ → CO₂能隔绝氧气 → 可以灭火</p>
+    </div>
+    <div class="path-box">
+      <div class="path-label">方案B：</div>
+      <p>可乐的主要成分是水+糖+CO₂ → 水的灭火效果远不如专业灭火器</p>
+    </div>
+    <div class="outcome-box"><strong>结果：</strong>可乐有一定灭火效果（因为含水），但远不如专业灭火器（CO₂含量有限、喷力不足）</div>
+    <div class="tip-box"><strong>💡 可迁移启示：</strong>生活中看似合理的想法，需要用化学原理判断后再行动</div>
+  </div>
+
+  <!-- 案例2：进阶层 -->
+  <div class="case-card" data-tab="lv2">
+    <span class="label label-lv2">进阶 · 历史类</span>
+    <h3>🧪 DDT——从"神奇农药"到"全球禁令"</h3>
+    <p><strong>背景：</strong>1939年DDT被发现具有强大杀虫效果，发明者因此获诺贝尔奖。DDT曾被认为可以"消灭一切害虫"，在全球广泛使用。</p>
+    <p><strong>核心问题：</strong>为什么一个获奖的化学产品最终会被全球禁用？</p>
+    <div class="section-title">决策路径</div>
+    <div class="path-box">
+      <div class="path-label">方案A：</div>
+      <p>大量使用DDT → 短期害虫控制效果极好</p>
+    </div>
+    <div class="path-box">
+      <div class="path-label">方案B：</div>
+      <p>研究DDT的长期影响 → 发现食物链富集 → 鸟类蛋壳变薄、生态系统破坏</p>
+    </div>
+    <div class="outcome-box"><strong>结果：</strong>1972年美国禁用DDT，之后全球跟进——一个"短期有效、长期有害"的经典案例</div>
+    <div class="tip-box"><strong>💡 可迁移启示：</strong>系统效应分析法——不能只看短期效果，要思考长期影响（善的维度）</div>
+    <div class="tip-box" style="background:#f0f5ff;border-color:#91caff;">
+      <strong>🤔 如果你是决策者：</strong>假设你是1950年代的农业部长，面对DDT这种"神奇农药"，在缺乏长期数据的情况下，你如何做出负责任的决策？
+    </div>
+  </div>
+
+  <!-- 案例3：挑战层 -->
+  <div class="case-card" data-tab="lv3">
+    <span class="label label-lv3">挑战 · 复杂系统</span>
+    <h3>⚛️ 石墨烯——从诺贝尔奖到"万能材料"的真相</h3>
+    <p><strong>背景：</strong>2004年石墨烯被发现，2010年获诺贝尔奖。媒体称其为"万能材料"，各种"石墨烯产品"涌现（石墨烯电池、石墨烯内衣、石墨烯涂料……）。</p>
+    <p><strong>核心问题：</strong>石墨烯真的"万能"吗？哪些产品是真的？哪些是噱头？</p>
+    <div class="section-title">决策路径</div>
+    <div class="path-box">
+      <div class="path-label">方案A：</div>
+      <p>石墨烯+任何产品=高科技产品（大量企业的做法）</p>
+    </div>
+    <div class="path-box">
+      <div class="path-label">方案B：</div>
+      <p>严格区分"真正含石墨烯"和"只是蹭热度"</p>
+    </div>
+    <div class="outcome-box"><strong>结果：</strong>真正含石墨烯的产品并不多，大量是概念炒作；真正的石墨烯应用正在逐步推进但尚未普及</div>
+    <div class="tip-box"><strong>💡 可迁移启示：</strong>用证据链追踪法辨别科学新闻——"诺贝尔奖"不等于"成熟产品"</div>
+
+    <div class="section-title">🎲 多结局模拟（点击选择你预测的结局）</div>
+    <div class="ending-sim">
+      <button class="sim-item" onclick="selectEnding(this)">结局1：石墨烯技术突破，成本降低 → 改变电子、能源等多个行业</button>
+      <button class="sim-item" onclick="selectEnding(this)">结局2：石墨烯和其他材料竞争，找到最适合的应用领域</button>
+      <button class="sim-item" onclick="selectEnding(this)">结局3：炒作泡沫破裂，真正的研究反而被忽视</button>
+    </div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-top:6px;">你认为最可能走向哪个结局？说说你的理由。</p>
+  </div>
+
+  <div class="footer">
+    化学 · 九年级上 · M16 新知应用与创新中的真善美思维与反思
+  </div>
+</div>
+<script>
+function switchTab(btn, tab) {
+  var tabs = document.querySelectorAll('.tab-btn');
+  tabs.forEach(function(t) { t.classList.remove('active'); });
+  btn.classList.add('active');
+  var cards = document.querySelectorAll('.case-card');
+  cards.forEach(function(c) {
+    c.classList.remove('active');
+    if (c.getAttribute('data-tab') === tab) {
+      c.classList.add('active');
+    }
+  });
+}
+function selectEnding(el) {
+  var parent = el.closest('.ending-sim');
+  if (!parent) return;
+  var items = parent.querySelectorAll('.sim-item');
+  items.forEach(function(i) { i.classList.remove('selected'); });
+  el.classList.add('selected');
+}
+</script>
+</body>
+</html>

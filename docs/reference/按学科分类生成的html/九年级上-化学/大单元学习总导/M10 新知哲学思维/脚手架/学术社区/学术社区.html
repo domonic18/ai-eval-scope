@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学术社区 — 化学学习共同体</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+  --success: #52c41a;
+  --warning: #faad14;
+  --pink: #eb2f96;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); font-size: var(--font-body); line-height: var(--line-height); }
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+
+.header { background: linear-gradient(135deg, #0d2137 0%, #14568a 50%, #1677ff 100%); color: #fff; padding: 28px 36px; border-radius: var(--border-radius); margin-bottom: 24px; }
+.header h1 { margin: 0 0 6px; font-size: var(--font-h1); font-weight: 700; }
+.header .subtitle { font-size: 14px; opacity: 0.85; }
+.header .badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 2px 12px; border-radius: 12px; font-size: 12px; margin-top: 8px; }
+
+.card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px 24px; margin-bottom: 20px; border: 1px solid var(--border); }
+.card-title { font-size: var(--font-h2); font-weight: 600; color: var(--primary); margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+
+/* Section tabs */
+.section-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.section-btn { padding: 10px 20px; border: 2px solid var(--border); border-radius: 8px; background: var(--card-bg); cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.25s; font-family: inherit; }
+.section-btn:hover { border-color: var(--accent); }
+.section-btn.active { border-color: var(--primary); background: #f0f5ff; color: var(--primary); font-weight: 600; }
+
+/* Section panels */
+.section-panel { display: none; }
+.section-panel.active { display: block; }
+
+/* Poll card */
+.poll-item { padding: 14px 16px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; cursor: pointer; transition: all 0.25s; }
+.poll-item:hover { border-color: var(--accent); box-shadow: 0 2px 8px rgba(22,119,255,0.06); }
+.poll-item.selected { border-color: var(--primary); background: #f0f5ff; }
+.poll-item .poll-letter { display: inline-flex; width: 24px; height: 24px; border-radius: 50%; background: var(--primary); color: #fff; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; margin-right: 8px; flex-shrink: 0; }
+.poll-item .poll-text { font-size: 14px; }
+.poll-item .poll-reason { display: none; margin-top: 8px; padding: 8px 12px; background: #fff7e6; border-radius: 6px; font-size: 13px; color: var(--text-secondary); }
+.poll-item.selected .poll-reason { display: block; }
+.poll-item .poll-bar-wrap { margin-top: 8px; height: 6px; background: #f0f0f0; border-radius: 3px; overflow: hidden; }
+.poll-item .poll-bar { height: 100%; border-radius: 3px; width: 0%; transition: width 0.6s ease; }
+
+/* Role cards */
+.role-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin: 12px 0; }
+.role-card { padding: 16px; border: 1px solid var(--border); border-radius: 8px; text-align: center; transition: all 0.25s; cursor: default; }
+.role-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+.role-card .role-icon { font-size: 32px; margin-bottom: 6px; }
+.role-card .role-name { font-weight: 600; font-size: 15px; }
+.role-card .role-desc { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+.role-card.observer { border-top: 3px solid var(--primary); }
+.role-card.skeptic { border-top: 3px solid var(--warning); }
+.role-card.integrator { border-top: 3px solid var(--success); }
+.role-card.reporter { border-top: 3px solid var(--pink); }
+
+/* Parent task card */
+.parent-task { background: linear-gradient(135deg, #fff7e6 0%, #fffbe6 100%); border: 1px solid #ffe7ba; border-radius: var(--border-radius); padding: 16px 20px; }
+.parent-task .pt-step { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px dashed #ffe7ba; }
+.parent-task .pt-step:last-child { border-bottom: none; }
+.parent-task .pt-num { width: 24px; height: 24px; border-radius: 50%; background: var(--warning); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+.parent-task .pt-text { font-size: 14px; }
+
+/* Signature area */
+.signature-area { margin-top: 12px; padding: 12px 16px; background: var(--card-bg); border: 2px dashed var(--border); border-radius: var(--border-radius); text-align: center; }
+.signature-area .sig-line { width: 200px; border: none; border-bottom: 1px solid var(--text-secondary); padding: 4px 8px; font-size: 14px; background: transparent; text-align: center; font-family: inherit; outline: none; }
+.signature-area .sig-line:focus { border-bottom-color: var(--primary); }
+
+/* Resource links */
+.resource-grid { display: grid; gap: 14px; }
+.resource-item { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border: 1px solid var(--border); border-radius: 8px; transition: all 0.3s; cursor: pointer; }
+.resource-item:hover { border-color: var(--primary); box-shadow: 0 2px 8px rgba(22,119,255,0.1); transform: translateX(4px); }
+.resource-item .ri-icon { font-size: 28px; flex-shrink: 0; }
+.resource-item .ri-info { flex: 1; }
+.resource-item .ri-name { font-weight: 600; font-size: 14px; }
+.resource-item .ri-desc { font-size: 13px; color: var(--text-secondary); }
+.resource-item .ri-link { font-size: 12px; color: var(--primary); }
+
+/* Share button */
+.share-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-outline { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
+.btn-outline:hover { background: #f0f5ff; }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { background: #389e0d; }
+
+/* Observation table */
+.obs-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; }
+.obs-table th, .obs-table td { border: 1px solid var(--border); padding: 8px 10px; text-align: center; }
+.obs-table th { background: var(--primary); color: #fff; font-weight: 600; }
+.obs-table td:first-child { font-weight: 600; text-align: left; background: #fafafa; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container { padding: 12px 16px; }
+  .header { padding: 20px; }
+  .card { padding: 14px 16px; }
+  .role-grid { grid-template-columns: repeat(2, 1fr); }
+  .section-btn { padding: 8px 14px; font-size: 13px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>🌐 学术社区</h1>
+    <div class="subtitle">学习共同体 — 在同伴交流、家校互动和真实连接中建构化学认知</div>
+    <div class="badge">九年级上 · 化学 · M10 新知哲学思维</div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="section-tabs">
+    <button class="section-btn active" onclick="switchSection('peer', this)">👥 同伴连接</button>
+    <button class="section-btn" onclick="switchSection('home', this)">🏠 家校连接</button>
+    <button class="section-btn" onclick="switchSection('social', this)">🌍 社会连接</button>
+  </div>
+
+  <!-- ====== Peer Connection ====== -->
+  <div class="section-panel active" id="panel-peer">
+    <!-- Poll 1 -->
+    <div class="card">
+      <div class="card-title">🗳️ 讨论议题一</div>
+      <p style="font-size:14px;color:var(--text-secondary);margin:0 0 12px;"><strong>"判断化学变化最可靠的证据是什么？"</strong> 点击你的选择，看看反例分析。</p>
+
+      <div class="poll-item" onclick="selectPoll(this, 'A')">
+        <span class="poll-letter">A</span>
+        <span class="poll-text">颜色变化</span>
+        <div class="poll-reason">⚠️ <strong>反例：</strong>氧气是无色气体，液氧是淡蓝色液体——从气体到液体只是物理变化，但颜色变了。所以"颜色变化"不能作为化学变化的可靠证据。</div>
+        <div class="poll-bar-wrap"><div class="poll-bar" id="bar-A" style="background:#1890ff;"></div></div>
+      </div>
+      <div class="poll-item" onclick="selectPoll(this, 'B')">
+        <span class="poll-letter">B</span>
+        <span class="poll-text">产生气泡</span>
+        <div class="poll-reason">⚠️ <strong>反例：</strong>水烧开时也会产生大量气泡（水蒸气）——但那是物理变化。产生气泡本身不能直接证明化学变化发生。</div>
+        <div class="poll-bar-wrap"><div class="poll-bar" id="bar-B" style="background:#52c41a;"></div></div>
+      </div>
+      <div class="poll-item" onclick="selectPoll(this, 'C')">
+        <span class="poll-letter">C</span>
+        <span class="poll-text">有热量变化（放热/吸热）</span>
+        <div class="poll-reason">⚠️ <strong>反例：</strong>浓硫酸倒入水中会放出大量热——但那是稀释过程（物理变化）。灯泡通电也会发热——也是物理变化。所以热量变化≠化学变化。</div>
+        <div class="poll-bar-wrap"><div class="poll-bar" id="bar-C" style="background:var(--warning);"></div></div>
+      </div>
+      <div class="poll-item" onclick="selectPoll(this, 'D')">
+        <span class="poll-letter">D</span>
+        <span class="poll-text">有新物质生成（检验得出的结论）</span>
+        <div class="poll-reason">✅ <strong>正确答案！</strong>化学变化的本质特征就是<strong>有新物质生成</strong>。其他现象（颜色变化、气泡、放热）只能作为"线索"，最终确认需要检验新物质是否存在。例如：澄清石灰水变浑浊证明有二氧化碳生成。</div>
+        <div class="poll-bar-wrap"><div class="poll-bar" id="bar-D" style="background:#722ed1;"></div></div>
+      </div>
+
+      <div style="margin-top:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <button class="btn btn-outline" onclick="resetPoll()">🔄 重新投票</button>
+        <span id="poll-result" style="font-size:13px;color:var(--text-secondary);"></span>
+      </div>
+    </div>
+
+    <!-- Poll 2 -->
+    <div class="card">
+      <div class="card-title">💬 讨论议题二 · 联结生活</div>
+      <p style="font-size:14px;margin:0 0 8px;">"你在生活中观察到过'看似化学变化其实是物理变化'或'看似物理变化其实是化学变化'的例子吗？"</p>
+      <div style="background:#f0f5ff;border-radius:6px;padding:12px 16px;font-size:13px;">
+        <strong>💡 示例：</strong>鸡蛋煮熟——看起来只是"变硬了"（物理变化？），实际上蛋白质在加热时发生了<strong>变性</strong>（化学变化），生成了新的分子结构。你还能想到类似的例子吗？
+      </div>
+    </div>
+
+    <!-- Role cards -->
+    <div class="card">
+      <div class="card-title">👤 小组角色分工（4人小组）</div>
+      <div class="role-grid">
+        <div class="role-card observer">
+          <div class="role-icon">🔭</div>
+          <div class="role-name">观察员</div>
+          <div class="role-desc">记录讨论中的关键观点和分歧</div>
+        </div>
+        <div class="role-card skeptic">
+          <div class="role-icon">❓</div>
+          <div class="role-name">质疑者</div>
+          <div class="role-desc">对每个观点提出"你有证据吗"</div>
+        </div>
+        <div class="role-card integrator">
+          <div class="role-icon">🧩</div>
+          <div class="role-name">整合者</div>
+          <div class="role-desc">把各方观点整理成对照表</div>
+        </div>
+        <div class="role-card reporter">
+          <div class="role-icon">📢</div>
+          <div class="role-name">汇报者</div>
+          <div class="role-desc">向其他小组展示讨论成果</div>
+        </div>
+      </div>
+      <div style="margin-top:8px;">
+        <button class="btn btn-outline" onclick="assignRoles()">🎲 随机分配角色</button>
+        <span id="role-result" style="margin-left:10px;font-size:13px;color:var(--text-secondary);"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== Home-School Connection ====== -->
+  <div class="section-panel" id="panel-home">
+    <div class="card">
+      <div class="card-title">🏠 家长参与任务</div>
+      <p style="font-size:14px;color:var(--text-secondary);margin:0 0 12px;">请向家长解释"物理变化"和"化学变化"的区别，然后一起完成一个生活小实验。</p>
+
+      <div class="parent-task">
+        <div class="pt-step">
+          <span class="pt-num">1</span>
+          <div class="pt-text"><strong>讲解：</strong>用你自己的话告诉家长——物理变化（无新物质）和化学变化（有新物质）的核心区别。可以用"冰融化"和"纸燃烧"为例。</div>
+        </div>
+        <div class="pt-step">
+          <span class="pt-num">2</span>
+          <div class="pt-text"><strong>实验选择（任选其一）：</strong><br>
+            🔥 观察厨房里烧水的过程（有气泡产生——物理变化）<br>
+            🍳 观察煎鸡蛋的过程（蛋清凝固——化学变化）<br>
+            🧊 观察冰块融化（固→液——物理变化）</div>
+        </div>
+        <div class="pt-step">
+          <span class="pt-num">3</span>
+          <div class="pt-text"><strong>记录：</strong>和家长一起填写下方的观察记录表。</div>
+        </div>
+        <div class="pt-step">
+          <span class="pt-num">4</span>
+          <div class="pt-text"><strong>签字：</strong>家长确认并在下方签字。</div>
+        </div>
+      </div>
+
+      <!-- Observation table -->
+      <div style="overflow-x:auto;margin-top:14px;">
+        <table class="obs-table">
+          <thead>
+            <tr><th>观察项目</th><th>现象描述</th><th>变化类型</th><th>判断依据</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>实验名称</td>
+              <td><input type="text" style="width:100%;border:none;border-bottom:1px solid var(--border);padding:4px;font-family:inherit;font-size:13px;text-align:center;background:transparent;outline:none;" placeholder="例如：烧水观察"></td>
+              <td><input type="text" style="width:100%;border:none;border-bottom:1px solid var(--border);padding:4px;font-family:inherit;font-size:13px;text-align:center;background:transparent;outline:none;" placeholder="物理/化学"></td>
+              <td><input type="text" style="width:100%;border:none;border-bottom:1px solid var(--border);padding:4px;font-family:inherit;font-size:13px;text-align:center;background:transparent;outline:none;" placeholder="你的理由"></td>
+            </tr>
+            <tr>
+              <td>变化前状态</td>
+              <td><input type="text" style="width:100%;border:none;border-bottom:1px solid var(--border);padding:4px;font-family:inherit;font-size:13px;text-align:center;background:transparent;outline:none;" placeholder="仔细观察描述"></td>
+              <td colspan="2" rowspan="3" style="font-size:12px;color:var(--text-secondary);">💡 提示：重点看"是否有新物质生成"——这是判断物理/化学变化的唯一可靠标准！</td>
+            </tr>
+            <tr><td>变化中现象</td><td><input type="text" style="width:100%;border:none;border-bottom:1px solid var(--border);padding:4px;font-family:inherit;font-size:13px;text-align:center;background:transparent;outline:none;" placeholder="发生了什么"></td></tr>
+            <tr><td>变化后状态</td><td><input type="text" style="width:100%;border:none;border-bottom:1px solid var(--border);padding:4px;font-family:inherit;font-size:13px;text-align:center;background:transparent;outline:none;" placeholder="结果如何"></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Signature -->
+      <div class="signature-area" id="sig-area">
+        <p style="margin:0 0 8px;font-size:14px;font-weight:500;">📝 家长签字确认</p>
+        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 8px;">学生已向我解释了物理变化与化学变化的区别，并一起完成了上述实验观察。</p>
+        <input class="sig-line" id="sig-input" placeholder="家长签名" oninput="checkSignature()">
+        <p id="sig-date" style="font-size:12px;color:var(--text-secondary);margin:4px 0 0;"></p>
+        <p id="sig-status" style="font-size:13px;margin:6px 0 0;display:none;">✅ 确认完成！</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== Social Connection ====== -->
+  <div class="section-panel" id="panel-social">
+    <div class="card">
+      <div class="card-title">🌍 推荐连接 · 专家与机构</div>
+      <p style="font-size:14px;color:var(--text-secondary);margin:0 0 14px;">点击卡片展开详情</p>
+
+      <div class="resource-grid">
+        <div class="resource-item" onclick="toggleResource(this)">
+          <span class="ri-icon">🔬</span>
+          <div class="ri-info">
+            <div class="ri-name">中国化学会 · 初中化学科普专栏</div>
+            <div class="ri-desc">官方学术组织开设的科普平台，含趣味实验视频和化学史动画</div>
+            <div class="ri-link">ccs.ac.cn → 科普教育 → 初中化学</div>
+          </div>
+        </div>
+        <div class="resource-item" onclick="toggleResource(this)">
+          <span class="ri-icon">🎨</span>
+          <div class="ri-info">
+            <div class="ri-name">果壳网 · "美丽科学"栏目</div>
+            <div class="ri-desc">高清微距镜头拍摄化学反应过程，视觉效果震撼</div>
+            <div class="ri-link">guokr.com → 搜索"美丽科学"</div>
+          </div>
+        </div>
+        <div class="resource-item" onclick="toggleResource(this)">
+          <span class="ri-icon">📺</span>
+          <div class="ri-info">
+            <div class="ri-name">B站UP主 · "科学声音"</div>
+            <div class="ri-desc">化学史揭秘系列视频，用故事讲述化学家的思维突破</div>
+            <div class="ri-link">bilibili.com → 搜索"科学声音 化学史"</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;padding:10px 16px;background:linear-gradient(135deg,#f0f5ff,#e6f7ff);border-radius:6px;font-size:13px;">
+        <strong>📋 探索任务：</strong>从以上三个资源中选择一个，浏览后写一个 50 字的发现分享到班级群！
+        <div style="margin-top:8px;display:flex;gap:8px;">
+          <button class="btn btn-success" onclick="startExploration()">🎯 开始探索</button>
+          <span id="explore-status" style="font-size:13px;color:var(--text-secondary);align-self:center;"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Section switching
+function switchSection(id, btn) {
+  document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.section-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+// Poll
+let pollVotes = { A: 0, B: 0, C: 0, D: 7 };
+let totalVotes = 7;
+let voted = false;
+
+function updatePollBars() {
+  totalVotes = Object.values(pollVotes).reduce((a, b) => a + b, 0);
+  for (let key of ['A','B','C','D']) {
+    const bar = document.getElementById('bar-' + key);
+    if (bar) bar.style.width = ((pollVotes[key] / Math.max(totalVotes, 1)) * 100) + '%';
+  }
+}
+
+function selectPoll(el, letter) {
+  if (voted) return;
+  document.querySelectorAll('.poll-item').forEach(p => p.classList.remove('selected'));
+  el.classList.add('selected');
+  voted = true;
+  pollVotes[letter]++;
+  updatePollBars();
+  const labels = { A: '颜色变化', B: '产生气泡', C: '有热量变化', D: '有新物质生成' };
+  const resultEl = document.getElementById('poll-result');
+  if (letter === 'D') {
+    resultEl.textContent = '✅ 正确选择！化学变化的本质特征是有新物质生成。看看反例学习为什么其他选项不可靠。';
+  } else {
+    resultEl.textContent = `你选择了「${labels[letter]}」——点击查看为什么它不能作为可靠证据。`;
+  }
+}
+
+function resetPoll() {
+  document.querySelectorAll('.poll-item').forEach(p => p.classList.remove('selected'));
+  voted = false;
+  document.getElementById('poll-result').textContent = '';
+  pollVotes = { A: 0, B: 0, C: 0, D: 7 };
+  updatePollBars();
+}
+
+// Role assignment
+function assignRoles() {
+  const roles = ['🔭 观察员', '❓ 质疑者', '🧩 整合者', '📢 汇报者'];
+  const shuffled = [...roles].sort(() => Math.random() - 0.5);
+  const names = ['你', '同学A', '同学B', '同学C'];
+  let result = '';
+  for (let i = 0; i < 4; i++) {
+    result += names[i] + ' → ' + shuffled[i] + '  ';
+  }
+  document.getElementById('role-result').textContent = '🎲 ' + result;
+}
+
+// Signature
+function checkSignature() {
+  const input = document.getElementById('sig-input');
+  const status = document.getElementById('sig-status');
+  const dateEl = document.getElementById('sig-date');
+  if (input && input.value.trim().length > 0) {
+    status.style.display = 'block';
+    const now = new Date();
+    dateEl.textContent = '签字日期：' + now.getFullYear() + '年' + (now.getMonth()+1) + '月' + now.getDate() + '日';
+  } else {
+    status.style.display = 'none';
+  }
+}
+
+// Resource click feedback
+function toggleResource(el) {
+  el.style.background = '#f0f5ff';
+  setTimeout(() => el.style.background = '', 300);
+}
+
+// Exploration tracker
+function startExploration() {
+  document.getElementById('explore-status').textContent = '🎉 任务已领取！完成后记得在班级群分享你的发现！';
+}
+</script>
+</body>
+</html>

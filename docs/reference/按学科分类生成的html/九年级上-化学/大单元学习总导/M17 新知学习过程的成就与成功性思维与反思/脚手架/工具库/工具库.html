@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具库 - 化学探索者脚手架</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+}
+
+.container { width: 100%; max-width: none; }
+
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 28px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--accent);
+  font-weight: 600;
+}
+
+h3 {
+  font-size: 17px;
+  color: var(--text);
+  margin: 18px 0 10px;
+  font-weight: 600;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+
+.intro-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border-left: 4px solid var(--primary);
+}
+
+/* Tool Grid */
+.tool-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  margin: 16px 0;
+}
+
+@media (min-width: 700px) {
+  .tool-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.tool-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  transition: box-shadow 0.2s;
+}
+
+.tool-card:hover {
+  box-shadow: 0 4px 16px rgba(22,119,255,0.1);
+}
+
+.tool-level {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+.level-basic { background: #e6f7ff; color: #1890ff; }
+.level-advanced { background: #fff7e6; color: #d46b08; }
+.level-high { background: #f6ffed; color: #52c41a; }
+
+.tool-header {
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.tool-header:hover { background: #f7faff; }
+
+.tool-title {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--primary);
+}
+
+.tool-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.45s ease;
+}
+
+.tool-card.open .tool-body {
+  max-height: 800px;
+}
+
+.tool-body-inner {
+  padding: 0 18px 16px;
+}
+
+.tool-body-inner p {
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.tool-body-inner strong { color: var(--primary); }
+.tool-purpose { color: var(--text-secondary); font-size: 13px; margin-bottom: 8px; }
+
+/* T-table Example */
+.ttable {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  font-size: 13px;
+}
+
+.ttable th {
+  background: var(--primary);
+  color: #fff;
+  padding: 6px 10px;
+  text-align: left;
+  font-weight: 600;
+}
+
+.ttable td {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+}
+
+.ttable tr:nth-child(even) td { background: #f7faff; }
+
+/* Step list */
+.step-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+}
+
+.step-list li {
+  padding: 5px 0 5px 24px;
+  position: relative;
+  font-size: 14px;
+}
+
+.step-list li::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 10px;
+  width: 10px;
+  height: 10px;
+  background: var(--accent);
+  border-radius: 50%;
+  opacity: 0.5;
+}
+
+.collap-hint {
+  font-size: 12px;
+  color: var(--accent);
+  text-align: right;
+}
+
+/* Compare Table */
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  font-size: 13px;
+}
+
+.compare-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 6px 10px;
+  text-align: left;
+  font-weight: 600;
+}
+
+.compare-table td {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+}
+
+.compare-table tr:nth-child(even) td { background: #f7faff; }
+
+@media (max-width: 480px) {
+  body { padding: 14px 12px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🧰 工具库</h1>
+<p class="subtitle">六大学习工具，助你高效建构化学知识</p>
+
+<div class="intro-card">
+  <p>本工具库按照从基础到高阶的梯度，为你准备了六种经过验证的学习工具。每个工具都包含用途说明、使用步骤和示例。点击工具标题展开详情，随时可以收起。</p>
+</div>
+
+<h2>🟢 基础工具</h2>
+
+<div class="tool-grid">
+
+  <div class="tool-card">
+    <div class="tool-header" onclick="toggleTool(this)">
+      <span class="tool-title">1. T型思考表 <span class="tool-level level-basic">基础</span></span>
+      <span class="collap-hint">展开</span>
+    </div>
+    <div class="tool-body">
+      <div class="tool-body-inner">
+        <p class="tool-purpose">📌 将"现象"和"解释"分开，从观察到结论建立清晰的逻辑链。</p>
+        <p><strong>使用步骤：</strong></p>
+        <ol class="step-list">
+          <li>在T型表左边写观察到的现象</li>
+          <li>在右边写出对应的化学解释</li>
+          <li>检查左右是否一一对应</li>
+        </ol>
+        <p><strong>示例：铁在氧气中燃烧</strong></p>
+        <table class="ttable">
+          <tr><th>观察（现象）</th><th>解释（化学）</th></tr>
+          <tr><td>铁丝剧烈燃烧，火星四射</td><td>铁与氧气发生剧烈氧化反应</td></tr>
+          <tr><td>生成黑色固体</td><td>生成四氧化三铁（Fe₃O₄）</td></tr>
+        </table>
+        <p style="font-size:12px; color:var(--text-secondary);">适用场景：实验记录、现象分析、建构解释模型</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="tool-card">
+    <div class="tool-header" onclick="toggleTool(this)">
+      <span class="tool-title">2. PhET互动模拟 <span class="tool-level level-basic">基础</span></span>
+      <span class="collap-hint">展开</span>
+    </div>
+    <div class="tool-body">
+      <div class="tool-body-inner">
+        <p class="tool-purpose">📌 科罗拉多大学开发的免费化学物理交互式模拟平台，可视化微观过程。</p>
+        <p><strong>使用步骤：</strong></p>
+        <ol class="step-list">
+          <li>访问 phet.colorado.edu</li>
+          <li>选择"化学"板块</li>
+          <li>选择对应模拟（如"分子形状""化学反应"）</li>
+          <li>按引导操作，观察微观变化</li>
+        </ol>
+        <p style="font-size:12px; color:var(--text-secondary);">适用场景：理解分子结构、化学键、反应配平等抽象概念</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<h2>🟡 进阶工具</h2>
+
+<div class="tool-grid">
+
+  <div class="tool-card">
+    <div class="tool-header" onclick="toggleTool(this)">
+      <span class="tool-title">3. 分析比较表 <span class="tool-level level-advanced">进阶</span></span>
+      <span class="collap-hint">展开</span>
+    </div>
+    <div class="tool-body">
+      <div class="tool-body-inner">
+        <p class="tool-purpose">📌 多维度对比不同物质或反应，帮助发现模式和规律。</p>
+        <p><strong>使用步骤：</strong></p>
+        <ol class="step-list">
+          <li>确定比较对象（如铁燃烧vs硫燃烧）</li>
+          <li>确定比较维度（反应物、条件、现象、产物、反应类型）</li>
+          <li>填充表格，观察差异和共性</li>
+        </ol>
+        <p><strong>示例：铁 vs 硫在氧气中燃烧</strong></p>
+        <table class="compare-table">
+          <tr><th>比较维度</th><th>铁 + 氧气</th><th>硫 + 氧气</th></tr>
+          <tr><td>反应条件</td><td>点燃</td><td>点燃</td></tr>
+          <tr><td>现象</td><td>火星四射</td><td>蓝色火焰</td></tr>
+          <tr><td>产物</td><td>Fe₃O₄（黑色固体）</td><td>SO₂（刺激性气味气体）</td></tr>
+          <tr><td>反应类型</td><td>化合反应</td><td>化合反应</td></tr>
+        </table>
+        <p style="font-size:12px; color:var(--text-secondary);">适用场景：实验比较、物质分类、规律总结</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="tool-card">
+    <div class="tool-header" onclick="toggleTool(this)">
+      <span class="tool-title">4. POE记录法 <span class="tool-level level-advanced">进阶</span></span>
+      <span class="collap-hint">展开</span>
+    </div>
+    <div class="tool-body">
+      <div class="tool-body-inner">
+        <p class="tool-purpose">📌 实验前先预测、实验时观察、实验后解释，避免"看热闹不看门道"。</p>
+        <p><strong>三步流程：</strong></p>
+        <ol class="step-list">
+          <li><strong>Predict（预测）：</strong>写下你对实验结果的预测及其依据</li>
+          <li><strong>Observe（观察）：</strong>记录实际实验现象</li>
+          <li><strong>Explain（解释）：</strong>比较预测和观察的差异，解释原因</li>
+        </ol>
+        <p style="font-size:12px; color:var(--text-secondary);">适用场景：所有化学实验前的思维训练</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<h2>🔴 高阶工具</h2>
+
+<div class="tool-grid">
+
+  <div class="tool-card">
+    <div class="tool-header" onclick="toggleTool(this)">
+      <span class="tool-title">5. 概念图 <span class="tool-level level-high">高阶</span></span>
+      <span class="collap-hint">展开</span>
+    </div>
+    <div class="tool-body">
+      <div class="tool-body-inner">
+        <p class="tool-purpose">📌 用节点和连接线展示概念之间的关系，建构知识体系的核心工具。</p>
+        <p><strong>使用步骤：</strong></p>
+        <ol class="step-list">
+          <li>写出核心概念（如：化学变化、物理变化、化合反应、分解反应）</li>
+          <li>用箭头连接相关概念</li>
+          <li>在连线上标注关系类型（"包含""导致""不同于""例如"）</li>
+          <li>整体调整布局，确保逻辑清晰</li>
+        </ol>
+        <p style="font-size:12px; color:var(--text-secondary);">适用场景：单元总结、知识建构、成果展示</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="tool-card">
+    <div class="tool-header" onclick="toggleTool(this)">
+      <span class="tool-title">6. AI辅助学习 <span class="tool-level level-high">高阶</span></span>
+      <span class="collap-hint">展开</span>
+    </div>
+    <div class="tool-body">
+      <div class="tool-body-inner">
+        <p class="tool-purpose">📌 利用AI助手作为"私人学习伙伴"，辅助但不替代你的独立思考。</p>
+        <p><strong>使用步骤：</strong></p>
+        <ol class="step-list">
+          <li>明确你要解决的问题（不要模糊提问）</li>
+          <li>向AI提问时加上约束："请只给提示，不要给完整答案"</li>
+          <li>对AI的回答进行批判性思考——"这个回答合理吗？它的依据是什么？"</li>
+          <li>如果AI的回答和你自己的想法冲突，记录下来——这是最有价值的学习机会</li>
+        </ol>
+        <p style="font-size:12px; color:var(--text-secondary);">适用场景：遇到困难卡点时获取提示、验证自己的想法、获取补充资料</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</div>
+
+<script>
+function toggleTool(el) {
+  var card = el.closest('.tool-card');
+  if (card) {
+    card.classList.toggle('open');
+    var hint = el.querySelector('.collap-hint');
+    if (hint) hint.textContent = card.classList.contains('open') ? '收起' : '展开';
+  }
+}
+</script>
+
+</body>
+</html>

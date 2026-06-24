@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性原理导学 — 化学</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body); line-height: var(--line-height);
+  color: var(--text); background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff; padding: 28px 24px; border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 8px; }
+.header .meta { font-size: 13px; opacity: 0.85; }
+.header .meta span { display: inline-block; margin-right: 16px; }
+
+.section { margin-bottom: 28px; }
+.section-title {
+  font-size: var(--font-h2); font-weight: 600; color: var(--primary);
+  padding-bottom: 8px; border-bottom: 2px solid var(--accent);
+  margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+}
+
+.card {
+  background: var(--card-bg); border-radius: var(--border-radius);
+  box-shadow: var(--shadow); padding: 20px; margin-bottom: 16px;
+  border: 1px solid var(--border); transition: box-shadow 0.2s;
+}
+.card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.card h3 {
+  font-size: 16px; font-weight: 600; color: var(--primary); margin-bottom: 10px;
+}
+.card p, .card li { font-size: var(--font-body); line-height: var(--line-height); }
+.card ul, .card ol { padding-left: 20px; margin-top: 8px; }
+.card li { margin-bottom: 6px; }
+
+.tag {
+  display: inline-block; background: var(--bg); color: var(--primary);
+  padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 500;
+  margin-right: 6px; margin-bottom: 4px;
+}
+
+.principle-card {
+  border-left: 4px solid var(--primary); position: relative;
+}
+.principle-card .num {
+  position: absolute; top: -8px; left: -8px;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--primary); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700;
+}
+
+.practice-card { border-left: 4px solid var(--accent); }
+.reflect-card { border-left: 4px solid #fa8c16; }
+
+.interactive-toggle { margin-top: 12px; }
+.toggle-btn {
+  background: var(--primary); color: #fff; border: none;
+  padding: 8px 18px; border-radius: 6px; cursor: pointer;
+  font-size: 14px; transition: background 0.2s;
+}
+.toggle-btn:hover { background: var(--primary-hover); }
+.toggle-content {
+  display: none; margin-top: 12px; padding: 14px;
+  background: #f8faff; border-radius: 6px; border: 1px dashed var(--accent);
+}
+.toggle-content.show { display: block; }
+
+.check-item {
+  display: flex; align-items: flex-start; gap: 10px; padding: 8px 0;
+  cursor: pointer; border-bottom: 1px solid #f0f0f0;
+}
+.check-item:last-child { border-bottom: none; }
+.check-item .box {
+  width: 18px; height: 18px; border: 2px solid var(--primary);
+  border-radius: 3px; flex-shrink: 0; margin-top: 3px;
+  transition: background 0.2s; display: flex; align-items: center; justify-content: center;
+}
+.check-item.done .box { background: var(--primary); border-color: var(--primary); }
+.check-item.done .box::after { content: "✓"; color: #fff; font-size: 12px; font-weight: 700; }
+.check-item.done .text { color: var(--text-secondary); text-decoration: line-through; }
+
+.reset-btn {
+  background: transparent; color: var(--text-secondary); border: 1px solid var(--border);
+  padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px;
+  transition: all 0.2s; margin-top: 10px;
+}
+.reset-btn:hover { color: var(--primary); border-color: var(--primary); }
+
+@media (max-width: 600px) {
+  .container { padding: 16px 12px; }
+  .header { padding: 20px 16px; }
+  .card { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>建构性原理导学</h1>
+    <div class="meta">
+      <span>🔬 化学 · 九年级上</span>
+      <span>📖 第1章 走进化学世界</span>
+      <span>🧩 M9 新知文化思维</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <p style="margin-bottom:16px; color:var(--text-secondary);">
+      本模块的核心目标是：从具体案例中提炼出可迁移的建构性学习原理，并运用这些原理解决新的化学问题。以下 4 条原理来自对建构性学习过程的深度提炼。
+    </p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🔍 建构性原理提炼</div>
+
+    <div class="card principle-card">
+      <div class="num">1</div>
+      <h3>现象驱动提问法</h3>
+      <p><strong>说明：</strong>从日常化学现象中提取可探究的科学问题。</p>
+      <p><strong>来源：</strong>从"看到变化"到"问为什么"的思维转变。</p>
+      <p><strong>适用情境：</strong>任何观察到的化学/物理变化。</p>
+      <p><strong>注意事项：</strong>问题要具体、可检验，避免笼统提问。</p>
+      <div class="interactive-toggle">
+        <button class="toggle-btn" onclick="toggleContent(this)">💡 看示例</button>
+        <div class="toggle-content">
+          <p><strong>❌ 笼统提问：</strong>"为什么铁会生锈？"</p>
+          <p><strong>✅ 具体提问：</strong>"铁钉在有水和没水的环境中，生锈速度是否不同？"</p>
+          <p class="tag">可检验</p><p class="tag">可设计实验</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card principle-card">
+      <div class="num">2</div>
+      <h3>证据分层法</h3>
+      <p><strong>说明：</strong>区分直接观察证据和间接推理证据。</p>
+      <p><strong>来源：</strong>示例中收集多种证据的过程。</p>
+      <p><strong>适用情境：</strong>实验探究、现象分析。</p>
+      <p><strong>注意事项：</strong>注意判断不同证据的可靠性。</p>
+      <div class="interactive-toggle">
+        <button class="toggle-btn" onclick="toggleContent(this)">💡 看示例</button>
+        <div class="toggle-content">
+          <p><strong>直接观察证据：</strong>铁钉表面出现红色物质、溶液颜色变化</p>
+          <p><strong>间接推理证据：</strong>质量增加 → 推断与氧气结合</p>
+          <p class="tag">直接证据更可靠</p><p class="tag">推理需要交叉验证</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card principle-card">
+      <div class="num">3</div>
+      <h3>模型迭代法</h3>
+      <p><strong>说明：</strong>先建立初步解释模型，再通过新证据不断完善。</p>
+      <p><strong>来源：</strong>从初步假设到形成最终模型的演进过程。</p>
+      <p><strong>适用情境：</strong>概念建构、规律总结。</p>
+      <p><strong>注意事项：</strong>模型要能解释所有已知证据，不能有例外。</p>
+      <div class="interactive-toggle">
+        <button class="toggle-btn" onclick="toggleContent(this)">💡 看迭代路径</button>
+        <div class="toggle-content">
+          <p><strong>V1 初步模型：</strong>铁生锈是因为接触了水</p>
+          <p><strong>V2 修正模型：</strong>铁生锈需要水和空气共同作用</p>
+          <p><strong>V3 最终模型：</strong>铁与空气中的氧气和水发生氧化反应</p>
+          <p class="tag">逐步逼近真相</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card principle-card">
+      <div class="num">4</div>
+      <h3>多维验证法</h3>
+      <p><strong>说明：</strong>从不同角度、用不同方法验证建构的结论。</p>
+      <p><strong>来源：</strong>示例中交叉验证的过程。</p>
+      <p><strong>适用情境：</strong>实验结论验证、科学解释确认。</p>
+      <p><strong>注意事项：</strong>验证方法要多样化，避免单一方法偏差。</p>
+      <div class="interactive-toggle">
+        <button class="toggle-btn" onclick="toggleContent(this)">💡 看验证策略</button>
+        <div class="toggle-content">
+          <p>🔹 实验法：设计对照实验验证假设</p>
+          <p>🔹 文献法：查阅教材确认理论解释</p>
+          <p>🔹 类比法：比较类似化学反应规律</p>
+          <p class="tag">方法越多越可靠</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🧪 迁移应用练习</div>
+    <p style="margin-bottom:12px; color:var(--text-secondary);">运用上面的原理，尝试解决以下两个化学情境问题。</p>
+
+    <div class="card practice-card">
+      <h3>📋 练习1：厨房中的化学</h3>
+      <p><strong>情境：</strong>小苏打（碳酸氢钠）加入白醋（醋酸）后产生大量气泡。</p>
+      <p><strong>建构任务：</strong>建构"气体产生的化学变化条件"理解模型。</p>
+      <p><strong>建议原理：</strong><span class="tag">现象驱动提问法</span><span class="tag">证据分层法</span></p>
+      <p><strong>脚手架提示：</strong>观察什么（现象）→ 记录什么（气泡数量、速率）→ 如何验证（收集气体检验）</p>
+      <div class="interactive-toggle">
+        <button class="toggle-btn" onclick="toggleContent(this)">🧪 展开思考支架</button>
+        <div class="toggle-content">
+          <p><strong>观察阶段：</strong></p>
+          <p>▪ 混合后立即出现的现象是什么？</p>
+          <p>▪ 气泡从哪里产生？持续多久？</p>
+          <p><strong>证据阶段：</strong></p>
+          <p>▪ 用燃烧的木条靠近——气体能灭火吗？</p>
+          <p>▪ 气体通入澄清石灰水——变浑浊吗？</p>
+          <p><strong>结论：</strong>产生的气体是二氧化碳，反应属于复分解反应。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card practice-card">
+      <h3>🍎 练习2：变色的苹果</h3>
+      <p><strong>情境：</strong>苹果切开后在空气中逐渐变成褐色。</p>
+      <p><strong>建构任务：</strong>建构"氧化反应"初步理解框架。</p>
+      <p><strong>建议原理：</strong><span class="tag">模型迭代法</span><span class="tag">多维验证法</span></p>
+      <p><strong>脚手架提示：</strong>如何设计对照实验验证猜想？</p>
+      <div class="interactive-toggle">
+        <button class="toggle-btn" onclick="toggleContent(this)">🔬 展开实验设计</button>
+        <div class="toggle-content">
+          <p><strong>对照实验方案：</strong></p>
+          <p><strong>实验组：</strong>苹果切片暴露在空气中</p>
+          <p><strong>对照组1：</strong>苹果切片浸入柠檬汁（酸性环境）</p>
+          <p><strong>对照组2：</strong>苹果切片用保鲜膜密封（隔绝空气）</p>
+          <p><strong>假设：</strong>苹果变色需要氧气参与，酸性物质可延缓氧化</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">💭 元认知反思</div>
+    <p style="margin-bottom:12px; color:var(--text-secondary);">完成建构后，打勾确认你的反思：</p>
+
+    <div id="reflect-list">
+      <div class="card reflect-card" data-group="reflect">
+        <div class="check-item" onclick="toggleCheck(this)">
+          <div class="box"></div>
+          <span class="text">🤔 我建构这个理解花了多久？哪个步骤最难？</span>
+        </div>
+        <div class="check-item" onclick="toggleCheck(this)">
+          <div class="box"></div>
+          <span class="text">📊 我用了哪些证据来支持结论？</span>
+        </div>
+        <div class="check-item" onclick="toggleCheck(this)">
+          <div class="box"></div>
+          <span class="text">🔄 我的理解模型有没有被后续发现推翻？</span>
+        </div>
+        <div class="check-item" onclick="toggleCheck(this)">
+          <div class="box"></div>
+          <span class="text">💡 如果重新做一次，我会改变什么？</span>
+        </div>
+        <div class="check-item" onclick="toggleCheck(this)">
+          <div class="box"></div>
+          <span class="text">🔗 我能把今天学的原理用到一个新场景吗？</span>
+        </div>
+        <button class="reset-btn" onclick="resetReflect()">↻ 重置反思清单</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleContent(btn) {
+  var content = btn.nextElementSibling;
+  if (content && content.classList) {
+    content.classList.toggle('show');
+    btn.textContent = content.classList.contains('show') ? '🙈 收起' : '💡 看示例';
+  }
+}
+
+function toggleCheck(el) {
+  el.classList.toggle('done');
+}
+
+function resetReflect() {
+  var items = document.querySelectorAll('#reflect-list .check-item');
+  items.forEach(function(item) { item.classList.remove('done'); });
+}
+</script>
+</body>
+</html>

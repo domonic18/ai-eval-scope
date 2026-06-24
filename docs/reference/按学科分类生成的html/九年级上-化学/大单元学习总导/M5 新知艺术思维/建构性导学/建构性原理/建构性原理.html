@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性原理 - 化学九年级</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+  --success: #52c41a;
+  --warning: #faad14;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+.container { width: 100%; max-width: none; padding: 24px 32px 60px; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 32px 40px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 8px; }
+.header p { font-size: 14px; opacity: 0.9; }
+.section-title {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin: 32px 0 16px;
+  padding-left: 12px;
+  border-left: 4px solid var(--primary);
+}
+.principle-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: default;
+}
+.principle-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(22,119,255,0.12);
+}
+.principle-number {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 600;
+  margin-right: 10px;
+}
+.principle-name {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--primary);
+}
+.principle-desc { margin: 8px 0 4px; color: var(--text); }
+.principle-detail {
+  margin-top: 10px;
+  padding: 12px 16px;
+  background: var(--bg);
+  border-radius: 6px;
+  font-size: 14px;
+}
+.principle-detail strong { color: var(--primary); }
+.toggle-btn {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 6px 16px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.toggle-btn:hover { background: var(--primary-hover); }
+.toggle-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+}
+.toggle-content.show { max-height: 400px; }
+.practice-card {
+  background: var(--card-bg);
+  border: 2px solid var(--accent);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+.practice-card h3 {
+  color: var(--primary);
+  font-size: 17px;
+  margin-bottom: 10px;
+}
+.tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  margin: 4px 4px 0 0;
+}
+.tag-blue { background: #e6f4ff; color: #1677ff; }
+.tag-green { background: #f6ffed; color: #52c41a; }
+.tag-orange { background: #fff7e6; color: #d46b08; }
+.reflect-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 640px) { .reflect-grid { grid-template-columns: 1fr; } }
+.reflect-item {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: all 0.25s;
+}
+.reflect-item:hover {
+  border-color: var(--primary);
+  box-shadow: 0 2px 12px rgba(22,119,255,0.1);
+}
+.reflect-item .q { font-weight: 600; color: var(--primary); margin-bottom: 6px; }
+.reflect-item .a {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.reflect-item.open .a { max-height: 300px; }
+.btn-reset {
+  display: inline-block;
+  margin: 24px 0;
+  padding: 10px 28px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-reset:hover { background: var(--primary-hover); }
+.migration-note {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin: 12px 0;
+  font-size: 14px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🧱 建构性原理</h1>
+  <p>化学 · 九年级上 · 建构性导学</p>
+</div>
+
+<p style="font-size:16px;margin-bottom:20px;padding:16px 20px;background:#fff;border-radius:8px;border-left:4px solid var(--primary);">
+  建构不是为了"记住答案"，而是为了"创造理解"。以下是5条建构性原理，点击每条原理的按钮可查看适用场景与注意事项。
+</p>
+
+<!-- 原理1 -->
+<div class="principle-card">
+  <div><span class="principle-number">1</span><span class="principle-name">情境锚定法</span></div>
+  <div class="principle-desc">从真实、具体的情境出发，让问题自然浮现，而不是从抽象概念开始。</div>
+  <button class="toggle-btn" onclick="toggleDetail(this)">展开详情</button>
+  <div class="toggle-content">
+    <div class="principle-detail">
+      <strong>来源：</strong>建构性示例中的情境如何引发你的好奇心和建构需求。<br>
+      <strong>适用：</strong>任何需要你"从零开始"建构理解的新领域。<br>
+      <strong>注意：</strong>选择的情境要足够具体，避免宏大空泛。
+    </div>
+  </div>
+</div>
+
+<!-- 原理2 -->
+<div class="principle-card">
+  <div><span class="principle-number">2</span><span class="principle-name">证据驱动法</span></div>
+  <div class="principle-desc">建构必须基于可观察的证据（实验数据、现象观察、文本信息），而不是凭空想象。</div>
+  <button class="toggle-btn" onclick="toggleDetail(this)">展开详情</button>
+  <div class="toggle-content">
+    <div class="principle-detail">
+      <strong>来源：</strong>示例中如何从给定证据出发进行推理和建构。<br>
+      <strong>适用：</strong>科学探究、数据分析、方案设计等需要事实依据的场景。<br>
+      <strong>注意：</strong>要学会区分"事实"和"观点"。
+    </div>
+  </div>
+</div>
+
+<!-- 原理3 -->
+<div class="principle-card">
+  <div><span class="principle-number">3</span><span class="principle-name">表达外显法</span></div>
+  <div class="principle-desc">把你的思考过程用具体形式（图示、模型、文字）表达出来，建构才算完成。</div>
+  <button class="toggle-btn" onclick="toggleDetail(this)">展开详情</button>
+  <div class="toggle-content">
+    <div class="principle-detail">
+      <strong>来源：</strong>示例中成果表达的方式和标准。<br>
+      <strong>适用：</strong>所有需要展示思维成果的场景。<br>
+      <strong>注意：</strong>表达不是为了好看，而是为了让别人看懂你的思路。
+    </div>
+  </div>
+</div>
+
+<!-- 原理4 -->
+<div class="principle-card">
+  <div><span class="principle-number">4</span><span class="principle-name">迭代优化法</span></div>
+  <div class="principle-desc">第一次建构的成果不是终点，通过自评和修改可以不断优化。</div>
+  <button class="toggle-btn" onclick="toggleDetail(this)">展开详情</button>
+  <div class="toggle-content">
+    <div class="principle-detail">
+      <strong>来源：</strong>示例中自我评价和改进的过程。<br>
+      <strong>适用：</strong>任何需要不断完善的作品或方案。<br>
+      <strong>注意：</strong>优化要有方向，不能盲目修改。
+    </div>
+  </div>
+</div>
+
+<!-- 原理5 -->
+<div class="principle-card">
+  <div><span class="principle-number">5</span><span class="principle-name">原理迁移法</span></div>
+  <div class="principle-desc">将一个情境中学会的建构方法迁移到新的、相似的情境中。</div>
+  <button class="toggle-btn" onclick="toggleDetail(this)">展开详情</button>
+  <div class="toggle-content">
+    <div class="principle-detail">
+      <strong>来源：</strong>示例如何为后续案例迁移提供方法基础。<br>
+      <strong>适用：</strong>从熟悉到陌生的学习场景。<br>
+      <strong>注意：</strong>迁移时要识别新情境的关键差异。
+    </div>
+  </div>
+</div>
+
+<div class="section-title">📋 迁移应用练习</div>
+
+<!-- 练习1 -->
+<div class="practice-card" data-group="practice1">
+  <h3>🥘 练习一：解开厨房中的化学秘密</h3>
+  <div><span class="tag tag-blue">情境锚定</span><span class="tag tag-green">证据驱动</span></div>
+  <p style="margin-top:12px;"><strong>情境：</strong>家里的铁锅生锈了，妈妈想知道为什么新买的"不粘锅"不会生锈。</p>
+  <p><strong>建构任务：</strong>建构一个关于"金属防锈原理"的解释模型。</p>
+  <p><strong>可用证据：</strong>铁锅锈迹照片、不粘锅材质说明、食盐加速生锈的生活经验。</p>
+  <button class="toggle-btn" onclick="showHint(this)">💡 查看脚手架提示</button>
+  <div class="toggle-content">
+    <div class="migration-note">
+      从"锈是什么"开始思考——锈是铁与氧气、水反应生成的氧化铁。再比较两种锅的材质差异：铁锅是铁（易氧化），不粘锅表面有特氟龙涂层（不与水、氧气反应）。
+    </div>
+  </div>
+</div>
+
+<!-- 练习2 -->
+<div class="practice-card" data-group="practice2">
+  <h3>🔬 练习二：设计实验展示方案</h3>
+  <div><span class="tag tag-orange">表达外显</span><span class="tag tag-green">迭代优化</span></div>
+  <p style="margin-top:12px;"><strong>情境：</strong>学校科技节需要设计一个"走进化学世界"的互动展台。</p>
+  <p><strong>建构任务：</strong>设计一个3分钟能完成的化学小实验展示方案。</p>
+  <p><strong>可用证据：</strong>教材中的基础实验、安全规则、展台设备清单。</p>
+  <button class="toggle-btn" onclick="showHint(this)">💡 查看脚手架提示</button>
+  <div class="toggle-content">
+    <div class="migration-note">
+      先确定你想让参观者"看到什么现象"，再反推需要什么实验。例如：紫甘蓝汁遇酸碱变色——简单、安全、视觉效果好。
+    </div>
+  </div>
+</div>
+
+<div class="section-title">🤔 元认知反思</div>
+<p style="margin-bottom:14px;color:var(--text-secondary);">点击每个问题展开反思引导：</p>
+
+<div class="reflect-grid">
+  <div class="reflect-item" data-reflect="1" onclick="toggleReflect(this)">
+    <div class="q">1. 在刚才的建构过程中，你最初的想法是什么？后来发生了什么变化？</div>
+    <div class="a">回忆建构起点——你关于"化学变化"的初始理解是什么？哪个观察或证据让你改变了看法？</div>
+  </div>
+  <div class="reflect-item" data-reflect="2" onclick="toggleReflect(this)">
+    <div class="q">2. 你在建构过程中遇到了什么困难？</div>
+    <div class="a">是信息不足、概念不清还是表达困难？尝试识别你卡在哪一步，这本身也是一种元认知能力。</div>
+  </div>
+  <div class="reflect-item" data-reflect="3" onclick="toggleReflect(this)">
+    <div class="q">3. 你用了哪条建构性原理？它帮助你解决了什么问题？</div>
+    <div class="a">例如：情境锚定帮你聚焦问题，证据驱动帮你找到依据，表达外显让你的思路清晰可见。</div>
+  </div>
+  <div class="reflect-item" data-reflect="4" onclick="toggleReflect(this)">
+    <div class="q">4. 如果重新做一次，你会改变哪个环节？</div>
+    <div class="a">是观察不够细致？分类不够准确？还是模型表达不够直观？找到改进点就是在迭代优化。</div>
+  </div>
+</div>
+
+<button class="btn-reset" onclick="resetAll()">🔄 全部收起</button>
+
+</div>
+
+<script>
+function toggleDetail(btn) {
+  var content = btn.nextElementSibling;
+  if (!content) return;
+  content.classList.toggle('show');
+  btn.textContent = content.classList.contains('show') ? '收起详情' : '展开详情';
+}
+
+function showHint(btn) {
+  var content = btn.nextElementSibling;
+  if (!content) return;
+  content.classList.toggle('show');
+  btn.textContent = content.classList.contains('show') ? '收起提示' : '💡 查看脚手架提示';
+}
+
+function toggleReflect(el) {
+  el.classList.toggle('open');
+}
+
+function resetAll() {
+  document.querySelectorAll('.toggle-content.show').forEach(function(el) {
+    el.classList.remove('show');
+  });
+  document.querySelectorAll('.toggle-btn').forEach(function(btn) {
+    if (btn.textContent === '收起详情' || btn.textContent === '收起提示') {
+      btn.textContent = btn.textContent === '收起详情' ? '展开详情' : '💡 查看脚手架提示';
+    }
+  });
+  document.querySelectorAll('.reflect-item.open').forEach(function(el) {
+    el.classList.remove('open');
+  });
+}
+</script>
+</body>
+</html>

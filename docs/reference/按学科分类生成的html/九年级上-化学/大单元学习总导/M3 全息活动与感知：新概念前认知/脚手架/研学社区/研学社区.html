@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>研学社区（案例库） - 化学学习脚手架</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+}
+.page-title {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  text-align: center;
+  margin-bottom: 8px;
+}
+.page-sub {
+  text-align: center;
+  color: var(--text-secondary);
+  margin-bottom: 28px;
+  font-size: 14px;
+}
+
+/* 层级标签（类似游戏难度） */
+.diff-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.diff-tab {
+  flex: 1;
+  min-width: 120px;
+  padding: 12px 0;
+  text-align: center;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  border: 2px solid var(--border);
+  transition: all 0.25s;
+  font-family: inherit;
+  user-select: none;
+}
+.diff-tab:hover { transform: translateY(-2px); }
+.diff-tab.active { color: #fff; border-color: transparent; }
+.diff-tab.easy.active { background: #16a34a; }
+.diff-tab.mid.active { background: #1677ff; }
+.diff-tab.hard.active { background: #d46b08; }
+
+.case-content { display: none; }
+.case-content.active { display: block; }
+
+/* 案例卡片 */
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+  transition: box-shadow 0.25s;
+}
+.case-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.09); }
+.case-card:last-child { margin-bottom: 0; }
+.case-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.case-bg {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+}
+.case-question {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding: 8px 14px;
+  background: rgba(22,119,255,0.06);
+  border-radius: 6px;
+}
+
+/* 决策路径 */
+.decision-grid {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.decision-option {
+  flex: 1;
+  min-width: 180px;
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: 2px solid transparent;
+  font-family: inherit;
+  text-align: left;
+  font-size: 14px;
+}
+.decision-option:hover { border-color: var(--accent); transform: translateY(-2px); }
+.decision-option.selected {
+  border-color: var(--primary);
+  background: rgba(22,119,255,0.08);
+}
+.decision-option .opt-label {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 3px;
+  color: #fff;
+  margin-bottom: 4px;
+}
+.decision-option .opt-label.a { background: #1677ff; }
+.decision-option .opt-label.b { background: #16a34a; }
+.decision-option .opt-label.c { background: #d46b08; }
+.opt-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.opt-result {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* 可迁移启示 */
+.insight-box {
+  background: linear-gradient(135deg, var(--bg) 0%, #e6f0ff 100%);
+  border-radius: 6px;
+  padding: 14px;
+  margin-top: 12px;
+  border: 1px dashed var(--primary);
+}
+.insight-box strong {
+  color: var(--primary);
+}
+.insight-box .insight-icon {
+  margin-right: 4px;
+}
+
+/* 多结局模拟 */
+.outcome-box {
+  display: none;
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 14px;
+  margin-top: 12px;
+  border-left: 4px solid var(--primary);
+  font-size: 14px;
+}
+.outcome-box.open { display: block; }
+
+/* 思考任务 */
+.think-task {
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: 6px;
+  padding: 14px;
+  margin-top: 12px;
+  font-size: 14px;
+  color: #d46b08;
+}
+.think-task strong { color: #d46b08; }
+
+/* 重置按钮 */
+.reset-btn {
+  display: inline-block;
+  padding: 8px 20px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s;
+  margin-top: 12px;
+}
+.reset-btn:hover { background: var(--primary-hover); }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1 class="page-title">🌱 研学社区（案例库）</h1>
+<p class="page-sub">选择难度层级 · 点击决策选项探索不同路径的结果</p>
+
+<!-- 难度选择 -->
+<div class="diff-tabs">
+  <div class="diff-tab easy active" data-level="easy" onclick="switchCase('easy', this)">🌿 基础 · 生活类</div>
+  <div class="diff-tab mid" data-level="mid" onclick="switchCase('mid', this)">📜 进阶 · 行业/历史</div>
+  <div class="diff-tab hard" data-level="hard" onclick="switchCase('hard', this)">⚡ 挑战 · 复杂系统</div>
+</div>
+
+<!-- 基础案例 -->
+<div class="case-content active" id="cases-easy">
+  <div class="case-card">
+    <div class="case-title">🔩 铁锅生锈了！</div>
+    <div class="case-bg">妈妈发现家里的铁锅如果洗完后没有擦干，第二天就会出现红褐色的锈斑。</div>
+    <div class="case-question">❓ 是什么条件导致了铁锅生锈？生锈是化学变化吗？</div>
+
+    <div class="decision-grid">
+      <div class="decision-option" onclick="selectDecision(this, 'easy')">
+        <span class="opt-label a">方案A</span>
+        <span class="opt-name">不管它，继续用</span>
+        <span class="opt-result">点击查看结果 →</span>
+        <div class="opt-result-detail" style="display:none;margin-top:6px;color:var(--text);">🔴 结果：锈斑扩大，铁锅出现小孔</div>
+      </div>
+      <div class="decision-option" onclick="selectDecision(this, 'easy')">
+        <span class="opt-label b">方案B</span>
+        <span class="opt-name">每次洗净后擦干涂油</span>
+        <span class="opt-result">点击查看结果 →</span>
+        <div class="opt-result-detail" style="display:none;margin-top:6px;color:var(--text);">🟢 结果：不再生锈</div>
+      </div>
+      <div class="decision-option" onclick="selectDecision(this, 'easy')">
+        <span class="opt-label c">方案C</span>
+        <span class="opt-name">换成不锈钢锅</span>
+        <span class="opt-result">点击查看结果 →</span>
+        <div class="opt-result-detail" style="display:none;margin-top:6px;color:var(--text);">🟡 结果：不生锈，但传热效果不同</div>
+      </div>
+    </div>
+
+    <div class="insight-box" style="display:none;" id="insight-easy">
+      <span class="insight-icon">💡</span><strong>可迁移启示：</strong>化学变化往往需要特定的条件（水和空气），改变条件可以控制变化的发生。
+    </div>
+    <button class="reset-btn" onclick="resetCase('easy')">🔄 重置选择</button>
+  </div>
+</div>
+
+<!-- 进阶案例 -->
+<div class="case-content" id="cases-mid">
+  <div class="case-card">
+    <div class="case-title">📜 蔡伦改进造纸术</div>
+    <div class="case-bg">东汉时期，蔡伦想要制造一种廉价、轻便的书写材料。</div>
+    <div class="case-question">❓ 如何将树皮、麻头等植物纤维转化为可书写的纸张？</div>
+
+    <div class="decision-grid">
+      <div class="decision-option" onclick="selectDecision(this, 'mid')">
+        <span class="opt-label a">方案A</span>
+        <span class="opt-name">直接晾干树皮</span>
+        <span class="opt-result">点击查看结果 →</span>
+        <div class="opt-result-detail" style="display:none;margin-top:6px;color:var(--text);">🔴 结果：太粗糙，无法书写</div>
+      </div>
+      <div class="decision-option" onclick="selectDecision(this, 'mid')">
+        <span class="opt-label b">方案B</span>
+        <span class="opt-name">捣碎加水浸泡</span>
+        <span class="opt-result">点击查看结果 →</span>
+        <div class="opt-result-detail" style="display:none;margin-top:6px;color:var(--text);">🟡 结果：有了一些纤维，但不成形</div>
+      </div>
+      <div class="decision-option" onclick="selectDecision(this, 'mid')">
+        <span class="opt-label c">方案C</span>
+        <span class="opt-name">碱煮+捣碎+抄纸+晾干</span>
+        <span class="opt-result">点击查看结果 →</span>
+        <div class="opt-result-detail" style="display:none;margin-top:6px;color:var(--text);">🟢 结果：造出了质地均匀的纸张</div>
+      </div>
+    </div>
+
+    <div class="insight-box" style="display:none;" id="insight-mid">
+      <span class="insight-icon">💡</span><strong>可迁移启示：</strong>许多"人造物"的制造过程都涉及化学变化——蔡伦在无意中利用碱液与植物纤维的化学反应，改变了材料的性质。
+    </div>
+
+    <div class="think-task" style="display:none;" id="think-mid">
+      <strong>🤔 "如果你是决策者"思考任务：</strong>如果你是蔡伦，在有限的条件下，你会如何测试哪种处理方法最有效？
+    </div>
+    <button class="reset-btn" onclick="resetCase('mid')">🔄 重置选择</button>
+  </div>
+</div>
+
+<!-- 挑战案例 -->
+<div class="case-content" id="cases-hard">
+  <div class="case-card">
+    <div class="case-title">🌍 从"白色污染"到"绿色塑料"</div>
+    <div class="case-bg">传统塑料（如塑料袋）在自然环境中几百年不分解，造成严重的环境污染。</div>
+    <div class="case-question">❓ 如何设计一种既有塑料的便利性，又能在使用后通过化学变化自然降解的材料？</div>
+
+    <div class="decision-grid">
+      <div class="decision-option" onclick="selectDecision(this, 'hard')">
+        <span class="opt-label a">方案A</span>
+        <span class="opt-name">开发可降解塑料（PLA）</span>
+        <span class="opt-result">点击查看结果 →</span>
+        <div class="opt-result-detail" style="display:none;margin-top:6px;color:var(--text);">🟡 结果：可降解，但成本高，需特定降解条件</div>
+      </div>
+      <div class="decision-option" onclick="selectDecision(this, 'hard')">
+        <span class="opt-label b">方案B</span>
+        <span class="opt-name">回收利用现有塑料</span>
+        <span class="opt-result">点击查看结果 →</span>
+        <div class="opt-result-detail" style="display:none;margin-top:6px;color:var(--text);">🟡 结果：需分类和特殊工艺，回收率低</div>
+      </div>
+      <div class="decision-option" onclick="selectDecision(this, 'hard')">
+        <span class="opt-label c">方案C</span>
+        <span class="opt-name">微生物"吃"塑料</span>
+        <span class="opt-result">点击查看结果 →</span>
+        <div class="opt-result-detail" style="display:none;margin-top:6px;color:var(--text);">🟢 结果：有前景但技术尚未成熟</div>
+      </div>
+    </div>
+
+    <div class="insight-box" style="display:none;" id="insight-hard">
+      <span class="insight-icon">💡</span><strong>可迁移启示：</strong>理解化学变化的本质（物质转化）是解决环境问题的关键。
+    </div>
+
+    <div class="outcome-box" id="outcome-hard">
+      <strong>🔮 多结局模拟：</strong><br>
+      • 如果只选方案A，10年后可降解塑料成本降低但需完善回收体系，50年后可能替代50%传统塑料<br>
+      • 如果只选方案B，需要建立全球分类标准，50年后回收率可能提升至70%<br>
+      • 如果三种方案同时推进，10~50年后有望形成"减量+回收+降解"的完整闭环
+    </div>
+    <button class="reset-btn" onclick="resetCase('hard')">🔄 重置选择</button>
+  </div>
+</div>
+
+<div style="text-align:center;color:var(--text-secondary);font-size:13px;padding:16px 0;border-top:1px solid var(--border);margin-top:8px;">
+  💡 点击各方案选项可查看对应结果 · 每个案例可多次尝试
+</div>
+
+</div>
+
+<script>
+function switchCase(level, el) {
+  document.querySelectorAll('.diff-tab').forEach(function(t) {
+    t.classList.toggle('active', t === el);
+  });
+  document.querySelectorAll('.case-content').forEach(function(c) {
+    c.classList.toggle('active', c.id === 'cases-' + level);
+  });
+}
+
+function selectDecision(el, group) {
+  var parent = el.closest('.case-card');
+  // 取消同组其他选中的
+  parent.querySelectorAll('.decision-option').forEach(function(opt) {
+    opt.classList.remove('selected');
+    var detail = opt.querySelector('.opt-result-detail');
+    if (detail) detail.style.display = 'none';
+    var resultText = opt.querySelector('.opt-result');
+    if (resultText) resultText.textContent = '点击查看结果 →';
+  });
+  // 选中当前
+  el.classList.add('selected');
+  var detail = el.querySelector('.opt-result-detail');
+  if (detail) detail.style.display = 'block';
+  var resultText = el.querySelector('.opt-result');
+  if (resultText) resultText.textContent = '✅ 已选择';
+
+  // 显示启示
+  var insight = parent.querySelector('#insight-' + group);
+  if (insight) insight.style.display = 'block';
+
+  // 显示思考任务（进阶案例）
+  var think = parent.querySelector('#think-' + group);
+  if (think) think.style.display = 'block';
+
+  // 显示多结局（挑战案例）
+  var outcome = parent.querySelector('#outcome-' + group);
+  if (outcome) outcome.classList.add('open');
+}
+
+function resetCase(group) {
+  var parent = document.querySelector('#cases-' + group + ' .case-card');
+  if (!parent) return;
+  parent.querySelectorAll('.decision-option').forEach(function(opt) {
+    opt.classList.remove('selected');
+    var detail = opt.querySelector('.opt-result-detail');
+    if (detail) detail.style.display = 'none';
+    var resultText = opt.querySelector('.opt-result');
+    if (resultText) resultText.textContent = '点击查看结果 →';
+  });
+  var insight = parent.querySelector('#insight-' + group);
+  if (insight) insight.style.display = 'none';
+  var think = parent.querySelector('#think-' + group);
+  if (think) think.style.display = 'none';
+  var outcome = parent.querySelector('#outcome-' + group);
+  if (outcome) outcome.classList.remove('open');
+}
+</script>
+</body>
+</html>

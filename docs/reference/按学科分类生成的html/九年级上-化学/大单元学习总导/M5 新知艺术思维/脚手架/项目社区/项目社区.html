@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目社区 - 化学实践项目</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; box-sizing: border-box; }
+header { text-align: center; padding: 32px 20px 20px; background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; border-radius: 0 0 16px 16px; margin: -24px -20px 24px; }
+header h1 { font-size: var(--font-h1); margin: 0 0 6px; }
+header p { margin: 0; opacity: .85; font-size: 14px; }
+.project-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px; border-top: 4px solid var(--primary); }
+.project-card h3 { font-size: var(--font-h2); color: var(--primary); margin: 0 0 4px; }
+.project-duration { display: inline-block; background: var(--accent); color: #fff; font-size: 12px; padding: 2px 12px; border-radius: 10px; margin-bottom: 10px; }
+.project-meta { margin: 10px 0; }
+.project-meta strong { color: var(--primary); }
+.stage-list { padding-left: 18px; }
+.stage-list li { margin-bottom: 6px; }
+.stage-list li strong { color: var(--text); }
+.toggle-detail { margin: 10px 0; }
+.toggle-detail button { padding: 6px 16px; border: 1px solid var(--primary); border-radius: 4px; cursor: pointer; font-size: 13px; background: var(--card-bg); color: var(--primary); transition: all .2s; }
+.toggle-detail button:hover { background: var(--primary); color: #fff; }
+.detail-box { display: none; margin-top: 10px; padding: 14px; background: var(--bg); border-radius: 6px; border-left: 3px solid var(--primary); }
+.detail-box.show { display: block; animation: fadeIn .25s ease; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.tip-box { background: #fff7e6; border: 1px dashed #fa8c16; border-radius: 6px; padding: 10px 14px; margin: 10px 0; }
+.tip-box::before { content: "💡 小提示："; font-weight: 600; }
+.pagination { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
+.pagination button { padding: 8px 20px; border: 1px solid var(--primary); border-radius: 6px; cursor: pointer; font-size: 14px; background: var(--card-bg); color: var(--primary); transition: all .2s; }
+.pagination button:hover { background: var(--primary); color: #fff; }
+.pagination button:disabled { opacity: .4; cursor: not-allowed; }
+.page-indicator { font-size: 14px; color: var(--text-secondary); padding: 8px; }
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<h1>🧪 项目社区</h1>
+<p>动手做化学 — 短周期 · 中周期 · 长周期 三级项目体系</p>
+</header>
+
+<div id="project-1" class="project-card">
+<h3>📌 项目1：家庭化学侦探</h3>
+<span class="project-duration">⏱ 短周期 · 1—3天</span>
+
+<div class="project-meta"><strong>🎯 项目目标：</strong>找出家中5种日常用品，判断它们通过什么化学变化制造出来的。</div>
+
+<div class="toggle-detail"><button onclick="toggleDetail(this)">📋 查看阶段任务</button></div>
+<div class="detail-box">
+  <ol class="stage-list">
+    <li><strong>第1天：调查与记录</strong> — 列出用品清单，研读成分表</li>
+    <li><strong>第2天：研究与制图</strong> — 查找每种用品的制造过程，画出"原料→化学变化→成品"流程图</li>
+    <li><strong>第3天：展示与交流</strong> — 向家人展示你的发现</li>
+  </ol>
+</div>
+
+<div class="project-meta"><strong>📦 成果形式：</strong>家庭用品化学变化地图（A3手绘海报）</div>
+<div class="project-meta"><strong>⭐ 评价标准：</strong>至少5种用品、每种含化学变化类型标注、信息准确、图文清晰</div>
+</div>
+
+<div id="project-2" class="project-card">
+<h3>📌 项目2："走进化学世界"班级展览策划</h3>
+<span class="project-duration">⏱ 中周期 · 1—2周</span>
+
+<div class="project-meta"><strong>🎯 项目目标：</strong>策划一场面向低年级同学的化学科普微展览。</div>
+
+<div class="toggle-detail"><button onclick="toggleDetail(this)">📋 查看阶段任务</button></div>
+<div class="detail-box">
+  <ol class="stage-list">
+    <li><strong>第1周：主题确定+资料收集</strong> — 确定展览主题、收集实验方案和安全规范</li>
+    <li><strong>第2周：展品制作+解说词撰写</strong> — 制作展示海报、准备演示实验、撰写解说词</li>
+  </ol>
+</div>
+
+<div class="project-meta"><strong>📦 成果形式：</strong>展览设计方案书（含主题、展品清单、实验步骤、解说词）</div>
+<div class="project-meta"><strong>⭐ 评价标准：</strong>科学性、安全性、可操作性、趣味性</div>
+</div>
+
+<div id="project-3" class="project-card">
+<h3>📌 项目3："我家旁边的水"环境研究报告</h3>
+<span class="project-duration">⏱ 长周期 · 1个月以上</span>
+
+<div class="project-meta"><strong>🎯 项目目标：</strong>调查社区周边水源的水质情况，撰写一份科学报告。</div>
+
+<div class="toggle-detail"><button onclick="toggleDetail(this)">📋 查看阶段任务</button></div>
+<div class="detail-box">
+  <ol class="stage-list">
+    <li><strong>第1周：确定监测方案</strong> — 确定监测指标、学习检测方法、准备工具</li>
+    <li><strong>第2周：实地采样与检测</strong> — 定期采样、使用pH试纸等工具检测、记录数据</li>
+    <li><strong>第3周：数据分析与制图</strong> — 整理数据、绘制变化趋势图、查找国家标准对比</li>
+    <li><strong>第4周：报告撰写与建议</strong> — 撰写研究报告、提出改善建议、准备展示</li>
+  </ol>
+</div>
+
+<div class="project-meta"><strong>📦 成果形式：</strong>水质监测研究报告（含数据、图表、分析与建议）</div>
+<div class="project-meta"><strong>⭐ 评价标准：</strong>数据真实完整、分析有依据、建议切实可行、格式规范</div>
+
+<div class="tip-box">资源链接：当地环保部门公开数据 | 水质检测简易工具包（pH试纸、TDS笔）</div>
+</div>
+
+<div class="pagination">
+<button id="prevBtn" onclick="navigate(-1)" disabled>◀ 上一个</button>
+<span class="page-indicator"><span id="currentPage">1</span> / 3</span>
+<button id="nextBtn" onclick="navigate(1)">下一个 ▶</button>
+</div>
+</div>
+
+<script>
+var currentProject = 1;
+var totalProjects = 3;
+
+function toggleDetail(btn) {
+  var detail = btn.closest('.project-card').querySelector('.detail-box');
+  if (detail) {
+    detail.classList.toggle('show');
+    btn.textContent = detail.classList.contains('show') ? '🙈 收起阶段任务' : '📋 查看阶段任务';
+  }
+}
+
+function navigate(direction) {
+  var next = currentProject + direction;
+  if (next < 1 || next > totalProjects) return;
+  currentProject = next;
+
+  // Scroll to project
+  document.querySelectorAll('.project-card').forEach(function(card, idx) {
+    var num = idx + 1;
+    card.style.display = num === currentProject ? 'block' : 'none';
+  });
+
+  document.getElementById('currentPage').textContent = currentProject;
+  document.getElementById('prevBtn').disabled = currentProject === 1;
+  document.getElementById('nextBtn').disabled = currentProject === totalProjects;
+
+  // Scroll to top of container
+  document.querySelector('.container').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+</script>
+</body>
+</html>

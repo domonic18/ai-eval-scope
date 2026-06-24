@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名人名言 — 化学发现之旅</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  padding: 0;
+}
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 6px; }
+.header p { font-size: 14px; opacity: 0.9; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bg);
+}
+.chemist-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.chemist-card {
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+.chemist-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--primary);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.chemist-card:hover { border-color: var(--primary); box-shadow: var(--shadow); }
+.chemist-card:hover::before { opacity: 1; }
+.chemist-card .chemist-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.chemist-card .chemist-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--primary);
+}
+.chemist-card .chemist-sub {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+.chemist-card .toggle-icon {
+  font-size: 20px;
+  transition: transform 0.3s;
+}
+.chemist-card.expanded .toggle-icon { transform: rotate(180deg); }
+.chemist-detail {
+  display: none;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border);
+}
+.chemist-card.expanded .chemist-detail { display: block; }
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 640px) { .detail-grid { grid-template-columns: 1fr; } }
+.detail-item {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 12px;
+}
+.detail-item .label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.detail-item .value { font-size: 14px; line-height: 1.6; }
+.insight-box {
+  background: linear-gradient(135deg, var(--bg), #e6f0ff);
+  border-radius: 6px;
+  padding: 14px;
+  margin-top: 10px;
+  border-left: 3px solid var(--primary);
+}
+.insight-box .insight-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+}
+.insight-box .insight-text { font-size: 14px; margin-top: 4px; }
+.think-task {
+  background: #fff7e6;
+  border: 2px solid #ffd591;
+  border-radius: var(--border-radius);
+  padding: 18px;
+  margin-top: 12px;
+}
+.think-task h3 {
+  font-size: 16px;
+  color: #d46b08;
+  margin-bottom: 8px;
+}
+.think-task p { font-size: 14px; line-height: 1.7; color: var(--text); }
+.think-task .btn-think {
+  margin-top: 10px;
+  padding: 8px 20px;
+  border: none;
+  border-radius: 6px;
+  background: #d46b08;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.3s;
+}
+.think-task .btn-think:hover { background: #e8710a; }
+.think-task .think-reveal {
+  display: none;
+  margin-top: 12px;
+  padding: 12px;
+  background: #fff;
+  border-radius: 6px;
+  font-size: 14px;
+  border: 1px solid #ffd591;
+}
+.think-task .think-reveal.show { display: block; }
+.reading-path {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.reading-path .path-item {
+  flex: 1;
+  min-width: 140px;
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.reading-path .path-item:hover { background: #e6f0ff; }
+.reading-path .path-item .path-type {
+  font-size: 12px;
+  color: var(--primary);
+  font-weight: 600;
+}
+.reading-path .path-item .path-name { font-size: 14px; font-weight: 600; margin: 4px 0; }
+.reading-path .path-item .path-level {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>💡 名人名言</h1>
+    <p>化学概念如何被人类发现和定义 · 关键人物的思想路径</p>
+  </div>
+
+  <div class="card">
+    <h2>🔬 三位化学家 · 三段思想突破</h2>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">点击每位化学家，展开他们的故事与思维突破：</p>
+
+    <div class="chemist-grid">
+      <div class="chemist-card" onclick="toggleChemist(this)">
+        <div class="chemist-header">
+          <div>
+            <div class="chemist-name">安托万·拉瓦锡</div>
+            <div class="chemist-sub">1743—1794 · 法国 · "现代化学之父"</div>
+          </div>
+          <span class="toggle-icon">▼</span>
+        </div>
+        <div class="chemist-detail">
+          <div class="detail-grid">
+            <div class="detail-item">
+              <div class="label">🔑 关键问题</div>
+              <div class="value">燃烧的本质是什么？化学反应前后质量是否变化？</div>
+            </div>
+            <div class="detail-item">
+              <div class="label">💥 思维突破</div>
+              <div class="value">建立定量实验方法（精密天平），首次提出"元素"定义，揭示燃烧是物质与氧气的反应</div>
+            </div>
+            <div class="detail-item">
+              <div class="label">⚠️ 失败/争议</div>
+              <div class="value">曾任税务官，法国大革命中被处决；曾错误地认为"热质"是一种物质</div>
+            </div>
+            <div class="detail-item">
+              <div class="label">🌟 当下启示</div>
+              <div class="value">科学进步需要精确测量和严格实验，而不是仅凭感官判断</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chemist-card" onclick="toggleChemist(this)">
+        <div class="chemist-header">
+          <div>
+            <div class="chemist-name">罗伯特·波义耳</div>
+            <div class="chemist-sub">1627—1691 · 英国 · 化学与物理的跨界者</div>
+          </div>
+          <span class="toggle-icon">▼</span>
+        </div>
+        <div class="chemist-detail">
+          <div class="detail-grid">
+            <div class="detail-item">
+              <div class="label">🔑 关键问题</div>
+              <div class="value">如何通过实验区分不同物质？</div>
+            </div>
+            <div class="detail-item">
+              <div class="label">💥 思维突破</div>
+              <div class="value">将化学确立为一门独立的自然科学，提出"元素"概念雏形，强调实验证据的重要性</div>
+            </div>
+            <div class="detail-item">
+              <div class="label">🌉 跨学科视角</div>
+              <div class="value">波义耳定律（气体压强与体积关系）展现了化学与物理的交叉力量</div>
+            </div>
+            <div class="detail-item">
+              <div class="label">🌟 当下启示</div>
+              <div class="value">化学与物理的交叉视角能带来突破性发现</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chemist-card" onclick="toggleChemist(this)">
+        <div class="chemist-header">
+          <div>
+            <div class="chemist-name">屠呦呦</div>
+            <div class="chemist-sub">1930— · 中国 · 诺贝尔生理学或医学奖得主</div>
+          </div>
+          <span class="toggle-icon">▼</span>
+        </div>
+        <div class="chemist-detail">
+          <div class="detail-grid">
+            <div class="detail-item">
+              <div class="label">🔑 关键问题</div>
+              <div class="value">如何从传统草药中提取有效成分治疗疟疾？</div>
+            </div>
+            <div class="detail-item">
+              <div class="label">💥 思维突破</div>
+              <div class="value">利用化学性质差异（乙醚低温萃取），从青蒿中成功分离出青蒿素</div>
+            </div>
+            <div class="detail-item">
+              <div class="label">📚 研究方法</div>
+              <div class="value">从古籍《肘后备急方》中获得灵感，结合现代化学萃取技术</div>
+            </div>
+            <div class="detail-item">
+              <div class="label">🌟 当下启示</div>
+              <div class="value">化学性质的深刻理解可以解决重大的全球人类健康问题</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🤔 "如果你是他"思考任务</h2>
+    <div class="think-task">
+      <h3>🧪 穿越到18世纪——你是拉瓦锡</h3>
+      <p>假设你是拉瓦锡，身处18世纪的法国。当时流行的"燃素说"认为物质燃烧时会释放一种叫"燃素"的东西。你没有现代分析仪器，没有电子天平，但你坚信实验和测量。</p>
+      <p style="margin-top:6px;"><strong>问题：</strong>你会如何设计一个（或一组）实验，来证明燃烧是化学反应而非"燃素释放"？请写下你的实验思路。</p>
+      <button class="btn-think" onclick="revealThink()">💡 看看拉瓦锡的实际做法</button>
+      <div class="think-reveal" id="thinkReveal">
+        <p><strong>拉瓦锡的实际方案：</strong></p>
+        <p>他设计了著名的<strong>"钟罩实验"</strong>——将汞（水银）放在密闭容器中加热，发现空气体积减少了约1/5，同时生成红色粉末（氧化汞）。更关键的是，他称量了反应前后整个容器的总质量，发现<strong>没有变化</strong>。然后他加热红色粉末，又释放出气体，收集到的气体体积恰好等于之前减少的部分，而且这种气体能让蜡烛燃烧更旺——这就是氧气。</p>
+        <p style="margin-top:6px;">这个实验同时证明了：①燃烧需要氧气；②质量守恒（拉瓦锡定律）。一套实验推翻了统治百年的燃素说。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📖 深度阅读路径</h2>
+    <div class="reading-path">
+      <div class="path-item" onclick="alert('推荐阅读：《化学革命——拉瓦锡传》（入门级）\n适合了解拉瓦锡的生平与科学贡献。')">
+        <div class="path-type">📘 入门</div>
+        <div class="path-name">拉瓦锡传</div>
+        <div class="path-level">了解生平与贡献</div>
+      </div>
+      <div class="path-item" onclick="alert('推荐阅读：《化学简史》J.R.柏廷顿著（进阶级）\n系统了解化学发展的思想脉络。')">
+        <div class="path-type">📗 进阶</div>
+        <div class="path-name">化学简史</div>
+        <div class="path-level">化学思想发展史</div>
+      </div>
+      <div class="path-item" onclick="alert('推荐观看：BBC纪录片《化学史》\n视觉效果极佳的化学发展史纪录片。')">
+        <div class="path-type">🎬 拓展</div>
+        <div class="path-name">BBC化学史</div>
+        <div class="path-level">纪录片系列</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleChemist(el) {
+  el.classList.toggle('expanded');
+}
+function revealThink() {
+  var reveal = document.getElementById('thinkReveal');
+  reveal.classList.toggle('show');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>研学社区 — 案例探究与实践决策</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+}
+.container { width: 100%; max-width: none; }
+h1 { font-size: var(--font-h1); color: var(--primary); margin: 0 0 16px; padding-bottom: 10px; border-bottom: 3px solid var(--accent); }
+h2 { font-size: var(--font-h2); color: var(--primary); margin: 28px 0 12px; }
+h3 { font-size: 17px; color: var(--text); margin: 20px 0 8px; }
+p, li { font-size: var(--font-body); margin-bottom: 10px; }
+
+/* 难度标签 */
+.diff-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+.diff-tab { padding: 8px 22px; border-radius: 20px; border: 1px solid var(--border); background: var(--card-bg); cursor: pointer; font-size: 14px; font-weight: 600; transition: .2s; }
+.diff-tab.active { color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.diff-tab[data-diff="basic"].active { background: #52c41a; border-color: #52c41a; }
+.diff-tab[data-diff="adv"].active { background: #fa8c16; border-color: #fa8c16; }
+.diff-tab[data-diff="challenge"].active { background: #f5222d; border-color: #f5222d; }
+.diff-tab:hover:not(.active) { border-color: var(--primary); color: var(--primary); }
+
+/* 面板 */
+.diff-panel { display: none; }
+.diff-panel.active { display: block; animation: fadeIn .35s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* 案例卡片 */
+.case-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px; position: relative; overflow: hidden; }
+.case-card::before { content: ''; position: absolute; top: 0; left: 0; height: 100%; width: 4px; }
+.case-card[data-diff="basic"]::before { background: #52c41a; }
+.case-card[data-diff="adv"]::before { background: #fa8c16; }
+.case-card[data-diff="challenge"]::before { background: #f5222d; }
+.case-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); transform: translateY(-2px); transition: .2s; }
+
+.case-badge { display: inline-block; padding: 2px 12px; border-radius: 10px; font-size: 12px; font-weight: 600; margin-bottom: 8px; color: #fff; }
+.case-badge.basic { background: #52c41a; }
+.case-badge.adv { background: #fa8c16; }
+.case-badge.challenge { background: #f5222d; }
+
+.case-question { font-weight: 700; font-size: 16px; color: var(--text); margin: 8px 0; }
+
+/* 决策路径 */
+.path-grid { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+.path-option { padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--border-radius); cursor: pointer; transition: .2s; font-size: 14px; }
+.path-option:hover { border-color: var(--primary); }
+.path-option.selected { border-color: var(--primary); background: #f0f5ff; }
+.path-option.correct { border-color: #52c41a; background: #f6ffed; }
+.path-option.wrong { border-color: #ff4d4f; background: #fff2f0; }
+.path-result { display: none; padding: 10px 14px; border-radius: 6px; margin-top: 6px; font-size: 14px; }
+.path-result.show { display: block; animation: fadeIn .3s ease; }
+.path-result.correct { background: #f6ffed; border-left: 3px solid #52c41a; color: #135200; }
+.path-result.wrong { background: #fff2f0; border-left: 3px solid #ff4d4f; color: #820014; }
+
+/* 可迁移启示 */
+.transfer-box { background: #f9f9ff; border-radius: var(--border-radius); padding: 14px 18px; margin-top: 12px; border-left: 3px solid var(--accent); }
+.transfer-box strong { color: var(--primary); }
+
+/* 思考任务 */
+.think-task { background: #fff7e6; border: 1px solid #ffd591; border-radius: var(--border-radius); padding: 18px; margin-top: 24px; }
+.think-task h3 { color: #d46b08; margin: 0 0 8px; }
+.think-options { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+.think-btn { padding: 10px 16px; border: 1px solid var(--border); border-radius: var(--border-radius); background: var(--card-bg); cursor: pointer; font-size: 14px; text-align: left; transition: .2s; }
+.think-btn:hover { border-color: #d46b08; }
+.think-btn.selected { border-color: #d46b08; background: #fff7e6; border-left: 4px solid #d46b08; }
+.think-feedback { display: none; margin-top: 10px; padding: 12px; border-radius: 6px; background: #f0f5ff; font-size: 14px; }
+.think-feedback.show { display: block; animation: fadeIn .3s ease; }
+
+.reset-btn { display: inline-block; margin-top: 10px; padding: 6px 20px; border: 1px solid var(--border); border-radius: 6px; background: var(--card-bg); cursor: pointer; font-size: 13px; transition: .2s; }
+.reset-btn:hover { border-color: var(--primary); color: var(--primary); }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🌱 研学社区 · 案例库</h1>
+<p style="font-size:14px;color:var(--text-secondary);margin-bottom:20px;">化学 · 九年级上 · 基础 → 进阶 → 挑战</p>
+
+<!-- 难度标签 -->
+<div class="diff-tabs" id="diffTabs">
+  <button class="diff-tab active" data-diff="basic" onclick="switchDiff('basic')">🌿 基础 · 生活</button>
+  <button class="diff-tab" data-diff="adv" onclick="switchDiff('adv')">🔥 进阶 · 历史</button>
+  <button class="diff-tab" data-diff="challenge" onclick="switchDiff('challenge')">⚡ 挑战 · 跨领域</button>
+</div>
+
+<!-- 基础案例 -->
+<div class="diff-panel active" id="panel-basic">
+  <div class="case-card" data-diff="basic">
+    <span class="case-badge basic">🌿 基础 · 生活类</span>
+    <h3 style="margin:0 0 4px;">厨房里的"酸"与"碱"</h3>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:10px;">白醋去水垢 ✅ · 肥皂水滑滑的 ✅ · 柠檬汁泡茶颜色变了 ✅</p>
+    <div class="case-question">❓ 为什么同样是"酸"，对不同物质的效果完全不同？</div>
+    <p style="font-size:14px;color:var(--text-secondary);"><strong>背景：</strong>你用白醋去水垢（效果很好），用肥皂水洗手（滑滑的），用柠檬汁泡茶（颜色变了）。</p>
+    <div class="path-grid" data-case="kitchen">
+      <div class="path-option" data-v="A" onclick="judgePath(this,'kitchen','wrong')">方案A：认为所有酸性物质都一样 → 不同酸强度不同</div>
+      <div class="path-option" data-v="B" onclick="judgePath(this,'kitchen','correct')">方案B：关注"哪些物质显酸性，哪些显碱性" → 需要分类工具（pH试纸）</div>
+      <div class="path-option" data-v="C" onclick="judgePath(this,'kitchen','wrong')">方案C：探究酸碱性如何影响化学反应 → 酸碱中和是一种化学变化</div>
+    </div>
+    <p class="path-result" id="result-kitchen"></p>
+    <div class="transfer-box"><strong>🧠 可迁移启示：</strong>生活中的"效果差异"往往源于化学性质的不同。</div>
+  </div>
+</div>
+
+<!-- 进阶案例 -->
+<div class="diff-panel" id="panel-adv">
+  <div class="case-card" data-diff="adv">
+    <span class="case-badge adv">🔥 进阶 · 历史类</span>
+    <h3 style="margin:0 0 4px;">拉瓦锡"背叛"了燃素说</h3>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:10px;">18世纪 · 几乎所有人都相信燃素说</p>
+    <div class="case-question">❓ 拉瓦锡凭什么一个人的实验就推翻了整个科学界的共识？</div>
+    <div class="path-grid" data-case="lavoisier">
+      <div class="path-option" data-v="A" onclick="judgePath(this,'lavoisier','wrong')">方案A：相信权威，不质疑 → 科学停滞</div>
+      <div class="path-option" data-v="B" onclick="judgePath(this,'lavoisier','wrong')">方案B：做定性实验（观察现象）→ 仍然区分不清</div>
+      <div class="path-option" data-v="C" onclick="judgePath(this,'lavoisier','correct')">方案C：做定量实验（精确称重）→ <strong>质量守恒，燃素不存在</strong></div>
+    </div>
+    <p class="path-result" id="result-lavoisier"></p>
+    <div class="transfer-box"><strong>🧠 可迁移启示：</strong><strong>定量思维</strong>——当你对一个结论不确定时，试试"测量它"。</div>
+  </div>
+</div>
+
+<!-- 挑战案例 -->
+<div class="diff-panel" id="panel-challenge">
+  <div class="case-card" data-diff="challenge">
+    <span class="case-badge challenge">⚡ 挑战 · 跨领域</span>
+    <h3 style="margin:0 0 4px;">从"紫色染料"到"抗癌神药"</h3>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:10px;">紫杉醇 · 太平洋紫杉树皮 · 一树一剂</p>
+    <div class="case-question">❓ 如何在保护珍稀树木的同时，大规模生产这种抗癌药物？</div>
+    <div class="path-grid" data-case="taxol">
+      <div class="path-option" data-v="A" onclick="judgePath(this,'taxol','wrong')">方案A：继续砍树 → 不可持续</div>
+      <div class="path-option" data-v="B" onclick="judgePath(this,'taxol','wrong')">方案B：人工合成 → 难度极大，成本极高</div>
+      <div class="path-option" data-v="C" onclick="judgePath(this,'taxol','correct')">方案C：找到合成紫杉醇的真菌（从紫杉树中分离）→ <strong>生物合成！化学 + 生物学</strong></div>
+    </div>
+    <p class="path-result" id="result-taxol"></p>
+    <div class="transfer-box"><strong>🧠 可迁移启示：</strong>跨学科思维 = 化学 + 生物 + 工程 = 全新解决方案</div>
+  </div>
+</div>
+
+<!-- 思考任务 -->
+<div class="think-task">
+  <h3>🧑‍🔬 "如果你是决策者" 任务</h3>
+  <p style="font-size:14px;color:var(--text-secondary);">假设你是18世纪的化学家，你相信燃素说但看了拉瓦锡的实验数据。你信谁？</p>
+  <div class="think-options" id="thinkOptions">
+    <button class="think-btn" data-v="A" onclick="selectThink('A')">⚖️ 分支A：相信拉瓦锡，改变自己的理论框架</button>
+    <button class="think-btn" data-v="B" onclick="selectThink('B')">🔍 分支B：质疑拉瓦锡的实验方法</button>
+    <button class="think-btn" data-v="C" onclick="selectThink('C')">🧪 分支C：尝试重复实验，自己验证</button>
+  </div>
+  <div class="think-feedback" id="thinkFeedback">
+    <strong>🤔 深度思考：</strong>无论你选哪条路，核心都是<strong>用证据说话</strong>。科学进步不是靠"信谁"，而是靠"谁能被验证"。你做出的选择，恰恰反映了你对科学本质的理解。
+  </div>
+  <button class="reset-btn" onclick="resetThink()">🔄 重新选择</button>
+</div>
+
+</div>
+
+<script>
+function switchDiff(d) {
+  document.querySelectorAll('.diff-tab').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.diff-panel').forEach(el => el.classList.remove('active'));
+  const tab = document.querySelector('.diff-tab[data-diff="'+d+'"]');
+  const panel = document.getElementById('panel-'+d);
+  if (tab) tab.classList.add('active');
+  if (panel) panel.classList.add('active');
+}
+
+function judgePath(btn, caseId, verdict) {
+  const container = btn.closest('.path-grid[data-case="'+caseId+'"]');
+  if (!container) return;
+  container.querySelectorAll('.path-option').forEach(el => {
+    el.classList.remove('selected','correct','wrong');
+    el.style.pointerEvents = 'none';
+  });
+  btn.classList.add('selected', verdict);
+  const resultEl = document.getElementById('result-'+caseId);
+  if (!resultEl) return;
+  if (verdict === 'correct') {
+    resultEl.className = 'path-result show correct';
+    resultEl.innerHTML = '✅ <strong>正解！</strong> 这是历史验证的最佳路径。';
+  } else {
+    resultEl.className = 'path-result show wrong';
+    resultEl.innerHTML = '❌ 这个方案在当时被验证行不通。看看其他方案，尤其是定量实验那条路。';
+  }
+}
+
+function selectThink(v) {
+  document.querySelectorAll('.think-btn').forEach(el => el.classList.remove('selected'));
+  const btn = document.querySelector('.think-btn[data-v="'+v+'"]');
+  if (btn) btn.classList.add('selected');
+  const fb = document.getElementById('thinkFeedback');
+  if (fb) fb.classList.add('show');
+}
+
+function resetThink() {
+  document.querySelectorAll('.think-btn').forEach(el => el.classList.remove('selected'));
+  const fb = document.getElementById('thinkFeedback');
+  if (fb) fb.classList.remove('show');
+  document.querySelectorAll('.path-option').forEach(el => {
+    el.classList.remove('selected','correct','wrong');
+    el.style.pointerEvents = '';
+  });
+  document.querySelectorAll('.path-result').forEach(el => {
+    el.className = 'path-result';
+    el.innerHTML = '';
+  });
+}
+</script>
+</body>
+</html>

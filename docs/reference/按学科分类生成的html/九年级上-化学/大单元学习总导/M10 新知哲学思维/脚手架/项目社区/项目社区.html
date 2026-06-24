@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目社区 — 脚手架</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary) 0%, #0050b3 100%);
+  color: #fff;
+  padding: 32px 20px;
+  text-align: center;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header p { font-size: 15px; opacity: .85; }
+.tab-bar {
+  display: flex;
+  gap: 2px;
+  background: var(--bg);
+  padding: 16px 20px 0;
+  border-bottom: 2px solid var(--border);
+}
+.tab-btn {
+  flex: 1;
+  padding: 10px 8px;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all .25s;
+  text-align: center;
+  font-weight: 500;
+}
+.tab-btn:hover { color: var(--primary); background: rgba(22,119,255,.06); }
+.tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin: 16px 0;
+}
+.card h3 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+.card h4 {
+  font-size: 16px;
+  color: var(--text);
+  margin: 14px 0 6px;
+}
+.card ul, .card ol { padding-left: 20px; margin: 6px 0; }
+.card li { margin: 4px 0; }
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-right: 6px;
+}
+.badge-short { background: #e6f7ff; color: #13a8a8; }
+.badge-mid { background: #fff7e6; color: #d46b08; }
+.badge-long { background: #f9f0ff; color: #722ed1; }
+.stage-list { counter-reset: stage; }
+.stage-item {
+  counter-increment: stage;
+  padding: 8px 12px;
+  margin: 6px 0;
+  background: var(--bg);
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+}
+.stage-item::before {
+  content: "阶段 " counter(stage) "：";
+  font-weight: 600;
+  color: var(--primary);
+}
+.resource-btn {
+  display: inline-block;
+  padding: 6px 14px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  margin: 4px 4px 0 0;
+  transition: background .2s;
+}
+.resource-btn:hover { background: var(--primary-hover); }
+.resource-panel {
+  display: none;
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 12px;
+  margin: 8px 0;
+  border: 1px solid var(--border);
+  font-size: 14px;
+}
+.resource-panel.show { display: block; }
+.eval-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 8px 0;
+}
+.eval-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px;
+  background: var(--bg);
+  border-radius: 6px;
+  font-size: 14px;
+}
+.eval-item input[type="checkbox"] {
+  margin-top: 3px;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+.eval-item.checked { text-decoration: line-through; opacity: .6; }
+.project-tip {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 10px 0;
+  font-size: 14px;
+}
+.project-tip strong { color: #d48806; }
+.goal-box {
+  background: linear-gradient(135deg, #e6f7ff, #f0f5ff);
+  border-radius: 8px;
+  padding: 14px;
+  margin: 12px 0;
+  border-left: 4px solid var(--primary);
+}
+.goal-box strong { color: var(--primary); }
+@media (max-width: 640px) {
+  .tab-btn { font-size: 13px; padding: 8px 4px; }
+  .eval-grid { grid-template-columns: 1fr; }
+  .header { padding: 24px 16px; }
+  .header h1 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🧪 项目社区</h1>
+  <p>M10 新知哲学思维 · 化学 · 九年级上 · 以真实问题驱动的长期学习机制</p>
+</div>
+<div class="container">
+  <div class="tab-bar" id="tabBar">
+    <button class="tab-btn active" data-tab="short" onclick="switchTab('short')">📋 短周期<br><small>1—3天</small></button>
+    <button class="tab-btn" data-tab="mid" onclick="switchTab('mid')">📚 中周期<br><small>1—2周</small></button>
+    <button class="tab-btn" data-tab="long" onclick="switchTab('long')">🎯 长周期<br><small>1月+</small></button>
+  </div>
+
+  <!-- 短周期项目 -->
+  <div class="tab-content active" id="tab-short">
+    <div class="card">
+      <h3>🍳 微项目：厨房化学——解码一个日常变化</h3>
+      <span class="badge badge-short">短周期 · 1—3天</span>
+      <div class="goal-box"><strong>项目目标：</strong>选择一个家庭厨房中的化学变化现象，运用本模块的"解析→建构"完整流程进行分析和模型建构</div>
+
+      <h4>阶段任务</h4>
+      <div class="stage-list">
+        <div class="stage-item">选择一个现象（如"煮蛋时蛋清凝固"、"泡打粉发面"）</div>
+        <div class="stage-item">分析这属于什么变化？变化的条件是什么？产物是什么？</div>
+        <div class="stage-item">画一张"变化过程"模型图</div>
+        <div class="stage-item">向家人展示并解释你的发现</div>
+      </div>
+
+      <h4>成果形式</h4>
+      <p>A4纸大小的 <strong>"变化解码卡"</strong>（图文结合）</p>
+
+      <h4>资源工具</h4>
+      <button class="resource-btn" onclick="toggleResource('resShort')">📎 查看资源清单</button>
+      <div class="resource-panel" id="resShort">
+        <ul>
+          <li><strong>观察记录表</strong>：记录现象 · 条件 · 产物</li>
+          <li><strong>证据—解释对照表</strong>：帮助从现象推断原理</li>
+          <li><strong>模型图模板</strong>：原子/分子级别的变化示意</li>
+        </ul>
+      </div>
+
+      <div class="project-tip">
+        <strong>💡 启发提示：</strong>"蛋清从透明变成白色固体"——是物理变化还是化学变化？想一想"蛋清的主要成分是蛋白质"，蛋白质受热会怎样？
+      </div>
+    </div>
+  </div>
+
+  <!-- 中周期项目 -->
+  <div class="tab-content" id="tab-mid">
+    <div class="card">
+      <h3>⚗️ 专题项目：化学史上的一次"革命"</h3>
+      <span class="badge badge-mid">中周期 · 1—2周</span>
+      <div class="goal-box"><strong>项目目标：</strong>选择拉瓦锡质量守恒实验，通过角色扮演+"书本实验重演"的方式，理解"新知"是如何被建构出来的</div>
+
+      <h4>阶段任务</h4>
+      <div class="stage-list">
+        <div class="stage-item">研读相关史料（参考"名人名言"和"名著介绍"脚手架）</div>
+        <div class="stage-item">设计并完成一个简化的"质量守恒验证实验"（电子天平+塑料瓶反应容器）</div>
+        <div class="stage-item">撰写一篇"我是拉瓦锡"的研究日志</div>
+        <div class="stage-item">做一次3分钟的口头汇报</div>
+      </div>
+
+      <h4>成果形式</h4>
+      <p>📝 研究日志（800字 + 实验照片）</p>
+
+      <h4>评价标准</h4>
+      <div class="eval-grid">
+        <label class="eval-item"><input type="checkbox" onchange="toggleEval(this)"> 准确理解化学史实</label>
+        <label class="eval-item"><input type="checkbox" onchange="toggleEval(this)"> 独立完成验证实验</label>
+        <label class="eval-item"><input type="checkbox" onchange="toggleEval(this)"> 用自己的话解释"验证过程"</label>
+        <label class="eval-item"><input type="checkbox" onchange="toggleEval(this)"> 体现了"新知哲学思维"——理解"知识是怎么来的"</label>
+      </div>
+
+      <div class="project-tip">
+        <strong>💡 角色扮演提示：</strong>如果你穿越到1774年成为拉瓦锡，看到"物质燃烧后质量似乎减少了"这个现象——你会怎么想？你的实验怎么设计？
+      </div>
+    </div>
+  </div>
+
+  <!-- 长周期项目 -->
+  <div class="tab-content" id="tab-long">
+    <div class="card">
+      <h3>🌍 综合项目：社区科普展板——"变化的科学"</h3>
+      <span class="badge badge-long">长周期 · 1月+</span>
+      <div class="goal-box"><strong>项目目标：</strong>设计并制作一块物理展板或数字展板，用通俗易懂的方式向社区居民科普"化学变化和物理变化"</div>
+
+      <h4>阶段任务</h4>
+      <div class="stage-list">
+        <div class="stage-item">调研——社区居民对"化学变化"存在哪些常见误解（如"燃烧就是物质消失了"）</div>
+        <div class="stage-item">策划——设计展板内容结构（概念区 + 案例区 + 互动实验区）</div>
+        <div class="stage-item">制作——完成展板内容并配图</div>
+        <div class="stage-item">展示——在社区或学校展示，收集反馈</div>
+      </div>
+
+      <h4>成果形式</h4>
+      <p>🖼️ 物理展板（60×90cm）或数字展板（Canva可画设计）</p>
+
+      <h4>资源工具</h4>
+      <button class="resource-btn" onclick="toggleResource('resLong')">📎 查看资源清单</button>
+      <div class="resource-panel" id="resLong">
+        <ul>
+          <li><strong>问题库</strong>："常见化学变化认知误区"相关调研问题</li>
+          <li><strong>视频脚手架</strong>：化学变化与物理变化的对比演示视频</li>
+          <li><strong>Canva模板</strong>：科普展板设计模板</li>
+        </ul>
+      </div>
+
+      <h4>评价标准</h4>
+      <div class="eval-grid">
+        <label class="eval-item"><input type="checkbox" onchange="toggleEval(this)"> 科学准确（无事实错误）</label>
+        <label class="eval-item"><input type="checkbox" onchange="toggleEval(this)"> 通俗易懂（避免专业术语堆砌）</label>
+        <label class="eval-item"><input type="checkbox" onchange="toggleEval(this)"> 视觉美观（排版 + 配色 + 图像）</label>
+        <label class="eval-item"><input type="checkbox" onchange="toggleEval(this)"> 互动性强（至少1个观众可参与的小实验或提问）</label>
+      </div>
+
+      <div class="project-tip">
+        <strong>💡 调研小贴士：</strong>问问身边的人"冰块融化是不是化学变化"？你会发现很多成年人也会认为是化学变化——这就是你的展板要解答的问题！
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function switchTab(name) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelector('.tab-btn[data-tab="' + name + '"]').classList.add('active');
+}
+function toggleResource(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('show');
+}
+function toggleEval(cb) {
+  var item = cb.closest('.eval-item');
+  if (item) item.classList.toggle('checked');
+}
+</script>
+</body>
+</html>

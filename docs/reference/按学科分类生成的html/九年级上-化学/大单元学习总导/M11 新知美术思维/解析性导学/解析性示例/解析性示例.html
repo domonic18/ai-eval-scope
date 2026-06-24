@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性示例 — 化学 九年级上</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0;
+  width: 100%;
+  max-width: none;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.wrapper { width: 100%; max-width: none; padding: 24px 20px; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin: 0 0 6px; }
+.header .meta { opacity: 0.85; font-size: 14px; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.card h2 { font-size: var(--font-h2); color: var(--primary); margin-bottom: 10px; }
+.card h3 { font-size: 17px; color: var(--primary); margin: 16px 0 8px; }
+.card p { margin-bottom: 8px; }
+.step-box {
+  border-left: 3px solid var(--primary);
+  padding: 12px 16px;
+  margin: 10px 0;
+  background: var(--bg);
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+}
+.step-box h4 { color: var(--primary); margin-bottom: 6px; font-size: 15px; }
+.highlight { background: #fff7e6; border: 1px solid #ffd591; padding: 10px 14px; border-radius: 6px; margin: 8px 0; }
+.highlight strong { color: #d46b08; }
+.tip-box { background: #f6ffed; border: 1px solid #b7eb8f; padding: 10px 14px; border-radius: 6px; margin: 8px 0; }
+.tip-box strong { color: #389e0d; }
+.warn-box { background: #fff2f0; border: 1px solid #ffccc7; padding: 10px 14px; border-radius: 6px; margin: 8px 0; }
+.warn-box strong { color: #cf1322; }
+.toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+  margin: 4px 0;
+}
+.toggle-btn:hover { background: var(--primary-hover); }
+.toggle-btn.outline { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
+.toggle-btn.outline:hover { background: var(--bg); }
+.quiz-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 16px;
+  margin: 6px 0;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 15px;
+  font-family: inherit;
+  transition: background 0.2s, border-color 0.2s;
+}
+.quiz-option:hover { border-color: var(--primary); background: var(--bg); }
+.quiz-option.selected { border-color: var(--primary); background: #e6f4ff; }
+.quiz-option.correct { border-color: #52c41a; background: #f6ffed; }
+.quiz-option.wrong { border-color: #ff4d4f; background: #fff2f0; }
+.feedback { display: none; padding: 10px 14px; border-radius: 6px; margin: 8px 0; font-size: 14px; }
+.feedback.show { display: block; }
+.feedback.correct { background: #f6ffed; border: 1px solid #b7eb8f; color: #135200; }
+.feedback.wrong { background: #fff2f0; border: 1px solid #ffccc7; color: #820014; }
+.method-list { counter-reset: method; }
+.method-list li { list-style: none; position: relative; padding: 8px 0 8px 36px; border-bottom: 1px dashed var(--border); }
+.method-list li::before { counter-increment: method; content: counter(method); position: absolute; left: 0; top: 8px; width: 24px; height: 24px; background: var(--primary); color: #fff; border-radius: 50%; text-align: center; line-height: 24px; font-size: 13px; font-weight: 600; }
+.self-check { margin-top: 16px; }
+.check-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.check-item:last-child { border-bottom: none; }
+.check-box { width: 20px; height: 20px; border: 2px solid var(--border); border-radius: 4px; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: background 0.2s, border-color 0.2s; margin-top: 2px; font-size: 12px; color: #fff; }
+.check-box.done { background: var(--primary); border-color: var(--primary); }
+@media (min-width: 640px) { .wrapper { padding: 32px 40px; } }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <h1>🔍 解析性示例 · 跟着专家学拆解</h1>
+    <div class="meta">化学 · 九年级上 · 第一单元 走进化学世界</div>
+    <div style="margin-top:8px;font-size:14px;opacity:0.9;">看一个完整的"解析示范"——专家遇到化学现象时是如何一步步拆解的</div>
+  </div>
+
+  <div class="card">
+    <h2>📖 场景定位</h2>
+    <p>本任务给你看一个完整的<strong>"解析示范"</strong>——专家遇到一个化学现象时，是如何一步步拆解分析的。你需要跟着走一遍流程，理解"解析"到底是怎么一回事。</p>
+  </div>
+
+  <div class="card">
+    <h2>🧪 解析任务情境</h2>
+    <div class="highlight">
+      <p><strong>情境：</strong>你在厨房里发现了一瓶"白醋"和一壶"白开水"，它们看起来一模一样——都是无色透明的液体。但是当妈妈把白醋倒进小苏打水里，产生了大量气泡；而把白开水倒进小苏打水里，什么也没发生。</p>
+      <p style="margin-top:8px;"><strong>你的核心问题：</strong>为什么看起来一样的两种液体，遇到小苏打时表现完全不同？</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🔬 专家解析过程</h2>
+    <p style="color:var(--text-secondary);margin-bottom:12px;">👇 点击每一步的按钮，逐步展开看专家如何分析</p>
+
+    <button class="toggle-btn" onclick="toggleStep(1)">▶ 第一步：先看见什么</button>
+    <div class="step-box" id="step1" style="display:none;">
+      <h4>先看见什么</h4>
+      <p>观察现象：两种液体外观相同——都是无色透明液体，但与小苏打反应的结果不同。</p>
+      <p><strong>关键发现：</strong>一个变浑浊/冒气泡，另一个没有变化。</p>
+      <p>👉 <strong>解析要点：</strong>现象本身不会说话，但如果<em>对比观察</em>，差异就会显现出来。专家最擅长的就是"发现差异"。</p>
+    </div>
+
+    <button class="toggle-btn" onclick="toggleStep(2)">▶ 第二步：判断问题属于哪一类</button>
+    <div class="step-box" id="step2" style="display:none;">
+      <h4>判断问题属于哪一类</h4>
+      <p>这属于<strong>"物质性质差异"</strong>类的问题。</p>
+      <p>不是操作错误，也不是偶然现象，而是<strong>物质本身的成分不同</strong>导致的差异。</p>
+      <p>👉 <strong>解析要点：</strong>给问题"归类"是专家思维的标志。把问题放进一个类别里，你就知道用什么知识去解决它。</p>
+    </div>
+
+    <button class="toggle-btn" onclick="toggleStep(3)">▶ 第三步：调用哪些概念</button>
+    <div class="step-box" id="step3" style="display:none;">
+      <h4>调用哪些概念</h4>
+      <p>专家脑中快速调用了以下化学概念：</p>
+      <ul style="padding-left:20px;margin:6px 0;">
+        <li><strong>物理性质</strong>——颜色、状态、气味（比较相同点）</li>
+        <li><strong>化学性质</strong>——是否能与某种物质反应（比较不同点）</li>
+        <li><strong>化学变化</strong>——产生新物质→气泡（CO₂）</li>
+        <li><strong>物质鉴别</strong>——根据性质差异区分物质</li>
+      </ul>
+      <p>👉 <strong>解析要点：</strong>不是"回忆所有学过的概念"，而是<em>根据问题类型</em>精准调用相关概念。</p>
+    </div>
+
+    <button class="toggle-btn" onclick="toggleStep(4)">▶ 第四步：如何进行推理</button>
+    <div class="step-box" id="step4" style="display:none;">
+      <h4>如何进行推理</h4>
+      <p>专家的推理链：</p>
+      <div style="background:#fff;border:1px solid var(--border);border-radius:6px;padding:12px;margin:8px 0;">
+        <p style="text-align:center;font-size:14px;">
+          白醋含醋酸 → 醋酸与小苏打（NaHCO₃）反应 → 生成CO₂气体<br>
+          ⬇<br>
+          白开水不含酸性物质 → 与小苏打不反应 → 无气泡<br>
+          ⬇<br>
+          <strong>结论：气泡的有无 → 是否含酸性物质 → 两种液体成分不同</strong>
+        </p>
+      </div>
+      <p>👉 <strong>解析要点：</strong>推理的本质是"如果A，那么B"的因果链。每推一步都要问：这个因果关系成立吗？</p>
+    </div>
+
+    <button class="toggle-btn" onclick="toggleStep(5)">▶ 第五步：怎样形成结论</button>
+    <div class="step-box" id="step5" style="display:none;">
+      <h4>怎样形成结论</h4>
+      <ul style="padding-left:20px;margin:6px 0;">
+        <li><strong>外观相同 ≠ 成分相同</strong>——这是最重要的结论</li>
+        <li><strong>化学方法是鉴别物质的可靠手段</strong>——让性质"开口说话"</li>
+      </ul>
+      <p>👉 <strong>解析要点：</strong>好的结论不只是回答问题，而是提炼出<em>可以迁移的规律</em>，让你下次遇到类似问题时能更快上手。</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🧰 方法提炼</h2>
+    <p>以后遇到"两个东西看起来一样"的问题时，可以这样做：</p>
+    <ol class="method-list" style="padding-left:0;margin-top:10px;">
+      <li><strong>先仔细观察：</strong>它们真的完全一样吗？有没有细微的差别？</li>
+      <li><strong>再寻找差异：</strong>用什么方法能让它们的差异"现形"？（如加小苏打）</li>
+      <li><strong>分析本质：</strong>差异的背后是什么成分或结构的不同？</li>
+      <li><strong>验证判断：</strong>能不能用另一个方法确认你的结论？</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>⚠️ 易错提醒</h2>
+    <div class="warn-box">
+      <strong>🚫 "看起来一样就一样"的思维陷阱</strong>
+      <p style="margin-top:4px;">外观相同不等于物质相同。白醋和白开水看起来一样，但化学成分完全不同。</p>
+    </div>
+    <div class="warn-box">
+      <strong>🚫 "一次实验就定结论"</strong>
+      <p style="margin-top:4px;">科学需要重复验证。一次实验可能有偶发因素，多次重复才能确认真相。</p>
+    </div>
+    <div class="warn-box">
+      <strong>🚫 混淆现象和本质</strong>
+      <p style="margin-top:4px;">气泡是现象，产生新物质（CO₂）是本质。现象是表象，本质才是答案。</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>✏️ 自主迁移小练习</h2>
+    <div class="highlight">
+      <p><strong>新情境：</strong>你发现家里的"食用碱"和"面粉"看起来也很像——都是白色粉末。你怎么区分它们？</p>
+      <p style="margin-top:6px;">💡 提示：可以用白醋（已知含醋酸）来测试。</p>
+    </div>
+    <div style="margin-top:10px;">
+      <p style="font-weight:600;margin-bottom:6px;">你的分析思路：</p>
+      <textarea style="width:100%;min-height:80px;border:1px solid var(--border);border-radius:6px;padding:10px;font-size:14px;font-family:inherit;resize:vertical;" placeholder="写下你的分析思路..."></textarea>
+      <button class="toggle-btn outline" style="margin-top:8px;" onclick="showHint(this)">💡 查看提示</button>
+      <div class="tip-box" style="display:none;">
+        <strong>提示：</strong>食用碱（碳酸钠Na₂CO₃）遇白醋会产生CO₂气泡；面粉（主要成分淀粉）遇白醋不产生气泡。另外，面粉加碘液会变蓝，食用碱不会。你想到这些方法了吗？
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📊 学习自评</h2>
+    <p style="color:var(--text-secondary);margin-bottom:10px;">点击复选框，完成学习自评：</p>
+    <div class="self-check">
+      <div class="check-item">
+        <div class="check-box" onclick="toggleCheck(this)">✓</div>
+        <div>我能说出"解析"和"看看"有什么区别吗？<br><span style="font-size:13px;color:var(--text-secondary);">解析是有方法、有步骤地拆解，不是随便看看</span></div>
+      </div>
+      <div class="check-item">
+        <div class="check-box" onclick="toggleCheck(this)">✓</div>
+        <div>我能不能说清从"看到气泡"到"判断物质成分"的推理过程？<br><span style="font-size:13px;color:var(--text-secondary);">白醋含醋酸 → 与小苏打反应 → CO₂气泡 → 成分不同</span></div>
+      </div>
+      <div class="check-item">
+        <div class="check-box" onclick="toggleCheck(this)">✓</div>
+        <div>我能把"方法提炼"中的四步用到其他问题上吗？<br><span style="font-size:13px;color:var(--text-secondary);">观察→差异→本质→验证</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleStep(n) {
+  var el = document.getElementById('step' + n);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+function showHint(btn) {
+  var hint = btn.nextElementSibling;
+  if (hint && hint.classList) hint.style.display = hint.style.display === 'none' ? 'block' : 'none';
+}
+function toggleCheck(el) {
+  el.classList.toggle('done');
+}
+</script>
+</body>
+</html>

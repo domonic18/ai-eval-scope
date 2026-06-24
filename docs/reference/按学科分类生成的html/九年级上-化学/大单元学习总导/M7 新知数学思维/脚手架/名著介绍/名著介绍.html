@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名著介绍 — 化学定量思维</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; }
+h1 { font-size: var(--font-h1); color: var(--primary); margin-bottom: 8px; }
+h2 { font-size: var(--font-h2); color: var(--primary); margin: 32px 0 12px; padding-bottom: 6px; border-bottom: 2px solid var(--accent); }
+h3 { font-size: calc(var(--font-body) + 2px); color: var(--text); margin: 20px 0 8px; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+  border-left: 4px solid var(--primary);
+}
+.quote-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.quote-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  border-left: 4px solid var(--accent);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.quote-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 16px rgba(22,119,255,0.15);
+}
+.quote-card.expanded {
+  border-left-color: var(--primary);
+  background: #f6faff;
+}
+.quote-text { font-style: italic; color: var(--text); margin-bottom: 4px; }
+.quote-author { color: var(--text-secondary); font-size: 0.9em; text-align: right; margin-top: 4px; }
+.quote-tag {
+  display: inline-block;
+  font-size: 0.75em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--accent);
+  color: #fff;
+  margin-bottom: 6px;
+}
+.quote-insight {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, opacity 0.3s ease;
+  opacity: 0;
+  margin-top: 0;
+  font-size: 0.92em;
+  color: var(--text-secondary);
+}
+.quote-card.expanded .quote-insight {
+  max-height: 120px;
+  opacity: 1;
+  margin-top: 10px;
+}
+.book-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 10px 0;
+  font-size: 0.9em;
+}
+.book-meta span {
+  background: var(--bg);
+  padding: 2px 10px;
+  border-radius: 4px;
+  color: var(--text-secondary);
+}
+.tag-green { background: #e6f7e6; color: #389e0d; }
+.tag-blue { background: var(--bg); color: var(--primary); }
+.tag-orange { background: #fff7e6; color: #d48806; }
+.expand-btn {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 4px 12px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.expand-btn:hover { background: var(--primary-hover); }
+.get-path {
+  background: var(--bg);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-top: 8px;
+  font-size: 0.9em;
+  color: var(--text-secondary);
+}
+.get-path strong { color: var(--text); }
+@media (max-width: 640px) {
+  .quote-grid { grid-template-columns: 1fr; }
+  .container { padding: 16px 12px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📚 名著介绍</h1>
+  <p style="color:var(--text-secondary);margin-bottom:20px;">从经典中感悟"用数据说话"的定量思维 — 化学 × 数学的跨学科阅读</p>
+
+  <h2>💬 名人名言</h2>
+  <p style="margin-bottom:12px;color:var(--text-secondary);">点击卡片展开深层解读</p>
+  <div class="quote-grid">
+    <div class="quote-card" onclick="toggleQuote(this)">
+      <span class="quote-tag">⚡ 冲突型</span>
+      <div class="quote-text">"自然界中没有跳跃，一切都在测量之中。"</div>
+      <div class="quote-author">—— 培根</div>
+      <div class="quote-insight">培根强调测量的核心地位。化学中无论是pH值、浓度还是温度，测量都是发现规律的起点。</div>
+    </div>
+    <div class="quote-card" onclick="toggleQuote(this)">
+      <span class="quote-tag">💡 启发型</span>
+      <div class="quote-text">"当你能够测量并用数字表达时，你就有了一些了解。"</div>
+      <div class="quote-author">—— 开尔文勋爵</div>
+      <div class="quote-insight">开尔文道出了科学的核心：从定性到定量，是人类认识世界的质变。化学方程式就是最典型的"数字表达"。</div>
+    </div>
+    <div class="quote-card" onclick="toggleQuote(this)">
+      <span class="quote-tag">🔍 批判型</span>
+      <div class="quote-text">"科学始于测量。没有测量，便没有科学。"</div>
+      <div class="quote-author">—— 门捷列夫</div>
+      <div class="quote-insight">门捷列夫用原子量这一"测量值"排列出元素周期表，大胆预言了未知元素的存在——测量数据催生了伟大发现。</div>
+    </div>
+    <div class="quote-card" onclick="toggleQuote(this)">
+      <span class="quote-tag">🔄 反思型</span>
+      <div class="quote-text">"我们相信上帝，其他一切都要用数据说话。"</div>
+      <div class="quote-author">—— 戴明</div>
+      <div class="quote-insight">现代质量管理之父戴明将统计学引入管理。化学实验中，一个反常数据可能揭示新现象，也可能暴露操作失误。</div>
+    </div>
+  </div>
+
+  <h2>📖 名著精读</h2>
+
+  <div class="card">
+    <h3>🇨🇳 《天工开物》· 宋应星（明末）</h3>
+    <div class="book-meta">
+      <span class="tag-green">中国科技经典</span>
+      <span class="tag-blue">古代定量思维</span>
+    </div>
+    <p><strong>核心问题：</strong>中国古代工艺中隐藏着哪些科学原理？</p>
+    <p><strong>关键发现：</strong>每一种工艺都包含对材料"多少、温度、时间"的精妙控制——古人没有现代仪器，却有着朴素的定量思维。</p>
+    <p><strong>精彩片段：</strong>冶金篇中"铁和钢"的区分——含碳量不同导致性质不同，这是最早的"成分-性质"定量分析雏形。</p>
+    <div class="get-path">
+      <strong>适读：</strong>基础→白话文节选版&nbsp;|&nbsp;进阶→原著配图版<br>
+      <strong>获取：</strong>中华书局版本（纸质）· 国学网站（电子书在线阅读）
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>🌿 《物种起源》· 达尔文</h3>
+    <div class="book-meta">
+      <span class="tag-green">科学巨著</span>
+      <span class="tag-orange">跨学科启示</span>
+    </div>
+    <p><strong>核心问题：</strong>物种是如何变化的？</p>
+    <p><strong>与化学定量思维的联系：</strong>达尔文虽不做化学实验，却用20年收集成千上万的"定量"数据——雀鸟喙的长度、不同岛屿的种群数量。这种"用数据说话"的思维与化学定量分析完全一致！</p>
+    <p><strong>精彩片段：</strong>加拉帕戈斯群岛雀鸟的喙长数据——食物类型与喙形态之间的定量关系。</p>
+    <div class="get-path">
+      <strong>适读：</strong>基础→青少年简写版&nbsp;|&nbsp;进阶→牛津通识版<br>
+      <strong>获取：</strong>商务出版社（纸质）· 免费电子书下载
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>📊 《统计学的世界》· 当代</h3>
+    <div class="book-meta">
+      <span class="tag-blue">跨学科经典</span>
+      <span class="tag-orange">数据素养</span>
+    </div>
+    <p><strong>核心问题：</strong>数据会撒谎吗？如何从数据中看到真相？</p>
+    <p><strong>核心观点：</strong>"数据不会骗人，但骗子会用数据"——学会判断数据是否可靠、如何从数据中发现真正规律。</p>
+    <p><strong>精彩案例：</strong>冰激凌销量和溺水率正相关？背后是"夏天"这个共同因素——<strong>相关性 ≠ 因果性</strong>。</p>
+    <button class="expand-btn" onclick="toggleExample(this)">💡 点击查看化学中的类似案例</button>
+    <div id="chem-example" style="display:none;margin-top:10px;padding:10px 14px;background:#fff7e6;border-radius:6px;font-size:0.92em;color:var(--text-secondary);">
+      化学中的经典误判：18世纪科学家发现"燃素"理论，因为木柴燃烧后质量减轻。直到拉瓦锡用精确天平称量整个密闭系统，才发现燃烧是金属与氧气的化合——质量<strong>增加</strong>了！如果没有定量思维，就会被表面现象欺骗。
+    </div>
+    <div class="get-path" style="margin-top:10px;">
+      <strong>适读：</strong>基础→初中生版&nbsp;|&nbsp;进阶→完整版<br>
+      <strong>获取：</strong>中信出版社（纸质）· 微信读书（电子书）
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleQuote(el) {
+  el.classList.toggle('expanded');
+}
+function toggleExample(btn) {
+  var example = document.getElementById('chem-example');
+  if (example.style.display === 'none') {
+    example.style.display = 'block';
+    btn.textContent = '📌 收起案例';
+  } else {
+    example.style.display = 'none';
+    btn.textContent = '💡 点击查看化学中的类似案例';
+  }
+}
+</script>
+</body>
+</html>

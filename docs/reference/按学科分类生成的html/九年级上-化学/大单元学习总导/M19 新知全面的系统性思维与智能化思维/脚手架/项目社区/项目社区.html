@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目社区 - 化学探究实践</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+  --success: #52c41a;
+  --warning: #faad14;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+}
+.container { width: 100%; max-width: none; padding: 20px 24px; }
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 3px solid var(--accent);
+}
+h2 {
+  font-size: var(--font-h2);
+  color: var(--text);
+  margin: 24px 0 12px;
+  padding-left: 12px;
+  border-left: 4px solid var(--primary);
+}
+h3 {
+  font-size: calc(var(--font-body) + 2px);
+  color: var(--primary);
+  margin: 16px 0 8px;
+}
+h4 {
+  font-size: var(--font-body);
+  font-weight: 600;
+  margin: 10px 0 4px;
+}
+.project-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 16px 0;
+  flex-wrap: wrap;
+}
+.project-tab {
+  padding: 10px 20px;
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: var(--font-body);
+  transition: all 0.25s;
+  font-weight: 500;
+}
+.project-tab:hover { border-color: var(--primary); color: var(--primary); }
+.project-tab.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.project-section { display: none; }
+.project-section.active { display: block; }
+.project-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.project-card .phase-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+}
+.project-card .phase-list li {
+  padding: 6px 0 6px 24px;
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+  transition: color 0.2s;
+}
+.project-card .phase-list li::before {
+  content: "○";
+  position: absolute;
+  left: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.project-card .phase-list li.done { color: var(--text-secondary); }
+.project-card .phase-list li.done::before {
+  content: "●";
+  color: var(--success);
+}
+.tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  margin: 2px 4px 2px 0;
+}
+.tag.short { background: #f6ffed; color: #389e0d; }
+.tag.mid { background: #e6f7ff; color: #096dd9; }
+.tag.long { background: #fff7e6; color: #d46b08; }
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.meta-row span { display: flex; align-items: center; gap: 4px; }
+.eval-box {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 8px 0;
+  font-size: 14px;
+}
+.eval-box strong { color: var(--warning); }
+.topics-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin: 10px 0;
+}
+@media (min-width: 640px) {
+  .topics-grid { grid-template-columns: 1fr 1fr; }
+}
+.topic-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.topic-card:hover { border-color: var(--primary); box-shadow: var(--shadow); }
+.topic-card.selected { border-color: var(--primary); background: #e6f7ff; }
+.topic-card h4 { margin: 0 0 4px; color: var(--primary); }
+.topic-card p { font-size: 13px; color: var(--text-secondary); }
+.output-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+.output-opt {
+  padding: 6px 14px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  background: var(--card-bg);
+  transition: all 0.2s;
+}
+.output-opt:hover { border-color: var(--primary); color: var(--primary); }
+.output-opt.chosen { border-color: var(--success); background: #f6ffed; color: var(--success); }
+@media (max-width: 640px) {
+  .container { padding: 12px 14px; }
+  .project-card { padding: 12px 14px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🧪 项目社区</h1>
+  <p style="color:var(--text-secondary);margin-bottom:8px;">选择适合你的项目，点击阶段任务标记完成进度。</p>
+
+  <div class="project-tabs">
+    <button class="project-tab active" onclick="switchProject('short',this)">📋 微项目 <span style="font-size:12px;opacity:0.8;">1-3天</span></button>
+    <button class="project-tab" onclick="switchProject('mid',this)">📊 专题项目 <span style="font-size:12px;opacity:0.8;">1-2周</span></button>
+    <button class="project-tab" onclick="switchProject('long',this)">🚀 综合项目 <span style="font-size:12px;opacity:0.8;">1个月+</span></button>
+  </div>
+
+  <!-- 短周期微项目 -->
+  <div class="project-section active" data-level="short">
+    <h2>短周期微项目（1—3天）</h2>
+
+    <div class="project-card">
+      <h3>🍳 微项目A：厨房化学发现日志</h3>
+      <div class="meta-row">
+        <span>⏱ 3天</span>
+        <span>🎯 观察厨房里的化学现象</span>
+      </div>
+      <p><strong>项目目标：</strong>用3天时间，每天观察厨房里的1个化学现象或化学用品，用"现象—原理—用途"框架记录。</p>
+      <h4>阶段任务：</h4>
+      <ul class="phase-list" data-group="projA">
+        <li onclick="togglePhase(this)">第1天：选择一个厨房现象（如：为什么泡打粉能让蛋糕蓬松？）</li>
+        <li onclick="togglePhase(this)">第2天：查找资料，写出化学原理（用化学式或文字说明）</li>
+        <li onclick="togglePhase(this)">第3天：整理为"厨房化学卡片"（卡片格式：现象描述 + 化学原理解释 + 发现心得）</li>
+      </ul>
+      <h4>成果形式：</h4>
+      <p>3张"厨房化学卡片"，可以画图+文字，拍照上传</p>
+      <div class="eval-box"><strong>📋 评价标准：</strong>每张卡片至少包含1个明确的化学原理，原理解释准确</div>
+    </div>
+
+    <div class="project-card">
+      <h3>🏷 微项目B：我的"化学物品安全标签"设计</h3>
+      <div class="meta-row">
+        <span>⏱ 3天</span>
+        <span>🎯 为家里的化学品设计安全标签</span>
+      </div>
+      <p><strong>项目目标：</strong>为家里的3种化学品（如84消毒液、洁厕灵、酒精）设计新的"安全标签"。</p>
+      <h4>阶段任务：</h4>
+      <ul class="phase-list" data-group="projB">
+        <li onclick="togglePhase(this)">第1天：查看现有标签，列出关键信息（成分、危险标识、使用方法、急救措施）</li>
+        <li onclick="togglePhase(this)">第2天：根据自己理解，设计一个更清晰、更易懂的标签样式</li>
+        <li onclick="togglePhase(this)">第3天：制作成品（手绘或电脑排版），贴在对应瓶子上</li>
+      </ul>
+      <h4>成果形式：</h4>
+      <p>3张实物标签（照片）或电子版设计图</p>
+      <div class="eval-box"><strong>📋 评价标准：</strong>标签包含主要安全信息，设计美观，适合家庭成员阅读</div>
+    </div>
+  </div>
+
+  <!-- 中周期专题项目 -->
+  <div class="project-section" data-level="mid">
+    <h2>中周期专题项目（1—2周）</h2>
+
+    <div class="project-card">
+      <h3>📑 专题项目：家庭常用物质"系统性研究报告"</h3>
+      <div class="meta-row">
+        <span>⏱ 约10天</span>
+        <span>🎯 运用系统性思维完成对比研究</span>
+      </div>
+      <p><strong>项目目标：</strong>选择3种家庭常用化学物质（如小苏打、白醋、食盐），运用系统性思维完成一份对比研究报告。</p>
+      <h4>阶段任务：</h4>
+      <ul class="phase-list" data-group="projMid">
+        <li onclick="togglePhase(this)">阶段1（2天）：建立研究框架——确定分析维度（物理性质/化学性质/主要用途/安全注意事项/环境影响）</li>
+        <li onclick="togglePhase(this)">阶段2（3天）：收集信息——查阅教材、资料、产品包装、网络</li>
+        <li onclick="togglePhase(this)">阶段3（2天）：对比分析——用表格对比3种物质在各维度上的异同</li>
+        <li onclick="togglePhase(this)">阶段4（2天）：绘制"物质关系系统图"——展示3种物质之间可能发生的化学反应和相互作用</li>
+        <li onclick="togglePhase(this)">阶段5（1天）：撰写报告结论——从"系统性"角度总结规律</li>
+      </ul>
+      <h4>成果形式：</h4>
+      <p>一份完整的系统性研究报告（文字+图表，不少于3页A4纸）</p>
+      <div class="eval-box"><strong>📋 评价标准：</strong>① 分析维度不少于4个 ② 有跨物质对比 ③ 有系统关系图 ④ 结论有独立的思考发现</div>
+      <p style="font-size:13px;color:var(--text-secondary);margin-top:6px;">📎 教材第1章 · 思维导图模板 · VR工具中的分子结构查看</p>
+    </div>
+  </div>
+
+  <!-- 长周期综合项目 -->
+  <div class="project-section" data-level="long">
+    <h2>长周期综合项目（1个月以上）</h2>
+
+    <div class="project-card">
+      <h3>🌍 "未来化学与我的生活"主题探究</h3>
+      <div class="meta-row">
+        <span>⏱ 1个月以上</span>
+        <span>🎯 深度探究 + 可展示成果</span>
+      </div>
+      <p><strong>项目目标：</strong>选择一个你感兴趣的化学相关主题，进行为期至少1个月的深度探究，最终产出一件可展示的成果。</p>
+
+      <h4>可选主题方向（三选一）：</h4>
+      <div class="topics-grid">
+        <div class="topic-card" onclick="selectTopic(this)">
+          <h4>🌱 绿色化学在行动</h4>
+          <p>研究一种环保化学技术（如：生物降解塑料、CO₂捕集技术、天然植物染料），分析它的原理、现状和推广难点</p>
+        </div>
+        <div class="topic-card" onclick="selectTopic(this)">
+          <h4>🍶 厨房化学革命</h4>
+          <p>深入研究一种厨房化学品的"前世今生"（如从发现小苏打→工业化生产→未来替代方案），写一份"物质传记"</p>
+        </div>
+        <div class="topic-card" onclick="selectTopic(this)">
+          <h4>🏠 我家的一日化学全景</h4>
+          <p>记录你从起床到睡觉的一整天中，所有接触到的化学品/化学现象，建立"人与化学物质互动的系统模型"</p>
+        </div>
+      </div>
+      <p style="font-size:13px;color:var(--text-secondary);margin-top:4px;">👆 点击选择一个主题方向</p>
+
+      <h4>阶段任务：</h4>
+      <ul class="phase-list" data-group="projLong">
+        <li onclick="togglePhase(this)">第1周：选题并制定研究计划（确定研究问题、研究方法、预期成果）</li>
+        <li onclick="togglePhase(this)">第2周：搜集资料，完成信息整理（查阅不少于3种来源）</li>
+        <li onclick="togglePhase(this)">第3周：深入分析，形成核心观点（运用解析性原理和建构性原理）</li>
+        <li onclick="togglePhase(this)">第4周：成果制作和展示准备</li>
+      </ul>
+
+      <h4>成果形式（四选一）：</h4>
+      <div class="output-options">
+        <span class="output-opt" onclick="chooseOutput(this)">📄 图文报告（PDF ≥5页）</span>
+        <span class="output-opt" onclick="chooseOutput(this)">🎬 短视频（3-5分钟）</span>
+        <span class="output-opt" onclick="chooseOutput(this)">🖼 海报/手抄报（A2以上）</span>
+        <span class="output-opt" onclick="chooseOutput(this)">📊 PPT演讲稿（≥10页）</span>
+      </div>
+
+      <div class="eval-box"><strong>📋 评价标准：</strong>① 主题明确，有探究价值 ② 有化学原理解释（不少于3个核心概念） ③ 有系统性分析（不仅仅是知识罗列） ④ 有个人观点和反思 ⑤ 呈现美观、表达清晰</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchProject(level, el) {
+  document.querySelectorAll('.project-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.project-section').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelector('.project-section[data-level="'+level+'"]').classList.add('active');
+}
+
+function togglePhase(el) {
+  el.classList.toggle('done');
+}
+
+function selectTopic(el) {
+  document.querySelectorAll('.topic-card').forEach(t => t.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function chooseOutput(el) {
+  el.classList.toggle('chosen');
+}
+</script>
+</body>
+</html>

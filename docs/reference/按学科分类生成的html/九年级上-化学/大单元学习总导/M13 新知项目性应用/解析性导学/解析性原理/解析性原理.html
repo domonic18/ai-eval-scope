@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性原理 - 化学·九年级上</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+}
+.header {
+  text-align: center;
+  padding: 32px 20px;
+  background: linear-gradient(135deg, var(--bg) 0%, #d6e4ff 100%);
+  border-bottom: 3px solid var(--primary);
+  margin: -24px -20px 24px;
+}
+.header h1 { font-size: var(--font-h1); color: var(--primary); margin-bottom: 8px; }
+.header p { color: var(--text-secondary); font-size: 14px; }
+.header .badge {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  margin-top: 10px;
+}
+.section {
+  margin-bottom: 28px;
+}
+.section-title {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 14px;
+  padding-left: 14px;
+  border-left: 4px solid var(--primary);
+}
+.section-intro {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow);
+}
+.principle-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+  border: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.principle-card:hover {
+  box-shadow: 0 4px 16px rgba(22,119,255,0.1);
+}
+.principle-card .p-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.principle-card .p-num {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  line-height: 32px;
+  text-align: center;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 700;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+.principle-card .p-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  flex: 1;
+}
+.principle-card .p-toggle {
+  font-size: 18px;
+  color: var(--text-secondary);
+  transition: transform 0.3s;
+}
+.principle-card.expanded .p-toggle { transform: rotate(180deg); }
+.principle-card .p-body {
+  display: none;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #f0f0f0;
+}
+.principle-card.expanded .p-body { display: block; }
+.principle-card .p-body h4 {
+  font-size: 14px;
+  color: var(--primary);
+  margin: 10px 0 4px;
+}
+.principle-card .p-body p, .principle-card .p-body ul {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.7;
+}
+.principle-card .p-body ul {
+  padding-left: 18px;
+  margin: 4px 0;
+}
+.principle-card .p-body li { margin-bottom: 4px; }
+
+/* Practice cards */
+.practice-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+  border: 1px solid #f0f0f0;
+}
+.practice-card h3 {
+  font-size: 17px;
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+.practice-card .p-field {
+  margin-bottom: 10px;
+}
+.practice-card .p-label {
+  display: inline-block;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--primary);
+  background: #e6f4ff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+.practice-card .p-content {
+  font-size: 14px;
+  line-height: 1.7;
+}
+.practice-card .hint-box {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 8px 0;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+.practice-card .hint-box .hint-label { font-weight: 600; color: #d48806; }
+.practice-card .hint-box .hint-body {
+  display: none;
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.practice-card .hint-box.revealed .hint-body { display: block; }
+
+/* Self check */
+.check-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+.check-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+  border: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.check-card:hover { border-color: var(--accent); }
+.check-card .c-num {
+  display: inline-block;
+  width: 26px;
+  height: 26px;
+  line-height: 26px;
+  text-align: center;
+  background: var(--bg);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-right: 6px;
+}
+.check-card .c-text { font-size: 14px; }
+.check-card .c-hint {
+  display: none;
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: #f6ffed;
+  border-radius: 6px;
+  border-left: 3px solid #52c41a;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.check-card.revealed .c-hint { display: block; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🧩 解析性原理</h1>
+    <p>化学 · 九年级上 · 第1章 走进化学世界</p>
+    <span class="badge">从示例到原理，实现学习迁移</span>
+  </div>
+
+  <!-- 第一部分：从示例到原理 -->
+  <div class="section">
+    <div class="section-title">一、从示例到原理</div>
+    <div class="section-intro">
+      <p>上一环节中，我们通过具体案例进行了完整的解析分析。但仅仅"会做一道题"是不够的——我们的目标是<strong>"会做一类题"</strong>。</p>
+      <p style="margin-top:8px;">从示例中提炼<strong>解析性原理</strong>，就是把隐藏在具体案例背后的思维"脚手架"显性化。这些原理就像化学中的"反应规律"——掌握了规律，你就能预测和解释无数相似的现象。</p>
+      <p style="margin-top:8px;color:var(--text-secondary);font-size:14px;">💡 <strong>迁移的关键</strong>：不是记住案例本身，而是提取可复用的分析框架。</p>
+    </div>
+  </div>
+
+  <!-- 第二部分：原理 -->
+  <div class="section">
+    <div class="section-title">二、解析性原理提炼</div>
+
+    <!-- 原理1 -->
+    <div class="principle-card expanded" onclick="togglePrinciple(this)">
+      <div class="p-header">
+        <div style="display:flex;align-items:center;">
+          <span class="p-num">1</span>
+          <span class="p-name">现象分类法——先定性，后分析</span>
+        </div>
+        <span class="p-toggle">▼</span>
+      </div>
+      <div class="p-body">
+        <h4>原理说明</h4>
+        <p>面对一个化学现象，首先判断它属于"物理变化"还是"化学变化"范畴，再深入分析具体机制。分类为后续分析提供方向。</p>
+        <h4>在示例中的体现</h4>
+        <p>蜡烛燃烧案例中，先识别出"蜡熔化"是物理变化、"蜡蒸气燃烧"是化学变化，再分别分析各自的机制和产物。</p>
+        <h4>如何使用这个原理</h4>
+        <p>遇到变化现象时，先问自己："有新物质生成吗？" 回答"是"→化学变化路径；回答"否"→物理变化路径。分路径分析，不走错方向。</p>
+        <h4>可迁移到哪些类似问题</h4>
+        <ul>
+          <li>判断生活中各种变化（食物变质、金属生锈、玻璃破碎等）</li>
+          <li>分析实验中的混合变化过程（如镁条燃烧既有物理变化也有化学变化）</li>
+        </ul>
+        <h4>使用提醒</h4>
+        <p>不要忽视"同时发生"的变化——很多现象是物理变化和化学变化共存，需要分别识别而非一概而论。</p>
+      </div>
+    </div>
+
+    <!-- 原理2 -->
+    <div class="principle-card" onclick="togglePrinciple(this)">
+      <div class="p-header">
+        <div style="display:flex;align-items:center;">
+          <span class="p-num">2</span>
+          <span class="p-name">证据链规则——每个结论都需要对应证据</span>
+        </div>
+        <span class="p-toggle">▼</span>
+      </div>
+      <div class="p-body">
+        <h4>原理说明</h4>
+        <p>在化学分析中，每一个结论都必须有对应的实验现象或数据作为证据。不能仅凭"看起来像"或"我感觉是"下结论。</p>
+        <h4>在示例中的体现</h4>
+        <p>判断蜡烛燃烧生成水——用了"干冷烧杯内壁出现水雾"作为证据；判断生成二氧化碳——用了"澄清石灰水变浑浊"作为证据。</p>
+        <h4>如何使用这个原理</h4>
+        <p>每下一个结论，立刻追问自己："我的证据是什么？" 养成"结论→证据"的捆绑习惯。记录时用表格对比列出"结论"和"证据"两列。</p>
+        <h4>可迁移到哪些类似问题</h4>
+        <ul>
+          <li>任何实验报告的撰写（确保每项分析都有数据支撑）</li>
+          <li>日常生活中辨别谣言（"这个说法有证据吗？"）</li>
+        </ul>
+        <h4>使用提醒</h4>
+        <p>注意区分"相关性证据"和"因果性证据"——两个现象同时出现不等于一个导致另一个。</p>
+      </div>
+    </div>
+
+    <!-- 原理3 -->
+    <div class="principle-card" onclick="togglePrinciple(this)">
+      <div class="p-header">
+        <div style="display:flex;align-items:center;">
+          <span class="p-num">3</span>
+          <span class="p-name">控制变量策略——一次只改变一个条件</span>
+        </div>
+        <span class="p-toggle">▼</span>
+      </div>
+      <div class="p-body">
+        <h4>原理说明</h4>
+        <p>设计对比实验时，确保实验组和对照组的其他条件完全相同，只改变你想要检验的那一个变量。这样结果差异才能归因于该变量。</p>
+        <h4>在示例中的体现</h4>
+        <p>验证蜡烛燃烧生成水时，用"干冷烧杯"罩在火焰上方——只改变"是否接触燃烧产物"这一个条件，其他条件（温度、环境）相同。</p>
+        <h4>如何使用这个原理</h4>
+        <p>设计实验时列一张表：写出所有可能的变量→圈出你要改变的那个→确认其他变量全部固定→再开始实验。</p>
+        <h4>可迁移到哪些类似问题</h4>
+        <ul>
+          <li>探究影响反应速率的因素（温度、浓度、催化剂等）</li>
+          <li>比较不同物质的化学性质</li>
+        </ul>
+        <h4>使用提醒</h4>
+        <p>注意有些变量你"以为控制了"但其实没控制——比如温度变化对气体体积的影响、空气中水分的影响等。</p>
+      </div>
+    </div>
+
+    <!-- 原理4 -->
+    <div class="principle-card" onclick="togglePrinciple(this)">
+      <div class="p-header">
+        <div style="display:flex;align-items:center;">
+          <span class="p-num">4</span>
+          <span class="p-name">反证检验——如果结论错了会怎样</span>
+        </div>
+        <span class="p-toggle">▼</span>
+      </div>
+      <div class="p-body">
+        <h4>原理说明</h4>
+        <p>在形成假设后，主动思考"如果我的结论是错的，我可能会观察到什么现象？" 然后去检验这些"反面预期"是否存在，以此验证结论的可靠性。</p>
+        <h4>在示例中的体现</h4>
+        <p>如果蜡烛燃烧真的生成了CO₂，那么用澄清石灰水应该变浑浊——这就是"如果结论正确，会观察到什么"。反过来，如果石灰水没变浑浊，就说明结论错了。</p>
+        <h4>如何使用这个原理</h4>
+        <p>先做出假设（如"这个变化是化学变化"），然后问"如果它确实是，我预期看到什么？"再问"如果它根本不是，我预期看到什么？"两个预期哪个被验证了？</p>
+        <h4>可迁移到哪些类似问题</h4>
+        <ul>
+          <li>验证物质成分（如检验某气体是否为氧气）</li>
+          <li>评判一个科学假说的合理性</li>
+        </ul>
+        <h4>使用提醒</h4>
+        <p>反证检验只能"证伪"不能完全"证实"——通过了反证检验只能说"还没发现矛盾"，不意味着绝对正确。</p>
+      </div>
+    </div>
+
+    <!-- 原理5 -->
+    <div class="principle-card" onclick="togglePrinciple(this)">
+      <div class="p-header">
+        <div style="display:flex;align-items:center;">
+          <span class="p-num">5</span>
+          <span class="p-name">微观溯源法——从宏观现象推微观本质</span>
+        </div>
+        <span class="p-toggle">▼</span>
+      </div>
+      <div class="p-body">
+        <h4>原理说明</h4>
+        <p>所有宏观的化学现象（颜色变化、气体生成、温度变化等）本质上是分子、原子层面的变化在宏观上的表现。分析时要从"看到了什么"追问到"分子层面发生了什么"。</p>
+        <h4>在示例中的体现</h4>
+        <p>蜡烛燃烧时看到的"火焰"——宏观现象；其微观本质是：蜡分子（CₓHᵧ）与氧气分子（O₂）发生反应，原子重新组合生成水分子（H₂O）和二氧化碳分子（CO₂），断裂和形成化学键的过程中释放光和热。</p>
+        <h4>如何使用这个原理</h4>
+        <p>看到任何化学现象时做"三层追问"：①我看到了什么现象？②参与反应的物质是什么？③这些物质的分子/原子之间发生了什么？用化学方程式把微观变化"翻译"出来。</p>
+        <h4>可迁移到哪些类似问题</h4>
+        <ul>
+          <li>理解所有化学反应的实质（复分解反应、氧化还原反应等）</li>
+          <li>区分物理变化和化学变化的分子层面理解</li>
+        </ul>
+        <h4>使用提醒</h4>
+        <p>微观解释不能过度臆想——要有实验证据或已知理论支撑，不能编造分子层面的故事。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 第三部分：应用练习 -->
+  <div class="section">
+    <div class="section-title">三、解析性原理应用</div>
+
+    <div class="practice-card">
+      <h3>📝 练习1：镁条燃烧的分析</h3>
+      <div class="p-field">
+        <span class="p-label">情境</span>
+        <div class="p-content">镁条在空气中燃烧发出耀眼白光，放出大量热，生成白色固体（氧化镁）。同时观察到有少量白烟产生。</div>
+      </div>
+      <div class="p-field">
+        <span class="p-label">解析任务</span>
+        <div class="p-content">判断镁条燃烧过程中涉及的变化类型，分析"白光""放热""白烟"分别对应什么变化，并用证据支持你的判断。</div>
+      </div>
+      <div class="p-field">
+        <span class="p-label">建议使用的原理</span>
+        <div class="p-content"><span class="link-hint" style="display:inline;">现象分类法（原理1）</span> <span class="link-hint" style="display:inline;">证据链规则（原理2）</span> <span class="link-hint" style="display:inline;">微观溯源法（原理5）</span></div>
+      </div>
+      <div class="p-field">
+        <span class="p-label">分析提示</span>
+        <div class="p-content">白光和放热是化学反应中化学键断裂与形成时能量释放的表现；白烟可能是镁与空气中氮气反应生成的氮化镁（Mg₃N₂）小颗粒。注意镁条燃烧是"化学变化为主，伴随物理变化"的案例。</div>
+      </div>
+      <div class="hint-box" onclick="toggleHint(this)">
+        <span class="hint-label">💡 点击查看解析脚手架提示</span>
+        <div class="hint-body">
+          <p>① 先分类：镁条燃烧→有新物质生成→化学变化。</p>
+          <p>② 找证据：白色固体（MgO）生成→化学变化的直接证据；发出白光+放热→化学变化伴随的能量现象。</p>
+          <p>③ 微观溯源：写化学方程式 2Mg + O₂ → 2MgO（还有可能 3Mg + N₂ → Mg₃N₂），分析原子如何重新组合。</p>
+          <p>④ 表达建议：用"宏观现象→微观解释→化学方程式"三段式呈现分析结果。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="practice-card">
+      <h3>📝 练习2：水的电解实验</h3>
+      <div class="p-field">
+        <span class="p-label">情境</span>
+        <div class="p-content">将水通电后，两极产生气泡。正极产生的气体能使带火星的木条复燃，负极产生的气体可以点燃发出淡蓝色火焰。正极与负极产生的气体体积比约为1:2。</div>
+      </div>
+      <div class="p-field">
+        <span class="p-label">解析任务</span>
+        <div class="p-content">用解析性原理分析水的电解过程，说明为什么这是一个化学变化，并判断两种气体分别是什么。</div>
+      </div>
+      <div class="p-field">
+        <span class="p-label">建议使用的原理</span>
+        <div class="p-content"><span class="link-hint" style="display:inline;">证据链规则（原理2）</span> <span class="link-hint" style="display:inline;">反证检验（原理4）</span> <span class="link-hint" style="display:inline;">微观溯源法（原理5）</span></div>
+      </div>
+      <div class="p-field">
+        <span class="p-label">分析提示</span>
+        <div class="p-content">利用"使带火星木条复燃"可以检验氧气，利用"燃烧产生淡蓝色火焰"可以检验氢气。体积比1:2符合水的化学组成（H₂O中H:O=2:1）。反证检验：如果水不是被分解成H₂和O₂，那么这些气体应该是什么？</div>
+      </div>
+      <div class="hint-box" onclick="toggleHint(this)">
+        <span class="hint-label">💡 点击查看解析脚手架提示</span>
+        <div class="hint-body">
+          <p>① 先定性：水→氢+氧，有新物质生成→化学变化。</p>
+          <p>② 证据链：带火星木条复燃→正极气体是O₂；点燃淡蓝火焰→负极气体是H₂；体积比1:2→符合H₂O的原子组成。</p>
+          <p>③ 微观溯源：2H₂O → 2H₂↑ + O₂↑，水分子被分解为氢原子和氧原子，重新组合成氢分子和氧分子。</p>
+          <p>④ 表达建议：使用"化学方程式 + 实验证据对照表"的方式呈现分析。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 第四部分：自我检测 -->
+  <div class="section">
+    <div class="section-title">四、自我检测</div>
+    <p style="margin-bottom:14px;font-size:14px;color:var(--text-secondary);">点击每个问题查看解析，检验自己是否掌握了这些解析性原理。</p>
+    <div class="check-grid">
+      <div class="check-card" onclick="toggleCheck(this)">
+        <div><span class="c-num">1</span><span class="c-text">你能说出"现象分类法"解决的核心问题是什么吗？</span></div>
+        <div class="c-hint">💡 核心问题：面对一个复杂变化现象时，从哪里开始分析？"现象分类法"告诉你第一步永远是"判断变化类型（物理/化学）"，这决定了后续的分析方向和分析工具的选择。</div>
+      </div>
+      <div class="check-card" onclick="toggleCheck(this)">
+        <div><span class="c-num">2</span><span class="c-text">你能举出一个新例子来说明"证据链规则"的应用吗？</span></div>
+        <div class="c-hint">💡 示例：判断一瓶无色气体是否为氧气——证据1：带火星的木条伸入后复燃；证据2：该气体不支持燃烧→矛盾，说明这不是氧气。一个完整的证据链需要：正证据（证明是什么）+ 反证据（排除其他可能）。</div>
+      </div>
+      <div class="check-card" onclick="toggleCheck(this)">
+        <div><span class="c-num">3</span><span class="c-text">如果"控制变量策略"中的某个变量没有被固定，分析结果会受到什么影响？</span></div>
+        <div class="c-hint">💡 后果：无法确定现象变化的原因。如果同时改变了温度和浓度，你无法判断实验结果的差异是温度引起的还是浓度引起的。结论可能完全错误——这就是为什么"相关≠因果"。</div>
+      </div>
+      <div class="check-card" onclick="toggleCheck(this)">
+        <div><span class="c-num">4</span><span class="c-text">"微观溯源法"有没有不适用的情况？请举例。</span></div>
+        <div class="c-hint">💡 不适用的情况示例：(1)尚未发现或认知微观粒子的领域（如早期化学家没有电子显微镜时）(2)仅需宏观描述的场合（如工厂中只关注产量，不需要分子级解释）(3)纯物理变化中分子不变，微观解释价值有限。</div>
+      </div>
+      <div class="check-card" onclick="toggleCheck(this)">
+        <div><span class="c-num">5</span><span class="c-text">你如何用自己的话向同学解释"反证检验"这条原理？</span></div>
+        <div class="c-hint">💡 通俗解释："反证检验"就像破案时问自己——'如果凶手不是他，那凶手会是谁？'在化学中就是：'如果我的结论是错的，应该观察到什么？'然后去看看这些相反的现象有没有出现。如果没有出现，那说明我的结论可能是对的。这是排除错误答案的方法。</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;padding:18px;color:var(--text-secondary);font-size:13px;border-top:1px solid var(--border);margin-top:10px;">
+    💡 点击原理卡片展开/折叠详情 · 点击练习提示查看脚手架 · 点击检测题查看参考答案
+  </div>
+</div>
+
+<script>
+function togglePrinciple(el) {
+  el.classList.toggle('expanded');
+}
+
+function toggleHint(el) {
+  el.classList.toggle('revealed');
+}
+
+function toggleCheck(el) {
+  el.classList.toggle('revealed');
+}
+</script>
+</body>
+</html>

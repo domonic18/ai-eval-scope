@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>问题榜 — 化学定量思维挑战</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%; min-height: 100vh; padding: 0;
+}
+.container { width: 100%; max-width: none; padding: 30px 24px; }
+.header { text-align: center; padding: 36px 20px; background: linear-gradient(135deg, var(--bg), #e6f0ff); border-radius: var(--border-radius); margin-bottom: 24px; }
+.header h1 { font-size: var(--font-h1); color: var(--primary); margin-bottom: 6px; }
+.header p { color: var(--text-secondary); font-size: 14px; }
+.header .badge { display: inline-block; background: var(--primary); color: #fff; padding: 4px 14px; border-radius: 20px; font-size: 12px; margin-top: 8px; }
+
+.tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.tab-btn { padding: 10px 22px; border: 1px solid var(--border); background: var(--card-bg); border-radius: 6px; cursor: pointer; font-size: 14px; color: var(--text-secondary); transition: all .25s; }
+.tab-btn:hover { border-color: var(--primary); color: var(--primary); }
+.tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.category-grid { display: flex; flex-direction: column; gap: 16px; }
+.category-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); border: 1px solid var(--border); overflow: hidden; }
+.category-header { padding: 14px 18px; cursor: pointer; display: flex; align-items: center; gap: 10px; user-select: none; }
+.category-header .icon { font-size: 20px; flex-shrink: 0; }
+.category-header .cat-info { flex: 1; }
+.category-header .cat-info .cat-name { font-weight: 600; font-size: 15px; }
+.category-header .cat-info .cat-desc { font-size: 13px; color: var(--text-secondary); }
+.category-header .arrow { transition: transform .3s; color: var(--text-secondary); font-size: 12px; flex-shrink: 0; }
+.category-card.expanded .arrow { transform: rotate(180deg); }
+.category-body { max-height: 0; overflow: hidden; transition: max-height .45s ease; }
+.category-card.expanded .category-body { max-height: 600px; }
+.category-body-inner { padding: 0 18px 16px 18px; border-top: 1px solid var(--border); padding-top: 12px; }
+.q-item { padding: 8px 12px; margin-bottom: 6px; border-radius: 6px; background: #fafafa; border: 1px solid #f0f0f0; font-size: 14px; display: flex; align-items: flex-start; gap: 10px; }
+.q-item .q-num { color: var(--primary); font-weight: 600; flex-shrink: 0; min-width: 20px; }
+.q-item .q-text { flex: 1; }
+.q-item .q-check { flex-shrink: 0; width: 20px; height: 20px; border: 2px solid var(--border); border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #fff; transition: all .2s; margin-top: 2px; user-select: none; }
+.q-item .q-check.checked { background: #52c41a; border-color: #52c41a; }
+
+.progress-bar { margin: 16px 0; display: flex; align-items: center; gap: 12px; }
+.progress-track { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--primary); border-radius: 3px; width: 0%; transition: width .4s; }
+.progress-text { font-size: 13px; color: var(--text-secondary); flex-shrink: 0; min-width: 50px; text-align: right; }
+.reset-btn { padding: 6px 16px; border: 1px solid var(--border); background: var(--card-bg); border-radius: 6px; cursor: pointer; font-size: 13px; color: var(--text-secondary); transition: all .25s; }
+.reset-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+@media (max-width: 640px) {
+  .container { padding: 16px 12px; }
+  .header { padding: 22px 14px; }
+  .tab-btn { padding: 8px 14px; font-size: 13px; }
+  .q-item { padding: 6px 10px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>💭 问题榜</h1>
+    <p>三层挑战 · 四个维度 · 在思考中建立化学定量思维</p>
+    <span class="badge">九年级 · 化学</span>
+  </div>
+
+  <div class="tabs" id="tabGroup">
+    <button class="tab-btn active" data-layer="basic" onclick="switchLayer('basic')">🧪 基础层</button>
+    <button class="tab-btn" data-layer="adv" onclick="switchLayer('adv')">📊 进阶层</button>
+    <button class="tab-btn" data-layer="challenge" onclick="switchLayer('challenge')">🚀 挑战层</button>
+  </div>
+
+  <div class="progress-bar">
+    <span style="font-size:13px;color:var(--text-secondary)">本层进度</span>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="progress-text" id="progressText">0/8</span>
+    <button class="reset-btn" onclick="resetLayer()">🔄 重置</button>
+  </div>
+
+  <div class="category-grid" id="categoryGrid"></div>
+</div>
+
+<script>
+var layers = {
+  basic: {
+    cats: [
+      { icon: '💡', name: '开放性问题', desc: '自由发散，没有标准答案', questions: ['你觉得"定性观察"和"定量测量"哪个更难？为什么？', '如果化学实验不做任何测量，会怎样？'] },
+      { icon: '⚖️', name: '对比性问题', desc: '比较异同，辨析概念', questions: ['用"克"描述和用"差不多、很少"描述有什么区别？分别适用于什么情况？', '为什么化学家用"摩尔"而不用"个"来描述原子数量？'] },
+      { icon: '🌀', name: '反事实问题', desc: '假设历史改变，想象另一种可能', questions: ['假如拉瓦锡没有使用天平，化学会如何发展？', '如果空气不是21%的氧气而是50%氧气，蜡烛燃烧会有哪些不同？'] },
+      { icon: '🔍', name: '元认知问题', desc: '反思自己的思维过程', questions: ['你在测量时最可能犯的错误是什么？怎么预防？', '"2000字以内"和"500字以内"的要求是否影响你想表达的内容？这和实验精度要求有何关系？'] }
+    ]
+  },
+  adv: {
+    cats: [
+      { icon: '💡', name: '开放性问题', desc: '综合分析与应用', questions: ['如何测量"一滴水中有多少个水分子"？（提示：需综合多个数据）', '你能设计一种方法，用家庭材料测量空气中氧气的含量吗？'] },
+      { icon: '⚖️', name: '对比性问题', desc: '深化辨析', questions: ['"平均数值"和"逐次测量值"哪个更能反映真实情况？', '拉瓦锡质量守恒定律和民间说法"东西烧没了"之间的差异说明了什么？'] },
+      { icon: '🌀', name: '反事实问题', desc: '打破常规假设', questions: ['如果没有标准单位（克、毫升、摄氏度），化学家之间怎么交流实验结果？', '如果人类没有发明小数点，化学会发展成什么样？'] },
+      { icon: '🔍', name: '元认知问题', desc: '审视自己的判断', questions: ['你在"估算"和"精确测量"之间通常怎么选择？依据是什么？', '当实验数据和直觉不一致时，你更相信哪个？为什么？'] }
+    ]
+  },
+  challenge: {
+    cats: [
+      { icon: '💡', name: '开放性问题', desc: '创造与设计', questions: ['设计一个跨学科的定量研究项目，需要用到化学+数学+至少一门其他学科', '有没有可能发明一种新的数据呈现方式，比条形图和折线图更直观？'] },
+      { icon: '⚖️', name: '对比性问题', desc: '批判性辨析', questions: ['AI数据分析 vs 人类数据分析——各有什么优势和劣势？', '中医学"望闻问切"（定性）和现代医学"化验单"（定量），哪种更能准确诊断？'] },
+      { icon: '🌀', name: '反事实问题', desc: '深度想象', questions: ['如果全世界都废除了数字和单位，科学会倒退多少年？', '如果让你穿越到200年前向拉瓦锡展示现代数据分析工具，他会最惊讶的是什么？'] },
+      { icon: '🔍', name: '元认知问题', desc: '总结反思', questions: ['在本模块学习中，你"思维转变"最大的一点是什么？', '你如何判断自己已经"学会"了化学定量思维？有什么具体的检验标准？'] }
+    ]
+  }
+};
+
+var currentLayer = 'basic';
+var checkState = {};
+
+function renderLayer(layer) {
+  var grid = document.getElementById('categoryGrid');
+  var data = layers[layer];
+  var html = '';
+  data.cats.forEach(function(cat, ci) {
+    html += '<div class="category-card" data-ci="' + ci + '">';
+    html += '<div class="category-header" onclick="toggleCat(this)">';
+    html += '<div class="icon">' + cat.icon + '</div>';
+    html += '<div class="cat-info"><div class="cat-name">' + cat.name + '</div><div class="cat-desc">' + cat.desc + '</div></div>';
+    html += '<div class="arrow">▼</div></div>';
+    html += '<div class="category-body"><div class="category-body-inner">';
+    cat.questions.forEach(function(q, qi) {
+      var key = layer + '-' + ci + '-' + qi;
+      var checked = checkState[key] || false;
+      html += '<div class="q-item">';
+      html += '<div class="q-num">Q' + (qi + 1) + '</div>';
+      html += '<div class="q-text">' + q + '</div>';
+      html += '<div class="q-check' + (checked ? ' checked' : '') + '" onclick="toggleCheck(this,\'' + key + '\')">' + (checked ? '✓' : '') + '</div>';
+      html += '</div>';
+    });
+    html += '</div></div></div>';
+  });
+  grid.innerHTML = html;
+  updateProgress();
+}
+
+function switchLayer(layer) {
+  currentLayer = layer;
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelector('.tab-btn[data-layer="'+layer+'"]').classList.add('active');
+  renderLayer(layer);
+}
+
+function toggleCat(header) {
+  var card = header.closest ? header.closest('.category-card') : header.parentElement;
+  if (card) card.classList.toggle('expanded');
+}
+
+function toggleCheck(el, key) {
+  checkState[key] = !checkState[key];
+  if (checkState[key]) {
+    el.textContent = '✓';
+    el.classList.add('checked');
+  } else {
+    el.textContent = '';
+    el.classList.remove('checked');
+  }
+  updateProgress();
+}
+
+function updateProgress() {
+  var data = layers[currentLayer];
+  var total = 0, done = 0;
+  data.cats.forEach(function(cat, ci) {
+    cat.questions.forEach(function(q, qi) {
+      total++;
+      if (checkState[currentLayer + '-' + ci + '-' + qi]) done++;
+    });
+  });
+  var pct = total > 0 ? Math.round(done / total * 100) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = done + '/' + total;
+}
+
+function resetLayer() {
+  var data = layers[currentLayer];
+  data.cats.forEach(function(cat, ci) {
+    cat.questions.forEach(function(q, qi) {
+      checkState[currentLayer + '-' + ci + '-' + qi] = false;
+    });
+  });
+  renderLayer(currentLayer);
+}
+
+renderLayer('basic');
+</script>
+</body>
+</html>

@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>作业榜 — 走进化学世界</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  padding: 0;
+}
+.wrapper { width: 100%; max-width: none; padding: 24px; }
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 6px; }
+.header .sub { font-size: 13px; opacity: 0.85; }
+
+/* Card */
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  border-left: 4px solid var(--primary);
+  padding-left: 12px;
+  margin-bottom: 14px;
+}
+.card h3 {
+  font-size: 16px;
+  color: var(--text);
+  margin: 12px 0 8px;
+  font-weight: 600;
+}
+.tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 6px;
+}
+.tag.required { background: #e6f4ff; color: var(--primary); }
+.tag.basic { background: #f0f5ff; color: #0958d9; }
+.tag.select { background: #f6ffed; color: #389e0d; }
+.tag.open { background: #fff7e6; color: #d46b08; }
+
+/* Q&A Interactive */
+.qa-block { margin: 12px 0; }
+.qa-block .q { font-weight: 600; margin-bottom: 4px; }
+.qa-block .options { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.qa-block .options .opt {
+  padding: 6px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  user-select: none;
+}
+.qa-block .options .opt:hover { border-color: var(--primary); color: var(--primary); }
+.qa-block .options .opt.selected { background: var(--primary); color: #fff; border-color: var(--primary); }
+.qa-block .options .opt.correct { background: #52c41a; color: #fff; border-color: #52c41a; }
+.qa-block .options .opt.wrong { background: #ff4d4f; color: #fff; border-color: #ff4d4f; }
+.qa-block .reveal-btn {
+  display: inline-block;
+  padding: 4px 12px;
+  font-size: 13px;
+  color: var(--primary);
+  border: 1px dashed var(--primary);
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+  transition: all 0.2s;
+  margin-top: 4px;
+}
+.qa-block .reveal-btn:hover { background: #e6f4ff; }
+.qa-block .answer { display: none; margin-top: 6px; padding: 8px 12px; background: #f6ffed; border-radius: 4px; color: #389e0d; font-size: 14px; border-left: 3px solid #52c41a; }
+.qa-block .answer.show { display: block; }
+
+/* Write-in */
+.write-area { margin: 10px 0; }
+.write-area textarea {
+  width: 100%;
+  min-height: 72px;
+  padding: 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  line-height: 1.6;
+}
+.write-area textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(22,119,255,0.15); }
+
+/* Connect Line */
+.connect-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 10px 0;
+}
+.connect-col { flex: 1; min-width: 100px; }
+.connect-item {
+  padding: 8px 12px;
+  background: #fafafa;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  text-align: center;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  user-select: none;
+}
+.connect-item:hover { border-color: var(--primary); background: #e6f4ff; }
+.connect-item.connected { background: var(--primary); color: #fff; border-color: var(--primary); }
+.connect-item.dimmed { opacity: 0.45; }
+
+/* Level Tabs */
+.level-tabs { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
+.level-tab {
+  padding: 6px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s;
+  background: var(--card-bg);
+}
+.level-tab:hover { border-color: var(--primary); color: var(--primary); }
+.level-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.level-content { display: none; margin-top: 12px; padding: 14px; background: #fafafa; border-radius: 6px; }
+.level-content.active { display: block; }
+
+/* Rubric Table */
+.rubric-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+.rubric-table th, .rubric-table td { border: 1px solid var(--border); padding: 8px 10px; text-align: center; }
+.rubric-table th { background: #e6f4ff; color: var(--primary); font-weight: 600; }
+.rubric-table th:first-child { text-align: left; }
+.rubric-table td:first-child { text-align: left; font-weight: 600; }
+.rubric-table .excellent { background: #f6ffed; }
+.rubric-table .pass { background: #fffbe6; }
+.rubric-table .improve { background: #fff2f0; }
+
+/* Progress */
+.progress-bar {
+  display: flex; align-items: center; gap: 12px; margin: 14px 0;
+  padding: 10px 14px; background: var(--card-bg); border-radius: 6px;
+  border: 1px solid var(--border);
+}
+.progress-track { flex: 1; height: 8px; background: #f0f0f0; border-radius: 4px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 4px; width: 0; transition: width 0.5s ease; }
+.progress-label { font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
+.score-display { font-size: 22px; font-weight: 700; color: var(--primary); }
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+.btn-outline:hover { background: #e6f4ff; }
+.btn-success { background: #52c41a; color: #fff; }
+.btn-success:hover { background: #73d13d; }
+
+.mb-8 { margin-bottom: 8px; }
+.mt-8 { margin-top: 8px; }
+.text-sm { font-size: 13px; }
+.text-muted { color: var(--text-secondary); }
+.flex { display: flex; gap: 10px; flex-wrap: wrap; }
+.badge {
+  display: inline-block; padding: 1px 8px; border-radius: 10px;
+  font-size: 12px; font-weight: 600;
+}
+.badge-blue { background: #e6f4ff; color: var(--primary); }
+.badge-green { background: #f6ffed; color: #389e0d; }
+.badge-orange { background: #fff7e6; color: #d46b08; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<!-- Header -->
+<div class="header">
+  <h1>📋 作业榜</h1>
+  <div class="sub">化学 · 九年级上 · 第1章 走进化学世界 · M6 新知技术思维</div>
+  <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;">
+    <span class="tag required">必做</span>
+    <span class="tag select">分层选做</span>
+    <span class="tag open">开放选做</span>
+  </div>
+</div>
+
+<!-- Progress -->
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <div style="font-weight:600;">🏆 闯关进度</div>
+    <div class="score-display" id="totalScore">0</div>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-label" id="progressLabel">0 / 100 分</div>
+  </div>
+  <div class="flex">
+    <button class="btn btn-outline" onclick="resetAll()">🔄 重置</button>
+  </div>
+</div>
+
+<!-- 基础层 -->
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <h2>一、基础层 · 再现与理解</h2>
+    <span class="badge badge-blue">必做 · 每题 10 分</span>
+  </div>
+  <p class="text-muted text-sm mb-8">覆盖核心概念的复现与理解，共 4 题，总分 40 分。</p>
+
+  <!-- Q1 填空 -->
+  <div class="qa-block" data-group="basic">
+    <div class="q">1. 填空：化学变化与物理变化的本质区别是______。</div>
+    <div class="options">
+      <span class="opt" data-group="basic" onclick="selectOpt(this,'q1'); checkFill()">是否有新物质生成</span>
+      <span class="opt" data-group="basic" onclick="selectOpt(this,'q1'); checkFill()">是否有颜色变化</span>
+      <span class="opt" data-group="basic" onclick="selectOpt(this,'q1'); checkFill()">是否有气体产生</span>
+      <span class="opt" data-group="basic" onclick="selectOpt(this,'q1'); checkFill()">是否有温度变化</span>
+    </div>
+  </div>
+
+  <!-- Q2 选择 -->
+  <div class="qa-block" data-group="basic">
+    <div class="q">2. 选择：下列属于化学变化的是（  ）</div>
+    <div class="options">
+      <span class="opt" data-group="basic" onclick="selectQ2(this)">A. 冰融化成水</span>
+      <span class="opt" data-group="basic" onclick="selectQ2(this)">B. 铁生锈</span>
+      <span class="opt" data-group="basic" onclick="selectQ2(this)">C. 酒精挥发</span>
+      <span class="opt" data-group="basic" onclick="selectQ2(this)">D. 玻璃破碎</span>
+    </div>
+  </div>
+
+  <!-- Q3 简答 -->
+  <div class="qa-block" data-group="basic">
+    <div class="q">3. 简答：请用自己的话解释为什么"化学是一门以实验为基础的科学"？</div>
+    <div class="write-area">
+      <textarea placeholder="在下方写下你的思考……" oninput="updateScore()"></textarea>
+    </div>
+    <button class="reveal-btn" onclick="toggleAnswer('a3')">💡 参考思路</button>
+    <div class="answer" id="a3">化学理论需要通过实验来验证；新物质的性质需要通过实验来发现；实验是化学知识最可靠的来源。</div>
+  </div>
+
+  <!-- Q4 连线 -->
+  <div class="qa-block" data-group="basic">
+    <div class="q">4. 连线：将实验器材与用途配对（点击配对）</div>
+    <div style="display:flex;flex-wrap:wrap;gap:16px;margin:10px 0;">
+      <div style="flex:1;min-width:120px;">
+        <div class="connect-item" data-conn="a" onclick="connectItem(this)">🧪 量筒</div>
+        <div class="connect-item" data-conn="b" onclick="connectItem(this)">🔥 酒精灯</div>
+        <div class="connect-item" data-conn="c" onclick="connectItem(this)">🧫 试管</div>
+      </div>
+      <div style="flex:1;min-width:120px;">
+        <div class="connect-item" data-conn="a" onclick="connectItem(this)">量取体积</div>
+        <div class="connect-item" data-conn="b" onclick="connectItem(this)">加热</div>
+        <div class="connect-item" data-conn="c" onclick="connectItem(this)">反应容器</div>
+      </div>
+    </div>
+    <div id="connectStatus" class="text-sm text-muted mt-8">点击左列一项，再点击右列对应项完成配对。</div>
+  </div>
+</div>
+
+<!-- 分层任务 -->
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <h2>二、分层任务</h2>
+    <span class="badge badge-green">选做其一 · 每题 30 分</span>
+  </div>
+  <p class="text-muted text-sm mb-8">选择适合自己水平的层级，点击标签切换。</p>
+
+  <div class="level-tabs">
+    <div class="level-tab active" data-level="a" onclick="switchLevel('a',this)">A级 · 应用 ⭐</div>
+    <div class="level-tab" data-level="b" onclick="switchLevel('b',this)">B级 · 分析 ⭐⭐⭐</div>
+    <div class="level-tab" data-level="c" onclick="switchLevel('c',this)">C级 · 评价 ⭐⭐⭐⭐</div>
+  </div>
+
+  <!-- A级 -->
+  <div class="level-content active" id="levelA">
+    <h3>📝 A 级 · 应用（适合基础较弱的同学）</h3>
+    <p>参照课本"蜡烛燃烧实验"的描述方式，写出"镁条在空气中燃烧"的完整观察记录（现象、产物、反应类型）。</p>
+    <div class="write-area"><textarea placeholder="描述镁条燃烧的观察记录……（100-200 字）"></textarea></div>
+    <button class="reveal-btn" onclick="toggleAnswer('aLevel')">💡 参考示例</button>
+    <div class="answer" id="aLevel">镁条燃烧发出耀眼白光，放出大量热，生成白色固体（氧化镁）。反应类型：化合反应。现象描述要点：发光、放热、产物颜色状态。</div>
+  </div>
+
+  <!-- B级 -->
+  <div class="level-content" id="levelB">
+    <h3>📊 B 级 · 分析（适合大部分同学）</h3>
+    <p>制作一张"物理变化 vs 化学变化"双气泡对比图，至少列出 5 项对比维度，附 100 字以内总结。</p>
+    <div class="write-area"><textarea placeholder="列出对比维度和总结……"></textarea></div>
+    <button class="reveal-btn" onclick="toggleAnswer('bLevel')">💡 参考维度</button>
+    <div class="answer" id="bLevel">维度：定义、特征、实例、能量变化、分子变化。总结：物理变化分子不变、无新物质；化学变化分子改变、有新物质生成，常伴随能量变化。</div>
+  </div>
+
+  <!-- C级 -->
+  <div class="level-content" id="levelC">
+    <h3>🔬 C 级 · 评价（适合挑战高分的同学）</h3>
+    <p>阅读材料"拉瓦锡与燃素说的终结"，回答：</p>
+    <p>① 拉瓦锡用"定量实验"挑战了当时的主流理论——这体现了怎样的科学思维？</p>
+    <p>② 如果你是 18 世纪的化学家，面对两种对立理论，你会如何设计实验来验证？</p>
+    <div class="write-area"><textarea placeholder="写下你的分析和实验方案……"></textarea></div>
+  </div>
+</div>
+
+<!-- 开放层 -->
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <h2>三、开放层 · 创造性表达</h2>
+    <span class="badge badge-orange">选做 · 额外 20 分</span>
+  </div>
+  <p class="text-muted text-sm mb-8">从以下四种形式中任选一种完成，鼓励多元表达！</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0;">
+    <div class="connect-item" data-group="open" onclick="selectOpen(this)" style="border-color:var(--accent);">✍️ 写作<br><small>500字科幻微小说</small></div>
+    <div class="connect-item" data-group="open" onclick="selectOpen(this)" style="border-color:var(--accent);">🎨 图示<br><small>A4 思维导图</small></div>
+    <div class="connect-item" data-group="open" onclick="selectOpen(this)" style="border-color:var(--accent);">📹 视频<br><small>3 分钟以内</small></div>
+    <div class="connect-item" data-group="open" onclick="selectOpen(this)" style="border-color:var(--accent);">🎤 演讲<br><small>5 分钟课堂演讲</small></div>
+  </div>
+  <div id="openTip" class="text-sm text-muted">点击选择你要挑战的形式，完成后可自评加分。</div>
+</div>
+
+<!-- 评价标准 -->
+<div class="card">
+  <h2>四、评价标准（Rubric）</h2>
+  <p class="text-muted text-sm mb-8">完成作业后对照评分，看看自己处于哪个等级。</p>
+  <table class="rubric-table">
+    <thead>
+      <tr><th style="width:20%">维度</th><th class="excellent" style="width:27%">卓越 A (90-100%)</th><th class="pass" style="width:27%">达标 B (70-89%)</th><th class="improve" style="width:26%">待改进 C (&lt;70%)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>准确性<br><small class="text-muted">30%</small></td><td class="excellent">无知识错误，术语使用精准</td><td class="pass">少量错误但不影响理解</td><td class="improve">多处关键错误</td></tr>
+      <tr><td>完整性<br><small class="text-muted">30%</small></td><td class="excellent">覆盖所有要点</td><td class="pass">覆盖主要要点</td><td class="improve">遗漏重要内容</td></tr>
+      <tr><td>表达力<br><small class="text-muted">20%</small></td><td class="excellent">逻辑清晰、有创意</td><td class="pass">表达清楚</td><td class="improve">表达混乱</td></tr>
+      <tr><td>规范性<br><small class="text-muted">20%</small></td><td class="excellent">格式工整、引用规范</td><td class="pass">基本规范</td><td class="improve">格式随意</td></tr>
+    </tbody>
+  </table>
+</div>
+
+</div><!-- wrapper -->
+
+<script>
+let score = 0;
+let q1Done = false, q2Done = false, q3Done = false, q4Done = false;
+let selectedConn = null;
+
+function updateScore() {
+  let s = 0;
+  if (q1Done) s += 10;
+  if (q2Done) s += 10;
+  if (q3Done) s += 10;
+  if (q4Done) s += 10;
+  score = s;
+  renderScore();
+}
+
+function renderScore() {
+  document.getElementById('totalScore').textContent = score + (score >= 40 ? ' ✅' : '');
+  const pct = Math.min(100, Math.round(score / 100 * 100));
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = score + ' / 100 分';
+}
+
+function selectOpt(el, q) {
+  const parent = el.closest('.qa-block');
+  parent.querySelectorAll('.opt').forEach(o => o.classList.remove('selected','correct','wrong'));
+  el.classList.add('selected');
+  if (q === 'q1') {
+    if (el.textContent.trim().includes('新物质')) {
+      el.classList.add('correct');
+      q1Done = true;
+    } else {
+      el.classList.add('wrong');
+      q1Done = false;
+    }
+    updateScore();
+  }
+}
+
+function selectQ2(el) {
+  const parent = el.closest('.qa-block');
+  parent.querySelectorAll('.opt').forEach(o => o.classList.remove('selected','correct','wrong'));
+  el.classList.add('selected');
+  if (el.textContent.trim().startsWith('B')) {
+    el.classList.add('correct');
+    q2Done = true;
+  } else {
+    el.classList.add('wrong');
+    q2Done = false;
+  }
+  updateScore();
+}
+
+function toggleAnswer(id) {
+  document.getElementById(id).classList.toggle('show');
+}
+
+function connectItem(el) {
+  if (el.classList.contains('connected')) return;
+  if (!selectedConn) {
+    selectedConn = el;
+    el.classList.add('connected');
+    return;
+  }
+  const connA = selectedConn.dataset.conn;
+  const connB = el.dataset.conn;
+  if (connA === connB && selectedConn !== el) {
+    el.classList.add('connected');
+    selectedConn.classList.add('connected');
+    selectedConn = null;
+    document.getElementById('connectStatus').textContent = '✅ 配对成功！继续配对其他项目。';
+    q4Done = true;
+    updateScore();
+  } else {
+    selectedConn.classList.remove('connected');
+    selectedConn = null;
+    document.getElementById('connectStatus').textContent = '❌ 配对不匹配，请重新选择。';
+  }
+  if (document.querySelectorAll('.connect-item.connected').length >= 6) {
+    document.getElementById('connectStatus').textContent = '🎉 全部配对完成！';
+  }
+}
+
+function switchLevel(level, el) {
+  document.querySelectorAll('.level-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.level-content').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('level' + level.toUpperCase()).classList.add('active');
+}
+
+function selectOpen(el) {
+  document.querySelectorAll('[data-group="open"]').forEach(o => o.classList.remove('connected'));
+  el.classList.add('connected');
+  document.getElementById('openTip').textContent = '✅ 已选择 ' + el.textContent.trim().replace(/\n/g,'').replace(/\s+/g,' ') + ' — 完成后可额外加 20 分！';
+}
+
+function checkFill() { /* used by Q1 */ }
+
+function resetAll() {
+  score = 0; q1Done = false; q2Done = false; q3Done = false; q4Done = false; selectedConn = null;
+  document.querySelectorAll('.opt').forEach(o => o.classList.remove('selected','correct','wrong'));
+  document.querySelectorAll('.connect-item').forEach(o => o.classList.remove('connected','dimmed'));
+  document.querySelectorAll('.answer').forEach(a => a.classList.remove('show'));
+  document.querySelectorAll('textarea').forEach(t => t.value = '');
+  document.querySelectorAll('[data-group="open"]').forEach(o => o.classList.remove('connected'));
+  document.getElementById('connectStatus').textContent = '点击左列一项，再点击右列对应项完成配对。';
+  document.getElementById('openTip').textContent = '点击选择你要挑战的形式，完成后可自评加分。';
+  renderScore();
+}
+</script>
+</body>
+</html>

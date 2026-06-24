@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>七阶解析性适配案例 — 走进化学世界</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  margin: 0;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px;
+  box-sizing: border-box;
+}
+.header {
+  text-align: center;
+  padding: 24px 16px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header .meta { font-size: 14px; opacity: 0.9; }
+.case-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+  justify-content: center;
+}
+.case-nav button {
+  padding: 8px 14px;
+  border: 2px solid var(--primary);
+  background: var(--card-bg);
+  color: var(--primary);
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.case-nav button:hover, .case-nav button.active {
+  background: var(--primary);
+  color: #fff;
+}
+.case-card {
+  display: none;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 20px;
+  border-left: 4px solid var(--primary);
+  animation: fadeIn 0.3s ease;
+}
+.case-card.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.case-card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+}
+.case-card h3 {
+  font-size: 16px;
+  color: var(--text);
+  margin: 16px 0 8px;
+  font-weight: 600;
+}
+.case-card .tag {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.case-card p { margin-bottom: 10px; }
+.case-card .material {
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px;
+  margin: 12px 0;
+  border-left: 3px solid var(--accent);
+}
+.case-card .material strong { color: var(--primary); }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 14px;
+}
+table th, table td {
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  text-align: left;
+}
+table th {
+  background: var(--bg);
+  color: var(--primary);
+  font-weight: 600;
+}
+table tr:nth-child(even) { background: #fafafa; }
+.reveal-btn {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  transition: background 0.2s;
+  margin: 4px 0;
+}
+.reveal-btn:hover { background: var(--primary-hover); }
+.reveal-content {
+  display: none;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  padding: 12px;
+  margin: 8px 0;
+  font-size: 14px;
+}
+.reveal-content.show { display: block; }
+.reflection-section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-top: 20px;
+}
+.reflection-section h2 { font-size: var(--font-h2); color: var(--primary); margin-bottom: 16px; }
+.reflection-item {
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.reflection-item:hover { border-color: var(--primary); background: var(--bg); }
+.reflection-item .q { font-weight: 600; margin-bottom: 4px; }
+.reflection-item .a { display: none; color: var(--text-secondary); font-size: 14px; padding-top: 8px; border-top: 1px dashed var(--border); }
+.reflection-item .a.show { display: block; }
+.reflection-item .hint { font-size: 13px; color: var(--accent); margin-top: 4px; }
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  .case-nav button { font-size: 12px; padding: 6px 10px; }
+  .case-card { padding: 16px; }
+  table { font-size: 13px; }
+  table th, table td { padding: 6px 8px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>📋 七阶解析性适配案例</h1>
+    <div class="meta">化学 · 九年级上 · 第1章 走进化学世界 | M9 新知文化思维 · 解析性导学</div>
+  </div>
+
+  <div class="case-nav" id="caseNav">
+    <button class="active" data-case="0">案例一</button>
+    <button data-case="1">案例二</button>
+    <button data-case="2">案例三</button>
+    <button data-case="3">案例四</button>
+    <button data-case="4">案例五</button>
+    <button data-case="5">案例六</button>
+    <button data-case="6">案例七</button>
+    <button data-case="7">综合反思</button>
+  </div>
+
+  <!-- 案例一 -->
+  <div class="case-card active" data-index="0">
+    <span class="tag">🏠 生活情境</span>
+    <h2>案例一：燃烧的蜡烛</h2>
+    <div class="material">
+      <strong>📌 案例材料：</strong>观察一根燃烧的蜡烛。蜡烛变短、蜡油熔化、火焰上方有黑烟。这些现象中，哪些是物理变化？哪些是化学变化？
+    </div>
+    <p><strong>🔍 解析任务：</strong>区分蜡烛燃烧过程中的物理变化和化学变化</p>
+    <p><strong>⚙️ 建议原理：</strong>变化类型优先判断法</p>
+    <p><strong>🔄 解析路径：</strong>识别现象 → 分类 → 查找证据 → 得出结论</p>
+
+    <h3>📊 分析记录表</h3>
+    <table>
+      <tr><th>现象</th><th>变化类型</th><th>判断依据</th></tr>
+      <tr><td>蜡烛变短</td><td><span style="color:var(--primary);font-weight:600;">点击查看 →</span></td><td><span style="color:var(--primary);font-weight:600;">点击查看 →</span></td></tr>
+      <tr><td>蜡油熔化</td><td><span style="color:var(--primary);font-weight:600;">点击查看 →</span></td><td><span style="color:var(--primary);font-weight:600;">点击查看 →</span></td></tr>
+      <tr><td>火焰上方有黑烟</td><td><span style="color:var(--primary);font-weight:600;">点击查看 →</span></td><td><span style="color:var(--primary);font-weight:600;">点击查看 →</span></td></tr>
+    </table>
+    <button class="reveal-btn" onclick="toggleTable(this)">🔎 查看参考答案</button>
+    <div class="reveal-content">
+      <table>
+        <tr><th>现象</th><th>变化类型</th><th>判断依据</th></tr>
+        <tr><td>蜡烛变短</td><td>化学变化 + 物理变化</td><td>部分蜡燃烧生成CO₂和H₂O（化学），部分熔化流走（物理）</td></tr>
+        <tr><td>蜡油熔化</td><td>物理变化</td><td>蜡由固态变液态，没有新物质生成</td></tr>
+        <tr><td>火焰上方有黑烟</td><td>化学变化</td><td>生成碳颗粒（新物质），是蜡不完全燃烧的结果</td></tr>
+      </table>
+    </div>
+    <p style="margin-top:10px;font-size:14px;color:var(--text-secondary);">💡 <strong>参考思路：</strong>关注"有没有新物质生成"——蜡油熔化是物理变化，蜡燃烧生成水和二氧化碳是化学变化。</p>
+  </div>
+
+  <!-- 案例二 -->
+  <div class="case-card" data-index="1">
+    <span class="tag">🏫 校园情境</span>
+    <h2>案例二：实验室的"白色粉末"</h2>
+    <div class="material">
+      <strong>📌 案例材料：</strong>化学实验室有两瓶白色粉末，标签模糊。一瓶是食盐（NaCl），一瓶是白糖（C₁₂H₂₂O₁₁）。你如何区分？
+    </div>
+    <p><strong>🔍 解析任务：</strong>设计方案区分这两种白色粉末，判断过程中发生了什么类型的变化</p>
+    <p><strong>⚙️ 建议原理：</strong>变化类型优先判断法 + 反应物—条件—产物分析法</p>
+    <p><strong>🔄 解析路径：</strong>提出方案 → 操作 → 观察 → 判断</p>
+    <h3>📊 分析记录表</h3>
+    <table>
+      <tr><th>区分方法</th><th>现象</th><th>变化类型</th><th>原理说明</th></tr>
+      <tr><td>加热</td><td style="color:var(--primary);cursor:pointer;" onclick="toggleInline(this)">点击展开 ▸</td><td style="color:var(--primary);cursor:pointer;" onclick="toggleInline(this)">点击展开 ▸</td><td style="color:var(--primary);cursor:pointer;" onclick="toggleInline(this)">点击展开 ▸</td></tr>
+      <tr><td>加水溶解</td><td style="color:var(--primary);cursor:pointer;" onclick="toggleInline(this)">点击展开 ▸</td><td style="color:var(--primary);cursor:pointer;" onclick="toggleInline(this)">点击展开 ▸</td><td style="color:var(--primary);cursor:pointer;" onclick="toggleInline(this)">点击展开 ▸</td></tr>
+    </table>
+    <button class="reveal-btn" onclick="toggleTable(this)">🔎 查看参考答案</button>
+    <div class="reveal-content">
+      <table>
+        <tr><th>区分方法</th><th>现象</th><th>变化类型</th><th>原理说明</th></tr>
+        <tr><td>加热</td><td>白糖变焦发黑，食盐不变</td><td>化学变化（白糖焦化）</td><td>白糖受热分解生成碳等新物质</td></tr>
+        <tr><td>加水溶解</td><td>两者都溶解，无色透明</td><td>物理变化</td><td>没有新物质生成，只是分散状态改变</td></tr>
+      </table>
+    </div>
+    <p style="margin-top:10px;font-size:14px;color:var(--text-secondary);">⚠️ <strong>安全提醒：</strong>实验室禁止尝任何化学药品！区分白色粉末不能用尝味道的方法。</p>
+  </div>
+
+  <!-- 案例三 -->
+  <div class="case-card" data-index="2">
+    <span class="tag">🏘️ 社区情境</span>
+    <h2>案例三：老旧水管为什么漏水</h2>
+    <div class="material">
+      <strong>📌 案例材料：</strong>老旧小区的铁质水管出现漏水，管壁变薄，有红褐色物质附着。
+    </div>
+    <p><strong>🔍 解析任务：</strong>分析水管漏水的原因，判断铁管变薄和红褐色物质生成属于什么变化</p>
+    <p><strong>⚙️ 建议原理：</strong>反应物—条件—产物分析法</p>
+    <p><strong>🔄 解析路径：</strong>观察 → 分析反应物和条件 → 判断变化类型 → 提出预防建议</p>
+    <h3>📊 分析记录表</h3>
+    <table>
+      <tr><th>变化现象</th><th>反应物</th><th>条件</th><th>产物</th><th>变化类型</th></tr>
+      <tr><td>管壁变薄</td><td>铁</td><td>潮湿空气</td><td>铁离子进入溶液</td><td>化学变化</td></tr>
+      <tr><td>红褐色物质</td><td>铁、氧气、水</td><td>常温、潮湿</td><td>铁锈（Fe₂O₃·xH₂O）</td><td>化学变化</td></tr>
+    </table>
+    <button class="reveal-btn" onclick="toggleTable(this)">🔎 查看延伸思考</button>
+    <div class="reveal-content">
+      <p><strong>💡 预防建议：</strong></p>
+      <ul style="padding-left:20px;">
+        <li>给水管刷防锈漆（隔绝氧气和水）</li>
+        <li>保持管道干燥</li>
+        <li>定期检查，及时更换</li>
+      </ul>
+      <p style="margin-top:8px;">铁 + 氧气 + 水 → 铁锈（Fe₂O₃·xH₂O）。铁锈疏松多孔，不能保护内部铁材，会持续向內腐蚀。</p>
+    </div>
+  </div>
+
+  <!-- 案例四 -->
+  <div class="case-card" data-index="3">
+    <span class="tag">🔬 学科核心情境</span>
+    <h2>案例四：水的"变身"之旅</h2>
+    <div class="material">
+      <strong>📌 案例材料：</strong>水在自然界中不断循环——液态水蒸发成水蒸气、水蒸气冷凝成云、水结成冰、水在电解条件下分解成氢气和氧气。
+    </div>
+    <p><strong>🔍 解析任务：</strong>分析上述水的变化过程，区分哪些是物理变化、哪些是化学变化</p>
+    <p><strong>⚙️ 建议原理：</strong>变化类型优先判断法 + 科学判断 vs 直觉判断区分法</p>
+    <p><strong>🔄 解析路径：</strong>列出变化序列 → 逐项分析 → 分类 → 总结规律</p>
+    <h3>📊 分析记录表</h3>
+    <table>
+      <tr><th>变化过程</th><th>是否有新物质</th><th>变化类型</th></tr>
+      <tr><td>液态水 → 水蒸气</td><td style="color:var(--primary);cursor:pointer;" onclick="toggleInline(this)">点击展开 ▸</td><td style="color:var(--primary);cursor:pointer;" onclick="toggleInline(this)">点击展开 ▸</td></tr>
+      <tr><td>水蒸气 → 云（冷凝）</td><td style="color:var(--primary);cursor:pointer;" onclick="toggleInline(this)">点击展开 ▸</td><td style="color:var(--primary);cursor:pointer;" onclick="toggleInline(this)">点击展开 ▸</td></tr>
+      <tr><td>液态水 → 冰</td><td style="color:var(--primary);cursor:pointer;" onclick="toggleInline(this)">点击展开 ▸</td><td style="color:var(--primary);cursor:pointer;" onclick="toggleInline(this)">点击展开 ▸</td></tr>
+      <tr><td>水 → 氢气 + 氧气（电解）</td><td style="color:var(--primary);cursor:pointer;" onclick="toggleInline(this)">点击展开 ▸</td><td style="color:var(--primary);cursor:pointer;" onclick="toggleInline(this)">点击展开 ▸</td></tr>
+    </table>
+    <button class="reveal-btn" onclick="toggleTable(this)">🔎 查看参考答案</button>
+    <div class="reveal-content">
+      <table>
+        <tr><th>变化过程</th><th>是否有新物质</th><th>变化类型</th></tr>
+        <tr><td>液态水 → 水蒸气</td><td>否，仍是H₂O分子</td><td>物理变化</td></tr>
+        <tr><td>水蒸气 → 云（冷凝）</td><td>否，仍是H₂O</td><td>物理变化</td></tr>
+        <tr><td>液态水 → 冰</td><td>否，仍是H₂O</td><td>物理变化</td></tr>
+        <tr><td>水 → 氢气 + 氧气（电解）</td><td>是！生成H₂和O₂</td><td>化学变化</td></tr>
+      </table>
+    </div>
+    <p style="margin-top:10px;font-size:14px;color:var(--text-secondary);">💡 <strong>规律总结：</strong>状态变化（冰/水/水蒸气）是物理变化；电解水生成H₂和O₂是化学变化——本质区别是有无新物质生成。</p>
+  </div>
+
+  <!-- 案例五 -->
+  <div class="case-card" data-index="4">
+    <span class="tag">🌐 跨学科情境</span>
+    <h2>案例五：植物的光合作用</h2>
+    <div class="material">
+      <strong>📌 案例材料：</strong>绿色植物在阳光下吸收CO₂和H₂O，合成有机物（C₆H₁₂O₆）并释放O₂。这是一系列化学变化的总和。
+    </div>
+    <p><strong>🔍 解析任务：</strong>从化学角度分析光合作用过程中的变化类型，解释为什么这是一个典型的化学变化</p>
+    <p><strong>⚙️ 建议原理：</strong>反应物—条件—产物分析法</p>
+    <p><strong>🔄 解析路径：</strong>确定反应物 → 分析条件 → 确定产物 → 判断变化类型 → 解释意义</p>
+    <h3>📊 分析记录表</h3>
+    <table>
+      <tr><th>反应物</th><th>条件</th><th>产物</th><th>变化类型判断</th><th>判断依据</th></tr>
+      <tr><td>CO₂ + H₂O</td><td>光照、叶绿素</td><td>C₆H₁₂O₆ + O₂</td><td>化学变化</td><td>有新物质生成</td></tr>
+    </table>
+    <p style="font-size:14px;color:var(--text-secondary);">📝 光合作物用化学方程式表示：6CO₂ + 6H₂O →<sup>光、叶绿素</sup> C₆H₁₂O₆ + 6O₂</p>
+    <p style="font-size:14px;color:var(--text-secondary);">💡 CO₂和H₂O是反应物，C₆H₁₂O₆（葡萄糖）和O₂是产物——有新物质生成，所以是化学变化。</p>
+  </div>
+
+  <!-- 案例六 -->
+  <div class="case-card" data-index="5">
+    <span class="tag">🌍 社会议题情境</span>
+    <h2>案例六：食品包装中的"双吸剂"</h2>
+    <div class="material">
+      <strong>📌 案例材料：</strong>许多食品包装里有一小包"双吸剂"，主要成分是铁粉。说明书说它可以同时吸收氧气和水分，防止食品变质。
+    </div>
+    <p><strong>🔍 解析任务：</strong>分析双吸剂的工作原理，判断其"吸收氧气和水分"过程中发生了什么变化</p>
+    <p><strong>⚙️ 建议原理：</strong>反应物—条件—产物分析法 + 科学判断 vs 直觉判断区分法</p>
+    <p><strong>🔄 解析路径：</strong>观察 → 提出推测 → 查找资料 → 验证 → 得出结论</p>
+    <h3>📊 分析记录表</h3>
+    <table>
+      <tr><th>成分</th><th>作用</th><th>原理</th><th>变化类型</th><th>证据来源</th></tr>
+      <tr><td>铁粉</td><td>吸收氧气</td><td>铁与氧气反应生成铁锈</td><td>化学变化</td><td>铁锈是不同于铁的新物质</td></tr>
+      <tr><td>铁粉+其他</td><td>吸收水分</td><td>部分成分吸水（物理）+铁与水反应（化学）</td><td>两者皆有</td><td>需具体分析</td></tr>
+    </table>
+    <button class="reveal-btn" onclick="toggleTable(this)">🔎 查看详细分析</button>
+    <div class="reveal-content">
+      <p>铁粉与氧气和水反应生成铁锈（化学变化），消耗了包装内的氧气和水分，从而防止食品氧化变质。这就是为什么叫"双吸剂"——同时吸收氧气和水分。</p>
+      <p style="margin-top:8px;">🔑 核心原理：利用铁生锈的化学变化，消耗包装内的O₂和H₂O，创造一个低氧、干燥的保存环境。</p>
+    </div>
+  </div>
+
+  <!-- 案例七 -->
+  <div class="case-card" data-index="6">
+    <span class="tag">🧪 综合迁移情境</span>
+    <h2>案例七：我的"化学侦探"报告</h2>
+    <div class="material">
+      <strong>📌 案例材料：</strong>有同学说"把铁钉放入硫酸铜溶液中，铁钉表面会覆盖一层红色物质"。请你亲自观察并分析这个现象。
+    </div>
+    <p><strong>🔍 解析任务：</strong>综合运用所学原理，完整分析铁钉与硫酸铜溶液反应的全部变化</p>
+    <p><strong>⚙️ 建议原理：</strong>全部三条原理综合运用</p>
+    <p><strong>🔄 解析路径：</strong>观察 → 假设 → 实验验证 → 分析 → 结论 → 表达</p>
+    <h3>📊 分析记录表</h3>
+    <table>
+      <tr><th>初始状态</th><th>观察到的变化</th><th>变化类型判断</th><th>化学原理</th><th>结论</th></tr>
+      <tr><td>银白色铁钉 + 蓝色硫酸铜溶液</td><td>铁钉表面出现红色物质，溶液蓝色变浅</td><td>化学变化</td><td>铁 + 硫酸铜 → 硫酸亚铁 + 铜</td><td>生成了新物质——红色的铜单质</td></tr>
+    </table>
+    <button class="reveal-btn" onclick="toggleTable(this)">🔎 查看化学原理</button>
+    <div class="reveal-content">
+      <p><strong>化学反应方程式：</strong>Fe + CuSO₄ → FeSO₄ + Cu</p>
+      <p>这属于<strong>置换反应</strong>，也是湿法冶铜的原理——铁把铜从硫酸铜溶液中置换出来。</p>
+      <p>✅ 这是一个化学变化：生成了红色的铜单质（新物质），和原来的铁完全不同。</p>
+      <p>📜 历史小知识：我国西汉时期就有"曾青得铁则化为铜"的记载，就是利用这个反应。</p>
+    </div>
+  </div>
+
+  <!-- 综合反思 -->
+  <div class="case-card" data-index="7">
+    <span class="tag">🤔 综合反思</span>
+    <h2>综合反思（5个问题）</h2>
+    <p style="margin-bottom:16px;">点击每个问题展开思考提示：</p>
+    <div class="reflection-item" onclick="toggleReflection(this)">
+      <div class="q">1️⃣ 这7个案例中，哪个最容易分析？为什么？</div>
+      <div class="a">提示：可以从变化类型是否明显、现象是否直观、是否贴近生活等角度思考。例如水的"变身"中状态变化容易判断，但电解水则需要更多化学知识。</div>
+      <div class="hint">👆 点击展开/收起</div>
+    </div>
+    <div class="reflection-item" onclick="toggleReflection(this)">
+      <div class="q">2️⃣ 哪个案例最难？困难在哪里？</div>
+      <div class="a">提示：光合作用涉及生物和化学两个学科，双吸剂既有物理变化又有化学变化——这些案例可能更具挑战性。</div>
+      <div class="hint">👆 点击展开/收起</div>
+    </div>
+    <div class="reflection-item" onclick="toggleReflection(this)">
+      <div class="q">3️⃣ 你最常用的解析性原理是哪一条？</div>
+      <div class="a">提示：三条原理——变化类型优先判断法、反应物—条件—产物分析法、科学判断 vs 直觉判断区分法。哪一条你用起来最顺手？</div>
+      <div class="hint">👆 点击展开/收起</div>
+    </div>
+    <div class="reflection-item" onclick="toggleReflection(this)">
+      <div class="q">4️⃣ 哪条原理你还不太会用？需要什么帮助？</div>
+      <div class="a">提示：科学判断 vs 直觉判断区分法可能比较抽象——需要更多练习来区分"看起来像"和"实际上是什么"。</div>
+      <div class="hint">👆 点击展开/收起</div>
+    </div>
+    <div class="reflection-item" onclick="toggleReflection(this)">
+      <div class="q">5️⃣ 这些案例分析如何帮你在生活中做出更科学的判断？</div>
+      <div class="a">提示：遇到"变黑""生锈""冒烟"等现象时，先问自己"有没有新物质生成"——这就是科学思维的起点！</div>
+      <div class="hint">👆 点击展开/收起</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleTable(btn) {
+  var content = btn.nextElementSibling;
+  if (content && content.classList.contains('reveal-content')) {
+    content.classList.toggle('show');
+    btn.textContent = content.classList.contains('show') ? '🙈 收起答案' : '🔎 查看参考答案';
+  }
+}
+function toggleInline(el) {
+  if (el.textContent.includes('点击展开')) {
+    var parentRow = el.closest('tr');
+    if (!parentRow) return;
+    var cells = parentRow.querySelectorAll('td');
+    var tableEl = parentRow.closest('table');
+    if (!tableEl) return;
+    var caseIndex = document.querySelector('.case-card.active')?.dataset?.index;
+    var answers = getAnswers(parseInt(caseIndex) || 0, Array.from(cells).indexOf(el));
+    el.textContent = answers;
+    el.style.color = 'var(--text)';
+    el.style.cursor = 'default';
+  }
+}
+function getAnswers(caseIdx, colIdx) {
+  var map = {
+    1: {
+      0: ['白糖变焦发黑，食盐不变', '两者都溶解，无色透明'],
+      1: ['化学变化（白糖焦化）', '物理变化'],
+      2: ['白糖受热分解生成碳等新物质', '没有新物质生成，只是分散状态改变']
+    },
+    3: {
+      0: ['否，仍是H₂O分子', '否，仍是H₂O', '否，仍是H₂O', '是！生成H₂和O₂'],
+      1: ['物理变化', '物理变化', '物理变化', '化学变化']
+    }
+  };
+  var rowAnswers = map[caseIdx];
+  if (!rowAnswers) return '—';
+  var colAnswers = rowAnswers[colIdx];
+  if (!colAnswers) return '—';
+  var rowIdx = -1;
+  var tableEl = document.querySelector('.case-card.active table');
+  if (tableEl) {
+    var rows = tableEl.querySelectorAll('tr');
+    for (var i = 1; i < rows.length; i++) {
+      if (rows[i].querySelector('td') === arguments.callee?.caller ? null : null) {}
+    }
+  }
+  return colAnswers[0] || '—';
+}
+
+// Improved getAnswers 
+var answerData = {
+  1: {
+    0: ['白糖变焦发黑，食盐不变', '两者都溶解，无色透明'],
+    1: ['化学变化（白糖焦化）', '物理变化'],
+    2: ['白糖受热分解生成碳等新物质', '没有新物质生成，只是分散状态改变']
+  },
+  3: {
+    0: ['否，仍是H₂O分子', '否，仍是H₂O', '否，仍是H₂O', '是！生成H₂和O₂'],
+    1: ['物理变化', '物理变化', '物理变化', '化学变化']
+  }
+};
+
+// Override toggleInline
+var origToggle = toggleInline;
+toggleInline = function(el) {
+  if (el.textContent.includes('点击展开')) {
+    var activeCard = document.querySelector('.case-card.active');
+    var caseIdx = activeCard ? parseInt(activeCard.dataset.index) : -1;
+    var td = el;
+    var tr = td.closest('tr');
+    if (!tr) return;
+    var tds = Array.from(tr.querySelectorAll('td'));
+    var colIdx = tds.indexOf(td);
+    var rowIdx = Array.from(tr.parentNode.querySelectorAll('tr')).indexOf(tr) - 1;
+    if (answerData[caseIdx] && answerData[caseIdx][colIdx] && answerData[caseIdx][colIdx][rowIdx]) {
+      td.textContent = answerData[caseIdx][colIdx][rowIdx];
+      td.style.color = 'var(--text)';
+      td.style.cursor = 'default';
+    } else {
+      td.textContent = '(请参考下方参考答案)';
+      td.style.color = 'var(--text)';
+      td.style.cursor = 'default';
+    }
+  }
+};
+
+function toggleReflection(item) {
+  var answer = item.querySelector('.a');
+  if (answer) answer.classList.toggle('show');
+}
+
+// Case navigation
+(function() {
+  var navBtns = document.querySelectorAll('.case-nav button');
+  var cards = document.querySelectorAll('.case-card');
+  navBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var idx = parseInt(this.dataset.case);
+      navBtns.forEach(function(b) { b.classList.remove('active'); });
+      this.classList.add('active');
+      cards.forEach(function(c) { c.classList.remove('active'); });
+      cards[idx].classList.add('active');
+      window.scrollTo({ top: document.querySelector('.case-nav').offsetTop - 10, behavior: 'smooth' });
+    });
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性案例 — 七阶递进练习</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 28px;
+  box-sizing: border-box;
+}
+
+.page-header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+
+.page-header h1 {
+  margin: 0 0 6px 0;
+  font-size: var(--font-h1);
+  font-weight: 700;
+}
+
+.page-header p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: calc(var(--font-body) + 1px);
+}
+
+.section-title {
+  font-size: var(--font-h2);
+  font-weight: 700;
+  color: var(--primary);
+  margin: 32px 0 16px 0;
+  padding-left: 14px;
+  border-left: 4px solid var(--primary);
+}
+
+.progress-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 24px;
+}
+
+.progress-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  font-weight: 700;
+  font-size: calc(var(--font-body) - 2px);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.25s;
+}
+
+.progress-dot.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  transform: scale(1.1);
+}
+
+.progress-dot.done {
+  background: #e6f7ff;
+  border-color: var(--accent);
+  color: var(--primary);
+}
+
+.case-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow);
+}
+
+.case-card .level-tag {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 12px;
+  font-size: calc(var(--font-body) - 3px);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.level-l1 { background: #fff7e6; color: #d46b08; }
+.level-l2 { background: #f0f5ff; color: #1677ff; }
+.level-l3 { background: #f6ffed; color: #389e0d; }
+.level-l4 { background: #f9f0ff; color: #722ed1; }
+.level-l5 { background: #e6f7ff; color: #0077be; }
+.level-l6 { background: #fff2e8; color: #d4380d; }
+.level-l7 { background: #f5222d22; color: #cf1322; }
+
+.case-card h3 {
+  margin: 0 0 6px 0;
+  font-size: var(--font-h2);
+  color: var(--text);
+}
+
+.case-card .case-material {
+  background: #fafafa;
+  border-left: 3px solid var(--primary);
+  padding: 10px 14px;
+  margin: 8px 0;
+  border-radius: 0 6px 6px 0;
+  font-size: calc(var(--font-body) - 1px);
+}
+
+.case-card .task-box {
+  margin: 8px 0;
+}
+
+.case-card .task-box strong {
+  color: var(--primary);
+}
+
+.principle-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0;
+}
+
+.principle-tags span {
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  padding: 2px 10px;
+  font-size: calc(var(--font-body) - 3px);
+  color: var(--primary);
+}
+
+.reveal-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 6px 18px;
+  border-radius: 6px;
+  font-size: calc(var(--font-body) - 1px);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s;
+  margin-top: 6px;
+}
+
+.reveal-btn:hover {
+  background: var(--primary-hover);
+}
+
+.reveal-content {
+  display: none;
+  margin-top: 10px;
+  padding: 12px 16px;
+  background: #fafafa;
+  border-radius: 6px;
+  border: 1px dashed var(--border);
+}
+
+.reveal-content.open {
+  display: block;
+}
+
+.reflect-section {
+  margin-top: 24px;
+  padding: 18px 22px;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.reflect-section h3 {
+  margin: 0 0 12px 0;
+  font-size: var(--font-h2);
+  color: var(--text);
+}
+
+.reflect-q {
+  margin-bottom: 10px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.reflect-q p {
+  margin: 0;
+}
+
+.reflect-q strong {
+  color: var(--primary);
+}
+
+@media (max-width: 600px) {
+  .container { padding: 14px; }
+  .page-header { padding: 20px; }
+  .case-card { padding: 14px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="page-header">
+  <h1>🧩 解析性案例</h1>
+  <p>七阶递进案例 — 在新情境中迁移运用解析性原理</p>
+</div>
+
+<!-- 进度指示器 -->
+<div class="progress-row">
+  <span class="progress-dot active" onclick="jumpToCase(1)" data-case="1">1</span>
+  <span class="progress-dot" onclick="jumpToCase(2)" data-case="2">2</span>
+  <span class="progress-dot" onclick="jumpToCase(3)" data-case="3">3</span>
+  <span class="progress-dot" onclick="jumpToCase(4)" data-case="4">4</span>
+  <span class="progress-dot" onclick="jumpToCase(5)" data-case="5">5</span>
+  <span class="progress-dot" onclick="jumpToCase(6)" data-case="6">6</span>
+  <span class="progress-dot" onclick="jumpToCase(7)" data-case="7">7</span>
+</div>
+
+<!-- 案例1 -->
+<div class="case-card" data-case="1">
+  <span class="level-tag level-l1">🏠 生活情境</span>
+  <h3>🥚 案例1：厨房里的"变化"大考验</h3>
+  <div class="case-material">
+    <strong>案例材料：</strong>妈妈在厨房做了三件事——煮鸡蛋（蛋黄变硬凝固）、切黄瓜（黄瓜片变小）、烤面包（表面变焦黄）。判断这三个变化各属于什么类型，列出你的证据链。
+  </div>
+  <div class="principle-tags">
+    <span>前后对比法</span>
+    <span>证据层级法</span>
+  </div>
+  <button class="reveal-btn" onclick="revealAnswer(this)">💡 查看解析</button>
+  <div class="reveal-content">
+    <p><strong>🔎 解析：</strong></p>
+    <p><strong>煮鸡蛋</strong> — 蛋清/蛋黄由液态→固态，蛋白质变性，有新物质生成 → <strong>化学变化</strong></p>
+    <p><strong>切黄瓜</strong> — 只是形状变小，物质本身还是黄瓜 → <strong>物理变化</strong></p>
+    <p><strong>烤面包</strong> — 表面焦黄，糖类和蛋白质发生美拉德反应，有新物质生成 → <strong>化学变化</strong></p>
+    <p><strong>证据链：</strong>前后对比+核心证据（有无新物质）</p>
+  </div>
+</div>
+
+<!-- 案例2 -->
+<div class="case-card" data-case="2">
+  <span class="level-tag level-l2">🔬 校园情境</span>
+  <h3>🧪 案例2：化学实验室的"神秘液体"</h3>
+  <div class="case-material">
+    <strong>案例材料：</strong>小明在实验室发现一瓶无色液体，标签脱落。他做了以下实验：①闻起来有酒精味 ②加热后液体消失 ③点燃时能燃烧。解析任务：①、②、③分别属于对什么的分析（性质还是变化）？液体消失和燃烧分别是什么变化？
+  </div>
+  <div class="principle-tags">
+    <span>操作定义法</span>
+    <span>证据层级法</span>
+  </div>
+  <button class="reveal-btn" onclick="revealAnswer(this)">💡 查看解析</button>
+  <div class="reveal-content">
+    <p><strong>🔎 解析：</strong></p>
+    <p>① 闻味道 → 分析的是<strong>物理性质</strong>（气味）</p>
+    <p>② 加热消失 → <strong>物理变化</strong>（液体蒸发为气体，物质仍为乙醇）</p>
+    <p>③ 点燃燃烧 → <strong>化学变化</strong>（乙醇+氧气→CO₂+H₂O，有新物质生成），同时体现<strong>化学性质</strong>（可燃性）</p>
+  </div>
+</div>
+
+<!-- 案例3 -->
+<div class="case-card" data-case="3">
+  <span class="level-tag level-l3">🏘️ 社区情境</span>
+  <h3>🔩 案例3：小区里的"金属腐蚀"调查</h3>
+  <div class="case-material">
+    <strong>案例材料：</strong>你观察到三个场景——①铁门生锈（红褐色粉末）②铝窗框表面发暗 ③铜水龙头变绿。三个案例的共同点和不同点是什么？哪些属于化学变化？判断依据是什么？
+  </div>
+  <div class="principle-tags">
+    <span>前后对比法</span>
+    <span>反例检验法</span>
+  </div>
+  <button class="reveal-btn" onclick="revealAnswer(this)">💡 查看解析</button>
+  <div class="reveal-content">
+    <p><strong>🔎 解析：</strong></p>
+    <p>三种现象均属于金属被空气中的O₂/H₂O/CO₂等腐蚀，均生成新物质 → 都是<strong>化学变化</strong>。</p>
+    <p><strong>共同点：</strong>都是金属与空气发生化学反应</p>
+    <p><strong>不同点：</strong>产物不同（Fe₂O₃·xH₂O红褐色、Al₂O₃致密膜、Cu₂(OH)₂CO₃铜绿）</p>
+    <p><strong>反例检验：</strong>"有颜色变化就是化学变化"→ 不成立（如颜料溶解变色是物理变化）</p>
+  </div>
+</div>
+
+<!-- 案例4 -->
+<div class="case-card" data-case="4">
+  <span class="level-tag level-l4">🧬 学科核心情境</span>
+  <h3>🔬 案例4："变化的微观解释"</h3>
+  <div class="case-material">
+    <strong>案例材料：</strong>水和冰的分子排列图（物理变化：分子间距变化）和碳燃烧生成二氧化碳的分子变化图（化学变化：原子重新组合）。从分子/原子的微观层面，解释物理变化和化学变化的本质区别。
+  </div>
+  <div class="principle-tags">
+    <span>操作定义法</span>
+    <span>前后对比法</span>
+  </div>
+  <button class="reveal-btn" onclick="revealAnswer(this)">💡 查看解析</button>
+  <div class="reveal-content">
+    <p><strong>🔎 解析：</strong></p>
+    <p><strong>物理变化：</strong>分子种类不变，只是分子间的距离或排列方式改变（如H₂O分子在水和冰中都是H₂O）。</p>
+    <p><strong>化学变化：</strong>分子分裂成原子，原子重新组合成新分子（如C + O₂ → CO₂，碳原子和氧原子重新排列）。</p>
+    <p><strong>本质区别：</strong>化学变化中分子种类改变，物理变化中分子种类不变。</p>
+  </div>
+</div>
+
+<!-- 案例5 -->
+<div class="case-card" data-case="5">
+  <span class="level-tag level-l5">🧊 跨学科情境</span>
+  <h3>🥩 案例5：冰冻食品的"科学解冻"</h3>
+  <div class="case-material">
+    <strong>案例材料：</strong>从冰箱取出冻肉，用三种方式解冻——①室温自然解冻 ②冷水浸泡 ③微波炉解冻。记录温度变化和肉质变化。解冻过程中发生了什么变化？微波加热是物理变化还是化学变化？为什么？
+  </div>
+  <div class="principle-tags">
+    <span>证据层级法</span>
+    <span>反例检验法</span>
+  </div>
+  <button class="reveal-btn" onclick="revealAnswer(this)">💡 查看解析</button>
+  <div class="reveal-content">
+    <p><strong>🔎 解析：</strong></p>
+    <p><strong>解冻过程：</strong>冰→水（状态变化），肉本身成分不变 → <strong>物理变化</strong></p>
+    <p><strong>微波加热：</strong>微波使水分子振动产热，水分子结构未变 → <strong>物理变化</strong>（虽然产热了，但没有新物质生成）</p>
+    <p><strong>反例检验：</strong>"因为产热了所以是化学变化"对吗？→ 搓手也产热但无新物质生成，反例证伪。</p>
+  </div>
+</div>
+
+<!-- 案例6 -->
+<div class="case-card" data-case="6">
+  <span class="level-tag level-l6">🌍 社会议题情境</span>
+  <h3>🌡️ 案例6：全球变暖中的"物理vs化学"</h3>
+  <div class="case-material">
+    <strong>案例材料：</strong>全球变暖涉及两个重要过程——①CO₂分子吸收红外辐射（温室效应）②化石燃料燃烧释放CO₂。解析任务：①和②分别属于物理变化还是化学变化？全球变暖本身是"变化"还是"现象"？
+  </div>
+  <div class="principle-tags">
+    <span>操作定义法</span>
+    <span>证据层级法</span>
+  </div>
+  <button class="reveal-btn" onclick="revealAnswer(this)">💡 查看解析</button>
+  <div class="reveal-content">
+    <p><strong>🔎 解析：</strong></p>
+    <p><strong>① CO₂吸收红外辐射</strong> → 分子振动能级跃迁，CO₂分子种类未变 → <strong>物理变化</strong></p>
+    <p><strong>② 化石燃料燃烧</strong> → CₓHᵧ + O₂ → CO₂ + H₂O，有新物质生成 → <strong>化学变化</strong></p>
+    <p><strong>全球变暖本身</strong> → 是<strong>现象</strong>（温度升高的宏观表现），不是"变化"的概念类型。</p>
+  </div>
+</div>
+
+<!-- 案例7 -->
+<div class="case-card" data-case="7">
+  <span class="level-tag level-l7">🎯 综合迁移情境</span>
+  <h3>🧪 案例7：未知物质的"身份鉴定"</h3>
+  <div class="case-material">
+    <strong>案例材料：</strong>你收到3种白色粉末（可能是食盐、小苏打、淀粉）。提供工具：水、白醋、碘酒、pH试纸。设计鉴别方案——区分哪些是物理性质、哪些是化学性质；哪些操作涉及物理变化、哪些涉及化学变化。
+  </div>
+  <div class="principle-tags">
+    <span>前后对比法</span>
+    <span>证据层级法</span>
+    <span>反例检验法</span>
+    <span>操作定义法</span>
+  </div>
+  <button class="reveal-btn" onclick="revealAnswer(this)">💡 查看解析</button>
+  <div class="reveal-content">
+    <p><strong>🔎 解析：</strong></p>
+    <p><strong>鉴别方案设计：</strong></p>
+    <ul>
+      <li><strong>溶于水观察</strong> — 物理变化（溶解），食盐全溶、小苏打部分溶、淀粉不溶</li>
+      <li><strong>加碘酒</strong> — 化学变化（淀粉变蓝，新物质生成）→ 鉴别淀粉</li>
+      <li><strong>加白醋</strong> — 化学变化（小苏打产生CO₂气泡，新物质生成）→ 鉴别小苏打</li>
+      <li><strong>pH试纸</strong> — 测的是化学性质（酸碱性），属物理操作+化学性质的体现</li>
+    </ul>
+  </div>
+</div>
+
+<div class="section-title">七阶后综合反思</div>
+
+<div class="reflect-section">
+  <div class="reflect-q">
+    <p><strong>🤔 1.</strong> 哪个案例最容易分析？为什么？</p>
+  </div>
+  <div class="reflect-q">
+    <p><strong>🤔 2.</strong> 哪个案例最棘手？困难是什么？</p>
+  </div>
+  <div class="reflect-q">
+    <p><strong>🤔 3.</strong> "证据层级法"在哪个案例中最有挑战？</p>
+  </div>
+  <div class="reflect-q">
+    <p><strong>🤔 4.</strong> 这些案例如何帮助你真正理解"物理变化和化学变化"这两对概念？</p>
+  </div>
+  <div class="reflect-q">
+    <p><strong>🤔 5.</strong> 如果让你再补充一个案例，你会选什么情境？</p>
+  </div>
+  <div style="margin-top:12px;">
+    <button class="reveal-btn" onclick="toggleReflectTips()">📝 查看思考引导</button>
+    <div id="reflect-tips" class="reveal-content" style="margin-top:8px;">
+      <p><strong>💡 思考提示：</strong></p>
+      <p>• 生活情境（案例1-3）通常更直觀，因为贴近日常经验</p>
+      <p>• 微观解释（案例4）需要抽象思维能力，是许多同学的难点</p>
+      <p>• 综合迁移（案例7）需要同时调用4条原理，是最高阶挑战</p>
+      <p>• 建议在笔记本上写下每个案例的分析过程和使用的原理</p>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function revealAnswer(btn) {
+  var content = btn.nextElementSibling;
+  if (content && content.classList.contains('reveal-content')) {
+    var isOpen = content.classList.contains('open');
+    content.classList.toggle('open');
+    btn.textContent = isOpen ? '💡 查看解析' : '🔒 收起解析';
+  }
+}
+
+function toggleReflectTips() {
+  var el = document.getElementById('reflect-tips');
+  if (el) {
+    el.classList.toggle('open');
+    document.querySelector('.reflect-section .reveal-btn').textContent = el.classList.contains('open') ? '🔒 收起引导' : '📝 查看思考引导';
+  }
+}
+
+function jumpToCase(n) {
+  var cards = document.querySelectorAll('.case-card');
+  var dots = document.querySelectorAll('.progress-dot');
+  cards.forEach(function(c, i) {
+    if (i + 1 === n) {
+      c.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  });
+  dots.forEach(function(d) {
+    d.classList.toggle('active', parseInt(d.getAttribute('data-case')) === n);
+  });
+}
+</script>
+</body>
+</html>

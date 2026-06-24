@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性案例 — 化学 九年级上</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0;
+  width: 100%;
+  max-width: none;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.wrapper { width: 100%; max-width: none; padding: 24px 20px; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin: 0 0 6px; }
+.header .meta { opacity: 0.85; font-size: 14px; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.card h2 { font-size: var(--font-h2); color: var(--primary); margin-bottom: 10px; }
+.card p { margin-bottom: 8px; }
+.case-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.case-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+.case-card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.12); transform: translateY(-1px); }
+.case-card .case-header { display: flex; justify-content: space-between; align-items: center; }
+.case-card .case-title { font-weight: 600; font-size: 16px; }
+.case-card .case-diff { font-size: 14px; color: var(--text-secondary); }
+.stars { color: #faad14; }
+.case-body { display: none; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border); }
+.case-body.open { display: block; }
+.case-body h4 { color: var(--primary); margin: 12px 0 6px; font-size: 15px; }
+.case-body h4:first-child { margin-top: 0; }
+.analysis-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14px; }
+.analysis-table th, .analysis-table td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; }
+.analysis-table th { background: var(--bg); font-weight: 600; color: var(--primary); }
+.analysis-table input { width: 100%; border: none; border-bottom: 1px dashed var(--border); outline: none; font-size: 14px; padding: 4px 0; font-family: inherit; background: transparent; }
+.analysis-table input:focus { border-bottom-color: var(--primary); }
+.ref-btn {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  border: 1px solid var(--accent);
+  padding: 6px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+  margin-top: 8px;
+}
+.ref-btn:hover { background: var(--accent); color: #fff; }
+.ref-content { display: none; margin-top: 10px; padding: 12px; background: #f6ffed; border: 1px solid #b7eb8f; border-radius: 6px; font-size: 14px; color: #135200; }
+.ref-content.open { display: block; }
+.reflection-area { margin-top: 24px; }
+.reflection-area textarea { width: 100%; min-height: 60px; border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-size: 14px; font-family: inherit; resize: vertical; margin-bottom: 10px; }
+.reflection-area textarea:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px rgba(22,119,255,0.1); }
+.reflection-area label { font-weight: 600; display: block; margin-bottom: 4px; color: var(--text); }
+.btn {
+  display: inline-block;
+  padding: 8px 20px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+.btn:hover { background: var(--primary-hover); }
+.btn-outline {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  margin-left: 8px;
+}
+.btn-outline:hover { background: var(--bg); }
+@media (min-width: 640px) { .wrapper { padding: 32px 40px; } }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <h1>🔬 解析性案例 · 七阶挑战</h1>
+    <div class="meta">化学 · 九年级上 · 第一单元 走进化学世界</div>
+    <div style="margin-top:8px;font-size:14px;opacity:0.9;">运用解析性原理，独立完成7个递进式化学现象拆解分析</div>
+  </div>
+
+  <div class="card">
+    <h2>📋 任务定位</h2>
+    <p>在"示例"和"原理"之后，现在是<strong>你自己上场分析</strong>的时候了。这里有7个递进式案例，每个都要求你运用刚学到的解析性原理，独立完成对化学现象的拆解分析——不需要你创造新东西，而是练习<strong>"看懂"</strong>。</p>
+    <p style="margin-top:8px;color:var(--text-secondary);">👇 点击任意案例卡片展开详情，按"分析记录表"逐项填写你的分析。</p>
+  </div>
+
+  <div class="case-grid">
+
+    <!-- 案例1 -->
+    <div class="case-card" onclick="toggleCase(this)">
+      <div class="case-header">
+        <span class="case-title">🥣 第1阶 · 生活情境</span>
+        <span class="case-diff"><span class="stars">★</span>☆☆ 基础</span>
+      </div>
+      <div style="font-size:14px;color:var(--text-secondary);margin-top:4px;">家里的食盐为什么"受潮结块"？——分析潮解是物理变化还是化学变化</div>
+      <div class="case-body">
+        <h4>📌 案例材料</h4>
+        <p>夏天，厨房里的食盐（主要成分NaCl）放置在空气中一段时间后，原本干燥的盐粒变得潮湿，甚至结块。妈妈问你："这盐还能吃吗？它是变质了吗？"</p>
+        <h4>🎯 解析任务</h4>
+        <p>分析食盐潮解的过程，判断它属于物理变化还是化学变化，并说明判断依据。</p>
+        <h4>🔍 解析路径</h4>
+        <p><strong>识别问题</strong>→<strong>确定对象</strong>（食盐、水蒸气）→<strong>拆解要素</strong>（外观变化、成分是否改变）→<strong>梳理过程</strong>→<strong>寻找证据</strong>→<strong>得出结论</strong></p>
+        <h4>📖 原理调用</h4>
+        <p>① 物理变化与化学变化的区分原理（有无新物质生成）<br>② 潮解的定义：物质吸收空气中的水分，表面溶解</p>
+        <h4>分析记录表</h4>
+        <table class="analysis-table">
+          <tr><th style="width:120px;">步骤</th><th>我的分析</th><th style="width:140px;">证据/依据</th></tr>
+          <tr><td>我看到了什么现象？</td><td><input type="text" placeholder="写下你的观察..." data-group="c1"></td><td><input type="text" placeholder="依据..." data-group="c1"></td></tr>
+          <tr><td>属于哪类问题？</td><td><input type="text" placeholder="判断问题类型..." data-group="c1"></td><td><input type="text" placeholder="依据..." data-group="c1"></td></tr>
+          <tr><td>涉及什么概念/原理？</td><td><input type="text" placeholder="列出相关概念..." data-group="c1"></td><td><input type="text" placeholder="依据..." data-group="c1"></td></tr>
+          <tr><td>关键证据是什么？</td><td><input type="text" placeholder="找到关键证据..." data-group="c1"></td><td><input type="text" placeholder="依据..." data-group="c1"></td></tr>
+          <tr><td>我的推理过程</td><td><input type="text" placeholder="写出推理链条..." data-group="c1"></td><td><input type="text" placeholder="依据..." data-group="c1"></td></tr>
+          <tr><td>我的结论</td><td><input type="text" placeholder="给出最终结论..." data-group="c1"></td><td><input type="text" placeholder="依据..." data-group="c1"></td></tr>
+        </table>
+        <button class="ref-btn" onclick="event.stopPropagation();toggleRef(this)">💡 查看参考思路</button>
+        <div class="ref-content">
+          <strong>参考方向：</strong>食盐潮解是吸收空气中水分，表面溶解——NaCl没有变成新物质，水分蒸发后仍能得到食盐固体，因此是<strong>物理变化</strong>。区别于化学变化（如铁生锈生成新物质铁锈）。<br>
+          <strong>延伸思考：</strong>如果食盐中含碘酸钾(KIO₃)，潮解过程中碘酸钾会分解吗？查阅资料确认。
+        </div>
+      </div>
+    </div>
+
+    <!-- 案例2 -->
+    <div class="case-card" onclick="toggleCase(this)">
+      <div class="case-header">
+        <span class="case-title">🔥 第2阶 · 校园情境</span>
+        <span class="case-diff"><span class="stars">★</span>☆☆ 基础</span>
+      </div>
+      <div style="font-size:14px;color:var(--text-secondary);margin-top:4px;">实验室的镁条燃烧发出耀眼白光——分析这个变化的过程和产物</div>
+      <div class="case-body">
+        <h4>📌 案例材料</h4>
+        <p>化学实验课上，老师用坩埚钳夹住一根银白色镁条，在酒精灯上点燃。镁条剧烈燃烧，发出耀眼的白光，放出大量热。燃烧后镁条消失，留下白色粉末。</p>
+        <h4>🎯 解析任务</h4>
+        <p>分析镁条燃烧过程中发生了什么变化，判断变化类型，写出化学方程式。</p>
+        <h4>📖 原理调用</h4>
+        <p>① 燃烧的定义（剧烈的发光放热的化学变化）<br>② 化学变化的判断依据（有新物质生成）<br>③ 化学方程式书写原理</p>
+        <table class="analysis-table">
+          <tr><th style="width:120px;">步骤</th><th>我的分析</th><th style="width:140px;">证据/依据</th></tr>
+          <tr><td>现象描述</td><td><input type="text" placeholder="写下观察..." data-group="c2"></td><td><input type="text" placeholder="依据..." data-group="c2"></td></tr>
+          <tr><td>问题类型</td><td><input type="text" placeholder="判断..." data-group="c2"></td><td><input type="text" placeholder="依据..." data-group="c2"></td></tr>
+          <tr><td>涉及原理</td><td><input type="text" placeholder="列出原理..." data-group="c2"></td><td><input type="text" placeholder="依据..." data-group="c2"></td></tr>
+          <tr><td>关键证据</td><td><input type="text" placeholder="关键证据..." data-group="c2"></td><td><input type="text" placeholder="依据..." data-group="c2"></td></tr>
+          <tr><td>推理过程</td><td><input type="text" placeholder="推理..." data-group="c2"></td><td><input type="text" placeholder="依据..." data-group="c2"></td></tr>
+          <tr><td>结论</td><td><input type="text" placeholder="结论..." data-group="c2"></td><td><input type="text" placeholder="依据..." data-group="c2"></td></tr>
+        </table>
+        <button class="ref-btn" onclick="event.stopPropagation();toggleRef(this)">💡 查看参考思路</button>
+        <div class="ref-content">
+          <strong>参考方向：</strong>镁条燃烧是<strong>化学变化</strong>，镁(Mg)与氧气(O₂)反应生成氧化镁(MgO)。银白色镁条→白色粉末，外观完全不同，证明有新物质生成。化学方程式：2Mg + O₂ 点燃 2MgO。耀眼白光是因为反应释放大量能量，以光能形式释放。
+        </div>
+      </div>
+    </div>
+
+    <!-- 案例3 -->
+    <div class="case-card" onclick="toggleCase(this)">
+      <div class="case-header">
+        <span class="case-title">🧪 第3阶 · 家庭/社区情境</span>
+        <span class="case-diff"><span class="stars">★★</span>☆ 进阶</span>
+      </div>
+      <div style="font-size:14px;color:var(--text-secondary);margin-top:4px;">为什么用"小苏打+醋"可以疏通厨房下水道？</div>
+      <div class="case-body">
+        <h4>📌 案例材料</h4>
+        <p>厨房下水道堵塞了，妈妈倒了一些小苏打（碳酸氢钠NaHCO₃）和白醋（含醋酸CH₃COOH），管道里立刻冒出大量气泡，过了一会儿管道就通了。</p>
+        <h4>🎯 解析任务</h4>
+        <p>分析小苏打与醋混合产生气泡的原因，判断产生的气体是什么，说明为什么气泡能帮助疏通管道。</p>
+        <h4>📖 原理调用</h4>
+        <p>① 酸与碳酸盐的反应原理（产生CO₂）<br>② 气体生成对管道内压力变化的影响</p>
+        <h4>分析记录表</h4>
+        <table class="analysis-table">
+          <tr><th style="width:120px;">步骤</th><th>我的分析</th><th style="width:140px;">证据/依据</th></tr>
+          <tr><td>现象描述</td><td><input type="text" placeholder="写下观察..." data-group="c3"></td><td><input type="text" placeholder="依据..." data-group="c3"></td></tr>
+          <tr><td>问题类型</td><td><input type="text" placeholder="判断..." data-group="c3"></td><td><input type="text" placeholder="依据..." data-group="c3"></td></tr>
+          <tr><td>关键证据</td><td><input type="text" placeholder="关键证据..." data-group="c3"></td><td><input type="text" placeholder="依据..." data-group="c3"></td></tr>
+          <tr><td>结论</td><td><input type="text" placeholder="结论..." data-group="c3"></td><td><input type="text" placeholder="依据..." data-group="c3"></td></tr>
+        </table>
+        <button class="ref-btn" onclick="event.stopPropagation();toggleRef(this)">💡 查看参考思路</button>
+        <div class="ref-content">
+          <strong>参考方向：</strong>醋酸与碳酸氢钠反应：NaHCO₃ + CH₃COOH → CH₃COONa + H₂O + CO₂↑。产生的CO₂气体在管道内膨胀形成气压，推动堵塞物松动。同时反应生成的液体帮助溶解油污。<strong>关键判断</strong>：有新物质CO₂生成 → 化学变化。
+        </div>
+      </div>
+    </div>
+
+    <!-- 案例4 -->
+    <div class="case-card" onclick="toggleCase(this)">
+      <div class="case-header">
+        <span class="case-title">⚗️ 第4阶 · 学科核心情境</span>
+        <span class="case-diff"><span class="stars">★★</span>☆ 进阶</span>
+      </div>
+      <div style="font-size:14px;color:var(--text-secondary);margin-top:4px;">分析铁丝在氧气中燃烧——为什么集气瓶底要放水？</div>
+      <div class="case-body">
+        <h4>📌 案例材料</h4>
+        <p>将细铁丝盘成螺旋状，一端系一根火柴，点燃火柴后伸入盛有氧气的集气瓶中。铁丝剧烈燃烧，火星四射，生成黑色固体。集气瓶底事先放了一些水或细沙。</p>
+        <h4>🎯 解析任务</h4>
+        <p>分析铁丝燃烧的现象变化，解释"瓶底放水"的目的，判断变化类型。</p>
+        <button class="ref-btn" onclick="event.stopPropagation();toggleRef(this)">💡 查看参考思路</button>
+        <div class="ref-content">
+          <strong>参考方向：</strong>铁丝燃烧：3Fe + 2O₂ 点燃 Fe₃O₄（四氧化三铁，黑色）。火星四射说明反应剧烈，熔化后的高温生成物溅落。<strong>瓶底放水</strong>是为了防止高温熔融物炸裂集气瓶底。属于<strong>化学变化</strong>（新物质Fe₃O₄生成）。
+        </div>
+      </div>
+    </div>
+
+    <!-- 案例5 -->
+    <div class="case-card" onclick="toggleCase(this)">
+      <div class="case-header">
+        <span class="case-title">🧫 第5阶 · 跨学科情境</span>
+        <span class="case-diff"><span class="stars">★★★</span> 挑战</span>
+      </div>
+      <div style="font-size:14px;color:var(--text-secondary);margin-top:4px;">夏天剩饭容易"馊"掉——从化学和生物两个角度分析</div>
+      <div class="case-body">
+        <h4>📌 案例材料</h4>
+        <p>夏天的米饭放在室温下，第二天就发出酸馊味，不能再吃了。而放在冰箱里的米饭可以保存好几天。</p>
+        <h4>🎯 解析任务</h4>
+        <p>从<strong>化学</strong>角度（物质变化、化学反应速率）和<strong>生物</strong>角度（微生物繁殖、酶的作用）分别分析米饭馊掉的原因，并说明温度在其中起什么作用。</p>
+        <button class="ref-btn" onclick="event.stopPropagation();toggleRef(this)">💡 查看参考思路</button>
+        <div class="ref-content">
+          <strong>化学视角：</strong>米饭中的淀粉在微生物分泌的酶催化下水解为糖类，糖类进一步发酵产生有机酸（醋酸、乳酸）和醇类 → 产生酸馊味。属于化学变化。<br>
+          <strong>生物视角：</strong>微生物（细菌、霉菌）在温暖环境中快速繁殖，分解米饭中的有机物。<br>
+          <strong>温度作用：</strong>温度影响化学反应速率和微生物繁殖速度。高温（夏天）加速，低温（冰箱）减慢。<br>
+          <strong>综合结论：</strong>馊饭是微生物引发的复杂化学变化过程。
+        </div>
+      </div>
+    </div>
+
+    <!-- 案例6 -->
+    <div class="case-card" onclick="toggleCase(this)">
+      <div class="case-header">
+        <span class="case-title">🌧️ 第6阶 · 社会议题情境</span>
+        <span class="case-diff"><span class="stars">★★★</span> 挑战</span>
+      </div>
+      <div style="font-size:14px;color:var(--text-secondary);margin-top:4px;">分析"酸雨"的形成过程和危害——涉及哪些化学变化？</div>
+      <div class="case-body">
+        <h4>📌 案例材料</h4>
+        <p>酸雨是指pH值小于5.6的酸性降水。化石燃料燃烧产生的SO₂和NO₃等气体排放到大气中，经过一系列化学反应转化为硫酸和硝酸，随雨水降落。</p>
+        <h4>🎯 解析任务</h4>
+        <p>分析酸雨形成过程中涉及的化学变化，写出SO₂转化为硫酸的化学方程式，说明酸雨对环境的主要危害。</p>
+        <button class="ref-btn" onclick="event.stopPropagation();toggleRef(this)">💡 查看参考思路</button>
+        <div class="ref-content">
+          <strong>化学变化过程：</strong><br>
+          ① S + O₂ 点燃 SO₂（含硫燃料燃烧）<br>
+          ② 2SO₂ + O₂ ⇌ 2SO₃（在催化剂/光照下）<br>
+          ③ SO₃ + H₂O → H₂SO₄（形成硫酸）<br>
+          <strong>危害：</strong>腐蚀建筑物（大理石CaCO₃ + H₂SO₄ → CaSO₄ + CO₂↑ + H₂O）、酸化土壤和湖泊、损害植物、腐蚀金属制品。<br>
+          <strong>防治：</strong>使用清洁能源、烟气脱硫、推广新能源汽车。
+        </div>
+      </div>
+    </div>
+
+    <!-- 案例7 -->
+    <div class="case-card" onclick="toggleCase(this)">
+      <div class="case-header">
+        <span class="case-title">🧪 第7阶 · 综合迁移情境</span>
+        <span class="case-diff"><span class="stars">★★★</span> 挑战</span>
+      </div>
+      <div style="font-size:14px;color:var(--text-secondary);margin-top:4px;">给你一瓶未知白色粉末，设计一套分析方案判断它是什么</div>
+      <div class="case-body">
+        <h4>📌 案例材料</h4>
+        <p>你得到一瓶未知的白色粉末，标签已脱落。已知它可能是：食盐(NaCl)、小苏打(NaHCO₃)、蔗糖(C₁₂H₂₂O₁₁)、面粉（主要成分淀粉）中的一种。</p>
+        <h4>🎯 解析任务</h4>
+        <p>设计一套完整的化学分析方案，利用你已学过的化学知识和方法，逐步确定该白色粉末的成分。要求写出每一步的检验方法、预期现象和判断依据。</p>
+        <button class="ref-btn" onclick="event.stopPropagation();toggleRef(this)">💡 查看参考思路</button>
+        <div class="ref-content">
+          <strong>参考方案：</strong><br>
+          <strong>第一步（物理方法）：</strong>观察颜色、状态，闻气味——排除明显异味物质。<br>
+          <strong>第二步（溶解性测试）：</strong>取少量样品溶于水——蔗糖易溶、小苏打可溶、面粉难溶形成悬浊液。<br>
+          <strong>第三步（加白醋测试）：</strong>取样品加白醋——小苏打产生CO₂气泡，其他不反应。<br>
+          <strong>第四步（碘液测试）：</strong>取样品加碘液——面粉变蓝（淀粉遇碘变蓝）。<br>
+          <strong>第五步（不可尝药品！）：</strong>严禁在实验室尝药品！用专用试剂检测Cl⁻（如AgNO₃溶液）<br>
+          <strong>综合判断：</strong>通过排除法和确定性检验，逐步缩小范围，确定未知粉末成分。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:24px;">
+    <h2>📝 综合反思</h2>
+    <p style="color:var(--text-secondary);margin-bottom:16px;">完成全部或部分案例后，请思考以下问题：</p>
+    <div class="reflection-area">
+      <label>1. 哪个案例最容易分析？为什么？</label>
+      <textarea placeholder="写下你的反思..."></textarea>
+      <label>2. 哪个案例最难？困难在哪里？</label>
+      <textarea placeholder="写下你的反思..."></textarea>
+      <label>3. 哪条解析性原理最常用？哪条还不太会用？</label>
+      <textarea placeholder="写下你的反思..."></textarea>
+      <label>4. 这些案例如何帮你更深入理解"走进化学世界"？</label>
+      <textarea placeholder="写下你的反思..."></textarea>
+      <label>5. 在"拆解分析"方面最大的进步是什么？</label>
+      <textarea placeholder="写下你的反思..."></textarea>
+      <div style="margin-top:12px;">
+        <button class="btn" onclick="alert('反思内容已保存到本地！')">💾 保存反思</button>
+        <button class="btn btn-outline" onclick="resetReflections()">🔄 重新填写</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleCase(el) {
+  var body = el.querySelector('.case-body');
+  if (body) body.classList.toggle('open');
+}
+function toggleRef(btn) {
+  var content = btn.nextElementSibling;
+  if (content && content.classList) {
+    content.classList.toggle('open');
+  }
+}
+function resetReflections() {
+  var area = document.querySelector('.reflection-area:last-child');
+  if (!area) return;
+  var textareas = area.querySelectorAll('textarea');
+  for (var i = 0; i < textareas.length; i++) {
+    textareas[i].value = '';
+  }
+}
+</script>
+</body>
+</html>

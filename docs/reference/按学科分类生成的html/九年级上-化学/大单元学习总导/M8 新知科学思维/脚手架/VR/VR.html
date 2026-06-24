@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VR脚手架 — 走进化学世界</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+  --success: #52c41a;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  margin: 0; padding: 0; width: 100%;
+}
+.container {
+  width: 100%; max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  text-align: center;
+  margin: 16px 0 8px;
+}
+.subtitle {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+h2 {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin: 28px 0 12px;
+  padding-left: 12px;
+  border-left: 4px solid var(--primary);
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin: 16px 0;
+  border: 1px solid var(--border);
+}
+.task-card {
+  background: var(--card-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  padding: 16px 20px;
+  margin: 12px 0;
+  cursor: pointer;
+  transition: all 0.25s;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  user-select: none;
+}
+.task-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(22,119,255,0.1);
+}
+.task-card.done {
+  background: #f6ffed;
+  border-color: var(--success);
+}
+.task-icon {
+  font-size: 24px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.task-info { flex: 1; }
+.task-info h4 { font-size: 15px; margin-bottom: 4px; }
+.task-info p { font-size: 14px; color: var(--text-secondary); }
+.task-check {
+  width: 24px; height: 24px;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+.task-card.done .task-check {
+  background: var(--success);
+  border-color: var(--success);
+  color: #fff;
+}
+.platform-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 12px 0;
+}
+.platform-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  transition: all 0.2s;
+}
+.platform-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(22,119,255,0.1);
+}
+.platform-card h4 { color: var(--primary); margin-bottom: 4px; font-size: 15px; }
+.platform-card p { font-size: 13px; color: var(--text-secondary); }
+.tip-box {
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 8px 0;
+  font-size: 14px;
+}
+.tip-box::before {
+  content: "💡 使用建议";
+  display: block;
+  font-weight: 600;
+  color: #d46b08;
+  margin-bottom: 4px;
+}
+.alt-link {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  padding: 6px 14px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 13px;
+  margin: 4px 4px 4px 0;
+  cursor: pointer;
+  transition: background 0.2s;
+  border: 1px solid var(--accent);
+}
+.alt-link:hover { background: var(--accent); color: #fff; }
+.alt-link.active { background: var(--primary); color: #fff; }
+.alt-section {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+}
+.alt-section.open { max-height: 400px; }
+.timer-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 12px 0;
+  overflow: hidden;
+}
+.timer-fill {
+  height: 100%;
+  width: 0;
+  background: var(--primary);
+  border-radius: 2px;
+  transition: width 1s linear;
+}
+.timer-fill.running { width: 100%; }
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .platform-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>VR 脚手架</h1>
+<p class="subtitle">沉浸式体验化学微观世界 · M8 新知科学思维</p>
+
+<div class="card" style="background:linear-gradient(135deg,#e6f7ff,#f0f5ff);border-color:var(--accent);">
+<p>🔬 通过沉浸式虚拟现实体验，将化学中的抽象概念（分子、原子、化学反应过程）具象化，获得直观理解。即使没有VR设备，也有替代方案👇</p>
+</div>
+
+<!-- 一、VR任务 -->
+<h2>一、VR 学习任务</h2>
+<p style="font-size:14px;color:var(--text-secondary);margin-bottom:6px;">点击每个任务卡片，标记你的完成进度：</p>
+
+<div class="task-card" onclick="toggleTask(this)">
+  <span class="task-icon">👁️</span>
+  <div class="task-info">
+    <h4>观察任务</h4>
+    <p>在VR环境中观察原子/分子结构、化学反应过程。<br>🔍 重点观察：水分子的V形结构、NaCl的晶格排列、铁生锈的微观变化。</p>
+  </div>
+  <span class="task-check">✓</span>
+</div>
+
+<div class="task-card" onclick="toggleTask(this)">
+  <span class="task-icon">🖱️</span>
+  <div class="task-info">
+    <h4>操作任务</h4>
+    <p>虚拟实验操作——安全使用酒精灯、量筒读数、试管加热等。<br>🔬 注意：VR中犯错的成本为零！大胆试错，记住正确的操作步骤。</p>
+  </div>
+  <span class="task-check">✓</span>
+</div>
+
+<div class="task-card" onclick="toggleTask(this)">
+  <span class="task-icon">📝</span>
+  <div class="task-info">
+    <h4>记录任务</h4>
+    <p>记录观察到的关键现象和数据。<br>📋 准备一个"VR观察日志"，记录：看到了什么？和预期一样吗？有什么新发现？</p>
+  </div>
+  <span class="task-check">✓</span>
+</div>
+
+<div class="timer-bar"><div class="timer-fill" id="timerFill"></div></div>
+<p style="font-size:13px;color:var(--text-secondary);text-align:right;">建议每次 VR 使用不超过 <strong>15 分钟</strong> ⏱️</p>
+
+<!-- 二、推荐平台 -->
+<h2>二、推荐平台 / 软件</h2>
+
+<div class="platform-grid">
+<div class="platform-card">
+  <div style="font-size:32px;margin-bottom:6px;">🥽</div>
+  <h4>ClassVR</h4>
+  <p>专为教育设计的VR平台，含化学分子模型库，支持教师端控制</p>
+  <span style="display:inline-block;font-size:12px;background:#e6f7ff;color:#1677ff;padding:2px 8px;border-radius:4px;margin-top:6px;">学校统一配备</span>
+</div>
+<div class="platform-card">
+  <div style="font-size:32px;margin-bottom:6px;">🔬</div>
+  <h4>Labster</h4>
+  <p>全球领先的虚拟实验室，可模拟化学实验操作，含闯关任务</p>
+  <span style="display:inline-block;font-size:12px;background:#e6f7ff;color:#1677ff;padding:2px 8px;border-radius:4px;margin-top:6px;">网页版可用</span>
+</div>
+</div>
+
+<!-- 三、替代方案 -->
+<h2>三、替代方案（无VR设备时）</h2>
+
+<div>
+<button class="alt-link" onclick="toggleAlt(this, 'altMol')">🧬 MolView (分子3D)</button>
+<button class="alt-link" onclick="toggleAlt(this, 'altChem')">📹 化学实验视频</button>
+<button class="alt-link" onclick="toggleAlt(this, 'altHtml')">💻 HTML5 模拟实验</button>
+</div>
+
+<div id="altMol" class="alt-section">
+<div class="card">
+<h4 style="color:var(--primary);">🧬 MolView — 免费分子3D查看器</h4>
+<p style="font-size:14px;margin:6px 0;">网址：<strong>molview.org</strong></p>
+<ul style="padding-left:20px;font-size:14px;">
+  <li>输入化学式（如 H₂O、NaCl）即可查看3D结构</li>
+  <li>可旋转、缩放、切换显示模式（球棍模型、空间填充等）</li>
+  <li>完全免费，无需注册，浏览器直接打开</li>
+</ul>
+</div>
+</div>
+
+<div id="altChem" class="alt-section">
+<div class="card">
+<h4 style="color:var(--primary);">📹 化学实验视频资源</h4>
+<p style="font-size:14px;margin:6px 0;">推荐平台：<strong>国家中小学智慧教育平台、B站知识区</strong></p>
+<ul style="padding-left:20px;font-size:14px;">
+  <li>搜索"九年级化学实验视频"获取高清演示</li>
+  <li>建议观看时暂停并写下观察记录</li>
+  <li>重点关注：操作规范、现象变化、注意事项</li>
+</ul>
+</div>
+</div>
+
+<div id="altHtml" class="alt-section">
+<div class="card">
+<h4 style="color:var(--primary);">💻 HTML5 交互式模拟实验</h4>
+<p style="font-size:14px;margin:6px 0;">推荐平台：<strong>PhET 互动模拟（phet.colorado.edu）</strong></p>
+<ul style="padding-left:20px;font-size:14px;">
+  <li>科罗拉多大学出品，免费开源</li>
+  <li>含"分子形状""酸碱滴定""气体性质"等化学模拟</li>
+  <li>支持中文界面，适合自主探索</li>
+</ul>
+</div>
+</div>
+
+<!-- 四、使用建议 -->
+<h2>四、使用建议</h2>
+<div class="tip-box">
+<ol style="padding-left:20px;margin-top:4px;">
+  <li><strong>先观察，再操作，最后记录</strong>——按这个顺序效率最高</li>
+  <li>每次使用<strong>不超过15分钟</strong>，避免视觉疲劳</li>
+  <li>记录你的发现并与<strong>教材知识对比</strong>——VR中的现象是否和课本一致？</li>
+  <li>遇到不懂的化学概念，先记下来，回头查阅教材或请教老师</li>
+  <li><strong>和同学讨论</strong>你们的观察发现，互相补充记录</li>
+</ol>
+</div>
+
+<div style="text-align:center;margin:24px 0;">
+<button class="alt-link" onclick="resetAll()" style="font-size:14px;padding:8px 24px;">🔄 重置所有任务状态</button>
+</div>
+
+</div>
+
+<script>
+function toggleTask(el) {
+  if (el) el.classList.toggle('done');
+}
+function toggleAlt(btn, id) {
+  var section = document.getElementById(id);
+  if (section) {
+    var isOpen = section.classList.contains('open');
+    document.querySelectorAll('.alt-section.open').forEach(function(s) {
+      s.classList.remove('open');
+    });
+    document.querySelectorAll('.alt-link.active').forEach(function(b) {
+      b.classList.remove('active');
+    });
+    if (!isOpen) {
+      section.classList.add('open');
+      btn.classList.add('active');
+    }
+  }
+}
+function resetAll() {
+  document.querySelectorAll('.task-card.done').forEach(function(c) {
+    c.classList.remove('done');
+  });
+  document.querySelectorAll('.alt-section.open').forEach(function(s) {
+    s.classList.remove('open');
+  });
+  document.querySelectorAll('.alt-link.active').forEach(function(b) {
+    b.classList.remove('active');
+  });
+}
+</script>
+</body>
+</html>

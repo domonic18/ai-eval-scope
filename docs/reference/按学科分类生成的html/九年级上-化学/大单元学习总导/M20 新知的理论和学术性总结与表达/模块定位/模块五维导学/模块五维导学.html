@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块五维导学 — M20 新知的理论和学术性总结与表达</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 3px solid var(--accent);
+}
+h2 {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin: 24px 0 12px;
+  padding-left: 12px;
+  border-left: 4px solid var(--primary);
+}
+h3 {
+  font-size: calc(var(--font-body) + 2px);
+  font-weight: 600;
+  color: var(--text);
+  margin: 16px 0 8px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.card.highlight {
+  border-left: 4px solid var(--primary);
+  background: linear-gradient(135deg, var(--card-bg) 0%, #f6fbff 100%);
+}
+.card.vision {
+  background: linear-gradient(135deg, #f0f5ff 0%, #e6f7ff 100%);
+  border-color: var(--accent);
+}
+.dimension-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.dim-tab {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.25s;
+  font-family: inherit;
+  color: var(--text-secondary);
+}
+.dim-tab:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.dim-tab.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.dim-panel {
+  display: none;
+  animation: fadeIn 0.4s ease;
+}
+.dim-panel.active {
+  display: block;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  margin: 2px;
+}
+.tag.blue { background: #e6f4ff; color: #1677ff; }
+.tag.green { background: #e6fff2; color: #16a34a; }
+.tag.purple { background: #f0e6ff; color: #722ed1; }
+.tag.orange { background: #fff7e6; color: #d46b08; }
+.figure-card {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 14px;
+  background: #f8fbff;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  border-left: 3px solid var(--primary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.figure-card:hover {
+  background: #e6f4ff;
+  transform: translateX(4px);
+}
+.figure-card .avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.figure-card .figure-detail {
+  display: none;
+  margin-top: 8px;
+  padding: 10px;
+  background: var(--card-bg);
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.figure-card.expanded .figure-detail {
+  display: block;
+}
+.qa-card {
+  padding: 14px 18px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.qa-card:hover {
+  border-color: var(--primary);
+}
+.qa-card .qa-q {
+  font-weight: 600;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.qa-card .qa-q .toggle-icon {
+  transition: transform 0.3s;
+  font-size: 14px;
+}
+.qa-card .qa-a {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s;
+  padding: 0 4px;
+}
+.qa-card.active .qa-q .toggle-icon {
+  transform: rotate(90deg);
+}
+.qa-card.active .qa-a {
+  max-height: 400px;
+  padding: 12px 4px 4px;
+  border-top: 1px dashed var(--border);
+  margin-top: 8px;
+}
+.method-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+@media (min-width: 640px) {
+  .method-grid { grid-template-columns: 1fr 1fr; }
+}
+.method-item {
+  padding: 14px;
+  background: #f8fbff;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  text-align: center;
+}
+.method-item .method-icon {
+  font-size: 28px;
+  margin-bottom: 6px;
+}
+.method-item h4 {
+  font-size: 15px;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.method-item p {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.btn {
+  display: inline-block;
+  padding: 10px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: var(--font-body);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(22,119,255,0.3);
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>🧭 模块五维导学</h1>
+  <p style="font-size:16px;color:var(--text-secondary);margin-bottom:8px;">M20：新知的理论和学术性总结与表达</p>
+  <p style="font-size:14px;color:var(--text-secondary);margin-bottom:20px;">化学 · 九年级上 · 走进化学世界</p>
+
+  <!-- 五维导航标签 -->
+  <div class="dimension-tabs" id="dimTabs">
+    <button class="dim-tab active" onclick="switchDim(0)">🎯 学习目标</button>
+    <button class="dim-tab" onclick="switchDim(1)">🚀 未来价值</button>
+    <button class="dim-tab" onclick="switchDim(2)">📚 学习方法</button>
+    <button class="dim-tab" onclick="switchDim(3)">👤 关键人物</button>
+    <button class="dim-tab" onclick="switchDim(4)">💭 前沿追问</button>
+  </div>
+
+  <!-- ========= 维度1：学习目标 ========= -->
+  <div class="dim-panel active" data-dim="0">
+    <div class="card">
+      <h2>🎯 模块学习目标</h2>
+      <p>完成本模块后，你能够：</p>
+      <ul style="padding-left:20px;margin-top:8px;">
+        <li><strong>📖 知识理解</strong>：系统化梳理"走进化学世界"第1章的核心概念，理解化学变化与物理变化、化学性质与物理性质之间的区别与联系。</li>
+        <li style="margin-top:6px;"><strong>🔧 能力形成</strong>：运用化学学科语言，对所学新知进行规范的学术化表达和理论化总结。</li>
+        <li style="margin-top:6px;"><strong>🧠 思维发展</strong>：建立"观察现象→记录证据→归纳规律→理论表达→学术输出"的完整思维链，形成结构化的认知方式。</li>
+        <li style="margin-top:6px;"><strong>📝 表达产出</strong>：完成一份结构清晰、语言规范的化学新知理论总结报告，能够在同学面前进行学术展示。</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ========= 维度2：未来价值 ========= -->
+  <div class="dim-panel" data-dim="1">
+    <div class="card vision">
+      <h2>🚀 高精尖价值与未来意义</h2>
+      <p>你可能觉得"总结和表达"听起来很简单，但在真实的科学前沿，这项能力至关重要：</p>
+      <ul style="padding-left:20px;margin-top:10px;">
+        <li><strong>🔬 科学研究的基石</strong>：每一位科学家在发现新知识后，都必须将其用学术语言表达出来，才能被同行理解和验证。你正在学习的就是"科学家的基本功"。</li>
+        <li style="margin-top:8px;"><strong>🧪 材料科学的底层逻辑</strong>：从石墨烯到超导材料，每一项材料科学的突破都始于"对实验现象的理论总结和学术表达"。</li>
+        <li style="margin-top:8px;"><strong>🤖 人工智能时代的独特价值</strong>：AI可以帮你搜索信息，但人类独有的——把零散知识系统化、形成自己理解并表达出来的能力——正是你最不可替代的核心素养。</li>
+        <li style="margin-top:8px;"><strong>🌍 环境治理与国家战略</strong>："双碳"目标的实现，离不开化学家对能源转化过程中化学反应规律的理论总结。</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ========= 维度3：学习方法 ========= -->
+  <div class="dim-panel" data-dim="2">
+    <div class="card">
+      <h2>📚 推荐学习方式与方法</h2>
+      <p style="color:var(--text-secondary);margin-bottom:12px;">点击查看每种方法的详细说明 👇</p>
+      <div class="method-grid">
+        <div class="method-item" onclick="showMethodTip(this,'用思维导图把第1章的零散知识串联起来，找到概念之间的逻辑关系。这是理论总结的第一步！')">
+          <div class="method-icon">🧩</div>
+          <h4>概念图构建法</h4>
+          <p>思维导图串联零散知识</p>
+        </div>
+        <div class="method-item" onclick="showMethodTip(this,'把容易混淆的概念（物理变化 vs 化学变化、物理性质 vs 化学性质）放在一起对比，用表格整理异同。')">
+          <div class="method-icon">⚖️</div>
+          <h4>对比分析法</h4>
+          <p>表格整理易混概念</p>
+        </div>
+        <div class="method-item" onclick="showMethodTip(this,'学习使用"引言—主体—结论"的学术写作结构，让你的表达更有章法。')">
+          <div class="method-icon">📄</div>
+          <h4>学术写作框架法</h4>
+          <p>结构化表达训练</p>
+        </div>
+        <div class="method-item" onclick="showMethodTip(this,'从教材中的经典实验案例入手，学习科学家是如何从现象到结论的，再模仿这种思路。')">
+          <div class="method-icon">🔍</div>
+          <h4>案例学习法</h4>
+          <p>模仿科学家的思路</p>
+        </div>
+        <div class="method-item" onclick="showMethodTip(this,'写完报告后请同学读一遍，看看对方能否理解你的表达——这最能检验你的学术表达能力！')">
+          <div class="method-icon">👥</div>
+          <h4>同伴互评法</h4>
+          <p>请同学检验你的表达</p>
+        </div>
+      </div>
+      <div id="methodTip" style="display:none;margin-top:12px;padding:12px 16px;background:#e6f4ff;border-radius:6px;border-left:3px solid var(--primary);"></div>
+    </div>
+  </div>
+
+  <!-- ========= 维度4：关键人物 ========= -->
+  <div class="dim-panel" data-dim="3">
+    <div class="card">
+      <h2>👤 关键人物与事件</h2>
+      <p style="color:var(--text-secondary);margin-bottom:10px;">点击卡片展开人物详情 👇</p>
+
+      <div class="figure-card" onclick="toggleFigure(this)">
+        <div class="avatar">L</div>
+        <div style="flex:1;">
+          <strong>拉瓦锡</strong><span class="tag blue" style="margin-left:6px;">现代化学之父</span>
+          <p style="font-size:14px;color:var(--text-secondary);">他通过定量实验推翻了"燃素说"，建立了质量守恒定律。</p>
+          <div class="figure-detail">
+            <p>🔬 <strong>核心贡献：</strong>拉瓦锡的"二十天实验"在密闭装置中加热汞，精确测量了燃烧前后物质的总质量，证明了燃烧不是物质消失，而是物质与氧气发生了化学反应。他的研究方法——"观察→实验→理论总结→学术表达"——是每一个化学学习者应该掌握的思维范式。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="figure-card" onclick="toggleFigure(this)">
+        <div class="avatar">D</div>
+        <div style="flex:1;">
+          <strong>道尔顿</strong><span class="tag green" style="margin-left:6px;">近代原子论</span>
+          <p style="font-size:14px;color:var(--text-secondary);">第一个用科学方法系统表达原子理论的人。</p>
+          <div class="figure-detail">
+            <p>⚛️ <strong>核心贡献：</strong>道尔顿不是第一个思考"世界由什么组成"的人，却是第一个用科学的语言系统表达这个理论的人。他提出了原子论的五条基本假设，并用数学方法计算了不同元素的原子量——这正是"理论总结与学术表达"的力量。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="figure-card" onclick="toggleFigure(this)">
+        <div class="avatar">M</div>
+        <div style="flex:1;">
+          <strong>门捷列夫</strong><span class="tag purple" style="margin-left:6px;">元素周期表</span>
+          <p style="font-size:14px;color:var(--text-secondary);">通过理论总结预测了未被发现的元素。</p>
+          <div class="figure-detail">
+            <p>📊 <strong>核心贡献：</strong>门捷列夫不仅整理了当时已知的63种元素，还通过分析元素性质的周期规律，大胆预测了镓、钪、锗等当时尚未被发现的元素的存在，并准确预言了它们的性质。这是理论表达的最高境界——用规律预测未知。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="figure-card" onclick="toggleFigure(this)">
+        <div class="avatar">C</div>
+        <div style="flex:1;">
+          <strong>《化学基础教程》</strong><span class="tag orange" style="margin-left:6px;">第一部化学教科书</span>
+          <p style="font-size:14px;color:var(--text-secondary);">拉瓦锡创立了化学学科的术语系统和表达规范。</p>
+          <div class="figure-detail">
+            <p>📖 <strong>核心贡献：</strong>拉瓦锡的《化学基础教程》被认为是第一部现代化学教科书。它创立了化学学科的术语系统和表达规范，第一次用清晰、统一的化学语言描述了化学现象。没有这本书，就没有后来的化学学科体系。</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========= 维度5：前沿追问 ========= -->
+  <div class="dim-panel" data-dim="4">
+    <div class="card">
+      <h2>💭 前沿追问</h2>
+      <p style="color:var(--text-secondary);margin-bottom:10px;">点击问题展开思考提示 👇</p>
+
+      <div class="qa-card" onclick="toggleQA(this)">
+        <div class="qa-q"><span class="toggle-icon">▶</span> 如果让你向外星人描述地球上物质变化的规律，你的"化学语言"会怎么写？</div>
+        <div class="qa-a">
+          <p><strong>💡 思考提示：</strong>想象外星人完全不了解地球上的物质命名规则，你需要创造一套通用的化学语言。你的"理论总结"要做到让任何智慧生命都能理解化学变化的本质。这是对化学概念体系最深层的考验。</p>
+        </div>
+      </div>
+
+      <div class="qa-card" onclick="toggleQA(this)">
+        <div class="qa-q"><span class="toggle-icon">▶</span> 在AI可以自动生成实验报告的今天，人类化学家的"理论总结"能力还有什么独特价值？</div>
+        <div class="qa-a">
+          <p><strong>💡 思考提示：</strong>AI可以排列数据、生成文字，但真正的科学洞察——"这个结果意味着什么""下一步该研究什么""哪些反常现象暗示了新的规律"——仍然需要人类的创造性思维和理论直觉。</p>
+        </div>
+      </div>
+
+      <div class="qa-card" onclick="toggleQA(this)">
+        <div class="qa-q"><span class="toggle-icon">▶</span> 什么样的"理论总结"才算是有价值的？</div>
+        <div class="qa-a">
+          <p><strong>💡 思考提示：</strong>化学家每年发表数百万篇论文，但真正推动科学进步的只有少数。有价值的理论总结往往具备三个特征：<strong>解释力</strong>（能解释更多现象）、<strong>预测力</strong>（能预言新结果）、<strong>简洁性</strong>（能用最少的假设解释最多的事实）。</p>
+        </div>
+      </div>
+
+      <div class="qa-card" onclick="toggleQA(this)">
+        <div class="qa-q"><span class="toggle-icon">▶</span> 你能否用本模块学到的方法，总结出你学习化学以来最大的三个"认知突破"？</div>
+        <div class="qa-a">
+          <p><strong>💡 思考提示：</strong>回顾你学化学的历程——第一次理解"物质由分子原子构成"时的恍然大悟、第一次发现"化学变化前后质量不变"时的惊奇……把它们用学术语言写下来，这就是属于你自己的"理论总结"。</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+var currentDim = 0;
+
+function switchDim(index) {
+  currentDim = index;
+  var tabs = document.querySelectorAll('#dimTabs .dim-tab');
+  var panels = document.querySelectorAll('.dim-panel');
+  tabs.forEach(function(t, i) { t.classList.toggle('active', i === index); });
+  panels.forEach(function(p, i) { p.classList.toggle('active', i === index); });
+}
+
+function showMethodTip(el, tip) {
+  var tipEl = document.getElementById('methodTip');
+  tipEl.style.display = 'block';
+  tipEl.textContent = '💡 ' + tip;
+  tipEl.style.animation = 'none';
+  void tipEl.offsetHeight;
+  tipEl.style.animation = 'fadeIn 0.3s ease';
+}
+
+function toggleFigure(el) {
+  el.classList.toggle('expanded');
+}
+
+function toggleQA(el) {
+  el.classList.toggle('active');
+}
+</script>
+</body>
+</html>

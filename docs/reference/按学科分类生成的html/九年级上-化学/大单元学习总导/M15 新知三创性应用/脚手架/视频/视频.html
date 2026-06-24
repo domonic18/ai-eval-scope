@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>化学视频脚手架</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+}
+.container { width: 100%; max-width: none; padding: 20px; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header p { font-size: 14px; opacity: 0.9; }
+.tabs {
+  display: flex; gap: 8px;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 6px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+.tab-btn {
+  flex: 1; border: none; background: transparent;
+  padding: 10px 16px; border-radius: 6px;
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  color: var(--text-secondary); transition: all 0.25s;
+}
+.tab-btn:hover { background: var(--bg); }
+.tab-btn.active {
+  background: var(--primary); color: #fff;
+  box-shadow: 0 2px 6px rgba(22,119,255,0.3);
+}
+.panel { display: none; }
+.panel.active { display: block; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+.card h3 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.badge {
+  display: inline-block;
+  padding: 2px 10px; border-radius: 10px;
+  font-size: 12px; font-weight: 600;
+}
+.badge-basic { background: #e6f7ff; color: #1677ff; }
+.badge-adv { background: #fff7e6; color: #d46b08; }
+.badge-challenge { background: #f9f0ff; color: #722ed1; }
+.task-list { list-style: none; }
+.task-list li {
+  padding: 8px 0; border-bottom: 1px solid #f0f0f0;
+  display: flex; align-items: flex-start; gap: 10px;
+  cursor: pointer;
+}
+.task-list li:last-child { border-bottom: none; }
+.task-list li::before {
+  content: "○"; font-size: 18px; line-height: 1.4;
+  color: var(--text-secondary); flex-shrink: 0;
+}
+.task-list li.done { color: var(--text-secondary); text-decoration: line-through; }
+.task-list li.done::before { content: "●"; color: var(--primary); }
+.q-item {
+  background: var(--bg); border-radius: 6px;
+  padding: 12px 16px; margin-bottom: 8px; cursor: pointer;
+  border-left: 3px solid var(--accent); transition: all 0.2s;
+}
+.q-item:hover { border-left-color: var(--primary); }
+.q-item .q-text { font-weight: 500; }
+.q-item .q-answer {
+  display: none; margin-top: 10px;
+  padding: 10px; background: var(--card-bg);
+  border-radius: 6px; font-size: 14px; color: var(--text-secondary);
+}
+.q-item.expanded .q-answer { display: block; }
+.pause-point {
+  background: linear-gradient(135deg, #fff7e6, #fffbe6);
+  border-radius: 6px; padding: 12px 16px; margin: 12px 0;
+  border-left: 3px solid #fa8c16;
+}
+.pause-point strong { color: #d46b08; }
+.output-box {
+  background: var(--bg); border-radius: 6px;
+  padding: 14px 16px; margin-top: 12px;
+  border: 1px dashed var(--accent);
+}
+.output-box h4 { font-size: 14px; color: var(--primary); margin-bottom: 6px; }
+.tag {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  background: #f0f5ff; color: var(--primary); font-size: 12px; margin-right: 4px;
+}
+.focus-label {
+  text-align: center; font-size: 14px; color: var(--text-secondary);
+  padding: 12px; margin-bottom: 16px;
+  background: var(--card-bg); border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+}
+.focus-label strong { color: var(--primary); }
+@media (max-width: 640px) {
+  .header { padding: 20px; }
+  .tabs { flex-direction: column; }
+  .card { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🎬 化学视频脚手架</h1>
+    <p>以"观看焦点"为核心，训练从化学视频中提取关键信息的能力</p>
+  </div>
+
+  <div class="focus-label">
+    🎯 <strong>观看焦点</strong>：带着任务看视频，从被动观看转向主动提取
+  </div>
+
+  <div class="tabs" id="tabGroup">
+    <button class="tab-btn active" data-tab="0" onclick="switchTab(0)">🌱 基础·解释型</button>
+    <button class="tab-btn" data-tab="1" onclick="switchTab(1)">🚀 进阶·分析型</button>
+    <button class="tab-btn" data-tab="2" onclick="switchTab(2)">⚡ 挑战·前沿型</button>
+  </div>
+
+  <!-- 基础面板 -->
+  <div class="panel active" data-panel="0">
+    <div class="card">
+      <h3><span class="badge badge-basic">基础</span> 《走进化学世界》科普短片</h3>
+      <p style="margin-bottom:12px;color:var(--text-secondary);">观看并记录化学变化与物理变化的典型实例</p>
+
+      <div style="margin-bottom:12px;">
+        <span class="tag">📺 约8分钟</span>
+        <span class="tag">🎯 入门级</span>
+      </div>
+
+      <h4 style="font-size:14px;color:var(--primary);margin-bottom:8px;">📋 观看任务</h4>
+      <ul class="task-list" id="taskListBasic">
+        <li onclick="toggleTask(this)">记录视频中出现的 <strong>3个化学变化</strong></li>
+        <li onclick="toggleTask(this)">记录视频中出现的 <strong>3个物理变化</strong></li>
+        <li onclick="toggleTask(this)">用一句话概括化学变化的特征</li>
+      </ul>
+
+      <h4 style="font-size:14px;color:var(--primary);margin:16px 0 8px;">❓ 关键问题</h4>
+      <div class="q-item expanded" onclick="toggleQ(this)">
+        <div class="q-text">化学变化有哪些特征？如何判断一个变化是化学变化？</div>
+        <div class="q-answer">化学变化特征：有新物质生成。判断依据：观察颜色变化、气体产生、沉淀生成、发光发热、温度变化等现象。</div>
+      </div>
+      <div class="q-item" onclick="toggleQ(this)">
+        <div class="q-text">物理变化和化学变化的本质区别是什么？</div>
+        <div class="q-answer">本质区别：是否有新物质生成。物理变化只是形态或状态改变（如冰融化成水），化学变化产生了新物质（如铁生锈生成铁锈）。</div>
+      </div>
+
+      <div class="pause-point">
+        <strong>⏸ 暂停思考</strong> [02:35] 视频中展示的"蜡烛燃烧"实验——请暂停并思考：蜡烛熔化是什么变化？蜡烛燃烧又是什么变化？为什么？
+      </div>
+
+      <div class="output-box">
+        <h4>📝 输出任务：化学变化特征速记卡</h4>
+        <p style="font-size:14px;color:var(--text-secondary);">用卡片形式整理：化学变化 vs 物理变化的特征、判断方法、各3个实例</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 进阶面板 -->
+  <div class="panel" data-panel="1">
+    <div class="card">
+      <h3><span class="badge badge-adv">进阶</span> TED-Ed《化学变化与物理变化的区别》</h3>
+      <p style="margin-bottom:12px;color:var(--text-secondary);">分析视频中的比较论证结构</p>
+
+      <div style="margin-bottom:12px;">
+        <span class="tag">📺 约5分钟</span>
+        <span class="tag">🎯 进阶级</span>
+      </div>
+
+      <h4 style="font-size:14px;color:var(--primary);margin-bottom:8px;">📋 观看任务</h4>
+      <ul class="task-list" id="taskListAdv">
+        <li onclick="toggleTask(this)">分析视频采用了哪些 <strong>比较论证</strong> 方法</li>
+        <li onclick="toggleTask(this)">提取视频证明"化学变化的本质"所用的 <strong>3个关键证据</strong></li>
+        <li onclick="toggleTask(this)">画出视频的 <strong>论证逻辑链</strong></li>
+      </ul>
+
+      <h4 style="font-size:14px;color:var(--primary);margin:16px 0 8px;">❓ 关键问题</h4>
+      <div class="q-item" onclick="toggleQ(this)">
+        <div class="q-text">视频用了哪些证据来证明化学变化的本质？</div>
+        <div class="q-answer">证据包括：1. 分子层面的重组演示；2. 能量变化数据（放热/吸热）；3. 不可逆性实验对比（如纸张燃烧 vs 撕碎）。</div>
+      </div>
+      <div class="q-item" onclick="toggleQ(this)">
+        <div class="q-text">视频是如何对比化学变化和物理变化的？这种对比有什么好处？</div>
+        <div class="q-answer">通过并列对比（同一物质在不同条件下的变化），直观展示"是否有新物质生成"这一核心差异。对比论证让抽象概念更具体。</div>
+      </div>
+
+      <div class="pause-point">
+        <strong>⏸ 暂停思考</strong> [03:20] 视频提到"分子的重新排列组合"——请暂停思考：为什么分子重新排列就产生了新物质？这说明了什么？
+      </div>
+
+      <div class="output-box">
+        <h4>📝 输出任务：论证逻辑图</h4>
+        <p style="font-size:14px;color:var(--text-secondary);">画出视频的论证结构图：核心论点→分论点→证据→结论，标注论证关系</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 挑战面板 -->
+  <div class="panel" data-panel="2">
+    <div class="card">
+      <h3><span class="badge badge-challenge">挑战</span> 前沿化学科普：绿色化学与新型材料</h3>
+      <p style="margin-bottom:12px;color:var(--text-secondary);">提取关键科学观点，进行批判性思考</p>
+
+      <div style="margin-bottom:12px;">
+        <span class="tag">📺 约10分钟</span>
+        <span class="tag">🎯 挑战级</span>
+      </div>
+
+      <h4 style="font-size:14px;color:var(--primary);margin-bottom:8px;">📋 观看任务</h4>
+      <ul class="task-list" id="taskListChall">
+        <li onclick="toggleTask(this)">提取 <strong>3个</strong> 前沿化学的核心科学观点</li>
+        <li onclick="toggleTask(this)">思考每个观点对日常生活的 <strong>潜在影响</strong></li>
+        <li onclick="toggleTask(this)">提出 <strong>1个</strong> 自己的疑问或延伸想法</li>
+      </ul>
+
+      <h4 style="font-size:14px;color:var(--primary);margin:16px 0 8px;">❓ 关键问题</h4>
+      <div class="q-item" onclick="toggleQ(this)">
+        <div class="q-text">绿色化学的核心原则是什么？它如何改变传统化学工业？</div>
+        <div class="q-answer">绿色化学核心原则：减少有害物质使用、提高原子经济性、使用可再生原料。它从源头减少污染，而非末端治理。</div>
+      </div>
+      <div class="q-item" onclick="toggleQ(this)">
+        <div class="q-text">新型材料的研发如何体现"化学创造未来"？</div>
+        <div class="q-answer">新型材料（如可降解塑料、碳纳米管、自修复材料）通过分子设计实现特定功能，展现了化学从"发现"到"创造"的转变。</div>
+      </div>
+
+      <div class="pause-point">
+        <strong>⏸ 暂停思考</strong> [06:50] 视频展示了一种新型可降解材料——请暂停思考：这种材料的设计思路如何体现"绿色化学"理念？它的推广可能面临什么挑战？
+      </div>
+
+      <div class="output-box">
+        <h4>📝 输出任务：微评论"化学创造未来"</h4>
+        <p style="font-size:14px;color:var(--text-secondary);">写一篇200字左右的微评论，结合视频中的前沿观点，阐述化学如何改变人类生活</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;padding:16px 0;color:var(--text-secondary);font-size:13px;">
+    💡 点击任务项标记完成 · 点击问题展开答案
+  </div>
+</div>
+<script>
+function switchTab(idx) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', i===idx));
+  document.querySelectorAll('.panel').forEach((p,i) => p.classList.toggle('active', i===idx));
+}
+function toggleTask(el) { el.classList.toggle('done'); }
+function toggleQ(el) { el.classList.toggle('expanded'); }
+</script>
+</body>
+</html>

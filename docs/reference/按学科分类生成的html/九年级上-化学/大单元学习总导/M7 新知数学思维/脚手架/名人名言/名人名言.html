@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名人名言 — M7 新知数学思维</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); width: 100%; max-width: none; }
+.wrapper { width: 100%; max-width: none; padding: 30px 24px; }
+.container { width: 100%; max-width: none; }
+
+.header { background: linear-gradient(135deg, #1a1a2e, #16213e); color: #fff; border-radius: var(--border-radius); padding: 28px 32px; margin-bottom: 28px; position: relative; overflow: hidden; }
+.header::after { content: "💬"; position: absolute; right: 24px; bottom: 12px; font-size: 48px; opacity: 0.2; }
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 6px; }
+.header p { font-size: calc(var(--font-body) + 1px); opacity: 0.85; }
+.header .badge { display: inline-block; background: rgba(255,255,255,0.15); border-radius: 20px; padding: 2px 14px; font-size: 13px; margin-top: 8px; }
+
+/* person card */
+.person-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); margin-bottom: 20px; overflow: hidden; border: 1px solid var(--border); }
+.person-card .card-top { padding: 20px 24px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none; transition: background 0.2s; }
+.person-card .card-top:hover { background: var(--bg); }
+.person-card .card-top .name-wrap { display: flex; align-items: center; gap: 14px; }
+.person-card .card-top .avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.person-card .card-top .info h3 { font-size: calc(var(--font-h2) - 1px); }
+.person-card .card-top .info .sub { font-size: 12px; color: var(--text-secondary); }
+.person-card .card-top .toggle-icon { transition: transform 0.3s; color: var(--text-secondary); font-size: 14px; }
+.person-card .card-top.open .toggle-icon { transform: rotate(180deg); }
+.person-card .card-body { display: none; padding: 0 24px 20px; border-top: 1px solid var(--border); }
+.person-card .card-body.open { display: block; }
+
+/* insight blocks */
+.insight { margin: 10px 0; padding: 12px 16px; border-radius: 6px; border-left: 4px solid; }
+.insight.q { background: #fff7e6; border-color: #fa8c16; }
+.insight.breakthrough { background: #f0f5ff; border-color: var(--primary); }
+.insight.fail { background: #fff2f0; border-color: #ff4d4f; }
+.insight.lesson { background: #f6ffed; border-color: #52c41a; }
+.insight .label { font-weight: 600; font-size: calc(var(--font-body) - 1px); display: block; margin-bottom: 4px; }
+
+/* reading path */
+.reading-path { background: var(--bg); border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+.reading-path h4 { font-size: var(--font-h2); margin-bottom: 10px; }
+.reading-path li { margin-bottom: 6px; }
+
+/* thinking task */
+.think-task { background: linear-gradient(135deg, #fff7e6, #fffbe6); border: 2px solid #fa8c16; border-radius: var(--border-radius); padding: 20px 24px; margin: 20px 0; }
+.think-task h4 { font-size: var(--font-h2); color: #d46b08; margin-bottom: 10px; }
+.think-task .hint { font-size: calc(var(--font-body) - 1px); color: var(--text-secondary); margin-top: 8px; }
+.think-task textarea { width: 100%; min-height: 100px; border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-size: var(--font-body); font-family: inherit; margin-top: 10px; resize: vertical; }
+.think-task textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px var(--accent); }
+.think-task .btn-row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+.think-task .btn { padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; transition: all 0.2s; }
+.think-task .btn-primary { background: var(--primary); color: #fff; }
+.think-task .btn-primary:hover { background: var(--primary-hover); }
+.think-task .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.think-task .btn-outline:hover { background: var(--bg); }
+
+@media (max-width: 600px) {
+  .wrapper { padding: 16px 12px; }
+  .header { padding: 20px; }
+  .person-card .card-top { padding: 16px; }
+  .person-card .card-body { padding: 0 16px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+<div class="container">
+
+<div class="header">
+  <h1>💬 名人名言</h1>
+  <p>从化学巨匠身上学习定量思维的力量</p>
+  <span class="badge">🔬 化学 · 九年级上</span>
+</div>
+
+<div id="personCards">
+
+<div class="person-card">
+  <div class="card-top open" onclick="togglePerson(this)">
+    <div class="name-wrap">
+      <div class="avatar" style="background:#e6f7ff;">🧪</div>
+      <div class="info">
+        <h3>安托万·拉瓦锡</h3>
+        <div class="sub">奠基人物 · 1743-1794 · 法国</div>
+      </div>
+    </div>
+    <span class="toggle-icon">▾</span>
+  </div>
+  <div class="card-body open" id="person0">
+    <div class="insight q">
+      <span class="label">❓ 关键问题</span>
+      "燃烧到底是什么？" 在拉瓦锡之前，人们用"燃素说"解释燃烧——认为物质燃烧时释放了"燃素"。但拉瓦锡不满足于这种"看不见、摸不着"的解释。
+    </div>
+    <div class="insight breakthrough">
+      <span class="label">💡 思维突破点</span>
+      他做了一个关键决定——用天平<strong>"称一称"</strong>燃烧前后的物质质量。他发现：金属燃烧后质量增加了！如果燃烧真的是释放"燃素"，质量应该减少才对。
+    </div>
+    <div class="insight fail">
+      <span class="label">⚠️ 失败/争议</span>
+      拉瓦锡的结论当时遭到强烈反对，直到他通过精确测量水中燃烧实验证明了氧气的存在。
+    </div>
+    <div class="insight lesson">
+      <span class="label">🎯 对当下的启示</span>
+      当你对"大家都这么说"的理论产生怀疑时，<strong>想办法测量它！</strong>数据是检验理论的最好武器。
+    </div>
+  </div>
+</div>
+
+<div class="person-card">
+  <div class="card-top" onclick="togglePerson(this)">
+    <div class="name-wrap">
+      <div class="avatar" style="background:#f0f5ff;">📐</div>
+      <div class="info">
+        <h3>约翰·道尔顿</h3>
+        <div class="sub">跨界人物 · 1766-1844 · 英国</div>
+      </div>
+    </div>
+    <span class="toggle-icon">▾</span>
+  </div>
+  <div class="card-body" id="person1">
+    <div class="insight q">
+      <span class="label">❓ 关键问题</span>
+      "不同元素之间的质量关系是否有规律？" 道尔顿本来是个气象学家，但他把<strong>数学比例思想</strong>引入了化学。
+    </div>
+    <div class="insight breakthrough">
+      <span class="label">💡 思维突破点</span>
+      他发现：两种元素形成不同化合物时，与一定量A元素化合的B元素质量之间呈简单整数比——这就是<strong>"倍比定律"</strong>。
+    </div>
+    <div class="insight fail">
+      <span class="label">⚠️ 失败/争议</span>
+      由于当时测量技术有限，他的一些数据不够精确，导致对原子量的推测有偏差。
+    </div>
+    <div class="insight lesson">
+      <span class="label">🎯 对当下的启示</span>
+      <strong>跨界思维</strong>往往能带来突破——道尔顿用气象学的视角看化学，发现了原子量之间的数学关系。
+    </div>
+  </div>
+</div>
+
+<div class="person-card">
+  <div class="card-top" onclick="togglePerson(this)">
+    <div class="name-wrap">
+      <div class="avatar" style="background:#f6ffed;">🌿</div>
+      <div class="info">
+        <h3>屠呦呦</h3>
+        <div class="sub">当代人物 · 1930- · 中国 · 诺贝尔奖得主</div>
+      </div>
+    </div>
+    <span class="toggle-icon">▾</span>
+  </div>
+  <div class="card-body" id="person2">
+    <div class="insight q">
+      <span class="label">❓ 关键问题</span>
+      "青蒿素到底能不能治疗疟疾？" 在传统中草药方中，青蒿被用来治疗发热，但疗效不稳定。
+    </div>
+    <div class="insight breakthrough">
+      <span class="label">💡 思维突破点</span>
+      屠呦呦发现传统煎煮方法的高温可能破坏了有效成分，于是改用<strong>低温乙醚提取</strong>——这一改动来自对"温度对有效成分影响"的定量思考。
+    </div>
+    <div class="insight fail">
+      <span class="label">⚠️ 失败/争议</span>
+      经历了<strong>190多次失败</strong>，才找到最优提取条件。
+    </div>
+    <div class="insight lesson">
+      <span class="label">🎯 对当下的启示</span>
+      科学发现往往来自对<strong>"传统做法"的定量检验和改进</strong>——不盲从，去测量！
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="reading-path">
+  <h4>📚 深度阅读路径</h4>
+  <ul>
+    <li><strong>拉瓦锡</strong>：《化学基础论》（商务出版社）——近代化学的开山之作</li>
+    <li><strong>道尔顿</strong>：化学原子论的原始论文（英译本，可在Project Gutenberg阅读）</li>
+    <li><strong>纪录片</strong>：《化学史》（BBC纪录片系列，拉瓦锡与道尔顿章节）</li>
+  </ul>
+</div>
+
+<div class="think-task">
+  <h4>🤔 "如果你是他" 思考任务</h4>
+  <p>假如你是<strong>拉瓦锡</strong>，面对"质量增加"这个不符合当时理论的现象，你会怎么说服其他人相信你的测量结果是正确的？请列出你的论证步骤。</p>
+  <textarea id="thinkArea" placeholder="写下你的论证步骤……&#10;1. 首先……&#10;2. 然后……&#10;3. 最后……"></textarea>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="saveThink()">💾 保存思考</button>
+    <button class="btn btn-outline" onclick="clearThink()">🔄 清空重写</button>
+  </div>
+  <p class="hint" id="thinkHint">✍️ 试着从"设计对照实验→重复测量→公开演示"的角度思考</p>
+</div>
+
+</div>
+</div>
+
+<script>
+function togglePerson(el) {
+  el.classList.toggle('open');
+  var body = el.nextElementSibling;
+  if (body && body.classList.contains('card-body')) {
+    body.classList.toggle('open');
+  }
+}
+
+function saveThink() {
+  var ta = document.getElementById('thinkArea');
+  var hint = document.getElementById('thinkHint');
+  if (ta.value.trim().length < 5) {
+    hint.textContent = '⚠️ 请先写下你的论证内容，至少写几个要点吧！';
+    return;
+  }
+  hint.textContent = '✅ 思考已保存！你已经完成了拉瓦锡的思想实验。';
+  hint.style.color = '#52c41a';
+}
+
+function clearThink() {
+  document.getElementById('thinkArea').value = '';
+  var hint = document.getElementById('thinkHint');
+  hint.textContent = '✍️ 文本框已清空，重新思考吧！';
+  hint.style.color = 'var(--text-secondary)';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M2 模块五维导学 - 动机激发仪表盘</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+  --ring-cognitive: #1677ff;
+  --ring-emotional: #ff4d4f;
+  --ring-social: #52c41a;
+  --ring-achievement: #faad14;
+  --ring-value: #722ed1;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: #f5f8ff;
+  margin: 0; padding: 0;
+  min-height: 100vh;
+}
+.container { width: 100%; max-width: none; padding: 16px; box-sizing: border-box; }
+
+/* ===== Header ===== */
+.header {
+  text-align: center;
+  padding: 24px 16px 16px;
+  position: relative;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.header p {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+/* ===== Dashboard ===== */
+.dashboard {
+  position: relative;
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 20px 0;
+}
+
+/* ===== 5D Rings ===== */
+.rings-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+  margin: 20px 0;
+}
+.ring-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 120px;
+  cursor: pointer;
+  transition: transform 0.3s;
+}
+.ring-wrapper:hover { transform: translateY(-4px); }
+.ring-wrapper.low { animation: pulse-red 1.5s infinite; }
+@keyframes pulse-red {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(255,77,79,0.3)); }
+  50% { filter: drop-shadow(0 0 16px rgba(255,77,79,0.7)); }
+}
+
+.ring-circle {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  position: relative;
+  background: conic-gradient(var(--ring-color) 0% var(--ring-pct, 0%), #e8e8e8 var(--ring-pct, 0%) 100%);
+  transition: background 0.6s;
+}
+.ring-circle .ring-inner {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+.ring-wrapper .ring-label {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--ring-color);
+  text-align: center;
+}
+
+/* ===== Dimension Card ===== */
+.dimension-card {
+  display: none;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin: 16px auto;
+  max-width: 500px;
+  box-shadow: var(--shadow);
+  animation: slideUp 0.4s ease-out;
+}
+.dimension-card.show { display: block; }
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.dimension-card .card-header {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+.dimension-card .card-goal {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+.dimension-card .card-example {
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 8px;
+  background: #f5f5f5;
+  border-radius: 6px;
+}
+
+/* ===== Slider Section ===== */
+.slider-section {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin: 16px 0;
+  box-shadow: var(--shadow);
+}
+.slider-section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 16px;
+  text-align: center;
+}
+.slider-item {
+  margin: 12px 0;
+}
+.slider-item .slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.slider-item .slider-label {
+  font-size: 13px;
+  font-weight: bold;
+}
+.slider-item .slider-value {
+  font-size: 13px;
+  color: var(--primary);
+  font-weight: bold;
+}
+.slider-item .slider-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+input[type="range"] {
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: linear-gradient(to right, var(--primary) var(--slider-pct, 0%), #e8e8e8 var(--slider-pct, 0%));
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--primary);
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+/* ===== Radar ===== */
+.radar-container {
+  max-width: 350px;
+  margin: 16px auto;
+  text-align: center;
+}
+.radar-container canvas {
+  width: 100%;
+  height: auto;
+}
+.radar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  font-size: 12px;
+  margin-top: 8px;
+}
+.radar-legend .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.radar-legend .legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* ===== Trigger Cards ===== */
+.trigger-section {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin: 16px 0;
+  box-shadow: var(--shadow);
+}
+.trigger-section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  text-align: center;
+}
+.trigger-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+.trigger-card {
+  padding: 10px 14px;
+  background: #f5f8ff;
+  border: 2px solid #e8e8e8;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: grab;
+  user-select: none;
+  transition: all 0.3s;
+  text-align: center;
+}
+.trigger-card:hover {
+  border-color: var(--primary);
+  background: #e6f0ff;
+  transform: scale(1.05);
+}
+.trigger-card.placed {
+  opacity: 0.4;
+  pointer-events: none;
+  border-color: var(--border);
+}
+.trigger-card .trig-icon {
+  display: block;
+  font-size: 20px;
+  margin-bottom: 2px;
+}
+
+/* ===== Portrait ===== */
+.portrait-area {
+  text-align: center;
+  margin: 16px 0;
+}
+.portrait-card {
+  display: none;
+  background: var(--card-bg);
+  border: 2px solid var(--primary);
+  border-radius: var(--border-radius);
+  padding: 24px;
+  margin: 16px 0;
+  box-shadow: var(--shadow);
+}
+.portrait-card.show { display: block; }
+.portrait-card .p-title {
+  color: var(--primary);
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+.portrait-card .p-section {
+  margin: 8px 0;
+  padding: 10px;
+  background: #f0f5ff;
+  border-radius: 8px;
+  text-align: left;
+}
+.portrait-card .p-section h3 {
+  color: var(--primary);
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+.portrait-card .p-section p {
+  font-size: 13px;
+  color: var(--text);
+}
+
+/* ===== Warning ===== */
+.warning-banner {
+  display: none;
+  background: #fff1f0;
+  border: 1px solid #ff4d4f;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 12px 0;
+  animation: shake 0.5s;
+}
+.warning-banner.show { display: flex; align-items: center; gap: 10px; }
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+.warning-banner .w-icon { font-size: 24px; }
+.warning-banner .w-text { font-size: 13px; color: #cf1322; }
+.warning-banner .w-recommend {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+/* ===== Content ===== */
+.content-section {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin: 16px 0;
+}
+.content-section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+.content-section h3 {
+  font-size: 15px;
+  color: var(--primary);
+  margin: 14px 0 6px;
+}
+.content-section p, .content-section li {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.7;
+}
+.content-section ul { padding-left: 18px; }
+.content-section li { margin: 3px 0; }
+.content-section .highlight-box {
+  background: #f0f5ff;
+  border-left: 3px solid var(--primary);
+  padding: 10px 14px;
+  margin: 8px 0;
+  border-radius: 0 6px 6px 0;
+  font-size: 13px;
+}
+
+/* ===== Buttons ===== */
+.btn {
+  display: inline-block;
+  padding: 10px 24px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.3s;
+  font-weight: 500;
+}
+.btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.btn-primary:hover {
+  background: var(--primary-hover);
+  color: #fff;
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 600px) {
+  .ring-wrapper { width: 100px; }
+  .ring-circle { width: 72px; height: 72px; font-size: 24px; }
+  .ring-circle .ring-inner { width: 56px; height: 56px; font-size: 22px; }
+  .rings-container { gap: 10px; }
+  .trigger-card { font-size: 11px; padding: 8px 12px; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>🎯 动机激发五维仪表盘</h1>
+    <p>M2 — 学习新知的新价值与新使命</p>
+  </div>
+
+  <!-- Content: 模块学习目标 -->
+  <div class="content-section">
+    <h2>📖 模块学习目标</h2>
+    <ul>
+      <li><strong>知识理解：</strong>你能说出化学学习不仅仅是记住方程式，而是一个主动建构新认识的过程</li>
+      <li><strong>能力形成：</strong>你会运用"观察现象→提出问题→寻找证据→建构解释→表达交流"的方法来学习化学</li>
+      <li><strong>思维发展：</strong>你开始用"有没有新物质生成"来判断物理变化和化学变化，形成初步的化学思维</li>
+      <li><strong>表达产出：</strong>你能用概念图、表格或短文的形式，把自己的化学理解清晰地表达出来</li>
+    </ul>
+  </div>
+
+  <!-- 5D Dashboard Rings -->
+  <div class="dashboard">
+    <div class="rings-container" id="ringsContainer">
+      <div class="ring-wrapper" data-dim="cognitive" onclick="showDimensionCard('cognitive')" style="--ring-color:var(--ring-cognitive);--ring-pct:70%">
+        <div class="ring-circle"><div class="ring-inner">🧠</div></div>
+        <div class="ring-label">认知动机</div>
+      </div>
+      <div class="ring-wrapper" data-dim="emotional" onclick="showDimensionCard('emotional')" style="--ring-color:var(--ring-emotional);--ring-pct:60%">
+        <div class="ring-circle"><div class="ring-inner">❤️</div></div>
+        <div class="ring-label">情感动机</div>
+      </div>
+      <div class="ring-wrapper" data-dim="social" onclick="showDimensionCard('social')" style="--ring-color:var(--ring-social);--ring-pct:50%">
+        <div class="ring-circle"><div class="ring-inner">👥</div></div>
+        <div class="ring-label">社会动机</div>
+      </div>
+      <div class="ring-wrapper" data-dim="achievement" onclick="showDimensionCard('achievement')" style="--ring-color:var(--ring-achievement);--ring-pct:55%">
+        <div class="ring-circle"><div class="ring-inner">🏆</div></div>
+        <div class="ring-label">成就动机</div>
+      </div>
+      <div class="ring-wrapper" data-dim="value" onclick="showDimensionCard('value')" style="--ring-color:var(--ring-value);--ring-pct:65%">
+        <div class="ring-circle"><div class="ring-inner">🌟</div></div>
+        <div class="ring-label">价值动机</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dimension Card Display -->
+  <div class="dimension-card" id="dimCard">
+    <div class="card-header" id="dimCardHeader"></div>
+    <div class="card-goal" id="dimCardGoal"></div>
+    <div class="card-example" id="dimCardExample"></div>
+  </div>
+
+  <!-- Content: 高精尖价值 -->
+  <div class="content-section">
+    <h2>🚀 高精尖价值与未来意义</h2>
+    <div class="highlight-box">
+      <strong>现代科技联系：</strong>从手机电池到纳米材料，从药物合成到环保技术，化学是现代科技的基石。学会"如何建构化学理解"是未来从事科技工作的核心能力。
+    </div>
+    <div class="highlight-box">
+      <strong>社会发展联系：</strong>"碳达峰、碳中和"、水污染治理、食品安全检测，这些社会议题的解决都需要化学知识和方法。
+    </div>
+    <div class="highlight-box">
+      <strong>国家战略联系：</strong>芯片制造中的化学刻蚀、航天器的耐热材料、新能源电池——化学是国家科技竞争力的重要支撑。
+    </div>
+  </div>
+
+  <!-- Slider Section: 自评 -->
+  <div class="slider-section">
+    <h2>📊 五维动机自评</h2>
+    <p style="font-size:12px;color:var(--text-secondary);text-align:center;margin-bottom:12px;">拖动滑块自评你的每个动机维度（0-100）</p>
+    <div id="slidersContainer">
+      <div class="slider-item" data-dim="cognitive">
+        <div class="slider-header">
+          <span class="slider-label" style="color:var(--ring-cognitive);">🧠 认知动机</span>
+          <span class="slider-value" id="val-cognitive">70</span>
+        </div>
+        <input type="range" min="0" max="100" value="70" data-dim="cognitive" oninput="updateSlider(this)">
+        <div class="slider-labels"><span>完全不想知道</span><span>迫不及待想搞清楚</span></div>
+      </div>
+      <div class="slider-item" data-dim="emotional">
+        <div class="slider-header">
+          <span class="slider-label" style="color:var(--ring-emotional);">❤️ 情感动机</span>
+          <span class="slider-value" id="val-emotional">60</span>
+        </div>
+        <input type="range" min="0" max="100" value="60" data-dim="emotional" oninput="updateSlider(this)">
+        <div class="slider-labels"><span>毫无感觉</span><span>深深共鸣</span></div>
+      </div>
+      <div class="slider-item" data-dim="social">
+        <div class="slider-header">
+          <span class="slider-label" style="color:var(--ring-social);">👥 社会动机</span>
+          <span class="slider-value" id="val-social">50</span>
+        </div>
+        <input type="range" min="0" max="100" value="50" data-dim="social" oninput="updateSlider(this)">
+        <div class="slider-labels"><span>自己学就够了</span><span>想帮别人一起学</span></div>
+      </div>
+      <div class="slider-item" data-dim="achievement">
+        <div class="slider-header">
+          <span class="slider-label" style="color:var(--ring-achievement);">🏆 成就动机</span>
+          <span class="slider-value" id="val-achievement">55</span>
+        </div>
+        <input type="range" min="0" max="100" value="55" data-dim="achievement" oninput="updateSlider(this)">
+        <div class="slider-labels"><span>得过且过</span><span>志在必得</span></div>
+      </div>
+      <div class="slider-item" data-dim="value">
+        <div class="slider-header">
+          <span class="slider-label" style="color:var(--ring-value);">🌟 价值动机</span>
+          <span class="slider-value" id="val-value">65</span>
+        </div>
+        <input type="range" min="0" max="100" value="65" data-dim="value" oninput="updateSlider(this)">
+        <div class="slider-labels"><span>学这个有什么用</span><span>改变我看世界的方式</span></div>
+      </div>
+    </div>
+
+    <!-- Warning -->
+    <div class="warning-banner" id="warningBanner">
+      <span class="w-icon">⚠️</span>
+      <div>
+        <div class="w-text" id="warningText"></div>
+        <div class="w-recommend" id="warningRecommend"></div>
+      </div>
+    </div>
+
+    <!-- Radar -->
+    <div class="radar-container">
+      <canvas id="radarCanvas" width="300" height="300"></canvas>
+      <div class="radar-legend">
+        <div class="legend-item"><span class="legend-dot" style="background:var(--primary);"></span> 你的分布</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#bbb;border:1px dashed #999;"></span> 理想分布</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Trigger Cards -->
+  <div class="trigger-section">
+    <h2>🎴 动机触发器配对</h2>
+    <p style="font-size:12px;color:var(--text-secondary);text-align:center;margin-bottom:10px;">点击触发器卡片，将其配对到对应的动机维度圆环上</p>
+    <div class="trigger-grid" id="triggerGrid">
+      <div class="trigger-card" data-trigger="challenge" data-target="achievement" onclick="pairTrigger(this)">
+        <span class="trig-icon">🏔️</span>挑战性任务
+      </div>
+      <div class="trigger-card" data-trigger="real" data-target="value" onclick="pairTrigger(this)">
+        <span class="trig-icon">🔍</span>真实问题情境
+      </div>
+      <div class="trigger-card" data-trigger="competition" data-target="achievement" onclick="pairTrigger(this)">
+        <span class="trig-icon">⚔️</span>同伴竞赛
+      </div>
+      <div class="trigger-card" data-trigger="story" data-target="emotional" onclick="pairTrigger(this)">
+        <span class="trig-icon">📖</span>故事悬念
+      </div>
+      <div class="trigger-card" data-trigger="feedback" data-target="cognitive" onclick="pairTrigger(this)">
+        <span class="trig-icon">⚡</span>即时反馈
+      </div>
+      <div class="trigger-card" data-trigger="role" data-target="social" onclick="pairTrigger(this)">
+        <span class="trig-icon">🎭</span>角色代入
+      </div>
+    </div>
+  </div>
+
+  <!-- Content: 推荐学习方式 -->
+  <div class="content-section">
+    <h2>💡 推荐学习方式与方法</h2>
+    <ul>
+      <li><strong>观察对比法：</strong>在生活中观察物质变化现象，用"对比"找出不同（如铁钉生锈 vs 铝锅不锈）</li>
+      <li><strong>建构笔记法：</strong>不要直接抄写结论，而是先自己总结，再对照教材修正</li>
+      <li><strong>概念图法：</strong>把零散的知识点用概念图连接起来，形成知识网络</li>
+      <li><strong>问题链法：</strong>从一个现象开始，连续追问"为什么"，直到找到最根本的解释</li>
+      <li><strong>AI辅助：</strong>用AI工具验证你的建构理解是否正确，或请AI生成类似案例练习</li>
+    </ul>
+  </div>
+
+  <!-- Content: 关键人物 -->
+  <div class="content-section">
+    <h2>👤 值得了解的关键人物</h2>
+    <div class="highlight-box">
+      <strong>🧪 拉瓦锡（Antoine Lavoisier）</strong> — "现代化学之父"<br>
+      通过精确的称量实验推翻了燃素说，建立了质量守恒定律。<br>
+      <em style="color:var(--text-secondary);">⭐ 他展示了"用证据推翻旧观念"的化学思维典范</em>
+    </div>
+    <div class="highlight-box">
+      <strong>📊 门捷列夫（Dmitri Mendeleev）</strong><br>
+      通过排列已知元素发现了元素周期律，甚至预测了尚未发现的元素。<br>
+      <em style="color:var(--text-secondary);">⭐ 他展示了"从数据中发现规律"的建构性思维</em>
+    </div>
+    <div class="highlight-box">
+      <strong>🏅 屠呦呦</strong> — 中国科学家，诺贝尔奖获得者<br>
+      从古籍中获得灵感，发现青蒿素。<br>
+      <em style="color:var(--text-secondary);">⭐ 展示了化学与传统文化结合的独特路径</em>
+    </div>
+  </div>
+
+  <!-- Content: 前沿追问 -->
+  <div class="content-section">
+    <h2>🔮 前沿追问</h2>
+    <ol style="padding-left:18px;">
+      <li style="margin:6px 0;font-size:13px;">如果让你设计一个实验来证明"化学变化中物质质量不变"，你会怎么设计？</li>
+      <li style="margin:6px 0;font-size:13px;">人工智能能"学会"做化学实验吗？AI发现的新材料和人类发现的有区别吗？</li>
+      <li style="margin:6px 0;font-size:13px;">未来的化学家还需要在实验室里做实验吗？还是全部在电脑上模拟？</li>
+      <li style="margin:6px 0;font-size:13px;">如果地球上所有的化学反应都停止了，世界会变成什么样？</li>
+      <li style="margin:6px 0;font-size:13px;">化学和物理的边界在哪里？一个现象什么时候算"化学变化"、什么时候算"物理变化"？</li>
+    </ol>
+  </div>
+
+  <!-- Portrait -->
+  <div class="portrait-area">
+    <button class="btn btn-primary" onclick="generatePortrait()">🎨 生成动机画像</button>
+    <div class="portrait-card" id="portraitCard">
+      <div class="p-title">🧠 个人学习动机画像</div>
+      <div class="p-section" id="portraitRadar"><h3>📊 雷达图</h3><p>（基于你的自评数据）</p></div>
+      <div class="p-section" id="portraitStrength"><h3>💪 优势维度</h3><p id="pStrength"></p></div>
+      <div class="p-section" id="portraitWeak"><h3>🔧 待激发维度</h3><p id="pWeak"></p></div>
+      <div class="p-section" id="portraitStrategy"><h3>📌 推荐激发策略</h3><p id="pStrategy"></p></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const dimData = {
+    cognitive: {
+      name: '🧠 认知动机',
+      goal: '你将发现这个问题背后的神奇逻辑——化学变化为什么会产生新物质？物质的质量为什么不变？这些追问会让你的大脑充满探索的渴望！',
+      example: '本单元应用：当你思考"蜡烛燃烧后质量是否变化"时，你的好奇心会驱动你去寻找答案。'
+    },
+    emotional: {
+      name: '❤️ 情感动机',
+      goal: '这个故事会让你感同身受，激发你的共鸣——从拉瓦锡面对质疑坚持实验，到屠呦呦从古籍中发现青蒿素，化学家的故事会让你热血沸腾。',
+      example: '本单元应用：当你看到蜡烛燃烧的美丽火焰，感受到化学的神奇魅力时，情感共鸣会加深你的学习体验。'
+    },
+    social: {
+      name: '👥 社会动机',
+      goal: '学完后你可以帮身边的人解决实际问题——教同学区分物理变化和化学变化，帮妈妈解释为什么铁锅会生锈，在班级科学角分享你的发现！',
+      example: '本单元应用：把你建构的"物质变化分类概念图"分享给同桌，互相检查分类是否准确。'
+    },
+    achievement: {
+      name: '🏆 成就动机',
+      goal: '掌握这个技能，你将解锁通往下一关的钥匙——当你能够准确区分物理变化和化学变化，你就掌握了化学学习的"第一把钥匙"！',
+      example: '本单元应用：完成建构性示例的自我评价量表，看到自己的进步和成长。'
+    },
+    achievement: {
+      name: '🏆 成就动机',
+      goal: '掌握这个技能，你将解锁通往下一关的钥匙——当你能够准确区分物理变化和化学变化，你就掌握了化学学习的"第一把钥匙"！',
+      example: '本单元应用：完成建构性示例的自我评价量表，看到自己的进步和成长。'
+    },
+    value: {
+      name: '🌟 价值动机',
+      goal: '这个知识会改变你看待世界的方式——当你学会用"有没有新物质生成"来看待周围的变化时，世界在你眼中会变得更加神奇和有序。',
+      example: '本单元应用：理解了化学变化的本质后，你会开始注意到生活中无处不在的化学变化——从做饭到呼吸，从光合作用到金属生锈。'
+    }
+  };
+
+  const triggerMap = {
+    cognitive: '⚡ 即时反馈在本单元的应用：当你完成一个建构步骤（如观察现象后），可以立即对照教材验证自己的判断是否正确，这种"即时反馈"会强化你的认知动机。',
+    emotional: '📖 "故事悬念"在本单元的应用：拉瓦锡如何通过精确称量推翻燃素说？蜡烛燃烧后质量到底变不变？这个故事悬念会激发你的情感投入。',
+    social: '🎭 "角色代入"在本单元的应用：假设你是拉瓦锡的助手，需要帮他设计实验证明质量守恒——你会怎么做？这种角色代入会激发你的社会动机。',
+    achievement: '🏔️ "挑战性任务"在本单元的应用：尝试自己设计一个实验方案来区分物理变化和化学变化，完成后你会获得巨大的成就感！',
+    value: '🔍 "真实问题情境"在本单元的应用：为什么铁锅会生锈而铝锅不会？为什么小苏打和白醋混合会冒泡？这些真实问题会激发你的价值动机。'
+  };
+
+  // ===== Dimension Cards =====
+  window.showDimensionCard = function(dim) {
+    const card = document.getElementById('dimCard');
+    const data = dimData[dim];
+    if (!data) return;
+    document.getElementById('dimCardHeader').textContent = data.name;
+    document.getElementById('dimCardGoal').textContent = data.goal;
+    document.getElementById('dimCardExample').textContent = data.example;
+    card.classList.remove('show');
+    void card.offsetWidth;
+    card.classList.add('show');
+  };
+
+  // ===== Sliders =====
+  const sliderVals = { cognitive: 70, emotional: 60, social: 50, achievement: 55, value: 65 };
+  const ideal = { cognitive: 80, emotional: 75, social: 70, achievement: 75, value: 80 };
+
+  window.updateSlider = function(el) {
+    const dim = el.getAttribute('data-dim');
+    const val = parseInt(el.value);
+    sliderVals[dim] = val;
+    document.getElementById('val-' + dim).textContent = val;
+    el.style.setProperty('--slider-pct', val + '%');
+    updateRadar();
+    checkLowMotivation();
+  };
+
+  // Initialize sliders
+  document.querySelectorAll('input[type="range"]').forEach(el => {
+    const dim = el.getAttribute('data-dim');
+    const val = sliderVals[dim] || 50;
+    el.value = val;
+    el.style.setProperty('--slider-pct', val + '%');
+  });
+
+  // ===== Radar =====
+  const dims = ['cognitive', 'emotional', 'social', 'achievement', 'value'];
+  const dimLabels = ['认知', '情感', '社会', '成就', '价值'];
+  const dimColors = ['#1677ff', '#ff4d4f', '#52c41a', '#faad14', '#722ed1'];
+
+  function updateRadar() {
+    const canvas = document.getElementById('radarCanvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    const cx = W / 2, cy = H / 2;
+    const R = Math.min(cx, cy) - 30;
+    const n = dims.length;
+    ctx.clearRect(0, 0, W, H);
+
+    // Grid
+    for (let ring = 1; ring <= 5; ring++) {
+      const r = R * ring / 5;
+      ctx.beginPath();
+      for (let i = 0; i <= n; i++) {
+        const angle = Math.PI * 2 * i / n - Math.PI / 2;
+        const x = cx + r * Math.cos(angle);
+        const y = cy + r * Math.sin(angle);
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = '#e0e0e0';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Axes
+    for (let i = 0; i < n; i++) {
+      const angle = Math.PI * 2 * i / n - Math.PI / 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + R * Math.cos(angle), cy + R * Math.sin(angle));
+      ctx.strokeStyle = '#d0d0d0';
+      ctx.stroke();
+      ctx.fillStyle = '#666';
+      ctx.font = '11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const lx = cx + (R + 16) * Math.cos(angle);
+      const ly = cy + (R + 16) * Math.sin(angle);
+      ctx.fillText(dimLabels[i], lx, ly);
+    }
+
+    // Ideal distribution
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const idx = i % n;
+      const angle = Math.PI * 2 * idx / n - Math.PI / 2;
+      const r = R * ideal[dims[idx]] / 100;
+      const x = cx + r * Math.cos(angle);
+      const y = cy + r * Math.sin(angle);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = '#bbb';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // User distribution
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const idx = i % n;
+      const angle = Math.PI * 2 * idx / n - Math.PI / 2;
+      const r = R * sliderVals[dims[idx]] / 100;
+      const x = cx + r * Math.cos(angle);
+      const y = cy + r * Math.sin(angle);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.fillStyle = 'rgba(22,119,255,0.15)';
+    ctx.fill();
+    ctx.strokeStyle = '#1677ff';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Dots
+    for (let i = 0; i < n; i++) {
+      const angle = Math.PI * 2 * i / n - Math.PI / 2;
+      const r = R * sliderVals[dims[i]] / 100;
+      const x = cx + r * Math.cos(angle);
+      const y = cy + r * Math.sin(angle);
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, Math.PI * 2);
+      ctx.fillStyle = dimColors[i];
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+  }
+
+  // ===== Low Motivation Warning =====
+  function checkLowMotivation() {
+    const banner = document.getElementById('warningBanner');
+    let found = false;
+    let text = '', recommend = '';
+    const tips = {
+      cognitive: '试试先看一个有趣的化学现象？比如蜡烛燃烧时的颜色变化。',
+      emotional: '试试看一个化学家的故事？拉瓦锡的故事就很有意思。',
+      social: '试试和同学一起讨论？两个人一起学更有劲。',
+      achievement: '先设定一个小目标——今天只搞清楚"物理变化和化学变化"这一个区别。',
+      value: '想想这个知识和你的生活有什么关系？铁锅为什么会生锈？'
+    };
+
+    for (let dim of dims) {
+      if (sliderVals[dim] < 30) {
+        found = true;
+        const dimName = dimLabels[dims.indexOf(dim)];
+        text = '⚠️ 你在【' + dimName + '动机】上似乎动力不太足';
+        recommend = '💡 ' + (tips[dim] || '换个角度试试？');
+        break;
+      }
+    }
+
+    if (found) {
+      document.getElementById('warningText').textContent = text;
+      document.getElementById('warningRecommend').textContent = recommend;
+      banner.classList.add('show');
+    } else {
+      banner.classList.remove('show');
+    }
+  }
+
+  // ===== Trigger Pairing =====
+  window.pairTrigger = function(el) {
+    if (el.classList.contains('placed')) return;
+    const target = el.getAttribute('data-target');
+    el.classList.add('placed');
+    // Show the trigger info as a card
+    const info = triggerMap[target];
+    if (info) {
+      // Find matching ring and flash it
+      const ring = document.querySelector(`.ring-wrapper[data-dim="${target}"]`);
+      if (ring) {
+        ring.style.transition = 'transform 0.2s';
+        ring.style.transform = 'scale(1.2)';
+        setTimeout(() => { ring.style.transform = ''; }, 500);
+        // Show as a toast-like notification
+        const toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#fff;border:2px solid var(--primary);border-radius:12px;padding:14px 20px;max-width:400px;width:90%;box-shadow:0 4px 20px rgba(0,0,0,0.15);z-index:999;font-size:13px;animation:slideUp 0.4s ease-out;';
+        toast.innerHTML = '<strong style="color:var(--primary);">✅ 配对成功！</strong><br>' + info;
+        document.body.appendChild(toast);
+        setTimeout(() => { toast.remove(); }, 4000);
+      }
+    }
+  };
+
+  // ===== Generate Portrait =====
+  window.generatePortrait = function() {
+    const sorted = dims.slice().sort((a,b) => sliderVals[b] - sliderVals[a]);
+    const top = sorted[0];
+    const bottom = sorted[sorted.length - 1];
+    const topName = dimLabels[dims.indexOf(top)];
+    const bottomName = dimLabels[dims.indexOf(bottom)];
+
+    document.getElementById('pStrength').textContent = '你的最强动机是【' + topName + '动机】——这是你的学习引擎火力最旺的地方！';
+    document.getElementById('pWeak').textContent = '需要加强的是【' + bottomName + '动机】——试试从优势维度切入，带动短板提升。';
+    let strategy = '';
+    if (sliderVals.cognitive >= 70) strategy += '✅ 认知动机强：多问"为什么"，你的好奇心是最好的老师。';
+    else strategy += '💡 认知动机待激发：先观察一个有趣的化学现象，让好奇心自然生长。';
+    if (sliderVals.emotional >= 60) strategy += '✅ 情感动机不错：多读化学家的故事，让情感共鸣推动学习。';
+    else strategy += '💡 情感动机待激发：找一个你真正感兴趣的化学现象开始。';
+    document.getElementById('pStrategy').textContent = strategy || '保持现有的学习节奏，尝试在不同的动机维度上都有所探索。';
+
+    document.getElementById('portraitCard').classList.add('show');
+  };
+
+  // ===== Init =====
+  updateRadar();
+  checkLowMotivation();
+
+})();
+</script>
+</body>
+</html>

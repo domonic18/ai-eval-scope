@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>作业榜 — 科学思维分层作业</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+h1::before {
+  content: "📋";
+  font-size: 26px;
+}
+.subtitle {
+  color: var(--text-secondary);
+  margin: 0 0 24px;
+  font-size: 14px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  transition: box-shadow 0.2s;
+}
+.card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.badge {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-weight: 600;
+}
+.badge-a { background: #52c41a; }
+.badge-b { background: #1677ff; }
+.badge-c { background: #722ed1; }
+.level-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+.level-item {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  border-left: 4px solid transparent;
+}
+.level-item:hover {
+  background: #e6f0ff;
+  transform: translateX(4px);
+}
+.level-item.selected {
+  border-left-color: var(--primary);
+  background: #e6f0ff;
+}
+.level-item .level-tag {
+  font-weight: 700;
+  font-size: 13px;
+  display: inline-block;
+  min-width: 48px;
+}
+.level-item .level-desc {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.rubric-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.rubric-item {
+  flex: 1;
+  min-width: 100px;
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 10px 12px;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+.rubric-item .rubric-name {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+.rubric-item .rubric-val {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.creative-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+.creative-opt {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13px;
+}
+.creative-opt:hover {
+  border-color: var(--primary);
+  background: #e6f0ff;
+}
+.creative-opt.chosen {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+.creative-opt .opt-icon {
+  font-size: 24px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.task-check-list {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+}
+.task-check-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.task-check-list li .check-box {
+  width: 18px; height: 18px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: transparent;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.task-check-list li.done {
+  color: var(--text-secondary);
+  text-decoration: line-through;
+}
+.task-check-list li.done .check-box {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+
+.action-bar {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: var(--primary-hover);
+}
+.btn-outline {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+.btn-outline:hover {
+  background: var(--bg);
+}
+
+.feedback-msg {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  display: none;
+}
+.feedback-msg.show {
+  display: block;
+}
+.feedback-msg.success {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  color: #135200;
+}
+.feedback-msg.info {
+  background: #e6f0ff;
+  border: 1px solid #91caff;
+  color: #003eb3;
+}
+
+@media (max-width: 600px) {
+  .container { padding: 16px 12px; }
+  .rubric-row { flex-direction: column; }
+  .creative-options { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>作业榜</h1>
+<p class="subtitle">巩固科学思维 · 分层挑战 · 自主选择</p>
+
+<div class="card">
+  <h2>🎯 学习目标</h2>
+  <p style="margin:0;">通过分层作业任务，巩固对科学思维的理解，并能运用<strong>解析性思维</strong>和<strong>建构性思维</strong>解决化学问题。</p>
+</div>
+
+<div class="card">
+  <h2>📖 一、基础层 · 再现与理解</h2>
+  <ul class="task-check-list" id="baseTaskList">
+    <li data-task="0" onclick="toggleTask(this)">
+      <span class="check-box">✓</span>
+      解释"解析性思维"和"建构性思维"的区别
+    </li>
+    <li data-task="1" onclick="toggleTask(this)">
+      <span class="check-box">✓</span>
+      从教材中找出一个体现科学思维的实例
+    </li>
+    <li data-task="2" onclick="toggleTask(this)">
+      <span class="check-box">✓</span>
+      判断给定的情境描述属于哪种思维方式
+    </li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>⭐ 二、分层挑战</h2>
+  <p style="color:var(--text-secondary);font-size:13px;margin:0 0 8px;">选择适合自己当前水平的层级：</p>
+  <div class="level-group" id="levelGroup">
+    <div class="level-item" data-level="A" onclick="selectLevel(this)">
+      <div><span class="badge badge-a">A级</span> <strong>基础巩固</strong></div>
+      <div class="level-desc">完成科学思维概念辨析题，夯实基础概念</div>
+    </div>
+    <div class="level-item" data-level="B" onclick="selectLevel(this)">
+      <div><span class="badge badge-b">B级</span> <strong>应用提升</strong></div>
+      <div class="level-desc">分析一个化学实验背后的思维过程，写出分析报告</div>
+    </div>
+    <div class="level-item" data-level="C" onclick="selectLevel(this)">
+      <div><span class="badge badge-c">C级</span> <strong>拓展挑战</strong></div>
+      <div class="level-desc">设计一个小型建构任务（如设计实验验证假设）并完成</div>
+    </div>
+  </div>
+  <div class="feedback-msg" id="levelFeedback"></div>
+</div>
+
+<div class="card">
+  <h2>🎨 三、创造性表达</h2>
+  <p style="color:var(--text-secondary);font-size:13px;margin:0 0 8px;">选择你喜欢的方式，表达你对科学思维的理解：</p>
+  <div class="creative-options" id="creativeGroup">
+    <div class="creative-opt" onclick="pickCreative(this)">
+      <span class="opt-icon">✍️</span>
+      写作：短文分享
+    </div>
+    <div class="creative-opt" onclick="pickCreative(this)">
+      <span class="opt-icon">📊</span>
+      图示：思维流程图
+    </div>
+    <div class="creative-opt" onclick="pickCreative(this)">
+      <span class="opt-icon">🎬</span>
+      视频：2分钟讲解
+    </div>
+    <div class="creative-opt" onclick="pickCreative(this)">
+      <span class="opt-icon">🎤</span>
+      演讲：3分钟分享
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>📊 四、评价标准</h2>
+  <div class="rubric-row">
+    <div class="rubric-item">
+      <div class="rubric-name">概念准确性</div>
+      <div class="rubric-val">40%</div>
+    </div>
+    <div class="rubric-item">
+      <div class="rubric-name">思维过程清晰度</div>
+      <div class="rubric-val">30%</div>
+    </div>
+    <div class="rubric-item">
+      <div class="rubric-name">表达完整度</div>
+      <div class="rubric-val">30%</div>
+    </div>
+  </div>
+</div>
+
+<div class="action-bar">
+  <button class="btn btn-primary" onclick="submitWork()">✅ 提交作业</button>
+  <button class="btn btn-outline" onclick="resetAll()">🔄 重新选择</button>
+</div>
+<div class="feedback-msg" id="submitFeedback"></div>
+
+</div>
+
+<script>
+function toggleTask(el) {
+  el.classList.toggle('done');
+}
+
+function selectLevel(el) {
+  var group = document.getElementById('levelGroup');
+  var items = group.querySelectorAll('.level-item');
+  for (var i = 0; i < items.length; i++) {
+    items[i].classList.remove('selected');
+  }
+  el.classList.add('selected');
+  var fb = document.getElementById('levelFeedback');
+  fb.className = 'feedback-msg show info';
+  var label = el.querySelector('strong').textContent;
+  fb.textContent = '你选择了 ' + label + '，加油完成挑战吧！';
+}
+
+function pickCreative(el) {
+  var group = document.getElementById('creativeGroup');
+  var opts = group.querySelectorAll('.creative-opt');
+  for (var i = 0; i < opts.length; i++) {
+    opts[i].classList.remove('chosen');
+  }
+  el.classList.add('chosen');
+}
+
+function submitWork() {
+  var fb = document.getElementById('submitFeedback');
+  var tasks = document.querySelectorAll('#baseTaskList li');
+  var doneCount = 0;
+  for (var i = 0; i < tasks.length; i++) {
+    if (tasks[i].classList.contains('done')) doneCount++;
+  }
+  var levelSelected = document.querySelector('.level-item.selected');
+  var creativeChosen = document.querySelector('.creative-opt.chosen');
+
+  if (doneCount === 0 && !levelSelected && !creativeChosen) {
+    fb.className = 'feedback-msg show';
+    fb.style.background = '#fff2f0';
+    fb.style.border = '1px solid #ffccc7';
+    fb.style.color = '#a8071a';
+    fb.textContent = '请先完成基础任务、选择分层级别和创意表达形式再提交哦！';
+    return;
+  }
+  fb.className = 'feedback-msg show success';
+  var msg = '🎉 提交成功！已完成 ' + doneCount + '/3 项基础任务';
+  if (levelSelected) msg += ' · 分层：' + levelSelected.querySelector('strong').textContent;
+  if (creativeChosen) msg += ' · 创意：已选';
+  fb.textContent = msg;
+}
+
+function resetAll() {
+  var tasks = document.querySelectorAll('#baseTaskList li');
+  for (var i = 0; i < tasks.length; i++) {
+    tasks[i].classList.remove('done');
+  }
+  var levelItems = document.querySelectorAll('.level-item');
+  for (var i = 0; i < levelItems.length; i++) {
+    levelItems[i].classList.remove('selected');
+  }
+  var opts = document.querySelectorAll('.creative-opt');
+  for (var i = 0; i < opts.length; i++) {
+    opts[i].classList.remove('chosen');
+  }
+  var fb = document.getElementById('levelFeedback');
+  fb.className = 'feedback-msg';
+  var sf = document.getElementById('submitFeedback');
+  sf.className = 'feedback-msg';
+}
+</script>
+</body>
+</html>

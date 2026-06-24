@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性原理 - 化学思维工具</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+  --success: #52c41a;
+  --warning: #faad14;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+}
+.container { width: 100%; max-width: none; padding: 20px 24px; }
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 3px solid var(--accent);
+}
+h2 {
+  font-size: var(--font-h2);
+  color: var(--text);
+  margin: 24px 0 12px;
+  padding-left: 12px;
+  border-left: 4px solid var(--primary);
+}
+h3 {
+  font-size: calc(var(--font-body) + 2px);
+  color: var(--primary);
+  margin: 16px 0 8px;
+}
+h4 {
+  font-size: var(--font-body);
+  font-weight: 600;
+  margin: 10px 0 4px;
+}
+.intro-box {
+  background: linear-gradient(135deg, var(--bg), #fff);
+  border: 2px solid var(--accent);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+.intro-box .fish-icon { font-size: 28px; display: block; margin-bottom: 8px; }
+.principle-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 16px 20px;
+  margin-bottom: 14px;
+  border-left: 5px solid var(--primary);
+  border-top: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  transition: box-shadow 0.2s;
+}
+.principle-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.1); }
+.principle-card .p-number {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 700;
+  margin-right: 8px;
+}
+.principle-card .p-desc {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin: 4px 0 8px;
+}
+.principle-card .p-example {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin: 6px 0;
+  font-size: 14px;
+}
+.principle-card .p-example strong { color: var(--primary); }
+.principle-card .p-use {
+  font-size: 14px;
+  padding: 6px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+.principle-card .p-use::before { content: "💡 使用提醒："; font-weight: 600; color: var(--warning); flex-shrink: 0; }
+.principle-card .p-scene { font-size: 13px; color: var(--text-secondary); margin: 4px 0; }
+.principle-card .p-scene::before { content: "🎯 适用场景："; font-weight: 600; color: var(--primary); }
+.expand-btn {
+  display: inline-block;
+  padding: 4px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+  transition: all 0.2s;
+}
+.expand-btn:hover { border-color: var(--primary); color: var(--primary); }
+.expand-content { display: none; margin-top: 6px; padding: 8px 12px; background: #fffbe6; border-radius: 6px; font-size: 14px; }
+.expand-content.open { display: block; }
+.exercise-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 16px 20px;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+}
+.exercise-card .ex-number {
+  display: inline-block;
+  background: var(--warning);
+  color: #fff;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 700;
+  margin-right: 8px;
+}
+.step-flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0;
+}
+.step-item {
+  padding: 6px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+.step-item:hover { border-color: var(--primary); color: var(--primary); }
+.step-item.done { background: var(--success); color: #fff; border-color: var(--success); }
+.self-check-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin: 12px 0;
+}
+@media (min-width: 640px) {
+  .self-check-grid { grid-template-columns: 1fr 1fr; }
+}
+.check-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+.check-card:hover { border-color: var(--primary); }
+.check-card .q { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.check-card .a { display: none; font-size: 14px; color: var(--text-secondary); padding-top: 6px; border-top: 1px dashed var(--border); }
+.check-card.revealed .a { display: block; }
+.check-card.revealed { border-color: var(--success); background: #f6ffed; }
+@media (max-width: 640px) {
+  .container { padding: 12px 14px; }
+  .principle-card, .exercise-card { padding: 12px 14px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🧠 解析性原理</h1>
+  <p style="color:var(--text-secondary);margin-bottom:12px;">从具体案例中提炼可迁移的思维工具——学会分析任何化学现象的方法。</p>
+
+  <div class="intro-box">
+    <span class="fish-icon">🐟 → 🎣</span>
+    <p><strong>具体案例</strong>是"鱼"——就这一个案例有用；<strong>提炼原理</strong>是"渔"——以后遇到任何化学现象你都能自己分析。</p>
+    <p style="margin-top:6px;">接下来，从木柴燃烧示例中提炼出5条可迁移的解析性原理，每一条都是你可以反复使用的<strong>"思维工具"</strong>。</p>
+  </div>
+
+  <h2>解析性原理提炼</h2>
+
+  <div class="principle-card">
+    <h3><span class="p-number">1</span>现象初判法——先描述，后解释</h3>
+    <div class="p-desc">分析前先客观描述你观察到的现象，不加解释、不跳结论。</div>
+    <div class="p-example"><strong>示例体现：</strong>第一步"先看见什么"——只写"木柴发光发热变灰烬"，没有立刻写"这是燃烧反应"。</div>
+    <div class="p-scene">做化学实验前的准备、观察自然现象、遇到不懂的问题时</div>
+    <div class="p-use">最难的不是描述，而是在描述时忍住不去"解释"。先列事实，后做推理。</div>
+  </div>
+
+  <div class="principle-card">
+    <h3><span class="p-number">2</span>类型定位法——先判断"这是哪类问题"</h3>
+    <div class="p-desc">分析前先给问题"贴标签"，不同标签对应不同的分析路径。</div>
+    <div class="p-example"><strong>示例体现：</strong>第二步判断"这是一个化学变化类问题"——于是后续调用化学变化相关的概念和分析框架。</div>
+    <div class="p-scene">任何需要"先分类再分析"的场景——不仅化学，整理资料、做决策也可用</div>
+    <p style="font-size:14px;margin:4px 0;">遇到一个化学现象时，先判断：① 化学变化/物理变化？② 物质性质/物质应用？③ 能量变化/物质变化？</p>
+    <div class="p-use">分类不需要100%精确，但要有一个初步判断作为分析的"入口"。</div>
+  </div>
+
+  <div class="principle-card">
+    <h3><span class="p-number">3</span>要素拆解法——把复杂现象分解为"谁参与了"</h3>
+    <div class="p-desc">一个现象背后往往有多个要素在共同起作用，逐一识别它们。</div>
+    <div class="p-example"><strong>示例体现：</strong>燃烧 = 木柴（可燃物）+ 氧气（助燃物）+ 点燃（温度条件）</div>
+    <p style="font-size:14px;margin:4px 0;"><strong>如何使用：</strong>画一个"要素圆圈图"，中心写现象，周围辐射写参与的"人/物/条件"。</p>
+    <div class="p-scene">分析化学反应的参与者、分析问题的成因、分析一个系统的组成部分</div>
+    <div class="p-use">不要漏了"看不见的要素"（如燃烧中的氧气、溶液中的水）；也不要过度分解（分解到能解释现象即可）。</div>
+  </div>
+
+  <div class="principle-card">
+    <h3><span class="p-number">4</span>关系揭示法——找出要素之间的"连接"</h3>
+    <div class="p-desc">要素不是孤立的，找出它们之间的因果、条件和互斥关系。</div>
+    <div class="p-example"><strong>示例体现：</strong>"木柴+氧气+点燃"三者缺一不可 → "如果隔绝氧气，火会熄灭" → 揭示了"要素之间的条件关系"。</div>
+    <p style="font-size:14px;margin:4px 0;"><strong>如何使用：</strong>在要素之间画箭头，标注箭头含义（"提供""导致""抑制""转化为"等），形成关系图。</p>
+    <div class="p-scene">解释现象的原因、做对比分析、预测变化结果</div>
+    <div class="p-use">先找"强关系"（明显的因果关系），再找"弱关系"（间接影响）；关系图不一定正确，需要验证。</div>
+  </div>
+
+  <div class="principle-card">
+    <h3><span class="p-number">5</span>质疑验证法——问自己"还有没有别的可能"</h3>
+    <div class="p-desc">分析结果出来后，主动找反例和漏洞。</div>
+    <div class="p-example"><strong>示例体现：</strong>"灰烬变轻了→质量不守恒？"→"不对，是气体产物跑了"→验证了质量守恒。</div>
+    <p style="font-size:14px;margin:4px 0;"><strong>如何使用：</strong>每得出一个结论，问3个"灵魂拷问"：① 有没有反例？② 我的证据充分吗？③ 还有没有其他解释？</p>
+    <div class="p-scene">完成作业后自查、看别人的分析时找漏洞、做科学研究时</div>
+    <div class="p-use">质疑不等于否定一切——质疑后再验证，要么巩固结论，要么修正结论。</div>
+  </div>
+
+  <h2>解析性原理应用</h2>
+
+  <div class="exercise-card">
+    <h3><span class="ex-number">1</span>分析"鸡蛋壳+醋"产生的气泡</h3>
+    <p style="margin:4px 0;"><strong>情境：</strong>你把一个鸡蛋壳放入白醋中，看到鸡蛋壳表面不断冒气泡，过一会儿鸡蛋壳变薄了。</p>
+    <p style="margin:4px 0;"><strong>解析任务：</strong>运用上述解析性原理，解释"鸡蛋壳+醋"发生了什么变化。</p>
+    <p style="font-size:14px;margin:6px 0;"><strong>分析提示：</strong>鸡蛋壳主要成分是碳酸钙（CaCO₃），醋主要成分是乙酸（CH₃COOH）。酸和含碳酸根的物质混合会释放什么气体？</p>
+
+    <h4 style="margin:10px 0 6px;">按五步法逐一完成：</h4>
+    <div class="step-flow" data-group="ex1">
+      <span class="step-item" onclick="toggleStep(this)">① 现象初判法</span>
+      <span class="step-item" onclick="toggleStep(this)">② 类型定位法</span>
+      <span class="step-item" onclick="toggleStep(this)">③ 要素拆解法</span>
+      <span class="step-item" onclick="toggleStep(this)">④ 关系揭示法</span>
+      <span class="step-item" onclick="toggleStep(this)">⑤ 质疑验证法</span>
+    </div>
+
+    <button class="expand-btn" onclick="toggleExpand('ex1Answer')">🔍 查看参考分析</button>
+    <div class="expand-content" id="ex1Answer">
+      <p><strong>现象初判：</strong>鸡蛋壳放入白醋 → 表面冒气泡 → 蛋壳变薄 → 液体变浑浊</p>
+      <p><strong>类型定位：</strong>这是一个化学变化（有新物质——气体产生）</p>
+      <p><strong>要素拆解：</strong>鸡蛋壳（CaCO₃）+ 白醋（CH₃COOH）+ 气泡（CO₂）+ 水环境</p>
+      <p><strong>关系揭示：</strong>CaCO₃ + 2CH₃COOH → Ca(CH₃COO)₂ + H₂O + CO₂↑（酸与碳酸盐反应产生CO₂）</p>
+      <p><strong>质疑验证：</strong>气泡一定是CO₂吗？→ 可以用澄清石灰水检验（CO₂使石灰水变浑浊）。蛋壳变薄是因为碳酸钙被消耗了。</p>
+      <p style="margin-top:4px;font-size:14px;color:var(--text-secondary);"><strong>表达建议：</strong>用"现象—要素—关系—结论"四栏表格呈现你的分析。</p>
+    </div>
+  </div>
+
+  <div class="exercise-card">
+    <h3><span class="ex-number">2</span>为什么超市里的"自热米饭"会自己发热？</h3>
+    <p style="margin:4px 0;"><strong>情境：</strong>你买了一盒自热米饭，按说明把水倒入底部发热包，盖上盖子，几分钟后米饭就热了。发热包装有"生石灰（CaO）"。</p>
+    <p style="margin:4px 0;"><strong>解析任务：</strong>运用解析性原理，分析自热米饭的发热原理。</p>
+    <p style="font-size:14px;margin:6px 0;"><strong>分析提示：</strong>① CaO和水反应生成Ca(OH)₂——放热还是吸热？② 你能写出文字表达式吗？</p>
+
+    <h4 style="margin:10px 0 6px;">按五步法逐一完成：</h4>
+    <div class="step-flow" data-group="ex2">
+      <span class="step-item" onclick="toggleStep(this)">① 现象初判法</span>
+      <span class="step-item" onclick="toggleStep(this)">② 类型定位法</span>
+      <span class="step-item" onclick="toggleStep(this)">③ 要素拆解法</span>
+      <span class="step-item" onclick="toggleStep(this)">④ 关系揭示法</span>
+      <span class="step-item" onclick="toggleStep(this)">⑤ 质疑验证法</span>
+    </div>
+
+    <button class="expand-btn" onclick="toggleExpand('ex2Answer')">🔍 查看参考分析</button>
+    <div class="expand-content" id="ex2Answer">
+      <p><strong>现象初判：</strong>水倒入发热包 → 发热包发热 → 水沸腾 → 米饭变热</p>
+      <p><strong>类型定位：</strong>这是一个化学变化（放热反应），属于"能量变化"类问题</p>
+      <p><strong>要素拆解：</strong>生石灰（CaO）+ 水（H₂O）+ 热量 + 氢氧化钙 [Ca(OH)₂]</p>
+      <p><strong>关系揭示：</strong>CaO + H₂O → Ca(OH)₂ + 大量热量（放热反应）</p>
+      <p><strong>质疑验证：</strong>发热后生成物是什么？安全吗？→ Ca(OH)₂有腐蚀性，所以发热包不能拆开食用。如果不用CaO，还有什么物质也能放热？</p>
+      <p style="margin-top:4px;font-size:14px;color:var(--text-secondary);"><strong>表达建议：</strong>画一幅"自热火锅发热原理图"——从"加水"到"发热"的完整链条，标注每一步的化学原理。</p>
+    </div>
+  </div>
+
+  <h2>自我检测</h2>
+  <p style="color:var(--text-secondary);margin-bottom:8px;">点击问题卡片查看参考答案，检测自己是否掌握了这些解析性原理。</p>
+
+  <div class="self-check-grid">
+    <div class="check-card" onclick="revealAnswer(this)">
+      <div class="q">1️⃣ 我能复述吗？</div>
+      <div class="a">五条解析性原理：① 现象初判法 ② 类型定位法 ③ 要素拆解法 ④ 关系揭示法 ⑤ 质疑验证法。你能写出几条？</div>
+    </div>
+    <div class="check-card" onclick="revealAnswer(this)">
+      <div class="q">2️⃣ 我能举例吗？</div>
+      <div class="a">举例（以"要素拆解法"为例）：分析"为什么手机电量不耐用"→ 要素=电池容量 + 屏幕亮度 + 后台App + 信号强度 + 使用习惯 → 找出关键要素后定向优化。</div>
+    </div>
+    <div class="check-card" onclick="revealAnswer(this)">
+      <div class="q">3️⃣ 我能分辨吗？</div>
+      <div class="a">"锅里的水烧开了"分析中使用了：现象初判法（看到水烧开）+ 类型定位法（物理变化）+ 要素拆解法（水+热量）+ 关系揭示法（热量让水分子运动加快变为水蒸气）。</div>
+    </div>
+    <div class="check-card" onclick="revealAnswer(this)">
+      <div class="q">4️⃣ 我能应用吗？</div>
+      <div class="a">"冰融化"要素拆解：要素 = 冰（固态水）+ 热量（环境温度）+ 液态水。关系：热量传递给冰 → 冰分子运动加快 → 克服分子间作用力 → 从固态变为液态（物理变化）。</div>
+    </div>
+    <div class="check-card" onclick="revealAnswer(this)" style="grid-column:1/-1;">
+      <div class="q">5️⃣ 我能反思吗？</div>
+      <div class="a">在分析"鸡蛋壳+醋"时，如果你第一步直接说"这是酸和碳酸钙反应产生CO₂"——这跳过了现象描述。如果先描述"看到气泡→蛋壳变薄→液体变浑浊"，再分析原因，你会更全面地捕捉所有现象，不漏掉任何线索。先描述后解释，关键在于"忍住不跳结论"。</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleStep(el) {
+  el.classList.toggle('done');
+}
+
+function toggleExpand(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('open');
+}
+
+function revealAnswer(el) {
+  el.classList.toggle('revealed');
+}
+</script>
+</body>
+</html>

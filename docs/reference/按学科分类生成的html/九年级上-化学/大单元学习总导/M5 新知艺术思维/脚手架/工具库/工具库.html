@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具库 — 化学学习工具箱</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+}
+.container { width: 100%; max-width: none; }
+h1 { font-size: var(--font-h1); color: var(--primary); margin: 0 0 16px; padding-bottom: 10px; border-bottom: 3px solid var(--accent); }
+h2 { font-size: var(--font-h2); color: var(--primary); margin: 28px 0 12px; }
+h3 { font-size: 17px; color: var(--text); margin: 20px 0 8px; }
+p, li { font-size: var(--font-body); margin-bottom: 10px; }
+
+/* 层级标签 */
+.level-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+.level-tab { padding: 8px 22px; border-radius: 20px; border: 1px solid var(--border); background: var(--card-bg); cursor: pointer; font-size: 14px; font-weight: 600; transition: .2s; }
+.level-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: 0 2px 8px rgba(22,119,255,0.2); }
+.level-tab:hover:not(.active) { border-color: var(--primary); color: var(--primary); }
+
+/* 面板 */
+.level-panel { display: none; }
+.level-panel.active { display: block; animation: fadeIn .35s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* 工具卡片 */
+.tool-grid { display: flex; flex-direction: column; gap: 16px; }
+.tool-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; transition: .2s; position: relative; overflow: hidden; }
+.tool-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--primary); }
+.tool-card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.12); transform: translateY(-2px); }
+.tool-name { font-size: 17px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+.tool-usage { font-size: 14px; color: var(--text-secondary); margin-bottom: 8px; }
+
+/* 步骤列表 */
+.step-list { padding-left: 20px; margin: 8px 0; }
+.step-list li { margin-bottom: 4px; font-size: 14px; }
+
+/* 推荐工具 */
+.tool-recs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+.rec-item { background: var(--bg); color: var(--text); padding: 3px 12px; border-radius: 6px; font-size: 13px; }
+.rec-item:first-child { background: var(--primary); color: #fff; }
+
+/* 示例框 */
+.example-box { background: #f9f9ff; border-radius: 6px; padding: 12px 16px; margin: 10px 0; font-size: 14px; border-left: 3px solid var(--accent); }
+
+/* 警告 */
+.warning-box { background: #fff7e6; border: 1px solid #ffd591; border-radius: 6px; padding: 12px 16px; margin: 10px 0; font-size: 14px; border-left: 3px solid #fa8c16; }
+
+/* 交互按钮区 */
+.interact-area { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+.practice-btn { padding: 6px 16px; border: 1px solid var(--primary); border-radius: 6px; background: transparent; color: var(--primary); cursor: pointer; font-size: 13px; transition: .2s; }
+.practice-btn:hover, .practice-btn.active { background: var(--primary); color: #fff; }
+.practice-feedback { font-size: 13px; color: var(--text-secondary); margin-top: 4px; min-height: 20px; }
+.hidden { display: none; }
+
+/* 高阶标签 */
+.tag-hl { display: inline-block; background: linear-gradient(135deg, #e6f7ff, #f0f5ff); color: var(--primary); font-size: 12px; padding: 2px 10px; border-radius: 10px; margin-bottom: 6px; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🧰 工具库</h1>
+<p style="font-size:14px;color:var(--text-secondary);margin-bottom:20px;">化学 · 九年级上 · 从基础到高阶，选你需要的工具</p>
+
+<!-- 层级切换 -->
+<div class="level-tabs" id="levelTabs">
+  <button class="level-tab active" onclick="switchLevel('basic')">🌟 基础工具</button>
+  <button class="level-tab" onclick="switchLevel('adv')">🚀 进阶工具</button>
+  <button class="level-tab" onclick="switchLevel('pro')">🎯 高阶工具</button>
+</div>
+
+<!-- 基础面板 -->
+<div class="level-panel active" id="panel-basic">
+  <div class="tool-grid">
+    <div class="tool-card">
+      <div class="tool-name">🧠 思维导图</div>
+      <div class="tool-usage">梳理化学概念之间的逻辑关系</div>
+      <ol class="step-list">
+        <li>中心写主题</li>
+        <li>向外发散关键词</li>
+        <li>标注箭头关系</li>
+        <li>用颜色分类</li>
+      </ol>
+      <div class="example-box"><strong>示例：</strong>以"化学变化"为中心词，发散出"证据""特征""类型""实例"</div>
+      <div class="tool-recs">
+        <span class="rec-item">✏️ 纸+笔（推荐）</span>
+        <span class="rec-item">XMind</span>
+        <span class="rec-item">百度脑图</span>
+      </div>
+      <div class="interact-area">
+        <button class="practice-btn" onclick="showDemo('mindmapDemo')">✏️ 试试画一个</button>
+        <p class="practice-feedback hidden" id="mindmapDemo">💡 提示：先写下"化学变化"在纸中央，然后画出4条分支：证据、特征、类型、实例</p>
+      </div>
+    </div>
+
+    <div class="tool-card">
+      <div class="tool-name">📋 KWL 表格</div>
+      <div class="tool-usage">明确你已经知道什么、想知道什么、学到了什么</div>
+      <ol class="step-list">
+        <li><strong>K</strong>（已知）— 学习前，写下你已经知道的</li>
+        <li><strong>W</strong>（想知）— 写下你想知道的</li>
+        <li><strong>L</strong>（学到）— 学习后，写下你学到的</li>
+      </ol>
+      <div class="example-box"><strong>适用场景：</strong>模块开始前和完成后各填一次，对比你的成长</div>
+      <div class="interact-area">
+        <button class="practice-btn" onclick="showDemo('kwlDemo')">📝 展开示例</button>
+        <p class="practice-feedback hidden" id="kwlDemo">📌 <strong>K</strong>: 我知道化学反应会产生新物质<br>📌 <strong>W</strong>: 我想知道如何判断是否发生了化学变化<br>📌 <strong>L</strong>: 我学到了变化前后质量不变</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 进阶面板 -->
+<div class="level-panel" id="panel-adv">
+  <div class="tool-grid">
+    <div class="tool-card">
+      <div class="tool-name">🔗 概念图工具</div>
+      <div class="tool-usage">表达多个概念之间的复杂关系（因果关系、层级关系、交叉关系）</div>
+      <ol class="step-list">
+        <li>列出关键概念</li>
+        <li>确定层级</li>
+        <li>画连线</li>
+        <li>标注关系词</li>
+      </ol>
+      <div class="example-box"><strong>示例：</strong>"化学变化"→"产生"→"新物质"→"证据"→"颜色变化 / 气体产生 / 温度变化"</div>
+      <div class="tool-recs">
+        <span class="rec-item">CmapTools</span>
+        <span class="rec-item">MindMaster</span>
+      </div>
+    </div>
+
+    <div class="tool-card">
+      <div class="tool-name">🧪 实验设计框架</div>
+      <div class="tool-usage">设计可操作的化学探究实验</div>
+      <ol class="step-list">
+        <li>提出假设</li>
+        <li>确定变量</li>
+        <li>设计步骤</li>
+        <li>预测结果</li>
+        <li>安全评估</li>
+      </ol>
+      <div class="example-box"><strong>适用场景：</strong>建构性案例中的实验类任务</div>
+      <div class="interact-area">
+        <button class="practice-btn" onclick="showDemo('expDemo')">💡 设计思路</button>
+        <p class="practice-feedback hidden" id="expDemo">🔬 假设：酸能溶解水垢 → 变量：不同酸 → 步骤：分别用醋/柠檬汁/水浸泡水垢 → 安全：戴手套，避免接触眼睛</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 高阶面板 -->
+<div class="level-panel" id="panel-pro">
+  <div class="tool-grid">
+    <div class="tool-card">
+      <div class="tool-name">🤖 AI 辅助学习工具</div>
+      <div class="tool-usage">帮助理解复杂化学概念、生成思考框架</div>
+      <ol class="step-list">
+        <li>明确你的问题</li>
+        <li>加入学科背景</li>
+        <li>要求AI提供思路而非答案</li>
+        <li>验证AI输出的准确性</li>
+      </ol>
+      <div class="warning-box">⚠️ <strong>重要提醒：</strong>AI可能出错！所有AI生成的内容必须与教材对照验证。</div>
+      <div class="tool-recs">
+        <span class="rec-item">Kimi</span>
+        <span class="rec-item">通义千问</span>
+        <span class="rec-item">ChatGPT</span>
+      </div>
+      <div class="interact-area">
+        <button class="practice-btn" onclick="showDemo('aiDemo')">💬 示例对话</button>
+        <p class="practice-feedback hidden" id="aiDemo">🧑‍🎓 "请用初中生能理解的方式解释质量守恒定律" → 然后对照课本检验AI的解释是否准确</p>
+      </div>
+    </div>
+
+    <div class="tool-card">
+      <div class="tool-name">📊 数据分析工具</div>
+      <div class="tool-usage">处理实验数据，发现规律</div>
+      <ol class="step-list">
+        <li>数据录入</li>
+        <li>选择图表类型</li>
+        <li>观察趋势</li>
+        <li>得出结论</li>
+      </ol>
+      <div class="tool-recs">
+        <span class="rec-item">Excel</span>
+        <span class="rec-item">石墨文档表格</span>
+        <span class="rec-item">简道云</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function switchLevel(lvl) {
+  document.querySelectorAll('.level-tab').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.level-panel').forEach(el => el.classList.remove('active'));
+  const tab = document.querySelector('.level-tab[onclick*="'+lvl+'"]');
+  const panel = document.getElementById('panel-'+lvl);
+  if (tab) tab.classList.add('active');
+  if (panel) panel.classList.add('active');
+}
+
+function showDemo(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('hidden');
+}
+</script>
+</body>
+</html>

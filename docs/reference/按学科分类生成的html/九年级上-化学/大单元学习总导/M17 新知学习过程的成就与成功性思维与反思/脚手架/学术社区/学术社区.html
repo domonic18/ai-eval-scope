@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学术社区 - 化学探索者脚手架</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+}
+
+.container { width: 100%; max-width: none; }
+
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 28px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--accent);
+  font-weight: 600;
+}
+
+h3 {
+  font-size: 17px;
+  color: var(--text);
+  margin: 20px 0 8px;
+  font-weight: 600;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+
+.intro-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border-left: 4px solid var(--primary);
+}
+
+.intro-card p { margin-bottom: 8px; }
+
+/* Connection Tabs */
+.tab-bar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 0;
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  padding: 10px 18px;
+  border: none;
+  background: var(--card-bg);
+  border-radius: var(--border-radius) var(--border-radius) 0 0;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  font-family: inherit;
+}
+
+.tab-btn:hover { color: var(--primary); background: #f7faff; }
+
+.tab-btn.active {
+  color: var(--primary);
+  background: var(--card-bg);
+  border-color: var(--primary);
+  font-weight: 600;
+}
+
+.tab-content {
+  display: none;
+  background: var(--card-bg);
+  border-radius: 0 var(--border-radius) var(--border-radius) var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--primary);
+}
+
+.tab-content.active { display: block; }
+
+.discuss-item {
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  background: #f7faff;
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+}
+
+.discuss-item strong { color: var(--primary); }
+
+.discuss-item p { margin: 4px 0; font-size: 14px; }
+
+/* Role Table */
+.role-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 14px;
+}
+
+.role-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+}
+
+.role-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.role-table tr:hover td { background: #f7faff; }
+
+.collab-task {
+  background: linear-gradient(135deg, #f0f5ff, #fff);
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin: 10px 0;
+  border: 1px solid var(--border);
+}
+
+.collab-task h4 { color: var(--primary); margin-bottom: 6px; }
+
+/* Output Section */
+.output-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+@media (min-width: 700px) {
+  .output-grid { grid-template-columns: 1fr 1fr 1fr; }
+}
+
+.output-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  transition: transform 0.2s;
+}
+
+.output-card:hover { transform: translateY(-2px); }
+
+.output-card h4 {
+  color: var(--primary);
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+
+.output-card p { font-size: 14px; margin-bottom: 6px; }
+
+/* Family Experiment */
+.exp-box {
+  background: linear-gradient(135deg, #e6f7ff, #f0f5ff);
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin: 10px 0;
+  border: 1px dashed var(--accent);
+}
+
+.exp-box strong { color: var(--primary); }
+
+/* Checkbox */
+.checklist {
+  list-style: none;
+  padding: 0;
+}
+
+.checklist li {
+  padding: 6px 0;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checklist li::before {
+  content: "□";
+  color: var(--primary);
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.checklist li.done::before {
+  content: "☑";
+  color: #52c41a;
+}
+
+@media (max-width: 480px) {
+  body { padding: 14px 12px; }
+  .tab-btn { padding: 8px 12px; font-size: 13px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🤝 学术社区</h1>
+<p class="subtitle">在协作、对话与真实连接中深化化学学习</p>
+
+<div class="intro-card">
+  <p>化学不是一个人的孤岛探索。通过与同伴的讨论、与家长的分享、与社会资源的连接，你会发现化学学习可以更丰富、更有趣。点击下方标签切换不同的连接方式。</p>
+</div>
+
+<h2>🔗 三类连接</h2>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('peer')" data-tab="peer">🧑‍🤝‍🧑 同伴连接</button>
+  <button class="tab-btn" onclick="switchTab('home')" data-tab="home">🏠 家校连接</button>
+  <button class="tab-btn" onclick="switchTab('social')" data-tab="social">🌐 社会连接</button>
+</div>
+
+<div id="peer" class="tab-content active">
+  <h3>讨论与协作</h3>
+
+  <div class="discuss-item">
+    <strong>议题A：</strong>
+    <p>"化学变化中一定有能量变化"——你能举例说明吗？你想到的例子和同桌想到的，互补性如何？</p>
+  </div>
+  <div class="discuss-item">
+    <strong>议题B：</strong>
+    <p>你从建构性示例中提炼的"建构性原理"是什么？和同学的原理对比，谁的更通用？谁的更贴近化学学科特点？</p>
+  </div>
+  <div class="discuss-item">
+    <strong>议题C：</strong>
+    <p>本模块的反思环节中，你觉得自己最大的"学习突破"是什么？你是如何实现这个突破的？</p>
+  </div>
+
+  <div class="collab-task">
+    <h4>👫 两人搭档</h4>
+    <p>互相讲解各自的"化学变化类型辨析模型"，用对方的模型判断一个未接触过的反应，提出改进建议。</p>
+  </div>
+
+  <div class="collab-task">
+    <h4>👥 四人小组</h4>
+    <p>分别完成7个建构性案例中的不同案例，互相展示成果，评选"最佳建构案例"。</p>
+  </div>
+
+  <h4 style="margin-top:16px;">角色分工建议</h4>
+  <table class="role-table">
+    <thead>
+      <tr><th>角色</th><th>职责</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>🎯 主持人</td><td>控制讨论节奏，确保每人都有发言机会</td></tr>
+      <tr><td>📝 记录员</td><td>记录小组讨论的关键观点和分歧</td></tr>
+      <tr><td>❓ 质疑官</td><td>对每个结论提出"你怎么知道？你的证据是什么？"</td></tr>
+      <tr><td>📊 总结者</td><td>汇总小组共识，准备向全班汇报</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div id="home" class="tab-content">
+  <h3>支持与反馈</h3>
+
+  <div class="collab-task">
+    <h4>📸 展示成果</h4>
+    <p>每完成一个建构成果（模型图、方案书），拍照发给家长，用3句话解释："我做了什么，我学到了什么"。</p>
+  </div>
+
+  <div class="collab-task">
+    <h4>💬 家长反馈单</h4>
+    <p>请家长在成果照片下方写一句反馈——"你最惊奇的一点是什么？"</p>
+  </div>
+
+  <div class="exp-box">
+    <strong>🧪 家庭化学小实验：</strong>
+    <p>如果条件允许，在家长陪伴下完成一个安全家庭小实验（如白醋+小苏打），拍摄短视频并在班级群分享。</p>
+    <p style="font-size:13px; color: var(--text-secondary); margin-top:6px;">⚠️ 注意安全，请在家长陪同下操作</p>
+  </div>
+</div>
+
+<div id="social" class="tab-content">
+  <h3>真实资源链接</h3>
+
+  <div class="collab-task">
+    <h4>🔬 线上专家连接</h4>
+    <p>中国数字科技馆——理化实验室，包含线上虚拟实验和科学家访谈视频</p>
+    <p style="font-size:13px; color: var(--text-secondary);">访问：www.cdstm.cn</p>
+  </div>
+
+  <div class="collab-task">
+    <h4>🧪 线上展览</h4>
+    <p>中国化学会科普专栏，了解化学在日常生活中的应用。</p>
+  </div>
+
+  <div class="collab-task">
+    <h4>🏛️ 线下连接（可选）</h4>
+    <p>参观本地科技馆的化学展区，或联系本地大学的化学开放日。</p>
+  </div>
+</div>
+
+<h2>📤 输出机制</h2>
+
+<div class="output-grid">
+
+  <div class="output-card">
+    <h4>📝 个人输出</h4>
+    <p>每次讨论后完成"讨论反思卡"：</p>
+    <ul class="checklist">
+      <li onclick="toggleCheck(this)">我今天的核心收获</li>
+      <li onclick="toggleCheck(this)">我提出的一个好问题</li>
+      <li onclick="toggleCheck(this)">我下次可以改进的一点</li>
+    </ul>
+  </div>
+
+  <div class="output-card">
+    <h4>👥 小组输出</h4>
+    <p>协作任务的成果共享：小组内部互相传阅评价，用贴纸或在线评论标注"亮点"和"建议"。</p>
+    <ul class="checklist">
+      <li onclick="toggleCheck(this)">成果已传阅</li>
+      <li onclick="toggleCheck(this)">已标注亮点</li>
+      <li onclick="toggleCheck(this)">已记录建议</li>
+    </ul>
+  </div>
+
+  <div class="output-card">
+    <h4>🏫 班级/社区输出</h4>
+    <p>优秀成果展示墙 + 数字成果集：将个人最佳成果拍照/录屏，整理成"M17学习成果相册"分享到班级群。</p>
+    <ul class="checklist">
+      <li onclick="toggleCheck(this)">成果已张贴至展示墙</li>
+      <li onclick="toggleCheck(this)">已拍照/录屏保存</li>
+      <li onclick="toggleCheck(this)">已分享至班级群</li>
+    </ul>
+  </div>
+
+</div>
+
+</div>
+
+<script>
+function switchTab(tabId) {
+  var btns = document.querySelectorAll('.tab-btn');
+  var contents = document.querySelectorAll('.tab-content');
+  btns.forEach(function(b) { b.classList.remove('active'); });
+  contents.forEach(function(c) { c.classList.remove('active'); });
+  var activeBtn = document.querySelector('.tab-btn[data-tab="' + tabId + '"]');
+  var activeContent = document.getElementById(tabId);
+  if (activeBtn) activeBtn.classList.add('active');
+  if (activeContent) activeContent.classList.add('active');
+}
+
+function toggleCheck(el) {
+  el.classList.toggle('done');
+}
+</script>
+
+</body>
+</html>

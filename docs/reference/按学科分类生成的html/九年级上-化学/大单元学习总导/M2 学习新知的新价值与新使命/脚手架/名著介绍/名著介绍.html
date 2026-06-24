@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名著介绍 — 化学经典阅读</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  padding: 24px;
+}
+.container { width: 100%; max-width: none; }
+.page-title {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.page-sub {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+
+/* 名言卡片 */
+.quote-card {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  border-left: 4px solid var(--primary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.quote-card:hover { box-shadow: 0 2px 8px rgba(22,119,255,0.1); }
+.quote-card .quote-text {
+  font-style: italic;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text);
+}
+.quote-card .quote-author {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-style: normal;
+}
+.quote-card .quote-think {
+  display: none;
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: var(--card-bg);
+  border-radius: 6px;
+  font-size: 14px;
+  border: 1px solid var(--border);
+}
+.quote-card .quote-think.show { display: block; }
+.quote-card .think-label {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* 书籍卡片 */
+.book-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+.book-card:hover { box-shadow: 0 2px 12px rgba(22,119,255,0.1); }
+.book-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--bg);
+  cursor: pointer;
+}
+.book-header h3 {
+  font-size: 16px;
+  color: var(--primary);
+  margin: 0;
+}
+.book-header .arrow {
+  font-size: 14px;
+  color: var(--text-secondary);
+  transition: transform 0.3s;
+}
+.book-card.open .arrow { transform: rotate(180deg); }
+.book-body {
+  display: none;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+}
+.book-card.open .book-body { display: block; }
+.book-body .field {
+  font-weight: 600;
+  color: var(--primary);
+  display: block;
+  margin-top: 6px;
+}
+.book-body .field:first-child { margin-top: 0; }
+.book-body p { margin-bottom: 4px; font-size: 14px; }
+.book-body .level-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  color: #fff;
+  margin-top: 4px;
+}
+.level-tag.beginner { background: #52c41a; }
+.level-tag.intermediate { background: #fa8c16; }
+.level-tag.advanced { background: #722ed1; }
+.level-tag.all { background: #1677ff; }
+
+.source-note {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 10px;
+  padding: 10px;
+  background: var(--bg);
+  border-radius: 6px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1 class="page-title">名著介绍</h1>
+  <p class="page-sub">第1章 走进化学世界 · M2 学习新知的新价值与新使命</p>
+
+  <div class="card">
+    <h2>名言 · 与大师对话</h2>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:10px;">点击名言展开思考引导：</p>
+
+    <div class="quote-card" onclick="toggleQuote(this)">
+      <span class="quote-text">"我不期望我的观点立刻被接受，因为长期形成的思维习惯不会轻易让位给新思想。"</span>
+      <span class="quote-author">— 拉瓦锡</span>
+      <div class="quote-think">
+        <span class="think-label">思考：</span>当你学到的新知识和已有认知冲突时，你选择相信谁？拉瓦锡的这句话提醒我们：科学进步从来不是一帆风顺的。
+      </div>
+    </div>
+
+    <div class="quote-card" onclick="toggleQuote(this)">
+      <span class="quote-text">"生活中没有什么可怕的事物，只有需要理解的事物。"</span>
+      <span class="quote-author">— 居里夫人</span>
+      <div class="quote-think">
+        <span class="think-label">思考：</span>这句名言和"学习新知的新价值与新使命"有什么关系？居里夫人告诉我们：恐惧源于未知，而学习是消除恐惧的唯一途径。
+      </div>
+    </div>
+
+    <div class="quote-card" onclick="toggleQuote(this)">
+      <span class="quote-text">"科学不仅与灵性相容，而且是深度灵性的源泉。"</span>
+      <span class="quote-author">— 卡尔·萨根</span>
+      <div class="quote-think">
+        <span class="think-label">思考：</span>学习化学的"灵性"在哪里？仅仅是算方程式吗？萨根告诉我们，当你知道一滴水中有多少原子、一个反应如何发生时，你就在经历科学之美。
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>名著 · 三本必读</h2>
+
+    <div class="book-card" id="book1">
+      <div class="book-header" onclick="toggleBook('book1')">
+        <h3>《天工开物》— 宋应星（明代）</h3>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="book-body">
+        <span class="field">核心问题</span>
+        <p>中国古代工匠如何利用化学原理制造陶瓷、冶炼金属、酿造美酒？</p>
+        <span class="field">核心观点</span>
+        <p>化学不是西方独有的，中国古人早已在实践中运用了复杂的化学变化。</p>
+        <span class="field">关键片段</span>
+        <p>"陶埏"一章中关于瓷釉烧制的描述，涉及氧化还原反应的基本原理。</p>
+        <span class="field">适读建议</span>
+        <span class="level-tag beginner">基础</span>
+        <p style="margin-top:6px;"><strong>获取：</strong>中华书局简体版 / 微信读书电子版</p>
+      </div>
+    </div>
+
+    <div class="book-card" id="book2">
+      <div class="book-header" onclick="toggleBook('book2')">
+        <h3>《化学简史》— J.R.帕廷顿</h3>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="book-body">
+        <span class="field">核心问题</span>
+        <p>化学是如何从炼金术发展到现代科学的？</p>
+        <span class="field">核心观点</span>
+        <p>化学的进步是"一个错误修正另一个错误"的螺旋上升过程。</p>
+        <span class="field">关键片段</span>
+        <p>拉瓦锡推翻燃素说的章节——看一位科学家如何用实验击败千年偏见。</p>
+        <span class="field">适读建议</span>
+        <span class="level-tag advanced">进阶</span>
+        <p style="margin-top:6px;"><strong>获取：</strong>商务印书馆译本 / 有声书平台</p>
+      </div>
+    </div>
+
+    <div class="book-card" id="book3">
+      <div class="book-header" onclick="toggleBook('book3')">
+        <h3>《元素的盛宴》— 山姆·基恩</h3>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="book-body">
+        <span class="field">核心问题</span>
+        <p>元素周期表中的每一个元素背后都有怎样的故事？</p>
+        <span class="field">核心观点</span>
+        <p>化学元素不仅存在于实验室，它们塑造了人类历史。</p>
+        <span class="field">关键片段</span>
+        <p>关于"铅与罗马帝国衰亡"的章节——重金属如何影响一个帝国的命运？</p>
+        <span class="field">适读建议</span>
+        <span class="level-tag all">基础—进阶</span>
+        <p style="margin-top:6px;"><strong>获取：</strong>中信出版社译本 / 微信读书 / 解读音频</p>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function toggleQuote(el) {
+  var think = el.querySelector('.quote-think');
+  think.classList.toggle('show');
+}
+function toggleBook(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+</script>
+</body>
+</html>

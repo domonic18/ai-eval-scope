@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>作业榜 - 化学变化探究</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+* { box-sizing: border-box; }
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+}
+.header {
+  background: linear-gradient(135deg, #d46b08 0%, #fa8c16 100%);
+  color: #fff;
+  padding: 28px 36px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.header::after {
+  content: "📋";
+  position: absolute;
+  right: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 54px;
+  opacity: 0.15;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+.header .subtitle {
+  font-size: 13px;
+  opacity: 0.85;
+  margin: 0;
+}
+
+.tab-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.tab-btn {
+  padding: 8px 20px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.25s;
+  color: var(--text);
+}
+.tab-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.tab-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.tab-content {
+  display: none;
+}
+.tab-content.active {
+  display: block;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  margin: 0 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card h2 .level-tag {
+  font-size: 11px;
+  padding: 1px 10px;
+  border-radius: 10px;
+  color: #fff;
+}
+.level-a { background: #52c41a; }
+.level-b { background: #fa8c16; }
+.level-c { background: #722ed1; }
+
+.homework-item {
+  padding: 10px 14px;
+  margin: 6px 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.25s;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.homework-item:hover {
+  border-color: var(--primary);
+  background: #e6f4ff;
+}
+.homework-item .status-icon {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #fff;
+  margin-top: 2px;
+  transition: all 0.2s;
+}
+.homework-item.done .status-icon {
+  background: #52c41a;
+  border-color: #52c41a;
+}
+.homework-item.done .hw-text {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+
+.rubric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 12px 0;
+}
+.rubric-item {
+  text-align: center;
+  padding: 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+.rubric-item .score {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary);
+  display: block;
+}
+.rubric-item .label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 600px) {
+  .container { padding: 12px 16px; }
+  .header { padding: 18px; }
+  .tab-bar { gap: 4px; }
+  .tab-btn { padding: 6px 12px; font-size: 13px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>📋 作业榜</h1>
+  <p class="subtitle">化学变化探究 · M9 新知文化思维 · 第1章 走进化学世界</p>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('basic')">📘 基础层</button>
+  <button class="tab-btn" onclick="switchTab('layered')">📗 分层任务</button>
+  <button class="tab-btn" onclick="switchTab('open')">📕 开放层</button>
+  <button class="tab-btn" onclick="switchTab('rubric')">📊 评价标准</button>
+</div>
+
+<div id="tab-basic" class="tab-content active">
+  <div class="card">
+    <h2>📘 基础层 <span style="font-size:12px;color:var(--text-secondary);font-weight:400;">再现与理解</span></h2>
+    <div class="homework-item" onclick="toggleHWDone(this)">
+      <span class="status-icon"></span>
+      <span class="hw-text"><strong>必做：</strong>列举5个生活中的化学变化和物理变化，并说明你判断的依据</span>
+    </div>
+    <div class="homework-item" onclick="toggleHWDone(this)">
+      <span class="status-icon"></span>
+      <span class="hw-text"><strong>选做：</strong>用表格对比物理变化和化学变化的异同</span>
+    </div>
+  </div>
+</div>
+
+<div id="tab-layered" class="tab-content">
+  <div class="card">
+    <h2>📗 A层 · 标准 <span class="level-tag level-a">A</span></h2>
+    <div class="homework-item" onclick="toggleHWDone(this)">
+      <span class="status-icon"></span>
+      <span class="hw-text">画出「蜡烛燃烧」的变化分析图，标注发生了哪些化学变化和物理变化</span>
+    </div>
+  </div>
+  <div class="card">
+    <h2>📗 B层 · 挑战 <span class="level-tag level-b">B</span></h2>
+    <div class="homework-item" onclick="toggleHWDone(this)">
+      <span class="status-icon"></span>
+      <span class="hw-text">设计一个微型实验证明「化学变化伴随能量变化」，写出实验方案</span>
+    </div>
+  </div>
+  <div class="card">
+    <h2>📗 C层 · 拓展 <span class="level-tag level-c">C</span></h2>
+    <div class="homework-item" onclick="toggleHWDone(this)">
+      <span class="status-icon"></span>
+      <span class="hw-text">分析一篇科学短文中的化学变化描述，找出其中的科学判断依据</span>
+    </div>
+  </div>
+</div>
+
+<div id="tab-open" class="tab-content">
+  <div class="card">
+    <h2>📕 创造性表达</h2>
+    <div class="homework-item" onclick="toggleHWDone(this)">
+      <span class="status-icon"></span>
+      <span class="hw-text"><strong>✍️ 写作：</strong>写一篇「我身边的化学变化」科普短文（300字）</span>
+    </div>
+    <div class="homework-item" onclick="toggleHWDone(this)">
+      <span class="status-icon"></span>
+      <span class="hw-text"><strong>🎨 图示：</strong>绘制「A→B的变化」概念图，涵盖至少5种变化类型</span>
+    </div>
+    <div class="homework-item" onclick="toggleHWDone(this)">
+      <span class="status-icon"></span>
+      <span class="hw-text"><strong>🎬 视频：</strong>拍摄「家庭厨房中的化学变化」微视频（2分钟内）</span>
+    </div>
+  </div>
+</div>
+
+<div id="tab-rubric" class="tab-content">
+  <div class="card">
+    <h2>📊 评价标准（Rubric）</h2>
+    <div class="rubric-grid">
+      <div class="rubric-item">
+        <span class="score">40%</span>
+        <span class="label">科学性：化学概念使用准确，判断有依据</span>
+      </div>
+      <div class="rubric-item">
+        <span class="score">30%</span>
+        <span class="label">完整性：涵盖变化的多个维度和关键要素</span>
+      </div>
+      <div class="rubric-item">
+        <span class="score">30%</span>
+        <span class="label">表达质量：清晰、有条理、形式美观</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p style="text-align:center;color:var(--text-secondary);font-size:13px;">
+  <button onclick="resetAllHW()" style="background:#8c8c8c;color:#fff;border:none;padding:5px 16px;border-radius:4px;cursor:pointer;">重置全部作业状态</button>
+</p>
+
+</div>
+<script>
+function switchTab(tab) {
+  var tabs = ['basic','layered','open','rubric'];
+  tabs.forEach(function(t) {
+    var btn = document.querySelector('.tab-btn[onclick*="'+t+'"]');
+    var content = document.getElementById('tab-'+t);
+    if (!btn || !content) return;
+    if (t === tab) {
+      btn.classList.add('active');
+      content.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+      content.classList.remove('active');
+    }
+  });
+}
+function toggleHWDone(el) {
+  el.classList.toggle('done');
+}
+function resetAllHW() {
+  document.querySelectorAll('.homework-item').forEach(function(el) {
+    el.classList.remove('done');
+  });
+}
+</script>
+</body>
+</html>

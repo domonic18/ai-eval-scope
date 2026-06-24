@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学术社区 — 化学学习共同体</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+  --font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+}
+.container { width: 100%; max-width: none; padding: 20px 24px; }
+.header {
+  text-align: center;
+  padding: 28px 20px 20px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  border-radius: 0 0 16px 16px;
+  margin: -20px -24px 24px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 6px; letter-spacing: 1px; }
+.header p { font-size: 14px; opacity: .85; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 22px;
+  margin-bottom: 18px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  border-left: 4px solid var(--primary);
+  padding-left: 12px;
+}
+.card h3 {
+  font-size: 16px;
+  color: var(--text);
+  margin: 14px 0 8px;
+}
+.topic-box {
+  background: #fafafa;
+  border: 1px solid #e8e8e8;
+  border-radius: 6px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+.role-tag {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  margin: 3px;
+}
+.role-observer { background: #e6f7ff; color: #0070c0; }
+.role-evidence { background: #f6ffed; color: #389e0d; }
+.role-summary { background: #fff7e6; color: #d46b08; }
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background .2s;
+  margin: 4px 4px 0 0;
+}
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-outline {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  padding: 6px 16px;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all .2s;
+  margin: 4px 4px 0 0;
+}
+.btn-outline:hover { background: var(--bg); }
+.reveal-content {
+  display: none;
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 14px 16px;
+  margin: 10px 0;
+  border: 1px solid var(--border);
+}
+.reveal-content.show { display: block; }
+.perspective-box {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 8px 0;
+  font-size: 14px;
+}
+.home-task {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 6px;
+  padding: 14px 16px;
+  margin: 10px 0;
+}
+.home-task h4 { color: #389e0d; margin-bottom: 4px; }
+.social-link {
+  display: inline-block;
+  background: #fafafa;
+  border: 1px solid #e8e8e8;
+  border-radius: 4px;
+  padding: 6px 12px;
+  margin: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.social-link:hover { background: var(--bg); border-color: var(--primary); color: var(--primary); }
+.summary-format {
+  background: #f0f5ff;
+  border: 2px dashed var(--accent);
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 12px;
+  text-align: center;
+}
+.summary-format p { margin: 4px 0; }
+.summary-format .num { display: inline-block; width: 24px; height: 24px; line-height: 24px; background: var(--primary); color: #fff; border-radius: 50%; font-size: 13px; margin-right: 6px; text-align: center; }
+.footer-note {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 16px 0 8px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🤝 学术社区</h1>
+  <p>构建"学习共同体"——在讨论与合作中建构化学知识</p>
+</div>
+
+<!-- 同伴连接 -->
+<div class="card">
+  <h2>👥 同伴连接 · 讨论与协作</h2>
+
+  <div class="topic-box">
+    <h3>📌 讨论议题 1（结构化）</h3>
+    <p style="background:#f0f5ff;padding:10px 14px;border-radius:6px;font-size:14px;">
+      "有人说'铁生锈'是化学变化，'铁被磁铁吸引'是物理变化。<br>你能用证据说服一个不同意的人吗？"
+    </p>
+    <button class="btn-outline" onclick="toggleReveal('hint1')">💡 查看提示</button>
+    <div id="hint1" class="reveal-content">
+      <strong>思考路径：</strong>想一想：铁生锈后产生了什么新物质？（红棕色的铁锈——主要成分 Fe₂O₃）。铁被磁铁吸引后，铁还是铁，没有新物质生成。区别就在"是否有新物质产生"。
+    </div>
+  </div>
+
+  <div class="topic-box">
+    <h3>📌 讨论议题 2</h3>
+    <p style="background:#f0f5ff;padding:10px 14px;border-radius:6px;font-size:14px;">
+      "你能想出 3 个看起来像是化学变化、实际上是物理变化的例子吗？"
+    </p>
+    <button class="btn-outline" onclick="toggleReveal('hint2')">💡 查看提示</button>
+    <div id="hint2" class="reveal-content">
+      <strong>参考示例：</strong><br>
+      ① 玻璃破碎——看起来"变了"，但玻璃还是玻璃（SiO₂）<br>
+      ② 冰块融化——固体变液体，但 H₂O 还是 H₂O<br>
+      ③ 食盐溶于水——盐"不见了"，但蒸干水后盐又出现了
+    </div>
+  </div>
+
+  <button class="btn-primary" onclick="toggleReveal('roles')">👤 查看角色分工</button>
+  <div id="roles" class="reveal-content">
+    <p style="margin-bottom:8px;"><strong>建议小组角色分工：</strong></p>
+    <span class="role-tag role-observer">👁️ 观察员 — 记录不同观点</span>
+    <span class="role-tag role-evidence">📊 证据提供者 — 查找实证</span>
+    <span class="role-tag role-summary">📝 总结者 — 整理讨论结论</span>
+    <p style="margin-top:10px;font-size:14px;">💡 建议小组成员轮流担任不同角色，体验不同的学习视角。</p>
+  </div>
+</div>
+
+<!-- 家校连接 -->
+<div class="card">
+  <h2>🏠 家校连接 · 支持与反馈</h2>
+  <div class="home-task">
+    <h4>🎯 家庭互动任务</h4>
+    <p style="font-size:14px;">向你的家人介绍你今天学到的"物理变化 vs 化学变化"，请他们帮你找找家里还有哪些例子。把他们的发现记录下来，带回课堂分享。</p>
+    <button class="btn-primary" style="margin-top:8px;" onclick="toggleReveal('record')">📋 打开记录表模板</button>
+    <div id="record" class="reveal-content">
+      <p><strong>📝 家庭发现记录表：</strong></p>
+      <table style="width:100%;border-collapse:collapse;font-size:14px;margin-top:6px;">
+        <tr style="background:var(--primary);color:#fff;">
+          <th style="padding:6px;border:1px solid var(--border);">物品/现象</th>
+          <th style="padding:6px;border:1px solid var(--border);">家人认为的变化类型</th>
+          <th style="padding:6px;border:1px solid var(--border);">你的判断</th>
+        </tr>
+        <tr>
+          <td style="padding:6px;border:1px solid var(--border);">＿＿＿＿＿＿＿</td>
+          <td style="padding:6px;border:1px solid var(--border);">□ 物理 □ 化学</td>
+          <td style="padding:6px;border:1px solid var(--border);">□ 物理 □ 化学</td>
+        </tr>
+        <tr>
+          <td style="padding:6px;border:1px solid var(--border);">＿＿＿＿＿＿＿</td>
+          <td style="padding:6px;border:1px solid var(--border);">□ 物理 □ 化学</td>
+          <td style="padding:6px;border:1px solid var(--border);">□ 物理 □ 化学</td>
+        </tr>
+        <tr>
+          <td style="padding:6px;border:1px solid var(--border);">＿＿＿＿＿＿＿</td>
+          <td style="padding:6px;border:1px solid var(--border);">□ 物理 □ 化学</td>
+          <td style="padding:6px;border:1px solid var(--border);">□ 物理 □ 化学</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- 社会连接 -->
+<div class="card">
+  <h2>🌍 社会连接 · 真实连接</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+    <span class="social-link" onclick="toggleReveal('social1')">📱 化学科普公众号</span>
+    <span class="social-link" onclick="toggleReveal('social2')">🔬 科普中国平台</span>
+    <span class="social-link" onclick="toggleReveal('social3')">🏛️ 科技馆参观</span>
+  </div>
+  <div id="social1" class="reveal-content">
+    推荐关注"科普中国""果壳网""中科院物理所"等平台上的化学主题内容，每天 5 分钟了解一个化学小知识。
+  </div>
+  <div id="social2" class="reveal-content">
+    搜索"科普中国"官方网站或App，在化学/材料分类下，有大量图文和短视频讲解化学原理在生活中的应用。
+  </div>
+  <div id="social3" class="reveal-content">
+    如果有条件，参观本地科技馆或自然博物馆的化学展区，观察互动展品，体验化学变化的奇妙。
+  </div>
+</div>
+
+<!-- 输出机制 -->
+<div class="card">
+  <h2>📝 输出机制 · 三句话总结</h2>
+  <p style="font-size:14px;margin-bottom:10px;">讨论结束后，用"三句话总结"格式输出你的收获：</p>
+  <div class="summary-format">
+    <p><span class="num">1</span><strong>我原来以为…</strong></p>
+    <p style="color:var(--text-secondary);font-size:14px;margin:6px 0 10px;">（写下讨论前你持有的旧想法）</p>
+    <p><span class="num">2</span><strong>现在我知道了…</strong></p>
+    <p style="color:var(--text-secondary);font-size:14px;margin:6px 0 10px;">（记录讨论中学到的新认知）</p>
+    <p><span class="num">3</span><strong>我还想知道…</strong></p>
+    <p style="color:var(--text-secondary);font-size:14px;margin:6px 0 0;">（提出新的问题，驱动后续学习）</p>
+  </div>
+  <p style="font-size:13px;color:var(--text-secondary);margin-top:10px;text-align:center;">⭐ 优秀讨论成果可整理成小报或黑板报展示</p>
+</div>
+
+<div class="footer-note">
+  🤝 交流 · 分享 · 成长——化学因讨论而更有趣
+</div>
+
+</div>
+<script>
+function toggleReveal(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('show');
+}
+</script>
+</body>
+</html>

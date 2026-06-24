@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块五维导学 — M14 新知STEAM融合性应用</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+.wrapper {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  border-radius: var(--border-radius);
+  padding: 28px 32px;
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 6px; }
+.header .sub { opacity: 0.9; font-size: var(--font-body); }
+.dim-grid {
+  display: grid;
+  gap: 16px;
+}
+.dim-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: all 0.2s;
+}
+.dim-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  cursor: pointer;
+  background: linear-gradient(135deg, #f6f8fc 0%, #fff 100%);
+  transition: background 0.2s;
+  user-select: none;
+}
+.dim-header:hover { background: linear-gradient(135deg, #e6f0ff 0%, #f6f8fc 100%); }
+.dim-icon {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  background: var(--accent);
+  color: #fff;
+  flex-shrink: 0;
+}
+.dim-title { font-size: var(--font-h2); font-weight: 700; color: var(--primary); flex:1; }
+.dim-arrow {
+  font-size: 18px;
+  color: var(--text-secondary);
+  transition: transform 0.3s;
+  flex-shrink: 0;
+}
+.dim-card.open .dim-arrow { transform: rotate(180deg); }
+.dim-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+  padding: 0 20px;
+}
+.dim-card.open .dim-body {
+  max-height: 800px;
+  padding: 16px 20px 20px;
+}
+.dim-body p { margin-bottom: 8px; }
+.dim-body ul { margin: 6px 0 10px 20px; }
+.dim-body li { margin-bottom: 5px; }
+.highlight-box {
+  background: #f6f8fc;
+  border-left: 4px solid var(--primary);
+  padding: 12px 16px;
+  border-radius: 0 6px 6px 0;
+  margin: 10px 0;
+}
+.tag {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin: 2px;
+}
+.plan-area {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-top: 20px;
+  border: 1px solid var(--border);
+}
+.plan-area h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+}
+.btn {
+  display: inline-block;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: var(--font-body);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--primary);
+  color: #fff;
+}
+.btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
+.btn-outline {
+  background: transparent;
+  border: 2px solid var(--primary);
+  color: var(--primary);
+}
+.btn-outline:hover { background: #e6f0ff; }
+@media (max-width: 600px) {
+  .wrapper { padding: 16px 12px; }
+  .header { padding: 20px; }
+  .dim-header { padding: 14px 16px; }
+  .dim-body { padding: 0 16px; }
+  .dim-card.open .dim-body { padding: 12px 16px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <h1>🧭 模块五维导学</h1>
+    <p class="sub">M14 新知STEAM融合性应用 · 化学 九年级上</p>
+  </div>
+
+  <p style="margin-bottom:16px;color:var(--text-secondary);">
+    👆 点击每个维度的标题展开详情，全面了解本模块的学习蓝图。
+  </p>
+
+  <div class="dim-grid">
+
+    <!-- 维度一 -->
+    <div class="dim-card" id="dim1">
+      <div class="dim-header" onclick="toggleDim('dim1')">
+        <div class="dim-icon">🎯</div>
+        <div class="dim-title">学习目标</div>
+        <div class="dim-arrow">▼</div>
+      </div>
+      <div class="dim-body">
+        <div class="highlight-box">
+          <strong>知识理解：</strong>掌握化学变化的基本特征（新物质生成），能识别化学变化与物理变化的区别，理解"原子重新组合"这一核心概念。
+        </div>
+        <div class="highlight-box">
+          <strong>能力形成：</strong>形成跨学科综合应用能力——能将化学知识与科学探究、技术工具、工程思维、艺术表达和数学方法相结合，解决一个真实问题。
+        </div>
+        <div class="highlight-box">
+          <strong>思维发展：</strong>从"单一学科思维"升级为"系统建构思维"——在观察化学现象的基础上，学会从多个学科角度分析问题、设计方案、产出成果。
+        </div>
+        <div class="highlight-box">
+          <strong>表达产出：</strong>完成一件可视化的STEAM融合作品（如翻页海报、模型、动画脚本），并能用口头和书面语言清晰解释你的建构过程。
+        </div>
+      </div>
+    </div>
+
+    <!-- 维度二 -->
+    <div class="dim-card" id="dim2">
+      <div class="dim-header" onclick="toggleDim('dim2')">
+        <div class="dim-icon">🚀</div>
+        <div class="dim-title">高精尖价值与未来意义</div>
+        <div class="dim-arrow">▼</div>
+      </div>
+      <div class="dim-body">
+        <p>STEAM思维不是课本上的概念——它是现代科技创新的<strong>底层操作系统</strong>。</p>
+        <ul>
+          <li><strong>新材料研发：</strong>科学家用化学原理 + 计算机模拟（T/M）设计新型催化剂，实现更高效的能源转化</li>
+          <li><strong>环境监测：</strong>工程师将化学传感器 + 数据分析（S/T/M）结合，实时检测空气和水质</li>
+          <li><strong>科普可视化：</strong>用化学知识 + 艺术设计（A）让抽象的微观世界"被看见"，这就是你在这个模块要尝试的方向</li>
+        </ul>
+        <p>未来，无论你从事什么职业——<strong>跨学科解决问题的能力</strong>才是最有竞争力的核心素养。</p>
+        <p style="color:var(--primary);font-weight:600;margin-top:6px;">这个模块就是你的第一次STEAM实战演练。</p>
+      </div>
+    </div>
+
+    <!-- 维度三 -->
+    <div class="dim-card" id="dim3">
+      <div class="dim-header" onclick="toggleDim('dim3')">
+        <div class="dim-icon">📖</div>
+        <div class="dim-title">推荐学习方式与方法</div>
+        <div class="dim-arrow">▼</div>
+      </div>
+      <div class="dim-body">
+        <p>本模块不是"听讲"模式，而是<strong>做中学</strong>。推荐以下方法：</p>
+        <ul>
+          <li><strong>观察法：</strong>先从生活中真实的现象入手（铁钉生锈、酸碱变色），做好观察记录</li>
+          <li><strong>比较法：</strong>对比变化前后的差异，对比不同设计方案的效果</li>
+          <li><strong>建模法：</strong>用示意图、海报、模型等方式将微观过程"可视化"</li>
+          <li><strong>实验探究法：</strong>在安全条件下动手做小实验，获取第一手数据</li>
+          <li><strong>反思迭代法：</strong>完成初稿后，用评价量表自检并改进</li>
+        </ul>
+        <div class="highlight-box">
+          💡 <strong>具体操作建议：</strong>准备一本"建构日志本"，每完成一个环节记录一步。先完整跟学建构性示例，再独立完成建构任务。
+        </div>
+      </div>
+    </div>
+
+    <!-- 维度四 -->
+    <div class="dim-card" id="dim4">
+      <div class="dim-header" onclick="toggleDim('dim4')">
+        <div class="dim-icon">👤</div>
+        <div class="dim-title">关键人物、事件与成果</div>
+        <div class="dim-arrow">▼</div>
+      </div>
+      <div class="dim-body">
+        <ul>
+          <li><strong>🧪 安托万·拉瓦锡 (1743-1794)</strong> — "现代化学之父"。他以精确的实验和定量思维推翻了燃素说，确立了化学变化中的质量守恒定律。他的研究方法本身就是"科学+数学"的典范。</li>
+          <li><strong>🖼️ 大卫·A·古德塞尔</strong> — 科学可视化先驱。他开创了用计算机图形学展示蛋白质结构和分子运动的方法，让"看不见的分子世界"变得可见，是"科学(S)+技术(T)+艺术(A)"的典范。</li>
+          <li><strong>🏭 乔治·华盛顿·卡弗 (1864-1943)</strong> — 化学家兼发明家。他从花生、红薯等农产品中提取出300多种衍生产品，完美示范了"化学+工程+应用"的STEAM思维。</li>
+        </ul>
+        <p style="margin-top:8px;color:var(--text-secondary);">🔍 拓展阅读提示：搜索"科学可视化竞赛""分子模型 3D打印"可以看到更多跨学科结合的精彩案例。</p>
+      </div>
+    </div>
+
+    <!-- 维度五 -->
+    <div class="dim-card" id="dim5">
+      <div class="dim-header" onclick="toggleDim('dim5')">
+        <div class="dim-icon">❓</div>
+        <div class="dim-title">前沿追问</div>
+        <div class="dim-arrow">▼</div>
+      </div>
+      <div class="dim-body">
+        <p>学完本模块后，试试回答这些问题——答案没有标准解，但能激发更深层的思考：</p>
+        <div class="highlight-box" style="margin:8px 0;">
+          <strong>🤔 追问一：</strong>如果给你一个"分子级3D打印机"，你打算设计什么作品来展示化学变化的本质？
+        </div>
+        <div class="highlight-box" style="margin:8px 0;">
+          <strong>🤔 追问二：</strong>人工智能可以自动生成化学变化的示意图了——你认为"人"在STEAM建构中不可替代的价值是什么？
+        </div>
+        <div class="highlight-box" style="margin:8px 0;">
+          <strong>🤔 追问三：</strong>如果让你用一套"可视化模型"向小学生解释"燃烧"的本质，你会在海报中重点展示什么？
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 学习规划表 -->
+  <div class="plan-area">
+    <h2>📋 我的学习规划表</h2>
+    <p style="margin-bottom:12px;">基于五维导学，制定个人学习计划：</p>
+    <textarea id="planInput" rows="6" placeholder="例如：
+1. 我的学习目标：理解化学变化的微观本质，制作一份翻页海报
+2. 我打算用以下方法：先观察铁钉生锈，再查阅课本第1章，然后设计草图
+3. 我感兴趣的拓展人物：拉瓦锡——我想读他的质量守恒实验故事
+4. 我想探索的前沿追问：追问一——用电脑设计分子模型
+5. 我的完成时限：本周三完成观察记录，下周一完成海报制作" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:var(--font-body);line-height:var(--line-height);"></textarea>
+    <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+      <button class="btn" onclick="savePlan()">💾 保存我的规划</button>
+      <button class="btn btn-outline" onclick="clearPlan()">🔄 重新规划</button>
+    </div>
+    <div id="planFeedback" style="margin-top:10px;color:var(--text-secondary);font-style:italic;"></div>
+  </div>
+</div>
+
+<script>
+function toggleDim(id) {
+  var card = document.getElementById(id);
+  card.classList.toggle('open');
+}
+function savePlan() {
+  var plan = document.getElementById('planInput').value.trim();
+  var fb = document.getElementById('planFeedback');
+  if (!plan) {
+    fb.innerHTML = '⚠️ 请先在输入框中填写你的学习规划。';
+    return;
+  }
+  fb.innerHTML = '✅ 学习规划已保存！你可以随时回来修改完善。';
+  localStorage.setItem('modulePlan_m14', plan);
+}
+function clearPlan() {
+  document.getElementById('planInput').value = '';
+  document.getElementById('planFeedback').innerHTML = '🔄 已清空，开始重新规划吧！';
+  localStorage.removeItem('modulePlan_m14');
+}
+window.onload = function() {
+  var saved = localStorage.getItem('modulePlan_m14');
+  if (saved) {
+    document.getElementById('planInput').value = saved;
+    document.getElementById('planFeedback').innerHTML = '📌 上次保存的学习规划已载入。';
+  }
+};
+</script>
+</body>
+</html>

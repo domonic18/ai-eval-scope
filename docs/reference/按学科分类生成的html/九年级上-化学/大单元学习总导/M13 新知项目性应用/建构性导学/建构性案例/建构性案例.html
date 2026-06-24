@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性案例 — 化学·九年级上</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+  padding: 20px;
+}
+.container { width: 100%; max-width: none; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 24px 28px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 6px; }
+.header .meta { font-size: 13px; opacity: 0.85; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--bg);
+}
+.card h3 { font-size: 16px; color: var(--text); margin: 12px 0 6px; }
+.card h4 { font-size: 15px; color: var(--primary-hover); margin: 10px 0 4px; }
+.case-wrap { }
+.case-item { display: none; }
+.case-item.active { display: block; animation: fadeIn 0.35s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.case-num {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 28px;
+  font-size: 14px;
+  margin-right: 8px;
+}
+.star { display: inline-block; font-size: 14px; margin-left: 6px; }
+.star-1 { color: #52c41a; }
+.star-2 { color: #73d13d; }
+.star-3 { color: #faad14; }
+.star-4 { color: #ff7a45; }
+.nav-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.nav-tabs .tab {
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  cursor: pointer;
+  font-size: 13px;
+  background: var(--card-bg);
+  transition: all 0.2s;
+}
+.nav-tabs .tab:hover { border-color: var(--primary); color: var(--primary); }
+.nav-tabs .tab.cur { background: var(--primary); color: #fff; border-color: var(--primary); }
+.rubric { list-style: none; padding: 0; }
+.rubric li {
+  padding: 6px 12px;
+  margin-bottom: 4px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rubric li:hover { border-color: var(--primary); }
+.rubric li .ck {
+  display: inline-flex;
+  width: 18px; height: 18px;
+  border: 2px solid var(--border);
+  border-radius: 3px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+.rubric li.done .ck { background: var(--primary); border-color: var(--primary); color: #fff; }
+.btn-sm {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 4px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+  margin-top: 6px;
+}
+.btn-sm:hover { border-color: var(--primary); color: var(--primary); }
+.fade-in { animation: fadeIn 0.4s ease; }
+@media (max-width: 600px) {
+  body { padding: 10px; }
+  .card { padding: 14px 16px; }
+  .header { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header fade-in">
+  <h1>建构性案例 — 七阶适配案例导学</h1>
+  <div class="meta">化学 · 九年级上 · 第1章 走进化学世界 · M13 新知项目性应用 · 建构性导学</div>
+</div>
+
+<!-- 总览 -->
+<div class="card fade-in">
+  <h2>七阶递进总览</h2>
+  <div style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:14px;">
+      <thead><tr style="background:var(--primary);color:#fff;"><th style="padding:6px 10px;text-align:left;">阶次</th><th style="padding:6px 10px;text-align:left;">维度</th><th style="padding:6px 10px;text-align:left;">案例方向（化学）</th><th style="padding:6px 10px;text-align:left;">难度</th></tr></thead>
+      <tbody>
+        <tr><td style="padding:6px 10px;border:1px solid var(--border);">1</td><td style="padding:6px 10px;border:1px solid var(--border);">个人理解型</td><td style="padding:6px 10px;border:1px solid var(--border);">生活中的化学现象理解</td><td style="padding:6px 10px;border:1px solid var(--border);"><span class="star star-1">★</span></td></tr>
+        <tr><td style="padding:6px 10px;border:1px solid var(--border);">2</td><td style="padding:6px 10px;border:1px solid var(--border);">生活应用型</td><td style="padding:6px 10px;border:1px solid var(--border);">日常物品的化学原理应用</td><td style="padding:6px 10px;border:1px solid var(--border);"><span class="star star-2">★★</span></td></tr>
+        <tr><td style="padding:6px 10px;border:1px solid var(--border);">3</td><td style="padding:6px 10px;border:1px solid var(--border);">校园问题解决型</td><td style="padding:6px 10px;border:1px solid var(--border);">校园中的化学相关问题</td><td style="padding:6px 10px;border:1px solid var(--border);"><span class="star star-2">★★</span></td></tr>
+        <tr><td style="padding:6px 10px;border:1px solid var(--border);">4</td><td style="padding:6px 10px;border:1px solid var(--border);">学科表达型</td><td style="padding:6px 10px;border:1px solid var(--border);">化学概念/过程的模型化表达</td><td style="padding:6px 10px;border:1px solid var(--border);"><span class="star star-3">★★★</span></td></tr>
+        <tr><td style="padding:6px 10px;border:1px solid var(--border);">5</td><td style="padding:6px 10px;border:1px solid var(--border);">跨学科整合型</td><td style="padding:6px 10px;border:1px solid var(--border);">化学+其他学科的综合问题</td><td style="padding:6px 10px;border:1px solid var(--border);"><span class="star star-3">★★★</span></td></tr>
+        <tr><td style="padding:6px 10px;border:1px solid var(--border);">6</td><td style="padding:6px 10px;border:1px solid var(--border);">社会情境型</td><td style="padding:6px 10px;border:1px solid var(--border);">社会议题中的化学视角</td><td style="padding:6px 10px;border:1px solid var(--border);"><span class="star star-4">★★★★</span></td></tr>
+        <tr><td style="padding:6px 10px;border:1px solid var(--border);">7</td><td style="padding:6px 10px;border:1px solid var(--border);">综合创新型</td><td style="padding:6px 10px;border:1px solid var(--border);">开放创新解决方案</td><td style="padding:6px 10px;border:1px solid var(--border);"><span class="star star-4">★★★★</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="margin-top:8px;font-size:14px;color:var(--text-secondary);">↓ 点击下方标签切换案例</p>
+</div>
+
+<!-- 案例导航 -->
+<div class="card" style="padding:12px 20px;">
+  <div class="nav-tabs" id="caseTabs">
+    <span class="tab cur" data-idx="0" onclick="switchCase(0)">第1阶</span>
+    <span class="tab" data-idx="1" onclick="switchCase(1)">第2阶</span>
+    <span class="tab" data-idx="2" onclick="switchCase(2)">第3阶</span>
+    <span class="tab" data-idx="3" onclick="switchCase(3)">第4阶</span>
+    <span class="tab" data-idx="4" onclick="switchCase(4)">第5阶</span>
+    <span class="tab" data-idx="5" onclick="switchCase(5)">第6阶</span>
+    <span class="tab" data-idx="6" onclick="switchCase(6)">第7阶</span>
+  </div>
+</div>
+
+<!-- ============ 案例 1 ============ -->
+<div class="case-wrap">
+<div class="case-item active" data-idx="0">
+<div class="card">
+  <h2><span class="case-num">1</span>为何苹果切开后变黄了？<span class="star star-1">★</span></h2>
+  <p style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">个人理解型 · 生活中的化学现象理解</p>
+  <h4>1. 真实建构情境</h4>
+  <p>午餐时你带了一个苹果，削皮后放在桌上。等你去洗了手回来，发现苹果表面变成了黄褐色。同桌说"苹果生锈了"，你好奇：苹果没有铁，怎么会"生锈"？这到底是一种什么变化？</p>
+  <h4>2. 建构任务</h4>
+  <p>建构一个"果蔬褐变"科学解释卡，解释苹果切开变色的原因，明确判断其属于物理变化还是化学变化，并设计一个延缓褐变的简单方案。</p>
+  <h4>3. 原理调用提示</h4>
+  <p>调用<strong>观察驱动原理</strong>：仔细描述苹果变色前后的颜色、质地、气味变化；<strong>证据链建构原理</strong>：收集"变色只有在切开后发生""柠檬汁可延缓变色"等证据链。</p>
+  <h4>4. 建构步骤</h4>
+  <p><strong>Step 1</strong> 观察并记录苹果变色全过程（0min→5min→15min→30min的颜色变化）。<br><strong>Step 2</strong> 查阅资料：苹果含有多酚类物质和多酚氧化酶（PPO），切开后细胞破碎，酚类物质与空气中氧气接触发生氧化反应。<br><strong>Step 3</strong> 对比实验：在半个苹果上滴柠檬汁，另半个不做处理，观察差异。<br><strong>Step 4</strong> 得出结论：苹果褐变产生了新的有色物质→化学变化。<br><strong>Step 5</strong> 产出科学解释卡：描述现象→解释原理→判断变化类型→延缓方案。</p>
+  <h4>5. 脚手架推荐</h4>
+  <p>建构模板句式"我观察到了……因为……所以我建构出……"；教材第1章化学变化定义。</p>
+  <h4>6. 成果表达</h4>
+  <p><strong>成果名称：</strong>《苹果褐变科学解释卡》（图文并茂，A5大小）<br><strong>格式：</strong>左侧照片/绘制图展示变色过程，右侧文字解释原理，底部列出延缓方案。</p>
+  <h4>7. 自评量规</h4>
+  <ul class="rubric" id="rubric0">
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 观察记录完整记录了4个时间点的颜色变化</li>
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 正确区分了物理变化与化学变化</li>
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 至少设计了1项对比实验并记录结果</li>
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 科学解释卡包含现象→原理→判断→方案四个模块</li>
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 延缓方案有科学依据（隔绝氧气/抑制酶活性）</li>
+  </ul>
+  <button class="btn-sm" onclick="resetRubric('rubric0')">重置评价</button>
+</div></div>
+
+<!-- ============ 案例 2 ============ -->
+<div class="case-item" data-idx="1">
+<div class="card">
+  <h2><span class="case-num">2</span>小苏打为什么能让面包变蓬松？<span class="star star-2">★★</span></h2>
+  <p style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">生活应用型 · 日常物品的化学原理应用</p>
+  <h4>1. 真实建构情境</h4>
+  <p>妈妈做馒头时，在面粉里加了一小勺白色粉末（小苏打）。蒸出来的馒头蓬松柔软，咬一口里面有很多小孔。你好奇：这种白色粉末在加热时发生了什么？馒头里的小孔是怎么来的？</p>
+  <h4>2. 建构任务</h4>
+  <p>设计并演示一个"小苏打产气"微型实验，建构"小苏打受热分解/遇酸产气"的化学原理模型，制作一张《膨松剂工作原理卡》。</p>
+  <h4>3. 原理调用提示</h4>
+  <p>调用<strong>假设—验证循环原理</strong>：先假设"白色粉末加热会产生气体"，再实验验证；<strong>模型化表达原理</strong>：用化学方程式或图示表达分解过程。</p>
+  <h4>4. 建构步骤</h4>
+  <p><strong>Step 1</strong> 取少量小苏打（碳酸氢钠）放入试管，观察外观（白色粉末）。<br><strong>Step 2</strong> 用酒精灯加热试管，将产生的气体通入澄清石灰水，观察石灰水变浑浊→证明产生CO₂。<br><strong>Step 3</strong> 另取小苏打与白醋混合，迅速将火柴伸入试管→火柴熄灭→证明产生CO₂。<br><strong>Step 4</strong> 整理两种产气路径：受热分解（烘焙）和遇酸反应（发酵）。<br><strong>Step 5</strong> 用图示表达：小苏打→受热/遇酸→CO₂气体→在面团中形成气孔→馒头蓬松。</p>
+  <h4>5. 脚手架推荐</h4>
+  <p>关键句式："如果……那么……"实验假设句式；教材中化学变化的判断方法——是否有新物质生成。</p>
+  <h4>6. 成果表达</h4>
+  <p><strong>成果名称：</strong>《膨松剂工作原理卡》<br><strong>格式：</strong>双栏对比展示"受热分解"与"遇酸反应"两条路径，配化学反应示意图。</p>
+  <h4>7. 自评量规</h4>
+  <ul class="rubric" id="rubric1">
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 实验验证了小苏打受热和遇酸均能产生CO₂</li>
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 能解释CO₂如何使馒头蓬松</li>
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 正确标注了反应中的化学变化特征</li>
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 工作卡包含两种产气路径的对比</li>
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 图示清晰表达从反应物到产物的变化过程</li>
+  </ul>
+  <button class="btn-sm" onclick="resetRubric('rubric1')">重置评价</button>
+</div></div>
+
+<!-- ============ 案例 3 ============ -->
+<div class="case-item" data-idx="2">
+<div class="card">
+  <h2><span class="case-num">3</span>实验室的废液该倒哪里？<span class="star star-2">★★</span></h2>
+  <p style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">校园问题解决型 · 校园中的化学相关问题</p>
+  <h4>1. 真实建构情境</h4>
+  <p>化学实验课后，老师要求将废液倒入指定废液桶。有同学说"水可以冲走一切，倒水池里就行"，也有同学说"有些废液会腐蚀管道，不能乱倒"。你们小组的实验废液是稀盐酸和氢氧化钠溶液的混合液。这些废液到底该怎么处理？</p>
+  <h4>2. 建构任务</h4>
+  <p>建构一份《校园化学实验室废液分类处理指南》，包括废液分类标准、每种废液的正确处理方式、以及"中和处理"的实验验证方案。</p>
+  <h4>3. 原理调用提示</h4>
+  <p>调用<strong>证据链建构原理</strong>：收集不同废液的性质证据（酸性、碱性、毒性等）；<strong>假设—验证循环原理</strong>：设计实验验证酸碱性，再决定处理方式。</p>
+  <h4>4. 建构步骤</h4>
+  <p><strong>Step 1</strong> 调查实验室常见废液种类及性质（酸、碱、盐、有机溶剂等）。<br><strong>Step 2</strong> 用pH试纸测稀盐酸和氢氧化钠溶液的pH值，验证其酸碱性。<br><strong>Step 3</strong> 查阅资料了解实验室废液排放标准和环境影响。</p>
+  <p><strong>Step 4</strong> 设计废液中和实验：向废酸液中逐滴加入废碱液，用pH试纸监测至中性。<br><strong>Step 5</strong> 编制分类处理指南：酸→碱中和后排放；碱→酸中和后排放；有机溶剂→专门回收。</p>
+  <h4>5. 脚手架推荐</h4>
+  <p>pH试纸作为简单可靠的酸碱性检测工具；流程图模板用来设计废液处理流程。</p>
+  <h4>6. 成果表达</h4>
+  <p><strong>成果名称：</strong>《校园化学实验室废液分类处理指南》（A4单页，表格+流程图）<br><strong>呈现建议：</strong>以"废液类型→性质检测→处理方案"三级结构展开。</p>
+  <h4>7. 自评量规</h4>
+  <ul class="rubric" id="rubric2">
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 分类涵盖至少3种常见实验室废液</li>
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 用pH试纸检测酸碱性并记录数据</li>
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 设计了可行的中和处理方案</li>
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 指南包含明确的分类处理流程图</li>
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 提到环境保护和安全的考虑</li>
+  </ul>
+  <button class="btn-sm" onclick="resetRubric('rubric2')">重置评价</button>
+</div></div>
+
+<!-- ============ 案例 4 ============ -->
+<div class="case-item" data-idx="3">
+<div class="card">
+  <h2><span class="case-num">4</span>如何用模型表达"物质三态变化"？<span class="star star-3">★★★</span></h2>
+  <p style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">学科表达型 · 化学概念/过程的模型化表达</p>
+  <h4>1. 真实建构情境</h4>
+  <p>课堂上学习到物质有固态、液态、气态三种状态，水在0℃以下结冰、100℃以上沸腾。可是"分子间距变大"这种描述太抽象——有没有一种直观的方式，能让人一眼看清固态→液态→气态时分子到底发生了什么变化？</p>
+  <h4>2. 建构任务</h4>
+  <p>用日常材料（豆子/珠子+纸板/盘子）制作一个"分子排列模型"，直观展示固态、液态、气态三种状态下分子的排列方式和运动状态差异，并用该模型解释冰融化、水蒸发等物理变化。</p>
+  <h4>3. 原理调用提示</h4>
+  <p>调用<strong>模型化表达原理</strong>：将抽象的分子概念转化为可视化的物理模型，用模型表达科学理解。</p>
+  <h4>4. 建构步骤</h4>
+  <p><strong>Step 1</strong> 回顾教材中关于分子排列的图示和文字描述。<br><strong>Step 2</strong> 设计模型方案：固态→豆子紧密排列成固定形状；液态→豆子排列较松散可滑动；气态→豆子分散在容器中自由运动。<br><strong>Step 3</strong> 动手制作模型，为每种状态拍摄/绘制照片并标注说明。<br><strong>Step 4</strong> 用模型演示"冰→水→水蒸气"的变化过程，用箭头连接三张照片。<br><strong>Step 5</strong> 在模型旁附文字解释：固态（分子排列紧密有固定形状）→液态（分子间距增大无固定形状）→气态（分子间距最大充满容器空间）。</p>
+  <h4>5. 脚手架推荐</h4>
+  <p>关键句式："固态像……因为分子的排列方式……；液态像……因为……"——用类比强化理解。</p>
+  <h4>6. 成果表达</h4>
+  <p><strong>成果名称：</strong>《物质三态分子排列模型》（实物模型或展板）<br><strong>评价重点：</strong>科学性（分子排列正确）、直观性（一目了然）、完整性（三种状态全覆盖）。</p>
+  <h4>7. 自评量规</h4>
+  <ul class="rubric" id="rubric3">
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 三种状态的分子排列方式准确反映了科学原理</li>
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 模型能清晰展示固态→液态→气态的分子间距变化</li>
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 能用模型正确解释冰融化和水蒸发的本质</li>
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 模型材料选择合理，制作认真</li>
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 含文字标注，能独立解说模型的含义</li>
+  </ul>
+  <button class="btn-sm" onclick="resetRubric('rubric3')">重置评价</button>
+</div></div>
+
+<!-- ============ 案例 5 ============ -->
+<div class="case-item" data-idx="4">
+<div class="card">
+  <h2><span class="case-num">5</span>植物生长需要什么——化学视角+生物视角<span class="star star-3">★★★</span></h2>
+  <p style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">跨学科整合型 · 化学+其他学科的综合问题</p>
+  <h4>1. 真实建构情境</h4>
+  <p>生物课上老师告诉你植物通过光合作用制造有机物，化学课上你学到CO₂是化学反应的产物。你发现一个有趣的交叉问题：植物从环境中吸收的CO₂和H₂O，通过光合作用变成有机物和O₂——这究竟是物理变化还是化学变化？光合作用中涉及了哪些物质转化？</p>
+  <h4>2. 建构任务</h4>
+  <p>建构一个"光合作用·化学视角解读"信息图，从化学变化的角度分析光合作用的本质（反应物→产物、新物质生成、能量转化），并与生物课所学知识形成互补。</p>
+  <h4>3. 原理调用提示</h4>
+  <p>调用<strong>证据链建构原理</strong>：用多条证据（CO₂减少、O₂增加、有机物生成）来证明光合作用是化学变化；<strong>模型化表达原理</strong>：用化学方程式+图示呈现。</p>
+  <h4>4. 建构步骤</h4>
+  <p><strong>Step 1</strong> 回顾生物课光合作用知识：6CO₂+6H₂O→C₆H₁₂O₆+6O₂（条件：光、叶绿体）。<br><strong>Step 2</strong> 从化学角度分析：反应物和产物完全不同→有新物质生成→是化学变化。<br><strong>Step 3</strong> 查阅资料：叶绿素中的镁元素在光合反应链中扮演关键角色。<br><strong>Step 4</strong> 设计信息图框架：生物层（植物结构、光合作用场所）+ 化学层（化学方程式、物质转化分析、变化类型判断）。<br><strong>Step 5</strong> 制作信息图，在化学层重点标注"新物质"的判断依据。</p>
+  <h4>5. 脚手架推荐</h4>
+  <p>"变化类型判断三步法"：①列出反应物→②列出生成物→③判断是否产生新物质。</p>
+  <h4>6. 成果表达</h4>
+  <p><strong>成果名称：</strong>《光合作用·跨学科解读信息图》<br><strong>格式：</strong>A3大小，左侧生物视角，右侧化学视角，中间交叉分析区域。</p>
+  <h4>7. 自评量规</h4>
+  <ul class="rubric" id="rubric4">
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 化学视角部分包含完整的化学方程式</li>
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 正确从化学变化角度分析了光合作用本质</li>
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 信息图有效连接了生物与化学两学科知识</li>
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 版面设计清晰，标注了关键信息点</li>
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 能回答"为什么光合作用是化学变化"并给出证据</li>
+  </ul>
+  <button class="btn-sm" onclick="resetRubric('rubric4')">重置评价</button>
+</div></div>
+
+<!-- ============ 案例 6 ============ -->
+<div class="case-item" data-idx="5">
+<div class="card">
+  <h2><span class="case-num">6</span>塑料污染——化学能帮上什么忙？<span class="star star-4">★★★★</span></h2>
+  <p style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">社会情境型 · 社会议题中的化学视角</p>
+  <h4>1. 真实建构情境</h4>
+  <p>新闻报道说全球每年有超过800万吨塑料流入海洋，到2050年海洋中的塑料可能比鱼还多。你看到海滩上被塑料缠绕的海鸟照片，深感震撼。塑料是化学制品，那么化学知识能用来解决塑料污染问题吗？</p>
+  <h4>2. 建构任务</h4>
+  <p>建构一份"塑料污染·化学解决方案"研究报告，从塑料的化学组成和变化特性出发，分析至少3种化学方法（降解、回收再造、替代材料）在解决塑料污染中的潜力和局限。</p>
+  <h4>3. 原理调用提示</h4>
+  <p>调用<strong>观察驱动原理</strong>：观察不同塑料制品的标识和降解情况；<strong>假设—验证循环原理</strong>：对每种解决方案提出假设分析其可行性。</p>
+  <h4>4. 建构步骤</h4>
+  <p><strong>Step 1</strong> 收集信息：塑料的化学组成（聚乙烯、聚丙烯等高分子化合物）、降解所需条件。<br><strong>Step 2</strong> 分析"可降解塑料"化学原理：在特定条件下（微生物作用、光照）高分子链断裂成小分子。<br><strong>Step 3</strong> 分析"化学回收"：通过热解将塑料分解为燃料或单体，实现循环利用。<br><strong>Step 4</strong> 分析"替代材料"：PLA（聚乳酸）来自玉米淀粉，可在工业堆肥条件下降解。<br><strong>Step 5</strong> 综合对比3种方案的优势与局限，形成报告。</p>
+  <h4>5. 脚手架推荐</h4>
+  <p>教材第1章"化学变化"概念迁移——塑料降解是化学变化（高分子分解为小分子）；"对比表格"模板。</p>
+  <h4>6. 成果表达</h4>
+  <p><strong>成果名称：</strong>《塑料污染·化学解决方案研究报告》<br><strong>格式：</strong>四栏对比表（方案名称、化学原理、优势、局限）+ 文字说明。</p>
+  <h4>7. 自评量规</h4>
+  <ul class="rubric" id="rubric5">
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 报告覆盖至少3种不同的化学解决方案</li>
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 每种方案从化学原理角度解释了工作机制</li>
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 对比表格一目了然，数据准确</li>
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 指出了各方案的实际应用局限</li>
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 提出了自己的观点或改进建议</li>
+  </ul>
+  <button class="btn-sm" onclick="resetRubric('rubric5')">重置评价</button>
+</div></div>
+
+<!-- ============ 案例 7 ============ -->
+<div class="case-item" data-idx="6">
+<div class="card">
+  <h2><span class="case-num">7</span>设计一个"未来净水装置"<span class="star star-4">★★★★</span></h2>
+  <p style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">综合创新型 · 开放创新解决方案</p>
+  <h4>1. 真实建构情境</h4>
+  <p>某地区遭遇洪水后，饮用水源被污染。村民只能喝浑浊的河水，很多人生病了。现有材料：空塑料瓶、沙子、碎石、活性炭、棉花、明矾、漂白粉。你能用这些材料和化学知识，设计一个简易的净水装置吗？</p>
+  <h4>2. 建构任务</h4>
+  <p>设计并制作一个"未来净水装置"原型，综合运用物理方法（过滤、吸附）和化学方法（絮凝、消毒），实现将浑浊河水净化为较清澈的可饮用水。形成设计方案+实物演示+科学原理解释。</p>
+  <h4>3. 原理调用提示</h4>
+  <p>调用<strong>观察驱动原理</strong>：观察原水→各步骤后→最终出水的差异；<strong>假设—验证循环原理</strong>：每步处理后检测水质变化；<strong>模型化表达原理</strong>：用流程图展示净水全流程。</p>
+  <h4>4. 建构步骤</h4>
+  <p><strong>Step 1</strong> 观察原水特征：浊度、颜色、气味、pH值，记录初始数据。<br><strong>Step 2</strong> 设计净水流程：沉降（明矾絮凝）→过滤（沙石活性炭层）→消毒（漂白粉/煮沸），画出设计图。<br><strong>Step 3</strong> 动手组装净水装置（空塑料瓶剪开，分层填充砂石+活性炭+棉花）。<br><strong>Step 4</strong> 进行净化实验，每步骤后取样对比，检验效果。<br><strong>Step 5</strong> 记录各步骤的化学原理：明矾絮凝（化学变化生成絮状沉淀吸附杂质）→活性炭吸附（物理变化）→漂白粉消毒（化学变化杀灭微生物）。<br><strong>Step 6</strong> 撰写净水装置使用说明书，包括材料清单、组装步骤、化学原理、适用范围和局限性。</p>
+  <h4>5. 脚手架推荐</h4>
+  <p>"变化类型判断框架"区分净化过程中每一步属于物理变化还是化学变化；"设计图模板"绘制装置结构。</p>
+  <h4>6. 成果表达</h4>
+  <p><strong>成果名称：</strong>《未来净水装置原型+使用说明书》<br><strong>格式：</strong>实物装置（或设计图）+A4说明书（含流程图、化学原理标注、操作步骤）。</p>
+  <h4>7. 自评量规</h4>
+  <ul class="rubric" id="rubric6">
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 装置至少包含2种物理方法和1种化学方法</li>
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 正确标注了每个步骤的变化类型（物理/化学）和原理</li>
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 装置设计合理，材料来源易得</li>
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 进行了水质对比检测并记录数据</li>
+    <li onclick="toggleRubric(this)"><span class="ck">✓</span> 说明书完整，可指导他人复制该装置</li>
+  </ul>
+  <button class="btn-sm" onclick="resetRubric('rubric6')">重置评价</button>
+</div></div>
+</div>
+
+</div>
+<script>
+function switchCase(idx) {
+  document.querySelectorAll('.case-item').forEach(function(c) {
+    c.classList.remove('active');
+  });
+  document.querySelectorAll('.tab').forEach(function(t) {
+    t.classList.remove('cur');
+  });
+  var target = document.querySelector('.case-item[data-idx="' + idx + '"]');
+  var tab = document.querySelector('.tab[data-idx="' + idx + '"]');
+  if (target) target.classList.add('active');
+  if (tab) tab.classList.add('cur');
+}
+function toggleRubric(el) {
+  el.classList.toggle('done');
+}
+function resetRubric(id) {
+  var list = document.getElementById(id);
+  if (!list) return;
+  list.querySelectorAll('li').forEach(function(li) {
+    li.classList.remove('done');
+  });
+}
+// Check for any broken elements
+document.addEventListener('DOMContentLoaded', function() {
+  var firstCase = document.querySelector('.case-item[data-idx="0"]');
+  var firstTab = document.querySelector('.tab[data-idx="0"]');
+  if (firstCase) firstCase.classList.add('active');
+  if (firstTab) firstTab.classList.add('cur');
+});
+</script>
+</body>
+</html>

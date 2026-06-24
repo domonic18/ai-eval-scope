@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性示例 — 走进化学世界</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+  --success: #52c41a;
+  --warning: #faad14;
+  --error: #ff4d4f;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  margin: 0; padding: 0;
+  width: 100%;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  text-align: center;
+  margin: 16px 0 8px;
+}
+h2 {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin: 28px 0 12px;
+  padding-left: 12px;
+  border-left: 4px solid var(--primary);
+}
+h3 {
+  font-size: calc(var(--font-body) + 2px);
+  font-weight: 600;
+  color: var(--text);
+  margin: 18px 0 8px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin: 16px 0;
+  border: 1px solid var(--border);
+}
+.goal-box {
+  background: linear-gradient(135deg, #e6f7ff, #f0f5ff);
+  border: 1px solid var(--accent);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin: 12px 0;
+}
+.goal-box::before {
+  content: "🎯 学习目标";
+  display: block;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+.step-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin: 12px 0;
+  border-left: 4px solid var(--primary);
+  box-shadow: var(--shadow);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: default;
+}
+.step-card:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(22,119,255,0.15);
+}
+.step-num {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 28px;
+  font-size: 14px;
+  font-weight: 700;
+  margin-right: 8px;
+}
+.demo-box {
+  background: #f6ffed;
+  border: 1px dashed var(--success);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.demo-box::before {
+  content: "💡 思维示范";
+  display: block;
+  font-weight: 600;
+  color: var(--success);
+  margin-bottom: 4px;
+}
+.toggle-btn {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+  margin: 6px 0;
+}
+.toggle-btn:hover {
+  background: var(--primary-hover);
+}
+.toggle-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+  padding: 0 12px;
+}
+.toggle-content.open {
+  max-height: 600px;
+  padding: 12px;
+}
+.checklist {
+  list-style: none;
+  padding: 0;
+}
+.checklist li {
+  padding: 8px 0 8px 36px;
+  position: relative;
+  cursor: pointer;
+  transition: color 0.2s;
+  border-bottom: 1px solid #f0f0f0;
+}
+.checklist li::before {
+  content: "○";
+  position: absolute;
+  left: 8px;
+  color: var(--primary);
+  font-size: 18px;
+  transition: all 0.2s;
+}
+.checklist li.done {
+  color: var(--text-secondary);
+  text-decoration: line-through;
+}
+.checklist li.done::before {
+  content: "●";
+  color: var(--success);
+}
+.rating-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+}
+.rating-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 14px;
+}
+.rating-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  vertical-align: middle;
+}
+.rating-table tr:last-child td { border-bottom: none; }
+.rating-table tr:hover td { background: #f0f5ff; }
+.stars {
+  color: var(--warning);
+  font-size: 18px;
+  cursor: pointer;
+  user-select: none;
+}
+.stars span {
+  transition: opacity 0.15s;
+}
+.stars span:hover, .stars span.active {
+  opacity: 1;
+}
+.stars span { opacity: 0.3; }
+.stars span.active { opacity: 1; }
+.scaffold-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin: 12px 0;
+}
+.scaffold-item {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+.scaffold-item:hover {
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(22,119,255,0.12);
+}
+.scaffold-item.selected {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.subtitle {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .scaffold-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 480px) {
+  .scaffold-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>建构性示例</h1>
+<p class="subtitle">M8 新知科学思维 · 走进化学世界</p>
+
+<div class="goal-box">
+<p>通过一个完整的建构示范案例，学会如何从真实情境出发，主动建构化学知识成果。你将看到一个"专家建构"的全过程，并模仿完成自己的建构任务。</p>
+</div>
+
+<!-- 二、真实建构情境 -->
+<h2>一、真实建构情境</h2>
+<div class="card">
+<p><strong>情境：</strong>周末你在家帮妈妈切土豆准备晚餐，你把切好的土豆块泡在水里防止变色。半小时后，你发现泡土豆的水变成了淡淡的<strong>蓝色</strong>！</p>
+<p>你明明只是用水泡了土豆，没有加任何化学试剂——水为什么会变蓝？这个"意外"现象背后藏着什么秘密？</p>
+<p style="margin-top:8px;color:var(--text-secondary);">🤔 好奇心被点燃了吗？让我们像科学家一样，从零开始建构对这个现象的解释！</p>
+</div>
+
+<!-- 三、建构目标 -->
+<h2>二、建构目标</h2>
+<div class="card">
+<p>建构一个<strong>"土豆泡水变蓝"现象的科学解释模型</strong>，包括：</p>
+<ul style="padding-left:20px;margin-top:8px;">
+  <li>是什么物质导致了变色？</li>
+  <li>发生了怎样的化学反应？</li>
+  <li>如何用化学方程式表达这一变化？</li>
+</ul>
+</div>
+
+<!-- 四、建构任务说明 -->
+<h2>三、建构任务说明</h2>
+<div class="card">
+<table style="width:100%;border-collapse:collapse;">
+  <tr><td style="padding:6px 12px;font-weight:600;width:120px;">成果名称</td><td>土豆泡水变蓝现象解释卡</td></tr>
+  <tr><td style="padding:6px 12px;font-weight:600;">用途对象</td><td>给同班同学科普这个有趣的化学现象</td></tr>
+  <tr><td style="padding:6px 12px;font-weight:600;">表现形式</td><td>图文结合的A4纸卡片（含现象描述+化学原理+方程式）</td></tr>
+  <tr><td style="padding:6px 12px;font-weight:600;">最低标准</td><td>准确指认变色物质，写出正确的化学方程式，配一张手绘示意图</td></tr>
+</table>
+</div>
+
+<!-- 五、建构过程示范 -->
+<h2>四、建构过程示范</h2>
+
+<div class="step-card">
+<div><span class="step-num">1</span><strong>观察情境，记录关键信息</strong></div>
+<p style="margin:6px 0 4px 36px;font-size:14px;color:var(--text-secondary);"><strong>做什么：</strong>把观察到的现象用文字准确记录下来。</p>
+<p style="margin:0 0 4px 36px;font-size:14px;color:var(--text-secondary);"><strong>怎么做：</strong>用"什么+怎么样+在什么条件下"的句式记录。</p>
+<div class="demo-box">
+"我观察到：切好的土豆块泡在自来水中，约30分钟后，<strong>水变成了淡蓝色</strong>。土豆本身是淡黄色的，水原本是透明的。变蓝的是水，不是土豆。水温是室温。"<br>
+→ <strong>关键信息</strong>：土豆、水、蓝色、30分钟、室温
+</div>
+</div>
+
+<div class="step-card">
+<div><span class="step-num">2</span><strong>提出核心问题</strong></div>
+<p style="margin:6px 0 4px 36px;font-size:14px;color:var(--text-secondary);"><strong>做什么：</strong>基于观察提出要探究的科学问题。</p>
+<p style="margin:0 0 4px 36px;font-size:14px;color:var(--text-secondary);"><strong>怎么做：</strong>用"为什么……？是什么……？"列出问题。</p>
+<div class="demo-box">
+"为什么土豆泡水水会变蓝？蓝色物质是什么？<br>
+土豆里有什么特殊成分？这种成分在水里发生了什么变化？<br>
+→ <strong>核心问题</strong>：土豆中的什么物质在什么条件下使水变蓝？"
+</div>
+</div>
+
+<div class="step-card">
+<div><span class="step-num">3</span><strong>调用已有知识和经验</strong></div>
+<p style="margin:6px 0 4px 36px;font-size:14px;color:var(--text-secondary);"><strong>做什么：</strong>回忆学过的化学知识和生活经验，寻找线索。</p>
+<p style="margin:0 0 4px 36px;font-size:14px;color:var(--text-secondary);"><strong>怎么做：</strong>知识联想 + 经验对照。</p>
+<div class="demo-box">
+"我记得：土豆含有<strong>淀粉</strong>（我们做过淀粉遇碘变蓝的实验）。但这里没有加碘！<br>
+我还知道：有些植物含有<strong>花青素</strong>（紫甘蓝遇酸变红、遇碱变蓝）。<br>
+土豆切开后会<strong>氧化</strong>变色（苹果切开变黄也是氧化）。<br>
+→ <strong>初步猜想</strong>：可能是土豆中的某种物质溶解到水里，发生了化学反应。"
+</div>
+</div>
+
+<div class="step-card">
+<div><span class="step-num">4</span><strong>寻找证据（教材、数据、实验）</strong></div>
+<p style="margin:6px 0 4px 36px;font-size:14px;color:var(--text-secondary);"><strong>做什么：</strong>查阅资料或设计小实验来验证猜想。</p>
+<p style="margin:0 0 4px 36px;font-size:14px;color:var(--text-secondary);"><strong>怎么做：</strong>教材查阅 + 简单实验验证。</p>
+<div class="demo-box">
+"查教材：九年级化学第1章讲到——土豆中含有<strong>碘元素</strong>和<strong>淀粉</strong>？不对，碘是微量元素。<br>
+查资料：土豆中天然含有<strong>绿原酸</strong>和<strong>多酚氧化酶</strong>。当土豆被切开，细胞破损，多酚氧化酶与空气中的<strong>氧气</strong>接触，催化绿原酸氧化，生成<strong>醌类物质</strong>，呈蓝色！<br>
+→ <strong>验证实验</strong>：取泡土豆的水，加几滴维生素C溶液（还原剂），蓝色褪去——证明是氧化还原反应！"
+</div>
+<button class="toggle-btn" onclick="toggleDemo(this)">展开验证逻辑</button>
+<div class="toggle-content">
+<p style="font-size:14px;">验证推理链：</p>
+<ol style="padding-left:20px;font-size:14px;">
+  <li>土豆切开 → 细胞破裂 → 多酚氧化酶释放</li>
+  <li>多酚氧化酶 + O₂ → 催化绿原酸氧化</li>
+  <li>绿原酸（无色） → 被氧化 → 醌类物质（蓝色）</li>
+  <li>维生素C是还原剂 → 可使醌类物质褪色 → 证明氧化反应确实发生了</li>
+</ol>
+</div>
+</div>
+
+<div class="step-card">
+<div><span class="step-num">5</span><strong>建构初步解释</strong></div>
+<p style="margin:6px 0 4px 36px;font-size:14px;color:var(--text-secondary);"><strong>做什么：</strong>用已知原理组织一个完整的解释框架。</p>
+<p style="margin:0 0 4px 36px;font-size:14px;color:var(--text-secondary);"><strong>怎么做：</strong>把证据串联成因果关系链条。</p>
+<div class="demo-box">
+"<strong>解释模型：</strong><br>
+① 土豆被切→细胞破损→多酚氧化酶从细胞中释放到水中<br>
+② 水中溶解的O₂与多酚氧化酶相遇<br>
+③ 多酚氧化酶催化土豆中的绿原酸被O₂氧化<br>
+④ 绿原酸 → 醌类物质（蓝色）<br>
+⑤ 所以泡土豆的水变成了蓝色！<br>
+→ <strong>结论</strong>：这是一个<strong>酶催化氧化反应</strong>，不是污染，不是变质，而是土豆天然成分的化学变化。"
+</div>
+</div>
+
+<div class="step-card">
+<div><span class="step-num">6</span><strong>验证和完善</strong></div>
+<p style="margin:6px 0 4px 36px;font-size:14px;color:var(--text-secondary);"><strong>做什么：</strong>用新证据检验解释模型，修正不足。</p>
+<p style="margin:0 0 4px 36px;font-size:14px;color:var(--text-secondary);"><strong>怎么做：</strong>换个条件再做观察 + 对照实验。</p>
+<div class="demo-box">
+"对照实验：① 用煮过的土豆（酶已失活）泡水→水不变蓝→证明酶很重要！<br>
+② 密封真空泡土豆→水不变蓝→证明需要O₂！<br>
+③ 加醋（酸性条件）泡土豆→蓝色变浅→说明pH影响酶活性。<br>
+→ <strong>完善</strong>：补充"酶活性受温度、pH影响"的条件说明，解释模型更完整。"
+</div>
+</div>
+
+<div class="step-card">
+<div><span class="step-num">7</span><strong>形成最终成果</strong></div>
+<p style="margin:6px 0 4px 36px;font-size:14px;color:var(--text-secondary);"><strong>做什么：</strong>整合所有步骤，完成"土豆泡水变蓝解释卡"。</p>
+<p style="margin:0 0 4px 36px;font-size:14px;color:var(--text-secondary);"><strong>怎么做：</strong>按解释卡的格式整理。</p>
+<div class="demo-box">
+"<strong>最终成果框架：</strong><br>
+📌 标题：土豆泡水为什么会变蓝？<br>
+📌 现象描述：（配图：一杯变蓝的水+土豆块）<br>
+📌 原理说明：多酚氧化酶催化绿原酸氧化为醌类物质<br>
+📌 化学本质：酶催化氧化还原反应<br>
+📌 实验证据：维生素C褪色实验 + 煮土豆对照实验<br>
+📌 生活启示：切好的土豆尽快下锅或泡水（隔绝氧气）可防止变色"
+</div>
+</div>
+
+<!-- 六、支架工具推荐 -->
+<h2>五、支架工具推荐</h2>
+<div class="scaffold-grid">
+<div class="scaffold-item" onclick="selectScaffold(this)">📋 观察记录表</div>
+<div class="scaffold-item" onclick="selectScaffold(this)">❓ 问题分析框架</div>
+<div class="scaffold-item" onclick="selectScaffold(this)">🔬 实验对照设计表</div>
+</div>
+<p style="font-size:13px;color:var(--text-secondary);margin-top:6px;">👆 点击选择你需要的建构工具（可多选）</p>
+
+<div class="card">
+<p><strong>建构关键句式（模仿使用）：</strong></p>
+<ul style="padding-left:20px;font-size:14px;">
+  <li>"我观察到……这让我想到……"</li>
+  <li>"我的假设是……因为……"</li>
+  <li>"如果……那么……说明……"</li>
+  <li>"通过对比发现……"</li>
+  <li>"我的结论是……证据是……"</li>
+</ul>
+</div>
+
+<!-- 七、建构成果样例 -->
+<h2>六、建构成果样例</h2>
+<div class="card">
+<p><strong>成果名称：</strong>「土豆泡水变蓝」科学解释卡</p>
+<p style="margin:8px 0;"><strong>成果评价要求：</strong></p>
+<ol style="padding-left:20px;font-size:14px;">
+  <li><strong>科学性</strong>（40%）：化学原理准确，方程式正确，逻辑自洽</li>
+  <li><strong>完整性</strong>（35%）：包含现象→问题→原理→证据→结论的全链条</li>
+  <li><strong>美观性</strong>（25%）：图文并茂，布局清晰，文字简洁</li>
+</ol>
+<p style="margin:8px 0;"><strong>推荐表达格式：</strong></p>
+<div style="background:#fafafa;border:1px solid var(--border);border-radius:6px;padding:12px;font-size:14px;">
+  <p>📄 <strong>解释卡模板</strong></p>
+  <p>【标题区】______<br>
+  【现象区】（配示意图）______<br>
+  【原理区】______<br>
+  【化学方程式/反应式】______<br>
+  【证据区】______<br>
+  【生活启示】______</p>
+</div>
+<p style="margin:8px 0;"><strong>完成建议：</strong>将前7步成果按模板整合，先画草图再定稿。可手绘或电脑制作。</p>
+</div>
+
+<!-- 八、成果优化建议 -->
+<h2>七、成果优化建议</h2>
+<div class="card">
+<ul style="padding-left:20px;font-size:14px;">
+  <li><strong>常见不足①：</strong>只写现象不写原理 → <strong>优化：</strong>在每个现象后面追问"为什么"，把化学本质写清楚</li>
+  <li><strong>常见不足②：</strong>缺少实验证据 → <strong>优化：</strong>补充至少一个对照实验或验证实验（如维C褪色实验）</li>
+  <li><strong>常见不足③：</strong>图示太简单 → <strong>优化：</strong>用箭头标注"酶+O₂→氧化→变蓝"的过程，让视觉辅助理解</li>
+  <li><strong>常见不足④：</strong>没有联系生活 → <strong>优化：</strong>加上"如何防止土豆变色"的生活小技巧，让知识落地</li>
+</ul>
+</div>
+
+<!-- 九、自我评价量表 -->
+<h2>八、自我评价量表</h2>
+<p style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">点击表格中的⭐进行自评（1-5星），点击评价条目前方的○标记已达标。</p>
+<table class="rating-table" id="ratingTable">
+  <thead><tr><th style="width:50%;">评价标准</th><th style="width:35%;">自评</th><th style="width:15%;">✔</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>我能准确说出变蓝的原因（多酚氧化酶催化氧化）</td>
+      <td><span class="stars" data-rating="0" onclick="setRating(this, event)"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></span></td>
+      <td style="text-align:center;"><span style="cursor:pointer;font-size:20px;" onclick="toggleCheck(this)">○</span></td>
+    </tr>
+    <tr>
+      <td>我能写出完整的解释卡并包含实验证据</td>
+      <td><span class="stars" data-rating="0" onclick="setRating(this, event)"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></span></td>
+      <td style="text-align:center;"><span style="cursor:pointer;font-size:20px;" onclick="toggleCheck(this)">○</span></td>
+    </tr>
+    <tr>
+      <td>我能把建构方法迁移到其他化学现象</td>
+      <td><span class="stars" data-rating="0" onclick="setRating(this, event)"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></span></td>
+      <td style="text-align:center;"><span style="cursor:pointer;font-size:20px;" onclick="toggleCheck(this)">○</span></td>
+    </tr>
+    <tr>
+      <td>我的解释卡图文并茂、清晰易懂</td>
+      <td><span class="stars" data-rating="0" onclick="setRating(this, event)"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></span></td>
+      <td style="text-align:center;"><span style="cursor:pointer;font-size:20px;" onclick="toggleCheck(this)">○</span></td>
+    </tr>
+    <tr>
+      <td>我能说出这个建构过程用了哪些科学思维方法</td>
+      <td><span class="stars" data-rating="0" onclick="setRating(this, event)"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></span></td>
+      <td style="text-align:center;"><span style="cursor:pointer;font-size:20px;" onclick="toggleCheck(this)">○</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<div style="text-align:center;margin:20px 0;">
+  <button class="toggle-btn" onclick="resetAll()">🔄 重置所有评价</button>
+</div>
+
+</div><!-- end container -->
+
+<script>
+function toggleDemo(btn) {
+  var content = btn.nextElementSibling;
+  if (content && content.classList) {
+    content.classList.toggle('open');
+    btn.textContent = content.classList.contains('open') ? '收起验证逻辑' : '展开验证逻辑';
+  }
+}
+function selectScaffold(el) {
+  if (el) el.classList.toggle('selected');
+}
+function setRating(el, e) {
+  if (!el) return;
+  var stars = el.querySelectorAll('span');
+  var rect = el.getBoundingClientRect();
+  var x = e.clientX - rect.left;
+  var totalWidth = rect.width;
+  var fraction = x / totalWidth;
+  var count = Math.min(5, Math.max(1, Math.ceil(fraction * 5)));
+  stars.forEach(function(s, i) {
+    s.classList.toggle('active', i < count);
+  });
+  el.setAttribute('data-rating', count);
+  e.stopPropagation();
+}
+function toggleCheck(el) {
+  if (!el) return;
+  el.textContent = el.textContent === '○' ? '●' : '○';
+  el.style.color = el.textContent === '●' ? '#52c41a' : '';
+}
+function resetAll() {
+  document.querySelectorAll('.stars').forEach(function(s) {
+    s.querySelectorAll('span').forEach(function(sp) { sp.classList.remove('active'); });
+    s.setAttribute('data-rating', '0');
+  });
+  document.querySelectorAll('td:nth-child(3) span').forEach(function(el) {
+    el.textContent = '○';
+    el.style.color = '';
+  });
+}
+</script>
+</body>
+</html>

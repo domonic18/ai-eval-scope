@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性示例：铁丝在氧气中燃烧</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+}
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 6px; }
+.header .sub { opacity: .85; font-size: calc(var(--font-body) - 1px); }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.card h2 { font-size: var(--font-h2); color: var(--primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.card h3 { font-size: calc(var(--font-body) + 1px); color: var(--text); margin: 12px 0 8px; }
+.card p, .card li { margin-bottom: 8px; }
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  font-size: calc(var(--font-body) - 1px);
+}
+.info-table th, .info-table td {
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+.info-table th { background: var(--bg); font-weight: 600; color: var(--primary); width: 28%; }
+.info-table td { width: 36%; }
+.step-box {
+  background: var(--bg);
+  border-left: 4px solid var(--primary);
+  border-radius: 0 6px 6px 0;
+  padding: 14px 16px;
+  margin: 10px 0;
+  cursor: pointer;
+  transition: background .2s;
+}
+.step-box:hover { background: #e6f0ff; }
+.step-box .step-label { font-weight: 600; color: var(--primary); cursor: pointer; }
+.step-box .step-detail {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .4s ease, margin .3s;
+}
+.step-box .step-detail.open { max-height: 600px; margin-top: 8px; }
+.step-box .step-detail p:last-child { margin-bottom: 0; }
+.mistake-box {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin: 8px 0;
+  align-items: flex-start;
+}
+.mistake-box.danger { background: #fff2f0; border: 1px solid #ffccc7; }
+.mistake-box.danger .icon { color: #ff4d4f; font-size: 20px; flex-shrink: 0; }
+.mistake-box.warn { background: #fffbe6; border: 1px solid #ffe58f; }
+.mistake-box.warn .icon { color: #faad14; font-size: 20px; flex-shrink: 0; }
+.checklist { list-style: none; padding: 0; }
+.checklist li {
+  padding: 8px 12px;
+  margin: 4px 0;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  user-select: none;
+}
+.checklist li:hover { border-color: var(--primary); }
+.checklist li .box {
+  width: 18px; height: 18px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.checklist li.done { background: #f6ffed; border-color: #b7eb8f; color: #135200; text-decoration: line-through; }
+.checklist li.done .box { background: var(--primary); border-color: var(--primary); color: #fff; }
+.checklist li.done .box::after { content: "✓"; font-size: 13px; font-weight: 700; }
+.practice-box {
+  background: linear-gradient(135deg, #fff7e6, #fffbe6);
+  border: 1px solid #ffe58f;
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-top: 16px;
+}
+.practice-box h2::before { content: "✏️ "; }
+.btn-reveal {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: calc(var(--font-body) - 1px);
+  transition: background .2s;
+  margin-top: 8px;
+}
+.btn-reveal:hover { background: var(--primary-hover); }
+.reveal-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .4s ease;
+}
+.reveal-content.open { max-height: 600px; }
+.reveal-content-inner {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-top: 8px;
+}
+@media (max-width: 640px) {
+  .container { padding: 12px; }
+  .header { padding: 20px 16px; }
+  .card { padding: 14px; }
+  .info-table { font-size: 13px; }
+  .info-table th, .info-table td { padding: 6px 8px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🔬 解析性示例：铁丝在氧气中燃烧</h1>
+  <div class="sub">化学 · 九年级上 — 跟着专家一步步拆解化学变化与物理变化的判断</div>
+</div>
+
+<!-- 情境描述 -->
+<div class="card">
+  <h2>📖 解析任务情境</h2>
+  <p>星期三的化学课上，老师将一根光亮的细铁丝放入盛有氧气的集气瓶中，点燃引燃。铁丝剧烈燃烧、火星四射、瓶底出现黑色固体。</p>
+  <p style="font-weight:600;color:var(--primary);margin-top:10px;">核心问题：铁丝在氧气中燃烧的全过程中，哪些属于物理变化？哪些属于化学变化？你如何精确地区分开它们？</p>
+</div>
+
+<!-- 关键信息提取 -->
+<div class="card">
+  <h2>📊 关键信息提取</h2>
+  <table class="info-table">
+    <tr><th>情境信息</th><th>这说明什么</th><th>为什么重要</th></tr>
+    <tr><td>铁丝银白色、有金属光泽</td><td>铁的物理性质</td><td>区分起点——物理性质是"观察到的"，不是"生成新物质"</td></tr>
+    <tr><td>铁丝被火柴引燃后才燃烧</td><td>燃烧需要达到着火点</td><td>反应条件会影响变化是否发生</td></tr>
+    <tr><td>燃烧时火星四射、发出白光</td><td>反应剧烈，放出大量热和光</td><td>是化学变化的常见伴随现象，但不是判断依据</td></tr>
+    <tr><td>生成黑色固体</td><td>有新物质生成</td><td>判断化学变化的最关键证据</td></tr>
+    <tr><td>黑色固体≠原来的银白色</td><td>物质种类发生了改变</td><td>新物质的出现=化学变化的本质特征</td></tr>
+  </table>
+</div>
+
+<!-- 专家解析过程 -->
+<div class="card">
+  <h2>🧠 专家解析过程 <span style="font-size:13px;font-weight:400;color:var(--text-secondary);">（点击每一步展开详细分析）</span></h2>
+
+  <div class="step-box" onclick="toggleStep(this)">
+    <div class="step-label">第一步：先看见什么 <span style="font-weight:400;color:var(--text-secondary);">— 客观描述现象</span></div>
+    <div class="step-detail">
+      <p><strong>观察现象：</strong>不要直接跳到"这是化学变化"的结论。先客观描述：银白色铁丝→点燃后剧烈燃烧、火星四射、放出大量热→生成黑色固体。</p>
+      <p><strong>为什么要这样想：</strong>先观察后解释，才能避免"我想它是这样"替代"它实际上是那样"。客观描述是科学分析的起点。</p>
+    </div>
+  </div>
+
+  <div class="step-box" onclick="toggleStep(this)">
+    <div class="step-label">第二步：判断问题属于哪一类 <span style="font-weight:400;color:var(--text-secondary);">— 问题归类</span></div>
+    <div class="step-detail">
+      <p><strong>问题归类：</strong>这是一个"化学变化 vs 物理变化"的判断问题。不是配平化学方程式，不是计算题。先锁定问题类型，你就知道应该调用什么知识来分析。</p>
+      <p><strong>为什么要这样想：</strong>如果当成"配平方程式"的问题，就会偏题。判断问题类型，就像看病先挂对科室。</p>
+    </div>
+  </div>
+
+  <div class="step-box" onclick="toggleStep(this)">
+    <div class="step-label">第三步：调用哪些概念和方法 <span style="font-weight:400;color:var(--text-secondary);">— 核心概念</span></div>
+    <div class="step-detail">
+      <p><strong>核心概念：</strong></p>
+      <p>• 物理变化：没有新物质生成的变化（改变形态、状态等）</p>
+      <p>• 化学变化：有新物质生成的变化</p>
+      <p><strong>关键方法：</strong>比较法（比较反应前后物质种类）、观察法（寻找新物质的证据）</p>
+      <p><strong>为什么要这样想：</strong>判断的核心标准只有一个——有没有新物质生成。其他现象（发光、放热）只是参考，不是决定标准。</p>
+    </div>
+  </div>
+
+  <div class="step-box" onclick="toggleStep(this)">
+    <div class="step-label">第四步：如何进行推理 <span style="font-weight:400;color:var(--text-secondary);">— 推理过程</span></div>
+    <div class="step-detail">
+      <p><strong>推理：</strong></p>
+      <p>1. 反应前：铁（Fe，银白色固体）+ 氧气（O₂，无色气体）</p>
+      <p>2. 反应后：四氧化三铁（Fe₃O₄，黑色固体）</p>
+      <p>3. 对比前后：铁原子和氧原子重新组合，生成了新物质</p>
+      <p>4. 结论：这是<strong>化学变化</strong></p>
+      <p><strong>为什么要这样想：</strong>严格遵循"反应物→生成物"对比逻辑。注意：水烧开冒气泡是物理变化——有气泡≠都是化学变化。</p>
+    </div>
+  </div>
+
+  <div class="step-box" onclick="toggleStep(this)">
+    <div class="step-label">第五步：怎样形成结论 <span style="font-weight:400;color:var(--text-secondary);">— 最终结论</span></div>
+    <div class="step-detail">
+      <p><strong>最终结论：</strong>铁丝在氧气中燃烧是<strong>化学变化</strong>，具体属于<strong>化合反应</strong>（铁+氧气→四氧化三铁），同时伴随发光、放热等物理现象。</p>
+      <p><strong>结论表达：</strong>"铁丝在氧气中燃烧是化学变化，因为反应前的铁和氧气变成了新物质——四氧化三铁。燃烧时的火星和强光是反应放热的表现，是伴随现象，但不是判断标准。"</p>
+    </div>
+  </div>
+</div>
+
+<!-- 方法提炼 -->
+<div class="card" style="background:linear-gradient(135deg,#f6ffed,#f0f5ff);">
+  <h2>🎯 方法提炼</h2>
+  <p>遇到类似问题时，记住这四步：</p>
+  <p><strong>先停</strong>——不要急着给结论，先客观记录现象</p>
+  <p><strong>再问</strong>——"反应前后，物质种类变了吗？"</p>
+  <p><strong>后比</strong>——如果有新物质，判断是哪种化学变化类型</p>
+  <p><strong>最后表达</strong>——"因为<strong>__（证据）__</strong>，所以<strong>__（结论）__</strong>"</p>
+</div>
+
+<!-- 易错提醒 -->
+<div class="card">
+  <h2>⚠️ 易错提醒</h2>
+  <div class="mistake-box danger">
+    <span class="icon">❌</span>
+    <div><strong>误区一："有发光放热就是化学变化"</strong><br>灯泡发光也发光放热，但这是物理变化。关键不是"有没有光和热"，而是"有没有新物质"。</div>
+  </div>
+  <div class="mistake-box warn">
+    <span class="icon">❌</span>
+    <div><strong>误区二："有颜色变化就是化学变化"</strong><br>氧气降温变成淡蓝色液体，颜色变了但物质没变。颜色变化只能作为参考线索。</div>
+  </div>
+  <div class="mistake-box danger">
+    <span class="icon">❌</span>
+    <div><strong>误区三："有气体产生就是化学变化"</strong><br>水沸腾产生水蒸气，气体产生但物质没变。要区分"气体从液体里跑出来"和"化学反应生成新气体"。</div>
+  </div>
+</div>
+
+<!-- 迁移练习 -->
+<div class="practice-box card">
+  <h2 style="font-size:var(--font-h2);color:var(--text);">自主迁移小练习</h2>
+  <p>妈妈用白醋清洗水壶里的水垢。你观察到：白醋倒入后，水垢表面产生大量气泡，过了一会儿水垢慢慢消失了。请问：这主要是化学变化还是物理变化？你判断的依据是什么？</p>
+  <p style="color:var(--text-secondary);font-size:calc(var(--font-body)-1px);">💡 想想"证据先于结论法"——你观察到的气泡是什么？它从哪里来？</p>
+  <button class="btn-reveal" onclick="revealAnswer()">🔍 查看参考分析</button>
+  <div class="reveal-content" id="answerReveal">
+    <div class="reveal-content-inner">
+      <p><strong>参考答案：</strong>这是<strong>化学变化</strong>。</p>
+      <p><strong>依据：</strong>白醋（醋酸）与水垢（主要成分碳酸钙）发生化学反应，生成二氧化碳气体（气泡）、水和可溶性的醋酸钙。水垢消失是因为碳酸钙被反应消耗了，而不是单纯溶解。证据链：气泡（CO₂气体）是新物质→证明发生了化学变化。</p>
+    </div>
+  </div>
+</div>
+
+<!-- 学习自评 -->
+<div class="card">
+  <h2>📋 学习自评 <span style="font-size:13px;font-weight:400;color:var(--text-secondary);">（点击每一项切换完成状态）</span></h2>
+  <ul class="checklist" id="checklist">
+    <li onclick="toggleCheck(this)"><span class="box"></span>我能用自己的话清楚说出"化学变化"和"物理变化"的本质区别</li>
+    <li onclick="toggleCheck(this)"><span class="box"></span>看完专家的解析过程，我能说出"专家是怎么一步步得出结论的"</li>
+    <li onclick="toggleCheck(this)"><span class="box"></span>我能识别自己在判断时最容易犯的错误属于哪个误区</li>
+    <li onclick="toggleCheck(this)"><span class="box"></span>做完迁移小练习后，我能写出一段完整的分析推理过程</li>
+    <li onclick="toggleCheck(this)"><span class="box"></span>我已掌握"以后遇到类似问题可以怎么分析"的通用方法</li>
+  </ul>
+</div>
+
+</div>
+<script>
+function toggleStep(el) {
+  var detail = el.querySelector('.step-detail');
+  detail.classList.toggle('open');
+}
+function toggleCheck(el) {
+  el.classList.toggle('done');
+}
+function revealAnswer() {
+  var r = document.getElementById('answerReveal');
+  r.classList.toggle('open');
+}
+</script>
+</body>
+</html>

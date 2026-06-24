@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性示例</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+}
+
+.page-header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  padding: 28px 36px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+
+.page-header h1 {
+  margin: 0 0 6px 0;
+  font-size: var(--font-h1);
+  font-weight: 700;
+}
+
+.page-header .subtitle {
+  opacity: 0.9;
+  font-size: 14px;
+}
+
+.section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+.section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 16px 0;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--accent);
+}
+
+.example-title-box {
+  background: linear-gradient(135deg, #fff7e6 0%, #fff1f0 100%);
+  border: 1px solid #ffd591;
+  border-radius: var(--border-radius);
+  padding: 18px 22px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.example-title-box h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #d46b08;
+}
+
+.scenario-box {
+  background: #fff;
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  border-left: 4px solid var(--primary);
+}
+
+.scenario-box .label {
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.target-box {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 640px) {
+  .target-box { grid-template-columns: 1fr; }
+}
+
+.target-item {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 14px;
+}
+
+.target-item .target-label {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.step-tracker {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.step-dot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 2px solid var(--border);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: var(--card-bg);
+}
+
+.step-dot.active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+
+.step-dot.completed {
+  border-color: #52c41a;
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.step-dot .step-num {
+  font-weight: 700;
+}
+
+.step-content {
+  display: none;
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  animation: fadeIn 0.3s;
+}
+
+.step-content.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.step-content .step-title {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+
+.step-content .step-doing {
+  background: #fff;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  border-left: 3px solid var(--accent);
+}
+
+.step-content .step-demo {
+  background: #fffbe6;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  border-left: 3px solid #fadb14;
+  font-size: 13px;
+}
+
+.step-content .step-output {
+  background: #f6ffed;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 13px;
+  border-left: 3px solid #52c41a;
+}
+
+.tool-card {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-bottom: 12px;
+}
+
+.tool-card .tool-label {
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+
+.checklist {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .checklist { grid-template-columns: 1fr; }
+}
+
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.check-item:hover {
+  border-color: var(--accent);
+}
+
+.check-item .checkbox {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.check-item.done {
+  background: #f6ffed;
+  border-color: #52c41a;
+}
+
+.check-item.done .checkbox {
+  background: #52c41a;
+  border-color: #52c41a;
+  color: #fff;
+}
+
+.self-eval-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .self-eval-grid { grid-template-columns: 1fr; }
+}
+
+.eval-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.eval-item:hover {
+  background: #e6f4ff;
+}
+
+.eval-item .eval-radio {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.eval-item.done .eval-radio {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.eval-item.done .eval-radio::after {
+  content: "✓";
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.btn-nav {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.btn-nav button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-nav button:hover {
+  background: var(--primary-hover);
+}
+
+.btn-nav button:disabled {
+  background: var(--border);
+  cursor: not-allowed;
+}
+
+.btn-reset {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 10px;
+}
+
+.btn-reset:hover {
+  background: var(--primary-hover);
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-header">
+    <h1>建构性示例</h1>
+    <div class="subtitle">化学 · 九年级上 · 从"铁丝在氧气中燃烧"到"我自己的化学变化解释模型"</div>
+  </div>
+
+  <div class="section">
+    <div class="example-title-box">
+      <h3>从"铁丝在氧气中燃烧"到"我自己的化学变化解释模型"</h3>
+    </div>
+
+    <div class="scenario-box">
+      <div class="label">🎯 真实建构情境</div>
+      <p style="margin:0;">你在化学课上看到了一个经典实验：铁丝在氧气中剧烈燃烧，火星四射，生成黑色固体。老师告诉你这是"化合反应"，但你心里冒出一串问题：铁丝不是金属吗？金属也能燃烧？这和木头燃烧是一回事吗？生成的黑色固体又是什么？——这些问题是建构新理解的起点。</p>
+    </div>
+
+    <p style="font-weight:700;font-size:16px;color:var(--primary);margin:16px 0 8px 0;">建构目标</p>
+    <p style="margin:0 0 12px 0;">建构一个<strong>"化学变化类型辨析模型"</strong>，能够用这个模型判断和解释任何一个新的化学变化属于什么类型。</p>
+
+    <div class="target-box">
+      <div class="target-item">
+        <div class="target-label">📦 成果名称</div>
+        <span>化学变化类型辨析模型手绘图</span>
+      </div>
+      <div class="target-item">
+        <div class="target-label">🎯 用途</div>
+        <span>帮助自己（也能帮助同学）快速判断化合反应、分解反应、置换反应、复分解反应</span>
+      </div>
+      <div class="target-item">
+        <div class="target-label">📏 最低标准</div>
+        <span>至少包含四类反应的"表达式模板+关键特征+至少1个例子+易混淆点提醒"</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>建构过程示范（6步）</h2>
+    <p style="margin-top:-8px;color:var(--text-secondary);font-size:14px;">点击步骤圆点切换，跟随引导完成你的辨析模型</p>
+
+    <div class="step-tracker" id="stepTracker">
+      <div class="step-dot active" data-step="0" onclick="goToStep(0)">
+        <span class="step-num">1</span> 提取证据
+      </div>
+      <div class="step-dot" data-step="1" onclick="goToStep(1)">
+        <span class="step-num">2</span> 比较分类
+      </div>
+      <div class="step-dot" data-step="2" onclick="goToStep(2)">
+        <span class="step-num">3</span> 类型模板
+      </div>
+      <div class="step-dot" data-step="3" onclick="goToStep(3)">
+        <span class="step-num">4</span> 配例子
+      </div>
+      <div class="step-dot" data-step="4" onclick="goToStep(4)">
+        <span class="step-num">5</span> 识陷阱
+      </div>
+      <div class="step-dot" data-step="5" onclick="goToStep(5)">
+        <span class="step-num">6</span> 绘模型
+      </div>
+    </div>
+
+    <!-- Step 1 -->
+    <div class="step-content active" data-step="0">
+      <div class="step-title">第1步：回到现象，提取"化学变化"的证据</div>
+      <div class="step-doing"><strong>做什么：</strong>回顾铁丝燃烧实验的全过程，写下观察到的所有变化（发光、放热、生成黑色固体）</div>
+      <div class="step-output"><strong>产出：</strong>一份"现象—证据"对应表</div>
+      <div class="step-demo"><strong>示范：</strong>你写下的现象中，哪些属于物理变化？哪些属于化学变化？区分依据是什么？——铁丝变红热是物理变化（没有新物质），生成黑色四氧化三铁是化学变化（有新物质生成）。</div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="step-content" data-step="1">
+      <div class="step-title">第2步：比较不同反应, 发现分类依据</div>
+      <p style="margin:0 0 8px;">对比铁丝燃烧 vs 其他反应的区别</p>
+      <div style="background:#fff;border-radius:8px;padding:12px;margin-bottom:10px;border:1px solid var(--border);font-size:14px;">
+        <table style="width:100%;border-collapse: collapse;">
+          <tr style="background: var(--bg);font-weight:700;"><td style="padding:6px 10px;border:1px solid var(--border);">反应</td><td style="padding:6px 10px;border:1px solid var(--border);">反应物种数</td><td style="padding:6px 10px;border:1px solid var(--border);">生成物种数</td><td style="padding:6px 10px;border:1px solid var(--border);">类型猜测</td></tr>
+          <tr><td style="padding:6px 10px;border:1px solid var(--border);">铁丝 + 氧气 → 四氧化三铁</td><td style="padding:6px 10px;border:1px solid var(--border);">2</td><td style="padding:6px 10px;border:1px solid var(--border);">1</td><td style="padding:6px 10px;border:1px solid var(--border);">化合</td></tr>
+          <tr><td style="padding:6px 10px;border:1px solid var(--border);">硫 + 氧气 → 二氧化硫</td><td style="padding:6px 10px;border:1px solid var(--border);">2</td><td style="padding:6px 10px;border:1px solid var(--border);">1</td><td style="padding:6px 10px;border:1px solid var(--border);">化合</td></tr>
+          <tr><td style="padding:6px 10px;border:1px solid var(--border);">水通电 → 氢气 + 氧气</td><td style="padding:6px 10px;border:1px solid var(--border);">1</td><td style="padding:6px 10px;border:1px solid var(--border);">2</td><td style="padding:6px 10px;border:1px solid var(--border);">分解</td></tr>
+          <tr><td style="padding:6px 10px;border:1px solid var(--border);">铁 + 硫酸铜 → 铜 + 硫酸亚铁</td><td style="padding:6px 10px;border:1px solid var(--border);">2</td><td style="padding:6px 10px;border:1px solid var(--border);">2</td><td style="padding:6px 10px;border:1px solid var(--border);">置换</td></tr>
+        </table>
+      </div>
+      <div class="step-output"><strong>产出：</strong>反应物—生成物多种关系对比表</div>
+      <div class="step-demo"><strong>示范：</strong>铁丝燃烧是"两种物质→一种物质"；你能找到"一种→两种"或"两种→两种"的例子吗？</div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="step-content" data-step="2">
+      <div class="step-title">第3步：抽象出类型模板</div>
+      <div class="step-doing"><strong>做什么：</strong>把比较结果提炼成通用表达式</div>
+      <p style="margin:8px 0;">用 A + B → AB（化合）、AB → A + B（分解）等符号表达式</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+        <div style="background:#fff;padding:10px 14px;border-radius:6px;border:1px solid var(--border);">
+          <strong style="color:var(--primary);">化合反应</strong><br>
+          <span style="font-family:monospace;font-size:18px;">A + B → AB</span>
+        </div>
+        <div style="background:#fff;padding:10px 14px;border-radius:6px;border:1px solid var(--border);">
+          <strong style="color:var(--primary);">分解反应</strong><br>
+          <span style="font-family:monospace;font-size:18px;">AB → A + B</span>
+        </div>
+        <div style="background:#fff;padding:10px 14px;border-radius:6px;border:1px solid var(--border);">
+          <strong style="color:var(--primary);">置换反应</strong><br>
+          <span style="font-family:monospace;font-size:18px;">A + BC → AC + B</span>
+        </div>
+        <div style="background:#fff;padding:10px 14px;border-radius:6px;border:1px solid var(--border);">
+          <strong style="color:var(--primary);">复分解反应</strong><br>
+          <span style="font-family:monospace;font-size:18px;">AB + CD → AD + CB</span>
+        </div>
+      </div>
+      <div class="step-output"><strong>产出：</strong>四大基本反应类型的符号表达式模板</div>
+      <div class="step-demo"><strong>示范：</strong>你的模板不仅要写字母表达式，关键是要说清"为什么要这样归类"</div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="step-content" data-step="3">
+      <div class="step-title">第4步：给每个类型配上"自己的例子"</div>
+      <div class="step-doing"><strong>做什么：</strong>为每个反应类型找 1—2 个具体的化学方程式</div>
+      <p style="margin:8px 0;">从教材和课堂笔记中搜索，优先选你亲眼看过实验的</p>
+      <div style="background:#fff;padding:12px 16px;border-radius:8px;border:1px solid var(--border);margin-bottom:10px;">
+        <p style="margin:4px 0;"><strong style="color:var(--primary);">化合反应：</strong>铁 + 氧气 <span style="font-family:serif;">点燃</span>→ 四氧化三铁</p>
+        <p style="margin:4px 0;"><strong style="color:var(--primary);">分解反应：</strong>水 <span style="font-family:serif;">通电</span>→ 氢气 + 氧气</p>
+        <p style="margin:4px 0;"><strong style="color:var(--primary);">置换反应：</strong>铁 + 硫酸铜 → 铜 + 硫酸亚铁</p>
+        <p style="margin:4px 0;"><strong style="color:var(--primary);">复分解反应：</strong>氢氧化钠 + 盐酸 → 氯化钠 + 水</p>
+      </div>
+      <div class="step-output"><strong>产出：</strong>类型—例子对照卡</div>
+    </div>
+
+    <!-- Step 5 -->
+    <div class="step-content" data-step="4">
+      <div class="step-title">第5步：识别易混淆陷阱</div>
+      <div class="step-doing"><strong>做什么：</strong>找出哪些反应看起来像某一类、实际上不是</div>
+      <div class="step-demo">
+        <strong>比如"甲烷燃烧"</strong>——反应物有氧气，生成物有二氧化碳和水，看起来像两种→两种，但这不是置换反应，而是<strong>氧化反应</strong>（不属于四大基本类型）。<br><br>
+        <strong>你的辨析笔记要写清楚：</strong>它看起来像哪种类型 → 为什么不是 → 实际属于什么 → 判断依据
+      </div>
+      <div class="step-output"><strong>产出：</strong>易错辨析笔记</div>
+    </div>
+
+    <!-- Step 6 -->
+    <div class="step-content" data-step="5">
+      <div class="step-title">第6步：绘制完整的辨析模型</div>
+      <div class="step-doing"><strong>做什么：</strong>把前5步的成果整合成一张完整的模型图</div>
+      <p>用思维导图或流程图的形式，把"判断顺序、类型模板、例子、易错点"组织起来</p>
+      <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:10px;">
+        <div style="text-align:center;font-weight:700;color:var(--primary);margin-bottom:16px;">
+          判断一个化学变化是什么类型
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div style="background:#e6f7ff;padding:10px;border-radius:6px;text-align:center;font-size:13px;">
+            <strong style="color:#1677ff;">化合反应</strong><br>多种→一种<br>3Fe+2O₂→Fe₃O₄
+          </div>
+          <div style="background:#fff7e6;padding:10px;border-radius:6px;text-align:center;font-size:13px;">
+            <strong style="color:#d46b08;">分解反应</strong><br>一种→多种<br>2H₂O→2H₂+O₂
+          </div>
+          <div style="background:#f6ffed;padding:10px;border-radius:6px;text-align:center;font-size:13px;">
+            <strong style="color:#52c41a;">置换反应</strong><br>单质+化合物→新单质+新化合物<br>Fe+CuSO₄→Cu+FeSO₄
+          </div>
+          <div style="background:#f9f0ff;padding:10px;border-radius:6px;text-align:center;font-size:13px;">
+            <strong style="color:#722ed1;">复分解反应</strong><br>两种化合物交换成分<br>NaOH+HCl→NaCl+H₂O
+          </div>
+        </div>
+      </div>
+      <div class="step-output"><strong>产出：</strong>一张A4纸的完整辨析模型</div>
+    </div>
+
+    <div class="btn-nav">
+      <button onclick="prevStep()" id="prevBtn" disabled>◀ 上一步</button>
+      <button onclick="nextStep()" id="nextBtn">下一步 ▶</button>
+      <button onclick="resetSteps()" style="background:transparent;color:var(--text-secondary);border:1px solid var(--border);">🔄 重置</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>支架工具 & 检查清单</h2>
+
+    <div class="tool-card">
+      <div class="tool-label">📋 建构模板</div>
+      <p style="margin:4px 0 0 0;font-size:14px;">T型标识表（左栏写现象，右栏写化学解释）</p>
+    </div>
+
+    <div class="tool-card">
+      <div class="tool-label">✏️ 关键句式</div>
+      <p style="margin:4px 0 0 0;font-size:14px;">"从 ______ 的现象中，我推断 ______ ，因为 ______"</p>
+    </div>
+
+    <div class="tool-card">
+      <div class="tool-label">✅ 检查清单（点击打勾）</div>
+      <div class="checklist" id="checklist">
+        <div class="check-item" onclick="toggleCheck(this)"><span class="checkbox"></span> 我区分了物理变化和化学变化</div>
+        <div class="check-item" onclick="toggleCheck(this)"><span class="checkbox"></span> 我写出了反应类型</div>
+        <div class="check-item" onclick="toggleCheck(this)"><span class="checkbox"></span> 我配了具体例子</div>
+        <div class="check-item" onclick="toggleCheck(this)"><span class="checkbox"></span> 我标出了易混淆点</div>
+      </div>
+      <button class="btn-reset" onclick="resetChecklist()" style="margin-top:10px;">🔄 重置检查清单</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>自我评价量表</h2>
+    <p style="margin-top:-8px;color:var(--text-secondary);font-size:14px;">点击每条标准进行自我评价（打勾确认）</p>
+
+    <div class="self-eval-grid" id="evalGrid">
+      <div class="eval-item" onclick="toggleEval(this)"><div class="eval-radio"></div> 我的模型是否覆盖了四大基本反应类型？</div>
+      <div class="eval-item" onclick="toggleEval(this)"><div class="eval-radio"></div> 每种类型我是否至少配了一个亲手写出的化学方程式？</div>
+      <div class="eval-item" onclick="toggleEval(this)"><div class="eval-radio"></div> 我是否在模型中标注了容易混淆的判断点？</div>
+      <div class="eval-item" onclick="toggleEval(this)"><div class="eval-radio"></div> 我用这个模型去判断一个新反应时，能快速得到结论吗？</div>
+      <div class="eval-item" onclick="toggleEval(this)"><div class="eval-radio"></div> 我的模型是否整洁清晰，让别人也能看懂？</div>
+    </div>
+
+    <button class="btn-reset" onclick="resetEval()">🔄 重置评价</button>
+  </div>
+
+</div>
+
+<script>
+var currentStep = 0;
+var totalSteps = 6;
+
+function goToStep(index) {
+  var dots = document.querySelectorAll('.step-dot');
+  var contents = document.querySelectorAll('.step-content');
+
+  dots.forEach(function(d) { d.classList.remove('active'); });
+  contents.forEach(function(c) { c.classList.remove('active'); });
+
+  dots[index].classList.add('active');
+  contents[index].classList.add('active');
+  currentStep = index;
+
+  document.getElementById('prevBtn').disabled = (index === 0);
+  document.getElementById('nextBtn').disabled = (index === totalSteps - 1);
+}
+
+function nextStep() {
+  if (currentStep < totalSteps - 1) goToStep(currentStep + 1);
+}
+
+function prevStep() {
+  if (currentStep > 0) goToStep(currentStep - 1);
+}
+
+function resetSteps() {
+  goToStep(0);
+}
+
+function toggleCheck(el) {
+  if (!el) return;
+  el.classList.toggle('done');
+  var cb = el.querySelector('.checkbox');
+  if (cb) cb.textContent = el.classList.contains('done') ? '✓' : '';
+}
+
+function resetChecklist() {
+  var items = document.querySelectorAll('.check-item');
+  items.forEach(function(item) {
+    item.classList.remove('done');
+    var cb = item.querySelector('.checkbox');
+    if (cb) cb.textContent = '';
+  });
+}
+
+function toggleEval(el) {
+  if (!el) return;
+  el.classList.toggle('done');
+}
+
+function resetEval() {
+  var items = document.querySelectorAll('.eval-item');
+  items.forEach(function(item) {
+    item.classList.remove('done');
+  });
+}
+</script>
+</body>
+</html>

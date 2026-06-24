@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目社区 — 化学项目库脚手架 | 九年级上</title>
+<style>
+  :root {
+    --primary: #1677ff;
+    --primary-hover: #4096ff;
+    --accent: #69b1ff;
+    --bg: #f0f5ff;
+    --card-bg: #ffffff;
+    --font-body: 15px;
+    --font-h1: 24px;
+    --font-h2: 19px;
+    --line-height: 1.7;
+    --radius: 12px;
+    --shadow: 0 2px 12px rgba(22,119,255,0.10);
+    --border: #d9e4ff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: var(--font-body);
+    line-height: var(--line-height);
+    background: var(--bg);
+    color: #1d2129;
+    padding: 24px 0;
+    min-height: 100vh;
+  }
+
+  .container {
+    width: 100%;
+    padding: 0 20px;
+  }
+
+  /* ===== Header ===== */
+  .header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+    color: #fff;
+    padding: 32px 28px;
+    border-radius: var(--radius);
+    margin-bottom: 28px;
+  }
+  .header h1 {
+    font-size: var(--font-h1);
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .header p {
+    font-size: 14px;
+    opacity: 0.92;
+    max-width: 720px;
+  }
+
+  /* ===== Section ===== */
+  .section {
+    margin-bottom: 32px;
+  }
+  .section-title {
+    font-size: var(--font-h2);
+    font-weight: 700;
+    color: var(--primary);
+    border-left: 4px solid var(--primary);
+    padding-left: 14px;
+    margin-bottom: 16px;
+  }
+  .section-desc {
+    color: #4e5969;
+    margin-bottom: 18px;
+    padding: 0 4px;
+  }
+
+  /* ===== Filter ===== */
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .filter-btn {
+    padding: 6px 18px;
+    border: 1.5px solid var(--primary);
+    border-radius: 20px;
+    background: transparent;
+    color: var(--primary);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all .25s;
+    font-family: inherit;
+  }
+  .filter-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .filter-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+  /* ===== Project Card ===== */
+  .project-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    margin-bottom: 16px;
+    transition: box-shadow .25s;
+  }
+  .project-card:hover { box-shadow: 0 4px 20px rgba(22,119,255,0.16); }
+
+  .card-header {
+    padding: 18px 22px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+  }
+  .card-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1d2129;
+  }
+  .card-badge {
+    display: inline-block;
+    font-size: 12px;
+    padding: 2px 12px;
+    border-radius: 12px;
+    background: var(--bg);
+    color: var(--primary);
+    font-weight: 500;
+    white-space: nowrap;
+    margin-left: 10px;
+  }
+  .card-toggle {
+    font-size: 20px;
+    color: var(--primary);
+    transition: transform .3s;
+    flex-shrink: 0;
+    margin-left: 12px;
+  }
+  .card-toggle.open { transform: rotate(180deg); }
+
+  .card-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height .4s ease, padding .3s ease;
+    padding: 0 22px;
+  }
+  .card-body.open {
+    max-height: 2000px;
+    padding: 0 22px 20px;
+  }
+
+  .card-body p { margin-bottom: 10px; color: #4e5969; }
+  .card-body ul { margin: 8px 0 12px 20px; color: #4e5969; }
+  .card-body li { margin-bottom: 4px; line-height: 1.6; }
+  .card-body strong { color: #1d2129; }
+
+  .timeline {
+    background: #f7faff;
+    border-left: 3px solid var(--primary);
+    padding: 10px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 10px 0;
+    font-size: 13px;
+  }
+  .timeline span { display: block; margin-bottom: 2px; }
+  .timeline em { color: var(--primary); font-style: normal; font-weight: 600; }
+
+  /* ===== Progress Tracker ===== */
+  .progress-tracker {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 22px;
+    border: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .progress-tracker h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #1d2129;
+  }
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .progress-row label {
+    min-width: 80px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .progress-bar-bg {
+    flex: 1;
+    min-width: 100px;
+    height: 8px;
+    background: #e8edf5;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    border-radius: 4px;
+    transition: width .5s ease;
+  }
+  .progress-pct {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary);
+    min-width: 32px;
+    text-align: right;
+  }
+  .reset-progress {
+    margin-top: 12px;
+    padding: 6px 18px;
+    border: 1.5px solid var(--primary);
+    border-radius: 20px;
+    background: transparent;
+    color: var(--primary);
+    cursor: pointer;
+    font-size: 13px;
+    transition: all .25s;
+    font-family: inherit;
+  }
+  .reset-progress:hover { background: var(--primary); color: #fff; }
+
+  /* ===== Usage Tips ===== */
+  .tips-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+  }
+  .tip-item {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    text-align: center;
+    transition: transform .2s, box-shadow .2s;
+    cursor: pointer;
+  }
+  .tip-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(22,119,255,0.12);
+  }
+  .tip-num {
+    display: inline-block;
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .tip-item h4 { font-size: 14px; margin-bottom: 4px; }
+  .tip-item p { font-size: 13px; color: #86909c; }
+
+  /* ===== Footer ===== */
+  .footer {
+    text-align: center;
+    color: #86909c;
+    font-size: 13px;
+    padding: 20px 0 8px;
+    border-top: 1px solid var(--border);
+    margin-top: 8px;
+  }
+
+  /* ===== Utility ===== */
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>项目社区 (项目库脚手架)</h1>
+    <p>真实问题驱动的化学项目化学习任务库。每个项目围绕一个真实化学问题展开，经历"提出问题 → 制定计划 → 调查研究 → 形成成果 → 展示评价"的完整周期。在动手实践中训练书面表达。</p>
+  </div>
+
+  <!-- Progress Tracker -->
+  <div class="progress-tracker" id="progressTracker">
+    <h3>我的项目进度</h3>
+    <div class="progress-row" data-group="progress">
+      <label>元素海报</label>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="fill0"></div></div>
+      <span class="progress-pct" id="pct0">0%</span>
+    </div>
+    <div class="progress-row" data-group="progress">
+      <label>家庭实验</label>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="fill1"></div></div>
+      <span class="progress-pct" id="pct1">0%</span>
+    </div>
+    <div class="progress-row" data-group="progress">
+      <label>水质调查</label>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="fill2"></div></div>
+      <span class="progress-pct" id="pct2">0%</span>
+    </div>
+    <div class="progress-row" data-group="progress">
+      <label>净化方案</label>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="fill3"></div></div>
+      <span class="progress-pct" id="pct3">0%</span>
+    </div>
+    <div class="progress-row" data-group="progress">
+      <label>主题研究</label>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="fill4"></div></div>
+      <span class="progress-pct" id="pct4">0%</span>
+    </div>
+    <button class="reset-progress" onclick="resetProgress()">重置进度</button>
+  </div>
+
+  <!-- Filter -->
+  <div class="section">
+    <div class="section-title">项目列表</div>
+    <div class="section-desc">点击项目卡片展开详情，使用筛选快速定位感兴趣的项目周期。</div>
+    <div class="filter-bar" id="filterBar">
+      <button class="filter-btn active" data-group="filter" data-filter="all" onclick="filterProjects('all')">全部</button>
+      <button class="filter-btn" data-group="filter" data-filter="short" onclick="filterProjects('short')">短周期 (1-2 课时)</button>
+      <button class="filter-btn" data-group="filter" data-filter="mid" onclick="filterProjects('mid')">中周期 (1-2 周)</button>
+      <button class="filter-btn" data-group="filter" data-filter="long" onclick="filterProjects('long')">长周期 (全学期)</button>
+    </div>
+  </div>
+
+  <!-- Cards -->
+  <div class="section" id="projectList">
+
+    <!-- 项目一 -->
+    <div class="project-card" data-cycle="short" id="card0">
+      <div class="card-header" onclick="toggleCard('card0')">
+        <div>
+          元素海报设计与说明
+          <span class="card-badge">短周期</span>
+        </div>
+        <span class="card-toggle" id="toggle0">&#9660;</span>
+      </div>
+      <div class="card-body" id="body0">
+        <p><strong>目标</strong>：选择 1 种元素（氧、氢、碳、铁、铜等），查阅资料，设计 A3"元素信息海报"，撰写 200 字"元素说明书"。</p>
+        <p><strong>任务</strong>：<br>1. 选定一种元素，从原子结构、物理性质、化学性质、常见用途等维度收集信息<br>2. 设计 A3 尺寸海报布局，包含元素符号、原子序数、相对原子质量、电子排布、实物图片<br>3. 撰写 200 字左右的元素说明书，用流畅的书面语介绍该元素</p>
+        <p><strong>成果</strong>：元素信息海报（含图文）+ 元素说明书</p>
+        <p><strong>评价</strong>：信息准确性 30% | 版面设计 25% | 说明书表达 30% | 创意呈现 15%</p>
+        <p><strong>资源</strong>：元素周期表、化学教材、科普网站（教师可提供元素信息模板）</p>
+      </div>
+    </div>
+
+    <!-- 项目二 -->
+    <div class="project-card" data-cycle="short" id="card1">
+      <div class="card-header" onclick="toggleCard('card1')">
+        <div>
+          家庭化学小实验说明书
+          <span class="card-badge">短周期</span>
+        </div>
+        <span class="card-toggle" id="toggle1">&#9660;</span>
+      </div>
+      <div class="card-body" id="body1">
+        <p><strong>目标</strong>：选择家庭常见材料（食醋、小苏打、食盐、柠檬等），设计安全实验，撰写实验说明书（400-500 字）。</p>
+        <p><strong>任务</strong>：<br>1. 确定实验主题（如"小苏打与食醋反应"、"紫甘蓝酸碱指示剂"等）<br>2. 列出材料清单与安全注意事项<br>3. 按步骤撰写实验操作流程（含预期现象）<br>4. 记录实验现象并分析原理</p>
+        <p><strong>成果</strong>：家庭实验说明书 + 实验照片/视频</p>
+        <p><strong>评价</strong>：安全规范 20% | 步骤清晰度 30% | 原理分析 30% | 记录完整性 20%</p>
+        <p><strong>资源</strong>：家庭常见化学品安全指南、实验记录表模板</p>
+      </div>
+    </div>
+
+    <!-- 项目三 -->
+    <div class="project-card" data-cycle="mid" id="card2">
+      <div class="card-header" onclick="toggleCard('card2')">
+        <div>
+          校园水质调查报告
+          <span class="card-badge">中周期</span>
+        </div>
+        <span class="card-toggle" id="toggle2">&#9660;</span>
+      </div>
+      <div class="card-body" id="body2">
+        <p><strong>目标</strong>：对校园内不同区域的水样进行 pH 检测，撰写水质调查报告（800-1000 字）。</p>
+        <div class="timeline">
+          <span><em>第 1 天</em> — 制定调查计划，确定采样点</span>
+          <span><em>第 3 天</em> — 采集水样并检测记录</span>
+          <span><em>第 5 天</em> — 数据分析与对比</span>
+          <span><em>第 7 天</em> — 完成调查报告</span>
+          <span><em>第 10 天</em> — 班级展示交流</span>
+        </div>
+        <p><strong>成果</strong>：水质调查报告（含检测数据表、pH 分析、结论建议）</p>
+        <p><strong>评价</strong>：数据真实性 20% | 分析方法 25% | 报告结构 25% | 建议可行性 30%</p>
+        <p><strong>资源</strong>：pH 试纸、蒸馏水、烧杯、数据记录模板</p>
+      </div>
+    </div>
+
+    <!-- 项目四 -->
+    <div class="project-card" data-cycle="mid" id="card3">
+      <div class="card-header" onclick="toggleCard('card3')">
+        <div>
+          空气净化方案设计
+          <span class="card-badge">中周期</span>
+        </div>
+        <span class="card-toggle" id="toggle3">&#9660;</span>
+      </div>
+      <div class="card-body" id="body3">
+        <p><strong>目标</strong>：调查室内空气污染物，研究净化原理，设计净化方案，撰写方案建议书（500-800 字）。</p>
+        <p><strong>任务</strong>：<br>1. 调查室内常见空气污染物（甲醛、PM2.5、TVOC 等）及其来源<br>2. 研究活性炭吸附、光催化、HEPA 过滤等净化原理<br>3. 针对特定场景（教室、卧室、新装修房间）设计净化方案<br>4. 撰写方案建议书，对比不同方案的成本与效果</p>
+        <p><strong>成果</strong>：空气净化方案建议书（含污染源分析、净化原理说明、方案对比表）</p>
+        <p><strong>评价</strong>：污染源调研 20% | 原理理解 25% | 方案合理性 30% | 书面表达 25%</p>
+        <p><strong>资源</strong>：空气质量标准手册、净化材料资料包</p>
+      </div>
+    </div>
+
+    <!-- 项目五 -->
+    <div class="project-card" data-cycle="long" id="card4">
+      <div class="card-header" onclick="toggleCard('card4')">
+        <div>
+          "化学改变生活"主题研究
+          <span class="card-badge">长周期</span>
+        </div>
+        <span class="card-toggle" id="toggle4">&#9660;</span>
+      </div>
+      <div class="card-body" id="body4">
+        <p><strong>目标</strong>：选择日常生活化学主题（食品添加剂、清洁剂、塑料、药物等），全学期研究，形成化学小论文（1000-1500 字）。</p>
+        <div class="timeline">
+          <span><em>选题（1 周）</em> — 确定研究方向，提交选题报告</span>
+          <span><em>文献（2 周）</em> — 查阅文献，做文献摘要</span>
+          <span><em>研究（4 周）</em> — 开展实验/调查，记录数据</span>
+          <span><em>撰写（2 周）</em> — 撰写化学小论文初稿</span>
+          <span><em>修改（2 周）</em> — 根据反馈修改完善</span>
+          <span><em>展示（1 周）</em> — 课堂展示与答辩</span>
+        </div>
+        <p><strong>成果</strong>：化学小论文（1000-1500 字，含引言、方法、结果、讨论、结论）</p>
+        <p><strong>评价</strong>：选题创新 15% | 文献综述 20% | 研究方法 20% | 论文质量 30% | 展示答辩 15%</p>
+        <p><strong>资源</strong>：学术数据库、论文写作模板、教师辅导</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Usage Tips -->
+  <div class="section">
+    <div class="section-title">使用建议</div>
+    <div class="tips-grid">
+      <div class="tip-item">
+        <div class="tip-num">1</div>
+        <h4>按周期选择</h4>
+        <p>根据课时安排灵活选择短、中、长周期项目</p>
+      </div>
+      <div class="tip-item">
+        <div class="tip-num">2</div>
+        <h4>分阶段交付</h4>
+        <p>大项目拆解为阶段性成果，定期检查反馈</p>
+      </div>
+      <div class="tip-item">
+        <div class="tip-num">3</div>
+        <h4>成果可见</h4>
+        <p>所有成果张贴于项目社区，形成互学氛围</p>
+      </div>
+      <div class="tip-item">
+        <div class="tip-num">4</div>
+        <h4>展示为本</h4>
+        <p>每个项目以展示收尾，关注表达与交流</p>
+      </div>
+      <div class="tip-item">
+        <div class="tip-num">5</div>
+        <h4>联动作业榜</h4>
+        <p>将项目成果纳入作业榜积分体系</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    九年级化学 · 项目社区脚手架 &mdash; 在做中学，在写中思
+  </div>
+
+</div>
+
+<script>
+(function () {
+  /* ===== 展开/收起卡片 (data-group: card) ===== */
+  window.toggleCard = function (cardId) {
+    if (!cardId) return;
+    var el = document.getElementById(cardId);
+    if (!el) return;
+    var body = document.getElementById('body' + cardId.replace('card', ''));
+    var toggle = document.getElementById('toggle' + cardId.replace('card', ''));
+    if (!body || !toggle) return;
+    var isOpen = body.classList.contains('open');
+    if (isOpen) {
+      body.classList.remove('open');
+      toggle.classList.remove('open');
+      toggle.textContent = '▼';
+    } else {
+      body.classList.add('open');
+      toggle.classList.add('open');
+      toggle.textContent = '▲';
+    }
+  };
+
+  /* ===== 筛选项目 (data-group: filter) ===== */
+  window.filterProjects = function (cycle) {
+    if (!cycle) return;
+    // 更新按钮状态
+    var btns = document.querySelectorAll('#filterBar .filter-btn');
+    if (btns) {
+      for (var i = 0; i < btns.length; i++) {
+        if (btns[i].getAttribute('data-filter') === cycle) {
+          btns[i].classList.add('active');
+        } else {
+          btns[i].classList.remove('active');
+        }
+      }
+    }
+    // 切换卡片
+    var cards = document.querySelectorAll('#projectList .project-card');
+    if (!cards) return;
+    for (var j = 0; j < cards.length; j++) {
+      if (cycle === 'all') {
+        cards[j].style.display = '';
+      } else {
+        cards[j].style.display = cards[j].getAttribute('data-cycle') === cycle ? '' : 'none';
+      }
+    }
+  };
+
+  /* ===== 进度跟踪 (data-group: progress) ===== */
+  function getProgressState() {
+    var state;
+    try { state = JSON.parse(localStorage.getItem('chem_progress')); } catch(e) { state = null; }
+    if (!state || typeof state !== 'object') state = [0, 0, 0, 0, 0];
+    return state;
+  }
+
+  function saveProgressState(arr) {
+    try { localStorage.setItem('chem_progress', JSON.stringify(arr)); } catch(e) {}
+  }
+
+  function updateProgressUI(arr) {
+    for (var i = 0; i < 5; i++) {
+      var fill = document.getElementById('fill' + i);
+      var pct = document.getElementById('pct' + i);
+      if (!fill || !pct) continue;
+      var val = typeof arr[i] === 'number' ? Math.min(Math.max(arr[i], 0), 100) : 0;
+      fill.style.width = val + '%';
+      pct.textContent = val + '%';
+    }
+  }
+
+  window.resetProgress = function () {
+    var empty = [0, 0, 0, 0, 0];
+    updateProgressUI(empty);
+    saveProgressState(empty);
+  };
+
+  // 初始化进度
+  var initState = getProgressState();
+  updateProgressUI(initState);
+
+  /* ===== 进度条点击递增 (data-group: progress) ===== */
+  var rows = document.querySelectorAll('.progress-row[data-group="progress"]');
+  if (rows) {
+    for (var k = 0; k < rows.length; k++) {
+      (function (idx) {
+        rows[k].addEventListener('click', function (e) {
+          // 忽略 label 外的区域点击 —— 用户也可以自己设置进度
+          var state = getProgressState();
+          state[idx] = Math.min((state[idx] || 0) + 25, 100);
+          updateProgressUI(state);
+          saveProgressState(state);
+        });
+      })(k);
+    }
+  }
+
+  /* ===== 提示项点击标记 (data-group: tips) ===== */
+  var tips = document.querySelectorAll('.tip-item');
+  if (tips) {
+    for (var m = 0; m < tips.length; m++) {
+      (function (tip) {
+        tip.addEventListener('click', function () {
+          if (tip.style.backgroundColor === 'rgb(22, 119, 255)') {
+            tip.style.backgroundColor = '';
+            tip.style.color = '';
+            tip.querySelector('h4').style.color = '';
+            tip.querySelector('p').style.color = '';
+          } else {
+            tip.style.backgroundColor = '#1677ff';
+            tip.style.color = '#fff';
+            var h4 = tip.querySelector('h4');
+            var p = tip.querySelector('p');
+            if (h4) h4.style.color = '#fff';
+            if (p) p.style.color = '#edf4ff';
+          }
+        });
+      })(tips[m]);
+    }
+  }
+})();
+</script>
+
+</body>
+</html>

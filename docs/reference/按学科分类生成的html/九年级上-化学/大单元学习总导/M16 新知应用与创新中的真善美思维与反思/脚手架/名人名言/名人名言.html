@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名人名言 - 化学中的真善美</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px 24px 40px;
+  box-sizing: border-box;
+}
+.header {
+  text-align: center;
+  padding: 28px 0 12px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin: 0 0 6px;
+}
+.header .sub {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: box-shadow .25s;
+}
+.card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  cursor: pointer;
+  user-select: none;
+  transition: background .2s;
+}
+.card-header:hover {
+  background: #f5f8ff;
+}
+.card-header .arrow {
+  margin-left: auto;
+  transition: transform .3s;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.card-header.open .arrow {
+  transform: rotate(90deg);
+}
+.card-body {
+  display: none;
+  padding: 0 20px 16px;
+}
+.card-body.open {
+  display: block;
+}
+.card-header h3 {
+  margin: 0;
+  font-size: 17px;
+  color: var(--primary);
+}
+.card-header .emoji-tag {
+  font-size: 20px;
+}
+.person-tag {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  padding: 1px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  margin-left: 6px;
+}
+.info-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 12px;
+  font-size: 14px;
+  margin: 8px 0;
+  align-items: start;
+}
+.info-grid .label {
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.think-box {
+  background: #fff7e6;
+  border-left: 4px solid #fa8c16;
+  padding: 10px 14px;
+  border-radius: 0 6px 6px 0;
+  margin: 10px 0;
+  font-size: 14px;
+}
+.think-box strong {
+  color: #d46b08;
+}
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+  font-size: 14px;
+}
+.compare-table th, .compare-table td {
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  text-align: left;
+}
+.compare-table th {
+  background: var(--bg);
+  color: var(--primary);
+  font-weight: 600;
+}
+.compare-table td:first-child {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.connection-section {
+  background: linear-gradient(135deg, #e6f4ff, #f0f5ff);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin: 14px 0;
+  text-align: center;
+}
+.connection-section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 8px;
+}
+.connection-section p {
+  margin: 4px 0;
+  font-size: 14px;
+}
+@media (max-width: 640px) {
+  .info-grid {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+  .compare-table td:first-child {
+    white-space: normal;
+  }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>💡 名人名言</h1>
+    <p class="sub">以认知突破为核心，理解化学知识诞生背后的深层逻辑</p>
+  </div>
+
+  <div class="card">
+    <div class="card-header open" onclick="toggleCard(this)">
+      <span class="emoji-tag">🧪</span>
+      <h3>奠基人物：侯德榜 <span class="person-tag">1890—1974</span></h3>
+      <span class="arrow">▶</span>
+    </div>
+    <div class="card-body open">
+      <div class="info-grid">
+        <span class="label">身份</span><span>中国化学工业先驱，侯氏制碱法发明人</span>
+        <span class="label">关键问题</span><span>如何摆脱西方对纯碱生产技术的垄断？</span>
+        <span class="label">思维突破点</span><span>突破索尔维法专利封锁，将制碱和制氨两大工业体系融合，创造"联合制碱法"</span>
+        <span class="label">失败/争议</span><span>早期实验多次失败，工厂爆炸风险，在资金和技术双重困境中坚持了5年</span>
+        <span class="label">当下启示</span><span>科学创新需要智慧（真）与对国家和人民的责任（善）</span>
+      </div>
+      <div class="think-box">
+        <strong>💭 如果你是他</strong>
+        <p style="margin:4px 0 0;">如果你是1930年代的中国化学工程师，面对西方技术封锁和国内工业空白，你会选择从哪里突破？是利用现成的西方技术路线，还是走一条全新的路？</p>
+      </div>
+      <p style="font-size:13px;color:var(--text-secondary);margin:4px 0 0;">📖 推荐阅读：《侯德榜传》· 纪录片《大国工匠》侯德榜专题</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="toggleCard(this)">
+      <span class="emoji-tag">🚀</span>
+      <h3>跨界人物：钱学森 <span class="person-tag">1911—2009</span></h3>
+      <span class="arrow">▶</span>
+    </div>
+    <div class="card-body">
+      <div class="info-grid">
+        <span class="label">身份</span><span>系统工程科学家、"中国航天之父"</span>
+        <span class="label">关键问题</span><span>如何从全局视角整合不同学科的知识解决复杂问题？</span>
+        <span class="label">思维突破点</span><span>提出"系统工程"思想——任何创新都不能只看单一维度，要从整体系统出发</span>
+        <span class="label">与M16关联</span><span>钱学森的系统工程思想帮助你在评价化学创新时跳出二元判断，从系统效应角度全面分析</span>
+      </div>
+      <div class="think-box">
+        <strong>💭 如果你是他</strong>
+        <p style="margin:4px 0 0;">钱学森说"不要人云亦云"——当所有人都在追捧某项化学新技术时，你会如何运用系统思维来保持独立思考？</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="toggleCard(this)">
+      <span class="emoji-tag">🏆</span>
+      <h3>当代人物：屠呦呦 <span class="person-tag">1930—</span></h3>
+      <span class="arrow">▶</span>
+    </div>
+    <div class="card-body">
+      <div class="info-grid">
+        <span class="label">身份</span><span>中国药学家，2015年诺贝尔生理学或医学奖得主</span>
+        <span class="label">关键问题</span><span>如何从传统中医药中发现抗疟新药？</span>
+        <span class="label">思维突破点</span><span>从东晋葛洪《肘后备急方》记载中获得灵感，改用乙醚低温提取，保留青蒿素活性</span>
+        <span class="label">失败/争议</span><span>前期用水煎法失败，实验重复190次后才成功</span>
+        <span class="label">当下启示</span><span>科学发现需要"坚持之真"（190次失败不放弃）+ "济世之善"（拯救数百万生命）</span>
+      </div>
+      <div class="think-box">
+        <strong>💭 如果你是她</strong>
+        <p style="margin:4px 0 0;">屠呦呦从古籍中寻找科学的灵感——如果你穿越回古代，你想用现代化学知识解决古人的哪个难题？</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="connection-section">
+    <h2>🔗 思考连线：三位人物如何体现真善美？</h2>
+    <table class="compare-table">
+      <tr><th>人物</th><th>真（科学突破）</th><th>善（社会贡献）</th><th>美（思维之美）</th></tr>
+      <tr><td>侯德榜</td><td>联合制碱法化学原理</td><td>打破技术封锁，造福国人</td><td>零排放闭环工艺流程</td></tr>
+      <tr><td>钱学森</td><td>系统工程方法论</td><td>科技强国，人才培养</td><td>整体思维的系统之美</td></tr>
+      <tr><td>屠呦呦</td><td>青蒿素提取与验证</td><td>拯救数百万生命</td><td>古今结合的文化灵感</td></tr>
+    </table>
+    <p style="margin-top:8px;">⭐ 三位科学家的共同点：用 <strong>真</strong> 探索未知，用 <strong>善</strong> 贡献社会，用 <strong>美</strong> 创造价值</p>
+  </div>
+</div>
+
+<script>
+function toggleCard(header) {
+  var body = header.nextElementSibling;
+  var isOpen = body.classList.contains('open');
+  if (isOpen) {
+    body.classList.remove('open');
+    header.classList.remove('open');
+  } else {
+    body.classList.add('open');
+    header.classList.add('open');
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>作业榜 · 三层递进式书面表达训练</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:var(--font-body);
+  line-height:var(--line-height);
+  color:var(--text);
+  background:var(--bg);
+  width:100%;
+  min-height:100vh;
+}
+.container{width:100%;max-width:none;padding:24px 20px;box-sizing:border-box}
+.header{
+  text-align:center;
+  padding:32px 16px 24px;
+  background:linear-gradient(135deg,#e6f0ff,#f0f5ff);
+  border-bottom:1px solid var(--border);
+}
+.header h1{
+  font-size:var(--font-h1);
+  color:var(--primary);
+  margin-bottom:8px;
+  letter-spacing:2px;
+}
+.header p{color:var(--text-secondary);font-size:14px;}
+.level-nav{
+  display:flex;
+  gap:12px;
+  justify-content:center;
+  margin:24px auto 16px;
+  flex-wrap:wrap;
+}
+.level-nav button{
+  padding:10px 28px;
+  border:2px solid var(--primary);
+  border-radius:20px;
+  background:var(--card-bg);
+  color:var(--primary);
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+  transition:all .3s;
+}
+.level-nav button.active{
+  background:var(--primary);
+  color:#fff;
+  box-shadow:0 4px 14px rgba(22,119,255,.3);
+}
+.level-nav button:hover:not(.active){background:#e6f0ff;}
+.level-section{display:none}
+.level-section.show{display:block}
+.task-card{
+  background:var(--card-bg);
+  border-radius:var(--border-radius);
+  box-shadow:var(--shadow);
+  margin-bottom:16px;
+  padding:20px;
+  border-left:4px solid var(--primary);
+  transition:box-shadow .3s;
+  cursor:pointer;
+}
+.task-card:hover{box-shadow:0 4px 16px rgba(22,119,255,.12);}
+.task-card .task-title{
+  font-size:16px;
+  font-weight:700;
+  color:var(--primary);
+  margin-bottom:8px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.task-card .task-title .badge{
+  display:inline-block;
+  background:var(--accent);
+  color:#fff;
+  font-size:12px;
+  padding:2px 10px;
+  border-radius:10px;
+  font-weight:500;
+}
+.task-card .task-desc{
+  color:var(--text);
+  margin-bottom:6px;
+}
+.task-card .task-meta{
+  color:var(--text-secondary);
+  font-size:13px;
+  display:flex;
+  gap:16px;
+  flex-wrap:wrap;
+}
+.task-card .expand-content{
+  max-height:0;
+  overflow:hidden;
+  transition:max-height .4s ease;
+  background:#fafbff;
+  border-radius:6px;
+  margin-top:8px;
+}
+.task-card .expand-content.open{
+  max-height:600px;
+  padding:16px;
+}
+.task-card .expand-content ul{
+  padding-left:20px;
+  margin:8px 0;
+}
+.task-card .expand-content li{margin-bottom:4px;color:var(--text-secondary);}
+.standard-box{
+  background:var(--card-bg);
+  border-radius:var(--border-radius);
+  box-shadow:var(--shadow);
+  padding:20px;
+  margin-bottom:20px;
+}
+.standard-box h3{
+  font-size:var(--font-h2);
+  color:var(--primary);
+  margin-bottom:12px;
+  padding-bottom:8px;
+  border-bottom:2px solid var(--accent);
+}
+.standard-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:12px;
+}
+.standard-item{
+  background:#fafbff;
+  border-radius:6px;
+  padding:12px 16px;
+  border:1px solid var(--border);
+}
+.standard-item .label{font-weight:700;color:var(--primary);font-size:13px;}
+.standard-item .value{color:var(--text);font-size:14px;margin-top:4px;}
+.table-wrap{overflow-x:auto;margin:12px 0;}
+table{width:100%;border-collapse:collapse;font-size:14px;}
+th,td{
+  border:1px solid var(--border);
+  padding:10px 14px;
+  text-align:left;
+}
+th{background:var(--primary);color:#fff;font-weight:600;}
+td{background:var(--card-bg);}
+tr:nth-child(even) td{background:#f8faff;}
+.tip-box{
+  background:linear-gradient(135deg,#e6f0ff,#f0f5ff);
+  border-radius:var(--border-radius);
+  padding:16px 20px;
+  margin-bottom:16px;
+  border-left:4px solid var(--primary);
+}
+.tip-box .tip-icon{font-weight:700;color:var(--primary);margin-right:6px;}
+@media(max-width:640px){
+  .container{padding:16px 12px;}
+  .header{padding:24px 12px 16px;}
+  .level-nav button{padding:8px 18px;font-size:13px;}
+  .task-card{padding:14px;}
+  .task-card .expand-content.open{padding:12px;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📝 作业榜</h1>
+  <p>三层递进式书面表达训练体系 · 在"写—改—再写"中提升化学表达力</p>
+</div>
+
+<div class="container">
+
+<div class="level-nav" id="levelNav">
+  <button class="active" data-level="1">🌱 基础层</button>
+  <button data-level="2">🚀 进阶层</button>
+  <button data-level="3">🌟 开放层</button>
+</div>
+
+<!-- 基础层 -->
+<div class="level-section show" id="level1">
+  <div class="standard-box">
+    <h3>🎯 基础层目标</h3>
+    <p>用规范用语描述基本化学现象和概念</p>
+    <div class="standard-grid">
+      <div class="standard-item"><span class="label">用词准确</span><div class="value">无色/白色、气体/烟雾等区分到位</div></div>
+      <div class="standard-item"><span class="label">结构完整</span><div class="value">时间→地点→现象→结论脉络清晰</div></div>
+      <div class="standard-item"><span class="label">书写规范</span><div class="value">化学式、元素符号书写无误</div></div>
+    </div>
+  </div>
+
+  <div class="task-card" onclick="toggleTask(1)">
+    <div class="task-title">✍️ 任务 A · 现象描述 <span class="badge">写作</span></div>
+    <div class="task-desc">用 100-150 字描述指定实验现象（如锌粒与稀盐酸反应）</div>
+    <div class="task-meta"><span>📏 字数：100-150 字</span><span>📋 形式：写作</span></div>
+    <div class="expand-content" id="taskExpand1">
+      <strong>💡 写作提示：</strong>
+      <ul>
+        <li>观察要点：反应前固体颜色形态 → 加入液体后的变化 → 产生的气体/沉淀</li>
+        <li>用词示例：银白色金属 → 表面产生大量气泡 → 固体逐渐减小</li>
+        <li>避免使用"冒烟"（应区分"白雾"与"白烟"）</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="task-card" onclick="toggleTask(2)">
+    <div class="task-title">✍️ 任务 B · 概念复述 <span class="badge">写作</span></div>
+    <div class="task-desc">用自己的话写出 3 个化学基本概念的定义（物理变化、化学变化、物理性质）</div>
+    <div class="task-meta"><span>📏 字数：每个概念 30-50 字</span><span>📋 形式：写作</span></div>
+    <div class="expand-content" id="taskExpand2">
+      <strong>💡 写作提示：</strong>
+      <ul>
+        <li>定义格式：概念名称 + 属（属于什么范畴）+ 种差（区别于其他概念的特征）</li>
+        <li>例如："物理变化是物质在变化过程中没有生成其他物质的变化"</li>
+        <li>⚠️ 注意：不能直接抄课本，必须用自己的语言重组</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="task-card" onclick="toggleTask(3)">
+    <div class="task-title">✍️ 任务 C · 纠错练习 <span class="badge">写作</span></div>
+    <div class="task-desc">给出一段含错误的实验描述，圈出错处并修正</div>
+    <div class="task-meta"><span>📋 形式：批注 + 修改</span></div>
+    <div class="expand-content" id="taskExpand3">
+      <strong>💡 示例片段：</strong>
+      <p style="background:#fff6e6;padding:10px;border-radius:6px;margin:6px 0;">"将锌粒放入稀盐酸中，观察到锌粒表面产生白烟，溶液温度降低。"</p>
+      <strong>🔍 找一找：</strong> 几处错误？正确的应该怎样写？
+      <ul>
+        <li>"白烟" → 应为"气泡"（氢气是无色气体，不是白烟）</li>
+        <li>"温度降低" → 应为"温度升高"（置换反应放热）</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="task-card" onclick="toggleTask(4)">
+    <div class="task-title">📊 图示任务 · 物质分类树状图 <span class="badge">图示</span></div>
+    <div class="task-desc">绘制"物质分类树状图"并配文字说明</div>
+    <div class="task-meta"><span>📋 形式：图示 + 100-200 字说明</span></div>
+    <div class="expand-content" id="taskExpand4">
+      <strong>📐 结构建议：</strong>
+      <ul>
+        <li>顶层：物质 → 分支为 纯净物 与 混合物</li>
+        <li>纯净物 → 分支为 单质（金属/非金属）与 化合物</li>
+        <li>化合物 → 分支为 氧化物、酸、碱、盐等</li>
+        <li>配图说明：用箭头 + 关键词 + 简单例句</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 进阶层 -->
+<div class="level-section" id="level2">
+  <div class="standard-box">
+    <h3>🎯 进阶层目标</h3>
+    <p>培养对比分析、因果推理的书面表达能力</p>
+    <div class="standard-grid">
+      <div class="standard-item"><span class="label">比较点选择</span><div class="value">合理选取比较维度，避免重复性描述</div></div>
+      <div class="standard-item"><span class="label">因果表述</span><div class="value">使用"因此""所以""从而导致"等连接词</div></div>
+      <div class="standard-item"><span class="label">证据引用</span><div class="value">用实验证据支持自己的观点</div></div>
+    </div>
+  </div>
+
+  <div class="task-card" onclick="toggleTask(5)">
+    <div class="task-title">✍️ 任务 A · 比较分析 <span class="badge">写作</span></div>
+    <div class="task-desc">比较氧气与二氧化碳的物理性质和化学性质，写成 200 字对比说明</div>
+    <div class="task-meta"><span>📏 字数：200 字</span><span>📋 形式：对比说明</span></div>
+    <div class="expand-content" id="taskExpand5">
+      <strong>📋 比较框架：</strong>
+      <ul>
+        <li>物理性质：颜色、状态、气味、密度（与空气比较）、溶解性</li>
+        <li>化学性质：是否支持燃烧、与什么物质反应、反应现象</li>
+        <li>结尾：用一句话总结二者的本质差异</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="task-card" onclick="toggleTask(6)">
+    <div class="task-title">✍️ 任务 B · 因果解释 <span class="badge">写作</span></div>
+    <div class="task-desc">解释"为什么铁丝在空气中不能燃烧而在氧气中可以"，要求用"因为……所以……"结构</div>
+    <div class="task-meta"><span>📋 形式：因果推理段落</span></div>
+    <div class="expand-content" id="taskExpand6">
+      <strong>🔬 关键知识点：</strong>
+      <ul>
+        <li>空气中氧气体积分数仅约 21%，氧气浓度低</li>
+        <li>铁丝燃烧需要达到一定的氧气浓度（助燃物浓度）</li>
+        <li>纯氧中氧气浓度高，反应剧烈，放出热量足以维持持续燃烧</li>
+        <li>写作结构：现象描述 → 原因分析 → 实验证据 → 结论</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="task-card" onclick="toggleTask(7)">
+    <div class="task-title">✍️ 任务 C · 实验分析 <span class="badge">写作</span></div>
+    <div class="task-desc">分析实验失败的可能原因并提出改进方案（如"收集的氧气不纯，可能是因为……"）</div>
+    <div class="task-meta"><span>📋 形式：诊断式分析</span></div>
+    <div class="expand-content" id="taskExpand7">
+      <strong>🧪 分析模板：</strong>
+      <ul>
+        <li>Step 1：明确指出实验失败的具体表现</li>
+        <li>Step 2：列举可能的失败原因（2-3 条）</li>
+        <li>Step 3：针对每一条原因提出对应的改进措施</li>
+        <li>Step 4：用"因此，改进后的实验应该……"做结</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="task-card" onclick="toggleTask(8)">
+    <div class="task-title">🎬 任务 · 实验解说视频 <span class="badge">视频</span></div>
+    <div class="task-desc">录制 2 分钟"实验现象解说"短视频，需提交视频脚本文字稿</div>
+    <div class="task-meta"><span>⏱ 时长：2 分钟</span><span>📋 产出：视频 + 文字脚本</span></div>
+    <div class="expand-content" id="taskExpand8">
+      <strong>🎥 脚本结构建议：</strong>
+      <ul>
+        <li>开场（15s）：实验名称 + 目的</li>
+        <li>准备（20s）：介绍实验器材和药品</li>
+        <li>操作（40s）：边做边解说操作步骤</li>
+        <li>现象（25s）：描述观察到的现象</li>
+        <li>结论（20s）：解释现象背后的化学原理</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 开放层 -->
+<div class="level-section" id="level3">
+  <div class="standard-box">
+    <h3>🎯 开放层目标</h3>
+    <p>综合运用化学知识进行创造性、辩论性的书面表达</p>
+  </div>
+
+  <div class="task-card" onclick="toggleTask(9)">
+    <div class="task-title">✍️ 任务 A · 创意写作 <span class="badge">写作</span></div>
+    <div class="task-desc">"假如我是一个水分子，我的奇妙旅程"（不少于 300 字）</div>
+    <div class="task-meta"><span>📏 字数：≥300 字</span><span>📋 形式：创意故事</span></div>
+    <div class="expand-content" id="taskExpand9">
+      <strong>💡 创作思路：</strong>
+      <ul>
+        <li>以第一人称"我"（H₂O 分子）的视角展开</li>
+        <li>经历不同的状态变化（固态→液态→气态）</li>
+        <li>经历化学变化（如电解水：2H₂O → 2H₂↑ + O₂↑）</li>
+        <li>融入真实的地理/生活场景（河流→云→雨→自来水厂）</li>
+        <li>至少用到 5 个化学专业术语并标注</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="task-card" onclick="toggleTask(10)">
+    <div class="task-title">✍️ 任务 B · 科学小论文 <span class="badge">写作</span></div>
+    <div class="task-desc">"日常生活中有哪些化学变化？任选 3 例进行科学分析"</div>
+    <div class="task-meta"><span>📏 字数：400 字左右</span><span>📋 形式：小论文</span></div>
+    <div class="expand-content" id="taskExpand10">
+      <strong>📝 论文结构：</strong>
+      <ul>
+        <li>引言：化学变化就在我们身边（50 字）</li>
+        <li>例 1：如铁生锈（化学方程式 + 条件分析）</li>
+        <li>例 2：如食物消化（酶的作用 + 化学变化本质）</li>
+        <li>例 3：如燃烧（燃烧三要素 + 产物分析）</li>
+        <li>结论：化学变化在日常生活中的意义</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="task-card" onclick="toggleTask(11)">
+    <div class="task-title">✍️ 任务 C · 辩论稿 <span class="badge">写作</span></div>
+    <div class="task-desc">"化学工业的发展是利大于弊还是弊大于利？"撰写正方或反方一辩稿</div>
+    <div class="task-meta"><span>📏 字数：500-600 字</span><span>📋 形式：辩论一辩稿</span></div>
+    <div class="expand-content" id="taskExpand11">
+      <strong>🎯 辩论稿结构：</strong>
+      <ul>
+        <li>立论（100 字）：明确我方观点 + 核心论点</li>
+        <li>论据 1（150 字）：事实论据（数据/案例）</li>
+        <li>论据 2（150 字）：理论论据（化学原理）</li>
+        <li>论据 3（100 字）：补充论据或驳对方可能的观点</li>
+        <li>结论（50 字）：升华观点，掷地有声</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="task-card" onclick="toggleTask(12)">
+    <div class="task-title">✍️ 任务 D · 实验方案设计 <span class="badge">写作</span></div>
+    <div class="task-desc">设计一个实验证明"空气中氧气约占 1/5"，写出完整的实验方案</div>
+    <div class="task-meta"><span>📋 形式：实验方案</span></div>
+    <div class="expand-content" id="taskExpand12">
+      <strong>🧪 方案框架：</strong>
+      <ul>
+        <li>实验目的：定量测定空气中氧气的体积分数</li>
+        <li>实验原理：利用红磷燃烧消耗氧气，压强差使水倒流</li>
+        <li>实验器材：集气瓶、燃烧匙、红磷、水槽等</li>
+        <li>操作步骤：6-8 步，逻辑清晰，可复现</li>
+        <li>注意事项：装置气密性、红磷足量等</li>
+        <li>预期结果与结论：水倒流至约 1/5 刻度处</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 表达形式说明 -->
+<div class="standard-box" style="margin-top:24px;">
+  <h3>📋 表达形式一览</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>形式</th><th>适用范围</th><th>书面产出要求</th></tr></thead>
+      <tbody>
+        <tr><td>✍️ 写作</td><td>全部三层</td><td>必须提交文字稿</td></tr>
+        <tr><td>📊 图示</td><td>基础层、开放层</td><td>配 100-200 字文字说明</td></tr>
+        <tr><td>🎬 视频</td><td>进阶层</td><td>提交视频脚本/字幕文字稿</td></tr>
+        <tr><td>🎤 演讲</td><td>进阶层、开放层</td><td>提交完整演讲稿</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 使用建议 -->
+<div class="tip-box">
+  <span class="tip-icon">💡</span>
+  <strong>使用建议：</strong>
+  ① 所有任务最终都有"写"的环节，视频和演讲需附带文字脚本。
+  ② 三层都至少选一，按能力分层选做。
+  ③ 设置"初稿 → 互评 → 修改稿"迭代流程。
+  ④ 完成不同层级获得不同积分，"作业王者榜"等你上榜！🏆
+</div>
+
+</div>
+
+<script>
+// 层级切换
+document.querySelectorAll('.level-nav button').forEach(btn => {
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('.level-nav button').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    document.querySelectorAll('.level-section').forEach(s => s.classList.remove('show'));
+    document.getElementById('level' + this.dataset.level).classList.add('show');
+  });
+});
+
+// 展开/收起任务详情
+function toggleTask(id){
+  const el = document.getElementById('taskExpand' + id);
+  if(!el) return;
+  el.classList.toggle('open');
+}
+</script>
+</body>
+</html>

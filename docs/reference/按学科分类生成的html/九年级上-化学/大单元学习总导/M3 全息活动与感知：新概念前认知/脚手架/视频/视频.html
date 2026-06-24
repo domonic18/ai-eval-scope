@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M3 视频脚手架 — 化学变化与物理变化</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; }
+h1 { font-size: var(--font-h1); font-weight: 700; color: var(--primary); margin-bottom: 12px; }
+h2 { font-size: var(--font-h2); font-weight: 600; color: var(--text); margin: 24px 0 12px; padding-bottom: 6px; border-bottom: 2px solid var(--accent); }
+h3 { font-size: calc(var(--font-body) + 2px); font-weight: 600; color: var(--primary); margin: 16px 0 8px; }
+.video-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+  border-left: 4px solid var(--primary);
+  transition: transform 0.2s;
+}
+.video-card:hover { transform: translateX(4px); }
+.layer-badge {
+  display: inline-block;
+  padding: 2px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.l1 { background: #e6f4ff; color: #1677ff; }
+.l2 { background: #f0fff0; color: #16a34a; }
+.l3 { background: #fff7e6; color: #d46b08; }
+.source { color: var(--text-secondary); font-size: 13px; margin-bottom: 8px; }
+.task-item {
+  background: #fafafa;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 8px 0;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.task-item:hover { background: #f0f5ff; border-color: var(--primary); }
+.task-item .check { flex-shrink: 0; width: 20px; height: 20px; border: 2px solid var(--border); border-radius: 4px; margin-top: 2px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #fff; }
+.task-item.done .check { background: var(--primary); border-color: var(--primary); content: "✓"; }
+.task-item.done .check::after { content: "✓"; }
+.task-item.done { background: #f6ffed; border-color: #b7eb8f; }
+.q-block {
+  background: #fafafa;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 8px 0;
+  border-left: 3px solid var(--primary);
+}
+.q-block .q { font-weight: 600; margin-bottom: 4px; color: var(--text); }
+.reveal-btn {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 4px 14px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.2s;
+}
+.reveal-btn:hover { background: var(--primary-hover); }
+.reveal-answer {
+  display: none;
+  margin-top: 8px;
+  padding: 10px 14px;
+  background: #e6f4ff;
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--text);
+}
+.reveal-answer.show { display: block; }
+.pause-point {
+  background: #fffbe6;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 8px 0;
+  border-left: 3px solid #faad14;
+}
+.pause-point .pause-label { font-weight: 600; color: #d46b08; font-size: 13px; }
+.output-task {
+  background: linear-gradient(135deg, #f0f5ff, #e6f4ff);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 12px 0;
+  border: 1px dashed var(--primary);
+}
+.output-task strong { color: var(--primary); }
+.progress-bar {
+  background: var(--card-bg);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.progress-track {
+  flex: 1;
+  min-width: 120px;
+  height: 8px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  border-radius: 4px;
+  width: 0%;
+  transition: width 0.5s ease;
+}
+.progress-text { font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
+.reset-btn {
+  padding: 6px 16px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+.reset-btn:hover { border-color: var(--primary); color: var(--primary); }
+@media (max-width: 640px) {
+  .container { padding: 16px 12px; }
+  .video-card { padding: 14px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🎬 视频脚手架</h1>
+  <p style="color:var(--text-secondary);margin-bottom:16px;">根据你的学习节奏选择视频层，完成观看任务，记录你的思考。</p>
+
+  <div class="progress-bar">
+    <span style="font-weight:600;font-size:13px;">完成进度</span>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <span class="progress-text" id="progressText">0 / 18</span>
+    <button class="reset-btn" onclick="resetAll()">🔄 重置</button>
+  </div>
+
+  <!-- 基础层 -->
+  <h2>📘 基础层 · 解释型</h2>
+  <div class="video-card">
+    <span class="layer-badge l1">基础层</span>
+    <h3>视频1：化学变化到底是怎么回事？</h3>
+    <div class="source">🔍 B站/YouTube 搜索"化学变化 vs 物理变化 初中化学"</div>
+
+    <p style="font-weight:600;margin:8px 0 4px;">观看任务</p>
+    <div class="task-item" onclick="toggleTask(this)">
+      <span class="check"></span>
+      <span>找到视频中提到的 <strong>3个化学变化</strong> 的例子和 <strong>3个物理变化</strong> 的例子</span>
+    </div>
+
+    <p style="font-weight:600;margin:12px 0 4px;">关键问题</p>
+    <div class="q-block">
+      <div class="q">① 视频是怎么判断一个变化是化学变化的？</div>
+      <button class="reveal-btn" onclick="revealAnswer(this)">💡 看提示</button>
+      <div class="reveal-answer">视频通常会用"有没有新物质生成"作为核心判断标准。注意听视频中反复提到的关键词！</div>
+    </div>
+    <div class="q-block">
+      <div class="q">② 有一个变化你可能误认为是物理变化，但实际上是化学变化——是什么？</div>
+      <button class="reveal-btn" onclick="revealAnswer(this)">💡 看提示</button>
+      <div class="reveal-answer">提示：很多日常现象看似简单，实际上发生了化学变化。比如"铁生锈""食物变质"等，你觉得还有哪些？</div>
+    </div>
+
+    <p style="font-weight:600;margin:12px 0 4px;">⏸️ 暂停思考点</p>
+    <div class="pause-point">
+      <div class="pause-label">⏱️ 02:15 暂停</div>
+      <div>看到燃放烟花的画面——你在生活中观察过烟花吗？它发生了什么变化？</div>
+      <button class="reveal-btn" onclick="revealAnswer(this)" style="margin-top:6px;">💡 我的思考</button>
+      <div class="reveal-answer">烟花燃放时有火焰、有光、有烟，产生了新的物质（如金属氧化物），所以是<strong>化学变化</strong>。你想到的是不是也是这个？</div>
+    </div>
+    <div class="pause-point">
+      <div class="pause-label">⏱️ 05:30 暂停</div>
+      <div>讲完判断标准后——你能不能用一句话总结"化学变化的核心判断依据"？</div>
+    </div>
+
+    <div class="output-task">
+      <strong>📝 输出任务：</strong>画一张"化学变化 vs 物理变化"的两栏对比图，各列出5个例子。
+      <button class="reveal-btn" onclick="revealAnswer(this)" style="margin-top:6px;">📋 参考格式</button>
+      <div class="reveal-answer">
+        <table style="width:100%;border-collapse:collapse;margin-top:6px;">
+          <tr><th style="border:1px solid #d9d9d9;padding:4px 8px;background:var(--primary);color:#fff;">化学变化</th><th style="border:1px solid #d9d9d9;padding:4px 8px;background:var(--primary);color:#fff;">物理变化</th></tr>
+          <tr><td style="border:1px solid #d9d9d9;padding:4px 8px;">纸张燃烧</td><td style="border:1px solid #d9d9d9;padding:4px 8px;">纸张撕碎</td></tr>
+          <tr><td style="border:1px solid #d9d9d9;padding:4px 8px;">铁生锈</td><td style="border:1px solid #d9d9d9;padding:4px 8px;">铁熔化</td></tr>
+          <tr><td style="border:1px solid #d9d9d9;padding:4px 8px;">牛奶变酸</td><td style="border:1px solid #d9d9d9;padding:4px 8px;">水结冰</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 进阶层 -->
+  <h2>🔬 进阶层 · 分析型</h2>
+  <div class="video-card">
+    <span class="layer-badge l2">进阶层</span>
+    <h3>视频2：蜡烛燃烧的科学——你可能从未真正"看到"的火焰</h3>
+    <div class="source">🔍 搜索"蜡烛燃烧 科学"（BBC纪录片片段或科普中国视频）</div>
+
+    <p style="font-weight:600;margin:8px 0 4px;">观看任务</p>
+    <div class="task-item" onclick="toggleTask(this)">
+      <span class="check"></span>
+      <span>记录视频中用到了哪些实验工具来观察蜡烛燃烧</span>
+    </div>
+
+    <p style="font-weight:600;margin:12px 0 4px;">关键问题</p>
+    <div class="q-block">
+      <div class="q">① 视频中用什么方法证明了蜡烛燃烧产生了水和二氧化碳？</div>
+      <button class="reveal-btn" onclick="revealAnswer(this)">💡 看提示</button>
+      <div class="reveal-answer">通常用<strong>冷烧杯</strong>收集水雾（水蒸气遇冷凝结），用<strong>澄清石灰水</strong>检验二氧化碳（石灰水变浑浊）。</div>
+    </div>
+    <div class="q-block">
+      <div class="q">② 为什么蜡烛的火焰分为三层？每一层的化学变化有什么不同？</div>
+      <button class="reveal-btn" onclick="revealAnswer(this)">💡 看提示</button>
+      <div class="reveal-answer">火焰从内到外：<strong>焰心</strong>（温度最低，蜡蒸气未燃烧）、<strong>内焰</strong>（部分燃烧，有碳颗粒发光）、<strong>外焰</strong>（充分燃烧，温度最高）。</div>
+    </div>
+
+    <p style="font-weight:600;margin:12px 0 4px;">⏸️ 暂停思考点</p>
+    <div class="pause-point">
+      <div class="pause-label">⏱️ 03:00 暂停</div>
+      <div>看到用冷烧杯罩在火焰上方——预测一下，冷烧杯内壁会出现什么？</div>
+      <button class="reveal-btn" onclick="revealAnswer(this)" style="margin-top:6px;">💡 揭晓</button>
+      <div class="reveal-answer">冷烧杯内壁会出现<strong>水珠/水雾</strong>！因为蜡烛燃烧产生的水蒸气遇到冷的烧杯壁凝结成了小水滴。这说明蜡烛燃烧产生了水。</div>
+    </div>
+    <div class="pause-point">
+      <div class="pause-label">⏱️ 06:45 暂停</div>
+      <div>看到用导管导出火焰中间的蜡蒸气——这个实验说明了什么？</div>
+      <button class="reveal-btn" onclick="revealAnswer(this)" style="margin-top:6px;">💡 揭晓</button>
+      <div class="reveal-answer">说明火焰中间的蜡蒸气<strong>还没有燃烧</strong>。蜡先受热变成蒸气，蒸气再燃烧——这也解释了为什么焰心温度最低。</div>
+    </div>
+
+    <div class="output-task">
+      <strong>📝 输出任务：</strong>用你自己的话写一段"蜡烛燃烧"的科学解释（不少于100字），包含反应物、生成物和证据。
+    </div>
+  </div>
+
+  <!-- 挑战层 -->
+  <h2>🌍 挑战层 · 辩论/前沿型</h2>
+  <div class="video-card">
+    <span class="layer-badge l3">挑战层</span>
+    <h3>视频3：气候变化——地球正在经历的"化学变化"</h3>
+    <div class="source">🔍 TED演讲/央视纪录片《我们需要化学》</div>
+
+    <p style="font-weight:600;margin:8px 0 4px;">观看任务</p>
+    <div class="task-item" onclick="toggleTask(this)">
+      <span class="check"></span>
+      <span>找出视频中提到的人类活动如何改变了地球大气的化学组成</span>
+    </div>
+
+    <p style="font-weight:600;margin:12px 0 4px;">关键问题</p>
+    <div class="q-block">
+      <div class="q">① 燃烧化石燃料（煤、石油、天然气）发生了哪些化学变化？</div>
+      <button class="reveal-btn" onclick="revealAnswer(this)">💡 看提示</button>
+      <div class="reveal-answer">化石燃料中的碳和氢与氧气反应，生成<strong>二氧化碳</strong>和<strong>水</strong>，同时释放能量。这是典型的<strong>氧化反应</strong>（化学变化）。</div>
+    </div>
+    <div class="q-block">
+      <div class="q">② "温室效应"是物理变化还是化学变化？视频中是怎么解释的？</div>
+      <button class="reveal-btn" onclick="revealAnswer(this)">💡 看提示</button>
+      <div class="reveal-answer"><strong>温室效应本身是物理过程</strong>（热量被温室气体吸收、反射），但<strong>导致温室效应的气体增多</strong>却是化学变化的结果（燃烧产生CO₂）。这是化学变化→物理效应的连锁反应。</div>
+    </div>
+
+    <p style="font-weight:600;margin:12px 0 4px;">⏸️ 暂停思考点</p>
+    <div class="pause-point">
+      <div class="pause-label">⏱️ 04:20 暂停</div>
+      <div>看到全球CO₂浓度变化曲线——这个数据说明了什么？</div>
+      <button class="reveal-btn" onclick="revealAnswer(this)" style="margin-top:6px;">💡 我的分析</button>
+      <div class="reveal-answer">工业革命以来CO₂浓度急剧上升，与人类大规模使用化石燃料的时间高度吻合。这是化学变化影响全球环境的<strong>宏观证据</strong>。</div>
+    </div>
+    <div class="pause-point">
+      <div class="pause-label">⏱️ 08:00 暂停</div>
+      <div>介绍碳捕集技术时——想想，这个技术的科学原理是什么？</div>
+      <button class="reveal-btn" onclick="revealAnswer(this)" style="margin-top:6px;">💡 揭晓</button>
+      <div class="reveal-answer">碳捕集技术利用化学吸收或吸附原理，把CO₂从工业废气中"抓"出来，再储存或转化为其他物质。本质上是<strong>利用化学变化逆转化学变化</strong>。</div>
+    </div>
+
+    <div class="output-task">
+      <strong>📝 输出任务：</strong>写一段话讨论："如果每个人都能理解和关注日常生活中的化学变化，对环保有什么帮助？"
+    </div>
+  </div>
+</div>
+
+<script>
+let totalTasks = 0;
+let doneTasks = 0;
+
+function countTasks() {
+  totalTasks = document.querySelectorAll('.task-item').length;
+  doneTasks = document.querySelectorAll('.task-item.done').length;
+}
+
+function updateProgress() {
+  countTasks();
+  const pct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+  const fill = document.getElementById('progressFill');
+  const txt = document.getElementById('progressText');
+  if (fill) fill.style.width = pct + '%';
+  if (txt) txt.textContent = doneTasks + ' / ' + totalTasks;
+}
+
+function toggleTask(el) {
+  if (!el) return;
+  el.classList.toggle('done');
+  updateProgress();
+}
+
+function revealAnswer(btn) {
+  if (!btn) return;
+  var answer = btn.nextElementSibling;
+  if (answer && answer.classList) {
+    answer.classList.toggle('show');
+    btn.textContent = answer.classList.contains('show') ? '🙈 收起' : '💡 看提示';
+  }
+}
+
+function resetAll() {
+  document.querySelectorAll('.task-item').forEach(function(el) {
+    el.classList.remove('done');
+  });
+  document.querySelectorAll('.reveal-answer').forEach(function(el) {
+    el.classList.remove('show');
+  });
+  document.querySelectorAll('.reveal-btn').forEach(function(el) {
+    el.textContent = el.textContent.includes('收起') ? '💡 看提示' : el.textContent;
+  });
+  updateProgress();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  updateProgress();
+});
+</script>
+</body>
+</html>

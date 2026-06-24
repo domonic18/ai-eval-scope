@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名著介绍 — 化学经典导读</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 24px; box-sizing: border-box; }
+.page-title {
+  font-size: var(--font-h1); font-weight: 700;
+  color: var(--primary); text-align: center;
+  margin: 0 0 8px; padding-bottom: 12px;
+  border-bottom: 3px solid var(--accent);
+}
+.page-subtitle { text-align: center; color: var(--text-secondary); margin: 0 0 28px; font-size: 14px; }
+h2 {
+  font-size: var(--font-h2); font-weight: 600;
+  color: var(--primary); margin: 28px 0 16px;
+  padding-left: 12px; border-left: 4px solid var(--primary);
+}
+.section-card {
+  background: var(--card-bg); border-radius: var(--border-radius);
+  box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+
+/* 名言区 */
+.quote-grid {
+  display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 12px;
+}
+.quote-card {
+  flex: 1 1 200px; min-width: 180px;
+  background: linear-gradient(135deg, #f0f5ff 0%, #e6f0ff 100%);
+  border-radius: var(--border-radius); padding: 16px;
+  border-left: 4px solid var(--primary);
+  cursor: pointer; transition: all 0.3s ease;
+  position: relative; overflow: hidden;
+}
+.quote-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(22,119,255,0.15); }
+.quote-card .quote-text { font-style: italic; font-size: 14px; line-height: 1.6; }
+.quote-card .quote-author { font-weight: 600; color: var(--primary); margin-top: 8px; font-size: 13px; text-align: right; }
+.quote-card .quote-type {
+  display: inline-block; font-size: 11px; padding: 2px 8px;
+  border-radius: 10px; background: var(--accent); color: #fff; margin-bottom: 6px;
+}
+.quote-card .detail-reveal {
+  max-height: 0; overflow: hidden; transition: max-height 0.4s ease, opacity 0.3s ease;
+  opacity: 0; margin-top: 0;
+}
+.quote-card.reveal .detail-reveal {
+  max-height: 200px; opacity: 1; margin-top: 10px;
+}
+
+/* 名著区域 */
+.book-card {
+  background: var(--card-bg); border-radius: var(--border-radius);
+  box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px;
+  border: 1px solid var(--border);
+  transition: all 0.3s ease;
+}
+.book-card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.1); }
+.book-header {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+  cursor: pointer; user-select: none;
+}
+.book-header h3 { margin: 0; font-size: 17px; color: var(--primary); }
+.book-level {
+  font-size: 12px; padding: 2px 10px; border-radius: 12px;
+  background: var(--accent); color: #fff; white-space: nowrap;
+}
+.book-body { display: none; }
+.book-body.open { display: block; }
+.book-body .q-item { margin: 8px 0 4px; font-weight: 600; color: var(--text); }
+.book-body .a-item { margin: 0 0 12px; padding-left: 8px; color: var(--text-secondary); font-size: 14px; }
+.toggle-icon { transition: transform 0.3s; font-size: 14px; }
+.toggle-icon.rotated { transform: rotate(90deg); }
+
+/* 获取路径 */
+.path-box {
+  background: #f6f8fa; border-radius: 6px; padding: 10px 14px;
+  font-size: 13px; color: var(--text-secondary); margin-top: 12px;
+  border: 1px dashed var(--border);
+}
+
+/* 交互提示 */
+.hint { text-align: center; font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; }
+
+@media (max-width: 640px) {
+  .container { padding: 16px; }
+  .quote-grid { flex-direction: column; }
+  .quote-card { flex: 1 1 100%; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1 class="page-title">📚 化学经典名著导读</h1>
+<p class="page-subtitle">通过经典著作的系统导读，构建化学认知的深度与思想格局</p>
+
+<!-- 名言区域 -->
+<h2>💬 化学名言·思想引子</h2>
+<p class="hint">👆 点击名言卡片，查看深度解读</p>
+<div class="quote-grid">
+  <div class="quote-card" onclick="toggleQuote(this)">
+    <span class="quote-type">概念引子</span>
+    <div class="quote-text">"化学是一门实验科学"</div>
+    <div class="quote-author">—— 拉瓦锡</div>
+    <div class="detail-reveal">
+      <strong>🔍 深度理解：</strong>拉瓦锡通过定量实验推翻了燃素说，奠定了现代化学的基础。这句话提醒我们：化学的每一个结论都必须建立在可重复的实验证据之上。
+    </div>
+  </div>
+  <div class="quote-card" onclick="toggleQuote(this)">
+    <span class="quote-type">冲突触发器</span>
+    <div class="quote-text">"自然界没有飞跃，只有变化"</div>
+    <div class="quote-author">—— 林奈</div>
+    <div class="detail-reveal">
+      <strong>🔍 深度理解：</strong>化学反应看似突变（如燃烧、爆炸），实则遵循着从量变到质变的规律。化学变化背后是分子、原子层面的重新排列。
+    </div>
+  </div>
+  <div class="quote-card" onclick="toggleQuote(this)">
+    <span class="quote-type">反思起点</span>
+    <div class="quote-text">"化学的美在于它能把看起来不相关的东西联系起来"</div>
+    <div class="quote-author">—— 化学哲思</div>
+    <div class="detail-reveal">
+      <strong>🔍 深度理解：</strong>元素周期表正是这种"联系之美"的巅峰——看似各异的元素，在周期表中找到了内在秩序和规律。
+    </div>
+  </div>
+</div>
+
+<!-- 名著区域 -->
+<h2>📖 推荐名著（至少3本）</h2>
+
+<div class="book-card">
+  <div class="book-header" onclick="toggleBook(this)">
+    <span class="toggle-icon">▶</span>
+    <h3>1.《天工开物》—— 宋应星</h3>
+    <span class="book-level">⭐ 基础难度</span>
+  </div>
+  <div class="book-body">
+    <div class="q-item">❓ 核心问题</div>
+    <div class="a-item">中国古代工匠如何利用化学变化创造器物？</div>
+    <div class="q-item">📌 核心观点摘要</div>
+    <div class="a-item">
+      《天工开物》被誉为"中国17世纪的工艺百科全书"，其中<strong>陶埏卷</strong>记载了陶瓷烧制中黏土的高温化学变化；<strong>杀青卷</strong>记录了造纸过程中纤维素的分离与漂白；<strong>五金卷</strong>描述了金属冶炼（铜、铁、锡等）的氧化还原反应。这些工艺是经验化学的早期典范。
+    </div>
+    <div class="q-item">📖 关键片段导读</div>
+    <div class="a-item">
+      <strong>「陶埏」篇：</strong>"凡陶土，取于山，澄于水，练于火。" 寥寥数语描绘了陶瓷从原料到成品的化学转化路径——水洗去杂质（物理变化），火烧成陶器（高温下黏土矿物脱水重构的化学变化）。<br><br>
+      <strong>「五金」篇：</strong>"凡铁分生熟，出炉未炒则生，既炒则熟。" 描述了生铁炼成熟铁的脱碳过程，实质是碳在高温下被氧化移除的化学变化。
+    </div>
+    <div class="q-item">👥 适读人群建议</div>
+    <div class="a-item">适合九年级以上学生阅读，建议配合白话文译本（如潘吉星译注本），重点关注"陶埏""杀青""五金""丹青"等与化学相关的卷章。</div>
+    <div class="path-box">
+      <strong>📎 获取路径：</strong>
+      推荐版本：《天工开物》（译注本）潘吉星译注，上海古籍出版社；
+      线上资源：国学网全文检索 / 中华书局数字出版平台
+    </div>
+  </div>
+</div>
+
+<div class="book-card">
+  <div class="book-header" onclick="toggleBook(this)">
+    <span class="toggle-icon">▶</span>
+    <h3>2.《蜡烛的故事》—— 迈克尔·法拉第</h3>
+    <span class="book-level">🔥 进阶难度</span>
+  </div>
+  <div class="book-body">
+    <div class="q-item">❓ 核心问题</div>
+    <div class="a-item">化学如何从炼金术发展成为现代科学？</div>
+    <div class="q-item">📌 核心观点摘要</div>
+    <div class="a-item">
+      法拉第在皇家研究院的圣诞讲座中，以一支蜡烛为载体，系统讲解了燃烧的三个条件（可燃物、助燃物、着火点）、蜡烛燃烧的化学反应（蜡的氧化生成CO₂和H₂O）、火焰的结构（外焰氧化、内焰还原）以及毛细作用等物理化学原理。这本书体现了"从简单现象发现深刻科学"的研究精神。
+    </div>
+    <div class="q-item">📖 关键片段导读</div>
+    <div class="a-item">
+      <strong>蜡烛的燃烧实验：</strong>法拉第在讲座中展示——蜡烛点燃后，用玻璃罩罩住，火焰逐渐变小直至熄灭。这个简单实验揭示了燃烧需要氧气的本质。他还演示了蜡烛燃烧生成水的实验（用冷烧杯罩在火焰上方，杯壁出现小水珠）。<br><br>
+      <strong>化学史上的意义：</strong>法拉第通过一支蜡烛，串联起了氧气、氢气、二氧化碳、水的化学性质，以及质量守恒定律的实际验证。
+    </div>
+    <div class="q-item">👥 适读人群建议</div>
+    <div class="a-item">适合已经学习过"燃烧与灭火""化学变化基本概念"的学生进阶阅读。本书语言生动，实验可模仿，推荐阅读原文或中译本。</div>
+    <div class="path-box">
+      <strong>📎 获取路径：</strong>
+      推荐版本：《蜡烛的故事》中译本，中国少年儿童出版社；
+      线上资源：B站可搜索"法拉第蜡烛的故事"英文原版讲座录像
+    </div>
+  </div>
+</div>
+
+<div class="book-card">
+  <div class="book-header" onclick="toggleBook(this)">
+    <span class="toggle-icon">▶</span>
+    <h3>3.《元素的盛宴》—— 山姆·基恩</h3>
+    <span class="book-level">🌟 基础→进阶</span>
+  </div>
+  <div class="book-body">
+    <div class="q-item">❓ 核心问题</div>
+    <div class="a-item">元素周期表背后的故事与人类文明的关系</div>
+    <div class="q-item">📌 核心观点摘要</div>
+    <div class="a-item">
+      本书以元素周期表为线索，讲述了每一种重要元素发现背后的有趣故事和历史——从铀的放射性被意外发现，到汞中毒对科学家（包括牛顿、爱迪生）的影响，再到铝从"比黄金还贵"到"日常用品"的转变。作者用轻松幽默的笔触展现了化学元素如何塑造世界历史进程。
+    </div>
+    <div class="q-item">📖 关键片段导读</div>
+    <div class="a-item">
+      <strong>「最贵的金属——铝」：</strong>19世纪初，铝比黄金还珍贵。法国皇帝拿破仑三世用铝制餐具招待最尊贵的客人，其他客人只能使用金制餐具。直到1886年霍尔-埃鲁电解法的发明，铝才从"贵族金属"变成日常材料。这个转变的实质是：电解法（化学变化）大幅降低了铝的冶炼成本。<br><br>
+      <strong>「致命元素——铊」：</strong>铊盐无色无味，曾多次被用作毒药。这个元素的故事提醒我们：化学性质的两面性——同一元素可以是治病的良药，也可以是致命的毒药（关键看剂量和形态）。
+    </div>
+    <div class="q-item">👥 适读人群建议</div>
+    <div class="a-item">本书文字通俗有趣，适合所有水平的学生。建议已经学习过元素周期表基本结构的学生阅读，可以更好地将故事与课堂知识联系起来。</div>
+    <div class="path-box">
+      <strong>📎 获取路径：</strong>
+      推荐版本：《元素的盛宴》山姆·基恩著，接力出版社；
+      线上资源：微信读书 / 豆瓣阅读可搜索电子版；
+      配套资源：BBC纪录片《化学史》配合观看效果更佳
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function toggleQuote(el) {
+  el.classList.toggle('reveal');
+}
+function toggleBook(header) {
+  const body = header.nextElementSibling;
+  const icon = header.querySelector('.toggle-icon');
+  if (!body || !icon) return;
+  body.classList.toggle('open');
+  icon.classList.toggle('rotated');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性案例 — 七阶递进建构练习</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  text-align: center;
+  padding: 28px 20px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.header p { font-size: 14px; opacity: 0.9; }
+
+/* tabs */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 20px;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 8px 12px;
+  box-shadow: var(--shadow);
+}
+.tab-btn {
+  padding: 6px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: var(--primary); background: var(--bg); }
+.tab-btn.active {
+  color: #fff;
+  background: var(--primary);
+}
+
+/* 案例卡片 */
+.case-panel {
+  display: none;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  margin-bottom: 28px;
+}
+.case-panel.active { display: block; }
+.case-banner {
+  padding: 20px;
+  background: linear-gradient(135deg, #f6f9ff 0%, #e6f7ff 100%);
+  border-bottom: 1px solid var(--border);
+}
+.case-banner .case-badge-lv {
+  display: inline-block;
+  padding: 2px 12px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.case-banner h3 {
+  font-size: 18px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.case-banner .case-level {
+  font-size: 12px;
+  color: var(--primary);
+}
+.case-content { padding: 20px; }
+.case-section {
+  margin-bottom: 16px;
+}
+.case-section:last-child { margin-bottom: 0; }
+.case-section h4 {
+  font-size: 14px;
+  color: var(--primary);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.case-section p, .case-section ul {
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--text);
+}
+.case-section ul { padding-left: 18px; }
+.case-section ul li { margin-bottom: 4px; }
+.case-section ul li::marker { color: var(--primary); }
+
+/* 导航 */
+.case-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  background: #fafafa;
+  border-top: 1px solid var(--border);
+}
+.case-nav button {
+  padding: 8px 20px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.case-nav button:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.case-nav .nav-indicator {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* 反思区 */
+.reflection-box {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+.reflection-box h3 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+}
+.reflect-item {
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  background: #fafafa;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13.5px;
+  line-height: 1.6;
+  border-left: 3px solid transparent;
+}
+.reflect-item:hover { background: #f0f5ff; }
+.reflect-item.checked {
+  background: #e6f7ff;
+  border-left-color: var(--primary);
+}
+
+@media (max-width: 640px) {
+  .container { padding: 12px 10px; }
+  .header { padding: 20px 14px; }
+  .tabs { padding: 6px 8px; gap: 4px; }
+  .tab-btn { font-size: 12px; padding: 5px 10px; }
+  .case-banner { padding: 14px; }
+  .case-content { padding: 14px; }
+  .case-nav { padding: 10px 14px; flex-wrap: wrap; gap: 8px; justify-content: center; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🏗️ 建构性案例</h1>
+  <p>化学变化·九年级上 — 七阶递进建构练习，在真实情境中迁移运用</p>
+</div>
+
+<!-- Tab导航 -->
+<div class="tabs" id="tabNav">
+  <button class="tab-btn active" data-index="0" onclick="switchCase(0)">案例 1</button>
+  <button class="tab-btn" data-index="1" onclick="switchCase(1)">案例 2</button>
+  <button class="tab-btn" data-index="2" onclick="switchCase(2)">案例 3</button>
+  <button class="tab-btn" data-index="3" onclick="switchCase(3)">案例 4</button>
+  <button class="tab-btn" data-index="4" onclick="switchCase(4)">案例 5</button>
+  <button class="tab-btn" data-index="5" onclick="switchCase(5)">案例 6</button>
+  <button class="tab-btn" data-index="6" onclick="switchCase(6)">案例 7</button>
+</div>
+
+<!-- 案例面板容器 -->
+<div id="caseContainer">
+
+  <!-- 案例1 -->
+  <div class="case-panel active" data-index="0">
+    <div class="case-banner">
+      <span class="case-badge-lv">个人理解型</span>
+      <h3>📝 我的"变化日记"</h3>
+    </div>
+    <div class="case-content">
+      <div class="case-section">
+        <h4>📋 情境</h4>
+        <p>回顾你一天中遇到的5个"东西变了"的场景。</p>
+      </div>
+      <div class="case-section">
+        <h4>🎯 建构任务</h4>
+        <p>建构一张"一天中的变化地图"，标注每个变化是物理还是化学变化。</p>
+      </div>
+      <div class="case-section">
+        <h4>⚙️ 建议调用原理</h4>
+        <p><strong>现象分拆法</strong> — 把每个变化场景单独拆开分析；<strong>框架建构法</strong> — 用"有无新物质生成"标准分类。</p>
+      </div>
+    </div>
+    <div class="case-nav">
+      <button disabled style="opacity:0.4; cursor:default;">◀ 上一个</button>
+      <span class="nav-indicator">1 / 7</span>
+      <button onclick="switchCase(1)">下一个 ▶</button>
+    </div>
+  </div>
+
+  <!-- 案例2 -->
+  <div class="case-panel" data-index="1">
+    <div class="case-banner">
+      <span class="case-badge-lv">生活应用型</span>
+      <h3>🏠 家用物品的"身份卡"</h3>
+    </div>
+    <div class="case-content">
+      <div class="case-section">
+        <h4>📋 情境</h4>
+        <p>选择3种厨房物品（如：食盐、食醋、小苏打），查资料了解它们的性质。</p>
+      </div>
+      <div class="case-section">
+        <h4>🎯 建构任务</h4>
+        <p>为每种物品建构"物理性质和化学性质身份卡"。</p>
+      </div>
+      <div class="case-section">
+        <h4>⚙️ 建议调用原理</h4>
+        <p><strong>本质提取法</strong> — 区分物理性质和化学性质；<strong>自我验证法</strong> — 用已学判断标准检验分类。</p>
+      </div>
+    </div>
+    <div class="case-nav">
+      <button onclick="switchCase(0)">◀ 上一个</button>
+      <span class="nav-indicator">2 / 7</span>
+      <button onclick="switchCase(2)">下一个 ▶</button>
+    </div>
+  </div>
+
+  <!-- 案例3 -->
+  <div class="case-panel" data-index="2">
+    <div class="case-banner">
+      <span class="case-badge-lv">问题解决型</span>
+      <h3>🧪 实验室安全"决策树"</h3>
+    </div>
+    <div class="case-content">
+      <div class="case-section">
+        <h4>📋 情境</h4>
+        <p>化学实验室中，有同学不小心打翻了酒精灯。</p>
+      </div>
+      <div class="case-section">
+        <h4>🎯 建构任务</h4>
+        <p>建构一个"实验事故响应决策树"。</p>
+      </div>
+      <div class="case-section">
+        <h4>⚙️ 建议调用原理</h4>
+        <p><strong>框架建构法</strong> — 设计"如果…那么…"的决策分支；<strong>经验对比法</strong> — 对比不同事故的应对差异。</p>
+      </div>
+    </div>
+    <div class="case-nav">
+      <button onclick="switchCase(1)">◀ 上一个</button>
+      <span class="nav-indicator">3 / 7</span>
+      <button onclick="switchCase(3)">下一个 ▶</button>
+    </div>
+  </div>
+
+  <!-- 案例4 -->
+  <div class="case-panel" data-index="3">
+    <div class="case-banner">
+      <span class="case-badge-lv">学科表达型</span>
+      <h3>🔬 化学变化的"可视化图解"</h3>
+    </div>
+    <div class="case-content">
+      <div class="case-section">
+        <h4>📋 情境</h4>
+        <p>教材中提到了镁条燃烧、铁与硫酸铜反应等变化。</p>
+      </div>
+      <div class="case-section">
+        <h4>🎯 建构任务</h4>
+        <p>建构"化学变化微观解释图"，用粒子模型解释变化本质。</p>
+      </div>
+      <div class="case-section">
+        <h4>⚙️ 建议调用原理</h4>
+        <p><strong>本质提取法</strong> — 从宏观现象提炼微观本质；<strong>框架建构法</strong> — 建立"分子→原子"解释框架。</p>
+      </div>
+    </div>
+    <div class="case-nav">
+      <button onclick="switchCase(2)">◀ 上一个</button>
+      <span class="nav-indicator">4 / 7</span>
+      <button onclick="switchCase(4)">下一个 ▶</button>
+    </div>
+  </div>
+
+  <!-- 案例5 -->
+  <div class="case-panel" data-index="4">
+    <div class="case-banner">
+      <span class="case-badge-lv">跨学科整合型</span>
+      <h3>🍞 厨房里的"科学说明书"</h3>
+    </div>
+    <div class="case-content">
+      <div class="case-section">
+        <h4>📋 情境</h4>
+        <p>发酵面团——用化学（产生二氧化碳）和生物（酵母菌）两个视角解释。</p>
+      </div>
+      <div class="case-section">
+        <h4>🎯 建构任务</h4>
+        <p>建构一份"馒头发酵的跨学科科学说明书"。</p>
+      </div>
+      <div class="case-section">
+        <h4>⚙️ 建议调用原理</h4>
+        <p><strong>现象分拆法</strong> — 将发酵分成化学和生物两个维度；<strong>经验对比法</strong> — 对比化学变化与生物过程。</p>
+      </div>
+    </div>
+    <div class="case-nav">
+      <button onclick="switchCase(3)">◀ 上一个</button>
+      <span class="nav-indicator">5 / 7</span>
+      <button onclick="switchCase(5)">下一个 ▶</button>
+    </div>
+  </div>
+
+  <!-- 案例6 -->
+  <div class="case-panel" data-index="5">
+    <div class="case-banner">
+      <span class="case-badge-lv">社会议题型</span>
+      <h3>♻️ 社区垃圾分类的"化学视角"</h3>
+    </div>
+    <div class="case-content">
+      <div class="case-section">
+        <h4>📋 情境</h4>
+        <p>社区推广垃圾分类，但很多人不清楚"有害垃圾"为什么有害。</p>
+      </div>
+      <div class="case-section">
+        <h4>🎯 建构任务</h4>
+        <p>建构一份"从化学性质看垃圾处理"的社区宣传方案。</p>
+      </div>
+      <div class="case-section">
+        <h4>⚙️ 建议调用原理</h4>
+        <p><strong>本质提取法</strong> — 揭示有害垃圾的化学成分和危害机理；<strong>框架建构法</strong> — 建立"垃圾类别→处理方式"对应框架。</p>
+      </div>
+    </div>
+    <div class="case-nav">
+      <button onclick="switchCase(4)">◀ 上一个</button>
+      <span class="nav-indicator">6 / 7</span>
+      <button onclick="switchCase(6)">下一个 ▶</button>
+    </div>
+  </div>
+
+  <!-- 案例7 -->
+  <div class="case-panel" data-index="6">
+    <div class="case-banner">
+      <span class="case-badge-lv">综合创新型</span>
+      <h3>🧠 我的"化学变化预测器"</h3>
+    </div>
+    <div class="case-content">
+      <div class="case-section">
+        <h4>📋 情境</h4>
+        <p>给你3种未知物质（描述其外观和已知性质），预测它们混合后可能发生的变化。</p>
+      </div>
+      <div class="case-section">
+        <h4>🎯 建构任务</h4>
+        <p>建构一个"物质反应预测模型"。</p>
+      </div>
+      <div class="case-section">
+        <h4>⚙️ 建议调用原理</h4>
+        <p><strong>全部5条原理综合运用：</strong>现象分拆法、经验对比法、本质提取法、框架建构法、自我验证法。</p>
+      </div>
+    </div>
+    <div class="case-nav">
+      <button onclick="switchCase(5)">◀ 上一个</button>
+      <span class="nav-indicator">7 / 7</span>
+      <button disabled style="opacity:0.4; cursor:default;">下一个 ▶</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- 反思区 -->
+<div class="reflection-box">
+  <h3>💭 综合反思</h3>
+  <p style="font-size:13px; color:var(--text-secondary); margin-bottom:10px;">点击每项标记为已思考：</p>
+  <div class="reflect-item" onclick="this.classList.toggle('checked')">
+    <strong>Q1</strong>&nbsp;&nbsp;哪个案例最好建构？为什么？
+  </div>
+  <div class="reflect-item" onclick="this.classList.toggle('checked')">
+    <strong>Q2</strong>&nbsp;&nbsp;哪个案例最有挑战？困难在哪里？
+  </div>
+  <div class="reflect-item" onclick="this.classList.toggle('checked')">
+    <strong>Q3</strong>&nbsp;&nbsp;哪条建构性原理最有帮助？
+  </div>
+  <div class="reflect-item" onclick="this.classList.toggle('checked')">
+    <strong>Q4</strong>&nbsp;&nbsp;这些建构任务如何帮你完成大单元的最终成果？
+  </div>
+</div>
+
+</div>
+
+<script>
+var currentIndex = 0;
+var totalCases = 7;
+
+function switchCase(index) {
+  if (index < 0 || index >= totalCases) return;
+
+  // 更新面板
+  var panels = document.querySelectorAll('.case-panel');
+  for (var i = 0; i < panels.length; i++) {
+    panels[i].classList.remove('active');
+  }
+  var target = document.querySelector('.case-panel[data-index="' + index + '"]');
+  if (target) target.classList.add('active');
+
+  // 更新tab
+  var tabs = document.querySelectorAll('.tab-btn');
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].classList.remove('active');
+  }
+  var targetTab = document.querySelector('.tab-btn[data-index="' + index + '"]');
+  if (targetTab) targetTab.classList.add('active');
+
+  currentIndex = index;
+}
+</script>
+</body>
+</html>

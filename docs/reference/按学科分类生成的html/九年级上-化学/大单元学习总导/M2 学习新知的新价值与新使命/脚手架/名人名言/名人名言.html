@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名人名言 — 化学人物卡</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  padding: 24px;
+}
+.container { width: 100%; max-width: none; }
+.page-title {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.page-sub {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+
+/* 人物卡片 */
+.person-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+.person-card:hover { box-shadow: 0 2px 12px rgba(22,119,255,0.12); }
+.person-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background: var(--bg);
+  cursor: pointer;
+}
+.person-header h3 {
+  font-size: 16px;
+  color: var(--primary);
+  margin: 0;
+}
+.person-header .arrow {
+  font-size: 14px;
+  color: var(--text-secondary);
+  transition: transform 0.3s;
+}
+.person-card.open .arrow { transform: rotate(180deg); }
+.person-body {
+  display: none;
+  padding: 14px 16px;
+  border-top: 1px solid var(--border);
+}
+.person-card.open .person-body { display: block; }
+.person-body .label {
+  font-weight: 600;
+  color: var(--primary);
+  display: block;
+  margin-top: 8px;
+}
+.person-body .label:first-child { margin-top: 0; }
+.person-body p { margin-bottom: 4px; font-size: 14px; }
+.highlight-box {
+  background: #fff7e6;
+  border-left: 3px solid #fa8c16;
+  padding: 10px 14px;
+  border-radius: 0 6px 6px 0;
+  margin: 8px 0;
+  font-size: 14px;
+}
+
+/* 思考任务 */
+.think-task {
+  background: linear-gradient(135deg, #f0f5ff, #e6f0ff);
+  border: 1px dashed var(--primary);
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 12px;
+}
+.think-task .hint {
+  display: none;
+  margin-top: 10px;
+  padding: 10px;
+  background: var(--card-bg);
+  border-radius: 6px;
+  font-size: 14px;
+  border: 1px solid var(--border);
+}
+.think-task .hint.show { display: block; }
+.think-btn {
+  padding: 6px 16px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  margin-top: 8px;
+}
+.think-btn:hover { background: var(--primary-hover); }
+
+.read-list { list-style: none; padding: 0; }
+.read-list li {
+  padding: 6px 0;
+  font-size: 14px;
+  border-bottom: 1px dashed #eee;
+}
+.read-list li:last-child { border-bottom: none; }
+.read-list li .tag {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  margin-right: 6px;
+  color: #fff;
+}
+.tag.bio { background: #1677ff; }
+.tag.pop { background: #52c41a; }
+.tag.talk { background: #722ed1; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1 class="page-title">化学人物 · 名人名言</h1>
+  <p class="page-sub">第1章 走进化学世界 · M2 学习新知的新价值与新使命</p>
+
+  <div class="card">
+    <h2>奠基人物 — 拉瓦锡</h2>
+    <div class="person-card" id="p1">
+      <div class="person-header" onclick="togglePerson('p1')">
+        <h3>Antoine Lavoisier · 1743-1794</h3>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="person-body">
+        <span class="label">人物卡片</span>
+        <p>法国化学家，"现代化学之父"。通过精确实验推翻燃素说，建立质量守恒定律。</p>
+        <span class="label">关键问题</span>
+        <p>燃烧时物质重量减少，是因为"燃素"跑了吗？</p>
+        <div class="highlight-box">
+          <strong>思维突破：</strong>拉瓦锡没有被表面现象迷惑，精确测量密封容器中金属燃烧前后的总质量，发现质量不变——"空气"也是化学反应的一部分。
+        </div>
+        <span class="label">对当下的启示</span>
+        <p>科学的进步往往来自"你看到了别人看不到的东西"。</p>
+      </div>
+    </div>
+
+    <h2>跨界人物 — 居里夫人</h2>
+    <div class="person-card" id="p2">
+      <div class="person-header" onclick="togglePerson('p2')">
+        <h3>Marie Curie · 1867-1934</h3>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="person-body">
+        <span class="label">人物卡片</span>
+        <p>物理学家兼化学家，两次获得诺贝尔奖；发现镭和钋。</p>
+        <span class="label">关键问题</span>
+        <p>铀矿石为什么比纯铀的放射性更强？</p>
+        <div class="highlight-box">
+          <strong>思维突破：</strong>她不接受"铀矿石就是这样"，追问"为什么更强？"——从几吨沥青铀矿中提取出极微量的镭。
+        </div>
+        <span class="label">对当下的启示</span>
+        <p>跨学科思维（物理+化学）、坚持实验、"从异常中发现新事物"的洞察力。</p>
+      </div>
+    </div>
+
+    <h2>当代人物 — 鲍哲南</h2>
+    <div class="person-card" id="p3">
+      <div class="person-header" onclick="togglePerson('p3')">
+        <h3>Zhenan Bao · 1970-</h3>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="person-body">
+        <span class="label">人物卡片</span>
+        <p>斯坦福大学化工系教授，可穿戴电子材料专家。</p>
+        <span class="label">关键问题</span>
+        <p>电子材料通常是刚硬的，如何让它们像皮肤一样柔软可拉伸？</p>
+        <div class="highlight-box">
+          <strong>思维突破：</strong>利用有机化学的分子设计思路，创造可拉伸的导电聚合物。
+        </div>
+        <span class="label">对当下的启示</span>
+        <p>化学正和电子工程、医学、材料科学融合，创造前所未有的新材料。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>深度阅读路径</h2>
+    <ul class="read-list">
+      <li><span class="tag bio">传记</span>《居里夫人自传》/《燃素说的兴衰》</li>
+      <li><span class="tag pop">科普</span>《化学简史》/《元素的盛宴》</li>
+      <li><span class="tag talk">访谈</span>鲍哲南 TED 演讲</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>"如果你是他"思考任务</h2>
+    <div class="think-task">
+      <p><strong>如果你是拉瓦锡，</strong>生活在18世纪的法国，没有精密仪器，你会如何设计实验证明"燃烧需要空气中的某种成分"？</p>
+      <button class="think-btn" onclick="showHint()">查看提示</button>
+      <div class="hint" id="hint1">
+        <p><strong>思路方向：</strong></p>
+        <p>🔬 蜡烛在密闭容器中燃烧到熄灭，水位上升——说明"空气被消耗了"。</p>
+        <p>🔬 通过钟罩实验，可以证明燃烧消耗了空气中约1/5体积的气体（后来被命名为"氧气"）。</p>
+        <p>💡 关键不在于仪器多精密，而在于想到了"比较反应前后的质量"这个思路。</p>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function togglePerson(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+function showHint() {
+  var h = document.getElementById('hint1');
+  h.classList.toggle('show');
+}
+</script>
+</body>
+</html>

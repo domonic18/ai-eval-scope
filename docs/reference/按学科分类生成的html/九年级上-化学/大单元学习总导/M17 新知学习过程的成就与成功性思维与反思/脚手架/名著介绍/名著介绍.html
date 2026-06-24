@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名著介绍 - 化学探索者脚手架</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+}
+
+.container { width: 100%; max-width: none; }
+
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 28px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--accent);
+  font-weight: 600;
+}
+
+h3 {
+  font-size: 17px;
+  color: var(--text);
+  margin: 20px 0 8px;
+  font-weight: 600;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+
+/* Intro Section */
+.intro-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border-left: 4px solid var(--primary);
+}
+
+.intro-card p { margin-bottom: 8px; }
+
+/* Quote Cards */
+.quote-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+@media (min-width: 700px) {
+  .quote-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.quote-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid transparent;
+  position: relative;
+}
+
+.quote-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(22,119,255,0.12);
+  border-color: var(--accent);
+}
+
+.quote-text {
+  font-size: 16px;
+  font-style: italic;
+  color: var(--primary);
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+
+.quote-author {
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-align: right;
+}
+
+.quote-reflection {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+  padding: 0 12px;
+  background: #f7faff;
+  border-radius: 6px;
+  margin-top: 0;
+}
+
+.quote-card.active .quote-reflection {
+  max-height: 300px;
+  padding: 12px;
+  margin-top: 12px;
+}
+
+.quote-reflection strong { color: var(--primary); }
+.quote-reflection p { margin-bottom: 6px; font-size: 14px; }
+
+.click-hint {
+  font-size: 12px;
+  color: var(--accent);
+  text-align: right;
+  margin-top: 4px;
+}
+
+/* Book Cards */
+.book-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  margin: 16px 0;
+}
+
+@media (min-width: 760px) {
+  .book-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.book-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.book-header {
+  background: linear-gradient(135deg, #e6f0ff, #f0f5ff);
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.book-header:hover { background: linear-gradient(135deg, #d6e4ff, #e6f0ff); }
+
+.book-title {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--primary);
+}
+
+.book-badge {
+  font-size: 11px;
+  background: var(--primary);
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.book-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.45s ease;
+}
+
+.book-card.open .book-body {
+  max-height: 1200px;
+}
+
+.book-body-inner {
+  padding: 16px 18px;
+}
+
+.book-body-inner p {
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.book-body-inner strong { color: var(--primary); }
+
+.book-section-label {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 10px 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.path-list {
+  list-style: none;
+  padding: 0;
+}
+
+.path-list li {
+  padding: 4px 0;
+  padding-left: 16px;
+  position: relative;
+  font-size: 14px;
+}
+
+.path-list li::before {
+  content: "•";
+  color: var(--primary);
+  position: absolute;
+  left: 4px;
+}
+
+/* Challenge Section */
+.challenge-box {
+  background: linear-gradient(135deg, #f0f5ff, #e6f0ff);
+  border-radius: var(--border-radius);
+  padding: 18px 22px;
+  margin: 16px 0;
+  border: 1px dashed var(--accent);
+}
+
+.challenge-box h3 {
+  color: var(--primary);
+  margin-top: 0;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  body { padding: 14px 12px; }
+  .intro-card { padding: 14px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>📚 名著介绍</h1>
+<p class="subtitle">从科学巨匠的智慧中汲取化学学习的灵感</p>
+
+<div class="intro-card">
+  <p>伟大的科学著作不仅是知识的宝库，更是思维方法的训练场。本模块精选与化学学习密切相关的经典名著与名人名言，帮助你建立更广阔的学科视野。点击每条名言可展开反思提示，点击每本书的标题可查看详细解读。</p>
+</div>
+
+<h2>💡 名人名言</h2>
+<div class="quote-grid">
+
+  <div class="quote-card" onclick="toggleQuote(this)">
+    <div class="quote-text">"化学家的工作首先是探索，其次才是制造。"</div>
+    <div class="quote-author">—— 拉瓦锡</div>
+    <div class="click-hint">👆 点击展开反思</div>
+    <div class="quote-reflection">
+      <p><strong>作为概念引子：</strong>学化学的第一目标不是记住方程式，而是像科学家一样去探索。</p>
+      <p><strong>反思起点：</strong>你更习惯于"探索"还是"接受"？如果今天你完全靠自己探索出一个规律，会是什么感受？</p>
+    </div>
+  </div>
+
+  <div class="quote-card" onclick="toggleQuote(this)">
+    <div class="quote-text">"科学的本质是问正确的问题，而不是给出正确的答案。"</div>
+    <div class="quote-author">—— 卡尔·萨根</div>
+    <div class="click-hint">👆 点击展开反思</div>
+    <div class="quote-reflection">
+      <p><strong>冲突触发器：</strong>课堂和考试通常奖励"答对"，但科学进步奖励的是"问对"。</p>
+      <p><strong>反思起点：</strong>在本模块的学习中，尝试少问"答案是什么"，多问"这个问题是怎么被提出来的？"</p>
+    </div>
+  </div>
+
+  <div class="quote-card" onclick="toggleQuote(this)">
+    <div class="quote-text">"仅仅知道事实并不能成为科学家，就像仅仅知道砖块并不能成为建筑师一样。"</div>
+    <div class="quote-author">—— 爱因斯坦</div>
+    <div class="click-hint">👆 点击展开反思</div>
+    <div class="quote-reflection">
+      <p><strong>冲突触发器：</strong>化学书上有大量事实，但仅仅记住这些事实，还不能让你真正理解化学。</p>
+      <p><strong>反思起点：</strong>你如何把化学事实"搭建成建筑"？你的"建筑师技能"是什么？</p>
+    </div>
+  </div>
+
+</div>
+
+<h2>📖 经典名著</h2>
+
+<div class="book-grid">
+
+  <div class="book-card">
+    <div class="book-header" onclick="toggleBook(this)">
+      <span class="book-title">《化学基础论》</span>
+      <span class="book-badge">拉瓦锡</span>
+    </div>
+    <div class="book-body">
+      <div class="book-body-inner">
+        <p><strong>核心问题：</strong>如何用"元素"这个新概念重新定义整个化学？</p>
+        <div class="book-section-label">核心观点</div>
+        <p>拉瓦锡提出"元素是不可再分的纯净物质"，这个定义统治了化学近100年。他首次把定量方法引入化学——"不称量，不化学"。</p>
+        <div class="book-section-label">目录结构</div>
+        <p>第一篇：论气体的形成与分解 · 第二篇：论酸与碱的组合 · 第三篇：化学操作</p>
+        <div class="book-section-label">关键片段导读</div>
+        <p>重点读前言——拉瓦锡写道："我无意在此给出最终答案，而是希望为后来的研究者铺一条更可靠的路。"</p>
+        <div class="book-section-label">获取路径</div>
+        <ul class="path-list">
+          <li>纸质书：商务印书馆汉译名著系列</li>
+          <li>电子书：超星电子书平台</li>
+          <li>解读：得到APP听书解读</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="book-card">
+    <div class="book-header" onclick="toggleBook(this)">
+      <span class="book-title">《科学革命的结构》</span>
+      <span class="book-badge">托马斯·库恩</span>
+    </div>
+    <div class="book-body">
+      <div class="book-body-inner">
+        <p><strong>核心问题：</strong>科学是怎么进步的？是知识慢慢积累，还是突然的革命性突破？</p>
+        <div class="book-section-label">核心观点</div>
+        <p>"范式转换"——科学进步不是线性积累，而是从一个思维框架跳到另一个。当现有理论解释不了越来越多的异常时，"科学革命"就发生了。</p>
+        <div class="book-section-label">关键片段导读</div>
+        <p>重点读"在显微镜下看科学革命"——库恩用拉瓦锡推翻燃素说作为典型案例，正好对应本模块的化学学习。</p>
+        <div class="book-section-label">获取路径</div>
+        <ul class="path-list">
+          <li>纸质书：北京大学出版社</li>
+          <li>电子书：微信读书</li>
+          <li>有声书：喜马拉雅FM</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="book-card">
+    <div class="book-header" onclick="toggleBook(this)">
+      <span class="book-title">《为什么：关于因果关系的新科学》</span>
+      <span class="book-badge">朱迪亚·珀尔</span>
+    </div>
+    <div class="book-body">
+      <div class="book-body-inner">
+        <p><strong>核心问题：</strong>人类如何从数据中提取因果关系？</p>
+        <div class="book-section-label">核心观点</div>
+        <p>珀尔提出"因果之梯"三层理论：观察 → 干预 → 反事实思维。这和化学学习中"描述现象→设计实验→推理结论"完全对应。</p>
+        <div class="book-section-label">获取路径</div>
+        <ul class="path-list">
+          <li>纸质书：中信出版社</li>
+          <li>电子书：Kindle商店</li>
+          <li>解读：B站系列讲解视频</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="book-card">
+    <div class="book-header" onclick="toggleBook(this)">
+      <span class="book-title">《天工开物》</span>
+      <span class="book-badge">宋应星（中国著作类比）</span>
+    </div>
+    <div class="book-body">
+      <div class="book-body-inner">
+        <p><strong>推荐理由：</strong>被称为"中国17世纪的工艺百科全书"，记载了古代中国的化学工艺——冶铁、制盐、陶瓷、造纸等。</p>
+        <div class="book-section-label">与拉瓦锡的呼应</div>
+        <p>如果说拉瓦锡代表西方科学的"理论建构"传统，《天工开物》则代表东方科学的"工艺实证"传统。两者都重视观察和记录，但侧重点不同——前者追问"为什么"，后者记录"怎么做"。</p>
+        <div class="book-section-label">获取路径</div>
+        <ul class="path-list">
+          <li>纸质书：中华书局版</li>
+          <li>电子书：国学大师网可在线阅读</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="challenge-box">
+  <h3>🏆 挑战任务</h3>
+  <p><strong>基础：</strong>选择一本名著，摘抄3句让你印象最深的话，写下你的理解。</p>
+  <p><strong>进阶：</strong>用库恩"范式转换"理论，分析你自己的一次"化学学习突破时刻"。</p>
+  <p><strong>挑战：</strong>对比《化学基础论》和《天工开物》对"火"的解释，写一篇300字比较短文。</p>
+</div>
+
+</div>
+
+<script>
+function toggleQuote(el) {
+  el.classList.toggle('active');
+}
+
+function toggleBook(el) {
+  var card = el.closest('.book-card');
+  if (card) card.classList.toggle('open');
+}
+</script>
+
+</body>
+</html>

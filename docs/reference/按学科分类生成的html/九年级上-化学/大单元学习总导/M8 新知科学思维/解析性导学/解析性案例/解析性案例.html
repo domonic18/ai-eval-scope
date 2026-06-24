@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性案例 — 七阶解析性适配案例</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+  --success: #52c41a;
+  --warning: #fa8c16;
+  --danger: #ff4d4f;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+.header { text-align: center; padding: 24px 0 12px; }
+.header h1 { font-size: var(--font-h1); color: var(--primary); margin: 0 0 4px; }
+.header p { color: var(--text-secondary); margin: 0; font-size: 14px; }
+
+.goal-card { background: linear-gradient(135deg, var(--primary) 0%, #4096ff 100%); color: #fff; border-radius: var(--border-radius); padding: 18px 24px; margin-bottom: 24px; box-shadow: var(--shadow); }
+.goal-card h2 { font-size: var(--font-h2); margin: 0 0 6px; color: #fff; }
+.goal-card p { margin: 0; opacity: 0.92; }
+
+.section-title { font-size: var(--font-h2); color: var(--text); margin: 28px 0 14px; padding-left: 12px; border-left: 4px solid var(--primary); }
+
+/* Difficulty stars */
+.stars { color: #faad14; letter-spacing: 2px; font-size: 14px; }
+
+/* Case items */
+.case-list { display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px; }
+.case-item { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); overflow: hidden; border: 1px solid transparent; transition: border-color .25s; }
+.case-item:hover { border-color: var(--accent); }
+.case-header { padding: 14px 20px; cursor: pointer; display: flex; align-items: center; gap: 12px; user-select: none; }
+.case-header:hover { background: rgba(22,119,255,0.03); }
+.case-header .arrow { transition: transform .3s; font-size: 12px; color: var(--text-secondary); flex-shrink: 0; }
+.case-header.open .arrow { transform: rotate(90deg); }
+.case-header .diff { flex-shrink: 0; }
+.case-header .c-title { font-weight: 600; font-size: 16px; flex: 1; }
+.case-header .c-scene { font-size: 12px; background: #e6f4ff; color: var(--primary); padding: 2px 10px; border-radius: 10px; flex-shrink: 0; }
+.case-body { max-height: 0; overflow: hidden; transition: max-height .5s ease; }
+.case-body.open { max-height: 3000px; }
+.case-inner { padding: 0 20px 20px; }
+.case-inner p { margin: 6px 0; }
+.case-inner .label { font-weight: 600; color: var(--primary); font-size: 13px; margin-top: 10px; }
+.case-inner .label:first-child { margin-top: 0; }
+.case-inner .ref-box { background: #f6ffed; border: 1px solid #b7eb8f; border-radius: 6px; padding: 12px 16px; margin-top: 10px; display: none; }
+.case-inner .ref-box.show { display: block; }
+.case-inner .ref-btn { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 6px 14px; cursor: pointer; font-size: 13px; color: var(--primary); margin-top: 8px; }
+.case-inner .ref-btn:hover { background: #e6f4ff; }
+
+/* Analysis path steps */
+.path-steps { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.path-step { display: inline-flex; align-items: center; gap: 4px; background: #f0f5ff; border-radius: 16px; padding: 4px 12px; font-size: 12px; color: var(--primary); }
+.path-step .step-num { font-weight: 700; }
+
+/* Record table */
+.record-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14px; }
+.record-table th { background: var(--primary); color: #fff; padding: 8px 12px; text-align: left; font-weight: 600; }
+.record-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+.record-table tr:last-child td { border-bottom: none; }
+.record-table td input { width: 100%; border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; box-sizing: border-box; font-size: 13px; }
+
+/* Reflection */
+.reflection-box { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px; }
+.reflection-box ul { padding-left: 18px; }
+.reflection-box ul li { margin-bottom: 6px; }
+.reflection-box .expand-input { margin-top: 8px; }
+.reflection-box .expand-input textarea { width: 100%; border: 1px solid var(--border); border-radius: 6px; padding: 10px; box-sizing: border-box; resize: vertical; font-family: inherit; font-size: 14px; min-height: 60px; }
+
+.footer-note { text-align: center; color: var(--text-secondary); font-size: 13px; padding: 16px 0 28px; border-top: 1px solid var(--border); margin-top: 12px; }
+
+@media (max-width: 640px) {
+  .container { padding: 16px; }
+  .case-header { flex-wrap: wrap; }
+  .case-header .c-scene { margin-left: 44px; }
+  .record-table { font-size: 12px; }
+  .record-table th, .record-table td { padding: 6px 8px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🧩 解析性案例</h1>
+  <p>七阶解析性适配案例 — 从简单到复杂的分析进阶</p>
+</div>
+
+<div class="goal-card">
+  <h2>🎯 学习目标</h2>
+  <p>在7个不同层级的情境中，运用解析性原理分析化学现象、数据和问题，体验从简单到复杂的分析进阶。</p>
+</div>
+
+<div class="case-list" id="caseList">
+
+  <!-- 案例1 -->
+  <div class="case-item">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="arrow">▶</span>
+      <span class="diff"><span class="stars">★</span>☆☆☆☆</span>
+      <span class="c-title">🧂 醋除水垢 — 生活中的化学变化</span>
+      <span class="c-scene">🏠 生活情境</span>
+    </div>
+    <div class="case-body">
+      <div class="case-inner">
+        <div class="label">📄 案例材料</div>
+        <p>妈妈发现烧水壶底部积了一层白色水垢，倒了一些白醋进去浸泡一晚，第二天水垢消失了。小华好奇：水垢是什么？白醋为什么能除去水垢？</p>
+        <div class="label">🔍 解析任务</div>
+        <p>分析水垢的成分、白醋除水垢的原理，判断这是物理变化还是化学变化。</p>
+        <div class="label">🛤️ 解析路径</div>
+        <div class="path-steps">
+          <span class="path-step"><span class="step-num">1</span> 识别问题</span>
+          <span class="path-step"><span class="step-num">2</span> 确定对象</span>
+          <span class="path-step"><span class="step-num">3</span> 拆解要素</span>
+          <span class="path-step"><span class="step-num">4</span> 梳理关系</span>
+          <span class="path-step"><span class="step-num">5</span> 解释原因</span>
+          <span class="path-step"><span class="step-num">6</span> 寻找证据</span>
+          <span class="path-step"><span class="step-num">7</span> 得出结论</span>
+        </div>
+        <div class="label">🔧 原理调用提示</div>
+        <p>建议使用 <strong>现象→本质法</strong> 和 <strong>比较分析法</strong></p>
+        <div class="label">📊 分析记录表</div>
+        <table class="record-table">
+          <tr><th>现象</th><th>可能的解释</th><th>你的判断</th></tr>
+          <tr><td>水垢是白色固体</td><td>可能是碳酸钙等矿物质沉积</td><td><input type="text" placeholder="写下你的分析..."></td></tr>
+          <tr><td>加入白醋后水垢消失</td><td>白醋中的醋酸与水垢发生了化学反应</td><td><input type="text" placeholder="写下你的分析..."></td></tr>
+          <tr><td>有气泡产生</td><td>产生气体说明有新物质生成</td><td><input type="text" placeholder="写下你的分析..."></td></tr>
+        </table>
+        <button class="ref-btn" onclick="toggleRef(this)">💡 查看参考思路</button>
+        <div class="ref-box">
+          <p><strong>关键角度：</strong>水垢主要成分是碳酸钙（CaCO₃），白醋含醋酸（CH₃COOH）。碳酸钙与醋酸反应产生二氧化碳（气泡）、水和可溶性的醋酸钙（水垢消失）。这个过程中有新物质生成，属于<strong>化学变化</strong>。</p>
+          <p>💡 <strong>破题密码：</strong>判断物理变化还是化学变化的关键——是否有新物质生成。气泡的产生是"有新物质"的直观证据。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 案例2 -->
+  <div class="case-item">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="arrow">▶</span>
+      <span class="diff"><span class="stars">★★</span>☆☆☆</span>
+      <span class="c-title">🧪 酒精灯的安全使用</span>
+      <span class="c-scene">🏫 校园情境</span>
+    </div>
+    <div class="case-body">
+      <div class="case-inner">
+        <div class="label">📄 案例材料</div>
+        <p>实验室规则强调：<strong>①</strong> 绝对禁止用燃着的酒精灯去引燃另一盏酒精灯；<strong>②</strong> 熄灭酒精灯时必须用灯帽盖灭，不可用嘴吹。有同学不理解为什么。</p>
+        <div class="label">🔍 解析任务</div>
+        <p>分析这两条操作规范背后的科学原理，用化学知识解释"为什么不能这么做"。</p>
+        <div class="label">🛤️ 解析路径</div>
+        <div class="path-steps">
+          <span class="path-step"><span class="step-num">1</span> 识别问题</span>
+          <span class="path-step"><span class="step-num">2</span> 确定对象</span>
+          <span class="path-step"><span class="step-num">3</span> 拆解要素</span>
+          <span class="path-step"><span class="step-num">4</span> 梳理关系</span>
+          <span class="path-step"><span class="step-num">5</span> 解释原因</span>
+          <span class="path-step"><span class="step-num">6</span> 寻找证据</span>
+          <span class="path-step"><span class="step-num">7</span> 得出结论</span>
+        </div>
+        <div class="label">🔧 原理调用提示</div>
+        <p>建议使用 <strong>溯因推理法</strong></p>
+        <button class="ref-btn" onclick="toggleRef(this)">💡 查看参考思路</button>
+        <div class="ref-box">
+          <p><strong>关键角度：</strong>① 用燃着的酒精灯引燃另一盏时，倾斜的灯可能使酒精洒出并着火（燃烧三要素：可燃物+助燃剂+温度达到着火点）。② 用嘴吹灭时，气流可能把火焰吹入灯壶内部，引燃壶内酒精蒸气导致爆炸。</p>
+          <p>💡 <strong>破题密码：</strong>思考"如果违反规则，最坏情况会怎样"——从安全事故反推操作规范的合理性。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 案例3 -->
+  <div class="case-item">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="arrow">▶</span>
+      <span class="diff"><span class="stars">★★★</span>☆☆</span>
+      <span class="c-title">🏡 家用消毒剂的安全使用</span>
+      <span class="c-scene">🏘️ 社区情境</span>
+    </div>
+    <div class="case-body">
+      <div class="case-inner">
+        <div class="label">📄 案例材料</div>
+        <p>疫情期间，很多家庭同时使用84消毒液（主要成分次氯酸钠NaClO）和洁厕灵（主要成分盐酸HCl）进行清洁。新闻曾报道：有人将两者混合后产生了刺激性很强的气体，导致身体不适。84消毒液瓶身上也明确写着"禁止与酸性物质混用"。</p>
+        <div class="label">🔍 解析任务</div>
+        <p>分析84消毒液与洁厕灵混合产生的气体是什么、为什么会产生、这个反应属于哪种类型，并提出家庭化学安全使用建议。</p>
+        <div class="label">🛤️ 解析路径</div>
+        <div class="path-steps">
+          <span class="path-step"><span class="step-num">1</span> 识别问题</span>
+          <span class="path-step"><span class="step-num">2</span> 确定对象</span>
+          <span class="path-step"><span class="step-num">3</span> 拆解要素</span>
+          <span class="path-step"><span class="step-num">4</span> 梳理关系</span>
+          <span class="path-step"><span class="step-num">5</span> 解释原因</span>
+          <span class="path-step"><span class="step-num">6</span> 寻找证据</span>
+          <span class="path-step"><span class="step-num">7</span> 得出结论</span>
+        </div>
+        <div class="label">🔧 原理调用提示</div>
+        <p>建议使用 <strong>证据链法</strong> 和 <strong>溯因推理法</strong></p>
+        <div class="label">📊 分析记录表</div>
+        <table class="record-table">
+          <tr><th>已知信息</th><th>化学分析</th><th>安全建议</th></tr>
+          <tr><td>84消毒液含NaClO</td><td><input type="text" placeholder="NaClO的化学性质..."></td><td><input type="text" placeholder="如何安全使用..."></td></tr>
+          <tr><td>洁厕灵含HCl</td><td><input type="text" placeholder="HCl的化学性质..."></td><td><input type="text" placeholder="注意事项..."></td></tr>
+          <tr><td>混合后产生刺激性气体</td><td><input type="text" placeholder="可能是什么气体..."></td><td><input type="text" placeholder="如果不慎混合怎么办..."></td></tr>
+        </table>
+        <button class="ref-btn" onclick="toggleRef(this)">💡 查看参考思路</button>
+        <div class="ref-box">
+          <p><strong>关键角度：</strong>NaClO + 2HCl → NaCl + Cl₂↑ + H₂O。次氯酸钠与盐酸反应生成氯气（Cl₂），氯气是黄绿色刺激性有毒气体。因此含氯消毒剂绝对不能和酸性清洁剂混用。</p>
+          <p>💡 <strong>破题密码：</strong>标签上的"禁止"二字背后一定有化学原理——找到反应方程式，就能理解为什么。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 案例4 -->
+  <div class="case-item">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="arrow">▶</span>
+      <span class="diff"><span class="stars">★★★</span>☆☆</span>
+      <span class="c-title">🔬 拉瓦锡的钟罩实验</span>
+      <span class="c-scene">📚 学科核心</span>
+    </div>
+    <div class="case-body">
+      <div class="case-inner">
+        <div class="label">📄 案例材料</div>
+        <p>1774年，拉瓦锡将汞放置在密闭钟罩中加热12天，发现部分汞变成红色粉末（氧化汞），钟罩内空气体积减少了约1/5。他收集红色粉末继续加热，得到汞和一种气体（氧气），该气体的体积恰好等于之前减少的体积。</p>
+        <div class="label">🔍 解析任务</div>
+        <p>分析拉瓦锡的实验设计逻辑：他是如何通过这个实验证明空气是由氧气和氮气组成的？</p>
+        <div class="label">🛤️ 解析路径</div>
+        <div class="path-steps">
+          <span class="path-step"><span class="step-num">1</span> 识别问题</span>
+          <span class="path-step"><span class="step-num">2</span> 确定对象</span>
+          <span class="path-step"><span class="step-num">3</span> 拆解要素</span>
+          <span class="path-step"><span class="step-num">4</span> 梳理关系</span>
+          <span class="path-step"><span class="step-num">5</span> 解释原因</span>
+          <span class="path-step"><span class="step-num">6</span> 寻找证据</span>
+          <span class="path-step"><span class="step-num">7</span> 得出结论</span>
+        </div>
+        <div class="label">🔧 原理调用提示</div>
+        <p>建议使用 <strong>模型检验法</strong> 和 <strong>证据链法</strong></p>
+        <button class="ref-btn" onclick="toggleRef(this)">💡 查看参考思路</button>
+        <div class="ref-box">
+          <p><strong>关键角度：</strong>拉瓦锡的设计精妙之处：① 汞与氧气反应消耗了密闭容器中的氧气，体积减少1/5；② 将生成的氧化汞分解，又得到了相同体积的气体；③ 剩下4/5不助燃的气体就是氮气。实验+反实验形成完整的证据闭环。</p>
+          <p>💡 <strong>破题密码：</strong>注意"体积恰好相等"这个关键信息——它证明了被消耗的气体和被释放的气体是同一种。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 案例5 -->
+  <div class="case-item">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="arrow">▶</span>
+      <span class="diff"><span class="stars">★★★★</span>☆</span>
+      <span class="c-title">🌿 光合作用中的化学</span>
+      <span class="c-scene">🔗 跨学科</span>
+    </div>
+    <div class="case-body">
+      <div class="case-inner">
+        <div class="label">📄 案例材料</div>
+        <p>光合作用：6CO₂ + 6H₂O →（光能, 叶绿体）→ C₆H₁₂O₆ + 6O₂。这是一个从化学视角看很有趣的反应——无机物（CO₂和H₂O）在光能驱动下转化为有机物（葡萄糖）和氧气。</p>
+        <div class="label">🔍 解析任务</div>
+        <p>从化学视角分析：① 这个反应属于什么基本反应类型？② 在化学变化中能量如何转化？③ 反应物和产物在元素组成上有怎样的变化？</p>
+        <div class="label">🛤️ 解析路径</div>
+        <div class="path-steps">
+          <span class="path-step"><span class="step-num">1</span> 识别问题</span>
+          <span class="path-step"><span class="step-num">2</span> 确定对象</span>
+          <span class="path-step"><span class="step-num">3</span> 拆解要素</span>
+          <span class="path-step"><span class="step-num">4</span> 梳理关系</span>
+          <span class="path-step"><span class="step-num">5</span> 解释原因</span>
+          <span class="path-step"><span class="step-num">6</span> 寻找证据</span>
+          <span class="path-step"><span class="step-num">7</span> 得出结论</span>
+        </div>
+        <div class="label">🔧 原理调用提示</div>
+        <p>建议使用 <strong>比较分析法</strong> 和 <strong>现象→本质法</strong></p>
+        <button class="ref-btn" onclick="toggleRef(this)">💡 查看参考思路</button>
+        <div class="ref-box">
+          <p><strong>关键角度：</strong>① 光合作用不属于初中四大基本反应类型（化合、分解、置换、复分解），它是一种氧化还原反应。② 光能→化学能（储存在葡萄糖中）。③ 元素种类不变（C、H、O），但原子重新组合——这是化学变化的本质。</p>
+          <p>💡 <strong>破题密码：</strong>跨学科分析的关键是"用化学的眼镜看其他学科的现象"——关注物质变化和能量变化。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 案例6 -->
+  <div class="case-item">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="arrow">▶</span>
+      <span class="diff"><span class="stars">★★★★</span>☆</span>
+      <span class="c-title">🌊 水体富营养化的化学密码</span>
+      <span class="c-scene">🌍 社会议题</span>
+    </div>
+    <div class="case-body">
+      <div class="case-inner">
+        <div class="label">📄 案例材料</div>
+        <p>某湖泊夏季频繁爆发蓝藻水华，水面被绿色藻类覆盖，水体散发异味，鱼类大量死亡。检测报告显示：湖水中氮（N）含量为12mg/L，磷（P）含量为2.5mg/L，远超正常水平。周边有农田和居民区。</p>
+        <div class="label">🔍 解析任务</div>
+        <p>分析水体富营养化的化学成因，解释为什么高氮磷会导致鱼类死亡，并提出从化学角度可采取的治理方案。</p>
+        <div class="label">🛤️ 解析路径</div>
+        <div class="path-steps">
+          <span class="path-step"><span class="step-num">1</span> 识别问题</span>
+          <span class="path-step"><span class="step-num">2</span> 确定对象</span>
+          <span class="path-step"><span class="step-num">3</span> 拆解要素</span>
+          <span class="path-step"><span class="step-num">4</span> 梳理关系</span>
+          <span class="path-step"><span class="step-num">5</span> 解释原因</span>
+          <span class="path-step"><span class="step-num">6</span> 寻找证据</span>
+          <span class="path-step"><span class="step-num">7</span> 得出结论</span>
+        </div>
+        <div class="label">🔧 原理调用提示</div>
+        <p>建议使用 <strong>证据链法</strong> 和 <strong>溯因推理法</strong></p>
+        <button class="ref-btn" onclick="toggleRef(this)">💡 查看参考思路</button>
+        <div class="ref-box">
+          <p><strong>关键角度：</strong>① 氮和磷是藻类的"肥料"——过量时藻类疯狂生长。② 藻类覆盖水面阻碍氧气溶解；藻类死亡后被微生物分解消耗大量氧气，导致鱼类缺氧死亡。③ 化学治理思路：沉淀法除磷（如加入石灰形成磷酸钙沉淀）、曝气增氧等。</p>
+          <p>💡 <strong>破题密码：</strong>化学知识（氮磷循环、沉淀反应）→ 解释环境现象 → 提出治理方案，这是一条完整的问题解决链。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 案例7 -->
+  <div class="case-item">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="arrow">▶</span>
+      <span class="diff"><span class="stars">★★★★★</span></span>
+      <span class="c-title">🧪 未知白色粉末的身份鉴定</span>
+      <span class="c-scene">🧩 综合迁移</span>
+    </div>
+    <div class="case-body">
+      <div class="case-inner">
+        <div class="label">📄 案例材料</div>
+        <p>小明在化学实验室发现了一瓶标签脱落的白色粉末，可能是以下物质中的一种：碳酸钠（Na₂CO₃）、碳酸氢钠（NaHCO₃）、氯化钠（NaCl）、氢氧化钠（NaOH）。他希望通过实验来确定它是什么。</p>
+        <div class="label">🔍 解析任务</div>
+        <p>综合运用多种分析方法，设计实验方案来鉴定这瓶白色粉末，写出完整的推理过程。</p>
+        <div class="label">🛤️ 解析路径</div>
+        <div class="path-steps">
+          <span class="path-step"><span class="step-num">1</span> 识别问题</span>
+          <span class="path-step"><span class="step-num">2</span> 确定对象</span>
+          <span class="path-step"><span class="step-num">3</span> 拆解要素</span>
+          <span class="path-step"><span class="step-num">4</span> 梳理关系</span>
+          <span class="path-step"><span class="step-num">5</span> 解释原因</span>
+          <span class="path-step"><span class="step-num">6</span> 寻找证据</span>
+          <span class="path-step"><span class="step-num">7</span> 得出结论</span>
+        </div>
+        <div class="label">🔧 原理调用提示</div>
+        <p>建议综合运用全部5条原理：<strong>现象→本质法</strong>、<strong>证据链法</strong>、<strong>比较分析法</strong>、<strong>溯因推理法</strong>、<strong>模型检验法</strong></p>
+        <button class="ref-btn" onclick="toggleRef(this)">💡 查看参考思路</button>
+        <div class="ref-box">
+          <p><strong>关键角度：</strong>① 先用pH试纸测水溶液酸碱性（NaOH强碱，Na₂CO₃弱碱，NaHCO₃弱碱，NaCl中性）；② 加稀盐酸看气泡（碳酸盐/碳酸氢盐冒泡）；③ 将气体通入澄清石灰水（确认是CO₂）；④ 加热固体（NaHCO₃分解，Na₂CO₃不分解）。通过多步实验缩小范围并最终确定。</p>
+          <p>💡 <strong>破题密码：</strong>逐一排除法——每做一个实验就能排除一些选项，应用"模型检验法"先假设它是某一种，然后设计实验检验。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 综合反思 -->
+<h2 class="section-title">五、综合反思</h2>
+<div class="reflection-box">
+  <p>完成7个案例的分析后，回顾你的分析过程：</p>
+  <ul>
+    <li><strong>①</strong> 在哪个案例中你觉得分析最顺畅？用了什么方法？</li>
+    <li><strong>②</strong> 在哪个案例中你遇到了困难？卡在了哪一步？</li>
+    <li><strong>③</strong> 哪条解析性原理对你有最多的帮助？为什么？</li>
+    <li><strong>④</strong> 如果让你给一位同学讲解"现象→本质法"，你会怎么讲？</li>
+    <li><strong>⑤</strong> 经过这7个案例的练习，你的分析能力有了哪些变化？</li>
+  </ul>
+  <div class="expand-input">
+    <textarea placeholder="在这里写下你的反思…"></textarea>
+  </div>
+</div>
+
+<div class="footer-note">🧩 解析性案例 · 在多样情境中锤炼分析力</div>
+</div>
+
+<script>
+function toggleCase(header) {
+  header.classList.toggle('open');
+  var body = header.nextElementSibling;
+  if (body) body.classList.toggle('open');
+}
+
+function toggleRef(btn) {
+  var box = btn.nextElementSibling;
+  if (box) {
+    box.classList.toggle('show');
+    btn.textContent = box.classList.contains('show') ? '🙈 隐藏参考思路' : '💡 查看参考思路';
+  }
+}
+</script>
+</body>
+</html>

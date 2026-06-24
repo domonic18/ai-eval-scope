@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目社区 — 化学探究项目</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 28px;
+  box-sizing: border-box;
+}
+
+.page-header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+
+.page-header h1 {
+  margin: 0 0 6px 0;
+  font-size: var(--font-h1);
+  font-weight: 700;
+}
+
+.page-header p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: calc(var(--font-body) + 1px);
+}
+
+.section-title {
+  font-size: var(--font-h2);
+  font-weight: 700;
+  color: var(--primary);
+  margin: 32px 0 16px 0;
+  padding-left: 14px;
+  border-left: 4px solid var(--primary);
+}
+
+.project-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.25s, transform 0.2s;
+}
+
+.project-card:hover {
+  box-shadow: 0 4px 16px rgba(22,119,255,0.12);
+  transform: translateY(-2px);
+}
+
+.project-card h3 {
+  margin: 0 0 8px 0;
+  font-size: calc(var(--font-h2) - 1px);
+  color: var(--text);
+}
+
+.project-badge {
+  display: inline-block;
+  font-size: calc(var(--font-body) - 3px);
+  padding: 2px 10px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.badge-short {
+  background: #e6f7ff;
+  color: #0077be;
+}
+
+.badge-medium {
+  background: #f0f5ff;
+  color: var(--primary);
+}
+
+.badge-long {
+  background: #fff7e6;
+  color: #d46b08;
+}
+
+.project-card ul {
+  margin: 8px 0 0 0;
+  padding-left: 20px;
+}
+
+.project-card li {
+  margin-bottom: 4px;
+}
+
+.project-card .label {
+  font-weight: 600;
+  color: var(--primary);
+  margin-top: 10px;
+  margin-bottom: 2px;
+}
+
+.project-card .label:first-of-type {
+  margin-top: 0;
+}
+
+.eval-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.eval-item {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: calc(var(--font-body) - 2px);
+  border: 1px solid var(--border);
+}
+
+.eval-item strong {
+  color: var(--primary);
+}
+
+.resource-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.resource-links .tag {
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  border-radius: 14px;
+  padding: 3px 12px;
+  font-size: calc(var(--font-body) - 3px);
+  color: var(--primary);
+  cursor: default;
+}
+
+.toggle-area {
+  margin-top: 10px;
+}
+
+.toggle-btn {
+  background: none;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: calc(var(--font-body) - 1px);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s;
+}
+
+.toggle-btn:hover {
+  background: var(--bg);
+}
+
+.toggle-content {
+  display: none;
+  margin-top: 10px;
+  padding: 12px 16px;
+  background: #fafafa;
+  border-radius: 6px;
+  border: 1px dashed var(--border);
+}
+
+.toggle-content.open {
+  display: block;
+}
+
+.self-check {
+  margin-top: 24px;
+  padding: 18px 22px;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.self-check h3 {
+  margin: 0 0 12px 0;
+  font-size: var(--font-h2);
+  color: var(--text);
+}
+
+.check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.check-item input[type="checkbox"] {
+  margin-top: 4px;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.check-item.done label {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+
+.check-item label {
+  cursor: pointer;
+  flex: 1;
+}
+
+@media (max-width: 600px) {
+  .container { padding: 14px; }
+  .page-header { padding: 20px; }
+  .project-card { padding: 14px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="page-header">
+  <h1>🔬 项目社区</h1>
+  <p>以真实问题为驱动的长期学习机制 — 从生活现象出发，走向化学思维</p>
+</div>
+
+<!-- 短周期项目 -->
+<div class="section-title">短周期项目（1-3天）</div>
+
+<div class="project-card">
+  <span class="project-badge badge-short">⚡ 1-3天</span>
+  <h3>🏠 家庭"变化侦探"行动</h3>
+  <p style="color:var(--text-secondary);margin:0 0 8px 0;"><strong>项目目标：</strong>在家庭环境中发现10个变化现象，分类并拍照记录</p>
+  <div class="label">📋 阶段任务</div>
+  <ul>
+    <li>制定"侦察路线"（厨房→阳台→卫生间→储物间）</li>
+    <li>逐区域观察记录，填写"变化记录表"</li>
+    <li>分类汇总，制作"家庭变化地图"</li>
+  </ul>
+  <div class="label">🎨 成果形式</div>
+  <p style="margin:2px 0 0 0;">家庭变化海报（A3纸大小）</p>
+  <div class="label">📊 评价标准</div>
+  <div class="eval-bar">
+    <span class="eval-item"><strong>≥8个</strong> 变化覆盖</span>
+    <span class="eval-item"><strong>90%</strong> 分类准确率</span>
+    <span class="eval-item"><strong>📸</strong> 有证据照片</span>
+  </div>
+  <div class="toggle-area">
+    <button class="toggle-btn" onclick="toggleDetail(this)">📖 查看变化记录表模板</button>
+    <div class="toggle-content">
+      <p><strong>变化记录表（示例）</strong></p>
+      <table style="width:100%;border-collapse:collapse;font-size:calc(var(--font-body)-2px);">
+        <tr style="background:var(--bg);"><th style="border:1px solid var(--border);padding:6px;">区域</th><th style="border:1px solid var(--border);padding:6px;">变化现象</th><th style="border:1px solid var(--border);padding:6px;">类型</th><th style="border:1px solid var(--border);padding:6px;">证据</th></tr>
+        <tr><td style="border:1px solid var(--border);padding:6px;">厨房</td><td style="border:1px solid var(--border);padding:6px;">水烧开冒蒸汽</td><td style="border:1px solid var(--border);padding:6px;">物理变化</td><td style="border:1px solid var(--border);padding:6px;">照片</td></tr>
+        <tr><td style="border:1px solid var(--border);padding:6px;">厨房</td><td style="border:1px solid var(--border);padding:6px;">苹果切开变色</td><td style="border:1px solid var(--border);padding:6px;">化学变化</td><td style="border:1px solid var(--border);padding:6px;">照片</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- 中周期项目 -->
+<div class="section-title">中周期项目（1-2周）</div>
+
+<div class="project-card">
+  <span class="project-badge badge-medium">📆 1-2周</span>
+  <h3>🧪 物质的"身份证"策划展</h3>
+  <p style="color:var(--text-secondary);margin:0 0 8px 0;"><strong>项目目标：</strong>为5种常见物质制作完整的"物质身份档案"</p>
+  <div class="label">📋 阶段任务</div>
+  <ul>
+    <li>研究每种物质的物理性质和化学性质（查阅教材+网络）</li>
+    <li>为每种物质设计一个简单的化学变化示例实验（家庭可行条件下）</li>
+    <li>制作"物质身份档案"卡片集</li>
+    <li>策划一个班级"物质身份证"展览</li>
+  </ul>
+  <div class="label">📇 身份卡内容包含</div>
+  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">
+    <span class="eval-item">名称</span>
+    <span class="eval-item">外观</span>
+    <span class="eval-item">物理性质</span>
+    <span class="eval-item">化学性质</span>
+    <span class="eval-item">典型变化</span>
+    <span class="eval-item">用途</span>
+  </div>
+  <div class="label">🔗 资源链接</div>
+  <div class="resource-links">
+    <span class="tag">📖 教材第1章</span>
+    <span class="tag">🌐 中国数字科技馆</span>
+    <span class="tag">🧪 PhET模拟</span>
+  </div>
+  <div class="toggle-area">
+    <button class="toggle-btn" onclick="toggleDetail(this)">💡 查看身份卡示例</button>
+    <div class="toggle-content">
+      <p><strong>水（H₂O）身份档案</strong></p>
+      <p>外观：无色透明液体 | 物理性质：沸点100°C，凝固点0°C，密度1g/cm³<br>
+      化学性质：稳定，电解生成H₂和O₂，与Na反应 | 典型变化：水→冰（物理变化），电解水（化学变化）<br>
+      用途：溶剂、饮用水、冷却剂</p>
+    </div>
+  </div>
+</div>
+
+<!-- 长周期项目 -->
+<div class="section-title">长周期项目（1月+）</div>
+
+<div class="project-card">
+  <span class="project-badge badge-long">🔥 1月+</span>
+  <h3>🌍 "化学改变生活"主题探究</h3>
+  <p style="color:var(--text-secondary);margin:0 0 8px 0;"><strong>项目目标：</strong>选择一个日常生活中的变化，从化学角度完整分析其变化过程和性质依据</p>
+  <div class="label">📋 阶段任务</div>
+  <ul>
+    <li><strong>选题与开题：</strong>确定研究对象和研究问题（如食物保存、金属防锈、燃料燃烧）</li>
+    <li><strong>资料收集：</strong>文献、实验、采访</li>
+    <li><strong>实验/观察：</strong>记录至少2周的追踪观察</li>
+    <li><strong>分析：</strong>运用本模块所学概念进行分析</li>
+    <li><strong>成果制作与展示</strong></li>
+  </ul>
+  <div class="label">🎨 成果形式</div>
+  <p style="margin:2px 0 0 0;">研究报告（≥800字）+ 展示海报或短视频</p>
+  <div class="label">📊 评价标准</div>
+  <div class="eval-bar">
+    <span class="eval-item"><strong>40%</strong> 化学概念准确</span>
+    <span class="eval-item"><strong>30%</strong> 证据充分</span>
+    <span class="eval-item"><strong>20%</strong> 表达清晰</span>
+    <span class="eval-item"><strong>10%</strong> 反思深入</span>
+  </div>
+  <div class="toggle-area">
+    <button class="toggle-btn" onclick="toggleDetail(this)">🔍 查看选题建议</button>
+    <div class="toggle-content">
+      <p><strong>推荐选题方向：</strong></p>
+      <ul>
+        <li><strong>食物保存：</strong>从化学视角理解冰箱冷藏、真空包装、添加防腐剂的原理</li>
+        <li><strong>金属防锈：</strong>铁生锈的化学本质是什么？防锈措施背后的化学原理</li>
+        <li><strong>燃料燃烧：</strong>天然气/煤/酒精燃烧的化学方程式及环境影响</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 学习承诺与自评 -->
+<div class="self-check">
+  <h3>📌 我的项目学习承诺</h3>
+  <p style="margin:0 0 12px 0;color:var(--text-secondary);">勾选你已完成的承诺，开启项目之旅！</p>
+  <div class="check-item" onclick="toggleCheck(this)">
+    <input type="checkbox" id="chk1">
+    <label for="chk1">我承诺至少完成 <strong>1个短周期项目</strong>，作为入门训练</label>
+  </div>
+  <div class="check-item" onclick="toggleCheck(this)">
+    <input type="checkbox" id="chk2">
+    <label for="chk2">我承诺在小组合作中承担 <strong>至少一个具体角色</strong>（记录员/资料员/实验员/汇报员）</label>
+  </div>
+  <div class="check-item" onclick="toggleCheck(this)">
+    <input type="checkbox" id="chk3">
+    <label for="chk3">我承诺在项目中 <strong>坚持记录日志</strong>，每周至少1次</label>
+  </div>
+  <div class="check-item" onclick="toggleCheck(this)">
+    <input type="checkbox" id="chk4">
+    <label for="chk4">我承诺项目完成后 <strong>撰写反思</strong>，总结收获与不足</label>
+  </div>
+</div>
+
+</div>
+
+<script>
+function toggleDetail(btn) {
+  var content = btn.nextElementSibling;
+  if (content && content.classList.contains('toggle-content')) {
+    content.classList.toggle('open');
+    btn.textContent = content.classList.contains('open') ? '📕 收起' : btn.getAttribute('data-original') || '📖 查看详情';
+    if (!btn.getAttribute('data-original')) btn.setAttribute('data-original', btn.textContent);
+  }
+}
+
+function toggleCheck(el) {
+  var cb = el.querySelector('input[type="checkbox"]');
+  if (cb) {
+    cb.checked = !cb.checked;
+    el.classList.toggle('done', cb.checked);
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性示例 — 解析性导学</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary) 0%, #0050b3 100%);
+  color: #fff;
+  padding: 32px 20px;
+  text-align: center;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 6px; }
+.header p { font-size: 14px; opacity: .85; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin: 14px 0;
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+.card h3 {
+  font-size: 16px;
+  color: var(--text);
+  margin: 12px 0 6px;
+}
+.card p { margin: 4px 0; }
+.card ul, .card ol { padding-left: 18px; margin: 4px 0; }
+.card li { margin: 3px 0; }
+.exp-box {
+  display: flex; gap: 12px; flex-wrap: wrap; margin: 10px 0;
+}
+.exp-item {
+  flex: 1; min-width: 200px;
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.exp-a { border-left: 4px solid var(--primary); background: #f0f5ff; }
+.exp-b { border-left: 4px solid #ff4d4f; background: #fff1f0; }
+.exp-item h4 { font-size: 15px; margin-bottom: 4px; }
+.info-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14px; }
+.info-table th { background: var(--primary); color: #fff; padding: 8px 10px; text-align: left; font-weight: 600; }
+.info-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+.info-table tr:hover td { background: rgba(22,119,255,.03); }
+.step-card {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 16px;
+  margin: 10px 0;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all .25s;
+}
+.step-card:hover { border-color: var(--primary); }
+.step-card h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  color: var(--text);
+  margin-bottom: 0;
+}
+.step-num {
+  display: inline-flex;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.step-body { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); font-size: 14px; }
+.step-card.open .step-body { display: block; }
+.step-card.open h4 { margin-bottom: 0; }
+.conclusion-block {
+  background: linear-gradient(135deg, #e6f7ff, #f0f5ff);
+  border-radius: 8px;
+  padding: 14px;
+  margin: 10px 0;
+  border-left: 4px solid var(--primary);
+}
+.pitfall-grid {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0;
+}
+.pitfall-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all .2s;
+  cursor: pointer;
+}
+.pitfall-wrong { background: #fff1f0; border: 1px solid #ffa39e; }
+.pitfall-right { background: #f6ffed; border: 1px solid #b7eb8f; }
+.pitfall-wrong:hover, .pitfall-right:hover { transform: translateX(4px); }
+.practice-tip {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 14px;
+}
+.practice-tip strong { color: #d48806; }
+.reveal-btn {
+  padding: 8px 18px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background .2s;
+  margin: 6px 0;
+}
+.reveal-btn:hover { background: var(--primary-hover); }
+.reveal-content { display: none; margin: 8px 0; padding: 12px; background: var(--bg); border-radius: 6px; font-size: 14px; border: 1px solid var(--border); }
+.reveal-content.show { display: block; }
+.check-grid {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0;
+}
+.check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.check-item input[type="checkbox"] {
+  margin-top: 4px; width: 16px; height: 16px;
+  accent-color: var(--primary); cursor: pointer;
+}
+.check-item.done { opacity: .55; text-decoration: line-through; }
+.method-box {
+  background: #e6f7ff;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 14px;
+  margin: 10px 0;
+  font-size: 14px;
+}
+.method-box h4 { color: var(--primary); margin-bottom: 4px; }
+@media (max-width: 640px) {
+  .header { padding: 24px 16px; }
+  .header h1 { font-size: 20px; }
+  .exp-item { min-width: 100%; }
+  .info-table { font-size: 13px; }
+  .info-table th, .info-table td { padding: 6px; }
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🔬 解析性示例</h1>
+  <p>从"白醋+小苏打"学分析之道 · 化学 · 九年级上</p>
+</div>
+<div class="container">
+
+  <!-- 实验情境 -->
+  <div class="card">
+    <h2>🧪 厨房里的两个小实验</h2>
+    <p>你正在厨房做实验——材料安全易得，适合居家操作：</p>
+    <div class="exp-box">
+      <div class="exp-item exp-a">
+        <h4>🧴 实验A</h4>
+        <p>玻璃杯中加入两勺白醋，再加入一勺小苏打——<strong>瞬间产生大量气泡</strong></p>
+      </div>
+      <div class="exp-item exp-b">
+        <h4>🧂 实验B</h4>
+        <p>同样量的白醋中加入一勺食盐——<strong>几乎看不到变化</strong></p>
+      </div>
+    </div>
+    <p><strong>核心问题：</strong>为什么两个实验现象截然不同？白醋和小苏打之间到底发生了什么？产生的气体是什么？如何证明？</p>
+  </div>
+
+  <!-- 关键信息表 -->
+  <div class="card">
+    <h2>📊 关键信息提取</h2>
+    <table class="info-table">
+      <thead><tr><th>情境信息</th><th>说明什么</th><th>为什么重要</th></tr></thead>
+      <tbody>
+        <tr><td>产生大量气泡</td><td>有气体生成</td><td>气体可能是CO₂——化学变化的标志</td></tr>
+        <tr><td>白醋是酸味液体</td><td>含有酸性物质（醋酸）</td><td>反应涉及酸碱相互作用</td></tr>
+        <tr><td>小苏打是白色粉末</td><td>含碳酸氢钠</td><td>碳酸盐+酸→CO₂的反应规律</td></tr>
+        <tr><td>食盐+白醋无气泡</td><td>NaCl与醋酸不反应</td><td>排除了"所有盐都反应"的误解</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 专家解析 5步 -->
+  <div class="card">
+    <h2>🎯 专家解析过程（5步）</h2>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">点击每步展开详细分析</p>
+
+    <div class="step-card open" onclick="toggleStep(this)">
+      <h4><span class="step-num">1</span> 先看见什么</h4>
+      <div class="step-body">
+        <p>看到"气泡"→立即判断：可能有气体生成。问自己：这是<strong>物理变化</strong>（如水的沸腾——气泡是水蒸气）还是<strong>化学变化</strong>（有新物质生成）？</p>
+      </div>
+    </div>
+
+    <div class="step-card" onclick="toggleStep(this)">
+      <h4><span class="step-num">2</span> 判断问题属于哪一类</h4>
+      <div class="step-body">
+        <p>识别为"<strong>化学反应产物鉴定问题</strong>"→属于化学变化中的"生成物分析"类型。这一步缩小了分析范围：不是在猜"是不是变化"，而是在问"生成了什么"。</p>
+      </div>
+    </div>
+
+    <div class="step-card" onclick="toggleStep(this)">
+      <h4><span class="step-num">3</span> 调用哪些知识</h4>
+      <div class="step-body">
+        <ul>
+          <li>化学变化的本质特征：<strong>有新物质生成</strong></li>
+          <li>碳酸盐+酸 → CO₂↑ + 水的反应规律</li>
+          <li>CO₂的验证方法：使<strong>澄清石灰水变浑浊</strong></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step-card" onclick="toggleStep(this)">
+      <h4><span class="step-num">4</span> 如何进行推理分析</h4>
+      <div class="step-body">
+        <p><strong>假设：</strong>气泡是CO₂气体</p>
+        <p><strong>检验方案：</strong>用一根导管将气体通入澄清石灰水</p>
+        <p><strong>预期结果：</strong>石灰水变浑浊 → 证明是CO₂</p>
+        <p><strong>结论：</strong>白醋+小苏打发生了化学变化，生成了CO₂</p>
+        <p style="margin-top:6px;"><em>对比实验B（白醋+食盐）无气泡 → 确认不是"所有酸都产气"，而是"碳酸盐+酸才产气"。</em></p>
+      </div>
+    </div>
+
+    <div class="step-card" onclick="toggleStep(this)">
+      <h4><span class="step-num">5</span> 怎样形成结论</h4>
+      <div class="step-body">
+        <div class="conclusion-block">
+          <p><strong>分析链条：</strong></p>
+          <p>① 观察现象（气泡产生）→ ② 提出假设（气体是CO₂）→ ③ 设计验证方案（石灰水实验+对比实验）→ ④ 执行并观察结果（石灰水变浑浊）→ ⑤ 得出结论（发生了化学变化，生成物含CO₂）</p>
+        </div>
+        <p><strong>化学解释：</strong>白醋（醋酸）和小苏打（碳酸氢钠）混合后，发生了化学变化：NaHCO₃ + CH₃COOH → CH₃COONa + H₂O + CO₂↑。二氧化碳（CO₂）就是我们看到的气泡。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 方法提炼 -->
+  <div class="card">
+    <h2>💡 方法提炼</h2>
+    <div class="method-box">
+      <h4>以后遇到"两种物质混合有气泡"，可以这样分析：</h4>
+      <ol>
+        <li>先判断这是物理变化还是化学变化（有没有新物质生成）</li>
+        <li>如果是化学变化，猜测气体可能是什么（根据反应物类型推断）</li>
+        <li>用已知的验证方法进行检验</li>
+        <li>形成"问题 → 假设 → 验证 → 结论"的分析链条</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- 易错提醒 -->
+  <div class="card">
+    <h2>⚠️ 易错提醒</h2>
+    <div class="pitfall-grid">
+      <div class="pitfall-item pitfall-wrong" onclick="this.classList.toggle('pitfall-right');this.classList.toggle('pitfall-wrong')">
+        <span>❌</span>
+        <span>误以为"有气泡就是物理变化"——水的沸腾也有气泡（水蒸气），那是物理变化</span>
+      </div>
+      <div class="pitfall-item pitfall-wrong" onclick="this.classList.toggle('pitfall-right');this.classList.toggle('pitfall-wrong')">
+        <span>❌</span>
+        <span>误以为"所有酸和盐反应都会产生气体"——白醋+食盐就不反应</span>
+      </div>
+      <div class="pitfall-item pitfall-wrong" onclick="this.classList.toggle('pitfall-right');this.classList.toggle('pitfall-wrong')">
+        <span>❌</span>
+        <span>误以为"看到现象就直接下结论"——必须先验证假设</span>
+      </div>
+      <div class="pitfall-item pitfall-right">
+        <span>✅</span>
+        <span>正确做法：先判断变化类型，再推断生成物，最后用实验验证</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 自主迁移 -->
+  <div class="card">
+    <h2>🏠 自主迁移小练习</h2>
+    <p><strong>任务：</strong>家里有柠檬汁（酸性）和鸡蛋壳（主要成分碳酸钙）。如果你将柠檬汁滴在鸡蛋壳上，会发生什么？</p>
+    <p style="font-size:14px;">请按照示例中的分析步骤，预测现象并说明理由。</p>
+    <div class="practice-tip">
+      <strong>💡 启发：</strong>鸡蛋壳主要成分是<strong>碳酸钙</strong>——"碳酸盐+酸"这个组合让你想到了示例中的什么？
+    </div>
+    <button class="reveal-btn" onclick="toggleReveal('migrate')">🔍 查看参考</button>
+    <div class="reveal-content" id="migrate">
+      <p><strong>参考分析：</strong></p>
+      <ul>
+        <li><strong>预测现象：</strong>鸡蛋壳表面产生<strong>气泡</strong>，鸡蛋壳逐渐变薄甚至溶解</li>
+        <li><strong>推理过程：</strong>鸡蛋壳（碳酸钙）+ 柠檬酸 → 产生CO₂气体（与"白醋+小苏打"同类反应）</li>
+        <li><strong>验证方法：</strong>用蘸有澄清石灰水的玻璃片放在杯口——石灰水变浑浊即证明CO₂</li>
+        <li><strong>结论：</strong>发生了化学变化（有新物质CO₂生成），属于碳酸盐与酸的反应</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 学习自评 -->
+  <div class="card">
+    <h2>📋 学习自评</h2>
+    <div class="check-grid">
+      <label class="check-item"><input type="checkbox" onchange="this.closest('.check-item').classList.toggle('done')"> 我能说出化学变化和物理变化的根本区别</label>
+      <label class="check-item"><input type="checkbox" onchange="this.closest('.check-item').classList.toggle('done')"> 我能用自己的话复述"白醋+小苏打"的分析过程</label>
+      <label class="check-item"><input type="checkbox" onchange="this.closest('.check-item').classList.toggle('done')"> 我理解了"假设→验证→结论"的分析逻辑</label>
+      <label class="check-item"><input type="checkbox" onchange="this.closest('.check-item').classList.toggle('done')"> 我能够把这个分析过程迁移到"柠檬汁+鸡蛋壳"的任务中</label>
+    </div>
+  </div>
+</div>
+<script>
+function toggleStep(el) {
+  el.classList.toggle('open');
+}
+function toggleReveal(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('show');
+}
+</script>
+</body>
+</html>

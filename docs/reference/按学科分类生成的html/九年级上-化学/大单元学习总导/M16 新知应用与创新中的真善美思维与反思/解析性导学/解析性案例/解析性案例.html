@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性七阶适配案例</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 20px; box-sizing: border-box; }
+.header {
+  text-align: center; padding: 30px 20px 20px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  margin: -20px -20px 24px -20px;
+  color: #fff;
+}
+.header h1 { font-size: var(--font-h1); margin: 0 0 8px; font-weight: 700; }
+.header p { margin: 0; opacity: 0.9; font-size: 14px; }
+
+/* 数据组标签 */
+.data-tabs {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-bottom: 20px; justify-content: center;
+}
+.data-tab {
+  padding: 8px 16px; border-radius: var(--border-radius);
+  border: 1px solid var(--border); background: var(--card-bg);
+  cursor: pointer; font-size: 13px; color: var(--text);
+  transition: all 0.3s; text-align: center;
+}
+.data-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.data-tab:hover:not(.active) { border-color: var(--primary); color: var(--primary); }
+.data-tab .tab-num {
+  display: inline-block; width: 22px; height: 22px; line-height: 22px;
+  border-radius: 50%; background: var(--accent); color: #fff;
+  font-size: 11px; font-weight: 700; margin-right: 4px;
+}
+.data-tab.active .tab-num { background: rgba(255,255,255,0.3); }
+
+/* 案例面板 */
+.case-panel {
+  display: none;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  padding: 18px;
+  margin-bottom: 20px;
+  animation: fadeIn 0.35s ease;
+}
+.case-panel.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.case-panel h3 {
+  margin: 0 0 12px; font-size: 17px; color: var(--primary);
+  border-bottom: 2px solid var(--accent); padding-bottom: 8px;
+}
+.case-panel .section-label { color: var(--primary); font-weight: 600; display: block; margin-top: 10px; }
+.case-panel p { margin: 8px 0; font-size: 14px; }
+.case-panel .case-meta {
+  background: #f0f5ff; padding: 10px 14px; border-radius: 6px;
+  margin: 8px 0; font-size: 13px; border-left: 3px solid var(--primary);
+}
+.case-panel .ref-box {
+  background: #fff7e6; border: 1px solid #ffd591;
+  border-radius: 6px; padding: 10px 14px; margin: 8px 0;
+  font-size: 13px;
+}
+.case-panel .principle-tag {
+  display: inline-block; padding: 3px 10px; border-radius: 12px;
+  background: var(--bg); border: 1px solid var(--accent);
+  font-size: 12px; margin: 3px 4px 3px 0; color: var(--primary);
+}
+.case-panel .equation {
+  background: #f5f5f5; padding: 6px 12px; border-radius: 4px;
+  font-family: "Times New Roman", serif; font-size: 15px; margin: 8px 0;
+  text-align: center;
+}
+
+/* 化学式动画 */
+@keyframes pulse-blue {
+  0% { box-shadow: 0 0 0 0 rgba(22,119,255,0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(22,119,255,0); }
+  100% { box-shadow: 0 0 0 0 rgba(22,119,255,0); }
+}
+
+/* 反思区 */
+.reflection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px; margin: 14px 0;
+}
+.reflection-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px; cursor: pointer;
+  transition: all 0.3s;
+}
+.reflection-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+.reflection-card .r-num {
+  display: inline-block; background: var(--accent); color: #fff;
+  border-radius: 50%; width: 24px; height: 24px; text-align: center;
+  line-height: 24px; font-size: 13px; margin-bottom: 6px;
+}
+.reflection-card p { margin: 6px 0; font-size: 13px; }
+.reflection-card .r-thought {
+  display: none; font-size: 13px; color: var(--text-secondary);
+  background: #f5f5f5; border-radius: 4px; padding: 8px; margin-top: 6px;
+}
+.reflection-card .r-thought.show { display: block; }
+
+/* 路径指示 */
+.progress-bar {
+  display: flex; justify-content: center; gap: 6px; margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.progress-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--border); transition: all 0.3s;
+}
+.progress-dot.done { background: var(--primary); }
+
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  .header { margin: -12px -12px 16px -12px; padding: 20px 12px; }
+  .reflection-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🔍 解析性七阶适配案例</h1>
+  <p>从生活到学科，从校园到社会 — 7个真实情境，7次深度分析</p>
+</div>
+
+<div style="background:#e6fffb;border:1px solid #87e8de;border-radius:var(--border-radius);padding:14px 18px;margin-bottom:20px;font-size:14px;">
+  <strong>💡 使用说明：</strong>点击下方标签切换案例。每个案例包含案例材料、解析任务和参考思路。先自己尝试分析，再点击查看参考思路对照。
+</div>
+
+<!-- 进度指示 -->
+<div class="progress-bar" id="progressBar">
+  <span class="progress-dot" data-step="0"></span>
+  <span class="progress-dot" data-step="1"></span>
+  <span class="progress-dot" data-step="2"></span>
+  <span class="progress-dot" data-step="3"></span>
+  <span class="progress-dot" data-step="4"></span>
+  <span class="progress-dot" data-step="5"></span>
+  <span class="progress-dot" data-step="6"></span>
+</div>
+
+<!-- 案例标签导航 -->
+<div class="data-tabs">
+  <button class="data-tab active" data-case="0" onclick="switchCase(0,this)"><span class="tab-num">1</span>生活情境<br><small>小苏打去污</small></button>
+  <button class="data-tab" data-case="1" onclick="switchCase(1,this)"><span class="tab-num">2</span>校园情境<br><small>实验事故</small></button>
+  <button class="data-tab" data-case="2" onclick="switchCase(2,this)"><span class="tab-num">3</span>家庭社区<br><small>危险混用</small></button>
+  <button class="data-tab" data-case="3" onclick="switchCase(3,this)"><span class="tab-num">4</span>学科核心<br><small>电解水实验</small></button>
+  <button class="data-tab" data-case="4" onclick="switchCase(4,this)"><span class="tab-num">5</span>跨学科<br><small>矿物颜料</small></button>
+  <button class="data-tab" data-case="5" onclick="switchCase(5,this)"><span class="tab-num">6</span>社会议题<br><small>塑料回收</small></button>
+  <button class="data-tab" data-case="6" onclick="switchCase(6,this)"><span class="tab-num">7</span>综合迁移<br><small>自选案例</small></button>
+</div>
+
+<!-- 案例1 -->
+<div class="case-panel active" data-case="0">
+  <h3>🧪 案例一：生活情境 — "小苏打去污"的科学分析</h3>
+  <div class="case-meta">
+    <strong>📖 案例材料：</strong>你家厨房里，妈妈用小苏打（NaHCO₃）加白醋来清洗水槽和灶台。她说这是"纯天然去污"，比化学清洁剂安全。这个小苏打+白醋的组合真的有去污效果吗？
+  </div>
+  <p><strong>🎯 解析任务：</strong>从"真（科学原理）"的角度分析：小苏打+白醋为什么可能去污？这个原理是什么？</p>
+  <p><strong>🔬 解析路径：</strong></p>
+  <p>① 识别核心问题：小苏打+白醋的化学反应是什么？<br>② 确定分析对象：反应产物和去污效果<br>③ 拆解关键要素</p>
+  <div class="equation">NaHCO₃ + CH₃COOH → CO₂↑ + H₂O + CH₃COONa</div>
+  <p>④ 分析过程：产生CO₂气泡 → 物理松动污渍；醋酸钠溶液 → 助溶<br>⑤ 寻找证据：查阅教材中酸碱中和反应、CO₂产生的相关内容</p>
+  <p><span class="principle-tag">证据链追踪法</span> — 找到"去污效果"背后的化学证据。</p>
+  <div class="ref-box">
+    <strong>💭 参考思路：</strong>小苏打是弱碱性，白醋是酸性，中和产生CO₂气泡，气泡产生的物理冲击力和反应后溶液对油脂的溶解作用共同实现了去污效果。但"纯天然"是否就等于"安全"？用这个方法清洗铝锅会有什么后果？
+  </div>
+  <p style="font-size:13px;color:var(--text-secondary);margin-top:10px;">💡 <strong>分析记录表：</strong>反应物 NaHCO₃+CH₃COOH → 生成物 CO₂+H₂O+CH₃COONa → 去污机理 物理松动+助溶 → 证据来源 教材酸碱中和 → 局限 铝锅腐蚀风险</p>
+</div>
+
+<!-- 案例2 -->
+<div class="case-panel" data-case="1">
+  <h3>⚠️ 案例二：校园情境 — 化学实验事故分析</h3>
+  <div class="case-meta">
+    <strong>📖 案例材料：</strong>某校化学实验室，一名学生在无教师在场的情况下，将未经标定的浓硫酸加入水中（而不是将水加入浓硫酸），导致液体飞溅灼伤手臂。
+  </div>
+  <p><strong>🎯 解析任务：</strong>从"真（安全原理）"和"善（安全责任）"两个维度分析这起事故。</p>
+  <p><strong>🔬 解析路径：</strong></p>
+  <p>① 识别核心问题：为什么"酸入水"而不是"水入酸"？<br>② 确定分析对象：浓硫酸稀释的放热原理<br>③ 拆解：浓硫酸遇水剧烈放热 → 水密度小于硫酸 → 沸腾 → 飞溅<br>④ 解释：正确的操作应该是"酸入水，沿壁流，不断搅拌"</p>
+  <p><span class="principle-tag">三维审视法</span><span class="principle-tag">利益相关者分析法</span></p>
+  <div class="ref-box">
+    <strong>💭 参考思路：</strong>可以从"为什么教材多次强调这个操作规范？""如果学校在实验室显眼位置贴上安全警示标志，事故是否可以避免？"等角度思考。<br>
+    <strong>三维审视：</strong>真（放热原理）；善（实验室安全管理，谁该负责）；美（操作规范的设计智慧——这个规定背后是无数教训换来的）。
+  </div>
+</div>
+
+<!-- 案例3 -->
+<div class="case-panel" data-case="2">
+  <h3>☣️ 案例三：家庭社区 — 洁厕灵+84消毒液的危险混用</h3>
+  <div class="case-meta">
+    <strong>📖 案例材料：</strong>网上流传着一段视频，有人将洁厕灵（含盐酸）和84消毒液（含次氯酸钠）混合，产生了黄绿色气体。这位博主说"这样可以增强消毒效果"。
+  </div>
+  <p><strong>🎯 解析任务：</strong>从"真（化学反应原理）"和"善（安全风险评估）"分析这个操作的危险性。</p>
+  <p><strong>🔬 解析路径：</strong></p>
+  <p>① 识别核心问题：混合后产生了什么气体？为什么有毒？<br>② 确定分析对象</p>
+  <div class="equation">NaClO + 2HCl → Cl₂↑ + NaCl + H₂O</div>
+  <p>③ 拆解：氯气（Cl₂）的性质——黄绿色、有刺激性、有毒<br>④ 结论：这个操作不仅不能增强消毒效果，还会产生有毒气体</p>
+  <p><span class="principle-tag">证据链追踪法</span><span class="principle-tag">系统效应分析法</span></p>
+  <div class="ref-box">
+    <strong>💭 参考思路：</strong>可以从"如果你在社交媒体上看到这种危险操作，你会怎么提醒他人？"的角度拓展思考。<br>
+    <strong>系统效应：</strong>短期 → 立即中毒；长期 → 公众对消毒产品的误解。
+  </div>
+</div>
+
+<!-- 案例4 -->
+<div class="case-panel" data-case="3">
+  <h3>⚡ 案例四：学科核心 — "电解水实验"的科学之美</h3>
+  <div class="case-meta">
+    <strong>📖 案例材料：</strong>在教材中，电解水实验（2H₂O → 通电 → 2H₂↑ + O₂↑）是化学入门的经典实验。这个实验看似简单，但它同时蕴含了科学之真和设计之美。
+  </div>
+  <p><strong>🎯 解析任务：</strong>从"美（科学逻辑之美、实验设计之美）"的维度分析电解水实验。</p>
+  <p><strong>🔬 解析路径：</strong></p>
+  <p>① 识别核心问题：这个实验美在哪里？<br>② 确定分析对象：实验装置设计、氢气与氧气体积比（2:1）<br>③ 拆解：每个实验环节的设计巧思<br>④ 解释：为什么用直流电？为什么加少量硫酸？为什么用排水法收集？</p>
+  <p><span class="principle-tag">三维审视法（重点用"美"的维度）</span></p>
+  <div class="ref-box">
+    <strong>💭 参考思路：</strong>电解水实验的美在于——2:1的体积比恰好揭示了水的组成（H₂O），这个简单比例背后是化学计量的精确之美。实验装置虽简单，但每一步设计都有科学依据：加稀硫酸增强导电性、排水法收集气体、用直流电确保定向分解。和拉瓦锡早期的水分解实验相比，现代装置更安全、更精确。
+  </div>
+</div>
+
+<!-- 案例5 -->
+<div class="case-panel" data-case="4">
+  <h3>🎨 案例五：跨学科 — 颜料的化学成分分析</h3>
+  <div class="case-meta">
+    <strong>📖 案例材料：</strong>古人在壁画中使用了各种矿物颜料——红色的朱砂（HgS）、绿色的石绿（CuCO₃·Cu(OH)₂）、蓝色的青金石。这些颜料历经千年而不褪色。
+  </div>
+  <p><strong>🎯 解析任务：</strong>从"真（化学成分决定稳定性）"和"美（颜料色彩和化学结构的关系）"进行分析。</p>
+  <p><strong>🔬 解析路径：</strong></p>
+  <p>① 识别核心问题：为什么矿物颜料能千年不褪色？<br>② 确定分析对象：颜料的化学结构<br>③ 拆解：HgS的晶体结构稳定 → 不易和空气中的氧气反应<br>④ 解释：化学稳定性决定了颜料的耐久性</p>
+  <p><span class="principle-tag">三维审视法</span><span class="principle-tag">系统效应分析法</span></p>
+  <div class="ref-box">
+    <strong>💭 参考思路：</strong>矿物颜料千年不褪色的秘密在于——这些颜料多是金属硫化物或碳酸盐，化学性质非常稳定，常温下不易与氧气、水反应。现代合成颜料虽然色彩更鲜艳、成本更低，但部分合成颜料的耐光性、耐候性不如传统矿物颜料。<br>
+    <strong>延伸思考：</strong>从化学结构的角度看，颜色和电子跃迁有什么关系？金属离子的d-d跃迁如何决定颜料颜色？
+  </div>
+</div>
+
+<!-- 案例6 -->
+<div class="case-panel" data-case="5">
+  <h3>♻️ 案例六：社会议题 — 塑料回收的化学方案评价</h3>
+  <div class="case-meta">
+    <strong>📖 案例材料：</strong>目前塑料回收主要有三种方法：机械回收（粉碎再加工）、化学回收（裂解成单体再聚合）、焚烧发电。每种方法都有支持者和反对者。
+  </div>
+  <p><strong>🎯 解析任务：</strong>从真善美三个维度综合评价三种塑料回收方法。</p>
+  <p><strong>🔬 解析路径：</strong></p>
+  <p>① 识别核心问题：哪种回收方法最"好"？<br>② 确定分析对象：三种方法<br>③ 拆解：每种方法的科学原理、成本、环境影响<br>④ 诠释：真（原理是否可靠）、善（环境效益）、美（循环经济设计之美）</p>
+  <p><span class="principle-tag">三维审视法</span><span class="principle-tag">利益相关者分析法</span><span class="principle-tag">系统效应分析法</span></p>
+  <div class="ref-box">
+    <strong>💭 参考思路：</strong>三种方案各有利弊——<br>
+    <strong>机械回收：</strong>物理变化，成本低但质量逐次下降（降级回收）；<br>
+    <strong>化学回收：</strong>化学变化，质量高但成本高、能耗大；<br>
+    <strong>焚烧发电：</strong>彻底解决垃圾问题，但产生CO₂，且公众反对"烧垃圾"。<br>
+    没有完美的方案，只有"当下最优"的选择——最好的方案是减少使用。
+  </div>
+</div>
+
+<!-- 案例7 -->
+<div class="case-panel" data-case="6">
+  <h3>🚀 案例七：综合迁移 — 自选化学创新案例真善美分析</h3>
+  <div class="case-meta">
+    <strong>📖 案例材料：</strong>自由选择生活或媒体报道中的一个化学创新案例（如新型电池、可降解餐具、纳米防晒霜、空气净化涂料等），独立完成分析。
+  </div>
+  <p><strong>🎯 解析任务：</strong>运用全部四条解析性原理，从真善美三个维度完成一份完整的分析报告。</p>
+  <p><strong>📋 分析框架：</strong></p>
+  <p>✅ 案例的基本信息<br>✅ 真维度：科学原理分析<br>✅ 善维度：利益相关者和伦理分析<br>✅ 美维度：设计逻辑分析<br>✅ 综合评价和开放问题</p>
+  <p><span class="principle-tag">三维审视法</span><span class="principle-tag">证据链追踪法</span><span class="principle-tag">利益相关者分析法</span><span class="principle-tag">系统效应分析法</span></p>
+  <div class="ref-box">
+    <strong>💭 参考思路：</strong>如果你一时想不到选什么，可以试试这些方向——<br>
+    🔋 "钠离子电池"能否替代锂电池？<br>
+    🥤 "可降解吸管"真的更环保吗？<br>
+    🧴 "纳米防晒霜"的安全性如何？<br>
+    确定案例后，用四条原理逐一分析，输出一份报告并和同学分享讨论。
+  </div>
+</div>
+
+<!-- 综合反思 -->
+<h2 style="font-size:18px;margin:24px 0 12px;padding-left:10px;border-left:3px solid var(--primary);">💬 综合反思</h2>
+
+<div class="reflection-grid">
+  <div class="reflection-card" onclick="toggleReflection(this)">
+    <div class="r-num">1</div>
+    <p>"这7个案例中，哪个最容易分析？为什么——是因为你对那个领域熟悉，还是因为案例比较简单？"</p>
+    <div class="r-thought">
+      <strong>反思引导：</strong>写下你的答案并思考——容易的分析是否意味着你掌握了相关化学知识？试着找出让你觉得"容易"的具体原因，这能帮你发现自己的优势学习方式。
+    </div>
+  </div>
+  <div class="reflection-card" onclick="toggleReflection(this)">
+    <div class="r-num">2</div>
+    <p>"哪个案例最难？困难在哪里——是找不到证据，还是不知道如何运用原理？"</p>
+    <div class="r-thought">
+      <strong>反思引导：</strong>别怕难！最难的那个案例恰恰是你进步最大的地方。如果困难在于"不知道用哪条原理"，可以回头复习"四条解析性原理"的卡片。如果困难在于"找不到证据"，试着用证据链追踪法一步步倒推。
+    </div>
+  </div>
+  <div class="reflection-card" onclick="toggleReflection(this)">
+    <div class="r-num">3</div>
+    <p>"在四条解析性原理中，你发现哪一条最常用？哪一条还不太会用？"</p>
+    <div class="r-thought">
+      <strong>反思引导：</strong>大多数同学觉得"三维审视法"最容易上手，"系统效应分析法"最难掌握。如果你也有同感，试着从生活中找一个"短期好、长期坏"的例子来专门练习。熟能生巧！
+    </div>
+  </div>
+  <div class="reflection-card" onclick="toggleReflection(this)">
+    <div class="r-num">4</div>
+    <p>"这些分析任务如何帮助你在日常生活中更理性地看待化学产品和新技术的宣传？"</p>
+    <div class="r-thought">
+      <strong>反思引导：</strong>下次看到"黑科技""革命性突破"等宣传词时，试试自动启动"真善美"三部曲——这真的科学吗（真）？对谁有好处（善）？设计合理吗（美）？你会发现自己越来越不容易被夸张广告忽悠了。
+    </div>
+  </div>
+  <div class="reflection-card" onclick="toggleReflection(this)">
+    <div class="r-num">5</div>
+    <p>"综合案例七中，你选择了什么产品进行分析？你的核心发现是什么？"</p>
+    <div class="r-thought">
+      <strong>反思引导：</strong>无论你选了哪个产品，重要的是——你是否通过这次分析改变了对这个产品的看法？有没有发现之前没注意到的"阴暗面"？这才是"真善美"分析的真正价值：让我们不仅看到事物的表面，更看到它的全貌。
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function switchCase(index, btn) {
+  document.querySelectorAll('.data-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelectorAll('.case-panel').forEach(function(p) { p.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  var panel = document.querySelector('.case-panel[data-case="' + index + '"]');
+  if (panel) panel.classList.add('active');
+
+  // 更新进度
+  document.querySelectorAll('.progress-dot').forEach(function(d) {
+    var step = parseInt(d.dataset.step);
+    d.classList.toggle('done', step <= index);
+  });
+}
+
+function toggleReflection(card) {
+  var thought = card.querySelector('.r-thought');
+  if (!thought) return;
+  thought.classList.toggle('show');
+}
+
+// 初始化进度
+document.querySelectorAll('.progress-dot').forEach(function(d) {
+  d.classList.add('done');
+});
+</script>
+</body>
+</html>

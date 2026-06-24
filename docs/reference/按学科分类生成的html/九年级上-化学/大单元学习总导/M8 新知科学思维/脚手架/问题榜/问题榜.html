@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>问题榜 — 脚手架</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 8px; }
+.header p { font-size: var(--font-body); opacity: 0.9; }
+.section { margin-bottom: 28px; }
+.section-title {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title .lvl-tag {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-weight: 500;
+  margin-left: 8px;
+  color: #fff;
+}
+.lvl-1 { background: #1677ff; }
+.lvl-2 { background: #16a34a; }
+.lvl-3 { background: #d46b08; }
+.question-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 14px 18px;
+  margin-bottom: 10px;
+  border-left: 3px solid var(--primary);
+  cursor: pointer;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.question-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.question-card .q-icon { font-size: 16px; margin-right: 6px; }
+.question-card .q-text { font-size: 14px; line-height: 1.6; }
+.question-card .q-type {
+  display: inline-block;
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--primary);
+  margin-right: 6px;
+  font-weight: 500;
+}
+.question-card .answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 0;
+  padding-left: 24px;
+}
+.question-card.expanded .answer { max-height: 200px; margin-top: 8px; }
+.question-card.expanded { border-left-color: var(--accent); }
+.usage-box {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 16px 20px;
+  margin-top: 20px;
+  border: 1px solid var(--border);
+}
+.usage-box h3 { font-size: 16px; font-weight: 600; color: var(--primary); margin-bottom: 10px; }
+.usage-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+.usage-item {
+  text-align: center;
+  padding: 12px;
+  border-radius: 6px;
+  background: var(--bg);
+}
+.usage-item .level-name { font-weight: 600; color: var(--primary); font-size: 14px; }
+.usage-item .level-desc { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+.footer {
+  text-align: center;
+  padding: 16px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  border-top: 1px solid var(--border);
+  margin-top: 20px;
+}
+@media (max-width: 640px) {
+  .usage-grid { grid-template-columns: 1fr; }
+  .container { padding: 16px 12px; }
+  .header { padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>❓ 问题榜</h1>
+    <p>通过不同类型的问题驱动思考和探究，培养提出问题和分析问题的能力。</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">基础层 <span class="lvl-tag lvl-1">理解与识别</span></div>
+    <div class="question-card" onclick="this.classList.toggle('expanded')">
+      <span class="q-text"><span class="q-icon">💡</span>什么是科学思维？它在化学学习中起什么作用？</span>
+      <div class="answer">提示：科学思维是观察、假设、实验、验证的思考方式。在化学中帮助我们理解现象背后的规律。</div>
+    </div>
+    <div class="question-card" onclick="this.classList.toggle('expanded')">
+      <span class="q-text"><span class="q-icon">💡</span>解析性思维和建构性思维有什么区别？请各举一个化学学习的例子。</span>
+      <div class="answer">提示：解析性思维是拆解分析（如分析化学方程式），建构性思维是组合创造（如设计实验方案）。</div>
+    </div>
+    <div class="question-card" onclick="this.classList.toggle('expanded')">
+      <span class="q-text"><span class="q-icon">💡</span>在"走进化学世界"第1章中，哪些内容体现了科学思维？</span>
+      <div class="answer">提示：观察蜡烛燃烧、对物质变化的分类、实验探究的方法等。</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">进阶层 <span class="lvl-tag lvl-2">分析与应用</span></div>
+    <div class="question-card" onclick="this.classList.toggle('expanded')">
+      <span class="q-type">开放性</span>
+      <span class="q-text">如果一个同学说"化学就是背方程式"，你会如何用 M8 学到的内容回应他？</span>
+      <div class="answer">提示：从科学思维的角度说明化学是理解变化规律的科学，而不仅仅是记忆。</div>
+    </div>
+    <div class="question-card" onclick="this.classList.toggle('expanded')">
+      <span class="q-type">对比性</span>
+      <span class="q-text">比较"用教材学化学"和"用科学思维学化学"两种方式，它们有什么不同？</span>
+      <div class="answer">提示：前者侧重知识记忆，后者侧重思维方法和探究能力。</div>
+    </div>
+    <div class="question-card" onclick="this.classList.toggle('expanded')">
+      <span class="q-type">反事实</span>
+      <span class="q-text">如果拉瓦锡没有使用天平做实验，化学史可能会怎样改变？</span>
+      <div class="answer">提示：质量守恒定律可能更晚被发现，燃素说可能持续更长时间。</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">挑战层 <span class="lvl-tag lvl-3">创造与批判</span></div>
+    <div class="question-card" onclick="this.classList.toggle('expanded')">
+      <span class="q-type">开放性</span>
+      <span class="q-text">请你设计一个"科学思维训练"的小实验，让没学过化学的人也能理解什么是科学思维。</span>
+      <div class="answer">提示：例如用冰块融化实验观察状态变化，提出假设并验证。</div>
+    </div>
+    <div class="question-card" onclick="this.classList.toggle('expanded')">
+      <span class="q-type">元认知</span>
+      <span class="q-text">在完成本模块学习的过程中，你是如何思考的？有没有发现自己思考方式的改变？</span>
+      <div class="answer">提示：回顾自己从被动接受到主动提问的转变过程。</div>
+    </div>
+    <div class="question-card" onclick="this.classList.toggle('expanded')">
+      <span class="q-type">批判性</span>
+      <span class="q-text">"科学思维是万能的"——你同意这个说法吗？有什么是科学思维解决不了的？</span>
+      <div class="answer">提示：科学思维在伦理判断、艺术创作、情感理解等领域有其局限性。</div>
+    </div>
+  </div>
+
+  <div class="usage-box">
+    <h3>📋 使用方式</h3>
+    <div class="usage-grid">
+      <div class="usage-item">
+        <div class="level-name">🔵 基础层</div>
+        <div class="level-desc">快速自测理解</div>
+      </div>
+      <div class="usage-item">
+        <div class="level-name">🟢 进阶层</div>
+        <div class="level-desc">小组讨论或笔头作答</div>
+      </div>
+      <div class="usage-item">
+        <div class="level-name">🟠 挑战层</div>
+        <div class="level-desc">深入思考和写作</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    问题榜 · M8 新知科学思维 · 九年级化学
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>作业榜 - M5 新知艺术思维</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.wrapper {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+.hero {
+  background: linear-gradient(135deg, var(--primary) 0%, #096dd9 100%);
+  color: #fff;
+  border-radius: var(--border-radius);
+  padding: 30px 36px;
+  margin-bottom: 24px;
+}
+.hero h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+.hero .sub {
+  opacity: 0.9;
+  margin: 0;
+}
+.level-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.level-tab {
+  padding: 8px 20px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.25s;
+  font-family: inherit;
+  color: var(--text);
+}
+.level-tab:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.level-tab.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.level-section {
+  display: none;
+}
+.level-section.show {
+  display: block;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 22px 26px;
+  margin-bottom: 16px;
+  border-left: 4px solid var(--primary);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card h2 .tag {
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--primary);
+  font-weight: 400;
+}
+.card p, .card li {
+  margin: 0 0 8px;
+}
+.card ul {
+  padding-left: 20px;
+  margin: 0;
+}
+.option-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+.option-btn {
+  padding: 10px 18px;
+  border-radius: 6px;
+  border: 2px solid var(--border);
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  font-family: inherit;
+  color: var(--text);
+}
+.option-btn:hover {
+  border-color: var(--accent);
+  background: var(--bg);
+}
+.option-btn.selected {
+  border-color: var(--primary);
+  background: var(--bg);
+  color: var(--primary);
+  font-weight: 600;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 14px;
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+}
+th {
+  background: var(--bg);
+  color: var(--primary);
+  font-weight: 600;
+}
+td:first-child {
+  font-weight: 500;
+}
+tr:hover td {
+  background: #fafafa;
+}
+.feedback-box {
+  margin-top: 12px;
+  padding: 14px 18px;
+  background: var(--bg);
+  border-radius: 6px;
+  display: none;
+  border: 1px solid var(--accent);
+}
+.feedback-box.show {
+  display: block;
+}
+@media (max-width: 640px) {
+  .wrapper { padding: 16px; }
+  .hero { padding: 20px; }
+  .card { padding: 16px; }
+  .level-tabs { gap: 4px; }
+  .level-tab { padding: 6px 14px; font-size: 13px; }
+  table { font-size: 13px; }
+  th, td { padding: 6px 8px; }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <div class="hero">
+    <h1>📋 作业榜</h1>
+    <p class="sub">M5 新知艺术思维 · 选择适合你的挑战层级</p>
+  </div>
+
+  <div class="level-tabs">
+    <button class="level-tab active" data-level="basic" onclick="switchLevel('basic', this)">⭐ 基础层</button>
+    <button class="level-tab" data-level="layered" onclick="switchLevel('layered', this)">🎯 分层任务</button>
+    <button class="level-tab" data-level="open" onclick="switchLevel('open', this)">🚀 开放挑战</button>
+    <button class="level-tab" data-level="rubric" onclick="switchLevel('rubric', this)">📊 评价标准</button>
+  </div>
+
+  <div class="level-section show" id="section-basic">
+    <div class="card">
+      <h2>A1 · 概念对应填空 <span class="tag">必做</span></h2>
+      <p>用关键词填空，巩固核心概念。点击空白处查看答案：</p>
+      <p style="background:var(--bg);padding:14px;border-radius:6px;line-height:2;">
+        1. 没有生成新物质的变化叫 <span class="blank" onclick="fillBlank(this)" data-answer="物理变化" style="border-bottom:2px dashed var(--primary);padding:0 8px;cursor:pointer;">______</span>。
+        <br>
+        2. 生成新物质的变化叫 <span class="blank" onclick="fillBlank(this)" data-answer="化学变化" style="border-bottom:2px dashed var(--primary);padding:0 8px;cursor:pointer;">______</span>。
+        <br>
+        3. 不需要发生化学变化就能表现出来的性质叫 <span class="blank" onclick="fillBlank(this)" data-answer="物理性质" style="border-bottom:2px dashed var(--primary);padding:0 8px;cursor:pointer;">______</span>。
+        <br>
+        4. 在化学变化中表现出来的性质叫 <span class="blank" onclick="fillBlank(this)" data-answer="化学性质" style="border-bottom:2px dashed var(--primary);padding:0 8px;cursor:pointer;">______</span>。
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>A2 · 现象分类 <span class="tag">必做</span></h2>
+      <p>判断下列现象属于物理变化还是化学变化，点击选择：</p>
+      <div id="phenomena">
+        <div class="phenomenon" style="padding:10px 14px;background:var(--bg);border-radius:6px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;" data-answer="化学变化">
+          <span>🔩 铁生锈</span>
+          <span class="choices">
+            <button class="option-btn" onclick="choosePhen(this, '物理变化')">物理变化</button>
+            <button class="option-btn" onclick="choosePhen(this, '化学变化')">化学变化</button>
+          </span>
+        </div>
+        <div class="phenomenon" style="padding:10px 14px;background:var(--bg);border-radius:6px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;" data-answer="物理变化">
+          <span>🧊 水结冰</span>
+          <span class="choices">
+            <button class="option-btn" onclick="choosePhen(this, '物理变化')">物理变化</button>
+            <button class="option-btn" onclick="choosePhen(this, '化学变化')">化学变化</button>
+          </span>
+        </div>
+        <div class="phenomenon" style="padding:10px 14px;background:var(--bg);border-radius:6px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;" data-answer="化学变化">
+          <span>🍞 面包发霉</span>
+          <span class="choices">
+            <button class="option-btn" onclick="choosePhen(this, '物理变化')">物理变化</button>
+            <button class="option-btn" onclick="choosePhen(this, '化学变化')">化学变化</button>
+          </span>
+        </div>
+      </div>
+      <div style="text-align:right;margin-top:8px;">
+        <button class="level-tab" onclick="resetPhen()" style="font-size:13px;padding:4px 14px;">↻ 重置</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="level-section" id="section-layered">
+    <div class="card">
+      <h2>分层任务 · 三选一</h2>
+      <p>从以下三个任务中选择一个完成：</p>
+      <div class="option-group">
+        <button class="option-btn" data-task="B1" onclick="selectTask(this)">📊 B1 图示类</button>
+        <button class="option-btn" data-task="B2" onclick="selectTask(this)">✏️ B2 写作类</button>
+        <button class="option-btn" data-task="B3" onclick="selectTask(this)">🎬 B3 视频类</button>
+      </div>
+      <div id="taskDetail" class="feedback-box">
+        <p id="taskDesc" style="margin:0;"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="level-section" id="section-open">
+    <div class="card">
+      <h2>C1 · 概念设计 <span class="tag">挑战</span></h2>
+      <p><strong>「如果世界上没有化学变化」</strong> —— 写一篇短科幻或画一幅概念图，展开你的想象。</p>
+    </div>
+    <div class="card">
+      <h2>C2 · 探究提案 <span class="tag">挑战</span></h2>
+      <p>提出一个你想验证的化学相关问题，设计简单的验证方案。</p>
+    </div>
+  </div>
+
+  <div class="level-section" id="section-rubric">
+    <div class="card">
+      <h2>📊 评价标准 (Rubric)</h2>
+      <table>
+        <thead>
+          <tr><th>标准</th><th>优秀 (3分)</th><th>达标 (2分)</th><th>需改进 (1分)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>概念准确</td><td>全部概念使用准确</td><td>大部分准确</td><td>有3处以上错误</td></tr>
+          <tr><td>证据支持</td><td>每个判断都有依据</td><td>部分有依据</td><td>缺少依据</td></tr>
+          <tr><td>表达清晰</td><td>图文清晰，他人可理解</td><td>基本可理解</td><td>难以理解</td></tr>
+          <tr><td>创意表现</td><td>视角新颖，有个人见解</td><td>有创意元素</td><td>完成即可</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+<script>
+function switchLevel(level, btn) {
+  var tabs = document.querySelectorAll('.level-tab');
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].classList.remove('active');
+  }
+  if (btn) btn.classList.add('active');
+  var sections = document.querySelectorAll('.level-section');
+  for (var i = 0; i < sections.length; i++) {
+    sections[i].classList.remove('show');
+  }
+  var target = document.getElementById('section-' + level);
+  if (target) target.classList.add('show');
+}
+function fillBlank(el) {
+  if (!el) return;
+  if (el.textContent.indexOf('_') === -1) return;
+  var answer = el.getAttribute('data-answer');
+  if (answer) el.textContent = answer;
+}
+function choosePhen(btn, type) {
+  if (!btn) return;
+  var container = btn.closest('.phenomenon');
+  if (!container) return;
+  var correct = container.getAttribute('data-answer');
+  var allBtns = container.querySelectorAll('.option-btn');
+  for (var i = 0; i < allBtns.length; i++) {
+    allBtns[i].classList.remove('selected');
+  }
+  btn.classList.add('selected');
+  if (type === correct) {
+    btn.style.background = '#f6ffed';
+    btn.style.borderColor = '#52c41a';
+  } else {
+    btn.style.background = '#fff2f0';
+    btn.style.borderColor = '#ff4d4f';
+  }
+}
+function resetPhen() {
+  var allBtns = document.querySelectorAll('.phenomenon .option-btn');
+  for (var i = 0; i < allBtns.length; i++) {
+    allBtns[i].classList.remove('selected');
+    allBtns[i].style.background = '';
+    allBtns[i].style.borderColor = '';
+  }
+}
+function selectTask(btn) {
+  if (!btn) return;
+  var allBtns = document.querySelectorAll('[data-task]');
+  for (var i = 0; i < allBtns.length; i++) {
+    allBtns[i].classList.remove('selected');
+  }
+  btn.classList.add('selected');
+  var task = btn.getAttribute('data-task');
+  var descEl = document.getElementById('taskDesc');
+  var box = document.getElementById('taskDetail');
+  if (!descEl || !box) return;
+  var descs = {
+    'B1': '📊 选择1个化学变化（如蜡烛燃烧），用流程图 + 标注的方式展示变化前后的物质变化。',
+    'B2': '✏️ 以第一人称写一篇「我的一天」，描述生活中遇到的化学变化和物理变化，至少各3个。',
+    'B3': '🎬 录制一段2分钟视频，演示1个化学变化并解说你的观察和推理。'
+  };
+  descEl.textContent = descs[task] || '';
+  box.classList.add('show');
+}
+</script>
+</body>
+</html>

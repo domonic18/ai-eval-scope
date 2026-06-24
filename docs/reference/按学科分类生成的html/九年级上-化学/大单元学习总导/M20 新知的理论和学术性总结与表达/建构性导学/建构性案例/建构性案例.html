@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性案例：七阶适配案例导学</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+}
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin: 0 0 8px 0;
+  font-weight: 700;
+  position: relative;
+  padding-left: 16px;
+}
+h1::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 4px;
+  background: var(--primary);
+  border-radius: 2px;
+}
+h2 {
+  font-size: var(--font-h2);
+  color: var(--text);
+  margin: 20px 0 12px 0;
+  font-weight: 600;
+}
+h3 { font-size: 16px; margin: 0 0 8px 0; }
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 20px;
+  padding-left: 16px;
+}
+
+/* 引言 */
+.intro-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border-left: 4px solid var(--primary);
+}
+
+/* 案例卡片 */
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  transition: box-shadow 0.3s;
+}
+.case-card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.12); }
+.case-header {
+  padding: 14px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  user-select: none;
+  -webkit-user-select: none;
+  background: var(--card-bg);
+  transition: background 0.2s;
+}
+.case-header:hover { background: #f6f8fa; }
+.case-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.case-header h3 {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+.case-toggle {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--primary);
+  transition: transform 0.3s;
+  flex-shrink: 0;
+}
+.case-card.open .case-toggle { transform: rotate(180deg); }
+.case-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+  padding: 0 20px;
+}
+.case-card.open .case-body {
+  max-height: 5000px;
+  padding: 0 20px 20px;
+}
+.case-body p { margin: 8px 0; }
+.case-body strong { color: var(--primary); }
+
+.tag {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  margin: 2px 4px 2px 0;
+}
+
+.step-list {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+.step-list li { margin: 4px 0; }
+
+.scaffold-box {
+  background: #e6f7ff;
+  border: 1px solid #91d5ff;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 10px 0;
+  font-size: 14px;
+}
+.scaffold-box strong { color: #1677ff; }
+
+.rubric-box {
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 10px 0;
+  font-size: 14px;
+}
+.rubric-box strong { color: #d46b08; }
+.rubric-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+}
+.rubric-check {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #d9d9d9;
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #fff;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  background: transparent;
+}
+.rubric-item.done .rubric-check {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.rubric-item.done .rubric-check::after { content: '✓'; }
+.rubric-item.done { text-decoration: line-through; color: var(--text-secondary); }
+
+/* 控制按钮 */
+.ctrl-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.btn {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+}
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-outline {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+.btn-outline:hover { background: var(--bg); }
+
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .case-header { padding: 12px 16px; }
+  .case-card.open .case-body { padding: 0 16px 16px; }
+  .case-num { width: 28px; height: 28px; font-size: 12px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>建构性案例：七阶适配案例导学</h1>
+<div class="subtitle">M20 新知的理论和学术性总结与表达 · 九年级化学</div>
+
+<div class="intro-card">
+  <p>以下 <strong>7 个案例</strong>由浅入深，帮助你运用建构性原理，在不同情境中主动建构对化学新知的系统化理解和学术化表达。</p>
+  <p>💡 点击每个案例展开详情。每个案例都包含：<strong>建构情境 → 建构任务 → 原理调用提示 → 建构步骤 → 脚手架推荐 → 成果表达 → 自评量规</strong></p>
+</div>
+
+<div class="ctrl-bar">
+  <button class="btn btn-primary" onclick="expandAll()">展开全部</button>
+  <button class="btn btn-outline" onclick="collapseAll()">收起全部</button>
+</div>
+
+<!-- 案例一 -->
+<div class="case-card open" data-case="1">
+  <div class="case-header" onclick="toggleCase(this)">
+    <span class="case-num">1</span>
+    <h3>我的"化学变化"概念图</h3>
+    <span class="case-toggle">▼</span>
+  </div>
+  <div class="case-body">
+    <p><strong>📍 真实建构情境：</strong>你已经学完"走进化学世界"第 1 章，头脑中有很多零散的知识点——物理变化、化学变化、物理性质、化学性质、实验仪器……现在请你把这些知识点编织成一张概念图。</p>
+    <p><strong>🎯 建构任务：</strong>用一张概念图展示"化学变化"这个核心概念与其他概念之间的关系。</p>
+    <p><span class="tag">🔬 原理调用提示</span> 二分归类法——先判断哪些概念属于"变化"，哪些属于"性质"。</p>
+    <p><strong>📋 建构步骤：</strong></p>
+    <ol class="step-list">
+      <li>列出所有学过的概念</li>
+      <li>找出核心概念</li>
+      <li>分类归纳</li>
+      <li>画出关系</li>
+      <li>标注连接词</li>
+    </ol>
+    <div class="scaffold-box"><strong>🔧 脚手架推荐：</strong>使用 XMind 思维导图软件，或手绘在 A4 纸上</div>
+    <p><strong>📤 成果表达：</strong>A4 纸大小的概念图，包含至少 10 个概念，用箭头和连接词标明关系。</p>
+    <div class="rubric-box">
+      <strong>✅ 自评量规：</strong>
+      <div class="rubric-item" onclick="toggleRubric(this)"><span class="rubric-check"></span>是否包含"化学变化"核心概念</div>
+      <div class="rubric-item" onclick="toggleRubric(this)"><span class="rubric-check"></span>是否区分了变化和性质</div>
+      <div class="rubric-item" onclick="toggleRubric(this)"><span class="rubric-check"></span>是否有清晰的层级结构</div>
+    </div>
+  </div>
+</div>
+
+<!-- 案例二 -->
+<div class="case-card" data-case="2">
+  <div class="case-header" onclick="toggleCase(this)">
+    <span class="case-num">2</span>
+    <h3>家庭化学变化调查报告</h3>
+    <span class="case-toggle">▼</span>
+  </div>
+  <div class="case-body">
+    <p><strong>📍 真实建构情境：</strong>你的厨房就是一个化学实验室！做饭时发生的变化，哪些是物理变化，哪些是化学变化？</p>
+    <p><strong>🎯 建构任务：</strong>调查你家厨房中 3 个化学变化实例和 3 个物理变化实例，写出调查报告。</p>
+    <p><span class="tag">🔬 原理调用提示</span> 现象驱动法——仔细观察每个变化的现象。</p>
+    <p><strong>📋 建构步骤：</strong></p>
+    <ol class="step-list">
+      <li>确定调查对象</li>
+      <li>观察并记录现象</li>
+      <li>判断变化类型</li>
+      <li>写出报告</li>
+    </ol>
+    <div class="scaffold-box"><strong>🔧 脚手架推荐：</strong>观察记录表模板（现象、变化前、变化后、变化类型）</div>
+    <p><strong>📤 成果表达：</strong>图文结合的调查报告，每个变化配一张照片或示意图。</p>
+    <div class="rubric-box">
+      <strong>✅ 自评量规：</strong>
+      <div class="rubric-item" onclick="toggleRubric(this)"><span class="rubric-check"></span>是否包含了 6 个实例</div>
+      <div class="rubric-item" onclick="toggleRubric(this)"><span class="rubric-check"></span>每个实例是否都有现象描述</div>
+      <div class="rubric-item" onclick="toggleRubric(this)"><span class="rubric-check"></span>变化类型判断是否正确</div>
+    </div>
+  </div>
+</div>
+
+<!-- 案例三 -->
+<div class="case-card" data-case="3">
+  <div class="case-header" onclick="toggleCase(this)">
+    <span class="case-num">3</span>
+    <h3>实验室安全操作指南</h3>
+    <span class="case-toggle">▼</span>
+  </div>
+  <div class="case-body">
+    <p><strong>📍 真实建构情境：</strong>新同学第一次进化学实验室，不知道如何安全操作。</p>
+    <p><strong>🎯 建构任务：</strong>设计一份"化学实验室安全操作指南"海报。</p>
+    <p><span class="tag">🔬 原理调用提示</span> 模型表达法——将安全规范可视化表达出来。</p>
+    <p><strong>📋 建构步骤：</strong></p>
+    <ol class="step-list">
+      <li>列出常见危险操作</li>
+      <li>总结安全规则</li>
+      <li>设计海报布局</li>
+      <li>制作成品</li>
+    </ol>
+    <div class="scaffold-box"><strong>🔧 脚手架推荐：</strong>查阅教材中的实验室安全规则</div>
+    <p><strong>📤 成果表达：</strong>A3 大小的海报，包含至少 8 条安全规则和对应的图示。</p>
+    <div class="rubric-box">
+      <strong>✅ 自评量规：</strong>
+      <div class="rubric-item" onclick="toggleRubric(this)"><span class="rubric-check"></span>是否涵盖了教材中的所有安全规则</div>
+      <div class="rubric-item" onclick="toggleRubric(this)"><span class="rubric-check"></span>是否有图示辅助理解</div>
+      <div class="rubric-item" onclick="toggleRubric(this)"><span class="rubric-check"></span>语言是否清晰易懂</div>
+    </div>
+  </div>
+</div>
+
+<!-- 案例四 -->
+<div class="case-card" data-case="4">
+  <div class="case-header" onclick="toggleCase(this)">
+    <span class="case-num">4</span>
+    <h3>用化学语言描述实验</h3>
+    <span class="case-toggle">▼</span>
+  </div>
+  <div class="case-body">
+    <p><strong>📍 真实建构情境：</strong>你在实验室做了一个"加热碳酸氢铵"的实验，现在需要用规范的化学语言描述这个过程。</p>
+    <p><strong>🎯 建构任务：</strong>写一份"加热碳酸氢铵"的实验描述报告。</p>
+    <p><span class="tag">🔬 原理调用提示</span> 学术语言转化法——将观察到的事实转化为化学语言。</p>
+    <p><strong>📋 建构步骤：</strong></p>
+    <ol class="step-list">
+      <li>记录实验现象</li>
+      <li>确定变化类型</li>
+      <li>用化学语言描述</li>
+      <li>总结规律</li>
+    </ol>
+    <div class="scaffold-box"><strong>🔧 脚手架推荐：</strong>实验报告模板（目的、现象、化学方程式、结论）</div>
+    <p><strong>📤 成果表达：</strong>包含实验目的、实验现象、化学方程式、结论的结构化报告。</p>
+    <div class="rubric-box">
+      <strong>✅ 自评量规：</strong>
+      <div class="rubric-item" onclick="toggleRubric(this)"><span class="rubric-check"></span>实验现象描述是否完整</div>
+      <div class="rubric-item" onclick="toggleRubric(this)"><span class="rubric-check"></span>是否使用了化学术语</div>
+      <div class="rubric-item" onclick="toggleRubric(this)"><span class="rubric-check"></span>结论是否基于证据</div>
+    </div>
+  </div>
+</div>
+
+<!-- 案例五 -->
+<div class="case-card" data-case="5">
+  <div class="case-header" onclick="toggleCase(this)">
+    <span class="case-num">5</span>
+    <h3>跨学科视角——燃烧的三要素</h3>
+    <span class="case-toggle">▼</span>
+  </div>
+  <div class="case-body">
+    <p><strong>📍 真实建构情境：</strong>消防员说"燃烧需要三个条件"，物理学老师说"燃烧释放能量"，化学老师说"燃烧是氧化反应"。</p>
+    <p><strong>🎯 建构任务：</strong>建构一个跨学科视角的"燃烧综合解释模型"。</p>
+    <p><span class="tag">🔬 原理调用提示</span> 证据链建构法——整合来自不同学科的证据。</p>
+    <p><strong>📋 建构步骤：</strong></p>
+    <ol class="step-list">
+      <li>收集各学科对燃烧的解释</li>
+      <li>找出共同点</li>
+      <li>建构综合模型</li>
+      <li>展示</li>
+    </ol>
+    <div class="scaffold-box"><strong>🔧 脚手架推荐：</strong>三栏对比分析表（化学视角 | 物理视角 | 生活视角）</div>
+    <p><strong>📤 成果表达：</strong>一幅包含化学、物理、生活视角的"燃烧综合解释图"。</p>
+    <div class="rubric-box">
+      <strong>✅ 自评量规：</strong>
+      <div class="rubric-item" onclick="toggleRubric(this)"><span class="rubric-check"></span>是否包含了 3 个学科视角</div>
+      <div class="rubric-item" onclick="toggleRubric(this)"><span class="rubric-check"></span>各视角是否有证据支持</div>
+      <div class="rubric-item" onclick="toggleRubric(this)"><span class="rubric-check"></span>是否整合为一个连贯的模型</div>
+    </div>
+  </div>
+</div>
+
+<!-- 案例六 -->
+<div class="case-card" data-case="6">
+  <div class="case-header" onclick="toggleCase(this)">
+    <span class="case-num">6</span>
+    <h3>环境问题中的化学原理</h3>
+    <span class="case-toggle">▼</span>
+  </div>
+  <div class="case-body">
+    <p><strong>📍 真实建构情境：</strong>新闻报道说"某地区酸雨严重，导致了建筑腐蚀和土壤酸化"。</p>
+    <p><strong>🎯 建构任务：</strong>建构一个"酸雨形成的化学过程解释模型"。</p>
+    <p><span class="tag">🔬 原理调用提示</span> 模型表达法 + 证据链建构法</p>
+    <p><strong>📋 建构步骤：</strong></p>
+    <ol class="step-list">
+      <li>分析新闻中的现象</li>
+      <li>找出化学原因</li>
+      <li>建构形成过程</li>
+      <li>提出建议</li>
+    </ol>
+    <div class="scaffold-box"><strong>🔧 脚手架推荐：</strong>原因—过程—结果分析框架</div>
+    <p><strong>📤 成果表达：</strong>一份"酸雨的化学过程"说明图，包含反应过程和对环境的影响。</p>
+    <div class="rubric-box">
+      <strong>✅ 自评量规：</strong>
+      <div class="rubric-item" onclick="toggleRubric(this)"><span class="rubric-check"></span>是否解释了酸雨的形成原因</div>
+      <div class="rubric-item" onclick="toggleRubric(this)"><span class="rubric-check"></span>是否用化学语言表达</div>
+      <div class="rubric-item" onclick="toggleRubric(this)"><span class="rubric-check"></span>是否提出了可行的缓解建议</div>
+    </div>
+  </div>
+</div>
+
+<!-- 案例七 -->
+<div class="case-card" data-case="7">
+  <div class="case-header" onclick="toggleCase(this)">
+    <span class="case-num">7</span>
+    <h3>化学新知学术展览</h3>
+    <span class="case-toggle">▼</span>
+  </div>
+  <div class="case-body">
+    <p><strong>📍 真实建构情境：</strong>学校要举办"化学新知学术展览"，你的任务是设计一个展板，向全校师生展示"走进化学世界"这一章的核心新知识。</p>
+    <p><strong>🎯 建构任务：</strong>设计一份"化学新知学术展览展板"。</p>
+    <p><span class="tag">🔬 原理调用提示</span> 综合运用所有五条建构性原理</p>
+    <p><strong>📋 建构步骤：</strong></p>
+    <ol class="step-list">
+      <li>梳理全章知识点</li>
+      <li>确定展示主题</li>
+      <li>设计展板结构</li>
+      <li>制作展板</li>
+      <li>准备讲解词</li>
+    </ol>
+    <div class="scaffold-box"><strong>🔧 脚手架推荐：</strong>参考科学展览的展板设计范例（标题+核心概念图+关键实验+学术总结）</div>
+    <p><strong>📤 成果表达：</strong>一张展板（含标题、核心概念图、关键实验、学术总结）+ 3 分钟讲解词。</p>
+    <div class="rubric-box">
+      <strong>✅ 自评量规：</strong>
+      <div class="rubric-item" onclick="toggleRubric(this)"><span class="rubric-check"></span>是否覆盖了第 1 章核心内容</div>
+      <div class="rubric-item" onclick="toggleRubric(this)"><span class="rubric-check"></span>展板是否有清晰的逻辑结构</div>
+      <div class="rubric-item" onclick="toggleRubric(this)"><span class="rubric-check"></span>讲解词是否面向听众</div>
+      <div class="rubric-item" onclick="toggleRubric(this)"><span class="rubric-check"></span>是否体现了学术化表达</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function toggleCase(header) {
+  var card = header.parentElement;
+  card.classList.toggle('open');
+}
+
+function expandAll() {
+  var cards = document.querySelectorAll('.case-card');
+  for (var i = 0; i < cards.length; i++) {
+    cards[i].classList.add('open');
+  }
+}
+
+function collapseAll() {
+  var cards = document.querySelectorAll('.case-card');
+  for (var i = 0; i < cards.length; i++) {
+    cards[i].classList.remove('open');
+  }
+}
+
+function toggleRubric(el) {
+  el.classList.toggle('done');
+}
+</script>
+</body>
+</html>

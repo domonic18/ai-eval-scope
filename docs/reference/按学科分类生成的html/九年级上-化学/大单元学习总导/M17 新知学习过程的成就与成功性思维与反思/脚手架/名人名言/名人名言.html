@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名人名言 — 科学思维的力量</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+.hero {
+  background: linear-gradient(135deg, #003a8c 0%, var(--primary) 50%, #69c0ff 100%);
+  color: #fff;
+  padding: 36px 44px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::after {
+  content: '"';
+  position: absolute;
+  right: 20px;
+  top: -20px;
+  font-size: 160px;
+  font-weight: 900;
+  opacity: 0.1;
+  color: #fff;
+  font-family: Georgia, serif;
+}
+.hero h1 { font-size: var(--font-h1); margin-bottom: 6px; }
+.hero .subtitle { font-size: 15px; opacity: 0.9; }
+.hero .badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.2);
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
+.person-nav {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.person-nav button {
+  padding: 10px 20px;
+  border: none;
+  background: var(--card-bg);
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: all 0.25s;
+  font-family: inherit;
+  flex: 1;
+  min-width: 120px;
+}
+.person-nav button:hover { background: var(--bg); color: var(--text); }
+.person-nav button.active {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(22,119,255,0.35);
+}
+.person-content { display: none; }
+.person-content.active { display: block; }
+
+.person-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.person-card .header-img {
+  height: 6px;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+}
+.person-card .body { padding: 24px; }
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 14px 0;
+}
+.info-item {
+  padding: 10px 12px;
+  background: #fafafa;
+  border-radius: 6px;
+  border-left: 3px solid var(--primary);
+}
+.info-item .label { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+.info-item .value { font-weight: 600; margin-top: 2px; }
+
+.insight-box {
+  background: #e6f7ff;
+  border-radius: 6px;
+  padding: 14px 18px;
+  margin: 12px 0;
+  border-left: 4px solid var(--primary);
+}
+.insight-box strong { color: var(--primary); }
+
+.reading-path {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+}
+.reading-path .tag {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 16px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  border: 1px solid var(--border);
+  cursor: default;
+  transition: all 0.2s;
+}
+.reading-path .tag:hover { border-color: var(--primary); background: #e6f7ff; }
+
+.thought-box {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+  padding: 16px 20px;
+  margin: 14px 0;
+}
+.thought-box h4 { color: #d48806; margin-bottom: 6px; font-size: 15px; }
+.thought-box p { font-size: 14px; }
+.thought-btn {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 6px 18px;
+  background: #faad14;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+.thought-btn:hover { background: #d48806; }
+.thought-btn:disabled { background: #d9d9d9; cursor: default; }
+.thought-btn.done { background: #52c41a; }
+.thought-btn.done:hover { background: #389e0d; }
+.milestone { display: none; margin-top: 10px; padding: 10px 14px; background: #f6ffed; border-radius: 6px; border-left: 3px solid #52c41a; }
+.milestone.show { display: block; }
+
+@media (max-width: 640px) {
+  .container { padding: 16px; }
+  .hero { padding: 24px 20px; }
+  .hero::after { font-size: 100px; right: 16px; top: -10px; }
+  .info-grid { grid-template-columns: 1fr; }
+  .person-card .body { padding: 16px; }
+  .person-nav button { min-width: 80px; font-size: 13px; padding: 8px 12px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="hero">
+  <div class="badge">💡 名人名言</div>
+  <h1>科学思维的力量</h1>
+  <div class="subtitle">三位科学家的故事——创新、试错与坚持</div>
+</div>
+
+<div class="person-nav">
+  <button class="active" data-person="lavoisier" onclick="switchPerson(this)">🧪 拉瓦锡</button>
+  <button data-person="edison" onclick="switchPerson(this)">💡 爱迪生</button>
+  <button data-person="tu" onclick="switchPerson(this)">🌿 屠呦呦</button>
+</div>
+
+<div class="person-content active" id="person-lavoisier">
+  <div class="person-card">
+    <div class="header-img"></div>
+    <div class="body">
+      <h2 style="font-size:var(--font-h2);">安托万·拉瓦锡</h2>
+      <p style="color:var(--text-secondary);margin-bottom:10px;">Antoine Lavoisier · 1743—1794 · 现代化学奠基人</p>
+
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="label">关键问题</div>
+          <div class="value">物质在燃烧时到底发生了什么？"燃素说"正确吗？</div>
+        </div>
+        <div class="info-item">
+          <div class="label">思维突破</div>
+          <div class="value">用定量方法证明质量守恒定律，推翻燃素说</div>
+        </div>
+        <div class="info-item">
+          <div class="label">争议点</div>
+          <div class="value">曾任税务官，被革命法庭判处死刑</div>
+        </div>
+        <div class="info-item">
+          <div class="label">对当下的启示</div>
+          <div class="value">面对主流理论，问"它解释不了什么？"</div>
+        </div>
+      </div>
+
+      <div class="insight-box">
+        <strong>🔬 拉瓦锡教会我们：</strong>面对一个主流理论时，不要只问"它解释了哪些现象"，更要问"还有哪些现象它解释不了？"——这是科学创新的起点。
+      </div>
+
+      <div class="reading-path">
+        <span class="tag">📖 《化学革命：拉瓦锡传》</span>
+        <span class="tag">🎬 BBC《科学的故事》</span>
+        <span class="tag">📄 《化学基础论》节选</span>
+      </div>
+
+      <div class="thought-box">
+        <h4>🤔 "如果你是他"思考任务</h4>
+        <p>你穿越回 18 世纪，所有人都相信"燃素说"。你能设计一个什么样的实验，既让他们心服口服地接受新理论，又不伤害他们的感情？</p>
+        <button class="thought-btn" onclick="completeThought(this,'lavoisier')">✓ 我已思考完成</button>
+        <div class="milestone" id="milestone-lavoisier">🎉 你像拉瓦锡一样，敢于挑战主流理论——这是科学进步的第一步！建议将你的实验设计思路写下来。</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="person-content" id="person-edison">
+  <div class="person-card">
+    <div class="header-img"></div>
+    <div class="body">
+      <h2 style="font-size:var(--font-h2);">托马斯·爱迪生</h2>
+      <p style="color:var(--text-secondary);margin-bottom:10px;">Thomas Edison · 1847—1931 · 发明家 · 1093项专利</p>
+
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="label">关键问题</div>
+          <div class="value">如何找到耐用、廉价、安全的灯丝材料？</div>
+        </div>
+        <div class="info-item">
+          <div class="label">思维突破</div>
+          <div class="value">系统化测试 6000+ 种材料，建立首个"材料筛选数据库"</div>
+        </div>
+        <div class="info-item">
+          <div class="label">争议点</div>
+          <div class="value">他不是第一个发明电灯的人，但第一个解决实用化问题</div>
+        </div>
+        <div class="info-item">
+          <div class="label">对当下的启示</div>
+          <div class="value">失败是排除了一个不成立的假设——记录它们</div>
+        </div>
+      </div>
+
+      <div class="insight-box">
+        <strong>💡 爱迪生教会我们：</strong>失败不是失败，是排除了一个不成立的假设。把你的"失败"记录下来，它们会成为你最珍贵的学习数据。
+      </div>
+
+      <div class="reading-path">
+        <span class="tag">📖 《爱迪生：发明与创新的一生》</span>
+        <span class="tag">🎬 History Channel《爱迪生与电流之战》</span>
+      </div>
+
+      <div class="thought-box">
+        <h4>🤔 "如果你是他"思考任务</h4>
+        <p>你在化学实验中连续失败了 5 次。用爱迪生的"试错方法论"，你如何记录和分析这 5 次失败？设计一张"实验失败记录表"。</p>
+        <button class="thought-btn" onclick="completeThought(this,'edison')">✓ 我已思考完成</button>
+        <div class="milestone" id="milestone-edison">🎉 你把失败变成了学习数据！记住：每次失败的实验都在告诉你"这条路不通"，减少了下次试错的范围。</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="person-content" id="person-tu">
+  <div class="person-card">
+    <div class="header-img"></div>
+    <div class="body">
+      <h2 style="font-size:var(--font-h2);">屠呦呦</h2>
+      <p style="color:var(--text-secondary);margin-bottom:10px;">1930— · 中国药学家 · 2015年诺贝尔生理学或医学奖</p>
+
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="label">关键问题</div>
+          <div class="value">如何从中国古代医书中找到治疗疟疾的有效药物？</div>
+        </div>
+        <div class="info-item">
+          <div class="label">思维突破</div>
+          <div class="value">从《肘后备急方》"青蒿一握，以水二升渍，绞取汁"悟出：温度是关键！</div>
+        </div>
+        <div class="info-item">
+          <div class="label">失败经历</div>
+          <div class="value">经历 190 多次失败，在"文革"极端艰苦条件下坚持研究</div>
+        </div>
+        <div class="info-item">
+          <div class="label">对当下的启示</div>
+          <div class="value">跨界阅读的价值 + 190 次失败后的第 191 次可能成功</div>
+        </div>
+      </div>
+
+      <div class="insight-box">
+        <strong>🌿 屠呦呦带给我们两个启示：</strong>① 跨界阅读的价值——她认真地把古籍中的操作细节和化学原理对照起来。② 坚持的价值——190 次失败之后的第 191 次，可能就是成功。
+      </div>
+
+      <div class="reading-path">
+        <span class="tag">📖 《屠呦呦传》</span>
+        <span class="tag">🎬 CCTV《一株小草改变世界》</span>
+        <span class="tag">📄 诺贝尔奖官网获奖演讲</span>
+      </div>
+
+      <div class="thought-box">
+        <h4>🤔 "如果你是她"思考任务</h4>
+        <p>假设你也在屠呦呦的位置，手头只有一本古籍和一些基础实验设备。你会如何设计一个实验方案，既能验证青蒿的有效成分，又不破坏它？请写出你的"实验研究方案提纲"（300 字以内）。</p>
+        <button class="thought-btn" onclick="completeThought(this,'tu')">✓ 我已思考完成</button>
+        <div class="milestone" id="milestone-tu">🎉 你的实验思维令人赞叹！屠呦呦的故事告诉我们：传统智慧 + 现代科学方法 = 伟大的发现。</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function switchPerson(btn) {
+  var navBtns = document.querySelectorAll('.person-nav button');
+  navBtns.forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  var contents = document.querySelectorAll('.person-content');
+  contents.forEach(function(c) { c.classList.remove('active'); });
+  var target = document.getElementById('person-' + btn.getAttribute('data-person'));
+  if (target) target.classList.add('active');
+}
+function completeThought(btn, id) {
+  if (btn.disabled) return;
+  btn.disabled = true;
+  btn.classList.add('done');
+  btn.textContent = '✓ 已完成';
+  var milestone = document.getElementById('milestone-' + id);
+  if (milestone) milestone.classList.add('show');
+}
+</script>
+</body>
+</html>

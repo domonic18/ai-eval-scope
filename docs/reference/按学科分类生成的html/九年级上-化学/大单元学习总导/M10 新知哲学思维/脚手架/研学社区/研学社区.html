@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>研学社区 — 案例库</title>
+<style>
+:root {
+  --primary: #16a34a;
+  --primary-hover: #15803d;
+  --accent: #22c55e;
+  --bg: #f0fdf4;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.container { width:100%; max-width:none; padding:20px; box-sizing:border-box; }
+
+.header { background: linear-gradient(135deg, #15803d, #16a34a); color:#fff; padding:24px 28px; border-radius:var(--border-radius); margin-bottom:20px; }
+.header h1 { font-size:var(--font-h1); margin-bottom:6px; }
+.header .subtitle { font-size:14px; opacity:0.9; }
+
+.stage-tabs {
+  display:flex; gap:4px; margin-bottom:20px;
+  background:var(--card-bg); border-radius:var(--border-radius); padding:4px; box-shadow:var(--shadow);
+}
+.stage-btn {
+  flex:1; padding:10px 0; border:none; border-radius:6px; font-size:14px; font-weight:600;
+  cursor:pointer; transition:all 0.3s; background:transparent; color:var(--text-secondary);
+}
+.stage-btn.active { background:var(--primary); color:#fff; box-shadow:0 2px 6px rgba(22,163,74,0.3); }
+.stage-btn:hover:not(.active) { color:var(--primary); }
+
+.case-card {
+  background:var(--card-bg); border:1px solid var(--border); border-radius:var(--border-radius);
+  padding:20px; margin-bottom:16px; box-shadow:var(--shadow);
+}
+.case-badge { display:inline-block; font-size:11px; font-weight:700; padding:2px 10px; border-radius:10px; margin-bottom:8px; }
+.badge-life { background:#dcfce7; color:#166534; }
+.badge-hist { background:#fef3c7; color:#92400e; }
+.badge-global { background:#fce7f3; color:#9d174d; }
+
+.case-card h3 { font-size:var(--font-h2); margin-bottom:8px; color:var(--primary); }
+.case-card .label { font-weight:600; color:var(--text); margin-top:10px; margin-bottom:4px; }
+.case-card p, .case-card li { font-size:14px; }
+
+.option-grid { display:flex; gap:8px; flex-wrap:wrap; margin:8px 0; }
+.option-btn {
+  padding:8px 14px; border:2px solid var(--border); border-radius:8px; background:var(--card-bg);
+  font-size:13px; cursor:pointer; transition:all 0.25s; color:var(--text);
+}
+.option-btn:hover { border-color:var(--accent); }
+.option-btn.selected { border-color:var(--primary); background:#dcfce7; color:#166534; font-weight:600; }
+.result-box { margin-top:10px; padding:12px 14px; border-radius:6px; font-size:13px; display:none; border-left:4px solid var(--primary); background:var(--bg); }
+.result-box.show { display:block; }
+.result-box.correct { border-left-color:var(--primary); }
+.result-box.incorrect { border-left-color:#ef4444; }
+
+.task-box {
+  margin-top:20px; background:var(--card-bg); border:2px dashed var(--primary); border-radius:var(--border-radius); padding:20px;
+}
+.task-box h4 { font-size:var(--font-h2); color:var(--primary); margin-bottom:8px; }
+.task-box textarea { width:100%; min-height:100px; padding:10px; border:1px solid var(--border); border-radius:6px; font-size:14px; font-family:inherit; resize:vertical; margin-top:8px; }
+.task-box textarea:focus { outline:2px solid var(--accent); outline-offset:-1px; }
+
+.stage-panel { display:none; }
+.stage-panel.active { display:block; }
+
+.insight-box { margin-top:12px; padding:10px 14px; background:linear-gradient(135deg, #f0fdf4, #ffffff); border-radius:6px; border-left:4px solid var(--primary); }
+.insight-box strong { color:var(--primary); }
+
+@media (max-width:600px) {
+  .option-grid { flex-direction:column; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🌍 研学社区 · 案例库</h1>
+  <div class="subtitle">化学 · 九年级上 · 真实世界的化学变化</div>
+</div>
+
+<div class="stage-tabs">
+  <button class="stage-btn active" data-stage="life" onclick="switchStage('life')">🥘 生活层</button>
+  <button class="stage-btn" data-stage="history" onclick="switchStage('history')">📜 历史层</button>
+  <button class="stage-btn" data-stage="global" onclick="switchStage('global')">🌏 挑战层</button>
+</div>
+
+<div class="stage-panel active" id="stage-life">
+  <div class="case-card">
+    <span class="case-badge badge-life">生活案例</span>
+    <h3>🔥 厨房里的"化学灭火"</h3>
+    <p><strong>背景：</strong>炒菜时油锅突然起火，妈妈迅速盖上锅盖，火马上就灭了；如果用自来水浇，反而会火星四溅。</p>
+    <div class="label">🧐 核心问题</div>
+    <p>为什么盖锅盖能灭火？为什么油锅起火不能用水浇？</p>
+    <div class="label">🔽 你的选择</div>
+    <div class="option-grid" data-group="fire">
+      <button class="option-btn" data-choice="A" onclick="choose('fire','A')">A · 盖锅盖</button>
+      <button class="option-btn" data-choice="B" onclick="choose('fire','B')">B · 用水浇</button>
+      <button class="option-btn" data-choice="C" onclick="choose('fire','C')">C · 湿毛巾覆盖</button>
+      <button class="option-btn" data-choice="D" onclick="choose('fire','D')">D · 跑出去打119</button>
+    </div>
+    <div id="result-fire" class="result-box"></div>
+    <div class="insight-box">
+      <strong>💡 可迁移启示：</strong>灭火的本质是"破坏三个条件（可燃物、氧气、着火点）中至少一个"。这个原则适用于<strong>任何</strong>火灾场景。
+    </div>
+  </div>
+</div>
+
+<div class="stage-panel" id="stage-history">
+  <div class="case-card">
+    <span class="case-badge badge-hist">历史案例</span>
+    <h3>⚖️ 拉瓦锡的"十二天实验"</h3>
+    <p><strong>背景：</strong>18世纪，主流科学界认为燃烧是释放"燃素"的过程。拉瓦锡设计了一个封闭容器，精确称量锡加热前后的总质量。</p>
+    <div class="label">🧐 核心问题</div>
+    <p>如果燃素说正确，锡燃烧释放了燃素 → 体系质量应减少。但拉瓦锡发现总质量不变。为什么会这样？</p>
+    <div class="label">🔽 决策路径</div>
+    <div class="option-grid" data-group="lavoisier">
+      <button class="option-btn" data-choice="A" onclick="choose('lavoisier','A')">A · 燃素有"负质量"</button>
+      <button class="option-btn" data-choice="B" onclick="choose('lavoisier','B')">B · 锡与空气中的某种成分结合</button>
+    </div>
+    <div id="result-lavoisier" class="result-box"></div>
+    <div class="insight-box">
+      <strong>💡 可迁移启示：</strong>科学进步往往不是因为"发现了新事实"，而是因为"对已有事实做了新的解释"。
+    </div>
+  </div>
+</div>
+
+<div class="stage-panel" id="stage-global">
+  <div class="case-card">
+    <span class="case-badge badge-global">全球挑战</span>
+    <h3>🌱 碳中和——碳元素的"社会流动"</h3>
+    <p><strong>背景：</strong>人类每年排放约360亿吨CO₂，而自然界的碳循环只能吸收约一半。剩余的CO₂在大气中累积，导致全球变暖。</p>
+    <div class="label">🧐 核心问题</div>
+    <p>从化学角度看，碳排放的本质是什么？碳中和的化学本质又是什么？</p>
+    <div class="label">🔽 决策路径</div>
+    <div class="option-grid" data-group="carbon">
+      <button class="option-btn" data-choice="A" onclick="choose('carbon','A')">A · 减排：减少化石燃料燃烧</button>
+      <button class="option-btn" data-choice="B" onclick="choose('carbon','B')">B · 碳捕集：从烟囱中吸收CO₂</button>
+      <button class="option-btn" data-choice="C" onclick="choose('carbon','C')">C · 碳转化：CO₂→燃料/材料</button>
+    </div>
+    <div id="result-carbon" class="result-box"></div>
+    <div class="insight-box">
+      <strong>💡 可迁移启示：</strong>化学变化不仅仅发生在试管里——它发生在全球尺度上。学化学的你，未来可能参与任何一条路径。
+    </div>
+  </div>
+
+  <div class="task-box">
+    <h4>✍️ "如果你是决策者"分支任务</h4>
+    <p>假设你是某城市的环保负责人，当地碳排放主要来自钢铁厂和火力发电厂。请从"化学角度"提出你的减排或碳处理建议。</p>
+    <textarea id="task-letter" placeholder="写下你的100字建议信……"></textarea>
+    <div style="margin-top:8px;display:flex;gap:8px;">
+      <button class="stage-btn" style="flex:0;padding:8px 18px;background:var(--primary);color:#fff;" onclick="submitTask()">📤 提交思考</button>
+      <button class="stage-btn" style="flex:0;padding:8px 18px;" onclick="clearTask()">🔄 重置</button>
+    </div>
+    <div id="task-feedback" class="result-box" style="margin-top:8px;"></div>
+  </div>
+</div>
+
+</div>
+<script>
+function switchStage(name) {
+  document.querySelectorAll('.stage-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.stage-panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`[data-stage="${name}"]`).classList.add('active');
+  document.getElementById('stage-' + name).classList.add('active');
+}
+
+const results = {
+  fire: { A: { text: '✅ 正确！盖锅盖隔绝了氧气（助燃物），破坏了燃烧条件，火焰因缺氧而熄灭。', correct: true },
+         B: { text: '❌ 用水浇油锅非常危险！水的密度比油大，会沉入锅底瞬间汽化，把燃烧的油溅得到处都是，火势反而扩大。', correct: false },
+         C: { text: '✅ 湿毛巾覆盖同样能隔绝氧气，是个可行方案！但注意湿毛巾要足够大，完全覆盖锅口。', correct: true },
+         D: { text: '🟡 在火势无法控制时打119是正确的。但油锅初期火灾通常盖锅盖就能解决，不需要惊动消防队。', correct: false } },
+  lavoisier: { A: { text: '❌ "负质量"在科学上不存在。这个解释只是为了强行维护燃素说而提出的，缺乏实验证据。', correct: false },
+               B: { text: '✅ 正确！拉瓦锡推断锡与空气中的某种成分（后来命名为"氧气"）发生了化合反应，因此总质量不变。这推翻了燃素说！', correct: true } },
+  carbon: { A: { text: '🌱 好选择！减少化石燃料燃烧是从源头上控制碳排放。可通过发展清洁能源（太阳能、风能）替代。', correct: true },
+            B: { text: '🧪 有道理！碳捕集技术（CCS）用化学吸收法从烟道气中分离CO₂，是目前重要的减排补充手段。', correct: true },
+            C: { text: '🔬 有远见！将CO₂催化转化为甲醇、合成气等燃料/材料，是化学前沿研究方向，变废为宝。', correct: true } }
+};
+
+function choose(group, choice) {
+  const container = document.querySelector(`[data-group="${group}"]`);
+  container.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+  const btn = container.querySelector(`[data-choice="${choice}"]`);
+  if (btn) btn.classList.add('selected');
+
+  const resultEl = document.getElementById('result-' + group);
+  const data = results[group][choice];
+  if (!data) return;
+  resultEl.textContent = data.text;
+  resultEl.className = 'result-box show ' + (data.correct ? 'correct' : 'incorrect');
+}
+
+function submitTask() {
+  const ta = document.getElementById('task-letter');
+  const fb = document.getElementById('task-feedback');
+  if (!ta.value.trim()) {
+    fb.textContent = '请先写下你的建议再提交哦 😊';
+    fb.className = 'result-box show incorrect';
+    return;
+  }
+  fb.textContent = '✅ 思考已记录！你的化学视角建议很有价值。建议与同学分享交流，看看不同方案各有什么优劣。';
+  fb.className = 'result-box show correct';
+}
+
+function clearTask() {
+  const ta = document.getElementById('task-letter');
+  const fb = document.getElementById('task-feedback');
+  ta.value = '';
+  fb.className = 'result-box';
+  fb.textContent = '';
+}
+</script>
+</body>
+</html>

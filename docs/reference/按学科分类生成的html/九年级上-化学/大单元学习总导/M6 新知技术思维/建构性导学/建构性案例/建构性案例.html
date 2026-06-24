@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性案例 - 7层案例设计</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); font-size: var(--font-body); line-height: var(--line-height); }
+.container { width: 100%; max-width: none; padding: 32px 24px; box-sizing: border-box; }
+h1 { font-size: var(--font-h1); color: var(--primary); margin: 0 0 4px; }
+.subtitle { color: var(--text-secondary); font-size: 14px; margin-bottom: 20px; }
+.level-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.level-tab { padding: 8px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--card-bg); cursor: pointer; font-size: 13px; transition: all .2s; user-select: none; }
+.level-tab:hover { border-color: var(--primary); }
+.level-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.case-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); box-shadow: var(--shadow); margin-bottom: 18px; overflow: hidden; display: none; }
+.case-card.visible { display: block; }
+.case-card.open { }
+.case-header { display: flex; align-items: center; gap: 12px; padding: 16px 18px; cursor: pointer; user-select: none; transition: background .2s; }
+.case-header:hover { background: #f5f8ff; }
+.case-level { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #fff; font-weight: 600; flex-shrink: 0; }
+.case-title { font-weight: 600; font-size: 15px; flex: 1; }
+.case-toggle { color: var(--text-secondary); font-size: 16px; transition: transform .3s; }
+.case-card.open .case-toggle { transform: rotate(180deg); }
+.case-body { max-height: 0; overflow: hidden; transition: max-height .4s ease, opacity .3s, padding .3s; opacity: 0; }
+.case-card.open .case-body { max-height: 4000px; opacity: 1; padding: 0 18px 18px; }
+.case-body p { margin: 8px 0; }
+.case-desc { background: var(--bg); border-radius: 6px; padding: 12px; margin: 8px 0; font-size: 13px; }
+.case-principles { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
+.principle-tag { background: var(--accent); color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+.steps-list { background: #f6ffed; border: 1px solid #b7eb8f; border-radius: 6px; padding: 10px 14px; margin: 8px 0; font-size: 13px; }
+.steps-list ol { margin: 4px 0; padding-left: 20px; }
+.steps-list li { margin: 3px 0; }
+.rubric { border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; margin: 8px 0; font-size: 13px; background: #fffbe6; border-color: #ffe58f; }
+.rubric strong { color: #d48806; }
+.all-visible .case-card { display: block; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>🏗️ 建构性案例</h1>
+<p class="subtitle">7个层级建构案例 · 从个人理解到综合创新</p>
+
+<div class="level-tabs" id="tabContainer">
+  <span class="level-tab active" data-filter="all" onclick="filterCases('all')">全部展示</span>
+  <span class="level-tab" data-filter="level1" onclick="filterCases('level1')">个人理解</span>
+  <span class="level-tab" data-filter="level2" onclick="filterCases('level2')">生活应用</span>
+  <span class="level-tab" data-filter="level3" onclick="filterCases('level3')">校园问题</span>
+  <span class="level-tab" data-filter="level4" onclick="filterCases('level4')">学科表达</span>
+  <span class="level-tab" data-filter="level5" onclick="filterCases('level5')">跨学科</span>
+  <span class="level-tab" data-filter="level6" onclick="filterCases('level6')">社会未来</span>
+  <span class="level-tab" data-filter="level7" onclick="filterCases('level7')">综合创新</span>
+</div>
+
+<div id="caseContainer">
+
+<div class="case-card visible" data-level="level1">
+  <div class="case-header" onclick="toggleCase(this.parentElement)">
+    <span class="case-level" style="background:#1677ff;">1</span>
+    <span class="case-title">🔩 建构"金属和非金属"分类标准</span>
+    <span class="case-toggle">▾</span>
+  </div>
+  <div class="case-body">
+    <p><strong>情境：</strong>身边有铁钉、铝箔、铜线、木条、塑料、玻璃——请自己建构出金属与非金属的分类标准。</p>
+    <div class="case-desc"><strong>任务：</strong>不查阅资料，仅通过观察、触摸、实验（导电性测试、硬度测试等）自主建构金属与非金属的特征模型。</div>
+    <div class="case-principles"><span class="principle-tag">问题拆解</span><span class="principle-tag">证据三角</span><span class="principle-tag">可视化表达</span></div>
+    <div class="steps-list">
+      <strong>步骤：</strong>
+      <ol>
+        <li>收集材料清单</li><li>设计判断标准</li><li>做简易导电测试</li>
+        <li>记录特征对比表</li><li>绘制分类模型图</li><li>用小众物质检验模型</li>
+      </ol>
+    </div>
+    <div class="rubric"><strong>📊 自评：</strong>分类标准独立建构(3分) | 可解释未测试物质(2分) | 至少3个判断维度(2分)</div>
+  </div>
+</div>
+
+<div class="case-card visible" data-level="level2">
+  <div class="case-header" onclick="toggleCase(this.parentElement)">
+    <span class="case-level" style="background:#52c41a;">2</span>
+    <span class="case-title">🍳 建构"哪些生活变化是化学变化"</span>
+    <span class="case-toggle">▾</span>
+  </div>
+  <div class="case-body">
+    <p><strong>情境：</strong>切水果、米煮成饭、苹果变色、冰块融化、菜刀生锈、醋泡鸡蛋壳——哪些是化学变化？</p>
+    <div class="case-desc"><strong>任务：</strong>从生活中选出3—5种变化，自行设计验证方案判断哪些是化学变化、哪些是物理变化。</div>
+    <div class="case-principles"><span class="principle-tag">问题拆解</span><span class="principle-tag">证据三角</span><span class="principle-tag">推理链</span></div>
+    <div class="steps-list">
+      <strong>步骤：</strong>
+      <ol>
+        <li>列出5种生活变化</li><li>每种判断"是否有新物质生成"</li>
+        <li>设计验证方案（闻气味、看颜色、测pH等）</li><li>做简易验证实验</li>
+        <li>用推理链写出判断过程</li><li>检验结论</li>
+      </ol>
+    </div>
+    <div class="rubric"><strong>📊 自评：</strong>涵盖4种以上变化(2分) | 每种有验证思路(3分) | 推理链≥2步(2分) | 区分"明显变化"和"新物质"(3分)</div>
+  </div>
+</div>
+
+<div class="case-card visible" data-level="level3">
+  <div class="case-header" onclick="toggleCase(this.parentElement)">
+    <span class="case-level" style="background:#722ed1;">3</span>
+    <span class="case-title">💧 建构"学校饮水机的水是否纯净"</span>
+    <span class="case-toggle">▾</span>
+  </div>
+  <div class="case-body">
+    <p><strong>情境：</strong>饮水机的水清澈透明，但它真的"纯净"吗？如何建构"纯净"的判断标准？</p>
+    <div class="case-desc"><strong>任务：</strong>以学校饮水机出水为样本，自主建构"纯净水"的标准，设计检验方案并做出判断。</div>
+    <div class="case-principles"><span class="principle-tag">问题拆解</span><span class="principle-tag">证据三角</span><span class="principle-tag">可视化表达</span><span class="principle-tag">反思迭代</span></div>
+    <div class="steps-list">
+      <strong>步骤：</strong>
+      <ol>
+        <li>讨论"纯净"在化学中的含义</li><li>列出判断维度（透明度、气味、残余物、溶解物）</li>
+        <li>设计实验（蒸干观察残留、测TDS、pH试纸）</li><li>对比自来水、矿泉水和饮水机水</li>
+        <li>建构"纯净度评估模型"</li><li>反思：自己的标准是否严格</li>
+      </ol>
+    </div>
+    <div class="rubric"><strong>📊 自评：</strong>定义"纯净"化学标准(3分) | 使用2种以上检验方法(2分) | 有数据记录(2分) | 结论有证据支撑(3分)</div>
+  </div>
+</div>
+
+<div class="case-card visible" data-level="level4">
+  <div class="case-header" onclick="toggleCase(this.parentElement)">
+    <span class="case-level" style="background:#d46b08;">4</span>
+    <span class="case-title">⚖️ 建构"质量守恒定律"实验证据模型</span>
+    <span class="case-toggle">▾</span>
+  </div>
+  <div class="case-body">
+    <p><strong>情境：</strong>老师说"化学反应前后质量不变"，但这是书本结论。你要像科学家一样动手建构出证据支撑。</p>
+    <div class="case-desc"><strong>任务：</strong>设计至少2个化学实验验证反应前后质量是否变化，建构质量守恒定律的理解模型。</div>
+    <div class="case-principles"><span class="principle-tag">问题拆解</span><span class="principle-tag">证据三角</span><span class="principle-tag">推理链</span><span class="principle-tag">可视化表达</span><span class="principle-tag">反思迭代</span></div>
+    <div class="steps-list">
+      <strong>步骤：</strong>
+      <ol>
+        <li>提出可检验的问题</li><li>选择反应（铁+硫酸铜、碳酸钠+盐酸）</li>
+        <li>设计称量方案（密闭/开放装置）</li><li>动手实验记录数据</li>
+        <li>分析数据偏差原因</li><li>建构"质量守恒解释模型"</li><li>迭代实验优化方案</li>
+      </ol>
+    </div>
+    <div class="rubric"><strong>📊 自评：</strong>设计2个及以上独立实验(3分) | 有误差分析(2分) | 模型能解释"为什么守恒"(3分) | 结论经得起质疑(2分)</div>
+  </div>
+</div>
+
+<div class="case-card visible" data-level="level5">
+  <div class="case-header" onclick="toggleCase(this.parentElement)">
+    <span class="case-level" style="background:#eb2f96;">5</span>
+    <span class="case-title">🌿 建构"植物生长所需的元素模型"</span>
+    <span class="case-toggle">▾</span>
+  </div>
+  <div class="case-body">
+    <p><strong>情境：</strong>植物生长需要什么"营养"？在化学元素和生物学需求之间建立桥梁。</p>
+    <div class="case-desc"><strong>任务：</strong>查阅资料并结合简易实验，建构植物生长所需的主要化学元素与其生物学功能的对应模型。</div>
+    <div class="case-principles"><span class="principle-tag">问题拆解</span><span class="principle-tag">证据三角</span><span class="principle-tag">推理链</span><span class="principle-tag">可视化表达</span></div>
+    <div class="steps-list">
+      <strong>步骤：</strong>
+      <ol>
+        <li>列出植物生长必需的宏观表现（长叶、长根、开花、结果）</li>
+        <li>追踪每个表现对应的化学元素需求</li>
+        <li>设计验证（资料+对比实验观察缺素症状）</li>
+        <li>建构"元素-功能"对应模型</li>
+        <li>用模型解释"为什么要氮磷钾搭配"</li>
+      </ol>
+    </div>
+    <div class="rubric"><strong>📊 自评：</strong>涵盖至少5种元素(2分) | 每种有生物功能说明(3分) | 展示协同关系(3分) | 跨学科思考(2分)</div>
+  </div>
+</div>
+
+<div class="case-card visible" data-level="level6">
+  <div class="case-header" onclick="toggleCase(this.parentElement)">
+    <span class="case-level" style="background:#13c2c2;">6</span>
+    <span class="case-title">🌍 建构"碳中和技术"的化学原理地图</span>
+    <span class="case-toggle">▾</span>
+  </div>
+  <div class="case-body">
+    <p><strong>情境：</strong>"碳达峰""碳中和""碳捕集"——这些技术背后的化学原理是什么？</p>
+    <div class="case-desc"><strong>任务：</strong>研究碳中和相关技术的化学基础（燃烧、光合作用、CO₂捕集、碳转化等），建构技术与原理的关联模型。</div>
+    <div class="case-principles"><span class="principle-tag">问题拆解</span><span class="principle-tag">推理链</span><span class="principle-tag">可视化表达</span><span class="principle-tag">反思迭代</span></div>
+    <div class="steps-list">
+      <strong>步骤：</strong>
+      <ol>
+        <li>定义问题："碳中和"到底是什么</li><li>分解关键环节：排放→捕集→转化→储存</li>
+        <li>研究每个环节的化学反应</li><li>建构"碳中和化学原理地图"</li><li>评估模型中的知识盲区</li>
+      </ol>
+    </div>
+    <div class="rubric"><strong>📊 自评：</strong>覆盖3个以上技术环节(3分) | 每环节标注化学反应(3分) | 展示碳的完整循环(2分) | 模型局限性思考(2分)</div>
+  </div>
+</div>
+
+<div class="case-card visible" data-level="level7">
+  <div class="case-header" onclick="toggleCase(this.parentElement)">
+    <span class="case-level" style="background:#f5222d;">7</span>
+    <span class="case-title">🌊 建构"社区一条河的水质评估方案"</span>
+    <span class="case-toggle">▾</span>
+  </div>
+  <div class="case-body">
+    <p><strong>情境：</strong>学校附近河水变浑浊——"污染"到底如何定义和评估？</p>
+    <div class="case-desc"><strong>任务：</strong>为社区河流设计一套完整的水质评估方案（含检测指标、检测方法、评价标准、报告模板），并实地采样测试。</div>
+    <div class="case-principles"><span class="principle-tag">5条原理综合运用</span></div>
+    <div class="steps-list">
+      <strong>步骤：</strong>
+      <ol>
+        <li>定义"水质"的多个维度</li><li>确定检测指标（pH、溶解氧、浊度、氨氮、重金属）</li>
+        <li>选择可行检测方法（感官+试剂盒+数字化工具）</li><li>设计评估标准和等级</li>
+        <li>实地采样检测</li><li>用数据建构水质结论</li>
+        <li>撰写评估报告并可视化呈现</li><li>和真实的水质报告对比找差距</li>
+      </ol>
+    </div>
+    <div class="rubric"><strong>📊 自评：</strong>评估维度≥3个指标(2分) | 检测方法科学可行(2分) | 数据记录+可视化(2分) | 结论有证据链(2分) | 迭代优化痕迹(2分)</div>
+  </div>
+</div>
+</div>
+</div>
+
+<script>
+function toggleCase(card) { card.classList.toggle('open'); }
+
+function filterCases(level) {
+  var tabs = document.querySelectorAll('.level-tab');
+  tabs.forEach(function(t) { t.classList.remove('active'); });
+  var activeTab;
+  tabs.forEach(function(t) {
+    if (t.getAttribute('data-filter') === level) { t.classList.add('active'); }
+  });
+  var cards = document.querySelectorAll('.case-card');
+  cards.forEach(function(c) {
+    if (level === 'all') { c.classList.add('visible'); }
+    else if (c.getAttribute('data-level') === level) { c.classList.add('visible'); }
+    else { c.classList.remove('visible'); }
+  });
+}
+</script>
+</body>
+</html>

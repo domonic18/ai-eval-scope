@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性示例导学 — 铁锅煮苹果汤</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  margin: 0;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px;
+  box-sizing: border-box;
+}
+.header {
+  text-align: center;
+  padding: 24px 16px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header .meta { font-size: 14px; opacity: 0.9; }
+.section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bg);
+}
+.section h3 {
+  font-size: 16px;
+  margin: 16px 0 8px;
+  font-weight: 600;
+}
+.section p { margin-bottom: 10px; }
+.scenario-box {
+  background: linear-gradient(135deg, #fff7e6, #fff8f0);
+  border: 1px solid #ffd591;
+  border-radius: var(--border-radius);
+  padding: 18px;
+  margin-bottom: 16px;
+  border-left: 4px solid #fa8c16;
+}
+.scenario-box .label {
+  display: inline-block;
+  background: #fa8c16;
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+.step-card {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+}
+.step-card:hover { border-color: var(--primary); background: var(--bg); }
+.step-card .step-num {
+  display: inline-block;
+  width: 28px; height: 28px;
+  line-height: 28px;
+  text-align: center;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 600;
+  margin-right: 8px;
+}
+.step-card .step-title {
+  font-weight: 600;
+  font-size: 15px;
+  display: inline;
+}
+.step-card .step-detail {
+  display: none;
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: 4px;
+  font-size: 14px;
+}
+.step-card .step-detail.show { display: block; }
+.step-card .hint-text {
+  font-size: 13px;
+  color: var(--accent);
+  margin-top: 6px;
+}
+.step-card.open { border-left: 3px solid var(--primary); }
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 14px;
+}
+.info-table th, .info-table td {
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  text-align: left;
+}
+.info-table th {
+  background: var(--bg);
+  color: var(--primary);
+  font-weight: 600;
+}
+.info-table tr:nth-child(even) { background: #fafafa; }
+.conclusion-box {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: var(--border-radius);
+  padding: 16px;
+  margin: 12px 0;
+  border-left: 4px solid #22c55e;
+}
+.method-list {
+  list-style: none;
+  padding: 0;
+}
+.method-list li {
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  background: var(--bg);
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+  font-size: 14px;
+}
+.method-list li strong { color: var(--primary); }
+.warn-box {
+  background: #fff1f0;
+  border: 1px solid #ffccc7;
+  border-radius: 6px;
+  padding: 14px;
+  margin: 8px 0;
+  border-left: 3px solid #ff4d4f;
+}
+.warn-box li { margin-bottom: 6px; }
+.practice-box {
+  background: #f0f5ff;
+  border: 1px solid #adc6ff;
+  border-radius: var(--border-radius);
+  padding: 18px;
+  margin: 12px 0;
+}
+.practice-box .btn {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+  margin-top: 8px;
+  transition: background 0.2s;
+}
+.practice-box .btn:hover { background: var(--primary-hover); }
+.practice-hint {
+  display: none;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px;
+  margin-top: 12px;
+  font-size: 14px;
+}
+.practice-hint.show { display: block; }
+.self-check label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+.self-check label:hover { border-color: var(--primary); background: var(--bg); }
+.self-check input[type="checkbox"] {
+  margin-top: 3px;
+  width: 16px; height: 16px;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+}
+.self-check label.checked {
+  border-color: var(--primary);
+  background: var(--bg);
+}
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  .section { padding: 16px; }
+  .info-table { font-size: 13px; }
+  .info-table th, .info-table td { padding: 6px 8px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🧪 解析性示例导学</h1>
+    <div class="meta">化学 · 九年级上 · 第1章 走进化学世界 | M9 新知文化思维 · 解析性导学</div>
+  </div>
+
+  <!-- 1. 解析任务情境 -->
+  <div class="section">
+    <h2>📖 解析任务情境</h2>
+    <div class="scenario-box">
+      <span class="label">🏠 生活情境</span>
+      <p style="font-size:16px;font-weight:500;margin-bottom:6px;">妈妈用铁锅煮苹果汤，汤变黑了。</p>
+      <p>妈妈说："铁锅不能用，把营养都煮没了。"</p>
+      <p style="color:var(--text-secondary);font-size:14px;margin-top:8px;">你怎么看这个问题？</p>
+    </div>
+    <p><strong>特点：</strong>这是一个贴近生活的情境，包含认知冲突——日常经验（变黑=不好）与科学原理之间的冲突，需要通过化学分析来解答。</p>
+  </div>
+
+  <!-- 2. 核心问题 -->
+  <div class="section">
+    <h2>❓ 核心问题</h2>
+    <p style="font-size:16px;">🤔 铁锅煮苹果汤为什么会变黑？</p>
+    <p style="font-size:16px;">🤔 这是化学变化还是物理变化？</p>
+    <p style="font-size:16px;">🤔 汤变黑意味着"营养流失"吗？</p>
+  </div>
+
+  <!-- 3. 关键信息提取表 -->
+  <div class="section">
+    <h2>📋 关键信息提取表</h2>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">点击每行的"为什么重要"查看详细解析：</p>
+    <table class="info-table">
+      <tr><th>情境信息</th><th>说明什么</th><th>为什么重要</th></tr>
+      <tr>
+        <td>铁锅是金属铁做的</td>
+        <td>存在铁元素</td>
+        <td><span class="click-reveal" style="color:var(--primary);cursor:pointer;" onclick="revealWhy(this)">点击查看 ▸</span><span class="why-text" style="display:none;">铁是化学性质较活泼的金属，能与酸性物质反应——这是分析的关键出发点</span></td>
+      </tr>
+      <tr>
+        <td>苹果含有鞣酸</td>
+        <td>苹果里有酸性物质</td>
+        <td><span class="click-reveal" style="color:var(--primary);cursor:pointer;" onclick="revealWhy(this)">点击查看 ▸</span><span class="why-text" style="display:none;">鞣酸（单宁酸）遇到铁离子会生成黑色的鞣酸铁——这就解释了"为什么变黑"</span></td>
+      </tr>
+      <tr>
+        <td>汤的颜色变深</td>
+        <td>发生了颜色变化</td>
+        <td><span class="click-reveal" style="color:var(--primary);cursor:pointer;" onclick="revealWhy(this)">点击查看 ▸</span><span class="why-text" style="display:none;">颜色改变是化学变化的重要线索——新物质（鞣酸铁）有不同于原物质的颜色</span></td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- 4. 专家解析过程（5步） -->
+  <div class="section">
+    <h2>🔬 专家解析过程（5步）</h2>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">点击每一步展开详细解析：</p>
+
+    <div class="step-card" onclick="toggleStep(this)">
+      <span class="step-num">1</span>
+      <span class="step-title">先看见什么</span>
+      <div class="hint-text">👆 点击展开</div>
+      <div class="step-detail">
+        <p><strong>观察到的现象：</strong></p>
+        <ul style="padding-left:20px;margin-bottom:8px;">
+          <li>苹果汤颜色由浅变深（从淡黄色变成深褐色/黑色）</li>
+          <li>铁锅与汤接触</li>
+          <li>煮汤过程有加热（温度条件）</li>
+        </ul>
+        <p><strong>关键线索：</strong>颜色变化 + 物质接触 + 温度条件 → 三者同时存在，提示可能发生了化学反应。</p>
+      </div>
+    </div>
+
+    <div class="step-card" onclick="toggleStep(this)">
+      <span class="step-num">2</span>
+      <span class="step-title">判断问题属于哪一类</span>
+      <div class="hint-text">👆 点击展开</div>
+      <div class="step-detail">
+        <p><strong>问题归类：</strong>物质变化类问题</p>
+        <p><strong>具体类型：</strong>涉及两种物质（铁锅中的铁 + 苹果中的鞣酸）在特定条件下（加热、有水）发生的反应</p>
+        <p><strong>判断依据：</strong>有颜色变化、有新物质产生的迹象——不再是原来的物质了</p>
+      </div>
+    </div>
+
+    <div class="step-card" onclick="toggleStep(this)">
+      <span class="step-num">3</span>
+      <span class="step-title">调用哪些概念</span>
+      <div class="hint-text">👆 点击展开</div>
+      <div class="step-detail">
+        <p><strong>已学概念调用：</strong></p>
+        <ul style="padding-left:20px;">
+          <li><strong>化学变化特征：</strong>有新物质生成，常伴随颜色变化、沉淀产生、气体放出、温度变化等</li>
+          <li><strong>金属与酸的反应：</strong>某些金属可以与酸发生反应，生成新物质</li>
+          <li><strong>物理变化 vs 化学变化：</strong>本质区别——有无新物质生成</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step-card" onclick="toggleStep(this)">
+      <span class="step-num">4</span>
+      <span class="step-title">如何进行推理</span>
+      <div class="hint-text">👆 点击展开</div>
+      <div class="step-detail">
+        <p><strong>推理链：</strong></p>
+        <p style="padding:10px;background:#fff;border:1px solid var(--border);border-radius:6px;">
+          铁（Fe）+ 鞣酸（苹果中）→ 鞣酸铁（黑色化合物）<br>
+          <span style="color:var(--text-secondary);">↓</span><br>
+          鞣酸铁对人体无害（常见于食物中，如红茶的颜色就来自鞣酸铁）<br>
+          <span style="color:var(--text-secondary);">↓</span><br>
+          结论：汤变黑≠营养流失，汤仍可安全食用
+        </p>
+        <p style="margin-top:8px;font-size:14px;color:var(--text-secondary);">💡 注意区分"观察到的事实"（汤变黑）和"推测"（没营养了）——妈妈的推测是错误的。</p>
+      </div>
+    </div>
+
+    <div class="step-card" onclick="toggleStep(this)">
+      <span class="step-num">5</span>
+      <span class="step-title">怎样形成结论</span>
+      <div class="hint-text">👆 点击展开</div>
+      <div class="step-detail">
+        <p><strong>最终结论：</strong></p>
+        <p>铁锅煮苹果汤变黑是<strong>化学变化</strong>——铁和苹果中的鞣酸反应，生成了黑色的鞣酸铁。这不会造成营养流失，鞣酸铁对人体无害，汤可以正常食用。</p>
+        <p style="margin-top:6px;"><strong>证据链：</strong></p>
+        <ul style="padding-left:20px;">
+          <li>✅ 颜色变化（浅→黑）→有新物质生成</li>
+          <li>✅ 铁和鞣酸可以反应（已知化学知识）</li>
+          <li>✅ 生成的鞣酸铁为黑色（与观察一致）</li>
+          <li>✅ 鞣酸铁无害（与食品安全知识一致）</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. 结论表达 -->
+  <div class="section">
+    <h2>💬 结论表达</h2>
+    <div class="conclusion-box">
+      <p>铁锅煮苹果汤变黑，是<strong>铁</strong>和苹果中的<strong>鞣酸</strong>发生了<strong>化学反应</strong>，生成了黑色的<strong>鞣酸铁</strong>。</p>
+      <p>这不会造成营养流失，鞣酸铁对人体无害，汤可以正常食用。</p>
+      <p style="margin-top:6px;font-size:14px;color:var(--text-secondary);">——用通俗的语言说清楚一个科学现象</p>
+    </div>
+  </div>
+
+  <!-- 6. 方法提炼 -->
+  <div class="section">
+    <h2>🎯 方法提炼</h2>
+    <p style="margin-bottom:12px;">以后遇到类似"两种物质接触后发生变化"的问题，可以这样做：</p>
+    <ul class="method-list">
+      <li><strong>Step 1</strong> — 确认变化类型（物理还是化学）</li>
+      <li><strong>Step 2</strong> — 列出参与的物质</li>
+      <li><strong>Step 3</strong> — 分析可能的反应条件</li>
+      <li><strong>Step 4</strong> — 查询或推断可能生成的物质</li>
+    </ul>
+  </div>
+
+  <!-- 7. 易错提醒 -->
+  <div class="section">
+    <h2>⚠️ 易错提醒</h2>
+    <div class="warn-box">
+      <ul style="padding-left:20px;">
+        <li><strong>错误1：</strong>看到颜色变化就认为是化学变化——溶解、分散等物理变化也能引起颜色变化</li>
+        <li><strong>错误2：</strong>认为所有"变黑"都意味着有害——鞣酸铁是无害的，红茶的颜色就来自它</li>
+        <li><strong>错误3：</strong>忽略温度、pH等外部条件的影响——很多反应需要特定条件才能发生</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 8. 自主迁移小练习 -->
+  <div class="section">
+    <h2>✏️ 自主迁移小练习</h2>
+    <div class="practice-box">
+      <p><strong>情境：</strong>用铝锅煮绿豆汤，汤变成了红色。铝锅是铝做的，绿豆含有某种色素。请你按刚学到的方法分析这个现象。</p>
+      <button class="btn" onclick="toggleHint(this)">💡 查看提示</button>
+      <div class="practice-hint">
+        <p><strong>参考思路：</strong></p>
+        <ol style="padding-left:20px;">
+          <li><strong>变化类型：</strong>可能为化学变化（发生了化学反应）或物理变化（色素溶出）——需要实验验证</li>
+          <li><strong>参与物质：</strong>铝（Al）、绿豆中的色素（可能是黄酮类化合物）</li>
+          <li><strong>条件：</strong>加热、碱性环境（绿豆汤偏碱性）</li>
+          <li><strong>可能产物：</strong>铝与色素形成的络合物（红色）</li>
+        </ol>
+        <p style="margin-top:8px;color:var(--text-secondary);font-size:14px;">💡 对比验证：用不锈钢锅煮绿豆汤看是否变红 → 如果不红，说明铝参与了反应。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 9. 学习自评 -->
+  <div class="section">
+    <h2>📝 学习自评</h2>
+    <p style="margin-bottom:12px;">完成学习后，请自我检查：</p>
+    <div class="self-check" id="selfCheck">
+      <label onclick="toggleCheck(this)">
+        <input type="checkbox">
+        <span>我能说出解析这个问题的完整思考步骤（5步）吗？</span>
+      </label>
+      <label onclick="toggleCheck(this)">
+        <input type="checkbox">
+        <span>我能区分"观察到的事实"和"我的推测"吗？</span>
+      </label>
+      <label onclick="toggleCheck(this)">
+        <input type="checkbox">
+        <span>我能用同样的方法分析另一个生活化学现象（如铝锅煮绿豆汤）吗？</span>
+      </label>
+      <label onclick="toggleCheck(this)">
+        <input type="checkbox">
+        <span>我理解了化学变化的本质是"有新物质生成"，而不仅仅是"颜色变了"？</span>
+      </label>
+    </div>
+    <button class="btn" style="background:var(--primary);color:#fff;border:none;padding:8px 20px;border-radius:4px;cursor:pointer;font-size:14px;font-family:inherit;margin-top:8px;" onclick="resetChecks()">🔄 重新自评</button>
+  </div>
+</div>
+
+<script>
+function toggleStep(el) {
+  var detail = el.querySelector('.step-detail');
+  var hint = el.querySelector('.hint-text');
+  if (detail) {
+    detail.classList.toggle('show');
+    el.classList.toggle('open');
+    if (hint) hint.textContent = detail.classList.contains('show') ? '👆 点击收起' : '👆 点击展开';
+  }
+}
+function revealWhy(el) {
+  var row = el.closest('tr');
+  if (!row) return;
+  var reveal = el;
+  var whyText = row.querySelector('.why-text');
+  if (reveal) reveal.style.display = 'none';
+  if (whyText) whyText.style.display = 'inline';
+}
+function toggleHint(btn) {
+  var hint = btn.parentElement.querySelector('.practice-hint');
+  if (hint) {
+    hint.classList.toggle('show');
+    btn.textContent = hint.classList.contains('show') ? '🙈 收起提示' : '💡 查看提示';
+  }
+}
+function toggleCheck(label) {
+  var cb = label.querySelector('input[type="checkbox"]');
+  if (cb) {
+    cb.checked = !cb.checked;
+    label.classList.toggle('checked');
+  }
+}
+function resetChecks() {
+  var labels = document.querySelectorAll('.self-check label');
+  labels.forEach(function(l) {
+    l.classList.remove('checked');
+    var cb = l.querySelector('input[type="checkbox"]');
+    if (cb) cb.checked = false;
+  });
+}
+</script>
+</body>
+</html>

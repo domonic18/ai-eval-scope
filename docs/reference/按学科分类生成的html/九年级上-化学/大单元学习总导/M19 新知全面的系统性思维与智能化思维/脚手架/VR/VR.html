@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VR脚手架 — 沉浸体验化学微观世界</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body); line-height: var(--line-height);
+  color: var(--text); background: var(--bg); margin: 0; padding: 0;
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, #002c8c 0%, var(--primary) 100%);
+  color: #fff; border-radius: var(--border-radius); padding: 28px 24px; margin-bottom: 20px;
+}
+.header h1 { font-size: var(--font-h1); margin: 0 0 6px; font-weight: 700; }
+.header .subtitle { font-size: 13px; opacity: 0.85; }
+.card {
+  background: var(--card-bg); border-radius: var(--border-radius); padding: 20px 22px;
+  margin-bottom: 16px; box-shadow: var(--shadow); border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2); color: var(--primary); margin-bottom: 12px;
+  padding-bottom: 8px; border-bottom: 2px solid var(--accent);
+}
+.task-item {
+  background: var(--bg); border-radius: 6px; padding: 12px 16px; margin-bottom: 10px;
+  border-left: 3px solid var(--primary); cursor: pointer; transition: background 0.2s;
+  user-select: none;
+}
+.task-item:hover { background: #e6f0ff; }
+.task-item.done { border-left-color: #52c41a; background: #f6ffed; }
+.task-item.done .task-check { color: #52c41a; }
+.task-item .task-check { font-size: 16px; margin-right: 8px; color: var(--text-secondary); }
+.task-item.done .task-text { text-decoration: line-through; color: var(--text-secondary); }
+table {
+  width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px;
+}
+th, td { border: 1px solid var(--border); padding: 10px 12px; text-align: left; }
+th { background: var(--bg); color: var(--primary); font-weight: 600; }
+tr:hover { background: #fafafa; }
+.alternative-box {
+  background: #fffbe6; border: 1px solid #ffe58f; border-radius: 6px;
+  padding: 14px 16px; margin: 14px 0;
+}
+.alternative-box h3 { color: #d48806; font-size: 16px; margin-bottom: 8px; }
+.alternative-box li { margin-bottom: 6px; }
+.record-area {
+  width: 100%; min-height: 80px; border: 1px solid var(--border); border-radius: 6px;
+  padding: 12px; font-size: 14px; font-family: inherit; resize: vertical;
+  margin: 8px 0; box-sizing: border-box;
+}
+.record-area:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(22,119,255,0.15); }
+.btn-primary {
+  display: inline-block; background: var(--primary); color: #fff; border: none;
+  padding: 8px 20px; border-radius: 6px; font-size: 14px; cursor: pointer;
+  transition: background 0.2s; margin: 4px;
+}
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-outline {
+  display: inline-block; background: transparent; color: var(--primary); border: 1px solid var(--primary);
+  padding: 7px 19px; border-radius: 6px; font-size: 14px; cursor: pointer;
+  transition: all 0.2s; margin: 4px;
+}
+.btn-outline:hover { background: var(--bg); }
+.molecule-viewer {
+  background: #1a1a2e; border-radius: 10px; padding: 20px; margin: 14px 0;
+  display: flex; flex-direction: column; align-items: center; color: #fff;
+}
+.molecule-viewer .mol-name { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+.molecule-viewer .mol-model {
+  width: 160px; height: 160px; border-radius: 50%; position: relative;
+  background: radial-gradient(circle at 30% 30%, #2a2a4e, #0d0d1a);
+  margin-bottom: 10px; transition: transform 0.5s; cursor: grab;
+}
+.molecule-viewer .mol-model:active { cursor: grabbing; }
+.molecule-viewer .mol-model.rotate { animation: spin3d 4s linear infinite; }
+@keyframes spin3d {
+  0% { transform: rotateY(0deg) rotateX(10deg); }
+  100% { transform: rotateY(360deg) rotateX(10deg); }
+}
+.atom-o {
+  display: inline-flex; width: 40px; height: 40px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ff6b6b, #c0392b);
+  align-items: center; justify-content: center; color: #fff; font-weight: bold; font-size: 12px;
+  position: absolute; box-shadow: 0 0 12px rgba(255,107,107,0.5);
+}
+.atom-h {
+  display: inline-flex; width: 24px; height: 24px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #74b9ff, #2980b9);
+  align-items: center; justify-content: center; color: #fff; font-weight: bold; font-size: 10px;
+  position: absolute; box-shadow: 0 0 8px rgba(116,185,255,0.5);
+}
+.atom-na {
+  display: inline-flex; width: 36px; height: 36px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fdcb6e, #e17055);
+  align-items: center; justify-content: center; color: #fff; font-weight: bold; font-size: 11px;
+  position: absolute; box-shadow: 0 0 10px rgba(253,203,110,0.5);
+}
+.atom-cl {
+  display: inline-flex; width: 44px; height: 44px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #55efc4, #00b894);
+  align-items: center; justify-content: center; color: #fff; font-weight: bold; font-size: 12px;
+  position: absolute; box-shadow: 0 0 12px rgba(85,239,196,0.5);
+}
+.record-count { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+@media (max-width: 600px) {
+  .container { padding: 12px 10px; }
+  .header { padding: 18px 16px; }
+  .card { padding: 14px 14px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🥽 VR 沉浸体验 — 走进化学微观世界</h1>
+  <div class="subtitle">通过 VR 把抽象的分子、原子概念变成看得见、摸得着的空间体验</div>
+</div>
+
+<div class="card">
+  <h2>🔍 观察任务</h2>
+  <div class="task-item" onclick="toggleTask(this)">
+    <span class="task-check">⬜</span><span class="task-text">观察水分子的三维结构：在VR中旋转、缩放一个水分子模型，观察两个氢原子和一个氧原子的空间排列方式，感受"V形结构"和"键角约104.5°"的含义</span>
+  </div>
+  <div class="task-item" onclick="toggleTask(this)">
+    <span class="task-check">⬜</span><span class="task-text">观察氯化钠晶体结构：从宏观的食盐晶体"钻进去"，观察离子在三维空间中的周期性排列</span>
+  </div>
+
+  <div class="molecule-viewer">
+    <div class="mol-name">💧 水分子 (H₂O) — 模拟预览</div>
+    <div class="mol-model" id="molModel" onclick="toggleRotate()">
+      <div class="atom-o" style="top:55px;left:60px;">O</div>
+      <div class="atom-h" style="top:32px;left:96px;">H</div>
+      <div class="atom-h" style="top:96px;left:96px;">H</div>
+    </div>
+    <div style="font-size:12px;color:rgba(255,255,255,0.6);">点击模型旋转 · V形结构 · 键角 ~104.5°</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>🖐️ 操作任务</h2>
+  <div class="task-item" onclick="toggleTask(this)">
+    <span class="task-check">⬜</span><span class="task-text">组装分子模型：在VR中用手柄抓取原子，按照正确的化合价规则组装水、二氧化碳、甲烷等分子</span>
+  </div>
+  <div class="task-item" onclick="toggleTask(this)">
+    <span class="task-check">⬜</span><span class="task-text">模拟化学变化过程：观察并操作小苏打(碳酸氢钠)受热分解的微观过程——看化学键如何断裂、新键如何形成</span>
+  </div>
+</div>
+
+<div class="card">
+  <h2>📝 记录任务</h2>
+  <p style="margin-bottom:8px;font-size:14px;">在VR体验过程中，记录以下内容：</p>
+  <textarea class="record-area" id="recordNote1" placeholder="你观察到的分子结构关键特征（形状、键角、原子排布）..."></textarea>
+  <textarea class="record-area" id="recordNote2" placeholder="分子组装时遇到的困难（哪个原子放错了位置？怎么发现的？）..."></textarea>
+  <textarea class="record-area" id="recordNote3" placeholder="化学变化过程中'最震撼'的微观画面是什么..."></textarea>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px;">
+    <button class="btn-primary" onclick="saveNotes()">💾 保存记录</button>
+    <button class="btn-outline" onclick="clearNotes()">🗑️ 清空</button>
+    <span id="saveMsg" class="record-count"></span>
+  </div>
+</div>
+
+<div class="card">
+  <h2>🛠️ VR 资源推荐</h2>
+  <table>
+    <tr><th>平台/工具</th><th>说明</th><th>获取方式</th></tr>
+    <tr><td><strong>Molecule Viewer VR</strong>（免费）</td><td>可查看上万种分子三维结构，支持手柄操作</td><td>各大VR应用商店</td></tr>
+    <tr><td><strong>Nanome</strong>（教育版免费）</td><td>专业分子建模工具，支持多人协作</td><td>nanome.ai</td></tr>
+    <tr><td><strong>Merge Cube + 化学App</strong></td><td>手机+AR立方体，无需头盔也能看3D分子</td><td>手机应用商店搜索"Merge Chemistry"</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h2>🔄 替代方案（无VR设备时）</h2>
+  <div class="alternative-box">
+    <h3>方案一：3D模型网站</h3>
+    <p>打开 <strong>molview.org</strong>，在浏览器中旋转缩放任意分子模型（支持鼠标拖拽操作）</p>
+    <h3 style="margin-top:12px;">方案二：3D眼镜版</h3>
+    <p>搜索"水分子3D结构图"查看立体图像</p>
+    <h3 style="margin-top:12px;">方案三：纸模型</h3>
+    <p>用黏土 + 牙签制作水分子、二氧化碳分子的物理模型</p>
+  </div>
+</div>
+
+</div>
+
+<script>
+function toggleTask(el) {
+  if (!el) return;
+  var check = el.querySelector('.task-check');
+  if (el.classList.contains('done')) {
+    el.classList.remove('done');
+    if (check) check.textContent = '⬜';
+  } else {
+    el.classList.add('done');
+    if (check) check.textContent = '✅';
+  }
+}
+var rotating = false;
+function toggleRotate() {
+  var m = document.getElementById('molModel');
+  if (!m) return;
+  rotating = !rotating;
+  if (rotating) m.classList.add('rotate');
+  else m.classList.remove('rotate');
+}
+function saveNotes() {
+  var n1 = document.getElementById('recordNote1');
+  var n2 = document.getElementById('recordNote2');
+  var n3 = document.getElementById('recordNote3');
+  var msg = document.getElementById('saveMsg');
+  if (!msg) return;
+  var count = 0;
+  if (n1 && n1.value.trim()) count++;
+  if (n2 && n2.value.trim()) count++;
+  if (n3 && n3.value.trim()) count++;
+  if (count > 0) msg.textContent = '✅ 已保存 ' + count + ' 条记录！';
+  else msg.textContent = '请先填写记录内容';
+}
+function clearNotes() {
+  var n1 = document.getElementById('recordNote1');
+  var n2 = document.getElementById('recordNote2');
+  var n3 = document.getElementById('recordNote3');
+  var msg = document.getElementById('saveMsg');
+  if (n1) n1.value = '';
+  if (n2) n2.value = '';
+  if (n3) n3.value = '';
+  if (msg) msg.textContent = '已清空';
+}
+</script>
+</body>
+</html>

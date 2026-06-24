@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块五维导学 — M11 新知美术思维 · 化学 九年级上</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+.header p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 14px;
+}
+.header .badge-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.header .badge-row span {
+  background: rgba(255,255,255,0.2);
+  padding: 2px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+/* Tab 导航 */
+.tab-bar {
+  display: flex;
+  gap: 2px;
+  margin: 0 0 16px;
+  flex-wrap: wrap;
+}
+.tab-btn {
+  padding: 10px 18px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+.tab-btn:hover {
+  color: var(--primary);
+  background: #f0f5ff;
+}
+.tab-btn.active {
+  color: var(--primary);
+  background: var(--card-bg);
+  border-color: var(--primary);
+  border-bottom-color: var(--card-bg);
+  font-weight: 600;
+}
+
+.tab-content {
+  display: none;
+  background: var(--card-bg);
+  border-radius: 0 8px 8px 8px;
+  padding: 22px 24px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  animation: fadeIn 0.3s ease;
+}
+.tab-content.active {
+  display: block;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.tab-content h3 {
+  font-size: 17px;
+  color: var(--primary);
+  margin: 0 0 14px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+
+.goal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+.goal-card {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 14px 16px;
+  border-left: 3px solid var(--primary);
+}
+.goal-card h4 {
+  margin: 0 0 4px;
+  font-size: 14px;
+  color: var(--primary);
+}
+.goal-card p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.method-list {
+  list-style: none;
+  padding: 0;
+}
+.method-list li {
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  border-left: 3px solid var(--accent);
+  font-size: 14px;
+}
+.method-list li strong { color: var(--primary); }
+
+.person-card {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.person-card .avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.person-card .info h4 {
+  margin: 0 0 4px;
+  color: var(--primary);
+  font-size: 15px;
+}
+.person-card .info .years {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.person-card .info p {
+  margin: 6px 0 0;
+  font-size: 14px;
+}
+
+.qa-list {
+  list-style: none;
+  padding: 0;
+}
+.qa-list li {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+  border-left: 3px solid var(--accent);
+}
+.qa-list li:hover { background: #e6f7ff; }
+.qa-list li .q {
+  font-weight: 600;
+  color: var(--text);
+  display: block;
+}
+.qa-list li .a {
+  display: none;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+.qa-list li.active .a { display: block; }
+.qa-list li.active { border-left-color: var(--primary); }
+
+.tip-box {
+  background: #e6f7ff;
+  border: 1px solid #91d5ff;
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin: 14px 0;
+  font-size: 14px;
+}
+.tip-box strong { color: var(--primary); }
+
+.btn-reset {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-reset:hover { background: var(--primary-hover); }
+
+@media (max-width: 640px) {
+  .container { padding: 14px; }
+  .header { padding: 18px 16px; }
+  .tab-btn { padding: 8px 12px; font-size: 13px; }
+  .tab-content { padding: 16px; }
+  .goal-grid { grid-template-columns: 1fr; }
+  .person-card { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🗺️ 模块五维导学</h1>
+  <p>从5个维度看清「M11 新知美术思维」的全貌</p>
+  <div class="badge-row">
+    <span>📚 化学 · 九年级上</span>
+    <span>🧩 M11 新知美术思维</span>
+    <span>⏱ 约10分钟通读</span>
+  </div>
+</div>
+
+<p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">
+  下面的 5 张"学习地图"帮你在进入具体学习之前，建立对模块的整体认知。🖱️ <strong>点击标签切换维度</strong>。
+</p>
+
+<div class="tab-bar" id="tabBar">
+  <button class="tab-btn active" data-tab="1" onclick="switchTab(1)">🎯 学习目标</button>
+  <button class="tab-btn" data-tab="2" onclick="switchTab(2)">🚀 价值与意义</button>
+  <button class="tab-btn" data-tab="3" onclick="switchTab(3)">📖 学习方法</button>
+  <button class="tab-btn" data-tab="4" onclick="switchTab(4)">👤 关键人物</button>
+  <button class="tab-btn" data-tab="5" onclick="switchTab(5)">🤔 前沿追问</button>
+</div>
+
+<!-- 维度 1：学习目标 -->
+<div class="tab-content active" data-tab="1" id="tab1">
+  <h3>🎯 维度一：模块学习目标</h3>
+  <div class="goal-grid">
+    <div class="goal-card">
+      <h4>📖 知识理解</h4>
+      <p>理解"新知美术思维"的内涵——像艺术家一样观察和建构化学知识；掌握物理变化与化学变化的本质区别；了解化学实验基本方法和安全规则。</p>
+    </div>
+    <div class="goal-card">
+      <h4>🛠️ 能力形成</h4>
+      <p>能用"观察—提问—证据—推理—表达"建构自己的化学理解；能独立分析一个化学现象背后的变化类型。</p>
+    </div>
+    <div class="goal-card">
+      <h4>🧠 思维发展</h4>
+      <p>从"被动接收"转向"主动建构"的思维习惯；建立"用证据说话"的科学思维方式。</p>
+    </div>
+    <div class="goal-card">
+      <h4>📊 表达产出</h4>
+      <p>能用图示 + 文字呈现自己的化学建构成果，让没有学过化学的人也能看懂。</p>
+    </div>
+  </div>
+</div>
+
+<!-- 维度 2：价值与意义 -->
+<div class="tab-content" data-tab="2" id="tab2">
+  <h3>🚀 维度二：高精尖价值与未来意义</h3>
+  <div class="goal-grid">
+    <div class="goal-card">
+      <h4>🧬 材料科学</h4>
+      <p>材料科学中的"分子设计"——正是"新知美术思维"在原子尺度上的体现。化学家像艺术家一样设计新分子（如催化剂、药物分子结构设计）。</p>
+    </div>
+    <div class="goal-card">
+      <h4>🌍 环境监测</h4>
+      <p>环境监测中的化学分析思维——从现象到结论的建构过程。比如水质检测中，如何从数据建构出污染源的判断。</p>
+    </div>
+    <div class="goal-card">
+      <h4>🎯 对你未来的意义</h4>
+      <p>无论将来学什么专业，"从零到一建构理解"的能力永远有用。化学的"证据思维"可以迁移到日常生活的判断中。</p>
+    </div>
+  </div>
+  <div class="tip-box">
+    <strong>💡 想一想：</strong>为什么说"建构性学习"让你学到的不仅仅是化学知识？这种思维方式还能应用到哪些学科或生活场景中？
+  </div>
+</div>
+
+<!-- 维度 3：学习方法 -->
+<div class="tab-content" data-tab="3" id="tab3">
+  <h3>📖 维度三：推荐学习方式与方法</h3>
+  <p><strong>学科思维锚点：</strong>化学的核心思维是 <strong>宏观现象 → 微观解释 → 符号表达</strong>。"新知美术思维"特别强调"宏观观察"这一起点。</p>
+  <ul class="method-list">
+    <li><strong>🔍 观察记录法：</strong>遇到化学现象先看再记，不急着找答案。用五感 + 工具做完整记录。</li>
+    <li><strong>🔬 对比分析法：</strong>把相似概念放在一起比较（如物理变化 vs 化学变化），通过差异加深理解。</li>
+    <li><strong>🧩 概念图法：</strong>用可视化方式整理知识关系，把零散的知识点连成网络。</li>
+    <li><strong>📝 自我解释法：</strong>用自己的话复述刚学到的内容——讲得清楚，才是真懂了。</li>
+  </ul>
+</div>
+
+<!-- 维度 4：关键人物 -->
+<div class="tab-content" data-tab="4" id="tab4">
+  <h3>👤 维度四：关键人物与成果</h3>
+
+  <div class="person-card">
+    <div class="avatar">🔬</div>
+    <div class="info">
+      <h4>安东尼·拉瓦锡 <span class="years">(1743–1794)</span></h4>
+      <p><strong>贡献：</strong>推翻了统治化学界百年的"燃素说"，建立了氧化学说，被誉为"现代化学之父"。</p>
+      <p><strong>他的思维特征：</strong>精确测量、定量分析——这正是"解析性思维"的典范。他用天平做实验，用数据说话。</p>
+    </div>
+  </div>
+
+  <div class="person-card">
+    <div class="avatar">🧪</div>
+    <div class="info">
+      <h4>罗伯特·波义耳 <span class="years">(1627–1691)</span></h4>
+      <p><strong>贡献：</strong>提出了元素的概念，把化学确立为一门独立科学，结束了化学依附于炼金术的时代。</p>
+      <p><strong>启示：</strong>敢于质疑权威，从实验事实中建构新理论——这正是建构性学习的核心精神。</p>
+    </div>
+  </div>
+
+  <div class="tip-box">
+    <strong>🔗 拓展阅读提示：</strong>你可以搜索"拉瓦锡 钟罩实验"或"波义耳 元素定义"了解更多。这些科学家的"思维方法"比"科学成果"更值得学习。
+  </div>
+</div>
+
+<!-- 维度 5：前沿追问 -->
+<div class="tab-content" data-tab="5" id="tab5">
+  <h3>🤔 维度五：前沿追问</h3>
+  <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">点击每个问题展开深度思考方向：</p>
+  <ul class="qa-list">
+    <li onclick="toggleQA(this)">
+      <span class="q">🌐 追问 1：物理变化和化学变化之间有"灰色地带"吗？</span>
+      <span class="a">
+        比如燃烧是剧烈的化学变化，那缓慢氧化呢？铁生锈是化学变化，但它进行得非常慢。<br>
+        <strong>思考方向：</strong>变化的"快慢"是否影响变化本质？有没有一种变化同时具有两种变化的特征？<br>
+        <em>（提示：可以查一查"核变化"——它既不是物理也不是化学变化）</em>
+      </span>
+    </li>
+    <li onclick="toggleQA(this)">
+      <span class="q">💊 追问 2：化学家如何从"观察疾病"一步步建构出新药分子？</span>
+      <span class="a">
+        化学家设计新药时，先观察疾病现象（细胞变化）→ 提出分子假说（什么蛋白质出了问题）→ 设计分子结构 → 合成测试 → 检验修正。<br>
+        <strong>思考方向：</strong>这和"建构性学习"的六步流程有什么相似之处？
+      </span>
+    </li>
+    <li onclick="toggleQA(this)">
+      <span class="q">🤖 追问 3：AI 能帮化学家"看到"肉眼看不到的化学变化过程吗？</span>
+      <span class="a">
+        当前 AI 已能通过模拟计算预测化学反应路径，甚至"看到"原子级别的反应过程。<br>
+        <strong>思考方向：</strong>如果 AI 能帮助完成"观察"和"推理"，人类化学家的核心价值在哪里？——也许就在于"提出好问题"和"创造性建构"。
+      </span>
+    </li>
+  </ul>
+</div>
+
+<div class="section-title" style="margin-top:30px;">📌 学习建议</div>
+<div style="background:var(--card-bg);border-radius:var(--border-radius);padding:16px 20px;box-shadow:var(--shadow);">
+  <ul style="font-size:14px;padding-left:18px;margin:0;">
+    <li>五个维度可以按顺序通读一遍（约10分钟）</li>
+    <li>对其中感兴趣的部分做标记，在后续学习中重点留意</li>
+    <li>"关键人物"部分可以作为课外拓展阅读的起点</li>
+    <li>完成全部学习后，回到"前沿追问"，看看你的回答有没有变化</li>
+  </ul>
+</div>
+
+</div>
+
+<script>
+function switchTab(n) {
+  // 更新按钮
+  document.querySelectorAll('.tab-btn').forEach(function(btn) {
+    btn.classList.remove('active');
+  });
+  var activeBtn = document.querySelector('.tab-btn[data-tab="' + n + '"]');
+  if (activeBtn) activeBtn.classList.add('active');
+
+  // 更新内容
+  document.querySelectorAll('.tab-content').forEach(function(content) {
+    content.classList.remove('active');
+  });
+  var activeContent = document.getElementById('tab' + n);
+  if (activeContent) activeContent.classList.add('active');
+}
+
+function toggleQA(el) {
+  el.classList.toggle('active');
+}
+</script>
+</body>
+</html>

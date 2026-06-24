@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M17 模块定位 — 新知学习过程的成就与成功性思维与反思</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+.hero {
+  background: linear-gradient(135deg, var(--primary) 0%, #4a9eff 100%);
+  color: #fff;
+  padding: 40px 48px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::after {
+  content: "M17";
+  position: absolute;
+  right: 30px;
+  bottom: -10px;
+  font-size: 100px;
+  font-weight: 900;
+  opacity: 0.1;
+  color: #fff;
+}
+.hero h1 { font-size: var(--font-h1); margin-bottom: 8px; line-height: 1.4; }
+.hero .subtitle { font-size: 16px; opacity: 0.9; }
+.hero .badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.2);
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+  overflow: hidden;
+  transition: box-shadow 0.3s;
+}
+.card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.card-header {
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+.card-header:hover { background: #fafafa; }
+.card-header h3 { font-size: var(--font-h2); font-weight: 600; }
+.card-header .icon {
+  width: 28px; height: 28px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  transition: transform 0.3s;
+  flex-shrink: 0;
+}
+.card-header .icon.open { transform: rotate(45deg); }
+.card-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+  padding: 0 24px;
+}
+.card-body.open {
+  max-height: 800px;
+  padding: 0 24px 20px;
+}
+.card-body p { margin-bottom: 10px; }
+.card-body ul { padding-left: 20px; margin-bottom: 10px; }
+.card-body li { margin-bottom: 4px; }
+.card-body .highlight {
+  background: #e6f7ff;
+  border-left: 3px solid var(--primary);
+  padding: 10px 14px;
+  border-radius: 4px;
+  margin: 10px 0;
+}
+.checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 16px 0;
+}
+.check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #fafafa;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.3s;
+}
+.check-item:hover { background: #f0f5ff; }
+.check-item.checked { opacity: 0.6; text-decoration: line-through; background: #f0f0f0; }
+.check-item .cb {
+  width: 20px; height: 20px;
+  border: 2px solid var(--primary);
+  border-radius: 4px;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 2px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.check-item.checked .cb { background: var(--primary); border-color: var(--primary); }
+.check-item .cb::after { content: ""; display: none; }
+.check-item.checked .cb::after {
+  display: block;
+  content: "✓";
+  color: #fff;
+  font-size: 14px;
+  font-weight: bold;
+}
+.quote-box {
+  background: #f6f8fa;
+  border-radius: 6px;
+  padding: 16px 20px;
+  margin: 12px 0;
+  border-left: 4px solid var(--primary);
+  font-style: italic;
+}
+.relation-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 12px 0;
+}
+.relation-card {
+  padding: 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  text-align: center;
+  transition: all 0.2s;
+}
+.relation-card:hover {
+  border-color: var(--primary);
+  background: #f0f5ff;
+}
+.relation-card .label { font-size: 13px; color: var(--text-secondary); }
+.relation-card .val { font-weight: 600; color: var(--primary); margin-top: 4px; }
+.progress-bar {
+  height: 6px;
+  background: #e8e8e8;
+  border-radius: 3px;
+  margin: 12px 0;
+  overflow: hidden;
+}
+.progress-bar .fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 3px;
+  width: 0%;
+  transition: width 0.5s ease;
+}
+@media (max-width: 640px) {
+  .container { padding: 16px; }
+  .hero { padding: 24px 20px; }
+  .hero::after { font-size: 60px; right: 16px; }
+  .hero h1 { font-size: 20px; }
+  .relation-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="hero">
+  <div class="badge">🎯 模块定位</div>
+  <h1>M17 新知学习过程的成就与成功性思维与反思</h1>
+  <div class="subtitle">学化学的方法，比学化学知识本身更重要</div>
+</div>
+
+<div class="card">
+  <div class="card-header" onclick="toggleCard(this)">
+    <h3>📖 本模块学习什么</h3>
+    <div class="icon">+</div>
+  </div>
+  <div class="card-body open">
+    <p>本模块学的是<strong>"学习本身"</strong>。不是具体的化学方程式，不是实验操作步骤，而是<strong>你在学习化学时的思维过程</strong>。具体来说，你要学三件事：</p>
+    <ul>
+      <li><strong>看清</strong>：当你理解一个化学概念时，你的大脑经历了哪些步骤？</li>
+      <li><strong>建构</strong>：如何主动"造"出属于你自己的理解和成果，而不是被动接收？</li>
+      <li><strong>反思</strong>：学完之后，怎么知道自己学好了？怎么让下一次学得更好？</li>
+    </ul>
+    <div class="quote-box">"真正的学习，不是往大脑里装东西，而是让大脑长出新的结构。"</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header" onclick="toggleCard(this)">
+    <h3>✨ 本模块为什么重要</h3>
+    <div class="icon">+</div>
+  </div>
+  <div class="card-body">
+    <p>这是整个"走进化学世界"大单元中最特别的模块。前面你学了化学是什么、怎么观察化学变化、怎么做实验——这些都是"学化学"。但本模块学的是"学化学的方法"，也就是<strong>元学习</strong>。</p>
+    <div class="highlight"><strong>学会如何学习化学，比学会化学知识本身更重要。</strong> 因为知识会忘，但"学习的能力"会陪伴你一生，不仅在化学课上能用，在所有学科和未来工作中都能用。</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header" onclick="toggleCard(this)">
+    <h3>🔗 本模块与大单元主题的关系</h3>
+    <div class="icon">+</div>
+  </div>
+  <div class="card-body">
+    <p>"走进化学世界"大单元带你看清了化学这门学科的全貌：什么是化学、化学变化有哪些特征、如何用科学的方法研究化学。</p>
+    <p>本模块是这个大单元的<strong>"收尾"和"升华"</strong>——学完具体内容后，退后一步，看看自己走过的学习路径。它不新增知识点，而是帮你把前面学的所有内容串联成你自己的认知框架图。</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header" onclick="toggleCard(this)">
+    <h3>🔄 本模块与前后模块的衔接</h3>
+    <div class="icon">+</div>
+  </div>
+  <div class="card-body">
+    <div class="relation-grid">
+      <div class="relation-card">
+        <div class="label">◀ 前接</div>
+        <div class="val">学习素材 + 学习经验</div>
+        <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">化学变化、实验操作、科学探究方法</div>
+      </div>
+      <div class="relation-card">
+        <div class="label">后续 ▶</div>
+        <div class="val">具体的物质世界</div>
+        <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">空气、水、碳——学习策略将反复使用</div>
+      </div>
+    </div>
+    <p>本模块是你从<strong>"学着看"</strong>到<strong>"自己学"</strong>的转折点。</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header" onclick="toggleCard(this)">
+    <h3>🎯 本模块预期学习成果</h3>
+    <div class="icon">+</div>
+  </div>
+  <div class="card-body">
+    <p>学完本模块，你将产出：</p>
+    <div class="checklist" id="outcomeList">
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="cb"></div>
+        <span>一份"我的化学学习成功思维手册"（包含你提炼的建构性原理和解析性原理）</span>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="cb"></div>
+        <span>至少 3 个你独立完成的建构成果（模型、方案、作品）</span>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="cb"></div>
+        <span>一套你可以随时调用的"学习策略工具箱"</span>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="cb"></div>
+        <span>一种对自己的学习过程保持敏感和反思的习惯——超能力</span>
+      </div>
+    </div>
+    <div class="progress-bar"><div class="fill" id="progressFill"></div></div>
+    <div style="text-align:right;font-size:13px;color:var(--text-secondary);">
+      完成进度：<span id="progressText">0</span>/4
+    </div>
+    <button class="reset-btn" onclick="resetAll()">重置进度</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+function toggleCard(header) {
+  var body = header.nextElementSibling;
+  var icon = header.querySelector('.icon');
+  body.classList.toggle('open');
+  icon.classList.toggle('open');
+}
+function toggleCheck(item) {
+  item.classList.toggle('checked');
+  updateProgress();
+}
+function updateProgress() {
+  var items = document.querySelectorAll('#outcomeList .check-item');
+  var checked = document.querySelectorAll('#outcomeList .check-item.checked');
+  var count = checked.length;
+  var total = items.length;
+  var pct = total > 0 ? (count / total) * 100 : 0;
+  var fill = document.getElementById('progressFill');
+  var text = document.getElementById('progressText');
+  if (fill) fill.style.width = pct + '%';
+  if (text) text.textContent = count;
+}
+function resetAll() {
+  var items = document.querySelectorAll('#outcomeList .check-item');
+  items.forEach(function(it) { it.classList.remove('checked'); });
+  updateProgress();
+}
+</script>
+</body>
+</html>

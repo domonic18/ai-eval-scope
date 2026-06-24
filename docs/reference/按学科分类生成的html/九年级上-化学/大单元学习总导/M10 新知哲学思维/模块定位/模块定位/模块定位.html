@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块定位 — M10 新知哲学思维</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+}
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+
+.hero {
+  background: linear-gradient(135deg, #1677ff 0%, #4096ff 100%);
+  color: #fff;
+  padding: 32px 40px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+.hero h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.hero .subtitle { font-size: 15px; opacity: 0.9; margin-bottom: 10px; }
+.hero .meta { display: flex; gap: 12px; flex-wrap: wrap; font-size: 13px; }
+.hero .meta span { background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; }
+
+.q-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.q-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  padding: 20px 22px;
+  transition: all 0.25s;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.q-card:hover { transform: translateY(-2px); box-shadow: 0 5px 16px rgba(22,119,255,0.12); }
+.q-card:active { transform: translateY(0); }
+.q-card .q-num {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  font-size: 40px;
+  font-weight: 800;
+  color: var(--accent);
+  opacity: 0.15;
+  line-height: 1;
+}
+.q-card .q-icon { font-size: 26px; margin-bottom: 6px; }
+.q-card h3 { font-size: 16px; color: var(--primary); margin-bottom: 6px; }
+.q-card p { font-size: 14px; color: var(--text); }
+.q-card .q-badge {
+  display: inline-block;
+  font-size: 11px;
+  background: var(--bg);
+  color: var(--primary);
+  padding: 2px 10px;
+  border-radius: 10px;
+  margin-top: 8px;
+}
+.q-card .q-badge.green { background: #e6f7ed; color: #16a34a; }
+.q-card .q-badge.orange { background: #fff2e5; color: #d46b08; }
+
+.reveal-box {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, opacity 0.3s ease, margin 0.3s ease;
+  opacity: 0;
+  margin: 0;
+}
+.reveal-box.open {
+  max-height: 600px;
+  opacity: 1;
+  margin: 12px 0 0;
+}
+.reveal-box .reveal-content {
+  background: #fafcff;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--primary);
+  border-radius: 6px;
+  padding: 14px 18px;
+  font-size: 14px;
+}
+.reveal-box .reveal-content ul { padding-left: 18px; margin: 6px 0; }
+.reveal-box .reveal-content ul li { margin-bottom: 4px; }
+
+.outcome-box {
+  background: #e6f4ff;
+  border: 1.5px dashed var(--primary);
+  border-radius: var(--border-radius);
+  padding: 18px 22px;
+  margin-top: 6px;
+}
+.outcome-box h4 { font-size: 15px; color: var(--primary); margin-bottom: 8px; }
+.outcome-box ul { list-style: none; padding: 0 !important; }
+.outcome-box ul li {
+  padding: 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+.outcome-box ul li::before { content: "✅"; }
+
+.bridge-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 14px;
+  background: #fafcff;
+  border-radius: 6px;
+  border: 1px dashed var(--border);
+  margin: 10px 0;
+}
+.bridge-flow .bf-item {
+  background: var(--card-bg);
+  border: 1.5px solid var(--accent);
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  text-align: center;
+  font-weight: 500;
+}
+.bridge-flow .bf-arrow { color: var(--primary); font-size: 18px; font-weight: 700; }
+.bridge-flow .bf-item.highlight { border-color: var(--primary); background: #e6f4ff; }
+
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .hero { padding: 24px 18px; }
+  .hero h1 { font-size: 20px; }
+  .q-grid { grid-template-columns: 1fr; }
+  .bridge-flow { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="hero">
+  <h1>🗺️ M10 新知哲学思维 · 模块定位</h1>
+  <div class="subtitle">你的"化学思考"通关地图——5个关键问题带你进入模块</div>
+  <div class="meta">
+    <span>🧪 化学 · 九年级上</span>
+    <span>📖 人教版 第1章</span>
+    <span>🏗️ 模块定位</span>
+  </div>
+</div>
+
+<div class="q-grid">
+
+  <!-- Q1 -->
+  <div class="q-card" onclick="toggleQ(1)">
+    <div class="q-icon">📖</div>
+    <div class="q-num">1</div>
+    <h3>本模块学习什么？</h3>
+    <p>不是学习某一种具体的化学知识，而是追问——<strong>"我们是怎么知道这些化学知识的？"</strong></p>
+    <span class="q-badge">元认知层面</span>
+    <div id="q1" class="reveal-box">
+      <div class="reveal-content">
+        <ul>
+          <li><strong>🔍 解析</strong> — 面对化学现象如何拆解、分析、寻找证据、推理判断</li>
+          <li><strong>🏗️ 建构</strong> — 如何基于观察和实验证据，生成自己的理解、模型或解释</li>
+          <li><strong>🧰 脚手架工具</strong> — 遇到困难时知道去哪里找答案</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q2 -->
+  <div class="q-card" onclick="toggleQ(2)">
+    <div class="q-icon">💡</div>
+    <div class="q-num">2</div>
+    <h3>本模块为什么重要？</h3>
+    <p>不学本模块，化学知识只是一堆需要记忆的"结论"；学完本模块，你将明白每个结论背后的<strong>"发现方法"</strong>。</p>
+    <span class="q-badge green">短期+长期价值</span>
+    <div id="q2" class="reveal-box">
+      <div class="reveal-content">
+        <p><strong>🎯 短期价值：</strong>学会分析和建构方法，后续学习更高效</p>
+        <p><strong>🌟 长期价值：</strong>这个思维模式可以用到物理、生物甚至生活中的问题解决中</p>
+        <p style="margin-top:6px;">——从"学化学"到"像化学家一样思考"</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q3 -->
+  <div class="q-card" onclick="toggleQ(3)">
+    <div class="q-icon">🔗</div>
+    <div class="q-num">3</div>
+    <h3>本模块与大单元主题的关系</h3>
+    <p>大单元"走进化学世界"——从陌生到熟悉，从直觉到科学。本模块带你进入<strong>"元认知"层面</strong>。</p>
+    <span class="q-badge orange">承上启下</span>
+    <div id="q3" class="reveal-box">
+      <div class="reveal-content">
+        <div class="bridge-flow">
+          <div class="bf-item">📘 前序模块<br><span style="font-size:11px;font-weight:400;">物质变化与性质</span></div>
+          <div class="bf-arrow">→</div>
+          <div class="bf-item highlight">🏗️ M10 本模块<br><span style="font-size:11px;font-weight:400;">解析·建构·元认知</span></div>
+          <div class="bf-arrow">→</div>
+          <div class="bf-item">📗 后续模块<br><span style="font-size:11px;font-weight:400;">氧气·水·碳</span></div>
+        </div>
+        <p style="font-size:13px;"><strong>承上：</strong>用前序模块的具体化学知识作为分析材料</p>
+        <p style="font-size:13px;"><strong>启下：</strong>提炼的方法将贯穿九年级全部化学学习</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q4 -->
+  <div class="q-card" onclick="toggleQ(4)">
+    <div class="q-icon">🧩</div>
+    <div class="q-num">4</div>
+    <h3>本模块与前后模块的衔接</h3>
+    <p><strong>前序：</strong>物质的变化和性质、化学实验基本操作</p>
+    <p><strong>后续：</strong>氧气、水、碳等具体物质的学习</p>
+    <span class="q-badge">学习路径</span>
+    <div id="q4" class="reveal-box">
+      <div class="reveal-content">
+        <p>本模块学到的分析和建构方法，将在后续各章节中反复使用：</p>
+        <ul>
+          <li>学习氧气性质时 → 用"观察—记录—追问"法分析燃烧实验</li>
+          <li>学习水的组成时 → 用"输入—变化—输出"模型理解电解</li>
+          <li>学习碳的化合物时 → 用"证据—解释"对照表推理反应产物</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q5 - 跨两列 -->
+  <div class="q-card" onclick="toggleQ(5)" style="grid-column:1/3;">
+    <div class="q-icon">🏆</div>
+    <div class="q-num">5</div>
+    <h3>本模块预期学习成果</h3>
+    <p>点击查看你将产出的具体成果：</p>
+    <div id="q5" class="reveal-box" style="max-height:0;">
+      <div class="reveal-content">
+        <div class="outcome-box">
+          <h4>📦 你将带走这些成果：</h4>
+          <ul>
+            <li>一份"蜡烛燃烧的物质转化解释模型"</li>
+            <li>一份"7阶情境建构案例成果集"</li>
+            <li>一份"3-5条可迁移的建构性原理"清单</li>
+            <li style="background:#e6f4ff;border-radius:4px;padding:4px 8px;margin-top:4px;">🌟 一个更重要的隐性成果：<strong>对自己"如何学习"的深度认识</strong></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <span class="q-badge green" id="outcome-hint">👆 点击查看详情</span>
+  </div>
+
+</div>
+
+</div>
+<script>
+function toggleQ(n) {
+  var el = document.getElementById('q' + n);
+  if (!el) return;
+  el.classList.toggle('open');
+  if (n === 5) {
+    var hint = document.getElementById('outcome-hint');
+    if (hint) hint.textContent = el.classList.contains('open') ? '📂 已展开' : '👆 点击查看详情';
+  }
+}
+</script>
+</body>
+</html>

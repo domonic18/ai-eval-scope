@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>问题榜 — 化学思考题</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  background: var(--bg);
+  color: var(--text);
+  width: 100%;
+  padding: 20px;
+}
+.container { width: 100%; max-width: none; }
+h1 { font-size: var(--font-h1); color: var(--primary); margin-bottom: 8px; }
+h2 { font-size: var(--font-h2); color: var(--primary); margin: 16px 0 8px; }
+.header-desc { color: var(--text-secondary); margin-bottom: 16px; }
+.level-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.level-btn {
+  padding: 8px 16px; border: 1px solid var(--border); border-radius: var(--border-radius);
+  background: var(--card-bg); cursor: pointer; font-size: 14px; transition: all .2s;
+}
+.level-btn:hover { border-color: var(--primary); color: var(--primary); }
+.level-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.q-list { display: none; }
+.q-list.active { display: block; }
+.q-item {
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius);
+  padding: 12px; margin-bottom: 10px; box-shadow: var(--shadow);
+  cursor: pointer; transition: box-shadow .2s;
+}
+.q-item:hover { box-shadow: 0 3px 10px rgba(22,119,255,0.1); }
+.q-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 50%; font-size: 13px; font-weight: 600;
+  margin-right: 6px; flex-shrink: 0;
+}
+.q-num.basic { background: #e6f4ff; color: #1677ff; }
+.q-num.adv { background: #f6ffed; color: #389e0d; }
+.q-num.high { background: #fff7e6; color: #d46b08; }
+.q-item .q-header { display: flex; align-items: flex-start; gap: 4px; }
+.q-item .q-text { flex: 1; font-size: 14px; }
+.q-item .q-status { margin-left: auto; font-size: 12px; color: var(--text-secondary); }
+.q-answer { display: none; margin-top: 8px; padding: 10px; background: #fafafa; border-radius: 4px; font-size: 14px; }
+.q-answer.show { display: block; }
+.q-answer .hint { color: var(--primary); font-weight: 600; }
+.type-tag {
+  display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 8px;
+  background: #f0f5ff; color: var(--primary); margin-right: 4px;
+}
+.footer { text-align: center; color: var(--text-secondary); font-size: 13px; margin-top: 20px; padding: 10px 0; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🏆 问题榜</h1>
+  <p class="header-desc">三层挑战，检验你对化学知识的理解深度。点击问题展开思考提示。</p>
+
+  <div class="level-tabs">
+    <button class="level-btn active" data-level="basic" onclick="switchLevel('basic')">🌱 基础层</button>
+    <button class="level-btn" data-level="adv" onclick="switchLevel('adv')">🌿 进阶层</button>
+    <button class="level-btn" data-level="high" onclick="switchLevel('high')">🌳 挑战层</button>
+  </div>
+
+  <!-- 基础层 (1-3) -->
+  <div class="q-list active" id="list-basic">
+    <div class="q-item" onclick="toggleAnswer('a1')">
+      <div class="q-header">
+        <span class="q-num basic">1</span>
+        <span class="q-text"><strong>【理解题】</strong>用自己的话区分"物理变化"和"化学变化"，并举一个例子说明。</span>
+        <span class="q-status">点击展开</span>
+      </div>
+      <div class="q-answer" id="a1">
+        <p><span class="hint">参考思路：</span>物理变化没有新物质生成（如冰熔化→水），化学变化有新物质生成（如铁生锈→氧化铁）。关键看"分子种类是否改变"。</p>
+      </div>
+    </div>
+
+    <div class="q-item" onclick="toggleAnswer('a2')">
+      <div class="q-header">
+        <span class="q-num basic">2</span>
+        <span class="q-text"><strong>【识别题】</strong>以下哪些属于化学变化？<br>A.玻璃破碎 B.铁钉生锈 C.冰块融化 D.纸张燃烧 E.食盐溶解</span>
+        <span class="q-status">点击展开</span>
+      </div>
+      <div class="q-answer" id="a2">
+        <p><span class="hint">答案：</span><strong>B、D</strong>（铁钉生锈和纸张燃烧）。A玻璃破碎、C冰块融化、E食盐溶解都是物理变化——物质种类没有改变，只是形态或大小变了。</p>
+      </div>
+    </div>
+
+    <div class="q-item" onclick="toggleAnswer('a3')">
+      <div class="q-header">
+        <span class="q-num basic">3</span>
+        <span class="q-text"><strong>【概念题】</strong>"学习化学为什么不能死记硬背？"请用本模块学到的知识回答。</span>
+        <span class="q-status">点击展开</span>
+      </div>
+      <div class="q-answer" id="a3">
+        <p><span class="hint">参考思路：</span>化学的核心是理解"变化"的规律和原因，而不是背诵变化的结果。建构性学习强调通过分析现象→追问原因→抽象概念的过程来建立理解，只有理解了"为什么产生新物质"才能真正掌握化学变化的本质。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 进阶层 (4-6) -->
+  <div class="q-list" id="list-adv">
+    <div class="q-item" onclick="toggleAnswer('a4')">
+      <div class="q-header">
+        <span class="q-num adv">4</span>
+        <span class="q-text"><strong>【分析题】</strong>热水瓶内壁有水垢（主要成分碳酸钙），白醋浸泡后水垢消失。这是什么变化？水垢"消失"生成了什么？</span>
+        <span class="q-status">点击展开</span>
+      </div>
+      <div class="q-answer" id="a4">
+        <p><span class="hint">参考思路：</span>化学变化。白醋（醋酸）与碳酸钙反应生成可溶性的醋酸钙、水和二氧化碳。水垢不是"溶解"了，而是<strong>发生了化学反应被转化了</strong>——冒出的气泡就是生成的CO₂。</p>
+      </div>
+    </div>
+
+    <div class="q-item" onclick="toggleAnswer('a5')">
+      <div class="q-header">
+        <span class="q-num adv">5</span>
+        <span class="q-text"><strong>【应用题】</strong>设计一个简单实验证明"空气中含有氧气"，预测你会看到什么现象。</span>
+        <span class="q-status">点击展开</span>
+      </div>
+      <div class="q-answer" id="a5">
+        <p><span class="hint">参考思路：</span>用一根燃烧的木条，伸入集气瓶中。如果空气中有氧气，木条会继续燃烧（维持火焰）。对比：将木条伸入无氧的瓶子（如充满氮气），火焰立刻熄灭。氧气是<strong>助燃气体</strong>。</p>
+      </div>
+    </div>
+
+    <div class="q-item" onclick="toggleAnswer('a6')">
+      <div class="q-header">
+        <span class="q-num adv">6</span>
+        <span class="q-text"><strong>【比较题】</strong>"铁锅生锈"和"铁锅被烧红"——两者有什么本质区别？说出你的判断依据。</span>
+        <span class="q-status">点击展开</span>
+      </div>
+      <div class="q-answer" id="a6">
+        <p><span class="hint">参考思路：</span>铁锅生锈是<strong>化学变化</strong>（Fe→Fe₂O₃，生成新物质），铁锅被烧红是<strong>物理变化</strong>（铁还是铁，只是温度升高导致发光发热）。判断依据：是否产生新物质。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 挑战层 (7-10) -->
+  <div class="q-list" id="list-high">
+    <div class="q-item" onclick="toggleAnswer('a7')">
+      <div class="q-header">
+        <span class="q-num high">7</span>
+        <span class="q-text"><strong>【开放题】</strong>"现代化学已经发展到头了，所有重要发现都已做完。"你同意吗？用本模块的理解来反驳或支持。</span>
+        <span class="q-status">点击展开</span>
+      </div>
+      <div class="q-answer" id="a7">
+        <p><span class="hint">参考思路：</span>不同意。化学的发展是螺旋上升的——新材料（石墨烯）、新能源（氢能催化剂）、生命化学（CRISPR）都在不断拓展化学的边界。200年前的人也无法想象今天我们会研究纳米材料。化学远没有"到头"。</p>
+      </div>
+    </div>
+
+    <div class="q-item" onclick="toggleAnswer('a8')">
+      <div class="q-header">
+        <span class="q-num high">8</span>
+        <span class="q-text"><strong>【对比题】</strong>建构性学习和传统学习（老师讲、学生记）有什么本质区别？从"你和知识的关系"回答。</span>
+        <span class="q-status">点击展开</span>
+      </div>
+      <div class="q-answer" id="a8">
+        <p><span class="hint">参考思路：</span>传统学习中，你是知识的"接收者"——知识在你之外，你负责存储。建构性学习中，你是知识的"建构者"——你通过提问、探究、反思，在头脑中重建知识。后者中的知识是你"长"出来的，不是贴上去的。</p>
+      </div>
+    </div>
+
+    <div class="q-item" onclick="toggleAnswer('a9')">
+      <div class="q-header">
+        <span class="q-num high">9</span>
+        <span class="q-text"><strong>【反问题】</strong>"如果人类从未发明'化学'概念，还能理解物质变化吗？"从日常生活经验角度回答。</span>
+        <span class="q-status">点击展开</span>
+      </div>
+      <div class="q-answer" id="a9">
+        <p><span class="hint">参考思路：</span>能。古人没有"化学"概念，但通过观察和经验积累了对物质变化的理解——烧陶、酿酒、炼铁、制药。化学本质上是对这些<strong>已经在做的事</strong>进行系统化、可预测的总结。概念不是发明了现象，而是发明了理解现象的方式。</p>
+      </div>
+    </div>
+
+    <div class="q-item" onclick="toggleAnswer('a10')">
+      <div class="q-header">
+        <span class="q-num high">10</span>
+        <span class="q-text"><strong>【元认知题】</strong>回顾建构过程：从哪一步开始"进入状态"？哪个环节最难？为什么？</span>
+        <span class="q-status">点击展开</span>
+      </div>
+      <div class="q-answer" id="a10">
+        <p><span class="hint">参考思路：</span>①进入状态：当我开始自己举例分析物理/化学变化时；②最难环节：区分"有新物质"的判断标准，尤其是表面相似的现象（如纸张撕碎 vs 燃烧）；③原因：日常语言中"变了"太笼统，需要建立一个明确的化学判断标准。</p>
+      </div>
+    </div>
+  </div>
+
+  <h2>📋 问题类型说明</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:8px;">
+    <span class="type-tag">🌐 开放性问题 — 没有标准答案</span>
+    <span class="type-tag">⚖️ 对比性问题 — 通过比较深化理解</span>
+    <span class="type-tag">🔄 反事实问题 — 假设条件不成立</span>
+    <span class="type-tag">🪞 元认知问题 — 反思思考过程</span>
+  </div>
+
+  <div class="footer">化学 · 九年级上 · 第1章 走进化学世界</div>
+</div>
+
+<script>
+function switchLevel(name) {
+  document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.level-btn[data-level="' + name + '"]').classList.add('active');
+  document.querySelectorAll('.q-list').forEach(l => l.classList.remove('active'));
+  document.getElementById('list-' + name).classList.add('active');
+}
+function toggleAnswer(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('show');
+}
+</script>
+</body>
+</html>

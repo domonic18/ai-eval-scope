@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性案例 — 化学定量思维应用</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.wrapper {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.title-block {
+  text-align: center;
+  padding: 32px 20px 20px;
+  background: linear-gradient(135deg, var(--bg) 0%, #d6e4ff 100%);
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.title-block h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin: 0 0 8px;
+}
+.title-block p {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: 14px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+.case-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+.case-item {
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  transition: box-shadow 0.25s;
+}
+.case-item:hover {
+  box-shadow: var(--shadow);
+}
+.case-header {
+  background: var(--bg);
+  padding: 14px 18px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--text);
+  user-select: none;
+}
+.case-header .case-num {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  line-height: 26px;
+  text-align: center;
+  font-size: 13px;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+.case-header .arrow {
+  transition: transform 0.3s;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.case-header .arrow.rotated {
+  transform: rotate(180deg);
+}
+.case-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+}
+.case-body.open {
+  max-height: 800px;
+}
+.case-body-inner {
+  padding: 16px 18px;
+}
+.case-body-inner p {
+  margin: 6px 0;
+  font-size: 14px;
+}
+.case-body-inner strong {
+  color: var(--text);
+}
+.tag-principle {
+  display: inline-block;
+  background: #e6f7ff;
+  color: #0050b3;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  margin: 2px 4px 2px 0;
+  border: 1px solid #91d5ff;
+}
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.filter-btn {
+  padding: 6px 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+.filter-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.filter-btn:hover:not(.active) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<div class="title-block">
+  <h1>🔬 建构性案例</h1>
+  <p>七阶建构性适配案例——用化学定量思维解决真实问题</p>
+</div>
+
+<div class="card">
+  <h2>案例筛选</h2>
+  <p style="margin:0 0 8px; color:var(--text-secondary); font-size:14px;">按调用原理筛选案例（点击原理标签）</p>
+  <div class="filter-bar" id="filterBar">
+    <button class="filter-btn active" data-filter="all" onclick="filterCases('all')">全部</button>
+    <button class="filter-btn" data-filter="变量识别法" onclick="filterCases('变量识别法')">变量识别法</button>
+    <button class="filter-btn" data-filter="对比测量法" onclick="filterCases('对比测量法')">对比测量法</button>
+    <button class="filter-btn" data-filter="数据可视化法" onclick="filterCases('数据可视化法')">数据可视化法</button>
+    <button class="filter-btn" data-filter="证据推理" onclick="filterCases('证据推理')">证据—推理链接法</button>
+    <button class="filter-btn" data-filter="封闭系统" onclick="filterCases('封闭系统')">封闭系统思维法</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>七阶案例</h2>
+  <p style="margin:0 0 12px; color:var(--text-secondary); font-size:14px;">点击案例标题展开详情</p>
+  <div class="case-grid">
+
+    <div class="case-item" data-principles="变量识别法,对比测量法">
+      <div class="case-header" onclick="toggleCase(this)">
+        <span><span class="case-num">1</span> 我的"喝水"定量记录</span>
+        <span class="arrow">▾</span>
+      </div>
+      <div class="case-body">
+        <div class="case-body-inner">
+          <p><strong>情境：</strong>医生说你每天要喝8杯水，但"一杯"到底是多大？你决定用定量方法记录自己一周的饮水量。</p>
+          <p><strong>任务：</strong>建构一个"个人饮水量监测与评价"模型</p>
+          <p><strong>调用原理：</strong>
+            <span class="tag-principle">变量识别法</span>
+            <span class="tag-principle">对比测量法</span>
+          </p>
+          <p><strong>成果：</strong>一周饮水量数据表 + 日变化折线图 + 自我评价结论</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="case-item" data-principles="对比测量法,数据可视化法">
+      <div class="case-header" onclick="toggleCase(this)">
+        <span><span class="case-num">2</span> 教室空气质量调查</span>
+        <span class="arrow">▾</span>
+      </div>
+      <div class="case-body">
+        <div class="case-body-inner">
+          <p><strong>情境：</strong>课间和上课时，你觉得教室里的空气质量差别很大。但"感觉"可靠吗？请用数据说话。</p>
+          <p><strong>任务：</strong>设计一份"教室CO₂浓度变化调查"方案</p>
+          <p><strong>调用原理：</strong>
+            <span class="tag-principle">对比测量法</span>
+            <span class="tag-principle">数据可视化法</span>
+          </p>
+          <p><strong>成果：</strong>不同时间段的CO₂浓度对比柱状图 + 改善建议</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="case-item" data-principles="变量识别法,证据推理">
+      <div class="case-header" onclick="toggleCase(this)">
+        <span><span class="case-num">3</span> 学校食堂的剩饭问题</span>
+        <span class="arrow">▾</span>
+      </div>
+      <div class="case-body">
+        <div class="case-body-inner">
+          <p><strong>情境：</strong>食堂每天产生大量剩饭剩菜。你能用定量方法帮助食堂优化餐量吗？</p>
+          <p><strong>任务：</strong>建构一个"食堂餐量—需求匹配模型"</p>
+          <p><strong>调用原理：</strong>
+            <span class="tag-principle">变量识别法</span>
+            <span class="tag-principle">证据推理</span>
+          </p>
+          <p><strong>成果：</strong>一周各班剩饭量数据统计 + 按需配餐建议方案</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="case-item" data-principles="对比测量法,封闭系统">
+      <div class="case-header" onclick="toggleCase(this)">
+        <span><span class="case-num">4</span> 铁钉生锈的定量研究</span>
+        <span class="arrow">▾</span>
+      </div>
+      <div class="case-body">
+        <div class="case-body-inner">
+          <p><strong>情境：</strong>铁钉在潮湿空气中会生锈。但"会生锈"有多快？不同条件下生锈速度差多少？</p>
+          <p><strong>任务：</strong>建构一个"铁钉生锈速率影响因素"定量实验模型</p>
+          <p><strong>调用原理：</strong>
+            <span class="tag-principle">对比测量法</span>
+            <span class="tag-principle">封闭系统</span>
+          </p>
+          <p><strong>成果：</strong>不同条件（水/盐水/干燥）下铁钉质量变化对比 + 影响因素分析</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="case-item" data-principles="变量识别法,数据可视化法">
+      <div class="case-header" onclick="toggleCase(this)">
+        <span><span class="case-num">5</span> 自制温度计的标定</span>
+        <span class="arrow">▾</span>
+      </div>
+      <div class="case-body">
+        <div class="case-body-inner">
+          <p><strong>情境：</strong>你用矿泉水瓶和吸管做了一个"简易温度计"，但它没有刻度——你如何用数学方法为它标上刻度？</p>
+          <p><strong>任务：</strong>建构"简易温度计的标定方案"</p>
+          <p><strong>调用原理：</strong>
+            <span class="tag-principle">变量识别法</span>
+            <span class="tag-principle">数据可视化法</span>
+          </p>
+          <p><strong>成果：</strong>温度—液柱高度对应数据表 + 标定曲线图 + 使用说明书</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="case-item" data-principles="证据推理,对比测量法">
+      <div class="case-header" onclick="toggleCase(this)">
+        <span><span class="case-num">6</span> 社区垃圾分类的效率分析</span>
+        <span class="arrow">▾</span>
+      </div>
+      <div class="case-body">
+        <div class="case-body-inner">
+          <p><strong>情境：</strong>社区推行垃圾分类，但大家总觉得"分了也白分"。你能用数据证明垃圾分类到底有没有效果吗？</p>
+          <p><strong>任务：</strong>建构一个"社区垃圾分类效率评估"方案</p>
+          <p><strong>调用原理：</strong>
+            <span class="tag-principle">证据推理</span>
+            <span class="tag-principle">对比测量法</span>
+          </p>
+          <p><strong>成果：</strong>分类前后各类垃圾量的对比数据 + 效率分析报告</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="case-item" data-principles="变量识别法,对比测量法,数据可视化法,证据推理,封闭系统">
+      <div class="case-header" onclick="toggleCase(this)">
+        <span><span class="case-num">7</span> 自制净水器的评价标准</span>
+        <span class="arrow">▾</span>
+      </div>
+      <div class="case-body">
+        <div class="case-body-inner">
+          <p><strong>情境：</strong>你和同学各自做了一个简易净水器，但谁做的更好？只靠"看起来清不清"是不够的。</p>
+          <p><strong>任务：</strong>建构一套"简易净水器性能的定量评价体系"——综合运用全部5条原理</p>
+          <p><strong>调用原理：</strong>
+            <span class="tag-principle">变量识别法</span>
+            <span class="tag-principle">对比测量法</span>
+            <span class="tag-principle">数据可视化法</span>
+            <span class="tag-principle">证据推理</span>
+            <span class="tag-principle">封闭系统</span>
+          </p>
+          <p><strong>成果：</strong>包含3项定量指标的评价量表 + 你的净水器测试数据报告</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</div>
+
+<script>
+function toggleCase(header) {
+  var body = header.nextElementSibling;
+  var arrow = header.querySelector('.arrow');
+  if (!body || !arrow) return;
+  body.classList.toggle('open');
+  arrow.classList.toggle('rotated');
+}
+function filterCases(principle) {
+  var btns = document.querySelectorAll('.filter-btn');
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].classList.remove('active');
+  }
+  var activeBtn = document.querySelector('.filter-btn[data-filter="' + principle + '"]');
+  if (activeBtn) activeBtn.classList.add('active');
+
+  var items = document.querySelectorAll('.case-item');
+  for (var j = 0; j < items.length; j++) {
+    var principles = items[j].getAttribute('data-principles') || '';
+    if (principle === 'all') {
+      items[j].style.display = '';
+    } else {
+      items[j].style.display = principles.indexOf(principle) !== -1 ? '' : 'none';
+    }
+  }
+}
+</script>
+</body>
+</html>

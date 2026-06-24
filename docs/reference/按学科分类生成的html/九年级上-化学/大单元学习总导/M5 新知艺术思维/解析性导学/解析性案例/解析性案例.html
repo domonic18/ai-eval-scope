@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性案例 - 七阶导学案</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); font-size: var(--font-body); line-height: var(--line-height); }
+.container { width: 100%; max-width: none; padding: 32px 24px; box-sizing: border-box; }
+h1 { font-size: var(--font-h1); color: var(--primary); margin: 0 0 8px; }
+.subtitle { color: var(--text-secondary); font-size: 14px; margin-bottom: 24px; }
+h2 { font-size: var(--font-h2); color: var(--text); margin: 28px 0 12px; padding-left: 12px; border-left: 3px solid var(--primary); }
+.case-grid { display: flex; flex-direction: column; gap: 16px; }
+.case-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 18px 20px; cursor: pointer; transition: box-shadow .2s, transform .2s; border: 1px solid var(--border); }
+.case-card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.15); transform: translateY(-1px); }
+.case-header { display: flex; align-items: center; gap: 12px; }
+.case-badge { background: var(--primary); color: #fff; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; flex-shrink: 0; }
+.case-title { font-weight: 600; font-size: 16px; color: var(--text); flex: 1; }
+.case-icon { color: var(--text-secondary); font-size: 18px; transition: transform .3s; }
+.case-card.open .case-icon { transform: rotate(180deg); }
+.case-body { max-height: 0; overflow: hidden; transition: max-height .4s ease, opacity .3s, padding .3s; opacity: 0; }
+.case-card.open .case-body { max-height: 2000px; opacity: 1; padding-top: 16px; }
+.case-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: var(--bg); border-radius: 6px; padding: 12px; margin-top: 8px; font-size: 13px; }
+.case-meta dt { color: var(--text-secondary); }
+.case-meta dd { margin: 0; }
+.table-wrap { overflow-x: auto; margin-top: 10px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { background: var(--primary); color: #fff; padding: 8px 10px; text-align: left; font-weight: 500; }
+td { border: 1px solid var(--border); padding: 8px 10px; }
+tr:nth-child(even) td { background: #fafafa; }
+.reflect-section { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; margin-top: 28px; border: 1px solid var(--border); }
+.reflect-section h3 { color: var(--primary); margin: 0 0 12px; font-size: 17px; }
+.reflect-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px dashed #eee; }
+.reflect-item:last-child { border-bottom: none; }
+.reflect-num { background: var(--primary); color: #fff; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+.reflect-q { color: var(--text); }
+.hint { background: #fff7e6; border: 1px solid #ffd591; border-radius: 6px; padding: 10px 14px; margin: 8px 0; font-size: 13px; color: #ad4e00; }
+.hint strong { color: #d46b08; }
+@media (max-width: 640px) { .case-meta { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>🧪 解析性案例</h1>
+<p class="subtitle">七阶解析性导学案 · 7 个真实情境帮你练就化学分析思维</p>
+
+<div class="case-grid">
+
+<div class="case-card" onclick="toggleCase(this)">
+  <div class="case-header">
+    <span class="case-badge">1</span>
+    <span class="case-title">🏠 厨房里的"小苏打大战白醋"</span>
+    <span class="case-icon">▾</span>
+  </div>
+  <div class="case-body">
+    <p><strong>情境：</strong>妈妈用小苏打清洁厨房，遇到白醋"嘶嘶"冒泡。这些泡泡是什么？为什么小苏打+醋能去污？</p>
+    <p><strong>解析路径：</strong>识别现象（气泡）→ 确定对象（小苏打+白醋）→ 拆解要素 → 寻找证据</p>
+    <div class="case-meta">
+      <dt>建议原理</dt><dd>现象分类法 + 证据链法</dd>
+      <dt>分析记录</dt><dd>[反应物]→[现象]→[猜想]→[验证]→[结论]</dd>
+    </div>
+    <div class="hint"><strong>💡 思路提示：</strong>气泡可能是什么气体？有没有简单方法验证你的猜想？</div>
+  </div>
+</div>
+
+<div class="case-card" onclick="toggleCase(this)">
+  <div class="case-header">
+    <span class="case-badge">2</span>
+    <span class="case-title">🔬 实验报告中的"异常数据"</span>
+    <span class="case-icon">▾</span>
+  </div>
+  <div class="case-body">
+    <p><strong>情境：</strong>同学做"加热高锰酸钾制氧气"实验，收集到的氧气体积只有理论值的一半，装置检查后完好。</p>
+    <p><strong>解析任务：</strong>分析可能导致数据偏差的3种原因。</p>
+    <div class="case-meta">
+      <dt>建议原理</dt><dd>对比分析法 + 定性→定量递进法</dd>
+      <dt>分析记录</dt><dd>[可能原因]→[证据]→[验证方法]→[可能性评估]</dd>
+    </div>
+    <div class="hint"><strong>💡 思路提示：</strong>考虑药品是否变质、加热时间是否足够、收集方法是否正确。</div>
+  </div>
+</div>
+
+<div class="case-card" onclick="toggleCase(this)">
+  <div class="case-header">
+    <span class="case-badge">3</span>
+    <span class="case-title">💧 自来水中的"白色漂浮物"</span>
+    <span class="case-icon">▾</span>
+  </div>
+  <div class="case-body">
+    <p><strong>情境：</strong>烧开水后水面漂浮白色物质。妈妈说"水碱"，邻居说"漂白粉"——到底是什么？</p>
+    <p><strong>解析任务：</strong>分析白色漂浮物的化学成分和形成原因。</p>
+    <div class="case-meta">
+      <dt>建议原理</dt><dd>模型表达法 + 证据链法</dd>
+      <dt>分析记录</dt><dd>[现象]→[可能成分]→[检验方法]→[教材依据]→[结论]</dd>
+    </div>
+    <div class="hint"><strong>💡 思路提示：</strong>关注"为什么加热后才出现"这个关键线索。</div>
+  </div>
+</div>
+
+<div class="case-card" onclick="toggleCase(this)">
+  <div class="case-header">
+    <span class="case-badge">4</span>
+    <span class="case-title">🧴 鉴别3瓶无色液体</span>
+    <span class="case-icon">▾</span>
+  </div>
+  <div class="case-body">
+    <p><strong>情境：</strong>三瓶无标签无色液体：蒸馏水、白醋、石灰水。不准用嘴尝，请设计方案鉴别。</p>
+    <p><strong>解析任务：</strong>设计一份完整的鉴别方案。</p>
+    <div class="case-meta">
+      <dt>建议原理</dt><dd>现象分类法 + 模型表达法</dd>
+      <dt>分析记录</dt><dd>[液体编号]→[检验试剂]→[预期现象]→[结论]</dd>
+    </div>
+    <div class="hint"><strong>💡 思路提示：</strong>从"它们对紫色石蕊试液会有什么不同反应"入手。</div>
+  </div>
+</div>
+
+<div class="case-card" onclick="toggleCase(this)">
+  <div class="case-header">
+    <span class="case-badge">5</span>
+    <span class="case-title">🌱 植物"喝水"的化学解释</span>
+    <span class="case-icon">▾</span>
+  </div>
+  <div class="case-body">
+    <p><strong>情境：</strong>"腌黄瓜时会出水"和"浇花时水往根部走"两个现象有什么共同机制？</p>
+    <p><strong>解析路径：</strong>比较两个现象 → 寻找共同机制（浓度差→扩散）→ 建立解释模型</p>
+    <div class="case-meta">
+      <dt>建议原理</dt><dd>对比分析法 + 模型表达法</dd>
+      <dt>分析记录</dt><dd>[现象1]→[现象2]→[共同机制]→[化学原理]→[解释模型]</dd>
+    </div>
+    <div class="hint"><strong>💡 思路提示：</strong>试试用"浓度"和"膜的半透性"来解释。</div>
+  </div>
+</div>
+
+<div class="case-card" onclick="toggleCase(this)">
+  <div class="case-header">
+    <span class="case-badge">6</span>
+    <span class="case-title">🍽️ 食品添加剂是"敌人"还是"朋友"</span>
+    <span class="case-icon">▾</span>
+  </div>
+  <div class="case-body">
+    <p><strong>情境：</strong>短视频说"防腐剂都有害"，但食盐（氯化钠）本身就是一种防腐剂。</p>
+    <p><strong>解析任务：</strong>分析"食品添加剂有害"这个说法是否科学。</p>
+    <div class="case-meta">
+      <dt>建议原理</dt><dd>证据链法 + 定性→定量递进法</dd>
+      <dt>分析记录</dt><dd>[观点]→[支持证据]→[反对证据]→[你的判断]→[判断依据]</dd>
+    </div>
+    <div class="hint"><strong>💡 思路提示：</strong>从"剂量决定毒性"的角度思考。</div>
+  </div>
+</div>
+
+<div class="case-card" onclick="toggleCase(this)">
+  <div class="case-header">
+    <span class="case-badge">7</span>
+    <span class="case-title">🌊 设计一次水质检测</span>
+    <span class="case-icon">▾</span>
+  </div>
+  <div class="case-body">
+    <p><strong>情境：</strong>学校旁河水被怀疑污染。手中有pH试纸、TDS笔、放大镜和采集瓶。</p>
+    <p><strong>解析任务：</strong>设计水质检测方案并预测可能的检测结果。</p>
+    <div class="case-meta">
+      <dt>建议原理</dt><dd>全部5条解析性原理综合运用</dd>
+      <dt>分析记录</dt><dd>[检测项目]→[检测方法]→[正常范围]→[可能异常]→[解释]</dd>
+    </div>
+    <div class="hint"><strong>💡 思路提示：</strong>先确定"正常河水"的标准，再判断"超标说明什么"。</div>
+  </div>
+</div>
+</div>
+
+<div class="reflect-section">
+  <h3>🤔 综合反思</h3>
+  <div class="reflect-item"><span class="reflect-num">1</span><span class="reflect-q">哪个案例最容易分析？为什么？</span></div>
+  <div class="reflect-item"><span class="reflect-num">2</span><span class="reflect-q">哪个案例最难？困难在哪？</span></div>
+  <div class="reflect-item"><span class="reflect-num">3</span><span class="reflect-q">你最常用的是哪条解析性原理？</span></div>
+  <div class="reflect-item"><span class="reflect-num">4</span><span class="reflect-q">还有哪条原理你觉得自己还不太会用？</span></div>
+  <div class="reflect-item"><span class="reflect-num">5</span><span class="reflect-q">这些案例分析如何帮助你更好地完成建构性导学的任务？</span></div>
+</div>
+</div>
+
+<script>
+function toggleCase(el) {
+  el.classList.toggle('open');
+}
+</script>
+</body>
+</html>

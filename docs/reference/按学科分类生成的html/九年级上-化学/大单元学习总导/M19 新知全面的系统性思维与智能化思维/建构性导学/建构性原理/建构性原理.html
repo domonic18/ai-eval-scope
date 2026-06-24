@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性原理 — 5条可迁移的建构方法</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; }
+.header {
+  background: linear-gradient(135deg, var(--primary), #0d5bcf);
+  color: #fff;
+  padding: 32px 28px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header .subtitle { font-size: 15px; opacity: 0.9; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bg);
+}
+.principle-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  margin-bottom: 12px;
+  overflow: hidden;
+  transition: box-shadow 0.3s;
+}
+.principle-card:hover { box-shadow: 0 2px 12px rgba(22,119,255,0.10); }
+.principle-header {
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+  cursor: pointer;
+  gap: 12px;
+  user-select: none;
+}
+.principle-num {
+  width: 32px; height: 32px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.principle-name {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--text);
+  flex: 1;
+}
+.principle-icon { font-size: 18px; flex-shrink: 0; }
+.principle-arrow {
+  transition: transform 0.3s;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.principle-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s;
+  padding: 0 18px;
+  background: var(--bg);
+}
+.principle-body.open { max-height: 600px; padding: 14px 18px 18px; }
+.principle-body p { margin-bottom: 6px; }
+.principle-body .label { font-weight: 600; color: var(--primary); }
+.principle-body ul { margin: 4px 0 4px 18px; }
+.principle-body li { margin-bottom: 3px; }
+.practice-card {
+  background: linear-gradient(135deg, #fff7e6, #fffbe6);
+  border: 1px solid #ffd666;
+  border-radius: var(--border-radius);
+  padding: 18px 20px;
+  margin-bottom: 14px;
+}
+.practice-card h3 { color: #d46b08; font-size: 17px; margin-bottom: 8px; }
+.practice-card ul { margin: 6px 0 6px 18px; }
+.practice-card li { margin-bottom: 4px; }
+.tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin: 2px;
+  font-weight: 500;
+}
+.tag-blue { background: #e6f7ff; color: #1677ff; }
+.tag-orange { background: #fff7e6; color: #d46b08; }
+.tag-green { background: #f6ffed; color: #52c41a; }
+.tag-red { background: #fff1f0; color: #f5222d; }
+.reflect-section { margin-top: 8px; }
+.reflect-q {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--bg);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.reflect-q:last-child { border-bottom: none; }
+.reflect-q:hover { color: var(--primary); }
+.reflect-q .q-num { font-weight: 700; color: var(--primary); margin-right: 6px; }
+.btn {
+  display: inline-block;
+  padding: 8px 20px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+.btn:hover { background: var(--primary-hover); }
+.btn-sm { padding: 5px 14px; font-size: 13px; }
+@media (min-width: 768px) {
+  .container { padding: 32px 40px; }
+}
+@media (min-width: 1024px) {
+  .container { padding: 40px 60px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🏗️ 建构性原理</h1>
+    <div class="subtitle">从前面的"小苏打探究"示例中提炼出 5 条可迁移的建构性原理 · 九年级化学</div>
+  </div>
+
+  <div class="card">
+    <h2>📐 5 条建构性原理 👇 点击展开</h2>
+
+    <div class="principle-card">
+      <div class="principle-header" onclick="togglePrinciple(this)">
+        <div class="principle-num">1</div>
+        <div class="principle-name">问题驱动法</div>
+        <div class="principle-icon">❓</div>
+        <div class="principle-arrow">▶</div>
+      </div>
+      <div class="principle-body">
+        <p><span class="label">原理说明：</span>从一个真实、具体的问题出发（"为什么一种物质有这么多用途？"），驱动整个建构过程</p>
+        <p><span class="label">示例体现：</span>从厨房中小苏打发面的生活场景切入，产生"一物多用"的疑问</p>
+        <p><span class="label">适用情境：</span>任何新知识的学习，都可以从身边的现象或困惑开始</p>
+        <p><span class="label">注意：</span>问题要具体，避免空泛；从"为什么""怎么做"入手</p>
+        <div style="margin-top:8px;">
+          <span class="tag tag-blue">🔑 关键</span> 真实情境 → 具体问题 → 探究驱动
+        </div>
+      </div>
+    </div>
+
+    <div class="principle-card">
+      <div class="principle-header" onclick="togglePrinciple(this)">
+        <div class="principle-num">2</div>
+        <div class="principle-name">证据锚定法</div>
+        <div class="principle-icon">🔍</div>
+        <div class="principle-arrow">▶</div>
+      </div>
+      <div class="principle-body">
+        <p><span class="label">原理说明：</span>每个结论都要有对应的证据支撑（教材、实验、可靠资料），不凭空想象</p>
+        <p><span class="label">示例体现：</span>示例中每种用途都查找了对应的化学性质证据</p>
+        <p><span class="label">适用情境：</span>做实验分析、写研究报告、判断信息真伪</p>
+        <p><span class="label">注意：</span>区分"事实"和"观点"；优先使用教材和实验数据</p>
+        <div style="margin-top:8px;">
+          <span class="tag tag-orange">🔑 关键</span> 结论有据 · 区分事实与观点 · 优先教材数据
+        </div>
+      </div>
+    </div>
+
+    <div class="principle-card">
+      <div class="principle-header" onclick="togglePrinciple(this)">
+        <div class="principle-num">3</div>
+        <div class="principle-name">系统建模法</div>
+        <div class="principle-icon">🌐</div>
+        <div class="principle-arrow">▶</div>
+      </div>
+      <div class="principle-body">
+        <p><span class="label">原理说明：</span>将分散的"点状知识"用概念图/思维导图连接成网络，展现要素之间的因果关系</p>
+        <p><span class="label">示例体现：</span>从零散的信息（小苏打的几种用途）整合为"性质→用途"关联模型</p>
+        <p><span class="label">适用情境：</span>复习总结、理解复杂概念、做项目规划</p>
+        <p><span class="label">注意：</span>先建骨架再补细节；箭头方向要明确表示因果关系</p>
+        <div style="margin-top:8px;">
+          <span class="tag tag-green">🔑 关键</span> 点状→网状 · 因果箭头 · 先骨架后细节
+        </div>
+      </div>
+    </div>
+
+    <div class="principle-card">
+      <div class="principle-header" onclick="togglePrinciple(this)">
+        <div class="principle-num">4</div>
+        <div class="principle-name">迭代优化法</div>
+        <div class="principle-icon">🔄</div>
+        <div class="principle-arrow">▶</div>
+      </div>
+      <div class="principle-body">
+        <p><span class="label">原理说明：</span>先产出粗糙的初版，再通过对照资料、反思漏洞来逐步完善</p>
+        <p><span class="label">示例体现：</span>经历了"草图→补充→完整版"的迭代过程</p>
+        <p><span class="label">适用情境：</span>实验设计、论文写作、方案策划</p>
+        <p><span class="label">注意：</span>初版不求完美，关键是"先有再说"；每次迭代后问自己"还有什么遗漏"</p>
+        <div style="margin-top:8px;">
+          <span class="tag tag-red">🔑 关键</span> 粗糙初版 → 对照优化 → 循环迭代
+        </div>
+      </div>
+    </div>
+
+    <div class="principle-card">
+      <div class="principle-header" onclick="togglePrinciple(this)">
+        <div class="principle-num">5</div>
+        <div class="principle-name">外化表达法</div>
+        <div class="principle-icon">✏️</div>
+        <div class="principle-arrow">▶</div>
+      </div>
+      <div class="principle-body">
+        <p><span class="label">原理说明：</span>把头脑中的思考用可视化的形式"外化"出来（画图、表格、文字），便于检查和完善</p>
+        <p><span class="label">示例体现：</span>最终以概念图+说明文字的形式呈现完整的系统模型</p>
+        <p><span class="label">适用情境：</span>做笔记、准备展示、和同学讨论交流</p>
+        <p><span class="label">注意：</span>选择适合的表达形式（画图vs写字）；表达要让别人也能看懂</p>
+        <div style="margin-top:8px;">
+          <span class="tag tag-blue">🔑 关键</span> 脑中思维 → 可视化外化 → 可交流可检查
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:14px; text-align:center;">
+      <button class="btn btn-sm" onclick="expandAll()">展开全部</button>
+      <button class="btn btn-sm" onclick="collapseAll()" style="background:#8c8c8c;">收起全部</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🏋️ 迁移练习</h2>
+    <p style="margin-bottom:12px;">将上面的原理应用到新的情境中，并完成建构任务。</p>
+
+    <div class="practice-card">
+      <h3>🧂 练习 1：食盐（氯化钠）的多重身份</h3>
+      <p>食盐不仅是调味品，还用于腌制食品、医疗输液、冬季融雪、工业制碱……同样是"一种物质多种用途"。</p>
+      <ul>
+        <li><strong>建构任务：</strong>运用上述原理，建构"食盐性质—用途系统模型"</li>
+        <li><strong>建议原理：</strong><span class="tag tag-blue">问题驱动法</span> + <span class="tag tag-orange">证据锚定法</span></li>
+        <li><strong>建构脚手架：</strong>先列出食盐在厨房、医院、道路上的不同用途，思考这些用途分别利用了食盐的什么性质？（溶解性、渗透压、凝固点降低……）</li>
+        <li><strong>表达：</strong>画一张"食盐的性质—用途系统模型"概念图</li>
+      </ul>
+    </div>
+
+    <div class="practice-card">
+      <h3>🏠 练习 2：设计"家庭化学物质档案"</h3>
+      <p>家里还有白醋、纯碱、酒精……如果让你做一个"家庭化学物质档案系统"，让每个家庭成员都能快速了解每种物质"能做什么、为什么能做、使用时要注意什么"。</p>
+      <ul>
+        <li><strong>建构任务：</strong>选择2—3种家庭常见化学物质，运用建构性原理设计一份系统性档案模板</li>
+        <li><strong>建议原理：</strong><span class="tag tag-green">系统建模法</span> + <span class="tag tag-red">迭代优化法</span></li>
+        <li><strong>建构脚手架：</strong>档案模板包含：物质名称、分子式、主要性质（至少2条）、对应的用途（至少2个）、安全注意事项。先用一种物质测试框架，再调整</li>
+        <li><strong>表达：</strong>用表格或卡片形式呈现你的"家庭化学物质档案"</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>💭 元认知反思</h2>
+    <p style="margin-bottom:8px;">完成练习后，想一想并回答以下问题（点击可切换展开）：</p>
+    <div class="reflect-section">
+      <div class="reflect-q" onclick="toggleReflectDetail(this)">
+        <span class="q-num">Q1</span> 我这一次的建构过程，是从什么问题开始的？如果换一个起点，我的建构路径会不同吗？
+      </div>
+      <div class="reflect-q" onclick="toggleReflectDetail(this)">
+        <span class="q-num">Q2</span> 我在建构过程中，多少次停下来查找证据？我的结论都有证据支持吗？
+      </div>
+      <div class="reflect-q" onclick="toggleReflectDetail(this)">
+        <span class="q-num">Q3</span> 我的成果从初版到最终版，改进了哪些地方？如果现在让我再做一次，我会在哪里做得更好？
+      </div>
+      <div class="reflect-q" onclick="toggleReflectDetail(this)">
+        <span class="q-num">Q4</span> 如果让我用同样的方法去分析一个完全陌生的物质（比如一种新型环保材料），我觉得哪条原理最有用？哪条可能用不上？
+      </div>
+      <div class="reflect-q" onclick="toggleReflectDetail(this)">
+        <span class="q-num">Q5</span> 主动建构（自己发现并建立知识模型）和被动接受（看别人总结好的笔记），哪一种让你对知识的印象更深刻？为什么？
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function togglePrinciple(header) {
+  var body = header.nextElementSibling;
+  var arrow = header.querySelector('.principle-arrow');
+  if (body) {
+    body.classList.toggle('open');
+    if (arrow) arrow.textContent = body.classList.contains('open') ? '▼' : '▶';
+  }
+}
+function expandAll() {
+  var bodies = document.querySelectorAll('.principle-body');
+  var arrows = document.querySelectorAll('.principle-arrow');
+  bodies.forEach(function(b) { b.classList.add('open'); });
+  arrows.forEach(function(a) { a.textContent = '▼'; });
+}
+function collapseAll() {
+  var bodies = document.querySelectorAll('.principle-body');
+  var arrows = document.querySelectorAll('.principle-arrow');
+  bodies.forEach(function(b) { b.classList.remove('open'); });
+  arrows.forEach(function(a) { a.textContent = '▶'; });
+}
+function toggleReflectDetail(el) {
+  el.classList.toggle('active');
+  if (el.classList.contains('active')) {
+    el.style.color = 'var(--primary)';
+  } else {
+    el.style.color = '';
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性示例导学 — 化学</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body); line-height: var(--line-height);
+  color: var(--text); background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff; padding: 28px 24px; border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 8px; }
+.header .subtitle { font-size: 14px; opacity: 0.9; margin-bottom: 6px; }
+.header .meta { font-size: 13px; opacity: 0.85; }
+.header .meta span { display: inline-block; margin-right: 16px; }
+
+.section-title {
+  font-size: var(--font-h2); font-weight: 600; color: var(--primary);
+  padding-bottom: 8px; border-bottom: 2px solid var(--accent);
+  margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+}
+
+.card {
+  background: var(--card-bg); border-radius: var(--border-radius);
+  box-shadow: var(--shadow); padding: 20px; margin-bottom: 16px;
+  border: 1px solid var(--border); transition: box-shadow 0.2s;
+}
+.card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.card h3 { font-size: 16px; font-weight: 600; color: var(--primary); margin-bottom: 10px; }
+.card p { margin-bottom: 6px; }
+.card ul, .card ol { padding-left: 20px; margin: 8px 0; }
+.card li { margin-bottom: 4px; }
+
+.tag {
+  display: inline-block; background: var(--bg); color: var(--primary);
+  padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 500;
+  margin-right: 4px; margin-bottom: 4px;
+}
+
+/* Timeline / step cards */
+.step-card {
+  display: flex; gap: 14px; padding: 14px 16px;
+  background: var(--card-bg); border-radius: var(--border-radius);
+  border: 1px solid var(--border); margin-bottom: 10px;
+  align-items: flex-start; cursor: pointer; transition: all 0.2s;
+}
+.step-card:hover { border-color: var(--primary); box-shadow: var(--shadow); }
+.step-card .step-num {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--primary); color: #fff; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 14px;
+}
+.step-card .step-body { flex: 1; }
+.step-card .step-body h4 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.step-card .step-body p { font-size: 13px; color: var(--text-secondary); }
+.step-card.done .step-num { background: #52c41a; }
+.step-card.done .step-body p { color: var(--text); }
+.step-card .step-check {
+  width: 20px; height: 20px; border: 2px solid var(--border);
+  border-radius: 50%; flex-shrink: 0; margin-top: 6px;
+  transition: all 0.2s;
+}
+.step-card.done .step-check { background: #52c41a; border-color: #52c41a; }
+.step-card.done .step-check::after {
+  content: "✓"; display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 12px; font-weight: 700;
+}
+
+.tool-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: 8px; background: #f8faff;
+  border: 1px dashed var(--accent); margin-right: 8px; margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.model-display {
+  background: linear-gradient(135deg, #f0f5ff, #e6f7ff);
+  border-radius: 12px; padding: 20px; margin-top: 12px;
+  border: 2px solid var(--accent); text-align: center;
+}
+.model-display h4 { color: var(--primary); margin-bottom: 10px; font-size: 16px; }
+.model-display .model-row { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin: 12px 0; }
+.model-display .model-item { padding: 10px 16px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.06); min-width: 100px; }
+.model-display .model-arrow { font-size: 20px; color: var(--primary); align-self: center; }
+
+.reset-steps-btn {
+  background: transparent; color: var(--text-secondary); border: 1px solid var(--border);
+  padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px;
+  margin-top: 10px; transition: all 0.2s;
+}
+.reset-steps-btn:hover { color: var(--primary); border-color: var(--primary); }
+
+.eval-table {
+  width: 100%; border-collapse: collapse; margin-top: 10px;
+}
+.eval-table th, .eval-table td {
+  border: 1px solid var(--border); padding: 10px 12px; text-align: left; font-size: 14px;
+}
+.eval-table th { background: var(--bg); color: var(--primary); font-weight: 600; }
+.eval-table td { background: var(--card-bg); }
+.eval-table .check-col { width: 40px; text-align: center; cursor: pointer; }
+.eval-table .check-col:hover { background: #f0f5ff; }
+.eval-table .checked .check-col::after { content: "✓"; color: var(--primary); font-weight: 700; font-size: 16px; }
+
+@media (max-width: 600px) {
+  .container { padding: 16px 12px; }
+  .header { padding: 20px 16px; }
+  .card { padding: 16px; }
+  .step-card { padding: 10px 12px; }
+  .model-display .model-row { gap: 10px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>建构性示例导学</h1>
+    <div class="subtitle">像化学家一样思考 —— 以铁钉生锈为例的完整建构示范</div>
+    <div class="meta">
+      <span>🔬 化学 · 九年级上</span>
+      <span>📖 第1章 走进化学世界</span>
+      <span>🧩 M9 新知文化思维</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">🎯 建构目标</div>
+    <p>通过一个完整的化学探究案例，示范如何从日常现象出发，运用"观察→提问→假设→验证→建模"的科学方法，建构关于<strong>化学变化本质</strong>的理解模型。</p>
+    <p style="margin-top:8px;"><strong>核心问题：</strong>如何区分物理变化和化学变化？化学变化的本质是什么？</p>
+  </div>
+
+  <div class="card">
+    <div class="section-title">🔬 真实建构情境</div>
+    <div style="background:#fef7e6;border-radius:8px;padding:16px;border:1px solid #ffd666;margin-bottom:8px;">
+      <p style="font-size:16px;font-weight:500;">🪙 情境：爷爷的老铁钉</p>
+      <p>你在整理老家的工具箱时，发现一个锈迹斑斑的铁钉盒。同放在一个盒子里的塑料纽扣和新买的不锈钢螺丝却完好无损。</p>
+      <p><em>"为什么铁钉会生锈，而其他东西没有变化？"</em> 这个看似简单的问题，隐藏着化学变化的核心秘密。</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">📝 建构成果：化学变化判断模型</div>
+    <p><strong>成果名称：</strong>化学变化本质概念模型图</p>
+    <p><strong>用途：</strong>帮助自己区分物理变化和化学变化</p>
+    <p><strong>形式：</strong>概念模型图（含判断维度）</p>
+    <div class="model-display">
+      <h4>🧪 化学变化判断模型</h4>
+      <div class="model-row">
+        <div class="model-item"><strong>① 看新物质</strong><br><span style="font-size:12px;">是否生成新物质？</span></div>
+        <div class="model-arrow">→</div>
+        <div class="model-item"><strong>② 看能量</strong><br><span style="font-size:12px;">有无能量变化？</span></div>
+        <div class="model-arrow">→</div>
+        <div class="model-item"><strong>③ 看可逆性</strong><br><span style="font-size:12px;">能否简单复原？</span></div>
+        <div class="model-arrow">→</div>
+        <div class="model-item"><strong>④ 看分子</strong><br><span style="font-size:12px;">分子种类变了吗？</span></div>
+      </div>
+      <p style="margin-top:10px;font-size:13px;color:var(--text-secondary);">四个维度综合判断，满足①＋④即为化学变化</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">👣 建构过程示范（7步法）</div>
+    <p style="margin-bottom:12px;color:var(--text-secondary);font-size:13px;">点击每一步标记完成，追踪你的建构进度</p>
+
+    <div id="stepList">
+      <div class="step-card" onclick="toggleStep(this)">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>观察现象</h4>
+          <p>铁钉表面出现红褐色物质，部分铁钉变脆、有凹陷。塑料纽扣、不锈钢螺丝无变化。</p>
+        </div>
+        <div class="step-check"></div>
+      </div>
+      <div class="step-card" onclick="toggleStep(this)">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>提出问题</h4>
+          <p>"铁钉上的红褐色物质是什么？""为什么只有铁发生了变化？""铁生锈需要什么条件？"</p>
+        </div>
+        <div class="step-check"></div>
+      </div>
+      <div class="step-card" onclick="toggleStep(this)">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>收集证据</h4>
+          <p>查阅教材：铁锈主要成分是Fe₂O₃·xH₂O。回忆实验：铁在潮湿空气中更易生锈。</p>
+        </div>
+        <div class="step-check"></div>
+      </div>
+      <div class="step-card" onclick="toggleStep(this)">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h4>建立解释</h4>
+          <p>铁与空气中的氧气和水发生了化学反应，生成了新物质——铁锈。这是一个化学变化。</p>
+        </div>
+        <div class="step-check"></div>
+      </div>
+      <div class="step-card" onclick="toggleStep(this)">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <h4>验证修正</h4>
+          <p>设计对照实验：铁钉在干燥空气中 + 铁钉在水中 + 铁钉在潮湿空气中，观察哪组生锈。</p>
+        </div>
+        <div class="step-check"></div>
+      </div>
+      <div class="step-card" onclick="toggleStep(this)">
+        <div class="step-num">6</div>
+        <div class="step-body">
+          <h4>形成模型</h4>
+          <p>将理解可视化：化学变化 = 有新物质生成 + 分子种类改变 + 伴随能量变化。</p>
+        </div>
+        <div class="step-check"></div>
+      </div>
+      <div class="step-card" onclick="toggleStep(this)">
+        <div class="step-num">7</div>
+        <div class="step-body">
+          <h4>表达分享</h4>
+          <p>用清晰的语言描述建构成果："铁生锈是铁与氧气和水发生的氧化反应，产生了不同于铁的新物质铁锈。"</p>
+        </div>
+        <div class="step-check"></div>
+      </div>
+    </div>
+    <button class="reset-steps-btn" onclick="resetSteps()">↻ 重置全部步骤</button>
+  </div>
+
+  <div class="card">
+    <div class="section-title">🧰 支架工具箱</div>
+    <p style="margin-bottom:10px;">建构过程中，可以借助以下工具降低难度：</p>
+    <div>
+      <div class="tool-chip">📊 概念图模板：中心词→分支→连接词</div>
+      <div class="tool-chip">📋 观察记录表：时间/现象/条件/疑问</div>
+      <div class="tool-chip">💬 问题句式："我观察到___，我想知道___"</div>
+      <div class="tool-chip">🔬 对照实验设计模板</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">✏️ 成果优化建议</div>
+    <ul>
+      <li>📖 <strong>对照教材</strong>检查科学表述是否准确</li>
+      <li>👥 请同学<strong>互评</strong>，补充自己遗漏的判断维度</li>
+      <li>🎨 用<strong>不同颜色</strong>标注"已知确认"和"新发现"</li>
+      <li>🔄 用实际案例<strong>检验</strong>模型：套用3个新例子看模型是否有效</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="section-title">✅ 自我评价量表</div>
+    <p style="margin-bottom:10px;color:var(--text-secondary);">点击对应单元格打勾，完成自评：</p>
+    <table class="eval-table" id="evalTable">
+      <tr>
+        <th style="width:60%;">评价标准</th>
+        <th class="check-col" style="width:40px;">✓</th>
+      </tr>
+      <tr onclick="toggleEval(this)">
+        <td>我列出了至少 2 种化学变化的判断依据</td>
+        <td class="check-col"></td>
+      </tr>
+      <tr onclick="toggleEval(this)">
+        <td>我能够区分物理变化和化学变化</td>
+        <td class="check-col"></td>
+      </tr>
+      <tr onclick="toggleEval(this)">
+        <td>我在建构过程中提出了具体的问题</td>
+        <td class="check-col"></td>
+      </tr>
+      <tr onclick="toggleEval(this)">
+        <td>我的概念模型包含了 4 个判断维度</td>
+        <td class="check-col"></td>
+      </tr>
+      <tr onclick="toggleEval(this)">
+        <td>我可以用自己的话解释铁生锈的化学本质</td>
+        <td class="check-col"></td>
+      </tr>
+    </table>
+    <button class="reset-steps-btn" onclick="resetEval()">↻ 重置评价</button>
+  </div>
+</div>
+
+<script>
+function toggleStep(el) {
+  el.classList.toggle('done');
+}
+
+function resetSteps() {
+  var steps = document.querySelectorAll('#stepList .step-card');
+  steps.forEach(function(s) { s.classList.remove('done'); });
+}
+
+function toggleEval(row) {
+  row.classList.toggle('checked');
+}
+
+function resetEval() {
+  var rows = document.querySelectorAll('#evalTable tr');
+  rows.forEach(function(r) { r.classList.remove('checked'); });
+}
+</script>
+</body>
+</html>

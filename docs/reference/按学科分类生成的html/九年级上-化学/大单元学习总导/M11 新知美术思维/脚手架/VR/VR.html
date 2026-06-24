@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VR 脚手架 — 沉浸体验</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, #13c2c2, var(--primary));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 6px;
+}
+.header p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 14px;
+}
+.section-title {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 28px 0 16px;
+  padding-left: 12px;
+  border-left: 4px solid var(--primary);
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.task-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 640px) {
+  .task-grid { grid-template-columns: 1fr; }
+}
+.task-card {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.25s;
+  user-select: none;
+}
+.task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(22,119,255,0.12);
+}
+.task-card.done {
+  background: #f6ffed;
+  border-color: #52c41a;
+}
+.task-card .icon {
+  font-size: 28px;
+  display: block;
+  margin-bottom: 8px;
+}
+.task-card h4 {
+  margin: 0 0 6px;
+  font-size: 15px;
+  color: var(--text);
+}
+.task-card p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.table-wrap {
+  overflow-x: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+table th, table td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+}
+table th {
+  background: var(--bg);
+  color: var(--text);
+  font-weight: 600;
+}
+table td {
+  vertical-align: top;
+}
+.reveal-cell {
+  cursor: pointer;
+  transition: background 0.2s;
+  position: relative;
+}
+.reveal-cell:hover {
+  background: #e6f7ff;
+}
+.reveal-cell .answer {
+  display: none;
+}
+.reveal-cell.revealed .answer {
+  display: inline;
+}
+.reveal-cell.revealed .placeholder {
+  display: none;
+}
+.reveal-cell .placeholder {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+.resource-section {
+  margin-top: 20px;
+}
+.resource-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  transition: border-color 0.2s;
+}
+.resource-card:hover {
+  border-color: var(--primary);
+}
+.resource-card h4 {
+  margin: 0 0 6px;
+  color: var(--primary);
+}
+.resource-card p {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.resource-card a {
+  color: var(--primary);
+  text-decoration: none;
+}
+.resource-card a:hover {
+  text-decoration: underline;
+}
+.alt-box {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-top: 16px;
+}
+.alt-box h4 {
+  margin: 0 0 8px;
+  color: #d48806;
+}
+.alt-box ul {
+  margin: 4px 0 0;
+  padding-left: 20px;
+}
+.alt-box li {
+  margin-bottom: 4px;
+}
+.step-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🥽 VR 脚手架（沉浸体验）</h1>
+    <p>在虚拟空间中"走进"化学世界，观察肉眼看不到的变化过程</p>
+  </div>
+
+  <h2 class="section-title">🎯 任务定位</h2>
+  <div class="card">
+    通过沉浸式环境实现化学概念的 <strong>"具象化"</strong> 和 <strong>"情境化学习"</strong>。你将在虚拟空间中"走进"化学世界，观察肉眼看不到的变化过程。<br>
+    <span style="display:inline-block;margin-top:8px;font-size:13px;color:var(--text-secondary);">👇 点击下方任务卡片，标记已完成项</span>
+  </div>
+
+  <!-- 观察任务 -->
+  <h2 class="section-title">🔍 观察任务</h2>
+  <div class="task-grid">
+    <div class="task-card" onclick="toggleTaskDone(this)">
+      <span class="icon">💧</span>
+      <h4>水的沸腾（物理变化）</h4>
+      <p>从宏观到微观，观察水分子在加热过程中的运动变化</p>
+    </div>
+    <div class="task-card" onclick="toggleTaskDone(this)">
+      <span class="icon">🔩</span>
+      <h4>铁生锈（化学变化）</h4>
+      <p>观察铁原子与氧分子在潮湿空气中的结合过程</p>
+    </div>
+    <div class="task-card" onclick="toggleTaskDone(this)">
+      <span class="icon">🧪</span>
+      <h4>加热碳酸氢铵</h4>
+      <p>操作虚拟器材，记录实验现象并判断变化类型</p>
+    </div>
+  </div>
+
+  <!-- 记录表 -->
+  <h2 class="section-title">📋 记录任务</h2>
+  <div class="card">
+    <p style="margin-top:0;color:var(--text-secondary);font-size:13px;">💡 <strong>点击空白单元格</strong> 查看答案，先自己思考再核对</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>观察项目</th>
+            <th>变化前</th>
+            <th>变化后</th>
+            <th>有新物质生成？</th>
+            <th>变化类型</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>水的沸腾</td>
+            <td>液态水</td>
+            <td>水蒸气</td>
+            <td class="reveal-cell" onclick="revealAnswer(this)">
+              <span class="placeholder">👆 点击查看</span>
+              <span class="answer">无</span>
+            </td>
+            <td class="reveal-cell" onclick="revealAnswer(this)">
+              <span class="placeholder">👆 点击查看</span>
+              <span class="answer">物理变化</span>
+            </td>
+          </tr>
+          <tr>
+            <td>铁生锈</td>
+            <td>光亮的铁</td>
+            <td>红褐色铁锈</td>
+            <td class="reveal-cell" onclick="revealAnswer(this)">
+              <span class="placeholder">👆 点击查看</span>
+              <span class="answer">有（氧化铁）</span>
+            </td>
+            <td class="reveal-cell" onclick="revealAnswer(this)">
+              <span class="placeholder">👆 点击查看</span>
+              <span class="answer">化学变化</span>
+            </td>
+          </tr>
+          <tr>
+            <td>碳酸氢铵加热</td>
+            <td>白色固体</td>
+            <td>消失、有气体</td>
+            <td class="reveal-cell" onclick="revealAnswer(this)">
+              <span class="placeholder">👆 点击查看</span>
+              <span class="answer">有（氨气等）</span>
+            </td>
+            <td class="reveal-cell" onclick="revealAnswer(this)">
+              <span class="placeholder">👆 点击查看</span>
+              <span class="answer">化学变化</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 推荐资源 -->
+  <h2 class="section-title">📚 推荐资源</h2>
+
+  <div class="resource-section">
+    <div class="resource-card">
+      <h4>🎬 哔哩哔哩</h4>
+      <p>搜索"初中化学 VR 实验"，观看沉浸式实验演示视频</p>
+    </div>
+    <div class="resource-card">
+      <h4>🏫 国家中小学智慧教育平台</h4>
+      <p>进入"虚拟实验"模块，在线操作化学模拟实验</p>
+    </div>
+    <div class="resource-card">
+      <h4>🧪 PhET Interactive Simulations</h4>
+      <p>科罗拉多大学开发的交互式化学模拟，搜索 "states of matter" 等关键词</p>
+      <p>🌐 <a href="https://phet.colorado.edu" target="_blank" rel="noopener">phet.colorado.edu</a></p>
+    </div>
+  </div>
+
+  <div class="alt-box">
+    <h4>🔄 替代方案（无 VR 设备时）</h4>
+    <ul>
+      <li><strong>3D 实验演示视频</strong> — B 站搜索"初中化学 3D 实验"</li>
+      <li><strong>PhET 在线模拟</strong> — 访问 phet.colorado.edu，搜索 "states of matter"</li>
+      <li><strong>纸面"角色扮演"</strong> — 想象自己是显微镜下的一个小分子，用笔描述你"看到"的变化过程</li>
+    </ul>
+  </div>
+</div>
+<script>
+function toggleTaskDone(el) {
+  if (el) el.classList.toggle('done');
+}
+function revealAnswer(el) {
+  if (el) el.classList.toggle('revealed');
+}
+</script>
+</body>
+</html>

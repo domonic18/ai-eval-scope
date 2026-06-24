@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块五维导学 - 化学九年级</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+.container { width: 100%; max-width: none; padding: 24px 32px 60px; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 32px 40px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 8px; }
+.header p { font-size: 14px; opacity: 0.9; }
+.dim-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.dim-tab {
+  flex: 1;
+  min-width: 100px;
+  padding: 10px 12px;
+  text-align: center;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.25s;
+  color: var(--text-secondary);
+}
+.dim-tab:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.dim-tab.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.dim-panel { display: none; }
+.dim-panel.active { display: block; }
+.dim-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px 28px;
+  border: 1px solid var(--border);
+}
+.dim-card h2 {
+  font-size: 18px;
+  color: var(--primary);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.obj-list {
+  list-style: none;
+  padding: 0;
+}
+.obj-list > li {
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  background: var(--bg);
+  border-radius: 6px;
+  border-left: 3px solid var(--primary);
+}
+.obj-list > li strong { display: block; margin-bottom: 4px; }
+.obj-list > li ul { padding-left: 18px; margin-top: 4px; }
+.obj-list > li ul li { margin-bottom: 2px; font-size: 14px; }
+.obj-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  cursor: pointer;
+}
+.obj-check-box {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border);
+  border-radius: 3px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.obj-check-box.done {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.obj-check-box.done::after { content: '✓'; }
+.future-section {
+  margin: 16px 0;
+  padding: 16px 20px;
+  background: #e6f4ff;
+  border-radius: 6px;
+}
+.future-section h3 { color: var(--primary); font-size: 16px; margin-bottom: 8px; }
+.method-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 640px) {
+  .container { padding: 16px; }
+  .method-grid { grid-template-columns: 1fr; }
+  .dim-tab { min-width: 70px; font-size: 12px; }
+}
+.method-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.method-card:hover { border-color: var(--primary); box-shadow: var(--shadow); }
+.method-card .icon { font-size: 22px; }
+.method-card .name { font-weight: 600; color: var(--text); margin: 4px 0; }
+.method-card .desc { font-size: 13px; color: var(--text-secondary); display: none; }
+.method-card.open .desc { display: block; }
+.person-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 640px) { .person-grid { grid-template-columns: 1fr; } }
+.person-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+  transition: all 0.25s;
+  cursor: pointer;
+}
+.person-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(22,119,255,0.1);
+}
+.person-card .name { font-weight: 700; color: var(--primary); font-size: 16px; }
+.person-card .title { font-size: 13px; color: var(--text-secondary); margin: 2px 0 6px; }
+.person-card .detail { max-height: 0; overflow: hidden; transition: max-height 0.35s ease; font-size: 14px; }
+.person-card.open .detail { max-height: 200px; }
+.question-item {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: var(--shadow);
+}
+.question-item:hover { border-color: var(--primary); }
+.question-item .q { font-weight: 600; color: var(--primary); }
+.question-item .a { max-height: 0; overflow: hidden; transition: max-height 0.3s; color: var(--text-secondary); font-size: 14px; margin-top: 4px; }
+.question-item.open .a { max-height: 300px; }
+.btn-primary {
+  display: inline-block;
+  margin: 16px 0;
+  padding: 10px 28px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-primary:hover { background: var(--primary-hover); }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🧭 M5 新知艺术思维 · 模块五维导学</h1>
+  <p>化学 · 九年级上 · 模块定位</p>
+</div>
+
+<p style="font-size:16px;margin-bottom:20px;padding:16px 20px;background:#fff;border-radius:8px;border-left:4px solid var(--primary);">
+  五大维度全面导航，让你清晰了解本模块的学习目标、未来价值、学习方法、关键人物与前沿追问。点击标签切换维度。
+</p>
+
+<div class="dim-tabs">
+  <div class="dim-tab active" data-dim="0" onclick="switchDim(0)">🎯 学习目标</div>
+  <div class="dim-tab" data-dim="1" onclick="switchDim(1)">🚀 未来价值</div>
+  <div class="dim-tab" data-dim="2" onclick="switchDim(2)">📖 学习方法</div>
+  <div class="dim-tab" data-dim="3" onclick="switchDim(3)">👤 关键人物</div>
+  <div class="dim-tab" data-dim="4" onclick="switchDim(4)">💭 前沿追问</div>
+</div>
+
+<!-- 维度1: 学习目标 -->
+<div class="dim-panel active" data-dim="0">
+<div class="dim-card">
+  <h2>🎯 维度一：模块学习目标</h2>
+  <ul class="obj-list">
+    <li>
+      <strong>目标1：理解化学研究的基本思维过程</strong>
+      <ul>
+        <li>学会从现象出发提出问题</li>
+        <li>理解假设→验证→结论的科学思维链条</li>
+        <li>能够区分"描述现象"和"解释现象"</li>
+      </ul>
+      <div class="obj-check" onclick="toggleObjCheck(this)">
+        <div class="obj-check-box"></div><span>我已理解</span>
+      </div>
+    </li>
+    <li>
+      <strong>目标2：掌握解析性分析方法</strong>
+      <ul>
+        <li>能够对化学情境进行逐层拆解</li>
+        <li>学会提取关键信息、调用概念、形成判断</li>
+        <li>具备分析陌生化学问题的基本能力</li>
+      </ul>
+      <div class="obj-check" onclick="toggleObjCheck(this)">
+        <div class="obj-check-box"></div><span>我已理解</span>
+      </div>
+    </li>
+    <li>
+      <strong>目标3：体验建构性学习过程</strong>
+      <ul>
+        <li>能够从真实情境中主动建构化学理解</li>
+        <li>学会用可视化方式表达自己的思维成果</li>
+        <li>形成"建构→反思→优化"的学习习惯</li>
+      </ul>
+      <div class="obj-check" onclick="toggleObjCheck(this)">
+        <div class="obj-check-box"></div><span>我已理解</span>
+      </div>
+    </li>
+    <li>
+      <strong>目标4：产出完整学习成果</strong>
+      <ul>
+        <li>至少完成1份解析性分析记录</li>
+        <li>至少完成1份建构性学习成果（模型/方案/作品）</li>
+        <li>完成对自己学习过程的元认知反思</li>
+      </ul>
+      <div class="obj-check" onclick="toggleObjCheck(this)">
+        <div class="obj-check-box"></div><span>我已理解</span>
+      </div>
+    </li>
+  </ul>
+</div>
+</div>
+
+<!-- 维度2: 高精尖价值 -->
+<div class="dim-panel" data-dim="1">
+<div class="dim-card">
+  <h2>🚀 维度二：高精尖价值与未来意义</h2>
+
+  <div class="future-section">
+    <h3>🔬 化学研究的前沿图景</h3>
+    <p><strong>扫描隧道显微镜（STM）"看到"单个原子</strong>——现代化学家已经可以从原子尺度观察物质世界，本质上和你观察蜡烛燃烧是<strong>同一种"从现象到理解"的思维过程</strong>。</p>
+    <p style="margin-top:10px;"><strong>材料科学家通过调控分子结构设计新材料</strong>——他们在用建构性思维创造前所未有的物质。从石墨烯到钙钛矿太阳能电池，每一个新材料背后都是"建构→测试→优化"的循环。</p>
+    <p style="margin-top:10px;"><strong>药物化学家从天然产物中寻找先导化合物</strong>——解析天然产物的结构→建构药物分子模型→优化药效和安全性，本质上是解析与建构的循环。</p>
+  </div>
+
+  <div class="future-section" style="background:#fff7e6;">
+    <h3>🤖 为什么现在和未来仍然需要学习"走进化学世界"</h3>
+    <p>无论是研发新型电池、开发碳中和技术，还是设计靶向药物，<strong>所有化学创新都始于对"化学变化本质"的深刻理解</strong>。</p>
+    <p style="margin-top:8px;">人工智能时代的到来并没有降低化学思维的价值——相反，<strong>AI需要人类提出正确的问题和建构有意义的模型</strong>。AI可以预测分子的性质，但无法决定"什么分子值得合成"——这是人类化学家的判断力和创造力的领域。</p>
+  </div>
+</div>
+</div>
+
+<!-- 维度3: 学习方法 -->
+<div class="dim-panel" data-dim="2">
+<div class="dim-card">
+  <h2>📖 维度三：推荐学习方式与方法</h2>
+  <p style="margin-bottom:12px;color:var(--text-secondary);">点击每种方法查看详情：</p>
+  <div class="method-grid">
+    <div class="method-card" onclick="toggleMethod(this)">
+      <div class="icon">👁️</div>
+      <div class="name">观察法</div>
+      <div class="desc">带着问题观察生活中的化学现象，记录你看到的每一个细节。训练"科学家的眼睛"。</div>
+    </div>
+    <div class="method-card" onclick="toggleMethod(this)">
+      <div class="icon">⚖️</div>
+      <div class="name">比较法</div>
+      <div class="desc">对比物理变化和化学变化，寻找关键差异。建立"差异思维"——区分是学习化学的第一步。</div>
+    </div>
+    <div class="method-card" onclick="toggleMethod(this)">
+      <div class="icon">🧩</div>
+      <div class="name">建模法</div>
+      <div class="desc">用图示、表格、概念图表达你的化学理解。将抽象概念可视化的能力是化学的核心素养。</div>
+    </div>
+    <div class="method-card" onclick="toggleMethod(this)">
+      <div class="icon">🔍</div>
+      <div class="name">案例分析法</div>
+      <div class="desc">按照"情境→问题→证据→结论"的路径分析案例。这是科学家最常用的思维框架。</div>
+    </div>
+  </div>
+  <div style="margin-top:16px;padding:14px 18px;background:var(--bg);border-radius:6px;">
+    <strong>💡 特别推荐——元认知记录法：</strong>随时记录自己的思考过程。"我刚才为什么这么认为？"、"我的推理中哪个环节可能有问题？"——这种自我监控是高手学习者的共同特征。
+  </div>
+</div>
+</div>
+
+<!-- 维度4: 关键人物 -->
+<div class="dim-panel" data-dim="3">
+<div class="dim-card">
+  <h2>👤 维度四：关键人物与事件</h2>
+  <p style="margin-bottom:12px;color:var(--text-secondary);">点击人物卡片查看详细介绍：</p>
+  <div class="person-grid">
+
+    <div class="person-card" onclick="togglePerson(this)">
+      <div class="name">🔬 拉瓦锡</div>
+      <div class="title">Antoine Lavoisier · 1743-1794</div>
+      <div class="detail">
+        现代化学之父。他用<strong>定量实验</strong>推翻了统治化学界长达百年的"燃素说"——在曲颈甑中加热汞，精确称量反应前后物质的质量，发现总质量不变，从而建立了氧化学说。他的工作标志着化学从定性描述走向定量科学。
+      </div>
+    </div>
+
+    <div class="person-card" onclick="togglePerson(this)">
+      <div class="name">⚛️ 道尔顿</div>
+      <div class="title">John Dalton · 1766-1844</div>
+      <div class="detail">
+        提出<strong>原子论</strong>的英国化学家。他让化学从"现象描述"走向"理论解释"——所有物质都由不可再分的原子组成，同种元素原子相同，不同元素原子不同。这是化学史上第一次为所有化学变化提供了统一的理论基础。
+      </div>
+    </div>
+
+    <div class="person-card" onclick="togglePerson(this)">
+      <div class="name">📊 门捷列夫</div>
+      <div class="title">Dmitri Mendeleev · 1834-1907</div>
+      <div class="detail">
+        发现<strong>元素周期律</strong>的俄罗斯化学家。他最精彩的做法是——给当时已知的63种元素制作"卡片"，按原子量排列后发现性质呈周期性。更令人惊叹的是，他大胆<strong>预测了尚未发现的元素</strong>的性质，后来都被证实。这是"从数据中发现规律"的建构典范。
+      </div>
+    </div>
+
+    <div class="person-card" onclick="togglePerson(this)">
+      <div class="name">☢️ 居里夫人</div>
+      <div class="title">Marie Curie · 1867-1934</div>
+      <div class="detail">
+        两次获得诺贝尔奖的伟大科学家。她从数吨沥青铀矿中分离出<strong>镭和钋</strong>，整个发现过程堪称教科书级的"解析→建构"典范——从异常放射性的现象出发（解析），到分离出新元素并建构放射性理论（建构）。她证明了化学不仅可以研究"有什么"，还可以追问"为什么"。
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- 维度5: 前沿追问 -->
+<div class="dim-panel" data-dim="4">
+<div class="dim-card">
+  <h2>💭 维度五：前沿追问</h2>
+  <p style="margin-bottom:12px;color:var(--text-secondary);">点击每个问题展开思考引导：</p>
+
+  <div class="question-item" onclick="toggleQuestion(this)">
+    <div class="q">1. 如果化学变化的本质是原子的重新组合，那有没有什么变化是原子"不能组合"出来的？</div>
+    <div class="a">思考方向：核反应（原子核裂变/聚变）会改变原子种类——这已经不是化学变化了，属于核物理范畴。化学变化不改变原子种类，所以<strong>不同元素之间的转化</strong>（比如把汞变成金）是化学变化做不到的。这正是中世纪炼金术失败的根本原因。</div>
+  </div>
+
+  <div class="question-item" onclick="toggleQuestion(this)">
+    <div class="q">2. AI能否代替化学家发现新的化学反应？它缺少了什么？</div>
+    <div class="a">思考方向：AI可以基于已有数据预测数百万种可能的化学反应，但<strong>它缺少"提出真正新颖的问题"的能力</strong>——比如"打破现有理论框架的新反应类型"。AI擅长在已知空间中优化，而人类化学家擅长跳出已知空间、建立新范式。</div>
+  </div>
+
+  <div class="question-item" onclick="toggleQuestion(this)">
+    <div class="q">3. 你能否用化学变化的原理，解释"为什么铁会生锈、为什么不锈钢不会"？</div>
+    <div class="a">思考方向：铁生锈是铁与空气中的氧和水发生的化学变化（氧化反应）。不锈钢是铁与铬、镍等元素形成的<strong>合金</strong>，铬在表面形成一层致密的氧化铬薄膜，<strong>阻止了内部的铁与氧接触</strong>。这就是"用化学原理解决材料防锈问题"的经典案例。</div>
+  </div>
+
+  <div class="question-item" onclick="toggleQuestion(this)">
+    <div class="q">4. 如果让你设计一个"从空气中捕获CO₂"的方案，你会从哪里开始？</div>
+    <div class="a">思考方向：你会用到哪些建构性原理？情境锚定——为什么要捕获CO₂（碳中和）？证据驱动——空气中CO₂浓度只有0.04%，如何高效捕获？表达外显——画出你的"碳捕获系统"示意图。迭代优化——第一次设计有什么漏洞？这是把本模块所学综合应用的终极挑战。</div>
+  </div>
+
+</div>
+
+<button class="btn-primary" onclick="resetAll()">🔄 全部收起</button>
+
+</div>
+
+</div>
+
+<script>
+function switchDim(index) {
+  document.querySelectorAll('.dim-tab').forEach(function(tab) {
+    tab.classList.toggle('active', parseInt(tab.getAttribute('data-dim')) === index);
+  });
+  document.querySelectorAll('.dim-panel').forEach(function(panel) {
+    panel.classList.toggle('active', parseInt(panel.getAttribute('data-dim')) === index);
+  });
+}
+
+function toggleObjCheck(el) {
+  var box = el.querySelector('.obj-check-box');
+  if (box) box.classList.toggle('done');
+}
+
+function toggleMethod(el) {
+  el.classList.toggle('open');
+}
+
+function togglePerson(el) {
+  el.classList.toggle('open');
+}
+
+function toggleQuestion(el) {
+  el.classList.toggle('open');
+}
+
+function resetAll() {
+  document.querySelectorAll('.obj-check-box.done').forEach(function(el) {
+    el.classList.remove('done');
+  });
+  document.querySelectorAll('.method-card.open').forEach(function(el) {
+    el.classList.remove('open');
+  });
+  document.querySelectorAll('.person-card.open').forEach(function(el) {
+    el.classList.remove('open');
+  });
+  document.querySelectorAll('.question-item.open').forEach(function(el) {
+    el.classList.remove('open');
+  });
+}
+</script>
+
+</body>
+</html>

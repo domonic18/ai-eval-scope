@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性原理 - 化学九年级上</title>
+<style>
+  :root {
+    --primary: #1677ff;
+    --primary-hover: #4096ff;
+    --accent: #69b1ff;
+    --bg: #f0f5ff;
+    --card-bg: #ffffff;
+    --font-body: 15px;
+    --font-h1: 24px;
+    --font-h2: 19px;
+    --line-height: 1.7;
+    --radius: 12px;
+    --shadow: 0 2px 12px rgba(22,119,255,0.10);
+    --border: #d9e3f0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    font-size: var(--font-body);
+    line-height: var(--line-height);
+    background: var(--bg);
+    color: #222;
+    width: 100%;
+    min-height: 100vh;
+    padding: 24px 20px 60px;
+  }
+
+  .container { width: 100%; }
+
+  /* ── 头部 ── */
+  .header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+    color: #fff;
+    padding: 28px 24px;
+    border-radius: var(--radius);
+    margin-bottom: 24px;
+  }
+  .header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 6px; letter-spacing: 1px; }
+  .header .sub { font-size: 14px; opacity: 0.88; }
+
+  /* ── 通用区段 ── */
+  .section {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 22px 24px;
+    margin-bottom: 20px;
+  }
+  .section h2 {
+    font-size: var(--font-h2);
+    color: var(--primary);
+    margin-bottom: 14px;
+    border-left: 4px solid var(--primary);
+    padding-left: 12px;
+  }
+  .section h3 {
+    font-size: 17px;
+    color: var(--primary);
+    margin: 16px 0 8px;
+  }
+
+  /* ── 交互控件通用 ── */
+  button, .clickable {
+    cursor: pointer;
+  }
+
+  /* ── 回顾反思 ── */
+  .reflect-list { list-style: none; padding: 0; }
+  .reflect-list li {
+    background: var(--bg);
+    border-left: 3px solid var(--accent);
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    border-radius: 0 6px 6px 0;
+  }
+  .reflect-list li::before { content: "💡 "; }
+
+  /* ── 原理卡片（点击翻转） ── */
+  .principles-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 6px;
+  }
+  @media (max-width: 640px) { .principles-grid { grid-template-columns: 1fr; } }
+
+  .principle-card {
+    perspective: 1000px;
+    height: 200px;
+    cursor: pointer;
+  }
+  .principle-card .inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.5s ease;
+    transform-style: preserve-3d;
+  }
+  .principle-card.flipped .inner { transform: rotateY(180deg); }
+
+  .principle-card .face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    box-shadow: var(--shadow);
+  }
+  .principle-card .front { z-index: 2; }
+  .principle-card .back {
+    transform: rotateY(180deg);
+    background: var(--bg);
+    border-color: var(--primary);
+  }
+  .principle-card .face .badge {
+    display: inline-block;
+    background: var(--primary);
+    color: #fff;
+    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    margin-bottom: 8px;
+    width: fit-content;
+  }
+  .principle-card .face h4 { font-size: 16px; color: var(--primary); margin-bottom: 6px; }
+  .principle-card .face p { font-size: 14px; color: #444; line-height: 1.6; }
+  .principle-card .face .tip { font-size: 12px; color: #888; margin-top: 8px; }
+
+  /* ── 术语替换表格 ── */
+  .term-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+    font-size: 14px;
+  }
+  .term-table th {
+    background: var(--primary);
+    color: #fff;
+    padding: 8px 12px;
+    text-align: left;
+  }
+  .term-table th:first-child { border-radius: 6px 0 0 0; }
+  .term-table th:last-child  { border-radius: 0 6px 0 0; }
+  .term-table td {
+    padding: 7px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .term-table tr:last-child td { border-bottom: none; }
+  .term-table .bad { background: #fff1f0; }
+  .term-table .good { background: #f6ffed; }
+
+  /* ── 展开详情 ── */
+  .detail-toggle {
+    display: inline-block;
+    cursor: pointer;
+    color: var(--primary);
+    font-weight: 600;
+    font-size: 14px;
+    margin: 6px 0 4px;
+    user-select: none;
+  }
+  .detail-toggle:hover { color: var(--primary-hover); }
+  .detail-body { display: none; padding: 10px 14px; background: var(--bg); border-radius: 8px; margin-top: 4px; font-size: 14px; }
+  .detail-body.open { display: block; }
+
+  /* ── 自我检测 ── */
+  .quiz-item {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .quiz-item:last-child { border-bottom: none; }
+  .quiz-item .q { font-weight: 600; margin-bottom: 6px; }
+  .quiz-item .q .num { color: var(--primary); margin-right: 4px; }
+
+  .quiz-item .btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0; }
+  .quiz-item .btn-group button {
+    padding: 5px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    transition: opacity 0.2s;
+  }
+  .quiz-item .btn-group button:hover { opacity: 0.85; }
+  .btn-show-answer { background: var(--primary); color: #fff; }
+  .btn-check { background: var(--accent); color: #fff; }
+  .btn-reset { background: #e8e8e8; color: #555; }
+
+  .answer-box {
+    display: none;
+    background: #fffbe6;
+    border: 1px solid #ffe58f;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-top: 8px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .answer-box.open { display: block; }
+  .feedback { font-size: 13px; margin-top: 4px; color: #888; }
+
+  /* ── 总结延伸 ── */
+  .summary-chain {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 4px;
+    margin: 14px 0 6px;
+  }
+  .summary-chain .chain-item {
+    background: var(--primary);
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .summary-chain .chain-arrow { color: var(--primary); font-size: 18px; font-weight: bold; }
+
+  .summary-chain .chain-item:nth-child(1) { background: #1677ff; }
+  .summary-chain .chain-item:nth-child(3) { background: #4096ff; }
+  .summary-chain .chain-item:nth-child(5) { background: #69b1ff; }
+  .summary-chain .chain-item:nth-child(7) { background: #95c9ff; }
+
+  .summary-note {
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 10px;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+  .summary-note strong { color: var(--primary); }
+
+  /* ── 页脚 ── */
+  .footer {
+    text-align: center;
+    font-size: 13px;
+    color: #aaa;
+    margin-top: 28px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ========== 头部 ========== -->
+  <div class="header">
+    <h1>解析性原理</h1>
+    <div class="sub">化学 · 九年级上 · 解析性导学</div>
+  </div>
+
+  <!-- ========== 一、Slot 定位 ========== -->
+  <div class="section">
+    <h2>一、Slot 定位</h2>
+    <p>本环节是"解析性导学"的最后一个下属环节，承担从<strong>"具体操作"</strong>到<strong>"抽象原理"</strong>的升华功能。学生已经在 Slot 1 中看到了完整的解析示范，在 Slot 2 中经历了七种不同情境的实战训练。现在，需要将这些零散的经验提炼为<strong>可迁移的解析性原理</strong>。</p>
+  </div>
+
+  <!-- ========== 二、回顾与反思 ========== -->
+  <div class="section">
+    <h2>二、从示例到原理——回顾与反思</h2>
+    <p>回顾你在之前环节中的分析成果，思考以下问题：</p>
+    <ul class="reflect-list">
+      <li>在每个案例中，你的分析起点是什么？</li>
+      <li>你使用了哪些相同的"检查动作"？</li>
+      <li>哪些判断标准在不同案例中反复出现？</li>
+      <li>哪些思维方式是化学学科特有的？</li>
+    </ul>
+    <span class="detail-toggle" onclick="toggleDetail('reflect-detail')" data-group="reflect">展开思考提示 &#9660;</span>
+    <div class="detail-body" id="reflect-detail">
+      <p><strong>提示</strong>：分析起点往往是"题目给了什么信息"；反复出现的检查动作包括"找结论—找证据—判逻辑"三步法；化学特有的思维方式包括宏观现象与微观粒子对应的观念等。</p>
+    </div>
+  </div>
+
+  <!-- ========== 三、解析性原理提炼 ========== -->
+  <div class="section">
+    <h2>三、解析性原理提炼</h2>
+    <p style="margin-bottom:10px;">点击卡片查看反面详细操作要点</p>
+
+    <div class="principles-grid" id="principles-grid">
+      <!-- 原理一 -->
+      <div class="principle-card" data-group="principles" onclick="flipCard(this)">
+        <div class="inner">
+          <div class="face front">
+            <span class="badge">原理一</span>
+            <h4>证据链原理</h4>
+            <p>每一个结论，都要有对应的现象或数据作为证据。</p>
+            <span class="tip">点击翻转查看操作要点</span>
+          </div>
+          <div class="face back">
+            <span class="badge">操作要点</span>
+            <h4>证据链原理</h4>
+            <p>找到每一条结论对应的证据 &rarr; 检查证据是否充分 &rarr; 检查推理中是否存在跳跃。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 原理二 -->
+      <div class="principle-card" data-group="principles" onclick="flipCard(this)">
+        <div class="inner">
+          <div class="face front">
+            <span class="badge">原理二</span>
+            <h4>术语精确原理</h4>
+            <p>必须使用规范、精确的化学术语。</p>
+            <span class="tip">点击翻转查看常见替换</span>
+          </div>
+          <div class="face back">
+            <span class="badge">常见替换</span>
+            <h4>术语精确原理</h4>
+            <table class="term-table">
+              <tr><th>口语</th><th>规范术语</th></tr>
+              <tr class="bad"><td>冒泡</td><td class="good">产生气泡</td></tr>
+              <tr class="bad"><td>变热</td><td class="good">放出热量</td></tr>
+              <tr class="bad"><td>烧没了</td><td class="good">完全反应</td></tr>
+              <tr class="bad"><td>呛人</td><td class="good">有刺激性气味</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 原理三 -->
+      <div class="principle-card" data-group="principles" onclick="flipCard(this)">
+        <div class="inner">
+          <div class="face front">
+            <span class="badge">原理三</span>
+            <h4>结构完整性原理</h4>
+            <p>不同类型的化学书面表达有固定的结构模板。</p>
+            <span class="tip">点击翻转查看实验报告结构</span>
+          </div>
+          <div class="face back">
+            <span class="badge">结构模板</span>
+            <h4>结构完整性原理</h4>
+            <p><strong>实验报告必备结构：</strong><br>
+            实验目的 &rarr; 实验用品 &rarr; 实验步骤 &rarr; 实验现象 &rarr; 分析与结论 &rarr; 化学方程式</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 原理四 -->
+      <div class="principle-card" data-group="principles" onclick="flipCard(this)">
+        <div class="inner">
+          <div class="face front">
+            <span class="badge">原理四</span>
+            <h4>逻辑层次原理</h4>
+            <p>严格区分"观察到的事实"和"基于事实的分析判断"。</p>
+            <span class="tip">点击翻转查看操作要点</span>
+          </div>
+          <div class="face back">
+            <span class="badge">操作要点</span>
+            <h4>逻辑层次原理</h4>
+            <p>现象单独列出，判断单独列出，按时间 / 逻辑顺序排列。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:14px; text-align:right;">
+      <button class="btn-reset" onclick="resetAllPrinciples()" style="padding:5px 18px; border:none; border-radius:6px; font-size:13px; cursor:pointer;">重置所有卡片</button>
+    </div>
+  </div>
+
+  <!-- ========== 四、自我检测 ========== -->
+  <div class="section">
+    <h2>四、自我检测</h2>
+
+    <div class="quiz-item" data-group="quiz1">
+      <div class="q"><span class="num">1.</span>请用自己的话复述"证据链原理"的核心意思。</div>
+      <div class="btn-group">
+        <button class="btn-show-answer" onclick="showAnswer('a1')">查看参考答案</button>
+        <button class="btn-reset" onclick="resetQuiz('quiz1')">重置</button>
+      </div>
+      <div class="answer-box" id="a1">
+        <strong>参考答案：</strong>在化学书面表达中，每一个结论都必须有对应的现象或数据作为证据支撑，不能凭空下结论。证据要充分、推理不能有跳跃。
+      </div>
+    </div>
+
+    <div class="quiz-item" data-group="quiz2">
+      <div class="q"><span class="num">2.</span>请举例说明什么是化学书面表达中的"口语化问题"。</div>
+      <div class="btn-group">
+        <button class="btn-show-answer" onclick="showAnswer('a2')">查看参考答案</button>
+        <button class="btn-reset" onclick="resetQuiz('quiz2')">重置</button>
+      </div>
+      <div class="answer-box" id="a2">
+        <strong>参考答案：</strong>例如用"冒泡"代替"产生气泡"、用"变热"代替"放出热量"、用"烧没了"代替"完全反应"、用"呛人"代替"有刺激性气味"等，这些都是典型的化学口语化问题。
+      </div>
+    </div>
+
+    <div class="quiz-item" data-group="quiz3">
+      <div class="q"><span class="num">3.</span>"结构完整性原理"的操作要点是什么？</div>
+      <div class="btn-group">
+        <button class="btn-show-answer" onclick="showAnswer('a3')">查看参考答案</button>
+        <button class="btn-reset" onclick="resetQuiz('quiz3')">重置</button>
+      </div>
+      <div class="answer-box" id="a3">
+        <strong>参考答案：</strong>不同类型的化学书面表达有固定的结构模板。例如实验报告必须包含：实验目的、实验用品、实验步骤、实验现象、分析与结论、化学方程式。写作时先确认类型，再套用对应模板。
+      </div>
+    </div>
+
+    <div class="quiz-item" data-group="quiz4">
+      <div class="q"><span class="num">4.</span>分析以下化学表达中的问题并改正：<br>"把镁条放到盐酸里，冒泡了，变热了，说明反应了。"</div>
+      <div class="btn-group">
+        <button class="btn-check" onclick="checkQuiz4()">查看分析</button>
+        <button class="btn-reset" onclick="resetQuiz('quiz4')">重置</button>
+      </div>
+      <div class="answer-box" id="a4">
+        <strong>问题分析：</strong><br>
+        <strong>1. 术语口语化：</strong>"冒泡"应为"产生气泡"，"变热"应为"放出热量"。<br>
+        <strong>2. 证据不完整：</strong>应指明产生了什么气体（氢气）。<br>
+        <strong>3. 逻辑层次不清：</strong>现象与结论混在一起。<br><br>
+        <strong>改正后：</strong>"将镁条放入稀盐酸中，观察到产生大量气泡，试管壁发热（放出热量）。经检验该气体为氢气，说明镁与稀盐酸发生化学反应生成氢气，且该反应为放热反应。"<br>
+        <div class="feedback"><span id="quiz4-feedback"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 五、总结与延伸 ========== -->
+  <div class="section">
+    <h2>五、总结与延伸</h2>
+    <p><strong>四条原理的关联</strong>：它们共同构成了化学书面表达的质量体系——</p>
+    <div class="summary-chain">
+      <span class="chain-item">证据链原理</span><span class="chain-arrow">&#8594;</span>
+      <span class="chain-item">术语精确原理</span><span class="chain-arrow">&#8594;</span>
+      <span class="chain-item">结构完整性原理</span><span class="chain-arrow">&#8594;</span>
+      <span class="chain-item">逻辑层次原理</span>
+    </div>
+    <div class="summary-note">
+      <strong>内核</strong>：证据链原理（保证内容的可信度）<br>
+      <strong>砖瓦</strong>：术语精确原理（保证语言的规范性）<br>
+      <strong>蓝图</strong>：结构完整性原理（保证框架的完整性）<br>
+      <strong>骨架</strong>：逻辑层次原理（保证推理的条理性）
+    </div>
+    <p style="margin-top:12px; font-size:14px; color:#555;">掌握了这四条原理，你就能对任何化学书面表达进行系统、规范的解析。在今后的学习中，请不断运用这些原理提升你的书面表达能力。</p>
+  </div>
+
+  <div class="footer">
+    化学 · 九年级上 · 解析性导学
+  </div>
+
+</div><!-- /.container -->
+
+<script>
+(function(){
+  /* ==================== 原理卡片翻转 ==================== */
+  window.flipCard = function(el) {
+    if (!el) return;
+    el.classList.toggle('flipped');
+  };
+
+  /* ==================== 展开/收缩详情 ==================== */
+  window.toggleDetail = function(id) {
+    if (!id) return;
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('open');
+  };
+
+  /* ==================== 自我检测：显示答案 ==================== */
+  window.showAnswer = function(id) {
+    if (!id) return;
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('open');
+  };
+
+  /* ==================== 自我检测：分析题 ==================== */
+  window.checkQuiz4 = function() {
+    var box = document.getElementById('a4');
+    if (!box) return;
+    var fb = document.getElementById('quiz4-feedback');
+    box.classList.add('open');
+    if (fb) fb.textContent = '已展开详细分析，请对照你的修正思路。';
+  };
+
+  /* ==================== 重置单个自测题 ==================== */
+  window.resetQuiz = function(group) {
+    if (!group) return;
+    /* 找到该组所在的 quiz-item */
+    var items = document.querySelectorAll('.quiz-item[data-group="' + group + '"]');
+    if (!items || items.length === 0) return;
+    items.forEach(function(item) {
+      var answers = item.querySelectorAll('.answer-box');
+      if (answers) {
+        answers.forEach(function(ab) { ab.classList.remove('open'); });
+      }
+      var fb = item.querySelector('.feedback span');
+      if (fb) fb.textContent = '';
+    });
+  };
+
+  /* ==================== 重置所有原理卡片 ==================== */
+  window.resetAllPrinciples = function() {
+    var cards = document.querySelectorAll('.principle-card[data-group="principles"]');
+    if (!cards || cards.length === 0) return;
+    cards.forEach(function(c) { c.classList.remove('flipped'); });
+  };
+})();
+</script>
+
+</body>
+</html>

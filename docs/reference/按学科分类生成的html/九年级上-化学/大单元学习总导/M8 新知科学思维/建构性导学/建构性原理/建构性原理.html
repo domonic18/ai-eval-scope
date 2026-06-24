@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性原理 — M8 新知科学思维</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header p { font-size: 14px; opacity: 0.9; }
+.header .meta { font-size: 13px; opacity: 0.75; margin-top: 8px; }
+
+/* Section card */
+.section-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.section-card .card-header {
+  padding: 16px 20px;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: background 0.2s;
+}
+.section-card .card-header:hover { background: #f6f8ff; }
+.section-card .card-header h2 {
+  font-size: var(--font-h2);
+  flex: 1;
+  color: var(--text);
+}
+.section-card .card-header .num-badge {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: var(--primary);
+  flex-shrink: 0;
+  font-size: 14px;
+}
+.section-card .card-header .arrow {
+  font-size: 16px;
+  color: var(--text-secondary);
+  transition: transform 0.3s;
+  flex-shrink: 0;
+}
+.section-card.expanded .card-header .arrow { transform: rotate(180deg); }
+.section-card.expanded .card-header { background: #f0f5ff; }
+.card-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+  padding: 0 20px;
+  border-top: 0 solid var(--border);
+}
+.section-card.expanded .card-body {
+  max-height: 4000px;
+  padding: 16px 20px;
+  border-top-width: 1px;
+}
+
+/* Principle cards */
+.principles-grid {
+  display: grid;
+  gap: 20px;
+  margin: 10px 0;
+}
+.principle-card {
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+.principle-card:hover { box-shadow: 0 2px 12px rgba(22,119,255,0.10); }
+.principle-card .pc-head {
+  background: var(--bg);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.principle-card .pc-head .pc-icon {
+  font-size: 20px;
+}
+.principle-card .pc-head h3 {
+  font-size: 16px;
+  color: var(--primary);
+  font-weight: 600;
+}
+.principle-card .pc-body { padding: 12px 16px; font-size: 14px; }
+.principle-card .pc-body p { margin-bottom: 6px; }
+.principle-card .pc-body .label {
+  font-weight: 600;
+  color: var(--primary);
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+/* Practice cards */
+.practice-card {
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  margin-bottom: 16px;
+  border-left: 4px solid var(--primary);
+}
+.practice-card h3 {
+  font-size: 16px;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+.practice-card p, .practice-card li { font-size: 14px; margin-bottom: 4px; }
+.practice-card ul { padding-left: 18px; margin-top: 4px; }
+
+/* Reflection */
+.reflection-list { list-style: none; padding-left: 0 !important; }
+.reflection-list li {
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+}
+.reflection-list li:hover { border-color: var(--primary); }
+.reflection-list li .rf-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.reflection-list li .rf-body { flex: 1; }
+.reflection-list li .rf-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, margin 0.3s ease;
+  margin-top: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.reflection-list li.open .rf-answer {
+  max-height: 500px;
+  margin-top: 8px;
+}
+
+.tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background: #e6f4ff;
+  color: var(--primary);
+  margin-right: 4px;
+  margin-bottom: 4px;
+}
+
+@media (max-width: 600px) {
+  .container { padding: 12px 10px; }
+  .header { padding: 18px 16px; }
+  .card-body { padding: 0 14px; }
+  .section-card.expanded .card-body { padding: 12px 14px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🧩 建构性原理</h1>
+    <p>从建构性示例中提炼可迁移的建构性原理——形成一套你可以重复使用的建构方法</p>
+    <div class="meta">M8 新知科学思维 · 建构性导学 · 九年级化学</div>
+  </div>
+
+  <!-- 第一部分：学习目标 -->
+  <div class="section-card expanded" id="sec0">
+    <div class="card-header" onclick="toggleSection('sec0')">
+      <span class="num-badge">🎯</span>
+      <h2>学习目标</h2>
+      <span class="arrow">▲</span>
+    </div>
+    <div class="card-body">
+      <p>通过本课学习，你将能够：</p>
+      <ul style="padding-left:20px;font-size:14px;">
+        <li>从建构性示例中提炼 <strong>3-5 条可迁移的建构性原理</strong></li>
+        <li>在2个化学相关新情境中应用这些原理完成建构任务</li>
+        <li>通过元认知反思，评估自己的建构能力和改进方向</li>
+      </ul>
+      <div style="background:#e6f4ff;border-radius:6px;padding:10px 14px;margin-top:10px;font-size:13px;">
+        💡 <strong>建构</strong>是指从零散的信息和经验中，主动组织、连接、创造出属于自己的知识结构——不是"记住答案"，而是"自己造出解释"。
+      </div>
+    </div>
+  </div>
+
+  <!-- 第二部分：建构性原理提炼 -->
+  <div class="section-card" id="sec1">
+    <div class="card-header" onclick="toggleSection('sec1')">
+      <span class="num-badge">1</span>
+      <h2>建构性原理提炼</h2>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="card-body">
+      <p>以下5条原理是从化学学习中的建构过程提炼出来的——它们可以迁移到任何需要"自己建立理解"的场景中。</p>
+
+      <div class="principles-grid">
+        <!-- 原理1 -->
+        <div class="principle-card">
+          <div class="pc-head">
+            <span class="pc-icon">🔍</span>
+            <h3>原理1：从现象到问题</h3>
+          </div>
+          <div class="pc-body">
+            <p><strong>核心含义</strong>：面对一个化学现象，不止步于"看到了什么"，而是追问"为什么会这样"——把观察转化为可探究的问题。</p>
+            <div class="label">📌 原理来源</div>
+            <p>蜡烛燃烧实验中，看到"扣烧杯的蜡烛熄灭了"→ 追问"烧杯里还剩多少氧气？"</p>
+            <div class="label">🌐 适用情境</div>
+            <p>任何实验观察、生活现象分析：铁钉生锈、水壶结垢、食物腐败</p>
+            <div class="label">⚠️ 注意事项</div>
+            <p>不要跳过"现象"直接编"问题"——好问题必须基于真实观察，而不是凭空想象。</p>
+          </div>
+        </div>
+
+        <!-- 原理2 -->
+        <div class="principle-card">
+          <div class="pc-head">
+            <span class="pc-icon">📋</span>
+            <h3>原理2：从证据到解释</h3>
+          </div>
+          <div class="pc-body">
+            <p><strong>核心含义</strong>：任何科学解释都必须有证据支撑。学会区分"我感觉"和"数据告诉我"——用可验证的证据来构建自己的结论。</p>
+            <div class="label">📌 原理来源</div>
+            <p>牛奶营养成分案例中，"蛋白质3.0g/100mL"是证据→"喝一盒250mL牛奶摄入7.5g蛋白质"是解释</p>
+            <div class="label">🌐 适用情境</div>
+            <p>实验结果分析、数据报告撰写、日常决策（如比较产品成分）</p>
+            <div class="label">⚠️ 注意事项</div>
+            <p>证据不等于解释——同一条证据可能支持不同的解释，需要反复验证。警惕"挑数据支撑预设结论"的倾向。</p>
+          </div>
+        </div>
+
+        <!-- 原理3 -->
+        <div class="principle-card">
+          <div class="pc-head">
+            <span class="pc-icon">🏗️</span>
+            <h3>原理3：从经验到模型</h3>
+          </div>
+          <div class="pc-body">
+            <p><strong>核心含义</strong>：把零散的经验按某种框架组织起来，形成一个"可重复使用"的心智模型——模型帮你快速理解和预测新的类似情境。</p>
+            <div class="label">📌 原理来源</div>
+            <p>定量分析框架："总量 × 比例 = 分量"——从牛奶营养、水费计算、铁硫反应等多个案例中抽象出的通用模型</p>
+            <div class="label">🌐 适用情境</div>
+            <p>化学方程式配平、实验设计模板、物质分类体系构建</p>
+            <div class="label">⚠️ 注意事项</div>
+            <p>模型是"工具"不是"真理"。同一个现象可以用不同模型解释——学会判断哪个模型更适合当前问题。</p>
+          </div>
+        </div>
+
+        <!-- 原理4 -->
+        <div class="principle-card">
+          <div class="pc-head">
+            <span class="pc-icon">🔄</span>
+            <h3>原理4：从单例到迁移</h3>
+          </div>
+          <div class="pc-body">
+            <p><strong>核心含义</strong>：一个案例中学到的方法，能否用到看起来不同的新情境中？迁移的关键是找到"深层结构"而非"表面相似性"。</p>
+            <div class="label">📌 原理来源</div>
+            <p>分析牛奶营养的方法（比例推理）→ 迁移到分析水费涨幅（也是比例推理）→ 再迁移到分析汽车尾气数据</p>
+            <div class="label">🌐 适用情境</div>
+            <p>化学计算题的变式训练、实验方案的跨课题迁移、生活中的化学问题判断</p>
+            <div class="label">⚠️ 注意事项</div>
+            <p>不要生搬硬套。迁移前先问自己：这个新情境和之前的情境，<strong>底层逻辑</strong>是否相同？</p>
+          </div>
+        </div>
+
+        <!-- 原理5 -->
+        <div class="principle-card">
+          <div class="pc-head">
+            <span class="pc-icon">✍️</span>
+            <h3>原理5：从建构到表达</h3>
+          </div>
+          <div class="pc-body">
+            <p><strong>核心含义</strong>：建构不只在脑子里完成——把它写出来、画出来、讲出来，才算真正建构成型。表达的过程本身就是对理解的检验和深化。</p>
+            <div class="label">📌 原理来源</div>
+            <p>每个案例中的"分析记录表"——把思考过程表格化、数据化，形成可视化的建构成果</p>
+            <div class="label">🌐 适用情境</div>
+            <p>实验报告撰写、概念图绘制、小组汇报准备、学习笔记整理</p>
+            <div class="label">⚠️ 注意事项</div>
+            <p>表达不是"抄一遍"。真正的表达是用<strong>自己的语言</strong>重新组织——如果讲不出来，说明还没真正建构好。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 第三部分：迁移应用 -->
+  <div class="section-card" id="sec2">
+    <div class="card-header" onclick="toggleSection('sec2')">
+      <span class="num-badge">2</span>
+      <h2>建构性原理迁移应用</h2>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="card-body">
+      <p>尝试将刚才提炼的5条原理应用到以下2个化学相关新情境中：</p>
+
+      <div class="practice-card">
+        <h3>📌 练习1：水壶里的水垢从哪来？</h3>
+        <p><strong>情境</strong>：你发现家里的水壶用久了内壁出现了一层白色硬垢。妈妈说这是"水垢"。你观察到：①白醋可以溶解水垢并产生气泡；②纯净水烧开不会产生水垢；③自来水烧开会产生水垢。</p>
+        <p><strong>建构任务</strong>：建构一个"水垢成因与去除"的解释模型</p>
+        <p><strong>可用证据</strong>：自来水含钙镁离子（Ca²⁺、Mg²⁺）、碳酸氢钙受热分解产生碳酸钙↓+水+CO₂↑、白醋含醋酸可与碳酸钙反应</p>
+        <p><strong>建议使用的原理</strong>：<span class="tag">从现象到问题</span><span class="tag">从证据到解释</span><span class="tag">从经验到模型</span></p>
+        <p><strong>脚手架提示</strong>：先列出你观察到的3个"现象"→ 针对每个现象提出"为什么"→ 用化学知识把三个"为什么"串成一个完整的故事</p>
+        <p><strong>表达形式</strong>：一张"水垢生成与去除"的流程图（事件顺序 + 化学方程式）</p>
+      </div>
+
+      <div class="practice-card">
+        <h3>📌 练习2：两种金属，哪个更活泼？</h3>
+        <p><strong>情境</strong>：你有两小块金属——镁条和铁钉。你分别把它们放入稀盐酸中，观察到：镁条迅速产生大量气泡，溶液温度明显升高；铁钉缓慢产生少量气泡，溶液温度变化不明显。</p>
+        <p><strong>建构任务</strong>：基于实验现象建构"金属活动性顺序"的判断依据</p>
+        <p><strong>可用证据</strong>：气泡产生速率、温度变化、金属表面变化、反应后溶液颜色（FeCl₂为浅绿色，MgCl₂无色）</p>
+        <p><strong>建议使用的原理</strong>：<span class="tag">从证据到解释</span><span class="tag">从单例到迁移</span><span class="tag">从建构到表达</span></p>
+        <p><strong>脚手架提示</strong>：你正在为"金属活动性顺序"发现一条规律——反应越剧烈，金属越活泼。如何用数据来量化"剧烈程度"？</p>
+        <p><strong>表达形式</strong>：一份"金属活动性判断指南"（包含判断标准 + 实验依据 + 应用示例）</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 第四部分：元认知反思 -->
+  <div class="section-card" id="sec3">
+    <div class="card-header" onclick="toggleSection('sec3')">
+      <span class="num-badge">3</span>
+      <h2>元认知反思</h2>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="card-body">
+      <p>点击每个问题展开参考答案，对照反思：</p>
+      <ul class="reflection-list">
+        <li onclick="toggleReflection(this)">
+          <span class="rf-icon">🤔</span>
+          <div class="rf-body">
+            <strong>在建构过程中，你遇到的最大困难是什么？</strong>
+            <div class="rf-answer">常见的困难包括：无法从现象中提炼出可验证的问题（原理1）、找到了证据但不知道如何组织成解释（原理2）、或者把一个情境的方法生搬硬套到另一个情境（原理4）。<br>如果你遇到了这些问题——恭喜你，说明你真的在"建构"而不是"复制"。</div>
+          </div>
+        </li>
+        <li onclick="toggleReflection(this)">
+          <span class="rf-icon">📊</span>
+          <div class="rf-body">
+            <strong>你用了哪些证据来支撑你的结论？这些证据足够充分吗？</strong>
+            <div class="rf-answer">一个好的建构者会使用<strong>多条不同类型</strong>的证据。例如在"水垢"练习中：可见的白色硬垢（视觉）、白醋溶解产生气泡（化学变化证据）、纯净水vs自来水的对比（控制变量）。单一证据往往不够——越多独立的证据链，结论越可靠。</div>
+          </div>
+        </li>
+        <li onclick="toggleReflection(this)">
+          <span class="rf-icon">🔄</span>
+          <div class="rf-body">
+            <strong>如果重做一次，你会改进哪里？</strong>
+            <div class="rf-answer">可以思考这几个方向：①是否先做了充分的定性观察才进入定量分析？②是否尝试了不同的解释模型来比较优劣？③是否把自己的建构成果讲给别人听并获得了反馈？好的建构往往需要2-3轮迭代。</div>
+          </div>
+        </li>
+        <li onclick="toggleReflection(this)">
+          <span class="rf-icon">🔗</span>
+          <div class="rf-body">
+            <strong>你建构的成果和你已有的化学知识有什么关系？</strong>
+            <div class="rf-answer">建构不是从零开始——你已有的知识（如"碳酸氢钙受热分解"、"金属与酸反应"）是建构的"砖块"。好的建构是把已有的知识砖块用<strong>新的结构</strong>搭建起来。如果你发现建构成果和自己的已有知识产生了矛盾——那可能是最宝贵的学习机会！</div>
+          </div>
+        </li>
+        <li onclick="toggleReflection(this)">
+          <span class="rf-icon">⭐</span>
+          <div class="rf-body">
+            <strong>哪条原理对你帮助最大？为什么？</strong>
+            <div class="rf-answer">不同的人感受不同。有的同学觉得"从现象到问题"最难但最有价值——因为它改变了"被动接收"的学习方式。有的同学觉得"从建构到表达"最实用——因为讲出来真的能发现自己哪里没懂。回想你的学习过程，哪一条让你最有"原来如此"的感觉？</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleSection(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var isOpen = el.classList.toggle('expanded');
+  var arrow = el.querySelector('.arrow');
+  if (arrow) arrow.textContent = isOpen ? '▲' : '▼';
+}
+
+function toggleReflection(el) {
+  if (!el) return;
+  el.classList.toggle('open');
+}
+</script>
+</body>
+</html>

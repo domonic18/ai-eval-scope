@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块定位 M5 新知艺术思维</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.wrapper {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+.hero {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  border-radius: var(--border-radius);
+  padding: 36px 40px;
+  margin-bottom: 28px;
+}
+.hero h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 8px;
+  font-weight: 700;
+}
+.hero .subtitle {
+  font-size: calc(var(--font-body) + 2px);
+  opacity: 0.9;
+}
+.hero .tagline {
+  margin-top: 12px;
+  display: inline-block;
+  background: rgba(255,255,255,0.2);
+  padding: 4px 16px;
+  border-radius: 20px;
+  font-size: var(--font-body);
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  border-left: 4px solid var(--primary);
+  transition: box-shadow 0.3s;
+}
+.card:hover {
+  box-shadow: 0 4px 16px rgba(22,119,255,0.12);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card h2 .icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--bg);
+  font-size: 16px;
+}
+.card p, .card li {
+  margin: 0 0 10px;
+}
+.card ul {
+  padding-left: 20px;
+  margin: 0;
+}
+.card li {
+  margin-bottom: 6px;
+}
+.highlight {
+  background: linear-gradient(120deg, var(--bg) 0%, transparent 70%);
+  padding: 14px 18px;
+  border-radius: 6px;
+  margin: 12px 0;
+}
+.highlight strong {
+  color: var(--primary);
+}
+.badge {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  font-size: 13px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  margin-right: 6px;
+}
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 14px 0;
+}
+@media (max-width: 640px) {
+  .wrapper { padding: 16px; }
+  .hero { padding: 24px 20px; }
+  .card { padding: 18px 16px; }
+  .grid-2 { grid-template-columns: 1fr; }
+}
+.outcome-list {
+  list-style: none;
+  padding: 0;
+}
+.outcome-list li {
+  padding: 8px 12px;
+  background: var(--bg);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  font-size: var(--font-body);
+}
+.outcome-list li::before {
+  content: "✅ ";
+}
+.toggle-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: var(--font-body);
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+.toggle-btn:hover {
+  background: var(--primary-hover);
+}
+.extra-content {
+  margin-top: 14px;
+  padding: 16px;
+  background: var(--bg);
+  border-radius: 6px;
+  display: none;
+  border: 1px solid var(--accent);
+}
+.extra-content.show {
+  display: block;
+}
+.connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.connector .arrow {
+  color: var(--primary);
+  font-size: 20px;
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <div class="hero">
+    <h1>🧪 M5 新知艺术思维</h1>
+    <div class="subtitle">模块定位 · 化学 · 九年级上</div>
+    <div class="tagline">从「接收知识」到「建构知识」</div>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon">🔍</span> 本模块学习什么</h2>
+    <p>本模块的核心不是背概念，而是<strong>体验化学知识的建构过程</strong>。</p>
+    <ul>
+      <li><strong>解析性思维</strong> — 像化学家一样分析化学现象</li>
+      <li><strong>建构性思维</strong> — 从真实情境中主动建构自己的化学理解</li>
+      <li><strong>新知艺术思维</strong> — 化学知识创造过程中的创造性本质</li>
+    </ul>
+    <p>你将围绕<b>「物理变化与化学变化」</b>这一核心概念，经历从观察到理解、从分析到建构、从模仿到创造的完整学习旅程。</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon">💡</span> 本模块为什么重要</h2>
+    <div class="highlight">
+      <strong>知道「是什么」不等于知道「为什么」和「怎么来的」。</strong>
+    </div>
+    <ul>
+      <li>传统学习告诉你「化学变化产生新物质」——本模块让你亲自经历<strong>「如何发现」</strong>化学变化产生新物质</li>
+      <li>这种「像科学家一样思考」的能力，比记住任何具体概念都更有价值</li>
+      <li>让你从知识的<strong>被动接收者</strong>转变为知识的<strong>主动建构者</strong></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon">🗺️</span> 与大单元主题的关系</h2>
+    <p>第1章「走进化学世界」是大单元的开篇，M5是本章的思维升华模块：</p>
+    <div class="connector">
+      <span>M1—M4 认识化学</span>
+      <span class="arrow">→</span>
+      <span><strong>M5 思维跃迁</strong></span>
+      <span class="arrow">→</span>
+      <span>解决复杂问题</span>
+    </div>
+    <ul>
+      <li><b>M1—M4</b> 让你知道了「化学是什么」</li>
+      <li><b>M5</b> 让你思考「化学家是如何发现这些知识的」</li>
+    </ul>
+    <p>它回答了单元的核心问题：<em>化学知识不是从天上掉下来的，而是人——像你一样的人——通过观察、思考、验证一点一滴建构出来的。</em></p>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon">🔗</span> 与前后模块的衔接</h2>
+    <div class="grid-2">
+      <div style="background:var(--bg);padding:14px;border-radius:6px;border-left:3px solid var(--accent);">
+        <div style="font-weight:600;color:var(--primary);">前序 M1—M4</div>
+        <div style="font-size:14px;margin-top:4px;">物质的变化、性质、实验操作——建立基础认知</div>
+      </div>
+      <div style="background:var(--bg);padding:14px;border-radius:6px;border-left:3px solid var(--primary);">
+        <div style="font-weight:600;color:var(--primary);">后续模块</div>
+        <div style="font-size:14px;margin-top:4px;">运用 M5 获得的思维方法，解决更复杂的化学问题和项目任务</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon">🎯</span> 预期学习成果</h2>
+    <ul class="outcome-list">
+      <li>一套可复用的分析化学问题的方法（解析性原理）</li>
+      <li>一套可复用的建构化学理解的方法（建构性原理）</li>
+      <li>至少一份你自己建构的化学理解模型或方案</li>
+      <li>全新的学习视角：化学不是「背」出来的，是「想」出来的</li>
+    </ul>
+    <button class="toggle-btn" onclick="toggleDetail()">📖 展开学习路径详解</button>
+    <div id="pathDetail" class="extra-content">
+      <p><strong>建议学习路径：</strong></p>
+      <ol>
+        <li>先完成 M1—M4 基础回顾（30分钟）</li>
+        <li>观看本模块引导视频，记录你的初始理解（10分钟）</li>
+        <li>逐节完成解析性与建构性思维训练（60分钟）</li>
+        <li>完成一份你自己的化学理解模型（30分钟）</li>
+        <li>反思对比：学习前后的理解有什么不同（10分钟）</li>
+      </ol>
+    </div>
+  </div>
+
+</div>
+<script>
+function toggleDetail() {
+  var el = document.getElementById('pathDetail');
+  if (el) {
+    el.classList.toggle('show');
+  }
+}
+</script>
+</body>
+</html>

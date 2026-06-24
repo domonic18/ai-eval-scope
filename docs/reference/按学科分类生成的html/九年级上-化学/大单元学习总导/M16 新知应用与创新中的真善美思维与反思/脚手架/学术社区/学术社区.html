@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学术社区 - 化学中的真善美</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px 24px 40px;
+  box-sizing: border-box;
+}
+.header {
+  text-align: center;
+  padding: 28px 0 12px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin: 0 0 6px;
+}
+.header .sub {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  padding: 18px 20px;
+  transition: box-shadow .25s;
+}
+.section:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--accent);
+}
+.topic-card {
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  margin: 12px 0;
+  overflow: hidden;
+  transition: box-shadow .2s;
+}
+.topic-card:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.topic-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+  user-select: none;
+  background: #fafafa;
+  transition: background .2s;
+}
+.topic-header:hover {
+  background: #f0f5ff;
+}
+.topic-header .arrow {
+  margin-left: auto;
+  transition: transform .3s;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.topic-header.open .arrow {
+  transform: rotate(90deg);
+}
+.topic-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--primary);
+}
+.topic-body {
+  display: none;
+  padding: 12px 16px;
+}
+.topic-body.open {
+  display: block;
+}
+.topic-body p {
+  margin: 6px 0;
+  font-size: 14px;
+}
+.topic-body .meta {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 8px 0;
+}
+.role-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+  font-size: 14px;
+}
+.role-table th, .role-table td {
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  text-align: left;
+}
+.role-table th {
+  background: var(--bg);
+  color: var(--primary);
+  font-weight: 600;
+}
+.role-btn {
+  display: inline-block;
+  padding: 3px 12px;
+  border: 1px solid var(--primary);
+  border-radius: 14px;
+  font-size: 13px;
+  color: var(--primary);
+  cursor: pointer;
+  background: transparent;
+  transition: all .2s;
+  margin: 2px 0;
+}
+.role-btn:hover {
+  background: var(--primary);
+  color: #fff;
+}
+.role-btn.selected {
+  background: var(--primary);
+  color: #fff;
+}
+.output-box {
+  background: #fafafa;
+  border-radius: 6px;
+  padding: 12px;
+  margin: 8px 0;
+  font-size: 14px;
+  border-left: 3px solid var(--accent);
+}
+.checklist {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+}
+.checklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px dashed #eee;
+}
+.checklist li:last-child {
+  border-bottom: none;
+}
+.checklist input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
+  accent-color: var(--primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.checkbox-label {
+  cursor: pointer;
+  flex: 1;
+}
+.checkbox-label.checked {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+.btn-reset {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 6px 18px;
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all .2s;
+}
+.btn-reset:hover {
+  background: var(--primary);
+  color: #fff;
+}
+@media (max-width: 640px) {
+  .container { padding: 12px; }
+  .role-table { font-size: 13px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🤝 学术社区</h1>
+    <p class="sub">在讨论、协作和分享中深化对真善美化学的理解</p>
+  </div>
+
+  <div class="section">
+    <h2>🗣️ 讨论议题</h2>
+
+    <div class="topic-card">
+      <div class="topic-header open" onclick="toggleTopic(this)">
+        <span style="font-size:18px;">🔢</span>
+        <h3>议题一：真善美排序</h3>
+        <span class="arrow">▶</span>
+      </div>
+      <div class="topic-body open">
+        <p>在化学创新中，<strong>"真、善、美"</strong>哪个维度最重要？如果必须放弃一个，你会放弃哪个？</p>
+        <div class="meta">
+          <strong>讨论形式：</strong>每人独立排序(3分钟) → 轮流分享(每人2分钟) → 尝试达成共识(5分钟)
+        </div>
+      </div>
+    </div>
+
+    <div class="topic-card">
+      <div class="topic-header" onclick="toggleTopic(this)">
+        <span style="font-size:18px;">⚖️</span>
+        <h3>议题二：化学产品大辩论</h3>
+        <span class="arrow">▶</span>
+      </div>
+      <div class="topic-body">
+        <p><strong>观点：</strong>一种化学产品只要能解决"真"问题，并且对大多数人有利（善），即使生产过程不太美观（美），也值得推广。<strong>你同意吗？</strong></p>
+        <div class="meta">
+          <strong>讨论形式：</strong>正反方辩论 · 角色分工：主持人、正方3人、反方3人、评委3人
+        </div>
+      </div>
+    </div>
+
+    <div class="topic-card">
+      <div class="topic-header" onclick="toggleTopic(this)">
+        <span style="font-size:18px;">🔍</span>
+        <h3>议题三：生活中的真善美发现</h3>
+        <span class="arrow">▶</span>
+      </div>
+      <div class="topic-body">
+        <p>在你身边，找一个你认为"化学真善美"的例子，分享给同学——说明它为什么符合真善美标准。</p>
+        <div class="meta">
+          <strong>讨论形式：</strong>每人准备2分钟分享 → 小组内评选"最佳发现"
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>👥 角色分工</h2>
+    <p style="font-size:14px;color:var(--text-secondary);margin:0 0 6px;">点击选择你感兴趣的讨论角色</p>
+    <table class="role-table">
+      <tr><th>角色</th><th>职责</th><th>适合的同学</th><th>选择</th></tr>
+      <tr>
+        <td>🎙️ 主持人</td>
+        <td>控制讨论进度，确保每人发言</td>
+        <td>组织能力强</td>
+        <td><button class="role-btn" onclick="selectRole(this)">选择</button></td>
+      </tr>
+      <tr>
+        <td>📝 记录员</td>
+        <td>记录关键观点和分歧</td>
+        <td>细心、笔记好</td>
+        <td><button class="role-btn" onclick="selectRole(this)">选择</button></td>
+      </tr>
+      <tr>
+        <td>⏱️ 计时员</td>
+        <td>提醒发言时间</td>
+        <td>时间观念强</td>
+        <td><button class="role-btn" onclick="selectRole(this)">选择</button></td>
+      </tr>
+      <tr>
+        <td>💬 评论员</td>
+        <td>总结讨论成果</td>
+        <td>逻辑清晰</td>
+        <td><button class="role-btn" onclick="selectRole(this)">选择</button></td>
+      </tr>
+    </table>
+    <p id="roleStatus" style="font-size:14px;color:var(--text-secondary);margin:8px 0 0;">你已选择角色：<span id="selectedRole">无</span></p>
+    <button class="btn-reset" onclick="resetRole()">↺ 取消选择</button>
+  </div>
+
+  <div class="section">
+    <h2>📋 输出机制</h2>
+    <div class="output-box">
+      <strong>📄 讨论记录</strong> —— 每次讨论后由记录员整理"讨论纪要"（200字以内）：讨论主题、主要观点、达成的共识、未解决的分歧
+    </div>
+    <div class="output-box" style="border-left-color:#52c41a;">
+      <strong>🏆 成果展示</strong> —— 优秀讨论成果可在班级群/学习平台展示
+    </div>
+    <div class="output-box" style="border-left-color:#fa8c16;">
+      <strong>💌 互评反馈</strong> —— 给小组其他成员写一条"优点+建议"的反馈
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>✅ 自评清单</h2>
+    <ul class="checklist" id="discussChecklist">
+      <li><input type="checkbox" id="d1" onchange="toggleCheck(this)"><label class="checkbox-label" for="d1">我是否参与了至少1次讨论？</label></li>
+      <li><input type="checkbox" id="d2" onchange="toggleCheck(this)"><label class="checkbox-label" for="d2">我是否在讨论中表达了自己的观点？</label></li>
+      <li><input type="checkbox" id="d3" onchange="toggleCheck(this)"><label class="checkbox-label" for="d3">我是否认真倾听了其他同学的观点？</label></li>
+      <li><input type="checkbox" id="d4" onchange="toggleCheck(this)"><label class="checkbox-label" for="d4">我是否在讨论后完成了"讨论纪要"或收到了反馈？</label></li>
+      <li><input type="checkbox" id="d5" onchange="toggleCheck(this)"><label class="checkbox-label" for="d5">我是否在讨论中收获了新的认识？</label></li>
+    </ul>
+    <button class="btn-reset" onclick="resetDiscussChecklist()">↺ 重置自评</button>
+  </div>
+</div>
+
+<script>
+function toggleTopic(header) {
+  var body = header.nextElementSibling;
+  var isOpen = body.classList.contains('open');
+  if (isOpen) {
+    body.classList.remove('open');
+    header.classList.remove('open');
+  } else {
+    body.classList.add('open');
+    header.classList.add('open');
+  }
+}
+
+function selectRole(btn) {
+  document.querySelectorAll('.role-btn').forEach(function(b) { b.classList.remove('selected'); });
+  btn.classList.add('selected');
+  var row = btn.closest('tr');
+  var roleName = row.cells[0].textContent.trim();
+  document.getElementById('selectedRole').textContent = roleName;
+}
+
+function resetRole() {
+  document.querySelectorAll('.role-btn').forEach(function(b) { b.classList.remove('selected'); });
+  document.getElementById('selectedRole').textContent = '无';
+}
+
+function toggleCheck(cb) {
+  var label = cb.nextElementSibling;
+  if (cb.checked) {
+    label.classList.add('checked');
+  } else {
+    label.classList.remove('checked');
+  }
+}
+
+function resetDiscussChecklist() {
+  document.querySelectorAll('#discussChecklist input[type="checkbox"]').forEach(function(c) {
+    c.checked = false;
+    c.nextElementSibling.classList.remove('checked');
+  });
+  resetRole();
+  document.querySelectorAll('.topic-header.open').forEach(function(h) {
+    h.nextElementSibling.classList.remove('open');
+    h.classList.remove('open');
+  });
+}
+</script>
+</body>
+</html>

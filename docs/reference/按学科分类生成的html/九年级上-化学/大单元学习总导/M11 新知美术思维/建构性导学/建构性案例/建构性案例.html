@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性案例 — 化学 九年级上</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+.header p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 14px;
+}
+.section-title {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin: 28px 0 14px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--accent);
+}
+.case-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  margin: 14px 0;
+}
+.case-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 12px;
+  font-size: 13px;
+  text-align: left;
+  font-weight: 600;
+}
+.case-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  vertical-align: top;
+}
+.case-table tr:last-child td { border-bottom: none; }
+.case-table tr { cursor: pointer; transition: background 0.2s; }
+.case-table tr:hover { background: #f0f5ff; }
+.case-table tr.expanded { background: #e6f7ff; }
+.stars { color: #faad14; letter-spacing: 1px; }
+.case-detail {
+  display: none;
+  padding: 14px 16px;
+  background: #fafafa;
+  border-left: 3px solid var(--primary);
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.case-detail.show { display: block; }
+.case-detail strong { color: var(--primary); }
+.case-detail ul { margin: 6px 0; padding-left: 18px; }
+
+.reflection-list {
+  list-style: none;
+  padding: 0;
+}
+.reflection-list li {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  box-shadow: var(--shadow);
+  border-left: 3px solid var(--accent);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.reflection-list li:hover { background: #f0f5ff; }
+.reflection-list li .q { font-weight: 600; color: var(--primary); display: block; margin-bottom: 4px; }
+.reflection-list li .hint {
+  display: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border);
+}
+.reflection-list li.active .hint { display: block; }
+
+.output-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+.step-badge {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 10px 12px;
+  text-align: center;
+  font-size: 13px;
+  box-shadow: var(--shadow);
+}
+.step-badge .num {
+  display: inline-block;
+  width: 24px; height: 24px;
+  line-height: 24px;
+  text-align: center;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.btn-reset {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 12px;
+}
+.btn-reset:hover { background: var(--primary-hover); }
+
+@media (max-width: 640px) {
+  .container { padding: 14px; }
+  .header { padding: 18px 16px; }
+  .case-table, .case-table thead, .case-table tbody, .case-table tr, .case-table td, .case-table th { display: block; }
+  .case-table thead { display: none; }
+  .case-table td { padding: 8px 12px; border: none; position: relative; }
+  .case-table td:before { content: attr(data-label); font-weight: 600; display: block; color: var(--primary); font-size: 12px; }
+  .output-steps { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🧪 建构性案例</h1>
+  <p>7个递进式案例，运用建构性原理亲手建构化学理解 · 九年级上</p>
+</div>
+
+<p style="font-size:14px;color:var(--text-secondary);margin-bottom:20px;">
+  在"示例"和"原理"之后，现在是你自己上场的时候了！这里有 <strong>7个递进式案例</strong>，每个都要求你运用建构性原理，亲手建构属于你自己的化学理解。👇 <strong>点击案例行</strong>查看详细建构指引。
+</p>
+
+<div class="section-title">📋 七阶案例总览</div>
+
+<table class="case-table" id="caseTable">
+  <thead>
+    <tr><th>阶次</th><th>案例类型</th><th>核心建构任务</th><th>难度</th></tr>
+  </thead>
+  <tbody>
+    <tr onclick="toggleCase(this)" data-case="1">
+      <td data-label="阶次"><strong>第1阶</strong></td>
+      <td data-label="类型">个人理解型</td>
+      <td data-label="任务">从实验描述中自主建构"化学变化"特征清单</td>
+      <td data-label="难度"><span class="stars">★☆☆</span></td>
+    </tr>
+    <tr class="case-detail-row" data-case="1"><td colspan="4">
+      <div class="case-detail show" id="detail1">
+        <strong>📌 建构指引</strong><br>
+        <strong>原理调用：</strong>观察锚定法 + 自定文法<br>
+        <strong>建构步骤：</strong>
+        <ul>
+          <li>阅读一段实验描述（如镁条燃烧、碳酸氢钠加热）</li>
+          <li>用观察锚定法记录每个实验的现象</li>
+          <li>对比各实验的"变化前"和"变化后"</li>
+          <li>用自定文法写一段"化学变化是什么"</li>
+          <li>提炼出3+条化学变化的特征</li>
+        </ul>
+        <strong>成果形式：</strong>一份特征清单 + 一段自己的定义
+      </div>
+    </td></tr>
+
+    <tr onclick="toggleCase(this)" data-case="2">
+      <td data-label="阶次"><strong>第2阶</strong></td>
+      <td data-label="类型">生活应用型</td>
+      <td data-label="任务">观察家中3种物质变化，建构分类标准</td>
+      <td data-label="难度"><span class="stars">★☆☆</span></td>
+    </tr>
+    <tr class="case-detail-row" data-case="2"><td colspan="4">
+      <div class="case-detail" id="detail2">
+        <strong>📌 建构指引</strong><br>
+        <strong>原理调用：</strong>分类建模法 + 证据驱动法<br>
+        <strong>建构步骤：</strong>
+        <ul>
+          <li>选择家中3种变化（如蜡烛燃烧、铁锅生锈、冰块融化）</li>
+          <li>用观察锚定法描述每种变化的现象</li>
+          <li>用证据驱动法判断：是否有新物质生成？</li>
+          <li>用分类建模法归为"物理"或"化学"变化</li>
+          <li>建构自己的分类标准表</li>
+        </ul>
+        <strong>成果形式：</strong>三栏对照表（变化名称 | 现象 | 分类 | 证据）
+      </div>
+    </td></tr>
+
+    <tr onclick="toggleCase(this)" data-case="3">
+      <td data-label="阶次"><strong>第3阶</strong></td>
+      <td data-label="类型">校园问题型</td>
+      <td data-label="任务">通过实验建构"这是哪种液体"的判断流程</td>
+      <td data-label="难度"><span class="stars">★★☆</span></td>
+    </tr>
+    <tr class="case-detail-row" data-case="3"><td colspan="4">
+      <div class="case-detail" id="detail3">
+        <strong>📌 建构指引</strong><br>
+        <strong>原理调用：</strong>证据驱动法 + 检验修正法<br>
+        <strong>建构步骤：</strong>
+        <ul>
+          <li>情境：实验室丢失了标签，有3瓶无色液体</li>
+          <li>设计实验方案：闻气味、测pH、加热、混合试剂</li>
+          <li>记录每个实验的证据</li>
+          <li>逐步排除，锁定每种液体的身份</li>
+          <li>反思：如果再给你一种新液体，你怎么验证？</li>
+        </ul>
+        <strong>成果形式：</strong>一份鉴定流程图 + 实验证据记录
+      </div>
+    </td></tr>
+
+    <tr onclick="toggleCase(this)" data-case="4">
+      <td data-label="阶次"><strong>第4阶</strong></td>
+      <td data-label="类型">学科表达型</td>
+      <td data-label="任务">用图示+文字建构物质变化的知识框架图</td>
+      <td data-label="难度"><span class="stars">★★☆</span></td>
+    </tr>
+    <tr class="case-detail-row" data-case="4"><td colspan="4">
+      <div class="case-detail" id="detail4">
+        <strong>📌 建构指引</strong><br>
+        <strong>原理调用：</strong>分类建模法 + 自定文法<br>
+        <strong>建构步骤：</strong>
+        <ul>
+          <li>回顾前3阶的成果</li>
+          <li>用"中心—分支"形式画知识框架图</li>
+          <li>中心主题："物质的变化"</li>
+          <li>分支：物理变化 vs 化学变化（特征、例子、证据）</li>
+          <li>用文字标注关键区分点</li>
+        </ul>
+        <strong>成果形式：</strong>一张手绘/电子知识框架图 + 文字说明
+      </div>
+    </td></tr>
+
+    <tr onclick="toggleCase(this)" data-case="5">
+      <td data-label="阶次"><strong>第5阶</strong></td>
+      <td data-label="类型">跨学科整合型</td>
+      <td data-label="任务">建构"化学变化中能量变化"的初步模型</td>
+      <td data-label="难度"><span class="stars">★★★</span></td>
+    </tr>
+    <tr class="case-detail-row" data-case="5"><td colspan="4">
+      <div class="case-detail" id="detail5">
+        <strong>📌 建构指引</strong><br>
+        <strong>原理调用：</strong>观察锚定法 + 检验修正法<br>
+        <strong>建构步骤：</strong>
+        <ul>
+          <li>回忆物理课学的"能量守恒"</li>
+          <li>观察化学变化中的温度变化（如生石灰与水）</li>
+          <li>建构模型："化学反应 = 旧键断裂吸热 + 新键形成放热"</li>
+          <li>用能量示意图表示反应前后的能量变化</li>
+        </ul>
+        <strong>成果形式：</strong>能量变化模型图 + 文字解释
+      </div>
+    </td></tr>
+
+    <tr onclick="toggleCase(this)" data-case="6">
+      <td data-label="阶次"><strong>第6阶</strong></td>
+      <td data-label="类型">社会情境型</td>
+      <td data-label="任务">分析水质检测报告，建构水污染化学原理理解</td>
+      <td data-label="难度"><span class="stars">★★★</span></td>
+    </tr>
+    <tr class="case-detail-row" data-case="6"><td colspan="4">
+      <div class="case-detail" id="detail6">
+        <strong>📌 建构指引</strong><br>
+        <strong>原理调用：</strong>证据驱动法 + 分类建模法<br>
+        <strong>建构步骤：</strong>
+        <ul>
+          <li>阅读一份"水质检测报告"（pH、溶解氧、重金属含量等指标）</li>
+          <li>用证据驱动法判断哪些指标异常</li>
+          <li>分类建模：物理污染 vs 化学污染 vs 生物污染</li>
+          <li>建构你对水污染化学原理的理解</li>
+        </ul>
+        <strong>成果形式：</strong>水污染分析报告 + 污染类型分类图
+      </div>
+    </td></tr>
+
+    <tr onclick="toggleCase(this)" data-case="7">
+      <td data-label="阶次"><strong>第7阶</strong></td>
+      <td data-label="类型">综合创新型</td>
+      <td data-label="任务">设计"化学变化展板"，展示全方位理解</td>
+      <td data-label="难度"><span class="stars">★★★</span></td>
+    </tr>
+    <tr class="case-detail-row" data-case="7"><td colspan="4">
+      <div class="case-detail" id="detail7">
+        <strong>📌 建构指引</strong><br>
+        <strong>原理调用：</strong>全部五大原理综合运用<br>
+        <strong>建构步骤：</strong>
+        <ul>
+          <li>整合前6阶的所有成果</li>
+          <li>设计展板结构：标题区 → 概念区 → 案例区 → 实验区 → 反思区</li>
+          <li>每个区选择最适合的表达方式（图示/表格/文字）</li>
+          <li>检验修正：请同学或家人看，是否能看懂你的展板</li>
+        </ul>
+        <strong>成果形式：</strong>一份完整的化学变化展板设计（纸面或电子版）
+      </div>
+    </td></tr>
+  </tbody>
+</table>
+
+<div class="section-title">📌 每个案例的输出结构</div>
+<div class="output-steps">
+  <div class="step-badge"><span class="num">1</span><br>情境阅读</div>
+  <div class="step-badge"><span class="num">2</span><br>建构任务</div>
+  <div class="step-badge"><span class="num">3</span><br>原理调用</div>
+  <div class="step-badge"><span class="num">4</span><br>建构步骤</div>
+  <div class="step-badge"><span class="num">5</span><br>成果表达</div>
+  <div class="step-badge"><span class="num">6</span><br>自我检查</div>
+</div>
+
+<div class="section-title">🤔 综合反思</div>
+<p style="font-size:14px;color:var(--text-secondary);">点击每个问题，查看反思提示：</p>
+<ul class="reflection-list">
+  <li onclick="toggleReflect(this)">
+    <span class="q">问题 1：哪个案例最轻松？为什么？</span>
+    <span class="hint">💡 回想一下：是不是因为你对该案例涉及的现象更熟悉？或者你刚好有相关的建构原理用得比较顺手？</span>
+  </li>
+  <li onclick="toggleReflect(this)">
+    <span class="q">问题 2：哪个案例最困难？卡在了哪里？</span>
+    <span class="hint">💡 困难的地方往往就是你的"思维生长点"。是不知道如何开始？还是不知道怎么组织你的发现？</span>
+  </li>
+  <li onclick="toggleReflect(this)">
+    <span class="q">问题 3：哪条建构性原理我用得最顺手？</span>
+    <span class="hint">💡 每个人有不同的思维偏好。观察锚定法擅长细致描述的同学用得好，证据驱动法适合逻辑强的同学。</span>
+  </li>
+  <li onclick="toggleReflect(this)">
+    <span class="q">问题 4：建构性学习和传统的"老师讲、我记"有什么不同？</span>
+    <span class="hint">💡 建构学习是你自己"生产"知识，而不是"接收"知识。你记得更牢，因为那是你亲手建构的。</span>
+  </li>
+  <li onclick="toggleReflect(this)">
+    <span class="q">问题 5：这些建构经验对我后续学习化学有什么帮助？</span>
+    <span class="hint">💡 化学是实验科学——每次实验其实都是一次建构。有了这些方法，你面对任何化学新知识都有"套路"可循。</span>
+  </li>
+</ul>
+<div style="text-align:right;margin-top:16px;">
+  <button class="btn-reset" onclick="resetReflections()">🔄 收起全部提示</button>
+</div>
+
+</div>
+
+<script>
+function toggleCase(el) {
+  var caseId = el.getAttribute('data-case');
+  var detailRows = document.querySelectorAll('.case-detail-row[data-case="' + caseId + '"]');
+  detailRows.forEach(function(row) {
+    var detail = row.querySelector('.case-detail');
+    if (detail) {
+      detail.classList.toggle('show');
+    }
+  });
+  el.classList.toggle('expanded');
+}
+
+function toggleReflect(el) {
+  el.classList.toggle('active');
+}
+
+function resetReflections() {
+  document.querySelectorAll('.reflection-list li').forEach(function(li) {
+    li.classList.remove('active');
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视频 — 有任务驱动的视频观看</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 6px; }
+.header p { font-size: 14px; opacity: 0.9; }
+
+.video-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.video-card-header {
+  padding: 14px 18px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.15s;
+}
+.video-card-header:hover { background: #fafafa; }
+.video-card-header h3 { font-size: var(--font-h2); color: var(--primary); }
+.video-card-header .level-tag {
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.lv-tag-1 { background: #e6f7ff; color: #1677ff; }
+.lv-tag-2 { background: #fff7e6; color: #d46b08; }
+.lv-tag-3 { background: #f6ffed; color: #16a34a; }
+.video-card-body { display: none; padding: 0 18px 16px; border-top: 1px solid var(--border); padding-top: 12px; }
+.video-card-body.open { display: block; }
+.video-card-body p { margin-bottom: 6px; }
+.video-card-body .meta { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+.video-card-body .task-box {
+  background: #f0f5ff;
+  border-left: 3px solid var(--accent);
+  padding: 8px 12px;
+  border-radius: 0 6px 6px 0;
+  margin: 8px 0;
+  font-size: 14px;
+}
+.task-box strong { color: var(--primary); }
+.pause-box {
+  background: #fff7e6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin: 8px 0;
+  font-size: 14px;
+}
+.pause-box strong { color: #d46b08; }
+.question-list { list-style: none; padding: 0; }
+.question-list li {
+  padding: 6px 0 6px 20px;
+  position: relative;
+  font-size: 14px;
+}
+.question-list li::before {
+  content: "❓";
+  position: absolute;
+  left: 0;
+}
+.output-box {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin: 8px 0;
+  font-size: 14px;
+}
+
+/* 来源汇总表 */
+.info-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+.info-table th, .info-table td { border: 1px solid var(--border); padding: 6px 10px; text-align: left; }
+.info-table th { background: var(--bg); font-weight: 600; }
+
+/* 自评清单 */
+.checklist {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  padding: 16px;
+  margin-top: 12px;
+}
+.checklist h2 { font-size: var(--font-h2); color: var(--primary); margin-bottom: 10px; }
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  cursor: pointer;
+  font-size: 14px;
+}
+.check-item input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary); }
+.check-item.done { color: var(--text-secondary); text-decoration: line-through; }
+.reset-btn {
+  margin-top: 10px;
+  padding: 6px 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text);
+}
+.reset-btn:hover { border-color: var(--primary); color: var(--primary); }
+.footer { text-align: center; color: var(--text-secondary); font-size: 13px; padding: 20px 0 8px; border-top: 1px solid var(--border); margin-top: 12px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🎬 视频脚手架</h1>
+    <p>以"观看焦点"为核心，通过有任务驱动的视频观看训练信息提取能力和深度思考能力</p>
+  </div>
+
+  <!-- 视频1：基础 -->
+  <div class="video-card">
+    <div class="video-card-header" onclick="toggleVideo(this)">
+      <h3>📺 化学：改变世界的力量 <span class="level-tag lv-tag-1">基础</span></h3>
+      <span style="color:var(--text-secondary);font-size:13px;">展开 ▾</span>
+    </div>
+    <div class="video-card-body">
+      <div class="meta">🎯 来源：B站/YouTube搜索"化学改变世界"科普纪录片 · 约15分钟</div>
+      <p><strong>内容简介：</strong>从火的发现到现代化学工业，化学如何塑造了人类文明</p>
+      <div class="task-box"><strong>📋 观看任务：</strong>找出视频中提到的3个"改变世界的化学发现"</div>
+      <ul class="question-list">
+        <li>视频中提到的哪个化学发现对现代生活影响最大？</li>
+        <li>这些发现体现了化学的"真"还是"善"还是"美"？</li>
+      </ul>
+      <div class="pause-box"><strong>⏸️ 暂停思考（5分30秒处）：</strong>化肥发明是好是坏？从真善美角度分析</div>
+      <div class="output-box"><strong>✏️ 输出任务：</strong>用一句话概括"化学为什么能改变世界"</div>
+    </div>
+  </div>
+
+  <!-- 视频2：进阶 -->
+  <div class="video-card">
+    <div class="video-card-header" onclick="toggleVideo(this)">
+      <h3>📺 塑料：从伟大发明到环境挑战 <span class="level-tag lv-tag-2">进阶</span></h3>
+      <span style="color:var(--text-secondary);font-size:13px;">展开 ▾</span>
+    </div>
+    <div class="video-card-body">
+      <div class="meta">🎯 来源：B站/纪录片《塑料王国》节选 · 约20分钟</div>
+      <p><strong>内容简介：</strong>塑料的发明史、广泛应用和塑料污染问题</p>
+      <div class="task-box"><strong>📋 观看任务：</strong>用"真善美"框架分析塑料的"一生"</div>
+      <ul class="question-list">
+        <li>塑料的发明在"真"维度上有什么突破？</li>
+        <li>塑料污染反映了"善"维度上的什么问题？</li>
+        <li>塑料回收技术是否体现了"美"？</li>
+      </ul>
+      <div class="pause-box"><strong>⏸️ 暂停思考（12分钟处）：</strong>展示海洋塑料污染时——暂停，写30字感想</div>
+      <div class="output-box"><strong>✏️ 输出任务：</strong>完成一张"塑料真善美分析表"</div>
+    </div>
+  </div>
+
+  <!-- 视频3：挑战 -->
+  <div class="video-card">
+    <div class="video-card-header" onclick="toggleVideo(this)">
+      <h3>📺 TED：我们是否应该停止使用化学产品？ <span class="level-tag lv-tag-3">挑战</span></h3>
+      <span style="color:var(--text-secondary);font-size:13px;">展开 ▾</span>
+    </div>
+    <div class="video-card-body">
+      <div class="meta">🎯 来源：TED官网/网易公开课搜索"Are chemicals killing us?" · 约12分钟</div>
+      <p><strong>内容简介：</strong>一位化学家对"恐化学"现象的批判性分析</p>
+      <div class="task-box"><strong>📋 观看任务：</strong>分析演讲者的论点——用了什么证据？论证是否充分？</div>
+      <ul class="question-list">
+        <li>演讲者认为人们为什么"恐化学"？你同意吗？</li>
+        <li>演讲者倡导"科学对待化学"——这体现了真善美的哪个维度？</li>
+        <li>你觉得演讲者忽略了什么重要角度吗？</li>
+      </ul>
+      <div class="pause-box"><strong>⏸️ 暂停思考（6分钟处）：</strong>演讲者展示"天然≠安全"的数据——思考："宣传'纯天然'的产品是不是总比'含化学成分'的产品好？"</div>
+      <div class="output-box"><strong>✏️ 输出任务：</strong>写一篇50字短评——"我支持/不支持演讲者的观点，因为……"</div>
+    </div>
+  </div>
+
+  <!-- 来源汇总 -->
+  <table class="info-table">
+    <tr><th>类型</th><th>推荐搜索词</th><th>主要平台</th></tr>
+    <tr><td>纪录片</td><td>"化学 纪录片""化学改变世界"</td><td>B站、央视网</td></tr>
+    <tr><td>科普讲解</td><td>"化学 科普""有趣的化学实验"</td><td>B站、抖音</td></tr>
+    <tr><td>TED演讲</td><td>"TED 化学"</td><td>TED官网、网易公开课</td></tr>
+    <tr><td>行业实录</td><td>"化工厂 参观""化学工程师的一天"</td><td>B站、西瓜视频</td></tr>
+  </table>
+
+  <!-- 自评清单 -->
+  <div class="checklist">
+    <h2>✅ 自评清单</h2>
+    <label class="check-item"><input type="checkbox" onchange="checkToggle(this)"> 我是否完成了至少1个视频的观看？</label>
+    <label class="check-item"><input type="checkbox" onchange="checkToggle(this)"> 我是否指定了每个视频的观看任务？</label>
+    <label class="check-item"><input type="checkbox" onchange="checkToggle(this)"> 我是否在暂停点进行了思考？</label>
+    <label class="check-item"><input type="checkbox" onchange="checkToggle(this)"> 我是否完成了视频后的输出任务？</label>
+    <label class="check-item"><input type="checkbox" onchange="checkToggle(this)"> 我是否记录了视频中2个以上令我印象深刻的信息？</label>
+    <button class="reset-btn" onclick="resetChecklist()">🔄 重置</button>
+  </div>
+
+  <div class="footer">
+    化学 · 九年级上 · M16 新知应用与创新中的真善美思维与反思
+  </div>
+</div>
+<script>
+function toggleVideo(el) {
+  var body = el.nextElementSibling;
+  if (body) body.classList.toggle('open');
+}
+function checkToggle(el) {
+  var parent = el.closest('.check-item');
+  if (parent) {
+    parent.classList.toggle('done', el.checked);
+  }
+}
+function resetChecklist() {
+  var items = document.querySelectorAll('.check-item');
+  items.forEach(function(item) {
+    item.classList.remove('done');
+    var cb = item.querySelector('input[type="checkbox"]');
+    if (cb) cb.checked = false;
+  });
+}
+</script>
+</body>
+</html>

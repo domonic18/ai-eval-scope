@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具库 - 脚手架</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  background: var(--bg);
+  color: var(--text);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+.header p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 14px;
+}
+.section-title {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin: 28px 0 12px;
+  padding-left: 12px;
+  border-left: 4px solid var(--primary);
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.tag-basic { background: #e6f7ff; color: #1890ff; }
+.tag-adv { background: #f6ffed; color: #52c41a; }
+.tag-high { background: #fff7e6; color: #fa8c16; }
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+.tab-btn {
+  padding: 8px 18px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+.tab-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.tab-btn:hover:not(.active) {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+.tab-content {
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+.tab-content.active {
+  display: block;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.tool-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 14px;
+}
+.tool-table th {
+  background: var(--bg);
+  color: var(--primary);
+  font-weight: 600;
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 2px solid var(--primary);
+}
+.tool-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: top;
+}
+.tool-table tr:hover td {
+  background: #fafbff;
+}
+.level-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin: 16px 0;
+}
+.level-card {
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  background: var(--card-bg);
+  transition: box-shadow 0.2s;
+  cursor: default;
+}
+.level-card:hover {
+  box-shadow: 0 4px 12px rgba(22,119,255,0.12);
+}
+.level-card h4 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+.level-card .badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  background: var(--bg);
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+.level-card ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 14px;
+}
+.level-card li { margin-bottom: 4px; }
+.linkage-timeline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+.linkage-step {
+  flex: 1;
+  min-width: 140px;
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 14px;
+  text-align: center;
+  border-left: 3px solid var(--primary);
+}
+.linkage-step .step-num {
+  display: inline-block;
+  width: 26px; height: 26px;
+  line-height: 26px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.linkage-step strong {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+.linkage-step p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.tip-box {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin: 16px 0;
+}
+.tip-box h4 {
+  margin: 0 0 8px;
+  color: #d48806;
+  font-size: 15px;
+}
+.tip-box ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 14px;
+}
+.tip-box li { margin-bottom: 4px; }
+.tool-trigger {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: 1px dashed var(--primary);
+  color: var(--primary);
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+  margin: 4px;
+}
+.tool-trigger:hover {
+  background: var(--bg);
+  border-style: solid;
+}
+.reveal-area {
+  margin: 8px 0;
+  padding: 12px 16px;
+  background: #fafbff;
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+  display: none;
+  font-size: 14px;
+}
+.reveal-area.show {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🧰 工具库</h1>
+    <p>认知放大器 — 降低书面表达的技术门槛，把认知资源集中在"写什么"和"怎么写"上</p>
+  </div>
+
+  <div class="card">
+    <h2 style="margin:0 0 8px;font-size:var(--font-h2);">📌 功能定位</h2>
+    <p style="margin:0;font-size:14px;">工具库为学生提供各种帮他们更好地观察、思考、记录和表达化学知识的工具。这里的"工具"不限于实物器具，更包括思维框架、数字平台、数据处理方法和实验装备。核心价值是<strong>降低书面表达的技术门槛</strong>，让学生把认知资源集中在内容本身。</p>
+  </div>
+
+  <h2 class="section-title">🔧 四类工具</h2>
+
+  <div class="tabs" id="toolTabs">
+    <button class="tab-btn active" data-tab="thinking">思维工具</button>
+    <button class="tab-btn" data-tab="digital">数字工具</button>
+    <button class="tab-btn" data-tab="data">数据工具</button>
+    <button class="tab-btn" data-tab="experiment">实验工具</button>
+  </div>
+
+  <!-- 思维工具 -->
+  <div class="tab-content active" id="tab-thinking">
+    <table class="tool-table">
+      <tr><th>层级</th><th>工具</th><th>化学场景应用</th><th>书面表达功能</th></tr>
+      <tr><td><span class="tag tag-basic">基础</span></td><td>思维导图</td><td>整理"物质的变化与性质"知识点</td><td>提供写作的结构框架</td></tr>
+      <tr><td><span class="tag tag-basic">基础</span></td><td>5W1H 分析法</td><td>分析化学实验的 Why/What/Where/When/Who/How</td><td>确保实验报告完整无遗漏</td></tr>
+      <tr><td><span class="tag tag-adv">进阶</span></td><td>维恩图</td><td>比较物理变化与化学变化、纯净物与混合物</td><td>支持对比类写作</td></tr>
+      <tr><td><span class="tag tag-adv">进阶</span></td><td>T 字图表</td><td>记录实验的"预期现象"与"实际现象"</td><td>支持比较分析和反思写作</td></tr>
+      <tr><td><span class="tag tag-high">高阶</span></td><td>论证图（CER）</td><td>构建化学论证——"铁丝在氧气中燃烧现象不同"</td><td>训练论证类写作的骨架</td></tr>
+      <tr><td><span class="tag tag-high">高阶</span></td><td>鱼骨图（因果分析）</td><td>分析实验失败的多重原因</td><td>支持因果分析类写作</td></tr>
+    </table>
+    <div style="text-align:center;margin-top:12px;">
+      <button class="tool-trigger" onclick="toggleReveal('thinking-example')">💡 查看思维导图使用示例</button>
+    </div>
+    <div class="reveal-area" id="thinking-example">
+      <strong>示例：用思维导图整理"物质的变化与性质"</strong><br>
+      中心主题 → 分支1: 物理变化（冰融化、水蒸发）→ 分支2: 化学变化（铁生锈、木炭燃烧）→ 分支3: 物理性质（颜色、密度、熔点）→ 分支4: 化学性质（可燃性、稳定性）— 每个分支可继续细化，形成写作大纲。
+    </div>
+  </div>
+
+  <!-- 数字工具 -->
+  <div class="tab-content" id="tab-digital">
+    <table class="tool-table">
+      <tr><th>层级</th><th>工具</th><th>功能</th><th>书面表达价值</th></tr>
+      <tr><td><span class="tag tag-basic">基础</span></td><td>拼音/手写输入法</td><td>辅助书写困难的学生</td><td>降低文字输入门槛</td></tr>
+      <tr><td><span class="tag tag-basic">基础</span></td><td>在线词典（化学术语）</td><td>查询规范的化学用语</td><td>确保用词准确</td></tr>
+      <tr><td><span class="tag tag-adv">进阶</span></td><td>化学结构式绘制工具</td><td>绘制分子结构、化学仪器</td><td>图文结合的写作训练</td></tr>
+      <tr><td><span class="tag tag-adv">进阶</span></td><td>思维导图软件</td><td>将零散想法转化为结构化大纲</td><td>写作前的规划工具</td></tr>
+      <tr><td><span class="tag tag-high">高阶</span></td><td>写作辅助平台</td><td>多人协作编辑实验报告</td><td>协同写作训练</td></tr>
+      <tr><td><span class="tag tag-high">高阶</span></td><td>AI 辅助写作</td><td>获取写作框架建议、语法检查</td><td>迭代修改的辅助手段</td></tr>
+    </table>
+  </div>
+
+  <!-- 数据工具 -->
+  <div class="tab-content" id="tab-data">
+    <table class="tool-table">
+      <tr><th>层级</th><th>工具</th><th>化学场景应用</th></tr>
+      <tr><td><span class="tag tag-basic">基础</span></td><td>数据记录表模板</td><td>规范化的实验现象记录表格（时间-现象-变化前-变化后）</td></tr>
+      <tr><td><span class="tag tag-basic">基础</span></td><td>化学式计算模板</td><td>相对分子质量、元素质量分数的计算表格</td></tr>
+      <tr><td><span class="tag tag-adv">进阶</span></td><td>Excel/Google Sheets</td><td>实验数据的录入、计算和简单可视化</td></tr>
+      <tr><td><span class="tag tag-adv">进阶</span></td><td>数据对比模板</td><td>两组实验数据的对比分析表</td></tr>
+      <tr><td><span class="tag tag-high">高阶</span></td><td>数字化实验传感器</td><td>温度传感器、pH 传感器的数据采集与曲线绘制</td></tr>
+      <tr><td><span class="tag tag-high">高阶</span></td><td>数据报告写作模板</td><td>"数据-图表-结论"的标准写作格式</td></tr>
+    </table>
+  </div>
+
+  <!-- 实验工具 -->
+  <div class="tab-content" id="tab-experiment">
+    <table class="tool-table">
+      <tr><th>层级</th><th>工具</th><th>与书面表达的关系</th></tr>
+      <tr><td><span class="tag tag-basic">基础</span></td><td>标准实验器材</td><td>操作步骤的记录依赖对器具的准确命名</td></tr>
+      <tr><td><span class="tag tag-basic">基础</span></td><td>实验安全手册</td><td>安全警示语的书面规范的来源</td></tr>
+      <tr><td><span class="tag tag-adv">进阶</span></td><td>数字化实验套装</td><td>传感器数据的文字转化训练</td></tr>
+      <tr><td><span class="tag tag-adv">进阶</span></td><td>自制实验器材</td><td>创新方案的设计说明写作</td></tr>
+      <tr><td><span class="tag tag-high">高阶</span></td><td>虚拟仿真实验平台</td><td>实验记录的数字化输出</td></tr>
+    </table>
+  </div>
+
+  <h2 class="section-title">📊 三分级结构</h2>
+  <div class="level-grid">
+    <div class="level-card">
+      <span class="badge">✅ 必会</span>
+      <h4>📗 基础工具群</h4>
+      <ul>
+        <li>思维导图</li>
+        <li>5W1H 分析表</li>
+        <li>基础实验器材</li>
+      </ul>
+      <p style="font-size:13px;color:var(--text-secondary);margin:8px 0 0;">适用范围：所有学生，用于完成基础层书面表达任务</p>
+    </div>
+    <div class="level-card">
+      <span class="badge" style="background:#f6ffed;color:#52c41a;">⭐ 选学</span>
+      <h4>📘 进阶工具群</h4>
+      <ul>
+        <li>论证图（CER）</li>
+        <li>化学绘制工具</li>
+        <li>数字化实验传感器</li>
+      </ul>
+      <p style="font-size:13px;color:var(--text-secondary);margin:8px 0 0;">适用范围：大部分学生，用于完成进阶层书面表达任务</p>
+    </div>
+    <div class="level-card">
+      <span class="badge" style="background:#fff7e6;color:#fa8c16;">🚀 拓展</span>
+      <h4>📕 高阶工具群</h4>
+      <ul>
+        <li>鱼骨图（因果分析）</li>
+        <li>AI 写作辅助</li>
+        <li>数据分析与报告模板</li>
+      </ul>
+      <p style="font-size:13px;color:var(--text-secondary);margin:8px 0 0;">适用范围：学有余力的学生，用于完成开放层创造性表达任务</p>
+    </div>
+  </div>
+
+  <h2 class="section-title">🔄 与书面表达的联动方式</h2>
+  <div class="linkage-timeline">
+    <div class="linkage-step">
+      <div class="step-num">1</div>
+      <strong>写作前</strong>
+      <p>使用思维工具（思维导图、5W1H）完成写作规划</p>
+    </div>
+    <div class="linkage-step">
+      <div class="step-num">2</div>
+      <strong>写作中</strong>
+      <p>使用数字工具（化学绘图、在线词典）提高写作效率</p>
+    </div>
+    <div class="linkage-step">
+      <div class="step-num">3</div>
+      <strong>写作后</strong>
+      <p>使用数据处理工具和 AI 工具进行语法检查和数据校验</p>
+    </div>
+    <div class="linkage-step">
+      <div class="step-num">4</div>
+      <strong>写作评估</strong>
+      <p>使用论证图和评价标准自评写作质量</p>
+    </div>
+  </div>
+
+  <div class="tip-box">
+    <h4>💡 使用建议</h4>
+    <ul>
+      <li><strong>工具是手段不是目的：</strong>每个工具的使用都应指向书面表达能力的提升</li>
+      <li><strong>循序渐进：</strong>先掌握基础工具（思维导图、实验记录模板），再逐步引入高阶工具</li>
+      <li><strong>模板化起步：</strong>提供标准化的写作模板降低起步难度，学生熟练后可自主创作</li>
+      <li><strong>工具与任务匹配：</strong>开放层任务必须至少使用一种进阶或高阶工具</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+(function(){
+  // 标签页切换
+  var tabs = document.querySelectorAll('.tab-btn');
+  tabs.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var parent = btn.closest('.tabs');
+      if(!parent) return;
+      parent.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      var tabId = btn.getAttribute('data-tab');
+      var container = btn.closest('.container') || document.body;
+      var contents = container.querySelectorAll('.tab-content');
+      contents.forEach(function(c){ c.classList.remove('active'); });
+      var target = document.getElementById('tab-' + tabId);
+      if(target) target.classList.add('active');
+    });
+  });
+})();
+
+function toggleReveal(id){
+  var el = document.getElementById(id);
+  if(!el) return;
+  el.classList.toggle('show');
+}
+</script>
+</body>
+</html>

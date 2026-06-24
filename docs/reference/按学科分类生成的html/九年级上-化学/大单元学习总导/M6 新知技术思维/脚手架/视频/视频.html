@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视频 — 信息提取型脚手架</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  padding: 0;
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header p { font-size: 14px; opacity: 0.9; }
+.section { margin-bottom: 28px; }
+.section-title {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  border-left: 4px solid var(--primary);
+  padding-left: 12px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 18px; }
+.video-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.2s;
+}
+.video-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.video-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 12px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+.video-badge.exp { background: #e6f7ff; color: #1677ff; }
+.video-badge.ana { background: #f6ffed; color: #16a34a; }
+.video-badge.deb { background: #fff7e6; color: #d46b08; }
+.video-card h3 { font-size: 16px; margin-bottom: 6px; color: var(--text); }
+.video-card .source-type { font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; }
+.video-card .task {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin: 10px 0;
+  font-size: 13px;
+  border-left: 3px solid var(--accent);
+}
+.video-card .task strong { color: var(--primary); }
+.q-list { margin: 10px 0; padding-left: 18px; font-size: 13px; }
+.q-list li { margin-bottom: 6px; }
+.pause-point {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin: 8px 0;
+  font-size: 13px;
+}
+.pause-point strong { color: #d46b08; }
+.pause-point .time { font-weight: 700; color: var(--primary); }
+.output-task {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin: 8px 0;
+  font-size: 13px;
+}
+.output-task strong { color: #16a34a; }
+.toggle-questions {
+  margin-top: 10px;
+  padding: 5px 14px;
+  font-size: 12px;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.toggle-questions:hover { background: var(--primary); color: #fff; }
+.q-hidden { display: none; }
+.q-hidden.show { display: block; }
+.level-tabs { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+.level-tab {
+  padding: 6px 18px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+.level-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.level-tab:hover:not(.active) { border-color: var(--primary); color: var(--primary); }
+.video-group { display: none; }
+.video-group.show { display: grid; }
+.footer { text-align: center; padding: 20px; font-size: 13px; color: var(--text-secondary); }
+@media (max-width: 640px) {
+  .container { padding: 16px 12px; }
+  .video-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🎬 视频</h1>
+  <p>信息提取型脚手架 · 化学 · 九年级上</p>
+</div>
+
+<div class="level-tabs">
+  <span class="level-tab active" data-level="basic" onclick="switchLevel('basic',this)">📖 基础层</span>
+  <span class="level-tab" data-level="adv" onclick="switchLevel('adv',this)">🔬 进阶层</span>
+  <span class="level-tab" data-level="challenge" onclick="switchLevel('challenge',this)">🚀 挑战层</span>
+</div>
+
+<!-- 基础层 -->
+<div class="video-group show" data-group="basic">
+  <div class="video-grid">
+    <div class="video-card">
+      <span class="video-badge exp">解释型</span>
+      <h3>化学变化与物理变化——入门动画</h3>
+      <div class="source-type">🎞 课程类 · 可汗学院风格科普动画</div>
+      <div class="task"><strong>观看任务：</strong>归纳化学变化与物理变化的定义、特征及至少3个生活实例。</div>
+      <button class="toggle-questions" onclick="toggleQ('q1',this)">📌 查看关键问题</button>
+      <div class="q-hidden" id="q1">
+        <ol class="q-list">
+          <li>如何判断一个变化属于化学变化还是物理变化？</li>
+          <li>为什么纸张燃烧是化学变化，而纸张撕碎是物理变化？本质区别在哪？</li>
+        </ol>
+        <div class="pause-point"><span class="time">⏸ 00:45</span> 展示蜡烛融化时：思考这是物理还是化学变化？</div>
+        <div class="pause-point"><span class="time">⏸ 02:10</span> 展示铁钉生锈时：铁锈和铁是同一种物质吗？</div>
+        <div class="output-task"><strong>✏ 输出任务：</strong>绘制化学变化与物理变化的双气泡对比图（相同点和不同点），并各附2个自创实例。</div>
+      </div>
+    </div>
+    <div class="video-card">
+      <span class="video-badge exp">解释型</span>
+      <h3>走进化学实验室——实验安全规范</h3>
+      <div class="source-type">🎞 课程类 · 实验教学实录</div>
+      <div class="task"><strong>观看任务：</strong>记录至少5条实验室安全规范及其背后的化学原理。</div>
+      <button class="toggle-questions" onclick="toggleQ('q2',this)">📌 查看关键问题</button>
+      <div class="q-hidden" id="q2">
+        <ol class="q-list">
+          <li>为什么不能直接闻化学试剂的气味？正确操作是什么？</li>
+          <li>如果不慎将酸溅到皮肤上，应首先做什么？为什么？</li>
+        </ol>
+        <div class="pause-point"><span class="time">⏸ 01:30</span> 展示酒精灯使用时：为什么要使用外焰加热？</div>
+        <div class="pause-point"><span class="time">⏸ 03:15</span> 展示浓硫酸稀释时：为什么是"酸入水"而不是"水入酸"？</div>
+        <div class="output-task"><strong>✏ 输出任务：</strong>制作一张"实验室安全操作指南"信息海报（图文并茂）。</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 进阶层 -->
+<div class="video-group" data-group="adv">
+  <div class="video-grid">
+    <div class="video-card">
+      <span class="video-badge ana">分析型</span>
+      <h3>质量守恒定律——燃烧中的秘密</h3>
+      <div class="source-type">🎞 课程类 · BBC化学纪录片片段</div>
+      <div class="task"><strong>观看任务：</strong>理解质量守恒定律的实验证据及其微观解释。</div>
+      <button class="toggle-questions" onclick="toggleQ('q3',this)">📌 查看关键问题</button>
+      <div class="q-hidden" id="q3">
+        <ol class="q-list">
+          <li>拉瓦锡的汞+氧气实验为什么能够证明质量守恒？</li>
+          <li>从原子和分子层面解释：化学反应前后为什么质量不变？</li>
+        </ol>
+        <div class="pause-point"><span class="time">⏸ 04:20</span> 展示天平读数时：密闭系统和开放系统有何不同？</div>
+        <div class="pause-point"><span class="time">⏸ 06:50</span> 展示微观模型动画时：原子在反应中发生了什么变化？</div>
+        <div class="output-task"><strong>✏ 输出任务：</strong>用原子模型（画图或粘土模型）展示一个化学反应的质量守恒过程。</div>
+      </div>
+    </div>
+    <div class="video-card">
+      <span class="video-badge ana">分析型</span>
+      <h3>走进化学史——门捷列夫与元素周期表</h3>
+      <div class="source-type">🎞 纪录片 · 《化学史》片段</div>
+      <div class="task"><strong>观看任务：</strong>了解元素周期表的诞生过程及其科学意义。</div>
+      <button class="toggle-questions" onclick="toggleQ('q4',this)">📌 查看关键问题</button>
+      <div class="q-hidden" id="q4">
+        <ol class="q-list">
+          <li>门捷列夫是如何预测出当时尚未发现的元素的？</li>
+          <li>元素周期表的排列规律背后隐藏着怎样的化学"密码"？</li>
+        </ol>
+        <div class="pause-point"><span class="time">⏸ 03:00</span> 展示门捷列夫卡片时：他为什么会预留空位？</div>
+        <div class="pause-point"><span class="time">⏸ 05:30</span> 展示镓被发现时：预测与实际吻合说明了什么？</div>
+        <div class="output-task"><strong>✏ 输出任务：</strong>撰写一篇200字短文"如果我是门捷列夫"，描述你发现元素规律的思考过程。</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 挑战层 -->
+<div class="video-group" data-group="challenge">
+  <div class="video-grid">
+    <div class="video-card">
+      <span class="video-badge deb">前沿型</span>
+      <h3>化学与未来——人造叶绿体与人工光合作用</h3>
+      <div class="source-type">🎞 TED演讲 · 前沿科技</div>
+      <div class="task"><strong>观看任务：</strong>理解人工光合作用的化学原理及其对能源/环境的意义。</div>
+      <button class="toggle-questions" onclick="toggleQ('q5',this)">📌 查看关键问题</button>
+      <div class="q-hidden" id="q5">
+        <ol class="q-list">
+          <li>人造叶绿体如何模拟自然光合作用？关键化学反应是什么？</li>
+          <li>如果人造光合作用技术成熟，将如何改变能源格局和碳排放问题？</li>
+        </ol>
+        <div class="pause-point"><span class="time">⏸ 02:50</span> 展示自然vs人工光合作用对比时：两者有哪些异同？</div>
+        <div class="pause-point"><span class="time">⏸ 07:10</span> 展示未来应用场景时：这项技术最大的挑战是什么？</div>
+        <div class="output-task"><strong>✏ 输出任务：</strong>分小组辩论"人工光合作用能否在10年内实现大规模应用"，正方/反方各准备3个论据。</div>
+      </div>
+    </div>
+    <div class="video-card">
+      <span class="video-badge deb">行业实录</span>
+      <h3>化工厂安全事故分析与改进</h3>
+      <div class="source-type">🎞 安全生产培训素材</div>
+      <div class="task"><strong>观看任务：</strong>分析事故发生的化学原因和安全管理漏洞。</div>
+      <button class="toggle-questions" onclick="toggleQ('q6',this)">📌 查看关键问题</button>
+      <div class="q-hidden" id="q6">
+        <ol class="q-list">
+          <li>事故发生涉及哪些化学反应/物质？哪些条件控制不当？</li>
+          <li>如果是你作为安全工程师，会设计怎样的预防方案？</li>
+        </ol>
+        <div class="pause-point"><span class="time">⏸ 05:00</span> 事故复盘环节时：主要责任属于技术原因还是管理原因？</div>
+        <div class="pause-point"><span class="time">⏸ 08:30</span> 改进方案讨论时：你的方案和专家方案有何异同？</div>
+        <div class="output-task"><strong>✏ 输出任务：</strong>编写一份"化学实验室安全隐患自查清单"，至少涵盖5个风险点及其防控措施。</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">📌 带着问题看视频，从被动观看转向主动思维</div>
+</div>
+
+<script>
+function toggleQ(id, btn) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var show = !el.classList.contains('show');
+  el.classList.toggle('show', show);
+  btn.textContent = show ? '📌 收起问题' : '📌 查看关键问题';
+}
+function switchLevel(level, tab) {
+  var tabs = document.querySelectorAll('.level-tab');
+  tabs.forEach(function(t) { t.classList.remove('active'); });
+  tab.classList.add('active');
+  var groups = document.querySelectorAll('.video-group');
+  groups.forEach(function(g) { g.classList.remove('show'); });
+  var target = document.querySelector('.video-group[data-group="' + level + '"]');
+  if (target) target.classList.add('show');
+}
+</script>
+</body>
+</html>

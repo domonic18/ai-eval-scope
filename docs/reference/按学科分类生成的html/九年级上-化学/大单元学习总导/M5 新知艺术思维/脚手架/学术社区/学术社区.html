@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学术社区 — 连接 · 协作 · 成长</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+}
+.container { width: 100%; max-width: none; }
+h1 { font-size: var(--font-h1); color: var(--primary); margin: 0 0 16px; padding-bottom: 10px; border-bottom: 3px solid var(--accent); }
+h2 { font-size: var(--font-h2); color: var(--primary); margin: 28px 0 12px; }
+h3 { font-size: 17px; color: var(--text); margin: 20px 0 8px; }
+p, li { font-size: var(--font-body); margin-bottom: 10px; }
+
+/* 分类标签 */
+.section-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+.section-tab { padding: 8px 20px; border-radius: 20px; border: 1px solid var(--border); background: var(--card-bg); cursor: pointer; font-size: 14px; transition: .2s; }
+.section-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.section-tab:hover:not(.active) { border-color: var(--primary); color: var(--primary); }
+
+/* 卡片 */
+.section-panel { display: none; }
+.section-panel.active { display: block; animation: fadeIn .35s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 16px; transition: .2s; }
+.card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.1); }
+
+/* 议题选择 */
+.topic-options { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; }
+.topic-btn { display: block; width: 100%; text-align: left; padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--border-radius); background: var(--card-bg); cursor: pointer; font-size: 14px; transition: .2s; }
+.topic-btn:hover { border-color: var(--primary); }
+.topic-btn.selected { border-color: var(--primary); background: #f0f5ff; border-left: 4px solid var(--primary); }
+
+/* 角色表 */
+.role-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+.role-table th, .role-table td { border: 1px solid var(--border); padding: 10px 12px; text-align: left; }
+.role-table th { background: var(--primary); color: #fff; font-weight: 600; }
+.role-table tr:nth-child(even) td { background: #fafafa; }
+
+/* 家庭角 */
+.experiment-step { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: #f9f9ff; border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: .2s; }
+.experiment-step:hover { background: #eef3ff; }
+.step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0; }
+.step-done .step-num { background: #52c41a; }
+.step-text { flex: 1; }
+.step-check { font-size: 18px; color: #52c41a; opacity: 0; transition: .2s; }
+.step-done .step-check { opacity: 1; }
+
+/* 资源链接 */
+.resource-list { display: flex; flex-direction: column; gap: 8px; }
+.resource-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); cursor: pointer; transition: .2s; }
+.resource-item:hover { border-color: var(--primary); background: #f0f5ff; }
+.resource-icon { font-size: 20px; }
+.resource-name { flex: 1; font-weight: 600; }
+.resource-badge { background: var(--bg); color: var(--primary); padding: 2px 10px; border-radius: 10px; font-size: 12px; }
+
+/* 展示日历 */
+.showcase-cal { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; padding: 12px; background: #f9f9ff; border-radius: 8px; margin: 10px 0; font-size: 14px; }
+.cal-label { font-weight: 600; color: var(--primary); }
+
+/* 小标签 */
+.tag { display: inline-block; background: var(--bg); color: var(--primary); font-size: 12px; padding: 2px 10px; border-radius: 10px; margin-right: 4px; }
+
+/* 重置按钮 */
+.reset-btn { display: inline-block; margin-top: 8px; padding: 6px 18px; border: 1px solid var(--border); border-radius: 6px; background: var(--card-bg); cursor: pointer; font-size: 13px; transition: .2s; }
+.reset-btn:hover { border-color: var(--primary); color: var(--primary); }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🌐 学术社区</h1>
+<p style="font-size:14px;color:var(--text-secondary);margin-bottom:20px;">化学 · 九年级上 · 同伴 · 家校 · 社会</p>
+
+<!-- 分类标签 -->
+<div class="section-tabs" id="mainTabs">
+  <button class="section-tab active" onclick="switchTab('peer')">👥 同伴</button>
+  <button class="section-tab" onclick="switchTab('home')">🏠 家校</button>
+  <button class="section-tab" onclick="switchTab('society')">🌍 社会</button>
+</div>
+
+<!-- 同伴连接 -->
+<div class="section-panel active" id="panel-peer">
+  <div class="card">
+    <h3 style="margin:0 0 8px;">📢 结构化讨论议题</h3>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">选择一个议题，与小组同学深入探讨</p>
+    <div class="topic-options" data-group="discuss">
+      <button class="topic-btn" data-v="A" onclick="selectTopic(this,'discuss')">🧪 <strong>议题A：</strong>你觉得"化学变化产生新物质"这个说法有例外吗？</button>
+      <button class="topic-btn" data-v="B" onclick="selectTopic(this,'discuss')">🌏 <strong>议题B：</strong>如果没有化学，人类文明会是什么样子？</button>
+      <button class="topic-btn" data-v="C" onclick="selectTopic(this,'discuss')">🏆 <strong>议题C：</strong>分享你建构性学习中最得意的成果，并说说你是如何想到的</button>
+    </div>
+    <p id="discussResult" style="font-size:14px;color:var(--primary);margin-top:4px;">👆 点击选择一个议题开始讨论</p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0 0 8px;">👥 角色分工建议（4人小组）</h3>
+    <table class="role-table">
+      <thead><tr><th>角色</th><th>任务</th></tr></thead>
+      <tbody>
+        <tr><td>📝 记录员</td><td>记录每一位组员的关键观点</td></tr>
+        <tr><td>❓ 质疑官</td><td>对每个观点提出"你用什么证据支持"</td></tr>
+        <tr><td>📊 总结官</td><td>归纳全组共识与分歧</td></tr>
+        <tr><td>🎤 汇报官</td><td>向全班展示小组讨论成果</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 家校连接 -->
+<div class="section-panel" id="panel-home">
+  <div class="card">
+    <h3 style="margin:0 0 8px;">🧪 家庭化学角</h3>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">邀请家人一起做安全小实验，完成以下步骤：</p>
+    <div id="familySteps">
+      <div class="experiment-step" data-step="0" onclick="toggleStep(0)">
+        <span class="step-num">1</span>
+        <span class="step-text">准备小苏打 + 白醋 + 杯子</span>
+        <span class="step-check">✓</span>
+      </div>
+      <div class="experiment-step" data-step="1" onclick="toggleStep(1)">
+        <span class="step-num">2</span>
+        <span class="step-text">将小苏打放入杯中，倒入白醋，观察气泡</span>
+        <span class="step-check">✓</span>
+      </div>
+      <div class="experiment-step" data-step="2" onclick="toggleStep(2)">
+        <span class="step-num">3</span>
+        <span class="step-text">向家人解释：这是化学变化，产生了二氧化碳气体</span>
+        <span class="step-check">✓</span>
+      </div>
+    </div>
+    <button class="reset-btn" onclick="resetSteps()">🔄 重置进度</button>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0 0 8px;">💬 家庭讨论话题</h3>
+    <p style="margin-bottom:6px;">和家里人聊聊：咱们家有哪些东西是化学家发明的？</p>
+    <p style="font-size:14px;color:var(--text-secondary);">提示方向：塑料制品、清洁剂、药品、食品添加剂……</p>
+    <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;">
+      <span class="tag">塑料</span>
+      <span class="tag">清洁剂</span>
+      <span class="tag">药品</span>
+      <span class="tag">食品添加剂</span>
+      <span class="tag">电池</span>
+      <span class="tag">颜料</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0 0 8px;">📋 家长反馈表</h3>
+    <p style="font-size:14px;color:var(--text-secondary);">请家长评价你的"建构成果"是否让他们理解了化学概念。</p>
+    <p style="font-size:14px;margin-top:8px;">📥 <a href="#" onclick="return false;" style="color:var(--primary);text-decoration:none;border-bottom:1px dashed var(--primary);">下载反馈表模板（待生成）</a></p>
+  </div>
+</div>
+
+<!-- 社会连接 -->
+<div class="section-panel" id="panel-society">
+  <div class="card">
+    <h3 style="margin:0 0 8px;">🔗 专家 / 机构参考资源</h3>
+    <div class="resource-list">
+      <div class="resource-item" onclick="highlightRes(this)">
+        <span class="resource-icon">🧪</span>
+        <span class="resource-name">中国化学会科普平台</span>
+        <span class="resource-badge">官网</span>
+      </div>
+      <div class="resource-item" onclick="highlightRes(this)">
+        <span class="resource-icon">🔬</span>
+        <span class="resource-name">中科院化学研究所科普公开课</span>
+        <span class="resource-badge">公益</span>
+      </div>
+      <div class="resource-item" onclick="highlightRes(this)">
+        <span class="resource-icon">💬</span>
+        <span class="resource-name">"化学加"公众号社群</span>
+        <span class="resource-badge">社群</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0 0 8px;">📅 展示机制</h3>
+    <div class="showcase-cal">
+      <span class="cal-label">📆 每月</span>
+      <span>"化学小讲堂"线上分享会</span>
+      <span class="cal-label">🏅 成果</span>
+      <span>优秀成果推荐投稿至学校科学社团或科普杂志</span>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function switchTab(tab) {
+  document.querySelectorAll('.section-tab').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.section-panel').forEach(el => el.classList.remove('active'));
+  const tabEl = document.querySelector('.section-tab[onclick*="'+tab+'"]');
+  const panelEl = document.getElementById('panel-'+tab);
+  if (tabEl) tabEl.classList.add('active');
+  if (panelEl) panelEl.classList.add('active');
+}
+
+function selectTopic(btn, grp) {
+  const container = btn.closest('[data-group="'+grp+'"]') || btn.parentElement;
+  container.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const result = document.getElementById(grp+'Result');
+  if (result) result.textContent = '✅ 已选择：' + btn.textContent.trim().substring(0, 30) + '……';
+}
+
+function toggleStep(i) {
+  const el = document.querySelector('.experiment-step[data-step="'+i+'"]');
+  if (el) el.classList.toggle('step-done');
+}
+
+function resetSteps() {
+  document.querySelectorAll('.experiment-step').forEach(el => el.classList.remove('step-done'));
+}
+
+function highlightRes(el) {
+  document.querySelectorAll('.resource-item').forEach(r => r.style.background = '');
+  el.style.background = '#f0f5ff';
+}
+</script>
+</body>
+</html>

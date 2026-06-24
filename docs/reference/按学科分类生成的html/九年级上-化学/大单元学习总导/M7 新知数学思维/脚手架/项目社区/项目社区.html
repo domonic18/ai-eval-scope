@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目社区 — 化学定量实践</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 24px;
+  --font-h2: 19px;
+  --line-height: 1.7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%; min-height: 100vh; padding: 0;
+}
+.container { width: 100%; max-width: none; padding: 30px 24px; }
+.header { text-align: center; padding: 36px 20px; background: linear-gradient(135deg, var(--bg), #e6f0ff); border-radius: var(--border-radius); margin-bottom: 24px; }
+.header h1 { font-size: var(--font-h1); color: var(--primary); margin-bottom: 6px; }
+.header p { color: var(--text-secondary); font-size: 14px; }
+.header .badge { display: inline-block; background: var(--primary); color: #fff; padding: 4px 14px; border-radius: 20px; font-size: 12px; margin-top: 8px; }
+
+.section-group { margin-bottom: 30px; }
+.section-title { font-size: var(--font-h2); color: var(--primary); margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+.section-title .dur { font-size: 13px; color: var(--text-secondary); font-weight: 400; }
+.project-grid { display: flex; flex-direction: column; gap: 14px; }
+.project-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); border: 1px solid var(--border); overflow: hidden; }
+.project-header { padding: 16px 18px; cursor: pointer; display: flex; align-items: flex-start; gap: 12px; user-select: none; }
+.project-header .p-icon { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
+.project-header .p-info { flex: 1; }
+.project-header .p-info .p-name { font-weight: 600; font-size: 15px; }
+.project-header .p-info .p-goal { font-size: 13px; color: var(--text-secondary); margin-top: 4px; line-height: 1.5; }
+.project-header .arrow { transition: transform .3s; color: var(--text-secondary); font-size: 12px; flex-shrink: 0; margin-top: 4px; }
+.project-card.expanded .arrow { transform: rotate(180deg); }
+.project-body { max-height: 0; overflow: hidden; transition: max-height .45s ease; }
+.project-card.expanded .project-body { max-height: 800px; }
+.project-body-inner { padding: 0 18px 18px 52px; border-top: 1px solid var(--border); padding-top: 12px; }
+.project-body-inner .pb-section { margin-bottom: 10px; }
+.project-body-inner .pb-label { font-weight: 600; color: var(--primary); font-size: 13px; margin-bottom: 4px; }
+.project-body-inner .pb-text { font-size: 14px; color: var(--text); }
+.project-body-inner ul { list-style: none; padding: 0; }
+.project-body-inner ul li { position: relative; padding-left: 16px; margin-bottom: 4px; font-size: 14px; }
+.project-body-inner ul li::before { content: "•"; position: absolute; left: 4px; color: var(--accent); }
+.project-tag { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 12px; margin-left: 6px; }
+.tag-short { background: #e6f7ff; color: #1890ff; }
+.tag-mid { background: #fff7e6; color: #d46b08; }
+.tag-long { background: #f6ffed; color: #52c41a; }
+.status-bar { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.status-btn { padding: 5px 14px; border: 1px solid var(--border); border-radius: 6px; background: var(--card-bg); cursor: pointer; font-size: 13px; color: var(--text-secondary); transition: all .25s; }
+.status-btn:hover { border-color: var(--primary); color: var(--primary); }
+.status-btn.done { background: #f6ffed; border-color: #52c41a; color: #52c41a; }
+.status-btn.pending { background: #fff7e6; border-color: #fa8c16; color: #fa8c16; }
+@media (max-width: 640px) {
+  .container { padding: 16px 12px; }
+  .header { padding: 22px 14px; }
+  .project-body-inner { padding-left: 18px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🔬 项目社区</h1>
+    <p>从家庭实验到社区调查——用真实项目练习化学定量思维</p>
+    <span class="badge">九年级 · 化学</span>
+  </div>
+
+  <div class="section-group">
+    <div class="section-title">⚡ 短周期微项目 <span class="dur">1—3 天</span></div>
+    <div class="project-grid" id="shortGrid"></div>
+  </div>
+
+  <div class="section-group">
+    <div class="section-title">📆 中周期专题项目 <span class="dur">1—2 周</span></div>
+    <div class="project-grid" id="midGrid"></div>
+  </div>
+
+  <div class="section-group">
+    <div class="section-title">🌍 长周期综合项目 <span class="dur">1 月+</span></div>
+    <div class="project-grid" id="longGrid"></div>
+  </div>
+</div>
+
+<script>
+var projects = [
+  { id: 'p1', period: 'short', icon: '💧', name: '家庭水质检测报告', goal: '用TDS笔或水质试纸测量家中自来水、纯净水、矿泉水的TDS值',
+    tag: '1-3天', tagClass: 'tag-short',
+    stages: ['收集3种水样', '分别测量TDS值，连续测量3次取平均', '整理数据，绘制对比柱状图'],
+    output: '一份"家庭饮用水TDS检测报告"（数据表+柱状图+分析结论）',
+    standard: '数据完整、有对比分析、结论有依据' },
+  { id: 'p2', period: 'short', icon: '🧂', name: '厨房中定量实验——食盐溶解度', goal: '测量NaCl在室温和热水中分别能溶解多少',
+    tag: '1-3天', tagClass: 'tag-short',
+    stages: ['在100mL水中逐次加盐，记录每次加入量和是否溶解', '重复实验（不同温度）'],
+    output: '溶解度数据表 + 温度—溶解度变化曲线',
+    standard: '数据完整、有明显规律、结论有依据' },
+  { id: 'p3', period: 'mid', icon: '🌬️', name: '空气质量周报', goal: '持续一周监测所在区域的空气质量，分析变化规律',
+    tag: '1-2周', tagClass: 'tag-mid',
+    stages: ['每天记录当地AQI（PM2.5、PM10、O₃等）', '绘制一周变化折线图', '结合天气、交通等因素分析变化原因'],
+    output: '一份"一周空气质量监测与分析报告"',
+    standard: '连续7天数据不断档、有图表呈现变化趋势、有原因分析',
+    resource: '中国环境监测总站官网（https://www.cnemc.cn）' },
+  { id: 'p4', period: 'mid', icon: '🥟', name: '校门口早餐摊性价比分析', goal: '用定量方法比较校门口不同早餐摊的性价比',
+    tag: '1-2周', tagClass: 'tag-mid',
+    stages: ['调查3家以上早餐摊的价格、分量（称量）、味道评分', '计算每元/每百克的热量与蛋白质', '整理所有数据，给出排名和推荐'],
+    output: '一份"校门口早餐摊性价比分析报告"',
+    standard: '有真实数据支撑、分析方法合理、结论有说服力' },
+  { id: 'p5', period: 'long', icon: '🌱', name: '社区生活碳排放计算器', goal: '设计工具帮助社区居民估算每日碳排放量',
+    tag: '1月+', tagClass: 'tag-long',
+    stages: ['研究碳排放计算方法（用电→碳排放、出行→碳排放）', '设计问卷收集社区居民生活习惯', '建立碳排放计算模型', '制作"碳排放计算器"（可用Excel）', '为社区提供减碳建议'],
+    output: '碳排放计算器 + 社区调查分析报告 + 减碳建议书',
+    standard: '计算方法科学、数据来源可靠、结论对社区有实际参考价值' }
+];
+
+var statusState = {};
+
+function renderProjects() {
+  ['short','mid','long'].forEach(function(period) {
+    var gridId = period + 'Grid';
+    var grid = document.getElementById(gridId);
+    var filtered = projects.filter(function(p) { return p.period === period; });
+    var html = '';
+    filtered.forEach(function(p) {
+      var st = statusState[p.id] || 'todo';
+      var statusText = { todo: '📋 未开始', doing: '🔄 进行中', done: '✅ 已完成' };
+      var statusClass = { todo: '', doing: 'pending', done: 'done' };
+      var stagesHtml = '<div class="pb-section"><div class="pb-label">📋 阶段任务</div><ul>';
+      p.stages.forEach(function(s) { stagesHtml += '<li>' + s + '</li>'; });
+      stagesHtml += '</ul></div>';
+      var outputHtml = p.output ? '<div class="pb-section"><div class="pb-label">📄 成果形式</div><div class="pb-text">' + p.output + '</div></div>' : '';
+      var standardHtml = p.standard ? '<div class="pb-section"><div class="pb-label">⭐ 评价标准</div><div class="pb-text">' + p.standard + '</div></div>' : '';
+      var resourceHtml = p.resource ? '<div class="pb-section"><div class="pb-label">🔗 资源链接</div><div class="pb-text">' + p.resource + '</div></div>' : '';
+      html += '<div class="project-card" data-id="' + p.id + '">';
+      html += '<div class="project-header" onclick="toggleProj(this)">';
+      html += '<div class="p-icon">' + p.icon + '</div>';
+      html += '<div class="p-info"><div class="p-name">' + p.name + ' <span class="project-tag ' + p.tagClass + '">' + p.tag + '</span></div>';
+      html += '<div class="p-goal">🎯 ' + p.goal + '</div></div>';
+      html += '<div class="arrow">▼</div></div>';
+      html += '<div class="project-body"><div class="project-body-inner">';
+      html += stagesHtml + outputHtml + standardHtml + resourceHtml;
+      html += '<div class="status-bar">';
+      html += '<span style="font-size:13px;color:var(--text-secondary)">状态：' + statusText[st] + '</span>';
+      html += '<button class="status-btn ' + statusClass[st] + '" onclick="nextStatus(this,\'' + p.id + '\')">切换状态</button>';
+      html += '</div></div></div></div>';
+    });
+    grid.innerHTML = html;
+  });
+}
+
+function toggleProj(header) {
+  var card = header.closest ? header.closest('.project-card') : header.parentElement;
+  if (card) card.classList.toggle('expanded');
+}
+
+function nextStatus(btn, id) {
+  var order = ['todo','doing','done'];
+  var cur = statusState[id] || 'todo';
+  var idx = order.indexOf(cur);
+  var next = order[(idx + 1) % 3];
+  statusState[id] = next;
+  var labels = { todo: '📋 未开始', doing: '🔄 进行中', done: '✅ 已完成' };
+  var classes = { todo: '', doing: 'pending', done: 'done' };
+  var parent = btn.closest ? btn.closest('.status-bar') : btn.parentElement;
+  if (parent) {
+    var label = parent.querySelector('span');
+    if (label) label.textContent = '状态：' + labels[next];
+  }
+  btn.className = 'status-btn' + (classes[next] ? ' ' + classes[next] : '');
+}
+
+renderProjects();
+</script>
+</body>
+</html>
