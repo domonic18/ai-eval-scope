@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名著介绍 · 思想触发器与深度阅读</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+}
+.container { width: 100%; max-width: none; padding: 24px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  color: #fff; padding: 28px 24px; border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 8px; }
+.header p { font-size: 14px; opacity: 0.8; }
+.quote-section {
+  background: var(--card-bg); border-radius: var(--border-radius);
+  box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.quote-section h2 { font-size: var(--font-h2); color: var(--primary); margin-bottom: 14px; }
+.quote-card {
+  position: relative; padding: 16px 18px 16px 50px;
+  margin-bottom: 12px; border-left: 4px solid var(--primary);
+  background: var(--bg); border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  transition: background 0.3s; cursor: pointer;
+}
+.quote-card:hover { background: #e6f0ff; }
+.quote-card::before {
+  content: '"'; position: absolute; left: 16px; top: 10px;
+  font-size: 32px; color: var(--primary); line-height: 1;
+  font-family: Georgia, serif;
+}
+.quote-card p { font-style: italic; font-size: 14px; margin-bottom: 4px; }
+.quote-card .quote-author { font-style: normal; font-size: 13px; color: var(--text-secondary); font-weight: 600; }
+.conflict-tag {
+  display: inline-block; padding: 2px 10px; border-radius: 10px;
+  font-size: 12px; font-weight: 600; color: #fff; margin-bottom: 8px;
+}
+.conflict-tag.tension { background: #f5222d; }
+.conflict-tag.question { background: var(--primary); }
+.book-tabs {
+  display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
+}
+.book-tabs button {
+  flex: 1; min-width: 140px; padding: 14px 16px; border: 2px solid var(--border);
+  border-radius: var(--border-radius); background: var(--card-bg);
+  font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s;
+  color: var(--text);
+}
+.book-tabs button:hover { border-color: var(--primary); color: var(--primary); }
+.book-tabs button.active { border-color: var(--primary); background: var(--bg); color: var(--primary); }
+.book-tabs button .book-tag {
+  display: block; font-size: 12px; font-weight: 400; opacity: 0.7; margin-top: 2px;
+}
+.book-section { display: none; }
+.book-section.active { display: block; }
+.book-card {
+  background: var(--card-bg); border-radius: var(--border-radius);
+  box-shadow: var(--shadow); padding: 20px; margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.book-card .book-label {
+  display: inline-block; padding: 3px 12px; border-radius: 12px;
+  font-size: 12px; font-weight: 600; color: #fff; margin-bottom: 10px;
+}
+.book-card .book-label.guo { background: var(--primary); }
+.book-card .book-label.feynman { background: #d46b08; }
+.book-card .book-label.kuhn { background: #722ed1; }
+.book-card h3 { font-size: var(--font-h2); margin-bottom: 4px; }
+.book-card .book-author { color: var(--text-secondary); font-size: 13px; margin-bottom: 12px; }
+.book-card h4 { font-size: 15px; color: var(--primary); margin: 14px 0 6px; }
+.book-card p, .book-card li { font-size: 14px; margin-bottom: 6px; }
+.book-card ul, .book-card ol { padding-left: 20px; margin-bottom: 10px; }
+.book-card .highlight {
+  background: var(--bg); border-left: 3px solid var(--accent);
+  padding: 12px 16px; margin: 10px 0; border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  font-style: italic; font-size: 14px;
+}
+.insight-box {
+  background: linear-gradient(135deg, #fff7e6, #fffbe6);
+  border: 1px solid #ffd666; border-radius: var(--border-radius);
+  padding: 18px; margin: 16px 0;
+}
+.insight-box h4 { color: #d46b08; margin-bottom: 8px; }
+.linkage-table {
+  width: 100%; border-collapse: collapse; margin: 16px 0;
+  font-size: 14px;
+}
+.linkage-table th, .linkage-table td {
+  border: 1px solid var(--border); padding: 10px; text-align: left;
+  vertical-align: top;
+}
+.linkage-table th { background: var(--bg); color: var(--primary); font-weight: 600; }
+.output-tasks {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px;
+}
+@media (max-width: 768px) {
+  .container { padding: 12px; }
+  .book-tabs button { min-width: 80px; font-size: 13px; padding: 10px; }
+  .output-tasks { grid-template-columns: 1fr; }
+}
+.output-task-card {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: var(--border-radius); padding: 16px;
+  transition: box-shadow 0.3s; cursor: pointer;
+}
+.output-task-card:hover { box-shadow: 0 4px 12px rgba(22,119,255,0.12); }
+.output-task-card h4 { font-size: 15px; color: var(--primary); margin-bottom: 6px; }
+.output-task-card p { font-size: 14px; color: var(--text-secondary); }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>📚 名著介绍 · 思想触发器与深度阅读</h1>
+  <p>M2 学习新知的新价值与新使命 · 物理（静电场） · 选修3-1</p>
+  <p style="font-size:13px;opacity:0.7;margin-top:4px;">脚手架定位：通过思想触发器 + 系统思想载体构建认知深度</p>
+</div>
+
+<!-- ====== 名言篇 ====== -->
+<div class="quote-section">
+  <h2>💬 先激活你的大脑——冲突型名言</h2>
+  <p style="font-size:14px;color:var(--text-secondary);margin-bottom:14px;">
+    学习静电场，最难的其实不是公式，而是"场"这个观念本身。每一句都可能让你的思维方式发生一次小地震。
+  </p>
+
+  <div class="quote-card" onclick="this.querySelector('.quote-thought').classList.toggle('show')">
+    <p>"没有什么真实的东西能用场来描述——场仅仅是一个数学模型。"</p>
+    <span class="quote-author">—— 阿尔伯特·爱因斯坦</span>
+    <div class="quote-thought" style="display:none;margin-top:6px;font-size:13px;color:var(--text-secondary);padding-top:6px;border-top:1px solid var(--border);">
+      点击收起 ↑ 爱因斯坦晚年对场论的实在性提出了质疑
+    </div>
+  </div>
+
+  <div class="quote-card" onclick="this.querySelector('.quote-thought').classList.toggle('show')">
+    <p>"我越思考，越确信电场是真实存在的。它们不只是一个数学概念。"</p>
+    <span class="quote-author">—— 理查德·费曼《物理学讲义》</span>
+    <div class="quote-thought" style="display:none;margin-top:6px;font-size:13px;color:var(--text-secondary);padding-top:6px;border-top:1px solid var(--border);">
+      点击收起 ↑ 费曼与爱因斯坦——你相信谁的？
+    </div>
+  </div>
+
+  <div class="quote-card" onclick="this.querySelector('.quote-thought').classList.toggle('show')">
+    <p>"如果你把自然界看作舞台，那么场就是舞台上的演员，而不是舞台的背景。"</p>
+    <span class="quote-author">—— 大卫·格里菲斯《电动力学导论》</span>
+    <div class="quote-thought" style="display:none;margin-top:6px;font-size:13px;color:var(--text-secondary);padding-top:6px;border-top:1px solid var(--border);">
+      点击收起 ↑ 一个绝妙的比喻：场不是背景，它是主角
+    </div>
+  </div>
+
+  <div class="quote-card" onclick="this.querySelector('.quote-thought').classList.toggle('show')">
+    <p>"在物理学中，没有比'场'更重要的概念了。它是现代物理学的根基。"</p>
+    <span class="quote-author">—— 史蒂文·温伯格</span>
+    <div class="quote-thought" style="display:none;margin-top:6px;font-size:13px;color:var(--text-secondary);padding-top:6px;border-top:1px solid var(--border);">
+      点击收起 ↑ 但你学习时可能只觉得它是一个"要背的定义"——为什么体验差这么远？
+    </div>
+  </div>
+
+  <div class="insight-box" style="margin-top:14px;">
+    <h4>三重冲突</h4>
+    <p>爱因斯坦说场"只是一个计算工具"，费曼却说它"真实存在"——你相信谁的？温伯格说场是"最重要的概念"，但你可能只觉得它是"要背的定义"。你认为电场是"物质"吗？你能证明吗？</p>
+    <p style="margin-top:8px;"><strong>思考任务：</strong>选出你最有共鸣（或最想反驳）的一句，写下你的理由。带着这个立场去读后面的书。</p>
+  </div>
+</div>
+
+<!-- ====== 名著篇 ====== -->
+<h2 style="font-size:var(--font-h2);color:var(--primary);margin-bottom:14px;">📖 三本书带你深入"场"的世界</h2>
+
+<div class="book-tabs" id="bookTabs">
+  <button class="active" data-book="guo">
+    郭硕鸿《电动力学》
+    <span class="book-tag">🎯 精确</span>
+  </button>
+  <button data-book="feynman">
+    费曼《物理学讲义》
+    <span class="book-tag">✨ 直觉</span>
+  </button>
+  <button data-book="kuhn">
+    库恩《科学革命的结构》
+    <span class="book-tag">🔄 历史</span>
+  </button>
+</div>
+
+<!-- 郭硕鸿 -->
+<div class="book-section active" id="book-guo">
+  <div class="book-card">
+    <span class="book-label guo">🎯 中国著作 · 精确的数学语言</span>
+    <h3>《电动力学》</h3>
+    <div class="book-author">郭硕鸿（1925—2018）· 中山大学教授 · 中国高校物理系经典教材</div>
+
+    <h4>📌 核心问题</h4>
+    <p>电场和磁场的规律如何用统一的数学语言精确描述？麦克斯韦方程组到底在说什么？</p>
+
+    <h4>📌 核心观点</h4>
+    <ul>
+      <li>静电场是电磁场理论中最基础也最简单的部分——理解了静电场，你就理解了"场"概念的一半</li>
+      <li>电场的核心规律：①电场是有源场（电荷是源）②静电场是无旋场（可以定义电势）</li>
+      <li>唯一性定理：给定边界条件后，静电场是唯一确定的——让"猜解+验证"成为合法解题思路</li>
+    </ul>
+
+    <h4>📌 关键片段导读（第二章）</h4>
+    <div class="highlight">
+      <strong>§2.1 电场强度 E 的定义：</strong>从库仑定律出发，通过试探电荷定义电场强度。郭硕鸿对试探电荷的大小趋近于零做了严格要求（为了不破坏待测电场）。
+    </div>
+    <div class="highlight">
+      <strong>§2.2 高斯定理微分形式：</strong>div E = ρ/ε₀ ——电场线与电荷分布的精确数学关系。
+    </div>
+    <p style="margin-top:8px;"><strong>阅读建议：</strong>先跳到每节末尾看总结，再回头看推导。读的时候先理解"这一段在解决什么问题"。</p>
+
+    <h4>📌 适读建议</h4>
+    <ul>
+      <li><strong>基础：</strong>选读第二章§2.1的电场强度定义部分，把高中概念从"记住公式"升级为"理解来源"</li>
+      <li><strong>进阶：</strong>有高等数学入门水平，可读完整第二章</li>
+      <li><strong>获取：</strong>高等教育出版社第四版，ISBN 9787040395699，B站有配套讲解视频</li>
+    </ul>
+  </div>
+</div>
+
+<!-- 费曼 -->
+<div class="book-section" id="book-feynman">
+  <div class="book-card">
+    <span class="book-label feynman">✨ 外国经典 · 把复杂变好玩</span>
+    <h3>《费曼物理学讲义》第二卷</h3>
+    <div class="book-author">理查德·费曼（1918—1988）· 诺贝尔奖得主 · "最伟大的物理教师"</div>
+
+    <h4>📌 核心问题</h4>
+    <p>自然界中的电和磁到底是什么？"场"这个概念为什么被发明出来？</p>
+
+    <h4>📌 核心观点</h4>
+    <ul>
+      <li>场的概念是现代物理的"最伟大发明"——它本质上是一个关于"局域相互作用"的假设</li>
+      <li>静电学告诉我们：电场是一种"存储能量"的方式——分开两个异号电荷所做的功，就存储在它们之间的电场中</li>
+      <li>费曼始终强调物理图像先于数学公式——他用一整章教你"直观理解散度和旋度"而不写一个积分</li>
+    </ul>
+
+    <h4>📌 关键片段</h4>
+    <div class="highlight">
+      "如果我们把电磁定律写在纸上，它们看起来很简单。但当你真的去理解它们时，你会发现它们复杂得不可思议。电磁学的全部内容就是一个方程组，但它的推论几乎覆盖了整个物理学。"（第4-1页）
+    </div>
+    <div class="highlight">
+      "库仑定律和牛顿的万有引力定律有完全相同的数学形式（平方反比）。但这两种力之间没有任何直接的物理联系。这是自然界中一个奇妙的巧合。"（第4-12页）
+    </div>
+
+    <h4>📌 适读建议</h4>
+    <ul>
+      <li><strong>基础：</strong>读第1—4章的"常识部分"，跳过微分符号段落——至少能知道"场"为什么被发明</li>
+      <li><strong>进阶：</strong>读第2、4章全部文字，费曼用"咖啡杯中的奶泡理解散度"会让你开心一整天</li>
+      <li><strong>获取：</strong>上海科学技术出版社，ISBN 9787547801525。英文原版在 caltech 官网免费在线阅读</li>
+    </ul>
+  </div>
+</div>
+
+<!-- 库恩 -->
+<div class="book-section" id="book-kuhn">
+  <div class="book-card">
+    <span class="book-label kuhn">🔄 跨学科经典 · 科学哲学</span>
+    <h3>《科学革命的结构》</h3>
+    <div class="book-author">托马斯·库恩（1922—1996）· 20世纪最有影响力的科学哲学家之一</div>
+
+    <h4>📌 核心问题</h4>
+    <p>"场"的概念从提出到被接受，经历了怎样的历史过程？"范式转换"到底是什么样的体验？</p>
+
+    <h4>📌 核心观点</h4>
+    <ul>
+      <li>"范式"是科学家共同接受的世界观和方法论基础——决定了哪些问题值得研究</li>
+      <li>科学进步不是"知识一点一点累积"的过程，而是"稳定积累→危机→革命→新范式"的循环</li>
+      <li>从"超距作用"到"场"的转变，正是物理学史上一次经典的范式转换</li>
+    </ul>
+
+    <h4>📌 关键片段</h4>
+    <div class="highlight">
+      "科学发现始于意识到反常——即认识到了自然界以某种方式违反了范式所给出的预期。"（第四章）
+    </div>
+    <div class="highlight">
+      "范式转换之后，科学家在新世界里看到的不仅是不同的东西，而且是用不同的方式去看——就像戴上了一副新眼镜。"（第六章）
+    </div>
+    <p style="margin-top:8px;"><strong>💡 与你相连：</strong>当你小学时认为"带电的物体直接吸引另一个物体"，到高中理解"一个电荷在另一个电荷产生的电场中受力"——你其实也在经历一次微型的范式转换！</p>
+
+    <h4>📌 适读建议</h4>
+    <ul>
+      <li><strong>基础：</strong>只读第四章和第六章（约50页），高中生完全可以理解</li>
+      <li><strong>进阶：</strong>读完前六章，体会每一次科学进步都伴随着激烈争论</li>
+      <li><strong>获取：</strong>北京大学出版社第四版，ISBN 9787301209040。B站和得到App有精读课程</li>
+    </ul>
+  </div>
+</div>
+
+<!-- 联动阅读 -->
+<div class="insight-box">
+  <h4>🔗 三本书联动阅读建议</h4>
+  <table class="linkage-table">
+    <tr><th>阅读维度</th><th>郭硕鸿《电动力学》</th><th>费曼《物理学讲义》</th><th>库恩《科学革命的结构》</th></tr>
+    <tr><td>读什么</td><td>电场有多精确？</td><td>电场有多美？</td><td>电场是怎么来的？</td></tr>
+    <tr><td>带来什么</td><td>严谨的数学理解</td><td>直觉的物理图像</td><td>历史视角的深度</td></tr>
+    <tr><td>适合场景</td><td>需要"搞定题目"时</td><td>想"真正理解"时</td><td>想"深度反思"时</td></tr>
+  </table>
+</div>
+
+<!-- 产出任务 -->
+<h2 style="font-size:var(--font-h2);color:var(--primary);margin:20px 0 14px;">🎯 阅读后的产出任务（至少完成一项）</h2>
+
+<div class="output-tasks">
+  <div class="output-task-card" onclick="this.style.borderColor='var(--primary)'">
+    <h4>📝 一句话总结</h4>
+    <p>用一句话概括对"电场"概念的新理解（≤30字），结合名言冲突——你更认同爱因斯坦还是费曼？</p>
+  </div>
+  <div class="output-task-card" onclick="this.style.borderColor='var(--primary)'">
+    <h4>⏳ 时光机日记</h4>
+    <p>假设你穿越到1830年，你是法拉第的助手。用200字写一篇日记，记录你对"力线"的理解和困惑。</p>
+  </div>
+  <div class="output-task-card" onclick="this.style.borderColor='var(--primary)'">
+    <h4>🃏 概念手卡</h4>
+    <p>为"电场强度E"、"电场线"、"范式转换"各做一张手卡（正面定义 + 背面三本书中的解释）。</p>
+  </div>
+  <div class="output-task-card" onclick="this.style.borderColor='var(--primary)'">
+    <h4>⚖️ 辩论提纲</h4>
+    <p>就"电场是真实存在的物质吗？"写辩论提纲——正反方各3个论据，至少从三本书中引用1次。</p>
+  </div>
+</div>
+
+<div class="header" style="margin-top:24px;background:linear-gradient(135deg,var(--primary),var(--primary-hover));padding:20px;text-align:center;">
+  <p style="font-size:14px;opacity:0.9;">你不是在"背公式"——你是在参与一场持续了两百多年的伟大对话。</p>
+</div>
+
+</div>
+<script>
+document.querySelectorAll('#bookTabs button').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('#bookTabs button').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    document.querySelectorAll('.book-section').forEach(s => s.classList.remove('active'));
+    document.getElementById('book-' + this.dataset.book).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

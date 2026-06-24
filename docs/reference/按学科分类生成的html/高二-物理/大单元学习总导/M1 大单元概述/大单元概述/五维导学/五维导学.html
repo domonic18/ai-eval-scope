@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>五维导学 — 静电场</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0;
+  width: 100%;
+  max-width: none;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  padding: 32px 40px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 8px; }
+.header .meta { font-size: 14px; opacity: .85; line-height: 1.6; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  transition: box-shadow .3s, transform .2s;
+}
+.card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.12); transform: translateY(-1px); }
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+  position: relative;
+}
+.card h2::after {
+  content: '';
+  position: absolute; bottom: -2px; left: 0;
+  width: 48px; height: 2px; background: var(--primary);
+}
+.card h3 {
+  font-size: calc(var(--font-body) + 2px);
+  color: var(--text);
+  margin: 16px 0 8px;
+}
+.card p, .card li { margin-bottom: 8px; color: var(--text); }
+.card ul, .card ol { padding-left: 20px; margin-bottom: 12px; }
+.card li { margin-bottom: 4px; }
+.tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.tag-blue { background: #e6f4ff; color: #1677ff; }
+.tag-green { background: #f6ffed; color: #16a34a; }
+.tag-orange { background: #fff7e6; color: #d46b08; }
+.tag-purple { background: #f9f0ff; color: #722ed1; }
+table {
+  width: 100%; border-collapse: collapse; margin: 12px 0;
+  font-size: 14px;
+}
+th, td {
+  border: 1px solid var(--border); padding: 10px 12px; text-align: left;
+  vertical-align: top;
+}
+th { background: var(--bg); color: var(--primary); font-weight: 600; }
+tr:hover td { background: #fafafa; }
+.quote-box {
+  background: #f6ffed; border-left: 4px solid #16a34a;
+  padding: 14px 18px; margin: 12px 0; border-radius: 0 6px 6px 0;
+  font-style: italic;
+}
+.insight-box {
+  background: #fff7e6; border-left: 4px solid #fa8c16;
+  padding: 14px 18px; margin: 12px 0; border-radius: 0 6px 6px 0;
+}
+.fn-link {
+  display: inline-block; padding: 6px 16px;
+  background: var(--primary); color: #fff; border-radius: 20px;
+  font-size: 13px; cursor: pointer; transition: background .2s;
+  border: none;
+}
+.fn-link:hover { background: var(--primary-hover); }
+.toggle-content { display: none; padding: 12px 0 0; }
+.toggle-content.show { display: block; }
+.concept-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr));
+  gap: 12px; margin: 12px 0;
+}
+.concept-item {
+  background: var(--bg); border-radius: 6px; padding: 12px; text-align: center;
+  border: 1px solid var(--border);
+}
+.concept-item strong { display: block; color: var(--primary); margin-bottom: 4px; }
+.legend-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0; }
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .header { padding: 20px; }
+  .card { padding: 16px; }
+  .concept-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>五维导学</h1>
+  <div class="meta">
+    <span class="tag tag-blue">M1 大单元概述</span>
+    <span class="tag tag-orange">物理</span>
+    <span class="tag tag-purple">选修3-1</span>
+    <span class="tag tag-green">静电场</span>
+  </div>
+  <p style="margin-top:12px;font-size:14px;opacity:.9;">从五个维度为你导航，开启静电场的学习之旅</p>
+</div>
+
+<!-- 维度一：学习目的与目标 -->
+<div class="card">
+  <h2>（一）学习目的与目标</h2>
+  <h3>核心概念</h3>
+  <div class="concept-grid">
+    <div class="concept-item"><strong>静电场</strong>场的本源</div>
+    <div class="concept-item"><strong>电场强度</strong>力的描述</div>
+    <div class="concept-item"><strong>电势</strong>能的描述</div>
+    <div class="concept-item"><strong>电势能</strong>能量储存</div>
+    <div class="concept-item"><strong>电势差</strong>能量变化</div>
+    <div class="concept-item"><strong>电容</strong>储存电荷</div>
+    <div class="concept-item"><strong>静电平衡</strong>导体特性</div>
+    <div class="concept-item"><strong>带电粒子运动</strong>应用核心</div>
+  </div>
+  <h3>目标导航</h3>
+  <table>
+    <tr><th>层级</th><th>目标描述</th></tr>
+    <tr>
+      <td><span class="tag tag-blue">知识理解</span></td>
+      <td>我能准确描述电场强度、电势、电势能、电势差的概念，理解它们之间的区别与联系</td>
+    </tr>
+    <tr>
+      <td><span class="tag tag-green">能力应用</span></td>
+      <td>我能运用库仑定律、电场叠加原理、动能定理等分析点电荷和带电粒子的运动问题</td>
+    </tr>
+    <tr>
+      <td><span class="tag tag-orange">高阶思维</span></td>
+      <td>我能从"场"的视角——而非"力"的视角——解释静电现象，理解建立"场"概念模型的科学价值</td>
+    </tr>
+  </table>
+  <div style="margin-top:12px;text-align:right;">
+    <button class="fn-link" onclick="this.nextElementSibling.classList.toggle('show')">点击展开自我检测</button>
+    <div class="toggle-content">
+      <p><strong>自问自答：</strong>闭上书，你能用自己的话解释"电场强度"和"电势"的区别吗？试着说给你的同桌听——如果说不清楚，说明还需要再理解一遍。</p>
+    </div>
+  </div>
+</div>
+
+<!-- 维度二：高精尖价值与未来意义 -->
+<div class="card">
+  <h2>（二）高精尖价值与未来意义</h2>
+  <h3>宏观视野</h3>
+  <p>静电场的理论奠定了现代电磁学的基础，从<strong>芯片制造</strong>（控制带电粒子在电场中运动）到<strong>激光打印</strong>（静电吸附），从<strong>粒子加速器</strong>到<strong>静电除尘</strong>环保设备，电场概念是整个电力电子技术文明的理论根基。</p>
+  <h3>微观连接</h3>
+  <ul>
+    <li><strong>你的手机屏幕</strong>：触控屏的电容感应原理直接来自静电场的电容概念</li>
+    <li><strong>你的未来选择</strong>：无论从事工程、医学还是信息技术，电场概念都是理解精密电子设备的基础</li>
+    <li><strong>气候与环保</strong>：静电除尘技术广泛应用于电厂减排，守护蓝天</li>
+  </ul>
+  <div class="quote-box">
+    💡 "电场概念不只是课本上的公式——它就在你每天触摸的屏幕上、呼吸的空气中、照亮黑夜的电力系统里。学会它，你就获得了一把理解现代科技世界的钥匙。"
+  </div>
+</div>
+
+<!-- 维度三：学习方式与方法 -->
+<div class="card">
+  <h2>（三）学习方式与方法</h2>
+  <h3>学科思维锚点</h3>
+  <ul>
+    <li><strong>场的思维方式</strong>：从"超距作用"到"场传递相互作用"——这是物理学史上一次伟大的范式转换</li>
+    <li><strong>类比思维</strong>：用电势类比高度（重力势能）、用电场线类比水流——善于使用类比来理解抽象概念</li>
+  </ul>
+  <h3>策略支架</h3>
+  <ol>
+    <li><strong>画场线图</strong>：用可视化工具画出电场线和等势面</li>
+    <li><strong>定量计算与定性推理交替</strong>：计算电场强度的同时，始终问自己"这个结果意味着什么"</li>
+    <li><strong>建立概念关系图</strong>：画一张"电场强度—电势—电势能—电势差"四者关系的概念图</li>
+    <li><strong>实验模拟验证</strong>：使用PhET等虚拟仿真实验室探索电场分布</li>
+  </ol>
+  <div style="margin-top:12px;text-align:right;">
+    <button class="fn-link" onclick="this.nextElementSibling.classList.toggle('show')">点我查看概念图示例</button>
+    <div class="toggle-content">
+      <pre style="background:#f5f5f5;padding:12px;border-radius:6px;font-size:13px;line-height:1.6;overflow-x:auto;">
+  电场强度 E ──定义──→ 电场力 F = qE
+       │                       │
+       │                   电荷在电场中
+       ▼                       ▼
+  电势 φ ───梯度──→ 电场强度 E = -∇φ
+       │
+       │    × q
+       ▼
+  电势能 Ep = qφ
+       │
+       │    Δ
+       ▼
+  电势差 U = Δφ = ΔEp / q
+      </pre>
+    </div>
+  </div>
+</div>
+
+<!-- 维度四：关键人物与突破性成果 -->
+<div class="card">
+  <h2>（四）关键人物与突破性成果</h2>
+  <table>
+    <tr><th>人物</th><th>时代</th><th>关键贡献</th></tr>
+    <tr><td><strong>库仑</strong></td><td>1785</td><td>通过扭秤实验精确测定电荷间作用力与距离的平方反比关系，提出库仑定律</td></tr>
+    <tr><td><strong>法拉第</strong></td><td>1837</td><td>突破"超距作用"局限，首次提出"场"概念，引入电场线和力线</td></tr>
+    <tr><td><strong>麦克斯韦</strong></td><td>1864</td><td>将电场、磁场统一为电磁场理论，预言电磁波的存在</td></tr>
+    <tr><td><strong>密立根</strong></td><td>1909</td><td>油滴实验精确测定元电荷 e，证明电荷的量子化特性</td></tr>
+  </table>
+  <div class="insight-box">
+    <strong>🔬 思想溯源</strong><br>
+    法拉第的突破尤为关键——他不满足于用数学公式"描述"电现象，而是追问"电荷之间到底如何相互作用"，从而提出"场"的革命性概念。他教会我们：真正的科学突破往往来自对"常识"的不满足和追问。
+  </div>
+</div>
+
+<!-- 维度五：未完全解决的矛盾与前沿追问 -->
+<div class="card" style="margin-bottom:0;">
+  <h2>（五）未完全解决的矛盾与前沿追问</h2>
+  <div style="display:grid;gap:12px;">
+    <div style="background:#f0f5ff;border-radius:6px;padding:14px;border-left:4px solid #1677ff;">
+      <strong>1. 电荷为什么是量子化的？</strong>
+      <p style="margin-top:4px;font-size:14px;">为什么所有电荷都是元电荷 e 的整数倍？这是自然界的根本性质还是更深层理论的结果？</p>
+    </div>
+    <div style="background:#f0f5ff;border-radius:6px;padding:14px;border-left:4px solid #1677ff;">
+      <strong>2. 电场的能量本质是什么？</strong>
+      <p style="margin-top:4px;font-size:14px;">电场中储存的能量以什么形式存在？这直接关联到暗物质和真空涨落的前沿研究。</p>
+    </div>
+    <div style="background:#f0f5ff;border-radius:6px;padding:14px;border-left:4px solid #1677ff;">
+      <strong>3. 极端电场下的新物理</strong>
+      <p style="margin-top:4px;font-size:14px;">在极强电场中，真空本身会被"击穿"产生正负电子对——这是量子电动力学的预言，也是当代高能物理的实验前沿。</p>
+    </div>
+    <div style="background:#f0f5ff;border-radius:6px;padding:14px;border-left:4px solid #1677ff;">
+      <strong>4. 电场与生命的相互作用</strong>
+      <p style="margin-top:4px;font-size:14px;">生物细胞膜电位、神经信号传导中的电场机制仍有大量未解之谜，这是生物物理交叉领域的热点。</p>
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:16px;">
+    <button class="fn-link" onclick="this.nextElementSibling.classList.toggle('show')">💬 思考：哪个问题最吸引你？</button>
+    <div class="toggle-content" style="text-align:left;">
+      <p>选择一个你感兴趣的前沿问题，尝试用今天的知识去提出3个"为什么"，然后带着这些问题进入后续模块的学习。科学始于疑问！</p>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

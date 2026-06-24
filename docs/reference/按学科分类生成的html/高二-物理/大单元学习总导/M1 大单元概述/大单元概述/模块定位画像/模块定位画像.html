@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块定位画像 - 静电场大单元</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 6px; }
+.header .meta { font-size: 13px; opacity: 0.85; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bg);
+}
+.card h3 {
+  font-size: 16px;
+  color: var(--text);
+  margin: 14px 0 6px;
+}
+.card p { margin-bottom: 8px; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 8px;
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+th {
+  background: var(--bg);
+  color: var(--primary);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+}
+tr:hover { background: #fafafa; }
+.flow-diagram {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 0;
+  align-items: center;
+  padding: 16px 0;
+  font-size: 13px;
+}
+.flow-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0;
+}
+.flow-node {
+  background: var(--primary);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: default;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.flow-node:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(22,119,255,0.3);
+}
+.flow-arrow {
+  color: var(--primary);
+  font-size: 14px;
+  padding: 0 4px;
+  font-weight: bold;
+}
+.flow-label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: 2px;
+}
+.phase-box {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.phase-item {
+  flex: 1;
+  min-width: 100px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--bg);
+  border-left: 3px solid var(--primary);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.phase-item:hover { background: #d6e4ff; }
+.phase-item .p-title { font-weight: 600; font-size: 13px; }
+.phase-item .p-desc { font-size: 12px; color: var(--text-secondary); }
+.guide-card {
+  background: linear-gradient(135deg, #f6ffed, #d9f7be);
+  border: 1px solid #b7eb8f;
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+.guide-card h3 { color: #389e0d; }
+.guide-card ul { padding-left: 20px; margin-top: 6px; }
+.guide-card li { margin-bottom: 4px; font-size: 14px; }
+.toggle-btn {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 6px 16px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.2s;
+}
+.toggle-btn:hover { background: var(--primary-hover); }
+.toggle-content { display: none; margin-top: 10px; }
+.toggle-content.show { display: block; }
+@media (max-width: 768px) {
+  .container { padding: 12px 16px; }
+  .header { padding: 20px 16px; }
+  .card { padding: 14px 16px; }
+  table { font-size: 12px; }
+  th, td { padding: 5px 6px; }
+  .flow-diagram { font-size: 12px; }
+  .flow-node { font-size: 11px; padding: 4px 8px; }
+  .phase-item { min-width: 80px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>📐 模块定位画像</h1>
+  <div class="meta">静电场 · 大单元 · 新课标人教版 选修3-1</div>
+  <div class="meta" style="margin-top:4px;">所属模块：M1 大单元概述 &gt; 19个模块的全景画像</div>
+</div>
+
+<div class="card">
+  <h2>📌 大单元模块总览</h2>
+  <p>静电场大单元共包含 <strong>M1 至 M20</strong> 共 20 个模块，本画像聚焦 M2 至 M20 共 19 个模块的功能定位与核心概念。点击下方按钮展开/收起完整模块表。</p>
+  <button class="toggle-btn" onclick="document.getElementById('moduleTable').classList.toggle('show')">📋 切换显示模块表</button>
+  <div id="moduleTable" class="toggle-content">
+    <table>
+      <thead><tr><th>模块</th><th>主题</th><th>功能定位</th><th>核心概念</th></tr></thead>
+      <tbody>
+        <tr><td>M2</td><td>新价值与新使命</td><td>激发学习内驱力</td><td>静电场的文明意义、认知使命</td></tr>
+        <tr><td>M3</td><td>全息活动与感知</td><td>激活前概念与生活经验</td><td>摩擦起电、静电感应、验电器</td></tr>
+        <tr><td>M4</td><td>新概念解析与定义</td><td>核心概念建立</td><td>电场强度、电势、电势能、电势差</td></tr>
+        <tr><td>M5</td><td>新知艺术思维</td><td>电场理论的审美直觉</td><td>电场线对称美、等势面几何美学</td></tr>
+        <tr><td>M6</td><td>新知技术思维</td><td>静电技术的工程原理</td><td>静电除尘、静电喷涂、静电复印</td></tr>
+        <tr><td>M7</td><td>新知数学思维</td><td>精确描述的数学建模</td><td>库仑定律矢量形式、高斯定理</td></tr>
+        <tr><td>M8</td><td>新知科学思维</td><td>科学探究方法论</td><td>库仑扭秤实验、控制变量法</td></tr>
+        <tr><td>M9</td><td>新知文化思维</td><td>电学知识的社会建构</td><td>从古希腊到工业革命</td></tr>
+        <tr><td>M10</td><td>新知哲学思维</td><td>范式思考与批判反思</td><td>超距作用 vs 近距作用</td></tr>
+        <tr><td>M11</td><td>新知美术思维</td><td>视觉化设计表达</td><td>电场可视化、信息图</td></tr>
+        <tr><td>M12</td><td>新知书面性应用</td><td>规范化书面表达</td><td>解题规范、实验报告</td></tr>
+        <tr><td>M13</td><td>新知项目性应用</td><td>完整项目实践</td><td>静电除尘装置模型</td></tr>
+        <tr><td>M14</td><td>STEAM融合性应用</td><td>跨学科整合</td><td>艺术+工程+数学+电场</td></tr>
+        <tr><td>M15</td><td>新知三创性应用</td><td>创造·创新·创业</td><td>原创方案、市场价值</td></tr>
+        <tr><td>M16</td><td>真善美与反思</td><td>伦理与价值反思</td><td>安全性、伦理边界</td></tr>
+        <tr><td>M17</td><td>成就与成功反思</td><td>元认知与成就感</td><td>学习日志、策略评估</td></tr>
+        <tr><td>M18</td><td>幸福与福祉反思</td><td>学习与生活福祉关联</td><td>静电防护、智力愉悦</td></tr>
+        <tr><td>M19</td><td>系统与智能思维</td><td>系统性知识网络</td><td>电磁统一、AI知识图谱</td></tr>
+        <tr><td>M20</td><td>理论与学术总结</td><td>完整学术化输出</td><td>综述文章、学术海报</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <h2>🔗 模块递进逻辑</h2>
+  <p>19个模块之间存在清晰的递进路径，从价值感召到最终的学术总结，环环相扣：</p>
+  <div class="flow-diagram">
+    <div>
+      <span class="flow-node">M2 价值感召</span>
+      <span class="flow-label">为什么学</span>
+    </div>
+    <span class="flow-arrow">→</span>
+    <div>
+      <span class="flow-node">M3 感知激活</span>
+      <span class="flow-label">感觉到了什么</span>
+    </div>
+    <span class="flow-arrow">→</span>
+    <div>
+      <span class="flow-node">M4 概念建构</span>
+      <span class="flow-label">精确物理概念</span>
+    </div>
+    <span class="flow-arrow">→</span>
+    <div>
+      <span class="flow-node">M5~M10</span>
+      <span class="flow-label">多学科思维渗透</span>
+    </div>
+    <span class="flow-arrow">→</span>
+    <div>
+      <span class="flow-node">M11 美术表达</span>
+      <span class="flow-label">视觉化呈现</span>
+    </div>
+    <span class="flow-arrow">→</span>
+    <div>
+      <span class="flow-node">M12~M15</span>
+      <span class="flow-label">应用层次递进</span>
+    </div>
+    <span class="flow-arrow">→</span>
+    <div>
+      <span class="flow-node">M16~M18</span>
+      <span class="flow-label">反思层次</span>
+    </div>
+    <span class="flow-arrow">→</span>
+    <div>
+      <span class="flow-node">M19~M20</span>
+      <span class="flow-label">综合与输出</span>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>🧭 模块画像快速导航</h2>
+  <div class="phase-box">
+    <div class="phase-item" onclick="alert('M2: 探索静电场与科技前沿、人类文明的关系\nM3: 通过全息感知活动唤醒静电体验')">
+      <div class="p-title">🎯 价值与感知</div>
+      <div class="p-desc">M2~M3</div>
+    </div>
+    <div class="phase-item" onclick="alert('M4: 电场强度、电势、电势差等核心概念的精确定义与区分')">
+      <div class="p-title">🧱 概念建构</div>
+      <div class="p-desc">M4</div>
+    </div>
+    <div class="phase-item" onclick="alert('M5~M10: 艺术→技术→数学→科学→文化→哲学六维思维渗透')">
+      <div class="p-title">🧠 多学科思维</div>
+      <div class="p-desc">M5~M10</div>
+    </div>
+    <div class="phase-item" onclick="alert('M11: 用铁粉/电场线/数字工具绘制电场分布图')">
+      <div class="p-title">🎨 美术表达</div>
+      <div class="p-desc">M11</div>
+    </div>
+    <div class="phase-item" onclick="alert('M12 书面→M13 项目→M14 STEAM→M15 三创')">
+      <div class="p-title">⚡ 应用递进</div>
+      <div class="p-desc">M12~M15</div>
+    </div>
+    <div class="phase-item" onclick="alert('M16 真善美→M17 成就→M18 幸福，三层反思')">
+      <div class="p-title">💭 反思层次</div>
+      <div class="p-desc">M16~M18</div>
+    </div>
+  </div>
+</div>
+
+<div class="guide-card">
+  <h3>📖 使用指南</h3>
+  <ul>
+    <li><strong>学习路线选择：</strong>根据你的基础和目标，在 M2~M20 中选择适配的模块组合</li>
+    <li><strong>路径可切换：</strong>学习过程中可根据掌握情况，随时切换到其他路径</li>
+    <li><strong>跨模块连接：</strong>学习 M5（艺术思维）时可回顾 M8（科学思维）中的电场线概念</li>
+    <li><strong>输出导向：</strong>最终 M20 的学术总结应整合所有模块的学习成果</li>
+  </ul>
+</div>
+
+</div>
+<script>
+(function(){
+  var tables = document.querySelectorAll('table');
+  tables.forEach(function(t){ t.style.display = 'none'; });
+  var btns = document.querySelectorAll('.toggle-btn');
+  btns.forEach(function(b){
+    b.addEventListener('click', function(){
+      var target = document.getElementById('moduleTable');
+      if(target) {
+        target.style.display = target.classList.contains('show') ? 'table' : 'none';
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>

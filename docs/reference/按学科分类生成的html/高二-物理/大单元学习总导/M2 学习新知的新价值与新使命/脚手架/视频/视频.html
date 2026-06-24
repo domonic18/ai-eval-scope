@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视频脚手架：静电场信息提取训练</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.wrapper { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+.hero { background: linear-gradient(135deg, var(--primary) 0%, #0d47a1 100%); color: #fff; border-radius: 12px; padding: 32px 40px; margin-bottom: 28px; }
+.hero h1 { font-size: var(--font-h1); margin: 0 0 8px 0; font-weight: 700; }
+.hero p { margin: 4px 0; font-size: 14px; opacity: 0.9; }
+.hero .tag { display: inline-block; background: rgba(255,255,255,0.2); border-radius: 4px; padding: 2px 10px; font-size: 12px; margin-top: 10px; }
+.video-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 20px 24px; margin-bottom: 22px; box-shadow: var(--shadow); }
+.video-card h3 { font-size: var(--font-h2); color: var(--primary); margin: 0 0 6px 0; }
+.video-card .source { font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.video-card .source .badge { font-size: 11px; padding: 2px 8px; border-radius: 4px; color: #fff; }
+.badge-basic { background: var(--primary); }
+.badge-mid { background: #d46b08; }
+.badge-high { background: #16a34a; }
+.video-card h4 { font-size: 15px; margin: 14px 0 6px; color: var(--text); }
+.video-card p { margin: 6px 0; }
+.video-card ul, .video-card ol { margin: 6px 0 6px 20px; padding: 0; }
+.video-card li { margin: 4px 0; }
+.task-box { background: var(--bg); border-left: 3px solid var(--primary); padding: 10px 16px; border-radius: 0 6px 6px 0; margin: 10px 0; }
+.task-box strong { color: var(--primary); }
+.pause-box { background: #fffbe6; border-left: 3px solid #faad14; padding: 10px 16px; border-radius: 0 6px 6px 0; margin: 10px 0; }
+.pause-box strong { color: #d46b08; }
+.pause-box .time-tag { display: inline-block; background: #faad14; color: #fff; border-radius: 4px; padding: 1px 8px; font-size: 12px; font-weight: 600; margin-right: 6px; }
+.output-box { background: #f6ffed; border-left: 3px solid #16a34a; padding: 10px 16px; border-radius: 0 6px 6px 0; margin: 10px 0; }
+.output-box strong { color: #16a34a; }
+.debate-box { background: linear-gradient(135deg, #fff2f0, #f0f5ff); border: 1px solid #d6adff; border-radius: 8px; padding: 14px 18px; margin: 10px 0; }
+.debate-box .pro { color: var(--primary); font-weight: 600; }
+.debate-box .con { color: #ff4d4f; font-weight: 600; }
+.compact-table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+.compact-table th { background: var(--primary); color: #fff; padding: 8px 12px; text-align: left; }
+.compact-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+.compact-table tr:hover td { background: #f0f5ff; }
+.interactive-btn { display: inline-block; background: var(--primary); color: #fff; border: none; border-radius: 6px; padding: 8px 20px; font-size: 14px; cursor: pointer; transition: background 0.2s, transform 0.15s; margin: 6px 4px; }
+.interactive-btn:hover { background: var(--primary-hover); transform: scale(1.03); }
+.interactive-btn:active { transform: scale(0.97); }
+.toggle-content { display: none; padding: 12px 16px; background: #fafafa; border-radius: 6px; margin: 8px 0; border: 1px dashed var(--border); }
+.toggle-content.show { display: block; }
+.extend-box { background: #f9f0ff; border: 1px solid #d6adff; border-radius: 8px; padding: 12px 16px; margin: 10px 0; }
+@media (max-width: 768px) { .wrapper { padding: 12px 16px; } .hero { padding: 20px 18px; } .video-card { padding: 14px 16px; } }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="hero">
+    <h1>🎬 视频脚手架：静电场信息提取训练</h1>
+    <p>M2 学习新知的新价值与新使命 · 物理 选修3-1 · 静电场</p>
+    <span class="tag">🎯 观看焦点策略 · 精准提取信息</span>
+  </div>
+
+  <div class="video-card">
+    <h3>📺 视频A：《静电现象与电荷守恒》</h3>
+    <div class="source">
+      <span class="badge badge-basic">基础层 · 解释型</span>
+      <span>国家中小学网络云平台 · 公开课</span>
+    </div>
+
+    <div class="task-box">
+      <strong>🎯 观看焦点：</strong>请带着"静电现象背后的物理规律是什么"这个问题观看全片。注意视频中一共提到了几种起电方式？每一种的本质是什么？
+    </div>
+
+    <h4>❓ 关键问题</h4>
+    <ul>
+      <li>摩擦起电、接触起电、感应起电三种方式最根本的共同点是什么？</li>
+      <li>电荷守恒定律的"守恒"在实验现象中具体指什么不变？</li>
+      <li>丝绸摩擦玻璃棒后，玻璃棒带正电——丝绸带什么电？为什么？</li>
+    </ul>
+
+    <button class="interactive-btn" onclick="document.getElementById('pauseA').classList.toggle('show')">⏸️ 查看暂停思考点</button>
+    <div id="pauseA" class="toggle-content">
+      <div class="pause-box">
+        <p><span class="time-tag">01:32</span> 摩擦起电实验展示后 → <strong>暂停</strong>：想一想，电子是"产生"了还是"转移"了？</p>
+        <p><span class="time-tag">04:15</span> 验电器感应起电演示 → <strong>暂停</strong>：用手触摸验电器顶端时，电子流向是怎样的？</p>
+        <p><span class="time-tag">07:40</span> 电荷守恒定律总结处 → <strong>暂停</strong>：用自己的话复述一遍定律内容。</p>
+      </div>
+    </div>
+
+    <div class="output-box">
+      <strong>📝 输出任务：</strong>画一张「三种起电方式对比表」，横向维度为：方式名称、操作过程、电荷分布变化、本质解释。
+    </div>
+  </div>
+
+  <div class="video-card">
+    <h3>🔬 视频B：《库仑扭秤实验》</h3>
+    <div class="source">
+      <span class="badge badge-mid">进阶层 · 分析型</span>
+      <span>TED-Ed 精选物理史</span>
+    </div>
+
+    <div class="task-box">
+      <strong>🎯 观看焦点：</strong>库仑如何在18世纪的技术条件下，把一个"看不见摸不着"的力精确测量出来？注意他遇到的困难和他的解决办法。
+    </div>
+
+    <h4>❓ 关键问题</h4>
+    <ul>
+      <li>库仑扭秤的测量原理类比了什么日常现象？（提示：想想扭转与力的关系）</li>
+      <li>为什么库仑要用"小球接触再分开"的方式改变电荷量？这在数学上等价于什么操作？</li>
+      <li>如果实验中带电小球漏电了，测量结果会偏大还是偏小？请给出推理路径。</li>
+    </ul>
+
+    <button class="interactive-btn" onclick="document.getElementById('pauseB').classList.toggle('show')">⏸️ 查看暂停思考点</button>
+    <div id="pauseB" class="toggle-content">
+      <div class="pause-box">
+        <p><span class="time-tag">00:45</span> 介绍扭秤结构 → <strong>暂停</strong>：在纸上画出扭秤示意图，标出关键部件（悬丝、横杆、小球、刻度盘）</p>
+        <p><span class="time-tag">02:10</span> 改变电荷量的实验设计 → <strong>暂停</strong>：假设初始电荷为 Q，第一次接触再分开后每个小球带电量是多少？第二次呢？</p>
+        <p><span class="time-tag">03:55</span> 库仑得出的结论 → <strong>暂停</strong>：力与距离的平方成反比——如果距离变为原来的3倍，力变为多少？</p>
+      </div>
+    </div>
+
+    <div class="output-box">
+      <strong>📝 输出任务：</strong>撰写一段200字的"实验设计点评"，从控制变量和测量精度两个角度分析库仑扭秤实验的设计巧妙之处。
+    </div>
+  </div>
+
+  <div class="video-card">
+    <h3>🏭 视频C：《静电的"功"与"祸"——从工业除尘到电子防护》</h3>
+    <div class="source">
+      <span class="badge badge-high">挑战层 · 辩论/前沿型</span>
+      <span>行业实录纪录片</span>
+    </div>
+
+    <div class="task-box">
+      <strong>🎯 观看焦点：</strong>静电既是"功臣"又是"祸首"，你需要同时提取两方面的证据，并回答——我们如何利用物理规律"驯服"静电？
+    </div>
+
+    <h4>❓ 关键问题</h4>
+    <ul>
+      <li>静电除尘器的核心原理本质上就是库仑力——带电粉尘在电场中受到什么方向的力，驱使它向集尘极运动？</li>
+      <li>电子厂防静电手环的工作原理是"接地"还是"绝缘"？用静电平衡知识解释。</li>
+      <li>静电放电可能损坏芯片——对于已焊接到电路板上的芯片，静电放电的伤害路径是什么？</li>
+    </ul>
+
+    <button class="interactive-btn" onclick="document.getElementById('pauseC').classList.toggle('show')">⏸️ 查看暂停思考点</button>
+    <div id="pauseC" class="toggle-content">
+      <div class="pause-box">
+        <p><span class="time-tag">02:25</span> 静电除尘原理动画 → <strong>暂停</strong>：画出除尘器简图，标出电离区、集尘区，用箭头标出离子运动方向和粉尘运动方向</p>
+        <p><span class="time-tag">04:50</span> 工厂防静电措施实拍 → <strong>暂停</strong>：导电地板、防静电服、离子风机——分析各自利用了静电的哪些性质</p>
+        <p><span class="time-tag">06:30</span> "静电在医疗领域的应用" → <strong>暂停</strong>：如果你来设计一款利用静电原理的药物雾化吸入装置，你会如何利用库仑力？</p>
+      </div>
+    </div>
+
+    <div class="output-box">
+      <strong>📝 输出任务：</strong>以"静电：工程师的盟友还是敌人？"为题写一篇300字的微型辩论稿。
+      <button class="interactive-btn" onclick="document.getElementById('debate-tips').classList.toggle('show')" style="margin-top:8px;">📄 查看辩论框架</button>
+      <div id="debate-tips" class="toggle-content">
+        <div class="debate-box">
+          <p><span class="pro">✅ 盟友立场：</span>静电除尘、静电复印、静电喷涂、电场治疗……至少引用两个视频中的应用案例。</p>
+          <p><span class="con">❌ 敌人立场：</span>粉尘爆炸、芯片击穿、电子设备干扰、人体电击……至少引用两个视频中的危害案例。</p>
+          <p>结尾用一句表明你的判断，并用物理原理解释为什么。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2 style="font-size:var(--font-h2);color:var(--primary);border-left:4px solid var(--primary);padding-left:12px;margin:24px 0 14px;">📋 支架与产出对照表</h2>
+
+  <table class="compact-table">
+    <tr><th>层级</th><th>视频来源</th><th>焦点策略</th><th>核心概念</th><th>输出形式</th></tr>
+    <tr><td>基础</td><td>公开课（课程类）</td><td>识别三种起电方式本质</td><td>电荷守恒定律</td><td>对比表</td></tr>
+    <tr><td>进阶</td><td>TED-Ed（演讲类）</td><td>追踪实验设计推理链</td><td>库仑定律</td><td>实验评论文本</td></tr>
+    <tr><td>挑战</td><td>行业纪录片</td><td>辩证提取利弊证据</td><td>静电平衡与应用</td><td>微型辩论稿</td></tr>
+  </table>
+
+  <div class="extend-box">
+    <strong>🧩 课后延伸：</strong>
+    <ul>
+      <li>TED-Ed 语速太快？开启 0.75x 倍速 + 中文字幕。</li>
+      <li>看完行业纪录片后，搜索"静电喷涂"和"静电复印"（xerography）的工作原理——库仑定律的应用远超你的想象。</li>
+      <li>将你绘制的「三种起电方式对比表」贴到笔记本上——学习电场强度和电势时会反复用到。</li>
+    </ul>
+  </div>
+
+  <div class="output-box" style="border-left-color:var(--primary);">
+    <strong>💡 观看策略建议：</strong>不要一口气看完三个视频。每次只看一个，带着焦点问题→暂停思考→完成输出任务→再进入下一个。三遍观看胜过一遍囫囵吞枣。
+  </div>
+</div>
+</body>
+</html>

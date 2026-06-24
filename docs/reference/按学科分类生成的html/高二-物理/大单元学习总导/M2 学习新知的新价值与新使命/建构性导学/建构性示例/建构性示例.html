@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性示例 — 从吸引到描述：我是如何建构"电场强度"这个概念的</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 20px; box-sizing: border-box; }
+.wrapper { max-width: 960px; margin: 0 auto; }
+h1 { font-size: var(--font-h1); color: var(--primary); margin: 0 0 6px 0; }
+h2 { font-size: var(--font-h2); color: var(--primary); margin: 24px 0 10px 0; border-left: 4px solid var(--primary); padding-left: 12px; }
+h3 { font-size: 16px; color: var(--text); margin: 18px 0 8px 0; }
+.card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 16px; border: 1px solid var(--border); }
+.tag { display: inline-block; background: var(--bg); color: var(--primary); border-radius: 4px; padding: 2px 8px; font-size: 13px; margin-right: 4px; }
+.step-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 16px 20px; margin-bottom: 12px; border-left: 4px solid var(--accent); cursor: pointer; transition: all 0.25s ease; }
+.step-card:hover { transform: translateX(6px); box-shadow: 0 4px 16px rgba(22,119,255,0.15); }
+.step-card .step-num { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: #fff; font-weight: 700; font-size: 14px; margin-right: 10px; flex-shrink: 0; }
+.step-card .step-title { font-weight: 600; font-size: 16px; color: var(--primary); }
+.step-card .step-body { display: none; margin-top: 10px; padding: 12px; background: var(--bg); border-radius: 6px; font-size: 14px; color: var(--text); }
+.step-card.active .step-body { display: block; }
+.checklist { list-style: none; padding: 0; }
+.checklist li { padding: 8px 0 8px 32px; position: relative; cursor: pointer; transition: color 0.2s; }
+.checklist li::before { content: "□"; position: absolute; left: 4px; color: var(--primary); font-size: 18px; }
+.checklist li.checked { color: var(--text-secondary); text-decoration: line-through; }
+.checklist li.checked::before { content: "☑"; }
+.btn { display: inline-block; background: var(--primary); color: #fff; border: none; border-radius: 6px; padding: 8px 20px; font-size: 14px; cursor: pointer; transition: background 0.2s; }
+.btn:hover { background: var(--primary-hover); }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+.kv-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.kv-table th { background: var(--primary); color: #fff; padding: 8px 12px; text-align: left; }
+.kv-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+.kv-table tr:hover td { background: var(--bg); }
+.quote { background: var(--bg); border-left: 4px solid var(--accent); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 12px 0; font-style: italic; color: var(--text-secondary); }
+.fade-in { animation: fadeIn 0.5s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.highlight { background: linear-gradient(120deg, rgba(22,119,255,0.12) 0%, rgba(22,119,255,0.12) 100%); padding: 0 4px; font-weight: 500; }
+.scale-label { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+.scale-label span { min-width: 180px; font-size: 14px; }
+.scale-bar { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.scale-bar .fill { height: 100%; background: var(--primary); border-radius: 4px; transition: width 0.6s ease; }
+</style>
+</head>
+<body>
+<div class="container">
+<div class="wrapper">
+
+<div class="fade-in" style="text-align:center;padding:24px 0 12px;">
+  <span class="tag">建构性导学</span><span class="tag">静电场</span><span class="tag">选修3-1</span>
+  <h1 style="margin-top:12px;">从吸引到描述<br>我是如何建构"电场强度"的</h1>
+  <p style="color:var(--text-secondary);">一个完整的建构过程样板 · 带你亲手"重新发明"电场强度的概念</p>
+</div>
+
+<div class="card fade-in">
+  <h2>一、真实建构情境</h2>
+  <p>冬天脱毛衣时听到的 <span class="highlight">"噼啪"声</span>、用塑料梳子梳头后头发飘起的现象——这些都在提示你：<strong>电荷之间存在看不见的作用力</strong>。</p>
+  <div class="quote">冲突点：这些现象说明带电体之间有相互作用，但我们看不见这种作用——"力是怎么传过去的？"</div>
+  <p><strong>核心问题</strong>：<span class="highlight">电荷之间的力究竟是怎么传递的？它们之间有没有某种"东西"？</span></p>
+</div>
+
+<div class="card fade-in">
+  <h2>二、建构目标</h2>
+  <p>你将在本示例中建构的核心成果：</p>
+  <p style="font-size:18px;font-weight:600;color:var(--primary);text-align:center;padding:12px;background:var(--bg);border-radius:8px;">
+    ⚡ 一个可以定量描述电场强弱的物理量——<strong>电场强度</strong>
+  </p>
+  <p>你将学会：从实验现象出发 → 提出科学问题 → 设计思想实验 → 形成物理概念。</p>
+</div>
+
+<div class="card fade-in">
+  <h2>三、建构过程示范（7步）</h2>
+  <p style="color:var(--text-secondary);margin-bottom:14px;">点击每一步展开详细推理内容 👇</p>
+
+  <div class="step-card" onclick="this.classList.toggle('active')">
+    <div style="display:flex;align-items:center;">
+      <span class="step-num">1</span>
+      <span class="step-title">观察与提问</span>
+    </div>
+    <div class="step-body">
+      <p>从摩擦起电现象出发：用塑料梳子梳头发后，梳子能吸引小纸片；冬天脱毛衣时听到噼啪声、看到火星。</p>
+      <p><strong>记录现象</strong>：带电体之间存在相互作用（吸引或排斥）。</p>
+      <p><strong>提出问题</strong>：<em>"电荷之间的作用力如何描述？它们之间是否隔着空无一物的空间？"</em></p>
+    </div>
+  </div>
+
+  <div class="step-card" onclick="this.classList.toggle('active')">
+    <div style="display:flex;align-items:center;">
+      <span class="step-num">2</span>
+      <span class="step-title">寻找证据</span>
+    </div>
+    <div class="step-body">
+      <p>回顾已学知识：<strong>库仑定律</strong> —— 两个点电荷之间的力为 <em>F = kQq / r²</em></p>
+      <p><strong>关键认识</strong>：这个定律描述的是<em>两个</em>点电荷之间的相互作用力。但如果<strong>只有一个</strong>带电体 Q 呢？它周围是否存在某种东西？</p>
+    </div>
+  </div>
+
+  <div class="step-card" onclick="this.classList.toggle('active')">
+    <div style="display:flex;align-items:center;">
+      <span class="step-num">3</span>
+      <span class="step-title">思维实验：引入试探电荷</span>
+    </div>
+    <div class="step-body">
+      <p>思想实验：如果只有一个带电体 Q，我怎样知道它周围"有什么"？</p>
+      <p>办法：<strong>引入一个很小的试探电荷 q</strong>，将它放在 Q 周围的各个位置。</p>
+      <p>结果：试探电荷 q 在不同位置受到的力大小和方向都不同——说明 Q 周围的空间<strong>确实存在某种"东西"</strong>，它在不同位置强弱不同。</p>
+    </div>
+  </div>
+
+  <div class="step-card" onclick="this.classList.toggle('active')">
+    <div style="display:flex;align-items:center;">
+      <span class="step-num">4</span>
+      <span class="step-title">从力到场：比值定义</span>
+    </div>
+    <div class="step-body">
+      <p>试探电荷 q 受力 F 同时取决于 Q（产生者）和 q（被作用者）。如何只描述 Q 的性质？</p>
+      <p>关键发现：<strong>F/q 这个比值，与 q 无关！</strong> 只取决于 Q 本身。</p>
+      <p style="text-align:center;font-size:18px;font-weight:700;color:var(--primary);padding:10px;background:var(--bg);border-radius:6px;">
+        E = F / q
+      </p>
+      <p>这就是<strong>电场强度</strong>的定义：单位试探电荷所受的电场力。</p>
+    </div>
+  </div>
+
+  <div class="step-card" onclick="this.classList.toggle('active')">
+    <div style="display:flex;align-items:center;">
+      <span class="step-num">5</span>
+      <span class="step-title">完善概念：方向与叠加</span>
+    </div>
+    <div class="step-body">
+      <p><strong>方向性</strong>：正试探电荷所受力的方向规定为电场方向。</p>
+      <p><strong>叠加性</strong>：多个电荷产生的电场，在空间某点的总场强等于各电荷在该点产生场强的<strong>矢量和</strong>。</p>
+    </div>
+  </div>
+
+  <div class="step-card" onclick="this.classList.toggle('active')">
+    <div style="display:flex;align-items:center;">
+      <span class="step-num">6</span>
+      <span class="step-title">表达成果</span>
+    </div>
+    <div class="step-body">
+      <p>用两种方式表达电场强度：</p>
+      <p><strong>① 数学语言</strong>：E = F/q（定义式，适用于任何电场）</p>
+      <p><strong>② 图像语言</strong>：<strong>电场线</strong>——从正电荷发出、终止于负电荷的曲线，其疏密表示场强大小，切线方向表示场强方向。</p>
+    </div>
+  </div>
+
+  <div class="step-card" onclick="this.classList.toggle('active')">
+    <div style="display:flex;align-items:center;">
+      <span class="step-num">7</span>
+      <span class="step-title">反思验证</span>
+    </div>
+    <div class="step-body">
+      <p>检查这个定义在不同情境下是否自洽：</p>
+      <p>✔ 点电荷周围：E = kQ/r²（从库仑定律推导）→ 与定义式一致</p>
+      <p>✔ 匀强电场中：在平行板之间，E 处处大小相等、方向相同 → 符合直觉</p>
+      <p>✔ 任意电荷分布：场的叠加原理成立 → 自洽</p>
+    </div>
+  </div>
+</div>
+
+<div class="card fade-in">
+  <h2>四、建构成果样例</h2>
+  <p><strong>成果名称</strong>：电场强度概念建构过程可视化笔记</p>
+  <div class="grid-2" style="margin-top:12px;">
+    <div style="background:var(--bg);border-radius:6px;padding:14px;">
+      <h3 style="margin-top:0;font-size:15px;color:var(--primary);">❓ 左侧 · 问题链</h3>
+      <ul style="font-size:14px;padding-left:18px;">
+        <li>为什么头发会飘起来？</li>
+        <li>力是怎么传过去的？</li>
+        <li>一个电荷周围有什么？</li>
+        <li>如何定量描述？</li>
+        <li>怎么表达更直观？</li>
+      </ul>
+    </div>
+    <div style="background:var(--bg);border-radius:6px;padding:14px;">
+      <h3 style="margin-top:0;font-size:15px;color:var(--primary);">🔗 右侧 · 推理链</h3>
+      <ul style="font-size:14px;padding-left:18px;">
+        <li>观察 → 摩擦起电现象</li>
+        <li>提问 → 力如何传递？</li>
+        <li>方法 → 引入试探电荷</li>
+        <li>定义 → E = F/q</li>
+        <li>可视化 → 电场线</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="card fade-in">
+  <h2>五、自我评价量表</h2>
+  <p>点击项目标记已完成 ✓</p>
+  <ul class="checklist" id="checklist-1">
+    <li onclick="this.classList.toggle('checked')">我是否从真实的生活现象出发引出问题？</li>
+    <li onclick="this.classList.toggle('checked')">我是否完整经历了从现象到概念的建构过程？</li>
+    <li onclick="this.classList.toggle('checked')">我是否能用自己的语言解释电场强度的来龙去脉？</li>
+    <li onclick="this.classList.toggle('checked')">我的成果是否包含至少一种可视化表达？</li>
+    <li onclick="this.classList.toggle('checked')">我是否反思了建构过程中的困难及克服方法？</li>
+  </ul>
+  <div style="text-align:center;margin-top:14px;">
+    <button class="btn" onclick="document.querySelectorAll('#checklist-1 li').forEach(el => el.classList.toggle('checked'))">一键切换全部标记</button>
+  </div>
+</div>
+
+<div class="card fade-in" style="text-align:center;color:var(--text-secondary);font-size:14px;">
+  <p>💡 提示：将本页中的建构过程记录到你的"电场强度概念建构手册"中，作为后续学习的参考。</p>
+</div>
+
+</div>
+</div>
+</body>
+</html>

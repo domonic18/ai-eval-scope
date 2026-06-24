@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>整体定位 — 静电场</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0; width: 100%; max-width: none;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body); line-height: var(--line-height);
+  color: var(--text); background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, #1677ff 0%, #4096ff 100%);
+  color: #fff; padding: 32px 40px; border-radius: var(--border-radius); margin-bottom: 28px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 8px; }
+.header .meta { font-size: 14px; opacity: .85; line-height: 1.6; }
+.card {
+  background: var(--card-bg); border-radius: var(--border-radius);
+  box-shadow: var(--shadow); padding: 24px 28px; margin-bottom: 20px;
+  border: 1px solid var(--border);
+  transition: box-shadow .3s, transform .2s;
+}
+.card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.12); transform: translateY(-1px); }
+.card h2 {
+  font-size: var(--font-h2); color: var(--primary); margin-bottom: 14px;
+  padding-bottom: 8px; border-bottom: 2px solid var(--accent); position: relative;
+}
+.card h2::after {
+  content: ''; position: absolute; bottom: -2px; left: 0;
+  width: 48px; height: 2px; background: var(--primary);
+}
+.card h3 { font-size: calc(var(--font-body) + 2px); margin: 14px 0 8px; }
+.card p, .card li { margin-bottom: 8px; }
+.card ul, .card ol { padding-left: 20px; margin-bottom: 12px; }
+.card li { margin-bottom: 4px; }
+.tag {
+  display: inline-block; padding: 2px 10px; border-radius: 4px;
+  font-size: 13px; font-weight: 500;
+}
+.tag-blue { background: #e6f4ff; color: #1677ff; }
+.tag-green { background: #f6ffed; color: #16a34a; }
+.tag-orange { background: #fff7e6; color: #d46b08; }
+.tag-purple { background: #f9f0ff; color: #722ed1; }
+.tag-red { background: #fff1f0; color: #f5222d; }
+.tag-gray { background: #f5f5f5; color: #595959; }
+.module-map {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr));
+  gap: 12px; margin: 14px 0;
+}
+.module-group {
+  background: var(--bg); border-radius: 6px; padding: 14px;
+  border: 1px solid var(--border);
+}
+.module-group h4 { font-size: 14px; color: var(--primary); margin-bottom: 6px; }
+.module-group .modules-list { font-size: 13px; color: var(--text-secondary); }
+.pillar-box {
+  background: linear-gradient(135deg, #f0f5ff 0%, #ffffff 100%);
+  border-radius: 8px; padding: 20px; margin: 12px 0;
+  border: 1px solid var(--accent); position: relative;
+}
+.pillar-box .core-q {
+  font-size: calc(var(--font-body) + 2px); font-weight: 600;
+  color: var(--primary); margin-bottom: 10px;
+}
+.goal-steps {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr));
+  gap: 12px; margin: 12px 0;
+}
+.goal-item {
+  background: var(--bg); border-radius: 6px; padding: 16px;
+  text-align: center; border: 1px solid var(--border);
+}
+.goal-item .num {
+  display: inline-block; width: 32px; height: 32px; line-height: 32px;
+  background: var(--primary); color: #fff; border-radius: 50%;
+  font-size: 14px; font-weight: 700; margin-bottom: 8px;
+}
+.goal-item p { margin-top: 6px; font-size: 14px; }
+.analogy-box {
+  display: flex; flex-wrap: wrap; gap: 16px; margin: 14px 0;
+  align-items: center;
+}
+.analogy-item {
+  flex: 1; min-width: 140px; text-align: center;
+  padding: 14px; border-radius: 6px; background: #e6f4ff;
+}
+.analogy-arrow { font-size: 24px; color: var(--primary); text-align: center; }
+.fn-link {
+  display: inline-block; padding: 6px 16px;
+  background: var(--primary); color: #fff; border-radius: 20px;
+  font-size: 13px; cursor: pointer; transition: background .2s; border: none;
+}
+.fn-link:hover { background: var(--primary-hover); }
+.toggle-content { display: none; padding: 12px 0 0; }
+.toggle-content.show { display: block; }
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .header { padding: 20px; }
+  .card { padding: 16px; }
+  .module-map { grid-template-columns: 1fr; }
+  .goal-steps { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>整体定位</h1>
+  <div class="meta">
+    <span class="tag tag-blue">M1 大单元概述</span>
+    <span class="tag tag-orange">物理</span>
+    <span class="tag tag-purple">选修3-1</span>
+    <span class="tag tag-green">静电场</span>
+  </div>
+  <p style="margin-top:12px;font-size:14px;opacity:.9;">出发前的准备——看地图、定目标、选路线、熟悉装备</p>
+</div>
+
+<!-- 一、本模块在20模块进化链中的作用 -->
+<div class="card">
+  <h2>一、本模块在20模块学习进化链中的作用</h2>
+  <div class="pillar-box">
+    <div class="core-q">🌍 M1 是整个静电场学习旅程的起点和总纲</div>
+    <p>如果把学习静电场比作一次从地球出发探索电磁世界的旅程，<strong>M1就是你的出发前准备</strong>——看地图、定目标、选路线、熟悉装备。</p>
+  </div>
+  <p style="margin-bottom:10px;"><strong>后续19个模块的关系：</strong></p>
+  <div class="module-map">
+    <div class="module-group">
+      <h4>M2～M3</h4>
+      <p class="modules-list">引入新知识，激活已有感知</p>
+      <span class="tag tag-blue">感知层</span>
+    </div>
+    <div class="module-group">
+      <h4>M4～M10</h4>
+      <p class="modules-list">概念解析到多学科思维建构</p>
+      <span class="tag tag-green">理解层</span>
+    </div>
+    <div class="module-group">
+      <h4>M11～M15</h4>
+      <p class="modules-list">书面表达→STEAM融合→三创性应用</p>
+      <span class="tag tag-orange">应用层</span>
+    </div>
+    <div class="module-group">
+      <h4>M16～M18</h4>
+      <p class="modules-list">反思性思维（真善美、成就、幸福）</p>
+      <span class="tag tag-purple">反思层</span>
+    </div>
+    <div class="module-group">
+      <h4>M19～M20</h4>
+      <p class="modules-list">系统性总结与学术性表达</p>
+      <span class="tag tag-red">总结层</span>
+    </div>
+  </div>
+  <div style="text-align:right;margin-top:8px;">
+    <button class="fn-link" onclick="this.nextElementSibling.classList.toggle('show')">🗺️ 查看完整进化链</button>
+    <div class="toggle-content">
+      <pre style="background:#f5f5f5;padding:12px;border-radius:6px;font-size:13px;line-height:1.8;overflow-x:auto;">
+M1  大单元概述（起点）
+ ↓
+M2  全息活动 × 感知
+M3  全息活动 × 概念
+ ↓
+M4  ── M5  ── M6  ── M7  ── M8  ── M9  ── M10
+(概念) (艺术) (技术) (数学) (科学) (文化) (哲学)
+ ↓
+M11 书面表达 ── M12 合作表达
+M13 STEAM ── M14 三创性 ── M15 应用
+ ↓
+M16 真善美 ── M17 成就 ── M18 幸福
+ ↓
+M19 系统性总结 ── M20 学术性表达（终点）
+      </pre>
+    </div>
+  </div>
+</div>
+
+<!-- 二、本模块解决的核心认知问题 -->
+<div class="card">
+  <h2>二、本模块解决的核心认知问题</h2>
+  <div class="pillar-box" style="background:linear-gradient(135deg, #fff7e6 0%, #ffffff 100%);border-color:#d46b08;">
+    <div class="core-q" style="color:#d46b08;">❓ 核心问题</div>
+    <blockquote style="font-size:calc(var(--font-body)+2px);font-weight:500;font-style:italic;margin:8px 0;padding:12px;background:rgba(255,255,255,0.5);border-radius:6px;">
+      "我在生活中感受到过静电，但'电场'到底是什么？我看不见摸不着，怎么理解和描述它？"
+    </blockquote>
+    <p style="margin-top:10px;">这个问题的本质是：从<strong>生活经验层面的电荷现象</strong>，跃迁到<strong>科学概念层面的电场模型</strong>。本模块帮你搭建一座桥梁——不直接讲抽象概念，而是先让你看见整座"静电场知识大厦"的全貌，明确每一层（每一个模块）的学习任务，让你在后续学习中始终知道自己<strong>"在哪儿、在学什么、为什么学"</strong>。</p>
+  </div>
+  <div class="analogy-box">
+    <div class="analogy-item">
+      <span style="font-size:28px;">🏠</span>
+      <p style="margin-top:6px;font-size:14px;"><strong>你的经验：</strong><br>看到房子的外观，摸到墙壁</p>
+    </div>
+    <div class="analogy-arrow">→</div>
+    <div class="analogy-item" style="background:#f6ffed;">
+      <span style="font-size:28px;">📐</span>
+      <p style="margin-top:6px;font-size:14px;"><strong>这座桥：</strong><br>M1带你走进大门看结构</p>
+    </div>
+    <div class="analogy-arrow">→</div>
+    <div class="analogy-item" style="background:#e6f4ff;">
+      <span style="font-size:28px;">🔬</span>
+      <p style="margin-top:6px;font-size:14px;"><strong>科学理解：</strong><br>理解每一间房的建造原理</p>
+    </div>
+  </div>
+</div>
+
+<!-- 三、学习目标 -->
+<div class="card" style="margin-bottom:0;">
+  <h2>三、学习目标</h2>
+  <p>完成本模块后，你将能够：</p>
+  <div class="goal-steps">
+    <div class="goal-item">
+      <div class="num">1</div>
+      <strong>说出全貌</strong>
+      <p>用自己的话说出"静电场"大单元在学什么</p>
+    </div>
+    <div class="goal-item">
+      <div class="num">2</div>
+      <strong>指出位置</strong>
+      <p>指出20个模块在整体学习路径中的位置和作用</p>
+    </div>
+    <div class="goal-item">
+      <div class="num">3</div>
+      <strong>制定计划</strong>
+      <p>选择适合自己的学习路径并制定初步学习计划</p>
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:16px;padding:16px;background:var(--bg);border-radius:8px;">
+    <p><strong>现在，你已经站在了静电场学习之旅的起点。</strong></p>
+    <p style="font-size:14px;color:var(--text-secondary);">接下来的19个模块将从感知、理解、应用、反思到总结，带你一步步走进电场这个看不见却无处不在的物理世界。</p>
+    <button class="fn-link" style="margin-top:10px;" onclick="this.nextElementSibling.classList.toggle('show')">🚀 准备好了吗？</button>
+    <div class="toggle-content">
+      <p>回顾一下上面的三个目标，在笔记本上写下你对这三个问题的初步回答。然后，选一条学习路径，开始你的静电场探索之旅吧！</p>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

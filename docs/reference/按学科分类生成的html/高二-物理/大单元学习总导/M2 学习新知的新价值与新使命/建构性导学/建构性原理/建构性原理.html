@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性原理 - 静电场大单元</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+  --font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 6px; }
+.header .meta { font-size: 13px; opacity: 0.85; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--bg);
+}
+.card h3 {
+  font-size: 16px;
+  margin: 14px 0 6px;
+  color: var(--text);
+}
+.card h4 { font-size: 14px; margin: 8px 0 4px; color: var(--primary); }
+.card p { margin-bottom: 8px; }
+.card ul, .card ol { padding-left: 20px; margin-bottom: 8px; }
+.card li { margin-bottom: 3px; }
+.principle-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  border-left: 4px solid var(--primary);
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.principle-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 2px 12px rgba(22,119,255,0.1);
+}
+.principle-card .p-num {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 13px;
+  margin-right: 8px;
+}
+.principle-card .p-title { font-weight: 600; font-size: 15px; }
+.principle-card .p-brief { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+.principle-card .p-detail { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+.principle-card .p-detail.show { display: block; }
+.principle-card .p-detail strong { color: var(--primary); }
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-right: 4px;
+}
+.badge-blue { background: #e6f4ff; color: var(--primary); }
+.badge-green { background: #f6ffed; color: #389e0d; }
+.badge-orange { background: #fff7e6; color: #d46b08; }
+.practice-box {
+  background: linear-gradient(135deg, #f6ffed, #d9f7be);
+  border: 1px solid #b7eb8f;
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-bottom: 12px;
+}
+.practice-box h4 { color: #389e0d; }
+.practice-box ul { padding-left: 20px; }
+.reflection-box {
+  background: linear-gradient(135deg, #fff7e6, #ffe7ba);
+  border: 1px solid #ffd591;
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-bottom: 12px;
+}
+.reflection-box h4 { color: #d46b08; }
+.reflection-box ol { padding-left: 20px; }
+.reflection-box li { margin-bottom: 6px; cursor: pointer; }
+.reflection-box li:hover { color: var(--primary); }
+.tip { font-size: 13px; color: var(--text-secondary); padding: 6px 12px; background: var(--bg); border-radius: 4px; margin: 6px 0; }
+@media (max-width: 768px) {
+  .container { padding: 12px 16px; }
+  .header { padding: 20px 16px; }
+  .card { padding: 14px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🧱 建构性原理</h1>
+  <div class="meta">静电场 · 大单元 · 新课标人教版 选修3-1</div>
+  <div class="meta" style="margin-top:4px;">所属模块：M2 学习新知的新价值与新使命 | 建构性导学第二环</div>
+</div>
+
+<div class="card">
+  <h2>一、建构性原理提炼</h2>
+  <p style="margin-bottom:10px;">以下5条原理从"电场强度"概念的完整建构过程中提炼，可迁移到其他学习情境中。点击每条原理查看详情。</p>
+
+  <div class="principle-card">
+    <div>
+      <span class="p-num">1</span>
+      <span class="p-title">从冲突情境中发现问题</span>
+      <span class="badge badge-blue" style="margin-left:4px;">驱动型</span>
+    </div>
+    <div class="p-brief">有效的建构始于一个让人困惑的问题——日常经验与已有认知的冲突产生了建构新知识的驱动力</div>
+    <div class="p-detail">
+      <p><strong>示例体现：</strong>从"脱毛衣的噼啪声"出发，引出"看不见的力怎么传递的"这个核心问题</p>
+      <p><strong>其他情境：</strong>"为什么铁屑在磁铁周围会排列成特定图案？"</p>
+      <p><strong>⚠ 注意事项：</strong>问题要具体可探究，避免过于宏大</p>
+    </div>
+  </div>
+
+  <div class="principle-card">
+    <div>
+      <span class="p-num">2</span>
+      <span class="p-title">用思想实验进行推理</span>
+      <span class="badge badge-blue" style="margin-left:4px;">方法型</span>
+    </div>
+    <div class="p-brief">当无法直接观察时，通过设计理想化情境推演逻辑关系</div>
+    <div class="p-detail">
+      <p><strong>示例体现：</strong>引入试探电荷q，想象把它放在带电体Q周围不同位置，测量F随位置的变化</p>
+      <p><strong>其他情境：</strong>伽利略斜坡实验推理、爱因斯坦追光思想实验</p>
+      <p><strong>⚠ 注意事项：</strong>假设要明确，推理要符合逻辑</p>
+    </div>
+  </div>
+
+  <div class="principle-card">
+    <div>
+      <span class="p-num">3</span>
+      <span class="p-title">用比值定义法建立物理量</span>
+      <span class="badge badge-green" style="margin-left:4px;">核心型</span>
+    </div>
+    <div class="p-brief">当物理量A与B成正比时，比值A/B可以定义一个新物理量，反映系统的某种固有属性</div>
+    <div class="p-detail">
+      <p><strong>示例体现：</strong>F/q定义为电场强度E，与试探电荷无关，只反映电场本身性质</p>
+      <p><strong>其他情境：</strong>密度（m/V）、速度（s/t）、电阻（U/I）</p>
+      <p><strong>⚠ 注意事项：</strong>确认比值确实与试探量无关，且在不同情境下具有物理意义</p>
+    </div>
+  </div>
+
+  <div class="principle-card">
+    <div>
+      <span class="p-num">4</span>
+      <span class="p-title">用多种方式表达同一概念</span>
+      <span class="badge badge-orange" style="margin-left:4px;">表达型</span>
+    </div>
+    <div class="p-brief">完整的理解需要数学公式（精确）、图示（直观）和文字描述（解释力）相互印证</div>
+    <div class="p-detail">
+      <p><strong>示例体现：</strong>E=F/q（公式）+ 电场线（图示）+ 文字描述三种方式</p>
+      <p><strong>其他情境：</strong>函数的解析式+图像+表格、化学键的模型+电子式+描述</p>
+      <p><strong>⚠ 注意事项：</strong>不同表达方式要一致，说明各方式的适用范围</p>
+    </div>
+  </div>
+
+  <div class="principle-card">
+    <div>
+      <span class="p-num">5</span>
+      <span class="p-title">通过极端情况检验理解</span>
+      <span class="badge badge-orange" style="margin-left:4px;">验证型</span>
+    </div>
+    <div class="p-brief">将概念放到极端条件下检验自洽性——出现矛盾说明理解还有漏洞</div>
+    <div class="p-detail">
+      <p><strong>示例体现：</strong>q→0的极限、r→∞时E→0、点电荷附近E→∞</p>
+      <p><strong>其他情境：</strong>牛顿第二定律在v→c时的失效、理想气体在高压下的偏离</p>
+      <p><strong>⚠ 注意事项：</strong>极端检验要符合物理意义，不引入逻辑矛盾</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>二、建构性原理迁移应用</h2>
+
+  <div class="practice-box">
+    <h4>📝 练习1：建构"电势"概念</h4>
+    <p><strong>情境：</strong>电场中不同位置电荷受力不同，从能量角度看，电荷在不同位置具有不同的势能</p>
+    <p><strong>建构任务：</strong>类比电场强度的建构过程，建构"电势"概念</p>
+    <p><strong>建议使用原理：</strong>原理2（思想实验推理）+ 原理3（比值定义法）</p>
+    <p><strong>脚手架提示：</strong>想想密度怎么从质量和体积中提取的；从"单位电荷的电势能"切入</p>
+    <p><strong>表达：</strong>用公式（φ=Ep/q）、图示（等势面）和文字三种方式表达</p>
+    <button class="practice-hint" style="padding:4px 12px;background:var(--primary);color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;margin-top:4px;" onclick="alert('思路：①试探电荷在电场中从A移到B，电场力做功W_AB；②定义A、B两点电势差U_AB=W_AB/q；③选零势能点后定义电势φ=Ep/q；④检验：q→0时比值收敛。')">💡 查看提示</button>
+  </div>
+
+  <div class="practice-box">
+    <h4>📝 练习2：建构"电容器电容"概念</h4>
+    <p><strong>情境：</strong>两个导体板间加上电压，板上储存电荷；不同电容器在相同电压下储存的电荷量不同</p>
+    <p><strong>建构任务：</strong>建构"电容"的物理概念和定量表达式</p>
+    <p><strong>建议使用原理：</strong>原理3（比值定义法）+ 原理5（极端情况检验）</p>
+    <p><strong>脚手架提示：</strong>找出影响电容的因素；用Q/U的比值试试看</p>
+    <p><strong>表达：</strong>公式C=Q/U + 影响因素的实验结论 + 不同电容器的特点</p>
+    <button class="practice-hint" style="padding:4px 12px;background:var(--primary);color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;margin-top:4px;" onclick="alert('思路：①测量Q和U得到正比关系；②定义C=Q/U；③极端检验：U→∞时介质击穿，C与Q无关仅与结构有关；④探索影响因素：板间距d、正对面积S、介质介电常数ε。')">💡 查看提示</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>三、元认知反思</h2>
+  <div class="reflection-box">
+    <ol>
+      <li onclick="alert('试着回忆一下：是在理解「试探电荷与场源电荷的关系」时卡住了？还是在理解「比值与试探电荷无关」时困惑了？找到具体卡点，它就是你的成长突破点。')">在建构电场强度的过程中，哪一步让你感觉最困难？为什么？</li>
+      <li onclick="alert('例如：用「总路程÷总时间」求平均速度，本质上就是比值定义法的生活应用。你还能想到哪些？')">你之前有没有"不知不觉"就用过比值定义法？回忆一个例子。</li>
+      <li onclick="alert('向初中生解释：可以把电场想象成「一个带电物体周围存在的看不见的力场，就像磁铁周围有磁场一样」。这要求你把抽象概念转化成生活化的类比——这就是建构的逆过程。')">如果让你向一个初中生解释电场强度，你会怎么讲？和你建构的过程有什么不同？</li>
+      <li onclick="alert('思想实验的推理原则在逻辑学、经济学（理性人假设）、计算机科学（图灵机的思想实验）等领域都有广泛应用。')">你觉得"用思想实验推理"这个原理，还能用在物理以外的哪些地方？</li>
+      <li onclick="alert('完成两个迁移练习后，回想一下：哪条原理让你觉得「原来如此」？哪条还让你感觉不太确定？不确定的部分正是下一次学习的目标。')">完成两个迁移练习后，你觉得哪条原理最有用？哪条还需要多加练习？</li>
+    </ol>
+  </div>
+</div>
+
+</div>
+<script>
+var cards = document.querySelectorAll('.principle-card');
+cards.forEach(function(card){
+  card.addEventListener('click', function(){
+    var detail = this.querySelector('.p-detail');
+    if(detail) detail.classList.toggle('show');
+  });
+});
+</script>
+</body>
+</html>

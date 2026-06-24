@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学习路径 — 静电场</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0; width: 100%; max-width: none;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body); line-height: var(--line-height);
+  color: var(--text); background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, #1677ff 0%, #4096ff 100%);
+  color: #fff; padding: 32px 40px; border-radius: var(--border-radius); margin-bottom: 28px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 8px; }
+.header .meta { font-size: 14px; opacity: .85; line-height: 1.6; }
+.card {
+  background: var(--card-bg); border-radius: var(--border-radius);
+  box-shadow: var(--shadow); padding: 24px 28px; margin-bottom: 20px;
+  border: 1px solid var(--border);
+  transition: box-shadow .3s, transform .2s;
+}
+.card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.12); transform: translateY(-1px); }
+.card h2 {
+  font-size: var(--font-h2); color: var(--primary); margin-bottom: 14px;
+  padding-bottom: 8px; border-bottom: 2px solid var(--accent); position: relative;
+}
+.card h2::after {
+  content: ''; position: absolute; bottom: -2px; left: 0;
+  width: 48px; height: 2px; background: var(--primary);
+}
+.card h3 { font-size: calc(var(--font-body) + 2px); margin: 14px 0 8px; }
+.card p, .card li { margin-bottom: 6px; }
+.card ul, .card ol { padding-left: 20px; margin-bottom: 10px; }
+.card li { margin-bottom: 4px; }
+.tag {
+  display: inline-block; padding: 2px 10px; border-radius: 4px;
+  font-size: 13px; font-weight: 500;
+}
+.tag-blue { background: #e6f4ff; color: #1677ff; }
+.tag-green { background: #f6ffed; color: #16a34a; }
+.tag-orange { background: #fff7e6; color: #d46b08; }
+.tag-red { background: #fff1f0; color: #f5222d; }
+.tag-purple { background: #f9f0ff; color: #722ed1; }
+table {
+  width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px;
+}
+th, td { border: 1px solid var(--border); padding: 10px 12px; text-align: left; vertical-align: top; }
+th { background: var(--bg); color: var(--primary); font-weight: 600; }
+tr:hover td { background: #fafafa; }
+.path-box {
+  border-radius: var(--border-radius); padding: 16px 20px; margin: 12px 0;
+  border-left: 4px solid var(--primary); position: relative;
+}
+.path-beginner { background: #f0f5ff; border-color: #1677ff; }
+.path-standard { background: #f6ffed; border-color: #16a34a; }
+.path-advanced { background: #fff7e6; border-color: #d46b08; }
+.path-box h3 { margin-top: 0; color: var(--text); }
+.path-box .modules { font-family: monospace; font-size: 14px; color: var(--primary); margin: 8px 0; }
+.motto {
+  font-style: italic; font-size: 14px; color: var(--text-secondary);
+  margin-top: 8px; padding: 8px 12px; background: rgba(255,255,255,0.6);
+  border-radius: 6px;
+}
+.role-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr));
+  gap: 12px; margin: 12px 0;
+}
+.role-card {
+  background: var(--bg); border-radius: 6px; padding: 14px;
+  border: 1px solid var(--border);
+}
+.role-card strong { display: block; color: var(--primary); margin-bottom: 4px; }
+.role-card .small { font-size: 13px; color: var(--text-secondary); }
+.fn-link {
+  display: inline-block; padding: 6px 16px;
+  background: var(--primary); color: #fff; border-radius: 20px;
+  font-size: 13px; cursor: pointer; transition: background .2s; border: none;
+}
+.fn-link:hover { background: var(--primary-hover); }
+.toggle-content { display: none; padding: 12px 0 0; }
+.toggle-content.show { display: block; }
+.suggestion-item {
+  display: flex; gap: 10px; padding: 10px 12px; margin: 6px 0;
+  background: var(--bg); border-radius: 6px; align-items: flex-start;
+}
+.suggestion-item .icon { flex-shrink: 0; font-size: 18px; }
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .header { padding: 20px; }
+  .card { padding: 16px; }
+  .role-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>学习路径</h1>
+  <div class="meta">
+    <span class="tag tag-blue">M1 大单元概述</span>
+    <span class="tag tag-orange">物理</span>
+    <span class="tag tag-purple">选修3-1</span>
+    <span class="tag tag-green">静电场</span>
+  </div>
+  <p style="margin-top:12px;font-size:14px;opacity:.9;">选择最适合你的学习路径，让每一步都走得坚定而从容</p>
+</div>
+
+<!-- 路径一：基础进入 -->
+<div class="card">
+  <h2>一、基础进入路径</h2>
+  <div class="path-box path-beginner">
+    <p><span class="tag tag-blue">适合对象</span> 对电场概念感到陌生、定量计算稍弱、需要先理解核心的学生</p>
+    <p><strong>学习重点：</strong>电荷基本性质、电场强度定义、库仑定律基本应用</p>
+    <p class="modules"><strong>建议模块：</strong>M2 → M3 → M4 → M7 → M8 → M12 → M16 → M19</p>
+    <p><strong>成果要求：</strong>完成核心概念图 + 至少3道基础计算题 + 个人学习笔记整理</p>
+    <p><strong>支持工具：</strong>AI学伴答疑、PhET静电场仿真实验、概念卡工具包</p>
+    <div class="motto">"不怕慢，就怕停。每一个抽象概念都可以从生活中找到对应原型。"</div>
+  </div>
+</div>
+
+<!-- 路径二：标准发展 -->
+<div class="card">
+  <h2>二、标准发展路径</h2>
+  <div class="path-box path-standard">
+    <p><span class="tag tag-green">适合对象</span> 能跟上常规教学进度、愿意完成理解和应用的学生</p>
+    <p><strong>学习重点：</strong>电场强度与电势的综合应用、等势面理解、带电粒子运动分析</p>
+    <p class="modules"><strong>建议模块：</strong>M2 → M3 → M4 → M7 → M8 → M9 → M10 → M12 → M13 → M16 → M17 → M19</p>
+    <p><strong>成果要求：</strong>完成项目性应用报告 + 概念关系图 + 小组合作成果</p>
+    <p><strong>合作方式：</strong>与2～3人组成学习小组，每周一次互评反馈</p>
+    <div class="motto">"能算对还不够，要追问为什么。归纳规律比记住公式更重要。"</div>
+  </div>
+</div>
+
+<!-- 路径三：高阶挑战 -->
+<div class="card">
+  <h2>三、高阶挑战路径</h2>
+  <div class="path-box path-advanced">
+    <p><span class="tag tag-orange">适合对象</span> 基础扎实、愿意进行跨学科探究和创新表达的学生</p>
+    <p><strong>学习重点：</strong>电场与磁场的统一理解、STEAM融合项目、三创性应用</p>
+    <p class="modules"><strong>建议模块：</strong>M2～M20全路径，重点深入M5—M6—M11—M14—M15—M20</p>
+    <p><strong>成果要求：</strong>完成跨学科创新作品 + 研究小论文 + 成果展示</p>
+    <p><strong>挑战任务：</strong>设计一个应用静电原理的装置原型，或撰写一篇关于"电场如何改变人类文明"的微型研究论文</p>
+    <div class="motto">"真正的学习不是跟随路径，而是创造路径。每完成一个模块，思考它如何与你已有的知识连接。"</div>
+  </div>
+  <div style="text-align:right;margin-top:8px;">
+    <button class="fn-link" onclick="this.nextElementSibling.classList.toggle('show')">📌 对比三条路径</button>
+    <div class="toggle-content">
+      <p>三条路径不是固定不变的——你可以从基础路径开始，感觉准备好了再切换到标准路径；也可以在选择高阶路径后，偶尔回到基础路径补充某些薄弱概念。<strong>选择权在你手中。</strong></p>
+    </div>
+  </div>
+</div>
+
+<!-- 四、个体学习建议 -->
+<div class="card">
+  <h2>四、个体学习建议</h2>
+  <table>
+    <tr><th>学生类型</th><th>建议</th></tr>
+    <tr><td><span class="tag tag-blue">概念薄弱型</span></td><td>先做M3全息活动感知 + M4概念建构，用类比法（电势↔高度）建立直觉</td></tr>
+    <tr><td><span class="tag tag-orange">表达困难型</span></td><td>重点投入M12书面表达 + M20学术总结，多画概念图</td></tr>
+    <tr><td><span class="tag tag-green">实践兴趣型</span></td><td>直入M11～M15的应用模块，在实践中反哺概念理解</td></tr>
+    <tr><td><span class="tag tag-red">研究挑战型</span></td><td>直入M20学术总结 + 前沿追问内容，自主设计研究问题</td></tr>
+    <tr><td><span class="tag tag-purple">合作成长型</span></td><td>搭配小组角色中的"问题发现者"或"模型建构者"，以教为学</td></tr>
+    <tr><td><span class="tag tag-blue">数智工具探索型</span></td><td>使用AI学伴进行模拟实验、概念对话和作品生成</td></tr>
+  </table>
+</div>
+
+<!-- 五、小组合作建议 -->
+<div class="card">
+  <h2>五、小组合作建议</h2>
+  <div class="role-grid">
+    <div class="role-card">
+      <strong>🧐 问题发现者</strong>
+      <div>提出探究问题</div>
+      <div class="small">适合：好奇心强、善于提问</div>
+      <div class="small">证据：问题清单</div>
+    </div>
+    <div class="role-card">
+      <strong>🔍 资料检索者</strong>
+      <div>收集电场相关资料</div>
+      <div class="small">适合：信息素养较好</div>
+      <div class="small">证据：资料汇编</div>
+    </div>
+    <div class="role-card">
+      <strong>📊 证据分析者</strong>
+      <div>分析实验数据</div>
+      <div class="small">适合：逻辑严谨</div>
+      <div class="small">证据：数据分析报告</div>
+    </div>
+    <div class="role-card">
+      <strong>🧩 模型建构者</strong>
+      <div>设计电场概念模型</div>
+      <div class="small">适合：抽象思维好</div>
+      <div class="small">证据：模型示意图</div>
+    </div>
+    <div class="role-card">
+      <strong>🎨 表达设计者</strong>
+      <div>设计成果展示方式</div>
+      <div class="small">适合：有创意</div>
+      <div class="small">证据：展示方案</div>
+    </div>
+    <div class="role-card">
+      <strong>📋 项目推进者</strong>
+      <div>管理进度</div>
+      <div class="small">适合：组织能力强</div>
+      <div class="small">证据：进度表</div>
+    </div>
+    <div class="role-card">
+      <strong>💬 评价反馈者</strong>
+      <div>提供互评</div>
+      <div class="small">适合：观察力强</div>
+      <div class="small">证据：评价量表和反馈记录</div>
+    </div>
+  </div>
+</div>
+
+<!-- 六、自主表达建议 -->
+<div class="card">
+  <h2>六、自主表达建议</h2>
+  <p>选择最适合你的表达方式来展示对静电场核心概念的理解：</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-top:10px;">
+    <span class="tag tag-blue">📝 文字说明</span>
+    <span class="tag tag-green">🧠 思维导图</span>
+    <span class="tag tag-orange">🔗 概念图</span>
+    <span class="tag tag-purple">🎤 口头讲解</span>
+    <span class="tag tag-red">🎬 短视频</span>
+    <span class="tag tag-blue">📰 海报</span>
+    <span class="tag tag-green">🏗️ 模型</span>
+    <span class="tag tag-orange">📑 演示文稿</span>
+    <span class="tag tag-purple">📋 项目报告</span>
+    <span class="tag tag-red">🤖 AI对话记录</span>
+  </div>
+</div>
+
+<!-- 七、作品化成果建议 -->
+<div class="card" style="margin-bottom:0;">
+  <h2>七、作品化成果建议</h2>
+  <ol>
+    <li><strong>单元学习地图</strong>：画出本单元20模块的进化路径</li>
+    <li><strong>核心概念图</strong>：展示电场强度、电势、电势能、电势差的关系网络</li>
+    <li><strong>问题链记录</strong>：记录学习中产生的问题及解决路径</li>
+    <li><strong>案例解析卡</strong>：精选3～5个静电现象进行分析卡片</li>
+    <li><strong>项目方案</strong>：设计一个静电应用方案</li>
+    <li><strong>跨学科作品</strong>：将电场知识与艺术、技术结合创作</li>
+    <li><strong>学习反思报告</strong>：记录学习方法和策略的变化</li>
+    <li><strong>成果展示作品</strong>：选择任意形式展示你的静电场理解</li>
+  </ol>
+  <div style="text-align:center;margin-top:16px;">
+    <button class="fn-link" onclick="this.nextElementSibling.classList.toggle('show')">🌟 我的路径，我来选择</button>
+    <div class="toggle-content">
+      <p>无论你选择哪条路径，记住：最重要的不是走得多快，而是每一步都走得扎实。现在，选定你的路径，开始静电场的学习之旅吧！</p>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

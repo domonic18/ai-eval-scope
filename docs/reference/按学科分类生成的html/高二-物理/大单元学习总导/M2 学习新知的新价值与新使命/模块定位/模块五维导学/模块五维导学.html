@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块五维导学 — M2 学习新知的新价值与新使命</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body { margin:0; padding:0; font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; font-size:var(--font-body); line-height:var(--line-height); color:var(--text); background:var(--bg); }
+.container { width:100%; max-width:none; padding:20px; box-sizing:border-box; }
+.wrapper { max-width:960px; margin:0 auto; }
+h1 { font-size:var(--font-h1); color:var(--primary); margin:0 0 6px; }
+h2 { font-size:var(--font-h2); color:var(--primary); margin:24px 0 10px; border-left:4px solid var(--primary); padding-left:12px; }
+h3 { font-size:16px; color:var(--text); margin:18px 0 8px; }
+.card { background:var(--card-bg); border-radius:var(--border-radius); box-shadow:var(--shadow); padding:20px; margin-bottom:16px; border:1px solid var(--border); }
+.tag { display:inline-block; background:var(--bg); color:var(--primary); border-radius:4px; padding:2px 8px; font-size:13px; margin-right:4px; }
+.dim-card { background:var(--card-bg); border-radius:var(--border-radius); box-shadow:var(--shadow); padding:18px 20px; margin-bottom:14px; cursor:pointer; transition:all 0.25s ease; border-top:3px solid var(--primary); }
+.dim-card:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(22,119,255,0.12); }
+.dim-card .dim-icon { font-size:28px; margin-bottom:4px; }
+.dim-card .dim-title { font-weight:700; font-size:16px; color:var(--primary); }
+.dim-card .dim-body { max-height:0; overflow:hidden; transition:max-height 0.4s ease; }
+.dim-card.expanded .dim-body { max-height:800px; }
+.toggle-btn { background:none; border:1px solid var(--primary); color:var(--primary); border-radius:4px; padding:4px 12px; font-size:13px; cursor:pointer; transition:all 0.2s; margin-top:6px; }
+.toggle-btn:hover { background:var(--primary); color:#fff; }
+.frontier-box { background:var(--bg); border-radius:6px; padding:14px; margin:8px 0; border-left:4px solid var(--accent); }
+.frontier-box p { margin:6px 0; font-size:14px; cursor:pointer; padding:4px 8px; border-radius:4px; transition:background 0.2s; }
+.frontier-box p:hover { background:rgba(22,119,255,0.08); }
+.frontier-box p::before { content:"❓ "; }
+.fade-in { animation:fadeIn 0.5s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+.progress-dots { display:flex; gap:6px; justify-content:center; margin:10px 0; }
+.progress-dots span { width:12px; height:12px; border-radius:50%; background:var(--border); transition:background 0.3s; cursor:pointer; }
+.progress-dots span.active { background:var(--primary); transform:scale(1.2); }
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+@media(max-width:640px){ .grid-2{grid-template-columns:1fr} }
+.analogy-table { width:100%; border-collapse:collapse; font-size:14px; }
+.analogy-table th { background:var(--primary); color:#fff; padding:8px 12px; text-align:left; }
+.analogy-table td { padding:8px 12px; border-bottom:1px solid var(--border); }
+.analogy-table tr:hover td { background:var(--bg); }
+</style>
+</head>
+<body>
+<div class="container">
+<div class="wrapper">
+
+<div class="fade-in" style="text-align:center;padding:24px 0 12px;">
+  <span class="tag">模块五维导学</span><span class="tag">M2</span><span class="tag">静电场</span>
+  <h1 style="margin-top:12px;">M2：学习新知的新价值与新使命</h1>
+  <p style="color:var(--text-secondary);">学习全景地图 · 帮你从五个维度看清本模块的学习旅程</p>
+</div>
+
+<div class="progress-dots">
+  <span class="active" onclick="document.querySelectorAll('.dim-card')[0].classList.toggle('expanded')"></span>
+  <span onclick="document.querySelectorAll('.dim-card')[1].classList.toggle('expanded')"></span>
+  <span onclick="document.querySelectorAll('.dim-card')[2].classList.toggle('expanded')"></span>
+  <span onclick="document.querySelectorAll('.dim-card')[3].classList.toggle('expanded')"></span>
+  <span onclick="document.querySelectorAll('.dim-card')[4].classList.toggle('expanded')"></span>
+</div>
+
+<div class="dim-card expanded" onclick="this.classList.toggle('expanded')">
+  <div class="dim-icon">🎯</div>
+  <div class="dim-title">1. 模块学习目标</div>
+  <button class="toggle-btn" onclick="event.stopPropagation();this.closest('.dim-card').classList.toggle('expanded')">展开 / 收起</button>
+  <div class="dim-body">
+    <p><strong>请你完成本模块后，能够做到以下这些：</strong></p>
+    <ul>
+      <li><strong>知识理解</strong>：能用自己的语言解释电场强度、电势、电势差、电容等核心概念的含义和相互关系，不再只是背公式。</li>
+      <li><strong>能力形成</strong>：能运用"比值定义法"建立新的物理概念；能设计思想实验来推理电场问题；能用多种方式（公式、图示、语言）表达同一个物理概念。</li>
+      <li><strong>思维发展</strong>：能从"超距作用"思维升级到<strong>"场的思维"</strong>，意识到看不见的"场"是一种真实存在；能区分"电场强度"（力的角度）和"电势"（能量的角度）两个不同的描述视角。</li>
+      <li><strong>表达产出</strong>：完成建构性导学中的一个建构性成果，并能在解析性导学中完成规范的分析表达。</li>
+    </ul>
+  </div>
+</div>
+
+<div class="dim-card" onclick="this.classList.toggle('expanded')">
+  <div class="dim-icon">🚀</div>
+  <div class="dim-title">2. 高精尖价值与未来意义</div>
+  <button class="toggle-btn" onclick="event.stopPropagation();this.closest('.dim-card').classList.toggle('expanded')">展开 / 收起</button>
+  <div class="dim-body">
+    <p><strong>这些"旧知识"与你的未来有什么关系？</strong></p>
+    <div class="grid-2">
+      <div style="background:var(--bg);border-radius:6px;padding:12px;">
+        <p style="font-weight:600;margin:0 0 4px;">💻 芯片制造</p>
+        <p style="font-size:14px;margin:0;">现代芯片中晶体管的尺寸已缩小到几纳米，其中电场控制在微观层面的精度直接决定了芯片性能。</p>
+      </div>
+      <div style="background:var(--bg);border-radius:6px;padding:12px;">
+        <p style="font-weight:600;margin:0 0 4px;">🔋 超级电容器</p>
+        <p style="font-size:14px;margin:0;">石墨烯超级电容器有望实现"充电几秒钟，续航几百公里"——核心原理就是电容知识。</p>
+      </div>
+      <div style="background:var(--bg);border-radius:6px;padding:12px;">
+        <p style="font-weight:600;margin:0 0 4px;">🏥 医疗（质子治疗）</p>
+        <p style="font-size:14px;margin:0;">利用强电场加速质子到接近光速后轰击肿瘤——电场的力量可以被用来拯救生命。</p>
+      </div>
+      <div style="background:var(--bg);border-radius:6px;padding:12px;">
+        <p style="font-weight:600;margin:0 0 4px;">🛸 太空探索</p>
+        <p style="font-size:14px;margin:0;">航天器需要精确了解地球周围的电场环境（范艾伦辐射带）才能安全运行。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="dim-card" onclick="this.classList.toggle('expanded')">
+  <div class="dim-icon">📚</div>
+  <div class="dim-title">3. 推荐学习方式与方法</div>
+  <button class="toggle-btn" onclick="event.stopPropagation();this.closest('.dim-card').classList.toggle('expanded')">展开 / 收起</button>
+  <div class="dim-body">
+    <p>针对本模块的特殊定位，推荐以下方法：</p>
+    <ul>
+      <li><strong>建模学习法</strong>：把每个新概念看作是你自己建构的一个模型——它来自现实、描述现实、简化现实。</li>
+      <li><strong>类比学习法</strong>：用熟悉的"场"类比不熟悉的"场"：</li>
+    </ul>
+    <table class="analogy-table">
+      <tr><th>电场概念</th><th>类比对象</th><th>类比关系</th></tr>
+      <tr><td>电场强度 (E)</td><td>重力场强度 (g=G/m)</td><td>"电场有多强"</td></tr>
+      <tr><td>电势</td><td>地形图中的海拔高度</td><td>"电场中的高度"</td></tr>
+      <tr><td>电势差</td><td>瀑布的落差</td><td>"高度差决定释放的能量"</td></tr>
+    </table>
+    <ul>
+      <li><strong>可视化学习法</strong>：电场线、等势面概念天然适合视觉化——每个概念都画出对应的图示。</li>
+      <li><strong>概念图法</strong>：学完本模块后画一张"静电场概念地图"。</li>
+      <li><strong>AI辅助学习</strong>：用对话式AI工具帮助理解抽象概念。</li>
+      <li><strong>讨论法</strong>：积极参与学术社区中的议题讨论——"电场是一种物质吗？"</li>
+    </ul>
+  </div>
+</div>
+
+<div class="dim-card" onclick="this.classList.toggle('expanded')">
+  <div class="dim-icon">👤</div>
+  <div class="dim-title">4. 关键人物、事件、成果</div>
+  <button class="toggle-btn" onclick="event.stopPropagation();this.closest('.dim-card').classList.toggle('expanded')">展开 / 收起</button>
+  <div class="dim-body">
+    <div class="grid-2">
+      <div style="background:var(--bg);border-radius:6px;padding:12px;">
+        <p style="font-weight:700;margin:0 0 4px;color:var(--primary);">⚖️ 库仑 (1736–1806)</p>
+        <p style="font-size:14px;margin:0;">用扭秤实验测量电荷间作用力，得出库仑定律。展示了<em>"如何用精密实验发现自然基本规律"</em>。</p>
+      </div>
+      <div style="background:var(--bg);border-radius:6px;padding:12px;">
+        <p style="font-weight:700;margin:0 0 4px;color:var(--primary);">🧪 法拉第 (1791–1867)</p>
+        <p style="font-size:14px;margin:0;">没受过正规教育却成为最伟大的实验物理学家之一。提出"电场线"概念——<em>"场"观念的开创者</em>。</p>
+      </div>
+      <div style="background:var(--bg);border-radius:6px;padding:12px;">
+        <p style="font-weight:700;margin:0 0 4px;color:var(--primary);">📐 麦克斯韦 (1831–1879)</p>
+        <p style="font-size:14px;margin:0;">用数学方程统一电学和磁学，预言电磁波存在。方程组被誉为<em>"人类最美的数学创造之一"</em>。</p>
+      </div>
+      <div style="background:var(--bg);border-radius:6px;padding:12px;">
+        <p style="font-weight:700;margin:0 0 4px;color:var(--primary);">💧 密立根 (1868–1953)</p>
+        <p style="font-size:14px;margin:0;">"油滴实验"测量了电子电荷量——展示了<em>"用宏观方法测量微观量"</em>的智慧。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="dim-card" onclick="this.classList.toggle('expanded')">
+  <div class="dim-icon">💭</div>
+  <div class="dim-title">5. 前沿追问</div>
+  <button class="toggle-btn" onclick="event.stopPropagation();this.closest('.dim-card').classList.toggle('expanded')">展开 / 收起</button>
+  <div class="dim-body">
+    <p><strong>这些问题没有标准答案，但它们值得你思考：</strong></p>
+    <div class="frontier-box">
+      <p onclick="const a=this.nextElementSibling; a.style.display=a.style.display==='none'?'block':'none'"><strong>开放性问题：</strong>电场线是"真实存在"的还是方便描述的工具？</p>
+      <div style="display:none;font-size:14px;color:var(--text-secondary);padding:4px 8px;">提示：法拉第认为力线真实存在，但现代物理中"场"是一种更基础的实在。你怎么看？</div>
+    </div>
+    <div class="frontier-box">
+      <p onclick="const a=this.nextElementSibling; a.style.display=a.style.display==='none'?'block':'none'"><strong>对比性问题：</strong>电场和重力场高度相似，但为什么高中物理先学电场再学重力场？</p>
+      <div style="display:none;font-size:14px;color:var(--text-secondary);padding:4px 8px;">提示：这个顺序本身告诉了我们什么关于"认知进阶"的规律？</div>
+    </div>
+    <div class="frontier-box">
+      <p onclick="const a=this.nextElementSibling; a.style.display=a.style.display==='none'?'block':'none'"><strong>反事实问题：</strong>如果法拉第没提出"场"的概念，今天我们怎么理解电磁相互作用？</p>
+      <div style="display:none;font-size:14px;color:var(--text-secondary);padding:4px 8px;">提示：可能会长期停留在"超距作用"的框架中——场概念的提出是一次认知革命。</div>
+    </div>
+    <div class="frontier-box">
+      <p onclick="const a=this.nextElementSibling; a.style.display=a.style.display==='none'?'block':'none'"><strong>元认知问题：</strong>看到"E=F/q"你的第一反应是什么？</p>
+      <div style="display:none;font-size:14px;color:var(--text-secondary);padding:4px 8px;">你的反应方式（"又要背公式" vs "单位电荷受到的力"）决定了你的学习方式。</div>
+    </div>
+  </div>
+</div>
+
+<div class="card fade-in" style="text-align:center;">
+  <p style="color:var(--text-secondary);">💡 点击每个维度卡片可以展开/收起详细内容。<br>建议先通读全部五个维度，再深入每个维度学习。</p>
+</div>
+
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具库脚手架：静电场的认知放大器</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.wrapper { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+.hero { background: linear-gradient(135deg, var(--primary) 0%, #0d47a1 100%); color: #fff; border-radius: 12px; padding: 32px 40px; margin-bottom: 28px; }
+.hero h1 { font-size: var(--font-h1); margin: 0 0 8px 0; font-weight: 700; }
+.hero p { margin: 4px 0; font-size: 14px; opacity: 0.9; }
+.hero .tag { display: inline-block; background: rgba(255,255,255,0.2); border-radius: 4px; padding: 2px 10px; font-size: 12px; margin-top: 10px; }
+.badge { display: inline-block; background: var(--accent); color: #fff; border-radius: 4px; padding: 2px 10px; font-size: 12px; font-weight: 600; margin-right: 6px; }
+.level-label { display: inline-block; font-weight: 700; font-size: 14px; padding: 4px 14px; border-radius: 20px; margin-bottom: 14px; }
+.level-basic { background: #e6f7ff; color: var(--primary); }
+.level-mid { background: #fff7e6; color: #d46b08; }
+.level-high { background: #f6ffed; color: #16a34a; }
+.card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 20px 24px; margin-bottom: 18px; box-shadow: var(--shadow); transition: transform 0.2s, box-shadow 0.2s; }
+.card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.card h3 { font-size: var(--font-h2); color: var(--primary); margin: 0 0 10px 0; }
+.card h3 .tool-icon { margin-right: 8px; }
+.card .meta { font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; }
+.card p { margin: 6px 0; }
+.card ul, .card ol { margin: 6px 0 6px 20px; padding: 0; }
+.card li { margin: 4px 0; }
+.steps-box { background: var(--bg); border-left: 3px solid var(--primary); padding: 10px 16px; border-radius: 0 6px 6px 0; margin: 10px 0; }
+.steps-box strong { color: var(--primary); }
+.example-box { background: #f6ffed; border-left: 3px solid #16a34a; padding: 10px 16px; border-radius: 0 6px 6px 0; margin: 10px 0; }
+.example-box strong { color: #16a34a; }
+.scene-tag { display: inline-block; background: #f0f5ff; color: var(--primary); border-radius: 4px; padding: 2px 8px; font-size: 12px; margin: 2px 4px 2px 0; border: 1px solid #d6e4ff; }
+.strategy-table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+.strategy-table th { background: var(--primary); color: #fff; padding: 10px 14px; text-align: left; font-weight: 600; }
+.strategy-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.strategy-table tr:hover td { background: #f0f5ff; }
+.tip { background: #fffbe6; border: 1px solid #ffe58f; border-radius: 8px; padding: 14px 18px; margin: 18px 0; }
+.tip strong { color: #d46b08; }
+.interactive-btn { display: inline-block; background: var(--primary); color: #fff; border: none; border-radius: 6px; padding: 8px 20px; font-size: 14px; cursor: pointer; transition: background 0.2s, transform 0.15s; margin: 6px 4px; }
+.interactive-btn:hover { background: var(--primary-hover); transform: scale(1.03); }
+.interactive-btn:active { transform: scale(0.97); }
+.toggle-content { display: none; padding: 12px 16px; background: #fafafa; border-radius: 6px; margin: 8px 0; border: 1px dashed var(--border); }
+.toggle-content.show { display: block; }
+.kwl-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+.kwl-table th { background: var(--primary); color: #fff; padding: 8px 12px; text-align: left; }
+.kwl-table td { padding: 8px 12px; border: 1px solid var(--border); vertical-align: top; }
+.kwl-table tr:last-child td { background: #f0f5ff; }
+.feynman-box { background: linear-gradient(135deg, #f9f0ff, #f0f5ff); border: 1px solid #d6e4ff; border-radius: 8px; padding: 14px 18px; margin: 12px 0; }
+.feynman-box .quote { font-style: italic; color: var(--text-secondary); border-left: 3px solid var(--primary); padding-left: 12px; margin: 6px 0; }
+@media (max-width: 768px) { .wrapper { padding: 12px 16px; } .hero { padding: 20px 18px; } .card { padding: 14px 16px; } .strategy-table { font-size: 12px; } }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="hero">
+    <h1>⚡ 工具库：静电场的认知放大器</h1>
+    <p>M2 学习新知的新价值与新使命 · 物理 选修3-1 · 静电场</p>
+    <span class="tag">🧰 脚手架工具</span>
+  </div>
+
+  <div class="tip">
+    <strong>💡 为什么你需要一个"工具库"？</strong>
+    学静电场最痛苦的是什么？<strong>看不见、摸不着。</strong> 电场线不存在于肉眼可见的世界，电势差不能用手掂量。你需要的不只是一个更认真的态度——而是一套工具，把抽象的"场"变成你能看见、能操作、能直观理解的东西。
+  </div>
+
+  <h2 style="font-size:var(--font-h2);color:var(--primary);border-left:4px solid var(--primary);padding-left:12px;margin:24px 0 14px;">🔧 基础工具（刚接触静电场，马上能用）</h2>
+
+  <div class="card">
+    <h3><span class="tool-icon">🔌</span>工具1：PhET电场仿真模拟器</h3>
+    <div class="meta">科罗拉多大学 · 免费物理仿真平台</div>
+    <p><strong>用途：</strong>实时画出电场线和等势面，拖拽电荷观察电场变化。</p>
+    <div class="steps-box">
+      <strong>使用步骤：</strong>
+      <ol>
+        <li>浏览器打开 PhET 官网，进入 "Charges and Fields" 仿真模块</li>
+        <li>拖拽正/负电荷到画布上，观察电场线自动生成的方向与疏密</li>
+        <li>勾选 "Electric Field" 显示箭头场，勾选 "Equipotential" 显示等势面</li>
+        <li>用电势探测器平移测量不同位置的电势数值</li>
+      </ol>
+    </div>
+    <div class="example-box">
+      <strong>示例：</strong>放一个 +1nC 和一个 -1nC 电荷相距 5cm，观察电场线从正电荷发出终止于负电荷；再沿电场线方向移动电势探测器，看数值如何下降。
+    </div>
+    <div>
+      <span class="scene-tag">初学电场线</span>
+      <span class="scene-tag">等势面概念</span>
+      <span class="scene-tag">课前预习</span>
+    </div>
+    <button class="interactive-btn" onclick="document.getElementById('phet-detail').classList.toggle('show')">📖 展开操作演示</button>
+    <div id="phet-detail" class="toggle-content">
+      <p><strong>操作演示技巧：</strong></p>
+      <ol>
+        <li>先放一个正点电荷，观察辐射状电场线——记住"正电荷是电场的源头"</li>
+        <li>再放一个负电荷在旁边，观察电场线弯曲连接两个电荷</li>
+        <li>点击"Values"显示数值，用电势探测器在不同位置读数</li>
+        <li>试着让两个电荷距离加倍，观察电场强度如何变化</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><span class="tool-icon">✏️</span>工具2：电场线与等势面手绘模板（"三秒画场"法）</h3>
+    <div class="steps-box">
+      <strong>使用步骤：</strong>
+      <ol>
+        <li>判断电荷类型：正电荷→箭头向外辐射，负电荷→箭头向内汇聚</li>
+        <li>等量异种点电荷连线上画对称曲线，中垂面上等势面为平面</li>
+        <li>标注关键点：连线中点场强最小（异种）或最大（同种）</li>
+        <li>用虚线画等势面，注意与电场线处处垂直</li>
+      </ol>
+    </div>
+    <div class="example-box">
+      <strong>经典手绘模板：</strong>一个正点电荷的电场线和等势面像"刺猬"——辐射线 + 同心圆；两个等量正电荷的连线中点场强为零，但电势最大——手绘一次记住一辈子。
+    </div>
+    <button class="interactive-btn" onclick="document.getElementById('draw-detail').classList.toggle('show')">✋ 试试"三秒画场"</button>
+    <div id="draw-detail" class="toggle-content">
+      <p><strong>10 秒速画训练：</strong></p>
+      <p>1️⃣ 先画一个点→决定正负→向外或向内画6条射线 → <strong>2秒</strong></p>
+      <p>2️⃣ 再画3个同心半圆（虚线）与射线垂直 → <strong>3秒</strong></p>
+      <p>3️⃣ 标出场强方向箭头和等势面电势值 → <strong>3秒</strong></p>
+      <p>4️⃣ 检查：电场线是否垂直于等势面？箭头方向是否从高电势指向低电势？ → <strong>2秒</strong></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><span class="tool-icon">📋</span>工具3：KWL 概念追踪表</h3>
+    <p>一张三栏表格帮你每节课后梳理概念网络——不是被动记录，而是主动构建知识地图。</p>
+    <table class="kwl-table">
+      <tr><th>K（已知）</th><th>W（想知）</th><th>L（学到）</th></tr>
+      <tr><td>电荷有正负</td><td>电场强度和电势到底是不是同一个东西？</td><td>它们是两个独立的物理量——场强是力的属性，电势是能的属性，用 E = U/d 联系</td></tr>
+      <tr><td>库仑定律 F = kQq/r²</td><td>为什么库仑力和万有引力都用平方反比？</td><td>因为点源在三维空间扩散，表面积以 r² 增长——几何决定的，不是巧合</td></tr>
+    </table>
+    <button class="interactive-btn" onclick="document.getElementById('kwl-tip').classList.toggle('show')">📝 KWL使用技巧</button>
+    <div id="kwl-tip" class="toggle-content">
+      <p><strong>每节课后3分钟：</strong></p>
+      <p>• K列：写出之前已知道的东西</p>
+      <p>• W列：写出还没搞懂的问题</p>
+      <p>• L列：课后填写学到的新理解，画出新概念与旧概念之间的连线</p>
+      <p>考前快速浏览KWL表，一眼看出薄弱环节！</p>
+    </div>
+  </div>
+
+  <h2 style="font-size:var(--font-h2);color:#d46b08;border-left:4px solid #d46b08;padding-left:12px;margin:24px 0 14px;">⚙️ 进阶工具（课内延伸 / 章节复习用）</h2>
+
+  <div class="card">
+    <h3><span class="tool-icon">🧠</span>工具1：XMind 静电场概念图</h3>
+    <p>用思维导图软件把静电场所有核心概念组织成层级分明的树状图。</p>
+    <div class="steps-box">
+      <strong>构建方法：</strong>
+      <p>中心节点：<strong>静电场</strong></p>
+      <p>一级分支：力的性质（电场强度、库仑定律、电场线）←→ 能的性质（电势、电势能、电势差、等势面）</p>
+      <p>二级分支：每个概念下面挂公式、关键词、易混点，红色标注自己的易错点</p>
+    </div>
+    <div class="example-box">
+      <strong>分支示例：</strong>静电场 → 力的性质 → 电场强度 → 定义式 E=F/q → 点电荷 E=kQ/r² → 匀强电场 E=U/d<br>
+      <span style="color:#d46b08;">⚠️ 注意：E=F/q 是定义式永远成立，E=kQ/r² 只适用于点电荷</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><span class="tool-icon">🔢</span>工具2：Wolfram Alpha 数值计算助手</h3>
+    <p>在线计算引擎，即时计算电场强度、电势数值并自动绘图，适合确认计算过程和探索参数变化。</p>
+    <div class="steps-box">
+      <strong>使用流程：</strong>
+      <p>1️⃣ 输入自然语言，如 "electric field of 2 uC at 0.1 m"</p>
+      <p>2️⃣ 查看结果中的场强数值和方向</p>
+      <p>3️⃣ 修改参数观察变化趋势</p>
+      <p>4️⃣ 截图或复制结果加入解题过程</p>
+    </div>
+    <div class="example-box">
+      <strong>示例：</strong>"我不知道 0.5μC 在 3cm 处的场强量级对不对" → 输入后得到 E = 4.99×10⁶ N/C，与你的计算结果对比，确认单位换算没出错。
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><span class="tool-icon">❓</span>工具3：物理过程拆分法——"三问解题"模板</h3>
+    <p>一个结构化模板，强迫你遇到静电场计算题时先想清楚过程再动笔。</p>
+    <div class="steps-box">
+      <p><strong>第一问：</strong>这是什么模型？点电荷？匀强电场？带电粒子在电场中的偏转？</p>
+      <p><strong>第二问：</strong>什么量守恒/不变？动能定理？能量守恒？电场力做功 = −电势能变化？</p>
+      <p><strong>第三问：</strong>列方程 → 解方程，把答案代回原情境验证合理性</p>
+    </div>
+    <div class="example-box">
+      <strong>例题：</strong>"电子在200V的加速电场中从静止开始加速，求离开电场时的速度。"<br>
+      模型：匀强电场中带电粒子加速 → 能量守恒 eU = ½mv² → 代入 e=1.6×10⁻¹⁹C, U=200V, m=9.1×10⁻³¹kg
+    </div>
+    <button class="interactive-btn" onclick="document.getElementById('three-q').classList.toggle('show')">📄 查看完整解题</button>
+    <div id="three-q" class="toggle-content">
+      <p><strong>完整过程：</strong></p>
+      <p>eU = ½mv² → v = √(2eU/m) = √(2 × 1.6×10⁻¹⁹ × 200 / 9.1×10⁻³¹)</p>
+      <p>v ≈ 8.39 × 10⁶ m/s</p>
+      <p><strong>合理性检验：</strong>v ≈ 0.028c，远小于光速，可以忽略相对论效应 → 答案合理。</p>
+    </div>
+  </div>
+
+  <h2 style="font-size:var(--font-h2);color:#16a34a;border-left:4px solid #16a34a;padding-left:12px;margin:24px 0 14px;">🚀 高阶工具（研究性学习 / 竞赛拓展）</h2>
+
+  <div class="card">
+    <h3><span class="tool-icon">🐍</span>工具1：Python 电场可视化脚本</h3>
+    <p>用 matplotlib 计算任意电荷组的电场分布并绘制等势面与场线图。</p>
+    <div class="steps-box">
+      <strong>快速上手：</strong>
+      <p>1️⃣ 在 Google Colab（免费）打开模板 Notebook</p>
+      <p>2️⃣ 修改代码中的电荷坐标和电量数组，如：<code>charges = [(1,0,1e-9), (-1,0,-1e-9)]</code></p>
+      <p>3️⃣ 运行，获得电场线 + 等势面叠加彩图</p>
+      <p>4️⃣ 分析图中场强的对称性、零场强点位置</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><span class="tool-icon">🎓</span>工具2：费曼学习法——"给同学讲课"模式</h3>
+    <p>最强大的认知放大器：用自己的语言把一个概念讲出来，直到没学过的人也听得懂。</p>
+    <div class="feynman-box">
+      <p><strong>四步法：</strong></p>
+      <p>1️⃣ 选一个静电场概念（如"电势差与电场强度的关系"）</p>
+      <p>2️⃣ 用白板或录音，假装在给完全不懂物理的同学讲解</p>
+      <p>3️⃣ 当你卡壳或使用专业术语时——标记这个点，这就是你没真懂的地方</p>
+      <p>4️⃣ 回到课本查清楚，重新讲一遍，直到能用比喻完整表达</p>
+      <div class="quote">"电势差是电场力把单位电荷从A移到B做的功"——课本版。</div>
+      <div class="quote">"想象一个斜坡，每单位重量的物体从坡顶滑到坡底释放的能量——这就是高度差。电势差也一样，只是把'重量'换成了'电荷'。"——费曼版。</div>
+    </div>
+  </div>
+
+  <h2 style="font-size:var(--font-h2);color:var(--primary);border-left:4px solid var(--primary);padding-left:12px;margin:24px 0 14px;">📊 工具选择策略速查</h2>
+
+  <table class="strategy-table">
+    <tr><th>学习阶段</th><th>推荐工具组合</th><th>预期效果</th></tr>
+    <tr><td>初学（课中/课后）</td><td>PhET + 三秒画场法 + KWL表</td><td>建立直观 + 结构化笔记</td></tr>
+    <tr><td>复习（章节末/考前）</td><td>XMind概念图 + 三问解题模板</td><td>系统化知识网络 + 规范解题</td></tr>
+    <tr><td>验证/查错</td><td>Wolfram Alpha + PhET</td><td>数值和图像双重确认</td></tr>
+    <tr><td>深挖/拓展</td><td>Python可视化 + 费曼学习法</td><td>超越课纲的深度理解</td></tr>
+  </table>
+
+  <div class="tip" style="background:#f0f5ff;border-color:var(--accent);">
+    <strong>🎯 M2 核心提示：</strong>工具的本质不是节省时间，而是放大你的认知能力——它让你看到原本看不到的电场，感受到原本感受不到的电势。一个用过 PhET 的学生和一个只翻过课本的学生，对静电场的理解深度完全不同。<br><br>
+    <strong>你的工具箱不需要一次装满</strong>——先挑一个最顺手的（推荐从 PhET 开始），用熟练了再加下一个。关键不是拥有多少工具，而是<strong>真正用起来的那个工具你用了多少次</strong>。
+  </div>
+</div>
+</body>
+</html>

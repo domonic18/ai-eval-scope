@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>问题库脚手架：以问题驱动学习路径</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 15px;
+  --font-h1: 22px;
+  --font-h2: 18px;
+  --line-height: 1.65;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.wrapper { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+.hero { background: linear-gradient(135deg, var(--primary) 0%, #0d47a1 100%); color: #fff; border-radius: 12px; padding: 32px 40px; margin-bottom: 28px; }
+.hero h1 { font-size: var(--font-h1); margin: 0 0 8px 0; font-weight: 700; }
+.hero p { margin: 4px 0; font-size: 14px; opacity: 0.9; }
+.hero .tag { display: inline-block; background: rgba(255,255,255,0.2); border-radius: 4px; padding: 2px 10px; font-size: 12px; margin-top: 10px; }
+.q-level { display: inline-block; font-size: 12px; font-weight: 600; padding: 3px 12px; border-radius: 20px; margin-bottom: 10px; }
+.q-lv-basic { background: #e6f7ff; color: var(--primary); }
+.q-lv-mid { background: #fff7e6; color: #d46b08; }
+.q-lv-high { background: #f6ffed; color: #16a34a; }
+.q-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 20px 24px; margin-bottom: 18px; box-shadow: var(--shadow); }
+.q-card h3 { font-size: var(--font-h2); color: var(--primary); margin: 0 0 8px 0; }
+.q-card h3 .q-id { color: var(--accent); font-weight: 700; margin-right: 8px; }
+.q-card p { margin: 6px 0; }
+.q-card ul, .q-card ol { margin: 6px 0 6px 20px; padding: 0; }
+.q-card li { margin: 4px 0; }
+.type-tags { margin-bottom: 10px; }
+.type-tag { display: inline-block; padding: 2px 10px; border-radius: 4px; font-size: 12px; margin: 2px 4px 2px 0; }
+.type-open { background: #e6f7ff; color: var(--primary); border: 1px solid #91d5ff; }
+.type-compare { background: #fef2e0; color: #d46b08; border: 1px solid #ffd591; }
+.type-counter { background: #f6ffed; color: #16a34a; border: 1px solid #b7eb8f; }
+.type-meta { background: #f9f0ff; color: #722ed1; border: 1px solid #d6adff; }
+.insight-box { background: var(--bg); border-left: 3px solid var(--primary); padding: 10px 16px; border-radius: 0 6px 6px 0; margin: 10px 0; }
+.insight-box strong { color: var(--primary); }
+.scaffold-box { background: #fffbe6; border: 1px solid #ffe58f; border-radius: 8px; padding: 10px 16px; margin: 10px 0; }
+.scaffold-box strong { color: #d46b08; }
+.deep-box { background: linear-gradient(135deg, #f0f5ff, #f9f0ff); border: 1px solid #d6adff; border-radius: 8px; padding: 12px 18px; margin: 10px 0; }
+.deep-box strong { color: #722ed1; }
+.strategy-table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+.strategy-table th { background: var(--primary); color: #fff; padding: 8px 12px; text-align: left; font-weight: 600; }
+.strategy-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+.strategy-table tr:hover td { background: #f0f5ff; }
+.interactive-btn { display: inline-block; background: var(--primary); color: #fff; border: none; border-radius: 6px; padding: 8px 20px; font-size: 14px; cursor: pointer; transition: background 0.2s, transform 0.15s; margin: 6px 4px; }
+.interactive-btn:hover { background: var(--primary-hover); transform: scale(1.03); }
+.interactive-btn:active { transform: scale(0.97); }
+.toggle-content { display: none; padding: 12px 16px; background: #fafafa; border-radius: 6px; margin: 8px 0; border: 1px dashed var(--border); }
+.toggle-content.show { display: block; }
+.flow-box { background: #fff; border: 2px solid var(--primary); border-radius: 8px; padding: 14px 18px; margin: 10px 0; text-align: center; }
+.flow-box .step { display: inline-block; background: var(--primary); color: #fff; border-radius: 50%; width: 28px; height: 28px; line-height: 28px; text-align: center; font-weight: 700; font-size: 13px; margin: 4px; }
+.flow-box .arrow { color: var(--text-secondary); font-size: 18px; margin: 0 4px; }
+@media (max-width: 768px) { .wrapper { padding: 12px 16px; } .hero { padding: 20px 18px; } .q-card { padding: 14px 16px; } }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="hero">
+    <h1>❓ 问题库：以问题驱动静电场学习路径</h1>
+    <p>M2 学习新知的新价值与新使命 · 物理 选修3-1 · 静电场</p>
+    <span class="tag">🧠 开放·对比·反事实·元认知</span>
+  </div>
+
+  <div class="insight-box" style="background:#fffbe6;border-left-color:#d46b08;">
+    <strong>💡 为什么你需要一个"问题库"？</strong>
+    学静电场时最常见的困境：公式背了但不知道用哪个、题刷了很多换个问法又不会了。根源在于——<strong>你在被动接收答案，而不是主动提出问题</strong>。好的问题比好的答案更重要，因为每提出一个真问题，大脑就进入"搜索模式"，自动整合知识、查找缺口、建立连接。
+  </div>
+
+  <!-- ============ 基础层 ============ -->
+  <h2 style="font-size:var(--font-h2);color:var(--primary);border-left:4px solid var(--primary);padding-left:12px;margin:24px 0 14px;">一、基础层：理解与识别</h2>
+  <p style="margin:0 0 14px;color:var(--text-secondary);">帮你确认自己是否真的读懂了静电场的核心概念。如果回答不清楚，先回到课本再过一遍。</p>
+
+  <div class="q-card">
+    <h3><span class="q-id">Q1</span>用自己的话解释——"电场强度"和"电场力"到底是不是一回事？</h3>
+    <div class="type-tags">
+      <span class="type-tag type-open">🔄 开放性问题</span>
+    </div>
+    <p>关键是你能不能说清楚：<strong>电场强度是"场的属性"</strong>（由场源电荷决定，与试探电荷无关），而<strong>电场力是"电荷在电场中受到的力"</strong>（既取决于E，也取决于q）。</p>
+    <div class="scaffold-box">
+      <strong>💭 思考支架：</strong>画出 E = F/q 这个公式，追问自己：如果 q 变成 2q，E 变吗？F 变吗？为什么？
+    </div>
+  </div>
+
+  <div class="q-card">
+    <h3><span class="q-id">Q2</span>电场线和等势面分别画出了电场的什么特征？它们之间有什么关系？</h3>
+    <div class="type-tags">
+      <span class="type-tag type-compare">⚖️ 对比性问题</span>
+    </div>
+    <p><strong>电场线 → 力的方向：</strong>正电荷受力沿电场线方向</p>
+    <p><strong>等势面 → 能的分布：</strong>电荷在等势面上移动，电场力不做功</p>
+    <p><strong>核心关系：</strong>电场线垂直于等势面，且指向电势降低的方向</p>
+    <div class="scaffold-box">
+      <strong>💭 类比：</strong>电场线 = 山脊上的水流方向，等势面 = 地图上的等高线。水流垂直于等高线流下——电场线垂直于等势面指向低电势。
+    </div>
+  </div>
+
+  <div class="q-card">
+    <h3><span class="q-id">Q3</span>如果库仑定律是 F = kQq/r（反比于 r 的一次方）而不是平方反比，电场的世界会变成什么样？</h3>
+    <div class="type-tags">
+      <span class="type-tag type-counter">🌀 反事实问题</span>
+    </div>
+    <ul>
+      <li>E ∝ 1/r 而非 E ∝ 1/r²——场强随距离衰减更慢</li>
+      <li>电场线的形状会变吗？——会，高斯定理不再成立</li>
+      <li>原子还能稳定存在吗？——极有可能不能</li>
+    </ul>
+    <button class="interactive-btn" onclick="document.getElementById('q3-detail').classList.toggle('show')">🔍 深入分析</button>
+    <div id="q3-detail" class="toggle-content">
+      <div class="deep-box">
+        <strong>🎯 深度思考：</strong>平方反比律不是随意写出来的——它是三维空间中点源效应的<strong>几何必然</strong>。你看到的高斯定理的简洁性、点电荷场强公式的形式，根源都在"平方反比"这四个字上。如果世界服从 r¹ 规律，能量守恒和通量定理都会被颠覆。
+      </div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <h3><span class="q-id">Q4</span>你是如何理解"场"这个概念的？在你回答之前先"过一遍电影"。</h3>
+    <div class="type-tags">
+      <span class="type-tag type-meta">🧐 元认知问题</span>
+    </div>
+    <p>审视自己的概念建构过程——你用的是类比法？（"场就像空气"）依赖数学表达式？（"场就是 E=F/q"）需要看得见的证据？（"没有电场线就想象不出来"）</p>
+    <div class="insight-box">
+      <strong>💡 反馈：</strong>如果你主要依赖数学定义而缺乏空间想象——建议回到 PhET 仿真工具，先玩10分钟"拖拽电荷看电场线"。亲眼"看到"电场，比背出公式重要得多。
+    </div>
+  </div>
+
+  <!-- ============ 进阶层 ============ -->
+  <h2 style="font-size:var(--font-h2);color:#d46b08;border-left:4px solid #d46b08;padding-left:12px;margin:24px 0 14px;">二、进阶层：分析与应用</h2>
+  <p style="margin:0 0 14px;color:var(--text-secondary);">需要运用静电场知识分析具体情境，识别物理模型。能回答这些问题，说明你已从"知道"进入"会用"。</p>
+
+  <div class="q-card">
+    <h3><span class="q-id">Q5</span>两个等量的正电荷放在A、B两点，连线中点处放一个正试探电荷——它会怎么运动？</h3>
+    <div class="type-tags">
+      <span class="type-tag type-open">🔄 开放性问题</span>
+    </div>
+    <p>中点处：两个正电荷产生场强大小相等方向相反，合场强为零。正试探电荷在中点受力为零，但一旦偏离中点——沿连线方向被推回？沿垂直方向被推开？</p>
+    <button class="interactive-btn" onclick="document.getElementById('q5-hint').classList.toggle('show')">💡 提示</button>
+    <div id="q5-hint" class="toggle-content">
+      <p><strong>思考方向：</strong>在草稿纸上画出受力分析图。沿连线方向稍微偏离——两个电荷的场强不再对称，合力指向中点（回复力）。垂直于连线方向偏离——合力指向远离中点的方向（发散力）。用 PhET 验证！</p>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <h3><span class="q-id">Q6</span>匀强电场和点电荷的电场有什么根本区别？粒子运动规律有何不同？</h3>
+    <div class="type-tags">
+      <span class="type-tag type-compare">⚖️ 对比性问题</span>
+    </div>
+    <table class="strategy-table">
+      <tr><th>对比维度</th><th>匀强电场</th><th>点电荷电场</th></tr>
+      <tr><td>场强大小</td><td>处处相等</td><td>E = kQ/r² 随距离衰减</td></tr>
+      <tr><td>场线形状</td><td>平行等间距直线</td><td>辐射状直线</td></tr>
+      <tr><td>初速平行场线</td><td>匀加速直线</td><td>变加速直线</td></tr>
+      <tr><td>初速垂直场线</td><td>类平抛（抛物线）</td><td>轨迹更复杂</td></tr>
+    </table>
+    <div class="scaffold-box">
+      <strong>💭 追问：</strong>为什么匀强电场中偏转是抛物线，而点电荷电场中不是？线索在"加速度是否恒定"——用牛顿第二定律推导。
+    </div>
+  </div>
+
+  <div class="q-card">
+    <h3><span class="q-id">Q7</span>如果电场线是"真实存在的物理线"——有质量、会断裂、可以被剪断——静电场会变成什么样？</h3>
+    <div class="type-tags">
+      <span class="type-tag type-counter">🌀 反事实问题</span>
+    </div>
+    <p>这个思想实验帮你说清<strong>物理实在 vs 数学模型</strong>的区别。</p>
+    <ul>
+      <li>真实的电场线并不存在——它是一种可视化工具</li>
+      <li>如果它是真实的物理线——两条线之间是什么？空的？</li>
+      <li>"空区域"意味着电场不存在？这与高斯定理怎么兼容？</li>
+    </ul>
+    <button class="interactive-btn" onclick="document.getElementById('q7-deep').classList.toggle('show')">📜 科学史视角</button>
+    <div id="q7-deep" class="toggle-content">
+      <div class="deep-box">
+        <strong>🎯 你知道吗？</strong>法拉第曾真的认为力线是物理存在的"紧张状态"。他把铁屑撒在磁场周围看到线状图案，坚信那代表空间中的真实应力。麦克斯韦后来用数学证明：力线的"物理存在"是一个有用的直觉，但最终我们需要方程描述"没有线的地方"。你正被200年前两位科学家同样的困惑所困扰——这是好事！
+      </div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <h3><span class="q-id">Q8</span>拿到"带电粒子在电场中运动"的题目，你的解题第一步通常是什么？</h3>
+    <div class="type-tags">
+      <span class="type-tag type-meta">🧐 元认知问题</span>
+    </div>
+    <p>是直觉型（"看起来像平抛就用运动分解"）还是分析型（"先看已知条件给的是受力还是能量"）？</p>
+    <button class="interactive-btn" onclick="document.getElementById('q8-strategy').classList.toggle('show')">📋 更好的元认知策略</button>
+    <div id="q8-strategy" class="toggle-content">
+      <div class="insight-box">
+        <strong>动笔前问自己三个问题：</strong>
+        <ol>
+          <li>这个运动中，受力是恒定的还是变化的？→ 决定用动力学还是能量法</li>
+          <li>我只关心初末状态，还是关心中间过程？→ 能量法关注状态，动力法关注过程</li>
+          <li>如果两种方法都能做，哪种更简单？→ 通常能量法更简洁，但无法直接得到时间</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 挑战层 ============ -->
+  <h2 style="font-size:var(--font-h2);color:#16a34a;border-left:4px solid #16a34a;padding-left:12px;margin:24px 0 14px;">三、挑战层：创造与批判</h2>
+  <p style="margin:0 0 14px;color:var(--text-secondary);">没有标准答案，不指望一次想明白。挑战任何一个，你的物理认知将发生质变。</p>
+
+  <div class="q-card">
+    <h3><span class="q-id">Q9</span>设计一个"看得见电场"的实验方案——只用日常生活物品，让完全没基础的人"看到"电场存在。</h3>
+    <div class="type-tags">
+      <span class="type-tag type-open">🔄 开放性问题</span>
+    </div>
+    <p>需要满足：可操作、确凿证明"电场存在"、排除其他解释。如果是你——有一根细线、一个轻质小球、一把塑料尺——怎么设计？</p>
+    <div class="scaffold-box">
+      <strong>💭 提示：</strong>法拉第的"铁屑实验"的静电场版本应该是什么样的？
+    </div>
+  </div>
+
+  <div class="q-card">
+    <h3><span class="q-id">Q10</span>静电场 vs 引力场：它们在数学上本质相同——为什么不把引力叫做"一种电场"？</h3>
+    <div class="type-tags">
+      <span class="type-tag type-compare">⚖️ 对比性问题</span>
+    </div>
+    <ul>
+      <li>数学上：都服从平方反比律，都有势能概念</li>
+      <li>关键差异一：电荷有正负，质量只有正 → 导致什么后果？</li>
+      <li>关键差异二：电力强度约是引力的10⁴⁰倍 → 这跟宇宙尺度有什么关系？</li>
+      <li>关键差异三：广义相对论说"引力是时空弯曲"——这又意味着什么？</li>
+    </ul>
+    <button class="interactive-btn" onclick="document.getElementById('q10-deep').classList.toggle('show')">🔬 深度追问</button>
+    <div id="q10-deep" class="toggle-content">
+      <div class="deep-box">
+        物理学家没有把引力看作一种"电场"，不是没注意到类比——恰恰相反，这个类比驱动了后续的深邃发现（爱因斯坦试图统一引力和电磁力）。你的对比分析，就是在重走人类物理学思维的进化之路。
+      </div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <h3><span class="q-id">Q11</span>如果电荷只有一种（比如只有正电荷），静电场会是什么样子？世界会怎么变？</h3>
+    <div class="type-tags">
+      <span class="type-tag type-counter">🌀 反事实问题</span>
+    </div>
+    <ul>
+      <li>只有一种电荷 → 同性相斥 → 所有电荷尽可能远离彼此</li>
+      <li>原子还能存在吗？电子负电荷、原子核正电荷——一种电荷就不可能有原子</li>
+      <li>没有原子 → 没有分子 → 没有你、我、地球、太阳</li>
+      <li>宇宙会是均匀弥散的带电粒子"雾"——没有结构的宇宙</li>
+    </ul>
+    <div class="deep-box">
+      <strong>🎯 震撼启示：</strong>"同种相斥、异种相吸"这个最简单的规律，实际上是人类——以及整个宇宙——存在的先决条件。物理定律不是"课后习题的背景设定"，它们是让世界得以存在的底层代码。
+    </div>
+  </div>
+
+  <div class="q-card">
+    <h3><span class="q-id">Q12</span>回顾你解决静电场问题的完整过程——画一张"你的思考流程图"。</h3>
+    <div class="type-tags">
+      <span class="type-tag type-meta">🧐 元认知问题</span>
+    </div>
+    <div class="flow-box">
+      <span class="step">1</span> 读题 <span class="arrow">→</span>
+      <span class="step">2</span> 标已知 <span class="arrow">→</span>
+      <span class="step">3</span> 判模型 <span class="arrow">→</span>
+      <span class="step">4</span> 选公式 <span class="arrow">→</span>
+      <span class="step">5</span> 代计算 <span class="arrow">→</span>
+      <span class="step">6</span> 查单位 <span class="arrow">→</span>
+      <span class="step">7</span> 出答案
+    </div>
+    <p>在每个箭头旁标注"通常顺利"或"经常卡住"。在卡住的地方，标注你实际使用的应对策略。最后写一句：<strong>"我的物理学习最需要改进的是_____"</strong></p>
+    <div class="insight-box">
+      <strong>💡 元认知的力量：</strong>一旦你画出思考流程图，你就不再是"学不好物理的人"——而是"能在步骤2.3找到改进方案的人"。问题不在你身上，在你的策略上。
+    </div>
+  </div>
+
+  <!-- ============ 使用策略 ============ -->
+  <h2 style="font-size:var(--font-h2);color:var(--primary);border-left:4px solid var(--primary);padding-left:12px;margin:24px 0 14px;">📊 问题使用策略速查</h2>
+
+  <table class="strategy-table">
+    <tr><th>学习阶段</th><th>推荐问题</th><th>侧重</th><th>预期效果</th></tr>
+    <tr><td>初学（课后）</td><td>Q1, Q2, Q4</td><td>开放+对比+元认知</td><td>确认是否读懂概念</td></tr>
+    <tr><td>巩固（做题前）</td><td>Q3, Q5, Q8</td><td>反事实+元认知</td><td>建立物理直觉+优化解题策略</td></tr>
+    <tr><td>综合应用（复习）</td><td>Q6, Q7</td><td>对比+反事实</td><td>打通概念之间的连接</td></tr>
+    <tr><td>挑战拓展（学有余力）</td><td>Q9, Q10, Q11, Q12</td><td>全部类型</td><td>超越课纲，进入创造性思维</td></tr>
+  </table>
+
+  <div class="deep-box" style="border-color:var(--primary);">
+    <strong>🎯 使用建议：</strong>
+    <ol>
+      <li>不要一次性回答所有问题——每天选1-2个，写下来或说出来（录音给自己听也行）</li>
+      <li>"讲出来"比"想一想"有效得多——能"想明白"的问题，开口一说就漏洞百出</li>
+      <li>和同学互相提问——你出问题给别人回答，比自己回答更能检验理解</li>
+      <li>反复回访——一个月后再看同一批问题，你会发现当时的答案已经不够看了——这说明你在成长</li>
+    </ol>
+  </div>
+
+  <div class="insight-box" style="border-left-color:#722ed1;background:#f9f0ff;">
+    <strong>💡 M2 核心提示：</strong>问题库不是"刷题库"——每一道题都是一面镜子，照出你当前理解的边界。真正重要的是：<strong>你不仅要知道答案，还要知道你为什么走到了那个答案</strong>。当你能对一道题说"我知道我为什么是这样想的，我也知道可能还有别的思考方式"——那你就已经超越了"做题"，进入了真正的学习。
+  </div>
+</div>
+</body>
+</html>
