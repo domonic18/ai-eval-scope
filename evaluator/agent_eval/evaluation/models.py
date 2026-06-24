@@ -174,6 +174,7 @@ class MetricsReport:
     sample_scores: list[SampleScore] = field(default_factory=list)
     failure_breakdown: dict[str, int] = field(default_factory=dict)
     thresholds: dict[str, dict[str, Any]] = field(default_factory=dict)
+    llm_skipped: int = 0  # 因 LLM 不可用而跳过的约束数
 
     def to_dict(self) -> dict[str, Any]:
         """序列化为字典。"""
@@ -186,6 +187,7 @@ class MetricsReport:
                 "avg_reward": self.avg_reward,
                 "condR": self.cond_r,
                 "avg_time_ms": self.avg_time_ms,
+                "llm_skipped": self.llm_skipped,
             },
             "thresholds": self.thresholds,
             "failure_breakdown": self.failure_breakdown,

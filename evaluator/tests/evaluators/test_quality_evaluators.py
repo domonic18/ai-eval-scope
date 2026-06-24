@@ -91,6 +91,31 @@ class TestBaseLLMJudgeEvaluator:
         assert result.status == EvalStatus.SKIP
         assert "Auth" in result.reason
 
+    def test_quota_exceeded_sets_circuit_breaker(self, tmp_path: Path) -> None:
+        """额度耗尽时设置熔断标志（同 context 后续评估器可据此跳过）。"""
+        from agent_eval.core.exceptions import LLMQuotaExceededError
+
+        sample = _prepare_output(tmp_path, "内容" * 50)
+        mock_orch = MagicMock()
+        mock_orch.judge.side_effect = LLMQuotaExceededError("额度耗尽")
+        ctx = {"judge_orchestrator": mock_orch, "evidence_dir": tmp_path / "ev"}
+        TeachingLogicEvaluator().evaluate(sample, ctx)
+        assert ctx.get("llm_quota_exhausted") is True
+
+    def test_circuit_breaker_skips_subsequent(self, tmp_path: Path) -> None:
+        """熔断标志已设置时，评估器直接 SKIP（不调用 LLM）。"""
+        sample = _prepare_output(tmp_path, "内容" * 50)
+        mock_orch = MagicMock()
+        ctx = {
+            "judge_orchestrator": mock_orch,
+            "evidence_dir": tmp_path / "ev",
+            "llm_quota_exhausted": True,
+        }
+        result = TeachingLogicEvaluator().evaluate(sample, ctx)
+        assert result.status == EvalStatus.SKIP
+        assert "熔断" in result.reason
+        mock_orch.judge.assert_not_called()
+
     def test_llm_empty_content(self, tmp_path: Path) -> None:
         """空文档 LLM 评估失败。"""
         sample = _prepare_output(tmp_path, "")

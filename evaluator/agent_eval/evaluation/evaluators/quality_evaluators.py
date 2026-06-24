@@ -64,6 +64,16 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
                 duration_ms=elapsed,
             )
 
+        # 熔断：同 sample 内已检测到额度耗尽，后续 LLM 评估器直接跳过
+        if context.get("llm_quota_exhausted"):
+            elapsed = (time.monotonic() - start) * 1000
+            return self._make_result(
+                status=EvalStatus.SKIP,
+                score=0.0,
+                reason=f"{self.name}（LLM 额度耗尽，已熔断跳过，不计入得分）",
+                duration_ms=elapsed,
+            )
+
         # 收集文档内容
         output_dir = _get_output_dir(sample)
         text = ""
@@ -94,14 +104,23 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
                 evidence_dir=evidence_dir,
                 provider_name=self.params.get("llm_provider"),
             )
+        except LLMQuotaExceededError as e:
+            # 额度耗尽：设置熔断标志，同 sample 后续 LLM 评估器直接跳过
+            context["llm_quota_exhausted"] = True
+            elapsed = (time.monotonic() - start) * 1000
+            return self._make_result(
+                status=EvalStatus.SKIP,
+                score=0.0,
+                reason=f"{self.name}（LLM 不可用：{type(e).__name__}，已跳过，不计入得分）",
+                duration_ms=elapsed,
+            )
         except (
-            LLMQuotaExceededError,
             LLMAuthError,
             LLMNetworkError,
             LLMRateLimitError,
             ProviderNotFoundError,
         ) as e:
-            # LLM 不可用（额度耗尽/鉴权失败/网络/限流/未配置）→ 跳过，不计分、不 FAIL
+            # LLM 不可用（鉴权失败/网络/限流/未配置）→ 跳过，不计分、不 FAIL
             elapsed = (time.monotonic() - start) * 1000
             return self._make_result(
                 status=EvalStatus.SKIP,

@@ -64,6 +64,9 @@ class MetricsCalculator:
         # 失败分类
         failure_breakdown = self._breakdown(results)
 
+        # LLM 不可用导致的跳过数
+        llm_skipped = self._llm_skipped(results)
+
         return MetricsReport(
             run_id=run_id,
             total_samples=total,
@@ -84,6 +87,7 @@ class MetricsCalculator:
                 for r in results
             ],
             failure_breakdown=failure_breakdown,
+            llm_skipped=llm_skipped,
         )
 
     def _passed_gates(self, r: SampleResult) -> bool:
@@ -101,3 +105,13 @@ class MetricsCalculator:
                     if cr.status == EvalStatus.FAIL:
                         breakdown[cr.constraint_id] = breakdown.get(cr.constraint_id, 0) + 1
         return breakdown
+
+    def _llm_skipped(self, results: list[SampleResult]) -> int:
+        """统计因 LLM 不可用而 SKIP 的约束数（reason 含 'LLM'）。"""
+        count = 0
+        for r in results:
+            for sr in r.stage_results.values():
+                for cr in sr.constraint_results:
+                    if cr.status == EvalStatus.SKIP and "LLM" in (cr.reason or ""):
+                        count += 1
+        return count

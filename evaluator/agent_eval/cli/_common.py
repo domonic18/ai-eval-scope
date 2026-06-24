@@ -121,6 +121,11 @@ def _print_summary(result: object) -> None:
         ):
             rprint(f"  • [red]{cid}[/red]: {count} 次")
 
+    if getattr(result, "llm_skipped", 0):
+        rprint(
+            f"[yellow]⚠ LLM 不可用：{result.llm_skipped} 项评估已跳过（不计入得分）[/yellow]"
+        )
+
     rprint("")
 
 
