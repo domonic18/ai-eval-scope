@@ -19,7 +19,13 @@ from typing import Any
 import anthropic
 
 from agent_eval.config import ProviderConfig, resolve_api_key
-from agent_eval.core.exceptions import LLMError
+from agent_eval.core.exceptions import (
+    LLMAuthError,
+    LLMError,
+    LLMNetworkError,
+    LLMQuotaExceededError,
+    LLMRateLimitError,
+)
 from agent_eval.llm.client import LLMClient
 from agent_eval.llm.models import LLMResponse, Message, TokenUsage
 
@@ -115,9 +121,31 @@ class AnthropicCompatClient(LLMClient):
         try:
             response = self._client.messages.create(**request_kwargs)
         except anthropic.APIError as e:
+            msg = str(e).lower()
+            status = getattr(e, "status_code", None)
+            details = {"provider": self._name, "model": self._config.model, "status": status}
+            if "insufficient_quota" in msg or "billing" in msg or "balance" in msg:
+                raise LLMQuotaExceededError(
+                    f"Anthropic 额度耗尽: {e}", details=details
+                ) from e
+            if status == 401 or "authentication" in msg or "api key" in msg:
+                raise LLMAuthError(
+                    f"Anthropic 鉴权失败: {e}", details=details
+                ) from e
+            if status == 429 or "rate" in msg:
+                raise LLMRateLimitError(
+                    f"Anthropic 限流: {e}", details=details
+                ) from e
+            if status and status >= 500:
+                raise LLMNetworkError(
+                    f"Anthropic 服务端错误 {status}: {e}", details=details
+                ) from e
+            if "timeout" in msg or "connection" in msg:
+                raise LLMNetworkError(
+                    f"Anthropic 连接错误: {e}", details=details
+                ) from e
             raise LLMError(
-                f"Anthropic 兼容 API 调用失败: {e}",
-                details={"provider": self._name, "model": self._config.model},
+                f"Anthropic 兼容 API 调用失败: {e}", details=details
             ) from e
 
         duration_ms = (time.monotonic() - start) * 1000

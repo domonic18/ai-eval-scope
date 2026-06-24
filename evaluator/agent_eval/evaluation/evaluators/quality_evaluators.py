@@ -15,6 +15,13 @@ from pathlib import Path
 from typing import Any
 
 from agent_eval.config import EVALUATOR_DEFAULTS
+from agent_eval.core.exceptions import (
+    LLMAuthError,
+    LLMNetworkError,
+    LLMQuotaExceededError,
+    LLMRateLimitError,
+    ProviderNotFoundError,
+)
 from agent_eval.core.types import ConstraintTier, EvalMethod, EvalStatus
 from agent_eval.evaluation.base import BaseEvaluator
 from agent_eval.evaluation.evaluators.commonsense_evaluators import _get_output_dir
@@ -86,6 +93,21 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
                 context=context,
                 evidence_dir=evidence_dir,
                 provider_name=self.params.get("llm_provider"),
+            )
+        except (
+            LLMQuotaExceededError,
+            LLMAuthError,
+            LLMNetworkError,
+            LLMRateLimitError,
+            ProviderNotFoundError,
+        ) as e:
+            # LLM 不可用（额度耗尽/鉴权失败/网络/限流/未配置）→ 跳过，不计分、不 FAIL
+            elapsed = (time.monotonic() - start) * 1000
+            return self._make_result(
+                status=EvalStatus.SKIP,
+                score=0.0,
+                reason=f"{self.name}（LLM 不可用：{type(e).__name__}，已跳过，不计入得分）",
+                duration_ms=elapsed,
             )
         except Exception as e:
             elapsed = (time.monotonic() - start) * 1000

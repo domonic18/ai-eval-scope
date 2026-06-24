@@ -51,6 +51,46 @@ class TestBaseLLMJudgeEvaluator:
         assert result.score == 0.0
         assert result.status == EvalStatus.SKIP
 
+    def test_llm_quota_exceeded_skips(self, tmp_path: Path) -> None:
+        """LLM 额度耗尽时 SKIP（不计分、不 FAIL）。"""
+        from agent_eval.core.exceptions import LLMQuotaExceededError
+
+        sample = _prepare_output(tmp_path, "内容" * 50)
+        mock_orch = MagicMock()
+        mock_orch.judge.side_effect = LLMQuotaExceededError("额度耗尽")
+        result = TeachingLogicEvaluator().evaluate(
+            sample, {"judge_orchestrator": mock_orch, "evidence_dir": tmp_path / "ev"}
+        )
+        assert result.status == EvalStatus.SKIP
+        assert result.score == 0.0
+        assert "Quota" in result.reason
+
+    def test_llm_network_error_skips(self, tmp_path: Path) -> None:
+        """LLM 网络错误时 SKIP（不计分）。"""
+        from agent_eval.core.exceptions import LLMNetworkError
+
+        sample = _prepare_output(tmp_path, "内容" * 50)
+        mock_orch = MagicMock()
+        mock_orch.judge.side_effect = LLMNetworkError("超时")
+        result = TeachingLogicEvaluator().evaluate(
+            sample, {"judge_orchestrator": mock_orch, "evidence_dir": tmp_path / "ev"}
+        )
+        assert result.status == EvalStatus.SKIP
+        assert "Network" in result.reason
+
+    def test_llm_auth_error_skips(self, tmp_path: Path) -> None:
+        """LLM 鉴权失败时 SKIP。"""
+        from agent_eval.core.exceptions import LLMAuthError
+
+        sample = _prepare_output(tmp_path, "内容" * 50)
+        mock_orch = MagicMock()
+        mock_orch.judge.side_effect = LLMAuthError("401")
+        result = TeachingLogicEvaluator().evaluate(
+            sample, {"judge_orchestrator": mock_orch, "evidence_dir": tmp_path / "ev"}
+        )
+        assert result.status == EvalStatus.SKIP
+        assert "Auth" in result.reason
+
     def test_llm_empty_content(self, tmp_path: Path) -> None:
         """空文档 LLM 评估失败。"""
         sample = _prepare_output(tmp_path, "")

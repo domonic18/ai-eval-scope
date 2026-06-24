@@ -16,7 +16,13 @@ from typing import Any
 import openai
 
 from agent_eval.config import ProviderConfig, resolve_api_key
-from agent_eval.core.exceptions import LLMError
+from agent_eval.core.exceptions import (
+    LLMAuthError,
+    LLMError,
+    LLMNetworkError,
+    LLMQuotaExceededError,
+    LLMRateLimitError,
+)
 from agent_eval.llm.client import LLMClient
 from agent_eval.llm.models import LLMResponse, Message, TokenUsage
 
@@ -78,6 +84,41 @@ class OpenAICompatClient(LLMClient):
                 temperature=kwargs.get("temperature", self._config.temperature),
                 seed=kwargs.get("seed", self._config.seed),
             )
+        except openai.APITimeoutError as e:
+            raise LLMNetworkError(
+                f"OpenAI 请求超时: {e}",
+                details={"provider": self._name, "model": self._config.model},
+            ) from e
+        except openai.APIConnectionError as e:
+            raise LLMNetworkError(
+                f"OpenAI 连接失败: {e}",
+                details={"provider": self._name, "model": self._config.model},
+            ) from e
+        except openai.AuthenticationError as e:
+            raise LLMAuthError(
+                f"OpenAI 鉴权失败: {e}",
+                details={"provider": self._name, "model": self._config.model},
+            ) from e
+        except openai.RateLimitError as e:
+            msg = str(e).lower()
+            if "insufficient_quota" in msg or "billing" in msg:
+                raise LLMQuotaExceededError(
+                    f"OpenAI 额度耗尽: {e}",
+                    details={"provider": self._name, "model": self._config.model},
+                ) from e
+            raise LLMRateLimitError(
+                f"OpenAI 限流: {e}",
+                details={"provider": self._name, "model": self._config.model},
+            ) from e
+        except openai.APIStatusError as e:
+            details = {"provider": self._name, "model": self._config.model, "status": e.status_code}
+            if e.status_code >= 500:
+                raise LLMNetworkError(
+                    f"OpenAI 服务端错误 {e.status_code}: {e}", details=details
+                ) from e
+            raise LLMError(
+                f"OpenAI API 状态错误 {e.status_code}: {e}", details=details
+            ) from e
         except openai.APIError as e:
             raise LLMError(
                 f"OpenAI 兼容 API 调用失败: {e}",
