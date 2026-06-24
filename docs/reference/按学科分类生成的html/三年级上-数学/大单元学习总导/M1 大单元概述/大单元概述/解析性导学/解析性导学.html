@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>时、分、秒 — 深度解析透镜工作台</title>
+<style>
+:root {
+  --primary: #1677ff;--primary-hover: #4096ff;--accent: #69b1ff;
+  --bg: linear-gradient(180deg,#1a1a2e 0%,#16213e 30%,#e8e8e8 70%,#f5f5f5 100%);
+  --card-bg: #ffffff;--text: rgba(0,0,0,0.88);--text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;--border-radius: 8px;--shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;--font-h1: 28px;--font-h2: 22px;--line-height: 1.8;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:var(--font-body);line-height:var(--line-height);color:var(--text);
+  background:var(--bg);width:100%;max-width:none;min-height:100vh
+}
+.top-nav{
+  background:rgba(22,22,46,.95);padding:12px 24px;display:flex;align-items:center;
+  gap:16px;border-bottom:2px solid var(--primary);flex-wrap:wrap
+}
+.top-nav .title{color:#fff;font-size:20px;font-weight:700}
+.top-nav .badge{background:var(--primary);color:#fff;padding:2px 12px;border-radius:12px;font-size:12px}
+.workspace{display:flex;gap:0;width:100%;padding:0;min-height:calc(100vh - 60px)}
+.left-panel{width:260px;background:rgba(26,26,46,.92);color:#ccc;padding:16px;flex-shrink:0;overflow-y:auto;border-right:2px solid rgba(255,255,255,.08)}
+.left-panel h3{color:#fff;font-size:16px;margin-bottom:12px;border-bottom:1px solid rgba(255,255,255,.15);padding-bottom:8px}
+.tree-node{padding:4px 0 4px 16px;border-left:2px solid #333;margin:2px 0;cursor:pointer;font-size:14px;transition:.3s;position:relative}
+.tree-node::before{content:'';position:absolute;left:-2px;top:50%;width:12px;height:2px;background:#333}
+.tree-node.done{border-left-color:#52c41a;color:#b7eb8f}
+.tree-node.done::before{background:#52c41a}
+.tree-node.active{border-left-color:#faad14;color:#ffe58f;font-weight:600}
+.tree-node.active::before{background:#faad14}
+.tree-node.pending{border-left-color:#555;color:#888}
+.center-area{flex:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:20px}
+.dual-panel{display:flex;gap:20px;flex-wrap:wrap}
+.knowledge-panel{flex:1;min-width:300px}
+.analysis-panel{flex:1;min-width:300px;background:var(--card-bg);border-radius:var(--border-radius);padding:20px;box-shadow:var(--shadow);position:relative}
+.panel-header{font-size:var(--font-h2);font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.panel-header .icon{font-size:24px}
+.divider-icon{font-size:36px;color:var(--primary);display:flex;align-items:center;padding:0 4px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.knowledge-card{
+  background:var(--card-bg);border-radius:var(--border-radius);padding:16px;
+  margin-bottom:12px;box-shadow:var(--shadow);border-left:4px solid var(--primary);
+  cursor:pointer;transition:all .4s;position:relative;overflow:hidden
+}
+.knowledge-card.highlight{
+  border-left-color:#ff4d4f;box-shadow:0 0 0 2px rgba(255,77,79,.3);
+  animation:glow-pulse 1.5s ease-in-out infinite
+}
+@keyframes glow-pulse{0%,100%{box-shadow:0 0 0 2px rgba(255,77,79,.3)}50%{box-shadow:0 0 0 6px rgba(255,77,79,.1)}}
+.knowledge-card .k-title{font-weight:600;font-size:17px;margin-bottom:4px;display:flex;justify-content:space-between}
+.knowledge-card .k-tag{font-size:12px;background:var(--bg);padding:2px 8px;border-radius:10px;color:var(--primary)}
+.layer{display:none;margin-top:8px;padding:10px 12px;background:var(--bg);border-radius:6px;font-size:15px;animation:layerIn .4s ease}
+@keyframes layerIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.layer.show{display:block}
+.layer-badge{font-size:12px;color:var(--text-secondary);margin-bottom:4px;font-weight:600}
+.difficulty-btn{
+  position:absolute;top:8px;right:8px;background:#ff4d4f;color:#fff;
+  border:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;display:none
+}
+.highlight .difficulty-btn{display:block}
+.breadcrumb{display:flex;gap:6px;font-size:13px;color:var(--text-secondary);margin-bottom:12px;flex-wrap:wrap}
+.breadcrumb span{cursor:pointer;padding:2px 8px;border-radius:4px;background:var(--bg)}
+.breadcrumb span:hover{background:var(--accent);color:#fff}
+.canvas-area{
+  background:var(--card-bg);border-radius:var(--border-radius);padding:16px;
+  box-shadow:var(--shadow);margin-top:16px
+}
+.canvas-area h3{margin-bottom:8px;font-size:17px}
+.canvas-wrap{position:relative;width:100%;height:300px;border:2px dashed var(--border);border-radius:6px;overflow:hidden;background:#fafafa}
+.canvas-wrap canvas{width:100%;height:100%}
+.canvas-tools{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.canvas-tools button{
+  padding:4px 12px;border:1px solid var(--border);background:var(--card-bg);
+  border-radius:4px;cursor:pointer;font-size:13px
+}
+.canvas-tools button:hover{background:var(--bg);border-color:var(--primary)}
+.question-engine{
+  position:fixed;right:0;top:60px;width:280px;background:var(--card-bg);
+  box-shadow:-4px 0 20px rgba(0,0,0,.12);height:calc(100vh - 60px);
+  transform:translateX(100%);transition:transform .35s ease;z-index:100;
+  display:flex;flex-direction:column;padding:16px
+}
+.question-engine.open{transform:translateX(0)}
+.question-engine h3{font-size:17px;margin-bottom:12px}
+.question-engine .q-item{padding:10px 12px;background:var(--bg);border-radius:6px;margin-bottom:8px;cursor:pointer}
+.question-engine .q-item:hover{background:#e6f7ff}
+.question-engine textarea{width:100%;min-height:60px;border:1px solid var(--border);border-radius:6px;padding:8px;font-size:14px;resize:vertical;margin-top:8px}
+.question-toggle{
+  position:fixed;right:0;top:50%;transform:translateY(-50%);
+  background:var(--primary);color:#fff;border:none;border-radius:6px 0 0 6px;
+  padding:10px 6px;cursor:pointer;writing-mode:vertical-lr;z-index:101;font-size:14px
+}
+.questions-basket{
+  position:fixed;right:0;top:60px;width:260px;background:var(--card-bg);
+  box-shadow:-4px 0 20px rgba(0,0,0,.12);height:calc(100vh - 60px);
+  transform:translateX(100%);transition:transform .35s ease;z-index:102;
+  padding:16px;display:flex;flex-direction:column
+}
+.questions-basket.open{transform:translateX(0)}
+.questions-basket h3{font-size:17px;margin-bottom:12px}
+.basket-item{padding:8px;background:var(--bg);border-radius:6px;margin-bottom:6px;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+.basket-item .remove{color:#ff4d4f;cursor:pointer;font-size:12px}
+.basket-toggle{
+  position:fixed;right:0;top:calc(50% + 120px);transform:translateY(-50%);
+  background:#722ed1;color:#fff;border:none;border-radius:6px 0 0 6px;
+  padding:10px 6px;cursor:pointer;writing-mode:vertical-lr;z-index:103;font-size:14px
+}
+.mark-doubt{
+  position:absolute;bottom:8px;right:8px;border:none;background:transparent;
+  color:#722ed1;font-size:20px;cursor:pointer;opacity:0;transition:.3s
+}
+.knowledge-card:hover .mark-doubt{opacity:1}
+.slow-play-overlay{
+  display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,.6);z-index:200;justify-content:center;align-items:center
+}
+.slow-play-overlay.show{display:flex}
+.slow-play-box{
+  background:var(--card-bg);border-radius:12px;padding:24px;max-width:500px;width:90%;
+  box-shadow:0 8px 32px rgba(0,0,0,.2)
+}
+.slow-play-box h3{margin-bottom:12px}
+.slow-step{padding:8px 12px;margin:4px 0;background:var(--bg);border-radius:6px;opacity:0;transition:opacity .5s;font-size:15px}
+.slow-step.visible{opacity:1}
+.slow-play-box button{margin-top:12px;padding:6px 16px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer}
+@media(max-width:768px){
+  .workspace{flex-direction:column}
+  .left-panel{width:100%;max-height:200px}
+  .dual-panel{flex-direction:column}
+  .question-engine,.questions-basket{width:100%}
+}
+</style>
+</head>
+<body>
+<div class="top-nav">
+  <span class="title">🔍 深度解析透镜工作台</span>
+  <span class="badge">分析模式</span>
+  <span style="color:#999;font-size:14px;margin-left:auto">时、分、秒 · 三年级上</span>
+</div>
+
+<button class="question-toggle" onclick="document.querySelector('.question-engine').classList.toggle('open')">追问引擎</button>
+<button class="basket-toggle" onclick="document.querySelector('.questions-basket').classList.toggle('open')">疑问篮</button>
+
+<div class="workspace">
+  <div class="left-panel">
+    <h3>🌳 我的解析路径</h3>
+    <div id="treeContainer">
+      <div class="tree-node active" data-key="intro" onclick="showCard('intro')">🔍 现象观察</div>
+      <div class="tree-node pending" data-key="principle" onclick="showCard('principle')">⚙️ 原理解析</div>
+      <div class="tree-node pending" data-key="p1" onclick="showCard('p1')">👤 第1阶：个人与家庭</div>
+      <div class="tree-node pending" data-key="p2" onclick="showCard('p2')">🏫 第2阶：学校与社区</div>
+      <div class="tree-node pending" data-key="p3" onclick="showCard('p3')">🏙️ 第3阶：地方与城市</div>
+      <div class="tree-node pending" data-key="p4" onclick="showCard('p4')">👨‍👩‍👧‍👦 第4阶：区域与民族</div>
+      <div class="tree-node pending" data-key="p5" onclick="showCard('p5')">🇨🇳 第5阶：国家</div>
+      <div class="tree-node pending" data-key="p6" onclick="showCard('p6')">🌍 第6阶：人类</div>
+      <div class="tree-node pending" data-key="p7" onclick="showCard('p7')">🚀 第7阶：未来</div>
+    </div>
+  </div>
+
+  <div class="center-area">
+    <div class="dual-panel">
+      <div class="knowledge-panel" id="knowledgePanel"></div>
+      <div class="divider-icon">🔍</div>
+      <div class="analysis-panel" id="analysisPanel">
+        <div style="text-align:center;padding:40px;color:var(--text-secondary)">
+          <div style="font-size:48px;margin-bottom:16px">👆</div>
+          <p>点击左侧知识点卡片开始解析</p>
+          <p style="font-size:14px;margin-top:8px">每次点击展开一层理解 · 共3层</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="canvas-area">
+      <h3>🧩 概念关系画布</h3>
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">拖拽概念节点到画布，用连线标注关系类型</p>
+      <div class="canvas-wrap">
+        <canvas id="relCanvas"></canvas>
+      </div>
+      <div class="canvas-tools">
+        <button onclick="addCanvasNode('客观时间')">+ 客观时间</button>
+        <button onclick="addCanvasNode('主观感受')">+ 主观感受</button>
+        <button onclick="addCanvasNode('单位换算')">+ 单位换算</button>
+        <button onclick="clearCanvas()">🗑️ 清空</button>
+        <span style="font-size:12px;color:var(--text-secondary);margin-left:auto">单击节点选中 · 再次单击连线</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="question-engine" id="questionEngine">
+  <h3>❓ 追问引擎</h3>
+  <div id="questionList"></div>
+  <textarea id="qInput" placeholder="输入你的思考..."></textarea>
+  <button style="margin-top:8px;padding:6px 12px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer" onclick="recordThought()">记录思考</button>
+</div>
+
+<div class="questions-basket" id="questionsBasket">
+  <h3>📋 我的疑问</h3>
+  <div id="basketList"></div>
+  <button style="margin-top:auto;padding:8px;background:#722ed1;color:#fff;border:none;border-radius:6px;cursor:pointer" onclick="exportBasket()">📤 生成待探究清单</button>
+</div>
+
+<div class="slow-play-overlay" id="slowPlayOverlay">
+  <div class="slow-play-box">
+    <h3>🐢 慢放解析</h3>
+    <div id="slowSteps"></div>
+    <button onclick="document.getElementById('slowPlayOverlay').classList.remove('show')">关闭</button>
+  </div>
+</div>
+
+<script>
+const cards = {
+  intro:{
+    title:'🔍 现象：1分钟到底有多长？',
+    tag:'初始问题',
+    highlight:true,
+    layers:[
+      {label:'表层含义',content:'每个人说的"1分钟"是同一个固定长度（60秒），但在不同活动中我们对这个长度的"感觉"完全不同。'},
+      {label:'深层逻辑',content:'时间客观性：1分钟=60秒固定不变。时间主观性：注意力越集中，感知越快（大脑信息处理量大）；越无聊，感知越慢。数学关系：时间(t)=完成量÷速率。'},
+      {label:'跨学科关联',content:'心理学→时间感知受注意力影响；物理学→时间是基本物理量；体育→用时间衡量运动成绩；语文→"光阴似箭"描写时间的主观感受。'}
+    ],
+    core:'小明说1分钟做30道口算，小红不信——客观时间相同，主观感受不同'
+  },
+  principle:{
+    title:'⚙️ 解析性原理：从现象到系统的思维路径',
+    tag:'核心原理',
+    layers:[
+      {label:'表层含义',content:'面对生活现象（"觉得这节课好短"），把它变成可探究的问题（"一节课40分钟固定，为什么有时长有时短？"）。'},
+      {label:'深层逻辑',content:'从现象到问题→从问题到概念（客观时间vs主观时间）→从概念到证据（秒表实测）→从证据到规律（注意力越集中感知越快）→从规律到应用（计时+任务提升效率）→从应用到反思→从单点到系统结构。'},
+      {label:'跨学科关联',content:'科学研究方法论（探究循环）；心理学（注意力与时间感知）；数学（数据统计分析）；教育学（元认知反思）'}
+    ],
+    core:'7步：现象→问题→概念→证据→规律→应用→反思→系统'
+  },
+  p1:{
+    title:'👤 第1阶：个人与家庭 — 10小时真的够睡吗？',
+    tag:'7阶案例',
+    layers:[
+      {label:'表层含义',content:'你晚上8:30上床，总觉得"刚躺下闹钟就响了"。10小时睡眠真的够吗？实际睡眠时间可能被"偷走"了。'},
+      {label:'深层逻辑',content:'计算真实睡眠时长=实际入睡时间→实际起床时间。对比"你以为的睡眠时间"与"实际睡眠时间"的差值。可能30分钟都在酝酿入睡——这30分钟不算睡眠。'},
+      {label:'跨学科关联',content:'数学→时间计算与数据记录；科学→睡眠周期与身体需求；健康→充足睡眠的重要性'}
+    ],
+    core:'记录3天真实入睡和起床时间，计算实际睡眠时长，对比你以为的'
+  },
+  p2:{
+    title:'🏫 第2阶：学校与社区 — 课间10分钟够用吗？',
+    tag:'7阶案例',
+    layers:[
+      {label:'表层含义',content:'课间10分钟：上厕所、接水、准备书、聊天……到底够不够？10分钟花在了哪里？'},
+      {label:'深层逻辑',content:'分解时间消耗：走路30秒+接水40秒+聊天2分钟+……计算"必要活动"和"弹性活动"各占多少。画饼图可视化时间分配。'},
+      {label:'跨学科关联',content:'数学→统计与百分比、饼图绘制；生活技能→时间管理；社会研究→校园生活节奏'}
+    ],
+    core:'记录课间活动时间分配，画出你的"课间10分钟饼图"'
+  },
+  p3:{
+    title:'🏙️ 第3阶：地方与城市 — "平均15分钟"是真的吗？',
+    tag:'7阶案例',
+    layers:[
+      {label:'表层含义',content:'公交车牌写着"平均每15分钟一班"，但今天等了20分钟。"平均"到底是什么意思？'},
+      {label:'深层逻辑',content:'平均15分钟≠每趟间隔15分钟。统计3天等车数据：计算平均值、最长等待、最短等待。理解"平均时间"是统计学概念——极值会拉高平均数。'},
+      {label:'跨学科关联',content:'数学→统计学（平均数、极值）；城市规划→公共交通调度逻辑；生活智慧→理解"平均"不等于"每次"'}
+    ],
+    core:'统计等车数据，理解"平均时间"是统计学概念'
+  },
+  p4:{
+    title:'👨‍👩‍👧‍👦 第4阶：区域与民族 — 走路vs地铁差多少？',
+    tag:'7阶案例',
+    layers:[
+      {label:'表层含义',content:'爷爷走路上学1个半小时，你坐地铁20分钟。交通方式不同时间差多少？'},
+      {label:'深层逻辑',content:'时间=距离÷速度。不同交通方式速度不同：步行≈5km/h，骑车≈15km/h，地铁≈40km/h。同样距离，速度越快时间越短。'},
+      {label:'跨学科关联',content:'数学→路程=速度×时间公式；物理→速度与运动；社会学→交通发展改变生活节奏'}
+    ],
+    core:'用公式计算三种交通方式的时间对比'
+  },
+  p5:{
+    title:'🇨🇳 第5阶：国家 — 14亿人一起倒计时',
+    tag:'7阶案例',
+    layers:[
+      {label:'表层含义',content:'春节春晚零点倒计时，全国14亿人一起喊"5、4、3、2、1！"。为什么大家在同一个时刻迎接新年？'},
+      {label:'深层逻辑',content:'"北京时间"是东八区（UTC+8）标准时间，通过国家授时中心发布。全国统一时间，但不同地区的"自然时间"（根据太阳位置）不一样——这是"标准时间"和"地方时"的区别。'},
+      {label:'跨学科关联',content:'地理→时区与经度；物理→地球自转（24小时转360°，每小时15°）；历史→统一时间对国家的意义'}
+    ],
+    core:'北京时间=东八区标准时间，全国统一但自然时间不同'
+  },
+  p6:{
+    title:'🌍 第6阶：人类 — 你和纽约表哥的时间差',
+    tag:'7阶案例',
+    layers:[
+      {label:'表层含义',content:'你中午12点吃午饭，在纽约的表哥晚上12点要睡觉。同一时刻，地球不同地方时间为什么不一样？'},
+      {label:'深层逻辑',content:'地球自转一圈24小时（1440分钟），每一小时转过15°经度。全球划分24个时区，每15°一个。北京在东八区（UTC+8），纽约在西五区（UTC-5），相差13小时。'},
+      {label:'跨学科关联',content:'地理→时区划分与经度；数学→时差加减计算；社会→全球化时代的跨时区协作'}
+    ],
+    core:'地球自转→24时区→每15°一个时区→计算时差'
+  },
+  p7:{
+    title:'🚀 第7阶：未来 — 给火星发消息要多久？',
+    tag:'7阶案例',
+    layers:[
+      {label:'表层含义',content:'光速约30万千米/秒。月球距地球38万千米，月光传到地球需1秒多。给火星发消息要多久？'},
+      {label:'深层逻辑',content:'火星距地球最近约5460万千米→光需约3分钟。最远约4亿千米→光需约22分钟。所以在宇宙尺度上，"现在"其实是延迟的影像。光年=光走一年的距离，是距离单位不是时间单位。'},
+      {label:'跨学科关联',content:'物理→光速是宇宙速度极限；天文→行星距离与通讯延迟；哲学→"现在"的相对性'}
+    ],
+    core:'宇宙尺度上"现在"是延迟影像，光年是距离单位'
+  }
+};
+let currentCard = 'intro';
+let basketItems = [];
+let thoughtHistory = [];
+
+function showCard(key){
+  currentCard = key;
+  const card = cards[key];
+  if(!card) return;
+  document.querySelectorAll('.tree-node').forEach(n=>{
+    n.classList.remove('active');
+    n.classList.add(n.dataset.key===key?'active':'done');
+  });
+  document.getElementById('knowledgePanel').innerHTML = `
+    <div class="knowledge-card ${card.highlight?'highlight':''}">
+      <div class="k-title">
+        <span>${card.title}</span>
+        <span class="k-tag">${card.tag}</span>
+      </div>
+      <div style="font-size:14px;color:var(--text-secondary);margin-bottom:8px">💡 ${card.core}</div>
+      <div class="layer show">
+        <div class="layer-badge">点击展开详情 ▼</div>
+      </div>
+      <div id="layersContainer"></div>
+      ${card.highlight?'<button class="difficulty-btn" onclick="showSlowPlay()">🐢 慢放解析</button>':''}
+      <button class="mark-doubt" onclick="addToBasket('${key}')" title="标记疑问">❓</button>
+    </div>
+  `;
+  renderLayers(key, 0);
+  renderAnalysis(card, key);
+}
+
+function renderLayers(key, depth){
+  const card = cards[key];
+  const container = document.getElementById('layersContainer');
+  container.innerHTML = card.layers.map((l,i) => `
+    <div class="layer ${i<=depth?'show':''}" data-layer="${i}">
+      <div class="layer-badge">${'📌'.repeat(i+1)} 第${i+1}层：${l.label}</div>
+      <div>${l.content}</div>
+      <button class="question-trigger" style="border:none;background:transparent;color:var(--primary);cursor:pointer;font-size:13px;margin-top:4px" onclick="openQuestion('${l.label}')">❓ 追问</button>
+    </div>
+  `).join('');
+  const cardEl = document.querySelector('.knowledge-card');
+  if(cardEl){
+    cardEl.onclick = function(e){
+      if(e.target.closest('.difficulty-btn')||e.target.closest('.mark-doubt')||e.target.closest('.question-trigger')) return;
+      const nextDepth = depth < card.layers.length-1 ? depth+1 : 0;
+      if(nextDepth===0){ showCard(key); return; }
+      renderLayers(key, nextDepth);
+      const layers = container.querySelectorAll('.layer');
+      layers.forEach(l=>l.classList.toggle('show', parseInt(l.dataset.layer)<=nextDepth));
+      renderAnalysis(card, key);
+    };
+  }
+}
+
+function renderAnalysis(card, key){
+  const el = document.getElementById('analysisPanel');
+  const depth = document.querySelectorAll('#layersContainer .layer.show').length-1;
+  const currentLayer = card.layers[Math.min(depth,card.layers.length-1)];
+  el.innerHTML = `
+    <div class="panel-header"><span class="icon">🔬</span> 解析面板</div>
+    <div class="breadcrumb">
+      <span onclick="showCard('intro')">现象</span>
+      <span>→</span>
+      <span>${card.layers.slice(0,Math.min(depth+1,card.layers.length)).map((l,i)=>`<span onclick="renderLayers('${key}',${i})">${l.label}</span>`).join(' <span>→</span> ')}</span>
+    </div>
+    <div style="background:var(--bg);padding:16px;border-radius:8px;margin-bottom:12px">
+      <div style="font-weight:600;font-size:15px">📖 当前解析层：${currentLayer.label}</div>
+      <p style="margin-top:8px;font-size:15px">${currentLayer.content}</p>
+    </div>
+    <div style="border-top:1px solid var(--border);padding-top:12px">
+      <div style="font-size:13px;color:var(--text-secondary);margin-bottom:6px">🔗 可连接的概念</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${['客观时间','主观感受','单位换算','时间感知','时区'].map(c=>`<span style="padding:2px 10px;background:var(--bg);border-radius:12px;font-size:13px;cursor:pointer" onclick="addCanvasNode('${c}')">+${c}</span>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function openQuestion(label){
+  const engine = document.querySelector('.question-engine');
+  engine.classList.add('open');
+  const list = document.getElementById('questionList');
+  const questions = [
+    `"刚才关于${label}的结论是基于什么假设？"`,
+    `"换个条件会怎么样？"`,
+    `"这和之前学过的什么有联系？"`,
+    `"如果反过来说，成立吗？"`
+  ];
+  list.innerHTML = questions.map((q,i) => `
+    <div class="q-item" onclick="document.getElementById('qInput').value='${q}'">${q}</div>
+  `).join('');
+}
+
+function recordThought(){
+  const input = document.getElementById('qInput');
+  if(!input.value.trim()) return;
+  thoughtHistory.push(input.value.trim());
+  input.value = '';
+  alert('✅ 思考已记录！');
+}
+
+function addToBasket(key){
+  const card = cards[key];
+  if(!card) return;
+  if(basketItems.includes(key)){ alert('已在疑问篮中'); return; }
+  basketItems.push(key);
+  renderBasket();
+  document.querySelector('.questions-basket').classList.add('open');
+}
+
+function renderBasket(){
+  const list = document.getElementById('basketList');
+  list.innerHTML = basketItems.map(k => `
+    <div class="basket-item">
+      <span>${cards[k].title.replace(/<[^>]+>/g,'').slice(0,20)}...</span>
+      <span class="remove" onclick="removeFromBasket('${k}')">✕</span>
+    </div>
+  `).join('');
+}
+
+function removeFromBasket(key){
+  basketItems = basketItems.filter(k=>k!==key);
+  renderBasket();
+}
+
+function exportBasket(){
+  if(!basketItems.length){ alert('疑问篮为空'); return; }
+  let text = '待探究问题清单：\n' + basketItems.map((k,i) => `${i+1}. ${cards[k].core}`).join('\n');
+  alert(text);
+}
+
+function showSlowPlay(){
+  const overlay = document.getElementById('slowPlayOverlay');
+  const steps = document.getElementById('slowSteps');
+  const card = cards[currentCard];
+  const lc = card.layers.map(l=>l.content).join(' → ');
+  const parts = lc.split('。').filter(Boolean).slice(0,5);
+  steps.innerHTML = parts.map((p,i) => `<div class="slow-step" id="step${i}">步骤${i+1}：${p}。</div>`).join('');
+  overlay.classList.add('show');
+  parts.forEach((_,i)=>setTimeout(()=>{
+    const el = document.getElementById('step'+i);
+    if(el) el.classList.add('visible');
+  },i*2000));
+}
+
+// Canvas
+let canvas, ctx, canvasNodes = [], canvasLines = [], selectedNode = null, drawingLine = false;
+function initCanvas(){
+  canvas = document.getElementById('relCanvas');
+  canvas.width = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
+  ctx = canvas.getContext('2d');
+  canvas.addEventListener('click', onCanvasClick);
+  drawCanvas();
+}
+window.addEventListener('resize', ()=>{ if(canvas){ canvas.width=canvas.offsetWidth; canvas.height=canvas.offsetHeight; drawCanvas(); }});
+
+function addCanvasNode(label){
+  canvasNodes.push({label, x:150+Math.random()*200, y:80+Math.random()*120});
+  drawCanvas();
+}
+
+function onCanvasClick(e){
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left, y = e.clientY - rect.top;
+  let hit = null;
+  canvasNodes.forEach((n,i)=>{ if(Math.hypot(x-n.x,y-n.y)<20) hit=i; });
+  if(hit!==null){
+    if(drawingLine && selectedNode!==null && selectedNode!==hit){
+      canvasLines.push({from:selectedNode, to:hit, type:'-'});
+      drawingLine=false; selectedNode=null; drawCanvas(); return;
+    }
+    if(selectedNode===hit){
+      // second click on same node - start line drawing
+      drawingLine = !drawingLine;
+    } else {
+      selectedNode = hit;
+      drawingLine = false;
+    }
+    drawCanvas();
+    return;
+  }
+  selectedNode = null; drawingLine = false; drawCanvas();
+}
+
+function clearCanvas(){ canvasNodes=[]; canvasLines=[]; selectedNode=null; drawingLine=false; drawCanvas(); }
+
+function drawCanvas(){
+  if(!ctx) return;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#fafafa'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  canvasLines.forEach(l=>{
+    const f=canvasNodes[l.from], t=canvasNodes[l.to];
+    if(!f||!t) return;
+    ctx.beginPath(); ctx.moveTo(f.x,f.y); ctx.lineTo(t.x,t.y);
+    ctx.strokeStyle='#1677ff'; ctx.lineWidth=2; ctx.stroke();
+  });
+  canvasNodes.forEach((n,i)=>{
+    ctx.beginPath(); ctx.arc(n.x,n.y,18,0,Math.PI*2);
+    ctx.fillStyle=i===selectedNode?(drawingLine?'#faad14':'#1677ff'):'#69b1ff';
+    ctx.fill(); ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+    ctx.fillStyle='#fff'; ctx.font='12px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(n.label.slice(0,4),n.x,n.y);
+  });
+  if(selectedNode!==null && drawingLine){
+    ctx.beginPath(); ctx.arc(canvasNodes[selectedNode].x,canvasNodes[selectedNode].y,22,0,Math.PI*2);
+    ctx.strokeStyle='#faad14'; ctx.lineWidth=2; ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+  }
+}
+
+setTimeout(initCanvas, 100);
+showCard('intro');
+</script>
+</body>
+</html>

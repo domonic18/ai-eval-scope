@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性示例 — 小明的上学时间问题</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 36px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+.header .subtitle {
+  font-size: 17px;
+  opacity: 0.9;
+  margin: 0;
+}
+.section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+}
+.section-title {
+  font-size: var(--font-h2);
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.step-box {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 12px 0;
+  border-left: 4px solid var(--primary);
+}
+.step-box h4 {
+  margin: 0 0 8px;
+  color: var(--primary);
+  font-size: 17px;
+}
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 16px;
+}
+.info-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+}
+.info-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.info-table tr:last-child td { border-bottom: none; }
+.info-table tr:hover td { background: #f5f8ff; }
+.insight-card {
+  background: linear-gradient(135deg, #f0f5ff, #e6f7ff);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 12px 0;
+  border: 1px dashed var(--primary);
+}
+.insight-card strong { color: var(--primary); }
+.timeline-viz {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border: 2px solid var(--primary);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 16px 0;
+  position: relative;
+  overflow-x: auto;
+  gap: 4px;
+}
+.time-point {
+  text-align: center;
+  flex-shrink: 0;
+}
+.time-point .time {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 17px;
+}
+.time-point .label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.time-arrow {
+  color: var(--accent);
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.warning-box {
+  background: #fff2f0;
+  border: 1px solid #ffccc7;
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 12px 0;
+}
+.warning-box strong { color: #cf1322; }
+.tip-box {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 12px 0;
+}
+.tip-box strong { color: #389e0d; }
+.practice-box {
+  background: linear-gradient(135deg, #fff7e6, #fffbe6);
+  border: 1px solid #ffe58f;
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin-top: 20px;
+}
+.practice-box h3 { color: #d46b08; margin-top: 0; }
+.check-list {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+}
+.check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.check-item:hover { background: #e6f0ff; }
+.check-item.checked { background: #f6ffed; }
+.check-item.checked .check-box { background: var(--primary); color: #fff; }
+.check-box {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: 2px solid var(--primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: transparent;
+  transition: all 0.2s;
+  margin-top: 2px;
+}
+.btn-primary {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-primary:active { transform: scale(0.97); }
+.highlight { color: var(--primary); font-weight: 700; }
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .header { padding: 20px; }
+  .section { padding: 16px; }
+  .timeline-viz { flex-wrap: nowrap; padding: 10px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🔍 解析性示例</h1>
+  <p class="subtitle">跟着"专家思维"一步步分析——小明的上学时间问题</p>
+</div>
+
+<!-- 情境引入 -->
+<div class="section">
+  <div class="section-title"><span>📖</span> 情境：小明的上学时间</div>
+  <p>小明每天早上 <span class="highlight">7:30</span> 起床，洗漱吃饭需要 <span class="highlight">30分钟</span>，走路到学校需要 <span class="highlight">15分钟</span>，学校 <span class="highlight">8:20</span> 打上课铃。</p>
+  <div class="insight-card">
+    <strong>🤔 核心问题：</strong>小明能准时到校吗？如果他7:50才出门呢？他怎样才能确保不迟到？
+  </div>
+  <p><strong>💥 认知冲突点：</strong><br>
+  30+15=45，7:30+45=<span class="highlight">8:15</span>——到校后还有5分钟空余！但很多同学实际感觉"来不及"，问题出在哪里？<br>
+  <span style="color:var(--text-secondary);">背后的认知障碍：</span><strong style="color:#cf1322;">容易混淆"时刻"和"时间长度"的概念</strong>。</p>
+</div>
+
+<!-- 关键信息提取 -->
+<div class="section">
+  <div class="section-title"><span>📋</span> 关键信息提取</div>
+  <table class="info-table">
+    <thead><tr><th>情境信息</th><th>说明什么</th><th>为什么重要</th></tr></thead>
+    <tbody>
+      <tr><td>起床 7:30</td><td>这是"起始时刻"</td><td>所有时间计算的起点</td></tr>
+      <tr><td>洗漱吃饭 30分</td><td>这是一段"时间长度"</td><td>需要加在起床时刻后面</td></tr>
+      <tr><td>走路 15分</td><td>另一段"时间长度"</td><td>需要继续加</td></tr>
+      <tr><td>上课 8:20</td><td>这是"截止时刻"</td><td>用来判断是否迟到</td></tr>
+      <tr><td>提前10分钟到</td><td>目标时刻=8:20−10分=8:10</td><td>需要反向推算出门时间</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 时间轴可视化 -->
+<div class="section">
+  <div class="section-title"><span>📏</span> 时间轴——把信息"画"出来</div>
+  <div class="timeline-viz">
+    <div class="time-point"><div class="time">7:30</div><div class="label">起床</div></div>
+    <div class="time-arrow">⟶ 30分 ⟶</div>
+    <div class="time-point"><div class="time">8:00</div><div class="label">吃完</div></div>
+    <div class="time-arrow">⟶ 15分 ⟶</div>
+    <div class="time-point"><div class="time">8:15</div><div class="label">到校</div></div>
+    <div class="time-arrow" style="color:#52c41a;">⟶ 5分 ⟶</div>
+    <div class="time-point"><div class="time" style="color:#52c41a;">8:20</div><div class="label">上课</div></div>
+  </div>
+  <p style="text-align:center;color:var(--text-secondary);font-size:15px;">🟢 绿色箭头表示空余时间</p>
+</div>
+
+<!-- 专家解析过程 -->
+<div class="section">
+  <div class="section-title"><span>🧠</span> 专家解析过程（5步）</div>
+
+  <div class="step-box">
+    <h4>第一步：先看见什么</h4>
+    <p>看问题中哪些是<strong style="color:var(--primary);">"时刻"</strong>（时间点），哪些是<strong style="color:#52c41a;">"时长"</strong>（时间段）。</p>
+    <p>⏰ 时刻：<span class="highlight">7:30</span>（起床），<span class="highlight">8:20</span>（上课）</p>
+    <p>⏳ 时长：<span class="highlight">30分钟</span>（洗漱吃饭），<span class="highlight">15分钟</span>（走路）</p>
+  </div>
+
+  <div class="step-box">
+    <h4>第二步：判断问题属于哪一类</h4>
+    <p>这是<strong style="color:var(--primary);">"时刻+时长→新时刻"</strong>的问题。</p>
+    <p>时刻和时长不能直接相加——但<strong style="color:var(--primary);">"起始时刻+经过时长=新时刻"</strong>。</p>
+    <div class="insight-card">
+      💡 <strong>关键认知：</strong>时刻和时长是两种不同的"东西"，就像"年龄"和"身高"不能直接加一样！
+    </div>
+  </div>
+
+  <div class="step-box">
+    <h4>第三步：调用哪些方法</h4>
+    <p><strong>加法链条：</strong>7:30 + 30分 = <span class="highlight">8:00</span> → 8:00 + 15分 = <span class="highlight">8:15</span></p>
+    <p><strong>验证：</strong>8:15 ≤ 8:20？ ✅ 是→能准时到校</p>
+    <p><strong>反向推算（提前10分钟到）：</strong>8:20 − 10分 = 8:10 → 8:10 − 15分 = 7:55 → 7:55 − 30分 = <span class="highlight">7:25</span></p>
+    <p style="color:var(--text-secondary);">✏️ 先确定目标时刻，再倒着减回去！</p>
+  </div>
+
+  <div class="step-box">
+    <h4>第四步：推理与分析</h4>
+    <p>为什么很多人觉得"时间不够"？因为"7:30起床"到"8:20上课"中间只有<strong>50分钟</strong>。</p>
+    <p>30+15=45分钟的准备时间看起来绰绰有余——但这里没有算上<strong style="color:#cf1322;">"磨蹭的时间"</strong>！</p>
+    <div class="insight-card">
+      🧐 <strong>深层发现：</strong>理论计算和实践感受之间的差异，恰恰说明精确时间分析的重要性！
+    </div>
+  </div>
+
+  <div class="step-box">
+    <h4>第五步：形成结论</h4>
+    <p>✅ 小明最早 <span class="highlight">8:15</span> 到校，能准时赶上8:20的课</p>
+    <p>✅ 想提前10分钟到校，需要 <span class="highlight">7:25</span> 出门</p>
+    <p>⚠️ 每"耽误"1分钟，到校时间就晚1分钟——<strong style="color:var(--primary);">时间管理的关键是"准时出发"</strong></p>
+  </div>
+</div>
+
+<!-- 方法提炼 -->
+<div class="section">
+  <div class="section-title"><span>🧰</span> 方法提炼——以后遇到时间问题这样做</div>
+  <div class="tip-box">
+    <strong>1️⃣</strong> 先区分"时刻"和"时长"（用△标记时刻，用→标记时长）<br>
+    <strong>2️⃣</strong> 画一条"时间轴"把信息标上去<br>
+    <strong>3️⃣</strong> 加法类问题：起始时刻+时长=到达时刻<br>
+    <strong>4️⃣</strong> 减法类问题：目标时刻-时长=出发时刻
+  </div>
+</div>
+
+<!-- 易错提醒 -->
+<div class="section">
+  <div class="section-title"><span>⚠️</span> 易错提醒</div>
+  <div class="warning-box">
+    <strong>❌ 错误1：</strong>把时刻当作时长去加减<br>
+    8:20−7:30=50分钟是对的，但这不是简单的"82−73=9"，需要算一算！
+  </div>
+  <div class="warning-box">
+    <strong>❌ 错误2：</strong>忘了60进制<br>
+    50分+30分=1小时20分，不是80分！1小时=60分钟，不是100分钟。
+  </div>
+  <div class="warning-box">
+    <strong>❌ 错误3：</strong>混淆"7:30起床"和"睡了7小时30分"<br>
+    前者是时刻（7点30分这个时间点），后者是时长（7.5小时这个长度）。
+  </div>
+</div>
+
+<!-- 自主迁移练习 -->
+<div class="practice-box">
+  <h3>✏️ 自主迁移小练习</h3>
+  <p><strong>练习：</strong>小红的妈妈每天下午5:30下班，坐地铁需要40分钟。如果妈妈想6:00前到家，可行吗？如果不能，那她几点能到家？</p>
+  <p style="color:var(--text-secondary);">💡 <strong>提示：</strong>先画时间轴，标出下班时刻和乘车时长。</p>
+  <button class="btn-primary" onclick="showHint()">📌 查看提示</button>
+  <button class="btn-primary" onclick="showAnswer()">✅ 查看答案</button>
+  <div id="hintArea" style="margin-top:12px;display:none;">
+    <div class="tip-box">先画时间轴：5:30 ⟶ 40分 ⟶ ?。5:30+40分=6:10，所以6:00前到不了家，要6:10才能到。</div>
+  </div>
+  <div id="answerArea" style="margin-top:12px;display:none;">
+    <div class="insight-card"><strong>答案：</strong>不能6:00前到家。5:30+40分=6:10到家。</div>
+  </div>
+</div>
+
+<!-- 学习自评 -->
+<div class="section">
+  <div class="section-title"><span>📝</span> 学习自评——检验你的理解</div>
+  <p>点击每一项，检查自己是否已经掌握：</p>
+  <div class="check-list">
+    <div class="check-item" onclick="toggleCheck(this)">
+      <span class="check-box">✓</span>
+      <span>我能区分"时刻"和"时长"——举出3个生活中的例子</span>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <span class="check-box">✓</span>
+      <span>我会画时间轴来解决时间计算问题</span>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <span class="check-box">✓</span>
+      <span>我理解了时间计算中的"60进制"——和普通数字的100进制不同</span>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+}
+function showHint() {
+  const el = document.getElementById('hintArea');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+function showAnswer() {
+  const el = document.getElementById('answerArea');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+
+</body>
+</html>

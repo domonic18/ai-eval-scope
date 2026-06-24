@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>作业榜 - 时间概念巩固</title>
+<style>
+  :root {
+    --primary: #1677ff;
+    --primary-hover: #4096ff;
+    --accent: #69b1ff;
+    --bg: #f0f5ff;
+    --card-bg: #ffffff;
+    --text: rgba(0,0,0,0.88);
+    --text-secondary: rgba(0,0,0,0.45);
+    --border: #d9d9d9;
+    --border-radius: 8px;
+    --shadow: 0 2px 8px rgba(0,0,0,0.06);
+    --font-body: 18px;
+    --font-h1: 28px;
+    --font-h2: 22px;
+    --line-height: 1.8;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: var(--font-body);
+    line-height: var(--line-height);
+    color: var(--text);
+    background: var(--bg);
+    width: 100%;
+    max-width: none;
+    padding: 0;
+    margin: 0;
+  }
+  .container {
+    width: 100%;
+    max-width: none;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  .hero {
+    background: linear-gradient(135deg, #fa8c16 0%, #d46b08 100%);
+    color: #fff;
+    border-radius: var(--border-radius);
+    padding: 28px 24px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::after {
+    content: "🏆";
+    position: absolute;
+    right: 20px;
+    bottom: 10px;
+    font-size: 64px;
+    opacity: 0.2;
+  }
+  .hero h1 {
+    font-size: var(--font-h1);
+    margin-bottom: 8px;
+  }
+  .hero p {
+    font-size: var(--font-body);
+    opacity: 0.92;
+    max-width: 75%;
+  }
+  .level-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .level-tab {
+    padding: 8px 20px;
+    border-radius: 20px;
+    border: 2px solid var(--border);
+    background: var(--card-bg);
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .level-tab:hover {
+    border-color: var(--primary);
+  }
+  .level-tab.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+  }
+  .card {
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 20px 22px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+    transition: transform 0.2s;
+  }
+  .card:hover {
+    transform: translateY(-2px);
+  }
+  .card h2 {
+    font-size: var(--font-h2);
+    color: var(--primary);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card h2 .level-badge {
+    font-size: 13px;
+    background: var(--bg);
+    color: var(--primary);
+    padding: 2px 12px;
+    border-radius: 12px;
+    font-weight: 400;
+  }
+  .card p, .card li {
+    margin-bottom: 8px;
+  }
+  .card ul, .card ol {
+    padding-left: 22px;
+  }
+  .card li {
+    margin-bottom: 6px;
+  }
+  .question-block {
+    background: var(--bg);
+    border-radius: var(--border-radius);
+    padding: 14px 16px;
+    margin: 10px 0;
+    border: 1px solid var(--border);
+  }
+  .question-block .q-label {
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 6px;
+  }
+  .answer-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius);
+    font-size: 15px;
+    font-family: inherit;
+    margin-top: 6px;
+  }
+  .check-btn {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--border-radius);
+    padding: 6px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background 0.2s;
+    font-family: inherit;
+  }
+  .check-btn:hover {
+    background: var(--primary-hover);
+  }
+  .feedback {
+    margin-top: 8px;
+    padding: 8px 12px;
+    border-radius: var(--border-radius);
+    font-size: 15px;
+    display: none;
+  }
+  .feedback.show {
+    display: block;
+  }
+  .feedback.correct {
+    background: #f6ffed;
+    border: 1px solid #b7eb8f;
+    color: #135200;
+  }
+  .feedback.wrong {
+    background: #fff2f0;
+    border: 1px solid #ffccc7;
+    color: #a8071a;
+  }
+  .level-section {
+    display: none;
+  }
+  .level-section.active {
+    display: block;
+  }
+  .choice-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 12px 0;
+  }
+  .choice-card {
+    background: var(--card-bg);
+    border: 2px solid var(--border);
+    border-radius: var(--border-radius);
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .choice-card:hover {
+    border-color: var(--primary);
+    background: #e6f4ff;
+  }
+  .choice-card.selected {
+    border-color: var(--primary);
+    background: #e6f4ff;
+  }
+  .choice-card .choice-icon {
+    font-size: 28px;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .choice-card .choice-title {
+    font-weight: 600;
+    font-size: 16px;
+  }
+  .choice-card .choice-desc {
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+  .rubric-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+    font-size: 15px;
+  }
+  .rubric-table th, .rubric-table td {
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    text-align: left;
+  }
+  .rubric-table th {
+    background: var(--primary);
+    color: #fff;
+    font-weight: 600;
+  }
+  .rubric-table tr:nth-child(even) {
+    background: var(--bg);
+  }
+  .rubric-table td:first-child {
+    font-weight: 600;
+  }
+  .star-rating {
+    text-align: center;
+    margin: 12px 0;
+  }
+  .star-rating .star {
+    font-size: 32px;
+    cursor: pointer;
+    color: #d9d9d9;
+    transition: color 0.2s;
+  }
+  .star-rating .star.active {
+    color: #faad14;
+  }
+  @media (max-width: 640px) {
+    .container { padding: 12px; }
+    .hero h1 { font-size: 24px; }
+    .hero p { max-width: 100%; }
+    .choice-grid { grid-template-columns: 1fr; }
+    .rubric-table { font-size: 14px; }
+    .rubric-table th, .rubric-table td { padding: 6px 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="hero">
+    <h1>🏆 作业榜</h1>
+    <p>三层差异化作业设计，帮你巩固时间概念</p>
+  </div>
+
+  <div class="level-tabs">
+    <button class="level-tab active" data-level="base" onclick="switchLevel('base')">📘 基础层</button>
+    <button class="level-tab" data-level="mid" onclick="switchLevel('mid')">📗 分层任务</button>
+    <button class="level-tab" data-level="open" onclick="switchLevel('open')">🎨 开放层</button>
+    <button class="level-tab" data-level="rubric" onclick="switchLevel('rubric')">📊 评价标准</button>
+  </div>
+
+  <!-- 基础层 -->
+  <div class="level-section active" id="section-base">
+    <div class="card">
+      <h2>📘 基础层：再现与理解 <span class="level-badge">必做</span></h2>
+      <p>所有同学都要完成，检测你是否掌握了基本的时间换算。</p>
+
+      <div class="question-block">
+        <div class="q-label">📝 第 1 题 · 填空题</div>
+        <p>（1）3 时 = <input class="answer-input" style="width:80px;display:inline;" id="q1a" placeholder="___"> 分</p>
+        <p>（2）120 秒 = <input class="answer-input" style="width:80px;display:inline;" id="q1b" placeholder="___"> 分</p>
+        <p>（3）1 时 30 分 = <input class="answer-input" style="width:80px;display:inline;" id="q1c" placeholder="___"> 分</p>
+        <button class="check-btn" onclick="checkQ1()">✓ 检查答案</button>
+        <div class="feedback" id="f1"></div>
+      </div>
+
+      <div class="question-block">
+        <div class="q-label">🔢 第 2 题 · 比大小</div>
+        <p>2 时 ○ 120 分（填 &gt;、&lt; 或 =）</p>
+        <select class="answer-input" style="width:100px;" id="q2">
+          <option value="">请选择</option>
+          <option value="gt">&gt;</option>
+          <option value="lt">&lt;</option>
+          <option value="eq">=</option>
+        </select>
+        <button class="check-btn" onclick="checkQ2()">✓ 检查答案</button>
+        <div class="feedback" id="f2"></div>
+      </div>
+
+      <div class="question-block">
+        <div class="q-label">✅ 第 3 题 · 判断题</div>
+        <p>"1 分钟 = 60 秒，所以半分钟 = 30 秒" 这句话对吗？</p>
+        <select class="answer-input" style="width:100px;" id="q3">
+          <option value="">请选择</option>
+          <option value="correct">✓ 对</option>
+          <option value="wrong">✗ 错</option>
+        </select>
+        <button class="check-btn" onclick="checkQ3()">✓ 检查答案</button>
+        <div class="feedback" id="f3"></div>
+      </div>
+
+      <div class="question-block">
+        <div class="q-label">🕐 第 4 题 · 看钟面说时刻</div>
+        <p>观察上面动画时钟：如果时针指向 3 和 4 之间，分针指向 6，这时是几点？</p>
+        <input class="answer-input" id="q4" placeholder="例如：3 点 30 分" style="max-width:250px;">
+        <button class="check-btn" onclick="checkQ4()">✓ 检查答案</button>
+        <div class="feedback" id="f4"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 分层任务 -->
+  <div class="level-section" id="section-mid">
+    <div class="card">
+      <h2>📗 分层任务 <span class="level-badge">三选一</span></h2>
+      <p>选择适合你的一级挑战，完成后可以继续挑战更高难度。</p>
+
+      <div class="choice-grid">
+        <div class="choice-card" onclick="selectChoice(this, 'A')">
+          <span class="choice-icon">📋</span>
+          <span class="choice-title">A 级 · 基础巩固</span>
+          <span class="choice-desc">记录你晚上 6:00 到 8:00 之间做的事情，精确到分钟，制作一张 "晚间时间记录表"</span>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'B')">
+          <span class="choice-icon">📊</span>
+          <span class="choice-title">B 级 · 能力提升</span>
+          <span class="choice-desc">调查家人一天的时间分配（工作、休息、娱乐各多少小时），用柱状图展示并写一段分析</span>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'C')">
+          <span class="choice-icon">🔍</span>
+          <span class="choice-title">C 级 · 挑战拓展</span>
+          <span class="choice-desc">查资料了解 "古代人如何计时"，对比古今计时的优缺点，写 200 字小报告</span>
+        </div>
+      </div>
+
+      <div id="choiceFeedback" style="display:none;margin-top:12px;padding:12px;background:#e6f4ff;border-radius:var(--border-radius);">
+        <strong>🎯 你选择了：</strong> <span id="choiceLabel"></span><br>
+        <span style="font-size:15px;">完成后记得和同学分享你的成果！</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 开放层 -->
+  <div class="level-section" id="section-open">
+    <div class="card">
+      <h2>🎨 开放层：创造性表达 <span class="level-badge">四选一</span></h2>
+      <p>用你喜欢的方式，展示你对时间的理解。</p>
+
+      <div class="choice-grid">
+        <div class="choice-card" onclick="selectChoice(this, 'writing')">
+          <span class="choice-icon">📝</span>
+          <span class="choice-title">写作</span>
+          <span class="choice-desc">以 "一分钟的秘密" 为题，写一首小诗或小故事</span>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'drawing')">
+          <span class="choice-icon">🎨</span>
+          <span class="choice-title">图示</span>
+          <span class="choice-desc">画一张 "时、分、秒关系思维导图"</span>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'video')">
+          <span class="choice-icon">🎬</span>
+          <span class="choice-title">视频</span>
+          <span class="choice-desc">录制一段 2 分钟的 "时间小课堂" 讲解视频</span>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'speech')">
+          <span class="choice-icon">🗣️</span>
+          <span class="choice-title">演讲</span>
+          <span class="choice-desc">准备一份 3 分钟的 "珍惜时间" 演讲提纲</span>
+        </div>
+      </div>
+
+      <div id="creativeFeedback" style="display:none;margin-top:12px;padding:12px;background:#fff7e6;border-radius:var(--border-radius);">
+        <strong>🌟 太棒了！</strong> 期待你的作品！完成后可以邀请老师或同学为你打分。
+      </div>
+
+      <div class="star-rating">
+        <p style="margin-bottom:6px;">给自己的作品打个星吧 ⭐</p>
+        <span class="star" data-star="1" onclick="rateStar(1)">★</span>
+        <span class="star" data-star="2" onclick="rateStar(2)">★</span>
+        <span class="star" data-star="3" onclick="rateStar(3)">★</span>
+        <span class="star" data-star="4" onclick="rateStar(4)">★</span>
+        <span class="star" data-star="5" onclick="rateStar(5)">★</span>
+        <p id="starText" style="font-size:14px;color:var(--text-secondary);margin-top:4px;"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 评价标准 -->
+  <div class="level-section" id="section-rubric">
+    <div class="card">
+      <h2>📊 评价标准（Rubric）</h2>
+      <p>看看每个层级的达标要求是什么样的——</p>
+      <table class="rubric-table">
+        <thead>
+          <tr>
+            <th>层级</th>
+            <th>达标</th>
+            <th>良好</th>
+            <th>优秀</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>📘 基础层</td>
+            <td>正确率 ≥ 80%</td>
+            <td>正确率 ≥ 90%</td>
+            <td>全对 + 能讲清道理</td>
+          </tr>
+          <tr>
+            <td>📗 分层任务</td>
+            <td>基本完成记录</td>
+            <td>图文结合 + 分析</td>
+            <td>有深度思考 + 创意呈现</td>
+          </tr>
+          <tr>
+            <td>🎨 开放层</td>
+            <td>完成作品</td>
+            <td>内容完整 + 表达清晰</td>
+            <td>有独创性 + 感染力</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+<script>
+function switchLevel(level) {
+  document.querySelectorAll('.level-section').forEach(function(s) { s.classList.remove('active'); });
+  document.querySelectorAll('.level-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.getElementById('section-' + level).classList.add('active');
+  document.querySelector('.level-tab[data-level="' + level + '"]').classList.add('active');
+}
+
+function checkQ1() {
+  var a = document.getElementById('q1a').value.trim();
+  var b = document.getElementById('q1b').value.trim();
+  var c = document.getElementById('q1c').value.trim();
+  var fb = document.getElementById('f1');
+  var correct = (a === '180' || a === '180分') && (b === '2' || b === '2分') && (c === '90' || c === '90分');
+  fb.className = 'feedback show ' + (correct ? 'correct' : 'wrong');
+  fb.textContent = correct ? '✅ 全部正确！太棒了！' : '❌ 再想想看：3 时 = 180 分，120 秒 = 2 分，1 时 30 分 = 90 分';
+}
+
+function checkQ2() {
+  var v = document.getElementById('q2').value;
+  var fb = document.getElementById('f2');
+  var correct = v === 'eq';
+  fb.className = 'feedback show ' + (correct ? 'correct' : 'wrong');
+  fb.textContent = correct ? '✅ 正确！2 时 = 120 分，所以填 =' : '❌ 提示：2 时 = 2 × 60 = 120 分，所以 2 时 = 120 分';
+}
+
+function checkQ3() {
+  var v = document.getElementById('q3').value;
+  var fb = document.getElementById('f3');
+  var correct = v === 'correct';
+  fb.className = 'feedback show ' + (correct ? 'correct' : 'wrong');
+  fb.textContent = correct ? '✅ 正确！半分钟就是 30 秒～' : '❌ 不对哦，1 分钟 = 60 秒，所以半分钟 = 30 秒是对的！';
+}
+
+function checkQ4() {
+  var v = document.getElementById('q4').value.trim();
+  var fb = document.getElementById('f4');
+  var answers = ['3点30分', '3:30', '3点30', '三点三十分', '3 点 30 分'];
+  var correct = answers.some(function(a) { return v.indexOf(a) !== -1 || a.indexOf(v) !== -1; });
+  fb.className = 'feedback show ' + (correct ? 'correct' : 'wrong');
+  fb.textContent = correct ? '✅ 没错！时针在 3 和 4 之间表示 3 点多，分针指向 6 表示 30 分，所以是 3 点 30 分。' : '💡 提示：时针在 3 和 4 之间是 3 点多，分针指向 6 是 30 分，所以是 3 点 30 分。';
+}
+
+function selectChoice(el, id) {
+  document.querySelectorAll('.choice-card').forEach(function(c) { c.classList.remove('selected'); });
+  if (el) el.classList.add('selected');
+  var labels = { 'A': 'A 级 · 基础巩固', 'B': 'B 级 · 能力提升', 'C': 'C 级 · 挑战拓展', 'writing': '📝 写作', 'drawing': '🎨 图示', 'video': '🎬 视频', 'speech': '🗣️ 演讲' };
+  var fb = document.getElementById('choiceFeedback') || document.getElementById('creativeFeedback');
+  if (fb) {
+    fb.style.display = 'block';
+    var label = document.getElementById('choiceLabel');
+    if (label) label.textContent = labels[id] || id;
+  }
+}
+
+var currentStar = 0;
+function rateStar(n) {
+  currentStar = n;
+  document.querySelectorAll('.star').forEach(function(s) {
+    s.classList.toggle('active', parseInt(s.dataset.star) <= n);
+  });
+  var msgs = { 1: '加油！下次会更好 💪', 2: '继续努力！🌟', 3: '不错喔！👍', 4: '很厉害！🎉', 5: '完美！你是时间大师！🏆' };
+  document.getElementById('starText').textContent = msgs[n] || '';
+}
+</script>
+</body>
+</html>

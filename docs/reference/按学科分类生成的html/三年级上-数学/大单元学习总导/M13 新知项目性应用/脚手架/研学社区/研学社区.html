@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>案例库 — 真实世界的问题·决策·结果</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+
+.page-header {
+  text-align: center;
+  padding: 32px 20px 24px;
+  background: linear-gradient(135deg, #1677ff 0%, #69b1ff 100%);
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+  color: #fff;
+}
+.page-header h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.page-header p { font-size: 16px; opacity: 0.9; }
+
+/* Case level tabs */
+.level-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.level-tab {
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 15px;
+  font-weight: 600;
+  border: 2px solid var(--border);
+  background: var(--card-bg);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.level-tab:hover { border-color: var(--accent); }
+.level-tab.active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+.level-tab.basic-tab { border-color: #13a8a8; color: #13a8a8; }
+.level-tab.basic-tab.active { background: #13a8a8; color: #fff; }
+.level-tab.adv-tab { border-color: #d46b08; color: #d46b08; }
+.level-tab.adv-tab.active { background: #d46b08; color: #fff; }
+.level-tab.challenge-tab { border-color: #722ed1; color: #722ed1; }
+.level-tab.challenge-tab.active { background: #722ed1; color: #fff; }
+
+/* Case card */
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 24px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  transition: border-color 0.3s;
+}
+.case-card:hover { border-color: var(--primary); }
+
+.case-card-inner { padding: 20px 22px; }
+
+.case-title-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.case-title-bar .case-level-badge {
+  font-size: 12px;
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.case-level-badge.basic-badge { background: #e6f7ff; color: #13a8a8; }
+.case-level-badge.adv-badge { background: #fff7e6; color: #d46b08; }
+.case-level-badge.challenge-badge { background: #f9f0ff; color: #722ed1; }
+
+.case-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.case-section {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 16px;
+}
+.case-section.bg { background: #fafafa; }
+.case-section .section-label {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 4px;
+}
+.case-section .section-label.problem { color: #ff4d4f; }
+.case-section .section-label.decision { color: #fa8c16; }
+.case-section .section-label.result { color: #52c41a; }
+.case-section .section-label.insight { color: #1677ff; }
+.case-section .section-label.bg-label { color: #595959; }
+
+.decision-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+.decision-tag {
+  padding: 6px 14px;
+  background: #fff7e6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.decision-tag:hover { background: #ffe58f; }
+.decision-tag.chosen { background: #d46b08; color: #fff; border-color: #d46b08; }
+
+/* Result reveal */
+.result-box {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 16px;
+  margin: 8px 0;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-align: center;
+}
+.result-box.hidden {
+  background: #f0f0f0;
+  color: var(--text-secondary);
+  border: 2px dashed var(--border);
+}
+.result-box.hidden:hover {
+  background: #e6f7ff;
+  border-color: var(--primary);
+}
+.result-box.revealed {
+  background: #f6ffed;
+  border: 2px solid #73d13d;
+  color: #135200;
+}
+
+/* Migrate insight */
+.insight-box {
+  margin-top: 10px;
+  padding: 12px 16px;
+  background: #e6f7ff;
+  border-radius: 8px;
+  border-left: 4px solid var(--primary);
+  font-size: 15px;
+}
+
+/* Mission section */
+.mission-section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  border: 2px solid var(--accent);
+}
+.mission-section h3 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mission-section p { font-size: 16px; margin-bottom: 12px; }
+.mission-input {
+  width: 100%;
+  max-width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 16px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 60px;
+  margin-bottom: 10px;
+}
+.mission-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(22,119,255,0.2); }
+.mission-btn {
+  padding: 10px 28px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.mission-btn:hover { background: var(--primary-hover); }
+.mission-feedback {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 15px;
+  display: none;
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+}
+.mission-feedback.show { display: block; }
+
+.footer-note {
+  text-align: center;
+  padding: 16px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-top: 20px;
+  border-top: 1px solid var(--border);
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-header">
+    <h1>🌍 案例库 · 真实世界的问题—决策—结果</h1>
+    <p>从生活小事到航天工程，看"时间管理"如何改变世界</p>
+  </div>
+
+  <!-- 层级筛选 -->
+  <div class="level-tabs">
+    <span class="level-tab basic-tab active" onclick="filterLevel('all', this)">📋 全部案例</span>
+    <span class="level-tab basic-tab" onclick="filterLevel('basic', this)">🌱 基础·生活</span>
+    <span class="level-tab adv-tab" onclick="filterLevel('adv', this)">🚀 进阶·行业</span>
+    <span class="level-tab challenge-tab" onclick="filterLevel('challenge', this)">💎 挑战·跨领域</span>
+  </div>
+
+  <!-- 案例1：基础 -->
+  <div class="case-card" data-level="basic">
+    <div class="case-card-inner">
+      <div class="case-title-bar">
+        <span class="case-level-badge basic-badge">🌱 基础</span>
+        <span class="case-title">小美的"迟到危机"</span>
+      </div>
+      <div class="case-section bg">
+        <span class="section-label bg-label">📌 背景</span>
+        小美每天早上7:30起床，刷牙洗脸10分钟，吃早餐15分钟，穿衣服5分钟，走路到校15分钟。学校8:00上课，她总是迟到。
+      </div>
+      <div class="case-section">
+        <span class="section-label problem">❓ 核心问题</span>
+        小美的时间安排哪里出问题了？怎么调整才能不迟到？
+      </div>
+      <div class="case-section">
+        <span class="section-label decision">🔄 决策路径</span>
+        <div class="decision-options">
+          <span class="decision-tag" onclick="selectDecision(this)">方案A：提前30分钟起床</span>
+          <span class="decision-tag" onclick="selectDecision(this)">方案B：缩短早餐到10分钟</span>
+          <span class="decision-tag" onclick="selectDecision(this)">方案C：前一晚准备好衣服和书包</span>
+        </div>
+      </div>
+      <div class="case-section">
+        <span class="section-label result">✅ 结果</span>
+        <div class="result-box hidden" onclick="revealResult(this)" data-result="方案A → 能按时到校但睡眠不足 / 方案B+C → 既能按时到校又不缺睡眠">
+          👆 点击揭晓结果
+        </div>
+      </div>
+      <div class="insight-box">
+        💡 <strong>可迁移启示：</strong>解决问题不只有"多花时间"一种方法，提高效率更重要！
+      </div>
+    </div>
+  </div>
+
+  <!-- 案例2：进阶 -->
+  <div class="case-card" data-level="adv">
+    <div class="case-card-inner">
+      <div class="case-title-bar">
+        <span class="case-level-badge adv-badge">🚀 进阶</span>
+        <span class="case-title">1999年火星气候探测者号失联事件</span>
+      </div>
+      <div class="case-section bg">
+        <span class="section-label bg-label">📌 背景</span>
+        NASA发射的火星探测器在进入火星大气层后失联，损失3.27亿美元。
+      </div>
+      <div class="case-section">
+        <span class="section-label problem">❓ 核心问题</span>
+        原因竟是"单位换算错误"——一方用英制单位（磅·秒），一方用公制单位（牛顿·秒）。
+      </div>
+      <div class="case-section">
+        <span class="section-label decision">🔄 决策路径</span>
+        <div class="decision-options">
+          <span class="decision-tag" onclick="selectDecision(this)">为什么不统一单位制？</span>
+          <span class="decision-tag" onclick="selectDecision(this)">项目组有没有检查过关键数据？</span>
+          <span class="decision-tag" onclick="selectDecision(this)">缺少"第二人复核"程序</span>
+        </div>
+      </div>
+      <div class="case-section">
+        <span class="section-label result">✅ 结果</span>
+        <div class="result-box hidden" onclick="revealResult(this)" data-result="探测器坠毁——一个单位换算错误导致3.27亿美元化为乌有。">
+          👆 点击揭晓结果
+        </div>
+      </div>
+      <div class="insight-box">
+        💡 <strong>可迁移启示：</strong>数学换算错误在真实世界中可能造成巨大损失——你的每一道时间换算题都是未来严谨的"种子"。
+      </div>
+    </div>
+  </div>
+
+  <!-- 案例3：挑战 -->
+  <div class="case-card" data-level="challenge">
+    <div class="case-card-inner">
+      <div class="case-title-bar">
+        <span class="case-level-badge challenge-badge">💎 挑战</span>
+        <span class="case-title">国际空间站的时间管理</span>
+      </div>
+      <div class="case-section bg">
+        <span class="section-label bg-label">📌 背景</span>
+        国际空间站上的宇航员需要精确到秒安排每天的工作——实验、检修、锻炼、休息、与地面通讯……
+      </div>
+      <div class="case-section">
+        <span class="section-label problem">❓ 核心问题</span>
+        太空中没有自然的"昼夜"变化（每90分钟一次日出日落），怎么规划作息？
+      </div>
+      <div class="case-section">
+        <span class="section-label decision">🔄 决策路径</span>
+        <div class="decision-options">
+          <span class="decision-tag" onclick="selectDecision(this)">方案A：按格林威治时间（UTC）运行</span>
+          <span class="decision-tag" onclick="selectDecision(this)">方案B：按发射国时间</span>
+          <span class="decision-tag" onclick="selectDecision(this)">方案C：每人按自己的生物钟</span>
+        </div>
+      </div>
+      <div class="case-section">
+        <span class="section-label result">✅ 结果</span>
+        <div class="result-box hidden" onclick="revealResult(this)" data-result="选用方案A——统一用协调世界时（UTC），每90分钟一个'白天-黑夜'循环，所有人步调一致">
+          👆 点击揭晓结果
+        </div>
+      </div>
+      <div class="insight-box">
+        💡 <strong>可迁移启示：</strong>在复杂环境中，统一的时间标准让所有人步调一致。
+      </div>
+    </div>
+  </div>
+
+  <!-- 决策者任务 -->
+  <div class="mission-section">
+    <h3>🧑‍✈️ "如果你是决策者"分支任务</h3>
+    <p>如果你是NASA火星探测器的项目负责人，在设计阶段你会安排什么程序来防止"单位换算错误"？</p>
+    <p style="font-size:14px;color:var(--text-secondary);">写出你的 <strong>2条预防措施</strong></p>
+    <textarea class="mission-input" id="missionInput" placeholder="我的想法：&#10;1. ...&#10;2. ..."></textarea>
+    <button class="mission-btn" onclick="submitMission()">💡 提交我的方案</button>
+    <div id="missionFeedback" class="mission-feedback">
+      🎉 太棒了！严谨的检查程序是工程师的"安全网"。现在你也有了工程师的思维方式！
+    </div>
+  </div>
+
+  <div class="footer-note">
+    数学 · 三年级上 · 时间主题学习脚手架
+  </div>
+</div>
+
+<script>
+function filterLevel(level, btn) {
+  document.querySelectorAll('.level-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+
+  document.querySelectorAll('.case-card').forEach(card => {
+    if (level === 'all') {
+      card.style.display = '';
+    } else {
+      card.style.display = card.dataset.level === level ? '' : 'none';
+    }
+  });
+}
+
+function selectDecision(el) {
+  const siblings = el.parentElement.querySelectorAll('.decision-tag');
+  siblings.forEach(s => s.classList.remove('chosen'));
+  el.classList.add('chosen');
+}
+
+function revealResult(el) {
+  const resultText = el.dataset.result;
+  el.textContent = resultText;
+  el.classList.remove('hidden');
+  el.classList.add('revealed');
+}
+
+function submitMission() {
+  const input = document.getElementById('missionInput');
+  const fb = document.getElementById('missionFeedback');
+  if (input.value.trim().length < 5) {
+    alert('请先写出你的预防措施再提交哦！');
+    return;
+  }
+  fb.classList.add('show');
+  input.disabled = true;
+}
+</script>
+</body>
+</html>

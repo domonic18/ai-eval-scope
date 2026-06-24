@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目社区 — 时间研究项目</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+h1 { font-size: var(--font-h1); color: var(--primary); margin: 0 0 6px 0; }
+h2 { font-size: var(--font-h2); color: var(--text); margin: 28px 0 12px 0; padding-left: 12px; border-left: 4px solid var(--primary); }
+h3 { font-size: calc(var(--font-body) + 2px); color: var(--primary-hover); margin: 14px 0 8px 0; }
+.header-desc { color: var(--text-secondary); font-size: calc(var(--font-body) - 2px); margin-bottom: 20px; }
+
+.project-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px 24px; margin-bottom: 20px; border: 1px solid var(--border); border-top: 4px solid var(--primary); }
+.project-card.short { border-top-color: #52c41a; }
+.project-card.mid { border-top-color: #1677ff; }
+.project-card.long { border-top-color: #722ed1; }
+
+.project-badge { display: inline-block; font-size: calc(var(--font-body) - 4px); padding: 3px 14px; border-radius: 20px; font-weight: 600; margin-bottom: 8px; }
+.badge-short { background: #f6ffed; color: #52c41a; }
+.badge-mid { background: #e6f4ff; color: #1677ff; }
+.badge-long { background: #f9f0ff; color: #722ed1; }
+
+.project-title { font-size: calc(var(--font-body) + 4px); font-weight: 700; margin: 4px 0 6px 0; }
+.project-goal { background: #f0f5ff; border-radius: var(--border-radius); padding: 10px 14px; margin: 8px 0; font-size: calc(var(--font-body) - 1px); }
+.project-goal strong { color: var(--primary); }
+
+.stage-list { list-style: none; padding: 0; margin: 10px 0; }
+.stage-list li { padding: 7px 0 7px 32px; position: relative; border-bottom: 1px dashed #f0f0f0; }
+.stage-list li:last-child { border-bottom: none; }
+.stage-list li::before { content: "📅"; position: absolute; left: 0; top: 7px; }
+.stage-list li.done::before { content: "✅"; }
+.stage-list li.data::before { content: "📊"; }
+.stage-list li.interview::before { content: "🎤"; }
+
+.interact-toggle { display: none; }
+.toggle-label { display: inline-block; background: var(--primary); color: #fff; padding: 6px 18px; border-radius: 20px; cursor: pointer; font-size: calc(var(--font-body) - 3px); transition: background 0.3s; user-select: none; margin-top: 8px; }
+.toggle-label:hover { background: var(--primary-hover); }
+.toggle-content { max-height: 0; overflow: hidden; transition: max-height 0.5s ease, opacity 0.4s ease; opacity: 0; }
+.interact-toggle:checked ~ .toggle-content { max-height: 400px; opacity: 1; padding-top: 10px; }
+.interact-toggle:checked ~ .toggle-label { background: var(--text-secondary); }
+
+.resources-box { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 18px 22px; border: 1px solid var(--border); }
+.resources-box ul { list-style: none; padding: 0; margin: 10px 0 0 0; }
+.resources-box li { padding: 6px 0 6px 28px; position: relative; }
+.resources-box li::before { content: "📎"; position: absolute; left: 0; top: 6px; }
+
+.eval-tag { display: inline-block; background: #f0f5ff; color: var(--primary); padding: 2px 10px; border-radius: 4px; font-size: calc(var(--font-body) - 4px); margin-right: 4px; }
+
+@media (max-width: 640px) {
+  .container { padding: 16px; }
+  .project-card { padding: 14px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>🏗️ 项目社区</h1>
+  <p class="header-desc">在真实的时间研究项目中，成为"时间探索家"！每个项目都有一份专属的挑战地图等你解锁。</p>
+
+  <!-- 短周期 -->
+  <div class="project-card short">
+    <span class="project-badge badge-short">⚡ 短周期 · 1-3天</span>
+    <div class="project-title">我的"时间秤"</div>
+
+    <div class="project-goal"><strong>🎯 项目目标：</strong>建立个人的时间参照系统——找到你身上最准确的"生物计时器"。</div>
+
+    <ul class="stage-list">
+      <li><strong>Day 1：</strong>测试"闭眼数30秒"的准确度（用手机计时器验证）</li>
+      <li><strong>Day 2：</strong>测试"听一首歌判断3分钟"的准确度</li>
+      <li><strong>Day 3：</strong>汇总数据，制作"我的时间秤"报告</li>
+    </ul>
+
+    <input type="checkbox" id="toggle1" class="interact-toggle">
+    <label for="toggle1" class="toggle-label">📋 查看成果与评价</label>
+    <div class="toggle-content">
+      <p><strong>成果形式：</strong>一份个人时间感知报告</p>
+      <p><strong>评价标准：</strong><span class="eval-tag">数据完整</span><span class="eval-tag">有对比分析</span><span class="eval-tag">有改进策略</span></p>
+    </div>
+  </div>
+
+  <!-- 中周期 -->
+  <div class="project-card mid">
+    <span class="project-badge badge-mid">📆 中周期 · 1-2周</span>
+    <div class="project-title">一周时间侦探</div>
+
+    <div class="project-goal"><strong>🎯 项目目标：</strong>记录并分析你一周的时间分配，发现自己的时间使用模式。</div>
+
+    <ul class="stage-list">
+      <li class="data"><strong>第1-6天：</strong>每天记录"时间使用日记"（何时、何事、用时）</li>
+      <li class="data"><strong>第7天：</strong>汇总并分析——画饼图或时间线，看看时间都去哪儿了</li>
+      <li><strong>反思：</strong>哪些时间用得好？哪些可以改进？</li>
+    </ul>
+
+    <input type="checkbox" id="toggle2" class="interact-toggle">
+    <label for="toggle2" class="toggle-label">📋 查看成果与评价</label>
+    <div class="toggle-content">
+      <p><strong>成果形式：</strong>"一周时间日记" + 分析报告</p>
+      <p><strong>评价标准：</strong><span class="eval-tag">7天完整记录</span><span class="eval-tag">数据可视化</span><span class="eval-tag">有反思结论</span></p>
+    </div>
+  </div>
+
+  <!-- 长周期 -->
+  <div class="project-card long">
+    <span class="project-badge badge-long">🏆 长周期 · 1月+</span>
+    <div class="project-title">校园时间优化提案</div>
+
+    <div class="project-goal"><strong>🎯 项目目标：</strong>观察并记录学校一天中的时间安排，提出真正的优化建议。</div>
+
+    <ul class="stage-list">
+      <li class="data"><strong>第一周：</strong>观察并记录（课表、上课用时、课间、放学时间）</li>
+      <li class="interview"><strong>第二周：</strong>采访同学和老师——"你觉得学校时间安排合理吗？"</li>
+      <li class="data"><strong>第三周：</strong>数据分析和方案设计</li>
+      <li class="done"><strong>第四周：</strong>形成提案并展示</li>
+    </ul>
+
+    <input type="checkbox" id="toggle3" class="interact-toggle">
+    <label for="toggle3" class="toggle-label">📋 查看成果与评价</label>
+    <div class="toggle-content">
+      <p><strong>成果形式：</strong>校园时间优化提案（含数据、分析、建议）</p>
+      <p><strong>评价标准：</strong><span class="eval-tag">数据真实</span><span class="eval-tag">建议合理</span><span class="eval-tag">表达清晰</span><span class="eval-tag">有可行性</span></p>
+    </div>
+  </div>
+
+  <h2>📎 项目资源包</h2>
+  <div class="resources-box">
+    <ul>
+      <li>时间记录模板（表格）</li>
+      <li>图表制作指南（饼图 / 柱状图）</li>
+      <li>指导性问题列表（帮你的采访更有深度）</li>
+    </ul>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性案例 - 七阶适配分析</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+h1 { font-size: var(--font-h1); color: var(--primary); text-align: center; margin: 16px 0 8px; }
+.subtitle { text-align: center; color: var(--text-secondary); margin-bottom: 24px; font-size: 16px; }
+h2 { font-size: var(--font-h2); color: var(--primary); border-left: 4px solid var(--primary); padding-left: 12px; margin: 28px 0 16px; }
+h3 { font-size: 20px; color: var(--text); margin: 16px 0 10px; }
+.stage-indicator { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 20px; justify-content: center; }
+.stage-dot { padding: 6px 14px; border-radius: 16px; font-size: 14px; cursor: pointer; border: 2px solid var(--border); background: var(--card-bg); color: var(--text-secondary); transition: all 0.3s; font-family: inherit; }
+.stage-dot.active { border-color: var(--primary); background: var(--primary); color: #fff; }
+.stage-dot:hover:not(.active) { border-color: var(--accent); color: var(--primary); }
+.case-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); margin-bottom: 20px; border: 1px solid var(--border); display: none; }
+.case-card.active { display: block; }
+.case-card-inner { padding: 20px; }
+.case-tag { display: inline-block; background: var(--primary); color: #fff; font-size: 13px; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; }
+.case-tag.t1 { background: #52c41a; }
+.case-tag.t2 { background: #fa8c16; }
+.case-tag.t3 { background: #722ed1; }
+.case-tag.t4 { background: #eb2f96; }
+.case-tag.t5 { background: #13c2c2; }
+.case-tag.t6 { background: #2f54eb; }
+.case-tag.t7 { background: #d46b08; }
+.material-box { background: #f6ffed; border: 1px solid #b7eb8f; border-radius: var(--border-radius); padding: 14px 16px; margin: 12px 0; }
+.material-box h4 { color: #389e0d; margin: 0 0 8px; }
+.ref-box { background: #fff7e6; border: 1px solid #ffd591; border-radius: var(--border-radius); padding: 14px 16px; margin: 12px 0; }
+.ref-box h4 { color: #d46b08; margin: 0 0 8px; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 16px; }
+th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; }
+th { background: var(--bg); color: var(--primary); font-weight: 600; }
+.principle-pills { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
+.principle-pill { background: var(--bg); color: var(--primary); padding: 3px 12px; border-radius: 12px; font-size: 14px; border: 1px solid var(--accent); }
+.path-step { display: flex; align-items: flex-start; gap: 10px; margin: 8px 0; }
+.path-num { min-width: 26px; height: 26px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; }
+.reflect-list { list-style: none; padding: 0; }
+.reflect-list li { padding: 10px 0 10px 32px; border-bottom: 1px dashed var(--border); position: relative; }
+.reflect-list li:last-child { border-bottom: none; }
+.reflect-list li::before { content: "🤔"; position: absolute; left: 0; font-size: 18px; }
+.btn-hint { padding: 6px 16px; background: transparent; color: var(--primary); border: 1px solid var(--primary); border-radius: 16px; font-size: 14px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.btn-hint:hover { background: var(--primary); color: #fff; }
+.hint-content { display: none; margin-top: 8px; padding: 10px 14px; background: var(--bg); border-radius: var(--border-radius); }
+.hint-content.show { display: block; }
+@media (max-width: 600px) { .container { padding: 12px; } table { font-size: 14px; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🔍 解析性七阶适配案例</h1>
+  <p class="subtitle">在7个不同层级的情境中，运用解析性原理进行分析练习</p>
+
+  <div class="stage-indicator">
+    <button class="stage-dot active" onclick="switchCase(1)">第1阶 生活情境</button>
+    <button class="stage-dot" onclick="switchCase(2)">第2阶 校园情境</button>
+    <button class="stage-dot" onclick="switchCase(3)">第3阶 家庭情境</button>
+    <button class="stage-dot" onclick="switchCase(4)">第4阶 学科核心</button>
+    <button class="stage-dot" onclick="switchCase(5)">第5阶 跨学科</button>
+    <button class="stage-dot" onclick="switchCase(6)">第6阶 社会议题</button>
+    <button class="stage-dot" onclick="switchCase(7)">第7阶 综合迁移</button>
+  </div>
+
+  <!-- 第1阶 -->
+  <div class="case-card active" data-case="1">
+    <div class="case-card-inner">
+      <span class="case-tag t1">🏠 生活情境</span>
+      <h3>为什么40分钟感觉不一样？</h3>
+      <div class="material-box">
+        <h4>📄 案例材料</h4>
+        <p>本周三，小明回到家后，妈妈问他："今天在学校过得怎么样？"小明说："数学课好像才上了5分钟就下课了，可是语文课我都看了好几次钟表，怎么还没下课？"</p>
+        <p style="color: var(--text-secondary); font-size: 15px;">📌 数据补充：实际数学课和语文课都是40分钟。</p>
+      </div>
+      <p><strong>解析任务：</strong>为什么同样的40分钟，小明感觉不一样？请运用解析性原理分析这个现象。</p>
+      <div class="principle-pills">
+        <span class="principle-pill">要素拆解法</span>
+        <span class="principle-pill">对比发现法</span>
+      </div>
+      <p><strong>解析路径：</strong></p>
+      <div class="path-step"><span class="path-num">1</span><span>识别核心问题：同时间但不同感受</span></div>
+      <div class="path-step"><span class="path-num">2</span><span>确定解析对象：小明的"时间感受"</span></div>
+      <div class="path-step"><span class="path-num">3</span><span>拆解关键要素：课程内容、小明状态、课堂活动</span></div>
+      <div class="path-step"><span class="path-num">4</span><span>梳理关系：课程特点→小明参与度→时间感受</span></div>
+      <div class="path-step"><span class="path-num">5</span><span>寻找证据：关键词"好像才5分钟""看了好几次钟表"</span></div>
+      <table>
+        <tr><th>对比要素</th><th>数学课</th><th>语文课</th></tr>
+        <tr><td>小明感觉</td><td>很快</td><td>很慢</td></tr>
+        <tr><td>实际时长</td><td>40分钟</td><td>40分钟</td></tr>
+        <tr><td>可能的原因1</td><td style="color: var(--text-secondary);"></td><td style="color: var(--text-secondary);"></td></tr>
+        <tr><td>可能的原因2</td><td style="color: var(--text-secondary);"></td><td style="color: var(--text-secondary);"></td></tr>
+      </table>
+      <button class="btn-hint" onclick="toggleHint('hint1')">💡 参考思路</button>
+      <div id="hint1" class="hint-content">你的思考可以涵盖但不限于：小明对数学还是语文更感兴趣？哪节课上他动手参与的活动更多？一个人做喜欢的事情时，往往会感觉时间变快。</div>
+    </div>
+  </div>
+
+  <!-- 第2阶 -->
+  <div class="case-card" data-case="2">
+    <div class="case-card-inner">
+      <span class="case-tag t2">🏫 校园情境</span>
+      <h3>比赛时的超常与失常</h3>
+      <div class="material-box">
+        <h4>📄 案例材料</h4>
+        <p>学校运动会举行"1分钟跳绳比赛"。小红和小蓝都报名了。小红觉得自己平时跳绳1分钟只能跳80下，很紧张；小蓝很自信，因为他平时能跳120下。比赛时，小红跳了95下，小蓝跳了115下。</p>
+      </div>
+      <p><strong>解析任务：</strong>运用解析性原理分析：①小红"超水平发挥"可能是什么原因？②小蓝"略低于平时"可能是什么原因？③"紧张"如何影响人的表现？</p>
+      <div class="principle-pills">
+        <span class="principle-pill">因果追溯法</span>
+        <span class="principle-pill">情境锚定法</span>
+      </div>
+      <button class="btn-hint" onclick="toggleHint('hint2')">💡 参考思路</button>
+      <div id="hint2" class="hint-content">你的思考可以涵盖：压力对表现的影响、比赛氛围和平时训练的不同、注意力集中的程度等。注意：这不是有唯一答案的问题。</div>
+    </div>
+  </div>
+
+  <!-- 第3阶 -->
+  <div class="case-card" data-case="3">
+    <div class="case-card-inner">
+      <span class="case-tag t3">👨‍👩‍👧‍👦 家庭情境</span>
+      <h3>三代人的时间感受</h3>
+      <div class="material-box">
+        <h4>📄 案例材料</h4>
+        <p>奶奶说"一眨眼的工夫我就老了"，爸爸说"上班的一天好漫长"，上幼儿园的妹妹说"等妈妈下班要等好久好久"。同样在"过时间"，为什么家里三代人的"时间感受"如此不同？</p>
+      </div>
+      <p><strong>解析任务：</strong>为什么不同年龄段的人对时间的感受不一样？</p>
+      <div class="principle-pills">
+        <span class="principle-pill">对比发现法</span>
+        <span class="principle-pill">因果追溯法</span>
+      </div>
+      <table>
+        <tr><th>对比维度</th><th>奶奶</th><th>爸爸</th><th>妹妹</th></tr>
+        <tr><td>时间感受</td><td>一眨眼就老了</td><td>一天很漫长</td><td>等妈妈好久</td></tr>
+        <tr><td>可能的原因</td><td style="color: var(--text-secondary);"></td><td style="color: var(--text-secondary);"></td><td style="color: var(--text-secondary);"></td></tr>
+      </table>
+      <button class="btn-hint" onclick="toggleHint('hint3')">💡 参考思路</button>
+      <div id="hint3" class="hint-content">你的思考可以涵盖：年龄和生活经历的关系、日常生活中新鲜事物的多少、对时间"快慢"的评价标准等。</div>
+    </div>
+  </div>
+
+  <!-- 第4阶 -->
+  <div class="case-card" data-case="4">
+    <div class="case-card-inner">
+      <span class="case-tag t4">📐 学科核心</span>
+      <h3>两种"知道"</h3>
+      <div class="material-box">
+        <h4>📄 案例材料</h4>
+        <p>数学课上，老师问："为什么1分钟等于60秒？"小明说："因为老师说的。"小华说："因为古代巴比伦人用60进制，他们把一天分成24小时，每小时60分钟，每分钟60秒。"</p>
+        <p style="color: var(--text-secondary);">📌 补充：古巴比伦人（约4000年前）使用60进制，因为60可以被2、3、4、5、6、10、12、15、20、30整除。</p>
+      </div>
+      <p><strong>解析任务：</strong>对比两种"知道"——一种记住结论，一种理解原因。哪一种更接近"真正的学习"？为什么？</p>
+      <div class="principle-pills">
+        <span class="principle-pill">对比发现法</span>
+        <span class="principle-pill">意义提炼法</span>
+      </div>
+      <button class="btn-hint" onclick="toggleHint('hint4')">💡 参考思路</button>
+      <div id="hint4" class="hint-content">思考：两种知道方式在面对"新问题"时的区别——如果老师问"为什么1小时等于60分钟？"，小明会怎么回答？小华会怎么回答？</div>
+    </div>
+  </div>
+
+  <!-- 第5阶 -->
+  <div class="case-card" data-case="5">
+    <div class="case-card-inner">
+      <span class="case-tag t5">🔗 跨学科</span>
+      <h3>不同学科里的"时间"</h3>
+      <div class="material-box">
+        <h4>📄 案例材料</h4>
+        <p>数学课上：1分钟=60秒，1小时=60分钟；语文课上："光阴似箭，日月如梭"；美术课上：画一幅"四季"图；科学课上：种子发芽需要时间，蝴蝶破茧需要时间。</p>
+      </div>
+      <p><strong>解析任务：</strong>"时间"在不同学科里被"表达"成了不同的样子。分析这些表达方式的不同，它们各自抓住了"时间"的什么特点？</p>
+      <div class="principle-pills">
+        <span class="principle-pill">要素拆解法</span>
+        <span class="principle-pill">对比发现法</span>
+      </div>
+      <button class="btn-hint" onclick="toggleHint('hint5')">💡 参考思路</button>
+      <div id="hint5" class="hint-content">数学用数字表达（精确），语文用比喻表达（形象），美术用画面表达（直观），科学用过程表达（变化）。每种表达方式擅长什么？有什么局限？</div>
+    </div>
+  </div>
+
+  <!-- 第6阶 -->
+  <div class="case-card" data-case="6">
+    <div class="case-card-inner">
+      <span class="case-tag t6">🌐 社会议题</span>
+      <h3>刷短视频的2小时 vs 静坐的2小时</h3>
+      <div class="material-box">
+        <h4>📄 案例材料</h4>
+        <p>现在很多同学喜欢"刷短视频"。一个短视频15秒，刷完一个又自动播放下一个。刷了2小时后抬头看——"啊？2小时过去了？"而如果让你静坐等待2小时——"天哪，太漫长了！"</p>
+      </div>
+      <p><strong>解析任务：</strong>用"信息处理量"的角度分析，为什么刷短视频的2小时"嗖"一下就过去了，静坐等待的2小时却"度秒如年"？</p>
+      <div class="principle-pills">
+        <span class="principle-pill">因果追溯法</span>
+        <span class="principle-pill">要素拆解法</span>
+      </div>
+      <button class="btn-hint" onclick="toggleHint('hint6')">💡 参考思路</button>
+      <div id="hint6" class="hint-content">短视频每15秒换一个内容，大脑一直在处理"新信息"；静坐等待时没有新信息，大脑关注的是"时间过去了多少"。你还能举出其他例子吗？</div>
+    </div>
+  </div>
+
+  <!-- 第7阶 -->
+  <div class="case-card" data-case="7">
+    <div class="case-card-inner">
+      <span class="case-tag t7">🎯 综合迁移</span>
+      <h3>分析我的"学习过程"</h3>
+      <div class="material-box">
+        <h4>📄 案例材料</h4>
+        <p>回忆你学"时、分、秒"这个单元的整个过程——第一次见面、第一次困惑、第一次突破、第一次练习、第一次应用、第一次反思……</p>
+      </div>
+      <p><strong>解析任务：</strong>综合运用所有解析性原理，分析自己的学习过程——找出你在哪些节点上经历了"从不会到会"的转变。</p>
+      <div class="principle-pills">
+        <span class="principle-pill">情境锚定法</span>
+        <span class="principle-pill">要素拆解法</span>
+        <span class="principle-pill">对比发现法</span>
+        <span class="principle-pill">因果追溯法</span>
+        <span class="principle-pill">意义提炼法</span>
+      </div>
+      <button class="btn-hint" onclick="toggleHint('hint7')">💡 参考思路</button>
+      <div id="hint7" class="hint-content">你的分析可以涵盖：每个阶段的具体情况、转变发生的"关键一刻"是什么、那些"学会了"的感觉对你意味着什么。</div>
+    </div>
+  </div>
+
+  <h2>🤔 综合反思</h2>
+  <ul class="reflect-list">
+    <li>7个案例中，哪个最容易分析？为什么它对你来说最容易？</li>
+    <li>哪个最难？困难在哪里？是材料太复杂，还是不知道从哪里入手？</li>
+    <li>你用得最多的是哪条原理？为什么？</li>
+    <li>哪条原理你还不太会用？你打算通过什么方式来练习？</li>
+    <li>这些案例帮你更好地理解了"学习幸福"吗？具体是怎么帮你的？</li>
+  </ul>
+
+  <div style="text-align:center; margin-top: 28px; padding: 16px; background: linear-gradient(135deg, var(--bg), #fff); border-radius: var(--border-radius);">
+    <p style="color: var(--primary); font-weight: 600;">🌟 完成全部7个案例，你就是一名出色的"分析小能手"了！</p>
+  </div>
+</div>
+<script>
+var currentCase = 1;
+function switchCase(idx) {
+  currentCase = idx;
+  document.querySelectorAll('.case-card').forEach(function(el) { el.classList.remove('active'); });
+  document.querySelectorAll('.stage-dot').forEach(function(el) { el.classList.remove('active'); });
+  document.querySelector('.case-card[data-case="' + idx + '"]').classList.add('active');
+  document.querySelectorAll('.stage-dot')[idx - 1].classList.add('active');
+}
+function toggleHint(id) {
+  var el = document.getElementById(id);
+  el.classList.toggle('show');
+}
+</script>
+</body>
+</html>

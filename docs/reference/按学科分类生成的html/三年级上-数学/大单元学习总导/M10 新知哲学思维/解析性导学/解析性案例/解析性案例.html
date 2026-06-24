@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性案例 — 七阶解析性适配案例</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff;
+  padding: 32px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+  text-align: center;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; font-weight: 700; }
+.header p { font-size: 16px; opacity: 0.9; }
+
+/* Case navigation tabs */
+.case-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+  justify-content: center;
+}
+.case-tab {
+  padding: 8px 14px;
+  border: 2px solid var(--primary);
+  border-radius: 20px;
+  background: var(--card-bg);
+  color: var(--primary);
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.case-tab:hover, .case-tab.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* Case display */
+.case-container {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.case-slide {
+  display: none;
+  padding: 28px 24px;
+}
+.case-slide.active {
+  display: block;
+  animation: fadeIn 0.4s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.case-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.case-slide h2 {
+  font-size: var(--font-h2);
+  margin-bottom: 14px;
+  color: var(--text);
+}
+
+.case-slide h3 {
+  font-size: 17px;
+  color: var(--primary);
+  margin: 18px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.case-slide p {
+  margin-bottom: 8px;
+}
+
+.case-slide ul {
+  list-style: none;
+  padding: 0;
+}
+.case-slide ul li {
+  position: relative;
+  padding-left: 20px;
+  margin-bottom: 6px;
+}
+.case-slide ul li::before {
+  content: "•";
+  position: absolute;
+  left: 4px;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.case-slide .path-box {
+  background: #f0f5ff;
+  border-radius: 6px;
+  padding: 14px 18px;
+  margin: 12px 0;
+  border-left: 3px solid var(--primary);
+}
+.case-slide .path-box strong {
+  color: var(--primary);
+}
+
+/* Case navigation arrows */
+.case-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: #fafafa;
+  border-top: 1px solid var(--border);
+}
+.case-nav button {
+  padding: 8px 20px;
+  border: none;
+  border-radius: var(--border-radius);
+  background: var(--primary);
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s;
+  font-family: inherit;
+}
+.case-nav button:hover { background: var(--primary-hover); }
+.case-nav button:disabled {
+  background: #d9d9d9;
+  cursor: not-allowed;
+}
+.case-progress {
+  font-size: 15px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* Reflection section */
+.reflection {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin: 28px 0;
+}
+.reflection h2 {
+  font-size: var(--font-h2);
+  margin-bottom: 16px;
+}
+.reflection-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.reflection-item:last-child { border-bottom: none; }
+.reflection-item .q {
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+.reflection-item .a {
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+.reflection-item .hint-toggle {
+  display: inline-block;
+  margin-top: 6px;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: underline;
+  user-select: none;
+}
+
+/* Principle callout */
+.principle-callout {
+  display: inline-block;
+  background: #f0f5ff;
+  border: 1px solid #d6e4ff;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 8px 0;
+  font-size: 15px;
+}
+
+@media (max-width: 600px) {
+  .container { padding: 16px 12px; }
+  .header { padding: 24px 16px; }
+  .case-slide { padding: 20px 16px; }
+  .case-nav { flex-wrap: wrap; gap: 10px; justify-content: center; }
+  .case-tab { font-size: 13px; padding: 6px 10px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🧩 解析性案例</h1>
+  <p>数学三年级上 · 1时、分、秒 × M10 新知哲学思维 · 七阶递进案例</p>
+</div>
+
+<p style="margin-bottom:16px;font-size:16px;text-align:center;color:var(--text-secondary);">点击案例标签切换，用◀ ▶导航按钮浏览。共7个递进案例 + 5个综合反思问题。</p>
+
+<div class="case-tabs" id="caseTabs">
+  <button class="case-tab active" onclick="showCase(0,this)">❓ 案例一</button>
+  <button class="case-tab" onclick="showCase(1,this)">🏫 案例二</button>
+  <button class="case-tab" onclick="showCase(2,this)">🏠 案例三</button>
+  <button class="case-tab" onclick="showCase(3,this)">🔬 案例四</button>
+  <button class="case-tab" onclick="showCase(4,this)">🌍 案例五</button>
+  <button class="case-tab" onclick="showCase(5,this)">🔮 案例六</button>
+  <button class="case-tab" onclick="showCase(6,this)">🚀 案例七</button>
+  <button class="case-tab" onclick="showCase(7,this)">📝 综合反思</button>
+</div>
+
+<div class="case-container">
+  <!-- 案例一 -->
+  <div class="case-slide active" id="case0">
+    <div class="case-number">1</div>
+    <h2>❓ 生活情境案例 — 为什么一周有7天？</h2>
+
+    <h3>📄 案例材料</h3>
+    <p>学生观察日历，发现一周总是7天。教师展示古埃及、古巴比伦和中国的不同历法碎片，呈现一周天数不统一的真实历史记录。</p>
+
+    <h3>🎯 解析任务</h3>
+    <p>分析"一周有7天"这一规定是怎么来的，它到底是自然规律还是人为约定。</p>
+
+    <h3>🗺️ 解析路径</h3>
+    <div class="path-box">
+      <strong>步骤：</strong> 观察现象（日历上固定7天一周）→ 区分"自然事实"与"人为规定"→ 追溯历史原因（月相周期约28天→分四周；巴比伦人观测7颗行星→七天为一周）→ 得出结论：这是人类对自然周期的一种解析与约定
+    </div>
+
+    <h3>💡 原理调用提示</h3>
+    <div class="principle-callout">
+      引导学生调用"拆分-追溯-区分"的解析框架：把一个看似自然的现象拆开，追溯它的源头，区分哪些是天文学事实、哪些是文化约定。
+    </div>
+  </div>
+
+  <!-- 案例二 -->
+  <div class="case-slide" id="case1">
+    <div class="case-number">2</div>
+    <h2>🏫 校园情境案例 — 学校作息时间表合理吗？</h2>
+
+    <h3>📄 案例材料</h3>
+    <p>一份真实的学校日作息时间表（包含8节课、眼保健操、大课间、午休等），以及每位学生的记录：完成每项活动实际花了多少分钟。</p>
+
+    <h3>🎯 解析任务</h3>
+    <p>评估学校作息时间表的设计是否合理，提出改进建议。</p>
+
+    <h3>🗺️ 解析路径</h3>
+    <div class="path-box">
+      <strong>步骤：</strong> 列出"计划时长"和"实际时长"→ 对比差距，找出过紧或过松的环节 → 分析时间块衔接是否合理 → 用"必要性—效率—舒适度"三维评价 → 提出调整建议
+    </div>
+
+    <h3>💡 原理调用提示</h3>
+    <div class="principle-callout">
+      调用"对比—评价—调整"链：用实际数据对比计划，评价每段时间的功能是否到位，再反过来调整模型。
+    </div>
+  </div>
+
+  <!-- 案例三 -->
+  <div class="case-slide" id="case2">
+    <div class="case-number">3</div>
+    <h2>🏠 家庭情境案例 — 不同家庭的时间管理为什么不一样？</h2>
+
+    <h3>📄 案例材料</h3>
+    <p>三位同学的周日时间日记（A：上补习班—午餐—练琴—作业—自由游戏；B：帮家长看店—零碎学习—晚餐—作业；C：户外活动—自主阅读—兴趣小组—亲子时间）。每份日记精确到分钟。</p>
+
+    <h3>🎯 解析任务</h3>
+    <p>找出三个家庭时间安排的结构差异，分析差异背后的原因。</p>
+
+    <h3>🗺️ 解析路径</h3>
+    <div class="path-box">
+      <strong>步骤：</strong> 把每份日记拆成时间块，按"学习—家务—休闲—陪伴"分类统计 → 比较三份日记的结构比例 → 推测每类安排背后的家庭考量 → 反思：没有绝对"好"的时间表，只有适合特定条件的安排
+    </div>
+
+    <h3>💡 原理调用提示</h3>
+    <div class="principle-callout">
+      调用"分类—比较—推测"的解析方法：先把复杂的时间安排按功能分类，再横向对比结构差异，最后推测差异的深层原因。
+    </div>
+  </div>
+
+  <!-- 案例四 -->
+  <div class="case-slide" id="case3">
+    <div class="case-number">4</div>
+    <h2>🔬 学科核心情境案例 — "1秒"到底有多长？</h2>
+
+    <h3>📄 案例材料</h3>
+    <p>展示三种"秒"的定义——<strong>天文秒</strong>：1秒=1/86400平均太阳日；<strong>机械秒</strong>：摆钟的秒摆长度约99.4cm；<strong>原子秒</strong>：铯-133原子基态超精细跃迁的9,192,631,770个周期。</p>
+
+    <h3>🎯 解析任务</h3>
+    <p>理解"秒"的定义经历了三次变迁，分析每次变迁背后的科学逻辑。</p>
+
+    <h3>🗺️ 解析路径</h3>
+    <div class="path-box">
+      <strong>步骤：</strong> 用自己的话转述每种定义 → 对比三种定义的精确度、可重复性和实用场景 → 分析定义变化的驱动力：为什么人类不断重新定义"秒"？→ 串联三个定义，画出"秒"定义的进化树
+    </div>
+
+    <h3>💡 原理调用提示</h3>
+    <div class="principle-callout">
+      调用"转述—对比—溯源—串联"四步解析法：先把复杂定义转成自己的语言，再对比不同版本的优劣，追问"为什么变"，最后把演变串联成一条线。
+    </div>
+  </div>
+
+  <!-- 案例五 -->
+  <div class="case-slide" id="case4">
+    <div class="case-number">5</div>
+    <h2>🌍 跨学科情境案例 — 为什么北京和纽约有时差？</h2>
+
+    <h3>📄 案例材料</h3>
+    <p>世界时区图（显示24个时区划分）、北京与纽约实时时钟对比图、一则新闻："北京时间14:00直播的航天发射，纽约观众需在凌晨2:00收看。"</p>
+
+    <h3>🎯 解析任务</h3>
+    <p>解析时差现象，理解时区制度是如何把"自然时间"变成了"社会时间"。</p>
+
+    <h3>🗺️ 解析路径</h3>
+    <div class="path-box">
+      <strong>步骤：</strong> 成因分析：地球自转→不同经度看到太阳的时间不同→本地时间不同 → 地理-数学换算：经度每15°=1小时差，北京东八区vs纽约西五区→13小时差 → 社会层面分析：如果没有统一时区制度会怎样？→ 得出结论：时区是把自然现象用数学工具转化为社会制度的典型解析案例
+    </div>
+
+    <h3>💡 原理调用提示</h3>
+    <div class="principle-callout">
+      调用"因果—数学—社会"三层解析框架：先找自然原因，再用数学量化，最后分析社会影响。
+    </div>
+  </div>
+
+  <!-- 案例六 -->
+  <div class="case-slide" id="case5">
+    <div class="case-number">6</div>
+    <h2>🔮 社会/未来情境案例 — 如果全世界取消"时区"，会怎样？</h2>
+
+    <h3>📄 案例材料</h3>
+    <p>方案构想图——有人提议全球统一使用协调世界时（UTC），不分区，各地自行调整作息。呈现支持方论点（消除时差困扰、全球协同效率高）和反对方论点（打乱生活习惯、文化与自然的割裂）。</p>
+
+    <h3>🎯 解析任务</h3>
+    <p>分析统一时区方案的可行性与潜在影响，形成自己的立场判断。</p>
+
+    <h3>🗺️ 解析路径</h3>
+    <div class="path-box">
+      <strong>步骤：</strong> 明确"取消时区"实际上取消什么 → 罗列支持证据和反对证据 → 用"利益相关者分析法"：学生、上班族、国际旅行者、农民、航天工程师分别受什么影响？→ 形成个人观点，用3条理由支撑
+    </div>
+
+    <h3>💡 原理调用提示</h3>
+    <div class="principle-callout">
+      调用"界定—举证—分析—判断"决策解析链：先说清楚问题到底是什么，再收集正反证据，用多角色视角分析，最后做出有依据的判断。
+    </div>
+  </div>
+
+  <!-- 案例七 -->
+  <div class="case-slide" id="case6">
+    <div class="case-number">7</div>
+    <h2>🚀 综合迁移情境案例 — 设计一个"时间制度"</h2>
+
+    <h3>📄 案例材料</h3>
+    <p>"星球移民任务"——假设移居到自转周期为30小时的新星球，为一所学校设计一套全新的时间制度（一天分多少小时、一小时多少分钟、作息时间怎么定）。</p>
+
+    <h3>🎯 解析任务</h3>
+    <p>综合运用前六个案例中学到的解析性原理，设计一套合理且有说服力的时间制度。</p>
+
+    <h3>🗺️ 解析路径</h3>
+    <div class="path-box">
+      <strong>步骤：</strong> 界定问题（30小时不能照搬地球）→ 分解要素（单位划分、作息时段、周期循环）→ 追溯与借鉴（前6个案例哪些原理可迁移）→ 设计方案 → 对比论证（和直接套用24小时制对比）→ 陈述与反思
+    </div>
+
+    <h3>💡 原理调用提示</h3>
+    <div class="principle-callout">
+      调用完整"解析工具箱"——拆分、追溯、对比、分类、评价、迁移，六种解析性思维全部用上。
+    </div>
+  </div>
+
+  <!-- 综合反思 -->
+  <div class="case-slide" id="case7">
+    <div class="case-number" style="background:#722ed1;">📝</div>
+    <h2>📝 综合反思问题（5题，递进难度）</h2>
+
+    <h3>1️⃣ 回忆</h3>
+    <p>从案例一到案例七，我们用了很多方法来分析"时间"。请列出你印象最深的三个解析方法，并各用一句话说明它们帮你解决了什么问题。</p>
+    <p style="color:var(--text-secondary);font-size:15px;"><em>例："拆分法帮我认清了一周7天可以拆成天文事实+文化约定两部分。"</em></p>
+
+    <h3>2️⃣ 联系</h3>
+    <p>在前面的案例中，"一周有7天"和"1秒有多长"都是人类规定出来的。但前者来自古代文化，后者来自现代科学。你觉得"文化约定"和"科学定义"有什么相同和不同？</p>
+
+    <h3>3️⃣ 评价</h3>
+    <p>有位同学说："时间就是钟表上显示的数字，没什么好分析的。"请你从<strong>案例四</strong>和<strong>案例五</strong>中选一个证据来反驳他的观点。你的反驳要让对方觉得"有道理"而不是"被教训"。</p>
+
+    <h3>4️⃣ 迁移</h3>
+    <p>在你自己的日常生活中，有没有哪一件事看起来是"理所当然"的，但仔细一想可能是"人为规定"的？（提示：为什么上学是8:00而不是10:00？为什么一周上5天课？）用学过的"拆分—追溯"方法简单分析一下。</p>
+
+    <h3>5️⃣ 创造</h3>
+    <p>假设你可以重新定义一种"时间划分方式"，你的方案是什么？它好在哪？它可能会带来什么问题？请用<strong>利益相关者分析法</strong>来预测你的方案会影响哪些人。</p>
+  </div>
+
+  <!-- Navigation -->
+  <div class="case-nav">
+    <button id="prevBtn" onclick="prevCase()">◀ 上一案例</button>
+    <span class="case-progress" id="caseProgress">1 / 8</span>
+    <button id="nextBtn" onclick="nextCase()">下一案例 ▶</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+let currentCase = 0;
+const totalCases = 8;
+
+function showCase(index, tabEl) {
+  // Update slides
+  document.querySelectorAll('.case-slide').forEach(s => s.classList.remove('active'));
+  document.getElementById('case' + index).classList.add('active');
+  // Update tabs
+  document.querySelectorAll('.case-tab').forEach(t => t.classList.remove('active'));
+  if (tabEl) {
+    tabEl.classList.add('active');
+  } else {
+    document.querySelectorAll('.case-tab')[index].classList.add('active');
+  }
+  currentCase = index;
+  document.getElementById('caseProgress').textContent = (index + 1) + ' / ' + totalCases;
+  document.getElementById('prevBtn').disabled = (index === 0);
+  document.getElementById('nextBtn').disabled = (index === totalCases - 1);
+}
+
+function nextCase() {
+  if (currentCase < totalCases - 1) {
+    const tabs = document.querySelectorAll('.case-tab');
+    showCase(currentCase + 1, tabs[currentCase + 1]);
+  }
+}
+
+function prevCase() {
+  if (currentCase > 0) {
+    const tabs = document.querySelectorAll('.case-tab');
+    showCase(currentCase - 1, tabs[currentCase - 1]);
+  }
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'ArrowRight') nextCase();
+  if (e.key === 'ArrowLeft') prevCase();
+});
+</script>
+</body>
+</html>

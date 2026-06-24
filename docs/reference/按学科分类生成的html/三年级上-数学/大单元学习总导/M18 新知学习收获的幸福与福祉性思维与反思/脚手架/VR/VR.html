@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VR脚手架：沉浸式时间体验</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  padding: 20px;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px;
+}
+.header {
+  background: linear-gradient(135deg, #0d1b3e 0%, var(--primary) 100%);
+  color: #fff;
+  padding: 30px 28px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  text-align: center;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.header p { font-size: 16px; opacity: 0.85; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  transition: box-shadow 0.3s;
+}
+.card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.12); }
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bg);
+}
+.card h3 {
+  font-size: 19px;
+  margin: 16px 0 8px;
+  color: var(--text);
+}
+.card p { margin-bottom: 12px; }
+.card ul, .card ol { margin: 8px 0 12px 24px; }
+.card li { margin-bottom: 6px; }
+.highlight-box {
+  background: #e6f0ff;
+  border-left: 4px solid var(--primary);
+  padding: 14px 18px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+}
+.task-card {
+  background: #fafaff;
+  border: 1px dashed var(--accent);
+  border-radius: 10px;
+  padding: 18px 20px;
+  margin: 10px 0;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.task-card:hover {
+  border-color: var(--primary);
+  background: #eef3ff;
+}
+.task-card .task-icon {
+  font-size: 28px;
+  float: left;
+  margin-right: 14px;
+}
+.task-card .task-title {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 18px;
+}
+.task-card .task-desc { font-size: 15px; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 16px;
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+}
+th {
+  background: var(--bg);
+  color: var(--primary);
+  font-weight: 600;
+}
+.timer-display {
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--primary);
+  text-align: center;
+  padding: 20px;
+  font-family: "Courier New", monospace;
+  letter-spacing: 4px;
+  background: #0d1b3e;
+  color: #00ff88;
+  border-radius: 12px;
+  margin: 12px 0;
+}
+.timer-buttons { text-align: center; }
+.interact-btn {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 24px;
+  font-size: 17px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  margin: 6px 4px;
+}
+.interact-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+.interact-btn:active { transform: translateY(0); }
+.interact-btn.success {
+  background: #52c41a;
+}
+.interact-btn.success:hover { background: #73d13d; }
+.interact-btn.danger {
+  background: #ff4d4f;
+}
+.interact-btn.danger:hover { background: #ff7875; }
+.interact-btn.secondary {
+  background: #fff;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+.alt-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin: 12px 0;
+}
+.alt-card {
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+  border: 1px solid var(--border);
+  transition: all 0.3s;
+}
+.alt-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+.alt-card .alt-icon { font-size: 30px; }
+.alt-card h4 { font-size: 16px; color: var(--primary); margin: 4px 0; }
+.alt-card p { font-size: 14px; margin: 0; }
+@media (max-width: 600px) {
+  body { padding: 10px; }
+  .container { padding: 10px; }
+  .card { padding: 16px; }
+  .header { padding: 20px 16px; }
+  .alt-grid { grid-template-columns: 1fr; }
+  .timer-display { font-size: 36px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>🥽 VR 脚手架：沉浸式时间体验</h1>
+    <p>把抽象的时间概念变成看得见、感受得到的体验</p>
+  </div>
+
+  <div class="card">
+    <h2>🎯 任务定位</h2>
+    <p>通过沉浸式体验，帮你把<strong>"时间"</strong>这个抽象概念具象化，真实感受<strong>1秒、1分钟、1小时</strong>到底有多长。你不需要真的戴上VR眼镜——下面的任务可以用视频、APP或你的身体来感受！</p>
+  </div>
+
+  <div class="card">
+    <h2>👁️ 观察任务</h2>
+
+    <div class="task-card" onclick="this.classList.toggle('highlight-box')">
+      <div class="task-icon">🔍</div>
+      <div class="task-title">观察1秒的"重量"</div>
+      <div class="task-desc">观察秒针跳动一次的全过程。它看起来很快，但在这1秒里，世界上发生了多少事？蜂鸟扇动翅膀约55次、地球绕太阳公转约30公里……1秒其实很"重"！</div>
+    </div>
+
+    <div class="task-card" onclick="this.classList.toggle('highlight-box')">
+      <div class="task-icon">📊</div>
+      <div class="task-title">观察1分钟的"容量"</div>
+      <div class="task-desc">看着分针移动一小格，感受60秒如何"堆积"成1分钟。在这1分钟里，你的心脏大约跳动了70-80下，你的眼睛眨了约15次。</div>
+    </div>
+
+    <div class="task-card" onclick="this.classList.toggle('highlight-box')">
+      <div class="task-icon">🌞</div>
+      <div class="task-title">观察1小时的"形状"</div>
+      <div class="task-desc">观察时针移动一大格，感受60分钟如何组成1小时。在这1小时里，太阳在天空移动了约15度，一集动画片刚好播完。</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🎮 操作任务</h2>
+
+    <div class="task-card" onclick="this.classList.toggle('highlight-box')">
+      <div class="task-icon">⏱️</div>
+      <div class="task-title">VR计时挑战——你的"内心钟"准不准？</div>
+      <div class="task-desc">不带计时器，凭感觉——从点击"开始"起，当你觉得"正好60秒到了"就立刻点击"停止"！看看你的内心钟准不准。</div>
+    </div>
+
+    <div style="text-align:center;margin:12px 0;">
+      <div class="timer-display" id="timerDisplay">00:00</div>
+      <div class="timer-buttons">
+        <button class="interact-btn success" id="startBtn" onclick="startTimer()">▶ 开始计时</button>
+        <button class="interact-btn danger" id="stopBtn" onclick="stopTimer()" disabled>⏹ 停止（我感觉60秒到了！）</button>
+        <button class="interact-btn secondary" onclick="resetTimer()">↺ 重来</button>
+      </div>
+      <p id="timerResult" style="font-size:17px;margin-top:8px;"></p>
+    </div>
+
+    <div class="task-card" onclick="this.classList.toggle('highlight-box')">
+      <div class="task-icon">🔬</div>
+      <div class="task-title">时间缩放体验</div>
+      <div class="task-desc">在VR中把1秒"拉长"到10秒播放，观察平时看不到的细节——蜂鸟扇翅膀、水滴滴落的过程、乒乓球触地变形的瞬间。</div>
+    </div>
+
+    <div class="task-card" onclick="this.classList.toggle('highlight-box')">
+      <div class="task-icon">🎵</div>
+      <div class="task-title">时间叠加观察</div>
+      <div class="task-desc">想象同时开启3个计时器——1秒滴答一次（快节奏）、1分钟滴答一次（中节奏）、1小时滴答一次（慢节奏），感受三种节奏的差异。</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📝 记录任务</h2>
+    <table>
+      <tr><th>任务</th><th>我的观察</th><th>我的感受</th></tr>
+      <tr><td>观察1秒</td><td><input type="text" placeholder="我看到了..." style="width:100%;border:none;border-bottom:1px solid var(--border);padding:4px;font-size:15px;outline:none;"></td>
+          <td><input type="text" placeholder="我感觉1秒..." style="width:100%;border:none;border-bottom:1px solid var(--border);padding:4px;font-size:15px;outline:none;"></td></tr>
+      <tr><td>感受1分钟</td><td><input type="text" placeholder="在这1分钟里..." style="width:100%;border:none;border-bottom:1px solid var(--border);padding:4px;font-size:15px;outline:none;"></td>
+          <td><input type="text" placeholder="和我想象的一样/不一样" style="width:100%;border:none;border-bottom:1px solid var(--border);padding:4px;font-size:15px;outline:none;"></td></tr>
+      <tr><td>凭感觉计时60秒</td><td><input type="text" placeholder="实际计时了____秒" style="width:100%;border:none;border-bottom:1px solid var(--border);padding:4px;font-size:15px;outline:none;"></td>
+          <td><input type="text" placeholder="偏快/偏慢/准" style="width:100%;border:none;border-bottom:1px solid var(--border);padding:4px;font-size:15px;outline:none;"></td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>🎬 VR 资源推荐</h2>
+    <div class="highlight-box">
+      <p><strong>推荐平台：</strong></p>
+      <ul>
+        <li>"Time体验"VR教育应用（手机VR盒子可用）</li>
+        <li>Google Expeditions中"时间感知"模块</li>
+        <li>支付宝AR小程序"时间旅行者"（免设备）</li>
+      </ul>
+      <p><strong>获取路径：</strong>搜索"时间感知VR"或"Time perception VR"可找到免费资源</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🔄 替代方案（无VR设备时）</h2>
+    <div class="alt-grid">
+      <div class="alt-card">
+        <div class="alt-icon">🎥</div>
+        <h4>3D动画方案</h4>
+        <p>搜索"Time Lapse - 1 minute"延时摄影视频，观察1分钟内花朵开放、云朵移动的过程。</p>
+      </div>
+      <div class="alt-card">
+        <div class="alt-icon">⏳</div>
+        <h4>实物体验方案</h4>
+        <p>对着钟表闭眼数60秒，或用秒表APP玩"猜时间"游戏，还可以用沙漏观察时间流逝。</p>
+      </div>
+      <div class="alt-card">
+        <div class="alt-icon">🏃</div>
+        <h4>身体感知方案</h4>
+        <p>拍球60下、跳绳60下、深呼吸60次——用身体感受时间的长度！</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let timerInterval = null;
+let startTime = null;
+let elapsed = 0;
+let isRunning = false;
+
+function formatTime(ms) {
+  const secs = Math.floor(ms / 1000);
+  const millis = Math.floor((ms % 1000) / 10);
+  return String(secs).padStart(2, '0') + ':' + String(millis).padStart(2, '0');
+}
+
+function startTimer() {
+  if (isRunning) return;
+  isRunning = true;
+  startTime = Date.now() - elapsed;
+  document.getElementById('startBtn').disabled = true;
+  document.getElementById('stopBtn').disabled = false;
+  document.getElementById('timerResult').textContent = '⏳ 感觉时间在流逝...你觉得60秒到了就点击停止！';
+  timerInterval = setInterval(() => {
+    elapsed = Date.now() - startTime;
+    document.getElementById('timerDisplay').textContent = formatTime(elapsed);
+  }, 50);
+}
+
+function stopTimer() {
+  if (!isRunning) return;
+  isRunning = false;
+  clearInterval(timerInterval);
+  document.getElementById('startBtn').disabled = false;
+  document.getElementById('stopBtn').disabled = true;
+
+  const diff = elapsed - 60000;
+  let msg = '';
+  if (Math.abs(diff) < 3000) {
+    msg = '🎉 太厉害了！你的内心钟非常准！（误差在3秒以内）';
+  } else if (Math.abs(diff) < 8000) {
+    msg = '👍 不错哦！你的时间感很好，稍微再练练就完美了！';
+  } else if (diff > 0) {
+    msg = '⏰ 你偏慢了一些——你觉得的60秒比实际长，说明你的内心节奏比较从容。';
+  } else {
+    msg = '⚡ 你偏快了一些——你觉得的60秒比实际短，说明你的内心节奏比较快。';
+  }
+  document.getElementById('timerResult').textContent = `你计时了 ${formatTime(elapsed)}（约${Math.round(elapsed/1000)}秒），` + msg;
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  isRunning = false;
+  elapsed = 0;
+  document.getElementById('timerDisplay').textContent = '00:00';
+  document.getElementById('startBtn').disabled = false;
+  document.getElementById('stopBtn').disabled = true;
+  document.getElementById('timerResult').textContent = '';
+}
+</script>
+</body>
+</html>

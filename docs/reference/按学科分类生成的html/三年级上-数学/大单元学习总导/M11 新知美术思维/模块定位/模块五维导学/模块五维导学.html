@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块五维导学 — M11 新知美术思维</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  padding: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+}
+
+.header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+
+.header h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.header .subtitle {
+  font-size: 15px;
+  opacity: 0.9;
+}
+
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px 28px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border);
+  transition: box-shadow 0.3s;
+}
+
+.card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+
+.card h3 {
+  font-size: 20px;
+  color: var(--text);
+  margin: 16px 0 10px;
+}
+
+.dimension-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.dim-item {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 14px;
+  text-align: center;
+  border: 1px solid var(--border);
+  transition: transform 0.2s;
+  cursor: pointer;
+}
+
+.dim-item:hover {
+  transform: translateY(-3px);
+  border-color: var(--primary);
+}
+
+.dim-item .dim-icon {
+  font-size: 32px;
+  margin-bottom: 6px;
+}
+
+.dim-item .dim-num {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.dim-item .dim-text {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.objective-list {
+  list-style: none;
+  padding: 0;
+}
+
+.objective-list li {
+  padding: 12px 16px;
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  border-left: 3px solid var(--accent);
+  transition: background 0.3s;
+  cursor: default;
+}
+
+.objective-list li:hover {
+  background: #e6f4ff;
+}
+
+.objective-list li .obj-num {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.objective-list li.checked .obj-num {
+  background: #16a34a;
+}
+
+.objective-list li.checked {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.value-card {
+  background: linear-gradient(135deg, #e6f4ff 0%, #f0f5ff 100%);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin: 12px 0;
+  border: 1px solid #91caff;
+}
+
+.value-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.value-item {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  border: 1px solid var(--border);
+  text-align: center;
+  transition: transform 0.2s;
+}
+
+.value-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.value-item .val-icon {
+  font-size: 30px;
+  margin-bottom: 6px;
+}
+
+.value-item .val-title {
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.value-item .val-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.method-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 15px;
+}
+
+.method-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+}
+
+.method-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.method-table tr:hover td {
+  background: var(--bg);
+}
+
+.person-card {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  margin: 10px 0;
+  border: 1px solid var(--border);
+  align-items: flex-start;
+  transition: background 0.3s;
+  cursor: pointer;
+}
+
+.person-card:hover {
+  background: #e6f4ff;
+}
+
+.person-card .person-avatar {
+  font-size: 40px;
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card-bg);
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+}
+
+.person-card .person-name {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.person-card .person-years {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.person-card .person-detail {
+  display: none;
+  margin-top: 8px;
+  padding: 10px;
+  background: var(--card-bg);
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.quest-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin: 10px 0;
+  border: 1px dashed var(--primary);
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+.quest-card:hover {
+  background: var(--bg);
+  border-style: solid;
+}
+
+.quest-card .quest-num {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+  text-align: center;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 8px;
+}
+
+.quest-card .quest-think {
+  display: none;
+  margin-top: 10px;
+  padding: 10px;
+  background: #fff;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+}
+
+.quest-card .quest-think textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 15px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 50px;
+}
+
+.quest-card .quest-think textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+@media (max-width: 600px) {
+  .container { padding: 16px; }
+  .header { padding: 20px; }
+  .card { padding: 16px; }
+  .dimension-grid { grid-template-columns: repeat(2, 1fr); }
+  .value-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🧭 模块五维导学</h1>
+  <div class="subtitle">M11 新知美术思维 · 看清方向再出发</div>
+</div>
+
+<div class="card">
+  <h2>🎯 模块学习目标</h2>
+  <p style="color:var(--text-secondary);margin-bottom:12px;">完成M11"新知美术思维"后，请你检查自己是否达到了以下目标。点击目标标注为"已达成"。</p>
+  <ul class="objective-list">
+    <li onclick="this.classList.toggle('checked')"><span class="obj-num">1</span>我能用颜色表达时间——给不同的时间长度或活动类型分配颜色，别人能一眼看懂</li>
+    <li onclick="this.classList.toggle('checked')"><span class="obj-num">2</span>我能画时间轴——会用水平线、圆圈或流程图把一段时间可视化表达出来</li>
+    <li onclick="this.classList.toggle('checked')"><span class="obj-num">3</span>我理解比例关系——知道"1小时画2厘米，半小时画1厘米"的视觉比例逻辑</li>
+    <li onclick="this.classList.toggle('checked')"><span class="obj-num">4</span>我能分析别人的时间作品——看到一幅时间图谱，能说出"它用了什么方法"</li>
+    <li onclick="this.classList.toggle('checked')"><span class="obj-num">5</span>我能创作自己的时间图谱——独立完成一幅包含时间、活动、色彩、图例的作品</li>
+  </ul>
+  <div style="text-align:right;margin-top:8px;">
+    <button class="btn" onclick="var items=document.querySelectorAll('.objective-list li');var c=0;items.forEach(function(i){if(i.classList.contains('checked'))c++;});alert('✅ 已完成 '+c+'/'+items.length+' 个目标！');" style="background:var(--primary);color:#fff;border:none;border-radius:6px;padding:8px 20px;font-size:16px;font-family:inherit;cursor:pointer;">📊 查看进度</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>🚀 高精尖价值与未来意义</h2>
+  <p style="color:var(--text-secondary);margin-bottom:12px;">时间可视化不仅是美术课上的游戏，它在现代社会中无处不在：</p>
+
+  <div class="value-grid">
+    <div class="value-item">
+      <div class="val-icon">🚇</div>
+      <div class="val-title">地铁线路图</div>
+      <div class="val-desc">用不同颜色区分线路，用线段长度表示站点间的时间距离</div>
+    </div>
+    <div class="value-item">
+      <div class="val-icon">🏥</div>
+      <div class="val-title">医院排班表</div>
+      <div class="val-desc">用色彩块表示医生值班时段，一眼看出谁在什么时间上班</div>
+    </div>
+    <div class="value-item">
+      <div class="val-icon">📈</div>
+      <div class="val-title">金融股票图</div>
+      <div class="val-desc">用K线颜色表示涨跌，实时反映时间与价格的关系</div>
+    </div>
+    <div class="value-item">
+      <div class="val-icon">🚀</div>
+      <div class="val-title">航天任务时间线</div>
+      <div class="val-desc">NASA用精确到秒的时间轴规划火箭发射的每个环节</div>
+    </div>
+    <div class="value-item">
+      <div class="val-icon">🏅</div>
+      <div class="val-title">奥运会赛程表</div>
+      <div class="val-desc">视觉化展示数万场比赛在16天内的分布</div>
+    </div>
+  </div>
+
+  <div class="value-card">
+    <p><strong>💡 核心启示：</strong>学会"把时间画出来"，就是学会了一种<strong>信息可视化</strong>的思维方式——这是未来数字时代每个人都需要的核心能力。</p>
+  </div>
+</div>
+
+<div class="card">
+  <h2>📚 推荐学习方式与方法</h2>
+  <div style="overflow-x:auto;">
+  <table class="method-table">
+    <thead>
+      <tr><th style="width:120px;">方法</th><th>怎么用</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>👀 观察记录法</strong></td>
+        <td>先花2-3天记录自己每天的时间消耗，作为创作素材</td>
+      </tr>
+      <tr>
+        <td><strong>🎨 色彩编码法</strong></td>
+        <td>自创一套"时间颜色系统"（学习蓝、运动绿、休息黄……）</td>
+      </tr>
+      <tr>
+        <td><strong>🧠 图形思维法</strong></td>
+        <td>画之前先想：用横轴、圆形还是表格？哪个最能表达我的想法</td>
+      </tr>
+      <tr>
+        <td><strong>🔄 比较借鉴法</strong></td>
+        <td>看看同学的作品，问自己"他的方法好在哪里，我可以学什么"</td>
+      </tr>
+      <tr>
+        <td><strong>✏️ 修改完善法</strong></td>
+        <td>先画第一版草稿，隔天再看再改，通常第二版会有大进步</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<div class="card">
+  <h2>👤 关键人物与事件</h2>
+  <p style="color:var(--text-secondary);margin-bottom:12px;">点击人物卡片查看更多信息：</p>
+
+  <div class="person-card" onclick="togglePerson(this)">
+    <div class="person-avatar">⏰</div>
+    <div>
+      <div class="person-name">克里斯蒂安·惠更斯 <span class="person-years">（1629-1695）</span></div>
+      <p style="font-size:14px;">发明摆钟的人。他把"时间"变成了可以精确计量的机械运动。</p>
+      <div class="person-detail">惠更斯发明的摆钟将时间的误差从每天15分钟缩小到每天几秒钟，为后来的科学实验和航海导航提供了前所未有的时间精确度。</div>
+    </div>
+  </div>
+
+  <div class="person-card" onclick="togglePerson(this)">
+    <div class="person-avatar">⚓</div>
+    <div>
+      <div class="person-name">约翰·哈里森 <span class="person-years">（1693-1776）</span></div>
+      <p style="font-size:14px;">发明航海钟的人。他用了28年解决"如何在海上确定经度"的难题。</p>
+      <div class="person-detail">哈里森用28年时间设计了4代航海钟（H1-H4），让钟表在颠簸的海上也能准确计时，最终赢得了英国议会2万英镑的"经度大奖"。</div>
+    </div>
+  </div>
+
+  <div class="person-card" onclick="togglePerson(this)">
+    <div class="person-avatar">📊</div>
+    <div>
+      <div class="person-name">威廉·普莱费尔 <span class="person-years">（1759-1823）</span></div>
+      <p style="font-size:14px;">发明了柱状图和饼图，让人第一次可以用图形"看"数据。</p>
+      <div class="person-detail">这位苏格兰工程师在1786年出版的《商业与政治图集》中发明了线形图、柱状图和饼图，被称为"图形统计学之父"。</div>
+    </div>
+  </div>
+
+  <div class="person-card" onclick="togglePerson(this)">
+    <div class="person-avatar">🍅</div>
+    <div>
+      <div class="person-name">弗朗西斯科·西里洛</div>
+      <p style="font-size:14px;">番茄工作法创始人——25分钟专注+5分钟休息。</p>
+      <div class="person-detail">西里洛在1980年代发明了番茄工作法（Pomodoro Technique），用一种简单的视觉化方式管理时间，全球数亿人在使用这个方法提高专注力。</div>
+    </div>
+  </div>
+
+  <div class="person-card" onclick="togglePerson(this)">
+    <div class="person-avatar">⚛️</div>
+    <div>
+      <div class="person-name">原子钟 <span class="person-years">（1949-至今）</span></div>
+      <p style="font-size:14px;">目前最精确的时间测量工具，30亿年才误差1秒。</p>
+      <div class="person-detail">GPS导航、互联网时间同步、5G通信、金融交易都依赖原子钟的精确计时。它还验证了爱因斯坦的相对论！</div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:12px;">
+    <p style="font-size:14px;color:var(--text-secondary);">👆 点击卡片展开详情</p>
+  </div>
+</div>
+
+<div class="card">
+  <h2>🔮 前沿追问</h2>
+  <p style="color:var(--text-secondary);margin-bottom:12px;">这些问题没有标准答案——挑战你的想象力！</p>
+
+  <div class="quest-card" onclick="const t=this.querySelector('.quest-think');t.style.display=t.style.display==='block'?'none':'block';">
+    <span class="quest-num">1</span>
+    <strong>如果时间有颜色</strong>——1秒是什么颜色？1分钟呢？1小时呢？能不能创造一套"时间颜色语言"让全世界通用？
+    <div class="quest-think"><textarea placeholder="写下你的想象……"></textarea></div>
+  </div>
+
+  <div class="quest-card" onclick="const t=this.querySelector('.quest-think');t.style.display=t.style.display==='block'?'none':'block';">
+    <span class="quest-num">2</span>
+    <strong>时间能不能倒着画？</strong>——从右到左画时间轴会怎样？把时间画成螺旋形会怎样？
+    <div class="quest-think"><textarea placeholder="写下你的想象……"></textarea></div>
+  </div>
+
+  <div class="quest-card" onclick="const t=this.querySelector('.quest-think');t.style.display=t.style.display==='block'?'none':'block';">
+    <span class="quest-num">3</span>
+    <strong>如果钟表"消失"了</strong>——没有钟表，你怎么判断时间？你会用什么方法"画"出时间？
+    <div class="quest-think"><textarea placeholder="写下你的想象……"></textarea></div>
+  </div>
+
+  <div class="quest-card" onclick="const t=this.querySelector('.quest-think');t.style.display=t.style.display==='block'?'none':'block';">
+    <span class="quest-num">4</span>
+    <strong>动物的时间感</strong>——狗能感知时间吗？蜜蜂呢？如果让动物来画"一天的时间图谱"，它会画成什么样？
+    <div class="quest-think"><textarea placeholder="写下你的想象……"></textarea></div>
+  </div>
+
+  <div class="quest-card" onclick="const t=this.querySelector('.quest-think');t.style.display=t.style.display==='block'?'none':'block';">
+    <span class="quest-num">5</span>
+    <strong>100年后的时间可视化</strong>——全息投影？脑机接口？你想象的未来时间画面是什么样的？
+    <div class="quest-think"><textarea placeholder="写下你的想象……"></textarea></div>
+  </div>
+
+  <p style="text-align:center;margin-top:12px;font-size:14px;color:var(--text-secondary);">👆 点击问题，写下你的思考</p>
+</div>
+
+</div>
+<script>
+function togglePerson(el) {
+  var detail = el.querySelector('.person-detail');
+  if (detail) {
+    detail.style.display = detail.style.display === 'block' ? 'none' : 'block';
+  }
+}
+</script>
+<style>
+.btn { transition: background 0.3s; }
+.btn:hover { background: var(--primary-hover); }
+</style>
+</body>
+</html>

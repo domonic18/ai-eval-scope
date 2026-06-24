@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性七阶适配案例</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px 24px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 24px 30px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  text-align: center;
+}
+.header h1 {
+  margin: 0;
+  font-size: var(--font-h1);
+  font-weight: 700;
+}
+.header p {
+  margin: 8px 0 0;
+  opacity: 0.9;
+  font-size: var(--font-body);
+}
+.case-nav {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.case-nav button {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text);
+}
+.case-nav button:hover {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.case-nav button.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.case-card {
+  display: none;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  animation: fadeIn 0.4s ease;
+}
+.case-card.active {
+  display: block;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.case-card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+.case-card .case-type {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  padding: 3px 14px;
+  border-radius: 14px;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+.case-card .step-box {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+.case-card .step-box ol {
+  margin: 6px 0 0;
+  padding-left: 20px;
+}
+.case-card .step-box ol li { margin-bottom: 4px; }
+.principle-tag {
+  display: inline-block;
+  background: #e6f7ff;
+  color: var(--primary);
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  padding: 2px 12px;
+  font-size: 14px;
+  margin: 4px 4px 0 0;
+}
+.checklist {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: var(--border-radius);
+  padding: 12px 16px;
+  margin-top: 12px;
+}
+.checklist label {
+  display: block;
+  padding: 4px 0;
+  cursor: pointer;
+}
+.checklist input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+  vertical-align: middle;
+  accent-color: var(--primary);
+}
+.scaffold-box {
+  background: #fffbe6;
+  border: 1px dashed #ffe58f;
+  border-radius: var(--border-radius);
+  padding: 10px 14px;
+  margin: 8px 0;
+  font-size: 16px;
+}
+.footer {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 16px 0 8px;
+  font-size: 15px;
+}
+@media (max-width: 600px) {
+  .container { padding: 12px 16px; }
+  .header { padding: 18px 20px; }
+  .header h1 { font-size: 24px; }
+  .case-card { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>建构性七阶适配案例</h1>
+    <p>M13 新知项目性应用 — 7种不同场景，让你把时间知识用起来！</p>
+  </div>
+
+  <div class="case-nav" id="caseNav">
+    <button class="active" onclick="showCase(0)">案例1</button>
+    <button onclick="showCase(1)">案例2</button>
+    <button onclick="showCase(2)">案例3</button>
+    <button onclick="showCase(3)">案例4</button>
+    <button onclick="showCase(4)">案例5</button>
+    <button onclick="showCase(5)">案例6</button>
+    <button onclick="showCase(6)">案例7</button>
+  </div>
+
+  <!-- 案例1 -->
+  <div class="case-card active" data-index="0">
+    <span class="case-type">个人理解型</span>
+    <h2>我的"一分钟"能做什么</h2>
+    <p><strong>🌟 真实建构情境：</strong>一分钟可以做很多事——跳绳120下、写20个字、读一篇短文……但你真的感受过"一分钟"有多长吗？请你亲身体验，建构属于你自己的"一分钟概念库"。</p>
+    <p><strong>🎯 建构任务：</strong>设计并完成3个"一分钟挑战"活动，记录每个活动的结果，形成"一分钟能力档案"。</p>
+    <p><strong>🔗 原理调用：</strong><span class="principle-tag">量化估算原理</span><span class="principle-tag">可视化表达原理</span></p>
+    <div class="step-box">
+      <strong>建构步骤：</strong>
+      <ol>
+        <li>选3个活动（如跳绳、写字、拍球）</li>
+        <li>每个活动计时60秒</li>
+        <li>记录完成数量</li>
+        <li>制作"一分钟能力柱状图"</li>
+        <li>写下你的发现</li>
+      </ol>
+    </div>
+    <div class="scaffold-box">🧰 <strong>脚手架：</strong>计时器（手机秒表）、记录表格模板</div>
+    <p><strong>📦 成果表达：</strong>一份"一分钟能力档案"图表+文字说明。</p>
+    <div class="checklist">
+      <strong>✅ 自评量规：</strong>
+      <label><input type="checkbox"> 我记录了至少3项活动</label>
+      <label><input type="checkbox"> 我的计时准确到秒</label>
+      <label><input type="checkbox"> 我用图表展示了数据</label>
+      <label><input type="checkbox"> 我写了至少1条发现</label>
+      <label><input type="checkbox"> 我用了"分钟"和"秒"来表述</label>
+    </div>
+  </div>
+
+  <!-- 案例2 -->
+  <div class="case-card" data-index="1">
+    <span class="case-type">生活应用型</span>
+    <h2>上学路上时间地图</h2>
+    <p><strong>🌟 真实建构情境：</strong>从家到学校需要多长时间？走路和骑车差别多大？如果你在路上买早餐，要提前多久出门？</p>
+    <p><strong>🎯 建构任务：</strong>实测并制作一份"上学路上时间地图"，标注从家到学校不同路段、不同交通方式所需时间。</p>
+    <p><strong>🔗 原理调用：</strong><span class="principle-tag">清单先行原理</span><span class="principle-tag">量化估算原理</span></p>
+    <div class="step-box">
+      <strong>建构步骤：</strong>
+      <ol>
+        <li>画出简易路线图</li>
+        <li>分段标记各段长度</li>
+        <li>用不同颜色标注不同交通方式的用时</li>
+        <li>计算总用时</li>
+        <li>写出"最佳出行时间建议"</li>
+      </ol>
+    </div>
+    <div class="scaffold-box">🧰 <strong>脚手架：</strong>路线图模板、计时器</div>
+    <p><strong>📦 成果表达：</strong>一份手绘路线图，标注各段用时分钟数，附带"最佳出行方案"建议。</p>
+    <div class="checklist">
+      <strong>✅ 自评量规：</strong>
+      <label><input type="checkbox"> 我画了完整的路线图</label>
+      <label><input type="checkbox"> 我标注了至少3个路段的时间</label>
+      <label><input type="checkbox"> 我比较了至少2种出行方式</label>
+      <label><input type="checkbox"> 我计算了总用时</label>
+      <label><input type="checkbox"> 我给出了出行时间建议</label>
+    </div>
+  </div>
+
+  <!-- 案例3 -->
+  <div class="case-card" data-index="2">
+    <span class="case-type">校园问题解决型</span>
+    <h2>课间10分钟活动方案</h2>
+    <p><strong>🌟 真实建构情境：</strong>课间只有10分钟！上厕所、喝水、准备下节课用品、和小伙伴说几句话……怎么安排才能全部完成？</p>
+    <p><strong>🎯 建构任务：</strong>运用"系统组装原理"，设计一份"高效课间10分钟行动方案"。</p>
+    <p><strong>🔗 原理调用：</strong><span class="principle-tag">系统组装原理</span><span class="principle-tag">验证校准原理</span></p>
+    <div class="step-box">
+      <strong>建构步骤：</strong>
+      <ol>
+        <li>列出课间必须做的事和想做的事</li>
+        <li>估算每件事用时</li>
+        <li>按顺序排布</li>
+        <li>检查总时长 ≤ 10分钟</li>
+        <li>试执行并调整</li>
+      </ol>
+    </div>
+    <div class="scaffold-box">🧰 <strong>脚手架：</strong>10分钟倒计时器、活动排序表</div>
+    <p><strong>📦 成果表达：</strong>一份"课间10分钟时间安排表"（可按"必做"和"想做"分类）。</p>
+    <div class="checklist">
+      <strong>✅ 自评量规：</strong>
+      <label><input type="checkbox"> 我列出了至少4件课间要做的事</label>
+      <label><input type="checkbox"> 我估算了每件事的用时</label>
+      <label><input type="checkbox"> 总时长没有超过10分钟</label>
+      <label><input type="checkbox"> 安排顺序合理（先重要后次要）</label>
+      <label><input type="checkbox"> 我实际执行并改进了方案</label>
+    </div>
+  </div>
+
+  <!-- 案例4 -->
+  <div class="case-card" data-index="3">
+    <span class="case-type">学科表达型</span>
+    <h2>时间单位换算"思维导图"</h2>
+    <p><strong>🌟 真实建构情境：</strong>1时=60分，1分=60秒，1时=3600秒……时间单位之间的换算关系像一个迷宫，你能不能画一张"时间换算地图"？</p>
+    <p><strong>🎯 建构任务：</strong>建构一份"时间单位换算思维导图"，展示时、分、秒之间的换算规则和典型例子。</p>
+    <p><strong>🔗 原理调用：</strong><span class="principle-tag">可视化表达原理</span></p>
+    <div class="step-box">
+      <strong>建构步骤：</strong>
+      <ol>
+        <li>写出3个单位：时、分、秒</li>
+        <li>标出换算关系（大→小×60，小→大÷60）</li>
+        <li>为每个换算方向配一个例子</li>
+        <li>用箭头和颜色区分"×"和"÷"</li>
+        <li>加入"常见错误提醒"</li>
+      </ol>
+    </div>
+    <div class="scaffold-box">🧰 <strong>脚手架：</strong>思维导图模板、常见换算错误列表</div>
+    <p><strong>📦 成果表达：</strong>一张A4纸大小的"时间换算思维导图"，包含主要换算关系和2-3个典型例题。</p>
+    <div class="checklist">
+      <strong>✅ 自评量规：</strong>
+      <label><input type="checkbox"> 我标出了时、分、秒三者的全部换算关系</label>
+      <label><input type="checkbox"> 我的换算方向箭头标注正确</label>
+      <label><input type="checkbox"> 我为每个换算关系配了至少1个例子</label>
+      <label><input type="checkbox"> 我标注了1个以上常见错误提醒</label>
+      <label><input type="checkbox"> 我的导图清晰易读、有颜色区分</label>
+    </div>
+  </div>
+
+  <!-- 案例5 -->
+  <div class="case-card" data-index="4">
+    <span class="case-type">跨学科整合型</span>
+    <h2>计时器的发展历史时间轴</h2>
+    <p><strong>🌟 真实建构情境：</strong>古人没有手表和手机，他们怎么知道时间？日晷、水钟、沙漏、摆钟……计时工具经历了几千年的变化！</p>
+    <p><strong>🎯 建构任务：</strong>制作一份"计时器发展历史时间轴"，标注每个时代的计时精度。</p>
+    <p><strong>🔗 原理调用：</strong><span class="principle-tag">清单先行原理</span><span class="principle-tag">系统组装原理</span></p>
+    <div class="step-box">
+      <strong>建构步骤：</strong>
+      <ol>
+        <li>查阅资料列出5种以上的计时器</li>
+        <li>确定每种计时器出现的年代</li>
+        <li>估算它们的计时精度</li>
+        <li>按时间顺序排列</li>
+        <li>制作时间轴配图</li>
+      </ol>
+    </div>
+    <div class="scaffold-box">🧰 <strong>脚手架：</strong>网络资料（日晷、水钟、沙漏、机械钟、电子钟、原子钟）、时间轴模板</div>
+    <p><strong>📦 成果表达：</strong>一份有6-8个节点的"计时器发展史时间轴"手绘图。</p>
+    <div class="checklist">
+      <strong>✅ 自评量规：</strong>
+      <label><input type="checkbox"> 我列出了至少5种不同时期的计时器</label>
+      <label><input type="checkbox"> 时间轴按正确时间顺序排列</label>
+      <label><input type="checkbox"> 我标注了每种计时器的计时精度</label>
+      <label><input type="checkbox"> 我配了简易插图</label>
+      <label><input type="checkbox"> 时间轴格式整齐美观</label>
+    </div>
+  </div>
+
+  <!-- 案例6 -->
+  <div class="case-card" data-index="5">
+    <span class="case-type">社会情境型</span>
+    <h2>一分钟可以做什么公益？</h2>
+    <p><strong>🌟 真实建构情境：</strong>给老人让座只需30秒；捡起一张纸片只需5秒。如果每人每天抽1分钟做一件好事，全班40人一天就有40分钟，一周就有280分钟！</p>
+    <p><strong>🎯 建构任务：</strong>设计2-3个"一分钟公益行动"，计算全班一个月可以累积多少公益时间。</p>
+    <p><strong>🔗 原理调用：</strong><span class="principle-tag">量化估算原理</span><span class="principle-tag">验证校准原理</span></p>
+    <div class="step-box">
+      <strong>建构步骤：</strong>
+      <ol>
+        <li>想3件可以在1分钟内完成的公益小事</li>
+        <li>估算每件事的具体用时</li>
+        <li>计算全班40人一个月（30天）的公益总时长</li>
+        <li>换算成小时</li>
+        <li>设计一张"一分钟公益海报"</li>
+      </ol>
+    </div>
+    <div class="scaffold-box">🧰 <strong>脚手架：</strong>时间换算公式（分钟→小时，÷60）、海报设计模板</div>
+    <p><strong>📦 成果表达：</strong>一份"一分钟公益行动"海报（含行动方案和公益时间计算）。</p>
+    <div class="checklist">
+      <strong>✅ 自评量规：</strong>
+      <label><input type="checkbox"> 我设计了至少2个1分钟公益行动</label>
+      <label><input type="checkbox"> 我计算了全班一个月的公益总时间</label>
+      <label><input type="checkbox"> 我的时间换算没有错误</label>
+      <label><input type="checkbox"> 我的海报包含行动方案和时间数据</label>
+      <label><input type="checkbox"> 我的方案具有实际可行性</label>
+    </div>
+  </div>
+
+  <!-- 案例7 -->
+  <div class="case-card" data-index="6">
+    <span class="case-type">综合创新型</span>
+    <h2>我的"理想周末"时间规划方案</h2>
+    <p><strong>🌟 真实建构情境：</strong>如果这个周末完全由你来安排，你会怎么度过？从周六早上到周日晚上的48小时，请你做自己的"时间CEO"！</p>
+    <p><strong>🎯 建构任务：</strong>运用本模块所有建构性原理，设计一份完整的"理想周末48小时时间规划方案"。</p>
+    <p><strong>🔗 原理调用：</strong><span class="principle-tag">清单先行原理</span><span class="principle-tag">量化估算原理</span><span class="principle-tag">系统组装原理</span><span class="principle-tag">验证校准原理</span><span class="principle-tag">可视化表达原理</span></p>
+    <div class="step-box">
+      <strong>建构步骤：</strong>
+      <ol>
+        <li>列出所有想做的事</li>
+        <li>为每件事估算用时</li>
+        <li>按时间顺序排入48小时</li>
+        <li>检查总时长 ≤ 48小时</li>
+        <li>制作精美时间规划表</li>
+        <li>标注"必做"和"弹性"事项</li>
+      </ol>
+    </div>
+    <div class="scaffold-box">🧰 <strong>脚手架：</strong>48小时时间轴模板、彩色笔、周末活动参考清单</div>
+    <p><strong>📦 成果表达：</strong>一份"我的理想周末"48小时时间规划方案（包含时间表格和文字说明）。</p>
+    <div class="checklist">
+      <strong>✅ 自评量规：</strong>
+      <label><input type="checkbox"> 我的方案覆盖了周六日和早中晚全程</label>
+      <label><input type="checkbox"> 每项活动都标注了开始时间和持续时间</label>
+      <label><input type="checkbox"> 总用时没有超过48小时</label>
+      <label><input type="checkbox"> 我合理安排了休息、学习、娱乐的比例</label>
+      <label><input type="checkbox"> 我的方案规划清晰、美观大方</label>
+    </div>
+  </div>
+
+  <div class="footer">建构性七阶案例 — 从个人体验到综合创新，一步一步提升</div>
+</div>
+<script>
+function showCase(index) {
+  var cards = document.querySelectorAll('.case-card');
+  var btns = document.querySelectorAll('.case-nav button');
+  cards.forEach(function(c, i) {
+    c.classList.toggle('active', i === index);
+  });
+  btns.forEach(function(b, i) {
+    b.classList.toggle('active', i === index);
+  });
+}
+</script>
+</body>
+</html>

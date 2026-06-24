@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性案例 — 七阶建构之旅</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  text-align: center;
+}
+.header h1 { font-size: var(--font-h1); }
+.header .subtitle { font-size: 15px; opacity: 0.9; margin-top: 4px; }
+.container { width: 100%; max-width: none; padding: 20px 24px; }
+
+/* 进度轨道 */
+.track {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 12px 16px;
+  background: var(--card-bg);
+  border-radius: 30px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  position: relative;
+  overflow-x: auto;
+}
+.track::-webkit-scrollbar { height: 4px; }
+.track::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.track-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  min-width: 48px;
+  padding: 4px;
+  transition: all 0.2s;
+}
+.track-item:hover .track-dot { transform: scale(1.15); }
+.track-dot {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-secondary);
+  transition: all 0.3s;
+}
+.track-item.active .track-dot {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(22,119,255,0.2);
+}
+.track-item.done .track-dot {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.track-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  white-space: nowrap;
+}
+.track-arrow {
+  flex-shrink: 0;
+  color: var(--border);
+  font-size: 16px;
+}
+
+/* 案例卡片 */
+.case-section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  padding: 24px;
+  margin-bottom: 20px;
+  display: none;
+}
+.case-section.active { display: block; }
+.case-section .case-num {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  font-size: 14px;
+  padding: 3px 12px;
+  border-radius: 20px;
+  margin-bottom: 8px;
+}
+.case-section h2 { font-size: var(--font-h2); color: var(--primary); margin-bottom: 10px; }
+.level-badge {
+  display: inline-block;
+  background: #e6f7ff;
+  color: var(--primary);
+  font-size: 13px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  border: 1px solid #91d5ff;
+  margin-bottom: 10px;
+}
+.difficulty-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin: 8px 0;
+}
+.difficulty-row .star { color: #faad14; font-size: 16px; }
+.difficulty-row .star-empty { color: var(--border); font-size: 16px; }
+.product-box {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 14px;
+  margin: 10px 0;
+  border-left: 4px solid var(--primary);
+}
+.product-box strong { color: var(--primary); }
+.nav-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+.nav-buttons button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.nav-buttons button:hover { background: var(--primary-hover); }
+.nav-buttons button:disabled { background: var(--border); cursor: not-allowed; }
+
+/* 总览表格 */
+.summary-section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  padding: 22px 24px;
+  margin-top: 24px;
+}
+.summary-section h2 { font-size: var(--font-h2); color: var(--primary); margin-bottom: 12px; }
+.table-wrap { overflow-x: auto; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+table th, table td {
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  text-align: left;
+}
+table th { background: var(--bg); color: var(--primary); font-weight: 600; }
+
+/* 反思 */
+.reflect-box {
+  background: #f6ffed;
+  border: 2px dashed #52c41a;
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-top: 24px;
+}
+.reflect-box h3 { color: #389e0d; margin-bottom: 8px; }
+
+@media (max-width: 600px) {
+  .header { padding: 20px 16px; }
+  .header h1 { font-size: 24px; }
+  .container { padding: 12px 14px; }
+  .case-section { padding: 16px; }
+  .track-label { display: none; }
+  table th, table td { padding: 6px 8px; font-size: 13px; }
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🏗️ 七阶建构之旅</h1>
+  <p class="subtitle">M10 新知哲学思维 · 时间是如何被人类建构出来的</p>
+</div>
+<div class="container">
+
+<!-- 进度轨道 -->
+<div class="track" id="track"></div>
+
+<!-- 案例内容 -->
+<div id="caseContainer">
+  <div class="case-section active" data-index="0">
+    <div class="case-num">案例一</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+      <h2>建构自己的「一秒」标准</h2>
+      <span class="level-badge">🧍 个人理解型</span>
+    </div>
+    <div class="difficulty-row"><span>难度：</span><span class="star">★</span><span class="star-empty">★★★★★</span><span style="margin-left:8px;color:var(--text-secondary);font-size:14px;">感知层</span></div>
+    <p><strong>真实情境：</strong>在没有钟表的房间里，你需要估算1分钟有多长。你发现每个人的"感觉"差异巨大——有人觉得30秒就到了，有人觉得2分钟才到。</p>
+    <p style="margin-top:8px;"><strong>建构任务：</strong>观察自己的心跳、呼吸、眨眼等身体节律，选择一个最稳定的节律作为<strong>"我的1秒"</strong>的参考标准，并记录下来（如"眨3次眼大约1秒"）。</p>
+    <div class="product-box"><strong>📋 成果形式：</strong>个人《身体时钟记录卡》，包含所选节律描述、测算过程、与标准1秒的偏差数据。</div>
+    <p style="color:var(--text-secondary);font-size:14px;margin-top:8px;">📌 <strong>难度递进起点：</strong>从最直观的身体感知出发，体验"标准"是如何从个体经验中萌芽的。</p>
+  </div>
+
+  <div class="case-section" data-index="1">
+    <div class="case-num">案例二</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+      <h2>为家庭设计无钟表时间管理方案</h2>
+      <span class="level-badge">🏠 生活应用型</span>
+    </div>
+    <div class="difficulty-row"><span>难度：</span><span class="star">★★</span><span class="star-empty">★★★★</span><span style="margin-left:8px;color:var(--text-secondary);font-size:14px;">应用层</span></div>
+    <p><strong>真实情境：</strong>假设家里停电且所有钟表都没电了，家人需要安排早起、做饭、完成作业等日常事务。</p>
+    <p style="margin-top:8px;"><strong>建构任务：</strong>利用案例一建立的"身体时钟"，结合日影、沙漏、水漏等自然计时方法，为家庭设计一套可执行的时间管理方案。</p>
+    <div class="product-box"><strong>📋 成果形式：</strong>《家庭应急时间方案》图文手册（A4折页），含时间分配表、计时方法说明。</div>
+    <p style="color:var(--text-secondary);font-size:14px;margin-top:8px;">📌 <strong>难度递进：</strong>从个体标准走向家庭协作，增加了"多事件调度"的复杂性，引入自然计时工具。</p>
+  </div>
+
+  <div class="case-section" data-index="2">
+    <div class="case-num">案例三</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+      <h2>设计更合理的学校时间制度</h2>
+      <span class="level-badge">🏫 校园问题型</span>
+    </div>
+    <div class="difficulty-row"><span>难度：</span><span class="star">★★★</span><span class="star-empty">★★★</span><span style="margin-left:8px;color:var(--text-secondary);font-size:14px;">分析层</span></div>
+    <p><strong>真实情境：</strong>你发现当前40分钟一节课的安排并不适合所有人——有人觉得太短，有人觉得太长，课间10分钟也不够用。</p>
+    <p style="margin-top:8px;"><strong>建构任务：</strong>调查同学对不同活动（上课、课间、午休、体育）的理想时长需求，收集数据并用统计图表分析，提出新的学校作息制度方案。</p>
+    <div class="product-box"><strong>📋 成果形式：</strong>《校园时间制度提案》含调查问卷、数据分析图表、新作息时间表及理由说明。</div>
+    <p style="color:var(--text-secondary);font-size:14px;margin-top:8px;">📌 <strong>难度递进：</strong>引入数据收集与统计分析，从个人经验上升到群体协商，体会"制度"是社会建构的产物。</p>
+  </div>
+
+  <div class="case-section" data-index="3">
+    <div class="case-num">案例四</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+      <h2>"时间测量工具进化史"概念图</h2>
+      <span class="level-badge">📚 学科表达型</span>
+    </div>
+    <div class="difficulty-row"><span>难度：</span><span class="star">★★★</span><span class="star-empty">★★★</span><span style="margin-left:8px;color:var(--text-secondary);font-size:14px;">综合层</span></div>
+    <p><strong>真实情境：</strong>时间测量工具从日晷、沙漏、机械钟到原子钟不断演进，你需要理解这一进化的逻辑。</p>
+    <p style="margin-top:8px;"><strong>建构任务：</strong>查阅资料（教师提供图卡或简短文本），梳理不同时期计时工具的原理、精度、局限性，绘制进化概念图，标注关键转折点。</p>
+    <div class="product-box"><strong>📋 成果形式：</strong>A3横向概念图，含至少5种计时工具及其关联线，附一句话"进化驱动力"总结。</div>
+    <p style="color:var(--text-secondary);font-size:14px;margin-top:8px;">📌 <strong>难度递进：</strong>从制度建构转向工具建构，引入历史维度与因果分析，要求学生进行信息提炼与可视化表达。</p>
+  </div>
+
+  <div class="case-section" data-index="4">
+    <div class="case-num">案例五</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+      <h2>"时间与自然节律"模型</h2>
+      <span class="level-badge">🔬 跨学科整合型</span>
+    </div>
+    <div class="difficulty-row"><span>难度：</span><span class="star">★★★★</span><span class="star-empty">★★★</span><span style="margin-left:8px;color:var(--text-secondary);font-size:14px;">创造层</span></div>
+    <p><strong>真实情境：</strong>太阳东升西落、月相变化、四季轮回——自然现象本身就在"计时"，你需要理解时间与自然运动的关系。</p>
+    <p style="margin-top:8px;"><strong>建构任务：</strong>结合科学课中地球自转与公转的知识，用纸盘、彩笔、图钉等材料制作"日—地"运动模型，标出一天、一月、一年的时间刻度，解释时间单位与天体运动的关系。</p>
+    <div class="product-box"><strong>📋 成果形式：</strong>三维或二维"自然时钟"模型，配文字说明卡，解释"为什么一天是24小时"等核心问题。</div>
+    <p style="color:var(--text-secondary);font-size:14px;margin-top:8px;">📌 <strong>难度递进：</strong>跨学科联结，从社会约定回归自然本源，学生需要综合运用科学原理建构对时间单位的"底层解释"。</p>
+  </div>
+
+  <div class="case-section" data-index="5">
+    <div class="case-num">案例六</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+      <h2>设计未来人类新时间系统</h2>
+      <span class="level-badge">🚀 社会/未来型</span>
+    </div>
+    <div class="difficulty-row"><span>难度：</span><span class="star">★★★★</span><span class="star-empty">★★★</span><span style="margin-left:8px;color:var(--text-secondary);font-size:14px;">创造层</span></div>
+    <p><strong>真实情境：</strong>如果人类移居火星，一天（太阳日）约24小时37分钟，一年约687个地球日——地球的时间系统不再适用。</p>
+    <p style="margin-top:8px;"><strong>建构任务：</strong>基于火星环境，设计一套全新的时间系统，包括：一天的分段方式、每周/每月的长度、新时间单位的命名与换算关系，并论证其合理性。</p>
+    <div class="product-box"><strong>📋 成果形式：</strong>《火星时间系统设计报告》含时间单位表、换算关系图、设计原则说明。</div>
+    <p style="color:var(--text-secondary);font-size:14px;margin-top:8px;">📌 <strong>难度递进：</strong>从理解现有系统到创造全新系统，要求学生打破已有认知框架，进行真正的"无中生有"式建构。</p>
+  </div>
+
+  <div class="case-section" data-index="6">
+    <div class="case-num">案例七</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+      <h2>"我的时间哲学"成果集</h2>
+      <span class="level-badge">🎨 综合创新型</span>
+    </div>
+    <div class="difficulty-row"><span>难度：</span><span class="star">★★★★★</span><span class="star-empty">★★</span><span style="margin-left:8px;color:var(--text-secondary);font-size:14px;">元认知层</span></div>
+    <p><strong>真实情境：</strong>经过前面六个案例，你对"时间"有了丰富的体验与思考，需要一次综合性的个人表达。</p>
+    <p style="margin-top:8px;"><strong>建构任务：</strong>回顾整个建构历程，从以下角度自由选择至少三个进行综合创作：</p>
+    <ul style="padding-left:20px;margin:8px 0;">
+      <li>时间的"客观"与"主观"</li>
+      <li>不同文明如何看待时间</li>
+      <li>时间与记忆的关系</li>
+      <li>我的"时间价值观"</li>
+    </ul>
+    <p>形式可以是一篇短文、一首诗、一幅画、一个微视频剧本等。</p>
+    <div class="product-box"><strong>📋 成果形式：</strong>《我的时间哲学》个人作品集（纸质或电子），含前言、至少三个作品、后记（反思整个建构过程）。</div>
+    <p style="color:var(--text-secondary);font-size:14px;margin-top:8px;">📌 <strong>难度递进阶顶：</strong>从具体走向抽象，从工具与制度走向意义与价值。要求进行元认知反思——不仅建构了关于时间的知识，还建构了自己的"时间观"。</p>
+  </div>
+
+  <!-- 导航按钮 -->
+  <div class="nav-buttons">
+    <button id="prevBtn" onclick="prevCase()" disabled>← 上一个</button>
+    <button id="nextBtn" onclick="nextCase()">下一个 →</button>
+  </div>
+</div>
+
+<!-- 总览表格 -->
+<div class="summary-section">
+  <h2>📊 七阶建构之旅总览</h2>
+  <div class="table-wrap">
+    <table>
+      <tr><th>维度</th><th>案例一 → 案例七</th></tr>
+      <tr><td><strong>认知层级</strong></td><td>感知 → 应用 → 分析 → 综合 → 创造 → 元认知</td></tr>
+      <tr><td><strong>空间范围</strong></td><td>个人 → 家庭 → 学校 → 学科 → 自然 → 星际 → 哲学</td></tr>
+      <tr><td><strong>成果复杂度</strong></td><td>单页卡片 → 多页手册 → 数据提案 → 概念图 → 物理模型 → 系统设计 → 作品集</td></tr>
+      <tr><td><strong>建构对象</strong></td><td>标准 → 方案 → 制度 → 知识结构 → 自然模型 → 全新系统 → 意义体系</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="reflect-box">
+  <h3>💭 在这段建构之旅中，请记得思考：</h3>
+  <ol style="padding-left:20px;">
+    <li>在你建构时间单位时，你从哪里开始的？为什么这个选择很重要？</li>
+    <li>决定"分多少份""用什么进制"时，你有过两难选择吗？</li>
+    <li>你建构的体系和别人的一致吗？怎么达成一致的？</li>
+    <li>你的建构方案有没有盲区？如果换一个场景还适用吗？</li>
+    <li>生活中还有哪些东西也是被人"建构"出来的？它们也遵循这几条原理吗？</li>
+  </ol>
+</div>
+
+</div>
+
+<script>
+(function buildTrack() {
+  const track = document.getElementById('track');
+  const cases = document.querySelectorAll('.case-section');
+  const labels = ['感知标准', '家庭方案', '校园制度', '工具进化', '自然节律', '火星时间', '时间哲学'];
+  for (let i = 0; i < 7; i++) {
+    const item = document.createElement('div');
+    item.className = 'track-item' + (i === 0 ? ' active' : '');
+    item.dataset.idx = i;
+    item.innerHTML = '<div class="track-dot">' + (i+1) + '</div><div class="track-label">' + labels[i] + '</div>';
+    item.onclick = function() { goToCase(parseInt(this.dataset.idx)); };
+    track.appendChild(item);
+    if (i < 6) {
+      const arrow = document.createElement('div');
+      arrow.className = 'track-arrow';
+      arrow.textContent = '→';
+      track.appendChild(arrow);
+    }
+  }
+})();
+
+let currentIdx = 0;
+
+function goToCase(idx) {
+  const sections = document.querySelectorAll('.case-section');
+  const dots = document.querySelectorAll('.track-item');
+  sections.forEach(s => s.classList.remove('active'));
+  dots.forEach(d => d.classList.remove('active'));
+  sections[idx].classList.add('active');
+  dots[idx].classList.add('active');
+  // Mark earlier as done
+  dots.forEach((d, i) => {
+    d.classList.toggle('done', i < idx);
+  });
+  currentIdx = idx;
+  document.getElementById('prevBtn').disabled = idx === 0;
+  document.getElementById('nextBtn').disabled = idx === 6;
+  sections[idx].scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function nextCase() { if (currentIdx < 6) goToCase(currentIdx + 1); }
+function prevCase() { if (currentIdx > 0) goToCase(currentIdx - 1); }
+</script>
+</body>
+</html>

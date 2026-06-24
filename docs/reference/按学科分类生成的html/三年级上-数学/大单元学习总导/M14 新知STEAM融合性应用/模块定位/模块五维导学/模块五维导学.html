@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块五维导学 — M14 新知STEAM融合性应用</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --font-h3: 20px;
+  --line-height: 1.8;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+.hero {
+  background: linear-gradient(135deg, #1677ff 0%, #0958d9 100%);
+  color: #fff;
+  padding: 40px 48px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::after {
+  content: "🌟";
+  position: absolute;
+  right: 36px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 90px;
+  opacity: 0.12;
+}
+.hero h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.hero .sub {
+  font-size: 16px;
+  opacity: 0.85;
+  margin-top: 6px;
+}
+.dim-nav {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.dim-btn {
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s;
+  font-family: inherit;
+  font-size: 15px;
+}
+.dim-btn:hover, .dim-btn.active {
+  border-color: var(--primary);
+  background: #e6f4ff;
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(22,119,255,0.15);
+}
+.dim-btn .dim-icon { font-size: 28px; display: block; margin-bottom: 6px; }
+.dim-btn .dim-label { font-weight: 600; color: var(--text); }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 28px 32px;
+  margin-bottom: 24px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 3px solid var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card h3 {
+  font-size: var(--font-h3);
+  color: var(--text);
+  margin: 16px 0 8px;
+}
+.card p, .card li { font-size: var(--font-body); margin-bottom: 10px; }
+.card ul, .card ol { padding-left: 24px; margin: 10px 0; }
+.card li { margin-bottom: 6px; }
+.timeline-item {
+  padding: 14px 18px 14px 48px;
+  position: relative;
+  background: #f8fbff;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  border-left: 4px solid var(--primary);
+}
+.timeline-item .tl-icon {
+  position: absolute;
+  left: 12px;
+  top: 14px;
+  font-size: 22px;
+}
+.tag {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  margin: 2px 4px;
+}
+.tag-blue { background: #e6f4ff; color: #1677ff; }
+.tag-green { background: #f6ffed; color: #389e0d; }
+.tag-orange { background: #fff7e6; color: #d46b08; }
+.tag-purple { background: #f9f0ff; color: #722ed1; }
+.tag-red { background: #fff2f0; color: #cf1322; }
+.qa-box {
+  background: #f8fbff;
+  border-radius: 8px;
+  padding: 18px;
+  margin: 12px 0;
+  border: 1px solid var(--border);
+}
+.qa-box .q { font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+.qa-box .a { color: var(--text); }
+.method-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 12px 0;
+}
+.method-card {
+  background: #f8fbff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+.method-card:hover { border-color: var(--primary); }
+.method-card .m-icon { font-size: 30px; margin-bottom: 6px; }
+.method-card .m-name { font-weight: 600; }
+.factoid {
+  background: linear-gradient(135deg, #fff7e6, #fffbe6);
+  border: 1px solid #ffd591;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 12px 0;
+}
+.factoid .f-icon { font-size: 24px; margin-right: 8px; }
+.frontier-toggle {
+  background: linear-gradient(135deg, #f9f0ff, #f0f5ff);
+  border: 2px dashed #b37feb;
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin: 12px 0;
+  cursor: pointer;
+  transition: background 0.3s;
+  text-align: center;
+}
+.frontier-toggle:hover { background: linear-gradient(135deg, #f0f5ff, #e6f4ff); }
+.frontier-content { display: none; margin-top: 12px; text-align: left; }
+.footer-note {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+@media (max-width: 768px) {
+  .container { padding: 12px 16px; }
+  .hero { padding: 24px 20px; }
+  .hero::after { font-size: 50px; right: 16px; }
+  .card { padding: 20px 16px; }
+  .dim-nav { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="hero">
+  <h1>🌟 M14 新知STEAM融合性应用</h1>
+  <p style="font-size:20px;margin-bottom:4px;">—— 模块五维导学</p>
+  <p class="sub">数学 · 三年级上 · 时、分、秒</p>
+</div>
+
+<div class="dim-nav">
+  <button class="dim-btn active" onclick="showDim('goal',this)">
+    <span class="dim-icon">🎯</span>
+    <span class="dim-label">学习目标</span>
+  </button>
+  <button class="dim-btn" onclick="showDim('value',this)">
+    <span class="dim-icon">💎</span>
+    <span class="dim-label">高精尖价值</span>
+  </button>
+  <button class="dim-btn" onclick="showDim('method',this)">
+    <span class="dim-icon">🔧</span>
+    <span class="dim-label">学习方法</span>
+  </button>
+  <button class="dim-btn" onclick="showDim('people',this)">
+    <span class="dim-icon">👤</span>
+    <span class="dim-label">关键人物</span>
+  </button>
+  <button class="dim-btn" onclick="showDim('frontier',this)">
+    <span class="dim-icon">🚀</span>
+    <span class="dim-label">前沿追问</span>
+  </button>
+</div>
+
+<div id="dim-goal" class="card dim-section">
+  <h2>🎯 模块学习目标</h2>
+  <p>学完这个模块，你将会：</p>
+  <div class="timeline-item">
+    <span class="tl-icon">🧮</span>
+    <strong>知识理解：</strong>我能巩固时、分、秒之间的换算关系（1时=60分、1分=60秒），并能用这些知识解决STEAM项目中的实际问题。
+  </div>
+  <div class="timeline-item">
+    <span class="tl-icon">💡</span>
+    <strong>能力形成：</strong>我能用"分析时间数据"和"创造时间方案"两种思维方法处理不同的时间问题。
+  </div>
+  <div class="timeline-item">
+    <span class="tl-icon">👀</span>
+    <strong>思维发展：</strong>我能用数学眼光观察生活中的时间现象，用数学思维分析时间数据，用数学语言表达时间方案。
+  </div>
+  <div class="timeline-item">
+    <span class="tl-icon">✍️</span>
+    <strong>表达产出：</strong>我能制作一份时间主题的STEAM创意作品（方案、图表、模型或手工作品）。
+  </div>
+</div>
+
+<div id="dim-value" class="card dim-section" style="display:none;">
+  <h2>💎 高精尖价值与未来意义</h2>
+  <div class="factoid">
+    <p><span class="f-icon">🛰️</span><strong>GPS卫星需要纳秒级时间同步</strong><br>
+    1 纳秒 = 0.000000001 秒！卫星上的原子钟如果偏差 1 纳秒，定位就会偏 30 厘米。你学的"秒"比纳秒大十亿倍——科学家是怎么测量这么小的时间单位的？</p>
+  </div>
+  <div class="factoid">
+    <p><span class="f-icon">🏊</span><strong>奥运胜负常在 0.01 秒之间</strong><br>
+    游泳比赛里，冠军和亚军可能只差 0.01 秒——你眨一下眼就要 0.3 秒呢！精密计时让体育比赛更加公平精彩。</p>
+  </div>
+  <div class="factoid">
+    <p><span class="f-icon">👩‍🚀</span><strong>未来的你，也需要时间思维</strong><br>
+    无论是程序员（代码运行计时）、医生（用药时间安排）还是航天工程师（发射窗口计算），都离不开精确的时间思维。学会管理时间，就是学会管理自己的学习和生活！</p>
+  </div>
+</div>
+
+<div id="dim-method" class="card dim-section" style="display:none;">
+  <h2>🔧 推荐学习方式</h2>
+  <div class="method-grid">
+    <div class="method-card">
+      <div class="m-icon">📓</div>
+      <div class="m-name">观察记录法</div>
+      <p style="font-size:14px;margin-top:4px;">记录一周"时间使用日记"</p>
+    </div>
+    <div class="method-card">
+      <div class="m-icon">✋</div>
+      <div class="m-name">动手建构法</div>
+      <p style="font-size:14px;margin-top:4px;">动手做时间主题作品</p>
+    </div>
+    <div class="method-card">
+      <div class="m-icon">🔍</div>
+      <div class="m-name">对比分析法</div>
+      <p style="font-size:14px;margin-top:4px;">对比不同计时工具</p>
+    </div>
+    <div class="method-card">
+      <div class="m-icon">🤖</div>
+      <div class="m-name">AI辅助法</div>
+      <p style="font-size:14px;margin-top:4px;">用AI搜索时间科学知识</p>
+    </div>
+    <div class="method-card">
+      <div class="m-icon">🤝</div>
+      <div class="m-name">合作交流法</div>
+      <p style="font-size:14px;margin-top:4px;">分享创意方案</p>
+    </div>
+  </div>
+</div>
+
+<div id="dim-people" class="card dim-section" style="display:none;">
+  <h2>👤 关键人物与成果</h2>
+  <div class="timeline-item">
+    <span class="tl-icon">🕰️</span>
+    <strong>惠更斯 · 摆钟发明者（1656年）</strong><br>
+    荷兰科学家克里斯蒂安·惠更斯发明了摆钟，让人类第一次能精确测量到秒。为什么摆的摆动可以计时？因为摆的周期是固定的——这就是科学的力量！
+  </div>
+  <div class="timeline-item">
+    <span class="tl-icon">⚛️</span>
+    <strong>原子钟 · 重新定义"秒"（1949年）</strong><br>
+    第一台原子钟让"秒"的定义从"地球自转的 1/86400"变成了"铯-133 原子振动 9,192,631,770 次的时间"——它和我们学的"一秒"一样长吗？是的！只是测量方式更精确了。
+  </div>
+  <div class="timeline-item">
+    <span class="tl-icon">🛰️</span>
+    <strong>北斗卫星导航系统 · 中国的"时间之眼"</strong><br>
+    北斗卫星上的原子钟让定位精度达到厘米级。时间测量决定了定位精度——每颗北斗卫星都带着超级精确的原子钟在天上飞！
+  </div>
+</div>
+
+<div id="dim-frontier" class="card dim-section" style="display:none;">
+  <h2>🚀 前沿追问</h2>
+  <p>点击每个问题，展开你的思考：</p>
+  <div class="frontier-toggle" onclick="toggleFrontier(this)">
+    <p style="font-weight:700;">🌍 如果一天不是24小时，而是10小时……</p>
+    <div class="frontier-content">
+      <p>我们的一天会变成 10 小时，但地球自转一圈的时间不会变。那么每小时就是 144 分钟，每分钟还是 60 秒。你的上学时间、午休时间、游戏时间会怎么安排？试试看重新设计一整天的时间表！</p>
+    </div>
+  </div>
+  <div class="frontier-toggle" onclick="toggleFrontier(this)">
+    <p style="font-weight:700;">😊 为什么"快乐的时间过得快"？</p>
+    <div class="frontier-content">
+      <p>科学家发现：当我们专注做有趣的事情时，大脑会减少对"时间流逝"的关注，所以我们感觉时间变快了。而无聊时，大脑不断"检查"时间，秒秒都觉得很慢。你能用数学方法记录"快乐时间"和"无聊时间"的差异吗？</p>
+    </div>
+  </div>
+  <div class="frontier-toggle" onclick="toggleFrontier(this)">
+    <p style="font-weight:700;">⚡ 人类能测量的最短时间是多少？</p>
+    <div class="frontier-content">
+      <p>目前人类能测量的最短时间是"仄秒"（zeptosecond）—— 10⁻²¹ 秒！这比一秒小到无法想象。科学家用激光脉冲来测量原子内部电子运动的时间尺度。还有比"秒"小得多的时间单位：毫秒（千分之一秒）、微秒（百万分之一秒）、纳秒（十亿分之一秒）……</p>
+    </div>
+  </div>
+  <div class="frontier-toggle" onclick="toggleFrontier(this)">
+    <p style="font-weight:700;">⏳ 时间旅行真的可能吗？</p>
+    <div class="frontier-content">
+      <p>学完时间单位后，你对"时间"有什么新认识？爱因斯坦说时间是相对的——速度越快，时间过得越慢（这就是"双生子佯谬"）。虽然我们还不能造出时间机器，但理解"时间"本身，就是最酷的科学冒险！</p>
+    </div>
+  </div>
+</div>
+
+<div class="footer-note">
+  <p>准备好了吗？一起来探索时间的奥秘吧 🚀</p>
+  <p>M14 新知STEAM融合性应用 · 模块定位</p>
+</div>
+
+</div>
+<script>
+function showDim(id, btn) {
+  document.querySelectorAll('.dim-section').forEach(function(s) { s.style.display = 'none'; });
+  document.querySelectorAll('.dim-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('dim-' + id).style.display = 'block';
+  btn.classList.add('active');
+}
+function toggleFrontier(el) {
+  var content = el.querySelector('.frontier-content');
+  content.style.display = content.style.display === 'block' ? 'none' : 'block';
+}
+</script>
+</body>
+</html>

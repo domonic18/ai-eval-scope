@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块五维导学 — M7 新知数学思维</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{
+  margin:0;padding:0;
+  font-family:-apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size:var(--font-body);
+  line-height:var(--line-height);
+  color:var(--text);
+  background:var(--bg);
+}
+.container{
+  width:100%;max-width:none;
+  padding:20px;box-sizing:border-box;
+}
+.header{
+  background:linear-gradient(135deg,var(--primary),var(--primary-hover));
+  color:#fff;padding:30px 40px;
+  border-radius:var(--border-radius);
+  margin-bottom:24px;
+}
+.header h1{font-size:var(--font-h1);margin-bottom:8px;font-weight:700}
+.header .subtitle{font-size:16px;opacity:.9}
+.section-title{
+  font-size:var(--font-h2);font-weight:700;
+  margin:32px 0 16px;padding-bottom:8px;
+  border-bottom:2px solid var(--primary);
+  color:var(--primary);
+  display:flex;align-items:center;gap:10px;
+}
+.section-title .dim-badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--primary);color:#fff;border-radius:50%;
+  width:36px;height:36px;font-weight:700;font-size:16px;
+  flex-shrink:0;
+}
+.card{
+  background:var(--card-bg);
+  border-radius:var(--border-radius);
+  box-shadow:var(--shadow);
+  padding:24px 28px;
+  margin-bottom:20px;
+}
+.card ul, .card ol{padding-left:24px}
+.card li{margin-bottom:8px}
+.goal-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:16px;margin-top:12px;
+}
+.goal-card{
+  background:var(--bg);padding:18px;border-radius:var(--border-radius);
+  border-top:3px solid var(--primary);text-align:center;
+}
+.goal-card .icon{font-size:32px;margin-bottom:6px}
+.goal-card h4{color:var(--primary);font-size:17px;margin-bottom:6px}
+.goal-card p{font-size:15px;color:var(--text)}
+.value-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:14px;margin-top:12px;
+}
+.value-item{
+  background:var(--card-bg);border:1px solid var(--border);
+  border-radius:var(--border-radius);padding:16px;
+  transition:transform .2s;
+}
+.value-item:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.value-item h4{font-size:17px;margin-bottom:6px}
+.value-item p{font-size:15px;color:var(--text-secondary)}
+.method-tags{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.method-tag{
+  background:var(--bg);color:var(--primary);padding:8px 18px;
+  border-radius:20px;font-size:15px;font-weight:500;
+  border:1px solid var(--accent);cursor:pointer;
+  transition:all .2s;
+}
+.method-tag:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
+.method-tag.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.method-detail{display:none;margin-top:16px;padding:16px;background:#f6f8fa;border-radius:8px}
+.method-detail.show{display:block}
+.fig-card{
+  background:var(--card-bg);border:1px solid var(--border);
+  border-radius:var(--border-radius);padding:16px;margin-bottom:14px;
+}
+.fig-card h4{font-size:17px;margin-bottom:4px}
+.fig-card .era{color:var(--text-secondary);font-size:14px}
+.fig-card p{font-size:15px;margin-top:6px}
+.question-card{
+  background:linear-gradient(135deg,#f0f5ff,#e6f0ff);
+  border-radius:var(--border-radius);padding:20px;
+  margin-bottom:14px;border:1px solid var(--accent);
+}
+.question-card h4{font-size:17px;color:var(--primary);margin-bottom:6px}
+.question-card p{font-size:15px}
+.interact-btn{
+  display:inline-block;background:var(--primary);color:#fff;
+  border:none;padding:10px 24px;border-radius:var(--border-radius);
+  font-size:16px;cursor:pointer;transition:background .2s;margin:6px;
+}
+.interact-btn:hover{background:var(--primary-hover)}
+.interact-btn.secondary{background:var(--card-bg);color:var(--primary);border:1px solid var(--primary)}
+.interact-btn.secondary:hover{background:var(--bg)}
+@media(max-width:640px){
+  .container{padding:12px}
+  .header{padding:20px}
+  .card{padding:16px}
+  .goal-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🧭 模块五维导学</h1>
+  <div class="subtitle">M7 新知数学思维 — 从五个维度全面了解本模块的学习意义与方法</div>
+</div>
+
+<!-- 维度一：学习目标 -->
+<div class="section-title">
+  <span class="dim-badge">1</span> 模块学习目标
+</div>
+<div class="card">
+  <div class="goal-grid">
+    <div class="goal-card">
+      <div class="icon">📖</div>
+      <h4>知识理解</h4>
+      <p>我能准确说出时、分、秒之间的关系（1时=60分，1分=60秒），能进行简单的时间单位换算</p>
+    </div>
+    <div class="goal-card">
+      <div class="icon">🛠️</div>
+      <h4>能力形成</h4>
+      <p>我能用时钟和秒表测量时间，能估算常见活动的时间长度</p>
+    </div>
+    <div class="goal-card">
+      <div class="icon">🧠</div>
+      <h4>思维发展</h4>
+      <p>我能从"感觉时间"转向"测量时间"，学会用数学工具解决时间问题</p>
+    </div>
+    <div class="goal-card">
+      <div class="icon">🎨</div>
+      <h4>表达产出</h4>
+      <p>我能制作一份"时间测量说明书"或"时间计划表"，向他人展示我对时间的理解</p>
+    </div>
+  </div>
+</div>
+
+<!-- 维度二：高精尖价值 -->
+<div class="section-title">
+  <span class="dim-badge">2</span> 高精尖价值与未来意义
+</div>
+<div class="card">
+  <p style="margin-bottom:14px;">你知道吗？时间测量比你想象的重要得多！看看这些真实应用——</p>
+  <div class="value-grid">
+    <div class="value-item">
+      <h4>🛰️ 卫星导航</h4>
+      <p>GPS卫星上的原子钟精确到纳秒（十亿分之一秒），差一点点就会定位错误。</p>
+    </div>
+    <div class="value-item">
+      <h4>🏅 体育竞技</h4>
+      <p>奥运会上冠军和亚军的差距可能只有0.01秒，比眨一下眼还快100倍。</p>
+    </div>
+    <div class="value-item">
+      <h4>📱 网络通信</h4>
+      <p>你的手机和基站的时间必须同步，否则通话会断断续续。</p>
+    </div>
+    <div class="value-item">
+      <h4>🌌 科学探索</h4>
+      <p>科学家用"光秒"（光一秒钟走的距离≈30万公里）测量宇宙的距离。</p>
+    </div>
+  </div>
+</div>
+
+<!-- 维度三：学习方式 -->
+<div class="section-title">
+  <span class="dim-badge">3</span> 推荐学习方式与方法
+</div>
+<div class="card">
+  <p>点击每种方法了解详情 👇</p>
+  <div class="method-tags">
+    <span class="method-tag" onclick="showMethod(this,'m1')">📏 动手测量法</span>
+    <span class="method-tag" onclick="showMethod(this,'m2')">⚖️ 对比分析法</span>
+    <span class="method-tag" onclick="showMethod(this,'m3')">📊 制图表达法</span>
+    <span class="method-tag" onclick="showMethod(this,'m4')">🎭 角色扮演法</span>
+    <span class="method-tag" onclick="showMethod(this,'m5')">🤖 AI辅助法</span>
+  </div>
+  <div id="m1" class="method-detail"><strong>📏 动手测量法</strong><br>用秒表或手机计时器，亲自测量各种活动的时间——跳绳100下多久？刷牙多久？走路到学校多久？用自己的数据说话！</div>
+  <div id="m2" class="method-detail"><strong>⚖️ 对比分析法</strong><br>把"感觉时间"和"实际时间"放在一起对比。你会发现一个惊人的规律——开心的时候时间"变短"，无聊的时候时间"变长"。</div>
+  <div id="m3" class="method-detail"><strong>📊 制图表达法</strong><br>用时间轴、柱状图、饼图展示时间数据。画图会让隐藏的关系变得一目了然！</div>
+  <div id="m4" class="method-detail"><strong>🎭 角色扮演法</strong><br>扮演"时间规划师"管理自己的一天，或者扮演"时间侦探"调查时间都去哪儿了。边玩边学！</div>
+  <div id="m5" class="method-detail"><strong>🤖 AI辅助法</strong><br>用AI工具查询时间相关的科学知识，比如"为什么一分钟是60秒"、"原子的振荡周期怎么测量"，AI可以帮你找到有趣的答案。</div>
+</div>
+
+<!-- 维度四：关键人物 -->
+<div class="section-title">
+  <span class="dim-badge">4</span> 关键人物、事件与成果
+</div>
+<div class="card">
+  <div class="fig-card">
+    <h4>🌅 古代天文学家</h4>
+    <div class="era">约公元前4000年 · 古埃及、中国、巴比伦</div>
+    <p>发明日晷和漏刻，把"看太阳"变成了"看刻度"。他们是人类最早的"时间工程师"，让时间第一次可以被测量。</p>
+  </div>
+  <div class="fig-card">
+    <h4>🔧 克里斯蒂安·惠更斯</h4>
+    <div class="era">1656年 · 荷兰</div>
+    <p>发明了第一台摆钟，利用摆的等时性，把时间的精度从"刻"（约15分钟）提高到"秒"。从此人类有了"秒"的概念。</p>
+  </div>
+  <div class="fig-card">
+    <h4>⚛️ 原子钟之父 — 哈罗德·莱昂斯</h4>
+    <div class="era">1949年 · 美国</div>
+    <p>研制了第一台原子钟，利用铯原子的振荡周期测量时间，精确到每3000万年只差1秒。GPS、5G网络都离不开它。</p>
+  </div>
+</div>
+
+<!-- 维度五：前沿追问 -->
+<div class="section-title">
+  <span class="dim-badge">5</span> 前沿追问
+</div>
+<div class="card">
+  <p style="margin-bottom:14px;">这些问题的答案连科学家都还在探索👇 选一个你感兴趣的，和同学讨论或查资料研究！</p>
+  <div class="question-card">
+    <h4>🌍 如果地球自转变慢了，一天不再是24小时，我们的时间该怎么算？</h4>
+    <p>地球自转其实在慢慢变慢（因为月球的引力），几亿年前一天只有22小时。科学家用"闰秒"来调整——有时一分钟有61秒！</p>
+  </div>
+  <div class="question-card">
+    <h4>⏰ 你听说过"闰秒"吗？为什么有时候一分钟会有61秒？</h4>
+    <p>因为地球自转不均匀，为了让原子钟的时间和地球自转时间保持一致，国际组织会不定期在6月或12月最后一天加1秒。</p>
+  </div>
+  <div class="question-card">
+    <h4>🤔 时间真的存在吗？还是只是人类创造的一个概念？</h4>
+    <p>物理学家认为时间是宇宙的"第四个维度"，和空间密不可分。但在哲学上，时间到底是什么——这个问题已经争论了两千多年。</p>
+  </div>
+  <div class="question-card">
+    <h4>💡 光速为什么是299792458米/秒？这个数字是怎么来的？</h4>
+    <p>这个数字不是算出来的，而是——"定义"出来的！1983年科学家决定：一米就是光在1/299792458秒内走的距离。所以光速就成了这个精确数字。</p>
+  </div>
+
+  <div style="text-align:center;margin-top:20px;">
+    <button class="interact-btn" onclick="randomQuestion()">🎲 随机选一个问题思考</button>
+    <button class="interact-btn secondary" onclick="toggleAllQuestions()">📚 展开/收起所有答案</button>
+  </div>
+  <p id="rand-q" style="margin-top:12px;text-align:center;font-weight:600;color:var(--primary);min-height:24px;"></p>
+</div>
+
+<div style="background:linear-gradient(135deg,var(--primary),var(--primary-hover));border-radius:var(--border-radius);padding:24px;text-align:center;color:#fff;margin-top:24px;">
+  <h2 style="font-size:var(--font-h2);margin-bottom:8px;">🚀 准备好了吗？</h2>
+  <p style="font-size:16px;opacity:.9;">现在就从"感觉时间"开始，踏上"测量时间"的数学建构之旅吧！</p>
+</div>
+
+</div>
+<script>
+var methodVisible=null;
+function showMethod(el,id){
+  if(methodVisible===id){
+    document.getElementById(id).classList.remove('show');
+    el.classList.remove('active');
+    methodVisible=null;
+    return;
+  }
+  document.querySelectorAll('.method-detail').forEach(function(d){d.classList.remove('show');});
+  document.querySelectorAll('.method-tag').forEach(function(t){t.classList.remove('active');});
+  document.getElementById(id).classList.add('show');
+  el.classList.add('active');
+  methodVisible=id;
+}
+function randomQuestion(){
+  var qs=[
+    '🌍 如果地球自转变慢了，一天不再是24小时，我们的时间该怎么算？',
+    '⏰ 你听说过"闰秒"吗？为什么有时候一分钟会有61秒？',
+    '🤔 时间真的存在吗？还是只是人类创造的一个概念？',
+    '💡 光速为什么是299792458米/秒？这个数字是怎么来的？'
+  ];
+  document.getElementById('rand-q').textContent='🤔 '+qs[Math.floor(Math.random()*qs.length)];
+}
+function toggleAllQuestions(){
+  var qs=document.querySelectorAll('.question-card p:last-child');
+  var allHidden=true;
+  qs.forEach(function(p){if(p.style.display!=='none')allHidden=false;});
+  qs.forEach(function(p){p.style.display=allHidden?'block':'none';});
+}
+</script>
+</body>
+</html>

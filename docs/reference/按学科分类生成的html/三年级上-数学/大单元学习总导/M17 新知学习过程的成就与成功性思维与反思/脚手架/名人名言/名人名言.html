@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名人名言 - 时间与反思</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 30px 24px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.header h1 {
+  margin: 0;
+  font-size: var(--font-h1);
+  font-weight: 700;
+  letter-spacing: 2px;
+  position: relative;
+  z-index: 1;
+}
+.header p {
+  margin: 8px 0 0;
+  font-size: 16px;
+  opacity: 0.85;
+  position: relative;
+  z-index: 1;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bg);
+}
+.person-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+.person-card {
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 0;
+  overflow: hidden;
+  transition: box-shadow 0.3s, transform 0.3s;
+  cursor: default;
+}
+.person-card:hover {
+  box-shadow: 0 4px 16px rgba(22,119,255,0.15);
+  transform: translateY(-3px);
+}
+.person-header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.person-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.person-name {
+  font-size: 20px;
+  font-weight: 700;
+}
+.person-sub {
+  font-size: 15px;
+  opacity: 0.85;
+}
+.person-body {
+  padding: 14px 18px;
+}
+.person-body .q {
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-top: 0;
+}
+.insight-box {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+  border-left: 4px solid var(--primary);
+}
+.insight-box p {
+  margin: 0;
+}
+.quote-block {
+  background: #f9f9f9;
+  border-radius: 6px;
+  padding: 14px 18px;
+  margin: 10px 0;
+  font-style: italic;
+  position: relative;
+}
+.quote-block::before {
+  content: '"';
+  font-size: 40px;
+  color: var(--primary);
+  opacity: 0.3;
+  position: absolute;
+  top: 4px;
+  left: 10px;
+  line-height: 1;
+}
+.quote-block p {
+  margin: 0 0 0 20px;
+}
+.quote-source {
+  text-align: right;
+  font-size: 15px;
+  color: var(--text-secondary);
+  font-style: normal;
+  margin-top: 6px;
+}
+.read-path {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+.read-item {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 14px;
+  flex: 1;
+  min-width: 180px;
+}
+.read-item h4 {
+  margin: 0 0 4px;
+  font-size: 17px;
+  color: var(--primary);
+}
+.read-item p {
+  margin: 0;
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+.think-task {
+  background: linear-gradient(135deg, #fff7e6, #fffbe6);
+  border: 1px solid #ffe58f;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-top: 12px;
+}
+.think-task h3 {
+  margin: 0 0 8px;
+  font-size: 19px;
+  color: #d48806;
+}
+.think-task p {
+  margin: 0;
+}
+.expand-btn {
+  background: var(--card-bg);
+  border: 2px solid var(--primary);
+  color: var(--primary);
+  border-radius: 6px;
+  padding: 8px 18px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  margin-top: 8px;
+}
+.expand-btn:hover {
+  background: var(--primary);
+  color: #fff;
+}
+.hidden-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+}
+.hidden-content.show {
+  max-height: 300px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>💡 名人名言</h1>
+    <p>时间感知与元认知反思 · 认知跃迁之旅</p>
+  </div>
+
+  <div class="card">
+    <h2>人物卡片</h2>
+    <div class="person-grid">
+
+      <div class="person-card">
+        <div class="person-header">
+          <div class="person-avatar">A</div>
+          <div>
+            <div class="person-name">阿尔伯特·爱因斯坦</div>
+            <div class="person-sub">Albert Einstein · 物理学家</div>
+          </div>
+        </div>
+        <div class="person-body">
+          <p class="q">🤔 时间真的是一成不变的吗？</p>
+          <p><strong>思维突破：</strong>提出了"时间相对性"——时间不是绝对的，它会因速度和引力而变化。</p>
+          <div class="quote-block">
+            <p>当你和一个漂亮姑娘坐两个小时，你会觉得只坐了一分钟；但如果你在热炉子坐一分钟，你会觉得坐了两个小时。这就是相对论。</p>
+            <div class="quote-source">—— 阿尔伯特·爱因斯坦</div>
+          </div>
+          <div class="insight-box">
+            <p><strong>对你的启示：</strong>你对"时、分、秒"的长短感受不是固定的——做喜欢的事时时间飞逝，做困难的事时时间漫长。认识到这一点，就能更好地管理自己的学习时间。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="person-card">
+        <div class="person-header">
+          <div class="person-avatar">Л</div>
+          <div>
+            <div class="person-name">柳比歇夫</div>
+            <div class="person-sub">Alexander Lyubishchev · 科学家</div>
+          </div>
+        </div>
+        <div class="person-body">
+          <p class="q">🤔 人能不能精确记录自己每天的时间去向？</p>
+          <p><strong>思维突破：</strong>创造了"时间统计法"——56年如一日记录每项活动耗时，精确到分钟。</p>
+          <div class="quote-block">
+            <p>我不让自己有不去做计划的借口。</p>
+            <div class="quote-source">—— 柳比歇夫</div>
+          </div>
+          <div class="insight-box">
+            <p><strong>对你的启示：</strong>当你记录"做数学作业用了多少分钟"时，你和科学家在做同一件事——你已经开始用数据了解自己的时间了。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="person-card">
+        <div class="person-header">
+          <div class="person-avatar">J</div>
+          <div>
+            <div class="person-name">茱莉亚·加尔夫</div>
+            <div class="person-sub">Julia Galef · 时间感知研究者</div>
+          </div>
+        </div>
+        <div class="person-body">
+          <p class="q">🤔 为什么人在不同年龄对时间快慢的感受不同？</p>
+          <p><strong>思维突破：</strong>发现新体验越多，时间感觉越长——"时间膨胀"的心理学解释。</p>
+          <div class="insight-box">
+            <p><strong>对你的启示：</strong>学习新知识（如时分秒）会拉长你的时间感受——这就是为什么学习越投入，感觉时间过得越快。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>深度阅读路径</h2>
+    <div class="read-path">
+      <div class="read-item">
+        <h4>📖 传记推荐</h4>
+        <p>《奇特的一生》—— 柳比歇夫时间统计法</p>
+      </div>
+      <div class="read-item">
+        <h4>🔬 科普读物</h4>
+        <p>《时间的秩序》卡洛·罗韦利 —— 青少年版时间科普</p>
+      </div>
+      <div class="read-item">
+        <h4>🎬 视频推荐</h4>
+        <p>搜索"爱因斯坦 时间相对性 儿童科普"</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>"如果你是他"思考任务</h2>
+    <div class="think-task">
+      <p>假设你是 <strong>柳比歇夫</strong>，请你尝试记录今天放学后每一件事情的用时（精确到分钟），然后回答：</p>
+      <ul>
+        <li>你对自己的时间分配满意吗？</li>
+        <li>最大的"时间小偷"是什么？</li>
+      </ul>
+      <button class="expand-btn" onclick="document.getElementById('thinkHint').classList.toggle('show')">展开提示</button>
+      <div id="thinkHint" class="hidden-content">
+        <div class="insight-box" style="margin-top:10px;">
+          <p><strong>小提示：</strong>准备一个本子，分三列记录——「开始时间」「活动内容」「结束时间」。坚持记录3天，你就能发现自己的时间规律！</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

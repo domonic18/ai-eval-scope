@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>问题榜 — 时、分、秒 × 新知哲学思维</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px 24px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, #1677ff, #0958d9);
+  color: #fff;
+  padding: 32px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  text-align: center;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 6px; }
+.header p { font-size: var(--font-body); opacity: 0.9; }
+.header .tagline {
+  font-size: 15px; opacity: 0.85; margin-top: 6px;
+  background: rgba(255,255,255,0.15); display: inline-block;
+  padding: 4px 16px; border-radius: 16px;
+}
+.level-nav {
+  display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+  margin-bottom: 24px;
+}
+.level-nav a {
+  text-decoration: none; padding: 8px 20px; border-radius: 20px;
+  font-weight: 600; font-size: 15px; transition: all 0.2s;
+}
+.level-nav a:hover { transform: scale(1.05); }
+.level-header {
+  font-size: var(--font-h2);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 3px solid;
+}
+.question-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.question-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.question-card h3 {
+  font-size: 18px;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+.question-card .type-tag {
+  display: inline-block;
+  padding: 1px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.tag-open { background: #e6f4ff; color: var(--primary); }
+.tag-compare { background: #f6ffed; color: #52c41a; }
+.tag-counter { background: #fff7e6; color: #fa8c16; }
+.tag-meta { background: #f9f0ff; color: #722ed1; }
+.question-card .question-text {
+  font-size: 17px;
+  line-height: 1.7;
+  padding: 10px 14px;
+  background: var(--bg);
+  border-radius: 6px;
+  border-left: 3px solid var(--primary);
+  margin-top: 6px;
+}
+.think-toggle { display: none; }
+.think-label {
+  display: inline-block;
+  margin-top: 10px;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  user-select: none;
+  transition: color 0.2s;
+}
+.think-label:hover { color: var(--primary-hover); }
+.think-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s;
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+  padding: 0 14px;
+  margin-top: 0;
+}
+.think-toggle:checked ~ .think-content {
+  max-height: 300px;
+  padding: 12px 14px;
+  margin-top: 10px;
+}
+.pick-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.2s;
+}
+.pick-btn:hover { background: var(--primary-hover); transform: scale(1.03); }
+.pick-btn:active { transform: scale(0.97); }
+.random-result {
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: 8px;
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  display: none;
+  font-size: 17px;
+}
+.random-result.show { display: block; }
+.essay-box {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-top: 24px;
+  text-align: center;
+}
+.essay-box h2 { font-size: var(--font-h2); color: var(--primary); margin-bottom: 10px; }
+.essay-box textarea {
+  width: 100%;
+  max-width: 100%;
+  min-height: 120px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 16px;
+  font-family: inherit;
+  line-height: 1.7;
+  resize: vertical;
+  margin: 10px 0;
+  box-sizing: border-box;
+}
+.essay-box textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(22,119,255,0.2);
+}
+.design-note {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-top: 24px;
+  border: 1px solid var(--border);
+  font-size: 16px;
+  color: var(--text-secondary);
+}
+.design-note h3 {
+  color: var(--primary);
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  .question-card { padding: 16px; }
+  .essay-box { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>❓ 问题榜</h1>
+  <p>时、分、秒 × 新知哲学思维 · 三年级数学</p>
+  <div class="tagline">时间是客观的"刻度"，还是主观的"体验"？每个问题都是一个追问的起点。</div>
+</div>
+
+<div class="level-nav">
+  <a href="#basic" style="background:#e6f4ff;color:var(--primary);">🌟 基础层 · 理解与识别</a>
+  <a href="#adv" style="background:#f6ffed;color:#52c41a;">📈 进阶层 · 分析与应用</a>
+  <a href="#challenge" style="background:#fff7e6;color:#fa8c16;">🚀 挑战层 · 创造与批判</a>
+</div>
+
+<!-- 随机抽题 -->
+<div style="background:var(--card-bg);border-radius:var(--border-radius);box-shadow:var(--shadow);padding:20px;text-align:center;margin-bottom:24px;">
+  <h3 style="font-size:18px;color:var(--primary);margin-bottom:8px;">🎲 随机抽取一个问题</h3>
+  <p style="color:var(--text-secondary);font-size:15px;margin-bottom:10px;">点击按钮，让命运帮你选一个问题来思考！</p>
+  <button class="pick-btn" id="randomPickBtn">🎲 抽一题</button>
+  <div class="random-result" id="randomResult"></div>
+</div>
+
+<!-- 基础层 -->
+<h2 id="basic" class="level-header" style="color:var(--primary);border-bottom-color:var(--primary);">🌟 基础层 · 理解与识别</h2>
+
+<div class="question-card">
+  <span class="type-tag tag-open">💬 开放性问题</span>
+  <div class="question-text">"一分钟有多长？你能用身体的动作来'测量'一分钟吗？"</div>
+  <input type="checkbox" id="hint1" class="think-toggle">
+  <label for="hint1" class="think-label">💡 思考提示</label>
+  <div class="think-content">试试看：从1默数到60大约是一分钟。你还可以用心跳——安静时每分钟约70-80次。或者上下跳动30次、深呼吸5次……找找你的"身体秒表"在哪里！</div>
+</div>
+
+<div class="question-card">
+  <span class="type-tag tag-open">💬 开放性问题</span>
+  <div class="question-text">"如果没有钟表，你怎么知道时间在流动？"</div>
+  <input type="checkbox" id="hint2" class="think-toggle">
+  <label for="hint2" class="think-label">💡 思考提示</label>
+  <div class="think-content">看看窗外——太阳的位置、影子的长度、天色的明暗。听听周围——鸟叫声的变化、街上的喧闹声。感受自己——饿了？困了？这些都是时间流动的"信号"。</div>
+</div>
+
+<div class="question-card">
+  <span class="type-tag tag-compare">⚖️ 对比性问题</span>
+  <div class="question-text">"秒针走得最快，为什么计时单位反而最小？"</div>
+  <input type="checkbox" id="hint3" class="think-toggle">
+  <label for="hint3" class="think-label">💡 思考提示</label>
+  <div class="think-content">仔细看钟面：秒针走一圈（60格）= 分针走1小格 = 1分钟。走得快，说明它测量的单位更小、更精细——就像一把尺子上的毫米刻度比厘米刻度更密。</div>
+</div>
+
+<div class="question-card">
+  <span class="type-tag tag-compare">⚖️ 对比性问题</span>
+  <div class="question-text">"一小时和一分钟，感觉上哪个过得更快？"</div>
+  <input type="checkbox" id="hint4" class="think-toggle">
+  <label for="hint4" class="think-label">💡 思考提示</label>
+  <div class="think-content">你在等下课的时候，一分钟感觉很长；你在看动画片的时候，一小时感觉很短。所以——"快"和"慢"不只看时间本身，还看你在做什么！</div>
+</div>
+
+<div class="question-card">
+  <span class="type-tag tag-counter">🔄 反事实问题</span>
+  <div class="question-text">"如果一天不是24小时，而是100小时，你的生活会变成什么样？"</div>
+  <input type="checkbox" id="hint5" class="think-toggle">
+  <label for="hint5" class="think-label">💡 思考提示</label>
+  <div class="think-content">作息表要重排了！一天"白天"和"黑夜"的比例不变，但每个时间段都拉长了。你会有更大的"100小时"去完成一件事，还是反而更容易拖延？</div>
+</div>
+
+<div class="question-card">
+  <span class="type-tag tag-counter">🔄 反事实问题</span>
+  <div class="question-text">"如果世界上没有'秒'这个单位，人们还能准时上课吗？"</div>
+  <input type="checkbox" id="hint6" class="think-toggle">
+  <label for="hint6" class="think-label">💡 思考提示</label>
+  <div class="think-content">没有"秒"，还有"分"呀！上课铃用"分"来定也能用。但那些需要精确到秒的事（百米赛跑、火箭发射）就麻烦了——没有更小的单位，就无法区分"谁更快"。</div>
+</div>
+
+<div class="question-card">
+  <span class="type-tag tag-meta">🧐 元认知问题</span>
+  <div class="question-text">"当你盯着时钟看秒针时，为什么感觉时间变慢了？"</div>
+  <input type="checkbox" id="hint7" class="think-toggle">
+  <label for="hint7" class="think-label">💡 思考提示</label>
+  <div class="think-content">因为你的大脑在"等"时间过去——注意力高度集中在时间的流逝上，每一个"嘀嗒"都被放大了。就像你等水烧开时总觉得特别久——你在"等待"，时间就变"慢"了。</div>
+</div>
+
+<div class="question-card">
+  <span class="type-tag tag-meta">🧐 元认知问题</span>
+  <div class="question-text">"你是怎么判断'已经过了很久'的？是靠眼睛还是靠感觉？"</div>
+  <input type="checkbox" id="hint8" class="think-toggle">
+  <label for="hint8" class="think-label">💡 思考提示</label>
+  <div class="think-content">想想看：你低头写作业，抬头看钟——"才过了10分钟？我感觉都半小时了！"你的"感觉时钟"和真正的时钟，谁更可信？</div>
+</div>
+
+<!-- 进阶层 -->
+<h2 id="adv" class="level-header" style="color:#52c41a;border-bottom-color:#52c41a;margin-top:24px;">📈 进阶层 · 分析与应用</h2>
+
+<div class="question-card" style="border-left:3px solid #52c41a;">
+  <span class="type-tag tag-open">💬 开放性问题</span>
+  <div class="question-text">"时间是'在流逝'，还是'我们自己在移动'？试着从不同角度说说你的理解。"</div>
+  <input type="checkbox" id="hint9" class="think-toggle">
+  <label for="hint9" class="think-label">💡 思考提示</label>
+  <div class="think-content">有人说："时间像一条河，我们在岸上看着它流走。"也有人说："时间像一列火车，我们坐在车上，风景在后退。"你觉得哪种比喻更贴切？或者你有你自己的比喻？</div>
+</div>
+
+<div class="question-card" style="border-left:3px solid #52c41a;">
+  <span class="type-tag tag-compare">⚖️ 对比性问题</span>
+  <div class="question-text">"手表上的时间和心里感觉到的时间，为什么经常不一样？哪种更'真实'？"</div>
+  <input type="checkbox" id="hint10" class="think-toggle">
+  <label for="hint10" class="think-label">💡 思考提示</label>
+  <div class="think-content">手表上的时间——所有人都能看到，是"公共的""客观的"。心里感觉到的时间——只有你自己知道，是"私人的""主观的"。一个用来约定"几点上课"，一个用来告诉你"我快不耐烦了"。两者都真实，但用途不同。</div>
+</div>
+
+<div class="question-card" style="border-left:3px solid #52c41a;">
+  <span class="type-tag tag-counter">🔄 反事实问题</span>
+  <div class="question-text">"如果时间可以像橡皮筋一样拉长或缩短，你希望什么时候过得快一点、什么时候过得慢一点？为什么？"</div>
+  <input type="checkbox" id="hint11" class="think-toggle">
+  <label for="hint11" class="think-label">💡 思考提示</label>
+  <div class="think-content">这其实在问：你生命中最珍惜什么时刻？最想跳过什么时刻？你的答案就是你内心价值观的"时间地图"。</div>
+</div>
+
+<div class="question-card" style="border-left:3px solid #52c41a;">
+  <span class="type-tag tag-meta">🧐 元认知问题</span>
+  <div class="question-text">"当你算一道用时很长的题目时，你是如何控制自己不分心的？你用了什么'时间策略'？"</div>
+  <input type="checkbox" id="hint12" class="think-toggle">
+  <label for="hint12" class="think-label">💡 思考提示</label>
+  <div class="think-content">有人用"番茄工作法"——专注25分钟，休息5分钟。有人给自己设个小目标——"再做3题就喝水"。你的策略是什么？如果还没有，你想试试哪种？</div>
+</div>
+
+<!-- 挑战层 -->
+<h2 id="challenge" class="level-header" style="color:#fa8c16;border-bottom-color:#fa8c16;margin-top:24px;">🚀 挑战层 · 创造与批判</h2>
+
+<div class="question-card" style="border-left:3px solid #fa8c16;">
+  <span class="type-tag tag-open">💬 开放性问题</span>
+  <div class="question-text">"假如你要向一个从没见过钟表的外星人解释'时间'，你会怎么说？你举的例子足够准确吗？"</div>
+  <input type="checkbox" id="hint13" class="think-toggle">
+  <label for="hint13" class="think-label">💡 思考提示</label>
+  <div class="think-content">外星人可能不理解"秒""分""时"的概念。你可以用"变化"来解释——太阳升起又落下、花朵开放又凋谢、你从婴儿长成现在的样子……时间就是"让万物变化的东西"。外星人能理解吗？</div>
+</div>
+
+<div class="question-card" style="border-left:3px solid #fa8c16;">
+  <span class="type-tag tag-compare">⚖️ 对比性问题</span>
+  <div class="question-text">"动物的时间感觉和人一样吗？比如苍蝇看世界是'慢动作'，这算不算另一种时间？"</div>
+  <input type="checkbox" id="hint14" class="think-toggle">
+  <label for="hint14" class="think-label">💡 思考提示</label>
+  <div class="think-content">科学研究发现：体型越小、新陈代谢越快的动物，感受到的时间越"慢"。苍蝇能看到人类很难察觉的快速移动——所以拍苍蝇那么难！如果存在一种"苍蝇时间"，那"一秒"对苍蝇来说可能就像"一分钟"对我们一样长。</div>
+</div>
+
+<div class="question-card" style="border-left:3px solid #fa8c16;">
+  <span class="type-tag tag-counter">🔄 反事实问题</span>
+  <div class="question-text">"如果人类没有发明钟表，文明还能发展出火车时刻表、奥运会纪录和科学实验吗？时间概念本身是不是一种'发明'？"</div>
+  <input type="checkbox" id="hint15" class="think-toggle">
+  <label for="hint15" class="think-label">💡 思考提示</label>
+  <div class="think-content">没有钟表之前，人们用日晷、沙漏、水钟……说明人类一直在追求"更精确地约定时间"。钟表不是时间的发明者，而是时间测量的革命者。你想想——如果没有统一的计时，"下午3点见面"要怎么约定？"3分钟煮鸡蛋"怎么执行？</div>
+</div>
+
+<div class="question-card" style="border-left:3px solid #fa8c16;">
+  <span class="type-tag tag-meta">🧐 元认知问题</span>
+  <div class="question-text">"学完这节课后，你对'时间'的理解发生了什么变化？你原来觉得时间是什么，现在觉得它可能又是什么？——请用你自己的话写一段'时间哲学小短文'。"</div>
+  <input type="checkbox" id="hint16" class="think-toggle">
+  <label for="hint16" class="think-label">💡 思考提示</label>
+  <div class="think-content">可以这样开头："我以前觉得时间就是钟表上的数字……现在我发现……" 或者："时间对我来说最不可思议的地方是……" 没有标准答案，你的想法就是最重要的答案。</div>
+</div>
+
+<!-- 时间哲学小短文 -->
+<div class="essay-box">
+  <h2>✍️ 我的时间哲学小短文</h2>
+  <p style="color:var(--text-secondary);margin-bottom:8px;">学完这节课，你对"时间"的理解发生了什么变化？写下你的思考吧！</p>
+  <textarea id="essayInput" placeholder="我以前觉得时间就是……现在我发现……"></textarea>
+  <div>
+    <button class="pick-btn" id="saveEssayBtn" style="margin-right:8px;">💾 保存草稿</button>
+    <button class="pick-btn" id="clearEssayBtn" style="background:var(--text-secondary);">🗑️ 清空</button>
+  </div>
+  <p id="saveStatus" style="margin-top:8px;font-size:15px;color:#52c41a;display:none;">✅ 已保存到本地</p>
+</div>
+
+<!-- 设计说明 -->
+<div class="design-note">
+  <h3>📐 设计说明</h3>
+  <p>本问题榜围绕"时、分、秒"的数学知识展开，融合新知哲学思维的反思性——每个问题都指向一个更深层的追问：时间究竟是客观的"刻度"，还是主观的"体验"？<br><br>
+  <strong>🌟 基础层</strong> 聚焦感官与单位识别<br>
+  <strong>📈 进阶层</strong> 引入相对性与策略反思<br>
+  <strong>🚀 挑战层</strong> 触及时间本体论与文明建构<br><br>
+  从感知到思辨，形成一个完整的递进闭环。</p>
+</div>
+
+</div>
+
+<script>
+(function(){
+  // 随机抽题
+  var allQuestions = [];
+  document.querySelectorAll('.question-card .question-text').forEach(function(el){
+    allQuestions.push(el.textContent.trim());
+  });
+  document.getElementById('randomPickBtn').addEventListener('click', function(){
+    var r = Math.floor(Math.random() * allQuestions.length);
+    var resultEl = document.getElementById('randomResult');
+    resultEl.textContent = '💭 "' + allQuestions[r] + '"';
+    resultEl.classList.add('show');
+  });
+
+  // 保存/清空小短文
+  var essay = document.getElementById('essayInput');
+  var savedEssay = localStorage.getItem('timeEssay_4888');
+  if (savedEssay) { essay.value = savedEssay; }
+
+  document.getElementById('saveEssayBtn').addEventListener('click', function(){
+    localStorage.setItem('timeEssay_4888', essay.value);
+    var status = document.getElementById('saveStatus');
+    status.style.display = 'block';
+    setTimeout(function(){ status.style.display = 'none'; }, 2000);
+  });
+  document.getElementById('clearEssayBtn').addEventListener('click', function(){
+    if (confirm('确定清空吗？')) {
+      essay.value = '';
+      localStorage.removeItem('timeEssay_4888');
+    }
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学术社区 · 时间学习共同体</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+  --font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+  padding: 24px;
+}
+.container { width: 100%; max-width: none; margin: 0 auto; }
+.hero {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  border-radius: var(--border-radius);
+  padding: 28px 32px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+}
+.hero h1 { font-size: var(--font-h1); margin-bottom: 8px; font-weight: 700; }
+.hero p { font-size: var(--font-body); opacity: 0.9; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  transition: transform 0.2s;
+}
+.card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+.card h3 {
+  font-size: calc(var(--font-body) + 2px);
+  color: var(--primary-hover);
+  margin: 14px 0 8px;
+  font-weight: 600;
+}
+/* 标签 */
+.conn-tag {
+  display: inline-block;
+  padding: 4px 16px;
+  border-radius: 20px;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.tag-peer { background: #e6f4ff; color: var(--primary); }
+.tag-home { background: #fff7e6; color: #d46b08; }
+.tag-social { background: #f6ffed; color: #52c41a; }
+/* 讨论议题 */
+.topic-card {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-bottom: 14px;
+  border-left: 4px solid var(--primary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.topic-card:hover { background: #e6f4ff; transform: translateX(4px); }
+.topic-card h4 { margin-bottom: 6px; color: var(--primary); font-size: var(--font-body); }
+.topic-card .topic-detail { display: none; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); }
+.topic-card .topic-detail.show { display: block; }
+/* 表格 */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  font-size: var(--font-body);
+}
+th, td {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+th { background: var(--primary); color: #fff; font-weight: 600; }
+tr:nth-child(even) { background: #fafafa; }
+/* 按钮 */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 20px; border-radius: var(--border-radius);
+  border: 2px solid var(--primary); background: var(--card-bg);
+  color: var(--primary); font-size: var(--font-body);
+  cursor: pointer; transition: all 0.25s; font-family: var(--font-family);
+  margin: 4px 4px 4px 0;
+}
+.btn:hover { background: var(--primary); color: #fff; transform: scale(1.03); }
+.btn-accent { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-accent:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+.btn-orange { border-color: #d46b08; color: #d46b08; }
+.btn-orange:hover { background: #d46b08; color: #fff; }
+.btn-green { border-color: #52c41a; color: #52c41a; }
+.btn-green:hover { background: #52c41a; color: #fff; }
+/* 活动项 */
+.activity-item {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 12px 0; border-bottom: 1px solid var(--border);
+}
+.activity-item:last-child { border-bottom: none; }
+.activity-icon {
+  flex-shrink: 0; width: 40px; height: 40px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 20px; color: #fff;
+}
+.icon-blue { background: var(--primary); }
+.icon-orange { background: #d46b08; }
+.icon-green { background: #52c41a; }
+/* 输出表 */
+.output-grid {
+  display: grid; grid-template-columns: 1fr; gap: 8px;
+}
+@media (min-width: 640px) {
+  .output-grid { grid-template-columns: 1fr 1fr; }
+}
+.output-item {
+  padding: 12px 16px; background: var(--bg); border-radius: var(--border-radius);
+  border: 1px solid var(--border);
+}
+.output-item strong { color: var(--primary); }
+/* 专家问题 */
+.qa-btn {
+  display: inline-block;
+  padding: 8px 16px; margin: 4px;
+  background: var(--card-bg); border: 1px dashed var(--primary);
+  border-radius: 20px; cursor: pointer; transition: all 0.2s;
+  font-size: 16px; color: var(--primary); font-family: var(--font-family);
+}
+.qa-btn:hover { background: var(--primary); color: #fff; border-style: solid; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="hero">
+  <h1>🤝 学术社区 · 时间学习共同体</h1>
+  <p>和同学一起讨论、和家人一起体验、和世界一起探索——让学习变成一次共同的冒险</p>
+</div>
+
+<!-- 同伴连接 -->
+<div class="card">
+  <h2>👫 同伴连接 · 讨论与协作</h2>
+  <span class="conn-tag tag-peer">💬 小组讨论</span>
+
+  <div class="topic-card" onclick="toggleTopic(this)">
+    <h4>🗣 议题一：你觉得 1 分钟长还是短？</h4>
+    <p style="color:var(--text-secondary);font-size:16px;">点击展开/收起详情</p>
+    <div class="topic-detail">
+      <p><strong>思考角度：</strong>做不同事情时，你对 1 分钟的感受一样吗？</p>
+      <p><strong>讨论准备：</strong>先自己完成"1分钟体验记录"——不说话，静静感受 1 分钟的长度。</p>
+      <p><strong>讨论产出：</strong>小组汇总出一个"1分钟感受地图"，标注每个人不同的感受。</p>
+    </div>
+  </div>
+
+  <div class="topic-card" onclick="toggleTopic(this)">
+    <h4>😊 议题二：你学"时、分、秒"过程中最"爽"的一刻是什么？</h4>
+    <p style="color:var(--text-secondary);font-size:16px;">点击展开/收起详情</p>
+    <div class="topic-detail">
+      <p><strong>思考角度：</strong>是第一次看懂钟表？还是第一次做对换算题？</p>
+      <p><strong>讨论准备：</strong>翻翻课本，找到让你觉得"我学会了"的那个证据。</p>
+      <p><strong>讨论产出：</strong>每人写一张"幸福小卡片"，贴在小组展示板上。</p>
+    </div>
+  </div>
+
+  <div class="topic-card" onclick="toggleTopic(this)">
+    <h4>⏳ 议题三：如果没有钟表，你会怎么安排一天？</h4>
+    <p style="color:var(--text-secondary);font-size:16px;">点击展开/收起详情</p>
+    <div class="topic-detail">
+      <p><strong>思考角度：</strong>古代人没有钟表是怎么生活的？</p>
+      <p><strong>讨论准备：</strong>先自己设计一个"无钟方案"。</p>
+      <p><strong>讨论产出：</strong>小组评选出"最佳创意方案"。</p>
+    </div>
+  </div>
+
+  <h3>🎭 角色分工（小组活动建议）</h3>
+  <table>
+    <thead><tr><th>角色</th><th>任务</th></tr></thead>
+    <tbody>
+      <tr><td>⏱ 计时员</td><td>控制讨论时间，确保每个环节不超时</td></tr>
+      <tr><td>📝 记录员</td><td>记录小组讨论的要点和结论</td></tr>
+      <tr><td>🎤 发言代表</td><td>代表小组向全班分享讨论成果</td></tr>
+      <tr><td>💡 创意激发官</td><td>在大家思路卡住时提出"如果……会怎样"的新角度</td></tr>
+    </tbody>
+  </table>
+  <div style="margin-top:10px;">
+    <button class="btn" onclick="pickRole()">🎲 随机分配角色</button>
+    <span id="roleResult" style="margin-left:12px;font-weight:600;color:var(--primary);"></span>
+  </div>
+</div>
+
+<!-- 家校连接 -->
+<div class="card">
+  <h2>🏠 家校连接 · 支持与反馈</h2>
+  <span class="conn-tag tag-home">👨‍👩‍👧‍👦 家庭活动</span>
+
+  <div class="activity-item">
+    <div class="activity-icon icon-blue">📚</div>
+    <div>
+      <strong>"教爸爸妈妈看时间"活动</strong>
+      <p>用今天学到的知识，教家人一个关于"时间"的新知识（如：为什么1分钟=60秒而不是100秒）。请家人在你的"学习幸福报告"上写一句话评价。</p>
+      <button class="btn btn-small" onclick="alert('📝 准备一页纸，写下你的"时间小课堂"教案，然后教给家人！')">👉 开始行动</button>
+    </div>
+  </div>
+
+  <div class="activity-item">
+    <div class="activity-icon icon-orange">⏱</div>
+    <div>
+      <strong>"我家的一分钟"家庭记录</strong>
+      <p>请家人和你一起完成"1分钟"体验活动（如一起深呼吸60秒）。拍下照片或视频，附上每个人的感受。</p>
+      <button class="btn btn-small btn-orange" onclick="alert('📸 试试深呼吸60秒、闭眼站立60秒……看看谁的感受最有趣！')">👉 开始行动</button>
+    </div>
+  </div>
+
+  <div class="activity-item">
+    <div class="activity-icon icon-green">🎨</div>
+    <div>
+      <strong>"时间角"家庭展示</strong>
+      <p>把你的"学习幸福地图"或"时间关系图"贴在家里的墙上，让家人看到你的学习成果，为你点赞。</p>
+      <button class="btn btn-small btn-green" onclick="alert('🖼️ 找一个家里的显眼位置，建立属于你的"时间角"！')">👉 开始行动</button>
+    </div>
+  </div>
+</div>
+
+<!-- 社会连接 -->
+<div class="card">
+  <h2>🌍 社会连接 · 真实探索</h2>
+  <span class="conn-tag tag-social">🏛 实地探索</span>
+
+  <h3>🏛 参观建议</h3>
+  <ul>
+    <li>去科技馆的"时间展厅"参观，看看古代计时工具的实物</li>
+    <li>参观钟表店，请修表师傅演示钟表的内部结构</li>
+    <li>留意城市里的"大钟楼"或"报时钟"，感受公共时间的存在</li>
+  </ul>
+
+  <h3>💻 线上资源</h3>
+  <ul>
+    <li>中国科技馆官网"线上展厅"→"计时器的演变"专题</li>
+    <li>搜索"故宫钟表馆"线上展览，欣赏古代皇家钟表</li>
+  </ul>
+
+  <h3>❓ 专家问题库</h3>
+  <p style="margin-bottom:6px;">点击问题，把它记住，下次见到专家或去科技馆时问出来！</p>
+  <div>
+    <button class="qa-btn" onclick="saveQuestion(this)">❓ 为什么钟表指针是顺时针转？</button>
+    <button class="qa-btn" onclick="saveQuestion(this)">❓ 为什么一天是24小时，不是10小时？</button>
+    <button class="qa-btn" onclick="saveQuestion(this)">❓ 全世界的时间怎么统一？</button>
+  </div>
+  <p id="qaFeedback" style="margin-top:8px;color:var(--text-secondary);font-size:15px;"></p>
+</div>
+
+<!-- 输出机制 -->
+<div class="card">
+  <h2>📦 输出机制</h2>
+  <div class="output-grid">
+    <div class="output-item"><strong>💬 小组讨论</strong><br>讨论记录表 → 班级展板</div>
+    <div class="output-item"><strong>📚 教家人看时间</strong><br>活动照片+评价 → 班级群分享</div>
+    <div class="output-item"><strong>⏱ 家庭时间记录</strong><br>体验记录表 → "时间角"展示</div>
+    <div class="output-item"><strong>🏛 参观/线上观展</strong><br>参观笔记+画图 → 课堂分享</div>
+  </div>
+</div>
+
+<!-- 总结 -->
+<div class="card" style="text-align:center;">
+  <h2>🌟 学习不是一个人的事</h2>
+  <p>和同学讨论、和家人分享、向社会学习——</p>
+  <p>每一次交流，都会让你的"时间认知"变得更丰富、更深刻。</p>
+  <div style="margin-top:12px;">
+    <button class="btn btn-accent" onclick="alert('🎉 你已浏览完学术社区的全部内容！选一个活动马上开始吧！')">🚀 我准备好了</button>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<script>
+function toggleTopic(el) {
+  const detail = el.querySelector('.topic-detail');
+  if (detail) detail.classList.toggle('show');
+}
+
+function pickRole() {
+  const roles = ['⏱ 计时员', '📝 记录员', '🎤 发言代表', '💡 创意激发官'];
+  const chosen = roles[Math.floor(Math.random() * roles.length)];
+  document.getElementById('roleResult').textContent = '🎯 你抽到了：' + chosen;
+}
+
+function saveQuestion(btn) {
+  btn.style.background = 'var(--primary)';
+  btn.style.color = '#fff';
+  btn.style.borderStyle = 'solid';
+  document.getElementById('qaFeedback').textContent = '✅ 已记住！下次见到老师、专家或去科技馆时问出来吧！';
+}
+</script>
+</body>
+</html>

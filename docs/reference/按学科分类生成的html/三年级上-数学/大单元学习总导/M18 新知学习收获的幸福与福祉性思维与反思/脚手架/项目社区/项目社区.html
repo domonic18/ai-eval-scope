@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目社区 - 时间与学习幸福</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+h1 { font-size: var(--font-h1); color: var(--primary); text-align: center; margin: 16px 0 8px; }
+.subtitle { text-align: center; color: var(--text-secondary); margin-bottom: 24px; font-size: 16px; }
+h2 { font-size: var(--font-h2); color: var(--primary); border-left: 4px solid var(--primary); padding-left: 12px; margin: 28px 0 16px; }
+h3 { font-size: 20px; color: var(--text); margin: 20px 0 10px; }
+.tag { display: inline-block; background: var(--primary); color: #fff; font-size: 13px; padding: 2px 10px; border-radius: 4px; margin-right: 6px; }
+.tag.green { background: #52c41a; }
+.tag.orange { background: #fa8c16; }
+.tag.purple { background: #722ed1; }
+.card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px; border: 1px solid var(--border); transition: box-shadow 0.3s, transform 0.2s; }
+.card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.12); transform: translateY(-2px); }
+.card-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+.card-header h3 { margin: 0; }
+.toggle-btn { font-size: 22px; color: var(--primary); background: none; border: none; cursor: pointer; transition: transform 0.3s; padding: 0 4px; }
+.toggle-btn.active { transform: rotate(180deg); }
+.card-body { max-height: 0; overflow: hidden; transition: max-height 0.5s ease, padding 0.3s; padding: 0; }
+.card-body.open { max-height: 8000px; padding-top: 16px; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 16px; }
+th, td { border: 1px solid var(--border); padding: 10px 12px; text-align: left; }
+th { background: var(--bg); color: var(--primary); font-weight: 600; }
+.checklist { list-style: none; padding: 0; }
+.checklist li { padding: 6px 0 6px 28px; position: relative; }
+.checklist li::before { content: "☐"; position: absolute; left: 0; color: var(--primary); font-size: 18px; }
+.step-num { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--primary); color: #fff; font-size: 14px; font-weight: 600; margin-right: 8px; flex-shrink: 0; }
+.phase-timeline { position: relative; padding-left: 24px; }
+.phase-timeline::before { content: ""; position: absolute; left: 12px; top: 0; bottom: 0; width: 2px; background: var(--accent); }
+.phase-item { position: relative; margin-bottom: 14px; }
+.phase-item::before { content: ""; position: absolute; left: -18px; top: 10px; width: 10px; height: 10px; border-radius: 50%; background: var(--primary); border: 2px solid var(--bg); }
+.resource-link { display: inline-block; background: var(--bg); color: var(--primary); padding: 4px 12px; border-radius: 16px; font-size: 14px; text-decoration: none; border: 1px solid var(--accent); transition: background 0.2s; }
+.resource-link:hover { background: var(--accent); color: #fff; }
+.project-type-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.project-type-btn { padding: 8px 18px; border: 2px solid var(--primary); border-radius: 20px; background: transparent; color: var(--primary); font-size: 15px; cursor: pointer; transition: all 0.3s; font-family: inherit; }
+.project-type-btn.active, .project-type-btn:hover { background: var(--primary); color: #fff; }
+.project-content { display: none; }
+.project-content.active { display: block; }
+@media (max-width: 600px) { .container { padding: 12px; } table { font-size: 14px; } th, td { padding: 6px 8px; } .project-type-btn { font-size: 13px; padding: 6px 12px; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🏗️ 项目社区</h1>
+  <p class="subtitle">以真实问题为驱动，在实践中深化对"时间"和"学习幸福"的理解</p>
+
+  <div class="project-type-tabs">
+    <button class="project-type-btn active" onclick="switchProject('short')">📋 短周期 · 微项目</button>
+    <button class="project-type-btn" onclick="switchProject('medium')">📖 中周期 · 专题项目</button>
+    <button class="project-type-btn" onclick="switchProject('long')">🏆 长周期 · 综合项目</button>
+  </div>
+
+  <div id="project-short" class="project-content active">
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3>📋 项目1：我的"一天时间账单"</h3>
+        <span class="toggle-btn">▼</span>
+      </div>
+      <div class="card-body open">
+        <p><span class="tag">1-3天</span><span class="tag green">入门级</span></p>
+        <p><strong>项目目标：</strong>记录一天24小时中的各项活动，看看"时间都去哪儿了"。</p>
+        <div class="phase-timeline">
+          <div class="phase-item"><strong>记录日</strong>（第1天）：从起床到睡觉，记录每项活动的起止时间</div>
+          <div class="phase-item"><strong>统计日</strong>（第2天）：用表格分类统计——学习时间、休息时间、玩耍时间、吃饭时间、其他</div>
+          <div class="phase-item"><strong>分析日</strong>（第3天）：画出饼图或柱状图，写出"我的时间发现"</div>
+        </div>
+        <p><strong>成果形式：</strong>"一天时间账单"报告（包含记录表 + 统计图 + 分析文字）+ 一句"时间感言"</p>
+        <p><strong>评价标准：</strong></p>
+        <ul class="checklist">
+          <li>记录真实、完整（没有遗漏大块时间）</li>
+          <li>统计分类合理</li>
+          <li>统计图清晰可读</li>
+          <li>分析文字有自己的真实感受</li>
+        </ul>
+        <p>📎 <a class="resource-link" href="#">时间规划表模板</a></p>
+      </div>
+    </div>
+  </div>
+
+  <div id="project-medium" class="project-content">
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3>📖 项目2：《我的时间手册》创作项目</h3>
+        <span class="toggle-btn">▼</span>
+      </div>
+      <div class="card-body">
+        <p><span class="tag">1-2周</span><span class="tag orange">进阶级</span></p>
+        <p><strong>项目目标：</strong>创作一本属于自己的"时间主题"小手册，综合运用本单元学到的知识和反思方法。</p>
+        <div class="phase-timeline">
+          <div class="phase-item"><strong>规划阶段</strong>（第1-2天）：确定手册结构（至少4个页面），设计封面</div>
+          <div class="phase-item"><strong>内容创作</strong>（第3-6天）：时间知识卡 → 我的时间故事 → 幸福时刻墙 → 未来计划</div>
+          <div class="phase-item"><strong>美化阶段</strong>（第7天）：整理排版、上色、装订</div>
+        </div>
+        <p><strong>成果形式：</strong>折叠小册子（8页内）或电子版（PPT/PDF）</p>
+        <p><strong>评价标准：</strong></p>
+        <ul class="checklist">
+          <li>包含至少4个页面，内容完整</li>
+          <li>时间知识准确无误</li>
+          <li>有自己的个人表达（不是照抄书本）</li>
+          <li>体现了对"幸福学习"主题的理解</li>
+          <li>整体美观，让人愿意翻阅</li>
+        </ul>
+        <p>📎 可调用 <a class="resource-link" href="#">名人名言</a> <a class="resource-link" href="#">名著介绍</a> 中的内容作为素材</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="project-long" class="project-content">
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3>🏆 项目3："时间小管家"班级挑战赛</h3>
+        <span class="toggle-btn">▼</span>
+      </div>
+      <div class="card-body">
+        <p><span class="tag">1个月+</span><span class="tag purple">挑战级</span></p>
+        <p><strong>项目目标：</strong>以班级为单位，开展为期一个月的"时间管理"挑战赛，培养良好的时间管理习惯。</p>
+        <div class="phase-timeline">
+          <div class="phase-item"><strong>启动阶段</strong>（第1周）：制定规则，领取"时间存折"</div>
+          <div class="phase-item"><strong>执行阶段</strong>（第2-3周）：每日记录，每周小组交流</div>
+          <div class="phase-item"><strong>总结阶段</strong>（第4周）：统计积分，评选"时间小管家"，召开分享会</div>
+        </div>
+        <p><strong>成果形式：</strong>"时间存折"记录本 + 时间管理进步报告 + 班级展示墙</p>
+        <p><strong>评价标准：</strong></p>
+        <ul class="checklist">
+          <li>连续记录了至少21天</li>
+          <li>记录真实，没有虚报</li>
+          <li>在时间管理上确实有了进步（可举证）</li>
+          <li>分享内容对他人有启发</li>
+        </ul>
+        <p>📎 <a class="resource-link" href="#">时间规划表</a> <a class="resource-link" href="#">对比表格</a> <a class="resource-link" href="#">案例库</a> <a class="resource-link" href="#">学术社区</a></p>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center; margin-top: 32px; padding: 20px; background: linear-gradient(135deg, var(--bg), #e6f7ff); border-radius: var(--border-radius);">
+    <p style="font-size: 20px; color: var(--primary); font-weight: 600;">💡 选择一个项目，开始你的时间探索之旅吧！</p>
+    <p style="color: var(--text-secondary);">完成后记得回到社区分享你的成果哦 🌟</p>
+  </div>
+</div>
+<script>
+function toggleCard(el) {
+  var body = el.parentElement.querySelector('.card-body');
+  var btn = el.querySelector('.toggle-btn');
+  body.classList.toggle('open');
+  btn.classList.toggle('active');
+}
+function switchProject(type) {
+  document.querySelectorAll('.project-content').forEach(function(el) { el.classList.remove('active'); });
+  document.getElementById('project-' + type).classList.add('active');
+  document.querySelectorAll('.project-type-btn').forEach(function(el) { el.classList.remove('active'); });
+  var btns = document.querySelectorAll('.project-type-btn');
+  var idx = type === 'short' ? 0 : type === 'medium' ? 1 : 2;
+  btns[idx].classList.add('active');
+}
+</script>
+</body>
+</html>

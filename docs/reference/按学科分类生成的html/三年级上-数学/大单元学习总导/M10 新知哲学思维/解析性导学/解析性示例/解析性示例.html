@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性示例 — 时间单位是怎么来的？</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff;
+  padding: 32px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+  text-align: center;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; font-weight: 700; }
+.header p { font-size: 16px; opacity: 0.9; }
+
+/* Scenario card */
+.scenario {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 20px;
+  border-left: 4px solid var(--primary);
+  position: relative;
+}
+.scenario h2 { font-size: var(--font-h2); margin-bottom: 12px; }
+.scenario p { margin-bottom: 8px; }
+.scenario .dialogue {
+  background: #f6f8fa;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-style: italic;
+}
+
+/* Key Question highlight */
+.key-question {
+  background: linear-gradient(135deg, #fff7e6, #fffbe6);
+  border: 2px solid #ffd666;
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin: 20px 0;
+  text-align: center;
+}
+.key-question h3 {
+  color: #d46b08;
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+.key-question p {
+  font-size: 16px;
+}
+
+/* Info table */
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 15px;
+}
+.info-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 14px;
+  text-align: left;
+}
+.info-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.info-table tr:hover td { background: #f0f5ff; }
+.info-table .highlight { background: #fffbe6; }
+
+/* Analysis steps - interactive accordion */
+.steps-section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin: 20px 0;
+}
+.steps-section h2 {
+  font-size: var(--font-h2);
+  margin-bottom: 16px;
+}
+
+.step {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  transition: box-shadow 0.3s;
+}
+.step:hover { box-shadow: 0 2px 8px rgba(22,119,255,0.08); }
+
+.step-header {
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+  cursor: pointer;
+  user-select: none;
+  gap: 12px;
+}
+.step-header .step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.step-header .step-title {
+  flex: 1;
+  font-weight: 600;
+  font-size: 17px;
+}
+.step-header .step-icon {
+  transition: transform 0.3s;
+  color: var(--primary);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.step.open .step-icon { transform: rotate(180deg); }
+
+.step-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s ease;
+}
+.step.open .step-body { max-height: 600px; }
+
+.step-content {
+  padding: 0 18px 16px;
+  border-top: 1px solid var(--border);
+}
+.step-content p { margin-bottom: 6px; }
+.step-content p:first-child { margin-top: 12px; }
+
+/* Conclusion highlight */
+.conclusion-box {
+  background: linear-gradient(135deg, #f0f5ff, #e6f7ff);
+  border: 2px solid var(--primary);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin: 20px 0;
+  text-align: center;
+}
+.conclusion-box h3 {
+  color: var(--primary);
+  font-size: var(--font-h2);
+  margin-bottom: 10px;
+}
+.conclusion-box p {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* Method framework */
+.method-box {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin: 20px 0;
+}
+.method-box h2 { font-size: var(--font-h2); margin-bottom: 12px; }
+.method-steps {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+@media (min-width: 640px) {
+  .method-steps { grid-template-columns: 1fr 1fr; }
+}
+.method-item {
+  background: #f0f5ff;
+  border-radius: 6px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.method-item .m-num {
+  flex-shrink: 0;
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 16px;
+}
+
+/* Misconceptions */
+.misconceptions {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin: 20px 0;
+}
+.misconceptions h2 { font-size: var(--font-h2); margin-bottom: 12px; }
+.mis-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.mis-item:last-child { border-bottom: none; }
+.mis-item .mis-title {
+  font-weight: 700;
+  color: #cf1322;
+  margin-bottom: 4px;
+}
+.mis-item .mis-desc { font-size: 15px; }
+
+/* Practice cards */
+.practice-section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin: 20px 0;
+}
+.practice-section h2 { font-size: var(--font-h2); margin-bottom: 14px; }
+.practice-card {
+  background: #fafafa;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border-left: 4px solid var(--accent);
+}
+.practice-card h4 { font-size: 17px; margin-bottom: 6px; color: var(--primary); }
+.practice-card p { margin-bottom: 4px; font-size: 15px; }
+
+/* Self-assessment */
+.self-check {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin: 20px 0;
+}
+.self-check h2 { font-size: var(--font-h2); margin-bottom: 14px; }
+.star-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.star-item:last-child { border-bottom: none; }
+.star-label { flex: 1; font-size: 15px; }
+.stars { flex-shrink: 0; }
+.star { color: #ffd666; font-size: 20px; cursor: pointer; }
+.star.filled { color: #f5b400; }
+.star:hover, .star.filled:hover { color: #ffa000; }
+
+@media (max-width: 600px) {
+  .container { padding: 16px 12px; }
+  .header { padding: 24px 16px; }
+  .info-table, .info-table th, .info-table td { font-size: 14px; }
+  .info-table th, .info-table td { padding: 8px 10px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🔎 解析性示例</h1>
+  <p>时间单位是怎么来的？ · 数学三年级上 · 1时、分、秒</p>
+</div>
+
+<!-- 情境 -->
+<div class="scenario">
+  <h2>📖 场景：等人的烦恼</h2>
+  <p>小明和爸爸约好下午3:00去踢球。爸爸说："我2:55到小区门口等你。" 小明2:50就到了，等啊等，到3:05爸爸才来。</p>
+  <div class="dialogue">
+    <p><strong>小明问：</strong>"爸爸，你怎么迟到啦？"</p>
+    <p><strong>爸爸掏出手机说：</strong>"你看，我到的时候手机上显示的就是3:00。"</p>
+    <p><strong>小明看了看自己的手表：</strong>"可是我的手表显示2:55啊。"</p>
+  </div>
+  <p><strong>两个人看到的"时间"不一样——谁错了？</strong></p>
+  <p style="color:var(--text-secondary);font-size:15px;">这个看似简单的情境，背后藏着一个大问题：<strong>时间单位到底是怎么定的？为什么全世界的人都能用同一套时间单位来沟通？</strong></p>
+</div>
+
+<!-- 核心问题 -->
+<div class="key-question">
+  <h3>🎯 核心问题</h3>
+  <p>本案例要解决的关键问题：<strong>"1分钟"的标准长度是谁规定的？它是怎么来的？</strong></p>
+  <p style="margin-top:8px;font-size:15px;">推而广之：为什么1天=24小时，1小时=60分钟，1分钟=60秒？这些数字是怎么来的？</p>
+  <p style="margin-top:6px;color:#d46b08;font-weight:600;font-size:16px;">➜ 人类是如何把"看不见摸不着"的时间，变成可以测量、可以沟通的单位的？</p>
+</div>
+
+<!-- 关键信息表 -->
+<div style="overflow-x:auto;">
+<table class="info-table">
+  <thead>
+    <tr><th>情境信息</th><th>说明了什么</th><th>为什么重要</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>小明和爸爸的手表相差5分钟</td>
+      <td>不同计时工具可能不准</td>
+      <td>说明"时间单位"需要统一标准</td>
+    </tr>
+    <tr class="highlight">
+      <td>爸爸说"手机上显示3:00"</td>
+      <td>人们依赖计时器知道"现在几点"</td>
+      <td>但计时器本身需要被校准</td>
+    </tr>
+    <tr>
+      <td>古埃及人用日晷、沙漏计时</td>
+      <td>早期人类已有"分段时间"的需求</td>
+      <td>最早的"时间单位"来自天文观察和自然现象</td>
+    </tr>
+    <tr class="highlight">
+      <td>1天=24小时，1小时=60分钟</td>
+      <td>这些换算关系是人为约定的</td>
+      <td>追问"为什么是24和60"才能理解本质</td>
+    </tr>
+    <tr>
+      <td>现代原子钟精度达每10亿年误差1秒</td>
+      <td>今天的时间单位有科学定义</td>
+      <td>从"经验约定"到"科学定义"的跨</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<!-- 专家解析过程 -->
+<div class="steps-section">
+  <h2>🧠 专家解析过程（点击每一步展开）</h2>
+
+  <div class="step open" id="s1">
+    <div class="step-header" onclick="toggleStep('s1')">
+      <span class="step-num">1</span>
+      <span class="step-title">先看见什么</span>
+      <span class="step-icon">▾</span>
+    </div>
+    <div class="step-body">
+      <div class="step-content">
+        <p>先注意到这个现象：小明和爸爸的"1分钟"长度不一样——爸爸的5分钟在小明这里是10分钟。这意味着<strong>"分钟"不是一个天然存在的东西，它是人造的尺子</strong>。</p>
+        <p style="margin-top:8px;">所有时间单位（时、分、秒）都像是刻度不同的人造尺子。尺子之间要能换算，就得有固定的比例关系。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="step" id="s2">
+    <div class="step-header" onclick="toggleStep('s2')">
+      <span class="step-num">2</span>
+      <span class="step-title">判断问题类型</span>
+      <span class="step-icon">▾</span>
+    </div>
+    <div class="step-body">
+      <div class="step-content">
+        <p>这是一个<strong>"约定与标准"型问题</strong>——类似于"为什么1米这么长"、"为什么1千克那么重"。这类问题的共同特点是：</p>
+        <ul style="list-style:none;padding:0;margin:8px 0;">
+          <li style="padding-left:20px;position:relative;margin-bottom:4px;">✦ 答案不在自然中直接给出</li>
+          <li style="padding-left:20px;position:relative;margin-bottom:4px;">✦ 答案在人类历史选择中</li>
+          <li style="padding-left:20px;position:relative;margin-bottom:4px;">✦ 需要追问"当初为什么这么选"</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="step" id="s3">
+    <div class="step-header" onclick="toggleStep('s3')">
+      <span class="step-num">3</span>
+      <span class="step-title">调用概念与原理</span>
+      <span class="step-icon">▾</span>
+    </div>
+    <div class="step-body">
+      <div class="step-content">
+        <p>调出三个关键知识：</p>
+        <p><strong>① 天文周期：</strong>地球自转一周≈1天，这是时间单位最原始的自然基准</p>
+        <p><strong>② 60进制的历史：</strong>古巴比伦人用60进制（60的因数特别多），所以把1小时分成60分钟，1分钟分成60秒</p>
+        <p><strong>③ 24小时的来源：</strong>古埃及人把一天分成白天12小时+夜晚12小时（用12是因为手指节计数方便，且12的因数也多）</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="step" id="s4">
+    <div class="step-header" onclick="toggleStep('s4')">
+      <span class="step-num">4</span>
+      <span class="step-title">推理分析</span>
+      <span class="step-icon">▾</span>
+    </div>
+    <div class="step-body">
+      <div class="step-content">
+        <p><strong>推理链：</strong></p>
+        <p>① 人类需要"时间单位"来协调生活（种地、祭祀、交易、约会）</p>
+        <p>② 最自然的基准是"一天"（日出日落）</p>
+        <p>③ 一天太长，需要细分→选什么数字来分？</p>
+        <p>④ 古巴比伦人习惯60进制→1小时=60分钟</p>
+        <p>⑤ 古埃及人习惯12进制→1天=24小时</p>
+        <p>⑥ 现代科学需要更精确→用铯-133原子振动周期定义秒</p>
+        <p style="margin-top:8px;"><strong>关键洞察：</strong>"1分钟"的长度经历了三个阶段的变化——古代粗略且有季节差异 → 机械钟表时代固定下来 → 现代用原子振动周期精确定义。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="step" id="s5">
+    <div class="step-header" onclick="toggleStep('s5')">
+      <span class="step-num">5</span>
+      <span class="step-title">形成结论</span>
+      <span class="step-icon">▾</span>
+    </div>
+    <div class="step-body">
+      <div class="step-content">
+        <p><strong>结论：</strong>时间单位是人类基于自然周期（地球自转）和数学便利（60、12的因数多），经过几千年逐步约定出来的测量标准。</p>
+        <p style="margin-top:8px;">"1分钟"之所以是60秒，不是因为大自然里有一根"分钟尺子"，而是因为古巴比伦人偏爱60这个数字，这个习惯被继承下来，又被现代科学精确化了。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 结论 -->
+<div class="conclusion-box">
+  <h3>💎 核心结论</h3>
+  <p>时间单位 = 自然基准 × 历史选择 × 科学精确化</p>
+  <p style="margin-top:8px;font-size:15px;font-weight:400;">"时间单位不是自然刻在宇宙里的刻度，而是人类发明的语言。"</p>
+</div>
+
+<!-- 方法提炼 -->
+<div class="method-box">
+  <h2>🛠️ 方法提炼：以后遇到类似问题可以这样做</h2>
+  <p style="margin-bottom:12px;">当你想弄明白"一个东西为什么是这个值"时，可以套用下面的思考框架：</p>
+  <div class="method-steps">
+    <div class="method-item"><span class="m-num">❶</span> <span><strong>追问起源</strong> — 这个东西一开始是怎么来的？是自然现象还是人为约定？</span></div>
+    <div class="method-item"><span class="m-num">❷</span> <span><strong>追问选择</strong> — 为什么是这个数字/这个值，而不是别的？</span></div>
+    <div class="method-item"><span class="m-num">❸</span> <span><strong>追问演变</strong> — 它变过吗？从古代到现代有什么变化？</span></div>
+    <div class="method-item"><span class="m-num">❹</span> <span><strong>追问标准</strong> — 今天谁说了算？依据是什么？</span></div>
+    <div class="method-item" style="grid-column:1/-1;"><span class="m-num">❺</span> <span><strong>自行验证</strong> — 能不能找个简单办法自己验证/理解这个标准？</span></div>
+  </div>
+  <p style="margin-top:12px;font-size:15px;color:var(--text-secondary);">这个框架不只适用于时间单位，还适用于长度单位（米）、质量单位（千克）、温度单位（摄氏度）——所有"度量衡"类问题都可以用这个思路来解析。</p>
+</div>
+
+<!-- 易错提醒 -->
+<div class="misconceptions">
+  <h2>⚠️ 易错提醒</h2>
+
+  <div class="mis-item">
+    <div class="mis-title">误解一："1分钟的长度是天经地义的"</div>
+    <div class="mis-desc">很多同学以为1分钟就是60秒，这是一个天然事实。其实不然——秒、分、时都是人类选择的结果。假如古代文明普遍使用十进制，也许我们现在用的就是"1小时=100分钟"。</div>
+  </div>
+
+  <div class="mis-item">
+    <div class="mis-title">误解二："时间单位是科学家凭空发明的"</div>
+    <div class="mis-desc">反过来想也不对。时间单位有自然基础：一天的长度来自地球自转，一年的长度来自地球公转。人类是在自然周期的基础上做了"细分"，而不是完全凭空创造。</div>
+  </div>
+
+  <div class="mis-item">
+    <div class="mis-title">误解三："所有国家都用同一套时间单位"</div>
+    <div class="mis-desc">秒、分、时这套系统起源自西方（古埃及、古巴比伦、古希腊的混合），通过全球化和殖民传播到全世界。历史上中国用过"时辰"（一天12个时辰），也用过刻（一天100刻）。今天全球通用公制时间单位，是因为国际标准化的结果，而不是因为它"天生正确"。</div>
+  </div>
+</div>
+
+<!-- 迁移练习 -->
+<div class="practice-section">
+  <h2>✏️ 自主迁移小练习</h2>
+
+  <div class="practice-card">
+    <h4>练习1：查一查"星期"是怎么来的</h4>
+    <p>为什么一周是7天，而不是5天或10天？用上面学到的"追问起源→追问选择→追问演变→追问标准"框架来分析。</p>
+  </div>
+
+  <div class="practice-card">
+    <h4>练习2：设计新世界的"时间单位"</h4>
+    <p>假设你是一个新世界的殖民者，你要和同伴们建立一套新的时间单位体系。画一张"新时间单位换算表"，并说明你为什么这么选。</p>
+  </div>
+
+  <div class="practice-card">
+    <h4>练习3：寻找生活中的人为约定单位</h4>
+    <p>找一找生活中还有哪些"单位"是人为约定的（长度、重量、温度等），选其中一个，回答：它是怎么来的？为什么选那个基准？</p>
+  </div>
+</div>
+
+<!-- 学习自评 -->
+<div class="self-check">
+  <h2>⭐ 学习自评</h2>
+  <p style="margin-bottom:12px;font-size:15px;">请点击星星给自己打分（1-5星）：</p>
+
+  <div class="star-item">
+    <span class="star-label">① 我能不能用自己的话解释"1分钟为什么是60秒"？</span>
+    <span class="stars" data-question="0">
+      <span class="star" onclick="setStar(this,0)">★</span>
+      <span class="star" onclick="setStar(this,1)">★</span>
+      <span class="star" onclick="setStar(this,2)">★</span>
+      <span class="star" onclick="setStar(this,3)">★</span>
+      <span class="star" onclick="setStar(this,4)">★</span>
+    </span>
+  </div>
+
+  <div class="star-item">
+    <span class="star-label">② 我能不能区分"时间单位的自然基础"和"人为约定"？</span>
+    <span class="stars" data-question="1">
+      <span class="star" onclick="setStar(this,0)">★</span>
+      <span class="star" onclick="setStar(this,1)">★</span>
+      <span class="star" onclick="setStar(this,2)">★</span>
+      <span class="star" onclick="setStar(this,3)">★</span>
+      <span class="star" onclick="setStar(this,4)">★</span>
+    </span>
+  </div>
+
+  <div class="star-item">
+    <span class="star-label">③ 遇到新的"度量单位"问题时，我知道从哪里开始追问吗？</span>
+    <span class="stars" data-question="2">
+      <span class="star" onclick="setStar(this,0)">★</span>
+      <span class="star" onclick="setStar(this,1)">★</span>
+      <span class="star" onclick="setStar(this,2)">★</span>
+      <span class="star" onclick="setStar(this,3)">★</span>
+      <span class="star" onclick="setStar(this,4)">★</span>
+    </span>
+  </div>
+
+  <div class="star-item">
+    <span class="star-label">④ 我能不能讲清楚古巴比伦人和古埃及人各自对时间单位的贡献？</span>
+    <span class="stars" data-question="3">
+      <span class="star" onclick="setStar(this,0)">★</span>
+      <span class="star" onclick="setStar(this,1)">★</span>
+      <span class="star" onclick="setStar(this,2)">★</span>
+      <span class="star" onclick="setStar(this,3)">★</span>
+      <span class="star" onclick="setStar(this,4)">★</span>
+    </span>
+  </div>
+
+  <div class="star-item">
+    <span class="star-label">⑤ 我能不能指出"时间单位是天然存在的"这种说法为什么不对？</span>
+    <span class="stars" data-question="4">
+      <span class="star" onclick="setStar(this,0)">★</span>
+      <span class="star" onclick="setStar(this,1)">★</span>
+      <span class="star" onclick="setStar(this,2)">★</span>
+      <span class="star" onclick="setStar(this,3)">★</span>
+      <span class="star" onclick="setStar(this,4)">★</span>
+    </span>
+  </div>
+
+  <p style="margin-top:12px;font-size:15px;color:var(--text-secondary);">💡 如果前3题能拿到4星以上，说明你已经掌握了"解析性导学"的核心方法！</p>
+</div>
+
+</div>
+
+<script>
+function toggleStep(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+function setStar(el, index) {
+  const stars = el.parentElement;
+  const all = stars.querySelectorAll('.star');
+  const filled = el.classList.contains('filled');
+  if (filled && index === 0 && all[0].classList.contains('filled')) {
+    // Clicking the first filled star again = unset all
+    all.forEach(s => s.classList.remove('filled'));
+    return;
+  }
+  all.forEach((s, i) => {
+    if (i <= index) s.classList.add('filled');
+    else s.classList.remove('filled');
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性原理 — 从"看别人做"到"我会做"</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+  text-align: center;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header p { opacity: 0.9; font-size: 16px; }
+.section-title {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 28px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title .badge {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  font-size: 13px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  margin-left: 8px;
+}
+.intro-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px 22px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+}
+.intro-card p { margin-bottom: 10px; }
+.intro-card p:last-child { margin-bottom: 0; }
+.principle-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 20px; }
+.principle-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: box-shadow 0.3s;
+}
+.principle-card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.15); }
+.principle-header {
+  background: var(--primary);
+  color: #fff;
+  padding: 14px 20px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+  transition: background 0.3s;
+}
+.principle-header:hover { background: var(--primary-hover); }
+.principle-header .toggle-icon {
+  font-size: 20px;
+  transition: transform 0.3s;
+  display: inline-block;
+}
+.principle-card.open .toggle-icon { transform: rotate(180deg); }
+.principle-body {
+  padding: 0 20px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+}
+.principle-card.open .principle-body {
+  max-height: 600px;
+  padding: 18px 20px;
+}
+.principle-body p { margin-bottom: 8px; }
+.principle-body .label {
+  font-weight: 600;
+  color: var(--primary);
+  display: block;
+  margin-top: 10px;
+}
+.principle-body .label:first-child { margin-top: 0; }
+.highlight-box {
+  background: #e6f4ff;
+  border-left: 4px solid var(--primary);
+  padding: 12px 16px;
+  border-radius: 0 6px 6px 0;
+  margin: 12px 0;
+  font-size: 15px;
+}
+.practice-box {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px 22px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+}
+.practice-box h3 {
+  color: var(--primary);
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+.practice-item {
+  background: #f6f8fa;
+  border-radius: 6px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+}
+.checklist {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px 22px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+}
+.checklist h3 {
+  color: var(--primary);
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+.check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  cursor: pointer;
+  user-select: none;
+}
+.check-item input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin-top: 4px;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.check-item label {
+  cursor: pointer;
+  flex: 1;
+}
+.check-item input:checked + label { color: var(--text-secondary); text-decoration: line-through; }
+.progress-bar {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 3px;
+  width: 0%;
+  transition: width 0.5s ease;
+}
+.footer {
+  text-align: center;
+  padding: 16px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  border-top: 1px solid var(--border);
+  margin-top: 12px;
+}
+@media (min-width: 640px) {
+  .container { padding: 32px 40px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🧱 建构性原理</h1>
+    <p>从"看别人做"到"我会做" —— 提炼通用建构规则</p>
+  </div>
+
+  <div class="intro-card">
+    <p><strong>🤔 为什么要从建构示例中提炼原理？</strong></p>
+    <p>因为"看懂了别人的成果"≠"自己能做出来"。建构性原理就是从别人的示例中提炼出的<strong>"通用建构规则"</strong>——以后面对任何新情境，你都能运用这些规则，自己动手生成成果。</p>
+  </div>
+
+  <h2 class="section-title">📐 四大建构性原理</h2>
+  <div class="principle-grid">
+
+    <div class="principle-card open" onclick="toggleCard(this)">
+      <div class="principle-header">
+        <span>原理一：情境锚定法 <span style="font-size:14px;opacity:0.85;">🎯</span></span>
+        <span class="toggle-icon">▾</span>
+      </div>
+      <div class="principle-body">
+        <span class="label">📖 原理说明</span>
+        <p>任何建构任务都从一个"真实情境"开始——先把自己"放进"情境里，找到自己与问题的连接点。</p>
+        <span class="label">📌 在示例中的体现</span>
+        <p>建构示例不是从"定义"讲起，而是从"你参加运动会，跑步用了多久"这样的生活场景出发。</p>
+        <span class="label">✏️ 如何使用</span>
+        <p>读情境时问自己"如果我在那个场景里，我会怎么做？"<br>把抽象问题转化为"我身边的真实问题"。</p>
+        <span class="label">🎯 适用场景</span>
+        <p>任何需要"从零开始"的建构任务</p>
+        <div class="highlight-box">⚠️ 注意：不要跳过情境直接做——错过情境=失去动力</div>
+      </div>
+    </div>
+
+    <div class="principle-card" onclick="toggleCard(this)">
+      <div class="principle-header">
+        <span>原理二：系统分解法 <span style="font-size:14px;opacity:0.85;">🧩</span></span>
+        <span class="toggle-icon">▾</span>
+      </div>
+      <div class="principle-body">
+        <span class="label">📖 原理说明</span>
+        <p>把一个大任务"拆"成几个小步骤，一步一步完成。</p>
+        <span class="label">📌 在示例中的体现</span>
+        <p>建构示例用5-7步示范成果的生成过程，每一步都有"做什么→怎么做→产出什么"。</p>
+        <span class="label">✏️ 如何使用</span>
+        <p>拿到任务后，先列出"要做完这件事，需要哪几步"<br>每完成一步就画一个✓</p>
+        <span class="label">🎯 适用场景</span>
+        <p>复杂的方案设计、模型建构、作品创作</p>
+        <div class="highlight-box">⚠️ 注意：不要贪多求快——小步走才能走得远</div>
+      </div>
+    </div>
+
+    <div class="principle-card" onclick="toggleCard(this)">
+      <div class="principle-header">
+        <span>原理三：成果可视法 <span style="font-size:14px;opacity:0.85;">🎨</span></span>
+        <span class="toggle-icon">▾</span>
+      </div>
+      <div class="principle-body">
+        <span class="label">📖 原理说明</span>
+        <p>把隐性的"理解"变成显性的"成果"——一张图、一张表、一段话、一个方案。</p>
+        <span class="label">📌 在示例中的体现</span>
+        <p>每个建构任务都有明确的成果样式（手绘图、流程图、方案书等）。</p>
+        <span class="label">✏️ 如何使用</span>
+        <p>做完任务后，问自己"我拿什么给别人看？"<br>尽量用图和表代替纯文字。</p>
+        <span class="label">🎯 适用场景</span>
+        <p>知识整理、方案呈现、成果展示</p>
+        <div class="highlight-box">⚠️ 注意：成果不是"做完就算了"，要让它"别人也能看懂"</div>
+      </div>
+    </div>
+
+    <div class="principle-card" onclick="toggleCard(this)">
+      <div class="principle-header">
+        <span>原理四：自我校验法 <span style="font-size:14px;opacity:0.85;">✅</span></span>
+        <span class="toggle-icon">▾</span>
+      </div>
+      <div class="principle-body">
+        <span class="label">📖 原理说明</span>
+        <p>完成建构后，用"自评量规"检查自己的成果是否达标。</p>
+        <span class="label">📌 在示例中的体现</span>
+        <p>每个建构任务都配有5条检查清单，你可以逐条对照。</p>
+        <span class="label">✏️ 如何使用</span>
+        <p>做完后逐条对照自评量规<br>每达标一条打一个✓<br>不达标的地方就改进。</p>
+        <span class="label">🎯 适用场景</span>
+        <p>所有可评价的成果</p>
+        <div class="highlight-box">💡 提醒：自评不是为了"给自己打分"，而是为了"做得更好"</div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="section-title">🏃 迁移练习</h2>
+  <div class="practice-box">
+    <div class="practice-item">
+      <strong>练习一</strong>：运用"情境锚定法+系统分解法"，设计一个"周末时间安排方案"
+    </div>
+    <div class="practice-item">
+      <strong>练习二</strong>：运用"成果可视法+自我校验法"，画一张"时、分、秒换算关系图"
+    </div>
+    <p style="margin-top:12px;color:var(--text-secondary);text-align:center;">选一个你感兴趣的，动手试试吧！</p>
+  </div>
+
+  <h2 class="section-title">📋 自我检测</h2>
+  <div class="checklist">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <p style="color:var(--text-secondary);font-size:14px;margin-bottom:10px;">完成进度：<span id="progressText">0</span>/4</p>
+    <div class="check-item"><input type="checkbox" id="c1" onchange="updateProgress()"><label for="c1">我能说出4条建构性原理的名字和作用吗？</label></div>
+    <div class="check-item"><input type="checkbox" id="c2" onchange="updateProgress()"><label for="c2">我能举一个生活例子说明"情境锚定法"吗？</label></div>
+    <div class="check-item"><input type="checkbox" id="c3" onchange="updateProgress()"><label for="c3">当我要做一个新任务时，我知道第一步做什么吗？</label></div>
+    <div class="check-item"><input type="checkbox" id="c4" onchange="updateProgress()"><label for="c4">我能不能用"自评量规"检查自己的作业？</label></div>
+  </div>
+
+  <div class="footer">© 建构性学习 · 三年级数学 · 时、分、秒单元</div>
+</div>
+<script>
+function toggleCard(el) {
+  el.classList.toggle('open');
+}
+function updateProgress() {
+  var checks = document.querySelectorAll('.check-item input[type="checkbox"]');
+  var done = 0;
+  checks.forEach(function(c) { if(c.checked) done++; });
+  document.getElementById('progressText').textContent = done;
+  var pct = (done / checks.length) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+</script>
+</body>
+</html>

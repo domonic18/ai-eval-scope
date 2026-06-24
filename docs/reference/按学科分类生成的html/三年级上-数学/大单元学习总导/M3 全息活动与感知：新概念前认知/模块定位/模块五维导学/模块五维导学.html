@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块五维导学</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.wrapper {
+  width: 100%;
+  max-width: none;
+  padding: 30px 24px;
+  box-sizing: border-box;
+}
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+}
+h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+h2 {
+  font-size: var(--font-h2);
+  font-weight: 700;
+  color: var(--primary);
+  margin: 26px 0 10px;
+  padding-left: 12px;
+  border-left: 4px solid var(--primary);
+  line-height: 1.4;
+}
+h3 {
+  font-size: calc(var(--font-body) + 1px);
+  font-weight: 700;
+  color: var(--primary);
+  margin: 14px 0 6px;
+}
+.subtitle {
+  color: var(--text-secondary);
+  font-size: calc(var(--font-body) - 2px);
+  margin-bottom: 18px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  transition: all 0.3s ease;
+}
+.card:hover {
+  box-shadow: 0 4px 16px rgba(22,119,255,0.12);
+  border-color: var(--accent);
+}
+.dim-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+.dim-btn {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 8px 18px;
+  font-size: calc(var(--font-body) - 1px);
+  cursor: pointer;
+  transition: all 0.25s;
+  color: var(--text);
+  font-family: inherit;
+}
+.dim-btn:hover, .dim-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.dim-content {
+  display: none;
+}
+.dim-content.active {
+  display: block;
+}
+.goal-item {
+  display: flex;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--border);
+}
+.goal-item:last-child { border-bottom: none; }
+.goal-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.method-list {
+  padding-left: 20px;
+}
+.method-list li {
+  margin: 6px 0;
+}
+.people-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  font-size: calc(var(--font-body) - 1px);
+}
+.people-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 8px;
+  text-align: left;
+  font-weight: 600;
+}
+.people-table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.people-table tr:nth-child(even) td { background: #f6faff; }
+.q-card {
+  background: linear-gradient(135deg,#f0f5ff,#e6f7ff);
+  border-radius: var(--border-radius);
+  padding: 12px 16px;
+  margin: 8px 0;
+  border-left: 3px solid var(--primary);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.q-card:hover {
+  background: #e6f7ff;
+  transform: translateX(4px);
+}
+.q-card .q-hint {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+  color: var(--text-secondary);
+  font-size: calc(var(--font-body) - 2px);
+}
+.q-card.open .q-hint {
+  max-height: 120px;
+  padding-top: 6px;
+}
+.value-box {
+  background: linear-gradient(135deg,#f0f5ff,#e6f7ff);
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin: 10px 0;
+  border: 1px dashed var(--accent);
+}
+@media (max-width: 640px) {
+  .wrapper { padding: 16px 12px; }
+  .card { padding: 14px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+<div class="container">
+
+<h1>模块五维导学</h1>
+<p class="subtitle">M3 全息活动与感知：新概念前认知 — 学习全景图</p>
+
+<div class="card" style="background:linear-gradient(135deg,#e6f7ff,#f0f5ff);border:none;">
+  <p><strong>🎯 欢迎来到"时间建构"之旅！</strong>在进入具体学习前，先通过5个维度看清"我们要去哪里"和"为什么要去那里"。</p>
+</div>
+
+<div class="dim-nav">
+  <button class="dim-btn active" onclick="switchDim(0)">🎯 学习目标</button>
+  <button class="dim-btn" onclick="switchDim(1)">🔬 未来价值</button>
+  <button class="dim-btn" onclick="switchDim(2)">📚 学习方式</button>
+  <button class="dim-btn" onclick="switchDim(3)">👤 关键人物</button>
+  <button class="dim-btn" onclick="switchDim(4)">🤔 前沿追问</button>
+</div>
+
+<div class="dim-content active" id="dim0">
+  <div class="card">
+    <div class="goal-item"><span class="goal-icon">👁️</span><div><strong>感知目标</strong> — 通过身体体验，准确区分1秒、1分、10分钟，不再觉得"时间"只是钟表上的数字。</div></div>
+    <div class="goal-item"><span class="goal-icon">🔗</span><div><strong>关系目标</strong> — 用自己的方式（画图、动作、举例）说清楚"1分=60秒""1时=60分"。</div></div>
+    <div class="goal-item"><span class="goal-icon">🧠</span><div><strong>能力目标</strong> — 学会用"猜想→体验→记录→比较→表达"自主建构新概念。</div></div>
+    <div class="goal-item"><span class="goal-icon">📝</span><div><strong>表达目标</strong> — 完成一份"时间量感研究报告"（数据+感受+图画）。</div></div>
+  </div>
+</div>
+
+<div class="dim-content" id="dim1">
+  <div class="card">
+    <p>⏱️ <strong>时间测量改变世界</strong>：从日晷到原子钟，精度从"看太阳"提升到"10亿年误差1秒"。你的手机导航就靠原子钟定位！</p>
+  </div>
+  <div class="card">
+    <p>🌐 <strong>现代生活离不开时间同步</strong>：银行交易、互联网通信、卫星导航——全都需要精确的时间把握。</p>
+  </div>
+  <div class="card">
+    <p>🔮 <strong>未来会怎样？</strong>当时间测量精度达到纳秒级，人类会发现哪些新现象？</p>
+    <p style="color:var(--text-secondary);font-size:calc(var(--font-body)-1px);margin-top:4px;">——对三年级来说，建立时间管理能力，就是未来高效学习的"基础设施"。</p>
+  </div>
+</div>
+
+<div class="dim-content" id="dim2">
+  <div class="card">
+    <ol class="method-list">
+      <li><strong>身体体验法</strong> — 用计时器配合活动，让"时间长度"进入身体记忆</li>
+      <li><strong>图表记录法</strong> — 用表格和饼图记录活动时间，让时间"看得见"</li>
+      <li><strong>比较分析法</strong> — 不同活动相同时间 vs 相同活动不同时间</li>
+      <li><strong>互助交流法</strong> — 跟同学比一比挑战结果</li>
+      <li><strong>AI辅助提问</strong> — 用AI当"时间顾问"进行头脑风暴</li>
+    </ol>
+  </div>
+</div>
+
+<div class="dim-content" id="dim3">
+  <div class="card" style="padding:0;overflow:hidden;">
+    <table class="people-table">
+      <thead><tr><th>人物/事件</th><th>为什么值得了解</th></tr></thead>
+      <tbody>
+        <tr><td><strong>惠更斯</strong><br><span style="font-size:calc(var(--font-body)-3px);color:var(--text-secondary);">摆钟发明者</span></td><td>1656年发明第一个摆钟，让人类能精确测量"分钟"</td></tr>
+        <tr><td><strong>古埃及日晷</strong><br><span style="font-size:calc(var(--font-body)-3px);color:var(--text-secondary);">最古老的计时工具</span></td><td>用影子指示时间——公园里还能见到</td></tr>
+        <tr><td><strong>拉姆齐</strong><br><span style="font-size:calc(var(--font-body)-3px);color:var(--text-secondary);">原子钟之父</span></td><td>让"1秒"从"一天的1/86400"变成"铯原子振动9192631770次"</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="dim-content" id="dim4">
+  <div class="q-card" onclick="this.classList.toggle('open')">
+    <strong>💫 1.</strong> 如果我坐在光速飞船上旅行1年，地球上过去了多少年？
+    <div class="q-hint">💡 爱因斯坦相对论告诉我们：速度越快，时间越慢。这就是"双生子佯谬"——等你学了更多物理知识就会明白！</div>
+  </div>
+  <div class="q-card" onclick="this.classList.toggle('open')">
+    <strong>💫 2.</strong> 为什么1分钟不是100秒，而是60秒？
+    <div class="q-hint">💡 因为古代巴比伦人用60进制计数！60可以被2、3、4、5、6、10、12、15、20、30整除，比100方便多了。</div>
+  </div>
+  <div class="q-card" onclick="this.classList.toggle('open')">
+    <strong>💫 3.</strong> 你能在自己身上找到"生物钟"的证据吗？
+    <div class="q-hint">💡 到点就饿、到点就困、早上不用闹钟也能醒——这些都是你的生物钟在起作用！</div>
+  </div>
+  <div class="q-card" onclick="this.classList.toggle('open')">
+    <strong>💫 4.</strong> 如果时间能倒流，1秒会是什么样子？
+    <div class="q-hint">💡 雨滴从地面飞回天空？破碎的杯子重新拼好？想象一下——这就是物理学里的"时间反演对称性"！</div>
+  </div>
+  <div class="q-card" onclick="this.classList.toggle('open')">
+    <strong>💫 5.</strong> 怎样用"时间量感"帮助你规划周末作业？
+    <div class="q-hint">💡 先估算每项作业需要多久，实际计时做一遍，对比差距——这不就是"猜想→体验→记录→比较→表达"吗？</div>
+  </div>
+</div>
+
+<div style="text-align:center;margin-top:28px;padding:18px;background:linear-gradient(135deg,#1677ff,#4096ff);border-radius:12px;color:#fff;">
+  <p style="font-size:20px;font-weight:700;">准备好了吗？开始你的时间建构之旅！ 🚀</p>
+</div>
+
+</div>
+</div>
+
+<script>
+function switchDim(idx) {
+  document.querySelectorAll('.dim-content').forEach((el,i) => {
+    el.classList.toggle('active', i === idx);
+  });
+  document.querySelectorAll('.dim-btn').forEach((el,i) => {
+    el.classList.toggle('active', i === idx);
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>时、分、秒 — 模块全景画像</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:var(--font-body);
+  line-height:var(--line-height);
+  color:var(--text);
+  background:var(--bg);
+  width:100%;
+  max-width:none;
+  padding:0
+}
+.container{width:100%;max-width:none;padding:24px;box-sizing:border-box}
+.header-card{
+  background:linear-gradient(135deg,var(--primary),var(--primary-hover));
+  color:#fff;border-radius:var(--border-radius);padding:28px 32px;
+  margin-bottom:24px;box-shadow:var(--shadow)
+}
+.header-card h1{font-size:var(--font-h1);font-weight:700;margin-bottom:6px}
+.header-card p{font-size:16px;opacity:.85;margin:0}
+.filter-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+.filter-btn{
+  padding:6px 16px;border:2px solid var(--primary);border-radius:20px;
+  background:transparent;color:var(--primary);font-size:14px;cursor:pointer;
+  transition:all .3s;font-weight:500
+}
+.filter-btn:hover,.filter-btn.active{background:var(--primary);color:#fff}
+.module-grid{display:grid;grid-template-columns:1fr;gap:12px}
+.module-card{
+  background:var(--card-bg);border-radius:var(--border-radius);
+  box-shadow:var(--shadow);padding:16px 20px;cursor:pointer;
+  transition:all .3s;border-left:4px solid var(--primary);
+  position:relative;overflow:hidden
+}
+.module-card:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(22,119,255,.15)}
+.module-card .num{
+  display:inline-block;background:var(--primary);color:#fff;
+  border-radius:50%;width:32px;height:32px;line-height:32px;
+  text-align:center;font-size:14px;font-weight:700;margin-right:12px;flex-shrink:0
+}
+.module-card .title{font-size:18px;font-weight:600;color:var(--text)}
+.module-card .func{font-size:14px;color:var(--text-secondary);margin:4px 0 0 40px}
+.module-card .core{
+  font-size:14px;color:var(--primary);margin:6px 0 0 40px;
+  padding:6px 10px;background:var(--bg);border-radius:6px;display:none
+}
+.module-card.expanded .core{display:block}
+.tag{
+  display:inline-block;font-size:12px;padding:2px 10px;border-radius:12px;
+  margin-left:8px;font-weight:500
+}
+.tag-foundation{background:#e6f7ff;color:#13c2c2}
+.tag-activity{background:#fff7e6;color:#fa8c16}
+.tag-concept{background:#f6ffed;color:#52c41a}
+.tag-application{background:#f9f0ff;color:#722ed1}
+.tag-reflection{background:#fff1f0;color:#ff4d4f}
+.summary-row{
+  display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px
+}
+.summary-card{
+  flex:1;min-width:140px;background:var(--card-bg);border-radius:var(--border-radius);
+  padding:16px;text-align:center;box-shadow:var(--shadow)
+}
+.summary-card .num-big{font-size:32px;font-weight:700;color:var(--primary)}
+.summary-card .label{font-size:14px;color:var(--text-secondary);margin-top:4px}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;font-size:14px}
+.legend-item{display:flex;align-items:center;gap:4px}
+.legend-dot{width:12px;height:12px;border-radius:50%;display:inline-block}
+@media(min-width:768px){.module-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header-card">
+    <h1>📐 "时、分、秒" 模块全景画像</h1>
+    <p>数学 · 三年级上 · 大单元学习总导 — 点击任意模块查看详细定位</p>
+  </div>
+
+  <div class="summary-row">
+    <div class="summary-card"><div class="num-big">20</div><div class="label">总模块数</div></div>
+    <div class="summary-card"><div class="num-big">4</div><div class="label">感知与奠基</div></div>
+    <div class="summary-card"><div class="num-big">8</div><div class="label">多学科思维</div></div>
+    <div class="summary-card"><div class="num-big">5</div><div class="label">应用与实践</div></div>
+    <div class="summary-card"><div class="num-big">3</div><div class="label">反思与总结</div></div>
+  </div>
+
+  <div class="legend">
+    <span class="legend-item"><span class="legend-dot" style="background:#13c2c2"></span> 感知奠基</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#fa8c16"></span> 概念建构</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#52c41a"></span> 多学科思维</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#722ed1"></span> 应用实践</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#ff4d4f"></span> 反思总结</span>
+  </div>
+
+  <div class="filter-bar">
+    <button class="filter-btn active" data-filter="all">全部</button>
+    <button class="filter-btn" data-filter="foundation">感知奠基</button>
+    <button class="filter-btn" data-filter="concept">概念建构</button>
+    <button class="filter-btn" data-filter="thinking">多学科思维</button>
+    <button class="filter-btn" data-filter="application">应用实践</button>
+    <button class="filter-btn" data-filter="reflection">反思总结</button>
+  </div>
+
+  <div class="module-grid" id="moduleGrid"></div>
+</div>
+
+<script>
+const modules = [
+  {id:2,title:"学习新知的新价值与新使命",func:"建立"为什么学时间"的学习动机",core:"时间的社会价值、守时品格、时间管理对学习效率的提升意义",cat:"foundation",color:"#13c2c2"},
+  {id:3,title:"全息活动与感知：新概念前认知",func:"用多感官活动建立对"秒、分、时"的直观体验",core:"1秒的心跳感、1分钟能做什么、1小时的节奏感；闭眼计时体验",cat:"foundation",color:"#13c2c2"},
+  {id:4,title:"新概念解析、建构与定义",func:"系统学习秒、分、时的定义、符号、进率关系",core:"秒(s)、分(min)、时(h)的定义；1时=60分=3600秒的换算体系",cat:"concept",color:"#fa8c16"},
+  {id:5,title:"新知艺术思维",func:"用艺术的方式感受和表达时间",core:"音乐中的节拍与时间、诗歌中的时间意象、"时间画卷"创作",cat:"thinking",color:"#52c41a"},
+  {id:6,title:"新知技术思维",func:"认识时间测量工具从古至今的技术演进",core:"日晷→沙漏→机械钟→石英钟→原子钟的技术进化路径",cat:"thinking",color:"#52c41a"},
+  {id:7,title:"新知数学思维",func:"深入运用数学方法进行时间单位换算与计算",core:"单位换算(大化小乘60、小化大除60)、时间线段图、经过时间=结束-开始",cat:"thinking",color:"#52c41a"},
+  {id:8,title:"新知科学思维",func:"用科学探究方法研究"时间感知"的奥秘",core:"时间感知实验设计、变量控制(专注度/情绪对时间感的影响)、数据记录与分析",cat:"thinking",color:"#52c41a"},
+  {id:9,title:"新知文化思维",func:"探索不同文化中时间的理解方式",core:"古今中外对时间的尊称、俗语与哲学",cat:"thinking",color:"#52c41a"},
+  {id:10,title:"新知哲学思维",func:"思考时间的本质",core:"时间的一维性、不可逆性；"现在"是唯一的真实吗？",cat:"thinking",color:"#52c41a"},
+  {id:11,title:"新知美术思维",func:"用视觉艺术表现时间",core:"长曝光摄影中的时间感、时间轴设计、钟表造型的美学赏析",cat:"thinking",color:"#52c41a"},
+  {id:12,title:"新知书面性应用",func:"用文字准确描述时间",core:"用"时、分、秒"描述生活事件、时间应用题的解题步骤书写",cat:"application",color:"#722ed1"},
+  {id:13,title:"新知项目性应用",func:"完成一个真实的时间管理项目",core:"项目规划(目标→任务→时间分配→执行→评估)、甘特图入门",cat:"application",color:"#722ed1"},
+  {id:14,title:"新知STEAM融合性应用",func:"融合科学、技术、工程、艺术、数学设计计时工具",core:"自制滴漏计时器、日晷模型、水钟的STEAM设计流程",cat:"application",color:"#722ed1"},
+  {id:15,title:"新知三创性应用",func:"用创意、创新、创业思维设计时间相关产品",core:"创意时间管理APP设想、未来时钟创新设计、时间主题文创产品",cat:"application",color:"#722ed1"},
+  {id:16,title:"新知应用与创新中的真善美思维与反思",func:"反思"真"(准确)、"善"(守时惜时)、"美"(节奏与韵律)",core:"准确性的价值(火车时刻表不能差1秒)、守时是对他人的尊重、时间之美",cat:"reflection",color:"#ff4d4f"},
+  {id:17,title:"新知学习过程的成就与成功性思维与反思",func:"回顾自己的时间学习之路",core:"学习成果自评、时间感进步记录、最有成就感的时间应用案例",cat:"reflection",color:"#ff4d4f"},
+  {id:18,title:"新知学习收获的幸福与福祉性思维与反思",func:"探索"时间管理"如何带来幸福感",core:"时间规划与生活满意度、忙而不乱的时间管理哲学、时间的"质量"比"数量"更重要",cat:"reflection",color:"#ff4d4f"},
+  {id:19,title:"新知全面的系统性思维与智能化思维",func:"把知识放进更大的系统并探讨AI如何管理时间",core:"知识系统化(连接钟表、日历、日程管理)、AI智能时间助手、算法调度",cat:"thinking",color:"#52c41a"},
+  {id:20,title:"新知的理论和学术性总结与表达",func:"做完整理论和学术性总结",core:"核心概念回顾、知识网络图、学习反思、研究报告撰写、展示交流",cat:"application",color:"#722ed1"}
+];
+const catLabels={foundation:"感知奠基",concept:"概念建构",thinking:"多学科思维",application:"应用实践",reflection:"反思总结"};
+const catTags={foundation:"tag-foundation",concept:"tag-concept",thinking:"",application:"tag-application",reflection:"tag-reflection"};
+
+function render(filter='all'){
+  const grid=document.getElementById('moduleGrid');
+  grid.innerHTML=modules.filter(m=>filter==='all'||m.cat===filter).map(m=>`
+    <div class="module-card" data-cat="${m.cat}" onclick="this.classList.toggle('expanded')">
+      <div style="display:flex;align-items:center">
+        <span class="num">${m.id}</span>
+        <span class="title">${m.title}</span>
+        <span class="tag ${catTags[m.cat]||''}">${catLabels[m.cat]}</span>
+      </div>
+      <div class="func">📌 ${m.func}</div>
+      <div class="core">💡 ${m.core}</div>
+    </div>
+  `).join('');
+}
+document.querySelectorAll('.filter-btn').forEach(btn=>{
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    this.classList.add('active');
+    render(this.dataset.filter);
+  });
+});
+render();
+</script>
+</body>
+</html>

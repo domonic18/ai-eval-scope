@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+<title>五维导航罗盘 — 时、分、秒</title>
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 18px; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, -apple-system, sans-serif;
+    font-size: var(--font-body, 18px);
+    line-height: var(--line-height, 1.8);
+    background: #0a0e1a;
+    color: #e0e6f0;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  :root {
+    --primary: #1677ff;
+    --primary-hover: #4096ff;
+    --accent: #69b1ff;
+    --bg: #f0f5ff;
+    --font-body: 18px;
+    --font-h1: 28px;
+    --font-h2: 22px;
+    --line-height: 1.8;
+    --sector-cognition: #1677ff;
+    --sector-emotion: #ff4d4f;
+    --sector-skill: #52c41a;
+    --sector-metacog: #722ed1;
+    --sector-value: #faad14;
+    --card-bg: rgba(255,255,255,0.06);
+    --card-border: rgba(255,255,255,0.10);
+    --glow-blue: 0 0 30px rgba(22,119,255,0.3);
+  }
+  a { color: var(--accent); text-decoration: none; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #131a2c; }
+  ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 3px; }
+
+  /* ── Layout ── */
+  .app-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    padding: 0;
+  }
+  .header {
+    padding: 1.2rem 1.5rem 0.6rem;
+    text-align: center;
+    background: linear-gradient(180deg, #0e1525 0%, #0a0e1a 100%);
+    border-bottom: 1px solid rgba(22,119,255,0.2);
+    position: relative;
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 20%; right: 20%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  }
+  .header h1 {
+    font-size: var(--font-h1);
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 0.05em;
+  }
+  .header .subtitle {
+    font-size: 0.85rem;
+    color: #8894b0;
+    margin-top: 0.2rem;
+  }
+  .header .subtitle span {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* ── Main grid ── */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 320px 1fr 320px;
+    gap: 1.2rem;
+    flex: 1;
+    padding: 1.2rem 1.5rem;
+    min-height: 0;
+  }
+  @media (max-width: 1100px) {
+    .main-grid { grid-template-columns: 1fr; padding: 1rem; }
+  }
+
+  /* ── Left Panel: Radar & Balance ── */
+  .left-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .panel-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 1rem;
+    backdrop-filter: blur(6px);
+  }
+  .panel-card h3 {
+    font-size: var(--font-h2);
+    font-weight: 700;
+    margin-bottom: 0.6rem;
+    color: #c8d2e8;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .panel-card h3 .icon { font-size: 1.2em; }
+  .radar-wrapper { position: relative; width: 100%; aspect-ratio: 1/1; }
+  .radar-wrapper canvas { width: 100%; height: 100%; display: block; }
+  .balance-score {
+    text-align: center;
+    font-size: 0.85rem;
+    color: #8894b0;
+    margin-top: 0.3rem;
+  }
+  .balance-score strong { color: var(--accent); font-size: 1.1rem; }
+
+  /* ── Pre-test popup trigger ── */
+  .pretest-btn {
+    display: block;
+    width: 100%;
+    padding: 0.7rem;
+    border: 1px solid var(--primary);
+    border-radius: 8px;
+    background: rgba(22,119,255,0.12);
+    color: var(--accent);
+    font-size: 0.9rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .pretest-btn:hover { background: rgba(22,119,255,0.25); }
+
+  /* ── Center: Compass ── */
+  .center-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+  .compass-container {
+    position: relative;
+    width: 100%;
+    max-width: 520px;
+    aspect-ratio: 1/1;
+    margin: 0 auto;
+  }
+  .compass-container canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  /* ── Sector detail popover ── */
+  .sector-detail-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 1000;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(4px);
+    justify-content: center;
+    align-items: center;
+    padding: 1.5rem;
+  }
+  .sector-detail-overlay.active { display: flex; }
+  .sector-detail-box {
+    background: #111a2e;
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 1.8rem 2rem;
+    max-width: 600px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 0 60px rgba(22,119,255,0.15);
+    animation: fadeUp 0.3s ease;
+  }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+  .sector-detail-box .close-btn {
+    float: right;
+    background: none;
+    border: none;
+    color: #8894b0;
+    font-size: 1.6rem;
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.2s;
+  }
+  .sector-detail-box .close-btn:hover { color: #fff; }
+  .sector-detail-box h2 {
+    font-size: var(--font-h2);
+    font-weight: 700;
+    margin: 0 0 0.6rem;
+    padding-right: 2rem;
+  }
+  .sector-detail-box .sector-tag {
+    display: inline-block;
+    padding: 0.2rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 0.8rem;
+    text-transform: uppercase;
+  }
+  .sector-detail-box .content { font-size: 0.95rem; color: #c8d2e8; }
+  .sector-detail-box .content p { margin: 0.5rem 0; }
+  .sector-detail-box .content ul { padding-left: 1.2rem; }
+  .sector-detail-box .content li { margin: 0.3rem 0; }
+
+  /* ── Drag goal cards area ── */
+  .drag-zone {
+    width: 100%;
+    margin-top: 0.3rem;
+  }
+  .drag-zone h3 {
+    font-size: 1rem;
+    color: #8894b0;
+    margin-bottom: 0.5rem;
+    text-align: center;
+  }
+  .goal-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    justify-content: center;
+  }
+  .goal-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 0.5rem 0.9rem;
+    font-size: 0.8rem;
+    cursor: grab;
+    user-select: none;
+    transition: all 0.2s;
+    color: #c8d2e8;
+    position: relative;
+  }
+  .goal-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(22,119,255,0.2);
+  }
+  .goal-card:active { cursor: grabbing; transform: scale(0.96); }
+  .goal-card .card-label {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    margin-bottom: 0.1rem;
+  }
+  .goal-card.cognition { border-left: 3px solid var(--sector-cognition); }
+  .goal-card.cognition .card-label { color: var(--sector-cognition); }
+  .goal-card.emotion { border-left: 3px solid var(--sector-emotion); }
+  .goal-card.emotion .card-label { color: var(--sector-emotion); }
+  .goal-card.skill { border-left: 3px solid var(--sector-skill); }
+  .goal-card.skill .card-label { color: var(--sector-skill); }
+  .goal-card.metacog { border-left: 3px solid var(--sector-metacog); }
+  .goal-card.metacog .card-label { color: var(--sector-metacog); }
+  .goal-card.value { border-left: 3px solid var(--sector-value); }
+  .goal-card.value .card-label { color: var(--sector-value); }
+
+  .drop-feedback {
+    text-align: center;
+    font-size: 0.8rem;
+    min-height: 1.4rem;
+    margin-top: 0.3rem;
+    color: #52c41a;
+    transition: opacity 0.3s;
+  }
+
+  /* ── Right Panel ── */
+  .right-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .quick-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .quick-links button {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 0.5rem 0.8rem;
+    color: #c8d2e8;
+    font-size: 0.8rem;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .quick-links button:hover {
+    background: rgba(22,119,255,0.15);
+    border-color: var(--primary);
+  }
+  .quick-links button .label-badge {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    margin-right: 0.4rem;
+  }
+
+  /* ── Learning Path Timeline ── */
+  .timeline-bar {
+    padding: 0.8rem 1.5rem 1.2rem;
+    border-top: 1px solid rgba(22,119,255,0.12);
+    background: #0c1120;
+  }
+  .timeline-bar h3 {
+    font-size: 1rem;
+    color: #8894b0;
+    margin-bottom: 0.6rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .timeline-track {
+    display: flex;
+    gap: 0.3rem;
+    align-items: flex-start;
+    overflow-x: auto;
+    padding-bottom: 0.3rem;
+  }
+  .timeline-step {
+    flex: 1;
+    min-width: 120px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 0.6rem 0.8rem;
+    text-align: center;
+    position: relative;
+    transition: all 0.2s;
+  }
+  .timeline-step.active {
+    border-color: var(--primary);
+    background: rgba(22,119,255,0.10);
+    box-shadow: 0 0 16px rgba(22,119,255,0.15);
+  }
+  .timeline-step .step-num {
+    display: inline-block;
+    width: 24px; height: 24px;
+    line-height: 24px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+  }
+  .timeline-step .step-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #c8d2e8;
+  }
+  .timeline-step .step-desc {
+    font-size: 0.7rem;
+    color: #6a7490;
+    margin-top: 0.15rem;
+  }
+
+  /* ── Pre-test Modal ── */
+  .pretest-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 2000;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(6px);
+    justify-content: center;
+    align-items: center;
+    padding: 1.5rem;
+  }
+  .pretest-overlay.active { display: flex; }
+  .pretest-box {
+    background: #111a2e;
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 1.8rem 2rem;
+    max-width: 520px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 0 60px rgba(22,119,255,0.15);
+    animation: fadeUp 0.3s ease;
+  }
+  .pretest-box h2 {
+    font-size: var(--font-h2);
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--accent);
+  }
+  .quiz-item {
+    margin-bottom: 1.2rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .quiz-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .quiz-item .q { font-weight: 600; margin-bottom: 0.4rem; color: #c8d2e8; }
+  .quiz-item .opts { display: flex; flex-direction: column; gap: 0.3rem; }
+  .quiz-item .opts label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 0.3rem 0.5rem;
+    border-radius: 6px;
+    transition: background 0.2s;
+  }
+  .quiz-item .opts label:hover { background: rgba(255,255,255,0.04); }
+  .quiz-item .opts input[type="radio"] { accent-color: var(--primary); }
+  .quiz-result {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    text-align: center;
+    color: #52c41a;
+    min-height: 1.4rem;
+  }
+  .pretest-box .btn-row {
+    display: flex;
+    gap: 0.6rem;
+    margin-top: 1rem;
+    justify-content: flex-end;
+  }
+  .pretest-box .btn-row button {
+    padding: 0.5rem 1.2rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .pretest-box .btn-row .btn-primary {
+    background: var(--primary);
+    color: #fff;
+  }
+  .pretest-box .btn-row .btn-primary:hover { background: var(--primary-hover); }
+  .pretest-box .btn-row .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--card-border);
+    color: #8894b0;
+  }
+  .pretest-box .btn-row .btn-ghost:hover { border-color: var(--primary); color: #c8d2e8; }
+
+  /* ── Responsive ── */
+  @media (max-width: 1100px) {
+    .main-grid { grid-template-columns: 1fr; }
+    .left-panel, .right-panel {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    .compass-container { max-width: 400px; }
+    .header h1 { font-size: 1.5rem; }
+  }
+  @media (max-width: 600px) {
+    .header { padding: 0.8rem 1rem; }
+    .header h1 { font-size: 1.3rem; }
+    .main-grid { padding: 0.6rem; }
+    .left-panel, .right-panel { grid-template-columns: 1fr; }
+    .compass-container { max-width: 300px; }
+    .sector-detail-box { padding: 1.2rem; }
+    .pretest-box { padding: 1.2rem; }
+    .timeline-step { min-width: 90px; }
+  }
+
+  /* ── Utility ── */
+  .text-accent { color: var(--accent); }
+  .text-muted { color: #6a7490; }
+  .mt-1 { margin-top: 0.5rem; }
+  .mb-1 { margin-bottom: 0.5rem; }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+
+  <!-- ====== HEADER ====== -->
+  <header class="header">
+    <h1>五维导航罗盘</h1>
+    <div class="subtitle">
+      <span>三年级上 · 数学</span> — 时、分、秒 · 认知全景
+    </div>
+  </header>
+
+  <!-- ====== MAIN GRID ====== -->
+  <div class="main-grid">
+
+    <!-- ────── LEFT PANEL ────── -->
+    <div class="left-panel">
+      <div class="panel-card">
+        <h3><span class="icon">&#x1F3AF;</span> 五维均衡雷达</h3>
+        <div class="radar-wrapper">
+          <canvas id="radarChart" width="300" height="300"></canvas>
+        </div>
+        <div class="balance-score">
+          综合均衡度：<strong id="balanceScore">78%</strong>
+        </div>
+      </div>
+      <button class="pretest-btn" onclick="openPretest()">
+        &#x1F4DD; 前测基础检验（3题）
+      </button>
+    </div>
+
+    <!-- ────── CENTER: COMPASS ────── -->
+    <div class="center-area">
+      <div class="compass-container">
+        <canvas id="compassCanvas" width="600" height="600"></canvas>
+      </div>
+
+      <!-- Drag zone -->
+      <div class="drag-zone">
+        <h3>&#x1F9E9; 拖动目标卡片到对应维度</h3>
+        <div class="goal-cards" id="goalCards">
+          <div class="goal-card cognition" draggable="true" data-sector="cognition">
+            <span class="card-label">认知</span>
+            认识钟面·读写时刻
+          </div>
+          <div class="goal-card emotion" draggable="true" data-sector="emotion">
+            <span class="card-label">情意</span>
+            感受时间珍贵
+          </div>
+          <div class="goal-card skill" draggable="true" data-sector="skill">
+            <span class="card-label">技能</span>
+            单位换算·经过时间
+          </div>
+          <div class="goal-card metacog" draggable="true" data-sector="metacog">
+            <span class="card-label">元认知</span>
+            建立时间感
+          </div>
+          <div class="goal-card value" draggable="true" data-sector="value">
+            <span class="card-label">价值</span>
+            时间手册·规划生活
+          </div>
+        </div>
+        <div class="drop-feedback" id="dropFeedback"></div>
+      </div>
+    </div>
+
+    <!-- ────── RIGHT PANEL ────── -->
+    <div class="right-panel">
+      <div class="panel-card">
+        <h3><span class="icon">&#x1F4CA;</span> 各维速览</h3>
+        <div class="quick-links" id="quickLinks"></div>
+      </div>
+      <div class="panel-card">
+        <h3><span class="icon">&#x1F3ED;</span> 未解之问</h3>
+        <div style="font-size:0.85rem; color:#8894b0; line-height:1.7;">
+          <p style="font-style:italic; color:#69b1ff;">"时间是什么？时间为什么只能向前走？如何让全世界的时间保持同步？"</p>
+          <p class="mt-1">这些看似简单的问题，至今仍是科学前沿的未解之谜。</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ====== TIMELINE ====== -->
+  <div class="timeline-bar">
+    <h3>&#x1F4C8; 学习路径</h3>
+    <div class="timeline-track" id="timelineTrack"></div>
+  </div>
+
+</div><!-- /app-container -->
+
+<!-- ====== SECTOR DETAIL OVERLAY ====== -->
+<div class="sector-detail-overlay" id="sectorOverlay">
+  <div class="sector-detail-box" id="sectorDetailBox">
+    <button class="close-btn" onclick="closeSectorDetail()">&times;</button>
+    <div id="sectorDetailContent"></div>
+  </div>
+</div>
+
+<!-- ====== PRE-TEST OVERLAY ====== -->
+<div class="pretest-overlay" id="pretestOverlay">
+  <div class="pretest-box">
+    <h2>&#x1F4DD; 前测基础检验</h2>
+    <div id="quizContainer"></div>
+    <div class="quiz-result" id="quizResult"></div>
+    <div class="btn-row">
+      <button class="btn-ghost" onclick="closePretest()">关闭</button>
+      <button class="btn-primary" onclick="submitQuiz()">提交答案</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================================================================
+   DATA
+   ================================================================ */
+const SECTORS = [
+  {
+    id: 'cognition',
+    label: '认知维度',
+    sub: '学习目的与目标',
+    color: '#1677ff',
+    grad: ['#1677ff','#4096ff'],
+    angleStart: -Math.PI/2,
+    angleEnd: -Math.PI/2 + 2*Math.PI/5,
+    guiding: '知识理解：认识钟面，读写时刻',
+    detail: {
+      title: '维度一：学习目的与目标',
+      tag: '核心概念',
+      tagColor: '#1677ff',
+      content: `
+        <p><strong>核心概念：</strong>时间——从感受到测量，从经验到运用</p>
+        <p><strong>目标导航（进阶式）：</strong></p>
+        <ul>
+          <li><strong>知识理解：</strong>我能认识钟面，正确读、写几时几分几秒；知道1分=60秒、1时=60分，能进行简单的时间单位换算。</li>
+          <li><strong>能力应用：</strong>我能用时间单位描述日常生活事件（如"跳绳100下用了多少秒"），能计算经过的时间并解决简单实际问题。</li>
+          <li><strong>高阶思维：</strong>我能建立"时间感"——不借助钟表也能大致估计1分钟、1秒钟有多长，并运用时间管理方法规划自己的学习和生活。</li>
+          <li><strong>综合发展：</strong>我能理解时间测量对人类社会的意义（从日晷到原子钟），感受时间的珍贵，培养守时、惜时的品格。</li>
+          <li><strong>创新表达：</strong>我能制作一份"我的时间手册"，用文字、图画或表格记录自己一天的时间分配。</li>
+        </ul>
+      `
+    }
+  },
+  {
+    id: 'emotion',
+    label: '情意维度',
+    sub: '高精尖价值与未来意义',
+    color: '#ff4d4f',
+    grad: ['#ff4d4f','#ff7875'],
+    angleStart: -Math.PI/2 + 2*Math.PI/5,
+    angleEnd: -Math.PI/2 + 4*Math.PI/5,
+    guiding: '情意感受：时间测量推动人类文明',
+    detail: {
+      title: '维度二：高精尖价值与未来意义',
+      tag: '宏观视野',
+      tagColor: '#ff4d4f',
+      content: `
+        <p><strong>宏观视野：</strong>时间测量是人类文明进步的标尺——从古埃及的日晷到今天的原子钟（每10亿年才误差1秒）！航天发射、卫星导航（北斗、GPS）、5G通信、高速列车都依赖超高精度的时间同步。</p>
+        <p><strong>微观连接：</strong>日常生活、学习效率、职业方向、健康生活。</p>
+      `
+    }
+  },
+  {
+    id: 'skill',
+    label: '技能维度',
+    sub: '学习方式与方法',
+    color: '#52c41a',
+    grad: ['#52c41a','#73d13d'],
+    angleStart: -Math.PI/2 + 4*Math.PI/5,
+    angleEnd: -Math.PI/2 + 6*Math.PI/5,
+    guiding: '技能掌握：量感思维·转化思维',
+    detail: {
+      title: '维度三：学习方式与方法',
+      tag: '策略支架',
+      tagColor: '#52c41a',
+      content: `
+        <p><strong>学科思维锚点：</strong>量感思维、转化思维</p>
+        <p><strong>策略支架：</strong></p>
+        <ul>
+          <li><strong>身体计时法：</strong>用脉搏、呼吸感受1秒、1分钟</li>
+          <li><strong>生活关联法：</strong>将时间单位与日常活动对应</li>
+          <li><strong>数轴推演法：</strong>用数轴模型计算经过时间</li>
+          <li><strong>单位换算三步法：</strong>看单位→定进率→算结果</li>
+        </ul>
+      `
+    }
+  },
+  {
+    id: 'metacog',
+    label: '元认知维度',
+    sub: '历史关键人物与成果',
+    color: '#722ed1',
+    grad: ['#722ed1','#9254de'],
+    angleStart: -Math.PI/2 + 6*Math.PI/5,
+    angleEnd: -Math.PI/2 + 8*Math.PI/5,
+    guiding: '元认知：追溯时间测量的历史',
+    detail: {
+      title: '维度四：大单元中创造历史的关键人物、事件、成果',
+      tag: '历史纵览',
+      tagColor: '#722ed1',
+      content: `
+        <ul>
+          <li><strong>古埃及日晷（约公元前1500年）：</strong>人类最早的计时工具之一，利用太阳影子的位置变化测量时间。</li>
+          <li><strong>机械钟的发明（13世纪欧洲）：</strong>摆脱了对太阳的依赖，使昼夜计时成为可能，开启了精密计时时代。</li>
+          <li><strong>石英钟与原子钟（20世纪）：</strong>石英钟将误差缩小到每月几秒；原子钟更是达到每10亿年误差1秒的惊人精度！</li>
+        </ul>
+      `
+    }
+  },
+  {
+    id: 'value',
+    label: '价值维度',
+    sub: '未完全解决的矛盾与前沿追问',
+    color: '#faad14',
+    grad: ['#faad14','#ffc53d'],
+    angleStart: -Math.PI/2 + 8*Math.PI/5,
+    angleEnd: -Math.PI/2 + 10*Math.PI/5,
+    guiding: '价值追问：时间本质与同步之谜',
+    detail: {
+      title: '维度五：未完全解决的矛盾与前沿追问',
+      tag: '前沿思考',
+      tagColor: '#faad14',
+      content: `
+        <p>时间测量已经如此精确，但关于"时间"本身，人类仍有许多未解之谜：</p>
+        <ul>
+          <li><strong>时间是什么？</strong>从古希腊哲学到爱因斯坦相对论，时间的本质至今没有终极答案。</li>
+          <li><strong>时间为什么只能向前走？</strong>物理学中的"时间之箭"——为何过去已定、未来未定？</li>
+          <li><strong>如何让全世界的时间保持同步？</strong>从格林威治标准时间到协调世界时（UTC），再到闰秒的争议。</li>
+        </ul>
+      `
+    }
+  }
+];
+
+const TIMELINE_STEPS = [
+  { num: 1, title: '五维感知', desc: '浏览罗盘，建立全景认知', active: true },
+  { num: 2, title: '目标定位', desc: '明确学习目的与个人目标', active: false },
+  { num: 3, title: '思维构建', desc: '掌握方法策略与量感思维', active: false },
+  { num: 4, title: '历史探究', desc: '了解计时工具的发展历程', active: false },
+  { num: 5, title: '价值升华', desc: '思考时间本质与人生意义', active: false },
+];
+
+const QUIZ = [
+  {
+    q: '1. 1分钟等于多少秒？',
+    opts: ['50秒', '60秒', '100秒', '30秒'],
+    ans: 1
+  },
+  {
+    q: '2. 下面哪个工具计时精度最高？',
+    opts: ['日晷', '沙漏', '机械钟', '原子钟'],
+    ans: 3
+  },
+  {
+    q: '3. 时针从3走到5，经过了多长时间？',
+    opts: ['1小时', '2小时', '3小时', '5小时'],
+    ans: 1
+  }
+];
+
+/* ================================================================
+   COMPASS DRAWING
+   ================================================================ */
+const compassCanvas = document.getElementById('compassCanvas');
+const ctx = compassCanvas.getContext('2d');
+const W = 600, H = 600, CX = W/2, CY = H/2, R = 240;
+let scanAngle = -Math.PI/2;
+let scanDir = 1;
+let scanRunning = true;
+
+function drawCompass() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Background glow
+  const bgGrad = ctx.createRadialGradient(CX, CY, 30, CX, CY, R+40);
+  bgGrad.addColorStop(0, 'rgba(22,119,255,0.04)');
+  bgGrad.addColorStop(1, 'rgba(10,14,26,0)');
+  ctx.fillStyle = bgGrad;
+  ctx.beginPath();
+  ctx.arc(CX, CY, R+40, 0, 2*Math.PI);
+  ctx.fill();
+
+  // Outer ring
+  ctx.beginPath();
+  ctx.arc(CX, CY, R+15, 0, 2*Math.PI);
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Draw sectors
+  SECTORS.forEach((s, i) => {
+    const start = s.angleStart;
+    const end = s.angleEnd;
+
+    // Sector path
+    ctx.beginPath();
+    ctx.moveTo(CX, CY);
+    ctx.arc(CX, CY, R, start, end);
+    ctx.closePath();
+
+    // Fill gradient
+    const mid = (start + end) / 2;
+    const gx = CX + R*0.5*Math.cos(mid);
+    const gy = CY + R*0.5*Math.sin(mid);
+    const sg = ctx.createRadialGradient(CX, CY, 10, CX, CY, R);
+    sg.addColorStop(0, s.grad[0] + '55');
+    sg.addColorStop(1, s.grad[0] + '18');
+    ctx.fillStyle = sg;
+    ctx.fill();
+
+    // Border
+    ctx.strokeStyle = s.color + '44';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Scan highlight
+    const ms = Date.now() / 1000;
+    const angularSpeed = 0.3;
+    scanAngle = -Math.PI/2 + ((ms * angularSpeed) % (2*Math.PI));
+    const sectorMid = (start + end) / 2;
+    let diff = scanAngle - sectorMid;
+    while (diff > Math.PI) diff -= 2*Math.PI;
+    while (diff < -Math.PI) diff += 2*Math.PI;
+    const halfSpan = (end - start) / 2;
+    if (Math.abs(diff) < halfSpan) {
+      ctx.beginPath();
+      ctx.moveTo(CX, CY);
+      ctx.arc(CX, CY, R, start, end);
+      ctx.closePath();
+      ctx.fillStyle = s.color + '22';
+      ctx.fill();
+    }
+
+    // Label
+    const labelAngle = mid;
+    const labelR = R * 0.62;
+    const lx = CX + labelR * Math.cos(labelAngle);
+    const ly = CY + labelR * Math.sin(labelAngle);
+
+    ctx.save();
+    ctx.translate(lx, ly);
+    ctx.rotate(labelAngle + (labelAngle > Math.PI/2 ? Math.PI : 0));
+
+    ctx.fillStyle = s.color;
+    ctx.font = 'bold 15px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(s.label, 0, -8);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.50)';
+    ctx.font = '11px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillText(s.sub, 0, 10);
+
+    ctx.restore();
+
+    // Guiding text on ring
+    const gR = R + 30;
+    const gx2 = CX + gR * Math.cos(mid);
+    const gy2 = CY + gR * Math.sin(mid);
+    ctx.save();
+    ctx.translate(gx2, gy2);
+    ctx.rotate(mid + (mid > Math.PI/2 ? Math.PI : 0));
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.font = '9px "PingFang SC",sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(s.guiding, 0, 0);
+    ctx.restore();
+  });
+
+  // Center circle
+  const cGrad = ctx.createRadialGradient(CX, CY, 0, CX, CY, 45);
+  cGrad.addColorStop(0, '#1a2a4a');
+  cGrad.addColorStop(1, '#0e1525');
+  ctx.beginPath();
+  ctx.arc(CX, CY, 45, 0, 2*Math.PI);
+  ctx.fillStyle = cGrad;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(22,119,255,0.3)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 22px "PingFang SC",sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('五维', CX, CY - 8);
+  ctx.font = '12px "PingFang SC",sans-serif';
+  ctx.fillStyle = '#69b1ff';
+  ctx.fillText('导航罗盘', CX, CY + 16);
+
+  // Outer ticks
+  for (let a = 0; a < 360; a += 15) {
+    const rad = (a - 90) * Math.PI / 180;
+    const r1 = R + 18;
+    const r2 = R + 24;
+    ctx.beginPath();
+    ctx.moveTo(CX + r1*Math.cos(rad), CY + r1*Math.sin(rad));
+    ctx.lineTo(CX + r2*Math.cos(rad), CY + r2*Math.sin(rad));
+    ctx.strokeStyle = a % 30 === 0 ? 'rgba(255,255,255,0.20)' : 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = a % 30 === 0 ? 2 : 1;
+    ctx.stroke();
+  }
+}
+
+// Click detection on compass
+compassCanvas.addEventListener('click', (e) => {
+  const rect = compassCanvas.getBoundingClientRect();
+  const scaleX = compassCanvas.width / rect.width;
+  const scaleY = compassCanvas.height / rect.height;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const my = (e.clientY - rect.top) * scaleY;
+  const dx = mx - CX, dy = my - CY;
+  const dist = Math.sqrt(dx*dx + dy*dy);
+  if (dist > R + 20) return;
+  let angle = Math.atan2(dy, dx);
+  // Normalize angle to match sector start
+  for (const s of SECTORS) {
+    let a = angle;
+    let start = s.angleStart;
+    let end = s.angleEnd;
+    if (a < start) a += 2*Math.PI;
+    if (a >= start && a < end) {
+      showSectorDetail(s.id);
+      return;
+    }
+  }
+});
+
+/* ================================================================
+   RADAR CHART
+   ================================================================ */
+const radarCanvas = document.getElementById('radarChart');
+const rctx = radarCanvas.getContext('2d');
+const RW = 300, RH = 300, RCX = 150, RCY = 150, RR = 110;
+const RADAR_LABELS = ['认知', '情意', '技能', '元认知', '价值'];
+const RADAR_VALS = [85, 72, 78, 65, 90];
+const RCOLORS = ['#1677ff','#ff4d4f','#52c41a','#722ed1','#faad14'];
+
+function drawRadar() {
+  rctx.clearRect(0, 0, RW, RH);
+
+  const n = RADAR_LABELS.length;
+  const step = 2 * Math.PI / n;
+  const offset = -Math.PI/2;
+
+  // Grid rings
+  for (let ring = 1; ring <= 5; ring++) {
+    const r = RR * ring / 5;
+    rctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const a = offset + i * step;
+      const x = RCX + r * Math.cos(a);
+      const y = RCY + r * Math.sin(a);
+      i === 0 ? rctx.moveTo(x, y) : rctx.lineTo(x, y);
+    }
+    rctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    rctx.lineWidth = 1;
+    rctx.stroke();
+  }
+
+  // Axes
+  for (let i = 0; i < n; i++) {
+    const a = offset + i * step;
+    rctx.beginPath();
+    rctx.moveTo(RCX, RCY);
+    rctx.lineTo(RCX + RR * Math.cos(a), RCY + RR * Math.sin(a));
+    rctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    rctx.stroke();
+  }
+
+  // Data polygon
+  rctx.beginPath();
+  for (let i = 0; i < n; i++) {
+    const a = offset + i * step;
+    const val = RADAR_VALS[i] / 100;
+    const x = RCX + RR * val * Math.cos(a);
+    const y = RCY + RR * val * Math.sin(a);
+    i === 0 ? rctx.moveTo(x, y) : rctx.lineTo(x, y);
+  }
+  rctx.closePath();
+  const fillGrad = rctx.createRadialGradient(RCX, RCY, 0, RCX, RCY, RR);
+  fillGrad.addColorStop(0, 'rgba(22,119,255,0.25)');
+  fillGrad.addColorStop(1, 'rgba(22,119,255,0.05)');
+  rctx.fillStyle = fillGrad;
+  rctx.fill();
+  rctx.strokeStyle = '#1677ff';
+  rctx.lineWidth = 2;
+  rctx.stroke();
+
+  // Data points & labels
+  for (let i = 0; i < n; i++) {
+    const a = offset + i * step;
+    const val = RADAR_VALS[i] / 100;
+    const px = RCX + RR * val * Math.cos(a);
+    const py = RCY + RR * val * Math.sin(a);
+    const lx = RCX + (RR + 20) * Math.cos(a);
+    const ly = RCY + (RR + 20) * Math.sin(a);
+
+    rctx.beginPath();
+    rctx.arc(px, py, 4, 0, 2*Math.PI);
+    rctx.fillStyle = RCOLORS[i];
+    rctx.fill();
+
+    rctx.fillStyle = '#8894b0';
+    rctx.font = '10px "PingFang SC",sans-serif';
+    rctx.textAlign = 'center';
+    rctx.textBaseline = 'middle';
+    rctx.fillText(RADAR_LABELS[i], lx, ly);
+  }
+
+  // Center value
+  rctx.fillStyle = 'rgba(255,255,255,0.10)';
+  rctx.font = '10px sans-serif';
+  rctx.textAlign = 'center';
+  rctx.textBaseline = 'middle';
+}
+
+/* ================================================================
+   SECTOR DETAIL
+   ================================================================ */
+function showSectorDetail(id) {
+  const s = SECTORS.find(x => x.id === id);
+  if (!s) return;
+  const box = document.getElementById('sectorDetailContent');
+  box.innerHTML = `
+    <span class="sector-tag" style="background:${s.tagColor}22;color:${s.tagColor};border:1px solid ${s.tagColor}44">
+      ${s.detail.tag}
+    </span>
+    <h2 style="color:${s.color}">${s.detail.title}</h2>
+    <div class="content">${s.detail.content}</div>
+  `;
+  document.getElementById('sectorOverlay').classList.add('active');
+}
+function closeSectorDetail() {
+  document.getElementById('sectorOverlay').classList.remove('active');
+}
+document.getElementById('sectorOverlay').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeSectorDetail();
+});
+
+/* ================================================================
+   QUICK LINKS (Right Panel)
+   ================================================================ */
+function buildQuickLinks() {
+  const el = document.getElementById('quickLinks');
+  el.innerHTML = SECTORS.map(s => `
+    <button onclick="showSectorDetail('${s.id}')">
+      <span class="label-badge" style="background:${s.color}"></span>
+      ${s.label}
+    </button>
+  `).join('');
+}
+
+/* ================================================================
+   TIMELINE
+   ================================================================ */
+function buildTimeline() {
+  const el = document.getElementById('timelineTrack');
+  el.innerHTML = TIMELINE_STEPS.map(s => `
+    <div class="timeline-step${s.active ? ' active' : ''}">
+      <div class="step-num">${s.num}</div>
+      <div class="step-title">${s.title}</div>
+      <div class="step-desc">${s.desc}</div>
+    </div>
+  `).join('');
+}
+
+/* ================================================================
+   DRAG & DROP
+   ================================================================ */
+(function initDrag() {
+  const cards = document.querySelectorAll('.goal-card');
+  const fb = document.getElementById('dropFeedback');
+  cards.forEach(card => {
+    card.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', card.dataset.sector);
+      e.dataTransfer.effectAllowed = 'move';
+    });
+  });
+
+  // The compass canvas is the drop target
+  const canvas = document.getElementById('compassCanvas');
+  canvas.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+  canvas.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const sectorId = e.dataTransfer.getData('text/plain');
+    const s = SECTORS.find(x => x.id === sectorId);
+    if (s) {
+      fb.textContent = `✅  "${s.label}"卡片已匹配到罗盘！点击罗盘查看详情`;
+      fb.style.color = '#52c41a';
+      // Flash the sector
+      showSectorDetail(sectorId);
+    }
+    setTimeout(() => { fb.textContent = ''; }, 4000);
+  });
+})();
+
+/* ================================================================
+   PRE-TEST QUIZ
+   ================================================================ */
+function openPretest() {
+  document.getElementById('pretestOverlay').classList.add('active');
+  renderQuiz();
+}
+function closePretest() {
+  document.getElementById('pretestOverlay').classList.remove('active');
+}
+document.getElementById('pretestOverlay').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closePretest();
+});
+
+function renderQuiz() {
+  const el = document.getElementById('quizContainer');
+  el.innerHTML = QUIZ.map((q, qi) => `
+    <div class="quiz-item">
+      <div class="q">${q.q}</div>
+      <div class="opts">
+        ${q.opts.map((opt, oi) => `
+          <label>
+            <input type="radio" name="quiz_${qi}" value="${oi}">
+            ${opt}
+          </label>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function submitQuiz() {
+  let correct = 0;
+  QUIZ.forEach((q, qi) => {
+    const sel = document.querySelector(`input[name="quiz_${qi}"]:checked`);
+    if (sel && parseInt(sel.value) === q.ans) correct++;
+  });
+  const total = QUIZ.length;
+  const el = document.getElementById('quizResult');
+  if (correct === total) {
+    el.textContent = `✅ 全部正确！(${correct}/${total}) 你已具备良好的时间基础！`;
+    el.style.color = '#52c41a';
+  } else {
+    el.textContent = `\u{1F4DD} 答对 ${correct}/${total} 题，继续加油学习本单元！`;
+    el.style.color = '#faad14';
+  }
+}
+
+/* ================================================================
+   ANIMATION LOOP
+   ================================================================ */
+function animate() {
+  drawCompass();
+  drawRadar();
+  const avg = RADAR_VALS.reduce((a, b) => a + b, 0) / RADAR_VALS.length;
+  document.getElementById('balanceScore').textContent = Math.round(avg) + '%';
+  requestAnimationFrame(animate);
+}
+
+/* ================================================================
+   INIT
+   ================================================================ */
+buildQuickLinks();
+buildTimeline();
+animate();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视频脚手架——观看焦点</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px 60px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, #1677ff, #4096ff);
+  color: #fff;
+  padding: 32px 40px;
+  border-radius: var(--border-radius);
+  margin-bottom: 32px;
+}
+.header h1 { margin: 0 0 8px; font-size: var(--font-h1); }
+.header p { margin: 0; opacity: 0.9; font-size: 16px; }
+.level-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.level-tab {
+  padding: 10px 22px;
+  border-radius: 20px;
+  font-size: 15px;
+  font-weight: 600;
+  border: 2px solid var(--border);
+  background: var(--card-bg);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.level-tab:hover { border-color: var(--primary); color: var(--primary); }
+.level-tab.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.video-section { margin-bottom: 36px; }
+.video-section h2 {
+  font-size: var(--font-h2);
+  color: var(--text);
+  border-left: 4px solid var(--primary);
+  padding-left: 14px;
+  margin: 0 0 18px;
+}
+.video-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 22px 26px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+.video-card h3 {
+  font-size: 20px;
+  color: var(--primary);
+  margin: 0 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.video-card .source {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+.video-card .task-box {
+  background: #f0f5ff;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 10px 0;
+  border-left: 3px solid var(--primary);
+}
+.video-card .task-box strong { color: var(--primary); }
+.video-card .q-list { padding-left: 20px; margin: 10px 0; }
+.video-card .q-list li { margin-bottom: 6px; }
+.pause-tag {
+  display: inline-block;
+  background: #fff7e6;
+  border: 1px solid #ffe58f;
+  border-radius: 16px;
+  padding: 4px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #d46b08;
+  margin: 6px 4px 6px 0;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.pause-tag:hover { background: #ffe58f; }
+.pause-detail { display: none; margin: 8px 0 12px 16px; padding: 10px 14px; background: #fffbe6; border-radius: 8px; border-left: 3px solid #fa8c16; font-size: 15px; }
+.output-box {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.output-box .icon { font-size: 20px; }
+@media (max-width: 640px) {
+  .container { padding: 16px; }
+  .header { padding: 24px 20px; }
+  .video-card { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🎬 视频脚手架——观看焦点</h1>
+  <p>带着问题看视频，让每一分钟都有收获！点击暂停标签查看思考点，别忘了完成输出任务哦。</p>
+</div>
+
+<div class="level-tabs">
+  <span class="level-tab active" onclick="filterVideos('all',this)">📋 全部</span>
+  <span class="level-tab" onclick="filterVideos('basic',this)">⭐ 基础·解释型</span>
+  <span class="level-tab" onclick="filterVideos('adv',this)">🏆 进阶·分析型</span>
+  <span class="level-tab" onclick="filterVideos('challenge',this)">🚀 挑战·辩论型</span>
+</div>
+
+<!-- 基础层 -->
+<div class="video-section" data-level="basic">
+<h2>⭐ 基础层：解释型</h2>
+
+<div class="video-card">
+  <h3>🎥 视频 1：一分钟到底有多长？</h3>
+  <div class="source">📺 来源：Bilibili / 科普中国</div>
+  <div class="task-box"><strong>📋 观看任务：</strong>看完视频后，说出 3 种测量一分钟的方法。</div>
+  <ul class="q-list">
+    <li><strong>关键问题 1：</strong>视频中用了哪些方法来展示一分钟的长度？</li>
+    <li><strong>关键问题 2：</strong>为什么不同的人对一分钟的感受不一样？</li>
+  </ul>
+  <div>
+    <span class="pause-tag" onclick="togglePause(this)">⏸️ 00:30 暂停</span>
+    <div class="pause-detail">你觉得一分钟有多长？先猜一猜，再看视频揭晓答案。</div>
+    <span class="pause-tag" onclick="togglePause(this)">⏸️ 01:30 暂停</span>
+    <div class="pause-detail">视频中的人在做不同活动时，对一分钟的感受有什么不同？</div>
+  </div>
+  <div class="output-box">
+    <span class="icon">✍️</span>
+    <div><strong>输出任务：</strong>写一段 50 字的话，描述你印象最深的一个画面。</div>
+  </div>
+</div>
+
+<div class="video-card">
+  <h3>🎥 视频 2：钟表的发展历史</h3>
+  <div class="source">📺 来源：Bilibili "从日晷到原子钟——钟表发展史"</div>
+  <div class="task-box"><strong>📋 观看任务：</strong>按时间顺序列出至少 4 种不同的计时工具。</div>
+  <ul class="q-list">
+    <li><strong>关键问题 1：</strong>最早的计时工具是什么？它有什么缺点？</li>
+    <li><strong>关键问题 2：</strong>原子钟为什么比摆钟更精确？</li>
+  </ul>
+  <div>
+    <span class="pause-tag" onclick="togglePause(this)">⏸️ 01:00 暂停</span>
+    <div class="pause-detail">日晷为什么只能在白天使用？</div>
+    <span class="pause-tag" onclick="togglePause(this)">⏸️ 03:00 暂停</span>
+    <div class="pause-detail">摆钟的发明为什么是计时史上的一次革命？</div>
+  </div>
+  <div class="output-box">
+    <span class="icon">✍️</span>
+    <div><strong>输出任务：</strong>画一张"计时工具发展时间轴"，标注每种工具的发明时间和特点。</div>
+  </div>
+</div>
+
+</div>
+
+<!-- 进阶层 -->
+<div class="video-section" data-level="adv" style="display:none;">
+<h2>🏆 进阶层：分析型</h2>
+
+<div class="video-card">
+  <h3>🎥 视频 3：为什么一分钟是 60 秒？</h3>
+  <div class="source">📺 来源：Bilibili / YouTube 科普频道</div>
+  <div class="task-box"><strong>📋 观看任务：</strong>看完视频后，用你自己的话解释"为什么一分钟是 60 秒而不是 100 秒"。</div>
+  <ul class="q-list">
+    <li><strong>关键问题 1：</strong>60 进制和古巴比伦文明有什么关系？</li>
+    <li><strong>关键问题 2：</strong>为什么 60 是一个"好数字"？（提示：60 有多少个因数？）</li>
+  </ul>
+  <div>
+    <span class="pause-tag" onclick="togglePause(this)">⏸️ 02:00 暂停</span>
+    <div class="pause-detail">60 的因数有哪些？为什么这些因数让 60 很方便？</div>
+    <span class="pause-tag" onclick="togglePause(this)">⏸️ 04:00 暂停</span>
+    <div class="pause-detail">如果一分钟是 100 秒，我们的生活会有什么变化？</div>
+  </div>
+  <div class="output-box">
+    <span class="icon">✍️</span>
+    <div><strong>输出任务：</strong>写一段 100 字的短文，向同学解释"为什么一分钟是 60 秒"。</div>
+  </div>
+</div>
+
+<div class="video-card">
+  <h3>🎥 视频 4：时间管理小技巧</h3>
+  <div class="source">📺 来源：Bilibili "番茄工作法——儿童版"</div>
+  <div class="task-box"><strong>📋 观看任务：</strong>看完视频后，总结出 3 条时间管理技巧。</div>
+  <ul class="q-list">
+    <li><strong>关键问题 1：</strong>什么是"番茄工作法"？它为什么有效？</li>
+    <li><strong>关键问题 2：</strong>你打算怎么运用这些技巧？</li>
+  </ul>
+  <div>
+    <span class="pause-tag" onclick="togglePause(this)">⏸️ 01:00 暂停</span>
+    <div class="pause-detail">你平时是怎么安排学习时间的？和视频中的方法有什么不同？</div>
+    <span class="pause-tag" onclick="togglePause(this)">⏸️ 03:00 暂停</span>
+    <div class="pause-detail">视频中说的"25 分钟工作 + 5 分钟休息"，你觉得适合你吗？</div>
+  </div>
+  <div class="output-box">
+    <span class="icon">✍️</span>
+    <div><strong>输出任务：</strong>设计一份你自己的番茄工作法计划，确定你的工作时长和休息时长。</div>
+  </div>
+</div>
+
+</div>
+
+<!-- 挑战层 -->
+<div class="video-section" data-level="challenge" style="display:none;">
+<h2>🚀 挑战层：辩论 / 前沿型</h2>
+
+<div class="video-card">
+  <h3>🎥 视频 5：时间旅行可能吗？</h3>
+  <div class="source">📺 来源：Bilibili "时间旅行——科学还是幻想？"</div>
+  <div class="task-box"><strong>📋 观看任务：</strong>看完视频后，说出支持"时间旅行可能"和"时间旅行不可能"的各 2 个理由。</div>
+  <ul class="q-list">
+    <li><strong>关键问题 1：</strong>爱因斯坦的相对论为什么说时间旅行是可能的？</li>
+    <li><strong>关键问题 2：</strong>为什么"回到过去"比"前往未来"更难？</li>
+  </ul>
+  <div>
+    <span class="pause-tag" onclick="togglePause(this)">⏸️ 02:00 暂停</span>
+    <div class="pause-detail">如果时间旅行真的可能，你会想去哪个时代？为什么？</div>
+    <span class="pause-tag" onclick="togglePause(this)">⏸️ 05:00 暂停</span>
+    <div class="pause-detail">视频中说的"时间膨胀"是什么意思？和速度有什么关系？</div>
+  </div>
+  <div class="output-box">
+    <span class="icon">✍️</span>
+    <div><strong>输出任务：</strong>写一段 150 字的短文，表达你对"时间旅行"的看法——你觉得可能吗？为什么？</div>
+  </div>
+</div>
+
+<div class="video-card">
+  <h3>🎥 视频 6：原子钟——时间的终极裁判</h3>
+  <div class="source">📺 来源：Bilibili / 科普中国 "原子钟的工作原理"</div>
+  <div class="task-box"><strong>📋 观看任务：</strong>看完视频后，用简单的语言解释原子钟为什么这么精确。</div>
+  <ul class="q-list">
+    <li><strong>关键问题 1：</strong>原子钟利用了什么物理现象来计时？</li>
+    <li><strong>关键问题 2：</strong>原子钟的精度对我们的日常生活有什么影响？</li>
+  </ul>
+  <div>
+    <span class="pause-tag" onclick="togglePause(this)">⏸️ 01:30 暂停</span>
+    <div class="pause-detail">铯原子每秒振动多少次？这个数字和"秒"的定义有什么关系？</div>
+    <span class="pause-tag" onclick="togglePause(this)">⏸️ 03:30 暂停</span>
+    <div class="pause-detail">如果没有原子钟，GPS 导航会怎么样？</div>
+  </div>
+  <div class="output-box">
+    <span class="icon">✍️</span>
+    <div><strong>输出任务：</strong>画一张"原子钟工作原理"的示意图，标注关键步骤。</div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function togglePause(el) {
+  const detail = el.nextElementSibling;
+  detail.style.display = detail.style.display === 'block' ? 'none' : 'block';
+}
+function filterVideos(level, el) {
+  document.querySelectorAll('.level-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.video-section').forEach(s => {
+    if (level === 'all') { s.style.display = 'block'; return; }
+    s.style.display = s.dataset.level === level ? 'block' : 'none';
+  });
+}
+</script>
+
+</div>
+</body>
+</html>

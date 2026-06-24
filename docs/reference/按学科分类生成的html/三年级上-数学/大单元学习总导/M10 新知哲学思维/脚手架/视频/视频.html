@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视频脚手架 — 时、分、秒</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px 24px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, #1677ff, #0958d9);
+  color: #fff;
+  padding: 32px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  text-align: center;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 6px; }
+.header p { font-size: var(--font-body); opacity: 0.9; }
+.header .sub {
+  font-size: 15px; opacity: 0.85; margin-top: 6px;
+  background: rgba(255,255,255,0.15); display: inline-block;
+  padding: 4px 16px; border-radius: 16px;
+}
+.level-tabs {
+  display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+  margin-bottom: 24px;
+}
+.level-tab {
+  text-decoration: none; padding: 8px 20px; border-radius: 20px;
+  font-weight: 600; font-size: 15px; transition: all 0.2s; cursor: pointer;
+  border: none;
+}
+.level-tab:hover { transform: scale(1.05); }
+.video-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 20px;
+  border-left: 4px solid var(--primary);
+  transition: transform 0.2s;
+}
+.video-card:hover { transform: translateY(-2px); }
+.video-card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+.video-card .meta {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.video-card .meta span {
+  background: var(--bg);
+  padding: 2px 10px;
+  border-radius: 10px;
+}
+.level-badge {
+  display: inline-block;
+  padding: 2px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.lv-basic { background: #e6f4ff; color: var(--primary); }
+.lv-adv { background: #f6ffed; color: #52c41a; }
+.lv-challenge { background: #fff7e6; color: #fa8c16; }
+.section-box {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 14px;
+  margin-bottom: 10px;
+  border-left: 3px solid var(--accent);
+}
+.section-box strong { color: var(--primary); }
+.pause-box {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.pause-box::before {
+  content: "⏸️ 暂停思考";
+  display: block;
+  font-weight: 700;
+  color: #d48806;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+.task-box {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.task-box::before {
+  content: "📝 输出任务";
+  display: block;
+  font-weight: 700;
+  color: #52c41a;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+.usage-table-wrap { overflow-x: auto; margin-top: 24px; }
+.usage-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 16px;
+}
+.usage-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 12px;
+}
+.usage-table td {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  text-align: center;
+}
+.usage-table tr:nth-child(even) { background: #fafafa; }
+.philosophy-box {
+  background: linear-gradient(135deg, #f0f5ff, #e6f4ff);
+  border-radius: var(--border-radius);
+  padding: 24px;
+  margin-top: 24px;
+  text-align: center;
+  border: 2px dashed var(--primary);
+}
+.philosophy-box p { font-size: 17px; color: var(--text); }
+.philosophy-box .q { font-weight: 700; color: var(--primary); font-size: 18px; }
+.progress-wrap {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+.progress-wrap h3 { font-size: 18px; color: var(--primary); margin-bottom: 10px; }
+.progress-bar-bg {
+  width: 100%; height: 12px;
+  background: var(--bg); border-radius: 6px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  border-radius: 6px;
+  transition: width 0.6s ease;
+}
+.interact-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 22px;
+  border-radius: 20px;
+  font-size: 16px;
+  cursor: pointer;
+  margin: 6px 4px;
+  transition: all 0.2s;
+}
+.interact-btn:hover { background: var(--primary-hover); transform: scale(1.03); }
+.interact-btn:active { transform: scale(0.97); }
+.interact-btn.green { background: #52c41a; }
+.interact-btn.green:hover { background: #73d13d; }
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  .video-card { padding: 16px; }
+  .usage-table { font-size: 14px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🎬 视频脚手架</h1>
+  <p>时、分、秒 · M10 新知哲学思维 · 三年级数学</p>
+  <div class="sub">哲学主线：人类如何从"感受时间"走向"测量时间"</div>
+</div>
+
+<div class="level-tabs">
+  <button class="level-tab" onclick="scrollToEl('basic')" style="background:#e6f4ff;color:var(--primary);">🌟 基础</button>
+  <button class="level-tab" onclick="scrollToEl('advanced')" style="background:#f6ffed;color:#52c41a;">📈 进阶</button>
+  <button class="level-tab" onclick="scrollToEl('challenge')" style="background:#fff7e6;color:#fa8c16;">🚀 挑战</button>
+</div>
+
+<!-- 进度追踪 -->
+<div class="progress-wrap">
+  <h3>📊 我的观看进度</h3>
+  <div class="progress-bar-bg">
+    <div class="progress-bar-fill" id="progressFill"></div>
+  </div>
+  <p style="margin-top:8px;color:var(--text-secondary);font-size:15px;">
+    已完成 <span id="progressCount">0</span> / 6 个视频
+  </p>
+</div>
+
+<!-- 第一层：基础 -->
+<h2 id="basic" style="font-size:var(--font-h2);color:var(--primary);margin-bottom:16px;">🌟 第一层 · 基础 · 解释型</h2>
+
+<div class="video-card">
+  <span class="level-badge lv-basic">视频一</span>
+  <h2>⏳ 时间是怎么被量出来的？——从日晷到秒表</h2>
+  <div class="meta">
+    <span>📂 课程类 · 科普动画解说</span>
+    <span>⏱️ 建议 1 课时</span>
+  </div>
+
+  <div class="section-box">
+    <strong>🎯 观看任务：</strong>说出人类测量时间的"三步进化"分别是什么工具，每一代工具解决了上一代的什么缺陷。
+  </div>
+  <div class="section-box">
+    <strong>❓ 关键问题：</strong><br>
+    1. 为什么古人最早用"影子"而不是"心跳"来测量时间？<br>
+    2. 日晷在阴天或夜晚还能用吗？它有什么局限？
+  </div>
+  <div class="pause-box">
+    <strong>02:30</strong> — 画面展示日晷原理时暂停——"如果影子会移动，是不是说明时间在流动？影子是时间吗？"
+  </div>
+  <div class="pause-box">
+    <strong>05:15</strong> — 首次出现机械钟时暂停——"没有太阳的时候，人们用什么来替代影子？答案可能就在身边。"
+  </div>
+  <div class="task-box">
+    画一幅"时间测量工具进化图"：日晷 → 沙漏/水钟 → 机械钟 → 秒表。每幅图旁写一行"它比上一个厉害在哪里"。
+  </div>
+  <button class="interact-btn green" onclick="markDone(0)">✅ 我看完了</button>
+</div>
+
+<div class="video-card">
+  <span class="level-badge lv-basic">视频二</span>
+  <h2>⏲️ 1秒到底有多久？——让身体感受时间</h2>
+  <div class="meta">
+    <span>📂 课程类 · 互动实验微课</span>
+    <span>⏱️ 建议 1 课时</span>
+  </div>
+
+  <div class="section-box">
+    <strong>🎯 观看任务：</strong>闭眼默数10秒，然后看实际时间——你和真实时间差了几秒？记录数据。
+  </div>
+  <div class="section-box">
+    <strong>❓ 关键问题：</strong><br>
+    1. "1秒"是一个客观存在的东西，还是人造的约定？<br>
+    2. 为什么"滴答一下"不是1秒——而钟表上的一次摆动是？
+  </div>
+  <div class="pause-box">
+    <strong>01:45</strong> — "3-2-1开始"倒计时画面——"你自己数10秒需要多久？先别等视频揭秘，现在就试。"
+  </div>
+  <div class="pause-box">
+    <strong>04:00</strong> — 出现脉搏计时画面——"你能找到自己的脉搏吗？数15秒，乘以4，猜猜你的心率是多少？"
+  </div>
+  <div class="task-box">
+    录制一段自己的"30秒倒计时"语音（只靠默数不靠钟表），然后用手机计时器检查误差。写下："我的误差是____秒，我发现自己数得快/慢，因为______。"
+  </div>
+  <button class="interact-btn green" onclick="markDone(1)">✅ 我看完了</button>
+</div>
+
+<!-- 第二层：进阶 -->
+<h2 id="advanced" style="font-size:var(--font-h2);color:#52c41a;margin-bottom:16px;margin-top:24px;">📈 第二层 · 进阶 · 分析型</h2>
+
+<div class="video-card" style="border-left-color:#52c41a;">
+  <span class="level-badge lv-adv">视频三</span>
+  <h2 style="color:#52c41a;">🔬 秒的"官方定义"——从一个地球日到铯原子</h2>
+  <div class="meta">
+    <span>📂 纪录片 · 科学史/计量史</span>
+    <span>⏱️ 建议 1-1.5 课时</span>
+  </div>
+
+  <div class="section-box">
+    <strong>🎯 观看任务：</strong>追踪"1秒"的定义经历了哪几次重大变更，每次变更的原因是什么。
+  </div>
+  <div class="section-box">
+    <strong>❓ 关键问题：</strong><br>
+    1. 以前说"1秒 = 1天的1/86400"，为什么这个定义后来不够用了？<br>
+    2. 原子钟说"1秒 = 铯-133原子振动9192631770次"——为什么是"振动次数"而不是别的？
+  </div>
+  <div class="pause-box">
+    <strong>03:20</strong> — 解释"地球自转一天"时暂停——"地球自转真的永远是24小时吗？如果不是，谁能发现？"
+  </div>
+  <div class="pause-box">
+    <strong>07:00</strong> — 铯原子钟动画演示时暂停——"原子的'振动'和我们钟表的'嘀嗒'有什么不同？凭什么原子的嘀嗒更准？"
+  </div>
+  <div class="task-box">
+    用你自己的话写一段"给二年级同学的解释"——告诉他们"科学家是怎么定义1秒的"，限150字以内，不能出现"原子""振动"之外的专业术语。
+  </div>
+  <button class="interact-btn green" onclick="markDone(2)">✅ 我看完了</button>
+</div>
+
+<div class="video-card" style="border-left-color:#52c41a;">
+  <span class="level-badge lv-adv">视频四</span>
+  <h2 style="color:#52c41a;">🧠 时间的错觉——为什么快乐的时间过得快？</h2>
+  <div class="meta">
+    <span>📂 专题演讲 · 认知科学/心理学</span>
+    <span>⏱️ 建议 1-1.5 课时</span>
+  </div>
+
+  <div class="section-box">
+    <strong>🎯 观看任务：</strong>记录视频中提到的至少2种"让时间变快/变慢"的心理情景，对照自己的生活经验。
+  </div>
+  <div class="section-box">
+    <strong>❓ 关键问题：</strong><br>
+    1. 时间是客观的（钟表上一样长），但我们的感受是主观的——这两个"时间"到底哪一个更真实？<br>
+    2. 如果你的大脑可以"快放"不好的记忆，这对人类有什么进化上的好处？
+  </div>
+  <div class="pause-box">
+    <strong>02:15</strong> — 讲到"等待时时间过得很慢"——"你等红灯30秒的感觉，和玩手机30秒的感觉，为什么差那么多？注意看接下来的实验。"
+  </div>
+  <div class="pause-box">
+    <strong>05:40</strong> — 展示时间知觉实验数据时暂停——"你觉得年龄越大时间过得越快是真的吗？先写下你的猜测，再往下看。"
+  </div>
+  <div class="task-box">
+    做一个"时间感知对比表"——左边列出3件你觉得"过得很快"的事，右边列出3件"过得很慢"的事，每件事旁估算实际时长。思考：感觉和实际之间的差值说明什么？
+  </div>
+  <button class="interact-btn green" onclick="markDone(3)">✅ 我看完了</button>
+</div>
+
+<!-- 第三层：挑战 -->
+<h2 id="challenge" style="font-size:var(--font-h2);color:#fa8c16;margin-bottom:16px;margin-top:24px;">🚀 第三层 · 挑战 · 前沿型</h2>
+
+<div class="video-card" style="border-left-color:#fa8c16;">
+  <span class="level-badge lv-challenge">视频五</span>
+  <h2 style="color:#fa8c16;">🛰️ 10亿年只误差1秒——原子钟如何改变世界</h2>
+  <div class="meta">
+    <span>📂 行业实录/科普记录 · 现代科技前沿</span>
+    <span>⏱️ 建议 1.5-2 课时</span>
+  </div>
+
+  <div class="section-box">
+    <strong>🎯 观看任务：</strong>说出原子钟精确度达到什么级别，以及这种精确度在至少3个领域的实际应用。
+  </div>
+  <div class="section-box">
+    <strong>❓ 关键问题：</strong><br>
+    1. 如果你家的钟慢了一秒，你可能根本不会发现。但为什么GPS卫星上的钟如果慢了一微秒（百万分之一秒），导航就会偏几公里？<br>
+    2. "时间同步"是不是意味着全世界有一个"真正的时间"？还是我们只是在互相约定？
+  </div>
+  <div class="pause-box">
+    <strong>04:10</strong> — 演示GPS时间同步原理时暂停——"你的手机怎么知道'现在几点'？它没有连接卫星，它靠什么？想想看。"
+  </div>
+  <div class="pause-box">
+    <strong>08:30</strong> — 提到"光钟比原子钟还准"时暂停——"原子已经是目前最准的钟了，科学家还在追求更准——你觉得'足够准'有终点吗？"
+  </div>
+  <div class="task-box">
+    写一段60秒的"一分钟科普"演讲稿，主题是"为什么导航需要那么准的钟"。说给完全不懂技术的爷爷奶奶听，不能出现"原子""铯""振动频率"这些词。
+  </div>
+  <button class="interact-btn green" onclick="markDone(4)">✅ 我看完了</button>
+</div>
+
+<div class="video-card" style="border-left-color:#fa8c16;">
+  <span class="level-badge lv-challenge">视频六 · 开放挑战</span>
+  <h2 style="color:#fa8c16;">🤯 时间究竟是什么？——物理学家和哲学家的追问</h2>
+  <div class="meta">
+    <span>📂 专题演讲 · 跨学科前沿对话</span>
+    <span>⏱️ 建议 1.5-2 课时</span>
+  </div>
+
+  <div class="section-box">
+    <strong>🎯 观看任务：</strong>区分视频中物理学家和哲学家各自对"时间本质"的核心主张，找到他们之间的分歧和交集。
+  </div>
+  <div class="section-box">
+    <strong>❓ 关键问题：</strong><br>
+    1. 如果时间只是"变化"的另一个名字（没有变化就没有时间），那宇宙热寂之后还有时间吗？<br>
+    2. 你更相信"时间是宇宙的真实维度"还是"时间只是人类大脑的构造"？你的理由是什么？
+  </div>
+  <div class="pause-box">
+    <strong>03:00</strong> — 讲到"现在"这个概念——"'现在'有多长？1秒？0.1秒？还是0秒？仔细想一想，'现在'是不是一个永远在移动的边界？"
+  </div>
+  <div class="pause-box">
+    <strong>06:20</strong> — 讨论"时间箭头"时暂停——"为什么你能记住昨天但记不住明天？如果时间倒流了，我们的记忆也会倒流吗？"
+  </div>
+  <div class="task-box">
+    写一篇200字的"我的时间哲学"短评——你同意视频中哪位学者的观点？为什么？你有没有自己的"时间理论"？（提示：没有标准答案，只有更好的问题。）
+  </div>
+  <button class="interact-btn green" onclick="markDone(5)">✅ 我看完了</button>
+</div>
+
+<!-- 使用建议表 -->
+<h2 style="font-size:var(--font-h2);color:var(--primary);margin-top:24px;">📋 视频使用建议</h2>
+<div class="usage-table-wrap">
+<table class="usage-table">
+<thead>
+<tr><th>层级</th><th>视频</th><th>建议课时</th><th>前置知识</th></tr>
+</thead>
+<tbody>
+<tr><td>🌟 基础</td><td>视频一、二</td><td>各1课时</td><td>认识钟面、知道时/分/秒</td></tr>
+<tr><td>📈 进阶</td><td>视频三、四</td><td>各1-1.5课时</td><td>掌握单位换算、会计算经过时间</td></tr>
+<tr><td>🚀 挑战</td><td>视频五、六</td><td>各1.5-2课时</td><td>理解时间精度概念、具备基础科学视野</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="philosophy-box">
+  <p class="q">🤔 M10 哲学核心追问</p>
+  <p>我们用来"测量时间"的工具（日晷、钟表、原子钟），<br>本身是否也在塑造我们对"时间是什么"的认知？<br>当测量工具变得足够精确，我们离"时间的真实"更近了，还是更远了？</p>
+</div>
+
+</div>
+
+<script>
+(function(){
+  window.doneStatus = [false, false, false, false, false, false];
+  var saved = localStorage.getItem('videoProgress_4888');
+  if (saved) {
+    try {
+      var arr = JSON.parse(saved);
+      if (arr.length === 6) window.doneStatus = arr;
+    } catch(e) {}
+  }
+  function updateUI() {
+    var count = window.doneStatus.filter(Boolean).length;
+    document.getElementById('progressCount').textContent = count;
+    document.getElementById('progressFill').style.width = (count / 6 * 100) + '%';
+    var btns = document.querySelectorAll('.interact-btn.green');
+    btns.forEach(function(btn, idx){
+      if (window.doneStatus[idx]) {
+        btn.textContent = '✅ 已完成';
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+        btn.style.cursor = 'default';
+      }
+    });
+    localStorage.setItem('videoProgress_4888', JSON.stringify(window.doneStatus));
+  }
+  window.markDone = function(idx) {
+    if (window.doneStatus[idx]) return;
+    window.doneStatus[idx] = true;
+    updateUI();
+  };
+  window.scrollToEl = function(id) {
+    var el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  updateUI();
+})();
+</script>
+</body>
+</html>

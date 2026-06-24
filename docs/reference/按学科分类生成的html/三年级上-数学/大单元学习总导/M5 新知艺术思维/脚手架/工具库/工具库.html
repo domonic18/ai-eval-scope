@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具库 — 时间认知工具</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+
+.hero {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+  text-align: center;
+}
+.hero h1 {
+  font-size: var(--font-h1);
+  margin-bottom: 6px;
+}
+.hero p {
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+.section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+
+/* Category Tabs */
+.cat-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.cat-tab {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: var(--bg);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+}
+.cat-tab:hover {
+  background: var(--accent);
+  color: #fff;
+}
+.cat-tab.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+.cat-content {
+  display: none;
+  animation: fadeIn 0.35s ease;
+}
+.cat-content.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Tool Cards */
+.tool-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 800px) {
+  .tool-grid { grid-template-columns: 1fr; }
+}
+
+.tool-card {
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  transition: all 0.3s ease;
+}
+.tool-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 16px rgba(22,119,255,0.1);
+  transform: translateY(-2px);
+}
+.tool-card h3 {
+  font-size: 17px;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+.tool-card .tool-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.tool-card .tool-steps {
+  font-size: 14px;
+  padding-left: 16px;
+  margin-bottom: 6px;
+}
+.tool-card .tool-steps li {
+  margin-bottom: 3px;
+}
+.tool-card .tool-tag {
+  display: inline-block;
+  font-size: 12px;
+  background: var(--bg);
+  color: var(--primary);
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+/* Digital Tool Table */
+.digi-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+.digi-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+}
+.digi-table th:first-child { border-radius: 6px 0 0 0; }
+.digi-table th:last-child { border-radius: 0 6px 0 0; }
+.digi-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.digi-table tr:hover td {
+  background: var(--bg);
+}
+
+/* DIY Cards */
+.diy-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 600px) {
+  .diy-grid { grid-template-columns: 1fr; }
+}
+.diy-card {
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  background: var(--bg);
+}
+.diy-card h3 {
+  font-size: 17px;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.diy-card .diy-materials {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.diy-card .diy-steps {
+  font-size: 14px;
+  padding-left: 16px;
+}
+.diy-card .diy-steps li {
+  margin-bottom: 3px;
+}
+
+/* Level Cards */
+.level-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 600px) {
+  .level-grid { grid-template-columns: 1fr; }
+}
+.level-card {
+  text-align: center;
+  padding: 14px;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border);
+  transition: all 0.3s;
+}
+.level-card:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow);
+}
+.level-card .level-badge {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 6px;
+}
+.level-card .level-badge.basic { background: #52c41a; }
+.level-card .level-badge.mid { background: var(--primary); }
+.level-card .level-badge.advanced { background: #722ed1; }
+.level-card h4 { font-size: 16px; margin-bottom: 4px; }
+.level-card p { font-size: 14px; color: var(--text-secondary); }
+
+.footer {
+  text-align: center;
+  padding: 12px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="hero">
+  <h1>🧰 工具库</h1>
+  <p>用工具"放大"你的认知——观察、记录、分析时间数据</p>
+</div>
+
+<div class="section">
+  <h2>📐 工具分类</h2>
+
+  <div class="cat-tabs">
+    <div class="cat-tab active" onclick="switchCat(this, 0)">🧠 思维工具</div>
+    <div class="cat-tab" onclick="switchCat(this, 1)">💻 数字工具</div>
+    <div class="cat-tab" onclick="switchCat(this, 2)">📊 数据工具</div>
+    <div class="cat-tab" onclick="switchCat(this, 3)">🔨 动手工具</div>
+    <div class="cat-tab" onclick="switchCat(this, 4)">📈 分层推荐</div>
+  </div>
+
+  <!-- Category 1: 思维工具 -->
+  <div class="cat-content active" data-index="0">
+    <div class="tool-grid">
+      <div class="tool-card">
+        <h3>📏 时间轴模板</h3>
+        <div class="tool-desc">展示事件在时间线上的先后顺序和持续时间</div>
+        <ol class="tool-steps">
+          <li>画一条水平线，标注起点和终点时间</li>
+          <li>按比例在线上标记关键时间点</li>
+          <li>在每个时间点上方标注事件名称</li>
+          <li>用彩色箭头标注持续时间</li>
+        </ol>
+        <div class="tool-tag">适用：我的一天 · 植物生长 · 历史事件</div>
+      </div>
+      <div class="tool-card">
+        <h3>🥧 时间饼图模板</h3>
+        <div class="tool-desc">展示各类活动占总时间的比例</div>
+        <ol class="tool-steps">
+          <li>计算一天总分钟数（1440分钟）</li>
+          <li>计算每类活动的分钟数</li>
+          <li>活动时间÷1440×360°，用量角器分区</li>
+          <li>给每个区域涂上不同颜色</li>
+        </ol>
+        <div class="tool-tag">适用：分析时间分配 · 比较时间投入</div>
+      </div>
+      <div class="tool-card">
+        <h3>📊 时间柱状图模板</h3>
+        <div class="tool-desc">比较不同活动或不同日期的用时多少</div>
+        <ol class="tool-steps">
+          <li>确定横轴（活动名称）和纵轴（分钟数）</li>
+          <li>每项活动画一个柱条</li>
+          <li>高度代表分钟数</li>
+          <li>在柱条上方标注具体数字</li>
+        </ol>
+        <div class="tool-tag">适用：对比一周运动量 · 各科作业用时</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category 2: 数字工具 -->
+  <div class="cat-content" data-index="1">
+    <table class="digi-table">
+      <thead>
+        <tr><th>工具名称</th><th>用途</th><th>使用步骤</th><th>获取方式</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>⏱ 在线秒表</strong></td>
+          <td>计时体验、时间测量</td>
+          <td>点击"开始"→点"停止"→读数</td>
+          <td>timeanddate.com/stopwatch</td>
+        </tr>
+        <tr>
+          <td><strong>🍅 番茄钟App</strong></td>
+          <td>训练时间感、专注力</td>
+          <td>设25分钟→专注→5分钟休息</td>
+          <td>Forest、番茄Todo</td>
+        </tr>
+        <tr>
+          <td><strong>📱 时间记录小程序</strong></td>
+          <td>自动记录时间分配</td>
+          <td>点"开始"→切换活动→查看统计</td>
+          <td>微信搜索"时间记录"</td>
+        </tr>
+        <tr>
+          <td><strong>🧮 图形计算器</strong></td>
+          <td>辅助时间转换计算</td>
+          <td>输入分钟→自动换算为时分</td>
+          <td>手机计算器</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Category 3: 数据工具 -->
+  <div class="cat-content" data-index="2">
+    <div class="tool-grid">
+      <div class="tool-card">
+        <h3>📋 时间记录表（纸质）</h3>
+        <div class="tool-desc">五列记录每一天的时间安排</div>
+        <p style="font-size:14px;background:var(--bg);padding:8px;border-radius:6px;">
+          时间段 · 活动名称 · 开始时间 · 结束时间 · 持续时间
+        </p>
+        <div class="tool-tag">基础工具 · 易上手</div>
+      </div>
+      <div class="tool-card">
+        <h3>📈 时间数据统计表</h3>
+        <div class="tool-desc">汇总每天各类活动的总持续时间</div>
+        <p style="font-size:14px;background:var(--bg);padding:8px;border-radius:6px;">
+          日期 · 学习 · 运动 · 娱乐 · 睡眠 · 其他 · 合计
+        </p>
+        <div class="tool-tag">进阶 · 方便做对比分析</div>
+      </div>
+      <div class="tool-card">
+        <h3>🎨 "一分钟"实验记录单</h3>
+        <div class="tool-desc">记录1分钟内你做的事和数量</div>
+        <p style="font-size:14px;background:var(--bg);padding:8px;border-radius:6px;">
+          活动名称 · 完成数量 · 感受（画表情） · 挑战新纪录
+        </p>
+        <div class="tool-tag">绘本形式 · 三年级友好</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category 4: 动手工具 -->
+  <div class="cat-content" data-index="3">
+    <div class="diy-grid">
+      <div class="diy-card">
+        <h3>☀️ 简易日晷</h3>
+        <div class="diy-materials">材料：纸盘 · 吸管 · 黏土 · 量角器</div>
+        <ol class="diy-steps">
+          <li>在纸盘中心插吸管</li>
+          <li>每15度刻一条线</li>
+          <li>放室外阳光处</li>
+          <li>每整点标记影子位置</li>
+        </ol>
+        <div class="tool-tag" style="margin-top:6px;">理解太阳与时间的关系</div>
+      </div>
+      <div class="diy-card">
+        <h3>⏳ 迷你沙漏</h3>
+        <div class="diy-materials">材料：两个空塑料瓶 · 干沙子 · 胶带</div>
+        <ol class="diy-steps">
+          <li>两瓶口对口用胶带黏合</li>
+          <li>装入定量的沙子</li>
+          <li>翻转开始计时</li>
+        </ol>
+        <div class="tool-tag" style="margin-top:6px;">感受"固定时长"</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category 5: 分层推荐 -->
+  <div class="cat-content" data-index="4">
+    <div class="level-grid">
+      <div class="level-card">
+        <div class="level-badge basic">🌟 基础</div>
+        <h4>易上手</h4>
+        <p>时间记录表</p>
+        <p>在线秒表</p>
+        <p>简易沙漏</p>
+      </div>
+      <div class="level-card">
+        <div class="level-badge mid">🚀 进阶</div>
+        <h4>需指导</h4>
+        <p>时间饼图模板</p>
+        <p>番茄钟App</p>
+        <p>时间轴模板</p>
+      </div>
+      <div class="level-card">
+        <div class="level-badge advanced">🏆 高阶</div>
+        <h4>需综合运用</h4>
+        <p>时间统计与分析图表</p>
+        <p>日晷制作</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="background:linear-gradient(135deg,#f0f5ff,#e6f7ff);">
+  <h2>🎯 选工具小测试</h2>
+  <p style="font-size:15px;margin-bottom:10px;">看一看下面的场景，选一个最合适的工具：</p>
+  <div style="display:flex;flex-direction:column;gap:8px;">
+    <div style="padding:10px 14px;background:var(--card-bg);border-radius:6px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+      <span>📌 我想比较这周每天的运动时间</span>
+      <button style="padding:6px 12px;border:2px solid var(--primary);background:var(--card-bg);border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;color:var(--primary);" onclick="this.textContent='✅ 柱状图！';this.style.background='var(--primary)';this.style.color='#fff'">选工具</button>
+    </div>
+    <div style="padding:10px 14px;background:var(--card-bg);border-radius:6px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+      <span>📌 我想展示一天各项活动占了多少比例</span>
+      <button style="padding:6px 12px;border:2px solid var(--primary);background:var(--card-bg);border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;color:var(--primary);" onclick="this.textContent='✅ 饼图！';this.style.background='var(--primary)';this.style.color='#fff'">选工具</button>
+    </div>
+    <div style="padding:10px 14px;background:var(--card-bg);border-radius:6px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+      <span>📌 我想像古人一样用太阳测时间</span>
+      <button style="padding:6px 12px;border:2px solid var(--primary);background:var(--card-bg);border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;color:var(--primary);" onclick="this.textContent='✅ 做日晷！';this.style.background='var(--primary)';this.style.color='#fff'">选工具</button>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  M5 新知艺术思维 · 脚手架 · 工具库
+</div>
+
+</div>
+
+<script>
+function switchCat(el, index) {
+  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.cat-content').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelector(`.cat-content[data-index="${index}"]`).classList.add('active');
+}
+</script>
+</body>
+</html>

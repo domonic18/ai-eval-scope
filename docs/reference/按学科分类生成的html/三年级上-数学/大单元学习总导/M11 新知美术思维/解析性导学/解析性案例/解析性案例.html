@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性案例（7阶）— M11 新知美术思维</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+  --green: #52c41a;
+  --orange: #fa8c16;
+  --red: #ff4d4f;
+  --purple: #722ed1;
+  --pink: #eb2f96;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  padding: 0;
+  margin: 0;
+}
+.container { width: 100%; max-width: none; padding: 20px; box-sizing: border-box; }
+header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 8px; }
+header p { font-size: 16px; opacity: 0.9; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.card h2 { font-size: var(--font-h2); color: var(--primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.card h2 .badge {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 12px;
+  padding: 2px 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.card h3 { font-size: 17px; color: var(--text); margin: 16px 0 8px; }
+.card p { margin-bottom: 10px; color: var(--text); }
+.card ul, .card ol { padding-left: 22px; margin-bottom: 10px; }
+.card li { margin-bottom: 6px; }
+.table-wrap { overflow-x: auto; margin: 12px 0; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+table th { background: var(--primary); color: #fff; font-weight: 600; padding: 8px 10px; text-align: left; }
+table td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+table tr:nth-child(even) { background: #fafafa; }
+table tr:hover { background: #e6f4ff; }
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  margin: 12px 0;
+}
+.overview-item {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 6px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.overview-item:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(22,119,255,0.15); }
+.overview-item .step-num { font-size: 20px; font-weight: 700; color: var(--primary); }
+.overview-item .step-name { font-weight: 600; color: var(--text); margin: 4px 0; }
+.overview-item .step-desc { font-size: 14px; color: var(--text-secondary); }
+.color-demo { display: inline-block; width: 28px; height: 20px; border-radius: 4px; margin-right: 6px; vertical-align: middle; }
+.record-table td:first-child { font-weight: 600; white-space: nowrap; }
+.interact-btn {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 18px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+.interact-btn:hover { background: var(--primary-hover); }
+.interact-btn:active { transform: scale(0.96); }
+.hint-box {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+  padding: 12px;
+  margin: 10px 0;
+  display: none;
+}
+.hint-box.show { display: block; }
+.toggle-label { color: var(--primary); cursor: pointer; user-select: none; }
+.toggle-label:hover { text-decoration: underline; }
+.reflect-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+.reflect-card {
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: 6px;
+  padding: 14px;
+  text-align: center;
+  transition: all 0.3s;
+}
+.reflect-card:hover { transform: scale(1.02); }
+.reflect-card .q-num { font-size: 22px; font-weight: 700; color: var(--orange); }
+.reflect-card p { font-size: 14px; margin-top: 6px; }
+.principle-tag {
+  display: inline-block;
+  background: #e6f7ff;
+  color: #1890ff;
+  border: 1px solid #91d5ff;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 13px;
+  margin: 2px 4px 2px 0;
+}
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  header { padding: 18px 14px; }
+  .overview-grid { grid-template-columns: 1fr; }
+  table { font-size: 13px; }
+  table th, table td { padding: 6px 8px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>🎨 解析性案例（7阶）</h1>
+  <p>M11 新知美术思维 · 用"解析的眼睛"看懂每一幅时间作品</p>
+</header>
+
+<!-- 七阶概览 -->
+<div class="card">
+  <h2>📋 七阶案例总览</h2>
+  <p>跟着下面 7 个案例，一步步学会用「解析性原理」看懂时间可视化作品！点击每个案例可以快速跳转 👇</p>
+  <div class="overview-grid">
+    <div class="overview-item" onclick="document.getElementById('stage1').scrollIntoView({behavior:'smooth'})">
+      <div class="step-num">01</div>
+      <div class="step-name">课程表怎么看</div>
+      <div class="step-desc">整体形式识别法 + 色彩解码法</div>
+    </div>
+    <div class="overview-item" onclick="document.getElementById('stage2').scrollIntoView({behavior:'smooth'})">
+      <div class="step-num">02</div>
+      <div class="step-name">教室里的作息时间表</div>
+      <div class="step-desc">要素完整性检查法</div>
+    </div>
+    <div class="overview-item" onclick="document.getElementById('stage3').scrollIntoView({behavior:'smooth'})">
+      <div class="step-num">03</div>
+      <div class="step-name">家庭周末安排图</div>
+      <div class="step-desc">比例验证法</div>
+    </div>
+    <div class="overview-item" onclick="document.getElementById('stage4').scrollIntoView({behavior:'smooth'})">
+      <div class="step-num">04</div>
+      <div class="step-name">课本里的时间图示</div>
+      <div class="step-desc">比例验证法</div>
+    </div>
+    <div class="overview-item" onclick="document.getElementById('stage5').scrollIntoView({behavior:'smooth'})">
+      <div class="step-num">05</div>
+      <div class="step-name">历史朝代时间轴</div>
+      <div class="step-desc">全部原理综合运用</div>
+    </div>
+    <div class="overview-item" onclick="document.getElementById('stage6').scrollIntoView({behavior:'smooth'})">
+      <div class="step-num">06</div>
+      <div class="step-name">医院挂号等待时间图</div>
+      <div class="step-desc">比例验证法 + 色彩解码法</div>
+    </div>
+    <div class="overview-item" onclick="document.getElementById('stage7').scrollIntoView({behavior:'smooth'})">
+      <div class="step-num">07</div>
+      <div class="step-name">找一幅"问题"时间作品</div>
+      <div class="step-desc">全部原理综合运用</div>
+    </div>
+  </div>
+</div>
+
+<!-- 完整表格 -->
+<div class="card">
+  <h2>📊 七阶案例速查表</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>阶次</th><th>案例名称</th><th>分析对象</th><th>调用原理</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>第1阶</td><td>课程表怎么看</td><td>一份有颜色的课程表</td><td><span class="principle-tag">整体形式识别法</span><span class="principle-tag">色彩解码法</span></td></tr>
+        <tr><td>第2阶</td><td>教室里的作息时间表</td><td>教室张贴的作息表</td><td><span class="principle-tag">要素完整性检查法</span></td></tr>
+        <tr><td>第3阶</td><td>家庭周末安排图</td><td>一个家庭的周末时间安排</td><td><span class="principle-tag">比例验证法</span></td></tr>
+        <tr><td>第4阶</td><td>课本里的时间图示</td><td>数学课本中的时间图</td><td><span class="principle-tag">比例验证法</span></td></tr>
+        <tr><td>第5阶</td><td>历史朝代时间轴</td><td>中国历史朝代时间轴</td><td><span class="principle-tag">综合运用</span></td></tr>
+        <tr><td>第6阶</td><td>医院挂号等待时间图</td><td>医院各科室等待时间数据</td><td><span class="principle-tag">比例验证法</span><span class="principle-tag">色彩解码法</span></td></tr>
+        <tr><td>第7阶</td><td>找一幅"问题"时间作品</td><td>自选一幅不完美的作品</td><td><span class="principle-tag">全部原理综合运用</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 第1阶 -->
+<div class="card" id="stage1">
+  <h2><span class="badge">第1阶</span> 课程表怎么看</h2>
+  <p><strong>📌 案例材料：</strong>下面的课程表用了颜色区分课程类型——</p>
+  <p>
+    <span class="color-demo" style="background:#f5222d;"></span> 语文=红色
+    <span class="color-demo" style="background:#1677ff;"></span> 数学=蓝色
+    <span class="color-demo" style="background:#52c41a;"></span> 英语=绿色
+    <span class="color-demo" style="background:#fa8c16;"></span> 体育=橙色
+    <span class="color-demo" style="background:#722ed1;"></span> 美术=紫色
+    <span class="color-demo" style="background:#eb2f96;"></span> 音乐=粉色
+  </p>
+  <p>但课程表上没有图例，每个格子只写了科目名称，没有写具体时间（只写了第几节课）。</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>节次</th><th>周一</th><th>周二</th><th>周三</th></tr></thead>
+      <tbody>
+        <tr><td>第1节</td><td style="color:#f5222d;">语文</td><td style="color:#1677ff;">数学</td><td style="color:#52c41a;">英语</td></tr>
+        <tr><td>第2节</td><td style="color:#1677ff;">数学</td><td style="color:#f5222d;">语文</td><td style="color:#f5222d;">语文</td></tr>
+        <tr><td>第3节</td><td style="color:#fa8c16;">体育</td><td style="color:#722ed1;">美术</td><td style="color:#1677ff;">数学</td></tr>
+        <tr><td>第4节</td><td style="color:#52c41a;">英语</td><td style="color:#fa8c16;">体育</td><td style="color:#eb2f96;">音乐</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>🔍 解析任务</h3>
+  <p>用"整体形式识别法"和"色彩解码法"分析这份课程表。它是什么形式？颜色使用合理吗？缺少什么要素？</p>
+
+  <h3>🗺️ 解析路径</h3>
+  <p>识别形式(表格型)→分析颜色(6种颜色，有对应但没图例)→检查完整性→得出结论</p>
+
+  <h3>📝 分析记录表</h3>
+  <div class="table-wrap">
+    <table class="record-table">
+      <thead><tr><th>分析维度</th><th>你的发现</th><th>参考答案</th></tr></thead>
+      <tbody>
+        <tr><td>作品类型</td><td contenteditable="true" style="background:#fffbe6;">✏️ 点击填写</td><td>二维表格（节次 × 星期）</td></tr>
+        <tr><td>颜色数量</td><td contenteditable="true" style="background:#fffbe6;">✏️ 点击填写</td><td>6种颜色</td></tr>
+        <tr><td>是否有图例</td><td contenteditable="true" style="background:#fffbe6;">✏️ 点击填写</td><td>❌ 没有图例</td></tr>
+        <tr><td>缺少的要素</td><td contenteditable="true" style="background:#fffbe6;">✏️ 点击填写</td><td>具体时间、图例、日期信息</td></tr>
+        <tr><td>建议改进</td><td contenteditable="true" style="background:#fffbe6;">✏️ 点击填写</td><td>加图例、加具体时间</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <button class="interact-btn" onclick="toggleHint('hint1')">💡 看参考思路</button>
+  <div class="hint-box" id="hint1">
+    <p>形式是<strong>二维表格</strong>（节次×星期）。颜色逻辑清晰（每种颜色对应一种课程）但<strong>缺图例</strong>。缺少的要素：具体时间（第1节=8:00-8:40？）、图例说明、完整日期信息。</p>
+  </div>
+</div>
+
+<!-- 第2阶 -->
+<div class="card" id="stage2">
+  <h2><span class="badge">第2阶</span> 教室里的作息时间表</h2>
+  <p><strong>📌 案例材料：</strong>教室墙上贴了一份作息时间表：</p>
+  <p style="background:#f0f5ff; padding:12px; border-radius:6px; font-size:16px;">
+    🕐 8:00-8:40 第1节 &nbsp;|&nbsp; 8:50-9:30 第2节 &nbsp;|&nbsp; 9:30-10:00 大课间<br>
+    🕐 10:00-10:40 第3节 &nbsp;|&nbsp; 10:50-11:30 第4节
+  </p>
+  <p>有具体时间，但<strong>没有图形展示</strong>。</p>
+
+  <h3>🔍 解析任务</h3>
+  <p>用"要素完整性检查法"分析：如果要把这份作息表画成时间可视化作品，需要补充哪些要素？用哪种形式最合适？</p>
+
+  <h3>💡 互动思考</h3>
+  <p>👇 点击选择你认为最合适的形式：</p>
+  <div style="display:flex; gap:10px; flex-wrap:wrap; margin:10px 0;">
+    <button class="interact-btn" onclick="checkForm('formA',this)">📊 柱状图</button>
+    <button class="interact-btn" onclick="checkForm('formB',this)">📏 横向时间轴</button>
+    <button class="interact-btn" onclick="checkForm('formC',this)">🎯 饼图</button>
+    <button class="interact-btn" onclick="checkForm('formD',this)">📋 纯文字表</button>
+  </div>
+  <div id="formFeedback" style="margin-top:8px; font-weight:600;"></div>
+
+  <button class="interact-btn" onclick="toggleHint('hint2')">💡 看解析思路</button>
+  <div class="hint-box" id="hint2">
+    <p><strong>最合适的形式：横向时间轴。</strong>因为作息表是按时间顺序排列的，用一条从左到右的时间轴，把每节课的色块按比例画在轴上，能直观看到时间分配和先后顺序。</p>
+    <p>需要补充的要素：<strong>总标题</strong>（"每日作息时间表"）、<strong>时间轴刻度</strong>（标注整点）、<strong>活动色块</strong>（每种活动用不同颜色）、<strong>时长标注</strong>（每节课40分钟等）。</p>
+  </div>
+</div>
+
+<!-- 第3阶 -->
+<div class="card" id="stage3">
+  <h2><span class="badge">第3阶</span> 家庭周末安排图</h2>
+  <p><strong>📌 案例材料：</strong>小明画的"家庭周末安排"展示了周六全家的活动安排。它的时间轴是<strong>圆形</strong>的（像时钟一样）。但妈妈发现女儿画的"做作业1小时"色块和"看电视1小时"色块大小不一样。</p>
+
+  <h3>🔍 解析任务</h3>
+  <p>用"比例验证法"判断：</p>
+  <div style="display:flex; gap:20px; flex-wrap:wrap; margin:12px 0; padding:14px; background:#f6ffed; border-radius:6px;">
+    <div style="text-align:center; padding:10px; background:#fff; border-radius:6px; flex:1; min-width:140px;">
+      <div style="width:80px; height:80px; border-radius:50%; background:#e6f7ff; border:3px solid #1677ff; margin:0 auto; display:flex; align-items:center; justify-content:center; font-size:13px; color:#1677ff; font-weight:600;">r=2cm<br>12:00-13:00<br>吃饭</div>
+      <p style="margin-top:6px; font-size:14px;">🍚 吃饭 r = 2 cm</p>
+    </div>
+    <div style="text-align:center; padding:10px; background:#fff; border-radius:6px; flex:1; min-width:140px;">
+      <div style="width:60px; height:60px; border-radius:50%; background:#fff7e6; border:3px solid #fa8c16; margin:0 auto; display:flex; align-items:center; justify-content:center; font-size:13px; color:#fa8c16; font-weight:600;">r=1.5cm<br>15:00-16:00<br>阅读</div>
+      <p style="margin-top:6px; font-size:14px;">📚 阅读 r = 1.5 cm</p>
+    </div>
+  </div>
+  <p><strong>问题：</strong>同一个时长（都是1小时）却用了不同大小的色块——这是比例问题还是设计意图？</p>
+
+  <button class="interact-btn" onclick="toggleHint('hint3')">💡 看分析</button>
+  <div class="hint-box" id="hint3">
+    <p><strong>这是比例问题。</strong>两个活动时长都是1小时，按比例应该是同样大小的色块。这里色块半径不同（2cm vs 1.5cm），面积比大约是(2²):(1.5²)=4:2.25≈1.78:1，相差很大。</p>
+    <p>如果作者想用面积表示时长，就需要统一比例尺。否则观众会被误导，以为阅读比吃饭时间短。</p>
+    <p><strong>结论：</strong>这不是合理的设计意图，而是比例不一致的错误。</p>
+  </div>
+</div>
+
+<!-- 第4阶 -->
+<div class="card" id="stage4">
+  <h2><span class="badge">第4阶</span> 课本里的时间图示</h2>
+  <p><strong>📌 案例材料：</strong>数学课本第3页有一幅图："小明7:30从家出发，7:45到学校，用了15分钟。"图画上有<strong>一条时间线</strong>，标注了7:30和7:45两个时间点，中间画了一个小闹钟表示经过时间。</p>
+
+  <h3>🔍 解析任务</h3>
+  <p>用"比例验证法"分析：7:30到7:45之间在图上画了多长距离？如果1小时有10厘米，"15分钟"应该画2.5厘米，课本图上的比例对吗？</p>
+
+  <div style="background:#f0f5ff; border-radius:8px; padding:16px; margin:12px 0;">
+    <p style="font-weight:600;">📏 比例计算器</p>
+    <p>1小时 = 10厘米 → 1分钟 = 10 ÷ 60 ≈ 0.167厘米</p>
+    <p>15分钟 = 15 × 0.167 = <strong>2.5厘米</strong></p>
+    <p>👇 拖动滑块调整位置，感受比例变化：</p>
+    <input type="range" min="0" max="100" value="25" style="width:100%; margin:8px 0;" oninput="updateScale(this.value)">
+    <div style="position:relative; height:40px; background:#d9d9d9; border-radius:4px; margin:8px 0;">
+      <div id="scaleBar" style="position:absolute; left:0; top:0; height:40px; width:25%; background:var(--primary); border-radius:4px; transition:width 0.2s;"></div>
+      <div style="position:absolute; left:0; top:-18px; font-size:12px; color:var(--text-secondary);">7:30</div>
+      <div id="scaleEndLabel" style="position:absolute; left:25%; top:-18px; font-size:12px; color:var(--text-secondary); transform:translateX(-50%);">7:45</div>
+    </div>
+    <p id="scaleInfo">当前比例：15分钟 → 25% 的1小时长度</p>
+  </div>
+
+  <button class="interact-btn" onclick="toggleHint('hint4')">💡 看解析</button>
+  <div class="hint-box" id="hint4">
+    <p>按比例：1小时画10厘米，那么15分钟（¼小时）就应该是<strong>2.5厘米</strong>。</p>
+    <p>实际课本图中的距离需要量一量才知道。如果图上15分钟画的长度远大于或远小于2.5厘米，就存在比例问题。</p>
+    <p>比例一致是时间可视化最重要的原则之一——<strong>等时长 = 等长度</strong>。</p>
+  </div>
+</div>
+
+<!-- 第5阶 -->
+<div class="card" id="stage5">
+  <h2><span class="badge">第5阶</span> 历史朝代时间轴</h2>
+  <p><strong>📌 案例材料：</strong>你们班走廊上贴了一幅"中国历史朝代时间轴"——从夏朝(约前2070年)到清朝(1912年)，宽3米，每个朝代的色块长度与统治年数成比例。</p>
+
+  <h3>🔍 解析任务</h3>
+  <p>用全部已学原理综合分析：这是哪种形式的图？颜色怎么用的？各部分比例对吗？包含的要素完整吗？时间顺序正确吗？</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>分析维度</th><th>你的判断</th></tr></thead>
+      <tbody>
+        <tr><td>作品形式</td><td>横向时间轴（色块分段式）</td></tr>
+        <tr><td>颜色使用</td><td>每个朝代用不同颜色区分，便于识别</td></tr>
+        <tr><td>比例是否正确</td><td>色块长度 = 统治年数 × 比例尺，需验证</td></tr>
+        <tr><td>要素是否完整</td><td>应有：朝代名称、起止年份、持续时间、图例</td></tr>
+        <tr><td>时间顺序</td><td>从左到右按时间先后排列</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <button class="interact-btn" onclick="toggleHint('hint5')">💡 参考分析</button>
+  <div class="hint-box" id="hint5">
+    <p>这是一幅<strong>横向分段式时间轴</strong>。用不同颜色区分朝代是很好的做法，但总宽度3米要容纳约4000年历史，每个朝代的长度 = (该朝代年数÷总年数)×3米。汉朝(约400年)应占约30厘米，而秦朝(15年)只占约1厘米。</p>
+    <p><strong>常见问题：</strong>有时为了美观，短朝代被人为拉长——这就破坏了比例一致性！</p>
+  </div>
+</div>
+
+<!-- 第6阶 -->
+<div class="card" id="stage6">
+  <h2><span class="badge">第6阶</span> 医院挂号等待时间图</h2>
+  <p><strong>📌 案例材料：</strong>某医院在大屏幕上显示了各科室的平均等待时间，用<strong>柱状图</strong>表示：</p>
+
+  <div style="display:flex; align-items:flex-end; gap:12px; height:180px; padding:10px 10px 0; background:#fff; border-radius:6px; margin:12px 0;">
+    <div style="flex:1; text-align:center;">
+      <div style="height:120px; background:#1677ff; border-radius:4px 4px 0 0; transition:height 0.5s;"></div>
+      <div style="font-size:12px; margin-top:4px;">内科<br>45分</div>
+    </div>
+    <div style="flex:1; text-align:center;">
+      <div style="height:80px; background:#52c41a; border-radius:4px 4px 0 0;"></div>
+      <div style="font-size:12px; margin-top:4px;">外科<br>30分</div>
+    </div>
+    <div style="flex:1; text-align:center;">
+      <div style="height:160px; background:#ff4d4f; border-radius:4px 4px 0 0;"></div>
+      <div style="font-size:12px; margin-top:4px;">儿科<br>60分</div>
+    </div>
+    <div style="flex:1; text-align:center;">
+      <div style="height:53px; background:#fa8c16; border-radius:4px 4px 0 0;"></div>
+      <div style="font-size:12px; margin-top:4px;">眼科<br>20分</div>
+    </div>
+    <div style="flex:1; text-align:center;">
+      <div style="height:40px; background:#722ed1; border-radius:4px 4px 0 0;"></div>
+      <div style="font-size:12px; margin-top:4px;">口腔科<br>15分</div>
+    </div>
+    <div style="flex:1; text-align:center;">
+      <div style="height:67px; background:#eb2f96; border-radius:4px 4px 0 0;"></div>
+      <div style="font-size:12px; margin-top:4px;">耳鼻喉科<br>25分</div>
+    </div>
+  </div>
+
+  <h3>🔍 解析任务</h3>
+  <p>用"比例验证法"检查柱状图的比例——柱子高度是否和等待时间成比例？</p>
+  <p>再用"要素完整性检查法"——它有标题吗？有坐标轴标注吗？有图例吗？</p>
+
+  <button class="interact-btn" onclick="toggleHint('hint6')">💡 参考分析</button>
+  <div class="hint-box" id="hint6">
+    <p><strong>比例检查：</strong>以口腔科15分钟为基准(1cm)，内科45分=3cm✓，外科30分=2cm✓，儿科60分=4cm✓，眼科20分≈1.33cm✓，耳鼻喉25分≈1.67cm✓。比例基本正确。</p>
+    <p><strong>完整性检查：</strong>图中缺少标题（"各科室平均等待时间"）、缺少纵轴刻度标注（分钟数）、缺少横轴说明。这些信息能让观众更快读懂图表。</p>
+  </div>
+</div>
+
+<!-- 第7阶 -->
+<div class="card" id="stage7">
+  <h2><span class="badge">第7阶</span> 找一幅"问题"时间作品</h2>
+  <p><strong>📌 任务：</strong>请在你身边找一幅"存在明显问题"的时间可视化作品（可以是同学画的、网上找到的、或者你自己画的）。用全部解析性原理分析它的问题出在哪。</p>
+
+  <h3>五步分析法</h3>
+  <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:10px; margin:12px 0;">
+    <div style="background:#e6f7ff; padding:10px; border-radius:6px; text-align:center;">
+      <div style="font-size:24px;">👀</div>
+      <div style="font-weight:600; font-size:14px;">第一步</div>
+      <div style="font-size:13px; color:var(--text-secondary);">先看见什么</div>
+    </div>
+    <div style="background:#f6ffed; padding:10px; border-radius:6px; text-align:center;">
+      <div style="font-size:24px;">🏷️</div>
+      <div style="font-weight:600; font-size:14px;">第二步</div>
+      <div style="font-size:13px; color:var(--text-secondary);">判断类型</div>
+    </div>
+    <div style="background:#fff7e6; padding:10px; border-radius:6px; text-align:center;">
+      <div style="font-size:24px;">🔬</div>
+      <div style="font-weight:600; font-size:14px;">第三步</div>
+      <div style="font-size:13px; color:var(--text-secondary);">调用分析方法</div>
+    </div>
+    <div style="background:#fff1f0; padding:10px; border-radius:6px; text-align:center;">
+      <div style="font-size:24px;">🧠</div>
+      <div style="font-weight:600; font-size:14px;">第四步</div>
+      <div style="font-size:13px; color:var(--text-secondary);">推理分析</div>
+    </div>
+    <div style="background:#f9f0ff; padding:10px; border-radius:6px; text-align:center;">
+      <div style="font-size:24px;">✅</div>
+      <div style="font-weight:600; font-size:14px;">第五步</div>
+      <div style="font-size:13px; color:var(--text-secondary);">形成结论</div>
+    </div>
+  </div>
+
+  <textarea placeholder="✏️ 在这里写出你的300字分析报告……" style="width:100%; min-height:120px; padding:12px; border:2px solid var(--border); border-radius:6px; font-size:15px; font-family:inherit; resize:vertical;"></textarea>
+</div>
+
+<!-- 综合反思 -->
+<div class="card">
+  <h2>🤔 综合反思</h2>
+  <div class="reflect-grid">
+    <div class="reflect-card">
+      <div class="q-num">Q1</div>
+      <p>这7个案例中，哪个最先让你"啊哈，明白了"？为什么？</p>
+    </div>
+    <div class="reflect-card">
+      <div class="q-num">Q2</div>
+      <p>哪个案例最难分析？困难在哪里？</p>
+    </div>
+    <div class="reflect-card">
+      <div class="q-num">Q3</div>
+      <p>你最常用的解析性原理是哪一条？用得最少的是哪一条？</p>
+    </div>
+    <div class="reflect-card">
+      <div class="q-num">Q4</div>
+      <p>完成这些分析后，再看小明的"时间彩虹图"——你的看法有变化吗？</p>
+    </div>
+    <div class="reflect-card">
+      <div class="q-num">Q5</div>
+      <p>这些分析练习对你自己画时间图谱有什么帮助？</p>
+    </div>
+  </div>
+</div>
+
+</div>
+<script>
+function toggleHint(id) { document.getElementById(id).classList.toggle('show'); }
+function updateScale(val) {
+  const pct = val + '%';
+  document.getElementById('scaleBar').style.width = pct;
+  document.getElementById('scaleEndLabel').style.left = pct;
+  const mins = Math.round(val * 0.6);
+  document.getElementById('scaleInfo').textContent = '当前比例：' + mins + '分钟 → ' + val + '% 的1小时长度';
+}
+function checkForm(type, btn) {
+  const fb = document.getElementById('formFeedback');
+  const btns = document.querySelectorAll('#stage2 .interact-btn');
+  btns.forEach(b => { b.style.background = '#1677ff'; });
+  if (type === 'formB') {
+    fb.innerHTML = '✅ 正确！横向时间轴最能直观展示时间顺序和时长比例。';
+    fb.style.color = '#52c41a';
+    btn.style.background = '#52c41a';
+  } else {
+    fb.innerHTML = '❌ 不太合适。试试"横向时间轴"——按时间顺序从左到右排列最直观。';
+    fb.style.color = '#ff4d4f';
+    btn.style.background = '#ff4d4f';
+  }
+}
+</script>
+</body>
+</html>

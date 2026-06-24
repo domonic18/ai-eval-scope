@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目社区 — 时、分、秒项目库</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff;
+  padding: 32px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+  text-align: center;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+.header p {
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+/* Filter Tabs */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 24px;
+  justify-content: center;
+}
+.filter-btn {
+  padding: 8px 20px;
+  border: 2px solid var(--primary);
+  border-radius: 20px;
+  background: var(--card-bg);
+  color: var(--primary);
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-family: inherit;
+}
+.filter-btn:hover, .filter-btn.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* Project Grid */
+.project-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+@media (min-width: 768px) {
+  .project-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (min-width: 1024px) {
+  .project-grid { grid-template-columns: 1fr 1fr 1fr; }
+}
+
+.project-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: transform 0.3s, box-shadow 0.3s;
+  cursor: pointer;
+}
+.project-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(22,119,255,0.12);
+}
+
+.project-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.badge-short { background: #e6fffb; color: #13c2c2; }
+.badge-medium { background: #fff7e6; color: #fa8c16; }
+.badge-long { background: #f0f5ff; color: #1677ff; }
+
+.project-card-inner {
+  padding: 20px;
+}
+
+.project-title {
+  font-size: var(--font-h2);
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: var(--text);
+}
+
+.project-meta {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+.project-desc {
+  margin-bottom: 12px;
+  color: var(--text);
+}
+
+.project-tasks {
+  list-style: none;
+  padding: 0;
+}
+.project-tasks li {
+  position: relative;
+  padding-left: 20px;
+  margin-bottom: 6px;
+  font-size: 15px;
+}
+.project-tasks li::before {
+  content: "✦";
+  position: absolute;
+  left: 0;
+  color: var(--primary);
+}
+
+.project-detail {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s ease;
+}
+.project-card.expanded .project-detail {
+  max-height: 800px;
+}
+
+.project-detail-inner {
+  padding: 0 20px 20px;
+  border-top: 1px solid var(--border);
+}
+
+.project-detail-inner h4 {
+  font-size: 16px;
+  color: var(--primary);
+  margin: 12px 0 8px;
+}
+
+.project-detail-inner ul {
+  list-style: none;
+  padding: 0;
+}
+.project-detail-inner ul li {
+  position: relative;
+  padding-left: 18px;
+  margin-bottom: 4px;
+  font-size: 15px;
+}
+.project-detail-inner ul li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: var(--primary);
+}
+
+/* Philosophy hint */
+.philosophy-box {
+  background: linear-gradient(135deg, #f0f5ff, #e6f7ff);
+  border-left: 4px solid var(--primary);
+  padding: 20px 24px;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  margin: 28px 0;
+}
+.philosophy-box h3 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+.philosophy-box p {
+  font-size: 15px;
+}
+
+/* Path Table */
+.path-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 15px;
+}
+.path-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 14px;
+  text-align: left;
+}
+.path-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.path-table tr:hover td {
+  background: #f0f5ff;
+}
+
+/* Toggle icon */
+.expand-icon {
+  display: inline-block;
+  transition: transform 0.3s;
+  margin-left: 6px;
+}
+.project-card.expanded .expand-icon {
+  transform: rotate(180deg);
+}
+
+/* Pagination / navigation for community feel */
+.community-nav {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 28px;
+}
+.community-nav button {
+  padding: 10px 24px;
+  border: none;
+  border-radius: var(--border-radius);
+  background: var(--primary);
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s;
+  font-family: inherit;
+}
+.community-nav button:hover {
+  background: var(--primary-hover);
+}
+
+@media (max-width: 600px) {
+  .container { padding: 16px 12px; }
+  .header { padding: 24px 16px; }
+  .project-title { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🌱 项目社区</h1>
+  <p>数学三年级上 · 时、分、秒 × M10 新知哲学思维 · 项目库脚手架</p>
+</div>
+
+<div class="filter-bar">
+  <button class="filter-btn active" onclick="filterProjects('all', this)">全部项目</button>
+  <button class="filter-btn" onclick="filterProjects('short', this)">短周期 · 1-3天</button>
+  <button class="filter-btn" onclick="filterProjects('medium', this)">中周期 · 1-2周</button>
+  <button class="filter-btn" onclick="filterProjects('long', this)">长周期 · 1月+</button>
+</div>
+
+<div class="project-grid" id="projectGrid">
+
+  <!-- 项目1: 简易日晷 -->
+  <div class="project-card" data-type="short" onclick="toggleCard(this)">
+    <div class="project-card-inner">
+      <span class="project-badge badge-short">短周期 · 1-3天</span>
+      <div class="project-title">☀️ 制作简易日晷 <span class="expand-icon">▾</span></div>
+      <div class="project-meta">
+        <span>🎯 理解时间度量的起源</span>
+        <span>📅 适合新课导入</span>
+      </div>
+      <p class="project-desc">通过动手制作日晷，理解太阳与时间的关系，感受"时间度量"的起源。</p>
+      <ul class="project-tasks">
+        <li>阅读日晷原理图文资料</li>
+        <li>用纸板、吸管制作简易日晷</li>
+        <li>在阳光下观测并记录影子移动</li>
+      </ul>
+    </div>
+    <div class="project-detail">
+      <div class="project-detail-inner">
+        <h4>📋 完整阶段任务</h4>
+        <ul>
+          <li>阅读日晷原理图文资料（0.5天）</li>
+          <li>用纸板、吸管制作简易日晷，标注大致时刻（1天）</li>
+          <li>在阳光下观测并记录影子的移动（0.5天）</li>
+          <li>反思：影子为什么能表示时间？时间真的是"走"出来的吗？（0.5天）</li>
+        </ul>
+        <h4>📦 成果形式</h4>
+        <p>日晷实物 + 观测记录表</p>
+        <h4>📊 评价标准</h4>
+        <p>日晷刻度基本准确（60%）；观测记录完整（20%）；哲学追问反思言之有物（20%）</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 项目2: 感受1分钟 -->
+  <div class="project-card" data-type="short" onclick="toggleCard(this)">
+    <div class="project-card-inner">
+      <span class="project-badge badge-short">短周期 · 1-3天</span>
+      <div class="project-title">⏱️ 用身体感受1分钟 <span class="expand-icon">▾</span></div>
+      <div class="project-meta">
+        <span>🎯 体会时间的主观性</span>
+        <span>📅 适合第一课时</span>
+      </div>
+      <p class="project-desc">不借助钟表，用身体活动感知1分钟的长度，体会"时间的主观性"。</p>
+      <ul class="project-tasks">
+        <li>闭眼静坐，在觉得"1分钟到"时举手</li>
+        <li>做不同活动分别计时1分钟</li>
+        <li>讨论：为什么有时1分钟很长、有时很短？</li>
+      </ul>
+    </div>
+    <div class="project-detail">
+      <div class="project-detail-inner">
+        <h4>📋 完整阶段任务</h4>
+        <ul>
+          <li>闭眼静坐，在觉得"1分钟到"时举手，记下与实际时间的差距（0.5天）</li>
+          <li>做不同活动（跳绳、画画、说绕口令），分别计时1分钟，感受快慢差异（1天）</li>
+          <li>"新知哲学"讨论：为什么有时候1分钟很长、有时候很短？（0.5天）</li>
+        </ul>
+        <h4>📦 成果形式</h4>
+        <p>个人感知记录表 + 小组讨论便签墙</p>
+        <h4>📊 评价标准</h4>
+        <p>感知数据记录真实完整（50%）；能提出至少1个关于时间主观性的问题（30%）；参与讨论（20%）</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 项目3: 时间管理方案 -->
+  <div class="project-card" data-type="medium" onclick="toggleCard(this)">
+    <div class="project-card-inner">
+      <span class="project-badge badge-medium">中周期 · 1-2周</span>
+      <div class="project-title">📋 我的时间管理方案 <span class="expand-icon">▾</span></div>
+      <div class="project-meta">
+        <span>🎯 培养时间统筹意识</span>
+        <span>📅 知识点学完后</span>
+      </div>
+      <p class="project-desc">结合自身作息，制定可视化时间管理方案，培养时间统筹意识。</p>
+      <ul class="project-tasks">
+        <li>连续3天记录放学后的时间花费</li>
+        <li>统计各项活动用时，绘制条形统计图</li>
+        <li>设计并制作个性化时间管理表</li>
+      </ul>
+    </div>
+    <div class="project-detail">
+      <div class="project-detail-inner">
+        <h4>📋 完整阶段任务</h4>
+        <ul>
+          <li>连续3天记录放学后的时间花费，以15分钟为单位（3天）</li>
+          <li>统计各项活动用时，绘制条形统计图（2天）</li>
+          <li>分析"时间都去哪了"，找出可优化之处（1天）</li>
+          <li>设计并制作个性化时间管理表（含休息、学习、运动）（2天）</li>
+          <li>试行2天并调整，撰写反思日记（2天）</li>
+        </ul>
+        <h4>📦 成果形式</h4>
+        <p>一周时间统计图 + 个人时间管理表 + 300字反思日记</p>
+        <h4>📊 评价标准</h4>
+        <p>统计图数据准确、绘图规范（30%）；管理表合理、可执行（30%）；反思日记体现思考（25%）；团队协作（15%）</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 项目4: 古代计时工具研究报告 -->
+  <div class="project-card" data-type="medium" onclick="toggleCard(this)">
+    <div class="project-card-inner">
+      <span class="project-badge badge-medium">中周期 · 1-2周</span>
+      <div class="project-title">🏛️ 古代计时工具研究报告 <span class="expand-icon">▾</span></div>
+      <div class="project-meta">
+        <span>🎯 理解计时技术演进</span>
+        <span>📅 课堂拓展+社团课</span>
+      </div>
+      <p class="project-desc">探究古代计时工具（日晷、漏刻、沙漏、燃香钟），理解"时间测量技术的演进"。</p>
+      <ul class="project-tasks">
+        <li>分小组查阅一种古代计时工具资料</li>
+        <li>制作信息简报，含原理图与对比</li>
+        <li>复原简易模型</li>
+      </ul>
+    </div>
+    <div class="project-detail">
+      <div class="project-detail-inner">
+        <h4>📋 完整阶段任务</h4>
+        <ul>
+          <li>分小组查阅一种古代计时工具的资料（2天）</li>
+          <li>制作信息简报，包含原理图、优缺点、与现代钟表的对比（2天）</li>
+          <li>用低成本材料复原一个简易模型（2天）</li>
+          <li>"新知哲学"辩论：现代科技让我们的时间观念变好了还是变坏了？（1天）</li>
+        </ul>
+        <h4>📦 成果形式</h4>
+        <p>小组研究报告（A3海报）+ 复原模型</p>
+        <h4>📊 评价标准</h4>
+        <p>信息准确（25%）；模型功能完整（25%）；报告结构清晰（25%）；辩论参与度（25%）</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 项目5: 时间简史绘本 -->
+  <div class="project-card" data-type="long" onclick="toggleCard(this)">
+    <div class="project-card-inner">
+      <span class="project-badge badge-long">长周期 · 1月+</span>
+      <div class="project-title">📖 编写《时间简史》绘本 <span class="expand-icon">▾</span></div>
+      <div class="project-meta">
+        <span>🎯 综合运用多学科思维</span>
+        <span>📅 学期中综合实践周</span>
+      </div>
+      <p class="project-desc">以绘本形式讲述"人类如何认识时间"的故事，综合运用数学、语文和哲学思维。</p>
+      <ul class="project-tasks">
+        <li>主题阅读——收集时间相关故事与观点</li>
+        <li>确定绘本结构并编写文字脚本</li>
+        <li>设计跨页插图，排版装订</li>
+      </ul>
+    </div>
+    <div class="project-detail">
+      <div class="project-detail-inner">
+        <h4>📋 完整阶段任务</h4>
+        <ul>
+          <li>主题阅读——收集时间相关故事、科学史、哲学观点（1周）</li>
+          <li>确定绘本结构：时间是什么→古人如何计时→钟表的发明→时间的主观性→珍惜时间（1周）</li>
+          <li>分工编写文字脚本，设计跨页插图（1周）</li>
+          <li>排版制作，完整装订成册（1周）</li>
+          <li>班级绘本发布会，各组互评（1天）</li>
+        </ul>
+        <h4>📦 成果形式</h4>
+        <p>8-12页A4绘本（手绘/数字绘画均可）+ 发布会展示</p>
+        <h4>📊 评价标准</h4>
+        <p>时间单位知识正确（25%）；哲学思考深度（25%）；图文匹配（25%）；团队分工（25%）</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 项目6: 时间博物馆 -->
+  <div class="project-card" data-type="long" onclick="toggleCard(this)">
+    <div class="project-card-inner">
+      <span class="project-badge badge-long">长周期 · 1月+</span>
+      <div class="project-title">🏛️ 班级"时间博物馆"展览 <span class="expand-icon">▾</span></div>
+      <div class="project-meta">
+        <span>🎯 跨学科综合展示</span>
+        <span>📅 学校开放日/学科节</span>
+      </div>
+      <p class="project-desc">整合本单元所有探究成果，策划一场面向年级的沉浸式展览。</p>
+      <ul class="project-tasks">
+        <li>策展规划——确定展区并组建策展团队</li>
+        <li>分区展品制作与布置，含互动体验设计</li>
+        <li>解说词撰写与导览员培训</li>
+      </ul>
+    </div>
+    <div class="project-detail">
+      <div class="project-detail-inner">
+        <h4>📋 完整阶段任务</h4>
+        <ul>
+          <li>策展规划——确定展区（古代计时区、身体感知区、时间管理区、哲学思考区），组建策展团队（3天）</li>
+          <li>分区展品制作与布置，含互动体验设计（2周）</li>
+          <li>解说词撰写与导览员培训，设计门票/邀请函（3天）</li>
+          <li>正式开展并收集参观反馈（1天）</li>
+          <li>复盘总结：评价展区参观热度，反思"我们教会了别人什么"（2天）</li>
+        </ul>
+        <h4>📦 成果形式</h4>
+        <p>完整展览（4-6个展位）+ 参观手册 + 复盘报告</p>
+        <h4>📊 评价标准</h4>
+        <p>每个展位至少含1件互动展品（20%）；数学知识准确（20%）；哲学提问引导语清晰（20%）；团队协作（20%）；好评率≥80%（20%）</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 哲学思维贯穿 -->
+<div class="philosophy-box">
+  <h3>💡 M10 新知哲学思维贯穿提示</h3>
+  <p>在每个项目中，教师应引导学生追问——"时间真的存在吗？""1分钟对每个人是否等长？""如果太阳永不落山，我们还需要时间吗？" 让哲学思考成为深度学习的引擎。</p>
+</div>
+
+<!-- 项目路径建议表 -->
+<h2 style="font-size:var(--font-h2); margin-bottom:16px;">📌 项目路径选择建议</h2>
+<table class="path-table">
+  <thead>
+    <tr><th>项目</th><th>周期</th><th>适合场景</th><th>建议搭配</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>简易日晷</td><td>短</td><td>新课导入+周末亲子</td><td>独立开展</td></tr>
+    <tr><td>感受1分钟</td><td>短</td><td>第一课时导入</td><td>可与日晷衔接</td></tr>
+    <tr><td>时间管理方案</td><td>中</td><td>知识点学完后</td><td>搭配"反思日记"写作</td></tr>
+    <tr><td>古代计时工具</td><td>中</td><td>课堂拓展+社团课</td><td>搭配绘本素材收集</td></tr>
+    <tr><td>时间简史绘本</td><td>长</td><td>学期中综合实践周</td><td>作为单元终结性评价</td></tr>
+    <tr><td>时间博物馆</td><td>长</td><td>学校开放日/学科节</td><td>整合全班所有成果</td></tr>
+  </tbody>
+</table>
+
+<div class="community-nav">
+  <button onclick="scrollToTop()">⬆︎ 回到顶部</button>
+  <button onclick="showAll()">展开所有项目</button>
+</div>
+
+</div>
+
+<script>
+function filterProjects(type, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const cards = document.querySelectorAll('.project-card');
+  cards.forEach(c => {
+    if (type === 'all' || c.dataset.type === type) {
+      c.style.display = '';
+    } else {
+      c.style.display = 'none';
+    }
+  });
+}
+
+function toggleCard(el) {
+  el.classList.toggle('expanded');
+}
+
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showAll() {
+  document.querySelectorAll('.project-card').forEach(c => {
+    c.classList.add('expanded');
+    c.style.display = '';
+  });
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.filter-btn[onclick*="all"]').classList.add('active');
+}
+</script>
+</body>
+</html>

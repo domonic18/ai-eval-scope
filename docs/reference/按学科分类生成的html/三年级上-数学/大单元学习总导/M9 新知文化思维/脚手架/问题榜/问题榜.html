@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>问题榜 — 时间的15个深度问题</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+  --green: #52c41a;
+  --orange: #fa8c16;
+  --red: #ff4d4f;
+  --purple: #722ed1;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; box-sizing: border-box; }
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 32px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+  text-align: center;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header p { font-size: 16px; opacity: 0.9; }
+
+/* Level tags */
+.level-badge {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.level-basic { background: #e6f7ff; color: #08979c; }
+.level-adv { background: #fff7e6; color: #d46b08; }
+.level-challenge { background: #f9f0ff; color: #722ed1; }
+
+/* Section */
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--font-h2);
+  color: var(--text);
+  margin: 32px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+.section-icon { font-size: 24px; }
+
+/* Question card */
+.q-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  transition: transform 0.2s;
+}
+.q-card:hover { transform: translateX(4px); }
+.q-card .q-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 700;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+.q-card .q-tag {
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: #f5f5f5;
+  padding: 2px 10px;
+  border-radius: 10px;
+  display: inline-block;
+  margin-left: 6px;
+}
+.q-card .q-head {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.q-card .q-text {
+  font-size: var(--font-body);
+  padding-left: 42px;
+}
+.q-card .hint-btn {
+  display: inline-block;
+  margin-top: 10px;
+  margin-left: 42px;
+  padding: 5px 14px;
+  font-size: 14px;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: 16px;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.q-card .hint-btn:hover { background: #f0f5ff; }
+.q-card .hint-content {
+  display: none;
+  margin-top: 10px;
+  margin-left: 42px;
+  padding: 12px 16px;
+  background: #f0f5ff;
+  border-radius: 8px;
+  font-size: 15px;
+  color: var(--text);
+  border-left: 3px solid var(--primary);
+}
+
+/* Special card colors */
+.q-card.type-recognize { border-left-color: #08979c; }
+.q-card.type-analyze { border-left-color: #d46b08; }
+.q-card.type-critical { border-left-color: #722ed1; }
+.q-card.type-create { border-left-color: #eb2f96; }
+.q-card.type-meta { border-left-color: #13c2c2; }
+.q-card.type-counter { border-left-color: #fa8c16; }
+
+/* Answer box */
+.answer-box {
+  width: 100%;
+  min-height: 50px;
+  padding: 10px 14px;
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  margin-top: 10px;
+  margin-left: 42px;
+  width: calc(100% - 42px);
+  font-family: inherit;
+  font-size: 16px;
+  resize: vertical;
+  background: #fff;
+}
+.answer-box:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: #f0f5ff;
+}
+
+/* Challenge sub group */
+.challenge-group {
+  background: #f9f0ff;
+  border: 1px solid #d3adf7;
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-bottom: 12px;
+}
+.challenge-group .group-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--purple);
+  margin-bottom: 10px;
+}
+
+/* Counter */
+.stats-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin: 24px 0;
+}
+.stat-chip {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.stat-chip .num {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 20px;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .container { padding: 12px 10px; }
+  .header { padding: 20px 16px; }
+  .q-card .q-text, .q-card .hint-btn, .q-card .hint-content, .answer-box { margin-left: 0; }
+  .answer-box { width: 100%; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- Header -->
+<div class="header">
+  <h1>❓ 问题榜</h1>
+  <p>15个深度问题，从基础到挑战，全面激发你对"时间"的思考！</p>
+</div>
+
+<!-- Stats -->
+<div class="stats-bar">
+  <div class="stat-chip">📖 基础层 <span class="num">4</span>题</div>
+  <div class="stat-chip">🔍 进阶层 <span class="num">4</span>题</div>
+  <div class="stat-chip">🚀 挑战层 <span class="num">7</span>题</div>
+  <div class="stat-chip">✅ 已完成 <span class="num" id="completed-count">0</span>题</div>
+</div>
+
+<!-- ===== 基础层 ===== -->
+<div class="section-title">
+  <span class="section-icon">📖</span>
+  <span>基础层：理解与识别</span>
+</div>
+
+<div class="q-card type-recognize">
+  <div class="q-head">
+    <span class="q-num">1</span>
+    <span class="q-tag">识记</span>
+  </div>
+  <div class="q-text">1分钟等于多少秒？1小时等于多少分钟？</div>
+  <textarea class="answer-box" placeholder="写出你的答案……" oninput="updateProgress()"></textarea>
+</div>
+
+<div class="q-card type-recognize">
+  <div class="q-head">
+    <span class="q-num">2</span>
+    <span class="q-tag">识记</span>
+  </div>
+  <div class="q-text">钟表上一大格表示多少分钟？一小格表示多少秒？</div>
+  <textarea class="answer-box" placeholder="写出你的答案……" oninput="updateProgress()"></textarea>
+</div>
+
+<div class="q-card type-recognize">
+  <div class="q-head">
+    <span class="q-num">3</span>
+    <span class="q-tag">理解</span>
+  </div>
+  <div class="q-text">为什么我们常说"一寸光阴一寸金"？这里的"寸"是什么意思？</div>
+  <button class="hint-btn" onclick="toggleHint(this)">💡 提示</button>
+  <div class="hint-content">提示："寸"在古代是一种长度单位。想一想，古人怎么用"长度"来衡量"时间"？这和日晷有关系吗？</div>
+  <textarea class="answer-box" placeholder="写出你的理解……" oninput="updateProgress()"></textarea>
+</div>
+
+<div class="q-card type-recognize">
+  <div class="q-head">
+    <span class="q-num">4</span>
+    <span class="q-tag">理解</span>
+  </div>
+  <div class="q-text">请用自己的话说一说：日晷为什么能计时？它的原理是什么？</div>
+  <button class="hint-btn" onclick="toggleHint(this)">💡 提示</button>
+  <div class="hint-content">提示：想一想太阳在天空中的位置变化。影子会怎样变化？古人发现了什么规律？</div>
+  <textarea class="answer-box" placeholder="写出你的理解……" oninput="updateProgress()"></textarea>
+</div>
+
+<!-- ===== 进阶层 ===== -->
+<div class="section-title">
+  <span class="section-icon">🔍</span>
+  <span>进阶层：分析与应用</span>
+</div>
+
+<div class="q-card type-analyze">
+  <div class="q-head">
+    <span class="q-num">5</span>
+    <span class="q-tag">分析</span>
+  </div>
+  <div class="q-text">小明从家到学校步行需要20分钟，骑自行车需要8分钟。今天他7:50出门，8:00上课。用哪种方式能准时到校？请说明你的推理过程。</div>
+  <textarea class="answer-box" placeholder="写出你的推理过程……" oninput="updateProgress()"></textarea>
+</div>
+
+<div class="q-card type-analyze">
+  <div class="q-head">
+    <span class="q-num">6</span>
+    <span class="q-tag">分析</span>
+  </div>
+  <div class="q-text">同样是"一分钟"，为什么做自己喜欢的事时觉得很快，做枯燥的事时觉得很慢？请你画出"时间感知差异模型图"来解释这个现象。</div>
+  <button class="hint-btn" onclick="toggleHint(this)">💡 提示</button>
+  <div class="hint-content">提示：想想视频1的内容。心理学家认为我们大脑里有一个"内部时钟"——注意力越集中，这个时钟就走得越"慢"（实际时间感觉变快了）。试试用图示表达这个关系！</div>
+  <textarea class="answer-box" placeholder="描述你的模型图……" oninput="updateProgress()"></textarea>
+</div>
+
+<div class="q-card type-analyze">
+  <div class="q-head">
+    <span class="q-num">7</span>
+    <span class="q-tag">对比分析</span>
+  </div>
+  <div class="q-text">比较"沙漏"和"水钟"的相同点和不同点。哪一种更精确？为什么？</div>
+  <textarea class="answer-box" placeholder="写出你的对比分析……" oninput="updateProgress()"></textarea>
+</div>
+
+<div class="q-card type-analyze">
+  <div class="q-head">
+    <span class="q-num">8</span>
+    <span class="q-tag">应用</span>
+  </div>
+  <div class="q-text">如果你要用身体部位来估算"一分钟"，你会用什么方法？请说明你的方案并测试它的准确度。</div>
+  <button class="hint-btn" onclick="toggleHint(this)">💡 提示</button>
+  <div class="hint-content">提示：试试"数心跳"——安静下来数15秒内心跳次数，乘以4就是一分钟大概的心跳数。或者匀速拍手、数数……试完别忘了记录偏差哦！</div>
+  <textarea class="answer-box" placeholder="描述你的方案和测试结果……" oninput="updateProgress()"></textarea>
+</div>
+
+<!-- ===== 挑战层 ===== -->
+<div class="section-title">
+  <span class="section-icon">🚀</span>
+  <span>挑战层：创造与批判</span>
+</div>
+
+<!-- 开放性问题 -->
+<div class="challenge-group">
+  <div class="group-label">💬 开放性问题</div>
+
+  <div class="q-card type-critical">
+    <div class="q-head">
+      <span class="q-num">9</span>
+      <span class="q-tag">批判</span>
+    </div>
+    <div class="q-text">有人说"时间是无限的"，也有人说"时间是有起点的"——你支持哪种观点？请用至少两个理由支持你的观点。</div>
+    <button class="hint-btn" onclick="toggleHint(this)">💡 提示</button>
+    <div class="hint-content">提示：没有标准答案！试试从这些角度想——①宇宙大爆炸理论说了什么？②"无限"这个概念你能真正理解吗？③如果时间有起点，起点之前是什么？</div>
+    <textarea class="answer-box" placeholder="写下你的观点和理由……" oninput="updateProgress()"></textarea>
+  </div>
+
+  <div class="q-card type-create">
+    <div class="q-head">
+      <span class="q-num">10</span>
+      <span class="q-tag">创造</span>
+    </div>
+    <div class="q-text">如果地球自转越来越慢，一天变成25小时。请你重新设计"一天的时间划分方案"——还是24小时吗？为什么？</div>
+    <textarea class="answer-box" placeholder="你的新方案是？……" oninput="updateProgress()"></textarea>
+  </div>
+</div>
+
+<!-- 对比性问题 -->
+<div class="challenge-group" style="background:#fff7e6; border-color:#ffd591;">
+  <div class="group-label" style="color:#d46b08;">🔄 对比性问题</div>
+
+  <div class="q-card type-analyze">
+    <div class="q-head">
+      <span class="q-num">11</span>
+      <span class="q-tag">对比</span>
+    </div>
+    <div class="q-text">在数学中，我们学了"长度单位"（米、厘米）、"重量单位"（千克、克）和"时间单位"（时、分、秒）。这三种单位有什么相同之处？有什么不同之处？<br><span style="font-size:15px;color:var(--text-secondary);">提示：想一想它们的进制</span></div>
+    <textarea class="answer-box" placeholder="写出你的对比分析……" oninput="updateProgress()"></textarea>
+  </div>
+</div>
+
+<!-- 反事实问题 -->
+<div class="challenge-group" style="background:#fff2f0; border-color:#ffa39e;">
+  <div class="group-label" style="color:#ff4d4f;">🌀 反事实问题（"如果……会怎样"）</div>
+
+  <div class="q-card type-counter">
+    <div class="q-head">
+      <span class="q-num">12</span>
+      <span class="q-tag">反事实</span>
+    </div>
+    <div class="q-text">如果全世界都改用"百进制"——1小时=100分钟，1分钟=100秒——对我们的生活有什么影响？你认为系统需要多久才能适应？</div>
+    <button class="hint-btn" onclick="toggleHint(this)">💡 提示</button>
+    <div class="hint-content">提示：想想看——①现在1小时=60分钟，改成100分钟会怎样？②你的作息时间表要重写吗？③为什么世界上大部分国家都用了"60进制"来计时？（线索：古埃及人和美索不达米亚人！）</div>
+    <textarea class="answer-box" placeholder="写出你的分析……" oninput="updateProgress()"></textarea>
+  </div>
+</div>
+
+<!-- 元认知问题 -->
+<div class="challenge-group" style="background:#e6fffb; border-color:#87e8de;">
+  <div class="group-label" style="color:#13c2c2;">🧠 元认知问题（"你是如何思考的"）</div>
+
+  <div class="q-card type-meta">
+    <div class="q-head">
+      <span class="q-num">13</span>
+      <span class="q-tag">元认知</span>
+    </div>
+    <div class="q-text">在做"一分钟体验"活动时，你是用什么方法来估计一秒的长度的？你觉得自己的方法可靠吗？为什么？</div>
+    <textarea class="answer-box" placeholder="写下你的反思……" oninput="updateProgress()"></textarea>
+  </div>
+
+  <div class="q-card type-meta">
+    <div class="q-head">
+      <span class="q-num">14</span>
+      <span class="q-tag">元认知</span>
+    </div>
+    <div class="q-text">学习"时、分、秒"的换算时，你用的是"死记硬背"还是"理解为什么"？你觉得哪种方式更有效？为什么？</div>
+    <textarea class="answer-box" placeholder="反思你的学习方法……" oninput="updateProgress()"></textarea>
+  </div>
+
+  <div class="q-card type-meta">
+    <div class="q-head">
+      <span class="q-num">15</span>
+      <span class="q-tag">元认知</span>
+    </div>
+    <div class="q-text">如果你要给一个幼儿园小朋友讲"一分钟是什么"，你会怎么讲？你的方法从哪里学来的？</div>
+    <textarea class="answer-box" placeholder="写下你的讲解方案……" oninput="updateProgress()"></textarea>
+  </div>
+</div>
+
+<!-- Completion -->
+<div style="text-align:center; margin:32px 0 20px;">
+  <button class="hint-btn" style="font-size:16px;padding:10px 28px;" onclick="resetAnswers()">🔄 重置所有答案</button>
+</div>
+
+</div>
+
+<script>
+function toggleHint(btn) {
+  const content = btn.nextElementSibling;
+  content.style.display = content.style.display === 'block' ? 'none' : 'block';
+}
+
+function updateProgress() {
+  const boxes = document.querySelectorAll('.answer-box');
+  let count = 0;
+  boxes.forEach(box => {
+    if (box.value.trim().length > 0) count++;
+  });
+  document.getElementById('completed-count').textContent = count;
+}
+
+function resetAnswers() {
+  if (!confirm('确定要重置所有答案吗？')) return;
+  const boxes = document.querySelectorAll('.answer-box');
+  boxes.forEach(box => { box.value = ''; });
+  updateProgress();
+}
+</script>
+</body>
+</html>

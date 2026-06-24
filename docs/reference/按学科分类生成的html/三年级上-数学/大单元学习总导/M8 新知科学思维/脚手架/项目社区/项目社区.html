@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目社区 — 用「时间」做一件真事</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  text-align: center;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 8px;
+  font-weight: 700;
+}
+.header p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 16px;
+}
+.section-title {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin: 32px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 3px solid var(--accent);
+}
+.project-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+.project-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(22,119,255,0.15);
+}
+.project-card .tag {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  font-size: 14px;
+  padding: 2px 12px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+.project-card h3 {
+  font-size: 20px;
+  margin: 0 0 6px;
+  color: var(--text);
+}
+.project-card .goal {
+  color: var(--primary);
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+.project-card .toggle-btn {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  padding: 4px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 8px;
+}
+.project-card .toggle-btn:hover {
+  background: var(--primary);
+  color: #fff;
+}
+.project-detail {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+}
+.project-detail.open {
+  max-height: 800px;
+}
+.project-detail-inner {
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+  margin-top: 12px;
+}
+.project-detail ul, .project-detail ol {
+  padding-left: 24px;
+  margin: 8px 0;
+}
+.project-detail li {
+  margin-bottom: 4px;
+}
+.project-detail .highlight {
+  background: #fff7e6;
+  border-left: 4px solid #fa8c16;
+  padding: 8px 12px;
+  margin: 10px 0;
+  border-radius: 0 4px 4px 0;
+}
+.project-detail .result-box {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 10px 0;
+  font-weight: 600;
+  color: #389e0d;
+}
+.info-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+.info-item {
+  background: var(--bg);
+  padding: 4px 14px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.info-item strong {
+  color: var(--text);
+}
+.nav-hint {
+  background: #e6f7ff;
+  border: 1px solid #91d5ff;
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin: 20px 0 10px;
+  text-align: center;
+  font-size: 15px;
+}
+.nav-hint span {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  border-radius: 50%;
+  margin: 0 4px;
+  font-weight: 700;
+  font-size: 14px;
+}
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  .header h1 { font-size: 22px; }
+  .project-card { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>⏰ 项目社区</h1>
+  <p>用「时间」做一件真事 · 三年级数学项目库</p>
+</div>
+
+<p style="font-size:16px; color:var(--text-secondary); margin: 0 0 20px;">
+  点击任意项目卡片，展开看详细任务 👇
+</p>
+
+<div class="project-card" onclick="toggleDetail(this)">
+  <span class="tag">⚡ 微项目 · 1天</span>
+  <h3>「我的时间感觉」</h3>
+  <p class="goal">🎯 记录你「一个早上」每件事用了多少时间</p>
+  <button class="toggle-btn">📋 查看任务</button>
+  <div class="project-detail">
+    <div class="project-detail-inner">
+      <div class="info-row">
+        <div class="info-item"><strong>⏱ 用时</strong> 1天</div>
+        <div class="info-item"><strong>📊 类型</strong> 观察记录</div>
+      </div>
+      <p><strong>阶段任务：</strong></p>
+      <ol>
+        <li><strong>定时</strong> — 用秒表记录「刷牙」「吃饭」「走路」各用了多久</li>
+        <li><strong>算出</strong> — 每件事的用时（分钟/秒）</li>
+        <li><strong>画图</strong> — 画一个「时间饼图」，看看时间都分给了谁</li>
+      </ol>
+      <div class="result-box">✅ 成果：一张「我的时间分布图」</div>
+      <div class="highlight">
+        <strong>💡 自我评价：</strong>有没有「时间浪费」？怎么省下来？
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="project-card" onclick="toggleDetail(this)">
+  <span class="tag">📐 中项目 · 1周</span>
+  <h3>「时、分、秒关系图」</h3>
+  <p class="goal">🎯 用「时、分、秒」的关系，画一张「时间换算树」</p>
+  <button class="toggle-btn">📋 查看任务</button>
+  <div class="project-detail">
+    <div class="project-detail-inner">
+      <div class="info-row">
+        <div class="info-item"><strong>⏱ 用时</strong> 1周（5天）</div>
+        <div class="info-item"><strong>📊 类型</strong> 知识建构</div>
+      </div>
+      <p><strong>每日任务：</strong></p>
+      <ul>
+        <li><strong>Day 1：</strong>画「时→分」主线（1时=60分）</li>
+        <li><strong>Day 2：</strong>画「分→秒」分支（1分=60秒）</li>
+        <li><strong>Day 3：</strong>把「×60 / ÷60」标在每一个节点上</li>
+        <li><strong>Day 4：</strong>加「反例」——找容易错的地方</li>
+        <li><strong>Day 5：</strong>加「使用场景」——什么时候用×？什么时候用÷？</li>
+      </ul>
+      <div class="result-box">✅ 成果：一张 A3 大小的「时间换算树」</div>
+      <div class="highlight">
+        <strong>💡 评价标准：</strong>别人能看懂你的图吗？让同桌试试！
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="project-card" onclick="toggleDetail(this)">
+  <span class="tag">🚀 长项目 · 1个月+</span>
+  <h3>「时间管理」</h3>
+  <p class="goal">🎯 设计一套「你自己的」时间管理系统</p>
+  <button class="toggle-btn">📋 查看任务</button>
+  <div class="project-detail">
+    <div class="project-detail-inner">
+      <div class="info-row">
+        <div class="info-item"><strong>⏱ 用时</strong> 1个月以上</div>
+        <div class="info-item"><strong>📊 类型</strong> 综合实践</div>
+      </div>
+      <p><strong>阶段任务：</strong></p>
+      <ol>
+        <li>观察 <strong>7天</strong>「你是怎么用时间的」——记录每天的时间去向</li>
+        <li>找出 <strong>「浪费」</strong> 和 <strong>「高效」</strong> 的规律</li>
+        <li>设计一个「<strong>分 / 时 / 日 / 周</strong>」的分配表</li>
+        <li><strong>试用 1 周</strong> 并根据实际情况修改</li>
+        <li>向全班 <strong>展示成果</strong></li>
+      </ol>
+      <div class="result-box">✅ 成果：一份「我的时间管理手册」</div>
+      <div class="highlight">
+        <strong>💡 资源推荐：</strong>参考「工具库」中的 6 个时间管理工具（四象限、番茄钟等）
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="nav-hint">
+  <span>💡</span> 从微项目开始 → 再到中项目 → 最后挑战长项目！
+</div>
+
+</div>
+<script>
+function toggleDetail(el) {
+  var detail = el.querySelector('.project-detail');
+  var btn = el.querySelector('.toggle-btn');
+  detail.classList.toggle('open');
+  if (detail.classList.contains('open')) {
+    btn.textContent = '▲ 收起任务';
+  } else {
+    btn.textContent = '📋 查看任务';
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性原理 — 你的分析工具箱</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+  --green: #52c41a;
+  --orange: #fa8c16;
+  --red: #ff4d4f;
+  --purple: #722ed1;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; box-sizing: border-box; }
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 32px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+  text-align: center;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header p { font-size: 16px; opacity: 0.9; }
+
+/* Section */
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--font-h2);
+  color: var(--text);
+  margin: 32px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+.section-icon { font-size: 24px; }
+
+/* Principle card */
+.principle-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: transform 0.2s;
+}
+.principle-card:hover { transform: translateY(-2px); }
+.principle-card .p-header {
+  padding: 18px 24px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+  background: linear-gradient(135deg, #f0f5ff, #e6f7ff);
+  font-family: inherit;
+}
+.principle-card .p-header h3 {
+  font-size: 19px;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.principle-card .p-toggle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  transition: transform 0.3s;
+}
+.principle-card.collapsed .p-toggle { transform: rotate(-90deg); }
+.principle-card .p-body {
+  padding: 20px 24px;
+  transition: max-height 0.4s ease, opacity 0.3s;
+}
+.principle-card.collapsed .p-body {
+  max-height: 0;
+  padding: 0 24px;
+  opacity: 0;
+  overflow: hidden;
+}
+.principle-card:not(.collapsed) .p-body {
+  max-height: 2000px;
+  opacity: 1;
+}
+
+/* Principle sections */
+.p-desc { margin-bottom: 12px; }
+.p-example {
+  background: #f6ffed;
+  border-left: 4px solid var(--green);
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+.p-howto {
+  background: #fff7e6;
+  border-left: 4px solid var(--orange);
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+.p-migrate {
+  background: #f0f5ff;
+  border-left: 4px solid var(--primary);
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+.p-warning {
+  background: #fff2f0;
+  border-left: 4px solid var(--red);
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-size: 16px;
+}
+
+/* Principle number circle */
+.p-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* Exercise card */
+.exercise-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border: 2px solid var(--accent);
+  box-shadow: var(--shadow);
+}
+.exercise-card h4 {
+  font-size: 19px;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+.exercise-card .ex-tag {
+  display: inline-block;
+  padding: 2px 12px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.exercise-card .ex-hint {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 12px 0;
+  font-size: 15px;
+}
+.exercise-card .ex-hint strong { color: var(--orange); }
+
+/* Answer area */
+.ex-answer {
+  width: 100%;
+  min-height: 60px;
+  padding: 12px;
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  margin-top: 10px;
+  font-family: inherit;
+  font-size: 16px;
+  background: #fff;
+  resize: vertical;
+}
+.ex-answer:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: #f0f5ff;
+}
+
+/* Self-check */
+.check-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+.check-cell {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+.check-cell:hover { border-color: var(--primary); }
+.check-cell.done {
+  background: #f6ffed;
+  border-color: var(--green);
+}
+.check-cell .check-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.check-cell .check-text { font-size: 16px; }
+
+/* Tooltip reveal */
+.reveal-btn {
+  display: inline-block;
+  padding: 6px 16px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 15px;
+  font-family: inherit;
+  margin: 6px 4px 0 0;
+  transition: background 0.2s;
+}
+.reveal-btn:hover { background: var(--primary-hover); }
+.reveal-btn.secondary { background: var(--orange); }
+.reveal-btn.secondary:hover { background: #e8710a; }
+
+/* Responsive */
+@media (max-width: 600px) {
+  .container { padding: 12px 10px; }
+  .header { padding: 20px 16px; }
+  .principle-card .p-header, .principle-card .p-body { padding: 14px 16px; }
+  .check-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- Header -->
+<div class="header">
+  <h1>🧰 解析性原理</h1>
+  <p>把分析步骤"提炼"成你的专属工具箱，以后遇到任何测量问题都能打开来用！</p>
+</div>
+
+<!-- Intro -->
+<div style="background:var(--card-bg);padding:20px 24px;border-radius:var(--border-radius);margin-bottom:24px;border:1px solid var(--border);">
+  <p style="font-size:17px;">还记得刚才的"跑步比赛时间"示例吗？我们从"发现两个不同结果"→"分析误差原因"→"得出结论"走了一遍。现在，我们把这套方法<strong>提炼成5个分析原理</strong>，装进你的工具箱！</p>
+</div>
+
+<!-- ===== Principle 1 ===== -->
+<div class="principle-card" id="principle1">
+  <div class="p-header" onclick="togglePrinciple(this)">
+    <h3><span class="p-num">1</span> 差异追问法 — "有差异就是有故事"</h3>
+    <span class="p-toggle">▼</span>
+  </div>
+  <div class="p-body">
+    <p class="p-desc"><strong>📖 原理说明：</strong>当看到两个或以上不完全一致的数据时，不要忽略差异，而是要问"为什么不一样？"</p>
+    <div class="p-example">
+      <strong>📌 示例体现：</strong>小强11秒和13秒"两个不同结果"就是差异。我们追问"人、工具、方法"三个维度的原因，找到了"裁判反应时间"这个误差来源。
+    </div>
+    <div class="p-howto">
+      <strong>🔧 如何使用：</strong>看到有差异的数据时，先标记出来，然后从三个角度找原因：<br>
+      ① <strong>人的因素</strong>（判断/反应/主观）<br>
+      ② <strong>工具的因素</strong>（精度/使用方法）<br>
+      ③ <strong>方法的因素</strong>（流程/规则）
+    </div>
+    <div class="p-migrate">
+      <strong>🔄 可迁移到：</strong>比较考试分数、测量长度重量、统计调查数据……任何有"数字不一致"的场景。
+    </div>
+    <div class="p-warning">
+      <strong>⚠️ 提醒：</strong>差异不等于错误！差异本身是有价值的——它提示"这里有值得探究的东西"。
+    </div>
+  </div>
+</div>
+
+<!-- ===== Principle 2 ===== -->
+<div class="principle-card" id="principle2">
+  <div class="p-header" onclick="togglePrinciple(this)">
+    <h3><span class="p-num">2</span> 多测求稳法 — "一次不准，多次来凑"</h3>
+    <span class="p-toggle">▼</span>
+  </div>
+  <div class="p-body">
+    <p class="p-desc"><strong>📖 原理说明：</strong>一次测量可能不准确，但多次测量取平均值可以"中和"偶然误差，让结果更可靠。</p>
+    <div class="p-example">
+      <strong>📌 示例体现：</strong>小强11秒和13秒取平均得12秒，比单独相信任何一个数据都更合理。
+    </div>
+    <div class="p-howto">
+      <strong>🔧 如何使用：</strong><br>
+      ① 至少测量 <strong>3次</strong><br>
+      ② 计算 <strong>平均值</strong><br>
+      ③ 观察最大值和最小值的<strong>差距</strong>（差距越大，说明测量越不稳定）
+    </div>
+    <div class="p-migrate">
+      <strong>🔄 可迁移到：</strong>实验数据收集、体育成绩记录、日常估算（如估算走路时间多测几次取均值）。
+    </div>
+    <div class="p-warning">
+      <strong>⚠️ 提醒：</strong>取平均只能减少"偶然误差"，不能消除"系统误差"——比如手表本身就不准，测100次也没用。
+    </div>
+  </div>
+</div>
+
+<!-- ===== Principle 3 ===== -->
+<div class="principle-card" id="principle3">
+  <div class="p-header" onclick="togglePrinciple(this)">
+    <h3><span class="p-num">3</span> 统一单位法 — "不统一不比较"</h3>
+    <span class="p-toggle">▼</span>
+  </div>
+  <div class="p-body">
+    <p class="p-desc"><strong>📖 原理说明：</strong>比较两个时间（或任何量化数据）之前，必须先统一单位。</p>
+    <div class="p-example">
+      <strong>📌 示例体现：</strong>示例中所有数据都是"秒"单位，所以直接比较。但如果一个说"12秒"一个说"0.2分"，就需要先换算。
+    </div>
+    <div class="p-howto">
+      <strong>🔧 如何使用：</strong><br>
+      ① 检查所有数据的<strong>单位是否一致</strong><br>
+      ② 如果不一致，全部换算成<strong>同一个单位</strong><br>
+      ③ 单位换算时记住：<strong>1分=60秒，大化小乘，小化大除</strong>
+    </div>
+    <div class="p-migrate">
+      <strong>🔄 可迁移到：</strong>长度比较（米vs厘米）、重量比较（千克vs克）、价格比较（元vs角）——所有单位换算场景。
+    </div>
+    <div class="p-warning">
+      <strong>⚠️ 提醒：</strong>最容易出错的是"大化小乘还是小化大除"——记住"大单位→小单位，数字变大，所以乘"。
+    </div>
+  </div>
+</div>
+
+<!-- ===== Principle 4 ===== -->
+<div class="principle-card" id="principle4">
+  <div class="p-header" onclick="togglePrinciple(this)">
+    <h3><span class="p-num">4</span> 条件一致原则 — "对比的前提是条件一样"</h3>
+    <span class="p-toggle">▼</span>
+  </div>
+  <div class="p-body">
+    <p class="p-desc"><strong>📖 原理说明：</strong>比较两个数据时，必须确保测量条件/情境一致，否则比较没有意义。</p>
+    <div class="p-example">
+      <strong>📌 示例体现：</strong>小明和小强都是"50米跑"（距离相同），所以"时间越短越快"才成立。如果一个人跑50米、一个人跑100米，就不能直接比时间。
+    </div>
+    <div class="p-howto">
+      <strong>🔧 如何使用：</strong>比较前先问——"这两个数据的条件是否一致？"相同的距离？相同的方法？相同的环境？
+    </div>
+    <div class="p-migrate">
+      <strong>🔄 可迁移到：</strong>比较学习方法的效果（同一科目）、对比两种产品的价格（同样的规格）。
+    </div>
+    <div class="p-warning">
+      <strong>⚠️ 提醒：</strong>不能只看到"时间短"就说"更快"——还要检查"距离是否一样？条件是否相同？"
+    </div>
+  </div>
+</div>
+
+<!-- ===== Principle 5 ===== -->
+<div class="principle-card" id="principle5">
+  <div class="p-header" onclick="togglePrinciple(this)">
+    <h3><span class="p-num">5</span> 工具升级思维 — "不准了？换一个更好的"</h3>
+    <span class="p-toggle">▼</span>
+  </div>
+  <div class="p-body">
+    <p class="p-desc"><strong>📖 原理说明：</strong>当现有的测量工具或方法无法得到可靠数据时，考虑升级到更精确的工具。</p>
+    <div class="p-example">
+      <strong>📌 示例体现：</strong>人工手表有误差→建议使用电子计时器（光电感应，不需要人的反应时间）。
+    </div>
+    <div class="p-howto">
+      <strong>🔧 如何使用：</strong><br>
+      先评估当前测量误差是否可接受 → 不可接受就寻找"更精确的测量工具"或"更标准的方法"
+    </div>
+    <div class="p-migrate">
+      <strong>🔄 可迁移到：</strong>用尺子量不准时用游标卡尺、用温度计不准时用电子温度计。
+    </div>
+    <div class="p-warning">
+      <strong>⚠️ 提醒：</strong>工具升级要考虑成本和必要性——不一定每次都要最贵的工具，够用就好。
+    </div>
+  </div>
+</div>
+
+<!-- Toggle all -->
+<div style="text-align:center;margin:8px 0 24px;">
+  <button class="reveal-btn" onclick="expandAll()">📂 展开全部原理</button>
+  <button class="reveal-btn secondary" onclick="collapseAll()">📁 收起全部原理</button>
+</div>
+
+<!-- ===== Exercises ===== -->
+<div class="section-title">
+  <span class="section-icon">💪</span>
+  <span>练习应用</span>
+</div>
+
+<!-- Exercise 1 -->
+<div class="exercise-card">
+  <h4>🏃 练习1：跳绳测试</h4>
+  <span class="ex-tag">建议使用：原理①+原理②</span>
+
+  <p><strong>情境：</strong>体育课上，老师让同学们测1分钟跳绳。小红跳了三次：<strong>125、118、132</strong>个。小明的手机秒表可能不准（走快了）。</p>
+
+  <div style="margin-top:10px;">
+    <p><strong>任务：</strong></p>
+    <p>① 小红最可能的成绩是多少？</p>
+    <p>② 如果有证据显示小明的秒表偏快，对小明的成绩有什么影响？</p>
+  </div>
+
+  <div class="ex-hint">
+    <strong>💡 分析提示：</strong>先算小红三次的平均值 → 再看最大值和最小值的差距 → 然后分析秒表误差的方向。<br>
+    秒表偏快意味着实际时间不足1分钟——那跳绳数应该偏多还是偏少？
+  </div>
+
+  <button class="reveal-btn secondary" onclick="revealAnswer('answer1')">🔍 查看参考答案思路</button>
+  <div id="answer1" style="display:none;margin-top:10px;padding:12px 16px;background:#f0f5ff;border-radius:8px;font-size:16px;">
+    <strong>思路：</strong><br>
+    ① 平均值 = (125+118+132)÷3 = 375÷3 = <strong>125个</strong><br>
+    ② 差距 = 132-118 = 14个，属于正常波动范围。<br>
+    ③ 秒表偏快 → 实际时间不到60秒 → 跳的个数应该<strong>偏少</strong>（因为时间不够了）。小明的成绩需要"打折"看待。
+  </div>
+
+  <textarea class="ex-answer" placeholder="用"我发现……我认为……因为……"的句式写出你的分析过程和结论……"></textarea>
+</div>
+
+<!-- Exercise 2 -->
+<div class="exercise-card">
+  <h4>🚶 练习2：上学时间比较</h4>
+  <span class="ex-tag">建议使用：原理③+原理④</span>
+
+  <p><strong>情境：</strong>小明走路从家到学校需要<strong>15分钟</strong>。小红说"我上学只要<strong>0.15小时</strong>"——谁的家离学校更近？</p>
+
+  <div style="margin-top:10px;">
+    <p><strong>任务：</strong>比较谁的上学时间更短。</p>
+  </div>
+
+  <div class="ex-hint">
+    <strong>💡 分析提示：</strong>0.15小时是多少分钟？换算之后才能比较。<br>
+    但等等——就算时间一样，能直接说"谁的家更近"吗？如果小明走得慢、小红走得快呢？
+  </div>
+
+  <button class="reveal-btn secondary" onclick="revealAnswer('answer2')">🔍 查看参考答案思路</button>
+  <div id="answer2" style="display:none;margin-top:10px;padding:12px 16px;background:#f0f5ff;border-radius:8px;font-size:16px;">
+    <strong>思路：</strong><br>
+    ① 单位换算：0.15小时 = 0.15×60 = <strong>9分钟</strong><br>
+    ② 直接比：小红9分钟 ＜ 小明15分钟 → 小红用时更短<br>
+    ③ 但"用时短" ≠ "距离近"！还需要知道两人的<strong>速度</strong>。如果小明走得慢，可能他家其实更近但花的时间更长。
+  </div>
+
+  <textarea class="ex-answer" placeholder="写出你的完整推理过程……"></textarea>
+</div>
+
+<!-- ===== Self Check ===== -->
+<div class="section-title">
+  <span class="section-icon">✅</span>
+  <span>自我检测</span>
+</div>
+
+<div style="background:var(--card-bg);padding:20px 24px;border-radius:var(--border-radius);border:1px solid var(--border);">
+  <p style="margin-bottom:12px;">点击每一项，检查自己是否掌握：</p>
+  <div class="check-grid">
+    <div class="check-cell" onclick="toggleSelfCheck(this)">
+      <span class="check-icon">⬜</span>
+      <span class="check-text">我能说出"测量有差异时我应该先问什么"</span>
+    </div>
+    <div class="check-cell" onclick="toggleSelfCheck(this)">
+      <span class="check-icon">⬜</span>
+      <span class="check-text">我能说出"为什么要多次测量求平均值"</span>
+    </div>
+    <div class="check-cell" onclick="toggleSelfCheck(this)">
+      <span class="check-icon">⬜</span>
+      <span class="check-text">我能正确进行"分和秒"的换算</span>
+    </div>
+    <div class="check-cell" onclick="toggleSelfCheck(this)">
+      <span class="check-icon">⬜</span>
+      <span class="check-text">我能判断"两个时间数据能不能直接比较"</span>
+    </div>
+    <div class="check-cell" onclick="toggleSelfCheck(this)">
+      <span class="check-icon">⬜</span>
+      <span class="check-text">我能举例说明"更精确的计时工具"有哪些</span>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<div style="text-align:center;margin:32px 0 10px;padding:16px;color:var(--text-secondary);font-size:15px;">
+  🎉 恭喜你完成了解析性原理的学习！你已经拥有了5个强大的分析工具，随时可用。
+</div>
+
+</div>
+
+<script>
+function togglePrinciple(header) {
+  const card = header.parentElement;
+  card.classList.toggle('collapsed');
+}
+
+function expandAll() {
+  document.querySelectorAll('.principle-card').forEach(c => c.classList.remove('collapsed'));
+}
+
+function collapseAll() {
+  document.querySelectorAll('.principle-card').forEach(c => c.classList.add('collapsed'));
+}
+
+function revealAnswer(id) {
+  const el = document.getElementById(id);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleSelfCheck(el) {
+  el.classList.toggle('done');
+  const icon = el.querySelector('.check-icon');
+  icon.textContent = el.classList.contains('done') ? '✅' : '⬜';
+}
+</script>
+</body>
+</html>

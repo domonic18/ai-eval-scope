@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性原理 — 从体验中提炼可迁移的学习方法</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 36px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+.header p { margin: 0; opacity: 0.92; font-size: 17px; }
+.section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+}
+.section-title {
+  font-size: var(--font-h2);
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.principles-grid {
+  display: grid;
+  gap: 20px;
+}
+.principle-card {
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+.principle-card:hover { box-shadow: 0 4px 12px rgba(22,119,255,0.1); }
+.principle-header {
+  background: var(--bg);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+.principle-header:hover { background: #e6f0ff; }
+.principle-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.principle-name {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 17px;
+  flex: 1;
+}
+.toggle-icon {
+  color: var(--text-secondary);
+  font-size: 14px;
+  transition: transform 0.3s;
+}
+.principle-card.expanded .toggle-icon { transform: rotate(180deg); }
+.principle-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+}
+.principle-card.expanded .principle-body { max-height: 1200px; }
+.principle-content {
+  padding: 20px;
+}
+.principle-content .label {
+  font-weight: 600;
+  color: var(--primary);
+  display: block;
+  margin-bottom: 4px;
+  margin-top: 12px;
+}
+.principle-content .label:first-child { margin-top: 0; }
+.principle-content p { margin: 4px 0 12px; color: var(--text); }
+.apply-tag {
+  display: inline-block;
+  background: #f6ffed;
+  color: #389e0d;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+.practice-box {
+  background: linear-gradient(135deg, #fff7e6, #fffbe6);
+  border: 1px solid #ffe58f;
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin: 20px 0;
+}
+.practice-box h3 { color: #d46b08; margin-top: 0; }
+.practice-box .btn-primary {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-right: 8px;
+  margin-top: 8px;
+}
+.practice-box .btn-primary:hover { background: var(--primary-hover); }
+.scaffold-box {
+  background: var(--bg);
+  border-left: 3px solid var(--primary);
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin: 10px 0;
+  font-size: 16px;
+}
+.hidden-content {
+  display: none;
+  margin-top: 10px;
+}
+.hidden-content.show { display: block; }
+.reflection-box {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin-top: 20px;
+  border-left: 4px solid var(--primary);
+}
+.reflection-box h3 { color: var(--primary); margin-top: 0; }
+.reflection-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+}
+.reflection-item::before {
+  content: '💭';
+  flex-shrink: 0;
+}
+.meta-path {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 16px;
+  background: var(--bg);
+  border-radius: 8px;
+  margin: 12px 0;
+  font-size: 16px;
+}
+.meta-step {
+  background: var(--primary);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.meta-arrow { color: var(--accent); font-weight: 700; }
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .header { padding: 20px; }
+  .section { padding: 16px; }
+  .meta-path { font-size: 14px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🧩 建构性原理</h1>
+  <p>从"秒"的体验中提炼出5条可迁移的学习原理——以后学任何新概念都能用！</p>
+</div>
+
+<!-- 从示例到原理 -->
+<div class="section">
+  <div class="section-title"><span>🔄</span> 第一部分：从示例到原理</div>
+  <p>回顾建构"秒"概念时经历的完整过程——这就是你的"学习路线图"：</p>
+  <div class="meta-path">
+    <span class="meta-step">观察</span>
+    <span class="meta-arrow">→</span>
+    <span class="meta-step">提问</span>
+    <span class="meta-arrow">→</span>
+    <span class="meta-step">实验</span>
+    <span class="meta-arrow">→</span>
+    <span class="meta-step">发现</span>
+    <span class="meta-arrow">→</span>
+    <span class="meta-step">定义</span>
+    <span class="meta-arrow">→</span>
+    <span class="meta-step">表达</span>
+  </div>
+  <p><strong>为什么要从具体体验中提炼原理？</strong></p>
+  <p>原理就像"学习方法地图"——以后遇到新概念（比如学"长度"、"重量"、"面积"），不用从头摸索，直接拿出地图就能找到方向！</p>
+</div>
+
+<!-- 原理提炼 -->
+<div class="section">
+  <div class="section-title"><span>🧠</span> 第二部分：建构性原理提炼（5条）</div>
+  <div class="principles-grid">
+
+    <div class="principle-card expanded" onclick="togglePrinciple(this)">
+      <div class="principle-header">
+        <span class="principle-num">1</span>
+        <span class="principle-name">观察锚定法——从熟悉现象中找到概念入口</span>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="principle-body">
+        <div class="principle-content">
+          <span class="label">📌 原理说明</span>
+          <p>学一个新概念时，先找到生活中和它相关的现象或动作，用你的感官去"抓住"它。</p>
+          <span class="label">🔬 在示例中的体现</span>
+          <p>从拍手、眨眼、心跳等生活动作中找到"一秒"的感知参照。</p>
+          <span class="label">📚 适用的其他学习情境</span>
+          <p>学长度单位时找身边的"1厘米""1米"参照物；学重量时感受一个鸡蛋有多重。</p>
+          <span class="apply-tag">💡 使用提醒：感觉可能不准，需要用工具验证</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="principle-card" onclick="togglePrinciple(this)">
+      <div class="principle-header">
+        <span class="principle-num">2</span>
+        <span class="principle-name">测量验证法——用数据给感觉"纠偏"</span>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="principle-body">
+        <div class="principle-content">
+          <span class="label">📌 原理说明</span>
+          <p>主观感觉不一定准确，需要用工具测量、记录数据来验证。</p>
+          <span class="label">🔬 在示例中的体现</span>
+          <p>用秒表测量"拍一次手"的时间，发现和自己感觉不一样。</p>
+          <span class="label">📚 适用的其他学习情境</span>
+          <p>用尺子测量"我猜有1米"的桌子；用温度计检查"我觉得不烫"的水。</p>
+          <span class="apply-tag">💡 使用提醒：多测几次取平均值，避免偶然误差</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="principle-card" onclick="togglePrinciple(this)">
+      <div class="principle-header">
+        <span class="principle-num">3</span>
+        <span class="principle-name">定义建构法——用你自己的话给概念"下定义"</span>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="principle-body">
+        <div class="principle-content">
+          <span class="label">📌 原理说明</span>
+          <p>真正理解一个概念的标准是——你能用自己的话给别人讲清楚。</p>
+          <span class="label">🔬 在示例中的体现</span>
+          <p>在观察和实验之后，写出"我的秒定义"。</p>
+          <span class="label">📚 适用的其他学习情境</span>
+          <p>学"周长"后用自己的话定义；学"平行四边形"后用话描述它的特点。</p>
+          <span class="apply-tag">💡 使用提醒：定义要准确，写完后对照教材检验</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="principle-card" onclick="togglePrinciple(this)">
+      <div class="principle-header">
+        <span class="principle-num">4</span>
+        <span class="principle-name">表达固化法——用画图或写作把理解"定住"</span>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="principle-body">
+        <div class="principle-content">
+          <span class="label">📌 原理说明</span>
+          <p>光想不说、光说不写，理解容易溜走；把理解变成可见的作品，才算真正掌握。</p>
+          <span class="label">🔬 在示例中的体现</span>
+          <p>画出"秒的概念建构图"，让思维可视化。</p>
+          <span class="label">📚 适用的其他学习情境</span>
+          <p>用概念图整理单元知识点；用流程图表达解题步骤。</p>
+          <span class="apply-tag">💡 使用提醒：表达方式要适合内容本身，不要为了画画而画画</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="principle-card" onclick="togglePrinciple(this)">
+      <div class="principle-header">
+        <span class="principle-num">5</span>
+        <span class="principle-name">检验修正法——和权威对照，迭代完善</span>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="principle-body">
+        <div class="principle-content">
+          <span class="label">📌 原理说明</span>
+          <p>自己建构的理解不一定是完美的，需要和教材、老师或可靠资料对照，修正完善。</p>
+          <span class="label">🔬 在示例中的体现</span>
+          <p>拿自己的"秒定义"和教材对照，找出差异并修正。</p>
+          <span class="label">📚 适用的其他学习情境</span>
+          <p>自己总结的公式和教材对照；自己画的地图和标准地图对照。</p>
+          <span class="apply-tag">💡 使用提醒：先有自己的思考再对照，不要直接抄书</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 迁移应用练习 -->
+<div class="section">
+  <div class="section-title"><span>🏋️</span> 第三部分：迁移应用练习</div>
+
+  <div class="practice-box">
+    <h3>练习1：建构"一分钟"的理解</h3>
+    <p><strong>情境：</strong>你知道一分钟有多长吗？如果让你用身体动作来"表演"一分钟，你能做到吗？</p>
+    <p><strong>建构任务：</strong>用上述原理建构出对"一分钟"的准确理解。</p>
+    <p><strong>建议使用：</strong>观察锚定法 + 测量验证法 + 定义建构法</p>
+    <div class="scaffold-box">
+      🪜 <strong>建构脚手架：</strong>先找"一分钟"的生活参照（听一首歌、做一次眼保健操），再用计时器验证自己的感觉，最后写出定义。
+    </div>
+    <button class="btn-primary" onclick="showPractice('p1')">🧪 试试看</button>
+    <div id="p1" class="hidden-content scaffold-box">
+      ✅ 你的任务：打开计时器，先凭感觉喊"停"（感觉过了1分钟），再看实际过了多久。多试几次，记下你的数据！
+    </div>
+  </div>
+
+  <div class="practice-box">
+    <h3>练习2：建构"小时"的理解</h3>
+    <p><strong>情境：</strong>一节课是40分钟，一集动画片大约20分钟，那一小时有多长？</p>
+    <p><strong>建构任务：</strong>用"关系法"建构对"小时"的理解——不用"1小时=60分钟"，而用生活经验来描述。</p>
+    <p><strong>建议使用：</strong>表达固化法 + 检验修正法</p>
+    <div class="scaffold-box">
+      🪜 <strong>建构脚手架：</strong>用"我从____到____做____，大约经过了一小时"的句式来描述。
+    </div>
+    <button class="btn-primary" onclick="showPractice('p2')">🧪 试试看</button>
+    <div id="p2" class="hidden-content scaffold-box">
+      ✅ 例如："我从7:00到8:00上了一节语文课+课间休息，大约经过了一小时。" 你的一小时是什么？写下来！
+    </div>
+  </div>
+</div>
+
+<!-- 元认知反思 -->
+<div class="section">
+  <div class="section-title"><span>🤔</span> 第四部分：元认知反思</div>
+  <div class="reflection-box">
+    <p>想一想这些问题，把你的答案写在笔记本上：</p>
+    <div class="reflection-item">在建构"秒"的概念时，哪一步对你的帮助最大？为什么？</div>
+    <div class="reflection-item">你觉得自己建构的理解和教材上的定义有什么不同？</div>
+    <div class="reflection-item">下次学一个新概念时，你打算先用哪一条原理？</div>
+    <div class="reflection-item">你觉得哪一条原理最难用？困难在哪里？</div>
+    <div class="reflection-item">建构和死记硬背的区别是什么？你更喜欢哪一种？</div>
+  </div>
+  <button class="btn-primary" onclick="alert('📝 拿出笔记本，写下你的反思！和同学分享你的想法。')" style="margin-top:12px;">✍️ 开始反思</button>
+</div>
+
+</div>
+
+<script>
+function togglePrinciple(el) {
+  el.classList.toggle('expanded');
+}
+function showPractice(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('show');
+}
+</script>
+
+</body>
+</html>

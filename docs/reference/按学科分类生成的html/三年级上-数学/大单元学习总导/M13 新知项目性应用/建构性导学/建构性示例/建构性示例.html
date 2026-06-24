@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性示例 — 周末时间规划书</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px 24px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 24px 30px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  text-align: center;
+}
+.header h1 {
+  margin: 0;
+  font-size: var(--font-h1);
+  font-weight: 700;
+}
+.header p {
+  margin: 8px 0 0;
+  opacity: 0.9;
+  font-size: var(--font-body);
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+.story-box {
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  font-size: var(--font-body);
+}
+.story-box .avatar {
+  font-size: 40px;
+  text-align: center;
+  margin-bottom: 6px;
+}
+.step-card {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-bottom: 14px;
+  border-left: 4px solid var(--primary);
+  transition: transform 0.2s;
+  cursor: pointer;
+}
+.step-card:hover {
+  transform: translateX(8px);
+}
+.step-card .step-num {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 15px;
+  margin-right: 8px;
+}
+.step-card h3 {
+  display: inline;
+  font-size: 20px;
+  color: var(--text);
+  margin: 0;
+}
+.step-card .step-detail {
+  margin-top: 8px;
+  padding-left: 36px;
+}
+.step-card .step-detail p {
+  margin: 4px 0;
+}
+.step-card .step-detail .tag {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  padding: 1px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin: 2px;
+}
+.table-demo {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  font-size: 16px;
+}
+.table-demo th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+}
+.table-demo td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.table-demo tr:hover td {
+  background: #f0f5ff;
+}
+.tip-box {
+  background: #e6f7ff;
+  border: 1px dashed var(--accent);
+  border-radius: var(--border-radius);
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+.checklist label {
+  display: block;
+  padding: 5px 0;
+  cursor: pointer;
+}
+.checklist input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+  vertical-align: middle;
+  accent-color: var(--primary);
+}
+.checklist label.checked {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+.toggle-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 6px 18px;
+  border-radius: 16px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 8px;
+}
+.toggle-btn:hover {
+  background: var(--primary-hover);
+}
+.footer {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 16px 0 8px;
+  font-size: 15px;
+}
+@media (max-width: 600px) {
+  .container { padding: 12px 16px; }
+  .header { padding: 18px 20px; }
+  .header h1 { font-size: 24px; }
+  .card { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>建构性示例</h1>
+    <p>"我是时间小管家" — 制作一份周末时间规划书</p>
+  </div>
+
+  <div class="card">
+    <h2>一、真实建构情境</h2>
+    <div class="story-box">
+      <div class="avatar">🧑‍🎓</div>
+      <p>小明升入三年级后，发现周末时间总是不够用：作业、兴趣班、玩耍、阅读……每件事都想做，但总是做不完。他决定制作一份<strong>"周末时间规划书"</strong>，把自己的一天安排得井井有条。</p>
+      <p><strong>请你帮小明（也帮自己）来完成这份规划书！</strong></p>
+    </div>
+    <p><strong>🎯 建构目标：</strong>运用"时、分、秒"的知识，建构一份科学、合理的周末时间规划书。</p>
+  </div>
+
+  <div class="card">
+    <h2>二、建构任务说明</h2>
+    <table class="table-demo">
+      <tr>
+        <th>项目</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td>成果名称</td>
+        <td>我的周末时间规划书</td>
+      </tr>
+      <tr>
+        <td>用途</td>
+        <td>用来规划和记录自己的周末时间安排</td>
+      </tr>
+      <tr>
+        <td>对象</td>
+        <td>自己（学生）使用</td>
+      </tr>
+      <tr>
+        <td>形式</td>
+        <td>表格 + 时间轴 + 说明文字</td>
+      </tr>
+      <tr>
+        <td>最低标准</td>
+        <td>包含至少3个时间段（上午/下午/晚上），每个活动标注开始时间和持续时间</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>三、建构过程示范（6步）</h2>
+    <p>点击每一步查看详细示范 👇</p>
+
+    <div class="step-card" onclick="toggleStep('s1')">
+      <span class="step-num">1</span><h3>列出所有要做的事情</h3>
+      <div id="s1" class="step-detail" style="display:none;">
+        <p><strong>做什么：</strong>头脑风暴周末的所有活动</p>
+        <p><strong>怎么做：</strong>按"必须做"和"想要做"分类</p>
+        <p><strong>产出：</strong>活动清单</p>
+        <p><span class="tag">示范</span> <strong>必须做：</strong>数学作业（预计30分钟）、英语朗读（15分钟）、语文预习（20分钟）</p>
+        <p><span class="tag">示范</span> <strong>想要做：</strong>看动画片（20分钟）、打羽毛球（40分钟）、拼乐高（30分钟）</p>
+      </div>
+    </div>
+
+    <div class="step-card" onclick="toggleStep('s2')">
+      <span class="step-num">2</span><h3>估算每项活动的用时</h3>
+      <div id="s2" class="step-detail" style="display:none;">
+        <p><strong>做什么：</strong>用"分"和"秒"为单位估算每件事的时长</p>
+        <p><strong>怎么做：</strong>回忆之前做类似事情用多长时间，或先做一次计时</p>
+        <p><strong>产出：</strong>带时间估值的活动清单</p>
+        <p><span class="tag">小窍门</span> 如果没把握，可以先试做5分钟，再按比例推算！</p>
+      </div>
+    </div>
+
+    <div class="step-card" onclick="toggleStep('s3')">
+      <span class="step-num">3</span><h3>确定活动的先后顺序</h3>
+      <div id="s3" class="step-detail" style="display:none;">
+        <p><strong>做什么：</strong>考虑活动之间的逻辑关系（先做作业再玩）</p>
+        <p><strong>怎么做：</strong>用箭头表示先后顺序</p>
+        <p><strong>产出：</strong>活动顺序图</p>
+        <p><span class="tag">示范</span> 数学作业 → 英语朗读 → 语文预习 →（休息）→ 看动画片 → 打羽毛球</p>
+      </div>
+    </div>
+
+    <div class="step-card" onclick="toggleStep('s4')">
+      <span class="step-num">4</span><h3>制作时间规划表格</h3>
+      <div id="s4" class="step-detail" style="display:none;">
+        <p><strong>做什么：</strong>把活动填入时间段</p>
+        <p><strong>怎么做：</strong>画一个从早到晚的时间表格，写上开始时间、时长、结束时间</p>
+        <p><strong>产出：</strong>时间规划表草案</p>
+        <table class="table-demo">
+          <tr><th>时间段</th><th>活动</th><th>开始时间</th><th>持续时长</th><th>结束时间</th></tr>
+          <tr><td>上午</td><td>数学作业</td><td>9:00</td><td>30分</td><td>9:30</td></tr>
+          <tr><td>上午</td><td>英语朗读</td><td>9:40</td><td>15分</td><td>9:55</td></tr>
+          <tr><td>下午</td><td>打羽毛球</td><td>15:00</td><td>40分</td><td>15:40</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="step-card" onclick="toggleStep('s5')">
+      <span class="step-num">5</span><h3>检查时间安排是否合理</h3>
+      <div id="s5" class="step-detail" style="display:none;">
+        <p><strong>做什么：</strong>计算总用时是否超过可用时间</p>
+        <p><strong>怎么做：</strong>把所有活动用时加起来，和周末总可用时间比较</p>
+        <p><strong>产出：</strong>时间合理性分析</p>
+        <p><span class="tag">示范</span> 30分+15分+20分+10分（休息）+20分+40分 = 135分钟，在可用范围内 ✅</p>
+      </div>
+    </div>
+
+    <div class="step-card" onclick="toggleStep('s6')">
+      <span class="step-num">6</span><h3>美化完善</h3>
+      <div id="s6" class="step-detail" style="display:none;">
+        <p><strong>做什么：</strong>让规划书更清晰美观</p>
+        <p><strong>怎么做：</strong>用时标注颜色区分，画时间轴，加标题</p>
+        <p><strong>产出：</strong>最终的周末时间规划书</p>
+        <p><span class="tag">建议</span> 用不同颜色区分"学习"和"娱乐"，一眼就能看出时间分配！</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>四、支架工具推荐</h2>
+    <div class="tip-box">
+      <p><strong>📋 时间估算模板：</strong>活动 → 预计用时 → 实际用时 → 差异</p>
+      <p><strong>📋 时间规划表格模板：</strong>时间段 → 活动名称 → 开始时间 → 持续时间 → 结束时间</p>
+      <p><strong>📋 检查清单：</strong></p>
+      <ul>
+        <li>是否所有必须做的事都安排进去了？</li>
+        <li>时间安排是否可执行？有没有留出休息时间？</li>
+        <li>总用时是否超过了可用时间？</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>五、建构成果样例</h2>
+    <p><strong>成果名称：</strong>我的周末时间规划书</p>
+    <p><strong>成果评价要求：</strong></p>
+    <ul>
+      <li><strong>科学性：</strong>时间计算准确，无换算错误</li>
+      <li><strong>完整性：</strong>涵盖全天主要活动，标注清晰</li>
+      <li><strong>美观性：</strong>有标题、颜色标注、时间轴或表格</li>
+    </ul>
+    <div class="tip-box">
+      <p><strong>推荐表达格式：</strong></p>
+      <table class="table-demo">
+        <tr><th>时间段</th><th>活动</th><th>开始时间</th><th>持续时长</th><th>结束时间</th></tr>
+        <tr><td>上午</td><td>数学作业</td><td>9:00</td><td>30分</td><td>9:30</td></tr>
+        <tr><td>下午</td><td>打羽毛球</td><td>15:00</td><td>40分</td><td>15:40</td></tr>
+      </table>
+    </div>
+    <p><strong>💡 完成建议：</strong>先用手绘草稿，再用彩笔美化。</p>
+  </div>
+
+  <div class="card">
+    <h2>六、成果优化建议</h2>
+    <ul>
+      <li>对照检查清单，检查是否有时间冲突</li>
+      <li>请家长或同学看看是否合理</li>
+      <li>根据实际执行情况调整——第一版不完美没关系！</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>七、自我评价量表</h2>
+    <p>完成规划书后，逐项检查：</p>
+    <div class="checklist">
+      <label><input type="checkbox" onclick="toggleCheck(this)"> 我是否用到了"时、分、秒"的换算知识？</label>
+      <label><input type="checkbox" onclick="toggleCheck(this)"> 我的规划书中是否标注了每项活动的开始时间和持续时间？</label>
+      <label><input type="checkbox" onclick="toggleCheck(this)"> 我是否检查了所有活动的时间总和没有超过可用时间？</label>
+      <label><input type="checkbox" onclick="toggleCheck(this)"> 我的规划书是否清晰易读，别人能看懂？</label>
+      <label><input type="checkbox" onclick="toggleCheck(this)"> 我是否根据实际情况对规划进行了调整？</label>
+    </div>
+  </div>
+
+  <div class="footer">建构性示例 — 跟着步骤，你也可以做出超棒的时间规划书！</div>
+</div>
+<script>
+function toggleStep(id) {
+  var el = document.getElementById(id);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+function toggleCheck(el) {
+  el.parentElement.classList.toggle('checked');
+}
+</script>
+</body>
+</html>

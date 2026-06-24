@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块定位 — M12 新知书面性应用</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  padding: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.header::after {
+  content: "🗺️";
+  position: absolute;
+  right: 20px;
+  bottom: 10px;
+  font-size: 64px;
+  opacity: 0.15;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin-bottom: 6px;
+  position: relative;
+  z-index: 1;
+}
+.header .subtitle {
+  font-size: 16px;
+  opacity: 0.9;
+  position: relative;
+  z-index: 1;
+}
+.header .badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.2);
+  padding: 2px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  margin-top: 6px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Card */
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card h2 .icon { font-size: 24px; }
+.card p { margin-bottom: 10px; }
+.card ul, .card ol { margin: 8px 0 12px 22px; }
+.card li { margin-bottom: 6px; }
+
+/* Highlight */
+.callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: var(--border-radius);
+  margin: 12px 0;
+}
+.callout.blue {
+  background: #e6f4ff;
+  border-left: 4px solid var(--primary);
+}
+.callout.green {
+  background: #f6ffed;
+  border-left: 4px solid #52c41a;
+}
+.callout.orange {
+  background: #fff7e6;
+  border-left: 4px solid #fa8c16;
+}
+.callout.purple {
+  background: #f9f0ff;
+  border-left: 4px solid #722ed1;
+}
+.callout .co-icon { font-size: 24px; flex-shrink: 0; }
+
+/* Bridge diagram */
+.bridge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 14px 0;
+  flex-wrap: wrap;
+}
+.bridge-step {
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 12px 16px;
+  text-align: center;
+  min-width: 100px;
+  flex: 1;
+  transition: 0.3s;
+}
+.bridge-step:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow);
+  transform: translateY(-2px);
+}
+.bridge-step .bs-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.bridge-step .bs-content {
+  font-weight: 700;
+  color: var(--primary);
+  margin-top: 2px;
+}
+.bridge-step.current {
+  border-color: var(--primary);
+  background: #e6f4ff;
+}
+.bridge-step.current .bs-content {
+  font-size: 18px;
+}
+.bridge-arrow {
+  font-size: 24px;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+/* Achievement */
+.achievement-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 10px 0;
+}
+.achievement-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f0f5ff;
+  border-radius: var(--border-radius);
+  padding: 12px 14px;
+  border: 1px solid #d6e4ff;
+  transition: 0.2s;
+}
+.achievement-item:hover {
+  background: #e6f4ff;
+  transform: translateX(4px);
+}
+.achievement-item .ai-icon { font-size: 22px; }
+.achievement-item .ai-text { font-weight: 600; }
+
+/* Timeline animation */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Counter animation on scroll */
+.counter {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--primary);
+  text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .container { padding: 12px 10px; }
+  .card { padding: 14px; }
+  .achievement-list { grid-template-columns: 1fr; }
+  .bridge { flex-direction: column; }
+  .bridge-arrow { transform: rotate(90deg); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>模块定位</h1>
+    <div class="subtitle">M12 新知书面性应用 · 学习总体概要</div>
+    <div class="badge">🔢 数学 · 三年级上 · 时、分、秒</div>
+  </div>
+
+  <!-- 1. 本模块学什么 -->
+  <div class="card">
+    <h2><span class="icon">📖</span> 本模块学习什么？</h2>
+    <p>在这个模块里，你要学会把前面学到的<strong>"时、分、秒"知识</strong>，用规范、清晰的方式<strong>"写出来"</strong>。不是简单地算一个答案，而是把你的思考过程——读题、画时间轴、列算式、写答句——完整地呈现到纸上。</p>
+    <p>你还会接触到不同类型的时间应用题，从简单的单位换算到复杂的时间规划，一步步提升书面表达的能力。</p>
+    <div class="callout blue">
+      <div class="co-icon">💡</div>
+      <div><strong>一句话概括：</strong>从"心里明白"到"纸上写清"——让时间知识变成你能展示的书面成果。</div>
+    </div>
+  </div>
+
+  <!-- 2. 为什么重要 -->
+  <div class="card">
+    <h2><span class="icon">❓</span> 本模块为什么重要？</h2>
+    <p>从<strong>"会算"到"会写"</strong>是数学学习的一大步！</p>
+    <div style="display:flex;gap:14px;margin:12px 0;flex-wrap:wrap;">
+      <div style="flex:1;min-width:150px;text-align:center;background:#fff;border:2px solid var(--border);border-radius:var(--border-radius);padding:16px;">
+        <div style="font-size:36px;color:var(--text-secondary);">🧮</div>
+        <div style="font-weight:700;font-size:16px;color:var(--text-secondary);">会算</div>
+        <div style="font-size:14px;color:var(--text-secondary);">心里知道答案</div>
+        <div style="margin-top:8px;font-size:28px;color:var(--primary);">→</div>
+      </div>
+      <div style="flex:1;min-width:150px;text-align:center;background:var(--primary);color:#fff;border-radius:var(--border-radius);padding:16px;">
+        <div style="font-size:36px;">✏️</div>
+        <div style="font-weight:700;font-size:16px;">会写</div>
+        <div style="font-size:14px;opacity:0.9;">清晰表达思维过程</div>
+      </div>
+    </div>
+    <p>这就像学说话——先学会听懂别人说话，再学会自己表达出来。在以后的考试中，书面表达的规范性直接影响你的得分；在生活中，写时间安排表、请假条、日程规划，都需要用到本模块的技能。</p>
+  </div>
+
+  <!-- 3. 与大单元的关系 -->
+  <div class="card">
+    <h2><span class="icon">🔗</span> 本模块与大单元主题的关系</h2>
+    <p>整个大单元的主题是<strong>"时、分、秒"</strong>，你已经在前面模块中认识了这三个时间单位、理解了它们之间的关系、学会了基本换算。</p>
+    <div class="callout orange">
+      <div class="co-icon">🎯</div>
+      <div>本模块是对这些知识的<strong>"总整理和书面输出"</strong>——把零散的知识点整合成规范的表达方式，为后面的综合应用打基础。</div>
+    </div>
+  </div>
+
+  <!-- 4. 前后衔接 -->
+  <div class="card">
+    <h2><span class="icon">🔀</span> 前后模块衔接</h2>
+    <div class="bridge">
+      <div class="bridge-step">
+        <div class="bs-label">前面的模块</div>
+        <div class="bs-content">知识 · 理解换算</div>
+        <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">学的是"知识"</div>
+      </div>
+      <div class="bridge-arrow">▶</div>
+      <div class="bridge-step current">
+        <div class="bs-label">👈 当前模块</div>
+        <div class="bs-content" style="font-size:18px;">书面表达技能</div>
+        <div style="font-size:13px;color:var(--primary);margin-top:4px;">学的是"技能"</div>
+      </div>
+      <div class="bridge-arrow">▶</div>
+      <div class="bridge-step">
+        <div class="bs-label">后面的模块</div>
+        <div class="bs-content">综合应用</div>
+        <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">学的是"应用"</div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:8px;font-size:15px;color:var(--text-secondary);">
+      📈 知识 → <strong style="color:var(--primary);">技能</strong> → 综合应用
+    </div>
+  </div>
+
+  <!-- 5. 预期成果 -->
+  <div class="card">
+    <h2><span class="icon">🎁</span> 预期学习成果</h2>
+    <p>当你完成这个模块，你将收获一份属于自己的<strong>《时间书面应用成果集》</strong>，里面包含：</p>
+    <div class="achievement-list">
+      <div class="achievement-item">
+        <div class="ai-icon">📊</div>
+        <div class="ai-text">1张规范的时间轴图示</div>
+      </div>
+      <div class="achievement-item">
+        <div class="ai-icon">✏️</div>
+        <div class="ai-text">5道以上完整书写的时间应用题解答</div>
+      </div>
+      <div class="achievement-item">
+        <div class="ai-icon">📅</div>
+        <div class="ai-text">1份"我的周末时间安排"书面计划</div>
+      </div>
+      <div class="achievement-item">
+        <div class="ai-icon">📋</div>
+        <div class="ai-text">1张"时间单位换算说明书"</div>
+      </div>
+      <div class="achievement-item" style="grid-column:1/-1;">
+        <div class="ai-icon">🔑</div>
+        <div class="ai-text">若干条自己总结的解题方法</div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:14px;">
+      <button onclick="var p=this.nextElementSibling;p.style.display=p.style.display==='none'?'block':'none';this.textContent=p.style.display==='none'?'👀 查看成果样张':'🙈 收起成果样张'" style="background:var(--primary);color:#fff;border:none;border-radius:6px;padding:8px 20px;font-size:16px;cursor:pointer;">
+        👀 查看成果样张
+      </button>
+      <div style="display:none;margin-top:12px;padding:14px;background:#f0f5ff;border-radius:var(--border-radius);text-align:left;">
+        <p style="font-weight:700;color:var(--primary);">📋 《我的周末时间安排》（片段）</p>
+        <p>星期六上午8时30分起床，洗漱15分钟到8时45分。吃早餐用20分钟，9时05分开始写作业……</p>
+        <p style="color:var(--text-secondary);font-size:15px;">——以上规范使用了"时"和"分"单位，有时间轴思路，有连续时间表达。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部 -->
+  <div style="text-align:center;padding:16px 0 8px;color:var(--text-secondary);font-size:14px;">
+    M12 新知书面性应用 · 模块定位
+  </div>
+</div>
+</body>
+</html>

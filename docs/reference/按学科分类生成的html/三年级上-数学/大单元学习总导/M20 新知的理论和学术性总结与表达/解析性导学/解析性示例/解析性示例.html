@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性示例 - 时间知识总结分析</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  margin: 0; padding: 0;
+  width: 100%;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 30px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, #1677ff, #4096ff);
+  color: #fff;
+  padding: 28px 36px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 6px;
+}
+.header p {
+  font-size: 16px;
+  opacity: 0.9;
+  margin: 0;
+}
+.section-title {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 28px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 3px solid var(--accent);
+}
+.step-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.step-header {
+  padding: 16px 24px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+  background: linear-gradient(135deg, #f0f5ff, #e6f0ff);
+  transition: background 0.3s;
+}
+.step-header:hover {
+  background: linear-gradient(135deg, #e6f0ff, #d6e4ff);
+}
+.step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 15px;
+  font-weight: bold;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+.step-header h3 {
+  font-size: 19px;
+  color: var(--primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+.toggle-icon {
+  font-size: 20px;
+  color: var(--primary);
+  transition: transform 0.3s ease;
+}
+.step-card.expanded .toggle-icon {
+  transform: rotate(180deg);
+}
+.step-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s ease;
+}
+.step-card.expanded .step-body {
+  max-height: 800px;
+}
+.step-body-inner {
+  padding: 20px 24px;
+}
+.step-body-inner p {
+  margin-bottom: 10px;
+}
+.think-bubble {
+  background: #f0f5ff;
+  border-left: 4px solid var(--primary);
+  padding: 12px 16px;
+  margin: 10px 0;
+  border-radius: 0 6px 6px 0;
+  font-size: 15px;
+}
+.think-bubble::before {
+  content: "💡 ";
+  font-weight: bold;
+}
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 15px;
+}
+.info-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 12px;
+  text-align: left;
+  border: 1px solid var(--primary);
+}
+.info-table td {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  vertical-align: top;
+}
+.info-table tr:nth-child(even) {
+  background: #fafafa;
+}
+.error-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 18px;
+  margin: 10px 0;
+  border-radius: 6px;
+}
+.error-wrong {
+  background: #fff1f0;
+  border: 1px solid #ffa39e;
+}
+.error-right {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+}
+.error-label {
+  font-weight: bold;
+  flex-shrink: 0;
+  min-width: 48px;
+}
+.conclusion-box {
+  background: linear-gradient(135deg, #f0f5ff, #e6f0ff);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin: 16px 0;
+  font-size: 17px;
+  text-align: center;
+}
+.self-eval {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-top: 20px;
+}
+.self-eval h4 {
+  color: var(--primary);
+  font-size: 18px;
+  margin-bottom: 12px;
+}
+.eval-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+}
+.eval-item:last-child {
+  border-bottom: none;
+}
+.eval-item input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin-top: 4px;
+  accent-color: var(--primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.eval-item label {
+  cursor: pointer;
+}
+.eval-item.done label {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+.tag {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 14px;
+  margin: 2px;
+}
+.practice-box {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin: 16px 0;
+  border-left: 4px solid var(--primary);
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🔍 解析性示例</h1>
+  <p>M20 新知的理论和学术性总结与表达 —— 跟着专家思路，学会分析"时间单位知识总结"</p>
+</div>
+
+<div class="section-title">📌 解析任务情境</div>
+<p>
+你刚学完"时、分、秒"单元，老师让你写一份"关于时间单位的知识总结"。你翻了翻课本，发现课本上关于"时间单位"的知识是分散在各页的——第2页讲秒，第4页讲分，第6页讲时，第8页讲换算。你决定参考课本，写一份完整的知识总结。但你想先看看：<strong>一份好的知识总结，到底是怎么写出来的？</strong>
+</p>
+
+<div class="section-title">🎯 核心问题</div>
+<p><strong>一段好的"时间单位知识总结"，应该包含哪些要素？这些要素是如何组织成一个完整表达的？</strong></p>
+
+<div class="section-title">📊 关键信息提取</div>
+<div class="table-wrap" style="overflow-x:auto;">
+<table class="info-table">
+  <tr><th>情境信息</th><th>这说明什么</th><th>为什么重要</th></tr>
+  <tr>
+    <td>课本知识分散在不同页面</td>
+    <td>需要"整合"而非"照搬"</td>
+    <td>知识总结的核心工作是把分散信息结构化</td>
+  </tr>
+  <tr>
+    <td>课本每部分有固定格式</td>
+    <td>好的表达有可识别的结构模式</td>
+    <td>我们可以模仿这种结构</td>
+  </tr>
+  <tr>
+    <td>有些部分有例子、有些没有</td>
+    <td>例子帮助理解，但不是所有知识点都需要例子</td>
+    <td>需要判断哪里该举例、哪里不该</td>
+  </tr>
+</table>
+</div>
+
+<div class="section-title">👣 专家解析过程</div>
+
+<div class="step-card expanded">
+  <div class="step-header" onclick="toggleCard(this)">
+    <h3><span class="step-num">1</span>先看见什么</h3>
+    <span class="toggle-icon">▾</span>
+  </div>
+  <div class="step-body">
+    <div class="step-body-inner">
+      <p>拿到"时间单位"相关的课本内容，先整体扫读一遍。</p>
+      <ul style="padding-left:20px;margin:8px 0;">
+        <li>哦，这是关于"时、分、秒"三种时间单位的介绍</li>
+        <li>每种单位都有自己的"定义—换算—举例"</li>
+      </ul>
+      <div class="think-bubble">先看整体能避免"见木不见林"，知道自己在看什么类型的材料</div>
+    </div>
+  </div>
+</div>
+
+<div class="step-card expanded">
+  <div class="step-header" onclick="toggleCard(this)">
+    <h3><span class="step-num">2</span>判断问题属于哪一类</h3>
+    <span class="toggle-icon">▾</span>
+  </div>
+  <div class="step-body">
+    <div class="step-body-inner">
+      <p>这是一个<strong>"知识说明类"</strong>文本，不是"问题解决类"或"观点论述类"。</p>
+      <div class="think-bubble">不同类型的内容有不同的分析重点。知识说明类要看"说清楚了吗"，而不是"说服人了吗"</div>
+    </div>
+  </div>
+</div>
+
+<div class="step-card expanded">
+  <div class="step-header" onclick="toggleCard(this)">
+    <h3><span class="step-num">3</span>调用哪些概念、原理或方法</h3>
+    <span class="toggle-icon">▾</span>
+  </div>
+  <div class="step-body">
+    <div class="step-body-inner">
+      <p><span class="tag">结构概念</span> 总—分—总结构、并列结构</p>
+      <p><span class="tag">要素概念</span> 定义、换算关系、生活实例、注意事项</p>
+      <p><span class="tag">逻辑概念</span> 从大到小（时→分→秒）的排列顺序</p>
+      <div class="think-bubble">有了这些概念工具，才能"有意识地"分析文本，而不是"感觉"好或不好</div>
+    </div>
+  </div>
+</div>
+
+<div class="step-card expanded">
+  <div class="step-header" onclick="toggleCard(this)">
+    <h3><span class="step-num">4</span>如何进行推理或分析</h3>
+    <span class="toggle-icon">▾</span>
+  </div>
+  <div class="step-body">
+    <div class="step-body-inner">
+      <p><strong>结构分析：</strong>课本按"秒→分→时"的顺序排列，采用的是"并列式"结构</p>
+      <p><strong>要素分析：</strong>每部分包含"定义+符号+换算关系+生活例子"</p>
+      <p><strong>语言分析：</strong>使用"是指……""通常用……表示""例如……"等固定句式</p>
+      <div class="think-bubble">从结构到要素再到语言，从宏观到微观，每一步都建立在之上一步的基础上</div>
+    </div>
+  </div>
+</div>
+
+<div class="step-card expanded">
+  <div class="step-header" onclick="toggleCard(this)">
+    <h3><span class="step-num">5</span>怎样形成结论</h3>
+    <span class="toggle-icon">▾</span>
+  </div>
+  <div class="step-body">
+    <div class="step-body-inner">
+      <p>一份好的"时间单位知识总结"应该：</p>
+      <ul style="padding-left:20px;margin:8px 0;">
+        <li>采用"总起—分述—总结"的完整结构</li>
+        <li>每种单位都包含"定义—符号—换算—举例"四个要素</li>
+        <li>使用规范的说明句式，语言清晰准确</li>
+      </ul>
+      <div class="think-bubble">这是从分析中归纳出的"好标准"，可以用来评价任何知识总结的质量</div>
+    </div>
+  </div>
+</div>
+
+<div class="section-title">🏠 结论表达</div>
+<div class="conclusion-box">
+  <p style="font-size:18px;">一份优秀的知识总结，就像一个结构完整的<strong>"小房子"</strong>——</p>
+  <p>有<strong>屋顶</strong>（总起）、有<strong>房间</strong>（分述各知识点）、有<strong>地基</strong>（总结）。</p>
+  <p>每一个房间里的<strong>陈设</strong>（定义、符号、换算、举例）都要齐全。</p>
+  <p style="margin-top:8px;">这样，读者才能住得舒服（看得明白）。📖</p>
+</div>
+
+<div class="section-title">🧰 方法提炼</div>
+<p>以后遇到"写知识总结"或"分析别人的知识总结"时，可以这样做：</p>
+<ul style="padding-left:24px;margin:8px 0 16px;">
+  <li><strong>先问三个问题：</strong>这是讲什么的？分了几部分？整体结构是什么？</li>
+  <li><strong>再拆每个部分：</strong>每部分包含哪些要素？要素顺序合理吗？</li>
+  <li><strong>最后整体评价：</strong>完整吗？清晰吗？有例子吗？</li>
+</ul>
+
+<div class="section-title">⚠️ 易错提醒</div>
+
+<div class="error-box error-wrong">
+  <span class="error-label" style="color:#cf1322;">❌ 错误1</span>
+  <span>只抄课本原文，没有自己的整合和归纳</span>
+</div>
+<div class="error-box error-right">
+  <span class="error-label" style="color:#389e0d;">✅ 应该</span>
+  <span>把分散的信息按自己理解重新组织</span>
+</div>
+
+<div class="error-box error-wrong">
+  <span class="error-label" style="color:#cf1322;">❌ 错误2</span>
+  <span>只写知识点没有例子</span>
+</div>
+<div class="error-box error-right">
+  <span class="error-label" style="color:#389e0d;">✅ 应该</span>
+  <span>每个抽象概念都配一个具体的生活例子</span>
+</div>
+
+<div class="error-box error-wrong">
+  <span class="error-label" style="color:#cf1322;">❌ 错误3</span>
+  <span>逻辑顺序混乱（今天写秒、明天写小时、后天写分钟）</span>
+</div>
+<div class="error-box error-right">
+  <span class="error-label" style="color:#389e0d;">✅ 应该</span>
+  <span>按一个清晰的顺序排列（秒→分→时 或 时→分→秒）</span>
+</div>
+
+<div class="section-title">✏️ 自主迁移小练习</div>
+<div class="practice-box">
+  <p><strong>请你用今天学到的方法，分析你班上一位同学的"长度单位知识总结"——</strong></p>
+  <p>提示：先用整体感知法看结构→再用结构拆解法拆各部分→最后用评价对照法打分</p>
+</div>
+
+<div class="self-eval">
+  <h4>📋 学习自评（点击勾选）</h4>
+  <div class="eval-item" onclick="toggleEval(this)">
+    <input type="checkbox">
+    <label>我能说出一份知识总结通常包含哪几个结构部分吗？</label>
+  </div>
+  <div class="eval-item" onclick="toggleEval(this)">
+    <input type="checkbox">
+    <label>我能分辨"知识说明"和"观点论述"的区别吗？</label>
+  </div>
+  <div class="eval-item" onclick="toggleEval(this)">
+    <input type="checkbox">
+    <label>我能从一段文字中找出"定义""换算""举例"吗？</label>
+  </div>
+  <div class="eval-item" onclick="toggleEval(this)">
+    <input type="checkbox">
+    <label>我能判断一份知识总结写得好不好，并说出理由吗？</label>
+  </div>
+  <div class="eval-item" onclick="toggleEval(this)">
+    <input type="checkbox">
+    <label>看完这个示例，我知道怎么写自己的知识总结了吗？</label>
+  </div>
+</div>
+
+</div>
+
+<script>
+function toggleCard(header) {
+  const card = header.parentElement;
+  card.classList.toggle('expanded');
+}
+function toggleEval(item) {
+  const cb = item.querySelector('input[type="checkbox"]');
+  cb.checked = !cb.checked;
+  item.classList.toggle('done', cb.checked);
+}
+</script>
+</body>
+</html>

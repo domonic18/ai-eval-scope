@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎬 视频资源 — 时间主题学习视频</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.container { width: 100%; max-width: none; padding: 24px 20px 48px; box-sizing: border-box; }
+.header { text-align: center; padding: 32px 20px 24px; background: linear-gradient(135deg, var(--bg), #e6f0ff); border-radius: var(--border-radius); margin-bottom: 28px; }
+.header h1 { font-size: var(--font-h1); margin: 0 0 8px; color: var(--primary); }
+.header p { font-size: 16px; color: var(--text-secondary); margin: 0; }
+.section-title { font-size: var(--font-h2); color: var(--primary); margin: 32px 0 16px; padding-left: 12px; border-left: 4px solid var(--primary); }
+.level-tag { display: inline-block; padding: 3px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+.level-basic { background: #e6f7ff; color: #0090ff; }
+.level-adv { background: #f0f5ff; color: #1677ff; }
+.level-pro { background: #f9f0ff; color: #722ed1; }
+.video-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px 24px; margin-bottom: 20px; transition: transform 0.2s; }
+.video-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(22,119,255,0.12); }
+.video-card h3 { margin: 0 0 4px; font-size: 19px; color: var(--text); }
+.video-card .subtitle { color: var(--text-secondary); font-size: 14px; margin-bottom: 14px; }
+.play-icon { display: inline-block; width: 40px; height: 40px; line-height: 40px; text-align: center; background: var(--primary); color: #fff; border-radius: 50%; font-size: 18px; margin-right: 10px; vertical-align: middle; }
+.video-title-wrap { display: flex; align-items: center; }
+.section-block { margin: 10px 0; }
+.section-block strong { color: var(--primary); }
+.question-list { background: #fafbff; border-radius: 8px; padding: 12px 16px; margin: 10px 0; }
+.question-list li { margin-bottom: 6px; }
+.pause-box { background: #fff7e6; border: 1px solid #ffd591; border-radius: 8px; padding: 10px 16px; margin: 10px 0; font-size: 15px; }
+.pause-box::before { content: "⏸ "; font-size: 18px; }
+.output-box { background: #f6ffed; border: 1px solid #b7eb8f; border-radius: 8px; padding: 10px 16px; margin: 10px 0; font-size: 15px; }
+.output-box::before { content: "✏️ "; font-size: 16px; }
+.checklist-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; cursor: pointer; }
+.checklist-item input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer; }
+.checklist-item label { cursor: pointer; flex: 1; }
+.checklist-item.done label { text-decoration: line-through; color: var(--text-secondary); }
+.source-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 15px; }
+.source-table th { background: var(--bg); color: var(--primary); padding: 10px 12px; text-align: left; font-weight: 600; }
+.source-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.source-table tr:hover td { background: #fafbff; }
+footer { text-align: center; color: var(--text-secondary); font-size: 14px; padding: 16px; background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); margin-top: 28px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🎬 视频资源</h1>
+  <p>通过视频直观感受时间计量在各个领域中的运用。<br>每个视频配有观看任务和思考问题——"有目的地看"比"随便看看"收获大得多！</p>
+</div>
+
+<div class="section-title">🟢 基础 · 解释型视频</div>
+
+<div class="video-card">
+  <div class="video-title-wrap">
+    <span class="play-icon">▶</span>
+    <h3>视频1：《认识钟表》——时间单位入门</h3>
+  </div>
+  <p class="subtitle">看完后能说出钟面上三根指针的名字和作用</p>
+
+  <div class="section-block"><strong>🎯 观看任务：</strong>看完后能说出钟面上三根指针的名字和作用</div>
+
+  <div class="question-list">
+    <strong>❓ 关键问题：</strong>
+    <ol style="margin:6px 0 0; padding-left:20px;">
+      <li>最短的指针叫什么？它走一大格是多久？</li>
+      <li>最长的指针叫什么？它走一圈是多久？</li>
+      <li>秒针走一圈，分针会走多少？</li>
+    </ol>
+  </div>
+
+  <div class="pause-box">视频讲到"三根指针分工"时暂停，自己复述一遍</div>
+  <div class="output-box">画一个钟面，标出时、分、秒三根指针</div>
+
+  <div style="margin-top:10px;">
+    <strong>✅ 观看打卡：</strong>
+    <div class="checklist-item" onclick="toggleCheck(this)"><input type="checkbox"><label>☐ 我已看完视频，能说出三根指针的名字和作用</label></div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><input type="checkbox"><label>☐ 我完成了"画钟面"输出任务</label></div>
+  </div>
+</div>
+
+<div class="section-title">🔵 进阶 · 分析型视频</div>
+
+<div class="video-card">
+  <div class="video-title-wrap">
+    <span class="play-icon">▶</span>
+    <h3>视频2：《原子钟的秘密》——时间如何被精确定义</h3>
+  </div>
+  <p class="subtitle">理解"1秒"是怎么被定义的</p>
+
+  <div class="section-block"><strong>🎯 观看任务：</strong>理解"1秒"是怎么被定义的</div>
+
+  <div class="question-list">
+    <strong>❓ 关键问题：</strong>
+    <ol style="margin:6px 0 0; padding-left:20px;">
+      <li>原子钟的"心脏"是什么？</li>
+      <li>什么是"铯-133原子振动9,192,631,770次"？</li>
+      <li>为什么我们需要这么精确的时间？</li>
+    </ol>
+  </div>
+
+  <div class="pause-box">当出现原子钟结构图时暂停，尝试解释各部分的功能</div>
+  <div class="output-box">用一段话解释"什么是原子钟"（50-100字）</div>
+
+  <div style="margin-top:10px;">
+    <strong>✅ 观看打卡：</strong>
+    <div class="checklist-item" onclick="toggleCheck(this)"><input type="checkbox"><label>☐ 我能用自己的话说出"1秒"是怎么定义的</label></div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><input type="checkbox"><label>☐ 我完成了"解释原子钟"输出任务</label></div>
+  </div>
+</div>
+
+<div class="video-card">
+  <div class="video-title-wrap">
+    <span class="play-icon">▶</span>
+    <h3>视频3：《世界上最准的钟》——中国铯原子喷泉钟</h3>
+  </div>
+  <p class="subtitle">了解中国科学家如何制造出高精度原子钟</p>
+
+  <div class="section-block"><strong>🎯 观看任务：</strong>了解中国科学家如何制造出高精度原子钟</div>
+
+  <div class="question-list">
+    <strong>❓ 关键问题：</strong>
+    <ol style="margin:6px 0 0; padding-left:20px;">
+      <li>中国原子钟的精度有多高？</li>
+      <li>"喷泉"是什么意思？</li>
+      <li>为什么要造这么准的钟？</li>
+    </ol>
+  </div>
+
+  <div class="pause-box">看到"喷泉"原理动画时暂停，试着用语言描述</div>
+  <div class="output-box">画一幅"原子喷泉钟"原理简图</div>
+
+  <div style="margin-top:10px;">
+    <strong>✅ 观看打卡：</strong>
+    <div class="checklist-item" onclick="toggleCheck(this)"><input type="checkbox"><label>☐ 我理解了原子喷泉钟的原理</label></div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><input type="checkbox"><label>☐ 我完成了原理简图</label></div>
+  </div>
+</div>
+
+<div class="section-title">🟣 挑战 · 辩论/前沿型视频</div>
+
+<div class="video-card">
+  <div class="video-title-wrap">
+    <span class="play-icon">▶</span>
+    <h3>视频4：TED演讲《为什么时间会飞逝》</h3>
+  </div>
+  <p class="subtitle">理解"时间感知"的心理现象</p>
+
+  <div class="section-block"><strong>🎯 观看任务：</strong>理解"时间感知"的心理现象</div>
+
+  <div class="question-list">
+    <strong>❓ 关键问题：</strong>
+    <ol style="margin:6px 0 0; padding-left:20px;">
+      <li>为什么小时候觉得时间过得很慢，长大后觉得过得很快？</li>
+      <li>"时间感知"和"时钟时间"是一回事吗？</li>
+      <li>讲者提出了什么有趣的观点？</li>
+    </ol>
+  </div>
+
+  <div class="pause-box">讲者提出"时间感与多巴胺有关"时暂停——你能同意吗？</div>
+  <div class="output-box">写一段文字（100字），说说你同意或不同意讲者的观点，并给出理由</div>
+
+  <div style="margin-top:10px;">
+    <strong>✅ 观看打卡：</strong>
+    <div class="checklist-item" onclick="toggleCheck(this)"><input type="checkbox"><label>☐ 我理解了"时间感知"和"时钟时间"的区别</label></div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><input type="checkbox"><label>☐ 我完成了观点短文</label></div>
+  </div>
+</div>
+
+<div class="section-title">📚 来源推荐</div>
+<div class="video-card" style="overflow-x:auto;">
+<table class="source-table">
+  <tr><th>类型</th><th>推荐平台</th><th>关键词搜索</th><th>适合谁</th></tr>
+  <tr><td>课程类</td><td>哔哩哔哩/学堂在线</td><td>"三年级数学 时、分、秒"</td><td>基础巩固</td></tr>
+  <tr><td>纪录片</td><td>央视网/YouTube</td><td>"计时器演化史" "时间科学"</td><td>拓展视野</td></tr>
+  <tr><td>专题演讲</td><td>TED</td><td>"Why time flies"</td><td>深度思考</td></tr>
+  <tr><td>行业实录</td><td>纪录片频道</td><td>"北斗导航" "原子钟"</td><td>前沿了解</td></tr>
+</table>
+</div>
+
+<footer>💡 看完视频别急着关——完成输出任务，知识才能真正属于你！</footer>
+
+</div>
+<script>
+function toggleCheck(item) {
+  item.classList.toggle('done');
+  var cb = item.querySelector('input[type="checkbox"]');
+  cb.checked = !cb.checked;
+}
+</script>
+</body>
+</html>

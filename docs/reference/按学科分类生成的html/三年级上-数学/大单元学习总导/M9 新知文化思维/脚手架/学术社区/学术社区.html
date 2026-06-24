@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>学术社区 — M9 新知文化思维</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --font-h3: 20px;
+  --line-height: 1.8;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+}
+.container { width:100%; max-width:none; padding:24px; box-sizing:border-box; }
+h1 { font-size:var(--font-h1); font-weight:700; color:var(--primary); margin-bottom:12px; }
+h2 { font-size:var(--font-h2); font-weight:600; color:var(--primary); margin:28px 0 12px; padding-bottom:8px; border-bottom:3px solid var(--accent); }
+h3 { font-size:var(--font-h3); font-weight:600; color:var(--text); margin:20px 0 10px; }
+.card {
+  background:var(--card-bg);
+  border-radius:var(--border-radius);
+  box-shadow:var(--shadow);
+  padding:20px;
+  margin-bottom:20px;
+  border-left:4px solid var(--primary);
+  transition:transform 0.2s, box-shadow 0.2s;
+}
+.card:hover { transform:translateY(-2px); box-shadow:0 4px 16px rgba(22,119,255,0.12); }
+.card-green { border-left-color:#52c41a; }
+.card-orange { border-left-color:#fa8c16; }
+.card-purple { border-left-color:#722ed1; }
+.connect-icon {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:40px; height:40px;
+  border-radius:50%;
+  font-size:20px;
+  margin-right:10px;
+  flex-shrink:0;
+}
+.connect-icon.blue { background:#e6f7ff; }
+.connect-icon.green { background:#f6ffed; }
+.connect-icon.orange { background:#fff7e6; }
+.connect-icon.purple { background:#f9f0ff; }
+.topic-box {
+  background:#f9f9f9;
+  border-radius:10px;
+  padding:14px 16px;
+  margin:10px 0;
+  border:1px solid #f0f0f0;
+}
+.topic-box .topic-num {
+  display:inline-block;
+  background:var(--primary);
+  color:#fff;
+  border-radius:50%;
+  width:26px; height:26px;
+  text-align:center;
+  line-height:26px;
+  font-size:14px;
+  font-weight:700;
+  margin-right:8px;
+}
+.role-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:10px;
+  margin:10px 0;
+}
+.role-card {
+  background:var(--card-bg);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:12px;
+  text-align:center;
+  transition:all 0.2s;
+  cursor:default;
+}
+.role-card:hover {
+  border-color:var(--primary);
+  box-shadow:0 2px 8px rgba(22,119,255,0.1);
+}
+.role-card .role-icon { font-size:28px; margin-bottom:4px; }
+.role-card .role-name { font-weight:600; color:var(--primary); }
+.role-card .role-desc { font-size:14px; color:var(--text-secondary); margin-top:2px; }
+.toggle-btn {
+  display:inline-block;
+  margin-top:8px;
+  padding:6px 16px;
+  background:var(--primary);
+  color:#fff;
+  border:none;
+  border-radius:20px;
+  font-size:15px;
+  cursor:pointer;
+  transition:background 0.2s;
+}
+.toggle-btn:hover { background:var(--primary-hover); }
+.toggle-content { display:none; margin-top:10px; padding:12px; background:#f9f9f9; border-radius:8px; }
+.toggle-content.show { display:block; }
+table {
+  width:100%;
+  border-collapse:collapse;
+  margin:10px 0;
+  font-size:16px;
+}
+th, td {
+  border:1px solid var(--border);
+  padding:10px;
+  text-align:left;
+}
+th { background:var(--primary); color:#fff; font-weight:600; }
+tr:nth-child(even) { background:#f5f5f5; }
+tr:hover { background:#e6f7ff; }
+.highlight-box {
+  background:linear-gradient(135deg,#f0f5ff,#e6f7ff);
+  border-radius:var(--border-radius);
+  padding:16px;
+  margin:10px 0;
+}
+.highlight-box p { margin:4px 0; }
+.resource-link {
+  display:inline-block;
+  background:var(--card-bg);
+  border:1px solid var(--primary);
+  color:var(--primary);
+  padding:6px 14px;
+  border-radius:20px;
+  text-decoration:none;
+  font-size:15px;
+  margin:4px;
+  transition:all 0.2s;
+}
+.resource-link:hover { background:var(--primary); color:#fff; }
+@media (max-width:600px) {
+  .container { padding:16px; }
+  .role-grid { grid-template-columns:repeat(2,1fr); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🌐 学术社区</h1>
+<p style="font-size:20px;color:var(--text-secondary);margin-bottom:16px;">M9 新知文化思维 · 构建学习共同体</p>
+
+<div class="card">
+  <p style="font-size:20px;">🤝 通过与同伴、家长和社会的交流讨论，深化对<strong>"时间"</strong>的理解。</p>
+</div>
+
+<h2>👥 同伴连接：讨论与协作</h2>
+
+<h3>📌 讨论议题（结构化）</h3>
+
+<div class="topic-box">
+  <p><span class="topic-num">1</span> <strong>你相信"时间感知"有快慢之说吗？</strong></p>
+  <p style="margin-left:34px;margin-top:4px;">同一节40分钟的课，为什么有人觉得"一眨眼"有人觉得"度秒如年"？——用你的"一分钟体验"数据来说话。</p>
+</div>
+
+<div class="topic-box">
+  <p><span class="topic-num">2</span> <strong>如果你的手表现在突然停止不走了，你能用哪些方法估计现在大概几点？</strong></p>
+  <p style="margin-left:34px;margin-top:4px;">排除看手机！你能想出多少种方法？越多越好！</p>
+  <button class="toggle-btn" onclick="toggleTopic('topic2')">💡 提示一下</button>
+  <div class="toggle-content" id="topic2">
+    <p>想一想：太阳的位置、自己的影子、肚子饿不饿、公鸡打鸣……古人可没有手表哦！</p>
+  </div>
+</div>
+
+<div class="topic-box">
+  <p><span class="topic-num">3</span> <strong>古人的"日晷""水钟"和今天的"原子钟"，你觉得哪个最厉害？为什么？</strong></p>
+  <p style="margin-left:34px;margin-top:4px;">三种计时工具各有优劣，你的选择是？</p>
+  <button class="toggle-btn" onclick="toggleTopic('topic3')">🔎 了解一下</button>
+  <div class="toggle-content" id="topic3">
+    <p><strong>日晷</strong>：需要太阳，晚上和阴天不能用</p>
+    <p><strong>水钟</strong>：不受天气影响，但水会蒸发</p>
+    <p><strong>原子钟</strong>：精确到每亿年误差1秒，但需要高科技</p>
+  </div>
+</div>
+
+<h3>🎭 角色分工（小组活动 3-4人）</h3>
+<p style="margin-bottom:8px;">每次讨论选好角色，轮流担任！</p>
+
+<div class="role-grid">
+  <div class="role-card">
+    <div class="role-icon">⏱️</div>
+    <div class="role-name">计时员</div>
+    <div class="role-desc">控制每次讨论3分钟</div>
+  </div>
+  <div class="role-card">
+    <div class="role-icon">📝</div>
+    <div class="role-name">记录员</div>
+    <div class="role-desc">填写讨论记录表</div>
+  </div>
+  <div class="role-card">
+    <div class="role-icon">🎤</div>
+    <div class="role-name">发言代表</div>
+    <div class="role-desc">向全班分享观点</div>
+  </div>
+  <div class="role-card">
+    <div class="role-icon">❓</div>
+    <div class="role-name">质疑员</div>
+    <div class="role-desc">追问"真的吗？"</div>
+  </div>
+</div>
+
+<button class="toggle-btn" onclick="toggleTopic('output')">📋 讨论输出机制</button>
+<div class="toggle-content" id="output">
+  <p>每个议题讨论后，每组完成一张<strong>"讨论记录卡"</strong>：</p>
+  <p style="margin:4px 0;">议题名称 → 我们的观点（3-5条）→ 我们达成的共识 → 还有争议的问题</p>
+</div>
+
+<h2>🏠 家校连接：支持与反馈</h2>
+
+<div class="card card-green">
+  <div style="display:flex;align-items:flex-start;">
+    <div class="connect-icon green">👨‍👩‍👧</div>
+    <div>
+      <h3 style="margin:0;">家长参与活动：</h3>
+      <p>请家长讲一个他们小时候关于<strong>"等时间"</strong>的故事——等公交车、等过年、等下课……</p>
+      <p>对比你和家长对"等"的感受有什么不同？</p>
+      <button class="toggle-btn" onclick="toggleTopic('family')">📝 反馈表</button>
+      <div class="toggle-content" id="family">
+        <p>把你在课堂上的"一分钟体验"成果带回家，请家长写一句点评。</p>
+        <p>比如："孩子，我小时候等公交车觉得时间好长，你现在等快递是不是也一样？"</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2>🌍 社会连接：真实连接</h2>
+
+<div class="card card-orange">
+  <div style="display:flex;align-items:flex-start;">
+    <div class="connect-icon orange">🔗</div>
+    <div>
+      <h3 style="margin:0;">拓展资源</h3>
+      <p>百度搜索"国家授时中心"，看看中国最精确的时间是怎么发布的。</p>
+      <p>访问 time.is 网站，看原子钟显示的时间。</p>
+    </div>
+  </div>
+</div>
+
+<div class="card card-purple">
+  <div style="display:flex;align-items:flex-start;">
+    <div class="connect-icon purple">🎙️</div>
+    <div>
+      <h3 style="margin:0;">采访任务</h3>
+      <p>采访一位长辈（保安叔叔、邻居爷爷、小区门卫）——问问他：</p>
+      <p style="font-size:20px;font-weight:500;color:var(--primary);margin-top:6px;">"以前没有手机的时候，您是怎么看时间的？"</p>
+    </div>
+  </div>
+</div>
+
+<h2>📊 讨论记录表模板</h2>
+<p style="margin-bottom:8px;">复制下表到纸上，小组讨论时填写：</p>
+
+<table>
+<thead>
+<tr>
+  <th>议题</th>
+  <th>我的观点</th>
+  <th>同伴的观点</th>
+  <th>我们的结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>时间感知</td>
+  <td></td>
+  <td></td>
+  <td></td>
+</tr>
+<tr>
+  <td>无钟表估时</td>
+  <td></td>
+  <td></td>
+  <td></td>
+</tr>
+<tr>
+  <td>古今计时对比</td>
+  <td></td>
+  <td></td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+
+<div class="highlight-box">
+  <p>🌟 <strong>小贴士：</strong>讨论时记住——没有"错误答案"，只有"不同的想法"！</p>
+  <p>质疑员的任务是让讨论更有深度，不是否定别人哦！</p>
+</div>
+
+</div>
+<script>
+function toggleTopic(id) {
+  document.getElementById(id).classList.toggle('show');
+}
+</script>
+</body>
+</html>

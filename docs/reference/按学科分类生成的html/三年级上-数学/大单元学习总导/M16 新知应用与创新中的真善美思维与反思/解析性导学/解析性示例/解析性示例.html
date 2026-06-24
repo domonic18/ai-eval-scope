@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块解析性示例导学</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* 标题区 */
+.page-header {
+  text-align: center;
+  padding: 28px 20px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+
+.page-header h1 {
+  font-size: var(--font-h1);
+  margin-bottom: 6px;
+}
+
+.page-header p {
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+/* 情境卡片 */
+.story-card {
+  background: linear-gradient(135deg, #fff7e6, #fffbe6);
+  border: 2px solid #ffd591;
+  border-radius: var(--border-radius);
+  padding: 22px 26px;
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.story-card::before {
+  content: "🏟️";
+  font-size: 36px;
+  position: absolute;
+  top: -16px;
+  right: 20px;
+}
+
+.story-card h2 {
+  font-size: var(--font-h2);
+  color: #d46b08;
+  margin-bottom: 12px;
+}
+
+.story-card p {
+  font-size: 17px;
+  margin-bottom: 8px;
+}
+
+.story-card .question-bubble {
+  background: #fff;
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin-top: 12px;
+  border-left: 4px solid var(--primary);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* 关键信息表 */
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 15px;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.info-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 14px;
+  text-align: left;
+}
+
+.info-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.info-table tr:last-child td {
+  border-bottom: none;
+}
+
+.info-table tr:hover td {
+  background: #f0f5ff;
+}
+
+/* 解析步骤区 */
+.expert-section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 22px 26px;
+  margin-bottom: 24px;
+}
+
+.expert-section h2 {
+  font-size: var(--font-h2);
+  color: var(--text);
+  margin-bottom: 16px;
+  padding-left: 12px;
+  border-left: 4px solid var(--primary);
+}
+
+.step-card {
+  background: #f9f9f9;
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-bottom: 14px;
+  border-left: 4px solid var(--accent);
+  transition: background 0.2s;
+}
+
+.step-card:hover {
+  background: #f0f5ff;
+}
+
+.step-card .step-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.step-card .step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary);
+  color: #fff;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.step-card .step-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.step-card .step-reason {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+/* 结论卡片 */
+.conclusion-card {
+  background: linear-gradient(135deg, #f6ffed, #e6fffb);
+  border: 2px solid #95de64;
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin-bottom: 24px;
+}
+
+.conclusion-card h2 {
+  font-size: var(--font-h2);
+  color: #389e0d;
+  margin-bottom: 10px;
+}
+
+.conclusion-card .three-steps {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+
+.three-step-item {
+  flex: 1;
+  min-width: 120px;
+  background: #fff;
+  border-radius: var(--border-radius);
+  padding: 14px 16px;
+  text-align: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.three-step-item .step-icon {
+  font-size: 28px;
+  margin-bottom: 6px;
+}
+
+.three-step-item .step-name {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 16px;
+}
+
+/* 易错提醒 */
+.error-card {
+  background: #fff2f0;
+  border: 2px solid #ffa39e;
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin-bottom: 24px;
+}
+
+.error-card h2 {
+  font-size: var(--font-h2);
+  color: #cf1322;
+  margin-bottom: 12px;
+}
+
+.error-item {
+  background: #fff;
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin-bottom: 12px;
+}
+
+.error-item:last-child {
+  margin-bottom: 0;
+}
+
+.error-item .error-label {
+  font-weight: 700;
+  color: #cf1322;
+  margin-bottom: 4px;
+}
+
+.error-item .error-wrong {
+  color: #cf1322;
+}
+
+.error-item .error-right {
+  color: #389e0d;
+  font-weight: 600;
+}
+
+/* 迁移练习 */
+.practice-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 22px 26px;
+  margin-bottom: 24px;
+}
+
+.practice-card h2 {
+  font-size: var(--font-h2);
+  color: var(--text);
+  margin-bottom: 12px;
+  padding-left: 12px;
+  border-left: 4px solid var(--primary);
+}
+
+.practice-scenario {
+  background: #f0f5ff;
+  padding: 14px 18px;
+  border-radius: var(--border-radius);
+  margin: 12px 0;
+}
+
+.practice-questions {
+  padding-left: 20px;
+  margin: 12px 0;
+}
+
+.practice-questions li {
+  margin-bottom: 6px;
+}
+
+/* 自检清单 */
+.checklist {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 22px 26px;
+  margin-bottom: 24px;
+}
+
+.checklist h2 {
+  font-size: var(--font-h2);
+  margin-bottom: 14px;
+}
+
+.check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--bg);
+  cursor: pointer;
+}
+
+.check-item:last-child {
+  border-bottom: none;
+}
+
+.check-item input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin-top: 4px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.check-item label {
+  font-size: 16px;
+  cursor: pointer;
+  flex: 1;
+}
+
+.check-item.checked label {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+
+/* 响应式 */
+@media (max-width: 640px) {
+  .container { padding: 12px; }
+  .info-table { font-size: 13px; }
+  .info-table th, .info-table td { padding: 8px; }
+  .three-steps { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="page-header">
+  <h1>🔍 模块解析性示例导学</h1>
+  <p>M16 新知应用与创新中的真善美思维与反思</p>
+</div>
+
+<!-- 情境故事 -->
+<div class="story-card">
+  <h2>🏟️ 解析任务情境</h2>
+  <p>今天是学校运动会，小明参加了 <strong>200 米</strong>跑步比赛。他的成绩是 <strong>45 秒</strong>，而去年他的成绩是 <strong>52 秒</strong>。</p>
+  <p>小明的妈妈说："你比去年快了 <strong>7 秒</strong>！"</p>
+  <p>小明的爸爸说："你比去年快了 <strong>将近 10 秒</strong>！"</p>
+  <p style="margin-top:8px;">小明很困惑：7 秒和 10 秒，到底谁说得对？为什么两个人说的不一样？</p>
+  <div class="question-bubble">
+    🎯 核心问题：如何准确计算时间差？为什么不同的人对同一段时间的感受和描述会不一样？
+  </div>
+</div>
+
+<!-- 关键信息 -->
+<div class="expert-section">
+  <h2>📋 关键信息提取</h2>
+  <table class="info-table">
+    <tr><th>情境信息</th><th>说明什么</th><th>为什么重要</th></tr>
+    <tr>
+      <td>今年 45 秒，去年 52 秒</td>
+      <td>小明今年跑得更快了</td>
+      <td>这是计算时间差的基础数据</td>
+    </tr>
+    <tr>
+      <td>妈妈说得快了 7 秒</td>
+      <td>52 - 45 = 7，妈妈精确计算</td>
+      <td>这是精确的时间差</td>
+    </tr>
+    <tr>
+      <td>爸爸说得快了将近 10 秒</td>
+      <td>用了估算，把 7 秒说成"将近 10 秒"</td>
+      <td>说明描述方式不同</td>
+    </tr>
+    <tr>
+      <td>小明很困惑</td>
+      <td>需要区分精确值和估算值</td>
+      <td>这是核心认知冲突</td>
+    </tr>
+  </table>
+</div>
+
+<!-- 专家解析 -->
+<div class="expert-section">
+  <h2>🧠 专家解析过程</h2>
+
+  <div class="step-card">
+    <div class="step-label">
+      <span class="step-num">1</span>
+      <span class="step-title">先看见什么</span>
+    </div>
+    <p><strong>先看见：</strong>这是一个"时间差计算"问题——今年 45 秒，去年 52 秒。</p>
+    <p class="step-reason"><strong>为什么这样想：</strong>题目中出现了两个时间数据，而且问的是"快了"多少，说明需要计算差值。</p>
+  </div>
+
+  <div class="step-card">
+    <div class="step-label">
+      <span class="step-num">2</span>
+      <span class="step-title">判断问题属于哪一类</span>
+    </div>
+    <p><strong>判断：</strong>"时间差计算 + 精确与估算对比"的问题。</p>
+    <p class="step-reason"><strong>为什么这样想：</strong>妈妈和爸爸给出了两个不同答案，一个精确（7 秒），一个模糊（将近 10 秒）。</p>
+  </div>
+
+  <div class="step-card">
+    <div class="step-label">
+      <span class="step-num">3</span>
+      <span class="step-title">调用哪些概念、原理或方法</span>
+    </div>
+    <p>① <strong>时间差公式：</strong>时间差 = 较大值 - 较小值</p>
+    <p>② <strong>精确值与估算值：</strong>精确值是准确计算的结果，估算是近似描述</p>
+    <p>③ <strong>比较思维：</strong>把两个答案放在一起对比，分析差异原因</p>
+  </div>
+
+  <div class="step-card">
+    <div class="step-label">
+      <span class="step-num">4</span>
+      <span class="step-title">如何进行推理或分析</span>
+    </div>
+    <p><strong>推理过程：</strong></p>
+    <p>① 先计算精确时间差：52 - 45 = <strong>7 秒</strong> → 妈妈说得对</p>
+    <p>② 再分析爸爸的说法：7 秒离 10 秒还差 3 秒，说"将近 10 秒"不太准确，但爸爸可能是为了强调"进步很大"</p>
+    <p>③ 得出结论：妈妈说的是精确值，爸爸说的是估算值（带有鼓励的意味）</p>
+  </div>
+
+  <div class="step-card">
+    <div class="step-label">
+      <span class="step-num">5</span>
+      <span class="step-title">怎样形成结论</span>
+    </div>
+    <p>妈妈和爸爸都没有说错，只是表达方式不同。妈妈用了 <strong>精确计算</strong>（7 秒），爸爸用了 <strong>估算表达</strong>（将近 10 秒）。在数学中，我们通常用精确值；在生活中，人们有时会用估算来表达情感。</p>
+  </div>
+</div>
+
+<!-- 结论 -->
+<div class="conclusion-card">
+  <h2>📌 三步法：解决时间差问题</h2>
+  <div class="three-steps">
+    <div class="three-step-item">
+      <div class="step-icon">🔎</div>
+      <div class="step-name">找数据</div>
+      <p style="font-size:15px;color:var(--text-secondary);">找出两个时间值</p>
+    </div>
+    <div class="three-step-item">
+      <div class="step-icon">➖</div>
+      <div class="step-name">做减法</div>
+      <p style="font-size:15px;color:var(--text-secondary);">大的减小的</p>
+    </div>
+    <div class="three-step-item">
+      <div class="step-icon">💡</div>
+      <div class="step-name">判断意义</div>
+      <p style="font-size:15px;color:var(--text-secondary);">时间差说明了什么？</p>
+    </div>
+  </div>
+</div>
+
+<!-- 方法提炼 -->
+<div class="expert-section">
+  <h2>🧰 方法提炼</h2>
+  <ol style="padding-left:22px;font-size:17px;">
+    <li style="margin-bottom:8px;"><strong>第一步：</strong>确定要比较的两个时间值</li>
+    <li style="margin-bottom:8px;"><strong>第二步：</strong>用减法计算精确差值</li>
+    <li style="margin-bottom:8px;"><strong>第三步：</strong>判断这个差值在情境中的意义（进步了还是退步了？差距大不大？）</li>
+    <li style="margin-bottom:8px;"><strong>第四步：</strong>如果需要，可以用估算来帮助理解，但要知道估算和精确值的区别</li>
+  </ol>
+</div>
+
+<!-- 易错提醒 -->
+<div class="error-card">
+  <h2>⚠️ 易错提醒</h2>
+
+  <div class="error-item">
+    <div class="error-label">❌ 易错 1：计算时间差时搞错顺序</div>
+    <p class="error-wrong">错误：45 - 52 = -7（负数）</p>
+    <p class="error-right">正确：52 - 45 = 7（用较大的减较小的）</p>
+    <p style="font-size:15px;color:var(--text-secondary);margin-top:4px;">💡 怎么避免：先判断哪个时间更大，再用大的减小的。</p>
+  </div>
+
+  <div class="error-item">
+    <div class="error-label">❌ 易错 2：混淆"快了"和"慢了"</div>
+    <p class="error-wrong">错误：成绩从 52 秒变成 45 秒，说"慢了 7 秒"</p>
+    <p class="error-right">正确：时间变少了，说明跑得更快了，是"快了 7 秒"</p>
+    <p style="font-size:15px;color:var(--text-secondary);margin-top:4px;">💡 怎么避免：记住——时间越少，速度越快。</p>
+  </div>
+
+  <div class="error-item">
+    <div class="error-label">❌ 易错 3：把估算当成精确值</div>
+    <p class="error-wrong">错误：爸爸说"将近 10 秒"，就认为精确差值是 10 秒</p>
+    <p class="error-right">正确：估算只是近似描述，精确值需要计算</p>
+    <p style="font-size:15px;color:var(--text-secondary);margin-top:4px;">💡 怎么避免：听到"大约""将近""差不多"时，要知道这是估算。</p>
+  </div>
+</div>
+
+<!-- 迁移练习 -->
+<div class="practice-card">
+  <h2>✏️ 自主迁移小练习</h2>
+  <div class="practice-scenario">
+    <p><strong>情境：</strong>小红昨天跳绳跳了 <strong>85 个</strong>，今天跳了 <strong>102 个</strong>。小红说："我今天比昨天多跳了将近 <strong>20 个</strong>！"</p>
+  </div>
+  <ol class="practice-questions">
+    <li>小红今天比昨天多跳了多少个？（精确值）</li>
+    <li>小红说的"将近 20 个"准确吗？为什么她要这么说？</li>
+    <li>如果明天小红跳了 110 个，她比今天多跳了几个？</li>
+  </ol>
+  <p style="color:var(--text-secondary);font-size:15px;">💡 提示：先计算精确差值，再分析估算的合理性。</p>
+</div>
+
+<!-- 自检清单 -->
+<div class="checklist">
+  <h2>📋 学习自评清单</h2>
+  <p style="color:var(--text-secondary);margin-bottom:12px;">点击每一项标记你的掌握情况：</p>
+
+  <div class="check-item" onclick="toggleCheck(this)">
+    <input type="checkbox">
+    <label>我能说出妈妈和爸爸的答案为什么不一样</label>
+  </div>
+  <div class="check-item" onclick="toggleCheck(this)">
+    <input type="checkbox">
+    <label>我能用减法计算两个时间之间的差值</label>
+  </div>
+  <div class="check-item" onclick="toggleCheck(this)">
+    <input type="checkbox">
+    <label>我能区分"精确值"和"估算值"</label>
+  </div>
+  <div class="check-item" onclick="toggleCheck(this)">
+    <input type="checkbox">
+    <label>我能用"三步法"解决时间差问题</label>
+  </div>
+  <div class="check-item" onclick="toggleCheck(this)">
+    <input type="checkbox">
+    <label>我能举出一个生活中需要计算时间差的例子</label>
+  </div>
+</div>
+
+<script>
+function toggleCheck(el) {
+  const cb = el.querySelector('input[type="checkbox"]');
+  cb.checked = !cb.checked;
+  el.classList.toggle('checked', cb.checked);
+}
+</script>
+
+</div>
+</body>
+</html>

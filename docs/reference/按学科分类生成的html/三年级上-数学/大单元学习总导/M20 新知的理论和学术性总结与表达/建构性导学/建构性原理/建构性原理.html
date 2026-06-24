@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性原理 — 从示例中提炼可迁移的建构方法</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+}
+.container { width: 100%; max-width: none; padding: 24px 30px; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 8px; }
+.header p { font-size: 15px; opacity: 0.9; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px 28px;
+  margin-bottom: 22px;
+  border: 1px solid var(--border);
+  transition: box-shadow 0.3s;
+}
+.card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.12); }
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+.card h3 {
+  font-size: 18px;
+  color: var(--text);
+  margin: 14px 0 8px;
+  font-weight: 600;
+}
+.principe-card {
+  background: var(--card-bg);
+  border: 2px solid var(--accent);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin-bottom: 18px;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+.principe-card:hover { border-color: var(--primary); box-shadow: 0 4px 14px rgba(22,119,255,0.15); }
+.principe-card.expanded { border-color: var(--primary); }
+.principe-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.principe-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.principe-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+}
+.principe-card.expanded .principe-body { max-height: 600px; }
+.principe-body-inner { padding-top: 14px; }
+.principe-label {
+  font-weight: 600;
+  color: var(--text);
+  margin-top: 8px;
+}
+.principe-label:first-child { margin-top: 0; }
+.principe-label span { color: var(--text-secondary); font-weight: 400; }
+.practice-box {
+  background: linear-gradient(135deg, #fff7e6, #fffbe6);
+  border: 1px solid #ffd591;
+  border-radius: 6px;
+  padding: 16px 20px;
+  margin: 12px 0;
+}
+.practice-box h4 { color: #d46b08; margin: 8px 0 4px; }
+.practice-box h4:first-child { margin-top: 0; }
+.toggle-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 6px;
+}
+.toggle-btn:hover { background: var(--primary-hover); }
+.toggle-btn:active { transform: scale(0.97); }
+.reflect-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 12px 0;
+}
+.reflect-item {
+  background: var(--bg);
+  padding: 14px 18px;
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+}
+.reflect-item p { font-size: 15px; margin: 6px 0 0; }
+.reflect-item strong { color: var(--primary); }
+.progress-bar {
+  width: 100%;
+  height: 10px;
+  background: #e8e8e8;
+  border-radius: 5px;
+  margin: 10px 0;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  border-radius: 5px;
+  width: 0%;
+  transition: width 0.5s ease;
+}
+@media (max-width: 768px) {
+  .container { padding: 14px 16px; }
+  .header { padding: 20px; }
+  .header h1 { font-size: 22px; }
+  .card, .principe-card { padding: 16px; }
+  .reflect-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🏗️ 建构性原理</h1>
+  <p>从具体案例中提炼可反复使用的"建构方法" · 数学 · 时、分、秒</p>
+</div>
+
+<div class="card">
+  <h2>🎯 本任务定位</h2>
+  <p>在完成了建构性示例的学习之后，你需要从那个具体案例中提炼出可以反复使用的<strong>"建构方法"</strong>。这些方法不只在"时、分、秒"这一单元有用——以后学习任何新知识，你都可以用它们来帮助自己"建"出属于自己的理解。</p>
+  <div style="background: var(--bg); padding: 12px 16px; border-radius: 6px; margin-top: 12px;">
+    <strong>📌 核心任务：</strong>从建构性示例中提炼 <strong>3—5 条</strong>可迁移的建构性原理。
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  <p style="text-align:center;font-size:14px;color:var(--text-secondary);">点击下方卡片展开每一条原理，标记你的学习进度</p>
+</div>
+
+<!-- 原理1 -->
+<div class="principe-card" onclick="this.classList.toggle('expanded');updateProgress()">
+  <div class="principe-title">
+    <span class="principe-icon">1</span>
+    情境锚定法
+  </div>
+  <div class="principe-body">
+    <div class="principe-body-inner">
+      <div class="principe-label">📖 原理说明：<span>从一个真实、具体的场景出发，让抽象的知识"落回"生活。比如学习时间单位时，不从"1小时=60分钟"开始，而是从"一节课40分钟，课间10分钟"这样的日常体验开始。</span></div>
+      <div class="principe-label">💡 在示例中的体现：<span>示例中那位同学从"每天早上7点起床，7:30出门"的生活场景出发，归纳出时间单位的使用规律。</span></div>
+      <div class="principe-label">🎯 适用情境：<span>任何新概念的首次接触，尤其是抽象的数学概念。</span></div>
+      <div class="principe-label">⚠️ 注意事项：<span>情境要真实而非虚构，与你自己的生活相关才有效。</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- 原理2 -->
+<div class="principe-card" onclick="this.classList.toggle('expanded');updateProgress()">
+  <div class="principe-title">
+    <span class="principe-icon">2</span>
+    经验数据化法
+  </div>
+  <div class="principe-body">
+    <div class="principe-body-inner">
+      <div class="principe-label">📖 原理说明：<span>把你的感受和观察转化成具体的数据。比如"我感觉1分钟挺长的"→"我1分钟能走60步"。</span></div>
+      <div class="principe-label">💡 在示例中的体现：<span>示例中通过记录跳绳、写字等活动所需时间，把"感觉"变成了"数字"。</span></div>
+      <div class="principe-label">🎯 适用情境：<span>学习需要建立"量感"的概念（重量、长度、时间等）。</span></div>
+      <div class="principe-label">⚠️ 注意事项：<span>数据要准确，最好多次测量取平均值。</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- 原理3 -->
+<div class="principe-card" onclick="this.classList.toggle('expanded');updateProgress()">
+  <div class="principe-title">
+    <span class="principe-icon">3</span>
+    结构建模法
+  </div>
+  <div class="principe-body">
+    <div class="principe-body-inner">
+      <div class="principe-label">📖 原理说明：<span>用图示或框架把零散的知识点组织成有逻辑的结构。比如用概念图把"时、分、秒"的换算关系画出来。</span></div>
+      <div class="principe-label">💡 在示例中的体现：<span>示例最后用表格和思维导图整理了所有时间单位的关系。</span></div>
+      <div class="principe-label">🎯 适用情境：<span>复习总结、知识梳理、考前整理笔记。</span></div>
+      <div class="principe-label">⚠️ 注意事项：<span>结构要体现知识之间的真实关系，不要为了画图而画图。</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- 原理4 -->
+<div class="principe-card" onclick="this.classList.toggle('expanded');updateProgress()">
+  <div class="principe-title">
+    <span class="principe-icon">4</span>
+    学术表达法
+  </div>
+  <div class="principe-body">
+    <div class="principe-body-inner">
+      <div class="principe-label">📖 原理说明：<span>用规范的格式和清晰的语言，把自己的理解"写清楚"。就像课本上那样：定义→解释→举例→总结。</span></div>
+      <div class="principe-label">💡 在示例中的体现：<span>示例按照"名称—符号—进率—生活实例"的格式写出了时间单位卡片。</span></div>
+      <div class="principe-label">🎯 适用情境：<span>写学习总结、做报告、向他人讲解知识。</span></div>
+      <div class="principe-label">⚠️ 注意事项：<span>先想清楚再动笔，先说核心再补充细节。</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- 原理5 -->
+<div class="principe-card" onclick="this.classList.toggle('expanded');updateProgress()">
+  <div class="principe-title">
+    <span class="principe-icon">5</span>
+    反思迭代法
+  </div>
+  <div class="principe-body">
+    <div class="principe-body-inner">
+      <div class="principe-label">📖 原理说明：<span>做完之后回头看看——哪里做得好？哪里可以改进？然后动手改一版更好的。</span></div>
+      <div class="principe-label">💡 在示例中的体现：<span>示例中那位同学第一次画的概念图不完整，对照课本补充后又画了一版。</span></div>
+      <div class="principe-label">🎯 适用情境：<span>所有类型的作业和项目。</span></div>
+      <div class="principe-label">⚠️ 注意事项：<span>反思要具体，比如"第二部分的表述不够清晰"而不是"写得不好"。</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function updateProgress() {
+  const cards = document.querySelectorAll('.principe-card');
+  const expanded = document.querySelectorAll('.principe-card.expanded');
+  const pct = Math.round((expanded.length / cards.length) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+</script>
+
+<div class="card">
+  <h2>🏋️ 原理迁移练习</h2>
+
+  <div class="practice-box">
+    <h4>📝 练习1：建构"长度单位"知识结构</h4>
+    <p><strong>情境：</strong>你刚学了毫米、厘米、分米、米、千米，感觉有点乱。</p>
+    <p><strong>任务：</strong>用时、分、秒的建构方法，重新整理长度单位知识。</p>
+    <p><strong>建议使用的原理：</strong>情境锚定法 + 结构建模法</p>
+    <p style="font-size:14px;color:var(--text-secondary);margin-top:6px;">💡 提示：先想生活中哪些场景会遇到不同长度单位（课桌高度？操场跑道？）</p>
+    <button class="toggle-btn" onclick="alert('🏗️ 建构思路：\n1️⃣ 情境锚定：找生活中不同长度的例子（指甲盖≈1cm、课桌高≈70cm、操场跑道≈400m）\n2️⃣ 结构建模：画一条从mm到km的线段，标注每个单位的进率（×10→cm，×100→m...）\n3️⃣ 这样"长度"就不再是抽象的数字，而是你能感受到的实物了！')">💡 看看建构思路</button>
+  </div>
+
+  <div class="practice-box" style="margin-top:14px;">
+    <h4>📝 练习2：向二年级同学解释"时间"</h4>
+    <p><strong>情境：</strong>二年级的妹妹问你"为什么1小时有60分钟"。</p>
+    <p><strong>任务：</strong>用学术表达法写一段简单的解释。</p>
+    <p><strong>建议使用的原理：</strong>学术表达法 + 情境锚定法</p>
+    <p style="font-size:14px;color:var(--text-secondary);margin-top:6px;">💡 提示：先用生活中的例子让她感受，再用规范的数学语言总结。</p>
+    <button class="toggle-btn" onclick="alert('👧 给妹妹的解释：\n\n"你看，一节课就是40分钟，再加一个课间10分钟，就是50分钟。再数10下（1、2、3……10），就到60分钟啦！60分钟=1小时，就像100厘米=1米一样，是一个'进位'的规矩。古人就是这样规定的——把1小时分成60份，每份就是1分钟。"\n\n📐 学术总结：1小时=60分钟，因为时间单位采用六十进制。')">👧 看看怎么解释</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>💭 元认知反思</h2>
+  <div class="reflect-grid">
+    <div class="reflect-item">
+      <strong>🧠 你最常用的方法是？</strong>
+      <p>在提炼原理的过程中，你发现自己最常用的建构方法是哪一种？是喜欢从生活出发（情境锚定），还是喜欢画图整理（结构建模）？</p>
+    </div>
+    <div class="reflect-item">
+      <strong>🤔 哪条还不太会用？</strong>
+      <p>哪一条原理你觉得自己还不太会用？为什么？是因为没理解，还是因为平时很少用这种方式学习？</p>
+    </div>
+    <div class="reflect-item">
+      <strong>⭐ 哪条帮助最大？</strong>
+      <p>这些原理中，哪一条对你的帮助最大？试着回忆一下，是哪次使用让你觉得"哇，这个方法真好用"？</p>
+    </div>
+    <div class="reflect-item">
+      <strong>✨ 你想补充什么？</strong>
+      <p>如果让你自己再补充一条原理，你会补充什么？可以是你的独门学习方法哦！</p>
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:14px;">
+    <button class="toggle-btn" onclick="alert('🎉 恭喜你完成了建构性原理的学习！\n\n这5条原理就像一个"学习工具箱"：\n🔨 情境锚定法 — 让知识落地\n📊 经验数据化法 — 让感觉变数字\n🗺️ 结构建模法 — 让零散变系统\n✍️ 学术表达法 — 让想法变文章\n🔄 反思迭代法 — 让每次都比上次好\n\n带着这个工具箱，去学习任何新知识吧！')">🎯 完成学习！</button>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视频 — 时间的奥秘</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+h1 { font-size: var(--font-h1); color: var(--primary); margin: 0 0 6px 0; }
+h2 { font-size: var(--font-h2); color: var(--text); margin: 28px 0 12px 0; padding-left: 12px; border-left: 4px solid var(--primary); }
+h3 { font-size: calc(var(--font-body) + 2px); color: var(--primary-hover); margin: 18px 0 8px 0; }
+.header-desc { color: var(--text-secondary); font-size: calc(var(--font-body) - 2px); margin-bottom: 20px; }
+
+.video-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px 24px; margin-bottom: 20px; border: 1px solid var(--border); }
+.video-badge { display: inline-block; font-size: calc(var(--font-body) - 4px); padding: 3px 12px; border-radius: 20px; font-weight: 600; margin-bottom: 8px; }
+.badge-basic { background: #e6f4ff; color: #1677ff; }
+.badge-adv { background: #f0f5ff; color: #0958d9; }
+.badge-challenge { background: #f9f0ff; color: #722ed1; }
+.video-title { font-size: calc(var(--font-body) + 4px); font-weight: 700; color: var(--text); margin: 6px 0 4px 0; }
+.video-meta { color: var(--text-secondary); font-size: calc(var(--font-body) - 3px); margin-bottom: 10px; }
+.task-list { list-style: none; padding: 0; margin: 10px 0; }
+.task-list li { padding: 6px 0 6px 28px; position: relative; border-bottom: 1px dashed #f0f0f0; }
+.task-list li:last-child { border-bottom: none; }
+.task-list li::before { content: "🎯"; position: absolute; left: 0; top: 6px; font-size: 16px; }
+.task-list li.pause::before { content: "⏸️"; }
+.task-list li.output::before { content: "📝"; }
+.keyword { background: #e6f4ff; padding: 1px 6px; border-radius: 4px; color: var(--primary); font-weight: 500; }
+.pause-box { background: #fffbe6; border: 1px solid #ffe58f; border-radius: var(--border-radius); padding: 12px 16px; margin: 10px 0; font-style: italic; color: #ad6800; }
+
+.links-section { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px 24px; border: 1px solid var(--border); }
+.links-section ul { list-style: none; padding: 0; margin: 10px 0 0 0; }
+.links-section li { padding: 8px 0 8px 28px; position: relative; border-bottom: 1px dashed #f0f0f0; }
+.links-section li:last-child { border-bottom: none; }
+.links-section li::before { content: "🔗"; position: absolute; left: 0; top: 8px; }
+
+.interact-toggle { display: none; }
+.toggle-label { display: inline-block; background: var(--primary); color: #fff; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: calc(var(--font-body) - 2px); transition: background 0.3s; user-select: none; margin-top: 10px; }
+.toggle-label:hover { background: var(--primary-hover); }
+.toggle-content { max-height: 0; overflow: hidden; transition: max-height 0.5s ease, opacity 0.4s ease; opacity: 0; }
+.interact-toggle:checked ~ .toggle-content { max-height: 600px; opacity: 1; padding-top: 12px; }
+.interact-toggle:checked ~ .toggle-label { background: var(--text-secondary); }
+
+@media (max-width: 640px) {
+  .container { padding: 16px; }
+  .video-card { padding: 14px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>🎬 视频资源</h1>
+  <p class="header-desc">以"观看焦点"为核心，在视听体验中加深对"时间"概念的理解。点击下方按钮展开/隐藏每个视频的详细任务。</p>
+
+  <!-- 基础层 -->
+  <div class="video-card">
+    <span class="video-badge badge-basic">🌟 基础 · 解释型</span>
+    <div class="video-title">《一分钟有多长？》</div>
+    <div class="video-meta">科普动画 · 约4分钟</div>
+    <p><span class="keyword">观看任务：</span>记下视频中提到了几个"1分钟能做的事"。</p>
+    <p><span class="keyword">关键问题：</span>为什么有些事1分钟能做很多次，有些事1分钟才刚刚开始？</p>
+    <div class="pause-box">⏸️ 2分15秒处——暂停！猜猜接下来还会展示什么？</div>
+    <input type="checkbox" id="toggle1" class="interact-toggle">
+    <label for="toggle1" class="toggle-label">📝 查看输出任务</label>
+    <div class="toggle-content">
+      <p><strong>输出任务：</strong>画出"1分钟能做____"的信息图，用图画+文字展示你发现的奇妙事实。</p>
+    </div>
+  </div>
+
+  <!-- 进阶层 -->
+  <div class="video-card">
+    <span class="video-badge badge-adv">🚀 进阶 · 分析型</span>
+    <div class="video-title">《时间的测量——从日晷到原子钟》</div>
+    <div class="video-meta">纪录片片段 · 约8分钟</div>
+    <p><span class="keyword">观看任务：</span>按时间顺序画出"计时工具进化时间线"。</p>
+    <p><span class="keyword">关键问题：</span>每个时代的人为什么觉得当时的计时"够用了"？</p>
+    <div class="pause-box">⏸️ 5分00秒——暂停！如果你是古人，你会怎么计时？</div>
+    <input type="checkbox" id="toggle2" class="interact-toggle">
+    <label for="toggle2" class="toggle-label">📝 查看输出任务</label>
+    <div class="toggle-content">
+      <p><strong>输出任务：</strong>写一段话——"如果我生活在古代，我用______来计时"。</p>
+    </div>
+  </div>
+
+  <!-- 挑战层 -->
+  <div class="video-card">
+    <span class="video-badge badge-challenge">🔥 挑战 · 辩论型</span>
+    <div class="video-title">《时间旅行可能吗？》</div>
+    <div class="video-meta">TED Ed 科普 · 约5分钟</div>
+    <p><span class="keyword">观看任务：</span>视频中提到了3个关于时间旅行的事实，你相信哪一个？</p>
+    <p><span class="keyword">关键问题：</span>如果时间旅行真的可能，会有什么后果？</p>
+    <div class="pause-box">⏸️ 3分30秒——暂停！你同意"时间不可倒流"吗？为什么？</div>
+    <input type="checkbox" id="toggle3" class="interact-toggle">
+    <label for="toggle3" class="toggle-label">📝 查看输出任务</label>
+    <div class="toggle-content">
+      <p><strong>输出任务：</strong>写一段辩论稿，支持或反对"时间旅行可以实现"。</p>
+    </div>
+  </div>
+
+  <!-- 来源链接 -->
+  <h2>🔍 更多资源推荐</h2>
+  <div class="links-section">
+    <ul>
+      <li><strong>课程类：</strong>国家中小学智慧教育平台 搜索"时、分、秒"</li>
+      <li><strong>纪录片：</strong>B站 搜索"时间的奥秘 科普"</li>
+      <li><strong>专题演讲：</strong>TED Ed "How does time work?"</li>
+      <li><strong>行业实录：</strong>央视《超级工程》中关于时间同步的片段</li>
+    </ul>
+  </div>
+
+</div>
+</body>
+</html>

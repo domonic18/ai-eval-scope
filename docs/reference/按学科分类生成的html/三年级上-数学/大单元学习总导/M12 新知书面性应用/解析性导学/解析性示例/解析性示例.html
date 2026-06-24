@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性示例导学 — 时间混合计算</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+h2 {
+  font-size: var(--font-h2);
+  color: var(--text);
+  margin: 28px 0 12px 0;
+  line-height: 1.5;
+  border-left: 4px solid var(--primary);
+  padding-left: 12px;
+}
+h3 {
+  font-size: calc(var(--font-h2) - 2px);
+  margin: 16px 0 8px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.tag {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  margin-right: 4px;
+}
+.tag-orange { background: #d46b08; }
+.tag-green { background: #52c41a; }
+.tag-red { background: #ff4d4f; }
+.info-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 16px;
+  margin: 10px 0;
+  background: #fafafa;
+  padding: 12px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+.info-grid .label { font-weight: 600; color: var(--primary); }
+.step-card {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin-bottom: 12px;
+  transition: transform 0.2s;
+}
+.step-card:hover { transform: translateX(4px); }
+.step-card h4 {
+  margin: 0 0 6px;
+  color: #389e0d;
+}
+.equal-box {
+  background: #fff;
+  border: 2px dashed var(--primary);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+  margin: 12px 0;
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--primary);
+}
+.equal-box span { color: #d46b08; }
+.calc-display {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  font-size: 19px;
+  padding: 10px;
+  background: #fffbe6;
+  border-radius: 8px;
+  border: 1px solid #ffe58f;
+  margin: 10px 0;
+}
+.calc-display .highlight {
+  color: var(--primary);
+  font-weight: bold;
+  font-size: 22px;
+}
+.warning-box {
+  background: #fff2f0;
+  border: 1px solid #ffccc7;
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin-bottom: 12px;
+}
+.warning-box h4 { color: #ff4d4f; margin: 0 0 6px; }
+.warning-box li { margin-bottom: 3px; }
+.checklist {
+  list-style: none;
+  padding: 0;
+}
+.checklist li {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.checklist li::before {
+  content: "☐";
+  font-size: 20px;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+.toggle-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 8px 18px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.toggle-btn:hover { background: var(--primary-hover); }
+.toggle-btn.green { background: #52c41a; }
+.detail-box {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s;
+  padding: 0 14px;
+}
+.detail-box.open {
+  max-height: 500px;
+  padding: 14px;
+  background: #fafafa;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  margin-top: 8px;
+}
+ul, ol { padding-left: 24px; margin: 6px 0; }
+li { margin-bottom: 4px; }
+.footer-note {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+  padding: 20px 0 10px;
+  border-top: 1px solid var(--border);
+  margin-top: 30px;
+}
+@media (max-width: 600px) {
+  .container { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🔍 解析性示例导学</h1>
+<p style="color:var(--text-secondary);margin:0 0 20px 0;font-size:16px;">M12 新知书面性应用 · 时间混合计算示例 · 三年级</p>
+
+<!-- 情境 -->
+<div class="card">
+  <h2>🏟️ 解析任务情境</h2>
+  <p>今天是学校运动会，小芳报名参加了400米跑。她看到计时器上显示的成绩是<strong>"1分25秒"</strong>，而她的目标是跑进<strong>1分20秒以内</strong>。她想算算自己离目标还差多少秒。</p>
+  <p>同时，她的好朋友小刚在100米跑中跳了3次（咦？应该是跑了3次！😄），成绩分别是<strong>"1分32秒、1分28秒、1分35秒"</strong>。请你帮小芳来分析：</p>
+  <div class="equal-box">
+    🏁 核心问题：她离目标差多少秒？<br>小刚三次跑的平均成绩是多少？
+  </div>
+</div>
+
+<!-- 核心问题 -->
+<div class="card">
+  <h2>❓ 核心问题</h2>
+  <p style="font-size:20px;font-weight:600;color:var(--primary);text-align:center;">如何把"时、分、秒"的混合表达<br>转化成统一单位进行比较和计算？</p>
+</div>
+
+<!-- 关键信息 -->
+<div class="card">
+  <h2>📌 关键信息提取</h2>
+  <div class="info-grid">
+    <span class="label">📋 小芳成绩</span><span>1分25秒 → 含两个单位：分和秒</span>
+    <span class="label">🎯 小芳目标</span><span>1分20秒以内 → "以内"表示小于1分20秒</span>
+    <span class="label">📊 小刚成绩</span><span>1分32秒、1分28秒、1分35秒 → 三个不同数据</span>
+    <span class="label">🧮 问题类型</span><span>比较差值 + 求平均值</span>
+  </div>
+</div>
+
+<!-- 专家解析过程 -->
+<div class="card">
+  <h2>👨‍🏫 专家解析过程</h2>
+
+  <div class="step-card">
+    <h4>第一步 👀 先看见什么</h4>
+    <p>题目中有<strong>"分"</strong>和<strong>"秒"</strong>两个单位同时出现。先确定核心——所有数据都需要以<strong>"秒"</strong>为单位才能计算。</p>
+  </div>
+
+  <div class="step-card" style="border-left-color:#722ed1;">
+    <h4>第二步 🤔 判断问题类型</h4>
+    <p>这是一道<strong>"单位换算 + 时间比较 + 求平均值"</strong>的综合题。<br>顺序：先换算 → 再比较 → 再计算。</p>
+  </div>
+
+  <div class="step-card" style="border-left-color:#d46b08;">
+    <h4>第三步 🛠️ 调用哪些方法</h4>
+    <ul>
+      <li><strong>换算方法：</strong>1分 = 60秒，所以"几分几秒"要换算成秒</li>
+      <li><strong>比较方法：</strong>求差值用减法</li>
+      <li><strong>求平均方法：</strong>总和 ÷ 次数</li>
+    </ul>
+  </div>
+
+  <div class="step-card" style="border-left-color:#52c41a;">
+    <h4>第四步 🧮 推理过程</h4>
+    <div class="calc-display">
+      小芳成绩：1分25秒 = 60+25 = <span class="highlight">85秒</span>
+    </div>
+    <div class="calc-display">
+      小芳目标：1分20秒 = 60+20 = <span class="highlight">80秒</span>
+    </div>
+    <div class="calc-display">
+      相差：85 - 80 = <span class="highlight">5秒</span>（没达到目标！😅）
+    </div>
+    <div class="calc-display">
+      小刚成绩：92秒、88秒、95秒<br>
+      总和 = 92+88+95 = <span class="highlight">275秒</span><br>
+      平均 = 275 ÷ 3 ≈ <span class="highlight">91.67秒</span> ≈ 1分32秒
+    </div>
+  </div>
+
+  <div class="step-card" style="border-left-color:#1677ff;">
+    <h4>第五步 ✅ 结论</h4>
+    <p><strong>小芳</strong>离目标还差5秒，她需要努力跑进80秒以内。</p>
+    <p><strong>小刚</strong>三次平均成绩约91.67秒（约1分32秒）。</p>
+  </div>
+</div>
+
+<!-- 方法提炼 -->
+<div class="card">
+  <h2>💎 方法提炼</h2>
+  <p>以后遇到"分+秒"混在一起的题目，记住三步走：</p>
+  <ol>
+    <li><strong>全部换算成秒</strong> — 1分=60秒，记得加上！</li>
+    <li><strong>统一单位后才能比</strong> — 不同单位直接比会出错</li>
+    <li><strong>算完记得换回去</strong> — 如果题目要"几分几秒"，要把结果再换算回来</li>
+  </ol>
+</div>
+
+<!-- 易错提醒 -->
+<div class="card">
+  <h2>⚠️ 易错提醒</h2>
+  <div class="warning-box">
+    <h4>❌ 常见错误</h4>
+    <ul>
+      <li><strong>直接相加减：</strong>1分25秒 - 1分20秒 = 5秒（这步正好没错，因为单位一致）</li>
+      <li><strong>忘记进位：</strong>如果算1分50秒+30秒，应该是2分20秒，不是1分80秒！</li>
+      <li><strong>平均数的单位：</strong>91.67秒≈1分32秒，不要写成"91.67分"</li>
+    </ul>
+  </div>
+  <button class="toggle-btn" onclick="toggleDetail('wrong-example')">📝 看一个进位例子</button>
+  <div id="wrong-example" class="detail-box">
+    <p><strong>题目：</strong>1分50秒 + 30秒 = ？</p>
+    <p><strong>正确做法：</strong>50秒+30秒=80秒=1分20秒，加上原来的1分 → <strong>2分20秒</strong></p>
+    <p><strong>常见错误❌：</strong>写成1分80秒（秒数不能超过59！）</p>
+  </div>
+</div>
+
+<!-- 自主迁移 -->
+<div class="card" style="background:#f6ffed;border-color:#b7eb8f;">
+  <h2>🏋️ 自主迁移小练习</h2>
+  <p><strong>练习：</strong>小明跳绳三次，时间分别是：45秒、52秒、38秒（每次跳的时长）。他妈妈规定每次不能少于40秒。请分析：哪几次达标？平均每次跳了多长时间？</p>
+  <button class="toggle-btn green" onclick="toggleDetail('practice-ans')">✅ 查看答案</button>
+  <div id="practice-ans" class="detail-box">
+    <p><strong>达标分析：</strong>45秒≥40秒 ✔️，52秒≥40秒 ✔️，38秒＜40秒 ❌</p>
+    <p>第一次和第二次达标，第三次不达标。</p>
+    <p><strong>平均时长：</strong>(45+52+38)÷3 = 135÷3 = <strong>45秒</strong></p>
+  </div>
+</div>
+
+<!-- 学习自评 -->
+<div class="card">
+  <h2>✅ 学习自评</h2>
+  <ul class="checklist">
+    <li>我是否理解了"1分=60秒"在换算中的用法？</li>
+    <li>我是否能把"几分几秒"换算成"秒"？</li>
+    <li>我能否把"秒"再换算回"几分几秒"？</li>
+    <li>我是否理解"以内"和"以外"在时间比较中的含义？</li>
+  </ul>
+</div>
+
+<div class="footer-note">
+  M12 新知书面性应用 · 解析性示例 · 三年级数学
+</div>
+
+</div>
+
+<script>
+function toggleDetail(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+</script>
+</body>
+</html>

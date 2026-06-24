@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性案例 — 时间分析七阶训练</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); font-size: var(--font-body); line-height: var(--line-height); }
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+.header { background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; padding: 32px 28px; border-radius: var(--border-radius); margin-bottom: 28px; }
+.header h1 { font-size: var(--font-h1); margin: 0 0 8px; }
+.header p { margin: 0; opacity: 0.9; font-size: 16px; }
+.case-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); margin-bottom: 20px; overflow: hidden; }
+.case-header { padding: 16px 20px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); transition: background 0.2s; }
+.case-header:hover { background: var(--bg); }
+.case-header h3 { margin: 0; font-size: var(--font-h2); color: var(--primary); }
+.case-toggle { font-size: 22px; color: var(--primary); transition: transform 0.3s; }
+.case-body { padding: 0 20px; max-height: 0; overflow: hidden; transition: max-height 0.4s ease, padding 0.3s; }
+.case-body.open { max-height: 5000px; padding: 16px 20px; }
+.case-body p { margin: 0 0 10px; }
+.case-body strong { color: var(--primary); }
+table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: 15px; }
+th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; }
+th { background: var(--bg); color: var(--primary); font-weight: 600; }
+.tag { display: inline-block; background: #e6f4ff; color: var(--primary); padding: 2px 10px; border-radius: 12px; font-size: 13px; margin-right: 6px; }
+.btn-toggle { background: var(--primary); color: #fff; border: none; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+.btn-toggle:hover { background: var(--primary-hover); }
+.reflection { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px; border-left: 4px solid var(--primary); }
+.reflection h2 { font-size: var(--font-h2); color: var(--primary); margin: 0 0 12px; }
+.reflection ol { margin: 0; padding-left: 20px; }
+.reflection li { margin-bottom: 8px; }
+.principle-tip { background: #fff7e6; border-left: 4px solid #fa8c16; padding: 10px 14px; margin: 10px 0; border-radius: 0 6px 6px 0; font-size: 15px; }
+.principle-tip strong { color: #d46b08; }
+@media (max-width: 600px) {
+  .container { padding: 12px 14px; }
+  .header { padding: 20px 16px; }
+  table { font-size: 13px; }
+  th, td { padding: 5px 6px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>⏱ 解析性案例</h1>
+  <p>M5 新知艺术思维 · 7个由浅入深的时间分析实战案例</p>
+  <p style="margin-top:6px;font-size:14px;opacity:0.85;">运用5条解析性原理（时间定位法 · 分解法 · 分类法 · 60进制法 · 可视化法）</p>
+</div>
+
+<!-- 案例1 -->
+<div class="case-card">
+  <div class="case-header" onclick="toggleCase(this)">
+    <h3>🏠 案例1：我的上学路上要多久？</h3>
+    <span class="case-toggle">▼</span>
+  </div>
+  <div class="case-body">
+    <p><strong>情境</strong>：小光说"走路10分钟就够了"，但他每天8:00上课，7:45出门却常常迟到。请你当时间侦探，帮他分析问题出在哪儿。</p>
+    <p><strong>任务</strong>：记录从"关门出发"到"走进教室"每一个环节，看看"15分钟"只是一个环节还是总时间？</p>
+    <p><strong>解析路径</strong>：①识别核心问题 → ②确定解析对象 → ③拆解关键要素 → ④梳理关系 → ⑤解释原因 → ⑥迁移判断</p>
+    <div class="principle-tip"><strong>🔬 原理调用</strong>：原理1（时间定位法）· 原理2（分解法）</div>
+    <table>
+      <tr><th>环节</th><th>起点</th><th>终点</th><th>用时</th><th>备注</th></tr>
+      <tr><td>出门→走到电梯</td><td>—</td><td>—</td><td>—</td><td></td></tr>
+      <tr><td>等电梯</td><td>—</td><td>—</td><td>—</td><td></td></tr>
+      <tr><td>坐电梯</td><td>—</td><td>—</td><td>—</td><td></td></tr>
+      <tr><td>走到校门口</td><td>—</td><td>—</td><td>—</td><td></td></tr>
+      <tr><td>走进教室</td><td>—</td><td>—</td><td>—</td><td></td></tr>
+    </table>
+    <p style="color:var(--text-secondary);font-size:15px;">💡 从关门到坐下可能有5-8个小环节，固定时间+浮动时间都要算。没有唯一答案，关键是把模糊概念变成可记录的时间点。</p>
+  </div>
+</div>
+
+<!-- 案例2 -->
+<div class="case-card">
+  <div class="case-header" onclick="toggleCase(this)">
+    <h3>📚 案例2：课表的时间分析</h3>
+    <span class="case-toggle">▼</span>
+  </div>
+  <div class="case-body">
+    <p><strong>情境</strong>：8:00-8:40语文 → 8:50-9:30数学 → 9:40-10:20英语 → 10:30-11:10体育 → 11:10-11:40自习 → 11:40-14:00午休 → 14:00-14:40美术 → 14:50-15:30音乐 → 15:40放学</p>
+    <p><strong>任务</strong>：分析课间休息几分钟？一天几节课？上课总时长？午休占比？和你学校的课表有什么不同？</p>
+    <div class="principle-tip"><strong>🔬 原理调用</strong>：原理3（分类法）· 原理4（60进制法）· 原理5（可视化法）</div>
+    <table>
+      <tr><th>科目</th><th>上课时间</th><th>课时</th><th>分钟</th><th>分类</th></tr>
+      <tr><td>语文</td><td>8:00-8:40</td><td>1</td><td>40</td><td>主科</td></tr>
+      <tr><td>数学</td><td>8:50-9:30</td><td>1</td><td>40</td><td>主科</td></tr>
+      <tr><td>英语</td><td>9:40-10:20</td><td>1</td><td>40</td><td>主科</td></tr>
+      <tr><td>体育</td><td>10:30-11:10</td><td>1</td><td>40</td><td>艺体</td></tr>
+      <tr><td>美术</td><td>14:00-14:40</td><td>1</td><td>40</td><td>艺体</td></tr>
+      <tr><td>音乐</td><td>14:50-15:30</td><td>1</td><td>40</td><td>艺体</td></tr>
+    </table>
+    <p style="color:var(--text-secondary);font-size:15px;">💡 课间10分钟够不够？为什么上午排主科、下午排副科？如果课间改为15分钟，怎么调整？</p>
+  </div>
+</div>
+
+<!-- 案例3 -->
+<div class="case-card">
+  <div class="case-header" onclick="toggleCase(this)">
+    <h3>🛒 案例3：家庭周末购物时间计算</h3>
+    <span class="case-toggle">▼</span>
+  </div>
+  <div class="case-body">
+    <p><strong>情境</strong>：9:00出发→走路15分钟→购物40分钟→走路回家→11:00前到家。但10:00-10:30有"乐高拼搭比赛"想参加！</p>
+    <p><strong>任务</strong>：列出多种方案并计算是否可行。</p>
+    <div class="principle-tip"><strong>🔬 原理调用</strong>：原理1（时间定位法）· 原理2（分解法）</div>
+    <table>
+      <tr><th>方案</th><th>9:00-9:15</th><th>9:15-9:55</th><th>10:00-10:30</th><th>10:30-10:45</th><th>到家</th><th>可行?</th></tr>
+      <tr><td>A</td><td>去超市</td><td>购物</td><td>比赛</td><td>回家</td><td>10:45</td><td>✅</td></tr>
+      <tr><td>B</td><td>去超市</td><td>—</td><td>比赛</td><td>购物→回家</td><td>11:25</td><td>❌</td></tr>
+      <tr><td>C</td><td colspan="6">你还能想到其他方案吗？</td></tr>
+    </table>
+    <p style="color:var(--text-secondary);font-size:15px;">💡 注意购物和比赛之间的切换时间。列出所有可能，用时间线验证可行性。</p>
+  </div>
+</div>
+
+<!-- 案例4 -->
+<div class="case-card">
+  <div class="case-header" onclick="toggleCase(this)">
+    <h3>🏃 案例4：体育测试成绩分析</h3>
+    <span class="case-toggle">▼</span>
+  </div>
+  <div class="case-body">
+    <p><strong>情境</strong>：三年级一班50米跑成绩（秒）——男：小张9.8、小刘10.2、小王9.5、小李11.0、小陈9.9；女：小周10.5、小吴10.1、小郑11.2、小冯9.7、小赵10.8。达标：男≤10.5秒，女≤11.0秒</p>
+    <p><strong>任务</strong>：①男女生分别几人达标？②全班平均成绩？③最快和最慢差多少？④按成绩排序</p>
+    <div class="principle-tip"><strong>🔬 原理调用</strong>：原理3（分类法）· 原理5（可视化法）</div>
+    <table>
+      <tr><th>姓名</th><th>性别</th><th>成绩(秒)</th><th>是否达标</th><th>排名</th></tr>
+      <tr><td>小王</td><td>男</td><td>9.5</td><td>✅</td><td>1</td></tr>
+      <tr><td>小冯</td><td>女</td><td>9.7</td><td>✅</td><td>2</td></tr>
+      <tr><td>小张</td><td>男</td><td>9.8</td><td>✅</td><td>3</td></tr>
+    </table>
+    <p style="color:var(--text-secondary);font-size:15px;">💡 数字越小跑得越快（反向思维最易错）！最快的不一定都是男生。关注数据分布特征比单纯算数字更有意思。</p>
+  </div>
+</div>
+
+<!-- 案例5 -->
+<div class="case-card">
+  <div class="case-header" onclick="toggleCase(this)">
+    <h3>🌱 案例5：植物生长的时间周期</h3>
+    <span class="case-toggle">▼</span>
+  </div>
+  <div class="case-body">
+    <p><strong>情境</strong>：绿豆苗一周高度——D1:0cm → D2:0.5cm → D3:2cm → D4:3.5cm → D5:5cm → D6:7cm → D7:9cm</p>
+    <p><strong>任务</strong>：①从发芽到D7经过几天？②哪两天之间生长最快？③预测第10天高度？④画生长曲线图</p>
+    <div class="principle-tip"><strong>🔬 原理调用</strong>：原理1（时间定位法）· 原理5（可视化法）· 原理4（60进制法）</div>
+    <table>
+      <tr><th>天数</th><th>高度(cm)</th><th>比前一天长高(cm)</th></tr>
+      <tr><td>1</td><td>0</td><td>—</td></tr>
+      <tr><td>2</td><td>0.5</td><td>+0.5</td></tr>
+      <tr><td>3</td><td>2</td><td>+1.5</td></tr>
+      <tr><td>4</td><td>3.5</td><td>+1.5</td></tr>
+      <tr><td>5</td><td>5</td><td>+1.5</td></tr>
+      <tr><td>6</td><td>7</td><td>+2.0</td></tr>
+      <tr><td>7</td><td>9</td><td>+2.0</td></tr>
+    </table>
+    <p style="color:var(--text-secondary);font-size:15px;">💡 生长速度越来越快（加速生长）。预测第10天可以用平均法或趋势法。不同植物生长周期不同。</p>
+  </div>
+</div>
+
+<!-- 案例6 -->
+<div class="case-card">
+  <div class="case-header" onclick="toggleCase(this)">
+    <h3>🚀 案例6：火星上的时间</h3>
+    <span class="case-toggle">▼</span>
+  </div>
+  <div class="case-body">
+    <p><strong>情境</strong>：一个火星日≈24小时39分钟35秒。未来人类在火星建立基地，需适应"火星时间"。</p>
+    <p><strong>任务</strong>：①一个火星日比地球日长多少？②地球"上午8:00"火星对应几点？③每过一个火星日，时钟偏差多少？</p>
+    <div class="principle-tip"><strong>🔬 原理调用</strong>：原理4（60进制法）· 原理5（可视化法）</div>
+    <table>
+      <tr><th>天数</th><th>火星累积(h:m:s)</th><th>地球累积</th><th>偏差</th></tr>
+      <tr><td>1</td><td>24:39:35</td><td>24:00:00</td><td>+39:35</td></tr>
+      <tr><td>5</td><td>123:17:55</td><td>120:00:00</td><td>+3:17:55</td></tr>
+      <tr><td>30</td><td>739:47:30</td><td>720:00:00</td><td>≈19:47:30</td></tr>
+    </table>
+    <p style="color:var(--text-secondary);font-size:15px;">💡 39分35秒看起来不多，累积30天≈20小时偏差！第30天"火星中午12:00"≈地球"第二天早8:00"。如果你是时间规划师，怎么设计火星人的一天？</p>
+  </div>
+</div>
+
+<!-- 案例7 -->
+<div class="case-card">
+  <div class="case-header" onclick="toggleCase(this)">
+    <h3>🎉 案例7：活动策划的时间统筹</h3>
+    <span class="case-toggle">▼</span>
+  </div>
+  <div class="case-body">
+    <p><strong>情境</strong>：班级"六一"庆祝会，14:00-15:30（共90分钟）。开场5min → 合唱10min → 小品15min → 游戏20min → 抽奖10min → 总结5min</p>
+    <p><strong>任务</strong>：①总时长多少？有余地吗？②游戏超时6分钟怎么压缩？③插入神秘嘉宾8分钟怎么调整？④画时间轴</p>
+    <div class="principle-tip"><strong>🔬 原理调用</strong>：原理1（时间定位法）· 原理2（分解法）· 原理3（分类法）</div>
+    <table>
+      <tr><th>序号</th><th>活动</th><th>时长</th><th>开始</th><th>结束</th><th>可调?</th></tr>
+      <tr><td>1</td><td>开场</td><td>5min</td><td>14:00</td><td>14:05</td><td>固定</td></tr>
+      <tr><td>2</td><td>合唱</td><td>10min</td><td>14:05</td><td>14:15</td><td>固定</td></tr>
+      <tr><td>3</td><td>小品</td><td>15min</td><td>14:15</td><td>14:30</td><td>微调</td></tr>
+      <tr><td>4</td><td>游戏</td><td>20min</td><td>14:30</td><td>14:50</td><td>灵活</td></tr>
+      <tr><td>5</td><td>抽奖</td><td>10min</td><td>14:50</td><td>15:00</td><td>微调</td></tr>
+      <tr><td>6</td><td>总结</td><td>5min</td><td>15:00</td><td>15:05</td><td>固定</td></tr>
+    </table>
+    <p style="color:var(--text-secondary);font-size:15px;">💡 活动总长65分钟，但别忘了节目间切换时间（5-10分钟"消失"了）和3-5分钟保险时间。实际可用≈75-80分钟。超时问题：压缩后面还是延长时间？不同选择不同结果。</p>
+  </div>
+</div>
+
+<!-- 综合反思 -->
+<div class="reflection">
+  <h2>💭 综合反思</h2>
+  <p style="margin:0 0 10px;">完成7个案例后，问问自己：</p>
+  <ol>
+    <li><strong>哪个案例最容易？</strong>为什么——课表分析还是上学路上？哪个最贴近你的生活？</li>
+    <li><strong>哪个案例最难？</strong>是火星时间的60进制换算，还是活动统筹的多变量思考？</li>
+    <li><strong>哪条原理最常用？</strong>分解法和可视化法用到次数最多？</li>
+    <li><strong>哪条原理还不太会用？</strong>60进制法有没有在哪卡住你？打算怎么加强？</li>
+    <li><strong>如何帮助完成大单元成果？</strong>这些方法能用到你最终要做的"时间作品"中去吗？</li>
+  </ol>
+  <div style="margin-top:12px;padding:10px 14px;background:var(--bg);border-radius:6px;text-align:center;font-size:16px;">
+    <strong>🎯 核心收获</strong>：感觉会骗人，数据不会。用时间分析的方法，你就能成为"时间的主人"。
+  </div>
+</div>
+
+</div>
+
+<script>
+function toggleCase(el) {
+  var body = el.nextElementSibling;
+  var toggle = el.querySelector('.case-toggle');
+  body.classList.toggle('open');
+  toggle.textContent = body.classList.contains('open') ? '▲' : '▼';
+}
+</script>
+</body>
+</html>

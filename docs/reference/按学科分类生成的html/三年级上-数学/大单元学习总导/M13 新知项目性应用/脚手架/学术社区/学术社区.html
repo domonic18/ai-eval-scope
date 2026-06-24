@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学术社区 — 学习共同体</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+
+/* Header */
+.page-header {
+  text-align: center;
+  padding: 32px 20px 24px;
+  background: linear-gradient(135deg, #1677ff 0%, #69b1ff 100%);
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+  color: #fff;
+}
+.page-header h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.page-header p { font-size: 16px; opacity: 0.9; }
+
+/* Connection cards */
+.conn-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 24px;
+  overflow: hidden;
+  transition: box-shadow 0.3s;
+}
+.conn-card:hover { box-shadow: 0 4px 20px rgba(22,119,255,0.12); }
+
+.conn-card-header {
+  padding: 16px 22px;
+  font-size: var(--font-h2);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.conn-card-header.peer { background: #e6f7ff; color: #13a8a8; }
+.conn-card-header.home { background: #fff7e6; color: #d46b08; }
+.conn-card-header.social { background: #f6ffed; color: #389e0d; }
+.conn-card-header.output { background: #f9f0ff; color: #722ed1; }
+
+.conn-card-body {
+  padding: 18px 22px 22px;
+}
+
+/* Discussion topic */
+.topic-list {
+  list-style: none;
+  padding: 0;
+}
+.topic-list li {
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  background: #fafafa;
+  border-radius: 8px;
+  border-left: 4px solid var(--accent);
+  font-size: 16px;
+  transition: background 0.2s;
+  cursor: default;
+}
+.topic-list li:hover {
+  background: #e6f7ff;
+}
+.topic-list li .topic-num {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 24px;
+  font-size: 13px;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+/* Role grid */
+.role-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 500px) {
+  .role-grid { grid-template-columns: 1fr; }
+}
+.role-card {
+  padding: 14px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  text-align: center;
+  transition: transform 0.2s, border-color 0.2s;
+  cursor: default;
+}
+.role-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--primary);
+}
+.role-card .role-icon { font-size: 28px; margin-bottom: 6px; }
+.role-card .role-name { font-weight: 600; font-size: 16px; color: var(--primary); }
+.role-card .role-desc { font-size: 14px; color: var(--text-secondary); margin-top: 4px; }
+
+/* Home & Social items */
+.conn-item {
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 16px;
+  transition: border-color 0.2s;
+}
+.conn-item:hover { border-color: var(--accent); }
+.conn-item .conn-icon { margin-right: 8px; }
+
+/* Output items */
+.output-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+@media (min-width: 640px) {
+  .output-grid { grid-template-columns: 1fr 1fr 1fr; }
+}
+.output-item {
+  background: #fafafa;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+  cursor: default;
+}
+.output-item:hover {
+  background: #f9f0ff;
+  border-color: #b37feb;
+  transform: scale(1.02);
+}
+.output-item .out-icon { font-size: 32px; margin-bottom: 6px; }
+.output-item .out-label { font-weight: 600; font-size: 15px; color: #722ed1; }
+.output-item .out-desc { font-size: 14px; color: var(--text-secondary); margin-top: 4px; }
+
+/* Interactive task */
+.task-section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  box-shadow: var(--shadow);
+  margin-bottom: 24px;
+  text-align: center;
+}
+.task-section h3 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+}
+.task-section p {
+  font-size: 16px;
+  margin-bottom: 14px;
+}
+.task-btn {
+  padding: 10px 28px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  margin: 4px;
+}
+.task-btn:hover { background: var(--primary-hover); }
+.task-btn:active { transform: scale(0.96); }
+.task-btn.secondary {
+  background: #722ed1;
+}
+.task-btn.secondary:hover { background: #9254de; }
+.task-result {
+  margin-top: 14px;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 8px;
+  min-height: 40px;
+  font-size: 15px;
+  display: none;
+  border: 1px dashed var(--border);
+}
+.task-result.show { display: block; }
+
+.footer-note {
+  text-align: center;
+  padding: 16px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-top: 20px;
+  border-top: 1px solid var(--border);
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-header">
+    <h1>🤝 学习共同体 · 时间规划社区</h1>
+    <p>与同伴、家人和社会连接，让时间管理不再是一个人的战斗</p>
+  </div>
+
+  <!-- 同伴连接 -->
+  <div class="conn-card">
+    <div class="conn-card-header peer">👥 同伴连接 · 讨论与协作</div>
+    <div class="conn-card-body">
+      <p style="font-weight:600;font-size:16px;margin-bottom:10px;color:var(--text);">💬 讨论议题（和同桌或小组一起聊聊）</p>
+      <ul class="topic-list">
+        <li><span class="topic-num">1</span> 你觉得"时间规划"真的有用吗？有没有你计划好却没做到的时候？</li>
+        <li><span class="topic-num">2</span> 你估算时间总是偏多还是偏少？有什么办法让估算更准确？</li>
+        <li><span class="topic-num">3</span> 看同学的"周末时间安排"，你觉得谁的安排最合理？为什么？</li>
+      </ul>
+
+      <p style="font-weight:600;font-size:16px;margin:18px 0 10px;color:var(--text);">🎭 小组角色分工</p>
+      <div class="role-grid">
+        <div class="role-card">
+          <div class="role-icon">⏱️</div>
+          <div class="role-name">时间记录员</div>
+          <div class="role-desc">记录小组讨论的时间分配</div>
+        </div>
+        <div class="role-card">
+          <div class="role-icon">📐</div>
+          <div class="role-name">方案设计师</div>
+          <div class="role-desc">整理组员的时间规划方案</div>
+        </div>
+        <div class="role-card">
+          <div class="role-icon">🎤</div>
+          <div class="role-name">汇报人</div>
+          <div class="role-desc">向全班展示最佳方案</div>
+        </div>
+        <div class="role-card">
+          <div class="role-icon">🔔</div>
+          <div class="role-name">时间提醒员</div>
+          <div class="role-desc">确保讨论按时完成</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 家校连接 -->
+  <div class="conn-card">
+    <div class="conn-card-header home">🏠 家校连接 · 支持与反馈</div>
+    <div class="conn-card-body">
+      <div class="conn-item">
+        <span class="conn-icon">🗣️</span>
+        <strong>请家长分享：</strong>他们的"时间管理经验"——上班族怎么安排一天的时间？
+      </div>
+      <div class="conn-item">
+        <span class="conn-icon">📋</span>
+        <strong>亲子任务：</strong>和家长一起完成"家庭周末时间规划"，比较你和家长的规划思路有何不同
+      </div>
+    </div>
+  </div>
+
+  <!-- 社会连接 -->
+  <div class="conn-card">
+    <div class="conn-card-header social">🌍 社会连接 · 真实接触</div>
+    <div class="conn-card-body">
+      <div class="conn-item">
+        <span class="conn-icon">🎙️</span>
+        <strong>采访任务：</strong>找一位身边的"时间管理达人"（如学生会干部、忙碌的上班族家长），了解他们如何安排一天
+      </div>
+      <div class="conn-item">
+        <span class="conn-icon">📱</span>
+        <strong>拓展探索：</strong>关注"时间管理"主题的公众号或App社区，看看成年人的时间管理方法
+      </div>
+    </div>
+  </div>
+
+  <!-- 输出机制 -->
+  <div class="conn-card">
+    <div class="conn-card-header output">📤 输出机制 · 展示与反馈</div>
+    <div class="conn-card-body">
+      <div class="output-grid">
+        <div class="output-item">
+          <div class="out-icon">🏆</div>
+          <div class="out-label">展示</div>
+          <div class="out-desc">在班级展示墙上展示最佳"时间规划"作品</div>
+        </div>
+        <div class="output-item">
+          <div class="out-icon">📲</div>
+          <div class="out-label">分享</div>
+          <div class="out-desc">在班级群分享你的"一分钟挑战"发现</div>
+        </div>
+        <div class="output-item">
+          <div class="out-icon">🤲</div>
+          <div class="out-label">互评</div>
+          <div class="out-desc">同桌互评时间规划书，给"一个优点 + 一个建议"</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 互动任务区 -->
+  <div class="task-section">
+    <h3>🎯 课堂互动 · 选一个任务开始</h3>
+    <p>点击按钮随机分配一个讨论任务，和你的同伴一起完成</p>
+    <button class="task-btn" onclick="assignTask('peer')">👥 同伴讨论任务</button>
+    <button class="task-btn secondary" onclick="assignTask('reflect')">🧘 个人思考任务</button>
+    <div id="taskResult" class="task-result"></div>
+  </div>
+
+  <div class="footer-note">
+    数学 · 三年级上 · 时间主题学习脚手架
+  </div>
+</div>
+
+<script>
+function assignTask(type) {
+  const peerTasks = [
+    '🗣️ 和同桌互相分享：你一天中效率最高的时段是什么时候？为什么？',
+    '📊 小组合作：画出你们小组的"理想周末时间安排"甘特图',
+    '🎭 角色扮演：一人当"拖延症患者"，一人当"时间规划师"，规划师帮患者解决问题',
+    '📝 讨论：为什么同样的作业，有人半小时做完，有人要做两小时？'
+  ];
+  const reflectTasks = [
+    '✍️ 写下你今天时间使用中"最满意"和"最不满意"的一点',
+    '⏳ 估算：你完成今天的数学作业需要多少分钟？实际用了多少？',
+    '🎯 给自己设定一个"明天的小目标"——哪件事一定要准时完成？',
+    '📖 回想今天学的时间管理名言，哪一句对你触动最大？为什么？'
+  ];
+
+  const list = type === 'peer' ? peerTasks : reflectTasks;
+  const choice = list[Math.floor(Math.random() * list.length)];
+  const el = document.getElementById('taskResult');
+  el.textContent = choice;
+  el.classList.add('show');
+}
+</script>
+</body>
+</html>

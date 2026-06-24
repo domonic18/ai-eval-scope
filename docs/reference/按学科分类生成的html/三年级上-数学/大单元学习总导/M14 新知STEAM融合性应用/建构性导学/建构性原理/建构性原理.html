@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性原理 - 三年级数学</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: #1f1f1f;
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+}
+.container {
+  width: 100%;
+  padding: 20px 40px 60px;
+}
+/* ===== Header ===== */
+.header {
+  text-align: center;
+  padding: 36px 20px 28px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  border-radius: 16px;
+  margin-bottom: 32px;
+  box-shadow: 0 4px 20px rgba(22,119,255,0.25);
+}
+.header h1 {
+  font-size: var(--font-h1);
+  color: #fff;
+  letter-spacing: 4px;
+  margin-bottom: 6px;
+}
+.header .subtitle {
+  font-size: 16px;
+  color: rgba(255,255,255,0.88);
+  letter-spacing: 2px;
+}
+/* ===== Info Bar ===== */
+.info-bar {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 16px 24px;
+  margin-bottom: 28px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px 36px;
+  font-size: 15px;
+  color: #555;
+}
+.info-bar .label {
+  color: var(--primary);
+  font-weight: 600;
+}
+/* ===== Cards (principles) ===== */
+.section-title {
+  font-size: var(--font-h2);
+  font-weight: 700;
+  color: var(--primary);
+  margin: 36px 0 18px;
+  padding-left: 14px;
+  border-left: 4px solid var(--primary);
+}
+.section-desc {
+  color: #555;
+  margin-bottom: 20px;
+  font-size: 16px;
+}
+.principle-card {
+  background: var(--card-bg);
+  border-radius: 14px;
+  margin-bottom: 18px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  overflow: hidden;
+  cursor: pointer;
+  transition: box-shadow 0.3s;
+}
+.principle-card:hover {
+  box-shadow: 0 4px 20px rgba(22,119,255,0.12);
+}
+.principle-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #f7faff, #eef5ff);
+  user-select: none;
+}
+.principle-header .num-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  margin-right: 14px;
+  flex-shrink: 0;
+}
+.principle-header .title-group {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+.principle-header .principle-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f1f1f;
+}
+.principle-header .toggle-icon {
+  font-size: 22px;
+  color: var(--primary);
+  transition: transform 0.35s ease;
+  flex-shrink: 0;
+}
+.principle-card.open .toggle-icon {
+  transform: rotate(180deg);
+}
+.principle-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.45s ease, padding 0.3s ease;
+}
+.principle-card.open .principle-body {
+  max-height: 800px;
+}
+.principle-body-inner {
+  padding: 0 24px 20px;
+}
+.principle-body-inner p {
+  margin-bottom: 10px;
+}
+.principle-body-inner strong {
+  color: var(--primary);
+}
+.principle-body-inner .highlight-box {
+  background: #f6ffed;
+  border-left: 4px solid #52c41a;
+  padding: 10px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 10px 0;
+  font-size: 15px;
+}
+.principle-body-inner .warn-box {
+  background: #fff7e6;
+  border-left: 4px solid #fa8c16;
+  padding: 10px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 10px 0;
+  font-size: 15px;
+}
+/* ===== Practice cards ===== */
+.practice-section {
+  margin-top: 10px;
+}
+.practice-card {
+  background: var(--card-bg);
+  border-radius: 14px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  overflow: hidden;
+}
+.practice-card-header {
+  padding: 18px 24px;
+  background: linear-gradient(135deg, #fff7e6, #fff2d9);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  user-select: none;
+}
+.practice-card-header .practice-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+.practice-card-header .practice-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #d46b08;
+}
+.practice-card-body {
+  padding: 20px 24px;
+}
+.practice-card-body p {
+  margin-bottom: 10px;
+}
+.practice-card-body .tag-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+.tag {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.tag.orange {
+  background: #fff7e6;
+  color: #d46b08;
+}
+.tag.green {
+  background: #f6ffed;
+  color: #52c41a;
+}
+.scaffold-tip {
+  background: #e6f7ff;
+  border: 1px dashed var(--accent);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-top: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.scaffold-tip .tip-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+/* ===== Flip cards (reflection) ===== */
+.reflection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+  margin: 18px 0 10px;
+}
+.flip-card {
+  perspective: 800px;
+  height: 220px;
+  cursor: pointer;
+}
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s ease;
+  transform-style: preserve-3d;
+}
+.flip-card.flipped .flip-card-inner {
+  transform: rotateY(180deg);
+}
+.flip-card-front, .flip-card-back {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  padding: 20px 18px;
+  backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+}
+.flip-card-front {
+  background: var(--card-bg);
+  border: 2px solid var(--accent);
+}
+.flip-card-front .q-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+.flip-card-front .hint-tap {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #aaa;
+}
+.flip-card-back {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  transform: rotateY(180deg);
+}
+.flip-card-back p {
+  font-size: 16px;
+  line-height: 1.7;
+}
+/* ===== Navigation footer ===== */
+.nav-footer {
+  margin-top: 40px;
+  border-top: 2px solid #e8e8e8;
+  padding-top: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+}
+.nav-item {
+  background: var(--card-bg);
+  border-radius: 10px;
+  padding: 14px 22px;
+  flex: 1;
+  min-width: 200px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+.nav-item .nav-label {
+  font-size: 13px;
+  color: #999;
+}
+.nav-item .nav-name {
+  font-weight: 600;
+  color: var(--primary);
+  margin-top: 2px;
+}
+.nav-item .nav-desc {
+  font-size: 14px;
+  color: #666;
+  margin-top: 4px;
+}
+/* ===== Animation ===== */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.principle-card, .practice-card, .flip-card {
+  animation: fadeInUp 0.5s ease both;
+}
+.principle-card:nth-child(1) { animation-delay: 0.05s; }
+.principle-card:nth-child(2) { animation-delay: 0.10s; }
+.principle-card:nth-child(3) { animation-delay: 0.15s; }
+.principle-card:nth-child(4) { animation-delay: 0.20s; }
+.principle-card:nth-child(5) { animation-delay: 0.25s; }
+/* ===== Responsive ===== */
+@media (max-width: 640px) {
+  .container { padding: 12px 16px 40px; }
+  .header { padding: 24px 16px 20px; }
+  .principle-header { flex-wrap: wrap; }
+  .reflection-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- ========== HEADER ========== -->
+<div class="header">
+  <h1>建构性原理</h1>
+  <div class="subtitle">把"做过的经验"变成"能用一辈子的方法"</div>
+</div>
+
+<!-- ========== INFO BAR ========== -->
+<div class="info-bar">
+  <span><span class="label">隶属板块：</span>建构性导学</span>
+  <span><span class="label">所属模块：</span>M14 新知STEAM融合性应用</span>
+  <span><span class="label">前置依赖：</span>建构性示例（slot_17155）</span>
+  <span><span class="label">适用年级：</span>三年级上</span>
+</div>
+
+<!-- ========== SECTION 1: 建构性原理提炼 ========== -->
+<h2 class="section-title">一、建构性原理提炼</h2>
+<p class="section-desc">还记得刚刚完成的"一分钟创意挑战方案"吗？下面的每一个原理，都是从你刚才的建构过程中提炼出来的。点击卡片查看完整内容。</p>
+
+<!-- 原理一 -->
+<div class="principle-card open" onclick="toggleCard(this)">
+  <div class="principle-header">
+    <div class="title-group">
+      <span class="num-badge">1</span>
+      <span class="principle-name">问题驱动建构法</span>
+    </div>
+    <span class="toggle-icon">&#9660;</span>
+  </div>
+  <div class="principle-body">
+    <div class="principle-body-inner">
+      <p><strong>原理说明：</strong>从真实问题出发建构新理解，而不是从知识出发。当你脑子里先有一个问题，你再去学知识的时候，这些知识就有了"家"。</p>
+      <p><strong>示例体现：</strong>在"一分钟创意挑战"中，我们是先问"怎样设计一个一分钟挑战？"这个问题开始，而不是先背时间单位。因为有了问题，你才知道学时间换算用来干什么。</p>
+      <div class="highlight-box">
+        <strong>适用情境：</strong>任何需要创造新方案、新作品的学习任务，比如设计一个游戏、策划一次班级活动。
+      </div>
+      <div class="warn-box">
+        <strong>注意事项：</strong>问题要具体、可操作。不要说"怎样变得更好"这种太空的问题，要说"怎样在1分钟内完成3个动作"这种能动手的问题。
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 原理二 -->
+<div class="principle-card" onclick="toggleCard(this)">
+  <div class="principle-header">
+    <div class="title-group">
+      <span class="num-badge">2</span>
+      <span class="principle-name">证据支撑建构法</span>
+    </div>
+    <span class="toggle-icon">&#9660;</span>
+  </div>
+  <div class="principle-body">
+    <div class="principle-body-inner">
+      <p><strong>原理说明：</strong>建构不是凭空想象，需要收集和运用证据。证据就像盖房子时的砖头，没有砖头盖不出坚固的房子。</p>
+      <p><strong>示例体现：</strong>在挑战中，你用秒表实测了每个动作的时间，把这些数据记下来作为证据，再来调整你的方案。是不是比"我觉得大概需要X秒"准确多了？</p>
+      <div class="highlight-box">
+        <strong>适用情境：</strong>科学实验（要记录数据）、方案设计（要测量效果）、模型制作（要测试性能）。
+      </div>
+      <div class="warn-box">
+        <strong>注意事项：</strong>证据要准确记录，不能凭感觉。写清楚"某月某日测试了3次，平均用时X秒"比"我觉得挺快的"要可靠一亿倍！
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 原理三 -->
+<div class="principle-card" onclick="toggleCard(this)">
+  <div class="principle-header">
+    <div class="title-group">
+      <span class="num-badge">3</span>
+      <span class="principle-name">原型迭代建构法</span>
+    </div>
+    <span class="toggle-icon">&#9660;</span>
+  </div>
+  <div class="principle-body">
+    <div class="principle-body-inner">
+      <p><strong>原理说明：</strong>先快速做出初级版本（原型），再通过测试不断改进。不要老想着"一步到位"，世界上没有一步到位的发明。</p>
+      <p><strong>示例体现：</strong>你先画出方案草图（就是第一个原型），然后自己试了一遍，发现时间不够，于是修改方案，再试一遍……一直到满意为止。每一次修改都是一次迭代。</p>
+      <div class="highlight-box">
+        <strong>适用情境：</strong>任何创造性的设计任务——画画、写作文、做手工、搭积木都适用。
+      </div>
+      <div class="warn-box">
+        <strong>注意事项：</strong>第一次不求完美，关键是"先做出来"。就像先画出火柴人，再慢慢画成超人。最怕的是光想不动手。
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 原理四 -->
+<div class="principle-card" onclick="toggleCard(this)">
+  <div class="principle-header">
+    <div class="title-group">
+      <span class="num-badge">4</span>
+      <span class="principle-name">多学科整合建构法</span>
+    </div>
+    <span class="toggle-icon">&#9660;</span>
+  </div>
+  <div class="principle-body">
+    <div class="principle-body-inner">
+      <p><strong>原理说明：</strong>把数学知识和其他学科的工具结合起来解决问题。单个学科是"锤子"，多个学科才是"工具箱"。</p>
+      <p><strong>示例体现：</strong>完成一分钟挑战方案，你用了：时间换算（数学） + 方案流程设计（工程） + 创意表达（艺术/语言）。数学和美术配合起来，是不是比只用数学厉害多了？</p>
+      <div class="highlight-box">
+        <strong>适用情境：</strong>STEAM项目式学习，比如设计一个城市模型、做一个科学小发明。
+      </div>
+      <div class="warn-box">
+        <strong>注意事项：</strong>要确定核心学科是数学，其他学科是辅助工具。好比盖楼，数学是钢筋，美术是瓷砖——钢筋更重要。
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 原理五 -->
+<div class="principle-card" onclick="toggleCard(this)">
+  <div class="principle-header">
+    <div class="title-group">
+      <span class="num-badge">5</span>
+      <span class="principle-name">表达驱动建构法</span>
+    </div>
+    <span class="toggle-icon">&#9660;</span>
+  </div>
+  <div class="principle-body">
+    <div class="principle-body-inner">
+      <p><strong>原理说明：</strong>通过"要展示给别人看"来驱动自己把方案做完整。知道自己要上台，你就会把东西做得好好的。</p>
+      <p><strong>示例体现：</strong>因为要参加"一分钟挑战赛"，要面向全班同学展示，所以你写清楚步骤、画明白图示、练熟每一个动作。不是为了交作业，是为了让大家看得懂！</p>
+      <div class="highlight-box">
+        <strong>适用情境：</strong>任何需要产出和展示的学习任务——做小报、排节目、讲题汇报。
+      </div>
+      <div class="warn-box">
+        <strong>注意事项：</strong>表达形式要适合展示对象。如果是给一年级看，图画要更多；如果是给老师看，文字要更清楚。
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SECTION 2: 建构性原理迁移应用 ========== -->
+<h2 class="section-title">二、建构性原理迁移应用</h2>
+<p class="section-desc">现在，我们试试用学到的建构性原理来解决两个新的问题。每个问题都用到了前面学到的原理哦！</p>
+
+<div class="practice-section">
+
+  <!-- 练习一 -->
+  <div class="practice-card">
+    <div class="practice-card-header">
+      <span class="practice-icon">&#128203;</span>
+      <span class="practice-title">练习一：时间作息表设计</span>
+    </div>
+    <div class="practice-card-body">
+      <p><strong>情境：</strong>新学期到了，请你为自己设计一份合理的放学后作息时间表。既要保证完成作业，又要留出运动和休息的时间。</p>
+      <p><strong>建构任务：</strong>设计一份包含作业、运动、休息的时间安排表，时间精确到分钟。</p>
+      <div class="tag-group">
+        <span class="tag">问题驱动建构法</span>
+        <span class="tag orange">证据支撑建构法</span>
+      </div>
+      <div class="scaffold-tip">
+        <span class="tip-icon">&#128161;</span>
+        <div>
+          <strong>脚手架提示：</strong>别着急写！先用一周时间，每天记录自己放学后做了哪些事、用了多长时间。把一周的数据作为"证据"，再设计一个更优化的时间方案。这样设计出来的作息表才真的适合你。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 练习二 -->
+  <div class="practice-card">
+    <div class="practice-card-header">
+      <span class="practice-icon">&#127974;</span>
+      <span class="practice-title">练习二：班级时间银行</span>
+    </div>
+    <div class="practice-card-body">
+      <p><strong>情境：</strong>班级要建立"时间银行"系统，同学们可以通过完成特定任务"存入"时间，也可以"取出"时间做自己喜欢的事。</p>
+      <p><strong>建构任务：</strong>设计班级时间银行的运作规则和记录系统（比如：存多少、怎么取、谁来记录）。</p>
+      <div class="tag-group">
+        <span class="tag green">原型迭代建构法</span>
+        <span class="tag">多学科整合建构法</span>
+      </div>
+      <div class="scaffold-tip">
+        <span class="tip-icon">&#128161;</span>
+        <div>
+          <strong>脚手架提示：</strong>想一想现实中的银行是怎么运作的？你的"时间银行"怎么保证公平？会不会有人存了太多时间让别人没时间可存？先用一张纸画出"时间银行"的规则草案（原型），然后找几个同学测试一下，再修改完善。
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ========== SECTION 3: 元认知反思 ========== -->
+<h2 class="section-title">三、元认知反思</h2>
+<p class="section-desc">下面是几个关于"建构"的小问题，点击卡片翻到背面看看提示，然后自己想一想、写一写。</p>
+
+<div class="reflection-grid">
+
+  <div class="flip-card" onclick="this.classList.toggle('flipped')">
+    <div class="flip-card-inner">
+      <div class="flip-card-front">
+        <span class="q-number">1</span>
+        <p style="font-weight:600;">在"一分钟挑战方案"的建构过程中，你最成功的步骤是哪一步？为什么？</p>
+        <span class="hint-tap">&#128073; 点击翻转看提示</span>
+      </div>
+      <div class="flip-card-back">
+        <p>"最成功"不一定是结果最好，而是你在某个步骤<strong>最有成就感</strong>。可能是你想到一个好办法的那一刻，也可能是你反复测试终于成功的那一次。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="flip-card" onclick="this.classList.toggle('flipped')">
+    <div class="flip-card-inner">
+      <div class="flip-card-front">
+        <span class="q-number">2</span>
+        <p style="font-weight:600;">有没有哪个建构原理是你以前也在用，但没意识到的？</p>
+        <span class="hint-tap">&#128073; 点击翻转看提示</span>
+      </div>
+      <div class="flip-card-back">
+        <p>比如——你搭积木的时候是不是先搭一个简单的（原型），再慢慢改（迭代）？做手工的时候是不是先画草图再动手？你已经是一个"小建构师"了！</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="flip-card" onclick="this.classList.toggle('flipped')">
+    <div class="flip-card-inner">
+      <div class="flip-card-front">
+        <span class="q-number">3</span>
+        <p style="font-weight:600;">在建构过程中遇到困难时，你是怎么克服的？</p>
+        <span class="hint-tap">&#128073; 点击翻转看提示</span>
+      </div>
+      <div class="flip-card-back">
+        <p>你可以想一想：是请教了同学？查了资料？还是自己又试了几次？每个困难都是一次学习机会，记下你是怎么解决的，下次遇到同样的问题就不怕了。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="flip-card" onclick="this.classList.toggle('flipped')">
+    <div class="flip-card-inner">
+      <div class="flip-card-front">
+        <span class="q-number">4</span>
+        <p style="font-weight:600;">你觉得"建构"和"做题"最大的区别是什么？</p>
+        <span class="hint-tap">&#128073; 点击翻转看提示</span>
+      </div>
+      <div class="flip-card-back">
+        <p>做题是"别人出问题你来解答"，建构是"你自己发现要解决什么问题，然后自己想办法"。<br>做题是练招式，建构是自己编武功秘籍！</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="flip-card" onclick="this.classList.toggle('flipped')">
+    <div class="flip-card-inner">
+      <div class="flip-card-front">
+        <span class="q-number">5</span>
+        <p style="font-weight:600;">接下来要用建构性原理解决新问题了，你心里有把握吗？哪个原理你觉得最好用？</p>
+        <span class="hint-tap">&#128073; 点击翻转看提示</span>
+      </div>
+      <div class="flip-card-back">
+        <p>不用全都会，先挑一个你觉得最顺手的用起来。<br><strong>问题驱动法</strong>适合开始阶段；<strong>原型迭代法</strong>适合做不出来的时候。<br>先迈出一小步就好！</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ========== NAVIGATION FOOTER ========== -->
+<div class="nav-footer">
+  <div class="nav-item">
+    <div class="nav-label">前置</div>
+    <div class="nav-name">建构性示例（slot_17155）</div>
+    <div class="nav-desc">已完成"一分钟创意挑战方案"的建构过程</div>
+  </div>
+  <div class="nav-item" style="text-align:right;">
+    <div class="nav-label">后续</div>
+    <div class="nav-name">建构性案例（slot_17154）</div>
+    <div class="nav-desc">运用原理解决更复杂的实际案例</div>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<script>
+function toggleCard(el) {
+  el.classList.toggle('open');
+}
+</script>
+
+</body>
+</html>

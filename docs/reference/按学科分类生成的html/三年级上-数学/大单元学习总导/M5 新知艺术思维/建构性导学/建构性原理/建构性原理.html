@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性原理</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+.header { background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; padding: 32px 40px; border-radius: var(--border-radius); margin-bottom: 28px; }
+.header h1 { font-size: var(--font-h1); margin: 0 0 8px; }
+.header p { margin: 0; opacity: 0.9; font-size: 16px; }
+.section { margin-bottom: 32px; }
+.section-title { font-size: var(--font-h2); font-weight: 700; color: var(--primary); margin: 0 0 16px; display: flex; align-items: center; gap: 10px; }
+.section-title .num { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: var(--primary); color: #fff; border-radius: 50%; font-size: 16px; flex-shrink: 0; }
+.principle-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px 24px; margin-bottom: 16px; border-left: 4px solid var(--primary); transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; }
+.principle-card:hover { transform: translateX(4px); box-shadow: 0 4px 16px rgba(22,119,255,0.15); }
+.principle-card .p-title { font-size: 19px; font-weight: 700; color: var(--primary); margin: 0 0 8px; }
+.principle-card .p-desc { margin: 0 0 8px; }
+.principle-card .p-detail { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
+.principle-card .p-detail-inner { padding-top: 8px; border-top: 1px dashed var(--border); }
+.principle-card.expanded .p-detail { max-height: 500px; }
+.principle-card .tag { display: inline-block; background: var(--bg); color: var(--primary); padding: 2px 10px; border-radius: 12px; font-size: 14px; margin: 4px 4px 0 0; }
+.exercise-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px 24px; margin-bottom: 16px; border-top: 3px solid var(--accent); }
+.exercise-card .e-title { font-size: 19px; font-weight: 700; color: var(--text); margin: 0 0 8px; }
+.exercise-card .e-title .badge { display: inline-block; background: var(--accent); color: #fff; font-size: 14px; padding: 2px 10px; border-radius: 10px; margin-left: 8px; }
+.exercise-card .e-step { padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+.exercise-card .e-step:last-child { border-bottom: none; }
+.exercise-card .e-step strong { color: var(--primary); }
+.reflect-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 640px) { .reflect-grid { grid-template-columns: 1fr; } }
+.reflect-item { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 16px 20px; }
+.reflect-item .q { font-weight: 600; color: var(--primary); margin: 0 0 8px; font-size: 16px; }
+.reflect-item .hint { color: var(--text-secondary); font-size: 15px; margin: 0; }
+.toggle-btn { background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; margin-top: 8px; }
+.toggle-btn:hover { background: var(--bg); }
+.tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>建构性原理</h1>
+    <p>从"我的时间密码"示例中提炼出5条核心原理，帮你掌握建构学习的秘诀</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="num">1</span>建构性原理提炼</div>
+    <p style="color:var(--text-secondary);margin:0 0 16px;font-size:16px;">💡 点击卡片展开详情，看看每条原理的来龙去脉</p>
+
+    <div class="principle-card expanded" onclick="toggleCard(this)">
+      <div class="p-title">原理1：从真实困惑出发</div>
+      <div class="p-desc">建构不是空想，而是始于一个你真的想知道答案的问题。</div>
+      <div class="tag-list"><span class="tag">来源：小明"时间不够用"</span><span class="tag">适用：复习安排、零花钱、课外书</span></div>
+      <div class="p-detail"><div class="p-detail-inner">
+        <p><strong>注意事项：</strong>问题要小、要具体，不要一上来就问"人生的意义是什么"。</p>
+        <p><strong>想一想：</strong>你最近有什么"小困惑"？把它写下来。</p>
+      </div></div>
+      <button class="toggle-btn" onclick="event.stopPropagation();toggleCard(this.parentElement)">展开/收起</button>
+    </div>
+
+    <div class="principle-card" onclick="toggleCard(this)">
+      <div class="p-title">原理2：用数据说话</div>
+      <div class="p-desc">不靠感觉、不靠猜测，用真实记录的数据作为建构的基石。</div>
+      <div class="tag-list"><span class="tag">来源：拿着表一格一格记录</span><span class="tag">适用：零花钱、运动量、植物生长</span></div>
+      <div class="p-detail"><div class="p-detail-inner">
+        <p><strong>注意事项：</strong>数据要如实记录，不要"美化"——不准确的数据会得出错误的结论。</p>
+        <p><strong>试一试：</strong>今天就记录一件事的真实数据吧！</p>
+      </div></div>
+      <button class="toggle-btn" onclick="event.stopPropagation();toggleCard(this.parentElement)">展开/收起</button>
+    </div>
+
+    <div class="principle-card" onclick="toggleCard(this)">
+      <div class="p-title">原理3：分类让数据变信息</div>
+      <div class="p-desc">一堆数字没有意义，但按照"类别"一分类，规律就浮现出来了。</div>
+      <div class="tag-list"><span class="tag">来源：学习/运动/娱乐/生活四类</span><span class="tag">适用：整理书包、分组家务</span></div>
+      <div class="p-detail"><div class="p-detail-inner">
+        <p><strong>注意事项：</strong>分类要互不重叠（一个活动只属于一个类别）。</p>
+        <p><strong>思考：</strong>你的时间可以分为哪几类？</p>
+      </div></div>
+      <button class="toggle-btn" onclick="event.stopPropagation();toggleCard(this.parentElement)">展开/收起</button>
+    </div>
+
+    <div class="principle-card" onclick="toggleCard(this)">
+      <div class="p-title">原理4：选对表达方式</div>
+      <div class="p-desc">同一个数据，用不同的图展示，看出不同的信息。</div>
+      <div class="tag-list"><span class="tag">饼图看占比</span><span class="tag">柱状图看多少</span><span class="tag">时间轴看顺序</span></div>
+      <div class="p-detail"><div class="p-detail-inner">
+        <p><strong>注意事项：</strong>饼图看比例、柱状图看大小、时间轴看顺序——选错了反而看不清楚。</p>
+        <p><strong>挑战：</strong>给你的一周时间数据选一个最合适的图表类型。</p>
+      </div></div>
+      <button class="toggle-btn" onclick="event.stopPropagation();toggleCard(this.parentElement)">展开/收起</button>
+    </div>
+
+    <div class="principle-card" onclick="toggleCard(this)">
+      <div class="p-title">原理5：先完成再完善</div>
+      <div class="p-desc">第一版不用完美，完成了就有了可以修改的"底子"。</div>
+      <div class="tag-list"><span class="tag">来源：先草图后上色再修改</span><span class="tag">适用：作文、画画、手工</span></div>
+      <div class="p-detail"><div class="p-detail-inner">
+        <p><strong>注意事项：</strong>给自己设定一个"第一版截止时间"，不要追求一次性完美。</p>
+        <p><strong>行动：</strong>现在就开始画第一版，哪怕很粗糙！</p>
+      </div></div>
+      <button class="toggle-btn" onclick="event.stopPropagation();toggleCard(this.parentElement)">展开/收起</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="num">2</span>迁移应用练习</div>
+
+    <div class="exercise-card">
+      <div class="e-title">练习1：我的零花钱去哪儿了？ <span class="badge">挑战</span></div>
+      <div class="e-step"><strong>情境：</strong>妈妈每月给你50元零花钱，月底你发现钱没了，但想不起来花在哪儿了。</div>
+      <div class="e-step"><strong>任务：</strong>用剩下的日子记录零花钱去向，建构一份"零花钱流向图"。</div>
+      <div class="e-step"><strong>建议原理：</strong>原理1（从真实困惑出发）→ 原理2（用数据说话）→ 原理3（分类让数据变信息）</div>
+      <div class="e-step"><strong>脚手架：</strong>分成"吃的""用的""玩的""存的"四大类；每天只花1分钟记录。</div>
+      <div class="e-step"><strong>表达：</strong>画一个"零花钱大饼"，看看哪个"饼块"最大。</div>
+    </div>
+
+    <div class="exercise-card">
+      <div class="e-title">练习2：周末时间规划方案 <span class="badge">挑战</span></div>
+      <div class="e-step"><strong>情境：</strong>周六上午有两小时自由时间，但既想玩又想看书又想做手工。</div>
+      <div class="e-step"><strong>任务：</strong>先记录你平时做每件事各需要多久，用数据帮你做决定。</div>
+      <div class="e-step"><strong>建议原理：</strong>原理4（选对表达方式）→ 原理5（先完成再完善）</div>
+      <div class="e-step"><strong>脚手架：</strong>用时间轴画出周六两小时的"方案A"和"方案B"。</div>
+      <div class="e-step"><strong>表达：</strong>画出两个不同版本的两小时规划，选出更合理的一个。</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="num">3</span>元认知反思</div>
+    <p style="color:var(--text-secondary);margin:0 0 16px;font-size:16px;">点击问题，思考你的真实经历</p>
+    <div class="reflect-grid">
+      <div class="reflect-item" onclick="this.style.background='#e6f4ff'">
+        <p class="q">🤔 问题一</p>
+        <p>你曾经有什么样的困惑？你是怎么把它变成可操作的问题的？</p>
+        <p class="hint">提示：从"我数学不好"到"我什么时候做计算题最容易出错"</p>
+      </div>
+      <div class="reflect-item" onclick="this.style.background='#e6f4ff'">
+        <p class="q">🤔 问题二</p>
+        <p>你相信"用数据说话"吗？有没有过"感觉是对的，但实际一算发现错了"的经历？</p>
+        <p class="hint">提示：比如觉得花了很久，实际上只有20分钟</p>
+      </div>
+      <div class="reflect-item" onclick="this.style.background='#e6f4ff'">
+        <p class="q">🤔 问题三</p>
+        <p>分类这件事，除了时间，你在其他方面也用过吗？效果如何？</p>
+        <p class="hint">提示：整理书包、管理玩具、分类作业</p>
+      </div>
+      <div class="reflect-item" onclick="this.style.background='#e6f4ff'">
+        <p class="q">🤔 问题四</p>
+        <p>"先完成再完善"这个方法对你有用吗？你之前的作品是一次完成还是反复修改的？</p>
+        <p class="hint">提示：想一想你的作文、画画、手工……</p>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function toggleCard(el) { el.classList.toggle('expanded'); }
+</script>
+</body>
+</html>

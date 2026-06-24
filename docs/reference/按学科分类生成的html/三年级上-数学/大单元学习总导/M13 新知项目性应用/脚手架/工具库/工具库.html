@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具库 — 认知放大器</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+
+.page-header {
+  text-align: center;
+  padding: 32px 20px 24px;
+  background: linear-gradient(135deg, #1677ff 0%, #69b1ff 100%);
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+  color: #fff;
+}
+.page-header h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.page-header p { font-size: 16px; opacity: 0.9; }
+
+/* Level label */
+.level-label {
+  display: inline-block;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 6px 18px;
+  border-radius: 20px;
+  margin-bottom: 16px;
+}
+.level-label.basic { background: #e6f7ff; color: #13a8a8; }
+.level-label.adv { background: #fff7e6; color: #d46b08; }
+.level-label.high { background: #f6ffed; color: #389e0d; }
+
+/* Tool card */
+.tool-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.tool-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 20px rgba(22,119,255,0.1);
+}
+
+.tool-card-inner {
+  padding: 20px 22px;
+}
+
+.tool-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.tool-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 16px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.tool-name {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+  margin-left: 8px;
+  flex: 1;
+}
+.tool-icon-big { font-size: 28px; }
+
+.tool-purpose {
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+.tool-purpose strong { color: var(--primary); }
+
+.tool-steps {
+  background: #fafafa;
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin-bottom: 10px;
+}
+.tool-steps ol {
+  padding-left: 22px;
+  font-size: 15px;
+}
+.tool-steps ol li { margin-bottom: 6px; }
+.tool-steps ol li:last-child { margin-bottom: 0; }
+
+.tool-scene {
+  font-size: 14px;
+  color: var(--text-secondary);
+  background: var(--bg);
+  padding: 6px 14px;
+  border-radius: 20px;
+  display: inline-block;
+}
+.tool-scene::before { content: "🎯 适用场景："; }
+
+/* App recommendations */
+.app-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+.app-item {
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 15px;
+  cursor: default;
+  transition: all 0.2s;
+}
+.app-item:hover {
+  background: #e6f7ff;
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
+/* Interactive - Quadrant */
+.quadrant-demo {
+  margin: 14px 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 6px;
+  width: 100%;
+  max-width: 400px;
+}
+.quadrant-cell {
+  padding: 14px 10px;
+  text-align: center;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.quadrant-cell:hover {
+  transform: scale(1.04);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
+.quadrant-cell.q1 { background: #ffccc7; border: 2px solid #ff4d4f; }
+.quadrant-cell.q2 { background: #d9f7be; border: 2px solid #73d13d; }
+.quadrant-cell.q3 { background: #ffe58f; border: 2px solid #faad14; }
+.quadrant-cell.q4 { background: #d6e4ff; border: 2px solid #597ef7; }
+.quadrant-cell .q-label { font-weight: 600; }
+.quadrant-cell .q-desc { font-size: 12px; color: var(--text-secondary); }
+
+/* Timer interactive */
+.timer-area {
+  text-align: center;
+  margin: 14px 0;
+}
+.timer-display {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+  margin: 10px 0;
+}
+.timer-btn {
+  padding: 8px 24px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  cursor: pointer;
+  margin: 0 4px;
+  transition: background 0.2s;
+}
+.timer-btn:hover { background: var(--primary-hover); }
+.timer-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.timer-btn.reset { background: #8c8c8c; }
+.timer-btn.reset:hover { background: #595959; }
+
+/* Note */
+.note-box {
+  margin-top: 24px;
+  padding: 16px 20px;
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #8c6b00;
+}
+
+.footer-note {
+  text-align: center;
+  padding: 16px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-top: 20px;
+  border-top: 1px solid var(--border);
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-header">
+    <h1>🧰 工具库 · 认知放大器</h1>
+    <p>从基础到高阶，掌握时间管理的"武器库"</p>
+  </div>
+
+  <!-- 基础工具 -->
+  <div class="level-label basic">⭐ 基础工具 · 易上手</div>
+
+  <div class="tool-card">
+    <div class="tool-card-inner">
+      <div class="tool-header">
+        <span class="tool-number">1</span>
+        <span class="tool-name">时间四象限图</span>
+        <span class="tool-icon-big">🎯</span>
+      </div>
+      <div class="tool-purpose"><strong>用途：</strong>区分事情的紧急和重要程度，决定先做什么、后做什么</div>
+      <div class="tool-steps">
+        <ol>
+          <li>画一个十字，分成四格</li>
+          <li>左上：重要且紧急（马上去做）</li>
+          <li>右上：重要不紧急（计划去做）</li>
+          <li>左下：不重要但紧急（快速处理或请人帮忙）</li>
+          <li>右下：不重要不紧急（尽量少做）</li>
+        </ol>
+      </div>
+      <div class="quadrant-demo">
+        <div class="quadrant-cell q1" onclick="alert('🔥 重要紧急：明天要交的作业、生病去看医生')">
+          <div class="q-label">🔥 重要紧急</div>
+          <div class="q-desc">马上去做</div>
+        </div>
+        <div class="quadrant-cell q2" onclick="alert('📅 重要不紧急：预习下周内容、练字、运动锻炼')">
+          <div class="q-label">📅 重要不紧急</div>
+          <div class="q-desc">计划去做</div>
+        </div>
+        <div class="quadrant-cell q3" onclick="alert('⚡ 紧急不重要：同学临时借文具、接电话')">
+          <div class="q-label">⚡ 紧急不重要</div>
+          <div class="q-desc">快速处理</div>
+        </div>
+        <div class="quadrant-cell q4" onclick="alert('❌ 不重要不紧急：刷短视频、无聊发呆')">
+          <div class="q-label">❌ 不重要不紧急</div>
+          <div class="q-desc">尽量少做</div>
+        </div>
+      </div>
+      <span class="tool-scene">决定优先顺序、安排每日任务</span>
+    </div>
+  </div>
+
+  <div class="tool-card">
+    <div class="tool-card-inner">
+      <div class="tool-header">
+        <span class="tool-number">2</span>
+        <span class="tool-name">番茄计时法</span>
+        <span class="tool-icon-big">🍅</span>
+      </div>
+      <div class="tool-purpose"><strong>用途：</strong>用"25分钟专注 + 5分钟休息"的节奏高效学习</div>
+      <div class="tool-steps">
+        <ol>
+          <li>设定25分钟倒计时</li>
+          <li>专注做一件事（不碰手机、不走神）</li>
+          <li>铃响后休息5分钟（站起来活动一下）</li>
+          <li>每完成4个"番茄"，休息15分钟</li>
+        </ol>
+      </div>
+
+      <!-- 内置番茄计时器 -->
+      <div class="timer-area">
+        <p style="font-size:14px;color:var(--text-secondary);margin-bottom:6px;">🍅 试试番茄计时器</p>
+        <div class="timer-display" id="timerDisplay">25:00</div>
+        <div>
+          <button class="timer-btn" id="timerStartBtn" onclick="startTimer()">▶ 开始</button>
+          <button class="timer-btn reset" onclick="resetTimer()">⟳ 重置</button>
+        </div>
+        <p id="timerStatus" style="font-size:14px;color:var(--text-secondary);margin-top:8px;">点击"开始"进入专注模式</p>
+      </div>
+
+      <span class="tool-scene">做作业、阅读、练琴等需要专注的任务</span>
+    </div>
+  </div>
+
+  <!-- 进阶工具 -->
+  <div class="level-label adv">🚀 进阶工具 · 专业</div>
+
+  <div class="tool-card">
+    <div class="tool-card-inner">
+      <div class="tool-header">
+        <span class="tool-number">3</span>
+        <span class="tool-name">甘特图</span>
+        <span class="tool-icon-big">📊</span>
+      </div>
+      <div class="tool-purpose"><strong>用途：</strong>用条形图展示多项任务的时间安排，一眼看清全局</div>
+      <div class="tool-steps">
+        <ol>
+          <li>列出所有需要完成的任务</li>
+          <li>在时间轴上为每个任务画一条"条形"</li>
+          <li>用不同颜色区分任务类型（学习用蓝色、运动用绿色）</li>
+        </ol>
+      </div>
+      <span class="tool-scene">项目规划、周末安排、假期作业计划</span>
+    </div>
+  </div>
+
+  <div class="tool-card">
+    <div class="tool-card-inner">
+      <div class="tool-header">
+        <span class="tool-number">4</span>
+        <span class="tool-name">时间日志</span>
+        <span class="tool-icon-big">📝</span>
+      </div>
+      <div class="tool-purpose"><strong>用途：</strong>记录真实的时间使用情况，找到你的"时间漏洞"</div>
+      <div class="tool-steps">
+        <ol>
+          <li>以30分钟为单位，记录一天中每个时段的活动</li>
+          <li>睡前统计各项活动的总时长（睡觉、学习、玩耍、吃饭各多少）</li>
+          <li>比较"计划"和"实际"的差距</li>
+        </ol>
+      </div>
+      <span class="tool-scene">发现自己的时间都花在哪里了</span>
+    </div>
+  </div>
+
+  <!-- 高阶工具 -->
+  <div class="level-label high">💎 高阶工具 · 研究级</div>
+
+  <div class="tool-card">
+    <div class="tool-card-inner">
+      <div class="tool-header">
+        <span class="tool-number">5</span>
+        <span class="tool-name">计时软件 / App</span>
+        <span class="tool-icon-big">📱</span>
+      </div>
+      <div class="tool-purpose"><strong>用途：</strong>用科技手段帮助管理时间</div>
+      <div class="app-list">
+        <span class="app-item">🌳 Forest App（种树专注）</span>
+        <span class="app-item">🍅 番茄ToDo</span>
+        <span class="app-item">📊 Toggl Track</span>
+      </div>
+      <p style="font-size:14px;color:var(--text-secondary);margin-top:12px;">💡 工具只是辅助，关键还是你的规划意识！</p>
+    </div>
+  </div>
+
+  <div class="note-box">
+    💡 <strong>小提示：</strong>不必一次学完所有工具！先从"四象限"或"番茄计时"开始，用熟练了再尝试甘特图和时间日志。选一个最适合你的，坚持使用效果最好。
+  </div>
+
+  <div class="footer-note">
+    数学 · 三年级上 · 时间主题学习脚手架
+  </div>
+</div>
+
+<script>
+let timerInterval = null;
+let seconds = 25 * 60;
+let isRunning = false;
+
+function formatTime(s) {
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+}
+
+function updateDisplay() {
+  document.getElementById('timerDisplay').textContent = formatTime(seconds);
+}
+
+function startTimer() {
+  if (isRunning) return;
+  if (seconds <= 0) resetTimer();
+  isRunning = true;
+  document.getElementById('timerStartBtn').textContent = '⏳ 专注中...';
+  document.getElementById('timerStatus').textContent = '🍅 保持专注！';
+  timerInterval = setInterval(() => {
+    seconds--;
+    updateDisplay();
+    if (seconds <= 0) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      isRunning = false;
+      document.getElementById('timerStartBtn').textContent = '▶ 开始';
+      document.getElementById('timerStatus').textContent = '🔔 时间到！休息一下吧 🎉';
+      alert('🍅 番茄时间到！休息5分钟吧！');
+    }
+  }, 1000);
+}
+
+function resetTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  isRunning = false;
+  seconds = 25 * 60;
+  updateDisplay();
+  document.getElementById('timerStartBtn').textContent = '▶ 开始';
+  document.getElementById('timerStatus').textContent = '已重置，点击"开始"启动番茄钟';
+}
+</script>
+</body>
+</html>

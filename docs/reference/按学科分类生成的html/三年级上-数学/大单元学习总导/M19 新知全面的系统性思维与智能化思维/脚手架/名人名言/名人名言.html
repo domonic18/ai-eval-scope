@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名人名言 — 从认知突破中学习时间</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, #722ed1, var(--primary));
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin: 0 0 8px; font-weight: 700; }
+.header .subtitle { font-size: 16px; opacity: 0.9; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+.person-card {
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-bottom: 20px;
+  transition: all .2s;
+}
+.person-card:hover { border-color: var(--primary); box-shadow: var(--shadow); }
+.person-name {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0 0 4px;
+}
+.person-years {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.person-section { margin: 8px 0; }
+.person-section strong { color: var(--text); }
+.person-section .label {
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-right: 4px;
+}
+.label-question { background: #fff7e6; color: #d46b08; }
+.label-break { background: #f6ffed; color: #389e0d; }
+.label-fail { background: #fff1f0; color: #cf1322; }
+.label-lesson { background: #e6f7ff; color: #096dd9; }
+.think-task {
+  background: linear-gradient(135deg, #fff7e6, #fffbe6);
+  border: 2px dashed #faad14;
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin-top: 12px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.think-task:hover { background: #fff7e6; border-color: #d48806; }
+.think-task .prompt { font-weight: 600; }
+.think-task .hint { display: none; margin-top: 10px; padding: 10px 14px; background: #fff; border-radius: 6px; }
+.think-task .hint.show { display: block; }
+.reading-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 12px 0;
+}
+.reading-item {
+  flex: 1;
+  min-width: 180px;
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 14px 16px;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+.reading-item .book-icon { font-size: 28px; }
+.reading-item .book-title { font-weight: 600; margin: 4px 0; }
+.reading-item .book-person { font-size: 14px; color: var(--text-secondary); }
+.quote-bubble {
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin: 10px 0;
+  position: relative;
+  font-style: italic;
+  color: var(--text);
+}
+.quote-bubble::before { content: '"'; font-size: 32px; color: var(--accent); position: absolute; left: 8px; top: 4px; }
+.quote-bubble::after { content: '"'; font-size: 32px; color: var(--accent); position: absolute; right: 8px; bottom: -4px; }
+@media (max-width: 600px) {
+  .container { padding: 16px; }
+  .header { padding: 20px; }
+  .card { padding: 16px; }
+  .person-card { padding: 14px; }
+  .reading-list { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🏆 时间探索者：人物与思维</h1>
+  <div class="subtitle">从认知突破中学习 · 三位改变人类"时间观"的伟人</div>
+</div>
+
+<div class="card">
+  <h2>🔬 奠基人物</h2>
+  <div class="person-card">
+    <div class="person-name">克里斯蒂安·惠更斯</div>
+    <div class="person-years">Christiaan Huygens · 1629—1695</div>
+
+    <div class="person-section">
+      <span class="label label-question">关键问题</span>
+      <strong>如何让钟表走得更准？摆钟是怎么发明的？</strong>
+    </div>
+
+    <div class="person-section">
+      <span class="label label-break">思维突破点</span>
+      <span>惠更斯观察到摆锤的<strong>等时性</strong>——无论摆幅大小，单摆完成一次摆动的时间是固定的。他把这个物理原理应用到了钟表上，发明了摆钟。</span>
+    </div>
+
+    <div class="person-section">
+      <span class="label label-fail">失败/争议点</span>
+      <span>其实伽利略更早就发现了摆的等时性，但惠更斯是第一个把它做出<strong>实用摆钟</strong>的人——"发现"和"发明"是两回事。</span>
+    </div>
+
+    <div class="person-section">
+      <span class="label label-lesson">对当下的启示</span>
+      <span>你学的时间换算背后，是一段关于"如何精准测量时间"的人类奋斗史。没有精准的钟表，就没有现代科学。</span>
+    </div>
+
+    <div class="think-task" onclick="toggleHint('hint1')">
+      <div class="prompt">🤔 如果你是他 · 思考任务</div>
+      <p style="margin:6px 0 0;">假如你生活在17世纪，你发现钟表每天误差5分钟——你会怎么改进它？</p>
+      <div class="hint" id="hint1">
+        💡 <strong>可能的思路：</strong><br>
+        ① 检查齿轮是否磨损？<br>
+        ② 能不能用更稳定的"摆动"来代替齿轮？<br>
+        ③ 温度变化会不会影响金属部件的长短？<br>
+        <em>点击此处收起提示</em>
+      </div>
+    </div>
+  </div>
+
+  <h2>🌌 跨界人物</h2>
+  <div class="person-card">
+    <div class="person-name">阿尔伯特·爱因斯坦</div>
+    <div class="person-years">Albert Einstein · 1879—1955</div>
+
+    <div class="person-section">
+      <span class="label label-question">关键问题</span>
+      <strong>时间是绝对的还是相对的？不同人感受到的时间是一样的吗？</strong>
+    </div>
+
+    <div class="person-section">
+      <span class="label label-break">思维突破点</span>
+      <span>爱因斯坦提出<strong>"时间膨胀"</strong>——运动速度越快，时间过得越慢。这不是科幻，而是被实验证实的科学事实。</span>
+    </div>
+
+    <div class="person-section">
+      <span class="label label-fail">失败/争议点</span>
+      <span>当时几乎所有物理学家都反对他的观点——"时间怎么可能不是统一的？"但他用数学证明了自己是对的。</span>
+    </div>
+
+    <div class="person-section">
+      <span class="label label-lesson">对当下的启示</span>
+      <span>你正在学的"时、分、秒"只是时间的一种测量方式。真正的"时间"远比钟表显示的要奇妙。</span>
+    </div>
+
+    <div class="quote-bubble">
+      时间和空间都是相对的，唯有光速不变。
+    </div>
+
+    <div class="think-task" onclick="toggleHint('hint2')">
+      <div class="prompt">🤔 如果你是他 · 思考任务</div>
+      <p style="margin:6px 0 0;">如果时间真的会"变慢"，你希望做什么事的时候时间过得慢一点？</p>
+      <div class="hint" id="hint2">
+        💡 <strong>想一想：</strong><br>
+        是不是快乐的时候时间过得快，无聊的时候时间过得慢？<br>
+        爱因斯坦说时间其实是"相对"的——你的感受也是一种"相对论"！<br>
+        <em>点击此处收起提示</em>
+      </div>
+    </div>
+  </div>
+
+  <h2>📋 当代人物</h2>
+  <div class="person-card">
+    <div class="person-name">大卫·艾伦</div>
+    <div class="person-years">David Allen · 1945—</div>
+
+    <div class="person-section">
+      <span class="label label-question">关键问题</span>
+      <strong>如何用时间管理系统来处理海量信息和多任务？</strong>
+    </div>
+
+    <div class="person-section">
+      <span class="label label-break">思维突破点</span>
+      <span>提出了<strong>GTD</strong>（Getting Things Done）时间管理方法——核心不是"管理时间"，而是"管理注意力"。</span>
+    </div>
+
+    <div class="person-section">
+      <span class="label label-fail">失败/争议点</span>
+      <span>有人认为他的方法太复杂，不适合普通人——但简化后的"把要做的事写下来，不记在脑子里"这个技巧被广泛应用。</span>
+    </div>
+
+    <div class="person-section">
+      <span class="label label-lesson">对当下的启示</span>
+      <span>学会时间换算只是第一步，学会<strong>"安排时间"</strong>才是最终目的。</span>
+    </div>
+
+    <div class="think-task" onclick="toggleHint('hint3')">
+      <div class="prompt">🤔 如果你是他 · 思考任务</div>
+      <p style="margin:6px 0 0;">如果你只有24小时，要复习、做作业、运动、玩游戏和睡觉——你如何分配时间？</p>
+      <div class="hint" id="hint3">
+        💡 <strong>试着分配：</strong><br>
+        睡觉 9小时 | 学习+作业 6小时 | 运动 1小时<br>
+        吃饭 2小时 | 游戏 1小时 | 自由 2小时 | 其他 3小时<br>
+        总 = 24小时 ✅<br>
+        <em>你的分配方案是什么？点击此处收起提示</em>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>📚 深度阅读路径</h2>
+  <div class="reading-list">
+    <div class="reading-item">
+      <div class="book-icon">📖</div>
+      <div class="book-title">《时钟的故事》</div>
+      <div class="book-person">→ 了解惠更斯的摆钟</div>
+    </div>
+    <div class="reading-item">
+      <div class="book-icon">📖</div>
+      <div class="book-title">《时间简史》（插图版）</div>
+      <div class="book-person">→ 第一章 了解爱因斯坦</div>
+    </div>
+    <div class="reading-item">
+      <div class="book-icon">📖</div>
+      <div class="book-title">《搞定》（GTD青少年版）</div>
+      <div class="book-person">→ 学习大卫·艾伦的方法</div>
+    </div>
+  </div>
+  <p style="color:var(--text-secondary); font-size:15px; text-align:center; margin:0;">
+    💡 点击每张人物卡下方的"思考任务"展开提示，看看你的想法和伟人有什么不同！
+  </p>
+</div>
+
+</div>
+<script>
+function toggleHint(id) {
+  var el = document.getElementById(id);
+  if (el) { el.classList.toggle('show'); }
+}
+</script>
+</body>
+</html>

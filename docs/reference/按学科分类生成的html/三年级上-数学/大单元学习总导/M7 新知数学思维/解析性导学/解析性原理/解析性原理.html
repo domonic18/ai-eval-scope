@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性原理 — 可迁移的思考法则</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; box-sizing: border-box; }
+
+.page-header { text-align: center; padding: 20px 0 8px; }
+.page-header h1 { font-size: var(--font-h1); margin: 0 0 4px; color: var(--primary); }
+.page-header .subtitle { font-size: 15px; color: var(--text-secondary); margin: 0; }
+
+/* Section tabs (原理 / 应用 / 检测) */
+.section-tabs {
+  display: flex; gap: 6px; margin: 16px 0; flex-wrap: wrap;
+}
+.section-tab-btn {
+  flex: 1; min-width: 100px; padding: 10px 14px; border: 2px solid var(--border);
+  border-radius: var(--border-radius); background: var(--card-bg); cursor: pointer;
+  font-size: 15px; font-weight: 600; color: var(--text-secondary);
+  transition: all 0.25s; text-align: center;
+}
+.section-tab-btn:hover { border-color: var(--accent); color: var(--primary); }
+.section-tab-btn.active { border-color: var(--primary); background: var(--primary); color: #fff; }
+
+.section-panel { display: none; }
+.section-panel.active { display: block; }
+
+/* Principle Card */
+.principle-card {
+  background: var(--card-bg); border-radius: var(--border-radius);
+  box-shadow: var(--shadow); margin-bottom: 16px; overflow: hidden;
+  border-left: 4px solid var(--primary);
+}
+.principle-header {
+  padding: 14px 18px; cursor: pointer;
+  display: flex; align-items: center; gap: 10px;
+  transition: background 0.2s;
+}
+.principle-header:hover { background: #f6f9ff; }
+.principle-header .p-icon { font-size: 24px; flex-shrink: 0; }
+.principle-header .p-title { font-size: 17px; font-weight: 600; color: var(--primary); flex: 1; }
+.principle-header .p-toggle { font-size: 14px; color: var(--text-secondary); transition: transform 0.3s; }
+.principle-card.expanded .p-toggle { transform: rotate(180deg); }
+
+.principle-body {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+  padding: 0 18px; background: #fafcff; border-top: 0 solid var(--border);
+}
+.principle-card.expanded .principle-body {
+  max-height: 800px; padding: 14px 18px; border-top-width: 1px;
+}
+.principle-body h4 { font-size: 15px; margin: 8px 0 4px; color: var(--text); }
+.principle-body p { margin: 4px 0; font-size: 15px; }
+.principle-body .highlight {
+  background: #e6f7ff; padding: 6px 10px; border-radius: 6px;
+  margin: 6px 0; font-size: 14px;
+}
+
+/* Exercise Card */
+.exercise-card {
+  background: var(--card-bg); border-radius: var(--border-radius);
+  box-shadow: var(--shadow); padding: 18px; margin-bottom: 16px;
+  border-top: 4px solid var(--primary);
+}
+.exercise-card h3 { font-size: var(--font-h2); margin: 0 0 6px; color: var(--primary); }
+.exercise-card .situation {
+  background: #fffbe6; padding: 10px 14px; border-radius: 6px;
+  margin: 8px 0; font-size: 15px;
+}
+.exercise-card .principles-used {
+  display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0;
+}
+.exercise-card .principles-used .chip {
+  padding: 2px 10px; background: #f0f5ff; color: var(--primary);
+  border-radius: 12px; font-size: 13px; border: 1px solid var(--accent);
+}
+.exercise-card .analysis-hint {
+  background: #f6f9ff; padding: 10px 14px; border-radius: 6px;
+  font-size: 14px; margin: 6px 0; border-left: 3px solid var(--accent);
+}
+.exercise-card .task-req {
+  font-weight: 600; margin: 8px 0 4px;
+}
+.exercise-card .answer-area {
+  border: 2px dashed var(--border); border-radius: 6px; padding: 14px;
+  margin-top: 8px; min-height: 60px; text-align: center;
+  color: var(--text-secondary); font-size: 14px;
+  cursor: pointer; transition: all 0.3s;
+}
+.exercise-card .answer-area:hover {
+  border-color: var(--accent); background: #fafcff;
+}
+.exercise-card .answer-area.revealed {
+  border-color: var(--primary); background: #f0f5ff;
+  color: var(--text); text-align: left;
+}
+
+/* Self-check */
+.check-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px; margin: 12px 0;
+}
+.check-item {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: var(--border-radius); padding: 14px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.check-item .q { font-size: 15px; }
+.check-item .rating {
+  display: flex; gap: 4px;
+}
+.check-item .rating button {
+  flex: 1; padding: 4px 0; border: 1px solid var(--border);
+  border-radius: 4px; background: var(--card-bg); cursor: pointer;
+  font-size: 13px; color: var(--text-secondary); transition: all 0.2s;
+}
+.check-item .rating button:hover { border-color: var(--primary); color: var(--primary); }
+.check-item .rating button.selected { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* Intro */
+.intro-box {
+  background: linear-gradient(135deg, #f0f5ff, #e6f0ff);
+  border: 1px solid var(--accent); border-radius: var(--border-radius);
+  padding: 14px 18px; margin-bottom: 16px;
+}
+.intro-box h3 { margin: 0 0 6px; font-size: 17px; color: var(--primary); }
+.intro-box p { margin: 4px 0; font-size: 15px; }
+
+@media (max-width: 600px) {
+  .container { padding: 14px 10px; }
+  .section-tab-btn { font-size: 13px; padding: 8px 10px; }
+  .check-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<div class="page-header">
+  <h1>🧠 解析性原理</h1>
+  <p class="subtitle">从具体案例中提炼可迁移的思考法则</p>
+</div>
+
+<div class="section-tabs">
+  <button class="section-tab-btn active" onclick="switchSection('principles', this)">📐 四大原理</button>
+  <button class="section-tab-btn" onclick="switchSection('apply', this)">✏️ 实战应用</button>
+  <button class="section-tab-btn" onclick="switchSection('check', this)">✅ 自我检测</button>
+</div>
+
+<!-- 原理面板 -->
+<div id="panel-principles" class="section-panel active">
+
+  <div class="intro-box">
+    <h3>🤔 为什么要从案例提炼原理？</h3>
+    <p>因为案例是<strong>具体的</strong>——你学会了"小明和小红谁跑得快"，但换一道"妈妈和爸爸谁包饺子快"就又不会了。</p>
+    <p><strong>原理是可迁移的</strong>——学会了"确认可比性原则"，不光会比分时间，还会比价格、比速度、比成绩！</p>
+    <p>下面的 4 条原理，就是从解析性示例中提炼出来的"万能钥匙"🔑</p>
+  </div>
+
+  <!-- 原理1 -->
+  <div class="principle-card expanded" onclick="togglePrinciple(this, event)">
+    <div class="principle-header">
+      <span class="p-icon">⚖️</span>
+      <span class="p-title">原理1：确认可比性原则——"比的都是什么？"</span>
+      <span class="p-toggle">▼</span>
+    </div>
+    <div class="principle-body">
+      <h4>📖 原理说明</h4>
+      <p>比较任何两个事物前，先确认它们是否在<strong>"同一标准"</strong>下。</p>
+      <h4>💡 示例体现</h4>
+      <p>跑100米——距离相同（同一标准），才能直接比时间。如果小明跑100米、小红跑200米，就不能直接比谁跑得快！</p>
+      <h4>🔧 如何使用</h4>
+      <p>先问<strong>"这个比较公平吗？"</strong> → 检查参照标准是否一致</p>
+      <div class="highlight">📌 <strong>适用场景</strong>：比较速度、价格、大小、成绩等</div>
+      <div class="highlight">⚠️ <strong>使用提醒</strong>：注意"陷阱"——看起来可以比，实际上标准不同</div>
+    </div>
+  </div>
+
+  <!-- 原理2 -->
+  <div class="principle-card" onclick="togglePrinciple(this, event)">
+    <div class="principle-header">
+      <span class="p-icon">🔄</span>
+      <span class="p-title">原理2：同单位优先原则——"单位不一样，先统一再比"</span>
+      <span class="p-toggle">▼</span>
+    </div>
+    <div class="principle-body">
+      <h4>📖 原理说明</h4>
+      <p>不同单位的数字不能直接比较，要先换算成<strong>相同单位</strong>。</p>
+      <h4>💡 示例体现</h4>
+      <p>如果一个人用"秒"计，一个人用"分"计，不能直接比数字大小——3分=180秒，180秒>150秒！</p>
+      <h4>🔧 如何使用</h4>
+      <p>看到多个数字 → 检查单位 → 不一样 → 换算成最小单位 → 再比</p>
+      <div class="highlight">📌 <strong>适用场景</strong>：任何涉及计量单位的比较（时间、长度、重量等）</div>
+      <div class="highlight">⚠️ <strong>使用提醒</strong>：换算时要记住进率！时间进率是60，长度进率是10或1000，不一样的！</div>
+    </div>
+  </div>
+
+  <!-- 原理3 -->
+  <div class="principle-card" onclick="togglePrinciple(this, event)">
+    <div class="principle-header">
+      <span class="p-icon">📊</span>
+      <span class="p-title">原理3：数据优先于感觉原则——"感觉会骗人，数据不会"</span>
+      <span class="p-toggle">▼</span>
+    </div>
+    <div class="principle-body">
+      <h4>📖 原理说明</h4>
+      <p>人对时间、速度、数量的<strong>主观感觉</strong>往往不准确，要用<strong>工具获取数据</strong>。</p>
+      <h4>💡 示例体现</h4>
+      <p>小刚"觉得"自己跳绳很快，但秒表数据证明他不是最快的。感觉和数据的差距可能很大！</p>
+      <h4>🔧 如何使用</h4>
+      <p>主观判断后 → 问"有没有数据支持？" → 用工具（秒表、尺子、秤）测量验证</p>
+      <div class="highlight">📌 <strong>适用场景</strong>：日常生活中的判断——"我等了好久""我做了很多"</div>
+      <div class="highlight">⚠️ <strong>使用提醒</strong>：数据也可能有误差，需要多次测量取平均</div>
+    </div>
+  </div>
+
+  <!-- 原理4 -->
+  <div class="principle-card" onclick="togglePrinciple(this, event)">
+    <div class="principle-header">
+      <span class="p-icon">🤯</span>
+      <span class="p-title">原理4：反直觉检查原则——"答案太奇怪？再想想"</span>
+      <span class="p-toggle">▼</span>
+    </div>
+    <div class="principle-body">
+      <h4>📖 原理说明</h4>
+      <p>有些问题的答案和直觉<strong>相反</strong>（比如：跑得快=用时少），需要特别小心。</p>
+      <h4>💡 示例体现</h4>
+      <p>小明用时最短 → 小明最快（这和直觉"数字大=厉害"是相反的！）</p>
+      <h4>🔧 如何使用</h4>
+      <p>得出答案后 → 问"这符合常识吗？" → 不符合 → 重新检查推理</p>
+      <div class="highlight">📌 <strong>适用场景</strong>：速度比较、性价比计算、反比例关系</div>
+      <div class="highlight">⚠️ <strong>使用提醒</strong>：不是所有反直觉都是错的，要相信推理过程而不是第一感觉</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 应用面板 -->
+<div id="panel-apply" class="section-panel">
+
+  <div class="exercise-card">
+    <h3>🥟 练习1：谁做得更快？</h3>
+    <div class="situation">
+      <strong>情境：</strong>妈妈包饺子，半小时包了40个；爸爸包饺子，20分钟包了30个。比较谁包得更快。
+    </div>
+    <div class="principles-used">
+      <span class="chip">⚖️ 原理1：确认可比</span>
+      <span class="chip">🔄 原理2：同单位优先</span>
+    </div>
+    <div class="analysis-hint">
+      <strong>💭 分析提示：</strong>关键是"单位分钟"还是"单位小时"包的数量？先把时间换算成相同单位！
+    </div>
+    <p class="task-req">📝 写出你的比较过程和结论</p>
+    <div class="answer-area" onclick="revealAnswer(this, 'answer1')">
+      👆 点击查看参考解答
+    </div>
+    <div id="answer1" style="display:none;">
+      <p><strong>参考解答：</strong></p>
+      <p>半小时 = 30 分钟</p>
+      <p>妈妈每分钟包的数量：40 ÷ 30 = <strong>约1.33个/分钟</strong></p>
+      <p>爸爸每分钟包的数量：30 ÷ 20 = <strong>1.5个/分钟</strong></p>
+      <p><strong>结论：爸爸包得更快（1.5 &gt; 1.33）。</strong></p>
+      <p>✨ 两种做法都对的：先换算成"每分钟"或"每小时"都可以，关键是单位要统一！</p>
+    </div>
+  </div>
+
+  <div class="exercise-card">
+    <h3>🍽️ 练习2：吃饭比赛公平吗？</h3>
+    <div class="situation">
+      <strong>情境：</strong>小明3分钟吃了15个饺子，小红8分钟吃了20个饺子。老师说小红厉害。<br>判断老师的说法对不对。
+    </div>
+    <div class="principles-used">
+      <span class="chip">📊 原理3：数据优先</span>
+      <span class="chip">🤯 原理4：反直觉检查</span>
+    </div>
+    <div class="analysis-hint">
+      <strong>💭 分析提示：</strong>光看总数量还是看"每分钟吃几个"？老师说的是不是反直觉了？
+    </div>
+    <p class="task-req">📝 用表格列出你的分析过程</p>
+    <div class="answer-area" onclick="revealAnswer(this, 'answer2')">
+      👆 点击查看参考解答
+    </div>
+    <div id="answer2" style="display:none;">
+      <p><strong>参考解答：</strong></p>
+      <table style="width:100%;border-collapse:collapse;margin:6px 0;font-size:14px;">
+        <tr style="background:#f0f5ff;"><th style="padding:6px;border:1px solid var(--border);">人物</th><th style="padding:6px;border:1px solid var(--border);">总时间</th><th style="padding:6px;border:1px solid var(--border);">总数</th><th style="padding:6px;border:1px solid var(--border);">每分钟吃</th></tr>
+        <tr><td style="padding:6px;border:1px solid var(--border);">小明</td><td style="padding:6px;border:1px solid var(--border);">3分钟</td><td style="padding:6px;border:1px solid var(--border);">15个</td><td style="padding:6px;border:1px solid var(--border);">5个/分钟</td></tr>
+        <tr><td style="padding:6px;border:1px solid var(--border);">小红</td><td style="padding:6px;border:1px solid var(--border);">8分钟</td><td style="padding:6px;border:1px solid var(--border);">20个</td><td style="padding:6px;border:1px solid var(--border);">2.5个/分钟</td></tr>
+      </table>
+      <p><strong>结论：老师说得不对！</strong></p>
+      <p>虽然小红总数多（20 &gt; 15），但小明每分钟吃5个，小红每分钟只吃2.5个。<br>
+      所以小明才是"吃得快的人"。这正好验证了原理4——光看总数是反直觉的陷阱！</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- 检测面板 -->
+<div id="panel-check" class="section-panel">
+
+  <div class="intro-box">
+    <h3>✅ 自我检测</h3>
+    <p>每道题给自己一个评价：<strong>🟢 没问题</strong> ｜ <strong>🟡 有点不确定</strong> ｜ <strong>🔴 还需要复习</strong></p>
+  </div>
+
+  <div class="check-grid">
+    <div class="check-item">
+      <div class="q">1. 我能不能说出"确认可比性原则"在什么时候用？</div>
+      <div class="rating" id="rate-1">
+        <button onclick="rate(this,1)">🟢 没问题</button>
+        <button onclick="rate(this,2)">🟡 不确定</button>
+        <button onclick="rate(this,3)">🔴 需复习</button>
+      </div>
+    </div>
+    <div class="check-item">
+      <div class="q">2. 遇到"3分钟"和"180秒"，我会不会先换算再比较？</div>
+      <div class="rating" id="rate-2">
+        <button onclick="rate(this,1)">🟢 没问题</button>
+        <button onclick="rate(this,2)">🟡 不确定</button>
+        <button onclick="rate(this,3)">🔴 需复习</button>
+      </div>
+    </div>
+    <div class="check-item">
+      <div class="q">3. 我有没有过"感觉对了但数据错了"的经历？怎么发现的？</div>
+      <div class="rating" id="rate-3">
+        <button onclick="rate(this,1)">🟢 有，我知道</button>
+        <button onclick="rate(this,2)">🟡 好像有</button>
+        <button onclick="rate(this,3)">🔴 想不起来</button>
+      </div>
+    </div>
+    <div class="check-item">
+      <div class="q">4. 如果一道题的答案让我很惊讶，我会停下来再检查一次吗？</div>
+      <div class="rating" id="rate-4">
+        <button onclick="rate(this,1)">🟢 一定会</button>
+        <button onclick="rate(this,2)">🟡 有时会</button>
+        <button onclick="rate(this,3)">🔴 很少会</button>
+      </div>
+    </div>
+    <div class="check-item">
+      <div class="q">5. 我能用一句话给别人讲明白"为什么跑得快的人用时少"吗？</div>
+      <div class="rating" id="rate-5">
+        <button onclick="rate(this,1)">🟢 可以</button>
+        <button onclick="rate(this,2)">🟡 需要想想</button>
+        <button onclick="rate(this,3)">🔴 还不会</button>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin:16px 0;font-size:14px;color:var(--text-secondary);">
+    💡 点选完成后，如果多数是 🔴，建议回到上面的"四大原理"再看一遍哦！
+  </div>
+
+</div>
+
+</div>
+
+<script>
+function togglePrinciple(card, event) {
+  if (event.target.closest('.principle-body')) return;
+  card.classList.toggle('expanded');
+}
+
+function switchSection(panel, btn) {
+  document.querySelectorAll('.section-panel').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.section-tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + panel).classList.add('active');
+  btn.classList.add('active');
+}
+
+function revealAnswer(el, answerId) {
+  var answer = document.getElementById(answerId);
+  if (answer) {
+    el.innerHTML = answer.innerHTML;
+    el.classList.add('revealed');
+  }
+}
+
+function rate(btn, val) {
+  var parent = btn.parentElement;
+  parent.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+</script>
+
+</body>
+</html>

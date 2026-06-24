@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>问题库脚手架 — 以问题驱动学习</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 28px;
+  box-sizing: border-box;
+}
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+h1::before { content: "❓"; font-size: 30px; }
+h2 {
+  font-size: var(--font-h2);
+  color: var(--text);
+  margin: 24px 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 3px solid var(--accent);
+}
+h3 {
+  font-size: 20px;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+.intro {
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+}
+.level-section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 18px 22px;
+  margin-bottom: 16px;
+  border-left: 4px solid var(--primary);
+  transition: box-shadow 0.2s;
+}
+.level-section:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.12); }
+.level-badge {
+  display: inline-block;
+  font-size: 14px;
+  padding: 3px 12px;
+  border-radius: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.badge-basic { background: #f6ffed; color: #52c41a; }
+.badge-advanced { background: #fff7e6; color: #fa8c16; }
+.badge-challenge { background: #f9f0ff; color: #722ed1; }
+.question-list {
+  font-size: 16px;
+  padding-left: 0;
+}
+.question-list li {
+  list-style: none;
+  padding: 8px 0 8px 32px;
+  position: relative;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-radius: 4px;
+}
+.question-list li:last-child { border-bottom: none; }
+.question-list li:hover { background: #fafafa; }
+.question-list li::before {
+  position: absolute;
+  left: 4px;
+  font-size: 17px;
+}
+.basic-q li::before { content: "💡"; }
+.advanced-q li::before { content: "🤔"; }
+.challenge-q li::before { content: "🌟"; }
+.answer-hint {
+  display: none;
+  margin-top: 4px;
+  padding: 6px 12px;
+  background: #f0f5ff;
+  border-radius: 6px;
+  font-size: 15px;
+  color: var(--text-secondary);
+  border: 1px dashed var(--accent);
+}
+.question-list li.open .answer-hint { display: block; }
+.question-list li.open::after {
+  content: "▲";
+  float: right;
+  color: var(--primary);
+  font-size: 12px;
+}
+.question-list li:not(.open)::after {
+  content: "▼";
+  float: right;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.type-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 14px;
+  font-size: 15px;
+}
+.type-table th, .type-table td {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+.type-table th {
+  background: var(--bg);
+  color: var(--primary);
+  font-weight: 600;
+}
+.type-table td:first-child { font-weight: 600; }
+.think-bubble {
+  margin-top: 20px;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #f0f5ff, #e6f7ff);
+  border-radius: var(--border-radius);
+  text-align: center;
+  font-size: 16px;
+  color: var(--text-secondary);
+  border: 2px dashed var(--accent);
+}
+.think-bubble strong { color: var(--primary); }
+.progress-stats {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.stat-item {
+  flex: 1;
+  min-width: 100px;
+  padding: 12px 16px;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+.stat-item .num {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary);
+}
+.stat-item .label {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>问题库 — 以问题驱动「时、分、秒」的学习</h1>
+  <p class="intro">点击每个问题可以查看提示。挑战自己，从基础到高阶，一个一个攻克！👇</p>
+
+  <div class="progress-stats">
+    <div class="stat-item"><div class="num">4</div><div class="label">基础题</div></div>
+    <div class="stat-item"><div class="num">4</div><div class="label">进阶题</div></div>
+    <div class="stat-item"><div class="num">4</div><div class="label">挑战题</div></div>
+  </div>
+
+  <div class="level-section" style="border-left-color:#52c41a;">
+    <span class="level-badge badge-basic">🌱 基础层 · 理解与识别</span>
+    <ul class="question-list basic-q">
+      <li onclick="toggleAnswer(this)">1小时=多少分？
+        <div class="answer-hint">60分。1小时有60分钟，记住了吗？⏰</div>
+      </li>
+      <li onclick="toggleAnswer(this)">3小时=多少分钟？
+        <div class="answer-hint">3 × 60 = 180分钟！大化小，要乘60 ✅</div>
+      </li>
+      <li onclick="toggleAnswer(this)">150分=几时几分？
+        <div class="answer-hint">150 ÷ 60 = 2……30 → 2时30分。小化大，要除60 🎯</div>
+      </li>
+      <li onclick="toggleAnswer(this)">180秒=多少分？
+        <div class="answer-hint">180 ÷ 60 = 3分！秒化分，除以60 ⏱️</div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="level-section" style="border-left-color:#fa8c16;">
+    <span class="level-badge badge-advanced">🔍 进阶层 · 分析与应用</span>
+    <ul class="question-list advanced-q">
+      <li onclick="toggleAnswer(this)">为什么1小时不是100分钟？
+        <div class="answer-hint">历史原因：60进制来自古巴比伦。数学原因：60能被更多数整除，方便均分！🧮</div>
+      </li>
+      <li onclick="toggleAnswer(this)">如果1小时=100分钟，一天=多少小时？
+        <div class="answer-hint">一天还是24小时，但每小时变长了。你会更好算吗？还是更难了？🤯</div>
+      </li>
+      <li onclick="toggleAnswer(this)">在「3.3小时=（ ）时（ ）分」中，你最容易算错的是哪里？
+        <div class="answer-hint">小数部分要×60！0.3小时 = 0.3 × 60 = 18分钟，不是30分钟！⚠️</div>
+      </li>
+      <li onclick="toggleAnswer(this)">为什么「时间」和「长度」的进制不一样？
+        <div class="answer-hint">时间用60进制，长度用10进制。因为时间是从古代传下来的，长度是近代统一规定的 📏</div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="level-section" style="border-left-color:#722ed1;">
+    <span class="level-badge badge-challenge">🚀 挑战层 · 创造与批判</span>
+    <ul class="question-list challenge-q">
+      <li onclick="toggleAnswer(this)">如果时间「倒流」，时、分、秒的换算还能用吗？
+        <div class="answer-hint">换算公式不变（1时=60分），但「顺序」会反过来——你会先看到结果，再看到原因！🔄</div>
+      </li>
+      <li onclick="toggleAnswer(this)">「时间」和「速度」——哪个更「基本」？
+        <div class="answer-hint">速度=距离÷时间，所以时间更基本。但没有速度，你也感觉不到时间在流逝……先有鸡还是先有蛋？🥚</div>
+      </li>
+      <li onclick="toggleAnswer(this)">如果1分钟=100秒，你的一天怎么过？
+        <div class="answer-hint">你的「一分钟」变长了！原来60秒下课，现在100秒下课——多出40秒！但一天的总秒数也变了……⏳</div>
+      </li>
+      <li onclick="toggleAnswer(this)">你是怎么学会「时、分、秒」的？不是背的，是怎么想的？
+        <div class="answer-hint">好问题！你可能先知道「1分钟很长」，然后发现「1分钟=60秒」，再用钟表看时间。学习是「体验→理解→计算」的过程 🧠</div>
+      </li>
+    </ul>
+  </div>
+
+  <table class="type-table">
+    <thead>
+      <tr><th>问题类型</th><th>作用</th><th>示例</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>基础理解</td><td>先「知道」是什么</td><td>1时=60分</td></tr>
+      <tr><td>对比</td><td>看到「不同」</td><td>时间 vs 长度</td></tr>
+      <tr><td>反事实</td><td>训练「如果……会」</td><td>如果1分=100秒</td></tr>
+      <tr><td>元认知</td><td>学会「怎么学」</td><td>你是怎么想的</td></tr>
+    </tbody>
+  </table>
+
+  <div class="think-bubble">
+    <strong>🧠 想一想：</strong> 上面12个问题你都能回答吗？点开提示看看你的思路对不对。每个问题都是一把「钥匙」，打开时间世界的一扇门！
+  </div>
+</div>
+
+<script>
+function toggleAnswer(el) {
+  el.classList.toggle('open');
+}
+</script>
+</body>
+</html>

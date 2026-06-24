@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性原理 - 思维工具提炼</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+h1 { font-size: var(--font-h1); color: var(--primary); text-align: center; margin: 16px 0 8px; }
+.subtitle { text-align: center; color: var(--text-secondary); margin-bottom: 24px; font-size: 16px; }
+h2 { font-size: var(--font-h2); color: var(--primary); border-left: 4px solid var(--primary); padding-left: 12px; margin: 28px 0 16px; }
+h3 { font-size: 20px; color: var(--text); margin: 20px 0 10px; }
+h4 { font-size: 18px; color: var(--primary); margin: 14px 0 8px; }
+.principle-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); margin-bottom: 18px; border: 1px solid var(--border); overflow: hidden; }
+.principle-header { display: flex; align-items: center; padding: 16px 20px; cursor: pointer; background: var(--card-bg); transition: background 0.2s; user-select: none; }
+.principle-header:hover { background: var(--bg); }
+.principle-num { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: var(--primary); color: #fff; font-size: 16px; font-weight: 700; margin-right: 14px; flex-shrink: 0; }
+.principle-header h3 { margin: 0; font-size: 19px; flex: 1; }
+.principle-arrow { font-size: 20px; color: var(--primary); transition: transform 0.3s; }
+.principle-arrow.open { transform: rotate(180deg); }
+.principle-body { max-height: 0; overflow: hidden; transition: max-height 0.5s ease; }
+.principle-body-inner { padding: 0 20px 20px; }
+.principle-body.open { max-height: 2000px; }
+.tag { display: inline-block; background: var(--accent); color: #fff; font-size: 12px; padding: 2px 8px; border-radius: 4px; margin-right: 4px; }
+.tag.primary { background: var(--primary); }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 16px; }
+th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; }
+th { background: var(--bg); color: var(--primary); font-weight: 600; }
+.exercise-box { background: linear-gradient(135deg, #fff7e6, #fffbe6); border: 1px solid #ffd666; border-radius: var(--border-radius); padding: 16px 20px; margin: 16px 0; }
+.exercise-box h4 { color: #d46b08; }
+.self-check { list-style: none; padding: 0; }
+.self-check li { padding: 10px 0 10px 32px; border-bottom: 1px dashed var(--border); position: relative; }
+.self-check li:last-child { border-bottom: none; }
+.self-check li::before { content: "❓"; position: absolute; left: 0; font-size: 18px; }
+.highlight { background: #fffbe6; border-left: 4px solid #faad14; padding: 12px 16px; border-radius: 0 var(--border-radius) var(--border-radius) 0; margin: 12px 0; }
+.migrate-scene { display: inline-block; background: var(--bg); color: var(--primary); padding: 2px 10px; border-radius: 12px; font-size: 14px; margin: 2px 4px; }
+.btn-demo { padding: 10px 24px; background: var(--primary); color: #fff; border: none; border-radius: 20px; font-size: 16px; cursor: pointer; transition: all 0.3s; font-family: inherit; }
+.btn-demo:hover { background: var(--primary-hover); transform: scale(1.03); }
+.demo-feedback { margin-top: 10px; padding: 10px 16px; border-radius: var(--border-radius); background: var(--bg); display: none; }
+@media (max-width: 600px) { .container { padding: 12px; } .principle-header { padding: 12px 14px; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🧠 解析性原理</h1>
+  <p class="subtitle">从示例中提炼可迁移的分析方法——拥有这套"思维工具"，你就能分析任何学习经历</p>
+
+  <div class="highlight">
+    <strong>📌 核心思路：</strong>示例只是一个例子，真正有价值的是背后可以反复使用的分析方法。以下5条原理，就是你分析任何问题的"思维工具箱"。
+  </div>
+
+  <h2>🔧 五大解析性原理</h2>
+
+  <div class="principle-card">
+    <div class="principle-header" onclick="togglePrinciple(this)">
+      <span class="principle-num">1</span>
+      <h3>情境锚定法</h3>
+      <span class="principle-arrow">▼</span>
+    </div>
+    <div class="principle-body open">
+      <div class="principle-body-inner">
+        <p><strong>原理说明：</strong>分析任何问题前，先找到"它发生在什么情境中"——时间、地点、人物、事件。把问题"锚定"在具体情境里，分析才不会跑偏。</p>
+        <p><span class="tag primary">示例体现</span>把分析锁定在小明学习"时、分、秒"的具体场景里，而不是空泛地讨论"学习幸福"。</p>
+        <p><strong>如何使用：</strong>面对需要分析的问题，先回答：①这是谁的问题？②发生在什么时间/地点？③具体表现是什么？</p>
+        <p><strong>可迁移场景：</strong><span class="migrate-scene">分析作文题事件</span><span class="migrate-scene">分析数学应用题情境</span><span class="migrate-scene">分析科学实验条件</span></p>
+        <p style="color: var(--text-secondary); font-size: 15px;">⚠️ 情境只是"锚"，最终要回到分析目标</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="principle-card">
+    <div class="principle-header" onclick="togglePrinciple(this)">
+      <span class="principle-num">2</span>
+      <h3>要素拆解法</h3>
+      <span class="principle-arrow">▼</span>
+    </div>
+    <div class="principle-body">
+      <div class="principle-body-inner">
+        <p><strong>原理说明：</strong>把复杂的事情拆成一个个小要素，逐一分析。就像拆玩具一样——先拆开，看清楚每个零件，再理解它们怎么配合。</p>
+        <p><span class="tag primary">示例体现</span>把"学习幸福"拆解成"情境→行为→感受→收获→意义"五个要素。</p>
+        <p><strong>如何使用：</strong>列出问题的各个要素，给每个要素标上"它是什么""它起什么作用""它和别的要素有什么关系"。</p>
+        <p><strong>可迁移场景：</strong><span class="migrate-scene">分析段落大意</span><span class="migrate-scene">分析故事结构</span><span class="migrate-scene">分析解题步骤</span></p>
+        <p style="color: var(--text-secondary); font-size: 15px;">⚠️ 要素不是越多越好，找到关键要素更重要</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="principle-card">
+    <div class="principle-header" onclick="togglePrinciple(this)">
+      <span class="principle-num">3</span>
+      <h3>对比发现法</h3>
+      <span class="principle-arrow">▼</span>
+    </div>
+    <div class="principle-body">
+      <div class="principle-body-inner">
+        <p><strong>原理说明：</strong>通过"对比"来发现差异和规律。没有对比，很多特征就看不出来。</p>
+        <p><span class="tag primary">示例体现</span>对比了小明"学会前"和"学会后"的状态——不会时困惑、会时开心，让人看清"学习幸福"来自哪里。</p>
+        <p><strong>如何使用：</strong>找出一件事的"前后"或"左右"对比——学会前vs学会后、一种方法vs另一种方法、我的想法vs别人的想法。</p>
+        <p><strong>可迁移场景：</strong><span class="migrate-scene">对比不同解法优劣</span><span class="migrate-scene">对比学习方法</span><span class="migrate-scene">对比计时工具差异</span></p>
+        <p style="color: var(--text-secondary); font-size: 15px;">⚠️ 对比要公平——两件事要在相同维度上比</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="principle-card">
+    <div class="principle-header" onclick="togglePrinciple(this)">
+      <span class="principle-num">4</span>
+      <h3>因果追溯法</h3>
+      <span class="principle-arrow">▼</span>
+    </div>
+    <div class="principle-body">
+      <div class="principle-body-inner">
+        <p><strong>原理说明：</strong>不只是"看到了什么"，还要追问"为什么会出现这个现象"。找到原因，才能理解本质。</p>
+        <p><span class="tag primary">示例体现</span>没有停留在"小明很开心"这个现象上，而是追问"是什么让小明开心"——是因为他突破了困难。</p>
+        <p><strong>如何使用：</strong>每看到一个现象，追问至少2个"为什么"（为什么会出现？为什么是这样不是那样？）。</p>
+        <p><strong>可迁移场景：</strong><span class="migrate-scene">分析成绩变化原因</span><span class="migrate-scene">分析实验现象原理</span><span class="migrate-scene">分析社会现象</span></p>
+        <p style="color: var(--text-secondary); font-size: 15px;">⚠️ 原因可能不止一个，不要只找一个就满足了</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="principle-card">
+    <div class="principle-header" onclick="togglePrinciple(this)">
+      <span class="principle-num">5</span>
+      <h3>意义提炼法</h3>
+      <span class="principle-arrow">▼</span>
+    </div>
+    <div class="principle-body">
+      <div class="principle-body-inner">
+        <p><strong>原理说明：</strong>分析的最终目的不是"知道发生了什么"，而是"明白这件事告诉我什么"——提炼出可以带走的意义。</p>
+        <p><span class="tag primary">示例体现</span>提炼出"学到新知识时的幸福感是一种宝贵的成长体验"——和本模块名称完全呼应。</p>
+        <p><strong>如何使用：</strong>分析完后问自己"这件事让我明白了什么？""这个道理还能用在哪里？"</p>
+        <p><strong>可迁移场景：</strong><span class="migrate-scene">概括文章中心思想</span><span class="migrate-scene">理解科学原理的意义</span></p>
+        <p style="color: var(--text-secondary); font-size: 15px;">⚠️ 意义要有根据，不能脱离分析过程凭空想象</p>
+      </div>
+    </div>
+  </div>
+
+  <h2>📝 应用练习</h2>
+
+  <div class="exercise-box">
+    <h4>✏️ 练习1：分析"我的第一次时间换算"</h4>
+    <p>回忆你第一次做"2小时 = ____ 分钟"这样的换算题时的经历——你是怎么想的？算对了还是算错了？当时的感觉怎么样？</p>
+    <p><strong>建议原理：</strong>情境锚定法 + 要素拆解法</p>
+    <table>
+      <tr><th>情境要素</th><th>内容</th></tr>
+      <tr><td>时间</td><td style="color: var(--text-secondary);">（写下具体时间）</td></tr>
+      <tr><td>题目</td><td style="color: var(--text-secondary);">（写下具体题目）</td></tr>
+      <tr><td>我的想法（第一步→第二步→第三步）</td><td style="color: var(--text-secondary);">（写出思考过程）</td></tr>
+      <tr><td>结果（对/错）</td><td style="color: var(--text-secondary);">（写出结果）</td></tr>
+      <tr><td>原因分析</td><td style="color: var(--text-secondary);">（为什么会这样？）</td></tr>
+    </table>
+    <button class="btn-demo" onclick="showDemo('demo1')">💡 查看提示</button>
+    <div id="demo1" class="demo-feedback">
+      <p>🔍 想一想：当时你用了什么方法来算？是死记硬背"2×60=120"还是理解了"1小时=60分钟"的意思？如果做错了，错在哪里？为什么错？</p>
+    </div>
+  </div>
+
+  <div class="exercise-box">
+    <h4>✏️ 练习2：对比"上课40分钟"和"课间10分钟"</h4>
+    <p>同样是40分钟，为什么有的课感觉很快就过去了，有的课感觉好漫长？</p>
+    <p><strong>建议原理：</strong>对比发现法 + 因果追溯法</p>
+    <table>
+      <tr><th>对比维度</th><th>感觉快的课</th><th>感觉慢的课</th></tr>
+      <tr><td>课程内容</td><td style="color: var(--text-secondary);"></td><td style="color: var(--text-secondary);"></td></tr>
+      <tr><td>我的参与程度</td><td style="color: var(--text-secondary);"></td><td style="color: var(--text-secondary);"></td></tr>
+      <tr><td>我的理解程度</td><td style="color: var(--text-secondary);"></td><td style="color: var(--text-secondary);"></td></tr>
+      <tr><td>其他</td><td style="color: var(--text-secondary);"></td><td style="color: var(--text-secondary);"></td></tr>
+    </table>
+    <button class="btn-demo" onclick="showDemo('demo2')">💡 查看提示</button>
+    <div id="demo2" class="demo-feedback">
+      <p>🔍 对比维度可以包括：你对课程内容的兴趣、你有没有动手参与、老师讲得快还是慢、你有没有听懂。</p>
+    </div>
+  </div>
+
+  <h2>✅ 自我检测</h2>
+  <ul class="self-check">
+    <li>你能说出5条解析性原理的名称吗？每条用一句话说明。</li>
+    <li>如果让你分析"为什么今天数学课我听得特别认真"，你会用到哪几条原理？怎么用？</li>
+    <li>你觉得哪条原理对你来说最难理解？难在哪里？</li>
+    <li>你能不能自己举一个例子，说明"对比发现法"在你的学习中有用？</li>
+    <li>如果让你教同学使用"因果追溯法"，你会怎么教？</li>
+  </ul>
+
+  <div style="text-align:center; margin-top: 28px; padding: 16px; background: linear-gradient(135deg, var(--bg), #fff); border-radius: var(--border-radius);">
+    <p style="color: var(--primary); font-weight: 600;">🌟 掌握了这5条原理，你就拥有了分析任何学习经历的"思维工具箱"！</p>
+  </div>
+</div>
+<script>
+function togglePrinciple(el) {
+  var body = el.nextElementSibling;
+  var arrow = el.querySelector('.principle-arrow');
+  body.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+function showDemo(id) {
+  var el = document.getElementById(id);
+  el.style.display = el.style.display === 'block' ? 'none' : 'block';
+}
+</script>
+</body>
+</html>

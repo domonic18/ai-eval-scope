@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性示例</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+.header { background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; padding: 32px 40px; border-radius: var(--border-radius); margin-bottom: 28px; }
+.header h1 { font-size: var(--font-h1); margin: 0 0 8px; }
+.header p { margin: 0; opacity: 0.9; font-size: 16px; }
+.section { margin-bottom: 28px; }
+.section-title { font-size: var(--font-h2); font-weight: 700; color: var(--primary); margin: 0 0 16px; display: flex; align-items: center; gap: 10px; }
+.section-title .num { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: var(--primary); color: #fff; border-radius: 50%; font-size: 16px; flex-shrink: 0; }
+.step-progress { display: flex; justify-content: space-between; margin-bottom: 24px; overflow-x: auto; gap: 4px; }
+.step-progress .dot { display: flex; flex-direction: column; align-items: center; cursor: pointer; min-width: 56px; }
+.step-progress .dot .circle { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: #fff; background: var(--border); transition: all 0.3s; }
+.step-progress .dot .label { font-size: 13px; color: var(--text-secondary); margin-top: 4px; white-space: nowrap; }
+.step-progress .dot.active .circle { background: var(--primary); transform: scale(1.1); }
+.step-progress .dot.done .circle { background: var(--accent); }
+.step-progress .line { flex: 1; height: 3px; background: var(--border); align-self: center; border-radius: 2px; min-width: 12px; }
+.step-progress .line.done { background: var(--accent); }
+.step-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 28px; display: none; }
+.step-card.active { display: block; }
+.step-card .step-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.step-card .step-header .step-number { width: 40px; height: 40px; background: var(--primary); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; flex-shrink: 0; }
+.step-card .step-header .step-name { font-size: 20px; font-weight: 700; color: var(--text); }
+.step-card .step-header .step-action { background: var(--accent); color: #fff; padding: 2px 12px; border-radius: 10px; font-size: 14px; }
+.step-content { font-size: 16px; }
+.step-content .demo { background: var(--bg); border-left: 3px solid var(--primary); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+.step-content .demo .demo-label { font-weight: 700; color: var(--primary); font-size: 14px; margin-bottom: 4px; }
+.step-content table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 15px; }
+.step-content table th, .step-content table td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+.step-content table th { background: var(--primary); color: #fff; }
+.step-content table tr:nth-child(even) { background: #fafafa; }
+.step-nav { display: flex; justify-content: space-between; margin-top: 20px; }
+.step-nav button { padding: 10px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; transition: all 0.2s; }
+.step-nav .prev { background: var(--bg); color: var(--primary); }
+.step-nav .prev:hover { background: #dbe8ff; }
+.step-nav .next { background: var(--primary); color: #fff; }
+.step-nav .next:hover { background: var(--primary-hover); }
+.step-nav .finish { background: #52c41a; color: #fff; }
+.step-nav button:disabled { opacity: 0.4; cursor: not-allowed; }
+.tools-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 640px) { .tools-grid { grid-template-columns: 1fr; } }
+.tool-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 16px 20px; border-top: 3px solid var(--accent); }
+.tool-card .t-title { font-weight: 700; color: var(--primary); margin: 0 0 8px; }
+.tool-card .t-desc { font-size: 15px; color: var(--text); margin: 0; }
+.checklist-custom { list-style: none; padding: 0; }
+.checklist-custom li { padding: 6px 0; font-size: 16px; cursor: pointer; }
+.checklist-custom li::before { content: "☐ "; color: var(--primary); }
+.checklist-custom li.checked::before { content: "☑ "; color: #52c41a; }
+.checklist-custom li.checked { color: var(--text-secondary); text-decoration: line-through; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>建构性示例</h1>
+    <p>"我的时间密码"——用数据建构属于你自己的时间故事</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="num">1</span>真实建构情境</div>
+    <div style="background:var(--card-bg);border-radius:var(--border-radius);box-shadow:var(--shadow);padding:20px 24px;">
+      <p>小明是一名三年级学生，他觉得自己"每天都很忙"，但又说不上来时间都去哪儿了。妈妈让他做30分钟作业，他总觉得才过了5分钟；周末想出去玩，却发现作业还没做完……</p>
+      <p style="margin-bottom:0;"><strong>你有没有过类似的经历？</strong>跟着下面的7步示范，建构一份属于你自己的"时间密码"吧！</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="num">2</span>建构过程七步走</div>
+    <p style="color:var(--text-secondary);margin:-8px 0 16px;font-size:15px;">点击进度圆点或使用下方按钮，一步步跟着做</p>
+
+    <div class="step-progress" id="stepProgress">
+      <div class="dot active" data-step="0" onclick="goStep(0)">
+        <div class="circle">1</div>
+        <div class="label">提出问题</div>
+      </div>
+      <div class="line" id="line0"></div>
+      <div class="dot" data-step="1" onclick="goStep(1)">
+        <div class="circle">2</div>
+        <div class="label">收集数据</div>
+      </div>
+      <div class="line" id="line1"></div>
+      <div class="dot" data-step="2" onclick="goStep(2)">
+        <div class="circle">3</div>
+        <div class="label">数据整理</div>
+      </div>
+      <div class="line" id="line2"></div>
+      <div class="dot" data-step="3" onclick="goStep(3)">
+        <div class="circle">4</div>
+        <div class="label">发现规律</div>
+      </div>
+      <div class="line" id="line3"></div>
+      <div class="dot" data-step="4" onclick="goStep(4)">
+        <div class="circle">5</div>
+        <div class="label">选择表达</div>
+      </div>
+      <div class="line" id="line4"></div>
+      <div class="dot" data-step="5" onclick="goStep(5)">
+        <div class="circle">6</div>
+        <div class="label">制作作品</div>
+      </div>
+      <div class="line" id="line5"></div>
+      <div class="dot" data-step="6" onclick="goStep(6)">
+        <div class="circle">7</div>
+        <div class="label">反思优化</div>
+      </div>
+    </div>
+
+    <div class="step-card active" data-step="0">
+      <div class="step-header">
+        <div class="step-number">1</div>
+        <div class="step-name">提出问题</div>
+        <div class="step-action">做什么</div>
+      </div>
+      <div class="step-content">
+        <p><strong>怎么做：</strong>想一想"我的时间都花在哪儿了？"写下一个你的时间困惑。</p>
+        <div class="demo">
+          <div class="demo-label">示范</div>
+          <p style="margin:0;">"我想知道，我每天到底花了多少时间写作业、多少时间玩？"</p>
+        </div>
+        <p>💡 <strong>你的任务：</strong>在纸上写下你的时间困惑，越具体越好！</p>
+      </div>
+      <div class="step-nav">
+        <button disabled class="prev">◀ 上一步</button>
+        <button class="next" onclick="goStep(1)">下一步 ▶</button>
+      </div>
+    </div>
+
+    <div class="step-card" data-step="1">
+      <div class="step-header">
+        <div class="step-number">2</div>
+        <div class="step-name">收集数据</div>
+        <div class="step-action">做什么</div>
+      </div>
+      <div class="step-content">
+        <p><strong>怎么做：</strong>记录一天中各项活动的时间——每隔一段时间，记下你在做什么，持续了多少分钟。</p>
+        <div class="demo">
+          <div class="demo-label">示范：时间记录表</div>
+          <table>
+            <tr><th>时间</th><th>活动</th><th>花了多久</th></tr>
+            <tr><td>7:00-7:30</td><td>起床洗漱吃早餐</td><td>30分钟</td></tr>
+            <tr><td>7:30-7:50</td><td>上学路上</td><td>20分钟</td></tr>
+            <tr><td>8:00-12:00</td><td>上课</td><td>240分钟</td></tr>
+            <tr><td>12:00-12:30</td><td>午餐</td><td>30分钟</td></tr>
+          </table>
+        </div>
+        <p>💡 <strong>提示：</strong>至少记录5个主要活动，记下开始和结束时间，再算持续了多久。</p>
+      </div>
+      <div class="step-nav">
+        <button class="prev" onclick="goStep(0)">◀ 上一步</button>
+        <button class="next" onclick="goStep(2)">下一步 ▶</button>
+      </div>
+    </div>
+
+    <div class="step-card" data-step="2">
+      <div class="step-header">
+        <div class="step-number">3</div>
+        <div class="step-name">数据整理</div>
+        <div class="step-action">做什么</div>
+      </div>
+      <div class="step-content">
+        <p><strong>怎么做：</strong>把记录的数据分类汇总——同类活动合并（如所有上课时间合并、所有休息时间合并）。</p>
+        <div class="demo">
+          <div class="demo-label">示范：分类汇总</div>
+          <p style="margin:0;"><strong>学习类：</strong>480分钟 | <strong>运动类：</strong>40分钟 | <strong>娱乐类：</strong>60分钟 | <strong>生活类：</strong>120分钟</p>
+        </div>
+        <p>💡 <strong>提示：</strong>分类要互不重叠，每个活动只属于一个类别。</p>
+      </div>
+      <div class="step-nav">
+        <button class="prev" onclick="goStep(1)">◀ 上一步</button>
+        <button class="next" onclick="goStep(3)">下一步 ▶</button>
+      </div>
+    </div>
+
+    <div class="step-card" data-step="3">
+      <div class="step-header">
+        <div class="step-number">4</div>
+        <div class="step-name">发现规律</div>
+        <div class="step-action">做什么</div>
+      </div>
+      <div class="step-content">
+        <p><strong>怎么做：</strong>看看哪类活动花的时间最多/最少，比较各分类的合计时间。</p>
+        <div class="demo">
+          <div class="demo-label">示范：发现</div>
+          <p style="margin:0;">"我发现每天花在学习上的时间超过6小时，而运动只有40分钟。"</p>
+        </div>
+        <p>💡 <strong>关键句式：</strong>"我观察到……，我发现……，我想改变……"</p>
+      </div>
+      <div class="step-nav">
+        <button class="prev" onclick="goStep(2)">◀ 上一步</button>
+        <button class="next" onclick="goStep(4)">下一步 ▶</button>
+      </div>
+    </div>
+
+    <div class="step-card" data-step="4">
+      <div class="step-header">
+        <div class="step-number">5</div>
+        <div class="step-name">选择表达方式</div>
+        <div class="step-action">做什么</div>
+      </div>
+      <div class="step-content">
+        <p><strong>怎么做：</strong>决定用什么样的图来展示你的时间数据。</p>
+        <p>📊 <strong>选择指南：</strong></p>
+        <ul>
+          <li><strong>饼图</strong> — 看各类活动所占比例</li>
+          <li><strong>柱状图</strong> — 比较各类活动时间多少</li>
+          <li><strong>时间轴</strong> — 看一天活动的先后顺序</li>
+        </ul>
+        <div class="demo">
+          <div class="demo-label">示范</div>
+          <p style="margin:0;">"我选择用圆形饼图，这样能清楚看到每类活动的占比。"</p>
+        </div>
+      </div>
+      <div class="step-nav">
+        <button class="prev" onclick="goStep(3)">◀ 上一步</button>
+        <button class="next" onclick="goStep(5)">下一步 ▶</button>
+      </div>
+    </div>
+
+    <div class="step-card" data-step="5">
+      <div class="step-header">
+        <div class="step-number">6</div>
+        <div class="step-name">制作作品</div>
+        <div class="step-action">做什么</div>
+      </div>
+      <div class="step-content">
+        <p><strong>怎么做：</strong>把你的数据画成选定的图形——先用铅笔打草稿，再上色和标注。</p>
+        <div class="demo">
+          <div class="demo-label">示范要点</div>
+          <p style="margin:0;">用色彩区分不同活动类型，标注分钟数和百分比，外围标注活动名称和时长，下方写文字发现。</p>
+        </div>
+        <p>💡 <strong>画图要点：</strong>确定圆的总量（一天1440分钟）→ 用不同颜色区分类别 → 标注分钟数和百分比</p>
+      </div>
+      <div class="step-nav">
+        <button class="prev" onclick="goStep(4)">◀ 上一步</button>
+        <button class="next" onclick="goStep(6)">下一步 ▶</button>
+      </div>
+    </div>
+
+    <div class="step-card" data-step="6">
+      <div class="step-header">
+        <div class="step-number">7</div>
+        <div class="step-name">反思与优化</div>
+        <div class="step-action">做什么</div>
+      </div>
+      <div class="step-content">
+        <p><strong>怎么做：</strong>看看你的时间安排合理吗？有什么想改变的吗？写下改进计划。</p>
+        <div class="demo">
+          <div class="demo-label">示范</div>
+          <p style="margin:0;">"我想减少看iPad的时间，每天多运动15分钟。"</p>
+        </div>
+        <p>💡 <strong>核对数据：</strong>把所有时间加起来，看看是否等于1440分钟。让家人帮忙检查是否有遗漏。</p>
+        <p><strong>自我评价：</strong></p>
+        <ul class="checklist-custom">
+          <li onclick="this.classList.toggle('checked')">我记录了至少5个活动的开始和结束时间</li>
+          <li onclick="this.classList.toggle('checked')">我把所有活动分成了3类以上，并计算了每类总时间</li>
+          <li onclick="this.classList.toggle('checked')">时间图标注了分钟数、活动名称和颜色区分</li>
+          <li onclick="this.classList.toggle('checked')">我写下了至少2条关于时间安排的真实发现</li>
+          <li onclick="this.classList.toggle('checked')">总时间加起来接近1440分钟（一天）</li>
+        </ul>
+      </div>
+      <div class="step-nav">
+        <button class="prev" onclick="goStep(5)">◀ 上一步</button>
+        <button class="finish" onclick="goStep(0)">✅ 完成！重来一遍</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="num">3</span>支架工具推荐</div>
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="t-title">🛠️ 工具1：时间记录模板</div>
+        <div class="t-desc">| 时间段 | 活动名称 | 开始时间 | 结束时间 | 持续多久 | 感受 |</div>
+      </div>
+      <div class="tool-card">
+        <div class="t-title">🛠️ 工具2：分类汇总公式</div>
+        <div class="t-desc">"同一类活动的时间相加"——把所有"学习类"时间加起来就得到了总学习时间</div>
+      </div>
+      <div class="tool-card">
+        <div class="t-title">🛠️ 工具3：关键句式</div>
+        <div class="t-desc">"我观察到……，我发现……，我想改变……"——这三个句子帮你把发现说清楚</div>
+      </div>
+      <div class="tool-card">
+        <div class="t-title">🛠️ 工具4：画图要点</div>
+        <div class="t-desc">确定总量（一天1440分钟）→ 不同颜色 → 标注分钟数和百分比</div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function goStep(idx) {
+  const total = 7;
+  document.querySelectorAll('.step-card').forEach(el => el.classList.remove('active'));
+  document.querySelector(`.step-card[data-step="${idx}"]`).classList.add('active');
+  document.querySelectorAll('.step-progress .dot').forEach(el => el.classList.remove('active'));
+  document.querySelector(`.step-progress .dot[data-step="${idx}"]`).classList.add('active');
+  document.querySelectorAll('.step-progress .line').forEach(el => el.classList.remove('done'));
+  for (let i = 0; i < idx; i++) {
+    document.querySelector(`.step-progress .dot[data-step="${i}"]`).classList.add('done');
+    document.getElementById(`line${i}`).classList.add('done');
+  }
+}
+</script>
+</body>
+</html>

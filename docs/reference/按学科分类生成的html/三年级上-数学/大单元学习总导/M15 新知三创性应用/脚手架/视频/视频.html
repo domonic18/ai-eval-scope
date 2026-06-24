@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视频脚手架 — 时间探秘</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+}
+.wrapper {
+  width: 100%;
+  max-width: none;
+  padding: 24px 28px;
+  box-sizing: border-box;
+}
+.page-header {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.page-header h1 {
+  font-size: var(--font-h1);
+  margin-bottom: 6px;
+}
+.page-header p {
+  font-size: calc(var(--font-body) - 2px);
+  opacity: .9;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  transition: box-shadow .2s;
+}
+.card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.12); }
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card h2 .badge {
+  font-size: 12px;
+  background: var(--primary);
+  color: #fff;
+  padding: 2px 12px;
+  border-radius: 20px;
+  display: inline-block;
+}
+.card h3 {
+  font-size: calc(var(--font-body) + 2px);
+  color: var(--text);
+  margin: 14px 0 8px;
+}
+.task-box {
+  background: #f6ffed;
+  border-left: 4px solid #52c41a;
+  padding: 14px 18px;
+  border-radius: 6px;
+  margin: 12px 0;
+}
+.question-box {
+  background: #fff7e6;
+  border-left: 4px solid #fa8c16;
+  padding: 14px 18px;
+  border-radius: 6px;
+  margin: 12px 0;
+}
+.pause-box {
+  background: #fff0f6;
+  border-left: 4px solid #eb2f96;
+  padding: 14px 18px;
+  border-radius: 6px;
+  margin: 12px 0;
+  cursor: pointer;
+  transition: background .2s;
+}
+.pause-box:hover { background: #ffd6e7; }
+.pause-box .toggle-icon {
+  display: inline-block;
+  margin-right: 6px;
+  transition: transform .3s;
+}
+.pause-box.open .toggle-icon { transform: rotate(90deg); }
+.pause-box .pause-hint {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .4s ease;
+  margin-top: 0;
+}
+.pause-box.open .pause-hint {
+  max-height: 120px;
+  margin-top: 10px;
+}
+.pause-box .pause-hint-inner {
+  background: #fff;
+  padding: 12px 16px;
+  border-radius: 6px;
+  border: 1px dashed #eb2f96;
+}
+.tag {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  margin-right: 6px;
+  margin-bottom: 6px;
+}
+.tag-blue { background: #e6f4ff; color: #1677ff; }
+.tag-green { background: #f6ffed; color: #52c41a; }
+.tag-orange { background: #fff7e6; color: #fa8c16; }
+.tag-pink { background: #fff0f6; color: #eb2f96; }
+.output-section {
+  background: #f0f5ff;
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 14px 0;
+  text-align: center;
+}
+.output-section button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 10px 28px;
+  border-radius: 20px;
+  font-size: var(--font-body);
+  cursor: pointer;
+  transition: background .2s, transform .15s;
+}
+.output-section button:hover { background: var(--primary-hover); transform: scale(1.04); }
+.output-section button:active { transform: scale(.96); }
+.video-card { border-top: 4px solid var(--primary); }
+.timeline-visual {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  margin: 14px 0;
+  position: relative;
+}
+.timeline-visual::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #1677ff, #52c41a, #fa8c16);
+  border-radius: 2px;
+  z-index: 0;
+}
+.timeline-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+  z-index: 1;
+  cursor: pointer;
+  transition: transform .2s;
+}
+.timeline-node:hover { transform: scale(1.1); }
+.timeline-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+.dot-blue { background: #1677ff; }
+.dot-green { background: #52c41a; }
+.dot-orange { background: #fa8c16; }
+.timeline-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.key-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<div class="page-header">
+  <h1>🎬 视频脚手架</h1>
+  <p>三步进阶观看：看懂 · 分析 · 思辨</p>
+</div>
+
+<div class="card video-card">
+  <h2><span class="badge">基础层</span> 解释型视频</h2>
+  <div class="tag tag-blue">🎥 B站 / 科普中国</div>
+  <h3>《什么是时间？——给孩子的科学课》</h3>
+
+  <div class="task-box">
+    <strong>📋 观看任务：</strong>边看边记录视频中提到的时间测量工具（至少 3 种）
+  </div>
+
+  <div class="question-box">
+    <strong>💡 关键问题：</strong>
+    <ol style="margin-top:6px;padding-left:20px;">
+      <li>视频中介绍了几种测量时间的工具？</li>
+      <li>最早的钟表是什么样子？</li>
+      <li>为什么古人要发明钟表？</li>
+    </ol>
+  </div>
+
+  <div class="pause-box" onclick="this.classList.toggle('open')">
+    <span class="toggle-icon">▶</span> <strong>⏸ 暂停思考点（3:15 处）</strong> —— 点击展开
+    <div class="pause-hint">
+      <div class="pause-hint-inner">
+        🤔 猜猜看："一炷香"能烧多久？
+      </div>
+    </div>
+  </div>
+
+  <div class="output-section">
+    <p style="margin-bottom:8px;"><strong>✏️ 输出任务：</strong>画一张"时间测量工具进化简史"时间轴</p>
+    <button onclick="alert('📐 准备好纸和笔，画出从日晷→沙漏→机械钟→石英钟→原子钟的时间轴吧！')">开始创作 🎨</button>
+  </div>
+
+  <div class="timeline-visual">
+    <div class="timeline-node">
+      <div class="timeline-dot dot-blue"></div>
+      <span class="timeline-label">日晷</span>
+    </div>
+    <div class="timeline-node">
+      <div class="timeline-dot dot-blue"></div>
+      <span class="timeline-label">沙漏</span>
+    </div>
+    <div class="timeline-node">
+      <div class="timeline-dot dot-green"></div>
+      <span class="timeline-label">机械钟</span>
+    </div>
+    <div class="timeline-node">
+      <div class="timeline-dot dot-green"></div>
+      <span class="timeline-label">石英钟</span>
+    </div>
+    <div class="timeline-node">
+      <div class="timeline-dot dot-orange"></div>
+      <span class="timeline-label">原子钟</span>
+    </div>
+  </div>
+</div>
+
+<div class="card video-card" style="border-top-color:#52c41a;">
+  <h2><span class="badge">进阶层</span> 分析型视频</h2>
+  <div class="tag tag-green">📺 BBC《时间之谜》</div>
+  <h3>《一分钟有多长？》</h3>
+
+  <div class="task-box">
+    <strong>📋 观看任务：</strong>记录视频中不同人对"一分钟长度"的不同感受
+  </div>
+
+  <div class="question-box">
+    <strong>💡 关键问题：</strong>
+    <ol style="margin-top:6px;padding-left:20px;">
+      <li>为什么同样是一分钟，在不同情境下感觉不一样？</li>
+      <li>有哪些因素会影响人对时间长短的判断？</li>
+      <li>你能设计一个小实验，验证"主观时间"和"客观时间"的差异吗？</li>
+    </ol>
+  </div>
+
+  <div class="pause-box" onclick="this.classList.toggle('open')">
+    <span class="toggle-icon">▶</span> <strong>⏸ 暂停思考点（5:20 处）</strong> —— 点击展开
+    <div class="pause-hint">
+      <div class="pause-hint-inner">
+        🤔 你觉得你刚才的 1 分钟，实际上过了多久？
+      </div>
+    </div>
+  </div>
+
+  <div class="output-section">
+    <p style="margin-bottom:8px;"><strong>✏️ 输出任务：</strong>完成"主观时间 vs 客观时间"实验记录表</p>
+    <button onclick="alert('📝 设计3种不同情境（开心/无聊/紧张），分别计时1分钟，记录你的感受时长！')">开始实验 🔬</button>
+  </div>
+</div>
+
+<div class="card video-card" style="border-top-color:#fa8c16;">
+  <h2><span class="badge">挑战层</span> 辩论 / 前沿型视频</h2>
+  <div class="tag tag-orange">🧪 TED-Ed 科普动画</div>
+  <h3>《时间旅行可能吗？》</h3>
+
+  <div class="task-box">
+    <strong>📋 观看任务：</strong>记录视频中支持或反对时间旅行可能性的论据
+  </div>
+
+  <div class="question-box">
+    <strong>💡 关键问题：</strong>
+    <ol style="margin-top:6px;padding-left:20px;">
+      <li>如果时间可以倒流，会有什么问题？</li>
+      <li>视频中提到"接近光速旅行时间会变慢"——你觉得这听起来合理吗？</li>
+      <li>你能找到视频论证中的一个"漏洞"吗？</li>
+    </ol>
+  </div>
+
+  <div class="pause-box" onclick="this.classList.toggle('open')">
+    <span class="toggle-icon">▶</span> <strong>⏸ 暂停思考点（2:50 处）</strong> —— 点击展开
+    <div class="pause-hint">
+      <div class="pause-hint-inner">
+        🤔 你觉得"去未来"和"回过去"，哪个更容易实现？
+      </div>
+    </div>
+  </div>
+
+  <div class="output-section">
+    <p style="margin-bottom:8px;"><strong>✏️ 输出任务：</strong>写一段 100 字短文《如果我能让时间变慢……》</p>
+    <button onclick="alert('✍️ 发挥你的想象力！如果你能让时间变慢，你会用它来做什么？')">开始写作 📖</button>
+  </div>
+</div>
+
+<div class="card" style="text-align:center;background:linear-gradient(135deg,#f0f5ff,#fff);">
+  <p style="font-size:20px;font-weight:600;color:var(--primary);">🎯 三步进阶，看完三部视频你就是"时间小达人"！</p>
+  <p style="color:var(--text-secondary);margin-top:6px;">基础理解 → 深度分析 → 批判思辨</p>
+</div>
+
+</div>
+</body>
+</html>

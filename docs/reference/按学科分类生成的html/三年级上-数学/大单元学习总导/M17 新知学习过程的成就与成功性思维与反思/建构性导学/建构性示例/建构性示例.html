@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性示例 — 小乐的时、分、秒通关秘籍</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  text-align: center;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 8px; }
+.header p { font-size: 16px; opacity: 0.92; }
+.section { background: var(--card-bg); border-radius: var(--border-radius); padding: 24px; margin-bottom: 20px; box-shadow: var(--shadow); }
+.section h2 { font-size: var(--font-h2); color: var(--primary); margin-bottom: 16px; border-left: 4px solid var(--primary); padding-left: 12px; }
+.section h3 { font-size: 19px; color: var(--text); margin: 16px 0 10px; }
+.story-banner {
+  background: linear-gradient(135deg, #fff7e6, #fff1cc);
+  border: 1px solid #ffd666;
+  border-radius: var(--border-radius);
+  padding: 20px; margin-bottom: 20px; position: relative;
+}
+.story-banner::before { content: "📖"; font-size: 28px; display: block; margin-bottom: 8px; }
+.story-banner p { font-size: 16px; color: #613400; }
+.goal-box {
+  background: #e6fffb; border: 1px solid #87e8de;
+  border-radius: var(--border-radius); padding: 18px; margin-bottom: 20px;
+}
+.goal-box h3 { color: #006d75; margin-top: 0; }
+.goal-box .goal-item { padding: 6px 0; font-size: 15px; }
+.goal-box .goal-item::before { content: "🎯 "; }
+.step-timeline { position: relative; padding-left: 40px; }
+.step-timeline::before {
+  content: ''; position: absolute; left: 18px; top: 8px; bottom: 8px;
+  width: 3px; background: var(--accent); border-radius: 2px;
+}
+.step-item {
+  position: relative; margin-bottom: 22px; padding: 16px 18px;
+  background: #fafbff; border: 1px solid var(--border);
+  border-radius: var(--border-radius); transition: all 0.3s; cursor: pointer;
+}
+.step-item:hover { border-color: var(--primary); box-shadow: var(--shadow); }
+.step-item .step-num {
+  position: absolute; left: -32px; top: 16px;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--primary); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700;
+}
+.step-item .step-do { font-weight: 700; font-size: 17px; color: var(--primary); }
+.step-item .step-meta { font-size: 14px; color: var(--text-secondary); margin: 4px 0; }
+.step-item .step-demo {
+  max-height: 0; overflow: hidden; transition: max-height 0.4s ease;
+  background: #f0f5ff; border-radius: 4px; margin-top: 8px; font-size: 15px; padding: 0 12px;
+}
+.step-item.open .step-demo {
+  max-height: 200px;
+  padding: 12px; margin-top: 10px;
+}
+.step-item .step-demo::before { content: "💬 小乐的笔记："; display: block; font-weight: 600; margin-bottom: 4px; }
+.tools-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px; margin: 12px 0;
+}
+.tool-card {
+  background: #f0f5ff; border: 1px solid #d6e4ff;
+  border-radius: var(--border-radius); padding: 14px; text-align: center;
+  transition: transform 0.2s; font-size: 14px;
+}
+.tool-card:hover { transform: translateY(-3px); }
+.tool-card .tool-icon { font-size: 28px; display: block; margin-bottom: 6px; }
+.tool-card .tool-name { font-weight: 600; color: var(--primary); }
+.sample-card {
+  background: #fffbe6; border: 2px dashed #ffd666;
+  border-radius: var(--border-radius); padding: 20px; margin: 16px 0;
+  position: relative;
+}
+.sample-card h3 { color: #d48806; }
+.sample-card::before { content: "📇 成品样例"; position: absolute; top: -12px; left: 16px; background: #fffbe6; padding: 0 8px; font-size: 14px; font-weight: 600; color: #d48806; }
+.checklist-sample { list-style: none; padding: 0; }
+.checklist-sample li { padding: 8px 0 8px 32px; font-size: 15px; position: relative; }
+.checklist-sample li::before { content: "⬜"; position: absolute; left: 0; }
+.optimize-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+}
+.optimize-card {
+  background: #f6ffed; border: 1px solid #b7eb8f;
+  border-radius: var(--border-radius); padding: 16px; font-size: 15px;
+}
+.optimize-card h4 { color: #389e0d; margin-bottom: 6px; }
+@media (max-width: 600px) {
+  .container { padding: 12px 10px; }
+  .header { padding: 20px 16px; }
+  .section { padding: 16px; }
+  .step-timeline { padding-left: 30px; }
+  .step-item .step-num { left: -22px; width: 24px; height: 24px; font-size: 12px; }
+  .optimize-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🌟 建构性示例</h1>
+  <p>跟着小乐同学，看他是怎么一步步做出自己的"时、分、秒换算通关秘籍卡"的</p>
+</div>
+
+<div class="section">
+  <h2>📌 示例标题</h2>
+  <div class="story-banner">
+    <p style="font-size:20px;font-weight:700;">从"煮鸡蛋"开始的发明——小乐的时间换算通关秘籍诞生记</p>
+    <p style="margin-top:8px;">煮一个溏心蛋需要6分30秒。小乐盯着钟面上的分针和秒针，突然一拍脑门——"我为什么不给自己做一张换算秘籍卡呢？"</p>
+  </div>
+</div>
+
+<div class="section">
+  <h2>🎯 建构目标</h2>
+  <div class="goal-box">
+    <div class="goal-item"><strong>要建构什么：</strong>一份"我的时间换算通关秘籍"卡片</div>
+    <div class="goal-item"><strong>用途：</strong>帮自己和其他同学不再混淆"时、分、秒"的换算</div>
+    <div class="goal-item"><strong>形式：</strong>A4纸对折成卡片，手绘+口诀+生活例子</div>
+    <div class="goal-item"><strong>最低标准：</strong>包含三种换算关系（时→分，分→秒，时→秒）+ 至少2个生活例子</div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>👣 建构过程示范（7步）</h2>
+  <p style="font-size:14px;color:var(--text-secondary);margin-bottom:14px;">👇 点击每一步，查看小乐当时的想法笔记</p>
+  <div class="step-timeline">
+
+    <div class="step-item open" onclick="this.classList.toggle('open')">
+      <span class="step-num">1</span>
+      <div class="step-do">找到"我搞不懂"的点</div>
+      <div class="step-meta"><strong>怎么做：</strong>回顾作业中的错题，整理出一份困惑清单</div>
+      <div class="step-meta"><strong>生成什么：</strong>困惑清单</div>
+      <div class="step-demo">我翻了一下数学本，发现错得最多的是"几时几分=多少分"这种题。比如"2时15分=（ ）分"，我写的是215分……老师打了个红叉。原来问题是：我不知道时和分到底怎么换算！</div>
+    </div>
+
+    <div class="step-item" onclick="this.classList.toggle('open')">
+      <span class="step-num">2</span>
+      <div class="step-do">找一个能懂的"锚"</div>
+      <div class="step-meta"><strong>怎么做：</strong>盯着钟面，找到自己最有把握的一个时间点</div>
+      <div class="step-meta"><strong>生成什么：</strong>钟面标注图</div>
+      <div class="step-demo">我盯着钟看了好一会儿——分针走一圈，时针走一大格。妈妈说过："分针转一圈=1小时=60分钟。"我把这句话写在便利贴上贴在钟旁边。这个"1小时=60分钟"就是我的"锚"，有了它我心里踏实多了！</div>
+    </div>
+
+    <div class="step-item" onclick="this.classList.toggle('open')">
+      <span class="step-num">3</span>
+      <div class="step-do">用"锚"推算出其他关系</div>
+      <div class="step-meta"><strong>怎么做：</strong>从"60分钟=1小时"出发，推算出其他换算</div>
+      <div class="step-meta"><strong>生成什么：</strong>换算关系图</div>
+      <div class="step-demo">从"1小时=60分钟"我推出：半小时=30分钟、一刻钟=15分钟。还推了"2小时=120分钟"——就是60+60=120。反过来，120分钟=2小时。我又想：1分钟等于60秒，那3分钟=60×3=180秒！我把这些关系都画成了一张"换算关系图"。</div>
+    </div>
+
+    <div class="step-item" onclick="this.classList.toggle('open')">
+      <span class="step-num">4</span>
+      <div class="step-do">编一个记忆口诀</div>
+      <div class="step-meta"><strong>怎么做：</strong>把换算关系编成顺口溜，方便记忆</div>
+      <div class="step-meta"><strong>生成什么：</strong>口诀卡片</div>
+      <div class="step-demo">我编的口诀是："一时六十，一分六十，时化分乘以六十，分化时除以六十。分和秒也一样，这个口诀不能忘！"虽然有点长，但是念起来像打拍子，我念了几遍就背下来了。</div>
+    </div>
+
+    <div class="step-item" onclick="this.classList.toggle('open')">
+      <span class="step-num">5</span>
+      <div class="step-do">用生活例子加固</div>
+      <div class="step-meta"><strong>怎么做：</strong>找一个真实的生活场景来验证换算对不对</div>
+      <div class="step-meta"><strong>生成什么：</strong>事例记录</div>
+      <div class="step-demo">妈妈让我煮溏心蛋要6分30秒。6分=6×60=360秒，再加30秒=390秒。我盯着钟看分针走了6小格多一点，秒针滴答滴答走了390下——没错！我还在冰箱门上贴了一张便利贴："煮溏心蛋=390秒"。</div>
+    </div>
+
+    <div class="step-item" onclick="this.classList.toggle('open')">
+      <span class="step-num">6</span>
+      <div class="step-do">画出通关秘籍卡</div>
+      <div class="step-meta"><strong>怎么做：</strong>把以上所有内容整理到一张卡片上</div>
+      <div class="step-meta"><strong>生成什么：</strong>秘籍卡成品</div>
+      <div class="step-demo">我拿了一张A4纸，对折成卡片大小。正面：画了一个钟面（分针和时针），旁边写三大换算关系。反面：写口诀+两个生活例子（煮鸡蛋390秒、一节课40分钟）。用蓝色写换算公式，红色写口诀，黑色写例子——颜色区分，一目了然！</div>
+    </div>
+
+    <div class="step-item" onclick="this.classList.toggle('open')">
+      <span class="step-num">7</span>
+      <div class="step-do">找人测试</div>
+      <div class="step-meta"><strong>怎么做：</strong>考考同桌，看她能不能看懂你的秘籍卡</div>
+      <div class="step-meta"><strong>生成什么：</strong>测试反馈表</div>
+      <div class="step-demo">我让同桌看了我的秘籍卡，考了她三题："3时=？分""180秒=？分""1时30分=？分"。她全答对了！她说口诀很好记，但是建议我在钟面上加一个"秒针"的样子，因为之前只画了分针和时针。我加了——现在完美了！</div>
+    </div>
+
+  </div>
+</div>
+
+<div class="section">
+  <h2>🧰 支架工具推荐</h2>
+  <div class="tools-grid">
+    <div class="tool-card"><span class="tool-icon">🕐</span><span class="tool-name">钟面模板</span><br>画指针、标刻度</div>
+    <div class="tool-card"><span class="tool-icon">🧠</span><span class="tool-name">思维导图模板</span><br>画换算关系脉络</div>
+    <div class="tool-card"><span class="tool-icon">📝</span><span class="tool-name">口诀编写提示卡</span><br>编顺口溜小技巧</div>
+    <div class="tool-card"><span class="tool-icon">✅</span><span class="tool-name">成果自检清单</span><br>检查有没有漏掉重点</div>
+    <div class="tool-card"><span class="tool-icon">📏</span><span class="tool-name">便签贴</span><br>把换算关系贴在看得见的地方</div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>📇 建构成果样例</h2>
+  <div class="sample-card">
+    <h3>时、分、秒换算通关秘籍卡</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+      <div style="background:#f0f5ff;border-radius:6px;padding:14px;font-size:14px;">
+        <strong style="color:var(--primary);">正面 — 钟面 + 换算关系</strong>
+        <div style="margin-top:6px;">🕐 1时 = 60分<br>🕐 1分 = 60秒<br>🕐 1时 = 3600秒</div>
+      </div>
+      <div style="background:#fff7e6;border-radius:6px;padding:14px;font-size:14px;">
+        <strong style="color:#d48806;">反面 — 口诀 + 生活例子</strong>
+        <div style="margin-top:6px;">📝 口诀：一时六十，一分六十……<br>🥚 煮溏心蛋=390秒<br>📚 一节课=40分钟</div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:8px;padding:12px;background:#f6ffed;border-radius:6px;font-size:14px;">
+    <strong>✅ 成果评价要求：</strong>
+    ① 科学性——换算关系100%正确 ✓<br>
+    ② 完整性——包含时→分、分→秒、时→秒三种关系 ✓<br>
+    ③ 美观性——手绘清晰，颜色区分 ✓<br>
+    <strong>推荐格式：</strong>A4纸对折成卡片，正面画钟面+换算关系，反面写口诀+生活例子
+  </div>
+</div>
+
+<div class="section">
+  <h2>🚀 成果优化建议</h2>
+  <div class="optimize-grid">
+    <div class="optimize-card">
+      <h4>🧪 找人测试</h4>
+      <p>让同桌读你的秘籍卡，看ta能不能在3秒内回答一个换算问题。如果不能，说明哪里需要改进。</p>
+    </div>
+    <div class="optimize-card">
+      <h4>🔄 迭代升级</h4>
+      <p>如果发现哪里看不明白，加注释或简化表述。好的秘籍是越改越简单的！</p>
+    </div>
+    <div class="optimize-card">
+      <h4>📌 版本管理</h4>
+      <p>在卡片底部留一个空白行，以后学到"年、月、日"或者"24时计时法"时再补充进去。</p>
+    </div>
+    <div class="optimize-card">
+      <h4>🏆 分享传播</h4>
+      <p>把你的秘籍卡拍照发给好朋友，或者贴在班级展示区，帮助更多同学！</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>✅ 自我评价量表</h2>
+  <p style="font-size:14px;color:var(--text-secondary);margin-bottom:10px;">做完秘籍卡后，逐条检查——在做到的项前打✓</p>
+  <ul class="checklist-sample">
+    <li>我是否写出了<strong>1时=60分</strong>和<strong>1分=60秒</strong>两个核心关系且100%正确？</li>
+    <li>我的秘籍卡上是否有<strong>至少2个生活中的换算例子</strong>？</li>
+    <li>我是否画了一个<strong>钟面</strong>辅助理解（哪怕很简单）？</li>
+    <li>我的口诀是否能让自己<strong>不看也能回想起来</strong>？</li>
+    <li>我是否<strong>找人测试</strong>过，并收到了反馈？</li>
+  </ul>
+</div>
+
+<div class="footer" style="text-align:center;padding:20px;color:var(--text-secondary);font-size:14px;">
+  🌟 建构性示例 · 小乐能做到，你也能！现在开始动手做你的秘籍卡吧 🚀
+</div>
+
+</div>
+</body>
+</html>

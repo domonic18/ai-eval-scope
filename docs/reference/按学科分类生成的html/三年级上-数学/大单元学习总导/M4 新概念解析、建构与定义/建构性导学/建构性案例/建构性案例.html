@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性案例 — 七阶建构挑战</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 36px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+.header p { margin: 0; opacity: 0.92; font-size: 17px; }
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 22px;
+  padding: 20px 24px;
+  border-left: 4px solid var(--primary);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.case-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(22,119,255,0.1);
+}
+.case-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.case-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.case-name { font-size: var(--font-h2); font-weight: 700; color: var(--primary); margin: 0; }
+.case-type {
+  display: inline-block;
+  background: #fff7e6;
+  color: #d46b08;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.case-detail { margin-top: 12px; }
+.info-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+.info-row .principle-tag {
+  display: inline-block;
+  background: #f6ffed;
+  color: #389e0d;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+.step-flow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border-radius: 6px;
+  margin: 10px 0;
+}
+.step-flow .s {
+  background: var(--primary);
+  color: #fff;
+  padding: 3px 10px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.step-flow .arr { color: var(--accent); font-weight: 700; }
+.output-box {
+  background: linear-gradient(135deg, #fff7e6, #fffbe6);
+  border: 1px dashed #fa8c16;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 8px 0;
+  font-size: 16px;
+}
+.output-box strong { color: #d46b08; }
+.principle-list {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.principle-pill {
+  background: var(--bg);
+  color: var(--primary);
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  border: 1px solid var(--accent);
+}
+.reflection-box {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin-top: 24px;
+  border-left: 4px solid var(--primary);
+}
+.reflection-box h3 { color: var(--primary); margin-top: 0; }
+.reflect-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  cursor: pointer;
+  user-select: none;
+}
+.reflect-item:hover { color: var(--primary); }
+.reflect-item .check {
+  width: 20px; height: 20px;
+  border: 2px solid var(--primary);
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: transparent;
+  margin-top: 3px;
+}
+.reflect-item.done .check {
+  background: var(--primary);
+  color: #fff;
+}
+.btn-primary {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 8px;
+}
+.btn-primary:hover { background: var(--primary-hover); }
+.section-title {
+  font-size: var(--font-h2);
+  font-weight: 700;
+  color: var(--primary);
+  margin: 28px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+.overview-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 16px;
+}
+.overview-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+}
+.overview-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.overview-table tr:hover td { background: #f5f8ff; }
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .header { padding: 20px; }
+  .case-card { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🏗️ 建构性案例</h1>
+  <p>7个递进挑战，让你在不同情境中主动建构对"时、分、秒"的深入理解！</p>
+</div>
+
+<!-- 概览表 -->
+<table class="overview-table">
+  <thead><tr><th>序号</th><th>案例</th><th>类型</th><th>难度</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>我的1分钟有多长</td><td>个人理解型</td><td>★☆☆</td></tr>
+    <tr><td>2</td><td>一分钟晨间计划</td><td>生活应用型</td><td>★☆☆</td></tr>
+    <tr><td>3</td><td>静音计时器设计</td><td>校园问题型</td><td>★★☆</td></tr>
+    <tr><td>4</td><td>时、分、秒关系博物馆</td><td>学科表达型</td><td>★★☆</td></tr>
+    <tr><td>5</td><td>一秒钟能做什么</td><td>跨学科整合型</td><td>★★★</td></tr>
+    <tr><td>6</td><td>精确到秒的职业调查</td><td>社会情境型</td><td>★★★</td></tr>
+    <tr><td>7</td><td>时间的度量作品展</td><td>综合创新型</td><td>★★★★</td></tr>
+  </tbody>
+</table>
+
+<!-- 案例1 -->
+<div class="case-card">
+  <div class="case-header">
+    <span class="case-number">1</span>
+    <h3 class="case-name">我的1分钟有多长</h3>
+    <span class="case-type">个人理解型</span>
+  </div>
+  <p><strong>🎬 情境：</strong>你在等妈妈来接你，觉得1分钟好长。可上课时老师说"给大家1分钟时间"，你却觉得很快就过了。同样是1分钟，为什么感觉不一样？</p>
+  <p><strong>🎯 建构任务：</strong>建构出对"1分钟"的客观理解，不受主观感觉干扰。</p>
+  <div class="step-flow">
+    <span class="s">选3个活动</span><span class="arr">→</span>
+    <span class="s">每个计时1分钟</span><span class="arr">→</span>
+    <span class="s">对比感受和实际</span><span class="arr">→</span>
+    <span class="s">得出结论</span>
+  </div>
+  <div class="output-box"><strong>📦 成果：</strong>"我的1分钟对比记录表"（含数据+感受+结论）</div>
+  <div class="principle-list">
+    <span class="principle-pill">观察锚定法</span>
+    <span class="principle-pill">测量验证法</span>
+  </div>
+  <button class="btn-primary" onclick="alert('📋 选3个活动（静坐、拍手、写字），用计时器各测1分钟。记录你感觉过了多久 vs 实际过了多久！')">开始建构</button>
+</div>
+
+<!-- 案例2 -->
+<div class="case-card">
+  <div class="case-header">
+    <span class="case-number">2</span>
+    <h3 class="case-name">一分钟晨间计划</h3>
+    <span class="case-type">生活应用型</span>
+  </div>
+  <p><strong>🎬 情境：</strong>早上起床到出门只有20分钟，你需要安排刷牙、洗脸、吃早餐。你能把你的早晨拆分成按分钟计算的小任务吗？</p>
+  <p><strong>🎯 建构任务：</strong>设计一个精确到分钟的晨间时间分配方案。</p>
+  <div class="step-flow">
+    <span class="s">列出晨间事项</span><span class="arr">→</span>
+    <span class="s">逐个计时</span><span class="arr">→</span>
+    <span class="s">优化排列</span><span class="arr">→</span>
+    <span class="s">绘制时间分配图</span>
+  </div>
+  <div class="output-box"><strong>📦 成果：</strong>"我的晨间1分钟计划图"</div>
+  <div class="principle-list">
+    <span class="principle-pill">测量验证法</span>
+    <span class="principle-pill">定义建构法</span>
+  </div>
+  <button class="btn-primary" onclick="alert('⏰ 用计时器测一下：你刷牙几分钟？洗脸几分钟？吃早餐几分钟？然后把它们排进20分钟里！')">开始建构</button>
+</div>
+
+<!-- 案例3 -->
+<div class="case-card">
+  <div class="case-header">
+    <span class="case-number">3</span>
+    <h3 class="case-name">静音计时器设计</h3>
+    <span class="case-type">校园问题型</span>
+  </div>
+  <p><strong>🎬 情境：</strong>语文课上，老师让大家默读5分钟，但总有同学不知道5分钟有多长，中途抬头看时间。你准备设计一个不用看表的"静音计时器"。</p>
+  <p><strong>🎯 建构任务：</strong>用身体动作或声响信号，设计一个能提醒"1分钟到""3分钟到""5分钟到"的方案。</p>
+  <div class="step-flow">
+    <span class="s">确定时间节点</span><span class="arr">→</span>
+    <span class="s">设计提醒信号</span><span class="arr">→</span>
+    <span class="s">测试准确度</span><span class="arr">→</span>
+    <span class="s">优化方案</span>
+  </div>
+  <div class="output-box"><strong>📦 成果：</strong>"静音计时器设计方案"（含信号表和测试数据）</div>
+  <div class="principle-list">
+    <span class="principle-pill">观察锚定法</span>
+    <span class="principle-pill">表达固化法</span>
+  </div>
+  <button class="btn-primary" onclick="alert('🕐 比如：每读完一页书大概3分钟？每写3个字大概10秒？设计你的"身体计时器"方案！')">开始建构</button>
+</div>
+
+<!-- 案例4 -->
+<div class="case-card">
+  <div class="case-header">
+    <span class="case-number">4</span>
+    <h3 class="case-name">时、分、秒关系博物馆</h3>
+    <span class="case-type">学科表达型</span>
+  </div>
+  <p><strong>🎬 情境：</strong>学校要建一个"时间知识小博物馆"，请你设计一面"时、分、秒关系展示墙"。</p>
+  <p><strong>🎯 建构任务：</strong>用图画+文字+箭头，清晰展示时、分、秒三者之间的换算关系。</p>
+  <div class="step-flow">
+    <span class="s">梳理三者关系</span><span class="arr">→</span>
+    <span class="s">设计布局</span><span class="arr">→</span>
+    <span class="s">画草图</span><span class="arr">→</span>
+    <span class="s">标注换算关系</span><span class="arr">→</span>
+    <span class="s">美化</span>
+  </div>
+  <div class="output-box"><strong>📦 成果：</strong>"时、分、秒关系展示墙"设计图</div>
+  <div class="principle-list">
+    <span class="principle-pill">表达固化法</span>
+    <span class="principle-pill">检验修正法</span>
+  </div>
+  <button class="btn-primary" onclick="alert('🎨 用A3纸画出时、分、秒的换算关系。1时=60分、1分=60秒——用箭头、图画和例子把它们连起来！')">开始建构</button>
+</div>
+
+<!-- 案例5 -->
+<div class="case-card">
+  <div class="case-header">
+    <span class="case-number">5</span>
+    <h3 class="case-name">一秒钟能做什么</h3>
+    <span class="case-type">跨学科整合型</span>
+  </div>
+  <p><strong>🎬 情境：</strong>科学课上老师说"光一秒钟能绕地球七圈半"，你很好奇：一秒钟到底能做多少事？</p>
+  <p><strong>🎯 建构任务：</strong>设计3个小实验，测量"一秒钟"在不同情境下的"容量"。</p>
+  <div class="step-flow">
+    <span class="s">确定3个实验</span><span class="arr">→</span>
+    <span class="s">计时测量</span><span class="arr">→</span>
+    <span class="s">记录数据</span><span class="arr">→</span>
+    <span class="s">写实验报告</span>
+  </div>
+  <div class="output-box"><strong>📦 成果：</strong>"一秒钟能做什么"实验记录报告</div>
+  <div class="principle-list">
+    <span class="principle-pill">测量验证法</span>
+    <span class="principle-pill">定义建构法</span>
+  </div>
+  <button class="btn-primary" onclick="alert('🔬 试试3个实验：①1秒跳绳几下？②1秒写几个字？③1秒心跳几次？记录数据，写一份实验报告！')">开始建构</button>
+</div>
+
+<!-- 案例6 -->
+<div class="case-card">
+  <div class="case-header">
+    <span class="case-number">6</span>
+    <h3 class="case-name">精确到秒的职业调查</h3>
+    <span class="case-type">社会情境型</span>
+  </div>
+  <p><strong>🎬 情境：</strong>你觉得生活中需要精确到"秒"吗？爸爸说"差不多就行"，可妈妈说"高铁发车精确到秒"。到底哪些工作一秒钟都不能差？</p>
+  <p><strong>🎯 建构任务：</strong>调查2—3种需要精确到秒的职业或场景，制作对比表格。</p>
+  <div class="step-flow">
+    <span class="s">列出可能的场景</span><span class="arr">→</span>
+    <span class="s">查阅资料或采访</span><span class="arr">→</span>
+    <span class="s">填写对比表</span><span class="arr">→</span>
+    <span class="s">得出结论</span>
+  </div>
+  <div class="output-box"><strong>📦 成果：</strong>"精确到秒的职业大调查"对比表</div>
+  <div class="principle-list">
+    <span class="principle-pill">观察锚定法</span>
+    <span class="principle-pill">检验修正法</span>
+  </div>
+  <button class="btn-primary" onclick="alert('🔍 采访家人或上网查找：①航天发射 ②高铁调度 ③手术医生 ④体育裁判——哪些工作需要精确到秒？')">开始建构</button>
+</div>
+
+<!-- 案例7 -->
+<div class="case-card">
+  <div class="case-header">
+    <span class="case-number">7</span>
+    <h3 class="case-name">时间的度量作品展</h3>
+    <span class="case-type">综合创新型</span>
+  </div>
+  <p><strong>🎬 情境：</strong>你被邀请参加学校"时间的奥秘"作品展。你可以选择任何形式来展示你对"时、分、秒"的完整理解。</p>
+  <p><strong>🎯 建构任务：</strong>独立创作一件展示作品，包含对时、分、秒概念的理解和三者关系的表达。</p>
+  <div class="step-flow">
+    <span class="s">确定作品形式</span><span class="arr">→</span>
+    <span class="s">列出核心内容</span><span class="arr">→</span>
+    <span class="s">设计布局</span><span class="arr">→</span>
+    <span class="s">制作</span><span class="arr">→</span>
+    <span class="s">自我评价</span>
+  </div>
+  <div class="output-box"><strong>📦 成果：</strong>自选形式的展览作品（海报/手工钟表/小绘本/定格动画……）</div>
+  <div class="principle-list">
+    <span class="principle-pill">全部5条原理综合运用</span>
+  </div>
+  <button class="btn-primary" onclick="alert('🎉 选择你最喜欢的形式：①海报展示 ②手工制作钟表模型 ③画小绘本 ④用手机拍定格动画。尽情发挥创意！')">开始创作</button>
+</div>
+
+<!-- 综合反思 -->
+<div class="reflection-box">
+  <h3>💭 综合反思</h3>
+  <p>完成7个案例后，点击每一项反思你的学习：</p>
+  <div class="reflect-item" onclick="this.classList.toggle('done')">
+    <span class="check">✓</span>
+    <span>在这7个案例中，哪个让你觉得"时间"这个概念最有趣？</span>
+  </div>
+  <div class="reflect-item" onclick="this.classList.toggle('done')">
+    <span class="check">✓</span>
+    <span>你发现自己最擅长用哪种建构原理？</span>
+  </div>
+  <div class="reflect-item" onclick="this.classList.toggle('done')">
+    <span class="check">✓</span>
+    <span>完成这些案例后，你觉得"秒"和"分钟"还是"看不见摸不着"的吗？</span>
+  </div>
+  <div class="reflect-item" onclick="this.classList.toggle('done')">
+    <span class="check">✓</span>
+    <span>你觉得建构学习和死记硬背最大的不同是什么？</span>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

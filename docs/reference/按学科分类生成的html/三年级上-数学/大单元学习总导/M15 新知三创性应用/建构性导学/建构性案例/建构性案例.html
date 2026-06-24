@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性案例</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 20px;
+}
+.container { width: 100%; max-width: none; padding: 0; }
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+h2 {
+  font-size: var(--font-h2);
+  color: var(--text);
+  margin: 24px 0 12px;
+  padding-left: 12px;
+  border-left: 4px solid var(--primary);
+}
+h3 { font-size: 19px; color: var(--primary); margin-bottom: 6px; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+  width: 100%;
+}
+.case-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  margin-bottom: 14px;
+  transition: transform 0.2s;
+}
+.case-card:hover { transform: translateX(4px); }
+.case-card .level-tag {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  padding: 2px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+.case-card .step-list { margin: 6px 0 6px 20px; font-size: 15px; color: var(--text-secondary); }
+.case-card .step-list li { margin-bottom: 3px; }
+.check-badge {
+  display: inline-block;
+  background: #f6ffed;
+  color: #389e0d;
+  border: 1px solid #b7eb8f;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 14px;
+  margin-top: 4px;
+}
+.nav-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 16px 0;
+  flex-wrap: wrap;
+}
+.nav-btn {
+  padding: 8px 16px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.nav-btn:hover { background: var(--primary-hover); }
+.nav-btn.small { font-size: 13px; padding: 5px 12px; background: var(--bg); color: var(--primary); }
+.nav-btn.small:hover { background: var(--accent); color: #fff; }
+#case-display {
+  transition: opacity 0.3s;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+  font-size: 14px;
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: 6px 8px;
+  text-align: left;
+}
+th { background: var(--bg); color: var(--primary); font-weight: 600; }
+@media (max-width: 600px) {
+  body { padding: 12px; }
+  .card { padding: 14px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>📚 建构性案例（七阶适配）</h1>
+<p style="color:var(--text-secondary);margin-bottom:16px;">7个递进层级的情境案例，运用建构性原理主动建构时间相关的新理解</p>
+
+<div class="card">
+  <h2>🏗️ 七阶案例全景</h2>
+  <table>
+    <tr><th>层级</th><th>案例名称</th><th>核心原理</th></tr>
+    <tr><td>1</td><td>个人理解型 — 我的时间画像</td><td>情境锚定 + 证据收集</td></tr>
+    <tr><td>2</td><td>生活应用型 — 家庭作息时间表</td><td>问题驱动 + 模型建构</td></tr>
+    <tr><td>3</td><td>校园问题解决型 — 课间10分钟去哪了</td><td>证据收集 + 模型建构</td></tr>
+    <tr><td>4</td><td>学科表达型 — 时间换算魔法书</td><td>模型建构 + 表达反思</td></tr>
+    <tr><td>5</td><td>跨学科整合型 — 古诗中的时间</td><td>问题驱动 + 情境锚定</td></tr>
+    <tr><td>6</td><td>社会情境型 — 没有钟表的世界</td><td>情境锚定 + 表达反思</td></tr>
+    <tr><td>7</td><td>综合创新型 — 班级时间管家系统</td><td>全部5条原理综合运用</td></tr>
+  </table>
+</div>
+
+<div class="nav-buttons">
+  <button class="nav-btn" onclick="showCase(1)">案例一</button>
+  <button class="nav-btn" onclick="showCase(2)">案例二</button>
+  <button class="nav-btn" onclick="showCase(3)">案例三</button>
+  <button class="nav-btn" onclick="showCase(4)">案例四</button>
+  <button class="nav-btn" onclick="showCase(5)">案例五</button>
+  <button class="nav-btn" onclick="showCase(6)">案例六</button>
+  <button class="nav-btn" onclick="showCase(7)">案例七</button>
+</div>
+
+<div id="case-display">
+  <div class="card" id="case-1" style="display:block;">
+    <h3>案例一：我的时间画像</h3>
+    <p style="color:var(--text-secondary);margin-bottom:6px;"><strong>情境：</strong>你觉得自己一天中哪段时间效率最高？哪段时间最容易浪费？请不凭感觉，用数据说话。</p>
+    <p><strong>任务：</strong>记录自己某一天的时间使用情况（精确到分钟），制作一份"个人时间画像"</p>
+    <p><span style="color:var(--primary);">🔬 原理调用：情境锚定 + 证据收集</span></p>
+    <p><strong>建构步骤：</strong></p>
+    <ol class="step-list">
+      <li>设计记录表</li>
+      <li>逐时记录全天活动</li>
+      <li>计算各活动时长</li>
+      <li>绘制时间分配饼图</li>
+      <li>分析发现——写出1条时间发现</li>
+    </ol>
+    <p><strong>成果：</strong>个人一日时间分配饼图 + 1条时间发现</p>
+    <span class="check-badge">✅ 自评：数据是否覆盖全天？各活动时长之和是否等于24小时？</span>
+  </div>
+  <div class="card" id="case-2" style="display:none;">
+    <h3>案例二：家庭作息时间表</h3>
+    <p style="color:var(--text-secondary);margin-bottom:6px;"><strong>情境：</strong>爸爸6:30出门、妈妈7:30送上学、奶奶11:30做午饭……全家人的时间如何协调？</p>
+    <p><strong>任务：</strong>采访家人作息，设计一份"家庭时间协调方案"</p>
+    <p><span style="color:var(--primary);">🔬 原理调用：问题驱动 + 模型建构</span></p>
+    <p><strong>建构步骤：</strong></p>
+    <ol class="step-list">
+      <li>采访每位家人的关键作息时间</li>
+      <li>记录起床、用餐、出门、休息等时间节点</li>
+      <li>找出时间冲突点</li>
+      <li>设计协调方案</li>
+    </ol>
+    <p><strong>成果：</strong>家庭时间协调表（含所有家庭成员的时间安排）</p>
+    <span class="check-badge">✅ 自评：是否覆盖所有家庭成员？时间安排是否留有余地？</span>
+  </div>
+  <div class="card" id="case-3" style="display:none;">
+    <h3>案例三：课间10分钟去哪了</h3>
+    <p style="color:var(--text-secondary);margin-bottom:6px;"><strong>情境：</strong>很多同学觉得课间10分钟太短，上厕所、喝水、准备下节课……根本不够用。</p>
+    <p><strong>任务：</strong>测量并分析课间各项活动的时间消耗，设计一份"课间10分钟黄金使用方案"</p>
+    <p><span style="color:var(--primary);">🔬 原理调用：证据收集 + 模型建构</span></p>
+    <p><strong>建构步骤：</strong></p>
+    <ol class="step-list">
+      <li>列出课间要做的事</li>
+      <li>逐项计时（精确到秒）</li>
+      <li>按优先级排序优化</li>
+      <li>绘制"课间10分钟时间轴"</li>
+    </ol>
+    <p><strong>成果：</strong>课间10分钟时间分配方案 + 时间轴图示</p>
+    <span class="check-badge">✅ 自评：方案是否考虑优先级？是否留出缓冲时间？</span>
+  </div>
+  <div class="card" id="case-4" style="display:none;">
+    <h3>案例四：时间换算魔法书</h3>
+    <p style="color:var(--text-secondary);margin-bottom:6px;"><strong>情境：</strong>刚学会1时=60分、1分=60秒，但换算时总出错。有没有办法让自己和同学一眼看懂？</p>
+    <p><strong>任务：</strong>设计一页"时间换算魔法书"（图文结合），把换算规则变得好懂好记</p>
+    <p><span style="color:var(--primary);">🔬 原理调用：模型建构 + 表达反思</span></p>
+    <p><strong>建构步骤：</strong></p>
+    <ol class="step-list">
+      <li>梳理时、分、秒三者之间的换算关系</li>
+      <li>设计视觉呈现方式（箭头、阶梯、转盘等）</li>
+      <li>编写记忆口诀</li>
+      <li>制作成品（A4大小）</li>
+    </ol>
+    <p><strong>成果：</strong>一页A4"时间换算魔法书"（含换算关系图 + 记忆口诀）</p>
+    <span class="check-badge">✅ 自评：是否包含时、分、秒三者关系？图示是否清晰？口诀是否朗朗上口？</span>
+  </div>
+  <div class="card" id="case-5" style="display:none;">
+    <h3>案例五：古诗中的时间</h3>
+    <p style="color:var(--text-secondary);margin-bottom:6px;"><strong>情境：</strong>"一寸光阴一寸金""白日依山尽""春眠不觉晓"……古人是怎么感受和度量时间的？</p>
+    <p><strong>任务：</strong>选择一首含时间描写的古诗，用数学知识解析隐藏的时间信息</p>
+    <p><span style="color:var(--primary);">🔬 原理调用：问题驱动 + 情境锚定</span></p>
+    <p><strong>建构步骤：</strong></p>
+    <ol class="step-list">
+      <li>选一首含时间描写的古诗</li>
+      <li>找出时间词（朝、暮、午、漏、更等）</li>
+      <li>推测对应现代时间</li>
+      <li>换算成分钟/秒</li>
+      <li>写出解析</li>
+    </ol>
+    <p><strong>成果：</strong>1份"古诗时间解析卡"（原文 + 时间词注释 + 换算结果）</p>
+    <span class="check-badge">✅ 自评：是否准确进行了时间换算？解析是否有依据？</span>
+  </div>
+  <div class="card" id="case-6" style="display:none;">
+    <h3>案例六：没有钟表的世界</h3>
+    <p style="color:var(--text-secondary);margin-bottom:6px;"><strong>情境：</strong>假设突然有一天，所有的钟表和手机都没电了，你怎么知道时间？</p>
+    <p><strong>任务：</strong>设计一套"无钟表时间判断方案"</p>
+    <p><span style="color:var(--primary);">🔬 原理调用：情境锚定 + 表达反思</span></p>
+    <p><strong>建构步骤：</strong></p>
+    <ol class="step-list">
+      <li>想想古人如何判断时间（日晷、沙漏、燃香等）</li>
+      <li>列出可用的自然线索（太阳位置、影子长度等）</li>
+      <li>设计至少3种判断方法</li>
+      <li>实际测试方法的准确性</li>
+    </ol>
+    <p><strong>成果：</strong>1份"无钟表时间判断手记"（含方法 + 测试记录）</p>
+    <span class="check-badge">✅ 自评：方法是否可行？是否进行了实际测试？</span>
+  </div>
+  <div class="card" id="case-7" style="display:none;">
+    <h3>案例七：班级时间管家系统</h3>
+    <p style="color:var(--text-secondary);margin-bottom:6px;"><strong>情境：</strong>班级里总是有人迟到、交作业拖延、值日超时……如何帮全班同学管理时间？</p>
+    <p><strong>任务：</strong>综合运用前6个案例的成果，设计一个"班级时间管家系统"方案</p>
+    <p><span style="color:var(--primary);">🔬 原理调用：全部5条原理综合运用</span></p>
+    <p><strong>建构步骤：</strong></p>
+    <ol class="step-list">
+      <li>分析班级时间痛点（迟到、拖延、超时等）</li>
+      <li>借鉴前6个案例的成果和方法</li>
+      <li>设计方案（含规则、工具、奖惩机制）</li>
+      <li>制作原型（手绘或卡片）</li>
+      <li>向全班展示并收集反馈</li>
+    </ol>
+    <p><strong>成果：</strong>1份"班级时间管家系统"设计方案</p>
+    <span class="check-badge">✅ 自评：方案是否针对真实问题？是否易于执行？是否有创意？</span>
+  </div>
+</div>
+
+<div class="card" style="text-align:center;">
+  <p style="color:var(--text-secondary);">💡 提示：从案例一到案例七，难度逐步升级。建议从最简单的"个人时间画像"开始，一步步挑战自己！</p>
+</div>
+
+</div>
+<script>
+function showCase(n) {
+  for (let i = 1; i <= 7; i++) {
+    document.getElementById('case-' + i).style.display = 'none';
+  }
+  document.getElementById('case-' + n).style.display = 'block';
+}
+</script>
+</body>
+</html>

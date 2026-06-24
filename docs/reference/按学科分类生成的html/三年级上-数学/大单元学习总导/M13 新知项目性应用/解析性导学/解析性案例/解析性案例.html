@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块七 解析性适配案例 — 三年级上数学</title>
+<style>
+  :root {
+    --primary: #1677ff;
+    --primary-hover: #4096ff;
+    --accent: #69b1ff;
+    --bg: #f0f5ff;
+    --card-bg: #ffffff;
+    --font-body: 18px;
+    --font-h1: 28px;
+    --font-h2: 22px;
+    --line-height: 1.8;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: var(--font-body);
+    line-height: var(--line-height);
+    background: var(--bg);
+    color: #1f1f1f;
+    width: 100%;
+    min-height: 100vh;
+  }
+
+  .container {
+    width: 100%;
+    padding: 24px 32px;
+  }
+
+  h1 {
+    font-size: var(--font-h1);
+    color: var(--primary);
+    text-align: center;
+    margin-bottom: 12px;
+    position: relative;
+  }
+
+  h1::after {
+    content: '';
+    display: block;
+    width: 80px;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    margin: 10px auto 0;
+    border-radius: 2px;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #666;
+    font-size: 16px;
+    margin-bottom: 32px;
+  }
+
+  .cards-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    width: 100%;
+  }
+
+  .card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 28px 32px;
+    box-shadow: 0 2px 12px rgba(22,119,255,0.08);
+    border-left: 5px solid var(--primary);
+    transition: box-shadow 0.3s ease;
+    width: 100%;
+  }
+
+  .card:hover {
+    box-shadow: 0 4px 24px rgba(22,119,255,0.14);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .card-header h2 {
+    font-size: var(--font-h2);
+    color: var(--primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .card-header .badge {
+    display: inline-block;
+    background: var(--primary);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 2px 12px;
+    border-radius: 20px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  .toggle-icon {
+    font-size: 20px;
+    color: var(--primary);
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+  }
+
+  .card-header.active .toggle-icon {
+    transform: rotate(180deg);
+  }
+
+  .card-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease, padding 0.3s ease;
+    padding-top: 0;
+  }
+
+  .card-body.open {
+    max-height: 6000px;
+    padding-top: 20px;
+  }
+
+  .card-body p {
+    margin-bottom: 12px;
+  }
+
+  .card-body strong {
+    color: var(--primary);
+  }
+
+  .section-label {
+    display: inline-block;
+    background: var(--bg);
+    color: var(--primary);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 2px 12px;
+    border-radius: 4px;
+    margin: 14px 0 8px;
+  }
+
+  .section-label.first {
+    margin-top: 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 16px;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  table th {
+    background: var(--primary);
+    color: #fff;
+    padding: 10px 12px;
+    text-align: center;
+    font-weight: 600;
+  }
+
+  table td {
+    border: 1px solid #e8e8e8;
+    padding: 9px 12px;
+    text-align: center;
+  }
+
+  table tr:nth-child(even) {
+    background: #fafbff;
+  }
+
+  table tr:hover {
+    background: #e6f0ff;
+  }
+
+  .btn {
+    display: inline-block;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    font-size: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.25s ease, transform 0.15s ease;
+    margin: 6px 6px 6px 0;
+    font-family: inherit;
+  }
+
+  .btn:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+  }
+
+  .btn:active {
+    transform: scale(0.97);
+  }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--primary);
+    border: 2px solid var(--primary);
+  }
+
+  .btn-outline:hover {
+    background: var(--primary);
+    color: #fff;
+  }
+
+  .btn-success {
+    background: #52c41a;
+  }
+
+  .btn-success:hover {
+    background: #73d13d;
+  }
+
+  .btn-warning {
+    background: #faad14;
+    color: #333;
+  }
+
+  .btn-warning:hover {
+    background: #ffc53d;
+  }
+
+  .result-box {
+    background: #f6ffed;
+    border: 2px solid #b7eb8f;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 14px 0;
+    font-size: 17px;
+    display: none;
+  }
+
+  .result-box.show {
+    display: block;
+    animation: fadeSlideIn 0.4s ease;
+  }
+
+  .result-box.blue {
+    background: #e6f0ff;
+    border-color: var(--accent);
+  }
+
+  .result-box.yellow {
+    background: #fffbe6;
+    border-color: #ffe58f;
+  }
+
+  .tip-box {
+    background: #fff7e6;
+    border-left: 4px solid #fa8c16;
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin: 14px 0;
+  }
+
+  .tip-box.green {
+    background: #f6ffed;
+    border-left-color: #52c41a;
+  }
+
+  .tip-box.blue {
+    background: #e6f0ff;
+    border-left-color: var(--primary);
+  }
+
+  .highlight {
+    color: var(--primary);
+    font-weight: 600;
+  }
+
+  .emoji-big {
+    font-size: 32px;
+    display: inline-block;
+    margin-right: 8px;
+  }
+
+  @keyframes fadeSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+
+  .pulse {
+    animation: pulse 1.5s ease infinite;
+  }
+
+  .reflection-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 12px;
+  }
+
+  @media (max-width: 640px) {
+    .container {
+      padding: 16px;
+    }
+    .card {
+      padding: 18px 16px;
+    }
+    .reflection-grid {
+      grid-template-columns: 1fr;
+    }
+    table {
+      font-size: 14px;
+    }
+    table th,
+    table td {
+      padding: 6px 8px;
+    }
+  }
+
+  .progress-bar-wrap {
+    background: #f0f0f0;
+    border-radius: 10px;
+    height: 12px;
+    margin: 10px 0;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    border-radius: 10px;
+    width: 0%;
+    transition: width 1.2s ease;
+  }
+
+  .step-list {
+    list-style: none;
+    counter-reset: step;
+    margin: 10px 0;
+  }
+
+  .step-list li {
+    counter-increment: step;
+    padding: 6px 0 6px 40px;
+    position: relative;
+  }
+
+  .step-list li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 6px;
+    width: 28px;
+    height: 28px;
+    background: var(--primary);
+    color: #fff;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 28px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .tag {
+    display: inline-block;
+    font-size: 13px;
+    padding: 1px 10px;
+    border-radius: 12px;
+    margin: 2px 3px;
+  }
+
+  .tag-blue { background: #e6f0ff; color: var(--primary); }
+  .tag-green { background: #f6ffed; color: #389e0d; }
+  .tag-orange { background: #fff7e6; color: #d46b08; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h1>模块七 解析性适配案例</h1>
+<p class="subtitle">三年级上学期 · 数学 · 经过时间计算与数据分析</p>
+
+<div class="cards-grid">
+
+<!-- ============================================================ -->
+<!-- 案例1 -->
+<!-- ============================================================ -->
+<div class="card">
+  <div class="card-header active" onclick="toggleCard(this)">
+    <h2><span class="emoji-big">🥟</span>案例1：生活情境——早餐时间的"快"与"慢"<span class="badge">点击收缩</span></h2>
+    <span class="toggle-icon">&#9660;</span>
+  </div>
+  <div class="card-body open">
+    <span class="section-label first">案例材料</span>
+    <p>小丽早上7:20起床，洗漱10分钟，早餐15分钟，穿校服5分钟，收拾书包3分钟。她觉得自己动作很快，但好几次7:55出门还是迟到了（学校8:00上课，走路到校需要10分钟）。小丽很委屈：明明自己没偷懒，为什么总是迟到呢？</p>
+
+    <span class="section-label">解析任务</span>
+    <p>小丽的问题出在哪里？请你用"经过时间计算"方法从起床倒推，找出她能准时到校的<strong>最晚起床时间</strong>。</p>
+
+    <span class="section-label">解析路径</span>
+    <ol class="step-list">
+      <li>识别核心问题——小丽的"时间账"哪里算错了？</li>
+      <li>拆解每个环节的用时</li>
+      <li>从8:00倒推，倒着算每个环节的最晚时间</li>
+      <li>找到最晚起床时间</li>
+      <li>对比她现在的时间，给出建议</li>
+    </ol>
+
+    <span class="section-label">原理调用提示</span>
+    <p><span class="tag tag-blue">信息拆解原理</span>把早上的活动拆成一个个环节；<span class="tag tag-blue">对比分析原理</span>对比她的实际安排和理想时间安排。</p>
+
+    <span class="section-label">分析记录表</span>
+    <table>
+      <thead>
+        <tr><th>环节</th><th>用时</th><th>最晚开始时间</th><th>实际情况</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>洗漱</td><td>10分钟</td><td>7:12</td><td>7:20-7:30</td></tr>
+        <tr><td>早餐</td><td>15分钟</td><td>7:22</td><td>7:30-7:45</td></tr>
+        <tr><td>穿校服</td><td>5分钟</td><td>7:37</td><td>7:45-7:50</td></tr>
+        <tr><td>收拾书包</td><td>3分钟</td><td>7:42</td><td>7:50-7:53</td></tr>
+        <tr><td>走路到校</td><td>10分钟</td><td>7:50</td><td>7:55-8:05</td></tr>
+      </tbody>
+    </table>
+
+    <button class="btn" onclick="showResult('res1')">看看倒推过程</button>
+    <div id="res1" class="result-box show">
+      <strong>倒推过程：</strong><br>
+      8:00到校 ← 最晚7:50出门（走路10分钟）<br>
+      7:50出门 ← 最晚7:47开始收拾（收拾3分钟）<br>
+      7:47开始收拾 ← 最晚7:42开始穿校服（穿校服5分钟）<br>
+      7:42穿校服 ← 最晚7:27开始吃早餐（早餐15分钟）<br>
+      7:27吃早餐 ← 最晚7:12开始洗漱（洗漱10分钟）<br><br>
+      <strong>结论：小丽最晚应该7:12起床！</strong><br>
+      她现在7:20起床，已经晚了8分钟，所以才会迟到。😅
+    </div>
+
+    <button class="btn btn-outline" onclick="showResult('res1b')">还有一个小秘密</button>
+    <div id="res1b" class="result-box yellow">
+      <strong>等等，再算一笔账：</strong><br>
+      小丽7:20起床，7:55出门，中间有 <strong>35分钟</strong>。<br>
+      所有活动加起来：10+15+5+3 = <strong>33分钟</strong>。<br>
+      理论上35 &gt; 33，应该够用！<br>
+      <strong>那她为什么还迟到？</strong> 可能的原因是：早餐实际吃了20分钟？穿校服时走神了？书包收拾了两遍？<br>
+      这说明：<span class="highlight">"计划时间"和"实际时间"往往是两码事！</span>
+    </div>
+
+    <div class="tip-box blue">
+      <strong>小技巧：</strong> 把闹钟提前8分钟，早点起床，一天的节奏都会从容很多！
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 案例2 -->
+<!-- ============================================================ -->
+<div class="card">
+  <div class="card-header" onclick="toggleCard(this)">
+    <h2><span class="emoji-big">🏫</span>案例2：校园情境——课间够不够用？<span class="badge">点击展开</span></h2>
+    <span class="toggle-icon">&#9660;</span>
+  </div>
+  <div class="card-body">
+    <span class="section-label first">案例材料</span>
+    <p>课间只有10分钟。你需要做的事：去厕所（来回3分钟）、接水（来回2分钟）、准备下节课用品（1分钟）、和好朋友聊天（3分钟）、预习下节课（5分钟）。可是课间只有10分钟，怎么办？</p>
+
+    <span class="section-label">解析任务</span>
+    <p>列出所有要做的事的总时间，判断是否够用。如果不够，提出你的<strong>取舍方案</strong>。</p>
+
+    <span class="section-label">解析路径</span>
+    <ol class="step-list">
+      <li>列出所有事项</li>
+      <li>计算总时间</li>
+      <li>判断是否超过10分钟</li>
+      <li>如果超时，分析哪些可以合并、缩短或舍弃</li>
+    </ol>
+
+    <span class="section-label">原理调用提示</span>
+    <p><span class="tag tag-blue">信息拆解原理</span>逐项拆解每个事项；<span class="tag tag-blue">对比分析原理</span>对比"想要的"和"能做到的"。</p>
+
+    <span class="section-label">分析记录表</span>
+    <table>
+      <thead>
+        <tr><th>事项</th><th>预计用时</th><th>优先级</th><th>是否必须做</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>去厕所</td><td>3分钟</td><td><span class="tag tag-orange">高</span></td><td>是</td></tr>
+        <tr><td>接水</td><td>2分钟</td><td><span class="tag tag-orange">高</span></td><td>是</td></tr>
+        <tr><td>准备用品</td><td>1分钟</td><td><span class="tag tag-orange">高</span></td><td>是</td></tr>
+        <tr><td>和好朋友聊天</td><td>3分钟</td><td><span class="tag tag-green">低</span></td><td>否</td></tr>
+        <tr><td>预习下节课</td><td>5分钟</td><td><span class="tag tag-blue">中</span></td><td>最好做</td></tr>
+      </tbody>
+    </table>
+
+    <button class="btn" onclick="showResult('res2')">看看我的方案</button>
+    <div id="res2" class="result-box">
+      <strong>总时间计算：</strong> 3 + 2 + 1 + 3 + 5 = <strong>14分钟</strong> &gt; 10分钟 ❌<br><br>
+      <strong>方案A（必须做的事）：</strong> 去厕所3分 + 接水2分 + 准备用品1分 = <strong>6分钟</strong>，还剩4分钟。<br>
+      <strong>方案B（小编推荐）：</strong> 去厕所3分 + 接水2分 + 准备用品1分 + 预习3分 + 聊天1分 = <strong>10分钟</strong> ✅<br>
+      <strong>方案C（学霸型）：</strong> 去厕所3分 + 接水2分 + 准备用品1分 + 预习4分 = <strong>10分钟</strong> ✅<br><br>
+      聊天可以等中午再聊，或者一边接水一边聊几句呀！
+    </div>
+
+    <button class="btn btn-outline" onclick="showResult('res2b')">时间管理小窍门</button>
+    <div id="res2b" class="result-box blue">
+      <strong>课间时间管理三原则：</strong><br>
+      1. <strong>先做必须做的</strong>（厕所、喝水、准备用品）<br>
+      2. <strong>能合并的合并</strong>（一边接水一边和同学聊天）<br>
+      3. <strong>有舍才有得</strong>（预习和聊天选一个）<br><br>
+      记住：课间只有10分钟，学会取舍很重要！
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 案例3 -->
+<!-- ============================================================ -->
+<div class="card">
+  <div class="card-header" onclick="toggleCard(this)">
+    <h2><span class="emoji-big">📚</span>案例3：家庭情境——周末作业时间安排<span class="badge">点击展开</span></h2>
+    <span class="toggle-icon">&#9660;</span>
+  </div>
+  <div class="card-body">
+    <span class="section-label first">案例材料</span>
+    <p>周六上午8:00-12:00，小红有4项任务：数学作业（预计30分钟）、语文作文（预计45分钟）、英语听力（预计20分钟）、阅读打卡（预计15分钟）。小红计划每完成一项休息10分钟。</p>
+
+    <span class="section-label">解析任务</span>
+    <p>计算小红做完所有作业需要多少时间，判断她能不能在12:00前完成。如果能，最快几点完成？</p>
+
+    <span class="section-label">解析路径</span>
+    <ol class="step-list">
+      <li>计算各项作业的时间总和</li>
+      <li>计算休息的总时间</li>
+      <li>计算总耗时</li>
+      <li>判断是否小于4小时（8:00-12:00）</li>
+      <li>给出结论</li>
+    </ol>
+
+    <span class="section-label">分析记录表</span>
+    <table>
+      <thead>
+        <tr><th>任务</th><th>预计用时</th><th>开始时间</th><th>结束时间</th><th>累计用时</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>数学作业</td><td>30分钟</td><td>8:00</td><td>8:30</td><td>30分钟</td></tr>
+        <tr><td>休息</td><td>10分钟</td><td>8:30</td><td>8:40</td><td>40分钟</td></tr>
+        <tr><td>语文作文</td><td>45分钟</td><td>8:40</td><td>9:25</td><td>1小时25分</td></tr>
+        <tr><td>休息</td><td>10分钟</td><td>9:25</td><td>9:35</td><td>1小时35分</td></tr>
+        <tr><td>英语听力</td><td>20分钟</td><td>9:35</td><td>9:55</td><td>1小时55分</td></tr>
+        <tr><td>休息</td><td>10分钟</td><td>9:55</td><td>10:05</td><td>2小时05分</td></tr>
+        <tr><td>阅读打卡</td><td>15分钟</td><td>10:05</td><td>10:20</td><td>2小时20分</td></tr>
+      </tbody>
+    </table>
+
+    <button class="btn" onclick="showResult('res3')">看看计算结果</button>
+    <div id="res3" class="result-box show">
+      <strong>计算过程：</strong><br>
+      作业总时间 = 30 + 45 + 20 + 15 = <strong>110分钟</strong><br>
+      休息总时间 = 10 &times; 3 = <strong>30分钟</strong>（4项任务之间休息3次）<br>
+      总耗时 = 110 + 30 = <strong>140分钟 = 2小时20分钟</strong><br><br>
+      <strong>结论：8:00开始，10:20就能完成！</strong> ✅<br>
+      距离12:00还有1小时40分钟，完全可以出去玩啦！🎉
+    </div>
+
+    <button class="btn btn-outline btn-warning" onclick="showResult('res3b')">但是要注意……</button>
+    <div id="res3b" class="result-box yellow">
+      <strong>现实中的"陷阱"：</strong><br>
+      小红语文作文经常超时！如果作文写了60分钟（超了15分钟）：<br>
+      总耗时就变成了 <strong>155分钟</strong>，结束时间推迟到<strong>10:35</strong>。<br>
+      虽然还是能在12:00前完成，但会影响下面的安排。<br><br>
+      <span class="highlight">给你的建议：</span> 每项任务给自己定一个"闹钟提醒"，超时了就暂时停笔、先做下一项，回头再来补！
+    </div>
+
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progress3" style="width:58%"></div>
+    </div>
+    <p style="font-size:14px;color:#888;">进度：8:00 → 10:20（已完成任务的58%）</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 案例4 -->
+<!-- ============================================================ -->
+<div class="card">
+  <div class="card-header" onclick="toggleCard(this)">
+    <h2><span class="emoji-big">🏃</span>案例4：学科情境——解决"时间差"谜题<span class="badge">点击展开</span></h2>
+    <span class="toggle-icon">&#9660;</span>
+  </div>
+  <div class="card-body">
+    <span class="section-label first">案例材料</span>
+    <p>校运会60米跑比赛，三位同学的成绩：<br>
+    甲同学：<strong>9.8秒</strong> &nbsp; 乙同学：<strong>10.2秒</strong> &nbsp; 丙同学：<strong>11.5秒</strong><br>
+    裁判说："冠军和第三名差了1.7秒。"</p>
+
+    <span class="section-label">解析任务</span>
+    <ol style="margin-left:20px;margin-bottom:10px;">
+      <li>验证裁判说的1.7秒对不对</li>
+      <li>甲比乙快多少秒？</li>
+      <li>乙比丙快多少秒？</li>
+    </ol>
+
+    <span class="section-label">分析记录表</span>
+    <table>
+      <thead>
+        <tr><th>对比</th><th>计算</th><th>差距（秒）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>冠军（甲）vs 第三名（丙）</td><td>11.5 - 9.8</td><td>1.7秒 ✅ 裁判正确</td></tr>
+        <tr><td>甲 vs 乙</td><td>10.2 - 9.8</td><td>0.4秒</td></tr>
+        <tr><td>乙 vs 丙</td><td>11.5 - 10.2</td><td>1.3秒</td></tr>
+      </tbody>
+    </table>
+
+    <button class="btn" onclick="showResult('res4')">验证答案</button>
+    <div id="res4" class="result-box show">
+      <strong>11.5 - 9.8 = 1.7秒</strong> ✅ 裁判说得对！<br><br>
+      <strong>甲比乙快多少？</strong> 10.2 - 9.8 = <strong>0.4秒</strong><br>
+      <strong>乙比丙快多少？</strong> 11.5 - 10.2 = <strong>1.3秒</strong><br><br>
+      注意：在跑步比赛中，<span class="highlight">数字越小表示跑得越快！</span>
+    </div>
+
+    <div class="tip-box green">
+      <strong>重点理解：</strong> 时间是个"反着来"的量——秒数越少，说明跑得越快。甲的成绩9.8秒最小，所以他是冠军！乙10.2秒居中，丙11.5秒最慢是第三名。计算"快多少"时，要用大的数减小的数。
+    </div>
+
+    <button class="btn btn-outline" onclick="showResult('res4b')">考考你</button>
+    <div id="res4b" class="result-box blue">
+      <strong>想一想：</strong> 如果又有第四名同学跑了10.0秒，他比甲慢多少？比乙快多少？<br>
+      <span style="color:#999;">（点击按钮后想一想答案，再找老师对答案哦）</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 案例5 -->
+<!-- ============================================================ -->
+<div class="card">
+  <div class="card-header" onclick="toggleCard(this)">
+    <h2><span class="emoji-big">❤️</span>案例5：跨学科情境——生物课的"1分钟心跳"<span class="badge">点击展开</span></h2>
+    <span class="toggle-icon">&#9660;</span>
+  </div>
+  <div class="card-body">
+    <span class="section-label first">案例材料</span>
+    <p>科学课上，老师让你测量自己1分钟的心跳次数，你测了3次：<br>
+    第1次（静坐）：<strong>78次</strong><br>
+    第2次（慢走1分钟后）：<strong>96次</strong><br>
+    第3次（原地跑1分钟后）：<strong>132次</strong></p>
+
+    <span class="section-label">解析任务</span>
+    <p>计算3次心跳的变化量：第2次-第1次、第3次-第2次、第3次-第1次。并解释为什么运动后心跳会加快。</p>
+
+    <span class="section-label">分析记录表</span>
+    <table>
+      <thead>
+        <tr><th>状态</th><th>心跳次数</th><th>比前一次增加</th><th>可能的生理原因</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>静坐</td><td>78次</td><td>—</td><td>身体休息中，心跳平稳</td></tr>
+        <tr><td>慢走1分钟后</td><td>96次</td><td>+18次</td><td>肌肉开始活动，需要更多血液</td></tr>
+        <tr><td>原地跑1分钟后</td><td>132次</td><td>+36次</td><td>运动剧烈，需要大量氧气</td></tr>
+      </tbody>
+    </table>
+
+    <button class="btn" onclick="showResult('res5')">看看变化量</button>
+    <div id="res5" class="result-box show">
+      <strong>变化量计算：</strong><br>
+      96 - 78 = <strong>18次</strong>（慢走比静坐多跳了18次）<br>
+      132 - 96 = <strong>36次</strong>（跑步比慢走多跳了36次）<br>
+      132 - 78 = <strong>54次</strong>（跑步比静坐多跳了54次）<br><br>
+      <strong>运动越剧烈，心跳增加越多！</strong>
+    </div>
+
+    <button class="btn btn-success" onclick="showResult('res5b')">为什么会这样？</button>
+    <div id="res5b" class="result-box green">
+      <strong>科学小知识：</strong><br>
+      运动的时候，我们的肌肉需要更多的 <strong>氧气</strong> 和 <strong>营养</strong>。<br>
+      心脏就像一个"水泵"，需要跳得更快、更有力，才能把血液输送到全身。<br>
+      所以运动越剧烈，心脏就跳得越快！<br><br>
+      <span class="highlight">数学帮我们算出了"快了多少"，科学帮我们解释了"为什么会快"。</span>
+    </div>
+
+    <div class="tip-box blue">
+      <strong>自己试一试：</strong> 测一下你安静时和运动后的心跳，算算差了多少次！
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 案例6 -->
+<!-- ============================================================ -->
+<div class="card">
+  <div class="card-header" onclick="toggleCard(this)">
+    <h2><span class="emoji-big">🚴</span>案例6：社会情境——城市交通拥堵时间分析<span class="badge">点击展开</span></h2>
+    <span class="toggle-icon">&#9660;</span>
+  </div>
+  <div class="card-body">
+    <span class="section-label first">案例材料</span>
+    <p>某城市有两条上学路线：<br>
+    路线A（走大路）：3公里，通常骑车15分钟，但早高峰堵车可能需25分钟<br>
+    路线B（走小路）：2.5公里，通常骑车12分钟，但下雨天路滑需18分钟</p>
+
+    <span class="section-label">解析任务</span>
+    <p>如果你是家长，你会建议孩子选哪条路线？请考虑"最佳情况"和"最差情况"，比较两条路线的安全系数和时间可靠性。</p>
+
+    <span class="section-label">分析记录表</span>
+    <table>
+      <thead>
+        <tr><th>路线</th><th>最好用时</th><th>最差用时</th><th>波动范围</th><th>安全性</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>路线A（大路）</td><td>15分钟</td><td>25分钟</td><td>10分钟</td><td>较高（有非机动车道）</td></tr>
+        <tr><td>路线B（小路）</td><td>12分钟</td><td>18分钟</td><td>6分钟</td><td>较低（无专用道）</td></tr>
+      </tbody>
+    </table>
+
+    <button class="btn" onclick="showResult('res6')">分析结论</button>
+    <div id="res6" class="result-box show">
+      <strong>对比分析：</strong><br>
+      路线A波动范围 = 25 - 15 = <strong>10分钟</strong>（不稳定）<br>
+      路线B波动范围 = 18 - 12 = <strong>6分钟</strong>（更稳定）<br><br>
+      <strong>两条路线各有优劣：</strong><br>
+      🛣️ 路线A（大路）：安全但时间不确定，可能堵车<br>
+      🚲 路线B（小路）：时间稳定但安全性差一些<br><br>
+      <strong>我的建议：</strong> 如果更看重安全，选A；如果更看重准时，选B。最好的办法——两种都试一下，根据当天情况选择！
+    </div>
+
+    <button class="btn btn-outline" onclick="showResult('res6b')">更多思考</button>
+    <div id="res6b" class="result-box yellow">
+      如果今天下雨，路线B路滑需要18分钟，而路线A堵车需要25分钟——你会选哪条？<br>
+      如果今天天气好，路线A只要15分钟，路线B只要12分钟——你又选哪条？<br><br>
+      这告诉我们：<span class="highlight">选择不是一成不变的，要根据实际情况灵活判断！</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 案例7 -->
+<!-- ============================================================ -->
+<div class="card">
+  <div class="card-header" onclick="toggleCard(this)">
+    <h2><span class="emoji-big">⏰</span>案例7：综合迁移——"我的24小时"数据分析<span class="badge">点击展开</span></h2>
+    <span class="toggle-icon">&#9660;</span>
+  </div>
+  <div class="card-body">
+    <span class="section-label first">案例材料</span>
+    <p>你记录了昨天一天的活动时间：<br>
+    睡眠：21:30-6:30（9小时）<br>
+    上学：7:00-16:00（含上课、课间、午饭）<br>
+    做作业：16:30-18:00（1.5小时）<br>
+    晚餐：18:00-18:40<br>
+    自由活动：18:40-20:00（1小时20分）<br>
+    阅读：20:00-21:00（1小时）<br>
+    洗漱准备：21:00-21:30</p>
+
+    <span class="section-label">解析任务</span>
+    <p>验证以上所有活动加起来是否等于24小时。如果不等，找出"丢失的时间"在哪里。最后写一段"你的时间使用分析"。</p>
+
+    <span class="section-label">原理调用提示</span>
+    <p><span class="tag tag-blue">信息拆解原理</span> <span class="tag tag-green">对比分析原理</span> <span class="tag tag-orange">追问归因原理</span>综合运用全部3条解析性原理！</p>
+
+    <span class="section-label">分析记录表</span>
+    <table>
+      <thead>
+        <tr><th>活动</th><th>标注时长</th><th>累计时长</th><th>剩余时间</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>睡眠</td><td>9小时</td><td>9小时</td><td>15小时</td></tr>
+        <tr><td>上学时段</td><td>9小时</td><td>18小时</td><td>6小时</td></tr>
+        <tr><td>做作业</td><td>1小时30分</td><td>19小时30分</td><td>4小时30分</td></tr>
+        <tr><td>晚餐</td><td>40分</td><td>20小时10分</td><td>3小时50分</td></tr>
+        <tr><td>自由活动</td><td>1小时20分</td><td>21小时30分</td><td>2小时30分</td></tr>
+        <tr><td>阅读</td><td>1小时</td><td>22小时30分</td><td>1小时30分</td></tr>
+        <tr><td>洗漱准备</td><td>30分</td><td>23小时</td><td>1小时</td></tr>
+      </tbody>
+    </table>
+
+    <button class="btn" onclick="showResult('res7')">找出丢失的时间</button>
+    <div id="res7" class="result-box show">
+      <strong>总时间计算：</strong><br>
+      9小时 + 9小时 + 1.5小时 + 0.67小时 + 1.33小时 + 1小时 + 0.5小时<br>
+      = <strong>约23小时</strong> 😮<br><br>
+      少了大约 <strong>1小时</strong>！这一小时去哪了？<br><br>
+      <strong>可能的"时间小偷"：</strong><br>
+      🚶 上学、放学路上：约20分钟<br>
+      🚌 等车时间：约10分钟<br>
+      💭 发呆、走神：约15分钟<br>
+      🔍 找东西（橡皮、尺子）：约10分钟<br>
+      🧐 犹豫"先做什么"：约5分钟<br><br>
+      <span class="highlight">这些"小片段"加起来，就是1个小时！</span>
+    </div>
+
+    <button class="btn btn-success" onclick="showResult('res7b')">我的时间使用分析</button>
+    <div id="res7b" class="result-box green">
+      <strong>时间使用分析报告：</strong><br>
+      从以上数据可以看出，我的一天中 <strong>睡眠</strong> 和 <strong>上学</strong> 占据了18个小时，是一天中的"大头"。剩下的6个小时里，做作业、吃饭、自由活动、阅读和洗漱安排得还算合理。<br><br>
+      但我发现了一个问题：<strong>"丢失的1小时"</strong> 提醒我，日常生活中的碎片时间很容易被忽略。如果我们能把这些"碎片"利用起来——比如在等车时背一首古诗、在课间整理一下桌面——每天就能多出很多高效时间！<br><br>
+      <strong>改进计划：</strong> 明天开始记录每一个"碎片时间"，看看能不能找回这1小时！💪
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 综合反思 -->
+<!-- ============================================================ -->
+<div class="card" style="border-left-color:#fa8c16;">
+  <div class="card-header" onclick="toggleCard(this)">
+    <h2><span class="emoji-big">🤔</span>综合反思<span class="badge">点击展开</span></h2>
+    <span class="toggle-icon">&#9660;</span>
+  </div>
+  <div class="card-body">
+    <p>学完了7个案例，来做个小小的自我反思吧！下面的问题可以和你同桌一起讨论，也可以写在自己的笔记本上。</p>
+
+    <div class="reflection-grid">
+      <div class="tip-box">
+        <strong>1. 这7个案例中，哪个最容易分析？</strong>
+        <p style="margin-top:6px;font-size:16px;">想一想：哪个案例你一看到就知道怎么做？是因为数字简单，还是因为和生活很贴近？</p>
+      </div>
+      <div class="tip-box">
+        <strong>2. 哪个案例最难？困难在哪里？</strong>
+        <p style="margin-top:6px;font-size:16px;">是倒推时间让你晕了？还是心跳数据让你想不通？把困难写下来，问老师！</p>
+      </div>
+      <div class="tip-box green">
+        <strong>3. 三条原理中，哪一条你最常用？</strong>
+        <p style="margin-top:6px;font-size:16px;">信息拆解？对比分析？追问归因？选一个你用得最多的，给自己点赞！👍</p>
+      </div>
+      <div class="tip-box green">
+        <strong>4. 哪条原理你还不太会用？</strong>
+        <p style="margin-top:6px;font-size:16px;">可以怎么练习？比如追问归因——每天问自己3个"为什么"，慢慢就熟练了！</p>
+      </div>
+    </div>
+
+    <div class="tip-box blue" style="margin-top:16px;">
+      <strong>5. 这些案例如何帮助你完成本模块的最终项目成果？</strong>
+      <p style="margin-top:6px;font-size:16px;">通过这7个案例，你学会了：✅ 用倒推法计算经过时间 ✅ 学会取舍安排时间 ✅ 对比分析不同方案 ✅ 计算时间差和变化量 ✅ 找出"丢失的时间"。这些技能组合起来，就能完成"我的时间管理大师"项目成果啦！</p>
+    </div>
+
+    <div style="text-align:center;margin-top:18px;">
+      <button class="btn btn-success pulse" onclick="alert('你已经完成了模块七所有案例的学习！给自己鼓鼓掌吧！👏')">我学完了！点我庆祝 🎉</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /cards-grid -->
+
+</div><!-- /container -->
+
+<script>
+function toggleCard(headerEl) {
+  const card = headerEl.closest('.card');
+  const body = card.querySelector('.card-body');
+  const badge = card.querySelector('.badge');
+
+  headerEl.classList.toggle('active');
+  body.classList.toggle('open');
+
+  if (body.classList.contains('open')) {
+    badge.textContent = '点击收缩';
+  } else {
+    badge.textContent = '点击展开';
+  }
+}
+
+function showResult(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('show');
+}
+</script>
+
+</body>
+</html>

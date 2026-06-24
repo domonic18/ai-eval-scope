@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VR脚手架 - 沉浸体验</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+}
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, #141414, #2d2d2d);
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.header::after {
+  content: "🥽";
+  position: absolute;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 56px;
+  opacity: 0.25;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 6px; }
+.header p { font-size: 16px; opacity: 0.9; }
+.section { margin-bottom: 28px; }
+.section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  border-left: 4px solid var(--primary);
+  padding-left: 14px;
+  margin-bottom: 14px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.card h3 { font-size: 20px; color: var(--primary); margin-bottom: 10px; }
+.card p { margin-bottom: 8px; }
+.card ul { padding-left: 20px; margin-bottom: 8px; }
+.card li { margin-bottom: 6px; }
+.task-badge {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  padding: 4px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.table-wrap { overflow-x: auto; margin-top: 10px; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 16px;
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+}
+th { background: var(--primary); color: #fff; font-weight: 600; }
+tr:nth-child(even) { background: var(--bg); }
+tr:hover { background: #e6f0ff; }
+.resource-card {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px;
+  align-items: start;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin-bottom: 10px;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.resource-card:hover { transform: translateX(4px); border-color: var(--primary); }
+.resource-card .rtype {
+  background: var(--primary);
+  color: #fff;
+  text-align: center;
+  padding: 6px 0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.resource-card .rinfo h4 { font-size: 17px; color: var(--text); margin-bottom: 2px; }
+.resource-card .rinfo p { font-size: 15px; color: var(--text-secondary); }
+.alternative-box {
+  background: linear-gradient(135deg, #fff7e6, #fff1cc);
+  border: 1px solid #ffd591;
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-top: 12px;
+}
+.alternative-box h4 { color: #d46b08; margin-bottom: 8px; }
+.alternative-box li { color: var(--text); }
+.interactive-clock {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  border: 4px solid var(--primary);
+  position: relative;
+  margin: 20px auto;
+  background: #fff;
+  box-shadow: 0 0 20px rgba(22,119,255,0.15);
+}
+.interactive-clock .center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  background: var(--primary);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+}
+.hand {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform-origin: 0 50%;
+  border-radius: 2px;
+  transition: transform 2s ease-in-out;
+}
+.hand-second { width: 80px; height: 2px; background: #f5222d; }
+.hand-minute { width: 65px; height: 4px; background: var(--text); }
+.hand-hour { width: 45px; height: 5px; background: var(--text); }
+.number {
+  position: absolute;
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--text);
+}
+.tick { position: absolute; width: 2px; height: 10px; background: var(--border); }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-in { animation: fadeUp 0.5s ease-out; }
+@media (max-width: 600px) {
+  .container { padding: 12px 16px; }
+  .header { padding: 18px 20px; }
+  .header::after { font-size: 40px; right: 12px; }
+  .resource-card { grid-template-columns: 1fr; }
+  .interactive-clock { width: 160px; height: 160px; }
+  .hand-second { width: 64px; }
+  .hand-minute { width: 52px; }
+  .hand-hour { width: 36px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header animate-in">
+  <h1>VR 沉浸体验</h1>
+  <p>虽然没有VR头显，但你可以通过3D模拟和互动观察，获得"置身钟表内部"的体验</p>
+</div>
+
+<div class="section animate-in">
+  <h2>🎯 本任务定位</h2>
+  <div class="card">
+    <p>通过互动观察和操作，感受钟表内部精密的机械结构，理解齿轮传动与指针运动的数学关系。</p>
+    <p>看看齿轮是怎么转动的，感受秒针、分针、时针之间的转速比例关系——<strong>秒针转一圈 = 分针转一小格</strong>。</p>
+  </div>
+</div>
+
+<div class="section animate-in">
+  <h2>🕹 互动钟表模拟</h2>
+  <div class="card" style="text-align:center;">
+    <p style="color:var(--text-secondary);margin-bottom:12px;">👇 点击按钮让指针动起来——观察三根指针的比例关系</p>
+    <div class="interactive-clock" id="clock">
+      <div class="number" style="top:8px;left:50%;transform:translateX(-50%);">12</div>
+      <div class="number" style="top:50%;right:8px;transform:translateY(-50%);">3</div>
+      <div class="number" style="bottom:8px;left:50%;transform:translateX(-50%);">6</div>
+      <div class="number" style="top:50%;left:8px;transform:translateY(-50%);">9</div>
+      <div class="center"></div>
+      <div class="hand hand-hour" id="hourHand" style="width:45px;transform:rotate(0deg) translateX(-50%);"></div>
+      <div class="hand hand-minute" id="minHand" style="width:65px;transform:rotate(0deg) translateX(-50%);"></div>
+      <div class="hand hand-second" id="secHand" style="width:80px;transform:rotate(0deg) translateX(-50%);"></div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px;">
+      <button class="task-badge" style="cursor:pointer;border:none;" onclick="animateClock()">▶ 开始转动</button>
+      <button class="task-badge" style="cursor:pointer;border:none;background:#8c8c8c;" onclick="resetClock()">⏹ 复位</button>
+    </div>
+    <p style="font-size:15px;color:var(--text-secondary);margin-top:10px;">秒针转1圈 → 分针走1小格 → 时针走1/12大格</p>
+  </div>
+</div>
+
+<div class="section animate-in">
+  <h2>🔍 观察任务</h2>
+  <div class="card">
+    <span class="task-badge">🔭 观察</span>
+    <ul>
+      <li>观察齿轮是如何咬合传动的</li>
+      <li>观察秒针、分针、时针之间的转速比例关系（秒针转一圈=分针转一小格）</li>
+      <li><strong>记录</strong>你观察到的3个关键发现</li>
+    </ul>
+  </div>
+</div>
+
+<div class="section animate-in">
+  <h2>✋ 操作任务</h2>
+  <div class="card">
+    <span class="task-badge">👆 操作</span>
+    <ul>
+      <li>用鼠标拖动指针，观察时间的变化（在线工具中）</li>
+      <li>输入一个时间值，看指针如何对应</li>
+      <li>尝试设置"过30分钟后"指针会移动到什么位置</li>
+    </ul>
+  </div>
+</div>
+
+<div class="section animate-in">
+  <h2>📊 记录任务</h2>
+  <div class="card">
+    <span class="task-badge">📝 记录</span>
+    <p style="color:var(--text-secondary);margin-bottom:8px;">完成一个"VR观察记录表"：</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>观察内容</th><th>我看到了什么</th><th>这与数学知识的关系</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>齿轮传动</strong></td>
+            <td style="color:var(--text-secondary);">（等你填写）</td>
+            <td style="color:var(--text-secondary);">（等你填写）</td>
+          </tr>
+          <tr>
+            <td><strong>指针运动</strong></td>
+            <td style="color:var(--text-secondary);">（等你填写）</td>
+            <td style="color:var(--text-secondary);">（等你填写）</td>
+          </tr>
+          <tr>
+            <td><strong>内部结构</strong></td>
+            <td style="color:var(--text-secondary);">（等你填写）</td>
+            <td style="color:var(--text-secondary);">（等你填写）</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="section animate-in">
+  <h2>🌐 VR资源推荐</h2>
+  <div class="card">
+    <div class="resource-card">
+      <div class="rtype" style="background:#722ed1;">3D交互</div>
+      <div class="rinfo">
+        <h4>Clock 3D Viewer</h4>
+        <p>在线搜索 "3D clock interactive" — 可360度旋转观察钟表内部</p>
+      </div>
+    </div>
+    <div class="resource-card">
+      <div class="rtype" style="background:#16a34a;">互动工具</div>
+      <div class="rinfo">
+        <h4>Time Games（在线时钟）</h4>
+        <p>教育类App商店搜索 — 可拖拽指针学习认时间</p>
+      </div>
+    </div>
+    <div class="resource-card">
+      <div class="rtype" style="background:#d46b08;">互动网页</div>
+      <div class="rinfo">
+        <h4>齿轮模拟器</h4>
+        <p>搜索 "gear simulation" — 观察齿轮传动比与时间的关系</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section animate-in">
+  <h2>🔄 替代方案</h2>
+  <div class="card">
+    <p style="color:var(--text-secondary);margin-bottom:8px;">没有VR/3D设备时，试试这些替代方案：</p>
+    <div class="alternative-box">
+      <h4>📺 视频替代</h4>
+      <p>观看"钟表内部结构"拆解视频</p>
+    </div>
+    <div class="alternative-box">
+      <h4>⏰ 实物替代</h4>
+      <p>观察家里的闹钟或手表（如果有透明后盖的更好）</p>
+    </div>
+    <div class="alternative-box">
+      <h4>✂️ 动手替代</h4>
+      <p>用纸板做一个"齿轮传动模型"，自己动手组装</p>
+    </div>
+  </div>
+</div>
+
+</div>
+<script>
+function animateClock() {
+  const h = document.getElementById('hourHand');
+  const m = document.getElementById('minHand');
+  const s = document.getElementById('secHand');
+  const now = new Date();
+  const sec = now.getSeconds();
+  const min = now.getMinutes();
+  const hr = now.getHours() % 12;
+  const secDeg = sec * 6;
+  const minDeg = min * 6 + sec * 0.1;
+  const hrDeg = hr * 30 + min * 0.5;
+  s.style.transition = 'transform 0.5s ease-out';
+  m.style.transition = 'transform 0.5s ease-out';
+  h.style.transition = 'transform 0.5s ease-out';
+  s.style.transform = `rotate(${secDeg}deg) translateX(-50%)`;
+  m.style.transform = `rotate(${minDeg}deg) translateX(-50%)`;
+  h.style.transform = `rotate(${hrDeg}deg) translateX(-50%)`;
+}
+function resetClock() {
+  const h = document.getElementById('hourHand');
+  const m = document.getElementById('minHand');
+  const s = document.getElementById('secHand');
+  s.style.transition = 'transform 0.3s ease';
+  m.style.transition = 'transform 0.3s ease';
+  h.style.transition = 'transform 0.3s ease';
+  s.style.transform = 'rotate(0deg) translateX(-50%)';
+  m.style.transform = 'rotate(0deg) translateX(-50%)';
+  h.style.transform = 'rotate(0deg) translateX(-50%)';
+}
+</script>
+</body>
+</html>

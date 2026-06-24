@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性原理 — 5条核心原理</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); font-size: var(--font-body); line-height: var(--line-height); }
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+.header { background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; padding: 32px 28px; border-radius: var(--border-radius); margin-bottom: 28px; }
+.header h1 { font-size: var(--font-h1); margin: 0 0 8px; }
+.header p { margin: 0; opacity: 0.9; }
+.principles-grid { display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 24px; }
+.principle-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; }
+.principle-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(22,119,255,0.15); }
+.principle-card-header { background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; padding: 14px 20px; display: flex; align-items: center; gap: 12px; }
+.principle-card-header .num { background: rgba(255,255,255,0.25); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; flex-shrink: 0; }
+.principle-card-header h3 { margin: 0; font-size: 18px; }
+.principle-card-body { padding: 16px 20px; }
+.principle-card-body p { margin: 0 0 8px; }
+.principle-card-body .label { display: inline-block; background: var(--bg); color: var(--primary); padding: 2px 10px; border-radius: 10px; font-size: 13px; margin-right: 4px; margin-bottom: 4px; }
+.example-box { background: var(--bg); padding: 10px 14px; border-radius: 6px; margin-top: 8px; font-size: 15px; border-left: 3px solid var(--primary); }
+.example-box strong { color: var(--primary); }
+.section-title { font-size: var(--font-h2); color: var(--primary); margin: 28px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--border); }
+.exercise-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 16px; border-left: 4px solid var(--primary); }
+.exercise-card h3 { margin: 0 0 8px; color: var(--primary); font-size: 18px; }
+.exercise-card p { margin: 0 0 6px; }
+.exercise-card .tags { margin-top: 8px; }
+.reflection-box { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px; }
+.reflection-box h3 { font-size: var(--font-h2); color: var(--primary); margin: 0 0 12px; }
+.reflection-box ol { margin: 0; padding-left: 20px; }
+.reflection-box li { margin-bottom: 8px; cursor: pointer; padding: 4px 0; }
+.reflection-box li:hover { color: var(--primary); }
+.reflection-box li .hint { display: none; color: var(--text-secondary); font-size: 15px; padding: 4px 0 0 10px; }
+.reflection-box li:hover .hint { display: block; }
+.btn-all { background: var(--primary); color: #fff; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; margin-top: 12px; }
+.btn-all:hover { background: var(--primary-hover); }
+.extra-content { display: none; margin-top: 12px; padding: 14px 18px; background: var(--bg); border-radius: 6px; }
+.extra-content.show { display: block; }
+@media (min-width: 768px) {
+  .principles-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+  .container { padding: 12px 14px; }
+  .header { padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🧱 建构性原理</h1>
+  <p>M6 新知技术思维 · 5条核心建构原理 + 迁移应用练习</p>
+  <p style="margin-top:6px;font-size:14px;opacity:0.85;">前置参考：建构性示例"我的1分钟有多长？"</p>
+</div>
+
+<!-- 五条原理 -->
+<div class="principles-grid">
+
+  <div class="principle-card" onclick="expandDetail(this)">
+    <div class="principle-card-header">
+      <span class="num">1</span>
+      <h3>情境驱动原理</h3>
+    </div>
+    <div class="principle-card-body">
+      <p>真正的学习从一个让你困惑的真实问题开始——不是别人告诉你"该学什么"，而是你自己感受到"这个问题需要解决"。</p>
+      <span class="label">📌 示例体现</span><span class="label">💡 关键</span>
+      <div class="example-box"><strong>示例中</strong>：体育课上大家感觉时间长短不一，这个真实矛盾激发了"到底怎么准确知道时间"的学习需求。</div>
+      <div class="extra-content">
+        <p><strong>适用情境</strong>：学习任何新知识前，先找一个让自己困惑的真实问题。</p>
+        <p><strong>注意</strong>：不要等着别人给你问题，主动观察生活中的"不对劲"。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="principle-card" onclick="expandDetail(this)">
+    <div class="principle-card-header">
+      <span class="num">2</span>
+      <h3>工具选择原理</h3>
+    </div>
+    <div class="principle-card-body">
+      <p>不同的测量需求需要不同的工具——选对工具，工作就完成了一半。</p>
+      <span class="label">📌 示例体现</span><span class="label">🔧 实用</span>
+      <div class="example-box"><strong>示例中</strong>：从"凭感觉"到"用秒表"，工具的升级带来了准确度的飞跃。</div>
+      <div class="extra-content">
+        <p><strong>适用情境</strong>：做任何需要数据支持的探究时，先问自己"用什么工具来获取数据最合适"。</p>
+        <p><strong>注意</strong>：不是工具越高级越好，要适合你的需求和条件。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="principle-card" onclick="expandDetail(this)">
+    <div class="principle-card-header">
+      <span class="num">3</span>
+      <h3>证据记录原理</h3>
+    </div>
+    <div class="principle-card-body">
+      <p>结论不是靠猜出来的，是靠数据"说"出来的——把你的每一次尝试都记录下来，数据积累够了，规律自己就会出现。</p>
+      <span class="label">📌 示例体现</span><span class="label">📊 数据</span>
+      <div class="example-box"><strong>示例中</strong>：三次默数1分钟测试记录了"估计值"和"实际值"，数据对比让"校准策略"的形成有了依据。</div>
+      <div class="extra-content">
+        <p><strong>适用情境</strong>：任何需要验证或比较的任务中。</p>
+        <p><strong>注意</strong>：记录要真实，不能"修改数据让结果好看"。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="principle-card" onclick="expandDetail(this)">
+    <div class="principle-card-header">
+      <span class="num">4</span>
+      <h3>迭代优化原理</h3>
+    </div>
+    <div class="principle-card-body">
+      <p>第一次尝试通常不够好——这不叫失败，这叫"开始"。关键是在第一次的基础上不断调整和改进。</p>
+      <span class="label">📌 示例体现</span><span class="label">🔄 改进</span>
+      <div class="example-box"><strong>示例中</strong>：先凭感觉→发现不准确→设计策略→再测试验证→对比数据。</div>
+      <div class="extra-content">
+        <p><strong>适用情境</strong>：任何需要精益求精的任务（写作、绘画、科学实验等）。</p>
+        <p><strong>注意</strong>：每次改进都要有明确的方向，不是"随便改改"。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="principle-card" onclick="expandDetail(this)">
+    <div class="principle-card-header">
+      <span class="num">5</span>
+      <h3>表达分享原理</h3>
+    </div>
+    <div class="principle-card-body">
+      <p>如果你不能把自己的成果讲清楚让别人听懂，说明你还没有真正理解它。</p>
+      <span class="label">📌 示例体现</span><span class="label">🗣️ 表达</span>
+      <div class="example-box"><strong>示例中</strong>：最终写出一份"感知校准报告"，用数据和图表让别人看懂你的发现。</div>
+      <div class="extra-content">
+        <p><strong>适用情境</strong>：任何学习成果的总结和展示。</p>
+        <p><strong>注意</strong>：表达时先讲"发现了什么"，再讲"怎么发现的"。</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 迁移应用练习 -->
+<h2 class="section-title">🏋️ 迁移应用练习</h2>
+
+<div class="exercise-card">
+  <h3>🚶 练习1：估测走路速度</h3>
+  <p><strong>情境</strong>：从教室走到校门口，别人问你"这段路要走多久"，你怎么回答？</p>
+  <p><strong>任务</strong>：用建构性原理，设计一个"走路速度估测方案"并实际测试。</p>
+  <p><strong>可用工具</strong>：步数计数器、手机秒表</p>
+  <div class="tags">
+    <span class="label">🔬 情境驱动原理</span>
+    <span class="label">🔬 工具选择原理</span>
+    <span class="label">🔬 证据记录原理</span>
+    <span class="label">💡 先走一次记录时间，再走一次看是否稳定，最后算出平均值</span>
+  </div>
+</div>
+
+<div class="exercise-card">
+  <h3>🎯 练习2：为自己设计"专注时间管理器"</h3>
+  <p><strong>情境</strong>：做作业时总走神，想知道自己一次能专注多久。</p>
+  <p><strong>任务</strong>：设计一个记录"专注时长"的方案。</p>
+  <p><strong>可用工具</strong>：计时器、专注记录表</p>
+  <div class="tags">
+    <span class="label">🔬 工具选择原理</span>
+    <span class="label">🔬 证据记录原理</span>
+    <span class="label">🔬 迭代优化原理</span>
+    <span class="label">💡 先记录3次"自然走神时间"，再用闹钟提醒，对比效率变化</span>
+  </div>
+</div>
+
+<!-- 元认知反思 -->
+<h2 class="section-title">🤔 元认知反思（5问）</h2>
+
+<div class="reflection-box">
+  <p style="margin:0 0 10px;">点击每个问题展开思考引导 👇</p>
+  <ol>
+    <li onclick="toggleReflect(this)"><strong>在建构"1分钟感知校准"过程中，哪一步最困难？为什么？</strong>
+      <div class="hint">💡 是计时不准？还是不知道用什么方法校准？还是有想法但不敢尝试？</div>
+    </li>
+    <li onclick="toggleReflect(this)"><strong>你是如何从"觉得不准"到"找到校准策略"的？经历了什么思考？</strong>
+      <div class="hint">💡 回忆一下，你是先想方法再试，还是试了再调整？中间换过策略吗？</div>
+    </li>
+    <li onclick="toggleReflect(this)"><strong>如果重新做一次，你会改变哪个步骤？为什么？</strong>
+      <div class="hint">💡 是在记录方法上改进，还是在分析数据上花更多时间？</div>
+    </li>
+    <li onclick="toggleReflect(this)"><strong>"凭感觉"和"用工具测量"最大的差别是什么？</strong>
+      <div class="hint">💡 感觉会骗人，数据不会——但数据获取也需要技巧，你觉得呢？</div>
+    </li>
+    <li onclick="toggleReflect(this)"><strong>这次的建构方法还能用在其他什么学习上？</strong>
+      <div class="hint">💡 比如：估算一顿饭的热量、记录每天阅读时间、测量自己的跑步进步……</div>
+    </li>
+  </ol>
+</div>
+
+<button class="btn-all" onclick="expandAllCards()">展开所有原理详情</button>
+
+</div>
+
+<script>
+function expandDetail(el) {
+  var extra = el.querySelector('.extra-content');
+  if (extra) {
+    extra.classList.toggle('show');
+  }
+}
+function expandAllCards() {
+  var all = document.querySelectorAll('.extra-content');
+  var allOpen = Array.from(all).every(function(e) { return e.classList.contains('show'); });
+  all.forEach(function(e) { e.classList.toggle('show', !allOpen); });
+  this.textContent = allOpen ? '展开所有原理详情' : '收起所有原理详情';
+}
+function toggleReflect(el) {
+  var hint = el.querySelector('.hint');
+  if (hint) {
+    hint.style.display = hint.style.display === 'block' ? 'none' : 'block';
+  }
+}
+</script>
+</body>
+</html>

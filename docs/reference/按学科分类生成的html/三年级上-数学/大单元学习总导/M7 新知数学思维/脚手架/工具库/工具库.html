@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具库 — 时间思考的认知工具箱</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+h1 { font-size: var(--font-h1); color: var(--primary); text-align: center; margin: 24px 0 8px; }
+h1::after { content: ''; display: block; width: 60px; height: 3px; background: var(--accent); margin: 10px auto 0; border-radius: 2px; }
+h2 { font-size: var(--font-h2); color: var(--primary); margin: 28px 0 14px; padding-left: 12px; border-left: 4px solid var(--accent); }
+.subtitle { text-align: center; color: var(--text-secondary); font-size: 15px; margin-bottom: 24px; }
+.level-tabs { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+.level-tab { padding: 8px 18px; border-radius: 20px; border: 2px solid var(--accent); background: transparent; color: var(--primary); font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.3s; }
+.level-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.level-tab:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+.tool-groups { display: block; }
+.tool-group { display: none; }
+.tool-group.active { display: block; }
+.tool-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 16px 18px; margin-bottom: 14px; transition: transform 0.2s; }
+.tool-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.10); }
+.tool-card .tool-name { font-size: 19px; font-weight: 600; color: var(--primary); margin-bottom: 4px; }
+.tool-card .tool-use { font-size: 14px; color: var(--text-secondary); margin-bottom: 6px; }
+.tool-card .tool-steps { background: #f7faff; border-radius: 6px; padding: 10px 14px; margin: 8px 0; font-size: 15px; }
+.tool-card .tool-steps ol { margin: 4px 0; padding-left: 20px; }
+.tool-card .tool-steps li { margin-bottom: 3px; }
+.tool-card .tool-link { display: inline-block; background: var(--bg); border: 1px solid var(--accent); border-radius: 6px; padding: 4px 14px; font-size: 14px; color: var(--primary); cursor: pointer; transition: all 0.2s; margin: 4px 4px 0 0; }
+.tool-card .tool-link:hover { background: var(--primary); color: #fff; }
+.tool-card .tool-example { border: 1px dashed var(--accent); border-radius: 6px; padding: 10px 14px; margin: 8px 0; background: #fafaff; font-size: 15px; }
+.demo-clock { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 10px 0; }
+.demo-clock .clock-face { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--primary); position: relative; background: white; flex-shrink: 0; }
+.demo-clock .clock-face .hand { position: absolute; bottom: 50%; left: 50%; transform-origin: bottom center; border-radius: 2px; transition: all 0.5s; }
+.demo-clock .clock-face .hour-hand { width: 4px; height: 20px; background: var(--text); margin-left: -2px; }
+.demo-clock .clock-face .min-hand { width: 3px; height: 28px; background: var(--primary); margin-left: -1.5px; }
+.demo-clock .clock-face .center-dot { position: absolute; width: 8px; height: 8px; background: var(--primary); border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+.demo-btn { background: var(--primary); color: #fff; border: none; padding: 6px 16px; border-radius: 6px; font-size: 14px; cursor: pointer; transition: background 0.2s; }
+.demo-btn:hover { background: var(--primary-hover); }
+@media (max-width: 600px) { .container { padding: 12px 14px; } h1 { font-size: 24px; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🧰 工具库</h1>
+  <p class="subtitle">用好工具，让时间思考更高效</p>
+
+  <div class="level-tabs">
+    <button class="level-tab active" onclick="switchLevel(this,'basic')">⭐ 基础工具</button>
+    <button class="level-tab" onclick="switchLevel(this,'advanced')">🚀 进阶工具</button>
+    <button class="level-tab" onclick="switchLevel(this,'expert')">🔬 高阶工具</button>
+  </div>
+
+  <div class="tool-groups">
+    <!-- 基础工具 -->
+    <div class="tool-group active" id="basic">
+      <div class="tool-card">
+        <div class="tool-name">📋 时间记录表</div>
+        <div class="tool-use">用途：记录每天活动的时间分配</div>
+        <div class="tool-steps">
+          <ol>
+            <li>填上日期</li>
+            <li>列出今天的活动</li>
+            <li>记录开始时间和结束时间</li>
+            <li>算一算每件事花了多久</li>
+          </ol>
+        </div>
+        <div class="tool-example">
+          <strong>示例：</strong><br>
+          📅 日期：9月15日<br>
+          📚 作业 16:00—16:45 → 45分钟<br>
+          🎹 练琴 17:00—17:30 → 30分钟<br>
+          🏃 玩耍 17:40—18:10 → 30分钟
+        </div>
+        <span class="tool-link" onclick="useTool(this)">📥 下载空白表格</span>
+        <span class="tool-link" onclick="useTool(this)">✏️ 在线填写</span>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">📊 比较表（T形图）</div>
+        <div class="tool-use">用途：对比两个事物的差异</div>
+        <div class="tool-steps">
+          <ol>
+            <li>左边写"事项A"</li>
+            <li>右边写"事项B"</li>
+            <li>中间写出对比的方面</li>
+          </ol>
+        </div>
+        <div class="tool-example">
+          <strong>示例：</strong>对比"感觉时间"和"时钟时间"<br>
+          左边：玩的时候时间过得快<br>
+          右边：上课的时候时间过得慢<br>
+          中间比较：同样的30分钟感觉不一样
+        </div>
+        <span class="tool-link" onclick="useTool(this)">📝 制作我的T形图</span>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">🌳 思维导图模板</div>
+        <div class="tool-use">用途：梳理时间相关概念之间的关系</div>
+        <div class="tool-steps">
+          <ol>
+            <li>中间写"时间"</li>
+            <li>画出分支：时、分、秒</li>
+            <li>再画分支：它们之间怎么换算？</li>
+            <li>加上你学到的应用场景</li>
+          </ol>
+        </div>
+        <div class="tool-example">
+          <strong>示例：</strong>中心"时间"→ 分支"小时"→ "1小时=60分钟"→ "1节课40分钟"<br>
+          中心"时间"→ 分支"分钟"→ "1分钟=60秒"→ "我跳绳1分钟能跳多少个？"
+        </div>
+        <span class="tool-link" onclick="useTool(this)">🧠 开始画思维导图</span>
+      </div>
+    </div>
+
+    <!-- 进阶工具 -->
+    <div class="tool-group" id="advanced">
+      <div class="tool-card">
+        <div class="tool-name">🕐 在线时钟模拟器</div>
+        <div class="tool-use">用途：可调节指针的虚拟时钟，观察时间变化</div>
+        <div class="tool-steps">
+          <ol>
+            <li>打开模拟器网站</li>
+            <li>拖动指针调整时间</li>
+            <li>观察数字时钟的变化</li>
+            <li>记录你的发现</li>
+          </ol>
+        </div>
+        <div class="demo-clock">
+          <div class="clock-face" id="clockFace">
+            <div class="hand hour-hand" id="hourHand" style="transform:rotate(60deg)"></div>
+            <div class="hand min-hand" id="minHand" style="transform:rotate(180deg)"></div>
+            <div class="center-dot"></div>
+          </div>
+          <div>
+            <div>🕐 当前：<span id="demoTime">2:30</span></div>
+            <button class="demo-btn" onclick="rotateClock()">🔄 转一转</button>
+          </div>
+        </div>
+        <span class="tool-link" onclick="useTool(this)">🌐 toytheater.com/clock</span>
+        <span class="tool-link" onclick="useTool(this)">🌐 mathsframe.co.uk 时钟模拟器</span>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">⏱️ 秒表/计时器</div>
+        <div class="tool-use">用途：精确测量短时间间隔</div>
+        <div class="tool-steps">
+          <ol>
+            <li>点击"开始"</li>
+            <li>活动结束时点"停止"</li>
+            <li>读取结果</li>
+          </ol>
+        </div>
+        <div class="tool-example">
+          <strong>试一试：</strong>你能单脚站立几秒？深呼吸一次几秒？走10步要几秒？<br>
+          📱 推荐：手机自带秒表
+        </div>
+        <button class="demo-btn" onclick="startStopwatch(this)">⏱️ 开始秒表</button>
+        <span id="stopwatchDisplay" style="font-size:22px;font-weight:600;color:var(--primary);margin-left:10px;">00.0s</span>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">🧮 时间换算计算器</div>
+        <div class="tool-use">用途：快速进行时、分、秒之间的换算</div>
+        <div class="tool-steps">
+          <ol>
+            <li>输入数字</li>
+            <li>选择单位（时/分/秒）</li>
+            <li>点击"换算"</li>
+            <li>查看结果</li>
+          </ol>
+        </div>
+        <div class="tool-example">
+          <strong>自己动手：</strong>用Excel或纸笔，自己做一个换算表！<br>
+          💡 2小时 = 120分钟 = 7200秒
+        </div>
+        <span class="tool-link" onclick="useTool(this)">📐 在线换算器</span>
+      </div>
+    </div>
+
+    <!-- 高阶工具 -->
+    <div class="tool-group" id="expert">
+      <div class="tool-card">
+        <div class="tool-name">📈 数据图表制作工具</div>
+        <div class="tool-use">用途：把时间数据变成漂亮的图表</div>
+        <div class="tool-steps">
+          <ol>
+            <li>收集你的时间数据</li>
+            <li>用折线图、柱状图或饼图展示</li>
+            <li>分析：什么活动花的时间最多？</li>
+          </ol>
+        </div>
+        <div class="tool-example">
+          <strong>推荐：</strong>WPS/Excel图表功能、Canva在线图表制作
+        </div>
+        <span class="tool-link" onclick="useTool(this)">📊 试试做张饼图</span>
+        <span class="tool-link" onclick="useTool(this)">📈 试试做张折线图</span>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">📅 日期计算器</div>
+        <div class="tool-use">用途：计算两个日期之间的天数、推算N天后的日期</div>
+        <div class="tool-steps">
+          <ol>
+            <li>输入起始日期</li>
+            <li>输入结束日期（或要加的天数）</li>
+            <li>查看结果</li>
+          </ol>
+        </div>
+        <div class="tool-example">
+          <strong>试试：</strong>从今天到放寒假还有多少天？<br>
+          🌐 推荐：timedatecalc.com
+        </div>
+        <span class="tool-link" onclick="useTool(this)">🔢 计算日期差</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="background:linear-gradient(120deg,rgba(22,119,255,0.10)0%,rgba(22,119,255,0.06)100%);padding:12px 16px;border-radius:8px;margin:14px 0;text-align:center;">
+    <strong>💡 小贴士：</strong>先试试基础工具，用得熟练了再挑战进阶和高阶工具！
+  </div>
+</div>
+<script>
+function switchLevel(btn, level) {
+  document.querySelectorAll('.level-tab').forEach(function(t){ t.classList.remove('active'); });
+  btn.classList.add('active');
+  document.querySelectorAll('.tool-group').forEach(function(g){ g.classList.remove('active'); });
+  document.getElementById(level).classList.add('active');
+}
+function useTool(el) {
+  var old = el.textContent;
+  el.textContent = '✅ 已选择！';
+  el.style.background = 'var(--primary)';
+  el.style.color = '#fff';
+  setTimeout(function(){ el.textContent = old; el.style.background = ''; el.style.color = ''; }, 1500);
+}
+function rotateClock() {
+  var hour = document.getElementById('hourHand');
+  var min = document.getElementById('minHand');
+  var display = document.getElementById('demoTime');
+  var h = Math.floor(Math.random() * 12);
+  var m = Math.floor(Math.random() * 60);
+  hour.style.transform = 'rotate(' + (h * 30 + m / 2) + 'deg)';
+  min.style.transform = 'rotate(' + (m * 6) + 'deg)';
+  display.textContent = h + ':' + (m < 10 ? '0' : '') + m;
+}
+var swInterval = null;
+var swRunning = false;
+var swTime = 0;
+function startStopwatch(btn) {
+  if (!swRunning) {
+    swRunning = true;
+    btn.textContent = '⏹️ 停止';
+    swInterval = setInterval(function(){
+      swTime += 0.1;
+      document.getElementById('stopwatchDisplay').textContent = swTime.toFixed(1) + 's';
+    }, 100);
+  } else {
+    swRunning = false;
+    clearInterval(swInterval);
+    btn.textContent = '🔄 重置';
+    setTimeout(function(){
+      swTime = 0;
+      document.getElementById('stopwatchDisplay').textContent = '00.0s';
+      btn.textContent = '⏱️ 开始秒表';
+    }, 1500);
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>❓ 问题榜 — 时间主题挑战</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.container { width: 100%; max-width: none; padding: 24px 20px 48px; box-sizing: border-box; }
+.header { text-align: center; padding: 32px 20px 24px; background: linear-gradient(135deg, var(--bg), #e6f0ff); border-radius: var(--border-radius); margin-bottom: 28px; }
+.header h1 { font-size: var(--font-h1); margin: 0 0 8px; color: var(--primary); }
+.header p { font-size: 16px; color: var(--text-secondary); margin: 0; }
+.section-title { font-size: var(--font-h2); color: var(--primary); margin: 32px 0 16px; padding-left: 12px; border-left: 4px solid var(--primary); }
+.level-tag { display: inline-block; padding: 3px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+.level-basic { background: #e6f7ff; color: #0090ff; }
+.level-adv { background: #f0f5ff; color: #1677ff; }
+.level-pro { background: #f9f0ff; color: #722ed1; }
+.q-group { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 16px 20px; margin-bottom: 20px; }
+.q-item { padding: 12px 0; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.2s; border-radius: 6px; padding-left: 10px; }
+.q-item:last-child { border-bottom: none; }
+.q-item:hover { background: #fafbff; }
+.q-num { display: inline-block; width: 28px; height: 28px; line-height: 28px; text-align: center; background: var(--primary); color: #fff; border-radius: 6px; font-size: 14px; font-weight: 700; margin-right: 10px; }
+.q-num.open-num { background: #e6f7ff; color: var(--primary); }
+.q-item .q-text { font-weight: 500; }
+.q-item .q-answer { max-height: 0; overflow: hidden; padding-left: 38px; transition: max-height 0.35s ease, padding 0.25s ease; color: var(--text-secondary); font-size: 16px; }
+.q-item.open .q-answer { max-height: 300px; padding-top: 8px; padding-bottom: 4px; }
+.q-tip { background: #f0f5ff; border-radius: 8px; padding: 10px 16px; color: var(--primary); font-size: 15px; margin: 12px 0; }
+.guide-box { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 16px 20px; margin: 20px 0; }
+.guide-box h3 { margin: 0 0 8px; font-size: 18px; color: var(--primary); }
+.guide-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+.guide-item { padding: 10px 14px; border-radius: 8px; font-size: 15px; }
+.guide-item strong { display: block; margin-bottom: 4px; }
+.guide-basic { background: #e6f7ff; }
+.guide-adv { background: #f0f5ff; }
+.guide-pro { background: #f9f0ff; }
+.journal-box { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; margin: 20px 0; }
+.journal-box h3 { margin: 0 0 12px; font-size: 18px; color: var(--primary); }
+.journal-field { margin-bottom: 12px; }
+.journal-field label { display: block; font-weight: 600; margin-bottom: 4px; color: var(--text); }
+.journal-field textarea { width: 100%; box-sizing: border-box; border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 16px; font-family: inherit; resize: vertical; min-height: 50px; transition: border-color 0.2s; }
+.journal-field textarea:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px rgba(22,119,255,0.15); }
+.journal-btn { background: var(--primary); color: #fff; border: none; border-radius: 8px; padding: 10px 28px; font-size: 16px; cursor: pointer; transition: background 0.2s; }
+.journal-btn:hover { background: var(--primary-hover); }
+.journal-saved { display: none; margin-top: 10px; padding: 10px 14px; background: #f6ffed; border: 1px solid #b7eb8f; border-radius: 8px; color: #135200; }
+.journal-saved.show { display: block; }
+footer { text-align: center; color: var(--text-secondary); font-size: 14px; padding: 16px; background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); margin-top: 28px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>❓ 问题榜</h1>
+  <p>好的问题是学习的引擎。这些问题从不同角度、不同难度挑战你对"时间"的理解——<br>有的考你是不是真懂了，有的逼你想一想课本上没有的东西。<br>👆 <strong>点击每个问题</strong>可以查看提示或思路引导</p>
+</div>
+
+<div class="section-title">🟢 基础层 · 理解与识别</div>
+<div class="q-group">
+
+<div class="q-item" onclick="toggleQuestion(this)">
+  <div><span class="q-num">1</span><span class="q-text">1小时等于多少分钟？3小时呢？</span></div>
+  <div class="q-answer">💡 1小时 = 60分钟，3小时 = 180分钟 💪 你答对了吗？</div>
+</div>
+
+<div class="q-item" onclick="toggleQuestion(this)">
+  <div><span class="q-num">2</span><span class="q-text">1分钟等于多少秒？半分钟呢？</span></div>
+  <div class="q-answer">💡 1分钟 = 60秒，半分钟 = 30秒 ✅</div>
+</div>
+
+<div class="q-item" onclick="toggleQuestion(this)">
+  <div><span class="q-num">3</span><span class="q-text">秒针走一圈，分针走多少？</span></div>
+  <div class="q-answer">💡 秒针走一圈是60秒，也就是1分钟，所以分针走1小格 📐</div>
+</div>
+
+<div class="q-item" onclick="toggleQuestion(this)">
+  <div><span class="q-num">4</span><span class="q-text">分针走一圈，时针走多少？</span></div>
+  <div class="q-answer">💡 分针走一圈是60分钟 = 1小时，所以时针走1大格 ⏰</div>
+</div>
+
+<div class="q-item" onclick="toggleQuestion(this)">
+  <div><span class="q-num">5</span><span class="q-text">下面哪个时间是最长的：① 300秒 ② 5分钟 ③ 0.1小时？</span></div>
+  <div class="q-answer">💡 统一单位比较：300秒=300秒，5分钟=300秒，0.1小时=6分钟=360秒 → ③最长！🎯</div>
+</div>
+
+</div>
+
+<div class="section-title">🔵 进阶层 · 分析与应用</div>
+<div class="q-group">
+
+<div class="q-item" onclick="toggleQuestion(this)">
+  <div><span class="q-num q-num--adv">6</span><span class="q-text">🌟 你觉得"60进制"和"10进制"哪个更方便？请说明理由。</span></div>
+  <div class="q-answer">💭 开放性问题，没有标准答案！提示：10进制符合我们的手指计数习惯，但60进制能被2、3、4、5、6、10、12、15、20、30整除，在分时间时更灵活。</div>
+</div>
+
+<div class="q-item" onclick="toggleQuestion(this)">
+  <div><span class="q-num q-num--adv">7</span><span class="q-text">🌟 为什么钟表上的数字是1到12，而不是1到24？</span></div>
+  <div class="q-answer">💭 提示：想想古代人用什么方式计时？日晷和钟表的历史有关。另外，一天分成两个12小时（上午/下午），你能联想到什么？</div>
+</div>
+
+<div class="q-item" onclick="toggleQuestion(this)">
+  <div><span class="q-num q-num--adv">8</span><span class="q-text">🌟 时间单位的"60进制"和长度单位的"10进制"有什么不同？哪个更好换算？</span></div>
+  <div class="q-answer">💭 长度：1米=10分米=100厘米（×10）。时间：1小时=60分钟（×60）。用10进制换算更简单（小数点移动），但60进制在平分时更方便（能被更多数整除）。</div>
+</div>
+
+<div class="q-item" onclick="toggleQuestion(this)">
+  <div><span class="q-num q-num--adv">9</span><span class="q-text">🌟 你觉得"1秒"和"1厘米"是同一种类型的"单位"吗？</span></div>
+  <div class="q-answer">💭 它们不是同一类型！"秒"是时间单位，"厘米"是长度单位。但它们都是"基本单位"，都可以用来测量和比较。你能想到其他基本单位吗？（提示：千克、摄氏度……）</div>
+</div>
+
+<div class="q-item" onclick="toggleQuestion(this)">
+  <div><span class="q-num q-num--adv">10</span><span class="q-text">🌟 小丽从家到学校要走20分钟，她8:10到校，她最晚几点出门？</span></div>
+  <div class="q-answer">💡 用到达时间减去路上时间：8:10 - 0:20 = 7:50，所以最晚7:50出门 ⏰</div>
+</div>
+
+</div>
+
+<div class="section-title">🟣 挑战层 · 创造与批判</div>
+<div class="q-group">
+
+<div class="q-item" onclick="toggleQuestion(this)">
+  <div><span class="q-num q-num--pro">11</span><span class="q-text">🚀 反事实：如果一天不是24小时，而是10小时，生活会发生什么变化？</span></div>
+  <div class="q-answer">💭 大胆想象！如果一天10小时，每小时的时长会变长（相当于现在的2.4小时）。上学可能只上3小时？睡觉只睡2小时？你的一天的节奏会完全改变！</div>
+</div>
+
+<div class="q-item" onclick="toggleQuestion(this)">
+  <div><span class="q-num q-num--pro">12</span><span class="q-text">🚀 反事实：如果"分钟"和"秒"突然消失了，只有"小时"这个单位，你会遇到什么麻烦？</span></div>
+  <div class="q-answer">💭 想一想：你怎么说"等我5分钟"？怎么计时跑100米？怎么表示煮鸡蛋需要8分钟？你会发现日常生活中很多场景都需要比"小时"更小的单位！</div>
+</div>
+
+<div class="q-item" onclick="toggleQuestion(this)">
+  <div><span class="q-num q-num--pro">13</span><span class="q-text">🚀 元认知：你刚学会"1小时=3600秒"的时候，有没有觉得"怎么会这么多"？你是怎么记住换算关系的？</span></div>
+  <div class="q-answer">💭 想一想你的"记忆秘诀"是什么？是反复做练习题？还是画了时间轴？或者是编了顺口溜？了解自己的学习方法很重要！</div>
+</div>
+
+<div class="q-item" onclick="toggleQuestion(this)">
+  <div><span class="q-num q-num--pro">14</span><span class="q-text">🚀 元认知：做时间换算题的时候，你最容易在哪里出错？你发现了自己的"易错模式"吗？</span></div>
+  <div class="q-answer">💭 很多同学容易在"大单位→小单位"（×60）和"小单位→大单位"（÷60）时搞混方向。你也有这个问题吗？找到自己的易错点就是进步的开始！</div>
+</div>
+
+<div class="q-item" onclick="toggleQuestion(this)">
+  <div><span class="q-num q-num--pro">15</span><span class="q-text">🚀 创造性问题：请你设计一个新的计时工具！</span></div>
+  <div class="q-answer">💭 想一想：<br>• 它的名字叫什么？<br>• 显示方式：数字/指针/其他创意？<br>• 精确度：精确到秒、分还是时？<br>• 它有什么独特的优点？<br><br>大胆想象，没有对错！</div>
+</div>
+
+</div>
+
+<div class="guide-box">
+  <h3>📖 问题使用指南</h3>
+  <div class="guide-grid">
+    <div class="guide-item guide-basic"><strong>🟢 基础层</strong>如果答不对，说明需要回头复习课本</div>
+    <div class="guide-item guide-adv"><strong>🔵 进阶层</strong>没有标准答案，重点是你的思考过程</div>
+    <div class="guide-item guide-pro"><strong>🟣 挑战层</strong>这些问题可能花很长时间才能回答，不要着急，慢慢想</div>
+  </div>
+</div>
+
+<div class="journal-box">
+  <h3>📝 记录你的思考</h3>
+  <p style="color:var(--text-secondary); margin:0 0 12px; font-size:15px;">选1个你最感兴趣的问题，把你的思考过程写下来：</p>
+  <div class="journal-field">
+    <label>我选的问题（写编号）：</label>
+    <textarea id="journal-q" rows="1" placeholder="例如：第11题"></textarea>
+  </div>
+  <div class="journal-field">
+    <label>我的第一反应：</label>
+    <textarea id="journal-r1" rows="2" placeholder="看到这个问题，我第一个想到的是……"></textarea>
+  </div>
+  <div class="journal-field">
+    <label>深入思考后我发现：</label>
+    <textarea id="journal-r2" rows="2" placeholder="仔细想一想，原来……"></textarea>
+  </div>
+  <div class="journal-field">
+    <label>我的结论/答案：</label>
+    <textarea id="journal-r3" rows="2" placeholder="所以我的答案是……"></textarea>
+  </div>
+  <button class="journal-btn" onclick="saveJournal()">💾 保存我的思考</button>
+  <div id="journal-saved" class="journal-saved">✅ 太棒了！你的思考已经记录下来。回头看时，你会发现自己的思维成长轨迹！</div>
+</div>
+
+<footer>💡 学习不是记住答案，而是学会提问。保持好奇心！</footer>
+
+</div>
+<script>
+function toggleQuestion(el) {
+  el.classList.toggle('open');
+}
+function saveJournal() {
+  var q = document.getElementById('journal-q').value;
+  var r1 = document.getElementById('journal-r1').value;
+  var r2 = document.getElementById('journal-r2').value;
+  var r3 = document.getElementById('journal-r3').value;
+  if (!q && !r1 && !r2 && !r3) return;
+  var saved = document.getElementById('journal-saved');
+  saved.classList.add('show');
+  saved.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+</script>
+</body>
+</html>

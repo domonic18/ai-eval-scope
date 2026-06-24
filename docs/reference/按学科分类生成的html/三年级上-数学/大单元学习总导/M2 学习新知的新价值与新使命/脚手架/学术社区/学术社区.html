@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学术社区 · 时间主题学习圈</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 24px;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 0 0 40px;
+}
+h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+h1::before { content: "🌐"; font-size: 32px; }
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 15px;
+  margin-bottom: 24px;
+  padding-left: 4px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(22,119,255,0.12);
+}
+h2 {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+h2 .section-icon { font-size: 24px; }
+h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 14px 0 8px;
+  color: var(--text);
+}
+.topic-card {
+  background: #f8fbff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  margin: 10px 0;
+  position: relative;
+  transition: all 0.2s;
+  cursor: default;
+}
+.topic-card:hover { border-color: var(--primary); }
+.topic-card .topic-icon { font-size: 24px; margin-bottom: 4px; }
+.topic-card .topic-title {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+.topic-card .topic-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.topic-card .topic-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.topic-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.topic-btn:hover { background: var(--primary-hover); }
+.topic-btn.outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+.topic-btn.outline:hover { background: var(--bg); }
+.role-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 10px 0;
+}
+.role-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  text-align: center;
+  transition: all 0.2s;
+}
+.role-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(22,119,255,0.1);
+}
+.role-card .role-icon { font-size: 28px; margin-bottom: 4px; }
+.role-card .role-name { font-weight: 600; font-size: 15px; }
+.role-card .role-desc { font-size: 12px; color: var(--text-secondary); }
+.family-card {
+  background: linear-gradient(135deg, #f0fdf4, #f0fdf4);
+  border: 1px solid #86efac;
+  border-radius: 10px;
+  padding: 16px;
+  margin: 10px 0;
+}
+.family-card h3 { color: #16a34a; display: flex; align-items: center; gap: 6px; }
+.family-card ul { padding-left: 20px; font-size: 15px; }
+.family-card li { margin-bottom: 6px; }
+.social-card {
+  background: linear-gradient(135deg, #fef3c7, #fff7e6);
+  border: 1px solid #fcd34d;
+  border-radius: 10px;
+  padding: 16px;
+  margin: 10px 0;
+}
+.social-card h3 { color: #d46b08; display: flex; align-items: center; gap: 6px; }
+.interview-list { list-style: none; padding: 0; }
+.interview-list li {
+  padding: 10px 12px 10px 40px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 15px;
+}
+.interview-list li:hover { border-color: var(--primary); background: #f8fbff; }
+.interview-list li::before {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+}
+.interview-list li:nth-child(1)::before { content: "🏃"; }
+.interview-list li:nth-child(2)::before { content: "🚌"; }
+.interview-list li:nth-child(3)::before { content: "📺"; }
+.interview-list li.done {
+  background: #f0fdf4;
+  border-color: #16a34a;
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+.interview-list li.done::after {
+  content: " ✅";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.progress-bar {
+  width: 100%;
+  height: 10px;
+  background: #e8e8e8;
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(to right, var(--primary), var(--accent));
+  border-radius: 10px;
+  transition: width 0.5s ease;
+  width: 0%;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>学术社区</h1>
+  <p class="subtitle">🤝 和同学、家人一起探索"时间"的奥秘</p>
+
+  <!-- 同伴连接 -->
+  <div class="card">
+    <h2><span class="section-icon">👥</span> 一、同伴连接 · 讨论与协作</h2>
+
+    <div class="topic-card">
+      <div class="topic-icon">💭</div>
+      <div class="topic-title">讨论议题 1：如果一天变成 30 小时</div>
+      <div class="topic-desc">你的生活会有什么变化？先独立思考 2 分钟，再和同桌交流，最后小组汇总。</div>
+      <div class="topic-actions">
+        <button class="topic-btn" onclick="toggleIdea(this)">💡 先听听我的想法</button>
+        <span id="idea1" style="display:none;font-size:14px;color:var(--text-secondary);">比如：多出 6 小时，我能多睡一会儿、多玩一会儿、还能多学一会儿……你会怎么分配？</span>
+      </div>
+    </div>
+
+    <div class="topic-card">
+      <div class="topic-icon">⏲️</div>
+      <div class="topic-title">讨论议题 2：时间生活技巧 Top 5</div>
+      <div class="topic-desc">你用过哪些和"时、分、秒"有关的生活技巧？如煮蛋计时器、课间规划等——分享→排序→选出 Top 5！</div>
+      <div class="topic-actions">
+        <button class="topic-btn outline" onclick="this.parentElement.nextElementSibling.style.display='block';this.style.display='none';">📋 看看别人的技巧</button>
+        <div style="display:none;font-size:14px;color:var(--text-secondary);margin-top:6px;">
+          🥚 煮蛋计时器（3分钟溏心蛋）<br>
+          📱 手机秒表记录作业时间<br>
+          🎵 一首歌大约3-4分钟，用来估算时间
+        </div>
+      </div>
+    </div>
+
+    <div class="topic-card">
+      <div class="topic-icon">⚖️</div>
+      <div class="topic-title">讨论议题 3：1 分钟到底长还是短？</div>
+      <div class="topic-desc">分组辩论！正方：1 分钟很短；反方：1 分钟很长。每组准备 3 个理由。</div>
+      <div class="topic-actions">
+        <button class="topic-btn outline" onclick="toggleIdea(this)">⏱ 试试 1 分钟挑战</button>
+        <div style="display:none;font-size:14px;color:var(--text-secondary);margin-top:6px;">闭上眼，感觉过了 1 分钟时睁眼——看看实际过了多久？你估得准吗？</div>
+      </div>
+    </div>
+
+    <h3>👤 小组角色分工</h3>
+    <div class="role-grid">
+      <div class="role-card">
+        <div class="role-icon">⏱️</div>
+        <div class="role-name">计时员</div>
+        <div class="role-desc">控制讨论时间</div>
+      </div>
+      <div class="role-card">
+        <div class="role-icon">📝</div>
+        <div class="role-name">记录员</div>
+        <div class="role-desc">记录关键观点</div>
+      </div>
+      <div class="role-card">
+        <div class="role-icon">🎤</div>
+        <div class="role-name">报告员</div>
+        <div class="role-desc">向全班汇报</div>
+      </div>
+      <div class="role-card">
+        <div class="role-icon">🔍</div>
+        <div class="role-name">补充员</div>
+        <div class="role-desc">补充遗漏内容</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 家校连接 -->
+  <div class="card">
+    <h2><span class="section-icon">🏠</span> 二、家校连接 · 支持与反馈</h2>
+
+    <div class="family-card">
+      <h3>📋 家庭任务</h3>
+      <p style="font-size:15px;margin-bottom:6px;">和爸爸妈妈一起测量家中 5 种电器的运行时间，填写家庭时间调查表。</p>
+      <div class="progress-bar"><div class="progress-fill" style="width:0%" id="familyProgress"></div></div>
+      <button class="topic-btn" onclick="stepProgress()">🔌 记录一个电器</button>
+    </div>
+
+    <div class="family-card">
+      <h3>💬 家长互动</h3>
+      <p style="font-size:15px;">请家长分享一个"和时间有关"的人生经验或工作场景——比如"赶火车"的故事。</p>
+      <button class="topic-btn outline" onclick="this.nextElementSibling.style.display='block';this.style.display='none';">👂 听听家长的故事</button>
+      <div style="display:none;font-size:14px;color:var(--text-secondary);margin-top:6px;">"我年轻时赶火车，以为时间够用，结果路上堵车，差 2 分钟没赶上。从那以后，我每次都提前 30 分钟到站。"——你爸爸/妈妈有这样的经历吗？</div>
+    </div>
+
+    <div class="family-card">
+      <h3>🏆 亲子挑战</h3>
+      <p style="font-size:15px;">和家长比赛——每人说出 1 分钟能做多少件事，然后实际验证谁估计得准！</p>
+    </div>
+  </div>
+
+  <!-- 社会连接 -->
+  <div class="card">
+    <h2><span class="section-icon">🌍</span> 三、社会连接 · 真实连接</h2>
+
+    <div class="social-card">
+      <h3>🎙️ 建议采访对象</h3>
+      <ul class="interview-list">
+        <li onclick="this.classList.toggle('done')">体育老师——如何精确计时？秒表怎么用？</li>
+        <li onclick="this.classList.toggle('done')">公交司机——时间表如何安排？怎么保证准点？</li>
+        <li onclick="this.classList.toggle('done')">电视台工作人员——节目的时间控制，一秒都不能差！</li>
+      </ul>
+      <p style="font-size:13px;color:var(--text-secondary);margin-top:6px;">💡 点击可以标记"已完成采访" ✓</p>
+    </div>
+
+    <div class="social-card">
+      <h3>🌐 线上拓展</h3>
+      <p style="font-size:15px;">推荐「时间与频率国家计量院」官网科普栏目——了解国家标准时间是怎么产生的！</p>
+    </div>
+
+    <div class="social-card">
+      <h3>🖼️ 展示机制</h3>
+      <p style="font-size:15px;">在班级学习园地设置「时、分、秒」作品展示区，优秀作业在家长开放日展示！</p>
+    </div>
+  </div>
+</div>
+<script>
+function toggleIdea(btn) {
+  var div = btn.nextElementSibling;
+  if (div && div.tagName === 'DIV') {
+    div.style.display = div.style.display === 'block' ? 'none' : 'block';
+    btn.textContent = div.style.display === 'block' ? '🙈 收起来' : btn.textContent.replace('🙈', '💡');
+  }
+}
+var progressCount = 0;
+function stepProgress() {
+  progressCount = Math.min(progressCount + 1, 5);
+  var bar = document.getElementById('familyProgress');
+  if (bar) {
+    bar.style.width = (progressCount * 20) + '%';
+  }
+  if (progressCount >= 5) {
+    alert('🎉 太棒了！5 种电器全部记录完成！');
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学术社区 — 时间探索学习共同体</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+.header {
+  text-align: center;
+  padding: 32px 20px 24px;
+  margin-bottom: 28px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin: 0 0 8px;
+}
+.header .subtitle {
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px 28px;
+  margin-bottom: 24px;
+  transition: transform .2s, box-shadow .2s;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card h2 .icon { font-size: 24px; }
+
+/* 讨论议题 */
+.topic-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  cursor: pointer;
+  transition: all .3s;
+  background: var(--bg);
+}
+.topic-card:hover { border-color: var(--primary); box-shadow: 0 2px 8px rgba(22,119,255,0.1); }
+.topic-card h3 {
+  font-size: 17px;
+  margin: 0 0 6px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.topic-card .topic-tag {
+  display: inline-block;
+  padding: 1px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  margin-left: 6px;
+}
+.topic-tag.core { background: #f5222d; }
+.topic-tag.extend { background: var(--primary); }
+.topic-tag.fun { background: #52c41a; }
+.topic-card .topic-goal {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 8px;
+}
+.topic-card .topic-detail {
+  display: none;
+  margin-top: 10px;
+  padding: 12px 16px;
+  background: var(--card-bg);
+  border-radius: 6px;
+  border: 1px dashed var(--border);
+}
+.topic-card.expanded .topic-detail { display: block; }
+.topic-detail h4 { margin: 0 0 6px; font-size: 15px; color: var(--primary); }
+.topic-detail p { margin: 0 0 4px; font-size: 15px; }
+.topic-detail .factor-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0;
+}
+.factor-list span {
+  background: #e6f0ff;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+/* 角色分工 */
+.role-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 800px) {
+  .container { padding: 16px; }
+  .role-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 480px) {
+  .role-grid { grid-template-columns: 1fr; }
+}
+.role-card {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  border: 1px solid var(--border);
+  transition: all .3s;
+}
+.role-card:hover { border-color: var(--primary); transform: scale(1.03); }
+.role-card .role-emoji { font-size: 32px; display: block; margin-bottom: 6px; }
+.role-card h4 { margin: 0 0 4px; font-size: 16px; }
+.role-card p { margin: 0; font-size: 14px; color: var(--text-secondary); }
+.role-card .role-badge {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  background: var(--primary);
+  color: #fff;
+}
+
+/* 输出机制 */
+.output-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 680px) {
+  .output-grid { grid-template-columns: 1fr; }
+}
+.output-card {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  border: 1px solid var(--border);
+  transition: all .3s;
+}
+.output-card:hover { border-color: var(--primary); box-shadow: var(--shadow); }
+.output-card .o-icon { font-size: 28px; display: block; margin-bottom: 6px; }
+.output-card h4 { margin: 0 0 6px; font-size: 15px; }
+.output-card p { margin: 0; font-size: 14px; color: var(--text-secondary); }
+
+/* 家校连接 */
+.family-task {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 12px;
+}
+@media (max-width: 600px) {
+  .family-task { grid-template-columns: 1fr; }
+}
+.family-item {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 16px;
+  border-left: 4px solid var(--primary);
+}
+.family-item h4 { margin: 0 0 6px; font-size: 16px; }
+.family-item p { margin: 0; font-size: 15px; color: var(--text-secondary); }
+
+/* 讨论进度条 */
+.session-timer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  background: #e6f7ff;
+  border: 1px solid #91d5ff;
+  border-radius: 8px;
+  margin-top: 16px;
+}
+.session-timer label {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.timer-display {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+  min-width: 80px;
+  text-align: center;
+}
+.btn-circle {
+  padding: 6px 16px;
+  border: 1px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all .3s;
+}
+.btn-circle:hover {
+  background: var(--primary);
+  color: #fff;
+}
+.btn-circle:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+.btn-circle.danger {
+  border-color: #f5222d;
+  color: #f5222d;
+}
+.btn-circle.danger:hover {
+  background: #f5222d;
+  color: #fff;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🤝 学术社区 · 时间探索学习共同体</h1>
+  <p class="subtitle">一起讨论、协作、展示——把各自的理解碰撞出新的火花</p>
+</div>
+
+<!-- 讨论议题 -->
+<div class="card">
+  <h2><span class="icon">💬</span> 讨论议题</h2>
+  <p style="margin:0 0 16px;color:var(--text-secondary);">点击议题卡片展开详细内容</p>
+
+  <div class="topic-card expanded" onclick="toggleTopic(this)">
+    <h3>
+      🔥 核心议题
+      <span class="topic-tag core">核心</span>
+    </h3>
+    <p class="topic-goal">为什么时间的进制是60，而长度、重量的进制是10？</p>
+    <div class="topic-detail">
+      <h4>📋 准备材料</h4>
+      <p>60的因数有哪些？10的因数有哪些？我们来对比一下：</p>
+      <div class="factor-list">
+        <span>60 = 2×30</span>
+        <span>60 = 3×20</span>
+        <span>60 = 4×15</span>
+        <span>60 = 5×12</span>
+        <span>60 = 6×10</span>
+        <span>10 = 2×5</span>
+      </div>
+      <p style="margin-top:6px;"><strong>讨论目标：</strong>理解60进制的数学优势——60能被10个数整除，而10只能被4个数整除（1、2、5、10）</p>
+    </div>
+  </div>
+
+  <div class="topic-card" onclick="toggleTopic(this)">
+    <h3>
+      🧠 拓展议题
+      <span class="topic-tag extend">拓展</span>
+    </h3>
+    <p class="topic-goal">如果没有钟表，我们还能怎样知道时间？</p>
+    <div class="topic-detail">
+      <p><strong>讨论目标：</strong>激发对"时间测量本质"的思考——太阳、星星、沙子、水流、心跳……时间测量的方法远不止钟表一种。</p>
+      <p style="margin-top:4px;font-size:14px;color:var(--text-secondary);">💡 想一想：古人没有手机，他们怎么知道"该起床了"？</p>
+    </div>
+  </div>
+
+  <div class="topic-card" onclick="toggleTopic(this)">
+    <h3>
+      🎯 趣味议题
+      <span class="topic-tag fun">趣味</span>
+    </h3>
+    <p class="topic-goal">你觉得一分钟有多长？我们来做同步闭眼计时挑战！</p>
+    <div class="topic-detail">
+      <p><strong>讨论目标：</strong>感受主观时间与客观时间的差异——心里默数60秒，和实际60秒一致吗？为什么有时候感觉时间过得快，有时候过得慢？</p>
+      <p style="margin-top:4px;font-size:14px;color:var(--text-secondary);">🕐 试试看：全班一起闭眼，每个人觉得过了1分钟就坐下，看看谁最接近！</p>
+    </div>
+  </div>
+</div>
+
+<!-- 角色分工 -->
+<div class="card">
+  <h2><span class="icon">👥</span> 角色分工</h2>
+  <p style="margin:0 0 16px;color:var(--text-secondary);">小组讨论时，每人认领一个角色</p>
+  <div class="role-grid">
+    <div class="role-card">
+      <span class="role-emoji">⏱️</span>
+      <h4>计时员</h4>
+      <p>用计时器控制讨论时间，确保各环节不超时</p>
+      <span class="role-badge">1人</span>
+    </div>
+    <div class="role-card">
+      <span class="role-emoji">✏️</span>
+      <h4>记录员</h4>
+      <p>用讨论记录表汇总小组每一个观点</p>
+      <span class="role-badge">1人</span>
+    </div>
+    <div class="role-card">
+      <span class="role-emoji">🎤</span>
+      <h4>汇报员</h4>
+      <p>准备2分钟发言，向全班分享小组结论</p>
+      <span class="role-badge">1人</span>
+    </div>
+    <div class="role-card">
+      <span class="role-emoji">🎯</span>
+      <h4>主持人</h4>
+      <p>引导讨论流程，确保每人都有机会发言</p>
+      <span class="role-badge">1人</span>
+    </div>
+    <div class="role-card" style="border-color:#fa8c16;">
+      <span class="role-emoji">❓</span>
+      <h4>质疑员</h4>
+      <p>提出不同意见，帮助小组想得更全面</p>
+      <span class="role-badge" style="background:#fa8c16;">补充角色</span>
+    </div>
+  </div>
+
+  <!-- 讨论计时器 -->
+  <div class="session-timer">
+    <label>⏱️ 讨论计时器</label>
+    <span class="timer-display" id="timerDisplay">05:00</span>
+    <button class="btn-circle" id="timerStartBtn" onclick="startTimer()">▶ 开始</button>
+    <button class="btn-circle" onclick="pauseTimer()">⏸ 暂停</button>
+    <button class="btn-circle danger" onclick="resetTimer()">↺ 重置</button>
+  </div>
+</div>
+
+<!-- 输出机制 -->
+<div class="card">
+  <h2><span class="icon">📦</span> 输出成果</h2>
+  <div class="output-grid">
+    <div class="output-card">
+      <span class="o-icon">📝</span>
+      <h4>书面输出</h4>
+      <p>小组讨论记录表——议题 + 观点汇总 + 最终结论</p>
+    </div>
+    <div class="output-card">
+      <span class="o-icon">🖼️</span>
+      <h4>展示输出</h4>
+      <p>"时间进制为什么是60"创意海报展示</p>
+    </div>
+    <div class="output-card">
+      <span class="o-icon">📹</span>
+      <h4>数字化输出</h4>
+      <p>拍摄2分钟讨论视频，上传学习平台</p>
+    </div>
+  </div>
+</div>
+
+<!-- 家校连接 -->
+<div class="card">
+  <h2><span class="icon">🏠</span> 家校连接</h2>
+  <div class="family-task">
+    <div class="family-item">
+      <h4>🎤 家庭采访任务</h4>
+      <p>采访家人「你知道为什么一小时是60分钟吗？」记录他们的答案，带回学校和小组分享。</p>
+    </div>
+    <div class="family-item">
+      <h4>👨‍🔬 家长分享</h4>
+      <p>如果家长从事精密计时相关工作（运动员教练、实验室研究员、工程师等），欢迎进课堂分享！</p>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+// 议题展开/收起
+function toggleTopic(el) {
+  el.classList.toggle('expanded');
+}
+
+// 计时器
+var timerInterval = null;
+var timerSeconds = 300;
+var isRunning = false;
+
+function updateTimerDisplay() {
+  var m = Math.floor(timerSeconds / 60);
+  var s = timerSeconds % 60;
+  document.getElementById('timerDisplay').textContent =
+    String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  if (timerSeconds <= 0) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    isRunning = false;
+    document.getElementById('timerStartBtn').textContent = '▶ 开始';
+  }
+}
+
+function startTimer() {
+  if (isRunning) return;
+  if (timerSeconds <= 0) timerSeconds = 300;
+  isRunning = true;
+  document.getElementById('timerStartBtn').textContent = '▶ 进行中';
+  timerInterval = setInterval(function() {
+    timerSeconds--;
+    updateTimerDisplay();
+  }, 1000);
+}
+
+function pauseTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  isRunning = false;
+  document.getElementById('timerStartBtn').textContent = '▶ 继续';
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  isRunning = false;
+  timerSeconds = 300;
+  updateTimerDisplay();
+  document.getElementById('timerStartBtn').textContent = '▶ 开始';
+}
+</script>
+</body>
+</html>

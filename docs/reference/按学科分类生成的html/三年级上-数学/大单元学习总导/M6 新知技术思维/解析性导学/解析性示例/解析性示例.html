@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性示例 — 时、分、秒</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 20px;
+}
+.container { width: 100%; max-width: none; padding: 0; }
+.page-header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 30px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  text-align: center;
+}
+.page-header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.page-header .meta { opacity: 0.85; font-size: 14px; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 14px;
+}
+.card h3 {
+  font-size: 18px;
+  color: var(--text);
+  margin: 14px 0 8px;
+}
+.intro-box {
+  background: linear-gradient(135deg, #fff7e6, #fffbe6);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-bottom: 20px;
+  border-left: 5px solid #faad14;
+  font-size: 17px;
+}
+.story-scene {
+  background: linear-gradient(135deg, #e6f4ff, #f0f5ff);
+  border-radius: var(--border-radius);
+  padding: 24px;
+  margin-bottom: 20px;
+  border: 2px dashed var(--accent);
+  text-align: center;
+}
+.story-scene .runner {
+  display: inline-block;
+  margin: 0 20px;
+  text-align: center;
+}
+.story-scene .runner .name { font-weight: 700; font-size: 20px; }
+.story-scene .runner .time {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 6px 0;
+}
+.story-scene .runner .medal { font-size: 36px; }
+.story-scene .question {
+  margin-top: 16px;
+  padding: 12px;
+  background: #fff;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 17px;
+}
+.step-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  background: #fafafa;
+  border-radius: var(--border-radius);
+  border-left: 4px solid var(--accent);
+  transition: background 0.2s;
+  cursor: pointer;
+}
+.step-box:hover { background: #e6f4ff; }
+.step-num {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.step-content { flex: 1; }
+.step-content .step-title { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+.step-content .step-desc { font-size: 15px; color: var(--text-secondary); }
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 15px;
+}
+.info-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+}
+.info-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #eee;
+}
+.info-table tr:nth-child(even) td { background: #f9f9f9; }
+.method-list {
+  list-style: none;
+  padding: 0;
+}
+.method-list li {
+  padding: 8px 0 8px 36px;
+  position: relative;
+  border-bottom: 1px dashed #eee;
+}
+.method-list li::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 14px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.error-box {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 12px 0;
+}
+.error-item {
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 15px;
+}
+.error-item.wrong { background: #fff2f0; border-left: 4px solid #ff4d4f; }
+.error-item.correct { background: #f0fdf4; border-left: 4px solid #16a34a; }
+.practice-hint {
+  display: none;
+  margin-top: 10px;
+  padding: 14px;
+  background: #fff;
+  border-radius: 6px;
+  border-left: 4px solid var(--accent);
+}
+.practice-hint.show { display: block; }
+.check-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+.check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  background: #fafafa;
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+.check-item:hover { background: #e6f4ff; }
+.check-item .cb {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: transparent;
+  transition: all 0.2s;
+}
+.check-item.checked .cb {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.tip-btn {
+  display: inline-block;
+  padding: 6px 16px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+}
+.tip-btn:hover { background: var(--primary-hover); }
+@media (max-width: 640px) {
+  .check-grid, .error-box { grid-template-columns: 1fr; }
+  .story-scene .runner { display: block; margin: 12px 0; }
+  .page-header { padding: 20px; }
+  body { padding: 12px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="page-header">
+  <h1>🏃 解析性示例：运动会赛跑</h1>
+  <div class="meta">数学 · 三年级上 · 时、分、秒 · M6 新知技术思维</div>
+</div>
+
+<div class="story-scene">
+  <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:16px;">
+    <div class="runner">
+      <div class="name">🏃 小刚</div>
+      <div class="time">15 秒</div>
+    </div>
+    <div class="runner">
+      <div class="name">🏃‍♀️ 小红</div>
+      <div class="time">14 秒 🥇</div>
+      <div class="medal">🏆</div>
+    </div>
+    <div class="runner">
+      <div class="name">🏃 小强</div>
+      <div class="time">16 秒</div>
+    </div>
+  </div>
+  <div class="question">
+    🤔 广播员宣布："小红14秒，第一名！"<br>
+    小刚不服气："我的15比14大，为什么不是我快？"
+  </div>
+</div>
+
+<div class="intro-box">
+  <strong>🎯 核心问题：</strong>赛跑时，数字大 ≠ 快！在时间的世界里，<strong>数字越小，跑得越快</strong>——因为谁用的时间少，谁就更快。
+</div>
+
+<div class="card">
+  <h2>📋 关键信息提取</h2>
+  <table class="info-table">
+    <tr><th>情境信息</th><th>说明什么</th><th>为什么重要</th></tr>
+    <tr><td>小刚15秒，小红14秒，小强16秒</td><td>三人所用时间不同</td><td>这是比较的依据</td></tr>
+    <tr><td>小刚认为15＞14所以自己更快</td><td>混淆了"数字大小"和"速度"</td><td>这是易错点——需要澄清</td></tr>
+    <tr><td>赛跑是比谁用时少</td><td>时间越短跑得越快</td><td>这是判断标准</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h2>🔬 专家解析过程（5步）</h2>
+  <p style="color:var(--text-secondary);margin-bottom:12px;">👇 点击每一步展开思考过程</p>
+
+  <div class="step-box" onclick="toggleStep(this)">
+    <span class="step-num">1</span>
+    <div class="step-content">
+      <div class="step-title">第一步：先看见什么</div>
+      <div class="step-desc">看到三个数字：15秒、14秒、16秒——这是三个同学跑完100米各自花了多长时间。</div>
+    </div>
+  </div>
+  <div class="step-box" onclick="toggleStep(this)">
+    <span class="step-num">2</span>
+    <div class="step-content">
+      <div class="step-title">第二步：判断问题属于哪一类</div>
+      <div class="step-desc">这是"比较类"问题——比较三个同学的速度。关键是：赛跑比的是"谁花的时间少"，不是"谁的数大"。</div>
+    </div>
+  </div>
+  <div class="step-box" onclick="toggleStep(this)">
+    <span class="step-num">3</span>
+    <div class="step-content">
+      <div class="step-title">第三步：调用哪些概念、原理或方法</div>
+      <div class="step-desc">时间单位：秒（秒的比较规则）。比较规则：同样跑100米，用时越短越快。排序方法：从小到大排列。</div>
+    </div>
+  </div>
+  <div class="step-box" onclick="toggleStep(this)">
+    <span class="step-num">4</span>
+    <div class="step-content">
+      <div class="step-title">第四步：如何进行推理或分析</div>
+      <div class="step-desc">14秒 &lt; 15秒 &lt; 16秒 → 用时最少的是小红 → 所以小红最快</div>
+    </div>
+  </div>
+  <div class="step-box" onclick="toggleStep(this)">
+    <span class="step-num">5</span>
+    <div class="step-content">
+      <div class="step-title">第五步：怎样形成结论</div>
+      <div class="step-desc">第一名：小红（14秒），第二名：小刚（15秒），第三名：小强（16秒）。<br><strong>核心结论：赛跑是比谁用的时间少，不是比数字大小。</strong></div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>💡 结论表达</h2>
+  <p style="padding:14px;background:linear-gradient(135deg,#e6f4ff,#f0f5ff);border-radius:8px;font-size:17px;">
+    "在赛跑（或者其他固定路程的运动）中，想要知道谁更快，就看谁用的时间最少。时间越短，说明速度越快。"
+  </p>
+</div>
+
+<div class="card">
+  <h2>📝 方法提炼</h2>
+  <p style="margin-bottom:10px;">以后遇到类似问题，可以这样做：</p>
+  <ol class="method-list">
+    <li><strong>看前提：</strong>先搞清楚"是比谁用时少，还是比谁用时多"</li>
+    <li><strong>看单位：</strong>如果单位不统一（秒和分钟混在一起），先统一单位</li>
+    <li><strong>排序：</strong>用时少的排前面（快），用时多的排后面（慢）</li>
+    <li><strong>验证：</strong>用常识检验——冠军通常用时最少</li>
+  </ol>
+</div>
+
+<div class="card">
+  <h2>⚠️ 易错提醒</h2>
+  <div class="error-box">
+    <div class="error-item wrong">❌ 以为数字大就是快</div>
+    <div class="error-item correct">✅ 赛跑比的是时间少</div>
+    <div class="error-item wrong">❌ 直接比较秒和分钟</div>
+    <div class="error-item correct">✅ 先换算成同一单位</div>
+    <div class="error-item wrong">❌ 只比一个方面</div>
+    <div class="error-item correct">✅ 看完整前提（同样路程才可比）</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>🏋️ 自主迁移小练习</h2>
+  <p><strong>练习：</strong>跳绳比赛中，小丽跳了80个用了60秒，小华跳了80个用了55秒，谁跳得快？</p>
+  <p style="color:var(--text-secondary);font-size:15px;">💡 跳绳和赛跑一样——完成同样的任务，谁用的时间少？</p>
+  <button class="tip-btn" onclick="toggleHint()">👀 看看答案</button>
+  <div id="practiceHint" class="practice-hint">
+    <p><strong>解析：</strong>两人都跳了80个（任务相同）。小丽用了60秒，小华用了55秒。<br>55秒 &lt; 60秒 → <strong>小华跳得更快！</strong></p>
+  </div>
+</div>
+
+<div class="card">
+  <h2>✅ 学习自评</h2>
+  <p>点击每一项，检查自己是否掌握了 👇</p>
+  <div class="check-grid">
+    <div class="check-item" onclick="toggleCheck(this)"><span class="cb">✓</span> 我能说清楚"为什么14秒比15秒快"</div>
+    <div class="check-item" onclick="toggleCheck(this)"><span class="cb">✓</span> 我能向别人讲解"比较时间大小"的方法</div>
+    <div class="check-item" onclick="toggleCheck(this)"><span class="cb">✓</span> 我能自己总结"赛跑时间比较三步法"</div>
+    <div class="check-item" onclick="toggleCheck(this)"><span class="cb">✓</span> 遇到新问题（如游泳成绩），我会用同样的方法</div>
+    <div class="check-item" onclick="toggleCheck(this)"><span class="cb">✓</span> 我能举出3个"用时少反而好"的生活例子</div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function toggleStep(el) {
+  el.style.background = el.style.background === 'rgb(230, 244, 255)' ? '#fafafa' : '#e6f4ff';
+}
+function toggleHint() {
+  var el = document.getElementById('practiceHint');
+  if (el) el.classList.toggle('show');
+}
+function toggleCheck(item) {
+  item.classList.toggle('checked');
+}
+</script>
+
+</body>
+</html>

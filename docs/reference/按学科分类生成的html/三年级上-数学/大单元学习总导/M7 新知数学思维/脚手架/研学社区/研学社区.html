@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>研学社区 — 时间案例大探索</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+h1 { font-size: var(--font-h1); color: var(--primary); text-align: center; margin: 24px 0 8px; }
+h1::after { content: ''; display: block; width: 60px; height: 3px; background: var(--accent); margin: 10px auto 0; border-radius: 2px; }
+h2 { font-size: var(--font-h2); color: var(--primary); margin: 28px 0 14px; padding-left: 12px; border-left: 4px solid var(--accent); }
+.subtitle { text-align: center; color: var(--text-secondary); font-size: 15px; margin-bottom: 24px; }
+.difficulty-bar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.diff-btn { padding: 8px 20px; border-radius: 20px; border: 2px solid var(--accent); background: transparent; color: var(--primary); font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.3s; }
+.diff-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.diff-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+.case-groups { display: block; }
+.case-group { display: none; }
+.case-group.active { display: block; }
+.case-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 16px 18px; margin-bottom: 16px; transition: transform 0.2s; }
+.case-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.10); }
+.case-card .case-badge { display: inline-block; background: var(--bg); color: var(--primary); font-size: 12px; padding: 2px 12px; border-radius: 12px; border: 1px solid var(--accent); margin-bottom: 4px; }
+.case-card .case-title { font-size: 19px; font-weight: 600; color: var(--primary); margin-bottom: 4px; }
+.case-card .case-bg { font-size: 14px; color: var(--text-secondary); margin-bottom: 6px; }
+.case-card .case-q { background: #fff8e6; border: 1px solid #ffe58f; border-radius: 6px; padding: 8px 12px; margin: 8px 0; }
+.case-card .case-q strong { color: #d48806; }
+.path-container { background: #f7faff; border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.path-step { display: flex; align-items: center; gap: 6px; margin: 6px 0; flex-wrap: wrap; }
+.path-step .step-num { background: var(--primary); color: #fff; width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+.path-step .step-text { font-size: 15px; }
+.path-arrow { color: var(--accent); font-size: 18px; margin: 0 4px; }
+.case-result { margin: 8px 0; padding: 8px 12px; border-radius: 6px; font-size: 15px; }
+.case-result.good { background: #f6ffed; border: 1px solid #b7eb8f; }
+.case-result.info { background: #e6f7ff; border: 1px solid #91d5ff; }
+.case-insight { border-top: 2px dashed var(--accent); margin-top: 10px; padding-top: 8px; font-size: 15px; color: var(--text-secondary); }
+.challenge-card { background: linear-gradient(135deg, #fff8e6 0%, #fffbe6 100%); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 16px 18px; margin: 14px 0; border: 2px solid #ffe58f; }
+.challenge-card h3 { color: #d48806; margin: 0 0 8px; font-size: 19px; }
+.challenge-btn { background: #d48806; color: #fff; border: none; padding: 8px 24px; border-radius: 6px; font-size: 15px; cursor: pointer; transition: background 0.2s; }
+.challenge-btn:hover { background: #f5a623; }
+.interact-btn { display: inline-block; background: var(--primary); color: #fff; border: none; padding: 6px 18px; border-radius: 6px; font-size: 14px; cursor: pointer; transition: background 0.2s; margin: 4px 4px 0 0; }
+.interact-btn:hover { background: var(--primary-hover); }
+.interact-btn.outline { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
+.interact-btn.outline:hover { background: var(--bg); }
+@media (max-width: 600px) { .container { padding: 12px 14px; } h1 { font-size: 24px; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🔍 研学社区</h1>
+  <p class="subtitle">从真实案例中读懂时间</p>
+
+  <div class="difficulty-bar">
+    <button class="diff-btn active" onclick="switchDiff(this,'basic')">🌱 基础</button>
+    <button class="diff-btn" onclick="switchDiff(this,'intermediate')">🌿 进阶</button>
+    <button class="diff-btn" onclick="switchDiff(this,'challenge')">🌳 挑战</button>
+  </div>
+
+  <div class="case-groups">
+    <!-- 基础案例 -->
+    <div class="case-group active" id="basic">
+      <div class="case-card">
+        <span class="case-badge">🌱 生活案例</span>
+        <div class="case-title">小明的一天——时间管理大挑战</div>
+        <div class="case-bg">三年级学生小明早上7:00起床，8:00上学，下午4:00放学，晚上9:00睡觉。他有作业、练琴、玩耍三件事，但时间有限。</div>
+        <div class="case-q"><strong>❓ 核心问题：</strong>小明如何在有限的时间里安排好三件事？</div>
+        <div class="path-container">
+          <strong>决策路径：</strong>
+          <div class="path-step"><span class="step-num">A</span><span class="step-text">先玩再做作业</span><span class="path-arrow">→</span></div>
+          <div class="path-step"><span class="step-num">B</span><span class="step-text">先做作业再玩</span><span class="path-arrow">→</span></div>
+          <div class="path-step"><span class="step-num">C</span><span class="step-text">分段安排</span></div>
+        </div>
+        <div class="case-result info"><strong>结果：</strong>方案A：玩得开心但作业质量差 → 方案B：作业完成好但没时间练琴 → 方案C：合理分配，三件事都完成！✅</div>
+        <div class="case-insight">💡 <strong>可迁移启示：</strong>做时间计划要"重要的事情优先"</div>
+        <button class="interact-btn outline" onclick="showPlan(this)">📝 帮小明做个计划</button>
+      </div>
+    </div>
+
+    <!-- 进阶案例 -->
+    <div class="case-group" id="intermediate">
+      <div class="case-card">
+        <span class="case-badge">🌿 历史案例</span>
+        <div class="case-title">火车时刻表的诞生</div>
+        <div class="case-bg">19世纪以前，每个城市的"中午"都不一样——各地按太阳位置定时间。火车出现后，时间不统一会导致撞车事故！</div>
+        <div class="case-q"><strong>❓ 核心问题：</strong>如何让不同城市的火车按统一时间运行？</div>
+        <div class="path-container">
+          <strong>决策路径：</strong>
+          <div class="path-step"><span class="step-num">①</span><span class="step-text">各地自定时间</span><span class="path-arrow">→</span><span class="step-text">❌ 混乱，容易撞车</span></div>
+          <div class="path-step"><span class="step-num">②</span><span class="step-text">铁路公司统一时间</span><span class="path-arrow">→</span><span class="step-text">各公司标准不同</span></div>
+          <div class="path-step"><span class="step-num">③</span><span class="step-text">1884年建立全球时区制度</span><span class="path-arrow">→</span><span class="step-text">✅ 全球统一标准</span></div>
+        </div>
+        <div class="case-result good"><strong>结果：</strong>今天我们有标准时间和时区划分，全世界在同一套时间系统下运行！</div>
+        <div class="case-insight">💡 <strong>可迁移启示：</strong>当很多人需要协作时，需要一个"共同的标准"</div>
+        <button class="interact-btn outline" onclick="showFunFact(this)">🤔 你知道吗？</button>
+      </div>
+    </div>
+
+    <!-- 挑战案例 -->
+    <div class="case-group" id="challenge">
+      <div class="case-card">
+        <span class="case-badge">🌳 复杂系统案例</span>
+        <div class="case-title">闰秒——时间也要"加塞"</div>
+        <div class="case-bg">地球自转速度不固定，有时快有时慢。但原子钟极其稳定。两者一对比，原子钟比地球自转快了约0.001秒/天。</div>
+        <div class="case-q"><strong>❓ 核心问题：</strong>当"地球时间"和"原子时间"不一样了，怎么办？</div>
+        <div class="path-container">
+          <strong>三种方案：</strong>
+          <div class="path-step"><span class="step-num">A</span><span class="step-text">不管它 → 时间逐渐偏移，几百年后中午变成半夜</span></div>
+          <div class="path-step"><span class="step-num">B</span><span class="step-text">让时间加一秒——闰秒 → ✅ 1972年起引入，已加了27秒（截至2023年）</span></div>
+          <div class="path-step"><span class="step-num">C</span><span class="step-text">彻底抛弃天文时间 → 原子时间与地球脱钩</span></div>
+        </div>
+        <div class="case-result info"><strong>结果：</strong>方案B被采用，但我们每过几年就要给时间"多加一秒"！最近还在讨论要不要取消闰秒呢。</div>
+        <div class="case-insight">💡 <strong>可迁移启示：</strong>"标准"和"现实"出现差异时，需要灵活的调整机制</div>
+        <button class="interact-btn outline" onclick="showLeapSecond(this)">⏰ 了解闰秒的故事</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 决策者挑战 -->
+  <div class="challenge-card">
+    <h3>🎯 "如果你是决策者"任务</h3>
+    <p><strong>挑战一：</strong>如果你是1884年国际经度会议的代表，你会支持统一时间还是反对？为什么？</p>
+    <p><strong>挑战二：</strong>如果你来决定"要不要取消闰秒"，你会怎么选？</p>
+    <div style="text-align:center;margin-top:12px;">
+      <button class="challenge-btn" onclick="showChallenge(this)">🎤 说说你的决定</button>
+    </div>
+    <p id="challengeResult" style="margin-top:10px;font-size:15px;color:var(--text-secondary);text-align:center;"></p>
+  </div>
+
+  <div style="background:linear-gradient(120deg,rgba(22,119,255,0.10)0%,rgba(22,119,255,0.06)100%);padding:12px 16px;border-radius:8px;margin:14px 0;text-align:center;">
+    <strong>🌟 收获记录：</strong>选一个你印象最深的案例，写一段"我的收获"（50字左右），分享到班级圈！
+  </div>
+</div>
+<script>
+function switchDiff(btn, level) {
+  document.querySelectorAll('.diff-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  document.querySelectorAll('.case-group').forEach(function(g){ g.classList.remove('active'); });
+  document.getElementById(level).classList.add('active');
+}
+function showPlan(btn) {
+  var plans = ['📋 计划A：4:00-4:40作业→4:50-5:20练琴→5:30-6:00玩耍 ✅','📋 计划B：先玩30分钟→作业45分钟→练琴30分钟→再玩15分钟 ✅','📋 计划C：作业(分段)25+25→练琴20→玩耍40 ✅'];
+  btn.textContent = plans[Math.floor(Math.random() * plans.length)];
+  btn.style.background = 'var(--primary)';
+  btn.style.color = '#fff';
+  setTimeout(function(){ btn.textContent = '📝 帮小明做个计划'; btn.style.background = 'transparent'; btn.style.color = 'var(--primary)'; }, 3000);
+}
+function showFunFact(btn) {
+  btn.textContent = '🤯 其实中国横跨5个时区，但全国都用"北京时间"！';
+  btn.style.background = 'var(--primary)';
+  btn.style.color = '#fff';
+  setTimeout(function(){ btn.textContent = '🤔 你知道吗？'; btn.style.background = 'transparent'; btn.style.color = 'var(--primary)'; }, 3000);
+}
+function showLeapSecond(btn) {
+  btn.textContent = '⏰ 最近一次闰秒是2016年12月31日！下次可能在2035年取消~';
+  btn.style.background = 'var(--primary)';
+  btn.style.color = '#fff';
+  setTimeout(function(){ btn.textContent = '⏰ 了解闰秒的故事'; btn.style.background = 'transparent'; btn.style.color = 'var(--primary)'; }, 3000);
+}
+function showChallenge(btn) {
+  var opinions = [
+    '🗳️ "支持统一时间！就像大家用同一把尺子量东西，才不会有误会。"',
+    '🗳️ "反对统一时间！每个地方有自己的日出日落，强行统一不合理。"',
+    '🗳️ "取消闰秒！计算机系统每次加闰秒都容易出bug。"',
+    '🗳️ "保留闰秒！让人类时间和地球保持同步，这才是真正的时间。"'
+  ];
+  document.getElementById('challengeResult').textContent = opinions[Math.floor(Math.random() * opinions.length)];
+}
+</script>
+</body>
+</html>

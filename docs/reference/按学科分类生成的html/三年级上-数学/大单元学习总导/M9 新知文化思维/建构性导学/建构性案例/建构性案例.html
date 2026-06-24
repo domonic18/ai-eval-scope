@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性案例 - M9 新知文化思维</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+}
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff;
+  padding: 28px 36px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 6px; }
+.header p { font-size: calc(var(--font-body) - 1px); opacity: 0.9; }
+.header .badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.25);
+  padding: 3px 14px;
+  border-radius: 20px;
+  font-size: calc(var(--font-body) - 4px);
+  margin-top: 6px;
+}
+.section-title {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 20px 0 12px;
+  padding-left: 12px;
+  border-left: 4px solid var(--primary);
+}
+.case-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.case-nav button {
+  padding: 8px 16px;
+  border: 2px solid var(--primary);
+  background: var(--card-bg);
+  color: var(--primary);
+  border-radius: 20px;
+  font-size: calc(var(--font-body) - 3px);
+  cursor: pointer;
+  transition: all 0.25s;
+  font-family: inherit;
+}
+.case-nav button:hover, .case-nav button.active {
+  background: var(--primary);
+  color: #fff;
+}
+.case-card {
+  display: none;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  animation: fadeIn 0.35s ease;
+}
+.case-card.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.level-tag {
+  display: inline-block;
+  padding: 3px 14px;
+  border-radius: 14px;
+  font-size: calc(var(--font-body) - 5px);
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.level-1 { background: #e6fffb; color: #08979c; border: 1px solid #87e8de; }
+.level-2 { background: #f0f5ff; color: #1d39c4; border: 1px solid #adc6ff; }
+.level-3 { background: #fff7e6; color: #d46b08; border: 1px solid #ffd591; }
+.level-4 { background: #f6ffed; color: #389e0d; border: 1px solid #b7eb8f; }
+.level-5 { background: #f9f0ff; color: #722ed1; border: 1px solid #d3adf7; }
+.level-6 { background: #fff1f0; color: #cf1322; border: 1px solid #ffa39e; }
+.level-7 { background: #e6f7ff; color: #096dd9; border: 1px solid #91d5ff; }
+.case-card h3 { font-size: var(--font-h2); color: var(--text); margin-bottom: 10px; }
+.case-card h4 { font-size: calc(var(--font-body) + 1px); color: var(--primary); margin: 14px 0 6px; }
+.steps { padding-left: 20px; margin: 8px 0; }
+.steps li { margin-bottom: 4px; }
+.rubric {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin-top: 12px;
+  border: 1px dashed var(--border);
+}
+.rubric-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
+.rubric-item::before { content: "☐"; color: var(--primary); font-size: calc(var(--font-body) + 2px); }
+.principle-ref {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 10px 0;
+  font-size: calc(var(--font-body) - 1px);
+}
+.principle-ref strong { color: #389e0d; }
+.progress-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 16px 0;
+}
+.progress-dots .dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--border);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+.progress-dots .dot.active { background: var(--primary); transform: scale(1.3); }
+.progress-dots .dot:hover { transform: scale(1.2); }
+.btn-primary {
+  display: inline-block;
+  padding: 8px 22px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  font-size: calc(var(--font-body) - 2px);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s;
+}
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-outline {
+  display: inline-block;
+  padding: 8px 22px;
+  background: var(--card-bg);
+  color: var(--primary);
+  border: 2px solid var(--primary);
+  border-radius: 20px;
+  font-size: calc(var(--font-body) - 2px);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.btn-outline:hover { background: var(--primary); color: #fff; }
+.nav-buttons { display: flex; justify-content: space-between; margin-top: 16px; }
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .header { padding: 18px; }
+  .case-card { padding: 16px; }
+  .case-nav button { padding: 6px 12px; font-size: calc(var(--font-body) - 4px); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>建构性七阶案例</h1>
+  <p>M9 新知文化思维 · 从个人感受到社会应用，层层递进</p>
+  <span class="badge">运用建构性原理，亲手建构时间理解</span>
+</div>
+
+<div class="card" style="background:var(--card-bg);padding:18px 22px;margin-bottom:16px;border:1px solid var(--border);border-radius:var(--border-radius);">
+  <p style="font-size:calc(var(--font-body)-1px);color:var(--text-secondary);">
+    七个案例从<strong>个人感受</strong>到<strong>社会应用</strong>，层层递进。点击下方按钮切换案例，也可以使用上一页/下一页按钮按顺序浏览。
+  </p>
+</div>
+
+<div class="case-nav" id="caseNav">
+  <button class="active" data-index="0">案例一</button>
+  <button data-index="1">案例二</button>
+  <button data-index="2">案例三</button>
+  <button data-index="3">案例四</button>
+  <button data-index="4">案例五</button>
+  <button data-index="5">案例六</button>
+  <button data-index="6">案例七</button>
+</div>
+
+<div class="progress-dots" id="progressDots">
+  <span class="dot active" data-index="0"></span>
+  <span class="dot" data-index="1"></span>
+  <span class="dot" data-index="2"></span>
+  <span class="dot" data-index="3"></span>
+  <span class="dot" data-index="4"></span>
+  <span class="dot" data-index="5"></span>
+  <span class="dot" data-index="6"></span>
+</div>
+
+<!-- 案例一 -->
+<div class="case-card active" data-index="0">
+  <span class="level-tag level-1">个人理解型</span>
+  <h3>案例一：我的"10秒钟"计时器</h3>
+  <p><strong>真实建构情境：</strong>你和同学比赛"谁估计的10秒最准"，不用钟表，完全靠感觉。你打算用什么方法让自己估计得最准？</p>
+  <h4>建构任务</h4>
+  <p>设计并制作一个"人体10秒计时器"方案——用拍手、脉搏、数数或其他身体节奏来估计10秒。</p>
+  <div class="principle-ref">
+    <strong>原理调用：</strong>原理①（从身体感受到数学概念）——先找到你身体里稳定的"节奏"（心跳、呼吸、拍手频率），再换算成秒。
+  </div>
+  <h4>建构步骤</h4>
+  <ol class="steps">
+    <li>找出身体里最稳定的节奏</li>
+    <li>实际计时验证节奏</li>
+    <li>调整校准</li>
+    <li>写出"使用说明书"</li>
+    <li>画计时器示意图</li>
+  </ol>
+  <h4>成果表达</h4>
+  <p>一份"人体10秒计时器说明书"（含方法描述+校准数据+示意图）</p>
+  <div class="rubric">
+    <div class="rubric-item">我找到了至少两种身体节奏方法</div>
+    <div class="rubric-item">我记录了校准数据</div>
+    <div class="rubric-item">说明书别人能看懂</div>
+  </div>
+</div>
+
+<!-- 案例二 -->
+<div class="case-card" data-index="1">
+  <span class="level-tag level-2">生活应用型</span>
+  <h3>案例二：课间10分钟"时间管家"</h3>
+  <p><strong>真实建构情境：</strong>课间10分钟，你总是玩着玩着就上课了。请设计一个"课间10分钟时间分配方案"，让你既能玩好又不迟到。</p>
+  <h4>建构任务</h4>
+  <p>制作一张"课间10分钟时间管理卡"，把10分钟分成几段（如：上厕所→喝水→玩→回座位），并为每段分配时间。</p>
+  <div class="principle-ref">
+    <strong>原理调用：</strong>原理③（三步建构法）——先记录你实际课间做什么→再整理数据→最后制定分配方案。
+  </div>
+  <h4>建构步骤</h4>
+  <ol class="steps">
+    <li>连记3天课间时间使用</li>
+    <li>整理出"时间去哪儿了"表</li>
+    <li>设计理想方案</li>
+    <li>试用并调整</li>
+  </ol>
+  <h4>成果表达</h4>
+  <p>一张"课间时间管理卡"（含时间段分配+每段任务+实际执行记录）</p>
+  <div class="rubric">
+    <div class="rubric-item">记录了至少3天的课间时间</div>
+    <div class="rubric-item">分配方案总时间是10分钟</div>
+    <div class="rubric-item">试用后做出了调整</div>
+  </div>
+</div>
+
+<!-- 案例三 -->
+<div class="case-card" data-index="2">
+  <span class="level-tag level-3">校园问题解决型</span>
+  <h3>案例三：班级"一分钟挑战大赛"</h3>
+  <p><strong>真实建构情境：</strong>班会上，老师让大家感受"一分钟能做多少事"。有人说能写30个字，有人说能跳120个绳。到底一分钟能做什么？</p>
+  <h4>建构任务</h4>
+  <p>设计一个"班级一分钟挑战大赛"方案——确定挑战项目、规则和记录表，让全班同学体验"一分钟的价值"。</p>
+  <div class="principle-ref">
+    <strong>原理调用：</strong>原理②（对比发现规律）——通过对比不同项目的比赛结果，发现不同活动中"一分钟的效率"差异。
+  </div>
+  <h4>建构步骤</h4>
+  <ol class="steps">
+    <li>列出3-5个可能的挑战项目</li>
+    <li>为每个项目制定规则</li>
+    <li>设计记录表</li>
+    <li>试运行1个项目</li>
+    <li>完善方案</li>
+  </ol>
+  <h4>成果表达</h4>
+  <p>一份"班级一分钟挑战大赛策划案"（项目清单+规则+记录表模板）</p>
+  <div class="rubric">
+    <div class="rubric-item">至少有3个不同挑战项目</div>
+    <div class="rubric-item">每个项目有明确的计数规则</div>
+    <div class="rubric-item">记录表有可比性</div>
+  </div>
+</div>
+
+<!-- 案例四 -->
+<div class="case-card" data-index="3">
+  <span class="level-tag level-4">学科表达型</span>
+  <h3>案例四：时间单位换算"可视化工具"</h3>
+  <p><strong>真实建构情境：</strong>"1小时=60分钟，1分钟=60秒"这个换算关系，你能不能不用死记硬背，而是用一张图让别人一眼看懂？</p>
+  <h4>建构任务</h4>
+  <p>创作一张"时间单位换算可视化图"，让三年级同学一看就明白"时、分、秒"之间的关系。</p>
+  <div class="principle-ref">
+    <strong>原理调用：</strong>原理⑤（反思+可视化）——思考"我是怎么理解这个换算关系的"，然后把理解过程画出来。
+  </div>
+  <h4>建构步骤</h4>
+  <ol class="steps">
+    <li>画出三种时间单位的"实物类比"（秒=眨一下眼，分=一节课的1/40）</li>
+    <li>画出换算阶梯或齿轮图</li>
+    <li>标注关键换算点</li>
+    <li>用彩笔上色区分层级</li>
+  </ol>
+  <h4>成果表达</h4>
+  <p>一张A4大小的"时间单位换算可视化图"</p>
+  <div class="rubric">
+    <div class="rubric-item">包含时、分、秒三种单位</div>
+    <div class="rubric-item">正确标注了60倍换算关系</div>
+    <div class="rubric-item">使用了至少一种可视化表达（阶梯/齿轮/圆环）</div>
+  </div>
+</div>
+
+<!-- 案例五 -->
+<div class="case-card" data-index="4">
+  <span class="level-tag level-5">跨学科整合型</span>
+  <h3>案例五：时间与速度——测量"我走得多快"</h3>
+  <p><strong>真实建构情境：</strong>学校要开运动会，老师说"走得快的人，走同样的路用的时间少"。时间、距离、速度到底是什么关系？</p>
+  <h4>建构任务</h4>
+  <p>测量从教室到校门口的距离和所用时间，计算出"你的步行速度"，并画出一张"时间-距离关系图"。</p>
+  <div class="principle-ref">
+    <strong>原理调用：</strong>原理③（三步建构法）——先体验走路→再记录时间和距离数据→最后画图建模。
+  </div>
+  <h4>建构步骤</h4>
+  <ol class="steps">
+    <li>测量教室到校门口的步数（估算距离）</li>
+    <li>计时走这段路</li>
+    <li>计算速度（距离÷时间）</li>
+    <li>画时间-距离关系图</li>
+  </ol>
+  <h4>成果表达</h4>
+  <p>一张"我的步行速度报告"（含距离、时间、速度数据+时间-距离坐标图草图）</p>
+  <div class="rubric">
+    <div class="rubric-item">记录了准确的时间和步数</div>
+    <div class="rubric-item">正确计算了速度</div>
+    <div class="rubric-item">坐标图标注了数值</div>
+  </div>
+</div>
+
+<!-- 案例六 -->
+<div class="case-card" data-index="5">
+  <span class="level-tag level-6">社会或历史情境型</span>
+  <h3>案例六：古代人的时间测量智慧</h3>
+  <p><strong>真实建构情境：</strong>古代没有钟表，古人是怎么知道时间的？日晷、水钟、沙漏——这些"原始钟表"的原理是什么？</p>
+  <h4>建构任务</h4>
+  <p>选择一种古代的计时工具（日晷/水钟/沙漏），用身边的材料做一个简易模型，并写一份"原理说明书"。</p>
+  <div class="principle-ref">
+    <strong>原理调用：</strong>原理①（从感受到概念）——古人也是通过"观察到现象→形成概念"的过程发明了计时工具。
+  </div>
+  <h4>建构步骤</h4>
+  <ol class="steps">
+    <li>查阅或回忆古人计时方式</li>
+    <li>选择一种工具研究原理</li>
+    <li>用纸杯/木棍/沙子等材料制作</li>
+    <li>测试是否存在误差</li>
+    <li>写原理说明书</li>
+  </ol>
+  <h4>成果表达</h4>
+  <p>简易古代计时器模型 + "原理说明书"（含结构图+工作原理+误差分析）</p>
+  <div class="rubric">
+    <div class="rubric-item">模型使用了身边材料制作</div>
+    <div class="rubric-item">说明书画出了结构</div>
+    <div class="rubric-item">测试了计时功能并记录了误差</div>
+  </div>
+</div>
+
+<!-- 案例七 -->
+<div class="case-card" data-index="6">
+  <span class="level-tag level-7">综合创新型</span>
+  <h3>案例七：为"时间盲人"设计一个时间感知器</h3>
+  <p><strong>真实建构情境：</strong>钟表依赖视觉——如果你闭上眼睛，怎么知道时间过去了多久？或者说，如果一个人看不见也听不到，他怎样感知时间？</p>
+  <h4>建构任务</h4>
+  <p>设计一个"非视觉时间感知方案"——不用眼睛看钟表，用触觉、听觉、嗅觉或身体感觉来感知时间流逝。</p>
+  <div class="principle-ref">
+    <strong>原理调用：</strong>原理①+原理③——从身体节奏感受出发，用三步法建构出方案。
+  </div>
+  <h4>建构步骤</h4>
+  <ol class="steps">
+    <li>列出人类除视觉外的所有感官</li>
+    <li>为每种感官设计一种"时间提醒方式"</li>
+    <li>选择最佳方案画设计图</li>
+    <li>制作简易原型</li>
+    <li>测试并优化</li>
+  </ol>
+  <h4>成果表达</h4>
+  <p>一份"非视觉时间感知器"设计方案（含设计图+材料清单+使用说明）</p>
+  <div class="rubric">
+    <div class="rubric-item">使用了至少2种非视觉感官</div>
+    <div class="rubric-item">设计图标注了关键结构</div>
+    <div class="rubric-item">方案有可操作性，不是空想</div>
+  </div>
+</div>
+
+<div class="nav-buttons">
+  <button class="btn-outline" onclick="changeCase(-1)">◀ 上一案例</button>
+  <button class="btn-primary" onclick="changeCase(1)">下一案例 ▶</button>
+</div>
+
+<script>
+let currentIndex = 0;
+const total = 7;
+
+function showCase(index) {
+  if (index < 0) index = total - 1;
+  if (index >= total) index = 0;
+  currentIndex = index;
+
+  document.querySelectorAll('.case-card').forEach((el, i) => {
+    el.classList.toggle('active', i === index);
+  });
+  document.querySelectorAll('.case-nav button').forEach((el, i) => {
+    el.classList.toggle('active', i === index);
+  });
+  document.querySelectorAll('.progress-dots .dot').forEach((el, i) => {
+    el.classList.toggle('active', i === index);
+  });
+}
+
+function changeCase(delta) {
+  showCase(currentIndex + delta);
+}
+
+document.querySelectorAll('.case-nav button').forEach(btn => {
+  btn.addEventListener('click', function() {
+    showCase(parseInt(this.dataset.index));
+  });
+});
+
+document.querySelectorAll('.progress-dots .dot').forEach(dot => {
+  dot.addEventListener('click', function() {
+    showCase(parseInt(this.dataset.index));
+  });
+});
+</script>
+
+</div>
+</body>
+</html>

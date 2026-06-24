@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目社区 — 时、分、秒的认识</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+}
+.header {
+  text-align: center;
+  padding: 30px 20px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  border-radius: 0 0 20px 20px;
+  margin-bottom: 30px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin-bottom: 8px;
+  letter-spacing: 2px;
+}
+.header p { opacity: 0.9; font-size: 16px; }
+.section-desc {
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+  font-size: 16px;
+}
+
+/* Timeline-style project cards */
+.project-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  margin-bottom: 24px;
+  overflow: hidden;
+  transition: box-shadow 0.25s;
+}
+.project-card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.1); }
+.project-card-header {
+  padding: 18px 20px;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: relative;
+}
+.project-card-header .duration-tag {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.duration-short { background: #e6f7ff; color: #1677ff; }
+.duration-mid { background: #fff7e6; color: #d46b08; }
+.duration-long { background: #f6ffed; color: #16a34a; }
+.project-card-header h3 {
+  font-size: 17px;
+  flex: 1;
+  color: var(--text);
+}
+.project-card-header .status-badge {
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.project-card-header .arrow {
+  transition: transform 0.3s;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.project-card.open .project-card-header .arrow { transform: rotate(180deg); }
+.project-card-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.45s ease, padding 0.3s ease;
+  padding: 0 20px;
+}
+.project-card.open .project-card-body {
+  max-height: 1200px;
+  padding: 0 20px 20px;
+}
+.project-card-body h4 {
+  font-size: 16px;
+  color: var(--primary);
+  margin: 16px 0 8px;
+  padding-left: 10px;
+  border-left: 3px solid var(--accent);
+}
+.project-card-body ul, .project-card-body ol {
+  padding-left: 22px;
+  margin: 6px 0;
+}
+.project-card-body li {
+  margin-bottom: 4px;
+  font-size: 15px;
+}
+.project-card-body .goal-box {
+  background: #f6f9ff;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+  border-left: 4px solid var(--primary);
+}
+.project-card-body .goal-box strong { color: var(--primary); }
+
+.project-card-body .eval-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin: 10px 0;
+}
+.eval-item {
+  background: #fafafa;
+  border-radius: 6px;
+  padding: 10px 14px;
+  text-align: center;
+  font-size: 14px;
+  border: 1px solid var(--border);
+}
+.eval-item .check { font-size: 20px; display: block; margin-bottom: 4px; }
+
+/* Progress stepper */
+.stepper {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+.step {
+  flex: 1;
+  min-width: 100px;
+  text-align: center;
+  padding: 10px 6px;
+  background: #fafafa;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.step:hover { border-color: var(--accent); }
+.step.done { background: #f6ffed; border-color: #b7eb8f; color: #16a34a; }
+.step.done::after { content: " ✅"; }
+.step.active-step { border-color: var(--primary); background: #f0f5ff; font-weight: 600; color: var(--primary); }
+
+.resource-link {
+  display: inline-block;
+  margin-top: 6px;
+  color: var(--primary);
+  font-size: 14px;
+  text-decoration: none;
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+  padding: 3px 12px;
+  transition: all 0.2s;
+}
+.resource-link:hover { background: var(--primary); color: #fff; }
+
+.team-note {
+  background: linear-gradient(135deg, #fef7ff, #f0f5ff);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  border: 1px solid var(--border);
+  margin-top: 20px;
+}
+.team-note h3 {
+  font-size: 18px;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+.team-note p { font-size: 15px; color: var(--text-secondary); }
+
+@media (max-width: 768px) {
+  .container { padding: 16px 12px; }
+  .header { padding: 20px 16px; }
+  .project-card-header { flex-wrap: wrap; gap: 8px; }
+  .stepper { gap: 4px; }
+  .step { min-width: 40px; font-size: 12px; padding: 6px 4px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🏗️ 项目社区</h1>
+    <p>通过做"真项目"来深化对时间的理解，让你的学习成果有真实的用途</p>
+  </div>
+
+  <div class="section-desc">
+    选择适合你的项目——从1天的微项目到1个月的综合项目。点击卡片展开任务详情，完成每一步就标记它 ✅
+  </div>
+
+  <!-- 短周期：微项目 -->
+  <div class="project-card" onclick="toggleProject(this)">
+    <div class="project-card-header">
+      <span class="duration-tag duration-short">📅 1-3天</span>
+      <h3>🌞 自制简易日晷</h3>
+      <span class="status-badge" id="shortStatus"><span>📋 未开始</span></span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="project-card-body" onclick="event.stopPropagation()">
+      <div class="goal-box"><strong>🎯 项目目标：</strong>用纸板、竹签做一个日晷，验证"太阳位置和时间的关系"</div>
+
+      <h4>📋 阶段任务</h4>
+      <div class="stepper" id="shortStepper">
+        <span class="step" onclick="markStep(this,'short')">① 准备材料</span>
+        <span class="step" onclick="markStep(this,'short')">② 制作盘面</span>
+        <span class="step" onclick="markStep(this,'short')">③ 三次观察</span>
+        <span class="step" onclick="markStep(this,'short')">④ 对比误差</span>
+      </div>
+
+      <h4>📦 成果形式</h4>
+      <ul>
+        <li>日晷实物 + 观察记录表</li>
+      </ul>
+
+      <h4>📊 评价标准</h4>
+      <div class="eval-grid">
+        <div class="eval-item"><span class="check">☀️</span>日晷可工作</div>
+        <div class="eval-item"><span class="check">📝</span>≥3次观察记录</div>
+        <div class="eval-item"><span class="check">📐</span>有误差分析</div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <a class="resource-link" href="#">🔍 B站"自制日晷"教程</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 中周期：专题项目 -->
+  <div class="project-card" onclick="toggleProject(this)">
+    <div class="project-card-header">
+      <span class="duration-tag duration-mid">📅 1-2周</span>
+      <h3>📓 我的"一周时间日记"</h3>
+      <span class="status-badge" id="midStatus"><span>📋 未开始</span></span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="project-card-body" onclick="event.stopPropagation()">
+      <div class="goal-box"><strong>🎯 项目目标：</strong>连续记录一周的时间分配，分析自己的时间使用模式</div>
+
+      <h4>📋 阶段任务</h4>
+      <div class="stepper" id="midStepper">
+        <span class="step" onclick="markStep(this,'mid')">① 设计记录表</span>
+        <span class="step" onclick="markStep(this,'mid')">② 每天记录</span>
+        <span class="step" onclick="markStep(this,'mid')">③ 周末统计</span>
+        <span class="step" onclick="markStep(this,'mid')">④ 画统计图</span>
+        <span class="step" onclick="markStep(this,'mid')">⑤ 分析报告</span>
+      </div>
+
+      <h4>📦 成果形式</h4>
+      <ul>
+        <li>一周时间记录表</li>
+        <li>统计图表（饼图 / 条形图）</li>
+        <li>"我的时间发现"分析报告</li>
+      </ul>
+
+      <h4>📊 评价标准</h4>
+      <div class="eval-grid">
+        <div class="eval-item"><span class="check">📅</span>数据完整（7天）</div>
+        <div class="eval-item"><span class="check">📊</span>图表正确</div>
+        <div class="eval-item"><span class="check">🔍</span>分析有真实发现</div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <a class="resource-link" href="#">🔍 番茄钟App辅助计时</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 长周期：综合项目 -->
+  <div class="project-card" onclick="toggleProject(this)">
+    <div class="project-card-header">
+      <span class="duration-tag duration-long">📅 1个月+</span>
+      <h3>🌟 设计"完美一日"时间管理系统</h3>
+      <span class="status-badge" id="longStatus"><span>📋 未开始</span></span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="project-card-body" onclick="event.stopPropagation()">
+      <div class="goal-box"><strong>🎯 项目目标：</strong>综合分析自己在校学习、家庭作业、兴趣发展、休息娱乐等方面的最佳时间分配，设计一份实用的一日时间管理方案</div>
+
+      <h4>📋 阶段任务</h4>
+      <div class="stepper" id="longStepper">
+        <span class="step" onclick="markStep(this,'long')">🔍 调研</span>
+        <span class="step" onclick="markStep(this,'long')">📊 分析</span>
+        <span class="step" onclick="markStep(this,'long')">✏️ 设计</span>
+        <span class="step" onclick="markStep(this,'long')">▶️ 试运行</span>
+        <span class="step" onclick="markStep(this,'long')">🔄 迭代</span>
+      </div>
+
+      <h4>🗓️ 阶段详解</h4>
+      <ul>
+        <li><strong>第1周 · 调研</strong> — 记录当前时间分配 + 采访家人/同学的时间安排</li>
+        <li><strong>第2周 · 分析</strong> — 找出"时间黑洞"（浪费最多时间的地方）+ "黄金时段"（效率最高的时段）</li>
+        <li><strong>第3周 · 设计</strong> — 制定"完美一日"时间方案（含学习+运动+娱乐+休息）</li>
+        <li><strong>第4周 · 试运行</strong> — 执行方案一周，记录执行情况</li>
+        <li><strong>迭代优化</strong> — 根据试运行结果改进方案</li>
+      </ul>
+
+      <h4>📦 成果形式</h4>
+      <ul>
+        <li>一份图文并茂的"我的完美一日"时间管理海报</li>
+      </ul>
+
+      <h4>📊 评价标准</h4>
+      <div class="eval-grid">
+        <div class="eval-item"><span class="check">✅</span>方案可行</div>
+        <div class="eval-item"><span class="check">📊</span>有数据支撑</div>
+        <div class="eval-item"><span class="check">🔄</span>有优化过程</div>
+        <div class="eval-item"><span class="check">🎨</span>美观表达</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 学习社区氛围 -->
+  <div class="team-note">
+    <h3>🤝 项目社区公约</h3>
+    <p>选择你感兴趣的项目开始，完成每一步任务后在班级里分享你的成果。<br>
+    遇到困难不要怕——问问同学："你做到哪一步了？你的日晷影子准吗？"<br>
+    <strong>真实的作品，比完美的分数更有价值！</strong></p>
+  </div>
+</div>
+
+<script>
+function toggleProject(el) {
+  el.classList.toggle('open');
+}
+
+function markStep(el, type) {
+  el.classList.toggle('done');
+  updateProjectStatus(type);
+  el.classList.remove('active-step');
+}
+
+function updateProjectStatus(type) {
+  const stepper = document.getElementById(type + 'Stepper');
+  if (!stepper) return;
+  const steps = stepper.querySelectorAll('.step');
+  const done = stepper.querySelectorAll('.step.done').length;
+  const total = steps.length;
+  const statusEl = document.getElementById(type + 'Status');
+  if (!statusEl) return;
+  if (done === 0) {
+    statusEl.innerHTML = '<span>📋 未开始</span>';
+  } else if (done === total) {
+    statusEl.innerHTML = '<span style="color:#16a34a;font-weight:600;">🎉 已完成!</span>';
+  } else {
+    statusEl.innerHTML = '<span style="color:#d46b08;">⏳ ' + done + '/' + total + '</span>';
+  }
+}
+</script>
+</body>
+</html>

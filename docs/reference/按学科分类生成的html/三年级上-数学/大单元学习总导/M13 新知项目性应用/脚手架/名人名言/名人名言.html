@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>名人名言 — 时间主题人物卡片</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  min-height: 100vh;
+  padding: 24px;
+}
+.container { width: 100%; max-width: none; }
+.page-header {
+  background: linear-gradient(135deg, #0d47a1 0%, #1976d2 50%, #42a5f5 100%);
+  border-radius: var(--border-radius);
+  padding: 28px 32px;
+  margin-bottom: 24px;
+  color: #fff;
+  text-align: center;
+}
+.page-header h1 { font-size: var(--font-h1); margin-bottom: 4px; }
+.page-header .sub { opacity: 0.85; font-size: 16px; }
+.people-nav {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.person-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  background: var(--card-bg);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 16px;
+  transition: all 0.3s;
+  text-align: center;
+}
+.person-btn:hover { border-color: var(--accent); }
+.person-btn.active { border-color: var(--primary); background: var(--bg); color: var(--primary); }
+.person-card {
+  display: none;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--primary);
+  animation: fadeIn 0.4s;
+}
+.person-card.active { display: block; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.person-card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 14px;
+}
+.person-card .era-badge {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  font-size: 13px;
+  padding: 2px 12px;
+  border-radius: 10px;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+.qa-block {
+  background: #f6f8ff;
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 10px 0;
+}
+.qa-block .q { font-weight: 600; color: var(--primary); }
+.qa-block .a { margin-top: 6px; }
+.insight-box {
+  background: #fff7e6;
+  border: 1px dashed #ffc53d;
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 10px 0;
+}
+.insight-box .label { font-weight: 600; color: #d48806; }
+.quote-box {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 12px 0;
+  text-align: center;
+  font-style: italic;
+  font-size: 17px;
+  color: var(--text);
+  position: relative;
+}
+.quote-box::before {
+  content: "\201C";
+  font-size: 48px;
+  color: var(--accent);
+  position: absolute;
+  top: -6px;
+  left: 12px;
+  font-style: normal;
+}
+.think-task {
+  background: linear-gradient(135deg, #e6f0ff 0%, #f0f5ff 100%);
+  border-radius: var(--border-radius);
+  padding: 24px 28px;
+  margin-top: 20px;
+  border: 2px solid var(--primary);
+}
+.think-task h3 { font-size: 19px; color: var(--primary); margin-bottom: 10px; }
+.think-task .choices {
+  display: flex;
+  gap: 14px;
+  margin: 14px 0;
+  flex-wrap: wrap;
+}
+.choice-btn {
+  flex: 1;
+  min-width: 120px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  background: var(--card-bg);
+  cursor: pointer;
+  text-align: center;
+  font-weight: 600;
+  font-size: 16px;
+  transition: all 0.3s;
+}
+.choice-btn:hover { border-color: var(--accent); }
+.choice-btn.chosen { border-color: var(--primary); background: #e6f0ff; color: var(--primary); }
+.choice-result {
+  display: none;
+  margin-top: 10px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #f6ffed;
+  color: #389e0d;
+}
+.choice-result.show { display: block; }
+@media (max-width:600px) {
+  body { padding:12px; }
+  .person-card { padding:16px; }
+  .person-btn { font-size:14px; padding:8px 14px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-header">
+    <h1>⏳ 与时间对话的人</h1>
+    <p class="sub">三位从不同角度理解"时间"的人物 · 点击卡片了解他们的故事</p>
+  </div>
+
+  <div class="people-nav">
+    <div class="person-btn active" onclick="showPerson('harrison')" id="btn-harrison">🔧 约翰·哈里森</div>
+    <div class="person-btn" onclick="showPerson('einstein')" id="btn-einstein">⚡ 爱因斯坦</div>
+    <div class="person-btn" onclick="showPerson('allen')" id="btn-allen">📋 大卫·艾伦</div>
+  </div>
+
+  <div id="card-harrison" class="person-card active">
+    <h2>🔧 约翰·哈里森 <span class="era-badge">18世纪 · 英国</span></h2>
+
+    <div class="qa-block">
+      <p class="q">❓ 关键问题：海上经度难题</p>
+      <p class="a">18世纪航海时无法精确测量经度，导致无数海难。怎么在晃动的大海上精准计时？</p>
+    </div>
+
+    <div class="qa-block">
+      <p class="q">💡 思维突破点</p>
+      <p class="a">哈里森没有改进已有的摆钟（摆钟在海上不稳），而是设计了<strong>"蚱蜢擒纵器"</strong>——一种不受重力影响的计时机构。</p>
+    </div>
+
+    <div class="insight-box">
+      <span class="label">⚠️ 失败 / 争议点：</span>
+      他花了 <strong>40 年</strong>做实验，做了 4 个版本的航海钟（H1→H4），第 1 个就有 <strong>60 公斤</strong>重！
+    </div>
+
+    <div class="quote-box">
+      我不停地思考、实验、失败、重来，直到钟在海上也能走得准。
+    </div>
+
+    <div class="insight-box">
+      <span class="label">🌟 对当下的启示：</span>
+      真正的创新往往不是一步到位的，需要反复修改和坚持。失败不是终点，是通往成功的必经台阶。
+    </div>
+  </div>
+
+  <div id="card-einstein" class="person-card">
+    <h2>⚡ 爱因斯坦 <span class="era-badge">20世纪 · 德国/瑞士/美国</span></h2>
+
+    <div class="qa-block">
+      <p class="q">❓ 关键问题：时间是绝对的吗？</p>
+      <p class="a">不同的人经历的时间一样长吗？</p>
+    </div>
+
+    <div class="qa-block">
+      <p class="q">💡 思维突破点</p>
+      <p class="a">爱因斯坦提出<strong>"时间不是绝对的"</strong>——当你以接近光速运动时，时间会变慢（时间膨胀效应）。这是彻底颠覆了牛顿"绝对时间"观念的革命性思考。</p>
+    </div>
+
+    <div class="insight-box">
+      <span class="label">🌟 对当下的启示：</span>
+      你感知的"1分钟"可能和同桌感受的"1分钟"不一样——时间既是客观的（物理），也是主观的（心理）。同样是等待，开心时过得飞快，着急时度秒如年。
+    </div>
+
+    <div style="text-align:center;padding:10px;color:var(--text-secondary);font-size:15px;">
+      ⏱️ 试试：闭上眼睛默数60秒，看看实际过了多久？你的"1分钟"和别人一样吗？
+    </div>
+  </div>
+
+  <div id="card-allen" class="person-card">
+    <h2>📋 大卫·艾伦 <span class="era-badge">当代 · 美国</span></h2>
+
+    <div class="qa-block">
+      <p class="q">❓ 关键问题：时间管理困境</p>
+      <p class="a">信息爆炸时代，怎么管理自己的时间和任务？</p>
+    </div>
+
+    <div class="qa-block">
+      <p class="q">💡 思维突破点</p>
+      <p class="a">他发明了<strong>"GTD（Getting Things Done）"</strong>方法——把所有要做的事写下来，不让大脑记着，释放大脑的思考能力。</p>
+    </div>
+
+    <div class="insight-box">
+      <span class="label">🌟 对当下的启示：</span>
+      学会规划时间，首先要学会<strong>"清空大脑"</strong>——就像你列周末计划前先列出所有要做的事。大脑是用来思考的，不是用来记杂事的。
+    </div>
+
+    <div style="text-align:center;padding:10px;color:var(--text-secondary);font-size:15px;">
+      📝 试试：现在就把你脑子里所有"要做的事"写下来——你可能会发现脑袋一下子轻松了！
+    </div>
+  </div>
+
+  <div class="think-task">
+    <h3>🤔 "如果你是他"思考任务</h3>
+    <p>假如你是约翰·哈里森，历时 40 年反复失败，第七次造航海钟时发现自己犯了一个低级错误……</p>
+    <p style="font-weight:600;margin-top:8px;">你会选择放弃还是继续？为什么？</p>
+    <div class="choices">
+      <div class="choice-btn" onclick="makeChoice('继续')">💪 继续！已经坚持了40年</div>
+      <div class="choice-btn" onclick="makeChoice('放弃')">😔 放弃吧，可能方向不对</div>
+      <div class="choice-btn" onclick="makeChoice('换思路')">🤔 换一个全新的方法</div>
+    </div>
+    <div id="choice-result" class="choice-result">
+      <strong>你的选择：</strong> <span id="choice-text"></span><br>
+      哈里森的真实选择是 <strong>坚持继续</strong>。H4 航海钟最终成功解决了经度问题，他也获得了英国政府颁发的 £20,000 奖金（相当于今天的数百万美元）。<br><br>
+      <span style="color:var(--text-secondary);">💡 他的故事告诉我们：突破性创新常常出现在"几乎要放弃"的那一刻之后。</span>
+    </div>
+  </div>
+
+</div>
+<script>
+function showPerson(name) {
+  document.querySelectorAll('.person-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelectorAll('.person-card').forEach(function(c) { c.classList.remove('active'); });
+  document.getElementById('btn-' + name).classList.add('active');
+  document.getElementById('card-' + name).classList.add('active');
+}
+function makeChoice(choice) {
+  document.querySelectorAll('.choice-btn').forEach(function(b) { b.classList.remove('chosen'); });
+  event.target.classList.add('chosen');
+  document.getElementById('choice-text').textContent = choice;
+  document.getElementById('choice-result').classList.add('show');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目社区脚手架 — 时间探秘</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+}
+.wrapper {
+  width: 100%;
+  max-width: none;
+  padding: 24px 28px;
+  box-sizing: border-box;
+}
+.page-header {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.page-header h1 {
+  font-size: var(--font-h1);
+  margin-bottom: 6px;
+}
+.page-header p {
+  font-size: calc(var(--font-body) - 2px);
+  opacity: .9;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  transition: box-shadow .2s;
+}
+.card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.12); }
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card h2 .badge {
+  font-size: 12px;
+  background: var(--primary);
+  color: #fff;
+  padding: 2px 12px;
+  border-radius: 20px;
+  display: inline-block;
+}
+.project-card {
+  border-top: 4px solid var(--primary);
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+}
+.project-card.short { border-top-color: #52c41a; }
+.project-card.medium { border-top-color: #fa8c16; }
+.project-card.long { border-top-color: #eb2f96; }
+.project-card .p-header {
+  padding: 16px 20px;
+  border-radius: calc(var(--border-radius) - 2px) calc(var(--border-radius) - 2px) 0 0;
+  color: #fff;
+}
+.short .p-header { background: linear-gradient(135deg,#52c41a,#73d13d); }
+.medium .p-header { background: linear-gradient(135deg,#fa8c16,#ffa940); }
+.long .p-header { background: linear-gradient(135deg,#eb2f96,#f759ab); }
+.project-card .p-header .p-period {
+  font-size: 14px;
+  opacity: .9;
+}
+.project-card .p-body { padding: 18px 20px; }
+.proj-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+.proj-table th, .proj-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  vertical-align: top;
+}
+.proj-table th {
+  background: #f0f5ff;
+  color: var(--primary);
+  font-weight: 600;
+  width: 100px;
+}
+.proj-table tr:hover td { background: #fafafa; }
+.stage-pipeline {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+.stage-pipeline .stage {
+  flex: 1;
+  min-width: 90px;
+  background: #f6f8fa;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 6px;
+  text-align: center;
+  font-size: 13px;
+  transition: background .2s, transform .15s;
+}
+.stage-pipeline .stage:hover {
+  background: #e6f4ff;
+  transform: translateY(-3px);
+}
+.stage-pipeline .stage .stage-num {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  line-height: 22px;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+.short .stage .stage-num { background: #52c41a; }
+.medium .stage .stage-num { background: #fa8c16; }
+.long .stage .stage-num { background: #eb2f96; }
+.stage .stage-label {
+  display: block;
+  margin-top: 2px;
+  font-weight: 500;
+}
+.arrow-icon {
+  display: inline-block;
+  font-size: 16px;
+  color: var(--text-secondary);
+  align-self: center;
+}
+.eval-stars {
+  color: #faad14;
+  font-size: 16px;
+}
+.toggle-detail {
+  background: var(--bg);
+  border: 1px dashed var(--primary);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 12px;
+  cursor: pointer;
+  transition: background .2s;
+  text-align: center;
+}
+.toggle-detail:hover { background: #e6f4ff; }
+.toggle-detail .detail-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .4s ease;
+  text-align: left;
+  margin-top: 0;
+}
+.toggle-detail.open .detail-content {
+  max-height: 200px;
+  margin-top: 10px;
+}
+.resource-link {
+  display: inline-block;
+  background: #f0f5ff;
+  border: 1px solid var(--accent);
+  border-radius: 16px;
+  padding: 4px 14px;
+  font-size: 14px;
+  color: var(--primary);
+  margin: 4px 4px 4px 0;
+  transition: background .2s;
+}
+.resource-link:hover { background: #e6f4ff; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<div class="page-header">
+  <h1>🏗️ 项目社区</h1>
+  <p>短 · 中 · 长 三周期项目，在实践中掌握时间管理</p>
+</div>
+
+<div class="card project-card short">
+  <div class="p-header">
+    <h2 style="border:none;color:#fff;padding:0;margin:0;font-size:var(--font-h2);">📊 短周期项目 <span class="p-period">（1—3天）</span></h2>
+    <p style="margin-top:4px;font-size:16px;">一日时间记录微项目</p>
+  </div>
+  <div class="p-body">
+    <div class="proj-table">
+      <table>
+        <tr><th>🎯 项目目标</th><td>记录并分析自己一天的时间使用情况</td></tr>
+        <tr><th>📌 阶段任务</th><td>
+          <div class="stage-pipeline">
+            <div class="stage"><span class="stage-num">①</span><span class="stage-label">设计记录表</span><br><small>30分钟</small></div>
+            <span class="arrow-icon">→</span>
+            <div class="stage"><span class="stage-num">②</span><span class="stage-label">全天记录</span><br><small>1天</small></div>
+            <span class="arrow-icon">→</span>
+            <div class="stage"><span class="stage-num">③</span><span class="stage-label">统计与分析</span><br><small>1小时</small></div>
+            <span class="arrow-icon">→</span>
+            <div class="stage"><span class="stage-num">④</span><span class="stage-label">画时间分配图</span><br><small>30分钟</small></div>
+          </div>
+        </td></tr>
+        <tr><th>📦 成果形式</th><td>一份"我的一天"时间分析报告</td></tr>
+        <tr><th>⭐ 评价标准</th><td>记录完整度 &gt; 90% 活动 <span class="eval-stars">★★★★</span> / 计算准确 <span class="eval-stars">★★★★</span> / 有 1 条以上发现 <span class="eval-stars">★★★★★</span></td></tr>
+        <tr><th>🔗 资源链接</th><td><span class="resource-link">📋 时间记录表模板</span> <span class="resource-link">📊 条形图绘制指南</span></td></tr>
+      </table>
+    </div>
+    <div class="toggle-detail" onclick="this.classList.toggle('open')">
+      <span>▶ 点击展开：记录表示例</span>
+      <div class="detail-content">
+        <div style="background:#f6f8fa;padding:10px 14px;border-radius:6px;font-size:15px;">
+          <table style="width:100%;border-collapse:collapse;">
+            <tr style="background:var(--primary);color:#fff;"><td style="padding:6px 10px;">时间</td><td style="padding:6px 10px;">活动</td><td style="padding:6px 10px;">时长</td></tr>
+            <tr><td style="padding:6px 10px;border:1px solid var(--border);">7:00—7:30</td><td style="padding:6px 10px;border:1px solid var(--border);">起床洗漱</td><td style="padding:6px 10px;border:1px solid var(--border);">30分</td></tr>
+            <tr><td style="padding:6px 10px;border:1px solid var(--border);">7:30—8:00</td><td style="padding:6px 10px;border:1px solid var(--border);">吃早餐</td><td style="padding:6px 10px;border:1px solid var(--border);">30分</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card project-card medium">
+  <div class="p-header">
+    <h2 style="border:none;color:#fff;padding:0;margin:0;font-size:var(--font-h2);">📈 中周期项目 <span class="p-period">（1—2周）</span></h2>
+    <p style="margin-top:4px;font-size:16px;">一周时间管理方案</p>
+  </div>
+  <div class="p-body">
+    <div class="proj-table">
+      <table>
+        <tr><th>🎯 项目目标</th><td>通过一周记录，找到自己的时间规律，设计改进方案</td></tr>
+        <tr><th>📌 阶段任务</th><td>
+          <div class="stage-pipeline">
+            <div class="stage"><span class="stage-num">①</span><span class="stage-label">7天连续记录</span></div>
+            <span class="arrow-icon">→</span>
+            <div class="stage"><span class="stage-num">②</span><span class="stage-label">对比每天分配</span></div>
+            <span class="arrow-icon">→</span>
+            <div class="stage"><span class="stage-num">③</span><span class="stage-label">找出时间黑洞</span></div>
+            <span class="arrow-icon">→</span>
+            <div class="stage"><span class="stage-num">④</span><span class="stage-label">设计方案</span></div>
+            <span class="arrow-icon">→</span>
+            <div class="stage"><span class="stage-num">⑤</span><span class="stage-label">执行并调整</span></div>
+          </div>
+        </td></tr>
+        <tr><th>📦 成果形式</th><td>"一周时间优化方案"（含改进前/后对比）</td></tr>
+        <tr><th>⭐ 评价标准</th><td>连续记录 7 天 <span class="eval-stars">★★★★★</span> / 有数据对比 <span class="eval-stars">★★★★</span> / 方案有可操作性 <span class="eval-stars">★★★★</span></td></tr>
+        <tr><th>🔗 资源链接</th><td><span class="resource-link">📊 时间分析模板</span> <span class="resource-link">❓ 问题榜反思</span></td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card project-card long">
+  <div class="p-header">
+    <h2 style="border:none;color:#fff;padding:0;margin:0;font-size:var(--font-h2);">🏦 长周期项目 <span class="p-period">（1月+）</span></h2>
+    <p style="margin-top:4px;font-size:16px;">班级时间银行系统</p>
+  </div>
+  <div class="p-body">
+    <div class="proj-table">
+      <table>
+        <tr><th>🎯 项目目标</th><td>设计并运行一个"班级时间银行"——把时间当作"货币"，学生通过完成任务赚取"时间积分"</td></tr>
+        <tr><th>📌 阶段任务</th><td>
+          <div class="stage-pipeline">
+            <div class="stage"><span class="stage-num">①</span><span class="stage-label">调研需求</span><br><small>1天</small></div>
+            <span class="arrow-icon">→</span>
+            <div class="stage"><span class="stage-num">②</span><span class="stage-label">设计规则</span><br><small>2天</small></div>
+            <span class="arrow-icon">→</span>
+            <div class="stage"><span class="stage-num">③</span><span class="stage-label">制作原型</span><br><small>3天</small></div>
+            <span class="arrow-icon">→</span>
+            <div class="stage"><span class="stage-num">④</span><span class="stage-label">试运行</span><br><small>1周</small></div>
+            <span class="arrow-icon">→</span>
+            <div class="stage"><span class="stage-num">⑤</span><span class="stage-label">优化迭代</span><br><small>持续</small></div>
+          </div>
+        </td></tr>
+        <tr><th>📦 成果形式</th><td>班级时间银行系统（规则说明 + 积分记录工具 + 兑换机制）</td></tr>
+        <tr><th>⭐ 评价标准</th><td>规则公平合理 / 记录方便易用 / 激励机制有效</td></tr>
+        <tr><th>🔗 资源链接</th><td><span class="resource-link">💬 学术社区（分工讨论）</span> <span class="resource-link">🔧 工具库（数据工具）</span></td></tr>
+      </table>
+    </div>
+    <div class="toggle-detail" onclick="this.classList.toggle('open')">
+      <span>▶ 点击展开：时间银行规则示例</span>
+      <div class="detail-content">
+        <div style="background:#f6f8fa;padding:10px 14px;border-radius:6px;font-size:15px;">
+          <p>⏱ <strong>基础规则</strong>：每认真完成10分钟学习任务 = 1时间币</p>
+          <p>⏱ <strong>兑换机制</strong>：5时间币 = 选座位一次 / 10时间币 = 当一天课代表</p>
+          <p>⏱ <strong>特殊奖励</strong>：连续一周无迟到 = 额外奖励3时间币</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="text-align:center;background:linear-gradient(135deg,#f0f5ff,#fff);">
+  <p style="font-size:20px;font-weight:600;color:var(--primary);">🌟 从记录一天到改变一生，做时间的主人！</p>
+  <p style="color:var(--text-secondary);margin-top:6px;">选择一个项目，开始你的时间探索之旅</p>
+</div>
+
+</div>
+</body>
+</html>

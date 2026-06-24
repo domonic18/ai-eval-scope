@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目社区 - 时间主题项目库</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  margin: 0; padding: 0;
+  width: 100%;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 30px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 32px 40px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 8px;
+  line-height: 1.3;
+}
+.header p {
+  font-size: 16px;
+  opacity: 0.9;
+  margin: 0;
+}
+.section-title {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 32px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 3px solid var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-title .badge {
+  font-size: 14px;
+  background: var(--accent);
+  color: #fff;
+  padding: 2px 12px;
+  border-radius: 12px;
+  font-weight: normal;
+}
+.project-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+  overflow: hidden;
+  transition: box-shadow 0.3s ease;
+}
+.project-card:hover {
+  box-shadow: 0 4px 16px rgba(22,119,255,0.15);
+}
+.card-header {
+  background: linear-gradient(135deg, #f0f5ff, #e6f0ff);
+  padding: 18px 24px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+  transition: background 0.3s;
+}
+.card-header:hover {
+  background: linear-gradient(135deg, #e6f0ff, #d6e4ff);
+}
+.card-header h3 {
+  font-size: 20px;
+  color: var(--primary);
+  margin: 0;
+}
+.card-header .toggle-icon {
+  font-size: 20px;
+  color: var(--primary);
+  transition: transform 0.3s ease;
+}
+.project-card.expanded .card-header .toggle-icon {
+  transform: rotate(180deg);
+}
+.card-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s ease;
+}
+.project-card.expanded .card-body {
+  max-height: 1200px;
+}
+.card-body-inner {
+  padding: 20px 24px;
+}
+.card-body-inner p {
+  margin-bottom: 10px;
+}
+.stage-list {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0;
+}
+.stage-list li {
+  padding: 6px 0 6px 28px;
+  position: relative;
+  line-height: 1.7;
+}
+.stage-list li::before {
+  content: "✦";
+  position: absolute;
+  left: 4px;
+  color: var(--primary);
+  font-size: 14px;
+}
+.meta-tag {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  padding: 2px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  margin: 4px 4px 4px 0;
+}
+.period-badge {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  padding: 3px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.btn-expand-all {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s;
+  margin-bottom: 20px;
+}
+.btn-expand-all:hover {
+  background: var(--primary-hover);
+}
+.resource-link {
+  display: inline-block;
+  background: #f0f5ff;
+  border: 1px dashed var(--accent);
+  color: var(--primary);
+  padding: 4px 14px;
+  border-radius: 4px;
+  font-size: 14px;
+  margin: 6px 0;
+  text-decoration: none;
+  cursor: default;
+}
+.eval-box {
+  background: #fafafa;
+  border-left: 3px solid var(--primary);
+  padding: 12px 16px;
+  margin: 12px 0;
+  border-radius: 0 4px 4px 0;
+  font-size: 15px;
+}
+.project-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+@media (min-width: 768px) {
+  .project-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>⏳ 项目社区</h1>
+  <p>这些是"长期作战"的任务——不是10分钟就能完成的，但完成后的成就感也是最大的。选择一个感兴趣的，花几天到几周做出一份完整的作品吧！</p>
+</div>
+
+<button class="btn-expand-all" onclick="toggleAll()">展开全部项目</button>
+
+<div class="section-title">
+  📋 短周期项目（1—3天）<span class="badge">微项目</span>
+</div>
+
+<div class="project-grid">
+  <div class="project-card">
+    <div class="card-header" onclick="toggleCard(this)">
+      <h3>项目A："我的一天"时间统计报告</h3>
+      <span class="toggle-icon">▾</span>
+    </div>
+    <div class="card-body">
+      <div class="card-body-inner">
+        <p><strong>🎯 项目目标：</strong>准确记录自己一天的24小时是怎么度过的</p>
+        <p><strong>📌 阶段任务：</strong></p>
+        <ul class="stage-list">
+          <li>设计记录表（使用"时间段—活动—时长"格式）</li>
+          <li>记录一整天（从起床到睡觉，每隔30分钟记一次）</li>
+          <li>统计各类活动总时长（学习/玩耍/吃饭/睡觉等）</li>
+          <li>制作统计图（条形图或饼图）</li>
+          <li>写一段感想："我的时间都去哪儿了"</li>
+        </ul>
+        <p><strong>📄 成果形式：</strong>A4纸一份，包含记录表+统计图+感想</p>
+        <span class="resource-link">🔗 参考：时间管理类App统计功能</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="project-card">
+    <div class="card-header" onclick="toggleCard(this)">
+      <h3>项目B："时间单位卡牌游戏"</h3>
+      <span class="toggle-icon">▾</span>
+    </div>
+    <div class="card-body">
+      <div class="card-body-inner">
+        <p><strong>🎯 项目目标：</strong>设计一款卡牌游戏，让玩家在游戏中练习时间单位换算</p>
+        <p><strong>📌 阶段任务：</strong></p>
+        <ul class="stage-list">
+          <li>设计卡牌类型（如"60秒牌"可兑换"1分牌"）</li>
+          <li>制作至少20张卡牌</li>
+          <li>写明游戏规则</li>
+          <li>找同学试玩并修改</li>
+        </ul>
+        <p><strong>📄 成果形式：</strong>一套可实际游玩的卡牌</p>
+        <div class="eval-box">⭐ 评价标准：游戏能正常进行，玩家在游戏过程中完成了时间单位换算</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section-title">
+  📚 中周期项目（1—2周）<span class="badge">专题项目</span>
+</div>
+
+<div class="project-grid">
+  <div class="project-card">
+    <div class="card-header" onclick="toggleCard(this)">
+      <h3>项目C："时间计量发展史"知识小报</h3>
+      <span class="toggle-icon">▾</span>
+    </div>
+    <div class="card-body">
+      <div class="card-body-inner">
+        <p><strong>🎯 项目目标：</strong>制作一份图文并茂的知识小报，展示人类计时工具的发展历程</p>
+        <p><strong>📌 阶段任务：</strong></p>
+        <ul class="stage-list">
+          <li>查资料：从日晷→沙漏→水钟→机械钟→石英钟→原子钟</li>
+          <li>整理每个阶段的时间、发明者和原理</li>
+          <li>绘制时间轴</li>
+          <li>配上插图或示意图</li>
+          <li>设计版面并制作</li>
+        </ul>
+        <p><strong>📄 成果形式：</strong>A3纸大小的知识小报（或电子版）</p>
+        <span class="resource-link">🔗 资源：教材、图书馆、科普网站</span>
+        <div class="eval-box">⭐ 评价标准：覆盖至少5个发展阶段，每个阶段包含"时间+原理+图片"</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="project-card">
+    <div class="card-header" onclick="toggleCard(this)">
+      <h3>项目D："时间换算小达人"挑战赛</h3>
+      <span class="toggle-icon">▾</span>
+    </div>
+    <div class="card-body">
+      <div class="card-body-inner">
+        <p><strong>🎯 项目目标：</strong>为班级设计一场"时间换算挑战赛"的完整方案</p>
+        <p><strong>📌 阶段任务：</strong></p>
+        <ul class="stage-list">
+          <li>设计赛制（个人赛/小组赛？必答/抢答？）</li>
+          <li>编写题库（至少20道题，分3个难度等级）</li>
+          <li>设计计分规则</li>
+          <li>制作"参赛指南"</li>
+        </ul>
+        <p><strong>📄 成果形式：</strong>一份完整的比赛策划案</p>
+        <div class="eval-box">⭐ 评价标准：方案可执行，题库无错误，规则公平</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section-title">
+  🏆 长周期项目（1月+）<span class="badge">综合项目</span>
+</div>
+
+<div class="project-card">
+  <div class="card-header" onclick="toggleCard(this)">
+    <h3>项目E："时间探索者"综合研究报告</h3>
+    <span class="toggle-icon">▾</span>
+  </div>
+  <div class="card-body">
+    <div class="card-body-inner">
+      <p><strong>🎯 项目目标：</strong>选择一个与时间相关的话题，进行深入研究，形成一份正式的研究报告</p>
+      <p><strong>💡 话题建议：</strong></p>
+      <ul class="stage-list">
+        <li>"为什么古人选择60进制来计量时间？"</li>
+        <li>"动物有'时间感'吗？"</li>
+        <li>"不同文化中如何计时？"</li>
+        <li>"如果地球上自转速度变了，一天的长度会改变吗？"</li>
+      </ul>
+      <p><strong>📌 阶段任务：</strong></p>
+      <ul class="stage-list">
+        <li><strong>第1周</strong> — 选题和确定研究问题</li>
+        <li><strong>第2周</strong> — 资料收集和阅读</li>
+        <li><strong>第3周</strong> — 整理和分析</li>
+        <li><strong>第4周</strong> — 撰写报告</li>
+      </ul>
+      <p><strong>📄 成果形式：</strong>300—500字的研究报告（可配图、表格）</p>
+      <div class="eval-box">⭐ 评价标准：有明确的研究问题、有资料支撑、有个人分析和结论</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function toggleCard(header) {
+  const card = header.parentElement;
+  const wasExpanded = card.classList.contains('expanded');
+  card.classList.toggle('expanded');
+}
+
+function toggleAll() {
+  const cards = document.querySelectorAll('.project-card');
+  const anyCollapsed = Array.from(cards).some(c => !c.classList.contains('expanded'));
+  cards.forEach(c => {
+    if (anyCollapsed) {
+      c.classList.add('expanded');
+    } else {
+      c.classList.remove('expanded');
+    }
+  });
+}
+</script>
+</body>
+</html>

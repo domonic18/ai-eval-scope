@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性示例 - 运动会时间解析</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  width: 100%;
+}
+.container { width: 100%; max-width: none; padding: 24px 32px; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 32px 40px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 8px; }
+.header p { font-size: 16px; opacity: 0.9; }
+.section-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+}
+.section-card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--bg);
+}
+.section-card h3 {
+  font-size: 19px;
+  color: var(--text);
+  margin: 16px 0 10px;
+}
+.section-card p { margin-bottom: 10px; }
+.section-card ul, .section-card ol { padding-left: 24px; margin-bottom: 10px; }
+.section-card li { margin-bottom: 6px; }
+.story-box {
+  background: #e6f7ff;
+  border-radius: 10px;
+  padding: 20px;
+  margin: 16px 0;
+  border-left: 4px solid var(--primary);
+}
+.story-box .label {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  padding: 2px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.step-card {
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border-left: 4px solid var(--primary);
+}
+.step-card:hover { background: #e6f0ff; }
+.step-card .step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 17px;
+}
+.step-card .step-num {
+  display: inline-flex;
+  width: 28px; height: 28px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.step-card .step-detail {
+  display: none;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.step-card.open .step-detail { display: block; }
+.step-card .toggle-icon {
+  margin-left: auto;
+  transition: transform 0.3s;
+  font-size: 14px;
+}
+.step-card.open .toggle-icon { transform: rotate(180deg); }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 16px;
+}
+th, td {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+th {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+td { background: var(--card-bg); }
+tr:nth-child(even) td { background: #fafafa; }
+.warn-box {
+  background: #fff2f0;
+  border-left: 4px solid #ff4d4f;
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+}
+.tip-box {
+  background: #f6ffed;
+  border-left: 4px solid #52c41a;
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+}
+.method-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 12px 0;
+}
+.method-item {
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  text-align: center;
+  transition: all 0.3s;
+  cursor: default;
+}
+.method-item:hover {
+  border-color: var(--primary);
+  box-shadow: 0 2px 12px rgba(22,119,255,0.1);
+}
+.method-item .m-icon { font-size: 28px; display: block; margin-bottom: 6px; }
+.practice-box {
+  background: #fffbe6;
+  border: 2px dashed #faad14;
+  border-radius: 10px;
+  padding: 20px;
+  margin: 16px 0;
+}
+.checklist { list-style: none; padding: 0; }
+.checklist li {
+  padding: 10px 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.checklist li:hover { border-color: var(--primary); }
+.checklist li.checked {
+  background: #f6ffed;
+  border-color: #52c41a;
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+.checklist .cb {
+  width: 20px; height: 20px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.3s;
+}
+.checklist li.checked .cb {
+  background: #52c41a;
+  border-color: #52c41a;
+  color: #fff;
+}
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .header { padding: 24px; }
+  .method-list { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🔍 解析性示例</h1>
+    <p>跟着"专家"学分析——看如何用数学方法解决真实的时间比较问题</p>
+  </div>
+
+  <!-- 1. 情境 -->
+  <div class="section-card">
+    <h2>🏟️ 解析任务情境</h2>
+    <div class="story-box">
+      <span class="label">运动会现场</span>
+      <p style="font-size:17px;font-weight:500;margin-bottom:8px;">
+        学校运动会百米赛跑，三位同学的成绩如下：
+      </p>
+      <p style="font-size:20px;text-align:center;padding:8px 0;">
+        <strong>小刚</strong> 16秒 &nbsp;|&nbsp; <strong>小红</strong> 14秒 &nbsp;|&nbsp; <strong>小华</strong> 15秒
+      </p>
+      <p>但计时员用的钟表不太准，需要用正确的时间换算方法来判断：<strong>谁是真正的冠军？</strong></p>
+      <p style="margin-top:8px;font-size:15px;color:var(--text-secondary);">
+        🔬 <strong>STEAM融合：</strong>运动中精确计时是"科学"问题，数据处理是"数学"问题
+      </p>
+    </div>
+  </div>
+
+  <!-- 2. 核心问题 -->
+  <div class="section-card">
+    <h2>❓ 核心问题</h2>
+    <p style="font-size:19px;font-weight:500;padding:12px;background:var(--bg);border-radius:8px;">
+      "谁的跑步成绩最好？为什么用秒而不是分来衡量？如果换成不同计时工具会怎样？"
+    </p>
+  </div>
+
+  <!-- 3. 关键信息提取 -->
+  <div class="section-card">
+    <h2>📋 关键信息提取</h2>
+    <table>
+      <thead><tr><th>情境信息</th><th>说明什么</th><th>为什么重要</th></tr></thead>
+      <tbody>
+        <tr><td>小刚 16秒</td><td>用时最长</td><td>需要比较三个时间的大小</td></tr>
+        <tr><td>小红 14秒</td><td>用时最短</td><td>初步判断冠军</td></tr>
+        <tr><td>秒做单位</td><td>三人的单位一致</td><td>可以直接比较</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 4. 专家解析过程 -->
+  <div class="section-card">
+    <h2>👨‍🏫 专家解析过程（5步示范）</h2>
+    <p style="color:var(--text-secondary);margin-bottom:14px;">点击每一步展开详细分析，跟着专家一步步思考 👇</p>
+
+    <div class="step-card open" onclick="toggleStep(this)">
+      <div class="step-header">
+        <span class="step-num">1</span>
+        <span>先看见什么</span>
+        <span class="toggle-icon">▾</span>
+      </div>
+      <div class="step-detail">
+        <p><strong>观察：</strong>三位同学的成绩数据——小刚16秒、小红14秒、小华15秒。</p>
+        <p><strong>为什么这样想：</strong>原始数据是分析的第一步。先看清题目给了什么信息，才能判断下一步怎么做。</p>
+        <div class="tip-box">💡 <strong>要点：</strong>拿到任何问题，先问自己"我看到了什么数据？"</div>
+      </div>
+    </div>
+
+    <div class="step-card" onclick="toggleStep(this)">
+      <div class="step-header">
+        <span class="step-num">2</span>
+        <span>判断问题属于哪一类</span>
+        <span class="toggle-icon">▾</span>
+      </div>
+      <div class="step-detail">
+        <p><strong>类别判断：</strong>这是一个<strong>时间比较问题</strong>。</p>
+        <p><strong>为什么这样想：</strong>所有数据都是时间（秒），目标是比较谁跑得快——在跑步中，<strong>用时越短，速度越快</strong>。</p>
+        <div class="tip-box">💡 <strong>要点：</strong>判断问题类型能帮你快速找到对应的解决方法。</div>
+      </div>
+    </div>
+
+    <div class="step-card" onclick="toggleStep(this)">
+      <div class="step-header">
+        <span class="step-num">3</span>
+        <span>调用哪些概念、原理或方法</span>
+        <span class="toggle-icon">▾</span>
+      </div>
+      <div class="step-detail">
+        <p><strong>概念：</strong>时间单位（秒）、快慢与时间的关系（时间越短越快）。</p>
+        <p><strong>方法：</strong>比较法——直接比较数值大小。</p>
+        <p><strong>为什么这样想：</strong>三个成绩单位都是"秒"，单位相同，直接比较数字大小就行，不需要换算。</p>
+        <div class="tip-box">💡 <strong>要点：</strong>同单位比较最直接、最简单，不要把事情搞复杂！</div>
+      </div>
+    </div>
+
+    <div class="step-card" onclick="toggleStep(this)">
+      <div class="step-header">
+        <span class="step-num">4</span>
+        <span>如何进行推理或分析</span>
+        <span class="toggle-icon">▾</span>
+      </div>
+      <div class="step-detail">
+        <p><strong>排序：</strong>14秒 &lt; 15秒 &lt; 16秒 → <strong>小红最快</strong>。</p>
+        <p><strong>验证：</strong>如果换算成分钟——14秒≈0.23分钟，15秒≈0.25分钟，16秒≈0.27分钟——结论一致，小红仍然最快。</p>
+        <p><strong>为什么这样想：</strong>多角度验证可以保证结论正确，避免因为粗心而出错。</p>
+        <div class="tip-box">💡 <strong>要点：</strong>换一种方式再算一遍，确认结论一致，这叫"多角度验证"。</div>
+      </div>
+    </div>
+
+    <div class="step-card" onclick="toggleStep(this)">
+      <div class="step-header">
+        <span class="step-num">5</span>
+        <span>怎样形成结论</span>
+        <span class="toggle-icon">▾</span>
+      </div>
+      <div class="step-detail">
+        <p><strong>结论：</strong>小红是第一名（用时14秒最短）→ 小华第二（15秒）→ 小刚第三（16秒）。</p>
+        <p><strong>延伸思考：</strong>在此情境中用"秒"比用"分"更方便——14秒一眼就能看出大小，但换成0.23分钟反而不直观。</p>
+        <div class="tip-box">💡 <strong>要点：</strong>选择最合适的单位，能让分析更高效。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. 结论表达 -->
+  <div class="section-card">
+    <h2>📝 结论表达</h2>
+    <p>经过以上分析，我们可以清晰地表达：</p>
+    <div style="background:var(--bg);border-radius:10px;padding:16px 20px;margin:10px 0;">
+      <p style="font-weight:500;">"在百米赛跑中，小红用时14秒，小华用时15秒，小刚用时16秒。因为三个成绩单位相同（都是秒），直接比较数值大小可知：小红用时最短，所以她是第一名。"</p>
+    </div>
+    <p><strong>核心原则：</strong>同单位直接比较，不同单位先换算再比较。</p>
+  </div>
+
+  <!-- 6. 方法提炼 -->
+  <div class="section-card">
+    <h2>🧰 方法提炼</h2>
+    <p>以后再遇到类似问题，可以这样做：</p>
+    <div class="method-list">
+      <div class="method-item">
+        <span class="m-icon">①</span>
+        <strong>判断是否同单位</strong>
+        <p style="font-size:14px;color:var(--text-secondary);margin-top:4px;">先看单位是否一致</p>
+      </div>
+      <div class="method-item">
+        <span class="m-icon">②</span>
+        <strong>同单位直接比较</strong>
+        <p style="font-size:14px;color:var(--text-secondary);margin-top:4px;">数值越小 = 用时越短</p>
+      </div>
+      <div class="method-item">
+        <span class="m-icon">③</span>
+        <strong>不同单位先换算</strong>
+        <p style="font-size:14px;color:var(--text-secondary);margin-top:4px;">统一单位后再比较</p>
+      </div>
+      <div class="method-item">
+        <span class="m-icon">④</span>
+        <strong>多角度验证</strong>
+        <p style="font-size:14px;color:var(--text-secondary);margin-top:4px;">换种方法再算一遍</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. 易错提醒 -->
+  <div class="section-card">
+    <h2>⚠️ 易错提醒</h2>
+    <div class="warn-box">
+      <p><strong>❌ 易错1：</strong>认为"数字越大=时间越长"。</p>
+      <p style="padding-left:20px;">在时间比较中，"数字越小=速度越快=用时越短"。</p>
+    </div>
+    <div class="warn-box">
+      <p><strong>❌ 易错2：</strong>忘记单位换算——直接比较"1.5分"和"90秒"。</p>
+      <p style="padding-left:20px;">需要先统一单位：1.5分 = 90秒，所以一样长。</p>
+    </div>
+    <div class="warn-box">
+      <p><strong>❌ 易错3：</strong>换算进率搞混——1分=60秒，<strong>不是</strong>100秒！</p>
+      <p style="padding-left:20px;">记清楚：1时=60分，1分=60秒。</p>
+    </div>
+  </div>
+
+  <!-- 8. 自主迁移练习 -->
+  <div class="section-card">
+    <h2>✏️ 自主迁移练习</h2>
+    <div class="practice-box">
+      <p style="font-weight:600;margin-bottom:8px;">🎯 情境变化：从"跑步"变成"做作业"</p>
+      <p>小明做数学作业用了 <strong>30分钟</strong>，做语文作业用了 <strong>1200秒</strong>。</p>
+      <p><strong>问题：</strong>哪科作业花的时间更长？</p>
+      <p style="font-size:15px;color:var(--text-secondary);margin-top:8px;">💡 提示：单位不同怎么办？试试用上面的方法分析一下！</p>
+    </div>
+    <div style="margin-top:10px;">
+      <button onclick="showAnswer()" style="padding:8px 24px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:16px;transition:background 0.3s;">点击查看解析</button>
+      <div id="answerBox" style="display:none;margin-top:12px;background:#f6ffed;border-radius:8px;padding:16px;border-left:4px solid #52c41a;">
+        <p><strong>解析：</strong></p>
+        <p>第一步：判断单位——数学作业用"分钟"，语文作业用"秒"，单位不同。</p>
+        <p>第二步：统一换算——将语文作业的1200秒换算成分钟：1200 ÷ 60 = 20分钟。</p>
+        <p>第三步：比较——30分钟（数学）> 20分钟（语文）。</p>
+        <p><strong>结论：</strong>数学作业花的时间更长。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 9. 学习自评 -->
+  <div class="section-card">
+    <h2>✅ 学习自评</h2>
+    <p>完成学习后，逐项检查自己的掌握情况：</p>
+    <ul class="checklist" id="checklist">
+      <li onclick="toggleCheck(this)">
+        <span class="cb">✓</span>
+        我能否清楚地讲出"解析四步法"是哪四步？
+      </li>
+      <li onclick="toggleCheck(this)">
+        <span class="cb">✓</span>
+        我能否自己判断什么时候需要换算单位？
+      </li>
+      <li onclick="toggleCheck(this)">
+        <span class="cb">✓</span>
+        我能不能自己出一个类似的问题并写出解析过程？
+      </li>
+      <li onclick="toggleCheck(this)">
+        <span class="cb">✓</span>
+        我是否理解了"时间数值比较"的核心逻辑？
+      </li>
+      <li onclick="toggleCheck(this)">
+        <span class="cb">✓</span>
+        如果遇到不同单位的时间，我还能正确比较吗？
+      </li>
+    </ul>
+  </div>
+</div>
+
+<script>
+function toggleStep(el) {
+  el.classList.toggle('open');
+}
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+}
+function showAnswer() {
+  const box = document.getElementById('answerBox');
+  box.style.display = box.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+</body>
+</html>

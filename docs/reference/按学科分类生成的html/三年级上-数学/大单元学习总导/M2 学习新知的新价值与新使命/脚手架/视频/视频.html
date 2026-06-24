@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视频脚手架 — 时间主题</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 28px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, #1677ff, #4096ff);
+  color: #fff;
+  border-radius: var(--border-radius);
+  padding: 28px 32px;
+  margin-bottom: 28px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  margin: 0 0 8px 0;
+}
+.header p {
+  font-size: calc(var(--font-body) + 2px);
+  opacity: 0.9;
+  margin: 0;
+}
+.video-grid {
+  display: grid;
+  gap: 24px;
+}
+.video-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px 28px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.video-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(22,119,255,0.12);
+}
+.video-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.video-badge {
+  font-size: calc(var(--font-body) - 4px);
+  font-weight: 700;
+  color: #fff;
+  padding: 3px 12px;
+  border-radius: 99px;
+}
+.video-badge-basic { background: #1677ff; }
+.video-badge-adv { background: #16a34a; }
+.video-badge-challenge { background: #d46b08; }
+.video-duration {
+  font-size: calc(var(--font-body) - 2px);
+  color: var(--text-secondary);
+}
+.video-title {
+  font-size: calc(var(--font-body) + 4px);
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+.task-section {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+}
+.task-section::before {
+  content: "🎯 观看任务";
+  display: block;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.question-section {
+  background: #fff7e6;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+}
+.question-section::before {
+  content: "❓ 关键问题";
+  display: block;
+  font-weight: 700;
+  color: #d46b08;
+  margin-bottom: 4px;
+}
+.pause-point {
+  background: #f6ffed;
+  border-radius: 6px;
+  padding: 10px 16px;
+  margin: 10px 0;
+  border-left: 4px solid #52c41a;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.pause-point:hover { background: #d9f7be; }
+.pause-point::before {
+  content: "⏸️ 暂停思考";
+  display: block;
+  font-weight: 700;
+  color: #16a34a;
+  margin-bottom: 4px;
+}
+.pause-hint {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+  background: var(--card-bg);
+  border-radius: 4px;
+  padding: 0 12px;
+  margin-top: 4px;
+}
+.pause-point.active + .pause-hint,
+.pause-hint.show {
+  max-height: 200px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+}
+.output-task {
+  background: #f9f0ff;
+  border-radius: 6px;
+  padding: 12px 16px;
+  border-left: 4px solid #722ed1;
+}
+.output-task::before {
+  content: "✍️ 输出任务";
+  display: block;
+  font-weight: 700;
+  color: #722ed1;
+  margin-bottom: 4px;
+}
+.level-nav {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.level-btn {
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-radius: 99px;
+  padding: 8px 20px;
+  font-size: calc(var(--font-body) - 1px);
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text-secondary);
+}
+.level-btn:hover { border-color: var(--primary); color: var(--primary); }
+.level-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.level-section { display: block; }
+.level-section.hidden { display: none; }
+.fade-in {
+  animation: fadeIn 0.5s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header fade-in">
+  <h1>🎬 视频脚手架</h1>
+  <p>看视频学时间——从时钟的历史到物理学的终极问题！</p>
+</div>
+
+<!-- 层级筛选 -->
+<div class="level-nav">
+  <button class="level-btn active" onclick="filterLevel('all', this)">📺 全部视频</button>
+  <button class="level-btn" onclick="filterLevel('basic', this)">🌟 基础 · 解释型</button>
+  <button class="level-btn" onclick="filterLevel('adv', this)">🚀 进阶 · 分析型</button>
+  <button class="level-btn" onclick="filterLevel('challenge', this)">🏆 挑战 · 前沿型</button>
+</div>
+
+<!-- 基础层 -->
+<div class="video-grid level-section" data-level="basic">
+  <div class="video-card fade-in">
+    <div class="video-meta">
+      <span class="video-badge video-badge-basic">基础 · 解释型</span>
+      <span class="video-duration">⏱️ 约 8 分钟</span>
+    </div>
+    <div class="video-title">⏰ 视频1：《时钟的发展史》（科普动画）</div>
+    <div class="task-section">边看边画出"时间测量工具进化时间轴"</div>
+    <div class="question-section">
+      <div>① 最早的钟是什么？</div>
+      <div>② 为什么伽利略的发现重要？</div>
+      <div>③ 现在最准的钟是什么？</div>
+    </div>
+    <div class="pause-point" onclick="togglePause(this)">🕐（3:20处）暂停——猜一猜，摆钟为什么比水钟更准？</div>
+    <div class="pause-hint">💡 提示：摆的等时性——伽利略发现摆来回一次的时间几乎不变，不受摆动幅度影响。水钟则受水流速度影响，不够稳定。</div>
+    <div class="output-task">写一段"未来计时工具会是什么样？"的简短设想</div>
+  </div>
+
+  <div class="video-card fade-in">
+    <div class="video-meta">
+      <span class="video-badge video-badge-basic">基础 · 解释型</span>
+      <span class="video-duration">⏱️ 约 5 分钟</span>
+    </div>
+    <div class="video-title">⏲️ 视频2：《时间单位：秒、分、时》（教学动画）</div>
+    <div class="task-section">记录片中提到的所有"1秒钟能发生的事情"</div>
+    <div class="question-section">
+      <div>① 1秒到底有多长？</div>
+      <div>② 为什么1小时等于60分钟？</div>
+      <div>③ 你还知道哪些时间单位？</div>
+    </div>
+    <div class="pause-point" onclick="togglePause(this)">🕐（2:10处）暂停——自己心里默数10秒，看视频中的秒表是否同步</div>
+    <div class="pause-hint">💡 你的"内心秒表"准不准？试试多练几次！闭上眼睛默数，看看10秒后睁眼，实际过了几秒。</div>
+    <div class="output-task">填写"时间单位关系表"（秒→分→时，附生活实例）</div>
+  </div>
+</div>
+
+<!-- 进阶层 -->
+<div class="video-grid level-section hidden" data-level="adv">
+  <div class="video-card fade-in">
+    <div class="video-meta">
+      <span class="video-badge video-badge-adv">进阶 · 分析型</span>
+      <span class="video-duration">⏱️ 约 12 分钟</span>
+    </div>
+    <div class="video-title">🌐 视频3：《GPS和时间的秘密》（国家地理纪录片片段）</div>
+    <div class="task-section">找出 GPS 和"时间"之间的 3 个联系</div>
+    <div class="question-section">
+      <div>① 为什么 GPS 卫星需要精确到纳秒的时间？</div>
+      <div>② 如果卫星时间差1秒，定位误差多少？</div>
+      <div>③ 谁在维护全世界的时间？</div>
+    </div>
+    <div class="pause-point" onclick="togglePause(this)">🕐（7:45处）暂停——用自己的话解释"时间差 = 距离"的原理</div>
+    <div class="pause-hint">💡 提示：信号以光速传播（约30万公里/秒）。卫星发信号时带上时间戳，接收器对比发出时间和收到时间的时间差 × 光速 = 距离。</div>
+    <div class="output-task">画一张"卫星如何通过时间确定位置"的流程图</div>
+  </div>
+</div>
+
+<!-- 挑战层 -->
+<div class="video-grid level-section hidden" data-level="challenge">
+  <div class="video-card fade-in">
+    <div class="video-meta">
+      <span class="video-badge video-badge-challenge">挑战 · 前沿型</span>
+      <span class="video-duration">⏱️ 约 5 分钟</span>
+    </div>
+    <div class="video-title">🤔 视频4：《什么是时间？物理学家的回答》（TED-Ed）</div>
+    <div class="task-section">找出物理学家对"时间"的三种不同理解</div>
+    <div class="question-section">
+      <div>① 时间真的存在吗？</div>
+      <div>② "现在"这个时刻有多长？</div>
+      <div>③ 时间能不能倒流？</div>
+    </div>
+    <div class="output-task">写出你的"时间观"——你认为时间是什么？举一个生活中的例子说明</div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function filterLevel(level, btn) {
+  document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.level-section').forEach(s => {
+    s.classList.toggle('hidden', level !== 'all' && s.dataset.level !== level);
+  });
+}
+function togglePause(el) {
+  el.classList.toggle('active');
+  const hint = el.nextElementSibling;
+  if (hint.classList.contains('pause-hint')) {
+    hint.classList.toggle('show');
+  }
+}
+</script>
+</body>
+</html>

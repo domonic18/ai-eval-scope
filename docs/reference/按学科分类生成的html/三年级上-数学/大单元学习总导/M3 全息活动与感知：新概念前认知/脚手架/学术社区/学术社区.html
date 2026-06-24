@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学术社区 — 时间主题</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 28px 24px;
+  box-sizing: border-box;
+}
+
+.section-title {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 12px;
+  position: relative;
+  padding-left: 16px;
+}
+.section-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 4px;
+  background: var(--primary);
+  border-radius: 2px;
+}
+
+.sub-title {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--text);
+  margin-top: 28px;
+  margin-bottom: 10px;
+}
+
+.desc-box {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+
+/* ---- 三类连接 ---- */
+.connect-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.connect-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  border-top: 4px solid var(--primary);
+  transition: transform 0.2s;
+}
+.connect-card:hover {
+  transform: translateY(-2px);
+}
+
+.connect-icon {
+  font-size: 28px;
+  margin-bottom: 6px;
+}
+.connect-title {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+.connect-desc {
+  color: var(--text-secondary);
+  font-size: calc(var(--font-body) - 1px);
+  margin-bottom: 10px;
+}
+
+.topic-list {
+  list-style: none;
+  padding: 0;
+}
+.topic-list li {
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: var(--bg);
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.topic-list li:hover {
+  background: #d6e4ff;
+}
+.topic-list li .topic-num {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  width: 22px;
+  height: 22px;
+  text-align: center;
+  border-radius: 50%;
+  font-size: calc(var(--font-body) - 4px);
+  margin-right: 8px;
+  line-height: 22px;
+}
+
+/* ---- 角色分区 ---- */
+.role-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.role-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 18px;
+  box-shadow: var(--shadow);
+  text-align: center;
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+}
+.role-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(22,119,255,0.12);
+}
+
+.role-icon {
+  font-size: 32px;
+  margin-bottom: 6px;
+}
+.role-name {
+  font-weight: 600;
+  font-size: calc(var(--font-body) + 1px);
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.role-desc {
+  font-size: calc(var(--font-body) - 2px);
+  color: var(--text-secondary);
+}
+
+/* ---- 输出机制 ---- */
+.output-area {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+
+.output-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.output-row:last-child {
+  border-bottom: none;
+}
+.output-icon {
+  font-size: 24px;
+  width: 40px;
+  text-align: center;
+}
+.output-text {
+  flex: 1;
+}
+.output-label {
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* 家校任务 - 可展开 */
+.task-toggle {
+  margin-top: 10px;
+  padding: 10px 16px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: var(--font-body);
+  font-family: inherit;
+  transition: background 0.2s;
+}
+.task-toggle:hover {
+  background: var(--primary-hover);
+}
+
+.task-detail {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+  background: #fffbe6;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  margin-top: 8px;
+  padding: 0 16px;
+}
+.task-detail.show {
+  max-height: 300px;
+  padding: 14px 16px;
+}
+
+@media (max-width: 600px) {
+  .container { padding: 16px 12px; }
+  .connect-grid, .role-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1 class="section-title">🤝 学术社区 · 时间探索者联盟</h1>
+<p class="desc-box">我们是"时间探索者"——在讨论、协作和展示中，一起解开"时间"的秘密！分享你的发现，听听别人的想法，时间在交流中变得更清晰。</p>
+
+<h2 class="sub-title">🔗 三类连接</h2>
+
+<div class="connect-grid">
+
+  <div class="connect-card">
+    <div class="connect-icon">👥</div>
+    <div class="connect-title">同伴连接</div>
+    <div class="connect-desc">和同学一起讨论，碰撞出思维的火花！</div>
+    <ul class="topic-list">
+      <li onclick="this.style.background='#d6e4ff'"><span class="topic-num">1</span> 你觉得"1分钟"长还是短？为什么做不同的事，感受不一样？</li>
+      <li onclick="this.style.background='#d6e4ff'"><span class="topic-num">2</span> 分享你的"1分钟挑战"记录——谁的数据最出乎意料？</li>
+      <li onclick="this.style.background='#d6e4ff'"><span class="topic-num">3</span> 如果一天只有8小时，你的生活会变成什么样？</li>
+    </ul>
+  </div>
+
+  <div class="connect-card">
+    <div class="connect-icon">🏠</div>
+    <div class="connect-title">家校连接</div>
+    <div class="connect-desc">和家人一起，把"时间探索"带回家！</div>
+    <p style="margin-bottom:8px; color: var(--text);">📋 <strong>家庭任务：</strong>和家长一起完成"家庭一分钟挑战"，请家长写下感受。</p>
+    <button class="task-toggle" onclick="toggleTask(this)">📖 查看任务详情</button>
+    <div class="task-detail">
+      <p><strong>家庭一分钟挑战步骤：</strong></p>
+      <p>① 选一个活动（跳绳、拍球、单脚站……）<br>
+      ② 让家长计时 1 分钟，你做这个活动<br>
+      ③ 换过来：你计时，家长做 1 分钟<br>
+      ④ 一起讨论：感觉上的 1 分钟和实际的 1 分钟一样吗？<br>
+      ⑤ 请家长写下："我以为只过了___秒，实际上过了___秒"</p>
+    </div>
+  </div>
+
+  <div class="connect-card">
+    <div class="connect-icon">🌍</div>
+    <div class="connect-title">社会连接</div>
+    <div class="connect-desc">走出教室，看看真实世界的"时间"！</div>
+    <div style="background: var(--bg); border-radius:6px; padding:10px 14px; margin-top:8px;">
+      <p><strong>🎤 专家连线：</strong>邀请调表师（钟表维修师）或体育教练（计时专家）做线上分享</p>
+    </div>
+    <div style="background: var(--bg); border-radius:6px; padding:10px 14px; margin-top:8px;">
+      <p><strong>🏛️ 推荐参观：</strong>本地"钟表博物馆"或"科技馆时间展区"（也可线上虚拟参观）</p>
+    </div>
+  </div>
+
+</div>
+
+<h2 class="sub-title">👤 角色分工</h2>
+<p style="color: var(--text-secondary); margin-bottom: 12px;">每个小组选一个角色，轮换担任，每个人都能体验不同的视角！</p>
+
+<div class="role-grid">
+  <div class="role-card">
+    <div class="role-icon">✍️</div>
+    <div class="role-name">时间记录员</div>
+    <div class="role-desc">记录小组讨论中的关键观点和时间数据</div>
+  </div>
+  <div class="role-card">
+    <div class="role-icon">❓</div>
+    <div class="role-name">质疑者</div>
+    <div class="role-desc">提出反对意见或不同解释，推动讨论深入</div>
+  </div>
+  <div class="role-card">
+    <div class="role-icon">📋</div>
+    <div class="role-name">总结者</div>
+    <div class="role-desc">汇总讨论成果，提炼共识或分歧点</div>
+  </div>
+  <div class="role-card">
+    <div class="role-icon">🎤</div>
+    <div class="role-name">展示者</div>
+    <div class="role-desc">向班级展示讨论成果</div>
+  </div>
+</div>
+
+<h2 class="sub-title">📤 输出机制</h2>
+
+<div class="output-area">
+  <div class="output-row">
+    <div class="output-icon">📌</div>
+    <div class="output-text">
+      <span class="output-label">展示墙</span><br>
+      在教室（或线上共享文档）设立"时间感言墙"，贴上你的时间发现
+    </div>
+  </div>
+  <div class="output-row">
+    <div class="output-icon">🎙️</div>
+    <div class="output-text">
+      <span class="output-label">成果分享会</span><br>
+      每周末组织 10 分钟"时间故事分享"，把最有趣的发现讲给大家听
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function toggleTask(btn) {
+  var detail = btn.nextElementSibling;
+  if (detail.classList.contains('show')) {
+    detail.classList.remove('show');
+    btn.textContent = '📖 查看任务详情';
+  } else {
+    detail.classList.add('show');
+    btn.textContent = '🙌 收起任务详情';
+  }
+}
+</script>
+</body>
+</html>

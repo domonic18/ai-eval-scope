@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性示例导学 — 时间单位是如何被定义的？</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+}
+.container { width: 100%; max-width: none; padding: 20px; box-sizing: border-box; }
+header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  padding: 32px 20px;
+  text-align: center;
+}
+header h1 {
+  font-size: var(--font-h1);
+  color: #fff;
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+header p { color: rgba(255,255,255,0.85); font-size: 16px; }
+
+/* 通用卡片 */
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+.card h3 {
+  font-size: 20px;
+  color: var(--text);
+  margin: 16px 0 8px;
+}
+.card p, .card li { font-size: var(--font-body); margin-bottom: 8px; }
+
+/* 情境板块高亮 */
+.situation-box {
+  background: #e6f4ff;
+  border-left: 4px solid var(--primary);
+  padding: 20px;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  margin-bottom: 16px;
+}
+
+/* 步骤列表 —— 可点击展开 */
+.step-list { list-style: none; padding: 0; }
+.step-item {
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  margin-bottom: 10px;
+  overflow: hidden;
+  transition: box-shadow 0.3s;
+}
+.step-item:hover { box-shadow: 0 2px 12px rgba(22,119,255,0.15); }
+.step-header {
+  display: block;
+  padding: 14px 18px;
+  background: var(--card-bg);
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--primary);
+  position: relative;
+  user-select: none;
+}
+.step-header::after {
+  content: "+";
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 22px;
+  font-weight: 700;
+  transition: transform 0.3s;
+  color: var(--accent);
+}
+.step-toggle { display: none; }
+.step-body {
+  max-height: 0;
+  overflow: hidden;
+  padding: 0 18px;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+  border-top: 0 solid var(--border);
+}
+.step-toggle:checked + .step-header::after { content: "−"; }
+.step-toggle:checked ~ .step-body {
+  max-height: 200px;
+  padding: 14px 18px;
+  border-top-width: 1px;
+  border-top-style: solid;
+}
+.step-body p { margin: 0; font-size: 16px; color: var(--text-secondary); }
+
+/* 支架工具卡片组 */
+.scaffold-grid { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px; }
+.scaffold-card {
+  flex: 1 1 200px;
+  min-width: 180px;
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: default;
+}
+.scaffold-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+.scaffold-card h4 { color: var(--primary); font-size: 17px; margin-bottom: 6px; }
+.scaffold-card p { font-size: 15px; color: var(--text-secondary); margin: 0; }
+
+/* 样例卡片 */
+.example-card {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: var(--border-radius);
+  padding: 18px;
+  margin: 12px 0;
+  transition: background 0.3s;
+}
+.example-card:hover { background: #fff8d6; }
+.example-card h4 { color: #d48806; font-size: 18px; }
+.example-card p { font-size: 16px; }
+
+/* 评价表格 */
+.rating-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+.rating-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+}
+.rating-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.rating-table tr:hover td { background: #f0f5ff; }
+.rating-stars { display: inline-flex; gap: 4px; }
+.rating-stars label {
+  width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 16px;
+  color: #ccc;
+  transition: color 0.2s, background 0.2s;
+  user-select: none;
+}
+.rating-stars input { display: none; }
+.rating-stars label:hover,
+.rating-stars input:checked ~ label,
+.rating-stars input:checked + label { color: #fadb14; background: #fffbe6; }
+.rating-stars label:hover ~ label { color: #ccc; background: transparent; }
+
+/* 优化建议列表 */
+.tip-list { padding-left: 20px; }
+.tip-list li { margin-bottom: 6px; font-size: 16px; }
+.tip-list li::marker { color: var(--primary); }
+
+/* 底部 */
+footer {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <h1>建构性示例导学</h1>
+    <p>时间单位是如何被定义的？</p>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- 真实建构情境 -->
+  <div class="card">
+    <h2>想象你是四千年前的古人</h2>
+    <div class="situation-box">
+      <p><strong>没有钟表，只能看天。</strong>你约了小伙伴一起去河边捉鱼，你说"太阳升到那棵树顶的时候见"——结果你到了，小伙伴还没来；小伙伴来了，你又不在。为什么？因为"树顶"每个人看的都不一样，太阳的位置也在变。时间看不见、摸不着，大家怎么用同一把尺子来约定呢？</p>
+      <p>这就是古人遇到的难题。而你，今天要当一回"时间发明家"，亲手造出时间的尺子！</p>
+    </div>
+    <p style="margin-top:10px;"><strong>建构目标：</strong>理解"时、分、秒"不是自然界本来就有的，而是人类为了准确约定时间，一步一步定义出来的测量工具。</p>
+  </div>
+
+  <!-- 建构任务说明 -->
+  <div class="card">
+    <h2>你的任务</h2>
+    <p><strong>成果名称：</strong>我的时间发明手记</p>
+    <p><strong>形式：</strong>A4 纸上画一把"时间尺"（像尺子一样画出刻度），再写一段 <strong>50-150 字</strong>的文字说明，解释你的时间单位是怎么定义的。</p>
+  </div>
+
+  <!-- 建构过程示范 7 步 -->
+  <div class="card">
+    <h2>建构过程：七步发明时间</h2>
+    <p>点击每一步，看看"发明家"是怎么思考的：</p>
+    <ul class="step-list">
+
+      <li class="step-item">
+        <input type="checkbox" class="step-toggle" id="s1">
+        <label class="step-header" for="s1">第一步：发现问题</label>
+        <div class="step-body"><p>"太阳到树顶"太模糊了，每个人的感觉不一样。我们需要一种大家都看得懂、说得清的方法来约定时间。</p></div>
+      </li>
+
+      <li class="step-item">
+        <input type="checkbox" class="step-toggle" id="s2">
+        <label class="step-header" for="s2">第二步：寻找稳定重复的东西</label>
+        <div class="step-body"><p>太阳每天东升西落，月亮圆了又缺，四季轮换——自然界里有很多"周而复始"的现象，它们是最好的天然时钟。</p></div>
+      </li>
+
+      <li class="step-item">
+        <input type="checkbox" class="step-toggle" id="s3">
+        <label class="step-header" for="s3">第三步：做一把粗糙的尺子</label>
+        <div class="step-body"><p>古人最早把"从这一次日出到下一次日出"叫作"一天"。这就是时间尺上的第一大格。</p></div>
+      </li>
+
+      <li class="step-item">
+        <input type="checkbox" class="step-toggle" id="s4">
+        <label class="step-header" for="s4">第四步：发现需要更细的刻度</label>
+        <div class="step-body"><p>"明天见"可以，但"下午做作业""煮饭要多久"就不够用了。一天太长了，必须把一天分成更小的段。</p></div>
+      </li>
+
+      <li class="step-item">
+        <input type="checkbox" class="step-toggle" id="s5">
+        <label class="step-header" for="s5">第五步：引入进制概念</label>
+        <div class="step-body"><p>为什么 1 天 = 24 小时，1 小时 = 60 分，1 分 = 60 秒？这些数字不是随便来的——60 能被 2、3、4、5、6、10、12、15、20、30 整除，分起来特别方便！</p></div>
+      </li>
+
+      <li class="step-item">
+        <input type="checkbox" class="step-toggle" id="s6">
+        <label class="step-header" for="s6">第六步：制作标准参考物</label>
+        <div class="step-body"><p>日晷、漏刻、沙漏、机械钟……人们发明越来越精确的工具，把"一秒""一分"固定下来，让所有人都能参照。</p></div>
+      </li>
+
+      <li class="step-item">
+        <input type="checkbox" class="step-toggle" id="s7">
+        <label class="step-header" for="s7">第七步：检验和传递</label>
+        <div class="step-body"><p>你的时间尺准不准？让同桌用你的尺子约定一个时间，看看你们能不能同时到达同一个地方。能对上，就说明你的发明成功了！</p></div>
+      </li>
+
+    </ul>
+  </div>
+
+  <!-- 支架工具 -->
+  <div class="card">
+    <h2>支架工具</h2>
+    <div class="scaffold-grid">
+      <div class="scaffold-card">
+        <h4>定义卡模板</h4>
+        <p>我定义的时间单位叫「______」，1「______」等于______。我用______来测量它。</p>
+      </div>
+      <div class="scaffold-card">
+        <h4>句式支架</h4>
+        <p>"我选择______作为参考，因为它______。我的时间尺精确到______。"</p>
+      </div>
+      <div class="scaffold-card">
+        <h4>检查清单</h4>
+        <p>我的尺子有刻度吗？别人能看懂吗？每个单位的长度固定吗？能传递给别人用吗？</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 建构成果样例 -->
+  <div class="card">
+    <h2>建构成果样例："一烛"时间单位</h2>
+    <div class="example-card">
+      <h4>小明的时间发明</h4>
+      <p>我定义的时间单位叫「一烛」。我用一根粗细均匀的蜡烛，点燃后从顶端烧到底端刚好用完，就是 1 烛。我把蜡烛平均分成 10 格，每格就是 0.1 烛。这样大家只要用同样的蜡烛，就能约定时间啦！</p>
+    </div>
+  </div>
+
+  <!-- 成果优化建议 -->
+  <div class="card">
+    <h2>成果优化建议</h2>
+    <ul class="tip-list">
+      <li><strong>互换成果：</strong>和同桌交换时间尺，用对方的尺子约定一个时间，看看能不能对上。</li>
+      <li><strong>加刻度：</strong>在时间尺上多画几道刻度，让它能测量更短的时间段。</li>
+      <li><strong>找稳定漏洞：</strong>你的参考物受不受天气、温度影响？如果蜡烛被风吹灭怎么办？</li>
+      <li><strong>写使用说明书：</strong>为你的时间发明写一份"使用说明书"，让别人拿到就会用。</li>
+    </ul>
+  </div>
+
+  <!-- 自我评价量表 -->
+  <div class="card">
+    <h2>自我评价量表</h2>
+    <p>每一项给自己打 1-5 分（1 分最低，5 分最高），点击星星即可打分。</p>
+    <table class="rating-table">
+      <thead>
+        <tr><th style="width:50%;">评价指标</th><th style="width:50%;">我的评分</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>我理解了时间单位是人定义出来的</td>
+          <td>
+            <span class="rating-stars">
+              <input type="radio" name="r1" id="r1-1"><label for="r1-1">1</label>
+              <input type="radio" name="r1" id="r1-2"><label for="r1-2">2</label>
+              <input type="radio" name="r1" id="r1-3"><label for="r1-3">3</label>
+              <input type="radio" name="r1" id="r1-4"><label for="r1-4">4</label>
+              <input type="radio" name="r1" id="r1-5"><label for="r1-5">5</label>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td>我能说出建构过程的 7 个步骤</td>
+          <td>
+            <span class="rating-stars">
+              <input type="radio" name="r2" id="r2-1"><label for="r2-1">1</label>
+              <input type="radio" name="r2" id="r2-2"><label for="r2-2">2</label>
+              <input type="radio" name="r2" id="r2-3"><label for="r2-3">3</label>
+              <input type="radio" name="r2" id="r2-4"><label for="r2-4">4</label>
+              <input type="radio" name="r2" id="r2-5"><label for="r2-5">5</label>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td>我能设计出有创意的时间单位</td>
+          <td>
+            <span class="rating-stars">
+              <input type="radio" name="r3" id="r3-1"><label for="r3-1">1</label>
+              <input type="radio" name="r3" id="r3-2"><label for="r3-2">2</label>
+              <input type="radio" name="r3" id="r3-3"><label for="r3-3">3</label>
+              <input type="radio" name="r3" id="r3-4"><label for="r3-4">4</label>
+              <input type="radio" name="r3" id="r3-5"><label for="r3-5">5</label>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td>我的时间尺有清晰的刻度</td>
+          <td>
+            <span class="rating-stars">
+              <input type="radio" name="r4" id="r4-1"><label for="r4-1">1</label>
+              <input type="radio" name="r4" id="r4-2"><label for="r4-2">2</label>
+              <input type="radio" name="r4" id="r4-3"><label for="r4-3">3</label>
+              <input type="radio" name="r4" id="r4-4"><label for="r4-4">4</label>
+              <input type="radio" name="r4" id="r4-5"><label for="r4-5">5</label>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td>我能向别人解释我的时间发明</td>
+          <td>
+            <span class="rating-stars">
+              <input type="radio" name="r5" id="r5-1"><label for="r5-1">1</label>
+              <input type="radio" name="r5" id="r5-2"><label for="r5-2">2</label>
+              <input type="radio" name="r5" id="r5-3"><label for="r5-3">3</label>
+              <input type="radio" name="r5" id="r5-4"><label for="r5-4">4</label>
+              <input type="radio" name="r5" id="r5-5"><label for="r5-5">5</label>
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<footer>
+  三年级数学 · 建构性示例导学 · 做时间的小小发明家
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性案例 — 七阶时间分析挑战</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 10px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.wrapper {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), #4a9eff);
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+.header h1 {
+  margin: 0 0 6px 0;
+  font-size: var(--font-h1);
+}
+.header p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 16px;
+}
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px 28px;
+  margin-bottom: 22px;
+  border-left: 4px solid var(--primary);
+}
+.case-card .badge {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  font-size: 14px;
+  padding: 2px 14px;
+  border-radius: 20px;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+.case-card h3 {
+  font-size: var(--font-h2);
+  margin: 0 0 10px 0;
+  color: var(--text);
+}
+.case-card .material {
+  background: #f9f9f9;
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 10px 0;
+  border-left: 3px solid var(--accent);
+}
+.case-card .material::before {
+  content: "📖 案例材料";
+  display: block;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+.task-box {
+  background: #fff7e6;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 10px 0;
+  border: 1px solid #ffd591;
+}
+.task-box::before {
+  content: "🎯 解析任务";
+  display: block;
+  font-weight: 600;
+  color: #d46b08;
+  margin-bottom: 4px;
+}
+.principle-tag {
+  display: inline-block;
+  background: #e6f7ff;
+  color: var(--primary);
+  border: 1px solid #91d5ff;
+  border-radius: 16px;
+  padding: 2px 12px;
+  font-size: 14px;
+  margin: 3px 4px 3px 0;
+}
+.table-wrap {
+  overflow-x: auto;
+  margin: 10px 0;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 16px;
+}
+table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+}
+table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+table tr:nth-child(even) td {
+  background: #f8fbff;
+}
+.reflect-section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px 28px;
+  margin-top: 28px;
+  border: 2px dashed var(--accent);
+}
+.reflect-section h2 {
+  font-size: var(--font-h2);
+  margin: 0 0 14px 0;
+  color: var(--primary);
+}
+.reflect-section ul {
+  padding-left: 24px;
+}
+.reflect-section li {
+  margin-bottom: 10px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+.reflect-section li:hover {
+  background: #f0f5ff;
+}
+.reflect-section li.done {
+  color: var(--text-secondary);
+  text-decoration: line-through;
+}
+.reflect-section li.done::before {
+  content: "✅ ";
+}
+.reflect-section li:not(.done)::before {
+  content: "⬜ ";
+}
+.toggle-btn {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 6px 18px;
+  border-radius: 6px;
+  font-size: 15px;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background 0.2s;
+}
+.toggle-btn:hover {
+  background: var(--primary-hover);
+}
+.animation-box {
+  display: none;
+  margin-top: 12px;
+  padding: 16px;
+  background: #f0f5ff;
+  border-radius: 8px;
+  border: 1px dashed var(--accent);
+  animation: fadeSlide 0.4s ease;
+}
+.animation-box.show {
+  display: block;
+}
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.path-highlight {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0;
+}
+.path-step {
+  background: #e6f7ff;
+  border: 1px solid #91d5ff;
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: 15px;
+  color: var(--primary);
+}
+.reflect-note {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: #fffbe6;
+  border-radius: 8px;
+  border: 1px solid #ffe58f;
+}
+.reflect-note textarea {
+  width: 100%;
+  min-height: 60px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 16px;
+  font-family: inherit;
+  box-sizing: border-box;
+  resize: vertical;
+}
+.reflect-note textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(22,119,255,0.15);
+}
+@media (max-width: 640px) {
+  .wrapper { padding: 16px 12px; }
+  .header { padding: 20px 18px; }
+  .case-card { padding: 16px 14px; }
+  table { font-size: 14px; }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <h1>⏱ 七阶时间分析挑战</h1>
+    <p>运用前面提炼的解析性原理，挑战7个难度递进的真实案例</p>
+  </div>
+
+  <!-- 案例一 -->
+  <div class="case-card">
+    <span class="badge">案例一 · 生活情境</span>
+    <h3>🥣 "早餐争夺战"</h3>
+    <div class="material">妈妈做了早餐：煮鸡蛋需要8分钟，热牛奶需要3分钟，烤面包需要5分钟。小明想"最快"吃上早餐，应该先做什么？</div>
+    <div class="task-box">帮小明设计一个最省时的早餐流程</div>
+    <div class="path-highlight">
+      <span class="path-step">识别问题</span>
+      <span class="path-step">→ 拆解要素</span>
+      <span class="path-step">→ 找关系</span>
+    </div>
+    <div><span class="principle-tag">原理3: 数据优先于感觉</span></div>
+    <div class="table-wrap">
+      <table>
+        <tr><th>任务</th><th>时间</th><th>能否同时做？</th></tr>
+        <tr><td>煮鸡蛋</td><td>8分钟</td><td>可以（和热牛奶、烤面包同步）</td></tr>
+        <tr><td>热牛奶</td><td>3分钟</td><td>可以（和煮鸡蛋同步）</td></tr>
+        <tr><td>烤面包</td><td>5分钟</td><td>可以（和煮鸡蛋同步）</td></tr>
+      </table>
+    </div>
+    <button class="toggle-btn" onclick="toggleHint(this)">💡 查看参考思路</button>
+    <div class="animation-box"><strong>参考思路：</strong>关键不是"什么先做"，而是"什么可以同时做"——煮鸡蛋的8分钟里同时热牛奶和烤面包，总耗时约8分钟，而不是8+3+5=16分钟！</div>
+  </div>
+
+  <!-- 案例二 -->
+  <div class="case-card">
+    <span class="badge">案例二 · 校园情境</span>
+    <h3>🏫 "课间够不够？"</h3>
+    <div class="material">下课铃响，老师拖堂3分钟。你要去厕所（来回4分钟）、喝水（1分钟）、准备下节课课本（1分钟），走到下一节课教室需要2分钟。课间只有10分钟。</div>
+    <div class="task-box">判断时间够不够，如果不够，怎么调整？</div>
+    <div class="path-highlight">
+      <span class="path-step">计算总需求</span>
+      <span class="path-step">→ 对比可用时间</span>
+      <span class="path-step">→ 找可省略步骤</span>
+    </div>
+    <div><span class="principle-tag">原理2: 同单位优先</span><span class="principle-tag">原理1: 确认可比</span></div>
+    <div class="table-wrap">
+      <table>
+        <tr><th>事项</th><th>时间</th><th>是否必需？</th></tr>
+        <tr><td>拖堂</td><td>3分钟</td><td>无法避免</td></tr>
+        <tr><td>去厕所</td><td>4分钟</td><td>是</td></tr>
+        <tr><td>喝水</td><td>1分钟</td><td>是</td></tr>
+        <tr><td>准备课本</td><td>1分钟</td><td>可以课间再做</td></tr>
+        <tr><td>走到教室</td><td>2分钟</td><td>必须</td></tr>
+      </table>
+    </div>
+    <button class="toggle-btn" onclick="toggleHint(this)">💡 查看参考思路</button>
+    <div class="animation-box"><strong>参考思路：</strong>必须完成3+4+1+2=10分钟，刚好够！但准备课本可以在上课后再做，留出1分钟缓冲。遇到事情多时，先分"必须做"和"可以缓的"。</div>
+  </div>
+
+  <!-- 案例三 -->
+  <div class="case-card">
+    <span class="badge">案例三 · 家庭/社区情境</span>
+    <h3>🏠 "谁家离学校更近？"</h3>
+    <div class="material">小王家离学校走路要15分钟，小李家骑车要8分钟，小张家坐公交车要2站（每站约3分钟）。请问哪家离学校最近？</div>
+    <div class="task-box">注意！步行、骑车、坐车的速度不同→不能直接用时间判断距离！</div>
+    <div class="path-highlight">
+      <span class="path-step">发现问题（交通工具不同）</span>
+      <span class="path-step">→ 补充速度信息</span>
+      <span class="path-step">→ 换算</span>
+    </div>
+    <div><span class="principle-tag">原理1: 确认可比</span><span class="principle-tag">原理4: 反直觉检查</span></div>
+    <div class="table-wrap">
+      <table>
+        <tr><th>同学</th><th>用时</th><th>方式</th><th>速度估计</th><th>推算距离</th></tr>
+        <tr><td>小王</td><td>15分钟</td><td>步行</td><td>约80米/分钟</td><td>约1200米</td></tr>
+        <tr><td>小李</td><td>8分钟</td><td>骑车</td><td>约250米/分钟</td><td>约2000米</td></tr>
+        <tr><td>小张</td><td>≈6分钟</td><td>坐公交</td><td>约400米/分钟</td><td>约2400米</td></tr>
+      </table>
+    </div>
+    <button class="toggle-btn" onclick="toggleHint(this)">💡 查看参考思路</button>
+    <div class="animation-box"><strong>参考思路：</strong>虽然小王用时最长（15分钟），但他是走路最慢的。加上速度因素后，小王家反而离学校最近！这就是"反直觉"——用时最长≠距离最远。</div>
+  </div>
+
+  <!-- 案例四 -->
+  <div class="case-card">
+    <span class="badge">案例四 · 学科核心</span>
+    <h3>🏃 "速度竞赛"</h3>
+    <div class="material">甲10秒跑50米，乙12秒跑60米。谁跑得更快？</div>
+    <div class="task-box">这是一个"距离不同，时间也不同"的比较，怎么办？</div>
+    <div class="path-highlight">
+      <span class="path-step">发现不能直接比时间</span>
+      <span class="path-step">→ 统一标准</span>
+      <span class="path-step">→ 计算比较</span>
+    </div>
+    <div><span class="principle-tag">原理1: 确认可比</span><span class="principle-tag">原理2: 同单位优先</span></div>
+    <div class="table-wrap">
+      <table>
+        <tr><th>选手</th><th>距离</th><th>时间</th><th>速度（米/秒）</th></tr>
+        <tr><td>甲</td><td>50米</td><td>10秒</td><td>5米/秒</td></tr>
+        <tr><td>乙</td><td>60米</td><td>12秒</td><td>5米/秒</td></tr>
+      </table>
+    </div>
+    <button class="toggle-btn" onclick="toggleHint(this)">💡 查看参考思路</button>
+    <div class="animation-box"><strong>参考思路：</strong>算出"每秒跑多少米"——甲5米/秒，乙也是5米/秒，两人一样快！距离和时间都不同时，必须通过"速度"这个统一标准来比较。</div>
+  </div>
+
+  <!-- 案例五 -->
+  <div class="case-card">
+    <span class="badge">案例五 · 跨学科情境</span>
+    <h3>🌿 "时间与季节"</h3>
+    <div class="material">夏天白天长、晚上短；冬天白天短、晚上长。夏天日照时间约14小时，冬天约10小时。</div>
+    <div class="task-box">计算夏天比冬天多几个小时日照？这4小时的差距对动植物有什么影响？</div>
+    <div class="path-highlight">
+      <span class="path-step">提取数据</span>
+      <span class="path-step">→ 做减法</span>
+      <span class="path-step">→ 思考影响</span>
+      <span class="path-step">→ 寻找更多证据</span>
+    </div>
+    <div><span class="principle-tag">原理3: 数据优先</span><span class="principle-tag">原理1: 确认可比</span></div>
+    <div class="table-wrap">
+      <table>
+        <tr><th>季节</th><th>日照时长</th><th>与冬季差值</th><th>可能影响</th></tr>
+        <tr><td>夏季</td><td>14小时</td><td>+4小时</td><td>植物长得快、动物活动时间长</td></tr>
+        <tr><td>冬季</td><td>10小时</td><td>—</td><td>植物长得慢、动物冬眠/减少活动</td></tr>
+      </table>
+    </div>
+    <button class="toggle-btn" onclick="toggleHint(this)">💡 查看参考思路</button>
+    <div class="animation-box"><strong>参考思路：</strong>14-10=4小时。这4小时差距意味着夏天植物光合作用多了约30%！所以夏天庄稼长得快，冬天生长缓慢。数据让我们看到"温差"背后的"时间差"。</div>
+  </div>
+
+  <!-- 案例六 -->
+  <div class="case-card">
+    <span class="badge">案例六 · 社会情境</span>
+    <h3>🌍 "全球时间混乱"</h3>
+    <div class="material">北京时间早上8:00时，纽约是前一天晚上20:00（时差13小时），伦敦是凌晨0:00（时差8小时）。小明想和伦敦的表哥视频通话。</div>
+    <div class="task-box">小明在北京下午3:00打电话，伦敦现在是几点？合适通话吗？</div>
+    <div class="path-highlight">
+      <span class="path-step">确认时差</span>
+      <span class="path-step">→ 做加减</span>
+      <span class="path-step">→ 判断合理性</span>
+      <span class="path-step">→ 考虑替代时间</span>
+    </div>
+    <div><span class="principle-tag">原理1: 确认可比</span><span class="principle-tag">原理4: 反直觉检查</span></div>
+    <div class="table-wrap">
+      <table>
+        <tr><th>城市</th><th>时差</th><th>小明时间</th><th>对方时间</th><th>是否合适？</th></tr>
+        <tr><td>伦敦</td><td>-8小时</td><td>15:00</td><td>7:00（早上）</td><td>✅ 合适！刚好起床</td></tr>
+        <tr><td>纽约</td><td>-13小时</td><td>15:00</td><td>2:00（凌晨）</td><td>❌ 深夜休息中</td></tr>
+      </table>
+    </div>
+    <button class="toggle-btn" onclick="toggleHint(this)">💡 查看参考思路</button>
+    <div class="animation-box"><strong>参考思路：</strong>北京时间15:00，伦敦15-8=7:00（早上7点，刚好起床适合通话）；纽约15-13=2:00（凌晨2点，不合适）。反直觉检查：同一时刻，世界各地的时间完全不同！</div>
+  </div>
+
+  <!-- 案例七 -->
+  <div class="case-card">
+    <span class="badge">案例七 · 综合迁移</span>
+    <h3>🚀 "时间悖论"</h3>
+    <div class="material">传说一个人坐飞船以接近光速去太空旅行1年，回到地球后发现地球已经过了100年。这就是"时间膨胀"效应。</div>
+    <div class="task-box">这个说法是科学事实还是科幻想象？为什么"速度越快，时间越慢"？</div>
+    <div class="path-highlight">
+      <span class="path-step">区分已知事实和推测</span>
+      <span class="path-step">→ 查找可靠证据</span>
+      <span class="path-step">→ 判断可信度</span>
+      <span class="path-step">→ 形成自己理解</span>
+    </div>
+    <div><span class="principle-tag">原理3: 数据优先</span><span class="principle-tag">原理4: 反直觉检查</span></div>
+    <div class="table-wrap">
+      <table>
+        <tr><th>说法</th><th>科学依据？</th><th>来源</th><th>可信度</th></tr>
+        <tr><td>时间膨胀效应</td><td>爱因斯坦相对论，已被实验证实</td><td>物理学理论</td><td>⭐⭐⭐ 科学事实</td></tr>
+        <tr><td>旅行1年=地球100年</td><td>理论上可能（需接近光速）</td><td>理论推导</td><td>⭐⭐ 有依据，但现实中还做不到</td></tr>
+      </table>
+    </div>
+    <button class="toggle-btn" onclick="toggleHint(this)">💡 查看参考思路</button>
+    <div class="animation-box"><strong>参考思路：</strong>时间膨胀是真实科学——GPS卫星就要考虑这个效应来校准时间！但现实中我们还造不出能接近光速的飞船。科学事实和"能做到"是两回事，要学会区分。</div>
+  </div>
+
+  <!-- 综合反思 -->
+  <div class="reflect-section">
+    <h2>📝 七阶复盘反思</h2>
+    <p>完成全部案例后，点击以下问题自问自答：</p>
+    <ul id="reflect-list">
+      <li onclick="toggleDone(this)">这7个案例中，哪个你觉得最容易分析？为什么？</li>
+      <li onclick="toggleDone(this)">哪个最难？困难在哪里？</li>
+      <li onclick="toggleDone(this)">你用得最多的是哪条解析性原理？</li>
+      <li onclick="toggleDone(this)">哪条原理你觉得自己还不太会用？</li>
+      <li onclick="toggleDone(this)">这些分析练习帮助你更好地理解"时间"了吗？</li>
+    </ul>
+    <div class="reflect-note">
+      <label style="font-weight:600;display:block;margin-bottom:6px;">📓 我的反思笔记</label>
+      <textarea placeholder="写下你的思考和收获……"></textarea>
+    </div>
+  </div>
+</div>
+<script>
+function toggleHint(btn) {
+  var box = btn.nextElementSibling;
+  box.classList.toggle('show');
+  btn.textContent = box.classList.contains('show') ? '🙈 收起参考思路' : '💡 查看参考思路';
+}
+function toggleDone(el) {
+  el.classList.toggle('done');
+}
+</script>
+</body>
+</html>

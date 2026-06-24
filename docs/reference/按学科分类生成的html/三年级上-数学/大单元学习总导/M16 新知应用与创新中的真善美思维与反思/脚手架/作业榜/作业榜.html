@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>作业榜——知识内化与表达</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px 24px;
+  box-sizing: border-box;
+}
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin: 24px 0 16px;
+  font-weight: 700;
+  position: relative;
+  padding-left: 16px;
+}
+h1::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 4px;
+  background: var(--primary);
+  border-radius: 2px;
+}
+h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 20px 0 12px;
+  font-weight: 600;
+}
+h3 {
+  font-size: calc(var(--font-body) + 2px);
+  color: var(--text);
+  margin: 16px 0 8px;
+  font-weight: 600;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.tag {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  font-size: 14px;
+  padding: 2px 12px;
+  border-radius: 12px;
+  margin-right: 8px;
+  font-weight: 500;
+}
+.badge {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 4px 4px 4px 0;
+}
+.badge-base { background: #e6f4ff; color: #1677ff; }
+.badge-layer-a { background: #f0fdf4; color: #16a34a; }
+.badge-layer-b { background: #fff7e6; color: #d46b08; }
+.badge-layer-c { background: #f9f0ff; color: #722ed1; }
+.badge-open { background: #fff1f0; color: #cf1322; }
+.question-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.question-list li {
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  background: #fafafa;
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+  transition: background 0.2s;
+}
+.question-list li:hover {
+  background: #e6f4ff;
+}
+.question-list li .q-label {
+  font-weight: 600;
+  color: var(--primary);
+}
+.choice-item {
+  display: block;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+.choice-item:hover {
+  border-color: var(--primary);
+  background: #e6f4ff;
+}
+.choice-item input[type="radio"] {
+  display: none;
+}
+.choice-item input[type="radio"]:checked + .choice-content {
+  color: var(--primary);
+}
+.choice-item:has(input[type="radio"]:checked) {
+  border-color: var(--primary);
+  background: #e6f4ff;
+}
+.choice-label {
+  font-weight: 600;
+  font-size: 16px;
+}
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+.task-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 18px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(22,119,255,0.15);
+}
+.task-card .task-icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+.task-card h4 {
+  margin: 6px 0;
+  font-size: 18px;
+}
+.open-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+.open-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  border: 1px dashed var(--accent);
+  transition: all 0.2s;
+}
+.open-card:hover {
+  background: #fffbe6;
+  border-color: var(--primary);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+}
+th {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+tr:nth-child(even) td {
+  background: #fafafa;
+}
+.bonus-toggle {
+  display: none;
+}
+.bonus-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+}
+.bonus-toggle:checked ~ .bonus-content {
+  max-height: 600px;
+}
+.bonus-btn {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+  border: none;
+  transition: background 0.2s;
+  margin: 8px 0;
+}
+.bonus-btn:hover {
+  background: var(--primary-hover);
+}
+.star {
+  color: #faad14;
+}
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  .grid-3 { grid-template-columns: 1fr; }
+  .open-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🏆 作业榜——知识内化与表达</h1>
+<p style="color:var(--text-secondary);">完成下面的闯关任务，争取拿到三颗星 ⭐⭐⭐</p>
+
+<!-- 基础层 -->
+<div class="card">
+  <h2><span class="tag">必做</span> 基础层：再现与理解</h2>
+
+  <h3>📝 必做题</h3>
+  <ul class="question-list">
+    <li><span class="q-label">1.</span> 填空：1 小时 = ______ 分钟，1 分钟 = ______ 秒，2 小时 = ______ 分钟</li>
+    <li><span class="q-label">2.</span> 填空：180 秒 = ______ 分钟，240 分钟 = ______ 小时，3 分钟 = ______ 秒</li>
+    <li><span class="q-label">3.</span> 判断对错：<br>
+      ① 1 小时 = 100 分钟（&nbsp;&nbsp;&nbsp;）<br>
+      ② 半小时 = 30 分钟（&nbsp;&nbsp;&nbsp;）<br>
+      ③ 90 秒 = 1 分 30 秒（&nbsp;&nbsp;&nbsp;）
+    </li>
+  </ul>
+
+  <h3>🔍 选做题</h3>
+  <ul class="question-list">
+    <li><span class="q-label">4.</span> 比较大小：<br>
+      5 分钟 ○ 300 秒 &nbsp;&nbsp; 2 小时 ○ 100 分钟 &nbsp;&nbsp; 1 分 20 秒 ○ 80 秒
+    </li>
+  </ul>
+</div>
+
+<!-- 分层任务 -->
+<div class="card">
+  <h2>📊 分层任务（三选一）</h2>
+  <div class="grid-3">
+    <div class="task-card" style="border-top: 4px solid #16a34a;">
+      <div class="task-icon">🌱</div>
+      <h4><span class="badge badge-layer-a">A 层</span> 基础巩固</h4>
+      <p>完成教材第 5—8 页的练习题，重点练习时间单位换算。</p>
+    </div>
+    <div class="task-card" style="border-top: 4px solid #d46b08;">
+      <div class="task-icon">🔥</div>
+      <h4><span class="badge badge-layer-b">B 层</span> 能力提升</h4>
+      <p>设计 5 道时间换算题，交换给同桌做，然后互相批改。要求：每道题都要包含两种单位之间的换算。</p>
+    </div>
+    <div class="task-card" style="border-top: 4px solid #722ed1;">
+      <div class="task-icon">🚀</div>
+      <h4><span class="badge badge-layer-c">C 层</span> 挑战拓展</h4>
+      <p>调查家里 5 种电器的使用时间，计算它们一天总共运行多少分钟。</p>
+    </div>
+  </div>
+</div>
+
+<!-- 开放层 -->
+<div class="card">
+  <h2>🎨 开放层：创造性表达</h2>
+  <p style="color:var(--text-secondary);">从以下任务中任选一项完成，展示你的创意！</p>
+  <div class="open-grid">
+    <div class="open-card">
+      <div style="font-size:28px;">✍️</div>
+      <h4>写作任务</h4>
+      <p>以"我的一天"为题，写一篇 200 字左右的短文，用上时、分、秒描述一天中各个活动的时间安排。至少使用 5 个时间数据。</p>
+    </div>
+    <div class="open-card">
+      <div style="font-size:28px;">📊</div>
+      <h4>图示任务</h4>
+      <p>画一张"我的周末时间饼图"，用扇形图展示周末各项活动的时间分配。精确到半小时，标注每个扇形的角度和时间。</p>
+    </div>
+    <div class="open-card">
+      <div style="font-size:28px;">🎬</div>
+      <h4>视频任务</h4>
+      <p>录制一段 2 分钟的"时间知识小讲堂"视频，讲解一个时间换算技巧。要求有板书或演示，语言清晰。</p>
+    </div>
+    <div class="open-card">
+      <div style="font-size:28px;">🎤</div>
+      <h4>演讲任务</h4>
+      <p>准备一段 1 分钟的"时间名言"演讲，分享一句你最喜欢的时间名言，并说明为什么。</p>
+    </div>
+  </div>
+</div>
+
+<!-- 评价标准 -->
+<div class="card">
+  <h2>📋 评价标准（Rubric）</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>等级</th>
+        <th>标准</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="star">⭐⭐⭐</span> 优秀</td>
+        <td>基础题全对，分层题完成 B 层以上，开放题有创意且准确</td>
+      </tr>
+      <tr>
+        <td><span class="star">⭐⭐</span> 良好</td>
+        <td>基础题正确率 80% 以上，分层题完成 A 层，开放题按要求完成</td>
+      </tr>
+      <tr>
+        <td><span class="star">⭐</span> 合格</td>
+        <td>基础题正确率 60% 以上，分层题完成 A 层，开放题基本完成</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 互动：星级自评 -->
+  <input type="checkbox" id="showSelfCheck" class="bonus-toggle">
+  <label for="showSelfCheck" class="bonus-btn">📌 点击查看：星级自评卡</label>
+  <div class="bonus-content">
+    <div style="background:#fffbe6;border-radius:8px;padding:16px;margin-top:12px;border:1px solid #ffd666;">
+      <h3 style="margin-top:0;">⭐ 我的星级自评</h3>
+      <p>对照上面的 Rubric，给自己打个分吧！</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <label style="flex:1;min-width:100px;text-align:center;padding:12px;background:#fff;border-radius:8px;border:2px solid var(--border);cursor:pointer;transition:all 0.2s;" onclick="this.style.borderColor='#1677ff';this.style.background='#e6f4ff'">
+          <div style="font-size:32px;">⭐</div>
+          <div>合格</div>
+          <div style="font-size:13px;color:var(--text-secondary)">我需要再努力</div>
+        </label>
+        <label style="flex:1;min-width:100px;text-align:center;padding:12px;background:#fff;border-radius:8px;border:2px solid var(--border);cursor:pointer;transition:all 0.2s;" onclick="this.style.borderColor='#1677ff';this.style.background='#e6f4ff'">
+          <div style="font-size:32px;">⭐⭐</div>
+          <div>良好</div>
+          <div style="font-size:13px;color:var(--text-secondary)">我做得不错</div>
+        </label>
+        <label style="flex:1;min-width:100px;text-align:center;padding:12px;background:#fff;border-radius:8px;border:2px solid var(--border);cursor:pointer;transition:all 0.2s;" onclick="this.style.borderColor='#1677ff';this.style.background='#e6f4ff'">
+          <div style="font-size:32px;">⭐⭐⭐</div>
+          <div>优秀</div>
+          <div style="font-size:13px;color:var(--text-secondary)">我做到了最好！</div>
+        </label>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

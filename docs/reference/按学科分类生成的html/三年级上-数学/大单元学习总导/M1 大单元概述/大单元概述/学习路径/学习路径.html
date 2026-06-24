@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学习路径 — "时、分、秒"自主路线规划</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body { margin:0; padding:0; font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; font-size:var(--font-body); line-height:var(--line-height); color:var(--text); background:var(--bg); }
+.container { width:100%; max-width:none; padding:20px 24px; box-sizing:border-box; }
+.page-header { background:linear-gradient(135deg,var(--primary),var(--primary-hover)); color:#fff; padding:30px 24px; border-radius:var(--border-radius); margin-bottom:24px; position:relative; overflow:hidden; }
+.page-header h1 { margin:0; font-size:var(--font-h1); font-weight:700; }
+.page-header p { margin:8px 0 0; opacity:.85; font-size:16px; }
+.page-header::after { content:'⏱'; position:absolute; right:24px; top:50%; transform:translateY(-50%); font-size:60px; opacity:.15; }
+.card { background:var(--card-bg); border-radius:var(--border-radius); box-shadow:var(--shadow); padding:20px 24px; margin-bottom:20px; border:1px solid var(--border); transition:transform .2s,box-shadow .2s; }
+.card:hover { transform:translateY(-2px); box-shadow:0 4px 16px rgba(0,0,0,.1); }
+.card h2 { font-size:var(--font-h2); color:var(--primary); margin:0 0 12px; padding-bottom:8px; border-bottom:2px solid var(--accent); }
+.card h3 { font-size:18px; color:var(--text); margin:14px 0 8px; }
+.tag { display:inline-block; padding:2px 10px; border-radius:12px; font-size:14px; font-weight:600; margin-right:6px; margin-bottom:6px; }
+.tag-green { background:#f6ffed; color:#52c41a; border:1px solid #b7eb8f; }
+.tag-blue { background:#e6f7ff; color:#1890ff; border:1px solid #91d5ff; }
+.tag-orange { background:#fff7e6; color:#fa8c16; border:1px solid #ffd591; }
+.tag-purple { background:#f9f0ff; color:#722ed1; border:1px solid #d3adf7; }
+.btn { display:inline-block; padding:8px 20px; border-radius:var(--border-radius); border:none; cursor:pointer; font-size:16px; font-weight:600; transition:all .25s; }
+.btn-primary { background:var(--primary); color:#fff; }
+.btn-primary:hover { background:var(--primary-hover); transform:scale(1.03); }
+.btn-outline { background:transparent; color:var(--primary); border:2px solid var(--primary); }
+.btn-outline:hover { background:var(--primary); color:#fff; }
+.path-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px; }
+.path-card { background:var(--card-bg); border-radius:var(--border-radius); border-left:4px solid var(--primary); padding:16px 20px; box-shadow:var(--shadow); transition:all .3s; }
+.path-card:hover { transform:translateY(-3px); box-shadow:0 6px 20px rgba(0,0,0,.12); }
+.path-card.basic { border-left-color:#52c41a; }
+.path-card.standard { border-left-color:#fa8c16; }
+.path-card.advanced { border-left-color:#722ed1; }
+.path-card h3 { margin:0 0 8px; font-size:18px; }
+.path-card .badge { display:inline-block; padding:1px 10px; border-radius:10px; font-size:13px; font-weight:600; margin-bottom:8px; }
+.badge-basic { background:#f6ffed; color:#52c41a; }
+.badge-standard { background:#fff7e6; color:#fa8c16; }
+.badge-advanced { background:#f9f0ff; color:#722ed1; }
+table { width:100%; border-collapse:collapse; margin:12px 0; }
+th,td { padding:10px 12px; text-align:left; border-bottom:1px solid var(--border); font-size:15px; }
+th { background:var(--bg); color:var(--primary); font-weight:600; }
+tr:hover td { background:#fafafa; }
+.tip-box { background:linear-gradient(135deg,#fff7e6,#fffbe6); border-left:4px solid #fa8c16; padding:14px 18px; border-radius:0 var(--border-radius) var(--border-radius) 0; margin:12px 0; }
+.tip-box strong { color:#d46b08; }
+.accordion-toggle { cursor:pointer; display:flex; align-items:center; justify-content:space-between; padding:12px 0; border:none; background:none; width:100%; text-align:left; font-size:17px; font-weight:600; color:var(--text); }
+.accordion-toggle::after { content:'▾'; transition:transform .3s; font-size:14px; }
+.accordion-toggle.active::after { transform:rotate(180deg); }
+.accordion-content { max-height:0; overflow:hidden; transition:max-height .4s ease; }
+.accordion-content.open { max-height:2000px; }
+@keyframes fadeInUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+.animate-in { animation:fadeInUp .5s ease forwards; opacity:0; }
+.delay-1 { animation-delay:.1s; }
+.delay-2 { animation-delay:.2s; }
+.delay-3 { animation-delay:.3s; }
+.delay-4 { animation-delay:.4s; }
+@media(max-width:768px){ .container{ padding:12px; } .path-grid{ grid-template-columns:1fr; } th,td{ font-size:14px; padding:8px; } .page-header h1{ font-size:24px; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="page-header animate-in">
+  <h1>🗺️ 大单元学习路径选择</h1>
+  <p>"时、分、秒" — 选择适合你的路线，开启专属学习之旅</p>
+</div>
+
+<div class="card animate-in delay-1">
+  <h2>🎯 三条路径，按需选择</h2>
+  <p>每位同学对时间的感知不同，基础也不同。请根据你的实际情况选择一条最适合自己的学习路径。路径之间可随时切换，学习自主权在你手中！</p>
+</div>
+
+<div class="path-grid animate-in delay-2">
+  <div class="path-card basic">
+    <div class="badge badge-basic">🌱 基础进入</div>
+    <h3>稳扎稳打，建立时间感</h3>
+    <p><strong>适合：</strong>对钟表不够熟练、刚接触"秒"概念的同学</p>
+    <p><strong>学习重点：</strong>认识钟面 → 正确读写时间 → 建立1秒和1分钟的直观感受</p>
+    <p><strong>建议模块：</strong>1→2→3→4→5→7→12→16→17→20</p>
+    <div class="tip-box" style="margin:8px 0 0;">
+      <strong>💡 自我提醒：</strong>"我不急，一分钟有60秒，慢慢来也能走很远。"
+    </div>
+    <button class="btn btn-primary" style="margin-top:12px;" onclick="alert('🌱 基础进入路径已选择！\n建议模块：1→2→3→4→5→7→12→16→17→20\n使用工具：模拟时钟练习器、秒表APP、换算口诀卡')">选择这条路径</button>
+  </div>
+
+  <div class="path-card standard">
+    <div class="badge badge-standard">⚡ 标准发展</div>
+    <h3>灵活运用，解决实际问题</h3>
+    <p><strong>适合：</strong>能认读时间，但需要加强换算和应用能力的同学</p>
+    <p><strong>学习重点：</strong>单位换算 → 经过时间计算 → 生活实际应用</p>
+    <p><strong>建议模块：</strong>1→2→3→4→5→6→7→8→9→10→12→13→16→17→18→20</p>
+    <div class="tip-box" style="margin:8px 0 0;border-left-color:#fa8c16;">
+      <strong>💡 自我提醒：</strong>"时间是公平的，每人每天24小时，关键看你怎么用。"
+    </div>
+    <button class="btn btn-primary" style="margin-top:12px;" onclick="alert('⚡ 标准发展路径已选择！\n建议模块：1→2→3→4→5→6→7→8→9→10→12→13→16→17→18→20\n合作方式：和1-2位同学组队互相出题')">选择这条路径</button>
+  </div>
+
+  <div class="path-card advanced">
+    <div class="badge badge-advanced">🚀 高阶挑战</div>
+    <h3>项目探究，跨学科融合</h3>
+    <p><strong>适合：</strong>时间知识掌握较好、愿意做项目式探究的同学</p>
+    <p><strong>学习重点：</strong>时间测量原理探究 → 制作计时工具 → 时间与科学文化融合</p>
+    <p><strong>建议模块：</strong>全部20个模块（重点深入11/13/14/15/19/20）</p>
+    <div class="tip-box" style="margin:8px 0 0;border-left-color:#722ed1;">
+      <strong>💡 自我提醒：</strong>"能管理好时间的人，就能管理好自己的人生。"
+    </div>
+    <button class="btn btn-primary" style="margin-top:12px;" onclick="alert('🚀 高阶挑战路径已选择！\n全部20个模块\n挑战任务：研究"为什么一分钟是60秒而不是100秒"')">选择这条路径</button>
+  </div>
+</div>
+
+<div class="card animate-in delay-3">
+  <h2>📋 个体学习建议</h2>
+  <p>了解自己的学习类型，选择最适合你的学习方式：</p>
+  <table>
+    <tr><th style="width:30%">学习类型</th><th>学习建议</th></tr>
+    <tr><td><span class="tag tag-green">概念薄弱型</span></td><td>先用手拨钟面模型反复练习认读时间，再用"单位换算表"对照练习</td></tr>
+    <tr><td><span class="tag tag-blue">表达困难型</span></td><td>先用画图的方式表达时间（画钟面、画时间线），再试着用语言描述</td></tr>
+    <tr><td><span class="tag tag-orange">实践兴趣型</span></td><td>多选应用类模块（12-15），用秒表测量身边的运动，做一份"校园时间数据报告"</td></tr>
+    <tr><td><span class="tag tag-purple">研究挑战型</span></td><td>深入模块19、20，研究时间计量的历史和原理，完成一个探究项目</td></tr>
+    <tr><td><span class="tag tag-green">合作成长型</span></td><td>和学习伙伴组队，用角色分工完成任务，互相指正时间读法</td></tr>
+    <tr><td><span class="tag tag-blue">数智工具探索型</span></td><td>使用在线计时工具、时间管理APP辅助学习，用AI学伴练习单位换算</td></tr>
+  </table>
+</div>
+
+<div class="card animate-in delay-3">
+  <h2>👥 小组合作角色分配</h2>
+  <p>如果你选择和同学组队学习，可以认领以下角色：</p>
+  <table>
+    <tr><th>角色</th><th>任务</th><th>适合谁</th><th>可提交证据</th></tr>
+    <tr><td>🔍 问题发现者</td><td>提出生活中的时间问题</td><td>好奇心强</td><td>问题清单</td></tr>
+    <tr><td>📚 资料检索者</td><td>搜索时间测量的历史和故事</td><td>喜欢搜集</td><td>资料卡片</td></tr>
+    <tr><td>📊 证据分析者</td><td>记录和计算小组活动用时</td><td>细致认真</td><td>数据记录表</td></tr>
+    <tr><td>🏗️ 模型建构者</td><td>制作钟面模型或时间数轴</td><td>动手能力强</td><td>实物模型</td></tr>
+    <tr><td>🎨 表达设计者</td><td>设计汇报方式和展示材料</td><td>有创意</td><td>展示海报</td></tr>
+    <tr><td>📋 项目推进者</td><td>把控进度，协调分工</td><td>有组织力</td><td>项目计划表</td></tr>
+    <tr><td>⭐ 评价反馈者</td><td>检查成果质量，提出改进</td><td>客观公正</td><td>评价量规</td></tr>
+  </table>
+</div>
+
+<div class="card animate-in delay-4">
+  <h2>🎨 成果展示方式</h2>
+  <p>学习结束后，选择你喜欢的方式展示学习成果：</p>
+  <table>
+    <tr><th>展示方式</th><th>适合内容</th><th>评价关注点</th></tr>
+    <tr><td>📝 文字说明</td><td>时间换算方法、生活时间故事</td><td>准确性、清晰度</td></tr>
+    <tr><td>🧠 思维导图</td><td>时间单位换算关系</td><td>结构完整性</td></tr>
+    <tr><td>🔗 概念图</td><td>"时、分、秒"知识网络</td><td>概念关联性</td></tr>
+    <tr><td>🎤 口头讲解</td><td>介绍自己的一天安排</td><td>流畅性、条理性</td></tr>
+    <tr><td>📹 短视频</td><td>演示一个计时实验</td><td>过程清晰度</td></tr>
+    <tr><td>🖼️ 海报</td><td>时间知识总结展示</td><td>美观性、信息量</td></tr>
+    <tr><td>🏛️ 模型</td><td>自制日晷或滴水计时器</td><td>工作原理正确性</td></tr>
+    <tr><td>📑 演示文稿</td><td>小组研究成果汇报</td><td>逻辑性、感染力</td></tr>
+    <tr><td>📊 项目报告</td><td>"我的一天"时间优化方案</td><td>数据支撑、可行性</td></tr>
+    <tr><td>🤖 AI对话记录</td><td>和AI学伴讨论时间本质</td><td>提问深度、思考过程</td></tr>
+  </table>
+</div>
+
+<div class="card animate-in delay-4">
+  <h2>🏆 作品化成果建议</h2>
+  <p>完成学习后，以下作品可以展示你为这个单元付出的努力：</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;">
+    <div style="background:#f0f5ff;border-radius:8px;padding:14px;text-align:center;"><strong>🗺️ 单元学习地图</strong><br><span style="font-size:14px;color:var(--text-secondary);">画一张"时、分、秒"完整学习路线图</span></div>
+    <div style="background:#f0f5ff;border-radius:8px;padding:14px;text-align:center;"><strong>🔷 核心概念图</strong><br><span style="font-size:14px;color:var(--text-secondary);">展示秒、分、时及其换算关系的概念网络</span></div>
+    <div style="background:#f0f5ff;border-radius:8px;padding:14px;text-align:center;"><strong>❓ 问题链记录</strong><br><span style="font-size:14px;color:var(--text-secondary);">从"1秒有多长"出发的问题思考链</span></div>
+    <div style="background:#f0f5ff;border-radius:8px;padding:14px;text-align:center;"><strong>📇 案例解析卡</strong><br><span style="font-size:14px;color:var(--text-secondary);">生活中的时间问题案例及解析</span></div>
+    <div style="background:#f0f5ff;border-radius:8px;padding:14px;text-align:center;"><strong>📋 项目方案</strong><br><span style="font-size:14px;color:var(--text-secondary);">"一天时间优化"或"自制计时工具"项目方案</span></div>
+    <div style="background:#f0f5ff;border-radius:8px;padding:14px;text-align:center;"><strong>🌍 跨学科作品</strong><br><span style="font-size:14px;color:var(--text-secondary);">时间小短文+数据分析+计时器制作</span></div>
+    <div style="background:#f0f5ff;border-radius:8px;padding:14px;text-align:center;"><strong>📝 学习反思报告</strong><br><span style="font-size:14px;color:var(--text-secondary);">回顾自己的学习路径、收获和不足</span></div>
+    <div style="background:#f0f5ff;border-radius:8px;padding:14px;text-align:center;"><strong>🌟 成果展示作品</strong><br><span style="font-size:14px;color:var(--text-secondary);">海报、视频、模型三选一，在班级展示</span></div>
+  </div>
+</div>
+
+<div class="card animate-in delay-4" style="text-align:center;">
+  <h2>🚀 准备好开始你的学习之旅了吗？</h2>
+  <p>选择好路径，确定好角色，定好学习目标——让我们从"时间"出发！</p>
+  <button class="btn btn-primary" style="padding:12px 40px;font-size:20px;margin-top:8px;" onclick="if(confirm('确定开始你的学习之旅？⏱')){this.textContent='🎉 已出发！加油！';this.style.background='#52c41a';}">开始学习 →</button>
+</div>
+
+</div>
+<script>
+document.querySelectorAll('.accordion-toggle').forEach(btn=>{btn.addEventListener('click',()=>{btn.classList.toggle('active');const content=btn.nextElementSibling;content.classList.toggle('open');});});
+</script>
+</body>
+</html>

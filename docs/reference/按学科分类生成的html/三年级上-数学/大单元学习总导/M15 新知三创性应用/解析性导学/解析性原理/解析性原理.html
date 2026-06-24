@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性原理 — 时间探秘</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+}
+.wrapper {
+  width: 100%;
+  max-width: none;
+  padding: 24px 28px;
+  box-sizing: border-box;
+}
+.page-header {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.page-header h1 {
+  font-size: var(--font-h1);
+  margin-bottom: 6px;
+}
+.page-header p {
+  font-size: calc(var(--font-body) - 2px);
+  opacity: .9;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  transition: box-shadow .2s;
+}
+.card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.12); }
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card h2 .badge {
+  font-size: 12px;
+  background: var(--primary);
+  color: #fff;
+  padding: 2px 12px;
+  border-radius: 20px;
+  display: inline-block;
+}
+.card h3 {
+  font-size: calc(var(--font-body) + 2px);
+  color: var(--text);
+  margin: 14px 0 8px;
+}
+.intro-box {
+  background: linear-gradient(135deg, #f0f5ff, #fff);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 18px 22px;
+  margin-bottom: 16px;
+}
+.principle-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  margin: 14px 0;
+}
+.principle-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: box-shadow .2s;
+}
+.principle-card:hover { box-shadow: 0 3px 12px rgba(22,119,255,0.1); }
+.principle-card .p-top {
+  background: linear-gradient(135deg, #f0f5ff, #e6f4ff);
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.principle-card .p-top .p-num {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.principle-card .p-top .p-name {
+  font-size: calc(var(--font-body) + 2px);
+  font-weight: 700;
+  color: var(--primary);
+}
+.principle-card .p-body {
+  padding: 12px 18px;
+}
+.principle-card .p-body .p-desc {
+  margin-bottom: 6px;
+}
+.principle-card .p-body .p-detail {
+  font-size: calc(var(--font-body) - 2px);
+  color: var(--text-secondary);
+}
+.principle-card .p-tag {
+  display: inline-block;
+  background: #f0f5ff;
+  border-radius: 12px;
+  padding: 2px 10px;
+  font-size: 12px;
+  color: var(--primary);
+  margin: 2px;
+}
+.practice-card {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 10px;
+  padding: 18px 20px;
+  margin-bottom: 14px;
+  transition: background .2s;
+}
+.practice-card:hover { background: #fff8d6; }
+.practice-card .prac-title {
+  font-size: calc(var(--font-body) + 2px);
+  font-weight: 700;
+  color: #d48806;
+  margin-bottom: 8px;
+}
+.practice-card .prac-hint {
+  background: #fff;
+  border-left: 4px solid #faad14;
+  border-radius: 4px;
+  padding: 10px 14px;
+  margin-top: 10px;
+  font-size: calc(var(--font-body) - 2px);
+}
+.practice-card .prac-btn {
+  background: #faad14;
+  border: none;
+  color: #fff;
+  padding: 6px 18px;
+  border-radius: 16px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background .2s;
+}
+.practice-card .prac-btn:hover { background: #d48806; }
+.check-box {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 8px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  transition: background .2s;
+  cursor: default;
+}
+.check-box:hover { background: #d9f7be; }
+.check-box .check-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.check-box.checked {
+  background: #d9f7be;
+  border-color: #73d13d;
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<div class="page-header">
+  <h1>🔬 解析性原理</h1>
+  <p>从示例中提炼 5 条可迁移的通用分析方法</p>
+</div>
+
+<div class="card">
+  <h2><span class="badge">📖</span> 从示例到原理</h2>
+  <div class="intro-box">
+    <p>解析性示例展示了"已知开始时间和经过时间，求结束时间"的完整分析过程。但你能从中提炼出更通用的方法吗？当你遇到新的时间问题时，这些方法能帮你快速找到解题思路。</p>
+  </div>
+</div>
+
+<div class="card">
+  <h2><span class="badge">🧠</span> 五大解析性原理</h2>
+  <div class="principle-grid">
+
+    <div class="principle-card">
+      <div class="p-top">
+        <div class="p-num">1</div>
+        <div class="p-name">信息拆解原理</div>
+      </div>
+      <div class="p-body">
+        <p class="p-desc">先拆出已知条件和未知条件，再决定用什么运算</p>
+        <p class="p-detail"><strong>示例体现：</strong>从情境中提取"2:15（开始）"和"95分（经过）"</p>
+        <p class="p-detail"><strong>如何使用：</strong>读题后先列出：已知什么？求什么？</p>
+        <div style="margin-top:6px;">
+          <span class="p-tag">📐 任何应用题</span>
+          <span class="p-tag">⚠️ 不要遗漏隐藏条件</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="principle-card">
+      <div class="p-top">
+        <div class="p-num">2</div>
+        <div class="p-name">单位转化原理</div>
+      </div>
+      <div class="p-body">
+        <p class="p-desc">总时间超过60分钟时，先换算成"几小时几分"</p>
+        <p class="p-detail"><strong>示例体现：</strong>95分 = 1小时35分</p>
+        <p class="p-detail"><strong>如何使用：</strong>遇到较大数字时先换算再计算</p>
+        <div style="margin-top:6px;">
+          <span class="p-tag">🔄 时间换算</span>
+          <span class="p-tag">⚖️ 重量换算</span>
+          <span class="p-tag">📏 长度换算</span>
+          <span class="p-tag">⚠️ 60进制不同于十进制</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="principle-card">
+      <div class="p-top">
+        <div class="p-num">3</div>
+        <div class="p-name">分步计算原理</div>
+      </div>
+      <div class="p-body">
+        <p class="p-desc">把复杂问题拆成多个简单步骤依次解决</p>
+        <p class="p-detail"><strong>示例体现：</strong>先加分钟→分钟进位→再加小时</p>
+        <p class="p-detail"><strong>如何使用：</strong>把大问题拆解为小步骤，一步步解决</p>
+        <div style="margin-top:6px;">
+          <span class="p-tag">🧩 多步运算</span>
+          <span class="p-tag">🔍 复杂问题</span>
+          <span class="p-tag">✅ 每一步都检查</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="principle-card">
+      <div class="p-top">
+        <div class="p-num">4</div>
+        <div class="p-name">逆向验证原理</div>
+      </div>
+      <div class="p-body">
+        <p class="p-desc">用逆运算检验答案的正确性</p>
+        <p class="p-detail"><strong>示例体现：</strong>3:50 − 2:15 = 95分，与题目一致</p>
+        <p class="p-detail"><strong>如何使用：</strong>算完后用相反的运算检验</p>
+        <div style="margin-top:6px;">
+          <span class="p-tag">✅ 所有数学计算</span>
+          <span class="p-tag">🔄 验证方法要独立</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="principle-card">
+      <div class="p-top">
+        <div class="p-num">5</div>
+        <div class="p-name">情境锚定原理</div>
+      </div>
+      <div class="p-body">
+        <p class="p-desc">把抽象的计算放在具体情境中理解</p>
+        <p class="p-detail"><strong>示例体现：</strong>"电影几点结束"比"2:15+95分"更容易理解</p>
+        <p class="p-detail"><strong>如何使用：</strong>时刻想象"这是在生活中解决什么问题"</p>
+        <div style="margin-top:6px;">
+          <span class="p-tag">🏠 所有应用数学</span>
+          <span class="p-tag">💡 情境是理解工具</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="card">
+  <h2><span class="badge">✏️</span> 原理应用练习</h2>
+
+  <div class="practice-card">
+    <div class="prac-title">🚌 练习一：公交车站等车</div>
+    <p><strong>情境：</strong>公交车站牌上说"下一班车将在18分钟后到站"，现在时间是4:47。请问车几点到？</p>
+    <p style="margin-top:6px;"><strong>建议原理：</strong>信息拆解 + 分步计算</p>
+    <p><strong>分析提示：</strong>先拆出"开始时间4:47"和"经过时间18分"。18分超过60分了吗？需要换算吗？</p>
+    <div class="prac-hint">
+      <strong>🧱 脚手架提示：</strong>画一条时间轴，标出4:47到4:47+18分的位置
+    </div>
+    <button class="prac-btn" onclick="alert('⏰ 4:47 + 18分 = 4:65 → 60分进位 → 5:05\n所以车在 5:05 到站！')">🔎 看答案</button>
+  </div>
+
+  <div class="practice-card">
+    <div class="prac-title">🏃 练习二：运动会赛跑</div>
+    <p><strong>情境：</strong>学校运动会200米赛跑，小明用了36秒，小红用了42秒。小红比小明多用了多少秒？如果小红想赢小明，她需要在多少秒内跑完？</p>
+    <p style="margin-top:6px;"><strong>建议原理：</strong>信息拆解 + 逆向验证</p>
+    <p><strong>分析提示：</strong>注意两个问题本质不同——第一个是"比谁多"，第二个是"应该跑多少"</p>
+    <div class="prac-hint">
+      <strong>🧱 脚手架提示：</strong>线条图对比两个人的所用时间
+    </div>
+    <button class="prac-btn" onclick="alert('📊 ① 42 − 36 = 6（秒），小红多用了6秒\n② 小红需要比36秒快，即 &lt; 36 秒\n③ 验证：36 − 1 = 35，35 &lt; 36 ✅ 小红在35秒内就能赢')">🔎 看答案</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2><span class="badge">✅</span> 自我检测</h2>
+
+  <div class="check-box" onclick="this.classList.toggle('checked')">
+    <div class="check-icon">📌</div>
+    <div>
+      <p><strong>1.</strong> 拿到一个时间问题，你第一步会做什么？</p>
+      <p style="font-size:15px;color:var(--text-secondary);margin-top:4px;">💡 点击切换选中状态</p>
+    </div>
+  </div>
+
+  <div class="check-box" onclick="this.classList.toggle('checked')">
+    <div class="check-icon">📌</div>
+    <div>
+      <p><strong>2.</strong> 什么时候需要把"分钟"换算成"小时"？</p>
+    </div>
+  </div>
+
+  <div class="check-box" onclick="this.classList.toggle('checked')">
+    <div class="check-icon">📌</div>
+    <div>
+      <p><strong>3.</strong> 时间计算和普通数字计算最大的不同是什么？</p>
+    </div>
+  </div>
+
+  <div class="check-box" onclick="this.classList.toggle('checked')">
+    <div class="check-icon">📌</div>
+    <div>
+      <p><strong>4.</strong> 你是怎么知道自己的答案是对的还是错的？</p>
+    </div>
+  </div>
+
+  <div class="check-box" onclick="this.classList.toggle('checked')">
+    <div class="check-icon">📌</div>
+    <div>
+      <p><strong>5.</strong> 你能不能用这5条原理中的2条，给同学讲一道时间题？</p>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:16px;">
+    <button style="background:var(--primary);color:#fff;border:none;padding:10px 28px;border-radius:20px;font-size:var(--font-body);cursor:pointer;transition:background .2s;" onmouseover="this.style.background='var(--primary-hover)'" onmouseout="this.style.background='var(--primary)'" onclick="let c=document.querySelectorAll('.check-box');let n=0;c.forEach(x=>{if(x.classList.contains('checked'))n++});alert('✅ 你已完成了 '+n+'/'+c.length+' 道自测题！继续加油！')">📊 查看完成进度</button>
+  </div>
+</div>
+
+<div class="card" style="text-align:center;background:linear-gradient(135deg,#f0f5ff,#fff);">
+  <p style="font-size:20px;font-weight:600;color:var(--primary);">🧠 记住这 5 条原理，遇到任何时间问题都不怕！</p>
+  <p style="color:var(--text-secondary);margin-top:6px;">拆解 → 转化 → 分步 → 验证 → 锚定</p>
+</div>
+
+</div>
+</body>
+</html>

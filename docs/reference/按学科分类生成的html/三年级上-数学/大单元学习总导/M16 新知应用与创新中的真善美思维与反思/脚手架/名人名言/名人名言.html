@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名人名言——认知突破</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px 24px;
+  box-sizing: border-box;
+}
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin: 24px 0 16px;
+  font-weight: 700;
+  position: relative;
+  padding-left: 16px;
+}
+h1::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 4px;
+  background: var(--primary);
+  border-radius: 2px;
+}
+h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 20px 0 12px;
+  font-weight: 600;
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 6px;
+}
+h3 {
+  font-size: calc(var(--font-body) + 2px);
+  color: var(--text);
+  margin: 16px 0 8px;
+  font-weight: 600;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.person-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-bottom: 20px;
+  border-left: 4px solid var(--primary);
+  box-shadow: var(--shadow);
+  transition: transform 0.2s;
+}
+.person-card:hover {
+  transform: translateX(4px);
+}
+.person-card h3 {
+  margin-top: 0;
+  color: var(--primary);
+}
+.person-card .dates {
+  color: var(--text-secondary);
+  font-size: 15px;
+  margin-bottom: 12px;
+}
+.qa-item {
+  margin: 10px 0;
+  padding: 10px 14px;
+  background: #fafafa;
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+}
+.qa-item strong {
+  color: var(--primary);
+}
+.resource-path {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+}
+.resource-tag {
+  background: #e6f4ff;
+  color: var(--primary);
+  padding: 4px 12px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.think-task {
+  background: linear-gradient(135deg, #fff7e6 0%, #fffbe6 100%);
+  border: 1px solid #ffd666;
+  border-radius: var(--border-radius);
+  padding: 18px;
+  margin-bottom: 14px;
+  transition: all 0.2s;
+}
+.think-task:hover {
+  box-shadow: 0 2px 12px rgba(250,173,20,0.2);
+}
+.think-task h4 {
+  margin: 0 0 8px;
+  color: #d46b08;
+}
+.toggle-box {
+  display: none;
+}
+.toggle-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s ease;
+}
+.toggle-box:checked ~ .toggle-content {
+  max-height: 400px;
+}
+.toggle-label {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  padding: 6px 18px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  transition: background 0.2s;
+  margin: 6px 0;
+}
+.toggle-label:hover {
+  background: var(--primary-hover);
+}
+.insight-box {
+  background: #e6f4ff;
+  border-radius: 6px;
+  padding: 12px;
+  margin: 8px 0;
+  font-style: italic;
+}
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>💡 名人名言——认知突破</h1>
+<p style="color:var(--text-secondary);">穿越 300 年，看看三位与"时间"有关的伟大思想家是如何改变世界的！</p>
+
+<!-- 奠基人物 -->
+<div class="person-card">
+  <h3>⏰ 克里斯蒂安·惠更斯 <span class="dates">（1629—1695）</span></h3>
+  <div class="qa-item"><strong>🔑 关键问题：</strong>如何让时钟走得更准确？</div>
+  <div class="qa-item"><strong>💡 思维突破点：</strong>惠更斯发现摆锤的摆动具有<strong>等时性</strong>——无论摆动幅度大小，每次摆动的时间相同。他把这个原理应用到时钟上，发明了摆钟，将计时精度从每天误差 15 分钟提高到每天误差 10 秒。</div>
+  <div class="qa-item"><strong>⚡ 失败/争议点：</strong>惠更斯不是第一个发现摆的等时性的人（伽利略更早发现），但他是第一个成功把摆应用到时钟上的人。</div>
+  <div class="insight-box">🌟 对当下的启示：有时候，把别人的发现应用到实际中，比发现本身更有价值。</div>
+  <div class="resource-path">
+    <span class="resource-tag">📖 传记：《惠更斯：摆钟的发明者》</span>
+    <span class="resource-tag">🎬 B站"摆钟的工作原理 3D 动画"</span>
+    <span class="resource-tag">🔧 动手：用绳子和重物做简易摆</span>
+  </div>
+</div>
+
+<!-- 跨界人物 -->
+<div class="person-card">
+  <h3>🌌 阿尔伯特·爱因斯坦 <span class="dates">（1879—1955）</span></h3>
+  <div class="qa-item"><strong>🔑 关键问题：</strong>时间是不是绝对的？</div>
+  <div class="qa-item"><strong>💡 思维突破点：</strong>爱因斯坦提出"<strong>相对论</strong>"，认为时间不是固定不变的——速度越快、引力越强，时间过得越慢。这就是"时间膨胀"效应。</div>
+  <div class="qa-item"><strong>⚡ 失败/争议点：</strong>爱因斯坦的理论在当时太超前了，很多科学家都不相信。直到后来通过实验验证，人们才接受了他的理论。</div>
+  <div class="insight-box">🌟 对当下的启示：你以为"理所当然"的事情，可能只是因为你还没有从另一个角度去看它。</div>
+  <div class="resource-path">
+    <span class="resource-tag">📖 传记：《爱因斯坦：时间旅行者的故事》</span>
+    <span class="resource-tag">🎬 B站"什么是时间膨胀？3分钟看懂相对论"</span>
+    <span class="resource-tag">🤔 思考：宇航员在太空中的时间和地球上一样吗？</span>
+  </div>
+</div>
+
+<!-- 当代人物 -->
+<div class="person-card">
+  <h3>🔬 叶军（Jun Ye）<span class="dates">（1967—）</span></h3>
+  <div class="qa-item"><strong>🔑 关键问题：</strong>如何制造世界上最精确的时钟？</div>
+  <div class="qa-item"><strong>💡 思维突破点：</strong>叶军团队研发的"<strong>锶原子光钟</strong>"是目前世界上最精确的时钟之一，运行 150 亿年才误差 1 秒（比宇宙的年龄还长！）。</div>
+  <div class="qa-item"><strong>⚡ 失败/争议点：</strong>制造光钟需要把原子冷却到接近绝对零度（-273°C），技术难度极大。</div>
+  <div class="insight-box">🌟 对当下的启示：追求极致精确，是人类文明进步的重要动力。</div>
+  <div class="resource-path">
+    <span class="resource-tag">📖 科普中国"原子钟和光钟"</span>
+    <span class="resource-tag">🎬 B站"世界上最精确的钟——光钟"</span>
+    <span class="resource-tag">🤔 思考：为什么我们需要这么精确的时钟？</span>
+  </div>
+</div>
+
+<!-- 思考任务 -->
+<div class="card">
+  <h2>🤔 "如果你是他"思考任务</h2>
+
+  <div class="think-task">
+    <h4>🎯 任务 1：惠更斯的比喻</h4>
+    <p>如果你是惠更斯，你会怎么向别人解释"摆的等时性"？请用一句话说清楚。</p>
+    <input type="checkbox" id="hint1" class="toggle-box">
+    <label for="hint1" class="toggle-label">💡 点我看提示</label>
+    <div class="toggle-content">
+      <div style="background:#f0f5ff;border-radius:6px;padding:12px;margin-top:8px;">
+        <p style="margin:0;"><strong>参考思路：</strong>可以试试用秋千来比喻——"不管秋千荡得高还是低，来回一次的时间都一样长。"</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="think-task">
+    <h4>🎯 任务 2：爱因斯坦的解释</h4>
+    <p>如果你是爱因斯坦，你会怎么向一个三年级小学生解释"时间不是绝对的"？</p>
+    <input type="checkbox" id="hint2" class="toggle-box">
+    <label for="hint2" class="toggle-label">💡 点我看提示</label>
+    <div class="toggle-content">
+      <div style="background:#f0f5ff;border-radius:6px;padding:12px;margin-top:8px;">
+        <p style="margin:0;"><strong>参考思路：</strong>"想象你坐在一辆超快的高铁上，你的手表会比站在车站的爸爸的手表走得稍微慢一点点！速度越快，时间过得越慢。"</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="think-task">
+    <h4>🎯 任务 3：叶军的介绍词</h4>
+    <p>如果你是叶军，你会怎么向同学们介绍你的光钟？请写一段 100 字的介绍词。</p>
+    <input type="checkbox" id="hint3" class="toggle-box">
+    <label for="hint3" class="toggle-label">💡 点我看提示</label>
+    <div class="toggle-content">
+      <div style="background:#f0f5ff;border-radius:6px;padding:12px;margin-top:8px;">
+        <p style="margin:0;"><strong>参考思路：</strong>"同学们好！我叫叶军，我发明了一个超级精确的钟——光钟。它有多准呢？它跑 150 亿年才差 1 秒！它用锶原子和激光来计时，就像用光给时间拍照一样。有了它，卫星导航会更准，科学家也能研究更多宇宙的奥秘！"</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

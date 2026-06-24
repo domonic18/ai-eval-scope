@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块五维导学</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 20px;
+}
+.container { width: 100%; max-width: none; padding: 0; }
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+h2 {
+  font-size: var(--font-h2);
+  color: var(--text);
+  margin: 24px 0 12px;
+  padding-left: 12px;
+  border-left: 4px solid var(--primary);
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+  width: 100%;
+}
+.dim-card {
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  margin-bottom: 10px;
+  transition: all 0.2s;
+}
+.dim-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 2px 12px rgba(22,119,255,0.1);
+}
+.dim-card .dim-icon {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  line-height: 32px;
+  text-align: center;
+  background: var(--bg);
+  color: var(--primary);
+  border-radius: 50%;
+  font-size: 16px;
+  margin-right: 8px;
+}
+.dim-card h3 {
+  display: inline;
+  font-size: 19px;
+  color: var(--primary);
+}
+.tag {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 14px;
+  margin: 3px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+  font-size: 15px;
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: 8px;
+  text-align: left;
+}
+th { background: var(--bg); color: var(--primary); font-weight: 600; }
+.collapse-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 15px;
+  cursor: pointer;
+  color: var(--primary);
+  transition: all 0.2s;
+  margin-top: 4px;
+}
+.collapse-btn:hover {
+  background: var(--bg);
+  border-color: var(--primary);
+}
+.collapsible { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
+.collapsible.open { max-height: 600px; }
+.person-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  margin-bottom: 8px;
+}
+.person-card .avatar {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+}
+.question-card {
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: var(--border-radius);
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.question-card:hover { background: #fffbe6; }
+.question-card .q-num {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+  text-align: center;
+  background: #d46b08;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 13px;
+  margin-right: 8px;
+}
+@media (max-width: 600px) {
+  body { padding: 12px; }
+  .card { padding: 14px; }
+  table { font-size: 13px; }
+  th, td { padding: 5px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🧭 模块五维导学</h1>
+<p style="color:var(--text-secondary);margin-bottom:16px;">M15 新知三创性应用 · 全景学习导航</p>
+
+<div class="card">
+  <h2>🎯 模块学习目标</h2>
+  <table>
+    <tr><th>目标维度</th><th>具体内容</th></tr>
+    <tr><td>📖 知识理解</td><td>你能用自己的方式解释时、分、秒之间的关系，而不仅仅是背诵"1时=60分"</td></tr>
+    <tr><td>💪 能力形成</td><td>你能在真实情境中运用时间换算和计算解决问题</td></tr>
+    <tr><td>🧠 思维发展</td><td>你能区分"记住一个结论"和"自己建构一个理解"，学会从证据到结论的思考路径</td></tr>
+    <tr><td>🎤 表达产出</td><td>你能把自己的时间分析结果用图表、文字或口头方式清楚地表达出来</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h2>🚀 高精尖价值与未来意义</h2>
+  <button class="collapse-btn" onclick="toggleCollapse('future')">展开查看 →</button>
+  <div id="future" class="collapsible">
+    <div class="dim-card" style="margin-top:10px;">
+      <p><strong>⏱ 时间测量技术的演进：</strong>从日晷、沙漏到原子钟（精度达每亿年误差1秒）→ 时间测量越来越精确，给生活带来了巨大改变</p>
+    </div>
+    <div class="dim-card">
+      <p><strong>📈 时间管理与个人成长：</strong>运动员用百分之一秒决定胜负、航天任务精确到毫秒 → 学会管理时间就是学会管理人生</p>
+    </div>
+    <div class="dim-card">
+      <p><strong>🔢 数学与时间的联系：</strong>六十进制（时、分、秒）源自古代巴比伦——为什么几千年后我们还在用？</p>
+    </div>
+    <div class="dim-card">
+      <p><strong>🔬 未来方向：</strong>量子计时、时空理论、时间晶体……时间依然是科学研究的前沿</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>📚 推荐学习方式与方法</h2>
+  <table>
+    <tr><th>方法</th><th>具体做法</th><th>适合场景</th></tr>
+    <tr><td>⏳ 计时体验法</td><td>闭上眼睛默数1分钟，再用钟表验证</td><td>感受1分钟的实际长度</td></tr>
+    <tr><td>📝 数据记录法</td><td>记录一天的时间使用，用表格整理</td><td>了解自己的时间分配</td></tr>
+    <tr><td>🔍 比较分析法</td><td>比较自己和同伴的时间记录，发现差异</td><td>交流学习阶段</td></tr>
+    <tr><td>📊 模型建构法</td><td>用图、表、画等方式呈现时间关系</td><td>整理理解时</td></tr>
+    <tr><td>🤖 AI辅助学习</td><td>用AI生成时间换算练习题，自测自评</td><td>练习巩固阶段</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h2>👤 关键人物与事件</h2>
+  <div class="person-card">
+    <div class="avatar">G</div>
+    <div>
+      <p><strong>伽利略</strong> <span style="color:var(--text-secondary);font-size:14px;">（1564—1642）</span></p>
+      <p style="font-size:15px;color:var(--text-secondary);">利用脉搏测量比萨大教堂吊灯摆动时间，发现摆的等时性，促成了摆钟的发明</p>
+    </div>
+  </div>
+  <div class="person-card">
+    <div class="avatar">H</div>
+    <div>
+      <p><strong>惠更斯</strong> <span style="color:var(--text-secondary);font-size:14px;">（1629—1695）</span></p>
+      <p style="font-size:15px;color:var(--text-secondary);">发明了第一台摆钟，让时间的测量精度从小时级提高到分钟级</p>
+    </div>
+  </div>
+  <div class="person-card">
+    <div class="avatar">⏱</div>
+    <div>
+      <p><strong>国际原子时</strong> <span style="color:var(--text-secondary);font-size:14px;">（1967年至今）</span></p>
+      <p style="font-size:15px;color:var(--text-secondary);">1秒被定义为铯-133原子跃迁周期的9,192,631,770倍——科学让"秒"变得绝对精确</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>💭 前沿追问</h2>
+  <p style="color:var(--text-secondary);margin-bottom:8px;">点击每个问题，展开你的思考</p>
+  <div class="question-card" onclick="toggleQ(this)">
+    <p><span class="q-num">1</span>如果地球上所有人都用同一个时间（取消时区），会怎样？</p>
+    <div class="collapsible"><p style="color:#d46b08;margin-top:6px;">💡 思考方向：考虑不同地区日出日落时间不同，统一时间后人们的生活作息会如何变化？</p></div>
+  </div>
+  <div class="question-card" onclick="toggleQ(this)">
+    <p><span class="q-num">2</span>光速是每秒约30万千米，那"光年"是时间单位还是距离单位？</p>
+    <div class="collapsible"><p style="color:#d46b08;margin-top:6px;">💡 思考方向：光年是距离单位！它是光在一年内走的距离。那为什么名字里有个"年"？</p></div>
+  </div>
+  <div class="question-card" onclick="toggleQ(this)">
+    <p><span class="q-num">3</span>如果1分钟不是60秒，而是100秒，我们的生活会有什么变化？</p>
+    <div class="collapsible"><p style="color:#d46b08;margin-top:6px;">💡 思考方向：1小时会变成多少分钟？一天会变成多少小时？我们的钟表要重新设计了！</p></div>
+  </div>
+  <div class="question-card" onclick="toggleQ(this)">
+    <p><span class="q-num">4</span>动物能感知时间吗？为什么蜜蜂知道什么时候该采蜜？</p>
+    <div class="collapsible"><p style="color:#d46b08;margin-top:6px;">💡 思考方向：动物有"生物钟"——它们不需要看表就知道什么时候做什么事。人类的生物钟又是什么？</p></div>
+  </div>
+  <div class="question-card" onclick="toggleQ(this)">
+    <p><span class="q-num">5</span>你能设计出一个全新的计时工具吗？它怎么工作？</p>
+    <div class="collapsible"><p style="color:#d46b08;margin-top:6px;">💡 思考方向：试试用沙、水、光、声音或者你自己的身体来计时！</p></div>
+  </div>
+</div>
+
+</div>
+<script>
+function toggleCollapse(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+function toggleQ(el) {
+  const c = el.querySelector('.collapsible');
+  c.classList.toggle('open');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名人名言 — 时、分、秒</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 24px;
+}
+.container { width: 100%; max-width: none; }
+.page-title {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  text-align: center;
+  margin-bottom: 6px;
+}
+.subtitle {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 16px;
+  margin-bottom: 24px;
+}
+.card-grid { display: flex; flex-direction: column; gap: 20px; }
+.person-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.person-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(22,119,255,0.12); }
+.card-top {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.card-top .avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+.card-top h2 { font-size: var(--font-h2); color: #fff; }
+.card-top .era {
+  color: rgba(255,255,255,0.8);
+  font-size: 14px;
+}
+.card-body { padding: 16px 20px 20px; }
+.info-row {
+  display: flex;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px dashed #f0f0f0;
+}
+.info-row:last-child { border-bottom: none; }
+.info-row .label {
+  font-weight: 600;
+  color: var(--primary);
+  min-width: 90px;
+  flex-shrink: 0;
+}
+.info-row .value { color: var(--text); }
+.think-task {
+  margin-top: 12px;
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 14px 16px;
+  border-left: 4px solid var(--primary);
+}
+.think-task .think-label {
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.think-task .think-text { color: var(--text); font-size: 16px; }
+.reading-section { margin-top: 24px; }
+.reading-section h2 { font-size: var(--font-h2); color: var(--primary); margin-bottom: 12px; }
+.reading-path {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  box-shadow: var(--shadow);
+}
+.reading-path li {
+  padding: 8px 0;
+  border-bottom: 1px dashed #f0f0f0;
+  list-style: none;
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+.reading-path li:last-child { border-bottom: none; }
+.reading-path .rp-label {
+  font-weight: 600;
+  color: var(--primary);
+  min-width: 60px;
+}
+@media (max-width: 600px) {
+  body { padding: 12px; }
+  .info-row { flex-direction: column; gap: 2px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1 class="page-title">💡 名人名言</h1>
+  <p class="subtitle">三年级 · 数学 · 时、分、秒</p>
+
+  <div class="card-grid">
+
+    <div class="person-card">
+      <div class="card-top">
+        <div class="avatar">⏱</div>
+        <div><h2>克里斯蒂安·惠更斯</h2><div class="era">1629 — 1695 · 荷兰</div></div>
+      </div>
+      <div class="card-body">
+        <div class="info-row">
+          <span class="label">🧩 关键问题</span>
+          <span class="value">如何让钟表走得更准？</span>
+        </div>
+        <div class="info-row">
+          <span class="label">💡 思维突破</span>
+          <span class="value">摆的等时性 → 摆锤应用到钟表 → 发明摆钟（1656），精度提高 100 倍</span>
+        </div>
+        <div class="info-row">
+          <span class="label">⚠️ 失败与解决</span>
+          <span class="value">温度影响摆长 → 用"摆杆温度补偿"解决</span>
+        </div>
+        <div class="info-row">
+          <span class="label">🌟 对当下的启示</span>
+          <span class="value">一个物理现象（摆的等时性）转化为改变世界的技术（精确计时）</span>
+        </div>
+        <div class="think-task">
+          <div class="think-label">🤔 如果你是他</div>
+          <div class="think-text">你发现秋千摆动的时间总是相同的——你能想到用它来做什么？</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="person-card">
+      <div class="card-top">
+        <div class="avatar">🧠</div>
+        <div><h2>阿尔伯特·爱因斯坦</h2><div class="era">1879 — 1955 · 德国/美国</div></div>
+      </div>
+      <div class="card-body">
+        <div class="info-row">
+          <span class="label">🧩 关键问题</span>
+          <span class="value">时间对所有人和物来说都过得一样快吗？</span>
+        </div>
+        <div class="info-row">
+          <span class="label">💡 思维突破</span>
+          <span class="value">"时间膨胀"——速度越快、引力越强，时间过得越慢</span>
+        </div>
+        <div class="info-row">
+          <span class="label">⚠️ 争议</span>
+          <span class="value">相对论颠覆了"绝对时间"的观念，当时很多人不相信</span>
+        </div>
+        <div class="info-row">
+          <span class="label">🌟 对当下的启示</span>
+          <span class="value">时间不是"绝对的"——你走得快时，时间就"变慢"了</span>
+        </div>
+        <div class="think-task">
+          <div class="think-label">🤔 如果你是他</div>
+          <div class="think-text">如果时间可以"变慢"，你希望什么时候的时间变慢？为什么？</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="person-card">
+      <div class="card-top">
+        <div class="avatar">🛰</div>
+        <div><h2>北斗 · 守时者</h2><div class="era">当代 · 中国</div></div>
+      </div>
+      <div class="card-body">
+        <div class="info-row">
+          <span class="label">🧩 关键问题</span>
+          <span class="value">卫星定位为什么需要精确到纳秒的时间？</span>
+        </div>
+        <div class="info-row">
+          <span class="label">💡 思维突破</span>
+          <span class="value">卫星携带原子钟，通过测量信号传输时间差来计算距离</span>
+        </div>
+        <div class="info-row">
+          <span class="label">⚠️ 挑战</span>
+          <span class="value">空间环境影响原子钟，需要不断校准</span>
+        </div>
+        <div class="info-row">
+          <span class="label">🌟 对当下的启示</span>
+          <span class="value">你用手机导航找到回家的路，背后是一群科学家在"守时"</span>
+        </div>
+        <div class="think-task">
+          <div class="think-label">🤔 如果你是他</div>
+          <div class="think-text">你能用精确计时解决生活中的什么问题？比如知道校车还有多久到站？</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="reading-section">
+    <h2>📚 深度阅读路径</h2>
+    <div class="reading-path">
+      <ul>
+        <li><span class="rp-label">惠更斯</span>《摆钟论》(选读) + 儿童科普《钟表的故事》</li>
+        <li><span class="rp-label">爱因斯坦</span>《儿童相对论》《时间的奥秘》绘本</li>
+        <li><span class="rp-label">北斗导航</span> 科普视频"北斗导航的工作原理"（B站/学习强国）</li>
+      </ul>
+    </div>
+  </div>
+</div>
+</body>
+</html>

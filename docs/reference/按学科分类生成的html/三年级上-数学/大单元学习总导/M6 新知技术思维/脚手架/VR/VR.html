@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VR脚手架：沉浸式时间体验</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+
+.header {
+  background: linear-gradient(135deg, #0050b3 0%, var(--primary) 50%, var(--primary-hover) 100%);
+  color: #fff;
+  padding: 32px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.header::after {
+  content: "🥽";
+  font-size: 60px;
+  position: absolute;
+  right: 20px;
+  bottom: -10px;
+  opacity: 0.15;
+}
+
+.header h1 {
+  font-size: var(--font-h1);
+  margin-bottom: 6px;
+}
+
+.header .subtitle {
+  font-size: 16px;
+  opacity: 0.85;
+}
+
+.experience-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.tab-btn {
+  flex: 1;
+  min-width: 120px;
+  padding: 12px 14px;
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-align: center;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.tab-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.tab-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+
+.card h3 {
+  font-size: 20px;
+  margin: 16px 0 8px;
+  color: var(--text);
+}
+
+.card p { margin-bottom: 10px; }
+
+.task-block {
+  background: var(--bg);
+  border-left: 4px solid var(--primary);
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  padding: 14px 18px;
+  margin-bottom: 12px;
+}
+
+.task-block .task-icon { font-size: 20px; margin-right: 8px; }
+.task-block .task-label {
+  font-weight: 600;
+  color: var(--primary);
+  display: inline-block;
+  min-width: 72px;
+}
+
+.resource-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #fff7e6;
+  border: 1px solid #ffd54f;
+  border-radius: var(--border-radius);
+  margin: 8px 0;
+}
+
+.resource-box .icon { font-size: 28px; }
+
+.alternative-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: var(--border-radius);
+  margin: 8px 0;
+}
+
+.alternative-box .icon { font-size: 28px; }
+
+.guide-steps {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin: 16px 0;
+  flex-wrap: wrap;
+}
+
+.guide-step {
+  text-align: center;
+  padding: 14px;
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  min-width: 100px;
+  flex: 1;
+  border: 1px solid var(--border);
+  transition: all 0.3s;
+}
+
+.guide-step:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow);
+  border-color: var(--primary);
+}
+
+.guide-step .step-num {
+  display: block;
+  font-size: 32px;
+  margin-bottom: 4px;
+}
+
+.guide-step .step-label {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.record-card-btn {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-top: 12px;
+  text-align: center;
+}
+
+.record-card-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(22,119,255,0.35);
+}
+
+.record-card {
+  margin-top: 14px;
+  padding: 18px;
+  background: #fff;
+  border: 2px dashed var(--accent);
+  border-radius: var(--border-radius);
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s ease, padding 0.3s;
+}
+
+.record-card.open {
+  max-height: 600px;
+  padding: 18px;
+}
+
+.record-card input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 16px;
+  margin-bottom: 10px;
+  font-family: inherit;
+}
+
+.record-card textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 16px;
+  margin-bottom: 10px;
+  font-family: inherit;
+  min-height: 80px;
+  resize: vertical;
+}
+
+.record-card .submit-btn {
+  padding: 8px 24px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.sundial-sim {
+  text-align: center;
+  padding: 20px;
+  background: #fffbe6;
+  border-radius: var(--border-radius);
+  margin: 12px 0;
+  border: 1px solid #ffe58f;
+}
+
+.sundial-sim .sun {
+  font-size: 48px;
+  display: inline-block;
+  transition: transform 0.5s;
+  cursor: pointer;
+}
+
+.sundial-sim .sun:hover {
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+.sundial-sim .shadow-line {
+  height: 4px;
+  background: linear-gradient(90deg, transparent, #8c8c8c, transparent);
+  margin: 10px auto;
+  transition: width 0.5s;
+  width: 40%;
+  border-radius: 2px;
+}
+
+.sundial-controls {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 10px 0;
+}
+
+.sundial-btn {
+  padding: 6px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 15px;
+}
+
+.sundial-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.gear-demo {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  padding: 20px;
+  margin: 12px 0;
+}
+
+.gear {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 4px dashed var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--primary);
+  animation: spin 4s linear infinite;
+  background: rgba(22,119,255,0.05);
+}
+
+.gear-small { width: 40px; height: 40px; animation-duration: 2.5s; }
+.gear-large { width: 80px; height: 80px; animation-duration: 6s; }
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.race-lane {
+  position: relative;
+  height: 60px;
+  background: #f0f0f0;
+  border-radius: 8px;
+  margin: 10px 0;
+  overflow: hidden;
+}
+
+.runner {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  top: 14px;
+  transition: left 1.5s;
+  cursor: pointer;
+}
+
+.runner.r1 { background: #ff4d4f; left: 5px; }
+.runner.r2 { background: #52c41a; left: 5px; top: 8px; }
+.runner.r3 { background: #faad14; left: 5px; top: 28px; }
+
+@media (max-width: 640px) {
+  .container { padding: 16px 12px; }
+  .header { padding: 24px 16px; }
+  .header h1 { font-size: 24px; }
+  .card { padding: 16px; }
+  .tab-btn { min-width: 90px; font-size: 14px; padding: 10px; }
+  .guide-steps { flex-direction: row; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🥽 VR 沉浸体验 · 时间之旅</h1>
+  <div class="subtitle">观察 → 操作 → 记录，三步走进时间的"背后"</div>
+</div>
+
+<div class="experience-tabs">
+  <button class="tab-btn active" onclick="switchTab(0)">🏺 古代计时器</button>
+  <button class="tab-btn" onclick="switchTab(1)">⚙️ 钟表内部探索</button>
+  <button class="tab-btn" onclick="switchTab(2)">🏃 奥运计时员</button>
+</div>
+
+<div class="tab-content active" id="tab0">
+  <div class="card">
+    <h2>🏺 场景一：走进古代计时器博物馆</h2>
+
+    <div class="sundial-sim">
+      <div class="sun" id="sunIcon">☀️</div>
+      <p><strong>日晷模拟</strong> —— 点击太阳，看影子变化！</p>
+      <div class="shadow-line" id="shadowLine"></div>
+      <p id="timeLabel" style="font-size:15px;color:var(--text-secondary);">🌅 早晨：影子很长，指向西方</p>
+      <div class="sundial-controls">
+        <button class="sundial-btn" onclick="moveSun('morning')">🌅 早晨</button>
+        <button class="sundial-btn" onclick="moveSun('noon')">☀️ 正午</button>
+        <button class="sundial-btn" onclick="moveSun('evening')">🌇 傍晚</button>
+      </div>
+    </div>
+
+    <h3>📝 观察任务</h3>
+    <div class="task-block">
+      <p><span class="task-icon">👀</span><span class="task-label">观察：</span>观察日晷、水钟、沙漏、香钟等古代计时工具的结构和运行方式</p>
+    </div>
+
+    <h3>🖱️ 操作任务</h3>
+    <div class="task-block">
+      <p><span class="task-icon">🖱️</span><span class="task-label">操作：</span>点击上方太阳图标，模拟日晷的影子随太阳移动而变化</p>
+    </div>
+
+    <h3>📋 记录任务</h3>
+    <div class="task-block">
+      <p><span class="task-icon">✏️</span><span class="task-label">记录：</span>记录每种工具的工作原理和优缺点</p>
+    </div>
+
+    <div class="resource-box">
+      <div class="icon">🥽</div>
+      <div><strong>VR资源：</strong>Google Arts & Culture中的计时器展览</div>
+    </div>
+
+    <div class="alternative-box">
+      <div class="icon">📺</div>
+      <div><strong>替代方案：</strong>无VR时用3D展示动画或纪录片《时间的奥秘》</div>
+    </div>
+  </div>
+</div>
+
+<div class="tab-content" id="tab1">
+  <div class="card">
+    <h2>⚙️ 场景二：钟表内部结构探索</h2>
+
+    <div class="gear-demo">
+      <div class="gear gear-large">⏰</div>
+      <div class="gear">⚙️</div>
+      <div class="gear gear-small">🔧</div>
+    </div>
+    <p style="text-align:center;font-size:15px;color:var(--text-secondary);">齿轮联动：大齿轮转1圈，小齿轮转好几圈 → 秒针比时针转得快！</p>
+
+    <div style="text-align:center;margin:14px 0;">
+      <button class="sundial-btn" onclick="adjustGears('speedup')">⚡ 加速齿轮</button>
+      <button class="sundial-btn" onclick="adjustGears('slowdown')">🐢 减速齿轮</button>
+    </div>
+    <p id="gearStatus" style="text-align:center;font-size:16px;color:var(--text-secondary);">当前速度：正常</p>
+
+    <h3>👀 观察任务</h3>
+    <div class="task-block">
+      <p><span class="task-icon">👀</span><span class="task-label">观察：</span>"钻入"机械钟表内部，观察齿轮如何联动，秒针如何转动</p>
+    </div>
+
+    <h3>🖱️ 操作任务</h3>
+    <div class="task-block">
+      <p><span class="task-icon">🖱️</span><span class="task-label">操作：</span>点击按钮调整齿轮大小，观察对指针速度的影响</p>
+    </div>
+
+    <h3>📋 记录任务</h3>
+    <div class="task-block">
+      <p><span class="task-icon">✏️</span><span class="task-label">记录：</span>画出齿轮传动简图，标注动力传递路径</p>
+    </div>
+
+    <div class="resource-box">
+      <div class="icon">🥽</div>
+      <div><strong>VR资源：</strong>交互式钟表3D模型软件</div>
+    </div>
+
+    <div class="alternative-box">
+      <div class="icon">📺</div>
+      <div><strong>替代方案：</strong>拆解动画视频《钟表的工作原理》</div>
+    </div>
+  </div>
+</div>
+
+<div class="tab-content" id="tab2">
+  <div class="card">
+    <h2>🏃 场景三：当一次"奥运计时员"</h2>
+
+    <div class="race-lane">
+      <div class="runner r1" id="runner1">🏃</div>
+      <div class="runner r2" id="runner2">🏃‍♂️</div>
+      <div class="runner r3" id="runner3">🏃‍♀️</div>
+    </div>
+
+    <div style="text-align:center;margin:10px 0;">
+      <button class="sundial-btn" onclick="startRace()">🏁 开始比赛！</button>
+      <button class="sundial-btn" onclick="resetRace()">↺ 重置赛道</button>
+    </div>
+
+    <div id="raceResult" style="text-align:center;padding:10px;background:var(--bg);border-radius:var(--border-radius);min-height:40px;">
+      👆 点击"开始比赛"，记录每位运动员的成绩
+    </div>
+
+    <h3>👀 观察任务</h3>
+    <div class="task-block">
+      <p><span class="task-icon">👀</span><span class="task-label">观察：</span>站在计时员视角，观察百米赛跑的起跑和冲线瞬间</p>
+    </div>
+
+    <h3>🖱️ 操作任务</h3>
+    <div class="task-block">
+      <p><span class="task-icon">🖱️</span><span class="task-label">操作：</span>按下计时按钮，记录不同运动员的成绩</p>
+    </div>
+
+    <h3>📋 记录任务</h3>
+    <div class="task-block">
+      <p><span class="task-icon">✏️</span><span class="task-label">记录：</span>制作成绩排行榜，比较0.01秒的差距有多大</p>
+    </div>
+
+    <div class="resource-box">
+      <div class="icon">🥽</div>
+      <div><strong>VR资源：</strong>VR体育计时模拟体验</div>
+    </div>
+
+    <div class="alternative-box">
+      <div class="icon">📺</div>
+      <div><strong>替代方案：</strong>在线计时模拟器或视频分析工具</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>🧭 学习指南</h2>
+  <div class="guide-steps">
+    <div class="guide-step">
+      <span class="step-num">👀</span>
+      <span class="step-label">观察</span>
+      <span style="font-size:14px;color:var(--text-secondary);">先看清楚</span>
+    </div>
+    <div class="guide-step">
+      <span class="step-num">🖱️</span>
+      <span class="step-label">操作</span>
+      <span style="font-size:14px;color:var(--text-secondary);">再动手试</span>
+    </div>
+    <div class="guide-step">
+      <span class="step-num">✏️</span>
+      <span class="step-label">记录</span>
+      <span style="font-size:14px;color:var(--text-secondary);">最后记下来</span>
+    </div>
+  </div>
+
+  <button class="record-card-btn" onclick="toggleRecordCard()">📝 打开/关闭 VR 体验记录卡</button>
+
+  <div class="record-card" id="recordCard">
+    <p style="font-weight:600;margin-bottom:10px;">📋 VR体验记录卡</p>
+    <input type="text" placeholder="你体验的场景名称" id="sceneName">
+    <textarea placeholder="记录你的发现（至少写2个观察到的细节）" id="sceneNotes"></textarea>
+    <button class="submit-btn" onclick="submitRecord()">提交记录 ✅</button>
+    <p id="recordFeedback" style="margin-top:8px;font-size:15px;color:var(--text-secondary);"></p>
+  </div>
+
+  <div style="margin-top:14px;background:#fff7e6;border:1px solid #ffd54f;border-radius:var(--border-radius);padding:14px;">
+    <p><strong>💡 温馨提示：</strong>没有VR设备也没关系——3D视频和交互动画同样能学到知识！</p>
+  </div>
+</div>
+
+</div>
+
+<script>
+let currentTab = 0;
+
+function switchTab(idx) {
+  document.querySelectorAll('.tab-content').forEach((t, i) => {
+    t.classList.toggle('active', i === idx);
+  });
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', i === idx);
+  });
+  currentTab = idx;
+}
+
+// 日晷模拟
+function moveSun(time) {
+  const shadow = document.getElementById('shadowLine');
+  const label = document.getElementById('timeLabel');
+  const sun = document.getElementById('sunIcon');
+  if (time === 'morning') {
+    shadow.style.width = '60%';
+    label.innerHTML = '🌅 早晨：影子最长，指向西方';
+    sun.textContent = '🌤️';
+  } else if (time === 'noon') {
+    shadow.style.width = '15%';
+    label.innerHTML = '☀️ 正午：影子最短，几乎消失';
+    sun.textContent = '☀️';
+  } else {
+    shadow.style.width = '55%';
+    label.innerHTML = '🌇 傍晚：影子又变长了，指向东方';
+    sun.textContent = '🌅';
+  }
+}
+
+// 齿轮模拟
+let gearSpeed = 1;
+
+function adjustGears(action) {
+  const gears = document.querySelectorAll('.gear');
+  if (action === 'speedup') {
+    gearSpeed = Math.min(gearSpeed + 0.5, 3);
+  } else {
+    gearSpeed = Math.max(gearSpeed - 0.5, 0.3);
+  }
+  gears.forEach(g => {
+    const base = parseFloat(getComputedStyle(g).animationDuration) || 4;
+    g.style.animationDuration = (base / gearSpeed) + 's';
+  });
+  document.getElementById('gearStatus').textContent =
+    gearSpeed > 1.5 ? '⚡ 加速中！齿轮转得飞快' :
+    gearSpeed < 0.7 ? '🐢 减速了，齿轮慢慢转动' : '当前速度：正常';
+}
+
+// 赛跑模拟
+function startRace() {
+  // 随机分配"成绩"
+  const times = [9.85 + Math.random()*0.3, 9.95 + Math.random()*0.3, 10.05 + Math.random()*0.3];
+  const positions = times.map(t => Math.min(100, (10.5 - t) * 100 + 5));
+
+  document.getElementById('runner1').style.left = positions[0] + '%';
+  document.getElementById('runner2').style.left = positions[1] + '%';
+  document.getElementById('runner3').style.left = positions[2] + '%';
+
+  // 排序
+  const sorted = times.map((t, i) => ({i, t})).sort((a, b) => a.t - b.t);
+  const medals = ['🥇', '🥈', '🥉'];
+
+  let html = '🏁 比赛结果：<br>';
+  sorted.forEach((s, rank) => {
+    const runnerNames = ['选手A', '选手B', '选手C'];
+    html += `${medals[rank]} ${runnerNames[s.i]}: ${s.t.toFixed(2)}秒<br>`;
+  });
+  html += `<br>💡 第一名和第三名只差 ${(sorted[2].t - sorted[0].t).toFixed(2)} 秒！这就是精确计时的意义！`;
+
+  document.getElementById('raceResult').innerHTML = html;
+  document.getElementById('raceResult').style.background = '#e6f7ff';
+}
+
+function resetRace() {
+  document.getElementById('runner1').style.left = '5px';
+  document.getElementById('runner2').style.left = '5px';
+  document.getElementById('runner3').style.left = '5px';
+  document.getElementById('raceResult').innerHTML = '👆 点击"开始比赛"，记录每位运动员的成绩';
+  document.getElementById('raceResult').style.background = '';
+}
+
+// 记录卡
+function toggleRecordCard() {
+  const card = document.getElementById('recordCard');
+  card.classList.toggle('open');
+}
+
+function submitRecord() {
+  const scene = document.getElementById('sceneName').value.trim();
+  const notes = document.getElementById('sceneNotes').value.trim();
+  const fb = document.getElementById('recordFeedback');
+  if (!scene || !notes) {
+    fb.textContent = '⚠️ 请填写场景名称和你的发现记录！';
+    fb.style.color = '#ff4d4f';
+    return;
+  }
+  fb.innerHTML = '✅ 记录已保存！你已经完成了 <strong>' + scene + '</strong> 的探索！继续加油 💪';
+  fb.style.color = '#52c41a';
+}
+</script>
+</body>
+</html>

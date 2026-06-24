@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名人名言 — 时、分、秒</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); font-size: var(--font-body); line-height: var(--line-height); }
+.container { width: 100%; max-width: none; padding: 24px 20px; box-sizing: border-box; }
+.page-header { text-align: center; padding: 20px 0 10px; margin-bottom: 20px; }
+.page-header h1 { font-size: var(--font-h1); color: var(--primary); margin: 0 0 4px; }
+.page-header .subtitle { color: var(--text-secondary); font-size: 15px; }
+.card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px 24px; margin-bottom: 20px; border: 1px solid var(--border); transition: box-shadow 0.3s; }
+.card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.12); }
+.card h2 { font-size: var(--font-h2); color: var(--primary); margin: 0 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: flex; align-items: center; gap: 8px; }
+.card h2 .era { font-size: 13px; background: var(--primary); color: #fff; padding: 2px 10px; border-radius: 12px; font-weight: 400; }
+.person-card { background: #fafafa; border-radius: 8px; padding: 16px 20px; margin-bottom: 14px; border-left: 4px solid var(--primary); transition: transform 0.2s; cursor: pointer; }
+.person-card:hover { transform: translateX(4px); }
+.person-card .name-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.person-card .name-row h3 { margin: 0; font-size: 18px; color: var(--text); }
+.person-card .years { font-size: 14px; color: var(--text-secondary); }
+.person-card .tagline { font-size: 15px; color: var(--primary); font-style: italic; margin: 4px 0 8px; }
+.person-card .detail { font-size: 16px; margin: 4px 0; }
+.person-card .detail strong { color: var(--primary); }
+.person-card .insight { background: #e6f7ff; border-radius: 6px; padding: 8px 14px; margin: 8px 0 0; font-size: 15px; color: var(--text); }
+.toggle-collapse { margin: 8px 0 0; display: inline-flex; align-items: center; gap: 6px; color: var(--primary); font-size: 15px; cursor: pointer; user-select: none; }
+.toggle-collapse:hover { opacity: 0.8; }
+.collapse-content { display: none; padding: 10px 0 0; }
+.collapse-content.open { display: block; }
+.think-task { background: linear-gradient(135deg, #f0f5ff 0%, #e6f7ff 100%); border-radius: 8px; padding: 16px 20px; margin: 8px 0; border: 1px dashed var(--primary); }
+.think-task p { margin: 4px 0; font-size: 16px; }
+.think-task .q-icon { font-size: 20px; }
+.read-path { padding: 6px 0; font-size: 15px; }
+.read-path li { margin: 4px 0; }
+@media (max-width: 600px) { .container { padding: 12px 10px; } .card { padding: 14px; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="page-header">
+    <h1>🧠 名人名言 · 时间探索者</h1>
+    <div class="subtitle">数学 · 三年级上 · 时、分、秒 &nbsp;|&nbsp; 走近和时间打交道的人</div>
+  </div>
+
+  <div class="card">
+    <h2>📜 人物卡片 <span class="era">点击展开详情</span></h2>
+
+    <!-- 人物1 -->
+    <div class="person-card" onclick="togglePerson(this)">
+      <div class="name-row">
+        <h3>伽利略·伽利雷</h3>
+        <span class="years">1564—1642</span>
+        <span style="font-size:14px;background:#e6f7ff;padding:1px 10px;border-radius:10px;">奠基人物</span>
+      </div>
+      <div class="tagline">"用脉搏测量时间的人"</div>
+      <div class="detail"><strong>🔑 关键问题：</strong>没有精确计时器，如何测量物体运动的时间？</div>
+      <div class="collapse-content">
+        <div class="detail"><strong>💡 思维突破点：</strong>伽利略用"自己的脉搏"和"水钟"测量自由落体时间，发现下落距离与时间的平方成正比——这是历史上第一次把时间和运动用数学联系起来。</div>
+        <div class="detail"><strong>⚡ 失败/争议：</strong>当时没有秒表，测量受限于仪器精度，部分数据并不精确。</div>
+        <div class="insight">🌟 <strong>对你今天的启示：</strong>即使条件有限，你也可以利用身边工具——脉搏、水滴、心跳——来感受和测量时间！</div>
+      </div>
+      <div class="toggle-collapse">▼ 点击展开详情</div>
+    </div>
+
+    <!-- 人物2 -->
+    <div class="person-card" onclick="togglePerson(this)" style="border-left-color:#d46b08;">
+      <div class="name-row">
+        <h3>克里斯蒂安·惠更斯</h3>
+        <span class="years">1629—1695</span>
+        <span style="font-size:14px;background:#fff7e6;padding:1px 10px;border-radius:10px;">跨界人物</span>
+      </div>
+      <div class="tagline">"把摆变成钟的人"</div>
+      <div class="detail"><strong>🔑 关键问题：</strong>怎样才能让计时变得稳定和精确？</div>
+      <div class="collapse-content">
+        <div class="detail"><strong>💡 思维突破点：</strong>他发现摆的摆动周期是稳定的（与摆动幅度无关），并把这个物理原理做成了第一台摆钟——把物理现象变成了计时工具。</div>
+        <div class="detail"><strong>⚡ 失败/争议：</strong>摆钟容易受温度影响，后来需要设计补偿装置。</div>
+        <div class="insight">🌟 <strong>对你今天的启示：</strong>科学发现（摆的等时性）可以转化为实用的技术发明（摆钟）。你也能把学到的知识变成有用的创意！</div>
+      </div>
+      <div class="toggle-collapse">▼ 点击展开详情</div>
+    </div>
+
+    <!-- 人物3 -->
+    <div class="person-card" onclick="togglePerson(this)" style="border-left-color:#52c41a;">
+      <div class="name-row">
+        <h3>弗朗西斯科·西里洛</h3>
+        <span class="years">1956—至今</span>
+        <span style="font-size:14px;background:#f6ffed;padding:1px 10px;border-radius:10px;">当代人物</span>
+      </div>
+      <div class="tagline">"番茄工作法"创始人</div>
+      <div class="detail"><strong>🔑 关键问题：</strong>如何用科学方法提高时间利用效率？</div>
+      <div class="collapse-content">
+        <div class="detail"><strong>💡 思维突破点：</strong>将25分钟作为一个工作单元（"一个番茄"），每完成一个休息5分钟——把"分钟"变成了"效率单位"。</div>
+        <div class="detail"><strong>⚡ 失败/争议：</strong>不是所有人都适合25分钟的工作节奏，有些人需要更短或更长的专注时间。</div>
+        <div class="insight">🌟 <strong>对你今天的启示：</strong>你可以根据自己的注意力特点，设计专属的"时间工作单元"！比如15分钟一个"草莓"🍓，或者20分钟一个"橙子"🍊。</div>
+      </div>
+      <div class="toggle-collapse">▼ 点击展开详情</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📚 深度阅读路径</h2>
+    <ul class="read-path">
+      <li><strong>📖 传记：</strong>《伽利略传》（青少年版）第4章"时间与运动"、《惠更斯与摆钟的诞生》</li>
+      <li><strong>📄 论文：</strong>番茄工作法创始人 Francesco Cirillo 的原始论文（中译版）</li>
+      <li><strong>🎧 有声资源：</strong>搜索"时间的故事"科普音频，了解计时器发展史</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>🤔 "如果你是他"思考任务</h2>
+    <div class="think-task">
+      <p><span class="q-icon">💭</span> <strong>任务一：</strong>假如你是伽利略，没有手机没有秒表，你怎么测量1秒钟有多长？请设计一个方案。</p>
+    </div>
+    <div class="think-task">
+      <p><span class="q-icon">💭</span> <strong>任务二：</strong>假如你要为三年级同学设计一款"时间管理工具"，你会从惠更斯的摆钟中得到什么灵感？把你的创意画出来！</p>
+    </div>
+  </div>
+</div>
+<script>
+function togglePerson(el) {
+  const content = el.querySelector('.collapse-content');
+  const toggle = el.querySelector('.toggle-collapse');
+  const isOpen = content.classList.contains('open');
+  content.classList.toggle('open');
+  toggle.textContent = isOpen ? '▼ 点击展开详情' : '▲ 收起';
+}
+</script>
+</body>
+</html>

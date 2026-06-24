@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名人名言 — 时间认知突破</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  text-align: center;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header p { font-size: 16px; opacity: 0.9; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+.card h3 {
+  font-size: 20px;
+  color: var(--text);
+  margin: 14px 0 10px;
+}
+.person-card {
+  background: #fafafa;
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+.person-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(22,119,255,0.12);
+}
+.person-name {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.person-period {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.breakthrough-tag {
+  display: inline-block;
+  background: linear-gradient(135deg, #fff7e6, #fffbe6);
+  border: 1px solid #ffd591;
+  border-radius: 6px;
+  padding: 10px 16px;
+  margin: 8px 0;
+  font-size: 16px;
+}
+.breakthrough-tag strong { color: #d46b08; }
+.dispute-box {
+  background: #fff1f0;
+  border: 1px solid #ffa39e;
+  border-radius: 6px;
+  padding: 10px 16px;
+  margin: 8px 0;
+  font-size: 15px;
+}
+.dispute-box strong { color: #ff4d4f; }
+.think-btn {
+  display: inline-block;
+  padding: 10px 24px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.3s;
+}
+.think-btn:hover {
+  background: var(--primary-hover);
+  transform: scale(1.02);
+}
+.think-section {
+  display: none;
+  padding: 16px;
+  background: #e6f0ff;
+  border-radius: 6px;
+  margin-top: 12px;
+  border: 1px solid var(--accent);
+}
+.think-section.show { display: block; }
+.reading-path {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 6px;
+  padding: 10px 16px;
+  margin-top: 10px;
+  font-size: 15px;
+}
+.reading-path strong { color: #52c41a; }
+.flip-container {
+  perspective: 1000px;
+  margin: 10px 0;
+}
+.flip-inner {
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+  cursor: pointer;
+}
+.flip-inner.flipped { transform: rotateY(180deg); }
+.flip-front, .flip-back {
+  backface-visibility: hidden;
+  border-radius: var(--border-radius);
+  padding: 16px;
+}
+.flip-back {
+  transform: rotateY(180deg);
+  background: #e6f0ff;
+  border: 1px solid var(--accent);
+  margin-top: -60px;
+}
+@media (max-width: 640px) {
+  .container { padding: 12px; }
+  .card { padding: 16px; }
+  .person-card { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>💡 名人名言</h1>
+  <p>时间认知突破 · M12 新知书面性应用</p>
+</div>
+
+<!-- 惠更斯 -->
+<div class="card">
+  <h2>一、奠基人物：惠更斯</h2>
+  <div class="person-card">
+    <div class="person-name">克里斯蒂安·惠更斯</div>
+    <div class="person-period">Christiaan Huygens · 1629 — 1695</div>
+
+    <h3>🧩 关键问题</h3>
+    <p>17世纪人们只能用水钟和日晷粗略计时，怎么造出更精确的时钟？</p>
+
+    <h3>💥 思维突破点</h3>
+    <div class="breakthrough-tag">
+      <strong>钟摆的等时性：</strong>惠更斯发现钟摆的摆动周期是恒定的——无论摆幅大小，每次摆动时间相同！他利用这个原理在<strong>1656年发明了摆钟</strong>，让人类第一次能精确到分钟。
+    </div>
+
+    <h3>⚡ 失败与争议</h3>
+    <div class="dispute-box">
+      <strong>你知道吗？</strong>伽利略其实更早发现了摆的等时性，但没有做出实用摆钟。惠更斯是第一个把原理变成实际工具的人。
+    </div>
+
+    <h3>🧠 认知突破</h3>
+    <p>从粗糙到精确——<strong>不是知道原理就能改变世界</strong>，还要把原理变成可用的工具。</p>
+
+    <div class="reading-path">
+      <strong>📚 深度阅读：</strong>推荐《时间简史》（霍金）中关于计时器发展的章节；搜索纪录片"<strong>The Story of Time</strong>"。
+    </div>
+
+    <button class="think-btn" onclick="toggleThink('thinkHuygens')">🤔 如果你是他……</button>
+    <div class="think-section" id="thinkHuygens">
+      <p><strong>思考任务：</strong>假如你生活在300年前，没有时钟，你会用什么方法测量一分钟的长度？</p>
+      <textarea style="width:100%;min-height:70px;margin-top:8px;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:16px;font-family:inherit;" placeholder="写下你的想法……"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- 爱因斯坦 -->
+<div class="card">
+  <h2>二、跨界人物：爱因斯坦</h2>
+  <div class="person-card">
+    <div class="person-name">阿尔伯特·爱因斯坦</div>
+    <div class="person-period">Albert Einstein · 1879 — 1955</div>
+
+    <h3>🧩 关键问题</h3>
+    <p>时间真的是绝对的吗？每个人感受到的时间流逝速度一样吗？</p>
+
+    <h3>💥 思维突破点</h3>
+    <div class="breakthrough-tag">
+      <strong>相对论：</strong>爱因斯坦提出——<strong>时间不是固定不变的！</strong>速度越快、引力越强，时间流逝越慢。坐在飞船里的人比地球上的人老得慢。
+    </div>
+
+    <h3>⚡ 争议</h3>
+    <div class="dispute-box">
+      <strong>你知道吗？</strong>这个理论太反常识了，当时很多科学家不接受。后来越来越多的实验证明了它是对的。
+    </div>
+
+    <h3>🧠 认知突破</h3>
+    <p>时间是相对的——你以为的<strong>"常识"不一定是真理</strong>。</p>
+
+    <button class="think-btn" onclick="toggleThink('thinkEinstein')">🤔 如果你是他……</button>
+    <div class="think-section" id="thinkEinstein">
+      <p><strong>思考任务：</strong>如果时间可以变慢，你会用它来做什么？</p>
+      <textarea style="width:100%;min-height:70px;margin-top:8px;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:16px;font-family:inherit;" placeholder="写下你的奇思妙想……"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- 北斗团队 -->
+<div class="card">
+  <h2>三、当代人物：北斗卫星时间系统团队</h2>
+  <div class="person-card">
+    <div class="person-name">北斗卫星时间系统团队</div>
+    <div class="person-period">中国 · 当代</div>
+
+    <h3>🧩 关键问题</h3>
+    <p>导航卫星需要在几<strong>纳秒</strong>（十亿分之一秒）内同步时间，误差一秒定位就偏30万公里。怎么做？</p>
+
+    <h3>💥 思维突破点</h3>
+    <div class="breakthrough-tag">
+      <strong>原子钟：</strong>在卫星上装载原子钟，利用铯原子的振动频率计时，<strong>3000万年才误差1秒。</strong>
+    </div>
+
+    <h3>🌟 对当下的启示</h3>
+    <p>你正在学的"秒"——原子钟用的还是"秒"这个单位，只是测量得更加精确。</p>
+
+    <button class="think-btn" onclick="toggleThink('thinkBeidou')">🤔 如果你是他……</button>
+    <div class="think-section" id="thinkBeidou">
+      <p><strong>思考任务：</strong>查查"原子钟"的原理，用自己理解的话写一段说明（50字左右）。</p>
+      <textarea style="width:100%;min-height:70px;margin-top:8px;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:16px;font-family:inherit;" placeholder="用你的话解释原子钟……"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- 翻转思考卡 -->
+<div class="card">
+  <h2>🎯 翻转思考卡</h2>
+  <p>点击下面的卡片，看看这三个人物的共同点：</p>
+  <div class="flip-container">
+    <div class="flip-inner" onclick="this.classList.toggle('flipped')">
+      <div class="flip-front" style="background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;text-align:center;padding:40px 20px;">
+        <div style="font-size:48px;margin-bottom:10px;">🔄</div>
+        <strong style="font-size:20px;">点击翻转</strong>
+        <p style="margin-top:8px;opacity:0.9;">三个人的共同点是什么？</p>
+      </div>
+      <div class="flip-back" style="padding:30px 20px;">
+        <strong style="font-size:20px;color:var(--primary);">答案是：</strong>
+        <p style="margin-top:8px;">他们都<strong>打破了人们对时间的固有认知</strong>——惠更斯让时间精确可测，爱因斯坦让时间不再绝对，北斗团队让时间精确到纳秒。每一次突破都让我们对"时间"的理解更深一层。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleThink(id) {
+  var el = document.getElementById(id);
+  el.classList.toggle('show');
+}
+</script>
+
+</div>
+</body>
+</html>

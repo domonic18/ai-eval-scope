@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性示例 - 时间知识卡片</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+}
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 8px; }
+.header p { font-size: 16px; opacity: 0.9; }
+.section { margin-bottom: 28px; }
+.section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  border-left: 4px solid var(--primary);
+  padding-left: 14px;
+  margin-bottom: 14px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.card h3 { font-size: 20px; color: var(--primary); margin-bottom: 10px; }
+.card p, .card li { font-size: var(--font-body); color: var(--text); }
+.step-list { counter-reset: step; list-style: none; }
+.step-item {
+  counter-increment: step;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  position: relative;
+  padding-left: 56px;
+}
+.step-item::before {
+  content: counter(step);
+  position: absolute;
+  left: 14px;
+  top: 16px;
+  width: 30px;
+  height: 30px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+}
+.step-item strong { color: var(--primary); }
+.step-item p { margin-top: 6px; color: var(--text-secondary); }
+.tag {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  padding: 2px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  margin-right: 6px;
+  margin-bottom: 6px;
+}
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+.mini-card {
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  text-align: center;
+  transition: border-color 0.3s, transform 0.3s;
+  cursor: default;
+}
+.mini-card:hover { border-color: var(--primary); transform: scale(1.02); }
+.mini-card .unit { font-size: 32px; font-weight: 700; color: var(--primary); }
+.mini-card .symbol { font-size: 20px; color: var(--text-secondary); }
+.mini-card .rel { font-size: 15px; margin-top: 8px; color: var(--text); }
+.mini-card .example {
+  font-size: 15px; color: var(--text-secondary); margin-top: 6px;
+  background: var(--bg); padding: 6px 10px; border-radius: 8px;
+}
+.checklist {
+  list-style: none;
+}
+.checklist li {
+  padding: 8px 0 8px 32px;
+  position: relative;
+  border-bottom: 1px dashed var(--border);
+}
+.checklist li::before {
+  content: "☐";
+  position: absolute;
+  left: 0;
+  color: var(--primary);
+  font-size: 20px;
+}
+.checklist li:last-child { border-bottom: none; }
+.tip-box {
+  background: linear-gradient(135deg, #fff7e6, #fff1cc);
+  border-left: 4px solid #fa8c16;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  padding: 14px 18px;
+  margin-top: 12px;
+}
+.tip-box strong { color: #d46b08; }
+.animate-in {
+  animation: fadeUp 0.5s ease-out;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.btn-toggle {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 10px;
+}
+.btn-toggle:hover { background: var(--primary-hover); }
+.toggle-content { display: none; margin-top: 10px; }
+.toggle-content.show { display: block; }
+@media (max-width: 600px) {
+  .container { padding: 12px 16px; }
+  .header { padding: 18px 20px; }
+  .card-grid { grid-template-columns: 1fr; }
+  .step-item { padding-left: 48px; }
+  .step-item::before { left: 10px; width: 26px; height: 26px; font-size: 14px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header animate-in">
+  <h1>🕐 时间知识卡片</h1>
+  <p>从一个"一年级小朋友的问题"开始建构——把时、分、秒说清楚！</p>
+</div>
+
+<div class="section animate-in">
+  <h2>📌 真实建构情境</h2>
+  <div class="card">
+    <p>你的表弟今年上一年级，他问你：<strong>"姐姐，为什么1小时不是100分钟？10分钟又有多长？"</strong> 你突然发现，虽然自己会看钟表，但要"说清楚时间"并不容易。</p>
+    <p style="margin-top:8px;">你决定用学过的时、分、秒知识，做一套<strong>"时间知识卡片"</strong>，让表弟一看就明白。</p>
+    <div class="tip-box">
+      <strong>🎯 建构目标：</strong> 建构一套"时间知识卡片"，把时、分、秒的本质关系说清楚，格式规范、通俗易懂。
+    </div>
+  </div>
+</div>
+
+<div class="section animate-in">
+  <h2>📋 建构任务说明</h2>
+  <div class="card">
+    <p><strong>成果名称：</strong>时间知识卡片（一套3张）</p>
+    <p><strong>用途：</strong>教一年级的小朋友理解时、分、秒</p>
+    <p><strong>最低标准：</strong>每张卡片包含5个要素</p>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">
+      <span class="tag">单位名称</span>
+      <span class="tag">符号</span>
+      <span class="tag">与相邻单位关系</span>
+      <span class="tag">定义</span>
+      <span class="tag">1个生活例子</span>
+    </div>
+  </div>
+</div>
+
+<div class="section animate-in">
+  <h2>🛠 建构过程（6步）</h2>
+  <ol class="step-list">
+    <li class="step-item">
+      <strong>提出问题</strong>
+      <p>从表弟的问题出发：进制问题（为什么不是100）— 量感问题（10分钟多长）— 换算问题（时间怎么算）。产出：问题清单。</p>
+    </li>
+    <li class="step-item">
+      <strong>回顾已有经验</strong>
+      <p>调取已有知识：7:00起床、8:00上课、1小时=60分、1分=60秒。产出：已有知识清单。</p>
+    </li>
+    <li class="step-item">
+      <strong>寻找证据和资料</strong>
+      <p>查阅课本"时、分、秒"章节，找出所有换算关系，找3个生活实例。产出：证据表。</p>
+    </li>
+    <li class="step-item">
+      <strong>设计知识卡片结构</strong>
+      <p>设计统一格式：标题—符号—定义—换算关系—生活例子。产出：卡片设计模板。</p>
+    </li>
+    <li class="step-item">
+      <strong>制作卡片内容</strong>
+      <p>逐张填写：秒卡→分卡→时卡，每张包含5个要素。产出：3张完整的知识卡片。</p>
+    </li>
+    <li class="step-item">
+      <strong>检验和完善</strong>
+      <p>用卡片给表弟讲一遍，根据反馈修改完善。产出：修改后的最终版卡片。</p>
+    </li>
+  </ol>
+</div>
+
+<div class="section animate-in">
+  <h2>🃏 知识卡片预览</h2>
+  <p style="color:var(--text-secondary);margin-bottom:12px;">👆 点击卡片查看详情（模拟完成效果）</p>
+  <div class="card-grid">
+    <div class="mini-card" onclick="toggleCard(this)">
+      <div class="unit">秒</div>
+      <div class="symbol">s</div>
+      <div class="rel">1 分 = 60 秒</div>
+      <div class="example">👁 眨一次眼约 1 秒</div>
+      <div class="toggle-content"><p style="font-size:15px;margin-top:6px;">秒是时间的基本单位。钟表上最细最长的指针就是秒针，它走一小格就是1秒，走一圈（60小格）就是1分钟。</p></div>
+      <button class="btn-toggle" onclick="event.stopPropagation();toggleCard(this.parentElement)">展开详解</button>
+    </div>
+    <div class="mini-card" onclick="toggleCard(this)">
+      <div class="unit">分</div>
+      <div class="symbol">min</div>
+      <div class="rel">1 时 = 60 分</div>
+      <div class="example">📚 一节课约 40 分钟</div>
+      <div class="toggle-content"><p style="font-size:15px;margin-top:6px;">分钟介于时和秒之间。钟表上中等长度的指针是分针，它走一小格是1分钟，走一圈（60小格）是1小时。</p></div>
+      <button class="btn-toggle" onclick="event.stopPropagation();toggleCard(this.parentElement)">展开详解</button>
+    </div>
+    <div class="mini-card" onclick="toggleCard(this)">
+      <div class="unit">时</div>
+      <div class="symbol">h</div>
+      <div class="rel">1 天 = 24 时</div>
+      <div class="example">😴 每天睡约 10 小时</div>
+      <div class="toggle-content"><p style="font-size:15px;margin-top:6px;">小时是常用的较长时间单位。钟表上最短最粗的指针是时针，它走一大格就是1小时，走一圈（12大格）是半天。</p></div>
+      <button class="btn-toggle" onclick="event.stopPropagation();toggleCard(this.parentElement)">展开详解</button>
+    </div>
+  </div>
+</div>
+
+<div class="section animate-in">
+  <h2>🧰 支架工具推荐</h2>
+  <div class="card">
+    <ul style="padding-left:20px;">
+      <li><strong>KWL表格模板</strong>：已知（K）— 想知（W）— 学到（L）</li>
+      <li><strong>卡片设计模板</strong>：A6大小，标题区 / 定义区 / 换算区 / 举例区</li>
+      <li><strong>检查清单</strong>：每张卡片是否包含5个要素？</li>
+    </ul>
+  </div>
+</div>
+
+<div class="section animate-in">
+  <h2>📝 自我评价量表</h2>
+  <div class="card">
+    <ul class="checklist">
+      <li>我是否准确写出了时、分、秒的换算关系？</li>
+      <li>每张卡片是否都包含"名称、符号、换算、举例"？</li>
+      <li>例子是否来自真实生活，别人能理解？</li>
+      <li>卡片是否整洁、美观、适合展示？</li>
+      <li>用卡片讲一遍，听的人是否听懂了？</li>
+    </ul>
+    <button class="btn-toggle" onclick="const c=this.nextElementSibling;c.classList.toggle('show')">✅ 完成自评后点击查看建议</button>
+    <div class="toggle-content">
+      <div class="tip-box">
+        <strong>💡 优化建议：</strong> 对比课本原文检查错误；请家长或同学当"观众"；把新问题也做成补充卡片。
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+<script>
+function toggleCard(el) {
+  const content = el.querySelector('.toggle-content');
+  if (content) content.classList.toggle('show');
+}
+</script>
+</body>
+</html>

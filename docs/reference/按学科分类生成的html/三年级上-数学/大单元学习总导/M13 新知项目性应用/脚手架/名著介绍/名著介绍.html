@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名著介绍 — 时间主题</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+
+/* Header */
+.page-header {
+  text-align: center;
+  padding: 32px 20px 24px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+  color: #fff;
+}
+.page-header h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.page-header p {
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+/* Section */
+.section {
+  margin-bottom: 32px;
+}
+.section-title {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 3px solid var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-title .icon { font-size: 24px; }
+
+/* Quote card */
+.quote-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+@media (min-width: 640px) {
+  .quote-grid { grid-template-columns: 1fr 1fr; }
+}
+.quote-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--accent);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: default;
+}
+.quote-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(22,119,255,0.15);
+}
+.quote-card .quote-text {
+  font-size: 16px;
+  font-style: italic;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.quote-card .quote-author {
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-align: right;
+}
+.quote-card .quote-tag {
+  display: inline-block;
+  font-size: 12px;
+  background: var(--bg);
+  color: var(--primary);
+  padding: 2px 10px;
+  border-radius: 20px;
+  margin-bottom: 8px;
+}
+
+/* Book card */
+.book-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 22px 24px;
+  box-shadow: var(--shadow);
+  margin-bottom: 18px;
+  border: 1px solid var(--border);
+  transition: border-color 0.3s;
+}
+.book-card:hover {
+  border-color: var(--primary);
+}
+.book-card .book-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.book-card .book-meta {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.book-card .book-question {
+  background: #fff7e6;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  font-size: 15px;
+  border-left: 3px solid #fa8c16;
+}
+.book-card .book-question strong { color: #d46b08; }
+.book-card .book-viewpoint {
+  background: #f6ffed;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  font-size: 15px;
+  border-left: 3px solid #52c41a;
+}
+.book-card .book-viewpoint strong { color: #389e0d; }
+.book-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.book-details .detail-tag {
+  font-size: 13px;
+  background: var(--bg);
+  color: var(--text);
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+}
+
+/* Accordion for book excerpts */
+.excerpt-toggle {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 6px 16px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.excerpt-toggle:hover { background: var(--primary-hover); }
+.excerpt-content {
+  display: none;
+  margin-top: 10px;
+  padding: 14px 16px;
+  background: #fafafa;
+  border-radius: 8px;
+  font-size: 15px;
+  border: 1px dashed var(--border);
+}
+.excerpt-content.show { display: block; }
+
+/* Interaction section */
+.interact-area {
+  margin-top: 28px;
+  text-align: center;
+}
+.interact-area p {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.reflect-btn {
+  padding: 10px 28px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+.reflect-btn:hover { background: var(--primary-hover); }
+.reflect-btn:active { transform: scale(0.96); }
+.reflect-output {
+  margin-top: 14px;
+  padding: 16px;
+  background: var(--card-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  min-height: 40px;
+  font-size: 15px;
+  display: none;
+}
+.reflect-output.show { display: block; }
+
+/* Footer */
+.footer-note {
+  text-align: center;
+  padding: 16px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-top: 20px;
+  border-top: 1px solid var(--border);
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-header">
+    <h1>⏳ 时间主题 · 名言与名著</h1>
+    <p>跟着先贤的智慧，让时间的秘密在你眼前展开</p>
+  </div>
+
+  <!-- 名言部分 -->
+  <div class="section">
+    <div class="section-title"><span class="icon">💬</span> 名言·时间之思</div>
+    <div class="quote-grid">
+      <div class="quote-card" onclick="this.querySelector('.quote-text').style.color='#1677ff'">
+        <span class="quote-tag">概念引子</span>
+        <div class="quote-text">"时间就是生命。浪费别人的时间，无异于谋财害命。"</div>
+        <div class="quote-author">—— 鲁迅</div>
+      </div>
+      <div class="quote-card">
+        <span class="quote-tag">冲突触发器</span>
+        <div class="quote-text">"逝者如斯夫，不舍昼夜。"</div>
+        <div class="quote-author">—— 孔子</div>
+      </div>
+      <div class="quote-card">
+        <span class="quote-tag">冲突触发器</span>
+        <div class="quote-text">"明日复明日，明日何其多？我生待明日，万事成蹉跎。"</div>
+        <div class="quote-author">—— 《明日歌》</div>
+      </div>
+      <div class="quote-card">
+        <span class="quote-tag">反思起点</span>
+        <div class="quote-text">"时钟在走，时间在流，而你在做什么？"</div>
+        <div class="quote-author">—— 佚名</div>
+      </div>
+    </div>
+    <p style="font-size:14px;color:var(--text-secondary);text-align:center;">💡 点击名言卡片可高亮文字</p>
+  </div>
+
+  <!-- 名著部分 -->
+  <div class="section">
+    <div class="section-title"><span class="icon">📚</span> 名著·穿越时空的阅读</div>
+
+    <div class="book-card">
+      <div class="book-title">《时间之书》</div>
+      <div class="book-meta">余世存 著 · 中国 · 适读：基础</div>
+      <div class="book-question"><strong>❓ 核心问题：</strong>中国人的时间观念是如何形成的？二十四节气教你什么？</div>
+      <div class="book-viewpoint"><strong>💡 核心观点：</strong>中国人把时间看成一个循环——春生、夏长、秋收、冬藏，每个时间节点都有该做的事。</div>
+      <button class="excerpt-toggle" onclick="toggleExcerpt('excerpt1')">📖 看片段：立春篇</button>
+      <div id="excerpt1" class="excerpt-content">
+        "立春是一年的开始。古人说'一年之计在于春'，意思是在春天就要把全年的计划想好。农民在立春准备种子，学生在开学制定学习计划——这就是中国人的'计划思维'：一个时间节点做一件事，顺着自然的节奏走。"
+      </div>
+      <div class="book-details">
+        <span class="detail-tag">📕 纸质书 · 各书店有售</span>
+        <span class="detail-tag">📱 电子书 · 微信读书</span>
+      </div>
+    </div>
+
+    <div class="book-card">
+      <div class="book-title">《时间简史》</div>
+      <div class="book-meta">史蒂芬·霍金 著 · 英国 · 适读：挑战（需指导）</div>
+      <div class="book-question"><strong>❓ 核心问题：</strong>宇宙中的时间和我们日常感受的时间一样吗？</div>
+      <div class="book-viewpoint"><strong>💡 核心观点：</strong>时间有起点（宇宙大爆炸），也可能有终点（黑洞蒸发的瞬间）。</div>
+      <button class="excerpt-toggle" onclick="toggleExcerpt('excerpt2')">📖 看片段：第一章</button>
+      <div id="excerpt2" class="excerpt-content">
+        "我们坐在椅子上，觉得时间在一秒一秒地走。但在宇宙中，时间不是固定的——它会被引力弯曲。在黑洞附近，时间会变慢；在宇宙大爆炸的那一瞬间，时间才真正开始。你口袋里的手表，和太空中的手表，走的速度其实不一样。"
+      </div>
+      <div class="book-details">
+        <span class="detail-tag">📕 推荐插图版</span>
+        <span class="detail-tag">🎧 有声书 · 喜马拉雅</span>
+      </div>
+    </div>
+
+    <div class="book-card">
+      <div class="book-title">《把时间当作朋友》</div>
+      <div class="book-meta">李笑来 著 · 中国 · 适读：进阶</div>
+      <div class="book-question"><strong>❓ 核心问题：</strong>为什么有些人总能高效做事，而你总觉得时间不够？</div>
+      <div class="book-viewpoint"><strong>💡 核心观点：</strong>时间无法管理，能管理的是自己——培养"和时间做朋友"的心态。</div>
+      <button class="excerpt-toggle" onclick="toggleExcerpt('excerpt3')">📖 看片段：第二章"现实"</button>
+      <div id="excerpt3" class="excerpt-content">
+        "我们总是高估自己一天能做的事，却低估一年能做的事。时间不是敌人，它不会因为你着急就变慢。真正的秘诀是：接受时间在你身边流过的事实，然后老老实实做你该做的事——每一分钟，都会成为未来的积累。"
+      </div>
+      <div class="book-details">
+        <span class="detail-tag">📕 纸质书</span>
+        <span class="detail-tag">📱 电子书 · 得到App</span>
+        <span class="detail-tag">🎧 解读音频</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 互动思考区 -->
+  <div class="section interact-area">
+    <p>📝 读完这些名言和名著片段，你有什么感悟？</p>
+    <button class="reflect-btn" onclick="showReflection()">💭 点击随机展示一句话感悟</button>
+    <div id="reflectOutput" class="reflect-output">
+      🎯 选择一句你最有感触的名言，把它抄下来贴在书桌前吧！
+    </div>
+  </div>
+
+  <div class="footer-note">
+    数学 · 三年级上 · 时间主题学习脚手架
+  </div>
+</div>
+
+<script>
+function toggleExcerpt(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('show');
+}
+
+function showReflection() {
+  const msgs = [
+    '⏰ "时间就是生命"——珍惜每一分钟，就是对生命的尊重。',
+    '🌊 "逝者如斯夫"——时间像河水一样流走，抓不住的，但可以好好利用。',
+    '📅 "一年之计在于春"——现在就做一个时间规划吧！',
+    '🚀 时间有起点吗？连霍金都在追问，你也可以去探索。',
+    '🤝 和时间做朋友，不是赶时间，而是理解时间的节奏。'
+  ];
+  const el = document.getElementById('reflectOutput');
+  el.textContent = msgs[Math.floor(Math.random() * msgs.length)];
+  el.classList.add('show');
+}
+</script>
+</body>
+</html>

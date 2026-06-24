@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>作业榜 - 时、分、秒分层练习</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;font-size:var(--font-body);line-height:var(--line-height);color:var(--text);background:var(--bg)}
+.wrapper{width:100%;max-width:none;padding:24px 20px;box-sizing:border-box}
+.container{max-width:960px;margin:0 auto}
+.banner{background:linear-gradient(135deg,var(--primary),#0050b3);color:#fff;border-radius:var(--border-radius);padding:28px 24px;margin-bottom:24px;text-align:center;position:relative;overflow:hidden}
+.banner::after{content:"📋";position:absolute;right:20px;bottom:-8px;font-size:72px;opacity:.15}
+.banner h1{font-size:var(--font-h1);margin-bottom:4px}
+.banner p{font-size:15px;opacity:.85;margin:0}
+.level-tabs{display:flex;gap:6px;margin-bottom:20px;background:var(--card-bg);border-radius:var(--border-radius);padding:5px;box-shadow:var(--shadow)}
+.level-btn{flex:1;padding:12px 8px;border:none;background:transparent;border-radius:6px;font-size:15px;cursor:pointer;transition:all .25s;color:var(--text-secondary);font-weight:600;text-align:center}
+.level-btn:hover{background:var(--bg);color:var(--text)}
+.level-btn.active{background:var(--primary);color:#fff;box-shadow:0 2px 6px rgba(22,119,255,.3)}
+.level-btn .level-badge{display:block;font-size:12px;font-weight:400;opacity:.7;margin-top:2px}
+.level-panel{display:none}
+.level-panel.active{display:block;animation:fadeIn .35s ease}
+.q-card{background:var(--card-bg);border-radius:var(--border-radius);box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+.q-card .q-header{padding:14px 20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);user-select:none}
+.q-card .q-header h3{font-size:16px;margin:0;color:var(--text)}
+.q-card .q-body{padding:16px 20px}
+.check-item{display:flex;align-items:flex-start;gap:10px;padding:6px 0}
+.check-item input[type="checkbox"]{margin-top:4px;width:18px;height:18px;accent-color:var(--primary);cursor:pointer;flex-shrink:0}
+.check-item label{flex:1;font-size:15px;cursor:pointer}
+.tag{display:inline-block;border-radius:4px;padding:2px 10px;font-size:12px;font-weight:600;margin-right:4px}
+.tag-must{background:#fff1f0;color:#cf1322;border:1px solid #ffa39e}
+.tag-opt{background:#e6f7ff;color:#096dd9;border:1px solid #91d5ff}
+.tag-free{background:#f6ffed;color:#389e0d;border:1px solid #b7eb8f}
+.self-check{background:#fffbe6;border:1px solid #ffe58f;border-radius:var(--border-radius);padding:12px 16px;margin:12px 0;font-size:14px}
+.self-check input[type="checkbox"]{accent-color:var(--primary);width:16px;height:16px;margin-right:6px}
+.score-summary{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.score-item{flex:1;min-width:120px;background:var(--card-bg);border-radius:var(--border-radius);padding:14px 16px;text-align:center;box-shadow:var(--shadow)}
+.score-item .si-num{font-size:28px;font-weight:700;color:var(--primary)}
+.score-item .si-label{font-size:13px;color:var(--text-secondary)}
+.rubric-table{width:100%;border-collapse:collapse;font-size:14px;margin:10px 0}
+.rubric-table th,.rubric-table td{border:1px solid var(--border);padding:8px 12px;text-align:left}
+.rubric-table th{background:var(--bg);color:var(--text);font-weight:600}
+.rubric-table td{color:var(--text)}
+.star{color:#faad14}
+.otask-card{background:var(--card-bg);border-radius:var(--border-radius);box-shadow:var(--shadow);padding:18px 20px;margin-bottom:12px;border-left:4px solid var(--primary);transition:box-shadow .2s}
+.otask-card:hover{box-shadow:0 4px 16px rgba(22,119,255,.12)}
+.otask-card h4{font-size:16px;color:var(--text);margin-bottom:4px}
+.otask-card p{font-size:14px;color:var(--text-secondary);margin:0 0 8px}
+.ot-btn{border:1px solid var(--border);background:var(--card-bg);border-radius:6px;padding:4px 14px;font-size:13px;cursor:pointer;transition:all .2s;color:var(--text-secondary)}
+.ot-btn.selected{border-color:var(--primary);background:var(--bg);color:var(--primary);font-weight:600}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:640px){
+  .wrapper{padding:16px 12px}
+  .level-tabs{flex-direction:column}
+  .q-card .q-header{padding:12px 14px}
+  .q-card .q-body{padding:12px 14px}
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+<div class="container">
+
+<div class="banner">
+  <h1>📋 作业榜</h1>
+  <p>三级挑战 · 层层进阶 · 做自己的时间主人</p>
+</div>
+
+<div class="score-summary">
+  <div class="score-item"><div class="si-num">🌟</div><div class="si-label">基础层 · 再现理解</div></div>
+  <div class="score-item"><div class="si-num">🚀</div><div class="si-label">进阶层 · 分析应用</div></div>
+  <div class="score-item"><div class="si-num">🏆</div><div class="si-label">挑战层 · 创造表达</div></div>
+</div>
+
+<div class="level-tabs">
+  <button class="level-btn active" onclick="switchLevel('basic')">🌟 基础层<span class="level-badge">再现与理解</span></button>
+  <button class="level-btn" onclick="switchLevel('intermediate')">🚀 进阶层<span class="level-badge">分析与应用</span></button>
+  <button class="level-btn" onclick="switchLevel('challenge')">🏆 挑战层<span class="level-badge">创造性表达</span></button>
+</div>
+
+<!-- 基础层 -->
+<div class="level-panel active" id="panel-basic">
+  <div class="q-card">
+    <div class="q-header" onclick="toggleBody(this)"><h3>✏️ 必做部分（每题约5分钟）</h3><span class="toggle">▼</span></div>
+    <div class="q-body">
+      <div class="check-item"><input type="checkbox" id="b1"><label for="b1"><span class="tag tag-must">必做</span> 填空：1时 = ___ 分；1分 = ___ 秒；1时 = ___ 秒</label></div>
+      <div class="check-item"><input type="checkbox" id="b2"><label for="b2"><span class="tag tag-must">必做</span> 换算：120分 = ___ 时；180秒 = ___ 分；2时15分 = ___ 分</label></div>
+      <div class="check-item"><input type="checkbox" id="b3"><label for="b3"><span class="tag tag-must">必做</span> 读钟面：观察家里的钟表，写出3个不同时刻</label></div>
+      <div class="check-item"><input type="checkbox" id="b4"><label for="b4"><span class="tag tag-must">必做</span> 判断：哪个大概用了1分钟？A.看完一部电影 B.跳绳100下 C.吃一顿午餐</label></div>
+    </div>
+  </div>
+  <div class="q-card">
+    <div class="q-header" onclick="toggleBody(this)"><h3>⭐ 选做部分</h3><span class="toggle">▼</span></div>
+    <div class="q-body">
+      <div class="check-item"><input type="checkbox" id="b5"><label for="b5"><span class="tag tag-opt">选做</span> 连线：把时间和对应活动连起来（"1秒"→"眨一下眼"等）</label></div>
+      <div class="check-item"><input type="checkbox" id="b6"><label for="b6"><span class="tag tag-opt">选做</span> 圈一圈：在数字钟和指针钟之间画箭头配对</label></div>
+    </div>
+  </div>
+  <div class="q-card">
+    <div class="q-header" onclick="toggleBody(this)"><h3>🌱 自主拓展</h3><span class="toggle">▼</span></div>
+    <div class="q-body">
+      <div class="check-item"><input type="checkbox" id="b7"><label for="b7"><span class="tag tag-free">拓展</span> 用计时器体验"1秒、10秒、60秒"，画出你的"时间感受尺"</label></div>
+    </div>
+  </div>
+  <div class="self-check"><input type="checkbox" id="bsc"><label for="bsc"><strong>自查：</strong>我是否记住了60进制（不是100进制）？</label></div>
+</div>
+
+<!-- 进阶层 -->
+<div class="level-panel" id="panel-intermediate">
+  <div class="q-card">
+    <div class="q-header" onclick="toggleBody(this)"><h3>✏️ 必做部分</h3><span class="toggle">▼</span></div>
+    <div class="q-body">
+      <div class="check-item"><input type="checkbox" id="i1"><label for="i1"><span class="tag tag-must">必做</span> 小明7:30出发，走路到学校用了20分钟，到达时间是___时___分</label></div>
+      <div class="check-item"><input type="checkbox" id="i2"><label for="i2"><span class="tag tag-must">必做</span> 一节课8:10开始，8:55结束，上了___分钟</label></div>
+      <div class="check-item"><input type="checkbox" id="i3"><label for="i3"><span class="tag tag-must">必做</span> 图书馆上午9:00-11:30，一共开放___小时___分钟</label></div>
+      <div class="check-item"><input type="checkbox" id="i4"><label for="i4"><span class="tag tag-must">必做</span> 做作业用了35分钟，开始时间4:25，结束时间是___时___分</label></div>
+    </div>
+  </div>
+  <div class="q-card">
+    <div class="q-header" onclick="toggleBody(this)"><h3>⭐ 选做部分</h3><span class="toggle">▼</span></div>
+    <div class="q-body">
+      <div class="check-item"><input type="checkbox" id="i5"><label for="i5"><span class="tag tag-opt">选做</span> 比较大小：2时○100分  200秒○3分  1时20分○90分</label></div>
+      <div class="check-item"><input type="checkbox" id="i6"><label for="i6"><span class="tag tag-opt">选做</span> 排序：150秒、2分30秒、1时、45分（从短到长）</label></div>
+    </div>
+  </div>
+  <div class="q-card">
+    <div class="q-header" onclick="toggleBody(this)"><h3>🌱 自主拓展</h3><span class="toggle">▼</span></div>
+    <div class="q-body">
+      <div class="check-item"><input type="checkbox" id="i7"><label for="i7"><span class="tag tag-free">拓展</span> 记录今天"看电视+玩iPad+运动"总时间，分析是否合理</label></div>
+    </div>
+  </div>
+  <div class="self-check"><input type="checkbox" id="isc"><label for="isc"><strong>自查：</strong>计算经过时间时，是否注意"借位"时满60进1？</label></div>
+</div>
+
+<!-- 挑战层 -->
+<div class="level-panel" id="panel-challenge">
+  <p style="margin-bottom:14px;color:var(--text-secondary);font-size:15px;"><strong>开放式任务：三选一</strong> 选择你最喜欢的任务，点击"选中"开始创作！</p>
+  <div class="otask-card">
+    <h4>🔍 时间侦探报告</h4>
+    <p>观察家里钟表一周，记录"什么时候钟慢了""什么时候时间不准"，写一份简短观察报告</p>
+    <button class="ot-btn" onclick="selectTask(this)">选中这个任务</button>
+  </div>
+  <div class="otask-card">
+    <h4>📅 我的专属时间表</h4>
+    <p>设计一份"理想的一天"时间表（精确到分钟），包含学习、运动、娱乐、休息并说明为什么这样安排</p>
+    <button class="ot-btn" onclick="selectTask(this)">选中这个任务</button>
+  </div>
+  <div class="otask-card">
+    <h4>🎨 时间创意图谱</h4>
+    <p>用A4纸创作"时间图谱"——把"秒、分、时、天、月、年"用创意方式画在一张图上</p>
+    <button class="ot-btn" onclick="selectTask(this)">选中这个任务</button>
+  </div>
+
+  <p style="margin:16px 0 8px;font-size:15px;font-weight:600;color:var(--text);">📊 评价标准</p>
+  <table class="rubric-table">
+    <tr><th>维度</th><th>★ 达标</th><th>★★ 良好</th><th>★★★ 优秀</th></tr>
+    <tr><td>时间准确性</td><td>主要时间数字正确</td><td>所有时间数字正确</td><td>时间数字精确且有意义</td></tr>
+    <tr><td>表达完整性</td><td>完成基本框架</td><td>内容丰富有细节</td><td>有观点有创意有反思</td></tr>
+    <tr><td>个性化</td><td>有个人内容</td><td>有个人真实数据</td><td>有真实感受和独特思考</td></tr>
+  </table>
+</div>
+
+</div>
+</div>
+<script>
+function switchLevel(name){
+  document.querySelectorAll('.level-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  event.target.classList.add('active');
+}
+function toggleBody(header){
+  const body=header.nextElementSibling;
+  const icon=header.querySelector('.toggle');
+  if(body.style.display==='none'){body.style.display='block';icon.textContent='▼'}
+  else{body.style.display='none';icon.textContent='▶'}
+}
+function selectTask(btn){
+  document.querySelectorAll('.ot-btn').forEach(b=>{b.textContent=b.textContent.replace(' ✅','');b.classList.remove('selected')});
+  btn.classList.add('selected');
+  btn.textContent=btn.textContent+' ✅';
+}
+document.querySelectorAll('.q-body').forEach(el=>el.style.display='block');
+</script>
+</body>
+</html>

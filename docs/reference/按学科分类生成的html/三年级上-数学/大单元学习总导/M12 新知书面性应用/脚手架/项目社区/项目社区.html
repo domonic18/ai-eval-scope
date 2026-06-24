@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目库脚手架 — 时间主题项目实践</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+h2 {
+  font-size: var(--font-h2);
+  color: var(--text);
+  margin: 28px 0 12px 0;
+  line-height: 1.5;
+  border-left: 4px solid var(--primary);
+  padding-left: 12px;
+}
+h3 {
+  font-size: calc(var(--font-h2) - 2px);
+  color: var(--text);
+  margin: 20px 0 8px 0;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.tag {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  font-size: 14px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  margin-right: 6px;
+}
+.tag-orange {
+  background: #ff7a45;
+}
+.tag-green {
+  background: #52c41a;
+}
+.progress-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 12px 0;
+}
+.step {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 10px 14px;
+  flex: 1 1 180px;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.step:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+.step-num {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+.standards-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 16px;
+  margin: 8px 0;
+}
+.standards-grid .label {
+  font-weight: 600;
+  color: var(--primary);
+}
+.resource-link {
+  display: inline-block;
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 6px;
+  padding: 4px 12px;
+  color: #389e0d;
+  font-size: 15px;
+  cursor: default;
+}
+.toggle-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 8px 18px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin: 10px 0;
+}
+.toggle-btn:hover {
+  background: var(--primary-hover);
+}
+.detail-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s;
+  padding: 0 12px;
+}
+.detail-content.open {
+  max-height: 800px;
+  padding: 12px;
+  background: #fafafa;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  margin-top: 8px;
+}
+ul, ol {
+  padding-left: 24px;
+  margin: 6px 0;
+}
+li {
+  margin-bottom: 4px;
+}
+.reflection-box {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: var(--border-radius);
+  padding: 16px;
+  margin: 12px 0;
+}
+.footer-note {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+  padding: 20px 0 10px;
+  border-top: 1px solid var(--border);
+  margin-top: 30px;
+}
+@media (max-width: 600px) {
+  .container { padding: 16px; }
+  .step { flex: 1 1 100%; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🏗️ 项目库脚手架</h1>
+<p style="color:var(--text-secondary);margin:0 0 20px 0;font-size:16px;">M12 新知书面性应用 · 时间主题项目实践 · 三年级</p>
+
+<div class="card">
+  <h2>📐 项目概览</h2>
+  <p>欢迎进入项目实践环节！你将通过三个不同周期的项目，把学到的<strong>时间知识</strong>和<strong>书面表达</strong>能力用起来。每个项目都包含明确的目标、阶段任务、成果形式和评价标准。</p>
+  <p style="margin-top:8px;"><span class="tag">短周期 1-3天</span><span class="tag tag-orange">中周期 1-2周</span><span class="tag tag-green">长周期 1月+</span></p>
+</div>
+
+<!-- 短周期项目 -->
+<div class="card">
+  <h2>⚡ 短周期项目（1-3天）</h2>
+  <h3 style="display:flex;align-items:center;gap:8px;">🎯 制作"一分钟挑战"记录表</h3>
+  <p><strong>项目目标：</strong>亲身感受"一分钟"的实际长度，记录自己一分钟能完成的事情。</p>
+
+  <p><strong>📋 阶段任务：</strong></p>
+  <div class="progress-steps">
+    <div class="step"><div class="step-num">1</div>选择 3 项活动<br><small>跳绳、写字、背古诗…</small></div>
+    <div class="step"><div class="step-num">2</div>计时 1 分钟<br><small>完成并记录数据</small></div>
+    <div class="step"><div class="step-num">3</div>画柱状图<br><small>比较各项数据</small></div>
+    <div class="step"><div class="step-num">4</div>写感悟<br><small>"一分钟的意义"</small></div>
+  </div>
+
+  <div class="standards-grid">
+    <span class="label">📦 成果形式</span><span>《一分钟挑战记录》图文表（A4纸）</span>
+    <span class="label">⭐ 评价标准</span><span>数据真实、图表清晰、感悟言之有物</span>
+    <span class="label">🔗 资源链接</span><span><span class="resource-link">⏱️ 计时器（手机APP或秒表）</span></span>
+  </div>
+
+  <button class="toggle-btn" onclick="toggleDetail('short-detail')">💡 查看示例数据</button>
+  <div id="short-detail" class="detail-content">
+    <p><strong>示例数据表格：</strong></p>
+    <table style="width:100%;border-collapse:collapse;margin:6px 0;">
+      <tr style="background:var(--primary);color:#fff;"><th style="padding:6px;text-align:left;">活动</th><th style="padding:6px;text-align:left;">完成数量</th><th style="padding:6px;text-align:left;">单位</th></tr>
+      <tr style="background:#fafafa;"><td style="padding:6px;border-bottom:1px solid var(--border);">跳绳</td><td style="padding:6px;border-bottom:1px solid var(--border);">120</td><td style="padding:6px;border-bottom:1px solid var(--border);">次</td></tr>
+      <tr><td style="padding:6px;border-bottom:1px solid var(--border);">写汉字</td><td style="padding:6px;border-bottom:1px solid var(--border);">18</td><td style="padding:6px;border-bottom:1px solid var(--border);">个</td></tr>
+      <tr style="background:#fafafa;"><td style="padding:6px;border-bottom:1px solid var(--border);">背古诗</td><td style="padding:6px;border-bottom:1px solid var(--border);">2</td><td style="padding:6px;border-bottom:1px solid var(--border);">首</td></tr>
+    </table>
+    <p style="margin:4px 0 0;color:var(--text-secondary);font-size:15px;">💡 提示：把数据画成柱状图会更直观哦！</p>
+  </div>
+</div>
+
+<!-- 中周期项目 -->
+<div class="card">
+  <h2>📅 中周期项目（1-2周）</h2>
+  <h3 style="display:flex;align-items:center;gap:8px;">🌟 我的完美周末时间规划</h3>
+  <p><strong>项目目标：</strong>运用时间单位换算和书面表达能力，规划一个充实而合理的周末。</p>
+
+  <p><strong>📋 阶段任务：</strong></p>
+  <ol>
+    <li>列出周末需要做的所有事情（作业、运动、阅读、娱乐、家务等）</li>
+    <li>给每件事分配时长，确保总时长不超过周六+周日的时间</li>
+    <li>画一张"周末时间安排表"（含时间轴或表格）</li>
+    <li>写一段说明文字，解释你的安排思路</li>
+    <li>周末结束后对照执行情况，写反思</li>
+  </ol>
+
+  <div class="standards-grid">
+    <span class="label">📦 成果形式</span><span>《我的完美周末》时间规划书（含时间表+说明+反思）</span>
+    <span class="label">⭐ 评价标准</span><span>时间分配合理、书面表达规范、有实际的执行反思</span>
+    <span class="label">🔗 资源链接</span><span><span class="resource-link">📊 时间轴模板</span> <span class="resource-link">📋 时间规划表模板</span></span>
+  </div>
+
+  <button class="toggle-btn" onclick="toggleDetail('mid-detail')">🕐 查看规划示例</button>
+  <div id="mid-detail" class="detail-content">
+    <p><strong>参考：周末时间计算</strong></p>
+    <p>周六可用 ≈ 12小时 = 720分钟 &nbsp;|&nbsp; 周日可用 ≈ 10小时 = 600分钟</p>
+    <p>总计：1320分钟。做一张时间表，把每件事填进去，保证不超时！</p>
+    <p style="margin:4px 0 0;color:var(--text-secondary);font-size:15px;">💡 别忘了留出吃饭、休息和突发情况的时间哦。</p>
+  </div>
+</div>
+
+<!-- 长周期项目 -->
+<div class="card">
+  <h2>🌱 长周期项目（1月+）</h2>
+  <h3 style="display:flex;align-items:center;gap:8px;">🏫 班级时间守护者计划</h3>
+  <p><strong>项目目标：</strong>为班级设计一套时间管理系统，帮助大家提高时间利用效率。</p>
+
+  <div class="progress-steps">
+    <div class="step"><div class="step-num" style="background:#52c41a;">1</div><strong>调研周</strong><br>记录一周时间利用数据</div>
+    <div class="step"><div class="step-num" style="background:#52c41a;">2</div><strong>分析周</strong><br>找出"时间浪费最多的环节"</div>
+    <div class="step"><div class="step-num" style="background:#52c41a;">3</div><strong>设计周</strong><br>设计优化方案</div>
+    <div class="step"><div class="step-num" style="background:#52c41a;">4</div><strong>展示周</strong><br>展示并收集反馈</div>
+  </div>
+
+  <div class="standards-grid">
+    <span class="label">📦 成果形式</span><span>《班级时间守护者计划》完整方案书（含数据、分析、方案、图示）</span>
+    <span class="label">⭐ 评价标准</span><span>有真实数据支撑、方案可行、书面表达完整</span>
+    <span class="label">🔗 资源链接</span><span><span class="resource-link">📊 数据记录表模板</span> <span class="resource-link">📽️ PPT或海报展示工具</span></span>
+  </div>
+
+  <button class="toggle-btn" onclick="toggleDetail('long-detail')">📈 查看数据记录表示例</button>
+  <div id="long-detail" class="detail-content">
+    <table style="width:100%;border-collapse:collapse;margin:6px 0;font-size:16px;">
+      <tr style="background:var(--primary);color:#fff;"><th style="padding:6px;text-align:left;">时间段</th><th style="padding:6px;text-align:left;">做了什么</th><th style="padding:6px;text-align:left;">用时</th><th style="padding:6px;text-align:left;">效率评分</th></tr>
+      <tr><td style="padding:6px;border-bottom:1px solid var(--border);">8:00-8:30</td><td style="padding:6px;border-bottom:1px solid var(--border);">早读</td><td style="padding:6px;border-bottom:1px solid var(--border);">30分</td><td style="padding:6px;border-bottom:1px solid var(--border);">★★★★</td></tr>
+      <tr style="background:#fafafa;"><td style="padding:6px;border-bottom:1px solid var(--border);">课间</td><td style="padding:6px;border-bottom:1px solid var(--border);">打闹/发呆</td><td style="padding:6px;border-bottom:1px solid var(--border);">累计40分</td><td style="padding:6px;border-bottom:1px solid var(--border);">★★</td></tr>
+    </table>
+    <p style="margin:4px 0 0;color:var(--text-secondary);font-size:15px;">💡 持续记录一周，你会发现自己班的时间宝藏！</p>
+  </div>
+</div>
+
+<!-- 互动区 -->
+<div class="card">
+  <h2>🎯 项目选择器</h2>
+  <p>你想先挑战哪个项目？点击按钮选择，看看你的选择匹配建议：</p>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;">
+    <button class="toggle-btn" onclick="showAdvice('short')">⚡ 短周期项目</button>
+    <button class="toggle-btn" onclick="showAdvice('mid')" style="background:#ff7a45;">📅 中周期项目</button>
+    <button class="toggle-btn" onclick="showAdvice('long')" style="background:#52c41a;">🌱 长周期项目</button>
+  </div>
+  <div id="project-advice" style="margin-top:12px;padding:12px;background:#f6ffed;border-radius:6px;border:1px solid #b7eb8f;display:none;"></div>
+</div>
+
+<div class="reflection-box">
+  <h3 style="margin:0 0 8px;">📝 项目反思</h3>
+  <p>完成项目后，试着回答这几个问题：</p>
+  <ol style="margin:0;">
+    <li>在这个项目中，我用到哪些时间知识？（时、分、秒的换算？时间比较？）</li>
+    <li>我的书面表达是否清晰？别人能看懂我的安排吗？</li>
+    <li>如果再做一次，我会在哪些方面改进？</li>
+  </ol>
+</div>
+
+<div class="footer-note">
+  M12 新知书面性应用 · 项目库脚手架 · 三年级数学
+</div>
+
+</div>
+
+<script>
+function toggleDetail(id) {
+  var el = document.getElementById(id);
+  el.classList.toggle('open');
+}
+
+function showAdvice(type) {
+  var adv = document.getElementById('project-advice');
+  adv.style.display = 'block';
+  var msgs = {
+    short: '✅ 好选择！一分钟挑战最适合快速上手。建议先列出你擅长的3项活动，找好计时器再开始！',
+    mid: '✅ 太棒了！规划一个完整的周末需要仔细计算时间。建议先画一张24小时时间轴，再往里填任务。',
+    long: '✅ 勇气可嘉！班级时间守护者需要坚持一个月。建议先找2-3个小伙伴组队，分工合作！'
+  };
+  adv.innerHTML = '<strong>🎯 你的选择：</strong>' + msgs[type];
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性原理 — 时间测量中的四条黄金法则</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{
+  margin:0;padding:0;
+  font-family:-apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size:var(--font-body);
+  line-height:var(--line-height);
+  color:var(--text);
+  background:var(--bg);
+}
+.container{
+  width:100%;max-width:none;
+  padding:20px;box-sizing:border-box;
+}
+.header{
+  background:linear-gradient(135deg,var(--primary),var(--primary-hover));
+  color:#fff;padding:30px 40px;
+  border-radius:var(--border-radius);
+  margin-bottom:24px;
+}
+.header h1{font-size:var(--font-h1);margin-bottom:8px;font-weight:700}
+.header .subtitle{font-size:16px;opacity:.9}
+.principle-card{
+  background:var(--card-bg);
+  border-radius:var(--border-radius);
+  box-shadow:var(--shadow);
+  padding:24px 28px;
+  margin-bottom:20px;
+  border-left:5px solid var(--primary);
+  transition:transform .2s,box-shadow .2s;
+}
+.principle-card:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(22,119,255,.15)}
+.principle-card .num-badge{
+  display:inline-block;
+  background:var(--primary);
+  color:#fff;border-radius:50%;
+  width:36px;height:36px;line-height:36px;
+  text-align:center;font-weight:700;font-size:16px;
+  margin-right:12px;vertical-align:middle;
+}
+.principle-card h2{display:inline-block;font-size:var(--font-h2);vertical-align:middle}
+.principle-card .origin{
+  background:#f6f8fa;padding:12px 16px;border-radius:6px;
+  margin:12px 0;font-size:15px;color:var(--text-secondary);
+  border-left:3px solid var(--accent);
+}
+.principle-card .tags{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px}
+.principle-card .tags span{
+  background:var(--bg);color:var(--primary);padding:4px 12px;
+  border-radius:12px;font-size:14px;font-weight:500;
+}
+.section-title{
+  font-size:var(--font-h2);font-weight:700;
+  margin:32px 0 16px;padding-bottom:8px;
+  border-bottom:2px solid var(--primary);
+  color:var(--primary);
+}
+.practice-card{
+  background:var(--card-bg);
+  border-radius:var(--border-radius);
+  box-shadow:var(--shadow);
+  padding:20px 24px;margin-bottom:16px;
+  border:1px solid var(--border);
+}
+.practice-card h3{font-size:20px;margin-bottom:8px}
+.practice-card .hint{
+  background:#fff7e6;padding:10px 14px;border-radius:6px;
+  font-size:15px;margin-top:10px;border-left:3px solid #fa8c16;
+}
+.reflection-list{
+  background:var(--card-bg);border-radius:var(--border-radius);
+  box-shadow:var(--shadow);padding:24px;
+}
+.reflection-list li{
+  margin-bottom:14px;padding-left:8px;
+  list-style-position:inside;
+}
+.reflection-list li::marker{color:var(--primary);font-weight:700}
+.interact-btn{
+  display:inline-block;background:var(--primary);color:#fff;
+  border:none;padding:10px 24px;border-radius:var(--border-radius);
+  font-size:16px;cursor:pointer;transition:background .2s;
+  margin:6px;
+}
+.interact-btn:hover{background:var(--primary-hover)}
+.toggle-content{display:none;padding:16px;background:#f6f8fa;border-radius:6px;margin-top:12px}
+.toggle-content.show{display:block}
+@media(max-width:640px){
+  .container{padding:12px}
+  .header{padding:20px}
+  .principle-card{padding:16px}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🧱 建构性原理</h1>
+  <div class="subtitle">从示例中提炼 4 条可迁移的"时间测量"黄金法则</div>
+</div>
+
+<div class="principle-card">
+  <span class="num-badge">1</span><h2>从感觉到测量——用工具延伸感官</h2>
+  <div class="origin">📌 来源示例：小明觉得课间很短，但时钟显示确实只有 10 分钟</div>
+  <p><strong>原理说明：</strong>我们的感觉会"骗人"——觉得快乐的时间过得快，无聊的时间过得慢。需要用工具（时钟、秒表）获得客观数据。</p>
+  <p><strong>适用情境：</strong>任何需要客观判断的场合（如：你觉得等了好久，但实际才 5 分钟）。</p>
+  <p><strong>注意事项：</strong>工具也可能有误差，需要多次测量取平均值。</p>
+  <div class="tags">
+    <span>🔧 工具思维</span><span>📊 客观数据</span><span>🔄 多次测量</span>
+  </div>
+</div>
+
+<div class="principle-card">
+  <span class="num-badge">2</span><h2>从模糊到精确——用数字说话</h2>
+  <div class="origin">📌 来源示例：从"玩了很久"到"玩了 25 分钟"</div>
+  <p><strong>原理说明：</strong>把"很快""很久""一会儿"换成具体的数字（秒、分、时），让描述更精确。</p>
+  <p><strong>适用情境：</strong>描述任何事物的数量、大小、长短时。</p>
+  <p><strong>注意事项：</strong>数字要有单位，不同单位不能直接比较。</p>
+  <div class="tags">
+    <span>🔢 数字化</span><span>📏 量化思维</span><span>🧩 单位意识</span>
+  </div>
+</div>
+
+<div class="principle-card">
+  <span class="num-badge">3</span><h2>从比较到发现——找差异背后的规律</h2>
+  <div class="origin">📌 来源示例：对比"感觉时间"和"时钟时间"发现——专心玩的时候时间"过得快"，无聊的时候时间"过得慢"</div>
+  <p><strong>原理说明：</strong>把两个东西放在一起比一比，差异中往往藏着规律。</p>
+  <p><strong>适用情境：</strong>任何需要找出规律的学习场景。</p>
+  <p><strong>注意事项：</strong>比较的前提是"在同一个标准下"。</p>
+  <div class="tags">
+    <span>⚖️ 对比思维</span><span>🔍 发现规律</span><span>📋 同一标准</span>
+  </div>
+</div>
+
+<div class="principle-card">
+  <span class="num-badge">4</span><h2>从具体到抽象——画出关系图</h2>
+  <div class="origin">📌 来源示例：画"时、分、秒关系图"来理解 1 小时 = 60 分 = 3600 秒</div>
+  <p><strong>原理说明：</strong>把观察到的事实用图、表或模型表示出来，更容易看清关系。</p>
+  <p><strong>适用情境：</strong>数学概念学习、科学实验数据分析、生活计划安排。</p>
+  <p><strong>注意事项：</strong>关系图要标注清楚，让别人也能看懂。</p>
+  <div class="tags">
+    <span>📈 可视化</span><span>🧠 模型思维</span><span>🎨 图示表达</span>
+  </div>
+</div>
+
+<h2 class="section-title">🚀 迁移应用练习</h2>
+
+<div class="practice-card">
+  <h3>📝 练习一：测量"一集动画片有多长"</h3>
+  <p><strong>情境：</strong>你和朋友争论一集动画片到底多长，有人说 20 分钟，有人说 30 分钟。</p>
+  <p><strong>建议原理：</strong>原理 1（从感觉到测量）</p>
+  <p><strong>任务：</strong>设计一个验证方案，写一份简短验证报告。</p>
+  <div class="hint">💡 脚手架提示：可以用什么工具？需要测量几次？怎么记录？</div>
+  <button class="interact-btn" onclick="toggleReport(this)">📄 查看验证报告模板</button>
+  <div class="toggle-content" id="report1">
+    <h4>验证报告模板</h4>
+    <p><strong>问题：</strong>一集《XX》动画片到底多长？</p>
+    <p><strong>工具：</strong>手机计时器 / 手表</p>
+    <p><strong>方法：</strong>从片头出现第一帧开始计时，到片尾字幕结束停止。重复测量 3 次取平均。</p>
+    <p><strong>记录：</strong></p>
+    <ul>
+      <li>第 1 次：____ 分 ____ 秒</li>
+      <li>第 2 次：____ 分 ____ 秒</li>
+      <li>第 3 次：____ 分 ____ 秒</li>
+      <li><strong>结论：</strong>平均 ____ 分 ____ 秒</li>
+    </ul>
+  </div>
+</div>
+
+<div class="practice-card">
+  <h3>📝 练习二：一周时间分配大调查</h3>
+  <p><strong>情境：</strong>老师问"你一周花在作业、玩耍、睡觉上的时间各有多少？"</p>
+  <p><strong>建议原理：</strong>原理 2（用数字说话）+ 原理 4（画出关系图）</p>
+  <p><strong>任务：</strong>设计一个记录方案，画出一张"我的一周时间饼图"。</p>
+  <div class="hint">💡 脚手架提示：先分类（作业、玩、吃饭、睡觉等），再记录每类每天的时间，最后加起来。</div>
+  <button class="interact-btn" onclick="toggleReport(this)">📄 查看饼图制作步骤</button>
+  <div class="toggle-content" id="report2">
+    <h4>饼图制作步骤</h4>
+    <ol>
+      <li><strong>分类：</strong>将一周活动分为 5~6 类（作业、玩耍、吃饭、睡觉、上学、其他）</li>
+      <li><strong>记录：</strong>连续 7 天，每天记录每类活动的时长</li>
+      <li><strong>汇总：</strong>把每类活动一周的总时间加起来</li>
+      <li><strong>计算比例：</strong>每类时间 ÷ 一周总时间（168 小时）× 100%</li>
+      <li><strong>画图：</strong>用圆规或电脑画饼图，每类涂不同颜色</li>
+      <li><strong>发现：</strong>写一段文字说明——哪类花的时间最多？你满意吗？</li>
+    </ol>
+  </div>
+</div>
+
+<h2 class="section-title">💭 元认知反思</h2>
+<div class="reflection-list">
+  <ol>
+    <li>在今天的建构过程中，哪一步让你觉得"原来可以这样想"？</li>
+    <li>你觉得"感觉时间"和"时钟时间"哪个更可靠？为什么？</li>
+    <li>你发现自己最容易在哪个环节"想当然"而忽略证据？</li>
+    <li>如果让你教一个没学过时间的同学，你会怎么教？</li>
+    <li>这一次的建构方法，你准备用在哪个其他学科的学习中？</li>
+  </ol>
+  <button class="interact-btn" onclick="randomReflection()">🎲 随机选一题思考</button>
+  <p id="random-q" style="margin-top:12px;font-weight:600;color:var(--primary);min-height:24px"></p>
+</div>
+
+</div>
+<script>
+function toggleReport(btn){
+  var content=btn.nextElementSibling;
+  content.classList.toggle('show');
+  btn.textContent=content.classList.contains('show')?'📕 收起模板':'📄 查看验证报告模板';
+}
+function randomReflection(){
+  var qs=[
+    '在今天的建构过程中，哪一步让你觉得"原来可以这样想"？',
+    '你觉得"感觉时间"和"时钟时间"哪个更可靠？为什么？',
+    '你发现自己最容易在哪个环节"想当然"而忽略证据？',
+    '如果让你教一个没学过时间的同学，你会怎么教？',
+    '这一次的建构方法，你准备用在哪个其他学科的学习中？'
+  ];
+  document.getElementById('random-q').textContent='🤔 '+qs[Math.floor(Math.random()*qs.length)];
+}
+</script>
+</body>
+</html>

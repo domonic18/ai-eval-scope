@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具库 — 时间书面应用工具</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 28px;
+  box-sizing: border-box;
+}
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+h1::before {
+  content: "🧰";
+  font-size: 32px;
+}
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 15px;
+  margin: 0 0 28px;
+  padding-left: 4px;
+}
+.header-banner {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  border-radius: var(--border-radius);
+  padding: 28px 32px;
+  margin-bottom: 28px;
+}
+.header-banner h1 {
+  color: #fff;
+  margin: 0 0 6px;
+}
+.header-banner .subtitle {
+  color: rgba(255,255,255,0.85);
+  margin: 0;
+}
+.tool-section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px 28px;
+  margin-bottom: 24px;
+}
+.tool-section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 18px;
+  padding-bottom: 10px;
+  border-bottom: 3px solid var(--bg);
+}
+.tool-card {
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 18px 22px;
+  margin-bottom: 16px;
+  border-left: 4px solid var(--primary);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.tool-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(22,119,255,0.12);
+}
+.tool-card h3 {
+  font-size: 20px;
+  color: var(--text);
+  margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tool-card .label {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  font-size: 13px;
+  padding: 2px 10px;
+  border-radius: 20px;
+  margin-left: 8px;
+}
+.tool-card p { margin: 6px 0; }
+.tool-card ul {
+  margin: 6px 0 0;
+  padding-left: 20px;
+}
+.tool-card li { margin: 4px 0; }
+.code-block {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  border-radius: 8px;
+  padding: 14px 18px;
+  font-family: "Courier New", monospace;
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 12px 0;
+  white-space: pre-wrap;
+}
+.step-list {
+  counter-reset: step;
+  list-style: none;
+  padding: 0;
+}
+.step-list li {
+  counter-increment: step;
+  padding: 8px 0 8px 40px;
+  position: relative;
+}
+.step-list li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 28px;
+  height: 28px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 28px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.convert-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 16px;
+}
+.convert-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 16px;
+  text-align: center;
+  font-weight: 600;
+}
+.convert-table td {
+  padding: 10px 16px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.convert-table tr:hover td {
+  background: var(--bg);
+}
+.interactive-clock {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 10px;
+  border: 2px dashed var(--accent);
+  margin: 12px 0;
+  flex-wrap: wrap;
+}
+.clock-face {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 4px solid var(--text);
+  position: relative;
+  background: #fff;
+  flex-shrink: 0;
+}
+.clock-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  background: var(--text);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+}
+.hand-hour {
+  position: absolute;
+  bottom: 50%;
+  left: 50%;
+  width: 4px;
+  height: 32px;
+  background: var(--text);
+  border-radius: 2px;
+  transform-origin: bottom center;
+  transform: translateX(-50%) rotate(0deg);
+  z-index: 3;
+  transition: transform 2s ease;
+}
+.hand-minute {
+  position: absolute;
+  bottom: 50%;
+  left: 50%;
+  width: 3px;
+  height: 44px;
+  background: var(--primary);
+  border-radius: 1.5px;
+  transform-origin: bottom center;
+  transform: translateX(-50%) rotate(0deg);
+  z-index: 2;
+  transition: transform 2s ease;
+}
+.interactive-clock .controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.interactive-clock button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.interactive-clock button:hover {
+  background: var(--primary-hover);
+}
+.interactive-clock button:active {
+  transform: scale(0.96);
+}
+.tag-pill {
+  display: inline-block;
+  background: #e6f4ff;
+  color: var(--primary);
+  font-size: 13px;
+  padding: 3px 12px;
+  border-radius: 20px;
+  margin: 4px 4px 4px 0;
+}
+.pull-to-try {
+  background: linear-gradient(135deg, #e6f4ff, #f0f5ff);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin: 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.pull-to-try .icon {
+  font-size: 24px;
+}
+.pull-to-try .text {
+  flex: 1;
+  min-width: 200px;
+}
+.pull-to-try .btn-try {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.pull-to-try .btn-try:hover {
+  background: var(--primary-hover);
+}
+@media (max-width: 640px) {
+  .container { padding: 16px; }
+  .tool-section { padding: 16px; }
+  .header-banner { padding: 20px; }
+  .interactive-clock { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header-banner">
+  <h1>🧰 工具库</h1>
+  <p class="subtitle">时间书面应用工具 — 把你的时间思维武装起来！</p>
+</div>
+
+<!-- 一、思维工具 -->
+<div class="tool-section">
+  <h2>💡 思维工具</h2>
+
+  <div class="tool-card">
+    <h3>工具1：时间轴模板 <span class="label">必备</span></h3>
+    <p><strong>🎯 用途：</strong>把抽象的时间变成看得见的线，再也不怕算错时间！</p>
+    <p><strong>📋 使用步骤：</strong></p>
+    <ol class="step-list">
+      <li>画一条带箭头的横线 → 表示时间在向前走</li>
+      <li>左端写 <strong>起点时刻</strong>（比如7:30）</li>
+      <li>右端写 <strong>终点时刻</strong>（比如7:55）</li>
+      <li>在线段中间标注经过的时间和关键事件</li>
+    </ol>
+    <div class="pull-to-try">
+      <span class="icon">✏️</span>
+      <span class="text"><strong>试试看：</strong>小明7:30出门，走路25分钟到学校，到校时间是？</span>
+      <button class="btn-try" onclick="this.nextElementSibling.style.display='block'">显示时间轴</button>
+      <span style="display:none;padding:8px 12px;background:#fff;border-radius:6px;width:100%;text-align:center;font-weight:600;color:var(--primary);">
+       起点 7:30 ———(走路25分钟)———→ 终点 7:55 ✅
+      </span>
+    </div>
+    <p><span class="tag-pill">适用场景</span> 所有时间应用题都能用！</p>
+  </div>
+
+  <div class="tool-card">
+    <h3>工具2：解题四步模板 <span class="label">超实用</span></h3>
+    <p><strong>🎯 用途：</strong>规范书面表达，让你的解题过程清晰又完整。</p>
+    <p><strong>📋 四步法：</strong></p>
+    <ol class="step-list">
+      <li><strong>读题圈数据</strong> — 把题目中的时间数字圈出来</li>
+      <li><strong>画时间轴</strong> — 把圈出的数据标在线段上</li>
+      <li><strong>列算式写单位</strong> — 计算并写上单位（时/分/秒）</li>
+      <li><strong>写答句并验算</strong> — 完整回答，再倒推检查一遍</li>
+    </ol>
+    <div class="code-block">
+已知：起点____  经过____  终点____
+求：____
+时间轴：[画在这里]
+算式：______
+答句：_______
+验算：_______
+    </div>
+    <div class="pull-to-try">
+      <span class="icon">📝</span>
+      <span class="text">复制上面的模板，自己出题试试填一遍！</span>
+      <button class="btn-try" onclick="alert('📋 模板已复制到剪贴板（提示：请手动复制）')">复制模板</button>
+    </div>
+  </div>
+</div>
+
+<!-- 二、数字工具 -->
+<div class="tool-section">
+  <h2>🖥️ 数字工具</h2>
+
+  <div class="tool-card">
+    <h3>基础工具：在线时钟模拟器</h3>
+    <p><strong>🔗 推荐：</strong>Toy Theater Clock（访问 toytheater.com/clock）</p>
+    <p><strong>🎯 用途：</strong>拨动指针学习认读时刻</p>
+    <div class="interactive-clock">
+      <div class="clock-face" id="clockFace">
+        <div class="clock-center"></div>
+        <div class="hand-hour" id="hourHand" style="transform: translateX(-50%) rotate(60deg);"></div>
+        <div class="hand-minute" id="minuteHand" style="transform: translateX(-50%) rotate(180deg);"></div>
+      </div>
+      <div class="controls">
+        <button onclick="moveClock(15)">+15 分钟</button>
+        <button onclick="moveClock(30)">+30 分钟</button>
+        <button onclick="moveClock(60)">+1 小时</button>
+        <button onclick="resetClock()">重置 7:00</button>
+      </div>
+    </div>
+    <p style="text-align:center;color:var(--text-secondary);font-size:15px;">👆 点击按钮观察时针和分针怎么联动</p>
+  </div>
+
+  <div class="tool-card">
+    <h3>进阶工具：计时器 APP</h3>
+    <p><strong>📱 推荐：</strong>手机自带计时器 / Forest APP</p>
+    <p><strong>🎯 用途：</strong>计时练习，训练你的"时间感"——猜猜1分钟有多长？</p>
+    <div class="pull-to-try">
+      <span class="icon">⏱️</span>
+      <span class="text"><strong>挑战：</strong>闭眼默数60秒，感觉到了就睁眼，看看手机秒表准不准！</span>
+      <button class="btn-try" onclick="alert('⏱️ 准备好了吗？3、2、1——开始！感觉过了1分钟就点确定。')">开始挑战</button>
+    </div>
+  </div>
+</div>
+
+<!-- 三、数据工具 -->
+<div class="tool-section">
+  <h2>📊 数据工具</h2>
+
+  <div class="tool-card">
+    <h3>换算表（打印版）</h3>
+    <p>把这张表贴在书桌前，做作业随时查！</p>
+    <table class="convert-table">
+      <tr><th>时</th><th>分</th><th>秒</th></tr>
+      <tr><td>1时</td><td>60分</td><td>3600秒</td></tr>
+      <tr><td>2时</td><td>120分</td><td>7200秒</td></tr>
+      <tr><td>3时</td><td>180分</td><td>10800秒</td></tr>
+      <tr><td>半小时</td><td>30分</td><td>1800秒</td></tr>
+      <tr><td>一刻钟</td><td>15分</td><td>900秒</td></tr>
+    </table>
+    <div class="pull-to-try">
+      <span class="icon">🧮</span>
+      <span class="text">考考你：3刻钟 = ____分钟？用表里的数据算一算！</span>
+      <button class="btn-try" onclick="if(confirm('答案是 3×15=45 分钟！你答对了吗？')){this.textContent='✅ 45分钟！';}">显示答案</button>
+    </div>
+  </div>
+</div>
+
+<!-- 四、实验工具 -->
+<div class="tool-section">
+  <h2>🔬 实验工具</h2>
+
+  <div class="tool-card">
+    <h3>实物操作：机械手表或闹钟</h3>
+    <p><strong>⏰ 准备：</strong>找一个家里带指针的钟表（机械的更好！）</p>
+    <p><strong>👀 观察任务：</strong>轻轻拨动分针，仔细观察——</p>
+    <ul>
+      <li>分针走一圈，时针走了多少？</li>
+      <li>分针走半圈（30分钟），时针走几小格？</li>
+    </ul>
+    <div style="text-align:center;padding:12px;background:#fff;border-radius:10px;border:1px solid var(--accent);margin-top:10px;">
+      <p style="margin:0;"><strong>🔍 发现记录：</strong></p>
+      <p style="margin:4px 0;color:var(--text-secondary);">分针走1圈 → 时针走____大格 = ____分钟</p>
+      <p style="margin:4px 0;color:var(--text-secondary);">分针走半圈 → 时针走____小格 = ____分钟</p>
+    </div>
+  </div>
+</div>
+
+</div>
+<script>
+let currentMinutes = 420; // 7:00 = 7*60
+function moveClock(addMin) {
+  currentMinutes = (currentMinutes + addMin) % 720;
+  const hourAngle = (currentMinutes / 720) * 360;
+  const minuteAngle = ((currentMinutes % 60) / 60) * 360;
+  document.getElementById('hourHand').style.transform = 'translateX(-50%) rotate(' + hourAngle + 'deg)';
+  document.getElementById('minuteHand').style.transform = 'translateX(-50%) rotate(' + minuteAngle + 'deg)';
+}
+function resetClock() {
+  currentMinutes = 420;
+  document.getElementById('hourHand').style.transform = 'translateX(-50%) rotate(210deg)';
+  document.getElementById('minuteHand').style.transform = 'translateX(-50%) rotate(0deg)';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>模块定位 — M13 新知项目性应用</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  min-height: 100vh;
+  padding: 24px;
+}
+.container {
+  width: 100%;
+  max-width: none;
+}
+.module-header {
+  background: linear-gradient(135deg, #1677ff 0%, #69b1ff 100%);
+  border-radius: var(--border-radius);
+  padding: 28px 32px;
+  margin-bottom: 24px;
+  color: #fff;
+}
+.module-header h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.module-header .subtitle {
+  font-size: var(--font-body);
+  opacity: 0.9;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--primary);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(22,119,255,0.12);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card h2 .icon { font-size: 24px; }
+.card p, .card li {
+  margin-bottom: 8px;
+  color: var(--text);
+}
+.card ul {
+  list-style: none;
+  padding-left: 0;
+}
+.card ul li {
+  padding-left: 24px;
+  position: relative;
+}
+.card ul li::before {
+  content: "✦";
+  position: absolute;
+  left: 0;
+  color: var(--primary);
+}
+.highlight-box {
+  background: #f0f5ff;
+  border: 1px dashed var(--accent);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 12px 0;
+}
+.highlight-box strong { color: var(--primary); }
+.flow-chart {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 16px 0;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: var(--border-radius);
+}
+.flow-node {
+  background: var(--card-bg);
+  border: 2px solid var(--primary);
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--primary);
+}
+.flow-arrow { font-size: 22px; color: var(--accent); font-weight: 700; }
+.flow-highlight {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.achievement-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin: 12px 0;
+}
+.achievement-card {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  border: 1px solid var(--border);
+  transition: background 0.3s;
+}
+.achievement-card:hover { background: #e6f0ff; }
+.achievement-card .big-icon { font-size: 32px; display: block; margin-bottom: 8px; }
+.achievement-card .label { font-weight: 600; font-size: 15px; color: var(--primary); }
+.interact-btn {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+  margin-top: 12px;
+}
+.interact-btn:hover {
+  background: var(--primary-hover);
+  transform: scale(1.03);
+}
+.interact-btn:active { transform: scale(0.97); }
+#tip-area {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 8px;
+  display: none;
+  font-size: 16px;
+}
+#tip-area.show { display: block; }
+@media (max-width: 600px) {
+  body { padding: 12px; }
+  .module-header { padding: 20px 16px; }
+  .card { padding: 16px; }
+  .flow-chart { flex-direction: column; }
+  .flow-arrow { transform: rotate(90deg); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="module-header">
+    <h1>📘 M13 新知项目性应用</h1>
+    <div class="subtitle">把"时、分、秒"的知识变成规划时间的真本领</div>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon">🎯</span> 本模块学什么</h2>
+    <p>本模块学习如何运用<strong>"时、分、秒"</strong>的知识，完成一份真实的<strong>时间项目规划</strong>。你将学会五步法：</p>
+    <ul>
+      <li><strong>列清单</strong> — 把所有要做的事写下来</li>
+      <li><strong>估算用时</strong> — 每件事大概要花多少时间</li>
+      <li><strong>排顺序</strong> — 先做什么、再做什么</li>
+      <li><strong>检查合理性</strong> — 时间排得下吗？有冲突吗？</li>
+      <li><strong>用表格呈现</strong> — 把计划画成一张清晰的表</li>
+    </ul>
+    <p style="margin-top:8px;color:var(--text-secondary);">—— 把数学知识变成解决实际问题的能力。</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon">💡</span> 本模块为什么重要</h2>
+    <p>在真实的校园和家庭生活中，每天都需要安排时间。但很多同学"知道1时=60分"却不会规划自己的周末。本模块就是帮你把<strong>"书本知识"变成"生活能力"</strong>——</p>
+    <div class="highlight-box">
+      <strong>会算时间 → 会用时间 → 会管理时间</strong>
+    </div>
+    <p>掌握了这项能力，你不仅能做好时间规划作业，还能真的把自己的周末安排得井井有条！</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon">🔗</span> 与大单元主题的关系</h2>
+    <p>大单元主题是"时、分、秒"的全面学习。前面12个模块已经帮你理解时间概念、学会换算、书面表达。本模块（模块13）是<strong>"应用"阶段</strong>——</p>
+    <div class="flow-chart">
+      <span class="flow-node">M1-M12 积累知识</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node flow-highlight">M13 综合应用 ★</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node">未来更复杂的时间问题</span>
+    </div>
+    <p style="text-align:center;color:var(--text-secondary);">把前面学过的所有时间知识，综合运用到一个真实项目中</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon">📎</span> 与前后模块的衔接</h2>
+    <ul>
+      <li><strong>前序模块（M12 新知书面性应用）</strong>：你已经学会用文字和算式表达时间计算，本模块在此基础上往前一步——把书面表达变成实际行动方案</li>
+      <li><strong>后续模块（M14 及以后）</strong>：将进入更复杂的时间应用（如速度、时刻表等），本模块的项目化经验将帮助你面对更复杂的真实问题</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon">🏆</span> 学习成果预测</h2>
+    <p>完成本模块后，你将获得：</p>
+    <div class="achievement-grid">
+      <div class="achievement-card">
+        <span class="big-icon">📋</span>
+        <span class="label">一份时间规划方案</span>
+        <p style="font-size:14px;margin-top:6px;">周末规划书 / 一日时间地图</p>
+      </div>
+      <div class="achievement-card">
+        <span class="big-icon">🧰</span>
+        <span class="label">一套可迁移的方法</span>
+        <p style="font-size:14px;margin-top:6px;">清单→估算→组装→验证→表达</p>
+      </div>
+      <div class="achievement-card">
+        <span class="big-icon">⏰</span>
+        <span class="label">一个更有"时间感"的你</span>
+        <p style="font-size:14px;margin-top:6px;">更准确估算、更合理安排</p>
+      </div>
+    </div>
+
+    <button class="interact-btn" onclick="showTip()">💬 点击看看学习小贴士</button>
+    <div id="tip-area">
+      <strong>🌟 学习小贴士：</strong>做时间规划时，先别追求完美！第一次列出清单后，问问自己"我做这件事真的需要这么久吗？"——你可能会发现估算和实际差很多，这很正常，多练几次就会越来越准！
+    </div>
+  </div>
+
+</div>
+<script>
+function showTip() {
+  var el = document.getElementById('tip-area');
+  el.classList.toggle('show');
+}
+</script>
+</body>
+</html>

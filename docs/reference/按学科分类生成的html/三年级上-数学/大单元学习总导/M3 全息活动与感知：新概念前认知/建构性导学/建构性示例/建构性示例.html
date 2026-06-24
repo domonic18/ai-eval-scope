@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性示例</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.wrapper {
+  width: 100%;
+  max-width: none;
+  padding: 30px 24px;
+  box-sizing: border-box;
+}
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+}
+h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+h2 {
+  font-size: var(--font-h2);
+  font-weight: 700;
+  color: var(--primary);
+  margin: 28px 0 12px;
+  padding-left: 12px;
+  border-left: 4px solid var(--primary);
+  line-height: 1.4;
+}
+h3 {
+  font-size: calc(var(--font-body) + 2px);
+  font-weight: 700;
+  color: var(--text);
+  margin: 18px 0 8px;
+}
+.subtitle {
+  color: var(--text-secondary);
+  font-size: calc(var(--font-body) - 2px);
+  margin-bottom: 20px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 18px 22px;
+  margin-bottom: 18px;
+  border: 1px solid var(--border);
+  transition: all 0.3s ease;
+}
+.card:hover {
+  box-shadow: 0 4px 16px rgba(22,119,255,0.12);
+  border-color: var(--accent);
+}
+.step-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 14px 20px;
+  margin: 12px 0;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+.step-card:hover {
+  background: #f6faff;
+  border-color: var(--primary);
+  transform: translateX(4px);
+}
+.step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 18px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.step-body { flex: 1; }
+.step-body h4 {
+  font-size: calc(var(--font-body) + 1px);
+  color: var(--primary);
+  margin-bottom: 2px;
+}
+.step-body .detail {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease, padding 0.25s ease;
+  padding: 0;
+  color: var(--text-secondary);
+  font-size: calc(var(--font-body) - 1px);
+}
+.step-card.open .detail {
+  max-height: 200px;
+  padding: 6px 0 0;
+}
+.challenge-banner {
+  background: linear-gradient(135deg,#1677ff 0%,#4096ff 100%);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  color: #fff;
+  margin-bottom: 20px;
+}
+.challenge-banner h2 {
+  color: #fff;
+  border-left-color: rgba(255,255,255,0.6);
+  margin-top: 0;
+}
+.challenge-banner .highlight {
+  background: rgba(255,255,255,0.2);
+  border-radius: 6px;
+  padding: 2px 10px;
+  display: inline-block;
+}
+.tool-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin: 12px 0;
+}
+.tool-item {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 14px;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+.tool-item .icon { font-size: 28px; margin-bottom: 4px; }
+.tool-item .name { font-weight: 600; font-size: calc(var(--font-body) - 1px); }
+.sample-box {
+  background: linear-gradient(135deg,#f0f5ff,#e6f7ff);
+  border: 2px dashed var(--accent);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin: 14px 0;
+}
+.sample-box::before { content: "📝 成果样例"; font-weight: 700; color: var(--primary); display: block; margin-bottom: 6px; }
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  cursor: pointer;
+}
+.check-item:hover { color: var(--primary); }
+.checkbox {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.check-item.checked .checkbox {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.check-item.checked .checkbox::after { content: "✓"; font-weight: 700; }
+@media (max-width: 640px) {
+  .wrapper { padding: 16px 12px; }
+  .card { padding: 14px 16px; }
+  .tool-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+<div class="container">
+
+<h1>建构性示例</h1>
+<p class="subtitle">"1分钟挑战"——从亲身活动中建构"秒"和"分"的感性理解</p>
+
+<div class="challenge-banner">
+  <h2>🏆 "1分钟挑战"</h2>
+  <p style="font-size:20px;font-weight:600;margin:8px 0;">在1分钟里，你能完成多少次？</p>
+  <p>跳绳、拍球、写字、深呼吸——选一个你喜欢的活动，计时1分钟，挑战你自己！</p>
+  <p style="margin-top:8px;"><span class="highlight">📚 与教材联系：人教版三上"时、分、秒"</span></p>
+  <p style="margin-top:4px;"><strong>🎯 终极任务：</strong>完成一份<strong>"我的1分钟研究报告"</strong>——包含预测、体验、记录、比较、反思！</p>
+</div>
+
+<h2>7步建构过程</h2>
+<p class="subtitle">点击每一步展开详细说明 👇</p>
+
+<div class="step-card" onclick="this.classList.toggle('open')">
+  <span class="step-num">1</span>
+  <div class="step-body">
+    <h4>预测 — 做之前猜一猜</h4>
+    <p>在开始前写下你的猜测："我觉得1分钟我能跳绳____下"</p>
+    <div class="detail">不要怕猜错！猜错了反而会让你印象更深刻。把猜测的数字记下来，这是你建构理解的第一步。</div>
+  </div>
+</div>
+
+<div class="step-card" onclick="this.classList.toggle('open')">
+  <span class="step-num">2</span>
+  <div class="step-body">
+    <h4>体验 — 计时1分钟，完成指定活动</h4>
+    <p>让同学或家长帮忙计时，或者自己用计时器。认真投入地做活动！</p>
+    <div class="detail">注意：尽量做到活动结束、计时结束再停下来。如果跳绳断了，快速继续——这本身就是1分钟体验的一部分！</div>
+  </div>
+</div>
+
+<div class="step-card" onclick="this.classList.toggle('open')">
+  <span class="step-num">3</span>
+  <div class="step-body">
+    <h4>记录 — 用数字和感受双重记录</h4>
+    <p>记下实际完成次数 + 身体的感受（心跳快吗？喘气吗？出汗了吗？）</p>
+    <div class="detail">例子："跳绳68下，心跳砰砰砰，脸上有点发热，感觉1分钟过得好快！"数字+感受，缺一不可！</div>
+  </div>
+</div>
+
+<div class="step-card" onclick="this.classList.toggle('open')">
+  <span class="step-num">4</span>
+  <div class="step-body">
+    <h4>比较 — 预测vs实际，差多少？</h4>
+    <p>把预测次数和实际次数放在一起对比：差距是多少？为什么会有差距？</p>
+    <div class="detail">和同学也比一比！同样1分钟跳绳，为什么有人跳得多、有人跳得少？这些差异本身就是学习素材。</div>
+  </div>
+</div>
+
+<div class="step-card" onclick="this.classList.toggle('open')">
+  <span class="step-num">5</span>
+  <div class="step-body">
+    <h4>讨论 — 1分钟到底长还是短？</h4>
+    <p>1分钟跳绳感觉很短，但1分钟站着一动不动觉得好长——同一个人，同一个1分钟，为什么感觉不同？</p>
+    <div class="detail">关键发现：时间长度是客观的（60秒），但时间感受是主观的（跟做什么有关）。这是建构时间量感的核心洞见！</div>
+  </div>
+</div>
+
+<div class="step-card" onclick="this.classList.toggle('open')">
+  <span class="step-num">6</span>
+  <div class="step-body">
+    <h4>提炼 — 1分=60秒，"秒"是更小的"格子"</h4>
+    <p>从体验中提炼核心知识：1分钟里你会"嘀嗒"60次——1分钟就是60个1秒组成的！</p>
+    <div class="detail">你可以这样想：1分钟就像一盒有60块小积木的乐高，1秒就是其中一小块。用大单位（分）理解整体，用小单位（秒）理解细节。</div>
+  </div>
+</div>
+
+<div class="step-card" onclick="this.classList.toggle('open')">
+  <span class="step-num">7</span>
+  <div class="step-body">
+    <h4>表达 — 用一句话向别人解释"1分钟有多长"</h4>
+    <p>用你自己的方式——语言、图画、动作——向身边的人描述"1分钟有多长"。</p>
+    <div class="detail">比如："1分钟就像我跳绳68下那么长""1分钟就像我深呼吸15次那么长""1分钟就像我从1数到60那么长"。能说清楚，才是真理解！</div>
+  </div>
+</div>
+
+<h2>🛠 支架工具</h2>
+
+<div class="tool-grid">
+  <div class="tool-item">
+    <div class="icon">📋</div>
+    <div class="name">时间记录模板</div>
+    <div style="font-size:calc(var(--font-body)-3px);color:var(--text-secondary);">预测 | 实际 | 差距 | 感受</div>
+  </div>
+  <div class="tool-item">
+    <div class="icon">📊</div>
+    <div class="name">预测—实际对比图</div>
+    <div style="font-size:calc(var(--font-body)-3px);color:var(--text-secondary);">柱状图直观展示差距</div>
+  </div>
+  <div class="tool-item">
+    <div class="icon">📖</div>
+    <div class="name">时间感受词汇库</div>
+    <div style="font-size:calc(var(--font-body)-3px);color:var(--text-secondary);">快、慢、长、短、刚好</div>
+  </div>
+</div>
+
+<div class="sample-box">
+  <p><strong>预测：</strong>跳绳50下 &nbsp;|&nbsp; <strong>实际：</strong>跳绳68下</p>
+  <p><strong>差距：</strong>多跳了18下！原来1分钟能跳这么多！</p>
+  <p><strong>感受：</strong>跳绳时感觉1分钟过得好快；但静静站着时1分钟好长……</p>
+  <p><strong>一句话总结：</strong>"1分钟就是你尽全力跳绳大约68下的时间！"</p>
+</div>
+
+<h2>✅ 自我评价</h2>
+
+<div class="check-item" onclick="this.classList.toggle('checked')">
+  <span class="checkbox"></span>
+  <span>我是否亲身体验了"1分钟"？</span>
+</div>
+<div class="check-item" onclick="this.classList.toggle('checked')">
+  <span class="checkbox"></span>
+  <span>我是否记录了自己的预测和实际数据？</span>
+</div>
+<div class="check-item" onclick="this.classList.toggle('checked')">
+  <span class="checkbox"></span>
+  <span>我能否用自己的话向别人描述"1分钟有多长"？</span>
+</div>
+<div class="check-item" onclick="this.classList.toggle('checked')">
+  <span class="checkbox"></span>
+  <span>我是否理解"1分=60秒"是怎么从体验中来的？</span>
+</div>
+
+<div style="text-align:center;margin-top:28px;padding:20px;background:linear-gradient(135deg,#1677ff,#4096ff);border-radius:12px;color:#fff;">
+  <p style="font-size:20px;font-weight:700;margin-bottom:4px;">🎉 完成挑战！你已经建构了对"1分钟"的量感理解</p>
+  <p style="opacity:0.9;">接下来——把这些方法提炼成"建构性原理"，变成你可以随身携带的学习智慧！</p>
+</div>
+
+</div>
+</div>
+</body>
+</html>

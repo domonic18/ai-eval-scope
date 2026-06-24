@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性原理 — 你的方法工具箱</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  text-align: center;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 8px; }
+.header p { font-size: 16px; opacity: 0.92; }
+.section { background: var(--card-bg); border-radius: var(--border-radius); padding: 24px; margin-bottom: 20px; box-shadow: var(--shadow); }
+.section h2 { font-size: var(--font-h2); color: var(--primary); margin-bottom: 16px; border-left: 4px solid var(--primary); padding-left: 12px; }
+.principle-card {
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 18px;
+  margin-bottom: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: #fafbff;
+}
+.principle-card:hover { border-color: var(--primary); box-shadow: 0 4px 16px rgba(22,119,255,0.12); }
+.principle-card .principle-name { font-size: 20px; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+.principle-card .principle-name::before { content: "🔑 "; }
+.principle-card .principle-brief { color: var(--text-secondary); font-size: 15px; }
+.principle-detail {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.45s ease, padding 0.3s ease;
+  padding: 0 4px;
+}
+.principle-card.open .principle-detail {
+  max-height: 800px;
+  padding: 12px 4px 4px;
+}
+.principle-detail dt { font-weight: 600; color: var(--text); margin-top: 10px; font-size: 15px; }
+.principle-detail dt::before { content: "▸ "; color: var(--primary); }
+.principle-detail dd { margin-left: 18px; color: var(--text); font-size: 15px; }
+.toggle-hint { font-size: 14px; color: var(--text-secondary); text-align: right; margin-top: 2px; }
+.practice-box {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: var(--border-radius);
+  padding: 18px;
+  margin-bottom: 14px;
+  transition: transform 0.2s;
+}
+.practice-box:hover { transform: translateY(-2px); }
+.practice-box h3 { color: #389e0d; font-size: 18px; margin-bottom: 8px; }
+.practice-box h3::before { content: "✏️ "; }
+.practice-box .tag {
+  display: inline-block; background: #d9f7be; color: #135200;
+  padding: 2px 10px; border-radius: 12px; font-size: 13px; margin-bottom: 8px;
+}
+.reflect-list { list-style: none; padding: 0; }
+.reflect-list li {
+  padding: 14px 16px; background: #fffbe6; border: 1px solid #ffe58f;
+  border-radius: var(--border-radius); margin-bottom: 12px;
+  cursor: pointer; transition: all 0.25s;
+  font-size: 16px;
+}
+.reflect-list li:hover { background: #fff8d6; transform: translateX(6px); }
+.reflect-list li::before { content: "💭 "; }
+.reflect-answer {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.4s ease;
+  font-size: 15px; color: var(--text-secondary);
+  padding: 0 4px;
+}
+.reflect-list li.open .reflect-answer {
+  max-height: 120px;
+  padding: 10px 4px 4px;
+}
+.footer { text-align: center; padding: 20px; color: var(--text-secondary); font-size: 14px; }
+@media (max-width: 600px) {
+  .container { padding: 12px 10px; }
+  .header { padding: 20px 16px; }
+  .section { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🔧 建构性原理</h1>
+  <p>从"时、分、秒"的学习中，提炼属于你自己的方法工具箱</p>
+</div>
+
+<div class="section">
+  <h2>一、什么是建构性原理？</h2>
+  <p style="font-size:16px;">你在学"时、分、秒"的时候，是不是用了很多小窍门？比如盯着钟面看、用手指数格子、或者在心里默念"1时=60分"……这些小窍门背后都藏着一条"原理"。把它们提炼出来，你就能用到其他学习中去！</p>
+  <p style="font-size:15px;color:var(--text-secondary);margin-top:8px;">👇 <strong>点击每一张卡片</strong>，展开它背后藏着的完整原理。</p>
+</div>
+
+<div class="section">
+  <h2>二、建构性原理提炼（共4条）</h2>
+
+  <div class="principle-card" onclick="this.classList.toggle('open')">
+    <div class="principle-name">锚定时刻比较法</div>
+    <div class="principle-brief">找一个你最有把握的时间点作为参照，推算其他时间</div>
+    <div class="toggle-hint">👆 点击展开详情</div>
+    <div class="principle-detail">
+      <dl>
+        <dt>原理说明</dt>
+        <dd>当你不知道某个时间有多长时，先找一个你特别熟悉的时间点（比如"一节课=40分钟"），然后拿它和要估算的时间做比较。</dd>
+        <dt>原理来源</dt>
+        <dd>在学"时、分、秒"时，小乐用"分针走一圈=1小时"这个最熟悉的锚点，推算出"半小时=30分钟""一刻钟=15分钟"。</dd>
+        <dt>适用的其他学习情境</dt>
+        <dd>估算长度（用"一拃≈15厘米"去量桌子）、估算重量（用"一袋米≈5千克"去猜西瓜有多重）。</dd>
+        <dt>注意事项</dt>
+        <dd>"锚"一定要选自己100%确定的，选错了后面全错。</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="principle-card" onclick="this.classList.toggle('open')">
+    <div class="principle-name">刻度拆解法</div>
+    <div class="principle-brief">把大单位拆成小份，化整为零，逐个击破</div>
+    <div class="toggle-hint">👆 点击展开详情</div>
+    <div class="principle-detail">
+      <dl>
+        <dt>原理说明</dt>
+        <dd>遇到一个"大块头"问题，不要怕。把它拆成更小的、你认识的单位，一块一块处理。</dd>
+        <dt>原理来源</dt>
+        <dd>把"1小时"拆成"60分钟"，把"1分钟"拆成"60秒"。小乐就是用这个方法把"2时15分=135分"算出来的：2时=120分，再加15分=135分。</dd>
+        <dt>适用的其他学习情境</dt>
+        <dd>做应用题（把一道大应用题拆成几步）、背课文（把整篇拆成段落再背）。</dd>
+        <dt>注意事项</dt>
+        <dd>拆完之后别忘了"加回来"，很多人拆得开，合不拢。</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="principle-card" onclick="this.classList.toggle('open')">
+    <div class="principle-name">多感官验证法</div>
+    <div class="principle-brief">用看、听、动手三种方式互相验证同一个结果</div>
+    <div class="toggle-hint">👆 点击展开详情</div>
+    <div class="principle-detail">
+      <dl>
+        <dt>原理说明</dt>
+        <dd>不要只用一种方法判断对不对。换另一种方式再检查一遍——看一遍、听一遍、做一遍，三个答案一致才放心。</dd>
+        <dt>原理来源</dt>
+        <dd>小乐煮鸡蛋计时时，看了钟面分针的位置，又听了秒针的滴答声，还在心里数了"1秒、2秒……"，三种方式互相验证，确保6分30秒准确无误。</dd>
+        <dt>适用的其他学习情境</dt>
+        <dd>做口算（心算一遍+列竖式一遍+用计数器验证）、认生字（看字形+读拼音+用手写一遍）。</dd>
+        <dt>注意事项</dt>
+        <dd>三种方法要尽量独立，不要用同一种思路重复三次。</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="principle-card" onclick="this.classList.toggle('open')">
+    <div class="principle-name">情境绑定法</div>
+    <div class="principle-brief">把抽象的知识和具体的生活动作绑在一起</div>
+    <div class="toggle-hint">👆 点击展开详情</div>
+    <div class="principle-detail">
+      <dl>
+        <dt>原理说明</dt>
+        <dd>光背数字记不住？把知识和你每天做的事情连起来。知识就变得"有画面、有感觉"了。</dd>
+        <dt>原理来源</dt>
+        <dd>小乐发现"做一遍眼保健操≈5分钟""课间休息≈5分钟"，把抽象的时间单位变成了可以亲身体验的长度。</dd>
+        <dt>适用的其他学习情境</dt>
+        <dd>记长度单位（"教室门高≈2米、课桌高≈70厘米"）、记容量（"一瓶矿泉水≈500毫升"）。</dd>
+        <dt>注意事项</dt>
+        <dd>绑定的情境必须是你每天都在经历的，不能是想象出来的。</dd>
+      </dl>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>三、迁移练习——用原理解决新问题</h2>
+
+  <div class="practice-box">
+    <span class="tag">🏃 生活情境</span>
+    <h3>练习一：你跑100米用了多少秒？</h3>
+    <p><strong>情境</strong>：体育课上体育老师让你估算跑步100米用了多少秒，但你没带手表。</p>
+    <p><strong>建构任务</strong>：用自己的方法估算出时间，并用另一种方法验证。</p>
+    <p><strong>可用证据</strong>：你知道跑50米大约用10秒钟；你心跳一下大约0.8秒。</p>
+    <p><strong>建议使用的原理</strong>：<span style="color:var(--primary);font-weight:600;">锚定时刻比较法 + 多感官验证法</span></p>
+    <p><strong>脚手架提示</strong>：先用"跑50米≈10秒"这个锚点推算100米的时间，再在操场用数心跳或数步数的方法验证一次。</p>
+    <p><strong>表达</strong>：写一张"我的百米计时验证单"，包含：估算值、验证方法、最终结论。</p>
+  </div>
+
+  <div class="practice-box">
+    <span class="tag">🏫 校园情境</span>
+    <h3>练习二：课间10分钟"时间拼图"</h3>
+    <p><strong>情境</strong>：课间只有10分钟，你想做三件事：喝水（2分钟）、和同桌聊两句（3分钟）、预习下节课内容（？分钟）。</p>
+    <p><strong>建构任务</strong>：用"刻度拆解法"规划出完整的课间10分钟方案。</p>
+    <p><strong>可用证据</strong>：课间从下课铃响到上课铃响正好10分钟。</p>
+    <p><strong>建议使用的原理</strong>：<span style="color:var(--primary);font-weight:600;">刻度拆解法 + 情境绑定法</span></p>
+    <p><strong>脚手架提示</strong>：把10分钟拆成10个"1分钟块"，每个活动占几个块？画一张"时间拼图条"看看。</p>
+    <p><strong>表达</strong>：画出你的课间10分钟"时间拼图条"，标出每个活动的时间块。</p>
+  </div>
+</div>
+
+<div class="section">
+  <h2>四、元认知反思——回看你的建构过程</h2>
+  <p style="margin-bottom:12px;">点击每一个问题，看看提示——然后在心里或本子上回答它。</p>
+  <ol class="reflect-list">
+    <li onclick="this.classList.toggle('open')">
+      你在建构"时、分、秒"的关系时，最先突破的是哪个环节？
+      <div class="reflect-answer">💡 提示：是搞懂了"1时=60分"，还是"1分=60秒"？当时是怎么一下子就明白了的？</div>
+    </li>
+    <li onclick="this.classList.toggle('open')">
+      你是用什么方法帮助自己理解的——画图、动手还是举例？
+      <div class="reflect-answer">💡 提示：你动手画了钟面吗？还是用积木摆了60分钟？回忆一下你的"理解瞬间"。</div>
+    </li>
+    <li onclick="this.classList.toggle('open')">
+      如果让你教一个没学过的人，你会怎么教？这个方法来源于你的哪条原理？
+      <div class="reflect-answer">💡 提示：你在"教"的时候用了"锚定时刻比较法"还是"情境绑定法"？</div>
+    </li>
+    <li onclick="this.classList.toggle('open')">
+      你的哪个建构性原理用得最顺手？为什么？
+      <div class="reflect-answer">💡 提示：是"刻度拆解法"还是"多感官验证法"？它和你的学习习惯有什么关系？</div>
+    </li>
+    <li onclick="this.classList.toggle('open')">
+      下次学新单元（比如"长方形和正方形"），你打算先试用哪条原理？
+      <div class="reflect-answer">💡 提示：想想新单元的特点，选一条最适合的。如"长方形和正方形"可以用"情境绑定法"找身边的形状。</div>
+    </li>
+  </ol>
+</div>
+
+<div class="footer">
+  📚 建构性原理 · 你的方法工具箱 · 随时打开，随时用
+</div>
+
+</div>
+</body>
+</html>

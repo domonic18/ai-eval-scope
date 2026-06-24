@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>建构性案例 — 时间管理小达人</title>
+    <style>
+        /* ========== 基础重置与变量 ========== */
+        :root {
+            --primary: #1677ff;
+            --primary-hover: #4096ff;
+            --accent: #69b1ff;
+            --bg: #f0f5ff;
+            --card-bg: #ffffff;
+            --font-body: 18px;
+            --font-h1: 28px;
+            --font-h2: 22px;
+            --line-height: 1.8;
+            --radius: 12px;
+            --shadow: 0 2px 12px rgba(22, 119, 255, 0.10);
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            font-size: var(--font-body);
+            line-height: var(--line-height);
+            background: var(--bg);
+            color: #1f1f1f;
+            padding: 0;
+            width: 100%;
+        }
+        .container {
+            width: 100%;
+            padding: 30px 24px 60px;
+            background: var(--bg);
+        }
+
+        /* ========== 标题 ========== */
+        .page-title {
+            font-size: var(--font-h1);
+            font-weight: 700;
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+        }
+        .page-subtitle {
+            text-align: center;
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 32px;
+        }
+
+        /* ========== 信息卡片 ========== */
+        .info-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 18px 22px;
+            margin-bottom: 28px;
+            box-shadow: var(--shadow);
+            border-left: 5px solid var(--primary);
+        }
+        .info-grid .item {
+            font-size: 15px;
+            color: #444;
+            margin-right: 20px;
+        }
+        .info-grid .item strong {
+            color: var(--primary);
+        }
+
+        /* ========== 案例卡片 ========== */
+        .case-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            margin-bottom: 28px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            transition: box-shadow 0.3s;
+        }
+        .case-card:hover {
+            box-shadow: 0 4px 20px rgba(22,119,255,0.18);
+        }
+
+        .case-header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+            color: #fff;
+            padding: 16px 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+        }
+        .case-header h2 {
+            font-size: var(--font-h2);
+            font-weight: 600;
+            margin: 0;
+        }
+        .case-header .badge {
+            background: rgba(255,255,255,0.25);
+            padding: 2px 14px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .toggle-icon {
+            font-size: 24px;
+            transition: transform 0.35s ease;
+            display: inline-block;
+        }
+        .toggle-icon.open {
+            transform: rotate(180deg);
+        }
+
+        .case-body {
+            padding: 0 22px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease, padding 0.4s ease;
+        }
+        .case-body.open {
+            max-height: 3000px;
+            padding: 18px 22px 22px;
+        }
+
+        .case-body p { margin-bottom: 10px; }
+        .case-body ul, .case-body ol { margin: 8px 0 12px 22px; }
+        .case-body li { margin-bottom: 4px; }
+
+        .principle-tag {
+            display: inline-block;
+            background: #e6f4ff;
+            color: var(--primary);
+            padding: 2px 14px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        /* ========== 建构步骤 横向进度 ========== */
+        .steps-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 10px;
+            margin: 12px 0;
+        }
+        .step-item {
+            background: var(--bg);
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 15px;
+            color: var(--primary);
+            border: 1px solid var(--accent);
+        }
+        .step-item::before {
+            content: "➜ ";
+            color: var(--primary);
+        }
+
+        /* ========== 成果表达 ========== */
+        .outcome-box {
+            background: #fffbe6;
+            border: 1px dashed #fadb14;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin: 10px 0;
+            font-weight: 500;
+            color: #8c6e00;
+        }
+
+        /* ========== 自评量规 ========== */
+        .rubric {
+            background: #f6ffed;
+            border: 1px solid #b7eb8f;
+            border-radius: 8px;
+            padding: 14px 18px;
+            margin: 12px 0;
+        }
+        .rubric h4 {
+            color: #389e0d;
+            font-size: 16px;
+            margin-bottom: 6px;
+        }
+        .rubric label {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 15px;
+            margin-bottom: 4px;
+            cursor: pointer;
+        }
+        .rubric input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary);
+            margin-top: 3px;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+        .rubric input[type="checkbox"]:checked + span {
+            text-decoration: line-through;
+            color: #999;
+        }
+
+        /* ========== 递进设计说明 ========== */
+        .progression-section {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 22px;
+            margin-top: 12px;
+            box-shadow: var(--shadow);
+            border-left: 5px solid var(--accent);
+        }
+        .progression-section h2 {
+            font-size: var(--font-h2);
+            color: var(--primary);
+            margin-bottom: 12px;
+        }
+        .progression-section ul {
+            margin-left: 22px;
+        }
+        .progression-section li {
+            margin-bottom: 6px;
+        }
+
+        /* ========== 返回顶部 ========== */
+        .back-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 46px;
+            height: 46px;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            font-size: 22px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(22,119,255,0.35);
+            transition: transform 0.3s, opacity 0.3s;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 999;
+        }
+        .back-top.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .back-top:hover {
+            transform: scale(1.1);
+        }
+
+        /* ========== 动画 ========== */
+        @keyframes fadeUp {
+            0% { opacity:0; transform:translateY(20px); }
+            100% { opacity:1; transform:translateY(0); }
+        }
+        .case-card {
+            animation: fadeUp 0.5s ease both;
+        }
+        .case-card:nth-child(2) { animation-delay:0.05s; }
+        .case-card:nth-child(3) { animation-delay:0.10s; }
+        .case-card:nth-child(4) { animation-delay:0.15s; }
+        .case-card:nth-child(5) { animation-delay:0.20s; }
+        .case-card:nth-child(6) { animation-delay:0.25s; }
+        .case-card:nth-child(7) { animation-delay:0.30s; }
+        .case-card:nth-child(8) { animation-delay:0.35s; }
+
+        /* ========== 响应式 ========== */
+        @media (max-width: 600px) {
+            .container { padding: 16px 12px 40px; }
+            .case-header { flex-wrap: wrap; gap: 6px; }
+            .info-grid .item { margin-right: 10px; font-size:14px; }
+        }
+
+        /* ========== 展开全部按钮 ========== */
+        .toolbar {
+            display: flex;
+            justify-content: center;
+            gap: 14px;
+            margin-bottom: 22px;
+        }
+        .toolbar button {
+            background: var(--card-bg);
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            padding: 8px 24px;
+            border-radius: 24px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+        .toolbar button:hover {
+            background: var(--primary);
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- 标题 -->
+    <h1 class="page-title">建构性案例 — 时间管理小达人</h1>
+    <p class="page-subtitle">七阶案例带你从感知时间到创造未来时间管理器</p>
+
+    <!-- 基本信息 -->
+    <div class="info-grid">
+        <span class="item"><strong>隶属板块：</strong>建构性导学</span>
+        <span class="item"><strong>所属模块：</strong>M14 新知STEAM融合性应用</span>
+        <span class="item"><strong>前置依赖：</strong>建构性示例 + 建构性原理</span>
+        <span class="item"><strong>适用年级：</strong>三年级（上）</span>
+    </div>
+
+    <!-- 工具栏 -->
+    <div class="toolbar">
+        <button id="expandAllBtn">展开全部案例</button>
+        <button id="collapseAllBtn">收起全部案例</button>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- 案例1 -->
+    <!-- ============================================================ -->
+    <div class="case-card" data-index="1">
+        <div class="case-header" role="button" tabindex="0" aria-expanded="false">
+            <div>
+                <h2>案例1：个人理解型 — "我的专属一分钟"</h2>
+                <span class="badge">自我感知</span>
+            </div>
+            <span class="toggle-icon">&#9660;</span>
+        </div>
+        <div class="case-body">
+            <p><strong>情境：</strong>每个人感觉中的"一分钟"长短竟然不一样！当你开心玩耍时，一分钟"嗖"一下就过去了；当你排队等待时，一分钟却好像有一个世纪那么长。那么，你心中的一分钟到底有多长呢？请你亲自测量并创造属于你自己的"一分钟感知器"。</p>
+
+            <p><strong>建构任务：</strong>设计一种方法或装置，让你能不用看钟表就准确感知一分钟的流逝。也许你可以用拍手、走步、哼歌、摇晃身体——只要找到属于你的"时间节拍器"。</p>
+
+            <p><span class="principle-tag">原理调用：证据支撑建构法</span> — 用秒表实测数据校准你的感知，让数据说话。</p>
+
+            <p><strong>建构步骤：</strong></p>
+            <div class="steps-row">
+                <span class="step-item">观察</span>
+                <span class="step-item">假设</span>
+                <span class="step-item">测试</span>
+                <span class="step-item">记录</span>
+                <span class="step-item">调整</span>
+                <span class="step-item">成品</span>
+            </div>
+
+            <ol>
+                <li><strong>观察：</strong>先闭上眼睛，在心里默数"1、2、3……"直到你感觉过了1分钟，然后睁眼看钟表。你数得准吗？</li>
+                <li><strong>假设：</strong>猜想一下，用什么方法能让自己数得更准？比如匀速拍手、匀速走路、哼一首固定的歌？</li>
+                <li><strong>测试：</strong>用手机秒表或教室里的挂钟，实际测试你的方法3次以上。每次记录你数出的时间和实际时间的差距。</li>
+                <li><strong>记录：</strong>画一张数据记录表，把每次测试的"感知时间"和"实际时间"填进去。</li>
+                <li><strong>调整：</strong>根据数据调整你的方法。比如你发现哼歌太快了，就放慢速度再试。</li>
+                <li><strong>成品：</strong>完成你的"一分钟感知器"设计图，标出你的最佳方法和测试数据。</li>
+            </ol>
+
+            <div class="outcome-box">成果表达："一分钟感知器"设计图和说明</div>
+
+            <div class="rubric">
+                <h4>自评量规</h4>
+                <label><input type="checkbox"><span> 是否用秒表进行了至少3次测试？</span></label>
+                <label><input type="checkbox"><span> 是否标注了时间数据（感知时间 vs 实际时间）？</span></label>
+                <label><input type="checkbox"><span> 是否画出了"一分钟感知器"的简单示意图？</span></label>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- 案例2 -->
+    <!-- ============================================================ -->
+    <div class="case-card" data-index="2">
+        <div class="case-header" role="button" tabindex="0" aria-expanded="false">
+            <div>
+                <h2>案例2：生活应用型 — "周末时间小管家"</h2>
+                <span class="badge">生活管理</span>
+            </div>
+            <span class="toggle-icon">&#9660;</span>
+        </div>
+        <div class="case-body">
+            <p><strong>情境：</strong>每到周末，你是不是也经常感叹"还没玩就天黑了"？早上睡个懒觉、吃个早饭，再看会儿电视——咦？怎么就到下午了！作业还没写，课外书还没翻，一天就过去了。</p>
+
+            <p><strong>建构任务：</strong>制作一份科学合理的周末时间安排表，包含学习、运动、娱乐和休息四个板块，把时、分、秒的安排写得清清楚楚。这样周末就既充实又轻松啦！</p>
+
+            <p><span class="principle-tag">原理调用：问题驱动建构法 + 表达驱动建构法</span></p>
+
+            <p><strong>建构步骤：</strong></p>
+            <div class="steps-row">
+                <span class="step-item">记录现状</span>
+                <span class="step-item">发现问题</span>
+                <span class="step-item">设计方案</span>
+                <span class="step-item">执行测试</span>
+                <span class="step-item">调整优化</span>
+            </div>
+
+            <ol>
+                <li><strong>记录现状：</strong>找一个周末，详细记下你从起床到睡觉每一件事花了多少时间。比如：起床 8:30、吃早饭 8:35—8:50（15分钟）……</li>
+                <li><strong>发现问题：</strong>看看你的记录，哪些地方浪费了时间？是不是看电视太久？写作业拖拖拉拉？</li>
+                <li><strong>设计方案：</strong>制作一份理想的时间安排表。把一天分成上午、下午、晚上三段，每段至少安排2件事。注意：学习、运动、娱乐、休息都要有！</li>
+                <li><strong>执行测试：</strong>按照你的安排表过一天，看看能完成多少。别忘了用闹钟提醒自己！</li>
+                <li><strong>调整优化：</strong>如果发现某件事的时间安排太多或太少，就调整一下。最后的版本就是你的"周末时间小管家"啦！</li>
+            </ol>
+
+            <div class="outcome-box">成果表达：彩色时间规划表（建议用不同颜色区分学习、运动、娱乐、休息）</div>
+
+            <div class="rubric">
+                <h4>自评量规</h4>
+                <label><input type="checkbox"><span> 是否包含了时、分、秒的精确安排？</span></label>
+                <label><input type="checkbox"><span> 是否留出了弹性时间（休息缓冲）？</span></label>
+                <label><input type="checkbox"><span> 是否用不同颜色标注了不同活动类型？</span></label>
+                <label><input type="checkbox"><span> 是否经过了至少一次实际执行和调整？</span></label>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- 案例3 -->
+    <!-- ============================================================ -->
+    <div class="case-card" data-index="3">
+        <div class="case-header" role="button" tabindex="0" aria-expanded="false">
+            <div>
+                <h2>案例3：校园问题解决型 — "课间10分钟优化方案"</h2>
+                <span class="badge">校园</span>
+            </div>
+            <span class="toggle-icon">&#9660;</span>
+        </div>
+        <div class="case-body">
+            <p><strong>情境：</strong>"叮铃铃——"下课了！你要喝水、上厕所、准备下节课的课本、还想和同学聊会儿天……可是10分钟真的够用吗？为什么经常上课铃响了，你还在慌慌张张找课本？到底课间10分钟的时间都去哪儿了？</p>
+
+            <p><strong>建构任务：</strong>设计一个课间10分钟的全班高效方案，用一张流程图告诉大家：在有限的600秒里，先做什么、后做什么，怎样做最省时间。</p>
+
+            <p><span class="principle-tag">原理调用：原型迭代建构法</span> — 先试运行，再改进，越改越好。</p>
+
+            <p><strong>建构步骤：</strong></p>
+            <div class="steps-row">
+                <span class="step-item">观察现状</span>
+                <span class="step-item">分析耗时</span>
+                <span class="step-item">设计方案</span>
+                <span class="step-item">试行</span>
+                <span class="step-item">收集反馈</span>
+                <span class="step-item">改进</span>
+            </div>
+
+            <ol>
+                <li><strong>观察现状：</strong>连续3个课间，观察并记录你（和同学）在课间做了哪些事，每件事花了多少时间。比如：走出教室1分钟、接水排队3分钟……</li>
+                <li><strong>分析耗时：</strong>把你的记录整理一下。找出哪些事是最耗时的。是不是排队接水用了太多时间？或者聊天聊忘了时间？</li>
+                <li><strong>设计方案：</strong>画一张"课间10分钟任务流程图"。把10分钟分成几个关键阶段：放松休息（前3分钟）、生活事项（中间4分钟）、学习准备（最后3分钟）等。在每个阶段里列出要做的事。</li>
+                <li><strong>试行：</strong>按照你的流程图过一个课间。请你的同桌帮忙计时，看看能不能在10分钟内完成所有事项。</li>
+                <li><strong>收集反馈：</strong>问问同学：你的方案好用吗？哪里需要调整？</li>
+                <li><strong>改进：</strong>根据试行的结果和同学的反馈，修改你的流程图，形成2.0版本。</li>
+            </ol>
+
+            <div class="outcome-box">成果表达：课间10分钟任务流程图（带时间刻度）</div>
+
+            <div class="rubric">
+                <h4>自评量规</h4>
+                <label><input type="checkbox"><span> 是否精确到"分钟"级别规划？</span></label>
+                <label><input type="checkbox"><span> 流程图是否清晰展示了先后顺序？</span></label>
+                <label><input type="checkbox"><span> 是否经过至少一次试运行和反馈改进？</span></label>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- 案例4 -->
+    <!-- ============================================================ -->
+    <div class="case-card" data-index="4">
+        <div class="case-header" role="button" tabindex="0" aria-expanded="false">
+            <div>
+                <h2>案例4：学科表达型 — "我的时间绘本"</h2>
+                <span class="badge">艺术+语文+数学</span>
+            </div>
+            <span class="toggle-icon">&#9660;</span>
+        </div>
+        <div class="case-body">
+            <p><strong>情境：</strong>你的幼儿园小伙伴跑过来问你："为什么1小时等于60分钟？为什么1分钟又等于60秒？"你该怎样用他们能听懂的方式讲清楚呢？大段大段的数字他们可没兴趣听！</p>
+
+            <p><strong>建构任务：</strong>创作一本时间主题的翻转绘本或连环画，用有趣的故事把"时、分、秒"之间的关系讲明白。让幼儿园的小朋友一看就懂、一读就爱！</p>
+
+            <p><span class="principle-tag">原理调用：多学科整合建构法</span>（数学 + 艺术 + 语文）</p>
+
+            <p><strong>建构步骤：</strong></p>
+            <div class="steps-row">
+                <span class="step-item">确定故事</span>
+                <span class="step-item">设计角色</span>
+                <span class="step-item">画出时间变化</span>
+                <span class="step-item">配上文字</span>
+                <span class="step-item">装订成册</span>
+            </div>
+
+            <ol>
+                <li><strong>确定故事：</strong>想一个小朋友会喜欢的故事主题。比如："时钟王国历险记"——时针爷爷、分针姐姐和秒针小精灵的冒险之旅；或者"小蜗牛的一小时"——小蜗牛用一小时逛遍了整个花园。</li>
+                <li><strong>设计角色：</strong>给故事设计3个主要角色，分别代表时、分、秒。比如：慢吞吞的"时针老爷爷"（走一格要1小时）、稳健的"分针姐姐"（走一圈要1小时/60分钟）、飞快的"秒针小精灵"（跑一圈只要1分钟/60秒）。</li>
+                <li><strong>画出时间变化：</strong>用4—6页的篇幅，每页画一个时间场景。比如第一页画秒针小精灵跑了一圈，第二页画分针姐姐走了一格（1分钟到了），第三页画分针姐姐走了半圈（30分钟）……</li>
+                <li><strong>配上文字：</strong>在每页下方写1—2句简单的文字，解释这个场景里的时间知识。语言要生动有趣，像在讲故事一样！</li>
+                <li><strong>装订成册：</strong>把画好的页面按顺序叠好，用订书机或彩色丝带装订起来，还可以加上封面和封底哦！</li>
+            </ol>
+
+            <div class="outcome-box">成果表达：4—6页时间绘本（含封面、故事内容、封底）</div>
+
+            <div class="rubric">
+                <h4>自评量规</h4>
+                <label><input type="checkbox"><span> 书中是否出现了所有三个时间单位（时、分、秒）？</span></label>
+                <label><input type="checkbox"><span> 绘本是否有完整的封面和封底？</span></label>
+                <label><input type="checkbox"><span> 每一页是否都有图画和文字说明？</span></label>
+                <label><input type="checkbox"><span> 文字是否适合幼儿园小朋友阅读（简单、有趣）？</span></label>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- 案例5 -->
+    <!-- ============================================================ -->
+    <div class="case-card" data-index="5">
+        <div class="case-header" role="button" tabindex="0" aria-expanded="false">
+            <div>
+                <h2>案例5：跨学科整合型 — "植物生长时间记录仪"</h2>
+                <span class="badge">科学+数学</span>
+            </div>
+            <span class="toggle-icon">&#9660;</span>
+        </div>
+        <div class="case-body">
+            <p><strong>情境：</strong>科学课上你种了一颗绿豆，老师问你："种子从种下到破土发芽需要多少小时？"你挠挠头——每天只是看一眼，不知道具体用了多长时间。如果有一张表格可以同时记录日期、小时和分钟，那该多好！</p>
+
+            <p><strong>建构任务：</strong>设计一个植物生长时间记录表，不仅能记录"哪一天"，还能精确到"几时几分"，最后用数据画出一张折线图，直观地看到植物的生长变化。</p>
+
+            <p><span class="principle-tag">原理调用：证据支撑建构法 + 多学科整合建构法</span></p>
+
+            <p><strong>建构步骤：</strong></p>
+            <div class="steps-row">
+                <span class="step-item">确定指标</span>
+                <span class="step-item">制作记录表</span>
+                <span class="step-item">定时观察</span>
+                <span class="step-item">数据分析</span>
+                <span class="step-item">制作报告</span>
+            </div>
+
+            <ol>
+                <li><strong>确定观察指标：</strong>跟科学老师确认你要观察哪些变化。比如：种子入土时间（月/日/时/分）、第一次浇水时间、胚根出现时间、胚芽出土时间、第一对叶子展开时间、株高变化等。</li>
+                <li><strong>制作记录表：</strong>画一张表格，把上面的指标列成行，每次观察填上对应的日期、小时和分钟。别忘了留一列"备注"来写你的发现哦！</li>
+                <li><strong>定时观察记录：</strong>每天至少在同一时间观察一次（比如每天放学后4:30），用你的记录表记下植物的变化。如果发现重大变化（比如种子裂开了、冒芽了），立刻记下精确到分钟的时间！</li>
+                <li><strong>数据分析：</strong>一周后，算一算每一步花了多少时间。比如：从种下到发芽用了___小时___分钟。（提示：先换算成分钟再计算会更容易哦！）</li>
+                <li><strong>制作生长时间报告：</strong>用你的数据画一张折线图——横坐标是日期时间，纵坐标是株高（毫米）。看看生长曲线是直线上升还是波浪形的？</li>
+            </ol>
+
+            <div class="outcome-box">成果表达：植物生长时间记录表 + 数据折线图</div>
+
+            <div class="rubric">
+                <h4>自评量规</h4>
+                <label><input type="checkbox"><span> 是否每小时或每天同一时间记录了数据？</span></label>
+                <label><input type="checkbox"><span> 是否把时间换算到了不同单位（小时↔分钟）？</span></label>
+                <label><input type="checkbox"><span> 是否画出了折线图并标注了关键节点？</span></label>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- 案例6 -->
+    <!-- ============================================================ -->
+    <div class="case-card" data-index="6">
+        <div class="case-header" role="button" tabindex="0" aria-expanded="false">
+            <div>
+                <h2>案例6：社会情境型 — "城市交通时间调查员"</h2>
+                <span class="badge">社会调查</span>
+            </div>
+            <span class="toggle-icon">&#9660;</span>
+        </div>
+        <div class="case-body">
+            <p><strong>情境：</strong>每天早上你都是怎么去上学的？走路？坐公交车？坐爸爸/妈妈的小汽车？有没有想过——如果换一种方式，会不会更快？如果遇到下雨天，哪种方式最靠谱？</p>
+
+            <p><strong>建构任务：</strong>扮演一名"交通时间调查员"，实地调查从家到学校不同出行方式的时间。记录多次数据取平均值，制作一份"出行时间决策图"，帮助自己和家人选择最合适的出行方式。</p>
+
+            <p><span class="principle-tag">原理调用：证据支撑建构法 + 问题驱动建构法</span></p>
+
+            <p><strong>建构步骤：</strong></p>
+            <div class="steps-row">
+                <span class="step-item">列出出行方式</span>
+                <span class="step-item">实地计时</span>
+                <span class="step-item">取平均值</span>
+                <span class="step-item">比较分析</span>
+                <span class="step-item">推荐方案</span>
+            </div>
+
+            <ol>
+                <li><strong>列出出行方式：</strong>想一想，从你家到学校有几种出行方式？步行、骑自行车、坐公交车、坐私家车、坐地铁……把你能想到的都列出来！</li>
+                <li><strong>实地计时（多次取平均值）：</strong>选2—3种你能实际尝试的方式。每种方式在不同日期（或不同时间段）至少记录3次，填在下面这样一张调查表里：
+
+                    <div style="background:#fafafa;border-radius:6px;padding:10px;margin:8px 0;font-size:15px;">
+                    <strong>交通时间调查表（示例）</strong><br>
+                    | 出行方式 | 第1次时间 | 第2次时间 | 第3次时间 | 平均时间 |<br>
+                    | 步行     | 25分钟    | 27分钟    | 26分钟    | 26分钟   |<br>
+                    | 坐公交   | 18分钟    | 22分钟    | 20分钟    | 20分钟   |<br>
+                    | 坐小汽车 | 12分钟    | 15分钟    | 13分钟    | 13分20秒 |<br>
+                    （别忘了带上小本本和笔，还有爸爸妈妈的协助哦！）
+                    </div>
+                </li>
+                <li><strong>比较分析：</strong>算出每种方式的平均时间后，比较哪种最快、哪种最慢。思考一下：最快的就一定最好吗？还要考虑安全性、方便程度和天气因素哦！</li>
+                <li><strong>制作推荐方案：</strong>设计一张"出行时间决策图"（可以是一张海报或信息图），上面标注每种出行方式的平均时间，并给出你的推荐方案和理由。</li>
+            </ol>
+
+            <div class="outcome-box">成果表达：出行时间对比表 + 最佳方案推荐（含决策理由）</div>
+
+            <div class="rubric">
+                <h4>自评量规</h4>
+                <label><input type="checkbox"><span> 每种方式是否记录了至少3次时间数据？</span></label>
+                <label><input type="checkbox"><span> 是否计算了平均时间并做了比较分析？</span></label>
+                <label><input type="checkbox"><span> 推荐方案是否给出了有说服力的理由？</span></label>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- 案例7 -->
+    <!-- ============================================================ -->
+    <div class="case-card" data-index="7">
+        <div class="case-header" role="button" tabindex="0" aria-expanded="false">
+            <div>
+                <h2>案例7：综合创新型 — "未来时间管理神器"</h2>
+                <span class="badge">综合创新</span>
+            </div>
+            <span class="toggle-icon">&#9660;</span>
+        </div>
+        <div class="case-body">
+            <p><strong>情境：</strong>想象一下，10年后的你是一名初中生/高中生，每天要上很多节课、完成各科作业、参加社团活动、锻炼身体、和朋友社交、还要保证充足睡眠……天哪，事情太多了！怎么才能把时间安排得井井有条呢？未来的科技能帮你做什么？</p>
+
+            <p><strong>建构任务：</strong>大胆发挥创意，设计一个"未来时间管理神器"的概念方案！它可以是手机APP、智能手表、时间手账本、或者任何你想象得到的工具。要画出设计图，写出功能介绍和使用说明。</p>
+
+            <p><span class="principle-tag">原理调用：全部5条建构性原理综合运用</span> — 证据支撑、问题驱动、表达驱动、多学科整合、原型迭代</p>
+
+            <p><strong>建构步骤：</strong></p>
+            <div class="steps-row">
+                <span class="step-item">分析需求</span>
+                <span class="step-item">头脑风暴</span>
+                <span class="step-item">设计方案</span>
+                <span class="step-item">画出原型</span>
+                <span class="step-item">编写说明书</span>
+            </div>
+
+            <ol>
+                <li><strong>分析需求：</strong>想一想，一个"时间管理器"需要帮你解决哪些问题？提醒你上课别迟到？帮你记录写作业用了多少时间？帮你合理分配学习和娱乐的时间？把需求列一个清单。</li>
+                <li><strong>头脑风暴：</strong>跟同学或家人聊一聊，听听他们的"时间管理痛点"。结合你自己的需求，一起头脑风暴：什么样的神器能解决这些问题？把所有的点子都记下来，不管多么天马行空！</li>
+                <li><strong>设计方案：</strong>从你的创意中选出最棒的一个，开始详细设计。想清楚：它长什么样子（手表形状？手机APP界面？一个实体手账本？）、有哪些功能（计时？提醒？数据分析？）、怎么使用？</li>
+                <li><strong>画出原型：</strong>在A4纸上画出你的设计图。如果是电子产品，画出它的屏幕界面——至少3个主要界面（比如首页、计时界面、统计界面）。如果是手账本，画出它的内页格式。</li>
+                <li><strong>编写说明书：</strong>用一页纸写出"使用说明书"，告诉别人你的时间管理器怎么用。说明书要包含：产品名称、产品简介、主要功能（3—5项）、使用方法（分步骤说明）、适合人群。</li>
+            </ol>
+
+            <div class="outcome-box">成果表达：未来时间管理器设计方案（含设计图、功能介绍、使用说明书）</div>
+
+            <div class="rubric">
+                <h4>自评量规</h4>
+                <label><input type="checkbox"><span> 方案是否融合了时、分、秒的数学知识？</span></label>
+                <label><input type="checkbox"><span> 设计是否具有创意和可行性？</span></label>
+                <label><input type="checkbox"><span> 是否画出了至少3个界面/页面的设计图？</span></label>
+                <label><input type="checkbox"><span> 是否附有完整的"使用说明书"？</span></label>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- 递进设计说明 -->
+    <!-- ============================================================ -->
+    <div class="progression-section">
+        <h2>案例递进设计说明</h2>
+        <ul>
+            <li><strong>难度递进：</strong>从个人理解型（我的专属一分钟）到生活应用型（周末时间小管家），到校园问题解决型（课间10分钟优化方案），到学科表达型（时间绘本），到跨学科整合型（植物生长记录），到社会情境型（交通时间调查），最后到综合创新型（未来时间管理器）——难度逐级提升，让学生从"感知时间"走向"创造时间工具"。</li>
+            <li><strong>成果递进：</strong>建构成果从一张设计图（案例1），到一张彩色规划表（案例2），到一张流程图（案例3），到一本绘本（案例4），到一份数据报告+折线图（案例5），到一份社会调查报告（案例6），再到一份完整的创新设计方案（案例7）——从简单到复杂，从单一到综合。</li>
+            <li><strong>实质产出：</strong>每个案例都要求学生产出实质性成果，而不是单纯回答几个问题。每个成果都是可以展示、分享和评价的"作品"。</li>
+            <li><strong>原理灵活调用：</strong>每个案例都可以选择性地调用建构性原理——证据支撑建构法、问题驱动建构法、表达驱动建构法、多学科整合建构法、原型迭代建构法——让学生在实践中理解"为什么这样学"。</li>
+        </ul>
+    </div>
+
+</div>
+
+<!-- 返回顶部按钮 -->
+<button class="back-top" id="backTopBtn" title="返回顶部">&#8679;</button>
+
+<script>
+(function() {
+    // ---- 卡片展开/收起 ----
+    const cards = document.querySelectorAll('.case-card');
+    const headers = document.querySelectorAll('.case-header');
+
+    function toggleCard(header) {
+        const body = header.nextElementSibling;
+        const icon = header.querySelector('.toggle-icon');
+        const isOpen = body.classList.contains('open');
+        body.classList.toggle('open');
+        icon.classList.toggle('open');
+        header.setAttribute('aria-expanded', !isOpen);
+    }
+
+    headers.forEach(function(h) {
+        h.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleCard(this);
+        });
+        h.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleCard(this);
+            }
+        });
+    });
+
+    // ---- 展开全部 / 收起全部 ----
+    document.getElementById('expandAllBtn').addEventListener('click', function() {
+        cards.forEach(function(card) {
+            const body = card.querySelector('.case-body');
+            const icon = card.querySelector('.toggle-icon');
+            body.classList.add('open');
+            icon.classList.add('open');
+            card.querySelector('.case-header').setAttribute('aria-expanded', 'true');
+        });
+    });
+
+    document.getElementById('collapseAllBtn').addEventListener('click', function() {
+        cards.forEach(function(card) {
+            const body = card.querySelector('.case-body');
+            const icon = card.querySelector('.toggle-icon');
+            body.classList.remove('open');
+            icon.classList.remove('open');
+            card.querySelector('.case-header').setAttribute('aria-expanded', 'false');
+        });
+    });
+
+    // ---- 返回顶部 ----
+    const backTop = document.getElementById('backTopBtn');
+    window.addEventListener('scroll', function() {
+        if (window.scrollY > 400) {
+            backTop.classList.add('show');
+        } else {
+            backTop.classList.remove('show');
+        }
+    });
+    backTop.addEventListener('click', function() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // ---- 自评复选框：点击文字也可选中 ----
+    document.querySelectorAll('.rubric label').forEach(function(label) {
+        label.addEventListener('click', function(e) {
+            // 如果点的是 label 本身（不是里面的 checkbox），触发 checkbox
+            if (e.target.tagName !== 'INPUT') {
+                const cb = this.querySelector('input[type="checkbox"]');
+                if (cb) { cb.checked = !cb.checked; }
+            }
+        });
+    });
+})();
+</script>
+
+</body>
+</html>

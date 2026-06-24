@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块定位：M16 新知应用与创新中的真善美思维与反思</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  text-align: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 3px solid var(--accent);
+}
+h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 24px 0 12px;
+  padding-left: 12px;
+  border-left: 4px solid var(--accent);
+}
+h3 {
+  font-size: calc(var(--font-body) + 2px);
+  color: var(--text);
+  margin: 16px 0 8px;
+  font-weight: 600;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  transition: box-shadow 0.3s ease;
+}
+.card:hover {
+  box-shadow: 0 4px 16px rgba(22,119,255,0.12);
+}
+.tag {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 4px;
+  padding: 2px 10px;
+  font-size: 14px;
+  margin: 2px 4px 2px 0;
+}
+.tag-green { background: #52c41a; }
+.tag-orange { background: #ff7a45; }
+.tag-purple { background: #722ed1; }
+.highlight-box {
+  background: linear-gradient(135deg, #e6f4ff, #f0f5ff);
+  border: 2px solid var(--accent);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin: 12px 0;
+}
+.timeline-vertical {
+  position: relative;
+  padding-left: 30px;
+  margin: 12px 0;
+}
+.timeline-vertical::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  background: linear-gradient(to bottom, var(--primary), var(--accent));
+  border-radius: 2px;
+}
+.tl-item {
+  position: relative;
+  padding: 10px 0 10px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.tl-item:last-child { border-bottom: none; }
+.tl-item::before {
+  content: '';
+  position: absolute;
+  left: -24px;
+  top: 16px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 2px var(--primary);
+}
+.tl-item.done::before { background: #52c41a; box-shadow: 0 0 0 2px #52c41a; }
+.tl-item.current::before { background: #ff7a45; box-shadow: 0 0 0 2px #ff7a45; }
+.check-icon {
+  color: #52c41a;
+  font-weight: bold;
+  margin-right: 6px;
+}
+.value-tabs {
+  display: flex;
+  gap: 12px;
+  margin: 12px 0;
+  flex-wrap: wrap;
+}
+.value-tab {
+  flex: 1;
+  min-width: 120px;
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  user-select: none;
+}
+.value-tab:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+.value-tab .value-icon {
+  font-size: 32px;
+  display: block;
+  margin-bottom: 6px;
+}
+.value-tab .value-label {
+  font-weight: 600;
+  color: var(--text);
+}
+.value-tab .value-desc {
+  font-size: calc(var(--font-body) - 3px);
+  color: var(--text-secondary);
+  margin-top: 4px;
+  display: none;
+}
+.value-tab.active {
+  border-color: var(--primary);
+  background: #e6f4ff;
+}
+.value-tab.active .value-desc {
+  display: block;
+}
+.result-list {
+  list-style: none;
+  padding: 0;
+}
+.result-list li {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.result-list li:last-child { border-bottom: none; }
+.journey-box {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 16px 20px;
+  margin: 12px 0;
+  text-align: center;
+}
+.journey-box p {
+  color: var(--text-secondary);
+  font-size: calc(var(--font-body) - 1px);
+}
+.journey-steps {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+  flex-wrap: wrap;
+}
+.journey-step {
+  background: var(--bg);
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: calc(var(--font-body) - 2px);
+  color: var(--text);
+}
+.journey-arrow {
+  color: var(--primary);
+  font-size: 18px;
+}
+.journey-step.highlight {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+@media (max-width: 600px) {
+  .container { padding: 16px; }
+  .value-tabs { flex-direction: column; }
+  .journey-steps { flex-direction: column; }
+  .journey-arrow { transform: rotate(90deg); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>📍 M16 模块定位</h1>
+<p style="text-align: center; color: var(--text-secondary); margin-bottom: 20px;">新知应用与创新中的真善美思维与反思</p>
+
+<h2>📖 本模块学什么</h2>
+<div class="card">
+  <p>本模块不是简单地复习"1 小时 = 60 分钟"这样的换算公式，而是要你站在更高的角度来思考：<strong>时间知识怎么用到真实生活中？怎么用"真善美"的眼光来审视和创新地使用时间知识？</strong></p>
+  <div style="margin: 16px 0;">
+    <span class="tag">🔍 解析</span> 学会分析生活中的时间问题（比如：为什么感觉时间有时快有时慢？）
+    <br><br>
+    <span class="tag">🏗️ 建构</span> 动手创作自己的时间作品（比如：设计一个时间换算工具、创作一本时间绘本）
+    <br><br>
+    <span class="tag">🔄 反思</span> 回顾自己的学习过程，总结出可迁移的学习方法
+  </div>
+</div>
+
+<h2>💎 本模块为什么重要</h2>
+<div class="highlight-box">
+  <p>在前面的模块中，你已经学会了时、分、秒的认识、换算和计算。但学会知识只是第一步，<strong>会用知识才是真正的学习</strong>。本模块就是帮你完成从"知道"到"会用"的跨越。</p>
+</div>
+
+<div class="value-tabs" id="valueTabs">
+  <div class="value-tab" onclick="toggleTab(this)">
+    <span class="value-icon">📐</span>
+    <span class="value-label">真</span>
+    <span class="value-desc">你的方案要科学准确，换算不能出错</span>
+  </div>
+  <div class="value-tab" onclick="toggleTab(this)">
+    <span class="value-icon">❤️</span>
+    <span class="value-label">善</span>
+    <span class="value-desc">你的方案要能帮助别人解决实际问题</span>
+  </div>
+  <div class="value-tab" onclick="toggleTab(this)">
+    <span class="value-icon">✨</span>
+    <span class="value-label">美</span>
+    <span class="value-desc">你的方案要简洁清晰，让人一看就懂</span>
+  </div>
+</div>
+
+<p style="color: var(--text-secondary);">这种思维方式不仅适用于时间学习，也适用于你以后学习任何知识。</p>
+
+<h2>🔗 本模块与大单元主题的关系</h2>
+<div class="card">
+  <p>本模块是<strong>"1 时、分、秒"大单元的最后一个模块</strong>，起到"收尾升华"的作用。</p>
+  <div class="journey-box">
+    <p>如果把大单元比作一次旅行：</p>
+    <div class="journey-steps">
+      <span class="journey-step">🎒 前面模块<br>认识景点</span>
+      <span class="journey-arrow">→</span>
+      <span class="journey-step highlight">📍 本模块<br>设计自己的旅行路线</span>
+    </div>
+    <p style="margin-top: 6px;"><small>应用和创新</small></p>
+  </div>
+</div>
+
+<h2>🔄 本模块与前后模块的衔接</h2>
+<div class="card">
+  <div class="timeline-vertical">
+    <div class="tl-item done">
+      <strong>前序模块 ✅</strong><br>
+      <span style="color: var(--text-secondary);">时、分、秒的基本概念、单位换算和简单计算。这些知识是本模块的基础。</span>
+    </div>
+    <div class="tl-item current">
+      <strong>本模块 🔥 现在在这里</strong><br>
+      <span style="color: var(--text-secondary);">在前序知识的基础上，进行应用、创新和反思。</span>
+    </div>
+    <div class="tl-item">
+      <strong>后续学习 🚀</strong><br>
+      <span style="color: var(--text-secondary);">本模块培养的"真善美"思维方式和建构性学习方法，可以迁移到"测量""万以内的加法和减法"等单元的学习中。</span>
+    </div>
+  </div>
+</div>
+
+<h2>🎯 预期学习成果</h2>
+<div class="card">
+  <p>学完本模块，你将收获：</p>
+  <ul class="result-list" style="margin-top: 10px;">
+    <li><span class="check-icon">✅</span> 一份"一分钟时间体验档案"（建构性成果）</li>
+    <li><span class="check-icon">✅</span> 一套可迁移的"解析性原理"和"建构性原理"</li>
+    <li><span class="check-icon">✅</span> 一种"真善美"的思维方式</li>
+    <li><span class="check-icon">✅</span> 对时间概念的更深层次理解</li>
+  </ul>
+  <div style="margin-top: 14px; text-align: center;">
+    <button class="tag" style="cursor: pointer; border: none; font-size: var(--font-body); padding: 8px 24px;" onclick="this.textContent = this.textContent === '🎬 准备好了，开始学习！' ? '✅ 已确认，出发！' : '🎬 准备好了，开始学习！'">🎬 准备好了，开始学习！</button>
+  </div>
+</div>
+
+</div>
+<script>
+function toggleTab(el) {
+  var tabs = document.querySelectorAll('.value-tab');
+  tabs.forEach(function(t) { t.classList.remove('active'); });
+  el.classList.add('active');
+}
+</script>
+</body>
+</html>

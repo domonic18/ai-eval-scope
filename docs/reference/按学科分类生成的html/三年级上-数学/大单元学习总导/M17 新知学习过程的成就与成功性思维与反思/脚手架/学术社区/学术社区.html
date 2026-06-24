@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学术社区 — 时间主题</title>
+<style>
+  :root {
+    --primary: #1677ff;
+    --primary-hover: #4096ff;
+    --accent: #69b1ff;
+    --bg: #f0f5ff;
+    --card-bg: #ffffff;
+    --text: rgba(0,0,0,0.88);
+    --text-secondary: rgba(0,0,0,0.45);
+    --border: #d9d9d9;
+    --border-radius: 8px;
+    --shadow: 0 2px 8px rgba(0,0,0,0.06);
+    --font-body: 18px;
+    --font-h1: 28px;
+    --font-h2: 22px;
+    --line-height: 1.8;
+  }
+  body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); font-size: var(--font-body); line-height: var(--line-height); }
+  .container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+  h1 { font-size: var(--font-h1); color: var(--primary); margin: 16px 0 8px; }
+  h2 { font-size: var(--font-h2); color: var(--primary); margin: 24px 0 8px; border-left: 4px solid var(--primary); padding-left: 12px; }
+  h3 { font-size: calc(var(--font-body) + 2px); color: var(--text); margin: 18px 0 6px; }
+  .card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px; border: 1px solid var(--border); }
+  .section-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px; border: 1px solid var(--border); }
+  .section-card h3 { color: var(--primary); display: flex; align-items: center; gap: 8px; }
+  .role-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 12px 0; }
+  .role-item { background: var(--bg); border-radius: var(--border-radius); padding: 12px; text-align: center; border: 1px solid var(--border); transition: transform 0.2s; cursor: default; }
+  .role-item:hover { transform: scale(1.05); border-color: var(--primary); }
+  .role-item .role-icon { font-size: 28px; }
+  .role-item .role-name { font-weight: 600; margin: 4px 0 2px; }
+  .role-item .role-desc { font-size: calc(var(--font-body) - 3px); color: var(--text-secondary); }
+  .discuss-item { background: var(--bg); border-radius: var(--border-radius); padding: 14px; margin: 10px 0; border-left: 4px solid var(--accent); }
+  .discuss-item .num { display: inline-block; background: var(--primary); color: #fff; width: 28px; height: 28px; line-height: 28px; text-align: center; border-radius: 50%; margin-right: 8px; font-size: calc(var(--font-body) - 3px); }
+  .task-card { background: var(--bg); border-radius: var(--border-radius); padding: 14px; margin: 10px 0; border-left: 4px solid var(--accent); }
+  .output-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 12px 0; }
+  .output-item { background: var(--bg); border-radius: var(--border-radius); padding: 16px; text-align: center; border: 1px dashed var(--border); transition: all 0.2s; }
+  .output-item:hover { border-color: var(--primary); background: #e6f0ff; }
+  .output-item .out-icon { font-size: 32px; }
+  .toggle-btn { background: var(--primary); color: #fff; border: none; padding: 8px 18px; border-radius: var(--border-radius); font-size: var(--font-body); cursor: pointer; transition: background 0.2s; }
+  .toggle-btn:hover { background: var(--primary-hover); }
+  .toggle-btn:active { transform: scale(0.97); }
+  .hidden-content { display: none; margin-top: 12px; padding: 16px; background: var(--bg); border-radius: var(--border-radius); }
+  .hidden-content.show { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+  @media (max-width: 600px) {
+    .container { padding: 12px; }
+    .role-grid { grid-template-columns: repeat(2, 1fr); }
+    .output-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>🤝 学术社区 — 学习共同体</h1>
+  <div class="card">
+    <p>构建<strong>"学习共同体"</strong> —— 通过与同伴、家庭和社会的真实连接，把你的反思分享出去，也从别人的经验中学习。</p>
+  </div>
+
+  <h2>👥 同伴连接 · 讨论与协作</h2>
+
+  <div class="section-card">
+    <h3>💬 讨论议题</h3>
+    <div class="discuss-item">
+      <span class="num">1</span> <strong>你觉得"1分钟"到底有多长？</strong><br>每人先闭眼估时，然后一起对答案
+    </div>
+    <div class="discuss-item">
+      <span class="num">2</span> <strong>你在"时、分、秒"单元中最大的一次进步是怎么发生的？</strong>
+    </div>
+    <div class="discuss-item">
+      <span class="num">3</span> <strong>分享你的"学习成功档案"</strong><br>别人看你的档案能看懂吗？
+    </div>
+  </div>
+
+  <div class="section-card">
+    <h3>🎭 角色分工</h3>
+    <div class="role-grid">
+      <div class="role-item">
+        <div class="role-icon">⏱️</div>
+        <div class="role-name">计时员</div>
+        <div class="role-desc">控制讨论时间</div>
+      </div>
+      <div class="role-item">
+        <div class="role-icon">📝</div>
+        <div class="role-name">记录员</div>
+        <div class="role-desc">记录"成功经验"</div>
+      </div>
+      <div class="role-item">
+        <div class="role-icon">🎤</div>
+        <div class="role-name">发言员</div>
+        <div class="role-desc">代表小组汇报</div>
+      </div>
+      <div class="role-item">
+        <div class="role-icon">❓</div>
+        <div class="role-name">质疑员</div>
+        <div class="role-desc">推动讨论深入</div>
+      </div>
+    </div>
+    <button class="toggle-btn" onclick="toggleContent('roles-detail')">💡 看看你的角色怎么当</button>
+    <div id="roles-detail" class="hidden-content">
+      <p><strong>计时员：</strong>准备一个计时器，每个议题限时5分钟。</p>
+      <p><strong>记录员：</strong>用关键词记录，讨论结束后整理成完整句子。</p>
+      <p><strong>发言员：</strong>汇报前先复述一遍，确保说清楚了。</p>
+      <p><strong>质疑员：</strong>用"我有个不同的想法…"开头，不否定别人，只补充新角度。</p>
+    </div>
+  </div>
+
+  <h2>🏠 家校连接 · 支持与反馈</h2>
+  <div class="section-card">
+    <div class="task-card">
+      <strong>📋 家庭任务：</strong>采访家人 —— "您觉得10分钟能做什么？"<br>对比你和家人的答案，看看有什么不同。
+    </div>
+    <div class="task-card">
+      <strong>📬 家长反馈：</strong>请家长看你完成的"时间账单"，听听他们的建议。
+    </div>
+  </div>
+
+  <h2>🌐 社会连接 · 真实世界</h2>
+  <div class="section-card">
+    <div class="discuss-item">
+      <strong>🔬 专家连线（可选）：</strong>了解精算师 / 航天工程师 / 体育教练如何与时间打交道
+    </div>
+    <div class="discuss-item">
+      <strong>👀 社会观察：</strong>观察公共场所的钟表设计和时间信息展示<br>
+      <span style="color:var(--text-secondary)">（车站大屏、商场营业时间表、红绿灯倒计时……）</span>
+    </div>
+  </div>
+
+  <h2>📤 输出机制</h2>
+  <div class="output-grid">
+    <div class="output-item">
+      <div class="out-icon">🖼️</div>
+      <strong>小组反思海报</strong><br>
+      <span style="font-size:calc(var(--font-body)-3px);color:var(--text-secondary)">把讨论成果画在一张大纸上</span>
+    </div>
+    <div class="output-item">
+      <div class="out-icon">🎙️</div>
+      <strong>时间主题分享会</strong><br>
+      <span style="font-size:calc(var(--font-body)-3px);color:var(--text-secondary)">每人3分钟，分享最精彩的发现</span>
+    </div>
+    <div class="output-item">
+      <div class="out-icon">⭐</div>
+      <strong>互评表</strong><br>
+      <span style="font-size:calc(var(--font-body)-3px);color:var(--text-secondary)">打分 + 1条具体建议</span>
+    </div>
+  </div>
+
+</div>
+<script>
+function toggleContent(id) {
+  var el = document.getElementById(id);
+  if (el) { el.classList.toggle('show'); }
+}
+</script>
+</body>
+</html>

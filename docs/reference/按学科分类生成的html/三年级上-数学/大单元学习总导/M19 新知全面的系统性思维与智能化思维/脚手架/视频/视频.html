@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视频脚手架 — 时间单位换算</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body { margin: 0; padding: 0; background: var(--bg); font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); }
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+.header { text-align: center; padding: 32px 20px 20px; background: linear-gradient(135deg, #f0f5ff 0%, #e6f0ff 100%); border-radius: 12px; margin-bottom: 28px; }
+.header h1 { font-size: var(--font-h1); color: var(--primary); margin: 0 0 8px 0; }
+.header p { font-size: calc(var(--font-body) + 2px); color: var(--text-secondary); margin: 0; }
+.level-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 24px 28px; margin-bottom: 24px; border-left: 4px solid var(--primary); }
+.level-card.level-basic { border-left-color: var(--primary); }
+.level-card.level-intermediate { border-left-color: #52c41a; }
+.level-card.level-challenge { border-left-color: #fa8c16; }
+.level-badge { display: inline-block; padding: 4px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 12px; }
+.level-badge.basic { background: var(--primary); }
+.level-badge.intermediate { background: #52c41a; }
+.level-badge.challenge { background: #fa8c16; }
+.level-card h2 { font-size: var(--font-h2); margin: 0 0 12px 0; color: var(--text); }
+.level-card .video-rec { background: #fafafa; border: 1px dashed var(--border); border-radius: 6px; padding: 12px 16px; margin: 12px 0; font-size: 15px; }
+.video-rec strong { color: var(--primary); }
+.task-list { list-style: none; padding: 0; margin: 12px 0; }
+.task-list li { padding: 8px 0 8px 28px; position: relative; border-bottom: 1px solid #f0f0f0; }
+.task-list li:last-child { border-bottom: none; }
+.task-list li::before { content: "▶"; position: absolute; left: 0; top: 8px; color: var(--primary); font-size: 14px; }
+.question-list { list-style: none; padding: 0; margin: 12px 0; }
+.question-list li { padding: 8px 0 8px 32px; position: relative; background: #f9f9f9; border-radius: 6px; margin-bottom: 8px; }
+.question-list li::before { content: "❓"; position: absolute; left: 8px; top: 8px; font-size: 16px; }
+.question-list li .q-text { padding-left: 8px; }
+.pause-point { background: #fffbe6; border: 1px solid #ffe58f; border-radius: 6px; padding: 12px 16px; margin: 12px 0; }
+.pause-point::before { content: "⏸ "; color: #faad14; font-weight: 600; }
+.output-task { background: #f6ffed; border: 1px solid #b7eb8f; border-radius: 6px; padding: 12px 16px; margin: 12px 0; }
+.output-task::before { content: "✏️ "; color: #52c41a; font-weight: 600; }
+.interact-box { background: linear-gradient(135deg, #e6f0ff 0%, #f0f5ff 100%); border-radius: var(--border-radius); padding: 20px; text-align: center; margin-top: 20px; }
+.interact-box h3 { font-size: var(--font-h2); color: var(--primary); margin: 0 0 12px 0; }
+.interact-box .btn-group { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+.interact-box .btn { padding: 10px 24px; border: none; border-radius: 6px; font-size: 16px; font-weight: 500; cursor: pointer; transition: all 0.3s; }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(22,119,255,0.3); }
+.btn-outline { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
+.btn-outline:hover { background: var(--primary); color: #fff; }
+.hidden-content { display: none; margin-top: 16px; padding: 16px; background: #fff; border-radius: 6px; border: 1px solid var(--border); }
+.hidden-content.show { display: block; animation: fadeIn 0.4s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 600px) { .container { padding: 12px 16px; } .level-card { padding: 16px; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🎬 视频脚手架</h1>
+    <p>边看边想，边想边学 — 三个层次，带你从看懂到想深</p>
+  </div>
+
+  <div class="level-card level-basic">
+    <span class="level-badge basic">🌱 基础层</span>
+    <h2>解释型视频</h2>
+    <div class="video-rec"><strong>📺 推荐视频：</strong>《为什么要学习时间单位换算？》（B站 / 腾讯视频搜索）</div>
+    <ul class="task-list">
+      <li><strong>观看任务：</strong>认真看视频中如何解释 ×60 和 ÷60 的换算规则</li>
+    </ul>
+    <p style="font-weight:600;color:var(--text);margin:8px 0 4px;">关键问题：</p>
+    <ul class="question-list">
+      <li><span class="q-text">为什么说时间换算跟人民币换算不一样？</span></li>
+      <li><span class="q-text">视频中使用了什么"记忆口诀"帮你记住进率？</span></li>
+    </ul>
+    <div class="pause-point"><strong>暂停思考点：</strong>@1:30 处暂停 —— 在纸上写下 1时 = ？分、1分 = ？秒</div>
+    <div class="output-task"><strong>输出任务：</strong>用你自己的话写一段"时间换算小结"（50字以内）</div>
+  </div>
+
+  <div class="level-card level-intermediate">
+    <span class="level-badge intermediate">🚀 进阶层</span>
+    <h2>分析型视频</h2>
+    <div class="video-rec"><strong>📺 推荐视频：</strong>《古代人是怎样计时的？》（央视纪录片 / 科普短片）</div>
+    <ul class="task-list">
+      <li><strong>观看任务：</strong>找出古代至少 3 种计时工具，说清它们的工作原理</li>
+    </ul>
+    <p style="font-weight:600;color:var(--text);margin:8px 0 4px;">关键问题：</p>
+    <ul class="question-list">
+      <li><span class="q-text">日晷在阴天和晚上还能用吗？</span></li>
+      <li><span class="q-text">水钟的精度受什么影响？</span></li>
+    </ul>
+    <div class="pause-point"><strong>暂停思考点：</strong>@3:00 处暂停 —— 预测一下沙漏是什么时候发明的</div>
+    <div class="output-task"><strong>输出任务：</strong>画一个"计时工具进化时间线"（从古到今，至少 5 种）</div>
+  </div>
+
+  <div class="level-card level-challenge">
+    <span class="level-badge challenge">🔥 挑战层</span>
+    <h2>辩论 / 前沿型视频</h2>
+    <div class="video-rec"><strong>📺 推荐视频：</strong>《时间是什么？霍金的时间简史片段》（BBC 纪录片选段）</div>
+    <ul class="task-list">
+      <li><strong>观看任务：</strong>听懂"时间箭头"的概念 —— 为什么时间只能向前？</li>
+    </ul>
+    <p style="font-weight:600;color:var(--text);margin:8px 0 4px;">关键问题：</p>
+    <ul class="question-list">
+      <li><span class="q-text">视频中提到了几种"时间箭头"？</span></li>
+      <li><span class="q-text">如果时间可以倒流，会出现什么问题？</span></li>
+    </ul>
+    <div class="pause-point"><strong>暂停思考点：</strong>@5:20 处暂停 —— 你觉得"时间旅行"可能实现吗？写下你的理由</div>
+    <div class="output-task"><strong>输出任务：</strong>写一段 100 字的"我对时间的理解"—— 结合视频和你的课堂所学</div>
+  </div>
+
+  <div class="interact-box">
+    <h3>🎯 学习打卡</h3>
+    <p style="color:var(--text-secondary);margin:0 0 16px 0;">看完视频、完成输出任务后，点击打卡记录你的学习进度</p>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="checkIn('basic')">✅ 完成基础层</button>
+      <button class="btn btn-outline" onclick="checkIn('intermediate')">✅ 完成进阶层</button>
+      <button class="btn btn-outline" onclick="checkIn('challenge')">🔥 完成挑战层</button>
+    </div>
+    <div id="checkinMsg" class="hidden-content"></div>
+  </div>
+</div>
+
+<script>
+function checkIn(level) {
+  const msg = document.getElementById('checkinMsg');
+  const labels = { basic: '基础层 🌱', intermediate: '进阶层 🚀', challenge: '挑战层 🔥' };
+  msg.className = 'hidden-content show';
+  msg.innerHTML = '🎉 恭喜你完成 <strong>' + labels[level] + '</strong> 的学习！<br>继续加油，进入下一层挑战吧！';
+  msg.style.color = '#1677ff';
+}
+</script>
+</body>
+</html>

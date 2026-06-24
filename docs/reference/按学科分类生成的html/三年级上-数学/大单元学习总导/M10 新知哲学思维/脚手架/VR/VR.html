@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VR脚手架：时、分、秒 — 新知哲学思维模块</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+}
+.container { width: 100%; padding: 24px 20px 60px; box-sizing: border-box; }
+
+/* Header */
+.header {
+  text-align: center;
+  padding: 32px 20px 20px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  margin: -24px -20px 24px;
+}
+.header h1 { font-size: var(--font-h1); margin: 0 0 6px; font-weight: 700; }
+.header .sub { font-size: 16px; opacity: 0.9; }
+
+/* Section */
+.section { margin-bottom: 32px; }
+.section-title {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  font-weight: 700;
+  margin: 0 0 12px;
+  padding-left: 14px;
+  border-left: 4px solid var(--primary);
+  line-height: 1.4;
+}
+
+/* Cards */
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  padding: 20px;
+  margin-bottom: 16px;
+  transition: box-shadow 0.2s;
+}
+.card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.12); }
+.card h3 {
+  font-size: 20px;
+  color: var(--primary);
+  margin: 0 0 8px;
+}
+.card p { margin: 0 0 8px; color: var(--text); }
+.card .tip { color: var(--text-secondary); font-size: 15px; }
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 10px 22px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  font-family: inherit;
+  line-height: 1.4;
+}
+.btn:hover { background: var(--primary-hover); }
+.btn:active { transform: scale(0.96); }
+.btn-outline {
+  background: transparent;
+  color: var(--primary);
+  border: 1.5px solid var(--primary);
+}
+.btn-outline:hover { background: var(--bg); }
+
+/* Timer (simulated stopwatch) */
+.timer-box {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+.timer-display {
+  font-size: 36px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--primary);
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 8px 20px;
+  min-width: 160px;
+  text-align: center;
+  border: 1px solid var(--border);
+  letter-spacing: 2px;
+}
+
+/* Challenge table */
+.challenge-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 16px;
+}
+.challenge-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+}
+.challenge-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.challenge-table tr:last-child td { border-bottom: none; }
+.challenge-table .input-cell input {
+  width: 80px;
+  padding: 6px 8px;
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  font-size: 16px;
+  font-family: inherit;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+.challenge-table .input-cell input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(22,119,255,0.15);
+}
+.challenge-table .result-cell { color: var(--text-secondary); font-size: 15px; }
+
+/* Sun-dial simulation */
+.sundial-sim {
+  position: relative;
+  width: 240px;
+  height: 240px;
+  margin: 16px auto;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #f5e6c8, #e8d5a8);
+  border: 3px solid #c4a87a;
+  box-shadow: var(--shadow), inset 0 0 30px rgba(180,140,80,0.15);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+.sundial-sim:active { cursor: grabbing; }
+.sundial-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background: #8b6914;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+}
+.sundial-hand {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 90px;
+  background: linear-gradient(to top, #8b6914, #c4a87a);
+  border-radius: 2px;
+  transform-origin: 50% 0%;
+  transform: translate(-50%, 0) rotate(0deg);
+  z-index: 2;
+  transition: transform 0.05s linear;
+}
+.sundial-shadow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 80px;
+  background: rgba(100,80,40,0.25);
+  border-radius: 4px;
+  transform-origin: 50% 0%;
+  transform: translate(-50%, 0) rotate(180deg);
+  z-index: 1;
+  pointer-events: none;
+}
+.sundial-label {
+  text-align: center;
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+.sundial-angle-label {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-top: 4px;
+}
+
+/* Water clock drip effect */
+.drip-anim {
+  display: inline-block;
+  width: 14px;
+  height: 20px;
+  background: rgba(22,119,255,0.3);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  animation: drip 1.2s ease-in-out infinite;
+  vertical-align: middle;
+}
+@keyframes drip {
+  0% { transform: translateY(0) scaleY(1); opacity: 0.7; }
+  50% { transform: translateY(8px) scaleY(0.8); opacity: 0.5; }
+  100% { transform: translateY(16px) scaleY(0.4); opacity: 0; }
+}
+
+/* Tab toggle for challenge records */
+.tab-bar {
+  display: flex;
+  gap: 4px;
+  margin: 12px 0;
+  flex-wrap: wrap;
+}
+.tab-btn {
+  padding: 8px 18px;
+  border: 1.5px solid var(--border);
+  background: var(--card-bg);
+  border-radius: var(--border-radius) var(--border-radius) 0 0;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: inherit;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+.tab-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.tab-btn:hover:not(.active) { color: var(--primary); border-color: var(--accent); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Philosophy quote */
+.philosophy-box {
+  background: linear-gradient(135deg, #e6f0ff, #f0f5ff);
+  border: 2px solid var(--accent);
+  border-radius: var(--border-radius);
+  padding: 24px;
+  text-align: center;
+  margin: 20px 0;
+  position: relative;
+}
+.philosophy-box::before {
+  content: "\201C";
+  font-size: 60px;
+  color: var(--accent);
+  position: absolute;
+  top: -6px;
+  left: 16px;
+  line-height: 1;
+  opacity: 0.5;
+}
+.philosophy-box p {
+  font-size: 20px;
+  font-style: italic;
+  color: var(--text);
+  margin: 0;
+  line-height: 1.7;
+}
+.philosophy-box .author {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-top: 10px;
+  font-style: normal;
+}
+
+/* Progress steps */
+.steps { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+.step {
+  flex: 1;
+  min-width: 100px;
+  padding: 12px 10px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  text-align: center;
+  font-size: 15px;
+  transition: all 0.2s;
+}
+.step .num {
+  display: block;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--primary);
+}
+.step.active {
+  border-color: var(--primary);
+  background: #e6f0ff;
+}
+
+/* Task cards interaction */
+.task-card { cursor: pointer; }
+.task-card .body-short { display: block; }
+.task-card .body-full { display: none; margin-top: 10px; }
+.task-card.expanded .body-short { display: none; }
+.task-card.expanded .body-full { display: block; }
+
+/* Resource list */
+.resource-list { list-style: none; padding: 0; margin: 8px 0; }
+.resource-list li {
+  padding: 8px 0 8px 24px;
+  position: relative;
+  border-bottom: 1px solid #f0f0f0;
+}
+.resource-list li::before {
+  content: "\25B8";
+  position: absolute;
+  left: 0;
+  color: var(--primary);
+  font-weight: 700;
+}
+.resource-list li:last-child { border-bottom: none; }
+
+/* Info highlight */
+.highlight {
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: var(--border-radius);
+  padding: 12px 16px;
+  margin: 12px 0;
+  font-size: 15px;
+}
+.highlight strong { color: #d46b08; }
+
+/* Responsive */
+@media (max-width: 600px) {
+  .container { padding: 16px 12px 40px; }
+  .header { padding: 24px 16px 16px; }
+  .header h1 { font-size: 24px; }
+  .timer-display { font-size: 28px; min-width: 120px; }
+  .sundial-sim { width: 180px; height: 180px; }
+  .sundial-hand { height: 65px; }
+  .sundial-shadow { height: 58px; }
+  .steps .step { min-width: 70px; font-size: 13px; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>VR 时间探险家</h1>
+    <div class="sub">数学三年级上 · 时、分、秒 &nbsp;|&nbsp; M10 新知哲学思维</div>
+  </div>
+
+  <!-- Section 1: 总体设计 -->
+  <div class="section">
+    <div class="section-title">一、时空之旅 — 为什么用VR学时间？</div>
+    <div class="card">
+      <p>你有没有想过——<strong>时间</strong>到底是什么？它看不见、摸不着，但我们每天起床、上课、放学，都被它安排得明明白白！</p>
+      <p>在这趟<strong>VR 探险</strong>中，你将穿越到古代，亲眼看看日晷的影子如何悄悄移动，再回到现代，亲手组装一个属于自己的计时器。准备好出发了吗？</p>
+      <div class="highlight">
+        <strong>VR 沉浸目标：</strong>置身于不同时间尺度的场景中，用身体感受 1 秒有多长、1 分钟能做什么、1 小时又有多久。让抽象的时间变成你触手可及的体验！
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: VR 沉浸体验任务 -->
+  <div class="section">
+    <div class="section-title">二、三大挑战任务</div>
+
+    <!-- Task 1: 观察 -->
+    <div class="card task-card" onclick="this.classList.toggle('expanded')">
+      <h3>任务一：古今日晷与刻漏 <span class="tip" style="font-size:14px;font-weight:400;">（点击展开详情）</span></h3>
+      <div class="body-short">
+        <p><span class="drip-anim"></span> 观察日晷上的影子如何随太阳移动，聆听铜壶滴漏那古老的滴水声……</p>
+        <p class="tip">试试在脑海中 360° 环绕观察，把每个细节都记下来！</p>
+      </div>
+      <div class="body-full">
+        <p><strong>观察要点：</strong></p>
+        <ul style="padding-left:20px;margin:6px 0 10px;">
+          <li>日晷台上的指针影子在一天中从西→北→东缓慢移动</li>
+          <li>铜壶滴漏的水滴以均匀的节奏落下——古人就是这样数时间的</li>
+          <li>你的手表和手机上的数字时钟，其实和日晷、刻漏在做同一件事：<strong>测量时间的流逝</strong></li>
+        </ul>
+        <p><strong>数字叠加：</strong>在 VR 画面中会叠加一个数字时钟图层，你可以随时对比古代计时和现代计时！</p>
+        <p class="tip">💡 没有 VR 设备？别担心！你可以观看 3D 视频，按住鼠标拖拽视角，一样能 360° 探索！</p>
+        <button class="btn btn-outline" onclick="event.stopPropagation();alert('已记录：古今日晷观察完成！你发现日影移动和滴水节奏了吗？')">标记完成</button>
+      </div>
+    </div>
+
+    <!-- Task 2: 操作 -->
+    <div class="card">
+      <h3>任务二：打造你的日晷计时器</h3>
+      <p>拿起工具，自己组装一个简易日晷！<strong>拖拽下方的指针</strong>，把它对准正确的角度，再启动模拟吧。</p>
+
+      <!-- Sundial simulation -->
+      <div class="sundial-sim" id="sundial">
+        <div class="sundial-center"></div>
+        <div class="sundial-hand" id="sundialHand"></div>
+        <div class="sundial-shadow" id="sundialShadow"></div>
+      </div>
+      <div class="sundial-angle-label" id="angleLabel">当前指针角度：0°</div>
+      <div class="sundial-label">拖拽指针旋转 · 目标：对准 120°（下午 4 点方向）</div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px;">
+        <button class="btn" id="checkAngleBtn">检查角度</button>
+        <button class="btn btn-outline" id="resetSundialBtn">重置</button>
+      </div>
+      <div id="sundialFeedback" style="text-align:center;margin-top:10px;font-weight:600;min-height:28px;"></div>
+      <p class="tip" style="margin-top:10px;">💡 提示：从 12 点方向为 0°，顺时针旋转。下午 4 点大约是 120° 哦！</p>
+    </div>
+
+    <!-- Task 3: 记录 -->
+    <div class="card">
+      <h3>任务三：时间测量日志 — 三个计时挑战</h3>
+      <p>打开你的"时间测量日志"，完成下面三个挑战，看看你的时间感有多准！</p>
+
+      <!-- Tab切换 -->
+      <div class="tab-bar">
+        <div class="tab-btn active" data-tab="challenge1">挑战1：估测1分钟</div>
+        <div class="tab-btn" data-tab="challenge2">挑战2：影子移动</div>
+        <div class="tab-btn" data-tab="challenge3">挑战3：滴漏音频</div>
+      </div>
+
+      <!-- Challenge 1 -->
+      <div class="tab-content active" id="challenge1">
+        <p><strong>挑战1：</strong>在脑海中从 1 默数到 60，你觉得刚好过了 1 分钟时，立刻按"停止"。来试试你的"体内时钟"准不准！</p>
+        <div style="margin:12px 0;">
+          <button class="btn" id="stopwatchStart">开始计时</button>
+          <button class="btn btn-outline" id="stopwatchStop" disabled>停止</button>
+          <button class="btn btn-outline" id="stopwatchReset" disabled>重置</button>
+        </div>
+        <div class="timer-box">
+          <div class="timer-display" id="stopwatchDisplay">00:00.0</div>
+        </div>
+        <div id="stopwatchResult" style="font-size:16px;font-weight:600;color:var(--primary);min-height:24px;"></div>
+      </div>
+
+      <!-- Challenge 2 -->
+      <div class="tab-content" id="challenge2">
+        <p><strong>挑战2：</strong>回顾 VR 中观察到的日晷场景——如果影子在 10 分钟内移动了 2.5°，那么 1 小时（60 分钟）会移动多少度？</p>
+        <div style="margin:10px 0;">
+          <input type="number" id="shadowAnswer" placeholder="你的答案（度）" style="width:120px;padding:8px 10px;border:1.5px solid var(--border);border-radius:4px;font-size:16px;font-family:inherit;">
+          <button class="btn" id="shadowCheckBtn" style="margin-left:8px;">提交</button>
+        </div>
+        <div id="shadowFeedback" style="font-weight:600;min-height:24px;"></div>
+      </div>
+
+      <!-- Challenge 3 -->
+      <div class="tab-content" id="challenge3">
+        <p><strong>挑战3：</strong>铜壶滴漏每 4 秒滴落一滴水。请你测算：如果滴漏一壶水需要 500 滴水，那大约需要多少分钟？</p>
+        <div style="margin:10px 0;">
+          <input type="number" id="dripAnswer" placeholder="你的答案（分钟）" style="width:140px;padding:8px 10px;border:1.5px solid var(--border);border-radius:4px;font-size:16px;font-family:inherit;">
+          <button class="btn" id="dripCheckBtn" style="margin-left:8px;">提交</button>
+        </div>
+        <div id="dripFeedback" style="font-weight:600;min-height:24px;"></div>
+      </div>
+
+      <!-- 记录表 -->
+      <div style="margin-top:16px;">
+        <p><strong>我的时间测量记录表</strong></p>
+        <table class="challenge-table">
+          <thead>
+            <tr><th>挑战</th><th>你的答案</th><th>实际值</th><th>误差</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>估测1分钟</td>
+              <td class="input-cell"><input type="text" id="recordEst1" placeholder="秒" readonly></td>
+              <td>60 秒</td>
+              <td class="result-cell" id="recordErr1">--</td>
+            </tr>
+            <tr>
+              <td>影子移动</td>
+              <td class="input-cell"><input type="text" id="recordEst2" placeholder="度" readonly></td>
+              <td>15°</td>
+              <td class="result-cell" id="recordErr2">--</td>
+            </tr>
+            <tr>
+              <td>滴漏测算</td>
+              <td class="input-cell"><input type="text" id="recordEst3" placeholder="分" readonly></td>
+              <td>33.3 分</td>
+              <td class="result-cell" id="recordErr3">--</td>
+            </tr>
+          </tbody>
+        </table>
+        <button class="btn btn-outline" id="clearRecordBtn">清空记录</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: 资源推荐 -->
+  <div class="section">
+    <div class="section-title">三、VR 探险工具箱</div>
+    <div class="card">
+      <p>想继续探索时间的秘密？试试这些超酷的工具和资源！</p>
+      <ul class="resource-list">
+        <li><strong>Titans of Space</strong> — 在宇宙尺度中感受天体的运行周期，震撼体验时间与空间</li>
+        <li><strong>YouTube 360° 视频</strong> — 搜索"日晷 360"或"Ancient Sundial VR"，足不出户游遍世界计时博物馆</li>
+        <li><strong>Three.js 互动演示</strong> — 在浏览器里用鼠标拖拽 3D 日晷模型，代码开源可自由修改</li>
+        <li><strong>CoSpaces Edu</strong> — 自己搭建一个 VR 时间场景，邀请同学来参观你的杰作</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Section 4: 教学流程 -->
+  <div class="section">
+    <div class="section-title">四、一节课的冒险路线图（40分钟）</div>
+    <div class="card">
+      <div class="steps">
+        <div class="step active"><span class="num">5'</span> 导入</div>
+        <div class="step"><span class="num">15'</span> 观察+操作</div>
+        <div class="step"><span class="num">10'</span> 记录挑战</div>
+        <div class="step"><span class="num">5'</span> 数据对比</div>
+        <div class="step"><span class="num">5'</span> 哲学思考</div>
+      </div>
+      <ol style="padding-left:20px;margin:8px 0 0;">
+        <li><strong>导入（5分钟）：</strong>"从早上到学校到现在，你感觉过了多久？"——用你的直觉回答，然后开启 VR 之旅。</li>
+        <li><strong>观察+操作（15分钟）：</strong>沉浸在古老计时场景中，完成日晷观察和指针拖拽组装。</li>
+        <li><strong>记录挑战（10分钟）：</strong>三个计时挑战轮番上阵，考验你的时间感！</li>
+        <li><strong>数据对比（5分钟）：</strong>和小伙伴交换记录表，看看谁的误差最小？</li>
+        <li><strong>哲学思考（5分钟）：</strong>一起来聊聊——时间到底是"被发现"的还是"被发明"的？</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- Section 5: 新知哲学思维锚点 -->
+  <div class="section">
+    <div class="section-title">五、哲学小剧场：时间的秘密</div>
+    <div class="philosophy-box">
+      <p>"时间是一条河流，但我们用刻度把它锁进了钟表里。"</p>
+      <div class="author">—— 想一想：如果世界上没有钟表，时间还会存在吗？</div>
+    </div>
+    <div class="card">
+      <p><strong>思考时间：</strong>你刚刚用日晷看到了太阳的影子，用滴漏听到了水滴声，还用手机上的秒表测量了 1 分钟。这些工具都在做同一件事——<strong>把看不见的时间，变成看得见的东西</strong>。</p>
+      <p>古人看太阳就知道时辰，我们看手表就知道几点。测量工具变了，但时间从未停下。你觉得，"测量"到底是在做什么呢？</p>
+      <button class="btn btn-outline" onclick="document.getElementById('thinkAnswer').style.display='block'">写下你的想法</button>
+      <div id="thinkAnswer" style="display:none;margin-top:10px;">
+        <textarea placeholder="你觉得测量是什么呢？把你想到的写下来吧……" style="width:100%;max-width:500px;height:70px;padding:10px;border:1.5px solid var(--border);border-radius:4px;font-size:16px;font-family:inherit;resize:vertical;box-sizing:border-box;"></textarea>
+        <button class="btn" style="margin-top:8px;" onclick="alert('你的想法已保存！记住：每一个伟大的科学家都是从问"为什么"开始的！')">保存想法</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  // ---- Sundial drag ----
+  const sundial = document.getElementById('sundial');
+  const hand = document.getElementById('sundialHand');
+  const shadow = document.getElementById('sundialShadow');
+  const angleLabel = document.getElementById('angleLabel');
+  const feedback = document.getElementById('sundialFeedback');
+  let currentAngle = 0;
+  let dragging = false;
+
+  function updateSundial(angle) {
+    currentAngle = angle % 360;
+    if (currentAngle < 0) currentAngle += 360;
+    hand.style.transform = 'translate(-50%, 0) rotate(' + currentAngle + 'deg)';
+    shadow.style.transform = 'translate(-50%, 0) rotate(' + (currentAngle + 180) + 'deg)';
+    angleLabel.textContent = '当前指针角度：' + Math.round(currentAngle) + '°';
+  }
+
+  function getAngleFromEvent(e) {
+    const rect = sundial.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const dx = clientX - cx;
+    const dy = clientY - cy;
+    let angle = Math.atan2(dx, -dy) * (180 / Math.PI);
+    if (angle < 0) angle += 360;
+    return angle;
+  }
+
+  function onStart(e) {
+    e.preventDefault();
+    dragging = true;
+  }
+  function onMove(e) {
+    if (!dragging) return;
+    e.preventDefault();
+    const angle = getAngleFromEvent(e);
+    updateSundial(angle);
+  }
+  function onEnd(e) {
+    if (!dragging) return;
+    dragging = false;
+    feedback.textContent = '';
+  }
+
+  sundial.addEventListener('mousedown', onStart);
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onEnd);
+  sundial.addEventListener('touchstart', onStart, { passive: false });
+  document.addEventListener('touchmove', onMove, { passive: false });
+  document.addEventListener('touchend', onEnd);
+
+  document.getElementById('checkAngleBtn').addEventListener('click', function() {
+    const a = Math.round(currentAngle);
+    const target = 120;
+    const diff = Math.abs(a - target);
+    if (diff <= 5) {
+      feedback.innerHTML = '<span style="color:#1677ff;">&#10003; 太棒了！指针已对准 ' + target + '°，日晷开始报时！</span>';
+    } else {
+      feedback.innerHTML = '<span style="color:#ff4d4f;">偏差 ' + diff + '°，再微调一下吧！目标角度是 ' + target + '°</span>';
+    }
+  });
+
+  document.getElementById('resetSundialBtn').addEventListener('click', function() {
+    updateSundial(0);
+    feedback.textContent = '';
+  });
+
+  // ---- Stopwatch ----
+  const swDisplay = document.getElementById('stopwatchDisplay');
+  const swStart = document.getElementById('stopwatchStart');
+  const swStop = document.getElementById('stopwatchStop');
+  const swReset = document.getElementById('stopwatchReset');
+  const swResult = document.getElementById('stopwatchResult');
+  let swInterval = null;
+  let swRunning = false;
+  let swStartTime = 0;
+  let swElapsed = 0;
+
+  function formatSW(ms) {
+    const totalSec = ms / 1000;
+    const m = Math.floor(totalSec / 60);
+    const s = Math.floor(totalSec % 60);
+    const ds = Math.floor((totalSec % 1) * 10);
+    return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0') + '.' + ds;
+  }
+
+  function updateSW() {
+    swElapsed = Date.now() - swStartTime;
+    swDisplay.textContent = formatSW(swElapsed);
+  }
+
+  swStart.addEventListener('click', function() {
+    if (swRunning) return;
+    swRunning = true;
+    swStartTime = Date.now() - swElapsed;
+    swInterval = setInterval(updateSW, 100);
+    swStart.disabled = true;
+    swStop.disabled = false;
+    swReset.disabled = false;
+    swResult.textContent = '';
+  });
+
+  swStop.addEventListener('click', function() {
+    if (!swRunning) return;
+    swRunning = false;
+    clearInterval(swInterval);
+    swStart.disabled = false;
+    swStop.disabled = true;
+    const totalSec = swElapsed / 1000;
+    const diff = Math.abs(totalSec - 60);
+    let msg = '你估测了 ' + totalSec.toFixed(1) + ' 秒';
+    if (diff <= 3) {
+      msg += ' —— 哇，你的体内时钟超准！误差不到 3 秒！&#127775;';
+    } else if (diff <= 10) {
+      msg += ' —— 不错哦，误差在 ' + diff.toFixed(1) + ' 秒内，多练练会更准！';
+    } else {
+      msg += ' —— 差距有点大，别灰心！再试一次，用深呼吸来找节奏！';
+    }
+    swResult.innerHTML = msg;
+    // update record table
+    document.getElementById('recordEst1').value = totalSec.toFixed(1) + 's';
+    document.getElementById('recordErr1').textContent = diff.toFixed(1) + 's';
+  });
+
+  swReset.addEventListener('click', function() {
+    swRunning = false;
+    clearInterval(swInterval);
+    swElapsed = 0;
+    swDisplay.textContent = '00:00.0';
+    swStart.disabled = false;
+    swStop.disabled = true;
+    swReset.disabled = true;
+    swResult.textContent = '';
+  });
+
+  // ---- Tab switching ----
+  document.querySelectorAll('.tab-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+      document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+      this.classList.add('active');
+      document.getElementById(this.dataset.tab).classList.add('active');
+    });
+  });
+
+  // ---- Challenge 2: Shadow ----
+  document.getElementById('shadowCheckBtn').addEventListener('click', function() {
+    const val = parseFloat(document.getElementById('shadowAnswer').value);
+    const fb = document.getElementById('shadowFeedback');
+    if (isNaN(val)) { fb.textContent = '请先输入一个数字哦！'; return; }
+    const correct = 15;
+    const diff = Math.abs(val - correct);
+    document.getElementById('recordEst2').value = val + '°';
+    document.getElementById('recordErr2').textContent = diff.toFixed(1) + '°';
+    if (diff <= 1) {
+      fb.innerHTML = '<span style="color:#1677ff;">&#10003; 完全正确！10分钟移动2.5°，60分钟就是 2.5° × 6 = 15°！</span>';
+    } else {
+      fb.innerHTML = '<span style="color:#ff4d4f;">还差一点哦！提示：60 ÷ 10 = 6，所以是 2.5 × 6 = ?</span>';
+    }
+  });
+
+  // ---- Challenge 3: Drip ----
+  document.getElementById('dripCheckBtn').addEventListener('click', function() {
+    const val = parseFloat(document.getElementById('dripAnswer').value);
+    const fb = document.getElementById('dripFeedback');
+    if (isNaN(val)) { fb.textContent = '请先输入一个数字哦！'; return; }
+    // 500 drops * 4 sec = 2000 sec = 2000/60 = 33.33 min
+    const correct = 33.3;
+    const diff = Math.abs(val - correct);
+    document.getElementById('recordEst3').value = val + '分';
+    document.getElementById('recordErr3').textContent = diff.toFixed(1) + '分';
+    if (diff <= 2) {
+      fb.innerHTML = '<span style="color:#1677ff;">&#10003; 算对了！500 × 4 = 2000 秒，2000 ÷ 60 ≈ 33.3 分钟！</span>';
+    } else {
+      fb.innerHTML = '<span style="color:#ff4d4f;">再想想：每滴 4 秒，500 滴一共多少秒？再除以 60 换算成分钟哦。</span>';
+    }
+  });
+
+  // ---- Clear record ----
+  document.getElementById('clearRecordBtn').addEventListener('click', function() {
+    document.getElementById('recordEst1').value = '';
+    document.getElementById('recordEst2').value = '';
+    document.getElementById('recordEst3').value = '';
+    document.getElementById('recordErr1').textContent = '--';
+    document.getElementById('recordErr2').textContent = '--';
+    document.getElementById('recordErr3').textContent = '--';
+    document.getElementById('stopwatchDisplay').textContent = '00:00.0';
+    swElapsed = 0;
+    swDisplay.textContent = '00:00.0';
+    if (swRunning) {
+      swRunning = false;
+      clearInterval(swInterval);
+    }
+    swStart.disabled = false;
+    swStop.disabled = true;
+    swReset.disabled = true;
+    document.getElementById('shadowAnswer').value = '';
+    document.getElementById('dripAnswer').value = '';
+    document.getElementById('shadowFeedback').textContent = '';
+    document.getElementById('dripFeedback').textContent = '';
+    document.getElementById('swResult').textContent = '';
+    document.getElementById('sundialFeedback').textContent = '';
+    updateSundial(0);
+  });
+
+  // init
+  updateSundial(0);
+})();
+</script>
+</body>
+</html>

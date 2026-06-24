@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性原理 — 从时、分、秒中提炼可迁移的分析方法</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff;
+  padding: 32px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+  text-align: center;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; font-weight: 700; }
+.header p { font-size: 16px; opacity: 0.9; }
+
+.intro {
+  background: var(--card-bg);
+  padding: 24px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 24px;
+}
+.intro p { margin-bottom: 12px; }
+.intro p:last-child { margin-bottom: 0; }
+
+/* Principle Accordion */
+.principle {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+  overflow: hidden;
+  transition: box-shadow 0.3s;
+}
+.principle:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.1); }
+
+.principle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px;
+  cursor: pointer;
+  user-select: none;
+  gap: 12px;
+}
+.principle-header h3 {
+  font-size: var(--font-h2);
+  color: var(--text);
+  flex: 1;
+}
+.principle-header .toggle-icon {
+  font-size: 20px;
+  color: var(--primary);
+  transition: transform 0.3s;
+  flex-shrink: 0;
+}
+.principle.open .toggle-icon { transform: rotate(180deg); }
+
+.principle-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.principle-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s ease;
+}
+.principle.open .principle-body {
+  max-height: 1200px;
+}
+
+.principle-content {
+  padding: 0 24px 20px;
+  border-top: 1px solid var(--border);
+}
+
+.principle-content h4 {
+  font-size: 16px;
+  color: var(--primary);
+  margin: 14px 0 6px;
+}
+.principle-content h4:first-child { margin-top: 16px; }
+
+.principle-content p {
+  margin-bottom: 8px;
+}
+
+.principle-content .tag {
+  display: inline-block;
+  background: #f0f5ff;
+  color: var(--primary);
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin: 2px 4px 2px 0;
+}
+
+/* Practice Section */
+.practice-section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin: 28px 0;
+}
+.practice-section h2 {
+  font-size: var(--font-h2);
+  margin-bottom: 16px;
+  color: var(--text);
+}
+.practice-card {
+  background: #fafafa;
+  border-radius: 8px;
+  padding: 18px;
+  margin-bottom: 14px;
+  border-left: 4px solid var(--primary);
+}
+.practice-card h3 {
+  font-size: 17px;
+  margin-bottom: 8px;
+  color: var(--primary);
+}
+.practice-card p { margin-bottom: 6px; }
+.practice-card .hint {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 10px 0;
+  font-size: 15px;
+}
+
+/* Self-check */
+.self-check {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin: 20px 0;
+}
+.self-check h2 {
+  font-size: var(--font-h2);
+  margin-bottom: 16px;
+}
+.check-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.check-item:last-child { border-bottom: none; }
+.check-item .q { font-weight: 600; margin-bottom: 4px; }
+.check-item .hint-text { color: var(--text-secondary); font-size: 15px; }
+
+/* Buttons for practice reveal */
+.reveal-btn {
+  padding: 6px 16px;
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+  background: var(--card-bg);
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 8px;
+  transition: all 0.3s;
+  font-family: inherit;
+}
+.reveal-btn:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
+.reveal-content {
+  display: none;
+  margin-top: 10px;
+  padding: 12px;
+  background: #f6ffed;
+  border-radius: 6px;
+  border: 1px solid #b7eb8f;
+}
+.reveal-content.show { display: block; }
+
+@media (max-width: 600px) {
+  .container { padding: 16px 12px; }
+  .header { padding: 24px 16px; }
+  .principle-header { padding: 14px 16px; }
+  .principle-content { padding: 0 16px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🔍 解析性原理</h1>
+  <p>从"时、分、秒"中提炼可迁移的分析方法 · 数学三年级上</p>
+</div>
+
+<div class="intro">
+  <p>前面在解析性示例中，你跟着专家一起分析了"时间单位是怎么来的"这个问题。你可能看到了一个有意思的现象：秒、分、时这些我们每天都在用的单位，其实并不是天然存在的。</p>
+  <p>这些看似"理所当然"的知识背后，都有一个人为建构的过程。<strong>解析性原理</strong>就是帮你把"追问源头、拆解依据"的思维方式提取出来，让它变成你可以随身携带的思考工具，用到学数学、语文、科学甚至解决生活中遇到的问题中去。</p>
+</div>
+
+<!-- 原理1 -->
+<div class="principle open" id="p1">
+  <div class="principle-header" onclick="togglePrinciple('p1')">
+    <span class="principle-number">1</span>
+    <h3>起源追问法 — 遇到一个概念，先问"它从哪里来"</h3>
+    <span class="toggle-icon">▾</span>
+  </div>
+  <div class="principle-body">
+    <div class="principle-content">
+      <h4>📖 原理说明</h4>
+      <p>任何一个我们今天使用的概念或单位，都有它被发明、被定义的历史过程。追问它的起源，能让你理解它为什么是这样的，而不是死记硬背。</p>
+      <h4>🔬 在示例中的体现</h4>
+      <p>专家带着你追问"秒"这个单位是怎么来的——原来"1秒"最早是基于地球自转周期（1天）的1/86400定义出来的。后来科学家发现地球自转不稳定，又把它改成了用铯原子振动周期来定义。</p>
+      <h4>✋ 如何使用</h4>
+      <p>每当你学到一个新的单位或概念，先问自己三个问题：①这一定义背后对应自然中的什么现象？②是谁第一个提出来的？③当年的定义和今天的定义有没有变化？</p>
+      <h4>🔄 可迁移到哪些问题</h4>
+      <p><span class="tag">千克怎么定义的？</span><span class="tag">为什么先乘除后加减？</span><span class="tag">"意思"这个词的来历</span></p>
+      <h4>⚠️ 注意事项</h4>
+      <p>不要停留在"知道了历史"就结束，重点是要思考——<strong>这个定义方式有什么好处？它解决了什么问题？</strong></p>
+    </div>
+  </div>
+</div>
+
+<!-- 原理2 -->
+<div class="principle" id="p2">
+  <div class="principle-header" onclick="togglePrinciple('p2')">
+    <span class="principle-number">2</span>
+    <h3>依据拆解法 — 区分"自然规律"和"人为约定"</h3>
+    <span class="toggle-icon">▾</span>
+  </div>
+  <div class="principle-body">
+    <div class="principle-content">
+      <h4>📖 原理说明</h4>
+      <p>知识可以分为两类：一类是自然本身的规律（比如地球绕太阳转一圈大约365天），另一类是人为为了方便而做的约定（比如把365天分成12个月，把1小时分成60分钟）。把这两类区分开，你才能知道哪些是"不能改的"，哪些是"可以商量换个方式的"。</p>
+      <h4>🔬 在示例中的体现</h4>
+      <p>太阳东升西落、地球自转一圈约24小时——这是自然规律，我们不能改变。但是"1小时=60分钟"——这是人为的约定。如果当初人们选择了十进制，那1小时就是100分钟。</p>
+      <h4>✋ 如何使用</h4>
+      <p>拿到一个知识点，先在脑子里画一个表格：左边写"自然规律（无法改变）"，右边写"人为约定（可以不同）"。把知识填进去。</p>
+      <h4>🔄 可迁移到哪些问题</h4>
+      <p><span class="tag">闰年为什么存在？</span><span class="tag">星期为什么是7天？</span><span class="tag">温度计的0度和100度</span></p>
+      <h4>⚠️ 注意事项</h4>
+      <p>很多知识是"自然+人为"混合的，不要简单二选一。要追问：它的哪部分来自自然，哪部分来自人的选择？</p>
+    </div>
+  </div>
+</div>
+
+<!-- 原理3 -->
+<div class="principle" id="p3">
+  <div class="principle-header" onclick="togglePrinciple('p3')">
+    <span class="principle-number">3</span>
+    <h3>维度区分法 — 分清"客观现象"与"测量工具"</h3>
+    <span class="toggle-icon">▾</span>
+  </div>
+  <div class="principle-body">
+    <div class="principle-content">
+      <h4>📖 原理说明</h4>
+      <p>时间本身是看不见摸不着的，我们能看到的是"一个苹果从树上掉下来"、"沙子从沙漏流完"、"太阳的影子在移动"。这些是客观现象。但我们用钟表、沙漏、日晷来"测量"时间，仪器的读数只是对时间的近似表达，不等于时间本身。</p>
+      <h4>🔬 在示例中的体现</h4>
+      <p>示例中专家让你思考——人类并不是凭空想出了"秒"，而是先找到一个稳定的自然现象（地球自转、铯原子振动），然后用它作为"尺子"去量时间。钟表只是把这种测量变得方便了而已。</p>
+      <h4>✋ 如何使用</h4>
+      <p>当你在生活中看到某个数字（比如"现在8:05"），试着想一下：这个数字背后对应着哪个自然现象？它是通过什么工具测量得到的？这个测量工具准不准？</p>
+      <h4>🔄 可迁移到哪些问题</h4>
+      <p><span class="tag">温度计测的是温度还是水银膨胀？</span><span class="tag">GPS测的是位置还是信号时间？</span><span class="tag">体重秤测的是体重还是弹簧形变？</span></p>
+    </div>
+  </div>
+</div>
+
+<!-- 原理4 -->
+<div class="principle" id="p4">
+  <div class="principle-header" onclick="togglePrinciple('p4')">
+    <span class="principle-number">4</span>
+    <h3>进制的选择逻辑 — 为什么选60而不是10</h3>
+    <span class="toggle-icon">▾</span>
+  </div>
+  <div class="principle-body">
+    <div class="principle-content">
+      <h4>📖 原理说明</h4>
+      <p>进制的选择不是随意的，背后往往有数学、历史和使用便捷性的综合考量。理解为什么选用某个进制，比记住进制本身更重要。</p>
+      <h4>🔬 在示例中的体现</h4>
+      <p>1小时=60分钟来自古巴比伦的60进制。60有很多因数（1,2,3,4,5,6,10,12,15,20,30,60），方便均分。如果当初选了10进制，1小时的1/3就是3.333...分钟，多麻烦！</p>
+      <h4>✋ 如何使用</h4>
+      <p>学到一个有进制的知识时，问自己：为什么选这个数？这个数有哪些因数？换成其他进制会怎样？</p>
+      <h4>🔄 可迁移到哪些问题</h4>
+      <p><span class="tag">圆为什么是360度？</span><span class="tag">一周为什么是7天？</span><span class="tag">为什么时钟是12小时？</span><span class="tag">二进制为什么重要？</span></p>
+    </div>
+  </div>
+</div>
+
+<!-- 原理5 -->
+<div class="principle" id="p5">
+  <div class="principle-header" onclick="togglePrinciple('p5')">
+    <span class="principle-number">5</span>
+    <h3>局部分析法 — 先拆成小块，再看清关系</h3>
+    <span class="toggle-icon">▾</span>
+  </div>
+  <div class="principle-body">
+    <div class="principle-content">
+      <h4>📖 原理说明</h4>
+      <p>面对一个复杂的时间问题，如果直接去想整体答案，很容易乱。正确做法是：先把问题分解成若干个小的、可计算的部分，再分别计算每一部分，最后把各部分结果合起来。</p>
+      <h4>🔬 在示例中的体现</h4>
+      <p>专家并没有直接回答"时间是怎么定义的"，而是先拆成"1天→1小时→1分钟→1秒"这条链条，每一段都用对应的方法去分析。</p>
+      <h4>✋ 如何使用</h4>
+      <p>遇到一个大的时间问题，先别急着算答案。先问"这个问题能拆成几个小问题？"，然后在纸上分别列出每个小问题的答案，最后再串起来。</p>
+      <h4>🔄 可迁移到哪些问题</h4>
+      <p><span class="tag">运动会赛程规划</span><span class="tag">多段路程时间计算</span><span class="tag">写作文段落结构规划</span></p>
+    </div>
+  </div>
+</div>
+
+<!-- 原理应用练习 -->
+<div class="practice-section">
+  <h2>🧪 原理应用练习</h2>
+
+  <div class="practice-card">
+    <h3>练习1：古代人没有钟表，怎么知道"一刻钟"有多长？</h3>
+    <p><strong>情境：</strong>你穿越到了没有钟表的古代，有人告诉你"等一刻钟再来找我"。你需要向周围的人解释"一刻钟"到底有多长。</p>
+    <p><strong>解析任务：</strong></p>
+    <p>① 分析"一刻"的来源——它是自然规律还是人为约定？② 设计至少2种不用钟表测量"一刻钟"的方法 ③ 判断你的方法准不准，误差主要来自哪里</p>
+    <p><strong>建议原理：</strong>起源追问法 + 依据拆解法 + 维度区分法</p>
+    <div class="hint">💡 提示："刻"在中国古代是把一昼夜分成100刻，后来改成96刻，15分钟=1刻。想一想：一炷香燃烧的速度受什么因素影响？你的"一刻钟"在不同天气下长度会不会变？</div>
+    <button class="reveal-btn" onclick="toggleReveal('r1')">查看参考答案方向</button>
+    <div class="reveal-content" id="r1">
+      <p>"一刻"是人为约定的划分方式（将一昼夜均分）。可以用"一炷香"——调整香的长度使其恰好15分钟烧完；也可以用"滴水"——用漏壶测量。误差主要来自风力对香燃烧速度的影响、水滴速度的不均匀等。关键在于意识到<b>任何测量都是对真实时间的近似</b>。</p>
+    </div>
+  </div>
+
+  <div class="practice-card">
+    <h3>练习2：如果让你重新设计钟表，你会改成10进制吗？</h3>
+    <p><strong>情境：</strong>某个外星球的一天是20个小时，请你用十进制设计"时、分、秒"系统。</p>
+    <p><strong>解析任务：</strong>① 重新划分：1天=?小时，1小时=?分钟，1分钟=?秒 ② 对比地球60进制，列出利弊 ③ 思考为什么地球人没有选择十进制</p>
+    <p><strong>建议原理：</strong>进制的选择逻辑 + 依据拆解法 + 局部分析法</p>
+    <div class="hint">💡 提示：先定思路——把1天作为一个整体，你想把它切成多少份？为什么？再想一下，100进制的分钟和秒，在分蛋糕、做运动等场景中有什么不方便的地方？</div>
+    <button class="reveal-btn" onclick="toggleReveal('r2')">查看参考答案方向</button>
+    <div class="reveal-content" id="r2">
+      <p>如果1天=20小时（自然给了外星球），1小时=100分钟，1分钟=100秒，那么1秒≈地球上的0.864秒。好处：和十进制数学系统一致，计算方便。坏处：1小时的1/3是33.333...分钟，不够整齐。地球人没有选十进制主要是因为<b>历史传承</b>——60进制的因数多，在缺乏计算器的古代更实用。</p>
+    </div>
+  </div>
+</div>
+
+<!-- 自我检测 -->
+<div class="self-check">
+  <h2>📝 自我检测</h2>
+
+  <div class="check-item">
+    <div class="q">1️⃣ 选一选：下面哪些属于"自然规律"，哪些属于"人为约定"？</div>
+    <p>地球自转一圈约24小时 → <strong>自然规律</strong> &nbsp;&nbsp;|&nbsp;&nbsp; 1小时分成60分钟 → <strong>人为约定</strong></p>
+    <p>一周有7天 → <strong>人为约定</strong> &nbsp;&nbsp;|&nbsp;&nbsp; 一年大约是365天 → <strong>自然规律</strong></p>
+  </div>
+
+  <div class="check-item">
+    <div class="q">2️⃣ 想一想：如果1小时分成10等份，"半小时"等于多少分钟？</div>
+    <p>半小时 = 5等份 = 50分钟（假设1小时=100分钟）。好处：计算方便；坏处：1/3小时变成33.333分钟，不整齐。</p>
+  </div>
+
+  <div class="check-item">
+    <div class="q">3️⃣ 辨一辨：小明说"现在是下午3点15分"——请分析这句话。</div>
+    <p><strong>时刻：</strong>3点15分这个位置 &nbsp;&nbsp;|&nbsp;&nbsp; <strong>人为约定单位：</strong>"点"（小时）、"分" &nbsp;&nbsp;|&nbsp;&nbsp; <strong>自然周期：</strong>"下午"——太阳位置的变化</p>
+  </div>
+
+  <div class="check-item">
+    <div class="q">4️⃣ 用一用：用"进制的选择逻辑"分析——电脑为什么用二进制？</div>
+    <p>二进制（0和1）在电路中最容易实现——开关只有"开"和"关"两种状态。十进制需要十种状态，电路太复杂。所以选择二进制不是因为十进制"不好"，而是因为<b>技术的便利性</b>决定了选择。</p>
+  </div>
+
+  <div class="check-item">
+    <div class="q">5️⃣ 评一评：小朋友说"一天就是24小时嘛，这有什么好问的！"你该怎么回答？</div>
+    <p><em>"你说得对，一天确实是24小时。可是你知道吗？古巴比伦人觉得一天是12个时辰，古埃及人把白天夜晚各分12小时。而且地球自转其实在慢慢变慢——几亿年前地球上的一天只有22小时呢！所以'一天24小时'这个说法，既来自大自然，也来自人类的选择。"</em></p>
+  </div>
+</div>
+
+</div>
+
+<script>
+function togglePrinciple(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('open');
+}
+
+function toggleReveal(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('show');
+}
+</script>
+</body>
+</html>

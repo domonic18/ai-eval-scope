@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性案例 — 七阶实战训练</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); font-size: var(--font-body); line-height: var(--line-height); }
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+.header { background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; padding: 32px 28px; border-radius: var(--border-radius); margin-bottom: 28px; }
+.header h1 { font-size: var(--font-h1); margin: 0 0 8px; }
+.header p { margin: 0; opacity: 0.9; }
+.header .badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 2px 12px; border-radius: 12px; font-size: 13px; margin-top: 6px; }
+.case-grid { display: grid; grid-template-columns: 1fr; gap: 18px; margin-bottom: 24px; }
+.case-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); overflow: hidden; transition: transform 0.2s; border-top: 4px solid var(--primary); }
+.case-card:hover { transform: translateY(-2px); }
+.case-card .card-header { padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+.case-card .card-header h3 { margin: 0; font-size: 17px; color: var(--primary); }
+.case-card .card-header .type-tag { background: var(--bg); color: var(--primary); padding: 2px 10px; border-radius: 10px; font-size: 12px; font-weight: 600; }
+.case-card .card-body { padding: 0 18px; max-height: 0; overflow: hidden; transition: max-height 0.4s ease, padding 0.3s; }
+.case-card .card-body.open { max-height: 2000px; padding: 0 18px 16px; }
+.case-card .card-body p { margin: 0 0 8px; }
+.principle-tags { margin: 8px 0; }
+.principle-tags .tag { display: inline-block; background: #e6f4ff; color: var(--primary); padding: 2px 10px; border-radius: 10px; font-size: 12px; margin-right: 4px; margin-bottom: 4px; }
+.output-box { background: var(--bg); border-radius: 6px; padding: 10px 14px; margin: 8px 0; font-size: 15px; border-left: 3px solid var(--primary); }
+.output-box strong { color: var(--primary); }
+.steps { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.step-item { background: #f5f5f5; padding: 3px 10px; border-radius: 12px; font-size: 13px; color: var(--text-secondary); }
+.step-item.active { background: var(--bg); color: var(--primary); font-weight: 600; }
+.rubric { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px; }
+.rubric h2 { font-size: var(--font-h2); color: var(--primary); margin: 0 0 12px; }
+.rubric ul { list-style: none; padding: 0; margin: 0; }
+.rubric li { padding: 6px 0; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+.rubric li::before { content: '⬜'; font-size: 20px; transition: 0.2s; }
+.rubric li.checked::before { content: '✅'; }
+.rubric li.checked { color: var(--text-secondary); }
+.progress-bar { background: var(--border); border-radius: 10px; height: 8px; margin: 12px 0; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 10px; transition: width 0.5s; width: 0%; }
+.progress-label { font-size: 14px; color: var(--text-secondary); margin: 4px 0 0; text-align: right; }
+@media (min-width: 768px) {
+  .case-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+  .container { padding: 12px 14px; }
+  .header { padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🏗️ 建构性案例</h1>
+  <p>M6 新知技术思维 · 七阶案例从浅入深，综合运用5条建构性原理</p>
+  <span class="badge">前置参考：建构性示例 + 建构性原理</span>
+</div>
+
+<!-- 进度追踪 -->
+<div class="rubric">
+  <h2>📊 进度追踪</h2>
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill" style="width:0%"></div>
+  </div>
+  <p class="progress-label" id="progressLabel">已完成 0 / 7 个案例</p>
+</div>
+
+<!-- 七阶案例 -->
+<div class="case-grid">
+
+  <div class="case-card">
+    <div class="card-header" onclick="toggleCaseBody(this)">
+      <h3>🏃 案例1：我的1分钟动作挑战</h3>
+      <span class="type-tag">个人理解型</span>
+    </div>
+    <div class="card-body">
+      <p><strong>情境</strong>：你能在1分钟内做多少个跳绳？多少个深蹲？多少次鼓掌？</p>
+      <p><strong>任务</strong>：选定3个动作，分别测量1分钟内的完成次数，制作"个人1分钟能力数据表"。</p>
+      <div class="principle-tags">
+        <span class="tag">🔧 工具选择原理</span>
+        <span class="tag">📊 证据记录原理</span>
+      </div>
+      <div class="steps">
+        <span class="step-item active">① 选定动作</span>
+        <span class="step-item">② 计时测试</span>
+        <span class="step-item">③ 记录数据</span>
+        <span class="step-item">④ 计算平均</span>
+        <span class="step-item">⑤ 制作图表</span>
+      </div>
+      <div class="output-box"><strong>📦 成果</strong>：我的"1分钟能力数据卡"</div>
+      <p style="font-size:15px;color:var(--text-secondary);">💡 试试不同的动作，你会发现有些动作能做很多次，有些却不能——这也是"时间感知"的一部分。</p>
+    </div>
+  </div>
+
+  <div class="case-card">
+    <div class="card-header" onclick="toggleCaseBody(this)">
+      <h3>🏠 案例2：家庭时间小管家</h3>
+      <span class="type-tag">生活应用型</span>
+    </div>
+    <div class="card-body">
+      <p><strong>情境</strong>：妈妈做饭说"再蒸10分钟就好"，爸爸说"我5分钟后到家"——你怎么帮助家人准确把握时间？</p>
+      <p><strong>任务</strong>：为家庭设计一个"时间提醒方案"（闹钟提醒、倒计时器、沙漏等）。</p>
+      <div class="principle-tags">
+        <span class="tag">🔬 情境驱动原理</span>
+        <span class="tag">🔧 工具选择原理</span>
+      </div>
+      <div class="output-box"><strong>📦 成果</strong>：家庭时间提醒方案</div>
+      <p style="font-size:15px;color:var(--text-secondary);">💡 不同场景适合不同工具——蒸菜适合倒计时器，等人适合看时间点。你想为每个家人设计专属提醒吗？</p>
+    </div>
+  </div>
+
+  <div class="case-card">
+    <div class="card-header" onclick="toggleCaseBody(this)">
+      <h3>⏰ 案例3：课间10分钟规划师</h3>
+      <span class="type-tag">校园问题解决型</span>
+    </div>
+    <div class="card-body">
+      <p><strong>情境</strong>：课间只有10分钟，要上厕所、喝水、准备下节课用品、和同学玩一会儿——怎么安排？</p>
+      <p><strong>任务</strong>：设计一个"课间10分钟行动方案"，并实际测试是否可行。</p>
+      <div class="principle-tags">
+        <span class="tag">🔄 迭代优化原理</span>
+      </div>
+      <div class="steps">
+        <span class="step-item active">① 列出要做的事</span>
+        <span class="step-item">② 预估每件事的时间</span>
+        <span class="step-item">③ 排顺序</span>
+        <span class="step-item">④ 实际测试</span>
+        <span class="step-item">⑤ 调整优化</span>
+      </div>
+      <div class="output-box"><strong>📦 成果</strong>：我的课间10分钟行动方案</div>
+      <p style="font-size:15px;color:var(--text-secondary);">💡 先运行一周，再根据实际情况调整——这就是迭代优化！</p>
+    </div>
+  </div>
+
+  <div class="case-card">
+    <div class="card-header" onclick="toggleCaseBody(this)">
+      <h3>📊 案例4：我的一天时间饼图</h3>
+      <span class="type-tag">学科表达型</span>
+    </div>
+    <div class="card-body">
+      <p><strong>情境</strong>：你的"一天24小时"到底怎么度过的？睡觉、学习、玩耍各占多少？</p>
+      <p><strong>任务</strong>：记录自己一天的时间分配，制作时间饼图/柱状图。</p>
+      <div class="principle-tags">
+        <span class="tag">📊 证据记录原理</span>
+        <span class="tag">🗣️ 表达分享原理</span>
+      </div>
+      <div class="output-box"><strong>📦 成果</strong>：我的24小时时间分配图</div>
+      <p style="font-size:15px;color:var(--text-secondary);">💡 用不同颜色代表不同活动，看看你的"时间蛋糕"哪一块最大？</p>
+    </div>
+  </div>
+
+  <div class="case-card">
+    <div class="card-header" onclick="toggleCaseBody(this)">
+      <h3>🏃 案例5：跑步速度分析报告</h3>
+      <span class="type-tag">跨学科整合型</span>
+    </div>
+    <div class="card-body">
+      <p><strong>情境</strong>：体育课50米跑测试，你的成绩是多少？能不能算出自己的速度？</p>
+      <p><strong>任务</strong>：测量50米跑用时，计算速度（米/秒），与同学比较。</p>
+      <div class="principle-tags">
+        <span class="tag">🔬 全部5条原理</span>
+      </div>
+      <div class="output-box"><strong>📦 成果</strong>：我的50米跑速度分析报告</div>
+      <p style="font-size:15px;color:var(--text-secondary);">💡 速度 = 距离 ÷ 时间。同样的距离，用时越短速度越快。你能用图表展示全班速度分布吗？</p>
+    </div>
+  </div>
+
+  <div class="case-card">
+    <div class="card-header" onclick="toggleCaseBody(this)">
+      <h3>🏺 案例6：古人与现代人的1分钟</h3>
+      <span class="type-tag">社会/未来情境型</span>
+    </div>
+    <div class="card-body">
+      <p><strong>情境</strong>：古代没有钟表，古人怎么知道"过了1分钟"？用沙漏、水钟、燃香……</p>
+      <p><strong>任务</strong>：选择一种古代计时方法，用身边材料模拟制作，并测量其准确性。</p>
+      <div class="principle-tags">
+        <span class="tag">🔄 迭代优化原理</span>
+        <span class="tag">🔧 工具选择原理</span>
+      </div>
+      <div class="output-box"><strong>📦 成果</strong>：我的古代计时器复原报告</div>
+      <p style="font-size:15px;color:var(--text-secondary);">💡 用塑料瓶做水钟、用绳子做燃香计时……看看你的设计和真正的1分钟差多少？</p>
+    </div>
+  </div>
+
+  <div class="case-card">
+    <div class="card-header" onclick="toggleCaseBody(this)">
+      <h3>🧠 案例7：时间感知训练器</h3>
+      <span class="type-tag">综合创新型</span>
+    </div>
+    <div class="card-body">
+      <p><strong>情境</strong>：如果你的朋友也像一开始的你一样——对时间长短没概念，你能设计一个"训练器"帮他吗？</p>
+      <p><strong>任务</strong>：综合前面6个案例的收获，设计一个完整的"时间感知训练方案"。</p>
+      <div class="principle-tags">
+        <span class="tag">🔬 全部5条原理综合运用</span>
+      </div>
+      <div class="steps">
+        <span class="step-item active">① 收集需求</span>
+        <span class="step-item">② 设计方案</span>
+        <span class="step-item">③ 制作工具</span>
+        <span class="step-item">④ 测试验证</span>
+        <span class="step-item">⑤ 迭代优化</span>
+      </div>
+      <div class="output-box"><strong>📦 成果</strong>：时间感知训练器设计方案</div>
+      <p style="font-size:15px;color:var(--text-secondary);">💡 你的训练器可以包含：视觉倒计时、触觉提醒、游戏化挑战……创意无限！</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- 自评量规 -->
+<div class="rubric">
+  <h2>✅ 自评量规</h2>
+  <p style="margin:0 0 8px;font-size:15px;">每个案例完成后，点击对照自查：</p>
+  <ul id="rubricList">
+    <li onclick="toggleCheck(this)">我是否真实记录了所有数据？</li>
+    <li onclick="toggleCheck(this)">我的成果是否能让别人看明白？</li>
+    <li onclick="toggleCheck(this)">我是否至少使用了1条建构性原理？</li>
+    <li onclick="toggleCheck(this)">我是否在完成基础上思考了"怎么改进"？</li>
+    <li onclick="toggleCheck(this)">我的成果是否体现了"从问题到方案"的完整建构过程？</li>
+  </ul>
+  <p style="font-size:15px;color:var(--text-secondary);margin:8px 0 0;">💡 每完成一个案例，回到顶部更新进度条！</p>
+</div>
+
+<div style="text-align:center;padding:16px;background:var(--card-bg);border-radius:var(--border-radius);box-shadow:var(--shadow);">
+  <p style="font-size:16px;margin:0;"><strong>🎯 从案例1到案例7</strong>：从个人体验到综合创新，每一步都在建构你对"时间"的理解。</p>
+  <p style="margin:6px 0 0;color:var(--text-secondary);font-size:15px;">每完成一个案例，你就离"时间达人"更近一步！🚀</p>
+</div>
+
+</div>
+
+<script>
+// 已完成的案例计数
+var completedCount = 0;
+
+function toggleCaseBody(el) {
+  var body = el.nextElementSibling;
+  body.classList.toggle('open');
+  var toggleIcon = el.querySelector('h3');
+  var isOpen = body.classList.contains('open');
+
+  // 更新进度跟踪
+  var cards = document.querySelectorAll('.case-card .card-body');
+  var openCount = Array.from(cards).filter(function(c) { return c.classList.contains('open'); }).length;
+  completedCount = openCount;
+  updateProgress(openCount);
+}
+
+function updateProgress(count) {
+  var total = 7;
+  var pct = Math.round((count / total) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = '已完成 ' + count + ' / ' + total + ' 个案例';
+}
+
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+}
+</script>
+</body>
+</html>

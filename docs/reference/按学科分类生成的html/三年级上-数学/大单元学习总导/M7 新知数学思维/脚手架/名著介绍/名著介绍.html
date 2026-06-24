@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名著介绍 — 关于时间的思考</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+h1 { font-size: var(--font-h1); color: var(--primary); text-align: center; margin: 24px 0 8px; }
+h1::after { content: ''; display: block; width: 60px; height: 3px; background: var(--accent); margin: 10px auto 0; border-radius: 2px; }
+h2 { font-size: var(--font-h2); color: var(--primary); margin: 28px 0 14px; padding-left: 12px; border-left: 4px solid var(--accent); }
+.subtitle { text-align: center; color: var(--text-secondary); font-size: 15px; margin-bottom: 24px; }
+.section-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 18px 20px; margin-bottom: 18px; transition: transform 0.2s, box-shadow 0.2s; }
+.section-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.10); }
+.quote-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 16px 18px; margin-bottom: 14px; border-left: 4px solid var(--accent); cursor: pointer; transition: all 0.3s; position: relative; overflow: hidden; }
+.quote-card .quote-text { font-size: 17px; font-weight: 500; margin-bottom: 4px; }
+.quote-card .quote-author { color: var(--text-secondary); font-size: 14px; }
+.quote-card .trigger { color: var(--primary); font-size: 14px; margin-top: 8px; display: inline-block; border-bottom: 1px dashed var(--primary); cursor: pointer; }
+.quote-card .trigger-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease, padding 0.3s ease; padding: 0 12px; background: #f7faff; border-radius: 6px; margin-top: 8px; color: var(--text-secondary); font-size: 15px; }
+.quote-card .trigger-content.show { max-height: 200px; padding: 12px; }
+.book-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 16px 18px; margin-bottom: 14px; border-top: 3px solid var(--accent); }
+.book-card .book-title { font-size: 18px; font-weight: 600; color: var(--primary); margin-bottom: 6px; }
+.book-card .book-meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.book-card .tag { display: inline-block; background: var(--bg); color: var(--primary); font-size: 12px; padding: 2px 10px; border-radius: 12px; border: 1px solid var(--accent); }
+.book-card .book-q { color: var(--text); font-weight: 500; margin-top: 8px; }
+.book-card .book-a { color: var(--text-secondary); font-size: 15px; padding-left: 14px; border-left: 2px solid var(--accent); margin: 4px 0 8px; }
+.book-card .book-path { font-size: 14px; color: var(--text-secondary); background: #f9f9f9; padding: 6px 12px; border-radius: 6px; margin-top: 6px; }
+.interact-btn { display: inline-block; background: var(--primary); color: #fff; border: none; padding: 6px 18px; border-radius: 6px; font-size: 14px; cursor: pointer; transition: background 0.2s; margin: 4px 4px 0 0; }
+.interact-btn:hover { background: var(--primary-hover); }
+.interact-btn.outline { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
+.interact-btn.outline:hover { background: var(--bg); }
+.highlight { background: linear-gradient(120deg, rgba(22,119,255,0.10) 0%, rgba(22,119,255,0.06) 100%); padding: 12px 16px; border-radius: 8px; margin: 10px 0; }
+@media (max-width: 600px) { .container { padding: 12px 14px; } h1 { font-size: 24px; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>⏳ 关于时间的思考</h1>
+  <p class="subtitle">读名言 · 赏名著 · 悟时间</p>
+
+  <h2>💬 名言中的时间智慧</h2>
+  <p style="color:var(--text-secondary);margin-bottom:14px;">点击每一句名言，看看它想考你什么👇</p>
+
+  <div class="quote-card" onclick="toggleTrigger(this)">
+    <div class="quote-text">"逝者如斯夫，不舍昼夜。"</div>
+    <div class="quote-author">—— 孔子</div>
+    <div class="trigger">💡 点击思考</div>
+    <div class="trigger-content">时间像河水一样流走，你能"抓住"河水吗？<br><strong>想一想：</strong>如果时间像河水，那我们能做什么？是看着它流走，还是在河边做点有意义的事？</div>
+  </div>
+
+  <div class="quote-card" onclick="toggleTrigger(this)">
+    <div class="quote-text">"时间就是生命。"</div>
+    <div class="quote-author">—— 富兰克林</div>
+    <div class="trigger">💡 点击思考</div>
+    <div class="trigger-content">如果时间就是生命，那浪费时间等于什么？<br><strong>想一想：</strong>你每天花时间最多的事情是什么？它"值得"吗？</div>
+  </div>
+
+  <div class="quote-card" onclick="toggleTrigger(this)">
+    <div class="quote-text">"人们常常觉得时间不够用，其实时间从来没有少过，是我们没有用好它。"</div>
+    <div class="quote-author">—— 改编自塞内卡《论生命之短暂》</div>
+    <div class="trigger">💡 点击思考</div>
+    <div class="trigger-content"><strong>想一想：</strong>你有过"时间不够用"的感觉吗？如果把玩手机的时间换成读书，会不会就不一样了？</div>
+  </div>
+
+  <div class="quote-card" onclick="toggleTrigger(this)">
+    <div class="quote-text">"钟表杀死了时间。"</div>
+    <div class="quote-author">—— 麦克卢汉（媒介理论家）</div>
+    <div class="trigger">💡 点击思考</div>
+    <div class="trigger-content">我们把时间切成秒、分、时，是不是反而失去了对时间的整体感受？<br><strong>挑战：</strong>试着不戴手表、不看手机，感受一下"自然的时间"。</div>
+  </div>
+
+  <h2>📚 名著推荐</h2>
+
+  <div class="book-card">
+    <div class="book-title">📖 《论语·子罕》"逝者如斯夫"篇</div>
+    <div class="book-meta"><span class="tag">中国经典</span><span class="tag">基础</span><span class="tag">三年级可读</span></div>
+    <div class="book-q">❓ 古人如何看待时间的流逝？</div>
+    <div class="book-a">时间如流水，一去不回——所以要珍惜当下。</div>
+    <div class="book-path">📌 获取：带注音的《论语》少儿版</div>
+    <button class="interact-btn outline" onclick="showTip(this)">📝 我要读</button>
+  </div>
+
+  <div class="book-card">
+    <div class="book-title">📖 《毛毛——时间窃贼和一个小女孩的故事》</div>
+    <div class="book-meta"><span class="tag">外国经典</span><span class="tag">童话</span><span class="tag">适合所有人</span></div>
+    <div class="book-q">❓ 被"节省时间"控制了，会发生什么？</div>
+    <div class="book-a">时间就是生命，而生命在心中有它的位置。灰衣人偷走了人们的时间，让他们只顾"省时间"却忘了好好生活。</div>
+    <div class="book-path">📌 获取：各电商平台有售，图书馆可借阅</div>
+    <button class="interact-btn outline" onclick="showTip(this)">📝 我要读</button>
+  </div>
+
+  <div class="book-card">
+    <div class="book-title">📖 《时间的秩序》——少儿图解版</div>
+    <div class="book-meta"><span class="tag">当代作品</span><span class="tag">进阶</span><span class="tag">有配图</span></div>
+    <div class="book-q">❓ 时间真的"存在"吗？</div>
+    <div class="book-a">物理学家的时间和我们感觉的时间不一样。为什么我们只记得过去，不记得未来？</div>
+    <div class="book-path">📌 获取：Kindle、微信读书等电子书平台</div>
+    <button class="interact-btn outline" onclick="showTip(this)">📝 我要读</button>
+  </div>
+
+  <div class="highlight">
+    <strong>🌟 阅读小挑战：</strong>选一本你最感兴趣的书，读完后和同学分享一句话感受！
+  </div>
+</div>
+<script>
+function toggleTrigger(el) {
+  var content = el.querySelector('.trigger-content');
+  content.classList.toggle('show');
+  var btn = el.querySelector('.trigger');
+  if (content.classList.contains('show')) {
+    btn.textContent = '🙌 思考中... 点击收起';
+  } else {
+    btn.textContent = '💡 点击思考';
+  }
+}
+function showTip(btn) {
+  var tips = ['📚 好选择！读完记得写一句话感受哦~', '👏 阅读让时间更有意义！', '🌟 加油，书中有大世界！'];
+  var tip = tips[Math.floor(Math.random() * tips.length)];
+  var old = btn.textContent;
+  btn.textContent = tip;
+  btn.style.background = 'var(--primary)';
+  btn.style.color = '#fff';
+  setTimeout(function(){ btn.textContent = old; btn.style.background = 'transparent'; btn.style.color = 'var(--primary)'; }, 2000);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学术社区——学习共同体</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px 24px;
+  box-sizing: border-box;
+}
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin: 24px 0 16px;
+  font-weight: 700;
+  position: relative;
+  padding-left: 16px;
+}
+h1::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 4px;
+  background: var(--primary);
+  border-radius: 2px;
+}
+h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 20px 0 12px;
+  font-weight: 600;
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 6px;
+}
+h3 {
+  font-size: calc(var(--font-body) + 2px);
+  color: var(--text);
+  margin: 16px 0 8px;
+  font-weight: 600;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.topic-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 18px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.topic-card:hover {
+  transform: translateX(4px);
+  box-shadow: var(--shadow);
+}
+.topic-card h3 {
+  margin-top: 0;
+  color: var(--primary);
+}
+.topic-card .output-badge {
+  display: inline-block;
+  background: #52c41a;
+  color: #fff;
+  padding: 2px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.role-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin: 14px 0;
+}
+.role-card {
+  text-align: center;
+  padding: 16px 12px;
+  background: #fafafa;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+  cursor: default;
+}
+.role-card:hover {
+  border-color: var(--primary);
+  background: #e6f4ff;
+  transform: scale(1.03);
+}
+.role-card .role-icon {
+  font-size: 32px;
+  margin-bottom: 6px;
+}
+.role-card .role-name {
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--text);
+}
+.connect-section {
+  background: linear-gradient(135deg, #f0f5ff 0%, #fff 100%);
+  border-radius: var(--border-radius);
+  padding: 18px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.connect-section h3 {
+  margin-top: 0;
+}
+.connect-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.connect-list li {
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  background: var(--card-bg);
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+}
+.showcase-section {
+  background: #fffbe6;
+  border-radius: var(--border-radius);
+  padding: 18px;
+  margin-bottom: 16px;
+  border: 1px solid #ffd666;
+}
+.tag-blue {
+  display: inline-block;
+  background: #e6f4ff;
+  color: var(--primary);
+  padding: 4px 14px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 500;
+  margin: 3px;
+}
+.activity-steps {
+  counter-reset: step;
+  list-style: none;
+  padding: 0;
+}
+.activity-steps li {
+  counter-increment: step;
+  padding: 10px 14px 10px 44px;
+  margin-bottom: 8px;
+  position: relative;
+  background: #fafafa;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+.activity-steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  width: 26px;
+  height: 26px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 26px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.activity-steps li:hover {
+  background: #e6f4ff;
+}
+.eval-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 12px 0;
+}
+.eval-item {
+  text-align: center;
+  padding: 16px 12px;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  transition: all 0.2s;
+}
+.eval-item:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow);
+}
+.eval-item .eval-icon {
+  font-size: 30px;
+  margin-bottom: 6px;
+}
+.eval-item .eval-label {
+  font-weight: 600;
+}
+.star-vote {
+  display: inline-flex;
+  gap: 4px;
+  font-size: 28px;
+  cursor: pointer;
+  user-select: none;
+}
+.star-vote span {
+  transition: color 0.2s, transform 0.2s;
+}
+.star-vote span:hover {
+  color: #faad14;
+  transform: scale(1.2);
+}
+.star-vote span:hover ~ span {
+  color: #d9d9d9;
+}
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  .role-grid { grid-template-columns: repeat(2, 1fr); }
+  .eval-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🌐 学术社区——学习共同体</h1>
+<p style="color:var(--text-secondary);">和同学、老师、家人一起，在交流合作中探索时间的奥秘！</p>
+
+<!-- 同伴连接 -->
+<div class="card">
+  <h2>👥 同伴连接：讨论与协作</h2>
+
+  <div class="topic-card">
+    <h3>⏱️ 讨论议题 1：时间感知大调查</h3>
+    <p><strong>议题：</strong>不同的人对同一段时间的感受一样吗？</p>
+    <ol class="activity-steps">
+      <li>采访 5 位同学，问他们"你觉得一分钟有多长？"</li>
+      <li>记录每个人的回答，比较差异</li>
+      <li>整理成一份"时间感知调查报告"</li>
+    </ol>
+    <span class="output-badge">📋 输出：时间感知调查报告</span>
+  </div>
+
+  <div class="topic-card">
+    <h3>📅 讨论议题 2：谁的时间规划最合理？</h3>
+    <p><strong>议题：</strong>展示各自设计的"理想一日作息表"，互相评价</p>
+    <ol class="activity-steps">
+      <li>3—4 人一组，每人展示自己的作息表</li>
+      <li>组员从"合理性""可行性""完整性"三个角度打分</li>
+      <li>每组选出一份"最佳作息表"，并说明理由</li>
+    </ol>
+    <span class="output-badge">📋 输出：最佳作息表 + 评选理由</span>
+  </div>
+
+  <div class="topic-card">
+    <h3>🧮 讨论议题 3：时间换算技巧分享</h3>
+    <p><strong>议题：</strong>你有什么时间换算的独门技巧？</p>
+    <ol class="activity-steps">
+      <li>每人分享一个自己发现的时间换算技巧（口诀、画图法、手指法等）</li>
+      <li>互相学习，评选最巧妙的技巧</li>
+      <li>汇总成"班级时间换算技巧集"</li>
+    </ol>
+    <span class="output-badge">📋 输出：班级时间换算技巧集</span>
+  </div>
+</div>
+
+<!-- 角色分工 -->
+<div class="card">
+  <h2>🎭 角色分工</h2>
+  <p>在小组活动中，建议按以下角色分工合作：</p>
+  <div class="role-grid">
+    <div class="role-card">
+      <div class="role-icon">⏰</div>
+      <div class="role-name">时间记录员</div>
+      <div style="font-size:14px;color:var(--text-secondary);">负责记录讨论内容和时间</div>
+    </div>
+    <div class="role-card">
+      <div class="role-icon">📂</div>
+      <div class="role-name">成果整理员</div>
+      <div style="font-size:14px;color:var(--text-secondary);">负责整理小组的讨论成果</div>
+    </div>
+    <div class="role-card">
+      <div class="role-icon">🎤</div>
+      <div class="role-name">汇报员</div>
+      <div style="font-size:14px;color:var(--text-secondary);">负责向全班展示小组成果</div>
+    </div>
+    <div class="role-card">
+      <div class="role-icon">⏳</div>
+      <div class="role-name">计时员</div>
+      <div style="font-size:14px;color:var(--text-secondary);">负责控制每个环节的时间</div>
+    </div>
+  </div>
+</div>
+
+<!-- 家校连接 -->
+<div class="card">
+  <h2>🏠 家校连接：支持与反馈</h2>
+
+  <div class="connect-section">
+    <h3>👨‍👩‍👧 家长参与</h3>
+    <ul class="connect-list">
+      <li><strong>活动 1：</strong>请家长分享自己年轻时的时间管理经验</li>
+      <li><strong>活动 2：</strong>和家长一起完成"家庭时间小管家"计划</li>
+      <li><strong>反馈：</strong>请家长在孩子的成果上签字并写一句评语</li>
+    </ul>
+  </div>
+
+  <div class="connect-section">
+    <h3>👩‍🏫 教师反馈</h3>
+    <ul class="connect-list">
+      <li>教师会对你的"时间体验档案"和"理想作息表"进行点评</li>
+      <li>优秀作品将在班级展示墙上展出</li>
+    </ul>
+  </div>
+
+  <div class="connect-section">
+    <h3>🔗 社会连接：真实连接</h3>
+    <ul class="connect-list">
+      <li><strong>建议联系：</strong>当地科技馆的时间展厅</li>
+      <li><strong>线上资源：</strong>中国科技馆官网的"时间测量"专题</li>
+      <li><strong>采访对象：</strong>可以采访学校的体育老师（他们经常用秒表计时）</li>
+    </ul>
+  </div>
+</div>
+
+<!-- 输出机制 -->
+<div class="card">
+  <h2>📤 输出机制</h2>
+
+  <div class="showcase-section">
+    <h3>🎨 展示方式</h3>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;">
+      <span class="tag-blue">🏫 班级展示墙：张贴优秀作品</span>
+      <span class="tag-blue">📱 线上分享：在班级群分享视频作品</span>
+      <span class="tag-blue">🎪 成果汇报：每两周一次成果展示会</span>
+    </div>
+  </div>
+
+  <h3>⭐ 评价方式</h3>
+  <div class="eval-grid">
+    <div class="eval-item">
+      <div class="eval-icon">👍</div>
+      <div class="eval-label">同学互评</div>
+      <div style="font-size:14px;color:var(--text-secondary);">用贴纸投票选出最佳作品</div>
+      <div class="star-vote" onclick="this.querySelectorAll('span').forEach(s=>s.style.color='#faad14')">
+        <span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span>
+      </div>
+    </div>
+    <div class="eval-item">
+      <div class="eval-icon">📝</div>
+      <div class="eval-label">自我评价</div>
+      <div style="font-size:14px;color:var(--text-secondary);">对照自评量规检查成果</div>
+    </div>
+    <div class="eval-item">
+      <div class="eval-icon">💬</div>
+      <div class="eval-label">教师评价</div>
+      <div style="font-size:14px;color:var(--text-secondary);">对每个成果给出书面反馈</div>
+    </div>
+  </div>
+</div>
+
+<!-- 互动：小组自评 -->
+<div class="card" style="text-align:center;">
+  <h2>🎯 小组合作自评</h2>
+  <p>点击星星为你们小组的合作情况打分：</p>
+  <div style="font-size:40px;letter-spacing:8px;">
+    <span style="cursor:pointer;transition:all 0.15s;" onmouseenter="this.style.color='#faad14'" onmouseleave="this.style.color='#d9d9d9'" onclick="this.style.color='#faad14';this.nextElementSibling.style.color='#faad14';this.nextElementSibling.nextElementSibling.style.color='#faad14';this.nextElementSibling.nextElementSibling.nextElementSibling.style.color='#faad14';this.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.style.color='#faad14'">⭐</span>
+    <span style="cursor:pointer;transition:all 0.15s;color:#d9d9d9;" onmouseenter="this.style.color='#faad14'" onmouseleave="this.style.color='#d9d9d9'" onclick="this.style.color='#faad14';this.nextElementSibling.style.color='#faad14';this.nextElementSibling.nextElementSibling.style.color='#faad14';this.nextElementSibling.nextElementSibling.nextElementSibling.style.color='#faad14'">⭐</span>
+    <span style="cursor:pointer;transition:all 0.15s;color:#d9d9d9;" onmouseenter="this.style.color='#faad14'" onmouseleave="this.style.color='#d9d9d9'" onclick="this.style.color='#faad14';this.nextElementSibling.style.color='#faad14';this.nextElementSibling.nextElementSibling.style.color='#faad14'">⭐</span>
+    <span style="cursor:pointer;transition:all 0.15s;color:#d9d9d9;" onmouseenter="this.style.color='#faad14'" onmouseleave="this.style.color='#d9d9d9'" onclick="this.style.color='#faad14';this.nextElementSibling.style.color='#faad14'">⭐</span>
+    <span style="cursor:pointer;transition:all 0.15s;color:#d9d9d9;" onmouseenter="this.style.color='#faad14'" onmouseleave="this.style.color='#d9d9d9'" onclick="this.style.color='#faad14'">⭐</span>
+  </div>
+  <p style="color:var(--text-secondary);font-size:15px;">点击星星进行评价，点击后星星会变亮 ✨</p>
+</div>
+
+</div>
+</body>
+</html>

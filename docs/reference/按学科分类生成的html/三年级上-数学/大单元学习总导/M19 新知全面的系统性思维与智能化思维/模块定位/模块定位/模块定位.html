@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M19 模块定位 — 系统性思维与智能化思维</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); margin: 0 0 8px; font-weight: 700; }
+.header .subtitle { font-size: 16px; opacity: 0.9; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  transition: transform .2s, box-shadow .2s;
+}
+.card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+.card ul, .card ol { padding-left: 20px; margin: 8px 0; }
+.card li { margin-bottom: 6px; }
+.highlight {
+  background: var(--bg);
+  border-left: 4px solid var(--primary);
+  padding: 12px 16px;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  margin: 12px 0;
+}
+.badge {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  font-size: 14px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  margin-right: 6px;
+}
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 12px 0;
+}
+.result-item {
+  background: var(--bg);
+  padding: 14px 16px;
+  border-radius: var(--border-radius);
+  text-align: center;
+  border: 1px solid var(--border);
+}
+.result-item .icon { font-size: 28px; display: block; margin-bottom: 6px; }
+.result-item .label { font-size: 15px; color: var(--text-secondary); }
+.result-item .desc { font-size: var(--font-body); font-weight: 600; color: var(--primary); }
+.toggle-detail { cursor: pointer; color: var(--primary); font-weight: 600; }
+.toggle-detail:hover { color: var(--primary-hover); }
+.detail-content { display: none; margin-top: 10px; padding: 12px; background: var(--bg); border-radius: var(--border-radius); }
+.detail-content.show { display: block; }
+@media (max-width: 600px) {
+  .container { padding: 16px; }
+  .header { padding: 20px; }
+  .card { padding: 16px; }
+  .result-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>⏱ M19 系统性思维与智能化思维</h1>
+  <div class="subtitle">大单元"时、分、秒" · 三年级上册 · 模块学习总体概要</div>
+</div>
+
+<div class="card">
+  <h2>📖 本模块学习什么？</h2>
+  <p>本模块带你从<strong>"会看时间"</strong>走向<strong>"理解时间的系统"</strong>和<strong>"聪明地用时间"</strong>。你将学会：</p>
+  <ul>
+    <li>时、分、秒之间的<strong>60进制关系</strong>——不只是死记"1时=60分"，而是理解<em>为什么</em></li>
+    <li>如何像<strong>系统工程师</strong>一样，把零散的时间知识组织成一张清晰的<strong>"关系网"</strong></li>
+    <li>如何像<strong>时间管理达人</strong>一样，用学到的知识规划和优化自己的日常生活</li>
+  </ul>
+  <div class="highlight">
+    💡 <strong>一句话总结：</strong>从"知道时间"到"管理时间"的思维升级之旅！
+  </div>
+</div>
+
+<div class="card">
+  <h2>🌟 本模块为什么重要？</h2>
+  <p>因为<strong>"知识"</strong>和<strong>"思维"</strong>是两回事。</p>
+  <p>你知道"1分=60秒"是知识，但你能用这个知识去估算做一件事需要多少秒，然后合理安排时间——这就是<strong>系统性思维 + 智能化思维</strong>。</p>
+  <div class="highlight">
+    <strong>🎯 核心转变：</strong>掌握了这种思维方式，你不仅在<em>"学时间"</em>，更在学习<em>"如何学习"</em>。
+  </div>
+</div>
+
+<div class="card">
+  <h2>🔗 模块关系</h2>
+  <p><strong>与大单元主题的关系</strong></p>
+  <p>大单元"时、分、秒"的核心是认识时间、换算时间和运用时间。前几个模块侧重"认识"和"计算"，本模块侧重<strong>"系统构建"</strong>和<strong>"智慧运用"</strong>——如果说前面的模块是"学零件"，本模块就是<strong>"组装成机器并用起来"</strong>。</p>
+  <p style="margin-top:12px;"><strong>与前后模块的衔接</strong></p>
+  <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;">
+    <span class="badge" style="background:#8c8c8c;">M1-M18 基础</span>
+    <span style="align-self:center;">→</span>
+    <span class="badge">M19 系统化</span>
+    <span style="align-self:center;">→</span>
+    <span class="badge" style="background:#8c8c8c;">后续 复杂应用</span>
+  </div>
+  <ul style="margin-top:12px;">
+    <li><strong>前面模块（M1—M18）</strong>：时、分、秒的概念、进率和基本换算</li>
+    <li><strong>本模块（M19）</strong>：零散知识系统化，培养系统性思维和智能化思维</li>
+    <li><strong>后面模块</strong>：为更复杂的时间应用（速度、时间计算等）打基础</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>📋 预期学习成果</h2>
+  <p>点击下方卡片了解详情 👇</p>
+  <div class="result-grid">
+    <div class="result-item" onclick="toggleDetail('r1')" style="cursor:pointer;">
+      <span class="icon">🗺️</span>
+      <div class="desc">时间关系图</div>
+      <div class="label">概念建构</div>
+    </div>
+    <div class="result-item" onclick="toggleDetail('r2')" style="cursor:pointer;">
+      <span class="icon">📋</span>
+      <div class="desc">时间管理方案</div>
+      <div class="label">应用建构</div>
+    </div>
+    <div class="result-item" onclick="toggleDetail('r3')" style="cursor:pointer;">
+      <span class="icon">🧩</span>
+      <div class="desc">可迁移的原理</div>
+      <div class="label">方法建构</div>
+    </div>
+  </div>
+  <div id="r1" class="detail-content">
+    <strong>🗺️ 时间系统关系图</strong>
+    <p>把时、分、秒的换算关系画成一张"知识地图"——包括进率、换算方法、生活应用场景。让你的知识不再零散。</p>
+  </div>
+  <div id="r2" class="detail-content">
+    <strong>📋 时间管理小方案</strong>
+    <p>用学到的知识给自己设计一个"周末时间安排表"，包含每项活动的起止时间和时长，并计算总时间是否不超过24小时。</p>
+  </div>
+  <div id="r3" class="detail-content">
+    <strong>🧩 可迁移的建构性原理</strong>
+    <p>总结出"把零散知识系统化"的方法和"把知识用于实际"的方法——以后学任何新知识都能用上。</p>
+  </div>
+</div>
+
+<div class="card" style="text-align:center; background:var(--bg);">
+  <p style="font-size:20px; margin:0;">
+    🚀 <strong>准备好了吗？让我们一起把时间"管"起来！</strong>
+  </p>
+  <p style="color:var(--text-secondary); margin:8px 0 0; font-size:15px;">
+    点击卡片展开详情 · 开始你的系统性思维训练
+  </p>
+</div>
+
+</div>
+<script>
+function toggleDetail(id) {
+  var el = document.getElementById(id);
+  if (el) { el.classList.toggle('show'); }
+}
+</script>
+</body>
+</html>

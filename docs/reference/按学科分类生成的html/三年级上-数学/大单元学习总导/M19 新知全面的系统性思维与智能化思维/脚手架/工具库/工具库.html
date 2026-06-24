@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具库脚手架 — 你的思维放大器</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+  --font-stack: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font-stack);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  padding: 24px;
+}
+.container { width: 100%; max-width: none; }
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  text-align: center;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+.subtitle {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 16px;
+  margin-bottom: 28px;
+}
+.level-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+.level-tab {
+  padding: 8px 24px;
+  border-radius: 24px;
+  border: 2px solid var(--border);
+  background: var(--card-bg);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  color: var(--text-secondary);
+}
+.level-tab:hover, .level-tab.active {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: #e6f7ff;
+}
+.tool-section { display: none; }
+.tool-section.active { display: block; }
+.tool-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 22px;
+  margin-bottom: 18px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+.tool-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(22,119,255,0.14);
+}
+.tool-card .tool-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.tool-card .tool-icon {
+  font-size: 32px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  border-radius: 12px;
+}
+.tool-card .tool-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+.tool-card .tool-tag {
+  display: inline-block;
+  font-size: 13px;
+  padding: 2px 14px;
+  border-radius: 12px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.tag-easy { background: #b7eb8f; color: #135200; }
+.tag-pro { background: #91caff; color: #003eb3; }
+.tag-expert { background: #ffd591; color: #873800; }
+.tool-card .tool-purpose {
+  font-size: 16px;
+  color: var(--primary-hover);
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.tool-card .step-list {
+  background: #f6f8fa;
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 10px 0;
+}
+.tool-card .step-list ol {
+  padding-left: 20px;
+  margin: 0;
+}
+.tool-card .step-list li {
+  margin-bottom: 4px;
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+.tool-card .example-box {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 10px 0;
+  font-size: 16px;
+}
+.tool-card .example-box .example-label {
+  font-weight: 700;
+  color: #d46b08;
+}
+.tool-card .scene-tag {
+  display: inline-block;
+  padding: 3px 14px;
+  border-radius: 14px;
+  background: #e6f7ff;
+  color: #096dd9;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 6px;
+}
+.demo-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 18px;
+  font-size: 15px;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background 0.2s;
+}
+.demo-btn:hover { background: var(--primary-hover); }
+.demo-result {
+  display: none;
+  margin-top: 10px;
+  padding: 12px 16px;
+  background: #f0f5ff;
+  border-radius: 8px;
+  border: 1px solid #d6e4ff;
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+.demo-result.show { display: block; }
+.pomodoro-display {
+  text-align: center;
+  padding: 16px;
+  background: #f0f5ff;
+  border-radius: 12px;
+  margin: 10px 0;
+}
+.pomodoro-display .timer {
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+.fade-in {
+  opacity: 0;
+  transform: translateY(12px);
+  animation: fadeIn 0.5s ease forwards;
+}
+@keyframes fadeIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1 class="fade-in">🧰 你的思维放大器</h1>
+<p class="subtitle fade-in">5 个工具，从入门到高手！</p>
+
+<!-- 难度筛选 -->
+<div class="level-tabs fade-in">
+  <span class="level-tab active" onclick="switchLevel('all')">📋 全部工具</span>
+  <span class="level-tab" onclick="switchLevel('easy')">🟢 基础</span>
+  <span class="level-tab" onclick="switchLevel('pro')">🔵 进阶</span>
+  <span class="level-tab" onclick="switchLevel('expert')">🟠 高阶</span>
+</div>
+
+<!-- 基础工具 -->
+<div id="section-all" class="tool-section active">
+<div id="section-easy" class="tool-section active">
+
+<div class="tool-card" data-level="easy">
+  <div class="tool-header">
+    <div class="tool-icon">📐</div>
+    <div class="tool-name">时间换算公式卡</div>
+  </div>
+  <span class="tool-tag tag-easy">🟢 基础 · 易上手</span>
+  <div class="tool-purpose">🎯 快速换算时、分、秒</div>
+  <div class="step-list">
+    <strong>使用步骤：</strong>
+    <ol>
+      <li>确定"从什么单位 → 到什么单位"</li>
+      <li>大 → 小用 <strong>×</strong>，小 → 大用 <strong>÷</strong></li>
+      <li>满 60 进 1 或退 1</li>
+    </ol>
+  </div>
+  <div class="example-box">
+    <span class="example-label">📝 示例：</span> 3 时 = ? 分 → 时→分是大→小 → 3 × 60 = <strong>180 分</strong>
+  </div>
+  <div class="example-box">
+    <span class="example-label">📝 试试这个：</span> 120 分 = ? 时 → 分→时是小→大 → 120 ÷ 60 = <strong>2 时</strong>
+  </div>
+  <span class="scene-tag">💡 做题时放在旁边参考</span>
+  <br>
+  <button class="demo-btn" onclick="generateQuestion()">🎲 随机出题</button>
+  <div id="conversion-question" class="demo-result"></div>
+  <button class="demo-btn" onclick="document.getElementById('conversion-question').classList.remove('show');" style="margin-left:8px;background:transparent;color:var(--text-secondary);border:1px solid var(--border);">收起</button>
+</div>
+
+<div class="tool-card" data-level="easy">
+  <div class="tool-header">
+    <div class="tool-icon">📏</div>
+    <div class="tool-name">时间数轴图</div>
+  </div>
+  <span class="tool-tag tag-easy">🟢 基础 · 易上手</span>
+  <div class="tool-purpose">🎯 把时间长度画在一条线上，直观感受长短</div>
+  <div class="step-list">
+    <strong>使用步骤：</strong>
+    <ol>
+      <li>画一条直线，标上起点和终点</li>
+      <li>按比例标出刻度（每格代表10分钟）</li>
+      <li>标出各事件的时间位置</li>
+    </ol>
+  </div>
+  <div class="example-box">
+    <span class="example-label">📝 示例：</span> 从 8:00 到 8:30<br>
+    画一条线：8:00 ──┬──┬──┬── 8:30<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;8:05&nbsp;8:10&nbsp;8:20
+  </div>
+  <span class="scene-tag">💡 计算经过时间、规划时间安排</span>
+</div>
+
+</div>
+
+<!-- 进阶工具 -->
+<div id="section-pro" class="tool-section active">
+
+<div class="tool-card" data-level="pro">
+  <div class="tool-header">
+    <div class="tool-icon">🍅</div>
+    <div class="tool-name">番茄钟计时法</div>
+  </div>
+  <span class="tool-tag tag-pro">🔵 进阶 · 专业级</span>
+  <div class="tool-purpose">🎯 用 25 分钟 + 5 分钟的节奏高效学习</div>
+  <div class="step-list">
+    <strong>使用步骤：</strong>
+    <ol>
+      <li>设定 25 分钟倒计时</li>
+      <li>专注做一件事直到闹铃响</li>
+      <li>休息 5 分钟（再循环）</li>
+    </ol>
+  </div>
+  <div class="example-box">
+    <span class="example-label">📝 示例：</span> 做时间换算练习 25 分钟 → 休息 5 分钟 → 再练 25 分钟
+  </div>
+  <span class="scene-tag">💡 做作业、复习、任何需要专注的任务</span>
+
+  <!-- 番茄钟交互 -->
+  <div class="pomodoro-display">
+    <div class="timer" id="pomodoro-timer">25:00</div>
+    <p style="font-size:15px;color:var(--text-secondary);margin-top:4px;" id="pomodoro-status">⏸️ 点击开始专注</p>
+    <div style="margin-top:10px;">
+      <button class="demo-btn" onclick="startPomodoro()">▶️ 开始</button>
+      <button class="demo-btn" onclick="resetPomodoro()" style="background:transparent;color:var(--text-secondary);border:1px solid var(--border);">⏹️ 重置</button>
+    </div>
+  </div>
+</div>
+
+<div class="tool-card" data-level="pro">
+  <div class="tool-header">
+    <div class="tool-icon">🤖</div>
+    <div class="tool-name">AI 辅助工具</div>
+  </div>
+  <span class="tool-tag tag-pro">🔵 进阶 · 专业级</span>
+  <div class="tool-purpose">🎯 用 AI（如豆包、Kimi）帮你出题、检查答案</div>
+  <div class="step-list">
+    <strong>使用步骤：</strong>
+    <ol>
+      <li>输入"帮我出 3 道时间换算题（三年级）"</li>
+      <li>做完后输入"帮我检查答案"</li>
+      <li>让 AI 解释做错的地方</li>
+    </ol>
+  </div>
+  <div class="example-box">
+    <span class="example-label">📝 示例提问：</span> "小明 8:30 出门，路上用了 40 分钟，几点到？"
+  </div>
+  <span class="scene-tag">💡 自测、补差、拓展</span>
+  <br>
+  <button class="demo-btn" onclick="toggleDetail('ai-prompt')">📋 查看常用指令</button>
+  <div id="ai-prompt" class="demo-result">
+    <strong>📌 常用AI指令模板：</strong><br>
+    • "帮我出 5 道有关时间换算的应用题"<br>
+    • "我算完了：3时=300分……哪里错了？"<br>
+    • "用三年级能懂的方式解释什么是'经过时间'"<br>
+    • "帮我设计一个周末时间表"
+  </div>
+</div>
+
+</div>
+
+<!-- 高阶工具 -->
+<div id="section-expert" class="tool-section active">
+
+<div class="tool-card" data-level="expert">
+  <div class="tool-header">
+    <div class="tool-icon">📊</div>
+    <div class="tool-name">数据记录表</div>
+  </div>
+  <span class="tool-tag tag-expert">🟠 高阶 · 研究级</span>
+  <div class="tool-purpose">🎯 记录一周的时间安排，分析时间使用效率</div>
+  <div class="step-list">
+    <strong>使用步骤：</strong>
+    <ol>
+      <li>画一张 7 天 × 24 小时的表</li>
+      <li>每天记录做了什么、花了多久</li>
+      <li>周末统计：学习、休息、运动各占比多少</li>
+    </ol>
+  </div>
+  <div class="example-box">
+    <span class="example-label">📝 示例统计：</span><br>
+    周末复盘 → 学习 35% &nbsp;|&nbsp; 睡觉 40% &nbsp;|&nbsp; 运动 10% &nbsp;|&nbsp; 娱乐 15%
+  </div>
+  <span class="scene-tag">💡 时间管理、自我分析</span>
+  <br>
+  <button class="demo-btn" onclick="toggleDetail('data-chart')">📈 查看饼图分析</button>
+  <div id="data-chart" class="demo-result" style="text-align:center;">
+    <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:10px;">
+      <div style="width:100px;height:100px;border-radius:50%;background:conic-gradient(var(--primary) 0% 35%, #52c41a 35% 75%, #faad14 75% 85%, #ff4d4f 85% 100%);"></div>
+      <div style="text-align:left;font-size:14px;">
+        <div><span style="display:inline-block;width:14px;height:14px;background:var(--primary);border-radius:2px;"></span> 学习 35%</div>
+        <div><span style="display:inline-block;width:14px;height:14px;background:#52c41a;border-radius:2px;"></span> 睡觉 40%</div>
+        <div><span style="display:inline-block;width:14px;height:14px;background:#faad14;border-radius:2px;"></span> 运动 10%</div>
+        <div><span style="display:inline-block;width:14px;height:14px;background:#ff4d4f;border-radius:2px;"></span> 娱乐 15%</div>
+      </div>
+    </div>
+    <p style="margin-top:8px;font-size:14px;color:var(--text-secondary);">这是示例数据，你可以记录自己的时间分配！</p>
+  </div>
+</div>
+
+</div>
+</div>
+
+<!-- 底部总结 -->
+<div class="card fade-in" style="background:var(--card-bg);border-radius:var(--border-radius);box-shadow:var(--shadow);padding:20px;border:1px solid var(--border);">
+  <h2 style="font-size:var(--font-h2);color:var(--primary);margin-bottom:10px;">🚀 工具进阶路线</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;">
+    <span style="background:#b7eb8f;border-radius:16px;padding:4px 16px;font-size:15px;">🟢 换算公式卡</span>
+    <span style="font-size:20px;color:var(--text-secondary);">→</span>
+    <span style="background:#b7eb8f;border-radius:16px;padding:4px 16px;font-size:15px;">🟢 时间数轴图</span>
+    <span style="font-size:20px;color:var(--text-secondary);">→</span>
+    <span style="background:#91caff;border-radius:16px;padding:4px 16px;font-size:15px;">🔵 番茄钟</span>
+    <span style="font-size:20px;color:var(--text-secondary);">→</span>
+    <span style="background:#91caff;border-radius:16px;padding:4px 16px;font-size:15px;">🔵 AI 辅助</span>
+    <span style="font-size:20px;color:var(--text-secondary);">→</span>
+    <span style="background:#ffd591;border-radius:16px;padding:4px 16px;font-size:15px;">🟠 数据记录表</span>
+  </div>
+  <p style="text-align:center;margin-top:10px;color:var(--text-secondary);font-size:15px;">从基础到高阶，一步一步成为时间管理高手！</p>
+</div>
+
+</div>
+
+<script>
+function switchLevel(level) {
+  document.querySelectorAll('.level-tab').forEach(function(el) { el.classList.remove('active'); });
+  document.querySelectorAll('.level-tab').forEach(function(el) {
+    var txt = el.textContent.trim();
+    if (level === 'all' && txt.includes('全部')) el.classList.add('active');
+    else if (level === 'easy' && txt.includes('基础')) el.classList.add('active');
+    else if (level === 'pro' && txt.includes('进阶')) el.classList.add('active');
+    else if (level === 'expert' && txt.includes('高阶')) el.classList.add('active');
+  });
+  if (level === 'all') {
+    document.querySelectorAll('.tool-section').forEach(function(el) { el.classList.add('active'); });
+  } else {
+    document.querySelectorAll('.tool-section').forEach(function(el) { el.classList.remove('active'); });
+    var target = document.getElementById('section-' + level);
+    if (target) target.classList.add('active');
+  }
+}
+
+function toggleDetail(id) {
+  var el = document.getElementById(id);
+  el.classList.toggle('show');
+}
+
+function generateQuestion() {
+  var qs = [
+    {q: '2 时 = ? 分', a: '2 × 60 = 120 分'},
+    {q: '180 分 = ? 时', a: '180 ÷ 60 = 3 时'},
+    {q: '5 时 = ? 分', a: '5 × 60 = 300 分'},
+    {q: '1 时 30 分 = ? 分', a: '1 × 60 + 30 = 90 分'},
+    {q: '240 分 = ? 时', a: '240 ÷ 60 = 4 时'},
+    {q: '90 分 = ? 时 ? 分', a: '90 = 60 + 30 → 1 时 30 分'},
+  ];
+  var i = Math.floor(Math.random() * qs.length);
+  var el = document.getElementById('conversion-question');
+  el.innerHTML = '<strong>🧮 题目：</strong>' + qs[i].q + '<br><strong>✅ 答案：</strong>' + qs[i].a;
+  el.classList.add('show');
+}
+
+// 番茄钟
+var pomTimer = null;
+var pomSeconds = 25 * 60;
+var pomRunning = false;
+
+function updatePomodoroDisplay() {
+  var m = Math.floor(pomSeconds / 60);
+  var s = pomSeconds % 60;
+  document.getElementById('pomodoro-timer').textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+}
+
+function startPomodoro() {
+  if (pomRunning) return;
+  pomRunning = true;
+  document.getElementById('pomodoro-status').textContent = '🔴 专注中...';
+  pomTimer = setInterval(function() {
+    if (pomSeconds <= 0) {
+      clearInterval(pomTimer);
+      pomRunning = false;
+      document.getElementById('pomodoro-status').textContent = '✅ 时间到！休息一下吧 🎉';
+      return;
+    }
+    pomSeconds--;
+    updatePomodoroDisplay();
+  }, 1000);
+}
+
+function resetPomodoro() {
+  if (pomTimer) clearInterval(pomTimer);
+  pomRunning = false;
+  pomSeconds = 25 * 60;
+  updatePomodoroDisplay();
+  document.getElementById('pomodoro-status').textContent = '⏸️ 点击开始专注';
+}
+</script>
+</body>
+</html>

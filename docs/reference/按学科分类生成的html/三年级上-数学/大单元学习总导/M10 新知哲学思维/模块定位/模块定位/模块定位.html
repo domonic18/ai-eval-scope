@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M10 新知哲学思维 — 模块定位</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+}
+
+.wrapper {
+  width: 100%;
+  max-width: none;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* ===== Header ===== */
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 30px 20px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.header h1 {
+  margin: 0 0 6px;
+  font-size: var(--font-h1);
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.header .subtitle {
+  font-size: 16px;
+  opacity: 0.85;
+  margin: 0;
+}
+
+.header .badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.2);
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+/* ===== Section ===== */
+.section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+  border-bottom: 1px solid var(--border);
+  background: var(--card-bg);
+}
+
+.section-header:hover {
+  background: var(--bg);
+}
+
+.section-header .num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.section-header h2 {
+  margin: 0;
+  font-size: var(--font-h2);
+  font-weight: 600;
+  flex: 1;
+}
+
+.section-header .arrow {
+  font-size: 18px;
+  color: var(--text-secondary);
+  transition: transform 0.3s;
+  flex-shrink: 0;
+}
+
+.section.open .section-header .arrow {
+  transform: rotate(180deg);
+}
+
+.section-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+  padding: 0 50px;
+}
+
+.section.open .section-body {
+  max-height: 2000px;
+  padding: 20px 50px;
+}
+
+/* ===== Tabbed Card ===== */
+.tab-wrapper {
+  margin: 16px 0;
+}
+
+.tab-bar {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--border);
+}
+
+.tab-btn {
+  padding: 10px 18px;
+  font-size: 15px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-weight: 500;
+  position: relative;
+  transition: color 0.2s;
+  font-family: inherit;
+}
+
+.tab-btn::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--primary);
+  transform: scaleX(0);
+  transition: transform 0.25s;
+}
+
+.tab-btn.active {
+  color: var(--primary);
+}
+
+.tab-btn.active::after {
+  transform: scaleX(1);
+}
+
+.tab-btn:hover {
+  color: var(--primary-hover);
+}
+
+.tab-content {
+  display: none;
+  padding: 16px 0;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* ===== Highlight box ===== */
+.highlight-box {
+  background: var(--bg);
+  border-left: 4px solid var(--primary);
+  padding: 14px 18px;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  margin: 16px 0;
+}
+
+.highlight-box strong {
+  color: var(--primary);
+}
+
+/* ===== Emoji icon ===== */
+.emoji-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+/* ===== Knowledge Map ===== */
+.knowledge-map {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.map-card {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 14px;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: default;
+}
+
+.map-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow);
+}
+
+.map-card .map-icon {
+  font-size: 32px;
+  margin-bottom: 6px;
+}
+
+.map-card .map-title {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.map-card .map-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* ===== Results list ===== */
+.result-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.result-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  transition: background 0.2s;
+}
+
+.result-item:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.result-item:hover .ripple {
+  color: #fff;
+}
+
+.result-item .ripple {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+/* ===== Letter teaser ===== */
+.letter-teaser {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  border-radius: var(--border-radius);
+  padding: 18px 22px;
+  margin: 16px 0;
+  text-align: center;
+}
+
+.letter-teaser p {
+  margin: 6px 0;
+}
+
+/* ===== Footer ===== */
+.footer {
+  text-align: center;
+  padding: 30px 20px 12px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 640px) {
+  .knowledge-map {
+    grid-template-columns: 1fr;
+  }
+  .tab-btn {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+  .section-body,
+  .section.open .section-body {
+    padding: 12px 16px;
+  }
+  .header h1 {
+    font-size: 24px;
+  }
+}
+
+/* ===== Underline spark ===== */
+.spark {
+  display: inline-block;
+  border-bottom: 2px dashed var(--accent);
+  cursor: help;
+}
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+
+<!-- ============ HEADER ============ -->
+<div class="header">
+  <h1>M10 新知哲学思维</h1>
+  <p class="subtitle">模块定位 · 数学 · 三年级上（人教版）</p>
+  <span class="badge">单元：1 时、分、秒</span>
+</div>
+
+<!-- ============ 1. 本模块学习什么 ============ -->
+<div class="section open" id="sec1">
+  <div class="section-header" onclick="toggleSection('sec1')">
+    <span class="num">1</span>
+    <h2>本模块学习什么</h2>
+    <span class="arrow">&#9660;</span>
+  </div>
+  <div class="section-body">
+    <p>别的课上你学会了 <strong>"1 分 = 60 秒"</strong>，但这里我们要问三个更有趣的问题：</p>
+
+    <div class="tab-wrapper">
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="tab-q1" onclick="switchTab(this)">时间从哪里来？</button>
+        <button class="tab-btn" data-tab="tab-q2" onclick="switchTab(this)">是谁定的？</button>
+        <button class="tab-btn" data-tab="tab-q3" onclick="switchTab(this)">为什么全世界都听它的？</button>
+      </div>
+      <div class="tab-content active" id="tab-q1">
+        <p>在古代，没有手表也没有手机。人们靠看太阳的位置、数自己的心跳、或者看沙漏里的沙子来感受时间。那时候的"一分钟"每个人都不一样。</p>
+        <div class="highlight-box">
+          <strong>想一想：</strong> 如果你是一个古人，你会用什么办法知道时间过去了多久？
+        </div>
+      </div>
+      <div class="tab-content" id="tab-q2">
+        <p>后来火车要准时到站、卫星要在太空同步，全世界必须用同一把"时间尺子"。科学家、数学家、国际组织一起商量，定下了统一的标准。</p>
+        <div class="highlight-box">
+          <strong>想一想：</strong> 如果每个城市的时间都不一样，会发生什么混乱？
+        </div>
+      </div>
+      <div class="tab-content" id="tab-q3">
+        <p>1 秒到底有多长？今天我们用<strong>铯原子振动</strong>来定义——它振动了 9,192,631,770 次就是 1 秒。全世界的时钟都以这个为标准，所以才不会打架。</p>
+        <div class="highlight-box">
+          <strong>想一想：</strong> 为什么是 9,192,631,770 次？你能不能试着找到答案？
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 2. 本模块为什么重要 ============ -->
+<div class="section" id="sec2">
+  <div class="section-header" onclick="toggleSection('sec2')">
+    <span class="num">2</span>
+    <h2>本模块为什么重要</h2>
+    <span class="arrow">&#9660;</span>
+  </div>
+  <div class="section-body">
+    <p>课本只告诉你 <span class="spark">"1 分 = 60 秒"</span>，但从来不问：<strong>为什么是 60 而不是 100？</strong></p>
+    <p>M10 训练你<strong>追问的勇气</strong>和<strong>追问的习惯</strong>——看到任何知识都问一句：</p>
+
+    <div class="knowledge-map">
+      <div class="map-card">
+        <div class="map-icon">&#129300;</div>
+        <div class="map-title">这是怎么来的？</div>
+        <div class="map-desc">追到源头，看看它从哪里诞生</div>
+      </div>
+      <div class="map-card">
+        <div class="map-icon">&#128270;</div>
+        <div class="map-title">有没有其他可能？</div>
+        <div class="map-desc">换个角度，世界会不会不一样</div>
+      </div>
+      <div class="map-card">
+        <div class="map-icon">&#128161;</div>
+        <div class="map-title">谁决定的？为什么？</div>
+        <div class="map-desc">每个知识背后都有一个故事</div>
+      </div>
+    </div>
+
+    <p>学会追问的人，<strong>不会被别人随便忽悠</strong>。看到一条消息你会想："真的吗？让我查查。"——这就是哲学思维的开始。</p>
+  </div>
+</div>
+
+<!-- ============ 3. 本模块与大单元主题的关系 ============ -->
+<div class="section" id="sec3">
+  <div class="section-header" onclick="toggleSection('sec3')">
+    <span class="num">3</span>
+    <h2>本模块与大单元主题的关系</h2>
+    <span class="arrow">&#9660;</span>
+  </div>
+  <div class="section-body">
+    <p>整个大单元是"时、分、秒"的学科内容。其他模块像是大楼里的一个个房间——</p>
+
+    <div class="highlight-box">
+      <p><strong>其他模块：</strong> 学会看钟、换算单位、估算时间……这些都是楼里的房间。</p>
+      <p><strong>M10 新知哲学思维：</strong> 是这栋楼的 <strong>地基和屋顶</strong>。</p>
+    </div>
+
+    <p>打个比方吧——你去朋友家做客，看到他家地板很漂亮。别人只夸地板好看，而你问了一句：<strong>"这栋楼为什么建在这里？地板下面是什么？"</strong></p>
+    <p>M10 就是帮你想出这些问题的地方。</p>
+  </div>
+</div>
+
+<!-- ============ 4. 本模块与前后模块的衔接 ============ -->
+<div class="section" id="sec4">
+  <div class="section-header" onclick="toggleSection('sec4')">
+    <span class="num">4</span>
+    <h2>本模块与前后模块的衔接</h2>
+    <span class="arrow">&#9660;</span>
+  </div>
+  <div class="section-body">
+    <p>M10 不是孤立的，它站在前面两个模块的肩膀上：</p>
+
+    <div style="display:flex;gap:10px;margin:12px 0;flex-wrap:wrap;">
+      <div style="flex:1;min-width:140px;background:var(--bg);border-radius:var(--border-radius);padding:12px;text-align:center;">
+        <div style="font-weight:700;color:var(--primary);">&#8593; 上游</div>
+        <div><strong>M8</strong> 科学思维<br><span style="font-size:14px;color:var(--text-secondary);">怎么观察和测量时间</span></div>
+        <div style="margin-top:6px;"><strong>M9</strong> 历史思维<br><span style="font-size:14px;color:var(--text-secondary);">计时工具的演变</span></div>
+      </div>
+      <div style="flex:1;min-width:140px;background:var(--primary);border-radius:var(--border-radius);padding:12px;text-align:center;color:#fff;">
+        <div style="font-weight:700;">&#9670; M10 你在</div>
+        <div>从"学知识"切换到<br>"思考知识"的转折点</div>
+      </div>
+      <div style="flex:1;min-width:140px;background:var(--bg);border-radius:var(--border-radius);padding:12px;text-align:center;">
+        <div style="font-weight:700;color:var(--primary);">&#8595; 下游</div>
+        <div>带着追问习惯<br><span style="font-size:14px;color:var(--text-secondary);">进入后续所有学习</span></div>
+      </div>
+    </div>
+
+    <p>M10 是你从<strong>"学知识"</strong>切换到<strong>"思考知识"</strong>的关键转折点。从这里开始，你不再只是记答案，而是会问问题。</p>
+  </div>
+</div>
+
+<!-- ============ 5. 本模块预期学习成果 ============ -->
+<div class="section" id="sec5">
+  <div class="section-header" onclick="toggleSection('sec5')">
+    <span class="num">5</span>
+    <h2>本模块预期学习成果</h2>
+    <span class="arrow">&#9660;</span>
+  </div>
+  <div class="section-body">
+    <p>学完M10，你将会完成以下三个作品，展示你的追问成果：</p>
+
+    <div class="result-list">
+      <div class="result-item">
+        <span class="ripple">&#128203;</span>
+        <div>
+          <strong>一张"知识刨根图"</strong><br>
+          把你追问到的答案画成一张图，让每个人一看就懂时间是怎么定下来的。
+        </div>
+      </div>
+      <div class="result-item">
+        <span class="ripple">&#127925;</span>
+        <div>
+          <strong>一段 1-2 分钟口头播客</strong><br>
+          用你自己的话，像小主播一样讲给大家听："为什么 1 分钟是 60 秒？"
+        </div>
+      </div>
+      <div class="result-item">
+        <span class="ripple">&#128231;</span>
+        <div>
+          <strong>一封《给"时、分、秒"的一封信》</strong><br>
+          把时间单位当作一个朋友，写一封信给它，说说你的发现和感谢。
+        </div>
+      </div>
+    </div>
+
+    <div class="letter-teaser">
+      <p style="font-size:20px;font-weight:600;">准备好了吗？</p>
+      <p>让我们一起开始这段追问之旅吧！</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ FOOTER ============ -->
+<div class="footer">
+  M10 新知哲学思维 · 模块定位 &mdash; 数学 · 三年级上（人教版）
+</div>
+
+</div>
+
+<script>
+function toggleSection(id) {
+  var sec = document.getElementById(id);
+  sec.classList.toggle('open');
+}
+
+function switchTab(btn) {
+  var wrapper = btn.closest('.tab-wrapper');
+  var targetId = btn.getAttribute('data-tab');
+  wrapper.querySelectorAll('.tab-btn').forEach(function(b) {
+    b.classList.remove('active');
+  });
+  wrapper.querySelectorAll('.tab-content').forEach(function(c) {
+    c.classList.remove('active');
+  });
+  btn.classList.add('active');
+  document.getElementById(targetId).classList.add('active');
+}
+</script>
+</body>
+</html>

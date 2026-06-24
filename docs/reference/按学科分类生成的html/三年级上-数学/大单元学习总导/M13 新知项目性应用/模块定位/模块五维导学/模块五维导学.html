@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M13 新知项目性应用 模块五维导学</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px 24px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 24px 30px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  text-align: center;
+}
+.header h1 {
+  margin: 0;
+  font-size: var(--font-h1);
+  font-weight: 700;
+}
+.header p {
+  margin: 8px 0 0;
+  opacity: 0.9;
+  font-size: var(--font-body);
+}
+.dim-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+@media (max-width: 700px) {
+  .dim-grid { grid-template-columns: 1fr; }
+}
+.dim-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.dim-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(22,119,255,0.12);
+}
+.dim-card .dim-header {
+  background: var(--primary);
+  color: #fff;
+  padding: 14px 20px;
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dim-card .dim-header .dim-icon {
+  font-size: 28px;
+}
+.dim-card .dim-body {
+  padding: 16px 20px;
+}
+.dim-card .dim-body ul {
+  margin: 6px 0;
+  padding-left: 20px;
+}
+.dim-card .dim-body ul li {
+  margin-bottom: 8px;
+}
+.dim-card .dim-body .goal-item {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  border-left: 3px solid var(--primary);
+}
+.dim-card .dim-body .goal-item strong {
+  color: var(--primary);
+}
+.story-block {
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin: 8px 0;
+  transition: background 0.3s;
+  cursor: default;
+}
+.story-block:hover {
+  background: #fff1cc;
+}
+.story-block .story-icon {
+  font-size: 24px;
+  margin-right: 8px;
+}
+.story-block h4 {
+  margin: 0 0 4px;
+  color: #d48806;
+  font-size: 18px;
+}
+.story-block p {
+  margin: 4px 0;
+}
+.qa-block {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin-bottom: 12px;
+  transition: background 0.3s;
+  cursor: pointer;
+}
+.qa-block:hover {
+  background: #d9f7be;
+}
+.qa-block h4 {
+  margin: 0 0 4px;
+  color: #52c41a;
+  font-size: 18px;
+}
+.qa-block .qa-answer {
+  display: none;
+  margin-top: 8px;
+  padding: 10px 14px;
+  background: #fff;
+  border-radius: var(--border-radius);
+}
+.qa-block .qa-answer.show {
+  display: block;
+}
+.method-tag {
+  display: inline-block;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 4px 14px;
+  margin: 4px;
+  font-size: 15px;
+}
+.method-tag.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.footer {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 16px 0 8px;
+  font-size: 15px;
+}
+@media (max-width: 600px) {
+  .container { padding: 12px 16px; }
+  .header { padding: 18px 20px; }
+  .header h1 { font-size: 24px; }
+  .dim-card .dim-body { padding: 12px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>M13 新知项目性应用</h1>
+    <p>模块五维导学 — 认识时间，管理时间，做时间的小主人</p>
+  </div>
+
+  <div class="dim-grid">
+    <!-- 维度1：学习目标 -->
+    <div class="dim-card">
+      <div class="dim-header">
+        <span class="dim-icon">🎯</span> 学习目标
+      </div>
+      <div class="dim-body">
+        <p>学完本模块后，你将能够：</p>
+        <div class="goal-item">
+          <strong>📖 知识理解：</strong>准确说出时、分、秒之间的换算关系（1时=60分，1分=60秒），并能用这些关系解决时间规划问题
+        </div>
+        <div class="goal-item">
+          <strong>🔧 能力形成：</strong>学会用"列清单→估时间→排顺序→做表格→核时长→出成果"的项目方法，完成一份完整的时间规划方案
+        </div>
+        <div class="goal-item">
+          <strong>🧠 思维发展：</strong>培养"先计划后执行"的规划思维，学会用数学方法管理真实生活中的时间
+        </div>
+        <div class="goal-item">
+          <strong>✍️ 表达产出：</strong>能够用表格、时间轴、文字说明等方式，清晰呈现自己设计的时间规划方案
+        </div>
+      </div>
+    </div>
+
+    <!-- 维度2：高精尖价值 -->
+    <div class="dim-card">
+      <div class="dim-header">
+        <span class="dim-icon">🚀</span> 高精尖价值与未来意义
+      </div>
+      <div class="dim-body">
+        <div class="story-block">
+          <h4>🚀 航天领域的"秒"</h4>
+          <p>火箭发射的"10、9、8……"倒计时精确到秒，任何1秒的偏差都可能导致任务失败——你学的时间换算知识，正是航天工程师们每天都在使用的！</p>
+        </div>
+        <div class="story-block">
+          <h4>🏅 奥运会的"百分之一秒"</h4>
+          <p>在百米赛跑中，冠军和亚军的差距可能只有0.01秒。专业计时器已经能精确到千万分之一秒！</p>
+        </div>
+        <div class="story-block">
+          <h4>⏰ 你的"时间管理超能力"</h4>
+          <p>学会规划时间，不只是完成作业——未来你管理项目、安排工作、制定人生计划，都离不开今天学的"时间项目方法"。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 维度3：学习方法 -->
+    <div class="dim-card">
+      <div class="dim-header">
+        <span class="dim-icon">💡</span> 推荐学习方式与方法
+      </div>
+      <div class="dim-body">
+        <p>试试这些方法，学得更快更好：</p>
+        <div>
+          <span class="method-tag active">🛠️ 做中学</span>
+          <span class="method-tag active">🔍 比较法</span>
+          <span class="method-tag active">🔄 迭代法</span>
+          <span class="method-tag active">🤖 AI辅助</span>
+        </div>
+        <ul style="margin-top:12px;">
+          <li><strong>做中学：</strong>不要只读不练，每学一个方法就动手做一次规划</li>
+          <li><strong>比较法：</strong>把自己做的时间规划和同学对比，看看谁的安排更合理</li>
+          <li><strong>迭代法：</strong>先做一版规划，执行后根据实际情况调整，再做第二版</li>
+          <li><strong>AI辅助：</strong>可以用AI帮你检查时间换算是否正确，或帮你优化时间安排</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 维度4：关键人物 -->
+    <div class="dim-card">
+      <div class="dim-header">
+        <span class="dim-icon">👤</span> 关键人物
+      </div>
+      <div class="dim-body">
+        <div class="story-block">
+          <h4>⛵ 克里斯托弗·哥伦布</h4>
+          <p>这位航海家利用沙漏（半小时一转）记录航行时间，完成了发现新大陆的壮举——在海上，时间就是生命！</p>
+        </div>
+        <div class="story-block">
+          <h4>🕰️ 约翰·哈里森</h4>
+          <p>18世纪的钟表匠，用了40年时间发明了航海钟（H4计时器），解决了海上精准计时的世界难题。</p>
+        </div>
+        <div class="story-block">
+          <h4>📋 大卫·艾伦（David Allen）</h4>
+          <p>当代"时间管理"专家，他发明的"GTD时间管理法"帮助全球数百万人高效管理生活和工作。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 维度5：前沿追问 -->
+  <div class="card" style="background:var(--card-bg);border-radius:var(--border-radius);box-shadow:var(--shadow);padding:20px 24px;margin-bottom:20px;border:1px solid var(--border);">
+    <h2 style="font-size:var(--font-h2);color:var(--primary);margin:0 0 12px;padding-bottom:8px;border-bottom:2px solid var(--accent);">🤔 前沿追问</h2>
+    <p>点击下面的问题，展开思考提示：</p>
+
+    <div class="qa-block" onclick="toggleQA('q1')">
+      <h4>❓ 如果有一天全世界的钟表都停了，人类会面临什么困难？</h4>
+      <div id="q1" class="qa-answer">
+        <p>想想看：没有钟表，你怎么知道几点上学？火车飞机怎么准时出发？工厂怎么安排生产？科学家怎么做实验？整个世界会乱成一团！这就是为什么精准计时如此重要。</p>
+      </div>
+    </div>
+
+    <div class="qa-block" onclick="toggleQA('q2')">
+      <h4>❓ 你觉得未来会出现"0.001秒"的计时工具吗？生活中哪些场景需要这么精确？</h4>
+      <div id="q2" class="qa-answer">
+        <p>其实已经存在了！电子计时器可以精确到0.001秒（毫秒），原子钟甚至能精确到十亿分之一秒！需要这么精确的场景：航天发射、卫星导航、高速摄影、体育比赛电子计时……</p>
+      </div>
+    </div>
+
+    <div class="qa-block" onclick="toggleQA('q3')">
+      <h4>❓ 为什么时间是一去不复返的？如果时间可以"存起来"以后再用，世界会变成什么样？</h4>
+      <div id="q3" class="qa-answer">
+        <p>时间是一维的、单向流动的，这是物理定律。如果时间能存起来——那大家就不会珍惜现在了，反正可以"把今天存起来明天用"。正是时间不可逆，才让"规划时间"变得有意义！</p>
+      </div>
+    </div>
+
+    <div class="qa-block" onclick="toggleQA('q4')">
+      <h4>❓ AI帮你规划时间和你自己规划时间，哪种方式更好？为什么？</h4>
+      <div id="q4" class="qa-answer">
+        <p>AI可以快速计算、优化排序、检查冲突，但它不了解你的实际情况（你今天累不累？作业难不难？）。最好的方式是：<strong>你自己做主规划，AI做助手帮你检查和完善</strong>！</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">M13 新知项目性应用 — 学时间、用时间、管理时间</div>
+</div>
+<script>
+function toggleQA(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('show');
+}
+</script>
+</body>
+</html>

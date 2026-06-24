@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>问题榜 — 时间探究问题集</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; box-sizing: border-box; }
+
+/* Header */
+.page-header { text-align: center; padding: 20px 0 8px; }
+.page-header h1 {
+  font-size: var(--font-h1); margin: 0 0 4px; color: var(--primary);
+}
+.page-header .subtitle { font-size: 15px; color: var(--text-secondary); margin: 0; }
+
+/* Level Tabs */
+.level-tabs {
+  display: flex; gap: 6px; margin: 16px 0; flex-wrap: wrap;
+}
+.level-tab-btn {
+  flex: 1; min-width: 90px; padding: 10px 14px; border: 2px solid var(--border);
+  border-radius: var(--border-radius); background: var(--card-bg); cursor: pointer;
+  font-size: 15px; font-weight: 600; color: var(--text-secondary);
+  transition: all 0.25s; text-align: center;
+}
+.level-tab-btn:hover { border-color: var(--accent); color: var(--primary); }
+.level-tab-btn.active { border-color: var(--primary); background: var(--primary); color: #fff; }
+
+.level-section { display: none; }
+.level-section.active { display: block; }
+
+/* Level header */
+.level-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; border-radius: var(--border-radius); margin-bottom: 14px;
+}
+.level-header.basic { background: #e6f7ff; }
+.level-header.advanced { background: #fff7e6; }
+.level-header.challenge { background: #f6e6ff; }
+.level-header .lh-icon { font-size: 24px; }
+.level-header .lh-text { font-size: 16px; font-weight: 600; }
+.level-header .lh-desc { font-size: 14px; color: var(--text-secondary); }
+
+/* Question Card */
+.q-card {
+  background: var(--card-bg); border-radius: var(--border-radius);
+  box-shadow: var(--shadow); margin-bottom: 14px; overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+.q-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.q-card .q-front {
+  padding: 16px 18px; cursor: pointer;
+  display: flex; align-items: flex-start; gap: 10px;
+  border-left: 4px solid var(--primary);
+  transition: background 0.2s;
+}
+.q-card .q-front:hover { background: #f6f9ff; }
+.q-card .q-number {
+  font-weight: 700; color: var(--primary); flex-shrink: 0; min-width: 28px;
+}
+.q-card .q-text { flex: 1; font-size: 16px; }
+.q-card .q-tag {
+  display: inline-block; font-size: 12px; padding: 1px 8px;
+  border-radius: 10px; background: #f0f5ff; color: var(--primary); margin-left: 6px;
+  white-space: nowrap;
+}
+.q-card .q-toggle {
+  font-size: 14px; color: var(--text-secondary); flex-shrink: 0;
+  transition: transform 0.3s;
+}
+.q-card.expanded .q-toggle { transform: rotate(180deg); }
+
+.q-card .q-answer {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+  padding: 0 18px; background: #fafcff; border-top: 0 solid var(--border);
+}
+.q-card.expanded .q-answer {
+  max-height: 500px; padding: 14px 18px; border-top-width: 1px;
+}
+.q-answer .a-label { font-weight: 600; color: var(--primary); font-size: 14px; }
+.q-answer .a-content { font-size: 15px; color: var(--text); margin-top: 4px; }
+.q-answer .a-hint {
+  font-size: 14px; color: var(--text-secondary); margin-top: 6px;
+  font-style: italic;
+}
+
+/* Tip box */
+.tip-box {
+  background: linear-gradient(135deg, #f0f5ff, #e6f0ff);
+  border: 1px solid var(--accent); border-radius: var(--border-radius);
+  padding: 14px 18px; margin: 18px 0 6px;
+}
+.tip-box h3 { margin: 0 0 6px; font-size: 17px; color: var(--primary); }
+.tip-box p { margin: 4px 0; font-size: 15px; }
+
+/* Progress */
+.progress-bar {
+  display: flex; gap: 8px; align-items: center; margin: 8px 0 16px;
+}
+.progress-track {
+  flex: 1; height: 8px; background: #e8e8e8; border-radius: 4px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; background: var(--primary); border-radius: 4px;
+  width: 0%; transition: width 0.5s;
+}
+.progress-label { font-size: 14px; color: var(--text-secondary); white-space: nowrap; }
+
+@media (max-width: 600px) {
+  .container { padding: 14px 10px; }
+  .level-tab-btn { font-size: 13px; padding: 8px 10px; }
+  .q-card .q-text { font-size: 15px; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<div class="page-header">
+  <h1>❓ 问题榜</h1>
+  <p class="subtitle">以问题驱动思考，一步步揭开时间的秘密</p>
+</div>
+
+<!-- Tabs -->
+<div class="level-tabs">
+  <button class="level-tab-btn active" onclick="switchLevel('basic', this)">🌱 基础层</button>
+  <button class="level-tab-btn" onclick="switchLevel('advanced', this)">🔬 进阶层</button>
+  <button class="level-tab-btn" onclick="switchLevel('challenge', this)">🚀 挑战层</button>
+</div>
+
+<!-- Progress -->
+<div class="progress-bar">
+  <span class="progress-label">已思考：<span id="progressCount">0</span>/16</span>
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+</div>
+
+<!-- 基础层 -->
+<div id="level-basic" class="level-section active">
+  <div class="level-header basic">
+    <span class="lh-icon">🌱</span>
+    <div>
+      <div class="lh-text">基础层 — 理解与识别</div>
+      <div class="lh-desc">掌握时间的基本单位和换算，识别钟面时刻</div>
+    </div>
+  </div>
+
+  <div class="q-card" onclick="toggleCard(this)">
+    <div class="q-front">
+      <span class="q-number">Q1</span>
+      <span class="q-text">1时等于多少分？1分等于多少秒？</span>
+      <span class="q-toggle">▼</span>
+    </div>
+    <div class="q-answer">
+      <div class="a-label">💡 答案提示</div>
+      <div class="a-content"><strong>1时 = 60分</strong>，<strong>1分 = 60秒</strong>。时、分、秒之间的进率都是 60。</div>
+      <div class="a-hint">💭 想一想：为什么时、分、秒的进率是 60 而不是 10？这和古代巴比伦人的计数方式有关哦！</div>
+    </div>
+  </div>
+
+  <div class="q-card" onclick="toggleCard(this)">
+    <div class="q-front">
+      <span class="q-number">Q2</span>
+      <span class="q-text">看钟面，说出以下时刻：时针在3和4之间、分针指向6</span>
+      <span class="q-toggle">▼</span>
+    </div>
+    <div class="q-answer">
+      <div class="a-label">💡 答案提示</div>
+      <div class="a-content">时针在 3 和 4 之间 → 是 <strong>3 点多</strong>；分针指向 6 → <strong>30 分</strong>。所以时刻是 <strong>3:30</strong>，也可以说成"3 时半"。</div>
+      <div class="a-hint">💭 分针走一大格是 5 分钟，指向 6 就是 5×6=30 分。</div>
+    </div>
+  </div>
+
+  <div class="q-card" onclick="toggleCard(this)">
+    <div class="q-front">
+      <span class="q-number">Q3</span>
+      <span class="q-text">早上7:30到校，上午4节课每节40分钟，课间10分钟，请问放学时间是？</span>
+      <span class="q-tag">应用题</span>
+      <span class="q-toggle">▼</span>
+    </div>
+    <div class="q-answer">
+      <div class="a-label">💡 答案提示</div>
+      <div class="a-content">
+        上课总时间：4 × 40 = 160 分 = 2 时 40 分<br>
+        课间总时间：3 个课间 × 10 = 30 分（4 节课之间有 3 个课间）<br>
+        总用时：2 时 40 分 + 30 分 = 3 时 10 分<br>
+        放学时间：7:30 + 3 时 10 分 = <strong>10:40</strong>
+      </div>
+      <div class="a-hint">💭 注意：4 节课只有 3 个课间哦！</div>
+    </div>
+  </div>
+
+  <div class="q-card" onclick="toggleCard(this)">
+    <div class="q-front">
+      <span class="q-number">Q4</span>
+      <span class="q-text">在括号里填上合适的单位（时/分/秒）：<br>跑100米大约用15（  ）；看一集动画片大约用20（  ）</span>
+      <span class="q-tag">单位选择</span>
+      <span class="q-toggle">▼</span>
+    </div>
+    <div class="q-answer">
+      <div class="a-label">💡 答案提示</div>
+      <div class="a-content">
+        跑100米大约用 <strong>15（秒）</strong>；看一集动画片大约用 <strong>20（分）</strong>。<br>
+        想一想：如果用"分"来计百米跑，15 分跑 100 米也太慢了吧！如果用"秒"计动画片，20 秒刚打开就结束了！
+      </div>
+      <div class="a-hint">💭 选单位时要联系生活经验，想想做这件事真正需要多长时间。</div>
+    </div>
+  </div>
+</div>
+
+<!-- 进阶层 -->
+<div id="level-advanced" class="level-section">
+  <div class="level-header advanced">
+    <span class="lh-icon">🔬</span>
+    <div>
+      <div class="lh-text">进阶层 — 分析与应用</div>
+      <div class="lh-desc">用时间知识分析生活中的问题，发现背后的规律</div>
+    </div>
+  </div>
+
+  <div class="q-card" onclick="toggleCard(this)">
+    <div class="q-front">
+      <span class="q-number">Q5</span>
+      <span class="q-text">为什么时钟是60进制而不是10进制？你觉得有什么好处和坏处？</span>
+      <span class="q-tag">开放问题</span>
+      <span class="q-toggle">▼</span>
+    </div>
+    <div class="q-answer">
+      <div class="a-label">💡 思考方向</div>
+      <div class="a-content">60 能被 1、2、3、4、5、6、10、12、15、20、30、60 整除，可以平均分成很多份。古埃及人和巴比伦人用 60 进制来计时。<br><br>🔹 好处：可以把一小时平均分成 2 份、3 份、4 份……很方便<br>🔹 坏处：计算的时候要记住 60 进率，不如 10 进制好算</div>
+    </div>
+  </div>
+
+  <div class="q-card" onclick="toggleCard(this)">
+    <div class="q-front">
+      <span class="q-number">Q6</span>
+      <span class="q-text">用秒表测量你跳绳30次的用时和跳绳60次的用时，两者是什么关系？为什么？</span>
+      <span class="q-tag">动手实验</span>
+      <span class="q-toggle">▼</span>
+    </div>
+    <div class="q-answer">
+      <div class="a-label">💡 思考方向</div>
+      <div class="a-content">如果跳绳速度均匀，跳 60 次的时间大约是跳 30 次时间的 <strong>2 倍</strong>。<br><br>但如果后面累了跳慢了，60 次的时间可能超过 2 倍。这就是"非匀速"的情况。实际测量一下，看看你的数据符合哪种情况？</div>
+    </div>
+  </div>
+
+  <div class="q-card" onclick="toggleCard(this)">
+    <div class="q-front">
+      <span class="q-number">Q7</span>
+      <span class="q-text">如果坐地铁从家到学校需要35分钟，你早上8:00到校，最晚几点出发？路上还要预留5分钟步行时间</span>
+      <span class="q-tag">生活应用</span>
+      <span class="q-toggle">▼</span>
+    </div>
+    <div class="q-answer">
+      <div class="a-label">💡 答案提示</div>
+      <div class="a-content">
+        总用时 = 地铁 35 分 + 步行 5 分 = <strong>40 分</strong><br>
+        最晚出发时间 = 8:00 − 40 分 = <strong>7:20</strong><br><br>
+        还可以再提前 5~10 分钟，以防地铁晚点哦！
+      </div>
+    </div>
+  </div>
+
+  <div class="q-card" onclick="toggleCard(this)">
+    <div class="q-front">
+      <span class="q-number">Q8</span>
+      <span class="q-text">你的朋友说"我等你10分钟"，结果等了20分钟。你有什么办法让时间约定更准确？</span>
+      <span class="q-tag">思辨</span>
+      <span class="q-toggle">▼</span>
+    </div>
+    <div class="q-answer">
+      <div class="a-label">💡 思考方向</div>
+      <div class="a-content">
+        可以试试这些方法：<br>
+        🔹 约定具体时刻，而不是"等X分钟"——比如"下午 3:00 在图书馆门口见"<br>
+        🔹 双方用手机设好闹钟提醒<br>
+        🔹 约定"如果迟到要提前告诉对方"<br>
+        🔹 提前规划好路上的时间，预留 5~10 分钟余量
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 挑战层 -->
+<div id="level-challenge" class="level-section">
+  <div class="level-header challenge">
+    <span class="lh-icon">🚀</span>
+    <div>
+      <div class="lh-text">挑战层 — 创造与批判</div>
+      <div class="lh-desc">跳出常规，用批判思维和创造力探索时间的本质</div>
+    </div>
+  </div>
+
+  <div class="q-card" onclick="toggleCard(this)">
+    <div class="q-front">
+      <span class="q-number">Q9</span>
+      <span class="q-text">如果没有时钟，人类怎么知道什么时候该上课、什么时候该下班？</span>
+      <span class="q-tag">反事实</span>
+      <span class="q-toggle">▼</span>
+    </div>
+    <div class="q-answer">
+      <div class="a-label">💡 思考方向</div>
+      <div class="a-content">
+        古人有很多办法：<br>
+        🔹 看太阳的位置（日晷）<br>
+        🔹 听公鸡打鸣<br>
+        🔹 用漏刻（水钟）测量时间长度<br>
+        🔹 点一炷香（香燃烧的长度对应时间）<br><br>
+        但没有精确时钟，大家的时间概念会变得模糊。你觉得没有精确时间的社会，生活节奏会更快还是更慢？
+      </div>
+    </div>
+  </div>
+
+  <div class="q-card" onclick="toggleCard(this)">
+    <div class="q-front">
+      <span class="q-number">Q10</span>
+      <span class="q-text">有人说"把时间切成秒、分、时，反而让我们失去了对时间的整体感受"，你同意吗？</span>
+      <span class="q-tag">批判思考</span>
+      <span class="q-toggle">▼</span>
+    </div>
+    <div class="q-answer">
+      <div class="a-label">💡 思考方向</div>
+      <div class="a-content">
+        这是开放题，没有标准答案。<br><br>
+        👍 同意的话：古人看日出日落感知一天，现在我们看钟表数字，确实少了自然节律的感受。<br>
+        👎 不同意的话：精确计时让我们能安排复杂的生活，坐火车、上网课、做实验都需要精确时间。<br><br>
+        你的观点是什么？试着用例子说明。
+      </div>
+    </div>
+  </div>
+
+  <div class="q-card" onclick="toggleCard(this)">
+    <div class="q-front">
+      <span class="q-number">Q11</span>
+      <span class="q-text">如果让你设计一个全新的时间系统（不用60进制），你会怎么设计？请写出你的方案。</span>
+      <span class="q-tag">设计挑战</span>
+      <span class="q-toggle">▼</span>
+    </div>
+    <div class="q-answer">
+      <div class="a-label">💡 思考方向</div>
+      <div class="a-content">
+        大胆想象！比如：<br>
+        🔹 10 进制时间：1 天 = 10 时，1 时 = 100 分，1 分 = 100 秒<br>
+        🔹 12 进制时间：1 天 = 12 时，1 时 = 72 分（和钟面匹配）<br>
+        🔹 以心跳为单位的系统：1 天 = 你的心跳大约 10 万次<br><br>
+        你的方案要考虑：怎么让大家都接受？怎么和现有钟表兼容？
+      </div>
+    </div>
+  </div>
+
+  <div class="q-card" onclick="toggleCard(this)">
+    <div class="q-front">
+      <span class="q-number">Q12</span>
+      <span class="q-text">你是怎么理解"时间"的？你觉得自己关于时间的想法，哪些来自课本，哪些来自生活经验，哪些是自己想出来的？</span>
+      <span class="q-tag">元认知</span>
+      <span class="q-toggle">▼</span>
+    </div>
+    <div class="q-answer">
+      <div class="a-label">💡 思考方向</div>
+      <div class="a-content">
+        这是关于"你怎么知道你知道"的问题：<br>
+        📚 来自课本：时、分、秒的换算，钟面读法<br>
+        🏠 来自生活：妈妈说的"再等5分钟"、动画片的时长<br>
+        🧠 自己想出来的：时间过得快或慢的感觉、对"永远"的理解<br><br>
+        试着把你的"时间观"画成一张思维导图！
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Final tip -->
+<div class="tip-box">
+  <h3>🧠 问题阅读指南</h3>
+  <p><strong>点击问题卡片</strong>可以查看提示或答案。但建议你先自己思考，实在想不出来再点开哦！</p>
+  <p>每个问题可以从三个层面回答：<strong>我知道</strong>（复述知识）、<strong>我理解</strong>（解释原因）、<strong>我创造</strong>（提出新想法）。</p>
+</div>
+
+</div>
+
+<script>
+function switchLevel(level, btn) {
+  document.querySelectorAll('.level-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.level-tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('level-' + level).classList.add('active');
+  btn.classList.add('active');
+  updateProgress();
+}
+
+function toggleCard(card) {
+  card.classList.toggle('expanded');
+  updateProgress();
+}
+
+function updateProgress() {
+  var total = document.querySelectorAll('.q-card').length;
+  var expanded = document.querySelectorAll('.q-card.expanded').length;
+  document.getElementById('progressCount').textContent = expanded;
+  document.getElementById('progressFill').style.width = (expanded / total * 100) + '%';
+}
+
+document.addEventListener('DOMContentLoaded', updateProgress);
+</script>
+
+</body>
+</html>

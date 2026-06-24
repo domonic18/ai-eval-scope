@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性示例 — 从起床到上学</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  padding: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.header::after {
+  content: "⏰";
+  position: absolute;
+  right: 20px;
+  bottom: 10px;
+  font-size: 64px;
+  opacity: 0.15;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin-bottom: 8px;
+  position: relative;
+  z-index: 1;
+}
+.header .subtitle {
+  font-size: 16px;
+  opacity: 0.9;
+  position: relative;
+  z-index: 1;
+}
+
+/* Card */
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card h2 .icon { font-size: 22px; }
+.card h3 {
+  font-size: 18px;
+  color: var(--text);
+  margin: 14px 0 8px;
+}
+.card p { margin-bottom: 10px; }
+.card ul, .card ol { margin: 8px 0 12px 22px; }
+.card li { margin-bottom: 4px; }
+
+/* Highlight */
+.highlight {
+  background: #e6f4ff;
+  border-left: 4px solid var(--primary);
+  padding: 12px 16px;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  margin: 12px 0;
+}
+
+/* Step Table */
+.step-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 16px;
+}
+.step-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+}
+.step-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.step-table tr:hover td {
+  background: #f0f5ff;
+}
+.step-table .step-num {
+  font-weight: 700;
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+/* Example Box */
+.example-box {
+  background: #fffbe6;
+  border: 1px dashed #faad14;
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin: 12px 0;
+}
+.example-box .example-title {
+  font-weight: 700;
+  color: #d48806;
+  margin-bottom: 6px;
+}
+
+/* Checklist */
+.checklist { list-style: none; padding: 0; }
+.checklist li {
+  margin-bottom: 6px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--primary);
+  border-radius: 4px;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: 0.2s;
+  font-size: 14px;
+  color: transparent;
+  margin-top: 3px;
+  user-select: none;
+}
+.checkbox.checked {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.checkbox.checked::after { content: "✓"; }
+
+/* Scaffold Box */
+.scaffold {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin: 10px 0;
+}
+.scaffold h4 {
+  color: #389e0d;
+  margin-bottom: 8px;
+  font-size: 17px;
+}
+
+/* Tag */
+.tag {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 14px;
+  margin-right: 4px;
+}
+
+/* Collapse Toggle */
+.toggle-content { display: none; margin-top: 10px; }
+.toggle-trigger {
+  color: var(--primary);
+  cursor: pointer;
+  font-weight: 600;
+  user-select: none;
+}
+.toggle-trigger:hover { color: var(--primary-hover); }
+.toggle-check:checked ~ .toggle-content { display: block; }
+.toggle-check { display: none; }
+
+/* Responsive */
+@media (max-width: 600px) {
+  .container { padding: 12px 10px; }
+  .card { padding: 14px; }
+  .step-table { font-size: 14px; }
+  .step-table th, .step-table td { padding: 6px 8px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>从起床到上学</h1>
+    <div class="subtitle">一张时间表诞生的故事 · 建构性示例导学</div>
+  </div>
+
+  <!-- 真实情境 -->
+  <div class="card">
+    <h2><span class="icon">📖</span> 真实建构情境</h2>
+    <p>你是三年级的小明，每天早上都要经历"起床→洗漱→吃早饭→上学"的过程。今天妈妈给你出了一道题：</p>
+    <div class="highlight">
+      <p style="font-weight:600;margin:0;">小明早上7:30从家出发步行去学校，走了25分钟后到达学校。请问小明到校的时刻是多少？</p>
+    </div>
+    <p>这不是一道普通的计算题，而是你亲手构建一个"时间应用书面成果"的起点。</p>
+  </div>
+
+  <!-- 目标 -->
+  <div class="card">
+    <h2><span class="icon">🎯</span> 建构目标</h2>
+    <p>构建一个完整的<strong>"时间问题书面解答"</strong>成果，包含三大要素：</p>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;">
+      <div style="flex:1;min-width:120px;background:#e6f4ff;border-radius:6px;padding:12px;text-align:center;">
+        <div style="font-size:28px;">📊</div>
+        <div style="font-weight:700;color:var(--primary);">时间轴图示</div>
+      </div>
+      <div style="flex:1;min-width:120px;background:#e6f4ff;border-radius:6px;padding:12px;text-align:center;">
+        <div style="font-size:28px;">✏️</div>
+        <div style="font-weight:700;color:var(--primary);">算式书写</div>
+      </div>
+      <div style="flex:1;min-width:120px;background:#e6f4ff;border-radius:6px;padding:12px;text-align:center;">
+        <div style="font-size:28px;">💬</div>
+        <div style="font-weight:700;color:var(--primary);">答句表达</div>
+      </div>
+    </div>
+    <div style="margin-top:12px;">
+      <p><strong>成果名称：</strong>《我的时间书面应用示例》（第一版）</p>
+      <p><strong>最低标准：</strong>不少于80字，包含时间轴、算式和答句</p>
+    </div>
+  </div>
+
+  <!-- 建构过程 6步 -->
+  <div class="card">
+    <h2><span class="icon">🔧</span> 建构过程示范（6步）</h2>
+    <table class="step-table">
+      <thead>
+        <tr><th style="width:44px;">步</th><th>做什么</th><th>怎么做</th><th>产出</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="step-num">1</td>
+          <td>圈信息</td>
+          <td>圈出"7:30""25分钟""到校时刻"</td>
+          <td>圈注后的题目</td>
+        </tr>
+        <tr>
+          <td class="step-num">2</td>
+          <td>画时间轴</td>
+          <td>左端写"7:30"，右端写"？"，中间注"走路25分钟"</td>
+          <td>时间轴草图</td>
+        </tr>
+        <tr>
+          <td class="step-num">3</td>
+          <td>想关系</td>
+          <td>判断"起点+时长=终点"</td>
+          <td>算式思路</td>
+        </tr>
+        <tr>
+          <td class="step-num">4</td>
+          <td>列算式</td>
+          <td>7时30分 + 25分 = 7时55分</td>
+          <td>完整算式</td>
+        </tr>
+        <tr>
+          <td class="step-num">5</td>
+          <td>写答句</td>
+          <td>答：小明到校的时刻是7:55。</td>
+          <td>规范答句</td>
+        </tr>
+        <tr>
+          <td class="step-num">6</td>
+          <td>检查</td>
+          <td>7:55减去25分钟是不是回到7:30？是的！</td>
+          <td>验证结论</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="text-align:center;margin-top:14px;">
+      <label class="toggle-trigger" for="step-detail">📌 点击查看详细示范 ▼</label>
+      <input type="checkbox" id="step-detail" class="toggle-check">
+      <div class="toggle-content">
+        <div class="example-box">
+          <div class="example-title">📝 第1步：圈信息</div>
+          <p>在原题上圈出所有时间词和数据。妈妈给出了四个关键信息：时间点"7:30"、时长"25分钟"、问的是"到校时刻"、人物是"小明"。</p>
+        </div>
+        <div class="example-box">
+          <div class="example-title">📝 第2步：画时间轴</div>
+          <p>画一条带箭头的横线，左端点标注"7:30"，中间标注"走路25分钟"，右端点标注"？到校时刻"。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 支架工具 -->
+  <div class="card">
+    <h2><span class="icon">🧰</span> 支架工具</h2>
+    <div class="scaffold">
+      <h4>⏱ 时间轴模板</h4>
+      <p style="font-size:20px;text-align:center;letter-spacing:2px;font-weight:700;">
+        起点____→（经过____）→终点____
+      </p>
+    </div>
+    <div class="scaffold">
+      <h4>📝 关键句式</h4>
+      <p style="font-size:18px;text-align:center;font-weight:600;">
+        "___时___分 + ___分 = ___时___分"
+      </p>
+    </div>
+    <div class="scaffold">
+      <h4>✅ 检查清单</h4>
+      <ul style="display:flex;flex-wrap:wrap;gap:8px;list-style:none;margin:0;">
+        <li style="background:#fff;border:1px solid var(--border);border-radius:6px;padding:4px 12px;">☐ 圈了数据</li>
+        <li style="background:#fff;border:1px solid var(--border);border-radius:6px;padding:4px 12px;">☐ 画了时间轴</li>
+        <li style="background:#fff;border:1px solid var(--border);border-radius:6px;padding:4px 12px;">☐ 写了算式</li>
+        <li style="background:#fff;border:1px solid var(--border);border-radius:6px;padding:4px 12px;">☐ 写了答句</li>
+        <li style="background:#fff;border:1px solid var(--border);border-radius:6px;padding:4px 12px;">☐ 做了验算</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 成果样例 -->
+  <div class="card">
+    <h2><span class="icon">⭐</span> 建构成果样例</h2>
+    <div class="example-box">
+      <div class="example-title">📋 《小明上学时间书面分析》</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+        <div style="background:#f0f5ff;border-radius:6px;padding:10px 14px;border-left:4px solid var(--primary);">
+          <strong>时间轴：</strong>7:30 →（25分钟）→ 7:55
+        </div>
+        <div style="background:#f0f5ff;border-radius:6px;padding:10px 14px;border-left:4px solid var(--primary);">
+          <strong>算式：</strong>7时30分 + 25分 = 7时55分
+        </div>
+        <div style="background:#f0f5ff;border-radius:6px;padding:10px 14px;border-left:4px solid var(--primary);">
+          <strong>答句：</strong>答：小明到校的时刻是7时55分。
+        </div>
+        <div style="background:#f6ffed;border-radius:6px;padding:10px 14px;border-left:4px solid #52c41a;">
+          <strong>验算：</strong>7时55分 − 25分 = 7时30分 ✓
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 优化建议 -->
+  <div class="card">
+    <h2><span class="icon">✨</span> 成果优化建议</h2>
+    <ul>
+      <li>把"7:30"写成"7时30分"更规范</li>
+      <li>时间轴上加小箭头表示时间方向</li>
+      <li>答句中写上单位"时"和"分"</li>
+    </ul>
+  </div>
+
+  <!-- 自我评价 -->
+  <div class="card">
+    <h2><span class="icon">📊</span> 自我评价量表</h2>
+    <p style="color:var(--text-secondary);margin-bottom:10px;">点击每一项前面的方框，勾选你的完成情况：</p>
+    <ul class="checklist">
+      <li><span class="checkbox" onclick="this.classList.toggle('checked')"></span> 我是否画出了正确的时间轴？</li>
+      <li><span class="checkbox" onclick="this.classList.toggle('checked')"></span> 我的算式是否把单位（时、分）写清楚了？</li>
+      <li><span class="checkbox" onclick="this.classList.toggle('checked')"></span> 我的答句是否是一句完整的陈述？</li>
+      <li><span class="checkbox" onclick="this.classList.toggle('checked')"></span> 我用逆运算（减法验证加法）检查了吗？</li>
+      <li><span class="checkbox" onclick="this.classList.toggle('checked')"></span> 我的书面上字迹工整，别人能看懂吗？</li>
+    </ul>
+    <div style="text-align:center;margin-top:12px;">
+      <button onclick="document.querySelectorAll('.checkbox').forEach(c=>c.classList.add('checked'))" style="background:var(--primary);color:#fff;border:none;border-radius:6px;padding:8px 20px;font-size:16px;cursor:pointer;margin-right:8px;">全选</button>
+      <button onclick="document.querySelectorAll('.checkbox').forEach(c=>c.classList.remove('checked'))" style="background:#fff;color:var(--text);border:1px solid var(--border);border-radius:6px;padding:8px 20px;font-size:16px;cursor:pointer;">清空</button>
+    </div>
+  </div>
+
+  <!-- 底部 -->
+  <div style="text-align:center;padding:16px 0 8px;color:var(--text-secondary);font-size:14px;">
+    M12 新知书面性应用 · 建构性示例
+  </div>
+</div>
+<script>
+// Ensure toggle functionality works
+document.querySelectorAll('.toggle-trigger').forEach(function(el) {
+  el.addEventListener('click', function() {
+    var id = this.getAttribute('for');
+    var cb = document.getElementById(id);
+    if(cb) cb.checked = !cb.checked;
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性原理 — 时间分析的5个通用工具</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+}
+.wrapper {
+  max-width: 960px;
+  margin: 0 auto;
+}
+h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 16px;
+  margin-bottom: 20px;
+}
+h2 {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin-top: 28px;
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 3px solid var(--accent);
+}
+h3 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-top: 20px;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+h4 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 14px;
+  margin-bottom: 6px;
+  color: var(--primary-hover);
+}
+p { margin-bottom: 10px; }
+ul, ol { padding-left: 22px; margin-bottom: 10px; }
+li { margin-bottom: 5px; }
+
+.principle-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  border-left: 6px solid var(--primary);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.principle-card:hover {
+  transform: translateX(3px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+}
+.principle-card:nth-child(odd) { border-left-color: var(--primary); }
+.principle-card:nth-child(even) { border-left-color: #52c41a; }
+
+.p-number {
+  display: inline-block;
+  width: 36px;
+  height: 36px;
+  line-height: 36px;
+  text-align: center;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: 17px;
+  margin-right: 10px;
+}
+.p-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.p-section {
+  margin-top: 10px;
+}
+.p-label {
+  font-weight: 600;
+  color: var(--primary);
+  display: block;
+  margin-top: 8px;
+}
+
+.example-box {
+  background: #fff7e6;
+  border-left: 4px solid #fa8c16;
+  border-radius: 6px;
+  padding: 10px 16px;
+  margin: 8px 0;
+}
+.example-box::before { content: "📌 本示例中的体现"; display: block; font-weight: 700; color: #d46b08; margin-bottom: 2px; font-size: 15px; }
+
+.migrate-box {
+  background: #f6ffed;
+  border-left: 4px solid #52c41a;
+  border-radius: 6px;
+  padding: 10px 16px;
+  margin: 8px 0;
+}
+.migrate-box::before { content: "🔀 可迁移到哪些问题"; display: block; font-weight: 700; color: #389e0d; margin-bottom: 2px; font-size: 15px; }
+
+.warning-box {
+  background: #fff2f0;
+  border-left: 4px solid #ff4d4f;
+  border-radius: 6px;
+  padding: 10px 16px;
+  margin: 8px 0;
+}
+.warning-box::before { content: "⚠️ 使用提醒"; display: block; font-weight: 700; color: #cf1322; margin-bottom: 2px; font-size: 15px; }
+
+.practice-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border: 2px dashed var(--accent);
+}
+.practice-card h3 { color: var(--primary); }
+
+.scaffold-box {
+  background: #e6f7ff;
+  border-left: 4px solid var(--primary);
+  border-radius: 6px;
+  padding: 10px 16px;
+  margin: 8px 0;
+}
+.scaffold-box::before { content: "🧩 解析脚手架提示"; display: block; font-weight: 700; color: var(--primary); margin-bottom: 2px; font-size: 15px; }
+
+.self-check {
+  background: linear-gradient(135deg, #f0f5ff, #e6f7ff);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin-top: 24px;
+}
+.self-check h3 { color: var(--primary); }
+.self-check ol { padding-left: 22px; }
+.self-check li { 
+  margin-bottom: 10px; 
+  cursor: pointer; 
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+.self-check li:hover { background: rgba(22,119,255,0.06); }
+.self-check li.done { 
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 600px) {
+  .container { padding: 16px 12px; }
+  .principle-card, .practice-card, .self-check { padding: 14px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="wrapper">
+
+<h1>🔧 解析性原理</h1>
+<p class="subtitle">5条"通用手艺"——学会它们，你就能分析任何时间问题！每条原理都包含：说明 → 示例体现 → 迁移方法 → 使用提醒。</p>
+
+<div style="margin-bottom:20px;background:var(--card-bg);border-radius:var(--border-radius);padding:16px 20px;box-shadow:var(--shadow);border:1px solid var(--border);">
+  <p>在"小明出行的秘密"示例中，你跟着记录表一步步找到了"时间浪费"的真相。现在，我们把用过的"分析方法"提炼成5个通用工具——就像厨师学会了"刀工、火候、调味"这些通用手艺一样，以后遇到任何时间问题都能用上！</p>
+</div>
+
+<!-- 原理1 -->
+<div class="principle-card">
+  <div>
+    <span class="p-number">1</span>
+    <span class="p-title">时间定位法 — 先找到"起点"和"终点"</span>
+  </div>
+  <div class="p-section">
+    <span class="p-label">📖 原理说明</span>
+    <p>分析任何时间问题，首先要明确两个东西：<strong>"从几点开始"（起点时刻）</strong>和<strong>"到几点结束"（终点时刻）</strong>。不知道起点和终点，就什么都算不出来。每次遇到时间问题，先在纸上写下"起点→终点→时长"三个数据。</p>
+  </div>
+  <div class="example-box">小明从7:20开始准备，7:35结束——这就是分析他出门时间的第一组数据。</div>
+  <div class="migrate-box">一场电影从几时放到几时、从家里到学校需要多久、一节课从几时上到几时。</div>
+  <div class="warning-box">注意区分"起点时刻"和"起点前的时间"——"7:20开始准备"和"7:20之前已经醒了"是两回事。</div>
+</div>
+
+<!-- 原理2 -->
+<div class="principle-card">
+  <div>
+    <span class="p-number">2</span>
+    <span class="p-title">分解法 — 大段拆成小段</span>
+  </div>
+  <div class="p-section">
+    <span class="p-label">📖 原理说明</span>
+    <p>一大段时间看起来很模糊，但把它拆成几小段，每一小段都搞清楚做了什么、用了多久，问题就清楚了。<strong>拿到一段"模糊的大段时间"时，先问自己"这个时间段里发生了几件事？"</strong></p>
+  </div>
+  <div class="example-box">小明的15分钟被拆成了"找书包3分钟+喝水2分钟+上厕所2分钟+穿鞋5分钟+等电梯3分钟"。</div>
+  <div class="migrate-box">分析"做作业花了2小时"时拆分为各科用时；分析"周末活动安排"时拆分为各环节。</div>
+  <div class="warning-box">拆得越细越好？不是。拆到"能看出问题和优化空间"就可以了，不用把"找书包"再拆成"开书包1秒+翻找2分59秒"。</div>
+</div>
+
+<!-- 原理3 -->
+<div class="principle-card">
+  <div>
+    <span class="p-number">3</span>
+    <span class="p-title">分类法 — 区分"必要"和"可优化"</span>
+  </div>
+  <div class="p-section">
+    <span class="p-label">📖 原理说明</span>
+    <p>把拆出来的时间段分成两类——<strong>"不得不花的时间"</strong>和<strong>"可以省下来的时间"</strong>。这是做出"优化判断"的关键。在记录表旁边加一列"必要/可优化"即可。</p>
+  </div>
+  <div class="example-box">穿衣穿鞋是必要的，但"穿鞋用了5分钟"属于"可优化"（提前准备好鞋带就能省2分钟）。</div>
+  <div class="migrate-box">分析零花钱支出时分为"必须买"和"可以省"；看电视时间分为"已经约好的"和"临时打开的"。</div>
+  <div class="warning-box">不要把"习惯"当成"必要"——"我习惯了早上先看手机再起床"不等于"必须看手机"。</div>
+</div>
+
+<!-- 原理4 -->
+<div class="principle-card">
+  <div>
+    <span class="p-number">4</span>
+    <span class="p-title">60进制法 — 不是100，是60！</span>
+  </div>
+  <div class="p-section">
+    <span class="p-label">📖 原理说明</span>
+    <p>时间计算和普通加减法最大的不同：<strong>满60进1</strong>，不是满100进1。这是最容易出错的地方！每次做完时间加减，检查一下——分钟有没有超过59？如果超过了，记得"借位给小时"。</p>
+  </div>
+  <div class="example-box">小明7:55开始收拾书包，收拾了15分钟，结束时间是8:10（55+15=70分钟=1小时10分，7点+1小时10分=8:10）。</div>
+  <div class="migrate-box">所有涉及时间加减的题目——计算经过时间、倒推开始时间、时间比较等。</div>
+  <div class="warning-box">可以画一个"时间数轴"来避免计算错误。把时间画在数轴上，用数格子代替心算！</div>
+</div>
+
+<!-- 原理5 -->
+<div class="principle-card">
+  <div>
+    <span class="p-number">5</span>
+    <span class="p-title">可视化法 — 画出来才看得到</span>
+  </div>
+  <div class="p-section">
+    <span class="p-label">📖 原理说明</span>
+    <p>光在脑子里想"时间安排"是很模糊的，<strong>画成时间轴、饼图、条图，一眼就能看到问题</strong>。准备一张白纸，把时间数据画成一幅图——时间轴看顺序、饼图看比例、柱状图看对比。</p>
+  </div>
+  <div class="example-box">如果小明不画时间轴，他根本不会发现自己"临时增加了喝水、上厕所"这些环节。画出来之后，"偷时间的小偷"一目了然。</div>
+  <div class="migrate-box">展示家庭周末时间规划、对比一周学习时间变化、分析考试成绩趋势。</div>
+  <div class="warning-box">不要追求"画得漂亮"而忽略了"数据准确"——画图的第一目的是帮你看到规律，不是参加美术比赛。</div>
+</div>
+
+<!-- 练习区 -->
+<h2>✏️ 解析性原理应用</h2>
+
+<div class="practice-card">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+    <span style="font-size:28px;">🧩</span>
+    <h3 style="margin:0;">练习1：写作业的时间谜题</h3>
+  </div>
+  <p><strong>情境：</strong>小华说"我周三晚上写作业用了2小时"，但妈妈觉得他好像一直在玩。小华很委屈："我真的在写！"</p>
+  <p><strong>解析任务：</strong>请你设计一份"作业时间追踪表"，帮小华分析"2小时里到底有多少时间在写、多少时间在走神/休息/找东西"</p>
+  <p><strong>建议使用的原理：</strong> 原理1（时间定位法）→ 原理2（分解法）→ 原理3（分类法）</p>
+  <div class="scaffold-box">在纸上画一个圆，代表2小时，用扇形展示"真正写作业"、"找东西/走动"、"发呆"、"喝水休息"各占多少。</div>
+  <p><strong>成果表达：</strong>画一份"小华作业时间分析饼图"，并用时间分类标注。</p>
+  <div style="margin-top:10px;">
+    <button style="background:var(--primary);color:#fff;border:none;padding:6px 18px;border-radius:20px;font-size:15px;cursor:pointer;" onclick="togglePractice('p1')">💡 分析提示</button>
+    <div id="p1hint" style="display:none;margin-top:8px;padding:10px;background:#fafafa;border-radius:8px;">
+      <p>把2小时拆成"坐下→开始写→换科目→站起来"，记录每个中间环节的时间。注意：小华可能自己都没意识到他走神了多少次。</p>
+    </div>
+  </div>
+</div>
+
+<div class="practice-card">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+    <span style="font-size:28px;">🏃</span>
+    <h3 style="margin:0;">练习2：谁能跑第一？</h3>
+  </div>
+  <p><strong>情境：</strong>体育课上4位同学跑200米，计时成绩：小刚45秒、小红50秒、小亮42秒、小丽48秒。但老师说"小亮犯规要加5秒"。到底谁是第一名？</p>
+  <p><strong>解析任务：</strong>重新计算调整后的成绩，排序并宣布排名。</p>
+  <p><strong>建议使用的原理：</strong> 原理4（60进制法）+ 原理5（可视化法）</p>
+  <div class="scaffold-box">注意：跑步时间"越小"表示跑得越快！在数轴上标出每个同学的时间点，再把小亮的时间+5秒后重标。</div>
+  <p><strong>成果表达：</strong>画出"200米成绩对比柱状图"，标注原始时间和调整后的时间。</p>
+  <div style="margin-top:10px;">
+    <button style="background:var(--primary);color:#fff;border:none;padding:6px 18px;border-radius:20px;font-size:15px;cursor:pointer;" onclick="togglePractice('p2')">🔢 查看答案</button>
+    <div id="p2hint" style="display:none;margin-top:8px;padding:10px;background:#fafafa;border-radius:8px;">
+      <p>原始成绩：小亮第1（42秒）→ 小刚第2（45秒）→ 小丽第3（48秒）→ 小红第4（50秒）</p>
+      <p>小亮加5秒后=47秒，新排名：小刚第1（45秒）→ 小亮第2（47秒）→ 小丽第3（48秒）→ 小红第4（50秒）</p>
+      <p>小亮从第1掉到了第2——这就是"犯规的代价"！</p>
+    </div>
+  </div>
+</div>
+
+<!-- 自我检测 -->
+<div class="self-check">
+  <h3>📝 自我检测</h3>
+  <p>点击下面问题，检测一下自己是否真正掌握了这5条原理！</p>
+  <ol>
+    <li onclick="this.classList.toggle('done')">你能用自己的话说出"时间定位法"的第一步要做什么吗？</li>
+    <li onclick="this.classList.toggle('done')">"早上起床到出门"——你能拆出至少5个"小段"吗？每个大约需要多少分钟？</li>
+    <li onclick="this.classList.toggle('done')">"30分钟=0.5小时"这个换算你理解吗？如果用"100进制"算，30分钟=0.3小时——你发现区别了吗？</li>
+    <li onclick="this.classList.toggle('done')">如果你的作业记录显示"2小时内走神了4次，每次3分钟"，走神总共占了多少时间？占2小时的几分之几？</li>
+    <li onclick="this.classList.toggle('done')">这5条原理里，你觉得哪条最有帮助？哪条最难？为什么？</li>
+  </ol>
+  <p style="margin-top:12px;font-size:15px;color:var(--text-secondary);">👆 完成检测后点击题目，可以打勾标记哦！</p>
+</div>
+
+</div>
+</div>
+
+<script>
+function togglePractice(id) {
+  var el = document.getElementById(id + 'hint');
+  if (el) { el.style.display = el.style.display === 'none' ? 'block' : 'none'; }
+}
+</script>
+</body>
+</html>

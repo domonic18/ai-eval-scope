@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>问题榜 — 时间问题驱动引擎</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 28px;
+  box-sizing: border-box;
+}
+.header-banner {
+  background: linear-gradient(135deg, #1a1a2e, #2d2d44);
+  color: #fff;
+  border-radius: var(--border-radius);
+  padding: 28px 32px;
+  margin-bottom: 28px;
+}
+.header-banner h1 {
+  font-size: var(--font-h1);
+  color: #fff;
+  margin: 0 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.header-banner h1::before { content: "🏆"; font-size: 32px; }
+.header-banner .subtitle {
+  color: rgba(255,255,255,0.72);
+  margin: 0;
+  font-size: 15px;
+}
+.level-section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 28px;
+  overflow: hidden;
+}
+.level-header {
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.level-header .level-icon {
+  font-size: 28px;
+}
+.level-header h2 {
+  margin: 0;
+  font-size: var(--font-h2);
+  color: var(--text);
+}
+.level-header .level-tag {
+  margin-left: auto;
+  padding: 4px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+.level-tag.basic { background: #52c41a; }
+.level-tag.advanced { background: #fa8c16; }
+.level-tag.challenge { background: #f5222d; }
+.level-body {
+  padding: 0 24px 20px;
+}
+.question-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 18px;
+  margin: 8px 0;
+  background: var(--bg);
+  border-radius: 10px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: default;
+}
+.question-item:hover {
+  transform: translateX(4px);
+  box-shadow: 0 2px 10px rgba(22,119,255,0.1);
+}
+.question-item .q-num {
+  min-width: 34px;
+  height: 34px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.question-item .q-text {
+  flex: 1;
+}
+.question-item .q-type {
+  display: inline-block;
+  font-size: 13px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  margin-left: 8px;
+}
+.q-type.open { background: #e6f4ff; color: var(--primary); }
+.q-type.compare { background: #f6ffed; color: #52c41a; }
+.q-type.counterfact { background: #fff7e6; color: #d46b08; }
+.q-type.meta { background: #f9f0ff; color: #722ed1; }
+.question-item .reveal-btn {
+  background: none;
+  border: 1px solid var(--border);
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.question-item .reveal-btn:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.answer-box {
+  display: none;
+  width: 100%;
+  padding: 12px 16px;
+  margin-top: 8px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 16px;
+  color: var(--text);
+}
+.answer-box .check { color: #52c41a; font-weight: 700; }
+@media (max-width: 640px) {
+  .container { padding: 16px; }
+  .level-body { padding: 0 16px 16px; }
+  .level-header { padding: 14px 16px; }
+  .question-item { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header-banner">
+  <h1>🏆 问题榜</h1>
+  <p class="subtitle">时间问题驱动引擎 — 从基础闯关到思维挑战！</p>
+</div>
+
+<!-- 基础层 -->
+<div class="level-section">
+  <div class="level-header">
+    <span class="level-icon">🌱</span>
+    <h2>基础层：理解与识别</h2>
+    <span class="level-tag basic">🏁 入门</span>
+  </div>
+  <div class="level-body">
+
+    <div class="question-item">
+      <span class="q-num">1</span>
+      <div class="q-text">1分钟是多少秒？1小时是多少分钟？1小时是多少秒？</div>
+      <button class="reveal-btn" onclick="toggleAnswer('a1',this)">🙋 我想想</button>
+      <div class="answer-box" id="a1"><span class="check">✅</span> 1分钟 = 60秒 | 1小时 = 60分钟 | 1小时 = 3600秒</div>
+    </div>
+
+    <div class="question-item">
+      <span class="q-num">2</span>
+      <div class="q-text">时针从3走到5，经过了几个小时？</div>
+      <button class="reveal-btn" onclick="toggleAnswer('a2',this)">🙋 我想想</button>
+      <div class="answer-box" id="a2"><span class="check">✅</span> 5 − 3 = <strong>2小时</strong>。时针走一大格是1小时，从3到5走了2大格。</div>
+    </div>
+
+    <div class="question-item">
+      <span class="q-num">3</span>
+      <div class="q-text">分针从12走到6，经过了多长时间？</div>
+      <button class="reveal-btn" onclick="toggleAnswer('a3',this)">🙋 我想想</button>
+      <div class="answer-box" id="a3"><span class="check">✅</span> 分针从12走到6走了半圈 = <strong>30分钟</strong>（半小时）</div>
+    </div>
+
+    <div class="question-item">
+      <span class="q-num">4</span>
+      <div class="q-text">秒针走一圈，分针走多少？</div>
+      <button class="reveal-btn" onclick="toggleAnswer('a4',this)">🙋 我想想</button>
+      <div class="answer-box" id="a4"><span class="check">✅</span> 秒针走一圈 = 60秒 = 1分钟，分针走 <strong>1小格</strong>。</div>
+    </div>
+
+    <div class="question-item">
+      <span class="q-num">5</span>
+      <div class="q-text">180秒等于多少分钟？</div>
+      <button class="reveal-btn" onclick="toggleAnswer('a5',this)">🙋 我想想</button>
+      <div class="answer-box" id="a5"><span class="check">✅</span> 180 ÷ 60 = <strong>3分钟</strong></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 进阶层 -->
+<div class="level-section">
+  <div class="level-header">
+    <span class="level-icon">🔥</span>
+    <h2>进阶层：分析与应用</h2>
+    <span class="level-tag advanced">🚀 提升</span>
+  </div>
+  <div class="level-body">
+
+    <div class="question-item">
+      <span class="q-num">6</span>
+      <div class="q-text">
+        小明说"我每天学习2小时"，小红说"我每天学习120分钟"。他们谁学习的时间更长？为什么？
+        <span class="q-type open">开放</span>
+      </div>
+      <button class="reveal-btn" onclick="toggleAnswer('a6',this)">🙋 我想想</button>
+      <div class="answer-box" id="a6"><span class="check">✅</span> 2小时 = 120分钟，所以 <strong>两人一样长</strong>！只是用了不同的单位表达而已。</div>
+    </div>
+
+    <div class="question-item">
+      <span class="q-num">7</span>
+      <div class="q-text">
+        一场电影从下午2:15开始，到下午4:05结束。这部电影演了多长时间？（尝试用两种方法解答）
+        <span class="q-type open">开放</span>
+      </div>
+      <button class="reveal-btn" onclick="toggleAnswer('a7',this)">🙋 我想想</button>
+      <div class="answer-box" id="a7">
+        <span class="check">✅</span> <strong>方法1：</strong>2:15→4:15=2小时，减去多算的10分钟=1小时50分钟<br>
+        <strong>方法2：</strong>全部算分钟：4:05=245分钟，2:15=135分钟，245−135=110分钟=1小时50分钟
+      </div>
+    </div>
+
+    <div class="question-item">
+      <span class="q-num">8</span>
+      <div class="q-text">
+        一列火车从北京到上海需要4小时37分钟，上午8:50发车，什么时候到达？
+      </div>
+      <button class="reveal-btn" onclick="toggleAnswer('a8',this)">🙋 我想想</button>
+      <div class="answer-box" id="a8"><span class="check">✅</span> 8:50 + 4小时 = 12:50，再加37分钟 = <strong>13:27</strong>（下午1:27）</div>
+    </div>
+
+    <div class="question-item">
+      <span class="q-num">9</span>
+      <div class="q-text">
+        走一段路，小华用了5分钟，小丽用了300秒。谁走得更快？为什么？
+        <span class="q-type compare">对比</span>
+      </div>
+      <button class="reveal-btn" onclick="toggleAnswer('a9',this)">🙋 我想想</button>
+      <div class="answer-box" id="a9"><span class="check">✅</span> 5分钟 = 5×60 = 300秒。所以两人用时 <strong>一样</strong>！一样快！</div>
+    </div>
+
+    <div class="question-item">
+      <span class="q-num">10</span>
+      <div class="q-text">
+        "7:45"也可以说成"差一刻到8点"。你还能说出几个这样的时间表达方式？
+        <span class="q-type open">开放</span>
+      </div>
+      <button class="reveal-btn" onclick="toggleAnswer('a10',this)">🙋 我想想</button>
+      <div class="answer-box" id="a10">
+        <span class="check">✅</span> 比如：<br>
+        • 8:30 = "8点半" 或 "差半小时到9点"<br>
+        • 6:15 = "6点一刻" 或 "6点15分"<br>
+        • 9:50 = "差10分到10点"
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 挑战层 -->
+<div class="level-section">
+  <div class="level-header">
+    <span class="level-icon">💎</span>
+    <h2>挑战层：创造与批判</h2>
+    <span class="level-tag challenge">🏆 巅峰</span>
+  </div>
+  <div class="level-body">
+
+    <div class="question-item">
+      <span class="q-num">11</span>
+      <div class="q-text">
+        如果1小时只有30分钟（而不是60分钟），你的一天会变成怎样？请重新设计一个"30分钟制"的时间表。
+        <span class="q-type counterfact">反事实</span>
+      </div>
+      <button class="reveal-btn" onclick="toggleAnswer('a11',this)">💡 思路</button>
+      <div class="answer-box" id="a11">
+        <span class="check">💭</span> 如果1小时=30分钟，那原来的一天24小时就变成了48"新小时"。你的作息表要全部重新排——比如原来8小时睡眠 = 16个"新小时"！想一想这样的世界会有什么有趣的变化？
+      </div>
+    </div>
+
+    <div class="question-item">
+      <span class="q-num">12</span>
+      <div class="q-text">
+        如果人类没有发明"秒"这个时间单位，生活会有什么不方便？
+        <span class="q-type counterfact">反事实</span>
+      </div>
+      <button class="reveal-btn" onclick="toggleAnswer('a12',this)">💡 思路</button>
+      <div class="answer-box" id="a12">
+        <span class="check">💭</span> 奥运会的成绩怎么比？百米赛跑大家用时都"不到1分钟"，分不出谁更快！还有微波炉加热30秒怎么说？没有"秒"，很多需要精确计时的事情都做不了。
+      </div>
+    </div>
+
+    <div class="question-item">
+      <span class="q-num">13</span>
+      <div class="q-text">
+        你解一道时间应用题时，最先想到的是什么？为什么要先想这个？
+        <span class="q-type meta">元认知</span>
+      </div>
+      <button class="reveal-btn" onclick="toggleAnswer('a13',this)">💡 思路</button>
+      <div class="answer-box" id="a13">
+        <span class="check">💭</span> 优秀的小数学家会先想：<strong>"题目给的是时刻还是时间段？"</strong> 区分"时刻"（几点）和"时间段"（经过多久）是做对题的第一步！画时间轴也是先标这两个。
+      </div>
+    </div>
+
+    <div class="question-item">
+      <span class="q-num">14</span>
+      <div class="q-text">
+        画时间轴和不画时间轴，哪个方法让你算得更准确？为什么？
+        <span class="q-type meta">元认知</span>
+      </div>
+      <button class="reveal-btn" onclick="toggleAnswer('a14',this)">💡 思路</button>
+      <div class="answer-box" id="a14">
+        <span class="check">💭</span> 大多数同学发现画时间轴更准确——因为把抽象的时间变成了"看得见的线段"，少了心算的出错概率。你可以对比记录一下自己的做题准确率！
+      </div>
+    </div>
+
+    <div class="question-item">
+      <span class="q-num">15</span>
+      <div class="q-text">
+        当一道题你算出来的答案感觉"不太对"的时候，你会从哪里开始检查？
+        <span class="q-type meta">元认知</span>
+      </div>
+      <button class="reveal-btn" onclick="toggleAnswer('a15',this)">💡 思路</button>
+      <div class="answer-box" id="a15">
+        <span class="check">💭</span> 检查三步曲：<strong>① 重读题目</strong>——数据圈对了吗？<strong>② 看时间轴</strong>——起点和终点标的对不对？<strong>③ 倒推验算</strong>——把答案放回题目里，看看合不合理。比如算出来"电影演了5小时"——这明显不合理！
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</div>
+
+<script>
+function toggleAnswer(id, btn) {
+  const box = document.getElementById(id);
+  if (box.style.display === 'block') {
+    box.style.display = 'none';
+    btn.textContent = btn.textContent.replace('🔽', '').trim() || '🙋 我想想';
+  } else {
+    box.style.display = 'block';
+    btn.textContent = '🔽 收起';
+  }
+}
+</script>
+</body>
+</html>

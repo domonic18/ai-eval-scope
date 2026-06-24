@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>作业榜 — 时间知识分层练习</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px 48px;
+  box-sizing: border-box;
+}
+.banner {
+  background: linear-gradient(135deg, #0d1b2a, #1b2838);
+  border-radius: var(--border-radius);
+  padding: 28px 36px;
+  margin-bottom: 28px;
+  color: #fff;
+}
+.banner h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 6px;
+}
+.banner .subtitle {
+  font-size: 16px;
+  opacity: 0.85;
+}
+.level-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.level-tab {
+  flex: 1;
+  min-width: 100px;
+  padding: 10px 16px;
+  text-align: center;
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.3s;
+  font-family: inherit;
+}
+.level-tab:hover { border-color: var(--accent); }
+.level-tab.active {
+  border-color: var(--primary);
+  background: var(--bg);
+  color: var(--primary);
+}
+.level-tab .level-badge {
+  display: inline-block;
+  padding: 1px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  color: #fff;
+  margin-left: 4px;
+}
+.level-badge.base { background: #52c41a; }
+.level-badge.mid { background: #fa8c16; }
+.level-badge.hard { background: #ff4d4f; }
+.level-badge.open { background: #722ed1; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 14px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--accent);
+}
+.card h2 .star { color: #fadb14; }
+.question-box {
+  padding: 12px 16px;
+  margin: 8px 0;
+  background: #fafafa;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  transition: background 0.2s;
+}
+.question-box:hover { background: #f0f5ff; }
+.question-box .q-label {
+  font-weight: 600;
+  font-size: 16px;
+}
+.question-box .q-answer {
+  display: none;
+  margin-top: 8px;
+  padding: 8px 14px;
+  background: #f6ffed;
+  border-radius: 6px;
+  border: 1px solid #b7eb8f;
+  font-size: 16px;
+  color: #389e0d;
+}
+.question-box.show-answer .q-answer { display: block; }
+.check-btn {
+  display: inline-block;
+  padding: 2px 14px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 4px;
+  font-family: inherit;
+}
+.check-btn:hover { background: var(--primary-hover); }
+.level-content { display: none; }
+.level-content.active { display: block; }
+.table-wrap {
+  overflow-x: auto;
+  margin: 14px 0;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 16px;
+}
+table th, table td {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+table th {
+  background: var(--bg);
+  font-weight: 600;
+  color: var(--primary);
+}
+table tr:nth-child(even) { background: #fafafa; }
+table tr:hover { background: #e6f0ff; }
+.rubric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+.rubric-item {
+  padding: 14px;
+  border-radius: var(--border-radius);
+  text-align: center;
+}
+.rubric-item.excellent { background: #f6ffed; border: 1px solid #b7eb8f; }
+.rubric-item.pass { background: #fffbe6; border: 1px solid #ffe58f; }
+.rubric-item.fail { background: #fff2f0; border: 1px solid #ffccc7; }
+.rubric-item .rubric-score {
+  font-size: 24px;
+  font-weight: 800;
+}
+.rubric-item .rubric-label { font-weight: 600; margin: 4px 0; }
+.rubric-item .rubric-desc { font-size: 14px; color: var(--text-secondary); }
+.creative-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+.creative-card {
+  padding: 18px;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border);
+  text-align: center;
+  transition: transform 0.3s, box-shadow 0.3s;
+  cursor: pointer;
+  background: #fafbff;
+}
+.creative-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 16px rgba(22,119,255,0.12);
+}
+.creative-card .emoji-big { font-size: 36px; margin-bottom: 6px; }
+.creative-card h4 { margin: 6px 0 4px; font-size: 17px; }
+.creative-card p { margin: 0; font-size: 14px; color: var(--text-secondary); }
+@media (max-width: 600px) {
+  .container { padding: 16px; }
+  .banner { padding: 20px; }
+  .card { padding: 16px 18px; }
+  .level-tabs { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="banner">
+  <h1>📋 作业榜</h1>
+  <div class="subtitle">时、分、秒 · 分层练习 · 选择适合你的难度挑战自己！</div>
+</div>
+
+<div class="level-tabs">
+  <button class="level-tab active" onclick="switchLevel('base', this)">
+    🌱 基础层 <span class="level-badge base">必做</span>
+  </button>
+  <button class="level-tab" onclick="switchLevel('mid', this)">
+    📈 分层 <span class="level-badge mid">选做</span>
+  </button>
+  <button class="level-tab" onclick="switchLevel('hard', this)">
+    🚀 挑战 <span class="level-badge hard">选做</span>
+  </button>
+  <button class="level-tab" onclick="switchLevel('open', this)">
+    🎨 开放 <span class="level-badge open">创意</span>
+  </button>
+</div>
+
+<!-- 基础层 -->
+<div id="level-base" class="level-content active">
+  <div class="card">
+    <h2>🌱 基础层 · 理解与再现</h2>
+    <p><strong>目标</strong>：巩固时、分、秒的基本换算和读写。点击"查答案"看看你做对了没有 👇</p>
+
+    <div class="question-box">
+      <div class="q-label">📝 2 时 =（ ）分</div>
+      <button class="check-btn" onclick="toggleAnswer(this)">查答案</button>
+      <div class="q-answer">✅ 120 分（因为 1 时 = 60 分，2 × 60 = 120）</div>
+    </div>
+    <div class="question-box">
+      <div class="q-label">📝 180 秒 =（ ）分</div>
+      <button class="check-btn" onclick="toggleAnswer(this)">查答案</button>
+      <div class="q-answer">✅ 3 分（因为 60 秒 = 1 分，180 ÷ 60 = 3）</div>
+    </div>
+    <div class="question-box">
+      <div class="q-label">📝 1 时 15 分 =（ ）分</div>
+      <button class="check-btn" onclick="toggleAnswer(this)">查答案</button>
+      <div class="q-answer">✅ 75 分（1 时 = 60 分，60 + 15 = 75）</div>
+    </div>
+    <div class="question-box">
+      <div class="q-label">🕐 读出下面三个钟面上的时刻</div>
+      <button class="check-btn" onclick="toggleAnswer(this)">查答案</button>
+      <div class="q-answer">
+        <p>① 时针指向 3，分针指向 12 → <strong>3:00</strong></p>
+        <p>② 时针指向 7 和 8 之间，分针指向 6 → <strong>7:30</strong></p>
+        <p>③ 时针指向 10 和 11 之间，分针指向 3 → <strong>10:15</strong></p>
+      </div>
+    </div>
+    <div class="question-box">
+      <div class="q-label">🌟 <strong>选做</strong>：填写生活中的时间——"一节课___分钟，课间___分钟"</div>
+      <button class="check-btn" onclick="toggleAnswer(this)">查答案</button>
+      <div class="q-answer">✅ 一节课 <strong>40</strong> 分钟，课间 <strong>10</strong> 分钟（各地可能不同哦）</div>
+    </div>
+  </div>
+</div>
+
+<!-- 分层任务 -->
+<div id="level-mid" class="level-content">
+  <div class="card">
+    <h2>📈 分层任务 · 差异化练习</h2>
+    <p>选择适合你当前水平的题目，点击展开查看解题思路 ✨</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:80px;">层级</th>
+            <th>题目</th>
+            <th style="width:100px;">适合对象</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span style="color:#52c41a;font-weight:700;">A 层</span></td>
+            <td>
+              <strong>小明 7:30 起床，刷牙用了 5 分钟，他几点刷完牙？</strong>
+              <br><button class="check-btn" onclick="toggleAnswer(this)">看解析</button>
+              <div class="q-answer" style="margin-top:6px;">7:30 + 5 分钟 = <strong>7:35</strong></div>
+            </td>
+            <td>需要巩固计算的同学</td>
+          </tr>
+          <tr>
+            <td><span style="color:#fa8c16;font-weight:700;">B 层</span></td>
+            <td>
+              <strong>一列火车 9:15 出发，11:50 到站，全程用了多长时间？</strong>
+              <br><button class="check-btn" onclick="toggleAnswer(this)">看解析</button>
+              <div class="q-answer" style="margin-top:6px;">9:15 → 10:00 是 45 分，10:00 → 11:50 是 1 时 50 分，合计 <strong>2 时 35 分</strong></div>
+            </td>
+            <td>基本掌握的同学</td>
+          </tr>
+          <tr>
+            <td><span style="color:#ff4d4f;font-weight:700;">C 层</span></td>
+            <td>
+              <strong>小华跳绳 100 下用了 55 秒，小红用了 1 分 2 秒，谁更快？快了多少秒？</strong>
+              <br><button class="check-btn" onclick="toggleAnswer(this)">看解析</button>
+              <div class="q-answer" style="margin-top:6px;">1 分 2 秒 = 62 秒，55 秒 < 62 秒，小华快了 62 − 55 = <strong>7 秒</strong></div>
+            </td>
+            <td>想要挑战的同学</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- 挑战层 -->
+<div id="level-hard" class="level-content">
+  <div class="card">
+    <h2>🚀 挑战层 · 高阶应用</h2>
+    <p>这些题目需要你综合运用时间知识，开动脑筋想一想！</p>
+
+    <div class="question-box">
+      <div class="q-label">🏆 小丽从家到学校步行需要 18 分钟，她必须在 8:00 前到校。她最晚几点出门？如果她迟到了 3 分钟，到校时是几点？</div>
+      <button class="check-btn" onclick="toggleAnswer(this)">看解析</button>
+      <div class="q-answer">
+        最晚出门：8:00 − 18 分 = <strong>7:42</strong><br>
+        迟到 3 分钟到校：8:00 + 3 分 = <strong>8:03</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🎨 开放层 · 创造性表达</h2>
+    <p>选择一种你喜欢的方式，展现你对时间的理解！</p>
+    <div class="creative-grid">
+      <div class="creative-card" onclick="alert('✍️ 试试看：想象一个没有钟表的世界，你的生活会变成什么样？从起床到睡觉，写出一天的变化！')">
+        <div class="emoji-big">✍️</div>
+        <h4>写一篇短文</h4>
+        <p>《没有钟表的一天》——如果没有时间提示，你的生活会变成什么样？</p>
+      </div>
+      <div class="creative-card" onclick="alert('🎨 画一张"时间家族关系图"：展示时、分、秒之间的关系，可以画成大树、火车、房子……任何你喜欢的形状！')">
+        <div class="emoji-big">🎨</div>
+        <h4>画关系图</h4>
+        <p>"时间家族关系图"——展示时、分、秒的关系</p>
+      </div>
+      <div class="creative-card" onclick="alert('🎬 录制 1 分钟视频，用脱口秀的方式介绍"时间换算小窍门"——比如"怎么快速把秒化成分钟"！')">
+        <div class="emoji-big">🎬</div>
+        <h4>拍短视频</h4>
+        <p>1 分钟脱口秀——"时间换算小窍门"</p>
+      </div>
+      <div class="creative-card" onclick="alert('🎤 准备 2 分钟演讲《你的一分钟能做什么？》——想想 1 分钟可以跳绳多少下、写几个字、读几页书……')">
+        <div class="emoji-big">🎤</div>
+        <h4>演讲</h4>
+        <p>《你的一分钟能做什么？》2 分钟演讲</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 开放层 -->
+<div id="level-open" class="level-content">
+  <div class="card">
+    <h2>📊 评价标准（Rubric）</h2>
+    <p>看看你的作业能拿到几颗星 ⭐</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>评价维度</th>
+            <th>🌟 优秀（3分）</th>
+            <th>✅ 达标（2分）</th>
+            <th>📖 待改进（1分）</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>计算准确</strong></td>
+            <td>全部正确</td>
+            <td>1—2 处错误</td>
+            <td>多处错误</td>
+          </tr>
+          <tr>
+            <td><strong>思路清晰</strong></td>
+            <td>写出完整计算过程</td>
+            <td>仅有答案</td>
+            <td>过程混乱</td>
+          </tr>
+          <tr>
+            <td><strong>表达创意</strong></td>
+            <td>有独特视角 / 有趣表达</td>
+            <td>基本完成</td>
+            <td>内容单薄</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="rubric-grid">
+      <div class="rubric-item excellent">
+        <div class="rubric-score">🌟 3 分</div>
+        <div class="rubric-label">优秀</div>
+        <div class="rubric-desc">全部正确 + 过程清晰 + 有创意</div>
+      </div>
+      <div class="rubric-item pass">
+        <div class="rubric-score">✅ 2 分</div>
+        <div class="rubric-label">达标</div>
+        <div class="rubric-desc">基本正确，思路较清楚</div>
+      </div>
+      <div class="rubric-item fail">
+        <div class="rubric-score">📖 1 分</div>
+        <div class="rubric-label">待改进</div>
+        <div class="rubric-desc">需要再努力，加油！</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchLevel(level, btn) {
+  document.querySelectorAll('.level-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.level-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('level-' + level).classList.add('active');
+  btn.classList.add('active');
+}
+
+function toggleAnswer(btn) {
+  var box = btn.parentElement;
+  box.classList.toggle('show-answer');
+  btn.textContent = box.classList.contains('show-answer') ? '收起答案' : '查答案';
+}
+</script>
+
+</div>
+</body>
+</html>

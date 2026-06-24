@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性案例（7阶）— M11 新知美术思维</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  padding: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+}
+
+.header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+
+.header h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.header .subtitle {
+  font-size: 15px;
+  opacity: 0.9;
+}
+
+.stage-progress {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  gap: 4px;
+}
+
+.stage-dot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 60px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.stage-dot:hover { transform: scale(1.1); }
+
+.stage-dot .dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.3s;
+}
+
+.stage-dot.active .dot { background: var(--primary); box-shadow: 0 0 0 4px rgba(22,119,255,0.2); }
+.stage-dot .label { font-size: 12px; color: var(--text-secondary); margin-top: 4px; white-space: nowrap; }
+.stage-dot.active .label { color: var(--primary); font-weight: 600; }
+
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px 28px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border);
+  transition: box-shadow 0.3s;
+}
+
+.card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+
+.card h3 {
+  font-size: 20px;
+  color: var(--text);
+  margin: 16px 0 10px;
+}
+
+.overview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+
+.overview-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+}
+
+.overview-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.overview-table tr:hover td {
+  background: var(--bg);
+}
+
+.overview-table .stage-badge {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.case-content {
+  display: none;
+  animation: fadeIn 0.4s ease;
+}
+
+.case-content.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.case-step {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin: 12px 0;
+  border-left: 3px solid var(--primary);
+}
+
+.case-step ol {
+  padding-left: 20px;
+  margin-top: 8px;
+}
+
+.case-step ol li {
+  margin-bottom: 6px;
+}
+
+.checklist {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+}
+
+.checklist li {
+  padding: 6px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.checklist li::before {
+  content: "□";
+  color: var(--primary);
+  font-size: 18px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.checklist li.checked::before {
+  content: "☑";
+}
+
+.reflection-section {
+  margin-top: 16px;
+}
+
+.reflection-section .q-item {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.reflection-section .q-item:hover {
+  border-color: var(--primary);
+  background: var(--bg);
+}
+
+.reflection-section .q-item .q-num {
+  display: inline-block;
+  width: 26px;
+  height: 26px;
+  line-height: 26px;
+  text-align: center;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 8px;
+}
+
+.case-nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  gap: 12px;
+}
+
+.case-nav button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 24px;
+  font-size: 16px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.case-nav button:hover { background: var(--primary-hover); }
+.case-nav button:disabled { background: var(--border); cursor: not-allowed; }
+
+@media (max-width: 600px) {
+  .container { padding: 16px; }
+  .header { padding: 20px; }
+  .card { padding: 16px; }
+  .overview-table { font-size: 13px; }
+  .overview-table th, .overview-table td { padding: 6px 8px; }
+  .stage-dot { min-width: 44px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🏗️ 建构性案例（7阶）</h1>
+  <div class="subtitle">M11 新知美术思维 · 从个人生活到综合创新的时间可视化之旅</div>
+</div>
+
+<div class="card">
+  <h2>📊 七阶案例总览</h2>
+  <div style="overflow-x:auto;">
+  <table class="overview-table">
+    <thead>
+      <tr><th>阶次</th><th>案例名称</th><th>情境类型</th><th>成果形式</th></tr>
+    </thead>
+    <tbody>
+      <tr onclick="showCase(0)" style="cursor:pointer;"><td><span class="stage-badge">第1阶</span></td><td>我的放学后时间地图</td><td>个人生活</td><td>时间流程图</td></tr>
+      <tr onclick="showCase(1)" style="cursor:pointer;"><td><span class="stage-badge">第2阶</span></td><td>家庭周末活动日历</td><td>家庭生活</td><td>家庭日历图</td></tr>
+      <tr onclick="showCase(2)" style="cursor:pointer;"><td><span class="stage-badge">第3阶</span></td><td>校园铃声时间设计</td><td>校园情境</td><td>铃声时间表视觉图</td></tr>
+      <tr onclick="showCase(3)" style="cursor:pointer;"><td><span class="stage-badge">第4阶</span></td><td>一分钟能做什么</td><td>学科表达</td><td>1分钟信息图</td></tr>
+      <tr onclick="showCase(4)" style="cursor:pointer;"><td><span class="stage-badge">第5阶</span></td><td>时间与季节的对话</td><td>跨学科整合</td><td>四季时间轮盘</td></tr>
+      <tr onclick="showCase(5)" style="cursor:pointer;"><td><span class="stage-badge">第6阶</span></td><td>城市交通时间地图</td><td>社会情境</td><td>出行时间关系图</td></tr>
+      <tr onclick="showCase(6)" style="cursor:pointer;"><td><span class="stage-badge">第7阶</span></td><td>我的"理想一天"设计</td><td>综合创新</td><td>理想日完整作品</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="color:var(--text-secondary);font-size:14px;margin-top:8px;">👆 点击表格中的案例名称，下方会展示详细内容</p>
+</div>
+
+<div class="card">
+  <h2>🔍 案例详情</h2>
+
+  <!-- 阶段导航 -->
+  <div class="stage-progress" id="stageProgress">
+    <div class="stage-dot active" data-index="0" onclick="showCase(0)"><div class="dot">1</div><div class="label">放学后</div></div>
+    <div class="stage-dot" data-index="1" onclick="showCase(1)"><div class="dot">2</div><div class="label">家庭</div></div>
+    <div class="stage-dot" data-index="2" onclick="showCase(2)"><div class="dot">3</div><div class="label">校园</div></div>
+    <div class="stage-dot" data-index="3" onclick="showCase(3)"><div class="dot">4</div><div class="label">一分钟</div></div>
+    <div class="stage-dot" data-index="4" onclick="showCase(4)"><div class="dot">5</div><div class="label">四季</div></div>
+    <div class="stage-dot" data-index="5" onclick="showCase(5)"><div class="dot">6</div><div class="label">交通</div></div>
+    <div class="stage-dot" data-index="6" onclick="showCase(6)"><div class="dot">7</div><div class="label">理想日</div></div>
+  </div>
+
+  <!-- 第1阶 -->
+  <div class="case-content active" data-index="0">
+    <h3>🌳 第1阶：我的放学后时间地图</h3>
+    <div class="case-step">
+      <p><strong>🎯 真实情境：</strong>你每天放学后到晚睡前有大约5小时的自由时间。但每次到了睡觉时间你才发现"怎么什么都没做就过完了"？请找到"时间都去哪儿了"的答案。</p>
+      <p><strong>✅ 任务：</strong>画一张从放学（16:30）到睡前（21:00）的时间流程图，清晰标注每个活动及其时长。</p>
+      <p><strong>📐 原理调用：</strong>时间分层法 + 色彩编码法</p>
+    </div>
+    <div class="case-step">
+      <p><strong>📝 建构步骤：</strong></p>
+      <ol>
+        <li>先记录一周每天的放学后时间消费（做什么、做了多久）</li>
+        <li>给活动分类（作业/阅读/运动/娱乐/吃饭/洗漱等）</li>
+        <li>选取有代表性的一天，用不同颜色标注不同类型</li>
+        <li>按时间顺序画流程图</li>
+        <li>标出"时间占比最大"和"可以优化"的地方</li>
+        <li>给作品加标题和图例</li>
+      </ol>
+    </div>
+    <div class="case-step">
+      <p><strong>🪜 脚手架：</strong>提供4.5小时（16:30-21:00）时间轴模板底图</p>
+      <p style="margin-top:8px;"><strong>📋 自评量规：</strong></p>
+      <ul class="checklist">
+        <li>我记录了至少3天的放学后时间使用情况</li>
+        <li>时间轴上每个活动都标注了开始和结束时间</li>
+        <li>我用了至少4种颜色区分不同类型的活动</li>
+        <li>图中有图例，别人能看懂颜色代表什么</li>
+        <li>我标出了"时间最多的活动"和"想要改进的地方"</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 第2阶 -->
+  <div class="case-content" data-index="1">
+    <h3>🏠 第2阶：家庭周末活动日历</h3>
+    <div class="case-step">
+      <p><strong>🎯 真实情境：</strong>你家周末经常上演"你想去公园，爸妈想打扫卫生，弟弟想看动画片"的冲突。如果能画一张家庭周末活动日历，让每个人都能看到周末的时间安排，会不会好很多？</p>
+      <p><strong>✅ 任务：</strong>为你的家庭设计一张周六/周日的时间日历图，平衡全家人的活动需求。</p>
+      <p><strong>📐 原理调用：</strong>比例映射法 + 视觉叙事法</p>
+    </div>
+    <div class="case-step">
+      <p><strong>📝 建构步骤：</strong></p>
+      <ol>
+        <li>和家人一起列出每个人周末想做的事</li>
+        <li>把活动分为"全家一起做"和"各做各的"两类</li>
+        <li>用不同颜色代表不同的家庭成员</li>
+        <li>按时间顺序排列，注意活动之间的重叠和冲突</li>
+        <li>标注每个活动的时间长度</li>
+        <li>留出"自由时间"应对突发情况</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- 第3阶 -->
+  <div class="case-content" data-index="2">
+    <h3>🔔 第3阶：校园铃声时间设计</h3>
+    <div class="case-step">
+      <p><strong>🎯 真实情境：</strong>学校每天用铃声告诉我们上下课。每节课40分钟，课间10分钟。如果让你把一天的铃声节奏画出来，你会怎么设计这张"声音时间图谱"？</p>
+      <p><strong>✅ 任务：</strong>设计一张学校一上午（8:00-12:00）的"铃声时间视觉图"，用图形的大小、颜色反映不同时间段的长短和性质。</p>
+      <p><strong>📐 原理调用：</strong>比例映射法 + 色彩编码法</p>
+    </div>
+    <div class="case-step">
+      <p><strong>📝 建构步骤：</strong></p>
+      <ol>
+        <li>记录今天上午的铃声时间表（上课/下课/做操）</li>
+        <li>上课时段用一种颜色，下课用另一种，做操用第三种</li>
+        <li>色块宽度=时间段长度（40分钟比10分钟宽4倍）</li>
+        <li>在每个色块上标注具体时间（如"8:00-8:40 语文"）</li>
+        <li>加上铃声音效标注（🔔代表上课铃，🔕代表下课铃）</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- 第4阶 -->
+  <div class="case-content" data-index="3">
+    <h3>⏱️ 第4阶：一分钟能做什么</h3>
+    <div class="case-step">
+      <p><strong>🎯 真实情境：</strong>1分钟=60秒。跳绳能跳120下？心跳约72次？光能走1800万公里？请用一幅"1分钟信息图"来回答这个问题。</p>
+      <p><strong>✅ 任务：</strong>创作一幅"1分钟信息图"，用视觉方式展示3-5个"1分钟内发生的事"——既可以是亲身体验，也可以是科学事实。</p>
+      <p><strong>📐 原理调用：</strong>比例映射法 + 色彩编码法</p>
+    </div>
+    <div class="case-step">
+      <p><strong>📝 建构步骤：</strong></p>
+      <ol>
+        <li>列出3-5个"1分钟内发生的事"</li>
+        <li>给每个事件分配一种颜色</li>
+        <li>用图形大小表示数值大小（120下比72次更大）</li>
+        <li>在图形内或旁边标注具体数字</li>
+        <li>加标题和图例</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- 第5阶 -->
+  <div class="case-content" data-index="4">
+    <h3>🌸 第5阶：时间与季节的对话</h3>
+    <div class="case-step">
+      <p><strong>🎯 真实情境：</strong>一年有四季，每季约3个月。春天的"一天"和冬天的"一天"有什么不同？日出时间、日照时长、活动安排都会随着季节变化。</p>
+      <p><strong>✅ 任务：</strong>设计一个"四季时间轮盘"，展示同一个活动在春、夏、秋、冬四季的时间变化。</p>
+      <p><strong>📐 原理调用：</strong>时间分层法 + 视觉叙事法</p>
+    </div>
+    <div class="case-step">
+      <p><strong>📝 建构步骤：</strong></p>
+      <ol>
+        <li>选3个代表性活动（如"起床""放学""晚餐"）</li>
+        <li>查找或回忆每个季节这些活动的时间变化</li>
+        <li>画一个圆分成4个扇形（春夏秋冬）</li>
+        <li>在每个扇形内标出活动的时间点</li>
+        <li>用不同颜色代表不同季节</li>
+        <li>观察时间的季节变化规律</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- 第6阶 -->
+  <div class="case-content" data-index="5">
+    <h3>🚌 第6阶：城市交通时间地图</h3>
+    <div class="case-step">
+      <p><strong>🎯 真实情境：</strong>从你家到学校需要多长时间？如果是走路、坐公交、骑自行车分别要多久？时间与空间的关系在地图上是怎么"画"出来的？</p>
+      <p><strong>✅ 任务：</strong>画一张从你家到学校的"出行时间关系图"，用线段长度表示时间（而非实际距离）。</p>
+      <p><strong>📐 原理调用：</strong>比例映射法 + 事件锚定法</p>
+    </div>
+    <div class="case-step">
+      <p><strong>📝 建构步骤：</strong></p>
+      <ol>
+        <li>确定起点（家）和终点（学校）</li>
+        <li>测试并记录不同交通方式所需时间</li>
+        <li>以家为中心，按时间比例画线段</li>
+        <li>不同交通方式用不同颜色</li>
+        <li>在线段上标注具体分钟数</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- 第7阶 -->
+  <div class="case-content" data-index="6">
+    <h3>🌟 第7阶：我的"理想一天"设计</h3>
+    <div class="case-step">
+      <p><strong>🎯 真实情境：</strong>如果有一天的"自由支配权"，你会怎么分配学习、游戏、运动、休息和探索的时间？把它"画出来"，是一次对时间管理的深度思考。</p>
+      <p><strong>✅ 任务：</strong>创作"我的理想一天"时间图谱作品，综合运用前6阶学到的全部建构性原理。</p>
+      <p><strong>📐 原理调用：</strong>全部5条建构性原理综合运用</p>
+    </div>
+    <div class="case-step">
+      <p><strong>📝 建构步骤：</strong></p>
+      <ol>
+        <li>列出你理想一天中想要包含的所有活动</li>
+        <li>给活动分配时间比例</li>
+        <li>选择一种表现形式（时间轴/圆形/表格）</li>
+        <li>使用色彩编码法分类活动</li>
+        <li>用比例映射法确保时间准确</li>
+        <li>用视觉叙事法让一天有起承转合</li>
+        <li>加标题、图例，美化完善</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="case-nav">
+    <button id="prevBtn" onclick="navigateCase(-1)">◀ 上一阶</button>
+    <button id="nextBtn" onclick="navigateCase(1)">下一阶 ▶</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>💭 综合反思</h2>
+  <div class="reflection-section">
+    <div class="q-item" onclick="const a=this.querySelector('.q-answer');a.style.display=a.style.display==='block'?'none':'block';">
+      <span class="q-num">1</span>在7个案例中，你觉得哪个最容易上手？为什么？
+      <div class="q-answer" style="display:none;margin-top:10px;padding:10px;background:var(--bg);border-radius:6px;font-size:15px;color:var(--text-secondary);"><textarea placeholder="写下你的想法……" style="width:100%;border:1px solid var(--border);border-radius:4px;padding:8px;font-size:15px;font-family:inherit;resize:vertical;min-height:50px;"></textarea></div>
+    </div>
+    <div class="q-item" onclick="const a=this.querySelector('.q-answer');a.style.display=a.style.display==='block'?'none':'block';">
+      <span class="q-num">2</span>哪个案例最让你"卡住"？是不知道怎么画，还是不知道时间怎么算？
+      <div class="q-answer" style="display:none;margin-top:10px;padding:10px;background:var(--bg);border-radius:6px;font-size:15px;color:var(--text-secondary);"><textarea placeholder="写下你的想法……" style="width:100%;border:1px solid var(--border);border-radius:4px;padding:8px;font-size:15px;font-family:inherit;resize:vertical;min-height:50px;"></textarea></div>
+    </div>
+    <div class="q-item" onclick="const a=this.querySelector('.q-answer');a.style.display=a.style.display==='block'?'none':'block';">
+      <span class="q-num">3</span>色彩编码法是不是每个案例都用了？你有没有发现它的局限性？
+      <div class="q-answer" style="display:none;margin-top:10px;padding:10px;background:var(--bg);border-radius:6px;font-size:15px;color:var(--text-secondary);"><textarea placeholder="写下你的想法……" style="width:100%;border:1px solid var(--border);border-radius:4px;padding:8px;font-size:15px;font-family:inherit;resize:vertical;min-height:50px;"></textarea></div>
+    </div>
+    <div class="q-item" onclick="const a=this.querySelector('.q-answer');a.style.display=a.style.display==='block'?'none':'block';">
+      <span class="q-num">4</span>完成这7个案例后，你觉得"把时间画出来"和"把时间算出来"哪个更容易理解？
+      <div class="q-answer" style="display:none;margin-top:10px;padding:10px;background:var(--bg);border-radius:6px;font-size:15px;color:var(--text-secondary);"><textarea placeholder="写下你的想法……" style="width:100%;border:1px solid var(--border);border-radius:4px;padding:8px;font-size:15px;font-family:inherit;resize:vertical;min-height:50px;"></textarea></div>
+    </div>
+  </div>
+</div>
+
+</div>
+<script>
+var currentCase = 0;
+var totalCases = 7;
+
+function showCase(index) {
+  var contents = document.querySelectorAll('.case-content');
+  var dots = document.querySelectorAll('.stage-dot');
+  contents.forEach(function(c, i) {
+    c.classList.toggle('active', i === index);
+  });
+  dots.forEach(function(d, i) {
+    d.classList.toggle('active', i === index);
+  });
+  currentCase = index;
+  document.getElementById('prevBtn').disabled = (index === 0);
+  document.getElementById('nextBtn').disabled = (index === totalCases - 1);
+}
+
+function navigateCase(delta) {
+  var next = currentCase + delta;
+  if (next >= 0 && next < totalCases) {
+    showCase(next);
+  }
+}
+</script>
+</body>
+</html>

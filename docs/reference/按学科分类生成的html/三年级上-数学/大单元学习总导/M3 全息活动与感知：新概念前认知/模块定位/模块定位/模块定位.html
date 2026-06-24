@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块定位 — 时间量感体验</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+}
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  border-radius: var(--border-radius);
+  padding: 28px 32px;
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 8px; }
+.header p { font-size: 18px; opacity: 0.9; }
+
+/* Card Grid */
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; margin-bottom: 24px; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: default;
+}
+.card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(22, 119, 255, 0.12); }
+.card-icon {
+  width: 44px; height: 44px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; margin-bottom: 12px;
+  background: var(--bg); color: var(--primary);
+}
+.card h3 { font-size: var(--font-h2); font-weight: 600; color: var(--primary); margin-bottom: 10px; }
+.card p, .card ul { color: var(--text); margin-bottom: 8px; }
+.card ul { padding-left: 20px; }
+.card ul li { margin-bottom: 4px; }
+
+/* Accent card */
+.accent-card {
+  background: linear-gradient(135deg, #e6f4ff, #f0f5ff);
+  border: 2px solid var(--accent);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin-bottom: 24px;
+}
+.accent-card h3 { color: var(--primary); font-size: var(--font-h2); margin-bottom: 8px; }
+
+/* Timeline */
+.timeline { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+.timeline-step {
+  flex: 1; min-width: 160px;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 18px 16px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--border);
+  text-align: center;
+  transition: border-color 0.3s, transform 0.3s;
+}
+.timeline-step:hover { border-left-color: var(--primary); transform: scale(1.02); }
+.timeline-step .step-num {
+  display: inline-block;
+  width: 30px; height: 30px; line-height: 30px;
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 16px;
+  margin-bottom: 6px;
+}
+.timeline-step.active .step-num { background: var(--primary); color: #fff; }
+.timeline-step .step-label { font-size: 15px; color: var(--text); font-weight: 600; }
+.timeline-step .step-desc { font-size: 14px; color: var(--text-secondary); }
+
+/* Outcomes */
+.outcomes { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+.outcome-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--bg);
+  color: var(--primary);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 15px;
+  font-weight: 500;
+  border: 1px solid var(--accent);
+  transition: all 0.2s;
+}
+.outcome-tag:hover {
+  background: var(--primary);
+  color: #fff;
+  transform: scale(1.04);
+  cursor: default;
+}
+
+/* Interactive Toggle */
+.toggle-box { margin-bottom: 24px; }
+.toggle-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--primary); color: #fff;
+  border: none; border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.toggle-btn:hover { background: var(--primary-hover); }
+.toggle-btn::after { content: " ▼"; font-size: 12px; transition: transform 0.3s; }
+.toggle-btn.open::after { transform: rotate(180deg); }
+.toggle-content {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin-top: 12px;
+  display: none;
+  box-shadow: var(--shadow);
+}
+.toggle-content.show { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Responsive */
+@media (max-width: 600px) {
+  .container { padding: 16px; }
+  .header { padding: 20px; }
+  .card-grid { grid-template-columns: 1fr; }
+  .timeline { flex-direction: column; }
+  .timeline-step { min-width: auto; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <h1>⏱ 模块定位：让时间"活"起来</h1>
+    <p>用身体和感官去体验"秒""分""时"到底有多长</p>
+  </div>
+
+  <!-- 5 Core Questions -->
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-icon">📖</div>
+      <h3>本模块学什么？</h3>
+      <p>不是背"1分=60秒"的公式，而是<strong>用你的身体和感官去体验</strong>"秒""分""时"到底有多长。你会在活动中建立<strong>"时间量感"</strong>——一种对时间长度的直觉判断能力。这是准确计算时间的基础。</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">⭐</div>
+      <h3>为什么重要？</h3>
+      <p>很多同学做时间换算题出错，不是因为不会算，而是因为心中<strong>没有"1秒""1分"的感觉</strong>。有了时间量感：</p>
+      <ul>
+        <li>看到"3分钟=180秒"时，知道这大概就是做完口算的时间</li>
+        <li>估算做作业用时会更准确</li>
+        <li>能更好地规划自己的时间</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔗</div>
+      <h3>与大单元的关系</h3>
+      <p>大单元"时、分、秒"分三步走：</p>
+      <ul>
+        <li><strong>第一步</strong> — 建立感性认识（本模块的任务）</li>
+        <li><strong>第二步</strong> — 精确计量和换算</li>
+        <li><strong>第三步</strong> — 综合运用</li>
+      </ul>
+      <p>本模块是<strong>地基</strong>——有了时间量感，后面的学习就会轻松自然。</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🧩</div>
+      <h3>前后模块衔接</h3>
+      <ul>
+        <li><strong>前接</strong>：大单元学习总导</li>
+        <li><strong>本模块</strong>：全息活动与感知——让时间"活"起来</li>
+        <li><strong>后续</strong>：精确计量模块——在量感基础上准确计算</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Timeline -->
+  <h2 style="font-size:var(--font-h2); margin-bottom:12px; color:var(--primary);">📌 大单元三步走</h2>
+  <div class="timeline">
+    <div class="timeline-step active">
+      <div class="step-num">1</div>
+      <div class="step-label">本模块</div>
+      <div class="step-desc">感性认识·时间量感</div>
+    </div>
+    <div class="timeline-step">
+      <div class="step-num">2</div>
+      <div class="step-label">精确计量</div>
+      <div class="step-desc">换算与计算</div>
+    </div>
+    <div class="timeline-step">
+      <div class="step-num">3</div>
+      <div class="step-label">综合运用</div>
+      <div class="step-desc">解决实际问题</div>
+    </div>
+  </div>
+
+  <!-- Learning Outcomes with Toggle -->
+  <div class="accent-card">
+    <h3>🎯 预期学习成果</h3>
+    <p>学完本模块，你将能够：</p>
+    <div class="outcomes">
+      <span class="outcome-tag">📓 展示"时间量感手账"</span>
+      <span class="outcome-tag">👁 1秒≈眨眼一次</span>
+      <span class="outcome-tag">🏃 1分≈跳绳60下</span>
+      <span class="outcome-tag">📊 准确估算活动时长</span>
+      <span class="outcome-tag">📐 画出时间关系图</span>
+    </div>
+  </div>
+
+  <!-- Interactive: Test Your Time Sense -->
+  <div class="toggle-box">
+    <button class="toggle-btn" onclick="this.classList.toggle('open');document.getElementById('timeQuiz').classList.toggle('show')">🧪 测一测你的时间直觉</button>
+    <div id="timeQuiz" class="toggle-content">
+      <p style="margin-bottom:12px;"><strong>挑战</strong>：闭上眼睛，在心里默数10秒。当你觉得"到了"的时候睁开眼，看看手机上的秒表——你数对了多少？</p>
+      <div id="quizResult" style="text-align:center; padding:16px; background:var(--bg); border-radius:8px;">
+        <p style="font-size:20px; font-weight:700; color:var(--primary);">点击下方按钮开始计时</p>
+        <button onclick="startTimer()" style="margin-top:12px; background:var(--primary); color:#fff; border:none; border-radius:8px; padding:10px 24px; font-size:16px; cursor:pointer;">▶ 开始</button>
+        <button onclick="stopTimer()" style="margin-top:12px; background:#ff4d4f; color:#fff; border:none; border-radius:8px; padding:10px 24px; font-size:16px; cursor:pointer;">⏹ 停止</button>
+        <p id="timerDisplay" style="margin-top:12px; font-size:24px; font-weight:700; color:var(--text);">0.00 秒</p>
+        <p id="timerFeedback" style="margin-top:8px; font-size:16px; color:var(--text-secondary);"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let timerStart = 0;
+let timerRunning = false;
+let timerInterval = null;
+
+function startTimer() {
+  if (timerRunning) return;
+  timerRunning = true;
+  timerStart = Date.now();
+  document.getElementById('timerFeedback').textContent = '⏳ 闭上眼睛，默数10秒，然后点击"停止"...';
+  timerInterval = setInterval(function() {
+    var elapsed = (Date.now() - timerStart) / 1000;
+    document.getElementById('timerDisplay').textContent = elapsed.toFixed(2) + ' 秒';
+  }, 50);
+}
+
+function stopTimer() {
+  if (!timerRunning) return;
+  timerRunning = false;
+  clearInterval(timerInterval);
+  var elapsed = (Date.now() - timerStart) / 1000;
+  document.getElementById('timerDisplay').textContent = elapsed.toFixed(2) + ' 秒';
+  var diff = Math.abs(elapsed - 10);
+  var msg = '';
+  if (diff < 0.5) msg = '🎉 太厉害了！你对10秒有精准的直觉！';
+  else if (diff < 1.5) msg = '👍 非常接近！再练几次就更准了！';
+  else if (diff < 3) msg = '💪 还不错，试着用"心跳"或"深呼吸"来帮助计时吧！';
+  else msg = '🤔 你的感觉和实际时间有些差距哦~多做时间量感活动会慢慢变准的！';
+  document.getElementById('timerFeedback').textContent = msg;
+}
+</script>
+</body>
+</html>

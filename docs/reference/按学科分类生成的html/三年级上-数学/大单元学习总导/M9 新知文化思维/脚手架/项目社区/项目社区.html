@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目社区 — 时间探索项目库</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+  --green: #52c41a;
+  --orange: #fa8c16;
+  --purple: #722ed1;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; box-sizing: border-box; }
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 32px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+  text-align: center;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.header p { font-size: 16px; opacity: 0.9; }
+
+/* Section */
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--font-h2);
+  color: var(--text);
+  margin: 32px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+.section-icon { font-size: 24px; }
+
+/* Period badges */
+.period-badge {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.period-short { background: #e6f7ff; color: #08979c; }
+.period-mid { background: #fff7e6; color: #d46b08; }
+.period-long { background: #f9f0ff; color: #722ed1; }
+
+/* Project card */
+.project-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.project-card h3 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.project-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+}
+
+/* Expandable stage */
+.stage-list { list-style: none; padding: 0; }
+.stage-item {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.stage-header {
+  padding: 12px 16px;
+  background: #fafafa;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 16px;
+  user-select: none;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+.stage-header:hover { background: #f0f5ff; }
+.stage-header::after {
+  content: "▼";
+  font-size: 12px;
+  color: var(--text-secondary);
+  transition: transform 0.3s;
+}
+.stage-item.active .stage-header::after { transform: rotate(180deg); }
+.stage-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+  padding: 0 16px;
+}
+.stage-item.active .stage-body {
+  max-height: 300px;
+  padding: 12px 16px;
+}
+
+/* Info blocks */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+.info-block {
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.info-block h4 {
+  font-size: 15px;
+  margin-bottom: 6px;
+  color: var(--primary);
+}
+.info-block p { font-size: 15px; }
+
+/* Suggestion cards */
+.suggest-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin: 20px 0;
+}
+.suggest-card {
+  padding: 20px;
+  border-radius: var(--border-radius);
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 2px solid var(--border);
+  background: var(--card-bg);
+  user-select: none;
+}
+.suggest-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+.suggest-card.selected {
+  border-color: var(--primary);
+  background: #f0f5ff;
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.suggest-card .emoji { font-size: 36px; margin-bottom: 8px; }
+.suggest-card .label { font-weight: 600; font-size: 17px; }
+.suggest-card .desc { font-size: 14px; color: var(--text-secondary); margin-top: 4px; }
+
+/* Checklist */
+.check-group { margin: 14px 0; }
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  cursor: pointer;
+}
+.check-item input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+.check-item.done .check-text { text-decoration: line-through; color: var(--text-secondary); }
+
+/* Tip box */
+.tip-box {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 12px 0;
+  font-size: 15px;
+}
+.tip-box strong { color: var(--green); }
+
+/* Progress bar */
+.progress-bar-bg {
+  height: 10px;
+  background: #f0f0f0;
+  border-radius: 5px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  border-radius: 5px;
+  width: 0%;
+  transition: width 0.5s;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .container { padding: 12px 10px; }
+  .header { padding: 20px 16px; }
+  .info-grid { grid-template-columns: 1fr; }
+  .suggest-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- Header -->
+<div class="header">
+  <h1>🏗️ 项目社区</h1>
+  <p>用真实的项目深化你对"时间"的理解——从"人体秒表"到"复原古代计时器"！</p>
+</div>
+
+<!-- Project Selector -->
+<div class="section-title">
+  <span class="section-icon">🎯</span>
+  <span>选择你的项目路径</span>
+</div>
+
+<p style="margin-bottom:12px;">点击选择你想投入的时间，系统会推荐最适合你的项目组合：</p>
+
+<div class="suggest-grid">
+  <div class="suggest-card" onclick="selectSuggestion(this, 'short')">
+    <div class="emoji">⏱️</div>
+    <div class="label">时间紧张</div>
+    <div class="desc">选1个短周期项目（1-3天）</div>
+  </div>
+  <div class="suggest-card" onclick="selectSuggestion(this, 'mid')">
+    <div class="emoji">📅</div>
+    <div class="label">中等投入</div>
+    <div class="desc">短周期 + 中周期项目</div>
+  </div>
+  <div class="suggest-card" onclick="selectSuggestion(this, 'deep')">
+    <div class="emoji">🔬</div>
+    <div class="label">深度探索</div>
+    <div class="desc">中周期 + 长周期项目</div>
+  </div>
+</div>
+
+<div id="suggestion-result" style="display:none;background:var(--card-bg);border:2px solid var(--primary);border-radius:var(--border-radius);padding:16px 20px;margin-bottom:20px;">
+  <strong>✅ 推荐方案：</strong> <span id="suggestion-text"></span>
+</div>
+
+<!-- ===== Short Project ===== -->
+<div class="section-title">
+  <span class="section-icon">⏱️</span>
+  <span>短周期项目（1-3天）</span>
+</div>
+
+<div class="project-card">
+  <span class="period-badge period-short">短周期 · 微项目</span>
+  <h3>项目1：我是"人体秒表"</h3>
+  <div class="project-subtitle">🎯 目标：不借助任何计时器，用自己的方式估算30秒、1分钟、2分钟</div>
+
+  <ul class="stage-list">
+    <li class="stage-item active">
+      <div class="stage-header" onclick="toggleStage(this)">第1天：设计方案</div>
+      <div class="stage-body">设计你的"人体秒表"方案——可以拍手、数数、用心跳、用呼吸……你想用哪种方式？为什么选择这种方式？</div>
+    </li>
+    <li class="stage-item">
+      <div class="stage-header" onclick="toggleStage(this)">第2天：测试记录</div>
+      <div class="stage-body">进行3次测试，每次分别估测30秒、1分钟、2分钟。记录每次的偏差。看看你的"人体秒表"准不准？</div>
+    </li>
+    <li class="stage-item">
+      <div class="stage-header" onclick="toggleStage(this)">第3天：校准报告</div>
+      <div class="stage-body">根据前两天的结果调整方法，再次测试。写一份"人体秒表校准报告"——包含方法描述、3次测试数据、误差分析和优化建议。</div>
+    </li>
+  </ul>
+
+  <div class="info-grid">
+    <div class="info-block">
+      <h4>📦 成果形式</h4>
+      <p>"人体秒表校准报告"（方法描述 + 测试数据 + 误差分析 + 优化建议）</p>
+    </div>
+    <div class="info-block">
+      <h4>⭐ 评价标准</h4>
+      <p>方法有创意、数据完整、误差分析有思考</p>
+    </div>
+    <div class="info-block">
+      <h4>🔗 资源链接</h4>
+      <p>使用工具库的"对比分析表"和"三栏记录表"</p>
+    </div>
+  </div>
+
+  <div class="check-group">
+    <label class="check-item" onclick="toggleCheckItem(this)">
+      <input type="checkbox"> <span class="check-text">已完成方案设计</span>
+    </label>
+    <label class="check-item" onclick="toggleCheckItem(this)">
+      <input type="checkbox"> <span class="check-text">已完成3次测试</span>
+    </label>
+    <label class="check-item" onclick="toggleCheckItem(this)">
+      <input type="checkbox"> <span class="check-text">已完成校准报告</span>
+    </label>
+  </div>
+  <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-project1"></div></div>
+</div>
+
+<!-- ===== Mid Project ===== -->
+<div class="section-title">
+  <span class="section-icon">📅</span>
+  <span>中周期项目（1-2周）</span>
+</div>
+
+<div class="project-card">
+  <span class="period-badge period-mid">中周期 · 专题项目</span>
+  <h3>项目2：我的"一周时间账单"</h3>
+  <div class="project-subtitle">🎯 目标：连续记录一周的时间使用情况，分析自己的时间分配模式</div>
+
+  <ul class="stage-list">
+    <li class="stage-item active">
+      <div class="stage-header" onclick="toggleStage(this)">第1-2天：设计记录表</div>
+      <div class="stage-body">设计"时间账单记录表"——以30分钟为最小单位记录活动。想想每30分钟你在做什么？</div>
+    </li>
+    <li class="stage-item">
+      <div class="stage-header" onclick="toggleStage(this)">第3-5天：连续记录</div>
+      <div class="stage-body">连续3天按表记录，每晚汇总当日的时间分配。学习、玩耍、吃饭、睡觉各用了多少时间？</div>
+    </li>
+    <li class="stage-item">
+      <div class="stage-header" onclick="toggleStage(this)">第6天：数据可视化</div>
+      <div class="stage-body">用饼图或柱状图可视化自己的时间分配。哪种活动占用了最多时间？</div>
+    </li>
+    <li class="stage-item">
+      <div class="stage-header" onclick="toggleStage(this)">第7天：分析报告</div>
+      <div class="stage-body">写一份"时间使用分析报告"——哪些活动占用了最多时间？哪些时间可以更高效？列出你的改进计划。</div>
+    </li>
+  </ul>
+
+  <div class="info-grid">
+    <div class="info-block">
+      <h4>📦 成果形式</h4>
+      <p>一周时间记录表 + 时间分配可视化图 + 分析报告</p>
+    </div>
+    <div class="info-block">
+      <h4>⭐ 评价标准</h4>
+      <p>记录完整（至少3天）、图表准确、分析有深度</p>
+    </div>
+    <div class="info-block">
+      <h4>🔗 资源链接</h4>
+      <p>工具库的"时间轴绘制模板"和"对比分析表"</p>
+    </div>
+  </div>
+
+  <div class="tip-box">
+    <strong>💡 小技巧：</strong>可以邀请爸爸妈妈一起记录，比比看谁的时间管理更合理！
+  </div>
+
+  <div class="check-group">
+    <label class="check-item" onclick="toggleCheckItem(this)">
+      <input type="checkbox"> <span class="check-text">已完成记录表设计</span>
+    </label>
+    <label class="check-item" onclick="toggleCheckItem(this)">
+      <input type="checkbox"> <span class="check-text">已完成至少3天记录</span>
+    </label>
+    <label class="check-item" onclick="toggleCheckItem(this)">
+      <input type="checkbox"> <span class="check-text">已完成可视化图表</span>
+    </label>
+    <label class="check-item" onclick="toggleCheckItem(this)">
+      <input type="checkbox"> <span class="check-text">已完成分析报告</span>
+    </label>
+  </div>
+  <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-project2"></div></div>
+</div>
+
+<!-- ===== Long Project ===== -->
+<div class="section-title">
+  <span class="section-icon">🔬</span>
+  <span>长周期项目（1月+）</span>
+</div>
+
+<div class="project-card">
+  <span class="period-badge period-long">长周期 · 综合项目</span>
+  <h3>项目3：古代计时器"复原计划"</h3>
+  <div class="project-subtitle">🎯 目标：用身边的材料复原一种古代计时工具，理解古人的计时智慧</div>
+
+  <ul class="stage-list">
+    <li class="stage-item active">
+      <div class="stage-header" onclick="toggleStage(this)">第1周：调研设计</div>
+      <div class="stage-body">查阅资料，选择一种古代计时器（日晷/水钟/沙漏/蜡烛钟），画出原理图和材料清单。注意：材料需家中能找到或花很少钱买到。</div>
+    </li>
+    <li class="stage-item">
+      <div class="stage-header" onclick="toggleStage(this)">第2周：动手制作</div>
+      <div class="stage-body">按方案动手制作，拍照记录制作过程。遇到困难了吗？你是如何解决的？</div>
+    </li>
+    <li class="stage-item">
+      <div class="stage-header" onclick="toggleStage(this)">第3周：测试校准</div>
+      <div class="stage-body">用现代钟表测试你的计时器，记录误差。你的计时器差了多少？为什么会有误差？</div>
+    </li>
+    <li class="stage-item">
+      <div class="stage-header" onclick="toggleStage(this)">第4周：优化 + 报告</div>
+      <div class="stage-body">分析误差原因，提出改进方案，撰写制作报告。下次再做，你会怎么改进？</div>
+    </li>
+  </ul>
+
+  <div class="info-grid">
+    <div class="info-block">
+      <h4>📦 成果形式</h4>
+      <p>计时器实物（或模型）+ 制作过程记录 + 测试报告</p>
+    </div>
+    <div class="info-block">
+      <h4>⭐ 评价标准</h4>
+      <p>计时器能正常工作（误差≤20%）、过程记录完整、测试报告有深度</p>
+    </div>
+    <div class="info-block">
+      <h4>🔗 资源链接</h4>
+      <p>案例库"历史案例" + 视频脚手架"计时器进化史" + 工具库"概念图"</p>
+    </div>
+  </div>
+
+  <div class="check-group">
+    <label class="check-item" onclick="toggleCheckItem(this)">
+      <input type="checkbox"> <span class="check-text">已完成调研和原理图</span>
+    </label>
+    <label class="check-item" onclick="toggleCheckItem(this)">
+      <input type="checkbox"> <span class="check-text">已完成制作（有照片记录）</span>
+    </label>
+    <label class="check-item" onclick="toggleCheckItem(this)">
+      <input type="checkbox"> <span class="check-text">已完成测试和误差记录</span>
+    </label>
+    <label class="check-item" onclick="toggleCheckItem(this)">
+      <input type="checkbox"> <span class="check-text">已完成最终报告</span>
+    </label>
+  </div>
+  <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-project3"></div></div>
+</div>
+
+<!-- Footer -->
+<div style="text-align:center;margin:32px 0 10px;padding:20px;background:var(--card-bg);border-radius:var(--border-radius);border:1px solid var(--border);">
+  <p style="font-size:16px;color:var(--text-secondary);">💪 完成项目后，别忘了在课堂上分享你的成果！</p>
+</div>
+
+</div>
+
+<script>
+function toggleStage(header) {
+  header.parentElement.classList.toggle('active');
+}
+
+function toggleCheckItem(el) {
+  const checkbox = el.querySelector('input[type="checkbox"]');
+  checkbox.checked = !checkbox.checked;
+  el.classList.toggle('done', checkbox.checked);
+  updateAllProgress();
+}
+
+function updateAllProgress() {
+  const projects = [
+    { id: 'progress-project1', container: 0, count: 0 },
+    { id: 'progress-project2', container: 1, count: 0 },
+    { id: 'progress-project3', container: 2, count: 0 }
+  ];
+
+  const cardGroups = document.querySelectorAll('.project-card');
+  cardGroups.forEach((card, idx) => {
+    const checks = card.querySelectorAll('.check-item input[type="checkbox"]');
+    let checked = 0;
+    checks.forEach(c => { if (c.checked) checked++; });
+    const pct = checks.length > 0 ? Math.round((checked / checks.length) * 100) : 0;
+    const bar = document.getElementById(projects[idx].id);
+    if (bar) bar.style.width = pct + '%';
+  });
+}
+
+function selectSuggestion(el, type) {
+  document.querySelectorAll('.suggest-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+
+  const texts = {
+    short: '⏱️ 选项目1（人体秒表），1-3天完成',
+    mid: '📅 项目1（人体秒表）+ 项目2（一周时间账单），大约1-2周',
+    deep: '🔬 项目2（一周时间账单）+ 项目3（复原计时器），长期深度探索'
+  };
+
+  const result = document.getElementById('suggestion-result');
+  result.style.display = 'block';
+  document.getElementById('suggestion-text').textContent = texts[type];
+}
+</script>
+</body>
+</html>

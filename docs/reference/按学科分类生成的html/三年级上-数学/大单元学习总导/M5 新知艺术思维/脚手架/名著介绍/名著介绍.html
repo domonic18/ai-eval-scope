@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名著介绍 — 时间主题</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+
+/* Hero Section */
+.hero {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+  text-align: center;
+}
+.hero h1 {
+  font-size: var(--font-h1);
+  margin-bottom: 8px;
+}
+.hero p {
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+/* Section */
+.section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+
+/* Quote Cards */
+.quote-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 600px) {
+  .quote-grid { grid-template-columns: 1fr; }
+}
+.quote-card {
+  background: var(--bg);
+  border-left: 4px solid var(--primary);
+  padding: 14px 16px;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.quote-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(22,119,255,0.15);
+}
+.quote-card .quote-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.quote-card .quote-author {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.quote-card .quote-type {
+  display: inline-block;
+  font-size: 12px;
+  background: var(--accent);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+.quote-card .quote-reflection {
+  font-size: 14px;
+  color: var(--text);
+  display: none;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+  animation: fadeSlideIn 0.3s ease;
+}
+.quote-card.active .quote-reflection {
+  display: block;
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Book Cards */
+.book-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 800px) {
+  .book-grid { grid-template-columns: 1fr; }
+}
+.book-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  transition: all 0.3s ease;
+}
+.book-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 16px rgba(22,119,255,0.1);
+}
+.book-card h3 {
+  font-size: 17px;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+.book-card .book-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.book-card .book-question {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--bg);
+  padding: 8px 10px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+.book-card .book-detail {
+  font-size: 14px;
+  color: var(--text);
+}
+.book-card .book-detail summary {
+  cursor: pointer;
+  color: var(--primary);
+  font-weight: 600;
+  padding: 6px 0;
+}
+.book-card .book-detail ul {
+  list-style: none;
+  padding: 4px 0 0 12px;
+}
+.book-card .book-detail ul li {
+  position: relative;
+  padding-left: 14px;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+.book-card .book-detail ul li::before {
+  content: "●";
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+  font-size: 10px;
+  top: 6px;
+}
+.book-path {
+  display: inline-block;
+  font-size: 12px;
+  background: #f6ffed;
+  color: #389e0d;
+  padding: 3px 8px;
+  border-radius: 10px;
+  margin-top: 6px;
+}
+
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 12px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="hero">
+  <h1>📚 名著介绍</h1>
+  <p>用名言触发思考，用名著建立认知深度</p>
+</div>
+
+<div class="section">
+  <h2>💬 时间名言 · 思想触发器</h2>
+  <p style="margin-bottom:12px;font-size:15px;color:var(--text-secondary);">点击每一句名言，看看背后的思考问题</p>
+  <div class="quote-grid">
+    <div class="quote-card" onclick="this.classList.toggle('active')">
+      <div class="quote-text">"一寸光阴一寸金，寸金难买寸光阴。"</div>
+      <div class="quote-author">——中国古谚</div>
+      <span class="quote-type">冲突型</span>
+      <div class="quote-reflection">为什么金子和光阴能画等号？你的哪一分钟最"值钱"？</div>
+    </div>
+    <div class="quote-card" onclick="this.classList.toggle('active')">
+      <div class="quote-text">"逝者如斯夫，不舍昼夜。"</div>
+      <div class="quote-author">——孔子</div>
+      <span class="quote-type">启发型</span>
+      <div class="quote-reflection">请你观察一杯水从水龙头流下——你能"看见"时间在流吗？</div>
+    </div>
+    <div class="quote-card" onclick="this.classList.toggle('active')">
+      <div class="quote-text">"时间就是生命，浪费时间就是浪费生命。"</div>
+      <div class="quote-author">——鲁迅</div>
+      <span class="quote-type">批判型</span>
+      <div class="quote-reflection">你同意吗？你上一次觉得"浪费时间"是什么时候？</div>
+    </div>
+    <div class="quote-card" onclick="this.classList.toggle('active')">
+      <div class="quote-text">"时钟在走，生命在过。"</div>
+      <div class="quote-author">——林清玄</div>
+      <span class="quote-type">启发型</span>
+      <div class="quote-reflection">时间不是"用来过的"，而是"正在过"的。你的时间作品就是"记录生命在过"的一小部分。</div>
+    </div>
+    <div class="quote-card" onclick="this.classList.toggle('active')" style="grid-column:span 2;">
+      <div class="quote-text">"要生活啊，不是只活着。"</div>
+      <div class="quote-author">——塞涅卡（古罗马哲学家）</div>
+      <span class="quote-type">批判型</span>
+      <div class="quote-reflection">他一句话区分了"生存"和"生活"。你的时间是在"活着"还是在"生活"？</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>📖 时间名著 · 系统认知载体</h2>
+
+  <div class="book-grid">
+    <div class="book-card">
+      <h3>📘 给孩子的科技史</h3>
+      <div class="book-meta">吴军 著 · 中信出版社</div>
+      <div class="book-question">人类从用身体感知时间到用原子钟计时，经历了哪些惊人的跨越？</div>
+      <details class="book-detail">
+        <summary>查看目录 & 导读</summary>
+        <ul>
+          <li>用太阳和影子计时</li>
+          <li>水钟和沙漏的工作秘密</li>
+          <li>机械钟是怎样诞生的</li>
+          <li>从机械钟到石英钟</li>
+          <li>原子钟——让时间"永不差错"</li>
+        </ul>
+        <p style="font-size:14px;margin-top:8px;"><strong>关键导读：</strong>第三章"机械钟"——最早的大型机械钟没有指针，靠敲钟报时！</p>
+        <p style="font-size:14px;"><strong>核心观点：</strong>时间的测量史，就是人类文明的进步史。</p>
+        <span class="book-path">📎 微信读书 · 得到App青少年专区</span>
+      </details>
+    </div>
+
+    <div class="book-card">
+      <h3>📙 时间的奥秘</h3>
+      <div class="book-meta">Bruce Koscielniak 著 · 双语版</div>
+      <div class="book-question">人类从古至今为了"知道现在几点"做了哪些有趣的尝试？</div>
+      <details class="book-detail">
+        <summary>查看目录 & 导读</summary>
+        <ul>
+          <li>最早的时间——身体和时间</li>
+          <li>日晷的世界</li>
+          <li>用水和沙子计时</li>
+          <li>蜡烛钟和香钟</li>
+          <li>齿轮的智慧——机械钟的诞生</li>
+          <li>计时器的未来</li>
+        </ul>
+        <p style="font-size:14px;margin-top:8px;"><strong>关键导读：</strong>第4章"蜡烛钟和香钟"——点一根香，每隔5分钟做标记，燃烧速度均匀吗？</p>
+        <p style="font-size:14px;"><strong>核心观点：</strong>每一种计时工具都反映了人们的生活需求。</p>
+        <span class="book-path">📎 图书馆索书号 TH714-49 · Kindle</span>
+      </details>
+    </div>
+
+    <div class="book-card">
+      <h3>📗 时间之书</h3>
+      <div class="book-meta">余世存 著/绘 · 中国国家地理</div>
+      <div class="book-question">二十四节气——中国古人怎么用太阳的位置感知一年的时间？</div>
+      <details class="book-detail">
+        <summary>查看目录 & 导读</summary>
+        <ul>
+          <li>立春——一年开始了</li>
+          <li>春分——昼夜一样长</li>
+          <li>夏至——白天最长的一天</li>
+          <li>秋分——又是昼夜平分</li>
+          <li>冬至——夜晚最长的一天</li>
+        </ul>
+        <p style="font-size:14px;margin-top:8px;"><strong>关键导读：</strong>读"夏至"——用时、分、秒知识算算，夏至白天比冬至白天长多少小时？</p>
+        <p style="font-size:14px;"><strong>核心观点：</strong>大自然本身就是一个大时钟。</p>
+        <span class="book-path">📎 微信读书 · 喜马拉雅儿童频道</span>
+      </details>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="background:linear-gradient(135deg,#f0f5ff,#e6f7ff);">
+  <h2 style="border-bottom-color:var(--primary);">🎯 阅读小挑战</h2>
+  <p style="margin-bottom:10px;">选一本你最感兴趣的，完成下面的小任务：</p>
+  <div style="display:flex;flex-wrap:wrap;gap:10px;">
+    <button style="padding:10px 16px;border:2px solid var(--primary);background:var(--card-bg);border-radius:var(--border-radius);cursor:pointer;font-size:15px;transition:all 0.3s;" onclick="this.style.background='var(--primary)';this.style.color='#fff'">📝 读完写一段"我最惊讶的发现"</button>
+    <button style="padding:10px 16px;border:2px solid var(--primary);background:var(--card-bg);border-radius:var(--border-radius);cursor:pointer;font-size:15px;transition:all 0.3s;" onclick="this.style.background='var(--primary)';this.style.color='#fff'">🎨 画一张"时间测量工具进化图"</button>
+    <button style="padding:10px 16px;border:2px solid var(--primary);background:var(--card-bg);border-radius:var(--border-radius);cursor:pointer;font-size:15px;transition:all 0.3s;" onclick="this.style.background='var(--primary)';this.style.color='#fff'">🗣️ 和同学分享一个"时间冷知识"</button>
+  </div>
+</div>
+
+<div class="footer">
+  M5 新知艺术思维 · 脚手架 · 名著介绍
+</div>
+
+</div>
+</body>
+</html>

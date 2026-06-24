@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名人名言 — M11 新知美术思维</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+.banner {
+  background: linear-gradient(135deg, #722ed1, var(--primary));
+  color: #fff;
+  padding: 28px 36px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.banner h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.banner p {
+  font-size: 16px;
+  opacity: 0.9;
+}
+.person-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 18px;
+  margin-bottom: 24px;
+}
+.person-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+}
+.person-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(22,119,255,0.18);
+}
+.person-card-top {
+  padding: 18px 20px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.person-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: #fff;
+  flex-shrink: 0;
+}
+.avatar-1 { background: linear-gradient(135deg, #1677ff, #4096ff); }
+.avatar-2 { background: linear-gradient(135deg, #13c2c2, #5cdbd3); }
+.avatar-3 { background: linear-gradient(135deg, #d46b08, #fa8c16); }
+.person-name {
+  font-size: 17px;
+  font-weight: 700;
+}
+.person-name small {
+  display: block;
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.person-card-body {
+  padding: 14px 20px 18px;
+}
+.person-card-body .q {
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.person-card-body .detail {
+  padding: 4px 0;
+  font-size: 15px;
+  line-height: 1.7;
+}
+.quote-bubble {
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-top: 10px;
+  border-left: 3px solid var(--primary);
+  font-style: italic;
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.6;
+}
+.quote-bubble::before {
+  content: "💬 ";
+  font-style: normal;
+}
+.reading-box {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+}
+.reading-box h3 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+}
+.reading-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--border);
+  cursor: pointer;
+  transition: padding-left 0.2s;
+}
+.reading-item:last-child { border-bottom: none; }
+.reading-item:hover {
+  padding-left: 8px;
+  background: #f6f8fa;
+  border-radius: 6px;
+}
+.reading-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.reading-item strong {
+  display: block;
+  font-size: 16px;
+}
+.reading-item small {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.think-task {
+  background: linear-gradient(135deg, #f0f5ff, #e6f4ff);
+  border: 2px dashed var(--primary);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin-top: 8px;
+}
+.think-task h3 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+.think-task p {
+  font-size: 16px;
+  line-height: 1.7;
+}
+.think-btn {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 10px 24px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.think-btn:hover {
+  background: var(--primary-hover);
+  transform: scale(1.05);
+}
+.think-answer {
+  display: none;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin-top: 12px;
+  animation: fadeUp 0.4s ease;
+}
+.think-answer.show { display: block; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (max-width: 640px) {
+  .container { padding: 16px; }
+  .banner { padding: 20px; }
+  .person-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="banner">
+    <h1>💡 名人名言 — M11 新知美术思维</h1>
+    <p>三位改变"时间认知"的先锋人物，点击卡片探索他们的故事</p>
+  </div>
+
+  <div class="person-grid">
+
+    <div class="person-card" onclick="this.classList.toggle('expanded')">
+      <div class="person-card-top">
+        <div class="person-avatar avatar-1">⏱️</div>
+        <div class="person-name">惠更斯 <small>Christiaan Huygens · 1629–1695</small></div>
+      </div>
+      <div class="person-card-body">
+        <div class="q">🧩 关键问题</div>
+        <div class="detail">如何让钟表走得足够准确，让时间可以被精确测量？</div>
+        <div class="q" style="margin-top:8px;">💡 思维突破</div>
+        <div class="detail">发现摆在摆动中的<strong>等时性</strong>——无论摆幅大小，单摆周期相同。把"自然界的周期运动"和"人造的时间测量"联系起来。</div>
+        <div class="quote-bubble">"自然的运行是时间的准确表达"——用自然现象表达时间</div>
+      </div>
+    </div>
+
+    <div class="person-card" onclick="this.classList.toggle('expanded')">
+      <div class="person-card-top">
+        <div class="person-avatar avatar-2">📊</div>
+        <div class="person-name">威廉·普莱费尔 <small>William Playfair · 1759–1823</small></div>
+      </div>
+      <div class="person-card-body">
+        <div class="q">🧩 关键问题</div>
+        <div class="detail">如何让一堆枯燥的数字被人"一眼看懂"？</div>
+        <div class="q" style="margin-top:8px;">💡 思维突破</div>
+        <div class="detail">发明了<strong>柱状图和饼图</strong>——把数字变成面积和长度，让人用眼睛"看"数据。</div>
+        <div class="quote-bubble">"图形让那些本来需要费力思考的信息变得一目了然"</div>
+      </div>
+    </div>
+
+    <div class="person-card" onclick="this.classList.toggle('expanded')">
+      <div class="person-card-top">
+        <div class="person-avatar avatar-3">🗓️</div>
+        <div class="person-name">盐野米松 <small>日本时间设计师</small></div>
+      </div>
+      <div class="person-card-body">
+        <div class="q">🧩 关键问题</div>
+        <div class="detail">现代人为什么总觉得"时间不够用"？怎么从视觉上理解时间的流逝？</div>
+        <div class="q" style="margin-top:8px;">💡 思维突破</div>
+        <div class="detail">设计了<strong>"时间感知日历"</strong>，用一种特别的图形展示一天中不同时段的"密度"。</div>
+        <div class="quote-bubble">""感觉很久但实际很短"——时间感知和实际时长的差异，正是"新知美术思维"要去表达的</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="reading-box">
+    <h3>📚 深度阅读路径</h3>
+    <div class="reading-item">
+      <span class="reading-icon">📖</span>
+      <div>
+        <strong>《时间简史（插图版）》</strong> — 史蒂芬·霍金
+        <small>了解"时间"这个抽象概念在物理学中的理解</small>
+      </div>
+    </div>
+    <div class="reading-item">
+      <span class="reading-icon">📐</span>
+      <div>
+        <strong>《最简单的图形与最有趣的信息》</strong> — 黄慧敏
+        <small>教你如何把信息变成好看的图</small>
+      </div>
+    </div>
+    <div class="reading-item">
+      <span class="reading-icon">🎬</span>
+      <div>
+        <strong>纪录片《时间的风景》</strong> — 央视
+        <small>延时摄影下的中国美</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="think-task">
+    <h3>🤔 "如果你是他"思考任务</h3>
+    <p>穿越回 1656 年，惠更斯告诉你："我发明了一个能精确计时的摆钟。"<br>
+    请你用一幅简单的图向他解释：现在我们用<strong>"1小时=60分钟=3600秒"</strong>的彩色色块图来表达时间。<br>
+    你觉得惠更斯会被你的图惊艳到吗？为什么？</p>
+    <button class="think-btn" onclick="showThinkTip()">💭 看看我的想法</button>
+    <div class="think-answer" id="thinkTip">
+      <p><strong>一个可能的回答：</strong></p>
+      <p>惠更斯一定会非常惊讶！他花了大量精力让钟摆精确到秒，但看到现代人把抽象的时间数字变成<strong>彩色色块</strong>——秒用最细的色条、分钟用中等色块、小时用大色块——他能<strong>一眼看出时间的层级结构</strong>。他可能会说：'这就是我看到的时间！我让钟摆数它，你让颜色画它。'</p>
+    </div>
+  </div>
+
+</div>
+<script>
+const tips = [
+  '惠更斯会震惊的！他花了半辈子让钟摆精确到秒，而你用一组彩色色块就让时间的层级关系一目了然——这是从"测量"到"表达"的飞跃。',
+  '也许他会盯着你的图沉思很久，然后说："原来时间不仅有长度，还有颜色。"你的作品让他对时间有了全新的理解。',
+  '他会觉得不可思议：你只用了几种颜色，就表达了他需要用复杂机械才能测量的东西。这就是可视化思维的力量！'
+];
+let ti = 0;
+function showThinkTip() {
+  const el = document.getElementById('thinkTip');
+  el.classList.add('show');
+}
+</script>
+</body>
+</html>

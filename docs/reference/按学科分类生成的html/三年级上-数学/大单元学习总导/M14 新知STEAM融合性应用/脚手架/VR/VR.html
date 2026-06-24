@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VR脚手架 — 沉浸式时间体验</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --font-h3: 20px;
+  --line-height: 1.8;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+.vr-header {
+  background: linear-gradient(135deg, #141414 0%, #1f1f1f 50%, #1677ff 100%);
+  color: #fff;
+  padding: 40px 48px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+  position: relative;
+  overflow: hidden;
+}
+.vr-header::after {
+  content: "🥽";
+  position: absolute;
+  right: 36px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 80px;
+  opacity: 0.12;
+}
+.vr-header h1 { font-size: var(--font-h1); margin-bottom: 6px; }
+.vr-header .sub { font-size: 16px; opacity: 0.8; }
+.task-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.task-tab {
+  padding: 10px 22px;
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.2s;
+  color: var(--text);
+}
+.task-tab:hover { border-color: var(--primary); color: var(--primary); }
+.task-tab.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 28px 32px;
+  margin-bottom: 20px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 3px solid var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card h3 {
+  font-size: var(--font-h3);
+  color: var(--text);
+  margin: 16px 0 8px;
+}
+.card p, .card li { font-size: var(--font-body); margin-bottom: 10px; }
+.card ul, .card ol { padding-left: 24px; margin: 10px 0; }
+.card li { margin-bottom: 8px; }
+.task-item {
+  padding: 14px 18px;
+  background: #f8fbff;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  border-left: 4px solid var(--primary);
+  transition: background 0.2s;
+  cursor: default;
+}
+.task-item:hover { background: #e6f4ff; }
+.task-item .task-icon { font-size: 20px; margin-right: 8px; }
+.task-item .task-label { font-weight: 700; color: var(--primary); }
+.record-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  font-size: 16px;
+}
+.record-table th, .record-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: center;
+}
+.record-table th { background: var(--primary); color: #fff; font-weight: 600; }
+.record-table tr:nth-child(even) { background: #f8fbff; }
+.record-table input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: center;
+  font-size: 16px;
+  padding: 4px;
+  font-family: inherit;
+  border-bottom: 2px solid transparent;
+  transition: border-color 0.2s;
+}
+.record-table input:focus { outline: none; border-bottom-color: var(--primary); }
+.resource-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+.resource-card {
+  background: #f8fbff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.resource-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-3px);
+}
+.resource-card .rc-icon { font-size: 30px; margin-bottom: 6px; }
+.resource-card .rc-name { font-weight: 600; }
+.resource-card .rc-desc { font-size: 14px; margin-top: 4px; color: var(--text-secondary); }
+.alt-box {
+  background: linear-gradient(135deg, #fff7e6, #fffbe6);
+  border: 2px dashed #d46b08;
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin: 14px 0;
+}
+.alt-box h3 { color: #d46b08; margin-top: 0; }
+.timer-box {
+  background: linear-gradient(135deg, #f0f5ff, #e6f4ff);
+  border: 2px solid var(--primary);
+  border-radius: var(--border-radius);
+  padding: 24px;
+  text-align: center;
+  margin: 14px 0;
+}
+.timer-display {
+  font-size: 56px;
+  font-weight: 700;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+  margin: 10px 0;
+}
+.timer-btn {
+  padding: 10px 28px;
+  margin: 0 6px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+.timer-btn:hover { background: var(--primary-hover); }
+.timer-btn.reset { background: #d9d9d9; color: var(--text); }
+.timer-btn.reset:hover { background: #bfbfbf; }
+.footer-note {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+@media (max-width: 768px) {
+  .container { padding: 12px 16px; }
+  .vr-header { padding: 24px 20px; }
+  .vr-header::after { font-size: 50px; right: 16px; }
+  .card { padding: 20px 16px; }
+  .timer-display { font-size: 40px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="vr-header">
+  <h1>🥽 VR 沉浸式时间体验</h1>
+  <p class="sub">在虚拟世界中感受时间的流逝与精确</p>
+  <p style="font-size:15px;opacity:0.7;margin-top:6px;">数学 · 三年级上 · 时、分、秒 · 脚手架</p>
+</div>
+
+<div class="task-tabs">
+  <button class="task-tab active" onclick="switchTab('observe',this)">👁️ 观察任务</button>
+  <button class="task-tab" onclick="switchTab('operate',this)">🖐️ 操作任务</button>
+  <button class="task-tab" onclick="switchTab('record',this)">📝 记录任务</button>
+  <button class="task-tab" onclick="switchTab('resource',this)">📚 资源与替代</button>
+</div>
+
+<div id="tab-observe" class="tab-content">
+  <div class="card">
+    <h2>👁️ 观察任务（3个）</h2>
+    <div class="task-item">
+      <p><span class="task-icon">☀️</span><span class="task-label">观察古代计时器</span></p>
+      <p>在VR中观察<strong>日晷</strong>、<strong>水钟</strong>、<strong>沙漏</strong>的运作过程。注意看：影子移动、水流速度和沙子流动与时间有什么关系？</p>
+    </div>
+    <div class="task-item" style="border-left-color:#52c41a;">
+      <p><span class="task-icon">🔬</span><span class="task-label">观察"一秒"的微观世界</span></p>
+      <p>进入微观时间场景，观察秒针跳动时——蝴蝶振翅多少次？蜂鸟的心跳跳几下？光走了多远（30万公里！）？</p>
+    </div>
+    <div class="task-item" style="border-left-color:#722ed1;">
+      <p><span class="task-icon">🏃</span><span class="task-label">观察时间与运动的关系</span></p>
+      <p>在VR中控制不同速度的运动——跑、走、爬、飞，观察"快慢"与"时间"的关系：相同距离，速度越快，时间越短。</p>
+    </div>
+  </div>
+</div>
+
+<div id="tab-operate" class="tab-content" style="display:none;">
+  <div class="card">
+    <h2>🖐️ 操作任务（2个）</h2>
+    <div class="task-item">
+      <p><span class="task-icon">🌞</span><span class="task-label">操作虚拟日晷</span></p>
+      <p>拖动太阳在天空中的位置，观察影子方向和长度的变化。想一想：古人是怎么通过影子判断时间的？影子最短时是什么时候？</p>
+    </div>
+    <div class="task-item" style="border-left-color:#d46b08;">
+      <p><span class="task-icon">⏱</span><span class="task-label">操作数字计时器</span></p>
+      <p>在VR中设置不同时间间隔——<strong>10秒、30秒、1分钟、5分钟</strong>。先估计时间，再看计时器走完，亲身感受不同时间长度的差异。</p>
+    </div>
+  </div>
+</div>
+
+<div id="tab-record" class="tab-content" style="display:none;">
+  <div class="card">
+    <h2>📝 记录任务（2个）</h2>
+    <div class="task-item">
+      <p><span class="task-icon">🧠</span><span class="task-label">时间感知记录表</span></p>
+      <p>在VR中完成<strong>3次"闭眼估计30秒"</strong>任务，记录你的估计值：</p>
+      <table class="record-table">
+        <thead>
+          <tr><th>次数</th><th>你感觉过了多久</th><th>实际时间</th><th>差异（±秒）</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>第 1 次</td><td><input type="text" placeholder="____秒" oninput="calcDiff(this)"></td><td><input type="text" placeholder="____秒" oninput="calcDiff(this)"></td><td class="diff-cell">___</td></tr>
+          <tr><td>第 2 次</td><td><input type="text" placeholder="____秒" oninput="calcDiff(this)"></td><td><input type="text" placeholder="____秒" oninput="calcDiff(this)"></td><td class="diff-cell">___</td></tr>
+          <tr><td>第 3 次</td><td><input type="text" placeholder="____秒" oninput="calcDiff(this)"></td><td><input type="text" placeholder="____秒" oninput="calcDiff(this)"></td><td class="diff-cell">___</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:15px;color:var(--text-secondary);">💡 填入数据后自动计算差异！你的时间感准确吗？</p>
+    </div>
+    <div class="task-item" style="border-left-color:#389e0d;">
+      <p><span class="task-icon">📖</span><span class="task-label">计时工具原理记录</span></p>
+      <p>用关键词记录你观察到的三种计时工具的运作原理：</p>
+      <ul>
+        <li><strong>日晷：</strong>__________（提示：影子、太阳、角度）</li>
+        <li><strong>水钟：</strong>__________（提示：水流、水位、均匀）</li>
+        <li><strong>沙漏：</strong>__________（提示：沙子、重力、流速）</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>⏱ 试试你的时间感</h2>
+    <div class="timer-box">
+      <p>点击"开始"，闭眼数 30 秒，再点"停止"——看你的感觉准不准！</p>
+      <div class="timer-display" id="timerDisplay">00.0</div>
+      <div>
+        <button class="timer-btn" id="timerStartBtn" onclick="startTimer()">开始</button>
+        <button class="timer-btn" id="timerStopBtn" onclick="stopTimer()" style="display:none;">停止</button>
+        <button class="timer-btn reset" onclick="resetTimer()">重置</button>
+      </div>
+      <p id="timerResult" style="margin-top:10px;font-weight:700;min-height:28px;"></p>
+    </div>
+  </div>
+</div>
+
+<div id="tab-resource" class="tab-content" style="display:none;">
+  <div class="card">
+    <h2>📚 VR资源推荐</h2>
+    <div class="resource-grid">
+      <div class="resource-card">
+        <div class="rc-icon">📺</div>
+        <div class="rc-name">Bilibili VR时间科普</div>
+        <div class="rc-desc">时间主题VR科普视频</div>
+      </div>
+      <div class="resource-card">
+        <div class="rc-icon">🏛️</div>
+        <div class="rc-name">Google Arts & Culture</div>
+        <div class="rc-desc">古代计时器VR展览</div>
+      </div>
+      <div class="resource-card">
+        <div class="rc-icon">🌐</div>
+        <div class="rc-name">网页日晷模拟器</div>
+        <div class="rc-desc">在线搜索"sundial simulator"</div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="alt-box">
+      <h3>🔄 无设备替代方案</h3>
+      <p>没有VR设备？完全没关系！用这些方式也能获得一样的学习体验：</p>
+      <ul>
+        <li>📺 观看"古代计时器"纪录片片段（3D动画演示）</li>
+        <li>📱 使用手机秒表APP完成时间感知测试</li>
+        <li>✋ 动手制作简易日晷或水钟模型（材料和步骤见"项目库"）</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="footer-note">
+  <p>M14 新知STEAM融合性应用 · 脚手架 · VR沉浸体验</p>
+</div>
+
+</div>
+<script>
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(function(t) { t.style.display = 'none'; });
+  document.querySelectorAll('.task-tab').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('tab-' + id).style.display = 'block';
+  btn.classList.add('active');
+}
+
+function calcDiff(input) {
+  var row = input.closest('tr');
+  var inputs = row.querySelectorAll('input');
+  if (inputs.length < 2) return;
+  var felt = parseFloat(inputs[0].value);
+  var actual = parseFloat(inputs[1].value);
+  var diffCell = row.querySelector('.diff-cell');
+  if (!isNaN(felt) && !isNaN(actual)) {
+    var diff = felt - actual;
+    diffCell.textContent = (diff > 0 ? '+' : '') + diff.toFixed(1) + '秒';
+    diffCell.style.color = Math.abs(diff) > 5 ? '#cf1322' : '#389e0d';
+  } else {
+    diffCell.textContent = '___';
+  }
+}
+
+var timerRunning = false;
+var timerStartTime = 0;
+var timerRAF = null;
+
+function startTimer() {
+  timerRunning = true;
+  timerStartTime = Date.now();
+  document.getElementById('timerStartBtn').style.display = 'none';
+  document.getElementById('timerStopBtn').style.display = 'inline-block';
+  document.getElementById('timerResult').textContent = '';
+  updateTimer();
+}
+
+function updateTimer() {
+  if (!timerRunning) return;
+  var elapsed = (Date.now() - timerStartTime) / 1000;
+  document.getElementById('timerDisplay').textContent = elapsed.toFixed(1);
+  timerRAF = requestAnimationFrame(updateTimer);
+}
+
+function stopTimer() {
+  timerRunning = false;
+  cancelAnimationFrame(timerRAF);
+  var elapsed = (Date.now() - timerStartTime) / 1000;
+  document.getElementById('timerDisplay').textContent = elapsed.toFixed(1);
+  document.getElementById('timerStartBtn').style.display = 'inline-block';
+  document.getElementById('timerStopBtn').style.display = 'none';
+  var diff = Math.abs(elapsed - 30);
+  var msg = '';
+  if (diff < 2) msg = '🎉 太厉害了！你的时间感超级准！';
+  else if (diff < 5) msg = '👍 很不错！差一点点就完美了！';
+  else if (diff < 10) msg = '👌 还可以，多多练习你的时间感吧！';
+  else msg = '🤔 看来30秒比想象中长/短，多试几次会越来越准！';
+  document.getElementById('timerResult').textContent = '你感觉了 ' + elapsed.toFixed(1) + ' 秒（目标30秒）。' + msg;
+}
+
+function resetTimer() {
+  timerRunning = false;
+  cancelAnimationFrame(timerRAF);
+  document.getElementById('timerDisplay').textContent = '00.0';
+  document.getElementById('timerStartBtn').style.display = 'inline-block';
+  document.getElementById('timerStopBtn').style.display = 'none';
+  document.getElementById('timerResult').textContent = '';
+}
+</script>
+</body>
+</html>

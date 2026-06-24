@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>作业榜 — 时、分、秒换算练习</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  padding: 0;
+}
+.container { width: 100%; padding: 24px 20px; }
+.header {
+  text-align: center;
+  padding: 24px 16px 16px;
+  margin-bottom: 20px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+.header .subtitle {
+  color: var(--text-secondary);
+  font-size: 15px;
+}
+.progress-bar {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 16px 0 24px;
+  flex-wrap: wrap;
+}
+.progress-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 14px;
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.progress-step.active {
+  border-color: var(--primary);
+  background: #e6f4ff;
+  color: var(--primary);
+  font-weight: 600;
+}
+.progress-step.done {
+  border-color: #52c41a;
+  background: #f6ffed;
+  color: #52c41a;
+}
+.progress-step .badge {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  background: var(--border);
+  color: #fff;
+}
+.progress-step.active .badge { background: var(--primary); }
+.progress-step.done .badge { background: #52c41a; }
+
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 8px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tier-tag {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  color: #fff;
+  margin-left: 8px;
+}
+.tier-base { background: #52c41a; }
+.tier-adv { background: #fa8c16; }
+.tier-open { background: #722ed1; }
+
+.fill-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 12px 0;
+}
+@media (max-width: 480px) { .fill-grid { grid-template-columns: 1fr; } }
+.fill-item {
+  background: #fafafa;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.fill-item .blank {
+  display: inline-block;
+  min-width: 60px;
+  border-bottom: 2px solid var(--primary);
+  padding: 0 4px;
+  cursor: pointer;
+  color: var(--primary);
+  font-weight: 600;
+}
+.fill-item .blank.revealed { color: #52c41a; }
+
+.judge-item {
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.judge-item:last-child { border-bottom: none; }
+.judge-toggle {
+  width: 24px; height: 24px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.2s;
+  background: #fff;
+  font-size: 14px;
+}
+.judge-toggle.checked {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.reason-line {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-top: 2px;
+  cursor: pointer;
+}
+.reason-line .reason-text {
+  display: none;
+  color: var(--primary);
+  font-weight: 500;
+}
+.reason-line .reason-text.show { display: inline; }
+
+.table-wrap {
+  overflow-x: auto;
+  margin: 10px 0;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+th {
+  background: var(--primary);
+  color: #fff;
+  padding: 8px 12px;
+  text-align: left;
+}
+td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+td .calc-blank {
+  display: inline-block;
+  min-width: 70px;
+  border-bottom: 2px dashed var(--accent);
+  cursor: pointer;
+  color: var(--primary);
+}
+td .calc-blank.revealed { color: #52c41a; }
+
+.challenge-box {
+  background: linear-gradient(135deg, #fff7e6, #fff1f0);
+  border: 1px solid #ffd591;
+  border-radius: 10px;
+  padding: 14px;
+  margin: 10px 0;
+}
+.open-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 480px) { .open-list { grid-template-columns: 1fr; } }
+.open-list li {
+  background: #fafafa;
+  border-radius: 8px;
+  padding: 12px;
+  border-left: 4px solid var(--primary);
+  cursor: pointer;
+  transition: 0.2s;
+}
+.open-list li:hover { background: #e6f4ff; }
+.open-list li .icon { font-size: 20px; margin-right: 6px; }
+
+.eval-table {
+  margin-top: 12px;
+}
+.eval-table td:first-child {
+  font-weight: 600;
+  color: var(--primary);
+  white-space: nowrap;
+  width: 60px;
+}
+
+.btn-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  justify-content: center;
+}
+.btn {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+}
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-outline {
+  background: transparent;
+  border: 2px solid var(--primary);
+  color: var(--primary);
+}
+.btn-outline:hover { background: #e6f4ff; }
+.score-summary {
+  text-align: center;
+  padding: 16px;
+  margin-top: 12px;
+  font-size: 16px;
+  color: var(--text-secondary);
+  display: none;
+}
+.score-summary.show { display: block; }
+.score-summary strong { color: var(--primary); font-size: 20px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🏆 作业榜</h1>
+    <div class="subtitle">三层递进 · 时、分、秒换算练习</div>
+  </div>
+
+  <div class="progress-bar" id="progressBar">
+    <div class="progress-step active" data-tier="base"><span class="badge">1</span> 基础层</div>
+    <div class="progress-step" data-tier="adv"><span class="badge">2</span> 分层挑战</div>
+    <div class="progress-step" data-tier="open"><span class="badge">3</span> 开放创作</div>
+  </div>
+
+  <!-- 基础层 -->
+  <div class="card tier-base-card" data-tier="base">
+    <h2>📝 基础层 <span class="tier-tag tier-base">重现与理解</span></h2>
+    <p style="color:var(--text-secondary);margin-bottom:12px;"><strong>作业A</strong> — 填空练习（点击空白处查看答案）</p>
+    <div class="fill-grid">
+      <div class="fill-item">1小时 = <span class="blank" data-answer="60" onclick="toggleBlank(this)">?</span> 分钟</div>
+      <div class="fill-item">1分钟 = <span class="blank" data-answer="60" onclick="toggleBlank(this)">?</span> 秒</div>
+      <div class="fill-item">3小时 = 180分钟 = <span class="blank" data-answer="10800" onclick="toggleBlank(this)">?</span> 秒</div>
+      <div class="fill-item">180秒 = <span class="blank" data-answer="3" onclick="toggleBlank(this)">?</span> 分钟</div>
+      <div class="fill-item" style="grid-column:1/-1;">2时11分 = <span class="blank" data-answer="131" onclick="toggleBlank(this)">?</span> 分</div>
+    </div>
+
+    <p style="color:var(--text-secondary);margin:16px 0 8px;"><strong>作业B</strong> — 判断对错（点击方框切换 ✓/✗，点击理由看解析）</p>
+    <div class="judge-item">
+      <div class="judge-toggle" onclick="toggleJudge(this)">✓</div>
+      <div>
+        <span>3.3小时 = 3小时30分</span>
+        <div class="reason-line" onclick="toggleReason(this)">📌 点击看理由 <span class="reason-text">❌ 0.3小时=18分钟，3.3小时=3小时18分</span></div>
+      </div>
+    </div>
+    <div class="judge-item">
+      <div class="judge-toggle" onclick="toggleJudge(this)">✓</div>
+      <div>
+        <span>150分 = 1时50分</span>
+        <div class="reason-line" onclick="toggleReason(this)">📌 点击看理由 <span class="reason-text">❌ 150分=2时30分，1时50分=110分</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 分层挑战 -->
+  <div class="card tier-adv-card" data-tier="adv" style="display:none;">
+    <h2>🎯 分层挑战 <span class="tier-tag tier-adv">差异任务</span></h2>
+
+    <p style="color:var(--text-secondary);margin-bottom:8px;"><strong>A级（基础）</strong> — 补全表格（点击空白处查看答案）</p>
+    <div class="table-wrap">
+      <table>
+        <tr><th>大单位</th><th>小单位</th><th>计算</th><th>结果</th></tr>
+        <tr><td>2小时</td><td>分钟</td><td>2×60=</td><td><span class="calc-blank" data-answer="120" onclick="toggleBlank(this)">?</span></td></tr>
+        <tr><td>180秒</td><td>分钟</td><td>180÷60=</td><td><span class="calc-blank" data-answer="3" onclick="toggleBlank(this)">?</span></td></tr>
+        <tr><td>5小时</td><td>秒</td><td>5×3600=</td><td><span class="calc-blank" data-answer="18000" onclick="toggleBlank(this)">?</span></td></tr>
+      </table>
+    </div>
+
+    <div class="challenge-box" style="margin-top:16px;">
+      <p><strong>B级（进阶）</strong> 🌟 用身体丈量30秒</p>
+      <p style="font-size:15px;color:var(--text-secondary);">不用钟表，试试用「心跳」「呼吸」「步数」来测量30秒，看看哪个最准！</p>
+      <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;">
+        <span style="background:#f0f5ff;padding:4px 12px;border-radius:6px;">❤️ 心跳 ___ 次</span>
+        <span style="background:#fff7e6;padding:4px 12px;border-radius:6px;">🌬️ 呼吸 ___ 次</span>
+        <span style="background:#f6ffed;padding:4px 12px;border-radius:6px;">👣 步数 ___ 步</span>
+      </div>
+    </div>
+
+    <div class="challenge-box">
+      <p><strong>C级（挑战）</strong> 🚀 如果1分钟=100秒</p>
+      <p style="font-size:15px;color:var(--text-secondary);">写一段话：想象一个「1分钟=100秒」的世界，我们的生活会有哪些变化？上学、游戏、吃饭……</p>
+    </div>
+  </div>
+
+  <!-- 开放创作 -->
+  <div class="card tier-open-card" data-tier="open" style="display:none;">
+    <h2>🎨 开放创作 <span class="tier-tag tier-open">创造性表达</span></h2>
+    <ul class="open-list">
+      <li onclick="highlightItem(this)"><span class="icon">✍️</span> <strong>写作</strong><br><small>「时间管理」——你在作业、玩、休息之间怎么分配时间？</small></li>
+      <li onclick="highlightItem(this)"><span class="icon">📊</span> <strong>图示</strong><br><small>画一张时、分、秒的关系图（含换算箭头和示例）</small></li>
+      <li onclick="highlightItem(this)"><span class="icon">🎬</span> <strong>视频</strong><br><small>录一个「1分钟」原理解释视频（演示 + 画图 + 讲解）</small></li>
+      <li onclick="highlightItem(this)"><span class="icon">🎤</span> <strong>演讲</strong><br><small>「为什么1小时=60分钟？」——给全班做个小讲座</small></li>
+    </ul>
+  </div>
+
+  <!-- 评价标准 -->
+  <div class="card">
+    <h2>📋 评价标准</h2>
+    <div class="table-wrap eval-table">
+      <table>
+        <tr><td>基础</td><td>计算正确，能说出「为什么」</td></tr>
+        <tr><td>分层</td><td>选择适合自己的难度，完成了</td></tr>
+        <tr><td>开放</td><td>有创意，表达清晰，别人能看懂</td></tr>
+      </table>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="revealAll()">🔍 显示全部答案</button>
+      <button class="btn btn-outline" onclick="resetAll()">🔄 重置</button>
+    </div>
+    <div class="score-summary" id="scoreSummary">
+      ✅ 你已经完成了 <strong id="doneCount">0</strong> 个步骤，继续加油！
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleBlank(el) {
+  if (el.classList.contains('revealed')) {
+    el.textContent = '?';
+    el.classList.remove('revealed');
+  } else {
+    el.textContent = el.dataset.answer;
+    el.classList.add('revealed');
+  }
+}
+function toggleJudge(el) {
+  el.classList.toggle('checked');
+  el.textContent = el.classList.contains('checked') ? '✗' : '✓';
+}
+function toggleReason(el) {
+  el.querySelector('.reason-text').classList.toggle('show');
+}
+function highlightItem(el) {
+  el.style.background = '#e6f4ff';
+  setTimeout(() => el.style.background = '', 800);
+}
+
+document.querySelectorAll('.progress-step').forEach(step => {
+  step.addEventListener('click', function() {
+    const tier = this.dataset.tier;
+    document.querySelectorAll('.progress-step').forEach(s => s.classList.remove('active'));
+    this.classList.add('active');
+    document.querySelectorAll('.card[data-tier]').forEach(c => c.style.display = 'none');
+    const target = document.querySelector('.card[data-tier="' + tier + '"]') ||
+                   document.querySelector('.' + tier + '-card');
+    if (target) target.style.display = 'block';
+  });
+});
+
+function revealAll() {
+  document.querySelectorAll('.blank, .calc-blank').forEach(el => {
+    if (!el.classList.contains('revealed')) {
+      el.textContent = el.dataset.answer;
+      el.classList.add('revealed');
+    }
+  });
+  document.querySelectorAll('.judge-toggle').forEach(el => {
+    if (!el.classList.contains('checked')) {
+      el.classList.add('checked');
+      el.textContent = '✗';
+    }
+  });
+  let done = document.querySelectorAll('.blank.revealed').length;
+  document.getElementById('doneCount').textContent = done;
+  document.getElementById('scoreSummary').classList.add('show');
+}
+
+function resetAll() {
+  document.querySelectorAll('.blank, .calc-blank').forEach(el => {
+    el.textContent = '?';
+    el.classList.remove('revealed');
+  });
+  document.querySelectorAll('.judge-toggle').forEach(el => {
+    el.classList.remove('checked');
+    el.textContent = '✓';
+  });
+  document.querySelectorAll('.reason-text').forEach(el => el.classList.remove('show'));
+  document.getElementById('scoreSummary').classList.remove('show');
+}
+</script>
+</body>
+</html>

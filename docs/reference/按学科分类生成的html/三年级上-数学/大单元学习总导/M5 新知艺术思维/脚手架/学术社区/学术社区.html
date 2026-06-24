@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学术社区 — 时间主题讨论</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+}
+
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+
+.hero {
+  background: linear-gradient(135deg, var(--primary) 0%, #7ec1ff 100%);
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+  text-align: center;
+}
+.hero h1 {
+  font-size: var(--font-h1);
+  margin-bottom: 6px;
+}
+.hero p {
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+.section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+
+/* Topic Tabs */
+.topic-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.topic-tab {
+  padding: 10px 18px;
+  border: 2px solid var(--border);
+  border-radius: 20px;
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+}
+.topic-tab:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.topic-tab.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.topic-content {
+  display: none;
+  animation: fadeIn 0.4s ease;
+}
+.topic-content.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.topic-content .guide-questions {
+  list-style: none;
+  padding: 0;
+}
+.topic-content .guide-questions li {
+  background: var(--bg);
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+  font-size: 15px;
+  position: relative;
+  padding-left: 36px;
+}
+.topic-content .guide-questions li::before {
+  content: "💡";
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  font-size: 14px;
+}
+.topic-content .record-req {
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: 6px;
+  font-size: 15px;
+}
+.topic-content .record-req strong {
+  color: #d46b08;
+}
+
+/* Role Cards */
+.role-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 600px) {
+  .role-grid { grid-template-columns: 1fr; }
+}
+.role-card {
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 14px 16px;
+  text-align: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+.role-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(22,119,255,0.1);
+  transform: translateY(-2px);
+}
+.role-card.selected {
+  border-color: var(--primary);
+  background: var(--bg);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.role-card .role-icon {
+  font-size: 32px;
+  margin-bottom: 4px;
+}
+.role-card h4 {
+  font-size: 16px;
+  color: var(--primary);
+  margin-bottom: 2px;
+}
+.role-card p {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.role-card .role-tool {
+  font-size: 13px;
+  background: var(--bg);
+  padding: 4px 8px;
+  border-radius: 6px;
+  margin-top: 6px;
+  color: var(--text);
+}
+
+/* Timer */
+.timer-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 14px;
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.timer-box .timer-display {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+  min-width: 100px;
+  text-align: center;
+}
+.timer-btn {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.timer-btn.start {
+  background: var(--primary);
+  color: #fff;
+}
+.timer-btn.start:hover {
+  background: var(--primary-hover);
+}
+.timer-btn.stop {
+  background: #ff4d4f;
+  color: #fff;
+}
+.timer-btn.reset {
+  background: var(--border);
+  color: var(--text);
+}
+
+/* Output Section */
+.output-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 600px) {
+  .output-grid { grid-template-columns: 1fr; }
+}
+.output-card {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 14px;
+  text-align: center;
+  border: 1px dashed var(--border);
+}
+.output-card h4 {
+  font-size: 16px;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.output-card p {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.footer {
+  text-align: center;
+  padding: 12px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="hero">
+  <h1>🤝 学术社区</h1>
+  <p>在同伴讨论和协作中深化对时间的理解</p>
+</div>
+
+<div class="section">
+  <h2>🗣️ 讨论议题</h2>
+
+  <div class="topic-tabs">
+    <div class="topic-tab active" onclick="switchTopic(this, 0)">⏱ 一分钟有多长？</div>
+    <div class="topic-tab" onclick="switchTopic(this, 1)">📊 时间都去哪儿了？</div>
+    <div class="topic-tab" onclick="switchTopic(this, 2)">🔄 时间机器帮帮忙</div>
+  </div>
+
+  <!-- Topic 1 -->
+  <div class="topic-content active" data-index="0">
+    <h3 style="font-size:18px;color:var(--text);margin-bottom:8px;">⏱ 议题一："一分钟到底有多长？"</h3>
+    <p style="font-size:15px;color:var(--text-secondary);margin-bottom:10px;">小组围坐，每人先写下自己的答案，再一起讨论</p>
+    <ul class="guide-questions">
+      <li>跑步时的一分钟和玩游戏时的一分钟，感觉一样长吗？</li>
+      <li>什么情境下一分钟感觉"最慢"？什么情境下"最快"？</li>
+      <li>有没有方法让"无聊的一分钟"变"有趣的一分钟"？</li>
+    </ul>
+    <div class="record-req">
+      <strong>📝 记录要求：</strong>每组选一名记录员，画一张"一分钟感受折线图"
+    </div>
+  </div>
+
+  <!-- Topic 2 -->
+  <div class="topic-content" data-index="1">
+    <h3 style="font-size:18px;color:var(--text);margin-bottom:8px;">📊 议题二："你的一天时间都去哪儿了？"</h3>
+    <p style="font-size:15px;color:var(--text-secondary);margin-bottom:10px;">每人展示自己的"时间记录表"，小组互看</p>
+    <ul class="guide-questions">
+      <li>谁的一天"学习时间"最多？谁"运动时间"最多？</li>
+      <li>你们小组的平均睡眠时间是几小时？</li>
+      <li>如果你是时间警察，你会给谁发"最佳时间安排奖"？</li>
+    </ul>
+    <div class="record-req">
+      <strong>📝 记录要求：</strong>制作一张小组"时间大数据"汇总表
+    </div>
+  </div>
+
+  <!-- Topic 3 -->
+  <div class="topic-content" data-index="2">
+    <h3 style="font-size:18px;color:var(--text);margin-bottom:8px;">🔄 议题三："时间机器帮帮忙"</h3>
+    <p style="font-size:15px;color:var(--text-secondary);margin-bottom:10px;">角色扮演——你是一台"时间机器"，帮同学优化一天的时间安排</p>
+    <ul class="guide-questions">
+      <li>同桌的时间表里，哪个环节最需要优化？</li>
+      <li>你能帮他/她节省出多少分钟？省出来的时间做什么好？</li>
+      <li>他的安排有哪些你没想到的"巧妙之处"？</li>
+    </ul>
+    <div class="record-req">
+      <strong>📝 记录要求：</strong>两人一对，互相给对方画一张"优化后的一天时间轴"
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>👥 角色分工</h2>
+  <p style="font-size:15px;color:var(--text-secondary);margin-bottom:10px;">点击选择一个角色，看看你的任务</p>
+  <div class="role-grid">
+    <div class="role-card" onclick="selectRole(this)">
+      <div class="role-icon">👁️</div>
+      <h4>观察员</h4>
+      <p>记录大家的观点，发现不同的思考角度</p>
+      <div class="role-tool">🛠 观察记录表</div>
+    </div>
+    <div class="role-card" onclick="selectRole(this)">
+      <div class="role-icon">📝</div>
+      <h4>记录员</h4>
+      <p>汇总小组数据，形成"小组时间报告"</p>
+      <div class="role-tool">🛠 时间汇总表模板</div>
+    </div>
+    <div class="role-card" onclick="selectRole(this)">
+      <div class="role-icon">🎤</div>
+      <h4>汇报员</h4>
+      <p>代表小组向全班展示讨论成果</p>
+      <div class="role-tool">🛠 展示海报</div>
+    </div>
+    <div class="role-card" onclick="selectRole(this)">
+      <div class="role-icon">⏲️</div>
+      <h4>计时员</h4>
+      <p>控制讨论时间（每个议题10-15分钟）</p>
+      <div class="role-tool">🛠 计时器 / 秒表</div>
+    </div>
+  </div>
+
+  <div class="timer-box">
+    <span style="font-size:15px;font-weight:600;">⏱ 讨论计时器</span>
+    <div class="timer-display" id="timerDisplay">15:00</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+      <button class="timer-btn start" id="timerStart" onclick="startTimer()">开始</button>
+      <button class="timer-btn stop" id="timerStop" onclick="stopTimer()" style="display:none;">暂停</button>
+      <button class="timer-btn reset" onclick="resetTimer()">重置</button>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>🏆 展示与评审</h2>
+  <div class="output-grid">
+    <div class="output-card">
+      <h4>📰 小组海报展</h4>
+      <p>把讨论成果做成A3海报，贴在教室墙上</p>
+    </div>
+    <div class="output-card">
+      <h4>📄 时间"小报"</h4>
+      <p>用A4纸制作一份时间主题小报</p>
+    </div>
+    <div class="output-card">
+      <h4>📱 数字化分享</h4>
+      <p>拍照上传到班级群</p>
+    </div>
+    <div class="output-card">
+      <h4>🏅 评审奖项</h4>
+      <p>最佳发现奖 · 最优化方案奖 · 小组互评小红花</p>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  M5 新知艺术思维 · 脚手架 · 学术社区
+</div>
+
+</div>
+
+<script>
+let timerInterval = null;
+let totalSeconds = 900; // 15 minutes
+let isRunning = false;
+
+function switchTopic(el, index) {
+  document.querySelectorAll('.topic-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.topic-content').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelector(`.topic-content[data-index="${index}"]`).classList.add('active');
+}
+
+function selectRole(el) {
+  document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function updateDisplay() {
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  document.getElementById('timerDisplay').textContent =
+    String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+}
+
+function startTimer() {
+  if (isRunning) return;
+  isRunning = true;
+  document.getElementById('timerStart').style.display = 'none';
+  document.getElementById('timerStop').style.display = 'inline-block';
+  timerInterval = setInterval(() => {
+    if (totalSeconds > 0) {
+      totalSeconds--;
+      updateDisplay();
+    } else {
+      stopTimer();
+      alert('⏰ 时间到！请结束当前议题的讨论。');
+    }
+  }, 1000);
+}
+
+function stopTimer() {
+  isRunning = false;
+  clearInterval(timerInterval);
+  document.getElementById('timerStart').style.display = 'inline-block';
+  document.getElementById('timerStart').textContent = '继续';
+  document.getElementById('timerStop').style.display = 'none';
+}
+
+function resetTimer() {
+  stopTimer();
+  totalSeconds = 900;
+  document.getElementById('timerStart').textContent = '开始';
+  updateDisplay();
+}
+</script>
+</body>
+</html>

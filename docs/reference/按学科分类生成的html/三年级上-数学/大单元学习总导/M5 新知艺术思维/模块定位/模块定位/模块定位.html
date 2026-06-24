@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块定位 - M5 新知艺术思维</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.wrapper { width: 100%; max-width: none; padding: 24px 20px; box-sizing: border-box; }
+.container { max-width: 960px; margin: 0 auto; }
+/* Header */
+.module-header { background: linear-gradient(135deg, var(--primary), #0050b3); color: #fff; border-radius: var(--border-radius); padding: 32px 28px; margin-bottom: 28px; position: relative; overflow: hidden; }
+.module-header::after { content: "⏱"; position: absolute; right: 20px; bottom: -10px; font-size: 100px; opacity: 0.15; }
+.module-header h1 { font-size: var(--font-h1); margin-bottom: 6px; }
+.module-header .subtitle { font-size: 15px; opacity: 0.85; }
+.module-badge { display: inline-block; background: rgba(255,255,255,0.2); border-radius: 20px; padding: 2px 14px; font-size: 13px; margin-bottom: 12px; }
+/* Stats bar */
+.stats-bar { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 28px; }
+.stat-card { flex: 1; min-width: 120px; background: var(--card-bg); border-radius: var(--border-radius); padding: 16px 18px; box-shadow: var(--shadow); border-left: 3px solid var(--primary); }
+.stat-card .num { font-size: 24px; font-weight: 700; color: var(--primary); }
+.stat-card .label { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+/* Section cards */
+.section-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); margin-bottom: 20px; overflow: hidden; transition: box-shadow 0.3s; }
+.section-card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.12); }
+.section-card .card-header { padding: 18px 24px; background: var(--bg); cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none; }
+.section-card .card-header h2 { font-size: var(--font-h2); color: var(--primary); margin: 0; }
+.section-card .card-header .toggle-icon { font-size: 18px; color: var(--primary); transition: transform 0.3s; }
+.section-card .card-header .toggle-icon.open { transform: rotate(90deg); }
+.section-card .card-body { padding: 20px 24px; }
+.section-card .card-body ul { padding-left: 22px; margin: 8px 0; }
+.section-card .card-body li { margin-bottom: 6px; }
+/* Highlight box */
+.highlight-box { background: #e6f7ff; border: 1px solid #91d5ff; border-radius: var(--border-radius); padding: 16px 20px; margin: 14px 0; }
+.highlight-box .hl-title { font-weight: 600; color: var(--primary); margin-bottom: 4px; }
+/*成果展示*/
+.outcome-badge { display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #e6f7ff, #f0f5ff); border: 1px solid var(--accent); border-radius: 20px; padding: 6px 16px; font-size: 14px; color: var(--primary); font-weight: 500; margin: 4px; }
+/*箭頭衔接*/
+.flow-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: center; margin: 16px 0; }
+.flow-item { background: var(--bg); border-radius: var(--border-radius); padding: 10px 18px; text-align: center; min-width: 90px; font-size: 14px; border: 1px solid var(--border); }
+.flow-item.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.flow-arrow { font-size: 22px; color: var(--primary); }
+/* buttons */
+.btn { display: inline-block; background: var(--primary); color: #fff; border: none; border-radius: 6px; padding: 8px 20px; font-size: 15px; cursor: pointer; transition: background 0.2s; }
+.btn:hover { background: var(--primary-hover); }
+.btn-outline { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
+.btn-outline:hover { background: var(--bg); }
+/* quiz */
+.quiz-toggle { margin-top: 12px; }
+.quiz-answer { display: none; background: #f6ffed; border: 1px solid #b7eb8f; border-radius: var(--border-radius); padding: 12px 16px; margin-top: 8px; font-size: 15px; }
+.quiz-answer.show { display: block; }
+/* Responsive */
+@media (max-width: 640px) {
+  .wrapper { padding: 16px 12px; }
+  .module-header { padding: 24px 18px; }
+  .section-card .card-header { padding: 14px 16px; }
+  .section-card .card-body { padding: 14px 16px; }
+  .stats-bar { flex-direction: column; }
+  .flow-row { flex-direction: column; }
+  .flow-arrow { transform: rotate(90deg); }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+<div class="container">
+
+  <!-- Module Header -->
+  <div class="module-header">
+    <div class="module-badge">M5 · 终章挑战</div>
+    <h1>新知艺术思维</h1>
+    <div class="subtitle">用数学的眼光观察时间 · 用艺术的方式表达时间 · 用科学的方法分析时间</div>
+  </div>
+
+  <!-- Stats bar -->
+  <div class="stats-bar">
+    <div class="stat-card"><div class="num">1</div><div class="label">核心大任务</div></div>
+    <div class="stat-card"><div class="num">3</div><div class="label">创作方向</div></div>
+    <div class="stat-card"><div class="num">6</div><div class="label">方法工具</div></div>
+    <div class="stat-card"><div class="num">🏆</div><div class="label">你的时间作品</div></div>
+  </div>
+
+  <!-- Section 1: 学习什么 -->
+  <div class="section-card">
+    <div class="card-header" onclick="toggleCard(this)">
+      <h2>📖 本模块学习什么</h2>
+      <span class="toggle-icon open">▶</span>
+    </div>
+    <div class="card-body">
+      <p>你已经学会"1时=60分、1分=60秒"了，也知道怎么看钟表了。但——这些知识能用来干什么呢？</p>
+      <p><strong>本模块不是让你"再练一遍换算题"</strong>，而是带你做一件更有趣的事：<strong>用数学的眼光观察时间，用艺术的方式表达时间，用科学的方法分析时间。</strong></p>
+      <ul>
+        <li>记录自己一天的时间，发现你"花时间"的秘密</li>
+        <li>用时、分、秒的知识，解决真实生活中的时间问题</li>
+        <li>把时间数据变成好看的图、有用的方案和属于你自己的"时间作品"</li>
+      </ul>
+      <div class="highlight-box">
+        <div class="hl-title">💡 一句话概括</div>
+        <p style="margin:0">从"认识时间"走向"驾驭时间"——做一个真正的时间小主人！</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: 为什么重要 -->
+  <div class="section-card">
+    <div class="card-header" onclick="toggleCard(this)">
+      <h2>❓ 本模块为什么重要</h2>
+      <span class="toggle-icon open">▶</span>
+    </div>
+    <div class="card-body">
+      <p>你有没有想过——为什么一天是24小时而不是30小时？为什么1分钟是60秒而不是100秒？其实"时、分、秒"的诞生背后藏着几千年的文明智慧。</p>
+      <p>更重要的是：<strong>时间管理是陪伴你一生的能力。</strong></p>
+      <ul>
+        <li>从作业规划到未来工作</li>
+        <li>从体育比赛到太空探索</li>
+      </ul>
+      <p>谁懂得使用时间，谁就掌握了主动权。本模块就是帮你从"认识时间"走向<strong>"驾驭时间"</strong>。</p>
+      <div class="quiz-toggle">
+        <button class="btn btn-outline" onclick="toggleAnswer(this)">🤔 考考你：为什么1分钟是60秒而不是100秒？</button>
+        <div class="quiz-answer">这和古代美索不达米亚人的六十进制有关！60可以被2、3、4、5、6、10、12、15、20、30整除，用起来特别方便。而100只能被2、4、5、10、20、25、50整除。所以祖先们选择了60！</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: 与大单元主题的关系 -->
+  <div class="section-card">
+    <div class="card-header" onclick="toggleCard(this)">
+      <h2>🔗 本模块与大单元主题的关系</h2>
+      <span class="toggle-icon open">▶</span>
+    </div>
+    <div class="card-body">
+      <p>大单元"1 时、分、秒"的核心目标是建立<strong>"时间观念"</strong>——你不仅要会算时间，还要真正"感觉到"时间的长短，理解时间在你生活中的意义。</p>
+      <p>M5 新知艺术思维就是这条学习之路的<strong>"巅峰"</strong>——把前面积累的换算能力、认钟能力，变成分析生活、创造作品的真本事。</p>
+      <div class="flow-row">
+        <div class="flow-item">M1 时间<br>初印象</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-item">M2 分的<br>秘密</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-item">M3 秒的<br>世界</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-item">M4 时间<br>计算师</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-item active"><strong>M5 新知<br>艺术思维</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: 前后模块衔接 -->
+  <div class="section-card">
+    <div class="card-header" onclick="toggleCard(this)">
+      <h2>📚 本模块与前后模块的衔接</h2>
+      <span class="toggle-icon open">▶</span>
+    </div>
+    <div class="card-body">
+      <p><strong>前序模块已经帮你掌握了：</strong></p>
+      <ul>
+        <li>认识时针、分针、秒针</li>
+        <li>时、分、秒之间的换算（1时=60分，1分=60秒）</li>
+        <li>简单的时间计算（经过时间、开始/结束时刻）</li>
+      </ul>
+      <p>本模块不再重复这些基础，而是<strong>直接让你"用起来"</strong>——用它们观察你的生活、创作你的作品。</p>
+    </div>
+  </div>
+
+  <!-- Section 5: 预期学习成果 -->
+  <div class="section-card">
+    <div class="card-header" onclick="toggleCard(this)">
+      <h2>🎯 本模块预期学习成果</h2>
+      <span class="toggle-icon open">▶</span>
+    </div>
+    <div class="card-body">
+      <p>学完本模块，你将拥有：</p>
+      <div style="display:flex; flex-wrap:wrap; gap:8px; margin:10px 0;">
+        <span class="outcome-badge">📊 时间分布饼图</span>
+        <span class="outcome-badge">📜 一日故事时间轴</span>
+        <span class="outcome-badge">🏠 家庭周末时间规划方案</span>
+        <span class="outcome-badge">🧰 方法工具箱</span>
+      </div>
+      <p>以及一套可以用来分析任何时间问题的<strong>"方法工具箱"</strong>——这些工具将伴随你未来的学习和生活！</p>
+      <div style="margin-top:16px; text-align:center;">
+        <button class="btn" onclick="showEncourage()">🎬 我准备好了，开始学习！</button>
+      </div>
+      <div id="encourageMsg" style="display:none; margin-top:12px; text-align:center; font-size:20px; color:var(--primary);">加油！你的第一件"时间作品"正在等你创造！⏱✨</div>
+    </div>
+  </div>
+
+</div>
+</div>
+<script>
+function toggleCard(header) {
+  const body = header.nextElementSibling;
+  const icon = header.querySelector('.toggle-icon');
+  if (body.style.display === 'none') {
+    body.style.display = 'block';
+    icon.classList.add('open');
+  } else {
+    body.style.display = 'none';
+    icon.classList.remove('open');
+  }
+}
+function toggleAnswer(btn) {
+  const answer = btn.nextElementSibling;
+  answer.classList.toggle('show');
+}
+function showEncourage() {
+  const msg = document.getElementById('encourageMsg');
+  msg.style.display = 'block';
+  msg.style.animation = 'fadeIn 0.5s';
+}
+/* 默认卡片展开 */
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.card-body').forEach(el => el.style.display = 'block');
+});
+</script>
+<style>
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</body>
+</html>

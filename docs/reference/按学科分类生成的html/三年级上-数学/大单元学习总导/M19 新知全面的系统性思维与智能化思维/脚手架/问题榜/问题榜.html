@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>问题库脚手架 — 时间单位换算</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body { margin: 0; padding: 0; background: var(--bg); font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); }
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+.header { text-align: center; padding: 32px 20px 20px; background: linear-gradient(135deg, #f0f5ff 0%, #e6f0ff 100%); border-radius: 12px; margin-bottom: 28px; }
+.header h1 { font-size: var(--font-h1); color: var(--primary); margin: 0 0 8px 0; }
+.header p { font-size: calc(var(--font-body) + 2px); color: var(--text-secondary); margin: 0; }
+.level-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 24px 28px; margin-bottom: 24px; border-left: 4px solid var(--primary); }
+.level-card.level-basic { border-left-color: var(--primary); }
+.level-card.level-intermediate { border-left-color: #52c41a; }
+.level-card.level-challenge { border-left-color: #fa8c16; }
+.level-badge { display: inline-block; padding: 4px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 12px; }
+.level-badge.basic { background: var(--primary); }
+.level-badge.intermediate { background: #52c41a; }
+.level-badge.challenge { background: #fa8c16; }
+.level-card h2 { font-size: var(--font-h2); margin: 0 0 16px 0; color: var(--text); }
+.q-item { background: #fafafa; border-radius: 8px; padding: 16px 18px; margin-bottom: 14px; transition: all 0.3s; cursor: pointer; border: 1px solid transparent; }
+.q-item:hover { border-color: var(--primary); box-shadow: 0 2px 8px rgba(22,119,255,0.1); }
+.q-number { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--primary); color: #fff; border-radius: 50%; font-size: 14px; font-weight: 600; margin-right: 10px; flex-shrink: 0; }
+.q-title { font-weight: 600; color: var(--text); display: flex; align-items: flex-start; gap: 8px; }
+.q-hint { display: none; margin-top: 12px; padding: 12px 16px; background: #fffbe6; border-radius: 6px; border-left: 3px solid #faad14; font-size: 15px; color: #8c6b00; }
+.q-hint.show { display: block; animation: fadeIn 0.3s ease; }
+.q-hint::before { content: "💡 提示："; font-weight: 600; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.interact-box { background: linear-gradient(135deg, #e6f0ff 0%, #f0f5ff 100%); border-radius: var(--border-radius); padding: 20px; text-align: center; margin-top: 20px; }
+.interact-box h3 { font-size: var(--font-h2); color: var(--primary); margin: 0 0 12px 0; }
+.btn { padding: 10px 24px; border: none; border-radius: 6px; font-size: 16px; font-weight: 500; cursor: pointer; transition: all 0.3s; background: var(--primary); color: #fff; }
+.btn:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(22,119,255,0.3); }
+.btn-secondary { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
+.btn-secondary:hover { background: var(--primary); color: #fff; }
+.progress-bar { background: #e8e8e8; border-radius: 10px; height: 8px; margin: 16px 0; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 10px; width: 0%; transition: width 0.5s ease; }
+@media (max-width: 600px) { .container { padding: 12px 16px; } .level-card { padding: 16px; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>❓ 问题库脚手架</h1>
+    <p>用问题驱动你的学习 — 点击每个问题查看提示，看看你能答出几个</p>
+  </div>
+
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <p style="text-align:center;color:var(--text-secondary);margin:4px 0 20px;" id="progressText">已解锁 0 / 10 个问题</p>
+
+  <div class="level-card level-basic">
+    <span class="level-badge basic">🌱 基础层 · 理解与识别</span>
+
+    <div class="q-item" onclick="toggleHint(this)">
+      <div class="q-title"><span class="q-number">1</span>"1时 = ？分" 这个等式是什么意思？—— 你能用"分苹果"来比喻吗？</div>
+      <div class="q-hint">把 1 个苹果平均切成 60 块，每一块就是 1 分钟。1 小时就像一整颗苹果，掰成 60 小份。</div>
+    </div>
+
+    <div class="q-item" onclick="toggleHint(this)">
+      <div class="q-title"><span class="q-number">2</span>钟表上有几个大格？每个大格代表几分钟？为什么？</div>
+      <div class="q-hint">钟面有 12 个大格，每格代表 5 分钟。因为一圈 60 分钟 ÷ 12 格 = 5 分钟/格。</div>
+    </div>
+
+    <div class="q-item" onclick="toggleHint(this)">
+      <div class="q-title"><span class="q-number">3</span>秒针走一圈，分针走多少？—— 这就是"1分 = 60秒"的由来。</div>
+      <div class="q-hint">秒针走一整圈（60秒），分针刚好走 1 小格。分针走 1 小格 = 1 分钟。</div>
+    </div>
+  </div>
+
+  <div class="level-card level-intermediate">
+    <span class="level-badge intermediate">🚀 进阶层 · 分析与应用</span>
+
+    <div class="q-item" onclick="toggleHint(this)">
+      <div class="q-title"><span class="q-number">4</span>如果世界上没有钟表，人们怎么知道下课时间到了？</div>
+      <div class="q-hint">想想古代人的方法：日晷看影子、沙漏、水钟…… 还可以靠身体的"生物钟"——饿不饿？累不累？</div>
+    </div>
+
+    <div class="q-item" onclick="toggleHint(this)">
+      <div class="q-title"><span class="q-number">5</span>60进制（时间）和10进制（人民币）有什么不同？哪种更方便？</div>
+      <div class="q-hint">试试算 58分 + 15分 = ？用10进制算的话 58 + 15 = 73，但时间里 73分 = 1时13分。到底哪个更方便？</div>
+    </div>
+
+    <div class="q-item" onclick="toggleHint(this)">
+      <div class="q-title"><span class="q-number">6</span>如果1时 = 100分，1分 = 100秒，生活变成什么样？</div>
+      <div class="q-hint">课表会变成什么样？一节课还会是 40 分钟吗？你的体育课会变长还是变短？</div>
+    </div>
+  </div>
+
+  <div class="level-card level-challenge">
+    <span class="level-badge challenge">🔥 挑战层 · 创造与批判</span>
+
+    <div class="q-item" onclick="toggleHint(this)">
+      <div class="q-title"><span class="q-number">7</span>为什么一周是 7 天？为什么不是 5 天或者 10 天？</div>
+      <div class="q-hint">这和古代人的天文观测有关 —— 看看月亮从新月到满月再到新月，大约需要多少天？</div>
+    </div>
+
+    <div class="q-item" onclick="toggleHint(this)">
+      <div class="q-title"><span class="q-number">8</span>时间为什么不能倒流？</div>
+      <div class="q-hint">这不只是一个物理问题 —— 想想如果你的时间能倒流，你还愿意好好学习吗？你的选择还会一样吗？</div>
+    </div>
+
+    <div class="q-item" onclick="toggleHint(this)">
+      <div class="q-title"><span class="q-number">9</span>你是怎么学会时间换算的？—— 是背公式，还是理解了之后学会的？</div>
+      <div class="q-hint">回忆一下你学这个知识的过程 —— 哪个瞬间让你突然"开窍"了？是老师的哪句话？还是你自己想通了什么？</div>
+    </div>
+
+    <div class="q-item" onclick="toggleHint(this)">
+      <div class="q-title"><span class="q-number">10</span>假如你是"时间部长"，你会怎么让全国人的时间安排更合理？</div>
+      <div class="q-hint">考虑夏令时、时区调整、上学放学时间、交通高峰期…… 你可以改变哪些规则？</div>
+    </div>
+  </div>
+
+  <div class="interact-box">
+    <h3>📊 我的问题闯关</h3>
+    <p style="color:var(--text-secondary);margin:0 0 16px 0;">点击问题查看提示，全部看完后点击"完成闯关"</p>
+    <button class="btn" onclick="completeChallenge()">🏆 完成闯关</button>
+    <button class="btn btn-secondary" style="margin-left:12px;" onclick="resetAll()">🔄 重新开始</button>
+    <div id="resultMsg" style="margin-top:16px;font-weight:600;color:var(--primary);display:none;"></div>
+  </div>
+</div>
+
+<script>
+let revealed = new Set();
+function toggleHint(el) {
+  const hint = el.querySelector('.q-hint');
+  hint.classList.toggle('show');
+  if (hint.classList.contains('show')) {
+    revealed.add(el.querySelector('.q-number')?.textContent || el.innerText.slice(0,2));
+  }
+  updateProgress();
+}
+function updateProgress() {
+  const count = revealed.size;
+  document.getElementById('progressText').textContent = '已查看 ' + count + ' / 10 个问题提示';
+  document.getElementById('progressFill').style.width = (count / 10 * 100) + '%';
+}
+function completeChallenge() {
+  const msg = document.getElementById('resultMsg');
+  msg.style.display = 'block';
+  if (revealed.size >= 10) {
+    msg.innerHTML = '🎉 太棒了！你已经探索了全部 10 个问题！你是真正的"问题探险家"！';
+  } else {
+    msg.innerHTML = '💪 继续加油！你已经查看了 ' + revealed.size + '/10 个问题提示，试试全部点开吧！';
+  }
+}
+function resetAll() {
+  document.querySelectorAll('.q-hint').forEach(el => el.classList.remove('show'));
+  revealed.clear();
+  updateProgress();
+  document.getElementById('resultMsg').style.display = 'none';
+}
+</script>
+</body>
+</html>

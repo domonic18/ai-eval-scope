@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>作业榜 — 时、分、秒 × 新知哲学思维</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 30px 24px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.header .subtitle {
+  font-size: 16px;
+  opacity: 0.9;
+}
+.section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px 28px;
+  margin-bottom: 22px;
+  border: 1px solid var(--border);
+}
+.section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+.section h3 {
+  font-size: 20px;
+  color: var(--text);
+  margin: 16px 0 10px;
+}
+.tag {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  font-size: 14px;
+  padding: 2px 12px;
+  border-radius: 12px;
+  margin-right: 6px;
+}
+.tag-primary {
+  background: var(--primary);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 16px;
+}
+th {
+  background: var(--bg);
+  color: var(--primary);
+  font-weight: 600;
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 2px solid var(--accent);
+}
+td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: top;
+}
+tr:last-child td { border-bottom: none; }
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+  margin: 14px 0;
+}
+.level-card {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 18px;
+  border: 1px solid var(--border);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: default;
+}
+.level-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow);
+}
+.level-card .level-tag {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  width: 32px;
+  height: 32px;
+  line-height: 32px;
+  text-align: center;
+  border-radius: 50%;
+  margin-bottom: 8px;
+}
+.level-card .level-title {
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+.level-card ul {
+  list-style: none;
+  padding: 0;
+}
+.level-card ul li {
+  padding: 4px 0 4px 18px;
+  position: relative;
+}
+.level-card ul li::before {
+  content: "✦";
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+}
+.btn-toggle {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  margin: 6px 0;
+}
+.btn-toggle:hover {
+  background: var(--primary-hover);
+  transform: scale(1.03);
+}
+.btn-toggle:active {
+  transform: scale(0.97);
+}
+.extra-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, opacity 0.3s ease;
+  opacity: 0;
+}
+.extra-content.show {
+  max-height: 300px;
+  opacity: 1;
+}
+.philosophy-box {
+  background: linear-gradient(135deg, #e6f7ff, #f0f5ff);
+  border-left: 4px solid var(--primary);
+  padding: 16px 20px;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  margin: 16px 0;
+  font-style: italic;
+}
+.philosophy-box strong {
+  color: var(--primary);
+}
+.eval-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin: 12px 0;
+}
+.eval-item {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 14px;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+.eval-item .name {
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.eval-item .stars {
+  color: #faad14;
+  font-size: 18px;
+}
+.interact-area {
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  text-align: center;
+  margin: 16px 0;
+  border: 2px dashed var(--accent);
+}
+.interact-area p {
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: var(--primary);
+}
+@media (max-width: 600px) {
+  .container { padding: 16px 12px; }
+  .header { padding: 20px; }
+  .section { padding: 16px; }
+  table { font-size: 15px; }
+  th, td { padding: 8px 6px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>📋 作业榜</h1>
+  <div class="subtitle">时、分、秒 × 新知哲学思维 · 三年级上</div>
+</div>
+
+<div class="section">
+  <h2>一、基础层：再现与理解 <span class="tag">必做</span><span class="tag tag-primary">选1项</span></h2>
+  <table>
+    <thead>
+      <tr><th>作业形式</th><th>内容要求</th><th>评价要点</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>✍ 写作</strong></td>
+        <td>用一段话描述："如果你手表停了，你怎么知道过了1分钟？"</td>
+        <td>用到秒、分概念，描述合理</td>
+      </tr>
+      <tr>
+        <td><strong>🎨 图示</strong></td>
+        <td>画一个钟面，标出秒针走一圈时分针的位置变化，配简要文字说明</td>
+        <td>钟面正确、刻度清晰、说明准确</td>
+      </tr>
+      <tr>
+        <td><strong>🎤 视频/演讲</strong></td>
+        <td>录制30秒口述：说出3件你身边"大约1分钟"能做完的事</td>
+        <td>语速自然，举例贴近生活</td>
+      </tr>
+    </tbody>
+  </table>
+  <div style="text-align:right;font-size:15px;color:var(--text-secondary);">✅ 正确使用时分秒单位即达标</div>
+</div>
+
+<div class="section">
+  <h2>二、分层任务：差异化挑战 <span class="tag">必做</span><span class="tag tag-primary">A/B/C三选一</span></h2>
+  <div class="card-grid">
+
+    <div class="level-card" onclick="toggleCard(this)">
+      <div class="level-tag">A</div>
+      <div class="level-title">建构者 · 时间的形状</div>
+      <p>用示意图表现你对"时间"的想象：直线、圆圈、波浪、阶梯……</p>
+      <ul>
+        <li>图上标出时、分、秒三者的关系（60秒=1分、60分=1时）</li>
+        <li>用一句话写出：你的图为什么这样画？</li>
+      </ul>
+      <div style="margin-top:8px;font-size:15px;color:var(--text-secondary);">💡 体现单位换算关系，解释有个人思考</div>
+      <div style="margin-top:8px;"><button class="btn-toggle" onclick="event.stopPropagation();toggleExtra(this)">💭 看看范例思路</button></div>
+      <div class="extra-content" style="margin-top:8px;font-size:15px;color:var(--text-secondary);background:#fff;padding:10px;border-radius:6px;">
+        <p>🌟 范例：小明画了一条螺旋线——"时间像弹簧，一圈一圈，每一圈有60个刻度（秒），绕60圈就是1小时。"</p>
+      </div>
+    </div>
+
+    <div class="level-card" onclick="toggleCard(this)">
+      <div class="level-tag">B</div>
+      <div class="level-title">联结者 · 一分钟有多长</div>
+      <p>选一项活动（跳绳、静坐、拍手），让家人计时1分钟，你做完后记录结果。</p>
+      <ul>
+        <li>写出：你实际做了多少次？和猜想的相比多还是少？</li>
+        <li>画一张"时间感受图"（横轴：实际秒数；纵轴：你的感受快/慢）</li>
+      </ul>
+      <div style="margin-top:8px;font-size:15px;color:var(--text-secondary);">💡 记录真实数据，能对比猜想与实际</div>
+    </div>
+
+    <div class="level-card" onclick="toggleCard(this)">
+      <div class="level-tag">C</div>
+      <div class="level-title">对话者 · 与时间的对话</div>
+      <p>写一段虚构对话（你和"时间老人"）。</p>
+      <ul>
+        <li>问时间老人至少2个关于"为什么我们看不见时间却能感觉到它"的问题</li>
+        <li>时间老人的回答要体现时、分、秒的知识</li>
+      </ul>
+      <div style="margin-top:8px;font-size:15px;color:var(--text-secondary);">💡 问题有哲学味，回答用到单位换算，对话自然</div>
+      <div style="margin-top:8px;"><button class="btn-toggle" onclick="event.stopPropagation();toggleExtra(this)">💭 看看对话开头</button></div>
+      <div class="extra-content" style="margin-top:8px;font-size:15px;color:var(--text-secondary);background:#fff;padding:10px;border-radius:6px;">
+        <p>🌟 开头："时间老爷爷，为什么开心的时候你跑得那么快，排队的时候你又走得那么慢？"<br>"孩子，因为时间的快慢不在我的脚步里，而在你的心里呀。不过，不管你快不快乐，我的秒针都一格一格地走——60格是一分，3600格是一时。"</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="section">
+  <h2>三、开放层：创造性表达 <span class="tag">选做</span><span class="tag tag-primary">至少1项</span></h2>
+  <table>
+    <thead>
+      <tr><th>形式</th><th>任务描述</th><th>示例指引</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>📝 创意写作</strong></td>
+        <td>写一首短诗或小故事，主题"如果一秒变一年"</td>
+        <td>想象世界变化，反思时间相对性</td>
+      </tr>
+      <tr>
+        <td><strong>🎨 艺术图示</strong></td>
+        <td>创作"时间之河"画作，用色彩/线条表现时间流逝</td>
+        <td>不同颜色代表不同时间单位；附100字说明</td>
+      </tr>
+      <tr>
+        <td><strong>🎬 视频创作</strong></td>
+        <td>拍摄2分钟短片："我的一天——用秒和分重新讲述"</td>
+        <td>用计时器拍日常片段，旁白反思时间感知</td>
+      </tr>
+      <tr>
+        <td><strong>🎯 演讲/辩论</strong></td>
+        <td>准备1分钟即兴演讲："时间对每个人一样快吗？"</td>
+        <td>结合自身经历，提出观点并举例</td>
+      </tr>
+    </tbody>
+  </table>
+  <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;font-size:15px;">
+    <span style="background:#f6ffed;padding:4px 12px;border-radius:12px;color:#52c41a;">🌟 创意性 30%</span>
+    <span style="background:#fff7e6;padding:4px 12px;border-radius:12px;color:#fa8c16;">📐 知识准确性 30%</span>
+    <span style="background:#f0f5ff;padding:4px 12px;border-radius:12px;color:var(--primary);">💭 反思深度 40%</span>
+  </div>
+</div>
+
+<div class="section">
+  <h2>四、整体评价标准</h2>
+  <div class="eval-grid">
+    <div class="eval-item"><div class="name">新知哲学反思</div><div class="stars">☆☆☆</div><span style="font-size:14px;">基础层—</span><span style="font-size:14px;color:var(--primary);"> 开放层 ★★★</span></div>
+    <div class="eval-item"><div class="name">知识准确性</div><div class="stars">★★★</div><span style="font-size:14px;">基础层 ★</span><span style="font-size:14px;color:var(--primary);"> 分层 ★★</span></div>
+    <div class="eval-item"><div class="name">创意与个性</div><div class="stars">★★</div><span style="font-size:14px;">分层 ★</span><span style="font-size:14px;color:var(--primary);"> 开放层 ★★</span></div>
+    <div class="eval-item"><div class="name">表达规范</div><div class="stars">★★</div><span style="font-size:14px;">通顺即可</span><span style="font-size:14px;color:var(--primary);"> 结构完整</span></div>
+  </div>
+
+  <div class="philosophy-box">
+    <strong>🧠 核心追问：</strong>做完所有任务后，请你写一句话回答——<br>
+    <strong>"时间真的'存在'吗？还是只是我们脑子里的一个想法？"</strong><br>
+    <span style="font-size:15px;">这句话可附在任何一项作业末尾，作为本次新知哲学思维的收官之笔。</span>
+  </div>
+
+  <div class="interact-area">
+    <p>⏱ 点击按钮，随机抽取一个作业任务</p>
+    <button class="btn-toggle" onclick="pickRandom()">🎲 随机抽选</button>
+    <div id="randomResult" style="margin-top:12px;font-size:20px;font-weight:700;color:var(--primary);min-height:36px;"></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function toggleCard(el) {
+  el.style.transition = 'background 0.2s';
+  el.style.background = '#e6f7ff';
+  setTimeout(() => { el.style.background = ''; }, 300);
+}
+function toggleExtra(btn) {
+  const content = btn.parentElement.nextElementSibling;
+  if (content && content.classList.contains('extra-content')) {
+    content.classList.toggle('show');
+    btn.textContent = content.classList.contains('show') ? '🙈 收起' : '💭 看看范例思路';
+  }
+}
+const tasks = [
+  '写作：如果手表停了，你怎么知道过了1分钟？',
+  '图示：画出秒针走一圈时分钟的位置',
+  '演讲：说出3件大约1分钟能做完的事',
+  'A级建构者：画出时间的形状',
+  'B级联结者：实测一分钟有多长',
+  'C级对话者：与时间老人对话',
+  '创意写作：如果一秒变一年',
+  '艺术创作：时间之河画作',
+  '视频创作：用秒和分重述一天'
+];
+function pickRandom() {
+  const el = document.getElementById('randomResult');
+  el.style.opacity = '0';
+  setTimeout(() => {
+    const t = tasks[Math.floor(Math.random() * tasks.length)];
+    el.textContent = '🎯 ' + t;
+    el.style.opacity = '1';
+  }, 200);
+}
+</script>
+
+</body>
+</html>

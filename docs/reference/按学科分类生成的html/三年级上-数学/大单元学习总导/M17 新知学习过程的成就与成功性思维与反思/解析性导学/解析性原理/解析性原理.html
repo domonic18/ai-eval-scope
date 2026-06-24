@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性原理 — 学会分析自己的学习</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+}
+.header {
+  text-align: center;
+  padding: 30px 20px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  border-radius: 0 0 20px 20px;
+  margin-bottom: 30px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin-bottom: 8px;
+  letter-spacing: 2px;
+}
+.header p { opacity: 0.9; font-size: 16px; }
+.section-title {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 32px 0 16px;
+  padding-left: 14px;
+  border-left: 4px solid var(--primary);
+}
+.section-desc {
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  font-size: 16px;
+}
+
+/* Intro box */
+.intro-box {
+  background: linear-gradient(135deg, #f6f9ff, #eef4ff);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  border: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+.intro-box strong { color: var(--primary); }
+
+/* Principle cards */
+.prin-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+.prin-card-header {
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #f6f9ff, #eef4ff);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+  transition: background 0.2s;
+}
+.prin-card-header:hover { background: linear-gradient(135deg, #eef4ff, #e0edff); }
+.prin-card-header h3 {
+  font-size: 17px;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.prin-card-header .num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
+.prin-card-header .arrow {
+  transition: transform 0.3s;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.prin-card.open .prin-card-header .arrow { transform: rotate(180deg); }
+.prin-card-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+  padding: 0 20px;
+}
+.prin-card.open .prin-card-body {
+  max-height: 700px;
+  padding: 16px 20px 20px;
+}
+.prin-card-body table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+.prin-card-body td {
+  padding: 8px 6px;
+  border-bottom: 1px dashed #f0f0f0;
+  vertical-align: top;
+}
+.prin-card-body td:first-child {
+  width: 80px;
+  font-weight: 600;
+  color: var(--primary);
+  white-space: nowrap;
+}
+.prin-card-body td:last-child { color: var(--text); }
+
+/* Practice section */
+.practice-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  margin-bottom: 18px;
+  padding: 20px;
+}
+.practice-card h4 {
+  font-size: 17px;
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+.practice-card .p-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  display: block;
+  margin-top: 10px;
+  margin-bottom: 4px;
+}
+.practice-card p, .practice-card li { font-size: 15px; }
+.practice-card ul { padding-left: 20px; margin: 4px 0; }
+
+/* Self-check */
+.check-grid {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0;
+}
+.check-item {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border);
+  padding: 14px 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  transition: border-color 0.2s;
+}
+.check-item:hover { border-color: var(--accent); }
+.check-item .q-icon { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
+.check-item .q-text { flex: 1; font-size: 15px; }
+.check-item .btn-group {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+.check-item .btn-yes, .check-item .btn-no {
+  padding: 4px 14px;
+  border-radius: 14px;
+  font-size: 13px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: #fff;
+  transition: all 0.2s;
+  user-select: none;
+}
+.check-item .btn-yes:hover { border-color: #16a34a; color: #16a34a; }
+.check-item .btn-no:hover { border-color: #ff4d4f; color: #ff4d4f; }
+.check-item .btn-yes.chosen { background: #f6ffed; border-color: #16a34a; color: #16a34a; font-weight: 600; }
+.check-item .btn-no.chosen { background: #fff2f0; border-color: #ff4d4f; color: #ff4d4f; font-weight: 600; }
+
+.self-check-progress {
+  text-align: center;
+  padding: 14px;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border);
+  margin: 16px 0;
+  font-size: 15px;
+}
+.self-check-progress .bar-bg {
+  height: 8px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  margin: 8px auto;
+  max-width: 400px;
+  overflow: hidden;
+}
+.self-check-progress .bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent), var(--primary));
+  border-radius: 4px;
+  transition: width 0.4s;
+}
+
+@media (max-width: 768px) {
+  .container { padding: 16px 12px; }
+  .header { padding: 20px 16px; }
+  .prin-card-body td { display: block; width: 100%; padding: 4px 0; }
+  .prin-card-body td:first-child { padding-top: 10px; }
+  .check-item { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🔬 解析性原理</h1>
+    <p>从案例中提炼分析方法——今天学会用，明天可以用在100个不同的学习场景里</p>
+  </div>
+
+  <!-- 从示例到原理 -->
+  <div class="intro-box">
+    <strong>🧭 为什么要从案例中提炼原理？</strong><br>
+    案例只有1个，但原理可以用在 <strong>100个不同的学习场景</strong> 里。<br>
+    下面这4条原理，就是帮你分析"我怎么学会的"这个问题的万能工具。
+  </div>
+
+  <!-- 原理提炼 -->
+  <div class="section-title">📐 解析性原理（4条）</div>
+  <p class="section-desc">点击每条原理展开详情，看看它的核心逻辑和用法</p>
+
+  <div class="prin-card" onclick="togglePrin(this)">
+    <div class="prin-card-header">
+      <h3><span class="num">1</span> "闪光时刻"定位法</h3>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="prin-card-body">
+      <table>
+        <tr><td>核心逻辑</td><td>找到你状态最好的那一刻，往回追溯原因</td></tr>
+        <tr><td>示例体现</td><td>小明先找到了"我做对换算题的那次"，再往回看当时用了什么方法</td></tr>
+        <tr><td>如何使用</td><td>① 回想一个"做对了/想通了"的瞬间 → ② 写下当时的具体场景 → ③ 问：是什么让我做到的？</td></tr>
+        <tr><td>适用场景</td><td>分析做对一道难题的原因、找到某次考试发挥好的关键</td></tr>
+        <tr><td>使用提醒</td><td>别只看"结果对"，要看"方法对"——碰巧蒙对的不能算</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="prin-card" onclick="togglePrin(this)">
+    <div class="prin-card-header">
+      <h3><span class="num">2</span> "方法-结果"归因法</h3>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="prin-card-body">
+      <table>
+        <tr><td>核心逻辑</td><td>区分"碰巧"和"真正掌握"——看结果也要看方法</td></tr>
+        <tr><td>示例体现</td><td>小明对比了"画钟面法"（真的懂了）和"死记硬背"（过两天就忘）</td></tr>
+        <tr><td>如何使用</td><td>① 写出你的结果（对/错）→ ② 写出你用的方法 → ③ 判断：换个题目，这方法还能用吗？</td></tr>
+        <tr><td>适用场景</td><td>判断自己是否真正掌握了一个知识点</td></tr>
+        <tr><td>使用提醒</td><td>"做对了"不一定等于"会了"——问问自己：我能讲给别人听吗？</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="prin-card" onclick="togglePrin(this)">
+    <div class="prin-card-header">
+      <h3><span class="num">3</span> "前后对比"分析法</h3>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="prin-card-body">
+      <table>
+        <tr><td>核心逻辑</td><td>比较"之前是怎么错的"和"现在是怎么对的"，发现变化点</td></tr>
+        <tr><td>示例体现</td><td>小明对比了两次做题的思考过程差异——第一次凭感觉，第二次用钟面图</td></tr>
+        <tr><td>如何使用</td><td>① 找到你"之前错"的记录 → ② 找到你"之后对"的记录 → ③ 对比中间差了什么</td></tr>
+        <tr><td>适用场景</td><td>分析成绩提升的原因、检查自己改掉了什么坏习惯</td></tr>
+        <tr><td>使用提醒</td><td>千万不要只看分数不看过程——分数一样高，但思考深度可能完全不同</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="prin-card" onclick="togglePrin(this)">
+    <div class="prin-card-header">
+      <h3><span class="num">4</span> "证据链"追溯法</h3>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="prin-card-body">
+      <table>
+        <tr><td>核心逻辑</td><td>不是靠感觉，而是用具体证据串起自己的学习轨迹</td></tr>
+        <tr><td>示例体现</td><td>小明用作业本上的对勾和红叉做证据，而不是说"我好像会了"</td></tr>
+        <tr><td>如何使用</td><td>① 收集"证据"（作业本、错题本、测验卷）→ ② 按时间排序 → ③ 找规律</td></tr>
+        <tr><td>适用场景</td><td>准备考试复习、向老师和家长展示你的进步</td></tr>
+        <tr><td>使用提醒</td><td>证据越具体越好——"错题本上同一类题错了3次"比"我经常错"有力100倍</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- 应用练习 -->
+  <div class="section-title">✍️ 解析性原理应用练习</div>
+  <p class="section-desc">用刚学到的原理，分析下面两个新情境</p>
+
+  <div class="practice-card">
+    <h4>📝 练习一：帮朋友找到"开窍"的时刻</h4>
+    <p>你的好朋友告诉你："我最近数学应用题突然开窍了！"</p>
+    <span class="p-label">🎯 解析任务</span>
+    <p>请用 <strong>"闪光时刻定位法"</strong> 帮他找出那个"开窍"的时刻和方法</p>
+    <span class="p-label">💡 分析提示</span>
+    <p>先问朋友三个问题：① 是哪道题让你觉得"通了"？② 你当时怎么做的？③ 做之前和做之后有什么不一样？</p>
+    <span class="p-label">🧩 从哪里切入</span>
+    <p>从"那道让他眼睛一亮的题目"开始，而不是从"应用题很难"这个感受开始</p>
+    <span class="p-label">📤 怎么呈现</span>
+    <p>把你问到的答案整理成一段"开窍记录"——时间、题目、方法、变化</p>
+    <div style="margin-top:10px;">
+      <textarea style="width:100%;border:1px solid var(--border);border-radius:6px;padding:8px;font-size:15px;font-family:inherit;min-height:70px;resize:vertical;" placeholder="把你的分析写在这里……"></textarea>
+    </div>
+  </div>
+
+  <div class="practice-card">
+    <h4>📝 练习二：分析你自己的成绩进步</h4>
+    <p>找出你连续两次单元测验的成绩单（或作业本），对比分析</p>
+    <span class="p-label">🎯 解析任务</span>
+    <p>用 <strong>"前后对比法"</strong> 找出你做了哪些不一样的事</p>
+    <span class="p-label">💡 分析提示</span>
+    <p>不要只看分数变化！要对比：① 错的题是否变成了对的？② 错的原因变了没有（从粗心变成方法问题，还是反过来）？</p>
+    <span class="p-label">🧩 从哪里切入</span>
+    <p>找一道"第一次错了、第二次对了"的题——重点分析这两次你的思考过程有什么不同</p>
+    <span class="p-label">📤 怎么呈现</span>
+    <p>画一个简单的对比表格："第一次怎么想的 → 第二次怎么想的 → 中间发生了什么"</p>
+    <div style="margin-top:10px;">
+      <textarea style="width:100%;border:1px solid var(--border);border-radius:6px;padding:8px;font-size:15px;font-family:inherit;min-height:70px;resize:vertical;" placeholder="把你的对比分析写在这里……"></textarea>
+    </div>
+  </div>
+
+  <!-- 自我检测 -->
+  <div class="section-title">✅ 自我检测</div>
+  <p class="section-desc">诚实回答下面的问题，检验自己是否真的掌握了</p>
+
+  <div class="self-check-progress">
+    <div>你的掌握进度：<span id="checkScore">0</span>/5</div>
+    <div class="bar-bg"><div class="bar-fill" id="checkBar"></div></div>
+  </div>
+
+  <div class="check-grid">
+    <div class="check-item">
+      <span class="q-icon">🧠</span>
+      <div class="q-text">
+        我能说出至少2条解析性原理的名称和核心逻辑吗？
+        <div class="btn-group">
+          <span class="btn-yes" onclick="selfCheck(this,true)">能 ✅</span>
+          <span class="btn-no" onclick="selfCheck(this,false)">还不能 ❌</span>
+        </div>
+      </div>
+    </div>
+    <div class="check-item">
+      <span class="q-icon">🌟</span>
+      <div class="q-text">
+        我能用"闪光时刻定位法"分析自己今天的一个学习成功时刻吗？
+        <div class="btn-group">
+          <span class="btn-yes" onclick="selfCheck(this,true)">能 ✅</span>
+          <span class="btn-no" onclick="selfCheck(this,false)">还不能 ❌</span>
+        </div>
+      </div>
+    </div>
+    <div class="check-item">
+      <span class="q-icon">🔍</span>
+      <div class="q-text">
+        我能不能区分"碰巧做对"和"真正掌握"？（用你自己的例子验证）
+        <div class="btn-group">
+          <span class="btn-yes" onclick="selfCheck(this,true)">能 ✅</span>
+          <span class="btn-no" onclick="selfCheck(this,false)">还不能 ❌</span>
+        </div>
+      </div>
+    </div>
+    <div class="check-item">
+      <span class="q-icon">⚖️</span>
+      <div class="q-text">
+        如果让用"前后对比法"分析你的体育课进步，你会怎么用？
+        <div class="btn-group">
+          <span class="btn-yes" onclick="selfCheck(this,true)">有思路 ✅</span>
+          <span class="btn-no" onclick="selfCheck(this,false)">没思路 ❌</span>
+        </div>
+      </div>
+    </div>
+    <div class="check-item">
+      <span class="q-icon">🔗</span>
+      <div class="q-text">
+        我能说出"证据链追溯法"和"前后对比法"的区别吗？
+        <div class="btn-group">
+          <span class="btn-yes" onclick="selfCheck(this,true)">能 ✅</span>
+          <span class="btn-no" onclick="selfCheck(this,false)">还不能 ❌</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function togglePrin(el) {
+  el.classList.toggle('open');
+}
+
+function selfCheck(el, value) {
+  const parent = el.closest('.btn-group');
+  parent.querySelectorAll('.btn-yes, .btn-no').forEach(b => b.classList.remove('chosen'));
+  el.classList.add('chosen');
+  updateCheckScore();
+}
+
+function updateCheckScore() {
+  const allItems = document.querySelectorAll('.check-item');
+  let score = 0;
+  allItems.forEach(item => {
+    const chosenYes = item.querySelector('.btn-yes.chosen');
+    if (chosenYes) score++;
+  });
+  document.getElementById('checkScore').textContent = score;
+  const pct = (score / 5) * 100;
+  document.getElementById('checkBar').style.width = pct + '%';
+}
+</script>
+</body>
+</html>

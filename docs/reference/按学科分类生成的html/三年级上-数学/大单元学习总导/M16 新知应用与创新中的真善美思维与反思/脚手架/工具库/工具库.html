@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具库——认知放大器</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px 60px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 32px 40px;
+  border-radius: var(--border-radius);
+  margin-bottom: 32px;
+}
+.header h1 { margin: 0 0 8px; font-size: var(--font-h1); }
+.header p { margin: 0; opacity: 0.9; font-size: 16px; }
+.section { margin-bottom: 36px; }
+.section-title {
+  font-size: var(--font-h2);
+  font-weight: 700;
+  color: var(--primary);
+  border-left: 4px solid var(--primary);
+  padding-left: 14px;
+  margin: 0 0 18px;
+}
+.tool-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.tool-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 22px 26px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  transition: box-shadow 0.2s;
+}
+.tool-card:hover {
+  box-shadow: 0 4px 16px rgba(22,119,255,0.12);
+}
+.tool-card h3 {
+  font-size: 20px;
+  color: var(--primary);
+  margin: 0 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tool-card h3 .badge {
+  display: inline-block;
+  font-size: 13px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 20px;
+  padding: 0 12px;
+  line-height: 26px;
+  margin-left: 6px;
+}
+.tool-card .label {
+  font-weight: 600;
+  color: var(--text);
+  margin: 10px 0 4px;
+}
+.tool-card ul {
+  margin: 6px 0 0;
+  padding-left: 22px;
+}
+.tool-card li { margin-bottom: 4px; }
+.tool-card .example {
+  background: #f6f9ff;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 10px 0 0;
+  font-size: 15px;
+  color: var(--text-secondary);
+  border-left: 3px solid var(--accent);
+}
+.platform-tag {
+  display: inline-block;
+  background: #e6f0ff;
+  color: var(--primary);
+  border-radius: 16px;
+  padding: 2px 12px;
+  font-size: 14px;
+  margin: 2px 4px 2px 0;
+}
+.rec-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  margin-top: 12px;
+}
+.rec-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 16px;
+}
+.rec-table td {
+  padding: 12px 16px;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+}
+.rec-table tr:last-child td { border-bottom: none; }
+.rec-table tr:hover td { background: #f0f5ff; }
+.tag-basic { color: #389e0d; font-weight: 600; }
+.tag-adv { color: #d46b08; font-weight: 600; }
+.tag-pro { color: #cf1322; font-weight: 600; }
+.interactive-tip {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin-top: 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.interactive-tip:hover { background: #fff8d6; }
+.interactive-tip .hint { display: none; margin-top: 12px; color: var(--text-secondary); font-size: 15px; }
+.interactive-tip.active .hint { display: block; }
+@media (max-width: 640px) {
+  .container { padding: 16px; }
+  .header { padding: 24px 20px; }
+  .tool-card { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🧰 工具库——认知放大器</h1>
+  <p>掌握这些工具，你就能像数学家和科学家一样思考！点击卡片深入了解每个工具的使用方法。</p>
+</div>
+
+<!-- 思维工具 -->
+<div class="section">
+  <h2 class="section-title">💡 思维工具</h2>
+  <div class="tool-grid">
+
+    <div class="tool-card" onclick="this.classList.toggle('active')">
+      <h3>📏 工具 1：时间轴 <span class="badge">基础</span></h3>
+      <p><strong>用途：</strong>用一条线来表示时间的先后顺序，帮你理清时间关系。</p>
+      <div class="label">使用步骤：</div>
+      <ol>
+        <li>画一条水平线，左端为起点，右端为终点</li>
+        <li>在线上标出关键时间点</li>
+        <li>在两个时间点之间标注时长</li>
+      </ol>
+      <div class="example">📌 <strong>示例：</strong>从 7:00 到 7:40 的时间轴<br>
+      7:00 ——（穿衣 5 分钟）—— 7:05 ——（刷牙 8 分钟）—— 7:13 ——（早餐 15 分钟）—— 7:28 ——（走路 12 分钟）—— 7:40</div>
+      <div style="display:none;margin-top:10px;color:var(--text-secondary);font-size:15px;">
+        <strong>适用场景：</strong>规划作息时间、分析时间安排、理解历史事件顺序
+      </div>
+    </div>
+
+    <div class="tool-card" onclick="this.classList.toggle('active')">
+      <h3>🧠 工具 2：思维导图 <span class="badge" style="background:#d46b08;">进阶</span></h3>
+      <p><strong>用途：</strong>用中心向外发散的方式，把时间知识组织成一张"知识网"。</p>
+      <div class="label">使用步骤：</div>
+      <ol>
+        <li>中心写"时间"</li>
+        <li>向外画出三个分支：时、分、秒</li>
+        <li>每个分支继续延伸：定义、换算关系、生活应用</li>
+      </ol>
+      <div class="example">📌 <strong>示例：</strong>中心"时间"→ 分支"时"→ 子分支"1 小时 = 60 分钟""一天 24 小时"</div>
+      <div style="display:none;margin-top:10px;color:var(--text-secondary);font-size:15px;">
+        <strong>适用场景：</strong>复习总结、知识梳理、头脑风暴
+      </div>
+    </div>
+
+    <div class="tool-card" onclick="this.classList.toggle('active')">
+      <h3>📊 工具 3：对比表格 <span class="badge">基础</span></h3>
+      <p><strong>用途：</strong>用表格把多个数据放在一起比较，发现差异和规律。</p>
+      <div class="label">使用步骤：</div>
+      <ol>
+        <li>确定要比较的对象（列）</li>
+        <li>确定比较的维度（行）</li>
+        <li>填入数据，观察差异</li>
+      </ol>
+      <div class="example">📌 <strong>适用场景：</strong>数据对比、实验记录、方案比较</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 数字工具 -->
+<div class="section">
+  <h2 class="section-title">📱 数字工具</h2>
+  <div class="tool-grid">
+
+    <div class="tool-card" onclick="this.classList.toggle('active')">
+      <h3>🕐 工具 4：在线钟表模拟器 <span class="badge" style="background:#d46b08;">进阶</span></h3>
+      <p><strong>用途：</strong>在电脑上模拟钟表的指针运动，帮你理解时针、分针、秒针的关系。</p>
+      <div class="label">使用步骤：</div>
+      <ol>
+        <li>打开 Toy Theater 的 Clock 工具</li>
+        <li>拖动指针调整时间</li>
+        <li>观察指针之间的角度关系</li>
+      </ol>
+      <div class="label">推荐平台：</div>
+      <p><span class="platform-tag">Toy Theater Clock</span> <span class="platform-tag">Math Playground Clock</span></p>
+    </div>
+
+    <div class="tool-card" onclick="this.classList.toggle('active')">
+      <h3>⏱️ 工具 5：计时器 App <span class="badge">基础</span></h3>
+      <p><strong>用途：</strong>用手机或电脑的计时器进行各种时间体验活动。</p>
+      <div class="label">使用步骤：</div>
+      <ol>
+        <li>设置计时时长</li>
+        <li>开始计时</li>
+        <li>在计时结束时记录感受</li>
+      </ol>
+      <div class="label">推荐平台：</div>
+      <p><span class="platform-tag">手机自带计时器</span> <span class="platform-tag">timeanddate.com 秒表</span></p>
+    </div>
+
+    <div class="tool-card" onclick="this.classList.toggle('active')">
+      <h3>🤖 工具 6：AI 辅助学习 <span class="badge" style="background:#cf1322;">高阶</span></h3>
+      <p><strong>用途：</strong>用 AI 工具帮你检查时间换算是否正确，或者生成练习题。</p>
+      <div class="label">使用步骤：</div>
+      <ol>
+        <li>向 AI 提问："请帮我检查：3 分钟 = 180 秒，对吗？"</li>
+        <li>请 AI 出题："请给我出 5 道时间换算题"</li>
+        <li>做完后请 AI 批改</li>
+      </ol>
+      <div class="label">推荐平台：</div>
+      <p><span class="platform-tag">文心一言</span> <span class="platform-tag">通义千问</span> <span class="platform-tag">Kimi</span></p>
+    </div>
+
+  </div>
+</div>
+
+<!-- 数据工具 -->
+<div class="section">
+  <h2 class="section-title">📈 数据工具</h2>
+  <div class="tool-grid">
+
+    <div class="tool-card" onclick="this.classList.toggle('active')">
+      <h3>📊 工具 7：柱状图 <span class="badge" style="background:#d46b08;">进阶</span></h3>
+      <p><strong>用途：</strong>用柱子的高度来比较不同数据的大小。</p>
+      <div class="label">使用步骤：</div>
+      <ol>
+        <li>确定横轴（分类）和纵轴（数值）</li>
+        <li>每个分类画一根柱子，高度代表数值</li>
+        <li>比较柱子的高度</li>
+      </ol>
+      <div class="example">📌 <strong>适用场景：</strong>数据可视化、对比分析、成果展示</div>
+    </div>
+
+    <div class="tool-card" onclick="this.classList.toggle('active')">
+      <h3>🥧 工具 8：饼图 <span class="badge" style="background:#cf1322;">高阶</span></h3>
+      <p><strong>用途：</strong>用扇形的大小来展示各部分占总体的比例。</p>
+      <div class="label">使用步骤：</div>
+      <ol>
+        <li>计算各部分占总体的百分比</li>
+        <li>每个百分比对应一个扇形角度（百分比 × 360°）</li>
+        <li>画出饼图，标注各部分名称</li>
+      </ol>
+      <div class="example">📌 <strong>示例：</strong>一天 24 小时的时间分配饼图</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 分层推荐 -->
+<div class="section">
+  <h2 class="section-title">🎯 分层推荐</h2>
+  <table class="rec-table">
+    <thead><tr><th>层级</th><th>推荐工具</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td class="tag-basic">⭐ 基础</td><td>时间轴、对比表格、计时器 App</td><td>易上手，适合所有学生</td></tr>
+      <tr><td class="tag-adv">🏆 进阶</td><td>思维导图、柱状图、在线钟表模拟器</td><td>需要一定操作能力</td></tr>
+      <tr><td class="tag-pro">🚀 高阶</td><td>饼图、AI 辅助学习</td><td>需要综合运用能力</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="interactive-tip" onclick="this.classList.toggle('active')">
+  <strong>💡 小挑战 👆 点击展开</strong>
+  <div class="hint">
+    <p><strong>试试看：</strong>用今天学到的任意一个工具，规划你明天的放学后时间！</p>
+    <p>• 用<strong>时间轴</strong>画出 16:00 到 21:00 的安排<br>
+       • 用<strong>饼图</strong>分析你一天的时间都花在哪儿了<br>
+       • 用<strong>AI 工具</strong>出一道时间换算题考考自己</p>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

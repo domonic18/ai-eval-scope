@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性示例 - 乐乐学时间</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; font-size: var(--font-body); line-height: var(--line-height); color: var(--text); background: var(--bg); }
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+h1 { font-size: var(--font-h1); color: var(--primary); text-align: center; margin: 16px 0 8px; }
+.subtitle { text-align: center; color: var(--text-secondary); margin-bottom: 24px; font-size: 16px; }
+h2 { font-size: var(--font-h2); color: var(--primary); border-left: 4px solid var(--primary); padding-left: 12px; margin: 28px 0 16px; }
+h3 { font-size: 20px; color: var(--text); margin: 16px 0 10px; }
+h4 { font-size: 18px; color: var(--primary); margin: 14px 0 8px; }
+.story-box { background: linear-gradient(135deg, #e6f7ff, #f0f5ff); border: 1px solid #91d5ff; border-radius: var(--border-radius); padding: 16px 20px; margin: 12px 0; position: relative; }
+.story-box::before { content: ""; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--primary); border-radius: 4px 0 0 4px; }
+.expert-box { background: #fff7e6; border: 1px solid #ffd591; border-radius: var(--border-radius); padding: 16px 20px; margin: 16px 0; }
+.expert-box h4 { color: #d46b08; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 16px; }
+th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; }
+th { background: var(--bg); color: var(--primary); font-weight: 600; }
+.step-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); margin-bottom: 12px; border: 1px solid var(--border); overflow: hidden; }
+.step-header { display: flex; align-items: center; padding: 12px 16px; cursor: pointer; background: var(--card-bg); transition: background 0.2s; }
+.step-header:hover { background: var(--bg); }
+.step-num { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: #fff; font-size: 14px; font-weight: 700; margin-right: 10px; flex-shrink: 0; }
+.step-header h4 { margin: 0; flex: 1; color: var(--text); font-size: 17px; }
+.step-arrow { font-size: 18px; color: var(--primary); transition: transform 0.3s; }
+.step-arrow.open { transform: rotate(180deg); }
+.step-body { max-height: 0; overflow: hidden; transition: max-height 0.5s ease; }
+.step-body-inner { padding: 0 16px 14px; }
+.step-body.open { max-height: 2000px; }
+.conclusion-box { background: linear-gradient(135deg, var(--primary), #4096ff); color: #fff; border-radius: var(--border-radius); padding: 20px; margin: 16px 0; text-align: center; }
+.conclusion-box p { margin: 8px 0; font-size: 17px; }
+.four-q { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+.q-item { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 14px; text-align: center; transition: all 0.3s; cursor: default; }
+.q-item:hover { border-color: var(--primary); box-shadow: var(--shadow); transform: translateY(-2px); }
+.q-item .q-icon { font-size: 28px; display: block; margin-bottom: 6px; }
+.q-item .q-text { font-size: 15px; color: var(--text); }
+.method-list { counter-reset: method; list-style: none; padding: 0; }
+.method-list li { counter-increment: method; padding: 10px 0 10px 36px; position: relative; border-bottom: 1px dashed var(--border); }
+.method-list li::before { content: counter(method); position: absolute; left: 0; width: 24px; height: 24px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; }
+.warn-box { background: #fff2f0; border: 1px solid #ffccc7; border-radius: var(--border-radius); padding: 12px 16px; margin: 10px 0; }
+.warn-box h4 { color: #cf1322; }
+.self-check-list { list-style: none; padding: 0; }
+.self-check-list li { padding: 10px 0 10px 32px; border-bottom: 1px dashed var(--border); position: relative; }
+.self-check-list li:last-child { border-bottom: none; }
+.self-check-list li::before { content: "📌"; position: absolute; left: 0; font-size: 16px; }
+.practice-box { background: #f6ffed; border: 1px solid #b7eb8f; border-radius: var(--border-radius); padding: 14px 16px; margin: 12px 0; }
+.practice-box h4 { color: #389e0d; }
+.highlight-text { color: var(--primary); font-weight: 600; }
+.animate-in { animation: fadeInUp 0.6s ease; }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 600px) { .container { padding: 12px; } .four-q { grid-template-columns: 1fr; } table { font-size: 14px; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📖 解析性示例</h1>
+  <p class="subtitle">乐乐学时间的经历——看"从不会到会"的学习过程是如何发生的</p>
+
+  <h2>🎬 解析任务情境</h2>
+  <div class="story-box">
+    <p>三年级的乐乐正在学习"时、分、秒"这个单元。前几天她还觉得钟表上的指针转来转去"好晕"，今天做练习题时，她突然发现自己能做对"3小时=180分钟"这样的换算了！她兴奋地跑去跟妈妈说："妈妈妈妈，我学会看时间了！"</p>
+    <p>妈妈笑着问："那你跟我说说，你是怎么学会的？"乐乐愣住了——是啊，我是怎么学会的呢？</p>
+    <p>她想起了几个重要的时刻……</p>
+    <ul>
+      <li>她把家里的挂钟看了好久好久……</li>
+      <li>老师在黑板上画了一张大大的关系图：1小时=60分钟↔1分钟=60秒</li>
+      <li>她用跳绳体会了1分钟的感觉</li>
+      <li>她算着还有15分钟放学，一路数着秒针挨到下课</li>
+    </ul>
+  </div>
+
+  <h2>🎯 核心问题</h2>
+  <div class="expert-box">
+    <p><strong>乐乐"学会"了看时间——但在这个过程中，她到底经历了哪些"关键步骤"？是什么让她从"不会"走到了"会"？那些"开心的感觉"是在哪个环节出现的？</strong></p>
+  </div>
+
+  <h2>📊 关键信息提取</h2>
+  <table>
+    <tr><th>情境信息</th><th>说明什么</th><th>为什么重要</th></tr>
+    <tr>
+      <td>乐乐盯着家里的挂钟看了很久</td>
+      <td>她在主动观察</td>
+      <td>主动观察是学习的第一步——没人逼她看，她自己想看明白</td>
+    </tr>
+    <tr>
+      <td>老师画了时、分、秒的关系图</td>
+      <td>她得到了"知识框架"</td>
+      <td>清晰的结构帮她建立了概念间的联系</td>
+    </tr>
+    <tr>
+      <td>她用跳绳体会了1分钟的长度</td>
+      <td>抽象概念和身体体验结合</td>
+      <td>身体记忆比文字更牢固——"跳了120下=1分钟"</td>
+    </tr>
+    <tr>
+      <td>她期待放学，数着秒针度过最后15分钟</td>
+      <td>体会到了"等待时时间很慢"的真实感受</td>
+      <td>情感体验加深了记忆</td>
+    </tr>
+  </table>
+
+  <h2>🔬 专家解析过程</h2>
+
+  <div class="step-card">
+    <div class="step-header" onclick="toggleStep(this)">
+      <span class="step-num">1</span>
+      <h4>先看见什么</h4>
+      <span class="step-arrow open">▼</span>
+    </div>
+    <div class="step-body open">
+      <div class="step-body-inner">
+        <p>乐乐的学习过程有4个关键环节：<span class="highlight-text">观察→理解→体验→应用</span>。不是一步到位，而是逐步递进的。</p>
+        <p style="color: var(--text-secondary);">💡 学习从来不是"一下子就会了"的。找到这几个环节，就能看清"从不会到会"的路径图。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="step-card">
+    <div class="step-header" onclick="toggleStep(this)">
+      <span class="step-num">2</span>
+      <h4>判断问题属于哪一类</h4>
+      <span class="step-arrow">▼</span>
+    </div>
+    <div class="step-body">
+      <div class="step-body-inner">
+        <p>这是一个"分析学习过程"的问题——不是要算时间换算题，而是要"看清学习的步骤"。</p>
+        <p style="color: var(--text-secondary);">💡 数学题有两种：一种是用公式算答案，一种是分析"怎么学会的"。后者就是"解析性思维"。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="step-card">
+    <div class="step-header" onclick="toggleStep(this)">
+      <span class="step-num">3</span>
+      <h4>调用哪些概念或方法</h4>
+      <span class="step-arrow">▼</span>
+    </div>
+    <div class="step-body">
+      <div class="step-body-inner">
+        <p>用到两个关键方法：</p>
+        <ul>
+          <li><strong>要素拆解法</strong>——把"学会"拆成几个步骤</li>
+          <li><strong>因果追溯法</strong>——追问"为什么这个步骤让她进步了"</li>
+        </ul>
+        <p style="color: var(--text-secondary);">💡 遇到复杂的问题，先拆再追——拆开来看清楚，追根溯源想明白。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="step-card">
+    <div class="step-header" onclick="toggleStep(this)">
+      <span class="step-num">4</span>
+      <h4>如何进行推理</h4>
+      <span class="step-arrow">▼</span>
+    </div>
+    <div class="step-body">
+      <div class="step-body-inner">
+        <p><strong>推理过程：</strong></p>
+        <ol>
+          <li>乐乐一开始"不会"→需要经历从0到1的过程</li>
+          <li>她"盯着挂钟看"→主动观察，学习的第一级台阶</li>
+          <li>她看老师画图→理解概念关系，第二级台阶</li>
+          <li>她用跳绳体验1分钟→身体感知，第三级台阶</li>
+          <li>她期待放学数秒→情感体验，第四级台阶</li>
+          <li>四个台阶走完→从"不会"变成了"会"</li>
+        </ol>
+        <p><span class="highlight-text">关键发现：</span>真正的"学会"不是最后一个时刻才发生的，而是在这4个环节的每一个中逐步积累的。每一个环节都带来了"一点点懂了"的感觉——这就是"学习幸福"的来源。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="step-card">
+    <div class="step-header" onclick="toggleStep(this)">
+      <span class="step-num">5</span>
+      <h4>怎样形成结论</h4>
+      <span class="step-arrow">▼</span>
+    </div>
+    <div class="step-body">
+      <div class="step-body-inner">
+        <p><strong>乐乐的学习幸福来自：</strong></p>
+        <div class="four-q">
+          <div class="q-item"><span class="q-icon">🔍</span><span class="q-text">好奇心的满足<br>盯着钟表看→原来如此！</span></div>
+          <div class="q-item"><span class="q-icon">💡</span><span class="q-text">理解的突破<br>看关系图→我懂了！</span></div>
+          <div class="q-item"><span class="q-icon">🏃</span><span class="q-text">身体的参与<br>跳绳体验→我记住了！</span></div>
+          <div class="q-item"><span class="q-icon">❤️</span><span class="q-text">情感的共鸣<br>期待放学→时间真的可以感受到！</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="conclusion-box">
+    <p><strong>🌟 结论：</strong></p>
+    <p>乐乐学会看时间的经历告诉我们：</p>
+    <p style="font-size: 19px; font-weight: 600;">学习的幸福感不是偶然出现的，它藏在每一次主动观察、每一次理解突破、每一次身体体验和每一次情感共鸣中。</p>
+  </div>
+
+  <h2>💭 下次学习时问问自己</h2>
+  <div class="four-q">
+    <div class="q-item" onclick="this.style.borderColor='var(--primary)'"><span class="q-icon">👀</span><span class="q-text">我主动观察了吗？</span></div>
+    <div class="q-item" onclick="this.style.borderColor='var(--primary)'"><span class="q-icon">🧩</span><span class="q-text">我理解概念之间的关系了吗？</span></div>
+    <div class="q-item" onclick="this.style.borderColor='var(--primary)'"><span class="q-icon">🤸</span><span class="q-text">我用身体或行动体验了吗？</span></div>
+    <div class="q-item" onclick="this.style.borderColor='var(--primary)'"><span class="q-icon">💖</span><span class="q-text">我产生了什么感受？</span></div>
+  </div>
+
+  <h2>📝 方法提炼</h2>
+  <p>以后遇到"分析学习过程"的问题，可以这样做：</p>
+  <ol class="method-list">
+    <li><strong>画过程线</strong>——把"从不会到会"画成一条线，标出关键节点</li>
+    <li><strong>标类型</strong>——在每个节点上标注：这是观察、理解、体验还是应用？</li>
+    <li><strong>找转折</strong>——看看哪个节点让你感觉"一下子明白了"</li>
+    <li><strong>问为什么</strong>——追问"为什么这个节点特别重要"</li>
+    <li><strong>归纳总结</strong>——把学到的提炼成"我可以带走的方法"</li>
+  </ol>
+
+  <h2>⚠️ 易错提醒</h2>
+  <div class="warn-box">
+    <h4>易错点1：只关注"会不会做对题目"</h4>
+    <p>不要只盯着结果，也要关注过程。</p>
+  </div>
+  <div class="warn-box">
+    <h4>易错点2：认为"学会"是一下子发生的</h4>
+    <p>你的学习过程一定有步骤、有阶段。回头看看，找到那些"中间步骤"。</p>
+  </div>
+  <div class="warn-box">
+    <h4>易错点3：把"学习"和"开心"割裂开</h4>
+    <p>学会的那一瞬间，就是开心的。你要做的是认出那个瞬间。</p>
+  </div>
+
+  <h2>✏️ 自主迁移小练习</h2>
+  <div class="practice-box">
+    <h4>🎯 想想你学习"1分钟=60秒"的过程</h4>
+    <p>有没有一个"突然明白了"的瞬间？请你：</p>
+    <ol>
+      <li>描述当时发生了什么（你在哪里？在做什么？）</li>
+      <li>那个瞬间之前和之后，有什么不同？</li>
+      <li>你觉得为什么是"那个瞬间"让你明白了？</li>
+    </ol>
+    <p style="color: var(--text-secondary);">💡 如果找不到"突然明白了"的瞬间，可能你的学习是"慢慢明白"的——同样可以描述这个过程。</p>
+    <button style="padding: 8px 20px; background: var(--primary); color: #fff; border: none; border-radius: 16px; font-size: 15px; cursor: pointer; font-family: inherit;" onclick="this.textContent='✍️ 试试在纸上写下你的故事！'">💡 开始回忆</button>
+  </div>
+
+  <h2>✅ 学习自评</h2>
+  <ul class="self-check-list">
+    <li>我能不能说出乐乐学会看时间的4个关键环节是什么？</li>
+    <li>为什么说"盯着挂钟看"是主动观察？主动观察和被动看有什么区别？</li>
+    <li>为什么"跳绳体验1分钟"和"期待放学数秒"对学习有帮助？</li>
+    <li>如果让我分析"我怎么学会了______"，我会从哪里开始？</li>
+    <li>我觉得"解析性思维"对我以后的学习有帮助吗？为什么？</li>
+  </ul>
+
+  <div style="text-align:center; margin-top: 28px; padding: 16px; background: linear-gradient(135deg, var(--bg), #fff); border-radius: var(--border-radius);">
+    <p style="color: var(--primary); font-weight: 600;">🌟🌟🌟 每一次学习都有幸福，关键在于你会不会发现它！</p>
+  </div>
+</div>
+<script>
+function toggleStep(el) {
+  var body = el.nextElementSibling;
+  var arrow = el.querySelector('.step-arrow');
+  body.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+</script>
+</body>
+</html>

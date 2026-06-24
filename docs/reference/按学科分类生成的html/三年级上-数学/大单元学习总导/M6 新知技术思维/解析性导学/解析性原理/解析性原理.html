@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性原理 — 时、分、秒</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 20px;
+}
+.container { width: 100%; max-width: none; padding: 0; }
+.page-header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 30px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  text-align: center;
+}
+.page-header h1 { font-size: var(--font-h1); margin-bottom: 8px; }
+.page-header .meta { opacity: 0.85; font-size: 14px; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 14px;
+}
+.card h3 {
+  font-size: 18px;
+  color: var(--text);
+  margin: 14px 0 8px;
+}
+.intro-box {
+  background: linear-gradient(135deg, #e6f4ff, #f0f5ff);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-bottom: 20px;
+  border-left: 5px solid var(--primary);
+  font-size: 17px;
+}
+.principle-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+.principle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  background: #f5f5f5;
+  cursor: pointer;
+  transition: background 0.2s;
+  user-select: none;
+}
+.principle-header:hover { background: #e6f4ff; }
+.principle-header .pnum {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+.principle-header .ptitle { font-weight: 600; font-size: 16px; flex: 1; }
+.principle-header .parrow {
+  font-size: 14px;
+  color: var(--text-secondary);
+  transition: transform 0.3s;
+}
+.principle-header.open .parrow { transform: rotate(180deg); }
+.principle-body { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
+.principle-body.open { max-height: 800px; }
+.principle-body-inner { padding: 0 20px 20px; }
+.principle-body-inner p { margin-bottom: 8px; }
+.plabel {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 4px;
+  margin: 6px 4px 6px 0;
+}
+.plabel-scene { background: #e6f4ff; color: var(--primary); }
+.plabel-tip { background: #fff7e6; color: #d46b08; }
+.practice-box {
+  background: #fafafa;
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-top: 14px;
+  border: 1px dashed var(--border);
+}
+.practice-box h3 { color: var(--primary); }
+.hint-btn {
+  display: inline-block;
+  padding: 6px 16px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+  margin-top: 8px;
+}
+.hint-btn:hover { background: var(--primary-hover); }
+.hint-text {
+  display: none;
+  margin-top: 10px;
+  padding: 12px;
+  background: #fff;
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+  font-size: 15px;
+}
+.hint-text.show { display: block; }
+.check-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+.check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  background: #fafafa;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+  user-select: none;
+}
+.check-item:hover { background: #e6f4ff; }
+.check-item .cb {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  font-size: 14px;
+  color: transparent;
+}
+.check-item.checked .cb {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+@media (max-width: 640px) {
+  .check-grid { grid-template-columns: 1fr; }
+  .page-header { padding: 20px; }
+  body { padding: 12px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="page-header">
+  <h1>🧠 解析性原理</h1>
+  <div class="meta">数学 · 三年级上 · 时、分、秒 · M6 新知技术思维</div>
+</div>
+
+<div class="intro-box">
+  <strong>🤔 还记得运动会赛跑的例子吗？</strong> 你并不是"背"了一个结论，而是用了一套分析方法：先看清前提→提取信息→统一规则→排序比较→验证结论。这套方法可以迁移到很多类似问题中，这就是<strong>解析性原理</strong>。下面我们一起认识 5 条核心原理！
+</div>
+
+<!-- 原理列表 -->
+<div class="card">
+  <h2>📐 五大解析性原理</h2>
+  <p style="margin-bottom: 12px; color: var(--text-secondary);">👇 点击每条原理，展开查看详情</p>
+
+  <div class="principle-card">
+    <div class="principle-header" onclick="togglePrinciple(this)">
+      <span style="display:flex;align-items:center;"><span class="pnum">1</span><span class="ptitle">前提判断原理</span></span>
+      <span class="parrow">▼</span>
+    </div>
+    <div class="principle-body">
+      <div class="principle-body-inner">
+        <p><strong>📖 原理说明：</strong>解决任何问题前，先搞清楚"比什么"和"怎么比"——比赛的规则决定了判断标准。</p>
+        <p><strong>🏃 在示例中的体现：</strong>赛跑比的是"用时少"而不是"数字大"——这就是前提。</p>
+        <p><strong>✏️ 如何使用：</strong>读题时先圈出"比较标准"的关键词（如"快""贵""多""省"）。</p>
+        <p><span class="plabel plabel-scene">适用场景</span> 任何比较类问题（买东西比价格、运动会比成绩、考试比分数）</p>
+        <p><span class="plabel plabel-tip">💡 使用提醒</span> 不要急于计算，先搞清楚比什么！</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="principle-card">
+    <div class="principle-header" onclick="togglePrinciple(this)">
+      <span style="display:flex;align-items:center;"><span class="pnum">2</span><span class="ptitle">关键信息提取原理</span></span>
+      <span class="parrow">▼</span>
+    </div>
+    <div class="principle-body">
+      <div class="principle-body-inner">
+        <p><strong>📖 原理说明：</strong>从题目中提取真正有用的信息，忽略无关信息。</p>
+        <p><strong>🏃 在示例中的体现：</strong>提取了"14秒、15秒、16秒"和"100米"（同样路程）。</p>
+        <p><strong>✏️ 如何使用：</strong>用"谁/做什么/多少时间/结果如何"四问法提取。</p>
+        <p><span class="plabel plabel-scene">适用场景</span> 所有需要分析的问题，特别是应用题</p>
+        <p><span class="plabel plabel-tip">💡 使用提醒</span> 提取信息时不要漏掉细节，如"单位"和"条件"。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="principle-card">
+    <div class="principle-header" onclick="togglePrinciple(this)">
+      <span style="display:flex;align-items:center;"><span class="pnum">3</span><span class="ptitle">单位统一原理</span></span>
+      <span class="parrow">▼</span>
+    </div>
+    <div class="principle-body">
+      <div class="principle-body-inner">
+        <p><strong>📖 原理说明：</strong>比较前必须确保单位一致——不同单位不能直接比。</p>
+        <p><strong>🏃 在示例中的体现：</strong>成绩都是"秒"，所以可以直接比较。</p>
+        <p><strong>✏️ 如何使用：</strong>见不同单位（如"2分15秒"和"120秒"），先换算成同一单位再比。</p>
+        <p><span class="plabel plabel-scene">适用场景</span> 时间单位换算、长度/重量/货币比较</p>
+        <p><span class="plabel plabel-tip">💡 使用提醒</span> 大单位转小单位用乘法，小单位转大单位用除法。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="principle-card">
+    <div class="principle-header" onclick="togglePrinciple(this)">
+      <span style="display:flex;align-items:center;"><span class="pnum">4</span><span class="ptitle">关系推理原理</span></span>
+      <span class="parrow">▼</span>
+    </div>
+    <div class="principle-body">
+      <div class="principle-body-inner">
+        <p><strong>📖 原理说明：</strong>找到两个量之间的关系，通过关系进行推理。</p>
+        <p><strong>🏃 在示例中的体现：</strong>路程相同→时间越短→速度越快。</p>
+        <p><strong>✏️ 如何使用：</strong>画关系图或列关系式，标出已知和未知。</p>
+        <p><span class="plabel plabel-scene">适用场景</span> 速度、单价、效率等有固定关系的比较问题</p>
+        <p><span class="plabel plabel-tip">💡 使用提醒</span> 注意正比和反比关系的区别。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="principle-card">
+    <div class="principle-header" onclick="togglePrinciple(this)">
+      <span style="display:flex;align-items:center;"><span class="pnum">5</span><span class="ptitle">结果验证原理</span></span>
+      <span class="parrow">▼</span>
+    </div>
+    <div class="principle-body">
+      <div class="principle-body-inner">
+        <p><strong>📖 原理说明：</strong>用常识判断答案是否合理——让结果"经得起问"。</p>
+        <p><strong>🏃 在示例中的体现：</strong>冠军通常用时最少→14秒是三个中最小的→合理。</p>
+        <p><strong>✏️ 如何使用：</strong>自问"这个结果符合常理吗？"</p>
+        <p><span class="plabel plabel-scene">适用场景</span> 做完任何题目后，养成检验的习惯</p>
+        <p><span class="plabel plabel-tip">💡 使用提醒</span> 多角度验证，可以用逆向思维（反过来算一次）。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 练习 -->
+<div class="card">
+  <h2>🏋️ 来练练手</h2>
+
+  <div class="practice-box">
+    <h3>📌 练习1：游泳比赛成绩分析</h3>
+    <p><strong>情境：</strong>游泳比赛中，小华的50米成绩是1分10秒，小丽的50米成绩是75秒——谁游得快？</p>
+    <p><strong>建议使用的原理：</strong>关键信息提取原理 + 单位统一原理</p>
+    <button class="hint-btn" onclick="toggleHint('hint1')">🔍 看看提示</button>
+    <div id="hint1" class="hint-text">
+      <p><strong>提示：</strong>先把"1分10秒"换算成多少秒？1分 = 60秒，所以1分10秒 = 60 + 10 = <strong>70秒</strong>。然后比较70秒和75秒——时间越少游得越快！</p>
+      <p style="margin-top: 6px;"><strong>✅ 答案：</strong>小华（70秒）比小丽（75秒）快！</p>
+    </div>
+  </div>
+
+  <div class="practice-box" style="margin-top: 14px;">
+    <h3>📌 练习2：作业时间管理</h3>
+    <p><strong>情境：</strong>小强说"我昨天做语文作业用了30分钟，做数学作业用了1200秒，哪个用时更长？"</p>
+    <p><strong>建议使用的原理：</strong>单位统一原理 + 关系推理原理</p>
+    <button class="hint-btn" onclick="toggleHint('hint2')">🔍 看看提示</button>
+    <div id="hint2" class="hint-text">
+      <p><strong>提示：</strong>先把30分钟换算成秒——1分钟 = 60秒，30分钟 = 30 × 60 = <strong>1800秒</strong>。然后比较1800秒和1200秒！</p>
+      <p style="margin-top: 6px;"><strong>✅ 答案：</strong>语文作业用了1800秒，比数学作业的1200秒更长！</p>
+    </div>
+  </div>
+</div>
+
+<!-- 自我检测 -->
+<div class="card">
+  <h2>✅ 自我检测</h2>
+  <p>点击每一项，检查自己是否掌握了 👇</p>
+  <div class="check-grid">
+    <div class="check-item" onclick="toggleCheck(this)"><span class="cb">✓</span> 我能说出5条解析性原理的名称</div>
+    <div class="check-item" onclick="toggleCheck(this)"><span class="cb">✓</span> 我能用"前提判断原理"分析生活中的比较问题</div>
+    <div class="check-item" onclick="toggleCheck(this)"><span class="cb">✓</span> 做时间单位换算，我养成了"先统一再比较"的习惯</div>
+    <div class="check-item" onclick="toggleCheck(this)"><span class="cb">✓</span> 我能举出"单位统一原理"在非时间问题中的应用</div>
+    <div class="check-item" onclick="toggleCheck(this)"><span class="cb">✓</span> 做完一道题，我会问自己"这个答案合理吗？"</div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function togglePrinciple(header) {
+  header.classList.toggle('open');
+  var body = header.nextElementSibling;
+  if (body) { body.classList.toggle('open'); }
+}
+function toggleHint(id) {
+  var el = document.getElementById(id);
+  if (el) { el.classList.toggle('show'); }
+}
+function toggleCheck(item) {
+  item.classList.toggle('checked');
+}
+</script>
+
+</body>
+</html>

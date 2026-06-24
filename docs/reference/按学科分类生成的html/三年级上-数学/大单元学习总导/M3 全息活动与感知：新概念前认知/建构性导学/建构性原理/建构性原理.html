@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性原理</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.wrapper {
+  width: 100%;
+  max-width: none;
+  padding: 30px 24px;
+  box-sizing: border-box;
+}
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+}
+h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+h2 {
+  font-size: var(--font-h2);
+  font-weight: 700;
+  color: var(--primary);
+  margin: 28px 0 12px;
+  padding-left: 12px;
+  border-left: 4px solid var(--primary);
+  line-height: 1.4;
+}
+h3 {
+  font-size: calc(var(--font-body) + 2px);
+  font-weight: 700;
+  color: var(--text);
+  margin: 20px 0 8px;
+}
+.subtitle {
+  color: var(--text-secondary);
+  font-size: calc(var(--font-body) - 2px);
+  margin-bottom: 24px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.card:hover {
+  box-shadow: 0 4px 16px rgba(22,119,255,0.12);
+  border-color: var(--accent);
+  transition: all 0.3s ease;
+}
+.meta-tag {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  padding: 2px 12px;
+  border-radius: 20px;
+  font-size: calc(var(--font-body) - 4px);
+  font-weight: 600;
+  margin: 4px 4px 4px 0;
+}
+.principle-card {
+  border-left: 4px solid var(--primary);
+  position: relative;
+}
+.principle-card .num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 16px;
+  font-weight: 700;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+.principle-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.principle-card h3 {
+  margin: 0;
+  font-size: var(--font-h2);
+  color: var(--primary);
+}
+.principle-card .label {
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-top: 8px;
+}
+.principle-card p {
+  margin: 4px 0;
+}
+.scene-card {
+  background: linear-gradient(135deg, #f0f5ff 0%, #e6f7ff 100%);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin: 12px 0;
+  border: 1px dashed var(--accent);
+}
+.scene-card h4 {
+  color: var(--primary);
+  font-size: calc(var(--font-body) + 1px);
+  margin-bottom: 6px;
+}
+.interactive-btn {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: var(--font-body);
+  cursor: pointer;
+  margin: 6px 6px 6px 0;
+  transition: all 0.25s ease;
+}
+.interactive-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(22,119,255,0.3);
+}
+.interactive-btn:active {
+  transform: translateY(0);
+}
+.reflection-item {
+  background: var(--card-bg);
+  padding: 14px 18px;
+  border-radius: var(--border-radius);
+  margin: 10px 0;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.reflection-item:hover {
+  border-color: var(--primary);
+  background: #f6faff;
+}
+.reflection-q {
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.reflection-q::before {
+  content: "💡";
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.reflection-a {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+  padding: 0 0 0 30px;
+  color: var(--text-secondary);
+  font-size: calc(var(--font-body) - 1px);
+}
+.reflection-item.open .reflection-a {
+  max-height: 200px;
+  padding: 10px 0 4px 30px;
+}
+.hint-box {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: var(--border-radius);
+  padding: 12px 16px;
+  margin: 8px 0;
+  font-size: calc(var(--font-body) - 1px);
+}
+.hint-box::before {
+  content: "💡 ";
+  font-weight: 700;
+}
+@media (max-width: 640px) {
+  .wrapper { padding: 16px 12px; }
+  .card { padding: 14px 16px; }
+  .principle-header { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+<div class="container">
+
+<h1>建构性原理</h1>
+<p class="subtitle">从"1分钟挑战"活动中，提炼出可以带走的学习智慧</p>
+
+<div class="card" style="background:linear-gradient(135deg,#e6f7ff,#f0f5ff);border:none;">
+  <p><strong>🎯 从这里出发：</strong>刚才你在"1分钟挑战"中体验了从猜想、体验到表达的全过程。现在，我们把这次体验变成<strong>4条可迁移的建构性原理</strong>——就像武功秘籍中的"心法"，以后学到任何新概念都可以用上！</p>
+</div>
+
+<h2>核心原理（4条）</h2>
+
+<div class="card principle-card">
+  <div class="principle-header">
+    <span class="num">1</span>
+    <h3>先猜想后验证</h3>
+  </div>
+  <p><strong>说明：</strong>在动手体验之前，先大胆猜想结果，然后再用实践验证。</p>
+  <p class="label">📌 示例应用</p>
+  <p>猜1分钟能跳多少下跳绳 → 实际计时跳 → 对比猜测与实际</p>
+  <p class="label">🎯 适用场景</p>
+  <p>任何需要建立量感的学习：1米多长？1千克多重？1摄氏度温差多大？</p>
+  <div class="hint-box">猜错了也没关系——差距越大印象越深！</div>
+</div>
+
+<div class="card principle-card">
+  <div class="principle-header">
+    <span class="num">2</span>
+    <h3>感官记录法</h3>
+  </div>
+  <p><strong>说明：</strong>用身体感受 + 数字记录双重方式，把抽象概念"具体化"。</p>
+  <p class="label">📌 示例应用</p>
+  <p>记录"1分钟跳绳68下"的同时，记录"心跳加速、喘粗气"</p>
+  <p class="label">🎯 适用场景</p>
+  <p>学习容量、长度、重量等需要量感的数学概念</p>
+  <div class="hint-box">数字要准确，感受要真实！</div>
+</div>
+
+<div class="card principle-card">
+  <div class="principle-header">
+    <span class="num">3</span>
+    <h3>对比建构</h3>
+  </div>
+  <p><strong>说明：</strong>通过对比不同事物在同一尺度下的表现，加深对一个尺度的理解。</p>
+  <p class="label">📌 示例应用</p>
+  <p>同样1分钟，跳绳68下 vs 深呼吸15次 vs 安静站立——同一个1分钟却感受不同</p>
+  <p class="label">🎯 适用场景</p>
+  <p>理解抽象单位：分、秒、米、千克、摄氏度</p>
+  <div class="hint-box">对比时确保其他条件相同，结论才可靠！</div>
+</div>
+
+<div class="card principle-card">
+  <div class="principle-header">
+    <span class="num">4</span>
+    <h3>表达即理解</h3>
+  </div>
+  <p><strong>说明：</strong>用你自己的语言、图画或动作向别人解释一个概念，这个过程本身会加深你的理解。</p>
+  <p class="label">📌 示例应用</p>
+  <p>"1分钟就像课间排队，还没聊几句就结束了"</p>
+  <p class="label">🎯 适用场景</p>
+  <p>任何新概念的初步建构阶段</p>
+  <div class="hint-box">不追求完美定义，追求"我能说清楚"！</div>
+</div>
+
+<h2>迁移挑战</h2>
+<p class="subtitle">试试用这4条原理解决新问题 👇</p>
+
+<div class="scene-card">
+  <h4>⏱ 挑战1：感受10秒</h4>
+  <p>闭上眼默数10秒，同时让家长或同学帮忙计时。任务是"让自己的内心计时与真实时间尽可能接近"。</p>
+  <p><strong>运用原理：</strong>猜想验证（原理1）+ 感官记录（原理2）</p>
+  <button class="interactive-btn" onclick="alert('试试看：先猜自己数10秒要多久，然后闭上眼默数，最后睁开眼看看实际过了几秒！记录差距，多试几次看看有没有进步。')">点击获取挑战提示</button>
+</div>
+
+<div class="scene-card">
+  <h4>📊 挑战2：1小时有多长</h4>
+  <p>选择一项日常活动（看动画片、做作业、运动），记录开始和结束时间。画出"1小时的时间地图"，标注每个10分钟的感觉。</p>
+  <p><strong>运用原理：</strong>对比建构（原理3）+ 表达即理解（原理4）</p>
+  <button class="interactive-btn" onclick="alert('时间地图画法：画一条长线代表1小时，每10分钟做一个标记，在标记旁写一句话描述当时你的感受。你会发现同样的10分钟在不同活动里"长短"不一样！')">点击获取挑战提示</button>
+</div>
+
+<h2>元认知反思</h2>
+<p>点击每个问题，看看你的思考方向 👇</p>
+
+<div class="reflection-item" onclick="this.classList.toggle('open')">
+  <div class="reflection-q">在"1分钟挑战"中，你的猜想和实际之间差距大吗？为什么会有差距？</div>
+  <div class="reflection-a">差距大是正常的！因为平时我们很少"有意识地感受1分钟"。通过这次体验，你的大脑已经开始建立对1分钟的"参考标尺"了。</div>
+</div>
+
+<div class="reflection-item" onclick="this.classList.toggle('open')">
+  <div class="reflection-q">如果让你重新体验1分钟，你会用什么新方法来记住它的长度？</div>
+  <div class="reflection-a">可以试试：数60个数字（1秒1个）、哼一首你熟悉的歌、或者感受自己心跳60次……找到属于你的"1分钟锚点"！</div>
+</div>
+
+<div class="reflection-item" onclick="this.classList.toggle('open')">
+  <div class="reflection-q">今天学到的建构方法，还能用在数学的哪个知识点上？</div>
+  <div class="reflection-a">太多了！感受1千克有多重（提一提不同重量的物品）、感受1厘米有多长（不用尺子估测物体长度）——都可以用"猜想→体验→记录→比较→表达"的方法。</div>
+</div>
+
+<div class="reflection-item" onclick="this.classList.toggle('open')">
+  <div class="reflection-q">"身体感受到的时间"和"钟表量到的时间"哪个更准确？为什么？</div>
+  <div class="reflection-a">钟表更准确，但身体感受更"真实"。两者结合才是完整的"时间理解"——这就是建构性学习的核心：用体验给抽象概念"注入生命"。</div>
+</div>
+
+<div class="reflection-item" onclick="this.classList.toggle('open')">
+  <div class="reflection-q">如果让你教一个没学过时间的小朋友"1秒有多长"，你会怎么做？</div>
+  <div class="reflection-a">你可以说"1秒就是你说'嘀嗒'的时间"，或者"1秒就是你眨一下眼的时间"。用他们熟悉的身体动作来解释——这就是"表达即理解"！</div>
+</div>
+
+<div style="text-align:center;margin-top:32px;padding:20px;background:linear-gradient(135deg,#1677ff,#4096ff);border-radius:12px;color:#fff;">
+  <p style="font-size:20px;font-weight:700;margin-bottom:4px;">🎉 恭喜！你已经掌握了4条建构性原理</p>
+  <p style="opacity:0.9;">准备好进入下一个环节，用这些"心法"解决更多时间挑战了吗？</p>
+</div>
+
+</div>
+</div>
+</body>
+</html>

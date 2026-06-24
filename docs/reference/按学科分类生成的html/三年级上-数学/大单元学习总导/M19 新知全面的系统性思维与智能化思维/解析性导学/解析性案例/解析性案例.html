@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>七阶解析性适配案例 — 在多元情境中练就分析力</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+}
+.container { width: 100%; max-width: none; padding: 24px 30px; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 8px; }
+.header p { font-size: 15px; opacity: 0.9; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px 28px;
+  margin-bottom: 22px;
+  border: 1px solid var(--border);
+  transition: box-shadow 0.3s;
+}
+.card:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.12); }
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+.card h3 {
+  font-size: 18px;
+  color: var(--text);
+  margin: 14px 0 8px;
+  font-weight: 600;
+}
+.badge {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  padding: 2px 12px;
+  border-radius: 12px;
+  margin-right: 8px;
+}
+.tag {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  font-size: 13px;
+  padding: 2px 10px;
+  border-radius: 4px;
+  margin-right: 6px;
+  font-weight: 500;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 15px;
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+}
+th { background: var(--bg); color: var(--primary); font-weight: 600; }
+td { background: var(--card-bg); }
+tr:hover td { background: #f5f9ff; }
+.step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+.step-row { display: flex; align-items: flex-start; margin: 10px 0; }
+.step-content { flex: 1; }
+.principle-box {
+  background: #f6ffed;
+  border-left: 4px solid #52c41a;
+  padding: 12px 16px;
+  margin: 10px 0;
+  border-radius: 0 6px 6px 0;
+  font-size: 15px;
+  color: #135200;
+}
+.toggle-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 6px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 6px;
+}
+.toggle-btn:hover { background: var(--primary-hover); }
+.toggle-btn:active { transform: scale(0.97); }
+.detail-content { display: none; margin-top: 12px; padding: 16px; background: var(--bg); border-radius: 6px; }
+.detail-content.show { display: block; }
+.reflect-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 12px 0;
+}
+.reflect-item {
+  background: var(--bg);
+  padding: 14px 18px;
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+}
+.reflect-item p { font-size: 15px; margin: 0; }
+.reflect-item strong { color: var(--primary); }
+.anima-btn {
+  background: transparent;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.anima-btn:hover {
+  background: var(--primary);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(22,119,255,0.3);
+}
+@media (max-width: 768px) {
+  .container { padding: 14px 16px; }
+  .header { padding: 20px; }
+  .header h1 { font-size: 22px; }
+  .card { padding: 16px; }
+  table { font-size: 13px; }
+  th, td { padding: 6px 8px; }
+  .reflect-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🧩 七阶解析性适配案例</h1>
+  <p>在多元情境中练就分析力 · 数学 · 时、分、秒</p>
+</div>
+
+<!-- 第一阶 -->
+<div class="card">
+  <h2><span class="badge">第一阶</span>生活情境</h2>
+  <p><strong>📖 案例：</strong>你在等公交车，等了"感觉"上好像过了10分钟——一看手机，其实才过了4分钟。</p>
+  <div class="step-row">
+    <div class="step-num">1</div>
+    <div class="step-content"><strong>解析任务：</strong>你的"感觉时间"为什么会和"真实时间"不一样？差了多少？</div>
+  </div>
+  <div class="principle-box">🔑 调用原理：基准对照法——用"钟表时间"做基准，和"你的感觉"做比较</div>
+  <table>
+    <tr><th>活动</th><th>感觉时间</th><th>实际时间</th><th>误差</th></tr>
+    <tr><td>等公交</td><td>10分</td><td>4分</td><td>慢了6分</td></tr>
+  </table>
+  <button class="toggle-btn" onclick="this.nextElementSibling.classList.toggle('show')">💡 看看解析思路</button>
+  <div class="detail-content">
+    <p>你感觉等了很久（10分钟），但实际才4分钟——这是因为等待时我们"盼着车来"，注意力全在"怎么还没来"上，对时间的感知被放大了。解析的关键是把"感觉"和"客观数据"分开，用钟表作为基准来对照。</p>
+  </div>
+</div>
+
+<!-- 第二阶 -->
+<div class="card">
+  <h2><span class="badge">第二阶</span>校园情境</h2>
+  <p><strong>📖 案例：</strong>课间10分钟，小明说"10分钟=600秒"，小华说"10分钟=36000秒"——谁对？</p>
+  <div class="step-row">
+    <div class="step-num">2</div>
+    <div class="step-content"><strong>解析任务：</strong>10分钟到底等于多少秒？小华错在哪里？</div>
+  </div>
+  <div class="principle-box">🔑 调用原理：单位识别法——先看"10分钟"的单位是"分"，要化成"秒"→×60</div>
+  <table>
+    <tr><th>初始值</th><th>目标单位</th><th>运算</th><th>结果</th></tr>
+    <tr><td>10分</td><td>秒</td><td>×60</td><td>600秒</td></tr>
+  </table>
+  <button class="toggle-btn" onclick="this.nextElementSibling.classList.toggle('show')">🧐 小华错在哪？</button>
+  <div class="detail-content">
+    <p>小华可能把"分→秒"当成了"×3600"（以为1小时=3600秒，就×3600了）。但其实：1分=60秒，所以10分=10×60=600秒。记住：<strong>分→秒，×60</strong>，不是×3600！</p>
+  </div>
+</div>
+
+<!-- 第三阶 -->
+<div class="card">
+  <h2><span class="badge">第三阶</span>家庭情境</h2>
+  <p><strong>📖 案例：</strong>晚饭从6:30开始吃，吃完是7:00。爸爸说"吃了半小时"，奶奶说"吃了1800秒"——谁说的对？</p>
+  <div class="step-row">
+    <div class="step-num">3</div>
+    <div class="step-content"><strong>解析任务：</strong>30分钟=？秒？同时还等于？小时？</div>
+  </div>
+  <div class="principle-box">🔑 调用原理：拆解分步法——30分→秒（×60=1800秒）；30分→时（÷60=0.5时）</div>
+  <table>
+    <tr><th>初始</th><th>目标单位</th><th>运算</th><th>结果</th></tr>
+    <tr><td>30分</td><td>秒</td><td>×60</td><td>1800秒</td></tr>
+    <tr><td>30分</td><td>时</td><td>÷60</td><td>0.5时</td></tr>
+  </table>
+  <p>✅ 爸爸和奶奶说的都对！只是用了不同的单位来表达同一个时间长度。</p>
+</div>
+
+<!-- 第四阶 -->
+<div class="card">
+  <h2><span class="badge">第四阶</span>学科核心情境</h2>
+  <p><strong>📖 案例：</strong>算式题——3.5小时=几小时几分？</p>
+  <div class="step-row">
+    <div class="step-num">4</div>
+    <div class="step-content"><strong>解析任务：</strong>小数时间怎么转成"几时几分"的形式？</div>
+  </div>
+  <div class="principle-box">🔑 调用原理：基准对照法——把3.5拆成3（整数）+0.5（小数），小数部分×60</div>
+  <table>
+    <tr><th>整体</th><th>拆解</th><th>小数运算</th><th>最终结果</th></tr>
+    <tr><td>3.5时</td><td>3时+0.5时</td><td>0.5×60=30分</td><td>3时30分</td></tr>
+  </table>
+  <button class="anima-btn" onclick="alert('拆解过程：\n3.5小时 = 3小时 + 0.5小时\n0.5小时 × 60 = 30分钟\n答案：3小时30分\n验证：3×60+30=210分，210÷60=3.5 ✓')">🧮 点击查看演算</button>
+</div>
+
+<!-- 第五阶 -->
+<div class="card">
+  <h2><span class="badge">第五阶</span>跨学科情境</h2>
+  <p><strong>📖 案例：</strong>百米赛跑，甲用了0.2分，乙用了7/30分，丙用了13秒。谁最快？</p>
+  <div class="step-row">
+    <div class="step-num">5</div>
+    <div class="step-content"><strong>解析任务：</strong>三人的时间单位不同——需要先"统一单位"再比较</div>
+  </div>
+  <div class="principle-box">🔑 调用原理：单位识别法 + 检验验证法——全部换为秒</div>
+  <table>
+    <tr><th>选手</th><th>原时间</th><th>换算成秒</th><th>排名</th></tr>
+    <tr><td>甲 🥇</td><td>0.2分</td><td>0.2×60=12秒</td><td>第1</td></tr>
+    <tr><td>乙</td><td>7/30分</td><td>7/30×60=14秒</td><td>第3</td></tr>
+    <tr><td>丙</td><td>13秒</td><td>13秒</td><td>第2</td></tr>
+  </table>
+  <button class="toggle-btn" onclick="this.nextElementSibling.classList.toggle('show')">🏃 为什么甲最快？</button>
+  <div class="detail-content">
+    <p>单位不同不能直接比！必须统一成同一个单位（秒）。甲12秒 < 丙13秒 < 乙14秒，所以甲最快。这就是"单位识别法"——先把大家的单位统一，再比较数值大小。</p>
+  </div>
+</div>
+
+<!-- 第六阶 -->
+<div class="card">
+  <h2><span class="badge">第六阶</span>社会议题情境</h2>
+  <p><strong>📖 案例：</strong>有人提议"取消课间10分钟，改成连续上45分钟然后休息15分钟"。支持还是反对？</p>
+  <div class="step-row">
+    <div class="step-num">6</div>
+    <div class="step-content"><strong>解析任务：</strong>两种安排各有什么好处和坏处？用"时间数据"而不是用"感觉"来论证</div>
+  </div>
+  <div class="principle-box">🔑 调用原理：拆解分步法 + 检验验证法</div>
+  <table>
+    <tr><th>对比项</th><th>方案A（10分钟课间）</th><th>方案B（无课间+15分钟大课间）</th></tr>
+    <tr><td>总休息时间（2小时学习）</td><td>10×3=30分</td><td>15分</td></tr>
+    <tr><td>适合做什么</td><td>上厕所、接水、聊天</td><td>下楼活动、玩游戏</td></tr>
+    <tr><td>可能的问题</td><td>刚投入就下课</td><td>连续上45分钟太累</td></tr>
+  </table>
+  <button class="anima-btn" onclick="this.nextElementSibling.classList.toggle('show')">🗣️ 我的观点</button>
+  <div style="display:none; margin-top:12px; padding:14px; background:var(--bg); border-radius:6px;">
+    <p>用数据说话：如果一上午有4节课（每节40分钟），方案A总休息=10×3=30分钟，方案B=15×1=15分钟。方案A总休息时间更长，但零散；方案B休息集中但时间少一半。你的选择是什么？</p>
+  </div>
+</div>
+
+<!-- 第七阶 -->
+<div class="card">
+  <h2><span class="badge">第七阶</span>综合迁移案例</h2>
+  <p><strong>📖 案例：</strong>老师说"看完一页书大约需要3分钟"，你说"我读完一整本大约120页的书，用了多少小时？"</p>
+  <div class="step-row">
+    <div class="step-num">7</div>
+    <div class="step-content"><strong>解析任务：</strong>先算总时间（分）→再换算成"小时"</div>
+  </div>
+  <div class="principle-box">🔑 调用原理：综合使用全部4条原理——单位识别法 + 拆解分步法 + 基准对照法 + 检验验证法</div>
+  <table>
+    <tr><th>每页时间</th><th>总页数</th><th>总分钟</th><th>总小时</th></tr>
+    <tr><td>3分</td><td>120页</td><td>360分</td><td>360÷60=6时</td></tr>
+  </table>
+  <button class="toggle-btn" onclick="this.nextElementSibling.classList.toggle('show')">📚 完整解析过程</button>
+  <div class="detail-content">
+    <p><strong>步骤1（单位识别）：</strong>已知条件是"每页3分钟"，要问的是"多少小时"——中间需要先算出"多少分钟"<br>
+    <strong>步骤2（拆解分步）：</strong>3×120=360分钟（先算总分钟数）<br>
+    <strong>步骤3（基准对照）：</strong>360÷60=6小时（用1小时=60分做基准换算）<br>
+    <strong>步骤4（检验验证）：</strong>6×60=360分，360÷3=120页 ✓ 没问题！</p>
+  </div>
+</div>
+
+<!-- 综合反思 -->
+<div class="card">
+  <h2>💭 综合反思</h2>
+  <div class="reflect-grid">
+    <div class="reflect-item"><strong>🧠 哪个案例最容易？</strong><p>想一想：哪个案例你一读就明白该怎么分析？为什么这个案例对你来说特别简单？</p></div>
+    <div class="reflect-item"><strong>🤔 哪个案例最难？</strong><p>卡在哪里了？是单位换算不熟？还是不知道用什么方法？找到困难点就是进步的开始。</p></div>
+    <div class="reflect-item"><strong>🔍 哪条原理最常用？</strong><p>回顾7个案例，你发现哪条解析性原理出场次数最多？</p></div>
+    <div class="reflect-item"><strong>📌 哪条原理还不太会用？</strong><p>别着急，记下来告诉老师，下一轮学习就可以重点突破。</p></div>
+  </div>
+  <div style="text-align:center; margin-top:16px;">
+    <button class="anima-btn" onclick="this.style.transform='rotate(360deg)';alert('你已经完成了7个层级的解析性训练！从生活小事到综合迁移，分析力就是这样一步步练出来的 💪')">🎯 完成挑战！</button>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

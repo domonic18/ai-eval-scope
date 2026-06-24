@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知识城堡建造师 — "时、分、秒" 建构性导学</title>
+<style>
+/* ===== CSS Variables ===== */
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+  --success: #52c41a;
+  --warning: #faad14;
+  --danger: #ff4d4f;
+  --text: #1a1a2e;
+  --text-light: #555;
+  --card-bg: #fff;
+  --shadow: 0 2px 12px rgba(22,119,255,0.12);
+  --radius: 12px;
+  --transition: 0.3s;
+}
+
+/* ===== Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: var(--font-body); }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  min-height: 100vh;
+  padding: 16px;
+}
+h1 { font-size: var(--font-h1); font-weight: 800; }
+h2 { font-size: var(--font-h2); font-weight: 700; }
+h3 { font-size: 20px; font-weight: 700; }
+
+/* ===== Layout ===== */
+.app-wrapper {
+  max-width: 1440px; margin: 0 auto;
+  display: grid;
+  grid-template-columns: 260px 1fr 280px;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 16px;
+}
+.header {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff; border-radius: var(--radius); padding: 20px 28px;
+  display: flex; justify-content: space-between; align-items: center;
+  box-shadow: 0 4px 20px rgba(22,119,255,0.35);
+}
+.header h1 { font-size: 24px; letter-spacing: 2px; }
+.header-sub { font-size: 14px; opacity: 0.85; }
+
+/* ===== Sidebar Left — Build Log ===== */
+.sidebar-left {
+  grid-row: 2 / 4;
+  background: var(--card-bg); border-radius: var(--radius); padding: 16px;
+  box-shadow: var(--shadow); overflow-y: auto; max-height: 700px;
+}
+.sidebar-left h3 { font-size: 16px; color: var(--primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.log-entry { padding: 8px 10px; border-left: 3px solid var(--accent); margin-bottom: 6px; font-size: 14px; background: #f8fbff; border-radius: 0 6px 6px 0; }
+.log-entry .time { color: var(--text-light); font-size: 12px; }
+.log-entry.drag { border-left-color: var(--success); }
+.log-entry.error { border-left-color: var(--danger); background: #fff2f0; }
+.log-entry.check { border-left-color: var(--warning); }
+
+/* ===== Main Content ===== */
+.main-content {
+  grid-row: 2 / 4;
+  display: flex; flex-direction: column; gap: 16px;
+}
+
+/* ===== Castle Area ===== */
+.castle-area {
+  background: var(--card-bg); border-radius: var(--radius);
+  padding: 20px; box-shadow: var(--shadow);
+}
+.castle-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+}
+.castle-header h2 { font-size: 18px; }
+.castle-canvas-wrap {
+  position: relative; width: 100%; aspect-ratio: 16/10;
+  background: linear-gradient(180deg, #ffd6a5 0%, #ffc8a0 30%, #ffb07c 60%, #fa8c5a 100%);
+  border-radius: 10px; overflow: hidden; border: 2px solid #e8d5c0;
+}
+#castleCanvas {
+  width: 100%; height: 100%; display: block;
+}
+
+/* ===== Toolbar ===== */
+.toolbar {
+  display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 0 4px;
+}
+.knowledge-block {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px; cursor: grab; user-select: none;
+  font-size: 14px; font-weight: 600; transition: transform var(--transition), box-shadow var(--transition);
+  touch-action: none;
+}
+.knowledge-block:active { cursor: grabbing; transform: scale(0.95); }
+.knowledge-block.factual { background: #d4edda; color: #155724; border: 2px solid #52c41a; }
+.knowledge-block.conceptual { background: #cce5ff; color: #004085; border: 2px solid #1677ff; }
+.knowledge-block.meta { background: #fff3cd; color: #856404; border: 2px solid #faad14; }
+.knowledge-block.dragging { opacity: 0.5; }
+
+/* ===== 7 Stages Collapse ===== */
+.stages-section { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); }
+.stages-section h2 { font-size: 18px; padding: 16px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; color: var(--primary); }
+.stages-section h2 .arrow { transition: transform var(--transition); }
+.stages-section h2 .arrow.open { transform: rotate(180deg); }
+.stages-body { padding: 0 20px 20px; display: none; }
+.stages-body.open { display: block; }
+
+.stage-card {
+  background: #f8fbff; border: 1px solid #e8f0ff; border-radius: 10px;
+  padding: 16px; margin-bottom: 12px;
+}
+.stage-card .stage-num {
+  display: inline-block; background: var(--accent); color: #fff;
+  border-radius: 50%; width: 28px; height: 28px; text-align: center; line-height: 28px;
+  font-size: 14px; font-weight: 700; margin-right: 8px;
+}
+.stage-card h4 { display: inline; font-size: 16px; }
+.stage-card p { font-size: 14px; color: var(--text-light); margin-top: 6px; padding-left: 36px; }
+
+/* ===== Sidebar Right — Gallery ===== */
+.sidebar-right {
+  grid-row: 2 / 4;
+  background: var(--card-bg); border-radius: var(--radius); padding: 16px;
+  box-shadow: var(--shadow); overflow-y: auto; max-height: 700px;
+}
+.sidebar-right h3 { font-size: 16px; color: var(--primary); margin-bottom: 12px; }
+.gallery-item {
+  background: #f8fbff; border-radius: 8px; padding: 10px; margin-bottom: 10px;
+  border: 1px solid #e8f0ff; font-size: 13px;
+}
+.gallery-item .gi-name { font-weight: 700; color: var(--primary); }
+.gallery-item .gi-stars { color: var(--warning); }
+.gallery-item canvas { width: 100%; height: 60px; border-radius: 4px; margin-top: 6px; background: linear-gradient(180deg, #ffe8cc, #ffd6a5); }
+
+/* ===== Buttons ===== */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 20px; border: none; border-radius: 8px; cursor: pointer;
+  font-size: 14px; font-weight: 600; transition: all var(--transition);
+}
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(22,119,255,0.3); }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { background: #73d13d; }
+.btn-warning { background: var(--warning); color: #fff; }
+.btn-warning:hover { background: #ffc53d; }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { background: #ff7875; }
+.btn-outline { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
+.btn-outline:hover { background: var(--primary); color: #fff; }
+
+.action-bar { display: flex; gap: 10px; flex-wrap: wrap; padding: 8px 0; }
+
+/* ===== Output Panel ===== */
+.output-panel {
+  display: none;
+  background: linear-gradient(135deg, #f6ffed, #e6f7ff);
+  border: 2px solid var(--success); border-radius: var(--radius);
+  padding: 20px; margin-top: 12px;
+}
+.output-panel.open { display: block; }
+.output-panel h3 { color: var(--success); margin-bottom: 8px; }
+.output-panel .out-item { padding: 6px 0; border-bottom: 1px dashed #d9d9d9; font-size: 14px; }
+.output-panel .out-item:last-child { border: none; }
+.output-panel .out-label { font-weight: 700; color: var(--primary); }
+
+/* ===== Ghost / Missing ===== */
+.ghost-block {
+  position: absolute; border: 2px dashed rgba(255,77,79,0.5);
+  background: rgba(255,77,79,0.08); border-radius: 4px;
+  pointer-events: none; animation: pulse-ghost 2s infinite;
+}
+@keyframes pulse-ghost {
+  0%, 100% { opacity: 0.4; } 50% { opacity: 0.8; }
+}
+
+/* ===== Shake Animation ===== */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+.shake { animation: shake 0.6s ease-in-out; }
+
+/* ===== Responsive ===== */
+@media (max-width: 960px) {
+  .app-wrapper { grid-template-columns: 1fr; }
+  .sidebar-left, .sidebar-right { max-height: none; }
+  .sidebar-left { grid-row: auto; }
+  .sidebar-right { grid-row: auto; }
+  .main-content { grid-row: auto; }
+  .header { flex-direction: column; text-align: center; gap: 8px; }
+}
+
+/* ===== Drop Zones on Canvas (overlay) ===== */
+.drop-zone {
+  position: absolute;
+  border: 2px dashed rgba(22,119,255,0.3);
+  border-radius: 6px;
+  background: rgba(22,119,255,0.05);
+  transition: all var(--transition);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; color: rgba(22,119,255,0.4); font-weight: 600;
+  pointer-events: auto; cursor: pointer;
+}
+.drop-zone.drag-over { border-color: var(--primary); background: rgba(22,119,255,0.12); }
+.drop-zone.filled { border-style: solid; border-color: var(--success); background: rgba(82,196,26,0.08); color: var(--success); }
+.drop-zone.wrong { border-color: var(--danger); background: rgba(255,77,79,0.1); animation: shake 0.4s; }
+
+/* Tooltip */
+.tooltip {
+  position: absolute; background: #333; color: #fff; padding: 6px 12px;
+  border-radius: 6px; font-size: 13px; pointer-events: none;
+  opacity: 0; transition: opacity 0.2s; z-index: 100;
+  white-space: nowrap;
+}
+.tooltip.show { opacity: 1; }
+
+/* Castle sun/moon */
+.sun { position: absolute; top: 15px; right: 25px; width: 50px; height: 50px; background: #ffd700; border-radius: 50%; box-shadow: 0 0 40px rgba(255,215,0,0.5); }
+.cloud { position: absolute; top: 20px; left: 30px; width: 70px; height: 24px; background: rgba(255,255,255,0.7); border-radius: 20px; }
+.cloud::before, .cloud::after { content: ''; position: absolute; background: rgba(255,255,255,0.7); border-radius: 50%; }
+.cloud::before { width: 30px; height: 30px; top: -14px; left: 10px; }
+.cloud::after { width: 22px; height: 22px; top: -10px; left: 32px; }
+</style>
+</head>
+<body>
+
+<div class="app-wrapper">
+
+  <!-- ===== HEADER ===== -->
+  <header class="header">
+    <div>
+      <h1>&#x1F3F0; 知识城堡建造师</h1>
+      <div class="header-sub">三年级上 · 数学 · 时、分、秒 &mdash; 建构性导学</div>
+    </div>
+    <div style="font-size:14px;text-align:right;line-height:1.6">
+      <div>大单元建构性示例 &middot; 7阶建构之旅</div>
+      <div style="opacity:0.7">感受 &rarr; 测量 &rarr; 记录 &rarr; 分析 &rarr; 应用 &rarr; 创造</div>
+    </div>
+  </header>
+
+  <!-- ===== SIDEBAR LEFT — Build Log ===== -->
+  <aside class="sidebar-left" id="buildLog">
+    <h3>&#x1F4CB; 建造日志</h3>
+    <div id="logEntries"></div>
+  </aside>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main class="main-content">
+
+    <!-- Castle -->
+    <section class="castle-area">
+      <div class="castle-header">
+        <h2>&#x1F3F0; 知识城堡</h2>
+        <div class="action-bar">
+          <button class="btn btn-warning" onclick="checkStability()">&#x1F50D; 结构稳定性检查</button>
+          <button class="btn btn-success" onclick="generateOutput()">&#x1F4CA; 生成结构化总结</button>
+          <button class="btn btn-outline" onclick="resetCastle()">&#x21BA; 重置</button>
+        </div>
+      </div>
+      <div class="castle-canvas-wrap" id="castleWrap">
+        <div class="sun"></div>
+        <div class="cloud"></div>
+        <canvas id="castleCanvas"></canvas>
+        <!-- Drop zones rendered by JS -->
+        <div id="dropZonesContainer"></div>
+        <div class="tooltip" id="tooltip"></div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="toolbar" id="toolbar">
+        <div class="knowledge-block factual" draggable="true" data-type="factual" data-label="事实性知识（底层）" data-desc="时间单位换算、钟面读数等基础事实">
+          &#x1F7E9; 事实性知识
+        </div>
+        <div class="knowledge-block conceptual" draggable="true" data-type="conceptual" data-label="概念性知识（中层）" data-desc="时间的关系、功能、结构与分类理解">
+          &#x1F535; 概念性知识
+        </div>
+        <div class="knowledge-block meta" draggable="true" data-type="meta" data-label="元认知/价值知识（顶层）" data-desc="时间管理意识、统筹规划与反思创新">
+          &#x2B50; 元认知/价值
+        </div>
+      </div>
+    </section>
+
+    <!-- Output Panel -->
+    <div class="output-panel" id="outputPanel">
+      <h3>&#x1F4CA; 知识城堡结构化总结</h3>
+      <div id="outputContent"></div>
+    </div>
+
+    <!-- 7 Stages Collapse -->
+    <section class="stages-section">
+      <h2 onclick="toggleStages()">
+        &#x1F4D6; 大单元建构性7阶案例
+        <span class="arrow" id="stagesArrow">&#x25BC;</span>
+      </h2>
+      <div class="stages-body" id="stagesBody">
+        <div class="stage-card"><span class="stage-num">1</span><h4>个人与家庭</h4><p>记录三个早晨的时间安排，制定"我的早晨时间优化方案"</p></div>
+        <div class="stage-card"><span class="stage-num">2</span><h4>学校与社区</h4><p>绘制学校作息时间换算图</p></div>
+        <div class="stage-card"><span class="stage-num">3</span><h4>地方与城市</h4><p>选择交通方式记录实际用时对比</p></div>
+        <div class="stage-card"><span class="stage-num">4</span><h4>区域与民族</h4><p>探索中国时区，制作全球时区手绘示意图</p></div>
+        <div class="stage-card"><span class="stage-num">5</span><h4>国家</h4><p>中国时间计量进化时间轴</p></div>
+        <div class="stage-card"><span class="stage-num">6</span><h4>人类</h4><p>设计"世界时钟"显示6个城市时间</p></div>
+        <div class="stage-card"><span class="stage-num">7</span><h4>未来</h4><p>写100字科幻短文"未来的时钟"</p></div>
+      </div>
+    </section>
+
+    <!-- 建构性原理 -->
+    <section class="stages-section" style="margin-top:4px;">
+      <h2 onclick="togglePrinciple()">
+        &#x1F3AF; 大单元建构性原理
+        <span class="arrow" id="principleArrow">&#x25BC;</span>
+      </h2>
+      <div class="stages-body" id="principleBody">
+        <div style="display:flex;flex-wrap:wrap;gap:6px;font-size:14px;padding:8px 0;">
+          <span style="background:var(--primary);color:#fff;padding:4px 12px;border-radius:20px;">&#x1F4AC; 经验</span>
+          <span style="background:var(--accent);color:#fff;padding:4px 12px;border-radius:20px;">&#x27A1;</span>
+          <span style="background:var(--primary);color:#fff;padding:4px 12px;border-radius:20px;">&#x1F3AF; 目标</span>
+          <span style="background:var(--accent);color:#fff;padding:4px 12px;border-radius:20px;">&#x27A1;</span>
+          <span style="background:var(--primary);color:#fff;padding:4px 12px;border-radius:20px;">&#x1F4F0; 模型</span>
+          <span style="background:var(--accent);color:#fff;padding:4px 12px;border-radius:20px;">&#x27A1;</span>
+          <span style="background:var(--primary);color:#fff;padding:4px 12px;border-radius:20px;">&#x1F3C3; 行动</span>
+          <span style="background:var(--accent);color:#fff;padding:4px 12px;border-radius:20px;">&#x27A1;</span>
+          <span style="background:var(--primary);color:#fff;padding:4px 12px;border-radius:20px;">&#x1F3A8; 作品</span>
+          <span style="background:var(--accent);color:#fff;padding:4px 12px;border-radius:20px;">&#x27A1;</span>
+          <span style="background:var(--primary);color:#fff;padding:4px 12px;border-radius:20px;">&#x1F91D; 反馈</span>
+          <span style="background:var(--accent);color:#fff;padding:4px 12px;border-radius:20px;">&#x27A1;</span>
+          <span style="background:var(--primary);color:#fff;padding:4px 12px;border-radius:20px;">&#x1F504; 迭代</span>
+          <span style="background:var(--accent);color:#fff;padding:4px 12px;border-radius:20px;">&#x27A1;</span>
+          <span style="background:var(--primary);color:#fff;padding:4px 12px;border-radius:20px;">&#x1F680; 创新</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== SIDEBAR RIGHT — Gallery ===== -->
+  <aside class="sidebar-right" id="gallery">
+    <h3>&#x1F5BC; 同学城堡 gallery</h3>
+    <div id="galleryItems"></div>
+  </aside>
+
+</div>
+
+<script>
+/* ===== Build Log Helper ===== */
+function addLog(msg, type) {
+  const el = document.getElementById('logEntries');
+  const now = new Date();
+  const t = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0') + ':' + now.getSeconds().toString().padStart(2,'0');
+  const d = document.createElement('div');
+  d.className = 'log-entry' + (type ? ' ' + type : '');
+  d.innerHTML = '<span class="time">[' + t + ']</span> ' + msg;
+  el.prepend(d);
+}
+
+/* ===== Castle State ===== */
+const castleState = {
+  factual: null,   // description string
+  conceptual: null,
+  meta: null
+};
+
+/* ===== Simulated Gallery Data ===== */
+const galleryData = [
+  { name: '李小乐', stars: 3, levels: '事实性+概念性+元认知' },
+  { name: '王思睿', stars: 2, levels: '事实性+概念性' },
+  { name: '张悦萱', stars: 3, levels: '事实性+概念性+元认知' },
+  { name: '刘子轩', stars: 1, levels: '事实性' },
+  { name: '陈若溪', stars: 2, levels: '事实性+概念性' }
+];
+
+function renderGallery() {
+  const container = document.getElementById('galleryItems');
+  container.innerHTML = galleryData.map(g => {
+    const s = '&#x2B50;'.repeat(g.stars) + '&#x2606;'.repeat(3-g.stars);
+    return '<div class="gallery-item">'
+      + '<div><span class="gi-name">' + g.name + '</span> <span class="gi-stars">' + s + '</span></div>'
+      + '<div style="font-size:12px;color:var(--text-light);">' + g.levels + '</div>'
+      + '<canvas></canvas></div>';
+  }).join('');
+  // draw mini castles
+  setTimeout(() => {
+    document.querySelectorAll('.gallery-item canvas').forEach((cv, i) => {
+      const w = cv.parentElement.offsetWidth - 20 || 200;
+      cv.width = w; cv.height = 60;
+      drawMiniCastle(cv, i);
+    });
+  }, 50);
+}
+
+function drawMiniCastle(cv, idx) {
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  // sky
+  const grad = ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,'#ffe8cc'); grad.addColorStop(1,'#ffd6a5');
+  ctx.fillStyle = grad; ctx.fillRect(0,0,W,H);
+  // ground
+  ctx.fillStyle = '#8BC34A'; ctx.fillRect(0,H-10,W,10);
+  // levels
+  const levels = galleryData[idx].levels;
+  const cols = {factual:'#52c41a', conceptual:'#1677ff', meta:'#faad14'};
+  // bottom
+  if (levels.includes('事实性')) { ctx.fillStyle = '#52c41a'; ctx.fillRect(30,H-30,50,20); ctx.fillStyle='#333'; ctx.font='8px sans-serif'; ctx.fillText('事实',35,H-16); }
+  // middle
+  if (levels.includes('概念性')) { ctx.fillStyle = '#1677ff'; ctx.fillRect(45,H-50,50,20); ctx.fillStyle='#fff'; ctx.font='8px sans-serif'; ctx.fillText('概念',50,H-36); }
+  // top
+  if (levels.includes('元认知')) { ctx.fillStyle = '#faad14'; ctx.fillRect(60,H-65,50,15); ctx.fillStyle='#fff'; ctx.font='7px sans-serif'; ctx.fillText('元认知',64,H-55); }
+  // towers
+  ctx.fillStyle = '#a0522d'; ctx.fillRect(W-40,H-30,8,20); ctx.fillRect(W-20,H-30,8,20);
+  ctx.fillStyle = '#cd853f'; ctx.fillRect(W-36,H-40,4,10); ctx.fillRect(W-16,H-40,4,10);
+}
+
+/* ===== Canvas Drawing ===== */
+function drawCastle() {
+  const canvas = document.getElementById('castleCanvas');
+  const wrap = document.getElementById('castleWrap');
+  const rect = wrap.getBoundingClientRect();
+  const w = rect.width;
+  const h = w * 0.625;
+  canvas.width = w; canvas.height = h;
+
+  const ctx = canvas.getContext('2d');
+  const W = w, H = h;
+
+  // Sky gradient
+  const sky = ctx.createLinearGradient(0,0,0,H*0.7);
+  sky.addColorStop(0,'#ffd6a5'); sky.addColorStop(0.3,'#ffc8a0'); sky.addColorStop(0.6,'#ffb07c'); sky.addColorStop(1,'#fa8c5a');
+  ctx.fillStyle = sky; ctx.fillRect(0,0,W,H);
+
+  // Ground
+  ctx.fillStyle = '#7CB342'; ctx.fillRect(0,H*0.88,W,H*0.12);
+  ctx.fillStyle = '#689F38'; ctx.fillRect(0,H*0.88,W,3);
+
+  // ===== Castle base / ground level =====
+  const cx = W * 0.5, baseY = H * 0.88;
+  const fw = W * 0.6, fh = H * 0.22;
+
+  // ---- Level 1 (Bottom) - Factual ----
+  ctx.fillStyle = castleState.factual ? '#52c41a' : '#b7eb8f';
+  ctx.fillRect(cx - fw/2, baseY - fh, fw, fh);
+  ctx.strokeStyle = '#333'; ctx.lineWidth = 2;
+  ctx.strokeRect(cx - fw/2, baseY - fh, fw, fh);
+  // battlements
+  for (let i = 0; i < 6; i++) {
+    const bx = cx - fw/2 + (i * fw/6);
+    ctx.fillRect(bx, baseY - fh - 10, fw/12, 10);
+    ctx.fillStyle = castleState.factual ? '#52c41a' : '#b7eb8f';
+    ctx.strokeRect(bx, baseY - fh - 10, fw/12, 10);
+    ctx.fillStyle = castleState.factual ? '#52c41a' : '#b7eb8f';
+  }
+  // label
+  ctx.fillStyle = '#fff'; ctx.font = 'bold ' + Math.round(W*0.03) + 'px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('事实性知识 — 时、分、秒基础', cx, baseY - fh/2 + 5);
+  if (castleState.factual) {
+    ctx.font = Math.round(W*0.018) + 'px sans-serif'; ctx.fillStyle = '#fff';
+    ctx.fillText(castleState.factual, cx, baseY - fh/2 + 5 + Math.round(W*0.035));
+  }
+
+  // ---- Level 2 (Middle) - Conceptual ----
+  const mw = fw * 0.7, mh = fh * 0.75;
+  ctx.fillStyle = castleState.conceptual ? '#1677ff' : '#91caff';
+  ctx.fillRect(cx - mw/2, baseY - fh - mh, mw, mh);
+  ctx.strokeStyle = '#333'; ctx.lineWidth = 2;
+  ctx.strokeRect(cx - mw/2, baseY - fh - mh, mw, mh);
+  // columns
+  ctx.fillStyle = castleState.conceptual ? '#0958d9' : '#4096ff';
+  ctx.fillRect(cx - mw/2 + 4, baseY - fh - mh + 4, 8, mh - 8);
+  ctx.fillRect(cx + mw/2 - 12, baseY - fh - mh + 4, 8, mh - 8);
+  // windows
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.beginPath(); ctx.arc(cx, baseY - fh - mh/2, 12, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.font = 'bold ' + Math.round(W*0.025) + 'px sans-serif';
+  ctx.fillText('概念性知识', cx, baseY - fh - mh/2 + 5);
+  if (castleState.conceptual) {
+    ctx.font = Math.round(W*0.016) + 'px sans-serif'; ctx.fillStyle = '#fff';
+    ctx.fillText(castleState.conceptual, cx, baseY - fh - mh/2 + 5 + Math.round(W*0.03));
+  }
+
+  // ---- Level 3 (Top) - Meta ----
+  const tw = mw * 0.6, th = fh * 0.6;
+  // tower
+  ctx.fillStyle = castleState.meta ? '#faad14' : '#ffe58f';
+  ctx.beginPath();
+  ctx.moveTo(cx - tw/2, baseY - fh - mh);
+  ctx.lineTo(cx - tw/2, baseY - fh - mh - th);
+  ctx.lineTo(cx + tw/2, baseY - fh - mh - th);
+  ctx.lineTo(cx + tw/2, baseY - fh - mh);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#333'; ctx.lineWidth = 2; ctx.stroke();
+  // spire
+  ctx.fillStyle = castleState.meta ? '#faad14' : '#ffe58f';
+  ctx.beginPath();
+  ctx.moveTo(cx - tw/4, baseY - fh - mh - th);
+  ctx.lineTo(cx, baseY - fh - mh - th - 30);
+  ctx.lineTo(cx + tw/4, baseY - fh - mh - th);
+  ctx.closePath(); ctx.fill();
+  ctx.stroke();
+  // flag
+  ctx.fillStyle = '#e74c3c';
+  ctx.fillRect(cx - 1, baseY - fh - mh - th - 38, 2, 12);
+  ctx.beginPath(); ctx.moveTo(cx+1, baseY - fh - mh - th - 38); ctx.lineTo(cx+15, baseY - fh - mh - th - 32); ctx.lineTo(cx+1, baseY - fh - mh - th - 26); ctx.closePath(); ctx.fill();
+  // label
+  ctx.fillStyle = '#333'; ctx.font = 'bold ' + Math.round(W*0.02) + 'px sans-serif';
+  ctx.fillText('&#x2B50; 元认知/价值', cx, baseY - fh - mh - th/2 + 5);
+  if (castleState.meta) {
+    ctx.font = Math.round(W*0.014) + 'px sans-serif'; ctx.fillStyle = '#333';
+    ctx.fillText(castleState.meta, cx, baseY - fh - mh - th/2 + 5 + Math.round(W*0.025));
+  }
+
+  // ---- Decorative elements ----
+  // door
+  ctx.fillStyle = '#5D4037';
+  ctx.beginPath();
+  ctx.arc(cx, baseY, 20, Math.PI, 0);
+  ctx.lineTo(cx - 20, baseY); ctx.lineTo(cx - 20, baseY - 20);
+  ctx.lineTo(cx + 20, baseY - 20); ctx.lineTo(cx + 20, baseY);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#FFD700'; ctx.beginPath(); ctx.arc(cx, baseY - 12, 4, 0, Math.PI*2); ctx.fill();
+
+  // path
+  ctx.fillStyle = '#BCAAA4';
+  ctx.beginPath(); ctx.moveTo(cx-30,baseY); ctx.lineTo(cx-20,baseY+5); ctx.lineTo(cx-15,baseY+H*0.05); ctx.lineTo(cx+15,baseY+H*0.05); ctx.lineTo(cx+20,baseY+5); ctx.lineTo(cx+30,baseY); ctx.closePath(); ctx.fill();
+
+  addLog('城堡绘制完成 | ' + (castleState.factual ? '底部有' : '底部无') + '事实性知识，' + (castleState.conceptual ? '中部有' : '中部无') + '概念性知识，' + (castleState.meta ? '顶部有' : '顶部无') + '元认知知识', '');
+}
+
+/* ===== Drop Zones Overlay ===== */
+function createDropZones() {
+  const container = document.getElementById('dropZonesContainer');
+  const wrap = document.getElementById('castleWrap');
+  const rect = wrap.getBoundingClientRect();
+  const w = rect.width;
+  const h = w * 0.625;
+  if (w === 0) { setTimeout(createDropZones, 100); return; }
+
+  container.style.position = 'absolute'; container.style.top = '0'; container.style.left = '0';
+  container.style.width = '100%'; container.style.height = '100%'; container.style.pointerEvents = 'none';
+
+  const zones = [
+    { id: 'factual',   label: '拖入事实性知识', top: h*0.66, left: w*0.20, width: w*0.60, height: h*0.22 },
+    { id: 'conceptual',label: '拖入概念性知识', top: h*0.40, left: w*0.30, width: w*0.40, height: h*0.20 },
+    { id: 'meta',      label: '拖入元认知知识', top: h*0.20, left: w*0.35, width: w*0.30, height: h*0.18 }
+  ];
+
+  container.innerHTML = '';
+  zones.forEach(z => {
+    const dz = document.createElement('div');
+    dz.className = 'drop-zone';
+    dz.id = 'dz-' + z.id;
+    dz.dataset.type = z.id;
+    dz.style.top = z.top + 'px';
+    dz.style.left = z.left + 'px';
+    dz.style.width = z.width + 'px';
+    dz.style.height = z.height + 'px';
+    dz.style.pointerEvents = 'auto';
+    dz.textContent = z.label;
+    container.appendChild(dz);
+
+    // Drag events
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+    dz.addEventListener('dragleave', () => { dz.classList.remove('drag-over'); });
+    dz.addEventListener('drop', e => {
+      e.preventDefault();
+      dz.classList.remove('drag-over');
+      const type = e.dataTransfer.getData('text/plain');
+      const label = e.dataTransfer.getData('text/label');
+      const desc = e.dataTransfer.getData('text/desc');
+      if (type === z.id) {
+        castleState[type] = desc || label;
+        dz.textContent = '&#x2705; ' + (label || '已放置');
+        dz.classList.add('filled');
+        dz.classList.remove('wrong');
+        addLog('放置 ' + label + ' 到 ' + getZoneName(z.id) + ' &#x2705;', 'drag');
+        drawCastle();
+        updateGhosts();
+        checkAllFilled();
+      } else {
+        dz.classList.add('wrong');
+        addLog('&#x274C; ' + label + ' 不能放在 ' + getZoneName(z.id) + ' — ' + getHint(type, z.id), 'error');
+        setTimeout(() => dz.classList.remove('wrong'), 800);
+        showTooltip(e.clientX, e.clientY, getHint(type, z.id));
+      }
+    });
+  });
+}
+
+function getZoneName(id) {
+  return { factual:'事实性层', conceptual:'概念性层', meta:'元认知层' }[id] || id;
+}
+
+function getHint(from, to) {
+  const hints = {
+    'factual_conceptual': '事实性知识应放在底层，这是知识城堡的基石！',
+    'factual_meta': '事实性知识是基础，应放在最底层哦！',
+    'conceptual_factual': '概念性知识是中部结构，底层需要事实性知识支撑！',
+    'conceptual_meta': '概念性知识应建在事实性知识之上，放在中层！',
+    'meta_factual': '元认知是顶层思维，底层需要事实性知识！',
+    'meta_conceptual': '元认知应建在概念性知识之上，请放在顶层！'
+  };
+  const key = from + '_' + to;
+  return hints[key] || '这个位置不合适，试试其他层吧！';
+}
+
+/* ===== Tooltip ===== */
+function showTooltip(x, y, msg) {
+  const tt = document.getElementById('tooltip');
+  tt.textContent = msg; tt.className = 'tooltip show';
+  tt.style.left = Math.min(x, window.innerWidth - tt.offsetWidth - 20) + 'px';
+  tt.style.top = (y - 40) + 'px';
+  setTimeout(() => tt.classList.remove('show'), 2000);
+}
+
+/* ===== Drag Events on Toolbar Blocks ===== */
+document.getElementById('toolbar').addEventListener('dragstart', e => {
+  const block = e.target.closest('.knowledge-block');
+  if (!block) return;
+  e.dataTransfer.setData('text/plain', block.dataset.type);
+  e.dataTransfer.setData('text/label', block.dataset.label);
+  e.dataTransfer.setData('text/desc', block.dataset.desc);
+  block.classList.add('dragging');
+  setTimeout(() => block.classList.remove('dragging'), 0);
+});
+
+/* ===== Touch Support for Mobile ===== */
+let touchDragData = null;
+document.getElementById('toolbar').addEventListener('touchstart', e => {
+  const block = e.target.closest('.knowledge-block');
+  if (!block) return;
+  touchDragData = {
+    type: block.dataset.type,
+    label: block.dataset.label,
+    desc: block.dataset.desc
+  };
+  block.style.opacity = '0.5';
+}, { passive: true });
+
+document.addEventListener('touchmove', e => {
+  if (!touchDragData) return;
+  e.preventDefault();
+  const touch = e.touches[0];
+  const el = document.elementFromPoint(touch.clientX, touch.clientY);
+  // highlight drop zone
+  document.querySelectorAll('.drop-zone').forEach(dz => dz.classList.remove('drag-over'));
+  if (el && el.classList.contains('drop-zone')) el.classList.add('drag-over');
+}, { passive: false });
+
+document.addEventListener('touchend', e => {
+  if (!touchDragData) return;
+  const touch = e.changedTouches[0];
+  const el = document.elementFromPoint(touch.clientX, touch.clientY);
+  document.querySelectorAll('.knowledge-block').forEach(kb => kb.style.opacity = '1');
+  document.querySelectorAll('.drop-zone').forEach(dz => dz.classList.remove('drag-over'));
+
+  if (el && el.classList.contains('drop-zone')) {
+    const type = touchDragData.type;
+    const zoneId = el.dataset.type;
+    if (type === zoneId) {
+      castleState[type] = touchDragData.desc || touchDragData.label;
+      el.textContent = '&#x2705; ' + (touchDragData.label || '已放置');
+      el.classList.add('filled'); el.classList.remove('wrong');
+      addLog('放置 ' + touchDragData.label + ' 到 ' + getZoneName(zoneId) + ' [触摸]', 'drag');
+      drawCastle(); updateGhosts(); checkAllFilled();
+    } else {
+      el.classList.add('wrong');
+      addLog('&#x274C; ' + touchDragData.label + ' 不能放在 ' + getZoneName(zoneId) + ' [触摸]', 'error');
+      setTimeout(() => el.classList.remove('wrong'), 800);
+      showTooltip(touch.clientX, touch.clientY - 40, getHint(type, zoneId));
+    }
+  }
+  touchDragData = null;
+}, { passive: true });
+
+/* ===== Ghost Blocks ===== */
+function updateGhosts() {
+  document.querySelectorAll('.ghost-block').forEach(g => g.remove());
+  ['factual','conceptual','meta'].forEach(type => {
+    if (!castleState[type]) {
+      const dz = document.getElementById('dz-' + type);
+      if (!dz) return;
+      const ghost = document.createElement('div');
+      ghost.className = 'ghost-block';
+      const rect = dz.getBoundingClientRect();
+      const wrap = document.getElementById('castleWrap');
+      const wrapRect = wrap.getBoundingClientRect();
+      ghost.style.position = 'absolute';
+      ghost.style.left = (rect.left - wrapRect.left + 4) + 'px';
+      ghost.style.top = (rect.top - wrapRect.top + 4) + 'px';
+      ghost.style.width = (rect.width - 8) + 'px';
+      ghost.style.height = (rect.height - 8) + 'px';
+      ghost.style.pointerEvents = 'none';
+      ghost.style.border = '2px dashed rgba(255,77,79,0.5)';
+      ghost.style.background = 'rgba(255,77,79,0.08)';
+      ghost.style.borderRadius = '4px';
+      ghost.style.animation = 'pulse-ghost 2s infinite';
+      ghost.style.display = 'flex';
+      ghost.style.alignItems = 'center';
+      ghost.style.justifyContent = 'center';
+      ghost.style.color = 'rgba(255,77,79,0.5)';
+      ghost.style.fontSize = '13px';
+      ghost.style.fontWeight = '600';
+      ghost.textContent = '&#x2753; 此处缺失';
+      document.getElementById('dropZonesContainer').appendChild(ghost);
+    }
+  });
+}
+
+/* ===== Check All Filled ===== */
+function checkAllFilled() {
+  const filled = castleState.factual && castleState.conceptual && castleState.meta;
+  if (filled) {
+    addLog('&#x1F3C6; 所有知识层级已填充！可以生成结构化总结了。', 'check');
+  }
+}
+
+/* ===== Stability Check ===== */
+function checkStability() {
+  const wrap = document.getElementById('castleWrap');
+  wrap.classList.remove('shake');
+  let issues = [];
+
+  if (!castleState.factual) {
+    issues.push('&#x1F534; 底层（事实性知识）缺失 — 城堡地基不稳！');
+  }
+  if (!castleState.conceptual) {
+    issues.push('&#x1F534; 中层（概念性知识）缺失 — 城堡墙体摇晃！');
+  }
+  if (!castleState.meta) {
+    issues.push('&#x1F7E1; 顶层（元认知知识）缺失 — 少了些高度，但不影响稳定性');
+  }
+
+  if (!castleState.factual || !castleState.conceptual) {
+    setTimeout(() => wrap.classList.add('shake'), 50);
+    setTimeout(() => wrap.classList.remove('shake'), 700);
+  }
+
+  if (issues.length === 0) {
+    addLog('&#x2705; 结构稳固！知识城堡完美落成！', 'check');
+    showTooltip(window.innerWidth/2, 200, '结构稳固！完美城堡！');
+  } else {
+    issues.forEach(i => addLog(i, 'error'));
+  }
+}
+
+/* ===== Generate Output ===== */
+function generateOutput() {
+  const panel = document.getElementById('outputPanel');
+  const content = document.getElementById('outputContent');
+
+  if (!castleState.factual || !castleState.conceptual || !castleState.meta) {
+    addLog('&#x274C; 知识城堡不完整，无法生成结构化总结', 'error');
+    showTooltip(window.innerWidth/2, 200, '请先完成所有层级的搭建！');
+    return;
+  }
+
+  const output = [
+    { label: '建构任务', value: '"我的一分钟"挑战记录册 — 通过感受、测量、记录、分析、应用、创造，建构对时、分、秒的深层次理解' },
+    { label: '事实性知识（底层）', value: castleState.factual + ' — 时间单位换算（1时=60分，1分=60秒），钟面读数方法，基本时间概念' },
+    { label: '概念性知识（中层）', value: castleState.conceptual + ' — 时间的关系、功能、结构与分类理解，时间量感的建立与比较' },
+    { label: '元认知/价值（顶层）', value: castleState.meta + ' — 时间管理意识，统筹规划能力，反思与创新思维' },
+    { label: '7阶建构路径', value: '个人家庭→学校社区→地方城市→区域民族→国家→人类→未来，逐层递进建构时间认知体系' },
+    { label: '迁移创新', value: '探索"5分钟能做什么"，制定个人时间规划表，将时间管理应用于实际生活' }
+  ];
+
+  content.innerHTML = output.map(o => '<div class="out-item"><span class="out-label">' + o.label + '：</span>' + o.value + '</div>').join('');
+  panel.classList.add('open');
+  addLog('&#x1F4CA; 已生成知识城堡结构化总结', 'check');
+  window.scrollTo({ top: panel.offsetTop - 20, behavior: 'smooth' });
+}
+
+/* ===== Reset ===== */
+function resetCastle() {
+  castleState.factual = null; castleState.conceptual = null; castleState.meta = null;
+  document.querySelectorAll('.drop-zone').forEach(dz => {
+    dz.classList.remove('filled','wrong');
+    const labels = { factual:'拖入事实性知识', conceptual:'拖入概念性知识', meta:'拖入元认知知识' };
+    dz.textContent = labels[dz.dataset.type] || '';
+  });
+  document.getElementById('outputPanel').classList.remove('open');
+  drawCastle();
+  updateGhosts();
+  addLog('&#x21BA; 城堡已重置', '');
+}
+
+/* ===== Toggle Stages ===== */
+function toggleStages() {
+  const body = document.getElementById('stagesBody');
+  const arrow = document.getElementById('stagesArrow');
+  body.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+
+function togglePrinciple() {
+  const body = document.getElementById('principleBody');
+  const arrow = document.getElementById('principleArrow');
+  body.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+
+/* ===== Window Resize ===== */
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    drawCastle();
+    createDropZones();
+    updateGhosts();
+  }, 200);
+});
+
+/* ===== Init ===== */
+window.addEventListener('DOMContentLoaded', () => {
+  addLog('&#x1F3F0; 知识城堡建造师已启动', '');
+  addLog('&#x1F4AC; 从工具栏拖拽知识方块到城堡对应层级', '');
+  drawCastle();
+  setTimeout(() => { createDropZones(); updateGhosts(); }, 100);
+  renderGallery();
+});
+</script>
+
+</body>
+</html>

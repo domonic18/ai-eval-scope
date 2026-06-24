@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性原理 - M9 新知文化思维</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+}
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff;
+  padding: 32px 40px;
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 6px; }
+.header p { font-size: calc(var(--font-body) - 1px); opacity: 0.9; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  transition: box-shadow 0.2s;
+}
+.card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--accent);
+}
+.principle {
+  margin-bottom: 18px;
+  padding: 16px 20px;
+  border-left: 4px solid var(--primary);
+  background: var(--bg);
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  transition: transform 0.2s;
+}
+.principle:hover { transform: translateX(4px); }
+.principle h3 { font-size: calc(var(--font-body) + 2px); color: var(--primary); margin-bottom: 8px; }
+.principle .label {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  font-size: calc(var(--font-body) - 4px);
+  padding: 2px 10px;
+  border-radius: 12px;
+  margin-right: 8px;
+}
+.tag {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  font-size: calc(var(--font-body) - 5px);
+  padding: 2px 10px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+.section-title {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 24px 0 14px;
+  padding-left: 12px;
+  border-left: 4px solid var(--primary);
+}
+.meta-box {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  margin-top: 10px;
+  font-size: calc(var(--font-body) - 1px);
+}
+.meta-box strong { color: #389e0d; }
+.reflect-item {
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.reflect-item:hover { background: #fff7cc; }
+.reflect-item .q { font-weight: 600; color: #d48806; }
+.reflect-item .a { display: none; margin-top: 8px; padding: 10px; background: #fff; border-radius: 6px; }
+.reflect-item.open .a { display: block; }
+.btn-toggle {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 4px 14px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-size: calc(var(--font-body) - 4px);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-toggle:hover { background: var(--primary-hover); }
+.exercise-card {
+  background: linear-gradient(135deg, #f0f5ff, #e6f7ff);
+  border: 1px solid var(--accent);
+  border-radius: var(--border-radius);
+  padding: 18px 22px;
+  margin-bottom: 16px;
+}
+.exercise-card h4 { color: var(--primary); margin-bottom: 8px; }
+.step-list { list-style: none; padding: 0; }
+.step-list li {
+  padding: 6px 0 6px 24px;
+  position: relative;
+}
+.step-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 12px;
+  width: 10px;
+  height: 10px;
+  background: var(--primary);
+  border-radius: 50%;
+}
+.principle-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  font-size: calc(var(--font-body) - 4px);
+  font-weight: 700;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .header { padding: 20px; }
+  .card { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>建构性原理</h1>
+  <p>M9 新知文化思维 · 从"感知一分钟"示例中提炼可迁移的建构方法</p>
+</div>
+
+<div class="card">
+  <h2>什么是建构性原理？</h2>
+  <p>建构性原理是从具体的学习体验中提炼出来的<strong>可迁移方法</strong>。它们不是死记硬背的知识，而是你学了之后可以<strong>用到其他情境</strong>中去的学习策略。下面这5条原理，都来自"感知一分钟"的体验活动——请你先理解它们，再试着用到别的地方。</p>
+</div>
+
+<div class="section-title">一、建构性原理提炼（5条）</div>
+
+<div class="card">
+  <div class="principle">
+    <h3><span class="principle-count">1</span>从身体感受到数学概念</h3>
+    <p><strong>原理说明：</strong>先用自己的身体去"感受"一个抽象概念（如时间），再把感觉转化为数学语言（数字、单位、关系）。</p>
+    <div class="meta-box">
+      <strong>示例体现：</strong>先体验"闭眼静坐1分钟"的感受，再记录"感觉时长 vs 实际时长"，最后得出"1分=60秒"的数学关系。<br>
+      <strong>适用情境：</strong>学习任何抽象数学概念时（如"米"、"千克"）。<br>
+      <strong>注意事项：</strong>体验不是终点，体验后一定要做"从感受到数据"的转化记录。
+    </div>
+  </div>
+
+  <div class="principle">
+    <h3><span class="principle-count">2</span>用对比发现规律</h3>
+    <p><strong>原理说明：</strong>通过对比不同情境下的同一现象（如同一分钟内的不同活动），发现隐藏的规律。</p>
+    <div class="meta-box">
+      <strong>示例体现：</strong>对比"静坐1分钟 vs 拍手1分钟 vs 写字1分钟"的感受差异，发现"注意力越集中，时间感觉越短"的规律。<br>
+      <strong>适用情境：</strong>比较不同物体的重量、不同活动的耗时、不同形状的面积等。<br>
+      <strong>注意事项：</strong>对比时只改变一个变量，其他条件保持一致。
+    </div>
+  </div>
+
+  <div class="principle">
+    <h3><span class="principle-count">3</span>体验→数据→模型的三步建构法</h3>
+    <p><strong>原理说明：</strong>任何新概念的建构都遵循"先体验（收集素材）→ 再整理（变成数据）→ 最后可视化（建模型）"的路径。</p>
+    <div class="meta-box">
+      <strong>示例体现：</strong>体验活动（收集感受）→ 填写记录表（变成数据）→ 画一分钟模型（可视化）。<br>
+      <strong>适用情境：</strong>建构任何需要理解的抽象概念。<br>
+      <strong>注意事项：</strong>不要跳过"整理数据"这一步，直接从体验跳到画图。
+    </div>
+  </div>
+
+  <div class="principle">
+    <h3><span class="principle-count">4</span>用"我句式"表达自己的发现</h3>
+    <p><strong>原理说明：</strong>用固定的表达句式（"我观察到……我发现……所以我认为……"）把自己的思考和发现说清楚。</p>
+    <div class="meta-box">
+      <strong>示例体现：</strong>体验后用三段式句式写出对一分钟的新认识。<br>
+      <strong>适用情境：</strong>记录观察结果、表达实验结论、分享发现。<br>
+      <strong>注意事项：</strong>句式是"脚手架"不是"框框"，允许在框架内自由表达真实想法。
+    </div>
+  </div>
+
+  <div class="principle">
+    <h3><span class="principle-count">5</span>反思"我怎么知道的"</h3>
+    <p><strong>原理说明：</strong>每次建构完成后，不只关注"我知道了什么"，更要关注"我是怎么知道的"。</p>
+    <div class="meta-box">
+      <strong>示例体现：</strong>最后一步问自己"我是通过什么方法从不知道到知道的？"<br>
+      <strong>适用情境：</strong>每个学习任务结束后。<br>
+      <strong>注意事项：</strong>反思要具体，不要只说"我学了知识"，要说"我通过做___知道了___"。
+    </div>
+  </div>
+</div>
+
+<div class="section-title">二、建构性原理迁移应用</div>
+
+<div class="exercise-card">
+  <h4>练习1：感受"10秒钟"</h4>
+  <p><strong>情境：</strong>设计一个"10秒体验"活动，让你的同学也能感受到"10秒到底有多长"。</p>
+  <p><strong>建构任务：</strong>设计并完成一个"10秒体验方案"——包含体验方式、记录表、结论。</p>
+  <p><strong>建议使用原理：</strong><span class="tag">原理① 从感受到概念</span> <span class="tag">原理③ 三步建构法</span></p>
+  <p><strong>建构脚手架提示：</strong>想一想，"10秒"能做哪些动作？方案中用什么方式让别人"感受"到10秒的长度？</p>
+  <p><strong>表达：</strong>用"我句式"写出你的方案设计和感受结论。</p>
+  <button class="btn-toggle" onclick="this.parentElement.classList.toggle('open');this.textContent=this.parentElement.classList.contains('open')?'收起提示':'展开提示'">展开提示</button>
+  <div class="meta-box" style="display:none;margin-top:10px;">
+    试试看：拍手10次需要几秒？深呼吸一次需要几秒？用你的脉搏跳动来估算10秒——先测出你10秒内脉搏跳几次，以后就能用脉搏"计时"了！
+  </div>
+</div>
+<script>
+document.querySelectorAll('.exercise-card .btn-toggle').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const box = this.parentElement.querySelector('.meta-box');
+    if (box) {
+      if (box.style.display === 'none' || !box.style.display) {
+        box.style.display = 'block';
+        this.textContent = '收起提示';
+      } else {
+        box.style.display = 'none';
+        this.textContent = '展开提示';
+      }
+    }
+  });
+});
+</script>
+
+<div class="exercise-card">
+  <h4>练习2：画出"我的一天"时间比例图</h4>
+  <p><strong>情境：</strong>你的一天有24小时，睡觉、学习、吃饭、运动各占多少时间？用一张图表达出来。</p>
+  <p><strong>建构任务：</strong>统计自己一天的时间分配，画出"我的一天"圆形比例图（饼图）。</p>
+  <p><strong>建议使用原理：</strong><span class="tag">原理② 对比发现规律</span> <span class="tag">原理③ 三步建构法</span></p>
+  <p><strong>建构脚手架提示：</strong>先列出一日常规活动的时间，再算每项占24小时的几分之几，最后画成饼图。</p>
+  <p><strong>表达：</strong>用"我句式"写一段话，介绍你的时间分配图。</p>
+  <button class="btn-toggle" onclick="toggleHint(this)">展开提示</button>
+  <div class="meta-box" style="display:none;margin-top:10px;">
+    比如：睡觉9小时 → 9÷24 = 3/8 → 圆中占135°。把每项活动都这样换算，你就能画出一张属于你自己的时间饼图了！
+  </div>
+</div>
+
+<script>
+function toggleHint(btn) {
+  const box = btn.parentElement.querySelector('.meta-box');
+  if (box) {
+    if (box.style.display === 'none' || !box.style.display) {
+      box.style.display = 'block';
+      btn.textContent = '收起提示';
+    } else {
+      box.style.display = 'none';
+      btn.textContent = '展开提示';
+    }
+  }
+}
+</script>
+
+<div class="section-title">三、元认知反思</div>
+
+<div class="card">
+  <p style="margin-bottom:12px;">点击下面的问题，想一想你的答案——这对你成为一个会学习的人非常有帮助。</p>
+
+  <div class="reflect-item" onclick="toggleReflect(this)">
+    <div class="q">1. 在这个模块中，你是"通过做什么"来理解"一分钟"这个概念的？</div>
+    <div class="a"><em>试一试：</em>把你做过的事情列出来——体验活动？记录数据？画图？和同学讨论？哪件事对你理解"一分钟"帮助最大？</div>
+  </div>
+
+  <div class="reflect-item" onclick="toggleReflect(this)">
+    <div class="q">2. 如果你要学习"1000米有多长"，你会用什么方法？和建构"一分钟"的方法有什么相似之处？</div>
+    <div class="a"><em>试一试：</em>先走1000米感受距离？对比走路和跑步的时间？画一张距离图？这和"感受一分钟"是不是很像——都是先体验，再记录，再画图。</div>
+  </div>
+
+  <div class="reflect-item" onclick="toggleReflect(this)">
+    <div class="q">3. 你觉得"体验→数据→模型"三步法中，哪一步最困难？为什么？</div>
+    <div class="a"><em>试一试：</em>很多人觉得"整理数据"最难，因为要把模糊的感觉变成精确的数字。你认为呢？</div>
+  </div>
+
+  <div class="reflect-item" onclick="toggleReflect(this)">
+    <div class="q">4. 有没有在日常生活中学习学概念的经历？你是怎么学会的？</div>
+    <div class="a"><em>试一试：</em>比如"今天好热"→看温度计→知道38℃是什么感觉。这和"闭眼感受一分钟"是同一个道理。</div>
+  </div>
+
+  <div class="reflect-item" onclick="toggleReflect(this)">
+    <div class="q">5. 如果让你教幼儿园小朋友理解"一分钟"，你会怎么教？</div>
+    <div class="a"><em>试一试：</em>小朋友不认识数字——你是不是得用游戏、用身体感受、用拍手来教他们？那正是"从身体感受到数学概念"的原理！</div>
+  </div>
+</div>
+
+<script>
+function toggleReflect(el) {
+  el.classList.toggle('open');
+}
+</script>
+
+<div class="card" style="text-align:center;padding:20px;background:linear-gradient(135deg,#f0f5ff,#e6f7ff);">
+  <p style="font-size:calc(var(--font-body)+2px);font-weight:600;color:var(--primary);">记住：建构性原理就是你的"学习方法工具箱"</p>
+  <p style="color:var(--text-secondary);">下次遇到新概念，先问自己——我能用哪条原理来帮助自己理解？</p>
+</div>
+
+</div>
+</body>
+</html>

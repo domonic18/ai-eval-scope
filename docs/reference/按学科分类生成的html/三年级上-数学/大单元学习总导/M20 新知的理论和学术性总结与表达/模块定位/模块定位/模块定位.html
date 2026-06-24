@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块定位 - M20 时间理论总结</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+}
+.container { width: 100%; max-width: none; padding: 24px 32px; box-sizing: border-box; }
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 8px; }
+.header .subtitle { font-size: 16px; opacity: 0.9; }
+.section { margin-bottom: 28px; }
+.section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  border-left: 4px solid var(--primary);
+  padding-left: 14px;
+  margin-bottom: 14px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.card p { margin-bottom: 10px; }
+.card p:last-child { margin-bottom: 0; }
+.card ul { padding-left: 20px; margin-bottom: 8px; }
+.card li { margin-bottom: 6px; }
+.tag {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  padding: 3px 14px;
+  border-radius: 20px;
+  font-size: 14px;
+  margin: 3px 4px;
+}
+.highlight-box {
+  background: linear-gradient(135deg, #fff7e6, #fff1cc);
+  border-left: 4px solid #fa8c16;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  padding: 14px 18px;
+  margin: 12px 0;
+}
+.highlight-box strong { color: #d46b08; }
+.blue-box {
+  background: linear-gradient(135deg, #f0f5ff, #e6f0ff);
+  border-left: 4px solid var(--primary);
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  padding: 14px 18px;
+  margin: 12px 0;
+}
+.blue-box strong { color: var(--primary); }
+.roadmap {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 16px 0;
+  position: relative;
+  padding-left: 30px;
+}
+.roadmap::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  background: linear-gradient(to bottom, var(--primary), var(--accent));
+  border-radius: 2px;
+}
+.roadmap-item {
+  position: relative;
+  padding: 12px 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  margin-bottom: 10px;
+  transition: transform 0.2s;
+}
+.roadmap-item:hover { transform: translateX(4px); }
+.roadmap-item::before {
+  content: '';
+  position: absolute;
+  left: -24px;
+  top: 18px;
+  width: 12px;
+  height: 12px;
+  background: var(--primary);
+  border-radius: 50%;
+  border: 2px solid var(--bg);
+}
+.roadmap-item:last-child::before { background: #52c41a; }
+.roadmap-item .step-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+.roadmap-item .step-title {
+  font-size: var(--font-body);
+  color: var(--text);
+  font-weight: 600;
+}
+.roadmap-item .step-desc {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+.outcome-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-top: 12px;
+}
+.outcome-card {
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 18px 16px;
+  text-align: center;
+  transition: border-color 0.3s, transform 0.3s;
+  cursor: default;
+}
+.outcome-card:hover { border-color: var(--primary); transform: translateY(-3px); }
+.outcome-card .icon { font-size: 36px; margin-bottom: 8px; }
+.outcome-card h4 { font-size: 18px; color: var(--primary); margin-bottom: 6px; }
+.outcome-card p { font-size: 15px; color: var(--text-secondary); }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-in { animation: fadeUp 0.5s ease-out; }
+.btn-toggle {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 10px;
+}
+.btn-toggle:hover { background: var(--primary-hover); }
+.toggle-content { display: none; margin-top: 12px; padding: 14px; background: var(--bg); border-radius: var(--border-radius); }
+.toggle-content.show { display: block; }
+@media (max-width: 600px) {
+  .container { padding: 12px 16px; }
+  .header { padding: 18px 20px; }
+  .outcome-grid { grid-template-columns: 1fr; }
+  .roadmap { padding-left: 24px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header animate-in">
+  <h1>M20 模块学习总体概要</h1>
+  <p class="subtitle">站到更高处，回头看看走过的路——把沿途学到的东西整理成一幅"完整的地图"</p>
+</div>
+
+<div class="section animate-in">
+  <h2>📖 1. 本模块学习什么</h2>
+  <div class="card">
+    <p>在这个模块中，你不学习新的时间单位或新的换算方法。你的任务是：</p>
+    <div class="blue-box">
+      <strong>🎯 核心任务：</strong> 把已经掌握的时间知识整理成自己的<strong>"理论体系"</strong>，并学会用规范的学术语言表达出来。
+    </div>
+    <p style="font-size:20px;text-align:center;color:var(--primary);font-weight:700;margin-top:8px;">
+      从"我会算"升级到"我能讲清楚"
+    </p>
+  </div>
+</div>
+
+<div class="section animate-in">
+  <h2>❓ 2. 本模块为什么重要</h2>
+  <div class="card">
+    <div class="highlight-box">
+      <strong>💡 想象一下：</strong> 如果有人问你"1小时为什么等于60分钟"，你只能回答"课本上就是这么写的"——这说明你还没有真正理解。
+    </div>
+    <p>只有当你能用自己的话，清晰、完整地解释时间单位系统时，这些知识才算真正属于你。</p>
+    <div class="blue-box">
+      <strong>🔑 核心认知：</strong> 能说清楚 ≠ 会做题。这个模块帮你补的是 <strong>"能说清楚"</strong> 这一步。
+    </div>
+  </div>
+</div>
+
+<div class="section animate-in">
+  <h2>🗺 3. 本模块与大单元主题的关系</h2>
+  <div class="card">
+    <p>整个"时、分、秒"大单元让你走过了这样一条路：</p>
+    <div class="roadmap">
+      <div class="roadmap-item">
+        <div class="step-label">前面模块 M1—M19</div>
+        <div class="step-title">认识钟表 → 读懂时间 → 计算经过时间 → 单位换算 → 解决实际问题</div>
+        <div class="step-desc">积累了大量的操作经验和具体练习</div>
+      </div>
+      <div class="roadmap-item">
+        <div class="step-label">👉 这个模块 M20</div>
+        <div class="step-title">站到更高处，回头看看走过的路</div>
+        <div class="step-desc">把你沿途学到的东西整理成一幅"完整的地图"</div>
+      </div>
+    </div>
+    <div class="highlight-box">
+      <strong>🌍 比喻：</strong> 如果把大单元比作一次"时间探索之旅"，M20就是旅行结束后你写的那本 <strong>"旅行指南"</strong>。
+    </div>
+  </div>
+</div>
+
+<div class="section animate-in">
+  <h2>🔗 4. 本模块与前后模块的衔接</h2>
+  <div class="card">
+    <div class="blue-box">
+      <strong>📋 前面模块（M1—M19）：</strong> 帮助你从"不会看钟"到"熟练换算"。积累了大量的操作经验和具体练习。
+    </div>
+    <div class="blue-box">
+      <strong>📌 本模块（M20）：</strong> 把这些经验<strong>"理论化"</strong>。比如，你做过很多"3时=180分"的练习题，现在你要思考的是"为什么3时等于180分"，然后用语言把这个过程描述出来。
+    </div>
+    <div class="blue-box">
+      <strong>🌟 后续价值：</strong> 这种"把操作经验提升为理论知识"的能力，可以在学习任何数学概念时使用——长度、重量、面积、体积……</div>
+  </div>
+  <button class="btn-toggle" onclick="toggleDetail()">🔍 看看为什么60进制如此特别</button>
+  <div class="toggle-content" id="detailContent">
+    <p><strong>为什么时间用60进制？</strong></p>
+    <p>60可以被2、3、4、5、6、10、12、15、20、30整除，是1~6的整数中除了7以外都能整除的最小数字。古人选择60进制，是因为它<strong>特别适合平均分配</strong>——把1小时平均分成2份、3份、4份、5份、6份，都能得到整数分钟。如果是10进制，把1小时平均分成3份就得不到整数了！</p>
+  </div>
+</div>
+
+<div class="section animate-in">
+  <h2>🎁 5. 本模块预期学习成果</h2>
+  <p style="color:var(--text-secondary);margin-bottom:10px;">完成本模块后，你将有<strong>3样"可以带走的东西"</strong>：</p>
+  <div class="outcome-grid">
+    <div class="outcome-card">
+      <div class="icon">🧠</div>
+      <h4>时间知识概念图</h4>
+      <p>把你对时、分、秒的全部理解画在一张图上</p>
+    </div>
+    <div class="outcome-card">
+      <div class="icon">📝</div>
+      <h4>时间小论文</h4>
+      <p>用"引言—正文—结论"的结构写一篇关于时间单位的文章</p>
+    </div>
+    <div class="outcome-card">
+      <div class="icon">📈</div>
+      <h4>学习成长报告</h4>
+      <p>回顾自己学习"时、分、秒"的过程，记录从"不会"到"会"的变化</p>
+    </div>
+  </div>
+</div>
+
+</div>
+<script>
+function toggleDetail() {
+  const content = document.getElementById('detailContent');
+  content.classList.toggle('show');
+}
+</script>
+</body>
+</html>

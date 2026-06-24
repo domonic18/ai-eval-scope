@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性原理导学 — 时间计算通用方法</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+h2 {
+  font-size: var(--font-h2);
+  color: var(--text);
+  margin: 28px 0 12px 0;
+  line-height: 1.5;
+  border-left: 4px solid var(--primary);
+  padding-left: 12px;
+}
+h3 {
+  font-size: calc(var(--font-h2) - 2px);
+  color: var(--text);
+  margin: 18px 0 8px 0;
+}
+h4 {
+  font-size: calc(var(--font-body) + 2px);
+  margin: 14px 0 6px;
+  color: var(--primary);
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.principle-box {
+  border-left: 4px solid var(--primary);
+  background: #f6ffed;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  transition: transform 0.2s;
+}
+.principle-box:hover {
+  transform: translateX(4px);
+}
+.principle-num {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  font-size: 14px;
+  font-weight: bold;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+.tag {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  margin-right: 4px;
+}
+.tag-practice {
+  background: #722ed1;
+}
+.tag-check {
+  background: #52c41a;
+}
+.exercise-card {
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: var(--border-radius);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.exercise-card h4 { color: #d46b08; }
+ul, ol {
+  padding-left: 24px;
+  margin: 6px 0;
+}
+li { margin-bottom: 4px; }
+.checklist {
+  list-style: none;
+  padding: 0;
+}
+.checklist li {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.checklist li::before {
+  content: "☐";
+  font-size: 20px;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+.toggle-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 8px 18px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin: 6px 0;
+}
+.toggle-btn:hover { background: var(--primary-hover); }
+.hint-box {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s;
+  padding: 0 14px;
+}
+.hint-box.open {
+  max-height: 400px;
+  padding: 14px;
+  background: #fafafa;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  margin-top: 8px;
+}
+.approach-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+}
+.approach-step .step-label {
+  background: var(--primary);
+  color: #fff;
+  font-weight: bold;
+  font-size: 15px;
+  width: 32px;
+  height: 32px;
+  line-height: 32px;
+  text-align: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.footer-note {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+  padding: 20px 0 10px;
+  border-top: 1px solid var(--border);
+  margin-top: 30px;
+}
+@media (max-width: 600px) {
+  .container { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🧩 解析性原理导学</h1>
+<p style="color:var(--text-secondary);margin:0 0 20px 0;font-size:16px;">M12 新知书面性应用 · 从示例到通用方法 · 三年级</p>
+
+<div class="card">
+  <h2>🔍 从示例到原理</h2>
+  <p>在"解析性示例"中，你看到了一道时间混合计算题是如何一步步被拆解的。但光看一道题是不够的——你需要从中提炼出<strong>通用的分析方法</strong>，以后遇到任何时间问题都能用上。</p>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;">
+    <span class="tag">📌 核心思维</span>
+    <span class="tag">🔄 可迁移</span>
+    <span class="tag tag-practice">📝 边学边练</span>
+  </div>
+</div>
+
+<!-- 原理 1 -->
+<div class="card">
+  <h2>📐 原理1：单位统一优先法</h2>
+  <div class="principle-box">
+    <p><strong>原理说明：</strong>看到时间题的第一反应，不是直接算，而是先看单位是否统一。如果不统一，先换算再操作。</p>
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin-top:8px;">
+      <span style="font-weight:600;color:var(--primary);">📖 示例体现</span><span>"1分25秒"和"1分20秒"都含"分"和"秒"，全部换算成秒</span>
+      <span style="font-weight:600;color:var(--primary);">✏️ 如何使用</span><span>圈出题目中的所有时间数据，检查单位。有"分"+"秒"混排的，全部转成最小单位（秒）</span>
+      <span style="font-weight:600;color:var(--primary);">🎯 适用场景</span><span>时间比较、时间加减、时间排序、求平均值</span>
+      <span style="font-weight:600;color:var(--primary);">⚠️ 使用提醒</span><span>换完之后注意，最终答案可能需要换回"几分几秒"的形式</span>
+    </div>
+  </div>
+</div>
+
+<!-- 原理 2 -->
+<div class="card">
+  <h2>✏️ 原理2：关键信息标注法</h2>
+  <div class="principle-box" style="border-left-color:#722ed1;">
+    <p><strong>原理说明：</strong>用圈、划、标三种方式在题目上做标记，不放过任何一个数字和关键词。</p>
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin-top:8px;">
+      <span style="font-weight:600;color:#722ed1;">📖 示例体现</span><span>圈出了"1分25秒""1分20秒""以内""三次"等关键信息</span>
+      <span style="font-weight:600;color:#722ed1;">✏️ 如何使用</span><span>圈数字、划线标出关系词（以内、超过、提前、推迟）、标注单位</span>
+      <span style="font-weight:600;color:#722ed1;">🎯 适用场景</span><span>应用题审题、复杂题目的信息整理</span>
+      <span style="font-weight:600;color:#722ed1;">⚠️ 使用提醒</span><span>不要只在脑子里想，一定要动笔在题目上做标记</span>
+    </div>
+  </div>
+</div>
+
+<!-- 原理 3 -->
+<div class="card">
+  <h2>🔄 原理3：四步拆解法</h2>
+  <div class="principle-box" style="border-left-color:#d46b08;">
+    <p><strong>原理说明：</strong>按"看→判→调→解"四步拆解问题。</p>
+    <div style="margin:12px 0;">
+      <div class="approach-step"><span class="step-label">看</span> 这是什么题？有哪些数据？</div>
+      <div class="approach-step"><span class="step-label" style="background:#722ed1;">判</span> 判断需要什么运算？单位需要换算吗？</div>
+      <div class="approach-step"><span class="step-label" style="background:#d46b08;">调</span> 调整单位为统一格式</div>
+      <div class="approach-step"><span class="step-label" style="background:#52c41a;">解</span> 计算求解</div>
+    </div>
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin-top:8px;">
+      <span style="font-weight:600;color:#d46b08;">📖 示例体现</span><span>"看"到分和秒混合→"判"断需要换算→"调"整为统一单位→"解"出答案</span>
+      <span style="font-weight:600;color:#d46b08;">🎯 适用场景</span><span>所有需要计算的时间问题</span>
+      <span style="font-weight:600;color:#d46b08;">⚠️ 使用提醒</span><span>即使题目看起来很简单，也要养成按步骤思考的习惯</span>
+    </div>
+  </div>
+</div>
+
+<!-- 原理 4 -->
+<div class="card">
+  <h2>✅ 原理4：逆验算验证法</h2>
+  <div class="principle-box" style="border-left-color:#52c41a;">
+    <p><strong>原理说明：</strong>算完答案后，用相反的运算验证——加法的逆运算是减法，乘法的逆运算是除法。</p>
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin-top:8px;">
+      <span style="font-weight:600;color:#52c41a;">📖 示例体现</span><span>算出85-80=5秒后，反过来想"80+5=85吗？"是的！</span>
+      <span style="font-weight:600;color:#52c41a;">✏️ 如何使用</span><span>算完结果后，代入原题做反向运算检查</span>
+      <span style="font-weight:600;color:#52c41a;">🎯 适用场景</span><span>所有计算题的检查环节</span>
+      <span style="font-weight:600;color:#52c41a;">⚠️ 使用提醒</span><span>不要只盯着自己的计算过程检查，要用逆运算独立验证</span>
+    </div>
+  </div>
+</div>
+
+<!-- 练习区 -->
+<div class="card">
+  <h2>📝 原理应用练习</h2>
+
+  <div class="exercise-card">
+    <h4>🏆 练习1：谁是最佳守时员</h4>
+    <p>学校"守时小卫士"评选，小红到达时间8:10（规定8:00到校），小刚到校8:05，小丽到校7:55。要求迟到不超过5分钟才能获得提名。</p>
+    <p><strong>解析任务：</strong>谁获得了提名？谁迟到了？迟到了多久？</p>
+    <p style="font-size:15px;color:var(--text-secondary);">建议原理：单位统一优先法 + 关键信息标注法</p>
+    <button class="toggle-btn" onclick="toggleHint('hint1')">💡 查看分析提示</button>
+    <div id="hint1" class="hint-box">
+      <p>先搞清"8:00到校"是标准时间。每个人的时刻和标准时间比较：</p>
+      <p>小红 8:10 - 8:00 = 迟到10分钟 ❌<br>小刚 8:05 - 8:00 = 迟到5分钟 ✔️（刚好≤5）<br>小丽 7:55 - 8:00 = 早到5分钟 ✔️</p>
+      <p>答案：小刚和小丽获得提名，小红迟到了10分钟。</p>
+    </div>
+  </div>
+
+  <div class="exercise-card">
+    <h4>📺 练习2：电视节目时间表</h4>
+    <p>周日晚上电视台：18:00-18:30《动物世界》、18:30-19:00《新闻袋袋裤》、19:00-19:45《快乐大本营》。爸爸说只能看到20:00。</p>
+    <p><strong>解析任务：</strong>他最多能完整看完几个节目？每个节目时长多少？</p>
+    <p style="font-size:15px;color:var(--text-secondary);">建议原理：四步拆解法 + 关键信息标注法</p>
+    <button class="toggle-btn" onclick="toggleHint('hint2')">💡 查看分析提示</button>
+    <div id="hint2" class="hint-box">
+      <p>先算每个节目时长：《动物世界》30分，《新闻袋袋裤》30分，《快乐大本营》45分。</p>
+      <p>从18:00看到20:00共120分钟。30+30+45=105分钟 ≤ 120分钟。</p>
+      <p>答案：三个节目都能完整看完！</p>
+    </div>
+  </div>
+</div>
+
+<!-- 自我检测 -->
+<div class="card">
+  <h2>✅ 自我检测</h2>
+  <p>对照以下清单，检查自己是否掌握了这4条原理：</p>
+  <ul class="checklist">
+    <li>遇到"时、分、秒"混合的题，我第一反应是先统一单位吗？</li>
+    <li>我能在题目上用圈和划的方式标注关键信息吗？</li>
+    <li>我养成了写完用逆运算检查的习惯吗？</li>
+    <li>如果一道题我看不懂，我知道从哪里开始"拆解"吗？</li>
+  </ul>
+  <button class="toggle-btn" onclick="toggleHint('self-check-result')">📊 查看掌握评估</button>
+  <div id="self-check-result" class="hint-box">
+    <p><strong>评估标准：</strong></p>
+    <p>✅ 4项全勾 → 太棒了！你已经掌握了解析性原理，去挑战案例吧！</p>
+    <p>✅ 勾了3项 → 很不错！再复习一下没勾的那一条原理。</p>
+    <p>✅ 勾了1-2项 → 建议重新看一遍4条原理，重点练不熟练的部分。</p>
+    <p>✅ 0项 → 别着急，回到"解析性示例"再做一遍，边做边对照原理。</p>
+  </div>
+</div>
+
+<div class="footer-note">
+  M12 新知书面性应用 · 解析性原理 · 三年级数学
+</div>
+
+</div>
+
+<script>
+function toggleHint(id) {
+  var el = document.getElementById(id);
+  el.classList.toggle('open');
+}
+</script>
+</body>
+</html>

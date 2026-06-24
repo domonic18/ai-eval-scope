@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目社区 — 时间主题实践</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+}
+.wrapper {
+  max-width: 960px;
+  margin: 0 auto;
+}
+h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 16px;
+  margin-bottom: 20px;
+}
+h2 {
+  font-size: var(--font-h2);
+  font-weight: 600;
+  color: var(--primary);
+  margin-top: 28px;
+  margin-bottom: 14px;
+  padding-bottom: 6px;
+  border-bottom: 3px solid var(--accent);
+}
+h3 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-top: 18px;
+  margin-bottom: 10px;
+  color: var(--text);
+}
+h4 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 14px;
+  margin-bottom: 6px;
+  color: var(--primary-hover);
+}
+p { margin-bottom: 8px; }
+
+.period-badge {
+  display: inline-block;
+  padding: 3px 14px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 10px;
+}
+.period-badge.short { background: #52c41a; }
+.period-badge.medium { background: #1677ff; }
+.period-badge.long { background: #722ed1; }
+
+.project-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.project-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+
+.stage-list {
+  list-style: none;
+  padding: 0;
+  counter-reset: stage;
+}
+.stage-list li {
+  counter-increment: stage;
+  padding: 8px 12px 8px 38px;
+  position: relative;
+  margin-bottom: 6px;
+  background: var(--bg);
+  border-radius: 8px;
+}
+.stage-list li::before {
+  content: counter(stage);
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  text-align: center;
+  line-height: 24px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.criteria-box {
+  background: #fff7e6;
+  border-left: 4px solid #fa8c16;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 10px 0;
+}
+.criteria-box::before { content: "✅ 评价标准"; display: block; font-weight: 700; color: #d46b08; margin-bottom: 4px; }
+.criteria-box ul { margin-bottom: 0; }
+
+.resource-box {
+  background: #e6f7ff;
+  border-left: 4px solid #1677ff;
+  border-radius: 6px;
+  padding: 10px 16px;
+  margin: 10px 0;
+  font-size: 15px;
+}
+.resource-box::before { content: "🔗 资源链接"; display: block; font-weight: 600; color: var(--primary); margin-bottom: 2px; }
+
+.path-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 16px;
+}
+.path-table th, .path-table td {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.path-table th {
+  background: var(--bg);
+  color: var(--primary);
+  font-weight: 600;
+}
+.path-table tr:last-child td { border-bottom: none; }
+.path-table tr:hover td { background: #fafafa; }
+.path-table .tag-s { background: #f6ffed; }
+.path-table .tag-m { background: #e6f7ff; }
+.path-table .tag-l { background: #f9f0ff; }
+
+.project-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.tab-btn {
+  padding: 8px 18px;
+  border: 2px solid var(--border);
+  border-radius: 20px;
+  background: var(--card-bg);
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text);
+}
+.tab-btn:hover, .tab-btn.active {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--bg);
+}
+.project-panel {
+  display: none;
+}
+.project-panel.active {
+  display: block;
+}
+
+@media (max-width: 600px) {
+  .container { padding: 16px 12px; }
+  .project-card { padding: 14px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="wrapper">
+
+<h1>🏗️ 项目社区</h1>
+<p class="subtitle">通过4个真实项目，综合运用时、分、秒知识，在动手实践中成为"时间小专家"！选择适合你的项目开始吧！</p>
+
+<!-- 选项卡导航 -->
+<div class="project-tabs">
+  <button class="tab-btn active" onclick="switchTab('p1')">📊 精力折线图</button>
+  <button class="tab-btn" onclick="switchTab('p2')">🔍 时间小侦探</button>
+  <button class="tab-btn" onclick="switchTab('p3')">🏦 时间银行</button>
+  <button class="tab-btn" onclick="switchTab('p4')">⏳ 时光胶囊</button>
+</div>
+
+<!-- 项目1 -->
+<div id="panel-p1" class="project-panel active">
+  <div class="project-card">
+    <span class="period-badge short">短周期 1-3天</span>
+    <h3>项目1："我的一天"时间折线图</h3>
+    <p>用折线图展示一天中不同时间段的"精力变化"，发现自己的精力高峰和低谷！</p>
+    
+    <h4>📋 阶段任务</h4>
+    <ol class="stage-list">
+      <li>设计记录表：把一天分为上午、中午、下午、晚上四个时段</li>
+      <li>每2小时记录一次"精力值"（1-10分）</li>
+      <li>把数据点在坐标纸上，连成折线</li>
+      <li>标注"高峰期"和"低谷期"</li>
+    </ol>
+    
+    <div class="criteria-box">
+      <ul>
+        <li>是否有至少6个时间点的数据？</li>
+        <li>折线是否清晰连接？</li>
+        <li>是否标注了高峰和低谷？</li>
+      </ul>
+    </div>
+    
+    <div class="resource-box">工具库中的"时间记录表""坐标纸模板"</div>
+    
+    <div style="margin-top:12px;">
+      <p class="tip">💡 <strong>想一想</strong>：你的精力高峰在什么时候？为什么有的人早上精神好，有的人晚上精神好？</p>
+    </div>
+  </div>
+</div>
+
+<!-- 项目2 -->
+<div id="panel-p2" class="project-panel">
+  <div class="project-card">
+    <span class="period-badge medium">中周期 1周</span>
+    <h3>项目2："时间小侦探"——家族时间大调查</h3>
+    <p>调查家人一周的时间安排，发现不同人的时间使用模式差异。你可能会大吃一惊——原来家人的一天是这样的！</p>
+    
+    <h4>📋 阶段任务</h4>
+    <ol class="stage-list">
+      <li>采访家中的2-3位成员"你的一天怎么过？"</li>
+      <li>设计并分发"时间记录卡"，请每人记录3天</li>
+      <li>汇总数据——做一张"家庭时间对比图"</li>
+      <li>写一份"时间调查报告"（至少200字）</li>
+    </ol>
+    
+    <div class="criteria-box">
+      <ul>
+        <li>是否收集了至少2位家人的时间数据？</li>
+        <li>对比图是否用了"统一的分类标准"？</li>
+        <li>报告是否包含"发现"和"感受"？</li>
+      </ul>
+    </div>
+    
+    <div class="resource-box">工具库中的"时间记录卡模板""数据汇总表"</div>
+
+    <div style="margin-top:12px;">
+      <button class="tab-btn" style="border-color:var(--primary);" onclick="toggleSample()">👀 查看参考案例</button>
+      <div id="sampleCase" style="display:none;margin-top:10px;padding:12px;background:#fafafa;border-radius:8px;">
+        <p><strong>小明周末时间安排参考：</strong></p>
+        <p>周六：9:00-10:00写作业 / 10:00-11:30打球 / 14:00-16:00课外班 / 19:00-20:30看电视<br>
+        周日：9:00-11:00写作业 / 14:00-15:00阅读 / 16:00-17:00自由活动</p>
+        <p><em>发现了什么？小明周末"屏幕时间"占了很大比例！你的家人呢？</em></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 项目3 -->
+<div id="panel-p3" class="project-panel">
+  <div class="project-card">
+    <span class="period-badge medium">中周期 1-2周</span>
+    <h3>项目3：创建"班级时间银行" 🏦</h3>
+    <p>用"时间银行"的概念，和同学互相交换"时间"——你帮我补习10分钟数学，我帮你值日15分钟。时间就是"货币"！</p>
+    
+    <h4>📋 阶段任务</h4>
+    <ol class="stage-list">
+      <li>讨论：班级里有哪些可以互相帮助的事情？每件事大概需要几分钟？</li>
+      <li>设计："时间存折"模板（记录谁帮了谁、花了多少时间）</li>
+      <li>试运行：全班试行一周"时间银行"</li>
+      <li>总结：一周后分析"谁存的时间最多""谁取的时间最多"</li>
+    </ol>
+    
+    <div class="criteria-box">
+      <ul>
+        <li>时间存折是否记录清晰（帮助人、帮助内容、所用时间）？</li>
+        <li>存入和取出时间计算是否正确？</li>
+        <li>是否在"时间银行"中帮助了至少1位同学？</li>
+      </ul>
+    </div>
+    
+    <div class="resource-box">工具库中的"记录表模板"</div>
+
+    <div style="margin-top:12px;">
+      <p class="tip">💡 <strong>延伸思考</strong>：时间银行的"利率"是多少？如果A帮B 10分钟，B帮A 8分钟，公平吗？</p>
+    </div>
+  </div>
+</div>
+
+<!-- 项目4 -->
+<div id="panel-p4" class="project-panel">
+  <div class="project-card">
+    <span class="period-badge long">长周期 1个月</span>
+    <h3>项目4："时光胶囊"——记录一个月的成长变化</h3>
+    <p>用一个月的时间，记录自己在学习、身体、习惯三个方面的变化，制作专属于你的"时光胶囊"！</p>
+    
+    <h4>📋 阶段任务</h4>
+    <ol class="stage-list">
+      <li>设计记录维度（阅读时长、运动时长、练字时长、早睡次数等）</li>
+      <li>每天花2分钟记录各项数据</li>
+      <li>汇总30天数据，计算总时长、日均时长、变化趋势</li>
+      <li>制作"时光胶囊"展示板</li>
+      <li>向全班展示"这个月我花时间做了什么"</li>
+    </ol>
+    
+    <div class="criteria-box">
+      <ul>
+        <li>数据记录是否覆盖至少4周？</li>
+        <li>时间图是否包含了所有记录维度？</li>
+        <li>个人反思是否真诚、具体？（"我发现自己……"）</li>
+        <li>是否在班级展示中分享了自己的发现？</li>
+      </ul>
+    </div>
+    
+    <div class="resource-box">工具库中的"月度记录表"；作业榜中的"时间写作"任务参考</div>
+
+    <div style="margin-top:12px;">
+      <div class="interactive" style="text-align:center;padding:12px;background:linear-gradient(135deg,#f0f5ff,#e6f7ff);border-radius:12px;">
+        <p style="font-size:20px;font-weight:600;color:var(--primary);">⏳ 你的"时光胶囊"里要放进什么？</p>
+        <p class="tip">一本读完的书？一张满分试卷？一张运动照片？还是……你坚持了30天的记录表本身？</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 项目进阶路径 -->
+<div class="project-card" style="margin-top:24px;">
+  <h3 style="color:var(--primary);">🗺️ 项目进阶路径</h3>
+  <p>不同项目适合不同类型的你——看看哪一条路最适合自己！</p>
+  <table class="path-table">
+    <tr><th>周期</th><th>项目名称</th><th>建议周期</th><th>适合谁</th></tr>
+    <tr class="tag-s"><td>短周期</td><td>我的一天精力折线图</td><td>1-3天</td><td>初次尝试 / 基础层</td></tr>
+    <tr class="tag-s"><td>短周期</td><td>时间银行存折（启动）</td><td>1-3天</td><td>喜欢协作的学生</td></tr>
+    <tr class="tag-m"><td>中周期</td><td>家族时间大调查</td><td>1周</td><td>乐于观察和记录的学生</td></tr>
+    <tr class="tag-m"><td>中周期</td><td>时间银行运营+报告</td><td>2周</td><td>对经济和统计感兴趣的学生</td></tr>
+    <tr class="tag-l"><td>长周期</td><td>时光胶囊</td><td>1个月</td><td>喜欢长期项目和总结的学生</td></tr>
+  </table>
+  <p style="margin-top:10px;color:var(--text-secondary);font-size:15px;">💡 <strong>建议</strong>：第一次先选短周期项目，熟悉之后挑战中周期，最后尝试长周期的"时光胶囊"！</p>
+</div>
+
+</div>
+</div>
+
+<script>
+function switchTab(id) {
+  var panels = document.querySelectorAll('.project-panel');
+  panels.forEach(function(p) { p.classList.remove('active'); });
+  var btns = document.querySelectorAll('.tab-btn');
+  btns.forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('panel-' + id).classList.add('active');
+  var idx = {p1:0, p2:1, p3:2, p4:3}[id];
+  btns[idx].classList.add('active');
+}
+function toggleSample() {
+  var el = document.getElementById('sampleCase');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+</body>
+</html>

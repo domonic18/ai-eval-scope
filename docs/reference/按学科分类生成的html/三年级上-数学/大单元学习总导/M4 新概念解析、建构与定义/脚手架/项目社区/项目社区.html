@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目社区 — 时、分、秒</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  margin: 0; padding: 0;
+}
+.container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 6px; }
+.header .sub { font-size: 15px; opacity: 0.9; }
+
+/* Cards */
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 22px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+.card h3 {
+  font-size: 19px;
+  color: var(--text);
+  margin: 16px 0 8px;
+}
+.card h4 {
+  font-size: 17px;
+  color: var(--text);
+  margin: 12px 0 6px;
+}
+.card p { margin-bottom: 8px; color: var(--text); }
+.card ul, .card ol { padding-left: 22px; margin-bottom: 10px; }
+.card li { margin-bottom: 4px; }
+
+/* Badge */
+.badge {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  margin-right: 6px;
+}
+.badge-green { background: #52c41a; }
+.badge-orange { background: #fa8c16; }
+.badge-purple { background: #722ed1; }
+
+/* Timeline */
+.timeline { position: relative; padding-left: 24px; }
+.timeline::before {
+  content: '';
+  position: absolute; left: 6px; top: 4px; bottom: 4px;
+  width: 3px; background: var(--accent); border-radius: 2px;
+}
+.timeline-item { position: relative; margin-bottom: 14px; }
+.timeline-item::before {
+  content: '';
+  position: absolute; left: -20px; top: 8px;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--primary); border: 2px solid var(--card-bg);
+}
+.timeline-item .day { font-weight: 600; color: var(--primary); font-size: 15px; }
+
+/* Table */
+.table-wrap { overflow-x: auto; margin: 10px 0; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; }
+th { background: var(--bg); font-weight: 600; color: var(--primary); }
+
+/* Toggle */
+.toggle-label {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  padding: 6px 18px;
+  border-radius: 20px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 6px;
+}
+.toggle-label:hover { background: var(--primary-hover); }
+.toggle-content { display: none; margin-top: 10px; padding: 12px; background: var(--bg); border-radius: var(--border-radius); }
+.toggle-check { display: none; }
+.toggle-check:checked ~ .toggle-content { display: block; }
+
+/* Check list */
+.check-list { list-style: none; padding: 0; }
+.check-list li { padding: 6px 0 6px 28px; position: relative; cursor: pointer; }
+.check-list li::before {
+  content: '□';
+  position: absolute; left: 0;
+  font-size: 18px; color: var(--primary);
+}
+.check-list li.checked::before { content: '☑'; }
+.check-list li.checked { color: var(--text-secondary); text-decoration: line-through; }
+
+/* Project cards */
+.project-card {
+  border-left: 4px solid var(--primary);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  background: var(--bg);
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+}
+.project-card.short { border-left-color: #52c41a; }
+.project-card.medium { border-left-color: #fa8c16; }
+.project-card.long { border-left-color: #722ed1; }
+.project-card .cycle-tag {
+  display: inline-block; font-size: 13px; padding: 2px 10px;
+  border-radius: 10px; color: #fff; margin-bottom: 6px;
+}
+.cycle-tag.short { background: #52c41a; }
+.cycle-tag.medium { background: #fa8c16; }
+.cycle-tag.long { background: #722ed1; }
+
+/* Footer */
+.footer {
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-secondary);
+  padding: 20px 0 10px;
+}
+
+/* Interactive */
+.btn {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  .header { padding: 18px 16px; }
+  .card { padding: 14px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🏗️ 项目社区</h1>
+  <div class="sub">数学 · 三年级上 · 时、分、秒 &nbsp;|&nbsp; M4 新概念解析、建构与定义</div>
+</div>
+
+<div class="card">
+  <h2>📋 项目总览</h2>
+  <p>欢迎来到<strong>项目社区</strong>！在这里，你将通过三个不同长度的真实项目，深入理解时间概念，锻炼时间管理能力。每个项目都像一次小小的探险——做完它们，你就真正成为"时间小管家"了！</p>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0;">
+    <span class="badge badge-green">短周期 1-3天</span>
+    <span class="badge badge-orange">中周期 1-2周</span>
+    <span class="badge badge-purple">长周期 1月+</span>
+  </div>
+</div>
+
+<!-- 项目1 -->
+<div class="card">
+  <h2>🌞 项目一：制作简易日晷</h2>
+  <div class="project-card short">
+    <span class="cycle-tag short">⏱ 短周期 · 1~3天</span>
+  </div>
+  <p><strong>项目目标：</strong>亲手制作一个日晷，亲眼验证太阳与时间的神奇关系！古人没有钟表，就是靠太阳的影子来计时的哦。</p>
+
+  <h3>📅 阶段任务</h3>
+  <div class="timeline">
+    <div class="timeline-item">
+      <span class="day">第1天 · 材料准备</span>
+      <p>准备材料：纸板（硬一点更好）、铅笔、量角器、指南针（或手机指南针App）。按下面步骤制作日晷底座和指针。</p>
+      <label class="toggle-label" onclick="this.nextElementSibling.nextElementSibling.style.display=this.nextElementSibling.nextElementSibling.style.display==='block'?'none':'block'">📐 查看制作步骤</label>
+      <input type="checkbox" class="toggle-check" hidden>
+      <div class="toggle-content">
+        <ol>
+          <li>在纸板上画一个半圆（半径约10cm），用量角器每隔15°画一条线</li>
+          <li>在圆心处垂直插入铅笔（作为指针）</li>
+          <li>标注方向：用指南针找到正北，将日晷12点方向对准正北</li>
+          <li>标上时间刻度（6:00~18:00）</li>
+        </ol>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <span class="day">第2天 · 观察记录</span>
+      <p>选一个晴天！从早上8点到下午4点，<strong>每隔1小时</strong>在日晷上标记影子的位置，并在记录表上写下时间。</p>
+      <button class="btn" onclick="toggleTable(this)">📊 查看记录表模板</button>
+      <div id="table1" style="display:none;margin-top:10px;">
+        <div class="table-wrap">
+          <table>
+            <tr><th>时间</th><th>影子位置描述</th><th>铅笔影子长度</th></tr>
+            <tr><td>8:00</td><td></td><td></td></tr>
+            <tr><td>9:00</td><td></td><td></td></tr>
+            <tr><td>10:00</td><td></td><td></td></tr>
+            <tr><td>11:00</td><td></td><td></td></tr>
+            <tr><td>12:00</td><td></td><td></td></tr>
+            <tr><td>13:00</td><td></td><td></td></tr>
+            <tr><td>14:00</td><td></td><td></td></tr>
+            <tr><td>15:00</td><td></td><td></td></tr>
+            <tr><td>16:00</td><td></td><td></td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <span class="day">第3天 · 对比分析</span>
+      <p>对比你的日晷读数和真实钟表。写一份<strong>"我的日晷使用报告"</strong>——有哪些误差？为什么会有误差？</p>
+    </div>
+  </div>
+
+  <h3>🏆 评价标准</h3>
+  <ul class="check-list">
+    <li>日晷结构完整，指针竖直稳固 ✓</li>
+    <li>至少记录<strong>5个时间点</strong>的影子位置 ✓</li>
+    <li>对比分析准确，能说清楚误差原因 ✓</li>
+  </ul>
+</div>
+
+<!-- 项目2 -->
+<div class="card">
+  <h2>📝 项目二：我的一周时间日记</h2>
+  <div class="project-card medium">
+    <span class="cycle-tag medium">⏱ 中周期 · 1~2周</span>
+  </div>
+  <p><strong>项目目标：</strong>连续记录自己一周的时间使用情况，学会用数据"看见"时间，并优化自己的时间分配！</p>
+
+  <h3>📅 阶段任务</h3>
+  <div class="timeline">
+    <div class="timeline-item">
+      <span class="day">第1~7天 · 每日记录</span>
+      <p>每天记录各项活动所用的<strong>分钟数</strong>：学习、游戏、运动、吃饭、睡觉、其他。</p>
+      <button class="btn" onclick="toggleTable(this)">📋 查看时间日记表</button>
+      <div style="display:none;margin-top:10px;">
+        <div class="table-wrap">
+          <table>
+            <tr><th>日期</th><th>学习</th><th>游戏</th><th>运动</th><th>吃饭</th><th>睡觉</th><th>其他</th><th>总计</th></tr>
+            <tr><td>周一</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>周二</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>周三</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>周四</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>周五</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>周六</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>周日</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <span class="day">第8天 · 制作统计图</span>
+      <p>汇总一周数据，制作<strong>"一周时间饼图"</strong>或<strong>"时间条状图"</strong>。可以手绘，也可以用Excel。</p>
+    </div>
+    <div class="timeline-item">
+      <span class="day">第9~10天 · 分析与改进</span>
+      <p>分析你的时间使用情况：哪些时间用得好？哪些浪费了？写出你的<strong>时间优化方案</strong>。</p>
+    </div>
+  </div>
+
+  <h3>🏆 评价标准</h3>
+  <ul class="check-list">
+    <li>连续记录7天，无缺漏 ✓</li>
+    <li>统计图表清晰美观，标注完整 ✓</li>
+    <li>改进方案具体可行，有具体行动步骤 ✓</li>
+  </ul>
+</div>
+
+<!-- 项目3 -->
+<div class="card">
+  <h2>🔍 项目三："时间的秘密"综合探究报告</h2>
+  <div class="project-card long">
+    <span class="cycle-tag long">⏱ 长周期 · 1个月+</span>
+  </div>
+  <p><strong>项目目标：</strong>选择一个与"时间"相关的课题，像科学家一样做一次深度探究，形成属于你自己的研究报告！</p>
+
+  <h3>🎯 可选课题</h3>
+  <div class="card" style="background:var(--bg);border:none;box-shadow:none;padding:12px 16px;">
+    <ul>
+      <li><strong>选题A：</strong>古代文明如何计时——古埃及、中国、玛雅对比研究</li>
+      <li><strong>选题B：</strong>计时工具的发展史——从日晷到原子钟</li>
+      <li><strong>选题C：</strong>时间在自然科学中的角色</li>
+      <li><strong>选题D：</strong>自选课题（需经老师确认）</li>
+    </ul>
+  </div>
+
+  <h3>📅 阶段任务</h3>
+  <div class="timeline">
+    <div class="timeline-item">
+      <span class="day">第1周 · 确定选题 &amp; 收集资料</span>
+      <p>确定研究方向，通过图书、网络、博物馆等渠道收集资料。至少收集3个不同来源。</p>
+    </div>
+    <div class="timeline-item">
+      <span class="day">第2周 · 整理提纲</span>
+      <p>筛选整理资料，形成报告提纲：引言 → 主体（3~5个方面）→ 自己的观点 → 结论</p>
+    </div>
+    <div class="timeline-item">
+      <span class="day">第3周 · 撰写探究报告</span>
+      <p>图文结合，不少于800字。要有自己的分析和观点，不只是抄资料。</p>
+    </div>
+    <div class="timeline-item">
+      <span class="day">第4周 · 展示与分享</span>
+      <p>准备展示作品（海报 / PPT / 小视频 三选一），在班级或项目社区中分享你的研究成果。</p>
+    </div>
+  </div>
+
+  <h3>🏆 评价标准</h3>
+  <ul class="check-list">
+    <li>选题有意义，有探究价值 ✓</li>
+    <li>资料来源可靠，至少3个不同来源 ✓</li>
+    <li>有自己的观点和分析，不只是搬运资料 ✓</li>
+    <li>表达清晰、美观，展示有吸引力 ✓</li>
+  </ul>
+</div>
+
+<!-- 互动区 -->
+<div class="card">
+  <h2>💡 项目选择助手</h2>
+  <p>不确定选哪个项目开始？点击下方按钮帮你决定！</p>
+  <button class="btn" onclick="pickProject()">🎲 帮我选一个项目</button>
+  <p id="pick-result" style="margin-top:10px;font-weight:600;min-height:28px;"></p>
+
+  <h3 style="margin-top:18px;">📌 进度追踪</h3>
+  <p>点击项目前的方框，标记你已完成的项目：</p>
+  <ul class="check-list" id="progress-list">
+    <li onclick="toggleCheck(this)">🌞 项目一：制作简易日晷</li>
+    <li onclick="toggleCheck(this)">📝 项目二：我的一周时间日记</li>
+    <li onclick="toggleCheck(this)">🔍 项目三："时间的秘密"综合探究报告</li>
+  </ul>
+</div>
+
+<div class="footer">
+  📐 数学 · 三年级上 · 时、分、秒 &nbsp;|&nbsp; 项目社区
+</div>
+
+</div>
+
+<script>
+function toggleTable(btn) {
+  var tbl = btn.nextElementSibling;
+  tbl.style.display = tbl.style.display === 'block' ? 'none' : 'block';
+}
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+}
+function pickProject() {
+  var projects = [
+    '🌞 项目一：制作简易日晷（1~3天）',
+    '📝 项目二：我的一周时间日记（1~2周）',
+    '🔍 项目三："时间的秘密"综合探究报告（1个月+）'
+  ];
+  var pick = projects[Math.floor(Math.random() * projects.length)];
+  document.getElementById('pick-result').textContent = '✨ 推荐你挑战：' + pick;
+}
+</script>
+</body>
+</html>

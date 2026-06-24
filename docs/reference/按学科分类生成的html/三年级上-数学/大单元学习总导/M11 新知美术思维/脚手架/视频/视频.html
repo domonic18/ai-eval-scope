@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视频 — M11 新知美术思维</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --font-h3: 19px;
+  --line-height: 1.8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+
+.container { width: 100%; max-width: none; padding: 24px 20px 40px; }
+
+.header {
+  text-align: center;
+  padding: 28px 20px 20px;
+  margin-bottom: 24px;
+}
+
+.header h1 {
+  font-size: var(--font-h1);
+  color: var(--primary);
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.header p {
+  font-size: var(--font-body);
+  color: var(--text-secondary);
+}
+
+.level-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.level-tab {
+  padding: 10px 22px;
+  border-radius: 20px;
+  border: 2px solid var(--border);
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all .3s;
+  color: var(--text-secondary);
+}
+
+.level-tab:hover { border-color: var(--primary); color: var(--primary); }
+.level-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.level-section { display: none; }
+.level-section.active { display: block; }
+
+.level-title {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 16px;
+  padding-left: 14px;
+  border-left: 4px solid var(--primary);
+}
+
+.level-desc {
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  font-size: 16px;
+}
+
+.video-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.video-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: transform .2s, box-shadow .2s;
+}
+
+.video-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(22,119,255,0.12);
+}
+
+.video-card-header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.video-card-header .badge {
+  background: rgba(255,255,255,0.25);
+  border-radius: 6px;
+  padding: 2px 10px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.video-card-header h3 { font-size: var(--font-h3); font-weight: 600; }
+
+.video-card-body { padding: 20px; }
+
+.info-row {
+  margin-bottom: 14px;
+  padding: 12px 16px;
+  background: #f8faff;
+  border-radius: 8px;
+  border-left: 3px solid var(--accent);
+}
+
+.info-row .label {
+  font-weight: 600;
+  color: var(--primary);
+  display: block;
+  margin-bottom: 4px;
+  font-size: 15px;
+}
+
+.info-row .value { font-size: 16px; color: var(--text); }
+
+.pause-point {
+  background: linear-gradient(135deg, #fff7e6, #fffbe6);
+  border: 1px dashed #faad14;
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  cursor: pointer;
+  transition: background .3s;
+}
+
+.pause-point:hover { background: #fffbe6; }
+
+.pause-point .pause-label {
+  font-weight: 600;
+  color: #d48806;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+}
+
+.pause-point .pause-label::before {
+  content: "⏸";
+  font-size: 16px;
+}
+
+.pause-point .pause-content {
+  margin-top: 6px;
+  font-size: 16px;
+  color: var(--text);
+}
+
+.btn-output {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background .2s;
+  margin-top: 4px;
+}
+
+.btn-output:hover { background: var(--primary-hover); }
+
+.btn-output::before { content: "✏"; }
+
+.toggle-section { margin-top: 16px; }
+
+.toggle-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 15px;
+  user-select: none;
+}
+
+.toggle-header::before {
+  content: "▶";
+  font-size: 12px;
+  transition: transform .3s;
+}
+
+.toggle-header.open::before { transform: rotate(90deg); }
+
+.toggle-body {
+  display: none;
+  margin-top: 10px;
+  padding: 14px 16px;
+  background: #f8faff;
+  border-radius: 8px;
+  border: 1px solid var(--accent);
+  font-size: 16px;
+}
+
+.toggle-body.open { display: block; }
+
+.key-questions { margin: 14px 0; }
+
+.key-question-item {
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  background: #f8faff;
+  border-radius: 8px;
+  border-left: 3px solid var(--accent);
+  font-size: 16px;
+}
+
+.key-question-item q { font-style: italic; }
+
+footer {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  border-top: 1px solid var(--border);
+  margin-top: 32px;
+}
+
+@media (min-width: 768px) {
+  .video-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (min-width: 1024px) {
+  .container { padding: 24px 40px 40px; }
+  .video-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🎬 视频 — M11 新知美术思维</h1>
+    <p>看视频学思维 · 用眼睛"看见"时间</p>
+  </div>
+
+  <div class="level-tabs">
+    <button class="level-tab active" onclick="switchLevel('basic')">🌟 基础层</button>
+    <button class="level-tab" onclick="switchLevel('middle')">🔍 进阶层</button>
+    <button class="level-tab" onclick="switchLevel('challenge')">⚡ 挑战层</button>
+  </div>
+
+  <div id="basic" class="level-section active">
+    <h2 class="level-title">基础层：解释型</h2>
+    <p class="level-desc">观看并理解——时间是怎么被"看见"的？</p>
+    <div class="video-grid">
+
+      <div class="video-card">
+        <div class="video-card-header">
+          <span class="badge">🎥 5min</span>
+          <h3>《一天的时间是如何被"看见"的》</h3>
+        </div>
+        <div class="video-card-body">
+          <div class="info-row">
+            <span class="label">👁 观看任务</span>
+            <span class="value">找到视频中 <strong>3种以上</strong> 表现时间流逝的视觉方法</span>
+          </div>
+          <div class="key-questions">
+            <div class="key-question-item"><strong>①</strong> 延时摄影如何让"看不见的时间流动"被看见？</div>
+            <div class="key-question-item"><strong>②</strong> 为什么不同时段（早晨/正午/黄昏）的光影颜色不同？</div>
+          </div>
+          <div class="pause-point" onclick="this.classList.toggle('open')">
+            <div class="pause-label">⏸ [2:15] 暂停——你觉得这段延时摄影花了多长时间拍摄？</div>
+            <div class="pause-content" style="display:none">提示：延时摄影1秒画面可能对应真实世界几分钟甚至几小时！猜完后继续看，片尾可能有答案。</div>
+          </div>
+          <div class="toggle-section">
+            <div class="toggle-header" onclick="toggleBody(this)">输出任务</div>
+            <div class="toggle-body"><strong>✏ 用文字描述</strong>你看到的一种最震撼的时间视觉化方法。是什么画面？为什么震撼？</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="video-card">
+        <div class="video-card-header">
+          <span class="badge">🎥 8min</span>
+          <h3>《钟表是怎么工作的——齿轮的秘密》</h3>
+        </div>
+        <div class="video-card-body">
+          <div class="info-row">
+            <span class="label">👁 观看任务</span>
+            <span class="value">画出钟表齿轮传动的 <strong>简化示意图</strong></span>
+          </div>
+          <div class="key-questions">
+            <div class="key-question-item"><strong>①</strong> 秒针、分针、时针的齿轮比例是多少？</div>
+            <div class="key-question-item"><strong>②</strong> 为什么60秒=1分钟？这个60进制和齿轮齿数有什么关系？</div>
+          </div>
+          <div class="pause-point" onclick="this.classList.toggle('open')">
+            <div class="pause-label">⏸ [4:30] 暂停——看看秒针齿轮和分针齿轮，猜猜它们的齿数比是多少？</div>
+            <div class="pause-content" style="display:none">秒针齿轮齿数 : 分针齿轮齿数 = 1 : 60。秒针转60圈，分针才转1圈！</div>
+          </div>
+          <div class="toggle-section">
+            <div class="toggle-header" onclick="toggleBody(this)">输出任务</div>
+            <div class="toggle-body"><strong>✏ 用图画表示</strong>"秒针转一圈 = 分针转一格"的关系，标出齿轮齿数。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="middle" class="level-section">
+    <h2 class="level-title">进阶层：分析型</h2>
+    <p class="level-desc">分析优秀的信息图表——好在哪里？</p>
+    <div class="video-grid">
+      <div class="video-card">
+        <div class="video-card-header">
+          <span class="badge">🎥 12min</span>
+          <h3>《TED：信息图表的魅力》</h3>
+        </div>
+        <div class="video-card-body">
+          <div class="info-row">
+            <span class="label">👁 观看任务</span>
+            <span class="value">记录演讲者展示的 <strong>3种</strong> 信息图表类型</span>
+          </div>
+          <div class="key-questions">
+            <div class="key-question-item"><strong>①</strong> 演讲者说"好的图表是一个故事的浓缩"——你怎么理解？</div>
+            <div class="key-question-item"><strong>②</strong> 哪个图表示例让你印象最深？它好在哪里？</div>
+          </div>
+          <div class="pause-point" onclick="this.classList.toggle('open')">
+            <div class="pause-label">⏸ [7:00] 暂停——这个图示用了什么颜色方案？为什么选这些颜色？</div>
+            <div class="pause-content" style="display:none">观察色调、饱和度对比——暖色突出关键数据，冷色做背景衬托。</div>
+          </div>
+          <div class="toggle-section">
+            <div class="toggle-header" onclick="toggleBody(this)">输出任务</div>
+            <div class="toggle-body"><strong>✏ 一段话 + 一张草图</strong>：把视频中的信息图表方法"翻译"成你自己的时间作品创意。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="challenge" class="level-section">
+    <h2 class="level-title">挑战层：辩论 / 前沿型</h2>
+    <p class="level-desc">用延时摄影看世界——时间是最好的画家</p>
+    <div class="video-grid">
+      <div class="video-card">
+        <div class="video-card-header">
+          <span class="badge">🎥 15min</span>
+          <h3>《延时摄影中国——时间是最好的画家》</h3>
+        </div>
+        <div class="video-card-body">
+          <div class="info-row">
+            <span class="label">👁 观看任务</span>
+            <span class="value">找出延时摄影中 <strong>3种不同的"时间尺度"</strong>（秒级？分钟级？小时级？）</span>
+          </div>
+          <div class="key-questions">
+            <div class="key-question-item"><strong>①</strong> 延时摄影改变的不仅是对时间的感知——它还改变了什么？</div>
+            <div class="key-question-item"><strong>②</strong> 如果让你用延时摄影拍"1分钟"，你会拍什么？</div>
+            <div class="key-question-item"><strong>③</strong> 这些画面能不能被"翻译"成你的时间图谱？</div>
+          </div>
+          <div class="pause-point" onclick="this.classList.toggle('open')">
+            <div class="pause-label">⏸ [10:00] 暂停——想一想：如果你要把这个镜头画成时间图，会是什么样？</div>
+            <div class="pause-content" style="display:none">想一想色彩的渐变、色块的比例、以及时间的流动方向。</div>
+          </div>
+          <div class="toggle-section">
+            <div class="toggle-header" onclick="toggleBody(this)">输出任务</div>
+            <div class="toggle-body"><strong>✏ 选一个延时摄影镜头</strong>，把它"翻译"成一张时间图谱草图，标注时间尺度和色彩含义。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    📐 M11 新知美术思维 · 视频学习单 · 三年级上
+  </footer>
+</div>
+
+<script>
+function switchLevel(level) {
+  document.querySelectorAll('.level-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.level-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(level).classList.add('active');
+  document.querySelector(`.level-tab[onclick*="'${level}'"]`).classList.add('active');
+}
+function toggleBody(el) {
+  el.classList.toggle('open');
+  var body = el.nextElementSibling;
+  if (body) body.classList.toggle('open');
+}
+document.querySelectorAll('.pause-point').forEach(el => {
+  el.addEventListener('click', function() {
+    var content = this.querySelector('.pause-content');
+    if (content) content.style.display = content.style.display === 'none' ? 'block' : 'none';
+  });
+});
+</script>
+</body>
+</html>

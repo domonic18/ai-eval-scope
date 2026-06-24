@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VR脚手架 — M11 新知美术思维</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+.banner {
+  background: linear-gradient(135deg, #13c2c2, var(--primary));
+  color: #fff;
+  padding: 28px 36px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.banner h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.banner p {
+  font-size: 16px;
+  opacity: 0.9;
+}
+.task-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.task-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.task-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(22,119,255,0.18);
+}
+.task-card-header {
+  padding: 16px 20px 12px;
+  font-size: var(--font-h2);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.task-card-header .emoji { font-size: 26px; }
+.task-card-body {
+  padding: 14px 20px 18px;
+}
+.task-card-body ul {
+  list-style: none;
+  padding: 0;
+}
+.task-card-body li {
+  position: relative;
+  padding: 6px 0 6px 24px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.task-card-body li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 14px;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--primary);
+  border-radius: 3px;
+  transition: all 0.2s;
+}
+.task-card-body li.done {
+  color: var(--text-secondary);
+  text-decoration: line-through;
+}
+.task-card-body li.done::before {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.task-card-body li.done::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 14px;
+  width: 6px;
+  height: 10px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.resource-box {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  border-left: 4px solid #13c2c2;
+}
+.resource-box h3 {
+  font-size: var(--font-h2);
+  color: #13c2c2;
+  margin-bottom: 10px;
+}
+.resource-tag {
+  display: inline-block;
+  background: #e6fffb;
+  color: #13c2c2;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+.resource-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 0;
+}
+.resource-row .label {
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--primary);
+  min-width: 80px;
+}
+.alt-badge {
+  display: inline-block;
+  background: #fff7e6;
+  color: #d46b08;
+  font-size: 13px;
+  padding: 1px 8px;
+  border-radius: 4px;
+  margin-left: 6px;
+}
+.connect-box {
+  background: linear-gradient(135deg, #e6f4ff, #e6fffb);
+  border-radius: var(--border-radius);
+  padding: 18px 22px;
+  text-align: center;
+  margin-top: 8px;
+}
+.connect-box strong {
+  color: var(--primary);
+}
+@media (max-width: 640px) {
+  .container { padding: 16px; }
+  .banner { padding: 20px; }
+  .task-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="banner">
+    <h1>🥽 VR脚手架 — M11 新知美术思维</h1>
+    <p>进入时间之中，从第一人称视角感受时间的视觉形态</p>
+  </div>
+
+  <div class="task-grid">
+
+    <div class="task-card">
+      <div class="task-card-header">
+        <span class="emoji">👁️</span> 观察任务
+      </div>
+      <div class="task-card-body">
+        <ul>
+          <li onclick="this.classList.toggle('done')">观察日晷的阴影如何随着时间移动改变位置</li>
+          <li onclick="this.classList.toggle('done')">观察沙漏中沙子流逝的视觉过程</li>
+          <li onclick="this.classList.toggle('done')">观察钟表指针的运动——时间的连续性和周期性</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="task-card">
+      <div class="task-card-header">
+        <span class="emoji">✋</span> 操作任务
+      </div>
+      <div class="task-card-body">
+        <ul>
+          <li onclick="this.classList.toggle('done')">手动调整时钟指针，观察时针、分针、秒针的运动关系</li>
+          <li onclick="this.classList.toggle('done')">用VR画笔"在空中画出"1分钟=60秒的视觉关系</li>
+          <li onclick="this.classList.toggle('done')">调整时间流速（快放/慢放），观察时间视觉变化</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="task-card">
+      <div class="task-card-header">
+        <span class="emoji">📝</span> 记录任务
+      </div>
+      <div class="task-card-body">
+        <ul>
+          <li onclick="this.classList.toggle('done')">记录最震撼的一个"时间视觉化"瞬间</li>
+          <li onclick="this.classList.toggle('done')">画出VR中看到的"时间流动"草图（截屏后手绘）</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="resource-box">
+    <h3>🎯 VR资源推荐</h3>
+    <div class="resource-row">
+      <span class="label">VR 平台</span>
+      <span>MEL Science（科学可视化VR） / Google Earth VR（观察日夜变化）</span>
+    </div>
+    <div class="resource-row">
+      <span class="label">替代方案 <span class="alt-badge">无VR也可</span></span>
+      <span>B站搜索"延时摄影 一天"或"钟表齿轮 3D动画"，观察时间流逝的视觉表现</span>
+    </div>
+  </div>
+
+  <div class="connect-box">
+    <strong>🔗 学科关联：</strong>本模块中，VR让学生"进入"时间之中，从第一人称视角感受时间的视觉形态，为后续创作积累感官素材。
+  </div>
+
+</div>
+</body>
+</html>

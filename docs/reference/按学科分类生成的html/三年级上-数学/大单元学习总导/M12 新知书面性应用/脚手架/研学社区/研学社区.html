@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>研学社区 — 时间应用真实案例库</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 28px;
+  box-sizing: border-box;
+}
+.header-banner {
+  background: linear-gradient(135deg, var(--primary), #0958d9);
+  color: #fff;
+  border-radius: var(--border-radius);
+  padding: 28px 32px;
+  margin-bottom: 28px;
+}
+.header-banner h1 {
+  font-size: var(--font-h1);
+  color: #fff;
+  margin: 0 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.header-banner h1::before { content: "🏘️"; font-size: 32px; }
+.header-banner .subtitle {
+  color: rgba(255,255,255,0.85);
+  margin: 0;
+  font-size: 15px;
+}
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 28px;
+  overflow: hidden;
+}
+.case-header {
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.case-header .badge {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+.badge-basic { background: #52c41a; }
+.badge-advanced { background: #fa8c16; }
+.badge-challenge { background: #f5222d; }
+.case-header .tag {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.case-header h2 {
+  font-size: var(--font-h2);
+  margin: 0;
+  color: var(--text);
+  width: 100%;
+}
+.case-body {
+  padding: 0 24px 20px;
+}
+.case-body .bg-box {
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin: 12px 0;
+  border-left: 4px solid var(--primary);
+}
+.case-body .bg-box .bg-label {
+  font-weight: 600;
+  color: var(--primary);
+}
+.question-box {
+  background: linear-gradient(135deg, #fff7e6, #fffbe6);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin: 12px 0;
+  border: 1px solid #ffd666;
+}
+.question-box .q-label {
+  font-weight: 700;
+  color: #d46b08;
+}
+.path-box {
+  background: #f6ffed;
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin: 12px 0;
+  border: 1px solid #b7eb8f;
+}
+.path-box .p-label {
+  font-weight: 600;
+  color: #52c41a;
+}
+.migration-box {
+  background: #e6f4ff;
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin: 12px 0;
+  border: 1px solid var(--accent);
+}
+.migration-box .m-label {
+  font-weight: 600;
+  color: var(--primary);
+}
+.decision-task {
+  background: var(--card-bg);
+  border: 2px dashed var(--primary);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin: 16px 0;
+  transition: background 0.3s;
+  cursor: default;
+}
+.decision-task:hover {
+  background: #f0f5ff;
+}
+.decision-task .d-label {
+  font-weight: 700;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.decision-task .d-label::before { content: "🎯"; }
+.decision-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin: 6px 0;
+}
+.decision-btn:hover { background: var(--primary-hover); }
+.decision-btn:active { transform: scale(0.96); }
+.simulation-box {
+  background: #f9f0ff;
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin: 16px 0;
+  border: 1px solid #d3adf7;
+}
+.simulation-box .s-label {
+  font-weight: 600;
+  color: #722ed1;
+}
+.answer-reveal {
+  display: none;
+  margin: 10px 0;
+  padding: 14px 18px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 16px;
+}
+.answer-reveal .check { color: #52c41a; font-weight: 700; }
+@media (max-width: 640px) {
+  .container { padding: 16px; }
+  .case-header, .case-body { padding-left: 16px; padding-right: 16px; }
+  .header-banner { padding: 20px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header-banner">
+  <h1>🏘️ 研学社区</h1>
+  <p class="subtitle">时间应用真实案例库 — 在真实世界里学时间计算！</p>
+</div>
+
+<!-- 案例一 -->
+<div class="case-card">
+  <div class="case-header">
+    <span class="badge badge-basic">基础</span>
+    <span class="tag">🏪 生活类</span>
+    <h2>案例一：火车站的时刻表</h2>
+  </div>
+  <div class="case-body">
+    <div class="bg-box">
+      <span class="bg-label">📖 背景</span>
+      <p>火车站的大屏幕上显示着各趟列车的发车时间、到达时间和运行时长。你能看懂吗？</p>
+    </div>
+
+    <div class="question-box">
+      <span class="q-label">❓ 核心问题</span>
+      <p><strong>K123次列车14:25发车，17:38到达，它在路上运行了多长时间？</strong></p>
+    </div>
+
+    <div class="path-box">
+      <span class="p-label">🧭 决策路径</span>
+      <p><strong>方案1（推荐）：</strong>先算整小时，再算零头</p>
+      <p>14:25 → 17:25 = 3小时，再加13分钟 = <strong>3小时13分钟</strong></p>
+      <p><strong>方案2：</strong>全部换算成分钟再算</p>
+      <p>17:38 = 17×60+38 = 1058分钟，14:25 = 14×60+25 = 865分钟<br>1058 − 865 = 193分钟 = 3小时13分钟 ✅</p>
+    </div>
+
+    <div class="migration-box">
+      <span class="m-label">💡 可迁移启示</span>
+      <p>生活中的时刻表都可以用<strong>时间轴法</strong>来解决！画一条线，标上起点和终点，中间的距离就是经过的时间。</p>
+    </div>
+
+    <div class="decision-task">
+      <span class="d-label"> 如果你是决策者</span>
+      <p>如果列车晚点了20分钟，新的到达时间是什么时候？你会给接站的人发什么短信通知？</p>
+      <button class="decision-btn" onclick="document.getElementById('answer1').style.display='block'">📨 看看我的方案</button>
+      <div class="answer-reveal" id="answer1">
+        <p><span class="check">✅</span> 新到达时间：17:38 + 20分钟 = <strong>17:58</strong></p>
+        <p>📱 短信示例："接站提醒：K123次列车预计晚点20分钟，约17:58到达，不用着急，到了我去出站口等你！"</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 案例二 -->
+<div class="case-card">
+  <div class="case-header">
+    <span class="badge badge-advanced">进阶</span>
+    <span class="tag">📜 历史类</span>
+    <h2>案例二：古代沙漏的故事</h2>
+  </div>
+  <div class="case-body">
+    <div class="bg-box">
+      <span class="bg-label">📖 背景</span>
+      <p>中国古代用沙漏计时，一个沙漏从上流完到下大约需要1刻钟（15分钟）。古人开会的"沙漏计时法"你知道吗？</p>
+    </div>
+
+    <div class="question-box">
+      <span class="q-label">❓ 核心问题</span>
+      <p><strong>如果一个官员要用沙漏记录2小时的会议时间，他需要翻转几次沙漏？</strong></p>
+    </div>
+
+    <div class="path-box">
+      <span class="p-label">🧭 决策路径</span>
+      <p>2小时 = 120分钟 ÷ 15分钟（每刻钟）= <strong>8次</strong>（含开始的一次）</p>
+      <p>也就是：开始翻转1次 → 每15分钟翻1次 → 共翻8次才能走完2小时。</p>
+    </div>
+
+    <div class="migration-box">
+      <span class="m-label">💡 可迁移启示</span>
+      <p>古代的计时方法虽然不精确，但背后的数学原理——<strong>"总时间÷单位时间=次数"</strong>——和我们今天学的是一样的！</p>
+    </div>
+
+    <div class="decision-task">
+      <span class="d-label"> 如果你是决策者</span>
+      <p>你是一个古代工匠，要设计一个能计时1小时的沙漏，你会怎么做？（画图说明）</p>
+      <button class="decision-btn" onclick="document.getElementById('answer2').style.display='block'">⏳ 看看设计思路</button>
+      <div class="answer-reveal" id="answer2">
+        <p><span class="check">✅</span> <strong>思路：</strong>1小时 = 4刻钟 = 4个15分钟。</p>
+        <p>方案A：做一个大沙漏，装4倍沙子，一次漏完就是1小时。</p>
+        <p>方案B：做4个标准刻钟沙漏叠在一起，一个漏完自动触发下一个。</p>
+        <p>📐 <strong>画图提示：</strong>画一个沙漏，标上"上瓶→下瓶，60分钟漏完"，在瓶身上刻4条刻度线，每线代表15分钟。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 案例三 -->
+<div class="case-card">
+  <div class="case-header">
+    <span class="badge badge-challenge">挑战</span>
+    <span class="tag">🏅 综合类</span>
+    <h2>案例三：奥运会百米飞人大战</h2>
+  </div>
+  <div class="case-body">
+    <div class="bg-box">
+      <span class="bg-label">📖 背景</span>
+      <p>2024年巴黎奥运会男子100米决赛，冠军用时9.79秒，亚军用时9.81秒——只差了0.02秒！</p>
+    </div>
+
+    <div class="question-box">
+      <span class="q-label">❓ 核心问题</span>
+      <p><strong>冠亚军只差0.02秒，这0.02秒意味着什么？</strong></p>
+    </div>
+
+    <div class="path-box">
+      <span class="p-label">🧭 决策路径</span>
+      <p>0.02秒 ≈ 人类眨一下眼睛的 <strong>1/20</strong></p>
+      <p>眨一次眼大约0.3~0.4秒，而冠亚军的差距比一次眨眼 <strong>还要快15~20倍</strong>！</p>
+      <p>这么短的时间差，必须用<strong>电子计时器</strong>才能精确测量，人工计时根本看不出来。</p>
+    </div>
+
+    <div class="migration-box">
+      <span class="m-label">💡 可迁移启示</span>
+      <p>在现代竞技中，"秒"还不够精确，"百分之一秒""千分之一秒"才是决胜关键。时间单位的细分，让我们看到了肉眼看不到的差距！</p>
+    </div>
+
+    <div class="simulation-box">
+      <span class="s-label">🎭 多结局模拟</span>
+      <p>如果终点计时器误差0.01秒，冠军和亚军会易位吗？为什么比赛要使用高精度电子计时而不是人工计时？</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+        <button class="decision-btn" style="background:#52c41a;" onclick="document.getElementById('sim1').style.display='block'">🤔 思考结果</button>
+      </div>
+      <div class="answer-reveal" id="sim1">
+        <p><span class="check">✅</span> 冠亚军差距为0.02秒。如果误差0.01秒：</p>
+        <p>• 冠军真实成绩 +0.01秒 = 9.80秒</p>
+        <p>• 亚军真实成绩 −0.01秒 = 9.80秒</p>
+        <p>⚠️ 两者将<strong>打平</strong>！如果误差更大，结果可能反转。</p>
+        <p>所以奥运会必须使用高精度电子计时（精确到0.001秒甚至更高），人工计时受反应速度限制，无法分辨百分之一秒的差距。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

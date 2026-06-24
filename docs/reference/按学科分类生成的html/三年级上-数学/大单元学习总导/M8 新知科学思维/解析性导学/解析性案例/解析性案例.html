@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性案例 — 七阶递进分析实践</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+  text-align: center;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 8px;
+  font-weight: 700;
+}
+.header p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 16px;
+}
+.step-progress {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.step-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  color: var(--text-secondary);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.step-dot.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  transform: scale(1.15);
+}
+.step-dot.done {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.step-dot:hover {
+  transform: scale(1.1);
+}
+.case-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  display: none;
+  animation: fadeIn 0.4s ease;
+}
+.case-card.active {
+  display: block;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.case-card .stage-tag {
+  display: inline-block;
+  padding: 3px 14px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #fff;
+}
+.stage-tag.s1 { background: #fa8c16; }
+.stage-tag.s2 { background: #52c41a; }
+.stage-tag.s3 { background: #13c2c2; }
+.stage-tag.s4 { background: #1677ff; }
+.stage-tag.s5 { background: #722ed1; }
+.stage-tag.s6 { background: #eb2f96; }
+.stage-tag.s7 { background: #d46b08; }
+
+.case-card h3 {
+  font-size: 20px;
+  margin: 0 0 10px;
+  color: var(--text);
+}
+.case-card .case-desc {
+  background: var(--bg);
+  border-left: 4px solid var(--primary);
+  padding: 10px 14px;
+  border-radius: 0 6px 6px 0;
+  margin: 8px 0;
+}
+.case-card .case-desc strong {
+  color: var(--primary);
+}
+.case-card .principle-call {
+  color: var(--primary);
+  font-weight: 600;
+  margin: 10px 0 6px;
+}
+.case-table-wrap {
+  overflow-x: auto;
+  margin: 10px 0;
+}
+.case-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+  min-width: 280px;
+}
+.case-table th {
+  background: var(--primary);
+  color: #fff;
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+}
+.case-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.case-table tr:nth-child(even) {
+  background: var(--bg);
+}
+.case-table tr:hover {
+  background: #e6f7ff;
+}
+.nav-btns {
+  display: flex;
+  justify-content: space-between;
+  margin: 16px 0;
+  gap: 12px;
+}
+.nav-btns button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 24px;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-weight: 600;
+}
+.nav-btns button:hover {
+  background: var(--primary-hover);
+}
+.nav-btns button:disabled {
+  background: var(--border);
+  cursor: not-allowed;
+}
+.reflection-section {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-top: 20px;
+}
+.reflection-section h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 12px;
+}
+.reflection-section ol {
+  padding-left: 22px;
+  margin: 0;
+}
+.reflection-section li {
+  margin-bottom: 6px;
+  font-size: 16px;
+}
+.reflection-section textarea {
+  width: 100%;
+  height: 60px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 15px;
+  font-family: inherit;
+  box-sizing: border-box;
+  resize: vertical;
+  margin-top: 4px;
+}
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  .header h1 { font-size: 22px; }
+  .case-card { padding: 14px; }
+  .case-table { font-size: 14px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>📖 解析性案例</h1>
+  <p>七阶递进分析实践 · 从生活到综合迁移</p>
+</div>
+
+<div class="step-progress" id="progressDots"></div>
+
+<div id="casesContainer"></div>
+
+<div class="nav-btns">
+  <button id="prevBtn" onclick="changeStep(-1)">◀ 上一个案例</button>
+  <span id="stepIndicator" style="align-self:center;font-size:15px;color:var(--text-secondary);">1 / 7</span>
+  <button id="nextBtn" onclick="changeStep(1)">下一个案例 ▶</button>
+</div>
+
+<div class="reflection-section">
+  <h2>💭 综合反思</h2>
+  <p>完成以上 7 个案例后，请思考并记录：</p>
+  <ol>
+    <li>哪个案例最容易分析？为什么？</li>
+    <li>哪个案例最难？困难在哪里？</li>
+    <li>哪条原理最常用？</li>
+    <li>哪条原理你还不太会用？</li>
+    <li>这些分析能力怎么帮你完成大单元最终成果？</li>
+  </ol>
+  <textarea placeholder="把你的思考写在这里…"></textarea>
+</div>
+
+</div>
+
+<script>
+var cases = [
+  {
+    tag: '第一阶 · 生活情境', tagClass: 's1',
+    title: '「你的感觉」vs「钟表时间」',
+    desc: '妈妈让你「等5分钟」，你等了「感觉」很久——到底是几分钟？',
+    principle: '基准对照法——用「钟表」作为标准，和「你的感觉」比较',
+    table: { head: ['感觉', '实际时间', '误差'], rows: [['等了很久', '钟表显示', '差几秒']] }
+  },
+  {
+    tag: '第二阶 · 校园情境', tagClass: 's2',
+    title: '课间10分钟之争',
+    desc: '小明说「10分钟=600秒」，小华说「10分钟=36000秒」。谁对？',
+    principle: '单位识别法——先看「10分钟」的单位是「分」，要化成「秒」→×60',
+    table: { head: ['初始', '×或÷', '结果'], rows: [['10分', '×60', '600秒']] }
+  },
+  {
+    tag: '第三阶 · 家庭情境', tagClass: 's3',
+    title: '晚饭时间换算',
+    desc: '晚饭从6:30吃到7:00。用了30分钟。换成「秒」是多少？用「小时」呢？',
+    principle: '拆解分步法——30分→秒（×60=1800秒）；30分→时（÷60=0.5小时）',
+    table: { head: ['初始', '目标单位', '运算', '结果'], rows: [['30分', '秒', '×60', '1800秒'], ['30分', '时', '÷60', '0.5时']] }
+  },
+  {
+    tag: '第四阶 · 学科核心情境', tagClass: 's4',
+    title: '3.5小时 = 几小时几分？',
+    desc: '3.5小时 = 3小时 + 0.5小时；0.5小时×60=30分；所以 = 3小时30分',
+    principle: '基准对照法——先把3.5拆成3（整数）+0.5（小数），小数单独换算',
+    table: { head: ['整体', '拆成', '运算', '结果'], rows: [['3.5时', '3时+0.5时', '0.5×60=30分', '3时30分']] }
+  },
+  {
+    tag: '第五阶 · 跨学科情境', tagClass: 's5',
+    title: '跑步比赛谁最快？',
+    desc: '甲用0.2分，乙用7/30分，丙用13秒。三人的单位不一样——需先统一单位再比较。',
+    principle: '单位识别法 + 检验验证法——全换成「秒」',
+    table: { head: ['选手', '原单位', '换算到秒', '排名'], rows: [['甲', '0.2分', '0.2×60=12秒', '🥇 1'], ['乙', '7/30分', '7/30×60=14秒', '3'], ['丙', '13秒', '13秒', '🥈 2']] }
+  },
+  {
+    tag: '第六阶 · 社会议题情境', tagClass: 's6',
+    title: '夏令时该取消吗？',
+    desc: '有人建议「取消夏令时」，因为「调时间很麻烦，不调也能过」。支持还是反对？',
+    principle: '拆解分步法 + 检验验证法——列出优缺点，对比分析',
+    table: { head: ['有夏令时', '无夏令时'], rows: [['好处1：节约能源', '好处1：作息不变'], ['坏处1：调时间麻烦', '坏处2：可能浪费能源']] }
+  },
+  {
+    tag: '第七阶 · 综合迁移案例', tagClass: 's7',
+    title: '读完一本书用了多少小时？',
+    desc: '老师说「看完一页约3分钟」，你说「我读完了整本（约120页），用了多少小时？」',
+    principle: '综合使用全部4条原理（单位识别法 + 拆解分步法 + 基准对照法 + 检验验证法）',
+    table: { head: ['每页时间', '总页数', '总分钟', '总小时'], rows: [['3分', '120', '360分', '6小时']] }
+  }
+];
+
+var current = 0;
+
+function renderDots() {
+  var html = '';
+  for (var i = 0; i < cases.length; i++) {
+    html += '<span class="step-dot' + (i === current ? ' active' : '') + '" onclick="goToStep(' + i + ')">' + (i + 1) + '</span>';
+  }
+  document.getElementById('progressDots').innerHTML = html;
+}
+
+function renderCase(idx) {
+  var c = cases[idx];
+  var rowsHtml = '';
+  for (var r = 0; r < c.table.rows.length; r++) {
+    rowsHtml += '<tr>';
+    for (var d = 0; d < c.table.rows[r].length; d++) {
+      rowsHtml += '<td>' + c.table.rows[r][d] + '</td>';
+    }
+    rowsHtml += '</tr>';
+  }
+  var headsHtml = '';
+  for (var h = 0; h < c.table.head.length; h++) {
+    headsHtml += '<th>' + c.table.head[h] + '</th>';
+  }
+  var html = '<div class="case-card active">';
+  html += '<span class="stage-tag ' + c.tagClass + '">' + c.tag + '</span>';
+  html += '<h3>' + c.title + '</h3>';
+  html += '<div class="case-desc"><strong>📌 案例：</strong>' + c.desc + '</div>';
+  html += '<div class="principle-call">🔧 ' + c.principle + '</div>';
+  html += '<div class="case-table-wrap"><table class="case-table"><thead><tr>' + headsHtml + '</tr></thead><tbody>' + rowsHtml + '</tbody></table></div>';
+  html += '</div>';
+  document.getElementById('casesContainer').innerHTML = html;
+}
+
+function updateUI() {
+  renderDots();
+  renderCase(current);
+  document.getElementById('stepIndicator').textContent = (current + 1) + ' / ' + cases.length;
+  document.getElementById('prevBtn').disabled = (current === 0);
+  document.getElementById('nextBtn').disabled = (current === cases.length - 1);
+}
+
+function changeStep(delta) {
+  var next = current + delta;
+  if (next < 0 || next >= cases.length) return;
+  current = next;
+  updateUI();
+}
+
+function goToStep(idx) {
+  if (idx < 0 || idx >= cases.length) return;
+  current = idx;
+  updateUI();
+}
+
+updateUI();
+</script>
+</body>
+</html>

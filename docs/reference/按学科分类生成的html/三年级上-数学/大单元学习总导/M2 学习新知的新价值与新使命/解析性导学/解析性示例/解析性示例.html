@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性示例 — 学习动机透视镜</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+  --panel-bg: rgba(22,26,34,0.92);
+  --panel-text: #e8e8e8;
+  --panel-accent: #69b1ff;
+  --chat-bg: #ffffff;
+}
+*,*::before,*::after{box-sizing:border-box;}
+body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;font-size:var(--font-body);line-height:var(--line-height);color:var(--text);background:var(--bg);overflow-x:hidden;}
+.app-layout{display:flex;width:100%;max-width:none;min-height:100vh;position:relative;}
+.chat-area{flex:1;max-width:100%;padding:20px 24px;transition:max-width .5s ease,margin .5s ease;background:var(--chat-bg);min-height:100vh;overflow-y:auto;}
+.chat-area.panel-open{max-width:55%;}
+.chat-header{padding:16px 0;border-bottom:2px solid var(--bg);margin-bottom:20px;}
+.chat-header h1{font-size:var(--font-h2);margin:0;color:var(--primary);}
+.chat-header .subtitle{font-size:15px;color:var(--text-secondary);margin-top:4px;}
+.msg{padding:16px 20px;border-radius:12px;margin-bottom:14px;max-width:90%;animation:msgIn .4s ease;}
+.msg-student{background:var(--bg);border-bottom-left-radius:4px;margin-right:auto;}
+.msg-tutor{background:#e6f4ff;border-bottom-right-radius:4px;margin-left:auto;border-left:3px solid var(--primary);}
+.msg-system{background:#fff7e6;border:1px solid #ffd591;text-align:center;border-radius:8px;max-width:100%;}
+.msg .name{font-size:13px;font-weight:600;color:var(--primary);margin-bottom:4px;}
+@keyframes msgIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.panel-toggle{position:fixed;top:20px;right:20px;z-index:100;padding:10px 18px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;box-shadow:0 4px 12px rgba(22,119,255,.3);transition:transform .2s,right .5s ease;}
+.panel-toggle:hover{transform:scale(1.05);}
+.panel-toggle.active{right:calc(45% + 20px);}
+.analytics-panel{position:fixed;top:0;right:-46%;width:46%;height:100vh;background:var(--panel-bg);color:var(--panel-text);overflow-y:auto;transition:right .5s ease;z-index:90;padding:20px 18px;box-shadow:-4px 0 20px rgba(0,0,0,.3);backdrop-filter:blur(8px);}
+.analytics-panel.open{right:0;}
+.panel-title{font-size:20px;font-weight:700;color:#fff;margin:0 0 16px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,.12);}
+.panel-title span{color:var(--panel-accent);}
+.panel-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+.panel-tab{padding:6px 14px;border-radius:16px;font-size:13px;background:rgba(255,255,255,.08);color:var(--panel-text);border:none;cursor:pointer;transition:background .2s;}
+.panel-tab.active,.panel-tab:hover{background:var(--primary);color:#fff;}
+.panel-section{display:none;}
+.panel-section.active{display:block;}
+.motivation-grid{display:flex;gap:12px;margin:10px 0;}
+.motivation-col{flex:1;background:rgba(255,255,255,.06);border-radius:8px;padding:12px;min-height:180px;}
+.motivation-col h4{font-size:15px;margin:0 0 8px;text-align:center;padding:6px;border-radius:4px;}
+.col-inner h4{background:rgba(22,119,255,.25);color:var(--panel-accent);}
+.col-outer h4{background:rgba(245,34,45,.2);color:#ff7875;}
+.drag-card{padding:8px 12px;margin:6px 0;border-radius:6px;font-size:14px;cursor:grab;text-align:center;background:rgba(255,255,255,.1);transition:background .2s,transform .15s;user-select:none;}
+.drag-card:hover{background:rgba(255,255,255,.18);transform:scale(1.02);}
+.drag-card.dragging{opacity:.5;transform:scale(.95);}
+.drag-card.dropped{background:rgba(82,196,26,.3);cursor:default;}
+.drop-zone{min-height:60px;border:2px dashed rgba(255,255,255,.2);border-radius:6px;padding:8px;margin-top:6px;transition:border-color .2s,background .2s;}
+.drop-zone.dragover{border-color:var(--panel-accent);background:rgba(22,119,255,.12);}
+.drop-zone .placeholder{color:rgba(255,255,255,.35);font-size:13px;text-align:center;padding:12px 0;}
+.mindmap-container{background:rgba(255,255,255,.04);border-radius:8px;padding:14px;min-height:200px;}
+.mindmap-node{background:rgba(22,119,255,.2);border:1px solid rgba(22,119,255,.4);border-radius:6px;padding:8px 14px;margin:4px 0 4px 24px;font-size:14px;position:relative;cursor:pointer;transition:background .2s;}
+.mindmap-node:hover{background:rgba(22,119,255,.35);}
+.mindmap-node.root-node{margin-left:0;background:rgba(22,119,255,.35);border-width:2px;font-weight:600;}
+.mindmap-node .add-child{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.15);border:none;color:#fff;font-size:16px;width:24px;height:24px;border-radius:50%;cursor:pointer;line-height:24px;text-align:center;transition:background .2s;}
+.mindmap-node .add-child:hover{background:var(--primary);}
+.mindmap-input{display:flex;gap:6px;margin-top:8px;}
+.mindmap-input input{flex:1;padding:8px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:14px;}
+.mindmap-input input::placeholder{color:rgba(255,255,255,.35);}
+.mindmap-input button{padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;}
+.obstacle-list{list-style:none;padding:0;margin:10px 0;}
+.obstacle-list li{padding:10px 14px;margin:6px 0;background:rgba(255,255,255,.06);border-radius:6px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background .2s;font-size:15px;}
+.obstacle-list li:hover{background:rgba(255,255,255,.1);}
+.obstacle-list li.checked{background:rgba(82,196,26,.15);}
+.obstacle-list li input[type=checkbox]{width:18px;height:18px;accent-color:var(--primary);cursor:pointer;}
+.strategy-box{background:rgba(22,119,255,.12);border:1px solid rgba(22,119,255,.3);border-radius:8px;padding:12px 16px;margin-top:12px;font-size:14px;}
+.strategy-box strong{color:var(--panel-accent);}
+.conversation-area{background:rgba(255,255,255,.04);border-radius:8px;padding:12px;max-height:300px;overflow-y:auto;}
+.conv-msg{margin:8px 0;padding:8px 12px;border-radius:8px;font-size:14px;max-width:85%;}
+.conv-ai{background:rgba(22,119,255,.15);border-left:3px solid var(--panel-accent);margin-right:auto;}
+.conv-user{background:rgba(255,255,255,.08);margin-left:auto;text-align:right;}
+.conv-input{display:flex;gap:6px;margin-top:10px;}
+.conv-input input{flex:1;padding:8px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:14px;}
+.conv-input input::placeholder{color:rgba(255,255,255,.35);}
+.conv-input button{padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;}
+.diary-entry textarea{width:100%;min-height:80px;padding:10px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#fff;font-size:14px;margin:6px 0;resize:vertical;font-family:inherit;}
+.diary-entry textarea::placeholder{color:rgba(255,255,255,.35);}
+.diary-entry button{padding:8px 20px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;}
+.diary-log{margin-top:10px;font-size:13px;color:rgba(255,255,255,.5);}
+.timeline-container{background:rgba(255,255,255,.04);border-radius:8px;padding:16px;position:relative;overflow:hidden;margin-top:10px;}
+.timeline-line{position:absolute;left:20px;right:20px;top:40px;height:2px;background:rgba(255,255,255,.15);}
+.timeline-dot{position:absolute;top:40px;width:12px;height:12px;border-radius:50%;transform:translate(-50%,-50%);cursor:pointer;transition:transform .2s;}
+.timeline-dot:hover{transform:translate(-50%,-50%) scale(1.4);}
+.timeline-label{position:absolute;top:56px;transform:translateX(-50%);font-size:10px;color:rgba(255,255,255,.5);white-space:nowrap;}
+.timeline-curve{position:absolute;left:20px;right:20px;top:0;height:80px;overflow:hidden;}
+.timeline-curve svg{width:100%;height:100%;}
+
+/* 示例内容 */
+.example-scene{background:#fff7e6;border:1px solid #ffd591;border-radius:var(--border-radius);padding:20px 24px;margin:16px 0;}
+.example-scene h3{font-size:20px;margin:0 0 10px;color:#d46b08;}
+.example-scene .highlight{background:#fff;border-radius:6px;padding:12px 16px;margin:10px 0;border-left:4px solid #fa8c16;font-size:16px;}
+.info-table{width:100%;border-collapse:collapse;margin:10px 0;font-size:15px;display:block;overflow-x:auto;}
+.info-table th,.info-table td{border:1px solid var(--border);padding:8px 12px;text-align:left;}
+.info-table th{background:var(--bg);font-weight:600;color:var(--primary);}
+.info-table tr:last-child td{border-bottom:1px solid var(--border);}
+.step-card{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--border-radius);padding:16px 20px;margin:12px 0;border-left:4px solid var(--primary);}
+.step-card .step-num{display:inline-block;background:var(--primary);color:#fff;border-radius:50%;width:28px;height:28px;text-align:center;line-height:28px;font-weight:700;font-size:14px;margin-right:8px;}
+.step-card h4{display:inline;font-size:17px;margin:0;color:var(--text);}
+.conclusion-box{background:#f6ffed;border:1px solid #b7eb8f;border-radius:var(--border-radius);padding:20px 24px;margin:16px 0;text-align:center;font-size:18px;font-weight:600;color:#52c41a;}
+.method-box{background:var(--bg);border-radius:var(--border-radius);padding:16px 20px;margin:12px 0;border-left:4px solid var(--accent);font-size:15px;}
+.error-box{background:#fff2f0;border:1px solid #ffccc7;border-radius:var(--border-radius);padding:14px 18px;margin:12px 0;}
+.error-box ul{list-style:none;padding:0;margin:0;}
+.error-box li{padding:4px 0;font-size:15px;}
+.practice-task{background:#f0f5ff;border-radius:var(--border-radius);padding:16px 20px;margin:16px 0;border:1px dashed var(--primary);}
+.practice-task h3{font-size:18px;margin:0 0 8px;color:var(--primary);}
+.self-eval{margin:16px 0;}
+.self-eval li{padding:8px 0;border-bottom:1px solid var(--border);font-size:16px;}
+.self-eval li:last-child{border-bottom:none;}
+.self-eval input[type=checkbox]{width:18px;height:18px;accent-color:var(--primary);margin-right:8px;}
+@media(max-width:900px){
+  .chat-area.panel-open{max-width:100%;}
+  .analytics-panel{width:92%;right:-94%;}
+  .analytics-panel.open{right:0;}
+  .panel-toggle.active{right:20px;}
+  .motivation-grid{flex-direction:column;}
+}
+@media(max-width:600px){
+  .chat-area{padding:14px;}
+  .msg{max-width:100%;}
+  .example-scene{padding:14px 16px;}
+  .step-card{padding:12px 14px;}
+}
+</style>
+</head>
+<body>
+<div class="app-layout">
+  <div class="chat-area" id="chatArea">
+    <div class="chat-header">
+      <h1>🔍 解析性示例</h1>
+      <div class="subtitle">M2 学习新知的新价值与新使命 · 一分钟跳绳比赛</div>
+    </div>
+
+    <div class="msg msg-system">
+      <strong>🧠 AI导师：</strong> 欢迎来到"解析性示例"！让我们一起通过一个生活中的真实情境，学习如何科学地分析问题。准备好了吗？
+    </div>
+
+    <div class="msg msg-tutor">
+      <div class="name">🧑‍🏫 AI导师</div>
+      <p>我们来看一个 <strong>跳绳比赛</strong> 的例子。这里面藏着一个有趣的"时间谜题"哦！读完情境后，试着想一想：<strong>为什么大家的感觉不一样？</strong></p>
+      <p>打开右上角的 <strong>"🔍 动机透视镜"</strong>，边学边探索你的学习动机！</p>
+    </div>
+
+    <!-- 1. 情境 -->
+    <div class="example-scene">
+      <h3>🏟️ 解析任务情境</h3>
+      <p>学校举行 <strong>"一分钟跳绳比赛"</strong>：</p>
+      <ul>
+        <li>小明跳了 <strong>128</strong> 个</li>
+        <li>小红跳了 <strong>135</strong> 个</li>
+        <li>小华跳了 <strong>130</strong> 个</li>
+      </ul>
+      <p>广播里说："比赛时长为 <strong>60秒</strong>"。可是小明看着自己的电子表说：<strong>"我觉得才过了40秒啊！"</strong></p>
+      <div class="highlight">
+        🤯 <strong>核心冲突：</strong>感觉时间 ≠ 实际时间 —— 我们怎么才能"客观"地知道时间？
+      </div>
+    </div>
+
+    <div class="msg msg-tutor">
+      <div class="name">🧑‍🏫 AI导师</div>
+      <p>💡 你发现了吗？这里面其实有 <strong>3个关键发现</strong>：①每个人对一分钟的感受不一样 ②电子表上的60秒和感觉上的"一分钟"不一致 ③要准确比较成绩，必须知道精确的时间。</p>
+    </div>
+
+    <!-- 2. 核心问题 -->
+    <div class="msg msg-system" style="background:#e6f4ff;border-color:var(--primary);">
+      <strong>🎯 核心问题：</strong> "为什么大家对同一段时间的感受不一样？我们怎样科学地测量和比较时间？"
+    </div>
+
+    <!-- 3. 信息提取表 -->
+    <div class="msg msg-tutor">
+      <div class="name">🧑‍🏫 AI导师</div>
+      <p>先来提取关键信息，填一填这张表格 👇</p>
+    </div>
+    <table class="info-table">
+      <tr><th>情境信息</th><th>说明什么</th><th>为什么重要</th></tr>
+      <tr><td>小明觉得才40秒</td><td>主观感受不可靠</td><td>需要客观的测量工具</td></tr>
+      <tr><td>实际是60秒</td><td>客观时间和主观感受有差距</td><td>科学测量才能准确</td></tr>
+      <tr><td>三人成绩不同</td><td>需要精确到秒来比较</td><td>时间单位的作用</td></tr>
+    </table>
+
+    <!-- 4. 专家解析5步 -->
+    <div class="msg msg-tutor">
+      <div class="name">🧑‍🏫 AI导师</div>
+      <p>📋 下面是 <strong>专家解析的5个步骤</strong>，跟着每一步来思考，你就学会科学分析了！</p>
+    </div>
+
+    <div class="step-card">
+      <span class="step-num">1</span><h4>先看见什么</h4>
+      <p style="margin-top:8px;font-size:16px;">现象：大家对同一时长的感受不同——这是感官的局限性。人的感觉并不总是准确的！</p>
+    </div>
+
+    <div class="step-card">
+      <span class="step-num">2</span><h4>判断问题类别</h4>
+      <p style="margin-top:8px;font-size:16px;">这是一类 <strong>"主观 vs 客观"</strong> 的问题——主观感受不能作为判断标准，我们需要客观依据。</p>
+    </div>
+
+    <div class="step-card">
+      <span class="step-num">3</span><h4>调用哪些方法</h4>
+      <p style="margin-top:8px;font-size:16px;">
+        🅰 <strong>比较法</strong>——对比感受和实际<br>
+        🅱 <strong>工具法</strong>——使用秒表等计时工具<br>
+        🅲 <strong>多次验证法</strong>——多测几次取平均
+      </p>
+    </div>
+
+    <div class="step-card">
+      <span class="step-num">4</span><h4>如何推理分析</h4>
+      <p style="margin-top:8px;font-size:16px;">
+        <strong>推理链：</strong><br>
+        感受有差异 → 需要统一标准 → 标准从哪来？（看钟表）→ 钟表是怎么计时的？（秒针走一圈是1分）→ 秒针为什么准？（机械/电子规律）
+      </p>
+      <div style="background:var(--bg);border-radius:8px;padding:12px;margin:8px 0;text-align:center;font-size:15px;">
+        🔗 感受差异 → 统一标准 → 计时工具 → 科学原理 → 客观测量
+      </div>
+    </div>
+
+    <div class="step-card">
+      <span class="step-num">5</span><h4>形成结论</h4>
+      <p style="margin-top:8px;font-size:16px;">要客观测量时间，需要借助计时工具。时间单位（秒、分、时）是我们共同约定的 <strong>"标尺"</strong>。</p>
+    </div>
+
+    <!-- 5. 结论 -->
+    <div class="conclusion-box">
+      🎯 时间虽然看不见摸不着，但我们可以通过钟表等工具来准确测量它。秒、分、时是我们约定的"时间标尺"。<br><br>
+      <span style="font-size:16px;">感受可能骗人，但标尺不会。</span>
+    </div>
+
+    <!-- 6. 方法提炼 -->
+    <div class="msg msg-tutor">
+      <div class="name">🧑‍🏫 AI导师</div>
+      <p>📌 从上面的分析中，我们可以提炼出两个非常重要的 <strong>思维方法</strong>：</p>
+    </div>
+    <div class="method-box">
+      <strong>🔧 方法一：</strong>以后遇到"感觉和事实不一致"的问题，可以这样做：<br>
+      先承认感觉可能有偏差 → 找到客观测量工具 → 多次验证 → 对比分析
+    </div>
+    <div class="method-box">
+      <strong>🔧 方法二：</strong>遇到需要比较的情况，<strong>先用统一的单位来标度</strong>。
+    </div>
+
+    <!-- 7. 易错提醒 -->
+    <div class="error-box">
+      <strong>❌ 常见错误提醒：</strong>
+      <ul>
+        <li>❌ 凭感觉判断时间长短</li>
+        <li>❌ 只测一次就下结论</li>
+        <li>❌ 混淆不同的时间单位（如把秒当分）</li>
+      </ul>
+    </div>
+
+    <!-- 8. 自主迁移 -->
+    <div class="practice-task">
+      <h3>✏️ 自主迁移小练习</h3>
+      <p><strong>练习：</strong>你早上从家到学校，感觉走了"大概10分钟"。请用两种不同方法验证这个时间，比较结果并分析差异原因。</p>
+      <p><strong>提示：</strong>可以用手机计时器、看钟表、或者数步数估算……</p>
+      <button style="margin-top:8px;padding:8px 20px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:15px;" onclick="showPracticeHint()">💡 查看提示</button>
+      <div id="practiceHint" style="display:none;margin-top:10px;padding:12px;background:#fff;border-radius:6px;font-size:15px;">
+        <strong>方法1：</strong>用手机秒表测一次，记下时间。<br>
+        <strong>方法2：</strong>看出门和到校的时钟时间，计算差值。<br>
+        <strong>分析：</strong>比较两种方法的结果和你的感觉，看看差异有多大！
+      </div>
+    </div>
+
+    <!-- 9. 学习自评 -->
+    <div class="msg msg-tutor">
+      <div class="name">🧑‍🏫 AI导师</div>
+      <p>✅ 最后，来做一个 <strong>自我评价</strong>，看看你的掌握情况 👇</p>
+    </div>
+    <ul class="self-eval">
+      <li><input type="checkbox" id="e1"> 我能说清楚"为什么主观感受不能当测量标准"</li>
+      <li><input type="checkbox" id="e2"> 我能用秒表或钟表准确测量一段活动的时长</li>
+      <li><input type="checkbox" id="e3"> 我能区分哪些情况需要用"秒"、哪些用"分"、哪些用"时"</li>
+      <li><input type="checkbox" id="e4"> 我理解了"统一单位"的重要性</li>
+      <li><input type="checkbox" id="e5"> 遇到类似的主观vs客观问题时，我知道怎么分析</li>
+    </ul>
+    <button style="padding:10px 24px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;" onclick="checkEval()">📊 查看自评结果</button>
+    <div id="evalResult" style="margin-top:12px;font-size:16px;"></div>
+  </div>
+
+  <button class="panel-toggle" id="panelToggle" onclick="togglePanel()">🔍 动机透视镜</button>
+
+  <div class="analytics-panel" id="analyticsPanel">
+    <h2 class="panel-title">🔍 动机透视镜：<span>你为什么想学（或不想学）？</span></h2>
+    <div class="panel-tabs">
+      <button class="panel-tab active" data-tab="tab-motivation" onclick="switchTab('tab-motivation',this)">🎯 动机识别</button>
+      <button class="panel-tab" data-tab="tab-mindmap" onclick="switchTab('tab-mindmap',this)">🧠 动机追溯</button>
+      <button class="panel-tab" data-tab="tab-obstacle" onclick="switchTab('tab-obstacle',this)">🚧 障碍扫描</button>
+      <button class="panel-tab" data-tab="tab-chat" onclick="switchTab('tab-chat',this)">💬 AI对话</button>
+      <button class="panel-tab" data-tab="tab-diary" onclick="switchTab('tab-diary',this)">📝 动机日记</button>
+      <button class="panel-tab" data-tab="tab-timeline" onclick="switchTab('tab-timeline',this)">📈 时间线</button>
+    </div>
+
+    <div class="panel-section active" id="tab-motivation">
+      <p style="font-size:14px;color:rgba(255,255,255,.6);margin:0 0 10px;">把学习动机卡片拖到对应区域：</p>
+      <div class="motivation-grid">
+        <div class="motivation-col col-inner">
+          <h4>🌟 内在动机</h4>
+          <div class="drop-zone" id="dropInner" ondrop="dropHandler(event,'inner')" ondragover="dragOverHandler(event)" ondragleave="dragLeaveHandler(event)"><div class="placeholder">拖入内在动机卡片</div></div>
+        </div>
+        <div class="motivation-col col-outer">
+          <h4>🏆 外在动机</h4>
+          <div class="drop-zone" id="dropOuter" ondrop="dropHandler(event,'outer')" ondragover="dragOverHandler(event)" ondragleave="dragLeaveHandler(event)"><div class="placeholder">拖入外在动机卡片</div></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;justify-content:center;">
+        <div class="drag-card" draggable="true" ondragstart="dragStartHandler(event,'解开时间谜题很好奇','inner')">解开时间谜题很好奇</div>
+        <div class="drag-card" draggable="true" ondragstart="dragStartHandler(event,'知道秒针为什么准很开心','inner')">知道秒针为什么准很开心</div>
+        <div class="drag-card" draggable="true" ondragstart="dragStartHandler(event,'想当班上最会分析的人','outer')">想当班上最会分析的人</div>
+        <div class="drag-card" draggable="true" ondragstart="dragStartHandler(event,'这单元要考试','outer')">这单元要考试</div>
+        <div class="drag-card" draggable="true" ondragstart="dragStartHandler(event,'学会方法以后都能用','inner')">学会方法以后都能用</div>
+        <div class="drag-card" draggable="true" ondragstart="dragStartHandler(event,'老师会表扬我','outer')">老师会表扬我</div>
+      </div>
+      <div id="motivationFeedback" style="margin-top:12px;font-size:14px;color:var(--panel-accent);min-height:20px;"></div>
+    </div>
+
+    <div class="panel-section" id="tab-mindmap">
+      <p style="font-size:14px;color:rgba(255,255,255,.6);margin:0 0 10px;">逐层追问"我为什么想学时间知识？"</p>
+      <div class="mindmap-container" id="mindmapContainer">
+        <div class="mindmap-node root-node" data-id="root">🤔 我为什么想学这个？<button class="add-child" onclick="addMindmapNode('root')">➕</button></div>
+      </div>
+      <div class="mindmap-input">
+        <input type="text" id="mindmapInput" placeholder="输入你的想法…" onkeydown="if(event.key==='Enter')addFromInput()">
+        <button onclick="addFromInput()">添加</button>
+      </div>
+    </div>
+
+    <div class="panel-section" id="tab-obstacle">
+      <p style="font-size:14px;color:rgba(255,255,255,.6);margin:0 0 10px;">勾选你遇到的学习障碍：</p>
+      <ul class="obstacle-list">
+        <li onclick="toggleObstacle(this)"><input type="checkbox"> 😰 畏难情绪 — 怕分析过程太难</li>
+        <li onclick="toggleObstacle(this)"><input type="checkbox"> 🔗 缺乏关联 — 时间感知和分析有什么关系？</li>
+        <li onclick="toggleObstacle(this)"><input type="checkbox"> 💪 信心不足 — 怕自己分析不对</li>
+        <li onclick="toggleObstacle(this)"><input type="checkbox"> 📱 外部干扰 — 总想玩手机</li>
+        <li onclick="toggleObstacle(this)"><input type="checkbox"> ⏳ 延迟满足难 — 想直接知道答案</li>
+      </ul>
+      <div class="strategy-box" id="strategyBox"><strong>💡 破障策略：</strong><span id="strategyText">请先勾选你遇到的障碍！</span></div>
+    </div>
+
+    <div class="panel-section" id="tab-chat">
+      <div class="conversation-area" id="convArea">
+        <div class="conv-msg conv-ai">👋 你好！我是你的动机辅导师。你觉得小明的"时间错觉"有趣吗？来聊聊你的想法吧！</div>
+      </div>
+      <div class="conv-input">
+        <input type="text" id="convInput" placeholder="输入你的想法…" onkeydown="if(event.key==='Enter')sendConvMsg()">
+        <button onclick="sendConvMsg()">发送</button>
+      </div>
+    </div>
+
+    <div class="panel-section" id="tab-diary">
+      <div class="diary-entry">
+        <textarea id="diaryText" placeholder="今天我为什么想学？&#10;学到什么让我觉得值得？&#10;什么让我想放弃？"></textarea>
+        <button onclick="saveDiary()">📝 保存日记</button>
+      </div>
+      <div class="diary-log" id="diaryLog">📖 还没有日记记录，开始写第一篇吧！</div>
+    </div>
+
+    <div class="panel-section" id="tab-timeline">
+      <p style="font-size:14px;color:rgba(255,255,255,.6);margin:0 0 10px;">动机波动曲线（模拟）</p>
+      <div class="timeline-container">
+        <div class="timeline-curve">
+          <svg viewBox="0 0 600 80" preserveAspectRatio="none">
+            <path d="M0,50 Q40,10 100,45 T200,25 T300,40 T400,18 T500,38 T600,30" fill="none" stroke="var(--panel-accent)" stroke-width="2.5"/>
+            <path d="M0,50 Q40,10 100,45 T200,25 T300,40 T400,18 T500,38 T600,30" fill="none" stroke="var(--panel-accent)" stroke-width="6" opacity=".15"/>
+          </svg>
+        </div>
+        <div class="timeline-line"></div>
+        <div class="timeline-dot" style="left:6%;background:#ff4d4f;" title="读情境：好奇启动"></div>
+        <div class="timeline-dot" style="left:20%;background:#fa8c16;" title="信息提取：认真思考"></div>
+        <div class="timeline-dot" style="left:40%;background:#fadb14;" title="5步解析：渐入佳境"></div>
+        <div class="timeline-dot" style="left:60%;background:#52c41a;" title="方法提炼：收获满满"></div>
+        <div class="timeline-dot" style="left:80%;background:#1677ff;" title="练习+自评：信心提升"></div>
+        <div class="timeline-label" style="left:6%;">情境</div>
+        <div class="timeline-label" style="left:20%;">信息提取</div>
+        <div class="timeline-label" style="left:40%;">5步解析</div>
+        <div class="timeline-label" style="left:60%;">方法</div>
+        <div class="timeline-label" style="left:80%;">自评</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function togglePanel(){
+  var p=document.getElementById('analyticsPanel'),c=document.getElementById('chatArea'),b=document.getElementById('panelToggle');
+  p.classList.toggle('open');c.classList.toggle('panel-open');b.classList.toggle('active');
+  b.textContent=p.classList.contains('open')?'✕ 关闭面板':'🔍 动机透视镜';
+}
+function switchTab(id,el){
+  document.querySelectorAll('.panel-section').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.panel-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+}
+function showPracticeHint(){
+  var el=document.getElementById('practiceHint');
+  if(el) el.style.display=el.style.display==='none'?'block':'none';
+}
+
+var dragData={text:'',type:''};
+function dragStartHandler(e,text,type){e.dataTransfer.setData('text/plain',text);dragData={text,type};e.target.classList.add('dragging');setTimeout(()=>e.target.classList.remove('dragging'),0);}
+function dragOverHandler(e){e.preventDefault();e.currentTarget.classList.add('dragover');}
+function dragLeaveHandler(e){e.currentTarget.classList.remove('dragover');}
+function dropHandler(e,zoneType){
+  e.preventDefault();var zone=e.currentTarget;zone.classList.remove('dragover');
+  var text=dragData.text||e.dataTransfer.getData('text/plain');if(!text)return;
+  var fb=document.getElementById('motivationFeedback');
+  var match=(zoneType==='inner'&&dragData.type==='inner')||(zoneType==='outer'&&dragData.type==='outer');
+  var ph=zone.querySelector('.placeholder');if(ph)ph.style.display='none';
+  var card=document.createElement('div');card.className='drag-card dropped';card.textContent=text;zone.appendChild(card);
+  fb.innerHTML=match?'✅ <strong>配对成功！</strong> "'+text+'" 激发的是<strong>'+(zoneType==='inner'?'内在':'外在')+'动机</strong>。':'🤔 这个似乎更偏向<strong>'+(dragData.type==='inner'?'内在':'外在')+'动机</strong>，试试另一边？';
+}
+var mmCounter=0;
+function addMindmapNode(pId){
+  var inp=document.getElementById('mindmapInput'),t=inp.value.trim();if(!t){alert('请输入想法！');return;}
+  var p=document.querySelector('.mindmap-node[data-id="'+pId+'"]');if(!p)return;
+  mmCounter++;var id='mm-'+mmCounter;
+  var n=document.createElement('div');n.className='mindmap-node';n.dataset.id=id;
+  n.innerHTML=t+'<button class="add-child" onclick="addMindmapNode(\''+id+'\')">➕</button>';
+  p.parentNode.insertBefore(n,p.nextSibling);inp.value='';updateChain();
+}
+function addFromInput(){var r=document.querySelector('.mindmap-node.root-node');if(r)addMindmapNode(r.dataset.id);}
+function updateChain(){
+  var nodes=document.querySelectorAll('.mindmap-node'),chain=[];
+  nodes.forEach(n=>{var t=n.textContent.replace('➕','').trim();if(t)chain.push(t);});
+  if(chain.length>1){
+    var f=document.getElementById('mmChain');
+    if(!f){f=document.createElement('div');f.id='mmChain';f.style.cssText='margin-top:8px;font-size:13px;color:var(--panel-accent);background:rgba(22,119,255,.1);border-radius:6px;padding:8px 12px;';document.getElementById('mindmapContainer').appendChild(f);}
+    f.innerHTML='🧩 <strong>动机逻辑链：</strong>'+chain.join(' → ');
+  }
+}
+var strategyMap={'畏难情绪':'别怕！跟着5步解析慢慢走，每一步都有提示！','缺乏关联':'分析时间感知就是在训练"批判性思维"——科学家的核心能力！','信心不足':'你平时一定有过"觉得时间过得快/慢"的经历——你已经知道一半了！','外部干扰':'把手机放在抽屉里，设一个"沉浸学习25分钟"的计时器。','延迟满足难':'答案不重要，重要的是你思考的过程。每一步都是收获！'};
+function toggleObstacle(el){var cb=el.querySelector('input[type=checkbox]');cb.checked=!cb.checked;el.classList.toggle('checked',cb.checked);updateSt();}
+function updateSt(){
+  var c=document.querySelectorAll('.obstacle-list li.checked'),t=document.getElementById('strategyText');
+  if(c.length===0){t.textContent='请先勾选你遇到的障碍！';return;}
+  var s=[];c.forEach(function(li){var txt=li.textContent.trim();for(var k in strategyMap){if(txt.includes(k)){s.push('<strong>🔸 '+k+'：</strong>'+strategyMap[k]);break;}}});
+  t.innerHTML=s.length?s.join('<br><br>'):'✅ 你能意识到障碍已经很棒了！';
+}
+var convCount=0;
+var aiResp=['你的想法很有趣！你遇到过类似"时间错觉"的经历吗？','嗯，科学分析的第一步就是承认感觉可能不准——你已经学会了！','跟着5步走，你就能像科学家一样思考了！','太棒了！你已经开始用分析思维看世界了！'];
+function sendConvMsg(){
+  var inp=document.getElementById('convInput'),t=inp.value.trim();if(!t)return;
+  var a=document.getElementById('convArea');
+  var u=document.createElement('div');u.className='conv-msg conv-user';u.textContent='🙋 '+t;a.appendChild(u);inp.value='';
+  setTimeout(function(){var m=document.createElement('div');m.className='conv-msg conv-ai';m.textContent='🤖 '+aiResp[convCount%aiResp.length];a.appendChild(m);a.scrollTop=a.scrollHeight;convCount++;},600);
+  a.scrollTop=a.scrollHeight;
+}
+function saveDiary(){
+  var t=document.getElementById('diaryText').value.trim();if(!t){alert('请写下你的想法！');return;}
+  var l=document.getElementById('diaryLog');var d=new Date();var s=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+' '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0');
+  var e=document.createElement('div');e.style.cssText='background:rgba(255,255,255,.06);border-radius:6px;padding:8px 10px;margin:6px 0;font-size:13px;';
+  e.innerHTML='<span style="color:var(--panel-accent);">📅 '+s+'</span><br>'+t.replace(/\n/g,'<br>');
+  l.insertBefore(e,l.firstChild);document.getElementById('diaryText').value='';
+  if(l.textContent.includes('还没有日记记录')){l.innerHTML='';l.appendChild(e);}
+}
+function checkEval(){
+  var checks=['e1','e2','e3','e4','e5'].map(id=>document.getElementById(id).checked);
+  var n=checks.filter(Boolean).length;
+  var el=document.getElementById('evalResult');
+  var msgs=['加油！再回顾一下5步解析 💪','做得不错！再练习一下迁移部分 🎯','掌握得很好！你已经是分析小能手了 🌟','非常棒！大部分你已经会了 🏆','完美！你已经完全理解了解析方法！🎉'];
+  el.innerHTML='📊 你掌握了 <strong>'+n+'</strong>/5 项 —— '+msgs[n];
+  el.style.cssText='margin-top:12px;font-size:16px;padding:12px 16px;border-radius:8px;background:rgba(22,119,255,.08);';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名著介绍 — 时间主题</title>
+<style>
+  :root {
+    --primary: #1677ff;
+    --primary-hover: #4096ff;
+    --accent: #69b1ff;
+    --bg: #f0f5ff;
+    --card-bg: #ffffff;
+    --text: rgba(0,0,0,0.88);
+    --text-secondary: rgba(0,0,0,0.45);
+    --border: #d9d9d9;
+    --border-radius: 8px;
+    --shadow: 0 2px 8px rgba(0,0,0,0.06);
+    --font-body: 18px;
+    --font-h1: 28px;
+    --font-h2: 22px;
+    --line-height: 1.8;
+  }
+  body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); font-size: var(--font-body); line-height: var(--line-height); }
+  .container { width: 100%; max-width: none; padding: 20px 24px; box-sizing: border-box; }
+  h1 { font-size: var(--font-h1); color: var(--primary); margin: 16px 0 8px; }
+  h2 { font-size: var(--font-h2); color: var(--primary); margin: 24px 0 8px; border-left: 4px solid var(--primary); padding-left: 12px; }
+  h3 { font-size: calc(var(--font-body) + 2px); color: var(--text); margin: 20px 0 6px; }
+  .card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px; border: 1px solid var(--border); }
+  .quote-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  .quote-card { background: var(--bg); border-radius: var(--border-radius); padding: 16px; border-left: 4px solid var(--primary); }
+  .quote-card .quote { font-style: italic; font-size: calc(var(--font-body) + 2px); margin: 0 0 4px; }
+  .quote-card .author { color: var(--text-secondary); font-size: calc(var(--font-body) - 2px); }
+  .quote-card .type { display: inline-block; background: var(--primary); color: #fff; font-size: calc(var(--font-body) - 4px); padding: 2px 10px; border-radius: 12px; margin: 6px 0; }
+  .quote-card .think { color: var(--text-secondary); font-size: calc(var(--font-body) - 2px); margin-top: 6px; }
+  .book-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px; border: 1px solid var(--border); }
+  .book-card h3 { color: var(--primary); }
+  .book-tag { display: inline-block; background: var(--accent); color: #fff; font-size: calc(var(--font-body) - 4px); padding: 2px 12px; border-radius: 12px; margin-bottom: 8px; }
+  .key-point { background: var(--bg); border-radius: var(--border-radius); padding: 12px; margin: 8px 0; border-left: 3px solid var(--accent); }
+  .toggle-btn { background: var(--primary); color: #fff; border: none; padding: 8px 18px; border-radius: var(--border-radius); font-size: var(--font-body); cursor: pointer; transition: background 0.2s; }
+  .toggle-btn:hover { background: var(--primary-hover); }
+  .toggle-btn:active { transform: scale(0.97); }
+  .hidden-content { display: none; margin-top: 12px; padding: 16px; background: var(--bg); border-radius: var(--border-radius); }
+  .hidden-content.show { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+  .path-info { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+  .path-info span { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 4px 14px; font-size: calc(var(--font-body) - 3px); color: var(--text-secondary); }
+  .highlight { color: var(--primary); font-weight: 600; }
+  @media (max-width: 600px) {
+    .container { padding: 12px; }
+    .quote-card { padding: 12px; }
+    .book-card { padding: 14px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>📚 名著介绍 — 时间主题</h1>
+  <div class="card">
+    <p>通过<strong>思想触发器（名言）</strong>与<strong>系统思想载体（名著）</strong>，我们从更广阔的视角理解"时间"——构建认知深度与思想格局。</p>
+  </div>
+
+  <h2>💬 名言 · 思想触发器</h2>
+  <div class="quote-grid">
+    <div class="quote-card">
+      <p class="quote">"时间就是生命。浪费时间就是浪费生命。"</p>
+      <div class="author">—— 鲁迅</div>
+      <span class="type">启发型</span>
+      <div class="think">🤔 为什么说时间 = 生命？</div>
+    </div>
+    <div class="quote-card">
+      <p class="quote">"时间是一根鞭子，逼迫人前进。"</p>
+      <div class="author">—— 古希腊谚语</div>
+      <span class="type">冲突型</span>
+      <div class="think">🤔 时间有时让人感到压力吗？</div>
+    </div>
+    <div class="quote-card">
+      <p class="quote">"昨天是一张作废的支票，明天是一张期票，唯有今天是现金。"</p>
+      <div class="author">—— 戴尔·卡耐基</div>
+      <span class="type">批判型</span>
+      <div class="think">🤔 "现在"为什么最重要？</div>
+    </div>
+    <div class="quote-card">
+      <p class="quote">"少年易老学难成，一寸光阴不可轻。"</p>
+      <div class="author">—— 朱熹</div>
+      <span class="type">启发型</span>
+      <div class="think">🤔 时间对学习有什么意义？</div>
+    </div>
+  </div>
+
+  <h2>📖 名著推荐（3 本）</h2>
+
+  <div class="book-card">
+    <span class="book-tag">🇨🇳 中国著作</span>
+    <h3>《毛毛》—— 米切尔·恩德</h3>
+    <div class="key-point"><strong>核心问题：</strong>如果时间被偷走了，生活会变成什么样？</div>
+    <p><strong>故事主线：</strong>时间窃贼出现 → 人们越来越忙 → 毛毛发现真相 → 夺回时间</p>
+    <p><strong>核心观点：</strong>时间不是用来"节省"的，而是用来"体验"的。</p>
+    <button class="toggle-btn" onclick="toggleContent('book1')">📌 关键片段导读</button>
+    <div id="book1" class="hidden-content">
+      <p><strong>灰衣人偷走人们的时间</strong> —— 为什么人越"省时间"，反而越没时间？<br>想一想：你身边有没有"越忙越没时间做喜欢的事"的人？</p>
+    </div>
+    <div class="path-info">
+      <span>适读：三年级以上</span>
+      <span>纸质书·各大书店</span>
+      <span>微信读书</span>
+      <span>喜马拉雅有声书</span>
+    </div>
+  </div>
+
+  <div class="book-card">
+    <span class="book-tag">🌍 外国经典</span>
+    <h3>《时间之谜》（科普版）</h3>
+    <div class="key-point"><strong>核心问题：</strong>时间到底是什么？</div>
+    <p><strong>核心观点：</strong>时间在物理学、生物学、心理学里有不同的面貌。</p>
+    <button class="toggle-btn" onclick="toggleContent('book2')">📌 关键片段导读</button>
+    <div id="book2" class="hidden-content">
+      <p><strong>为什么蜂鸟觉得时间过得比人慢？</strong><br>小型动物的新陈代谢更快，它们感知时间的"帧率"更高——1秒里能"看到"更多画面！</p>
+    </div>
+    <div class="path-info">
+      <span>适读：三年级可读（基础篇）</span>
+      <span>图书馆借阅</span>
+      <span>电子书平台</span>
+    </div>
+  </div>
+
+  <div class="book-card">
+    <span class="book-tag">🔗 跨学科作品</span>
+    <h3>《时间的秩序》卡洛·罗韦利（儿童改编版）</h3>
+    <div class="key-point"><strong>核心问题：</strong>如果没有时钟，人类还能感知时间吗？</div>
+    <p><strong>核心观点：</strong>时间不是"嘀嗒嘀嗒"走的东西——它和空间、引力紧密相连。</p>
+    <button class="toggle-btn" onclick="toggleContent('book3')">📌 关键片段导读</button>
+    <div id="book3" class="hidden-content">
+      <p><strong>"山顶的时间比山脚过得快一点"——这是真的！</strong><br>根据爱因斯坦的相对论，引力越强的地方时间越慢。山脚离地心近，引力更大，时间过得更慢！虽然差得微乎其微，但原子钟可以测出来。</p>
+    </div>
+    <div class="path-info">
+      <span>适读：挑战级·亲子共读</span>
+      <span>纸质书精装版推荐</span>
+    </div>
+  </div>
+
+  <div style="text-align:center; margin: 30px 0 16px;">
+    <button class="toggle-btn" onclick="document.querySelectorAll('.hidden-content').forEach(el => el.classList.add('show'))">展开所有导读</button>
+    <button class="toggle-btn" style="background:var(--text-secondary);" onclick="document.querySelectorAll('.hidden-content').forEach(el => el.classList.remove('show'))">收起所有</button>
+  </div>
+
+</div>
+<script>
+function toggleContent(id) {
+  var el = document.getElementById(id);
+  if (el) { el.classList.toggle('show'); }
+}
+</script>
+</body>
+</html>

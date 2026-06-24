@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性示例 — 看别人怎么做时间换算"系统图"</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, #0d47a1, var(--primary), var(--accent));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.header h1 { font-size: var(--font-h1); margin-bottom: 6px; }
+.header p { opacity: 0.9; font-size: 16px; }
+.section-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 22px;
+  margin-bottom: 16px;
+}
+.section-title {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title .step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 16px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.goal-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.goal-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #f6f8fa;
+  border-radius: 6px;
+  border-left: 3px solid var(--primary);
+}
+.goal-item .icon { font-size: 20px; }
+.step-container {
+  position: relative;
+  padding-left: 40px;
+}
+.step-container::before {
+  content: '';
+  position: absolute;
+  left: 18px;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+.step-item {
+  position: relative;
+  margin-bottom: 16px;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: box-shadow 0.3s;
+  border: 2px solid transparent;
+}
+.step-item:hover { box-shadow: 0 4px 16px rgba(22,119,255,0.12); }
+.step-item.active {
+  border-color: var(--primary);
+  background: #f6fbff;
+}
+.step-item .step-dot {
+  position: absolute;
+  left: -26px;
+  top: 18px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid var(--card-bg);
+  z-index: 1;
+  transition: background 0.3s;
+}
+.step-item.active .step-dot { background: var(--primary); }
+.step-item .step-label {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 17px;
+  display: block;
+  margin-bottom: 4px;
+}
+.step-item .step-desc { margin-bottom: 4px; }
+.step-item .step-demo {
+  background: #f0f5ff;
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin-top: 8px;
+  font-size: 15px;
+  display: none;
+}
+.step-item.active .step-demo { display: block; }
+.step-item .expand-hint {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-top: 4px;
+}
+.tool-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.tool-item {
+  background: #f6f8fa;
+  border-radius: 6px;
+  padding: 12px;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+.tool-item .tool-label { font-weight: 600; color: var(--primary); }
+.check-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin: 12px 0;
+}
+.check-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 6px 0;
+  cursor: pointer;
+  user-select: none;
+}
+.check-row input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+  margin-top: 3px;
+  cursor: pointer;
+}
+.check-row label { cursor: pointer; flex: 1; }
+.check-row input:checked + label { color: var(--text-secondary); text-decoration: line-through; }
+.sample-box {
+  background: linear-gradient(135deg, #e6f4ff, #f0f5ff);
+  border: 2px dashed var(--accent);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  margin: 12px 0;
+  text-align: center;
+}
+.sample-box .sample-title { font-weight: 700; color: var(--primary); font-size: 18px; }
+.self-eval {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px 22px;
+  margin-bottom: 16px;
+}
+.self-eval .progress-bar {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+.self-eval .progress-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 3px;
+  width: 0%;
+  transition: width 0.5s ease;
+}
+.footer {
+  text-align: center;
+  padding: 16px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+}
+@media (min-width: 640px) {
+  .container { padding: 32px 40px; }
+  .goal-grid { grid-template-columns: repeat(3, 1fr); }
+  .tool-grid { grid-template-columns: repeat(2, 1fr); }
+  .check-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>👀 建构性示例</h1>
+    <p>看别人怎么做"时间系统"概念图</p>
+  </div>
+
+  <div class="section-card">
+    <div class="section-title"><span>🔍</span> 建构情境</div>
+    <p>你知道吗？时间其实是一套<strong>60进制系统</strong>。长度用10进制（10毫米=1厘米，100厘米=1米），但时间用的是60进制（60秒=1分，60分=1时）。为什么人类会选择60这个数字？这背后藏着古老的智慧。</p>
+    <div style="background:#fff7e6;border-left:4px solid #fa8c16;padding:10px 14px;border-radius:0 6px 6px 0;margin-top:10px;">
+      <strong>🎯 你的任务</strong>：亲手建构一张<strong>"时间系统图"</strong>，把时、分、秒的关系画得清清楚楚。
+    </div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-title"><span>🎯</span> 建构目标</div>
+    <p style="margin-bottom:10px;">建构一张"时间系统关系图"，让人一眼看懂：</p>
+    <div class="goal-grid">
+      <div class="goal-item"><span class="icon">🔄</span><span>时、分、秒之间的换算关系（×60或÷60）</span></div>
+      <div class="goal-item"><span class="icon">🏠</span><span>三个单位在生活中的典型应用</span></div>
+      <div class="goal-item"><span class="icon">💡</span><span>为什么60进制是一个聪明的设计</span></div>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-title"><span>📋</span> 建构任务说明</div>
+    <p><strong>成果名称</strong>：我的"时间系统"概念图</p>
+    <p><strong>用途</strong>：无论是自己复习还是讲给别人听，都能用这张图</p>
+    <p><strong>形式</strong>：手绘图（A4纸或更大）+ 双色笔 + 逻辑箭头</p>
+    <p style="margin-top:8px;"><strong>最低标准</strong>：</p>
+    <div class="check-grid">
+      <div class="check-row"><input type="checkbox" id="std1"><label for="std1">画全时、分、秒三个层级</label></div>
+      <div class="check-row"><input type="checkbox" id="std2"><label for="std2">标注进率（×60/÷60）</label></div>
+      <div class="check-row" style="grid-column:1/-1;"><input type="checkbox" id="std3"><label for="std3">至少1个生活中的例子</label></div>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-title"><span>👣</span> 建构过程示范（6步）</div>
+    <p style="margin-bottom:14px;color:var(--text-secondary);">💡 <strong>点击每一步</strong>展开详细示范</p>
+    <div class="step-container">
+      <div class="step-item" onclick="toggleStep(this)">
+        <div class="step-dot"></div>
+        <span class="step-label">第一步：收集信息</span>
+        <div class="step-desc"><strong>做什么</strong>：翻看教材中关于时、分、秒的内容，找出所有进率关系</div>
+        <div class="step-desc"><strong>怎么做</strong>：用铅笔在草稿纸上列出所有你能找到的关系式</div>
+        <div class="step-demo"><strong>示范</strong>：1时=60分，1分=60秒，1时=3600秒</div>
+        <div class="expand-hint">点击展开示范 →</div>
+      </div>
+      <div class="step-item" onclick="toggleStep(this)">
+        <div class="step-dot"></div>
+        <span class="step-label">第二步：确定结构</span>
+        <div class="step-desc"><strong>做什么</strong>：决定用"什么形状"来组织信息</div>
+        <div class="step-desc"><strong>怎么做</strong>：想想是串联（→→→）、并联（并列三个框）还是环形（循环关系）</div>
+        <div class="step-demo"><strong>示范</strong>：决定用"从上到下"的层级结构——时在最上，分在中间，秒在最下</div>
+        <div class="expand-hint">点击展开示范 →</div>
+      </div>
+      <div class="step-item" onclick="toggleStep(this)">
+        <div class="step-dot"></div>
+        <span class="step-label">第三步：画出框架</span>
+        <div class="step-desc"><strong>做什么</strong>：用铅笔在A4纸上画出三个层级框</div>
+        <div class="step-desc"><strong>怎么做</strong>：上面写"时"，中间写"分"，下面写"秒"，左右留出标注位置</div>
+        <div class="step-demo"><strong>示范</strong>：三个长方形，从上到下排列</div>
+        <div class="expand-hint">点击展开示范 →</div>
+      </div>
+      <div class="step-item" onclick="toggleStep(this)">
+        <div class="step-dot"></div>
+        <span class="step-label">第四步：标注进率</span>
+        <div class="step-desc"><strong>做什么</strong>：在框之间的连线上标注换算规则</div>
+        <div class="step-desc"><strong>怎么做</strong>：从上到下标注×60，从下到上标注÷60</div>
+        <div class="step-demo"><strong>示范</strong>：时→分：×60；分→秒：×60；秒→分：÷60；分→时：÷60</div>
+        <div class="expand-hint">点击展开示范 →</div>
+      </div>
+      <div class="step-item" onclick="toggleStep(this)">
+        <div class="step-dot"></div>
+        <span class="step-label">第五步：加入生活例子</span>
+        <div class="step-desc"><strong>做什么</strong>：在每个单位框里或旁边写一个生活例子</div>
+        <div class="step-desc"><strong>怎么做</strong>：想一想你在什么时候用到这个单位</div>
+        <div class="step-demo"><strong>示范</strong>：时——节课40分钟（约0.67时）；分——广告时长3分钟；秒——百米冲刺12秒</div>
+        <div class="expand-hint">点击展开示范 →</div>
+      </div>
+      <div class="step-item" onclick="toggleStep(this)">
+        <div class="step-dot"></div>
+        <span class="step-label">第六步：完善美化</span>
+        <div class="step-desc"><strong>做什么</strong>：用黑笔描深，用红笔标重点，用彩色标注例子</div>
+        <div class="step-desc"><strong>怎么做</strong>：铅笔改为签字笔，进率箭头改红色，例子用蓝色</div>
+        <div class="step-demo"><strong>示范</strong>：红色箭头清晰标注×60和÷60，蓝色小字写例子</div>
+        <div class="expand-hint">点击展开示范 →</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-title"><span>🧰</span> 支架工具</div>
+    <div class="tool-grid">
+      <div class="tool-item"><div class="tool-label">📐 结构模板</div><div style="font-size:14px;">层级图 / 思维导图 / 表格</div></div>
+      <div class="tool-item"><div class="tool-label">✏️ 关键句式</div><div style="font-size:14px;">"从___到___需要___"<br>"生活中的例子是___"</div></div>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-title"><span>⭐</span> 成果样例展示</div>
+    <div class="sample-box">
+      <div class="sample-title">🖼️ 时间系统三级图</div>
+      <p style="margin-top:6px;font-size:15px;">关系正确（×60/÷60无误）· 结构清晰（三层层级分明）· 例子贴切（至少3个生活场景）</p>
+      <p style="margin-top:6px;font-size:14px;color:var(--text-secondary);">推荐：A4纸纵向，上方三个大框，红色箭头标注进率，蓝色笔写例子</p>
+    </div>
+    <p style="font-size:15px;color:var(--text-secondary);text-align:center;">💡 先铅笔打草稿，确认无误再上色</p>
+  </div>
+
+  <div class="section-card">
+    <div class="section-title"><span>✨</span> 成果优化建议</div>
+    <ul style="padding-left:20px;">
+      <li>检查箭头方向：大→小用×，小→大用÷</li>
+      <li>检查例子：是不是三年级小朋友能理解的？</li>
+      <li><strong>进阶</strong>：可以加上"为什么60进制"的小注释（因为60能被2、3、4、5、6整除）</li>
+    </ul>
+  </div>
+
+  <div class="self-eval">
+    <div class="section-title" style="margin-bottom:10px;"><span>✅</span> 自我评价量表</div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <p style="color:var(--text-secondary);font-size:14px;margin-bottom:10px;">完成：<span id="progressText">0</span>/5</p>
+    <div class="check-row"><input type="checkbox" id="e1" onchange="updateEval()"><label for="e1">我的图中包含了时、分、秒三个层级</label></div>
+    <div class="check-row"><input type="checkbox" id="e2" onchange="updateEval()"><label for="e2">我标注了正确的进率关系（×60/÷60）</label></div>
+    <div class="check-row"><input type="checkbox" id="e3" onchange="updateEval()"><label for="e3">我写了至少3个生活中的应用例子</label></div>
+    <div class="check-row"><input type="checkbox" id="e4" onchange="updateEval()"><label for="e4">我的图用不同颜色区分了单位和进率</label></div>
+    <div class="check-row"><input type="checkbox" id="e5" onchange="updateEval()"><label for="e5">我的图能让没学过的人也能看懂</label></div>
+  </div>
+
+  <div class="footer">© 建构性学习 · 三年级数学 · 时、分、秒单元</div>
+</div>
+<script>
+function toggleStep(el) {
+  el.classList.toggle('active');
+}
+function updateEval() {
+  var checks = document.querySelectorAll('#e1,#e2,#e3,#e4,#e5');
+  var done = 0;
+  checks.forEach(function(c) { if(c.checked) done++; });
+  document.getElementById('progressText').textContent = done;
+  document.getElementById('progressFill').style.width = (done / 5 * 100) + '%';
+}
+</script>
+</body>
+</html>

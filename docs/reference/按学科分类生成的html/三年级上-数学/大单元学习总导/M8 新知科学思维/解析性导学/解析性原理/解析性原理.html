@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析性原理 — 从案例到可迁移分析方法</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 28px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+  text-align: center;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  margin: 0 0 8px;
+  font-weight: 700;
+}
+.header p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 16px;
+}
+.intro-box {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 18px 22px;
+  margin-bottom: 24px;
+  border-left: 5px solid var(--primary);
+}
+.intro-box p {
+  margin: 0;
+}
+.principles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 18px;
+  margin-bottom: 20px;
+}
+.principle-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+  border-top: 4px solid var(--primary);
+  transition: transform 0.2s;
+}
+.principle-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 16px rgba(22,119,255,0.15);
+}
+.principle-card .num-badge {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+.principle-card h3 {
+  font-size: 20px;
+  margin: 0 0 6px;
+  color: var(--text);
+}
+.principle-card .principle-desc {
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 15px;
+  margin: 0 0 10px;
+}
+.principle-card .sub-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-top: 10px;
+  margin-bottom: 4px;
+}
+.principle-card .sub-label:first-of-type {
+  margin-top: 0;
+}
+.principle-card p, .principle-card li {
+  font-size: 15px;
+  margin: 0 0 4px;
+}
+.principle-card ul, .principle-card ol {
+  padding-left: 20px;
+  margin: 4px 0;
+}
+.tip-box {
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-left: 4px solid #fa8c16;
+  border-radius: var(--border-radius);
+  padding: 10px 16px;
+  margin: 10px 0 0;
+  font-size: 14px;
+}
+.tip-box strong {
+  color: #d46b08;
+}
+.transfer-box {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-left: 4px solid #52c41a;
+  border-radius: var(--border-radius);
+  padding: 10px 16px;
+  margin: 10px 0 0;
+  font-size: 14px;
+}
+.transfer-box strong {
+  color: #389e0d;
+}
+.why-box {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 18px 22px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+.why-box h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin: 0 0 10px;
+}
+.why-box p {
+  margin: 0;
+  font-size: 16px;
+}
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  .header h1 { font-size: 22px; }
+  .principles-grid { grid-template-columns: 1fr; }
+  .principle-card { padding: 14px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🔬 解析性原理</h1>
+  <p>从具体案例到可迁移的分析方法 · 三年级数学</p>
+</div>
+
+<div class="why-box">
+  <h2>🤔 为什么要从案例中「提炼」原理？</h2>
+  <p>因为「学会一个题」≠「学会一类题」。从案例中提炼原理，就是帮你从「这一个」推到「这一类」——以后遇到任何新问题，你都有框架可用。</p>
+</div>
+
+<div class="principles-grid">
+
+<div class="principle-card">
+  <div class="num-badge">1</div>
+  <h3>单位识别法</h3>
+  <p class="principle-desc">先看「它是什么单位」——单位决定了「怎么换算」</p>
+  <div class="sub-label">📌 在本示例中的体现</div>
+  <p>看到「3.3小时」，先识别单位是「小时」；看到「180秒」，单位是「秒」</p>
+  <div class="sub-label">📋 如何使用</div>
+  <ol>
+    <li>写下数值和单位</li>
+    <li>问自己「我要化成什么单位？」</li>
+    <li>选择 ×60 或 ÷60</li>
+  </ol>
+  <div class="transfer-box">
+    <strong>🔄 可迁移：</strong>所有单位换算问题（km→m，kg→g，元→角）
+  </div>
+  <div class="tip-box">
+    <strong>⚠️ 提醒：</strong>先确定「大→小」还是「小→大」，不要一上来就乱乘除
+  </div>
+</div>
+
+<div class="principle-card">
+  <div class="num-badge">2</div>
+  <h3>拆解分步法</h3>
+  <p class="principle-desc">复杂问题 = 多个简单问题叠加——拆成一步步解决</p>
+  <div class="sub-label">📌 在本示例中的体现</div>
+  <p>150分 = ?时?分 → 先除（150÷60=2余30）→ 再分别写（2时30分）</p>
+  <div class="sub-label">📋 如何使用</div>
+  <ol>
+    <li>把大问题「切成」小任务</li>
+    <li>每一步只做一个运算</li>
+    <li>最后组合到一起</li>
+  </ol>
+  <div class="transfer-box">
+    <strong>🔄 可迁移：</strong>复杂题目、长难句、多步骤实验
+  </div>
+  <div class="tip-box">
+    <strong>⚠️ 提醒：</strong>不要跳步，跳步 = 漏步
+  </div>
+</div>
+
+<div class="principle-card">
+  <div class="num-badge">3</div>
+  <h3>基准对照法</h3>
+  <p class="principle-desc">把「抽象的数」转化为「熟悉的标准」来理解</p>
+  <div class="sub-label">📌 在本示例中的体现</div>
+  <p>3.3小时 → 3小时 + 0.3小时 → 0.3小时 = ? → 0.3×60 = 18分钟</p>
+  <div class="sub-label">📋 如何使用</div>
+  <ol>
+    <li>把带小数的数分成「整数部分」和「小数部分」</li>
+    <li>整数部分直接写（3小时）</li>
+    <li>小数部分单独换算（0.3×60=18分钟）</li>
+  </ol>
+  <div class="transfer-box">
+    <strong>🔄 可迁移：</strong>任何「单位换算」问题
+  </div>
+  <div class="tip-box">
+    <strong>⚠️ 提醒：</strong>最容易错的地方是「小数部分直接加整数」——如 3.3小时 ≠ 3小时30分
+  </div>
+</div>
+
+<div class="principle-card">
+  <div class="num-badge">4</div>
+  <h3>检验验证法</h3>
+  <p class="principle-desc">算出结果后，用一个「逆运算」检验</p>
+  <div class="sub-label">📌 在本示例中的体现</div>
+  <p>算完「3.3小时 = 3小时18分」后，反着算一遍：18分÷60=0.3小时 → 3+0.3=3.3 ← 正确！</p>
+  <div class="sub-label">📋 如何使用</div>
+  <ol>
+    <li>算完</li>
+    <li>换一个方向再算一遍</li>
+    <li>两次结果一致 → 正确</li>
+  </ol>
+  <div class="transfer-box">
+    <strong>🔄 可迁移：</strong>所有计算题
+  </div>
+  <div class="tip-box">
+    <strong>⚠️ 提醒：</strong>不要因为「感觉对了」就不验算——「感觉」是最不准的
+  </div>
+</div>
+
+</div>
+
+</div>
+</body>
+</html>

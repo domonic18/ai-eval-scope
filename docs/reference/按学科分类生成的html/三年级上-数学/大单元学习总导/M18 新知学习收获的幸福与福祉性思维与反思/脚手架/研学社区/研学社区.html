@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>研学社区 - 时间案例探究</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 12px;
+  --shadow: 0 2px 12px rgba(22,119,255,0.10);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  min-height: 100vh;
+}
+.container { width: 100%; max-width: none; padding: 24px 20px; }
+.header {
+  text-align: center;
+  padding: 36px 20px 28px;
+  background: linear-gradient(135deg, #0d47a1, var(--primary));
+  border-radius: var(--border-radius);
+  margin-bottom: 28px;
+  color: #fff;
+}
+.header h1 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 8px; }
+.header p { font-size: 16px; opacity: 0.9; }
+.badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.2);
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 14px;
+  margin-top: 10px;
+}
+.section { margin-bottom: 32px; }
+.section-title {
+  font-size: var(--font-h2);
+  font-weight: 700;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 3px solid var(--accent);
+}
+.section-title .icon { font-size: 24px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; }
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 22px;
+  border: 1px solid var(--border);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(22,119,255,0.15); }
+.card h3 {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+.level-badge {
+  display: inline-block;
+  font-size: 13px;
+  padding: 3px 12px;
+  border-radius: 10px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.lv-basic { background: #e6f4ff; color: #1677ff; }
+.lv-intermediate { background: #f0f5ff; color: #722ed1; }
+.lv-challenge { background: #fff7e6; color: #d46b08; }
+.card .bg-info {
+  background: #f6f9ff;
+  padding: 12px 14px;
+  border-radius: 8px;
+  margin: 10px 0;
+  font-size: 15px;
+  border-left: 4px solid var(--accent);
+}
+.card .question-box {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 10px 0;
+  font-size: 15px;
+}
+.card .question-box strong { color: #d46b08; }
+.solution-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+.solution-tab {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: 1;
+  min-width: 100px;
+  text-align: center;
+}
+.solution-tab:hover { border-color: var(--primary); background: #e6f4ff; }
+.solution-tab.active { border-color: var(--primary); background: var(--primary); color: #fff; }
+.result-box {
+  display: none;
+  background: #f6f9ff;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 14px;
+  margin-top: 10px;
+  font-size: 15px;
+}
+.result-box.show { display: block; }
+.branch-task {
+  background: linear-gradient(135deg, #f0f5ff, #e6f4ff);
+  border: 2px dashed var(--accent);
+  border-radius: var(--border-radius);
+  padding: 14px 16px;
+  margin-top: 14px;
+}
+.branch-task h4 {
+  font-size: 16px;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+.insight {
+  background: #f0fdf4;
+  border-left: 4px solid #16a34a;
+  padding: 10px 14px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+  font-size: 15px;
+}
+.insight strong { color: #16a34a; }
+@media (max-width: 640px) {
+  .container { padding: 12px 10px; }
+  .cards { grid-template-columns: 1fr; }
+  .header { padding: 24px 14px; }
+  .solution-tabs { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🌍 研学社区 · 案例库</h1>
+  <p>真实世界的"时间问题"，等你来决策</p>
+  <span class="badge">📐 数学 · 三年级 · 时、分、秒</span>
+</div>
+
+<!-- 基础层 -->
+<div class="section">
+  <div class="section-title"><span class="icon">🌱</span> 基础层 · 生活类案例</div>
+  <div class="cards">
+    <div class="card">
+      <span class="level-badge lv-basic">🏫 生活案例</span>
+      <h3>小美的"迟到风波"</h3>
+      <div class="bg-info">
+        <strong>背景：</strong>三年级的小美每天早上7:30起床，学校8:00打预备铃，家到学校步行15分钟。她起床后要花20分钟洗漱、15分钟吃早饭、10分钟收拾书包。最近她经常迟到。
+      </div>
+      <div class="question-box">
+        <strong>❓ 核心问题：</strong>小美的时间安排哪里出了问题？请你帮她算一算，她几点出门才能不迟到？最晚几点起床？
+      </div>
+
+      <p style="font-weight:600;margin-top:12px;font-size:15px;">📋 计算一下——小美的时间表</p>
+      <table style="width:100%;border-collapse:collapse;font-size:15px;margin:8px 0;">
+        <tr><th style="border:1px solid var(--border);padding:6px 8px;background:var(--bg);">环节</th><th style="border:1px solid var(--border);padding:6px 8px;background:var(--bg);">用时</th><th style="border:1px solid var(--border);padding:6px 8px;background:var(--bg);">结束时间</th></tr>
+        <tr><td style="border:1px solid var(--border);padding:6px 8px;">起床</td><td style="border:1px solid var(--border);padding:6px 8px;">—</td><td style="border:1px solid var(--border);padding:6px 8px;">7:30</td></tr>
+        <tr><td style="border:1px solid var(--border);padding:6px 8px;">洗漱</td><td style="border:1px solid var(--border);padding:6px 8px;">20分钟</td><td style="border:1px solid var(--border);padding:6px 8px;">7:50</td></tr>
+        <tr><td style="border:1px solid var(--border);padding:6px 8px;">吃早饭</td><td style="border:1px solid var(--border);padding:6px 8px;">15分钟</td><td style="border:1px solid var(--border);padding:6px 8px;">8:05</td></tr>
+        <tr><td style="border:1px solid var(--border);padding:6px 8px;">收拾书包</td><td style="border:1px solid var(--border);padding:6px 8px;">10分钟</td><td style="border:1px solid var(--border);padding:6px 8px;">8:15</td></tr>
+        <tr><td style="border:1px solid var(--border);padding:6px 8px;">上学路上</td><td style="border:1px solid var(--border);padding:6px 8px;">15分钟</td><td style="border:1px solid var(--border);padding:6px 8px;">8:30</td></tr>
+      </table>
+
+      <p style="font-weight:600;font-size:15px;">🔍 三种方案，你来决策：</p>
+      <div class="solution-tabs">
+        <div class="solution-tab" onclick="showResult(0,this)">方案A：提前30分钟起床</div>
+        <div class="solution-tab" onclick="showResult(1,this)">方案B：洗漱压缩到10分钟</div>
+        <div class="solution-tab" onclick="showResult(2,this)">方案C：前一晚收拾书包</div>
+      </div>
+      <div class="result-box" id="result0">⌛ 7:00起床 → 8:00到校。可行！但需要早睡30分钟。</div>
+      <div class="result-box" id="result1">⌛ 7:30→7:40洗漱→7:55早饭→8:10收拾→8:25到校。依然迟到5分钟，不够！</div>
+      <div class="result-box" id="result2">⌛ 7:30→7:50洗漱→8:05早饭→8:20到校。准时！方案C是最轻松的！</div>
+
+      <div class="insight">
+        <strong>💡 可迁移启示：</strong>学会倒推时间——先定目标时间（到校时间），再往前推每个环节需要多久，才知道"最晚几点做什么"。
+      </div>
+
+      <div class="branch-task">
+        <h4>🤔 如果你是决策者</h4>
+        <p style="font-size:15px;">如果你是小美，你会在前一天晚上做哪些准备，让第二天早上不那么赶？</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 进阶层 -->
+<div class="section">
+  <div class="section-title"><span class="icon">🚂</span> 进阶层 · 行业/历史案例</div>
+  <div class="cards">
+    <div class="card">
+      <span class="level-badge lv-intermediate">🏛️ 历史案例</span>
+      <h3>火车站的"时间革命"</h3>
+      <div class="bg-info">
+        <strong>背景：</strong>1840年代以前，全世界没有统一的时间标准——每个城市都以自己当地的太阳位置决定时间。北京12:00的时候，上海其实已经12:18了。火车出现后，如果北京到上海的火车写着"14:00发车"，到底按哪个城市的时间？
+      </div>
+      <div class="question-box">
+        <strong>❓ 核心问题：</strong>如果你是铁路局长，你怎么解决"到底按谁的时间"这个问题？
+      </div>
+
+      <p style="font-weight:600;font-size:15px;">🔍 三种方案，你来决策：</p>
+      <div class="solution-tabs">
+        <div class="solution-tab" onclick="showResult(3,this)">方案A：各用各的时间</div>
+        <div class="solution-tab" onclick="showResult(4,this)">方案B：全国统一时间</div>
+        <div class="solution-tab" onclick="showResult(5,this)">方案C：划分时区</div>
+      </div>
+      <div class="result-box" id="result3">⚠️ 容易混淆——乘客和列车员都搞不清到底按哪个时间，非常混乱。</div>
+      <div class="result-box" id="result4">✅ 1884年国际子午线会议后的方案——中国采用"北京时间"（东八区）作为全国标准。</div>
+      <div class="result-box" id="result5">🌍 全球被分成24个时区——每个区内时间统一，区与区间差1小时。</div>
+
+      <div class="insight">
+        <strong>💡 可迁移启示：</strong>有时候"统一标准"比"各自方便"更重要——和同学约时间的时候，也要说清楚"几点几分，用的什么时间"。
+      </div>
+
+      <div class="branch-task">
+        <h4>🤔 如果你是决策者</h4>
+        <p style="font-size:15px;">如果让你重新分配全球时区，你觉得24个时区合理吗？为什么有的国家（如中国）只用1个时区，而有的国家（如美国）用4个？</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 挑战层 -->
+<div class="section">
+  <div class="section-title"><span class="icon">🚀</span> 挑战层 · 复杂系统案例</div>
+  <div class="cards">
+    <div class="card">
+      <span class="level-badge lv-challenge">🛸 航天案例</span>
+      <h3>航天发射的"时间窗口"</h3>
+      <div class="bg-info">
+        <strong>背景：</strong>2023年中国发射神舟飞船时，发射时间精确到了"秒"——不是"某日某时"，而是"某日某时某分某秒"。因为空间站每90分钟绕地球一圈，每秒飞7.8公里。晚了1秒，空间站位置就偏了7.8公里。
+      </div>
+      <div class="question-box">
+        <strong>❓ 核心问题：</strong>如果你是指挥官，你怎么确定"最适合发射的那一秒"？
+      </div>
+
+      <p style="font-weight:600;font-size:15px;margin-top:10px;">🌐 需要同时考虑的因素：</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0;">
+        <span style="background:#f0f5ff;padding:4px 12px;border-radius:16px;font-size:14px;">🌍 地球自转</span>
+        <span style="background:#f0f5ff;padding:4px 12px;border-radius:16px;font-size:14px;">🛰️ 空间站轨道</span>
+        <span style="background:#f0f5ff;padding:4px 12px;border-radius:16px;font-size:14px;">⛅ 天气条件</span>
+        <span style="background:#f0f5ff;padding:4px 12px;border-radius:16px;font-size:14px;">⛽ 燃料消耗</span>
+      </div>
+
+      <div class="insight">
+        <strong>💡 可迁移启示：</strong>有些领域的时间精度可以精确到"秒"甚至"毫秒"。你在课堂上学的"1分钟=60秒"，不仅仅是考试用的——它是发射火箭、导航定位、全球通信的基础。
+      </div>
+
+      <div class="branch-task">
+        <h4>🤔 如果你是决策者</h4>
+        <p style="font-size:15px;">如果让你设计一个"最佳发射时间查找器"，你会把哪些因素输进去让电脑帮你计算？</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+<script>
+function showResult(idx, el) {
+  var tabs = el.parentElement.querySelectorAll('.solution-tab');
+  tabs.forEach(function(t) { t.classList.remove('active'); });
+  el.classList.add('active');
+  var results = el.parentElement.parentElement.querySelectorAll('.result-box');
+  results.forEach(function(r) { r.classList.remove('show'); });
+  var target = document.getElementById('result' + idx);
+  if (target) target.classList.add('show');
+}
+</script>
+</body>
+</html>

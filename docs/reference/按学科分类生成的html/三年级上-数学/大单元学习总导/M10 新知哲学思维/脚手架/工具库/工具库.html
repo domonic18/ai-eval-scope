@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具库 — 时、分、秒</title>
+<style>
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --accent: #69b1ff;
+  --bg: #f0f5ff;
+  --card-bg: #ffffff;
+  --text: rgba(0,0,0,0.88);
+  --text-secondary: rgba(0,0,0,0.45);
+  --border: #d9d9d9;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --font-body: 18px;
+  --font-h1: 28px;
+  --font-h2: 22px;
+  --line-height: 1.8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.container {
+  width: 100%;
+  max-width: none;
+  padding: 20px 24px;
+  box-sizing: border-box;
+}
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  padding: 32px 24px;
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+.header h1 {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.header p {
+  font-size: var(--font-body);
+  opacity: 0.9;
+}
+.level-badge {
+  display: inline-block;
+  padding: 2px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.level-basic { background: #e6f4ff; color: var(--primary); }
+.level-adv { background: #f6ffed; color: #52c41a; }
+.level-high { background: #fff7e6; color: #fa8c16; }
+.category-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 20px;
+  border-left: 4px solid var(--primary);
+  transition: transform 0.2s;
+}
+.category-card:hover { transform: translateY(-2px); }
+.category-card h2 {
+  font-size: var(--font-h2);
+  color: var(--primary);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bg);
+}
+.tool-item {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  transition: box-shadow 0.2s;
+}
+.tool-item:hover { box-shadow: 0 2px 12px rgba(22,119,255,0.12); }
+.tool-item h3 {
+  font-size: 18px;
+  color: var(--text);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tool-item h3 .badge {
+  font-size: 12px;
+  padding: 1px 8px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+.tool-item p { margin-bottom: 6px; color: var(--text-secondary); }
+.tool-item strong { color: var(--text); }
+.step-list {
+  list-style: none;
+  padding: 0;
+}
+.step-list li {
+  padding: 4px 0 4px 20px;
+  position: relative;
+}
+.step-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 12px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.example-box {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-top: 8px;
+  font-size: 16px;
+}
+.example-box::before {
+  content: "💡 示例";
+  display: block;
+  font-weight: 600;
+  color: #d48806;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+.accordion-toggle {
+  display: none;
+}
+.accordion-label {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  padding: 6px 16px;
+  border-radius: 16px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 8px;
+  user-select: none;
+  transition: background 0.2s;
+}
+.accordion-label:hover { background: var(--primary-hover); }
+.accordion-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s;
+}
+.accordion-toggle:checked ~ .accordion-content {
+  max-height: 600px;
+  padding-top: 12px;
+}
+.interact-btn {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.2s, transform 0.15s;
+}
+.interact-btn:hover { background: var(--primary-hover); transform: scale(1.03); }
+.interact-btn:active { transform: scale(0.97); }
+.result-feedback {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  display: none;
+}
+.result-feedback.show { display: block; }
+.levels-nav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.levels-nav a {
+  text-decoration: none;
+  padding: 6px 18px;
+  border-radius: 20px;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.levels-nav a:hover { opacity: 0.8; }
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  .header { padding: 20px 16px; }
+  .category-card { padding: 16px; }
+  .tool-item { padding: 12px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🧰 工具库</h1>
+  <p>时、分、秒 · M10 新知哲学思维 · 三年级数学</p>
+  <p style="font-size:15px; margin-top:6px; opacity:0.85;">选对工具，让看不见的时间"现出原形"</p>
+</div>
+
+<div class="levels-nav">
+  <a href="#tools" style="background:#e6f4ff;color:var(--primary);">🧠 思维工具</a>
+  <a href="#digital" style="background:#f6ffed;color:#52c41a;">📱 数字工具</a>
+  <a href="#data" style="background:#fff7e6;color:#fa8c16;">📊 数据工具</a>
+  <a href="#experiment" style="background:#f0f5ff;color:#722ed1;">🔬 实验工具</a>
+</div>
+
+<!-- 一、思维工具 -->
+<h2 id="tools" style="font-size:var(--font-h2);color:var(--primary);margin-bottom:16px;">🧠 思维工具 <span style="font-size:14px;color:var(--text-secondary);font-weight:400;">认知放大器</span></h2>
+
+<div class="category-card">
+  <span class="level-badge level-basic">🌟 基础</span>
+  <h2>概念图工具</h2>
+  <div class="tool-item">
+    <h3>📌 用途</h3>
+    <p>将"时、分、秒"的换算关系可视化，建立时间量感。</p>
+    <h3>📋 步骤</h3>
+    <ul class="step-list">
+      <li>中心写"时间"，延伸分支"时→分→秒"</li>
+      <li>标注进率（1时=60分，1分=60秒）</li>
+      <li>添加生活场景节点，连线串联</li>
+    </ul>
+    <div class="example-box">以"一节课40分钟"为中心，辐射出"课间10分钟""早读20分钟"等生活场景。</div>
+    <p style="margin-top:8px;color:var(--text-secondary);"><strong>适用场景：</strong>新课导入、知识整理、复习课结构梳理。</p>
+  </div>
+</div>
+
+<div class="category-card">
+  <span class="level-badge level-adv">🚀 进阶</span>
+  <h2>时间线工具</h2>
+  <div class="tool-item">
+    <h3>📌 用途</h3>
+    <p>记录事件发生的先后顺序，培养时间序列思维。</p>
+    <h3>📋 步骤</h3>
+    <ul class="step-list">
+      <li>横轴标时刻，纵轴或节点标事件</li>
+      <li>标注每段持续时长</li>
+      <li>连点成线，观察时间流向</li>
+    </ul>
+    <div class="example-box">制作"小明的一天"时间线——7:00起床→7:30上学→12:00午餐→16:00放学。</div>
+    <p style="margin-top:8px;color:var(--text-secondary);"><strong>适用场景：</strong>单元综合实践、跨学科（语文日记、数学统计）整合。</p>
+  </div>
+</div>
+
+<div class="category-card">
+  <span class="level-badge level-high">🔥 高阶</span>
+  <h2>对比分析工具</h2>
+  <div class="tool-item">
+    <h3>📌 用途</h3>
+    <p>比较不同时间单位下同一活动的感知差异，引发哲学追问。</p>
+    <h3>📋 步骤</h3>
+    <ul class="step-list">
+      <li>选定一个活动</li>
+      <li>分别用时、分、秒描述其时长</li>
+      <li>追问"为什么同一件事用不同单位感觉不同？"</li>
+    </ul>
+    <div class="example-box">跳绳100下——约40秒、0.67分、0.011时。对比感知"1分钟到底有多长"。</div>
+    <p style="margin-top:8px;color:var(--text-secondary);"><strong>适用场景：</strong>拓展探究、思维辩论、哲学思辨环节。</p>
+  </div>
+</div>
+
+<!-- 互动体验 -->
+<div style="background:var(--card-bg);border-radius:var(--border-radius);box-shadow:var(--shadow);padding:24px;margin-bottom:20px;text-align:center;">
+  <h2 style="font-size:var(--font-h2);color:var(--primary);margin-bottom:12px;">⏱️ 试试你的时间感</h2>
+  <p style="margin-bottom:12px;color:var(--text-secondary);">点击下方按钮，默数 10 秒后再点击"停"，看看你感觉的 10 秒准不准！</p>
+  <button class="interact-btn" id="startTimer">▶ 开始计时</button>
+  <button class="interact-btn" id="stopTimer" style="background:#ff4d4f;display:none;">⏹ 停</button>
+  <button class="interact-btn" id="resetTimer" style="background:var(--text-secondary);display:none;">⟳ 重新来</button>
+  <div class="result-feedback" id="timerFeedback"></div>
+</div>
+
+<!-- 二、数字工具 -->
+<h2 id="digital" style="font-size:var(--font-h2);color:#52c41a;margin-bottom:16px;margin-top:8px;">📱 数字工具</h2>
+
+<div class="category-card" style="border-left-color:#52c41a;">
+  <span class="level-badge level-basic">🌟 基础</span>
+  <h2 style="color:#52c41a;">计时 App（手机/平板秒表）</h2>
+  <div class="tool-item">
+    <h3>📌 用途</h3>
+    <p>直观感受"1秒""1分"的实际长度，校准时间感。</p>
+    <h3>📋 步骤</h3>
+    <ul class="step-list">
+      <li>学生闭眼默数目标时长</li>
+      <li>秒表记录实际用时</li>
+      <li>对比误差，反复训练校准</li>
+    </ul>
+    <div class="example-box">"闭眼估30秒"游戏——老师喊开始，学生闭眼默数30秒后举手，误差最小者获胜！</div>
+    <p style="margin-top:8px;color:var(--text-secondary);"><strong>适用场景：</strong>课堂热身、课中体验活动、课后家庭实践。</p>
+  </div>
+</div>
+
+<div class="category-card" style="border-left-color:#52c41a;">
+  <span class="level-badge level-adv">🚀 进阶</span>
+  <h2 style="color:#52c41a;">AI 对话工具（智能问答助手）</h2>
+  <div class="tool-item">
+    <h3>📌 用途</h3>
+    <p>借助 AI 生成历法故事、时间谜题，激发好奇心。</p>
+    <h3>📋 步骤</h3>
+    <ul class="step-list">
+      <li>学生口述提问</li>
+      <li>AI 生成"古人如何计时"等故事</li>
+      <li>学生复述核心知识，内化理解</li>
+    </ul>
+    <div class="example-box">提问"为什么1小时是60分钟而不是100分钟？"AI 回答古巴比伦六十进制渊源。</div>
+    <p style="margin-top:8px;color:var(--text-secondary);"><strong>适用场景：</strong>课外拓展、项目式学习、探究报告素材收集。</p>
+  </div>
+</div>
+
+<div class="category-card" style="border-left-color:#52c41a;">
+  <span class="level-badge level-high">🔥 高阶</span>
+  <h2 style="color:#52c41a;">编程计时器（Scratch / Python）</h2>
+  <div class="tool-item">
+    <h3>📌 用途</h3>
+    <p>通过编程理解计时原理，培养计算思维。</p>
+    <h3>📋 步骤</h3>
+    <ul class="step-list">
+      <li>编写倒计时脚本</li>
+      <li>设置时分秒变量</li>
+      <li>测试精度，讨论"误差来源"</li>
+    </ul>
+    <div class="example-box">Scratch 制作"2分钟挑战"游戏——倒计时结束自动播报，比比谁能踩点完成！</div>
+    <p style="margin-top:8px;color:var(--text-secondary);"><strong>适用场景：</strong>信息科技融合课、创客社团、高阶思维训练。</p>
+  </div>
+</div>
+
+<!-- 三、数据工具 -->
+<h2 id="data" style="font-size:var(--font-h2);color:#fa8c16;margin-bottom:16px;margin-top:8px;">📊 数据工具</h2>
+
+<div class="category-card" style="border-left-color:#fa8c16;">
+  <span class="level-badge level-basic">🌟 基础</span>
+  <h2 style="color:#fa8c16;">时间统计表（纸笔 / Excel）</h2>
+  <div class="tool-item">
+    <h3>📌 用途</h3>
+    <p>记录一周作息时间，学会用数据管理时间。</p>
+    <h3>📋 步骤</h3>
+    <ul class="step-list">
+      <li>列出行程事项</li>
+      <li>填入各项用时</li>
+      <li>计算各类活动总时间，画统计图</li>
+    </ul>
+    <div class="example-box">统计"周一至周五看电视总时长"，判断是否超过建议标准。</div>
+    <p style="margin-top:8px;color:var(--text-secondary);"><strong>适用场景：</strong>单元作业、综合实践、家校共育任务。</p>
+  </div>
+</div>
+
+<div class="category-card" style="border-left-color:#fa8c16;">
+  <span class="level-badge level-adv">🚀 进阶</span>
+  <h2 style="color:#fa8c16;">倒推计划表（甘特图雏形）</h2>
+  <div class="tool-item">
+    <h3>📌 用途</h3>
+    <p>从截止时间倒推各步骤完成节点，培养规划能力。</p>
+    <h3>📋 步骤</h3>
+    <ul class="step-list">
+      <li>确定目标完成时刻</li>
+      <li>列出中间步骤</li>
+      <li>估算每步耗时，倒排时间</li>
+    </ul>
+    <div class="example-box">"17:00前写完作业"→分解：数学15min+语文20min+英语15min→最晚16:10开始。</div>
+    <p style="margin-top:8px;color:var(--text-secondary);"><strong>适用场景：</strong>小组合作任务管理、考前复习计划制定。</p>
+  </div>
+</div>
+
+<div class="category-card" style="border-left-color:#fa8c16;">
+  <span class="level-badge level-high">🔥 高阶</span>
+  <h2 style="color:#fa8c16;">时序数据仪表盘（简易版）</h2>
+  <div class="tool-item">
+    <h3>📌 用途</h3>
+    <p>将多天、多人的时间数据聚合分析，发现规律。</p>
+    <h3>📋 步骤</h3>
+    <ul class="step-list">
+      <li>全班收集同一活动时长</li>
+      <li>录入表格，计算平均值和极值</li>
+      <li>讨论"为什么会有差异"</li>
+    </ul>
+    <div class="example-box">统计全班"从家到校用时"，分析交通方式与时长关系。</div>
+    <p style="margin-top:8px;color:var(--text-secondary);"><strong>适用场景：</strong>单元总结、数学小课题研究、数据分析启蒙。</p>
+  </div>
+</div>
+
+<!-- 四、实验工具 -->
+<h2 id="experiment" style="font-size:var(--font-h2);color:#722ed1;margin-bottom:16px;margin-top:8px;">🔬 实验工具</h2>
+
+<div class="category-card" style="border-left-color:#722ed1;">
+  <span class="level-badge level-basic">🌟 基础</span>
+  <h2 style="color:#722ed1;">日晷制作</h2>
+  <div class="tool-item">
+    <h3>📌 用途</h3>
+    <p>手工制作简易日晷，体验古人用太阳计时的智慧。</p>
+    <h3>📋 步骤</h3>
+    <ul class="step-list">
+      <li>纸板画圆，插垂直木棍</li>
+      <li>标注刻度，到户外对准太阳方向</li>
+      <li>观察影子移动，对比钟表</li>
+    </ul>
+    <div class="example-box">每节课间观察影子位置变化，对比钟表时间讨论误差。</div>
+    <p style="margin-top:8px;color:var(--text-secondary);"><strong>适用场景：</strong>科学实践课、周末亲子活动、传统文化融合教学。</p>
+  </div>
+</div>
+
+<div class="category-card" style="border-left-color:#722ed1;">
+  <span class="level-badge level-adv">🚀 进阶</span>
+  <h2 style="color:#722ed1;">水钟 / 沙漏制作</h2>
+  <div class="tool-item">
+    <h3>📌 用途</h3>
+    <p>制作定时间隔水钟或沙漏，理解"均匀流动"与计时的关系。</p>
+    <h3>📋 步骤</h3>
+    <ul class="step-list">
+      <li>塑料瓶上下串联，下部标刻度</li>
+      <li>上部装水或沙，记录下降速度</li>
+      <li>校准刻度，对比电子秒表验证精度</li>
+    </ul>
+    <div class="example-box">制作"1分钟沙漏"用于课堂活动计时，和电子秒表比比谁更准！</div>
+    <p style="margin-top:8px;color:var(--text-secondary);"><strong>适用场景：</strong>STEAM 课程、科学实验日、跨学科项目周。</p>
+  </div>
+</div>
+
+<div class="category-card" style="border-left-color:#722ed1;">
+  <span class="level-badge level-high">🔥 高阶</span>
+  <h2 style="color:#722ed1;">探究实验报告</h2>
+  <div class="tool-item">
+    <h3>📌 用途</h3>
+    <p>以科学实验方法验证影响时间感知的因素，培养实证精神。</p>
+    <h3>📋 步骤</h3>
+    <ul class="step-list">
+      <li>提出假设（如"有趣的事让时间变快"）</li>
+      <li>设计双变量实验（有趣 vs 枯燥活动）</li>
+      <li>采集数据，撰写结论</li>
+    </ul>
+    <div class="example-box">玩5分钟游戏 vs 抄5分钟生字——记录"感觉过了多久"的估测差异，数据会让你大吃一惊！</div>
+    <p style="margin-top:8px;color:var(--text-secondary);"><strong>适用场景：</strong>单元总结评价、哲学思辨活动、小小研究员课题展。</p>
+  </div>
+</div>
+
+</div>
+
+<script>
+(function(){
+  let startTime = 0;
+  let timerRunning = false;
+  const btnStart = document.getElementById('startTimer');
+  const btnStop = document.getElementById('stopTimer');
+  const btnReset = document.getElementById('resetTimer');
+  const feedback = document.getElementById('timerFeedback');
+
+  btnStart.addEventListener('click', function(){
+    startTime = Date.now();
+    timerRunning = true;
+    this.style.display = 'none';
+    btnStop.style.display = 'inline-block';
+    btnReset.style.display = 'none';
+    feedback.classList.remove('show');
+    feedback.textContent = '';
+  });
+
+  btnStop.addEventListener('click', function(){
+    if (!timerRunning) return;
+    timerRunning = false;
+    const elapsed = (Date.now() - startTime) / 1000;
+    const diff = Math.abs(elapsed - 10);
+    let msg = '⏱️ 你感觉的10秒，实际过去了 <strong>' + elapsed.toFixed(2) + '</strong> 秒。';
+    if (diff < 1) msg += ' 太厉害了，误差不到1秒！你的时间感非常准！🎉';
+    else if (diff < 3) msg += ' 不错哦，误差只有不到3秒，再练练会更准！👍';
+    else msg += ' 误差有 ' + diff.toFixed(1) + ' 秒——别灰心，多练习默数，你的"体内秒表"会越来越准！💪';
+    feedback.innerHTML = msg;
+    feedback.classList.add('show');
+    this.style.display = 'none';
+    btnReset.style.display = 'inline-block';
+  });
+
+  btnReset.addEventListener('click', function(){
+    timerRunning = false;
+    btnStart.style.display = 'inline-block';
+    btnStop.style.display = 'none';
+    this.style.display = 'none';
+    feedback.classList.remove('show');
+  });
+})();
+</script>
+</body>
+</html>
