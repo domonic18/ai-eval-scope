@@ -35,7 +35,7 @@ import artifactsRouter from "./routes/artifacts"
 import ingestRouter from "./routes/public/ingest"
 import publicArtifactsRouter from "./routes/public/artifacts"
 
-/** 组装 Express app。供 serverless-http 复用与测试 import。 */
+/** 组装 Express app。供测试 import（supertest 直接挂在 app 上）。 */
 export function createApp(): express.Application {
   const app = express()
 
