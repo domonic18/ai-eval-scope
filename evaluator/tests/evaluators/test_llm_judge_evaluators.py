@@ -515,7 +515,7 @@ class TestExplainability:
         sample = _prepare_output(tmp_path, "内容" * 50)
         evaluator = TeachingLogicEvaluator()
         result = evaluator.evaluate(sample, {})
-        assert "降级" in result.reason
+        assert "跳过" in result.reason
         assert "LLM 评估" not in result.reason
         assert "dimensions" not in result.details
 

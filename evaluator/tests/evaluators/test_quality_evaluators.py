@@ -39,16 +39,17 @@ class TestBaseLLMJudgeEvaluator:
         sample = _prepare_output(tmp_path, "# Test\nSome content here.")
         evaluator = TeachingLogicEvaluator()
         result = evaluator.evaluate(sample, {})  # 无 judge_orchestrator
-        assert result.score == 0.7
-        assert result.status == EvalStatus.PASS
-        assert "降级" in result.reason
+        assert result.score == 0.0
+        assert result.status == EvalStatus.SKIP
+        assert "跳过" in result.reason
 
     def test_degradation_no_evidence_dir(self, tmp_path: Path) -> None:
         """无 evidence_dir 时降级模式。"""
         sample = _prepare_output(tmp_path, "Content")
         evaluator = TeachingLogicEvaluator()
         result = evaluator.evaluate(sample, {"judge_orchestrator": MagicMock()})
-        assert result.score == 0.7
+        assert result.score == 0.0
+        assert result.status == EvalStatus.SKIP
 
     def test_llm_empty_content(self, tmp_path: Path) -> None:
         """空文档 LLM 评估失败。"""
@@ -200,8 +201,9 @@ class TestPreferenceEvaluators:
         ]:
             evaluator = registry.create(eval_id, {})
             result = evaluator.evaluate(sample, {})
-            assert result.score == 0.7
-            assert "降级" in result.reason
+            assert result.score == 0.0
+            assert result.status == EvalStatus.SKIP
+            assert "跳过" in result.reason
 
 
 # ─── 三阶段级联集成测试 ───

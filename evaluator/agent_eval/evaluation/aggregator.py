@@ -96,6 +96,8 @@ class ScoreAggregator:
 
         wsum = 0.0
         for cr in s.constraint_results:
+            if cr.status == EvalStatus.SKIP:
+                continue  # LLM 不可用等跳过的约束不计入得分
             if cr.constraint_id in weights:
                 wsum += weights[cr.constraint_id] * cr.score
 

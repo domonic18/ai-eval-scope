@@ -77,10 +77,6 @@ class TestPipelineDefaults:
 class TestEvaluatorDefaults:
     """评估器默认行为参数测试。"""
 
-    def test_llm_degrade_score(self) -> None:
-        """LLM 不可用时降级分数。"""
-        assert EVALUATOR_DEFAULTS.llm_degrade_score == 0.7
-
     def test_max_content_chars(self) -> None:
         """文本 LLM 评估默认最大内容字符数。"""
         assert EVALUATOR_DEFAULTS.max_content_chars == 8000

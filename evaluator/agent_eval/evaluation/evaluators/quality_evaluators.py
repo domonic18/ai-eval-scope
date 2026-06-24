@@ -45,15 +45,15 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
         evidence_dir = context.get("evidence_dir")
 
         if orchestrator is None or evidence_dir is None:
-            # 降级模式：LLM 不可用时默认通过
+            # LLM 不可用：跳过该评估器，不计入得分（避免默认 PASS 令 reward 虚高）
             elapsed = (time.monotonic() - start) * 1000
             return ConstraintResult(
                 constraint_id=self.evaluator_id,
                 name=self.name,
                 tier=self.tier,
-                status=EvalStatus.PASS,
-                score=EVALUATOR_DEFAULTS.llm_degrade_score,
-                reason=f"{self.name}（LLM 不可用，降级模式默认 {EVALUATOR_DEFAULTS.llm_degrade_score}）",
+                status=EvalStatus.SKIP,
+                score=0.0,
+                reason=f"{self.name}（LLM 不可用，已跳过，不计入得分）",
                 duration_ms=elapsed,
             )
 

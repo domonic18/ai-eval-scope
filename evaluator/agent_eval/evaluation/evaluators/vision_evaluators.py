@@ -27,9 +27,6 @@ from agent_eval.evaluation.models import ConstraintResult
 from agent_eval.evaluation.registry import registry
 from agent_eval.evaluation.vision import png_to_data_uri
 
-# 视觉不可用时的降级分数（与文本 LLM 降级一致）
-_DEGRADE_SCORE = EVALUATOR_DEFAULTS.llm_degrade_score
-
 
 def _collect_doc_files(output_dir: Path) -> list[Path]:
     """收集 output 目录下的 HTML/Markdown 文档（按路径排序，确定性）。"""
@@ -40,14 +37,14 @@ def _collect_doc_files(output_dir: Path) -> list[Path]:
 
 
 def _degrade(reason: str, *, duration_ms: float = 0.0) -> ConstraintResult:
-    """构造视觉降级结果（PASS / 0.7）。"""
+    """构造视觉降级结果（SKIP，不计入得分）。"""
     return ConstraintResult(
         constraint_id="vision.quality",
         name="视觉质量",
         tier=ConstraintTier.SOFT,
-        status=EvalStatus.PASS,
-        score=_DEGRADE_SCORE,
-        reason=f"视觉质量（视觉降级：{reason}，默认 {_DEGRADE_SCORE}）",
+        status=EvalStatus.SKIP,
+        score=0.0,
+        reason=f"视觉质量（视觉跳过：{reason}，不计入得分）",
         duration_ms=duration_ms,
     )
 

@@ -83,8 +83,6 @@ class PipelineDefaults:
 class EvaluatorDefaults:
     """各评估器默认行为参数。"""
 
-    # LLM 不可用时（无 Provider/无配置）的默认降级分数
-    llm_degrade_score: float = 0.7
     # 文本 LLM 评估时默认最大内容字符数（超过则截断）
     max_content_chars: int = 8000
     # 算术错误检测时的上下文窗口大小（字符数）
