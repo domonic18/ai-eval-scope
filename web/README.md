@@ -23,10 +23,11 @@ web/
 
 ## 本地起栈（Docker Compose，推荐）
 
-一键起 postgres + minio + 后端（首次起栈由 `docker/web/schema.sql` 经 postgres initdb 自动建表，容器不再跑 migrate）：
+起 postgres + minio + 后端（postgres 为空库；建库改为起栈后手动 `make db-init`，单一来源 = prisma migrations，已废弃 schema.sql）：
 
 ```bash
 make docker-up          # = docker compose up -d（根 docker-compose.yml，读根 .env）
+make db-init            # 手动建库：按序应用所有 prisma migration + resolve + generate（首次必跑）
 curl http://localhost:9000/health
 ```
 

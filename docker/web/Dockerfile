@@ -46,5 +46,5 @@ EXPOSE 9000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=5 \
     CMD node -e "require('http').get('http://localhost:9000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
 
-# 表由 postgres initdb.d 的 schema.sql 首次起栈时创建；此处仅启动服务
+# 表由 `make db-init` 手动应用 prisma migrations 创建（单一来源，docs/standard/数据库迁移规范.md）；此处仅启动服务
 CMD ["node", "dist/server.js"]

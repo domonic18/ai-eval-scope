@@ -26,8 +26,8 @@ services:
     volumes:
       # 持久化到 workspace 下，便于调试/重置/检视
       - ./workspace/data/postgres:/var/lib/postgresql/data
-      # 首次起栈（空库）自动导入建表 SQL；非空卷不重跑，不破坏已有数据
-      - ./docker/web/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      # 不再挂载 schema.sql：建库改为起栈后手动 `make db-init`（应用 prisma migrations）
+      # 单一来源 = web/backend/prisma/migrations；详见 web/backend/prisma/README.md §一
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-eval} -d ${POSTGRES_DB:-agent_eval}"]
       interval: 5s

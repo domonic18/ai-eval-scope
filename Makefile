@@ -1,4 +1,4 @@
-.PHONY: install dev test test-cov lint format clean golden web-install web-test web-typecheck docker-build docker-up docker-down docker-logs hooks check
+.PHONY: install dev test test-cov lint format clean golden web-install web-test web-typecheck docker-build docker-up docker-down docker-logs db-init hooks check
 
 # 使用 uv 进行包管理（推荐）
 # 需要先安装 uv: curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -59,6 +59,12 @@ docker-down:
 
 docker-logs:
 	docker compose logs -f web
+
+# 本地 docker 栈首次建库（手动，方案 B）：应用所有 prisma migration + resolve + generate
+# 前置：make docker-up。单一来源 = web/backend/prisma/migrations（已废弃 docker/web/schema.sql）
+db-init:
+	@test -f .env || { echo "❌ 缺少 .env：请先 cp .env.example .env"; exit 1; }
+	bash scripts/db-init.sh
 
 # ─── 代码规范（pre-commit + commitizen）───
 

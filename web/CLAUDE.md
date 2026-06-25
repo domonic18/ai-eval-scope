@@ -20,7 +20,7 @@
 ## 数据库与迁移
 
 - backend 用 Prisma，schema 在 `web/backend/prisma/schema.prisma`
-- **操作规范**：[`docs/standard/数据库迁移规范.md`](../docs/standard/数据库迁移规范.md) — Prisma 定义结构 + SQL 手动执行控制；含初始化/变更命令流程与禁止事项
+- **操作规范**：[`backend/prisma/README.md`](backend/prisma/README.md) — Prisma 定义结构 + SQL 手动执行控制；含初始化/变更命令流程与禁止事项
 - 日常变更：`prisma migrate dev --create-only`（生成 SQL 不执行）→ 手动跑 SQL → `prisma migrate resolve --applied`
 
 ## 测试
