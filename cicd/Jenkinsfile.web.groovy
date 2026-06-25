@@ -167,8 +167,12 @@ Deploy Env:  ${env.DEPLOY_ENV}
             }
             steps {
                 script {
+                    // 版本号 = VERSION 文件基线(a.b.c) + Jenkins 构建号；经 --build-arg 注入前端，烘焙进 bundle
+                    def baseVersion = readFile('web/VERSION').trim()
+                    def appVersion = "${baseVersion}.${env.BUILD_NUMBER}"
                     def dockerLib = load('cicd/scripts/docker-build.groovy')
-                    dockerLib.buildAndPush('.', 'docker/web/Dockerfile', 'agent-eval-web', [])
+                    dockerLib.buildAndPush('.', 'docker/web/Dockerfile', 'agent-eval-web',
+                        [['VITE_APP_VERSION', appVersion]])
                 }
             }
         }

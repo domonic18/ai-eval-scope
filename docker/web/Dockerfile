@@ -10,6 +10,9 @@ WORKDIR /app/web/frontend
 COPY web/frontend/package*.json ./
 RUN npm ci
 COPY web/frontend/ ./
+# 版本号由 Jenkins 经 --build-arg VITE_APP_VERSION 注入（a.b.c.<BUILD>）；本地构建回退默认 1.0.0
+ARG VITE_APP_VERSION=1.0.0
+ENV VITE_APP_VERSION=$VITE_APP_VERSION
 RUN npm run build
 
 # ─── Stage 2: 后端编译 ───
