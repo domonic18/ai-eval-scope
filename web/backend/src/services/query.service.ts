@@ -1,12 +1,10 @@
 /**
  * Query 业务（§九）。tenant 由中间件注入；只读，隔离由 repository 强制。
- * 制品下载：校验归属后签发 presigned GET（短时效 ≤15min）。
+ * 制品元信息：校验归属后返回 objectKey/contentType/filename（URL 签发交由路由层）。
  */
 
 import { PlatformError } from "../middleware/errorHandler"
 import { QueryRepository, type RunListFilter } from "../repositories/query.repository"
-import { getObjectStorage } from "../infra/objectStorage"
-import { getConfig } from "../config"
 import type { Tenant } from "../repositories/base.repository"
 
 export interface QueryService {
@@ -27,10 +25,9 @@ export interface QueryService {
     projectId: string,
     sampleId: string,
   ) => Promise<NonNullable<Awaited<ReturnType<QueryRepository["sampleDetail"]>>>>
-  artifactDownload: (
+  artifactMeta: (
     artifactId: string,
-    opts?: { inline?: boolean },
-  ) => Promise<{ url: string; contentType: string; filename: string }>
+  ) => Promise<{ objectKey: string; contentType: string; filename: string }>
 }
 
 export function createQueryService(tenant: Tenant): QueryService {
@@ -47,27 +44,11 @@ export function createQueryService(tenant: Tenant): QueryService {
     return s
   }
 
-  async function artifactDownload(artifactId: string, opts?: { inline?: boolean }) {
+  async function artifactMeta(artifactId: string) {
     const art = await repo.artifactRef(artifactId)
     if (!art) throw new PlatformError("artifact not found", { status: 404, code: "NOT_FOUND" })
-    const storage = getObjectStorage()
-    const presign: {
-      key: string
-      ttlSec: number
-      responseContentType?: string
-      responseContentDisposition?: string
-    } = { key: art.objectKey, ttlSec: getConfig().presignTtlSec }
-    if (opts?.inline) {
-      // 预览（iframe/fetch）：强制 inline，规避腾讯云 COS 默认
-      // Content-Disposition: attachment 导致浏览器弹下载框、iframe 空白
-      presign.responseContentDisposition = "inline"
-      if (art.contentType.includes("html")) {
-        presign.responseContentType = "text/html; charset=utf-8"
-      }
-    }
-    const g = await storage.presignGet(presign)
     return {
-      url: g.url,
+      objectKey: art.objectKey,
       contentType: art.contentType,
       filename: art.originalName || art.id,
     }
@@ -79,6 +60,6 @@ export function createQueryService(tenant: Tenant): QueryService {
     trends: (pid, f) => repo.trends(pid, f),
     runDetail,
     sampleDetail,
-    artifactDownload,
+    artifactMeta,
   }
 }
