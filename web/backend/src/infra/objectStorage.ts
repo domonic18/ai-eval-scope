@@ -153,14 +153,27 @@ export class S3Storage {
     return { url, method: "PUT", headers, expiresAt: epochNow() + ttl }
   }
 
-  /** 签发下载 URL（短时效 ≤15min，§十三）。 */
-  async presignGet(p: { key: string; ttlSec?: number }): Promise<PresignGetResult> {
+  /**
+   * 签发下载 URL（短时效 ≤15min，§十三）。
+   * responseContentType / responseContentDisposition 走 S3 标准响应头覆盖
+   *（签名 GET 的 response-* 查询参数），强制覆盖对象存储返回头 ——
+   * 用于预览场景规避腾讯云 COS 默认 Content-Disposition: attachment 触发下载。
+   */
+  async presignGet(p: {
+    key: string
+    ttlSec?: number
+    responseContentType?: string
+    responseContentDisposition?: string
+  }): Promise<PresignGetResult> {
     const ttl = Math.min(p.ttlSec || this.defaultTtlSec, 900)
-    const url = await getSignedUrl(
-      this.presignClient,
-      new GetObjectCommand({ Bucket: this.bucket, Key: p.key }),
-      { expiresIn: ttl },
-    )
+    const input: GetObjectCommand["input"] = { Bucket: this.bucket, Key: p.key }
+    if (p.responseContentType) input.ResponseContentType = p.responseContentType
+    if (p.responseContentDisposition) {
+      input.ResponseContentDisposition = p.responseContentDisposition
+    }
+    const url = await getSignedUrl(this.presignClient, new GetObjectCommand(input), {
+      expiresIn: ttl,
+    })
     return { url, expiresAt: epochNow() + ttl }
   }
 

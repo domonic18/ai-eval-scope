@@ -29,6 +29,7 @@ export interface QueryService {
   ) => Promise<NonNullable<Awaited<ReturnType<QueryRepository["sampleDetail"]>>>>
   artifactDownload: (
     artifactId: string,
+    opts?: { inline?: boolean },
   ) => Promise<{ url: string; contentType: string; filename: string }>
 }
 
@@ -46,11 +47,25 @@ export function createQueryService(tenant: Tenant): QueryService {
     return s
   }
 
-  async function artifactDownload(artifactId: string) {
+  async function artifactDownload(artifactId: string, opts?: { inline?: boolean }) {
     const art = await repo.artifactRef(artifactId)
     if (!art) throw new PlatformError("artifact not found", { status: 404, code: "NOT_FOUND" })
     const storage = getObjectStorage()
-    const g = await storage.presignGet({ key: art.objectKey, ttlSec: getConfig().presignTtlSec })
+    const presign: {
+      key: string
+      ttlSec: number
+      responseContentType?: string
+      responseContentDisposition?: string
+    } = { key: art.objectKey, ttlSec: getConfig().presignTtlSec }
+    if (opts?.inline) {
+      // 预览（iframe/fetch）：强制 inline，规避腾讯云 COS 默认
+      // Content-Disposition: attachment 导致浏览器弹下载框、iframe 空白
+      presign.responseContentDisposition = "inline"
+      if (art.contentType.includes("html")) {
+        presign.responseContentType = "text/html; charset=utf-8"
+      }
+    }
+    const g = await storage.presignGet(presign)
     return {
       url: g.url,
       contentType: art.contentType,
