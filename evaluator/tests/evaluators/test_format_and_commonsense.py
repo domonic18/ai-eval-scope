@@ -756,7 +756,7 @@ class TestChronologicalOrderEvaluator:
     def test_reference_courseware_years(self, tmp_path: Path) -> None:
         """模拟参考课件中的年份提取结果。
 
-        参考 docs/reference/大单元学习总导 中出现的年份：
+        参考 samples/大单元学习总导 中出现的年份：
         1966（陈景润）、2013（教材版本，×2）、2050（虚构场景）。
         "100年后"不应被提取。
         """

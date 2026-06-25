@@ -27,14 +27,14 @@ uv sync --extra llm          # LLM 依赖（可选）
 
 ### 示例：评估课件产出物
 
-以项目自带的 `docs/reference/大单元学习总导/`（HTML 课件目录）为例：
+以项目自带的 `samples/大单元学习总导/`（HTML 课件目录）为例：
 
 ```bash
 cd evaluator
 
 # ① 打包（自动遍历目录，task-id 取目录名"大单元学习总导"）
 uv run agent-eval pack \
-  --source-dir ../docs/reference/大单元学习总导/
+  --source-dir ../samples/大单元学习总导/
 
 # ② 评估
 uv run agent-eval eval \
