@@ -10,8 +10,9 @@ build/
 # Virtual environment
 .venv/
 
-# Environment variables
+# Environment variables & secrets (never commit)
 .env
+.secret
 
 # User LLM config (contains API keys)
 llm_config.yaml
