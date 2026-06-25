@@ -68,6 +68,15 @@ export const api = {
   async register(email: string, password: string, name: string) {
     return (await http.post("/auth/register", { email, password, name })).data
   },
+  async ssoConfig() {
+    return (await http.get("/auth/sso/config")).data as { enabled: boolean }
+  },
+  async ssoLogin() {
+    return (await http.post("/auth/sso/login")).data as { redirect_url: string }
+  },
+  async ssoExchange(code: string) {
+    return (await http.post("/auth/sso/exchange", { code })).data
+  },
   async dashboard(orgId: string) {
     return (await http.get(`/orgs/${orgId}/projects`)).data.projects
   },

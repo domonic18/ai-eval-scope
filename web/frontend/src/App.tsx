@@ -1,7 +1,8 @@
 import { Navigate, Route, Routes, useLocation } from "react-router-dom"
 import { loadSession } from "./store/auth"
 import { AppShell } from "./components/ui"
-import Login from "./pages/Login"
+import LoginPage from "./pages/LoginPage"
+import RegisterPage from "./pages/RegisterPage"
 import Dashboard from "./pages/Dashboard"
 import ProjectDetail from "./pages/ProjectDetail"
 import RunDetail from "./pages/RunDetail"
@@ -26,7 +27,8 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<RootRedirect />} />
-      <Route path="/login" element={<Login />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
       <Route element={<RequireAuth />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/project/:id" element={<ProjectDetail />} />
