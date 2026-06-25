@@ -181,7 +181,10 @@ export async function startLogin(): Promise<{ redirect_url: string }> {
   ensureEnabled()
   const { login_url, request_id } = await createLoginRequestUrl()
   if (!request_id) {
-    throw new PlatformError("SAML AuthnRequest 未生成 request_id", { status: 500, code: "SSO_CONFIG" })
+    throw new PlatformError("SAML AuthnRequest 未生成 request_id", {
+      status: 500,
+      code: "SSO_CONFIG",
+    })
   }
   rememberRequest(request_id)
   return { redirect_url: login_url }
@@ -194,14 +197,17 @@ export async function handleAcs(samlResponse: string): Promise<{ code: string }>
   let assertion: saml2.SAMLAssertResponse
   try {
     assertion = await postAssert(samlResponse)
-  } catch (e) {
+  } catch {
     throw new PlatformError("SAML Response 验证失败", { status: 401, code: "SSO_INVALID" })
   }
 
   // InResponseTo 防重放（对齐 SquadSight）
   const inResponseTo = assertion.response_header?.in_response_to
   if (inResponseTo && !consumeRequest(inResponseTo)) {
-    throw new PlatformError("SAML Response 重放/请求 ID 不匹配", { status: 401, code: "SSO_REPLAY" })
+    throw new PlatformError("SAML Response 重放/请求 ID 不匹配", {
+      status: 401,
+      code: "SSO_REPLAY",
+    })
   }
 
   const u = assertion.user
@@ -234,7 +240,10 @@ export async function handleAcs(samlResponse: string): Promise<{ code: string }>
 export function exchangeCode(code: string): SsoSession {
   const s = consumeCode(code)
   if (!s) {
-    throw new PlatformError("invalid or expired sso code", { status: 401, code: "SSO_CODE_INVALID" })
+    throw new PlatformError("invalid or expired sso code", {
+      status: 401,
+      code: "SSO_CODE_INVALID",
+    })
   }
   return s
 }
@@ -262,9 +271,7 @@ function extractEmail(u: SamlUser | undefined, nameId: string): string {
   return `${nameId}@sso.local`
 }
 
-function normalizeAttributes(
-  attrs: SamlUser["attributes"] | undefined,
-): Record<string, unknown> {
+function normalizeAttributes(attrs: SamlUser["attributes"] | undefined): Record<string, unknown> {
   if (!attrs) return {}
   const out: Record<string, unknown> = {}
   for (const [k, v] of Object.entries(attrs)) {

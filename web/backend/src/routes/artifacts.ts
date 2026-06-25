@@ -11,11 +11,7 @@ import { requireAuth } from "../middleware/auth"
 import { artifactGuard } from "../middleware/tenantGuard"
 import { PlatformError } from "../middleware/errorHandler"
 import { createQueryService } from "../services/query.service"
-import {
-  issueArtifactToken,
-  verifyArtifactToken,
-  type ArtifactTokenClaims,
-} from "../infra/crypto"
+import { issueArtifactToken, verifyArtifactToken, type ArtifactTokenClaims } from "../infra/crypto"
 import { getObjectStorage } from "../infra/objectStorage"
 import { getConfig } from "../config"
 

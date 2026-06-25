@@ -114,7 +114,8 @@ export async function register(input: RegisterInput): Promise<RegisterResult> {
 export async function login(input: { email?: string; password?: string }): Promise<LoginResult> {
   assertEmail(input.email)
   const user = await userRepo.findByEmail(input.email)
-  if (!user) {
+  if (!user || !user.passwordHash) {
+    // 账号不存在 或 SSO-only 用户（无密码，docs/arch/12 §4.2）→ 统一返回 invalid，不泄露账号是否存在
     throw new PlatformError("invalid credentials", { status: 401, code: "AUTH_INVALID" })
   }
   const ok = await verifyPassword(input.password!, user.passwordHash)

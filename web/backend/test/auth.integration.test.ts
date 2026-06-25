@@ -26,7 +26,7 @@ describe("#1 注册 / 登录 / 刷新 + argon2 哈希", () => {
     expect(u.org.id).toBeDefined()
 
     const row = await prisma.user.findUnique({ where: { id: u.user.id } })
-    expect(row!.passwordHash.startsWith("$argon2id")).toBe(true)
+    expect(row!.passwordHash!.startsWith("$argon2id")).toBe(true)
   })
 
   it("logs in with correct password and gets a new token pair", async () => {

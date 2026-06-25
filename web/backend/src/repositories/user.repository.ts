@@ -21,11 +21,7 @@ class UserRepository {
   findById(id: string): Promise<User | null> {
     return this.prisma.user.findUnique({ where: { id } })
   }
-  create(p: {
-    email: string
-    passwordHash?: string | null
-    name?: string | null
-  }): Promise<User> {
+  create(p: { email: string; passwordHash?: string | null; name?: string | null }): Promise<User> {
     // passwordHash 可选：SSO 用户无密码（docs/arch/12 §4.2）
     return this.prisma.user.create({
       data: {
