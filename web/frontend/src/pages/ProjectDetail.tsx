@@ -782,7 +782,7 @@ function BasicPanel({
         <Field label="项目名称">
           <Input defaultValue={name} />
         </Field>
-        <Field label="Slug（组织内唯一）" help="用于接入标识与 URL，创建后不建议修改。">
+        <Field label="Slug（项目唯一标识）" help="用于接入标识与 URL，创建后不建议修改。">
           <Input className="mono" defaultValue={slug} readOnly />
         </Field>
         <Field label="项目描述">

@@ -127,7 +127,7 @@ export default function Dashboard() {
       <div className="page-head r-1">
         <div className="page-title">
           <h1>项目看板</h1>
-          <div className="sub">组织内全部评估项目</div>
+          <div className="sub">我的全部评估项目</div>
         </div>
         <div className="page-actions">
           <Button icon={<IconRefresh size={15} />} onClick={load}>
@@ -159,7 +159,7 @@ export default function Dashboard() {
         <div className="card r-2">
           <div className="card-body">
             <Empty
-              title="该组织下暂无项目"
+              title="暂无评估项目"
               children={<>点击右上角「新建项目」创建第一个评估项目。</>}
             />
           </div>
@@ -269,7 +269,7 @@ export default function Dashboard() {
           />
         </Field>
         <Field
-          label="Slug（组织内唯一）"
+          label="Slug（项目唯一标识）"
           help="用于接入标识与 URL，仅小写字母、数字、连字符"
           style={{ marginBottom: 0 }}
         >

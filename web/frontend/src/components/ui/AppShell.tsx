@@ -5,18 +5,8 @@ import { api } from "../../api/client"
 import { clearSession, getActiveOrg, loadSession, setActiveOrg } from "../../store/auth"
 import type { Membership } from "../../types"
 import { initialOf } from "../../lib/format"
-import {
-  IconBell,
-  IconBook,
-  IconDashboard,
-  IconLogout,
-  IconMembers,
-  IconRuns,
-  IconSearch,
-  IconSettings,
-} from "../icons"
+import { IconBell, IconBook, IconDashboard, IconLogout, IconRuns, IconSearch } from "../icons"
 import { Logo } from "./Logo"
-import { OrgSwitcher } from "./OrgSwitcher"
 
 /** 面包屑：label + 可选回跳 to。 */
 export interface Crumb {
@@ -60,20 +50,6 @@ const NAV_MAIN: NavItem[] = [
     match: (p) => p.startsWith("/run"),
   },
 ]
-const NAV_ORG: NavItem[] = [
-  {
-    to: "/members",
-    icon: <IconMembers size={16} />,
-    label: "成员",
-    match: (p) => p.startsWith("/members"),
-  },
-  {
-    to: "/settings",
-    icon: <IconSettings size={16} />,
-    label: "组织设置",
-    match: (p) => p.startsWith("/settings"),
-  },
-]
 
 export function AppShell() {
   const [memberships, setMemberships] = useState<Membership[]>([])
@@ -113,25 +89,9 @@ export function AppShell() {
               <div style={{ marginBottom: 14 }}>
                 <Logo />
               </div>
-              <OrgSwitcher
-                memberships={memberships}
-                activeOrg={activeOrg}
-                onChange={setActiveOrgId}
-              />
             </div>
             <nav className="nav-section">
               {NAV_MAIN.map((it) => (
-                <Link
-                  key={it.to}
-                  to={it.to}
-                  className={`nav-item ${it.match(loc.pathname) ? "active" : ""}`}
-                >
-                  {it.icon}
-                  {it.label}
-                </Link>
-              ))}
-              <div className="nav-label">组织</div>
-              {NAV_ORG.map((it) => (
                 <Link
                   key={it.to}
                   to={it.to}

@@ -33,8 +33,6 @@ export default function App() {
         <Route path="/run/:id" element={<RunDetail />} />
         <Route path="/run/:id/sample/:sid" element={<SampleDetail />} />
         <Route path="/runs" element={<ComingSoon title="全部运行" />} />
-        <Route path="/members" element={<ComingSoon title="成员" />} />
-        <Route path="/settings" element={<ComingSoon title="组织设置" />} />
       </Route>
     </Routes>
   )

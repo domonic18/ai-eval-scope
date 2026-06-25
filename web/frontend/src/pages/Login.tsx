@@ -32,7 +32,7 @@ export default function Login() {
           ? await api.login(email, password)
           : await api.register(email, password, name || email.split("@")[0])
       saveSession(data)
-      toast.success(mode === "login" ? "登录成功" : "注册成功，已创建默认组织")
+      toast.success(mode === "login" ? "登录成功" : "注册成功")
       nav(redirect)
     } catch (err) {
       const e = err as { response?: { data?: { error?: string } }; message?: string }
@@ -50,11 +50,9 @@ export default function Login() {
       <div className="auth">
         <div className="auth-head">
           <Logo to="/" fontSize={17} />
-          <h1>{mode === "login" ? "欢迎回来" : "创建你的组织"}</h1>
+          <h1>{mode === "login" ? "欢迎回来" : "创建账号"}</h1>
           <p>
-            {mode === "login"
-              ? "登录以访问你的评估控制台"
-              : "注册即创建一个组织作为评估数据的租户空间"}
+            {mode === "login" ? "登录以访问你的评估控制台" : "注册账号，开始创建你的评估项目"}
           </p>
         </div>
 
@@ -113,7 +111,7 @@ export default function Login() {
               disabled={loading}
               style={{ width: "100%", justifyContent: "center", marginTop: 4 }}
             >
-              {loading ? "处理中…" : mode === "login" ? "登录" : "创建组织并进入"}
+              {loading ? "处理中…" : mode === "login" ? "登录" : "注册并进入"}
             </Button>
           </form>
         </div>
@@ -121,7 +119,7 @@ export default function Login() {
         <div className="auth-foot">
           {mode === "login" ? "还没有账号？" : "已有账号？"}
           <a onClick={() => setMode(mode === "login" ? "register" : "login")}>
-            {mode === "login" ? "创建组织" : "登录"}
+            {mode === "login" ? "立即注册" : "登录"}
           </a>
         </div>
         <div style={{ textAlign: "center" }}>
