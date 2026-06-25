@@ -25,6 +25,7 @@ import healthRouter from "./routes/health"
 
 // ── 平台路由（v1，认证与多租户）──
 import authRouter from "./routes/auth"
+import ssoRouter from "./routes/sso"
 import orgsRouter from "./routes/orgs"
 import projectsRouter from "./routes/projects"
 import keysRouter from "./routes/keys"
@@ -56,6 +57,7 @@ export function createApp(): express.Application {
   // ── 平台路由 ──
   app.use(healthRouter) // GET /health, GET /api/health
   app.use("/api/v1/auth", authRouter) // 注册/登录/刷新/me（register·login·refresh 公开）
+  app.use("/api/v1/auth/sso", ssoRouter) // SAML SSO（docs/arch/12，config/metadata/login/acs/exchange 公开）
   app.use("/api/v1/orgs", orgsRouter) // 成员 + 组织下项目（requireAuth + orgGuard）
   app.use("/api/v1/projects", projectsRouter) // 项目管理 + Query（runs/trends）
   app.use("/api/v1/projects/:id/keys", keysRouter) // API Key 管理（嵌套于项目）

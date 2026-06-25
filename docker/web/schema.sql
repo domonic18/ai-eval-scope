@@ -14,8 +14,13 @@
 CREATE TABLE "users" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
-    "password_hash" TEXT NOT NULL,
+    "password_hash" TEXT,
     "name" TEXT,
+    "auth_type" TEXT NOT NULL DEFAULT 'password',
+    "sso_provider" TEXT,
+    "sso_name_id" TEXT,
+    "sso_attributes" JSONB,
+    "last_sso_login_at" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
@@ -207,6 +212,7 @@ CREATE TABLE "ingest_events" (
 
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+CREATE UNIQUE INDEX "users_sso_name_id_key" ON "users"("sso_name_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "organizations_slug_key" ON "organizations"("slug");
@@ -309,3 +315,4 @@ CREATE TABLE "_prisma_migrations" (
 
 INSERT INTO "_prisma_migrations" ("id", "checksum", "migration_name", "started_at", "finished_at", "applied_steps_count") VALUES ('8153ea7d-d31f-4029-abfb-825890edabab', '0dae02807e9f14e5d33a06cb9c9e0476b9ec315bc0cc9f3ee1cd3a92c4394084', '20260616234815_init', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1);
 INSERT INTO "_prisma_migrations" ("id", "checksum", "migration_name", "started_at", "finished_at", "applied_steps_count") VALUES ('172d9060-eec1-4c82-8fed-c89f09f0f2c2', '6bfc6053b7367bad331dba789823df8e54d34a7ed1f8b95430ccd1715c594347', '20260617040341_add_artifact_project_relation', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1);
+INSERT INTO "_prisma_migrations" ("id", "checksum", "migration_name", "started_at", "finished_at", "applied_steps_count") VALUES ('9021dc0d-2cd6-489d-8b29-0bc171eae78b', 'db0c9e6ed01668474bb8c707d46a854642b06b021bc0552bbe681445d8cf3156', '20260625000000_add_user_sso_fields', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1);

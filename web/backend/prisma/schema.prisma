@@ -18,12 +18,18 @@ datasource db {
 
 // ── 账号与组织 ──────────────────────────────────────────
 model User {
-  id           String          @id @default(uuid())
-  email        String          @unique
-  passwordHash String          @map("password_hash")
-  name         String?
-  createdAt    DateTime        @default(now()) @map("created_at")
-  memberships  OrgMembership[]
+  id             String          @id @default(uuid())
+  email          String          @unique
+  passwordHash   String?         @map("password_hash") // 可选：SSO 用户无密码（docs/arch/12 §4.2）
+  name           String?
+  // —— SSO（SAML）字段 ——
+  authType       String          @default("password") @map("auth_type") // password | saml
+  ssoProvider    String?         @map("sso_provider") // "guanghua"
+  ssoNameId      String?         @unique @map("sso_name_id") // SAML NameID（部分唯一）
+  ssoAttributes  Json?           @map("sso_attributes") @db.JsonB
+  lastSsoLoginAt DateTime?       @map("last_sso_login_at")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  memberships    OrgMembership[]
 
   @@map("users")
 }

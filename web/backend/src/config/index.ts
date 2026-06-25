@@ -99,3 +99,55 @@ export function getConfig(): PlatformConfig {
   if (!_cfg) _cfg = loadConfig()
   return _cfg
 }
+
+/* ── SAML SSO 配置（docs/arch/12 §4.7，可选功能，独立于 PlatformConfig）── */
+export interface SamlConfig {
+  enabled: boolean
+  spEntityId: string
+  acsUrl: string
+  slsUrl: string
+  spCert: string // PEM（纯 base64 自动补标签）
+  spKey: string
+  idpEntityId: string
+  idpSsoUrl: string
+  idpSlsUrl: string
+  idpCert: string
+  strict: boolean
+  debug: boolean
+}
+
+export function loadSamlConfig(): SamlConfig {
+  return {
+    enabled: bool(process.env.SAML_SSO_ENABLED, false),
+    spEntityId: process.env.SAML_SP_ENTITY_ID || "",
+    acsUrl: process.env.SAML_ACS_URL || "",
+    slsUrl: process.env.SAML_SLS_URL || "",
+    spCert: process.env.SAML_SP_CERT || "",
+    spKey: process.env.SAML_SP_KEY || "",
+    idpEntityId: process.env.SAML_IDP_ENTITY_ID || "",
+    idpSsoUrl: process.env.SAML_IDP_SSO_URL || "",
+    idpSlsUrl: process.env.SAML_IDP_SLS_URL || "",
+    idpCert: process.env.SAML_IDP_CERT || "",
+    strict: bool(process.env.SAML_STRICT, true),
+    debug: bool(process.env.SAML_DEBUG, false),
+  }
+}
+
+let _saml: SamlConfig | null = null
+
+export function getSamlConfig(): SamlConfig {
+  if (!_saml) _saml = loadSamlConfig()
+  return _saml
+}
+
+/** 校验 SAML 配置完整性（启用时），返回缺失项列表（空 = 就绪）。 */
+export function validateSamlConfig(cfg: SamlConfig): string[] {
+  if (!cfg.enabled) return []
+  const missing: string[] = []
+  if (!cfg.idpEntityId) missing.push("SAML_IDP_ENTITY_ID")
+  if (!cfg.idpSsoUrl) missing.push("SAML_IDP_SSO_URL")
+  if (!cfg.idpCert) missing.push("SAML_IDP_CERT")
+  if (!cfg.spEntityId) missing.push("SAML_SP_ENTITY_ID")
+  if (!cfg.acsUrl) missing.push("SAML_ACS_URL")
+  return missing
+}
