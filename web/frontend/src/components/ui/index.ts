@@ -13,6 +13,7 @@ export {
 } from "./atoms"
 export { Field, Input, Select, Textarea, InputIconWrap } from "./Field"
 export { Modal } from "./Modal"
+export { Dropdown, DropdownItem, DropdownSeparator, DropdownLabel } from "./Dropdown"
 export { Tabs, Segment } from "./Tabs"
 export { Explain } from "./Explain"
 export { Metric, Gauge } from "./Metric"
