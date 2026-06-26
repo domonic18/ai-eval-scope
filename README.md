@@ -45,7 +45,7 @@ uv run agent-eval eval \
 cat ../workspace/runs/*/reports/summary.md
 ```
 
-不配置 LLM 时，9 项 Rule-based 评估器正常运行，5 项 LLM 评估器自动降级（score=0.7）。
+不配置 LLM 时，Rule-based 评估器（格式门控 + 常识阶段的规则/事实/公式检查）正常运行；LLM Judge 评估器（质量阶段）自动降级为 `score=0.7`，逻辑一致性评估器降级为规则匹配；多模态视觉评估（`vision.quality`）需配置视觉模型，未配置时跳过。
 
 ### pack 命令
 
@@ -91,6 +91,19 @@ cp agent_eval/assets/configs/llm_config.example.yaml agent_eval/assets/configs/l
 # 编辑填入 API Key（支持 ${DEEPSEEK_API_KEY} 语法，值从 .env 读取）
 # CLI 自动发现此文件，无需 --llm-config
 ```
+
+### 其他命令
+
+| 命令 | 说明 |
+|------|------|
+| `agent-eval run` | 执行被测 Agent（ExecutionAgent 驱动），生成 ExecutionPackage |
+| `agent-eval pipeline` | 完整流水线：执行被测 Agent → 评估 → 生成报告 |
+| `agent-eval upload` | 把历史运行的评估结果回填到可观测平台（API Key 摄取） |
+| `agent-eval dataset {download,list}` | 评测数据集下载与索引（详见 [10 数据集下载设计](./docs/arch/10数据集下载设计.md)） |
+| `agent-eval knowledge {convert,extract,merge,audit,list}` | 知识库构建管道（详见 [11 知识点完善管道系统设计](./docs/arch/11知识点完善管道系统设计.md)） |
+| `agent-eval version` | 显示版本信息 |
+
+均需在 `evaluator/` 下执行：`cd evaluator && uv run agent-eval <command> --help`。
 
 ### 输出
 

@@ -4,9 +4,14 @@
 
 ## 环境
 
-- Python 3.11+，依赖用 `uv` 管理（`uv.lock`）
-- 安装：`uv sync --extra dev`
-- CLI：`uv run agent-eval --help`
+- Python 3.11+，依赖用 `uv` 管理（`uv.lock`）。
+- 安装：`uv sync --extra dev`（开发）；`uv sync --extra llm`（LLM Judge 依赖，可选）。
+- CLI：`uv run agent-eval --help`。所有 `uv run` / `agent-eval` 命令从 `evaluator/` 执行，或用根 `make` 目标自动切换。
+
+## 配置
+
+- 环境变量从仓库根 `.env` 读取（`load_dotenv()` 自动向上查找）。
+- LLM 配置放在 `agent_eval/assets/configs/llm_config.yaml`（从 `.example.yaml` 复制）；CLI 自动发现，无需 `--llm-config`。
 
 ## 代码风格（强制）
 
@@ -17,6 +22,12 @@
 - **枚举**：定义在 `core/types.py`，统一 `(str, Enum)` 基类 + 中文 docstring。
 - **异常**：继承 `AgentEvalError`（`core/exceptions.py`），按模块分组（`XxxError` / `XxxNotFoundError` / `XxxValidationError`），带额外字段的子类在 `__init__` 设同名属性。
 
+## 目录约定
+
+- `agent_eval/` 自包含、pip-installable；随包资源在 `agent_eval/assets/`（经 `PACKAGE_ROOT` 定位，不硬编码绝对路径）。
+- 运行产物落 `workspace/`，按 `WORKSPACE_DIR`（或 `CWD/workspace`）定位。
+- 可选第三方依赖（huggingface_hub / modelscope / playwright）放 `[project.optional-dependencies]`，代码内**惰性导入** + 友好错误提示（仿 `observability/render.py` 的 Playwright 范式）。
+
 ## 测试（强制）
 
 - 每个模块对应 `tests/unit/test_*.py`；黄金样本在 `tests/fixtures/golden/`。
@@ -25,12 +36,6 @@
 - 断言用 `assert` / `pytest.raises(XxxError)`；测试命名 `test_<行为>[_<条件>]`。
 - CLI 测试用 `typer.testing.CliRunner` + `monkeypatch` mock 内部函数。
 - 可选依赖在 `tests/conftest.py` 顶部 `sys.modules.setdefault(...)` mock（仿 langfuse 范式）。
-
-## 目录约定
-
-- `agent_eval/` 自包含、pip-installable；随包资源在 `agent_eval/assets/`（经 `PACKAGE_ROOT` 定位，不硬编码绝对路径）。
-- 运行产物落 `workspace/`，按 `WORKSPACE_DIR`（或 `CWD/workspace`）定位。
-- 可选第三方依赖（huggingface_hub / modelscope / playwright）放 `[project.optional-dependencies]`，代码内**惰性导入** + 友好错误提示（仿 `observability/render.py` 的 Playwright 范式）。
 
 ## 质量检查（提交前）
 
