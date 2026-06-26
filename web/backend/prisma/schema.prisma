@@ -30,20 +30,39 @@ model User {
   lastSsoLoginAt DateTime?       @map("last_sso_login_at")
   createdAt      DateTime        @default(now()) @map("created_at")
   memberships    OrgMembership[]
+  joinRequests   JoinRequest[]
 
   @@map("users")
 }
 
 model Organization {
-  id        String          @id @default(uuid())
-  name      String
-  slug      String          @unique
-  createdBy String          @map("created_by")
-  createdAt DateTime        @default(now()) @map("created_at")
-  members   OrgMembership[]
-  projects  Project[]
+  id           String          @id @default(uuid())
+  name         String
+  slug         String          @unique
+  createdBy    String          @map("created_by")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  members      OrgMembership[]
+  projects     Project[]
+  joinRequests JoinRequest[]
 
   @@map("organizations")
+}
+
+// 团队加入申请（用户主动申请 → owner 审批 → 通过成 member）
+model JoinRequest {
+  id         String       @id @default(uuid())
+  orgId      String       @map("org_id")
+  userId     String       @map("user_id")
+  message    String? // 申请留言
+  status     String       @default("pending") // pending | approved | rejected
+  resolvedBy String?      @map("resolved_by")
+  createdAt  DateTime     @default(now()) @map("created_at")
+  resolvedAt DateTime?    @map("resolved_at")
+  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, userId])
+  @@map("join_requests")
 }
 
 model OrgMembership {

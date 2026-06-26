@@ -89,6 +89,52 @@ export const api = {
   async archiveProject(projectId: string) {
     return (await http.post(`/projects/${projectId}/archive`)).data.project
   },
+  async createOrg(name: string) {
+    return (await http.post("/orgs", { name })).data.org as {
+      id: string
+      name: string
+      slug: string
+    }
+  },
+  async teams() {
+    return (await http.get("/teams")).data.teams as {
+      id: string
+      name: string
+      slug: string
+      isMember: boolean
+      requestStatus: string | null
+    }[]
+  },
+  async myJoinRequests() {
+    return (await http.get("/me/join-requests")).data.requests as {
+      id: string
+      orgId: string
+      status: string
+      message: string | null
+      org: { name: string; slug: string }
+    }[]
+  },
+  async requestJoin(orgId: string, message?: string) {
+    return (await http.post(`/orgs/${orgId}/join-requests`, { message })).data.request as {
+      id: string
+      orgId: string
+      status: string
+    }
+  },
+  async orgJoinRequests(orgId: string) {
+    return (await http.get(`/orgs/${orgId}/join-requests`)).data.requests as {
+      id: string
+      status: string
+      message: string | null
+      user: { id: string; email: string; name: string | null }
+    }[]
+  },
+  async approveJoin(orgId: string, reqId: string) {
+    return (await http.post(`/orgs/${orgId}/join-requests/${reqId}/approve`)).data
+  },
+  async rejectJoin(orgId: string, reqId: string) {
+    return (await http.post(`/orgs/${orgId}/join-requests/${reqId}/reject`)).data
+  },
   async listMembers(orgId: string) {
     return (await http.get(`/orgs/${orgId}/members`)).data.members
   },

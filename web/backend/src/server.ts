@@ -27,6 +27,7 @@ import healthRouter from "./routes/health"
 import authRouter from "./routes/auth"
 import ssoRouter from "./routes/sso"
 import orgsRouter from "./routes/orgs"
+import joinRouter from "./routes/join"
 import projectsRouter from "./routes/projects"
 import keysRouter from "./routes/keys"
 import runsRouter from "./routes/runs"
@@ -59,6 +60,7 @@ export function createApp(): express.Application {
   app.use("/api/v1/auth", authRouter) // 注册/登录/刷新/me（register·login·refresh 公开）
   app.use("/api/v1/auth/sso", ssoRouter) // SAML SSO（docs/arch/12，config/metadata/login/acs/exchange 公开）
   app.use("/api/v1/orgs", orgsRouter) // 成员 + 组织下项目（requireAuth + orgGuard）
+  app.use("/api/v1", joinRouter) // 团队发现 + 加入申请/审批（/teams、/me/join-requests、/orgs/:org/join-requests）
   app.use("/api/v1/projects", projectsRouter) // 项目管理 + Query（runs/trends）
   app.use("/api/v1/projects/:id/keys", keysRouter) // API Key 管理（嵌套于项目）
   app.use("/api/v1/runs", runsRouter) // 运行/样本详情（Query，§九）

@@ -25,7 +25,6 @@ import { getPrisma } from "../infra/prisma"
 import { UserRepository } from "../repositories/user.repository"
 import { issueTokenPair } from "../infra/crypto"
 import { getSamlConfig, validateSamlConfig } from "../config"
-import { slugify, uniquify } from "../utils/slug"
 import { PlatformError } from "../middleware/errorHandler"
 
 const userRepo = new UserRepository()
@@ -316,37 +315,20 @@ async function matchOrCreateSsoUser(p: {
     return { user }
   }
 
-  // c. 新建 User(auth_type=saml) + 个人 Organization(owner)，事务
-  const baseSlug = slugify(p.name || p.email.split("@")[0]) || "org"
-  const result = await prisma.$transaction(async (tx) => {
-    const user = await tx.user.create({
-      data: {
-        email: p.email.toLowerCase(),
-        passwordHash: null,
-        name: p.name,
-        authType: "saml",
-        ssoProvider: SSO_PROVIDER,
-        ssoNameId: p.nameId,
-        ssoAttributes: attrsJson,
-        lastSsoLoginAt: new Date(),
-      },
-    })
-    let slug = baseSlug
-    if (await tx.organization.findUnique({ where: { slug } })) {
-      slug = uniquify(baseSlug)
-    }
-    const org = await tx.organization.create({
-      data: { name: `${p.name}'s Org`, slug, createdBy: user.id },
-    })
-    await tx.orgMembership.create({
-      data: { orgId: org.id, userId: user.id, role: "owner" },
-    })
-    return { user, org }
+  // c. 新建 User(auth_type=saml)；不再自动建个人 Org（纯团队中心：登录后创建/加入团队）
+  const user = await prisma.user.create({
+    data: {
+      email: p.email.toLowerCase(),
+      passwordHash: null,
+      name: p.name,
+      authType: "saml",
+      ssoProvider: SSO_PROVIDER,
+      ssoNameId: p.nameId,
+      ssoAttributes: attrsJson,
+      lastSsoLoginAt: new Date(),
+    },
   })
-  return {
-    user: result.user,
-    org: { id: result.org.id, name: result.org.name, slug: result.org.slug },
-  }
+  return { user }
 }
 
 export const SsoService = {

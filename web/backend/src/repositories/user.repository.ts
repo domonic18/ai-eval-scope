@@ -54,9 +54,19 @@ class OrgRepository {
   findBySlug(slug: string): Promise<Organization | null> {
     return this.prisma.organization.findUnique({ where: { slug } })
   }
-  create(p: { name: string; slug: string; createdBy: string }): Promise<Organization> {
+  create(p: {
+    name: string
+    slug: string
+    createdBy: string
+    isPersonal?: boolean
+  }): Promise<Organization> {
     return this.prisma.organization.create({
-      data: { name: p.name, slug: p.slug, createdBy: p.createdBy },
+      data: {
+        name: p.name,
+        slug: p.slug,
+        createdBy: p.createdBy,
+        isPersonal: p.isPersonal ?? false,
+      },
     })
   }
   listMembers(orgId: string) {

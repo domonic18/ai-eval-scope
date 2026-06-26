@@ -118,26 +118,23 @@ describe("SsoService.startLogin", () => {
 })
 
 describe("SsoService.handleAcs — 新建用户", () => {
-  it("creates user + org via transaction when email/nameId both unmatched", async () => {
+  it("creates sso user (no personal org) when email/nameId both unmatched", async () => {
     mocks.userRepo.findByEmail.mockResolvedValue(null)
     mocks.userRepo.findBySsoNameId.mockResolvedValue(null)
-    mocks.prisma.organization.findUnique.mockResolvedValue(null)
     mocks.prisma.user.create.mockResolvedValue({ id: "u1", email: "x@y.z", name: "U" })
-    mocks.prisma.organization.create.mockResolvedValue({ id: "o1", name: "U's Org", slug: "u" })
 
     await SsoService.startLogin() // remember request_id
     setAssertion({ nameId: "n1", email: "x@y.z" })
     const { code } = await SsoService.handleAcs("encoded-response")
 
     expect(mocks.prisma.user.create).toHaveBeenCalled()
-    expect(mocks.prisma.organization.create).toHaveBeenCalled()
-    expect(mocks.prisma.orgMembership.create).toHaveBeenCalled()
+    expect(mocks.prisma.organization.create).not.toHaveBeenCalled() // 不再建个人 Org
     expect(code).toMatch(/\S+/)
 
     const session = SsoService.exchangeCode(code)
     expect(session.access_token).toMatch(/\S+/)
     expect(session.user.email).toBe("x@y.z")
-    expect(session.org?.id).toBe("o1")
+    expect(session.org).toBeUndefined() // 无团队，登录后创建/加入
   })
 })
 
