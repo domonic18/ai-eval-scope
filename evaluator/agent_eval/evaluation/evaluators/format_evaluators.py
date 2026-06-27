@@ -302,7 +302,7 @@ class HtmlValidityEvaluator(BaseEvaluator):
         except Exception as e:  # noqa: BLE001 — 解析级异常统一上报
             errors.append(f"{filename}: HTML 解析失败: {e}")
         if validator.errors:
-            errors.extend(validator.errors)
+            errors.extend(f"{filename}: {e}" for e in validator.errors)
         if validator.stack:
             errors.append(f"{filename}: 未闭合标签 {validator.stack}")
 

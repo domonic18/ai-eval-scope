@@ -24,6 +24,10 @@ from agent_eval.evaluation.text_utils import collect_file_texts, collect_text_co
 
 logger = structlog.get_logger("evaluation.commonsense")
 
+# fact_verdict 二次确认的单批最大候选数（超过则分批调用，避免单次 prompt 过大
+# 导致 LLM 调用失败，如数学样本 98 候选一次调用即失败）
+FACT_VERDICT_BATCH_SIZE = 20
+
 
 def _get_output_dir(sample: Any) -> Path | None:
     """从样本中提取 output 目录。"""
@@ -900,24 +904,41 @@ class InfoAccuracyEvaluator(BaseEvaluator):
             for i, f in enumerate(error_findings)
         ]
         ev_dir = evidence_dir if isinstance(evidence_dir, Path) else Path(evidence_dir)
-        _scores, record = orchestrator.judge(
-            constraint_id=self.evaluator_id,
-            sample_id=context.get("sample_id", "unknown"),
-            template_id="fact_verdict",
-            variables={
-                "title": context.get("task_input", {}).get("title", "未知标题"),
-                "subject": context.get("task_input", {}).get("subject", "未知学科"),
-                "candidates": candidates,
-            },
-            evidence_dir=ev_dir,
-            provider_name=self.params.get("llm_provider"),
-            judge_id_suffix="fact_verdict",
-        )
+        batch_size = self.params.get("fact_verdict_batch_size", FACT_VERDICT_BATCH_SIZE)
+        variables_base = {
+            "title": context.get("task_input", {}).get("title", "未知标题"),
+            "subject": context.get("task_input", {}).get("subject", "未知学科"),
+        }
 
-        # verdicts 在 JudgeRecord.parsed_scores（解析后的完整 dict）
-        parsed = getattr(record, "parsed_scores", None) if record else None
-        verdicts = parsed.get("verdicts", []) if isinstance(parsed, dict) else []
-        verdict_map = {v.get("index"): v for v in verdicts if isinstance(v, dict) and "index" in v}
+        # 分批调用 fact_verdict（候选过多时单次 prompt 过大会导致 LLM 调用失败）
+        all_verdicts: list[dict[str, Any]] = []
+        for batch_start in range(0, len(candidates), batch_size):
+            batch = candidates[batch_start : batch_start + batch_size]
+            batch_idx = batch_start // batch_size
+            try:
+                _scores, record = orchestrator.judge(
+                    constraint_id=self.evaluator_id,
+                    sample_id=context.get("sample_id", "unknown"),
+                    template_id="fact_verdict",
+                    variables={**variables_base, "candidates": batch},
+                    evidence_dir=ev_dir,
+                    provider_name=self.params.get("llm_provider"),
+                    judge_id_suffix=f"fact_verdict_{batch_idx}",
+                )
+                parsed = getattr(record, "parsed_scores", None) if record else None
+                all_verdicts.extend(parsed.get("verdicts", []) if isinstance(parsed, dict) else [])
+            except Exception:
+                # 单批失败 → 该批 findings 缺裁定 → 默认保留（召回优先，不漏报）
+                logger.warning(
+                    "fact_verdict 批次裁定失败，该批保留（召回优先）",
+                    batch=batch_idx,
+                    batch_size=len(batch),
+                    exc_info=True,
+                )
+
+        verdict_map = {
+            v.get("index"): v for v in all_verdicts if isinstance(v, dict) and "index" in v
+        }
 
         confirmed: list[dict[str, Any]] = []
         for i, f in enumerate(error_findings):
