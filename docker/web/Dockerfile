@@ -5,7 +5,7 @@
 # Debian bookworm 自带 libssl3（Prisma 引擎依赖）。
 
 # ─── Stage 1: 前端构建 ───
-FROM node:22.15.1-bookworm AS frontend-builder
+FROM ccr.ccs.tencentyun.com/sasan/node:22.15.1-bookworm AS frontend-builder
 WORKDIR /app/web/frontend
 COPY web/frontend/package*.json ./
 RUN npm ci
@@ -16,7 +16,7 @@ ENV VITE_APP_VERSION=$VITE_APP_VERSION
 RUN npm run build
 
 # ─── Stage 2: 后端编译 ───
-FROM node:22.15.1-bookworm AS backend-builder
+FROM ccr.ccs.tencentyun.com/sasan/node:22.15.1-bookworm AS backend-builder
 WORKDIR /app/web/backend
 COPY web/backend/package*.json ./
 RUN npm ci
@@ -28,7 +28,7 @@ COPY web/backend/server.ts ./server.ts
 RUN npm run build
 
 # ─── Stage 3: 运行时（精简）───
-FROM node:22.15.1-bookworm
+FROM ccr.ccs.tencentyun.com/sasan/node:22.15.1-bookworm
 WORKDIR /app/web/backend
 COPY web/backend/package*.json ./
 RUN npm ci --omit=dev
