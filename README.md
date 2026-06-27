@@ -34,7 +34,8 @@ cd evaluator
 
 # ① 打包（自动遍历目录，task-id 取目录名"大单元学习总导"）
 uv run agent-eval pack \
-  --source-dir ../samples/大单元学习总导/
+  --source-dir ../samples/大单元学习总导/ \
+  --output-dir workspace/packages
 
 # ② 评估
 uv run agent-eval eval \
