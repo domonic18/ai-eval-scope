@@ -836,11 +836,18 @@ class InfoAccuracyEvaluator(BaseEvaluator):
         passed = combined_score >= threshold and len(rule_errors) == 0
         score = 1.0 if passed else 0.0
 
-        # 构建 reason
+        # 构建 reason（含具体错误描述，面向用户可读，替代"N 处错误"模板）
         score_parts = [f"{k}={v:.1f}" for k, v in scores.items()]
         reason = f"知识准确性（LLM + 规则）：{', '.join(score_parts)}"
         if rule_errors:
-            reason += f"；规则检查发现 {len(rule_errors)} 处错误（经 LLM 二次确认）"
+            # 列出 LLM 二次确认的具体错误（_llm_reason 优先，回退规则描述），最多 5 条
+            err_descs = [
+                (f.get("_llm_reason") or f.get("message") or f.get("reason") or "未提供详情")
+                for f in rule_errors[:5]
+            ]
+            detail = "；".join(d.strip() for d in err_descs if d and d.strip())
+            suffix = f"（共 {len(rule_errors)} 处）" if len(rule_errors) > 5 else ""
+            reason += f"；发现错误（经 LLM 二次确认）：{detail}{suffix}"
         elif error_findings:
             reason += f"；规则标记 {len(error_findings)} 处疑似错误经 LLM 二次确认均不成立"
 
