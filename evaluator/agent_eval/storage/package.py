@@ -78,6 +78,27 @@ class DirectoryManifest(BaseModel):
     )
 
 
+def find_orphan_files(output_dir: Path, manifest: DirectoryManifest) -> list[Path]:
+    """返回 output_dir 中存在、但 directory manifest 未登记的文件。
+
+    用于检测 pack 覆盖语义失效或 package 被外部篡改导致的孤儿文件，
+    避免 silent corruption（评估了不属于本任务的内容）。_manifest.json 自身不计入。
+
+    Args:
+        output_dir: package 的 output/ 目录。
+        manifest: 该目录的 DirectoryManifest（output/_manifest.json 反序列化）。
+
+    Returns:
+        孤儿文件路径列表（已排序）。
+    """
+    recorded = {output_dir / f.path for mod in manifest.modules for f in mod.children}
+    return sorted(
+        f
+        for f in output_dir.rglob("*")
+        if f.is_file() and f.name != "_manifest.json" and f not in recorded
+    )
+
+
 class ExecutionPackage(BaseModel):
     """执行包 — 一个任务执行后产出的完整数据包。
 

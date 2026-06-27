@@ -46,6 +46,19 @@ class PackageBuilder:
         )
     """
 
+    @staticmethod
+    def _reset_output_dir(package_dir: Path) -> Path:
+        """重置 output 目录：已存在则先清空后重建，确保 pack 为覆盖语义。
+
+        同一 task-id 的 package 跨次 pack 时，旧产物里"本次源不再包含"的文件
+        会被清空，避免污染（如评 A 后评 B，B 不残留 A 的文件）。
+        """
+        output_dir = package_dir / "output"
+        if output_dir.exists():
+            shutil.rmtree(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        return output_dir
+
     def build_inline(
         self,
         task: Task,
@@ -71,10 +84,9 @@ class PackageBuilder:
         run_id = run_id or generate_run_id()
         package_id = generate_package_id(run_id, task.id)
 
-        # 创建目录
+        # 创建目录（output 覆盖语义：清空旧产物，避免跨次 pack 残留污染）
         package_dir.mkdir(parents=True, exist_ok=True)
-        output_dir = package_dir / "output"
-        output_dir.mkdir(parents=True, exist_ok=True)
+        output_dir = self._reset_output_dir(package_dir)
 
         # 复制输出文件
         for src in output_files:
@@ -189,10 +201,9 @@ class PackageBuilder:
         )
         manifest_data = collector.collect()
 
-        # 创建目录
+        # 创建目录（output 覆盖语义：清空旧产物，避免跨次 pack 残留污染）
         package_dir.mkdir(parents=True, exist_ok=True)
-        output_dir = package_dir / "output"
-        output_dir.mkdir(parents=True, exist_ok=True)
+        output_dir = self._reset_output_dir(package_dir)
 
         # 排除系统/隐藏文件（.DS_Store、Thumbs.db、._* 等）
         _ignore = shutil.ignore_patterns(".DS_Store", "Thumbs.db", "._*", "__MACOSX")
