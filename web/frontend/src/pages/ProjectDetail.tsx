@@ -10,7 +10,7 @@ import type {
   TrendPoint,
 } from "../types"
 import { fmt3, fmtMs, num, timeAgo } from "../lib/format"
-import { METRIC_EXPLAIN, METRIC_LABEL, THRESHOLDS, metricColor, runBadge } from "../lib/eval"
+import { METRIC_EXPLAIN, METRIC_LABEL, metricColor, runBadge } from "../lib/eval"
 import type { MetricKey } from "../lib/eval"
 import {
   Badge,
