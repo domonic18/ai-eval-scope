@@ -14,11 +14,15 @@ import time
 from pathlib import Path
 from typing import Any
 
+import structlog
+
 from agent_eval.config import EVALUATOR_DEFAULTS
 from agent_eval.core.types import ConstraintTier, EvalMethod, EvalStatus
 from agent_eval.evaluation.base import BaseEvaluator
 from agent_eval.evaluation.registry import registry
 from agent_eval.evaluation.text_utils import collect_file_texts, collect_text_content
+
+logger = structlog.get_logger("evaluation.commonsense")
 
 
 def _get_output_dir(sample: Any) -> Path | None:
@@ -812,10 +816,24 @@ class InfoAccuracyEvaluator(BaseEvaluator):
         )
 
         # 计分：合并 rule-based findings + LLM 分数
-        rule_errors = [f for f in findings if f["severity"] == "error"]
+        # rule-based error findings 先经 LLM 二次确认（fact_verdict）过滤正则误报
+        error_findings = [f for f in findings if f["severity"] == "error"]
+        if error_findings:
+            try:
+                rule_errors = self._confirm_findings_with_llm(
+                    error_findings, file_texts, orchestrator, evidence_dir, context
+                )
+            except Exception:
+                logger.warning(
+                    "fact_verdict 二次确认失败，保留全部规则 error（召回优先）",
+                    exc_info=True,
+                )
+                rule_errors = error_findings
+        else:
+            rule_errors = []
         rule_warnings = [f for f in findings if f["severity"] == "warning"]
 
-        # 如果 rule-based 有 error 且 LLM 分数低 → FAIL
+        # 如果 rule-based 有（经确认的）error → FAIL
         threshold = self.params.get("pass_threshold", 0.8)
         combined_score = min(avg_score, 1.0)
         passed = combined_score >= threshold and len(rule_errors) == 0
@@ -825,7 +843,9 @@ class InfoAccuracyEvaluator(BaseEvaluator):
         score_parts = [f"{k}={v:.1f}" for k, v in scores.items()]
         reason = f"知识准确性（LLM + 规则）：{', '.join(score_parts)}"
         if rule_errors:
-            reason += f"；规则检查发现 {len(rule_errors)} 处错误"
+            reason += f"；规则检查发现 {len(rule_errors)} 处错误（经 LLM 二次确认）"
+        elif error_findings:
+            reason += f"；规则标记 {len(error_findings)} 处疑似错误经 LLM 二次确认均不成立"
 
         record_path = None
         if record:
@@ -856,6 +876,67 @@ class InfoAccuracyEvaluator(BaseEvaluator):
             judge_model=record.model if record else None,
             judge_record_path=record_path,
         )
+
+    def _confirm_findings_with_llm(
+        self,
+        error_findings: list[dict[str, Any]],
+        file_texts: dict[str, str],
+        orchestrator: Any,
+        evidence_dir: Any,
+        context: dict[str, Any],
+    ) -> list[dict[str, Any]]:
+        """对规则 error findings 批量调 LLM（fact_verdict）逐条裁定，返回被确认的真错误。
+
+        被判为误报（is_real_error=false）的 finding 仍保留在原列表（写审计字段
+        _llm_confirmed/_llm_reason），但不计入返回值（即不进入 rule_errors 一票否决）。
+        调用/解析异常由调用方捕获并降级为"保留全部"（召回优先）。
+        """
+        candidates = [
+            {
+                "index": i,
+                "file": f.get("file", ""),
+                "message": f.get("message", ""),
+                "context": self._extract_finding_context(f, file_texts),
+            }
+            for i, f in enumerate(error_findings)
+        ]
+        ev_dir = evidence_dir if isinstance(evidence_dir, Path) else Path(evidence_dir)
+        _scores, record = orchestrator.judge(
+            constraint_id=self.evaluator_id,
+            sample_id=context.get("sample_id", "unknown"),
+            template_id="fact_verdict",
+            variables={
+                "title": context.get("task_input", {}).get("title", "未知标题"),
+                "subject": context.get("task_input", {}).get("subject", "未知学科"),
+                "candidates": candidates,
+            },
+            evidence_dir=ev_dir,
+            provider_name=self.params.get("llm_provider"),
+            judge_id_suffix="fact_verdict",
+        )
+
+        # verdicts 在 JudgeRecord.parsed_scores（解析后的完整 dict）
+        parsed = getattr(record, "parsed_scores", None) if record else None
+        verdicts = parsed.get("verdicts", []) if isinstance(parsed, dict) else []
+        verdict_map = {v.get("index"): v for v in verdicts if isinstance(v, dict) and "index" in v}
+
+        confirmed: list[dict[str, Any]] = []
+        for i, f in enumerate(error_findings):
+            v = verdict_map.get(i)
+            # 缺裁定 → 默认 True（召回优先，不漏报）
+            is_real = bool(v.get("is_real_error", True)) if v else True
+            f["_llm_confirmed"] = is_real
+            f["_llm_reason"] = v.get("reason", "") if v else ""
+            if is_real:
+                confirmed.append(f)
+        return confirmed
+
+    @staticmethod
+    def _extract_finding_context(finding: dict[str, Any], file_texts: dict[str, str]) -> str:
+        """提取 finding 所在文件的截断文本，供 LLM 裁定参考。"""
+        fname = finding.get("file", "")
+        text = file_texts.get(fname, "")
+        return text[: EVALUATOR_DEFAULTS.max_file_chars] if text else ""
 
 
 @registry.register("commonsense.chronological_order")

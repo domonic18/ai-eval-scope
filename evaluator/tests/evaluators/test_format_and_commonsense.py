@@ -964,6 +964,31 @@ class TestInfoAccuracyLLM:
         orch.templates.get.return_value = mock_template
         return orch
 
+    def _make_verdict_record(self, verdicts: list[dict], judge_id: str = "judge_fv_001"):
+        """fact_verdict 的 mock JudgeRecord（parsed_scores 含 verdicts）。"""
+        rec = MagicMock()
+        rec.judge_id = judge_id
+        rec.provider_name = "deepseek_judge"
+        rec.model = "deepseek-chat"
+        rec.confidence = {}
+        rec.raw_response = ""
+        rec.parsed_scores = {"verdict_quality": 9.0, "verdicts": verdicts}
+        return rec
+
+    def _make_dual_orchestrator(self, ia_result, fv_result):
+        """两次 judge 调用（info_accuracy + fact_verdict）返回不同结果的 mock。
+
+        fv_result 为 Exception 实例时，第二次 judge 抛该异常。
+        """
+        orch = MagicMock()
+        orch.judge.side_effect = [ia_result, fv_result]
+        ia_template = MagicMock()
+        d1 = MagicMock(dim_id="factual_correctness", name="事实正确性", weight=0.6)
+        d2 = MagicMock(dim_id="statement_accuracy", name="陈述准确性", weight=0.4)
+        ia_template.dimensions = [d1, d2]
+        orch.templates.get.return_value = ia_template
+        return orch
+
     def test_llm_high_score_pass(self, tmp_path: Path) -> None:
         """LLM 高分 + 无规则错误 → PASS。"""
         out = _prepare_output(tmp_path)
@@ -1036,6 +1061,96 @@ class TestInfoAccuracyLLM:
         assert result.status == EvalStatus.FAIL
         assert result.score == 0.0
         assert "规则检查发现" in result.reason
+
+    def test_constant_false_positive_filtered_by_llm(self, tmp_path: Path) -> None:
+        """规则误报（金/信息密度误匹配"金的密度"）经 LLM 二次确认过滤 → PASS。"""
+        out = _prepare_output(tmp_path)
+        # 金(金字塔) + 密度(信息密度) + 数字 → 触发"金的密度"正则误报
+        (out / "doc.html").write_text("倒金字塔结构，信息密度高。共6条。\n", encoding="utf-8")
+
+        ia_record = self._make_mock_record(errors_found=[])
+        fv_record = self._make_verdict_record(
+            [{"index": 0, "is_real_error": False, "reason": "信息密度≠金的密度"}]
+        )
+        orch = self._make_dual_orchestrator(
+            ({"factual_correctness": 10.0, "statement_accuracy": 10.0}, ia_record),
+            ({"verdict_quality": 9.0}, fv_record),
+        )
+
+        ev = registry.create("commonsense.info_accuracy")
+        result = ev.evaluate(
+            tmp_path,
+            {"judge_orchestrator": orch, "evidence_dir": tmp_path / "evidence"},
+        )
+
+        assert result.status == EvalStatus.PASS
+        assert orch.judge.call_count == 2  # info_accuracy + fact_verdict
+        const = [f for f in result.details["findings"] if f.get("check_type") == "constant"]
+        assert len(const) >= 1
+        assert all(f.get("_llm_confirmed") is False for f in const)
+        assert result.details["errors"] == 0  # 误报不计入一票否决
+
+    def test_real_error_kept_by_llm(self, tmp_path: Path) -> None:
+        """真错误（水的沸点错误）经 LLM 确认为真 → 仍 FAIL。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.html").write_text("水的沸点是 50 度。\n", encoding="utf-8")
+
+        ia_record = self._make_mock_record(errors_found=[])
+        fv_record = self._make_verdict_record(
+            [{"index": 0, "is_real_error": True, "reason": "沸点应为100"}]
+        )
+        orch = self._make_dual_orchestrator(
+            ({"factual_correctness": 10.0, "statement_accuracy": 10.0}, ia_record),
+            ({"verdict_quality": 9.0}, fv_record),
+        )
+
+        ev = registry.create("commonsense.info_accuracy")
+        result = ev.evaluate(
+            tmp_path,
+            {"judge_orchestrator": orch, "evidence_dir": tmp_path / "evidence"},
+        )
+
+        assert result.status == EvalStatus.FAIL
+        assert result.details["errors"] == 1
+
+    def test_fact_verdict_failure_keeps_all(self, tmp_path: Path) -> None:
+        """fact_verdict 调用异常 → 召回优先，error 全保留 → FAIL。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.html").write_text("水的沸点是 50 度。\n", encoding="utf-8")
+
+        ia_record = self._make_mock_record(errors_found=[])
+        orch = self._make_dual_orchestrator(
+            ({"factual_correctness": 10.0, "statement_accuracy": 10.0}, ia_record),
+            RuntimeError("fact_verdict timeout"),
+        )
+
+        ev = registry.create("commonsense.info_accuracy")
+        result = ev.evaluate(
+            tmp_path,
+            {"judge_orchestrator": orch, "evidence_dir": tmp_path / "evidence"},
+        )
+
+        assert result.status == EvalStatus.FAIL  # 召回优先
+        assert result.details["errors"] == 1
+
+    def test_no_error_skips_fact_verdict(self, tmp_path: Path) -> None:
+        """无规则 error → fact_verdict 不被调用（0 额外 LLM 调用）。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.html").write_text("正常教学内容，无事实错误。\n", encoding="utf-8")
+
+        ia_record = self._make_mock_record(errors_found=[])
+        orch = self._make_mock_orchestrator(
+            {"factual_correctness": 10.0, "statement_accuracy": 10.0}, ia_record
+        )
+
+        ev = registry.create("commonsense.info_accuracy")
+        result = ev.evaluate(
+            tmp_path,
+            {"judge_orchestrator": orch, "evidence_dir": tmp_path / "evidence"},
+        )
+
+        assert result.status == EvalStatus.PASS
+        assert orch.judge.call_count == 1  # 仅 info_accuracy
 
     def test_llm_exception_fallback(self, tmp_path: Path) -> None:
         """LLM 调用异常 → 回退到 Phase 1-2 结果。"""
