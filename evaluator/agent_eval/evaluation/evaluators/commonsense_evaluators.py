@@ -768,15 +768,14 @@ class InfoAccuracyEvaluator(BaseEvaluator):
             total_chars += len(chunk)
         combined_text = "\n\n".join(combined_parts)
 
-        # 将 Phase 1-2 的 warning 传入 LLM 供重点验证
-        warnings = [f["message"] for f in findings if f["severity"] == "warning"]
-        errors = [f["message"] for f in findings if f["severity"] == "error"]
-
+        # info_accuracy LLM 独立评估原文事实性，不注入规则可疑条目（解耦）：
+        # 对照实验证实（docs/arch/12 §3.4），把规则误报（如"水的pH 800"实为报告字数）
+        # 作为"可疑条目"传给 LLM 会严重污染整体评分（化学样本 factual 4.0→10.0）。
+        # 规则 findings 由 fact_verdict 过滤后经 rule_errors 独立计分，与 LLM 解耦。
         variables = {
             "content": combined_text[: EVALUATOR_DEFAULTS.llm_judge_combined_content_chars],
             "title": context.get("task_input", {}).get("title", "未知标题"),
             "subject": context.get("task_input", {}).get("subject", "未知学科"),
-            "warnings": warnings + errors,
         }
 
         try:

@@ -1188,6 +1188,36 @@ class TestInfoAccuracyLLM:
         assert result.status == EvalStatus.PASS
         assert orch.judge.call_count == 1  # 仅 info_accuracy
 
+    def test_info_accuracy_llm_decoupled_from_rule_findings(self, tmp_path: Path) -> None:
+        """解耦：info_accuracy LLM 调用的 variables 不含规则可疑条目。
+
+        规则 findings（含误报）由 fact_verdict 过滤后经 rule_errors 计分，
+        不再注入 LLM 整体评分输入（避免污染，见 docs/arch/12 §3.4）。
+        """
+        out = _prepare_output(tmp_path)
+        # 触发规则误报（金的密度式跨匹配：金 + 信息密度 + 数字）
+        (out / "doc.html").write_text("倒金字塔结构，信息密度高。共6条。\n", encoding="utf-8")
+
+        ia_record = self._make_mock_record(errors_found=[])
+        fv_record = self._make_verdict_record(
+            [{"index": 0, "is_real_error": False, "reason": "误报"}]
+        )
+        orch = self._make_dual_orchestrator(
+            ({"factual_correctness": 10.0, "statement_accuracy": 10.0}, ia_record),
+            ({"verdict_quality": 9.0}, fv_record),
+        )
+
+        ev = registry.create("commonsense.info_accuracy")
+        ev.evaluate(
+            tmp_path,
+            {"judge_orchestrator": orch, "evidence_dir": tmp_path / "evidence"},
+        )
+
+        # 第一次 judge = info_accuracy 整体评分，其 variables 不应含规则 findings
+        ia_variables = orch.judge.call_args_list[0].kwargs["variables"]
+        assert "warnings" not in ia_variables
+        assert "errors" not in ia_variables
+
     def test_llm_exception_fallback(self, tmp_path: Path) -> None:
         """LLM 调用异常 → 回退到 Phase 1-2 结果。"""
         out = _prepare_output(tmp_path)
