@@ -97,8 +97,6 @@ class TestGlobalRegistry:
             "commonsense.info_accuracy",
             "commonsense.chronological_order",
             "commonsense.logical_consistency",
-            "commonsense.math_formula",
-            "commonsense.unit_consistency",
         ]:
             assert registry.is_registered(eid), f"{eid} 未注册"
 

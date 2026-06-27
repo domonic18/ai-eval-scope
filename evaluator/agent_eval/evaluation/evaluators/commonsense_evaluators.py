@@ -1,10 +1,11 @@
-"""常识约束评估器（5 项）— HARD_SCORE。
+"""常识约束评估器（3 项）— HARD_SCORE。
 
-- commonsense.info_accuracy: 知识准确性（FACT_VERIFY，三层检查：内置自动 + 可配置规则 + LLM）
-- commonsense.chronological_order: 时序正确性（RULE）
-- commonsense.logical_consistency: 逻辑一致性（LLM，Sprint 4 实现骨架）
-- commonsense.math_formula: 公式正确性（MATH_VERIFY）
-- commonsense.unit_consistency: 单位一致性（RULE）
+- commonsense.info_accuracy: 知识准确性（FACT_VERIFY，规则 + fact_verdict 二次确认 + LLM）
+- commonsense.chronological_order: 时序正确性（LLM_JUDGE，评整个课件）
+- commonsense.logical_consistency: 逻辑一致性（LLM_JUDGE，评整个课件）
+
+math_formula / unit_consistency 已移除（前者易误报且 info_accuracy 已覆盖算术检查，
+后者为死代码）。
 """
 
 from __future__ import annotations
@@ -19,28 +20,21 @@ import structlog
 from agent_eval.config import EVALUATOR_DEFAULTS
 from agent_eval.core.types import ConstraintTier, EvalMethod, EvalStatus
 from agent_eval.evaluation.base import BaseEvaluator
+from agent_eval.evaluation.evaluators.quality_evaluators import BaseLLMJudgeEvaluator
 from agent_eval.evaluation.registry import registry
-from agent_eval.evaluation.text_utils import collect_file_texts, collect_text_content
+from agent_eval.evaluation.text_utils import (
+    collect_file_texts,
+    collect_text_content,
+)
+from agent_eval.evaluation.text_utils import (
+    get_output_dir as _get_output_dir,
+)
 
 logger = structlog.get_logger("evaluation.commonsense")
 
 # fact_verdict 二次确认的单批最大候选数（超过则分批调用，避免单次 prompt 过大
 # 导致 LLM 调用失败，如数学样本 98 候选一次调用即失败）
 FACT_VERDICT_BATCH_SIZE = 20
-
-
-def _get_output_dir(sample: Any) -> Path | None:
-    """从样本中提取 output 目录。"""
-    if isinstance(sample, Path):
-        return sample / "output" if sample.is_dir() else sample.parent / "output"
-    if hasattr(sample, "output_dir") and sample.output_dir is not None:
-        return Path(sample.output_dir)
-    if isinstance(sample, dict):
-        p = sample.get("package_dir") or sample.get("output_dir")
-        if p:
-            p = Path(p)
-            return p / "output" if p.is_dir() and (p / "output").exists() else p
-    return None
 
 
 def _collect_text_content(output_dir: Path) -> str:
@@ -960,66 +954,19 @@ class InfoAccuracyEvaluator(BaseEvaluator):
 
 
 @registry.register("commonsense.chronological_order")
-class ChronologicalOrderEvaluator(BaseEvaluator):
-    """时序正确性检查 — 验证时间线顺序合理。"""
+class ChronologicalOrderEvaluator(BaseLLMJudgeEvaluator):
+    """时序正确性检查 — LLM 评审整个课件的时间线/序号/步骤顺序合理性。
+
+    旧规则实现（提取年份/序号但不校验，始终 PASS）已废弃；改为 LLM-as-judge，
+    对整个课件文本评估时序一致性。LLM 不可用时降级 SKIP（不计分）。
+    """
 
     evaluator_id = "commonsense.chronological_order"
     name = "时序正确性检查"
     tier = ConstraintTier.HARD_SCORE
-    method = EvalMethod.RULE
-
-    def evaluate(self, sample: Any, context: dict[str, Any]) -> Any:
-        start = time.monotonic()
-
-        output_dir = _get_output_dir(sample)
-        if output_dir is None or not output_dir.exists():
-            elapsed = (time.monotonic() - start) * 1000
-            return self._make_result(
-                status=EvalStatus.FAIL,
-                score=0.0,
-                reason="输出目录不存在",
-                duration_ms=elapsed,
-            )
-
-        text = _collect_text_content(output_dir)
-        if not text.strip():
-            elapsed = (time.monotonic() - start) * 1000
-            return self._make_result(
-                status=EvalStatus.FAIL,
-                score=0.0,
-                reason="文档内容为空",
-                duration_ms=elapsed,
-            )
-
-        # 提取年份 — 排除持续时间模式（"100年后""500年历史"等）
-        # (?!\s*[后历史内间以来前]) — "N年后/历史/内/间/以/来/前" 是时间段，非年份
-        _YEAR_PATTERN = re.compile(r"(?:公元)?(\d{3,4})\s*年(?!\s*[后历史内间以来前])")
-        years = _YEAR_PATTERN.findall(text)
-        year_list: list[int] = []
-        if years:
-            year_list = [int(y) for y in years if 0 < int(y) <= 2100]
-            for i in range(1, len(year_list)):
-                if year_list[i] < year_list[i - 1]:
-                    # 允许回溯（如回顾历史），但标记为潜在问题
-                    pass  # 时序回溯不一定错误，暂不报告
-
-        # 提取序号
-        sequences = re.findall(r"第([一二三四五六七八九十百千\d]+)[章节步骤期]", text)
-
-        elapsed = (time.monotonic() - start) * 1000
-
-        return self._make_result(
-            status=EvalStatus.PASS,
-            score=1.0,
-            reason="时序正确性检查通过",
-            details={
-                "files_checked": _collect_file_names(output_dir),
-                "years_found": year_list[:20],
-                "sequences_found": len(sequences),
-                "content_length": len(text),
-            },
-            duration_ms=elapsed,
-        )
+    method = EvalMethod.LLM_JUDGE
+    template_id = "chronological_order"
+    pass_threshold = EVALUATOR_DEFAULTS.logical_consistency_pass_threshold
 
 
 @registry.register("commonsense.logical_consistency")
@@ -1067,8 +1014,14 @@ class LogicalConsistencyEvaluator(BaseEvaluator):
                 text, context, orchestrator, evidence_dir, output_dir, start
             )
 
-        # 降级模式：Rule-based 基本矛盾检查
-        return self._evaluate_rule_based(text, output_dir, start)
+        # LLM 不可用 → SKIP（不计分；不降级 PASS 以免虚高 CPR）
+        elapsed = (time.monotonic() - start) * 1000
+        return self._make_result(
+            status=EvalStatus.SKIP,
+            score=0.0,
+            reason="逻辑一致性检查（LLM 不可用，已跳过，不计入得分）",
+            duration_ms=elapsed,
+        )
 
     def _evaluate_with_llm(
         self,
@@ -1087,7 +1040,7 @@ class LogicalConsistencyEvaluator(BaseEvaluator):
             text = text[:max_chars] + "\n\n[...内容已截断...]"
 
         variables = {
-            "content": text[: EVALUATOR_DEFAULTS.llm_judge_content_chars],
+            "content": text[: EVALUATOR_DEFAULTS.llm_judge_combined_content_chars],
             "title": context.get("task_input", {}).get("title", "未知标题"),
         }
 
@@ -1307,360 +1260,3 @@ class LogicalConsistencyEvaluator(BaseEvaluator):
                     )
 
         return findings
-
-
-@registry.register("commonsense.math_formula")
-class MathFormulaEvaluator(BaseEvaluator):
-    """公式正确性检查 — 验证数学公式的合理性。
-
-    检查内容：
-    1. LaTeX 公式中的括号匹配（$...$ 格式）
-    2. 算术等式正确性（复用 InfoAccuracyEvaluator 的
-       _EQ_PATTERN + _eval_simple_expr，避免二元正则子表达式误报）
-    3. 符号公式校验（利用 domain_facts.math_formulas 中的 30+ 条
-       已知公式，检测文档中出现的公式是否正确）
-    """
-
-    evaluator_id = "commonsense.math_formula"
-    name = "公式正确性检查"
-    tier = ConstraintTier.HARD_SCORE
-    method = EvalMethod.MATH_VERIFY
-
-    # 复用 InfoAccuracyEvaluator 的算术正则（完整左侧，非二元子表达式）
-    _EQ_PATTERN = InfoAccuracyEvaluator._EQ_PATTERN
-    _REMAINDER_PATTERN = InfoAccuracyEvaluator._REMAINDER_PATTERN
-
-    # ─── 符号公式提取正则 ───
-
-    # 匹配 "圆的面积 S=πr²" / "长方形面积=长×宽" / "梯形面积公式：(上底+下底)×高÷2"
-    _FORMULA_NAME_PATTERN = re.compile(
-        r"([一-鿿]{2,8}(?:面积|周长|体积|表面积|侧面积))"
-        r"\s*(?:公式)?[是为]?\s*[：:＝=]?\s*"
-        r"([A-Za-z½⅓¼¾π\d+\-()×÷*/^²³·\s＝=]+?)"
-        r"(?=[，。、；\n\r]|$)"
-    )
-    _FORMULA_KW_PATTERN = re.compile(
-        r"([一-鿿]{2,8})公式"
-        r"[是为]?\s*[：:＝=]?\s*"
-        r"([A-Za-z½⅓¼¾π\d+\-()×÷*/^²³·\s＝=]+?)"
-        r"(?=[，。、；\n\r]|$)"
-    )
-
-    def evaluate(self, sample: Any, context: dict[str, Any]) -> Any:
-        start = time.monotonic()
-
-        output_dir = _get_output_dir(sample)
-        if output_dir is None or not output_dir.exists():
-            elapsed = (time.monotonic() - start) * 1000
-            return self._make_result(
-                status=EvalStatus.FAIL,
-                score=0.0,
-                reason="输出目录不存在",
-                duration_ms=elapsed,
-            )
-
-        file_texts = _collect_file_texts(output_dir)
-        if not file_texts:
-            elapsed = (time.monotonic() - start) * 1000
-            return self._make_result(
-                status=EvalStatus.FAIL,
-                score=0.0,
-                reason="文档内容为空",
-                duration_ms=elapsed,
-            )
-
-        errors: list[str] = []
-        formulas_checked = 0
-        arith_checks = 0
-        symbolic_checks = 0
-
-        for filename, text in file_texts.items():
-            # 检查 LaTeX 公式中的括号匹配
-            formula_patterns = re.findall(r"[$].+?[$]", text)
-            formulas_checked += len(formula_patterns)
-            for formula in formula_patterns:
-                if formula.count("(") != formula.count(")"):
-                    errors.append(f"{filename}: 公式括号不匹配: {formula[:50]}")
-                if formula.count("{") != formula.count("}"):
-                    errors.append(f"{filename}: 公式花括号不匹配: {formula[:50]}")
-
-            # 算术等式验证（复用完整左侧正则 + 竖式上下文跳过）
-            remainder_positions: set[int] = set()
-            for m in self._REMAINDER_PATTERN.finditer(text):
-                remainder_positions.add(m.start())
-                dividend_s, divisor_s, quotient_s, remainder_s = m.groups()
-                start_pos = max(0, m.start() - 40)
-                end_pos = min(len(text), m.end() + 40)
-                ctx_window = text[start_pos:end_pos]
-                if _VERTICAL_CALC_KEYWORDS.search(ctx_window):
-                    continue
-                try:
-                    dividend = float(dividend_s)
-                    divisor = float(divisor_s)
-                    quotient = float(quotient_s)
-                    remainder = float(remainder_s)
-                except ValueError:
-                    continue
-                if divisor == 0:
-                    continue
-                arith_checks += 1
-                expected = quotient * divisor + remainder
-                if abs(expected - dividend) > EVALUATOR_DEFAULTS.arith_tolerance:
-                    errors.append(
-                        f"{filename}: 除法余数错误 "
-                        f"{float(dividend_s):g} ÷ {float(divisor_s):g} "
-                        f"= {float(quotient_s):g} 余 {float(remainder_s):g}"
-                        f"（应为 {expected:g}）"
-                    )
-
-            for m in self._EQ_PATTERN.finditer(text):
-                if m.start() in remainder_positions:
-                    continue
-                lhs_expr, result_s = m.group(1), m.group(2)
-                start_pos = max(0, m.start() - 40)
-                end_pos = min(len(text), m.end() + 40)
-                ctx_window = text[start_pos:end_pos]
-                if _VERTICAL_CALC_KEYWORDS.search(ctx_window):
-                    continue
-                try:
-                    result_val = float(result_s)
-                except ValueError:
-                    continue
-                expected = _eval_simple_expr(lhs_expr)
-                if expected is None:
-                    continue
-                arith_checks += 1
-                if abs(expected - result_val) > EVALUATOR_DEFAULTS.arith_tolerance:
-                    errors.append(
-                        f"{filename}: 算术错误 {lhs_expr.strip()} = {result_s}（应为 {expected:g}）"
-                    )
-
-            # 符号公式校验
-            sym_errors, sym_checks = self._check_symbolic_formulas(filename, text)
-            errors.extend(sym_errors)
-            symbolic_checks += sym_checks
-
-        elapsed = (time.monotonic() - start) * 1000
-        files_checked = list(file_texts.keys())
-
-        if not errors:
-            return self._make_result(
-                status=EvalStatus.PASS,
-                score=1.0,
-                reason="公式正确性检查通过",
-                details={
-                    "files_checked": files_checked,
-                    "formulas_checked": formulas_checked,
-                    "arithmetic_checked": arith_checks,
-                    "symbolic_checked": symbolic_checks,
-                },
-                duration_ms=elapsed,
-            )
-        else:
-            return self._make_result(
-                status=EvalStatus.FAIL,
-                score=0.0,
-                reason=f"发现 {len(errors)} 处公式错误",
-                details={
-                    "errors": errors,
-                    "files_checked": files_checked,
-                    "formulas_checked": formulas_checked,
-                    "arithmetic_checked": arith_checks,
-                    "symbolic_checked": symbolic_checks,
-                },
-                duration_ms=elapsed,
-            )
-
-    # ─── 符号公式校验 ───
-
-    def _check_symbolic_formulas(self, filename: str, text: str) -> tuple[list[str], int]:
-        """利用 domain_facts 校验文档中的符号公式。
-
-        Returns:
-            (errors, checks_count)
-        """
-        from agent_eval.evaluation.evaluators.formula_normalizer import (
-            build_formula_index,
-            normalize_formula,
-            normalize_formula_name,
-        )
-
-        fact_db = _load_fact_db(subjects=["math"])
-        domain_facts = fact_db.get("domain_facts", {})
-        if not isinstance(domain_facts, dict) or "math_formulas" not in domain_facts:
-            return [], 0
-
-        formula_index = build_formula_index(domain_facts)
-        if not formula_index:
-            return [], 0
-
-        errors: list[str] = []
-        checks = 0
-        reported: set[str] = set()  # 去重
-
-        for pattern in (self._FORMULA_NAME_PATTERN, self._FORMULA_KW_PATTERN):
-            for m in pattern.finditer(text):
-                name_raw = m.group(1)
-                expr_raw = m.group(2)
-
-                norm_name = normalize_formula_name(name_raw)
-                norm_expr = normalize_formula(expr_raw)
-
-                if len(norm_expr) < 2:
-                    continue
-
-                matched = self._find_matching_formula(norm_name, formula_index)
-                if matched is None:
-                    continue
-
-                dedup_key = f"{filename}:{matched['canonical_name']}"
-                if dedup_key in reported:
-                    continue
-
-                checks += 1
-                reported.add(dedup_key)
-                canonical = matched["normalized_formula"]
-
-                if not self._formulas_match(norm_expr, canonical):
-                    errors.append(
-                        f"{filename}: 公式错误 「{name_raw}」"
-                        f"文中为 {expr_raw.strip()}，"
-                        f"正确应为 {matched['formula']}"
-                    )
-
-        return errors, checks
-
-    @staticmethod
-    def _find_matching_formula(
-        norm_name: str, formula_index: list[dict[str, Any]]
-    ) -> dict[str, Any] | None:
-        """根据归一化名称查找匹配的公式条目。
-
-        精确匹配优先，其次子串匹配（仅当唯一匹配时返回）。
-        """
-        for entry in formula_index:
-            if norm_name == entry["canonical_name"]:
-                return entry
-
-        candidates = [
-            entry
-            for entry in formula_index
-            if norm_name in entry["canonical_name"] or entry["canonical_name"] in norm_name
-        ]
-        if len(candidates) == 1:
-            return candidates[0]
-        return None
-
-    @staticmethod
-    def _formulas_match(extracted: str, canonical: str) -> bool:
-        """比较归一化后的公式表达式是否匹配。
-
-        处理：
-        - 可选的左侧变量：S=πr² 与 πr² 视为相同
-        - 等价形式：2πr=πd 中的多选项
-        """
-        if extracted == canonical:
-            return True
-
-        def _strip_lhs(f: str) -> str:
-            """去掉单字母 LHS 变量（如 S=、V=、C=）。"""
-            parts = f.split("=", 1)
-            if len(parts) == 2 and len(parts[0]) <= 2 and parts[0].isalpha():
-                return parts[1]
-            return f
-
-        if _strip_lhs(extracted) == _strip_lhs(canonical):
-            return True
-
-        # canonical 可能含多个等价形式（如 "2πr=πd"）
-        canonical_rhs = _strip_lhs(canonical)
-        extracted_rhs = _strip_lhs(extracted)
-        for alt in canonical_rhs.split("="):
-            if extracted_rhs == alt:
-                return True
-
-        return False
-
-
-@registry.register("commonsense.unit_consistency")
-class UnitConsistencyEvaluator(BaseEvaluator):
-    """单位一致性检查 — 验证文中单位使用统一、正确。"""
-
-    evaluator_id = "commonsense.unit_consistency"
-    name = "单位一致性检查"
-    tier = ConstraintTier.HARD_SCORE
-    method = EvalMethod.RULE
-
-    # 已知的不合理单位组合
-    INVALID_COMBOS = [
-        (r"(\d+\.?\d*)\s*m/s(?!\²)", "速度单位 m/s 合理"),
-        (r"(\d+\.?\d*)\s*m/s²", "加速度单位 m/s² 合理"),
-        (r"(\d+\.?\d*)\s*kg·m/s²", "力的单位 kg·m/s² (牛顿) 合理"),
-    ]
-
-    # 常见单位不一致模式
-    INCONSISTENCY_PATTERNS = [
-        # 同一物理量使用不同单位制
-        (r"(\d+\.?\d*)\s*厘米.*?(\d+\.?\d*)\s*米", "同一文本混合使用厘米和米"),
-        (r"(\d+\.?\d*)\s*千克.*?(\d+\.?\d*)\s*克(?!罗)", "同一文本混合使用千克和克"),
-    ]
-
-    def evaluate(self, sample: Any, context: dict[str, Any]) -> Any:
-        start = time.monotonic()
-
-        output_dir = _get_output_dir(sample)
-        if output_dir is None or not output_dir.exists():
-            elapsed = (time.monotonic() - start) * 1000
-            return self._make_result(
-                status=EvalStatus.FAIL,
-                score=0.0,
-                reason="输出目录不存在",
-                duration_ms=elapsed,
-            )
-
-        text = _collect_text_content(output_dir)
-        if not text.strip():
-            elapsed = (time.monotonic() - start) * 1000
-            return self._make_result(
-                status=EvalStatus.FAIL,
-                score=0.0,
-                reason="文档内容为空",
-                duration_ms=elapsed,
-            )
-
-        errors: list[str] = []
-
-        # 检查明显的单位错误（如密度用 kg/m³ 是正确的，kg/m 是错误的）
-        # 检查单位符号后是否有多余字符或缺失上标
-        density_wrong = re.findall(r"密度.*?(\d+\.?\d*)\s*kg/m(?!²|³)", text)
-        if density_wrong:
-            errors.append("密度单位可能错误（应为 kg/m³ 或 kg/m²）")
-
-        # 检查重力加速度单位
-        g_wrong = re.findall(r"g\s*[=≈]\s*(\d+\.?\d*)\s*m/s(?![²³])", text)
-        if g_wrong:
-            errors.append("重力加速度单位可能错误（应为 m/s² 而非 m/s）")
-
-        elapsed = (time.monotonic() - start) * 1000
-
-        files_checked = _collect_file_names(output_dir)
-        if not errors:
-            return self._make_result(
-                status=EvalStatus.PASS,
-                score=1.0,
-                reason="单位一致性检查通过",
-                details={"files_checked": files_checked, "content_length": len(text)},
-                duration_ms=elapsed,
-            )
-        else:
-            return self._make_result(
-                status=EvalStatus.FAIL,
-                score=0.0,
-                reason=f"发现 {len(errors)} 处单位问题",
-                details={
-                    "errors": errors,
-                    "files_checked": files_checked,
-                    "content_length": len(text),
-                },
-                duration_ms=elapsed,
-            )

@@ -24,10 +24,10 @@ from agent_eval.core.exceptions import (
 )
 from agent_eval.core.types import ConstraintTier, EvalMethod, EvalStatus
 from agent_eval.evaluation.base import BaseEvaluator
-from agent_eval.evaluation.evaluators.commonsense_evaluators import _get_output_dir
 from agent_eval.evaluation.models import ConstraintResult
 from agent_eval.evaluation.registry import registry
 from agent_eval.evaluation.text_utils import collect_text_content
+from agent_eval.evaluation.text_utils import get_output_dir as _get_output_dir
 
 # ─── LLM Judge 评估器 ───
 
@@ -41,6 +41,7 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
     """
 
     template_id: str = ""  # 子类必须设置
+    pass_threshold: float | None = None  # HARD_SCORE 二值阈值；None=连续分（SOFT/PREF）
 
     def evaluate(self, sample: Any, context: dict[str, Any]) -> ConstraintResult:
         import time
@@ -195,14 +196,25 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
             judge_id = record.judge_id
             record_path = f"evidence/{judge_id}.json"
 
+        # HARD_SCORE（pass_threshold 设值）→ 二值；SOFT/PREF（None）→ 连续分
+        if self.pass_threshold is not None:
+            passed = normalized >= self.pass_threshold
+            status = EvalStatus.PASS if passed else EvalStatus.FAIL
+            score = 1.0 if passed else 0.0
+        else:
+            status = (
+                EvalStatus.PASS
+                if normalized >= EVALUATOR_DEFAULTS.llm_judge_pass_threshold
+                else EvalStatus.FAIL
+            )
+            score = normalized
+
         return ConstraintResult(
             constraint_id=self.evaluator_id,
             name=self.name,
             tier=self.tier,
-            status=EvalStatus.PASS
-            if normalized >= EVALUATOR_DEFAULTS.llm_judge_pass_threshold
-            else EvalStatus.FAIL,
-            score=normalized,
+            status=status,
+            score=score,
             reason=reason,
             details=details,
             duration_ms=elapsed,

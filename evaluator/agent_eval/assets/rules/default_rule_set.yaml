@@ -28,3 +28,28 @@ rules:
       allowed_formats: ["md", "html"]
     weight: 1.0
     penalty_on_fail: -3
+
+  # ─── 常识门控（commonsense）— 可按需 enabled: false 禁用某项 ───
+  - id: COMMON_INFO
+    name: "知识准确性"
+    dimension: functional
+    stage: commonsense_gate
+    evaluator: commonsense.info_accuracy
+    weight: 1.0
+    enabled: true
+
+  - id: COMMON_CHRONO
+    name: "时序正确性"
+    dimension: functional
+    stage: commonsense_gate
+    evaluator: commonsense.chronological_order
+    weight: 1.0
+    enabled: true   # 不关注时序的课件改 false 即禁用
+
+  - id: COMMON_LOGIC
+    name: "逻辑一致性"
+    dimension: functional
+    stage: commonsense_gate
+    evaluator: commonsense.logical_consistency
+    weight: 1.0
+    enabled: true

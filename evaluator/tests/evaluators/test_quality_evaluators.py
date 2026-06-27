@@ -287,18 +287,16 @@ class TestThreeStageCascade:
         assert len(quality_stage) == 1
         assert len(quality_stage[0].evaluators) == 5  # 5 llm
 
-    def test_17_evaluators_registered(self) -> None:
-        """12 项评估器全部注册。"""
+    def test_15_evaluators_registered(self) -> None:
+        """10 项评估器全部注册。"""
         expected = [
             # 格式（2）
             "format.response_format",
             "format.html_validity",
-            # 常识（5）
+            # 常识（3）
             "commonsense.info_accuracy",
             "commonsense.chronological_order",
             "commonsense.logical_consistency",
-            "commonsense.math_formula",
-            "commonsense.unit_consistency",
             # 软约束（2）
             "soft.teaching_logic",
             "soft.content_diversity",
@@ -307,7 +305,7 @@ class TestThreeStageCascade:
             "pref.depth_preference",
             "pref.request_fulfillment",
         ]
-        assert len(expected) == 12
+        assert len(expected) == 10
         for eval_id in expected:
             e = registry.create(eval_id, {})
             assert e is not None, f"评估器 {eval_id} 未注册"
@@ -496,7 +494,7 @@ class TestFullCascadeEndToEnd:
         assert result.stage_results["format"].status == EvalStatus.FAIL
         assert result.stage_results["commonsense"].status == EvalStatus.SKIP
         assert result.stage_results["quality"].status == EvalStatus.SKIP
-        assert result.s_format == -3.0
+        assert result.s_format == 0.0  # 归一化后 format 失败不惩罚（0，非 -3）
         # 短路后 soft/pref 得 0 分
         assert result.s_soft == 0.0
         assert result.s_pref == 0.0

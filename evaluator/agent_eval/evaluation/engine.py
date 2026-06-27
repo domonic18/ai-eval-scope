@@ -77,31 +77,41 @@ class PipelineEngine:
         self._build_stages()
 
     def apply_rule_set_params(self, rule_set: Any) -> None:
-        """用 RuleSet 中的 params 覆盖已创建评估器的参数。
+        """用 RuleSet 的 params 覆盖评估器参数，并按 enabled 过滤评估器。
 
-        当 RuleSet 指定了评估器参数时（如 max: 30），覆盖默认管线中的硬编码默认值。
+        - params：RuleSet 指定的参数覆盖默认值（如 max: 30）。
+        - enabled：RuleSet 显式 enabled: false 的评估器从管线移除（不评估、不计分）。
+          未在 RuleSet 中定义的评估器默认启用（向后兼容）。
         """
         if rule_set is None or not hasattr(rule_set, "rules"):
             return
 
-        # 建立 evaluator_id → params 映射
-        rule_params: dict[str, dict[str, Any]] = {}
+        # 建立 evaluator_id → (params, enabled) 映射
+        rule_map: dict[str, dict[str, Any]] = {}
         for rule in rule_set.rules:
-            if hasattr(rule, "evaluator") and hasattr(rule, "params"):
-                if rule.params:
-                    rule_params[rule.evaluator] = rule.params
+            if hasattr(rule, "evaluator") and rule.evaluator:
+                rule_map[rule.evaluator] = {
+                    "params": rule.params if hasattr(rule, "params") and rule.params else {},
+                    "enabled": getattr(rule, "enabled", True),
+                }
 
-        if not rule_params:
+        if not rule_map:
             return
 
-        # 遍历所有阶段中的评估器，合并参数
+        # 遍历所有阶段：合并 params + 过滤 enabled=false
         for stage in self.stages:
+            kept: list[Any] = []
             for evaluator in stage.evaluators:
                 eid = evaluator.evaluator_id
-                if eid in rule_params:
-                    # 合并：RuleSet params 覆盖默认 params
-                    merged = {**evaluator.params, **rule_params[eid]}
-                    evaluator.setup(merged)
+                cfg = rule_map.get(eid)
+                if cfg is not None:
+                    if not cfg["enabled"]:
+                        continue  # 显式禁用，移除
+                    if cfg["params"]:
+                        merged = {**evaluator.params, **cfg["params"]}
+                        evaluator.setup(merged)
+                kept.append(evaluator)
+            stage.evaluators = kept
 
     def _build_stages(self) -> None:
         """根据配置构建级联阶段。"""
@@ -234,8 +244,11 @@ class PipelineEngine:
         # 默认空（非视觉场景不影响 key），调用方按需注入 vision_snapshot_hash。
         vision_hash = context.get("vision_snapshot_hash", "")
         llm_signature = context.get("llm_signature", "")
+        # 内容指纹（pack 时算）：内容变 → content_hash 变 → cache key 变 → 自动重新评估，
+        # 彻底避免「重新打包但命中陈旧缓存」的问题。
+        content_hash = context.get("content_hash", "")
         content_str = (
-            f"{content}:{rule_version}:{vision_hash}:{llm_signature}:"
+            f"{content}:{rule_version}:{vision_hash}:{llm_signature}:{content_hash}:"
             f"{json.dumps(context.get('constraints', {}), sort_keys=True)}"
         )
         return hashlib.sha256(content_str.encode()).hexdigest()
@@ -337,8 +350,6 @@ def build_default_pipeline(
                     EvaluatorConfig("commonsense.info_accuracy", {}),
                     EvaluatorConfig("commonsense.chronological_order"),
                     EvaluatorConfig("commonsense.logical_consistency"),
-                    EvaluatorConfig("commonsense.math_formula"),
-                    EvaluatorConfig("commonsense.unit_consistency"),
                 ],
             ),
             StageConfig(

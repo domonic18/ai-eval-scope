@@ -18,8 +18,28 @@ from __future__ import annotations
 import re
 from html.parser import HTMLParser
 from pathlib import Path
+from typing import Any
 
 from agent_eval.config import EVALUATOR_DEFAULTS
+
+
+def get_output_dir(sample: Any) -> Path | None:
+    """从样本中提取 output 目录。
+
+    评估器通用工具，置于 text_utils 以避免 commonsense_evaluators 与
+    quality_evaluators 之间的循环依赖。
+    """
+    if isinstance(sample, Path):
+        return sample / "output" if sample.is_dir() else sample.parent / "output"
+    if hasattr(sample, "output_dir") and sample.output_dir is not None:
+        return Path(sample.output_dir)
+    if isinstance(sample, dict):
+        p = sample.get("package_dir") or sample.get("output_dir")
+        if p:
+            p = Path(p)
+            return p / "output" if p.is_dir() and (p / "output").exists() else p
+    return None
+
 
 # 其内容应整体丢弃的标签（连同子内容）。这些标签都有配对的关闭标签，可安全用
 # 深度计数丢弃。注意：自闭合无内容标签（meta/link/br/hr 等）**不放入此集合**——它们
