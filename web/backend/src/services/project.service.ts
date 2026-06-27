@@ -5,6 +5,8 @@
 import { Project } from "@prisma/client"
 import { ProjectRepository } from "../repositories/project.repository"
 import { AuditService } from "./audit.service"
+import { getObjectStorage } from "../infra/objectStorage"
+import { getLogger } from "../infra/logger"
 import { PlatformError } from "../middleware/errorHandler"
 import { slugify } from "../utils/slug"
 import type { Tenant } from "../repositories/base.repository"
@@ -27,6 +29,7 @@ export interface ProjectService {
   create: (input: ProjectCreateInput) => Promise<Project>
   update: (projectId: string, patch: ProjectPatch) => Promise<Project | null>
   setArchived: (projectId: string, archived: boolean) => Promise<Project | null>
+  delete: (projectId: string) => Promise<void>
 }
 
 export function createProjectService(tenant: Tenant): ProjectService {
@@ -112,5 +115,30 @@ export function createProjectService(tenant: Tenant): ProjectService {
     return repo.findByIdSafe(projectId)
   }
 
-  return { list, get, create, update, setArchived }
+  async function deleteProject(projectId: string): Promise<void> {
+    const existing = await repo.findByIdSafe(projectId)
+    if (!existing) throw new PlatformError("project not found", { status: 404, code: "NOT_FOUND" })
+    const objectKeys = await repo.deleteProject(projectId)
+    // 对象存储清理：best-effort，失败仅 warn（DB 已删，孤儿文件可后续清理）
+    if (objectKeys.length) {
+      try {
+        await getObjectStorage().deleteObjects(objectKeys)
+      } catch (err) {
+        getLogger().warn(
+          { projectId, count: objectKeys.length, error: (err as Error).message },
+          "project_delete_objects_failed",
+        )
+      }
+    }
+    await AuditService.log({
+      orgId: tenant.orgId,
+      actorUserId: tenant.userId,
+      action: "project.delete",
+      targetType: "project",
+      targetId: projectId,
+      metadata: { slug: existing.slug, name: existing.name },
+    })
+  }
+
+  return { list, get, create, update, setArchived, delete: deleteProject }
 }

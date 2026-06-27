@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom"
 import { api } from "../api/client"
 import type { ApiKeySafe, IssuedApiKey, RunSummary, TrendPoint } from "../types"
 import { fmt3, fmtMs, num, timeAgo } from "../lib/format"
-import { METRIC_EXPLAIN, THRESHOLDS, metricColor, runBadge } from "../lib/eval"
+import { METRIC_EXPLAIN, METRIC_LABEL, THRESHOLDS, metricColor, runBadge } from "../lib/eval"
 import type { MetricKey } from "../lib/eval"
 import {
   Badge,
@@ -80,7 +80,6 @@ export default function ProjectDetail() {
   }, [trends])
   const latest = trendsAsc[trendsAsc.length - 1]
   const prev = trendsAsc[trendsAsc.length - 2]
-  const condR = runs[0]?.condR
 
   const deltaOf = (cur: number | undefined, prevV: number | undefined, key: MetricKey) => {
     if (cur == null) return null
@@ -142,34 +141,26 @@ export default function ProjectDetail() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(4,1fr)",
+              gridTemplateColumns: "repeat(3,1fr)",
               gap: 14,
               marginBottom: 16,
             }}
           >
-            {(["DR", "CPR", "Reward", "CondR"] as MetricKey[]).map((k) => {
-              const val =
-                k === "CondR"
-                  ? condR
-                  : k === "DR"
-                    ? latest?.DR
-                    : k === "CPR"
-                      ? latest?.CPR
-                      : latest?.Reward
-              const prevVal =
-                !prev || k === "CondR"
-                  ? undefined
-                  : k === "DR"
-                    ? prev.DR
-                    : k === "CPR"
-                      ? prev.CPR
-                      : prev.Reward
+            {(["DR", "CPR", "Reward"] as MetricKey[]).map((k) => {
+              const val = k === "DR" ? latest?.DR : k === "CPR" ? latest?.CPR : latest?.Reward
+              const prevVal = !prev
+                ? undefined
+                : k === "DR"
+                  ? prev.DR
+                  : k === "CPR"
+                    ? prev.CPR
+                    : prev.Reward
               return (
                 <Metric
                   key={k}
-                  label={k}
+                  label={METRIC_LABEL[k]}
                   value={fmt3(val)}
-                  valueColor={k === "CondR" ? undefined : metricColor(k, val)}
+                  valueColor={metricColor(k, val)}
                   explain={METRIC_EXPLAIN[k]}
                   foot={deltaOf(val, prevVal, k)}
                 />
@@ -233,9 +224,9 @@ export default function ProjectDetail() {
 /** 趋势折线（DR/CPR/Reward）+ 图例。 */
 function LineTrendSVG({ trends }: { trends: TrendPoint[] }) {
   const series = [
-    { name: "DR", color: "var(--success)", data: trends.map((t) => t.DR) },
-    { name: "CPR", color: "var(--signal)", data: trends.map((t) => t.CPR) },
-    { name: "Reward", color: "var(--accent)", data: trends.map((t) => t.Reward) },
+    { name: METRIC_LABEL.DR, color: "var(--success)", data: trends.map((t) => t.DR) },
+    { name: METRIC_LABEL.CPR, color: "var(--signal)", data: trends.map((t) => t.CPR) },
+    { name: METRIC_LABEL.Reward, color: "var(--accent)", data: trends.map((t) => t.Reward) },
   ]
   // 动态导入避免循环：这里直接用内联 SVG（与 ui/Chart 一致）
   const W = 720
@@ -316,12 +307,12 @@ function runColumns() {
     },
     {
       key: "dr",
-      title: "DR",
+      title: METRIC_LABEL.DR,
       num: true,
       render: (r: RunSummary) => <span className={r.dr >= 0.95 ? "t-add" : ""}>{fmt3(r.dr)}</span>,
     },
-    { key: "cpr", title: "CPR", num: true, render: (r: RunSummary) => fmt3(r.cpr) },
-    { key: "avgReward", title: "Reward", num: true, render: (r: RunSummary) => fmt3(r.avgReward) },
+    { key: "cpr", title: METRIC_LABEL.CPR, num: true, render: (r: RunSummary) => fmt3(r.cpr) },
+    { key: "avgReward", title: METRIC_LABEL.Reward, num: true, render: (r: RunSummary) => fmt3(r.avgReward) },
     {
       key: "createdAt",
       title: "时间",
@@ -878,6 +869,17 @@ function DangerPanel({
     }
   }
 
+  async function doDelete() {
+    try {
+      await api.deleteProject(projectId)
+      toast.success("项目已删除")
+      setDeleteOpen(false)
+      onArchived()
+    } catch (e) {
+      toast.error("删除失败：" + ((e as Error).message ?? ""))
+    }
+  }
+
   return (
     <>
       <h3 style={{ fontSize: 16, fontWeight: 650, marginBottom: 4 }}>危险区</h3>
@@ -941,14 +943,7 @@ function DangerPanel({
         footer={
           <>
             <Button onClick={() => setDeleteOpen(false)}>取消</Button>
-            <Button
-              variant="danger"
-              disabled={confirmSlug !== slug}
-              onClick={() => {
-                toast.info("删除项目接口待后端接入")
-                setDeleteOpen(false)
-              }}
-            >
+            <Button variant="danger" disabled={confirmSlug !== slug} onClick={doDelete}>
               永久删除
             </Button>
           </>

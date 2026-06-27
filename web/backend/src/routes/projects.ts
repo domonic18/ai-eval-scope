@@ -1,9 +1,10 @@
 /**
  * 项目管理路由（/api/v1/projects）。
- *  - GET   /:id            详情
- *  - PATCH /:id            更新
- *  - POST  /:id/archive    归档（owner）
- *  - POST  /:id/unarchive  恢复（owner）
+ *  - GET    /:id            详情
+ *  - PATCH  /:id            更新
+ *  - POST   /:id/archive    归档（owner）
+ *  - POST   /:id/unarchive  恢复（owner）
+ *  - DELETE /:id            永久删除（owner；级联运行/样本/制品 + 清理对象存储）
  *
  * projectGuard 解析 :id → 校验归属与成员关系 → 注入 req.tenant（含 projectId）。
  */
@@ -97,6 +98,17 @@ router.post(
   wrap(async (req, res) => {
     const svc = createProjectService(req.tenant!)
     res.json({ project: await svc.setArchived(req.params.id, false) })
+  }),
+)
+
+router.delete(
+  "/:id",
+  requireAuth,
+  projectGuard({ role: "owner" }),
+  wrap(async (req, res) => {
+    const svc = createProjectService(req.tenant!)
+    await svc.delete(req.params.id)
+    res.json({ ok: true })
   }),
 )
 

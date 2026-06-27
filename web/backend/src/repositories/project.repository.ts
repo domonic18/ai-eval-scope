@@ -82,6 +82,22 @@ class ProjectRepository extends BaseRepository {
       data: { archivedAt: archived ? new Date() : null },
     })
   }
+
+  /**
+   * 删除项目：事务内先取该项目全部制品 objectKey，再 project.delete
+   * （DB 级联自动删 runs/samples/constraint_results/artifacts/api_keys 行）。
+   * 返回待清理的 objectKeys。归属由 projectGuard + service.findByIdSafe 校验。
+   */
+  async deleteProject(projectId: string): Promise<string[]> {
+    return this.prisma.$transaction(async (tx) => {
+      const arts = await tx.artifact.findMany({
+        where: { projectId },
+        select: { objectKey: true },
+      })
+      await tx.project.delete({ where: { id: projectId } })
+      return arts.map((a) => a.objectKey)
+    })
+  }
 }
 
 export { ProjectRepository }

@@ -4,6 +4,9 @@
  */
 
 import { PlatformError } from "../middleware/errorHandler"
+import { getLogger } from "../infra/logger"
+import { getObjectStorage } from "../infra/objectStorage"
+import { AuditService } from "./audit.service"
 import { QueryRepository, type RunListFilter } from "../repositories/query.repository"
 import type { Tenant } from "../repositories/base.repository"
 
@@ -20,7 +23,9 @@ export interface QueryService {
   runDetail: (
     projectId: string,
     runId: string,
-  ) => Promise<NonNullable<Awaited<ReturnType<QueryRepository["runDetail"]>>>>
+  ) => Promise<
+    NonNullable<Awaited<ReturnType<QueryRepository["runDetail"]>>> & { canDelete: boolean }
+  >
   sampleDetail: (
     projectId: string,
     sampleId: string,
@@ -28,6 +33,7 @@ export interface QueryService {
   artifactMeta: (
     artifactId: string,
   ) => Promise<{ objectKey: string; contentType: string; filename: string }>
+  deleteRun: (runId: string) => Promise<void>
 }
 
 export function createQueryService(tenant: Tenant): QueryService {
@@ -36,7 +42,7 @@ export function createQueryService(tenant: Tenant): QueryService {
   const runDetail: QueryService["runDetail"] = async (projectId, runId) => {
     const r = await repo.runDetail(projectId, runId)
     if (!r) throw new PlatformError("run not found", { status: 404, code: "NOT_FOUND" })
-    return r
+    return { ...r, canDelete: tenant.role === "owner" }
   }
   const sampleDetail: QueryService["sampleDetail"] = async (projectId, sampleId) => {
     const s = await repo.sampleDetail(projectId, sampleId)
@@ -54,6 +60,32 @@ export function createQueryService(tenant: Tenant): QueryService {
     }
   }
 
+  const deleteRun: QueryService["deleteRun"] = async (runId) => {
+    // 先取 run 元信息（校验存在性 + 归属 + 审计 metadata），再删
+    const run = await repo.runDetail(tenant.projectId!, runId)
+    if (!run) throw new PlatformError("run not found", { status: 404, code: "NOT_FOUND" })
+    const objectKeys = await repo.deleteRun(runId)
+    // 对象存储清理：best-effort，失败仅 warn（DB 已删、走势以 DB 为准）
+    if (objectKeys.length) {
+      try {
+        await getObjectStorage().deleteObjects(objectKeys)
+      } catch (err) {
+        getLogger().warn(
+          { runId, count: objectKeys.length, error: (err as Error).message },
+          "run_delete_objects_failed",
+        )
+      }
+    }
+    await AuditService.log({
+      actorUserId: tenant.userId,
+      orgId: tenant.orgId,
+      action: "run.delete",
+      targetType: "run",
+      targetId: runId,
+      metadata: { projectId: tenant.projectId, externalRunId: run.externalRunId },
+    })
+  }
+
   return {
     dashboard: () => repo.listProjectsDashboard(),
     listRuns: (pid, f) => repo.listRuns(pid, f),
@@ -61,5 +93,6 @@ export function createQueryService(tenant: Tenant): QueryService {
     runDetail,
     sampleDetail,
     artifactMeta,
+    deleteRun,
   }
 }

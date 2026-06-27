@@ -49,12 +49,15 @@ class QueryRepository extends BaseRepository {
         dr: number | null
         cpr: number | null
         avg_reward: number | null
+        owner_name: string | null
       }>
     >(Prisma.sql`
       SELECT p.id, p.name, p.slug, p.description, p.archived_at, p.created_at,
              COALESCE(r_cnt.run_count, 0)::bigint AS run_count,
-             lr.latest_run_id, lr.latest_created_at, lr.dr, lr.cpr, lr.avg_reward
+             lr.latest_run_id, lr.latest_created_at, lr.dr, lr.cpr, lr.avg_reward,
+             COALESCE(u.name, u.email) AS owner_name
       FROM projects p
+      LEFT JOIN users u ON u.id = p.created_by
       LEFT JOIN (
         SELECT project_id, COUNT(*)::bigint AS run_count FROM runs GROUP BY project_id
       ) r_cnt ON r_cnt.project_id = p.id
@@ -81,6 +84,7 @@ class QueryRepository extends BaseRepository {
             avgReward: r.avg_reward,
           }
         : null,
+      ownerName: r.owner_name,
     }))
   }
 
@@ -170,6 +174,22 @@ class QueryRepository extends BaseRepository {
     return this.prisma.artifact.findFirst({
       where: { id: artifactId, project: { orgId } },
       select: { id: true, objectKey: true, contentType: true, originalName: true, kind: true },
+    })
+  }
+
+  /**
+   * 删除运行：事务内先取该 run 全部制品的 objectKey，再 run.delete
+   * （DB 级联自动删 samples/constraint_results/artifacts 行）。返回待清理的 objectKeys。
+   * 归属由 runGuard 校验，此处信任 runId。
+   */
+  async deleteRun(runId: string): Promise<string[]> {
+    return this.prisma.$transaction(async (tx) => {
+      const arts = await tx.artifact.findMany({
+        where: { runId },
+        select: { objectKey: true },
+      })
+      await tx.run.delete({ where: { id: runId } })
+      return arts.map((a) => a.objectKey)
     })
   }
 }

@@ -89,6 +89,9 @@ export const api = {
   async archiveProject(projectId: string) {
     return (await http.post(`/projects/${projectId}/archive`)).data.project
   },
+  async deleteProject(projectId: string) {
+    return (await http.delete(`/projects/${projectId}`)).data
+  },
   async createOrg(name: string) {
     return (await http.post("/orgs", { name })).data.org as {
       id: string
@@ -155,6 +158,9 @@ export const api = {
   },
   async sampleDetail(runId: string, sampleId: string) {
     return (await http.get(`/runs/${runId}/samples/${sampleId}`)).data.sample
+  },
+  async deleteRun(runId: string) {
+    return (await http.delete(`/runs/${runId}`)).data
   },
   async listKeys(projectId: string) {
     return (await http.get(`/projects/${projectId}/keys`)).data.keys
