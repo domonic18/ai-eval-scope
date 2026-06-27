@@ -110,6 +110,42 @@ class TestHtmlValidityEvaluator:
         result = ev.evaluate(tmp_path, {})
         assert result.status == EvalStatus.FAIL
 
+    def test_text_quotes_not_false_positive(self, tmp_path: Path) -> None:
+        """正文含奇数个文本双引号（不成对的强调）但标签结构完整 → 有效（核心回归）。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.html").write_text(
+            '<html><body><p>正文含"范式"和电场"等术语</p></body></html>',
+            encoding="utf-8",
+        )
+
+        ev = registry.create("format.html_validity")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.PASS
+
+    def test_unclosed_attribute_quote(self, tmp_path: Path) -> None:
+        """属性引号未闭合（解析器吞掉后续标签）→ 无效。"""
+        out = _prepare_output(tmp_path)
+        (out / "bad.html").write_text(
+            '<html><body><div class="foo>内容</div></body></html>',
+            encoding="utf-8",
+        )
+
+        ev = registry.create("format.html_validity")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.FAIL
+
+    def test_illegal_nesting(self, tmp_path: Path) -> None:
+        """标签非法嵌套（<b><i></b></i>）→ 无效。"""
+        out = _prepare_output(tmp_path)
+        (out / "bad.html").write_text(
+            "<html><body><b><i>text</b></i></body></html>",
+            encoding="utf-8",
+        )
+
+        ev = registry.create("format.html_validity")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.FAIL
+
 
 # ─── 常识评估器 ───
 

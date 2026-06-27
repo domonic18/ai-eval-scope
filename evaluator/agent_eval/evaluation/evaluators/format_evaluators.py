@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-import re
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +14,55 @@ from agent_eval.config import EVALUATOR_DEFAULTS
 from agent_eval.core.types import ConstraintTier, EvalMethod, EvalStatus
 from agent_eval.evaluation.base import BaseEvaluator
 from agent_eval.evaluation.registry import registry
+
+
+class _TagStackValidator(HTMLParser):
+    """校验 HTML 标签嵌套平衡（void 元素不需闭合）。
+
+    替代字符串级引号奇偶计数，从语义层判断结构有效性：文本内容/JS 里的引号
+    不再干扰，且能抓「标签未闭合 / 非法嵌套 / 属性引号未闭合（经栈不平衡间接）」。
+    """
+
+    _VOID = {
+        "area",
+        "base",
+        "br",
+        "col",
+        "embed",
+        "hr",
+        "img",
+        "input",
+        "link",
+        "meta",
+        "param",
+        "source",
+        "track",
+        "wbr",
+    }
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.stack: list[str] = []
+        self.errors: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag not in self._VOID:
+            self.stack.append(tag)
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in self._VOID:
+            return  # void 元素无需闭合
+        if self.stack and self.stack[-1] == tag:
+            self.stack.pop()
+        elif tag in self.stack:
+            # 非法嵌套：弹出至匹配项，记录中间未闭合标签
+            while self.stack and self.stack[-1] != tag:
+                self.errors.append(f"<{self.stack[-1]}> 未闭合")
+                self.stack.pop()
+            if self.stack:
+                self.stack.pop()
+        else:
+            self.errors.append(f"多余的闭合标签 </{tag}>")
 
 
 @registry.register("format.response_format")
@@ -245,20 +294,17 @@ class HtmlValidityEvaluator(BaseEvaluator):
             errors.append(f"{filename}: 不包含 HTML 标签")
             return {"valid": False, "errors": errors}
 
-        # 检查关键标签是否闭合
-        for tag in ["html", "head", "body"]:
-            open_tag = f"<{tag}"
-            close_tag = f"</{tag}>"
-            has_open = bool(re.search(open_tag, lower))
-            has_close = close_tag in lower
-            if has_open and not has_close:
-                errors.append(f"{filename}: <{tag}> 标签未闭合")
-
-        # 检查常见自闭合标签误用（简单检查）
-        # 检查是否存在严重的不匹配引号
-        double_quotes = content.count('"') - content.count('\\"')
-        if double_quotes % 2 != 0:
-            errors.append(f"{filename}: 引号不匹配（奇数个双引号）")
+        # 标签嵌套平衡校验（解析器结构级，替代字符串级引号奇偶计数）
+        validator = _TagStackValidator()
+        try:
+            validator.feed(content)
+            validator.close()
+        except Exception as e:  # noqa: BLE001 — 解析级异常统一上报
+            errors.append(f"{filename}: HTML 解析失败: {e}")
+        if validator.errors:
+            errors.extend(validator.errors)
+        if validator.stack:
+            errors.append(f"{filename}: 未闭合标签 {validator.stack}")
 
         return {"valid": len(errors) == 0, "errors": errors}
 
