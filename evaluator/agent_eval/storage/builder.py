@@ -168,6 +168,7 @@ class PackageBuilder:
         run_id: str | None = None,
         status: PackageStatus = PackageStatus.SUCCESS,
         metadata: dict[str, Any] | None = None,
+        content_hash: str | None = None,
     ) -> Path:
         """目录模式 — 自动遍历目录结构打包。
 
@@ -228,6 +229,7 @@ class PackageBuilder:
             package_id=package_id,
             created_at=datetime.now(UTC).isoformat(),
             task_id=task.id,
+            content_hash=content_hash,
             sut_config_id="manual",
             status=status,
         )

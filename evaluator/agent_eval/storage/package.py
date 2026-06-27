@@ -24,6 +24,9 @@ class PackageManifest(BaseModel):
     package_id: str = Field(description="执行包唯一标识")
     created_at: str = Field(description="创建时间（ISO 8601）")
     task_id: str = Field(description="任务 ID")
+    content_hash: str | None = Field(
+        default=None, description="源内容指纹（SHA256 前 8 位，溯源/版本标记，不参与 task_id）"
+    )
     sut_config_id: str = Field(default="manual", description="SUT 配置标识")
     status: PackageStatus = Field(default=PackageStatus.SUCCESS, description="执行状态")
 

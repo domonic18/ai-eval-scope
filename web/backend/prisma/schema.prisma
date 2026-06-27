@@ -157,7 +157,8 @@ model Sample {
   id                String             @id @default(uuid())
   runId             String             @map("run_id")
   projectId         String             @map("project_id") // 反范式便于隔离过滤
-  externalSampleId  String             @map("external_sample_id") // task_id/sample_id
+  externalSampleId  String             @map("external_sample_id") // task_id/sample_id（逻辑课件标识，跨版本稳定）
+  contentHash       String?            @map("content_hash") // 内容指纹（版本标记，不参与唯一键，详见 docs/arch/13）
   status            String
   sFormat           Float              @map("s_format")
   sCommon           Float              @map("s_common")

@@ -37,6 +37,7 @@ export interface RunEventData {
 export interface SampleEventData {
   external_run_id: string
   external_sample_id: string
+  content_hash?: string | null
   status?: string
   s_format: number
   s_common: number

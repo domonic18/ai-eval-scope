@@ -52,6 +52,8 @@ class EvalResult:
     run_id: str = ""
     run_workspace: RunWorkspace | None = None
     samples: list[SampleResult] = field(default_factory=list)
+    # 运行溯源：规则集版本（docs/arch/13 §4），透传至 sink → run event → 平台
+    rule_set_version: str = ""
 
 
 class Orchestrator:
@@ -259,6 +261,8 @@ class Orchestrator:
             summary_md,
             encoding="utf-8",
         )
+        # 注入运行溯源（供 upload 子命令从 summary.json 重建 run event，docs/arch/13 §4）
+        summary_json["rule_set_version"] = rule_set_version
         (run_workspace.reports_dir / "summary.json").write_text(
             json.dumps(summary_json, ensure_ascii=False, indent=2),
             encoding="utf-8",
@@ -290,6 +294,7 @@ class Orchestrator:
             run_id=run_id,
             run_workspace=run_workspace,
             samples=sample_results,
+            rule_set_version=rule_set_version,
         )
 
     def _load_packages(self, package_dir: Path) -> list[ExecutionPackage]:

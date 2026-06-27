@@ -75,6 +75,7 @@ def build_sample_event(
         "data": {
             "external_run_id": external_run_id,
             "external_sample_id": sample.sample_id,
+            "content_hash": sample.content_hash,
             "status": sample.status.value,
             "s_format": sample.s_format,
             "s_common": sample.s_common,

@@ -152,7 +152,11 @@ class PipelineEngine:
                 return cached
 
         sample_id = context.get("sample_id", "unknown")
-        result = SampleResult(sample_id=sample_id, status=EvalStatus.PASS)
+        result = SampleResult(
+            sample_id=sample_id,
+            status=EvalStatus.PASS,
+            content_hash=context.get("content_hash"),
+        )
 
         import time
 
@@ -262,6 +266,10 @@ class PipelineEngine:
             context["sample_id"] = task_data.get("id", context["sample_id"])
             context["constraints"] = task_data.get("constraints", {})
             context["task_input"] = task_data.get("input", {})
+        # 内容指纹（溯源/版本标记，来自 pack manifest；详见 docs/arch/13 §5）
+        _manifest = getattr(package, "manifest", None)
+        if _manifest is not None and getattr(_manifest, "content_hash", None):
+            context["content_hash"] = _manifest.content_hash
 
         # 从 ExecutionPackage 提取目录清单
         if hasattr(package, "directory_manifest") and package.directory_manifest is not None:

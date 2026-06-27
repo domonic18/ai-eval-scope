@@ -100,6 +100,7 @@ class SampleResult:
 
     sample_id: str
     status: EvalStatus
+    content_hash: str | None = None
     stage_results: dict[str, StageResult] = field(default_factory=dict)
     s_format: float = 0.0
     s_common: float = 0.0
@@ -114,6 +115,7 @@ class SampleResult:
         """序列化为字典。"""
         return {
             "sample_id": self.sample_id,
+            "content_hash": self.content_hash,
             "status": self.status.value,
             "stage_results": {k: v.to_dict() for k, v in self.stage_results.items()},
             "s_format": self.s_format,

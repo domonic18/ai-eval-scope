@@ -110,6 +110,7 @@ export class IngestRepository {
         runId,
         projectId: this.projectId,
         externalSampleId: d.external_sample_id,
+        contentHash: d.content_hash ?? null,
         status: d.status ?? "completed",
         sFormat: d.s_format,
         sCommon: d.s_common,
@@ -121,6 +122,7 @@ export class IngestRepository {
         tokenUsage: d.token_usage ?? 0,
       },
       update: {
+        contentHash: d.content_hash ?? null,
         status: d.status ?? "completed",
         sFormat: d.s_format,
         sCommon: d.s_common,

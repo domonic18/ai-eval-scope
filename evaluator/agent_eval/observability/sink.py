@@ -115,6 +115,7 @@ class ResultSink:
             build_run_event(
                 result.report,
                 run_id=run_id,
+                rule_set_version=result.rule_set_version or None,
                 langfuse_trace_id=langfuse[0],
                 langfuse_host=langfuse[1],
             )

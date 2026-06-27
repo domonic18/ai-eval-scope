@@ -33,6 +33,31 @@ app = typer.Typer(
 )
 
 
+def _content_hash(source_dir: Path) -> str | None:
+    """计算目录内容的稳定短哈希（SHA256 前 8 位），用于样本内容寻址（docs/arch/13 §5）。
+
+    按「相对路径 + 文件内容」聚合哈希（相对路径排序保证遍历顺序稳定），
+    确保同内容同哈希、不同内容不同哈希，不受时间戳/路径位置/遍历顺序影响。
+    隐藏文件（.DS_Store 等）排除以提升稳定性。空目录返回 None（调用方回退到目录名）。
+    """
+    import hashlib
+
+    h = hashlib.sha256()
+    files = sorted(
+        p
+        for p in source_dir.rglob("*")
+        if p.is_file() and not any(part.startswith(".") for part in p.relative_to(source_dir).parts)
+    )
+    if not files:
+        return None
+    for p in files:
+        h.update(p.relative_to(source_dir).as_posix().encode("utf-8"))
+        h.update(b"\x00")
+        h.update(p.read_bytes())
+        h.update(b"\x00")
+    return h.hexdigest()[:8]
+
+
 @app.command()
 def pack(
     files: list[str] | None = typer.Option(None, "--files", help="文件路径（可多次指定）"),
@@ -63,7 +88,9 @@ def pack(
         from agent_eval.execution.models import Task
         from agent_eval.storage.builder import PackageBuilder
 
-        # 自动推导 task_id
+        # 自动推导 task_id：取末级目录名作为「逻辑课件标识」（跨版本稳定，便于走势聚合）。
+        # 内容指纹另存为 content_hash 字段（溯源/版本标记），不混入 task_id。
+        # 不同课件若同名，应以 --task-id 显式区分（详见 docs/arch/13 §5）。
         if task_id is None:
             if source_dir:
                 task_id = Path(source_dir).resolve().name
@@ -86,10 +113,12 @@ def pack(
         if source_dir:
             rprint("[blue]模式:[/blue] 目录打包")
             rprint(f"[blue]源目录:[/blue] {source_dir}")
+            content_hash = _content_hash(Path(source_dir))
             builder.build_directory(
                 task=task,
                 source_dir=Path(source_dir),
                 package_dir=pkg_dir,
+                content_hash=content_hash,
             )
         else:
             rprint("[blue]模式:[/blue] 文件打包")
@@ -343,6 +372,7 @@ def upload(
                     "avg_time_ms": metrics.get("avg_time_ms", 0.0),
                 },
                 "total_samples": summary.get("total_samples", 0),
+                "rule_set_version": summary.get("rule_set_version"),
                 "failure_breakdown": summary.get("failure_breakdown") or None,
                 "thresholds": summary.get("thresholds") or None,
             },
