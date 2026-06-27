@@ -25,6 +25,7 @@ export interface DashboardProject {
   description: string | null
   createdAt: string
   runCount: number
+  ownerName: string
   latestRun: {
     runId: string
     createdAt: string | null

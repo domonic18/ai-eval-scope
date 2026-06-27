@@ -112,17 +112,17 @@ export interface ExplainContent {
 }
 
 export const METRIC_LABEL: Record<MetricKey, string> = {
-  DR: "DR 交付率",
-  CPR: "CPR 常识",
-  Reward: "Reward",
-  CondR: "CondR 条件",
+  DR: "格式通过率(DR)",
+  CPR: "常识通过率(CPR)",
+  Reward: "综合评分(Reward)",
+  CondR: "达标综合分(CondR)",
 }
 
 export const METRIC_EXPLAIN: Record<MetricKey, ExplainContent> = {
   DR: {
     title: (
       <>
-        DR · Delivery Rate <code className="code-inline">交付率</code>
+        DR · Delivery Rate <code className="code-inline">格式通过率</code>
       </>
     ),
     rows: [
@@ -157,12 +157,12 @@ export const METRIC_EXPLAIN: Record<MetricKey, ExplainContent> = {
         dt: "定义",
         dd: (
           <>
-            通过<b style={{ color: "var(--text-primary)" }}>常识硬约束</b>
-            （史实、数理、单位、逻辑等）的样本占比。
+            通过<b style={{ color: "var(--text-primary)" }}>格式 + 常识双门控</b>
+            （常识含史实、数理、单位、逻辑等）的样本占比。
           </>
         ),
       },
-      { dt: "计算", dd: <span className="mono">常识通过样本数 / 总样本数</span> },
+      { dt: "计算", dd: <span className="mono">(格式+常识)双门控通过样本数 / 总样本数</span> },
       {
         dt: "标准",
         dd: (
@@ -176,7 +176,7 @@ export const METRIC_EXPLAIN: Record<MetricKey, ExplainContent> = {
   Reward: {
     title: (
       <>
-        Reward <code className="code-inline">综合奖励</code>
+        Reward <code className="code-inline">综合评分</code>
       </>
     ),
     rows: [
@@ -203,7 +203,7 @@ export const METRIC_EXPLAIN: Record<MetricKey, ExplainContent> = {
   CondR: {
     title: (
       <>
-        CondR · Conditional Reward <code className="code-inline">条件奖励</code>
+        CondR · Conditional Reward <code className="code-inline">达标综合分</code>
       </>
     ),
     rows: [

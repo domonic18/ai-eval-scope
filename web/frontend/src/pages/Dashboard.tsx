@@ -185,7 +185,12 @@ export default function Dashboard() {
                 <div className="pc-head">
                   <div>
                     <div className="pc-name">{p.name}</div>
-                    <div className="pc-slug">{p.slug}</div>
+                    <div className="pc-slug">
+                      {p.slug}
+                      <span className="muted" style={{ marginLeft: 6 }}>
+                        · 创建者 {p.ownerName}
+                      </span>
+                    </div>
                   </div>
                   <Badge variant={h.variant} dot={h.dot}>
                     {h.label}
@@ -214,11 +219,11 @@ export default function Dashboard() {
                     <div className="pc-stat-val" style={{ color: drColor }}>
                       {fmt3(p.latestRun?.dr)}
                     </div>
-                    <div className="pc-stat-lab">最新 DR</div>
+                    <div className="pc-stat-lab">最新交付率</div>
                   </div>
                   <div>
                     <div className="pc-stat-val">{fmt3(p.latestRun?.avgReward)}</div>
-                    <div className="pc-stat-lab">Reward</div>
+                    <div className="pc-stat-lab">综合奖励</div>
                   </div>
                   <div>
                     <div className="pc-stat-val">{num(p.runCount)}</div>

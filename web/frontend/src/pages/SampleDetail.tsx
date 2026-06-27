@@ -88,7 +88,7 @@ export default function SampleDetail() {
           </span>
           <Badge variant={sb.variant}>{sb.label}</Badge>
           <Badge variant="neutral">
-            Reward{" "}
+            综合奖励{" "}
             <b className="mono" style={{ color: "var(--danger)", marginLeft: 3 }}>
               {fmt3(sample.reward)}
             </b>
@@ -175,14 +175,26 @@ function ConstraintItem({ c }: { c: ConstraintRow }) {
       </div>
       <div className="c-body">
         {c.reason && <div className="c-reason">{c.reason}</div>}
-        {c.details && Object.keys(c.details).length > 0 && <DetailsBlock details={c.details} />}
-        {c.moduleResults && Object.keys(c.moduleResults).length > 0 && (
-          <pre
-            className="code-block"
-            style={{ margin: "0 0 10px", fontSize: 11, padding: "10px 12px" }}
+        {/* 用户关心的「存在什么问题」：从 details 提取 errors 结构化展示 */}
+        {constraintErrors(c.details).length > 0 && (
+          <div
+            style={{
+              margin: "8px 0",
+              padding: "8px 10px",
+              background: "rgba(248,81,73,0.06)",
+              border: "1px solid rgba(248,81,73,0.2)",
+              borderRadius: "var(--r-sm)",
+            }}
           >
-            {JSON.stringify(c.moduleResults, null, 2)}
-          </pre>
+            <div style={{ fontSize: 12, color: "var(--danger)", marginBottom: 4 }}>发现的问题</div>
+            <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: "var(--text-secondary)" }}>
+              {constraintErrors(c.details).map((e, i) => (
+                <li key={i} style={{ marginBottom: 2 }}>
+                  {e}
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
         <div className="c-meta">
           <span>
@@ -202,8 +214,40 @@ function ConstraintItem({ c }: { c: ConstraintRow }) {
             </span>
           )}
         </div>
+        {/* 调试详情（原始 JSON，默认折叠，不占主视觉） */}
+        {hasDebug(c) && (
+          <details style={{ marginTop: 10 }}>
+            <summary
+              style={{ cursor: "pointer", color: "var(--text-tertiary)", fontSize: 12, userSelect: "none" }}
+            >
+              调试详情（files_checked / formulas_checked 等技术细节）
+            </summary>
+            <div style={{ marginTop: 6 }}>
+              {c.details && Object.keys(c.details).length > 0 && <DetailsBlock details={c.details} />}
+              {c.moduleResults && Object.keys(c.moduleResults).length > 0 && (
+                <DetailsBlock details={c.moduleResults} />
+              )}
+            </div>
+          </details>
+        )}
       </div>
     </div>
+  )
+}
+
+/** 从 details 提取 errors（具体问题描述，用户关心的「存在什么问题」）。 */
+function constraintErrors(details: Record<string, unknown> | null): string[] {
+  if (!details) return []
+  const e = details.errors
+  if (!Array.isArray(e)) return []
+  return e.filter((x): x is string => typeof x === "string")
+}
+
+/** 是否有调试详情（原始 JSON，折叠展示）。 */
+function hasDebug(c: ConstraintRow): boolean {
+  return (
+    (!!c.details && Object.keys(c.details).length > 0) ||
+    (!!c.moduleResults && Object.keys(c.moduleResults).length > 0)
   )
 }
 
