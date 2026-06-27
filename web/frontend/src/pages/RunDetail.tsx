@@ -401,6 +401,9 @@ export default function RunDetail() {
             <span className="muted" style={{ fontWeight: 400 }}>
               {num(run.samples.length)}
             </span>
+            <span className="muted" style={{ fontSize: 12, fontWeight: 400, marginLeft: 8 }}>
+              被评估的内容单元；单次运行通常 1 个，批量评估时多个
+            </span>
           </h3>
           <div className="row" style={{ gap: 8 }}>
             <Segment<"all" | "fail" | "skip">

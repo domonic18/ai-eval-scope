@@ -107,6 +107,12 @@ class QueryRepository extends BaseRepository {
         orderBy: { createdAt: f.order === "asc" ? "asc" : "desc" },
         skip: (page - 1) * size,
         take: size,
+        include: {
+          samples: {
+            select: { externalSampleId: true },
+            orderBy: { externalSampleId: "asc" },
+          },
+        },
       }),
       this.prisma.run.count({ where }),
     ])
@@ -128,6 +134,68 @@ class QueryRepository extends BaseRepository {
       ORDER BY created_at ASC
       LIMIT ${limit}
     `
+  }
+
+  /** 样本清单：项目下 distinct externalSampleId + 评估次数 + 最近一次指标（docs/arch/14）。 */
+  async listSamplesByProject(projectId: string) {
+    const orgId = this.requireOrg()
+    const rows = await this.prisma.$queryRaw<
+      Array<{
+        external_sample_id: string
+        eval_count: bigint
+        created_at: Date
+        reward: number
+        status: string
+        content_hash: string | null
+      }>
+    >(Prisma.sql`
+      WITH ranked AS (
+        SELECT s.external_sample_id, s.reward, s.status, s.content_hash, r.created_at,
+               COUNT(*) OVER (PARTITION BY s.external_sample_id)::bigint AS eval_count,
+               ROW_NUMBER() OVER (PARTITION BY s.external_sample_id ORDER BY r.created_at DESC) AS rn
+        FROM samples s JOIN runs r ON s.run_id = r.id
+        WHERE s.project_id = ${projectId}
+          AND s.project_id IN (SELECT id FROM projects WHERE org_id = ${orgId})
+      )
+      SELECT external_sample_id, eval_count, created_at, reward, status, content_hash
+      FROM ranked WHERE rn = 1
+      ORDER BY created_at DESC
+    `)
+    return rows.map((r) => ({
+      externalSampleId: r.external_sample_id,
+      evalCount: Number(r.eval_count),
+      latestAt: r.created_at,
+      latestReward: r.reward,
+      latestStatus: r.status,
+      latestContentHash: r.content_hash,
+    }))
+  }
+
+  /** 样本走势：某 externalSampleId 跨 run 的指标时间序列（docs/arch/14）。 */
+  async sampleTrends(projectId: string, externalSampleId: string, limit: number) {
+    const orgId = this.requireOrg()
+    return this.prisma.$queryRaw<
+      Array<{
+        run_id: string
+        created_at: Date
+        reward: number
+        s_format: number
+        s_common: number
+        s_soft: number
+        s_pref: number
+        status: string
+        content_hash: string | null
+      }>
+    >(Prisma.sql`
+      SELECT r.external_run_id AS run_id, r.created_at,
+             s.reward, s.s_format, s.s_common, s.s_soft, s.s_pref, s.status, s.content_hash
+      FROM samples s JOIN runs r ON s.run_id = r.id
+      WHERE s.project_id = ${projectId}
+        AND s.external_sample_id = ${externalSampleId}
+        AND s.project_id IN (SELECT id FROM projects WHERE org_id = ${orgId})
+      ORDER BY r.created_at ASC
+      LIMIT ${limit}
+    `)
   }
 
   /** 运行详情（含样本摘要）。 */

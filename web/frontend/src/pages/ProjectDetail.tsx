@@ -1,7 +1,14 @@
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { api } from "../api/client"
-import type { ApiKeySafe, IssuedApiKey, RunSummary, TrendPoint } from "../types"
+import type {
+  ApiKeySafe,
+  IssuedApiKey,
+  ProjectSample,
+  RunSummary,
+  SampleTrendPoint,
+  TrendPoint,
+} from "../types"
 import { fmt3, fmtMs, num, timeAgo } from "../lib/format"
 import { METRIC_EXPLAIN, METRIC_LABEL, THRESHOLDS, metricColor, runBadge } from "../lib/eval"
 import type { MetricKey } from "../lib/eval"
@@ -17,6 +24,7 @@ import {
   Metric,
   Modal,
   Select,
+  Sparkline,
   Tabs,
   useCrumbs,
   useToast,
@@ -31,7 +39,7 @@ interface Project {
   ruleSetVersion?: string | null
 }
 
-type Tab = "overview" | "runs" | "settings"
+type Tab = "overview" | "runs" | "samples" | "settings"
 type SetTab = "keys" | "basic" | "retention" | "danger"
 
 function truncKey(k: string): string {
@@ -131,6 +139,7 @@ export default function ProjectDetail() {
           items={[
             { key: "overview", label: "概览" },
             { key: "runs", label: "运行", count: num(runsTotal) },
+            { key: "samples", label: "样本" },
             { key: "settings", label: "设置 & API Key" },
           ]}
         />
@@ -207,6 +216,8 @@ export default function ProjectDetail() {
       {tab === "runs" && (
         <RunsTab runs={runs} total={runsTotal} onOpen={(r) => nav(`/run/${r.id}`)} />
       )}
+
+      {tab === "samples" && id && <SamplesTab projectId={id} />}
 
       {tab === "settings" && project && (
         <SettingsTab
@@ -300,10 +311,18 @@ function runColumns() {
       },
     },
     {
-      key: "totalSamples",
-      title: "样本",
-      num: true,
-      render: (r: RunSummary) => num(r.totalSamples),
+      key: "samples",
+      title: "评估内容",
+      render: (r: RunSummary) => {
+        const ids = (r.samples ?? []).map((s) => s.externalSampleId)
+        if (!ids.length) return <span className="muted">—</span>
+        if (ids.length === 1) return <span className="mono">{ids[0]}</span>
+        return (
+          <span className="mono">
+            {ids[0]} <span className="muted">+{ids.length - 1}</span>
+          </span>
+        )
+      },
     },
     {
       key: "dr",
@@ -429,6 +448,156 @@ function RunsTab({
           pageSize={15}
           empty={<span className="muted">无匹配运行</span>}
         />
+      </div>
+    </div>
+  )
+}
+
+/** 样本 Tab：项目下课件清单 + 选中课件跨 run 走势（docs/arch/14）。 */
+function SamplesTab({ projectId }: { projectId: string }) {
+  const [samples, setSamples] = useState<ProjectSample[]>([])
+  const [selected, setSelected] = useState<string | null>(null)
+  const [trend, setTrend] = useState<SampleTrendPoint[]>([])
+
+  useEffect(() => {
+    api.listSamples(projectId).then(setSamples).catch(() => setSamples([]))
+  }, [projectId])
+
+  useEffect(() => {
+    if (!selected) {
+      setTrend([])
+      return
+    }
+    api.sampleTrends(projectId, selected).then(setTrend).catch(() => setTrend([]))
+  }, [projectId, selected])
+
+  const rewards = trend.map((t) => t.reward)
+  const lo = rewards.length ? Math.min(...rewards) : 0
+  const hi = rewards.length ? Math.max(...rewards) : 1
+
+  return (
+    <div
+      className="r-3"
+      style={{
+        display: "grid",
+        gridTemplateColumns: "minmax(340px,1fr) minmax(360px,1.2fr)",
+        gap: 16,
+      }}
+    >
+      <div className="card">
+        <div className="card-head">
+          <h3>样本（课件）</h3>
+          <span className="hint">点击查看走势</span>
+        </div>
+        <DataTable<ProjectSample>
+          columns={[
+            {
+              key: "externalSampleId",
+              title: "样本（逻辑标识）",
+              render: (s) => <span className="mono">{s.externalSampleId}</span>,
+            },
+            {
+              key: "evalCount",
+              title: "评估次数",
+              num: true,
+              render: (s) => num(s.evalCount),
+            },
+            {
+              key: "latestReward",
+              title: "最近 Reward",
+              num: true,
+              render: (s) => (
+                <span className={s.latestReward >= 0.8 ? "t-add" : ""}>{fmt3(s.latestReward)}</span>
+              ),
+            },
+            {
+              key: "latestAt",
+              title: "最近评估",
+              render: (s) => <span className="muted">{timeAgo(s.latestAt)}</span>,
+            },
+          ]}
+          rows={samples}
+          rowKey={(s) => s.externalSampleId}
+          onRowClick={(s) => setSelected(s.externalSampleId)}
+          pageSize={15}
+          empty={<span className="muted">暂无样本</span>}
+        />
+      </div>
+
+      <div className="card">
+        <div className="card-head">
+          <h3>{selected ? `走势：${selected}` : "样本走势"}</h3>
+          {trend.length > 0 && (
+            <span className="hint">
+              Reward {fmt3(lo)}–{fmt3(hi)} · {trend.length} 次评估
+            </span>
+          )}
+        </div>
+        <div className="card-body">
+          {!selected ? (
+            <Empty title="选择一个样本" children={<>从左侧选择课件，查看其跨多次评估的 Reward 走势。</>} />
+          ) : trend.length === 0 ? (
+            <Empty title="暂无走势数据" />
+          ) : (
+            <>
+              <div style={{ marginBottom: 16 }}>
+                <Sparkline data={rewards} color="var(--signal)" width={720} height={180} />
+              </div>
+              <DataTable<SampleTrendPoint>
+                columns={[
+                  {
+                    key: "created_at",
+                    title: "时间",
+                    render: (t) => (
+                      <span className="muted">
+                        {new Date(t.created_at).toLocaleString("zh-CN")}
+                      </span>
+                    ),
+                  },
+                  {
+                    key: "run_id",
+                    title: "运行",
+                    render: (t) => <span className="mono">#{t.run_id.slice(-8)}</span>,
+                  },
+                  {
+                    key: "reward",
+                    title: "Reward",
+                    num: true,
+                    render: (t) => (
+                      <span className={t.reward >= 0.8 ? "t-add" : ""}>{fmt3(t.reward)}</span>
+                    ),
+                  },
+                  {
+                    key: "s_format",
+                    title: "S_format",
+                    num: true,
+                    render: (t) => fmt3(t.s_format),
+                  },
+                  {
+                    key: "s_common",
+                    title: "S_common",
+                    num: true,
+                    render: (t) => fmt3(t.s_common),
+                  },
+                  {
+                    key: "content_hash",
+                    title: "内容版本",
+                    render: (t) =>
+                      t.content_hash ? (
+                        <span className="mono muted">{t.content_hash}</span>
+                      ) : (
+                        <span className="muted">—</span>
+                      ),
+                  },
+                ]}
+                rows={[...trend].reverse()}
+                rowKey={(t) => t.run_id}
+                pageSize={20}
+                empty={<span className="muted">无数据</span>}
+              />
+            </>
+          )}
+        </div>
       </div>
     </div>
   )

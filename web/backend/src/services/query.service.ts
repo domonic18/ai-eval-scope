@@ -34,6 +34,14 @@ export interface QueryService {
     artifactId: string,
   ) => Promise<{ objectKey: string; contentType: string; filename: string }>
   deleteRun: (runId: string) => Promise<void>
+  samples: (projectId: string) => Promise<
+    Awaited<ReturnType<QueryRepository["listSamplesByProject"]>>
+  >
+  sampleTrends: (
+    projectId: string,
+    externalSampleId: string,
+    limit?: number,
+  ) => Promise<Awaited<ReturnType<QueryRepository["sampleTrends"]>>>
 }
 
 export function createQueryService(tenant: Tenant): QueryService {
@@ -94,5 +102,8 @@ export function createQueryService(tenant: Tenant): QueryService {
     sampleDetail,
     artifactMeta,
     deleteRun,
+    samples: (pid) => repo.listSamplesByProject(pid),
+    sampleTrends: (pid, sid, limit) =>
+      repo.sampleTrends(pid, sid, Math.min(500, Math.max(1, limit ?? 100))),
   }
 }

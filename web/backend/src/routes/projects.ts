@@ -71,6 +71,35 @@ router.get(
   }),
 )
 
+// ── Query：样本级走势（§14）──
+router.get(
+  "/:id/samples",
+  requireAuth,
+  projectGuard(),
+  wrap(async (req, res) => {
+    const svc = createQueryService(req.tenant!)
+    res.json(await svc.samples(req.params.id))
+  }),
+)
+
+router.get(
+  "/:id/sample-trends",
+  requireAuth,
+  projectGuard(),
+  wrap(async (req, res) => {
+    const q = req.query as Record<string, string | undefined>
+    const sampleId = q.sample_id
+    if (!sampleId) {
+      res.status(400).json({ error: "sample_id required", code: "SCHEMA_INVALID" })
+      return
+    }
+    const svc = createQueryService(req.tenant!)
+    res.json(
+      await svc.sampleTrends(req.params.id, sampleId, q.limit ? Number(q.limit) : 100),
+    )
+  }),
+)
+
 router.patch(
   "/:id",
   requireAuth,

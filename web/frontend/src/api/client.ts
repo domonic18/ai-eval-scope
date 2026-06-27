@@ -5,6 +5,7 @@
 
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios"
 import { clearSession, getRefreshToken, getToken, saveSession } from "../store/auth"
+import type { ProjectSample, SampleTrendPoint } from "../types"
 
 export const http = axios.create({
   baseURL: "/api/v1",
@@ -158,6 +159,16 @@ export const api = {
   },
   async sampleDetail(runId: string, sampleId: string) {
     return (await http.get(`/runs/${runId}/samples/${sampleId}`)).data.sample
+  },
+  async listSamples(projectId: string) {
+    return (await http.get(`/projects/${projectId}/samples`)).data as ProjectSample[]
+  },
+  async sampleTrends(projectId: string, sampleId: string, limit = 100) {
+    return (
+      await http.get(`/projects/${projectId}/sample-trends`, {
+        params: { sample_id: sampleId, limit },
+      })
+    ).data as SampleTrendPoint[]
   },
   async deleteRun(runId: string) {
     return (await http.delete(`/runs/${runId}`)).data

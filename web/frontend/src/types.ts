@@ -41,6 +41,7 @@ export interface RunSummary {
   mode: string
   status: string
   totalSamples: number
+  samples?: { externalSampleId: string }[]
   dr: number
   cpr: number
   avgReward: number
@@ -69,6 +70,29 @@ export interface SampleSummary {
   sCommon: number
   sSoft: number
   sPref: number
+}
+
+/** 项目下样本（课件）清单项（docs/arch/14）。 */
+export interface ProjectSample {
+  externalSampleId: string
+  evalCount: number
+  latestAt: string
+  latestReward: number
+  latestStatus: string
+  latestContentHash: string | null
+}
+
+/** 样本走势点（某 externalSampleId 跨 run 的时间序列，docs/arch/14）。 */
+export interface SampleTrendPoint {
+  run_id: string
+  created_at: string
+  reward: number
+  s_format: number
+  s_common: number
+  s_soft: number
+  s_pref: number
+  status: string
+  content_hash: string | null
 }
 
 export interface ConstraintRow {
