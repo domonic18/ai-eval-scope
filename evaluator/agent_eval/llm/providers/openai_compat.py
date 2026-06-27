@@ -128,7 +128,7 @@ class OpenAICompatClient(LLMClient):
             except openai.APIError as e:
                 # 瞬时错误（超时/连接/限流/5xx）指数退避重试；不可重试或耗尽则映射抛出
                 if attempt < _MAX_RETRIES and _is_retryable(e):
-                    time.sleep(_RETRY_BASE_DELAY * (2 ** attempt))
+                    time.sleep(_RETRY_BASE_DELAY * (2**attempt))
                     continue
                 raise _map_openai_error(e, self._name, self._config.model) from e
 

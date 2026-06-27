@@ -161,7 +161,7 @@ class AnthropicCompatClient(LLMClient):
                 break
             except anthropic.APIError as e:
                 if attempt < _MAX_RETRIES and _is_anthropic_retryable(e):
-                    time.sleep(_RETRY_BASE_DELAY * (2 ** attempt))
+                    time.sleep(_RETRY_BASE_DELAY * (2**attempt))
                     continue
                 raise _map_anthropic_error(e, self._name, self._config.model) from e
 
