@@ -60,13 +60,13 @@ def _check_llm_availability(
 ) -> None:
     """预检：rule_set 含 LLM 评估器但 Judge 未配置时提示/阻断。
 
-    LLM 评估器：soft.*/pref.* 与 commonsense.logical_consistency。
+    LLM 评估器：soft.*/pref.* 与 commonsense.logical_consistency/chronological_order。
 
     - 默认（require_llm=False）：警告列出将跳过的评估器，继续执行（降级为 SKIP，不计分）
     - require_llm=True：阻断退出，提示用户先配置 LLM
     """
     llm_prefixes = ("soft.", "pref.")
-    llm_exact = {"commonsense.logical_consistency"}
+    llm_exact = {"commonsense.logical_consistency", "commonsense.chronological_order"}
     llm_evaluators = [
         r.evaluator  # type: ignore[attr-defined]
         for r in rule_set_obj.rules  # type: ignore[attr-defined]
@@ -107,7 +107,9 @@ def _print_summary(result: object) -> None:
 
     table.add_row("DR (交付率)", f"{result.dr:.3f}", dr_status)
     table.add_row("CPR (约束通过率)", f"{result.cpr:.3f}", cpr_status)
-    table.add_row("Avg Reward", f"{result.avg_reward:.3f}", reward_status)
+    table.add_row("Reward (综合评分)", f"{result.avg_reward:.3f}", reward_status)
+    table.add_row("Soft (内容质量分)", f"{result.avg_soft:.3f}", "—")
+    table.add_row("Pref (用户偏好分)", f"{result.avg_pref:.3f}", "—")
     table.add_row("CondR (条件Reward)", f"{result.cond_r:.3f}", "—")
     table.add_row("Avg Time", f"{result.avg_time_ms:.0f}ms", "—")
 

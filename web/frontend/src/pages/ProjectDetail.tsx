@@ -24,8 +24,8 @@ import {
   Metric,
   Modal,
   Select,
-  Sparkline,
   Tabs,
+  TrendChart,
   useCrumbs,
   useToast,
 } from "../components/ui"
@@ -89,19 +89,17 @@ export default function ProjectDetail() {
   const latest = trendsAsc[trendsAsc.length - 1]
   const prev = trendsAsc[trendsAsc.length - 2]
 
-  const deltaOf = (cur: number | undefined, prevV: number | undefined, key: MetricKey) => {
+  const deltaOf = (cur: number | undefined, prevV: number | undefined) => {
     if (cur == null) return null
-    const threshold = THRESHOLDS[key as "DR" | "CPR" | "Reward"]
-    if (prevV == null) {
-      return threshold ? <span className="muted">阈值 ≥ {threshold}</span> : null
-    }
+    if (prevV == null) return <span className="muted">首次评估</span>
     const diff = cur - prevV
-    if (Math.abs(diff) < 0.0005) return <span className="delta-flat">▬ 持平</span>
+    if (Math.abs(diff) < 0.0005) return <span className="delta-flat">▬ 较上次持平</span>
     const arrow = diff > 0 ? "▲" : "▼"
     const cls = diff > 0 ? "delta-up" : "delta-down"
     return (
       <span className={cls}>
-        {arrow} {(Math.abs(diff) * 100).toFixed(1)}% <span className="muted">vs 上次</span>
+        {arrow} 较上次 {diff > 0 ? "+" : ""}
+        {diff.toFixed(3)}
       </span>
     )
   }
@@ -150,20 +148,16 @@ export default function ProjectDetail() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(3,1fr)",
+              gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
               gap: 14,
               marginBottom: 16,
             }}
           >
-            {(["DR", "CPR", "Reward"] as MetricKey[]).map((k) => {
-              const val = k === "DR" ? latest?.DR : k === "CPR" ? latest?.CPR : latest?.Reward
-              const prevVal = !prev
-                ? undefined
-                : k === "DR"
-                  ? prev.DR
-                  : k === "CPR"
-                    ? prev.CPR
-                    : prev.Reward
+            {(["DR", "CPR", "Soft", "Pref", "Reward"] as MetricKey[]).map((k) => {
+              const kk = k as "DR" | "CPR" | "Reward" | "Soft" | "Pref"
+              const val = latest ? latest[kk] : undefined
+              const prevVal = prev ? prev[kk] : undefined
+              const delta = deltaOf(val, prevVal)
               return (
                 <Metric
                   key={k}
@@ -171,7 +165,19 @@ export default function ProjectDetail() {
                   value={fmt3(val)}
                   valueColor={metricColor(k, val)}
                   explain={METRIC_EXPLAIN[k]}
-                  foot={deltaOf(val, prevVal, k)}
+                  foot={
+                    latest ? (
+                      <span className="muted">
+                        最近一次运行 {timeAgo(latest.created_at)}
+                        {delta ? (
+                          <>
+                            {" · "}
+                            {delta}
+                          </>
+                        ) : null}
+                      </span>
+                    ) : null
+                  }
                 />
               )
             })}
@@ -234,55 +240,23 @@ export default function ProjectDetail() {
 
 /** 趋势折线（DR/CPR/Reward）+ 图例。 */
 function LineTrendSVG({ trends }: { trends: TrendPoint[] }) {
+  const points = trends.map((t) => ({
+    label: new Date(t.created_at).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" }),
+    values: { DR: t.DR, CPR: t.CPR, Reward: t.Reward, Soft: t.Soft, Pref: t.Pref },
+  }))
   const series = [
-    { name: METRIC_LABEL.DR, color: "var(--success)", data: trends.map((t) => t.DR) },
-    { name: METRIC_LABEL.CPR, color: "var(--signal)", data: trends.map((t) => t.CPR) },
-    { name: METRIC_LABEL.Reward, color: "var(--accent)", data: trends.map((t) => t.Reward) },
+    { key: "DR", name: METRIC_LABEL.DR, color: "var(--success)" },
+    { key: "CPR", name: METRIC_LABEL.CPR, color: "var(--warning)" },
+    { key: "Reward", name: METRIC_LABEL.Reward, color: "var(--accent)" },
+    { key: "Soft", name: METRIC_LABEL.Soft, color: "var(--signal)" },
+    { key: "Pref", name: METRIC_LABEL.Pref, color: "var(--info)" },
   ]
-  // 动态导入避免循环：这里直接用内联 SVG（与 ui/Chart 一致）
-  const W = 720
-  const H = 240
-  const y = (v: number) => H - Math.max(0, Math.min(1, v)) * H
-  const toPts = (data: number[]) =>
-    data
-      .map((v, i) => {
-        const x = data.length === 1 ? 0 : (i / (data.length - 1)) * W
-        return `${x.toFixed(1)},${y(v).toFixed(1)}`
-      })
-      .join(" ")
   return (
-    <>
-      <svg className="trend-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
-        {[0.25, 0.5, 0.75].map((g) => (
-          <line
-            key={g}
-            x1="0"
-            y1={y(g)}
-            x2={W}
-            y2={y(g)}
-            stroke="var(--border)"
-            strokeDasharray="3 4"
-          />
-        ))}
-        {series.map((s) => (
-          <polyline
-            key={s.name}
-            points={toPts(s.data)}
-            fill="none"
-            stroke={s.color}
-            strokeWidth={2.5}
-          />
-        ))}
-      </svg>
-      <div className="legend">
-        {series.map((s) => (
-          <div className="legend-item" key={s.name}>
-            <span className="legend-line" style={{ background: s.color }} />
-            {s.name}
-          </div>
-        ))}
-      </div>
-    </>
+    <TrendChart
+      points={points}
+      series={series}
+      thresholds={[{ label: "综合评分达标 0.8", value: 0.8, color: "var(--accent)" }]}
+    />
   )
 }
 
@@ -541,7 +515,20 @@ function SamplesTab({ projectId }: { projectId: string }) {
           ) : (
             <>
               <div style={{ marginBottom: 16 }}>
-                <Sparkline data={rewards} color="var(--signal)" width={720} height={180} />
+                <TrendChart
+                  points={trend.map((t) => ({
+                    label: new Date(t.created_at).toLocaleString("zh-CN", {
+                      month: "numeric",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }),
+                    values: { Reward: t.reward },
+                  }))}
+                  series={[{ key: "Reward", name: METRIC_LABEL.Reward, color: "var(--accent)" }]}
+                  height={300}
+                  thresholds={[{ label: "达标 0.8", value: 0.8, color: "var(--success)" }]}
+                />
               </div>
               <DataTable<SampleTrendPoint>
                 columns={[

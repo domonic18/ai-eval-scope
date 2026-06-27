@@ -135,7 +135,7 @@ class TestScoreAggregator:
         # This makes the calculation deterministic:
         #   soft_weights: {"soft.content_density": 1.0} => wtotal=1.0, wsum=1.0*0.8=0.8
         #   pref_weights: {"pref.style_preference": 1.0} => wtotal=1.0, wsum=1.0*0.7=0.7
-        #   reward = 1.0 + 1.0 + 1.0*0.8 + 1.0*0.7 = 3.5
+        #   reward 归一化 = (1.0 + 1.0 + 1.0*0.8 + 1.0*0.7) / (1.0+1.0+1.0+1.0) = 0.875
         agg = ScoreAggregator(
             w3=1.0,
             w4=1.0,
@@ -147,13 +147,15 @@ class TestScoreAggregator:
 
         assert score.s_format == 1.0
         assert score.s_common == 1.0
-        assert score.reward == pytest.approx(1.0 + 1.0 + 1.0 * 0.8 + 1.0 * 0.7, abs=0.01)
+        # 归一化到 [0,1]：3.5 / 4.0 = 0.875
+        assert score.reward == pytest.approx(0.875, abs=0.01)
 
     def test_format_fail(self) -> None:
         agg = ScoreAggregator()
         sample = self._make_sample(fmt_status=EvalStatus.FAIL, fmt_passed=False)
         score = agg.aggregate(sample)
-        assert score.s_format == -3.0
+        # 归一化后 format 失败不惩罚（0，非 -3）
+        assert score.s_format == 0.0
 
     def test_commonsense_fail(self) -> None:
         agg = ScoreAggregator()
@@ -168,7 +170,7 @@ class TestScoreAggregator:
         assert score.s_format == 0.0
 
     def test_reward_formula(self) -> None:
-        """手动验证: Reward = 1 + 1 + 1*0.78 + 1*0.65 = 3.43"""
+        """手动验证归一化: reward = (1+1+1*0.78+1*0.65) / 4 = 3.43/4 = 0.8575"""
         agg = ScoreAggregator(
             w3=1.0,
             w4=1.0,
@@ -177,7 +179,7 @@ class TestScoreAggregator:
         )
         sample = self._make_sample(soft_score=0.78, pref_score=0.65)
         score = agg.aggregate(sample)
-        assert score.reward == pytest.approx(3.43, abs=0.01)
+        assert score.reward == pytest.approx(0.8575, abs=0.01)
 
     def test_custom_weights(self) -> None:
         agg = ScoreAggregator(
@@ -188,8 +190,8 @@ class TestScoreAggregator:
         )
         sample = self._make_sample(soft_score=1.0, pref_score=1.0)
         score = agg.aggregate(sample)
-        # Reward = 1 + 1 + 0.5*1.0 + 0.5*1.0 = 3.0
-        assert score.reward == pytest.approx(3.0, abs=0.01)
+        # 归一化: (1+1+0.5*1.0+0.5*1.0) / (1+1+0.5+0.5) = 3.0/3.0 = 1.0
+        assert score.reward == pytest.approx(1.0, abs=0.01)
 
 
 # ─── MetricsCalculator 测试 ───
@@ -333,7 +335,7 @@ class TestPipelineEngine:
         engine = PipelineEngine(config, registry)
         result = engine.evaluate_sample(tmp_path, {"sample_id": "test_002"})
 
-        assert result.s_format == -3.0
+        assert result.s_format == 0.0  # 归一化后 format 失败不惩罚（0，非 -3）
         # 常识阶段应被 SKIP
         assert result.stage_results.get("commonsense") is not None
         assert result.stage_results["commonsense"].status == EvalStatus.SKIP

@@ -42,6 +42,8 @@ interface RunData {
   dr: number
   cpr: number
   avgReward: number
+  avgSoft: number
+  avgPref: number
   condR: number
   avgTimeMs: number
   ruleSetVersion: string | null
@@ -140,12 +142,15 @@ export default function RunDetail() {
   const failCount = run.samples.filter((s) => s.status === "fail" || s.status === "failed").length
   const rb = runBadge(run.status)
 
-  const metricBadge = (key: "DR" | "CPR" | "Reward") => {
-    const val = key === "DR" ? run.dr : key === "CPR" ? run.cpr : run.avgReward
-    return val >= THRESHOLDS[key] ? (
+  const metricBadge = (key: MetricKey) => {
+    const val =
+      key === "DR" ? run.dr : key === "CPR" ? run.cpr : key === "Reward"
+        ? run.avgReward : key === "Soft" ? run.avgSoft : run.avgPref
+    const soft = key === "Reward" || key === "Soft" || key === "Pref"
+    return val >= THRESHOLDS[key as "DR" | "CPR" | "Reward" | "Soft" | "Pref"] ? (
       <Badge variant="success">达标</Badge>
     ) : (
-      <Badge variant="warning">{key === "Reward" ? "偏低" : "未达"}</Badge>
+      <Badge variant="warning">{soft ? "偏低" : "未达"}</Badge>
     )
   }
 
@@ -230,10 +235,18 @@ export default function RunDetail() {
       </div>
 
       {/* run meta */}
-      <div className="meta-grid r-2" style={{ gridTemplateColumns: "repeat(3,1fr)" }}>
+      <div className="meta-grid r-2" style={{ gridTemplateColumns: "repeat(5,1fr)" }}>
         <div className="meta-cell">
           <div className="meta-lab">规则集版本</div>
           <div className="meta-val mono">{run.ruleSetVersion ?? "—"}</div>
+        </div>
+        <div className="meta-cell">
+          <div className="meta-lab">评估模式</div>
+          <div className="meta-val mono">{run.mode}</div>
+        </div>
+        <div className="meta-cell">
+          <div className="meta-lab">样本数</div>
+          <div className="meta-val mono">{num(run.totalSamples)}</div>
         </div>
         <div className="meta-cell">
           <div className="meta-lab">平均耗时 / 样本</div>
@@ -248,11 +261,13 @@ export default function RunDetail() {
       {/* metric cards */}
       <div
         className="r-3"
-        style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, marginBottom: 16 }}
+        style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 14, marginBottom: 16 }}
       >
         {[
           { k: "DR" as MetricKey, val: run.dr, thr: THRESHOLDS.DR },
           { k: "CPR" as MetricKey, val: run.cpr, thr: THRESHOLDS.CPR },
+          { k: "Soft" as MetricKey, val: run.avgSoft, thr: THRESHOLDS.Soft },
+          { k: "Pref" as MetricKey, val: run.avgPref, thr: THRESHOLDS.Pref },
           { k: "Reward" as MetricKey, val: run.avgReward, thr: THRESHOLDS.Reward },
         ].map((m) => (
           <Metric
@@ -261,7 +276,7 @@ export default function RunDetail() {
             value={fmt3(m.val)}
             valueColor={m.thr ? metricColor(m.k as MetricKey, m.val) : undefined}
             explain={METRIC_EXPLAIN[m.k as MetricKey]}
-            badge={m.thr ? metricBadge(m.k as "DR" | "CPR" | "Reward") : undefined}
+            badge={m.thr ? metricBadge(m.k) : undefined}
             gauge={
               <Gauge
                 value={m.val}

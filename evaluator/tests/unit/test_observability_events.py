@@ -61,6 +61,8 @@ def test_run_event_mapping_fields():
         "DR": 0.9,
         "CPR": 0.7,
         "avg_reward": 0.6,
+        "avg_soft": 0.0,
+        "avg_pref": 0.0,
         "condR": 0.65,
         "avg_time_ms": 1200,
     }

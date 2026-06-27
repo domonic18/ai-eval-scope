@@ -6,6 +6,8 @@ export interface RunMetrics {
   DR: number
   CPR: number
   avg_reward: number
+  avg_soft?: number
+  avg_pref?: number
   condR: number
   avg_time_ms: number
 }

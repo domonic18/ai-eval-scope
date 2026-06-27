@@ -133,6 +133,8 @@ model Run {
   dr               Float
   cpr              Float
   avgReward        Float      @map("avg_reward")
+  avgSoft          Float      @default(0) @map("avg_soft")
+  avgPref          Float      @default(0) @map("avg_pref")
   condR            Float      @map("cond_r")
   avgTimeMs        Float      @map("avg_time_ms")
   ruleSetVersion   String?    @map("rule_set_version")

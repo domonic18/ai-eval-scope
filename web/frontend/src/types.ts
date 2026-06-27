@@ -45,6 +45,8 @@ export interface RunSummary {
   dr: number
   cpr: number
   avgReward: number
+  avgSoft: number
+  avgPref: number
   condR: number
   avgTimeMs: number
   ruleSetVersion: string | null
@@ -59,6 +61,8 @@ export interface TrendPoint {
   DR: number
   CPR: number
   Reward: number
+  Soft: number
+  Pref: number
 }
 
 export interface SampleSummary {

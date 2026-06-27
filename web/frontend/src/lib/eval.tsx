@@ -98,9 +98,11 @@ export const THRESHOLDS = {
   DR: 0.95,
   CPR: 0.9,
   Reward: 0.8,
+  Soft: 0.7,
+  Pref: 0.7,
 }
 
-export type MetricKey = "DR" | "CPR" | "Reward" | "CondR"
+export type MetricKey = "DR" | "CPR" | "Reward" | "Soft" | "Pref" | "CondR"
 
 export interface ExplainRow {
   dt: string
@@ -112,17 +114,19 @@ export interface ExplainContent {
 }
 
 export const METRIC_LABEL: Record<MetricKey, string> = {
-  DR: "格式通过率(DR)",
-  CPR: "常识通过率(CPR)",
+  DR: "交付率(DR)",
+  CPR: "约束通过率(CPR)",
   Reward: "综合评分(Reward)",
-  CondR: "达标综合分(CondR)",
+  Soft: "内容质量分(Soft)",
+  Pref: "用户偏好分(Pref)",
+  CondR: "条件Reward(CondR)",
 }
 
 export const METRIC_EXPLAIN: Record<MetricKey, ExplainContent> = {
   DR: {
     title: (
       <>
-        DR · Delivery Rate <code className="code-inline">格式通过率</code>
+        DR · Delivery Rate <code className="code-inline">交付率</code>
       </>
     ),
     rows: [
@@ -130,17 +134,16 @@ export const METRIC_EXPLAIN: Record<MetricKey, ExplainContent> = {
         dt: "定义",
         dd: (
           <>
-            通过<b style={{ color: "var(--text-primary)" }}>格式硬门禁</b>
-            的样本占比，衡量产物能否被正常交付。
+            <b style={{ color: "var(--text-primary)" }}>能正常打开、格式符合基本要求</b>的样本占多少——连格式都不对，就没法使用了。
           </>
         ),
       },
-      { dt: "计算", dd: <span className="mono">格式通过样本数 / 总样本数</span> },
+      { dt: "计算", dd: <span className="mono">格式合格的样本数 ÷ 全部样本数</span> },
       {
         dt: "标准",
         dd: (
           <>
-            达标阈值 <span className="mono">≥ {THRESHOLDS.DR}</span>；低于即判定该运行不达标。
+            达标线 <span className="mono">≥ {THRESHOLDS.DR}</span>（即 {Math.round(THRESHOLDS.DR * 100)}%）；低于则这批整体不合格。
           </>
         ),
       },
@@ -149,7 +152,7 @@ export const METRIC_EXPLAIN: Record<MetricKey, ExplainContent> = {
   CPR: {
     title: (
       <>
-        CPR · Commonsense Pass Rate <code className="code-inline">常识通过率</code>
+        CPR · Constraint Pass Rate <code className="code-inline">约束通过率</code>
       </>
     ),
     rows: [
@@ -157,17 +160,16 @@ export const METRIC_EXPLAIN: Record<MetricKey, ExplainContent> = {
         dt: "定义",
         dd: (
           <>
-            通过<b style={{ color: "var(--text-primary)" }}>格式 + 常识双门控</b>
-            （常识含史实、数理、单位、逻辑等）的样本占比。
+            <b style={{ color: "var(--text-primary)" }}>格式合格、并且内容也正确</b>（没有事实或常识错误）的样本占多少。
           </>
         ),
       },
-      { dt: "计算", dd: <span className="mono">(格式+常识)双门控通过样本数 / 总样本数</span> },
+      { dt: "计算", dd: <span className="mono">格式和内容都通过的样本数 ÷ 全部样本数</span> },
       {
         dt: "标准",
         dd: (
           <>
-            达标阈值 <span className="mono">≥ {THRESHOLDS.CPR}</span>。
+            达标线 <span className="mono">≥ {THRESHOLDS.CPR}</span>（即 {Math.round(THRESHOLDS.CPR * 100)}%）。
           </>
         ),
       },
@@ -180,13 +182,24 @@ export const METRIC_EXPLAIN: Record<MetricKey, ExplainContent> = {
       </>
     ),
     rows: [
-      { dt: "定义", dd: <>样本综合得分，聚合四个阶段得分的加权和。</> },
+      {
+        dt: "定义",
+        dd: (
+          <>
+            每个样本的整体质量分，取值 <b style={{ color: "var(--text-primary)" }}>0~1</b>，综合
+            <b style={{ color: "var(--text-primary)" }}>格式、内容正确性、内容质量、用户喜好</b>四个方面。
+          </>
+        ),
+      },
       {
         dt: "计算",
         dd: (
           <>
-            <span className="mono">S_format + S_common + w₃·S_soft + w₄·S_pref</span>{" "}
-            后对全部样本取均值。
+            <div className="mono" style={{ margin: "4px 0 6px" }}>
+              综合得分 =（格式分 + 内容正确性分 + 内容质量分 + 用户喜好分）÷ 4
+            </div>
+            四个方面<b>各占 25%（等权）</b>，每项 0~1 分；满分 <span className="mono">1.0</span>，
+            <b style={{ color: "var(--danger)" }}>格式不合格则整体直接算 0 分</b>；最后取该项目所有样本的平均。
           </>
         ),
       },
@@ -194,7 +207,66 @@ export const METRIC_EXPLAIN: Record<MetricKey, ExplainContent> = {
         dt: "标准",
         dd: (
           <>
-            达标阈值 <span className="mono">≥ {THRESHOLDS.Reward}</span>；反映整体质量水位。
+            达标阈值 <span className="mono">≥ {THRESHOLDS.Reward}</span>（即{" "}
+            {Math.round((THRESHOLDS.Reward ?? 0) * 100)}% 质量）；越高越好。
+          </>
+        ),
+      },
+    ],
+  },
+  Soft: {
+    title: (
+      <>
+        Soft <code className="code-inline">内容质量分</code>
+      </>
+    ),
+    rows: [
+      {
+        dt: "定义",
+        dd: (
+          <>
+            <b style={{ color: "var(--text-primary)" }}>内容本身的质量</b>打分（结构、逻辑、多样性、可读性等），取值 0~1。
+          </>
+        ),
+      },
+      {
+        dt: "计算",
+        dd: <>由若干"内容质量"评估器（如教学逻辑、内容多样性）各自打分后<b>加权平均</b>。</>,
+      },
+      {
+        dt: "标准",
+        dd: (
+          <>
+            达标线 <span className="mono">≥ {THRESHOLDS.Soft}</span>（即 {Math.round(THRESHOLDS.Soft * 100)}%）；不影响是否"通过"，只反映质量高低。
+          </>
+        ),
+      },
+    ],
+  },
+  Pref: {
+    title: (
+      <>
+        Pref <code className="code-inline">用户偏好分</code>
+      </>
+    ),
+    rows: [
+      {
+        dt: "定义",
+        dd: (
+          <>
+            <b style={{ color: "var(--text-primary)" }}>是否符合用户主观喜好</b>（风格、深度、需求契合度等），取值 0~1。
+          </>
+        ),
+      },
+      {
+        dt: "计算",
+        dd: <>由若干"偏好"评估器（如风格、深度、需求满足）各自打分后<b>加权平均</b>。</>,
+      },
+      {
+        dt: "标准",
+        dd: (
+          <>
+            达标线 <span className="mono">≥ {THRESHOLDS.Pref}</span>（即 {Math.round(THRESHOLDS.Pref * 100)}%）；主观维度，越高越贴合用户预期。
           </>
         ),
       },
@@ -318,9 +390,9 @@ export const SCORE_EXPLAIN: Record<"S_format" | "S_common" | "S_soft_pref", Expl
 /** 指标值根据阈值着色：达标绿 / 未达红 / 中性。 */
 export function metricColor(key: MetricKey, value: number | null | undefined): string {
   if (value == null) return "var(--text-primary)"
-  const thr = THRESHOLDS[key as "DR" | "CPR" | "Reward"]
+  const thr = THRESHOLDS[key as "DR" | "CPR" | "Reward" | "Soft" | "Pref"]
   if (thr == null) return "var(--accent)"
-  if (value >= thr) return key === "Reward" || key === "DR" ? "var(--success)" : "var(--signal)"
+  if (value >= thr) return "var(--success)"
   return "var(--warning)"
 }
 

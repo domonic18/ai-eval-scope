@@ -1,6 +1,9 @@
 """ScoreAggregator — 评分聚合。
 
-实现 Reward 公式：Reward = S_format + S_common + w3 × S_soft + w4 × S_pref
+实现 Reward 公式（归一化到 [0,1]，行业最佳实践）：
+    Reward = (S_format + S_common + w3 × S_soft + w4 × S_pref)
+             / (format_pass + commonsense_pass + w3 + w4)
+各维度 ∈ [0,1] → Reward ∈ [0,1]，无负值；format 失败由 DR + fail-fast 体现，不再负惩罚。
 """
 
 from __future__ import annotations
@@ -47,7 +50,14 @@ class ScoreAggregator:
         s_soft = self._weighted(result, "quality", self.soft_weights)
         s_pref = self._weighted(result, "quality", self.pref_weights)
 
-        reward = s_format + s_common + self.w3 * s_soft + self.w4 * s_pref
+        # 归一化到 [0,1]：各维度 ∈ [0,1]，除以满分基数（format_pass + commonsense_pass + w3 + w4）
+        weights = SCORE_AGGREGATION_WEIGHTS
+        denom = weights.format_pass + weights.commonsense_pass + self.w3 + self.w4
+        reward = (
+            (s_format + s_common + self.w3 * s_soft + self.w4 * s_pref) / denom
+            if denom > 0
+            else 0.0
+        )
 
         return SampleScore(
             sample_id=result.sample_id,

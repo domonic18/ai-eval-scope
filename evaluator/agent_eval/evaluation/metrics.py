@@ -61,6 +61,10 @@ class MetricsCalculator:
         # Reward 分布
         rewards = [r.reward for r in results]
 
+        # 内容质量 / 用户偏好 分项均值（独立指标，不混入 Reward）
+        avg_soft = sum(r.s_soft for r in results) / total
+        avg_pref = sum(r.s_pref for r in results) / total
+
         # 失败分类
         failure_breakdown = self._breakdown(results)
 
@@ -73,6 +77,8 @@ class MetricsCalculator:
             dr=fmt_pass / total,
             cpr=com_pass / total,
             avg_reward=sum(rewards) / total,
+            avg_soft=avg_soft,
+            avg_pref=avg_pref,
             cond_r=(sum(r.reward for r in gated) / len(gated)) if gated else 0.0,
             avg_time_ms=sum(r.total_duration_ms for r in results) / total,
             sample_scores=[

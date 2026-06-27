@@ -24,6 +24,8 @@ export interface TrendPoint {
   DR: number
   CPR: number
   Reward: number
+  Soft: number
+  Pref: number
 }
 
 class QueryRepository extends BaseRepository {
@@ -125,7 +127,8 @@ class QueryRepository extends BaseRepository {
     const limit = Math.min(500, Math.max(1, f.limit ?? 100))
     return this.prisma.$queryRaw<TrendPoint[]>`
       SELECT external_run_id AS run_id, created_at,
-             dr AS "DR", cpr AS "CPR", avg_reward AS "Reward"
+             dr AS "DR", cpr AS "CPR", avg_reward AS "Reward",
+             avg_soft AS "Soft", avg_pref AS "Pref"
       FROM runs
       WHERE project_id = ${projectId}
         AND project_id IN (SELECT id FROM projects WHERE org_id = ${orgId})
