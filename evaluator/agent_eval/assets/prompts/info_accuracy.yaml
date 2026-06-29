@@ -50,13 +50,6 @@ user_prompt_template: |
   ## 文档内容
   {{ content }}
 
-  {% if warnings %}
-  ## ⚠️ 规则引擎标记的可疑条目（请重点验证）
-  {% for w in warnings %}
-  - {{ w }}
-  {% endfor %}
-  {% endif %}
-
   ---
 
   请严格按照以下 JSON 格式输出评估结果（每个维度评分范围 0-10）：

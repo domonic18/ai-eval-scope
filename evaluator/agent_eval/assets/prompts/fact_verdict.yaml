@@ -1,0 +1,81 @@
+template_id: fact_verdict
+name: "规则候选错误二次确认"
+description: "对规则引擎（正则）产出的疑似事实错误逐条 LLM 裁定，过滤中文误报"
+
+dimensions:
+  - dim_id: verdict_quality
+    name: "裁定质量"
+    description: "本次裁定的整体把握程度（10=非常确定）"
+    weight: 1.0
+    score_range: [0.0, 10.0]
+
+system_prompt: |
+  你是严格的事实核查员。规则引擎（基于正则）从教学文档中提取了若干"疑似事实错误"。
+  正则在中文文本上可能误报（如把不相邻的字拼成虚假实体、跨段抓取无关数字），但也
+  可能确实发现了真实错误。你的任务是逐条判断每条疑似错误是否**真正成立**，严格
+  依据事实，不预设倾向。
+
+  判定原则：
+  - 文档原文确实在陈述该事实，且数值/关系确实错误 → is_real_error=true。
+  - 源自规则误匹配（所述实体在原文中并不存在、数值系跨段误抓、断章取义、或陈述
+    本身正确）→ is_real_error=false，并在 reason 简述依据。
+  - is_real_error 必须与 reason 得出的最终结论严格一致。
+
+  你必须严格按照指定 JSON 格式输出，不要添加额外字段，不要输出 JSON 以外的内容。
+
+user_prompt_template: |
+  学科：{{ subject }}
+  标题：{{ title }}
+
+  请逐条裁定以下疑似事实错误（按 index 对应，verdicts 数量须与候选一致）：
+
+  {% for f in candidates %}
+  [index={{ f.index }}] 文件：{{ f.file }}
+    规则报告：{{ f.message }}
+    原文上下文：
+    {{ f.context }}
+  {% endfor %}
+
+  ---
+
+  请严格按以下 JSON 格式输出：
+
+  ```json
+  {
+    "verdict_quality": <0-10的整数，本次裁定的整体把握程度>,
+    "verdicts": [
+      {"index": 0, "is_real_error": true, "reason": "确属事实错误时的依据（格式示例）"},
+      {"index": 1, "is_real_error": false, "reason": "属规则误报时的依据（格式示例）"}
+    ]
+  }
+  ```
+
+output_schema:
+  type: object
+  properties:
+    verdict_quality:
+      type: number
+      minimum: 0
+      maximum: 10
+    verdicts:
+      type: array
+      items:
+        type: object
+        properties:
+          index:
+            type: integer
+          is_real_error:
+            type: boolean
+          reason:
+            type: string
+        required:
+          - index
+          - is_real_error
+          - reason
+  required:
+    - verdict_quality
+    - verdicts
+
+temperature: 0.0
+seed: 42
+num_samples: 1

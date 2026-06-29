@@ -1,9 +1,16 @@
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { api } from "../api/client"
-import type { ApiKeySafe, IssuedApiKey, RunSummary, TrendPoint } from "../types"
+import type {
+  ApiKeySafe,
+  IssuedApiKey,
+  ProjectSample,
+  RunSummary,
+  SampleTrendPoint,
+  TrendPoint,
+} from "../types"
 import { fmt3, fmtMs, num, timeAgo } from "../lib/format"
-import { METRIC_EXPLAIN, THRESHOLDS, metricColor, runBadge } from "../lib/eval"
+import { METRIC_EXPLAIN, METRIC_LABEL, metricColor, runBadge } from "../lib/eval"
 import type { MetricKey } from "../lib/eval"
 import {
   Badge,
@@ -18,6 +25,7 @@ import {
   Modal,
   Select,
   Tabs,
+  TrendChart,
   useCrumbs,
   useToast,
 } from "../components/ui"
@@ -31,7 +39,7 @@ interface Project {
   ruleSetVersion?: string | null
 }
 
-type Tab = "overview" | "runs" | "settings"
+type Tab = "overview" | "runs" | "samples" | "settings"
 type SetTab = "keys" | "basic" | "retention" | "danger"
 
 function truncKey(k: string): string {
@@ -80,21 +88,18 @@ export default function ProjectDetail() {
   }, [trends])
   const latest = trendsAsc[trendsAsc.length - 1]
   const prev = trendsAsc[trendsAsc.length - 2]
-  const condR = runs[0]?.condR
 
-  const deltaOf = (cur: number | undefined, prevV: number | undefined, key: MetricKey) => {
+  const deltaOf = (cur: number | undefined, prevV: number | undefined) => {
     if (cur == null) return null
-    const threshold = THRESHOLDS[key as "DR" | "CPR" | "Reward"]
-    if (prevV == null) {
-      return threshold ? <span className="muted">阈值 ≥ {threshold}</span> : null
-    }
+    if (prevV == null) return <span className="muted">首次评估</span>
     const diff = cur - prevV
-    if (Math.abs(diff) < 0.0005) return <span className="delta-flat">▬ 持平</span>
+    if (Math.abs(diff) < 0.0005) return <span className="delta-flat">▬ 较上次持平</span>
     const arrow = diff > 0 ? "▲" : "▼"
     const cls = diff > 0 ? "delta-up" : "delta-down"
     return (
       <span className={cls}>
-        {arrow} {(Math.abs(diff) * 100).toFixed(1)}% <span className="muted">vs 上次</span>
+        {arrow} 较上次 {diff > 0 ? "+" : ""}
+        {diff.toFixed(3)}
       </span>
     )
   }
@@ -132,6 +137,7 @@ export default function ProjectDetail() {
           items={[
             { key: "overview", label: "概览" },
             { key: "runs", label: "运行", count: num(runsTotal) },
+            { key: "samples", label: "样本" },
             { key: "settings", label: "设置 & API Key" },
           ]}
         />
@@ -142,36 +148,36 @@ export default function ProjectDetail() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(4,1fr)",
+              gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
               gap: 14,
               marginBottom: 16,
             }}
           >
-            {(["DR", "CPR", "Reward", "CondR"] as MetricKey[]).map((k) => {
-              const val =
-                k === "CondR"
-                  ? condR
-                  : k === "DR"
-                    ? latest?.DR
-                    : k === "CPR"
-                      ? latest?.CPR
-                      : latest?.Reward
-              const prevVal =
-                !prev || k === "CondR"
-                  ? undefined
-                  : k === "DR"
-                    ? prev.DR
-                    : k === "CPR"
-                      ? prev.CPR
-                      : prev.Reward
+            {(["DR", "CPR", "Soft", "Pref", "Reward"] as MetricKey[]).map((k) => {
+              const kk = k as "DR" | "CPR" | "Reward" | "Soft" | "Pref"
+              const val = latest ? latest[kk] : undefined
+              const prevVal = prev ? prev[kk] : undefined
+              const delta = deltaOf(val, prevVal)
               return (
                 <Metric
                   key={k}
-                  label={k}
+                  label={METRIC_LABEL[k]}
                   value={fmt3(val)}
-                  valueColor={k === "CondR" ? undefined : metricColor(k, val)}
+                  valueColor={metricColor(k, val)}
                   explain={METRIC_EXPLAIN[k]}
-                  foot={deltaOf(val, prevVal, k)}
+                  foot={
+                    latest ? (
+                      <span className="muted">
+                        最近一次运行 {timeAgo(latest.created_at)}
+                        {delta ? (
+                          <>
+                            {" · "}
+                            {delta}
+                          </>
+                        ) : null}
+                      </span>
+                    ) : null
+                  }
                 />
               )
             })}
@@ -217,6 +223,8 @@ export default function ProjectDetail() {
         <RunsTab runs={runs} total={runsTotal} onOpen={(r) => nav(`/run/${r.id}`)} />
       )}
 
+      {tab === "samples" && id && <SamplesTab projectId={id} />}
+
       {tab === "settings" && project && (
         <SettingsTab
           projectId={project.id}
@@ -232,55 +240,23 @@ export default function ProjectDetail() {
 
 /** 趋势折线（DR/CPR/Reward）+ 图例。 */
 function LineTrendSVG({ trends }: { trends: TrendPoint[] }) {
+  const points = trends.map((t) => ({
+    label: new Date(t.created_at).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" }),
+    values: { DR: t.DR, CPR: t.CPR, Reward: t.Reward, Soft: t.Soft, Pref: t.Pref },
+  }))
   const series = [
-    { name: "DR", color: "var(--success)", data: trends.map((t) => t.DR) },
-    { name: "CPR", color: "var(--signal)", data: trends.map((t) => t.CPR) },
-    { name: "Reward", color: "var(--accent)", data: trends.map((t) => t.Reward) },
+    { key: "DR", name: METRIC_LABEL.DR, color: "var(--success)" },
+    { key: "CPR", name: METRIC_LABEL.CPR, color: "var(--warning)" },
+    { key: "Reward", name: METRIC_LABEL.Reward, color: "var(--accent)" },
+    { key: "Soft", name: METRIC_LABEL.Soft, color: "var(--signal)" },
+    { key: "Pref", name: METRIC_LABEL.Pref, color: "var(--info)" },
   ]
-  // 动态导入避免循环：这里直接用内联 SVG（与 ui/Chart 一致）
-  const W = 720
-  const H = 240
-  const y = (v: number) => H - Math.max(0, Math.min(1, v)) * H
-  const toPts = (data: number[]) =>
-    data
-      .map((v, i) => {
-        const x = data.length === 1 ? 0 : (i / (data.length - 1)) * W
-        return `${x.toFixed(1)},${y(v).toFixed(1)}`
-      })
-      .join(" ")
   return (
-    <>
-      <svg className="trend-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
-        {[0.25, 0.5, 0.75].map((g) => (
-          <line
-            key={g}
-            x1="0"
-            y1={y(g)}
-            x2={W}
-            y2={y(g)}
-            stroke="var(--border)"
-            strokeDasharray="3 4"
-          />
-        ))}
-        {series.map((s) => (
-          <polyline
-            key={s.name}
-            points={toPts(s.data)}
-            fill="none"
-            stroke={s.color}
-            strokeWidth={2.5}
-          />
-        ))}
-      </svg>
-      <div className="legend">
-        {series.map((s) => (
-          <div className="legend-item" key={s.name}>
-            <span className="legend-line" style={{ background: s.color }} />
-            {s.name}
-          </div>
-        ))}
-      </div>
-    </>
+    <TrendChart
+      points={points}
+      series={series}
+      thresholds={[{ label: "综合评分达标 0.8", value: 0.8, color: "var(--accent)" }]}
+    />
   )
 }
 
@@ -309,19 +285,27 @@ function runColumns() {
       },
     },
     {
-      key: "totalSamples",
-      title: "样本",
-      num: true,
-      render: (r: RunSummary) => num(r.totalSamples),
+      key: "samples",
+      title: "评估内容",
+      render: (r: RunSummary) => {
+        const ids = (r.samples ?? []).map((s) => s.externalSampleId)
+        if (!ids.length) return <span className="muted">—</span>
+        if (ids.length === 1) return <span className="mono">{ids[0]}</span>
+        return (
+          <span className="mono">
+            {ids[0]} <span className="muted">+{ids.length - 1}</span>
+          </span>
+        )
+      },
     },
     {
       key: "dr",
-      title: "DR",
+      title: METRIC_LABEL.DR,
       num: true,
       render: (r: RunSummary) => <span className={r.dr >= 0.95 ? "t-add" : ""}>{fmt3(r.dr)}</span>,
     },
-    { key: "cpr", title: "CPR", num: true, render: (r: RunSummary) => fmt3(r.cpr) },
-    { key: "avgReward", title: "Reward", num: true, render: (r: RunSummary) => fmt3(r.avgReward) },
+    { key: "cpr", title: METRIC_LABEL.CPR, num: true, render: (r: RunSummary) => fmt3(r.cpr) },
+    { key: "avgReward", title: METRIC_LABEL.Reward, num: true, render: (r: RunSummary) => fmt3(r.avgReward) },
     {
       key: "createdAt",
       title: "时间",
@@ -438,6 +422,169 @@ function RunsTab({
           pageSize={15}
           empty={<span className="muted">无匹配运行</span>}
         />
+      </div>
+    </div>
+  )
+}
+
+/** 样本 Tab：项目下课件清单 + 选中课件跨 run 走势（docs/arch/14）。 */
+function SamplesTab({ projectId }: { projectId: string }) {
+  const [samples, setSamples] = useState<ProjectSample[]>([])
+  const [selected, setSelected] = useState<string | null>(null)
+  const [trend, setTrend] = useState<SampleTrendPoint[]>([])
+
+  useEffect(() => {
+    api.listSamples(projectId).then(setSamples).catch(() => setSamples([]))
+  }, [projectId])
+
+  useEffect(() => {
+    if (!selected) {
+      setTrend([])
+      return
+    }
+    api.sampleTrends(projectId, selected).then(setTrend).catch(() => setTrend([]))
+  }, [projectId, selected])
+
+  const rewards = trend.map((t) => t.reward)
+  const lo = rewards.length ? Math.min(...rewards) : 0
+  const hi = rewards.length ? Math.max(...rewards) : 1
+
+  return (
+    <div
+      className="r-3"
+      style={{
+        display: "grid",
+        gridTemplateColumns: "minmax(340px,1fr) minmax(360px,1.2fr)",
+        gap: 16,
+      }}
+    >
+      <div className="card">
+        <div className="card-head">
+          <h3>样本（课件）</h3>
+          <span className="hint">点击查看走势</span>
+        </div>
+        <DataTable<ProjectSample>
+          columns={[
+            {
+              key: "externalSampleId",
+              title: "样本（逻辑标识）",
+              render: (s) => <span className="mono">{s.externalSampleId}</span>,
+            },
+            {
+              key: "evalCount",
+              title: "评估次数",
+              num: true,
+              render: (s) => num(s.evalCount),
+            },
+            {
+              key: "latestReward",
+              title: "最近 Reward",
+              num: true,
+              render: (s) => (
+                <span className={s.latestReward >= 0.8 ? "t-add" : ""}>{fmt3(s.latestReward)}</span>
+              ),
+            },
+            {
+              key: "latestAt",
+              title: "最近评估",
+              render: (s) => <span className="muted">{timeAgo(s.latestAt)}</span>,
+            },
+          ]}
+          rows={samples}
+          rowKey={(s) => s.externalSampleId}
+          onRowClick={(s) => setSelected(s.externalSampleId)}
+          pageSize={15}
+          empty={<span className="muted">暂无样本</span>}
+        />
+      </div>
+
+      <div className="card">
+        <div className="card-head">
+          <h3>{selected ? `走势：${selected}` : "样本走势"}</h3>
+          {trend.length > 0 && (
+            <span className="hint">
+              Reward {fmt3(lo)}–{fmt3(hi)} · {trend.length} 次评估
+            </span>
+          )}
+        </div>
+        <div className="card-body">
+          {!selected ? (
+            <Empty title="选择一个样本" children={<>从左侧选择课件，查看其跨多次评估的 Reward 走势。</>} />
+          ) : trend.length === 0 ? (
+            <Empty title="暂无走势数据" />
+          ) : (
+            <>
+              <div style={{ marginBottom: 16 }}>
+                <TrendChart
+                  points={trend.map((t) => ({
+                    label: new Date(t.created_at).toLocaleString("zh-CN", {
+                      month: "numeric",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }),
+                    values: { Reward: t.reward },
+                  }))}
+                  series={[{ key: "Reward", name: METRIC_LABEL.Reward, color: "var(--accent)" }]}
+                  height={300}
+                  thresholds={[{ label: "达标 0.8", value: 0.8, color: "var(--success)" }]}
+                />
+              </div>
+              <DataTable<SampleTrendPoint>
+                columns={[
+                  {
+                    key: "created_at",
+                    title: "时间",
+                    render: (t) => (
+                      <span className="muted">
+                        {new Date(t.created_at).toLocaleString("zh-CN")}
+                      </span>
+                    ),
+                  },
+                  {
+                    key: "run_id",
+                    title: "运行",
+                    render: (t) => <span className="mono">#{t.run_id.slice(-8)}</span>,
+                  },
+                  {
+                    key: "reward",
+                    title: "Reward",
+                    num: true,
+                    render: (t) => (
+                      <span className={t.reward >= 0.8 ? "t-add" : ""}>{fmt3(t.reward)}</span>
+                    ),
+                  },
+                  {
+                    key: "s_format",
+                    title: "S_format",
+                    num: true,
+                    render: (t) => fmt3(t.s_format),
+                  },
+                  {
+                    key: "s_common",
+                    title: "S_common",
+                    num: true,
+                    render: (t) => fmt3(t.s_common),
+                  },
+                  {
+                    key: "content_hash",
+                    title: "内容版本",
+                    render: (t) =>
+                      t.content_hash ? (
+                        <span className="mono muted">{t.content_hash}</span>
+                      ) : (
+                        <span className="muted">—</span>
+                      ),
+                  },
+                ]}
+                rows={[...trend].reverse()}
+                rowKey={(t) => t.run_id}
+                pageSize={20}
+                empty={<span className="muted">无数据</span>}
+              />
+            </>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -782,7 +929,7 @@ function BasicPanel({
         <Field label="项目名称">
           <Input defaultValue={name} />
         </Field>
-        <Field label="Slug（组织内唯一）" help="用于接入标识与 URL，创建后不建议修改。">
+        <Field label="Slug（项目唯一标识）" help="用于接入标识与 URL，创建后不建议修改。">
           <Input className="mono" defaultValue={slug} readOnly />
         </Field>
         <Field label="项目描述">
@@ -878,6 +1025,17 @@ function DangerPanel({
     }
   }
 
+  async function doDelete() {
+    try {
+      await api.deleteProject(projectId)
+      toast.success("项目已删除")
+      setDeleteOpen(false)
+      onArchived()
+    } catch (e) {
+      toast.error("删除失败：" + ((e as Error).message ?? ""))
+    }
+  }
+
   return (
     <>
       <h3 style={{ fontSize: 16, fontWeight: 650, marginBottom: 4 }}>危险区</h3>
@@ -941,14 +1099,7 @@ function DangerPanel({
         footer={
           <>
             <Button onClick={() => setDeleteOpen(false)}>取消</Button>
-            <Button
-              variant="danger"
-              disabled={confirmSlug !== slug}
-              onClick={() => {
-                toast.info("删除项目接口待后端接入")
-                setDeleteOpen(false)
-              }}
-            >
+            <Button variant="danger" disabled={confirmSlug !== slug} onClick={doDelete}>
               永久删除
             </Button>
           </>

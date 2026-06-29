@@ -127,7 +127,7 @@ export default function Dashboard() {
       <div className="page-head r-1">
         <div className="page-title">
           <h1>项目看板</h1>
-          <div className="sub">组织内全部评估项目</div>
+          <div className="sub">我的全部评估项目</div>
         </div>
         <div className="page-actions">
           <Button icon={<IconRefresh size={15} />} onClick={load}>
@@ -159,7 +159,7 @@ export default function Dashboard() {
         <div className="card r-2">
           <div className="card-body">
             <Empty
-              title="该组织下暂无项目"
+              title="暂无评估项目"
               children={<>点击右上角「新建项目」创建第一个评估项目。</>}
             />
           </div>
@@ -185,7 +185,12 @@ export default function Dashboard() {
                 <div className="pc-head">
                   <div>
                     <div className="pc-name">{p.name}</div>
-                    <div className="pc-slug">{p.slug}</div>
+                    <div className="pc-slug">
+                      {p.slug}
+                      <span className="muted" style={{ marginLeft: 6 }}>
+                        · 创建者 {p.ownerName}
+                      </span>
+                    </div>
                   </div>
                   <Badge variant={h.variant} dot={h.dot}>
                     {h.label}
@@ -214,11 +219,11 @@ export default function Dashboard() {
                     <div className="pc-stat-val" style={{ color: drColor }}>
                       {fmt3(p.latestRun?.dr)}
                     </div>
-                    <div className="pc-stat-lab">最新 DR</div>
+                    <div className="pc-stat-lab">最新交付率</div>
                   </div>
                   <div>
                     <div className="pc-stat-val">{fmt3(p.latestRun?.avgReward)}</div>
-                    <div className="pc-stat-lab">Reward</div>
+                    <div className="pc-stat-lab">综合奖励</div>
                   </div>
                   <div>
                     <div className="pc-stat-val">{num(p.runCount)}</div>
@@ -269,7 +274,7 @@ export default function Dashboard() {
           />
         </Field>
         <Field
-          label="Slug（组织内唯一）"
+          label="Slug（项目唯一标识）"
           help="用于接入标识与 URL，仅小写字母、数字、连字符"
           style={{ marginBottom: 0 }}
         >

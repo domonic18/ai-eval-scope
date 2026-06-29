@@ -18,26 +18,51 @@ datasource db {
 
 // ── 账号与组织 ──────────────────────────────────────────
 model User {
-  id           String          @id @default(uuid())
-  email        String          @unique
-  passwordHash String          @map("password_hash")
-  name         String?
-  createdAt    DateTime        @default(now()) @map("created_at")
-  memberships  OrgMembership[]
+  id             String          @id @default(uuid())
+  email          String          @unique
+  passwordHash   String?         @map("password_hash") // 可选：SSO 用户无密码（docs/arch/12 §4.2）
+  name           String?
+  // —— SSO（SAML）字段 ——
+  authType       String          @default("password") @map("auth_type") // password | saml
+  ssoProvider    String?         @map("sso_provider") // "guanghua"
+  ssoNameId      String?         @unique @map("sso_name_id") // SAML NameID（部分唯一）
+  ssoAttributes  Json?           @map("sso_attributes") @db.JsonB
+  lastSsoLoginAt DateTime?       @map("last_sso_login_at")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  memberships    OrgMembership[]
+  joinRequests   JoinRequest[]
 
   @@map("users")
 }
 
 model Organization {
-  id        String          @id @default(uuid())
-  name      String
-  slug      String          @unique
-  createdBy String          @map("created_by")
-  createdAt DateTime        @default(now()) @map("created_at")
-  members   OrgMembership[]
-  projects  Project[]
+  id           String          @id @default(uuid())
+  name         String
+  slug         String          @unique
+  createdBy    String          @map("created_by")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  members      OrgMembership[]
+  projects     Project[]
+  joinRequests JoinRequest[]
 
   @@map("organizations")
+}
+
+// 团队加入申请（用户主动申请 → owner 审批 → 通过成 member）
+model JoinRequest {
+  id         String       @id @default(uuid())
+  orgId      String       @map("org_id")
+  userId     String       @map("user_id")
+  message    String? // 申请留言
+  status     String       @default("pending") // pending | approved | rejected
+  resolvedBy String?      @map("resolved_by")
+  createdAt  DateTime     @default(now()) @map("created_at")
+  resolvedAt DateTime?    @map("resolved_at")
+  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, userId])
+  @@map("join_requests")
 }
 
 model OrgMembership {
@@ -108,6 +133,8 @@ model Run {
   dr               Float
   cpr              Float
   avgReward        Float      @map("avg_reward")
+  avgSoft          Float      @default(0) @map("avg_soft")
+  avgPref          Float      @default(0) @map("avg_pref")
   condR            Float      @map("cond_r")
   avgTimeMs        Float      @map("avg_time_ms")
   ruleSetVersion   String?    @map("rule_set_version")
@@ -132,7 +159,8 @@ model Sample {
   id                String             @id @default(uuid())
   runId             String             @map("run_id")
   projectId         String             @map("project_id") // 反范式便于隔离过滤
-  externalSampleId  String             @map("external_sample_id") // task_id/sample_id
+  externalSampleId  String             @map("external_sample_id") // task_id/sample_id（逻辑课件标识，跨版本稳定）
+  contentHash       String?            @map("content_hash") // 内容指纹（版本标记，不参与唯一键，详见 docs/arch/13）
   status            String
   sFormat           Float              @map("s_format")
   sCommon           Float              @map("s_common")

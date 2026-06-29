@@ -34,6 +34,7 @@ from agent_eval.storage.package import (
     EvaluationResult,
     ExecutionPackage,
     ScoreSummary,
+    find_orphan_files,
     generate_result_id,
     generate_run_id,
 )
@@ -51,6 +52,8 @@ class EvalResult:
     run_id: str = ""
     run_workspace: RunWorkspace | None = None
     samples: list[SampleResult] = field(default_factory=list)
+    # 运行溯源：规则集版本（docs/arch/13 §4），透传至 sink → run event → 平台
+    rule_set_version: str = ""
 
 
 class Orchestrator:
@@ -85,6 +88,8 @@ class Orchestrator:
         with_vision: bool = False,
         screenshot_renderer: Any | None = None,
         vision_soft_weights: dict[str, float] | None = None,
+        llm_signature: str = "",
+        no_cache: bool = False,
     ) -> EvalResult:
         """eval-only 模式：加载 packages → 评估 → 报告。
 
@@ -163,6 +168,20 @@ class Orchestrator:
 
         logger.info("加载执行包", count=len(packages))
 
+        # 3.1 孤儿文件检测（兜底：pack 已为覆盖语义，此处防御 package 被外部篡改/旧版本残留，
+        #     避免 silent corruption —— 评估了不属于本任务的内容）
+        for pkg in packages:
+            if pkg.output_dir and pkg.directory_manifest is not None:
+                orphans = find_orphan_files(pkg.output_dir, pkg.directory_manifest)
+                if orphans:
+                    rel_paths = sorted(str(p.relative_to(pkg.output_dir)) for p in orphans)
+                    logger.warning(
+                        "检测到孤儿文件（manifest 未登记，可能污染评估结果）",
+                        package_id=pkg.manifest.package_id,
+                        count=len(orphans),
+                        files=rel_paths,
+                    )
+
         # 4. 用 RuleSet 参数覆盖评估器默认参数
         self.pipeline_engine.apply_rule_set_params(rule_set)
 
@@ -183,6 +202,10 @@ class Orchestrator:
             extra_context["screenshot_renderer"] = screenshot_renderer
         if trace_id is not None:
             extra_context["trace_id"] = trace_id
+        # LLM 配置指纹（纳入 cache_key，LLM 配置/可用性变更时缓存自动失效）
+        extra_context["llm_signature"] = llm_signature
+        if no_cache:
+            extra_context["no_cache"] = True
 
         # 为每个包设置 evidence_dir
         # 在 evaluate_batch 中通过 extra_context 统一注入，
@@ -238,6 +261,8 @@ class Orchestrator:
             summary_md,
             encoding="utf-8",
         )
+        # 注入运行溯源（供 upload 子命令从 summary.json 重建 run event，docs/arch/13 §4）
+        summary_json["rule_set_version"] = rule_set_version
         (run_workspace.reports_dir / "summary.json").write_text(
             json.dumps(summary_json, ensure_ascii=False, indent=2),
             encoding="utf-8",
@@ -269,6 +294,7 @@ class Orchestrator:
             run_id=run_id,
             run_workspace=run_workspace,
             samples=sample_results,
+            rule_set_version=rule_set_version,
         )
 
     def _load_packages(self, package_dir: Path) -> list[ExecutionPackage]:

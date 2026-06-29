@@ -157,6 +157,22 @@ class LLMResponseError(LLMError):
     """LLM 响应解析失败。"""
 
 
+class LLMNetworkError(LLMError):
+    """LLM 网络错误（连接超时/DNS/5xx）— 瞬时，可重试。"""
+
+
+class LLMRateLimitError(LLMError):
+    """LLM 限流（HTTP 429）— 瞬时，可重试。"""
+
+
+class LLMQuotaExceededError(LLMError):
+    """LLM 额度耗尽/余额不足 — 不可恢复，不应重试。"""
+
+
+class LLMAuthError(LLMError):
+    """LLM 鉴权失败（401/API Key 无效）— 不可恢复，不应重试。"""
+
+
 # ─── 编排调度相关 ───
 
 

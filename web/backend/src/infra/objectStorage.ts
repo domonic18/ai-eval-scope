@@ -18,6 +18,7 @@ import {
   HeadObjectCommand,
   HeadBucketCommand,
   CreateBucketCommand,
+  DeleteObjectsCommand,
 } from "@aws-sdk/client-s3"
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 import { getConfig, type PlatformConfig } from "../config"
@@ -202,6 +203,28 @@ export class S3Storage {
       const status = e.$metadata && e.$metadata.httpStatusCode
       if (status === 404 || e.name === "NotFound") return null
       throw err
+    }
+  }
+
+  /** 批量删除对象（best-effort：不存在的对象静默，不抛错）。单批 ≤1000 keys。 */
+  async deleteObjects(keys: string[]): Promise<void> {
+    if (!keys.length) return
+    for (let i = 0; i < keys.length; i += 1000) {
+      const batch = keys.slice(i, i + 1000)
+      try {
+        await this.client.send(
+          new DeleteObjectsCommand({
+            Bucket: this.bucket,
+            Delete: { Objects: batch.map((Key) => ({ Key })), Quiet: true },
+          }),
+        )
+      } catch (err) {
+        const e = err as { $metadata?: { httpStatusCode?: number }; name?: string }
+        const status = e.$metadata && e.$metadata.httpStatusCode
+        // 对象不存在视为已删（幂等）；其余错误向上抛，由调用方 best-effort 兜底
+        if (status === 404 || e.name === "NoSuchKey") continue
+        throw err
+      }
     }
   }
 

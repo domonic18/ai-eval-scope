@@ -88,6 +88,46 @@ export function verifyToken(token: string): TokenClaims {
   return jwt.verify(token, cfg.jwtSecret, { algorithms: ["HS256"] }) as TokenClaims
 }
 
+/* ── 制品预览专用 token（raw 代理鉴权）───────────────── */
+/**
+ * 同源流式代理 GET /artifacts/:id/raw 的鉴权凭证。
+ * iframe 导航不带 Authorization，无法复用 requireAuth；改由 preview 端点
+ * （已做 artifactGuard 归属校验）签发本 token 放入 URL query，raw 端点验签即放行。
+ * claims 自含 objectKey，raw 端点不查 DB；短 TTL 限制爆炸半径。
+ */
+export const ARTIFACT_TOKEN_TTL_SEC = 60 * 5
+
+export interface ArtifactTokenClaims extends jwt.JwtPayload {
+  kind: "artifact"
+  aid: string // artifactId
+  key: string // objectKey（raw 端点据此拉取对象）
+  ct: string // contentType（决定响应 Content-Type）
+  name: string // filename
+}
+
+export function issueArtifactToken(p: {
+  artifactId: string
+  objectKey: string
+  contentType: string
+  filename: string
+}): string {
+  const cfg = getConfig()
+  return jwt.sign(
+    { kind: "artifact", aid: p.artifactId, key: p.objectKey, ct: p.contentType, name: p.filename },
+    cfg.jwtSecret,
+    { expiresIn: ARTIFACT_TOKEN_TTL_SEC, algorithm: "HS256" },
+  )
+}
+
+export function verifyArtifactToken(token: string): ArtifactTokenClaims {
+  const cfg = getConfig()
+  const claims = jwt.verify(token, cfg.jwtSecret, { algorithms: ["HS256"] }) as ArtifactTokenClaims
+  if (claims.kind !== "artifact") {
+    throw new Error("wrong token kind")
+  }
+  return claims
+}
+
 /* ── API Key 对生成 ─────────────────────────────────── */
 function randomToken(bytes: number): string {
   return crypto.randomBytes(bytes).toString("hex")

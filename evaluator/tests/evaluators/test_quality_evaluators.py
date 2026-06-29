@@ -39,16 +39,82 @@ class TestBaseLLMJudgeEvaluator:
         sample = _prepare_output(tmp_path, "# Test\nSome content here.")
         evaluator = TeachingLogicEvaluator()
         result = evaluator.evaluate(sample, {})  # 无 judge_orchestrator
-        assert result.score == 0.7
-        assert result.status == EvalStatus.PASS
-        assert "降级" in result.reason
+        assert result.score == 0.0
+        assert result.status == EvalStatus.SKIP
+        assert "跳过" in result.reason
 
     def test_degradation_no_evidence_dir(self, tmp_path: Path) -> None:
         """无 evidence_dir 时降级模式。"""
         sample = _prepare_output(tmp_path, "Content")
         evaluator = TeachingLogicEvaluator()
         result = evaluator.evaluate(sample, {"judge_orchestrator": MagicMock()})
-        assert result.score == 0.7
+        assert result.score == 0.0
+        assert result.status == EvalStatus.SKIP
+
+    def test_llm_quota_exceeded_skips(self, tmp_path: Path) -> None:
+        """LLM 额度耗尽时 SKIP（不计分、不 FAIL）。"""
+        from agent_eval.core.exceptions import LLMQuotaExceededError
+
+        sample = _prepare_output(tmp_path, "内容" * 50)
+        mock_orch = MagicMock()
+        mock_orch.judge.side_effect = LLMQuotaExceededError("额度耗尽")
+        result = TeachingLogicEvaluator().evaluate(
+            sample, {"judge_orchestrator": mock_orch, "evidence_dir": tmp_path / "ev"}
+        )
+        assert result.status == EvalStatus.SKIP
+        assert result.score == 0.0
+        assert "Quota" in result.reason
+
+    def test_llm_network_error_skips(self, tmp_path: Path) -> None:
+        """LLM 网络错误时 SKIP（不计分）。"""
+        from agent_eval.core.exceptions import LLMNetworkError
+
+        sample = _prepare_output(tmp_path, "内容" * 50)
+        mock_orch = MagicMock()
+        mock_orch.judge.side_effect = LLMNetworkError("超时")
+        result = TeachingLogicEvaluator().evaluate(
+            sample, {"judge_orchestrator": mock_orch, "evidence_dir": tmp_path / "ev"}
+        )
+        assert result.status == EvalStatus.SKIP
+        assert "Network" in result.reason
+
+    def test_llm_auth_error_skips(self, tmp_path: Path) -> None:
+        """LLM 鉴权失败时 SKIP。"""
+        from agent_eval.core.exceptions import LLMAuthError
+
+        sample = _prepare_output(tmp_path, "内容" * 50)
+        mock_orch = MagicMock()
+        mock_orch.judge.side_effect = LLMAuthError("401")
+        result = TeachingLogicEvaluator().evaluate(
+            sample, {"judge_orchestrator": mock_orch, "evidence_dir": tmp_path / "ev"}
+        )
+        assert result.status == EvalStatus.SKIP
+        assert "Auth" in result.reason
+
+    def test_quota_exceeded_sets_circuit_breaker(self, tmp_path: Path) -> None:
+        """额度耗尽时设置熔断标志（同 context 后续评估器可据此跳过）。"""
+        from agent_eval.core.exceptions import LLMQuotaExceededError
+
+        sample = _prepare_output(tmp_path, "内容" * 50)
+        mock_orch = MagicMock()
+        mock_orch.judge.side_effect = LLMQuotaExceededError("额度耗尽")
+        ctx = {"judge_orchestrator": mock_orch, "evidence_dir": tmp_path / "ev"}
+        TeachingLogicEvaluator().evaluate(sample, ctx)
+        assert ctx.get("llm_quota_exhausted") is True
+
+    def test_circuit_breaker_skips_subsequent(self, tmp_path: Path) -> None:
+        """熔断标志已设置时，评估器直接 SKIP（不调用 LLM）。"""
+        sample = _prepare_output(tmp_path, "内容" * 50)
+        mock_orch = MagicMock()
+        ctx = {
+            "judge_orchestrator": mock_orch,
+            "evidence_dir": tmp_path / "ev",
+            "llm_quota_exhausted": True,
+        }
+        result = TeachingLogicEvaluator().evaluate(sample, ctx)
+        assert result.status == EvalStatus.SKIP
+        assert "熔断" in result.reason
+        mock_orch.judge.assert_not_called()
 
     def test_llm_empty_content(self, tmp_path: Path) -> None:
         """空文档 LLM 评估失败。"""
@@ -200,8 +266,9 @@ class TestPreferenceEvaluators:
         ]:
             evaluator = registry.create(eval_id, {})
             result = evaluator.evaluate(sample, {})
-            assert result.score == 0.7
-            assert "降级" in result.reason
+            assert result.score == 0.0
+            assert result.status == EvalStatus.SKIP
+            assert "跳过" in result.reason
 
 
 # ─── 三阶段级联集成测试 ───
@@ -220,20 +287,16 @@ class TestThreeStageCascade:
         assert len(quality_stage) == 1
         assert len(quality_stage[0].evaluators) == 5  # 5 llm
 
-    def test_17_evaluators_registered(self) -> None:
-        """14 项评估器全部注册。"""
+    def test_15_evaluators_registered(self) -> None:
+        """10 项评估器全部注册。"""
         expected = [
-            # 格式（4）
+            # 格式（2）
             "format.response_format",
-            "format.document_count",
-            "format.structure_compliance",
             "format.html_validity",
-            # 常识（5）
+            # 常识（3）
             "commonsense.info_accuracy",
             "commonsense.chronological_order",
             "commonsense.logical_consistency",
-            "commonsense.math_formula",
-            "commonsense.unit_consistency",
             # 软约束（2）
             "soft.teaching_logic",
             "soft.content_diversity",
@@ -242,7 +305,7 @@ class TestThreeStageCascade:
             "pref.depth_preference",
             "pref.request_fulfillment",
         ]
-        assert len(expected) == 14
+        assert len(expected) == 10
         for eval_id in expected:
             e = registry.create(eval_id, {})
             assert e is not None, f"评估器 {eval_id} 未注册"
@@ -431,7 +494,7 @@ class TestFullCascadeEndToEnd:
         assert result.stage_results["format"].status == EvalStatus.FAIL
         assert result.stage_results["commonsense"].status == EvalStatus.SKIP
         assert result.stage_results["quality"].status == EvalStatus.SKIP
-        assert result.s_format == -3.0
+        assert result.s_format == 0.0  # 归一化后 format 失败不惩罚（0，非 -3）
         # 短路后 soft/pref 得 0 分
         assert result.s_soft == 0.0
         assert result.s_pref == 0.0

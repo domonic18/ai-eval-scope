@@ -38,11 +38,11 @@ class TestVisionQualityEvaluator:
         assert ev.template_id == "visual_quality"
 
     def test_degrade_no_orchestrator(self, tmp_path: Path) -> None:
-        """无 judge_orchestrator 时降级 PASS/0.7。"""
+        """无 judge_orchestrator 时 SKIP（不计分）。"""
         ev = VisionQualityEvaluator()
         result = ev.evaluate(tmp_path, context={})
-        assert result.status.value == "pass"
-        assert result.score == 0.7
+        assert result.status.value == "skip"
+        assert result.score == 0.0
 
     def test_degrade_no_renderer(self, tmp_path: Path) -> None:
         """有 orchestrator 但无 renderer 时降级。"""
@@ -51,8 +51,8 @@ class TestVisionQualityEvaluator:
             tmp_path,
             context={"judge_orchestrator": MagicMock(), "evidence_dir": tmp_path / "ev"},
         )
-        assert result.status.value == "pass"
-        assert result.score == 0.7
+        assert result.status.value == "skip"
+        assert result.score == 0.0
         assert "渲染器" in result.reason
 
     def test_degrade_no_docs(self, tmp_path: Path) -> None:
@@ -68,7 +68,7 @@ class TestVisionQualityEvaluator:
                 "screenshot_renderer": MagicMock(),
             },
         )
-        assert result.score == 0.7
+        assert result.score == 0.0
         assert "文档" in result.reason
 
     def test_full_vision_eval(self, tmp_path: Path) -> None:
@@ -263,5 +263,5 @@ class TestVisionQualityEvaluator:
                 "screenshot_renderer": renderer,
             },
         )
-        assert result.score == 0.7
+        assert result.score == 0.0
         assert "渲染失败" in result.reason

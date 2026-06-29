@@ -6,7 +6,7 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
-from cli import app
+from agent_eval.cli import app
 
 runner = CliRunner()
 

@@ -1,7 +1,8 @@
 /**
  * 运行详情路由（/api/v1/runs）。
- *  - GET /:id               运行详情（含样本摘要）
- *  - GET /:id/samples/:sid  样本详情（约束 + 制品引用）
+ *  - GET    /:id               运行详情（含样本摘要）
+ *  - GET    /:id/samples/:sid  样本详情（约束 + 制品引用）
+ *  - DELETE /:id               删除运行（owner；级联样本/约束/制品 + 清理对象存储文件）
  *
  * runGuard 解析 :id(run)→project→org→成员关系，注入 req.tenant（含 projectId）。
  */
@@ -35,6 +36,17 @@ router.get(
   wrap(async (req, res) => {
     const svc = createQueryService(req.tenant!)
     res.json({ sample: await svc.sampleDetail(req.tenant!.projectId!, req.params.sid) })
+  }),
+)
+
+router.delete(
+  "/:id",
+  requireAuth,
+  runGuard({ role: "owner" }),
+  wrap(async (req, res) => {
+    const svc = createQueryService(req.tenant!)
+    await svc.deleteRun(req.params.id)
+    res.json({ ok: true })
   }),
 )
 

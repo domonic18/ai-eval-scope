@@ -37,6 +37,8 @@ dev = [
     "mypy>=1.10",
     "pre-commit>=3.7",
     "commitizen>=3.29",
+    "agent-eval[llm]",
+    "agent-eval[vision]",
 ]
 llm = [
     "openai>=1.30",
@@ -50,10 +52,11 @@ vision = [
 datasets = [
     "huggingface_hub>=0.24",
     "modelscope>=1.18",
+    "pyarrow>=24.0.0",
 ]
 
 [project.scripts]
-agent-eval = "cli:app"
+agent-eval = "agent_eval.cli:app"
 
 [tool.hatch.build.targets.wheel]
 packages = ["agent_eval"]

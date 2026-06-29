@@ -88,8 +88,6 @@ class TestGlobalRegistry:
     def test_format_evaluators_registered(self) -> None:
         for eid in [
             "format.response_format",
-            "format.document_count",
-            "format.structure_compliance",
             "format.html_validity",
         ]:
             assert registry.is_registered(eid), f"{eid} 未注册"
@@ -99,8 +97,6 @@ class TestGlobalRegistry:
             "commonsense.info_accuracy",
             "commonsense.chronological_order",
             "commonsense.logical_consistency",
-            "commonsense.math_formula",
-            "commonsense.unit_consistency",
         ]:
             assert registry.is_registered(eid), f"{eid} 未注册"
 

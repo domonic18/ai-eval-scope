@@ -60,6 +60,28 @@
               }
             },
             "additionalProperties": false
+          },
+          "knowledge_mapping": {
+            "type": "object",
+            "description": "数据集到 knowledge 学科的映射（供知识点提取脚本消费；可选）",
+            "properties": {
+              "subjects": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "对应 knowledge 学科 key（math/physics/chemistry/biology/history/geography/chinese/morality）"
+              },
+              "levels": {
+                "type": "array",
+                "items": { "type": "string", "enum": ["primary", "junior", "senior", "college"] },
+                "description": "学段"
+              },
+              "extractable": {
+                "type": "array",
+                "items": { "type": "string", "enum": ["constants", "misconceptions", "domain_facts"] },
+                "description": "可提取的 knowledge 字段"
+              }
+            },
+            "additionalProperties": false
           }
         },
         "additionalProperties": false

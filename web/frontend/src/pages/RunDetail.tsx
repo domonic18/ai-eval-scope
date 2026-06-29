@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { api } from "../api/client"
 import { fmt3, fmtMsRaw, num } from "../lib/format"
-import { METRIC_EXPLAIN, THRESHOLDS, metricColor, runBadge, sampleBadge } from "../lib/eval"
+import { METRIC_EXPLAIN, METRIC_LABEL, THRESHOLDS, metricColor, runBadge, sampleBadge } from "../lib/eval"
 import type { MetricKey } from "../lib/eval"
 import {
   Badge,
@@ -14,10 +14,12 @@ import {
   Gauge,
   LinkButton,
   Metric,
+  Modal,
   Segment,
   useCrumbs,
+  useToast,
 } from "../components/ui"
-import { IconDownload, IconExternal } from "../components/icons"
+import { IconDownload, IconExternal, IconTrash } from "../components/icons"
 
 interface SampleRow {
   id: string
@@ -32,12 +34,16 @@ interface SampleRow {
 interface RunData {
   id: string
   externalRunId: string
+  projectId: string
+  canDelete: boolean
   mode: string
   status: string
   totalSamples: number
   dr: number
   cpr: number
   avgReward: number
+  avgSoft: number
+  avgPref: number
   condR: number
   avgTimeMs: number
   ruleSetVersion: string | null
@@ -79,6 +85,8 @@ export default function RunDetail() {
   const [run, setRun] = useState<RunData | null>(null)
   const [stageFilter, setStageFilter] = useState<StageFilter>(null)
   const [seg, setSeg] = useState<"all" | "fail" | "skip">("all")
+  const toast = useToast()
+  const [deleteOpen, setDeleteOpen] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -134,12 +142,15 @@ export default function RunDetail() {
   const failCount = run.samples.filter((s) => s.status === "fail" || s.status === "failed").length
   const rb = runBadge(run.status)
 
-  const metricBadge = (key: "DR" | "CPR" | "Reward") => {
-    const val = key === "DR" ? run.dr : key === "CPR" ? run.cpr : run.avgReward
-    return val >= THRESHOLDS[key] ? (
+  const metricBadge = (key: MetricKey) => {
+    const val =
+      key === "DR" ? run.dr : key === "CPR" ? run.cpr : key === "Reward"
+        ? run.avgReward : key === "Soft" ? run.avgSoft : run.avgPref
+    const soft = key === "Reward" || key === "Soft" || key === "Pref"
+    return val >= THRESHOLDS[key as "DR" | "CPR" | "Reward" | "Soft" | "Pref"] ? (
       <Badge variant="success">达标</Badge>
     ) : (
-      <Badge variant="warning">{key === "Reward" ? "偏低" : "未达"}</Badge>
+      <Badge variant="warning">{soft ? "偏低" : "未达"}</Badge>
     )
   }
 
@@ -168,6 +179,18 @@ export default function RunDetail() {
     a.download = `run-${run!.externalRunId}.${kind}`
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  async function doDelete() {
+    if (!id) return
+    try {
+      await api.deleteRun(id)
+      toast.success("已删除")
+      setDeleteOpen(false)
+      nav(`/project/${run!.projectId}`)
+    } catch (e) {
+      toast.error("删除失败：" + ((e as Error).message ?? ""))
+    }
   }
 
   return (
@@ -199,18 +222,31 @@ export default function RunDetail() {
           <Button icon={<IconDownload size={15} />} onClick={() => downloadReport("md")}>
             下载报告
           </Button>
+          {run.canDelete && (
+            <Button
+              variant="danger"
+              icon={<IconTrash size={15} />}
+              onClick={() => setDeleteOpen(true)}
+            >
+              删除运行
+            </Button>
+          )}
         </div>
       </div>
 
       {/* run meta */}
-      <div className="meta-grid r-2">
-        <div className="meta-cell">
-          <div className="meta-lab">外部运行 ID</div>
-          <div className="meta-val mono">{run.externalRunId}</div>
-        </div>
+      <div className="meta-grid r-2" style={{ gridTemplateColumns: "repeat(5,1fr)" }}>
         <div className="meta-cell">
           <div className="meta-lab">规则集版本</div>
           <div className="meta-val mono">{run.ruleSetVersion ?? "—"}</div>
+        </div>
+        <div className="meta-cell">
+          <div className="meta-lab">评估模式</div>
+          <div className="meta-val mono">{run.mode}</div>
+        </div>
+        <div className="meta-cell">
+          <div className="meta-lab">样本数</div>
+          <div className="meta-val mono">{num(run.totalSamples)}</div>
         </div>
         <div className="meta-cell">
           <div className="meta-lab">平均耗时 / 样本</div>
@@ -225,21 +261,22 @@ export default function RunDetail() {
       {/* metric cards */}
       <div
         className="r-3"
-        style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 16 }}
+        style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 14, marginBottom: 16 }}
       >
         {[
           { k: "DR" as MetricKey, val: run.dr, thr: THRESHOLDS.DR },
           { k: "CPR" as MetricKey, val: run.cpr, thr: THRESHOLDS.CPR },
+          { k: "Soft" as MetricKey, val: run.avgSoft, thr: THRESHOLDS.Soft },
+          { k: "Pref" as MetricKey, val: run.avgPref, thr: THRESHOLDS.Pref },
           { k: "Reward" as MetricKey, val: run.avgReward, thr: THRESHOLDS.Reward },
-          { k: "CondR" as MetricKey, val: run.condR, thr: undefined },
         ].map((m) => (
           <Metric
             key={m.k}
-            label={m.k}
+            label={METRIC_LABEL[m.k as MetricKey]}
             value={fmt3(m.val)}
             valueColor={m.thr ? metricColor(m.k as MetricKey, m.val) : undefined}
             explain={METRIC_EXPLAIN[m.k as MetricKey]}
-            badge={m.thr ? metricBadge(m.k as "DR" | "CPR" | "Reward") : undefined}
+            badge={m.thr ? metricBadge(m.k) : undefined}
             gauge={
               <Gauge
                 value={m.val}
@@ -334,9 +371,9 @@ export default function RunDetail() {
             <p>
               本次运行 {num(run.totalSamples)} 个样本，
               <strong className="tag-ok">{passCount} 通过</strong> /{" "}
-              <strong className="tag-bad">{failCount} 失败</strong>。DR{" "}
-              {run.dr >= THRESHOLDS.DR ? "达标" : "未达"}（{fmt3(run.dr)}）、 CPR{" "}
-              {run.cpr >= THRESHOLDS.CPR ? "达标" : "未达"}（{fmt3(run.cpr)}），Reward{" "}
+              <strong className="tag-bad">{failCount} 失败</strong>。交付率(DR){" "}
+              {run.dr >= THRESHOLDS.DR ? "达标" : "未达"}（{fmt3(run.dr)}）、 常识通过率(CPR){" "}
+              {run.cpr >= THRESHOLDS.CPR ? "达标" : "未达"}（{fmt3(run.cpr)}），综合奖励(Reward){" "}
               <strong className={run.avgReward >= THRESHOLDS.Reward ? "tag-ok" : "tag-bad"}>
                 {run.avgReward >= THRESHOLDS.Reward
                   ? "达标"
@@ -379,6 +416,9 @@ export default function RunDetail() {
             <span className="muted" style={{ fontWeight: 400 }}>
               {num(run.samples.length)}
             </span>
+            <span className="muted" style={{ fontSize: 12, fontWeight: 400, marginLeft: 8 }}>
+              被评估的内容单元；单次运行通常 1 个，批量评估时多个
+            </span>
           </h3>
           <div className="row" style={{ gap: 8 }}>
             <Segment<"all" | "fail" | "skip">
@@ -418,7 +458,7 @@ export default function RunDetail() {
             },
             {
               key: "reward",
-              title: "Reward",
+              title: METRIC_LABEL.Reward,
               num: true,
               render: (s) => (
                 <span className={s.reward < 0.5 ? "t-del" : "t-add"}>{fmt3(s.reward)}</span>
@@ -462,6 +502,22 @@ export default function RunDetail() {
           empty={<span className="muted">无匹配样本</span>}
         />
       </div>
+
+      {/* 删除确认 */}
+      <Modal
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        title="删除运行"
+        desc="删除后该运行的样本、约束结论与制品将从库中永久清除，且无法恢复；走势与看板指标将随之重算。"
+        footer={
+          <>
+            <Button onClick={() => setDeleteOpen(false)}>取消</Button>
+            <Button variant="danger" onClick={doDelete}>
+              确认删除
+            </Button>
+          </>
+        }
+      />
     </div>
   )
 }

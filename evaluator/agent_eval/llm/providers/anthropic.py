@@ -19,9 +19,51 @@ from typing import Any
 import anthropic
 
 from agent_eval.config import ProviderConfig, resolve_api_key
-from agent_eval.core.exceptions import LLMError
+from agent_eval.core.exceptions import (
+    LLMAuthError,
+    LLMError,
+    LLMNetworkError,
+    LLMQuotaExceededError,
+    LLMRateLimitError,
+)
 from agent_eval.llm.client import LLMClient
 from agent_eval.llm.models import LLMResponse, Message, TokenUsage
+
+# 瞬时错误重试参数（与 openai_compat 一致）
+_MAX_RETRIES = 3
+_RETRY_BASE_DELAY = 1.0
+
+
+def _is_anthropic_retryable(e: anthropic.APIError) -> bool:
+    """判断 Anthropic SDK 异常是否值得重试（瞬时错误）。"""
+    msg = str(e).lower()
+    status = getattr(e, "status_code", None)
+    if "timeout" in msg or "connection" in msg:
+        return True
+    if isinstance(status, int):
+        if status == 429:
+            return "insufficient_quota" not in msg and "billing" not in msg
+        if status >= 500:
+            return True
+    return False
+
+
+def _map_anthropic_error(e: anthropic.APIError, name: str, model: str) -> LLMError:
+    """将 Anthropic SDK 异常映射为 LLM 分级异常。"""
+    msg = str(e).lower()
+    status = getattr(e, "status_code", None)
+    details = {"provider": name, "model": model, "status": status}
+    if "insufficient_quota" in msg or "billing" in msg or "balance" in msg:
+        return LLMQuotaExceededError(f"Anthropic 额度耗尽: {e}", details=details)
+    if (isinstance(status, int) and status == 401) or "authentication" in msg or "api key" in msg:
+        return LLMAuthError(f"Anthropic 鉴权失败: {e}", details=details)
+    if (isinstance(status, int) and status == 429) or "rate" in msg:
+        return LLMRateLimitError(f"Anthropic 限流: {e}", details=details)
+    if isinstance(status, int) and status >= 500:
+        return LLMNetworkError(f"Anthropic 服务端错误 {status}: {e}", details=details)
+    if "timeout" in msg or "connection" in msg:
+        return LLMNetworkError(f"Anthropic 连接错误: {e}", details=details)
+    return LLMError(f"Anthropic 兼容 API 调用失败: {e}", details=details)
 
 
 def _split_system(messages: list[Message]) -> tuple[str | None, list[dict[str, Any]]]:
@@ -112,13 +154,16 @@ class AnthropicCompatClient(LLMClient):
             request_kwargs["system"] = system
 
         start = time.monotonic()
-        try:
-            response = self._client.messages.create(**request_kwargs)
-        except anthropic.APIError as e:
-            raise LLMError(
-                f"Anthropic 兼容 API 调用失败: {e}",
-                details={"provider": self._name, "model": self._config.model},
-            ) from e
+        response = None
+        for attempt in range(_MAX_RETRIES + 1):
+            try:
+                response = self._client.messages.create(**request_kwargs)
+                break
+            except anthropic.APIError as e:
+                if attempt < _MAX_RETRIES and _is_anthropic_retryable(e):
+                    time.sleep(_RETRY_BASE_DELAY * (2**attempt))
+                    continue
+                raise _map_anthropic_error(e, self._name, self._config.model) from e
 
         duration_ms = (time.monotonic() - start) * 1000
 

@@ -88,7 +88,7 @@ export default function SampleDetail() {
           </span>
           <Badge variant={sb.variant}>{sb.label}</Badge>
           <Badge variant="neutral">
-            Reward{" "}
+            综合奖励{" "}
             <b className="mono" style={{ color: "var(--danger)", marginLeft: 3 }}>
               {fmt3(sample.reward)}
             </b>
@@ -145,7 +145,10 @@ export default function SampleDetail() {
 
         {/* 右：制品预览 */}
         <div className="pane pane-right r-2">
-          <PreviewPane artifacts={sample.artifacts} />
+          <PreviewPane
+            artifacts={sample.artifacts}
+            isMultimodal={sample.constraintResults.some((c) => c.constraintId?.includes("vision"))}
+          />
         </div>
       </div>
     </>
@@ -172,14 +175,26 @@ function ConstraintItem({ c }: { c: ConstraintRow }) {
       </div>
       <div className="c-body">
         {c.reason && <div className="c-reason">{c.reason}</div>}
-        {c.details && Object.keys(c.details).length > 0 && <DetailsBlock details={c.details} />}
-        {c.moduleResults && Object.keys(c.moduleResults).length > 0 && (
-          <pre
-            className="code-block"
-            style={{ margin: "0 0 10px", fontSize: 11, padding: "10px 12px" }}
+        {/* 用户关心的「存在什么问题」：从 details 提取 errors 结构化展示 */}
+        {constraintErrors(c.details).length > 0 && (
+          <div
+            style={{
+              margin: "8px 0",
+              padding: "8px 10px",
+              background: "rgba(248,81,73,0.06)",
+              border: "1px solid rgba(248,81,73,0.2)",
+              borderRadius: "var(--r-sm)",
+            }}
           >
-            {JSON.stringify(c.moduleResults, null, 2)}
-          </pre>
+            <div style={{ fontSize: 12, color: "var(--danger)", marginBottom: 4 }}>发现的问题</div>
+            <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: "var(--text-secondary)" }}>
+              {constraintErrors(c.details).map((e, i) => (
+                <li key={i} style={{ marginBottom: 2 }}>
+                  {e}
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
         <div className="c-meta">
           <span>
@@ -199,8 +214,40 @@ function ConstraintItem({ c }: { c: ConstraintRow }) {
             </span>
           )}
         </div>
+        {/* 调试详情（原始 JSON，默认折叠，不占主视觉） */}
+        {hasDebug(c) && (
+          <details style={{ marginTop: 10 }}>
+            <summary
+              style={{ cursor: "pointer", color: "var(--text-tertiary)", fontSize: 12, userSelect: "none" }}
+            >
+              调试详情（files_checked / formulas_checked 等技术细节）
+            </summary>
+            <div style={{ marginTop: 6 }}>
+              {c.details && Object.keys(c.details).length > 0 && <DetailsBlock details={c.details} />}
+              {c.moduleResults && Object.keys(c.moduleResults).length > 0 && (
+                <DetailsBlock details={c.moduleResults} />
+              )}
+            </div>
+          </details>
+        )}
       </div>
     </div>
+  )
+}
+
+/** 从 details 提取 errors（具体问题描述，用户关心的「存在什么问题」）。 */
+function constraintErrors(details: Record<string, unknown> | null): string[] {
+  if (!details) return []
+  const e = details.errors
+  if (!Array.isArray(e)) return []
+  return e.filter((x): x is string => typeof x === "string")
+}
+
+/** 是否有调试详情（原始 JSON，折叠展示）。 */
+function hasDebug(c: ConstraintRow): boolean {
+  return (
+    (!!c.details && Object.keys(c.details).length > 0) ||
+    (!!c.moduleResults && Object.keys(c.moduleResults).length > 0)
   )
 }
 
@@ -213,7 +260,13 @@ function DetailsBlock({ details }: { details: Record<string, unknown> }) {
 }
 
 /** 右栏制品预览（三 Tab：原始文档 / 渲染截图 / 执行 Trace）。 */
-function PreviewPane({ artifacts }: { artifacts: ArtifactRow[] }) {
+function PreviewPane({
+  artifacts,
+  isMultimodal,
+}: {
+  artifacts: ArtifactRow[]
+  isMultimodal: boolean
+}) {
   const [tab, setTab] = useState<PrevTab>("doc")
   const [preview, setPreview] = useState<PreviewState>({ mode: "none" })
   const [loading, setLoading] = useState(false)
@@ -298,7 +351,7 @@ function PreviewPane({ artifacts }: { artifacts: ArtifactRow[] }) {
           {(
             [
               ["doc", "原始文档"],
-              ["shot", "渲染截图"],
+              ...(isMultimodal ? ([["shot", "渲染截图"]] as [PrevTab, string][]) : []),
               ["trace", "执行 Trace"],
             ] as [PrevTab, string][]
           ).map(([k, label]) => (

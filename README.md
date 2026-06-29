@@ -27,14 +27,15 @@ uv sync --extra llm          # LLM 依赖（可选）
 
 ### 示例：评估课件产出物
 
-以项目自带的 `docs/reference/大单元学习总导/`（HTML 课件目录）为例：
+以项目自带的 `samples/大单元学习总导/`（HTML 课件目录）为例：
 
 ```bash
 cd evaluator
 
 # ① 打包（自动遍历目录，task-id 取目录名"大单元学习总导"）
 uv run agent-eval pack \
-  --source-dir ../docs/reference/大单元学习总导/
+  --source-dir ../samples/大单元学习总导/ \
+  --output-dir workspace/packages
 
 # ② 评估
 uv run agent-eval eval \
@@ -45,7 +46,7 @@ uv run agent-eval eval \
 cat ../workspace/runs/*/reports/summary.md
 ```
 
-不配置 LLM 时，9 项 Rule-based 评估器正常运行，5 项 LLM 评估器自动降级（score=0.7）。
+不配置 LLM 时，Rule-based 评估器（格式门控 + 常识阶段的规则/事实/公式检查）正常运行；LLM Judge 评估器（质量阶段）自动降级为 `score=0.7`，逻辑一致性评估器降级为规则匹配；多模态视觉评估（`vision.quality`）需配置视觉模型，未配置时跳过。
 
 ### pack 命令
 
@@ -92,6 +93,19 @@ cp agent_eval/assets/configs/llm_config.example.yaml agent_eval/assets/configs/l
 # CLI 自动发现此文件，无需 --llm-config
 ```
 
+### 其他命令
+
+| 命令 | 说明 |
+|------|------|
+| `agent-eval run` | 执行被测 Agent（ExecutionAgent 驱动），生成 ExecutionPackage |
+| `agent-eval pipeline` | 完整流水线：执行被测 Agent → 评估 → 生成报告 |
+| `agent-eval upload` | 把历史运行的评估结果回填到可观测平台（API Key 摄取） |
+| `agent-eval dataset {download,list}` | 评测数据集下载与索引（详见 [10 数据集下载设计](./docs/arch/10数据集下载设计.md)） |
+| `agent-eval knowledge {convert,extract,merge,audit,list}` | 知识库构建管道（详见 [11 知识点完善管道系统设计](./docs/arch/11知识点完善管道系统设计.md)） |
+| `agent-eval version` | 显示版本信息 |
+
+均需在 `evaluator/` 下执行：`cd evaluator && uv run agent-eval <command> --help`。
+
 ### 输出
 
 评估完成后查看 `workspace/` 目录（默认在 `WORKSPACE_DIR`，缺省 `./workspace`）：
@@ -106,7 +120,7 @@ cp agent_eval/assets/configs/llm_config.example.yaml agent_eval/assets/configs/l
 
 ```bash
 cp .env.example .env          # 填入 DB / 对象存储 / 安全密钥
-make docker-up                # 启动 postgres + minio + platform
+make docker-up                # 启动 postgres + minio + web
 ```
 
 平台界面预览：

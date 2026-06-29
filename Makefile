@@ -1,4 +1,4 @@
-.PHONY: install dev test test-cov lint format clean golden web-install web-test web-typecheck docker-build docker-up docker-down docker-logs hooks check
+.PHONY: install dev test test-cov lint format clean golden web-install web-test web-typecheck docker-build docker-up docker-down docker-logs db-init hooks check
 
 # 使用 uv 进行包管理（推荐）
 # 需要先安装 uv: curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -45,10 +45,10 @@ web-test:
 web-typecheck:
 	cd web/backend && npm run typecheck
 
-# ─── Docker（平台栈：postgres + minio + platform，配置见根 docker-compose.yml + .env）───
+# ─── Docker（平台栈：postgres + minio + web，配置见根 docker-compose.yml + .env）───
 
 docker-build:
-	docker compose build platform
+	docker compose build web
 
 docker-up:
 	@test -f .env || { echo "❌ 缺少 .env：请先 cp .env.example .env 并填入凭据"; exit 1; }
@@ -58,7 +58,13 @@ docker-down:
 	docker compose down
 
 docker-logs:
-	docker compose logs -f platform
+	docker compose logs -f web
+
+# 本地 docker 栈首次建库（手动，方案 B）：应用所有 prisma migration + resolve + generate
+# 前置：make docker-up。单一来源 = web/backend/prisma/migrations（已废弃 docker/web/schema.sql）
+db-init:
+	@test -f .env || { echo "❌ 缺少 .env：请先 cp .env.example .env"; exit 1; }
+	bash scripts/db-init.sh
 
 # ─── 代码规范（pre-commit + commitizen）───
 

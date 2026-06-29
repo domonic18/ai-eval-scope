@@ -9,7 +9,7 @@
 import { Router, type RequestHandler } from "express"
 import { requireAuth } from "../middleware/auth"
 import { orgGuard } from "../middleware/tenantGuard"
-import { createOrgService } from "../services/org.service"
+import { createOrgService, createTeamOrg } from "../services/org.service"
 import { createProjectService } from "../services/project.service"
 import { createQueryService } from "../services/query.service"
 
@@ -19,6 +19,19 @@ const wrap =
   (fn: RequestHandler): RequestHandler =>
   (req, res, next) =>
     Promise.resolve(fn(req, res, next)).catch(next)
+
+// 创建团队 Org（顺序：必须在 /:org/* 之前，否则 "orgs" 被 :org param 捕获）
+router.post(
+  "/",
+  requireAuth,
+  wrap(async (req, res) => {
+    const org = await createTeamOrg({
+      userId: req.user!.userId,
+      ...(req.body?.name ? { name: req.body.name } : {}),
+    })
+    res.status(201).json({ org })
+  }),
+)
 
 router.get(
   "/:org/members",

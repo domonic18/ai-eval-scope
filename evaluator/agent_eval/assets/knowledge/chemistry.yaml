@@ -1,169 +1,2945 @@
-subject: "chemistry"
-description: "化学知识库：常量、常见误区纠正、元素/化合物/指示剂基础事实"
-version: "1.0"
-
+subject: chemistry
+description: 化学知识库：常量、常见误区纠正、元素/化合物/指示剂基础事实
+version: '1.0'
 constants:
-  - name: "水的沸点"
-    extract_pattern: "水的沸点.*?(\\d+(?:\\.\\d+)?)\\s*[°度]?C"
-    value: 100.0
-    tolerance: 0.5
-
-  - name: "水的冰点"
-    extract_pattern: "水的冰点.*?(\\d+(?:\\.\\d+)?)\\s*[°度]?C"
-    value: 0.0
-    tolerance: 0.5
-
-  - name: "水的pH值"
-    extract_pattern: "水.*?pH.*?(\\d+(?:\\.\\d+)?)"
-    value: 7.0
-    tolerance: 0.5
-
+- name: 水的沸点
+  extract_pattern: 水的沸点.*?(\d+(?:\.\d+)?)\s*[°度]?C
+  value: 100.0
+  tolerance: 0.5
+- name: 水的冰点
+  extract_pattern: 水的冰点.*?(\d+(?:\.\d+)?)\s*[°度]?C
+  value: 0.0
+  tolerance: 0.5
+- name: 水的pH值
+  extract_pattern: 水.*?pH.*?(\d+(?:\.\d+)?)
+  value: 7.0
+  tolerance: 0.5
+- name: 氢的相对原子质量
+  extract_pattern: 氢.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 1.01
+  tolerance: 0.01
+  description: 氢（H）的相对原子质量约为 1.01
+  source: periodic_table_H
+- name: 氢的沸点 (℃)
+  extract_pattern: 氢.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -252.9
+  tolerance: 0.5
+  description: 氢（H）的沸点约为 -252.9℃
+  source: periodic_table_H
+- name: 氢的熔点 (℃)
+  extract_pattern: 氢.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -259.2
+  tolerance: 0.5
+  description: 氢（H）的熔点约为 -259.2℃
+  source: periodic_table_H
+- name: 氢的密度 (g/cm³)
+  extract_pattern: 氢.*密度[^\d]*(\d+\.?\d*)
+  value: 0.08988
+  tolerance: 0.004
+  description: 氢（H）的密度约为 0.08988 g/cm³
+  source: periodic_table_H
+- name: 氦的相对原子质量
+  extract_pattern: 氦.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 4.0
+  tolerance: 0.01
+  description: 氦（He）的相对原子质量约为 4.0
+  source: periodic_table_He
+- name: 氦的沸点 (℃)
+  extract_pattern: 氦.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -268.9
+  tolerance: 0.5
+  description: 氦（He）的沸点约为 -268.9℃
+  source: periodic_table_He
+- name: 氦的熔点 (℃)
+  extract_pattern: 氦.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -272.2
+  tolerance: 0.5
+  description: 氦（He）的熔点约为 -272.2℃
+  source: periodic_table_He
+- name: 氦的密度 (g/cm³)
+  extract_pattern: 氦.*密度[^\d]*(\d+\.?\d*)
+  value: 0.1786
+  tolerance: 0.009
+  description: 氦（He）的密度约为 0.1786 g/cm³
+  source: periodic_table_He
+- name: 锂的相对原子质量
+  extract_pattern: 锂.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 6.94
+  tolerance: 0.01
+  description: 锂（Li）的相对原子质量约为 6.94
+  source: periodic_table_Li
+- name: 锂的沸点 (℃)
+  extract_pattern: 锂.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 1329.8
+  tolerance: 0.5
+  description: 锂（Li）的沸点约为 1329.8℃
+  source: periodic_table_Li
+- name: 锂的熔点 (℃)
+  extract_pattern: 锂.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 180.5
+  tolerance: 0.5
+  description: 锂（Li）的熔点约为 180.5℃
+  source: periodic_table_Li
+- name: 锂的密度 (g/cm³)
+  extract_pattern: 锂.*密度[^\d]*(\d+\.?\d*)
+  value: 0.534
+  tolerance: 0.027
+  description: 锂（Li）的密度约为 0.534 g/cm³
+  source: periodic_table_Li
+- name: 铍的相对原子质量
+  extract_pattern: 铍.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 9.01
+  tolerance: 0.01
+  description: 铍（Be）的相对原子质量约为 9.01
+  source: periodic_table_Be
+- name: 铍的沸点 (℃)
+  extract_pattern: 铍.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 2468.8
+  tolerance: 0.5
+  description: 铍（Be）的沸点约为 2468.8℃
+  source: periodic_table_Be
+- name: 铍的熔点 (℃)
+  extract_pattern: 铍.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 1286.8
+  tolerance: 0.5
+  description: 铍（Be）的熔点约为 1286.8℃
+  source: periodic_table_Be
+- name: 铍的密度 (g/cm³)
+  extract_pattern: 铍.*密度[^\d]*(\d+\.?\d*)
+  value: 1.85
+  tolerance: 0.093
+  description: 铍（Be）的密度约为 1.85 g/cm³
+  source: periodic_table_Be
+- name: 硼的相对原子质量
+  extract_pattern: 硼.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 10.81
+  tolerance: 0.01
+  description: 硼（B）的相对原子质量约为 10.81
+  source: periodic_table_B
+- name: 硼的沸点 (℃)
+  extract_pattern: 硼.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 3926.8
+  tolerance: 0.5
+  description: 硼（B）的沸点约为 3926.8℃
+  source: periodic_table_B
+- name: 硼的熔点 (℃)
+  extract_pattern: 硼.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 2075.8
+  tolerance: 0.5
+  description: 硼（B）的熔点约为 2075.8℃
+  source: periodic_table_B
+- name: 硼的密度 (g/cm³)
+  extract_pattern: 硼.*密度[^\d]*(\d+\.?\d*)
+  value: 2.08
+  tolerance: 0.104
+  description: 硼（B）的密度约为 2.08 g/cm³
+  source: periodic_table_B
+- name: 碳的相对原子质量
+  extract_pattern: 碳.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 12.01
+  tolerance: 0.01
+  description: 碳（C）的相对原子质量约为 12.01
+  source: periodic_table_C
+- name: 碳的密度 (g/cm³)
+  extract_pattern: 碳.*密度[^\d]*(\d+\.?\d*)
+  value: 1.821
+  tolerance: 0.091
+  description: 碳（C）的密度约为 1.821 g/cm³
+  source: periodic_table_C
+- name: 氮的相对原子质量
+  extract_pattern: 氮.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 14.01
+  tolerance: 0.01
+  description: 氮（N）的相对原子质量约为 14.01
+  source: periodic_table_N
+- name: 氮的沸点 (℃)
+  extract_pattern: 氮.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -195.8
+  tolerance: 0.5
+  description: 氮（N）的沸点约为 -195.8℃
+  source: periodic_table_N
+- name: 氮的熔点 (℃)
+  extract_pattern: 氮.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -210.0
+  tolerance: 0.5
+  description: 氮（N）的熔点约为 -210.0℃
+  source: periodic_table_N
+- name: 氮的密度 (g/cm³)
+  extract_pattern: 氮.*密度[^\d]*(\d+\.?\d*)
+  value: 1.251
+  tolerance: 0.063
+  description: 氮（N）的密度约为 1.251 g/cm³
+  source: periodic_table_N
+- name: 氧的相对原子质量
+  extract_pattern: 氧.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 16.0
+  tolerance: 0.01
+  description: 氧（O）的相对原子质量约为 16.0
+  source: periodic_table_O
+- name: 氧的沸点 (℃)
+  extract_pattern: 氧.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -183.0
+  tolerance: 0.5
+  description: 氧（O）的沸点约为 -183.0℃
+  source: periodic_table_O
+- name: 氧的熔点 (℃)
+  extract_pattern: 氧.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -218.8
+  tolerance: 0.5
+  description: 氧（O）的熔点约为 -218.8℃
+  source: periodic_table_O
+- name: 氧的密度 (g/cm³)
+  extract_pattern: 氧.*密度[^\d]*(\d+\.?\d*)
+  value: 1.429
+  tolerance: 0.071
+  description: 氧（O）的密度约为 1.429 g/cm³
+  source: periodic_table_O
+- name: 氟的相对原子质量
+  extract_pattern: 氟.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 19.0
+  tolerance: 0.01
+  description: 氟（F）的相对原子质量约为 19.0
+  source: periodic_table_F
+- name: 氟的沸点 (℃)
+  extract_pattern: 氟.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -188.1
+  tolerance: 0.5
+  description: 氟（F）的沸点约为 -188.1℃
+  source: periodic_table_F
+- name: 氟的熔点 (℃)
+  extract_pattern: 氟.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -219.7
+  tolerance: 0.5
+  description: 氟（F）的熔点约为 -219.7℃
+  source: periodic_table_F
+- name: 氟的密度 (g/cm³)
+  extract_pattern: 氟.*密度[^\d]*(\d+\.?\d*)
+  value: 1.696
+  tolerance: 0.085
+  description: 氟（F）的密度约为 1.696 g/cm³
+  source: periodic_table_F
+- name: 氖的相对原子质量
+  extract_pattern: 氖.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 20.18
+  tolerance: 0.01
+  description: 氖（Ne）的相对原子质量约为 20.18
+  source: periodic_table_Ne
+- name: 氖的沸点 (℃)
+  extract_pattern: 氖.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -246.0
+  tolerance: 0.5
+  description: 氖（Ne）的沸点约为 -246.0℃
+  source: periodic_table_Ne
+- name: 氖的熔点 (℃)
+  extract_pattern: 氖.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -248.6
+  tolerance: 0.5
+  description: 氖（Ne）的熔点约为 -248.6℃
+  source: periodic_table_Ne
+- name: 氖的密度 (g/cm³)
+  extract_pattern: 氖.*密度[^\d]*(\d+\.?\d*)
+  value: 0.9002
+  tolerance: 0.045
+  description: 氖（Ne）的密度约为 0.9002 g/cm³
+  source: periodic_table_Ne
+- name: 钠的相对原子质量
+  extract_pattern: 钠.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 22.99
+  tolerance: 0.01
+  description: 钠（Na）的相对原子质量约为 22.99
+  source: periodic_table_Na
+- name: 钠的沸点 (℃)
+  extract_pattern: 钠.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 882.9
+  tolerance: 0.5
+  description: 钠（Na）的沸点约为 882.9℃
+  source: periodic_table_Na
+- name: 钠的熔点 (℃)
+  extract_pattern: 钠.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 97.8
+  tolerance: 0.5
+  description: 钠（Na）的熔点约为 97.8℃
+  source: periodic_table_Na
+- name: 钠的密度 (g/cm³)
+  extract_pattern: 钠.*密度[^\d]*(\d+\.?\d*)
+  value: 0.968
+  tolerance: 0.048
+  description: 钠（Na）的密度约为 0.968 g/cm³
+  source: periodic_table_Na
+- name: 镁的相对原子质量
+  extract_pattern: 镁.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 24.3
+  tolerance: 0.01
+  description: 镁（Mg）的相对原子质量约为 24.3
+  source: periodic_table_Mg
+- name: 镁的沸点 (℃)
+  extract_pattern: 镁.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 1089.8
+  tolerance: 0.5
+  description: 镁（Mg）的沸点约为 1089.8℃
+  source: periodic_table_Mg
+- name: 镁的熔点 (℃)
+  extract_pattern: 镁.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 649.9
+  tolerance: 0.5
+  description: 镁（Mg）的熔点约为 649.9℃
+  source: periodic_table_Mg
+- name: 镁的密度 (g/cm³)
+  extract_pattern: 镁.*密度[^\d]*(\d+\.?\d*)
+  value: 1.738
+  tolerance: 0.087
+  description: 镁（Mg）的密度约为 1.738 g/cm³
+  source: periodic_table_Mg
+- name: 铝的相对原子质量
+  extract_pattern: 铝.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 26.98
+  tolerance: 0.01
+  description: 铝（Al）的相对原子质量约为 26.98
+  source: periodic_table_Al
+- name: 铝的沸点 (℃)
+  extract_pattern: 铝.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 2469.8
+  tolerance: 0.5
+  description: 铝（Al）的沸点约为 2469.8℃
+  source: periodic_table_Al
+- name: 铝的熔点 (℃)
+  extract_pattern: 铝.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 660.3
+  tolerance: 0.5
+  description: 铝（Al）的熔点约为 660.3℃
+  source: periodic_table_Al
+- name: 铝的密度 (g/cm³)
+  extract_pattern: 铝.*密度[^\d]*(\d+\.?\d*)
+  value: 2.7
+  tolerance: 0.135
+  description: 铝（Al）的密度约为 2.7 g/cm³
+  source: periodic_table_Al
+- name: 硅的相对原子质量
+  extract_pattern: 硅.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 28.09
+  tolerance: 0.01
+  description: 硅（Si）的相对原子质量约为 28.09
+  source: periodic_table_Si
+- name: 硅的沸点 (℃)
+  extract_pattern: 硅.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 3264.8
+  tolerance: 0.5
+  description: 硅（Si）的沸点约为 3264.8℃
+  source: periodic_table_Si
+- name: 硅的熔点 (℃)
+  extract_pattern: 硅.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 1413.8
+  tolerance: 0.5
+  description: 硅（Si）的熔点约为 1413.8℃
+  source: periodic_table_Si
+- name: 硅的密度 (g/cm³)
+  extract_pattern: 硅.*密度[^\d]*(\d+\.?\d*)
+  value: 2.329
+  tolerance: 0.116
+  description: 硅（Si）的密度约为 2.329 g/cm³
+  source: periodic_table_Si
+- name: 磷的相对原子质量
+  extract_pattern: 磷.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 30.97
+  tolerance: 0.01
+  description: 磷（P）的相对原子质量约为 30.97
+  source: periodic_table_P
+- name: 磷的密度 (g/cm³)
+  extract_pattern: 磷.*密度[^\d]*(\d+\.?\d*)
+  value: 1.823
+  tolerance: 0.091
+  description: 磷（P）的密度约为 1.823 g/cm³
+  source: periodic_table_P
+- name: 硫的相对原子质量
+  extract_pattern: 硫.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 32.06
+  tolerance: 0.01
+  description: 硫（S）的相对原子质量约为 32.06
+  source: periodic_table_S
+- name: 硫的沸点 (℃)
+  extract_pattern: 硫.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 444.6
+  tolerance: 0.5
+  description: 硫（S）的沸点约为 444.6℃
+  source: periodic_table_S
+- name: 硫的熔点 (℃)
+  extract_pattern: 硫.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 115.2
+  tolerance: 0.5
+  description: 硫（S）的熔点约为 115.2℃
+  source: periodic_table_S
+- name: 硫的密度 (g/cm³)
+  extract_pattern: 硫.*密度[^\d]*(\d+\.?\d*)
+  value: 2.07
+  tolerance: 0.103
+  description: 硫（S）的密度约为 2.07 g/cm³
+  source: periodic_table_S
+- name: 氯的相对原子质量
+  extract_pattern: 氯.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 35.45
+  tolerance: 0.01
+  description: 氯（Cl）的相对原子质量约为 35.45
+  source: periodic_table_Cl
+- name: 氯的沸点 (℃)
+  extract_pattern: 氯.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -34.0
+  tolerance: 0.5
+  description: 氯（Cl）的沸点约为 -34.0℃
+  source: periodic_table_Cl
+- name: 氯的熔点 (℃)
+  extract_pattern: 氯.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -101.5
+  tolerance: 0.5
+  description: 氯（Cl）的熔点约为 -101.5℃
+  source: periodic_table_Cl
+- name: 氯的密度 (g/cm³)
+  extract_pattern: 氯.*密度[^\d]*(\d+\.?\d*)
+  value: 3.2
+  tolerance: 0.16
+  description: 氯（Cl）的密度约为 3.2 g/cm³
+  source: periodic_table_Cl
+- name: 氩的相对原子质量
+  extract_pattern: 氩.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 39.95
+  tolerance: 0.01
+  description: 氩（Ar）的相对原子质量约为 39.95
+  source: periodic_table_Ar
+- name: 氩的沸点 (℃)
+  extract_pattern: 氩.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -185.8
+  tolerance: 0.5
+  description: 氩（Ar）的沸点约为 -185.8℃
+  source: periodic_table_Ar
+- name: 氩的熔点 (℃)
+  extract_pattern: 氩.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -189.3
+  tolerance: 0.5
+  description: 氩（Ar）的熔点约为 -189.3℃
+  source: periodic_table_Ar
+- name: 氩的密度 (g/cm³)
+  extract_pattern: 氩.*密度[^\d]*(\d+\.?\d*)
+  value: 1.784
+  tolerance: 0.089
+  description: 氩（Ar）的密度约为 1.784 g/cm³
+  source: periodic_table_Ar
+- name: 钾的相对原子质量
+  extract_pattern: 钾.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 39.1
+  tolerance: 0.01
+  description: 钾（K）的相对原子质量约为 39.1
+  source: periodic_table_K
+- name: 钾的沸点 (℃)
+  extract_pattern: 钾.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 758.9
+  tolerance: 0.5
+  description: 钾（K）的沸点约为 758.9℃
+  source: periodic_table_K
+- name: 钾的熔点 (℃)
+  extract_pattern: 钾.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 63.6
+  tolerance: 0.5
+  description: 钾（K）的熔点约为 63.6℃
+  source: periodic_table_K
+- name: 钾的密度 (g/cm³)
+  extract_pattern: 钾.*密度[^\d]*(\d+\.?\d*)
+  value: 0.862
+  tolerance: 0.043
+  description: 钾（K）的密度约为 0.862 g/cm³
+  source: periodic_table_K
+- name: 钙的相对原子质量
+  extract_pattern: 钙.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 40.08
+  tolerance: 0.01
+  description: 钙（Ca）的相对原子质量约为 40.08
+  source: periodic_table_Ca
+- name: 钙的沸点 (℃)
+  extract_pattern: 钙.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 1483.8
+  tolerance: 0.5
+  description: 钙（Ca）的沸点约为 1483.8℃
+  source: periodic_table_Ca
+- name: 钙的熔点 (℃)
+  extract_pattern: 钙.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 841.9
+  tolerance: 0.5
+  description: 钙（Ca）的熔点约为 841.9℃
+  source: periodic_table_Ca
+- name: 钙的密度 (g/cm³)
+  extract_pattern: 钙.*密度[^\d]*(\d+\.?\d*)
+  value: 1.55
+  tolerance: 0.078
+  description: 钙（Ca）的密度约为 1.55 g/cm³
+  source: periodic_table_Ca
+- name: 铁的相对原子质量
+  extract_pattern: 铁.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 55.85
+  tolerance: 0.01
+  description: 铁（Fe）的相对原子质量约为 55.85
+  source: periodic_table_Fe
+- name: 铁的沸点 (℃)
+  extract_pattern: 铁.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 2860.8
+  tolerance: 0.5
+  description: 铁（Fe）的沸点约为 2860.8℃
+  source: periodic_table_Fe
+- name: 铁的熔点 (℃)
+  extract_pattern: 铁.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 1537.8
+  tolerance: 0.5
+  description: 铁（Fe）的熔点约为 1537.8℃
+  source: periodic_table_Fe
+- name: 铁的密度 (g/cm³)
+  extract_pattern: 铁.*密度[^\d]*(\d+\.?\d*)
+  value: 7.874
+  tolerance: 0.394
+  description: 铁（Fe）的密度约为 7.874 g/cm³
+  source: periodic_table_Fe
+- name: 铜的相对原子质量
+  extract_pattern: 铜.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 63.55
+  tolerance: 0.01
+  description: 铜（Cu）的相对原子质量约为 63.55
+  source: periodic_table_Cu
+- name: 铜的沸点 (℃)
+  extract_pattern: 铜.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 2561.8
+  tolerance: 0.5
+  description: 铜（Cu）的沸点约为 2561.8℃
+  source: periodic_table_Cu
+- name: 铜的熔点 (℃)
+  extract_pattern: 铜.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 1084.6
+  tolerance: 0.5
+  description: 铜（Cu）的熔点约为 1084.6℃
+  source: periodic_table_Cu
+- name: 铜的密度 (g/cm³)
+  extract_pattern: 铜.*密度[^\d]*(\d+\.?\d*)
+  value: 8.96
+  tolerance: 0.448
+  description: 铜（Cu）的密度约为 8.96 g/cm³
+  source: periodic_table_Cu
+- name: 锌的相对原子质量
+  extract_pattern: 锌.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 65.38
+  tolerance: 0.01
+  description: 锌（Zn）的相对原子质量约为 65.38
+  source: periodic_table_Zn
+- name: 锌的沸点 (℃)
+  extract_pattern: 锌.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 906.9
+  tolerance: 0.5
+  description: 锌（Zn）的沸点约为 906.9℃
+  source: periodic_table_Zn
+- name: 锌的熔点 (℃)
+  extract_pattern: 锌.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 419.5
+  tolerance: 0.5
+  description: 锌（Zn）的熔点约为 419.5℃
+  source: periodic_table_Zn
+- name: 锌的密度 (g/cm³)
+  extract_pattern: 锌.*密度[^\d]*(\d+\.?\d*)
+  value: 7.14
+  tolerance: 0.357
+  description: 锌（Zn）的密度约为 7.14 g/cm³
+  source: periodic_table_Zn
+- name: 溴的相对原子质量
+  extract_pattern: 溴.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 79.9
+  tolerance: 0.01
+  description: 溴（Br）的相对原子质量约为 79.9
+  source: periodic_table_Br
+- name: 溴的沸点 (℃)
+  extract_pattern: 溴.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 58.9
+  tolerance: 0.5
+  description: 溴（Br）的沸点约为 58.9℃
+  source: periodic_table_Br
+- name: 溴的熔点 (℃)
+  extract_pattern: 溴.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -7.3
+  tolerance: 0.5
+  description: 溴（Br）的熔点约为 -7.3℃
+  source: periodic_table_Br
+- name: 溴的密度 (g/cm³)
+  extract_pattern: 溴.*密度[^\d]*(\d+\.?\d*)
+  value: 3.1028
+  tolerance: 0.155
+  description: 溴（Br）的密度约为 3.1028 g/cm³
+  source: periodic_table_Br
+- name: 银的相对原子质量
+  extract_pattern: 银.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 107.87
+  tolerance: 0.01
+  description: 银（Ag）的相对原子质量约为 107.87
+  source: periodic_table_Ag
+- name: 银的沸点 (℃)
+  extract_pattern: 银.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 2161.8
+  tolerance: 0.5
+  description: 银（Ag）的沸点约为 2161.8℃
+  source: periodic_table_Ag
+- name: 银的熔点 (℃)
+  extract_pattern: 银.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 961.8
+  tolerance: 0.5
+  description: 银（Ag）的熔点约为 961.8℃
+  source: periodic_table_Ag
+- name: 银的密度 (g/cm³)
+  extract_pattern: 银.*密度[^\d]*(\d+\.?\d*)
+  value: 10.49
+  tolerance: 0.525
+  description: 银（Ag）的密度约为 10.49 g/cm³
+  source: periodic_table_Ag
+- name: 碘的相对原子质量
+  extract_pattern: 碘.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 126.9
+  tolerance: 0.01
+  description: 碘（I）的相对原子质量约为 126.9
+  source: periodic_table_I
+- name: 碘的沸点 (℃)
+  extract_pattern: 碘.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 184.2
+  tolerance: 0.5
+  description: 碘（I）的沸点约为 184.2℃
+  source: periodic_table_I
+- name: 碘的熔点 (℃)
+  extract_pattern: 碘.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 113.7
+  tolerance: 0.5
+  description: 碘（I）的熔点约为 113.7℃
+  source: periodic_table_I
+- name: 碘的密度 (g/cm³)
+  extract_pattern: 碘.*密度[^\d]*(\d+\.?\d*)
+  value: 4.933
+  tolerance: 0.247
+  description: 碘（I）的密度约为 4.933 g/cm³
+  source: periodic_table_I
+- name: 钡的相对原子质量
+  extract_pattern: 钡.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 137.33
+  tolerance: 0.01
+  description: 钡（Ba）的相对原子质量约为 137.33
+  source: periodic_table_Ba
+- name: 钡的沸点 (℃)
+  extract_pattern: 钡.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 1844.8
+  tolerance: 0.5
+  description: 钡（Ba）的沸点约为 1844.8℃
+  source: periodic_table_Ba
+- name: 钡的熔点 (℃)
+  extract_pattern: 钡.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 726.9
+  tolerance: 0.5
+  description: 钡（Ba）的熔点约为 726.9℃
+  source: periodic_table_Ba
+- name: 钡的密度 (g/cm³)
+  extract_pattern: 钡.*密度[^\d]*(\d+\.?\d*)
+  value: 3.51
+  tolerance: 0.175
+  description: 钡（Ba）的密度约为 3.51 g/cm³
+  source: periodic_table_Ba
+- name: 金的相对原子质量
+  extract_pattern: 金.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 196.97
+  tolerance: 0.01
+  description: 金（Au）的相对原子质量约为 196.97
+  source: periodic_table_Au
+- name: 金的沸点 (℃)
+  extract_pattern: 金.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 2969.8
+  tolerance: 0.5
+  description: 金（Au）的沸点约为 2969.8℃
+  source: periodic_table_Au
+- name: 金的熔点 (℃)
+  extract_pattern: 金.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 1064.2
+  tolerance: 0.5
+  description: 金（Au）的熔点约为 1064.2℃
+  source: periodic_table_Au
+- name: 金的密度 (g/cm³)
+  extract_pattern: 金.*密度[^\d]*(\d+\.?\d*)
+  value: 19.3
+  tolerance: 0.965
+  description: 金（Au）的密度约为 19.3 g/cm³
+  source: periodic_table_Au
+- name: 汞的相对原子质量
+  extract_pattern: 汞.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 200.59
+  tolerance: 0.01
+  description: 汞（Hg）的相对原子质量约为 200.59
+  source: periodic_table_Hg
+- name: 汞的沸点 (℃)
+  extract_pattern: 汞.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 356.7
+  tolerance: 0.5
+  description: 汞（Hg）的沸点约为 356.7℃
+  source: periodic_table_Hg
+- name: 汞的熔点 (℃)
+  extract_pattern: 汞.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: -38.8
+  tolerance: 0.5
+  description: 汞（Hg）的熔点约为 -38.8℃
+  source: periodic_table_Hg
+- name: 汞的密度 (g/cm³)
+  extract_pattern: 汞.*密度[^\d]*(\d+\.?\d*)
+  value: 13.534
+  tolerance: 0.677
+  description: 汞（Hg）的密度约为 13.534 g/cm³
+  source: periodic_table_Hg
+- name: 铅的相对原子质量
+  extract_pattern: 铅.*?(?:相对原子质量|原子量)[^\d]*(\d+\.?\d*)
+  value: 207.21
+  tolerance: 0.01
+  description: 铅（Pb）的相对原子质量约为 207.21
+  source: periodic_table_Pb
+- name: 铅的沸点 (℃)
+  extract_pattern: 铅.*沸点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 1748.8
+  tolerance: 0.5
+  description: 铅（Pb）的沸点约为 1748.8℃
+  source: periodic_table_Pb
+- name: 铅的熔点 (℃)
+  extract_pattern: 铅.*熔点[^\d]*(\d+\.?\d*)\s*(?:℃|度)?
+  value: 327.5
+  tolerance: 0.5
+  description: 铅（Pb）的熔点约为 327.5℃
+  source: periodic_table_Pb
+- name: 铅的密度 (g/cm³)
+  extract_pattern: 铅.*密度[^\d]*(\d+\.?\d*)
+  value: 11.34
+  tolerance: 0.567
+  description: 铅（Pb）的密度约为 11.34 g/cm³
+  source: periodic_table_Pb
 misconceptions:
-  # ---- 物质组成 ----
-  - pattern: "水由\\d+个氢原子和\\d+个氧原子组成"
-    correct: "水由氢元素和氧元素组成（微观上：每个水分子由2个氢原子和1个氧原子构成）"
-    description: "混淆了宏观元素组成与微观分子构成的表述"
-    severity: "warning"
-
-  - pattern: "二氧化碳是有毒气体"
-    correct: "二氧化碳无毒，但不能供给呼吸；浓度过高会导致窒息"
-    description: "二氧化碳本身无毒，属于不能供给呼吸的气体"
-    severity: "error"
-
-  # ---- 燃烧条件 ----
-  - pattern: "铁在空气中燃烧"
-    correct: "铁在纯氧中才能燃烧（在空气中不能燃烧）"
-    description: "铁在空气中不能燃烧，只有在纯氧中才能剧烈燃烧"
-    severity: "error"
-
-  # ---- 导电性 ----
-  - pattern: "纯水能导电"
-    correct: "纯水几乎不导电（天然水和溶液因含离子才导电）"
-    description: "纯水是极弱的电解质，几乎不导电"
-    severity: "error"
-
-  # ---- 原子守恒 ----
-  - pattern: "化学变化中原子种类(?:发?生)?改变"
-    correct: "化学变化中原子种类不变（原子是化学变化中的最小粒子）"
-    description: "化学变化中原子种类、数目不变，只是重新组合"
-    severity: "error"
-
-  # ---- 催化剂 ----
-  - pattern: "催化剂.*(?:质量|性质).*(?:改变|变化)"
-    correct: "催化剂能改变化学反应速率，但反应前后其质量和化学性质不变"
-    description: "催化剂在反应前后质量和化学性质不变（物理性质可能改变）"
-    severity: "error"
-
+- pattern: 水由\d+个氢原子和\d+个氧原子组成
+  correct: 水由氢元素和氧元素组成（微观上：每个水分子由2个氢原子和1个氧原子构成）
+  description: 混淆了宏观元素组成与微观分子构成的表述
+  severity: warning
+- pattern: 二氧化碳是有毒气体
+  correct: 二氧化碳无毒，但不能供给呼吸；浓度过高会导致窒息
+  description: 二氧化碳本身无毒，属于不能供给呼吸的气体
+  severity: error
+- pattern: 铁在空气中燃烧
+  correct: 铁在纯氧中才能燃烧（在空气中不能燃烧）
+  description: 铁在空气中不能燃烧，只有在纯氧中才能剧烈燃烧
+  severity: error
+- pattern: 纯水能导电
+  correct: 纯水几乎不导电（天然水和溶液因含离子才导电）
+  description: 纯水是极弱的电解质，几乎不导电
+  severity: error
+- pattern: 化学变化中原子种类(?:发?生)?改变
+  correct: 化学变化中原子种类不变（原子是化学变化中的最小粒子）
+  description: 化学变化中原子种类、数目不变，只是重新组合
+  severity: error
+- pattern: 催化剂.*(?:质量|性质).*(?:改变|变化)
+  correct: 催化剂能改变化学反应速率，但反应前后其质量和化学性质不变
+  description: 催化剂在反应前后质量和化学性质不变（物理性质可能改变）
+  severity: error
+- pattern: 原子半径.*热稳定性
+  correct: 原子半径越大，键能越小，氢化物热稳定性越弱；HI热稳定性弱于HBr
+  description: 误认为原子半径越大，氢化物热稳定性越强
+  severity: error
+  source: cmmlu_high_school_chemistry_0
+- pattern: Al2O3.*MgO.*NaOH
+  correct: Al2O3是两性氧化物，可与NaOH反应；MgO是碱性氧化物，不与NaOH反应
+  description: 误以为MgO也能与NaOH溶液反应
+  severity: error
+  source: cmmlu_high_school_chemistry_0
+- pattern: SO2.*SO3.*Ba\(NO3\)2.*BaSO3.*BaSO4
+  correct: SO2通入Ba(NO3)2溶液在酸性条件下被氧化为SO4²⁻，生成BaSO4沉淀，不会生成BaSO3
+  description: 误以为SO2在硝酸根存在下仍能生成亚硫酸钡沉淀
+  severity: error
+  source: cmmlu_high_school_chemistry_0
+- pattern: 蔗糖.*稀硫酸.*水浴加热.*新制氢氧化铜
+  correct: 蔗糖水解后需先加碱中和稀硫酸至碱性，再加入新制氢氧化铜悬浊液并加热，才能检验还原性
+  description: 误以为在酸性条件下可以直接用新制氢氧化铜检验还原糖
+  severity: error
+  source: cmmlu_high_school_chemistry_1
+- pattern: 电子层数相同的原子核外电子排布.*最外层电子数.*1→8
+  correct: 电子层数相同的原子，其最外层电子数不一定呈现从1到8的周期性变化，例如稀有气体最外层为8（氦为2）
+  description: 误以为所有电子层数相同的原子最外层电子数都严格从1递增到8
+  severity: error
+  source: cmmlu_high_school_chemistry_2
+- pattern: 元素性质的周期性变化.*原子半径.*化合价.*核外电子排布
+  correct: 元素性质的周期性变化主要指原子半径、主要化合价等性质的周期性变化，但原子核外电子排布的周期性变化是性质周期性变化的根本原因，而非性质本身
+  description: 混淆了元素性质的周期性变化与原子核外电子排布的周期性变化，将后者也归为性质变化
+  severity: error
+  source: cmmlu_high_school_chemistry_2
+- pattern: 从Li→F.*最高化合价.*＋1价→＋7价
+  correct: 从Li到F，元素的最高化合价并非从+1到+7递增，例如氧和氟通常无正化合价
+  description: 误认为第二周期从Li到F所有元素的最高化合价都从+1递增到+7
+  severity: error
+  source: cmmlu_high_school_chemistry_2
+- pattern: 木炭.*浓硝酸
+  correct: 木炭与浓硝酸反应生成NO2，每摩尔酸产生0.5摩尔气体，而木炭与浓硫酸反应生成CO2和SO2，每摩尔酸产生1摩尔气体
+  description: 误以为木炭与浓硝酸反应产生更多气体
+  severity: error
+  source: cmmlu_high_school_chemistry_3
+- pattern: 铜.*稀硝酸
+  correct: 铜与稀硝酸反应生成NO，每摩尔酸产生0.25摩尔气体，而木炭与浓硫酸反应每摩尔酸产生1摩尔气体
+  description: 误以为铜与稀硝酸反应产生更多气体
+  severity: error
+  source: cmmlu_high_school_chemistry_3
+- pattern: 锌.*稀硫酸
+  correct: 锌与稀硫酸反应生成H2，每摩尔酸产生1摩尔气体，但木炭与浓硫酸反应每摩尔酸也产生1摩尔气体，且木炭与浓硫酸反应产物为CO2和SO2，气体总量相同但题目要求最多，实际比较需考虑反应计量，但此处干扰项错误在于认为锌与稀硫酸产生气体更多
+  description: 误以为锌与稀硫酸反应产生气体比木炭与浓硫酸多
+  severity: error
+  source: cmmlu_high_school_chemistry_3
+- pattern: 容量瓶.*必须干燥
+  correct: 容量瓶不需要干燥，因为定容时加水会稀释，残留水不影响浓度
+  description: 误以为容量瓶必须干燥才能使用
+  severity: error
+  source: cmmlu_high_school_chemistry_4
+- pattern: 绿矾.*放入.*容量瓶.*溶解
+  correct: 配制溶液时，固体应在烧杯中溶解冷却后再转移至容量瓶，不能直接在容量瓶中溶解
+  description: 误以为固体可以直接在容量瓶中溶解
+  severity: error
+  source: cmmlu_high_school_chemistry_4
+- pattern: 480 mL.*氢氧化钠.*38.4 g
+  correct: 实验室没有480 mL容量瓶，应选用500 mL容量瓶，计算时按500 mL计算，需称量NaOH 40.0 g
+  description: 误以为可以直接配制480 mL溶液，忽略了容量瓶规格
+  severity: error
+  source: cmmlu_high_school_chemistry_4
+- pattern: 水银.*丹.*合金
+  correct: 水银加热生成的丹是氧化汞，属于氧化物
+  description: 误以为水银加热生成的丹是合金
+  severity: error
+  source: cmmlu_high_school_chemistry_5
+- pattern: 水银.*丹.*氯化物
+  correct: 水银加热生成的丹是氧化汞，属于氧化物
+  description: 误以为水银加热生成的丹是氯化物
+  severity: error
+  source: cmmlu_high_school_chemistry_5
+- pattern: 水银.*丹.*硫化物
+  correct: 水银加热生成的丹是氧化汞，属于氧化物
+  description: 误以为水银加热生成的丹是硫化物
+  severity: error
+  source: cmmlu_high_school_chemistry_5
+- pattern: Q与锌作用时一定能生成氢气
+  correct: Q是强酸，但锌与强酸反应不一定生成氢气，如硝酸与锌反应生成氮氧化物而非氢气
+  description: 误以为所有强酸与锌反应都生成氢气
+  severity: error
+  source: cmmlu_high_school_chemistry_6
+- pattern: 与水反应时，X的单质一定被氧化
+  correct: X单质与水反应时，X可能被氧化也可能被还原，取决于X的性质
+  description: 误以为单质与水反应时单质一定被氧化
+  severity: error
+  source: cmmlu_high_school_chemistry_6
+- pattern: 符合条件的Y元素只有一种
+  correct: 短周期中最高价氧化物对应水化物是强酸的Y元素可能有多种，如氯、硫等
+  description: 误以为短周期中符合条件的Y元素唯一
+  severity: error
+  source: cmmlu_high_school_chemistry_6
+- pattern: 盛放NaOH溶液.*玻璃塞.*磨口瓶
+  correct: 盛放NaOH溶液应使用橡胶塞或软木塞，因为玻璃塞中的二氧化硅会与NaOH反应生成硅酸钠，导致瓶塞与瓶口粘连
+  description: 误以为NaOH溶液可以用带玻璃塞的磨口瓶盛放
+  severity: error
+  source: cmmlu_high_school_chemistry_7
+- pattern: 苯萃取溴水.*分液漏斗下口放出
+  correct: 苯的密度比水小，萃取后苯层在上层，应从分液漏斗上口倒出
+  description: 误以为苯的密度比水大，将上层液体从下口放出
+  severity: error
+  source: cmmlu_high_school_chemistry_7
+- pattern: 湿润碘化钾淀粉试纸.*溴蒸气.*二氧化氮
+  correct: 溴蒸气和二氧化氮都能氧化碘化钾生成碘单质，使淀粉变蓝，因此无法用湿润的碘化钾淀粉试纸区分两者
+  description: 误以为湿润的碘化钾淀粉试纸可以区分溴蒸气和二氧化氮
+  severity: error
+  source: cmmlu_high_school_chemistry_7
+- pattern: 乙甲烷.*氯气.*四氯化碳
+  correct: 乙烷与氯气在光照下发生取代反应生成氯代烃，但制备四氯化碳通常需要甲烷与氯气反应
+  description: 误以为乙烷与氯气反应可直接制备四氯化碳，混淆了乙烷和甲烷的取代反应
+  severity: error
+  source: cmmlu_high_school_chemistry_8
+- pattern: 乙烯.*酸性KMnO4.*取代
+  correct: 乙烯通入酸性KMnO4溶液发生氧化反应，不是取代反应
+  description: 误以为乙烯与酸性高锰酸钾的反应是取代反应，实际是氧化反应
+  severity: error
+  source: cmmlu_high_school_chemistry_8
+- pattern: 葡萄糖.*新制Cu\(OH\)2.*取代
+  correct: 葡萄糖与新制Cu(OH)2悬浊液作用发生氧化反应，生成葡萄糖酸
+  description: 误以为葡萄糖与新制氢氧化铜的反应是取代反应，实际是氧化反应
+  severity: error
+  source: cmmlu_high_school_chemistry_8
+- pattern: 乙醇.*转化为乙
+  correct: 乙醇转化为乙醛或乙烯等属于氧化或消去反应，不是取代反应
+  description: 误以为乙醇转化为乙（可能指乙醛或乙烯）是取代反应，实际是氧化或消去反应
+  severity: error
+  source: cmmlu_high_school_chemistry_8
+- pattern: BaCl2.*不溶于硝酸.*白色沉淀.*Ag
+  correct: 加入BaCl2溶液产生不溶于硝酸的白色沉淀，可能是AgCl或BaSO4，溶液中可能含有Ag+或SO42-
+  description: 误以为不溶于硝酸的白色沉淀一定是AgCl，忽略了BaSO4也是不溶于硝酸的白色沉淀
+  severity: error
+  source: cmmlu_high_school_chemistry_9
+- pattern: 明矾.*漂白剂
+  correct: 明矾水解产生Al(OH)3胶体，具有吸附性，可作净水剂，而非漂白剂
+  description: 混淆了明矾的净水作用与漂白剂的漂白作用
+  severity: error
+  source: cmmlu_high_school_chemistry_9
+- pattern: 低碳经济.*大量使用.*化石燃料
+  correct: 低碳经济提倡减少化石燃料使用，开发清洁能源，以降低二氧化碳排放
+  description: 误以为低碳经济鼓励大量使用煤、石油、天然气等化石燃料
+  severity: error
+  source: cmmlu_high_school_chemistry_9
+- pattern: 生石灰.*防止.*氧化
+  correct: 生石灰或硅胶是干燥剂，用于吸收水分防止受潮，不能防止食品被氧化；防止氧化应使用抗氧化剂如铁粉
+  description: 误以为生石灰或硅胶能防止食品氧化变质
+  severity: error
+  source: cmmlu_high_school_chemistry_10
+- pattern: 过氧化钠.*离子总数.*0.4NA
+  correct: 7.8 g过氧化钠（0.1 mol）含有的离子总数为0.3NA（2个Na+和1个O2^2-）
+  description: 误以为过氧化钠中阴离子是O2-，从而多算了离子数
+  severity: error
+  source: cmmlu_high_school_chemistry_11
+- pattern: 过氧化钠.*水.*生成.*O2.*0.1NA
+  correct: 7.8 g过氧化钠（0.1 mol）与足量水反应生成O2分子数为0.05NA
+  description: 误以为过氧化钠与水反应生成氧气的物质的量与过氧化钠相等
+  severity: error
+  source: cmmlu_high_school_chemistry_11
+- pattern: 过氧化钠.*电子总数.*0.4NA
+  correct: 7.8 g过氧化钠（0.1 mol）所含电子总数为1.8NA（每个Na+有10个电子，每个O2^2-有18个电子）
+  description: 误以为过氧化钠中电子总数与离子数或分子数简单对应
+  severity: error
+  source: cmmlu_high_school_chemistry_11
+- pattern: 第二周期ⅥA族
+  correct: Z是氟元素，位于第二周期ⅦA族
+  description: 误以为Z是氧元素，位于ⅥA族
+  severity: error
+  source: cmmlu_high_school_chemistry_12
+- pattern: M、W、Y.*水溶液.*碱性
+  correct: M、W、Y形成的化合物如Na2SO4水溶液呈中性
+  description: 误以为钠、硫、氧形成的化合物水溶液呈碱性
+  severity: error
+  source: cmmlu_high_school_chemistry_12
+- pattern: 水火既济.*土和
+  correct: 黏土烧结成陶瓷涉及化学变化，高温下黏土发生脱水、氧化等化学反应
+  description: 误以为黏土烧结成陶瓷是物理变化
+  severity: error
+  source: cmmlu_high_school_chemistry_13
+- pattern: 曾青凃铁.*铁赤色如铜
+  correct: 铁与硫酸铜溶液发生置换反应生成铜，是化学变化
+  description: 误以为金属置换是物理变化
+  severity: error
+  source: cmmlu_high_school_chemistry_13
+- pattern: 丹砂烧之成水银.*积变又还成丹砂
+  correct: 硫化汞分解和再化合涉及化学键断裂与形成，是化学变化
+  description: 误以为物质间转化的可逆性是物理变化
+  severity: error
+  source: cmmlu_high_school_chemistry_13
+- pattern: 碘的升华.*物理变化
+  correct: 碘的升华是物理变化，石油的分馏也是物理变化
+  description: 误以为碘的升华是化学变化，或石油的分馏是化学变化
+  severity: error
+  source: cmmlu_high_school_chemistry_14
+- pattern: NH4Cl溶液除铁锈.*化学变化
+  correct: NH4Cl溶液除铁锈是化学变化，食盐水导电是物理变化
+  description: 误以为NH4Cl溶液除铁锈是物理变化，或食盐水导电是化学变化
+  severity: error
+  source: cmmlu_high_school_chemistry_14
+- pattern: 热的饱和KNO3溶液降温析出晶体.*化学变化
+  correct: 热的饱和KNO3溶液降温析出晶体是物理变化，二硫化碳洗涤试管内壁上的硫是物理变化
+  description: 误以为结晶过程是化学变化，或溶解硫是化学变化
+  severity: error
+  source: cmmlu_high_school_chemistry_14
+- pattern: CH3COONa.*c\(Na\+\).*>.*c\(CH3COO-\).*>.*c\(H\+\).*>.*c\(OH-\)
+  correct: CH3COONa溶液中，c(Na+) > c(CH3COO-) > c(OH-) > c(H+)
+  description: 误以为醋酸钠溶液中氢离子浓度大于氢氧根离子浓度
+  severity: error
+  source: cmmlu_high_school_chemistry_15
+- pattern: pH.*CH3COOH.*pH.*NH4Cl.*c\(H\+\).*不相等
+  correct: pH相同的CH3COOH溶液和NH4Cl溶液中，c(H+)相等
+  description: 误以为pH相同但不同溶质的溶液中氢离子浓度不同
+  severity: error
+  source: cmmlu_high_school_chemistry_15
+- pattern: Na2CO3.*加水稀释.*Kw.*减小
+  correct: Na2CO3溶液加水稀释后，Kw不变（只与温度有关）
+  description: 误以为加水稀释会改变水的离子积常数
+  severity: error
+  source: cmmlu_high_school_chemistry_15
+- pattern: 明矾.*净水
+  correct: 明矾净水涉及铝离子水解生成氢氧化铝胶体，属于化学变化
+  description: 误以为明矾净水只是物理吸附，不涉及化学变化
+  severity: error
+  source: cmmlu_high_school_chemistry_16
+- pattern: 生石灰.*干燥
+  correct: 生石灰作干燥剂时与水反应生成氢氧化钙，属于化学变化
+  description: 误以为生石灰干燥只是物理吸水，不涉及化学变化
+  severity: error
+  source: cmmlu_high_school_chemistry_16
+- pattern: 氢氟酸.*刻蚀玻璃
+  correct: 氢氟酸刻蚀玻璃是氢氟酸与二氧化硅反应，属于化学变化
+  description: 误以为氢氟酸刻蚀玻璃是物理过程，不涉及化学变化
+  severity: error
+  source: cmmlu_high_school_chemistry_16
+- pattern: 阴离子树脂.*H\+.*OH\-.*H2O
+  correct: 阴离子交换树脂交换的是阴离子，不直接发生H+与OH-的中和反应
+  description: 误以为阴离子交换树脂内部发生H+和OH-的中和反应
+  severity: error
+  source: cmmlu_high_school_chemistry_17
+- pattern: NO2.*SO42-.*Cl-.*阴离子树脂.*除
+  correct: 阴离子交换树脂去除的是阴离子，但NO2、SO42-、Cl-等阴离子会被交换去除
+  description: 误以为阴离子交换树脂不能去除NO2、SO42-、Cl-等阴离子
+  severity: error
+  source: cmmlu_high_school_chemistry_17
+- pattern: 古代的蜡.*高级脂肪酸酯.*高分子聚合物
+  correct: 古代的蜡主要成分是高级脂肪酸酯，但属于小分子有机物，不是高分子聚合物
+  description: 误以为高级脂肪酸酯属于高分子聚合物
+  severity: error
+  source: cmmlu_high_school_chemistry_18
+- pattern: CCl4.*溴.*苯.*分液
+  correct: 苯与CCl4互溶，无法通过分液分离，应使用NaOH溶液洗涤除去溴
+  description: 误以为苯可以萃取CCl4中的溴并通过分液分离，但苯与CCl4均为有机溶剂，互溶
+  severity: error
+  source: cmmlu_high_school_chemistry_19
+- pattern: Cu2O.*稀硝酸.*铜
+  correct: Cu2O与稀硝酸反应生成Cu(NO3)2、NO和H2O，红色固体完全溶解不能证明还原产物是铜
+  description: 误以为Cu2O与稀硝酸反应只生成Cu2+和Cu，忽略了硝酸的氧化性
+  severity: error
+  source: cmmlu_high_school_chemistry_19
+- pattern: 水垢.*盐酸.*澄清石灰水.*CaCO3.*MgCO3
+  correct: 水垢主要成分为CaCO3和Mg(OH)2，MgCO3在加热条件下易分解，通常不是主要成分
+  description: 误以为水垢主要成分为CaCO3和MgCO3，实际水垢中Mg以Mg(OH)2形式存在
+  severity: error
+  source: cmmlu_high_school_chemistry_19
+- pattern: 水玻璃.*易溶于水.*黏合剂.*防火剂
+  correct: 水玻璃（硅酸钠水溶液）本身是黏稠液体，不强调‘易溶于水’，其用于黏合剂和防火剂是基于其黏结性和不燃性
+  description: 误以为水玻璃易溶于水是其用于黏合剂和防火剂的原因
+  severity: error
+  source: cmmlu_high_school_chemistry_20
+- pattern: 钠和钾的合金.*导电性.*热交换剂
+  correct: 钠钾合金用作快中子反应堆热交换剂是因为其液态温度范围宽、导热性好，而非导电性
+  description: 误以为导电性是钠钾合金用作热交换剂的关键性质
+  severity: error
+  source: cmmlu_high_school_chemistry_20
+- pattern: 甲醛.*蛋白质变性.*食品防腐剂
+  correct: 甲醛虽能使蛋白质变性，但有毒，不可用于食品防腐
+  description: 误以为甲醛可用于食品防腐
+  severity: error
+  source: cmmlu_high_school_chemistry_20
+- pattern: 金属镁.*溶于NaOH
+  correct: 镁不与NaOH溶液反应，只有两性金属如铝、锌等可溶于强碱
+  description: 误以为所有活泼金属都能与NaOH溶液反应
+  severity: error
+  source: cmmlu_high_school_chemistry_21
+- pattern: Fe.*浓硝酸.*产生NO2
+  correct: 常温下铁遇浓硝酸发生钝化，不会持续反应产生NO2
+  description: 误以为铁与浓硝酸反应与铜类似，忽略钝化现象
+  severity: error
+  source: cmmlu_high_school_chemistry_21
+- pattern: F2.*KBr.*置换.*Br2
+  correct: 氟气与水剧烈反应生成HF和O2，不会从KBr溶液中置换出溴
+  description: 误以为氟的化学性质与氯相似，忽略氟与水优先反应
+  severity: error
+  source: cmmlu_high_school_chemistry_21
+- pattern: 甲苯.*共平面
+  correct: 甲苯分子中甲基碳为sp3杂化，所有原子不可能共平面
+  description: 误以为甲苯中甲基的氢原子也能与苯环共平面
+  severity: error
+  source: cmmlu_high_school_chemistry_22
+- pattern: 乙烷.*共平面
+  correct: 乙烷分子中碳原子为sp3杂化，所有原子不可能共平面
+  description: 误以为乙烷分子中所有原子可以共平面
+  severity: error
+  source: cmmlu_high_school_chemistry_22
+- pattern: 丙炔.*共平面
+  correct: 丙炔分子中甲基碳为sp3杂化，所有原子不可能共平面
+  description: 误以为丙炔分子中甲基的氢原子也能与三键碳共平面
+  severity: error
+  source: cmmlu_high_school_chemistry_22
+- pattern: 石蜡油.*加强热.*分解.*气体.*都是烷烃
+  correct: 石蜡油（液态烷烃混合物）加强热分解生成的气体中含有烷烃和烯烃等不饱和烃
+  description: 误以为石蜡油热分解只生成烷烃，实际上还会生成烯烃等不饱和烃
+  severity: error
+  source: cmmlu_high_school_chemistry_23
+- pattern: 甲苯.*使溴的四氯化碳溶液褪色
+  correct: 甲苯不能使溴的四氯化碳溶液褪色，但能使酸性高锰酸钾溶液褪色
+  description: 误以为甲苯能使溴的四氯化碳溶液褪色，实际上甲苯与溴的四氯化碳溶液不反应
+  severity: error
+  source: cmmlu_high_school_chemistry_23
+- pattern: 乙烷.*氯气.*光照.*加成反应
+  correct: 乙烷与氯气在光照条件下发生取代反应，不是加成反应
+  description: 误以为乙烷与氯气在光照下发生加成反应，实际是取代反应
+  severity: error
+  source: cmmlu_high_school_chemistry_23
+- pattern: 变化时释放或吸收能量
+  correct: 物理变化也可能伴随能量变化，如熔化、汽化等，因此释放或吸收能量不能作为化学变化的唯一判断依据
+  description: 误以为所有释放或吸收能量的变化都是化学变化
+  severity: error
+  source: cmmlu_high_school_chemistry_24
+- pattern: 测氯水.*pH.*玻璃棒.*蘸取
+  correct: 氯水具有漂白性，会使pH试纸褪色，无法准确测量pH值
+  description: 误以为氯水可以用pH试纸直接测量pH值，忽略了氯水的漂白性
+  severity: error
+  source: cmmlu_high_school_chemistry_25
+- pattern: 海带.*提碘.*灼烧.*溶解.*过滤.*萃取
+  correct: 海带提碘的正确步骤是：取样→灼烧→溶解→过滤→氧化→萃取
+  description: 忽略了海带中碘以碘离子形式存在，需要氧化步骤才能得到单质碘
+  severity: error
+  source: cmmlu_high_school_chemistry_25
+- pattern: 混酸.*浓硝酸.*注入.*浓硫酸
+  correct: 配制混酸时，应将浓硫酸沿玻璃棒缓慢注入浓硝酸中，并不断搅拌
+  description: 误以为配制混酸时浓硝酸应注入浓硫酸中，实际应相反
+  severity: error
+  source: cmmlu_high_school_chemistry_25
+- pattern: 激光法蒸发石墨得C60
+  correct: 激光法蒸发石墨得到C60是物理变化，因为只是碳原子重新排列，没有生成新物质
+  description: 误以为激光法蒸发石墨得到C60是化学变化
+  severity: error
+  source: cmmlu_high_school_chemistry_26
+- pattern: 玉不琢不成器.*化学变化
+  correct: 玉不琢不成器是物理变化，百炼方能成钢是化学变化
+  description: 误以为玉不琢不成器也是化学变化
+  severity: error
+  source: cmmlu_high_school_chemistry_27
+- pattern: 甘之如饴.*糖类.*甜味
+  correct: 并非所有糖类都有甜味，如淀粉、纤维素等糖类无甜味
+  description: 误以为所有糖类都有甜味
+  severity: error
+  source: cmmlu_high_school_chemistry_27
+- pattern: 爆竹.*分解反应
+  correct: 爆竹爆炸是氧化还原反应，不是分解反应
+  description: 误以为爆竹爆炸是分解反应
+  severity: error
+  source: cmmlu_high_school_chemistry_27
+- pattern: 氯气.*水.*转移电子.*NA
+  correct: 氯气与水反应是可逆反应，1 mol氯气通入水中转移电子数小于NA
+  description: 误以为氯气与水反应完全进行，转移电子数为NA
+  severity: error
+  source: cmmlu_high_school_chemistry_28
+- pattern: 标准状况.*辛烷.*分子数.*NA
+  correct: 标准状况下辛烷为液体，不能用气体摩尔体积计算分子数
+  description: 误以为标准状况下辛烷为气体，用22.4 L/mol计算分子数
+  severity: error
+  source: cmmlu_high_school_chemistry_28
+- pattern: 羟基.*电子数.*10NA
+  correct: 1 mol羟基中含有的电子数为9NA
+  description: 误将羟基的电子数算为10NA，实际羟基由氧和氢组成，电子数为9
+  severity: error
+  source: cmmlu_high_school_chemistry_28
+- pattern: Fe.*O2.*产物.*无关
+  correct: 铁与氧气反应，产物与反应条件（点燃或缓慢氧化）有关，可能生成Fe3O4或Fe2O3
+  description: 误以为铁与氧气反应产物与条件无关
+  severity: error
+  source: cmmlu_high_school_chemistry_29
+- pattern: NH4HCO3.*NaOH.*产物.*无关
+  correct: 碳酸氢铵与氢氧化钠反应，产物与反应物用量有关，用量不同可能生成碳酸钠或碳酸氢钠
+  description: 误以为碳酸氢铵与氢氧化钠反应产物与用量无关
+  severity: error
+  source: cmmlu_high_school_chemistry_29
+- pattern: C.*SiO2.*产物.*无关
+  correct: 碳与二氧化硅反应，产物与反应物用量有关，可能生成一氧化碳或二氧化碳
+  description: 误以为碳与二氧化硅反应产物与用量无关
+  severity: error
+  source: cmmlu_high_school_chemistry_29
+- pattern: SO2.*SO3.*Ba(NO3)2.*BaSO3.*BaSO4
+  correct: SO2和SO3混合气体通入Ba(NO3)2溶液，SO3与水反应生成H2SO4，与Ba2+生成BaSO4沉淀；SO2在酸性条件下被NO3-氧化为SO42-，也生成BaSO4，不会得到BaSO3
+  description: 误以为SO2在硝酸钡溶液中能生成亚硫酸钡沉淀，忽略硝酸根的氧化性
+  severity: error
+  source: cmmlu_high_school_chemistry_0
+- pattern: 苯萃取溴水.*下口放出
+  correct: 苯的密度比水小，萃取后苯层在上层，应从分液漏斗上口倒出
+  description: 误以为苯的密度比水大，将上层液体从下口放出
+  severity: error
+  source: cmmlu_high_school_chemistry_7
+- pattern: BaCl2.*不溶于硝酸.*白色沉淀.*一定含有Ag
+  correct: 加入BaCl2产生不溶于硝酸的白色沉淀，可能是AgCl或BaSO4，溶液中可能含有Ag+或SO42-
+  description: 误以为不溶于硝酸的白色沉淀只对应Ag+，忽略了SO42-也能与Ba2+生成BaSO4沉淀
+  severity: error
+  source: cmmlu_high_school_chemistry_9
+- pattern: 明矾.*吸附.*漂白剂
+  correct: 明矾水解产生的Al(OH)3胶体具有吸附性，可作净水剂，而非漂白剂
+  description: 混淆了净水剂和漂白剂的功能，明矾的吸附作用用于净水，不能漂白
+  severity: error
+  source: cmmlu_high_school_chemistry_9
+- pattern: CH3COONa.*c\(Na\+\).*c\(CH3COO-\).*c\(H\+\).*c\(OH-\)
+  correct: CH3COONa溶液中，c(Na+) > c(CH3COO-) > c(OH-) > c(H+)
+  description: 误以为醋酸钠溶液中氢离子浓度大于氢氧根离子浓度
+  severity: error
+  source: cmmlu_high_school_chemistry_15
+- pattern: pH.*CH3COOH.*NH4Cl.*c\(H\+\).*不相等
+  correct: pH相同的CH3COOH溶液和NH4Cl溶液中，c(H+)相等
+  description: 误以为pH相同但不同溶质的溶液中氢离子浓度不同
+  severity: error
+  source: cmmlu_high_school_chemistry_15
+- pattern: 蜡.*高级脂肪酸酯.*高分子聚合物
+  correct: 古代的蜡主要成分是高级脂肪酸酯，属于小分子有机物，不是高分子聚合物
+  description: 误以为高级脂肪酸酯属于高分子聚合物
+  severity: error
+  source: cmmlu_high_school_chemistry_18
+- pattern: 水玻璃.*黏合剂.*防火剂
+  correct: 水玻璃（硅酸钠水溶液）具有黏结性和耐高温性，可用于生产黏合剂和防火剂，但并非因为易溶于水
+  description: 误以为水玻璃的用途源于其易溶于水的性质
+  severity: error
+  source: cmmlu_high_school_chemistry_20
+- pattern: 钠钾合金.*导电性.*热交换剂
+  correct: 钠和钾的合金用作快中子反应堆热交换剂是因为其液态温度范围宽、导热性好，而非导电性
+  description: 误以为钠钾合金用作热交换剂是因为导电性
+  severity: error
+  source: cmmlu_high_school_chemistry_20
+- pattern: 甲醛.*食品防腐剂
+  correct: 甲醛能使蛋白质变性，但有毒，不可用于食品防腐剂
+  description: 误以为甲醛可用于食品防腐
+  severity: error
+  source: cmmlu_high_school_chemistry_20
+- pattern: 石蜡油.*加强热.*气体.*烷烃
+  correct: 石蜡油（液态烷烃混合物）加强热分解生成的气体中含有烷烃和烯烃等不饱和烃
+  description: 误以为石蜡油热分解产物只有烷烃，忽略了烯烃等不饱和烃的生成
+  severity: error
+  source: cmmlu_high_school_chemistry_23
+- pattern: 甲苯.*溴的四氯化碳溶液.*褪色
+  correct: 甲苯不能使溴的四氯化碳溶液褪色，但能使酸性高锰酸钾溶液褪色
+  description: 误以为甲苯能使溴的四氯化碳溶液褪色，混淆了苯环侧链与不饱和键的性质
+  severity: error
+  source: cmmlu_high_school_chemistry_23
+- pattern: 测氯水.*pH
+  correct: 氯水具有漂白性，会使pH试纸褪色，无法用pH试纸准确测量其pH值
+  description: 误以为氯水可以用pH试纸测pH值，忽略了氯水的漂白性
+  severity: error
+  source: cmmlu_high_school_chemistry_25
+- pattern: 可降解.*替代.*聚乙烯
+  correct: 研发可降解材料替代传统塑料可以减少白色污染，有利于遏制污染
+  description: 误以为研发可降解材料不利于遏制污染
+  severity: error
+  source: cmmlu_high_school_chemistry_30
+- pattern: 油改气.*推广
+  correct: 天然气比汽油、柴油更清洁，推广油改气工程有利于减少污染
+  description: 误以为推广机动车用天然气替代燃油不利于遏制污染
+  severity: error
+  source: cmmlu_high_school_chemistry_30
+- pattern: 清洁能源.*减少.*化石燃料
+  correct: 发展风能、太阳能等清洁能源替代化石燃料有利于减少污染
+  description: 误以为发展清洁能源不利于遏制污染
+  severity: error
+  source: cmmlu_high_school_chemistry_30
+- pattern: FeCl3.*氨水.*红褐色沉淀.*Fe3＋＋3OH－
+  correct: 向FeCl3溶液中滴加氨水，Fe3+与NH3·H2O反应生成Fe(OH)3沉淀，离子方程式为Fe3+ + 3NH3·H2O = Fe(OH)3↓
+    + 3NH4+
+  description: 误以为氨水中的OH-直接与Fe3+反应，忽略了氨水是弱碱，应写NH3·H2O而非OH-
+  severity: error
+  source: cmmlu_high_school_chemistry_31
+- pattern: FeCl3.*蓝色石蕊试纸变红.*Fe3＋＋3H2O===3H＋＋Fe(OH)3
+  correct: FeCl3溶液使蓝色石蕊试纸变红是因为Fe3+水解显酸性，但水解是可逆的，应用可逆符号，且Fe(OH)3不应写沉淀符号
+  description: 误以为Fe3+水解是完全的且生成沉淀，实际水解是可逆过程，Fe(OH)3为胶体或溶解态
+  severity: error
+  source: cmmlu_high_school_chemistry_31
+- pattern: FeCl3.*腐蚀印刷电路板.*Fe3＋＋Cu===Cu2＋＋Fe2＋
+  correct: 用FeCl3溶液腐蚀印刷电路板的离子方程式为2Fe3+ + Cu = 2Fe2+ + Cu2+，需配平电荷和原子
+  description: 误以为Fe3+与Cu反应时电荷守恒，实际反应中Fe3+被还原为Fe2+，需2个Fe3+才能氧化1个Cu
+  severity: error
+  source: cmmlu_high_school_chemistry_31
+- pattern: 福尔马林.*食品
+  correct: 福尔马林是甲醛溶液，有毒，不能用于食品加工、消毒、防腐
+  description: 误认为福尔马林可用于食品加工、消毒、防腐
+  severity: error
+  source: cmmlu_high_school_chemistry_32
+- pattern: 储氢.*NaHCO3.*被氧化
+  correct: 储氢过程中，NaHCO3中的碳元素化合价降低，被还原
+  description: 误以为储氢时NaHCO3被氧化，实际是碳从+4价降至+2价，被还原
+  severity: error
+  source: cmmlu_high_school_chemistry_33
+- pattern: 储氢.*释氢.*无能量变化
+  correct: 储氢和释氢过程均伴随化学键的断裂和形成，有能量变化
+  description: 误以为化学反应无能量变化，实际任何化学反应都伴随能量变化
+  severity: error
+  source: cmmlu_high_school_chemistry_33
+- pattern: 释氢.*盐类的水解
+  correct: 释氢过程是HCOONa分解生成NaHCO3和H2，属于分解反应，不是盐类水解
+  description: 误将释氢反应归为盐类水解，实际是逆向反应，涉及化学键断裂和形成
+  severity: error
+  source: cmmlu_high_school_chemistry_33
+- pattern: Na2O2.*淡黄色.*白色
+  correct: Na2O2在空气中放置后由淡黄色变为白色，是因为与CO2反应生成Na2CO3，而不是分解为Na2O和O2
+  description: 误以为Na2O2在空气中变白是自身分解为Na2O和O2
+  severity: error
+  source: cmmlu_high_school_chemistry_34
+- pattern: 常温下.*铁.*浓硫酸.*不反应
+  correct: 常温下铁在浓硫酸中发生钝化，表面形成致密氧化膜，阻止进一步反应
+  description: 误以为铁片不溶解是因为铁与浓硫酸不反应，实际是钝化现象
+  severity: error
+  source: cmmlu_high_school_chemistry_35
+- pattern: CuSO4.*NaOH.*蓝色固体
+  correct: 向CuSO4溶液中滴入过量NaOH溶液生成Cu(OH)2蓝色沉淀，但加热煮沸后Cu(OH)2分解为黑色CuO，过滤得到黑色固体
+  description: 误以为Cu(OH)2加热后仍为蓝色固体，忽略其受热分解为黑色氧化铜
+  severity: error
+  source: cmmlu_high_school_chemistry_36
+- pattern: 制备氢氧化亚铁.*搅拌
+  correct: 制备氢氧化亚铁时，应将滴管伸入硫酸亚铁溶液液面下滴加氢氧化钠溶液，且不能搅拌，以避免空气氧化，才能得到白色沉淀
+  description: 误以为制备氢氧化亚铁时可以搅拌，忽略搅拌会引入氧气使Fe(OH)2迅速氧化
+  severity: error
+  source: cmmlu_high_school_chemistry_36
+- pattern: 过量的铁.*稀硝酸.*KSCN.*红色
+  correct: 过量的铁与稀硝酸反应生成Fe(NO3)2，溶液中无Fe3+，滴加KSCN溶液不会显红色
+  description: 误以为铁与稀硝酸反应无论铁过量与否都生成Fe3+，忽略铁过量时生成Fe2+
+  severity: error
+  source: cmmlu_high_school_chemistry_36
+- pattern: 熔点.*X的氧化物.*Y的氧化物
+  correct: X的氧化物（如CO2）为分子晶体，Y的氧化物（如MgO）为离子晶体，离子晶体熔点通常高于分子晶体
+  description: 误以为非金属氧化物熔点高于金属氧化物
+  severity: error
+  source: cmmlu_high_school_chemistry_37
+- pattern: Y的单质.*Z的单质.*能溶于浓酸
+  correct: Y的单质（如Mg）能溶于浓酸，但Z的单质（如C）不溶于浓酸
+  description: 误以为所有短周期主族元素单质都能与浓酸反应
+  severity: error
+  source: cmmlu_high_school_chemistry_37
+- pattern: X与Z.*离子化合物
+  correct: X与Z同族且均为非金属元素，形成的化合物（如CO2）为共价化合物
+  description: 误以为同族非金属元素间能形成离子化合物
+  severity: error
+  source: cmmlu_high_school_chemistry_37
+- pattern: 滴水石穿.*化学变化
+  correct: 滴水石穿、绳锯木断都包含物理变化，不包含化学变化
+  description: 误以为滴水石穿、绳锯木断包含化学变化
+  severity: error
+  source: cmmlu_high_school_chemistry_38
+- pattern: 落汤螃蟹着红袍.*化学变化
+  correct: 落汤螃蟹着红袍描述的是虾青素在加热时变性，属于化学变化
+  description: 误以为落汤螃蟹着红袍不包含化学变化
+  severity: error
+  source: cmmlu_high_school_chemistry_38
+- pattern: 水乳交融.*化学变化
+  correct: 水乳交融是物理变化，火上浇油包含化学变化
+  description: 误以为水乳交融包含化学变化
+  severity: error
+  source: cmmlu_high_school_chemistry_38
+- pattern: 1 mol Cl2.*铁.*转移.*电子.*1 mol铁.*Cl2.*相等
+  correct: 1 mol Cl2与足量铁反应转移2 mol电子，1 mol铁与足量Cl2反应转移3 mol电子，两者不相等
+  description: 误以为氯气和铁反应时电子转移数相同，忽略了氯气生成FeCl3时铁被氧化到+3价
+  severity: error
+  source: cmmlu_high_school_chemistry_39
+- pattern: 标准状况.*11.2 L NO.*11.2 L O2.*混合.*分子数.*0.75NA
+  correct: 标准状况下，NO与O2反应生成NO2，且存在2NO2⇌N2O4平衡，混合后分子数小于0.75NA
+  description: 忽略了NO与O2反应生成NO2以及二聚平衡，导致分子数计算错误
+  severity: error
+  source: cmmlu_high_school_chemistry_39
+- pattern: 0.5 mol·L.*Na2SO4.*阴.*阳离子总数.*1.5NA
+  correct: 未给出溶液体积，无法计算离子总数，且Na2SO4溶液中阴、阳离子总数与浓度和体积有关
+  description: 误以为给定浓度即可直接计算离子数目，忽略了体积条件
+  severity: error
+  source: cmmlu_high_school_chemistry_39
+- pattern: 电解熔融.*Y.*Z.*化合物.*得Y单质
+  correct: Y是铝，Z是氯，电解熔融氯化铝不能得到铝单质，工业上电解熔融氧化铝制铝
+  description: 误以为电解熔融氯化铝可制得铝单质
+  severity: error
+  source: cmmlu_high_school_chemistry_40
+- pattern: X.*单质.*氧气中燃烧.*产物.*离子键.*共价键
+  correct: X是硅，二氧化硅只含共价键，不含离子键
+  description: 误以为硅在氧气中燃烧产物含离子键
+  severity: error
+  source: cmmlu_high_school_chemistry_40
+- pattern: Y.*单质.*空气中加热.*不会熔化
+  correct: 铝在空气中加热会熔化，因为铝的熔点较低（660℃）
+  description: 误以为铝在空气中加热不会熔化
+  severity: error
+  source: cmmlu_high_school_chemistry_40
+- pattern: 电解饱和食盐水.*阳极.*22.4 L
+  correct: 标准状况下，阳极产生22.4 L气体；常温常压下，气体摩尔体积不是22.4 L/mol
+  description: 误以为任何条件下气体摩尔体积都是22.4 L/mol，忽略温度和压强条件
+  severity: error
+  source: cmmlu_high_school_chemistry_41
+- pattern: 乙酸.*H＋数目.*0.1NA
+  correct: 乙酸是弱酸，部分电离，H＋数目远小于0.1NA
+  description: 误以为弱酸完全电离，忽略弱电解质的电离平衡
+  severity: error
+  source: cmmlu_high_school_chemistry_41
+- pattern: Na2O.*Na2O2.*阴离子总数不同
+  correct: Na2O和Na2O2中阴离子分别为O2-和O22-，但等物质的量时阴离子总数相同
+  description: 误以为阴离子种类不同导致数目不同，忽略阴离子个数比均为1:1
+  severity: error
+  source: cmmlu_high_school_chemistry_41
+- pattern: 乙烷.*氯气.*氯乙烷.*乙烯.*氯化氢.*氯乙烷
+  correct: 乙烷和氯气制氯乙烷是取代反应，乙烯与氯化氢反应制氯乙烷是加成反应，不属于同一反应类型
+  description: 误以为乙烷的取代反应和乙烯的加成反应属于同一反应类型
+  severity: error
+  source: cmmlu_high_school_chemistry_42
+- pattern: 乙醇.*氧气.*乙醛.*苯.*氢气.*环己烷
+  correct: 乙醇和氧气制乙醛是氧化反应，苯和氢气制环己烷是加成反应，不属于同一反应类型
+  description: 误以为乙醇的氧化反应和苯的加成反应属于同一反应类型
+  severity: error
+  source: cmmlu_high_school_chemistry_42
+- pattern: 葡萄糖.*新制氢氧化铜.*蔗糖.*稀硫酸
+  correct: 葡萄糖与新制氢氧化铜共热是氧化反应，蔗糖与稀硫酸共热是水解反应，不属于同一反应类型
+  description: 误以为葡萄糖的氧化反应和蔗糖的水解反应属于同一反应类型
+  severity: error
+  source: cmmlu_high_school_chemistry_42
+- pattern: 第二周期.*最高正化合价.*最外层电子数
+  correct: 第二周期元素中，氧和氟没有最高正化合价，氧通常显-2价，氟显-1价
+  description: 误以为第二周期所有元素的最高正化合价都等于最外层电子数，忽略了氧和氟的特殊性
+  severity: error
+  source: cmmlu_high_school_chemistry_43
+- pattern: 非金属性越强.*氧化物对应水化物.*酸性越强
+  correct: 非金属元素的非金属性越强，其最高价氧化物对应水化物的酸性越强，但低价态氧化物对应水化物的酸性不一定
+  description: 误以为非金属性越强，所有氧化物对应水化物的酸性都越强，忽略了价态的影响
+  severity: error
+  source: cmmlu_high_school_chemistry_43
+- pattern: Na.*Al.*Cl.*离子半径.*依次减小
+  correct: Na+、Al3+、Cl-的离子半径不是依次减小，Cl-的离子半径最大，因为Cl-比Na+和Al3+多一个电子层
+  description: 误以为原子半径减小趋势也适用于离子半径，忽略了阴离子和阳离子电子层数的差异
+  severity: error
+  source: cmmlu_high_school_chemistry_43
+- pattern: 高残留农药
+  correct: 应研发高效、低残留农药，减少对环境和人体的危害
+  description: 误以为高残留农药是化学发展的正确方向
+  severity: error
+  source: cmmlu_high_school_chemistry_44
+- pattern: 蜃.*NaHCO3
+  correct: 蜃的主要成分是CaO，由牡蛎壳（CaCO3）高温煅烧得到
+  description: 误以为蜃是碳酸氢钠，实际是氧化钙
+  severity: error
+  source: cmmlu_high_school_chemistry_45
+- pattern: 蜃.*SiO2
+  correct: 蜃的主要成分是CaO，不是二氧化硅
+  description: 误以为蜃是二氧化硅，实际是氧化钙
+  severity: error
+  source: cmmlu_high_school_chemistry_45
+- pattern: 蜃.*CaCO3
+  correct: 蜃是CaO，由CaCO3煅烧得到，而非直接是CaCO3
+  description: 误以为蜃是碳酸钙，实际是煅烧后的氧化钙
+  severity: error
+  source: cmmlu_high_school_chemistry_45
+- pattern: 锥形瓶.*不能加热
+  correct: 锥形瓶可以垫石棉网加热，但不可直接加热
+  description: 误以为锥形瓶完全不能加热
+  severity: error
+  source: cmmlu_high_school_chemistry_46
+- pattern: 银镜反应.*浓硝酸.*洗涤
+  correct: 银镜反应后的试管应用稀硝酸洗涤，浓硝酸反应剧烈且危险
+  description: 误以为银镜反应后的银需要用浓硝酸洗涤
+  severity: error
+  source: cmmlu_high_school_chemistry_46
+- pattern: 滴定管.*蒸馏水润洗
+  correct: 滴定管装滴定液前应先用待装液润洗，不能用蒸馏水润洗
+  description: 误以为滴定管装液前可用蒸馏水润洗
+  severity: error
+  source: cmmlu_high_school_chemistry_46
+- pattern: 球形冷凝管
+  correct: 蒸发浓缩应使用直形冷凝管，球形冷凝管用于回流
+  description: 误以为球形冷凝管可用于蒸发浓缩
+  severity: error
+  source: cmmlu_high_school_chemistry_47
+- pattern: 比较镁的金属性强于铝.*盐酸
+  correct: 比较金属性强弱应通过最高价氧化物对应水化物的碱性或单质与水/酸反应的剧烈程度，但需控制变量，仅用盐酸不能直接证明镁的金属性强于铝
+  description: 误以为通过金属与盐酸反应的剧烈程度可直接比较金属性，忽略了反应条件、产物等变量控制
+  severity: warning
+  source: cmmlu_high_school_chemistry_48
+- pattern: 比较高锰酸钾的氧化性强于氯气.*浓盐酸
+  correct: 高锰酸钾与浓盐酸反应生成氯气，可证明高锰酸钾的氧化性强于氯气，该实验合理
+  description: 误以为该实验不合理，实际上高锰酸钾氧化浓盐酸生成氯气是氧化性强弱比较的经典实验
+  severity: error
+  source: cmmlu_high_school_chemistry_48
+- pattern: 比较氯的非金属性强于溴.*溴化钠.*氯气
+  correct: 氯气置换溴化钠中的溴，可证明氯的非金属性强于溴，该实验合理
+  description: 误以为该实验不合理，实际上氯气置换溴化钠是证明非金属性强弱的典型方法
+  severity: error
+  source: cmmlu_high_school_chemistry_48
+- pattern: 新制氯水.*碳酸钙.*漂白性增强
+  correct: 碳酸钙与氯水中的盐酸反应，使Cl2+H2O⇌HCl+HClO平衡正向移动，HClO浓度增大，漂白性增强
+  description: 误以为碳酸钙直接增强漂白性，忽略了平衡移动原理
+  severity: error
+  source: cmmlu_high_school_chemistry_49
+- pattern: 蒸馏.*CCl4.*碘.*升华.*先分离
+  correct: 蒸馏是利用沸点差异分离液体混合物，碘溶于CCl4，应通过蒸馏使CCl4先蒸出，碘留在剩余物中
+  description: 误以为碘易升华就能在蒸馏中先分离，忽略了碘在溶液中以溶解态存在
+  severity: error
+  source: cmmlu_high_school_chemistry_49
+- pattern: Fe\(NO3\)2.*硫酸酸化.*H2O2.*氧化性.*H2O2>Fe3
+  correct: 溶液变黄是因为H2O2在酸性条件下将Fe2+氧化为Fe3+，但酸性条件下NO3-也有强氧化性，不能直接证明H2O2氧化性大于Fe3+
+  description: 误以为溶液变黄直接证明H2O2氧化性大于Fe3+，忽略了NO3-在酸性条件下的氧化性
+  severity: error
+  source: cmmlu_high_school_chemistry_49
+- pattern: 燃烧.*烟煤.*取暖
+  correct: 燃烧烟煤会产生大量有害气体和颗粒物，加剧大气污染和雾霾
+  description: 误以为燃烧烟煤取暖不会污染大气
+  severity: error
+  source: cmmlu_high_school_chemistry_50
+- pattern: 加大石油.*开发.*进口.*交通
+  correct: 增加石油使用会排放更多尾气，加剧大气污染和雾霾
+  description: 误以为加大石油开发进口有利于缓解污染
+  severity: error
+  source: cmmlu_high_school_chemistry_50
+- pattern: 田间.*焚烧秸秆
+  correct: 焚烧秸秆会产生大量烟尘和有害气体，严重污染大气
+  description: 误以为焚烧秸秆不会造成大气污染
+  severity: error
+  source: cmmlu_high_school_chemistry_50
+- pattern: K1.*H2SO3.*K1.*H2CO3.*K2.*H2SO3.*K2.*H2CO3
+  correct: 亚硫酸的K1大于碳酸的K1，但K2(H2SO3)小于K2(H2CO3)，且K1(H2CO3)大于K2(H2SO3)
+  description: 误以为亚硫酸和碳酸各级电离常数的大小顺序为K1(H2SO3)>K1(H2CO3)>K2(H2SO3)>K2(H2CO3)
+  severity: error
+  source: cmmlu_high_school_chemistry_51
+- pattern: 同温同浓度.*NaHCO3.*CH3COONa.*pH.*前者小于后者
+  correct: 同温同浓度下，NaHCO3溶液的pH大于CH3COONa溶液的pH
+  description: 误以为碳酸氢钠溶液的酸性强于醋酸钠，实际上碳酸氢根水解程度更大
+  severity: error
+  source: cmmlu_high_school_chemistry_51
+- pattern: 中和.*NaOH.*CH3COOH.*HCl.*物质的量.*前者小于后者
+  correct: 中和等量NaOH所需CH3COOH和HCl的物质的量相等
+  description: 误以为弱酸中和碱所需物质的量少于强酸，实际上中和反应按1:1计量
+  severity: error
+  source: cmmlu_high_school_chemistry_51
+- pattern: 酸性.*HNO3.*H3BO3.*H2CO3
+  correct: 酸性：HNO3＞H2CO3＞H3BO3，因为非金属性N＞C＞B
+  description: 误以为硼酸酸性强于碳酸，实际碳酸酸性强于硼酸
+  severity: error
+  source: cmmlu_high_school_chemistry_52
+- pattern: 稳定性.*HF.*PH3.*H2O
+  correct: 稳定性：HF＞H2O＞PH3，因为非金属性F＞O＞P
+  description: 误以为PH3稳定性高于H2O，实际水的稳定性远高于磷化氢
+  severity: error
+  source: cmmlu_high_school_chemistry_52
+- pattern: 碱性.*Be\(OH\)2.*Mg\(OH\)2.*Ca\(OH\)2
+  correct: 碱性：Ca(OH)2＞Mg(OH)2＞Be(OH)2，同主族从上到下金属性增强，碱性增强
+  description: 误以为铍的碱性最强，实际同主族从上到下碱性增强
+  severity: error
+  source: cmmlu_high_school_chemistry_52
+- pattern: FeI2.*盐酸.*过氧化氢
+  correct: FeI2与盐酸和过氧化氢反应时，Fe2+也会被氧化为Fe3+，离子方程式应为2Fe2+ + 4I- + 3H2O2 + 6H+ = 2Fe3+
+    + 2I2 + 6H2O
+  description: 误以为FeI2中只有I-被H2O2氧化，忽略了Fe2+也会被氧化
+  severity: error
+  source: cmmlu_high_school_chemistry_53
+- pattern: AlCl3.*氨水.*Al\(OH\)3.*OH-
+  correct: 氨水是弱碱，应写为NH3·H2O，离子方程式为Al3+ + 3NH3·H2O = Al(OH)3↓ + 3NH4+
+  description: 误将氨水写为OH-，忽略了氨水是弱电解质
+  severity: error
+  source: cmmlu_high_school_chemistry_53
+- pattern: CuCl2.*少量氨水.*Cu\(OH\)2
+  correct: 氨水是弱碱，应写为NH3·H2O，离子方程式为Cu2+ + 2NH3·H2O = Cu(OH)2↓ + 2NH4+
+  description: 误将氨水写为OH-，忽略了氨水是弱电解质
+  severity: error
+  source: cmmlu_high_school_chemistry_53
+- pattern: 电解氯化铝.*制取铝
+  correct: 工业上通常用电解熔融氧化铝（Al₂O₃）的方法制取铝，而非电解氯化铝
+  description: 误以为电解氯化铝是工业制铝的方法
+  severity: error
+  source: cmmlu_high_school_chemistry_54
+- pattern: 石英坩埚.*熔融氢氧化钠
+  correct: 熔融氢氧化钠会与石英（主要成分SiO₂）反应，应使用铁坩埚等耐碱材料
+  description: 误认为石英坩埚可耐受熔融氢氧化钠的腐蚀
+  severity: error
+  source: cmmlu_high_school_chemistry_54
+- pattern: 炉甘石.*碳酸钙
+  correct: 炉甘石的主要成分是碳酸锌（ZnCO₃），而非碳酸钙
+  description: 误将炉甘石的主要成分当作碳酸钙
+  severity: error
+  source: cmmlu_high_school_chemistry_55
+- pattern: 煤炭.*主要成分.*C
+  correct: 煤炭中起作用的主要成分是碳（C），该表述正确
+  description: 认为煤炭中起作用的主要成分不是碳
+  severity: warning
+  source: cmmlu_high_school_chemistry_55
+- pattern: 加快氧气的生成速率.*过氧化氢.*MnO2
+  correct: MnO2是过氧化氢分解的催化剂，能加快氧气生成速率
+  description: 误以为MnO2不能加快过氧化氢分解生成氧气的速率
+  severity: error
+  source: cmmlu_high_school_chemistry_56
+- pattern: 除去乙酸乙酯.*乙酸.*饱和碳酸钠
+  correct: 饱和碳酸钠溶液能中和乙酸并降低乙酸乙酯溶解度，可用于除杂
+  description: 误以为饱和碳酸钠不能除去乙酸乙酯中的乙酸
+  severity: error
+  source: cmmlu_high_school_chemistry_56
+- pattern: 制备二氧化硫.*饱和亚硫酸钠.*浓硫酸
+  correct: 浓硫酸与亚硫酸钠反应可生成二氧化硫气体
+  description: 误以为饱和亚硫酸钠与浓硫酸不能制备二氧化硫
+  severity: error
+  source: cmmlu_high_school_chemistry_56
+- pattern: 单质参加.*氧化还原反应
+  correct: 有单质参加的反应不一定是氧化还原反应，如同素异形体之间的转化（如O₂→O₃）是非氧化还原反应
+  description: 误认为所有有单质参与的反应都是氧化还原反应
+  severity: error
+  source: cmmlu_high_school_chemistry_57
+- pattern: 酸性氧化物.*与水反应.*对应酸
+  correct: 酸性氧化物不一定与水反应生成对应的酸，如SiO₂不溶于水，不能直接与水反应生成H₂SiO₃
+  description: 误认为所有酸性氧化物都能与水反应生成对应的酸
+  severity: error
+  source: cmmlu_high_school_chemistry_57
+- pattern: 石油裂解.*裂化.*目的相同
+  correct: 石油裂解的目的是获得短链不饱和烃（如乙烯），裂化的目的是提高轻质油（如汽油）的产量和质量
+  description: 误认为石油裂解和裂化的目的相同
+  severity: error
+  source: cmmlu_high_school_chemistry_57
+- pattern: FeCl3.*胶体.*胶粒.*数目.*NA
+  correct: Fe(OH)3胶粒是多个Fe(OH)3分子的聚集体，1 mol FeCl3制成的胶体含胶粒数远小于NA
+  description: 误以为Fe(OH)3胶粒数目等于FeCl3分子数目，忽略胶粒是聚集体
+  severity: error
+  source: cmmlu_high_school_chemistry_58
+- pattern: Al.*NaOH.*盐酸.*生成H2.*0.3NA
+  correct: Al与NaOH或盐酸反应时，若碱或酸不足，生成H2的量由不足的反应物决定，0.2 mol NaOH只能与0.2 mol Al反应生成0.3 mol
+    H2，但0.2 mol HCl只能与0.2/3 mol Al反应生成0.1 mol H2
+  description: 误以为Al与NaOH和盐酸反应生成H2的量相同，忽略反应物不足时的计算
+  severity: error
+  source: cmmlu_high_school_chemistry_58
+- pattern: 熔融.*NaHSO4.*阳离子.*2NA
+  correct: 熔融NaHSO4电离出Na+和HSO4-，阳离子只有Na+，120 g (1 mol) NaHSO4含阳离子数为NA
+  description: 误以为熔融NaHSO4电离出Na+和H+，忽略HSO4-在熔融状态下不电离
+  severity: error
+  source: cmmlu_high_school_chemistry_58
+- pattern: 标准状况.*O2.*NO.*混合.*分子数
+  correct: 标准状况下，11.2 L O2和22.4 L NO混合后发生反应2NO+O2=2NO2，且存在2NO2⇌N2O4平衡，最终气体分子数小于NA
+  description: 误以为O2和NO混合后气体分子数等于初始分子数之和，忽略化学反应和平衡
+  severity: error
+  source: cmmlu_high_school_chemistry_59
+- pattern: 液态HCl.*粒子总数.*0.2NA
+  correct: 液态HCl以分子形式存在，3.65 g HCl为0.1 mol，含有的粒子总数为0.1NA
+  description: 误以为液态HCl完全电离，将粒子总数算作离子数
+  severity: error
+  source: cmmlu_high_school_chemistry_59
+- pattern: 常温.*Fe.*浓硝酸.*转移电子.*0.3NA
+  correct: 常温下Fe在浓硝酸中发生钝化，表面形成致密氧化膜，反应停止，转移电子数远小于0.3NA
+  description: 误以为常温下Fe与浓硝酸剧烈反应生成Fe3+，忽略钝化现象
+  severity: error
+  source: cmmlu_high_school_chemistry_59
+- pattern: 酸式滴定管.*Na2CO3
+  correct: Na2CO3溶液呈碱性，应使用碱式滴定管，酸式滴定管用于盛装酸性或氧化性溶液
+  description: 误以为酸式滴定管可用于盛装碱性溶液
+  severity: error
+  source: cmmlu_high_school_chemistry_60
+- pattern: 制备乙酸乙酯.*乙醇.*乙酸.*浓硫酸
+  correct: 制备乙酸乙酯时，应先加入乙醇，再缓慢加入浓硫酸，冷却后再加入乙酸
+  description: 误以为乙醇和乙酸可直接依次加入到浓硫酸中，忽略了浓硫酸稀释放热的安全操作
+  severity: error
+  source: cmmlu_high_school_chemistry_60
+- pattern: 焰色反应.*黄色.*钠盐溶液
+  correct: 焰色反应火焰呈黄色只能说明含有钠元素，不一定是钠盐，也可能是氢氧化钠等钠的化合物
+  description: 误以为焰色反应黄色一定对应钠盐溶液
+  severity: error
+  source: cmmlu_high_school_chemistry_60
+- pattern: 饮鸩止渴.*化学
+  correct: 饮鸩止渴涉及有毒物质（如砒霜）与人体发生化学反应，属于化学变化
+  description: 误以为饮鸩止渴只是物理溶解或简单中毒，不涉及化学反应
+  severity: error
+  source: cmmlu_high_school_chemistry_61
+- pattern: 火上浇油.*化学
+  correct: 火上浇油涉及油的燃烧，是剧烈的氧化还原化学反应
+  description: 误以为火上浇油只是物理混合或助燃，不涉及化学反应
+  severity: error
+  source: cmmlu_high_school_chemistry_61
+- pattern: 百炼成钢.*化学
+  correct: 百炼成钢涉及生铁中的碳与氧气反应生成二氧化碳，是化学变化
+  description: 误以为百炼成钢只是物理锻造或形状改变，不涉及化学反应
+  severity: error
+  source: cmmlu_high_school_chemistry_61
+- pattern: 石油裂解.*提高.*轻质液体燃料
+  correct: 石油裂解的目的是为了获得乙烯、丙烯等短链烯烃，而非提高轻质液体燃料的产量和质量
+  description: 误以为石油裂解的目的是提高轻质液体燃料的产量和质量
+  severity: error
+  source: cmmlu_high_school_chemistry_62
+- pattern: 合成纤维.*主要成分.*纤维素
+  correct: 合成纤维的主要成分是合成高分子化合物，如聚酯、聚酰胺等，而非纤维素
+  description: 误以为合成纤维的主要成分是纤维素
+  severity: error
+  source: cmmlu_high_school_chemistry_62
+- pattern: 蛋白质水解.*生成葡萄糖
+  correct: 蛋白质水解生成氨基酸，而非葡萄糖；葡萄糖是淀粉或纤维素等碳水化合物的水解产物
+  description: 误以为蛋白质水解生成葡萄糖
+  severity: error
+  source: cmmlu_high_school_chemistry_62
+- pattern: 结晶水数目.*4
+  correct: 通过计算，BaCl2·nH2O中结晶水数目n=6
+  description: 误以为结晶水数目为4，可能因计算错误或忽略配比
+  severity: error
+  source: cmmlu_high_school_chemistry_63
+- pattern: 结晶水数目.*2
+  correct: 通过计算，BaCl2·nH2O中结晶水数目n=6
+  description: 误以为结晶水数目为2，可能因计算错误或忽略配比
+  severity: error
+  source: cmmlu_high_school_chemistry_63
+- pattern: 结晶水数目.*8
+  correct: 通过计算，BaCl2·nH2O中结晶水数目n=6
+  description: 误以为结晶水数目为8，可能因计算错误或忽略配比
+  severity: error
+  source: cmmlu_high_school_chemistry_63
+- pattern: 电子层结构不可能相同
+  correct: M2-与R+的核外电子数之和为20时，若M为氧、R为钠，则O2-与Na+的电子层结构相同，均为10电子结构
+  description: 误以为不同元素形成的阴离子和阳离子电子层结构一定不同
+  severity: error
+  source: cmmlu_high_school_chemistry_64
+- pattern: 不可能含有共价键
+  correct: M与R形成的化合物中可能含有共价键，例如过氧化钠（Na2O2）中的过氧根离子内部存在共价键
+  description: 误以为离子化合物中一定不含共价键
+  severity: error
+  source: cmmlu_high_school_chemistry_64
+- pattern: 质子数一定大于
+  correct: M原子的质子数不一定大于R原子的质子数，例如M为氧（质子数8）、R为钠（质子数11）时，M质子数小于R
+  description: 误以为阴离子对应原子的质子数一定大于阳离子对应原子的质子数
+  severity: error
+  source: cmmlu_high_school_chemistry_64
+- pattern: 铵态化肥.*草木灰.*不能混用
+  correct: 铵态化肥和草木灰不能混用，是因为草木灰中的K2CO3水解显碱性，与铵盐反应生成氨气，导致氮肥损失，而不是发生复分解反应
+  description: 误以为铵态化肥与草木灰的反应是复分解反应，实际是碱性条件下铵盐分解
+  severity: error
+  source: cmmlu_high_school_chemistry_65
+- pattern: 辽宁舰.*镶嵌.*铜块.*牺牲阳极
+  correct: 辽宁舰底部镶嵌铜块是利用铜的活泼性低于铁，铜块作为阴极被保护，属于外加电流的阴极保护法或牺牲阳极的阴极保护法中阳极应为更活泼金属
+  description: 误以为铜块作为牺牲阳极保护舰体，实际铜比铁不活泼，不能作为牺牲阳极
+  severity: error
+  source: cmmlu_high_school_chemistry_65
+- pattern: 液化气灶.*改天然气.*减少空气进入孔
+  correct: 液化气灶改天然气灶时，应增大空气进入孔的孔径，因为天然气燃烧所需空气量比液化气大
+  description: 误以为天然气燃烧需空气量更少，实际天然气热值低，完全燃烧需更多氧气
+  severity: error
+  source: cmmlu_high_school_chemistry_65
+- pattern: 福尔马林.*保存海鲜
+  correct: 福尔马林（甲醛溶液）有毒，不能用于保存海鲜产品
+  description: 误以为福尔马林可用于食品保鲜
+  severity: error
+  source: cmmlu_high_school_chemistry_66
+- pattern: Cl2.*澄清石灰水.*制取漂白粉
+  correct: 工业上利用Cl2与石灰乳（或消石灰）反应制取漂白粉，而非澄清石灰水
+  description: 误以为澄清石灰水可用于制取漂白粉
+  severity: error
+  source: cmmlu_high_school_chemistry_66
+- pattern: 稀硝酸.*铝.*氢气
+  correct: 稀硝酸与铝反应不生成氢气，而是生成氮氧化物
+  description: 误以为稀硝酸与活泼金属反应也生成氢气
+  severity: error
+  source: cmmlu_high_school_chemistry_67
+- pattern: 稀硫酸.*铝.*消耗.*最少
+  correct: 相同质量的铝与稀硫酸反应时，消耗硫酸的物质的量比氢氧化钠多
+  description: 误以为稀硫酸与铝反应消耗溶质更少
+  severity: error
+  source: cmmlu_high_school_chemistry_67
+- pattern: 盐酸.*铝.*消耗.*最少
+  correct: 相同质量的铝与盐酸反应时，消耗盐酸的物质的量比氢氧化钠多
+  description: 误以为盐酸与铝反应消耗溶质更少
+  severity: error
+  source: cmmlu_high_school_chemistry_67
+- pattern: 氯气的体积为1.12 L
+  correct: 常温常压下，气体摩尔体积不是22.4 L/mol，氯气的体积不一定为1.12 L
+  description: 误以为常温常压下气体摩尔体积也是22.4 L/mol
+  severity: error
+  source: cmmlu_high_school_chemistry_68
+- pattern: 所得溶液中ClO－的数目为0.05NA
+  correct: ClO－会水解，溶液中ClO－的数目小于0.05NA
+  description: 忽略ClO－的水解，认为其数目等于反应生成的物质的量
+  severity: error
+  source: cmmlu_high_school_chemistry_68
+- pattern: 所得溶液中含OH－的数目为1×10^－5NA
+  correct: pH＝9时c(OH－)＝1×10^－5 mol/L，但溶液体积未知，无法计算OH－数目
+  description: 误以为pH值直接给出OH－的物质的量，忽略溶液体积
+  severity: error
+  source: cmmlu_high_school_chemistry_68
+- pattern: 22.4 L.*混合气体.*碳原子数.*NA
+  correct: 气体摩尔体积22.4 L/mol只有在标准状况下才适用，且混合气体中碳原子数取决于各组分比例
+  description: 误以为任何条件下22.4 L气体都含有NA个分子，且忽略混合气体中碳原子数需根据具体组成计算
+  severity: error
+  source: cmmlu_high_school_chemistry_69
+- pattern: 标准状况.*22.4 L.*丙烷.*共用电子对.*8NA
+  correct: 标准状况下，22.4 L丙烷为1 mol，丙烷分子式为C3H8，每个分子含10对共用电子对（C-H键8对，C-C键2对），因此共用电子对数为10NA
+  description: 误以为丙烷分子中只有8对共用电子对，忽略了C-C键中的电子对
+  severity: error
+  source: cmmlu_high_school_chemistry_69
+- pattern: 80.*°C.*pH.*1.*硫酸.*OH.*10.*-13
+  correct: 80 °C时水的离子积常数Kw大于10^-14，pH=1的硫酸溶液中c(H+)=0.1 mol/L，c(OH-)=Kw/0.1，不等于10^-13
+    mol/L
+  description: 误以为任何温度下水的离子积常数都是10^-14，忽略了温度对Kw的影响
+  severity: error
+  source: cmmlu_high_school_chemistry_69
+- pattern: 11.2L.*CO2.*转移.*电子.*0.5 NA
+  correct: 常温常压下气体摩尔体积不是22.4 L/mol，不能直接用11.2 L计算物质的量
+  description: 误以为常温常压下气体摩尔体积仍为22.4 L/mol
+  severity: error
+  source: cmmlu_high_school_chemistry_70
+- pattern: FeCl3水解.*Fe\(OH\)3胶粒.*0.1NA
+  correct: Fe(OH)3胶粒是多个Fe(OH)3分子的聚集体，胶粒数远小于0.1NA
+  description: 误将Fe(OH)3胶粒数等同于FeCl3的物质的量
+  severity: error
+  source: cmmlu_high_school_chemistry_70
+- pattern: Cl2.*通入水.*HClO.*Cl-.*ClO-.*粒子数之和.*2 NA
+  correct: 氯气与水反应是可逆反应，且存在未反应的Cl2分子，粒子总数不等于2NA
+  description: 忽略氯气与水反应的可逆性及Cl2分子的存在
+  severity: error
+  source: cmmlu_high_school_chemistry_70
+- pattern: Mg.*Al.*NaOH.*原电池.*正极.*H2.*11.2
+  correct: 标准状况下，导线上流过NA个电子时正极放出H2的体积为11.2 L，但题目未指明气体所处状况，通常应指明标准状况
+  description: 误以为原电池中电子转移与气体体积计算时默认标准状况，忽略条件说明
+  severity: error
+  source: cmmlu_high_school_chemistry_71
+- pattern: 浓硫酸.*锌.*转移.*2NA
+  correct: 浓硫酸与锌反应生成SO2，随反应进行变为稀硫酸后生成H2，转移电子数介于NA和2NA之间，不是恰好2NA
+  description: 误以为浓硫酸与锌反应始终生成SO2，转移电子数为2NA，忽略浓度变化导致产物不同
+  severity: error
+  source: cmmlu_high_school_chemistry_71
+- pattern: 标准状况.*己烷.*共用电子
+  correct: 标准状况下己烷为液体，不能用气体摩尔体积计算其物质的量，因此无法计算共用电子对数
+  description: 误以为标准状况下己烷为气体，可用22.4 L/mol计算物质的量
+  severity: error
+  source: cmmlu_high_school_chemistry_71
+- pattern: NO2.*气体颜色加深.*物理变化
+  correct: NO2气体颜色加深是因为温度升高使化学平衡向生成NO2的方向移动，属于化学变化
+  description: 误以为NO2气体颜色加深只是物理变化，忽略了化学平衡移动
+  severity: error
+  source: cmmlu_high_school_chemistry_72
+- pattern: 熔融态.*Al2O3导电.*化学变化
+  correct: 熔融态Al2O3导电是物理变化，电解过程才是化学变化
+  description: 误以为熔融态Al2O3导电本身是化学变化，混淆了导电与电解
+  severity: error
+  source: cmmlu_high_school_chemistry_72
+- pattern: 12C转化为14C.*化学变化
+  correct: 12C转化为14C是原子核的变化，属于核变化而非化学变化
+  description: 误以为同位素转化是化学变化，混淆了化学变化与核变化
+  severity: error
+  source: cmmlu_high_school_chemistry_72
+- pattern: 能量变化.*化合分解复分解置换
+  correct: 化学反应按反应形式分为化合、分解、复分解、置换四类，而非按能量变化分类
+  description: 误以为化学反应按能量变化分为四类，混淆了分类标准
+  severity: error
+  source: cmmlu_high_school_chemistry_72
+- pattern: 磁性氧化铁.*Fe2O3
+  correct: 磁性氧化铁是Fe3O4，Fe2O3是氧化铁，无磁性
+  description: 误以为磁性氧化铁是Fe2O3
+  severity: error
+  source: cmmlu_high_school_chemistry_73
+- pattern: 小苏打.*Na2CO3
+  correct: 小苏打是NaHCO3，Na2CO3是纯碱或苏打
+  description: 误以为小苏打的成分是Na2CO3
+  severity: error
+  source: cmmlu_high_school_chemistry_73
+- pattern: 蓝矾.*检验水蒸气
+  correct: 蓝矾CuSO4·5H2O是蓝色，但检验水蒸气应使用无水硫酸铜（白色），遇水变蓝
+  description: 误以为蓝矾可用于检验水蒸气
+  severity: error
+  source: cmmlu_high_school_chemistry_73
+- pattern: 强氧化剂.*强还原剂.*一定.*氧化还原反应
+  correct: 强氧化剂与强还原剂相遇不一定发生氧化还原反应，还需考虑反应条件、浓度等因素
+  description: 误以为强氧化剂和强还原剂在任何条件下都会发生氧化还原反应
+  severity: error
+  source: cmmlu_high_school_chemistry_74
+- pattern: SO2.*Ba\(NO3\)2.*无沉淀
+  correct: SO2通入Ba(NO3)2溶液中，在酸性条件下会被氧化生成硫酸根，与钡离子形成硫酸钡沉淀
+  description: 误以为SO2与CO2性质完全相似，忽略SO2的还原性在硝酸根存在下可被氧化
+  severity: error
+  source: cmmlu_high_school_chemistry_74
+- pattern: 非金属性.*强.*单质.*活泼
+  correct: 元素的非金属性强弱与单质的活泼性不一定一致，如氮气因三键而稳定，磷单质更活泼
+  description: 误以为非金属性越强，其单质一定越活泼
+  severity: error
+  source: cmmlu_high_school_chemistry_74
+- pattern: 葡萄糖.*无红色沉淀.*不含Cu2
+  correct: 葡萄糖在碱性条件下与Cu2+反应生成红色Cu2O沉淀，但废液可能呈酸性，无沉淀不能直接证明不含Cu2+
+  description: 误以为葡萄糖与Cu2+的反应在任何条件下都能发生，忽略了反应需要碱性环境
+  severity: error
+  source: cmmlu_high_school_chemistry_75
+- pattern: 23∶12∶9
+  correct: 相同质量的Na、Mg、Al与足量盐酸反应，生成氢气的质量比为36∶69∶92
+  description: 误以为生成氢气的质量比等于金属的相对原子质量比
+  severity: error
+  source: cmmlu_high_school_chemistry_76
+- pattern: 23∶24∶37
+  correct: 相同质量的Na、Mg、Al与足量盐酸反应，生成氢气的质量比为36∶69∶92
+  description: 误以为生成氢气的质量比等于金属的摩尔质量比
+  severity: error
+  source: cmmlu_high_school_chemistry_76
+- pattern: 1∶2∶3
+  correct: 相同质量的Na、Mg、Al与足量盐酸反应，生成氢气的质量比为36∶69∶92
+  description: 误以为生成氢气的质量比等于金属的化合价比
+  severity: error
+  source: cmmlu_high_school_chemistry_76
+- pattern: 碱石灰.*玻璃.*生石灰.*漂白粉.*混合物
+  correct: 生石灰是纯净物（CaO），不是混合物
+  description: 误以为生石灰是混合物
+  severity: error
+  source: cmmlu_high_school_chemistry_77
+- pattern: HCl.*H2SO4.*HNO3.*氧化性酸
+  correct: HCl不是氧化性酸，其氧化性来自H+，而非酸根
+  description: 误以为所有具有氧化性的酸都是氧化性酸
+  severity: error
+  source: cmmlu_high_school_chemistry_77
+- pattern: H2O.*HCOOH.*(NH4)2Fe(SO4)2.*氧化物
+  correct: 氧化物只含两种元素，其中一种是氧；HCOOH和(NH4)2Fe(SO4)2含多种元素，不是氧化物
+  description: 误以为含有氧元素的化合物都是氧化物
+  severity: error
+  source: cmmlu_high_school_chemistry_77
+- pattern: SO2漂白
+  correct: SO2漂白是利用其漂白性（与有色物质化合），而非还原性
+  description: 误以为SO2漂白是还原性体现
+  severity: error
+  source: cmmlu_high_school_chemistry_78
+- pattern: Na2S.*除去.*Hg
+  correct: Na2S除去Hg2+是利用S2-与Hg2+生成沉淀，属于复分解反应，非氧化还原
+  description: 误以为沉淀反应涉及还原性
+  severity: error
+  source: cmmlu_high_school_chemistry_78
+- pattern: Na2O2.*供氧
+  correct: Na2O2作供氧剂是利用其氧化性（与水或CO2反应生成O2），而非还原性
+  description: 误以为供氧剂体现还原性
+  severity: error
+  source: cmmlu_high_school_chemistry_78
+- pattern: CO2.*酸雨
+  correct: CO2不导致酸雨，酸雨主要由SO2和NOx引起
+  description: 误以为CO2是酸雨的成因
+  severity: error
+  source: cmmlu_high_school_chemistry_79
+- pattern: 酸雨.*pH.*小于7
+  correct: 酸雨的pH小于5.6，正常雨水因溶有CO2而呈弱酸性（pH约5.6）
+  description: 误以为所有pH小于7的雨水都是酸雨
+  severity: error
+  source: cmmlu_high_school_chemistry_79
+- pattern: CO2.*大气污染物
+  correct: CO2是温室气体，但不属于大气污染物
+  description: 误以为CO2是大气污染物
+  severity: error
+  source: cmmlu_high_school_chemistry_79
+- pattern: 明矾.*除去.*铜锈
+  correct: 明矾水解显酸性，可与铜锈反应，但实际除铜锈常用酸或氨水
+  description: 误以为明矾能直接除去铜锈，实际明矾通过水解产生酸性环境，但并非直接反应
+  severity: warning
+  source: cmmlu_high_school_chemistry_80
+- pattern: KNO3.*氧化性
+  correct: 火药中KNO3作为氧化剂，提供氧使硫黄和木炭燃烧
+  description: 误以为KNO3在火药中仅起氧化作用，实际其氧化性体现在提供氧元素
+  severity: error
+  source: cmmlu_high_school_chemistry_80
+- pattern: 没有水生成.*也没有沉淀和气体生成.*复分解反应.*不能实现
+  correct: 复分解反应不一定需要生成水、沉淀或气体，例如醋酸钠与盐酸反应生成醋酸和氯化钠，没有明显现象但确实发生了复分解反应
+  description: 误以为复分解反应必须生成水、沉淀或气体之一才能发生
+  severity: error
+  source: cmmlu_high_school_chemistry_81
+- pattern: 两种酸溶液.*反应.*中性.*不能实现
+  correct: 强酸与强碱以外的酸与酸反应也可能得到中性溶液，例如氢硫酸与亚硫酸反应生成硫和水，溶液可呈中性
+  description: 误以为两种酸溶液反应后不可能得到中性溶液
+  severity: error
+  source: cmmlu_high_school_chemistry_81
+- pattern: 有单质参加.*非氧化还原反应.*不能实现
+  correct: 有单质参加的反应不一定都是氧化还原反应，例如氨气与氯化氢反应生成氯化铵（无单质），但同素异形体转化如氧气生成臭氧（有单质）是非氧化还原反应
+  description: 误以为有单质参加的反应一定是氧化还原反应
+  severity: error
+  source: cmmlu_high_school_chemistry_81
+- pattern: 两种氧化物反应.*产物有气体.*不能实现
+  correct: 两种氧化物反应可以生成气体，例如过氧化钠与水反应生成氧气，或二氧化氮与水反应生成一氧化氮
+  description: 误以为两种氧化物反应不可能生成气体产物
+  severity: error
+  source: cmmlu_high_school_chemistry_81
+- pattern: CuCl2.*加热蒸干.*无水
+  correct: CuCl2溶液加热蒸干时，Cu2+水解生成Cu(OH)2，最终分解为CuO，无法得到无水CuCl2固体
+  description: 误以为CuCl2溶液直接蒸干可得无水CuCl2，忽略水解和分解
+  severity: error
+  source: cmmlu_high_school_chemistry_82
+- pattern: 铜丝.*浓硫酸.*加热.*水加入反应器
+  correct: 应将反应后的混合物倒入水中，而不是把水加入反应器中，防止液体飞溅
+  description: 误以为稀释浓硫酸时应将水加入反应器，实际应相反
+  severity: error
+  source: cmmlu_high_school_chemistry_82
+- pattern: 常温.*铜丝.*氯气.*CuCl2
+  correct: 铜与氯气反应需要加热或点燃，常温下反应缓慢，无法直接观察CuCl2生成
+  description: 误以为铜在常温下能与氯气迅速反应生成CuCl2
+  severity: error
+  source: cmmlu_high_school_chemistry_82
+- pattern: 酸性氧化物.*电解质
+  correct: 酸性氧化物和碱性氧化物大多是非电解质，不是电解质
+  description: 误以为酸性氧化物和碱性氧化物都是电解质
+  severity: error
+  source: cmmlu_high_school_chemistry_83
+- pattern: 离子键.*只存在于.*离子化合物.*共价键.*只存在于.*共价化合物
+  correct: 离子键只存在于离子化合物中，但共价键可以存在于离子化合物（如NaOH中的O-H键）和共价化合物中
+  description: 误以为共价键只存在于共价化合物中，忽略了离子化合物中也可能含有共价键
+  severity: error
+  source: cmmlu_high_school_chemistry_83
+- pattern: NaOH.*FeCl3.*制备.*Fe\(OH\)3胶体
+  correct: 将NaOH溶液逐滴加入FeCl3溶液会生成Fe(OH)3沉淀，而不是胶体；制备Fe(OH)3胶体应将FeCl3溶液滴入沸水中
+  description: 误以为NaOH与FeCl3反应可直接制得Fe(OH)3胶体，实际生成的是沉淀
+  severity: error
+  source: cmmlu_high_school_chemistry_83
+- pattern: 丙烯.*环丙烷.*混合气体.*氢原子.*6NA
+  correct: 丙烯和环丙烷分子式均为C3H6，42 g混合气体为1 mol，含氢原子6 mol，即6NA个
+  description: 误以为丙烯和环丙烷的氢原子数不同，导致计算错误
+  severity: error
+  source: cmmlu_high_school_chemistry_84
+- pattern: NaClO.*NaCl.*浓盐酸.*Cl2.*转移电子.*6.02×10^23
+  correct: 该反应中Cl2既是氧化产物又是还原产物，每生成1 mol Cl2转移1 mol电子
+  description: 误以为生成1 mol Cl2转移2 mol电子，忽略了归中反应中电子转移的特殊性
+  severity: error
+  source: cmmlu_high_school_chemistry_84
+- pattern: pH相同.*CH3COONa.*NaHCO3.*NaClO.*c\(Na\+\).*a＞b＞c
+  correct: pH相同时，酸性越弱对应的盐溶液浓度越大，c(Na+)顺序为c＞b＞a
+  description: 误以为pH相同的盐溶液浓度与酸根对应酸的酸性强弱关系相反
+  severity: error
+  source: cmmlu_high_school_chemistry_84
+- pattern: 较高温度.*浓溶液.*冷却结晶.*提纯.*氯化钠
+  correct: 提纯混有少量硝酸钾的氯化钠应采用蒸发结晶的方法，因为氯化钠溶解度随温度变化不大
+  description: 误以为氯化钠和硝酸钾的分离都适合用冷却结晶法
+  severity: error
+  source: cmmlu_high_school_chemistry_85
+- pattern: 金属钠.*高压水枪.*喷水.*灭火
+  correct: 金属钠着火时应用沙土或干粉灭火器扑灭，不能用水或泡沫灭火器，因为钠与水反应生成氢气并放热
+  description: 误以为金属钠着火可以用水或泡沫灭火器灭火
+  severity: error
+  source: cmmlu_high_school_chemistry_85
+- pattern: 电石.*高压水枪.*喷水.*灭火
+  correct: 电石（碳化钙）着火时应用干粉灭火器或沙土扑灭，不能用水，因为电石与水反应生成乙炔气体
+  description: 误以为电石着火可以用水或泡沫灭火器灭火
+  severity: error
+  source: cmmlu_high_school_chemistry_85
+- pattern: Al3\+.*2Mg2\+.*7OH-.*Al\(OH\)3.*2Mg\(OH\)2
+  correct: 在含等物质的量浓度的Al(NO3)3、Mg(NO3)2混合溶液中滴加NaOH，Al3+先沉淀，Mg2+后沉淀，不会同时生成两种沉淀
+  description: 误以为Al3+和Mg2+会同时与OH-反应生成沉淀
+  severity: error
+  source: cmmlu_high_school_chemistry_85
+- pattern: 高纯度的硅单质.*光导纤维
+  correct: 光导纤维的主要原料是二氧化硅，高纯硅用于半导体
+  description: 误以为光导纤维由硅单质制成
+  severity: error
+  source: cmmlu_high_school_chemistry_86
+- pattern: 填埋法.*处理.*生活垃圾
+  correct: 填埋法处理未经分类的生活垃圾会造成土壤和地下水污染，应优先分类回收和资源化利用
+  description: 误以为填埋法是处理生活垃圾的合理方式
+  severity: error
+  source: cmmlu_high_school_chemistry_87
+- pattern: 碘.*海洋元素
+  correct: 海洋中含量最丰富的元素是氯，碘被称为‘海洋元素’的说法是错误的
+  description: 误以为碘是海洋中含量最丰富的元素
+  severity: error
+  source: cmmlu_high_school_chemistry_87
+- pattern: 甲烷.*Cl2.*反应.*乙烯.*Br2.*反应.*同一类型
+  correct: 甲烷和Cl2的反应是取代反应，乙烯和Br2的反应是加成反应，属于不同类型的反应
+  description: 误以为甲烷的取代反应和乙烯的加成反应是同一类型
+  severity: error
+  source: cmmlu_high_school_chemistry_88
+- pattern: 苯.*不能使酸性KMnO4褪色
+  correct: 苯不能使酸性KMnO4溶液褪色，但油脂中含有不饱和键，能使酸性KMnO4溶液褪色
+  description: 误以为油脂也不能使酸性KMnO4溶液褪色
+  severity: error
+  source: cmmlu_high_school_chemistry_88
+- pattern: 乙醇.*乙酸.*官能团相同
+  correct: 乙醇的官能团是羟基(-OH)，乙酸的官能团是羧基(-COOH)，二者官能团不同
+  description: 误以为乙醇和乙酸都能与Na反应放出H2，所以官能团相同
+  severity: error
+  source: cmmlu_high_school_chemistry_88
+- pattern: LiNi1－2xCoxMnxO2.*x=1
+  correct: 根据电荷守恒，Ni、Co、Mn化合价分别为+2、+3、+4时，x=1/3
+  description: 误以为x=1，未考虑化学式中各元素化合价代数和为零的电荷守恒关系
+  severity: error
+  source: cmmlu_high_school_chemistry_89
+- pattern: LiNi1－2xCoxMnxO2.*x=2
+  correct: 根据电荷守恒，Ni、Co、Mn化合价分别为+2、+3、+4时，x=1/3
+  description: 误以为x=2，未正确计算电荷守恒方程
+  severity: error
+  source: cmmlu_high_school_chemistry_89
+- pattern: LiNi1－2xCoxMnxO2.*x=1/2
+  correct: 根据电荷守恒，Ni、Co、Mn化合价分别为+2、+3、+4时，x=1/3
+  description: 误以为x=1/2，未正确计算电荷守恒方程
+  severity: error
+  source: cmmlu_high_school_chemistry_89
+- pattern: 高锰酸钾.*研磨
+  correct: 高锰酸钾是强氧化剂，研磨时可能发生爆炸，不应用力研磨
+  description: 误以为高锰酸钾晶体结块时可以像普通晶体一样研磨
+  severity: error
+  source: cmmlu_high_school_chemistry_90
+- pattern: 酸式滴定管.*润洗.*上口
+  correct: 酸式滴定管润洗后，溶液应从下口放出，而非从上口倒入废液缸
+  description: 误以为润洗液可以从滴定管上口倒出
+  severity: error
+  source: cmmlu_high_school_chemistry_90
+- pattern: 绿色化学.*核心.*治理
+  correct: 绿色化学的核心是从源头上减少或消除污染，而不是对已产生的污染进行治理
+  description: 误以为绿色化学的核心是治理环境污染
+  severity: error
+  source: cmmlu_high_school_chemistry_91
+- pattern: PM 2.5.*2.5.*10.*-9
+  correct: PM2.5是指大气中动力学当量直径小于或等于2.5×10^-6 m（即2.5微米）的颗粒物
+  description: 误以为PM2.5的直径是2.5×10^-9 m（纳米级），实际是微米级
+  severity: error
+  source: cmmlu_high_school_chemistry_91
+- pattern: 多吃.*富含碘
+  correct: 碘是人体必需的微量元素，但摄入过多也会导致健康问题，应适量补充
+  description: 误以为碘摄入越多越好，忽略了过量摄入的危害
+  severity: error
+  source: cmmlu_high_school_chemistry_91
+- pattern: 加碘食盐.*分子
+  correct: 加碘食盐中的碘指的是碘元素，不是碘分子
+  description: 误以为加碘食盐中的碘以分子形式存在
+  severity: error
+  source: cmmlu_high_school_chemistry_92
+- pattern: 加碘食盐.*单质
+  correct: 加碘食盐中的碘指的是碘元素，不是碘单质
+  description: 误以为加碘食盐中的碘以单质形式存在
+  severity: error
+  source: cmmlu_high_school_chemistry_92
+- pattern: 加碘食盐.*原子
+  correct: 加碘食盐中的碘指的是碘元素，不是碘原子
+  description: 误以为加碘食盐中的碘以原子形式存在
+  severity: error
+  source: cmmlu_high_school_chemistry_92
+- pattern: I－.*需要检验
+  correct: 加新制氯水和淀粉无明显现象，说明无I－，无需再检验
+  description: 误以为I－仍需检验，但实验已排除其存在
+  severity: error
+  source: cmmlu_high_school_chemistry_93
+- pattern: S2－.*需要检验
+  correct: 溶液显弱酸性，S2－在酸性条件下不能大量存在，无需再检验
+  description: 误以为S2－仍需检验，但溶液酸性已排除其存在
+  severity: error
+  source: cmmlu_high_school_chemistry_93
+- pattern: Ba2＋.*需要检验
+  correct: 溶液显弱酸性，且无I－和S2－，阴离子可能为Cl－等，Ba2＋可能存在，但需结合电荷守恒判断，实际还需检验Na＋
+  description: 误以为Ba2＋是需检验的离子，但根据电荷守恒和已知条件，Na＋才是待定离子
+  severity: error
+  source: cmmlu_high_school_chemistry_93
+- pattern: C4H8O2.*六元环
+  correct: C4H8O2的不饱和度为1，无法形成六元环（六元环至少需要不饱和度1且环上6个原子）
+  description: 误以为C4H8O2可以形成六元环，但分子中只有4个碳原子，无法构成六元环
+  severity: error
+  source: cmmlu_high_school_chemistry_94
+- pattern: C4H8O2.*酯类.*4种
+  correct: C4H8O2属于酯类的同分异构体有甲酸丙酯（2种）、乙酸乙酯（1种）、丙酸甲酯（1种），共4种
+  description: 误以为C4H8O2的酯类同分异构体不是4种，但实际计算正确
+  severity: error
+  source: cmmlu_high_school_chemistry_94
+- pattern: C4H8O2.*羧酸.*2种
+  correct: C4H8O2属于羧酸的同分异构体有丁酸和2-甲基丙酸，共2种
+  description: 误以为C4H8O2的羧酸同分异构体不是2种，但实际计算正确
+  severity: error
+  source: cmmlu_high_school_chemistry_94
+- pattern: C4H8BrCl.*14种
+  correct: 分子式为C4H8BrCl的有机物共有12种（不含立体异构）
+  description: 误以为C4H8BrCl的同分异构体数量为14种，可能重复计数或遗漏了对称性限制
+  severity: error
+  source: cmmlu_high_school_chemistry_95
+- pattern: C4H8BrCl.*10种
+  correct: 分子式为C4H8BrCl的有机物共有12种（不含立体异构）
+  description: 误以为C4H8BrCl的同分异构体数量为10种，可能遗漏了某些碳链异构或位置异构
+  severity: error
+  source: cmmlu_high_school_chemistry_95
+- pattern: C4H8BrCl.*8种
+  correct: 分子式为C4H8BrCl的有机物共有12种（不含立体异构）
+  description: 误以为C4H8BrCl的同分异构体数量为8种，可能忽略了部分异构体
+  severity: error
+  source: cmmlu_high_school_chemistry_95
+- pattern: 相同质量.*Al.*Fe.*产生氢气更多
+  correct: 金属性强弱与产生氢气的量无关，应比较反应速率或最高价氧化物对应水化物的碱性
+  description: 误以为产生氢气越多金属性越强，实际上金属性取决于失电子能力而非产生氢气的量
+  severity: error
+  source: cmmlu_high_school_chemistry_96
+- pattern: 导电性.*导热性.*金属性强弱
+  correct: 导电性、导热性是物理性质，不能作为比较金属性强弱的依据
+  description: 误以为物理性质（导电性、导热性）可以判断金属性强弱
+  severity: error
+  source: cmmlu_high_school_chemistry_96
+- pattern: Al\(OH\)3.*溶于NaOH.*Fe\(OH\)3.*不溶.*金属性强弱
+  correct: Al(OH)3是两性氢氧化物，Fe(OH)3是碱性氢氧化物，这体现的是金属的氢氧化物酸碱性差异，不能直接比较金属性强弱
+  description: 误以为氢氧化物与碱的反应性可以判断金属性强弱，实际上金属性强弱应比较最高价氧化物对应水化物的碱性
+  severity: error
+  source: cmmlu_high_school_chemistry_96
+- pattern: 铁粉.*剩余.*H\+
+  correct: 铁粉过量时，H+会被铁还原为H2，溶液中不存在H+
+  description: 误以为铁粉剩余时H+仍能存在
+  severity: error
+  source: cmmlu_high_school_chemistry_97
+- pattern: 铁粉.*剩余.*Cu2\+
+  correct: 铁粉过量时，Cu2+会被铁还原为Cu单质，溶液中不存在Cu2+
+  description: 误以为铁粉剩余时Cu2+仍能存在
+  severity: error
+  source: cmmlu_high_school_chemistry_97
+- pattern: 铁粉.*剩余.*Fe3\+
+  correct: 铁粉过量时，Fe3+会被铁还原为Fe2+，溶液中不存在Fe3+
+  description: 误以为铁粉剩余时Fe3+仍能存在
+  severity: error
+  source: cmmlu_high_school_chemistry_97
+- pattern: 碱.*烧碱
+  correct: 油条制作口诀中的‘碱’是纯碱（碳酸钠），不是烧碱（氢氧化钠）
+  description: 误以为油条制作中的‘碱’是烧碱（氢氧化钠），实际应为纯碱（碳酸钠）
+  severity: error
+  source: cmmlu_high_school_chemistry_98
+- pattern: 高锰酸钾.*乙烯.*分层
+  correct: 乙烯与高锰酸钾反应生成二氧化碳和水，溶液不分层
+  description: 误以为乙烯与高锰酸钾反应后溶液会分层
+  severity: error
+  source: cmmlu_high_school_chemistry_99
+- pattern: 戊烷.*2种同分异构体
+  correct: 戊烷有3种同分异构体（正戊烷、异戊烷、新戊烷）
+  description: 误以为戊烷只有2种同分异构体，忽略了新戊烷
+  severity: error
+  source: cmmlu_high_school_chemistry_100
+- pattern: C8H10.*只有3种.*芳香烃.*同分异构体
+  correct: C8H10属于芳香烃的同分异构体有4种（乙苯、邻二甲苯、间二甲苯、对二甲苯）
+  description: 误以为C8H10的芳香烃同分异构体只有3种，遗漏了乙苯
+  severity: error
+  source: cmmlu_high_school_chemistry_100
+- pattern: CH3CH2CH2CH3.*光照.*氯气.*只生成1种一氯代烃
+  correct: CH3CH2CH2CH3（正丁烷）光照下与氯气反应，生成2种一氯代烃（1-氯丁烷和2-氯丁烷）
+  description: 误以为正丁烷的一氯代物只有1种，忽略了不同碳原子上的氢被取代
+  severity: error
+  source: cmmlu_high_school_chemistry_100
+- pattern: 鸟粪石.*强酸.*强碱
+  correct: 鸟粪石中的磷酸根和铵根离子能与强酸或强碱反应，但并非同时与两者反应
+  description: 误以为鸟粪石既能与强酸又能与强碱反应
+  severity: error
+  source: cmmlu_high_school_chemistry_101
+- pattern: 鸟粪石.*离子键.*共价键
+  correct: 鸟粪石中Mg2+与NH4+、PO43-之间形成离子键，NH4+内部和PO43-内部存在共价键
+  description: 误以为鸟粪石中只含有离子键或只含有共价键
+  severity: error
+  source: cmmlu_high_school_chemistry_101
+- pattern: 鸟粪石.*镁盐.*磷酸盐
+  correct: 鸟粪石是镁盐和磷酸盐的复合盐，同时属于镁盐和磷酸盐
+  description: 误以为鸟粪石不能同时属于镁盐和磷酸盐
+  severity: error
+  source: cmmlu_high_school_chemistry_101
+- pattern: 同主族元素含氧酸的酸性随核电荷数的增加而减弱
+  correct: 同主族元素最高价含氧酸的酸性随核电荷数的增加而减弱，但非最高价含氧酸的酸性变化不一定遵循此规律
+  description: 误以为所有同主族元素含氧酸的酸性都随核电荷数增加而减弱，忽略了价态的影响
+  severity: error
+  source: cmmlu_high_school_chemistry_102
+- pattern: 核外电子排布相同的微粒化学性质也相同
+  correct: 核外电子排布相同的微粒（如离子、原子）化学性质不一定相同，因为核电荷数不同导致原子核对电子吸引能力不同
+  description: 误认为核外电子排布相同则化学性质完全相同，忽略了核电荷数的影响
+  severity: error
+  source: cmmlu_high_school_chemistry_102
+- pattern: 中和pH与体积均相同的盐酸和醋酸溶液，消耗NaOH的物质的量相同
+  correct: 中和pH与体积均相同的盐酸和醋酸溶液，醋酸是弱酸，其物质的量浓度更大，消耗NaOH的物质的量更多
+  description: 误以为pH相同则酸浓度相同，忽略了弱酸部分电离的特点
+  severity: error
+  source: cmmlu_high_school_chemistry_102
+- pattern: 聚丙烯.*结构简式.*CH3—CH—CH2
+  correct: 聚丙烯的结构简式应为-[CH2-CH(CH3)]n-，主链为碳碳单键连接
+  description: 误以为聚丙烯的结构简式是丙烯单体的简单重复，未正确表示聚合物的链状结构
+  severity: error
+  source: cmmlu_high_school_chemistry_103
+- pattern: C3H6O.*只含有一种官能团
+  correct: 分子式为C3H6O的有机物可能含有醛基（如丙醛）或酮基（如丙酮），也可能同时含有羟基和碳碳双键（如烯醇），官能团种类不唯一
+  description: 误以为分子式为C3H6O的有机物只含一种官能团，忽略了同分异构体中官能团多样性的可能
+  severity: error
+  source: cmmlu_high_school_chemistry_103
+- pattern: C5H10O2.*羧酸.*同分异构体.*5种
+  correct: 分子式为C5H10O2的羧酸（含-COOH）的同分异构体有4种，分别为正戊酸、2-甲基丁酸、3-甲基丁酸、2,2-二甲基丙酸
+  description: 误以为C5H10O2的羧酸同分异构体有5种，实际只有4种
+  severity: error
+  source: cmmlu_high_school_chemistry_103
+- pattern: K2SO4.*氧原子数
+  correct: 100 mL 0.1 mol·L⁻¹ K2SO4溶液中，溶质K2SO4含氧原子0.04NA，但溶剂水中也含有大量氧原子，总氧原子数远大于0.04NA
+  description: 忽略溶剂水中的氧原子，只计算溶质中的氧原子
+  severity: error
+  source: cmmlu_high_school_chemistry_104
+- pattern: 氨水.*氨分子数
+  correct: 100 g 17%的氨水中，氨分子部分电离为一水合氨，实际氨分子数小于NA
+  description: 误以为氨水中氨分子全部以分子形式存在，忽略其电离
+  severity: error
+  source: cmmlu_high_school_chemistry_104
+- pattern: pH.*Ba\(OH\)2.*OH－数目
+  correct: 25 °C时，pH＝13的Ba(OH)2溶液中c(OH⁻)=0.1 mol·L⁻¹，1.0 L溶液中OH⁻数目为0.1NA，不是0.2NA
+  description: 误将Ba(OH)2的浓度当作OH⁻浓度，忽略pH直接给出c(OH⁻)
+  severity: error
+  source: cmmlu_high_school_chemistry_104
+- pattern: 陶瓷.*耐酸碱
+  correct: 陶瓷通常耐酸碱，但并非绝对，某些陶瓷在强酸碱条件下可能被腐蚀
+  description: 误以为陶瓷对所有酸碱都完全稳定
+  severity: warning
+  source: cmmlu_high_school_chemistry_105
+- pattern: 陶瓷.*主要化学成分.*硅酸盐
+  correct: 陶瓷的主要化学成分是硅酸盐，但现代陶瓷还包括氧化物、碳化物等
+  description: 误以为所有陶瓷成分都是硅酸盐
+  severity: warning
+  source: cmmlu_high_school_chemistry_105
+- pattern: 秦兵马俑.*陶制品.*黏土.*高温烧结
+  correct: 秦兵马俑是陶制品，由黏土经高温烧结而成，这是正确的描述
+  description: 误以为该选项有错误，实际上它是正确的
+  severity: error
+  source: cmmlu_high_school_chemistry_105
+- pattern: 气态氢化物.*热稳定性.*X.*W
+  correct: 非金属性越强，气态氢化物热稳定性越强，W的非金属性强于X
+  description: 误以为地壳含量第二的元素（硅）的非金属性比硫强
+  severity: error
+  source: cmmlu_high_school_chemistry_106
+- pattern: 简单离子半径.*Z.*W
+  correct: 电子层数相同的离子，核电荷数越大半径越小，Z的离子半径小于W
+  description: 误以为第三周期原子半径最小的金属（铝）的离子半径大于硫离子
+  severity: error
+  source: cmmlu_high_school_chemistry_106
+- pattern: Z的氧化物.*碱性氧化物
+  correct: 氧化铝是两性氧化物，不是碱性氧化物
+  description: 误以为铝的氧化物是碱性氧化物
+  severity: error
+  source: cmmlu_high_school_chemistry_106
+- pattern: 黄芽.*黄铁矿
+  correct: 黄芽在《周易参同契》中指的是硫黄，而非黄铁矿
+  description: 误以为黄芽是黄铁矿
+  severity: error
+  source: cmmlu_high_school_chemistry_107
+- pattern: 黄芽.*黄铜
+  correct: 黄芽在《周易参同契》中指的是硫黄，而非黄铜
+  description: 误以为黄芽是黄铜
+  severity: error
+  source: cmmlu_high_school_chemistry_107
+- pattern: 黄芽.*金
+  correct: 黄芽在《周易参同契》中指的是硫黄，而非金
+  description: 误以为黄芽是金
+  severity: error
+  source: cmmlu_high_school_chemistry_107
+- pattern: 强弱电解质.*能否完全电离
+  correct: 强弱电解质的判断依据是在水溶液中能否完全电离，熔融状态不适用
+  description: 误以为强弱电解质的判断依据包括熔融状态下的电离程度
+  severity: error
+  source: cmmlu_high_school_chemistry_108
+- pattern: 糖类.*都能发生水解
+  correct: 单糖（如葡萄糖、果糖）不能发生水解反应，只有二糖和多糖才能水解
+  description: 误以为所有糖类都能水解，忽略了单糖不能水解
+  severity: error
+  source: cmmlu_high_school_chemistry_109
+- pattern: 植物油.*主要成分.*高级脂肪酸
+  correct: 植物油的主要成分是高级脂肪酸甘油酯（即油脂），而不是高级脂肪酸
+  description: 混淆了油脂（甘油酯）与脂肪酸的概念
+  severity: error
+  source: cmmlu_high_school_chemistry_109
+- pattern: 羊毛.*完全燃烧.*只生成CO2和H2O
+  correct: 羊毛是蛋白质纤维，含氮元素，完全燃烧还会生成氮气或氮氧化物等含氮物质
+  description: 误以为羊毛燃烧产物只有二氧化碳和水，忽略了蛋白质中的氮元素
+  severity: error
+  source: cmmlu_high_school_chemistry_109
+- pattern: 溴水.*鉴别.*甲烷.*乙烯
+  correct: 溴水可以鉴别甲烷和乙烯（乙烯使溴水褪色），但不能用于除去甲烷中的乙烯，因为生成的二溴乙烷仍为气体混在甲烷中
+  description: 误以为溴水既能鉴别又能完全除去甲烷中的乙烯
+  severity: error
+  source: cmmlu_high_school_chemistry_110
+- pattern: 油脂.*淀粉.*蛋白质.*水解
+  correct: 油脂、淀粉、蛋白质在一定条件下都能发生水解反应
+  description: 误以为油脂、淀粉或蛋白质中有些不能水解
+  severity: warning
+  source: cmmlu_high_school_chemistry_110
+- pattern: 碳原子.*形成.*共价键.*大于4
+  correct: 有机化合物中每个碳原子最多形成4个共价键
+  description: 误以为碳原子可以形成超过4个共价键
+  severity: error
+  source: cmmlu_high_school_chemistry_110
+- pattern: FeCl3.*沸水.*红褐色.*Fe\(OH\)3↓
+  correct: 向沸水中滴入饱和FeCl3溶液，继续煮沸至溶液显红褐色，生成的是Fe(OH)3胶体，不是沉淀，离子方程式应为Fe³⁺＋3H₂O===Fe(OH)₃(胶体)＋3H⁺
+  description: 误以为Fe(OH)3胶体是沉淀，错误使用沉淀符号
+  severity: error
+  source: cmmlu_high_school_chemistry_111
+- pattern: 醋酸钠.*显碱性.*CH3COO.*H2O===CH3COOH.*OH
+  correct: 醋酸钠水解是可逆反应，离子方程式应用可逆号：CH₃COO⁻＋H₂O⇌CH₃COOH＋OH⁻
+  description: 误将水解反应写成不可逆的等号
+  severity: error
+  source: cmmlu_high_school_chemistry_111
+- pattern: H2S.*变浑浊.*2S2.*O2.*4H
+  correct: 久置的H2S溶液变浑浊是H2S被氧气氧化，H2S是弱酸，应写分子形式：2H₂S＋O₂===2S＋2H₂O
+  description: 误将弱酸H2S写成离子形式S²⁻，且错误添加H⁺
+  severity: error
+  source: cmmlu_high_school_chemistry_111
+- pattern: c与b形成的二元化合物.*只存在离子键
+  correct: c与b形成的二元化合物可能含有共价键，如过氧化钠中存在O-O共价键
+  description: 误以为金属与非金属形成的二元化合物中只存在离子键，忽略了过氧化物等含有共价键的情况
+  severity: error
+  source: cmmlu_high_school_chemistry_112
+- pattern: d与b、c三种元素形成的化合物.*水溶液.*一定呈碱性
+  correct: d与b、c三种元素形成的化合物的水溶液不一定呈碱性，如硫酸钠溶液呈中性
+  description: 误以为含金属和氧的化合物水溶液一定呈碱性，忽略了强酸强碱盐呈中性的情况
+  severity: error
+  source: cmmlu_high_school_chemistry_112
+- pattern: pH＝a.*氨水.*稀释10倍.*pH＝b.*a＝b＋1
+  correct: 弱碱稀释10倍，pH变化小于1，即a < b+1
+  description: 误以为氨水是强碱，稀释10倍pH减小1
+  severity: error
+  source: cmmlu_high_school_chemistry_113
+- pattern: Cl－.*S2－.*Ca2＋.*K＋.*半径逐渐减小
+  correct: 离子半径大小顺序为S2- > Cl- > K+ > Ca2+
+  description: 误以为Cl-、S2-、Ca2+、K+的半径依次减小，实际需比较电子层数和核电荷数
+  severity: error
+  source: cmmlu_high_school_chemistry_113
+- pattern: 中和.*NaOH.*所需CH3COOH.*HCl.*物质的量前者小于后者
+  correct: 中和等量NaOH，所需一元酸的物质的量相等
+  description: 误以为弱酸CH3COOH中和NaOH所需物质的量少于强酸HCl
+  severity: error
+  source: cmmlu_high_school_chemistry_113
+- pattern: 沸水中滴加饱和FeCl3溶液.*沉淀
+  correct: 沸水中滴加饱和FeCl3溶液生成Fe(OH)3胶体，不是沉淀
+  description: 误以为FeCl3水解生成Fe(OH)3沉淀，实际生成胶体
+  severity: error
+  source: cmmlu_high_school_chemistry_114
+- pattern: SiO2.*碱性氧化物
+  correct: SiO2是酸性氧化物，能与碱反应生成盐和水
+  description: 误以为SiO2是碱性氧化物，实际它是酸性氧化物
+  severity: error
+  source: cmmlu_high_school_chemistry_114
+- pattern: CuSO4.*H2S.*酸性H2S＞H2SO4
+  correct: 该反应是复分解反应，生成CuS沉淀，不能据此比较酸性强弱
+  description: 误以为CuSO4与H2S反应生成H2SO4说明H2S酸性更强，实际是沉淀生成推动反应
+  severity: error
+  source: cmmlu_high_school_chemistry_114
+- pattern: 氯水久置.*无色
+  correct: 新制氯水久置后变为无色是因为氯气与水反应生成次氯酸，次氯酸分解产生盐酸和氧气，属于化学变化
+  description: 误以为氯水久置变色是物理变化
+  severity: error
+  source: cmmlu_high_school_chemistry_115
+- pattern: 金属钠.*银白色.*暗灰色
+  correct: 新切割的金属钠表面由银白色变为暗灰色是钠与氧气反应生成氧化钠，属于化学变化
+  description: 误以为钠表面变色是物理变化
+  severity: error
+  source: cmmlu_high_school_chemistry_115
+- pattern: NO2.*水.*无色
+  correct: 红棕色NO2通过水后变为无色是因为NO2与水反应生成硝酸和一氧化氮，属于化学变化
+  description: 误以为NO2溶于水变色是物理变化
+  severity: error
+  source: cmmlu_high_school_chemistry_115
+- pattern: 铜丝.*酒精灯.*加热.*伸入.*无水乙醇.*红色
+  correct: 铜丝加热生成氧化铜（黑色），伸入乙醇后氧化铜被还原为铜（红色），这是乙醇的催化氧化反应
+  description: 误以为铜丝恢复红色是物理变化或错误反应
+  severity: error
+  source: cmmlu_high_school_chemistry_116
+- pattern: HNO3.*苯.*甲苯.*甘油.*纤维素.*浓硫酸.*催化剂
+  correct: 浓硫酸在苯、甲苯的硝化反应中作催化剂和脱水剂，但在甘油、纤维素的硝化反应中主要作吸水剂和催化剂
+  description: 误以为浓硫酸在所有硝化反应中作用完全相同
+  severity: warning
+  source: cmmlu_high_school_chemistry_116
+- pattern: 黄酒.*乙醇氧化.*乙酸.*变酸
+  correct: 黄酒中乙醇被微生物氧化为乙酸，导致酒变酸，这是正确的化学变化描述
+  description: 该选项描述正确，不是错误选项
+  severity: error
+  source: cmmlu_high_school_chemistry_116
+- pattern: 硅胶.*铁粉.*干燥
+  correct: 硅胶能吸水起干燥作用，但铁粉主要吸收氧气起防氧化作用，不能干燥
+  description: 误以为铁粉也能像硅胶一样起干燥作用
+  severity: error
+  source: cmmlu_high_school_chemistry_117
+- pattern: C5H12O.*醇.*相对分子质量.*相同.*一元羧酸.*酯化.*种数.*15
+  correct: 分子式为C5H12O的醇有8种同分异构体，相对分子质量相同的一元羧酸为C4H8O2，有2种同分异构体，生成的酯共有8×2=16种
+  description: 误以为醇或羧酸的同分异构体数目计算错误，导致酯的总数少算
+  severity: error
+  source: cmmlu_high_school_chemistry_118
+- pattern: C5H12O.*醇.*相对分子质量.*相同.*一元羧酸.*酯化.*种数.*18
+  correct: 分子式为C5H12O的醇有8种同分异构体，相对分子质量相同的一元羧酸为C4H8O2，有2种同分异构体，生成的酯共有8×2=16种
+  description: 误以为醇或羧酸的同分异构体数目计算错误，导致酯的总数多算
+  severity: error
+  source: cmmlu_high_school_chemistry_118
+- pattern: C5H12O.*醇.*相对分子质量.*相同.*一元羧酸.*酯化.*种数.*17
+  correct: 分子式为C5H12O的醇有8种同分异构体，相对分子质量相同的一元羧酸为C4H8O2，有2种同分异构体，生成的酯共有8×2=16种
+  description: 误以为醇或羧酸的同分异构体数目计算错误，导致酯的总数多算
+  severity: error
+  source: cmmlu_high_school_chemistry_118
+- pattern: 纯碱.*石英砂.*制玻璃.*硅酸.*酸性.*强于碳酸
+  correct: 高温下纯碱与石英砂反应制玻璃，是利用高沸点酸制低沸点酸的原理，硅酸酸性弱于碳酸
+  description: 误以为硅酸酸性强于碳酸，实际硅酸酸性弱于碳酸
+  severity: error
+  source: cmmlu_high_school_chemistry_119
+- pattern: 碳酸钠.*碱
+  correct: 碳酸钠是盐，其水溶液因水解呈碱性，但本身不是碱
+  description: 误将碳酸钠归类为碱，实际它是盐
+  severity: error
+  source: cmmlu_high_school_chemistry_119
+- pattern: CO2.*极易溶于水
+  correct: CO2能溶于水但溶解度不大，喷泉实验是利用其与NaOH等溶液反应造成压强差，并非极易溶于水
+  description: 误以为CO2极易溶于水，实际CO2溶解度较小
+  severity: error
+  source: cmmlu_high_school_chemistry_119
+- pattern: 明矾.*净水.*除去.*铜离子
+  correct: 明矾净水是通过生成氢氧化铝胶体吸附悬浮杂质，不能除去铜离子
+  description: 误以为明矾净水可以除去重金属离子
+  severity: error
+  source: cmmlu_high_school_chemistry_120
+- pattern: 焰火.*化学性质
+  correct: 焰火的五彩缤纷是某些金属元素的物理性质（焰色反应）的展现
+  description: 误将焰色反应归为化学性质
+  severity: error
+  source: cmmlu_high_school_chemistry_120
+- pattern: 活性炭.*脱色.*臭氧.*漂白.*原理相似
+  correct: 活性炭脱色是物理吸附，臭氧漂白是化学氧化，原理不同
+  description: 误以为活性炭脱色和臭氧漂白的原理相同
+  severity: error
+  source: cmmlu_high_school_chemistry_120
+- pattern: 明矾.*净水.*Al3+.*3H2O.*Al\(OH\)3.*3H+
+  correct: 明矾净水时，Al3+水解生成Al(OH)3胶体，离子方程式为Al3+ + 3H2O ⇌ Al(OH)3(胶体) + 3H+，但通常不写沉淀符号，且水解可逆
+  description: 误以为明矾净水的离子方程式中Al(OH)3应写沉淀符号，且水解反应为完全反应
+  severity: error
+  source: cmmlu_high_school_chemistry_121
+- pattern: 小苏打.*胃酸.*CO.*2H+.*CO2.*H2O
+  correct: 小苏打治疗胃酸过多的离子方程式应为HCO3- + H+ === CO2↑ + H2O
+  description: 误将HCO3-写成了CO，漏写了碳酸氢根离子中的氢和氧
+  severity: error
+  source: cmmlu_high_school_chemistry_121
+- pattern: 常温常压下.*22.4 L.*O原子
+  correct: 常温常压下气体摩尔体积不是22.4 L/mol，22.4 L/mol仅适用于标准状况（0℃，101.325 kPa）
+  description: 误以为常温常压下气体摩尔体积也是22.4 L/mol
+  severity: error
+  source: cmmlu_high_school_chemistry_122
+- pattern: 标准状况下.*HCl.*NH3混合.*气体分子总数
+  correct: 标准状况下HCl和NH3反应生成NH4Cl固体，混合后气体分子数减少，不是0.1NA
+  description: 忽略HCl和NH3在标准状况下会反应生成固体NH4Cl
+  severity: error
+  source: cmmlu_high_school_chemistry_122
+- pattern: 18 g.*^18 O2.*中子数.*8NA
+  correct: 18 g ^18 O2的物质的量为0.5 mol，每个^18 O原子含10个中子，总中子数为10NA
+  description: 误算^18 O的中子数或物质的量，^18 O质子数8，中子数10
+  severity: error
+  source: cmmlu_high_school_chemistry_122
+- pattern: pH＝5.*H2S.*c\(H\+\).*c\(HS\-\)
+  correct: H2S是二元弱酸，分步电离，c(H+) > c(HS-)，且c(HS-)远小于1×10-5 mol/L
+  description: 误以为H2S完全电离或HS-浓度等于H+浓度
+  severity: error
+  source: cmmlu_high_school_chemistry_123
+- pattern: 足量.*NaHSO3.*Na2CO3.*产生CO2
+  correct: NaHSO3与Na2CO3反应生成Na2SO3和NaHCO3，不产生CO2气体
+  description: 误以为亚硫酸氢钠与碳酸钠反应会生成二氧化碳
+  severity: error
+  source: cmmlu_high_school_chemistry_123
+- pattern: 向Na2CO3.*通入足量SO2.*得到CO2
+  correct: SO2通入Na2CO3溶液首先生成Na2SO3和CO2，但足量SO2会继续反应生成NaHSO3，最终产物为NaHSO3和CO2
+  description: 误以为通入足量SO2不会产生CO2
+  severity: warning
+  source: cmmlu_high_school_chemistry_123
+- pattern: 0.05 mol Na2CO3.*0.05 mol CaO.*溶液中增大
+  correct: CaO与水反应生成Ca(OH)2，与Na2CO3反应生成CaCO3沉淀和NaOH，溶液中c(CO32-)减小，c(OH-)增大，但题目中'增大'表述不明确
+  description: 误以为加入CaO后溶液中某离子浓度会增大
+  severity: warning
+  source: cmmlu_high_school_chemistry_123
+- pattern: 25 °C.*100 °C.*Kw.*前者数值小于后者
+  correct: 水的电离是吸热过程，温度升高Kw增大，25°C时Kw=1×10-14，100°C时Kw≈1×10-12，前者小于后者
+  description: 误以为温度升高Kw减小
+  severity: error
+  source: cmmlu_high_school_chemistry_123
+- pattern: 碳酸钠.*离子化合物
+  correct: 碳酸钠是离子化合物，但过氧化钠是离子化合物且含过氧根离子
+  description: 误以为过氧化钠不属于离子化合物
+  severity: error
+  source: cmmlu_high_school_chemistry_124
+- pattern: 硫酸钡.*弱电解质
+  correct: 硫酸钡是强电解质，难溶于水但溶于水的部分完全电离
+  description: 误以为难溶物是弱电解质
+  severity: error
+  source: cmmlu_high_school_chemistry_124
+- pattern: 有色玻璃.*胶体
+  correct: 有色玻璃是固溶体，不是胶体
+  description: 误以为有色玻璃属于胶体
+  severity: error
+  source: cmmlu_high_school_chemistry_124
+- pattern: 果冻.*胶体
+  correct: 果冻是凝胶，属于胶体的一种
+  description: 误以为果冻不是胶体
+  severity: warning
+  source: cmmlu_high_school_chemistry_124
+- pattern: 蚕丝属于纤维素
+  correct: 蚕丝的主要成分是蛋白质，属于天然高分子化合物
+  description: 误以为蚕丝是纤维素，实际上蚕丝是蛋白质纤维
+  severity: error
+  source: cmmlu_high_school_chemistry_125
+- pattern: 泪.*石蜡燃烧.*水
+  correct: 蜡炬成灰泪始干中的'泪'是指熔化的液态石蜡，不是燃烧生成的水
+  description: 误将诗句中的'泪'理解为石蜡燃烧生成的水
+  severity: error
+  source: cmmlu_high_school_chemistry_125
+- pattern: 蚕丝.*石蜡.*完全燃烧.*产物相同
+  correct: 蚕丝（蛋白质）和石蜡（烃类）完全燃烧产物不同，蚕丝燃烧还产生含氮物质
+  description: 误以为不同成分的物质完全燃烧产物相同
+  severity: error
+  source: cmmlu_high_school_chemistry_125
+- pattern: d.*非金属性最强
+  correct: d元素的非金属性不一定最强，需根据具体元素判断
+  description: 误以为d元素在短周期中非金属性最强
+  severity: error
+  source: cmmlu_high_school_chemistry_126
+- pattern: 只有a.*离子化合物
+  correct: a与其他元素生成的化合物不都是离子化合物，可能存在共价化合物
+  description: 误以为a（金属元素）与其他元素形成的化合物全部是离子化合物
+  severity: error
+  source: cmmlu_high_school_chemistry_126
+- pattern: 均存在两种或两种以上的氧化物
+  correct: 并非所有短周期元素都有两种或以上氧化物
+  description: 误以为所有短周期元素都能形成多种氧化物
+  severity: error
+  source: cmmlu_high_school_chemistry_126
+- pattern: 钡.*焰色.*黄色
+  correct: 钡的焰色反应为绿色
+  description: 误以为钡的焰色为黄色，实际黄色是钠的焰色
+  severity: error
+  source: cmmlu_high_school_chemistry_127
+- pattern: 钡.*焰色.*紫色
+  correct: 钡的焰色反应为绿色
+  description: 误以为钡的焰色为紫色，实际紫色是钾的焰色
+  severity: error
+  source: cmmlu_high_school_chemistry_127
+- pattern: 钡.*焰色.*红色
+  correct: 钡的焰色反应为绿色
+  description: 误以为钡的焰色为红色，实际红色是锶或钙的焰色
+  severity: error
+  source: cmmlu_high_school_chemistry_127
+- pattern: 活性炭.*杀菌
+  correct: 活性炭具有吸附作用，可除异味，但不具有杀菌作用
+  description: 误以为活性炭具有杀菌功能
+  severity: error
+  source: cmmlu_high_school_chemistry_128
+- pattern: 鼻冲水.*明矾水
+  correct: 鼻冲水是指氨水，具有刺激性气味和挥发性
+  description: 误以为鼻冲水是明矾水，明矾水无强烈刺激性气味
+  severity: error
+  source: cmmlu_high_school_chemistry_129
+- pattern: 鼻冲水.*硝酸
+  correct: 鼻冲水是指氨水，硝酸虽具刺激性但为强酸，非描述中的药用水溶液
+  description: 误以为鼻冲水是硝酸，硝酸腐蚀性强，不符合文中外用描述
+  severity: error
+  source: cmmlu_high_school_chemistry_129
+- pattern: 鼻冲水.*卤水
+  correct: 鼻冲水是指氨水，卤水为盐卤溶液，无强烈挥发性气味
+  description: 误以为鼻冲水是卤水，卤水无辛烈气味
+  severity: error
+  source: cmmlu_high_school_chemistry_129
+- pattern: 薪柴.*低碳
+  correct: 薪柴燃烧释放大量CO2，属于高碳能源，不能实现低碳生活
+  description: 误以为使用薪柴等生物质燃料是低碳的，忽略了其燃烧产生的碳排放
+  severity: error
+  source: cmmlu_high_school_chemistry_130
+- pattern: 填埋.*处理.*生活垃圾
+  correct: 填埋未经分类的生活垃圾会造成土壤和地下水污染，不是环保的处理方法
+  description: 误以为直接填埋是合理的垃圾处理方式，忽视了垃圾分类和污染问题
+  severity: error
+  source: cmmlu_high_school_chemistry_130
+- pattern: 复分解反应
+  correct: 丹砂烧之成水银是分解反应，不是复分解反应
+  description: 误以为该反应是复分解反应
+  severity: error
+  source: cmmlu_high_school_chemistry_131
+- pattern: 只涉及物理变化
+  correct: 丹砂烧之成水银和积变又成丹砂都涉及化学变化
+  description: 误以为该过程只有物理变化
+  severity: error
+  source: cmmlu_high_school_chemistry_131
 domain_facts:
   common_elements:
-    - symbol: "H"
-      name: "氢"
-      atomic_number: 1
-    - symbol: "He"
-      name: "氦"
-      atomic_number: 2
-    - symbol: "C"
-      name: "碳"
-      atomic_number: 6
-    - symbol: "N"
-      name: "氮"
-      atomic_number: 7
-    - symbol: "O"
-      name: "氧"
-      atomic_number: 8
-    - symbol: "Na"
-      name: "钠"
-      atomic_number: 11
-    - symbol: "Mg"
-      name: "镁"
-      atomic_number: 12
-    - symbol: "Al"
-      name: "铝"
-      atomic_number: 13
-    - symbol: "Si"
-      name: "硅"
-      atomic_number: 14
-    - symbol: "P"
-      name: "磷"
-      atomic_number: 15
-    - symbol: "S"
-      name: "硫"
-      atomic_number: 16
-    - symbol: "Cl"
-      name: "氯"
-      atomic_number: 17
-    - symbol: "K"
-      name: "钾"
-      atomic_number: 19
-    - symbol: "Ca"
-      name: "钙"
-      atomic_number: 20
-    - symbol: "Fe"
-      name: "铁"
-      atomic_number: 26
-    - symbol: "Cu"
-      name: "铜"
-      atomic_number: 29
-    - symbol: "Zn"
-      name: "锌"
-      atomic_number: 30
-    - symbol: "Ag"
-      name: "银"
-      atomic_number: 47
-    - symbol: "Ba"
-      name: "钡"
-      atomic_number: 56
-    - symbol: "Au"
-      name: "金"
-      atomic_number: 79
-
+  - symbol: H
+    name: 氢
+    atomic_number: 1
+    atomic_mass: 1.01
+    category: 非金属
+    period: 1
+    group: 1
+    electron_configuration: 1s1
+    electronegativity: 2.2
+    phase: 气态
+  - symbol: He
+    name: 氦
+    atomic_number: 2
+    atomic_mass: 4.0
+    category: 稀有气体
+    period: 1
+    group: 18
+    electron_configuration: 1s2
+    electronegativity: null
+    phase: 气态
+  - symbol: Li
+    name: 锂
+    atomic_number: 3
+    atomic_mass: 6.94
+    category: 碱金属
+    period: 2
+    group: 1
+    electron_configuration: 1s2 2s1
+    electronegativity: 0.98
+    phase: 固态
+  - symbol: Be
+    name: 铍
+    atomic_number: 4
+    atomic_mass: 9.01
+    category: 碱土金属
+    period: 2
+    group: 2
+    electron_configuration: 1s2 2s2
+    electronegativity: 1.57
+    phase: 固态
+  - symbol: B
+    name: 硼
+    atomic_number: 5
+    atomic_mass: 10.81
+    category: 类金属
+    period: 2
+    group: 13
+    electron_configuration: 1s2 2s2 2p1
+    electronegativity: 2.04
+    phase: 固态
+  - symbol: C
+    name: 碳
+    atomic_number: 6
+    atomic_mass: 12.01
+    category: 非金属
+    period: 2
+    group: 14
+    electron_configuration: 1s2 2s2 2p2
+    electronegativity: 2.55
+    phase: 固态
+  - symbol: N
+    name: 氮
+    atomic_number: 7
+    atomic_mass: 14.01
+    category: 非金属
+    period: 2
+    group: 15
+    electron_configuration: 1s2 2s2 2p3
+    electronegativity: 3.04
+    phase: 气态
+  - symbol: O
+    name: 氧
+    atomic_number: 8
+    atomic_mass: 16.0
+    category: 非金属
+    period: 2
+    group: 16
+    electron_configuration: 1s2 2s2 2p4
+    electronegativity: 3.44
+    phase: 气态
+  - symbol: F
+    name: 氟
+    atomic_number: 9
+    atomic_mass: 19.0
+    category: 非金属
+    period: 2
+    group: 17
+    electron_configuration: 1s2 2s2 2p5
+    electronegativity: 3.98
+    phase: 气态
+  - symbol: Ne
+    name: 氖
+    atomic_number: 10
+    atomic_mass: 20.18
+    category: 稀有气体
+    period: 2
+    group: 18
+    electron_configuration: 1s2 2s2 2p6
+    electronegativity: null
+    phase: 气态
+  - symbol: Na
+    name: 钠
+    atomic_number: 11
+    atomic_mass: 22.99
+    category: 碱金属
+    period: 3
+    group: 1
+    electron_configuration: 1s2 2s2 2p6 3s1
+    electronegativity: 0.93
+    phase: 固态
+  - symbol: Mg
+    name: 镁
+    atomic_number: 12
+    atomic_mass: 24.3
+    category: 碱土金属
+    period: 3
+    group: 2
+    electron_configuration: 1s2 2s2 2p6 3s2
+    electronegativity: 1.31
+    phase: 固态
+  - symbol: Al
+    name: 铝
+    atomic_number: 13
+    atomic_mass: 26.98
+    category: 后过渡金属
+    period: 3
+    group: 13
+    electron_configuration: 1s2 2s2 2p6 3s2 3p1
+    electronegativity: 1.61
+    phase: 固态
+  - symbol: Si
+    name: 硅
+    atomic_number: 14
+    atomic_mass: 28.09
+    category: 类金属
+    period: 3
+    group: 14
+    electron_configuration: 1s2 2s2 2p6 3s2 3p2
+    electronegativity: 1.9
+    phase: 固态
+  - symbol: P
+    name: 磷
+    atomic_number: 15
+    atomic_mass: 30.97
+    category: 非金属
+    period: 3
+    group: 15
+    electron_configuration: 1s2 2s2 2p6 3s2 3p3
+    electronegativity: 2.19
+    phase: 固态
+  - symbol: S
+    name: 硫
+    atomic_number: 16
+    atomic_mass: 32.06
+    category: 非金属
+    period: 3
+    group: 16
+    electron_configuration: 1s2 2s2 2p6 3s2 3p4
+    electronegativity: 2.58
+    phase: 固态
+  - symbol: Cl
+    name: 氯
+    atomic_number: 17
+    atomic_mass: 35.45
+    category: 非金属
+    period: 3
+    group: 17
+    electron_configuration: 1s2 2s2 2p6 3s2 3p5
+    electronegativity: 3.16
+    phase: 气态
+  - symbol: Ar
+    name: 氩
+    atomic_number: 18
+    atomic_mass: 39.95
+    category: 稀有气体
+    period: 3
+    group: 18
+    electron_configuration: 1s2 2s2 2p6 3s2 3p6
+    electronegativity: null
+    phase: 气态
+  - symbol: K
+    name: 钾
+    atomic_number: 19
+    atomic_mass: 39.1
+    category: 碱金属
+    period: 4
+    group: 1
+    electron_configuration: 1s2 2s2 2p6 3s2 3p6 4s1
+    electronegativity: 0.82
+    phase: 固态
+  - symbol: Ca
+    name: 钙
+    atomic_number: 20
+    atomic_mass: 40.08
+    category: 碱土金属
+    period: 4
+    group: 2
+    electron_configuration: 1s2 2s2 2p6 3s2 3p6 4s2
+    electronegativity: 1
+    phase: 固态
+  - symbol: Fe
+    name: 铁
+    atomic_number: 26
+    atomic_mass: 55.85
+    category: 过渡金属
+    period: 4
+    group: 8
+    electron_configuration: 1s2 2s2 2p6 3s2 3p6 4s2 3d6
+    electronegativity: 1.83
+    phase: 固态
+  - symbol: Cu
+    name: 铜
+    atomic_number: 29
+    atomic_mass: 63.55
+    category: 过渡金属
+    period: 4
+    group: 11
+    electron_configuration: 1s2 2s2 2p6 3s2 3p6 4s1 3d10
+    electronegativity: 1.9
+    phase: 固态
+  - symbol: Zn
+    name: 锌
+    atomic_number: 30
+    atomic_mass: 65.38
+    category: 过渡金属
+    period: 4
+    group: 12
+    electron_configuration: 1s2 2s2 2p6 3s2 3p6 4s2 3d10
+    electronegativity: 1.65
+    phase: 固态
+  - symbol: Br
+    name: 溴
+    atomic_number: 35
+    atomic_mass: 79.9
+    category: 非金属
+    period: 4
+    group: 17
+    electron_configuration: 1s2 2s2 2p6 3s2 3p6 4s2 3d10 4p5
+    electronegativity: 2.96
+    phase: 液态
+  - symbol: Ag
+    name: 银
+    atomic_number: 47
+    atomic_mass: 107.87
+    category: 过渡金属
+    period: 5
+    group: 11
+    electron_configuration: 1s2 2s2 2p6 3s2 3p6 4s2 3d10 4p6 5s1 4d10
+    electronegativity: 1.93
+    phase: 固态
+  - symbol: I
+    name: 碘
+    atomic_number: 53
+    atomic_mass: 126.9
+    category: 非金属
+    period: 5
+    group: 17
+    electron_configuration: 1s2 2s2 2p6 3s2 3p6 4s2 3d10 4p6 5s2 4d10 5p5
+    electronegativity: 2.66
+    phase: 固态
+  - symbol: Ba
+    name: 钡
+    atomic_number: 56
+    atomic_mass: 137.33
+    category: 碱土金属
+    period: 6
+    group: 2
+    electron_configuration: 1s2 2s2 2p6 3s2 3p6 4s2 3d10 4p6 5s2 4d10 5p6 6s2
+    electronegativity: 0.89
+    phase: 固态
+  - symbol: Au
+    name: 金
+    atomic_number: 79
+    atomic_mass: 196.97
+    category: 过渡金属
+    period: 6
+    group: 11
+    electron_configuration: 1s2 2s2 2p6 3s2 3p6 4s2 3d10 4p6 5s2 4d10 5p6 6s1 4f14
+      5d10
+    electronegativity: 2.54
+    phase: 固态
+  - symbol: Hg
+    name: 汞
+    atomic_number: 80
+    atomic_mass: 200.59
+    category: 过渡金属
+    period: 6
+    group: 12
+    electron_configuration: 1s2 2s2 2p6 3s2 3p6 4s2 3d10 4p6 5s2 4d10 5p6 6s2 4f14
+      5d10
+    electronegativity: 2
+    phase: 液态
+  - symbol: Pb
+    name: 铅
+    atomic_number: 82
+    atomic_mass: 207.21
+    category: 后过渡金属
+    period: 6
+    group: 14
+    electron_configuration: 1s2 2s2 2p6 3s2 3p6 4s2 3d10 4p6 5s2 4d10 5p6 6s2 4f14
+      5d10 6p2
+    electronegativity: 1.87
+    phase: 固态
   common_compounds:
-    - formula: "H2O"
-      name: "水"
-      common_name: "水"
-    - formula: "CO2"
-      name: "二氧化碳"
-      common_name: "干冰（固态）"
-    - formula: "NaCl"
-      name: "氯化钠"
-      common_name: "食盐"
-    - formula: "CaCO3"
-      name: "碳酸钙"
-      common_name: "石灰石/大理石主要成分"
-    - formula: "H2SO4"
-      name: "硫酸"
-      common_name: null
-    - formula: "HCl"
-      name: "盐酸（氯化氢水溶液）"
-      common_name: "盐酸"
-    - formula: "NaOH"
-      name: "氢氧化钠"
-      common_name: "烧碱/火碱/苛性钠"
-    - formula: "Ca(OH)2"
-      name: "氢氧化钙"
-      common_name: "熟石灰/消石灰"
-    - formula: "NaHCO3"
-      name: "碳酸氢钠"
-      common_name: "小苏打"
-    - formula: "Na2CO3"
-      name: "碳酸钠"
-      common_name: "纯碱/苏打"
-    - formula: "Fe2O3"
-      name: "氧化铁"
-      common_name: "铁锈主要成分"
-    - formula: "CaO"
-      name: "氧化钙"
-      common_name: "生石灰"
-    - formula: "CO"
-      name: "一氧化碳"
-      common_name: null
-
+  - formula: H2O
+    name: 水
+    common_name: 水
+  - formula: CO2
+    name: 二氧化碳
+    common_name: 干冰（固态）
+  - formula: NaCl
+    name: 氯化钠
+    common_name: 食盐
+  - formula: CaCO3
+    name: 碳酸钙
+    common_name: 石灰石/大理石主要成分
+  - formula: H2SO4
+    name: 硫酸
+    common_name: null
+  - formula: HCl
+    name: 盐酸（氯化氢水溶液）
+    common_name: 盐酸
+  - formula: NaOH
+    name: 氢氧化钠
+    common_name: 烧碱/火碱/苛性钠
+  - formula: Ca(OH)2
+    name: 氢氧化钙
+    common_name: 熟石灰/消石灰
+  - formula: NaHCO3
+    name: 碳酸氢钠
+    common_name: 小苏打
+  - formula: Na2CO3
+    name: 碳酸钠
+    common_name: 纯碱/苏打
+  - formula: Fe2O3
+    name: 氧化铁
+    common_name: 铁锈主要成分
+  - formula: CaO
+    name: 氧化钙
+    common_name: 生石灰
+  - formula: CO
+    name: 一氧化碳
+    common_name: null
   acid_base_indicators:
-    - name: "石蕊"
-      acid_color: "红色"
-      neutral_color: "紫色"
-      base_color: "蓝色"
-    - name: "酚酞"
-      acid_color: "无色"
-      neutral_color: "无色"
-      base_color: "红色"
+  - name: 石蕊
+    acid_color: 红色
+    neutral_color: 紫色
+    base_color: 蓝色
+  - name: 酚酞
+    acid_color: 无色
+    neutral_color: 无色
+    base_color: 红色

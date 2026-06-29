@@ -4,7 +4,7 @@ import tseslint from "typescript-eslint"
 
 // ESLint flat config（eslint 9+）— Node + Express + TypeScript（CommonJS）
 export default tseslint.config(
-  { ignores: ["dist", "node_modules", "public", "prisma/migrations", "scf_bootstrap.js"] },
+  { ignores: ["dist", "node_modules", "public", "prisma/migrations"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

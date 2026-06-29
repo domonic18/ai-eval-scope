@@ -1,9 +1,10 @@
 /**
  * 项目管理路由（/api/v1/projects）。
- *  - GET   /:id            详情
- *  - PATCH /:id            更新
- *  - POST  /:id/archive    归档（owner）
- *  - POST  /:id/unarchive  恢复（owner）
+ *  - GET    /:id            详情
+ *  - PATCH  /:id            更新
+ *  - POST   /:id/archive    归档（owner）
+ *  - POST   /:id/unarchive  恢复（owner）
+ *  - DELETE /:id            永久删除（owner；级联运行/样本/制品 + 清理对象存储）
  *
  * projectGuard 解析 :id → 校验归属与成员关系 → 注入 req.tenant（含 projectId）。
  */
@@ -70,6 +71,35 @@ router.get(
   }),
 )
 
+// ── Query：样本级走势（§14）──
+router.get(
+  "/:id/samples",
+  requireAuth,
+  projectGuard(),
+  wrap(async (req, res) => {
+    const svc = createQueryService(req.tenant!)
+    res.json(await svc.samples(req.params.id))
+  }),
+)
+
+router.get(
+  "/:id/sample-trends",
+  requireAuth,
+  projectGuard(),
+  wrap(async (req, res) => {
+    const q = req.query as Record<string, string | undefined>
+    const sampleId = q.sample_id
+    if (!sampleId) {
+      res.status(400).json({ error: "sample_id required", code: "SCHEMA_INVALID" })
+      return
+    }
+    const svc = createQueryService(req.tenant!)
+    res.json(
+      await svc.sampleTrends(req.params.id, sampleId, q.limit ? Number(q.limit) : 100),
+    )
+  }),
+)
+
 router.patch(
   "/:id",
   requireAuth,
@@ -97,6 +127,17 @@ router.post(
   wrap(async (req, res) => {
     const svc = createProjectService(req.tenant!)
     res.json({ project: await svc.setArchived(req.params.id, false) })
+  }),
+)
+
+router.delete(
+  "/:id",
+  requireAuth,
+  projectGuard({ role: "owner" }),
+  wrap(async (req, res) => {
+    const svc = createProjectService(req.tenant!)
+    await svc.delete(req.params.id)
+    res.json({ ok: true })
   }),
 )
 

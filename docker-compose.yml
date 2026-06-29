@@ -26,6 +26,8 @@ services:
     volumes:
       # 持久化到 workspace 下，便于调试/重置/检视
       - ./workspace/data/postgres:/var/lib/postgresql/data
+      # 不再挂载 schema.sql：建库改为起栈后手动 `make db-init`（应用 prisma migrations）
+      # 单一来源 = web/backend/prisma/migrations；详见 web/backend/prisma/README.md §一
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-eval} -d ${POSTGRES_DB:-agent_eval}"]
       interval: 5s
@@ -65,11 +67,11 @@ services:
       mc anonymous set download local/$$PLATFORM_S3_BUCKET || true
       "
 
-  # ── 平台后端（Express + Prisma + 前端托管）──
-  platform:
+  # ── Web 容器（Express + Prisma + 前端托管）──
+  web:
     build:
       context: .
-      dockerfile: docker/platform/Dockerfile
+      dockerfile: docker/web/Dockerfile
     env_file: ./.env              # PLATFORM_OBJECT_STORAGE/REGION/BUCKET/PATH_STYLE/JWT_*/INGEST_* 等
     environment:
       NODE_ENV: production

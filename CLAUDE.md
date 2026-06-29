@@ -12,7 +12,7 @@ agent-eval-system/
 ├── cicd/               # 内部 CI（Jenkins + 腾讯工蜂）
 ├── docker/ scripts/    # Dockerfile 与辅助脚本
 ├── Makefile            # 顶层任务入口（install / test / check / hooks ...）
-└── docker-compose.yml  # 本地全栈（postgres + minio + platform）
+└── docker-compose.yml  # 本地全栈（postgres + minio + web）
 ```
 
 ## 文档索引（按需阅读，勿全量加载）

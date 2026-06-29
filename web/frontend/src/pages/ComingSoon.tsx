@@ -2,7 +2,7 @@ import { useEffect } from "react"
 import { useCrumbs, Empty } from "../components/ui"
 import { IconBook } from "../components/icons"
 
-/** 占位页：原型中尚未落地的页面（全部运行 / 成员 / 组织设置）。 */
+/** 占位页：原型中尚未落地的页面（全部运行）。 */
 export default function ComingSoon({ title }: { title: string }) {
   const { setCrumbs } = useCrumbs()
   useEffect(() => {

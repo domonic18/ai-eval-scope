@@ -16,12 +16,56 @@ from typing import Any
 import openai
 
 from agent_eval.config import ProviderConfig, resolve_api_key
-from agent_eval.core.exceptions import LLMError
+from agent_eval.core.exceptions import (
+    LLMAuthError,
+    LLMError,
+    LLMNetworkError,
+    LLMQuotaExceededError,
+    LLMRateLimitError,
+)
 from agent_eval.llm.client import LLMClient
 from agent_eval.llm.models import LLMResponse, Message, TokenUsage
 
 # DeepSeek 便捷别名预置的端点
 _DEEPSEEK_DEFAULT_BASE_URL = "https://api.deepseek.com/v1"
+
+# 瞬时错误重试参数（网络超时/连接失败/限流/5xx）
+_MAX_RETRIES = 3
+_RETRY_BASE_DELAY = 1.0
+
+
+def _is_retryable(e: openai.APIError) -> bool:
+    """判断 OpenAI SDK 异常是否值得重试（瞬时错误）。"""
+    if isinstance(e, openai.APITimeoutError | openai.APIConnectionError):
+        return True
+    if isinstance(e, openai.RateLimitError):
+        msg = str(e).lower()
+        return "insufficient_quota" not in msg and "billing" not in msg
+    if isinstance(e, openai.APIStatusError):
+        return e.status_code >= 500
+    return False
+
+
+def _map_openai_error(e: openai.APIError, name: str, model: str) -> LLMError:
+    """将 OpenAI SDK 异常映射为 LLM 分级异常。"""
+    details = {"provider": name, "model": model}
+    if isinstance(e, openai.APITimeoutError):
+        return LLMNetworkError(f"OpenAI 请求超时: {e}", details=details)
+    if isinstance(e, openai.APIConnectionError):
+        return LLMNetworkError(f"OpenAI 连接失败: {e}", details=details)
+    if isinstance(e, openai.AuthenticationError):
+        return LLMAuthError(f"OpenAI 鉴权失败: {e}", details=details)
+    if isinstance(e, openai.RateLimitError):
+        msg = str(e).lower()
+        if "insufficient_quota" in msg or "billing" in msg:
+            return LLMQuotaExceededError(f"OpenAI 额度耗尽: {e}", details=details)
+        return LLMRateLimitError(f"OpenAI 限流: {e}", details=details)
+    if isinstance(e, openai.APIStatusError):
+        d = {**details, "status": e.status_code}
+        if e.status_code >= 500:
+            return LLMNetworkError(f"OpenAI 服务端错误 {e.status_code}: {e}", details=d)
+        return LLMError(f"OpenAI API 状态错误 {e.status_code}: {e}", details=d)
+    return LLMError(f"OpenAI 兼容 API 调用失败: {e}", details=details)
 
 
 class OpenAICompatClient(LLMClient):
@@ -70,19 +114,23 @@ class OpenAICompatClient(LLMClient):
             LLMError: API 调用失败时。
         """
         start = time.monotonic()
-        try:
-            response = self._client.chat.completions.create(
-                model=self._config.model,
-                messages=[m.to_dict() for m in messages],
-                max_tokens=kwargs.get("max_tokens", self._config.max_tokens),
-                temperature=kwargs.get("temperature", self._config.temperature),
-                seed=kwargs.get("seed", self._config.seed),
-            )
-        except openai.APIError as e:
-            raise LLMError(
-                f"OpenAI 兼容 API 调用失败: {e}",
-                details={"provider": self._name, "model": self._config.model},
-            ) from e
+        response = None
+        for attempt in range(_MAX_RETRIES + 1):
+            try:
+                response = self._client.chat.completions.create(
+                    model=self._config.model,
+                    messages=[m.to_dict() for m in messages],
+                    max_tokens=kwargs.get("max_tokens", self._config.max_tokens),
+                    temperature=kwargs.get("temperature", self._config.temperature),
+                    seed=kwargs.get("seed", self._config.seed),
+                )
+                break
+            except openai.APIError as e:
+                # 瞬时错误（超时/连接/限流/5xx）指数退避重试；不可重试或耗尽则映射抛出
+                if attempt < _MAX_RETRIES and _is_retryable(e):
+                    time.sleep(_RETRY_BASE_DELAY * (2**attempt))
+                    continue
+                raise _map_openai_error(e, self._name, self._config.model) from e
 
         duration_ms = (time.monotonic() - start) * 1000
 

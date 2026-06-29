@@ -2,7 +2,7 @@
 
 > 本文档是 [03Web 可观测平台重构需求](../requirement/03Web可观测平台重构需求.md) 的工程落地设计，阐述 Web 可观测平台（仿 Langfuse 的多租户评估可观测后端）的分层架构、后端工程结构、数据库 DDL、对象存储、认证与多租户、摄取服务、评估器对接（ResultSink）、Query API、前端改造、迁移回填与部署运维。
 >
-> 属于 [01 整体架构设计](./01整体架构设计.md) §二"Web 可视化层"在平台化阶段的演进版；前端页面视觉沿用 [08Web 可视化层设计](./08Web可视化层设计.md) §三，本文聚焦数据/服务/对接层。需求条目编号（F-O-* / NF-O-*）对齐需求文档。
+> 属于 [01 整体架构设计](./01整体架构设计.md) §二"Web 可观测平台"在平台化阶段的演进版；前端页面视觉沿用早期 Web Portal 设计（见本文 §十 前端改造），本文聚焦数据/服务/对接层。需求条目编号（F-O-* / NF-O-*）对齐需求文档。
 
 ---
 
@@ -20,8 +20,8 @@
 
 ### 1.2 范围（本期 Sprint 7b–7g）
 
-- 含：账号/组织/项目/API Key、Ingestion API、PG + 对象存储、ResultSink、Query API、前端重接、回填迁移、自托管部署
-- 不含：细粒度 RBAC 矩阵、SSO/SAML、实时流式评估、Web 端规则编辑、人工仲裁界面（远期）
+- 含：账号/组织/项目/API Key、Ingestion API、PG + 对象存储、ResultSink、Query API、前端重接、回填迁移、自托管部署；**SAML SSO 登录**、**团队中心模型**（注册不自动建个人 Org，申请 + 审批加入团队）、**样本级走势**、项目/运行**永久删除**、制品**同源预览代理**
+- 不含：细粒度 RBAC 矩阵、实时流式评估、Web 端规则编辑、人工仲裁界面（远期）
 
 ---
 
@@ -158,14 +158,21 @@ web/backend/
 generator client { provider = "prisma-client-js" }
 datasource db { provider = "postgresql"; url = env("PLATFORM_DATABASE_URL") }
 
-// ── 账号与组织 ──────────────────────────────────────────
+// ── 账号与组织（纯团队中心：注册不自动建个人 Org）──────────
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique @db.Citext
-  passwordHash String   @map("password_hash")
-  name         String?
-  createdAt    DateTime @default(now()) @map("created_at")
-  memberships  OrgMembership[]
+  id             String   @id @default(uuid())
+  email          String   @unique                       // 应用层小写归一（不引入 citext 扩展）
+  passwordHash   String?  @map("password_hash")         // 可空：SSO 用户无密码
+  name           String?
+  // —— SSO（SAML）字段 ——
+  authType       String   @default("password") @map("auth_type")   // password | saml
+  ssoProvider    String?  @map("sso_provider")                    // 如 "guanghua"
+  ssoNameId      String?  @unique @map("sso_name_id")             // SAML NameID
+  ssoAttributes  Json?    @map("sso_attributes") @db.JsonB
+  lastSsoLoginAt DateTime? @map("last_sso_login_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+  memberships    OrgMembership[]
+  joinRequests   JoinRequest[]
   @@map("users")
 }
 
@@ -177,7 +184,24 @@ model Organization {
   createdAt DateTime @default(now()) @map("created_at")
   members   OrgMembership[]
   projects  Project[]
+  joinRequests JoinRequest[]
   @@map("organizations")
+}
+
+// 团队加入申请（用户主动申请 → owner 审批 → 通过成 member）
+model JoinRequest {
+  id         String   @id @default(uuid())
+  orgId      String   @map("org_id")
+  userId     String   @map("user_id")
+  message    String?                          // 申请留言
+  status     String   @default("pending")     // pending | approved | rejected
+  resolvedBy String?  @map("resolved_by")
+  createdAt  DateTime @default(now()) @map("created_at")
+  resolvedAt DateTime? @map("resolved_at")
+  org        Organization @relation(fields: [orgId], references: [id])
+  user       User         @relation(fields: [userId], references: [id])
+  @@unique([orgId, userId])
+  @@map("join_requests")
 }
 
 model OrgMembership {
@@ -215,7 +239,8 @@ model ApiKey {
   id           String    @id @default(uuid())
   projectId    String    @map("project_id")
   publicKey    String    @unique @map("public_key") // pk-eval-...
-  secretHash   String    @map("secret_hash")
+  secretHash   String    @map("secret_hash")        // 哈希态：审计/不回显
+  secretEncrypted String @map("secret_encrypted")   // 加密态：HMAC 验签（§6.3 方案 A，明文永不落库）
   name         String
   scopes       String[]  @default(["ingest"])
   expiresAt    DateTime? @map("expires_at")
@@ -242,6 +267,8 @@ model Run {
   dr              Float
   cpr             Float
   avgReward       Float    @map("avg_reward")
+  avgSoft         Float    @default(0) @map("avg_soft")
+  avgPref         Float    @default(0) @map("avg_pref")
   condR           Float    @map("cond_r")
   avgTimeMs       Float    @map("avg_time_ms")
   ruleSetVersion  String?  @map("rule_set_version")
@@ -265,7 +292,8 @@ model Sample {
   id                String   @id @default(uuid())
   runId             String   @map("run_id")
   projectId         String   @map("project_id")        // 反范式便于隔离过滤
-  externalSampleId  String   @map("external_sample_id") // task_id/sample_id
+  externalSampleId  String   @map("external_sample_id") // task_id/sample_id（逻辑课件标识，跨版本稳定）
+  contentHash       String?  @map("content_hash")       // 内容指纹（版本标记，不参与唯一键，走势点可标注内容变更）
   status            String
   sFormat           Float    @map("s_format")
   sCommon           Float    @map("s_common")
@@ -365,7 +393,8 @@ model AuditLog {
 
 ### 4.3 迁移策略
 
-- **Prisma Migrate**：`prisma migrate dev`（开发）/ `prisma migrate deploy`（CI/生产），schema 变更版本化、可回滚（生成 down 脚本由 CI 管理）。
+- **Prisma Migrate**：`prisma migrate dev`（开发）/ `prisma migrate deploy`（CI/生产），schema 变更版本化、可回滚（生成 down 脚本由 CI 管理）。日常变更走 `prisma migrate dev --create-only`（生成 SQL 不执行）→ 手动跑 SQL → `prisma migrate resolve --applied`（见 `prisma/README.md`）。
+- **本地建库（`make db-init`）**：起栈后 postgres 为空库，手动 `make db-init`（`scripts/db-init.sh`）按时间戳顺序应用 prisma migration SQL + `prisma migrate resolve --applied` + `prisma generate`；**单一来源 = prisma migrations，已废弃 `schema.sql` 自动建表**。线上库（腾讯云 CDB）迁移同理手动 deploy。
 - **JSONB 优先于加列**：`details`/`failure_breakdown`/`thresholds`/`extra`/`moduleResults` 等半结构化字段用 JSONB，避免评估模型迭代时频繁改表。
 - **一等列仅给"要索引/聚合"的字段**：DR/CPR/Reward 等核心指标落列，其余 JSONB。
 
@@ -388,10 +417,11 @@ interface ObjectStorage {
   put(opts: { key: string; body: Buffer; contentType: string }): Promise<{ md5: string; size: number }>; // 服务端兜底直传（小文件/测试）
   get(opts: { key: string }): Promise<Buffer>;
   head(opts: { key: string }): Promise<{ size: number; contentType: string } | null>;
+  deleteObjects(opts: { keys: string[] }): Promise<void>;   // 批量删除（项目/运行删除时回收制品，分批 1000）
 }
 ```
 
-工厂按 `PLATFORM_OBJECT_STORAGE`（`minio`/`s3`/`cos`）返回实现；三者均兼容 S3 协议，差别仅在 endpoint/签名版本配置。
+工厂按 `PLATFORM_OBJECT_STORAGE`（`minio`/`s3`/`cos`）返回实现；三者均兼容 S3 协议，差别仅在 endpoint/签名版本配置。COS/SCF 场景下 presigned URL 的签名 host 与浏览器可达域名可能不一致，故 S3 实现内部维护 `client`（内部读写）与 `presignClient`（对外签名，`externalEndpoint`）两个 S3Client。
 
 ### 5.2 布局与隔离
 
@@ -422,18 +452,33 @@ projects/{project_id}/runs/{run_id}/artifacts/{kind}/{name}
 
 > 制品上传失败可独立重试，不阻塞结构化事件：先发 `run/sample/constraint` 事件（其中 `judge_record_object_key` 可暂留 null 占位），制品补传成功后再发 `artifact` 事件回填引用（F-O-INGEST-06 / NF-O-06）。
 
+### 5.4 制品预览代理（同源 raw + 专用 token）
+
+制品在浏览器内嵌预览（iframe / fetch）有两个坑：① COS 默认 `Content-Disposition: attachment` 会触发下载；② `response-*` 覆盖在 COS 默认域名失效。故除下载用的 presigned 重定向外，新增**同源预览代理**：
+
+| 端点 | 用途 | 鉴权 |
+|------|------|------|
+| `GET /artifacts/:id` | 下载/新窗口，302 → presigned GET（attachment 语义） | JWT + `artifactGuard` |
+| `GET /artifacts/:id/preview` | 返回预览 URL + 元信息（JSON）：image → COS presigned 直链；html/text/trace → 同源 raw 代理 URL | JWT + `artifactGuard` |
+| `GET /artifacts/:id/raw?token=` | 同源流式代理：拉对象后强制 `inline` + 正确 `Content-Type` 回吐 | **专用短期 artifact token**（TTL 5min，preview 端点签发） |
+
+> iframe 导航不带 `Authorization` 头，故 raw 代理不能复用 JWT，改由 preview 端点签发专用短期 token（`issueArtifactToken` / `verifyArtifactToken`）；token 绑定 `artifactId` + `objectKey`，校验 `claims.aid === :id` 防越权。image 走 presigned 直链是为了省函数流量、规避 SCF 响应大小上限。
+
 ---
 
 ## 六、认证与多租户
 
-### 6.1 RBAC 模型
+### 6.1 团队中心模型（RBAC）
 
 ```
-User ──membership(role)──> Organization ──owns──> Project
-                                              └──owns──> ApiKey (项目级)
+注册 → User（不自动建个人 Org）
+         │ ① POST /orgs 创建团队  ──> Organization ──owner──> Project ──owns──> ApiKey
+         │ ② 或申请加入已有团队（JoinRequest）──owner 审批──> OrgMembership(member)
 ```
 
-- 组织内角色：`owner`（管理成员/项目/Key）、`member`（查看与使用）。
+- **纯团队中心**：注册仅建 `User`，无个人 Org；新用户登录后无团队，需 `POST /orgs` 创建团队，或申请加入已有团队（`JoinRequest`，owner 审批通过成 `member`）。
+- 组织内角色：`owner`（管理成员/项目/Key、审批加入申请）、`member`（查看与使用）。
+- `tenantGuard` **不依赖 token 中的 orgId**：以 DB membership 为准校验"用户是否属于该组织/有权访问该项目"，越权直接 403/404。
 - API Key 绑定**单一项目**，仅 `ingest` scope（写权限限定本项目）。
 - Web 查看权限：默认组织内成员可见组织下所有项目（本期）；远期可按项目授权。
 
@@ -479,6 +524,22 @@ Authorization    = "Eval " + public_key + ":" + signature
 ### 6.5 审计日志
 
 `AuditService.log(action, target, metadata)` 在 key/project/org/member 敏感操作处调用，落 `audit_logs` 表，管理页可查（F-O-OPS-03）。
+
+### 6.6 SAML SSO 登录
+
+接入企业 IdP（光华平台）的 SAML 2.0 登录，与密码登录并存：
+
+| 端点 | 用途 |
+|------|------|
+| `GET /auth/sso/config` | 返回 IdP 元信息（entrySSOUrl / issuer），前端渲染 SSO Tab |
+| `POST /auth/sso/login` | 生成 `AuthnRequest`（含防重放 state）并重定向到 IdP |
+| `POST /auth/sso/acs` | Assertion Consumer Service：校验 SAML Response → 匹配/建号 → 签发一次性 code |
+| `POST /auth/sso/exchange` | 用一次性 code 换 JWT（access + refresh） |
+
+- **建号策略**：按 `ssoNameId` 匹配现有 User；未匹配则自动建 `authType=saml` 用户（`passwordHash` 为空）。
+- **SSO-only 用户禁止密码登录**：`passwordHash` 为空时密码登录接口直接拒绝。
+- `User` 表的 SSO 字段（`authType` / `ssoProvider` / `ssoNameId` / `ssoAttributes` / `lastSsoLoginAt`）见 §四.1。
+- 前端登录页提供「密码 / SSO」Tab 切换（见 §十）。
 
 ---
 
@@ -668,27 +729,36 @@ def post_ingest(events, *, public_key, secret_key, host):
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/api/orgs/:org/projects` | 组织下项目看板（每项目最新运行、运行总数） |
+| GET | `/api/orgs/:org/projects` | 组织下项目看板（每项目最新运行、运行总数、创建者） |
 | GET | `/api/projects/:id` | 项目详情 |
 | GET | `/api/projects/:id/runs` | 运行列表（`?mode&rule_set_version&from&to&order&page&size`） |
-| GET | `/api/projects/:id/trends` | 趋势（`?metric&from&to&limit`） |
+| GET | `/api/projects/:id/trends` | Run 级趋势（`?from&to&limit`） |
+| GET | `/api/projects/:id/samples` | 样本清单（distinct `externalSampleId` + 评估次数 + 最近指标） |
+| GET | `/api/projects/:id/sample-trends` | 样本级走势（`?sample_id&limit`，某样本跨 run 指标时序） |
 | GET | `/api/runs/:id` | 运行详情 |
 | GET | `/api/runs/:id/samples/:sid` | 样本详情（约束 + 溯源 + 制品） |
+| DELETE | `/api/projects/:id` | 永久删除项目（owner；DB 级联 + 对象存储回收 + 审计） |
+| DELETE | `/api/runs/:id` | 永久删除运行（owner；同上） |
 | GET | `/api/artifacts/:id` | 制品下载（presigned 重定向） |
+| GET | `/api/artifacts/:id/preview` | 制品预览元信息（image 直链 / 其余同源 raw 代理 URL） |
+| GET | `/api/artifacts/:id/raw` | 制品同源流式代理（专用 artifact token 鉴权，见 §5.4） |
 
 ### 9.2 趋势聚合 SQL（示例）
 
 ```sql
 SELECT external_run_id AS run_id,
        created_at,
-       dr AS "DR", cpr AS "CPR", avg_reward AS "Reward"
+       dr AS "DR", cpr AS "CPR", avg_reward AS "Reward",
+       avg_soft AS "Soft", avg_pref AS "Pref"
 FROM runs
-WHERE project_id = $1 AND created_at BETWEEN $2 AND $3
+WHERE project_id = $1
+  AND project_id IN (SELECT id FROM projects WHERE org_id = $2)   -- orgId 双层隔离
+  AND created_at BETWEEN $3 AND $4
 ORDER BY created_at ASC
-LIMIT $4;
+LIMIT $5;
 ```
 
-> 因核心指标已为一等列，趋势查询走索引扫描，无需 JSONB 解包。
+> 因核心指标已为一等列（含 `avg_soft`/`avg_pref`），趋势查询走索引扫描，无需 JSONB 解包；`project_id IN (org 的 projects)` 是租户隔离的强制条件（与 §六.4 同范式），越权 404。
 
 ### 9.3 物化视图（可选，Sprint 7g）
 
@@ -701,16 +771,60 @@ CREATE INDEX ON project_trends_mv (project_id, day);
 -- REFRESH MATERIALIZED VIEW CONCURRENTLY project_trends_mv;  （定时任务）
 ```
 
+### 9.4 样本级走势（Run 级 vs Sample 级）
+
+走势分两个粒度，二者并存、互不替代：
+
+| 走势类型 | 粒度 | 主指标 | 数据来源 |
+|----------|------|--------|----------|
+| Run 走势（§9.2） | Run（一次评估） | DR / CPR / Reward（跨样本聚合率） | `runs` 表 |
+| **样本走势** | Sample（一个样本） | `reward`（综合评分）+ `s_format`/`s_common` 达标 | `samples` 表，按 `externalSampleId` 跨 run 聚合 |
+
+> 单 Project 多样本是生产常态（API Key 一次配置、绑定单一 Project，同 Project 下评估多个样本）。Run 走势看整体水位，**样本走势看每个样本随时间的演进**。样本以 `externalSampleId`（**逻辑课件标识**，跨版本稳定）为唯一键聚合；内容变更（课件优化）记录在 `content_hash`、不改变 `sample_id`，故同课件走势连续——内容哈希会随优化而变，不能作为聚合键。
+
+**样本清单 SQL**（`GET /projects/:id/samples`，窗口函数取每个样本最近一次评估）：
+
+```sql
+WITH ranked AS (
+  SELECT s.external_sample_id, s.reward, s.status, s.content_hash, r.created_at,
+         COUNT(*) OVER (PARTITION BY s.external_sample_id)::bigint AS eval_count,
+         ROW_NUMBER() OVER (PARTITION BY s.external_sample_id ORDER BY r.created_at DESC) AS rn
+  FROM samples s JOIN runs r ON s.run_id = r.id
+  WHERE s.project_id = $1
+    AND s.project_id IN (SELECT id FROM projects WHERE org_id = $2)
+)
+SELECT external_sample_id, eval_count, created_at, reward, status, content_hash
+FROM ranked WHERE rn = 1
+ORDER BY created_at DESC;
+```
+
+**样本走势 SQL**（`GET /projects/:id/sample-trends?sample_id=<externalSampleId>`）：
+
+```sql
+SELECT r.external_run_id AS run_id, r.created_at,
+       s.reward, s.s_format, s.s_common, s.s_soft, s.s_pref, s.status, s.content_hash
+FROM samples s JOIN runs r ON s.run_id = r.id
+WHERE s.project_id = $1
+  AND s.external_sample_id = $2
+  AND s.project_id IN (SELECT id FROM projects WHERE org_id = $3)
+ORDER BY r.created_at ASC
+LIMIT $4;
+```
+
+> 样本走势主轴用 `reward`（连续综合分，能反映样本质量随迭代/规则演进的变化）；单样本的 DR/CPR 是布尔值、走势呈 0/1 阶跃、信息量低，故仅作 `s_format`/`s_common` 达标辅助。隔离仍由 `project_id IN (org 的 projects)` 强制（与 §9.2 同范式），越权 404。
+
 ---
 
 ## 十、前端改造
 
-- **登录态**：新增登录/注册页；`App.tsx` 顶层路由守卫，无 token 跳登录；axios 拦截器自动刷新 access_token。
-- **组织/项目切换器**：顶栏组件，切换后写入 context，所有 API 调用带上当前 `org/project`。
-- **API client**：`src/api/client.ts` 调用 Query API（连 DB，不再读 workspace 文件）；TS 类型定义 Project/RunSummary/TrendDataPoint 等。
+- **登录态**：独立「登录页 / 注册页 / 团队加入页」三页面；登录页提供「密码 / SSO」Tab 切换（SSO 流程：GET config → POST login → ACS callback → POST exchange）；`App.tsx` 顶层路由守卫，无 token 跳登录；axios 拦截器自动刷新 access_token。
+- **团队中心流程**：注册成功后若无团队，引导「创建团队」或「发现团队并申请加入」（`join_requests`）；顶栏组织切换器，切换后写入 context，所有 API 调用带上当前 `org/project`。
+- **API client**：`src/api/client.ts` 调用 Query API（连 DB，不再读 workspace 文件）；TS 类型定义 Project / RunSummary / TrendDataPoint / SampleSummary / SampleTrendPoint 等。
 - **页面映射**：ProjectList/ProjectDetail/RunDetail/TaskDetail 等页面**新建**（Sprint 7a 的本地查看器前端已移除），数据源为 Query API；目录模式（DirectoryTree/ModuleScoreTable）按 `module_results` 字段切换。
-- **制品预览**：任务详情页对 `artifact.kind`（screenshot/judge_record/output）提供预览，URL 由 `/api/artifacts/:id` 重定向的 presigned GET。
+- **样本 Tab（项目页）**：项目页新增「样本」Tab——样本清单表（`externalSampleId` / 最近评估时间 / 最近 Reward / 评估次数 / 状态 / 内容版本）；点样本进入样本走势视图：该样本 `reward` 跨 run 走势图（复用 LineChart）+ 历次评估明细表（时间 / run / reward / s_format / s_common / 状态 / `content_hash`）。与运行视图互补：运行视图看「每次评估评了什么」，样本视图看「每个样本随时间的演进」。
+- **制品预览**：任务详情页对 `artifact.kind`（screenshot/judge_record/output）提供预览，经 `GET /api/artifacts/:id/preview` 取 URL——image 走 presigned 直链，html/text/trace 走同源 raw 代理（`/raw?token=`，见 §5.4）。
 - **Langfuse 跳转**：运行/任务详情页，若 `langfuse_trace_id` 存在，渲染"在 Langfuse 查看"按钮 → `${langfuse_host}/trace/${langfuse_trace_id}`。
+- **危险操作**：项目/运行永久删除置于「危险区」，需输入项目 slug 二次确认（owner only）。
 
 ---
 
@@ -745,7 +859,7 @@ CREATE INDEX ON project_trends_mv (project_id, day);
 services:
   postgres: { image: postgres:16, env: [POSTGRES_PASSWORD=...], volumes: ["pgdata:/var/lib/postgresql/data"] }
   minio:    { image: minio/minio, command: server /data, ports: ["9000:9000"], env: [MINIO_ROOT_USER=..., MINIO_ROOT_PASSWORD=...] }
-  platform: { build: ./web/backend, env_file: .env, ports: ["3000:3000"], depends_on: [postgres, minio] }
+  web: { build: ./web/backend, env_file: .env, ports: ["9000:9000"], depends_on: [postgres, minio] }
 volumes: { pgdata: {} }
 ```
 
@@ -791,6 +905,8 @@ volumes: { pgdata: {} }
 - 脱敏：日志/错误对 key、邮箱掩码（`pk-eval-ab**`）。
 - 输入校验：事件严格过 schema；非法不落库。
 - 隔离：数据访问层强制过滤 + 越权集成测试（见 §十四）。
+- 永久删除：项目/运行删除为 owner 专属，DB 级联 + 对象存储批量回收（`deleteObjects`）+ 审计日志，不可恢复（前端二次确认）。
+- 制品预览 token：raw 代理专用短期 token（TTL 5min，绑定 `artifactId` + `objectKey`），不暴露长期凭证。
 - 最小权限：API Key 仅 `ingest` + 仅本项目；Web 用户按组织/项目。
 
 ---
@@ -814,3 +930,4 @@ volumes: { pgdata: {} }
 | 版本 | 日期 | 变更内容 |
 |------|------|----------|
 | v1.0 | 2026-06-16 | 初版：基于 [03Web 可观测平台重构需求](../requirement/03Web可观测平台重构需求.md) 给出分层架构、后端工程结构、Prisma 数据模型 DDL、对象存储抽象、JWT+HMAC 认证与多租户隔离、Ingestion 摄取服务（事件 schema/幂等/校验/限流/两段式制品上传）、评估器 ResultSink 对接、Query API 与聚合、前端改造、迁移回填、部署运维、安全与测试策略 |
+| v1.1 | 2026-06-29 | 同步代码 + 合并原 14《样本级评估走势设计》：数据模型补 User SSO 字段 / `JoinRequest` / `ApiKey.secretEncrypted` / `Run.avgSoft,avgPref` / `Sample.contentHash`；§6.1 改团队中心模型（注册不自动建 Org + 申请审批），新增 §6.6 SAML SSO；§九 Query API 补 `samples`/`sample-trends`/DELETE 端点 + §9.4 样本级走势（Run 级 vs Sample 级，合并自原 doc 14）；§5.4 制品同源预览代理（raw + artifact token）；ObjectStorage 补 `deleteObjects`；§4.3 `make db-init` 替代 schema.sql；趋势 SQL 补 orgId 隔离 + Soft/Pref；前端补样本 Tab + 走势视图 + 登录/注册/加入页拆分 + SSO Tab |

@@ -14,7 +14,7 @@ class ObservabilityDefaults:
     """可观测平台对接默认参数。"""
 
     # 未设置 AGENT_EVAL_HOST 时的默认平台地址（本地 docker compose 起栈）。
-    host: str = "http://localhost:3000"
+    host: str = "http://localhost:9000"
 
     # 摄取端点（HMAC 鉴权）。
     ingest_path: str = "/api/public/ingest"

@@ -15,12 +15,19 @@ from pathlib import Path
 from typing import Any
 
 from agent_eval.config import EVALUATOR_DEFAULTS
+from agent_eval.core.exceptions import (
+    LLMAuthError,
+    LLMNetworkError,
+    LLMQuotaExceededError,
+    LLMRateLimitError,
+    ProviderNotFoundError,
+)
 from agent_eval.core.types import ConstraintTier, EvalMethod, EvalStatus
 from agent_eval.evaluation.base import BaseEvaluator
-from agent_eval.evaluation.evaluators.commonsense_evaluators import _get_output_dir
 from agent_eval.evaluation.models import ConstraintResult
 from agent_eval.evaluation.registry import registry
 from agent_eval.evaluation.text_utils import collect_text_content
+from agent_eval.evaluation.text_utils import get_output_dir as _get_output_dir
 
 # ─── LLM Judge 评估器 ───
 
@@ -34,6 +41,7 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
     """
 
     template_id: str = ""  # 子类必须设置
+    pass_threshold: float | None = None  # HARD_SCORE 二值阈值；None=连续分（SOFT/PREF）
 
     def evaluate(self, sample: Any, context: dict[str, Any]) -> ConstraintResult:
         import time
@@ -45,15 +53,25 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
         evidence_dir = context.get("evidence_dir")
 
         if orchestrator is None or evidence_dir is None:
-            # 降级模式：LLM 不可用时默认通过
+            # LLM 不可用：跳过该评估器，不计入得分（避免默认 PASS 令 reward 虚高）
             elapsed = (time.monotonic() - start) * 1000
             return ConstraintResult(
                 constraint_id=self.evaluator_id,
                 name=self.name,
                 tier=self.tier,
-                status=EvalStatus.PASS,
-                score=EVALUATOR_DEFAULTS.llm_degrade_score,
-                reason=f"{self.name}（LLM 不可用，降级模式默认 {EVALUATOR_DEFAULTS.llm_degrade_score}）",
+                status=EvalStatus.SKIP,
+                score=0.0,
+                reason=f"{self.name}（LLM 不可用，已跳过，不计入得分）",
+                duration_ms=elapsed,
+            )
+
+        # 熔断：同 sample 内已检测到额度耗尽，后续 LLM 评估器直接跳过
+        if context.get("llm_quota_exhausted"):
+            elapsed = (time.monotonic() - start) * 1000
+            return self._make_result(
+                status=EvalStatus.SKIP,
+                score=0.0,
+                reason=f"{self.name}（LLM 额度耗尽，已熔断跳过，不计入得分）",
                 duration_ms=elapsed,
             )
 
@@ -86,6 +104,30 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
                 context=context,
                 evidence_dir=evidence_dir,
                 provider_name=self.params.get("llm_provider"),
+            )
+        except LLMQuotaExceededError as e:
+            # 额度耗尽：设置熔断标志，同 sample 后续 LLM 评估器直接跳过
+            context["llm_quota_exhausted"] = True
+            elapsed = (time.monotonic() - start) * 1000
+            return self._make_result(
+                status=EvalStatus.SKIP,
+                score=0.0,
+                reason=f"{self.name}（LLM 不可用：{type(e).__name__}，已跳过，不计入得分）",
+                duration_ms=elapsed,
+            )
+        except (
+            LLMAuthError,
+            LLMNetworkError,
+            LLMRateLimitError,
+            ProviderNotFoundError,
+        ) as e:
+            # LLM 不可用（鉴权失败/网络/限流/未配置）→ 跳过，不计分、不 FAIL
+            elapsed = (time.monotonic() - start) * 1000
+            return self._make_result(
+                status=EvalStatus.SKIP,
+                score=0.0,
+                reason=f"{self.name}（LLM 不可用：{type(e).__name__}，已跳过，不计入得分）",
+                duration_ms=elapsed,
             )
         except Exception as e:
             elapsed = (time.monotonic() - start) * 1000
@@ -154,14 +196,25 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
             judge_id = record.judge_id
             record_path = f"evidence/{judge_id}.json"
 
+        # HARD_SCORE（pass_threshold 设值）→ 二值；SOFT/PREF（None）→ 连续分
+        if self.pass_threshold is not None:
+            passed = normalized >= self.pass_threshold
+            status = EvalStatus.PASS if passed else EvalStatus.FAIL
+            score = 1.0 if passed else 0.0
+        else:
+            status = (
+                EvalStatus.PASS
+                if normalized >= EVALUATOR_DEFAULTS.llm_judge_pass_threshold
+                else EvalStatus.FAIL
+            )
+            score = normalized
+
         return ConstraintResult(
             constraint_id=self.evaluator_id,
             name=self.name,
             tier=self.tier,
-            status=EvalStatus.PASS
-            if normalized >= EVALUATOR_DEFAULTS.llm_judge_pass_threshold
-            else EvalStatus.FAIL,
-            score=normalized,
+            status=status,
+            score=score,
             reason=reason,
             details=details,
             duration_ms=elapsed,

@@ -16,7 +16,7 @@ from agent_eval.core.types import ConstraintTier, EvalStatus
 class ConstraintResult:
     """单项约束检查结果。"""
 
-    constraint_id: str  # 如 "format.document_count"
+    constraint_id: str  # 如 "format.response_format"
     name: str
     tier: ConstraintTier
     status: EvalStatus
@@ -100,6 +100,7 @@ class SampleResult:
 
     sample_id: str
     status: EvalStatus
+    content_hash: str | None = None
     stage_results: dict[str, StageResult] = field(default_factory=dict)
     s_format: float = 0.0
     s_common: float = 0.0
@@ -114,6 +115,7 @@ class SampleResult:
         """序列化为字典。"""
         return {
             "sample_id": self.sample_id,
+            "content_hash": self.content_hash,
             "status": self.status.value,
             "stage_results": {k: v.to_dict() for k, v in self.stage_results.items()},
             "s_format": self.s_format,
@@ -168,12 +170,15 @@ class MetricsReport:
     total_samples: int = 0
     dr: float = 0.0  # Delivery Rate（交付率）
     cpr: float = 0.0  # Constraint Pass Rate（约束通过率）
-    avg_reward: float = 0.0  # 平均 Reward
+    avg_reward: float = 0.0  # 平均 Reward（综合评分）
+    avg_soft: float = 0.0  # 平均内容质量分（SOFT 维度，独立指标）
+    avg_pref: float = 0.0  # 平均用户偏好分（PREFERENCE 维度，独立指标）
     cond_r: float = 0.0  # Conditional Reward（条件 Reward）
     avg_time_ms: float = 0.0  # 平均耗时
     sample_scores: list[SampleScore] = field(default_factory=list)
     failure_breakdown: dict[str, int] = field(default_factory=dict)
     thresholds: dict[str, dict[str, Any]] = field(default_factory=dict)
+    llm_skipped: int = 0  # 因 LLM 不可用而跳过的约束数
 
     def to_dict(self) -> dict[str, Any]:
         """序列化为字典。"""
@@ -184,8 +189,11 @@ class MetricsReport:
                 "DR": self.dr,
                 "CPR": self.cpr,
                 "avg_reward": self.avg_reward,
+                "avg_soft": self.avg_soft,
+                "avg_pref": self.avg_pref,
                 "condR": self.cond_r,
                 "avg_time_ms": self.avg_time_ms,
+                "llm_skipped": self.llm_skipped,
             },
             "thresholds": self.thresholds,
             "failure_breakdown": self.failure_breakdown,

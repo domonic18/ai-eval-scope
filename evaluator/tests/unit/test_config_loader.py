@@ -80,7 +80,7 @@ class TestLoadRuleSet:
     def test_load_rule_set_model(self) -> None:
         rs = ConfigLoader.load_rule_set(CONFIGS / "rule_set.yaml")
         assert rs.version == "1.0"
-        assert len(rs.rules) == 2
+        assert len(rs.rules) == 1
         assert rs.rules[0].evaluator == "format.response_format"
 
     def test_load_rule_set_dimensions(self) -> None:

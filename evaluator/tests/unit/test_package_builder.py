@@ -273,3 +273,71 @@ class TestExecutionPackageLoad:
 
         pkg2 = ExecutionPackage.load(save_dir)
         assert pkg2.manifest.task_id == pkg.manifest.task_id
+
+
+def _make_source(root: Path, files: dict[str, str]) -> Path:
+    """在 root 下按 {相对路径: 内容} 创建文件，返回 root。"""
+    root.mkdir(parents=True, exist_ok=True)
+    for rel, content in files.items():
+        target = root / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8")
+    return root
+
+
+class TestOverwriteSemantics:
+    """pack 覆盖语义：同一 package_dir 跨次打包不残留上次产物。"""
+
+    def test_build_directory_overwrites_no_residue(
+        self,
+        builder: PackageBuilder,
+        directory_task: Task,
+        tmp_path: Path,
+    ) -> None:
+        pkg_dir = tmp_path / "pkg"
+        src_a = _make_source(
+            tmp_path / "src_a",
+            {
+                "moduleA/a1.html": "<html>a1</html>",
+                "moduleA/a2.html": "<html>a2</html>",
+                "moduleB/b1.html": "<html>b1</html>",
+            },
+        )
+        src_b = _make_source(
+            tmp_path / "src_b",
+            {"moduleB/b1.html": "<html>b1-new</html>"},
+        )
+
+        # 评 A（moduleA + moduleB）后评 B（仅 moduleB）到同一 package
+        builder.build_directory(task=directory_task, source_dir=src_a, package_dir=pkg_dir)
+        builder.build_directory(task=directory_task, source_dir=src_b, package_dir=pkg_dir)
+
+        output = pkg_dir / "output"
+        assert not (output / "moduleA").exists()  # A 的子目录被清空
+        htmls = sorted(p.relative_to(output).as_posix() for p in output.rglob("*.html"))
+        assert htmls == ["moduleB/b1.html"]
+
+    def test_build_inline_overwrites_no_residue(
+        self,
+        builder: PackageBuilder,
+        sample_task: Task,
+        tmp_path: Path,
+    ) -> None:
+        pkg_dir = tmp_path / "pkg"
+        files = {tmp_path / n: n for n in ("a.md", "b.md", "c.md")}
+        for path, content in files.items():
+            path.write_text(content, encoding="utf-8")
+
+        builder.build_inline(
+            task=sample_task,
+            output_files=[tmp_path / "a.md", tmp_path / "b.md"],
+            package_dir=pkg_dir,
+        )
+        builder.build_inline(
+            task=sample_task,
+            output_files=[tmp_path / "c.md"],
+            package_dir=pkg_dir,
+        )
+
+        names = sorted(p.name for p in (pkg_dir / "output").iterdir())
+        assert names == ["c.md"]

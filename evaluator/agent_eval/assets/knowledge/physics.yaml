@@ -1,383 +1,4223 @@
-# 物理知识准确性规则
-# 覆盖范围：小学科学至初中物理
-# 被 InfoAccuracyEvaluator 加载用于事实校验
-
-subject: "physics"
-description: "物理知识准确性规则（小学科学至初中物理）"
-version: "1.0"
-
-# ─── 物理常数 ───────────────────────────────────────────
-# extract_pattern: 从文档中提取数值的正则（需包含一个捕获组）
-# value: 标准值
-# tolerance: 允许偏差
-
+subject: physics
+description: 物理知识准确性规则（小学科学至初中物理）
+version: '1.0'
 constants:
-  # ─── 力学常数 ───
-
-  - name: "重力加速度 g (m/s²)"
-    extract_pattern: "(?:重力加速度|g)\\s*(?:≈|＝|=|约为|约|取)\\s*(\\d+\\.?\\d*)\\s*(?:m/s²|m/s\\^2|米每二次方秒|米/秒²)"
-    value: 9.8
-    tolerance: 0.15
-    description: "g ≈ 9.8 m/s²"
-
-  - name: "重力加速度 g (N/kg)"
-    extract_pattern: "(?:地球表面|地面附近).*重力加速度\\s*(?:≈|＝|=|约为|约)\\s*(\\d+\\.?\\d*)\\s*(?:N/kg|牛每千克|牛/千克)"
-    value: 9.8
-    tolerance: 0.15
-    description: "g ≈ 9.8 N/kg（地球表面）"
-
-  # ─── 密度常数 ───
-
-  - name: "水的密度"
-    extract_pattern: "(?:水的密度|纯水密度|常温下水的密度)\\s*(?:≈|＝|=|约为|约|为)\\s*(\\d[\\d,]*(?:\\.\\d+)?)\\s*(?:kg/m³|千克每立方米|kg/m\\^3|千克/立方米)"
-    value: 1000
-    tolerance: 50
-    description: "水的密度 ≈ 1000 kg/m³ = 1 g/cm³（4°C时精确值）"
-
-  - name: "水的密度 (g/cm³)"
-    extract_pattern: "(?:水的密度|纯水密度)\\s*(?:≈|＝|=|约为|约|为)\\s*(\\d+\\.?\\d*)\\s*(?:g/cm³|克每立方厘米|g/cm\\^3|克/厘米³)"
-    value: 1.0
-    tolerance: 0.05
-    description: "水的密度 ≈ 1 g/cm³"
-
-  # ─── 温度常数 ───
-
-  - name: "水的沸点 (标准大气压)"
-    extract_pattern: "(?:水的沸点|水沸腾|纯水沸点)\\s*(?:≈|＝|=|约为|约|为|是)\\s*(\\d+\\.?\\d*)\\s*°?C?"
-    value: 100
-    tolerance: 1
-    description: "水在1标准大气压下的沸点 = 100°C"
-
-  - name: "水的冰点"
-    extract_pattern: "(?:水的冰点|水的凝固点|水结冰|纯水凝固点)\\s*(?:≈|＝|=|约为|约|为|是)\\s*[零下负−-]?\\s*(\\d+\\.?\\d*)\\s*°?C?"
-    value: 0
-    tolerance: 0.5
-    description: "水在1标准大气压下的冰点 = 0°C"
-
-  # ─── 压强常数 ───
-
-  - name: "标准大气压"
-    extract_pattern: "(?:标准大气压|1个标准大气压|一个标准大气压|1\\s*atm)\\s*(?:≈|＝|=|约为|约|为)\\s*(\\d[\\d,]*(?:\\.\\d+)?)\\s*(?:Pa|帕斯卡|千帕|hPa)"
-    value: 101325
-    tolerance: 500
-    description: "1标准大气压 = 101325 Pa ≈ 1.013×10⁵ Pa"
-
-  - name: "标准大气压 (kPa)"
-    extract_pattern: "(?:标准大气压|1\\s*atm)\\s*(?:≈|＝|=|约为|约)\\s*(\\d+\\.?\\d*)\\s*(?:kPa|千帕)"
-    value: 101.325
-    tolerance: 0.5
-    description: "1标准大气压 ≈ 101.325 kPa"
-
-  # ─── 声学常数 ───
-
-  - name: "声速 (空气中, 15°C)"
-    extract_pattern: "(?:声速|声音在空气中的速度|空气中声速|声音速度)\\s*(?:≈|＝|=|约为|约)\\s*(\\d+\\.?\\d*)\\s*(?:m/s|米每秒|米/秒)"
-    value: 340
-    tolerance: 20
-    description: "空气中声速 ≈ 340 m/s（15°C, 1atm）"
-
-  # ─── 其他常见常数 ───
-
-  - name: "安全电压"
-    extract_pattern: "(?:安全电压|人体安全电压)\\s*(?:≤|不高于|不超过|≤|<=|＝|=|为)\\s*(\\d+)\\s*V?"
-    value: 36
-    tolerance: 0
-    description: "安全电压 ≤ 36V"
-
-  - name: "家庭电路电压"
-    extract_pattern: "(?:家庭电路|家用|市电|照明电路).*电压\\s*(?:≈|＝|=|约为|约|为|是)\\s*(\\d+)\\s*V?"
-    value: 220
-    tolerance: 20
-    description: "中国家庭电路电压 = 220V"
-
-# ─── 常见物理错误模式 ─────────────────────────────────
-# pattern: 匹配可能的错误表述
-# correct: 正确信息
-# severity: error（确信错误）或 warning（可能误报）
-
+- name: 重力加速度 g (m/s²)
+  extract_pattern: (?:重力加速度|g)\s*(?:≈|＝|=|约为|约|取)\s*(\d+\.?\d*)\s*(?:m/s²|m/s\^2|米每二次方秒|米/秒²)
+  value: 9.8
+  tolerance: 0.15
+  description: g ≈ 9.8 m/s²
+- name: 重力加速度 g (N/kg)
+  extract_pattern: (?:地球表面|地面附近).*重力加速度\s*(?:≈|＝|=|约为|约)\s*(\d+\.?\d*)\s*(?:N/kg|牛每千克|牛/千克)
+  value: 9.8
+  tolerance: 0.15
+  description: g ≈ 9.8 N/kg（地球表面）
+- name: 水的密度
+  extract_pattern: (?:水的密度|纯水密度|常温下水的密度)\s*(?:≈|＝|=|约为|约|为)\s*(\d[\d,]*(?:\.\d+)?)\s*(?:kg/m³|千克每立方米|kg/m\^3|千克/立方米)
+  value: 1000
+  tolerance: 50
+  description: 水的密度 ≈ 1000 kg/m³ = 1 g/cm³（4°C时精确值）
+- name: 水的密度 (g/cm³)
+  extract_pattern: (?:水的密度|纯水密度)\s*(?:≈|＝|=|约为|约|为)\s*(\d+\.?\d*)\s*(?:g/cm³|克每立方厘米|g/cm\^3|克/厘米³)
+  value: 1.0
+  tolerance: 0.05
+  description: 水的密度 ≈ 1 g/cm³
+- name: 水的沸点 (标准大气压)
+  extract_pattern: (?:水的沸点|水沸腾|纯水沸点)\s*(?:≈|＝|=|约为|约|为|是)\s*(\d+\.?\d*)\s*°?C?
+  value: 100
+  tolerance: 1
+  description: 水在1标准大气压下的沸点 = 100°C
+- name: 水的冰点
+  extract_pattern: (?:水的冰点|水的凝固点|水结冰|纯水凝固点)\s*(?:≈|＝|=|约为|约|为|是)\s*[零下负−-]?\s*(\d+\.?\d*)\s*°?C?
+  value: 0
+  tolerance: 0.5
+  description: 水在1标准大气压下的冰点 = 0°C
+- name: 标准大气压
+  extract_pattern: (?:标准大气压|1个标准大气压|一个标准大气压|1\s*atm)\s*(?:≈|＝|=|约为|约|为)\s*(\d[\d,]*(?:\.\d+)?)\s*(?:Pa|帕斯卡|千帕|hPa)
+  value: 101325
+  tolerance: 500
+  description: 1标准大气压 = 101325 Pa ≈ 1.013×10⁵ Pa
+- name: 标准大气压 (kPa)
+  extract_pattern: (?:标准大气压|1\s*atm)\s*(?:≈|＝|=|约为|约)\s*(\d+\.?\d*)\s*(?:kPa|千帕)
+  value: 101.325
+  tolerance: 0.5
+  description: 1标准大气压 ≈ 101.325 kPa
+- name: 声速 (空气中, 15°C)
+  extract_pattern: (?:声速|声音在空气中的速度|空气中声速|声音速度)\s*(?:≈|＝|=|约为|约)\s*(\d+\.?\d*)\s*(?:m/s|米每秒|米/秒)
+  value: 340
+  tolerance: 20
+  description: 空气中声速 ≈ 340 m/s（15°C, 1atm）
+- name: 安全电压
+  extract_pattern: (?:安全电压|人体安全电压)\s*(?:≤|不高于|不超过|≤|<=|＝|=|为)\s*(\d+)\s*V?
+  value: 36
+  tolerance: 0
+  description: 安全电压 ≤ 36V
+- name: 家庭电路电压
+  extract_pattern: (?:家庭电路|家用|市电|照明电路).*电压\s*(?:≈|＝|=|约为|约|为|是)\s*(\d+)\s*V?
+  value: 220
+  tolerance: 20
+  description: 中国家庭电路电压 = 220V
+- name: 铁的密度 (g/cm³)
+  value: 7.9
+  tolerance: 0.1
+  extract_pattern: 铁.*?密度[^\d]*(\d+\.?\d*)
+  description: 铁的密度约为 7.9 g/cm³ = 7.9×10³ kg/m³
+  source: physics_reference
+- name: 铜的密度 (g/cm³)
+  value: 8.9
+  tolerance: 0.1
+  extract_pattern: 铜.*?密度[^\d]*(\d+\.?\d*)
+  description: 铜的密度约为 8.9 g/cm³ = 8.9×10³ kg/m³
+  source: physics_reference
+- name: 铝的密度 (g/cm³)
+  value: 2.7
+  tolerance: 0.1
+  extract_pattern: 铝.*?密度[^\d]*(\d+\.?\d*)
+  description: 铝的密度约为 2.7 g/cm³ = 2.7×10³ kg/m³
+  source: physics_reference
+- name: 冰的密度 (g/cm³)
+  value: 0.9
+  tolerance: 0.05
+  extract_pattern: 冰.*?密度[^\d]*(\d+\.?\d*)
+  description: 冰的密度约为 0.9 g/cm³ = 0.9×10³ kg/m³
+  source: physics_reference
+- name: 水银的密度 (g/cm³)
+  value: 13.6
+  tolerance: 0.2
+  extract_pattern: 水银.*?密度[^\d]*(\d+\.?\d*)
+  description: 水银（汞）的密度约为 13.6 g/cm³ = 13.6×10³ kg/m³
+  source: physics_reference
+- name: 酒精的密度 (g/cm³)
+  value: 0.8
+  tolerance: 0.05
+  extract_pattern: 酒精.*?密度[^\d]*(\d+\.?\d*)
+  description: 酒精的密度约为 0.8 g/cm³ = 0.8×10³ kg/m³
+  source: physics_reference
+- name: 煤油的密度 (g/cm³)
+  value: 0.8
+  tolerance: 0.05
+  extract_pattern: 煤油.*?密度[^\d]*(\d+\.?\d*)
+  description: 煤油的密度约为 0.8 g/cm³ = 0.8×10³ kg/m³
+  source: physics_reference
+- name: 一节干电池电压 (V)
+  value: 1.5
+  tolerance: 0
+  extract_pattern: (?:一节|单节)?\s*干电池[^\d]*(\d+\.?\d*)\s*V
+  description: 一节干电池电压为 1.5V
+  source: physics_reference
+- name: 一节铅蓄电池电压 (V)
+  value: 2.0
+  tolerance: 0
+  extract_pattern: (?:一节|单节)\s*(?:铅|铅酸)?蓄电池[^\d]*(\d+\.?\d*)\s*V
+  description: 一节铅蓄电池电压为 2V
+  source: physics_reference
+- name: 汽车蓄电池电压 (V)
+  value: 12
+  tolerance: 0
+  extract_pattern: (?:汽车|轿车).*?(?:蓄电池|电瓶)[^\d]*(\d+)\s*V
+  description: 汽车蓄电池电压约为 12V（6 节铅蓄电池串联）
+  source: physics_reference
+- name: 工业动力电压 (V)
+  value: 380
+  tolerance: 5
+  extract_pattern: (?:工业|动力|三相).*?(?:线电压|电压)[^\d]*(\d+)\s*V
+  description: 工业三相动力线电压约为 380V
+  source: physics_reference
+- name: 水的折射率
+  value: 1.33
+  tolerance: 0.02
+  extract_pattern: 水.*?(?:的)?折射率[^\d]*(\d+\.?\d*)
+  description: 水的折射率约为 1.33（≈4/3）
+  source: physics_reference
+- name: 玻璃的折射率
+  value: 1.5
+  tolerance: 0.05
+  extract_pattern: 玻璃.*?(?:的)?折射率[^\d]*(\d+\.?\d*)
+  description: 普通玻璃的折射率约为 1.5
+  source: physics_reference
+- name: 标准大气压水银柱高 (cm)
+  value: 76
+  tolerance: 1
+  extract_pattern: (?:水银柱|汞柱).*?(?:高|高度|长约|约为)[^\d]*(\d+\.?\d*)\s*(?:cm|厘米)
+  description: 1 标准大气压能托起约 76cm 高的水银柱
+  source: physics_reference
+- name: 标准大气压水银柱高 (mmHg)
+  value: 760
+  tolerance: 10
+  extract_pattern: (?:水银柱|汞柱).*?(?:高|高度|长约|约为)[^\d]*(\d+)\s*(?:mm|毫米)
+  description: 1 标准大气压 = 760 mmHg
+  source: physics_reference
+- name: 人体正常体温 (℃)
+  value: 37
+  tolerance: 0.5
+  extract_pattern: (?:正常体温|人的体温|人体体温)[^\d]*(\d+\.?\d*)
+  description: 人体正常体温约为 37℃
+  source: physics_reference
 misconceptions:
-  # ─── 力学常见错误 ───
-
-  - pattern: "重力.*方向.*向下[^，。]|重力.*方向.*垂直向下"
-    correct: "重力的方向是竖直向下（不是'垂直向下'，垂直向下与接触面有关，竖直向下指向地心）"
-    description: "重力方向表述不准确：应为竖直向下而非垂直向下"
-    severity: "warning"
-
-  - pattern: "力.*(?:维持|保持).*(?:运动|物体运动)"
-    correct: "力是改变物体运动状态的原因，不是维持运动的原因（牛顿第一定律）"
-    description: "力不是维持运动的原因（亚里士多德观点的错误）"
-    severity: "error"
-
-  - pattern: "物体不受力.*(?:静止|停下|停下来|停止)"
-    correct: "牛顿第一定律：不受力的物体保持静止或匀速直线运动状态"
-    description: "物体不受力不一定静止，也可能匀速直线运动"
-    severity: "error"
-
-  - pattern: "惯性.*(?:是一种力|是力|力的|受到惯性|受到惯性力|惯性力)"
-    correct: "惯性不是力，是物体的固有属性，只与质量有关"
-    description: "惯性是物体属性不是力"
-    severity: "error"
-
-  - pattern: "质量.*(?:与|跟).*重力.*(?:成正比|有关|一样|相等)"
-    correct: "质量是物体本身属性，不随位置改变；重力与位置有关（G=mg）。质量不等于重力"
-    description: "质量和重力概念混淆"
-    severity: "warning"
-
-  - pattern: "失重.*(?:没有|无|不存在|失去).*重力"
-    correct: "失重不是没有重力，而是物体对支持物的压力（或对悬挂物的拉力）小于实际重力"
-    description: "失重不等于没有重力"
-    severity: "error"
-
-  # ─── 电学常见错误 ───
-
-  - pattern: "导体.*容易导电.*绝缘体.*不导电|绝缘体.*(?:完全不|绝对不|不能).*导电"
-    correct: "导体容易导电，绝缘体不容易导电但并非完全不导电（条件变化时可能导电）"
-    description: "绝缘体不是绝对不导电"
-    severity: "warning"
-
-  - pattern: "电流.*(?:从负极到正极|负极流向正极)"
-    correct: "电流方向：正极→外电路→负极（物理学规定正电荷移动方向为电流方向）"
-    description: "电流方向错误"
-    severity: "error"
-
-  # ─── 声学常见错误 ───
-
-  - pattern: "声音.*真空.*(?:传播|传递|通过)|真空.*声音.*(?:传播|通过)"
-    correct: "声音不能在真空中传播（声音的传播需要介质）"
-    description: "声音不能在真空中传播"
-    severity: "error"
-
-  - pattern: "声音.*(?:在空气中最快|空气中.*最快|空气.*传播最快)"
-    correct: "声音在固体中传播最快，其次是液体，气体中最慢"
-    description: "声音传播速度：固体>液体>气体"
-    severity: "error"
-
-  # ─── 热学常见错误 ───
-
-  - pattern: "温度高.*热量多|温度.*高.*热量.*多|温度.*热量"
-    correct: "温度和热量是不同概念：温度是状态量，热量是过程量，不能说温度高则热量多"
-    description: "温度高的物体不一定热量多"
-    severity: "error"
-
-  - pattern: "吸收热量.*温度.*(?:一定|必定|总是).*升高"
-    correct: "吸收热量温度不一定升高（如冰融化时吸热但温度保持0°C不变）"
-    description: "吸收热量不一定会导致温度升高（物态变化过程）"
-    severity: "warning"
-
-  # ─── 光学常见错误 ───
-
-  - pattern: "光年.*(?:时间|速度|单位是时间)"
-    correct: "光年是长度单位（光在一年内传播的距离），不是时间单位"
-    description: "光年是长度单位而非时间单位"
-    severity: "error"
-
-  - pattern: "反射.*入射角大于反射角|反射角小于入射角"
-    correct: "反射角等于入射角"
-    description: "反射定律：反射角等于入射角"
-    severity: "error"
-
-  # ─── 浮力常见错误 ───
-
-  - pattern: "浮力.*(?:与深度有关|越深浮力越大|深度越大浮力)"
-    correct: "浮力大小取决于排开液体的体积和液体密度（F_浮=ρ液gV_排），与物体浸没的深度无关"
-    description: "浮力与深度无关（完全浸没时）"
-    severity: "warning"
-
-  - pattern: "沉底的物体.*没有浮力|沉底.*不受浮力"
-    correct: "浸在液体中的物体都受到浮力，沉底只是浮力小于重力"
-    description: "沉底的物体同样受到浮力"
-    severity: "error"
-
-# ─── 学科领域知识 ─────────────────────────────────────
-
+- pattern: 重力.*方向.*向下[^，。]|重力.*方向.*垂直向下
+  correct: 重力的方向是竖直向下（不是'垂直向下'，垂直向下与接触面有关，竖直向下指向地心）
+  description: 重力方向表述不准确：应为竖直向下而非垂直向下
+  severity: warning
+- pattern: 力.*(?:维持|保持).*(?:运动|物体运动)
+  correct: 力是改变物体运动状态的原因，不是维持运动的原因（牛顿第一定律）
+  description: 力不是维持运动的原因（亚里士多德观点的错误）
+  severity: error
+- pattern: 物体不受力.*(?:静止|停下|停下来|停止)
+  correct: 牛顿第一定律：不受力的物体保持静止或匀速直线运动状态
+  description: 物体不受力不一定静止，也可能匀速直线运动
+  severity: error
+- pattern: 惯性.*(?:是一种力|是力|力的|受到惯性|受到惯性力|惯性力)
+  correct: 惯性不是力，是物体的固有属性，只与质量有关
+  description: 惯性是物体属性不是力
+  severity: error
+- pattern: 质量.*(?:与|跟).*重力.*(?:成正比|有关|一样|相等)
+  correct: 质量是物体本身属性，不随位置改变；重力与位置有关（G=mg）。质量不等于重力
+  description: 质量和重力概念混淆
+  severity: warning
+- pattern: 失重.*(?:没有|无|不存在|失去).*重力
+  correct: 失重不是没有重力，而是物体对支持物的压力（或对悬挂物的拉力）小于实际重力
+  description: 失重不等于没有重力
+  severity: error
+- pattern: 导体.*容易导电.*绝缘体.*不导电|绝缘体.*(?:完全不|绝对不|不能).*导电
+  correct: 导体容易导电，绝缘体不容易导电但并非完全不导电（条件变化时可能导电）
+  description: 绝缘体不是绝对不导电
+  severity: warning
+- pattern: 电流.*(?:从负极到正极|负极流向正极)
+  correct: 电流方向：正极→外电路→负极（物理学规定正电荷移动方向为电流方向）
+  description: 电流方向错误
+  severity: error
+- pattern: 声音.*真空.*(?:传播|传递|通过)|真空.*声音.*(?:传播|通过)
+  correct: 声音不能在真空中传播（声音的传播需要介质）
+  description: 声音不能在真空中传播
+  severity: error
+- pattern: 声音.*(?:在空气中最快|空气中.*最快|空气.*传播最快)
+  correct: 声音在固体中传播最快，其次是液体，气体中最慢
+  description: 声音传播速度：固体>液体>气体
+  severity: error
+- pattern: 温度高.*热量多|温度.*高.*热量.*多|温度.*热量
+  correct: 温度和热量是不同概念：温度是状态量，热量是过程量，不能说温度高则热量多
+  description: 温度高的物体不一定热量多
+  severity: error
+- pattern: 吸收热量.*温度.*(?:一定|必定|总是).*升高
+  correct: 吸收热量温度不一定升高（如冰融化时吸热但温度保持0°C不变）
+  description: 吸收热量不一定会导致温度升高（物态变化过程）
+  severity: warning
+- pattern: 光年.*(?:时间|速度|单位是时间)
+  correct: 光年是长度单位（光在一年内传播的距离），不是时间单位
+  description: 光年是长度单位而非时间单位
+  severity: error
+- pattern: 反射.*入射角大于反射角|反射角小于入射角
+  correct: 反射角等于入射角
+  description: 反射定律：反射角等于入射角
+  severity: error
+- pattern: 浮力.*(?:与深度有关|越深浮力越大|深度越大浮力)
+  correct: 浮力大小取决于排开液体的体积和液体密度（F_浮=ρ液gV_排），与物体浸没的深度无关
+  description: 浮力与深度无关（完全浸没时）
+  severity: warning
+- pattern: 沉底的物体.*没有浮力|沉底.*不受浮力
+  correct: 浸在液体中的物体都受到浮力，沉底只是浮力小于重力
+  description: 沉底的物体同样受到浮力
+  severity: error
+- pattern: 湿手掌.*摩擦
+  correct: 干燥表面摩擦系数更大，干手掌摩擦生热更多
+  description: 误以为湿润表面摩擦力更大
+  severity: error
+  source: Mercury_SC_415702
+- pattern: 涂油的手掌.*摩擦
+  correct: 油会降低摩擦系数，涂油的手掌摩擦生热更少
+  description: 误以为油能增加摩擦生热
+  severity: error
+  source: Mercury_SC_415702
+- pattern: 涂乳液的手掌.*摩擦
+  correct: 乳液会减少摩擦系数，涂乳液的手掌摩擦生热更少
+  description: 误以为乳液能增加摩擦生热
+  severity: error
+  source: Mercury_SC_415702
+- pattern: 光滑.*磁铁
+  correct: 磁铁吸附冰箱门是因为门中含有铁，而不是因为表面光滑
+  description: 误以为表面光滑是磁铁吸附的原因
+  severity: error
+  source: MCAS_2009_5_6516
+- pattern: 导体.*磁铁
+  correct: 磁铁吸附冰箱门是因为门中含有铁，而不是因为门是良导体
+  description: 误以为导电性是磁铁吸附的原因
+  severity: error
+  source: MCAS_2009_5_6516
+- pattern: 电线.*磁铁
+  correct: 磁铁吸附冰箱门是因为门中含有铁，而不是因为门内有电线
+  description: 误以为门内电线是磁铁吸附的原因
+  severity: error
+  source: MCAS_2009_5_6516
+- pattern: 冷却.*流动岩浆.*褶皱
+  correct: 沉积岩层中的褶皱主要由地壳板块汇聚运动造成，而非岩浆冷却
+  description: 误以为岩浆冷却过程能形成沉积岩层中的褶皱
+  severity: error
+  source: Mercury_7233695
+- pattern: 河流沉积.*褶皱
+  correct: 沉积岩层中的褶皱是构造运动的结果，与河流沉积作用无关
+  description: 误以为河流沉积物的沉积过程能形成褶皱
+  severity: error
+  source: Mercury_7233695
+- pattern: 碳酸盐矿物溶解.*褶皱
+  correct: 沉积岩层中的褶皱由地壳板块汇聚引起，而非碳酸盐矿物的溶解作用
+  description: 误以为碳酸盐矿物的化学溶解能形成褶皱
+  severity: error
+  source: Mercury_7233695
+- pattern: 全球性疾病.*恐龙灭绝
+  correct: 主流科学解释是陨石撞击导致尘埃遮蔽阳光，而非全球性疾病
+  description: 误以为全球性疾病是恐龙灭绝的主要原因
+  severity: error
+  source: Mercury_7041615
+- pattern: 全球造山运动.*恐龙灭绝
+  correct: 主流科学解释是陨石撞击导致尘埃遮蔽阳光，而非全球造山运动
+  description: 误以为全球造山运动是恐龙灭绝的主要原因
+  severity: error
+  source: Mercury_7041615
+- pattern: 哺乳动物兴起.*捕食.*恐龙灭绝
+  correct: 主流科学解释是陨石撞击导致尘埃遮蔽阳光，而非哺乳动物捕食
+  description: 误以为哺乳动物捕食是恐龙灭绝的主要原因
+  severity: error
+  source: Mercury_7041615
+- pattern: 风向向北吹
+  correct: 河流已向北提供力，若风也向北，船会向北而非东北
+  description: 误以为风向北吹与河流同向能使船向东北
+  severity: error
+  source: Mercury_7041860
+- pattern: 风向向南吹
+  correct: 风向南吹会抵消河流向北的力，船无法向东北
+  description: 误以为风向南吹能使船向东北
+  severity: error
+  source: Mercury_7041860
+- pattern: 冰川.*雕刻.*山谷
+  correct: 冰川雕刻山谷是侵蚀作用，而非建设性作用
+  description: 误以为冰川雕刻山谷是建设性作用
+  severity: error
+  source: Mercury_SC_401653
+- pattern: 冰川.*划痕.*花岗岩
+  correct: 冰川在花岗岩表面划出沟槽是侵蚀作用，而非建设性作用
+  description: 误以为冰川划痕是建设性作用
+  severity: error
+  source: Mercury_SC_401653
+- pattern: 冰川.*磨蚀.*基岩丘陵
+  correct: 冰川磨蚀基岩丘陵是侵蚀作用，而非建设性作用
+  description: 误以为冰川磨蚀基岩是建设性作用
+  severity: error
+  source: Mercury_SC_401653
+- pattern: 单细胞.*组织.*多细胞.*细胞
+  correct: 单细胞生物没有组织层次，其细胞器功能类似于多细胞生物的器官
+  description: 误以为单细胞生物有组织，且与多细胞生物的细胞类比
+  severity: error
+  source: MEA_2016_8_14
+- pattern: 单细胞.*细胞核.*多细胞.*皮肤
+  correct: 单细胞生物的细胞核是控制中心，与多细胞生物的皮肤（保护功能）不具可比性
+  description: 错误地将单细胞生物的细胞核与多细胞生物的皮肤进行功能类比
+  severity: error
+  source: MEA_2016_8_14
+- pattern: 单细胞.*细胞质.*多细胞.*神经系统
+  correct: 单细胞生物的细胞质是细胞内的胶状物质，与多细胞生物的神经系统（信息传递）功能不同
+  description: 误以为单细胞生物的细胞质与多细胞生物的神经系统功能相似
+  severity: error
+  source: MEA_2016_8_14
+- pattern: 31 pounds.*14 kilograms
+  correct: 质量不随地点改变，在地球上仍为84千克；重量与重力加速度成正比，地球上约为186磅
+  description: 误以为质量和重量都随重力变化，且混淆了月球与地球上的数值
+  severity: error
+  source: ACTAAP_2013_5_11
+- pattern: 31 pounds.*84 kilograms
+  correct: 质量不变，但重量在地球上更大，约为186磅
+  description: 误以为重量在月球和地球上相同，忽略了重力差异
+  severity: error
+  source: ACTAAP_2013_5_11
+- pattern: 186 pounds.*14 kilograms
+  correct: 质量不随地点改变，在地球上仍为84千克
+  description: 误以为质量随重力变化，将月球上的质量错误换算到地球
+  severity: error
+  source: ACTAAP_2013_5_11
+- pattern: 狗.*继承.*毛长
+  correct: 毛的长度是由遗传基因决定的，狗会从父母那里继承毛长
+  description: 误以为毛的长度不是遗传性状
+  severity: error
+  source: MCAS_1998_4_3
+- pattern: 狗.*继承.*鼻子形状
+  correct: 鼻子的形状是由遗传基因决定的，狗会从父母那里继承鼻子形状
+  description: 误以为鼻子形状不是遗传性状
+  severity: error
+  source: MCAS_1998_4_3
+- pattern: 狗.*继承.*毛色
+  correct: 毛的颜色是由遗传基因决定的，狗会从父母那里继承毛色
+  description: 误以为毛色不是遗传性状
+  severity: error
+  source: MCAS_1998_4_3
+- pattern: light color.*better chances.*reproducing
+  correct: 浅色海龟更容易被晒伤，降低生存和繁殖机会
+  description: 误以为浅色有助于繁殖，实际上浅色增加晒伤风险，降低存活率
+  severity: error
+  source: Mercury_7106908
+- pattern: light color.*shell.*stronger
+  correct: 颜色与龟壳强度无关，浅色不增强龟壳
+  description: 误以为浅色使龟壳更强，实际颜色不影响结构强度
+  severity: error
+  source: Mercury_7106908
+- pattern: light color.*new species
+  correct: 单个个体的颜色变异不足以形成新物种
+  description: 误以为颜色变异直接导致新物种形成，实际需要长期隔离和进化
+  severity: error
+  source: Mercury_7106908
+- pattern: O2.*H2O.*能量.*葡萄糖.*CO2
+  correct: 光合作用的正确化学方程式是 6CO2 + 6H2O + 能量 -> C6H12O6 + 6O2
+  description: 误以为光合作用消耗氧气和水生成葡萄糖和二氧化碳
+  severity: error
+  source: Mercury_401402
+- pattern: CO2.*H2O.*C6H6O3.*O2.*能量
+  correct: 光合作用生成葡萄糖（C6H12O6）和氧气，产物化学式不是C6H6O3
+  description: 误以为光合作用生成错误的有机物和能量
+  severity: error
+  source: Mercury_401402
+- pattern: 6O2.*6H2O.*葡萄糖.*6CO2.*能量
+  correct: 光合作用消耗二氧化碳和水，而不是消耗氧气和水
+  description: 误以为光合作用消耗氧气和水生成葡萄糖和二氧化碳
+  severity: error
+  source: Mercury_401402
+- pattern: lighting a match
+  correct: 点燃火柴涉及燃烧，是化学变化，产生了新物质
+  description: 误以为点燃火柴是物理变化
+  severity: error
+  source: MCAS_2005_8_4
+- pattern: burning of gasoline
+  correct: 汽油燃烧是化学变化，生成二氧化碳和水等新物质
+  description: 误以为汽油燃烧是物理变化
+  severity: error
+  source: MCAS_2005_8_4
+- pattern: rusting of iron
+  correct: 铁生锈是化学变化，铁与氧气反应生成氧化铁
+  description: 误以为铁生锈是物理变化
+  severity: error
+  source: MCAS_2005_8_4
+- pattern: sea floor.*变质岩
+  correct: 变质岩如片麻岩和片岩通常形成于地下深处的高温高压环境，而非海床
+  description: 误以为海床环境能形成区域变质岩
+  severity: error
+  source: MCAS_2007_8_5180
+- pattern: windblown desert.*变质岩
+  correct: 变质岩如片麻岩和片岩需要高温高压条件，风成沙漠地表无法提供
+  description: 误以为沙漠地表环境能形成变质岩
+  severity: error
+  source: MCAS_2007_8_5180
+- pattern: glacier.*变质岩
+  correct: 冰川覆盖的地表缺乏形成区域变质岩所需的高温高压条件
+  description: 误以为冰川环境能形成变质岩
+  severity: error
+  source: MCAS_2007_8_5180
+- pattern: 仍会交配.*不影响
+  correct: 即使交配行为存在，若精子无法产生，繁殖率会显著下降，从而减少种群数量
+  description: 误以为只要交配行为继续，种群数量就不会受影响，忽略了精子产生对繁殖的关键作用
+  severity: error
+  source: TIMSS_1995_8_K12
+- pattern: 不改变突变率.*不影响
+  correct: 阻止精子产生直接降低繁殖率，与突变率无关，但繁殖率下降会减少种群数量
+  description: 误以为只有突变率变化才影响种群，忽略了繁殖率下降的直接效应
+  severity: error
+  source: TIMSS_1995_8_K12
+- pattern: 雄性死亡.*减少
+  correct: 阻止精子产生不会直接导致雄性死亡，而是通过降低繁殖率来减少种群
+  description: 误以为阻止精子产生会导致雄性死亡，从而减少种群
+  severity: error
+  source: TIMSS_1995_8_K12
+- pattern: 风.*影响.*水.*状态
+  correct: 太阳辐射是驱动水循环的主要能量来源，决定水的状态变化
+  description: 误以为风是影响水状态的主要能量来源
+  severity: error
+  source: MDSA_2008_5_30
+- pattern: 洋流.*影响.*水.*状态
+  correct: 太阳辐射是驱动水循环的主要能量来源，决定水的状态变化
+  description: 误以为洋流是影响水状态的主要能量来源
+  severity: error
+  source: MDSA_2008_5_30
+- pattern: 地核.*影响.*水.*状态
+  correct: 太阳辐射是驱动水循环的主要能量来源，决定水的状态变化
+  description: 误以为地球内部的地核是影响水状态的主要能量来源
+  severity: error
+  source: MDSA_2008_5_30
+- pattern: oil.*reproduction.*increase
+  correct: 石油泄漏会污染水体，降低鱼类繁殖率，而非增加
+  description: 误以为石油泄漏为鱼类提供营养或促进繁殖
+  severity: error
+  source: MSA_2013_5_44
+- pattern: oil.*more sunlight
+  correct: 石油覆盖水面会阻挡阳光，减少水下光照，而非增加
+  description: 误以为石油泄漏使水植物获得更多阳光
+  severity: error
+  source: MSA_2013_5_44
+- pattern: oil.*more nutrients
+  correct: 石油泄漏会污染海岸，抑制植物生长，而非提供养分
+  description: 误以为石油泄漏为海岸植物提供额外营养
+  severity: error
+  source: MSA_2013_5_44
+- pattern: breaks easily when struck with a hammer
+  correct: 易碎性是物理性质，而非化学性质
+  description: 误将矿物受锤击易碎视为化学性质
+  severity: error
+  source: NYSEDREGENTS_2004_8_31
+- pattern: is easily scratched by a fingernail
+  correct: 硬度（被指甲划伤）是物理性质，而非化学性质
+  description: 误将矿物硬度视为化学性质
+  severity: error
+  source: NYSEDREGENTS_2004_8_31
+- pattern: reflects light from its surface
+  correct: 光泽（反射光线）是物理性质，而非化学性质
+  description: 误将矿物光泽视为化学性质
+  severity: error
+  source: NYSEDREGENTS_2004_8_31
+- pattern: 太阳.*反射.*云
+  correct: 太阳落山是地球自转导致太阳相对位置变化，而非云层反射
+  description: 误以为太阳消失是因为云层反射了太阳光
+  severity: error
+  source: ACTAAP_2012_7_5
+- pattern: 太阳.*折射.*大气
+  correct: 大气折射主要影响太阳光路径，但太阳落山现象的根本原因是地球自转
+  description: 误以为大气折射是太阳落山的主要原因
+  severity: error
+  source: ACTAAP_2012_7_5
+- pattern: 太阳.*从西向东.*运动
+  correct: 太阳每天从东向西运动（视运动），这是地球自西向东自转的结果
+  description: 误以为太阳每天从西向东运动
+  severity: error
+  source: ACTAAP_2012_7_5
+- pattern: 牙膏.*氟化物浓度.*推荐
+  correct: 高氟化物浓度并不直接等同于牙医推荐，牙医推荐基于多种因素
+  description: 误以为高氟化物浓度意味着牙膏被牙医推荐
+  severity: error
+  source: Mercury_7064208
+- pattern: 牙膏.*氟化物浓度.*价格
+  correct: 高氟化物浓度与牙膏价格无必然联系
+  description: 误以为高氟化物浓度意味着牙膏更昂贵
+  severity: error
+  source: Mercury_7064208
+- pattern: 水.*能量
+  correct: 细胞分解食物（如葡萄糖）来产生能量，而不是水
+  description: 误以为水是细胞产生能量的来源
+  severity: error
+  source: ACTAAP_2008_5_7
+- pattern: 叶绿素.*能量
+  correct: 叶绿素参与光合作用，但细胞通过分解食物（如葡萄糖）来产生能量
+  description: 误以为叶绿素是细胞产生能量的直接来源
+  severity: error
+  source: ACTAAP_2008_5_7
+- pattern: 二氧化碳.*能量
+  correct: 二氧化碳是细胞呼吸的产物，细胞分解食物（如葡萄糖）来产生能量
+  description: 误以为二氧化碳是细胞产生能量的来源
+  severity: error
+  source: ACTAAP_2008_5_7
+- pattern: 可能做直线运动.*也可能做曲线运动
+  correct: 当恒力与运动方向不在同一直线上时，物体一定做曲线运动
+  description: 误以为物体在受到与运动方向不在同一直线上的恒力时，可能仍保持直线运动
+  severity: error
+  source: cmmlu_conceptual_physics_0
+- pattern: 继续做直线运动
+  correct: 当恒力与运动方向不在同一直线上时，物体一定做曲线运动，不会继续做直线运动
+  description: 误以为物体在受到与运动方向不在同一直线上的恒力时，仍能保持直线运动
+  severity: error
+  source: cmmlu_conceptual_physics_0
+- pattern: 运动的形式不能确定
+  correct: 当恒力与运动方向不在同一直线上时，物体一定做曲线运动，运动形式是确定的
+  description: 误以为物体在受到与运动方向不在同一直线上的恒力时，运动形式无法确定
+  severity: error
+  source: cmmlu_conceptual_physics_0
+- pattern: 1Kg.*举高1m.*做功.*1J
+  correct: 把1kg的物体匀速举高1m，克服重力做功约为9.8J（重力加速度g≈9.8N/kg）
+  description: 误以为1kg物体的重力为1N，实际上1kg物体所受重力约为9.8N
+  severity: error
+  source: cmmlu_conceptual_physics_1
+- pattern: 力对物体不做功.*没有位移
+  correct: 力对物体不做功可能是因为力与位移方向垂直，或物体在力的方向上没有位移，但物体可能有其他方向的位移
+  description: 误以为力不做功时物体一定没有位移，忽略了力与位移垂直的情况
+  severity: error
+  source: cmmlu_conceptual_physics_1
+- pattern: 力对物体做功越多.*力越大
+  correct: 做功多少还取决于位移大小和力与位移的夹角，不能仅由做功多少判断力的大小
+  description: 误以为做功多少只由力的大小决定，忽略了位移和夹角的影响
+  severity: error
+  source: cmmlu_conceptual_physics_1
+- pattern: 电动势.*E=W/q.*W.*电压.*U=W/q.*W.*一样
+  correct: 电动势公式E=W/q中的W是非静电力做的功，电压公式U=W/q中的W是电场力做的功，两者不同
+  description: 误以为电动势和电压公式中的W都是电场力做的功
+  severity: error
+  source: cmmlu_conceptual_physics_2
+- pattern: 电动势.*就是.*两板间的电压
+  correct: 电动势是电源内部非静电力做功的特性，不等于两极板间的电压
+  description: 误以为电动势等于两极板间的电压
+  severity: error
+  source: cmmlu_conceptual_physics_2
+- pattern: 电压与电动势.*单位.*伏特.*同一个物理量
+  correct: 电压和电动势单位相同但物理意义不同，电压是电场力做功的量度，电动势是电源转化能量的本领
+  description: 误以为单位相同就是同一物理量
+  severity: error
+  source: cmmlu_conceptual_physics_2
+- pattern: 均匀磁场.*感生电场
+  correct: 只有变化磁场才能产生感生电场，均匀磁场不随时间变化，不会产生感生电场
+  description: 误以为均匀磁场也能产生感生电场
+  severity: error
+  source: cmmlu_conceptual_physics_3
+- pattern: 非均匀磁场.*感生电场
+  correct: 非均匀磁场若不随时间变化，也不会产生感生电场；感生电场的根源是磁场的变化率
+  description: 误以为非均匀磁场（空间分布不均匀）就能产生感生电场
+  severity: error
+  source: cmmlu_conceptual_physics_3
+- pattern: 稳恒电场.*感生电场
+  correct: 稳恒电场由静止电荷产生，与感生电场（由变化磁场产生）是不同根源
+  description: 误以为稳恒电场是感生电场的根源
+  severity: error
+  source: cmmlu_conceptual_physics_3
+- pattern: 曲线运动.*合外力.*变力
+  correct: 物体做曲线运动时合外力可以是恒力，如平抛运动
+  description: 误以为曲线运动必须由变力引起
+  severity: error
+  source: cmmlu_conceptual_physics_4
+- pattern: 合外力不为零.*一定做曲线运动
+  correct: 合外力不为零时物体可能做直线运动（如匀加速直线运动）
+  description: 误以为只要合外力不为零就必然做曲线运动
+  severity: error
+  source: cmmlu_conceptual_physics_4
+- pattern: 恒力.*不能做曲线运动
+  correct: 物体在恒力作用下可以做曲线运动，如平抛运动
+  description: 误以为恒力只能产生直线运动
+  severity: error
+  source: cmmlu_conceptual_physics_4
+- pattern: 温度升高.*一定吸收了热量
+  correct: 物体温度升高可能是外界对物体做功，不一定是吸收了热量
+  description: 误以为温度升高必然是因为吸收热量，忽略了做功也可以使温度升高
+  severity: error
+  source: cmmlu_conceptual_physics_5
+- pattern: 温度不变.*一定没有吸收热量
+  correct: 物体温度不变时可能同时吸收热量并对外做功，或发生物态变化
+  description: 误以为温度不变就意味着没有热量吸收，忽略了等温过程或相变
+  severity: error
+  source: cmmlu_conceptual_physics_5
+- pattern: 吸收热量.*温度一定升高
+  correct: 物体吸收热量时可能同时对外做功，温度不一定升高
+  description: 误以为吸收热量必然导致温度升高，忽略了做功和物态变化的影响
+  severity: error
+  source: cmmlu_conceptual_physics_5
+- pattern: 核电站.*核聚变
+  correct: 目前核电站的反应堆中发生的是可控制的核裂变，而非核聚变
+  description: 误以为核电站利用核聚变发电
+  severity: error
+  source: cmmlu_conceptual_physics_6
+- pattern: 核反应堆.*极短时间内.*释放
+  correct: 核反应堆是可控的链式反应装置，核能持续释放，而非在极短时间内释放
+  description: 误以为核反应堆像原子弹一样在极短时间内释放大量核能
+  severity: error
+  source: cmmlu_conceptual_physics_6
+- pattern: 简谐振动.*加速度.*位移.*反比
+  correct: 作简谐振动的物体，加速度与位移成正比，且方向相反
+  description: 误以为简谐振动中加速度与位移成反比，实际是成正比
+  severity: error
+  source: cmmlu_conceptual_physics_7
+- pattern: 宇航员不受重力
+  correct: 宇航员仍受重力作用，重力提供向心力
+  description: 误以为完全失重状态下物体不受重力
+  severity: error
+  source: cmmlu_conceptual_physics_8
+- pattern: 宇航员受到平衡力
+  correct: 宇航员受重力但不平衡，重力提供向心力，处于非平衡状态
+  description: 误以为匀速圆周运动是平衡状态
+  severity: error
+  source: cmmlu_conceptual_physics_8
+- pattern: 电动势.*大小.*与非静电力功.*成正比.*与移送电荷量.*成反比
+  correct: 电动势E由电源本身性质决定，与W和q无关，定义式E=W/q是比值定义法
+  description: 误以为电动势与W成正比、与q成反比，混淆了定义式与决定因素
+  severity: error
+  source: cmmlu_conceptual_physics_9
+- pattern: 电动势.*由电源本身决定.*跟电源的体积和外电路均有关
+  correct: 电动势E由电源本身决定，与电源体积和外电路无关
+  description: 误以为电动势与电源体积或外电路有关
+  severity: error
+  source: cmmlu_conceptual_physics_9
+- pattern: 电动势.*单位.*伏特.*本质上一样
+  correct: 电动势、电势、电势差单位相同但物理意义不同，电动势是非静电力做功本领，电势是电场能性质
+  description: 误以为单位相同则物理本质相同
+  severity: error
+  source: cmmlu_conceptual_physics_9
+- pattern: 重力的大小.*恒量.*不随.*地理位置
+  correct: 重力大小随地理位置（纬度、高度）变化，并非恒量
+  description: 误以为重力大小固定不变，忽略地球自转和形状导致的g值变化
+  severity: error
+  source: cmmlu_conceptual_physics_10
+- pattern: 重力就是地球对物体的吸引力
+  correct: 重力是地球对物体吸引力的一个分力（与向心力合成），并非严格等于万有引力
+  description: 混淆重力与万有引力，忽略地球自转产生的向心力影响
+  severity: error
+  source: cmmlu_conceptual_physics_10
+- pattern: 地球表面.*重力方向.*相同
+  correct: 重力方向竖直向下，但不同地点的竖直方向指向地心不同方向，因此方向不同
+  description: 误以为地球表面各处重力方向一致，忽略地球球面导致的方向差异
+  severity: error
+  source: cmmlu_conceptual_physics_10
+- pattern: 内力矢量和始终为零
+  correct: 质点系动量守恒的条件是外力矢量和始终为零，内力矢量和始终为零是动量守恒的必然结果而非条件
+  description: 误以为内力矢量和为零是动量守恒的条件
+  severity: error
+  source: cmmlu_conceptual_physics_11
+- pattern: 外力矩始终为零
+  correct: 质点系动量守恒的条件是外力矢量和始终为零，与外力矩无关
+  description: 混淆了动量守恒与角动量守恒的条件
+  severity: error
+  source: cmmlu_conceptual_physics_11
+- pattern: 外力做功始终为零
+  correct: 质点系动量守恒的条件是外力矢量和始终为零，与外力做功无关
+  description: 误以为外力不做功是动量守恒的条件
+  severity: error
+  source: cmmlu_conceptual_physics_11
+- pattern: 熵总是向减少的方向进行
+  correct: 在孤立系统中，自发过程熵总是向增加的方向进行
+  description: 误以为孤立系统中自发过程熵减少
+  severity: error
+  source: cmmlu_conceptual_physics_12
+- pattern: 轨道半径减小.*角速度增大
+  correct: 从较强磁场进入较弱磁场，速度不变，磁感应强度减小，由r=mv/qB知轨道半径增大；由ω=qB/m知角速度减小
+  description: 误以为磁场减弱会导致轨道半径减小和角速度增大
+  severity: error
+  source: cmmlu_conceptual_physics_13
+- pattern: 轨道半径增大.*角速度增大
+  correct: 从较强磁场进入较弱磁场，速度不变，磁感应强度减小，由r=mv/qB知轨道半径增大；由ω=qB/m知角速度减小
+  description: 误以为磁场减弱会导致轨道半径和角速度同时增大
+  severity: error
+  source: cmmlu_conceptual_physics_13
+- pattern: 轨道半径减小.*角速度减小
+  correct: 从较强磁场进入较弱磁场，速度不变，磁感应强度减小，由r=mv/qB知轨道半径增大；由ω=qB/m知角速度减小
+  description: 误以为磁场减弱会导致轨道半径和角速度同时减小
+  severity: error
+  source: cmmlu_conceptual_physics_13
+- pattern: 速度.*时间成反比.*加速度.*速度成反比
+  correct: 加速度与速度平方成正比
+  description: 误以为速度与时间成反比时，加速度与速度成反比
+  severity: error
+  source: cmmlu_conceptual_physics_14
+- pattern: 速度.*时间成反比.*加速度.*速度成正比
+  correct: 加速度与速度平方成正比
+  description: 误以为速度与时间成反比时，加速度与速度成正比
+  severity: error
+  source: cmmlu_conceptual_physics_14
+- pattern: 速度.*时间成反比.*加速度.*速度平方成反比
+  correct: 加速度与速度平方成正比
+  description: 误以为速度与时间成反比时，加速度与速度平方成反比
+  severity: error
+  source: cmmlu_conceptual_physics_14
+- pattern: 功率.*单位.*焦耳
+  correct: 功率的单位是瓦特（W），焦耳是功或能量的单位
+  description: 误以为功率的单位是焦耳
+  severity: error
+  source: cmmlu_conceptual_physics_15
+- pattern: 功率.*做功多少
+  correct: 功率是描述做功快慢的物理量，不是做功多少
+  description: 误以为功率描述做功的多少
+  severity: error
+  source: cmmlu_conceptual_physics_15
+- pattern: 分子是组成物质的最小微粒
+  correct: 分子是保持物质化学性质的最小微粒，但还可以再分为原子
+  description: 误以为分子是物质组成的最小不可分单元
+  severity: error
+  source: cmmlu_conceptual_physics_16
+- pattern: 分子是物体不能再分的最小微粒
+  correct: 分子可以再分为原子，不是不能再分的最小微粒
+  description: 误以为分子是物质不可再分的最小粒子
+  severity: error
+  source: cmmlu_conceptual_physics_16
+- pattern: 感应电动势相同.*感应电流相同
+  correct: 感应电动势相同，但感应电流不同，因为铁和铜的电阻率不同
+  description: 误以为感应电动势相同则感应电流也相同，忽略了材料电阻率差异
+  severity: error
+  source: cmmlu_conceptual_physics_17
+- pattern: 感应电动势不同.*感应电流相同
+  correct: 感应电动势相同，感应电流不同，因为磁通量变化率相同且环尺寸相同，但电阻不同
+  description: 误以为感应电动势不同但感应电流相同，混淆了电动势与电流的关系
+  severity: error
+  source: cmmlu_conceptual_physics_17
+- pattern: 感应电动势不同.*感应电流不同
+  correct: 感应电动势相同，感应电流不同，因为磁通量变化率相同，但电阻率不同导致电流不同
+  description: 误以为感应电动势和感应电流都不同，忽略了磁通量变化率相同决定电动势相同
+  severity: error
+  source: cmmlu_conceptual_physics_17
+- pattern: 磁通量为零.*感应电流.*为零
+  correct: 感应电流由磁通量变化率决定，磁通量为零时变化率可能不为零，因此感应电流不一定为零
+  description: 误以为磁通量为零时感应电流一定为零
+  severity: error
+  source: cmmlu_conceptual_physics_18
+- pattern: 磁通量变化量越大.*感应电流越大
+  correct: 感应电流由磁通量变化率（变化快慢）决定，而非变化量的大小
+  description: 混淆了磁通量变化量与变化率，认为变化量大则感应电流大
+  severity: error
+  source: cmmlu_conceptual_physics_18
+- pattern: 磁通量最大.*感应电流最大
+  correct: 磁通量最大时变化率为零，感应电流为零；感应电流在磁通量变化率最大时最大
+  description: 误以为磁通量最大时感应电流也最大
+  severity: error
+  source: cmmlu_conceptual_physics_18
+- pattern: 电梯加速上升.*机械能守恒
+  correct: 电梯加速上升时，除重力外还有电梯拉力做功，机械能不守恒
+  description: 误以为加速上升过程中只有重力做功，忽略拉力做功
+  severity: error
+  source: cmmlu_conceptual_physics_19
+- pattern: 竖直面内.*匀速圆周运动.*机械能守恒
+  correct: 在竖直面内做匀速圆周运动的物体，动能不变但重力势能变化，机械能不守恒
+  description: 误以为匀速圆周运动机械能守恒，忽略重力势能变化
+  severity: error
+  source: cmmlu_conceptual_physics_19
+- pattern: 木箱.*粗糙斜面.*匀速下滑.*机械能守恒
+  correct: 木箱沿粗糙斜面匀速下滑时，摩擦力做功，机械能转化为内能，机械能不守恒
+  description: 误以为匀速下滑时机械能守恒，忽略摩擦力做功
+  severity: error
+  source: cmmlu_conceptual_physics_19
+- pattern: 安培力的大小.*与.*夹角无关
+  correct: 安培力的大小与通电直导线和磁场方向的夹角有关，公式为F=BILsinθ
+  description: 误以为安培力大小与导线和磁场夹角无关
+  severity: error
+  source: cmmlu_conceptual_physics_20
+- pattern: 安培力的方向.*不垂直于直导线
+  correct: 安培力的方向总是垂直于直导线和磁场方向所决定的平面
+  description: 误以为安培力方向可以不垂直于直导线
+  severity: error
+  source: cmmlu_conceptual_physics_20
+- pattern: 将直导线从中点折成直角.*安培力.*一半
+  correct: 将直导线从中点折成直角后，安培力大小不一定变为原来的一半，需考虑折后两段在磁场中的有效长度和方向
+  description: 误以为将直导线折成直角后安培力一定减半
+  severity: error
+  source: cmmlu_conceptual_physics_20
+- pattern: 弹力.*必然.*摩擦力
+  correct: 物体受到弹力不一定产生摩擦力，产生摩擦力还需要接触面粗糙且有相对运动或相对运动趋势
+  description: 误以为有弹力就一定有摩擦力
+  severity: error
+  source: cmmlu_conceptual_physics_21
+- pattern: 重心.*受力中心.*只在重心.*重力
+  correct: 重心是重力的等效作用点，但物体各部分都受重力作用
+  description: 误以为物体只在重心位置受到重力
+  severity: error
+  source: cmmlu_conceptual_physics_21
+- pattern: 速度越大.*滑动摩擦力越大
+  correct: 滑动摩擦力大小与速度无关，只与正压力和接触面粗糙程度有关
+  description: 误以为滑动摩擦力随速度增大而增大
+  severity: error
+  source: cmmlu_conceptual_physics_21
+- pattern: 正电荷.*只受电场力.*一定向电势低的地方运动
+  correct: 正电荷在只受电场力作用下，由静止释放时向电势低的地方运动，但若有初速度则不一定
+  description: 误以为正电荷在任何情况下都一定向电势低的方向运动，忽略了初速度的影响
+  severity: error
+  source: cmmlu_conceptual_physics_22
+- pattern: 电势降低的方向.*电场线的方向
+  correct: 电势降低的方向不一定是电场线的方向，电场线方向是电势降低最快的方向
+  description: 误以为电势降低的方向就是电场线的方向，混淆了方向与最快方向
+  severity: error
+  source: cmmlu_conceptual_physics_22
+- pattern: 沿电场线方向电势逐渐升高
+  correct: 沿电场线方向电势逐渐降低
+  description: 误以为沿电场线方向电势升高，实际是电势降低
+  severity: error
+  source: cmmlu_conceptual_physics_22
+- pattern: 分运动是直线运动.*合运动必是直线运动
+  correct: 分运动是直线运动，合运动不一定是直线运动，取决于合速度与合加速度的方向关系
+  description: 误以为分运动都是直线运动时，合运动也一定是直线运动
+  severity: error
+  source: cmmlu_conceptual_physics_23
+- pattern: 合运动的时间等于两个分运动的时间之和
+  correct: 合运动的时间与各分运动的时间相等，而不是相加
+  description: 误以为合运动的时间是分运动时间的和
+  severity: error
+  source: cmmlu_conceptual_physics_23
+- pattern: 曲线运动的加速度方向可能与速度在同一直线上
+  correct: 曲线运动的加速度方向一定与速度方向不在同一直线上
+  description: 误以为曲线运动的加速度方向可能与速度方向共线
+  severity: error
+  source: cmmlu_conceptual_physics_23
+- pattern: 温度高的物体.*热量多
+  correct: 热量是过程量，不能说物体含有多少热量，只能说传递了多少热量
+  description: 误以为热量是物体含有的能量，温度高则热量多
+  severity: error
+  source: cmmlu_conceptual_physics_24
+- pattern: 温度高的物体.*内能大
+  correct: 内能大小不仅与温度有关，还与物体的质量、状态等因素有关
+  description: 误以为温度高内能就一定大，忽略了质量等因素
+  severity: error
+  source: cmmlu_conceptual_physics_24
+- pattern: 温度升高.*从外界吸收了热量
+  correct: 物体温度升高可能是吸收了热量，也可能是外界对物体做了功
+  description: 误以为温度升高一定是吸热，忽略了做功也可以升温
+  severity: error
+  source: cmmlu_conceptual_physics_24
+- pattern: 向心加速度.*角速度变化快慢
+  correct: 向心加速度描述的是线速度方向变化快慢，而非角速度变化快慢
+  description: 误以为向心加速度与角速度的变化有关
+  severity: error
+  source: cmmlu_conceptual_physics_25
+- pattern: 向心加速度.*角速度方向变化快慢
+  correct: 向心加速度描述的是线速度方向变化快慢，而非角速度方向变化快慢
+  description: 误以为向心加速度与角速度方向的变化有关
+  severity: error
+  source: cmmlu_conceptual_physics_25
+- pattern: 向心加速度.*线速度大小变化快慢
+  correct: 向心加速度描述的是线速度方向变化快慢，而非线速度大小变化快慢
+  description: 误以为向心加速度与线速度大小的变化有关
+  severity: error
+  source: cmmlu_conceptual_physics_25
+- pattern: 只适用于球形物体
+  correct: 万有引力定律适用于自然界中任意两个物体之间，与形状无关
+  description: 误以为万有引力定律只适用于球形物体
+  severity: error
+  source: cmmlu_conceptual_physics_26
+- pattern: 只适用于质点
+  correct: 万有引力定律适用于任意两个物体，实际物体可视为质点或通过积分计算
+  description: 误以为万有引力定律只适用于质点而不适用于实际物体
+  severity: error
+  source: cmmlu_conceptual_physics_26
+- pattern: 只适用于天体
+  correct: 万有引力定律适用于自然界中任意两个物体之间，包括地面物体
+  description: 误以为万有引力定律只适用于天体而不适用于地面物体
+  severity: error
+  source: cmmlu_conceptual_physics_26
+- pattern: 停下时就没有惯性
+  correct: 惯性是物体的固有属性，与运动状态无关，停下时仍然具有惯性
+  description: 误以为惯性只在运动时存在，静止时消失
+  severity: error
+  source: cmmlu_conceptual_physics_27
+- pattern: 受外力作用后惯性被克服
+  correct: 惯性是物体的固有属性，不会因受外力作用而被克服
+  description: 误以为外力可以消除或克服惯性
+  severity: error
+  source: cmmlu_conceptual_physics_27
+- pattern: 人走路时没有惯性
+  correct: 惯性是物体的固有属性，人走路时和被绊倒时都具有惯性
+  description: 误以为惯性只在特定情况下存在
+  severity: error
+  source: cmmlu_conceptual_physics_27
+- pattern: 闭合电路.*部分导体.*磁场.*运动.*一定产生感应电流
+  correct: 闭合电路的部分导体在磁场中做切割磁感线运动时，才会产生感应电流
+  description: 误以为只要导体在磁场中运动就一定能产生感应电流，忽略了切割磁感线的条件
+  severity: error
+  source: cmmlu_conceptual_physics_28
+- pattern: 通电导体.*磁场.*受力方向.*只与电流方向有关
+  correct: 通电导体在磁场中受力方向与电流方向和磁场方向都有关
+  description: 误以为受力方向只取决于电流方向，忽略了磁场方向的影响
+  severity: error
+  source: cmmlu_conceptual_physics_28
+- pattern: 不受外力.*一定保持静止
+  correct: 物体不受外力作用时，总保持原来的匀速直线运动状态或静止状态
+  description: 误以为不受外力时物体一定静止，忽略了匀速直线运动状态
+  severity: error
+  source: cmmlu_conceptual_physics_29
+- pattern: 不受外力.*一定保持匀速直线运动
+  correct: 物体不受外力作用时，总保持原来的匀速直线运动状态或静止状态
+  description: 误以为不受外力时物体一定做匀速直线运动，忽略了静止状态
+  severity: error
+  source: cmmlu_conceptual_physics_29
+- pattern: 要物体运动必须有力.*没有力.*将静止
+  correct: 力不是维持运动的原因，物体不受外力时保持原有运动状态
+  description: 误以为力是维持物体运动的原因，违背牛顿第一定律
+  severity: error
+  source: cmmlu_conceptual_physics_29
+- pattern: 直接接触.*才会.*力
+  correct: 不直接接触的物体之间也能发生力的作用，如重力、磁力等
+  description: 误以为力的作用必须通过物体直接接触才能发生
+  severity: error
+  source: cmmlu_conceptual_physics_30
+- pattern: 只有甲对乙有力.*乙对甲没有力
+  correct: 力的作用是相互的，甲对乙施力的同时乙也对甲施力
+  description: 误以为施力物体不会受到反作用力
+  severity: error
+  source: cmmlu_conceptual_physics_30
+- pattern: 有生命.*才会施力.*无生命.*只会受力
+  correct: 任何物体都能施力和受力，力是物体间的相互作用，与是否有生命无关
+  description: 误以为只有有生命或有动力的物体才能施力
+  severity: error
+  source: cmmlu_conceptual_physics_30
+- pattern: 法向加速度.*法向速度变化
+  correct: 法向加速度描述速度方向变化的快慢，而非法向速度（通常不存在）的变化
+  description: 误以为法向加速度对应一个独立的法向速度分量
+  severity: error
+  source: cmmlu_conceptual_physics_31
+- pattern: 加速度越大.*速度越快
+  correct: 加速度大只表示速度变化快，不表示速度本身大
+  description: 混淆加速度与速度的大小关系
+  severity: error
+  source: cmmlu_conceptual_physics_31
+- pattern: 加速度越来越小.*速度也越来越小
+  correct: 加速度减小但方向与速度同向时，速度仍会增大
+  description: 误以为加速度减小必然导致速度减小
+  severity: error
+  source: cmmlu_conceptual_physics_31
+- pattern: 原子由质子和中子组成
+  correct: 卢瑟福核式模型认为原子由原子核和核外电子组成，质子和中子是后来发现的
+  description: 误以为卢瑟福的核式模型已经包含了质子和中子的概念
+  severity: error
+  source: cmmlu_conceptual_physics_32
+- pattern: 功就是能，能就是功
+  correct: 功是能量转化的量度，功和能是两个不同的物理概念
+  description: 混淆了功和能的概念，认为两者等同
+  severity: error
+  source: cmmlu_conceptual_physics_33
+- pattern: 物体做功越多，物体的能就越大
+  correct: 物体做功的多少与物体具有的能量大小没有直接对应关系，能量是状态量，功是过程量
+  description: 误以为做功越多能量越大，忽略了能量转化和状态量的区别
+  severity: error
+  source: cmmlu_conceptual_physics_33
+- pattern: 外力对物体不做功，这个物体就没有能量
+  correct: 物体具有能量是固有的属性，即使外力不做功，物体也可能具有动能、势能等
+  description: 认为能量来源于外力做功，忽略了物体本身可以具有能量
+  severity: error
+  source: cmmlu_conceptual_physics_33
+- pattern: 逐渐慢下来.*最后停下来
+  correct: 物体不受外力时将保持匀速直线运动状态
+  description: 误以为没有外力时物体会自然减速停止
+  severity: error
+  source: cmmlu_conceptual_physics_34
+- pattern: 运动方向或快慢将改变
+  correct: 物体不受外力时运动状态不会改变，保持匀速直线运动
+  description: 误以为没有外力时物体运动方向或速度会自发变化
+  severity: error
+  source: cmmlu_conceptual_physics_34
+- pattern: 立即停下来
+  correct: 物体不受外力时不会立即停止，而是保持原有运动状态
+  description: 误以为没有外力时物体会瞬间停止
+  severity: error
+  source: cmmlu_conceptual_physics_34
+- pattern: 落地.*水平位移.*与初速度无关
+  correct: 平抛物体落地时的水平位移等于初速度乘以飞行时间，与初速度有关
+  description: 误以为平抛物体的水平位移只由高度决定，与初速度无关
+  severity: error
+  source: cmmlu_conceptual_physics_35
+- pattern: 落地.*水平位移.*与抛出点高度无关
+  correct: 平抛物体落地时的水平位移与抛出点高度有关，因为高度决定飞行时间
+  description: 误以为平抛物体的水平位移与高度无关
+  severity: error
+  source: cmmlu_conceptual_physics_35
+- pattern: 初速度越大.*空中运动时间越长
+  correct: 平抛物体在空中运动的时间只由抛出点高度决定，与初速度无关
+  description: 误以为初速度越大，物体在空中飞行时间越长
+  severity: error
+  source: cmmlu_conceptual_physics_35
+- pattern: 做功越多.*功率越大
+  correct: 功率是做功快慢的物理量，等于功与时间的比值，做功多不一定功率大
+  description: 误以为做功越多功率就越大，忽略了时间因素
+  severity: error
+  source: cmmlu_conceptual_physics_36
+- pattern: 做功时间越短.*功率越大
+  correct: 功率是做功快慢的物理量，等于功与时间的比值，时间短但做功少时功率不一定大
+  description: 误以为做功时间越短功率就越大，忽略了做功多少
+  severity: error
+  source: cmmlu_conceptual_physics_36
+- pattern: 做功时间越长.*功率越大
+  correct: 功率是做功快慢的物理量，等于功与时间的比值，时间长但做功少时功率不一定大
+  description: 误以为做功时间越长功率就越大，忽略了做功多少
+  severity: error
+  source: cmmlu_conceptual_physics_36
+- pattern: 压缩冲程.*内能.*机械能
+  correct: 压缩冲程是把机械能转化为内能
+  description: 误以为压缩冲程是将内能转化为机械能
+  severity: error
+  source: cmmlu_conceptual_physics_37
+- pattern: 液态.*分子间.*作用力.*固体.*大
+  correct: 固体分子间作用力通常大于液体分子间作用力
+  description: 误以为液体分子间作用力大于固体
+  severity: error
+  source: cmmlu_conceptual_physics_38
+- pattern: 只有燃烧时才具有内能
+  correct: 任何物体在任何温度下都具有内能，内能是物体内部所有分子热运动的动能和分子势能的总和
+  description: 误以为内能只在燃烧时存在，忽略了物体在任何状态下都具有内能
+  severity: error
+  source: cmmlu_conceptual_physics_39
+- pattern: 没有燃烧时只具有化学能
+  correct: 可燃冰在没有燃烧时同时具有化学能和内能，化学能是燃料本身储存的能量，内能是分子热运动能量
+  description: 误以为燃料在没有燃烧时只具有化学能，忽略了内能的存在
+  severity: error
+  source: cmmlu_conceptual_physics_39
+- pattern: 具有较高的内能
+  correct: 可燃冰具有较高的化学能，内能是物体内部热运动能量，与燃料燃烧释放的能量不同
+  description: 混淆了化学能与内能的概念，误将燃料燃烧释放的能量归为内能
+  severity: error
+  source: cmmlu_conceptual_physics_39
+- pattern: 只要是带电体.*就可以作为电源
+  correct: 带电体不一定能提供持续电流，电源是能提供持续电流的装置
+  description: 误以为任何带电体都能作为电源
+  severity: error
+  source: cmmlu_conceptual_physics_40
+- pattern: 只要能供电的装置就是电源
+  correct: 电源是提供持续电流的装置，而不仅仅是能供电的装置
+  description: 误以为任何能供电的装置都是电源
+  severity: error
+  source: cmmlu_conceptual_physics_40
+- pattern: 电源是把化学能转化为电能的装置
+  correct: 电源是将其他形式的能转化为电能的装置，不限于化学能
+  description: 误以为电源只能将化学能转化为电能
+  severity: error
+  source: cmmlu_conceptual_physics_40
+- pattern: 斜抛运动.*简谐
+  correct: 斜抛运动是匀变速曲线运动，回复力不满足F=-kx，不属于简谐振动
+  description: 误以为斜抛运动是简谐振动
+  severity: error
+  source: cmmlu_conceptual_physics_41
+- pattern: 平抛运动.*简谐
+  correct: 平抛运动是匀变速曲线运动，回复力不满足F=-kx，不属于简谐振动
+  description: 误以为平抛运动是简谐振动
+  severity: error
+  source: cmmlu_conceptual_physics_41
+- pattern: 地震.*简谐
+  correct: 地震是复杂的非周期性振动，不满足简谐振动的条件
+  description: 误以为地震是简谐振动
+  severity: error
+  source: cmmlu_conceptual_physics_41
+- pattern: 外界对物体做功.*内能一定增加
+  correct: 外界对物体做功的同时物体可能放热，内能不一定增加
+  description: 误以为做功一定导致内能增加，忽略了热传递的影响
+  severity: error
+  source: cmmlu_conceptual_physics_42
+- pattern: 温度低的物体内能一定小
+  correct: 内能还与分子数、体积等因素有关，温度低不一定内能小
+  description: 误将内能大小仅与温度挂钩，忽略了其他因素
+  severity: error
+  source: cmmlu_conceptual_physics_42
+- pattern: 物体放热.*内能一定减小
+  correct: 物体放热的同时外界可能对物体做功，内能不一定减小
+  description: 误以为放热一定导致内能减小，忽略了做功的影响
+  severity: error
+  source: cmmlu_conceptual_physics_42
+- pattern: 电阻率.*随温度.*增大
+  correct: 纯金属的电阻率随温度升高而增大，但有些材料（如半导体）的电阻率随温度升高而减小
+  description: 误以为所有材料的电阻率都随温度升高而增大
+  severity: error
+  source: cmmlu_conceptual_physics_43
+- pattern: 电阻率越大.*阻碍作用越大
+  correct: 电阻率是材料本身的属性，但导体对电流的阻碍作用（电阻）还与长度、横截面积有关，电阻率大不一定电阻大
+  description: 误以为电阻率直接决定导体对电流的阻碍作用大小
+  severity: error
+  source: cmmlu_conceptual_physics_43
+- pattern: 电阻率.*1/3
+  correct: 电阻率是材料本身的属性，与导体的长度、横截面积无关，截断后每段电阻率不变
+  description: 误以为电阻率会随导体长度改变而改变
+  severity: error
+  source: cmmlu_conceptual_physics_43
+- pattern: 压成.*密度.*小
+  correct: 把一铁块压成铁片，形状改变但质量和体积不变，密度不变
+  description: 误以为改变物体形状会改变其密度
+  severity: error
+  source: cmmlu_conceptual_physics_44
+- pattern: 密度.*跟.*质量成正比.*跟.*体积成反比
+  correct: 密度是物质的一种特性，与质量和体积无关，同种物质密度相同
+  description: 误以为密度与质量成正比、与体积成反比
+  severity: error
+  source: cmmlu_conceptual_physics_44
+- pattern: 质量相等.*密度大.*体积大
+  correct: 质量相等时，密度大的物质体积反而小
+  description: 误以为质量相等时密度与体积成正比
+  severity: error
+  source: cmmlu_conceptual_physics_44
+- pattern: 半衰期.*环境.*变短
+  correct: 半衰期由原子核内部结构决定，与外界环境无关
+  description: 误以为半衰期会随环境变化而改变
+  severity: error
+  source: cmmlu_conceptual_physics_45
+- pattern: 质子.*转变为中子.*放出β射线
+  correct: 原子核内中子转变为质子时放出β射线，质子转变为中子时放出正电子或发生电子俘获
+  description: 混淆了β衰变中质子与中子的转变方向
+  severity: error
+  source: cmmlu_conceptual_physics_45
+- pattern: γ射线.*穿透.*最强.*α射线.*电离.*最弱
+  correct: γ射线穿透能力最强，α射线电离能力最强
+  description: 误以为α射线电离能力最弱，实际α射线电离能力最强
+  severity: error
+  source: cmmlu_conceptual_physics_45
+- pattern: 不同的同步卫星加速度也不相同
+  correct: 所有地球同步卫星的轨道半径相同，因此向心加速度也相同
+  description: 误以为不同同步卫星的加速度可以不同，实际上同步卫星轨道半径固定，加速度相同
+  severity: error
+  source: cmmlu_conceptual_physics_46
+- pattern: 同步卫星.*椭圆轨道
+  correct: 地球同步卫星必须是圆轨道，且轨道平面与赤道平面重合
+  description: 误以为同步卫星可以是椭圆轨道，实际上同步卫星要求圆轨道以保持与地球自转同步
+  severity: error
+  source: cmmlu_conceptual_physics_46
+- pattern: 同步卫星.*任一点.*正上方
+  correct: 同步卫星只能在赤道正上方，且离地心距离固定
+  description: 误以为同步卫星可以在地面任意位置正上方，实际上必须位于赤道正上方
+  severity: error
+  source: cmmlu_conceptual_physics_46
+- pattern: 匀速圆周运动.*匀变速曲线运动
+  correct: 匀速圆周运动的加速度方向始终指向圆心，方向不断变化，因此不是匀变速曲线运动
+  description: 误以为匀速圆周运动是匀变速曲线运动，忽略了加速度方向的变化
+  severity: error
+  source: cmmlu_conceptual_physics_47
+- pattern: 匀速圆周运动.*线速度不变
+  correct: 匀速圆周运动的线速度大小不变，但方向时刻变化，因此线速度是变化的
+  description: 混淆了线速度的大小和方向，误以为线速度不变
+  severity: error
+  source: cmmlu_conceptual_physics_47
+- pattern: 角速度很大.*线速度一定大
+  correct: 线速度等于角速度乘以半径，角速度大时若半径很小，线速度不一定大
+  description: 忽略了半径对线速度的影响，认为角速度与线速度成正比
+  severity: error
+  source: cmmlu_conceptual_physics_47
+- pattern: 大小相同，方向相同
+  correct: 以不同角度抛出的小石子，落地时速度大小和方向均不同
+  description: 误以为不同抛射角下，落地速度大小和方向都相同
+  severity: error
+  source: cmmlu_conceptual_physics_48
+- pattern: 大小相同，方向不同
+  correct: 以不同角度抛出的小石子，落地时速度大小不同，方向也不同
+  description: 误以为不同抛射角下，落地速度大小相同但方向不同
+  severity: error
+  source: cmmlu_conceptual_physics_48
+- pattern: 大小不同，方向相同
+  correct: 以不同角度抛出的小石子，落地时速度大小和方向均不同
+  description: 误以为不同抛射角下，落地速度大小不同但方向相同
+  severity: error
+  source: cmmlu_conceptual_physics_48
+- pattern: 地球同步通讯卫星.*轨道.*椭圆
+  correct: 地球同步通讯卫星的轨道必须是圆形的，且轨道平面与赤道平面重合
+  description: 误以为地球同步卫星轨道可以是椭圆
+  severity: error
+  source: cmmlu_conceptual_physics_49
+- pattern: 第一宇宙速度.*11.2
+  correct: 第一宇宙速度大小是7.9 km/s，11.2 km/s是第二宇宙速度
+  description: 混淆了第一宇宙速度和第二宇宙速度的数值
+  severity: error
+  source: cmmlu_conceptual_physics_49
+- pattern: 地球同步通讯卫星.*定点.*任何一点
+  correct: 地球同步通讯卫星只能定点在赤道正上方特定高度，不能定点在地球上空的任意一点
+  description: 误以为地球同步卫星可以定点在地球上空任意位置
+  severity: error
+  source: cmmlu_conceptual_physics_49
+- pattern: 大小相同方向相反两个力.*力矩之和.*为零
+  correct: 大小相同方向相反的两个力，若作用线不同，对同一轴的力矩之和不一定为零
+  description: 误以为大小相等方向相反的力对同一轴的力矩一定抵消
+  severity: error
+  source: cmmlu_conceptual_physics_50
+- pattern: 质量相等.*形状大小不同.*相同力矩.*角加速度相等
+  correct: 刚体的角加速度与转动惯量有关，质量相等但形状大小不同的刚体转动惯量不同，相同力矩下角加速度不一定相等
+  description: 误以为质量相等的刚体在相同力矩下角加速度相同，忽略了转动惯量的影响
+  severity: error
+  source: cmmlu_conceptual_physics_50
+- pattern: 相位差为2.*波长
+  correct: 在波的传播方向上，相位差为2π的两质元之间的距离称为波长
+  description: 误以为相位差为2（弧度）对应波长，实际应为2π
+  severity: error
+  source: cmmlu_conceptual_physics_51
+- pattern: 缩短双缝.*距离.*间距减小
+  correct: 在杨氏双缝干涉中，条纹间距与双缝间距成反比，缩短双缝距离会使条纹间距增大
+  description: 误以为双缝间距减小会导致条纹间距减小，实际是反比关系
+  severity: error
+  source: cmmlu_conceptual_physics_52
+- pattern: 缩短双缝.*距离.*间距不变
+  correct: 在杨氏双缝干涉中，条纹间距与双缝间距成反比，缩短双缝距离会使条纹间距增大
+  description: 误以为双缝间距变化不影响条纹间距，实际条纹间距会改变
+  severity: error
+  source: cmmlu_conceptual_physics_52
+- pattern: 利用任何物质都能得到核能
+  correct: 只有某些重核（如铀、钚）和轻核（如氘、氚）能通过裂变或聚变释放核能，并非所有物质都适用
+  description: 误以为所有物质中的原子核都能轻易释放核能
+  severity: error
+  source: cmmlu_conceptual_physics_53
+- pattern: 自然界只有在人为的条件下才会发生裂变
+  correct: 自然界中存在自发裂变，如铀-238的自发裂变，但人工裂变是可控的链式反应
+  description: 误以为裂变只能由人工引发，忽略了自然界中的自发裂变
+  severity: error
+  source: cmmlu_conceptual_physics_53
+- pattern: 磁感线.*从磁铁北极.*回到磁铁南极
+  correct: 在磁铁外部，磁感线从北极出发回到南极；在磁铁内部，磁感线从南极指向北极，形成闭合曲线
+  description: 误以为磁感线只在磁铁外部从北极到南极，忽略了内部方向
+  severity: error
+  source: cmmlu_conceptual_physics_54
+- pattern: 小磁针.*偏转.*说明磁体周围存在磁场
+  correct: 小磁针在磁体附近偏转，说明磁体周围存在磁场，但这不是唯一证明磁场存在的方法
+  description: 误以为小磁针偏转是证明磁场存在的唯一或充分条件
+  severity: warning
+  source: cmmlu_conceptual_physics_54
+- pattern: 奥斯特实验.*说明通电导体周围存在磁场
+  correct: 奥斯特实验表明通电导体周围存在磁场，这是电流的磁效应
+  description: 误以为奥斯特实验说明的是其他现象，而非电流产生磁场
+  severity: error
+  source: cmmlu_conceptual_physics_54
+- pattern: 受力物体.*施力物体
+  correct: 一个受力物体同时也一定是施力物体，因为力的作用是相互的
+  description: 误以为受力物体不一定是施力物体
+  severity: error
+  source: cmmlu_conceptual_physics_55
+- pattern: 力.*物体对物体
+  correct: 力是物体对物体的作用，不能脱离物体存在
+  description: 误以为力可以脱离物体存在
+  severity: error
+  source: cmmlu_conceptual_physics_55
+- pattern: 力.*改变运动状态
+  correct: 力可以改变物体的运动状态，包括速度大小和方向
+  description: 误以为力不能改变物体的运动状态
+  severity: error
+  source: cmmlu_conceptual_physics_55
+- pattern: 力越大.*角加速度越大
+  correct: 定轴转动刚体的角加速度由合力矩决定，而非单个力的大小
+  description: 误以为作用在刚体上的力越大，角加速度就越大，忽略了力臂和力矩的概念
+  severity: error
+  source: cmmlu_conceptual_physics_56
+- pattern: 合力矩越大.*角速度越大
+  correct: 合力矩决定角加速度，而非角速度的大小
+  description: 误以为合力矩越大，角速度越大，混淆了角加速度与角速度
+  severity: error
+  source: cmmlu_conceptual_physics_56
+- pattern: 合力矩为零.*角速度为零
+  correct: 合力矩为零时，刚体角速度保持不变（可能不为零），而非一定为零
+  description: 误以为合力矩为零时角速度也为零，忽略了惯性
+  severity: error
+  source: cmmlu_conceptual_physics_56
+- pattern: 振动相位不相同
+  correct: 在一个完整的振动周期内，初相位和末相位相同
+  description: 误以为一个周期内相位始终不同，实际上相位变化2π后回到原值
+  severity: error
+  source: cmmlu_conceptual_physics_57
+- pattern: 振动速度不相同
+  correct: 在一个完整的振动周期内，物体回到同一位置时速度大小和方向相同
+  description: 误以为一个周期内速度始终不同，实际上周期结束时速度与初速度相同
+  severity: error
+  source: cmmlu_conceptual_physics_57
+- pattern: 卷笔刀.*削铅笔.*摩擦
+  correct: 卷笔刀削铅笔时，刀口与铅笔之间的摩擦是滑动摩擦
+  description: 误以为卷笔刀削铅笔是滚动摩擦
+  severity: error
+  source: cmmlu_conceptual_physics_58
+- pattern: 砂轮.*磨刀.*摩擦
+  correct: 用砂轮盘磨刀时，砂轮与刀口之间的摩擦是滑动摩擦
+  description: 误以为砂轮磨刀是滚动摩擦
+  severity: error
+  source: cmmlu_conceptual_physics_58
+- pattern: 滑梯.*滑下.*摩擦
+  correct: 小孩从滑梯上滑下时，小孩与滑梯之间的摩擦是滑动摩擦
+  description: 误以为滑梯下滑是滚动摩擦
+  severity: error
+  source: cmmlu_conceptual_physics_58
+- pattern: 小球在水平面上滚动.*重力.*做功
+  correct: 重力方向竖直向下，小球在水平面上滚动时在重力方向没有位移，重力不做功
+  description: 误以为物体只要运动，重力就一定做功
+  severity: error
+  source: cmmlu_conceptual_physics_59
+- pattern: 举重运动员.*杠铃不动.*举力.*做功
+  correct: 做功需要有力且在力的方向上有位移，杠铃静止时举力方向没有位移，举力不做功
+  description: 误以为只要有力作用在物体上，力就一定做功
+  severity: error
+  source: cmmlu_conceptual_physics_59
+- pattern: 起重机.*水平方向.*匀速.*拉力.*做功
+  correct: 拉力方向竖直向上，货物水平移动时在拉力方向没有位移，拉力不做功
+  description: 误以为物体移动时，所有作用力都做功
+  severity: error
+  source: cmmlu_conceptual_physics_59
+- pattern: 南北极.*重力.*引力
+  correct: 在南北极，地球自转的惯性离心力为零，重力和地球引力大小相等、方向相同
+  description: 误以为在南北极重力和引力大小相差最多
+  severity: error
+  source: cmmlu_conceptual_physics_60
+- pattern: 纬度60.*重力.*引力
+  correct: 在赤道上惯性离心力最大，重力和引力大小相差最多
+  description: 误以为在纬度60°处重力和引力大小相差最多
+  severity: error
+  source: cmmlu_conceptual_physics_60
+- pattern: 纬度45.*重力.*引力
+  correct: 在赤道上惯性离心力最大，重力和引力大小相差最多
+  description: 误以为在纬度45°处重力和引力大小相差最多
+  severity: error
+  source: cmmlu_conceptual_physics_60
+- pattern: 前者动量守恒，后者动量不守恒
+  correct: 两种情况下系统动量都不守恒，因为锤和钉受到外力（如手、木块阻力）
+  description: 误以为锤压钉时动量守恒，锤击钉时动量不守恒
+  severity: error
+  source: cmmlu_conceptual_physics_61
+- pattern: 后者动量变化大，给钉的作用力就大
+  correct: 动量变化率（即冲力）大，而不是动量变化量大，导致作用力大
+  description: 混淆了动量变化量与动量变化率（冲力）的概念
+  severity: error
+  source: cmmlu_conceptual_physics_61
+- pattern: 线速度.*质量成正比
+  correct: 双星系统中，线速度与质量成反比（v ∝ 1/m）
+  description: 误以为双星系统中线速度与质量成正比，实际上角速度相同，线速度与轨道半径成正比，而轨道半径与质量成反比
+  severity: error
+  source: cmmlu_conceptual_physics_62
+- pattern: 功就是能.*能就是功
+  correct: 功是能量转化的量度，不是能量本身，两者概念不同
+  description: 误以为功和能是同一概念，混淆了过程量和状态量
+  severity: error
+  source: cmmlu_conceptual_physics_63
+- pattern: 磁感应强度不为零.*通电导线.*一定.*磁场力
+  correct: 通电导线在磁场中受磁场力的条件是电流方向与磁场方向不平行，当两者平行时不受力
+  description: 误以为只要磁感应强度不为零，通电导线就一定受到磁场力
+  severity: error
+  source: cmmlu_conceptual_physics_64
+- pattern: 电场线.*从负电荷出发.*终止于正电荷
+  correct: 电场线从正电荷出发，终止于负电荷
+  description: 混淆了电场线的方向，误以为从负电荷出发到正电荷
+  severity: error
+  source: cmmlu_conceptual_physics_64
+- pattern: 磁感线.*从磁体的N极出发.*终止于S极
+  correct: 磁感线是闭合曲线，在磁体外部从N极到S极，在磁体内部从S极到N极
+  description: 误以为磁感线像电场线一样有起点和终点，实际上磁感线是闭合的
+  severity: error
+  source: cmmlu_conceptual_physics_64
+- pattern: 弹力仅仅是指弹簧形变时对其他物体的作用
+  correct: 弹力是指发生弹性形变的物体，由于要恢复原状，对接触它的物体产生的力，不仅限于弹簧
+  description: 误以为弹力只存在于弹簧形变中
+  severity: error
+  source: cmmlu_conceptual_physics_65
+- pattern: 速度变化.*机械能也变化
+  correct: 在平直公路上行驶的汽车，速度变化时机械能不一定变化，因为机械能包括动能和势能，势能可能补偿动能变化
+  description: 误以为速度变化必然导致机械能变化，忽略了势能可能同时变化
+  severity: error
+  source: cmmlu_conceptual_physics_66
+- pattern: 具有动能.*一定具有机械能
+  correct: 动能是机械能的一部分，具有动能就一定具有机械能
+  description: 误以为动能和机械能是独立概念，实际上动能是机械能的组成部分
+  severity: error
+  source: cmmlu_conceptual_physics_66
+- pattern: 力和位移都是矢量，功也一定是矢量
+  correct: 功是标量，由力和位移的点积定义，没有方向性
+  description: 误以为由矢量运算得到的物理量一定是矢量
+  severity: error
+  source: cmmlu_conceptual_physics_67
+- pattern: 功有正功和负功，所以功是矢量
+  correct: 功的正负表示能量传递方向，并非空间方向，功仍是标量
+  description: 误将正负号等同于矢量的方向性
+  severity: error
+  source: cmmlu_conceptual_physics_67
+- pattern: 力是矢量，功也是矢量
+  correct: 力是矢量，但功是标量，两者性质不同
+  description: 误以为力的矢量性必然传递到功
+  severity: error
+  source: cmmlu_conceptual_physics_67
+- pattern: 相互压紧的粗糙物体间一定存在摩擦力
+  correct: 相互压紧的粗糙物体间不一定存在摩擦力，还需要有相对运动或相对运动趋势
+  description: 误以为只要物体相互压紧且表面粗糙就一定有摩擦力
+  severity: error
+  source: cmmlu_conceptual_physics_68
+- pattern: 运动的物体一定受到滑动摩擦力
+  correct: 运动的物体不一定受到滑动摩擦力，可能不受摩擦力或受静摩擦力
+  description: 误以为物体运动就必然受到滑动摩擦力
+  severity: error
+  source: cmmlu_conceptual_physics_68
+- pattern: 静止的物体一定受到静摩擦力
+  correct: 静止的物体不一定受到静摩擦力，只有存在相对运动趋势时才可能受静摩擦力
+  description: 误以为静止的物体一定受到静摩擦力
+  severity: error
+  source: cmmlu_conceptual_physics_68
+- pattern: 电容器不带电.*电容为零
+  correct: 电容是电容器的固有属性，由极板形状、大小、间距和介质决定，与是否带电无关
+  description: 误以为电容依赖于电荷量，认为不带电时电容为零
+  severity: error
+  source: cmmlu_conceptual_physics_69
+- pattern: 电容器带电荷量越多.*电容越大
+  correct: 电容是电容器的固有属性，不随带电荷量变化
+  description: 误以为电容与电荷量成正比
+  severity: error
+  source: cmmlu_conceptual_physics_69
+- pattern: 电容器两极板间电压越低.*电容越小
+  correct: 电容是电容器的固有属性，不随两极板间电压变化
+  description: 误以为电容与电压成正比
+  severity: error
+  source: cmmlu_conceptual_physics_69
+- pattern: 电阻.*跟.*电压成正比.*跟.*电流成反比
+  correct: 导体的电阻由材料、长度、横截面积和温度决定，与电压和电流无关
+  description: 误以为电阻与电压成正比、与电流成反比，混淆了电阻的定义式与决定因素
+  severity: error
+  source: cmmlu_conceptual_physics_70
+- pattern: 加速时做正功.*匀速.*减速.*负功
+  correct: 电梯支持力始终向上，与位移方向相同，全程做正功
+  description: 误以为减速时支持力做负功，实际上支持力方向始终向上，与位移同向
+  severity: error
+  source: cmmlu_conceptual_physics_71
+- pattern: 匀速.*不做功
+  correct: 匀速时支持力与重力平衡，但位移向上，支持力仍做正功
+  description: 误以为匀速时支持力不做功，实际上力与位移同向，做功不为零
+  severity: error
+  source: cmmlu_conceptual_physics_71
+- pattern: 磁感应强度沿磁感线方向逐渐减小
+  correct: 磁感应强度沿磁感线方向不一定减小，在匀强磁场中大小不变
+  description: 误以为磁感线方向与磁感应强度大小变化相关
+  severity: error
+  source: cmmlu_conceptual_physics_72
+- pattern: 磁感应强度的方向就是正电荷在该处的受力方向
+  correct: 磁感应强度的方向是正电荷所受洛伦兹力的方向由左手定则确定，与正电荷运动方向垂直
+  description: 混淆了磁感应强度方向与正电荷受力方向的关系
+  severity: error
+  source: cmmlu_conceptual_physics_72
+- pattern: 磁感应强度的方向就是通电导线在磁场中受力的方向
+  correct: 磁感应强度的方向与通电导线在磁场中受力的方向垂直，由左手定则确定
+  description: 误以为磁感应强度方向与安培力方向相同
+  severity: error
+  source: cmmlu_conceptual_physics_72
+- pattern: 电功.*电热.*一回事
+  correct: 电功是电场力做的功，电热是电流通过电阻时产生的热量，两者不同
+  description: 误以为电功和电热是同一概念
+  severity: error
+  source: cmmlu_conceptual_physics_73
+- pattern: 电动机.*电功率.*热功率相等
+  correct: 电动机的电功率包括热功率和机械功率，两者不相等
+  description: 误以为电动机的电功率全部转化为热功率
+  severity: error
+  source: cmmlu_conceptual_physics_73
+- pattern: 电场力做功.*自由电子.*速率越来越大
+  correct: 电场力做功使自由电子定向移动，但速率不会持续增大，因存在碰撞和阻力
+  description: 误以为电场力做功会使自由电子速率无限增大
+  severity: error
+  source: cmmlu_conceptual_physics_73
+- pattern: 铜导线.*电阻.*比.*铁导线.*小
+  correct: 导体的电阻由材料、长度、横截面积和温度共同决定，仅材料不同无法比较电阻大小
+  description: 误以为铜的电阻率一定比铁小，忽略长度、横截面积等因素
+  severity: error
+  source: cmmlu_conceptual_physics_74
+- pattern: 长导线.*电阻.*比.*短导线.*大
+  correct: 导体的电阻由材料、长度、横截面积和温度共同决定，仅长度不同无法比较电阻大小
+  description: 误以为导线越长电阻一定越大，忽略材料、横截面积等因素
+  severity: error
+  source: cmmlu_conceptual_physics_74
+- pattern: 粗导线.*电阻.*比.*细导线.*小
+  correct: 导体的电阻由材料、长度、横截面积和温度共同决定，仅横截面积不同无法比较电阻大小
+  description: 误以为导线越粗电阻一定越小，忽略材料、长度等因素
+  severity: error
+  source: cmmlu_conceptual_physics_74
+- pattern: 运动速度越大.*内能越大
+  correct: 内能是物体内部分子热运动的能量，与宏观运动速度无关
+  description: 误将宏观动能与内能混淆
+  severity: error
+  source: cmmlu_conceptual_physics_75
+- pattern: 0°C.*没有内能
+  correct: 任何温度下物体分子都在做无规则运动，0°C的水也有内能
+  description: 误以为0°C时分子停止运动，没有内能
+  severity: error
+  source: cmmlu_conceptual_physics_75
+- pattern: 电磁波.*机械波.*类比
+  correct: 电磁波和机械波虽然都能发生干涉、衍射，但电磁波是横波，机械波可以是横波或纵波，且传播机制不同，类比不完全正确
+  description: 误以为电磁波与机械波在所有方面都可以完全类比
+  severity: error
+  source: cmmlu_conceptual_physics_76
+- pattern: 能量守恒.*节约能源意义不大
+  correct: 能量守恒不改变能量品质降低的事实，节约能源仍然非常重要
+  description: 误以为能量守恒意味着不需要节约能源
+  severity: error
+  source: cmmlu_conceptual_physics_77
+- pattern: 能量守恒.*利用率.*100%
+  correct: 能量守恒不意味着能源利用率可以达到100%，实际利用中总有能量损失
+  description: 误以为能量守恒定律保证能源利用率100%
+  severity: error
+  source: cmmlu_conceptual_physics_77
+- pattern: 节约能源.*只要.*节能意识
+  correct: 节约能源既需要提高节能意识，也需要科技进步来提高能源利用效率
+  description: 误以为节约能源仅靠意识，与科技进步无关
+  severity: error
+  source: cmmlu_conceptual_physics_77
+- pattern: 被击木块先到达地面
+  correct: 被击中的木块因子弹嵌入增加质量，但竖直方向动量守恒，下落时间不变，实际因水平动量转移导致竖直速度减小，故后到达地面
+  description: 误以为子弹击中木块会使其加速下落
+  severity: error
+  source: cmmlu_conceptual_physics_78
+- pattern: 两木块同时到达地面
+  correct: 子弹击中木块后，竖直方向动量守恒但木块获得水平速度，竖直速度因动量转移而减小，故被击木块后到达地面
+  description: 误以为子弹击中不影响竖直下落时间
+  severity: error
+  source: cmmlu_conceptual_physics_78
+- pattern: 匀速圆周运动.*向心力.*不变
+  correct: 匀速圆周运动中向心力大小不变，但方向始终指向圆心，因此是变化的
+  description: 误以为向心力是恒矢量，忽略了方向变化
+  severity: error
+  source: cmmlu_conceptual_physics_79
+- pattern: 匀速圆周运动.*加速度.*不变
+  correct: 匀速圆周运动中加速度大小不变，但方向始终指向圆心，因此是变化的
+  description: 误以为加速度是恒矢量，忽略了方向变化
+  severity: error
+  source: cmmlu_conceptual_physics_79
+- pattern: 匀速圆周运动.*线速度.*不变
+  correct: 匀速圆周运动中线速度大小不变，但方向沿切线方向不断变化，因此是变化的
+  description: 误以为线速度是恒矢量，忽略了方向变化
+  severity: error
+  source: cmmlu_conceptual_physics_79
+- pattern: 白光.*不同波长.*干涉
+  correct: 白光由不同波长的光组成，但不同波长的光仍可分别干涉，干涉不发生的根本原因是光源不相干
+  description: 误以为白光由多种波长组成是干涉不发生的直接原因
+  severity: error
+  source: cmmlu_conceptual_physics_80
+- pattern: 不同光源.*不能有相同频率
+  correct: 两个不同光源发出的光可以有相同频率，但频率相同不是干涉的充分条件，还需要相位差恒定
+  description: 误以为不同光源发出的光频率必然不同，从而无法干涉
+  severity: error
+  source: cmmlu_conceptual_physics_80
+- pattern: 光强度不同.*干涉
+  correct: 干涉现象与光强度无关，即使强度不同，只要满足相干条件仍可干涉
+  description: 误以为光强度不同会导致无法干涉
+  severity: error
+  source: cmmlu_conceptual_physics_80
+- pattern: 重力势能变化量.*不同.*参考平面
+  correct: 重力势能的变化量与参考平面的选择无关，只与高度差有关
+  description: 误以为选择不同参考平面会影响重力势能的变化量
+  severity: error
+  source: cmmlu_conceptual_physics_81
+- pattern: 重力势能为负.*做功.*少
+  correct: 重力势能的正负表示相对于参考平面的高低，与做功多少无直接关系
+  description: 误以为重力势能的正负值能比较做功的多少
+  severity: error
+  source: cmmlu_conceptual_physics_81
+- pattern: 重力.*正功.*重力势能增加
+  correct: 重力做正功时，重力势能减少
+  description: 误以为重力做正功会导致重力势能增加
+  severity: error
+  source: cmmlu_conceptual_physics_81
+- pattern: 最低点.*拉力等于.*重力
+  correct: 在最低点时，绳的拉力大于重力，合力向上提供向上的加速度
+  description: 误以为在最低点受力平衡，实际上最低点速度为零但加速度向上
+  severity: error
+  source: cmmlu_conceptual_physics_82
+- pattern: 绳.*拉力.*始终做负功.*动能一直减小
+  correct: 绳的拉力始终做负功，但人的动能先增大后减小，因为重力做正功阶段动能增加
+  description: 误以为拉力始终做负功则动能一直减小，忽略了重力做正功的影响
+  severity: error
+  source: cmmlu_conceptual_physics_82
+- pattern: 绳恰好伸直.*弹性势能为零.*动能最大
+  correct: 绳恰好伸直时弹性势能为零，但此时人的动能并非最大，之后重力仍大于拉力，动能继续增加
+  description: 误以为绳刚伸直时动能最大，实际上此时人仍加速，动能继续增大
+  severity: error
+  source: cmmlu_conceptual_physics_82
+- pattern: 浮力.*等于.*排开.*水.*重力
+  correct: 浮力等于物体排开液体的重力，不限于水
+  description: 误以为浮力只等于排开水的重力，忽略了其他液体
+  severity: error
+  source: cmmlu_conceptual_physics_83
+- pattern: 浸没.*越深.*浮力.*越大
+  correct: 物体浸没后，浮力与深度无关，只与排开液体体积和液体密度有关
+  description: 误以为物体浸没越深浮力越大
+  severity: error
+  source: cmmlu_conceptual_physics_83
+- pattern: 下沉.*不受到浮力
+  correct: 下沉的物体也受到浮力，只是浮力小于重力
+  description: 误以为下沉的物体不受浮力作用
+  severity: error
+  source: cmmlu_conceptual_physics_83
+- pattern: 速度越大的物体动能就越大
+  correct: 动能大小由质量和速度共同决定，速度大但质量小的物体动能不一定大
+  description: 误认为动能只与速度有关，忽略了质量的影响
+  severity: error
+  source: cmmlu_conceptual_physics_84
+- pattern: 物体受到的合外力越大，动能就越大
+  correct: 合外力做功改变动能，合外力大但位移为零或方向垂直时，动能可能不变
+  description: 误将合外力大小与动能大小直接关联，忽略了做功条件
+  severity: error
+  source: cmmlu_conceptual_physics_84
+- pattern: 动能越大的物体速度就越大
+  correct: 动能大可能是质量大而非速度大，速度不一定大
+  description: 误认为动能只由速度决定，忽略了质量的影响
+  severity: error
+  source: cmmlu_conceptual_physics_84
+- pattern: 自由电子移动的方向.*电流方向
+  correct: 金属导体中自由电子移动的方向与电流方向相反，电流方向是正电荷移动的方向
+  description: 误以为自由电子移动的方向就是电流方向，忽略了电流方向是正电荷定向移动的方向
+  severity: error
+  source: cmmlu_conceptual_physics_85
+- pattern: 负电荷运动的方向.*电流方向
+  correct: 人们把正电荷移动的方向规定为电流方向，而非负电荷运动的方向
+  description: 误以为负电荷运动的方向是电流方向
+  severity: error
+  source: cmmlu_conceptual_physics_85
+- pattern: 电荷运动的方向.*电流方向
+  correct: 电流方向是正电荷定向移动的方向，不是任意电荷运动的方向
+  description: 误以为任何电荷运动的方向都是电流方向，忽略了定向移动和正电荷的限定
+  severity: error
+  source: cmmlu_conceptual_physics_85
+- pattern: 每个线圈在均匀磁场中只转动而不移动
+  correct: 在均匀磁场中，线圈所受合力为零，但可能受磁力矩作用而转动，同时不会发生平动
+  description: 误以为线圈在均匀磁场中只会转动而不会移动，实际上均匀磁场中线圈所受合力为零，不会发生平动
+  severity: error
+  source: cmmlu_conceptual_physics_86
+- pattern: 三个线圈处于图示的位置时所受磁力矩最大
+  correct: 线圈在均匀磁场中所受磁力矩与线圈平面法线与磁场方向的夹角有关，图示位置不一定对应最大磁力矩
+  description: 误以为图示位置就是磁力矩最大的位置，实际上磁力矩大小取决于线圈平面法线与磁场方向的夹角
+  severity: error
+  source: cmmlu_conceptual_physics_86
+- pattern: 阻碍作用越大.*流经它的电流就越小
+  correct: 在电压一定时，电阻越大，电流越小；但若电压变化，电流不一定小
+  description: 忽略了电压不变的前提条件
+  severity: error
+  source: cmmlu_conceptual_physics_87
+- pattern: 相同电压下.*电流越大的电阻越大
+  correct: 相同电压下，电流越大的电阻越小
+  description: 混淆了电流大小与电阻大小的关系
+  severity: error
+  source: cmmlu_conceptual_physics_87
+- pattern: 压力越大.*压强一定越大
+  correct: 压强由压力和受力面积共同决定，压力增大时若受力面积也增大，压强不一定增大
+  description: 误以为压强只与压力成正比，忽略了受力面积的影响
+  severity: error
+  source: cmmlu_conceptual_physics_88
+- pattern: 受力面积越小.*压强一定越大
+  correct: 压强由压力和受力面积共同决定，受力面积减小时若压力也减小，压强不一定增大
+  description: 误以为压强只与受力面积成反比，忽略了压力的影响
+  severity: error
+  source: cmmlu_conceptual_physics_88
+- pattern: 受力面积不变.*重力越大.*压强一定越大
+  correct: 压强与压力有关，压力不一定等于重力（如物体放在斜面上），重力增大时压力不一定增大，压强不一定增大
+  description: 误以为重力直接等于压力，忽略了压力可能不等于重力的情况
+  severity: error
+  source: cmmlu_conceptual_physics_88
+- pattern: 合力一定大于分力
+  correct: 合力可能大于、等于或小于分力，取决于分力之间的夹角
+  description: 误以为合力总是大于任意一个分力
+  severity: error
+  source: cmmlu_conceptual_physics_89
+- pattern: 物体速率不变.*合外力为零
+  correct: 物体速率不变时，合外力可能不为零（如匀速圆周运动）
+  description: 误以为速率不变则合外力一定为零
+  severity: error
+  source: cmmlu_conceptual_physics_89
+- pattern: 速率很大的物体.*运动状态不易改变
+  correct: 运动状态改变的难易程度由质量决定，与速率大小无关
+  description: 误以为速率大的物体惯性大，运动状态更难改变
+  severity: error
+  source: cmmlu_conceptual_physics_89
+- pattern: 既没有斥力也没有引力
+  correct: 当分子间距离为r0时，分子间的引力和斥力大小相等，合力为零，但引力和斥力仍然存在
+  description: 误以为分子间距离为r0时分子间没有相互作用力
+  severity: error
+  source: cmmlu_conceptual_physics_90
+- pattern: 分子间只有引力
+  correct: 分子间的距离大于r0时，分子间同时存在引力和斥力，但引力大于斥力，表现为引力
+  description: 误以为分子间距离大于r0时只有引力作用
+  severity: error
+  source: cmmlu_conceptual_physics_90
+- pattern: 平衡距离.*与分子直径.*同一数值
+  correct: 分子间的平衡距离r0约等于分子直径，但两者不是同一数值，r0略大于分子直径
+  description: 误以为分子间的平衡距离r0与分子直径完全相同
+  severity: error
+  source: cmmlu_conceptual_physics_90
+- pattern: 天然气.*清洁.*无尽.*开发利用
+  correct: 天然气是化石能源，不可再生，储量有限
+  description: 误以为天然气是清洁且可无尽利用的能源
+  severity: error
+  source: cmmlu_conceptual_physics_91
+- pattern: 煤.*石油.*可再生能源
+  correct: 煤和石油是化石能源，不可再生
+  description: 误以为煤和石油是可再生能源
+  severity: error
+  source: cmmlu_conceptual_physics_91
+- pattern: 太阳能.*短期内消耗殆尽
+  correct: 太阳能是可再生能源，短期内不会消耗殆尽
+  description: 误以为太阳能是有限的、可被短期内耗尽
+  severity: error
+  source: cmmlu_conceptual_physics_91
+- pattern: 简谐振动的动能守恒
+  correct: 简谐振动的机械能守恒，动能和势能相互转化，动能不守恒
+  description: 误以为简谐振动中动能保持不变
+  severity: error
+  source: cmmlu_conceptual_physics_92
+- pattern: 简谐振动角动量守恒
+  correct: 简谐振动是直线运动，不涉及角动量守恒
+  description: 误以为简谐振动满足角动量守恒
+  severity: error
+  source: cmmlu_conceptual_physics_92
+- pattern: 简谐振动的势能守恒
+  correct: 简谐振动的机械能守恒，动能和势能相互转化，势能不守恒
+  description: 误以为简谐振动中势能保持不变
+  severity: error
+  source: cmmlu_conceptual_physics_92
+- pattern: 内能变为原来的两倍.*温度变为原来的四倍
+  correct: 对于一定质量的理想气体，容积固定时，压强增大为原来的两倍，则温度变为原来的两倍，内能也变为原来的两倍
+  description: 误以为压强加倍时温度会变为四倍
+  severity: error
+  source: cmmlu_conceptual_physics_93
+- pattern: 内能变为原来的四倍.*温度变为原来的两倍
+  correct: 对于一定质量的理想气体，容积固定时，压强增大为原来的两倍，则温度变为原来的两倍，内能也变为原来的两倍
+  description: 误以为压强加倍时内能会变为四倍
+  severity: error
+  source: cmmlu_conceptual_physics_93
+- pattern: 内能和温度都不变
+  correct: 对于一定质量的理想气体，容积固定时，压强增大为原来的两倍，则温度变为原来的两倍，内能也变为原来的两倍
+  description: 误以为压强变化时内能和温度保持不变
+  severity: error
+  source: cmmlu_conceptual_physics_93
+- pattern: 近地卫星.*保定.*纬度圈.*平面
+  correct: 近地卫星的轨道平面必须通过地心，不能只在某个地理纬度圈决定的平面上运动
+  description: 误以为近地卫星可以在任意纬度圈平面上做圆周运动，忽略了卫星轨道必须过地心的条件
+  severity: error
+  source: cmmlu_conceptual_physics_94
+- pattern: 近地卫星.*赤道.*物体.*完全失重
+  correct: 近地卫星处于完全失重状态，但赤道上的物体受支持力作用，并非完全失重
+  description: 误以为赤道上的物体也处于完全失重状态
+  severity: error
+  source: cmmlu_conceptual_physics_94
+- pattern: 近地卫星.*赤道.*物体.*轨道相同.*线速度相等
+  correct: 近地卫星和赤道上的物体轨道半径不同，线速度大小不相等
+  description: 误以为近地卫星和赤道上的物体轨道相同、线速度相等
+  severity: error
+  source: cmmlu_conceptual_physics_94
+- pattern: 元电荷.*电子.*质子
+  correct: 元电荷是电荷量的最小单位，不是指电子或质子本身
+  description: 误以为元电荷是电子或质子本身
+  severity: error
+  source: cmmlu_conceptual_physics_95
+- pattern: 点电荷.*元电荷.*检验电荷.*同一种物理模型
+  correct: 点电荷、元电荷、检验电荷是三个不同的概念，点电荷是理想化模型，元电荷是电荷量单位，检验电荷是用于检测电场的电荷
+  description: 混淆了点电荷、元电荷和检验电荷的概念
+  severity: error
+  source: cmmlu_conceptual_physics_95
+- pattern: 点电荷.*电荷量.*很小
+  correct: 点电荷是理想化模型，其电荷量不一定很小，关键是形状和大小可忽略
+  description: 误以为点电荷的电荷量一定很小
+  severity: error
+  source: cmmlu_conceptual_physics_95
+- pattern: 电压.*使.*电子.*不断移动
+  correct: 电压是产生电流的原因，但电子移动需要闭合回路
+  description: 误以为电压单独就能使电子持续移动，忽略了电路必须闭合
+  severity: error
+  source: cmmlu_conceptual_physics_96
+- pattern: 导体两端有电压.*因为.*电流
+  correct: 导体两端有电压是产生电流的原因，而不是电流导致电压
+  description: 颠倒电压和电流的因果关系，误以为电流导致电压
+  severity: error
+  source: cmmlu_conceptual_physics_96
+- pattern: 只要有电压.*就会有电流
+  correct: 电路中要有电流，除了电压还需要闭合回路
+  description: 误以为电压单独存在就能产生电流，忽略了电路必须闭合
+  severity: error
+  source: cmmlu_conceptual_physics_96
+- pattern: 完全失重.*不受重力
+  correct: 完全失重状态下物体仍受重力作用，只是支持力为零
+  description: 误以为完全失重时重力消失
+  severity: error
+  source: cmmlu_conceptual_physics_97
+- pattern: 合力.*大于.*分力
+  correct: 合力可能大于、等于或小于分力，取决于分力间的夹角
+  description: 误以为合力一定大于任一分力
+  severity: error
+  source: cmmlu_conceptual_physics_97
+- pattern: 运动.*摩擦力.*方向.*相反
+  correct: 运动物体所受摩擦力的方向可能与运动方向相同（如传送带上的物体）
+  description: 误以为摩擦力方向一定与运动方向相反
+  severity: error
+  source: cmmlu_conceptual_physics_97
+- pattern: 运动得越快.*内能越大
+  correct: 物体的内能与宏观机械运动速度无关，只与分子热运动有关
+  description: 误将宏观动能与内能混淆，认为物体运动速度越快内能越大
+  severity: error
+  source: cmmlu_conceptual_physics_98
+- pattern: 举得越高.*内能越大
+  correct: 物体的内能与重力势能无关，只与分子热运动有关
+  description: 误将重力势能与内能混淆，认为物体举得越高内能越大
+  severity: error
+  source: cmmlu_conceptual_physics_98
+- pattern: 运动得越快.*举得越高.*内能越大
+  correct: 物体的内能只与分子热运动有关，与宏观机械运动速度和高度无关
+  description: 误将宏观动能和重力势能同时与内能混淆
+  severity: error
+  source: cmmlu_conceptual_physics_98
+- pattern: 热传递.*惟一.*改变.*内能
+  correct: 做功和热传递都是改变物体内能的方式
+  description: 误以为只有热传递能改变内能，忽略了做功也能改变内能
+  severity: error
+  source: cmmlu_conceptual_physics_99
+- pattern: 温度相等.*内能相同
+  correct: 内能不仅与温度有关，还与物体的质量、状态等因素有关，温度相等但质量不同的物体内能不同
+  description: 误以为温度相同的物体内能一定相同，忽略了质量等因素
+  severity: error
+  source: cmmlu_conceptual_physics_99
+- pattern: 平抛运动速度方向与恒力方向之间夹角不变
+  correct: 平抛运动中速度方向与恒力（重力）方向之间的夹角随时间变化，越来越小
+  description: 误以为平抛运动速度方向与恒力方向夹角保持不变
+  severity: error
+  source: cmmlu_conceptual_physics_101
+- pattern: 电磁波不能在真空中传播
+  correct: 电磁波可以在真空中传播
+  description: 误以为电磁波需要介质才能传播
+  severity: error
+  source: cmmlu_conceptual_physics_102
+- pattern: 一切外力消失.*曲线运动
+  correct: 物体不受外力时，将保持匀速直线运动状态
+  description: 误以为物体在失去外力后仍会沿曲线运动
+  severity: error
+  source: cmmlu_conceptual_physics_103
+- pattern: 一切外力消失.*无法确定
+  correct: 根据牛顿第一定律，物体不受外力时运动状态不变
+  description: 误以为没有外力时物体运动状态无法确定
+  severity: error
+  source: cmmlu_conceptual_physics_103
+- pattern: 一切外力消失.*竖直下落
+  correct: 物体不受外力时，将保持原来的运动方向做匀速直线运动
+  description: 误以为失去外力后物体会竖直下落
+  severity: error
+  source: cmmlu_conceptual_physics_103
+- pattern: 电流方向.*磁性强弱
+  correct: 电流方向改变只改变电磁铁的磁极方向，不改变磁性强弱
+  description: 误以为电流方向改变会影响电磁铁的磁性强弱
+  severity: error
+  source: cmmlu_conceptual_physics_104
+- pattern: 线圈匝数.*磁性强弱无关
+  correct: 相同形状的电磁铁，线圈匝数越多，磁性越强
+  description: 误以为电磁铁的磁性强弱与线圈匝数无关
+  severity: error
+  source: cmmlu_conceptual_physics_104
+- pattern: 电流强弱.*磁性强弱无关
+  correct: 电磁铁的磁性强弱与通过它的电流强弱有关，电流越大磁性越强
+  description: 误以为电磁铁的磁性强弱与电流强弱无关
+  severity: error
+  source: cmmlu_conceptual_physics_104
+- pattern: 接触点是明的.*同心圆环.*等距离
+  correct: 牛顿环中心接触点为暗斑，且圆环间距随半径增大而减小，是不等距的
+  description: 误以为牛顿环中心是亮斑且圆环等间距
+  severity: error
+  source: cmmlu_conceptual_physics_105
+- pattern: 接触点是暗的.*同心圆环.*等距离
+  correct: 牛顿环圆环间距随半径增大而减小，是不等距的
+  description: 误以为牛顿环圆环等间距
+  severity: error
+  source: cmmlu_conceptual_physics_105
+- pattern: 接触点是明的.*同心圆环.*不等距离
+  correct: 牛顿环中心接触点为暗斑
+  description: 误以为牛顿环中心是亮斑
+  severity: error
+  source: cmmlu_conceptual_physics_105
+- pattern: 匀加速运动
+  correct: 收绳速率恒定但绳的方向不断变化，导致船的速度和加速度均变化，因此是变加速运动
+  description: 误以为收绳速率恒定则船做匀加速运动
+  severity: error
+  source: cmmlu_conceptual_physics_106
+- pattern: 匀减速运动
+  correct: 收绳速率恒定但绳的方向不断变化，船的速度和加速度均变化，不是匀减速运动
+  description: 误以为收绳速率恒定则船做匀减速运动
+  severity: error
+  source: cmmlu_conceptual_physics_106
+- pattern: 变减速运动
+  correct: 收绳速率恒定但绳的方向不断变化，船的速度和加速度均变化，且加速度方向与速度方向不一定相反，因此是变加速运动而非变减速运动
+  description: 误以为船的速度一直减小，实际船的速度是增加的
+  severity: error
+  source: cmmlu_conceptual_physics_106
+- pattern: 公式只适用于围绕太阳运行的行星
+  correct: 开普勒第三定律中的k值只与中心天体有关，公式适用于任何中心天体系统，不仅限于太阳
+  description: 误以为开普勒第三定律只适用于太阳系的行星
+  severity: error
+  source: cmmlu_conceptual_physics_107
+- pattern: 不同星球的行星或卫星，k值均相等
+  correct: 不同中心天体的系统k值不同，k值由中心天体的质量决定
+  description: 误以为所有天体系统的k值都相同
+  severity: error
+  source: cmmlu_conceptual_physics_107
+- pattern: 匀速圆周运动.*角速度.*变化
+  correct: 在匀速圆周运动中，角速度是恒定的
+  description: 误以为匀速圆周运动中角速度会变化
+  severity: error
+  source: cmmlu_conceptual_physics_108
+- pattern: 匀速圆周运动.*转速.*变化
+  correct: 在匀速圆周运动中，转速是恒定的
+  description: 误以为匀速圆周运动中转速会变化
+  severity: error
+  source: cmmlu_conceptual_physics_108
+- pattern: 匀速圆周运动.*周期.*变化
+  correct: 在匀速圆周运动中，周期是恒定的
+  description: 误以为匀速圆周运动中周期会变化
+  severity: error
+  source: cmmlu_conceptual_physics_108
+- pattern: 变化磁场.*保守力场
+  correct: 变化磁场产生的感生电场是非保守力场，静电场才是保守力场
+  description: 误以为变化磁场是保守力场
+  severity: error
+  source: cmmlu_conceptual_physics_109
+- pattern: 感生电场.*保守力场
+  correct: 感生电场是有旋场，非保守力场，静电场才是保守力场
+  description: 误以为感生电场是保守力场
+  severity: error
+  source: cmmlu_conceptual_physics_109
+- pattern: 稳恒磁场.*保守力场
+  correct: 稳恒磁场是涡旋场，非保守力场，静电场才是保守力场
+  description: 误以为稳恒磁场是保守力场
+  severity: error
+  source: cmmlu_conceptual_physics_109
+- pattern: 折射角总小于入射角
+  correct: 光从光疏介质斜射入光密介质时折射角小于入射角，从光密介质斜射入光疏介质时折射角大于入射角
+  description: 误以为折射角总是小于入射角，忽略了光从光密介质射向光疏介质的情况
+  severity: error
+  source: cmmlu_conceptual_physics_110
+- pattern: 动量守恒.*卫星
+  correct: 卫星绕地球运动时，动量不守恒，因为受到地球引力作用
+  description: 误以为卫星在椭圆轨道上动量守恒
+  severity: error
+  source: cmmlu_conceptual_physics_111
+- pattern: 角动量不守恒.*卫星
+  correct: 卫星对地球中心的角动量守恒，因为地球引力始终指向地心，力矩为零
+  description: 误以为卫星对地球中心的角动量不守恒
+  severity: error
+  source: cmmlu_conceptual_physics_111
+- pattern: 动能守恒.*卫星
+  correct: 卫星在椭圆轨道上动能不守恒，因为引力做功导致动能与势能相互转化
+  description: 误以为卫星在椭圆轨道上动能守恒
+  severity: error
+  source: cmmlu_conceptual_physics_111
+- pattern: 德布罗意.*实验验证.*物质波
+  correct: 德布罗意提出了物质波假说，但第一个实验验证物质波存在的是戴维孙和革末（电子衍射实验）
+  description: 误以为德布罗意本人通过实验验证了物质波的存在
+  severity: error
+  source: cmmlu_conceptual_physics_112
+- pattern: 光.*传播.*波.*相互作用.*粒子
+  correct: 光具有波粒二象性，在任何情况下都同时具有波动性和粒子性，并非在传播时是波、相互作用时是粒子
+  description: 误以为光的波动性和粒子性在不同过程中分别体现，而非同时存在
+  severity: error
+  source: cmmlu_conceptual_physics_112
+- pattern: 牛顿.*微粒说.*爱因斯坦.*光子说.*本质上一样
+  correct: 牛顿的微粒说认为光是经典粒子，爱因斯坦的光子说认为光具有量子化的能量，两者本质不同
+  description: 误以为牛顿的微粒说与爱因斯坦的光子说在本质上相同
+  severity: error
+  source: cmmlu_conceptual_physics_112
+- pattern: 磁通量越大.*磁感应强度.*一定越大
+  correct: 磁通量大小与磁感应强度和面积及夹角有关，磁通量大不一定磁感应强度大
+  description: 误以为磁通量大小仅由磁感应强度决定，忽略了面积和夹角的影响
+  severity: error
+  source: cmmlu_conceptual_physics_113
+- pattern: 磁通量为零.*磁感应强度.*为零
+  correct: 磁通量为零可能是由于平面与磁场平行，磁感应强度不一定为零
+  description: 误以为磁通量为零必然意味着该处无磁场
+  severity: error
+  source: cmmlu_conceptual_physics_113
+- pattern: 磁通量越大.*线圈平面面积.*一定越大
+  correct: 磁通量大小与磁感应强度、面积和夹角有关，磁通量大不一定面积大
+  description: 误以为磁通量大小仅由面积决定，忽略了磁感应强度和夹角的影响
+  severity: error
+  source: cmmlu_conceptual_physics_113
+- pattern: 电场线方向.*正.*检验电荷.*运动方向
+  correct: 电场线方向是正检验电荷所受电场力的方向，不一定是其运动方向
+  description: 误以为电场线方向就是正电荷的运动方向，忽略了初速度等因素
+  severity: error
+  source: cmmlu_conceptual_physics_114
+- pattern: 电场线.*直线.*匀强电场
+  correct: 匀强电场的电场线是平行等距的直线，但电场线是直线不一定代表匀强电场
+  description: 误以为只要电场线是直线就是匀强电场，忽略了电场线疏密程度
+  severity: error
+  source: cmmlu_conceptual_physics_114
+- pattern: 初速度为零.*正电荷.*沿着电场线.*运动
+  correct: 初速度为零的正电荷在电场中不一定沿电场线运动，还需电场线为直线且不受其他力
+  description: 误以为初速度为零的正电荷一定沿电场线运动，忽略了电场线弯曲或合力方向变化
+  severity: error
+  source: cmmlu_conceptual_physics_114
+- pattern: 丝绸.*电子.*转移.*玻璃棒
+  correct: 玻璃棒上的电子转移到了丝绸上，使玻璃棒带正电
+  description: 误以为电子从丝绸转移到玻璃棒
+  severity: error
+  source: cmmlu_conceptual_physics_115
+- pattern: 正电荷.*转移
+  correct: 摩擦起电中转移的是电子，不是正电荷
+  description: 误以为正电荷可以转移
+  severity: error
+  source: cmmlu_conceptual_physics_115
+- pattern: 分子间距离减小.*分子引力减小.*分子斥力增大
+  correct: 分子间距离减小时，分子引力和分子斥力都增大，但斥力增大更快
+  description: 误以为分子间距离减小时引力减小、斥力增大
+  severity: error
+  source: cmmlu_conceptual_physics_116
+- pattern: 气体膨胀.*分子势能减小.*内能减少
+  correct: 气体膨胀时，分子势能不一定减小，内能变化取决于做功和热传递
+  description: 误以为气体膨胀必然导致分子势能减小和内能减少
+  severity: error
+  source: cmmlu_conceptual_physics_116
+- pattern: 分子间距离增大.*分子势能一定增大
+  correct: 分子间距离增大时，分子势能不一定增大，取决于初始距离是否在平衡位置附近
+  description: 误以为分子间距离增大时分子势能一定增大
+  severity: error
+  source: cmmlu_conceptual_physics_116
+- pattern: 没有力作用.*只能处于静止状态
+  correct: 没有力作用时，物体可以保持静止或匀速直线运动状态
+  description: 误以为不受力时物体只能静止，忽略了匀速直线运动状态
+  severity: error
+  source: cmmlu_conceptual_physics_117
+- pattern: 速度越大惯性越大
+  correct: 惯性只与物体质量有关，与速度无关
+  description: 误以为速度越大惯性越大
+  severity: error
+  source: cmmlu_conceptual_physics_117
+- pattern: 只有在不受力或者合外力为零的时候才有惯性
+  correct: 惯性是物体的固有属性，任何状态下都有惯性
+  description: 误以为惯性只在特定条件下存在
+  severity: error
+  source: cmmlu_conceptual_physics_117
+- pattern: 速度变化越来越快.*加速度越来越小
+  correct: 速度变化越来越快表示速度变化率增大，加速度越来越大
+  description: 误以为速度变化快慢与加速度大小成反比
+  severity: error
+  source: cmmlu_conceptual_physics_118
+- pattern: 加速度为正.*物体一定加速
+  correct: 加速度方向与速度方向相同才加速，加速度为正但速度方向为负时物体减速
+  description: 误以为加速度为正就一定是加速运动，忽略了速度方向
+  severity: error
+  source: cmmlu_conceptual_physics_118
+- pattern: 加速度与速度方向相同且又减小.*物体做减速运动
+  correct: 加速度与速度方向相同时，即使加速度减小，物体仍做加速运动
+  description: 误以为加速度减小就一定是减速运动，忽略了方向关系
+  severity: error
+  source: cmmlu_conceptual_physics_118
+- pattern: 水速大.*路程长.*时间长
+  correct: 过河时间由垂直河岸的分速度决定，与水流速度无关；水速增大只增加合速度沿河岸分量，使路程变长，但时间不变
+  description: 误以为水流速度增大会同时增加过河时间和路程
+  severity: error
+  source: cmmlu_conceptual_physics_119
+- pattern: 路程.*时间.*与水速无关
+  correct: 过河时间与水速无关，但路程随水速增大而变长
+  description: 误以为水流速度对路程和过河时间都没有影响
+  severity: error
+  source: cmmlu_conceptual_physics_119
+- pattern: 水速大.*路程长.*时间短
+  correct: 过河时间由垂直河岸的分速度决定，与水流速度无关；水速增大只增加路程，时间不变
+  description: 误以为水流速度增大会缩短过河时间
+  severity: error
+  source: cmmlu_conceptual_physics_119
+- pattern: 磁感线.*实际存在
+  correct: 磁感线是为了形象描述磁场而引入的假想曲线，并非实际存在的线
+  description: 误以为磁感线是真实存在的物理实体
+  severity: error
+  source: cmmlu_conceptual_physics_120
+- pattern: 磁感线.*小磁针.*运动轨迹
+  correct: 磁感线是描述磁场方向和强弱的曲线，小磁针在磁场中的运动轨迹不一定与磁感线重合
+  description: 误以为小磁针的运动轨迹就是磁感线
+  severity: error
+  source: cmmlu_conceptual_physics_120
+- pattern: 磁感线.*始于.*N极.*终止.*S极
+  correct: 磁感线是闭合曲线，在磁体外部从N极到S极，在磁体内部从S极到N极
+  description: 误以为磁感线有起点和终点，忽略了磁体内部磁感线的方向
+  severity: error
+  source: cmmlu_conceptual_physics_120
+- pattern: 万有引力.*平衡力
+  correct: 两个物体间的万有引力大小相等、方向相反，但作用在不同物体上，是一对作用力与反作用力，不是平衡力
+  description: 误将作用力与反作用力当作平衡力
+  severity: error
+  source: cmmlu_conceptual_physics_121
+- pattern: 质量大.*引力大
+  correct: 两个物体间的万有引力大小相等，与各自质量无关，由公式F=Gm1m2/r^2决定
+  description: 误以为质量大的物体受到的引力更大
+  severity: error
+  source: cmmlu_conceptual_physics_121
+- pattern: 距离.*趋于零.*万有引力.*无穷大
+  correct: 当两物体距离趋于零时，万有引力公式不再适用，因为物体不能视为质点
+  description: 误以为万有引力公式在距离趋于零时仍成立
+  severity: error
+  source: cmmlu_conceptual_physics_121
+- pattern: 电荷量越多.*电容越大
+  correct: 电容是电容器的固有属性，由极板正对面积、极板间距和电介质性质决定，与所带电荷量无关
+  description: 误以为电容随电荷量增加而增大
+  severity: error
+  source: cmmlu_conceptual_physics_122
+- pattern: 极板间距离越大.*电容越大
+  correct: 其他条件不变时，极板间距离越大，电容越小
+  description: 误以为电容与极板间距成正比
+  severity: error
+  source: cmmlu_conceptual_physics_122
+- pattern: 电介质的性质.*不会影响电容
+  correct: 电介质的相对介电常数会影响电容，插入不同电介质会改变电容大小
+  description: 误以为电介质性质对电容无影响
+  severity: error
+  source: cmmlu_conceptual_physics_122
+- pattern: 体积.*密度.*大
+  correct: 密度是物质本身的属性，与体积大小无关，同种物质密度相同
+  description: 误以为体积越大密度越大
+  severity: error
+  source: cmmlu_conceptual_physics_123
+- pattern: 密度一定不相等
+  correct: 同种物质（质量分布均匀）的密度是相同的，与体积无关
+  description: 误以为体积不同会导致密度不同
+  severity: error
+  source: cmmlu_conceptual_physics_123
+- pattern: 曲线运动.*速度大小.*变化
+  correct: 做曲线运动的物体速度方向一定变化，但速度大小可以不变（如匀速圆周运动）
+  description: 误以为曲线运动速度大小一定变化
+  severity: error
+  source: cmmlu_conceptual_physics_124
+- pattern: 曲线运动.*加速度.*变化
+  correct: 做曲线运动的物体加速度可以不变（如平抛运动），不一定变化
+  description: 误以为曲线运动加速度一定变化
+  severity: error
+  source: cmmlu_conceptual_physics_124
+- pattern: 曲线运动.*合力.*为零
+  correct: 做曲线运动的物体合力一定不为零，因为需要改变速度方向
+  description: 误以为曲线运动合力可能为零
+  severity: error
+  source: cmmlu_conceptual_physics_124
+- pattern: 运动方向改变.*惯性
+  correct: 惯性是物体的固有属性，与运动状态无关，任何状态下都有惯性
+  description: 误以为惯性只在运动状态改变时存在
+  severity: error
+  source: cmmlu_conceptual_physics_125
+- pattern: 匀速直线运动.*惯性
+  correct: 惯性是物体的固有属性，与运动状态无关，任何状态下都有惯性
+  description: 误以为惯性只在匀速直线运动时存在
+  severity: error
+  source: cmmlu_conceptual_physics_125
+- pattern: 静止.*惯性
+  correct: 惯性是物体的固有属性，与运动状态无关，任何状态下都有惯性
+  description: 误以为惯性只在静止时存在
+  severity: error
+  source: cmmlu_conceptual_physics_125
+- pattern: 加热.*质量变化
+  correct: 加热只改变温度，不改变物质总量，质量不变
+  description: 误以为加热会使质量增加或减少
+  severity: error
+  source: cmmlu_conceptual_physics_126
+- pattern: 扎成.*薄片.*质量变化
+  correct: 扎成薄片只改变形状，不改变物质总量，质量不变
+  description: 误以为改变形状会导致质量变化
+  severity: error
+  source: cmmlu_conceptual_physics_126
+- pattern: 带到月球.*质量变化
+  correct: 位置变化不改变物质总量，质量不变
+  description: 误以为重力变化会导致质量变化
+  severity: error
+  source: cmmlu_conceptual_physics_126
+- pattern: 匀速率圆周运动.*动量不变
+  correct: 匀速率圆周运动中速度方向不断变化，因此动量不断改变
+  description: 误以为匀速率圆周运动中动量不变，忽略了速度方向的变化
+  severity: error
+  source: cmmlu_conceptual_physics_127
+- pattern: 匀速率圆周运动.*角动量不断改变
+  correct: 匀速率圆周运动中，对圆心的角动量大小和方向均不变
+  description: 误以为匀速率圆周运动中对圆心的角动量不断改变
+  severity: error
+  source: cmmlu_conceptual_physics_127
+- pattern: 滑动摩擦力总是做负功
+  correct: 滑动摩擦力可能做负功，也可能做正功
+  description: 误以为滑动摩擦力总是做负功
+  severity: error
+  source: cmmlu_conceptual_physics_128
+- pattern: 静摩擦力对物体总是做正功
+  correct: 静摩擦力可能做正功、负功或不做功
+  description: 误以为静摩擦力总是做正功
+  severity: error
+  source: cmmlu_conceptual_physics_128
+- pattern: 静摩擦力对物体一定做负功
+  correct: 静摩擦力可能做正功、负功或不做功
+  description: 误以为静摩擦力一定做负功
+  severity: error
+  source: cmmlu_conceptual_physics_128
+- pattern: 相互接触.*必定.*弹力
+  correct: 相互接触的物体间不一定有弹力，还需要发生弹性形变
+  description: 误以为只要物体接触就一定有弹力
+  severity: error
+  source: cmmlu_conceptual_physics_129
+- pattern: 压力.*由于桌面.*形变
+  correct: 物体对桌面产生的压力是由于物体本身发生微小形变而产生的
+  description: 混淆了施力物体和受力物体的形变来源
+  severity: error
+  source: cmmlu_conceptual_physics_129
+- pattern: 压力.*就是.*重力
+  correct: 物体对桌面的压力是弹力，与重力是不同性质的力，仅在特定条件下大小相等
+  description: 误以为压力等于重力，混淆了力的性质和来源
+  severity: error
+  source: cmmlu_conceptual_physics_129
+- pattern: 发动机功率.*合外力
+  correct: 汽车的发动机功率是指牵引力的功率，不是合外力的功率
+  description: 误将发动机功率等同于合外力的功率
+  severity: error
+  source: cmmlu_conceptual_physics_130
+- pattern: P＝Fv.*速度.*增大
+  correct: 在功率一定时，牵引力与速度成反比，速度不能无限增大
+  description: 误以为在P=Fv中速度可以无限增大而功率不变
+  severity: error
+  source: cmmlu_conceptual_physics_130
+- pattern: 温度升高.*一定是吸收了热量
+  correct: 物体温度升高可能是通过做功（如摩擦、压缩）增加内能，不一定吸收热量
+  description: 误以为温度升高只能通过吸热实现，忽略了做功也可以增加内能
+  severity: error
+  source: cmmlu_conceptual_physics_131
+- pattern: 温度不变.*就没有吸热或放热
+  correct: 物体温度不变时可能正在发生物态变化（如熔化、沸腾），此时吸热但温度不变
+  description: 误以为温度不变意味着没有热传递，忽略了物态变化过程中吸热不升温
+  severity: error
+  source: cmmlu_conceptual_physics_131
+- pattern: 向心力的数值发生变化.*离心运动
+  correct: 做匀速圆周运动的物体，只有当外界提供的向心力小于所需向心力时才会做离心运动，仅数值变化不一定导致离心运动
+  description: 误以为向心力数值的任何变化都会导致离心运动，忽略了离心运动需要向心力不足的条件
+  severity: error
+  source: cmmlu_conceptual_physics_132
+- pattern: 不受外力.*离心运动
+  correct: 物体不受外力时做匀速直线运动或静止，不会做离心运动
+  description: 误以为不受外力时物体可能做离心运动，实际上离心运动需要向心力不足
+  severity: error
+  source: cmmlu_conceptual_physics_132
+- pattern: 向心力突然变大.*离心运动
+  correct: 外界提供的向心力突然变大时，物体做向心运动，而非离心运动
+  description: 误以为向心力变大导致离心运动，实际上向心力变大会使物体向圆心靠近
+  severity: error
+  source: cmmlu_conceptual_physics_132
+- pattern: 悬挂.*物体.*没有做功.*不具有机械能
+  correct: 用线悬挂着的物体具有重力势能，因此具有机械能
+  description: 误以为物体不做功就不具有机械能，忽略了势能的存在
+  severity: error
+  source: cmmlu_conceptual_physics_133
+- pattern: 高度.*大.*势能.*一定大
+  correct: 物体的重力势能不仅与高度有关，还与质量有关，高度大不一定势能大
+  description: 误以为势能只由高度决定，忽略了质量因素
+  severity: error
+  source: cmmlu_conceptual_physics_133
+- pattern: 速度.*大.*动能.*一定大
+  correct: 物体的动能不仅与速度有关，还与质量有关，速度大不一定动能大
+  description: 误以为动能只由速度决定，忽略了质量因素
+  severity: error
+  source: cmmlu_conceptual_physics_133
+- pattern: 赤道.*角速度.*比.*大
+  correct: 地球自转角速度处处相等，赤道与南纬30°角速度相同
+  description: 误以为不同纬度角速度不同
+  severity: error
+  source: cmmlu_conceptual_physics_134
+- pattern: 提供向心力.*重力
+  correct: 地面物体随地球自转的向心力由万有引力的一个分力提供，不是重力
+  description: 误以为重力直接提供向心力
+  severity: error
+  source: cmmlu_conceptual_physics_134
+- pattern: 向心加速度.*指向地心
+  correct: 地球上物体的向心加速度指向所在纬度平面的圆心，并非地心
+  description: 误以为向心加速度方向指向地心
+  severity: error
+  source: cmmlu_conceptual_physics_134
+- pattern: 质量.*矢量
+  correct: 质量是标量，只有大小没有方向
+  description: 误认为质量是矢量
+  severity: error
+  source: cmmlu_conceptual_physics_135
+- pattern: 路程.*矢量
+  correct: 路程是标量，只有大小没有方向
+  description: 误认为路程是矢量
+  severity: error
+  source: cmmlu_conceptual_physics_135
+- pattern: 速率.*矢量
+  correct: 速率是标量，只有大小没有方向
+  description: 误认为速率是矢量
+  severity: error
+  source: cmmlu_conceptual_physics_135
+- pattern: 时间.*矢量
+  correct: 时间是标量，只有大小没有方向
+  description: 误认为时间是矢量
+  severity: error
+  source: cmmlu_conceptual_physics_135
+- pattern: 平均速率.*矢量
+  correct: 平均速率是标量，只有大小没有方向
+  description: 误认为平均速率是矢量
+  severity: error
+  source: cmmlu_conceptual_physics_135
+- pattern: 超导体.*电阻率.*无穷大
+  correct: 超导体在临界温度以下电阻率突然变为零
+  description: 误以为超导体电阻率变为无穷大，实际是变为零
+  severity: error
+  source: cmmlu_conceptual_physics_136
+- pattern: 金属.*电阻率.*随温度升高.*减小
+  correct: 金属的电阻率随温度升高而增大
+  description: 误以为金属电阻率随温度升高而减小，实际是增大
+  severity: error
+  source: cmmlu_conceptual_physics_136
+- pattern: 电阻率越大.*导电性能越好
+  correct: 电阻率越小，材料的导电性能越好
+  description: 误以为电阻率越大导电性能越好，实际电阻率越小导电性越好
+  severity: error
+  source: cmmlu_conceptual_physics_136
+- pattern: 旋转矢量法.*矢量A本身.*简谐振动
+  correct: 旋转矢量法中的矢量A以恒定角速度旋转，其端点在x轴上的投影点作简谐振动，矢量A本身不是简谐振动
+  description: 误以为旋转矢量本身在作简谐振动，实际上矢量是匀速旋转，其投影点作简谐振动
+  severity: error
+  source: cmmlu_conceptual_physics_137
+- pattern: 吸收热量.*内能一定增加
+  correct: 物体从外界吸收热量，其内能不一定增加，因为可能同时对外做功
+  description: 误以为吸收热量必然导致内能增加，忽略了做功的影响
+  severity: error
+  source: cmmlu_conceptual_physics_138
+- pattern: 液体分子.*无规则运动.*布朗运动
+  correct: 布朗运动是悬浮在液体中的固体颗粒的无规则运动，不是液体分子的无规则运动
+  description: 混淆了布朗运动的主体，误将液体分子的运动称为布朗运动
+  severity: error
+  source: cmmlu_conceptual_physics_138
+- pattern: 温度升高.*压强一定增大
+  correct: 气体温度升高，压强不一定增大，因为体积也可能变化
+  description: 误以为温度升高必然导致压强增大，忽略了体积变化的影响
+  severity: error
+  source: cmmlu_conceptual_physics_138
+- pattern: 半径越大.*速度越小.*周期越小
+  correct: 半径越大，速度越小，周期越大
+  description: 误以为轨道半径增大时周期也减小
+  severity: error
+  source: cmmlu_conceptual_physics_139
+- pattern: 所有卫星角速度都相同.*与半径无关
+  correct: 卫星角速度随轨道半径增大而减小
+  description: 误以为所有卫星的角速度相同，忽略半径影响
+  severity: error
+  source: cmmlu_conceptual_physics_139
+- pattern: 所有卫星的速度均是相同的.*与半径无关
+  correct: 卫星速度随轨道半径增大而减小
+  description: 误以为所有卫星的速度相同，忽略半径影响
+  severity: error
+  source: cmmlu_conceptual_physics_139
+- pattern: E=U/d.*匀强电场
+  correct: 场强E=U/d只适用于匀强电场，不适用于点电荷产生的静电场
+  description: 误以为E=U/d既适用于点电荷电场也适用于匀强电场
+  severity: error
+  source: cmmlu_conceptual_physics_140
+- pattern: E=kQ/r^2.*点电荷
+  correct: 场强E=kQ/r^2只适用于点电荷产生的静电场，不适用于匀强电场
+  description: 误以为E=kQ/r^2既适用于点电荷电场也适用于匀强电场
+  severity: error
+  source: cmmlu_conceptual_physics_140
+- pattern: 甲做功比乙快
+  correct: 汽油机效率高表示有用功与总能量之比大，不直接表示做功快慢
+  description: 误将效率高等同于功率大（做功快）
+  severity: error
+  source: cmmlu_conceptual_physics_141
+- pattern: 甲做功比乙多
+  correct: 汽油机效率高表示相同能量输入下有用功更多，但不表示做功总量一定多
+  description: 误将效率高等同于做功总量多
+  severity: error
+  source: cmmlu_conceptual_physics_141
+- pattern: 甲消耗的汽油比乙少
+  correct: 效率高表示相同有用功下耗油少，但未指定行驶条件时不能直接比较耗油量
+  description: 误以为效率高就一定耗油少，忽略了行驶距离和牵引力等条件
+  severity: error
+  source: cmmlu_conceptual_physics_141
+- pattern: 三要素完全相同.*平衡力
+  correct: 两个力的三要素完全相同，则方向相同，不满足平衡力方向相反的条件，因此一定不是平衡力
+  description: 误以为力的三要素相同（大小、方向、作用点）时，两个力可能平衡
+  severity: error
+  source: cmmlu_conceptual_physics_142
+- pattern: 三要素完全相同.*一定是平衡力
+  correct: 两个力的三要素完全相同，则方向相同，不满足平衡力方向相反的条件，因此一定不是平衡力
+  description: 误以为力的三要素相同（大小、方向、作用点）时，两个力一定是平衡力
+  severity: error
+  source: cmmlu_conceptual_physics_142
+- pattern: 闭合电路.*部分导体.*磁场中运动
+  correct: 闭合电路的部分导体在磁场中做切割磁感线运动时才能产生感应电流
+  description: 误以为只要闭合电路的部分导体在磁场中运动就能产生感应电流，忽略了切割磁感线的条件
+  severity: error
+  source: cmmlu_conceptual_physics_143
+- pattern: 导体.*磁场中.*切割磁感线运动
+  correct: 产生感应电流需要闭合电路和部分导体切割磁感线两个条件同时满足
+  description: 误以为只要导体在磁场中做切割磁感线运动就能产生感应电流，忽略了电路必须闭合
+  severity: error
+  source: cmmlu_conceptual_physics_143
+- pattern: 导体.*磁场中静止
+  correct: 导体在磁场中静止时，没有切割磁感线，不会产生感应电流
+  description: 误以为导体在磁场中静止也能产生感应电流
+  severity: error
+  source: cmmlu_conceptual_physics_143
+- pattern: 速度可以不变.*曲线运动
+  correct: 曲线运动的速度方向时刻改变，所以速度一定在变化
+  description: 误以为曲线运动的速度可以保持不变
+  severity: error
+  source: cmmlu_conceptual_physics_144
+- pattern: 加速度一定在不断地改变.*曲线运动
+  correct: 曲线运动的加速度可以不变，例如平抛运动中加速度恒为重力加速度
+  description: 误以为曲线运动的加速度必须不断变化
+  severity: error
+  source: cmmlu_conceptual_physics_144
+- pattern: 速度可以不变.*加速度也可以不变.*曲线运动
+  correct: 曲线运动速度方向时刻改变，速度一定变化；加速度可以不变
+  description: 误以为曲线运动的速度和加速度都可以保持不变
+  severity: error
+  source: cmmlu_conceptual_physics_144
+- pattern: r.*0.*F.*无穷
+  correct: 库仑定律只适用于点电荷，当r→0时带电体不能视为点电荷，公式不再适用
+  description: 误以为库仑定律在距离趋近于零时仍然成立，忽略了点电荷模型的适用条件
+  severity: error
+  source: cmmlu_conceptual_physics_145
+- pattern: 点电荷.*体积很小
+  correct: 点电荷是理想化模型，当带电体的大小远小于研究距离时可视为点电荷，与体积大小无直接关系
+  description: 误以为点电荷就是体积很小的带电体，忽略了相对距离的条件
+  severity: error
+  source: cmmlu_conceptual_physics_145
+- pattern: 距离.*一半.*库仑力.*2倍
+  correct: 库仑力与距离的平方成反比，距离变为原来的一半时，库仑力变为原来的4倍
+  description: 误以为库仑力与距离成反比，忽略了平方反比关系
+  severity: error
+  source: cmmlu_conceptual_physics_145
+- pattern: 电动势.*跟.*非静电力做的功成正比.*跟.*电荷量成反比
+  correct: 电动势是电源本身的属性，由电源本身决定，与做功和电荷量无关
+  description: 误以为电动势与W和q有比例关系，实际上E=W/q是定义式，但E由电源决定
+  severity: error
+  source: cmmlu_conceptual_physics_146
+- pattern: 通电导线.*不受磁场力.*磁感应强度一定为零
+  correct: 通电导线不受磁场力可能是因为电流方向与磁场方向平行，磁感应强度不一定为零
+  description: 误以为导线不受磁场力就说明该处无磁场
+  severity: error
+  source: cmmlu_conceptual_physics_146
+- pattern: 库仑.*提出了.*电场.*概念
+  correct: 库仑研究了电荷间相互作用，但'电场'概念是由法拉第提出的
+  description: 误以为电场概念是库仑提出的
+  severity: error
+  source: cmmlu_conceptual_physics_146
+- pattern: 人工放射性同位素.*能量
+  correct: 核电站利用重核裂变释放的能量，而非人工放射性同位素
+  description: 误以为核电站能量来自人工放射性同位素
+  severity: error
+  source: cmmlu_high_school_physics_0
+- pattern: 天然放射性元素衰变.*能量
+  correct: 核电站利用重核裂变释放的能量，而非天然放射性元素衰变
+  description: 误以为核电站能量来自天然放射性元素衰变
+  severity: error
+  source: cmmlu_high_school_physics_0
+- pattern: 化学反应.*能量
+  correct: 核电站利用重核裂变释放的能量，而非化学反应
+  description: 误以为核电站能量来自化学反应
+  severity: error
+  source: cmmlu_high_school_physics_0
+- pattern: 两手.*摩擦.*发热
+  correct: 两手互相摩擦时手发热是通过做功的方式改变物体内能
+  description: 误以为摩擦生热属于热传递，实际上摩擦生热是做功改变内能
+  severity: error
+  source: cmmlu_high_school_physics_1
+- pattern: 菜刀.*砂轮.*磨得发烫
+  correct: 菜刀在砂轮上磨得发烫是通过做功的方式改变物体内能
+  description: 误以为磨刀发热属于热传递，实际上磨刀时摩擦力做功使内能增加
+  severity: error
+  source: cmmlu_high_school_physics_1
+- pattern: 打气筒.*筒壁发热
+  correct: 用打气筒打气时筒壁发热是通过做功的方式改变物体内能
+  description: 误以为打气筒筒壁发热属于热传递，实际上压缩气体做功和摩擦做功使内能增加
+  severity: error
+  source: cmmlu_high_school_physics_1
+- pattern: 第8节.*第9节.*时间比值.*sqrt(3):sqrt(2)
+  correct: 匀减速直线运动中，通过连续相等位移的时间比为(√n-√(n-1))，第8节和第9节的时间比为(√3-√2):(√2-1)
+  description: 误以为通过连续相等位移的时间比等于位移平方根之比，忽略了时间差
+  severity: error
+  source: cmmlu_high_school_physics_2
+- pattern: 第8节.*第9节.*时间比值.*(sqrt(2)-1):(sqrt(3)-sqrt(2))
+  correct: 匀减速直线运动中，通过连续相等位移的时间比为(√n-√(n-1))，第8节和第9节的时间比为(√3-√2):(√2-1)
+  description: 误将时间比值的顺序颠倒
+  severity: error
+  source: cmmlu_high_school_physics_2
+- pattern: 第8节.*第9节.*时间比值.*sqrt(2):sqrt(3)
+  correct: 匀减速直线运动中，通过连续相等位移的时间比为(√n-√(n-1))，第8节和第9节的时间比为(√3-√2):(√2-1)
+  description: 误以为时间比等于位移平方根之比，且忽略了时间差
+  severity: error
+  source: cmmlu_high_school_physics_2
+- pattern: 电场.*理想模
+  correct: 电场是电荷周围空间实际存在的物质，不是理想模型
+  description: 误以为电场只是理想模型，而非真实存在的物质
+  severity: error
+  source: cmmlu_high_school_physics_3
+- pattern: 电荷.*相互作用.*不是.*电场
+  correct: 电荷间的相互作用是通过电场作媒介产生的
+  description: 误以为电荷间相互作用不需要电场作为媒介
+  severity: error
+  source: cmmlu_high_school_physics_3
+- pattern: 电场线.*就是电场
+  correct: 电场线是人为引入的用来描述电场分布的曲线，不是电场本身
+  description: 误以为电场线就是电场
+  severity: error
+  source: cmmlu_high_school_physics_3
+- pattern: 紫外线.*频率.*比.*红外线.*低
+  correct: 紫外线的频率比红外线的频率高
+  description: 误以为紫外线频率低于红外线
+  severity: error
+  source: cmmlu_high_school_physics_4
+- pattern: 紫外线.*遥控
+  correct: 红外线可用于遥控，紫外线不能用于遥控
+  description: 误以为紫外线可用于遥控
+  severity: error
+  source: cmmlu_high_school_physics_4
+- pattern: 紫外线.*紫色.*可见光
+  correct: 紫外线是不可见光，不是紫色的可见光
+  description: 误以为紫外线是紫色的可见光
+  severity: error
+  source: cmmlu_high_school_physics_4
+- pattern: 光在介质中的速度.*大于.*真空
+  correct: 光在介质中的速度小于光在真空中的速度
+  description: 误以为光在介质中传播速度比真空中快
+  severity: error
+  source: cmmlu_high_school_physics_6
+- pattern: 变化的电场.*一定.*变化的磁场
+  correct: 均匀变化的电场产生稳定的磁场，均匀变化的磁场产生稳定的电场；只有周期性变化的电场才产生周期性变化的磁场
+  description: 误以为任何变化的电场都产生变化的磁场，忽略了均匀变化的情况
+  severity: error
+  source: cmmlu_high_school_physics_6
+- pattern: 偏振片.*增加透射光
+  correct: 拍摄玻璃橱窗内的物品时，加偏振片是为了减少反射光的干扰，而不是增加透射光的强度
+  description: 误以为偏振片的作用是增加透射光强度，实际是消除或减弱反射光
+  severity: error
+  source: cmmlu_high_school_physics_6
+- pattern: 动量.*变化.*相同
+  correct: 动量是矢量，方向不同，所以动量变化不同
+  description: 误以为动量变化与速率变化一样只考虑大小
+  severity: error
+  source: cmmlu_high_school_physics_7
+- pattern: 合力.*冲量.*相同
+  correct: 合力的冲量等于动量变化，方向不同，所以冲量不同
+  description: 误以为合力冲量只与速率变化有关，忽略方向
+  severity: error
+  source: cmmlu_high_school_physics_7
+- pattern: 重力.*冲量.*相同
+  correct: 重力冲量等于重力乘以时间，下滑时间不同，所以冲量不同
+  description: 误以为高度相同则重力冲量相同，忽略时间差异
+  severity: error
+  source: cmmlu_high_school_physics_7
+- pattern: 瞬时速度.*某段时间内
+  correct: 瞬时速度是物体在某一时刻或某一位置的速度，不是某段时间内的速度
+  description: 误将瞬时速度理解为某段时间内的平均速度
+  severity: error
+  source: cmmlu_high_school_physics_8
+- pattern: 瞬时速度.*某一段位移
+  correct: 瞬时速度是物体在某一时刻或某一位置的速度，不是某段位移过程中的速度
+  description: 误将瞬时速度理解为某段位移过程中的平均速度
+  severity: error
+  source: cmmlu_high_school_physics_8
+- pattern: 分子热运动平均动能.*压强
+  correct: 分子热运动的平均动能只取决于温度
+  description: 误以为分子热运动的平均动能与压强有关
+  severity: error
+  source: cmmlu_high_school_physics_9
+- pattern: 分子间势能.*温度
+  correct: 分子间势能取决于体积（分子间距离）
+  description: 误以为分子间势能与温度有关
+  severity: error
+  source: cmmlu_high_school_physics_9
+- pattern: 分子间势能.*压强
+  correct: 分子间势能取决于体积（分子间距离）
+  description: 误以为分子间势能与压强有关
+  severity: error
+  source: cmmlu_high_school_physics_9
+- pattern: 曲线运动.*速度不变
+  correct: 曲线运动的速度方向时刻改变，因此一定是变速运动
+  description: 误以为曲线运动可以速度不变
+  severity: error
+  source: cmmlu_high_school_physics_10
+- pattern: 变速运动.*曲线运动
+  correct: 变速运动不一定是曲线运动，例如匀变速直线运动也是变速运动
+  description: 误以为所有变速运动都是曲线运动
+  severity: error
+  source: cmmlu_high_school_physics_10
+- pattern: 速率不变.*曲线运动.*匀速运动
+  correct: 曲线运动即使速率不变，速度方向也在变化，因此不是匀速运动
+  description: 误以为速率不变的曲线运动是匀速运动
+  severity: error
+  source: cmmlu_high_school_physics_10
+- pattern: 频率更小.*紫外线.*光电效应
+  correct: 光电效应需要入射光频率大于金属的截止频率，频率更小的紫外线频率更低，更不可能产生光电效应
+  description: 误以为降低频率可以产生光电效应，实际上需要更高频率的光
+  severity: error
+  source: cmmlu_high_school_physics_11
+- pattern: 延长.*照射时间.*光电效应
+  correct: 光电效应是瞬时发生的，与照射时间无关，取决于入射光频率是否大于截止频率
+  description: 误以为延长照射时间可以积累能量产生光电效应
+  severity: error
+  source: cmmlu_high_school_physics_11
+- pattern: 强度更大.*紫外线.*光电效应
+  correct: 光电效应取决于入射光频率是否大于截止频率，增大强度只增加光子数量，不改变频率
+  description: 误以为增大光强可以产生光电效应，实际上需要更高频率的光
+  severity: error
+  source: cmmlu_high_school_physics_11
+- pattern: 重⼒⽆反作⽤⼒
+  correct: 任何力都有反作用力，重力也有反作用力
+  description: 误以为重力没有反作用力
+  severity: error
+  source: cmmlu_high_school_physics_12
+- pattern: 作⽤⼒与反作⽤⼒的合⼒为零
+  correct: 作用力与反作用力分别作用在不同物体上，不能求合力
+  description: 误以为作用力与反作用力可以合成合力为零
+  severity: error
+  source: cmmlu_high_school_physics_12
+- pattern: 当作⽤⼒产⽣后，再产⽣反作⽤⼒
+  correct: 作用力与反作用力同时产生、同时消失
+  description: 误以为作用力和反作用力有先后顺序
+  severity: error
+  source: cmmlu_high_school_physics_12
+- pattern: mc2.*能量总和
+  correct: 质能方程E=mc²中的E是物体的总能量，并非物体能够放出的能量总和
+  description: 误以为mc²是物体能够放出能量的总和，实际上E=mc²表示物体的总能量
+  severity: error
+  source: cmmlu_high_school_physics_13
+- pattern: 质量和能量.*相互转化
+  correct: 质量和能量是物质的两种属性，不能相互转化，质能方程揭示的是质量与能量的当量关系
+  description: 误以为质量和能量可以相互转化，实际上它们是物质的不同属性，存在当量关系
+  severity: error
+  source: cmmlu_high_school_physics_13
+- pattern: 能量增加.*质量减少
+  correct: 如果物体的能量增加了ΔE，那么它的质量相应增加Δm，并且ΔE＝Δmc²
+  description: 误以为能量增加时质量减少，实际上能量增加时质量也增加
+  severity: error
+  source: cmmlu_high_school_physics_13
+- pattern: 串联.*12Ω.*36Ω
+  correct: 三个12Ω电阻串联总阻值为36Ω
+  description: 误以为串联后阻值不等于36Ω
+  severity: error
+  source: cmmlu_high_school_physics_14
+- pattern: 并联.*12Ω.*8Ω
+  correct: 三个12Ω电阻并联总阻值为4Ω，但两个并联再与一个串联可得8Ω
+  description: 误以为并联或混联无法得到8Ω
+  severity: error
+  source: cmmlu_high_school_physics_14
+- pattern: 混联.*12Ω.*18Ω
+  correct: 两个12Ω电阻串联得24Ω，再与另一个12Ω并联可得8Ω，但两个并联得6Ω再串联一个得18Ω
+  description: 误以为混联无法得到18Ω
+  severity: error
+  source: cmmlu_high_school_physics_14
+- pattern: 光导纤维.*干涉
+  correct: 光导纤维传播信号利用的是光的全反射原理，与干涉无关
+  description: 误以为光导纤维与光的干涉有关
+  severity: error
+  source: cmmlu_high_school_physics_15
+- pattern: 三棱镜.*干涉
+  correct: 白光通过三棱镜形成彩色光带是光的色散现象，与干涉无关
+  description: 误以为三棱镜色散是光的干涉
+  severity: error
+  source: cmmlu_high_school_physics_15
+- pattern: 水面.*油膜.*干涉
+  correct: 水面上的油膜呈现彩色是光的干涉现象
+  description: 误以为水面油膜彩色与干涉无关
+  severity: error
+  source: cmmlu_high_school_physics_15
+- pattern: 力一定产生在两个直接接触的物体之间
+  correct: 力可以产生在不直接接触的物体之间，如万有引力、电磁力等
+  description: 误以为力必须通过直接接触才能产生
+  severity: error
+  source: cmmlu_high_school_physics_16
+- pattern: 滑动摩擦力的方向一定与物体的运动方向相反
+  correct: 滑动摩擦力的方向与物体相对运动方向相反，而非与运动方向相反
+  description: 混淆了相对运动方向与运动方向
+  severity: error
+  source: cmmlu_high_school_physics_16
+- pattern: 作用力和反作用力的合力为零
+  correct: 作用力和反作用力分别作用在不同物体上，不能求合力
+  description: 误以为作用力和反作用力可以合成
+  severity: error
+  source: cmmlu_high_school_physics_16
+- pattern: 地球.*吸引.*0N
+  correct: 地球对中学生有引力，大小约为100N
+  description: 误以为地球对物体没有吸引力
+  severity: error
+  source: cmmlu_high_school_physics_17
+- pattern: 地球.*吸引.*无穷大
+  correct: 地球对中学生的引力大小约为100N，不是无穷大
+  description: 误以为地球引力无穷大
+  severity: error
+  source: cmmlu_high_school_physics_17
+- pattern: ⾃感L减⼩⼀半，电容C增⼤⼀倍
+  correct: 振荡频率f=1/(2π√(LC))，L减半且C加倍时√(LC)不变，频率不变
+  description: 误以为L减半且C加倍会使频率加倍，实际频率不变
+  severity: error
+  source: cmmlu_high_school_physics_18
+- pattern: ⾃感L增⼤⼀倍，电容C减⼩⼀半
+  correct: 振荡频率f=1/(2π√(LC))，L加倍且C减半时√(LC)不变，频率不变
+  description: 误以为L加倍且C减半会使频率加倍，实际频率不变
+  severity: error
+  source: cmmlu_high_school_physics_18
+- pattern: ⾃感L和电容C都增⼤⼀倍
+  correct: 振荡频率f=1/(2π√(LC))，L和C都加倍时√(LC)变为2倍，频率减半
+  description: 误以为L和C都加倍会使频率加倍，实际频率减半
+  severity: error
+  source: cmmlu_high_school_physics_18
+- pattern: 冰雪消融.*放热
+  correct: 冰雪消融是熔化过程，需要吸收热量
+  description: 误以为冰雪消融是放热过程
+  severity: error
+  source: cmmlu_high_school_physics_19
+- pattern: 积水干涸.*放热
+  correct: 积水干涸是汽化过程，需要吸收热量
+  description: 误以为积水干涸是放热过程
+  severity: error
+  source: cmmlu_high_school_physics_19
+- pattern: 物体竖直向下的运动一定是自由落体运动
+  correct: 自由落体运动必须满足初速度为零且只受重力作用，竖直向下的运动不一定都是自由落体运动
+  description: 误以为任何竖直向下的运动都是自由落体运动
+  severity: error
+  source: cmmlu_high_school_physics_20
+- pattern: 泡沫塑料.*动量减小
+  correct: 泡沫塑料通过延长作用时间减小冲击力，即减小动量变化率，而非减小动量本身
+  description: 误以为泡沫塑料的作用是减小物体的动量
+  severity: error
+  source: cmmlu_high_school_physics_21
+- pattern: 泡沫塑料.*减小.*冲量
+  correct: 冲量等于动量变化量，在碰撞过程中动量变化量不变，冲量也不变，泡沫塑料减小的是平均冲击力
+  description: 误以为泡沫塑料能减小物品受到的冲量
+  severity: error
+  source: cmmlu_high_school_physics_21
+- pattern: 泡沫塑料.*动量变化量减小
+  correct: 在碰撞过程中，物体的动量变化量由初末动量决定，通常不变；泡沫塑料通过延长作用时间减小动量变化率
+  description: 误以为泡沫塑料能减小物体的动量变化量
+  severity: error
+  source: cmmlu_high_school_physics_21
+- pattern: 阴极射线的研究.*原子结构
+  correct: 卢瑟福原子核式结构模型的基础是α粒子散射实验，而非阴极射线的研究
+  description: 误以为阴极射线研究是卢瑟福原子模型的基础
+  severity: error
+  source: cmmlu_high_school_physics_22
+- pattern: 质子的发现.*原子结构模型
+  correct: 质子的发现是卢瑟福在α粒子散射实验之后的研究成果，不是原子核式结构模型建立的基础
+  description: 误以为质子的发现是卢瑟福原子模型的基础
+  severity: error
+  source: cmmlu_high_school_physics_22
+- pattern: 天然放射性现象.*原子结构模型
+  correct: 天然放射性现象的发现是贝克勒尔等人的工作，不是卢瑟福原子核式结构模型建立的基础
+  description: 误以为天然放射性现象的发现是卢瑟福原子模型的基础
+  severity: error
+  source: cmmlu_high_school_physics_22
+- pattern: 重力与物体的质量和所在的地理位置无关
+  correct: 重力大小与物体的质量和所在的地理位置（重力加速度）有关
+  description: 误以为重力大小与质量和地理位置无关
+  severity: error
+  source: cmmlu_high_school_physics_23
+- pattern: 有弹力就一定有摩擦力
+  correct: 有弹力不一定有摩擦力，还需要接触面粗糙且有相对运动或相对运动趋势
+  description: 误以为弹力是摩擦力的充分条件
+  severity: error
+  source: cmmlu_high_school_physics_23
+- pattern: 接触面间的压力越大，摩擦力也一定越大
+  correct: 在粗糙程度一定的情况下，滑动摩擦力与压力成正比，但静摩擦力不一定随压力增大而增大
+  description: 误以为所有摩擦力都与压力成正比
+  severity: error
+  source: cmmlu_high_school_physics_23
+- pattern: 自由落体.*2s.*70m/s
+  correct: 自由落体2s末速度v=gt=10×2=20m/s
+  description: 误以为自由落体2s末速度为70m/s，可能混淆了其他运动公式或计算错误
+  severity: error
+  source: cmmlu_high_school_physics_24
+- pattern: 自由落体.*2s.*30m/s
+  correct: 自由落体2s末速度v=gt=10×2=20m/s
+  description: 误以为自由落体2s末速度为30m/s，可能混淆了加速度或时间计算
+  severity: error
+  source: cmmlu_high_school_physics_24
+- pattern: 自由落体.*2s.*50m/s
+  correct: 自由落体2s末速度v=gt=10×2=20m/s
+  description: 误以为自由落体2s末速度为50m/s，可能混淆了加速度或时间计算
+  severity: error
+  source: cmmlu_high_school_physics_24
+- pattern: 波长.*3 m
+  correct: 甲、乙相距3 m，甲在波谷、乙在波峰且之间有一个波峰，说明距离为1.5个波长，因此波长为2 m
+  description: 误将两木块间距直接当作波长
+  severity: error
+  source: cmmlu_high_school_physics_25
+- pattern: 周期.*0.1 s
+  correct: 每分钟上下运动30次，频率为0.5 Hz，周期为2 s
+  description: 误将每分钟30次当作每秒30次，导致周期计算错误
+  severity: error
+  source: cmmlu_high_school_physics_25
+- pattern: 频率.*30 Hz
+  correct: 每分钟上下运动30次，频率为0.5 Hz
+  description: 误将每分钟30次当作每秒30次，导致频率计算错误
+  severity: error
+  source: cmmlu_high_school_physics_25
+- pattern: 动能损失.*机械能损失.*相同
+  correct: 动能损失包括重力势能转化和克服阻力做功，机械能损失仅包括克服阻力做功，两者数值不同
+  description: 误以为动能损失与机械能损失相等，忽略重力势能变化
+  severity: error
+  source: cmmlu_high_school_physics_26
+- pattern: 落回.*动能.*初动能
+  correct: 由于空气阻力消耗机械能，落回A处时动能小于初动能，需根据阻力做功计算
+  description: 误以为落回原处时动能等于初动能，忽略空气阻力造成的能量损失
+  severity: error
+  source: cmmlu_high_school_physics_26
+- pattern: 圆周运动.*加速度.*指向圆心
+  correct: 只有匀速圆周运动的加速度才始终指向圆心，非匀速圆周运动的加速度不指向圆心
+  description: 误认为所有圆周运动的加速度都指向圆心
+  severity: error
+  source: cmmlu_high_school_physics_27
+- pattern: 匀速圆周运动.*匀速运动
+  correct: 匀速圆周运动的速度方向不断变化，是变速运动
+  description: 误将匀速圆周运动中的'匀速'理解为速度大小和方向都不变
+  severity: error
+  source: cmmlu_high_school_physics_27
+- pattern: 匀速圆周运动.*合力为零
+  correct: 匀速圆周运动需要向心力，合力不为零
+  description: 误认为匀速圆周运动是平衡状态，合力为零
+  severity: error
+  source: cmmlu_high_school_physics_27
+- pattern: 合力.*大小.*一定等于.*分力.*大小之和
+  correct: 合力的大小不一定等于两个分力大小之和，它取决于分力之间的夹角
+  description: 误以为合力总是等于分力大小的代数和
+  severity: error
+  source: cmmlu_high_school_physics_28
+- pattern: 合力.*大小.*不可能小于.*分力
+  correct: 当两个分力方向相反时，合力大小可能小于每一个分力
+  description: 误以为合力总是大于或等于每个分力
+  severity: error
+  source: cmmlu_high_school_physics_28
+- pattern: 合力.*一定比.*分力大.*比.*分力小
+  correct: 合力的大小可以大于、等于或小于任何一个分力，取决于分力间的夹角
+  description: 误以为合力总是介于两个分力大小之间
+  severity: error
+  source: cmmlu_high_school_physics_28
+- pattern: 神州六号.*周期更短
+  correct: 轨道半径越大，周期越长，神州六号在更高轨道上周期更长
+  description: 误以为轨道越高周期越短
+  severity: error
+  source: cmmlu_high_school_physics_29
+- pattern: 飞船所受合力为零
+  correct: 飞船做匀速圆周运动，所受合力不为零，提供向心力
+  description: 误以为匀速圆周运动合力为零
+  severity: error
+  source: cmmlu_high_school_physics_29
+- pattern: 飞船静止在赤道的上空
+  correct: 飞船绕地球做匀速圆周运动，并非静止在赤道上空
+  description: 误以为飞船在赤道上空静止
+  severity: error
+  source: cmmlu_high_school_physics_29
+- pattern: 频率改变.*振幅不变
+  correct: 单摆周期与摆长有关，与质量无关，频率不变；振幅与能量有关，速度变化时振幅改变
+  description: 误以为摆球质量增加或速度变化会影响单摆频率
+  severity: error
+  source: cmmlu_high_school_physics_30
+- pattern: 频率.*振幅.*都不变
+  correct: 单摆频率不变，但速度减半导致动能变化，振幅会改变
+  description: 误以为速度和质量同时变化时振幅保持不变
+  severity: error
+  source: cmmlu_high_school_physics_30
+- pattern: 频率.*振幅.*都改变
+  correct: 单摆频率只与摆长和重力加速度有关，质量变化不影响频率
+  description: 误以为质量增加会导致频率改变
+  severity: error
+  source: cmmlu_high_school_physics_30
+- pattern: 密封.*铅盒.*减缓.*衰变
+  correct: 放射性衰变是原子核内部过程，不受外部物理或化学环境影响，密封于铅盒无法减缓衰变
+  description: 误以为铅盒屏蔽能减缓放射性元素的衰变速率
+  severity: error
+  source: cmmlu_high_school_physics_31
+- pattern: 与轻核.*结合.*减缓.*衰变
+  correct: 放射性衰变是原子核内部过程，化学结合（如与轻核元素形成化合物）无法改变衰变速率
+  description: 误以为化学结合能影响原子核的衰变
+  severity: error
+  source: cmmlu_high_school_physics_31
+- pattern: 置于.*水中.*减缓.*衰变
+  correct: 放射性衰变是原子核内部过程，置于水中无法减缓衰变速率
+  description: 误以为水能吸收或减缓放射性元素的衰变
+  severity: error
+  source: cmmlu_high_school_physics_31
+- pattern: 加速度.*标量
+  correct: 加速度是矢量，既有大小又有方向
+  description: 误以为加速度是标量
+  severity: error
+  source: cmmlu_high_school_physics_32
+- pattern: 速度.*标量
+  correct: 速度是矢量，既有大小又有方向
+  description: 误以为速度是标量
+  severity: error
+  source: cmmlu_high_school_physics_32
+- pattern: 力.*标量
+  correct: 力是矢量，既有大小又有方向
+  description: 误以为力是标量
+  severity: error
+  source: cmmlu_high_school_physics_32
+- pattern: 推力越大，静摩擦力越小
+  correct: 推力增大时，静摩擦力也增大，直到达到最大静摩擦力
+  description: 误以为推力增大时静摩擦力会减小
+  severity: error
+  source: cmmlu_high_school_physics_33
+- pattern: 推力大小变化时，静摩擦力大小不变
+  correct: 静摩擦力大小随推力变化而变化，始终与推力平衡
+  description: 误以为静摩擦力是固定不变的
+  severity: error
+  source: cmmlu_high_school_physics_33
+- pattern: 推力小于静摩擦力
+  correct: 物体静止时推力与静摩擦力大小相等、方向相反，处于平衡状态
+  description: 误以为物体静止时推力可以小于静摩擦力
+  severity: error
+  source: cmmlu_high_school_physics_33
+- pattern: γ射线.*红外线.*紫外线.*无线电波
+  correct: 电磁波按波长由长到短排列为无线电波、红外线、紫外线、γ射线
+  description: 误以为γ射线波长最长，无线电波波长最短
+  severity: error
+  source: cmmlu_high_school_physics_34
+- pattern: 红外线.*无线电波.*γ射线.*紫外线
+  correct: 电磁波按波长由长到短排列为无线电波、红外线、紫外线、γ射线
+  description: 误以为红外线波长最长，紫外线波长最短
+  severity: error
+  source: cmmlu_high_school_physics_34
+- pattern: 紫外线.*无线电波.*γ射线.*红外线
+  correct: 电磁波按波长由长到短排列为无线电波、红外线、紫外线、γ射线
+  description: 误以为紫外线波长最长，红外线波长最短
+  severity: error
+  source: cmmlu_high_school_physics_34
+- pattern: 位移.*路程
+  correct: 路程是物体运动轨迹的实际长度，位移是初末位置的有向线段，两者不同
+  description: 误将位移大小当作路程
+  severity: error
+  source: cmmlu_high_school_physics_35
+- pattern: 匀变速.*路程.*位移
+  correct: 匀变速直线运动中，若速度方向改变，路程需分段计算，不等于位移大小
+  description: 误以为匀变速直线运动的路程等于位移大小
+  severity: error
+  source: cmmlu_high_school_physics_35
+- pattern: g1.*=.*a
+  correct: 月球表面的重力加速度g1与月球绕地球做圆周运动的向心加速度a无关
+  description: 误将月球表面的重力加速度等同于月球绕地球运动的向心加速度
+  severity: error
+  source: cmmlu_high_school_physics_36
+- pattern: g1.*-.*g2.*=.*a
+  correct: 月球绕地球运动的向心加速度a等于轨道处由地球引力产生的加速度g2，与月球表面重力加速度g1无关
+  description: 误以为月球表面重力加速度与轨道处地球引力加速度的差等于向心加速度
+  severity: error
+  source: cmmlu_high_school_physics_36
+- pattern: g1.*+.*g2.*=.*a
+  correct: 月球绕地球运动的向心加速度a等于轨道处由地球引力产生的加速度g2，与月球表面重力加速度g1无关
+  description: 误以为月球表面重力加速度与轨道处地球引力加速度的和等于向心加速度
+  severity: error
+  source: cmmlu_high_school_physics_36
+- pattern: 最容易发生衍射.*γ射线
+  correct: 在电磁波谱中，波长越长越容易发生衍射，γ射线波长最短，最不容易发生衍射
+  description: 误以为γ射线最容易发生衍射
+  severity: error
+  source: cmmlu_high_school_physics_37
+- pattern: γ射线.*内层电子受激发
+  correct: γ射线是原子核受激发产生的，不是内层电子受激发
+  description: 误以为γ射线由原子内层电子受激发产生
+  severity: error
+  source: cmmlu_high_school_physics_37
+- pattern: 紫外线.*比紫光.*更容易发生衍射
+  correct: 紫光波长比紫外线长，紫光比紫外线更容易发生衍射
+  description: 误以为紫外线比紫光更容易发生衍射
+  severity: error
+  source: cmmlu_high_school_physics_37
+- pattern: 动量.*速度一定大
+  correct: 动量大小等于质量与速度的乘积，动量大的物体可能质量大而速度小
+  description: 误以为动量只取决于速度，忽略了质量的影响
+  severity: error
+  source: cmmlu_high_school_physics_38
+- pattern: 惯性越大.*动量越大
+  correct: 惯性大小只与质量有关，动量大小还与速度有关，惯性大的物体若速度为零则动量为零
+  description: 误以为惯性大必然导致动量大，忽略了速度因素
+  severity: error
+  source: cmmlu_high_school_physics_38
+- pattern: 速度大小不变.*动量不变
+  correct: 动量是矢量，速度大小不变但方向改变时，动量也会改变
+  description: 误以为动量只与速度大小有关，忽略了动量的矢量性
+  severity: error
+  source: cmmlu_high_school_physics_38
+- pattern: 瓦特.*基本单位
+  correct: 瓦特是国际单位制导出单位，由基本单位千克、米、秒导出
+  description: 误以为瓦特是国际单位制基本单位
+  severity: error
+  source: cmmlu_high_school_physics_39
+- pattern: 焦耳.*基本单位
+  correct: 焦耳是国际单位制导出单位，由基本单位千克、米、秒导出
+  description: 误以为焦耳是国际单位制基本单位
+  severity: error
+  source: cmmlu_high_school_physics_39
+- pattern: 牛顿.*基本单位
+  correct: 牛顿是国际单位制导出单位，由基本单位千克、米、秒导出
+  description: 误以为牛顿是国际单位制基本单位
+  severity: error
+  source: cmmlu_high_school_physics_39
+- pattern: 振幅不一定为A
+  correct: 简谐波传播过程中无能量损失，各质点振幅均等于波源振幅A
+  description: 误以为波传播过程中振幅会衰减
+  severity: error
+  source: cmmlu_high_school_physics_40
+- pattern: 开始振动的方向.*取决于.*距离
+  correct: 所有质点开始振动的方向都与波源起振方向相同，沿y轴正向
+  description: 误以为质点起振方向与离波源距离有关
+  severity: error
+  source: cmmlu_high_school_physics_40
+- pattern: 速度的最大值一定为v
+  correct: 质点振动速度的最大值由振幅和周期决定，不等于波速v
+  description: 混淆了质点振动速度与波传播速度
+  severity: error
+  source: cmmlu_high_school_physics_40
+- pattern: 碰撞.*动量变化.*0
+  correct: 碰撞前后速度方向相反，动量变化为-2mv，不为零
+  description: 误以为碰撞前后速度大小不变则动量变化为零
+  severity: error
+  source: cmmlu_high_school_physics_41
+- pattern: 墙.*做功.*10.8
+  correct: 墙对小球不做功，因为碰撞前后动能不变，功为零
+  description: 误以为墙对小球施加了冲力所以做功，实际上动能未变
+  severity: error
+  source: cmmlu_high_school_physics_41
+- pattern: 半衰期.*11.4天
+  correct: 经过11.4天有7/8原子核衰变，即剩余1/8，对应3个半衰期，半衰期为3.8天
+  description: 误将衰变总时间直接当作半衰期
+  severity: error
+  source: cmmlu_high_school_physics_42
+- pattern: 半衰期.*7.6天
+  correct: 经过11.4天有7/8原子核衰变，即剩余1/8，对应3个半衰期，半衰期为3.8天
+  description: 误以为经过2个半衰期后剩余1/4，但实际剩余1/8对应3个半衰期
+  severity: error
+  source: cmmlu_high_school_physics_42
+- pattern: 半衰期.*5.7天
+  correct: 经过11.4天有7/8原子核衰变，即剩余1/8，对应3个半衰期，半衰期为3.8天
+  description: 误以为经过2个半衰期后剩余1/4，但实际剩余1/8对应3个半衰期
+  severity: error
+  source: cmmlu_high_school_physics_42
+- pattern: r、v都将略为减小
+  correct: 当探测器飞越质量密集区时，引力增大，轨道半径减小，速度增大
+  description: 误以为引力增大时轨道半径和速度都减小
+  severity: error
+  source: cmmlu_high_school_physics_43
+- pattern: r将略为增大，v将略为减小
+  correct: 当探测器飞越质量密集区时，引力增大，轨道半径减小，速度增大
+  description: 误以为引力增大时轨道半径增大、速度减小
+  severity: error
+  source: cmmlu_high_school_physics_43
+- pattern: r、v都将保持不变
+  correct: 当探测器飞越质量密集区时，引力增大，轨道半径减小，速度增大
+  description: 误以为质量密集区对探测器轨道无影响
+  severity: error
+  source: cmmlu_high_school_physics_43
+- pattern: 牛顿运动定律.*所有问题
+  correct: 牛顿运动定律只适用于宏观低速运动的物体，不能解决所有自然问题
+  description: 误以为牛顿运动定律是万能的，可以解决所有自然问题
+  severity: error
+  source: cmmlu_high_school_physics_44
+- pattern: 宏观物体.*高速运动.*经典力学.*适用
+  correct: 经典力学只适用于宏观低速运动，高速运动需用相对论
+  description: 误以为经典力学也适用于宏观物体的高速运动
+  severity: error
+  source: cmmlu_high_school_physics_44
+- pattern: 相对论.*量子力学.*经典力学.*失去意义
+  correct: 相对论和量子力学是经典力学的补充和发展，经典力学在低速宏观领域仍有意义
+  description: 误以为经典力学因新理论的出现而完全失效
+  severity: error
+  source: cmmlu_high_school_physics_44
+- pattern: 波峰.*一个.*相距.*平衡位置
+  correct: 两平衡位置质点间只有一个波峰时，波长可能为4m、6m或12m
+  description: 误以为两平衡位置质点间只有一个波峰时，波长只能取某些特定值，忽略了波峰位置的不同可能性
+  severity: error
+  source: cmmlu_high_school_physics_45
+- pattern: 两⼿相互摩擦能发热
+  correct: 两手相互摩擦是机械能转化为内能，而汽油机做功冲程是内能转化为机械能
+  description: 误以为摩擦生热与做功冲程能量转化方向相同
+  severity: error
+  source: cmmlu_high_school_physics_46
+- pattern: 压缩空⽓点⽕
+  correct: 压缩空气点火是机械能转化为内能，而汽油机做功冲程是内能转化为机械能
+  description: 误以为压缩点火与做功冲程能量转化方向相同
+  severity: error
+  source: cmmlu_high_school_physics_46
+- pattern: 锯⽊头锯⼦发烫
+  correct: 锯木头锯子发烫是机械能转化为内能，而汽油机做功冲程是内能转化为机械能
+  description: 误以为锯木头发热与做功冲程能量转化方向相同
+  severity: error
+  source: cmmlu_high_school_physics_46
+- pattern: 小提琴琴弦的颤动
+  correct: 小提琴琴弦的颤动属于机械运动，因为它是物体位置随时间的变化
+  description: 误以为琴弦颤动不是机械运动
+  severity: error
+  source: cmmlu_high_school_physics_47
+- pattern: 人体心脏的跳动
+  correct: 人体心脏的跳动属于机械运动，因为心脏肌肉有位置和形状的变化
+  description: 误以为心脏跳动不是机械运动
+  severity: error
+  source: cmmlu_high_school_physics_47
+- pattern: 地球绕太阳公转
+  correct: 地球绕太阳公转属于机械运动，因为地球位置随时间变化
+  description: 误以为地球公转不是机械运动
+  severity: error
+  source: cmmlu_high_school_physics_47
+- pattern: 冲量为mv－mg△t
+  correct: 地面对人的冲量等于动量变化量加上重力冲量，即 mv + mg△t
+  description: 误以为地面冲量等于动量变化量减去重力冲量，忽略了重力冲量的方向与动量变化方向相反
+  severity: error
+  source: cmmlu_high_school_physics_48
+- pattern: 地面对他做的功为mv2/2
+  correct: 地面对人的作用点没有位移，因此地面对人做功为零
+  description: 误以为地面做功等于动能变化量，实际上地面支持力作用点无位移，不做功
+  severity: error
+  source: cmmlu_high_school_physics_48
+- pattern: 冲量为mv
+  correct: 地面对人的冲量等于动量变化量加上重力冲量，即 mv + mg△t
+  description: 误以为地面冲量仅等于动量变化量，忽略了重力冲量的贡献
+  severity: error
+  source: cmmlu_high_school_physics_48
+- pattern: t2.*(t1\+t2)
+  correct: 水平推力与阻力大小之比为(t1+t2):t1
+  description: 误以为阻力作用时间t2与总时间(t1+t2)之比等于推力与阻力之比
+  severity: error
+  source: cmmlu_high_school_physics_49
+- pattern: (t1\+t2).*t2
+  correct: 水平推力与阻力大小之比为(t1+t2):t1
+  description: 误以为总时间(t1+t2)与阻力作用时间t2之比等于推力与阻力之比
+  severity: error
+  source: cmmlu_high_school_physics_49
+- pattern: t2.*t1
+  correct: 水平推力与阻力大小之比为(t1+t2):t1
+  description: 误以为阻力作用时间t2与推力作用时间t1之比等于推力与阻力之比
+  severity: error
+  source: cmmlu_high_school_physics_49
+- pattern: 路程.*4m.*位移.*3m
+  correct: 路程是路径总长度，下落4m加弹回1m共5m；位移是初末位置直线距离，从4m高处到1m高处为3m
+  description: 误将下落高度4m当作路程，忽略了弹回1m
+  severity: error
+  source: cmmlu_high_school_physics_50
+- pattern: 路程.*5m.*位移.*5m
+  correct: 位移是初末位置直线距离，从4m高处到1m高处为3m，不是5m
+  description: 误以为位移大小等于路程，混淆了位移与路程的概念
+  severity: error
+  source: cmmlu_high_school_physics_50
+- pattern: 路程.*4m.*位移.*1m
+  correct: 路程是路径总长度5m，位移是初末位置直线距离3m
+  description: 误将下落高度4m当作路程，且将弹回高度1m当作位移
+  severity: error
+  source: cmmlu_high_school_physics_50
+- pattern: 磁通量变化越大.*感应电动势越大
+  correct: 感应电动势的大小由磁通量变化率决定，而非变化量
+  description: 误以为磁通量变化量越大，感应电动势就越大，忽略了时间因素
+  severity: error
+  source: cmmlu_high_school_physics_51
+- pattern: 磁通量越大.*感应电动势越大
+  correct: 感应电动势与磁通量大小无关，只与磁通量变化率有关
+  description: 误以为磁通量越大，感应电动势就越大
+  severity: error
+  source: cmmlu_high_school_physics_51
+- pattern: 磁通量为零.*感应电动势一定为零
+  correct: 磁通量为零时，若磁通量变化率不为零，感应电动势可以不为零
+  description: 误以为磁通量为零时感应电动势一定为零，忽略了变化率
+  severity: error
+  source: cmmlu_high_school_physics_51
+- pattern: 铜块吸热.*水放热
+  correct: 水的比热容大于铜，吸收相同热量后水温升高较少，铜块温度更高，因此铜块放热，水吸热
+  description: 误以为铜块温度更低，会从水中吸热
+  severity: error
+  source: cmmlu_high_school_physics_52
+- pattern: 水的内能传递到铜块上
+  correct: 热量从高温物体传递到低温物体，铜块温度更高，所以内能从铜块传递到水
+  description: 误以为水的内能会自发传递到铜块
+  severity: error
+  source: cmmlu_high_school_physics_52
+- pattern: 铜块与水之间不发生热传递
+  correct: 铜块温度高于水，两者之间存在温度差，会发生热传递
+  description: 误以为铜块和水温度相同，不会发生热传递
+  severity: error
+  source: cmmlu_high_school_physics_52
+- pattern: 速度为零.*加速度为零
+  correct: 速度为零时，加速度不一定为零，例如竖直上抛的最高点速度为零但加速度为g
+  description: 误以为速度为零时加速度必然为零
+  severity: error
+  source: cmmlu_high_school_physics_53
+- pattern: 速度变化量越大.*加速度越大
+  correct: 加速度是速度变化率，即单位时间内的速度变化量，与速度变化量的大小无关
+  description: 误以为速度变化量大则加速度大，忽略了时间因素
+  severity: error
+  source: cmmlu_high_school_physics_53
+- pattern: 速度越大.*加速度越大
+  correct: 加速度与速度大小无直接关系，速度大时加速度可以很小甚至为零
+  description: 误以为速度越大加速度也越大
+  severity: error
+  source: cmmlu_high_school_physics_53
+- pattern: 电场强度.*变为原来的两倍
+  correct: 电场强度由场源电荷Q和位置决定，与试探电荷q无关，放2q时该点电场强度不变
+  description: 误以为电场强度与试探电荷大小成正比
+  severity: error
+  source: cmmlu_high_school_physics_54
+- pattern: 撤去电荷q.*电场强度为零
+  correct: 电场强度由场源电荷Q决定，与试探电荷q是否存在无关，撤去q后该点电场强度不变
+  description: 误以为电场强度依赖于试探电荷的存在
+  severity: error
+  source: cmmlu_high_school_physics_54
+- pattern: 电场强度.*E=F/Q
+  correct: 电场强度定义为E=F/q，其中q是试探电荷，Q是场源电荷，公式应为E=F/q
+  description: 混淆了试探电荷q和场源电荷Q在电场强度定义式中的角色
+  severity: error
+  source: cmmlu_high_school_physics_54
+- pattern: 女高音.*波速.*大于.*男中音
+  correct: 同一介质中声波波速相同，女高音和男中音的声波波速相等
+  description: 误以为音调高（频率高）的声波波速也更大
+  severity: error
+  source: cmmlu_high_school_physics_55
+- pattern: 女高音.*波长.*大于.*男中音
+  correct: 频率越高波长越短，女高音频率高所以波长小于男中音
+  description: 误以为频率高波长也大，忽略了波速相同时频率与波长成反比
+  severity: error
+  source: cmmlu_high_school_physics_55
+- pattern: 男中音.*频率.*大于.*女高音
+  correct: 女高音音调高，频率大于男中音
+  description: 误以为男中音频率高于女高音
+  severity: error
+  source: cmmlu_high_school_physics_55
+- pattern: 第2s内.*位移.*4m
+  correct: 匀加速直线运动中，第1s内位移2m，则加速度a=4m/s²，第2s内位移为6m
+  description: 误以为第2s内位移是第1s内的2倍
+  severity: error
+  source: cmmlu_high_school_physics_56
+- pattern: 第2s内.*位移.*3m
+  correct: 匀加速直线运动中，第1s内位移2m，则加速度a=4m/s²，第2s内位移为6m
+  description: 误以为第2s内位移是第1s内的1.5倍
+  severity: error
+  source: cmmlu_high_school_physics_56
+- pattern: m(g-a)h
+  correct: 起重机对货物做功等于力乘以位移，合力为m(g+a)，故功为m(g+a)h
+  description: 误以为加速度向上时合力为m(g-a)，忽略了加速度方向与重力方向相反
+  severity: error
+  source: cmmlu_high_school_physics_57
+- pattern: 16h.*t2.*t1
+  correct: 重力加速度表达式为 $8h/((t_2)^2 -(t_1)^2)$
+  description: 误将分子中的系数8误写为16，可能源于对时间差平方的系数计算错误
+  severity: error
+  source: cmmlu_high_school_physics_58
+- pattern: 2h.*t2.*t1
+  correct: 重力加速度表达式为 $8h/((t_2)^2 -(t_1)^2)$
+  description: 误将分子中的系数8误写为2，可能忽略了对称自由下落法推导中的倍数关系
+  severity: error
+  source: cmmlu_high_school_physics_58
+- pattern: 4h.*t2.*t1
+  correct: 重力加速度表达式为 $8h/((t_2)^2 -(t_1)^2)$
+  description: 误将分子中的系数8误写为4，可能遗漏了推导中的因子2
+  severity: error
+  source: cmmlu_high_school_physics_58
+- pattern: 稳定.*时间.*做功
+  correct: 物体在力的方向上没有位移时，力不做功
+  description: 误以为只要有力作用并持续一段时间，力就做了功
+  severity: error
+  source: cmmlu_high_school_physics_59
+- pattern: 挑担.*做功
+  correct: 挑担时担子受到向上的支持力，但水平移动时力的方向与位移方向垂直，不做功
+  description: 误以为挑担行走时对行李担做了功
+  severity: error
+  source: cmmlu_high_school_physics_59
+- pattern: 重力.*支持力.*水平面.*做功
+  correct: 在水平面上滚动时，重力和支持力方向与位移方向垂直，均不做功
+  description: 误以为物体在水平面上运动时重力和支持力做功
+  severity: error
+  source: cmmlu_high_school_physics_59
+- pattern: 重力.*做正功
+  correct: 在升降机加速上升过程中，重力方向与位移方向相反，重力做负功
+  description: 误以为物体上升时重力一定做正功，忽略了重力方向与位移方向的关系
+  severity: error
+  source: cmmlu_high_school_physics_60
+- pattern: 支持力.*不做功
+  correct: 在升降机加速上升过程中，支持力方向与位移方向相同，支持力做正功
+  description: 误以为支持力始终不做功，忽略了支持力方向与位移方向一致时做功的情况
+  severity: error
+  source: cmmlu_high_school_physics_60
+- pattern: 合外力.*不做功
+  correct: 在升降机加速上升过程中，合外力方向与位移方向相同，合外力做正功
+  description: 误以为物体静止时合外力不做功，忽略了加速上升时合外力不为零且做功
+  severity: error
+  source: cmmlu_high_school_physics_60
+- pattern: 风云一号.*线速度较小
+  correct: 风云一号周期更短，轨道半径更小，根据万有引力定律，线速度更大
+  description: 误以为周期短的卫星线速度更小
+  severity: error
+  source: cmmlu_high_school_physics_61
+- pattern: 风云一号.*离地面较高
+  correct: 风云一号周期12h小于风云二号24h，轨道半径更小，离地面更低
+  description: 误以为周期短的卫星离地面更高
+  severity: error
+  source: cmmlu_high_school_physics_61
+- pattern: 再过12h.*同时到达该小岛上空
+  correct: 风云一号周期12h，12h后回到原位置；风云二号周期24h，12h后转到地球另一侧，不会同时到达
+  description: 误以为两卫星周期成整数倍就能同时回到同一地点上空，忽略了地球自转和卫星轨道差异
+  severity: error
+  source: cmmlu_high_school_physics_61
+- pattern: 合力做功.*平方和
+  correct: 合力做功等于各分力做功的代数和，即8J+6J=14J
+  description: 误以为合力做功需要按矢量合成（如勾股定理）计算，而不是直接代数相加
+  severity: error
+  source: cmmlu_high_school_physics_62
+- pattern: 合力做功.*10J
+  correct: 合力做功等于各分力做功的代数和，即8J+6J=14J
+  description: 误以为合力做功是分力做功的算术平均值或某种中间值
+  severity: error
+  source: cmmlu_high_school_physics_62
+- pattern: 合力做功.*2J
+  correct: 合力做功等于各分力做功的代数和，即8J+6J=14J
+  description: 误以为合力做功是分力做功的差值
+  severity: error
+  source: cmmlu_high_school_physics_62
+- pattern: 加速度.*减小.*速度.*增大
+  correct: 当牵引力逐渐增大而功率不变时，速度会逐渐减小，加速度也会逐渐减小
+  description: 误以为加速度减小意味着速度增大
+  severity: error
+  source: cmmlu_high_school_physics_64
+- pattern: 加速度.*增大.*速度.*增大
+  correct: 当牵引力逐渐增大而功率不变时，速度会逐渐减小，加速度也会逐渐减小
+  description: 误以为加速度增大时速度一定增大
+  severity: error
+  source: cmmlu_high_school_physics_64
+- pattern: 加速度.*增大.*速度.*减小
+  correct: 当牵引力逐渐增大而功率不变时，速度会逐渐减小，加速度也会逐渐减小
+  description: 误以为加速度增大时速度减小
+  severity: error
+  source: cmmlu_high_school_physics_64
+- pattern: 初速度.*频率
+  correct: 单摆频率只与摆长和重力加速度有关，与初速度无关
+  description: 误以为初速度越大，单摆频率越大
+  severity: error
+  source: cmmlu_high_school_physics_65
+- pattern: 初速度.*振幅
+  correct: 单摆振幅与初速度正相关，初速度越大振幅越大
+  description: 误以为初速度越大振幅越小
+  severity: error
+  source: cmmlu_high_school_physics_65
+- pattern: 加速运动时.*马向前拉车的力大于车向后拉马的力
+  correct: 在任何运动状态下，马向前拉车的力与车向后拉马的力大小始终相等，这是一对作用力与反作用力
+  description: 误以为加速时拉力大于反作用力
+  severity: error
+  source: cmmlu_high_school_physics_66
+- pattern: 只有匀速运动时.*马向前拉车与车向后拉马的力大小相等
+  correct: 在任何运动状态下，马向前拉车的力与车向后拉马的力大小始终相等，这是一对作用力与反作用力
+  description: 误以为只有匀速运动时作用力与反作用力才相等
+  severity: error
+  source: cmmlu_high_school_physics_66
+- pattern: 加速运动时.*马向前拉车的力小于车向后拉马的力
+  correct: 在任何运动状态下，马向前拉车的力与车向后拉马的力大小始终相等，这是一对作用力与反作用力
+  description: 误以为加速时拉力小于反作用力
+  severity: error
+  source: cmmlu_high_school_physics_66
+- pattern: 速度大于v.*轮缘挤压外轨
+  correct: 当速度大于v时，火车有离心趋势，轮缘挤压外轨
+  description: 误以为速度大于规定速度时轮缘挤压内轨
+  severity: error
+  source: cmmlu_high_school_physics_67
+- pattern: 速度小于v.*轮缘挤压外轨
+  correct: 当速度小于v时，火车有向心趋势，轮缘挤压内轨
+  description: 误以为速度小于规定速度时轮缘挤压外轨
+  severity: error
+  source: cmmlu_high_school_physics_67
+- pattern: 电量.*3倍.*静电力.*3倍
+  correct: 静电力与电荷量的乘积成正比，各增大到3倍则乘积增大到9倍
+  description: 误以为静电力与单个电荷量成正比，忽略了乘积关系
+  severity: error
+  source: cmmlu_high_school_physics_68
+- pattern: 电量.*3倍.*静电力.*6倍
+  correct: 静电力与电荷量的乘积成正比，各增大到3倍则乘积增大到9倍
+  description: 误以为静电力与电荷量之和成正比，实际为乘积关系
+  severity: error
+  source: cmmlu_high_school_physics_68
+- pattern: 电量.*3倍.*静电力.*1倍
+  correct: 静电力与电荷量的乘积成正比，各增大到3倍则乘积增大到9倍
+  description: 误以为静电力与电荷量变化无关
+  severity: error
+  source: cmmlu_high_school_physics_68
+- pattern: 人造卫星.*拍摄.*紫外线.*分辨
+  correct: 人造卫星对地球拍摄利用红外线穿透云雾烟尘的能力，而非紫外线
+  description: 误以为紫外线有较好的分辨能力，可用于卫星拍摄
+  severity: error
+  source: cmmlu_high_school_physics_69
+- pattern: 红外线.*消毒
+  correct: 医院常用紫外线对病房和手术室消毒，红外线主要用于热效应而非消毒
+  description: 误以为红外线可用于消毒
+  severity: error
+  source: cmmlu_high_school_physics_69
+- pattern: X射线.*消毒
+  correct: 医院常用紫外线对病房和手术室消毒，X射线用于医学影像而非消毒
+  description: 误以为X射线可用于消毒
+  severity: error
+  source: cmmlu_high_school_physics_69
+- pattern: 任意两个连续相等时间.*速度都相等
+  correct: 在匀加速直线运动中，速度随时间均匀增加，任意两个连续相等时间内的速度不相等
+  description: 误以为匀加速直线运动中连续相等时间内的速度相等
+  severity: error
+  source: cmmlu_high_school_physics_70
+- pattern: 任意两个连续相等时间.*位移都相等
+  correct: 在匀加速直线运动中，连续相等时间内的位移之差为恒量，位移不相等
+  description: 误以为匀加速直线运动中连续相等时间内的位移相等
+  severity: error
+  source: cmmlu_high_school_physics_70
+- pattern: 前1s、前2s、前3s.*位移之比.*1:3:5
+  correct: 初速度为零的匀加速直线运动，前1s、前2s、前3s的位移之比是1:4:9
+  description: 混淆了前n秒内位移之比与第n秒内位移之比
+  severity: error
+  source: cmmlu_high_school_physics_70
+- pattern: 平均速度.*算术平均
+  correct: 平均速度等于总位移除以总时间，不能简单取各段平均速度的算术平均值
+  description: 误以为全程平均速度是各段平均速度的算术平均值
+  severity: error
+  source: cmmlu_high_school_physics_71
+- pattern: 平均速度.*加权平均.*时间
+  correct: 平均速度等于总位移除以总时间，加权平均时权重应为各段的时间而非位移
+  description: 误以为全程平均速度是各段平均速度按时间加权平均
+  severity: error
+  source: cmmlu_high_school_physics_71
+- pattern: 外力停止作用.*物体.*惯性.*停止
+  correct: 外力停止作用后，物体由于惯性将保持原来的运动状态（静止或匀速直线运动）
+  description: 误以为外力停止作用后物体会停下来，混淆了惯性与阻力的作用
+  severity: error
+  source: cmmlu_high_school_physics_72
+- pattern: 力是维持物体运动的原因
+  correct: 力是改变物体运动状态的原因，而不是维持运动的原因
+  description: 错误地认为力是维持物体运动所必需的，忽略了惯性
+  severity: error
+  source: cmmlu_high_school_physics_72
+- pattern: 红外线.*化学效应
+  correct: 红外线的主要特性是热效应，而非化学效应
+  description: 误以为红外线具有化学效应
+  severity: error
+  source: cmmlu_high_school_physics_73
+- pattern: 红外线.*穿透性
+  correct: 红外云图利用的是红外线的热效应，而非穿透性
+  description: 误以为红外云图基于红外线的穿透性
+  severity: error
+  source: cmmlu_high_school_physics_73
+- pattern: 红外线.*可见性
+  correct: 红外线是不可见光，云图利用的是其热效应
+  description: 误以为红外线具有可见性
+  severity: error
+  source: cmmlu_high_school_physics_73
+- pattern: 看山恰似走来迎.*参考系.*河岸
+  correct: 看山恰似走来迎是以船为参考系，山相对船运动
+  description: 误以为山向人走来是以河岸为参考系
+  severity: error
+  source: cmmlu_high_school_physics_74
+- pattern: 看山恰似走来迎.*参考系.*地面
+  correct: 看山恰似走来迎是以船为参考系，山相对船运动
+  description: 误以为山向人走来是以地面为参考系
+  severity: error
+  source: cmmlu_high_school_physics_74
+- pattern: 是船行.*参考系.*山
+  correct: 是船行是以山为参考系，船相对山运动
+  description: 误以为船行是以船为参考系
+  severity: error
+  source: cmmlu_high_school_physics_74
+- pattern: 子弹.*速度.*枪口.*平均速度
+  correct: 子弹以速度v从枪口射出，v是指瞬时速度
+  description: 误将子弹射出枪口时的速度当作平均速度
+  severity: error
+  source: cmmlu_high_school_physics_75
+- pattern: 平均速率.*平均速度的大小
+  correct: 平均速率是路程与时间的比值，不一定等于平均速度的大小
+  description: 误以为平均速率就是平均速度的大小
+  severity: error
+  source: cmmlu_high_school_physics_75
+- pattern: 火车.*速度.*某一段路.*瞬时速度
+  correct: 火车以速度v经过某一段路，v是指平均速度
+  description: 误将火车经过一段路的速度当作瞬时速度
+  severity: error
+  source: cmmlu_high_school_physics_75
+- pattern: 15N.*40N.*40N
+  correct: 当拉力为15N时物体静止，摩擦力等于拉力15N；当拉力为30N时物体仍静止，摩擦力等于拉力30N；当拉力为80N时物体滑动，摩擦力为滑动摩擦力40N
+  description: 误以为拉力超过最大静摩擦力后，摩擦力会突然增大到滑动摩擦力，而忽略了拉力小于最大静摩擦力时摩擦力等于拉力
+  severity: error
+  source: cmmlu_high_school_physics_76
+- pattern: 0N.*15N.*15N
+  correct: 当拉力为15N时物体静止，摩擦力等于拉力15N，不为0N
+  description: 误以为物体静止时摩擦力始终为0N
+  severity: error
+  source: cmmlu_high_school_physics_76
+- pattern: 0N.*20N.*40N
+  correct: 当拉力为15N时物体静止，摩擦力等于拉力15N，不为0N；当拉力为30N时物体静止，摩擦力等于拉力30N，不为20N
+  description: 误以为物体静止时摩擦力为0N，且拉力小于最大静摩擦力时摩擦力固定为某个值
+  severity: error
+  source: cmmlu_high_school_physics_76
+- pattern: 声波波速.*小.*光波波速.*大
+  correct: 波速不是决定衍射能力的关键因素，衍射主要取决于波长与障碍物尺寸的相对关系
+  description: 误以为波速大小决定波能否绕过障碍物
+  severity: error
+  source: cmmlu_high_school_physics_77
+- pattern: 声波振幅.*大.*光波振幅.*小
+  correct: 振幅影响能量大小，不影响衍射现象
+  description: 误以为振幅大小决定波能否绕过障碍物
+  severity: error
+  source: cmmlu_high_school_physics_77
+- pattern: 声波是纵波.*光波是横波
+  correct: 波的衍射能力与纵波或横波无关，只与波长有关
+  description: 误以为波的振动方向（纵波或横波）决定衍射能力
+  severity: error
+  source: cmmlu_high_school_physics_77
+- pattern: 光从空气射向水.*全反射
+  correct: 全反射只能发生在光从光密介质射向光疏介质时，水是光密介质，空气是光疏介质，因此光从空气射向水不会发生全反射
+  description: 误以为光从空气射向水也能发生全反射
+  severity: error
+  source: cmmlu_high_school_physics_78
+- pattern: 光从水射向空气.*入射角小于临界角.*全反射
+  correct: 光从水射向空气时，只有入射角大于临界角才能发生全反射
+  description: 误以为入射角小于临界角时也能发生全反射
+  severity: error
+  source: cmmlu_high_school_physics_78
+- pattern: Gcos\(a\)/2
+  correct: 绳索张力为 G/(2cos(a))，因为重力沿绳索方向的分量需与张力平衡
+  description: 误将重力在竖直方向的分量当作绳索张力，忽略了绳索与竖直方向夹角的影响
+  severity: error
+  source: cmmlu_high_school_physics_79
+- pattern: G/2sin\(a\)
+  correct: 绳索张力为 G/(2cos(a))，重力沿绳索方向的分量是 Gcos(a)，而非 Gsin(a)
+  description: 误用正弦函数代替余弦函数计算重力沿绳索方向的分量
+  severity: error
+  source: cmmlu_high_school_physics_79
+- pattern: Gsin\(a\)/2
+  correct: 绳索张力为 G/(2cos(a))，重力沿绳索方向的分量是 Gcos(a)，而非 Gsin(a)
+  description: 误用正弦函数且错误放置分母，导致张力表达式错误
+  severity: error
+  source: cmmlu_high_school_physics_79
+- pattern: w1<w2
+  correct: 两次搬运相同物品到相同高度，克服重力做功相等
+  description: 误以为时间不同会导致做功不同
+  severity: error
+  source: cmmlu_high_school_physics_80
+- pattern: p1>p2
+  correct: 做功相同，时间越短功率越大，所以p1<p2
+  description: 误以为时间越长功率越大
+  severity: error
+  source: cmmlu_high_school_physics_80
+- pattern: w1>w2
+  correct: 两次搬运相同物品到相同高度，克服重力做功相等
+  description: 误以为时间不同会导致做功不同
+  severity: error
+  source: cmmlu_high_school_physics_80
+- pattern: 分子间相互作用力.*随分子间距的减小而增大
+  correct: 分子间相互作用力随分子间距减小先增大后减小（斥力主导时增大，引力主导时减小）
+  description: 误以为分子间相互作用力总是随距离减小而单调增大，忽略了引力和斥力的合力变化规律
+  severity: error
+  source: cmmlu_high_school_physics_81
+- pattern: 分子间相互作用力.*随分子间距的增大而增大
+  correct: 分子间相互作用力随分子间距增大先增大后减小（在引力范围内先增后减）
+  description: 误以为分子间相互作用力随距离增大而单调增大
+  severity: error
+  source: cmmlu_high_school_physics_81
+- pattern: 分子间引力.*随分子间距的增大而增大
+  correct: 分子间引力随分子间距的增大而减小
+  description: 误以为分子间引力随距离增大而增大
+  severity: error
+  source: cmmlu_high_school_physics_81
+- pattern: 百⽶终点冲刺速度.*10m/s
+  correct: 全程平均速度是10m/s，但终点冲刺速度不一定等于平均速度
+  description: 误将全程平均速度当作终点瞬时速度
+  severity: error
+  source: cmmlu_high_school_physics_82
+- pattern: 第7s末.*瞬时速度.*9m/s
+  correct: 前7s的平均速度是9m/s，但第7s末的瞬时速度不一定等于该平均速度
+  description: 误将某段时间的平均速度当作该段时间末的瞬时速度
+  severity: error
+  source: cmmlu_high_school_physics_82
+- pattern: 第1s末.*瞬时速度.*8m/s
+  correct: 第1s内的平均速度是8m/s，但第1s末的瞬时速度不一定等于该平均速度
+  description: 误将某段时间的平均速度当作该段时间末的瞬时速度
+  severity: error
+  source: cmmlu_high_school_physics_82
+- pattern: 压缩冲程.*将废气排出缸外
+  correct: 压缩冲程是压缩燃料和空气的混合物，排气冲程才将废气排出缸外
+  description: 误以为压缩冲程负责排出废气
+  severity: error
+  source: cmmlu_high_school_physics_83
+- pattern: 压缩冲程.*对外做功
+  correct: 压缩冲程是压缩燃料和空气的混合物，做功冲程才对外做功
+  description: 误以为压缩冲程对外做功
+  severity: error
+  source: cmmlu_high_school_physics_83
+- pattern: 压缩冲程.*吸进汽油和空气
+  correct: 压缩冲程是压缩燃料和空气的混合物，吸气冲程才吸进汽油和空气的混合物
+  description: 误以为压缩冲程负责吸气
+  severity: error
+  source: cmmlu_high_school_physics_83
+- pattern: 声波的速度越来越大
+  correct: 声波在空气中的传播速度只取决于介质（空气）的性质，与声源运动无关
+  description: 误以为声源运动会导致声波传播速度变化
+  severity: error
+  source: cmmlu_high_school_physics_84
+- pattern: 声波的频率变低
+  correct: 当声源向观察者运动时，观察者接收到的声波频率变高（多普勒效应）
+  description: 误以为声源靠近时观察者接收到的频率降低
+  severity: error
+  source: cmmlu_high_school_physics_84
+- pattern: 红光.*侧移.*大于
+  correct: 紫光折射率大于红光，相同入射角下紫光侧移距离更大
+  description: 误以为红光折射率更大或侧移更大
+  severity: error
+  source: cmmlu_high_school_physics_85
+- pattern: 30度.*侧移.*大于.*45度
+  correct: 入射角越大，侧移距离越大，45度入射角侧移大于30度
+  description: 误以为入射角越小侧移越大
+  severity: error
+  source: cmmlu_high_school_physics_85
+- pattern: kg.*T.*N
+  correct: 国际单位制基本单位包括千克(kg)、安培(A)、秒(s)等，特斯拉(T)和牛顿(N)是导出单位
+  description: 误将特斯拉(T)和牛顿(N)当作基本单位
+  severity: error
+  source: cmmlu_high_school_physics_86
+- pattern: N.*A.*s
+  correct: 国际单位制基本单位包括安培(A)、秒(s)等，牛顿(N)是导出单位
+  description: 误将牛顿(N)当作基本单位
+  severity: error
+  source: cmmlu_high_school_physics_86
+- pattern: kg.*V.*m/s
+  correct: 国际单位制基本单位包括千克(kg)等，伏特(V)和米每秒(m/s)是导出单位
+  description: 误将伏特(V)和米每秒(m/s)当作基本单位
+  severity: error
+  source: cmmlu_high_school_physics_86
+- pattern: 上升.*动能.*势能.*2倍.*h.*2H/9
+  correct: 上升至离地高度h处动能是势能2倍时，h=4H/9
+  description: 误以为上升过程中动能与势能的比例关系对应的h为2H/9
+  severity: error
+  source: cmmlu_high_school_physics_87
+- pattern: 上升.*动能.*势能.*2倍.*h.*H/9
+  correct: 上升至离地高度h处动能是势能2倍时，h=4H/9
+  description: 误以为上升过程中动能与势能的比例关系对应的h为H/9
+  severity: error
+  source: cmmlu_high_school_physics_87
+- pattern: 上升.*动能.*势能.*2倍.*h.*3H/9
+  correct: 上升至离地高度h处动能是势能2倍时，h=4H/9
+  description: 误以为上升过程中动能与势能的比例关系对应的h为3H/9
+  severity: error
+  source: cmmlu_high_school_physics_87
+- pattern: 力是产生运动和维持物体运动的原因
+  correct: 力不是维持物体运动的原因，而是改变物体运动状态的原因
+  description: 误以为力是维持物体运动所必需的，混淆了力与运动的关系
+  severity: error
+  source: cmmlu_high_school_physics_88
+- pattern: 弹簧振子.*1.26.*加速
+  correct: 经过1.26s（3.15个周期），振子从平衡位置向右运动，此时处于向右远离平衡位置的过程，速度减小，做减速运动
+  description: 误以为经过多个周期后振子运动方向与初始方向相反或处于加速阶段
+  severity: error
+  source: cmmlu_high_school_physics_89
+- pattern: 弹簧振子.*1.26.*向左
+  correct: 经过1.26s（3.15个周期），振子仍处于向右运动阶段，并非向左运动
+  description: 误以为经过多个周期后振子运动方向变为向左
+  severity: error
+  source: cmmlu_high_school_physics_89
+- pattern: 很快获得速度
+  correct: 低速挡启动是为了在发动机输出功率不太大的情况下获得较大的驱动力，而不是为了快速加速
+  description: 误以为低速挡启动是为了让汽车快速获得速度
+  severity: error
+  source: cmmlu_high_school_physics_90
+- pattern: 车速慢.*安全
+  correct: 低速挡启动是为了获得较大的驱动力，而非单纯为了安全
+  description: 误以为低速挡启动是为了车速慢更安全
+  severity: error
+  source: cmmlu_high_school_physics_90
+- pattern: 操作规程.*不能违反
+  correct: 低速挡启动是基于物理原理（功率与驱动力关系），而非仅因操作规程
+  description: 误以为低速挡启动只是操作规程要求，缺乏物理原理理解
+  severity: error
+  source: cmmlu_high_school_physics_90
+- pattern: 白气.*吸收热量
+  correct: 液化过程放出热量，而不是吸收热量
+  description: 误以为液化（白气形成）需要吸热
+  severity: error
+  source: cmmlu_high_school_physics_91
+- pattern: 壶嘴.*白气.*水蒸气
+  correct: 壶嘴冒出的白气是水蒸气液化形成的小水滴，不是水蒸气本身
+  description: 误以为肉眼可见的白气就是水蒸气
+  severity: error
+  source: cmmlu_high_school_physics_91
+- pattern: 冰棒.*白气.*升华.*水蒸气
+  correct: 冰棒周围的白气是空气中的水蒸气遇冷液化形成的小水滴，不是升华形成的水蒸气
+  description: 误以为冰棒周围的白气是冰升华形成的水蒸气
+  severity: error
+  source: cmmlu_high_school_physics_91
+- pattern: 紫外线.*内层电子.*受激
+  correct: 紫外线是原子的外层电子受激发产生的
+  description: 误以为紫外线由内层电子跃迁产生
+  severity: error
+  source: cmmlu_high_school_physics_92
+- pattern: X光.*原子核.*受激
+  correct: X光是原子的内层电子受激发产生的
+  description: 误以为X光由原子核受激发产生
+  severity: error
+  source: cmmlu_high_school_physics_92
+- pattern: 9.0×10^4 kW
+  correct: 功率P=Fv=1.2×10^7N×15m/s=1.8×10^8W=1.8×10^5kW
+  description: 误将阻力数值或速度数值计算错误，得到9.0×10^4 kW
+  severity: error
+  source: cmmlu_high_school_physics_93
+- pattern: 8.0×10^4 kW
+  correct: 功率P=Fv=1.2×10^7N×15m/s=1.8×10^8W=1.8×10^5kW
+  description: 误将阻力数值或速度数值计算错误，得到8.0×10^4 kW
+  severity: error
+  source: cmmlu_high_school_physics_93
+- pattern: 8.0×10^3 kW
+  correct: 功率P=Fv=1.2×10^7N×15m/s=1.8×10^8W=1.8×10^5kW
+  description: 误将阻力数值或速度数值计算错误，得到8.0×10^3 kW
+  severity: error
+  source: cmmlu_high_school_physics_93
+- pattern: 30.*40.*合.*0
+  correct: 两个共点力夹角90°时，合力大小由勾股定理计算，为50N
+  description: 误以为两个力大小相等方向相反时合力为0，但此处夹角90°且大小不等
+  severity: error
+  source: cmmlu_high_school_physics_94
+- pattern: 30.*40.*合.*80
+  correct: 两个共点力夹角90°时，合力大小由勾股定理计算，为50N，不是简单相加
+  description: 误以为合力等于两个力大小的代数和，忽略了夹角影响
+  severity: error
+  source: cmmlu_high_school_physics_94
+- pattern: 30.*40.*合.*110
+  correct: 两个共点力夹角90°时，合力大小由勾股定理计算，为50N，不是简单相加
+  description: 误以为合力等于两个力大小的代数和，忽略了夹角影响
+  severity: error
+  source: cmmlu_high_school_physics_94
+- pattern: 体积很⼩.*质点
+  correct: 物体能否看成质点取决于其尺寸对研究问题的影响，而非体积大小
+  description: 误以为体积小的物体一定可以视为质点
+  severity: error
+  source: cmmlu_high_school_physics_95
+- pattern: 质量很⼩.*质点
+  correct: 物体能否看成质点取决于其尺寸对研究问题的影响，而非质量大小
+  description: 误以为质量小的物体一定可以视为质点
+  severity: error
+  source: cmmlu_high_school_physics_95
+- pattern: 低速.*质点|⾼速.*质点
+  correct: 物体能否看成质点取决于其尺寸对研究问题的影响，与运动速度无关
+  description: 误以为只有低速运动的物体才能视为质点
+  severity: error
+  source: cmmlu_high_school_physics_95
+- pattern: 各自下落1m.*速度不同
+  correct: 自由落体运动中，下落相同距离时速度相同，与质量无关
+  description: 误以为质量大的物体下落相同距离后速度更大
+  severity: error
+  source: cmmlu_high_school_physics_96
+- pattern: A加速度大于B加速度
+  correct: 自由落体运动中，所有物体加速度均为重力加速度g，与质量无关
+  description: 误以为质量大的物体自由落体加速度更大
+  severity: error
+  source: cmmlu_high_school_physics_96
+- pattern: 同一时刻A速度大于B速度
+  correct: 自由落体运动中，同时释放的物体在任意时刻速度相同，与质量无关
+  description: 误以为质量大的物体自由落体速度更快
+  severity: error
+  source: cmmlu_high_school_physics_96
+- pattern: 亚里士多德.*完全正确
+  correct: 亚里士多德认为力决定速度的观点是错误的，力不是维持运动的原因，而是改变运动状态的原因
+  description: 误认为亚里士多德的力与速度关系观点完全正确
+  severity: error
+  source: cmmlu_high_school_physics_97
+- pattern: 力和质量.*决定速度
+  correct: 力决定加速度而非速度，速度大小由加速度和初始条件共同决定
+  description: 误认为力和质量直接决定物体速度大小
+  severity: error
+  source: cmmlu_high_school_physics_97
+- pattern: 没有力物体不会运动
+  correct: 没有力时物体可以保持匀速直线运动（牛顿第一定律）
+  description: 误认为没有力物体就会停止运动
+  severity: error
+  source: cmmlu_high_school_physics_97
+- pattern: 中央电视台新闻联播节目用时30分钟
+  correct: 30分钟表示一段时间，是时间间隔，不是时刻
+  description: 误将时间间隔（时长）当作时刻
+  severity: error
+  source: cmmlu_high_school_physics_98
+- pattern: 2011年9月29日21时16分03秒.*发射
+  correct: 2011年9月29日21时16分03秒是一个具体时刻，不是时间间隔
+  description: 误将具体时刻当作时间间隔
+  severity: error
+  source: cmmlu_high_school_physics_98
+- pattern: 2008年8月8日晚8时.*开始
+  correct: 2008年8月8日晚8时是一个具体时刻，不是时间间隔
+  description: 误将具体时刻当作时间间隔
+  severity: error
+  source: cmmlu_high_school_physics_98
+- pattern: 子弹.*动能.*较大
+  correct: 运动员的动能较大，因为动能与质量和速度平方成正比，运动员质量远大于子弹
+  description: 误以为速度快的物体动能一定更大，忽略了质量的影响
+  severity: error
+  source: cmmlu_high_school_physics_99
+- pattern: 二者.*动能.*一样
+  correct: 运动员的动能较大，计算可得子弹动能约2450J，运动员动能约3000J
+  description: 误以为两者动能相等，未进行实际计算
+  severity: error
+  source: cmmlu_high_school_physics_99
+- pattern: 无法比较.*动能
+  correct: 动能可以比较，根据公式Ek=1/2mv²计算即可
+  description: 误以为不同单位或不同物体的动能无法比较
+  severity: error
+  source: cmmlu_high_school_physics_99
+- pattern: 飞机机轮.*导电橡胶
+  correct: 飞机机轮用导电橡胶制成是为了防止静电积累，属于静电防护而非静电应用
+  description: 误将静电防护措施当作静电应用
+  severity: error
+  source: cmmlu_high_school_physics_100
+- pattern: 织地毯.*不锈钢丝
+  correct: 织地毯时夹一些不锈钢丝是为了导走静电，属于静电防护而非静电应用
+  description: 误将静电防护措施当作静电应用
+  severity: error
+  source: cmmlu_high_school_physics_100
+- pattern: 油罐车.*铁链
+  correct: 油罐车拖一条铁链是为了导走静电，属于静电防护而非静电应用
+  description: 误将静电防护措施当作静电应用
+  severity: error
+  source: cmmlu_high_school_physics_100
+- pattern: F.*最⼤值.*导线.*与B平⾏
+  correct: 当安培力最大时，通电导线一定与B垂直
+  description: 误以为安培力最大时导线与磁场平行，实际上安培力最大时导线与磁场垂直
+  severity: error
+  source: cmmlu_high_school_physics_102
+- pattern: B＝4T.*F⼀定为2N
+  correct: 安培力大小还与导线与磁场的夹角有关，F=BILsinθ，B=4T时F不一定为2N
+  description: 误以为给定B、I、L就能确定安培力，忽略了夹角的影响
+  severity: error
+  source: cmmlu_high_school_physics_102
+- pattern: F＝0.*B.*⼀定为零
+  correct: 安培力为零时，B不一定为零，可能是导线与磁场平行
+  description: 误以为安培力为零则磁场必为零，忽略了导线与磁场平行的情况
+  severity: error
+  source: cmmlu_high_school_physics_102
+- pattern: 跳在沙坑.*动量.*小
+  correct: 跳在沙坑和水泥地上，人的动量变化相同，但沙坑延长了作用时间，从而减小了平均冲力
+  description: 误以为沙坑能减小动量或动量变化
+  severity: error
+  source: cmmlu_high_school_physics_103
+- pattern: 跳在沙坑.*冲量.*小
+  correct: 跳在沙坑和水泥地上，人受到的冲量相同（等于动量变化），但沙坑延长了作用时间，从而减小了平均冲力
+  description: 误以为沙坑能减小冲量
+  severity: error
+  source: cmmlu_high_school_physics_103
+- pattern: 跳在沙坑.*动量变化.*小
+  correct: 跳在沙坑和水泥地上，人的动量变化相同，但沙坑延长了作用时间，从而减小了平均冲力
+  description: 误以为沙坑能减小动量变化
+  severity: error
+  source: cmmlu_high_school_physics_103
+- pattern: 撑着钢柄雨伞
+  correct: 金属物体易引雷，雷雨时不应使用金属柄雨伞
+  description: 误以为钢柄雨伞可以防雷或无关紧要
+  severity: error
+  source: cmmlu_high_school_physics_104
+- pattern: 躲在.*大树下
+  correct: 大树易遭雷击，雷雨时不应躲在大树下
+  description: 误以为大树能安全避雷
+  severity: error
+  source: cmmlu_high_school_physics_104
+- pattern: 站在避雷针旁边
+  correct: 避雷针引雷入地，站在其旁边有跨步电压危险
+  description: 误以为避雷针附近绝对安全
+  severity: error
+  source: cmmlu_high_school_physics_104
+- pattern: 受激辐射.*En增大
+  correct: 受激辐射中原子从高能态跃迁到低能态，总能量En减小
+  description: 误以为受激辐射使原子总能量增加
+  severity: error
+  source: cmmlu_high_school_physics_105
+- pattern: 受激辐射.*Ep增大
+  correct: 受激辐射中电子从高能级跃迁到低能级，电势能Ep减小
+  description: 误以为受激辐射中电势能增加
+  severity: error
+  source: cmmlu_high_school_physics_105
+- pattern: 受激辐射.*Ek减小
+  correct: 受激辐射中电子从高能级跃迁到低能级，动能Ek增大
+  description: 误以为受激辐射中电子动能减小
+  severity: error
+  source: cmmlu_high_school_physics_105
+- pattern: 受激辐射.*En不变
+  correct: 受激辐射中原子释放光子，总能量En减小
+  description: 误以为受激辐射中原子总能量不变
+  severity: error
+  source: cmmlu_high_school_physics_105
+- pattern: 停在机场的飞机
+  correct: 乘客看到树木后退是以自己乘坐的飞机为参照系
+  description: 误以为以静止的飞机为参照系时树木会后退
+  severity: error
+  source: cmmlu_high_school_physics_106
+- pattern: 波速.*与.*频率成正⽐
+  correct: 波速由介质决定，与波源频率无关
+  description: 误以为波速与频率成正比
+  severity: error
+  source: cmmlu_high_school_physics_107
+- pattern: 波速.*由介质和波源共同决定
+  correct: 波速只由介质决定，与波源无关
+  description: 误以为波源也影响波速
+  severity: error
+  source: cmmlu_high_school_physics_107
+- pattern: 波速.*反映了质点振动的快慢
+  correct: 波速反映振动在介质中传播的快慢，质点振动快慢由频率决定
+  description: 混淆了波速与质点振动速度
+  severity: error
+  source: cmmlu_high_school_physics_107
+- pattern: 35V.*电感器
+  correct: 标有电容和电压参数的是电容器，不是电感器
+  description: 误将电容器的参数标识（电压和电容值）当作电感器的标识
+  severity: error
+  source: cmmlu_high_school_physics_108
+- pattern: 35V.*电阻器
+  correct: 标有电容和电压参数的是电容器，不是电阻器
+  description: 误将电容器的参数标识（电压和电容值）当作电阻器的标识
+  severity: error
+  source: cmmlu_high_school_physics_108
+- pattern: 35V.*电源
+  correct: 标有电容和电压参数的是电容器，不是电源
+  description: 误将电容器的参数标识（电压和电容值）当作电源的标识
+  severity: error
+  source: cmmlu_high_school_physics_108
+- pattern: 冲量.*向下.*m\(v1-v2\)
+  correct: 地面对钢球的冲量方向向上，大小为m(v1+v2)
+  description: 误以为冲量方向与弹回速度方向相同，或忽略了动量变化的方向性
+  severity: error
+  source: cmmlu_high_school_physics_109
+- pattern: 冲量.*向下.*m\(v1\+v2\)
+  correct: 地面对钢球的冲量方向向上，大小为m(v1+v2)
+  description: 误以为冲量方向向下，且大小计算正确但方向错误
+  severity: error
+  source: cmmlu_high_school_physics_109
+- pattern: 冲量.*向上.*m\(v1\+v2\)
+  correct: 地面对钢球的冲量方向向上，大小为m(v1+v2)
+  description: 误以为冲量大小为m(v1+v2)，但实际应为m(v1+v2)（注意v1和v2方向相反，动量变化为m(v1+v2)）
+  severity: error
+  source: cmmlu_high_school_physics_109
 domain_facts:
-
-  # ─── 物理量与单位对照表 ───
-
   physical_quantities:
-    - quantity: "长度"
-      symbol: "L / s"
-      unit: "米 (m)"
-      common_units: ["千米(kkm)", "分米(dm)", "厘米(cm)", "毫米(mm)", "微米(μm)", "纳米(nm)"]
-    - quantity: "质量"
-      symbol: "m"
-      unit: "千克 (kg)"
-      common_units: ["克(g)", "毫克(mg)", "吨(t)"]
-    - quantity: "时间"
-      symbol: "t"
-      unit: "秒 (s)"
-      common_units: ["分(min)", "时(h)", "天(d)"]
-    - quantity: "速度"
-      symbol: "v"
-      unit: "米每秒 (m/s)"
-      common_units: ["千米每小时(km/h)"]
-      conversion: "1 m/s = 3.6 km/h"
-    - quantity: "力"
-      symbol: "F"
-      unit: "牛顿 (N)"
-    - quantity: "重力"
-      symbol: "G"
-      unit: "牛顿 (N)"
-      formula: "G = mg"
-    - quantity: "密度"
-      symbol: "ρ"
-      unit: "千克每立方米 (kg/m³)"
-      common_units: ["克每立方厘米(g/cm³)"]
-      conversion: "1 g/cm³ = 1000 kg/m³"
-    - quantity: "压强"
-      symbol: "p"
-      unit: "帕斯卡 (Pa)"
-      formula: "p = F/S"
-      common_units: ["千帕(kPa)", "标准大气压(atm)"]
-    - quantity: "功"
-      symbol: "W"
-      unit: "焦耳 (J)"
-      formula: "W = Fs"
-    - quantity: "功率"
-      symbol: "P"
-      unit: "瓦特 (W)"
-      formula: "P = W/t"
-      common_units: ["千瓦(kW)"]
-    - quantity: "电流"
-      symbol: "I"
-      unit: "安培 (A)"
-      common_units: ["毫安(mA)", "微安(μA)"]
-    - quantity: "电压"
-      symbol: "U"
-      unit: "伏特 (V)"
-      common_units: ["千伏(kV)", "毫伏(mV)"]
-    - quantity: "电阻"
-      symbol: "R"
-      unit: "欧姆 (Ω)"
-      common_units: ["千欧(kΩ)", "兆欧(MΩ)"]
-    - quantity: "温度"
-      symbol: "t / T"
-      unit: "摄氏度 (°C) / 开尔文 (K)"
-      conversion: "T = t + 273.15"
-    - quantity: "比热容"
-      symbol: "c"
-      unit: "焦耳每千克摄氏度 (J/(kg·°C))"
-    - quantity: "热量"
-      symbol: "Q"
-      unit: "焦耳 (J)"
-    - quantity: "能量"
-      symbol: "E"
-      unit: "焦耳 (J)"
-    - quantity: "频率"
-      symbol: "f"
-      unit: "赫兹 (Hz)"
-      common_units: ["千赫(kHz)", "兆赫(MHz)"]
-
-  # ─── 牛顿三大定律 ───
-
+  - quantity: 长度
+    symbol: L / s
+    unit: 米 (m)
+    common_units:
+    - 千米(kkm)
+    - 分米(dm)
+    - 厘米(cm)
+    - 毫米(mm)
+    - 微米(μm)
+    - 纳米(nm)
+  - quantity: 质量
+    symbol: m
+    unit: 千克 (kg)
+    common_units:
+    - 克(g)
+    - 毫克(mg)
+    - 吨(t)
+  - quantity: 时间
+    symbol: t
+    unit: 秒 (s)
+    common_units:
+    - 分(min)
+    - 时(h)
+    - 天(d)
+  - quantity: 速度
+    symbol: v
+    unit: 米每秒 (m/s)
+    common_units:
+    - 千米每小时(km/h)
+    conversion: 1 m/s = 3.6 km/h
+  - quantity: 力
+    symbol: F
+    unit: 牛顿 (N)
+  - quantity: 重力
+    symbol: G
+    unit: 牛顿 (N)
+    formula: G = mg
+  - quantity: 密度
+    symbol: ρ
+    unit: 千克每立方米 (kg/m³)
+    common_units:
+    - 克每立方厘米(g/cm³)
+    conversion: 1 g/cm³ = 1000 kg/m³
+  - quantity: 压强
+    symbol: p
+    unit: 帕斯卡 (Pa)
+    formula: p = F/S
+    common_units:
+    - 千帕(kPa)
+    - 标准大气压(atm)
+  - quantity: 功
+    symbol: W
+    unit: 焦耳 (J)
+    formula: W = Fs
+  - quantity: 功率
+    symbol: P
+    unit: 瓦特 (W)
+    formula: P = W/t
+    common_units:
+    - 千瓦(kW)
+  - quantity: 电流
+    symbol: I
+    unit: 安培 (A)
+    common_units:
+    - 毫安(mA)
+    - 微安(μA)
+  - quantity: 电压
+    symbol: U
+    unit: 伏特 (V)
+    common_units:
+    - 千伏(kV)
+    - 毫伏(mV)
+  - quantity: 电阻
+    symbol: R
+    unit: 欧姆 (Ω)
+    common_units:
+    - 千欧(kΩ)
+    - 兆欧(MΩ)
+  - quantity: 温度
+    symbol: t / T
+    unit: 摄氏度 (°C) / 开尔文 (K)
+    conversion: T = t + 273.15
+  - quantity: 比热容
+    symbol: c
+    unit: 焦耳每千克摄氏度 (J/(kg·°C))
+  - quantity: 热量
+    symbol: Q
+    unit: 焦耳 (J)
+  - quantity: 能量
+    symbol: E
+    unit: 焦耳 (J)
+  - quantity: 频率
+    symbol: f
+    unit: 赫兹 (Hz)
+    common_units:
+    - 千赫(kHz)
+    - 兆赫(MHz)
   newtons_laws:
-    - law: "牛顿第一定律（惯性定律）"
-      statement: "一切物体在没有受到力的作用时，总保持静止状态或匀速直线运动状态"
-      key_points:
-        - "力不是维持运动的原因，而是改变运动状态的原因"
-        - "惯性是物体的固有属性，只与质量有关"
-        - "不受力的物体不存在，该定律是理想化推理的结论"
-      common_misconceptions:
-        - "物体不受力就一定静止"
-        - "力是维持运动的原因"
-        - "惯性是一种力"
-
-    - law: "牛顿第二定律"
-      statement: "物体的加速度与所受合力成正比，与物体质量成反比"
-      formula: "F = ma"
-      key_points:
-        - "加速度方向与合力方向相同"
-        - "力是产生加速度的原因"
-        - "质量越大，相同力产生的加速度越小"
-      common_misconceptions:
-        - "大物体受力大"
-        - "速度大的物体受力大"
-
-    - law: "牛顿第三定律（作用力与反作用力）"
-      statement: "两个物体之间的作用力和反作用力总是大小相等、方向相反、作用在同一直线上"
-      key_points:
-        - "作用力和反作用力分别作用在两个物体上"
-        - "它们同时产生、同时消失、同时变化"
-        - "与二力平衡不同（二力平衡作用在同一物体上）"
-      common_misconceptions:
-        - "作用力和反作用力可以抵消"
-        - "主动力大于被动力"
-
-  # ─── 常见物理公式 ───
-
+  - law: 牛顿第一定律（惯性定律）
+    statement: 一切物体在没有受到力的作用时，总保持静止状态或匀速直线运动状态
+    key_points:
+    - 力不是维持运动的原因，而是改变运动状态的原因
+    - 惯性是物体的固有属性，只与质量有关
+    - 不受力的物体不存在，该定律是理想化推理的结论
+    common_misconceptions:
+    - 物体不受力就一定静止
+    - 力是维持运动的原因
+    - 惯性是一种力
+  - law: 牛顿第二定律
+    statement: 物体的加速度与所受合力成正比，与物体质量成反比
+    formula: F = ma
+    key_points:
+    - 加速度方向与合力方向相同
+    - 力是产生加速度的原因
+    - 质量越大，相同力产生的加速度越小
+    common_misconceptions:
+    - 大物体受力大
+    - 速度大的物体受力大
+  - law: 牛顿第三定律（作用力与反作用力）
+    statement: 两个物体之间的作用力和反作用力总是大小相等、方向相反、作用在同一直线上
+    key_points:
+    - 作用力和反作用力分别作用在两个物体上
+    - 它们同时产生、同时消失、同时变化
+    - 与二力平衡不同（二力平衡作用在同一物体上）
+    common_misconceptions:
+    - 作用力和反作用力可以抵消
+    - 主动力大于被动力
   physics_formulas:
     mechanics:
-      - name: "重力"
-        formula: "G = mg"
-        description: "g ≈ 9.8 N/kg"
-      - name: "密度"
-        formula: "ρ = m/V"
-        description: "m为质量，V为体积"
-      - name: "压强"
-        formula: "p = F/S"
-        description: "F为压力，S为受力面积"
-      - name: "液体压强"
-        formula: "p = ρgh"
-        description: "ρ为液体密度，h为深度"
-      - name: "浮力（阿基米德原理）"
-        formula: "F_浮 = ρ_液 g V_排"
-        description: "排开液体所受的重力"
-      - name: "功"
-        formula: "W = Fs"
-        description: "F为力，s为在力的方向上移动的距离"
-      - name: "功率"
-        formula: "P = W/t"
-        description: "做功快慢的物理量"
-      - name: "动能"
-        formula: "E_k = ½mv²"
-        description: "与质量和速度有关"
-      - name: "势能（重力势能）"
-        formula: "E_p = mgh"
-        description: "与质量和高度有关"
-      - name: "杠杆平衡条件"
-        formula: "F₁L₁ = F₂L₂"
-        description: "动力×动力臂 = 阻力×阻力臂"
-
+    - name: 重力
+      formula: G = mg
+      description: g ≈ 9.8 N/kg
+    - name: 密度
+      formula: ρ = m/V
+      description: m为质量，V为体积
+    - name: 压强
+      formula: p = F/S
+      description: F为压力，S为受力面积
+    - name: 液体压强
+      formula: p = ρgh
+      description: ρ为液体密度，h为深度
+    - name: 浮力（阿基米德原理）
+      formula: F_浮 = ρ_液 g V_排
+      description: 排开液体所受的重力
+    - name: 功
+      formula: W = Fs
+      description: F为力，s为在力的方向上移动的距离
+    - name: 功率
+      formula: P = W/t
+      description: 做功快慢的物理量
+    - name: 动能
+      formula: E_k = ½mv²
+      description: 与质量和速度有关
+    - name: 势能（重力势能）
+      formula: E_p = mgh
+      description: 与质量和高度有关
+    - name: 杠杆平衡条件
+      formula: F₁L₁ = F₂L₂
+      description: 动力×动力臂 = 阻力×阻力臂
     electricity:
-      - name: "欧姆定律"
-        formula: "I = U/R"
-        description: "电流等于电压除以电阻"
-      - name: "电功"
-        formula: "W = UIt"
-        description: "U电压、I电流、t时间"
-      - name: "电功率"
-        formula: "P = UI"
-        description: "电功率等于电压乘以电流"
-      - name: "电功率（推导）"
-        formula: "P = I²R = U²/R"
-        description: "由欧姆定律推导"
-      - name: "焦耳定律"
-        formula: "Q = I²Rt"
-        description: "电流产生的热量"
-
+    - name: 欧姆定律
+      formula: I = U/R
+      description: 电流等于电压除以电阻
+    - name: 电功
+      formula: W = UIt
+      description: U电压、I电流、t时间
+    - name: 电功率
+      formula: P = UI
+      description: 电功率等于电压乘以电流
+    - name: 电功率（推导）
+      formula: P = I²R = U²/R
+      description: 由欧姆定律推导
+    - name: 焦耳定律
+      formula: Q = I²Rt
+      description: 电流产生的热量
     thermal:
-      - name: "吸热公式"
-        formula: "Q_吸 = cm(t-t₀)"
-        description: "c为比热容，m为质量"
-      - name: "放热公式"
-        formula: "Q_放 = cm(t₀-t)"
-        description: "物体降温放热"
-      - name: "热平衡"
-        formula: "Q_吸 = Q_放"
-        description: "无热损失时吸热等于放热"
-
+    - name: 吸热公式
+      formula: Q_吸 = cm(t-t₀)
+      description: c为比热容，m为质量
+    - name: 放热公式
+      formula: Q_放 = cm(t₀-t)
+      description: 物体降温放热
+    - name: 热平衡
+      formula: Q_吸 = Q_放
+      description: 无热损失时吸热等于放热
+    - name: 热值（燃料放热）
+      formula: Q = qm
+      description: q 为热值(J/kg)，m 为燃料质量，完全燃烧放热
+    - name: 热机效率
+      formula: η = W_有/Q_总
+      description: 有用功占燃料完全燃烧所释放能量的比例
     optics:
-      - name: "光速"
-        formula: "c = 3×10⁸ m/s"
-        description: "真空中的光速"
-      - name: "反射定律"
-        formula: "反射角 = 入射角"
-        description: "三线共面、法线居中、两角相等"
-
+    - name: 光速
+      formula: c = 3×10⁸ m/s
+      description: 真空中的光速
+    - name: 反射定律
+      formula: 反射角 = 入射角
+      description: 三线共面、法线居中、两角相等
+    - name: 折射定律
+      formula: n = sin i / sin r
+      description: 入射角正弦与折射角正弦之比为定值（折射率）
+    - name: 折射率与光速
+      formula: n = c / v
+      description: 真空光速 c 与介质中光速 v 之比，n≥1
     waves:
-      - name: "波速公式"
-        formula: "v = fλ"
-        description: "波速=频率×波长"
-      - name: "声速（空气）"
-        formula: "v ≈ 340 m/s"
-        description: "15°C空气中"
+    - name: 波速公式
+      formula: v = fλ
+      description: 波速=频率×波长
+    - name: 声速（空气）
+      formula: v ≈ 340 m/s
+      description: 15°C空气中
+    - name: 周期与频率
+      formula: T = 1/f
+      description: 周期是频率的倒数（单位：秒）
+  optical_imaging:
+    - object: 凸透镜
+      condition: u > 2f
+      image: 倒立、缩小、实像
+      position: f < v < 2f（异侧）
+      application: 照相机、摄像头
+    - object: 凸透镜
+      condition: u = 2f
+      image: 倒立、等大、实像
+      position: v = 2f（异侧）
+      application: 测焦距
+    - object: 凸透镜
+      condition: f < u < 2f
+      image: 倒立、放大、实像
+      position: v > 2f（异侧）
+      application: 投影仪、幻灯机
+    - object: 凸透镜
+      condition: u = f
+      image: 不成像（折射光线平行射出）
+      position: 无
+      application: 探照灯（平行光源）
+    - object: 凸透镜
+      condition: u < f
+      image: 正立、放大、虚像
+      position: v > u（同侧）
+      application: 放大镜
+    - object: 凹透镜
+      condition: 任意物距
+      image: 正立、缩小、虚像
+      position: 同侧
+      application: 近视眼镜
+    - object: 平面镜
+      condition: —
+      image: 正立、等大、虚像
+      position: 像距=物距（镜后）
+      application: 梳妆镜、潜望镜
+    - object: 凸面镜
+      condition: —
+      image: 正立、缩小、虚像
+      position: 镜后
+      application: 汽车后视镜（扩大视野）
+    - object: 凹面镜
+      condition: —
+      image: —（对光线有会聚作用）
+      position: —
+      application: 太阳灶、手电筒反光碗、医生头灯
+  states_of_matter:
+    - process: 熔化
+      transition: 固态→液态
+      heat: 吸热
+      condition: 晶体达到熔点且继续吸热
+      example: 冰熔化成水（熔点 0℃）
+    - process: 凝固
+      transition: 液态→固态
+      heat: 放热
+      condition: 晶体达到凝固点且继续放热
+      example: 水结成冰（凝固点 0℃）
+    - process: 汽化
+      transition: 液态→气态
+      heat: 吸热
+      forms: 蒸发（任意温度，表面）与沸腾（沸点，表面+内部）
+      example: 水沸腾（标准大气压沸点 100℃）
+    - process: 液化
+      transition: 气态→液态
+      heat: 放热
+      methods: 降温或压缩体积
+      example: 露水、水蒸气遇冷形成的"白气"
+    - process: 升华
+      transition: 固态→气态
+      heat: 吸热
+      example: 干冰升华、樟脑丸变小
+    - process: 凝华
+      transition: 气态→固态
+      heat: 放热
+      example: 霜、雪的形成、白炽灯泡壁发黑
+  magnetism:
+    - phenomenon: 奥斯特实验
+      fact: 通电导线周围存在磁场（电流的磁效应）
+      significance: 首次揭示电与磁的联系
+    - phenomenon: 安培定则（右手螺旋定则）
+      fact: 右手握住螺线管，四指弯曲方向与电流方向一致，大拇指所指为 N 极
+      application: 判断通电螺线管的极性
+    - phenomenon: 电磁感应（法拉第发现）
+      fact: 闭合电路的一部分导体在磁场中做切割磁感线运动时，产生感应电流
+      application: 发电机（机械能→电能）
+    - phenomenon: 磁场对电流的作用
+      fact: 通电导体在磁场中受到力的作用
+      application: 电动机（电能→机械能）
+    - phenomenon: 磁极相互作用
+      fact: 同名磁极相互排斥，异名磁极相互吸引
+    - phenomenon: 地磁场
+      fact: 地球周围存在磁场；地磁北极在地理南极附近（存在磁偏角）

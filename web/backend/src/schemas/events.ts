@@ -6,6 +6,8 @@ export interface RunMetrics {
   DR: number
   CPR: number
   avg_reward: number
+  avg_soft?: number
+  avg_pref?: number
   condR: number
   avg_time_ms: number
 }
@@ -37,6 +39,7 @@ export interface RunEventData {
 export interface SampleEventData {
   external_run_id: string
   external_sample_id: string
+  content_hash?: string | null
   status?: string
   s_format: number
   s_common: number

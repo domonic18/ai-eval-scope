@@ -1,466 +1,671 @@
-# 数学知识准确性规则
-# 覆盖范围：小学（1-6年级）至初中数学
-# 被 InfoAccuracyEvaluator 加载用于事实校验
-
-subject: "math"
-description: "数学知识准确性规则（小学至初中）"
-version: "1.0"
-
-# ─── 数学常数 ───────────────────────────────────────────
-# extract_pattern: 从文档中提取数值的正则（需包含一个捕获组）
-# value: 标准值
-# tolerance: 允许偏差
-
+subject: math
+description: 数学知识准确性规则（小学至初中）
+version: '1.0'
 constants:
-  # ─── 角度换算 ───
-
-  - name: "角度-分换算 (1度=60分)"
-    extract_pattern: "(?:1度|1°|一度)\\s*(?:＝|=|等于|为)\\s*(\\d+)\\s*(?:分|′)"
-    value: 60
-    tolerance: 0
-    description: "1度 = 60分"
-
-  - name: "角度-秒换算 (1分=60秒)"
-    extract_pattern: "(?:1分|1′|一分)\\s*(?:＝|=|等于|为)\\s*(\\d+)\\s*(?:秒|″)"
-    value: 60
-    tolerance: 0
-    description: "1分 = 60秒"
-
-  - name: "周角 (360度)"
-    extract_pattern: "(?:周角|一周角|一整圈|转一圈)\\s*(?:＝|=|等于|为|是)\\s*(\\d+)\\s*(?:度|°)"
-    value: 360
-    tolerance: 0
-    description: "1周角 = 360度"
-
-  - name: "平角 (180度)"
-    extract_pattern: "(?:平角|一平角)\\s*(?:＝|=|等于|为|是)\\s*(\\d+)\\s*(?:度|°)"
-    value: 180
-    tolerance: 0
-    description: "1平角 = 180度"
-
-  # ─── 圆周率由 _defaults.yaml 统一校验（tolerance=0.002） ───
-
-  # ─── 费马大定理相关 ───
-
-  - name: "高斯求和 1+2+...+100"
-    extract_pattern: "(?:1\\+2\\+\\.{3}\\+100|1加2加.*加100|从1加到100)\\s*(?:＝|=|等于|为|结果[是为])\\s*(\\d+)"
-    value: 5050
-    tolerance: 0
-    description: "1+2+...+100 = 5050（高斯配对法：50×101）"
-
-# ─── 常见数学错误模式 ─────────────────────────────────
-# pattern: 匹配可能的错误表述
-# correct: 正确信息
-# severity: error（确信错误）或 warning（可能误报）
-
+- name: 角度-分换算 (1度=60分)
+  extract_pattern: (?:1度|1°|一度)\s*(?:＝|=|等于|为)\s*(\d+)\s*(?:分|′)
+  value: 60
+  tolerance: 0
+  description: 1度 = 60分
+- name: 角度-秒换算 (1分=60秒)
+  extract_pattern: (?:1分|1′|一分)\s*(?:＝|=|等于|为)\s*(\d+)\s*(?:秒|″)
+  value: 60
+  tolerance: 0
+  description: 1分 = 60秒
+- name: 周角 (360度)
+  extract_pattern: (?:周角|一周角|一整圈|转一圈)\s*(?:＝|=|等于|为|是)\s*(\d+)\s*(?:度|°)
+  value: 360
+  tolerance: 0
+  description: 1周角 = 360度
+- name: 平角 (180度)
+  extract_pattern: (?:平角|一平角)\s*(?:＝|=|等于|为|是)\s*(\d+)\s*(?:度|°)
+  value: 180
+  tolerance: 0
+  description: 1平角 = 180度
+- name: 高斯求和 1+2+...+100
+  extract_pattern: (?:1\+2\+\.{3}\+100|1加2加.*加100|从1加到100)\s*(?:＝|=|等于|为|结果[是为])\s*(\d+)
+  value: 5050
+  tolerance: 0
+  description: 1+2+...+100 = 5050（高斯配对法：50×101）
+- name: 根号2 (√2)
+  extract_pattern: (?:根号2|√2|2的算术平方根)\s*(?:≈|＝|=|约为|约)\s*(\d+\.?\d*)
+  value: 1.414
+  tolerance: 0.001
+  description: √2 ≈ 1.414（勾股定理、单位正方形对角线）
+- name: 根号3 (√3)
+  extract_pattern: (?:根号3|√3|3的算术平方根)\s*(?:≈|＝|=|约为|约)\s*(\d+\.?\d*)
+  value: 1.732
+  tolerance: 0.001
+  description: √3 ≈ 1.732
+- name: 黄金分割比
+  extract_pattern: (?:黄金分割|黄金比例|黄金比)\s*(?:≈|＝|=|约为|约)\s*(\d+\.?\d*)
+  value: 0.618
+  tolerance: 0.001
+  description: 黄金分割比 ≈ 0.618
+- name: 1时 = 60分
+  value: 60
+  tolerance: 0
+  extract_pattern: (?:1小时|1时|一小时)\s*(?:=|＝|等于|为)\s*(\d+)\s*分钟?
+  description: 1 小时 = 60 分钟
+  source: math_reference
+- name: 1分 = 60秒
+  value: 60
+  tolerance: 0
+  extract_pattern: (?:1分钟|1分|一分)\s*(?:=|＝|等于|为)\s*(\d+)\s*(?:秒|s)
+  description: 1 分钟 = 60 秒
+  source: math_reference
+- name: 1时 = 3600秒
+  value: 3600
+  tolerance: 0
+  extract_pattern: (?:1小时|1时)\s*(?:=|＝|等于).*?(\d+)\s*(?:秒|s)
+  description: 1 小时 = 3600 秒
+  source: math_reference
+- name: 1天 = 24时
+  value: 24
+  tolerance: 0
+  extract_pattern: (?:1天|一天|一日)\s*(?:=|＝|等于|为|有)\s*(\d+)\s*(?:小时|时|h)
+  description: 1 天 = 24 小时
+  source: math_reference
+- name: 1年 ≈ 365天
+  value: 365
+  tolerance: 1
+  extract_pattern: (?:1年|一年)\s*(?:≈|＝|=|约为|约|等于)\s*(\d+)\s*(?:天|日)
+  description: 1 年 ≈ 365 天（平年）
+  source: math_reference
+- name: 1千米 = 1000米
+  value: 1000
+  tolerance: 0
+  extract_pattern: (?:1千米|1公里|1km)\s*(?:=|＝|等于|为)\s*(\d+)\s*(?:米|m)
+  description: 1 千米 = 1000 米
+  source: math_reference
+- name: 1米 = 10分米
+  value: 10
+  tolerance: 0
+  extract_pattern: (?:1米|1m)\s*(?:=|＝|等于|为)\s*(\d+)\s*(?:分米|dm)
+  description: 1 米 = 10 分米
+  source: math_reference
+- name: 1米 = 100厘米
+  value: 100
+  tolerance: 0
+  extract_pattern: (?:1米|1m)\s*(?:=|＝|等于|为)\s*(\d+)\s*(?:厘米|cm)
+  description: 1 米 = 100 厘米
+  source: math_reference
+- name: 1米 = 1000毫米
+  value: 1000
+  tolerance: 0
+  extract_pattern: (?:1米|1m)\s*(?:=|＝|等于|为)\s*(\d+)\s*(?:毫米|mm)
+  description: 1 米 = 1000 毫米
+  source: math_reference
+- name: 1吨 = 1000千克
+  value: 1000
+  tolerance: 0
+  extract_pattern: (?:1吨|1t)\s*(?:=|＝|等于|为)\s*(\d+)\s*(?:千克|kg)
+  description: 1 吨 = 1000 千克
+  source: math_reference
+- name: 1千克 = 1000克
+  value: 1000
+  tolerance: 0
+  extract_pattern: (?:1千克|1公斤|1kg)\s*(?:=|＝|等于|为)\s*(\d+)\s*(?:克|g)
+  description: 1 千克 = 1000 克
+  source: math_reference
+- name: 1平方千米 = 100公顷
+  value: 100
+  tolerance: 0
+  extract_pattern: (?:1平方千米|1平方公里|1km²)\s*(?:=|＝|等于|为)\s*(\d+)\s*(?:公顷)
+  description: 1 平方千米 = 100 公顷
+  source: math_reference
+- name: 1公顷 = 10000平方米
+  value: 10000
+  tolerance: 0
+  extract_pattern: (?:1公顷|1ha)\s*(?:=|＝|等于|为)\s*(\d+)\s*(?:平方米|m²)
+  description: 1 公顷 = 10000 平方米
+  source: math_reference
+- name: 1平方米 = 100平方分米
+  value: 100
+  tolerance: 0
+  extract_pattern: (?:1平方米|1m²)\s*(?:=|＝|等于|为)\s*(\d+)\s*(?:平方分米|dm²)
+  description: 1 平方米 = 100 平方分米
+  source: math_reference
+- name: 1平方分米 = 100平方厘米
+  value: 100
+  tolerance: 0
+  extract_pattern: (?:1平方分米|1dm²)\s*(?:=|＝|等于|为)\s*(\d+)\s*(?:平方厘米|cm²)
+  description: 1 平方分米 = 100 平方厘米
+  source: math_reference
+- name: 1立方米 = 1000立方分米
+  value: 1000
+  tolerance: 0
+  extract_pattern: (?:1立方米|1m³)\s*(?:=|＝|等于|为)\s*(\d+)\s*(?:立方分米|dm³)
+  description: 1 立方米 = 1000 立方分米
+  source: math_reference
+- name: 1升 = 1000毫升
+  value: 1000
+  tolerance: 0
+  extract_pattern: (?:1升|1L)\s*(?:=|＝|等于|为)\s*(\d+)\s*(?:毫升|mL)
+  description: 1 升 = 1000 毫升
+  source: math_reference
+- name: 1立方分米 = 1升
+  value: 1
+  tolerance: 0
+  extract_pattern: (?:1立方分米|1dm³)\s*(?:=|＝|等于|为)\s*(\d+)\s*(?:升|L)
+  description: 1 立方分米 = 1 升
+  source: math_reference
+- name: 1元 = 10角
+  value: 10
+  tolerance: 0
+  extract_pattern: (?:1元|一元)\s*(?:=|＝|等于|为)\s*(\d+)\s*角
+  description: 1 元 = 10 角
+  source: math_reference
+- name: 1角 = 10分
+  value: 10
+  tolerance: 0
+  extract_pattern: (?:1角|一角)\s*(?:=|＝|等于|为)\s*(\d+)\s*分
+  description: 1 角 = 10 分
+  source: math_reference
+- name: 1元 = 100分
+  value: 100
+  tolerance: 0
+  extract_pattern: (?:1元|一元)\s*(?:=|＝|等于|为)\s*(\d+)\s*分
+  description: 1 元 = 100 分
+  source: math_reference
+- name: 直角 (90度)
+  value: 90
+  tolerance: 0
+  extract_pattern: (?:直角|一直角)\s*(?:=|＝|等于|为|是)\s*(\d+)\s*(?:度|°)
+  description: 1 直角 = 90 度
+  source: math_reference
 misconceptions:
-  # ─── 小学常见错误 ───
-
-  - pattern: "余数.*(?:大于等于|>=|≥|不小[于过])\\s*除数"
-    correct: "余数必须严格小于除数（余数 < 除数）"
-    description: "余数大于等于除数是常见计算错误"
-    severity: "error"
-
-  - pattern: "分母.*(?:为|等于|是)\\s*0"
-    correct: "分母不能为0，除数不能为0"
-    description: "除以0无意义"
-    severity: "error"
-
-  - pattern: "(?:分数线上下颠倒|分子分母[颠倒反]|把分子当分母|把分母当分子)"
-    correct: "分数线上方为分子（取的份数），下方为分母（平均分的总份数）"
-    description: "分数分子分母混淆"
-    severity: "error"
-
-  - pattern: "长方形(?:面积|周长).*长\\+宽[^×\\*]"
-    correct: "长方形周长=2×(长+宽)，面积=长×宽"
-    description: "长方形周长与面积公式混淆"
-    severity: "error"
-
-  - pattern: "长方形周长.*长×宽[^[^（]"
-    correct: "长方形周长=2×(长+宽)，不是长×宽（那是面积）"
-    description: "长方形周长公式误写为面积公式"
-    severity: "error"
-
-  - pattern: "正方形周长.*边长×边长|正方形周长.*边长[²²2]"
-    correct: "正方形周长=4×边长，面积=边长×边长（边长²）"
-    description: "正方形周长与面积公式混淆"
-    severity: "error"
-
-  - pattern: "圆的周长.*πr[²2]|圆周长.*πr[²2]"
-    correct: "圆的周长 C=2πr，圆的面积 S=πr²"
-    description: "圆周长与面积公式混淆（C=2πr vs S=πr²）"
-    severity: "error"
-
-  - pattern: "圆的面积.*2πr[^²2]|圆面积.*2πr[^²2]"
-    correct: "圆的面积 S=πr²，周长 C=2πr"
-    description: "圆面积公式误写为周长公式"
-    severity: "error"
-
-  - pattern: "(?:除以|除|被.*除)\\s*0[^.]*(?:等于|＝|=|得)"
-    correct: "任何数除以0都没有意义，除法中除数不能为0"
-    description: "除以0错误"
-    severity: "error"
-
-  - pattern: "负数.*平方根|负数.*开方|负数.*算术平方根"
-    correct: "负数在实数范围内没有平方根"
-    description: "负数在实数范围内没有平方根"
-    severity: "error"
-
-  # ─── 乘法口诀表常见错误 ───
-
-  - pattern: "三七二十四"
-    correct: "三七二十一（3×7=21）"
-    description: "乘法口诀表错误：三七二十一不是二十四"
-    severity: "error"
-
-  - pattern: "六八四十二"
-    correct: "六八四十八（6×8=48）"
-    description: "乘法口诀表错误：六八四十八不是四十二"
-    severity: "error"
-
-  - pattern: "七八五十[三四]"
-    correct: "七八五十六（7×8=56）"
-    description: "乘法口诀表错误：七八五十六"
-    severity: "error"
-
-  - pattern: "六七四十[一二]"
-    correct: "六七四十二（6×7=42）"
-    description: "乘法口诀表错误：六七四十二"
-    severity: "error"
-
-  - pattern: "八九七十二[^，。]|八九六十四"
-    correct: "八九七十二（8×9=72）"
-    description: "乘法口诀表错误：八九七十二"
-    severity: "error"
-
-  - pattern: "四七二十[四六]"
-    correct: "四七二十八（4×7=28）"
-    description: "乘法口诀表错误：四七二十八"
-    severity: "error"
-
-  # ─── 比例与百分数 ───
-
-  - pattern: "比例尺.*图上距离.*实际距离[×\\*]乘"
-    correct: "比例尺=图上距离÷实际距离（注意是除以不是乘以）"
-    description: "比例尺计算方向错误（应除以实际距离）"
-    severity: "error"
-
-  - pattern: "百分数.*不能.*大于.*100|百分数.*不可能.*超过.*100"
-    correct: "百分数可以大于100%，表示超过基数的部分（如增长率200%）"
-    description: "百分数大于100%不一定是错误"
-    severity: "warning"
-
-  # ─── 初中代数常见错误 ───
-
-  - pattern: "方程两边.*除以.*(?:含|x|y|未知数|变量)"
-    correct: "方程两边不能除以含未知数的式子（可能丢失解）"
-    description: "方程两边除以含变量的式子导致丢解"
-    severity: "error"
-
-  - pattern: "负.*负.*得.*负"
-    correct: "负负得正：两个负数相乘/相除结果为正数"
-    description: "负负得正规则错误应用（负×负=正）"
-    severity: "error"
-
-  - pattern: "平方差.*[＝=].*\\(a-b\\)[²2]|a²-b².*[＝=].*\\(a-b\\)[²2]"
-    correct: "平方差公式：a²-b²=(a+b)(a-b)，不等于(a-b)²"
-    description: "平方差公式应用错误（a²-b²≠(a-b)²）"
-    severity: "error"
-
-  - pattern: "完全平方.*a²[+\\+]2ab[+\\+]b².*[＝=]\\(a-b\\)²|\\(a\\+b\\)².*a²[+\\+]b²[^+]"
-    correct: "(a+b)²=a²+2ab+b²，(a-b)²=a²-2ab+b²，不是 a²+b²"
-    description: "完全平方公式遗漏交叉项"
-    severity: "error"
-
-  # ─── 历史数学家事实 ───
-
-  - pattern: "高斯.*1.*100.*5050.*(?:乘法|相乘|乘以)|1加到100.*乘以101"
-    correct: "高斯配对法：(1+100)+(2+99)+...+(50+51)=50×101=5050"
-    description: "高斯1到100求和：50对，每对101，共5050"
-    severity: "warning"
-
-  - pattern: "祖冲之.*圆周率.*(?:6|8|9|10)位"
-    correct: "祖冲之将圆周率精确到小数点后7位（3.1415926~3.1415927）"
-    description: "祖冲之圆周率精确到小数点后7位，非其他位数"
-    severity: "warning"
-
-  - pattern: "刘徽.*割圆术.*圆周率.*(?:7|8|9)位"
-    correct: "刘徽用割圆术将圆周率精确到3.1416（约4位小数），7位是祖冲之的成就"
-    description: "刘徽割圆术精度与祖冲之混淆"
-    severity: "warning"
-
-  - pattern: "祖冲之.*(?:密率|355/113|22/7)"
-    correct: "祖冲之给出密率355/113和约率22/7"
-    description: "祖冲之圆周率密率约率参考"
-    severity: "warning"
-
-# ─── 学科领域知识 ─────────────────────────────────────
-
+- pattern: 余数.*(?:大于等于|>=|≥|不小[于过])\s*除数
+  correct: 余数必须严格小于除数（余数 < 除数）
+  description: 余数大于等于除数是常见计算错误
+  severity: error
+- pattern: 分母.*(?:为|等于|是)\s*0
+  correct: 分母不能为0，除数不能为0
+  description: 除以0无意义
+  severity: error
+- pattern: (?:分数线上下颠倒|分子分母[颠倒反]|把分子当分母|把分母当分子)
+  correct: 分数线上方为分子（取的份数），下方为分母（平均分的总份数）
+  description: 分数分子分母混淆
+  severity: error
+- pattern: 长方形(?:面积|周长).*长\+宽[^×\*]
+  correct: 长方形周长=2×(长+宽)，面积=长×宽
+  description: 长方形周长与面积公式混淆
+  severity: error
+- pattern: 长方形周长.*长×宽[^[^（]
+  correct: 长方形周长=2×(长+宽)，不是长×宽（那是面积）
+  description: 长方形周长公式误写为面积公式
+  severity: error
+- pattern: 正方形周长.*边长×边长|正方形周长.*边长[²²2]
+  correct: 正方形周长=4×边长，面积=边长×边长（边长²）
+  description: 正方形周长与面积公式混淆
+  severity: error
+- pattern: 圆的周长.*πr[²2]|圆周长.*πr[²2]
+  correct: 圆的周长 C=2πr，圆的面积 S=πr²
+  description: 圆周长与面积公式混淆（C=2πr vs S=πr²）
+  severity: error
+- pattern: 圆的面积.*2πr[^²2]|圆面积.*2πr[^²2]
+  correct: 圆的面积 S=πr²，周长 C=2πr
+  description: 圆面积公式误写为周长公式
+  severity: error
+- pattern: (?:除以|除|被.*除)\s*0[^.]*(?:等于|＝|=|得)
+  correct: 任何数除以0都没有意义，除法中除数不能为0
+  description: 除以0错误
+  severity: error
+- pattern: 负数.*平方根|负数.*开方|负数.*算术平方根
+  correct: 负数在实数范围内没有平方根
+  description: 负数在实数范围内没有平方根
+  severity: error
+- pattern: 三七二十四
+  correct: 三七二十一（3×7=21）
+  description: 乘法口诀表错误：三七二十一不是二十四
+  severity: error
+- pattern: 六八四十二
+  correct: 六八四十八（6×8=48）
+  description: 乘法口诀表错误：六八四十八不是四十二
+  severity: error
+- pattern: 七八五十[三四]
+  correct: 七八五十六（7×8=56）
+  description: 乘法口诀表错误：七八五十六
+  severity: error
+- pattern: 六七四十[一二]
+  correct: 六七四十二（6×7=42）
+  description: 乘法口诀表错误：六七四十二
+  severity: error
+- pattern: 八九七十二[^，。]|八九六十四
+  correct: 八九七十二（8×9=72）
+  description: 乘法口诀表错误：八九七十二
+  severity: error
+- pattern: 四七二十[四六]
+  correct: 四七二十八（4×7=28）
+  description: 乘法口诀表错误：四七二十八
+  severity: error
+- pattern: 比例尺.*图上距离.*实际距离[×\*]乘
+  correct: 比例尺=图上距离÷实际距离（注意是除以不是乘以）
+  description: 比例尺计算方向错误（应除以实际距离）
+  severity: error
+- pattern: 百分数.*不能.*大于.*100|百分数.*不可能.*超过.*100
+  correct: 百分数可以大于100%，表示超过基数的部分（如增长率200%）
+  description: 百分数大于100%不一定是错误
+  severity: warning
+- pattern: 方程两边.*除以.*(?:含|x|y|未知数|变量)
+  correct: 方程两边不能除以含未知数的式子（可能丢失解）
+  description: 方程两边除以含变量的式子导致丢解
+  severity: error
+- pattern: 负.*负.*得.*负
+  correct: 负负得正：两个负数相乘/相除结果为正数
+  description: 负负得正规则错误应用（负×负=正）
+  severity: error
+- pattern: 平方差.*[＝=].*\(a-b\)[²2]|a²-b².*[＝=].*\(a-b\)[²2]
+  correct: 平方差公式：a²-b²=(a+b)(a-b)，不等于(a-b)²
+  description: 平方差公式应用错误（a²-b²≠(a-b)²）
+  severity: error
+- pattern: 完全平方.*a²[+\+]2ab[+\+]b².*[＝=]\(a-b\)²|\(a\+b\)².*a²[+\+]b²[^+]
+  correct: (a+b)²=a²+2ab+b²，(a-b)²=a²-2ab+b²，不是 a²+b²
+  description: 完全平方公式遗漏交叉项
+  severity: error
+- pattern: 高斯.*1.*100.*5050.*(?:乘法|相乘|乘以)|1加到100.*乘以101
+  correct: 高斯配对法：(1+100)+(2+99)+...+(50+51)=50×101=5050
+  description: 高斯1到100求和：50对，每对101，共5050
+  severity: warning
+- pattern: 祖冲之.*圆周率.*(?:6|8|9|10)位
+  correct: 祖冲之将圆周率精确到小数点后7位（3.1415926~3.1415927）
+  description: 祖冲之圆周率精确到小数点后7位，非其他位数
+  severity: warning
+- pattern: 刘徽.*割圆术.*圆周率.*(?:7|8|9)位
+  correct: 刘徽用割圆术将圆周率精确到3.1416（约4位小数），7位是祖冲之的成就
+  description: 刘徽割圆术精度与祖冲之混淆
+  severity: warning
+- pattern: 祖冲之.*(?:密率|355/113|22/7)
+  correct: 祖冲之给出密率355/113和约率22/7
+  description: 祖冲之圆周率密率约率参考
+  severity: warning
 domain_facts:
-
-  # ─── 数学公式 ───
-
   math_formulas:
-    # 平面图形
     plane_figures:
-      - name: "长方形周长"
-        formula: "C = 2(a+b)"
-        description: "长a、宽b"
-      - name: "长方形面积"
-        formula: "S = ab"
-        description: "长a、宽b"
-      - name: "正方形周长"
-        formula: "C = 4a"
-        description: "边长a"
-      - name: "正方形面积"
-        formula: "S = a²"
-        description: "边长a"
-      - name: "三角形面积"
-        formula: "S = ½ah"
-        description: "底a、高h"
-      - name: "平行四边形面积"
-        formula: "S = ah"
-        description: "底a、高h"
-      - name: "梯形面积"
-        formula: "S = ½(a+b)h"
-        description: "上底a、下底b、高h"
-      - name: "圆的周长"
-        formula: "C = 2πr = πd"
-        description: "半径r、直径d"
-      - name: "圆的面积"
-        formula: "S = πr²"
-        description: "半径r"
-
-    # 立体图形
+    - name: 长方形周长
+      formula: C = 2(a+b)
+      description: 长a、宽b
+    - name: 长方形面积
+      formula: S = ab
+      description: 长a、宽b
+    - name: 正方形周长
+      formula: C = 4a
+      description: 边长a
+    - name: 正方形面积
+      formula: S = a²
+      description: 边长a
+    - name: 三角形面积
+      formula: S = ½ah
+      description: 底a、高h
+    - name: 平行四边形面积
+      formula: S = ah
+      description: 底a、高h
+    - name: 梯形面积
+      formula: S = ½(a+b)h
+      description: 上底a、下底b、高h
+    - name: 圆的周长
+      formula: C = 2πr = πd
+      description: 半径r、直径d
+    - name: 圆的面积
+      formula: S = πr²
+      description: 半径r
+    - name: 勾股定理
+      formula: a² + b² = c²
+      description: 直角三角形两直角边 a、b，斜边 c
     solid_figures:
-      - name: "长方体体积"
-        formula: "V = abc"
-        description: "长a、宽b、高c"
-      - name: "长方体表面积"
-        formula: "S = 2(ab+bc+ac)"
-        description: "长a、宽b、高c"
-      - name: "正方体体积"
-        formula: "V = a³"
-        description: "棱长a"
-      - name: "正方体表面积"
-        formula: "S = 6a²"
-        description: "棱长a"
-      - name: "圆柱体体积"
-        formula: "V = πr²h"
-        description: "底面半径r、高h"
-      - name: "圆柱体侧面积"
-        formula: "S_侧 = 2πrh"
-        description: "底面半径r、高h"
-      - name: "圆锥体体积"
-        formula: "V = ⅓πr²h"
-        description: "底面半径r、高h"
-      - name: "球体体积"
-        formula: "V = 4/3·πr³"
-        description: "半径r"
-      - name: "球体表面积"
-        formula: "S = 4πr²"
-        description: "半径r"
-
-    # 应用公式
+    - name: 长方体体积
+      formula: V = abc
+      description: 长a、宽b、高c
+    - name: 长方体表面积
+      formula: S = 2(ab+bc+ac)
+      description: 长a、宽b、高c
+    - name: 正方体体积
+      formula: V = a³
+      description: 棱长a
+    - name: 正方体表面积
+      formula: S = 6a²
+      description: 棱长a
+    - name: 圆柱体体积
+      formula: V = πr²h
+      description: 底面半径r、高h
+    - name: 圆柱体侧面积
+      formula: S_侧 = 2πrh
+      description: 底面半径r、高h
+    - name: 圆锥体体积
+      formula: V = ⅓πr²h
+      description: 底面半径r、高h
+    - name: 球体体积
+      formula: V = 4/3·πr³
+      description: 半径r
+    - name: 球体表面积
+      formula: S = 4πr²
+      description: 半径r
     applied_formulas:
-      - name: "速度"
-        formula: "v = s/t"
-        description: "路程s、时间t"
-      - name: "路程"
-        formula: "s = vt"
-        description: "速度v、时间t"
-      - name: "单价×数量=总价"
-        formula: "总价 = 单价 × 数量"
-        description: "购物问题基本关系"
-      - name: "工作效率"
-        formula: "工作总量 = 工作效率 × 工作时间"
-        description: "工程问题基本关系"
-      - name: "简单利息"
-        formula: "利息 = 本金 × 利率 × 时间"
-        description: "利率问题"
-      - name: "利润率"
-        formula: "利润率 = (售价 - 成本) / 成本 × 100%"
-        description: "利润问题"
-      - name: "比例尺"
-        formula: "比例尺 = 图上距离 ÷ 实际距离"
-        description: "地图比例问题"
-
-    # 初中代数公式
+    - name: 速度
+      formula: v = s/t
+      description: 路程s、时间t
+    - name: 路程
+      formula: s = vt
+      description: 速度v、时间t
+    - name: 单价×数量=总价
+      formula: 总价 = 单价 × 数量
+      description: 购物问题基本关系
+    - name: 工作效率
+      formula: 工作总量 = 工作效率 × 工作时间
+      description: 工程问题基本关系
+    - name: 简单利息
+      formula: 利息 = 本金 × 利率 × 时间
+      description: 利率问题
+    - name: 利润率
+      formula: 利润率 = (售价 - 成本) / 成本 × 100%
+      description: 利润问题
+    - name: 比例尺
+      formula: 比例尺 = 图上距离 ÷ 实际距离
+      description: 地图比例问题
     algebra_formulas:
-      - name: "平方差公式"
-        formula: "a² - b² = (a+b)(a-b)"
-        description: "因式分解"
-      - name: "完全平方和"
-        formula: "(a+b)² = a² + 2ab + b²"
-        description: "乘法公式"
-      - name: "完全平方差"
-        formula: "(a-b)² = a² - 2ab + b²"
-        description: "乘法公式"
-      - name: "一元二次方程求根公式"
-        formula: "x = (-b ± √(b²-4ac)) / 2a"
-        description: "ax²+bx+c=0 (a≠0)"
-      - name: "韦达定理"
-        formula: "x₁+x₂=-b/a, x₁x₂=c/a"
-        description: "一元二次方程根与系数关系"
-
-  # ─── 各年级知识点 ───
-
+    - name: 平方差公式
+      formula: a² - b² = (a+b)(a-b)
+      description: 因式分解
+    - name: 完全平方和
+      formula: (a+b)² = a² + 2ab + b²
+      description: 乘法公式
+    - name: 完全平方差
+      formula: (a-b)² = a² - 2ab + b²
+      description: 乘法公式
+    - name: 一元二次方程求根公式
+      formula: x = (-b ± √(b²-4ac)) / 2a
+      description: ax²+bx+c=0 (a≠0)
+    - name: 韦达定理
+      formula: x₁+x₂=-b/a, x₁x₂=c/a
+      description: 一元二次方程根与系数关系
+    - name: 同底数幂乘法
+      formula: a^m · a^n = a^(m+n)
+      description: 底数不变，指数相加
+    - name: 同底数幂除法
+      formula: a^m ÷ a^n = a^(m-n)
+      description: 底数不变，指数相减（a≠0）
+    - name: 幂的乘方
+      formula: (a^m)^n = a^(mn)
+      description: 底数不变，指数相乘
+    trigonometry:
+    - name: 正弦
+      formula: sinA = 对边/斜边
+      description: 直角三角形中，∠A 的对边与斜边之比
+    - name: 余弦
+      formula: cosA = 邻边/斜边
+      description: ∠A 的邻边与斜边之比
+    - name: 正切
+      formula: tanA = 对边/邻边
+      description: ∠A 的对边与邻边之比
+    - name: 特殊角三角函数值
+      formula: sin30°=1/2, cos30°=√3/2, tan45°=1, sin45°=cos45°=√2/2
+      description: 30°/45°/60° 常用值
+    statistics:
+    - name: 平均数
+      formula: x̄ = (x₁+x₂+...+xₙ)/n
+      description: 所有数据之和除以数据个数
+    - name: 中位数
+      formula: 由小到大排列取中间值
+      description: 奇数个取正中，偶数个取中间两数平均
+    - name: 众数
+      formula: 出现次数最多的数
+      description: 一组数据中可能有一个或多个众数
+    - name: 方差
+      formula: s² = [(x₁-x̄)²+...+(xₙ-x̄)²]/n
+      description: 衡量数据波动大小，方差越小越稳定
+    probability:
+    - name: 概率公式
+      formula: P(A) = m/n
+      description: m 为事件 A 的有利结果数，n 为所有可能结果数
+    - name: 概率取值范围
+      formula: 0 ≤ P(A) ≤ 1
+      description: 必然事件 P=1，不可能事件 P=0
+    functions:
+    - name: 一次函数
+      formula: y = kx + b (k≠0)
+      description: k 为斜率，b 为截距；b=0 时为正比例函数
+    - name: 反比例函数
+      formula: y = k/x (k≠0)
+      description: 图象为双曲线
+    - name: 二次函数
+      formula: y = ax² + bx + c (a≠0)
+      description: 图象为抛物线，a 决定开口方向
   grade_topics:
     grade_1_2:
-      - "20以内加减法"
-      - "100以内加减法"
-      - "认识图形（长方形、正方形、三角形、圆）"
-      - "认识钟表（整时、半时）"
-      - "认识人民币"
-      - "表内乘法（乘法口诀表1-9）"
-      - "长度单位（厘米、米）"
-      - "角的初步认识"
-
+    - 20以内加减法
+    - 100以内加减法
+    - 认识图形（长方形、正方形、三角形、圆）
+    - 认识钟表（整时、半时）
+    - 认识人民币
+    - 表内乘法（乘法口诀表1-9）
+    - 长度单位（厘米、米）
+    - 角的初步认识
     grade_3:
-      - "万以内加减法"
-      - "有余数的除法"
-      - "多位数乘一位数"
-      - "分数的初步认识"
-      - "长方形和正方形周长"
-      - "时、分、秒"
-      - "测量（毫米、分米、千米）"
-      - "吨的认识"
-
+    - 万以内加减法
+    - 有余数的除法
+    - 多位数乘一位数
+    - 分数的初步认识
+    - 长方形和正方形周长
+    - 时、分、秒
+    - 测量（毫米、分米、千米）
+    - 吨的认识
     grade_4:
-      - "三位数乘两位数"
-      - "除数是两位数的除法"
-      - "角的度量"
-      - "平行四边形和梯形"
-      - "条形统计图"
-      - "四则运算"
-      - "运算定律（交换律、结合律、分配律）"
-      - "小数的意义和性质"
-      - "三角形（分类、内角和）"
-
+    - 三位数乘两位数
+    - 除数是两位数的除法
+    - 角的度量
+    - 平行四边形和梯形
+    - 条形统计图
+    - 四则运算
+    - 运算定律（交换律、结合律、分配律）
+    - 小数的意义和性质
+    - 三角形（分类、内角和）
     grade_5:
-      - "小数乘除法"
-      - "简易方程"
-      - "多边形的面积"
-      - "因数与倍数"
-      - "长方体和正方体"
-      - "分数的意义和性质"
-      - "分数的加法和减法"
-      - "折线统计图"
-
+    - 小数乘除法
+    - 简易方程
+    - 多边形的面积
+    - 因数与倍数
+    - 长方体和正方体
+    - 分数的意义和性质
+    - 分数的加法和减法
+    - 折线统计图
     grade_6:
-      - "分数乘除法"
-      - "比"
-      - "圆"
-      - "百分数"
-      - "扇形统计图"
-      - "圆柱和圆锥"
-      - "比例"
-      - "数学广角（鸽巢原理）"
-      - "负数的初步认识"
-
+    - 分数乘除法
+    - 比
+    - 圆
+    - 百分数
+    - 扇形统计图
+    - 圆柱和圆锥
+    - 比例
+    - 数学广角（鸽巢原理）
+    - 负数的初步认识
     grade_7_9:
-      - "有理数"
-      - "整式的加减"
-      - "一元一次方程"
-      - "几何图形初步"
-      - "相交线与平行线"
-      - "实数"
-      - "平面直角坐标系"
-      - "二元一次方程组"
-      - "不等式与不等式组"
-      - "数据的收集与整理"
-      - "三角形（全等、相似）"
-      - "轴对称"
-      - "整式的乘法与因式分解"
-      - "分式"
-      - "二次根式"
-      - "一元二次方程"
-      - "旋转"
-      - "圆的性质"
-      - "概率初步"
-      - "二次函数"
-      - "反比例函数"
-
-  # ─── 乘法口诀验证数据 ───
-
+    - 有理数
+    - 整式的加减
+    - 一元一次方程
+    - 几何图形初步
+    - 相交线与平行线
+    - 实数
+    - 平面直角坐标系
+    - 二元一次方程组
+    - 不等式与不等式组
+    - 数据的收集与整理
+    - 三角形（全等、相似）
+    - 轴对称
+    - 整式的乘法与因式分解
+    - 分式
+    - 二次根式
+    - 一元二次方程
+    - 旋转
+    - 圆的性质
+    - 概率初步
+    - 二次函数
+    - 反比例函数
   common_multiplication_tables:
-    description: "九九乘法口诀表标准值，用于验证口诀引用是否正确"
+    description: 九九乘法口诀表标准值，用于验证口诀引用是否正确
     pairs:
-      # 容易出错的口诀
-      - expression: "三七"
-        result: 21
-        comment: "常见误写为24"
-      - expression: "六八"
-        result: 48
-        comment: "常见误写为42"
-      - expression: "七八"
-        result: 56
-        comment: "常见误写为54"
-      - expression: "六七"
-        result: 42
-        comment: "常见误写为48"
-      - expression: "四七"
-        result: 28
-        comment: "常见误写为24或26"
-      - expression: "八九"
-        result: 72
-        comment: "常见误写为64"
-      - expression: "七九"
-        result: 63
-        comment: "常见误写为54或56"
-      - expression: "六九"
-        result: 54
-        comment: "常见误写为56"
-      - expression: "四八"
-        result: 32
-        comment: "常见误写为36"
-      - expression: "三九"
-        result: 27
-        comment: "常见误写为21"
-    # 完整表（供程序化验证用）
+    - expression: 三七
+      result: 21
+      comment: 常见误写为24
+    - expression: 六八
+      result: 48
+      comment: 常见误写为42
+    - expression: 七八
+      result: 56
+      comment: 常见误写为54
+    - expression: 六七
+      result: 42
+      comment: 常见误写为48
+    - expression: 四七
+      result: 28
+      comment: 常见误写为24或26
+    - expression: 八九
+      result: 72
+      comment: 常见误写为64
+    - expression: 七九
+      result: 63
+      comment: 常见误写为54或56
+    - expression: 六九
+      result: 54
+      comment: 常见误写为56
+    - expression: 四八
+      result: 32
+      comment: 常见误写为36
+    - expression: 三九
+      result: 27
+      comment: 常见误写为21
     full_table:
-      - [1,1,1]
-      - [1,2,2]
-      - [1,3,3]
-      - [1,4,4]
-      - [1,5,5]
-      - [1,6,6]
-      - [1,7,7]
-      - [1,8,8]
-      - [1,9,9]
-      - [2,2,4]
-      - [2,3,6]
-      - [2,4,8]
-      - [2,5,10]
-      - [2,6,12]
-      - [2,7,14]
-      - [2,8,16]
-      - [2,9,18]
-      - [3,3,9]
-      - [3,4,12]
-      - [3,5,15]
-      - [3,6,18]
-      - [3,7,21]
-      - [3,8,24]
-      - [3,9,27]
-      - [4,4,16]
-      - [4,5,20]
-      - [4,6,24]
-      - [4,7,28]
-      - [4,8,32]
-      - [4,9,36]
-      - [5,5,25]
-      - [5,6,30]
-      - [5,7,35]
-      - [5,8,40]
-      - [5,9,45]
-      - [6,6,36]
-      - [6,7,42]
-      - [6,8,48]
-      - [6,9,54]
-      - [7,7,49]
-      - [7,8,56]
-      - [7,9,63]
-      - [8,8,64]
-      - [8,9,72]
-      - [9,9,81]
+    - - 1
+      - 1
+      - 1
+    - - 1
+      - 2
+      - 2
+    - - 1
+      - 3
+      - 3
+    - - 1
+      - 4
+      - 4
+    - - 1
+      - 5
+      - 5
+    - - 1
+      - 6
+      - 6
+    - - 1
+      - 7
+      - 7
+    - - 1
+      - 8
+      - 8
+    - - 1
+      - 9
+      - 9
+    - - 2
+      - 2
+      - 4
+    - - 2
+      - 3
+      - 6
+    - - 2
+      - 4
+      - 8
+    - - 2
+      - 5
+      - 10
+    - - 2
+      - 6
+      - 12
+    - - 2
+      - 7
+      - 14
+    - - 2
+      - 8
+      - 16
+    - - 2
+      - 9
+      - 18
+    - - 3
+      - 3
+      - 9
+    - - 3
+      - 4
+      - 12
+    - - 3
+      - 5
+      - 15
+    - - 3
+      - 6
+      - 18
+    - - 3
+      - 7
+      - 21
+    - - 3
+      - 8
+      - 24
+    - - 3
+      - 9
+      - 27
+    - - 4
+      - 4
+      - 16
+    - - 4
+      - 5
+      - 20
+    - - 4
+      - 6
+      - 24
+    - - 4
+      - 7
+      - 28
+    - - 4
+      - 8
+      - 32
+    - - 4
+      - 9
+      - 36
+    - - 5
+      - 5
+      - 25
+    - - 5
+      - 6
+      - 30
+    - - 5
+      - 7
+      - 35
+    - - 5
+      - 8
+      - 40
+    - - 5
+      - 9
+      - 45
+    - - 6
+      - 6
+      - 36
+    - - 6
+      - 7
+      - 42
+    - - 6
+      - 8
+      - 48
+    - - 6
+      - 9
+      - 54
+    - - 7
+      - 7
+      - 49
+    - - 7
+      - 8
+      - 56
+    - - 7
+      - 9
+      - 63
+    - - 8
+      - 8
+      - 64
+    - - 8
+      - 9
+      - 72
+    - - 9
+      - 9
+      - 81

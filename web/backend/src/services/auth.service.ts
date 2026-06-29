@@ -1,13 +1,12 @@
 /**
  * 认证业务（注册/登录/刷新）。
  *
- * 注册：邮箱+密码 → 建 user → 建 organization（owner）+ membership（事务）→ 签发 token 对。
- * 邮箱应用层小写归一（schema 未用 citext）。
- * PLATFORM_ALLOW_SIGNUP 控制是否开放注册。
+ * 注册：邮箱+密码 → 建 user。**不再自动建个人 Org**（纯团队中心模型）：
+ * 新用户登录后无团队，需「创建团队」或「申请加入团队」（见 org.service / join request）。
+ * 邮箱应用层小写归一；PLATFORM_ALLOW_SIGNUP 控制是否开放注册。
  */
 
-import { getPrisma } from "../infra/prisma"
-import { UserRepository, OrgRepository } from "../repositories/user.repository"
+import { UserRepository } from "../repositories/user.repository"
 import {
   hashPassword,
   verifyPassword,
@@ -17,10 +16,8 @@ import {
 } from "../infra/crypto"
 import { getConfig } from "../config"
 import { PlatformError } from "../middleware/errorHandler"
-import { slugify, uniquify } from "../utils/slug"
 
 const userRepo = new UserRepository()
-const _orgRepo = new OrgRepository()
 
 function assertEmail(email?: string): asserts email is string {
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -40,7 +37,6 @@ export interface RegisterInput {
   email?: string
   password?: string
   name?: string
-  orgName?: string
 }
 export interface AuthPublicUser {
   id: string
@@ -49,13 +45,12 @@ export interface AuthPublicUser {
 }
 export interface RegisterResult extends TokenPair {
   user: AuthPublicUser
-  org: { id: string; name: string; slug: string }
 }
 export interface LoginResult extends TokenPair {
   user: AuthPublicUser
 }
 
-/** 注册：建用户 + 首个组织（owner）+ 成员关系（事务）。 */
+/** 注册：建用户（不再建个人 Org）。 */
 export async function register(input: RegisterInput): Promise<RegisterResult> {
   const cfg = getConfig()
   if (!cfg.allowSignup) {
@@ -71,50 +66,26 @@ export async function register(input: RegisterInput): Promise<RegisterResult> {
   }
 
   const passwordHash = await hashPassword(input.password)
-  const baseSlug = slugify(input.orgName || input.name || normalizedEmail.split("@")[0]) || "org"
-
-  const prisma = getPrisma()
-  const result = await prisma.$transaction(async (tx) => {
-    const user = await tx.user.create({
-      data: { email: normalizedEmail, passwordHash, name: input.name || null },
-    })
-
-    let slug = baseSlug
-    if (await tx.organization.findUnique({ where: { slug } })) {
-      slug = uniquify(baseSlug)
-    }
-    const org = await tx.organization.create({
-      data: {
-        name: input.orgName || `${input.name || normalizedEmail}'s Org`,
-        slug,
-        createdBy: user.id,
-      },
-    })
-    await tx.orgMembership.create({
-      data: { orgId: org.id, userId: user.id, role: "owner" },
-    })
-    return { user, org }
+  const user = await userRepo.create({
+    email: normalizedEmail,
+    passwordHash,
+    name: input.name || null,
   })
 
-  const tokens = issueTokenPair({
-    userId: result.user.id,
-    orgId: result.org.id,
-    role: "owner",
-    name: result.user.name,
-  })
-
+  // 无团队：token 不带 orgId（鉴权不依赖它；前端 me() memberships 为空 → 引导创建/加入团队）
+  const tokens = issueTokenPair({ userId: user.id, name: user.name })
   return {
-    user: { id: result.user.id, email: result.user.email, name: result.user.name },
-    org: { id: result.org.id, name: result.org.name, slug: result.org.slug },
+    user: { id: user.id, email: user.email, name: user.name },
     ...tokens,
   }
 }
 
-/** 登录：校验密码 → 签发（以用户首个组织为默认上下文）。 */
+/** 登录：校验密码 → 签发（以用户首个组织为默认上下文，无团队则空）。 */
 export async function login(input: { email?: string; password?: string }): Promise<LoginResult> {
   assertEmail(input.email)
   const user = await userRepo.findByEmail(input.email)
-  if (!user) {
+  if (!user || !user.passwordHash) {
+    // 账号不存在 或 SSO-only 用户（无密码）→ 统一返回 invalid
     throw new PlatformError("invalid credentials", { status: 401, code: "AUTH_INVALID" })
   }
   const ok = await verifyPassword(input.password!, user.passwordHash)

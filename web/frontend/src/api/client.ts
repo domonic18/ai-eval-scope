@@ -5,6 +5,7 @@
 
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios"
 import { clearSession, getRefreshToken, getToken, saveSession } from "../store/auth"
+import type { ProjectSample, SampleTrendPoint } from "../types"
 
 export const http = axios.create({
   baseURL: "/api/v1",
@@ -68,6 +69,15 @@ export const api = {
   async register(email: string, password: string, name: string) {
     return (await http.post("/auth/register", { email, password, name })).data
   },
+  async ssoConfig() {
+    return (await http.get("/auth/sso/config")).data as { enabled: boolean }
+  },
+  async ssoLogin() {
+    return (await http.post("/auth/sso/login")).data as { redirect_url: string }
+  },
+  async ssoExchange(code: string) {
+    return (await http.post("/auth/sso/exchange", { code })).data
+  },
   async dashboard(orgId: string) {
     return (await http.get(`/orgs/${orgId}/projects`)).data.projects
   },
@@ -79,6 +89,55 @@ export const api = {
   },
   async archiveProject(projectId: string) {
     return (await http.post(`/projects/${projectId}/archive`)).data.project
+  },
+  async deleteProject(projectId: string) {
+    return (await http.delete(`/projects/${projectId}`)).data
+  },
+  async createOrg(name: string) {
+    return (await http.post("/orgs", { name })).data.org as {
+      id: string
+      name: string
+      slug: string
+    }
+  },
+  async teams() {
+    return (await http.get("/teams")).data.teams as {
+      id: string
+      name: string
+      slug: string
+      isMember: boolean
+      requestStatus: string | null
+    }[]
+  },
+  async myJoinRequests() {
+    return (await http.get("/me/join-requests")).data.requests as {
+      id: string
+      orgId: string
+      status: string
+      message: string | null
+      org: { name: string; slug: string }
+    }[]
+  },
+  async requestJoin(orgId: string, message?: string) {
+    return (await http.post(`/orgs/${orgId}/join-requests`, { message })).data.request as {
+      id: string
+      orgId: string
+      status: string
+    }
+  },
+  async orgJoinRequests(orgId: string) {
+    return (await http.get(`/orgs/${orgId}/join-requests`)).data.requests as {
+      id: string
+      status: string
+      message: string | null
+      user: { id: string; email: string; name: string | null }
+    }[]
+  },
+  async approveJoin(orgId: string, reqId: string) {
+    return (await http.post(`/orgs/${orgId}/join-requests/${reqId}/approve`)).data
+  },
+  async rejectJoin(orgId: string, reqId: string) {
+    return (await http.post(`/orgs/${orgId}/join-requests/${reqId}/reject`)).data
   },
   async listMembers(orgId: string) {
     return (await http.get(`/orgs/${orgId}/members`)).data.members
@@ -100,6 +159,19 @@ export const api = {
   },
   async sampleDetail(runId: string, sampleId: string) {
     return (await http.get(`/runs/${runId}/samples/${sampleId}`)).data.sample
+  },
+  async listSamples(projectId: string) {
+    return (await http.get(`/projects/${projectId}/samples`)).data as ProjectSample[]
+  },
+  async sampleTrends(projectId: string, sampleId: string, limit = 100) {
+    return (
+      await http.get(`/projects/${projectId}/sample-trends`, {
+        params: { sample_id: sampleId, limit },
+      })
+    ).data as SampleTrendPoint[]
+  },
+  async deleteRun(runId: string) {
+    return (await http.delete(`/runs/${runId}`)).data
   },
   async listKeys(projectId: string) {
     return (await http.get(`/projects/${projectId}/keys`)).data.keys

@@ -1,14 +1,12 @@
-"""格式约束评估器（4 项）— HARD_GATE。
+"""格式约束评估器（2 项）— HARD_GATE。
 
 - format.response_format: 文件格式检查（MD/HTML）
-- format.document_count: 文档数量检查
-- format.structure_compliance: 结构规范性（标题层级）
 - format.html_validity: HTML 标签有效性
 """
 
 from __future__ import annotations
 
-import re
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +14,55 @@ from agent_eval.config import EVALUATOR_DEFAULTS
 from agent_eval.core.types import ConstraintTier, EvalMethod, EvalStatus
 from agent_eval.evaluation.base import BaseEvaluator
 from agent_eval.evaluation.registry import registry
+
+
+class _TagStackValidator(HTMLParser):
+    """校验 HTML 标签嵌套平衡（void 元素不需闭合）。
+
+    替代字符串级引号奇偶计数，从语义层判断结构有效性：文本内容/JS 里的引号
+    不再干扰，且能抓「标签未闭合 / 非法嵌套 / 属性引号未闭合（经栈不平衡间接）」。
+    """
+
+    _VOID = {
+        "area",
+        "base",
+        "br",
+        "col",
+        "embed",
+        "hr",
+        "img",
+        "input",
+        "link",
+        "meta",
+        "param",
+        "source",
+        "track",
+        "wbr",
+    }
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.stack: list[str] = []
+        self.errors: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag not in self._VOID:
+            self.stack.append(tag)
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in self._VOID:
+            return  # void 元素无需闭合
+        if self.stack and self.stack[-1] == tag:
+            self.stack.pop()
+        elif tag in self.stack:
+            # 非法嵌套：弹出至匹配项，记录中间未闭合标签
+            while self.stack and self.stack[-1] != tag:
+                self.errors.append(f"<{self.stack[-1]}> 未闭合")
+                self.stack.pop()
+            if self.stack:
+                self.stack.pop()
+        else:
+            self.errors.append(f"多余的闭合标签 </{tag}>")
 
 
 @registry.register("format.response_format")
@@ -145,212 +192,6 @@ class ResponseFormatEvaluator(BaseEvaluator):
         return (time.monotonic() - start) * 1000
 
 
-@registry.register("format.document_count")
-class DocumentCountEvaluator(BaseEvaluator):
-    """文档数量检查 — 验证输出文档数量在约束范围内。"""
-
-    evaluator_id = "format.document_count"
-    name = "文档数量检查"
-    tier = ConstraintTier.HARD_GATE
-    method = EvalMethod.RULE
-
-    def evaluate(self, sample: Any, context: dict[str, Any]) -> Any:
-        import time
-
-        start = time.monotonic()
-
-        constraints = context.get("constraints", {})
-        min_docs = self.params.get("min_documents", constraints.get("min_documents", 1))
-        max_docs = self.params.get("max_documents", constraints.get("max_documents", 20))
-        # 也支持 min/max 简写
-        min_docs = self.params.get("min", min_docs)
-        max_docs = self.params.get("max", max_docs)
-
-        output_dir = self._get_output_dir(sample)
-        if output_dir is None or not output_dir.exists():
-            elapsed = (time.monotonic() - start) * 1000
-            return self._make_result(
-                status=EvalStatus.FAIL,
-                score=0.0,
-                reason="输出目录不存在",
-                duration_ms=elapsed,
-            )
-
-        # 统计文件数（排除 _manifest.json）
-        files = [f for f in output_dir.rglob("*") if f.is_file() and f.name != "_manifest.json"]
-        actual = len(files)
-        elapsed = (time.monotonic() - start) * 1000
-
-        passed = min_docs <= actual <= max_docs
-        return self._make_result(
-            status=EvalStatus.PASS if passed else EvalStatus.FAIL,
-            score=1.0 if passed else 0.0,
-            reason=f"实际 {actual} 个文档，要求 [{min_docs}, {max_docs}]",
-            details={
-                "actual": actual,
-                "min": min_docs,
-                "max": max_docs,
-                "checked_files": [f.name for f in files],
-            },
-            duration_ms=elapsed,
-        )
-
-    def _get_output_dir(self, sample: Any) -> Path | None:
-        if isinstance(sample, Path):
-            return sample / "output" if sample.is_dir() else sample.parent / "output"
-        if hasattr(sample, "output_dir") and sample.output_dir is not None:
-            return Path(sample.output_dir)
-        if isinstance(sample, dict):
-            p = sample.get("package_dir") or sample.get("output_dir")
-            if p:
-                p = Path(p)
-                return p / "output" if p.is_dir() and (p / "output").exists() else p
-        return None
-
-
-@registry.register("format.structure_compliance")
-class StructureComplianceEvaluator(BaseEvaluator):
-    """结构规范性检查 — 验证标题层级合理、章节结构完整。"""
-
-    evaluator_id = "format.structure_compliance"
-    name = "结构规范性检查"
-    tier = ConstraintTier.HARD_GATE
-    method = EvalMethod.RULE
-
-    def evaluate(self, sample: Any, context: dict[str, Any]) -> Any:
-        import time
-
-        start = time.monotonic()
-
-        max_heading_depth = self.params.get("max_heading_depth", 6)
-        self.params.get("require_toc", False)  # reserved for future TOC check
-
-        output_dir = self._get_output_dir(sample)
-        if output_dir is None or not output_dir.exists():
-            elapsed = (time.monotonic() - start) * 1000
-            return self._make_result(
-                status=EvalStatus.FAIL,
-                score=0.0,
-                reason="输出目录不存在",
-                duration_ms=elapsed,
-            )
-
-        files = self._collect_content_files(output_dir)
-        if not files:
-            elapsed = (time.monotonic() - start) * 1000
-            return self._make_result(
-                status=EvalStatus.FAIL,
-                score=0.0,
-                reason="无可检查的文档文件",
-                duration_ms=elapsed,
-            )
-
-        issues: list[str] = []
-        has_heading = False
-        heading_summary: dict[str, list[list]] = {}  # filename -> [[level, text], ...]
-        total_heading_count = 0
-
-        for f in files:
-            try:
-                content = f.read_text(encoding="utf-8", errors="ignore")
-            except OSError:
-                continue
-
-            ext = f.suffix.lower()
-            if ext in (".md", ".markdown"):
-                headings = self._extract_md_headings(content)
-            elif ext in (".html", ".htm"):
-                headings = self._extract_html_headings(content)
-            else:
-                continue
-
-            if headings:
-                has_heading = True
-                total_heading_count += len(headings)
-                heading_summary[f.name] = [[level, text] for level, text in headings]
-                # 检查标题层级是否超出限制
-                for level, text in headings:
-                    if level > max_heading_depth:
-                        issues.append(
-                            f"{f.name}: 标题层级 {level} 超出限制 {max_heading_depth} — '{text[:30]}'"
-                        )
-
-        elapsed = (time.monotonic() - start) * 1000
-
-        if not has_heading:
-            return self._make_result(
-                status=EvalStatus.FAIL,
-                score=0.0,
-                reason="文档中未发现任何标题结构",
-                duration_ms=elapsed,
-            )
-
-        if issues:
-            return self._make_result(
-                status=EvalStatus.FAIL,
-                score=0.0,
-                reason=f"结构不合规: {'; '.join(issues[:5])}",
-                details={
-                    "issues": issues,
-                    "checked_files": [f.name for f in files],
-                    "heading_summary": heading_summary,
-                    "total_headings": total_heading_count,
-                },
-                duration_ms=elapsed,
-            )
-
-        return self._make_result(
-            status=EvalStatus.PASS,
-            score=1.0,
-            reason="文档结构规范，标题层级合理",
-            details={
-                "checked_files": [f.name for f in files],
-                "heading_summary": heading_summary,
-                "total_headings": total_heading_count,
-                "max_heading_depth": max_heading_depth,
-            },
-            duration_ms=elapsed,
-        )
-
-    def _collect_content_files(self, output_dir: Path) -> list[Path]:
-        """收集 Markdown 和 HTML 文件。"""
-        files = []
-        for ext in ("*.md", "*.markdown", "*.html", "*.htm"):
-            files.extend(output_dir.rglob(ext))
-        return sorted(files)
-
-    def _extract_md_headings(self, content: str) -> list[tuple[int, str]]:
-        """提取 Markdown 标题 (# level text)。"""
-        headings = []
-        for line in content.split("\n"):
-            match = re.match(r"^(#{1,6})\s+(.+)$", line)
-            if match:
-                headings.append((len(match.group(1)), match.group(2).strip()))
-        return headings
-
-    def _extract_html_headings(self, content: str) -> list[tuple[int, str]]:
-        """提取 HTML 标题 (h1-h6)。"""
-        headings = []
-        for match in re.finditer(r"<h([1-6])[^>]*>(.*?)</h\1>", content, re.DOTALL | re.IGNORECASE):
-            level = int(match.group(1))
-            text = re.sub(r"<[^>]+>", "", match.group(2)).strip()
-            if text:
-                headings.append((level, text))
-        return headings
-
-    def _get_output_dir(self, sample: Any) -> Path | None:
-        if isinstance(sample, Path):
-            return sample / "output" if sample.is_dir() else sample.parent / "output"
-        if hasattr(sample, "output_dir") and sample.output_dir is not None:
-            return Path(sample.output_dir)
-        if isinstance(sample, dict):
-            p = sample.get("package_dir") or sample.get("output_dir")
-            if p:
-                p = Path(p)
-                return p / "output" if p.is_dir() and (p / "output").exists() else p
-        return None
-
-
 @registry.register("format.html_validity")
 class HtmlValidityEvaluator(BaseEvaluator):
     """HTML 有效性检查 — 验证 HTML 标签闭合、可正常解析。"""
@@ -453,20 +294,17 @@ class HtmlValidityEvaluator(BaseEvaluator):
             errors.append(f"{filename}: 不包含 HTML 标签")
             return {"valid": False, "errors": errors}
 
-        # 检查关键标签是否闭合
-        for tag in ["html", "head", "body"]:
-            open_tag = f"<{tag}"
-            close_tag = f"</{tag}>"
-            has_open = bool(re.search(open_tag, lower))
-            has_close = close_tag in lower
-            if has_open and not has_close:
-                errors.append(f"{filename}: <{tag}> 标签未闭合")
-
-        # 检查常见自闭合标签误用（简单检查）
-        # 检查是否存在严重的不匹配引号
-        double_quotes = content.count('"') - content.count('\\"')
-        if double_quotes % 2 != 0:
-            errors.append(f"{filename}: 引号不匹配（奇数个双引号）")
+        # 标签嵌套平衡校验（解析器结构级，替代字符串级引号奇偶计数）
+        validator = _TagStackValidator()
+        try:
+            validator.feed(content)
+            validator.close()
+        except Exception as e:  # noqa: BLE001 — 解析级异常统一上报
+            errors.append(f"{filename}: HTML 解析失败: {e}")
+        if validator.errors:
+            errors.extend(f"{filename}: {e}" for e in validator.errors)
+        if validator.stack:
+            errors.append(f"{filename}: 未闭合标签 {validator.stack}")
 
         return {"valid": len(errors) == 0, "errors": errors}
 

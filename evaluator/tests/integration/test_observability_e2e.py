@@ -5,7 +5,7 @@
 
 前置：docker compose up -d（postgres+minio，根 docker-compose.yml 读 .env）+
       cd web/backend && npm run build && PLATFORM_DATABASE_URL=… node dist/server.js
-      （默认指向 http://localhost:3000）
+      （默认指向 http://localhost:9000）
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ pytestmark = pytest.mark.skipif(
     reason="set AGENT_EVAL_E2E=1 且后端在跑时启用",
 )
 
-HOST = os.environ.get("AGENT_EVAL_E2E_HOST", "http://localhost:3000")
+HOST = os.environ.get("AGENT_EVAL_E2E_HOST", "http://localhost:9000")
 
 
 @pytest.fixture(scope="module")

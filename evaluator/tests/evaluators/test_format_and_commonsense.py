@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from agent_eval.core.types import ConstraintTier, EvalStatus
+from agent_eval.core.types import EvalStatus
 from agent_eval.evaluation.evaluators import *  # trigger registration
 from agent_eval.evaluation.evaluators.commonsense_evaluators import _reset_fact_db_cache
 from agent_eval.evaluation.registry import registry
@@ -75,69 +75,6 @@ class TestResponseFormatEvaluator:
         assert result.status == EvalStatus.FAIL
 
 
-class TestDocumentCountEvaluator:
-    def test_count_within_range(self, tmp_path: Path) -> None:
-        out = _prepare_output(tmp_path)
-        for i in range(5):
-            (out / f"doc_{i}.md").write_text(f"# Doc {i}")
-
-        ev = registry.create("format.document_count", {"min": 1, "max": 10})
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.PASS
-
-    def test_count_too_few(self, tmp_path: Path) -> None:
-        out = _prepare_output(tmp_path)
-        (out / "only.md").write_text("# Only")
-
-        ev = registry.create("format.document_count", {"min": 3, "max": 10})
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.FAIL
-        assert result.score == 0.0
-
-    def test_count_too_many(self, tmp_path: Path) -> None:
-        out = _prepare_output(tmp_path)
-        for i in range(25):
-            (out / f"doc_{i}.md").write_text(f"# Doc {i}")
-
-        ev = registry.create("format.document_count", {"min": 1, "max": 20})
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.FAIL
-
-
-class TestStructureComplianceEvaluator:
-    def test_valid_md_structure(self, tmp_path: Path) -> None:
-        out = _prepare_output(tmp_path)
-        (out / "index.md").write_text("# Title\n\n## Section 1\n\n### Subsection\n\n## Section 2\n")
-
-        ev = registry.create("format.structure_compliance", {"max_heading_depth": 4})
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.PASS
-
-    def test_heading_too_deep(self, tmp_path: Path) -> None:
-        out = _prepare_output(tmp_path)
-        (out / "deep.md").write_text("# H1\n## H2\n### H3\n#### H4\n##### H5\n###### H6\n")
-
-        ev = registry.create("format.structure_compliance", {"max_heading_depth": 4})
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.FAIL
-
-    def test_no_headings(self, tmp_path: Path) -> None:
-        out = _prepare_output(tmp_path)
-        (out / "flat.md").write_text("Just some text without any headings.")
-
-        ev = registry.create("format.structure_compliance")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.FAIL
-
-    def test_valid_html_structure(self, tmp_path: Path) -> None:
-        out = _prepare_output(tmp_path)
-        (out / "index.html").write_text("<html><body><h1>Title</h1><h2>Section</h2></body></html>")
-
-        ev = registry.create("format.structure_compliance", {"max_heading_depth": 4})
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.PASS
-
-
 class TestHtmlValidityEvaluator:
     def test_valid_html(self, tmp_path: Path) -> None:
         out = _prepare_output(tmp_path)
@@ -173,140 +110,44 @@ class TestHtmlValidityEvaluator:
         result = ev.evaluate(tmp_path, {})
         assert result.status == EvalStatus.FAIL
 
+    def test_text_quotes_not_false_positive(self, tmp_path: Path) -> None:
+        """正文含奇数个文本双引号（不成对的强调）但标签结构完整 → 有效（核心回归）。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.html").write_text(
+            '<html><body><p>正文含"范式"和电场"等术语</p></body></html>',
+            encoding="utf-8",
+        )
+
+        ev = registry.create("format.html_validity")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.PASS
+
+    def test_unclosed_attribute_quote(self, tmp_path: Path) -> None:
+        """属性引号未闭合（解析器吞掉后续标签）→ 无效。"""
+        out = _prepare_output(tmp_path)
+        (out / "bad.html").write_text(
+            '<html><body><div class="foo>内容</div></body></html>',
+            encoding="utf-8",
+        )
+
+        ev = registry.create("format.html_validity")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.FAIL
+
+    def test_illegal_nesting(self, tmp_path: Path) -> None:
+        """标签非法嵌套（<b><i></b></i>）→ 无效。"""
+        out = _prepare_output(tmp_path)
+        (out / "bad.html").write_text(
+            "<html><body><b><i>text</b></i></body></html>",
+            encoding="utf-8",
+        )
+
+        ev = registry.create("format.html_validity")
+        result = ev.evaluate(tmp_path, {})
+        assert result.status == EvalStatus.FAIL
+
 
 # ─── 常识评估器 ───
-
-
-class TestMathFormulaEvaluator:
-    def test_correct_arithmetic(self, tmp_path: Path) -> None:
-        out = _prepare_output(tmp_path)
-        (out / "math.md").write_text("计算 2+3=5 和 10×2=20。")
-
-        ev = registry.create("commonsense.math_formula")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.PASS
-
-    def test_wrong_arithmetic(self, tmp_path: Path) -> None:
-        out = _prepare_output(tmp_path)
-        (out / "wrong.md").write_text("2+3=6 是正确的。")
-
-        ev = registry.create("commonsense.math_formula")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.FAIL
-
-    def test_multi_term_no_false_positive(self, tmp_path: Path) -> None:
-        """多项表达式不应产生子表达式误报。"""
-        out = _prepare_output(tmp_path)
-        (out / "math.md").write_text(
-            "总数：24 + 32 + 27 = 83 本\n"
-            "总分：42 + 38 + 45 = 125 分\n"
-            "检验：268+145+87=500\n"
-            "验证：28×8 + 22×9 + 35×4 = 224 + 198 + 140 = 562元\n"
-        )
-
-        ev = registry.create("commonsense.math_formula")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.PASS, (
-            f"多项表达式不应产生误报: {result.details.get('errors')}"
-        )
-
-    def test_multi_term_error_detected(self, tmp_path: Path) -> None:
-        """多项表达式错误应被检测。"""
-        out = _prepare_output(tmp_path)
-        (out / "math.md").write_text("方案：12×2 + 7 + 3 + 5 + 18 = 100 元")
-
-        ev = registry.create("commonsense.math_formula")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.FAIL
-        assert any("57" in e for e in result.details["errors"])
-
-    def test_per_file_attribution(self, tmp_path: Path) -> None:
-        """错误应携带文件名归属。"""
-        out = _prepare_output(tmp_path)
-        (out / "good.md").write_text("2+3=5")
-        (out / "bad.md").write_text("5+3=9")
-
-        ev = registry.create("commonsense.math_formula")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.FAIL
-        assert any("bad.md" in e for e in result.details["errors"])
-        assert not any("good.md" in e for e in result.details["errors"])
-
-    # ─── 符号公式校验 ───
-
-    def test_correct_circle_area(self, tmp_path: Path) -> None:
-        """正确的圆面积公式 → PASS。"""
-        out = _prepare_output(tmp_path)
-        (out / "math.md").write_text("圆的面积 S=πr²")
-
-        ev = registry.create("commonsense.math_formula")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.PASS
-
-    def test_wrong_circle_area(self, tmp_path: Path) -> None:
-        """圆面积用了周长公式 2πr → FAIL。"""
-        out = _prepare_output(tmp_path)
-        (out / "math.md").write_text("圆的面积 S=2πr")
-
-        ev = registry.create("commonsense.math_formula")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.FAIL
-        assert any("圆" in e for e in result.details["errors"])
-
-    def test_triangle_missing_half(self, tmp_path: Path) -> None:
-        """三角形面积缺少 ½ → FAIL。"""
-        out = _prepare_output(tmp_path)
-        (out / "math.md").write_text("三角形面积 S=ah")
-
-        ev = registry.create("commonsense.math_formula")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.FAIL
-
-    def test_correct_rectangle_area(self, tmp_path: Path) -> None:
-        """正确的长方形面积公式 → PASS。"""
-        out = _prepare_output(tmp_path)
-        (out / "math.md").write_text("长方形面积=长×宽")
-
-        ev = registry.create("commonsense.math_formula")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.PASS
-
-    def test_unknown_formula_not_flagged(self, tmp_path: Path) -> None:
-        """未知公式名不应产生误报。"""
-        out = _prepare_output(tmp_path)
-        (out / "math.md").write_text("特殊五边形面积=S=3ab")
-
-        ev = registry.create("commonsense.math_formula")
-        result = ev.evaluate(tmp_path, {})
-        # 无匹配的 domain_facts 条目 → 不报错
-        assert result.status == EvalStatus.PASS
-
-    def test_formula_in_html(self, tmp_path: Path) -> None:
-        """HTML 中的公式应被检测。"""
-        out = _prepare_output(tmp_path)
-        (out / "page.html").write_text("<p>圆的面积公式是：S=2πr</p>")
-
-        ev = registry.create("commonsense.math_formula")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.FAIL
-
-
-class TestUnitConsistencyEvaluator:
-    def test_correct_units(self, tmp_path: Path) -> None:
-        out = _prepare_output(tmp_path)
-        (out / "physics.md").write_text("浮力公式 F = ρ液 × g × V_排，其中 g = 9.8 m/s²")
-
-        ev = registry.create("commonsense.unit_consistency")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.PASS
-
-    def test_wrong_g_unit(self, tmp_path: Path) -> None:
-        out = _prepare_output(tmp_path)
-        (out / "wrong.md").write_text("g = 9.8 m/s")
-
-        ev = registry.create("commonsense.unit_consistency")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.FAIL
 
 
 class TestInfoAccuracyEvaluator:
@@ -680,324 +521,6 @@ class TestInfoAccuracyEvaluator:
         assert "余数错误" in arith_errors[0]["message"]
 
 
-class TestChronologicalOrderEvaluator:
-    """时序正确性检查评估器测试。
-
-    当前实现为空壳（始终 PASS），测试验证：
-    1. 提取逻辑的正确性（years_found、sequences_found）
-    2. 文档行为的稳定性（始终 PASS）
-    3. 已知局限（年份误提取、序号不校验递增）
-    """
-
-    def test_pass_correct_year_order(self, tmp_path: Path) -> None:
-        """年份递增出现 → PASS，details 含正确年份列表。"""
-        out = _prepare_output(tmp_path)
-        (out / "doc.md").write_text("1949年新中国成立。1978年改革开放。2001年加入WTO。")
-
-        ev = registry.create("commonsense.chronological_order")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.PASS
-        assert result.score == 1.0
-        assert result.details["years_found"] == [1949, 1978, 2001]
-
-    def test_pass_year_regression_not_reported(self, tmp_path: Path) -> None:
-        """年份回溯（如回顾历史）→ 仍然 PASS（空实现，暂不报告）。"""
-        out = _prepare_output(tmp_path)
-        (out / "doc.md").write_text("1978年改革开放。回顾1949年新中国成立。")
-
-        ev = registry.create("commonsense.chronological_order")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.PASS
-        assert result.details["years_found"] == [1978, 1949]
-
-    def test_pass_no_years(self, tmp_path: Path) -> None:
-        """无年份 → PASS，years_found 为空。"""
-        out = _prepare_output(tmp_path)
-        (out / "doc.md").write_text("这是一段没有年份的文本。")
-
-        ev = registry.create("commonsense.chronological_order")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.PASS
-        assert result.details["years_found"] == []
-
-    def test_sequences_found(self, tmp_path: Path) -> None:
-        """序号提取应统计数量。"""
-        out = _prepare_output(tmp_path)
-        (out / "doc.md").write_text("第一步：准备材料。\n第二步：开始实验。\n第三步：记录结果。")
-
-        ev = registry.create("commonsense.chronological_order")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.PASS
-        assert result.details["sequences_found"] >= 3
-
-    def test_mixed_chinese_arabic_sequences(self, tmp_path: Path) -> None:
-        """混合中/阿拉伯数字序号（第一步 → 第4步）仍 PASS，但应被提取。"""
-        out = _prepare_output(tmp_path)
-        (out / "doc.md").write_text("第一步：准备。\n第4步：重新检查。")
-
-        ev = registry.create("commonsense.chronological_order")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.PASS
-        # 至少提取到 2 个序号
-        assert result.details["sequences_found"] >= 2
-
-    def test_duration_not_extracted_as_year(self, tmp_path: Path) -> None:
-        """\"100年后\" 不应被提取为年份 100。
-
-        这是当前实现的已知局限——正则 `(?:公元)?(\\d{3,4})\\s*年`
-        会将 \"100年后\" 匹配为 year=100。
-        当修复后此测试应断言 100 不在 years_found 中。
-        """
-        out = _prepare_output(tmp_path)
-        (out / "doc.md").write_text("科学家预测100年后气温上升2-4摄氏度。")
-
-        ev = registry.create("commonsense.chronological_order")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.PASS
-        # 已知局限：当前会错误提取 "100年后" 为 year=100
-        # 修复后改为: assert 100 not in result.details["years_found"]
-        assert 100 not in result.details["years_found"], "「100年后」是时间段而非年份，不应被提取。"
-
-    def test_details_structure(self, tmp_path: Path) -> None:
-        """details 应包含标准字段。"""
-        out = _prepare_output(tmp_path)
-        (out / "doc.md").write_text("1949年新中国成立。第一步：准备。")
-
-        ev = registry.create("commonsense.chronological_order")
-        result = ev.evaluate(tmp_path, {})
-        assert "files_checked" in result.details
-        assert "years_found" in result.details
-        assert "sequences_found" in result.details
-        assert "content_length" in result.details
-
-    def test_fail_empty_content(self, tmp_path: Path) -> None:
-        """空文档内容 → FAIL。"""
-        out = _prepare_output(tmp_path)
-        (out / "empty.md").write_text("   ")
-
-        ev = registry.create("commonsense.chronological_order")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.FAIL
-        assert result.score == 0.0
-
-    def test_fail_no_output_dir(self, tmp_path: Path) -> None:
-        """无 output 目录 → FAIL。"""
-        ev = registry.create("commonsense.chronological_order")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.FAIL
-        assert result.score == 0.0
-
-    def test_html_tags_stripped(self, tmp_path: Path) -> None:
-        """HTML 标签应被去除后再提取年份。"""
-        out = _prepare_output(tmp_path)
-        (out / "page.html").write_text("<html><body><p>1949年</p><p>1978年</p></body></html>")
-
-        ev = registry.create("commonsense.chronological_order")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.PASS
-        assert 1949 in result.details["years_found"]
-        assert 1978 in result.details["years_found"]
-
-    def test_year_filtering_range(self, tmp_path: Path) -> None:
-        """年份应在 (0, 2100] 范围内；超出范围的数字不提取。
-        同时验证持续时间模式（N年后/历史/内/间）不提取。
-        """
-        out = _prepare_output(tmp_path)
-        (out / "doc.md").write_text("99999年代码量。100年后气温上升。500年历史。1949年新中国。")
-
-        ev = registry.create("commonsense.chronological_order")
-        result = ev.evaluate(tmp_path, {})
-        # 99999 > 2100 → 不提取
-        assert 99999 not in result.details["years_found"]
-        # 100年后 → 时间段，不提取
-        assert 100 not in result.details["years_found"]
-        # 500年历史 → 时间段，不提取
-        assert 500 not in result.details["years_found"]
-        # 1949 在范围内 → 提取
-        assert 1949 in result.details["years_found"]
-
-    def test_reference_courseware_years(self, tmp_path: Path) -> None:
-        """模拟参考课件中的年份提取结果。
-
-        参考 docs/reference/大单元学习总导 中出现的年份：
-        1966（陈景润）、2013（教材版本，×2）、2050（虚构场景）。
-        "100年后"不应被提取。
-        """
-        out = _prepare_output(tmp_path)
-        (out / "doc.html").write_text(
-            "在1966年取得了关键突破。"
-            "年级：三年级上（2013年版）。"
-            "2050年，你成为了一名城市设计师。"
-            "科学家预测100年后气温上升2-4摄氏度。"
-        )
-
-        ev = registry.create("commonsense.chronological_order")
-        result = ev.evaluate(tmp_path, {})
-        years = result.details["years_found"]
-
-        # 应提取的正确年份
-        assert 1966 in years, "陈景润年份 1966 应被提取"
-        assert 2013 in years, "教材版本年份 2013 应被提取"
-        assert 2050 in years, "虚构场景年份 2050 应被提取"
-
-        # 已知局限：100 不应被提取（修复后验证）
-        assert 100 not in years, "「100年后」是时间段而非年份，不应被提取"
-
-
-class TestLogicalConsistencyEvaluator:
-    """逻辑一致性检查评估器测试 — Rule-based 降级模式。
-
-    验证：
-    1. 算术表达式不误判为变量矛盾
-    2. 真正的变量赋值矛盾能被检测
-    3. 跨文件变量不互相比较
-    4. details 包含文件归属和上下文
-    """
-
-    def test_default_pass(self, tmp_path: Path) -> None:
-        """无变量赋值模式 → PASS。"""
-        out = _prepare_output(tmp_path)
-        (out / "doc.md").write_text("Some content.")
-
-        ev = registry.create("commonsense.logical_consistency")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.PASS
-        assert result.tier == ConstraintTier.HARD_SCORE
-
-    def test_arithmetic_not_false_positive(self, tmp_path: Path) -> None:
-        """算术表达式（24+8=32、83-47=36）不应产生变量矛盾。
-
-        旧正则将纯数字（"8""47"）当作变量名，产生 28 处假阳性。
-        新正则只匹配具名变量（字母/中文开头），排除纯数字。
-        """
-        out = _prepare_output(tmp_path)
-        (out / "doc.md").write_text(
-            "计算：24 + 8 = 32 本\n"
-            "验算：83 - 47 = 36\n"
-            "验证：101 × 50 = 5050\n"
-            "竖式：个位 7+9=16，写6进1；十位 6+8+1=15\n"
-        )
-
-        ev = registry.create("commonsense.logical_consistency")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.PASS, (
-            f"算术表达式不应产生假阳性: {result.details.get('errors')}"
-        )
-
-    def test_chinese_equal_not_split(self, tmp_path: Path) -> None:
-        """\"等于\" 不应被拆为 \"变量等=值\"。"""
-        out = _prepare_output(tmp_path)
-        (out / "doc.md").write_text("十位 4加5等于10，写0进1。\n百位 2加1等于4。\n")
-
-        ev = registry.create("commonsense.logical_consistency")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.PASS
-
-    def test_real_variable_contradiction(self, tmp_path: Path) -> None:
-        """同一文件中具名变量赋值矛盾应被检测。"""
-        out = _prepare_output(tmp_path)
-        (out / "doc.md").write_text("总面积=567平方米。\n根据计算，总面积=658平方米。\n")
-
-        ev = registry.create("commonsense.logical_consistency")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.FAIL
-        findings = result.details.get("findings", [])
-        assert len(findings) > 0
-        assert any("总面积" in f.get("variable", "") for f in findings)
-
-    def test_cross_file_no_false_positive(self, tmp_path: Path) -> None:
-        """不同文件中同名变量不应互相比较。"""
-        out = _prepare_output(tmp_path)
-        (out / "a.md").write_text("总价 = 350 元")
-        (out / "b.md").write_text("总价 = 500 元")
-
-        ev = registry.create("commonsense.logical_consistency")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.PASS, "不同文件中的同名变量不应被当作矛盾"
-
-    def test_same_file_contradiction_detected(self, tmp_path: Path) -> None:
-        """同一文件中同名变量不同值应被检测。"""
-        out = _prepare_output(tmp_path)
-        (out / "a.md").write_text("方案一：总价 = 350 元\n方案二：总价 = 500 元")
-
-        ev = registry.create("commonsense.logical_consistency")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.FAIL
-
-    def test_details_have_file_attribution(self, tmp_path: Path) -> None:
-        """findings 应包含 file 字段和 contexts。"""
-        out = _prepare_output(tmp_path)
-        (out / "doc.md").write_text("学生数=45人。学生数=50人。")
-
-        ev = registry.create("commonsense.logical_consistency")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.FAIL
-        findings = result.details.get("findings", [])
-        assert len(findings) > 0
-        f = findings[0]
-        assert "file" in f
-        assert "variable" in f
-        assert "values" in f
-        assert "contexts" in f
-
-    def test_short_ascii_vars_skipped(self, tmp_path: Path) -> None:
-        """单字母变量（如 x=1, x=2）应被跳过（数学公式常见）。"""
-        out = _prepare_output(tmp_path)
-        (out / "doc.md").write_text("设 x=5。方程 x=10 的解。")
-
-        ev = registry.create("commonsense.logical_consistency")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.PASS
-
-    def test_chinese_named_var_detected(self, tmp_path: Path) -> None:
-        """中文命名的变量赋值矛盾应被检测。"""
-        out = _prepare_output(tmp_path)
-        (out / "doc.md").write_text("三年级一班有学生数=42人。\n但实际上学生数=45人。\n")
-
-        ev = registry.create("commonsense.logical_consistency")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.FAIL
-        findings = result.details.get("findings", [])
-        assert any("学生数" in f.get("variable", "") for f in findings)
-
-    def test_reference_courseware_no_false_positive(self, tmp_path: Path) -> None:
-        """参考课件中的算术内容不应产生假阳性。"""
-        out = _prepare_output(tmp_path)
-        (out / "doc.md").write_text(
-            "示例：算完36+47=83后，估算80左右合理，用83-47=36验证正确。\n"
-            "方案一：18 + 12 + 7 + 3 + 5 = 45 元\n"
-            "最优方案：12×2 + 7 + 3 + 5 + 18 = 100 元\n"
-            "101×50=5050。高斯配对法。\n"
-            "竖式：个位3+8=11，写1进1；十位2+1+1=4\n"
-        )
-
-        ev = registry.create("commonsense.logical_consistency")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.PASS, (
-            f"参考课件算术内容不应产生假阳性: {result.details.get('errors')}"
-        )
-
-    def test_fail_no_output_dir(self, tmp_path: Path) -> None:
-        """无 output 目录 → FAIL。"""
-        ev = registry.create("commonsense.logical_consistency")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.FAIL
-        assert result.score == 0.0
-
-    def test_fail_empty_content(self, tmp_path: Path) -> None:
-        """空文档 → FAIL。"""
-        out = _prepare_output(tmp_path)
-        (out / "empty.md").write_text("   ")
-
-        ev = registry.create("commonsense.logical_consistency")
-        result = ev.evaluate(tmp_path, {})
-        assert result.status == EvalStatus.FAIL
-        assert result.score == 0.0
-
-
-# ─── InfoAccuracy LLM Phase 3 测试 ───
-
-
 class TestInfoAccuracyLLM:
     """InfoAccuracyEvaluator 的 LLM Phase 3 路径测试。"""
 
@@ -1025,6 +548,31 @@ class TestInfoAccuracyLLM:
             d2 = MagicMock(dim_id="statement_accuracy", name="陈述准确性", weight=0.4)
             mock_template.dimensions = [d1, d2]
         orch.templates.get.return_value = mock_template
+        return orch
+
+    def _make_verdict_record(self, verdicts: list[dict], judge_id: str = "judge_fv_001"):
+        """fact_verdict 的 mock JudgeRecord（parsed_scores 含 verdicts）。"""
+        rec = MagicMock()
+        rec.judge_id = judge_id
+        rec.provider_name = "deepseek_judge"
+        rec.model = "deepseek-chat"
+        rec.confidence = {}
+        rec.raw_response = ""
+        rec.parsed_scores = {"verdict_quality": 9.0, "verdicts": verdicts}
+        return rec
+
+    def _make_dual_orchestrator(self, ia_result, fv_result):
+        """两次 judge 调用（info_accuracy + fact_verdict）返回不同结果的 mock。
+
+        fv_result 为 Exception 实例时，第二次 judge 抛该异常。
+        """
+        orch = MagicMock()
+        orch.judge.side_effect = [ia_result, fv_result]
+        ia_template = MagicMock()
+        d1 = MagicMock(dim_id="factual_correctness", name="事实正确性", weight=0.6)
+        d2 = MagicMock(dim_id="statement_accuracy", name="陈述准确性", weight=0.4)
+        ia_template.dimensions = [d1, d2]
+        orch.templates.get.return_value = ia_template
         return orch
 
     def test_llm_high_score_pass(self, tmp_path: Path) -> None:
@@ -1099,6 +647,126 @@ class TestInfoAccuracyLLM:
         assert result.status == EvalStatus.FAIL
         assert result.score == 0.0
         assert "规则检查发现" in result.reason
+
+    def test_constant_false_positive_filtered_by_llm(self, tmp_path: Path) -> None:
+        """规则误报（金/信息密度误匹配"金的密度"）经 LLM 二次确认过滤 → PASS。"""
+        out = _prepare_output(tmp_path)
+        # 金(金字塔) + 密度(信息密度) + 数字 → 触发"金的密度"正则误报
+        (out / "doc.html").write_text("倒金字塔结构，信息密度高。共6条。\n", encoding="utf-8")
+
+        ia_record = self._make_mock_record(errors_found=[])
+        fv_record = self._make_verdict_record(
+            [{"index": 0, "is_real_error": False, "reason": "信息密度≠金的密度"}]
+        )
+        orch = self._make_dual_orchestrator(
+            ({"factual_correctness": 10.0, "statement_accuracy": 10.0}, ia_record),
+            ({"verdict_quality": 9.0}, fv_record),
+        )
+
+        ev = registry.create("commonsense.info_accuracy")
+        result = ev.evaluate(
+            tmp_path,
+            {"judge_orchestrator": orch, "evidence_dir": tmp_path / "evidence"},
+        )
+
+        assert result.status == EvalStatus.PASS
+        assert orch.judge.call_count == 2  # info_accuracy + fact_verdict
+        const = [f for f in result.details["findings"] if f.get("check_type") == "constant"]
+        assert len(const) >= 1
+        assert all(f.get("_llm_confirmed") is False for f in const)
+        assert result.details["errors"] == 0  # 误报不计入一票否决
+
+    def test_real_error_kept_by_llm(self, tmp_path: Path) -> None:
+        """真错误（水的沸点错误）经 LLM 确认为真 → 仍 FAIL。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.html").write_text("水的沸点是 50 度。\n", encoding="utf-8")
+
+        ia_record = self._make_mock_record(errors_found=[])
+        fv_record = self._make_verdict_record(
+            [{"index": 0, "is_real_error": True, "reason": "沸点应为100"}]
+        )
+        orch = self._make_dual_orchestrator(
+            ({"factual_correctness": 10.0, "statement_accuracy": 10.0}, ia_record),
+            ({"verdict_quality": 9.0}, fv_record),
+        )
+
+        ev = registry.create("commonsense.info_accuracy")
+        result = ev.evaluate(
+            tmp_path,
+            {"judge_orchestrator": orch, "evidence_dir": tmp_path / "evidence"},
+        )
+
+        assert result.status == EvalStatus.FAIL
+        assert result.details["errors"] == 1
+
+    def test_fact_verdict_failure_keeps_all(self, tmp_path: Path) -> None:
+        """fact_verdict 调用异常 → 召回优先，error 全保留 → FAIL。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.html").write_text("水的沸点是 50 度。\n", encoding="utf-8")
+
+        ia_record = self._make_mock_record(errors_found=[])
+        orch = self._make_dual_orchestrator(
+            ({"factual_correctness": 10.0, "statement_accuracy": 10.0}, ia_record),
+            RuntimeError("fact_verdict timeout"),
+        )
+
+        ev = registry.create("commonsense.info_accuracy")
+        result = ev.evaluate(
+            tmp_path,
+            {"judge_orchestrator": orch, "evidence_dir": tmp_path / "evidence"},
+        )
+
+        assert result.status == EvalStatus.FAIL  # 召回优先
+        assert result.details["errors"] == 1
+
+    def test_no_error_skips_fact_verdict(self, tmp_path: Path) -> None:
+        """无规则 error → fact_verdict 不被调用（0 额外 LLM 调用）。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.html").write_text("正常教学内容，无事实错误。\n", encoding="utf-8")
+
+        ia_record = self._make_mock_record(errors_found=[])
+        orch = self._make_mock_orchestrator(
+            {"factual_correctness": 10.0, "statement_accuracy": 10.0}, ia_record
+        )
+
+        ev = registry.create("commonsense.info_accuracy")
+        result = ev.evaluate(
+            tmp_path,
+            {"judge_orchestrator": orch, "evidence_dir": tmp_path / "evidence"},
+        )
+
+        assert result.status == EvalStatus.PASS
+        assert orch.judge.call_count == 1  # 仅 info_accuracy
+
+    def test_info_accuracy_llm_decoupled_from_rule_findings(self, tmp_path: Path) -> None:
+        """解耦：info_accuracy LLM 调用的 variables 不含规则可疑条目。
+
+        规则 findings（含误报）由 fact_verdict 过滤后经 rule_errors 计分，
+        不再注入 LLM 整体评分输入（避免污染，见 docs/arch/12 §3.4）。
+        """
+        out = _prepare_output(tmp_path)
+        # 触发规则误报（金的密度式跨匹配：金 + 信息密度 + 数字）
+        (out / "doc.html").write_text("倒金字塔结构，信息密度高。共6条。\n", encoding="utf-8")
+
+        ia_record = self._make_mock_record(errors_found=[])
+        fv_record = self._make_verdict_record(
+            [{"index": 0, "is_real_error": False, "reason": "误报"}]
+        )
+        orch = self._make_dual_orchestrator(
+            ({"factual_correctness": 10.0, "statement_accuracy": 10.0}, ia_record),
+            ({"verdict_quality": 9.0}, fv_record),
+        )
+
+        ev = registry.create("commonsense.info_accuracy")
+        ev.evaluate(
+            tmp_path,
+            {"judge_orchestrator": orch, "evidence_dir": tmp_path / "evidence"},
+        )
+
+        # 第一次 judge = info_accuracy 整体评分，其 variables 不应含规则 findings
+        ia_variables = orch.judge.call_args_list[0].kwargs["variables"]
+        assert "warnings" not in ia_variables
+        assert "errors" not in ia_variables
 
     def test_llm_exception_fallback(self, tmp_path: Path) -> None:
         """LLM 调用异常 → 回退到 Phase 1-2 结果。"""

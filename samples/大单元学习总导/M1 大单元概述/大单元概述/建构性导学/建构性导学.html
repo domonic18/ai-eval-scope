@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建构性导学 - 深度解析透镜工作台</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"微软雅黑",sans-serif;background:#f5f6fa;font-size:16px;color:#333}
+.header{background:linear-gradient(135deg,#2d5a7b,#4a9b8c);color:#fff;padding:15px 20px;display:flex;align-items:center;gap:12px}
+.header h1{font-size:20px;font-weight:bold}
+.magnifier{font-size:28px}
+.container{display:flex;min-height:calc(100vh - 60px)}
+.left-panel{width:55%;padding:20px;border-right:2px solid #e0e0e0;background:#fff}
+.right-panel{width:45%;padding:20px;background:#f0f4f8}
+.panel-title{font-size:18px;font-weight:bold;color:#2d5a7b;margin-bottom:15px;display:flex;align-items:center;gap:8px}
+.card{background:#fff;border-radius:12px;padding:15px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-left:4px solid #4a9b8c}
+.card-header{display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.card-title{font-size:16px;font-weight:bold;color:#333}
+.expand-icon{transition:transform 0.3s;font-size:18px;color:#4a9b8c}
+.card-content{margin-top:12px;padding-top:12px;border-top:1px dashed #e0e0e0;display:none;font-size:14px;line-height:1.8;color:#555}
+.card.expanded .card-content{display:block}
+.card.expanded .expand-icon{transform:rotate(180deg)}
+.card.level2{border-left-color:#3d8bc7}
+.card.level3{border-left-color:#7c5295}
+.difficulty-card{position:relative;overflow:hidden}
+.difficulty-card::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;border:2px solid #e74c3c;border-radius:12px;animation:pulse-border 1.5s infinite}
+@keyframes pulse-border{0%,100%{opacity:1}50%{opacity:0.4}}
+.analysis-section{background:#fff;border-radius:12px;padding:15px;margin-bottom:15px}
+.canvas-area{background:#f8f9fa;border:2px dashed #c0c0c0;border-radius:10px;min-height:200px;display:flex;flex-wrap:wrap;gap:10px;padding:15px;align-items:center;justify-content:center}
+.node{background:linear-gradient(135deg,#2d5a7b,#4a9b8c);color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;cursor:grab;position:relative;user-select:none}
+.node:active{cursor:grabbing}
+.canvas-line{position:absolute;height:2px;background:#4a9b8c;transform-origin:0 50%}
+.question-engine{margin-top:15px}
+.question-btn{background:linear-gradient(135deg,#e67e22,#f39c12);color:#fff;border:none;padding:8px 16px;border-radius:20px;cursor:pointer;font-size:14px;transition:transform 0.3s}
+.question-btn:hover{transform:scale(1.05)}
+.question-list{margin-top:10px;padding:10px;background:#fff3e0;border-radius:8px;display:none}
+.question-list.show{display:block}
+.question-item{font-size:13px;color:#555;padding:5px 0;border-bottom:1px solid #ffe0b2}
+.history-tree{background:#fff;border-radius:12px;padding:15px}
+.tree-node{padding:8px 0 8px 25px;position:relative;font-size:14px;color:#555}
+.tree-node::before{content:'├';position:absolute;left:8px;color:#4a9b8c}
+.tree-node:last-child::before{content:'└'}
+.basket{background:#fff;border-radius:12px;padding:15px;border:2px solid #e74c3c}
+.basket-title{font-size:15px;color:#e74c3c;font-weight:bold;margin-bottom:10px}
+.basket-item{font-size:13px;color:#666;padding:5px 10px;background:#fdf2f2;border-radius:5px;margin-bottom:5px;display:inline-block}
+.example-box{background:linear-gradient(135deg,#e8f4f8,#d4eef6);border-radius:10px;padding:15px;margin-bottom:15px}
+.example-title{font-size:15px;font-weight:bold;color:#2d5a7b;margin-bottom:8px}
+.principle-box{background:linear-gradient(135deg,#e8f8f0,#d4f0e6);border-radius:10px;padding:15px;margin-bottom:15px}
+.principle-title{font-size:15px;font-weight:bold;color:#2d7b5a;margin-bottom:8px}
+.level-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #e0e0e0}
+.level-num{width:28px;height:28px;background:#4a9b8c;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:bold}
+.level-text{flex:1;font-size:14px;color:#333}
+</style>
+</head>
+<body>
+<div class="header">
+<span class="magnifier">🔍</span>
+<h1>建构性导学 - 深度解析透镜工作台</h1>
+</div>
+<div class="container">
+<div class="left-panel">
+<div class="panel-title">📚 知识原片卡片区</div>
+
+<div class="example-box">
+<div class="example-title">🔬 建构性示例：《测量》</div>
+<p style="font-size:14px;color:#555;line-height:1.7">测量是三年级数学的核心概念，通过建构性学习，学生可以从身边实物出发，逐步建立对长度、重量、时间的量化认知，形成系统的测量思维。</p>
+</div>
+
+<div class="card" onclick="toggleCard(this)">
+<div class="card-header">
+<span class="card-title">📐 第一层解构：测量的本质</span>
+<span class="expand-icon">▼</span>
+</div>
+<div class="card-content">测量是将未知量与已知标准量进行比较的过程。核心要素包括：<br>① 标准单位（厘米、米）<br>② 比较工具（尺子、天平）<br>③ 数值表达（数值+单位）</div>
+</div>
+
+<div class="card level2" onclick="toggleCard(this)">
+<div class="card-header">
+<span class="card-title">📏 第二层解构：测量单位体系</span>
+<span class="expand-icon">▼</span>
+</div>
+<div class="card-content">单位之间的建构关系：<br>• 长度：毫米→厘米→分米→米→千米<br>• 重量：克→千克→吨<br>• 时间：秒→分→时→日→周<br>每相邻单位间存在十进或千进关系。</div>
+</div>
+
+<div class="card level3 difficulty-card" onclick="toggleCard(this)">
+<div class="card-header">
+<span class="card-title">⚠️ 第三层解构：测量应用与转换</span>
+<span class="expand-icon">▼</span>
+</div>
+<div class="card-content">综合应用难点：<br>• 不同单位间的混合运算<br>• 估算与精确测量的平衡<br>• 测量结果的有效性判断<br>• 实际情境中的测量方案选择</div>
+</div>
+
+<div class="principle-box">
+<div class="principle-title">🧭 建构性7阶原理</div>
+<p style="font-size:14px;color:#333;line-height:1.8">学习是从已知向未知延伸的建构过程。通过逐层递进的结构化引导，帮助学生在已有经验基础上，自主构建完整的知识体系。</p>
+</div>
+
+<div class="analysis-section">
+<div class="panel-title">🔗 概念关系画布</div>
+<div class="canvas-area" id="canvas">
+<div class="node" draggable="true">测量</div>
+<div class="node" draggable="true">单位</div>
+<div class="node" draggable="true">工具</div>
+<div class="node" draggable="true">估算</div>
+<div class="node" draggable="true">应用</div>
+</div>
+<p style="font-size:12px;color:#888;text-align:center;margin-top:8px">👉 拖拽卡片进行概念关联</p>
+</div>
+</div>
+
+<div class="right-panel">
+<div class="panel-title">🔬 解析面板</div>
+
+<div class="analysis-section">
+<div class="panel-title" style="font-size:15px">🎯 7阶案例建构路径</div>
+<div class="level-item"><span class="level-num">1</span><span class="level-text"><b>个人与家庭</b> — 测量自己的身高体重</span></div>
+<div class="level-item"><span class="level-num">2</span><span class="level-text"><b>学校与社区</b> — 测量教室长度、操场周长</span></div>
+<div class="level-item"><span class="level-num">3</span><span class="level-text"><b>地方与城市</b> — 测量街道长度、公园面积</span></div>
+<div class="level-item"><span class="level-num">4</span><span class="level-text"><b>区域与民族</b> — 各地区长度单位的历史演变</span></div>
+<div class="level-item"><span class="level-num">5</span><span class="level-text"><b>国家</b> — 了解国家测量标准与计量法规</span></div>
+<div class="level-item"><span class="level-num">6</span><span class="level-text"><b>人类</b> — 国际单位制(SI)的发展与统一</span></div>
+<div class="level-item"><span class="level-num">7</span><span class="level-text"><b>未来</b> — 测量技术在科技与生活中的创新</span></div>
+</div>
+
+<div class="analysis-section question-engine">
+<div class="panel-title" style="font-size:15px">❓ 追问引擎</div>
+<button class="question-btn" onclick="showQuestions()">展开递进式追问</button>
+<div class="question-list" id="questionList">
+<div class="question-item">Q1: 为什么测量需要统一的标准单位？</div>
+<div class="question-item">Q2: 如果没有尺子，你还能测量长度吗？</div>
+<div class="question-item">Q3: 估算和精确测量哪个更重要？为什么？</div>
+<div class="question-item">Q4: 你觉得测量还可以应用在哪些场景？</div>
+</div>
+</div>
+
+<div class="history-tree">
+<div class="panel-title" style="font-size:15px">📊 解析历史轨迹树</div>
+<div class="tree-node">▶ 测量概念引入</div>
+<div class="tree-node" style="padding-left:35px">├─ 单位体系认知</div>
+<div class="tree-node" style="padding-left:35px">├─ 测量工具使用</div>
+<div class="tree-node" style="padding-left:35px">└─ 综合应用拓展</div>
+</div>
+
+<div class="basket">
+<div class="basket-title">🛒 疑问收集篮</div>
+<div style="font-size:13px;color:#888;margin-bottom:10px">点击下方按钮添加你的疑问：</div>
+<button class="question-btn" style="background:linear-gradient(135deg,#c0392b,#e74c3c)" onclick="addQuestion()">+ 添加疑问</button>
+<div id="basketItems" style="margin-top:10px"></div>
+</div>
+</div>
+</div>
+
+<script>
+function toggleCard(card){
+card.classList.toggle('expanded');
+}
+
+function showQuestions(){
+document.getElementById('questionList').classList.toggle('show');
+}
+
+function addQuestion(){
+var question=prompt('请输入你的疑问：');
+if(question){
+var container=document.getElementById('basketItems');
+var item=document.createElement('div');
+item.className='basket-item';
+item.textContent='❓ '+question;
+container.appendChild(item);
+}
+}
+
+// Drag and drop for concept nodes
+var canvas=document.getElementById('canvas');
+var nodes=document.querySelectorAll('.node');
+var draggedNode=null;
+
+nodes.forEach(function(node){
+node.addEventListener('dragstart',function(e){
+draggedNode=this;
+e.dataTransfer.effectAllowed='move';
+});
+node.addEventListener('dragend',function(e){
+draggedNode=null;
+});
+});
+
+canvas.addEventListener('dragover',function(e){
+e.preventDefault();
+e.dataTransfer.dropEffect='move';
+});
+
+canvas.addEventListener('drop',function(e){
+e.preventDefault();
+if(draggedNode){
+var rect=canvas.getBoundingClientRect();
+var x=e.clientX-rect.left;
+var y=e.clientY-rect.top;
+draggedNode.style.position='absolute';
+draggedNode.style.left=x+'px';
+draggedNode.style.top=y+'px';
+canvas.appendChild(draggedNode);
+}
+});
+</script>
+</body>
+</html>

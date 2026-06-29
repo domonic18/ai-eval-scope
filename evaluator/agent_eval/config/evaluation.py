@@ -38,8 +38,10 @@ class ScoreAggregationWeights:
     w4: float = 1.0
     # 格式门控全通过时的 S_format 得分
     format_pass: float = 1.0
-    # 格式门控任一失败时的 S_format 惩罚
-    format_fail: float = -3.0
+    # 格式门控任一失败时的 S_format 得分（0 = 不得分）。
+    # format 的重要性由 DR（格式通过率）+ fail-fast 短路体现，不再用负值惩罚——
+    # 保证 reward 归一化到 [0,1]、无负值（行业最佳实践，详见 docs/arch/07）。
+    format_fail: float = 0.0
     # 常识门控全通过时的 S_common 得分
     commonsense_pass: float = 1.0
     # 常识门控任一失败时的 S_common 得分
@@ -83,8 +85,6 @@ class PipelineDefaults:
 class EvaluatorDefaults:
     """各评估器默认行为参数。"""
 
-    # LLM 不可用时（无 Provider/无配置）的默认降级分数
-    llm_degrade_score: float = 0.7
     # 文本 LLM 评估时默认最大内容字符数（超过则截断）
     max_content_chars: int = 8000
     # 算术错误检测时的上下文窗口大小（字符数）

@@ -49,6 +49,8 @@ def build_run_event(
                 "DR": report.dr,
                 "CPR": report.cpr,
                 "avg_reward": report.avg_reward,
+                "avg_soft": report.avg_soft,
+                "avg_pref": report.avg_pref,
                 "condR": report.cond_r,
                 "avg_time_ms": report.avg_time_ms,
             },
@@ -75,6 +77,7 @@ def build_sample_event(
         "data": {
             "external_run_id": external_run_id,
             "external_sample_id": sample.sample_id,
+            "content_hash": sample.content_hash,
             "status": sample.status.value,
             "s_format": sample.s_format,
             "s_common": sample.s_common,

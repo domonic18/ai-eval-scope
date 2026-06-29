@@ -93,34 +93,8 @@ class RuleSetMeta(BaseModel):
     author: str = Field(default="", description="作者")
     created_at: str = Field(default="", description="创建时间 ISO 8601")
     updated_at: str = Field(default="", description="更新时间 ISO 8601")
-    changelog: list[str] = Field(
-        default_factory=list,
-        description="变更摘要列表（按版本顺序）",
-    )
 
     model_config = {"extra": "allow"}
-
-
-class RuleSetChange(BaseModel):
-    """单条变更记录。"""
-
-    version: str = Field(description="变更时版本号")
-    timestamp: str = Field(description="变更时间 ISO 8601")
-    change_type: str = Field(description="变更类型: add|remove|modify|version_bump|apply|rollback")
-    rule_id: str | None = Field(default=None, description="受影响的规则 ID")
-    description: str = Field(default="", description="变更描述")
-    diff: dict[str, Any] = Field(default_factory=dict, description="具体差异")
-
-
-class RuleSetDiff(BaseModel):
-    """两个 RuleSet 版本的差异报告。"""
-
-    version_from: str = Field(description="原版本")
-    version_to: str = Field(description="目标版本")
-    added_rules: list[dict[str, Any]] = Field(default_factory=list, description="新增规则")
-    removed_rules: list[dict[str, Any]] = Field(default_factory=list, description="移除规则")
-    modified_rules: list[dict[str, Any]] = Field(default_factory=list, description="修改规则")
-    unchanged_rules: list[str] = Field(default_factory=list, description="未变更规则 ID")
 
 
 class RuleSet(BaseModel):
@@ -141,10 +115,6 @@ class RuleSet(BaseModel):
     templates: list[RuleTemplate] = Field(
         default_factory=list,
         description="本规则集内联定义的模板",
-    )
-    history: list[RuleSetChange] = Field(
-        default_factory=list,
-        description="变更历史",
     )
 
     model_config = {"extra": "allow", "populate_by_name": True}
