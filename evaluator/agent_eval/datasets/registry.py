@@ -31,7 +31,9 @@ class DatasetEntry:
     default_source: str = "auto"
     category: str = ""
     paper: str = ""
-    knowledge_mapping: dict[str, object] | None = None  # 数据集→knowledge 学科映射（供知识点提取脚本）
+    knowledge_mapping: dict[str, object] | None = (
+        None  # 数据集→knowledge 学科映射（供知识点提取脚本）
+    )
 
     def get_id(self, source: str) -> str | None:
         """按归一化后的 source（"huggingface" / "modelscope"）返回对应源的仓库 id。"""
