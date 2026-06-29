@@ -21,6 +21,7 @@ agent-eval-system/
 - 评估引擎：[`docs/arch/04评估引擎设计.md`](docs/arch/04评估引擎设计.md)
 - 数据管理与配置：[`docs/arch/06数据管理与配置规范.md`](docs/arch/06数据管理与配置规范.md)
 - Web 可观测平台：[`docs/arch/09Web可观测平台架构设计.md`](docs/arch/09Web可观测平台架构设计.md)
+- 第三方系统对接：[`docs/arch/12第三方系统对接方案.md`](docs/arch/12第三方系统对接方案.md)
 - 数据集下载：[`docs/arch/10数据集下载设计.md`](docs/arch/10数据集下载设计.md)
 - 编码规范索引：[`docs/standard/README.md`](docs/standard/README.md)
 - 贡献指南（提交 / 分支 / PR）：[`CONTRIBUTING.md`](CONTRIBUTING.md)
