@@ -113,11 +113,7 @@ Deploy Env:  ${env.DEPLOY_ENV}
                         try {
                             sh '''
                                 mkdir -p report
-                                uv run pytest tests/unit -v --tb=short \
-                                    --junitxml=report/test-results.xml \
-                                    --cov=eval_gateway \
-                                    --cov-report=term-missing \
-                                    --cov-report=html:report/htmlcov
+                                uv run pytest tests/unit -v --tb=short --junitxml=report/test-results.xml
                             '''
                         } catch (Exception e) {
                             error("Gateway - 单元测试失败: ${e.getMessage()}")
@@ -128,15 +124,6 @@ Deploy Env:  ${env.DEPLOY_ENV}
             post {
                 always {
                     junit allowEmptyResults: true, testResults: "${GATEWAY_DIR}/report/test-results.xml"
-                    publishHTML(target: [
-                        allowMissing: true,
-                        alwaysLinkToLastBuild: false,
-                        keepAll: true,
-                        reportDir: "${GATEWAY_DIR}/report/htmlcov",
-                        reportFiles: 'index.html',
-                        reportName: 'Gateway Coverage Report',
-                        reportTitles: ''
-                    ])
                 }
             }
         }

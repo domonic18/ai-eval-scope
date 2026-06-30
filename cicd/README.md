@@ -83,7 +83,7 @@ cicd/
 |------|------|----------|------|
 | 环境准备 | setup-python.sh | — | 安装 Python3 + uv（与 eval 共用） |
 | 代码静态检查 | ruff + mypy (`gateway/`) | 非阻塞 | `ruff check eval_gateway tests` + `mypy eval_gateway --ignore-missing-imports`，JUnit XML |
-| 单元测试 | pytest (`gateway/`) | **阻塞** | `pytest tests/unit`（纯单测，JUnit XML + 覆盖率） |
+| 单元测试 | pytest (`gateway/`) | **阻塞** | `pytest tests/unit`（纯单测，JUnit XML；gateway 未装 pytest-cov，不收集覆盖率） |
 | 镜像构建推送 | docker | **阻塞** | `docker/gateway/Dockerfile`，context=仓库根 |
 
 **Gateway 单测策略**：CI 仅跑 `gateway/tests/unit`（阻塞）；集成测试（marker `integration`，依赖真实 PG）不在 CI 执行。单测 conftest 已 mock PG/langfuse/worker loop，离线可跑。Python 阶段在 `dir("gateway")` 内执行（pyproject 以 path 依赖复用 `../evaluator`）。
