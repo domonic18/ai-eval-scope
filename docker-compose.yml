@@ -91,3 +91,25 @@ services:
         condition: service_healthy
       minio-init:
         condition: service_completed_successfully
+
+  # ── Gateway（第三方接入服务）──
+  # 容器内监听 9000（对齐腾讯云函数默认端口），本地宿主映射 9102 避开 web 的 9000。
+  gateway:
+    build:
+      context: .
+      dockerfile: docker/gateway/Dockerfile
+    env_file: ./.env              # PLATFORM_DATABASE_URL/PLATFORM_KEY_ENCRYPTION_KEY/AGENT_EVAL_*
+    environment:
+      EVALGATEWAY_PORT: 9000
+      EVALGATEWAY_DATABASE_URL: postgresql://${POSTGRES_USER:-eval}:${POSTGRES_PASSWORD:-evalpassword}@postgres:5432/${POSTGRES_DB:-agent_eval}?schema=public
+      EVALGATEWAY_WEB_BASE_URL: http://localhost:9000
+    ports:
+      - "9102:9000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:9000/v1/health')\""]
+      interval: 5s
+      timeout: 3s
+      retries: 10

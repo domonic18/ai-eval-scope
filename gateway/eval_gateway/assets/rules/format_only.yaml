@@ -1,0 +1,30 @@
+version: "1.0"
+description: "纯格式规则集（gateway 冒烟/CI 用，无 LLM 依赖）"
+
+dimensions:
+  - id: functional
+    name: "功能性"
+    weight: 1.0
+  - id: effectiveness
+    name: "效果性"
+    weight: 1.0
+
+cascade:
+  - stage: format_gate
+    name: "格式门控"
+    stop_on_fail: true
+  - stage: commonsense_gate
+    name: "常识门控"
+    stop_on_fail: false
+
+rules:
+  - id: FMT_001
+    name: "输出格式有效"
+    dimension: functional
+    stage: format_gate
+    description: "SUT 必须生成有效的 Markdown 或 HTML 文件"
+    evaluator: format.response_format
+    params:
+      allowed_formats: ["md", "html"]
+    weight: 1.0
+    penalty_on_fail: -3
