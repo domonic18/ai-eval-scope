@@ -10,6 +10,9 @@ export interface User {
   id: string
   email: string
   name: string | null
+  role?: string
+  platformAdmin?: boolean
+  status?: string
 }
 
 export interface Membership {

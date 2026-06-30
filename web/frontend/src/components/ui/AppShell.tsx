@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react"
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom"
 import type { ReactNode } from "react"
 import { api } from "../../api/client"
-import { clearSession, getActiveOrg, loadSession, setActiveOrg } from "../../store/auth"
+import { clearSession, getActiveOrg, loadSession, setActiveOrg, updateSessionUser } from "../../store/auth"
 import type { Membership } from "../../types"
 import { initialOf } from "../../lib/format"
 import {
@@ -10,6 +10,7 @@ import {
   IconBook,
   IconChevronDown,
   IconDashboard,
+  IconLock,
   IconLogout,
   IconMembers,
   IconPlus,
@@ -103,6 +104,7 @@ export function AppShell() {
   const [inviteEmail, setInviteEmail] = useState("")
   const [creatingOrg, setCreatingOrg] = useState(false)
   const [inviting, setInviting] = useState(false)
+  const [platformAdmin, setPlatformAdmin] = useState(!!loadSession()?.user?.platformAdmin)
   const toast = useToast()
   const nav = useNavigate()
   const loc = useLocation()
@@ -114,6 +116,16 @@ export function AppShell() {
       .then((d) => {
         setMemberships(d.memberships)
         setActive(getActiveOrg(d.memberships))
+        // 用 /me 刷新 session user（role/platformAdmin/status 变更后即时反映给 RequireAdmin）
+        updateSessionUser({
+          id: d.id,
+          email: d.email,
+          name: d.name,
+          role: d.role,
+          platformAdmin: d.platformAdmin,
+          status: d.status,
+        })
+        setPlatformAdmin(!!d.platformAdmin)
       })
       .catch((e) => {
         // token 对应用户不存在（清库后旧 session 等）或 401 → 清 session 跳登录，
@@ -412,6 +424,16 @@ export function AppShell() {
                   {it.label}
                 </Link>
               ))}
+              {/* 超管入口：仅 platformAdmin 可见（普通用户看不到，手敲 /admin 亦被 RequireAdmin 重定向） */}
+              {platformAdmin && (
+                <Link
+                  to="/admin"
+                  className={`nav-item ${loc.pathname.startsWith("/admin") ? "active" : ""}`}
+                >
+                  <IconLock size={16} />
+                  管理后台
+                </Link>
+              )}
             </nav>
             <div className="sidebar-foot">
               <Link to="/dashboard" className="nav-item">

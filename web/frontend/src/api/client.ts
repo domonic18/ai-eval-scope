@@ -208,6 +208,163 @@ export const api = {
   async getDebugJob(projectId: string, jobId: string): Promise<DebugJobStatus> {
     return (await http.get(`/projects/${projectId}/debug/jobs/${jobId}`)).data
   },
+
+  /* ── 超管后台 ─────────────────────────────────────── */
+  async adminOverview() {
+    return (await http.get("/admin/stats/overview")).data
+  },
+  async adminTrends(limit = 100) {
+    return (await http.get(`/admin/stats/trends?limit=${limit}`)).data as Array<{
+      run_id: string
+      created_at: string
+      DR: number
+      CPR: number
+      Reward: number
+    }>
+  },
+  async adminScoreDistribution() {
+    return (await http.get("/admin/stats/score-distribution")).data as Array<{
+      bucket: string
+      count: number
+    }>
+  },
+  async adminListUsers(opts: { search?: string; status?: string; page?: number } = {}) {
+    const qs = new URLSearchParams()
+    if (opts.search) qs.set("search", opts.search)
+    if (opts.status) qs.set("status", opts.status)
+    qs.set("page", String(opts.page ?? 1))
+    return (await http.get(`/admin/users?${qs.toString()}`)).data as {
+      items: AdminUser[]
+      total: number
+      page: number
+      size: number
+    }
+  },
+  async adminUpdateUser(id: string, data: { role?: string; status?: string }) {
+    return (await http.patch(`/admin/users/${id}`, data)).data
+  },
+  async adminListOrgs(opts: { search?: string; page?: number } = {}) {
+    const qs = new URLSearchParams()
+    if (opts.search) qs.set("search", opts.search)
+    qs.set("page", String(opts.page ?? 1))
+    return (await http.get(`/admin/orgs?${qs.toString()}`)).data as {
+      items: AdminOrg[]
+      total: number
+      page: number
+      size: number
+    }
+  },
+  async adminDeleteOrg(id: string) {
+    return (await http.delete(`/admin/orgs/${id}`)).data
+  },
+  async adminListProjects(opts: { search?: string; archived?: boolean; page?: number } = {}) {
+    const qs = new URLSearchParams()
+    if (opts.search) qs.set("search", opts.search)
+    if (opts.archived !== undefined) qs.set("archived", String(opts.archived))
+    qs.set("page", String(opts.page ?? 1))
+    return (await http.get(`/admin/projects?${qs.toString()}`)).data as {
+      items: AdminProject[]
+      total: number
+      page: number
+      size: number
+    }
+  },
+  async adminListRuns(opts: { status?: string; search?: string; page?: number } = {}) {
+    const qs = new URLSearchParams()
+    if (opts.status) qs.set("status", opts.status)
+    if (opts.search) qs.set("search", opts.search)
+    qs.set("page", String(opts.page ?? 1))
+    return (await http.get(`/admin/runs?${qs.toString()}`)).data as {
+      items: AdminRun[]
+      total: number
+      page: number
+      size: number
+    }
+  },
+  async adminListArtifacts(opts: { kind?: string; page?: number } = {}) {
+    const qs = new URLSearchParams()
+    if (opts.kind) qs.set("kind", opts.kind)
+    qs.set("page", String(opts.page ?? 1))
+    return (await http.get(`/admin/artifacts?${qs.toString()}`)).data as {
+      items: AdminArtifact[]
+      total: number
+      page: number
+      size: number
+    }
+  },
+  async adminListAudit(opts: { action?: string; page?: number } = {}) {
+    const qs = new URLSearchParams()
+    if (opts.action) qs.set("action", opts.action)
+    qs.set("page", String(opts.page ?? 1))
+    return (await http.get(`/admin/audit?${qs.toString()}`)).data as {
+      items: AdminAuditRow[]
+      total: number
+      page: number
+      size: number
+    }
+  },
+}
+
+export interface AdminUser {
+  id: string
+  email: string
+  name: string | null
+  role: string
+  status: string
+  createdAt: string
+  authType?: string
+  _count?: { memberships: number }
+}
+export interface AdminOrg {
+  id: string
+  name: string
+  slug: string
+  createdBy: string
+  createdAt: string
+  memberCount: number
+  projectCount: number
+  runCount: number
+}
+export interface AdminProject {
+  id: string
+  name: string
+  slug: string
+  orgId: string
+  archivedAt: string | null
+  createdAt: string
+  org: { id: string; name: string }
+  _count: { runs: number; apiKeys: number }
+}
+export interface AdminRun {
+  id: string
+  externalRunId: string
+  mode: string
+  status: string
+  dr: number
+  cpr: number
+  avgReward: number
+  totalSamples: number
+  createdAt: string
+  project: { id: string; name: string; org: { id: string; name: string } }
+}
+export interface AdminArtifact {
+  id: string
+  kind: string
+  sizeBytes: number
+  contentType: string
+  originalName: string | null
+  createdAt: string
+  project: { id: string; name: string }
+  run: { id: string; externalRunId: string }
+}
+export interface AdminAuditRow {
+  id: string
+  orgId: string | null
+  actorUserId: string | null
+  action: string
+  targetType: string | null
+  targetId: string | null
+  createdAt: string
 }
 
 export { saveSession }

@@ -20,6 +20,12 @@ export function saveSession(s: AuthSession & { user: User }): void {
   localStorage.setItem(KEY, JSON.stringify(s))
 }
 
+/** 用 /me 的最新结果刷新 session 内的 user（role/platformAdmin/status 变更后即时反映）。 */
+export function updateSessionUser(user: User): void {
+  const s = loadSession()
+  if (s) localStorage.setItem(KEY, JSON.stringify({ ...s, user }))
+}
+
 export function clearSession(): void {
   localStorage.removeItem(KEY)
   localStorage.removeItem(ORG_KEY)

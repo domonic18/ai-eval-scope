@@ -10,6 +10,14 @@ import RunDetail from "./pages/RunDetail"
 import SampleDetail from "./pages/SampleDetail"
 import ComingSoon from "./pages/ComingSoon"
 import DebugPage from "./pages/DebugPage"
+import AdminLayout from "./pages/admin/AdminLayout"
+import AdminOverview from "./pages/admin/AdminOverview"
+import AdminUsers from "./pages/admin/AdminUsers"
+import AdminOrgs from "./pages/admin/AdminOrgs"
+import AdminProjects from "./pages/admin/AdminProjects"
+import AdminRuns from "./pages/admin/AdminRuns"
+import AdminArtifacts from "./pages/admin/AdminArtifacts"
+import AdminAudit from "./pages/admin/AdminAudit"
 
 /** 根路径：已登录进看板，未登录进登录页（为公开落地页占位）。 */
 function RootRedirect() {
@@ -37,6 +45,14 @@ function RequireOwner() {
   return <Outlet />
 }
 
+/** 超管守卫：非 platformAdmin → 回看板（管理后台独立 shell，不嵌套 AppShell）。 */
+function RequireAdmin() {
+  const session = loadSession()
+  if (!session) return <Navigate to="/login" replace state={{ from: "/admin" }} />
+  if (!session.user?.platformAdmin) return <Navigate to="/dashboard" replace />
+  return <AdminLayout />
+}
+
 export default function App() {
   return (
     <Routes>
@@ -53,6 +69,16 @@ export default function App() {
         <Route element={<RequireOwner />}>
           <Route path="/debug" element={<DebugPage />} />
         </Route>
+      </Route>
+      {/* 超管后台（独立 shell，platformAdmin 专属）*/}
+      <Route element={<RequireAdmin />}>
+        <Route path="/admin" element={<AdminOverview />} />
+        <Route path="/admin/users" element={<AdminUsers />} />
+        <Route path="/admin/orgs" element={<AdminOrgs />} />
+        <Route path="/admin/projects" element={<AdminProjects />} />
+        <Route path="/admin/runs" element={<AdminRuns />} />
+        <Route path="/admin/artifacts" element={<AdminArtifacts />} />
+        <Route path="/admin/audit" element={<AdminAudit />} />
       </Route>
     </Routes>
   )

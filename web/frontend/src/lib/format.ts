@@ -79,3 +79,14 @@ export function initialOf(s: string | null | undefined): string {
   if (!trimmed) return "?"
   return trimmed[0].toUpperCase()
 }
+
+/** 字节数 → "1.2 MB" / "340 KB" / "512 B"。 */
+export function fmtBytes(b: number | null | undefined): string {
+  if (b == null) return "—"
+  if (b < 1024) return `${b} B`
+  const kb = b / 1024
+  if (kb < 1024) return `${kb.toFixed(1)} KB`
+  const mb = kb / 1024
+  if (mb < 1024) return `${mb.toFixed(1)} MB`
+  return `${(mb / 1024).toFixed(2)} GB`
+}
