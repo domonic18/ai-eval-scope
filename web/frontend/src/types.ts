@@ -142,3 +142,34 @@ export interface ApiKeySafe {
 export interface IssuedApiKey extends ApiKeySafe {
   secretKey: string
 }
+
+/** 调试台：gateway 任务态（GET /v1/jobs/{id} 透传）。 */
+export interface DebugJobStatus {
+  job_id: string
+  status: string // queued | running | completed | failed
+  project_id?: string
+  input_kind?: string // upload | inline
+  scope?: string // unit | single
+  rule_set_id?: string
+  run_id?: string | null
+  web_run_url?: string | null
+  metrics?: {
+    run_id?: string
+    metrics?: {
+      DR?: number
+      CPR?: number
+      condR?: number
+      avg_reward?: number
+      avg_soft?: number
+      avg_pref?: number
+      avg_time_ms?: number
+      llm_skipped?: number
+    }
+    total_samples?: number
+    failure_breakdown?: Record<string, number>
+  } | null
+  error?: { message?: string; traceback?: string } | null
+  created_at?: string | null
+  started_at?: string | null
+  finished_at?: string | null
+}

@@ -37,11 +37,17 @@ interface CrumbsApi {
 interface OrgApi {
   activeOrg: string | null
   memberships: Membership[]
+  loading: boolean
   setActive: (orgId: string) => void
 }
 
 const CrumbsContext = createContext<CrumbsApi>({ crumbs: [], setCrumbs: () => {} })
-const OrgContext = createContext<OrgApi>({ activeOrg: null, memberships: [], setActive: () => {} })
+const OrgContext = createContext<OrgApi>({
+  activeOrg: null,
+  memberships: [],
+  loading: true,
+  setActive: () => {},
+})
 
 export const useCrumbs = () => useContext(CrumbsContext)
 export const useOrg = () => useContext(OrgContext)
@@ -84,6 +90,7 @@ interface JoinRequestRow {
 export function AppShell() {
   const [memberships, setMemberships] = useState<Membership[]>([])
   const [activeOrg, setActive] = useState<string | null>(null)
+  const [orgLoading, setOrgLoading] = useState(true)
   const [crumbs, setCrumbs] = useState<Crumb[]>([])
   const [menuOpen, setMenuOpen] = useState(false)
   // 组织切换器 + 团队/成员管理弹窗
@@ -117,6 +124,7 @@ export function AppShell() {
           nav("/login", { replace: true })
         }
       })
+      .finally(() => setOrgLoading(false))
   }, [])
 
   const setActiveOrgId = (orgId: string) => {
@@ -222,7 +230,7 @@ export function AppShell() {
   const pendingRequests = joinRequests.filter((r) => r.status === "pending")
 
   return (
-    <OrgContext.Provider value={{ activeOrg, memberships, setActive: setActiveOrgId }}>
+    <OrgContext.Provider value={{ activeOrg, memberships, loading: orgLoading, setActive: setActiveOrgId }}>
       <CrumbsContext.Provider value={{ crumbs, setCrumbs }}>
         <div className="shell">
           <div className="ambient" />

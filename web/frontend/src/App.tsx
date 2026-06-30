@@ -1,6 +1,6 @@
-import { Navigate, Route, Routes, useLocation } from "react-router-dom"
+import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom"
 import { loadSession } from "./store/auth"
-import { AppShell } from "./components/ui"
+import { AppShell, useOrg } from "./components/ui"
 import LoginPage from "./pages/LoginPage"
 import RegisterPage from "./pages/RegisterPage"
 import JoinPage from "./pages/JoinPage"
@@ -9,6 +9,7 @@ import ProjectDetail from "./pages/ProjectDetail"
 import RunDetail from "./pages/RunDetail"
 import SampleDetail from "./pages/SampleDetail"
 import ComingSoon from "./pages/ComingSoon"
+import DebugPage from "./pages/DebugPage"
 
 /** 根路径：已登录进看板，未登录进登录页（为公开落地页占位）。 */
 function RootRedirect() {
@@ -24,6 +25,18 @@ function RequireAuth() {
   return <AppShell />
 }
 
+/** owner 守卫：当前组织非 owner → 回看板（特殊入口，普通 member 不可见）。 */
+function RequireOwner() {
+  const { memberships, activeOrg, loading } = useOrg()
+  // memberships 异步加载中（orgLoading=true）暂不判定，避免加载未完成被误重定向
+  if (loading) return null
+  const active = memberships.find((m) => m.orgId === activeOrg)
+  if (!active || active.role !== "owner") {
+    return <Navigate to="/dashboard" replace />
+  }
+  return <Outlet />
+}
+
 export default function App() {
   return (
     <Routes>
@@ -37,6 +50,9 @@ export default function App() {
         <Route path="/run/:id" element={<RunDetail />} />
         <Route path="/run/:id/sample/:sid" element={<SampleDetail />} />
         <Route path="/runs" element={<ComingSoon title="全部运行" />} />
+        <Route element={<RequireOwner />}>
+          <Route path="/debug" element={<DebugPage />} />
+        </Route>
       </Route>
     </Routes>
   )

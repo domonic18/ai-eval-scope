@@ -32,6 +32,7 @@ import projectsRouter from "./routes/projects"
 import keysRouter from "./routes/keys"
 import runsRouter from "./routes/runs"
 import artifactsRouter from "./routes/artifacts"
+import debugRouter from "./routes/debug"
 
 // ── 摄取路由（HMAC 鉴权，7d）──
 import ingestRouter from "./routes/public/ingest"
@@ -63,6 +64,7 @@ export function createApp(): express.Application {
   app.use("/api/v1", joinRouter) // 团队发现 + 加入申请/审批（/teams、/me/join-requests、/orgs/:org/join-requests）
   app.use("/api/v1/projects", projectsRouter) // 项目管理 + Query（runs/trends）
   app.use("/api/v1/projects/:id/keys", keysRouter) // API Key 管理（嵌套于项目）
+  app.use("/api/v1/projects/:id/debug", debugRouter) // 调试台（owner 专属，转发 gateway）
   app.use("/api/v1/runs", runsRouter) // 运行/样本详情（Query，§九）
   app.use("/api/v1/artifacts", artifactsRouter) // 制品下载（presigned 重定向）
 

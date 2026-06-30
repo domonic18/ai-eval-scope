@@ -5,7 +5,7 @@
 
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios"
 import { clearSession, getRefreshToken, getToken, saveSession } from "../store/auth"
-import type { ProjectSample, SampleTrendPoint } from "../types"
+import type { DebugJobStatus, ProjectSample, SampleTrendPoint } from "../types"
 
 export const http = axios.create({
   baseURL: "/api/v1",
@@ -189,6 +189,21 @@ export const api = {
     artifactId: string,
   ): Promise<{ url: string; contentType: string; filename: string }> {
     return (await http.get(`/artifacts/${artifactId}/preview`)).data
+  },
+  // ── 调试台：转发 eval-gateway（owner 专属）──
+  async submitDebugJob(
+    projectId: string,
+    file: File,
+    ruleSetId: string,
+  ): Promise<{ job_id: string; status: string; poll_url: string }> {
+    const qs = new URLSearchParams({ filename: file.name, rule_set_id: ruleSetId })
+    return (await http.post(`/projects/${projectId}/debug/jobs?${qs.toString()}`, file, {
+      headers: { "Content-Type": "application/octet-stream" },
+      timeout: 60000,
+    })).data
+  },
+  async getDebugJob(projectId: string, jobId: string): Promise<DebugJobStatus> {
+    return (await http.get(`/projects/${projectId}/debug/jobs/${jobId}`)).data
   },
 }
 

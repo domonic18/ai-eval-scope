@@ -12,6 +12,7 @@ export {
   Reveal,
 } from "./atoms"
 export { Field, Input, Select, Textarea, InputIconWrap } from "./Field"
+export { FilePicker } from "./FilePicker"
 export { Modal } from "./Modal"
 export { Dropdown, DropdownItem, DropdownSeparator, DropdownLabel } from "./Dropdown"
 export { Tabs, Segment } from "./Tabs"

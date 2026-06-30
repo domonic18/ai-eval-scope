@@ -32,6 +32,7 @@ export interface PlatformConfig {
   host: string
   schemaVersion: string // 事件 schema 版本（同时为 /health 上报）
   logLevel: string
+  gatewayBaseUrl: string // eval-gateway 内网地址（调试台转发用，容器内走服务名）
 }
 
 const REQUIRED_AT_RUNTIME = ["PLATFORM_DATABASE_URL"]
@@ -74,6 +75,7 @@ export function loadConfig(): PlatformConfig {
     host: process.env.HOST || "0.0.0.0",
     schemaVersion: "1.0",
     logLevel: process.env.LOG_LEVEL || "info",
+    gatewayBaseUrl: process.env.PLATFORM_GATEWAY_BASE_URL || "http://localhost:9102",
   }
 
   if (cfg.presignTtlSec > 900 || cfg.presignTtlSec < 1) {
