@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import zipfile
 from pathlib import Path
 from typing import Any
@@ -63,18 +64,45 @@ def materialize_inline(
 
 
 def _extract_zip(data: bytes, contents_dir: Path) -> None:
-    """安全解压 zip，限制总大小与路径穿越。"""
+    """安全解压 zip，限制总大小与路径穿越；修正非 UTF-8 文件名编码（避免中文乱码）。"""
     max_uncompressed = 100 * 1024 * 1024
     total = 0
-    with zipfile.ZipFile(file=__import__("io").BytesIO(data)) as zf:
-        for info in zf.infolist():
+    with zipfile.ZipFile(file=io.BytesIO(data)) as zf:
+        infos = zf.infolist()
+        # 先校验全部（大小 + 路径穿越 + 编码修正），再统一解压，避免中途失败留下部分文件
+        for info in infos:
             total += info.file_size
             if total > max_uncompressed:
                 raise ValueError("zip uncompressed size exceeds 100MB")
-            target = contents_dir / info.filename
-            if not _is_safe_path(contents_dir, target):
+            info.filename = _decode_zip_name(info)
+            if not _is_safe_path(contents_dir, contents_dir / info.filename):
                 raise ValueError(f"zip-slip detected: {info.filename}")
-        zf.extractall(contents_dir)
+        for info in infos:
+            zf.extract(info, contents_dir)
+
+
+def _decode_zip_name(info: zipfile.ZipInfo) -> str:
+    """修正 zip 条目文件名编码。
+
+    ZIP 规范默认文件名编码为 CP437；仅当通用位标志 bit 11（0x800）置位时才为 UTF-8。
+    Python ``zipfile`` 遵此规范——未置位时按 CP437 解码，于是以 UTF-8/GBK 实际存储的
+    中文文件名会被误解为乱码（如 ``大单元`` → ``σñºσìòσàâ``），并经 evaluator 摄取入库。
+    此处把文件名回滚为原始字节后，依次按 UTF-8 / GBK / GB18030 重新解码：已是 ASCII
+    或带 UTF-8 标记的文件名原样返回，无法还原时保留原值（幂等、不丢数据）。
+    """
+    name = info.filename
+    if info.flag_bits & 0x800:  # UTF-8 标记已置位 → filename 已是正确的 UTF-8
+        return name
+    try:
+        raw = name.encode("cp437")
+    except (UnicodeEncodeError, LookupError):
+        return name  # 含 cp437 不可编码字符（如已正确解码的 CJK）→ 无需也无法回滚
+    for enc in ("utf-8", "gbk", "gb18030"):
+        try:
+            return raw.decode(enc)
+        except UnicodeDecodeError:
+            continue
+    return name
 
 
 def _is_safe_path(base: Path, target: Path) -> bool:
