@@ -5,7 +5,7 @@
 项目使用 Jenkins CI/CD，**单仓库多流水线**模式 —— 每个交付物一条独立 Jenkinsfile：
 
 ```
-腾讯工蜂 PR Webhook (develop / master)
+腾讯工蜂 PR Webhook (develop / main)
         │
         ├───► ┌──────────────────────────┐
         │     │  Jenkinsfile.eval        │  Eval Pipeline（Python 评估器）
@@ -13,6 +13,14 @@
         │     │  ├── 代码静态检查 (ruff)  │  ← 非阻塞
         │     │  ├── 类型检查 (mypy)      │  ← 非阻塞
         │     │  └── 单元测试 (pytest)    │  ← 阻塞（失败中断）
+        │     └──────────────────────────┘
+        │
+        ├───► ┌──────────────────────────┐
+        │     │  Jenkinsfile.gateway     │  Gateway Pipeline（Python → 镜像）
+        │     │  ├── 环境准备             │
+        │     │  ├── 静态检查 (ruff+mypy) │  ← 非阻塞
+        │     │  ├── 单元测试 (pytest)    │  ← 阻塞（仅 tests/unit）
+        │     │  └── 镜像构建推送 (→ CCR)  │  ← 前置失败则跳过
         │     └──────────────────────────┘
         │
         └───► ┌──────────────────────────┐
@@ -32,6 +40,7 @@
 ```
 cicd/
 ├── Jenkinsfile.eval.groovy       # Eval 流水线（静态检查 + 单元测试）
+├── Jenkinsfile.gateway.groovy    # Gateway 流水线（静态检查 + 单测 + 镜像构建推送）
 ├── Jenkinsfile.web.groovy        # Web 流水线（静态检查 + 单测 + 镜像构建推送）
 ├── README.md                     # 本文件
 └── scripts/
@@ -68,13 +77,26 @@ cicd/
 
 **后端单测策略**：`web/backend` 的集成测试（依赖真实 postgres+minio）以 `*.integration.test.ts` 命名，CI 不执行；仅跑纯单测（`test:unit`）并阻塞。集成测试本地用 `npm run test:integration`（需先 `make docker-up`）。
 
-### 镜像与腾讯云 CCR 约定
+## Gateway 流水线详情
+
+| 阶段 | 工具 | 阻塞策略 | 说明 |
+|------|------|----------|------|
+| 环境准备 | setup-python.sh | — | 安装 Python3 + uv（与 eval 共用） |
+| 代码静态检查 | ruff + mypy (`gateway/`) | 非阻塞 | `ruff check eval_gateway tests` + `mypy eval_gateway --ignore-missing-imports`，JUnit XML |
+| 单元测试 | pytest (`gateway/`) | **阻塞** | `pytest tests/unit`（纯单测，JUnit XML + 覆盖率） |
+| 镜像构建推送 | docker | **阻塞** | `docker/gateway/Dockerfile`，context=仓库根 |
+
+**Gateway 单测策略**：CI 仅跑 `gateway/tests/unit`（阻塞）；集成测试（marker `integration`，依赖真实 PG）不在 CI 执行。单测 conftest 已 mock PG/langfuse/worker loop，离线可跑。Python 阶段在 `dir("gateway")` 内执行（pyproject 以 path 依赖复用 `../evaluator`）。
+
+## 镜像与腾讯云 CCR 约定
+
+Web 与 Gateway 镜像共用同一套 CCR 约定（由 `scripts/docker-build.groovy` 统一实现）：
 
 | 项 | 值 |
 |----|----|
 | Registry | `ccr.ccs.tencentyun.com`（腾讯云容器服务个人版 CCR） |
 | Namespace | `sasan` |
-| 镜像名 | `agent-eval-web` → 全名 `ccr.ccs.tencentyun.com/sasan/agent-eval-web` |
+| 镜像名 | `agent-eval-web` / `agent-eval-gateway` → 全名 `ccr.ccs.tencentyun.com/sasan/<镜像名>` |
 | Tag | `${branch}-${shortHash}-${BUILD_NUMBER}`（如 `main-a1b2c3d-42`） |
 | `:latest` | 仅 `main` 分支额外推送 |
 | 推送重试 | 3 次，失败间隔 5s（见 `scripts/docker-build.groovy`） |
@@ -86,6 +108,7 @@ cicd/
 | Job | Script Path | 触发分支 |
 |-----|-------------|----------|
 | Eval | `cicd/Jenkinsfile.eval.groovy` | develop / master / release |
+| Gateway | `cicd/Jenkinsfile.gateway.groovy` | develop / main（main 推 `:latest`） |
 | Web | `cicd/Jenkinsfile.web.groovy` | develop / master（main 推 `:latest`） |
 
 配置 Webhook 触发（腾讯工蜂 PR/push）。
@@ -97,7 +120,7 @@ cicd/
 | `git-code-tencent-credentials` | Username with password | 腾讯工蜂 Git 凭据（拉代码） |
 | `tencent-registry-credentials` | Username with password | 腾讯云 CCR 账号（`docker.withRegistry` 推送镜像，被 `scripts/docker-build.groovy` 使用） |
 
-> `tencent-registry-credentials` 需在 Jenkins 凭据库新建（用户名/密码 = 腾讯云 CCR 登录账号）；CCR 控制台需确保 `sasan/agent-eval-web` 仓库存在或开启自动创建。
+> `tencent-registry-credentials` 需在 Jenkins 凭据库新建（用户名/密码 = 腾讯云 CCR 登录账号）；CCR 控制台需确保 `sasan/agent-eval-web`、`sasan/agent-eval-gateway` 仓库存在或开启自动创建。
 
 ## 本地验证
 
@@ -121,6 +144,14 @@ cd web/frontend
 npm run lint
 npm run build                   # tsc -b && vite build
 
-# ── 镜像构建（对应 stage 7，仓库根执行）──
+# ── Gateway（对应 Jenkinsfile.gateway）──
+cd gateway
+uv run ruff check eval_gateway tests
+uv run mypy eval_gateway --ignore-missing-imports
+uv run pytest tests/unit -q
+cd ..
+
+# ── 镜像构建（仓库根执行）──
 docker build -f docker/web/Dockerfile -t agent-eval-web:local .
+docker build -f docker/gateway/Dockerfile -t agent-eval-gateway:local .
 ```
