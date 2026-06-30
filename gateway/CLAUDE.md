@@ -14,7 +14,7 @@
 ## 配置（环境变量，从仓库根 `.env` 读取）
 
 复用 Web 的变量：
-- `PLATFORM_DATABASE_URL` — 共享 PG（gateway 在独立 schema `gateway` 建 `jobs` 表，只读 web `public.api_keys` 做验签）。
+- `PLATFORM_DATABASE_URL` — 共享 PG（`gateway.jobs` 表建在独立 schema `gateway`，**由 `make db-init` 创建、gateway 代码不建库**；gateway 只读 web `public.api_keys` 做验签）。
 - `PLATFORM_KEY_ENCRYPTION_KEY` — AES-256-GCM 解密 `api_keys.secret_encrypted`（key = SHA256(此值)）。
 
 gateway 自身（`EVALGATEWAY_*`）：`EVALGATEWAY_PORT`(默认 9000，SCF 要求)、`EVALGATEWAY_WORKER_CONCURRENCY`(默认 2)、`EVALGATEWAY_MAX_UPLOAD_MB`(默认 50)、`EVALGATEWAY_WEB_BASE_URL`、`EVALGATEWAY_UPLOAD_DIR`。

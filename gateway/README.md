@@ -10,8 +10,8 @@
 # 1. 安装（含评估器路径依赖）
 make gateway-dev          # = cd gateway && uv sync --extra dev
 
-# 2. 建库（在共享 PG 的 gateway schema 建 jobs 表）
-make gateway-db-init      # 需先配好 PLATFORM_DATABASE_URL
+# 2. 建库（在共享 PG 的 gateway schema 建 jobs 表；与 web 统一）
+make db-init              # 统一应用 web+gateway 迁移，需先配好 PLATFORM_DATABASE_URL（见 db/README.md）
 
 # 3. 起服务（容器内 9000，本地宿主 9102 避开 web）
 cd gateway && uv run eval-gateway

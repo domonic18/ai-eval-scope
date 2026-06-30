@@ -10,8 +10,9 @@ agent-eval-system/
 ├── web/                # 可观测平台（TypeScript，frontend + backend）
 ├── docs/               # 架构 / 需求 / 规范文档
 ├── cicd/               # 内部 CI（Jenkins + 腾讯工蜂）
+├── db/                 # 数据库建库/迁移唯一来源（web=Prisma + gateway=SQL，make db-init）
 ├── docker/ scripts/    # Dockerfile 与辅助脚本
-├── Makefile            # 顶层任务入口（install / test / check / hooks ...）
+├── Makefile            # 顶层任务入口（install / test / check / db-init / hooks ...）
 └── docker-compose.yml  # 本地全栈（postgres + minio + web）
 ```
 
