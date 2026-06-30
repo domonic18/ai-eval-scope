@@ -15,6 +15,7 @@ import {
   Empty,
   Field,
   FilePicker,
+  Input,
   Metric,
   Select,
   useCrumbs,
@@ -49,6 +50,8 @@ export default function DebugPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [projectId, setProjectId] = useState("")
   const [ruleSet, setRuleSet] = useState(RULE_SETS[0])
+  const [taskId, setTaskId] = useState("")
+  const [taskTitle, setTaskTitle] = useState("")
   const [file, setFile] = useState<File | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -107,7 +110,10 @@ export default function DebugPage() {
     if (!projectId || !file) return
     setSubmitting(true)
     try {
-      const res = await api.submitDebugJob(projectId, file, ruleSet)
+      const res = await api.submitDebugJob(projectId, file, ruleSet, {
+        taskId: taskId.trim() || undefined,
+        taskTitle: taskTitle.trim() || undefined,
+      })
       const proj = projects.find((p) => p.id === projectId)
       setJob({ job_id: res.job_id, status: res.status })
       setActiveJob({ projectId, jobId: res.job_id })
@@ -176,6 +182,47 @@ export default function DebugPage() {
                   ))}
                 </Select>
               </Field>
+              <Field
+                label="任务 ID（task_id，可选）"
+                help="决定 run 内 sample_id；不填则单页恒为 contents。填了即可在结果中按该 ID 定位。"
+                style={{ marginTop: 16 }}
+              >
+                <Input
+                  value={taskId}
+                  onChange={(e) => setTaskId(e.target.value)}
+                  placeholder="如 lesson-3（留空 → contents）"
+                  style={{ width: "100%" }}
+                />
+              </Field>
+              <Field label="任务标题（task_title，可选）" style={{ marginTop: 16 }}>
+                <Input
+                  value={taskTitle}
+                  onChange={(e) => setTaskTitle(e.target.value)}
+                  placeholder="如 分数入门（留空 → job_id）"
+                  style={{ width: "100%" }}
+                />
+              </Field>
+              <Callout variant="info" style={{ marginTop: 16 }}>
+                <strong>参数说明</strong>
+                <div style={{ fontSize: 12, lineHeight: 1.7, marginTop: 6 }}>
+                  <div>
+                    <code>file</code>（必填）：单页 <code>.html/.md</code> 或 <code>.zip</code> 单元包
+                  </div>
+                  <div>
+                    <code>rule_set_id</code>（可选，默认 <code>coursework-default</code>）：
+                    <code>coursework-default</code> 完整含 LLM / <code>format-only</code> 仅格式
+                  </div>
+                  <div>
+                    <code>task_id</code>（可选）：见上，决定 sample_id
+                  </div>
+                  <div>
+                    <code>task_title</code>（可选）：任务标题
+                  </div>
+                  <div>
+                    <code>scope</code> 自动推断：zip → 单元，单文件 → 单页（不可设）
+                  </div>
+                </div>
+              </Callout>
               <Field
                 label="评估内容"
                 help="zip 课件包 = 单元评估（多文件）；单个 .html/.md = 单页评估"

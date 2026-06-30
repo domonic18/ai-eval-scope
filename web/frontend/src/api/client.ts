@@ -195,8 +195,11 @@ export const api = {
     projectId: string,
     file: File,
     ruleSetId: string,
+    opts?: { taskId?: string; taskTitle?: string },
   ): Promise<{ job_id: string; status: string; poll_url: string }> {
     const qs = new URLSearchParams({ filename: file.name, rule_set_id: ruleSetId })
+    if (opts?.taskId) qs.set("task_id", opts.taskId)
+    if (opts?.taskTitle) qs.set("task_title", opts.taskTitle)
     return (await http.post(`/projects/${projectId}/debug/jobs?${qs.toString()}`, file, {
       headers: { "Content-Type": "application/octet-stream" },
       timeout: 60000,

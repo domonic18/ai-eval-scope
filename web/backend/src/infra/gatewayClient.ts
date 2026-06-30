@@ -23,6 +23,10 @@ export interface GatewaySubmitInput {
   filename: string
   fileBytes: Buffer
   ruleSetId: string
+  /** 调用方可设的任务字段；不填则 gateway builder 回退（单页恒为 contents）。 */
+  taskId?: string
+  taskTitle?: string
+  taskSubject?: string
 }
 
 export interface GatewaySubmitResult {
@@ -83,13 +87,19 @@ async function ensureOk(res: Response, method: string, path: string): Promise<vo
 /** POST /v1/jobs（multipart file 上传）。返回 {job_id, status, poll_url}。 */
 export async function submitJob(input: GatewaySubmitInput): Promise<GatewaySubmitResult> {
   const boundary = `----evalgw${randomBytes(12).toString("hex")}`
-  const body = buildMultipart(
-    [
-      { name: "rule_set_id", value: input.ruleSetId },
-      { name: "file", filename: input.filename, mime: "application/octet-stream", data: input.fileBytes },
-    ],
-    boundary,
-  )
+  const fields: Parameters<typeof buildMultipart>[0] = [
+    { name: "rule_set_id", value: input.ruleSetId },
+    { name: "file", filename: input.filename, mime: "application/octet-stream", data: input.fileBytes },
+  ]
+  // 仅在调用方提供时携带 task_*，避免空串覆盖 gateway 默认行为
+  for (const [name, val] of [
+    ["task_id", input.taskId],
+    ["task_title", input.taskTitle],
+    ["task_subject", input.taskSubject],
+  ] as const) {
+    if (val && val.trim()) fields.push({ name, value: val })
+  }
+  const body = buildMultipart(fields, boundary)
   const sig = signHmac(input.secret, "POST", JOB_PATH, body)
   const res = await fetch(`${input.baseUrl}${JOB_PATH}`, {
     method: "POST",

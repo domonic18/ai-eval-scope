@@ -59,10 +59,24 @@ router.post(
       throw new PlatformError("file body is empty", { status: 400, code: "INPUT_INVALID" })
     }
     const ruleSetId = q.rule_set_id || "coursework-default"
+    // 可选任务字段：不填则 gateway 回退（单页 sample_id 恒为 contents）
+    const taskId = q.task_id?.trim() || undefined
+    const taskTitle = q.task_title?.trim() || undefined
+    const taskSubject = q.task_subject?.trim() || undefined
 
     const { publicKey, secret } = await pickProjectKey(projectId, tenant.orgId!)
     const baseUrl = getConfig().gatewayBaseUrl
-    const result = await submitJob({ baseUrl, publicKey, secret, filename, fileBytes, ruleSetId })
+    const result = await submitJob({
+      baseUrl,
+      publicKey,
+      secret,
+      filename,
+      fileBytes,
+      ruleSetId,
+      taskId,
+      taskTitle,
+      taskSubject,
+    })
 
     await AuditService.log({
       orgId: tenant.orgId,
@@ -70,7 +84,7 @@ router.post(
       action: "debug.job.submit",
       targetType: "project",
       targetId: projectId,
-      metadata: { jobId: result.job_id, filename, ruleSetId },
+      metadata: { jobId: result.job_id, filename, ruleSetId, taskId },
     }).catch((e) => getLogger().warn({ error: (e as Error).message }, "audit_log_failed"))
 
     res.status(202).json(result)
