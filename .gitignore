@@ -39,6 +39,7 @@ packages/
 # OS
 .DS_Store
 Thumbs.db
+*.zip
 
 # Ruff
 .ruff_cache/
