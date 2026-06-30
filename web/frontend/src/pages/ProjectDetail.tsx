@@ -219,7 +219,7 @@ export default function ProjectDetail() {
                   value={fmt3(val)}
                   explain={METRIC_EXPLAIN[m.key]}
                   delta={delta}
-                  foot={latest ? `最近 ${timeAgo(latest.created_at)}` : undefined}
+                  recentRunTime={latest ? timeAgo(latest.created_at) : undefined}
                   valueStyle={{ color: metricColor(m.key, val) }}
                 />
               )
