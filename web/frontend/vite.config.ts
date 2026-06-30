@@ -1,5 +1,6 @@
 import { defineConfig } from "vite"
 import react from "@vitejs/plugin-react"
+import tailwindcss from "@tailwindcss/vite"
 import fs from "node:fs"
 import path from "node:path"
 
@@ -12,9 +13,14 @@ const appVersion =
 
 // 后端在 :9000；开发期 /api 与 /health 经代理转发
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   define: {
     "import.meta.env.VITE_APP_VERSION": JSON.stringify(appVersion),
+  },
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "src"),
+    },
   },
   server: {
     port: 5173,
