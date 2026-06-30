@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom"
 import type { ReactNode } from "react"
 import { api } from "@/api/client"
 import { clearSession, getActiveOrg, loadSession, setActiveOrg, updateSessionUser } from "@/store/auth"
+import { APP_VERSION } from "@/version"
 import type { Membership } from "@/types"
 import { initialOf } from "@/lib/format"
 import { Button } from "@/components/shadcn/button"
@@ -239,11 +240,14 @@ export function AppShell() {
           {/* Sidebar */}
           <aside className="flex w-60 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground">
             <div className="border-b p-4">
-              <Link to="/dashboard" className="mb-3 flex items-center gap-2">
-                <div className="flex size-7 items-center justify-center rounded-md bg-primary font-bold text-primary-foreground">
-                  E
-                </div>
+              <Link to="/dashboard" className="mb-3 inline-flex items-center gap-2">
+                <span className="flex size-7 items-center justify-center">
+                  <img src="/logo.svg" alt="EvalScope" className="h-full w-full" />
+                </span>
                 <span className="font-semibold tracking-tight">EvalScope</span>
+                <span className="rounded border border-border bg-secondary px-1 py-0.5 font-mono text-[10px] font-medium tracking-tight text-muted-foreground">
+                  v{APP_VERSION}
+                </span>
               </Link>
               {/* 团队切换器 */}
               <DropdownMenu>
