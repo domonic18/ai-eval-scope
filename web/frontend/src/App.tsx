@@ -1,6 +1,6 @@
 import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom"
 import { loadSession } from "./store/auth"
-import { AppShell, useOrg } from "./components/ui"
+import { AppShell, useOrg } from "./components/AppShell"
 import LoginPage from "./pages/LoginPage"
 import RegisterPage from "./pages/RegisterPage"
 import JoinPage from "./pages/JoinPage"

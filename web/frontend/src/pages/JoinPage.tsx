@@ -1,11 +1,9 @@
-/**
- * 加入团队页（/join）— 发现团队 + 申请加入 + 我的申请状态。
- * 纯团队中心模型：新用户登录后无团队，在此申请加入，owner 审批通过后成为成员。
- */
-
+/** 加入团队页（/join）— 发现团队 + 申请加入 + 我的申请状态。 */
 import { useEffect, useState } from "react"
 import { api } from "../api/client"
-import { Badge, Button, Empty, useToast } from "../components/ui"
+import { Button } from "@/components/shadcn/button"
+import { useToast } from "../components/toast"
+import { PageHead } from "../components/shared"
 
 interface Team {
   id: string
@@ -13,6 +11,17 @@ interface Team {
   slug: string
   isMember: boolean
   requestStatus: string | null
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  pending: "审批中",
+  approved: "已通过",
+  rejected: "已拒绝",
+}
+const STATUS_CLS: Record<string, string> = {
+  pending: "border-yellow-500/40 text-yellow-400",
+  approved: "border-emerald-500/40 text-emerald-400",
+  rejected: "border-red-500/40 text-red-400",
 }
 
 export default function JoinPage() {
@@ -46,56 +55,43 @@ export default function JoinPage() {
   }
 
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: "32px 24px" }}>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 650, marginBottom: 6 }}>加入团队</h1>
-        <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
-          选择一个团队申请加入，owner 审批通过后即可查看和创建该团队下的项目。
-        </p>
-      </div>
-
+    <div className="mx-auto max-w-3xl space-y-6 p-6">
+      <PageHead
+        title="加入团队"
+        sub="选择一个团队申请加入，owner 审批通过后即可查看和创建该团队下的项目。"
+      />
       {loading ? (
-        <div style={{ color: "var(--text-tertiary)", fontSize: 13 }}>加载中…</div>
+        <div className="text-sm text-muted-foreground">加载中…</div>
       ) : teams.length === 0 ? (
-        <Empty title="还没有团队">
-          <span style={{ color: "var(--text-tertiary)", fontSize: 13 }}>
-            联系同事创建团队，或在侧栏「创建团队」自建一个。
-          </span>
-        </Empty>
+        <div className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">
+          还没有团队。联系同事创建团队，或在侧栏「创建团队」自建一个。
+        </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <div className="space-y-3">
           {teams.map((t) => (
             <div
               key={t.id}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "14px 16px",
-                background: "var(--bg-elevated)",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--r-lg)",
-              }}
+              className="flex items-center justify-between rounded-lg border bg-card p-4 text-card-foreground"
             >
-              <div style={{ overflow: "hidden" }}>
-                <div style={{ fontWeight: 600, fontSize: 15 }}>{t.name}</div>
-                <div style={{ fontSize: 12, color: "var(--text-tertiary)" }}>{t.slug}</div>
+              <div className="min-w-0">
+                <div className="font-medium">{t.name}</div>
+                <div className="text-xs text-muted-foreground">{t.slug}</div>
               </div>
-              <div>
-                {t.isMember ? (
-                  <Badge>已加入</Badge>
-                ) : t.requestStatus === "pending" ? (
-                  <Badge>审批中</Badge>
-                ) : t.requestStatus === "approved" ? (
-                  <Badge>已通过</Badge>
-                ) : t.requestStatus === "rejected" ? (
-                  <Badge>已拒绝</Badge>
-                ) : (
-                  <Button variant="primary" onClick={() => apply(t.id)}>
-                    申请加入
-                  </Button>
-                )}
-              </div>
+              {t.isMember ? (
+                <span className="inline-flex items-center rounded-md border border-emerald-500/40 px-2 py-0.5 text-xs font-medium text-emerald-400">
+                  已加入
+                </span>
+              ) : t.requestStatus ? (
+                <span
+                  className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium ${STATUS_CLS[t.requestStatus]}`}
+                >
+                  {STATUS_LABEL[t.requestStatus] ?? t.requestStatus}
+                </span>
+              ) : (
+                <Button size="sm" onClick={() => apply(t.id)}>
+                  申请加入
+                </Button>
+              )}
             </div>
           ))}
         </div>

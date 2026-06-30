@@ -2,24 +2,22 @@ import { useEffect, useMemo, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { api } from "../api/client"
 import { fmt3, fmtMsRaw, num } from "../lib/format"
-import { METRIC_EXPLAIN, METRIC_LABEL, THRESHOLDS, metricColor, runBadge, sampleBadge } from "../lib/eval"
+import { METRIC_LABEL, THRESHOLDS } from "../lib/eval"
 import type { MetricKey } from "../lib/eval"
+import { Button } from "@/components/shadcn/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/shadcn/card"
 import {
-  Badge,
-  Button,
-  Chip,
-  DataTable,
-  Empty,
-  FailBar,
-  Gauge,
-  LinkButton,
-  Metric,
-  Modal,
-  Segment,
-  useCrumbs,
-  useToast,
-} from "../components/ui"
-import { IconDownload, IconExternal, IconTrash } from "../components/icons"
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/shadcn/dialog"
+import { useCrumbs } from "../components/AppShell"
+import { useToast } from "../components/toast"
+import { DataTable, PageHead, StatusBadge, type Column } from "../components/shared"
+import { Download, ExternalLink, Trash2 } from "lucide-react"
 
 interface SampleRow {
   id: string
@@ -52,10 +50,8 @@ interface RunData {
   createdAt: string
   samples: SampleRow[]
 }
-
 type StageFilter = "format" | "commonsense" | "soft" | "pref" | null
 
-/** 判断某阶段是否"不达标"，用于失败分布与样本筛选。 */
 function stageFail(s: SampleRow, stage: NonNullable<StageFilter>): boolean {
   switch (stage) {
     case "format":
@@ -68,14 +64,32 @@ function stageFail(s: SampleRow, stage: NonNullable<StageFilter>): boolean {
       return s.sPref < 0.6
   }
 }
-
-/** 样本最差阶段（用作"失败约束"列代理 chip）。 */
-function worstStage(s: SampleRow): { chip: "hard" | "soft" | "pref"; label: string } | null {
-  if (s.sFormat < 1) return { chip: "hard", label: "format" }
-  if (s.sCommon <= 0) return { chip: "hard", label: "commonsense" }
-  if (s.sSoft < 0.6) return { chip: "soft", label: "soft" }
-  if (s.sPref < 0.6) return { chip: "pref", label: "pref" }
+function worstStage(s: SampleRow): string | null {
+  if (s.sFormat < 1) return "format"
+  if (s.sCommon <= 0) return "commonsense"
+  if (s.sSoft < 0.6) return "soft"
+  if (s.sPref < 0.6) return "pref"
   return null
+}
+function tierCls(chip: "hard" | "soft" | "pref" | null): string {
+  if (chip === "hard") return "border-red-500/40 text-red-400"
+  if (chip === "soft") return "border-yellow-500/40 text-yellow-400"
+  if (chip === "pref") return "border-sky-500/40 text-sky-400"
+  return "border-border text-muted-foreground"
+}
+
+function FailBar({ name, count, max, color, active, onClick }: { name: string; count: number; max: number; color: string; active?: boolean; onClick: () => void }) {
+  return (
+    <button onClick={onClick} className={`block w-full rounded-md px-2 py-1.5 text-left transition-colors hover:bg-accent/50 ${active ? "bg-accent/60" : ""}`}>
+      <div className="mb-1 flex items-center justify-between text-xs">
+        <span>{name}</span>
+        <span className="font-mono tabular-nums text-muted-foreground">{count}</span>
+      </div>
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+        <div className="h-full rounded-full" style={{ width: `${(count / max) * 100}%`, background: color }} />
+      </div>
+    </button>
+  )
 }
 
 export default function RunDetail() {
@@ -90,16 +104,10 @@ export default function RunDetail() {
 
   useEffect(() => {
     if (!id) return
-    api
-      .runDetail(id)
-      .then((r) => {
-        setRun(r)
-        setCrumbs([
-          { label: "项目看板", to: "/dashboard" },
-          { label: <span className="mono">#{r.externalRunId}</span> },
-        ])
-      })
-      .catch(() => setRun(null))
+    api.runDetail(id).then((r) => {
+      setRun(r)
+      setCrumbs([{ label: "项目看板", to: "/dashboard" }, { label: `#${r.externalRunId}` }])
+    }).catch(() => setRun(null))
   }, [id, setCrumbs])
 
   const failCounts = useMemo(() => {
@@ -112,9 +120,7 @@ export default function RunDetail() {
       pref: s.filter((x) => stageFail(x, "pref")).length,
     }
   }, [run])
-  const failMax = failCounts
-    ? Math.max(failCounts.format, failCounts.commonsense, failCounts.soft, failCounts.pref, 1)
-    : 1
+  const failMax = failCounts ? Math.max(failCounts.format, failCounts.commonsense, failCounts.soft, failCounts.pref, 1) : 1
 
   const filteredSamples = useMemo(() => {
     if (!run) return []
@@ -126,33 +132,11 @@ export default function RunDetail() {
     })
   }, [run, seg, stageFilter])
 
-  if (!run) {
-    return (
-      <div className="page">
-        <Empty title="加载运行详情…" />
-      </div>
-    )
-  }
+  if (!run) return <div className="p-8 text-muted-foreground">加载运行详情…</div>
 
-  const langfuseUrl =
-    run.langfuseTraceId && run.langfuseHost
-      ? `${run.langfuseHost}/trace/${run.langfuseTraceId}`
-      : null
+  const langfuseUrl = run.langfuseTraceId && run.langfuseHost ? `${run.langfuseHost}/trace/${run.langfuseTraceId}` : null
   const passCount = run.samples.filter((s) => s.status === "pass" || s.status === "passed").length
   const failCount = run.samples.filter((s) => s.status === "fail" || s.status === "failed").length
-  const rb = runBadge(run.status)
-
-  const metricBadge = (key: MetricKey) => {
-    const val =
-      key === "DR" ? run.dr : key === "CPR" ? run.cpr : key === "Reward"
-        ? run.avgReward : key === "Soft" ? run.avgSoft : run.avgPref
-    const soft = key === "Reward" || key === "Soft" || key === "Pref"
-    return val >= THRESHOLDS[key as "DR" | "CPR" | "Reward" | "Soft" | "Pref"] ? (
-      <Badge variant="success">达标</Badge>
-    ) : (
-      <Badge variant="warning">{soft ? "偏低" : "未达"}</Badge>
-    )
-  }
 
   function downloadReport(kind: "md" | "json") {
     const summary = {
@@ -163,16 +147,8 @@ export default function RunDetail() {
       pass: passCount,
       fail: failCount,
     }
-    let text: string
-    let mime: string
-    if (kind === "json") {
-      text = JSON.stringify(summary, null, 2)
-      mime = "application/json"
-    } else {
-      text = `# 运行 #${run!.externalRunId} 报告\n\n- 样本：${run!.totalSamples}（通过 ${passCount} / 失败 ${failCount}）\n- DR=${fmt3(run!.dr)}（阈值 ≥ ${THRESHOLDS.DR}）\n- CPR=${fmt3(run!.cpr)}（阈值 ≥ ${THRESHOLDS.CPR}）\n- Reward=${fmt3(run!.avgReward)}（阈值 ≥ ${THRESHOLDS.Reward}）\n- CondR=${fmt3(run!.condR)}\n`
-      mime = "text/markdown"
-    }
-    const blob = new Blob([text], { type: mime })
+    const text = kind === "json" ? JSON.stringify(summary, null, 2) : `# 运行 #${run!.externalRunId}\n\n- 样本：${run!.totalSamples}（通过 ${passCount} / 失败 ${failCount}）\n- DR=${fmt3(run!.dr)} · CPR=${fmt3(run!.cpr)} · Reward=${fmt3(run!.avgReward)} · CondR=${fmt3(run!.condR)}\n`
+    const blob = new Blob([text], { type: kind === "json" ? "application/json" : "text/markdown" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
@@ -193,331 +169,198 @@ export default function RunDetail() {
     }
   }
 
+  const metricRows: { k: MetricKey; val: number; thr: number }[] = [
+    { k: "DR", val: run.dr, thr: THRESHOLDS.DR },
+    { k: "CPR", val: run.cpr, thr: THRESHOLDS.CPR },
+    { k: "Soft", val: run.avgSoft, thr: THRESHOLDS.Soft },
+    { k: "Pref", val: run.avgPref, thr: THRESHOLDS.Pref },
+    { k: "Reward", val: run.avgReward, thr: THRESHOLDS.Reward },
+  ]
+  const meta = [
+    { lab: "规则集", val: run.ruleSetVersion ?? "—" },
+    { lab: "评估模式", val: run.mode },
+    { lab: "样本数", val: num(run.totalSamples) },
+    { lab: "平均耗时/样本", val: fmtMsRaw(run.avgTimeMs) },
+    { lab: "创建时间", val: new Date(run.createdAt).toLocaleString("zh-CN") },
+  ]
+
   return (
-    <div className="page reveal">
-      <div className="page-head r-1">
-        <div className="page-title">
-          <h1>
-            <span className="mono">运行 #{run.externalRunId}</span>{" "}
-            <Badge variant={rb.variant} dot={rb.dot} pulse={rb.pulse} style={{ fontSize: 12 }}>
-              {rb.label}
-            </Badge>
-          </h1>
-          <div className="sub">
-            {run.mode} 模式 · {num(run.totalSamples)} 个样本 ·{" "}
-            {new Date(run.createdAt).toLocaleString("zh-CN")}
-          </div>
-        </div>
-        <div className="page-actions">
-          {langfuseUrl && (
-            <LinkButton
-              href={langfuseUrl}
-              target="_blank"
-              rel="noreferrer"
-              icon={<IconExternal size={15} />}
-            >
-              在 Langfuse 查看
-            </LinkButton>
-          )}
-          <Button icon={<IconDownload size={15} />} onClick={() => downloadReport("md")}>
-            下载报告
-          </Button>
-          {run.canDelete && (
-            <Button
-              variant="danger"
-              icon={<IconTrash size={15} />}
-              onClick={() => setDeleteOpen(true)}
-            >
-              删除运行
+    <div className="space-y-6 p-6">
+      <PageHead
+        title={<span className="flex items-center gap-2 font-mono">运行 #{run.externalRunId} <StatusBadge status={run.status} /></span>}
+        sub={`${run.mode} 模式 · ${num(run.totalSamples)} 个样本 · ${new Date(run.createdAt).toLocaleString("zh-CN")}`}
+        right={
+          <div className="flex gap-2">
+            {langfuseUrl && (
+              <Button asChild variant="outline">
+                <a href={langfuseUrl} target="_blank" rel="noreferrer">
+                  <ExternalLink className="size-4" /> Langfuse
+                </a>
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => downloadReport("md")}>
+              <Download className="size-4" /> 下载报告
             </Button>
-          )}
-        </div>
-      </div>
+            {run.canDelete && (
+              <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
+                <Trash2 className="size-4" /> 删除运行
+              </Button>
+            )}
+          </div>
+        }
+      />
 
-      {/* run meta */}
-      <div className="meta-grid r-2" style={{ gridTemplateColumns: "repeat(5,1fr)" }}>
-        <div className="meta-cell">
-          <div className="meta-lab">规则集版本</div>
-          <div className="meta-val mono">{run.ruleSetVersion ?? "—"}</div>
-        </div>
-        <div className="meta-cell">
-          <div className="meta-lab">评估模式</div>
-          <div className="meta-val mono">{run.mode}</div>
-        </div>
-        <div className="meta-cell">
-          <div className="meta-lab">样本数</div>
-          <div className="meta-val mono">{num(run.totalSamples)}</div>
-        </div>
-        <div className="meta-cell">
-          <div className="meta-lab">平均耗时 / 样本</div>
-          <div className="meta-val mono">{fmtMsRaw(run.avgTimeMs)}</div>
-        </div>
-        <div className="meta-cell">
-          <div className="meta-lab">创建时间</div>
-          <div className="meta-val mono">{new Date(run.createdAt).toLocaleString("zh-CN")}</div>
-        </div>
-      </div>
-
-      {/* metric cards */}
-      <div
-        className="r-3"
-        style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 14, marginBottom: 16 }}
-      >
-        {[
-          { k: "DR" as MetricKey, val: run.dr, thr: THRESHOLDS.DR },
-          { k: "CPR" as MetricKey, val: run.cpr, thr: THRESHOLDS.CPR },
-          { k: "Soft" as MetricKey, val: run.avgSoft, thr: THRESHOLDS.Soft },
-          { k: "Pref" as MetricKey, val: run.avgPref, thr: THRESHOLDS.Pref },
-          { k: "Reward" as MetricKey, val: run.avgReward, thr: THRESHOLDS.Reward },
-        ].map((m) => (
-          <Metric
-            key={m.k}
-            label={METRIC_LABEL[m.k as MetricKey]}
-            value={fmt3(m.val)}
-            valueColor={m.thr ? metricColor(m.k as MetricKey, m.val) : undefined}
-            explain={METRIC_EXPLAIN[m.k as MetricKey]}
-            badge={m.thr ? metricBadge(m.k) : undefined}
-            gauge={
-              <Gauge
-                value={m.val}
-                threshold={m.thr}
-                color={m.thr ? metricColor(m.k as MetricKey, m.val) : "var(--accent)"}
-              />
-            }
-            foot={
-              m.thr ? (
-                <span className="muted">阈值 ≥ {m.thr}</span>
-              ) : (
-                <span className="muted">门禁通过样本均值</span>
-              )
-            }
-          />
+      {/* meta */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+        {meta.map((m) => (
+          <Card key={m.lab}>
+            <CardContent className="pt-5">
+              <div className="text-xs text-muted-foreground">{m.lab}</div>
+              <div className="mt-1 font-mono text-sm">{m.val}</div>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
-      <div className="run-two r-4">
+      {/* metric cards */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
+        {metricRows.map((m) => {
+          const ok = m.val >= m.thr
+          return (
+            <Card key={m.k}>
+              <CardContent className="pt-5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">{METRIC_LABEL[m.k]}</span>
+                  <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] ${ok ? "border-emerald-500/40 text-emerald-400" : "border-yellow-500/40 text-yellow-400"}`}>
+                    {ok ? "达标" : "未达"}
+                  </span>
+                </div>
+                <div className={`mt-1 text-2xl font-semibold tabular-nums ${ok ? "" : "text-yellow-400"}`}>{fmt3(m.val)}</div>
+                <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-muted">
+                  <div className={`h-full rounded-full ${ok ? "bg-emerald-500" : "bg-yellow-500"}`} style={{ width: `${Math.min(100, m.val * 100)}%` }} />
+                </div>
+                <div className="mt-1 text-[11px] text-muted-foreground">阈值 ≥ {m.thr}</div>
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
         {/* 失败分布 */}
-        <div className="card">
-          <div className="card-head">
-            <h3>失败分布</h3>
-            <span className="hint">按阶段 · 点击下钻样本</span>
-          </div>
-          <div className="card-body" style={{ padding: "8px 20px 16px" }}>
-            {failCounts &&
-            failCounts.format + failCounts.commonsense + failCounts.soft + failCounts.pref === 0 ? (
-              <Empty title="无失败/偏低项" />
+        <Card>
+          <CardHeader className="flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-base">失败分布</CardTitle>
+            <span className="text-xs text-muted-foreground">点击下钻样本</span>
+          </CardHeader>
+          <CardContent className="space-y-1">
+            {failCounts && failCounts.format + failCounts.commonsense + failCounts.soft + failCounts.pref === 0 ? (
+              <div className="py-6 text-center text-sm text-muted-foreground">无失败/偏低项</div>
             ) : (
               <>
-                <FailBar
-                  name={<Chip variant="hard">format 格式门禁</Chip>}
-                  count={failCounts?.format ?? 0}
-                  max={failMax}
-                  color="var(--danger)"
-                  onClick={() => {
-                    setStageFilter(stageFilter === "format" ? null : "format")
-                    document.getElementById("samples")?.scrollIntoView({ behavior: "smooth" })
-                  }}
-                />
-                <FailBar
-                  name={<Chip variant="hard">commonsense 常识</Chip>}
-                  count={failCounts?.commonsense ?? 0}
-                  max={failMax}
-                  color="var(--danger)"
-                  onClick={() => {
-                    setStageFilter(stageFilter === "commonsense" ? null : "commonsense")
-                    document.getElementById("samples")?.scrollIntoView({ behavior: "smooth" })
-                  }}
-                />
-                <FailBar
-                  name={<Chip variant="soft">soft 软约束偏低</Chip>}
-                  count={failCounts?.soft ?? 0}
-                  max={failMax}
-                  color="var(--warning)"
-                  onClick={() => {
-                    setStageFilter(stageFilter === "soft" ? null : "soft")
-                    document.getElementById("samples")?.scrollIntoView({ behavior: "smooth" })
-                  }}
-                />
-                <FailBar
-                  name={<Chip variant="pref">preference 偏好偏低</Chip>}
-                  count={failCounts?.pref ?? 0}
-                  max={failMax}
-                  color="var(--info)"
-                  onClick={() => {
-                    setStageFilter(stageFilter === "pref" ? null : "pref")
-                    document.getElementById("samples")?.scrollIntoView({ behavior: "smooth" })
-                  }}
-                />
+                <FailBar name="format 格式门禁" count={failCounts?.format ?? 0} max={failMax} color="var(--destructive)" active={stageFilter === "format"} onClick={() => setStageFilter(stageFilter === "format" ? null : "format")} />
+                <FailBar name="commonsense 常识" count={failCounts?.commonsense ?? 0} max={failMax} color="var(--destructive)" active={stageFilter === "commonsense"} onClick={() => setStageFilter(stageFilter === "commonsense" ? null : "commonsense")} />
+                <FailBar name="soft 软约束偏低" count={failCounts?.soft ?? 0} max={failMax} color="var(--chart-3)" active={stageFilter === "soft"} onClick={() => setStageFilter(stageFilter === "soft" ? null : "soft")} />
+                <FailBar name="preference 偏好偏低" count={failCounts?.pref ?? 0} max={failMax} color="var(--chart-4)" active={stageFilter === "pref"} onClick={() => setStageFilter(stageFilter === "pref" ? null : "pref")} />
               </>
             )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* 报告摘要 */}
-        <div className="card">
-          <div className="card-head">
-            <h3>报告摘要</h3>
-            <div className="row" style={{ gap: 8 }}>
-              <Button size="sm" onClick={() => downloadReport("md")}>
-                MD
-              </Button>
-              <Button size="sm" onClick={() => downloadReport("json")}>
-                JSON
-              </Button>
+        <Card>
+          <CardHeader className="flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-base">报告摘要</CardTitle>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => downloadReport("md")}>MD</Button>
+              <Button size="sm" variant="outline" onClick={() => downloadReport("json")}>JSON</Button>
             </div>
-          </div>
-          <div className="card-body report">
-            <h4>总体结论</h4>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
             <p>
-              本次运行 {num(run.totalSamples)} 个样本，
-              <strong className="tag-ok">{passCount} 通过</strong> /{" "}
-              <strong className="tag-bad">{failCount} 失败</strong>。交付率(DR){" "}
-              {run.dr >= THRESHOLDS.DR ? "达标" : "未达"}（{fmt3(run.dr)}）、 常识通过率(CPR){" "}
-              {run.cpr >= THRESHOLDS.CPR ? "达标" : "未达"}（{fmt3(run.cpr)}），{METRIC_LABEL.Reward}{" "}
-              <strong className={run.avgReward >= THRESHOLDS.Reward ? "tag-ok" : "tag-bad"}>
-                {run.avgReward >= THRESHOLDS.Reward
-                  ? "达标"
-                  : `偏低（${fmt3(run.avgReward)} < ${THRESHOLDS.Reward}）`}
-              </strong>
-              。
+              本次 {num(run.totalSamples)} 个样本，<span className="font-medium text-emerald-400">{passCount} 通过</span> / <span className="font-medium text-red-400">{failCount} 失败</span>。
+              DR {run.dr >= THRESHOLDS.DR ? "达标" : "未达"}（{fmt3(run.dr)}）、CPR {run.cpr >= THRESHOLDS.CPR ? "达标" : "未达"}（{fmt3(run.cpr)}），Reward <span className={run.avgReward >= THRESHOLDS.Reward ? "text-emerald-400" : "text-red-400"}>{run.avgReward >= THRESHOLDS.Reward ? "达标" : `偏低（${fmt3(run.avgReward)}）`}</span>。
             </p>
-            <h4>主要问题</h4>
-            <ul>
-              {failCounts && failCounts.format > 0 && (
-                <li>{failCounts.format} 个样本未通过格式门禁（format）。</li>
-              )}
-              {failCounts && failCounts.commonsense > 0 && (
-                <li>{failCounts.commonsense} 个样本存在常识性错误（commonsense）。</li>
-              )}
-              {failCounts && failCounts.soft > 0 && (
-                <li>{failCounts.soft} 个样本软约束评分偏低（soft &lt; 0.6）。</li>
-              )}
-              {failCounts && failCounts.pref > 0 && (
-                <li>{failCounts.pref} 个样本偏好评分偏低（preference &lt; 0.6）。</li>
-              )}
-              {(!failCounts ||
-                failCounts.format + failCounts.commonsense + failCounts.soft + failCounts.pref ===
-                  0) && <li>未发现明显短板。</li>}
+            <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
+              {!!failCounts?.format && <li>{failCounts.format} 个样本未通过格式门禁。</li>}
+              {!!failCounts?.commonsense && <li>{failCounts.commonsense} 个样本存在常识性错误。</li>}
+              {!!failCounts?.soft && <li>{failCounts.soft} 个样本软约束偏低（&lt; 0.6）。</li>}
+              {!!failCounts?.pref && <li>{failCounts.pref} 个样本偏好偏低（&lt; 0.6）。</li>}
+              {(!failCounts || (failCounts.format + failCounts.commonsense + failCounts.soft + failCounts.pref === 0)) && <li>未发现明显短板。</li>}
             </ul>
-            <h4>建议</h4>
-            <ul>
-              <li>点击左侧"失败分布"下钻查看具体样本与约束结论。</li>
-              <li>结合样本详情左右分栏，对照原文核验失败原因。</li>
-            </ul>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* 样本表 */}
-      <div className="card r-5" id="samples">
-        <div className="card-head">
-          <h3>
-            样本{" "}
-            <span className="muted" style={{ fontWeight: 400 }}>
-              {num(run.samples.length)}
-            </span>
-            <span className="muted" style={{ fontSize: 12, fontWeight: 400, marginLeft: 8 }}>
-              被评估的内容单元；单次运行通常 1 个，批量评估时多个
-            </span>
-          </h3>
-          <div className="row" style={{ gap: 8 }}>
-            <Segment<"all" | "fail" | "skip">
-              value={seg}
-              onChange={setSeg}
-              items={[
-                { key: "all", label: "全部" },
-                { key: "fail", label: `失败 ${failCount}` },
-                { key: "skip", label: "跳过" },
-              ]}
-            />
+      <Card id="samples">
+        <CardHeader className="flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-base">
+            样本 <span className="ml-1 text-muted-foreground">{num(run.samples.length)}</span>
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <div className="flex rounded-md border p-0.5">
+              {([["all", "全部"], ["fail", `失败 ${failCount}`], ["skip", "跳过"]] as const).map(([k, label]) => (
+                <button
+                  key={k}
+                  onClick={() => setSeg(k)}
+                  className={`rounded px-2 py-1 text-xs transition-colors ${seg === k ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
             {stageFilter && (
-              <Badge
-                variant="accent"
-                style={{ cursor: "pointer" }}
-                onClick={() => setStageFilter(null)}
-              >
+              <button onClick={() => setStageFilter(null)} className="inline-flex items-center rounded-md border border-primary/40 px-2 py-0.5 text-xs text-primary">
                 筛选：{stageFilter} ✕
-              </Badge>
+              </button>
             )}
           </div>
-        </div>
-        <DataTable<SampleRow>
-          columns={[
-            {
-              key: "externalSampleId",
-              title: "样本 (task_id)",
-              render: (s) => <span className="mono">{s.externalSampleId}</span>,
-            },
-            {
-              key: "status",
-              title: "状态",
-              render: (s) => {
-                const b = sampleBadge(s.status)
-                return <Badge variant={b.variant}>{b.label}</Badge>
+        </CardHeader>
+        <CardContent>
+          <DataTable
+            columns={[
+              { key: "externalSampleId", title: "样本 (task_id)", render: (s) => <span className="font-mono text-xs">{s.externalSampleId}</span> },
+              { key: "status", title: "状态", render: (s) => <StatusBadge status={s.status} /> },
+              { key: "reward", title: METRIC_LABEL.Reward, num: true, render: (s) => <span className={s.reward < 0.5 ? "text-red-400" : "text-emerald-400"}>{fmt3(s.reward)}</span> },
+              { key: "sFormat", title: "S_format", num: true, render: (s) => <span className={s.sFormat < 1 ? "text-red-400" : ""}>{fmt3(s.sFormat)}</span> },
+              { key: "sCommon", title: "S_common", num: true, render: (s) => <span className={s.sCommon <= 0 ? "text-red-400" : ""}>{fmt3(s.sCommon)}</span> },
+              { key: "sSoft", title: "S_soft", num: true, render: (s) => fmt3(s.sSoft) },
+              { key: "sPref", title: "S_pref", num: true, render: (s) => fmt3(s.sPref) },
+              {
+                key: "fail",
+                title: "失败约束",
+                render: (s) => {
+                  const w = worstStage(s)
+                  const chip = w === "format" || w === "commonsense" ? "hard" : w === "soft" ? "soft" : w === "pref" ? "pref" : null
+                  return w ? (
+                    <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[11px] ${tierCls(chip)}`}>{w}</span>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )
+                },
               },
-            },
-            {
-              key: "reward",
-              title: METRIC_LABEL.Reward,
-              num: true,
-              render: (s) => (
-                <span className={s.reward < 0.5 ? "t-del" : "t-add"}>{fmt3(s.reward)}</span>
-              ),
-            },
-            {
-              key: "sFormat",
-              title: "S_format",
-              num: true,
-              render: (s) => (
-                <span className={s.sFormat < 1 ? "t-del" : ""}>{fmt3(s.sFormat)}</span>
-              ),
-            },
-            {
-              key: "sCommon",
-              title: "S_common",
-              num: true,
-              render: (s) => (
-                <span className={s.sCommon <= 0 ? "t-del" : ""}>{fmt3(s.sCommon)}</span>
-              ),
-            },
-            { key: "sSoft", title: "S_soft", num: true, render: (s) => fmt3(s.sSoft) },
-            { key: "sPref", title: "S_pref", num: true, render: (s) => fmt3(s.sPref) },
-            {
-              key: "fail",
-              title: "失败约束",
-              render: (s) => {
-                const w = worstStage(s)
-                return w ? (
-                  <Chip variant={w.chip}>{w.label}</Chip>
-                ) : (
-                  <span className="muted">—</span>
-                )
-              },
-            },
-          ]}
-          rows={filteredSamples}
-          rowKey={(s) => s.id}
-          onRowClick={(s) => nav(`/run/${id}/sample/${s.id}`)}
-          pageSize={15}
-          empty={<span className="muted">无匹配样本</span>}
-        />
-      </div>
+            ] as Column<SampleRow>[]}
+            rows={filteredSamples}
+            rowKey={(s) => s.id}
+            onRowClick={(s) => nav(`/run/${id}/sample/${s.id}`)}
+            empty="无匹配样本"
+          />
+        </CardContent>
+      </Card>
 
-      {/* 删除确认 */}
-      <Modal
-        open={deleteOpen}
-        onClose={() => setDeleteOpen(false)}
-        title="删除运行"
-        desc="删除后该运行的样本、约束结论与制品将从库中永久清除，且无法恢复；走势与看板指标将随之重算。"
-        footer={
-          <>
-            <Button onClick={() => setDeleteOpen(false)}>取消</Button>
-            <Button variant="danger" onClick={doDelete}>
-              确认删除
-            </Button>
-          </>
-        }
-      />
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>删除运行</DialogTitle>
+            <DialogDescription>删除后该运行的样本、约束结论与制品将永久清除，无法恢复；走势与看板指标将随之重算。</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteOpen(false)}>取消</Button>
+            <Button variant="destructive" onClick={doDelete}>确认删除</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

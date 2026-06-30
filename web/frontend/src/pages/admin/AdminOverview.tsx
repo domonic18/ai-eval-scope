@@ -1,7 +1,16 @@
-/** 超管后台 · 总览：全平台计数 + run 指标趋势 + score 分布。 */
+/** 超管后台 · 总览（shadcn/ui + Recharts 重写）：规模卡 + 指标趋势 + score 分布。 */
 import { useEffect, useState } from "react"
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { api } from "../../api/client"
-import { Metric, LineChart, Callout, Badge } from "../../components/ui"
+import { Badge } from "@/components/shadcn/badge"
+import { Alert, AlertDescription, AlertTitle } from "@/components/shadcn/alert"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/shadcn/card"
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/shadcn/chart"
 import { num, fmtBytes } from "../../lib/format"
 
 interface Overview {
@@ -13,9 +22,29 @@ interface Overview {
   artifacts: { total: number; storageBytes: number }
 }
 
+const trendConfig = {
+  DR: { label: "DR", color: "var(--chart-1)" },
+  Reward: { label: "Reward", color: "var(--chart-2)" },
+} satisfies ChartConfig
+const distConfig = { count: { label: "样本数", color: "var(--chart-2)" } } satisfies ChartConfig
+
+function StatCard({ label, value, foot }: { label: string; value: string; foot?: string }) {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="text-3xl font-semibold tracking-tight tabular-nums">{value}</div>
+        {foot && <p className="mt-1 text-xs text-muted-foreground">{foot}</p>}
+      </CardContent>
+    </Card>
+  )
+}
+
 export default function AdminOverview() {
   const [ov, setOv] = useState<Overview | null>(null)
-  const [trends, setTrends] = useState<{ DR: number; CPR: number; Reward: number }[]>([])
+  const [trends, setTrends] = useState<{ created_at: string; DR: number; Reward: number }[]>([])
   const [dist, setDist] = useState<{ bucket: string; count: number }[]>([])
   const [err, setErr] = useState("")
 
@@ -23,97 +52,84 @@ export default function AdminOverview() {
     Promise.all([api.adminOverview(), api.adminTrends(100), api.adminScoreDistribution()])
       .then(([o, t, d]) => {
         setOv(o)
-        setTrends(t)
+        setTrends(t.map((p) => ({ created_at: p.created_at, DR: p.DR, Reward: p.Reward })))
         setDist(d)
       })
       .catch((e) => setErr((e as Error).message))
   }, [])
 
-  if (err) return <Callout variant="warn">加载失败：{err}</Callout>
-  if (!ov) return <div className="page" style={{ padding: 32, color: "var(--text-secondary)" }}>加载中…</div>
+  if (err)
+    return (
+      <div className="p-8">
+        <Alert variant="destructive">
+          <AlertTitle>加载失败</AlertTitle>
+          <AlertDescription>{err}</AlertDescription>
+        </Alert>
+      </div>
+    )
+  if (!ov)
+    return <div className="p-8 text-muted-foreground">加载中…</div>
 
-  const drSeries = [{ name: "DR", color: "var(--signal)", data: trends.map((t) => t.DR) }]
-  const rewardSeries = [{ name: "Reward", color: "var(--accent)", data: trends.map((t) => t.Reward) }]
-  const distMax = Math.max(1, ...dist.map((d) => d.count))
+  const trendData = trends.map((t, i) => ({ i: i + 1, DR: t.DR, Reward: t.Reward }))
 
   return (
-    <div className="page reveal">
-      <div className="page-head r-1">
-        <div className="page-title">
-          <h1>
-            平台总览 <Badge variant="accent">super admin</Badge>
-          </h1>
-          <div className="sub">全平台用户 / 工作组 / 项目 / 评估任务 / 产出物 统计</div>
-        </div>
+    <div className="space-y-6 p-6">
+      <div className="flex items-center gap-3">
+        <h1 className="text-2xl font-semibold tracking-tight">平台总览</h1>
+        <Badge variant="secondary">super admin</Badge>
       </div>
 
-      <div className="card r-2">
-        <div className="card-head">
-          <h3>规模</h3>
-        </div>
-        <div className="card-body">
-          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-            <Metric label="用户" value={num(ov.users.total)} foot={`活跃 ${ov.users.active} · 禁用 ${ov.users.disabled} · 超管 ${ov.users.admins}`} />
-            <Metric label="工作组" value={num(ov.orgs)} />
-            <Metric label="项目" value={num(ov.projects.total)} foot={`归档 ${ov.projects.archived}`} />
-            <Metric label="评估任务" value={num(ov.runs.total)} foot={`完成 ${ov.runs.completed} · 失败 ${ov.runs.failed} · 进行 ${ov.runs.pending}`} />
-            <Metric label="样本" value={num(ov.samples)} />
-            <Metric label="产出物" value={num(ov.artifacts.total)} foot={fmtBytes(ov.artifacts.storageBytes)} />
-          </div>
-        </div>
+      {/* 规模卡 */}
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+        <StatCard label="用户" value={num(ov.users.total)} foot={`活跃 ${ov.users.active} · 禁用 ${ov.users.disabled} · 超管 ${ov.users.admins}`} />
+        <StatCard label="工作组" value={num(ov.orgs)} />
+        <StatCard label="项目" value={num(ov.projects.total)} foot={`归档 ${ov.projects.archived}`} />
+        <StatCard label="评估任务" value={num(ov.runs.total)} foot={`完成 ${ov.runs.completed} · 失败 ${ov.runs.failed} · 进行 ${ov.runs.pending}`} />
+        <StatCard label="样本" value={num(ov.samples)} />
+        <StatCard label="产出物" value={num(ov.artifacts.total)} foot={fmtBytes(ov.artifacts.storageBytes)} />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="r-2">
-        <div className="card">
-          <div className="card-head">
-            <h3>DR 趋势（最近 {trends.length} 次运行）</h3>
-          </div>
-          <div className="card-body">
-            {trends.length > 0 ? <LineChart series={drSeries} /> : <div className="muted">暂无数据</div>}
-          </div>
-        </div>
-        <div className="card">
-          <div className="card-head">
-            <h3>Reward 趋势</h3>
-          </div>
-          <div className="card-body">
-            {trends.length > 0 ? <LineChart series={rewardSeries} /> : <div className="muted">暂无数据</div>}
-          </div>
-        </div>
-      </div>
+      {/* 趋势 */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">DR / Reward 趋势（最近 {trends.length} 次运行）</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={trendConfig} className="h-[240px] w-full">
+              <AreaChart data={trendData} margin={{ left: 4, right: 8, top: 8, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                <XAxis dataKey="i" tickLine={false} axisLine={false} tickMargin={8} fontSize={11} />
+                <YAxis domain={[0, 1]} tickLine={false} axisLine={false} width={32} fontSize={11} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Area dataKey="DR" type="monotone" stroke="var(--color-DR)" fill="var(--color-DR)" fillOpacity={0.12} strokeWidth={2} />
+                <Area dataKey="Reward" type="monotone" stroke="var(--color-Reward)" fill="var(--color-Reward)" fillOpacity={0.12} strokeWidth={2} />
+              </AreaChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
 
-      <div className="card r-2">
-        <div className="card-head">
-          <h3>样本 reward 分布</h3>
-        </div>
-        <div className="card-body">
-          {dist.length === 0 ? (
-            <div className="muted">暂无数据</div>
-          ) : (
-            <div style={{ display: "flex", gap: 4, alignItems: "flex-end", height: 120 }}>
-              {dist.map((d) => (
-                <div
-                  key={d.bucket}
-                  title={`${d.bucket}: ${d.count}`}
-                  style={{
-                    flex: 1,
-                    height: `${(d.count / distMax) * 100}%`,
-                    background: "var(--signal)",
-                    borderRadius: "4px 4px 0 0",
-                    minWidth: 8,
-                  }}
-                />
-              ))}
-            </div>
-          )}
-          <div style={{ display: "flex", gap: 4, marginTop: 4 }}>
-            {dist.map((d) => (
-              <div key={d.bucket} style={{ flex: 1, fontSize: 9, textAlign: "center", color: "var(--text-tertiary)" }}>
-                {d.bucket}
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* score 分布 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">样本 reward 分布</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {dist.length === 0 ? (
+              <div className="text-sm text-muted-foreground">暂无数据</div>
+            ) : (
+              <ChartContainer config={distConfig} className="h-[240px] w-full">
+                <BarChart data={dist} margin={{ left: 4, right: 8, top: 8, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                  <XAxis dataKey="bucket" tickLine={false} axisLine={false} tickMargin={8} fontSize={10} interval={0} />
+                  <YAxis tickLine={false} axisLine={false} width={32} fontSize={11} allowDecimals={false} />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="count" fill="var(--color-count)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ChartContainer>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

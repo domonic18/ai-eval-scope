@@ -3,9 +3,24 @@ import { useParams } from "react-router-dom"
 import { api } from "../api/client"
 import type { ArtifactRow, ConstraintRow } from "../types"
 import { fmt3 } from "../lib/format"
-import { METRIC_LABEL, SCORE_EXPLAIN, STAGES, sampleBadge, tierToChip } from "../lib/eval"
-import { Badge, Button, Empty, Explain, Select, useCrumbs, useToast } from "../components/ui"
-import { IconCaret, IconExternal } from "../components/icons"
+import { METRIC_LABEL, SCORE_EXPLAIN, STAGES } from "../lib/eval"
+import { Button } from "@/components/shadcn/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/shadcn/select"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/shadcn/tooltip"
+import { useCrumbs } from "../components/AppShell"
+import { useToast } from "../components/toast"
+import { ChevronRight, ExternalLink, HelpCircle } from "lucide-react"
 
 interface SampleData {
   id: string
@@ -37,20 +52,16 @@ export default function SampleDetail() {
 
   useEffect(() => {
     if (!id || !sid) return
-    api
-      .sampleDetail(id, sid)
-      .then((s) => {
-        setSample(s)
-        setCrumbs([
-          { label: "项目看板", to: "/dashboard" },
-          { label: "运行", to: `/run/${id}` },
-          { label: <span className="mono">{s.externalSampleId}</span> },
-        ])
-      })
-      .catch(() => setSample(null))
+    api.sampleDetail(id, sid).then((s) => {
+      setSample(s)
+      setCrumbs([
+        { label: "项目看板", to: "/dashboard" },
+        { label: "运行", to: `/run/${id}` },
+        { label: s.externalSampleId },
+      ])
+    }).catch(() => setSample(null))
   }, [id, sid, setCrumbs])
 
-  // 阶段聚合得分（用于阶段头）—— 必须在早退 return 之前调用
   const stageScores = useMemo(() => {
     const cs = sample?.constraintResults ?? []
     const byTier = (t: string) => cs.filter((c) => c.tier === t)
@@ -66,207 +77,168 @@ export default function SampleDetail() {
     }
   }, [sample])
 
-  if (!sample) {
-    return (
-      <div className="page">
-        <Empty title="加载样本详情…" />
-      </div>
-    )
-  }
+  if (!sample) return <div className="p-8 text-muted-foreground">加载样本详情…</div>
 
   const failedCount = sample.constraintResults.filter((c) => !c.passed).length
-  const sb = sampleBadge(sample.status)
 
   return (
-    <>
-      <div className="scanlines" />
+    <div className="flex h-[calc(100vh-3.5rem)] flex-col">
       {/* 样本摘要条 */}
-      <div className="sample-bar">
-        <div className="row" style={{ gap: 10 }}>
-          <span className="mono" style={{ fontWeight: 650, fontSize: 15 }}>
-            {sample.externalSampleId}
+      <div className="flex items-center justify-between border-b px-6 py-3">
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-sm font-semibold">{sample.externalSampleId}</span>
+          <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs ${sample.status === "pass" || sample.status === "passed" ? "border-emerald-500/40 text-emerald-400" : "border-red-500/40 text-red-400"}`}>
+            {sample.status}
           </span>
-          <Badge variant={sb.variant}>{sb.label}</Badge>
-          <Badge variant="neutral">
-            {METRIC_LABEL.Reward}{" "}
-            <b className="mono" style={{ color: "var(--danger)", marginLeft: 3 }}>
-              {fmt3(sample.reward)}
-            </b>
-          </Badge>
+          <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-xs">
+            {METRIC_LABEL.Reward}
+            <b className="ml-1 font-mono text-red-400">{fmt3(sample.reward)}</b>
+          </span>
           {failedCount > 0 && (
-            <Badge variant="danger" dot="var(--danger)">
+            <span className="inline-flex items-center gap-1 rounded-md border border-red-500/40 px-2 py-0.5 text-xs text-red-400">
+              <span className="size-1.5 rounded-full bg-red-500" />
               {failedCount} 项约束失败
-            </Badge>
+            </span>
           )}
         </div>
-        <div className="row" style={{ gap: 8 }}>
-          <Button size="sm" onClick={() => toast.info("请在运行详情的样本表中切换样本")}>
-            上一个
-          </Button>
-          <Button size="sm" onClick={() => toast.info("请在运行详情的样本表中切换样本")}>
-            下一个
-          </Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => toast.info("请在运行详情的样本表中切换样本")}>上一个</Button>
+          <Button size="sm" variant="outline" onClick={() => toast.info("请在运行详情的样本表中切换样本")}>下一个</Button>
         </div>
       </div>
 
-      <div className="split reveal">
+      <div className="grid min-h-0 flex-1 grid-cols-1 overflow-hidden lg:grid-cols-2">
         {/* 左：约束结论 */}
-        <div className="pane pane-left r-1">
-          {STAGES.map((stage) => {
-            const constraints = sample.constraintResults.filter((c) => stage.tiers.includes(c.tier))
-            if (constraints.length === 0) return null
-            return (
-              <div className="stage" key={stage.key}>
-                <div className="stage-head">
-                  <span className="stage-bar" style={{ background: stage.bar }} />
-                  <h3>{stage.title}</h3>
-                  {stage.chips.map((ch) => (
-                    <span key={ch.label} className={`chip chip-${ch.chip}`}>
-                      {ch.label}
-                    </span>
-                  ))}
-                  <span className="stage-score">
+        <div className="overflow-y-auto border-r p-6">
+          <TooltipProvider delayDuration={200}>
+            {STAGES.map((stage) => {
+              const constraints = sample.constraintResults.filter((c) => stage.tiers.includes(c.tier))
+              if (constraints.length === 0) return null
+              return (
+                <div key={stage.key} className="mb-6">
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="h-3 w-1 rounded-full" style={{ background: stage.bar }} />
+                    <h3 className="text-sm font-semibold">{stage.title}</h3>
+                    {stage.chips.map((ch) => (
+                      <span key={ch.label} className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] ${ch.chip === "hard" ? "border-red-500/40 text-red-400" : ch.chip === "soft" ? "border-yellow-500/40 text-yellow-400" : "border-sky-500/40 text-sky-400"}`}>
+                        {ch.label}
+                      </span>
+                    ))}
                     {stage.scoreExplainKey && (
-                      <>
-                        {stage.scoreText?.(stageScores)}{" "}
-                        <Explain content={SCORE_EXPLAIN[stage.scoreExplainKey]} />
-                      </>
+                      <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
+                        {stage.scoreText?.(stageScores)}
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <HelpCircle className="size-3.5 cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {(() => {
+                              const ex = SCORE_EXPLAIN[stage.scoreExplainKey]
+                              return (
+                                <div className="max-w-[220px] space-y-1">
+                                  <div className="font-medium">{ex.title}</div>
+                                  {ex.rows.map((r, i) => (
+                                    <div key={i} className="text-xs">
+                                      <span className="font-mono">{r.dt}</span>：{r.dd}
+                                    </div>
+                                  ))}
+                                </div>
+                              )
+                            })()}
+                          </TooltipContent>
+                        </Tooltip>
+                      </span>
                     )}
-                  </span>
+                  </div>
+                  <div className="space-y-1">
+                    {constraints.map((c) => (
+                      <ConstraintItem key={c.id} c={c} />
+                    ))}
+                  </div>
                 </div>
-                {constraints.map((c) => (
-                  <ConstraintItem key={c.id} c={c} />
-                ))}
-              </div>
-            )
-          })}
-          {sample.constraintResults.length === 0 && <Empty title="无约束结果" />}
+              )
+            })}
+            {sample.constraintResults.length === 0 && (
+              <div className="py-8 text-center text-sm text-muted-foreground">无约束结果</div>
+            )}
+          </TooltipProvider>
         </div>
 
         {/* 右：制品预览 */}
-        <div className="pane pane-right r-2">
+        <div className="flex min-h-0 flex-col">
           <PreviewPane
             artifacts={sample.artifacts}
             isMultimodal={sample.constraintResults.some((c) => c.constraintId?.includes("vision"))}
           />
         </div>
       </div>
-    </>
-  )
-}
-
-/** 单条约束（可展开，失败默认展开高亮）。 */
-function ConstraintItem({ c }: { c: ConstraintRow }) {
-  const [open, setOpen] = useState(!c.passed)
-  const chip = tierToChip(c.tier)
-  const method = c.judgeProvider ? "LLM_JUDGE" : "RULE"
-  return (
-    <div className={`constraint ${!c.passed ? "fail" : ""} ${open ? "open" : ""}`}>
-      <div className="c-head" onClick={() => setOpen((o) => !o)}>
-        {c.passed ? <Badge variant="success">PASS</Badge> : <Badge variant="danger">FAIL</Badge>}
-        <span className="c-name">
-          {c.name}
-          <span className="cid">{c.constraintId}</span>
-        </span>
-        <span className="c-score" style={{ color: c.passed ? "var(--success)" : "var(--danger)" }}>
-          {c.score.toFixed(2)}
-        </span>
-        <IconCaret size={14} className="c-caret" />
-      </div>
-      <div className="c-body">
-        {c.reason && <div className="c-reason">{c.reason}</div>}
-        {/* 用户关心的「存在什么问题」：从 details 提取 errors 结构化展示 */}
-        {constraintErrors(c.details).length > 0 && (
-          <div
-            style={{
-              margin: "8px 0",
-              padding: "8px 10px",
-              background: "rgba(248,81,73,0.06)",
-              border: "1px solid rgba(248,81,73,0.2)",
-              borderRadius: "var(--r-sm)",
-            }}
-          >
-            <div style={{ fontSize: 12, color: "var(--danger)", marginBottom: 4 }}>发现的问题</div>
-            <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: "var(--text-secondary)" }}>
-              {constraintErrors(c.details).map((e, i) => (
-                <li key={i} style={{ marginBottom: 2 }}>
-                  {e}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        <div className="c-meta">
-          <span>
-            <b>方法</b> {method}
-          </span>
-          {c.judgeProvider && (
-            <span>
-              <b>Judge</b> {c.judgeProvider}/{c.judgeModel ?? "?"}
-            </span>
-          )}
-          <span>
-            <b>耗时</b> {Math.round(c.durationMs)}ms
-          </span>
-          {chip !== "hard" && (
-            <span>
-              <b>层级</b> {c.tier}
-            </span>
-          )}
-        </div>
-        {/* 调试详情（原始 JSON，默认折叠，不占主视觉） */}
-        {hasDebug(c) && (
-          <details style={{ marginTop: 10 }}>
-            <summary
-              style={{ cursor: "pointer", color: "var(--text-tertiary)", fontSize: 12, userSelect: "none" }}
-            >
-              调试详情（files_checked / formulas_checked 等技术细节）
-            </summary>
-            <div style={{ marginTop: 6 }}>
-              {c.details && Object.keys(c.details).length > 0 && <DetailsBlock details={c.details} />}
-              {c.moduleResults && Object.keys(c.moduleResults).length > 0 && (
-                <DetailsBlock details={c.moduleResults} />
-              )}
-            </div>
-          </details>
-        )}
-      </div>
     </div>
   )
 }
 
-/** 从 details 提取 errors（具体问题描述，用户关心的「存在什么问题」）。 */
+function ConstraintItem({ c }: { c: ConstraintRow }) {
+  const [open, setOpen] = useState(!c.passed)
+  const method = c.judgeProvider ? "LLM_JUDGE" : "RULE"
+  return (
+    <div className={`rounded-md border ${!c.passed ? "border-red-500/30 bg-red-500/5" : "border-border"}`}>
+      <button onClick={() => setOpen((o) => !o)} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm">
+        {c.passed ? (
+          <span className="inline-flex items-center rounded border border-emerald-500/40 px-1.5 py-0.5 text-[10px] text-emerald-400">PASS</span>
+        ) : (
+          <span className="inline-flex items-center rounded border border-red-500/40 px-1.5 py-0.5 text-[10px] text-red-400">FAIL</span>
+        )}
+        <span className="flex-1 truncate">
+          {c.name}
+          <span className="ml-2 font-mono text-[10px] text-muted-foreground">{c.constraintId}</span>
+        </span>
+        <span className={`font-mono text-xs tabular-nums ${c.passed ? "text-emerald-400" : "text-red-400"}`}>{c.score.toFixed(2)}</span>
+        <ChevronRight className={`size-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-90" : ""}`} />
+      </button>
+      {open && (
+        <div className="space-y-2 border-t px-3 py-2 text-xs">
+          {c.reason && <div className="text-muted-foreground">{c.reason}</div>}
+          {constraintErrors(c.details).length > 0 && (
+            <div className="rounded border border-red-500/20 bg-red-500/5 p-2">
+              <div className="mb-1 font-medium text-red-400">发现的问题</div>
+              <ul className="list-disc space-y-0.5 pl-4 text-muted-foreground">
+                {constraintErrors(c.details).map((e, i) => (
+                  <li key={i}>{e}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground">
+            <span><b className="text-foreground">方法</b> {method}</span>
+            {c.judgeProvider && <span><b className="text-foreground">Judge</b> {c.judgeProvider}/{c.judgeModel ?? "?"}</span>}
+            <span><b className="text-foreground">耗时</b> {Math.round(c.durationMs)}ms</span>
+            {c.tier !== "hard_gate" && c.tier !== "hard_score" && <span><b className="text-foreground">层级</b> {c.tier}</span>}
+          </div>
+          {hasDebug(c) && (
+            <details className="pt-1">
+              <summary className="cursor-pointer text-muted-foreground">调试详情（技术细节）</summary>
+              <div className="mt-1 space-y-2">
+                {c.details && Object.keys(c.details).length > 0 && <pre className="overflow-x-auto rounded bg-muted/50 p-2 text-[11px]">{JSON.stringify(c.details, null, 2)}</pre>}
+                {c.moduleResults && Object.keys(c.moduleResults).length > 0 && <pre className="overflow-x-auto rounded bg-muted/50 p-2 text-[11px]">{JSON.stringify(c.moduleResults, null, 2)}</pre>}
+              </div>
+            </details>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function constraintErrors(details: Record<string, unknown> | null): string[] {
   if (!details) return []
   const e = details.errors
   if (!Array.isArray(e)) return []
   return e.filter((x): x is string => typeof x === "string")
 }
-
-/** 是否有调试详情（原始 JSON，折叠展示）。 */
 function hasDebug(c: ConstraintRow): boolean {
-  return (
-    (!!c.details && Object.keys(c.details).length > 0) ||
-    (!!c.moduleResults && Object.keys(c.moduleResults).length > 0)
-  )
+  return (!!c.details && Object.keys(c.details).length > 0) || (!!c.moduleResults && Object.keys(c.moduleResults).length > 0)
 }
 
-function DetailsBlock({ details }: { details: Record<string, unknown> }) {
-  return (
-    <pre className="code-block" style={{ margin: "0 0 10px", fontSize: 11, padding: "10px 12px" }}>
-      {JSON.stringify(details, null, 2)}
-    </pre>
-  )
-}
-
-/** 右栏制品预览（三 Tab：原始文档 / 渲染截图 / 执行 Trace）。 */
-function PreviewPane({
-  artifacts,
-  isMultimodal,
-}: {
-  artifacts: ArtifactRow[]
-  isMultimodal: boolean
-}) {
+function PreviewPane({ artifacts, isMultimodal }: { artifacts: ArtifactRow[]; isMultimodal: boolean }) {
   const [tab, setTab] = useState<PrevTab>("doc")
   const [preview, setPreview] = useState<PreviewState>({ mode: "none" })
   const [loading, setLoading] = useState(false)
@@ -274,41 +246,24 @@ function PreviewPane({
   const groups = useMemo(() => {
     const isHtml = (a: ArtifactRow) => a.contentType.includes("html") || a.kind === "output"
     const isImg = (a: ArtifactRow) => a.contentType.startsWith("image") || a.kind === "screenshot"
-    const isTrace = (a: ArtifactRow) =>
-      a.kind === "trace" || a.contentType.includes("json") || a.kind === "judge_record"
-    return {
-      doc: artifacts.filter(isHtml),
-      shot: artifacts.filter(isImg),
-      trace: artifacts.filter(isTrace),
-      // 其余文档归入 doc
-    }
+    const isTrace = (a: ArtifactRow) => a.kind === "trace" || a.contentType.includes("json") || a.kind === "judge_record"
+    return { doc: artifacts.filter(isHtml), shot: artifacts.filter(isImg), trace: artifacts.filter(isTrace) }
   }, [artifacts])
 
-  // 当前 Tab 可选制品（doc 兜底包含非截图/非trace的文本制品）
   const docArts = useMemo(() => {
     const used = new Set([...groups.shot, ...groups.trace].map((a) => a.id))
     return artifacts.filter((a) => !used.has(a.id))
   }, [artifacts, groups])
 
-  const listFor = (t: PrevTab): ArtifactRow[] =>
-    t === "doc" ? docArts : t === "shot" ? groups.shot : groups.trace
-  const [selectedId, setSelectedId] = useState<Record<PrevTab, string>>({
-    doc: "",
-    shot: "",
-    trace: "",
-  })
+  const listFor = (t: PrevTab): ArtifactRow[] => (t === "doc" ? docArts : t === "shot" ? groups.shot : groups.trace)
+  const [selectedId, setSelectedId] = useState<Record<PrevTab, string>>({ doc: "", shot: "", trace: "" })
 
   const currentList = listFor(tab)
   const currentId = selectedId[tab] || currentList[0]?.id || ""
   const current = currentList.find((a) => a.id === currentId) || currentList[0]
 
   useEffect(() => {
-    setSelectedId((s) => ({
-      ...s,
-      doc: docArts[0]?.id || "",
-      shot: groups.shot[0]?.id || "",
-      trace: groups.trace[0]?.id || "",
-    }))
+    setSelectedId({ doc: docArts[0]?.id || "", shot: groups.shot[0]?.id || "", trace: groups.trace[0]?.id || "" })
   }, [docArts, groups.shot, groups.trace])
 
   useEffect(() => {
@@ -318,122 +273,75 @@ function PreviewPane({
       return
     }
     setLoading(true)
-    api
-      .artifactPreview(current.id)
-      .then(async (p) => {
-        if (cancelled) return
-        if (p.contentType.includes("html")) {
-          setPreview({ mode: "iframe", url: p.url })
-        } else if (p.contentType.startsWith("image")) {
-          setPreview({ mode: "img", url: p.url })
-        } else {
-          try {
-            const resp = await fetch(p.url)
-            setPreview({ mode: "text", text: await resp.text() })
-          } catch {
-            setPreview({ mode: "text", text: "（无法加载文件内容）" })
-          }
+    api.artifactPreview(current.id).then(async (p) => {
+      if (cancelled) return
+      if (p.contentType.includes("html")) setPreview({ mode: "iframe", url: p.url })
+      else if (p.contentType.startsWith("image")) setPreview({ mode: "img", url: p.url })
+      else {
+        try {
+          const resp = await fetch(p.url)
+          setPreview({ mode: "text", text: await resp.text() })
+        } catch {
+          setPreview({ mode: "text", text: "（无法加载文件内容）" })
         }
-      })
-      .catch(() => !cancelled && setPreview({ mode: "text", text: "（无法加载文件内容）" }))
-      .finally(() => !cancelled && setLoading(false))
+      }
+    }).catch(() => !cancelled && setPreview({ mode: "text", text: "（无法加载文件内容）" })).finally(() => !cancelled && setLoading(false))
     return () => {
       cancelled = true
     }
   }, [current])
 
+  const tabs: [PrevTab, string][] = [["doc", "原始文档"], ...(isMultimodal ? [["shot", "渲染截图"] as [PrevTab, string]] : []), ["trace", "执行 Trace"]]
   const hasAny = artifacts.length > 0
 
   return (
     <>
-      <div className="prev-bar">
-        <div className="prev-tabs">
-          {(
-            [
-              ["doc", "原始文档"],
-              ...(isMultimodal ? ([["shot", "渲染截图"]] as [PrevTab, string][]) : []),
-              ["trace", "执行 Trace"],
-            ] as [PrevTab, string][]
-          ).map(([k, label]) => (
-            <span
-              key={k}
-              className={`prev-tab ${tab === k ? "active" : ""}`}
-              onClick={() => setTab(k)}
-            >
+      <div className="flex items-center justify-between border-b px-4 py-2">
+        <div className="flex rounded-md border p-0.5">
+          {tabs.map(([k, label]) => (
+            <button key={k} onClick={() => setTab(k)} className={`rounded px-2.5 py-1 text-xs transition-colors ${tab === k ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
               {label}
-            </span>
+            </button>
           ))}
         </div>
-        <div className="row" style={{ gap: 8 }}>
+        <div className="flex items-center gap-2">
           {currentList.length > 0 && (
-            <Select
-              style={{ width: "auto" }}
-              value={currentId}
-              onChange={(e) => setSelectedId((s) => ({ ...s, [tab]: e.target.value }))}
-            >
-              {currentList.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.originalName || a.id}
-                </option>
-              ))}
+            <Select value={currentId} onValueChange={(v) => setSelectedId((s) => ({ ...s, [tab]: v }))}>
+              <SelectTrigger className="h-7 w-48 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {currentList.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.originalName || a.id}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           )}
           {current && (
-            <a
-              className="icon-btn"
-              href={api.artifactUrl(current.id)}
-              target="_blank"
-              rel="noreferrer"
-              style={{ display: "inline-flex", textDecoration: "none" }}
-            >
-              <IconExternal size={15} />
+            <a className="inline-flex size-7 items-center justify-center rounded-md hover:bg-accent" href={api.artifactUrl(current.id)} target="_blank" rel="noreferrer">
+              <ExternalLink className="size-4" />
             </a>
           )}
         </div>
       </div>
 
-      <div className="prev-body">
+      <div className="min-h-0 flex-1 overflow-auto bg-muted/20 p-4">
         {!hasAny ? (
-          <Empty title="无制品" children={<>该样本暂无可预览的产出物。</>} />
+          <div className="py-8 text-center text-sm text-muted-foreground">该样本暂无可预览的产出物。</div>
         ) : !current ? (
-          <Empty
-            title={`暂无${tab === "doc" ? "原始文档" : tab === "shot" ? "渲染截图" : "执行 Trace"}制品`}
-          />
+          <div className="py-8 text-center text-sm text-muted-foreground">暂无{tab === "doc" ? "原始文档" : tab === "shot" ? "渲染截图" : "执行 Trace"}制品</div>
         ) : loading ? (
-          <Empty title="加载中…" />
+          <div className="py-8 text-center text-sm text-muted-foreground">加载中…</div>
         ) : preview.mode === "iframe" ? (
-          <iframe
-            src={preview.url}
-            style={{
-              width: "100%",
-              height: "70vh",
-              border: "1px solid var(--border)",
-              borderRadius: 8,
-              background: "#fff",
-            }}
-            title="preview"
-          />
+          <iframe src={preview.url} className="h-[70vh] w-full rounded-lg border bg-white" title="preview" />
         ) : preview.mode === "img" ? (
-          <div style={{ maxWidth: 680, margin: "0 auto" }}>
-            <img
-              src={preview.url}
-              alt="screenshot"
-              style={{ width: "100%", borderRadius: 8, border: "1px solid var(--border)" }}
-            />
+          <div className="mx-auto max-w-2xl">
+            <img src={preview.url} alt="screenshot" className="w-full rounded-lg border" />
           </div>
         ) : (
-          <pre
-            style={{
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-all",
-              background: "var(--bg-inset)",
-              border: "1px solid var(--border)",
-              borderRadius: 8,
-              padding: 16,
-              fontSize: 12.5,
-              color: "var(--text-secondary)",
-            }}
-          >
+          <pre className="overflow-x-auto whitespace-pre-wrap break-all rounded-lg border bg-background p-4 text-xs text-muted-foreground">
             {preview.text}
           </pre>
         )}

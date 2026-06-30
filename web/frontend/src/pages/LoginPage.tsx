@@ -1,24 +1,22 @@
 /**
- * 登录页 — 复刻 SquadSight 视觉（居中卡片 + 密码/SSO Tab），docs/arch/12 §5。
- * Tab=密码登录 / SSO 登录；注册另走 /register。
- * SSO 流程：GET /sso/config 决定 Tab 显隐；点登录 POST /sso/login 跳光华；
- *          回调 /login?sso=success&code=xxx → POST /sso/exchange → saveSession。
+ * 登录页（shadcn/Tailwind 重写）— 密码 / SSO Tab。
+ * SSO：GET /sso/config 显隐；POST /sso/login 跳转；回调 ?sso=success&code → /sso/exchange。
  */
-
 import { useEffect, useRef, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { api, saveSession } from "../api/client"
 import { loadSession } from "../store/auth"
-import { Button, Field, Input, InputIconWrap, Logo, useToast } from "../components/ui"
-import { IconArrowRight, IconKey, IconLock, IconMail } from "../components/icons"
-
-type Mode = "password" | "sso"
+import { Button } from "@/components/shadcn/button"
+import { Input } from "@/components/shadcn/input"
+import { Label } from "@/components/shadcn/label"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/shadcn/tabs"
+import { useToast } from "../components/toast"
+import { ArrowRight, KeyRound, Lock, Mail } from "lucide-react"
 
 export default function LoginPage() {
   const nav = useNavigate()
   const loc = useLocation()
   const toast = useToast()
-  const [mode, setMode] = useState<Mode>("password")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
@@ -27,19 +25,14 @@ export default function LoginPage() {
 
   const redirect = (loc.state as { from?: string } | null)?.from || "/dashboard"
 
-  // 已登录直接进看板；否则拉 SSO 配置决定是否显示 SSO Tab
   useEffect(() => {
     if (loadSession()) {
       nav("/dashboard", { replace: true })
       return
     }
-    api
-      .ssoConfig()
-      .then((d) => setSsoEnabled(d.enabled))
-      .catch(() => setSsoEnabled(false))
+    api.ssoConfig().then((d) => setSsoEnabled(d.enabled)).catch(() => setSsoEnabled(false))
   }, [nav])
 
-  // SSO 回调：?sso=success&code=xxx（换 token）/ ?sso=error&reason=...（失败提示）
   useEffect(() => {
     const params = new URLSearchParams(loc.search)
     const sso = params.get("sso")
@@ -90,114 +83,94 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="auth-page">
-      <div className="ambient" />
-      <div className="auth">
-        <div className="auth-head">
-          <Logo to="/" fontSize={17} />
-          <h1>欢迎回来</h1>
-          <p>登录以访问你的评估控制台</p>
-        </div>
-
-        <div className="auth-card">
-          <div className="auth-tabs">
-            <button
-              type="button"
-              className={mode === "password" ? "active" : ""}
-              onClick={() => setMode("password")}
-            >
-              密码登录
-            </button>
-            <button
-              type="button"
-              className={mode === "sso" ? "active" : ""}
-              onClick={() => setMode("sso")}
-            >
-              SSO 登录
-            </button>
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <div className="w-full max-w-sm space-y-6">
+        <div className="text-center">
+          <div className="mb-3 inline-flex size-9 items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground">
+            E
           </div>
+          <h1 className="text-2xl font-semibold tracking-tight">欢迎回来</h1>
+          <p className="mt-1 text-sm text-muted-foreground">登录以访问你的评估控制台</p>
+        </div>
 
-          {mode === "password" ? (
-            <form onSubmit={submit}>
-              <Field label="邮箱">
-                <InputIconWrap icon={<IconMail size={16} />}>
-                  <Input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@company.com"
-                  />
-                </InputIconWrap>
-              </Field>
-              <Field label="密码">
-                <InputIconWrap icon={<IconLock size={16} />}>
-                  <Input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="输入密码"
-                  />
-                </InputIconWrap>
-              </Field>
-              <Button
-                type="submit"
-                variant="primary"
-                size="lg"
-                disabled={loading}
-                style={{ width: "100%", justifyContent: "center", marginTop: 4 }}
-              >
-                {loading ? "处理中…" : "登录"}
-              </Button>
-            </form>
-          ) : (
-            <div className="sso-panel">
+        <div className="rounded-xl border bg-card p-6 text-card-foreground shadow-sm">
+          <Tabs defaultValue="password">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="password">密码登录</TabsTrigger>
+              <TabsTrigger value="sso">SSO 登录</TabsTrigger>
+            </TabsList>
+            <TabsContent value="password" className="mt-4">
+              <form onSubmit={submit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">邮箱</Label>
+                  <div className="relative">
+                    <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@company.com"
+                      className="pl-9"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">密码</Label>
+                  <div className="relative">
+                    <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type="password"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="输入密码"
+                      className="pl-9"
+                    />
+                  </div>
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "处理中…" : "登录"}
+                </Button>
+              </form>
+            </TabsContent>
+            <TabsContent value="sso" className="mt-4 text-center">
               {ssoEnabled ? (
-                <>
-                  <div className="sso-icon">
-                    <IconKey size={24} />
+                <div className="space-y-4">
+                  <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <KeyRound className="size-6" />
                   </div>
-                  <h3>企业身份认证</h3>
-                  <p>
-                    通过光华平台统一身份认证登录
-                    <br />
-                    无需额外账号密码
-                  </p>
-                  <Button
-                    variant="primary"
-                    size="lg"
-                    disabled={loading}
-                    onClick={handleSso}
-                    style={{ width: "100%", justifyContent: "center", gap: 8 }}
-                  >
-                    <IconKey size={16} />
+                  <div>
+                    <h3 className="font-medium">企业身份认证</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">通过光华平台统一身份认证登录</p>
+                  </div>
+                  <Button className="w-full" disabled={loading} onClick={handleSso}>
+                    <KeyRound className="size-4" />
                     {loading ? "正在跳转…" : "企业账号登录"}
-                    {!loading && <IconArrowRight size={14} />}
+                    {!loading && <ArrowRight className="size-4" />}
                   </Button>
-                  <p className="sso-hint">需要企业管理员开通权限</p>
-                </>
+                  <p className="text-xs text-muted-foreground">需要企业管理员开通权限</p>
+                </div>
               ) : (
-                <>
-                  <div className="sso-icon sso-icon-off">
-                    <IconKey size={22} />
+                <div className="space-y-2 py-4">
+                  <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                    <KeyRound className="size-6" />
                   </div>
-                  <p className="sso-off-title">SSO 登录未启用</p>
-                  <p className="sso-off-desc">请联系管理员配置企业身份认证</p>
-                </>
+                  <p className="font-medium">SSO 登录未启用</p>
+                  <p className="text-sm text-muted-foreground">请联系管理员配置企业身份认证</p>
+                </div>
               )}
-            </div>
-          )}
+            </TabsContent>
+          </Tabs>
         </div>
 
-        <div className="auth-foot">
+        <div className="text-center text-sm text-muted-foreground">
           还没有账号？
-          <a onClick={() => nav("/register")}>立即注册</a>
-        </div>
-        <div style={{ textAlign: "center" }}>
-          <a className="auth-back" onClick={() => nav("/")}>
-            ← 返回首页
-          </a>
+          <button className="ml-1 text-primary hover:underline" onClick={() => nav("/register")}>
+            立即注册
+          </button>
         </div>
       </div>
     </div>

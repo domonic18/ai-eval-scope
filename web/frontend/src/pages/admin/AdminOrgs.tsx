@@ -1,9 +1,18 @@
 /** 超管后台 · 工作组（组织）管理：列表 + 删除（级联）。 */
 import { useEffect, useState } from "react"
 import { api, type AdminOrg } from "../../api/client"
-import { Button, Callout, DataTable, Modal, useToast, type Column } from "../../components/ui"
+import { Button } from "@/components/shadcn/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/shadcn/dialog"
+import { useToast } from "../../components/toast"
+import { DataTable, PageHead, Pager, type Column } from "../../components/shared"
 import { timeAgo } from "../../lib/format"
-import { Pager } from "./AdminUsers"
 
 export default function AdminOrgs() {
   const toast = useToast()
@@ -38,7 +47,16 @@ export default function AdminOrgs() {
   }
 
   const columns: Column<AdminOrg>[] = [
-    { key: "name", title: "工作组", render: (o) => <><div>{o.name}</div><div className="muted" style={{ fontSize: 12 }}>{o.slug}</div></> },
+    {
+      key: "name",
+      title: "工作组",
+      render: (o) => (
+        <div>
+          <div>{o.name}</div>
+          <div className="text-xs text-muted-foreground">{o.slug}</div>
+        </div>
+      ),
+    },
     { key: "members", title: "成员", num: true, render: (o) => o.memberCount },
     { key: "projects", title: "项目", num: true, render: (o) => o.projectCount },
     { key: "runs", title: "运行", num: true, render: (o) => o.runCount },
@@ -47,37 +65,44 @@ export default function AdminOrgs() {
       key: "actions",
       title: "操作",
       render: (o) => (
-        <Button size="sm" variant="danger" onClick={() => setDel(o)}>删除</Button>
+        <Button variant="outline" size="sm" className="text-red-400" onClick={() => setDel(o)}>
+          删除
+        </Button>
       ),
     },
   ]
 
   return (
-    <div className="page reveal">
-      <div className="page-head r-1">
-        <div className="page-title">
-          <h1>工作组管理</h1>
-          <div className="sub">共 {total} 个工作组（删除将级联清除其项目 / 运行 / 制品）</div>
-        </div>
+    <div className="space-y-6 p-6">
+      <PageHead title="工作组管理" sub={`共 ${total} 个工作组（删除将级联清除其项目 / 运行 / 制品）`} />
+      <div className="space-y-3 rounded-lg border bg-card p-4 text-card-foreground">
+        <DataTable columns={columns} rows={rows} rowKey={(o) => o.id} />
+        <Pager page={page} total={total} onPrev={() => load(page - 1)} onNext={() => load(page + 1)} />
       </div>
-      <div className="card r-2">
-        <div className="card-body">
-          <DataTable columns={columns} rows={rows} rowKey={(o) => o.id} pageSize={20} />
-          <Pager page={page} total={total} onPrev={() => load(page - 1)} onNext={() => load(page + 1)} />
-        </div>
-      </div>
-      <Modal
-        open={!!del}
-        onClose={() => setDel(null)}
-        title="删除工作组"
-        footer={<><Button onClick={() => setDel(null)}>取消</Button><Button variant="danger" onClick={confirmDelete}>确认删除</Button></>}
-      >
-        {del && (
-          <Callout variant="warn">
-            将删除工作组 <strong>{del.name}</strong> 及其 <strong>{del.projectCount}</strong> 个项目、<strong>{del.runCount}</strong> 次运行及全部制品。此操作不可恢复。
-          </Callout>
-        )}
-      </Modal>
+
+      <Dialog open={!!del} onOpenChange={(o) => !o && setDel(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>删除工作组</DialogTitle>
+            <DialogDescription>
+              {del && (
+                <span className="text-foreground">
+                  将删除工作组 <strong>{del.name}</strong> 及其 <strong>{del.projectCount}</strong> 个项目、
+                  <strong>{del.runCount}</strong> 次运行及全部制品。此操作不可恢复。
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDel(null)}>
+              取消
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              确认删除
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

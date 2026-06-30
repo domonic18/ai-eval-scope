@@ -2,9 +2,18 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { api, type AdminProject } from "../../api/client"
-import { Badge, Button, DataTable, Field, Input, useToast, type Column } from "../../components/ui"
+import { Button } from "@/components/shadcn/button"
+import { Input } from "@/components/shadcn/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/shadcn/select"
+import { useToast } from "../../components/toast"
+import { DataTable, PageHead, Pager, type Column } from "../../components/shared"
 import { timeAgo } from "../../lib/format"
-import { Pager } from "./AdminUsers"
 
 export default function AdminProjects() {
   const toast = useToast()
@@ -12,11 +21,15 @@ export default function AdminProjects() {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState("")
-  const [archived, setArchived] = useState<boolean | undefined>(undefined)
+  const [archived, setArchived] = useState<string>("")
 
-  async function load(p = 1, s = search, a = archived) {
+  async function load(p = 1) {
     try {
-      const r = await api.adminListProjects({ search: s, archived: a, page: p })
+      const r = await api.adminListProjects({
+        search: search || undefined,
+        archived: archived === "" ? undefined : archived === "true",
+        page: p,
+      })
       setRows(r.items)
       setTotal(r.total)
       setPage(r.page)
@@ -30,39 +43,68 @@ export default function AdminProjects() {
   }, [])
 
   const columns: Column<AdminProject>[] = [
-    { key: "name", title: "项目", render: (p) => <><div>{p.name}</div><div className="muted" style={{ fontSize: 12 }}>{p.slug}</div></> },
+    {
+      key: "name",
+      title: "项目",
+      render: (p) => (
+        <div>
+          <div>{p.name}</div>
+          <div className="text-xs text-muted-foreground">{p.slug}</div>
+        </div>
+      ),
+    },
     { key: "org", title: "工作组", render: (p) => p.org.name },
     { key: "runs", title: "运行", num: true, render: (p) => p._count.runs },
     { key: "keys", title: "API Key", num: true, render: (p) => p._count.apiKeys },
-    { key: "status", title: "状态", render: (p) => <Badge variant={p.archivedAt ? "neutral" : "success"}>{p.archivedAt ? "已归档" : "活跃"}</Badge> },
+    {
+      key: "status",
+      title: "状态",
+      render: (p) =>
+        p.archivedAt ? (
+          <span className="text-xs text-muted-foreground">已归档</span>
+        ) : (
+          <span className="inline-flex items-center rounded-md border border-emerald-500/40 px-2 py-0.5 text-xs font-medium text-emerald-400">
+            活跃
+          </span>
+        ),
+    },
     { key: "created", title: "创建", render: (p) => timeAgo(p.createdAt) },
-    { key: "go", title: "", render: (p) => <Link className="btn btn-sm" to={`/project/${p.id}`}>查看</Link> },
+    {
+      key: "go",
+      title: "",
+      render: (p) => (
+        <Button variant="outline" size="sm" asChild>
+          <Link to={`/project/${p.id}`}>查看</Link>
+        </Button>
+      ),
+    },
   ]
 
   return (
-    <div className="page reveal">
-      <div className="page-head r-1">
-        <div className="page-title">
-          <h1>项目管理</h1>
-          <div className="sub">共 {total} 个项目（跨所有工作组）</div>
+    <div className="space-y-6 p-6">
+      <PageHead title="项目管理" sub={`共 ${total} 个项目（跨所有工作组）`} />
+      <div className="space-y-3 rounded-lg border bg-card p-4 text-card-foreground">
+        <div className="flex gap-2">
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="名称 / slug"
+            onKeyDown={(e) => e.key === "Enter" && load(1)}
+          />
+          <Select value={archived} onValueChange={setArchived}>
+            <SelectTrigger className="w-32">
+              <SelectValue placeholder="全部" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全部</SelectItem>
+              <SelectItem value="false">活跃</SelectItem>
+              <SelectItem value="true">已归档</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button onClick={() => load(1)}>筛选</Button>
         </div>
-      </div>
-      <div className="card r-2">
-        <div className="card-body">
-          <Field label="筛选">
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="名称 / slug" style={{ flex: 1 }} onKeyDown={(e) => e.key === "Enter" && load(1)} />
-              <select className="input" value={archived === undefined ? "" : String(archived)} onChange={(e) => { const v = e.target.value; setArchived(v === "" ? undefined : v === "true") }}>
-                <option value="">全部</option>
-                <option value="false">活跃</option>
-                <option value="true">已归档</option>
-              </select>
-              <Button onClick={() => load(1)}>筛选</Button>
-            </div>
-          </Field>
-          <DataTable columns={columns} rows={rows} rowKey={(p) => p.id} pageSize={20} />
-          <Pager page={page} total={total} onPrev={() => load(page - 1)} onNext={() => load(page + 1)} />
-        </div>
+        <DataTable columns={columns} rows={rows} rowKey={(p) => p.id} />
+        <Pager page={page} total={total} onPrev={() => load(page - 1)} onNext={() => load(page + 1)} />
       </div>
     </div>
   )

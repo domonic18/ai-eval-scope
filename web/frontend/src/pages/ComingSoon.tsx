@@ -1,6 +1,7 @@
 import { useEffect } from "react"
-import { useCrumbs, Empty } from "../components/ui"
-import { IconBook } from "../components/icons"
+import { useCrumbs } from "../components/AppShell"
+import { PageHead } from "../components/shared"
+import { BookOpen } from "lucide-react"
 
 /** 占位页：原型中尚未落地的页面（全部运行）。 */
 export default function ComingSoon({ title }: { title: string }) {
@@ -10,21 +11,12 @@ export default function ComingSoon({ title }: { title: string }) {
   }, [title, setCrumbs])
 
   return (
-    <div className="page reveal">
-      <div className="page-head r-1">
-        <div className="page-title">
-          <h1>{title}</h1>
-          <div className="sub">该页面将在后续迭代上线</div>
-        </div>
-      </div>
-      <div className="card r-2">
-        <div className="card-body">
-          <Empty
-            icon={<IconBook size={40} />}
-            title={`${title} 页面规划中`}
-            children={<>对应高保真原型已就绪，将随后续迭代落地。</>}
-          />
-        </div>
+    <div className="space-y-6 p-6">
+      <PageHead title={title} sub="该页面将在后续迭代上线" />
+      <div className="rounded-lg border bg-card p-10 text-center text-card-foreground">
+        <BookOpen className="mx-auto size-10 text-muted-foreground" />
+        <h3 className="mt-3 font-medium">{title} 页面规划中</h3>
+        <p className="mt-1 text-sm text-muted-foreground">对应高保真原型已就绪，将随后续迭代落地。</p>
       </div>
     </div>
   )

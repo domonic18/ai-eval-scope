@@ -4,52 +4,31 @@ import { api } from "../api/client"
 import type { DashboardProject, TrendPoint } from "../types"
 import { fmt3, num, timeAgo } from "../lib/format"
 import { METRIC_LABEL } from "../lib/eval"
+import { Button } from "@/components/shadcn/button"
+import { Input } from "@/components/shadcn/input"
+import { Label } from "@/components/shadcn/label"
+import { Card, CardContent } from "@/components/shadcn/card"
+import { Skeleton } from "@/components/shadcn/skeleton"
 import {
-  Badge,
-  Button,
-  Empty,
-  Field,
-  Input,
-  Modal,
-  Skeleton,
-  Sparkline,
-  useCrumbs,
-  useOrg,
-  useToast,
-} from "../components/ui"
-import { IconPlus, IconRefresh } from "../components/icons"
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/shadcn/dialog"
+import { Sparkline } from "@/components/Sparkline"
+import { useCrumbs, useOrg } from "../components/AppShell"
+import { useToast } from "../components/toast"
+import { PageHead } from "../components/shared"
+import { Plus, RefreshCw } from "lucide-react"
 
-function projectHealth(p: DashboardProject): {
-  variant: "success" | "warning" | "neutral"
-  label: string
-  dot: string
-  sparkColor: string
-} {
-  if (!p.latestRun)
-    return {
-      variant: "neutral",
-      label: "未运行",
-      dot: "var(--text-tertiary)",
-      sparkColor: "var(--text-tertiary)",
-    }
-  const dr = p.latestRun.dr
+function healthColor(p: DashboardProject): { dot: string; spark: string; label: string; cls: string } {
+  const dr = p.latestRun?.dr
   if (dr == null)
-    return {
-      variant: "neutral",
-      label: "未运行",
-      dot: "var(--text-tertiary)",
-      sparkColor: "var(--signal)",
-    }
-  if (dr >= 0.95)
-    return { variant: "success", label: "健康", dot: "var(--success)", sparkColor: "var(--signal)" }
-  if (dr >= 0.9)
-    return {
-      variant: "warning",
-      label: "关注",
-      dot: "var(--warning)",
-      sparkColor: "var(--warning)",
-    }
-  return { variant: "warning", label: "关注", dot: "var(--warning)", sparkColor: "var(--warning)" }
+    return { dot: "bg-muted-foreground", spark: "var(--muted-foreground)", label: "未运行", cls: "border-border text-muted-foreground" }
+  if (dr >= 0.95) return { dot: "bg-emerald-500", spark: "var(--chart-2)", label: "健康", cls: "border-emerald-500/40 text-emerald-400" }
+  return { dot: "bg-yellow-500", spark: "var(--chart-3)", label: "关注", cls: "border-yellow-500/40 text-yellow-400" }
 }
 
 export default function Dashboard() {
@@ -79,10 +58,10 @@ export default function Dashboard() {
       const ps: DashboardProject[] = await api.dashboard(activeOrg)
       setProjects(ps)
       const entries = await Promise.all(
-        ps.map(async (p: DashboardProject): Promise<[string, number[]]> => {
+        ps.map(async (p): Promise<[string, number[]]> => {
           try {
             const t: TrendPoint[] = await api.projectTrends(p.id, 8)
-            return [p.id, t.map((x: TrendPoint) => x.DR).filter((v): v is number => v != null)]
+            return [p.id, t.map((x) => x.DR).filter((v): v is number => v != null)]
           } catch {
             return [p.id, []]
           }
@@ -124,169 +103,137 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="page reveal">
-      <div className="page-head r-1">
-        <div className="page-title">
-          <h1>项目看板</h1>
-          <div className="sub">我的全部评估项目</div>
-        </div>
-        <div className="page-actions">
-          <Button icon={<IconRefresh size={15} />} onClick={load}>
-            刷新
-          </Button>
-          <Button
-            variant="primary"
-            icon={<IconPlus size={15} />}
-            onClick={() => setCreateOpen(true)}
-          >
-            新建项目
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-6 p-6">
+      <PageHead
+        title="项目看板"
+        sub="我的全部评估项目"
+        right={
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={load}>
+              <RefreshCw className="size-4" /> 刷新
+            </Button>
+            <Button onClick={() => setCreateOpen(true)}>
+              <Plus className="size-4" /> 新建项目
+            </Button>
+          </div>
+        }
+      />
 
       {projects === null ? (
-        <div className="proj-grid r-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[0, 1, 2].map((i) => (
-            <div className="card pc" key={i}>
-              <Skeleton height={18} width="60%" />
-              <div style={{ height: 28, margin: "14px 0" }}>
-                <Skeleton height={28} />
-              </div>
-              <Skeleton height={18} />
-            </div>
+            <Card key={i}>
+              <CardContent className="space-y-3 pt-6">
+                <Skeleton className="h-4 w-3/5" />
+                <Skeleton className="h-7 w-full" />
+                <Skeleton className="h-4 w-full" />
+              </CardContent>
+            </Card>
           ))}
         </div>
       ) : projects.length === 0 ? (
-        <div className="card r-2">
-          <div className="card-body">
-            <Empty
-              title="暂无评估项目"
-              children={<>点击右上角「新建项目」创建第一个评估项目。</>}
-            />
-          </div>
-        </div>
+        <Card>
+          <CardContent className="p-10 text-center text-sm text-muted-foreground">
+            暂无评估项目。点击右上角「新建项目」创建第一个评估项目。
+          </CardContent>
+        </Card>
       ) : (
-        <div className="proj-grid r-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((p) => {
-            const h = projectHealth(p)
+            const h = healthColor(p)
             const drVal = p.latestRun?.dr
-            const drColor =
-              drVal == null
-                ? "var(--text-tertiary)"
-                : drVal >= 0.95
-                  ? "var(--success)"
-                  : "var(--warning)"
+            const drCls = drVal == null ? "text-muted-foreground" : drVal >= 0.95 ? "text-emerald-400" : "text-yellow-400"
             return (
-              <Link
-                key={p.id}
-                to={`/project/${p.id}`}
-                className={`card-link pc ${!p.latestRun ? "" : ""}`}
-                style={!p.latestRun ? { opacity: 0.75 } : undefined}
-              >
-                <div className="pc-head">
-                  <div>
-                    <div className="pc-name">{p.name}</div>
-                    <div className="pc-slug">
-                      {p.slug}
-                      <span className="muted" style={{ marginLeft: 6 }}>
-                        · 创建者 {p.ownerName}
+              <Link key={p.id} to={`/project/${p.id}`} className="block">
+                <Card className="transition-colors hover:border-primary/50 hover:bg-accent/40">
+                  <CardContent className="space-y-3 pt-6">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="truncate font-medium">{p.name}</div>
+                        <div className="truncate text-xs text-muted-foreground">
+                          {p.slug} · 创建者 {p.ownerName}
+                        </div>
+                      </div>
+                      <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium ${h.cls}`}>
+                        <span className={`size-1.5 rounded-full ${h.dot}`} />
+                        {h.label}
                       </span>
                     </div>
-                  </div>
-                  <Badge variant={h.variant} dot={h.dot}>
-                    {h.label}
-                  </Badge>
-                </div>
 
-                {(sparks[p.id]?.length ?? 0) > 1 ? (
-                  <Sparkline data={sparks[p.id]} color={h.sparkColor} />
-                ) : (
-                  <div
-                    style={{
-                      height: 28,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "var(--text-quaternary)",
-                      fontSize: 11,
-                    }}
-                  >
-                    {p.latestRun ? "暂无趋势数据" : ""}
-                  </div>
-                )}
-
-                <div className="pc-stats">
-                  <div>
-                    <div className="pc-stat-val" style={{ color: drColor }}>
-                      {fmt3(p.latestRun?.dr)}
+                    <div className="flex h-7 items-center">
+                      {(sparks[p.id]?.length ?? 0) > 1 ? (
+                        <Sparkline data={sparks[p.id]} color={h.spark} width={260} height={28} />
+                      ) : (
+                        <span className="text-xs text-muted-foreground/60">
+                          {p.latestRun ? "暂无趋势数据" : ""}
+                        </span>
+                      )}
                     </div>
-                    <div className="pc-stat-lab">{METRIC_LABEL.DR}</div>
-                  </div>
-                  <div>
-                    <div className="pc-stat-val">{fmt3(p.latestRun?.avgReward)}</div>
-                    <div className="pc-stat-lab">{METRIC_LABEL.Reward}</div>
-                  </div>
-                  <div>
-                    <div className="pc-stat-val">{num(p.runCount)}</div>
-                    <div className="pc-stat-lab">运行数</div>
-                  </div>
-                </div>
 
-                <div className="pc-foot">
-                  <span>
-                    {p.latestRun
-                      ? `最近运行 ${timeAgo(p.latestRun.createdAt)}`
-                      : "等待首个运行接入"}
-                  </span>
-                  {p.latestRun && <span className="mono">#{p.latestRun.runId.slice(-8)}</span>}
-                </div>
+                    <div className="grid grid-cols-3 gap-2 border-t pt-3">
+                      <div>
+                        <div className={`text-lg font-semibold tabular-nums ${drCls}`}>{fmt3(p.latestRun?.dr)}</div>
+                        <div className="text-[11px] text-muted-foreground">{METRIC_LABEL.DR}</div>
+                      </div>
+                      <div>
+                        <div className="text-lg font-semibold tabular-nums">{fmt3(p.latestRun?.avgReward)}</div>
+                        <div className="text-[11px] text-muted-foreground">{METRIC_LABEL.Reward}</div>
+                      </div>
+                      <div>
+                        <div className="text-lg font-semibold tabular-nums">{num(p.runCount)}</div>
+                        <div className="text-[11px] text-muted-foreground">运行数</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>
+                        {p.latestRun ? `最近运行 ${timeAgo(p.latestRun.createdAt)}` : "等待首个运行接入"}
+                      </span>
+                      {p.latestRun && <span className="font-mono">#{p.latestRun.runId.slice(-8)}</span>}
+                    </div>
+                  </CardContent>
+                </Card>
               </Link>
             )
           })}
 
-          {/* 新建项目虚线块 */}
-          <button className="card-link pc-new" onClick={() => setCreateOpen(true)}>
-            <IconPlus size={28} />
-            <span style={{ fontSize: 13, fontWeight: 550 }}>新建项目</span>
+          <button
+            onClick={() => setCreateOpen(true)}
+            className="flex min-h-[180px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
+          >
+            <Plus className="size-7" />
+            <span className="text-sm font-medium">新建项目</span>
           </button>
         </div>
       )}
 
-      <Modal
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        title="新建项目"
-        desc="项目是评估数据的容器，对应一类被测 Agent"
-        footer={
-          <>
-            <Button onClick={() => setCreateOpen(false)}>取消</Button>
-            <Button variant="primary" onClick={doCreate} disabled={creating}>
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>新建项目</DialogTitle>
+            <DialogDescription>项目是评估数据的容器，对应一类被测 Agent</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="p-name">项目名称</Label>
+              <Input id="p-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="如：课件生成评估" autoFocus />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="p-slug">Slug（项目唯一标识）</Label>
+              <Input id="p-slug" className="font-mono" value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="courseware" />
+              <p className="text-xs text-muted-foreground">用于接入标识与 URL，仅小写字母、数字、连字符</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>
+              取消
+            </Button>
+            <Button onClick={doCreate} disabled={creating}>
               {creating ? "创建中…" : "创建并配置接入"}
             </Button>
-          </>
-        }
-      >
-        <Field label="项目名称">
-          <Input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="如：课件生成评估"
-            autoFocus
-          />
-        </Field>
-        <Field
-          label="Slug（项目唯一标识）"
-          help="用于接入标识与 URL，仅小写字母、数字、连字符"
-          style={{ marginBottom: 0 }}
-        >
-          <Input
-            className="mono"
-            value={slug}
-            onChange={(e) => setSlug(e.target.value)}
-            placeholder="courseware"
-          />
-        </Field>
-      </Modal>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

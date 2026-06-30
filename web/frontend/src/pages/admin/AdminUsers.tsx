@@ -1,8 +1,18 @@
 /** 超管后台 · 用户管理：列表 / 搜索 / 提降权 / 启用禁用。 */
 import { useEffect, useState } from "react"
 import { api, type AdminUser } from "../../api/client"
-import { Badge, Button, Callout, DataTable, Field, Input, Modal, type Column } from "../../components/ui"
-import { useToast } from "../../components/ui"
+import { Button } from "@/components/shadcn/button"
+import { Input } from "@/components/shadcn/input"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/shadcn/dialog"
+import { useToast } from "../../components/toast"
+import { DataTable, PageHead, Pager, StatusBadge, type Column } from "../../components/shared"
 import { timeAgo } from "../../lib/format"
 import { loadSession } from "../../store/auth"
 
@@ -13,12 +23,10 @@ export default function AdminUsers() {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState("")
-  const [loading, setLoading] = useState(false)
   const [target, setTarget] = useState<AdminUser | null>(null)
   const [action, setAction] = useState<"promote" | "demote" | "enable" | "disable" | null>(null)
 
   async function load(p = page, s = search) {
-    setLoading(true)
     try {
       const r = await api.adminListUsers({ search: s, page: p })
       setRows(r.items)
@@ -26,8 +34,6 @@ export default function AdminUsers() {
       setPage(r.page)
     } catch {
       toast.error("加载用户失败")
-    } finally {
-      setLoading(false)
     }
   }
   useEffect(() => {
@@ -53,86 +59,121 @@ export default function AdminUsers() {
       setAction(null)
       await load()
     } catch (e) {
-      const msg = (e as { response?: { data?: { code?: string; error?: string } } }).response?.data
-      toast.error(msg?.code === "SELF_LOCKOUT" ? "不能降权/禁用自己" : msg?.error || "操作失败")
+      const code = (e as { response?: { data?: { code?: string } } }).response?.data?.code
+      toast.error(code === "SELF_LOCKOUT" ? "不能降权/禁用自己" : "操作失败")
     }
   }
 
+  const actionLabel =
+    action === "promote"
+      ? "提升为超级管理员"
+      : action === "demote"
+        ? "降为普通用户"
+        : action === "disable"
+          ? "禁用账号"
+          : "启用账号"
+
   const columns: Column<AdminUser>[] = [
-    { key: "email", title: "邮箱", render: (u) => <><div>{u.email}</div><div className="muted" style={{ fontSize: 12 }}>{u.name || "—"}</div></> },
-    { key: "role", title: "角色", render: (u) => <Badge variant={u.role === "admin" ? "accent" : "neutral"}>{u.role}</Badge> },
-    { key: "status", title: "状态", render: (u) => <Badge variant={u.status === "active" ? "success" : "danger"}>{u.status}</Badge> },
-    { key: "memberships", title: "所属团队", num: true, render: (u) => u._count?.memberships ?? 0 },
+    {
+      key: "email",
+      title: "邮箱",
+      render: (u) => (
+        <div>
+          <div>{u.email}</div>
+          <div className="text-xs text-muted-foreground">{u.name || "—"}</div>
+        </div>
+      ),
+    },
+    {
+      key: "role",
+      title: "角色",
+      render: (u) =>
+        u.role === "admin" ? (
+          <span className="inline-flex items-center rounded-md border border-primary/40 px-2 py-0.5 text-xs font-medium text-primary">
+            admin
+          </span>
+        ) : (
+          <span className="text-xs text-muted-foreground">user</span>
+        ),
+    },
+    { key: "status", title: "状态", render: (u) => <StatusBadge status={u.status} /> },
+    { key: "memberships", title: "团队", num: true, render: (u) => u._count?.memberships ?? 0 },
     { key: "created", title: "注册", render: (u) => timeAgo(u.createdAt) },
     {
       key: "actions",
       title: "操作",
       render: (u) => (
-        <div style={{ display: "flex", gap: 6 }}>
+        <div className="flex gap-2">
           {u.role === "admin" ? (
-            <Button size="sm" onClick={() => open(u, "demote")} disabled={u.id === selfId}>降为用户</Button>
+            <Button variant="outline" size="sm" onClick={() => open(u, "demote")} disabled={u.id === selfId}>
+              降为用户
+            </Button>
           ) : (
-            <Button size="sm" onClick={() => open(u, "promote")}>提为超管</Button>
+            <Button variant="outline" size="sm" onClick={() => open(u, "promote")}>
+              提为超管
+            </Button>
           )}
           {u.status === "active" ? (
-            <Button size="sm" onClick={() => open(u, "disable")} disabled={u.id === selfId}>禁用</Button>
+            <Button variant="outline" size="sm" onClick={() => open(u, "disable")} disabled={u.id === selfId}>
+              禁用
+            </Button>
           ) : (
-            <Button size="sm" onClick={() => open(u, "enable")}>启用</Button>
+            <Button variant="outline" size="sm" onClick={() => open(u, "enable")}>
+              启用
+            </Button>
           )}
         </div>
       ),
     },
   ]
 
-  const actionLabel =
-    action === "promote" ? "提升为超级管理员" :
-    action === "demote" ? "降为普通用户" :
-    action === "disable" ? "禁用账号" : "启用账号"
-
   return (
-    <div className="page reveal">
-      <div className="page-head r-1">
-        <div className="page-title">
-          <h1>用户管理</h1>
-          <div className="sub">共 {total} 个账号</div>
+    <div className="space-y-6 p-6">
+      <PageHead title="用户管理" sub={`共 ${total} 个账号`} />
+      <div className="space-y-3 rounded-lg border bg-card p-4 text-card-foreground">
+        <div className="flex gap-2">
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="搜索邮箱 / 姓名（回车）"
+            onKeyDown={(e) => e.key === "Enter" && load(1, search)}
+          />
+          <Button onClick={() => load(1, search)}>搜索</Button>
         </div>
-      </div>
-      <div className="card r-2">
-        <div className="card-body">
-          <Field label="搜索（邮箱 / 姓名）">
-            <div style={{ display: "flex", gap: 8 }}>
-              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="回车搜索" style={{ flex: 1 }} onKeyDown={(e) => e.key === "Enter" && load(1, search)} />
-              <Button onClick={() => load(1, search)}>搜索</Button>
-            </div>
-          </Field>
-          <DataTable columns={columns} rows={rows} rowKey={(u) => u.id} pageSize={20} />
-          <Pager page={page} total={total} onPrev={() => load(page - 1)} onNext={() => load(page + 1)} loading={loading} />
-        </div>
+        <DataTable columns={columns} rows={rows} rowKey={(u) => u.id} />
+        <Pager page={page} total={total} onPrev={() => load(page - 1)} onNext={() => load(page + 1)} />
       </div>
 
-      <Modal
-        open={!!target}
-        onClose={() => setTarget(null)}
-        title={actionLabel}
-        footer={<><Button onClick={() => setTarget(null)}>取消</Button><Button variant="primary" onClick={confirm}>确认</Button></>}
-      >
-        {target && (
-          <Callout variant="warn">
-            确认对 <strong>{target.email}</strong> 执行「{actionLabel}」？
-            {action === "disable" && <div className="muted" style={{ marginTop: 6 }}>禁用后该用户无法登录，已签发的 token 也在下次请求被拒绝。</div>}
-          </Callout>
-        )}
-      </Modal>
-    </div>
-  )
-}
-
-export function Pager({ page, total, onPrev, onNext, loading }: { page: number; total: number; onPrev: () => void; onNext: () => void; loading?: boolean }) {
-  return (
-    <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12, marginTop: 12, fontSize: 13, color: "var(--text-secondary)" }}>
-      <span>第 {page} 页 · 共 {total}</span>
-      <Button size="sm" onClick={onPrev} disabled={page <= 1 || loading}>上一页</Button>
-      <Button size="sm" onClick={onNext} disabled={total <= page * 50 || loading}>下一页</Button>
+      <Dialog open={!!target} onOpenChange={(o) => !o && setTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{actionLabel}</DialogTitle>
+            <DialogDescription>
+              {target && (
+                <span className="text-foreground">
+                  确认对 <strong>{target.email}</strong> 执行「{actionLabel}」？
+                  {action === "disable" && (
+                    <span className="mt-1 block text-muted-foreground">
+                      禁用后该用户无法登录，已签发的 token 也在下次请求被拒绝。
+                    </span>
+                  )}
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTarget(null)}>
+              取消
+            </Button>
+            <Button
+              variant={action === "disable" || action === "demote" ? "destructive" : "default"}
+              onClick={confirm}
+            >
+              确认
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

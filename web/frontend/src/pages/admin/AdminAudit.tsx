@@ -1,9 +1,11 @@
 /** 超管后台 · 审计日志：全平台敏感操作流水。 */
 import { useEffect, useState } from "react"
 import { api, type AdminAuditRow } from "../../api/client"
-import { Badge, Button, DataTable, Field, Input, useToast, type Column } from "../../components/ui"
+import { Button } from "@/components/shadcn/button"
+import { Input } from "@/components/shadcn/input"
+import { useToast } from "../../components/toast"
+import { DataTable, PageHead, Pager, type Column } from "../../components/shared"
 import { timeAgo } from "../../lib/format"
-import { Pager } from "./AdminUsers"
 
 export default function AdminAudit() {
   const toast = useToast()
@@ -28,32 +30,64 @@ export default function AdminAudit() {
   }, [])
 
   const columns: Column<AdminAuditRow>[] = [
-    { key: "action", title: "操作", render: (a) => <Badge variant="neutral">{a.action}</Badge> },
-    { key: "actor", title: "操作者", render: (a) => <span className="mono" style={{ fontSize: 12 }}>{a.actorUserId?.slice(0, 13) ?? "system"}…</span> },
-    { key: "target", title: "对象", render: (a) => <span className="muted" style={{ fontSize: 12 }}>{a.targetType ?? "—"}{a.targetId ? ` · ${a.targetId.slice(0, 8)}…` : ""}</span> },
-    { key: "org", title: "工作组", render: (a) => (a.orgId ? <span className="mono" style={{ fontSize: 11 }}>{a.orgId.slice(0, 8)}…</span> : <Badge variant="accent">platform</Badge>) },
+    {
+      key: "action",
+      title: "操作",
+      render: (a) => (
+        <span className="inline-flex items-center rounded-md border px-2 py-0.5 font-mono text-xs">
+          {a.action}
+        </span>
+      ),
+    },
+    {
+      key: "actor",
+      title: "操作者",
+      render: (a) => (
+        <span className="font-mono text-xs text-muted-foreground">
+          {(a.actorUserId ?? "system").slice(0, 13)}…
+        </span>
+      ),
+    },
+    {
+      key: "target",
+      title: "对象",
+      render: (a) => (
+        <span className="text-xs text-muted-foreground">
+          {a.targetType ?? "—"}
+          {a.targetId ? ` · ${a.targetId.slice(0, 8)}…` : ""}
+        </span>
+      ),
+    },
+    {
+      key: "org",
+      title: "工作组",
+      render: (a) =>
+        a.orgId ? (
+          <span className="font-mono text-xs text-muted-foreground">{a.orgId.slice(0, 8)}…</span>
+        ) : (
+          <span className="inline-flex items-center rounded-md border border-primary/40 px-2 py-0.5 text-xs font-medium text-primary">
+            platform
+          </span>
+        ),
+    },
     { key: "time", title: "时间", render: (a) => timeAgo(a.createdAt) },
   ]
 
   return (
-    <div className="page reveal">
-      <div className="page-head r-1">
-        <div className="page-title">
-          <h1>审计日志</h1>
-          <div className="sub">共 {total} 条（全平台，含平台级操作 orgId=platform）</div>
+    <div className="space-y-6 p-6">
+      <PageHead title="审计日志" sub={`共 ${total} 条（全平台，含平台级操作 orgId=platform）`} />
+      <div className="space-y-3 rounded-lg border bg-card p-4 text-card-foreground">
+        <div className="flex gap-2">
+          <Input
+            value={action}
+            onChange={(e) => setAction(e.target.value)}
+            placeholder="按操作过滤，如 user.update / key.create"
+            onKeyDown={(e) => e.key === "Enter" && load(1)}
+          />
+          <Button onClick={() => load(1)}>筛选</Button>
         </div>
-      </div>
-      <div className="card r-2">
-        <div className="card-body">
-          <Field label="按操作过滤">
-            <div style={{ display: "flex", gap: 8 }}>
-              <Input value={action} onChange={(e) => setAction(e.target.value)} placeholder="如 user.update / key.create" style={{ flex: 1 }} onKeyDown={(e) => e.key === "Enter" && load(1)} />
-              <Button onClick={() => load(1)}>筛选</Button>
-            </div>
-          </Field>
-          <DataTable columns={columns} rows={rows} rowKey={(a) => a.id} pageSize={20} />
-          <Pager page={page} total={total} onPrev={() => load(page - 1)} onNext={() => load(page + 1)} />
-        </div>
+        <DataTable columns={columns} rows={rows} rowKey={(a) => a.id} />
+        <Pager page={page} total={total} onPrev={() => load(page - 1)} onNext={() => load(page + 1)} />
       </div>
     </div>
   )

@@ -2,23 +2,36 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { api, type AdminRun } from "../../api/client"
-import { Badge, Button, DataTable, Field, Input, useToast, type Column } from "../../components/ui"
+import { Button } from "@/components/shadcn/button"
+import { Input } from "@/components/shadcn/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/shadcn/select"
+import { useToast } from "../../components/toast"
+import { DataTable, PageHead, Pager, StatusBadge, type Column } from "../../components/shared"
 import { fmt3, timeAgo } from "../../lib/format"
-import { Pager } from "./AdminUsers"
 
-const STATUSES = ["", "completed", "failed", "running", "partial"]
+const STATUSES = ["all", "completed", "failed", "running", "partial"]
 
 export default function AdminRuns() {
   const toast = useToast()
   const [rows, setRows] = useState<AdminRun[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
-  const [status, setStatus] = useState("")
+  const [status, setStatus] = useState("all")
   const [search, setSearch] = useState("")
 
   async function load(p = 1) {
     try {
-      const r = await api.adminListRuns({ status: status || undefined, search: search || undefined, page: p })
+      const r = await api.adminListRuns({
+        status: status === "all" ? undefined : status,
+        search: search || undefined,
+        page: p,
+      })
       setRows(r.items)
       setTotal(r.total)
       setPage(r.page)
@@ -31,13 +44,27 @@ export default function AdminRuns() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const statusVariant = (s: string): "success" | "danger" | "info" | "neutral" =>
-    s === "completed" ? "success" : s === "failed" ? "danger" : s === "running" ? "info" : "neutral"
-
   const columns: Column<AdminRun>[] = [
-    { key: "run", title: "运行", render: (r) => <Link to={`/run/${r.externalRunId}`} className="mono" style={{ fontSize: 12 }}>{r.externalRunId}</Link> },
-    { key: "project", title: "项目 / 工作组", render: (r) => <><div>{r.project.name}</div><div className="muted" style={{ fontSize: 12 }}>{r.project.org.name}</div></> },
-    { key: "status", title: "状态", render: (r) => <Badge variant={statusVariant(r.status)}>{r.status}</Badge> },
+    {
+      key: "run",
+      title: "运行",
+      render: (r) => (
+        <Link to={`/run/${r.externalRunId}`} className="font-mono text-xs hover:text-primary">
+          {r.externalRunId}
+        </Link>
+      ),
+    },
+    {
+      key: "project",
+      title: "项目 / 工作组",
+      render: (r) => (
+        <div>
+          <div>{r.project.name}</div>
+          <div className="text-xs text-muted-foreground">{r.project.org.name}</div>
+        </div>
+      ),
+    },
+    { key: "status", title: "状态", render: (r) => <StatusBadge status={r.status} /> },
     { key: "dr", title: "DR", num: true, render: (r) => fmt3(r.dr) },
     { key: "cpr", title: "CPR", num: true, render: (r) => fmt3(r.cpr) },
     { key: "reward", title: "Reward", num: true, render: (r) => fmt3(r.avgReward) },
@@ -46,27 +73,32 @@ export default function AdminRuns() {
   ]
 
   return (
-    <div className="page reveal">
-      <div className="page-head r-1">
-        <div className="page-title">
-          <h1>评估任务</h1>
-          <div className="sub">共 {total} 次运行（全平台）</div>
+    <div className="space-y-6 p-6">
+      <PageHead title="评估任务" sub={`共 ${total} 次运行（全平台）`} />
+      <div className="space-y-3 rounded-lg border bg-card p-4 text-card-foreground">
+        <div className="flex gap-2">
+          <Select value={status} onValueChange={setStatus}>
+            <SelectTrigger className="w-36">
+              <SelectValue placeholder="全部状态" />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUSES.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s === "all" ? "全部状态" : s}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="按项目名搜索"
+            onKeyDown={(e) => e.key === "Enter" && load(1)}
+          />
+          <Button onClick={() => load(1)}>筛选</Button>
         </div>
-      </div>
-      <div className="card r-2">
-        <div className="card-body">
-          <Field label="筛选">
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <select className="input" value={status} onChange={(e) => setStatus(e.target.value)}>
-                {STATUSES.map((s) => <option key={s} value={s}>{s || "全部状态"}</option>)}
-              </select>
-              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="按项目名搜索" style={{ flex: 1 }} onKeyDown={(e) => e.key === "Enter" && load(1)} />
-              <Button onClick={() => load(1)}>筛选</Button>
-            </div>
-          </Field>
-          <DataTable columns={columns} rows={rows} rowKey={(r) => r.id} pageSize={20} />
-          <Pager page={page} total={total} onPrev={() => load(page - 1)} onNext={() => load(page + 1)} />
-        </div>
+        <DataTable columns={columns} rows={rows} rowKey={(r) => r.id} />
+        <Pager page={page} total={total} onPrev={() => load(page - 1)} onNext={() => load(page + 1)} />
       </div>
     </div>
   )
