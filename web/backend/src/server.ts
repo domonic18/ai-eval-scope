@@ -33,6 +33,7 @@ import keysRouter from "./routes/keys"
 import runsRouter from "./routes/runs"
 import artifactsRouter from "./routes/artifacts"
 import debugRouter from "./routes/debug"
+import adminRouter from "./routes/admin"
 
 // ── 摄取路由（HMAC 鉴权，7d）──
 import ingestRouter from "./routes/public/ingest"
@@ -67,6 +68,7 @@ export function createApp(): express.Application {
   app.use("/api/v1/projects/:id/debug", debugRouter) // 调试台（owner 专属，转发 gateway）
   app.use("/api/v1/runs", runsRouter) // 运行/样本详情（Query，§九）
   app.use("/api/v1/artifacts", artifactsRouter) // 制品下载（presigned 重定向）
+  app.use("/api/v1/admin", adminRouter) // 超管后台（platformAdminGuard，跨租户）
 
   // ── 摄取路由（HMAC 鉴权 + 限流，7d）──
   app.use("/api/public/ingest", ingestRouter) // POST /api/public/ingest

@@ -35,6 +35,11 @@ model User {
   ssoNameId      String?         @unique @map("sso_name_id") // SAML NameID（部分唯一）
   ssoAttributes  Json?           @map("sso_attributes") @db.JsonB
   lastSsoLoginAt DateTime?       @map("last_sso_login_at")
+  // —— 平台级角色/状态（Sprint：超级管理员后台）——
+  // role：user | admin（admin = 超级管理员，跨租户管理）；首个注册用户自动 admin。
+  // status：active | disabled（disabled 即时拒绝登录/鉴权）。
+  role           String          @default("user") @map("role")
+  status         String          @default("active") @map("status")
   createdAt      DateTime        @default(now()) @map("created_at")
   memberships    OrgMembership[]
   joinRequests   JoinRequest[]

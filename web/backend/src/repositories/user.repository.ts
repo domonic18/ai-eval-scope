@@ -21,15 +21,28 @@ class UserRepository {
   findById(id: string): Promise<User | null> {
     return this.prisma.user.findUnique({ where: { id } })
   }
-  create(p: { email: string; passwordHash?: string | null; name?: string | null }): Promise<User> {
+  create(p: {
+    email: string
+    passwordHash?: string | null
+    name?: string | null
+    role?: string
+    status?: string
+  }): Promise<User> {
     // passwordHash 可选：SSO 用户无密码（docs/arch/12 §4.2）
+    // role/status 可选：默认由 schema 决定（user/active）；首注册用户由 service 传 "admin"
     return this.prisma.user.create({
       data: {
         email: String(p.email).toLowerCase(),
         passwordHash: p.passwordHash ?? null,
         name: p.name ?? null,
+        role: p.role ?? undefined,
+        status: p.status ?? undefined,
       },
     })
+  }
+  /** 全平台用户计数（首注册用户判定 + 管理后台统计）。 */
+  count(): Promise<number> {
+    return this.prisma.user.count()
   }
   /** SSO：按 SAML NameID 查找（docs/arch/12 §4.4 匹配顺序 b）。 */
   findBySsoNameId(nameId: string): Promise<User | null> {

@@ -22,6 +22,7 @@ export const requireAuth: RequestHandler = (req, _res, next) => {
       userId: payload.sub,
       orgId: payload.org_id || null,
       role: payload.role || null,
+      platformAdmin: payload.platform_admin === true,
       authTime: payload.auth_time,
     }
     next()

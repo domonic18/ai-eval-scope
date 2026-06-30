@@ -105,7 +105,14 @@ interface SsoSession {
   access_token: string
   refresh_token: string
   expires_in: number
-  user: { id: string; email: string; name: string | null }
+  user: {
+    id: string
+    email: string
+    name: string | null
+    role: string
+    platformAdmin: boolean
+    status: string
+  }
   org?: { id: string; name: string; slug: string }
   exp: number
 }
@@ -224,12 +231,20 @@ export async function handleAcs(samlResponse: string): Promise<{ code: string }>
     orgId: org?.id,
     role: org ? "owner" : undefined,
     name: user.name,
+    platformAdmin: user.role === "admin",
   })
   const code = issueCode({
     access_token: tokens.access_token,
     refresh_token: tokens.refresh_token,
     expires_in: tokens.expires_in,
-    user: { id: user.id, email: user.email, name: user.name },
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      platformAdmin: user.role === "admin",
+      status: user.status,
+    },
     org,
   })
   return { code }

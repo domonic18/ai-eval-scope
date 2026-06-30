@@ -42,6 +42,9 @@ export interface AuthPublicUser {
   id: string
   email: string
   name: string | null
+  role: string
+  platformAdmin: boolean
+  status: string
 }
 export interface RegisterResult extends TokenPair {
   user: AuthPublicUser
@@ -66,16 +69,31 @@ export async function register(input: RegisterInput): Promise<RegisterResult> {
   }
 
   const passwordHash = await hashPassword(input.password)
+  // 首个注册用户自动成为超级管理员（平台冷启动）；其后注册均为普通 user。
+  const isFirstUser = (await userRepo.count()) === 0
+  const role = isFirstUser ? "admin" : "user"
   const user = await userRepo.create({
     email: normalizedEmail,
     passwordHash,
     name: input.name || null,
+    role,
   })
 
   // 无团队：token 不带 orgId（鉴权不依赖它；前端 me() memberships 为空 → 引导创建/加入团队）
-  const tokens = issueTokenPair({ userId: user.id, name: user.name })
+  const tokens = issueTokenPair({
+    userId: user.id,
+    name: user.name,
+    platformAdmin: role === "admin",
+  })
   return {
-    user: { id: user.id, email: user.email, name: user.name },
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role,
+      platformAdmin: role === "admin",
+      status: user.status,
+    },
     ...tokens,
   }
 }
@@ -88,6 +106,9 @@ export async function login(input: { email?: string; password?: string }): Promi
     // 账号不存在 或 SSO-only 用户（无密码）→ 统一返回 invalid
     throw new PlatformError("invalid credentials", { status: 401, code: "AUTH_INVALID" })
   }
+  if (user.status === "disabled") {
+    throw new PlatformError("account disabled", { status: 403, code: "ACCOUNT_DISABLED" })
+  }
   const ok = await verifyPassword(input.password!, user.passwordHash)
   if (!ok) {
     throw new PlatformError("invalid credentials", { status: 401, code: "AUTH_INVALID" })
@@ -99,14 +120,22 @@ export async function login(input: { email?: string; password?: string }): Promi
     orgId: primary ? primary.orgId : undefined,
     role: primary ? primary.role : undefined,
     name: user.name,
+    platformAdmin: user.role === "admin",
   })
   return {
-    user: { id: user.id, email: user.email, name: user.name },
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      platformAdmin: user.role === "admin",
+      status: user.status,
+    },
     ...tokens,
   }
 }
 
-/** 刷新：校验 refresh token → 重发（保留同一 org/role 上下文）。 */
+/** 刷新：校验 refresh token → 重发（保留同一 org/role 上下文，platform_admin 以 DB 为准）。 */
 export async function refresh(input: { refresh_token?: string }): Promise<TokenPair> {
   let payload
   try {
@@ -120,10 +149,16 @@ export async function refresh(input: { refresh_token?: string }): Promise<TokenP
   if (payload.kind !== "refresh") {
     throw new PlatformError("not a refresh token", { status: 401, code: "AUTH_INVALID" })
   }
+  // 重取用户：令禁用/降权在下次刷新即失效（不纯信旧 token）
+  const user = await userRepo.findById(payload.sub)
+  if (!user || user.status === "disabled") {
+    throw new PlatformError("invalid or expired refresh token", { status: 401, code: "AUTH_INVALID" })
+  }
   return issueTokenPair({
     userId: payload.sub,
     orgId: payload.org_id || undefined,
     role: payload.role || undefined,
+    platformAdmin: user.role === "admin",
   })
 }
 
@@ -136,6 +171,9 @@ export async function me(userId: string) {
     id: user.id,
     email: user.email,
     name: user.name,
+    role: user.role,
+    platformAdmin: user.role === "admin",
+    status: user.status,
     memberships: memberships.map((m) => ({
       orgId: m.orgId,
       role: m.role,

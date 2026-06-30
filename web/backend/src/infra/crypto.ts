@@ -41,6 +41,7 @@ export interface TokenPayloadInput {
   orgId?: string | null
   role?: string | null
   name?: string | null
+  platformAdmin?: boolean
 }
 
 export interface TokenClaims extends jwt.JwtPayload {
@@ -49,6 +50,7 @@ export interface TokenClaims extends jwt.JwtPayload {
   org_id: string | null
   role: string | null
   name: string | null
+  platform_admin: boolean
   auth_time: number
 }
 
@@ -62,6 +64,7 @@ function issueToken(payload: TokenPayloadInput, kind: "access" | "refresh"): str
       org_id: payload.orgId || null,
       role: payload.role || null,
       name: payload.name || null,
+      platform_admin: payload.platformAdmin === true,
       auth_time: Math.floor(Date.now() / 1000),
     },
     cfg.jwtSecret,

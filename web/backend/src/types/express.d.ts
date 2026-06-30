@@ -10,6 +10,7 @@ declare module "express-serve-static-core" {
       userId: string
       orgId: string | null
       role: string | null
+      platformAdmin?: boolean
       authTime?: number
     }
     tenant?: Tenant
