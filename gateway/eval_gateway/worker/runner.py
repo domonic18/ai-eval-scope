@@ -63,7 +63,14 @@ async def run_job(job: Job) -> None:
 
     try:
         input_dir = Path(job.input_ref)
-        build_package(input_dir=input_dir, package_dir=package_dir, task_title=job.job_id)
+        # task_id 不填时 builder 回退为目录名（单页恒为 "contents"）；调用方可经 HTTP 设 task_id 覆盖。
+        build_package(
+            input_dir=input_dir,
+            package_dir=package_dir,
+            task_id=job.task_id,
+            task_title=job.task_title or job.job_id,
+            task_subject=job.task_subject,
+        )
 
         result = await asyncio.to_thread(
             eval_packages,

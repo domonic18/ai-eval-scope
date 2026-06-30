@@ -120,5 +120,54 @@ async def test_cancel_job(
     assert response.status_code == 200
 
 
+async def test_submit_multipart_passes_task_fields(
+    client: AsyncClient,
+    fake_session: MagicMock,
+) -> None:
+    """提交时携带 task_id/task_title/task_subject 应写入入队 Job（不再恒为 contents）。"""
+    added: list[Job] = []
+    fake_session.add = MagicMock(side_effect=lambda job: added.append(job))
+    fake_session.commit = AsyncMock()
+    fake_session.refresh = AsyncMock()
+
+    files = {"file": ("lesson.md", b"# Hello", "text/markdown")}
+    data = {
+        "task_id": "my-task-001",
+        "task_title": "分数入门",
+        "task_subject": "math",
+        "rule_set_id": "format-only",
+    }
+    response = await client.post("/v1/jobs", data=data, files=files)
+
+    assert response.status_code == 202
+    assert len(added) == 1
+    job = added[0]
+    assert job.task_id == "my-task-001"
+    assert job.task_title == "分数入门"
+    assert job.task_subject == "math"
+
+
+async def test_submit_inline_json_passes_task_id(
+    client: AsyncClient,
+    fake_session: MagicMock,
+) -> None:
+    """内联 JSON 提交携带 task_id 应写入 Job。"""
+    added: list[Job] = []
+    fake_session.add = MagicMock(side_effect=lambda job: added.append(job))
+    fake_session.commit = AsyncMock()
+    fake_session.refresh = AsyncMock()
+
+    payload = {
+        "content": {"filename": "lesson.md", "text": "# Hello"},
+        "task_id": "lesson-3",
+        "rule_set_id": "format-only",
+    }
+    response = await client.post("/v1/jobs", json=payload)
+
+    assert response.status_code == 202
+    assert added[0].task_id == "lesson-3"
+    assert added[0].task_title is None
+
+
 # Tenant 类型提示
 from eval_gateway.auth.deps import Tenant  # noqa: E402

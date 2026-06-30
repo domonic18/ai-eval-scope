@@ -30,6 +30,10 @@ class Job(Base):
     rule_set_id: Mapped[str] = mapped_column(
         String(64), nullable=False, default="coursework-default"
     )
+    # 调用方可设的任务标识/标题/学科（不填则由 builder 回退：单页→"contents"）
+    task_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    task_title: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    task_subject: Mapped[str | None] = mapped_column(String(128), nullable=True)
     run_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     web_run_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     metrics: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)

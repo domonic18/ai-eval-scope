@@ -21,6 +21,7 @@ class JobCreateInline(BaseModel):
     """内联 JSON 提交请求体。"""
 
     content: ContentInline = Field(description="内联的单个文件内容")
+    task_id: str | None = Field(default=None, description="任务标识（决定 run 内 sample_id）")
     task_title: str | None = Field(default=None, description="任务标题")
     task_subject: str | None = Field(default=None, description="学科")
     rule_set_id: str = Field(default="coursework-default", description="规则集标识")
@@ -36,6 +37,9 @@ class JobResponse(BaseModel):
     input_kind: InputKind
     scope: Scope
     rule_set_id: str
+    task_id: str | None = None
+    task_title: str | None = None
+    task_subject: str | None = None
     run_id: str | None
     web_run_url: str | None
     metrics: dict[str, Any] | None

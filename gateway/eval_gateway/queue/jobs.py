@@ -26,6 +26,9 @@ async def enqueue(
     scope: str,
     input_ref: str,
     rule_set_id: str,
+    task_id: str | None = None,
+    task_title: str | None = None,
+    task_subject: str | None = None,
 ) -> Job:
     """第三方提交的任务入队。"""
     job = Job(
@@ -37,6 +40,9 @@ async def enqueue(
         scope=scope,
         input_ref=input_ref,
         rule_set_id=rule_set_id,
+        task_id=task_id,
+        task_title=task_title,
+        task_subject=task_subject,
     )
     session.add(job)
     await session.commit()

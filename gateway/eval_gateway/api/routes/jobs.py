@@ -31,6 +31,12 @@ def _cleanup(temp_dir: Path) -> None:
     shutil.rmtree(temp_dir, ignore_errors=True)
 
 
+def _str_field(form: Any, key: str) -> str | None:
+    """从 multipart 表单取字符串字段（UploadFile/None → None）。"""
+    val = form.get(key)
+    return val if isinstance(val, str) else None
+
+
 @router.post("", response_model=JobSubmissionResponse, status_code=status.HTTP_202_ACCEPTED)
 async def submit_job(
     request: Request,
@@ -54,7 +60,12 @@ async def submit_job(
             if not isinstance(upload, UploadFile) or upload.filename is None:
                 raise InputInvalidError("file is required for multipart upload")
             rule_set_id_raw = form.get("rule_set_id")
-            rule_set_id = rule_set_id_raw if isinstance(rule_set_id_raw, str) else "coursework-default"
+            rule_set_id = (
+                rule_set_id_raw if isinstance(rule_set_id_raw, str) else "coursework-default"
+            )
+            task_id = _str_field(form, "task_id")
+            task_title = _str_field(form, "task_title")
+            task_subject = _str_field(form, "task_subject")
             input_ref, scope = await materialize_upload(
                 upload, temp_dir, max_size=settings.max_upload_mb * 1024 * 1024
             )
@@ -68,7 +79,14 @@ async def submit_job(
             if not isinstance(content, dict):
                 raise InputInvalidError("content required")
             rule_set_id_raw = data.get("rule_set_id")
-            rule_set_id = rule_set_id_raw if isinstance(rule_set_id_raw, str) else "coursework-default"
+            rule_set_id = (
+                rule_set_id_raw if isinstance(rule_set_id_raw, str) else "coursework-default"
+            )
+            task_id = data.get("task_id") if isinstance(data.get("task_id"), str) else None
+            task_title = data.get("task_title") if isinstance(data.get("task_title"), str) else None
+            task_subject = (
+                data.get("task_subject") if isinstance(data.get("task_subject"), str) else None
+            )
             input_ref, scope = materialize_inline(content, temp_dir)
             input_kind = InputKind.INLINE.value
         else:
@@ -82,6 +100,9 @@ async def submit_job(
             scope=scope.value,
             input_ref=input_ref,
             rule_set_id=rule_set_id,
+            task_id=task_id,
+            task_title=task_title,
+            task_subject=task_subject,
         )
 
         poll_url = f"/v1/jobs/{job_id}"
