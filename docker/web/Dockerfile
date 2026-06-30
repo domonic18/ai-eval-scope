@@ -20,7 +20,7 @@ FROM ccr.ccs.tencentyun.com/sasan/node:22.15.1-bookworm AS backend-builder
 WORKDIR /app/web/backend
 COPY web/backend/package*.json ./
 RUN npm ci
-COPY web/backend/prisma ./prisma
+COPY db/web/prisma /app/db/web/prisma
 RUN npx prisma generate
 COPY web/backend/tsconfig.json web/backend/tsconfig.build.json ./
 COPY web/backend/src ./src
@@ -32,7 +32,7 @@ FROM ccr.ccs.tencentyun.com/sasan/node:22.15.1-bookworm
 WORKDIR /app/web/backend
 COPY web/backend/package*.json ./
 RUN npm ci --omit=dev
-COPY web/backend/prisma ./prisma
+COPY db/web/prisma /app/db/web/prisma
 RUN npx prisma generate
 COPY --from=backend-builder /app/web/backend/dist ./dist
 COPY --from=frontend-builder /app/web/frontend/dist ./public
@@ -46,5 +46,5 @@ EXPOSE 9000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=5 \
     CMD node -e "require('http').get('http://localhost:9000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
 
-# 表由 `make db-init` 手动应用 prisma migrations 创建（单一来源，docs/standard/数据库迁移规范.md）；此处仅启动服务
+# 表由 `make db-init` 手动应用迁移创建（单一来源 = db/，详见 db/README.md）；此处仅启动服务
 CMD ["node", "dist/server.js"]

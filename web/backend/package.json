@@ -58,6 +58,6 @@
     "vitest": "^4.1.9"
   },
   "prisma": {
-    "schema": "prisma/schema.prisma"
+    "schema": "../../db/web/prisma/schema.prisma"
   }
 }

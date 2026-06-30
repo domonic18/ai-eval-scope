@@ -5,14 +5,11 @@ from __future__ import annotations
 import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
-from sqlalchemy import text
 
 from eval_gateway.api.routes import health, jobs
 from eval_gateway.config.settings import get_settings
 from eval_gateway.core.exceptions import GatewayError, InputInvalidError
 from eval_gateway.core.logging import setup_logging
-from eval_gateway.models.db import Base
-from eval_gateway.storage.session import get_engine
 from eval_gateway.worker.loop import WorkerLoop
 
 app = FastAPI(title="eval-gateway", version="0.1.0")
@@ -22,21 +19,14 @@ app.include_router(jobs.router)
 _worker: WorkerLoop | None = None
 
 
-async def _ensure_schema() -> None:
-    """幂等创建 gateway schema 与 jobs 表（供 startup 与 make gateway-db-init 复用）。"""
-    settings = get_settings()
-    engine = get_engine(settings)
-    async with engine.begin() as conn:
-        await conn.execute(text("CREATE SCHEMA IF NOT EXISTS gateway"))
-        await conn.run_sync(Base.metadata.create_all)
-
-
 @app.on_event("startup")
 async def startup() -> None:
     setup_logging()
     settings = get_settings()
     settings.upload_dir.mkdir(parents=True, exist_ok=True)
-    await _ensure_schema()
+
+    # 注：不在代码里建库。gateway schema/jobs 表由 `make db-init`（db/apply.sh）创建；
+    # 启动前须已完成建库，否则 jobs 读写会报错。
 
     # 启动后台 worker
     global _worker

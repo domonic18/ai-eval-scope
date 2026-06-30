@@ -1,4 +1,4 @@
-.PHONY: install dev test test-cov lint format clean golden web-install web-test web-typecheck docker-build docker-up docker-down docker-logs db-init hooks check gateway-install gateway-dev gateway-test gateway-lint gateway-format gateway-check gateway-db-init
+.PHONY: install dev test test-cov lint format clean golden web-install web-test web-typecheck docker-build docker-up docker-down docker-logs db-init db-migrate-prod hooks check gateway-install gateway-dev gateway-test gateway-lint gateway-format gateway-check
 
 # 使用 uv 进行包管理（推荐）
 # 需要先安装 uv: curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -67,11 +67,6 @@ gateway-check:
 	cd gateway && uv run ruff check eval_gateway tests
 	cd gateway && uv run pytest tests/unit -q
 
-# 本地初始化 gateway schema/jobs 表（复用 [4] POSTGRES_* 凭据）
-gateway-db-init:
-	@test -f .env || { echo "❌ 缺少 .env：请先 cp .env.example .env 并填入凭据"; exit 1; }
-	psql "${PLATFORM_DATABASE_URL:-postgresql://${POSTGRES_USER:-eval}:${POSTGRES_PASSWORD:-evalpassword}@localhost:5432/${POSTGRES_DB:-agent_eval}?schema=public}" -f scripts/gateway_init.sql
-
 # ─── Docker（平台栈：postgres + minio + web，配置见根 docker-compose.yml + .env）───
 
 docker-build:
@@ -87,11 +82,15 @@ docker-down:
 docker-logs:
 	docker compose logs -f web
 
-# 本地 docker 栈首次建库（手动，方案 B）：应用所有 prisma migration + resolve + generate
-# 前置：make docker-up。单一来源 = web/backend/prisma/migrations（已废弃 docker/web/schema.sql）
+# 全库建库/迁移统一应用（本地 docker 栈）：web(public, Prisma) + gateway(gateway, SQL) 两 schema。
+# 前置：make docker-up。单一来源 = db/（详见 db/README.md）。
 db-init:
 	@test -f .env || { echo "❌ 缺少 .env：请先 cp .env.example .env"; exit 1; }
-	bash scripts/db-init.sh
+	bash db/apply.sh
+
+# 线上增量迁移：从 .secret/.env 读生产凭据，只补 web pending + gateway 幂等 SQL。
+db-migrate-prod:
+	bash db/apply-prod.sh
 
 # ─── 代码规范（pre-commit + commitizen）───
 

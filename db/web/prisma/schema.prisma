@@ -9,6 +9,13 @@
 
 generator client {
   provider = "prisma-client-js"
+  // schema 已迁出 web/backend（统一到 db/web/prisma/，见 db/README.md）。
+  // Prisma 默认 output 由「从 schema 文件向上找 node_modules」决定；迁出后该链路找不到
+  // web/backend/node_modules，故显式指向它，使 @prisma/client 的 require('.prisma/client/default')
+  // 仍能解析、18 处 `import "@prisma/client"` 全部不变。路径相对 schema 文件：
+  //   宿主  db/web/prisma/ → ../../../ → 仓库根 → web/backend/node_modules/.prisma/client
+  //   容器  /app/db/web/prisma/ → ../../../ → /app → /app/web/backend/node_modules/.prisma/client
+  output = "../../../web/backend/node_modules/.prisma/client"
 }
 
 datasource db {

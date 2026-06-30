@@ -52,6 +52,13 @@ web/frontend/node_modules/
 web/frontend/dist/
 web/backend/public/
 
+# Prisma 项目根污染：schema.prisma 迁至 db/web/prisma/ 后，prisma generate 会把仓库根
+# 推断为项目根并在此安装 @prisma/client/prisma（node_modules + package.json）。
+# 这是 Prisma 的推断副作用，非本项目依赖，勿入库。详见 db/README.md。
+/package.json
+/package-lock.json
+/node_modules/
+
 # 可观测平台离线摄取队列（运行期产物）
 .ingest_queue/
 
