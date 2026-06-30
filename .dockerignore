@@ -25,14 +25,15 @@
 !.env.example
 .secret
 
-# 文档与数据（按需）
-docs
+# 文档与数据（按需）—— docs/tests/scripts 用 ** 覆盖所有层级（裸模式只匹配仓库根）
+**/docs
 *.md
 !web/frontend/README.md
-workspace
+# 运行产物目录：所有层级（根/evaluator/gateway 的 workspace/）。裸 workspace 只匹配根，会漏掉 evaluator/workspace
+**/workspace
 !workspace/.gitkeep
-tests
-scripts
+**/tests
+**/scripts
 
 # 已构建产物（镜像内重新构建）
 web/backend/public
