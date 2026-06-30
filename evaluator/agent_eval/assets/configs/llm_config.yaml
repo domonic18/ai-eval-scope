@@ -1,0 +1,23 @@
+# 工作 LLM 配置（已 gitignore，含环境变量引用，非明文 key）
+# 统一使用 KIMI_API_KEY（云函数只需配一个 LLM key）：
+# - kimi_judge：文本维度（常识/软约束/偏好），Moonshot OpenAI 兼容端点（api.moonshot.cn/v1）
+# - kimi_vision：视觉维度（vision.quality），Kimi Coding plan，Anthropic 协议兼容（api.kimi.com/coding/）
+
+llm:
+  default: kimi_judge
+  providers:
+    kimi_judge:
+      provider: openai          # OpenAI 兼容客户端（factory.py: deepseek|openai → OpenAICompatClient，支持自定义 base_url）
+      model: moonshot-v1-128k   # 128k 上下文，适合长课件评估；如需 kimi-k2 系列请填准确 model id
+      api_key: ${KIMI_API_KEY}
+      base_url: https://api.moonshot.cn/v1
+      max_tokens: 8192
+      temperature: 0.0
+      seed: 42
+    kimi_vision:
+      provider: anthropic
+      model: kimi-for-coding
+      api_key: ${KIMI_API_KEY}
+      base_url: https://api.kimi.com/coding/
+      max_tokens: 8192
+      temperature: 0.0
