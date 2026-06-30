@@ -7,6 +7,10 @@
 **/.pytest_cache
 **/.coverage
 **/htmlcov
+**/.venv
+**/.ruff_cache
+**/.mypy_cache
+**/uv.lock
 
 .git
 .gitignore

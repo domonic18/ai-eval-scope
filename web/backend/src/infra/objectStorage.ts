@@ -148,7 +148,10 @@ export class S3Storage {
       input.ContentMD5 = md5B64
       headers["Content-MD5"] = md5B64
     }
-    const url = await getSignedUrl(this.presignClient, new PutObjectCommand(input), {
+    // 上传用内部 client（minio:9000）：上传方为容器内服务（evaluator/gateway），
+    // 走内网端点；对外端点（presignClient）仅供浏览器下载（presignGet）。
+    // （MinIO 严格校验签名 Host，故上传与下载必须各自用可达端点签名。）
+    const url = await getSignedUrl(this.client, new PutObjectCommand(input), {
       expiresIn: ttl,
     })
     return { url, method: "PUT", headers, expiresAt: epochNow() + ttl }

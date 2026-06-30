@@ -12,8 +12,8 @@ RUN pip install --no-cache-dir uv
 COPY evaluator ./evaluator
 COPY gateway ./gateway
 
-# 以 editable 方式安装 agent-eval + eval-gateway，并锁定依赖
-RUN cd evaluator && uv pip install --system -e .
+# 以 editable 方式安装 agent-eval[llm]（gateway 需 LLM Judge）+ eval-gateway，并锁定依赖
+RUN cd evaluator && uv pip install --system -e '.[llm]'
 RUN cd gateway && uv pip install --system -e .
 
 # 容器内监听端口：默认 9000（腾讯云函数 SCF 要求）

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncGenerator
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -17,13 +18,21 @@ _engine_cache: dict[str, AsyncEngine] = {}
 _sessionmaker_cache: dict[str, async_sessionmaker[AsyncSession]] = {}
 
 
+# asyncpg 不识别的 query 参数（Prisma/其他驱动专用），连接前须剥离。
+_ASYNCPG_DROP_QUERY_PARAMS = frozenset({"schema"})
+
+
 def _to_asyncpg_url(url: str) -> str:
-    """把标准 postgresql:// 转换为 asyncpg 驱动的 postgresql+asyncpg://。"""
-    if url.startswith("postgresql://"):
-        return "postgresql+asyncpg://" + url[len("postgresql://") :]
-    if url.startswith("postgres://"):
-        return "postgresql+asyncpg://" + url[len("postgres://") :]
-    return url
+    """转 asyncpg 驱动 URL，并剔除 asyncpg 不识别的 query 参数。
+
+    web 的 ``PLATFORM_DATABASE_URL`` 带 ``?schema=public``（Prisma 约定）；asyncpg 会把
+    未知 query 参数当作 connect kwargs 报 ``TypeError``，故剥离 schema 等再交给引擎。
+    """
+    parsed = urlparse(url)
+    query = [
+        (k, v) for k, v in parse_qsl(parsed.query) if k not in _ASYNCPG_DROP_QUERY_PARAMS
+    ]
+    return urlunparse(parsed._replace(scheme="postgresql+asyncpg", query=urlencode(query)))
 
 
 def get_engine(settings: Settings | None = None) -> AsyncEngine:

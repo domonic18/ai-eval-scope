@@ -90,6 +90,10 @@ export function projectGuard(opts: GuardOpts = {}): RequestHandler {
 /**
  * 运行级守卫（路由参数 :id = run id）→ 解析 run→project→org→成员关系。
  * 注入 req.tenant（含 projectId = run 所属项目）。
+ *
+ * :id 既接受 web 内部 UUID，也兜底接受评估器 external_run_id（第三方 gateway 经
+ * web_run_url 跳转时只携带 external_run_id）。external_run_id 非全局唯一，但后续
+ * project→org→成员关系校验是真正的授权门，故兜底解析不会泄露跨租户数据。
  */
 export function runGuard(opts: GuardOpts = {}): RequestHandler {
   const param = opts.param || "id"
@@ -100,8 +104,8 @@ export function runGuard(opts: GuardOpts = {}): RequestHandler {
       if (!req.user) {
         return next(new PlatformError("auth required", { status: 401, code: "AUTH_INVALID" }))
       }
-      const run = await prisma.run.findUnique({
-        where: { id: runId! },
+      const run = await prisma.run.findFirst({
+        where: { OR: [{ id: runId }, { externalRunId: runId }] },
         select: { id: true, projectId: true },
       })
       if (!run) {

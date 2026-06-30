@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime
 from typing import Any
 
@@ -103,7 +104,7 @@ async def mark_done(
         UPDATE gateway.jobs
         SET status = 'completed',
             run_id = :run_id,
-            metrics = :metrics,
+            metrics = CAST(:metrics AS jsonb),
             web_run_url = :web_run_url,
             finished_at = now()
         WHERE job_id = :job_id
@@ -114,7 +115,7 @@ async def mark_done(
         {
             "job_id": job_id,
             "run_id": run_id,
-            "metrics": metrics,
+            "metrics": json.dumps(metrics, ensure_ascii=False),
             "web_run_url": web_run_url,
         },
     )
@@ -133,12 +134,12 @@ async def mark_failed(
         """
         UPDATE gateway.jobs
         SET status = 'failed',
-            error = :error,
+            error = CAST(:error AS jsonb),
             finished_at = now()
         WHERE job_id = :job_id
         """
     )
-    await session.execute(stmt, {"job_id": job_id, "error": error})
+    await session.execute(stmt, {"job_id": job_id, "error": json.dumps(error, ensure_ascii=False)})
     await session.commit()
     LOG.info("job.failed", job_id=job_id, error=error)
 

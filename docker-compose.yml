@@ -101,12 +101,18 @@ services:
     env_file: ./.env              # PLATFORM_DATABASE_URL/PLATFORM_KEY_ENCRYPTION_KEY/AGENT_EVAL_*
     environment:
       EVALGATEWAY_PORT: 9000
-      EVALGATEWAY_DATABASE_URL: postgresql://${POSTGRES_USER:-eval}:${POSTGRES_PASSWORD:-evalpassword}@postgres:5432/${POSTGRES_DB:-agent_eval}?schema=public
+      # Settings 读 PLATFORM_DATABASE_URL（与 web 一致），容器内 host=postgres。
+      PLATFORM_DATABASE_URL: postgresql://${POSTGRES_USER:-eval}:${POSTGRES_PASSWORD:-evalpassword}@postgres:5432/${POSTGRES_DB:-agent_eval}?schema=public
       EVALGATEWAY_WEB_BASE_URL: http://localhost:9000
+      # 覆盖 .env 的 AGENT_EVAL_HOST：容器内 localhost 不通 web，须用 compose 服务名。
+      # gateway 评估后经 ResultSink 回传结果/制品到 web（web 再落 minio）。
+      AGENT_EVAL_HOST: http://web:9000
     ports:
       - "9102:9000"
     depends_on:
       postgres:
+        condition: service_healthy
+      web:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:9000/v1/health')\""]

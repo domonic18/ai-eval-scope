@@ -20,7 +20,7 @@ dependencies = [
     "pydantic-settings>=2.1",
     "structlog>=24.1",
     "httpx>=0.27",
-    "agent-eval",
+    "agent-eval[llm]",
 ]
 
 [project.optional-dependencies]

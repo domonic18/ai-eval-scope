@@ -201,11 +201,15 @@ class QueryRepository extends BaseRepository {
     `)
   }
 
-  /** 运行详情（含样本摘要）。 */
+  /** 运行详情（含样本摘要）。runId 接受内部 UUID 或评估器 external_run_id。 */
   async runDetail(projectId: string, runId: string) {
     const orgId = this.requireOrg()
     const run = await this.prisma.run.findFirst({
-      where: { id: runId, projectId, project: { orgId } },
+      where: {
+        projectId,
+        project: { orgId },
+        OR: [{ id: runId }, { externalRunId: runId }],
+      },
       include: {
         samples: {
           orderBy: { externalSampleId: "asc" },
