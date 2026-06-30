@@ -391,7 +391,7 @@ export const SCORE_EXPLAIN: Record<"S_format" | "S_common" | "S_soft_pref", Expl
 export function metricColor(key: MetricKey, value: number | null | undefined): string {
   if (value == null) return "var(--text-primary)"
   const thr = THRESHOLDS[key as "DR" | "CPR" | "Reward" | "Soft" | "Pref"]
-  if (thr == null) return "var(--accent)"
+  if (thr == null) return "var(--text-primary)"
   if (value >= thr) return "var(--success)"
   return "var(--warning)"
 }

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { CartesianGrid, Line, LineChart, ReferenceLine, XAxis, YAxis } from "recharts"
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/shadcn/chart"
+import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/shadcn/chart"
 import { api } from "../api/client"
 import type {
   ApiKeySafe,
@@ -12,8 +12,9 @@ import type {
   TrendPoint,
 } from "../types"
 import { fmt3, num, timeAgo } from "../lib/format"
-import { METRIC_LABEL } from "../lib/eval"
+import { METRIC_EXPLAIN, METRIC_LABEL, metricColor } from "../lib/eval"
 import type { MetricKey } from "../lib/eval"
+import { MetricCard } from "../components/MetricCard"
 import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
 import { Label } from "@/components/shadcn/label"
@@ -27,6 +28,7 @@ import {
   DialogTitle,
 } from "@/components/shadcn/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/shadcn/tabs"
+import { Separator } from "@/components/shadcn/separator"
 import {
   Select,
   SelectContent,
@@ -76,6 +78,7 @@ function MetricTrendChart({
         <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} fontSize={11} />
         <YAxis domain={[0, 1]} tickLine={false} axisLine={false} width={32} fontSize={11} />
         <ChartTooltip content={<ChartTooltipContent />} />
+        <ChartLegend content={<ChartLegendContent />} />
         {thresholds.map((t, i) => (
           <ReferenceLine
             key={i}
@@ -97,28 +100,6 @@ function MetricTrendChart({
         ))}
       </LineChart>
     </ChartContainer>
-  )
-}
-
-function StatTile({
-  label,
-  value,
-  valueCls,
-  foot,
-}: {
-  label: string
-  value: string
-  valueCls?: string
-  foot?: React.ReactNode
-}) {
-  return (
-    <Card>
-      <CardContent className="pt-5">
-        <div className="text-xs text-muted-foreground">{label}</div>
-        <div className={`mt-1 text-2xl font-semibold tabular-nums ${valueCls ?? ""}`}>{value}</div>
-        {foot && <div className="mt-1 text-xs text-muted-foreground">{foot}</div>}
-      </CardContent>
-    </Card>
   )
 }
 
@@ -160,10 +141,11 @@ export default function ProjectDetail() {
 
   const deltaOf = (cur: number | undefined, prevV: number | undefined) => {
     if (cur == null) return null
-    if (prevV == null) return "首次评估"
+    if (prevV == null || prevV === 0) return "首次评估"
     const diff = cur - prevV
     if (Math.abs(diff) < 0.0005) return "持平"
-    return `${diff > 0 ? "+" : ""}${diff.toFixed(3)}`
+    const pct = (diff / prevV) * 100
+    return `${diff > 0 ? "+" : ""}${pct.toFixed(1)}%`
   }
 
   const trendPoints = trendsAsc.map((t) => ({
@@ -171,9 +153,11 @@ export default function ProjectDetail() {
     values: { DR: t.DR, CPR: t.CPR, Reward: t.Reward, Soft: t.Soft, Pref: t.Pref },
   }))
   const trendSeries = [
-    { key: "DR", name: METRIC_LABEL.DR, color: "var(--chart-2)" },
-    { key: "CPR", name: METRIC_LABEL.CPR, color: "var(--chart-3)" },
-    { key: "Reward", name: METRIC_LABEL.Reward, color: "var(--chart-1)" },
+    { key: "DR", name: "交付率(DR)", color: "var(--chart-5)" },
+    { key: "CPR", name: "约束通过率(CPR)", color: "var(--chart-3)" },
+    { key: "Reward", name: "综合评分(Reward)", color: "var(--chart-1)" },
+    { key: "Soft", name: "内容质量分(Soft)", color: "var(--chart-2)" },
+    { key: "Pref", name: "用户偏好分(Pref)", color: "var(--chart-4)" },
   ]
 
   return (
@@ -205,25 +189,38 @@ export default function ProjectDetail() {
       />
 
       <Tabs defaultValue="overview">
-        <TabsList>
+        <TabsList variant="line">
           <TabsTrigger value="overview">概览</TabsTrigger>
-          <TabsTrigger value="runs">运行 ({num(runsTotal)})</TabsTrigger>
+          <TabsTrigger value="runs">
+            运行 <span className="ml-1 text-muted-foreground">{num(runsTotal)}</span>
+          </TabsTrigger>
           <TabsTrigger value="samples">样本</TabsTrigger>
           <TabsTrigger value="settings">设置 & API Key</TabsTrigger>
         </TabsList>
+        <Separator className="mb-4" />
 
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
-            {(["DR", "CPR", "Soft", "Pref", "Reward"] as MetricKey[]).map((k) => {
-              const kk = k as "DR" | "CPR" | "Reward" | "Soft" | "Pref"
+            {([
+              { key: "DR", label: "交付率(DR)" },
+              { key: "CPR", label: "约束通过率(CPR)" },
+              { key: "Soft", label: "内容质量分(SOFT)" },
+              { key: "Pref", label: "用户偏好分(PREF)" },
+              { key: "Reward", label: "综合评分(REWARD)" },
+            ] as { key: MetricKey; label: string }[]).map((m) => {
+              const kk = m.key as "DR" | "CPR" | "Reward" | "Soft" | "Pref"
               const val = latest ? latest[kk] : undefined
               const prevVal = prev ? prev[kk] : undefined
+              const delta = deltaOf(val, prevVal)
               return (
-                <StatTile
-                  key={k}
-                  label={METRIC_LABEL[k]}
+                <MetricCard
+                  key={m.key}
+                  label={m.label}
                   value={fmt3(val)}
-                  foot={latest ? `最近 ${timeAgo(latest.created_at)}${deltaOf(val, prevVal) ? ` · ${deltaOf(val, prevVal)}` : ""}` : undefined}
+                  explain={METRIC_EXPLAIN[m.key]}
+                  delta={delta}
+                  foot={latest ? `最近 ${timeAgo(latest.created_at)}` : undefined}
+                  valueStyle={{ color: metricColor(m.key, val) }}
                 />
               )
             })}
@@ -235,7 +232,7 @@ export default function ProjectDetail() {
             </CardHeader>
             <CardContent>
               {trendsAsc.length > 0 ? (
-                <MetricTrendChart points={trendPoints} series={trendSeries} thresholds={[{ label: "达标 0.8", value: 0.8, color: "var(--chart-1)" }]} />
+                <MetricTrendChart points={trendPoints} series={trendSeries} thresholds={[{ label: "综合评分达标 0.8", value: 0.8, color: "var(--chart-1)" }]} />
               ) : (
                 <div className="py-8 text-center text-sm text-muted-foreground">
                   完成首次评估运行后，将在此展示 DR / CPR / Reward 趋势。
