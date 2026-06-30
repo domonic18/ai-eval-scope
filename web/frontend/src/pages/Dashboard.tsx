@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom"
 import { api } from "../api/client"
 import type { DashboardProject, TrendPoint } from "../types"
 import { fmt3, num, timeAgo } from "../lib/format"
+import { METRIC_LABEL } from "../lib/eval"
 import {
   Badge,
   Button,
@@ -219,11 +220,11 @@ export default function Dashboard() {
                     <div className="pc-stat-val" style={{ color: drColor }}>
                       {fmt3(p.latestRun?.dr)}
                     </div>
-                    <div className="pc-stat-lab">最新交付率</div>
+                    <div className="pc-stat-lab">{METRIC_LABEL.DR}</div>
                   </div>
                   <div>
                     <div className="pc-stat-val">{fmt3(p.latestRun?.avgReward)}</div>
-                    <div className="pc-stat-lab">综合奖励</div>
+                    <div className="pc-stat-lab">{METRIC_LABEL.Reward}</div>
                   </div>
                   <div>
                     <div className="pc-stat-val">{num(p.runCount)}</div>

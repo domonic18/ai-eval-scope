@@ -373,7 +373,7 @@ export default function RunDetail() {
               <strong className="tag-ok">{passCount} 通过</strong> /{" "}
               <strong className="tag-bad">{failCount} 失败</strong>。交付率(DR){" "}
               {run.dr >= THRESHOLDS.DR ? "达标" : "未达"}（{fmt3(run.dr)}）、 常识通过率(CPR){" "}
-              {run.cpr >= THRESHOLDS.CPR ? "达标" : "未达"}（{fmt3(run.cpr)}），综合奖励(Reward){" "}
+              {run.cpr >= THRESHOLDS.CPR ? "达标" : "未达"}（{fmt3(run.cpr)}），{METRIC_LABEL.Reward}{" "}
               <strong className={run.avgReward >= THRESHOLDS.Reward ? "tag-ok" : "tag-bad"}>
                 {run.avgReward >= THRESHOLDS.Reward
                   ? "达标"

@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom"
 import { api } from "../api/client"
 import type { ArtifactRow, ConstraintRow } from "../types"
 import { fmt3 } from "../lib/format"
-import { SCORE_EXPLAIN, STAGES, sampleBadge, tierToChip } from "../lib/eval"
+import { METRIC_LABEL, SCORE_EXPLAIN, STAGES, sampleBadge, tierToChip } from "../lib/eval"
 import { Badge, Button, Empty, Explain, Select, useCrumbs, useToast } from "../components/ui"
 import { IconCaret, IconExternal } from "../components/icons"
 
@@ -88,7 +88,7 @@ export default function SampleDetail() {
           </span>
           <Badge variant={sb.variant}>{sb.label}</Badge>
           <Badge variant="neutral">
-            综合奖励{" "}
+            {METRIC_LABEL.Reward}{" "}
             <b className="mono" style={{ color: "var(--danger)", marginLeft: 3 }}>
               {fmt3(sample.reward)}
             </b>
