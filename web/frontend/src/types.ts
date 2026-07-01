@@ -128,10 +128,10 @@ export interface ArtifactRow {
   originalName: string | null
 }
 
-/** API Key 列表/吊销回显（不含 secret）。callCount 为 BigInt 序列化的字符串。 */
+/** API Key 列表/吊销回显（不含明文 token）。callCount 为 BigInt 序列化的字符串。 */
 export interface ApiKeySafe {
   id: string
-  publicKey: string
+  tokenPreview: string
   name: string
   expiresAt: string | null
   lastUsedAt: string | null
@@ -141,9 +141,9 @@ export interface ApiKeySafe {
   revokedAt: string | null
 }
 
-/** 签发响应：含一次性 plaintext secretKey。 */
+/** 签发响应：含一次性 plaintext token。 */
 export interface IssuedApiKey extends ApiKeySafe {
-  secretKey: string
+  token: string
 }
 
 /** 调试台：gateway 任务态（GET /v1/jobs/{id} 透传）。 */

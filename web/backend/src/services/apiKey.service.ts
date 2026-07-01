@@ -1,16 +1,17 @@
 /**
- * API Key 业务：签发（secret 明文仅返回一次）、列表、吊销、统计。
+ * API Key 业务：签发（单一 Bearer token，明文仅返回一次）、列表、吊销、统计。
  *
  * 存储（§6.3 方案 A）：
- *  - secretHash：sha256（审计/不回显）
- *  - secretEncrypted：AES-256-GCM（HMAC 验签时解密得明文）
- *  明文永不落库、永不回显；签发响应仅含一次性的 plaintext secret。
+ *  - tokenHash：sha256（鉴权查找）
+ *  - tokenEncrypted：AES-256-GCM（gateway 回传时解密得明文）
+ *  - tokenPreview：明文前缀，供列表识别（不可还原）
+ *  明文 token 永不落库、永不回显；签发响应仅含一次性的 plaintext token。
  */
 
 import { ApiKey } from "@prisma/client"
 import { ApiKeyRepository } from "../repositories/apiKey.repository"
 import { ProjectRepository } from "../repositories/project.repository"
-import { generateApiKeyPair, encryptSecret, hashSecret } from "../infra/crypto"
+import { generateApiKey, encryptToken, hashToken } from "../infra/crypto"
 import { AuditService } from "./audit.service"
 import { PlatformError } from "../middleware/errorHandler"
 import type { Tenant } from "../repositories/base.repository"
@@ -21,15 +22,15 @@ export interface ApiKeyIssueInput {
 }
 export interface IssuedKey {
   id: string
-  publicKey: string
-  secretKey: string // 明文，仅本次返回
+  token: string // 明文，仅本次返回
+  tokenPreview: string
   name: string
   expiresAt: Date | null
   createdAt: Date
 }
 export interface SafeKey {
   id: string
-  publicKey: string
+  tokenPreview: string
   name: string
   expiresAt: Date | null
   lastUsedAt: Date | null
@@ -69,12 +70,12 @@ export function createApiKeyService(tenant: Tenant): ApiKeyService {
       throw new PlatformError("name required", { status: 400, code: "SCHEMA_INVALID" })
     }
 
-    const { publicKey, secretKey } = generateApiKeyPair()
+    const token = generateApiKey()
     const created = await repo.create({
       projectId,
-      publicKey,
-      secretHash: hashSecret(secretKey),
-      secretEncrypted: encryptSecret(secretKey),
+      tokenHash: hashToken(token),
+      tokenEncrypted: encryptToken(token),
+      tokenPreview: token.slice(0, 12),
       name: input.name,
       expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
     })
@@ -85,13 +86,13 @@ export function createApiKeyService(tenant: Tenant): ApiKeyService {
       action: "key.create",
       targetType: "api_key",
       targetId: created.id,
-      metadata: { projectId, name: input.name, publicKey },
+      metadata: { projectId, name: input.name, tokenPreview: token.slice(0, 12) },
     })
 
     return {
       id: created.id,
-      publicKey,
-      secretKey,
+      token,
+      tokenPreview: token.slice(0, 12),
       name: created.name,
       expiresAt: created.expiresAt,
       createdAt: created.createdAt,
@@ -122,11 +123,11 @@ export function createApiKeyService(tenant: Tenant): ApiKeyService {
   return { list, issue, revoke }
 }
 
-/** 去除一切可还原 secret 的字段，供列表/吊销回显。 */
+/** 去除一切可还原 token 的字段，供列表/吊销回显。 */
 function stripSecret(key: ApiKey): SafeKey {
   return {
     id: key.id,
-    publicKey: key.publicKey,
+    tokenPreview: key.tokenPreview,
     name: key.name,
     expiresAt: key.expiresAt,
     lastUsedAt: key.lastUsedAt,

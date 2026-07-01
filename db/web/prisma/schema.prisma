@@ -114,10 +114,10 @@ model Project {
 model ApiKey {
   id              String    @id @default(uuid())
   projectId       String    @map("project_id")
-  publicKey       String    @unique @map("public_key") // pk-eval-...
-  // §6.3 方案 A：哈希态用于审计/不回显；加密态用于 HMAC 验签（明文永不落库）
-  secretHash      String    @map("secret_hash")
-  secretEncrypted String    @map("secret_encrypted")
+  // §6.3 方案 A（单一 Bearer token）：哈希态鉴权查找；加密态 gateway 回传解密；preview 识别用（明文永不落库）
+  tokenHash       String    @unique @map("token_hash")
+  tokenEncrypted  String    @map("token_encrypted")
+  tokenPreview    String    @map("token_preview")
   name            String
   scopes          String[]  @default(["ingest"])
   expiresAt       DateTime? @map("expires_at")

@@ -50,11 +50,6 @@ interface Project {
 }
 type SetTab = "keys" | "basic" | "retention" | "danger"
 
-function truncKey(k: string): string {
-  if (!k) return "—"
-  return k.length <= 16 ? k : `${k.slice(0, 12)}…${k.slice(-4)}`
-}
-
 /* ── 趋势图（recharts）── 一组 points({label,values}) + series + thresholds */
 function MetricTrendChart({
   points,
@@ -517,11 +512,10 @@ function KeysPanel({ projectId, slug }: { projectId: string; slug: string }) {
     }
   }
 
-  const snippetKey = keys.find((k) => !k.revokedAt)?.publicKey ?? "pk_live_••••••••"
+  const snippetKey = keys.find((k) => !k.revokedAt)?.tokenPreview ?? "eval-••••••"
   const snippetText = `# 评估器侧环境变量（.env）
-AGENT_EVAL_INGEST_URL=https://app.evalscope.io/api/public/ingest
-AGENT_EVAL_PUBLIC_KEY=${snippetKey}
-AGENT_EVAL_SECRET_KEY=sk_live_••••••••••••••••
+AGENT_EVAL_HOST=https://app.evalscope.io
+AGENT_EVAL_API_KEY=${snippetKey}••••
 AGENT_EVAL_PROJECT=${slug}`
 
   return (
@@ -530,7 +524,7 @@ AGENT_EVAL_PROJECT=${slug}`
         <div>
           <h3 className="text-base font-semibold">API Keys</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            评估器凭 Key 的 HMAC 签名摄取数据。Secret 仅创建时明文展示一次。
+            评估器凭单一 API Key（Bearer）摄取数据。Key 仅创建时明文展示一次。
           </p>
         </div>
         <Button size="sm" onClick={() => setCreateOpen(true)}>
@@ -543,7 +537,7 @@ AGENT_EVAL_PROJECT=${slug}`
           <DataTable
             columns={[
               { key: "name", title: "名称", render: (k) => k.name || "—" },
-              { key: "publicKey", title: "公钥", render: (k) => <span className="font-mono text-xs text-muted-foreground">{truncKey(k.publicKey)}</span> },
+              { key: "tokenPreview", title: "Key 前缀", render: (k) => <span className="font-mono text-xs text-muted-foreground">{k.tokenPreview}…</span> },
               { key: "callCount", title: "调用次数", num: true, render: (k) => num(Number(k.callCount || 0)) },
               { key: "lastUsedAt", title: "最近使用", render: (k) => <span className="text-muted-foreground">{k.lastUsedAt ? timeAgo(k.lastUsedAt) : "—"}</span> },
               {
@@ -580,7 +574,7 @@ AGENT_EVAL_PROJECT=${slug}`
           {snippetText}
         </pre>
         <p className="mt-2 rounded-md border border-sky-500/30 bg-sky-500/5 p-2 text-xs text-muted-foreground">
-          ResultSink 会在评估结束后自动以 HMAC-SHA256 签名上报运行、样本、约束结论与制品文件。
+          ResultSink 会在评估结束后自动以 Bearer Key 上报运行、样本、约束结论与制品文件。
         </p>
       </div>
 
@@ -609,10 +603,9 @@ AGENT_EVAL_PROJECT=${slug}`
           {issued && (
             <div className="space-y-3">
               <div className="rounded-md border border-yellow-500/40 bg-yellow-500/5 p-2 text-sm text-yellow-400">
-                Secret 仅此次显示，关闭后无法再次查看，请立即保存。
+                API Key 仅此次显示，关闭后无法再次查看，请立即保存。
               </div>
-              <CopyRow label="公钥 Public Key" value={issued.publicKey} onCopy={() => toast.success("已复制公钥")} />
-              <CopyRow label="密钥 Secret Key" value={issued.secretKey} onCopy={() => toast.success("已复制 Secret")} />
+              <CopyRow label="API Key（Bearer）" value={issued.token} onCopy={() => toast.success("已复制 API Key")} />
             </div>
           )}
           <DialogFooter>

@@ -9,7 +9,7 @@
 import request from "supertest"
 import { createApp } from "../src/server"
 import { getPrisma } from "../src/infra/prisma"
-import { decryptSecret } from "../src/infra/crypto"
+import { decryptToken } from "../src/infra/crypto"
 import { registerUser, login, createProject, issueKey } from "./helpers"
 
 let app: ReturnType<typeof createApp>
@@ -62,25 +62,24 @@ describe("#1 注册 / 登录 / 刷新 + argon2 哈希", () => {
   })
 })
 
-describe("#2 项目 + API Key：secret 仅返回一次，DB 仅存哈希/加密态", () => {
-  it("issues a key with plaintext secret (once) and stores hash+encrypted only", async () => {
+describe("#2 项目 + API Key：token 仅返回一次，DB 仅存哈希/加密态", () => {
+  it("issues a key with plaintext token (once) and stores hash+encrypted only", async () => {
     const u = await registerUser(app, "b1")
     const project = await createProject(app, u)
     const key = await issueKey(app, { accessToken: u.accessToken, projectId: project.id })
 
-    expect(key.publicKey).toMatch(/^pk-eval-/)
-    expect(key.secretKey).toMatch(/^sk-eval-/) // 明文，仅本次返回
+    expect(key.token).toMatch(/^eval-/) // 明文，仅本次返回
 
     const row = await prisma.apiKey.findUnique({ where: { id: key.id } })
-    expect(row!.secretHash).toMatch(/^[0-9a-f]{64}$/) // sha256
-    expect(row!.secretEncrypted.startsWith("v1:")).toBe(true) // AES-GCM
-    expect(row!.secretEncrypted).not.toContain(key.secretKey)
+    expect(row!.tokenHash).toMatch(/^[0-9a-f]{64}$/) // sha256
+    expect(row!.tokenEncrypted.startsWith("v1:")).toBe(true) // AES-GCM
+    expect(row!.tokenEncrypted).not.toContain(key.token)
     expect(row!.callCount.toString()).toBe("0")
-    // 方案 A：加密态可还原为明文用于验签
-    expect(decryptSecret(row!.secretEncrypted)).toBe(key.secretKey)
+    // 方案 A：加密态可还原为明文（gateway 回传解密）
+    expect(decryptToken(row!.tokenEncrypted)).toBe(key.token)
   })
 
-  it("list keys never returns plaintext or reversible secret", async () => {
+  it("list keys never returns plaintext or reversible token", async () => {
     const u = await registerUser(app, "b2")
     const project = await createProject(app, u)
     await issueKey(app, { accessToken: u.accessToken, projectId: project.id })
@@ -91,10 +90,10 @@ describe("#2 项目 + API Key：secret 仅返回一次，DB 仅存哈希/加密�
     expect(r.status).toBe(200)
     expect(r.body.keys.length).toBe(1)
     const k = r.body.keys[0]
-    expect(k.secretKey).toBeUndefined()
-    expect(k.secretHash).toBeUndefined()
-    expect(k.secretEncrypted).toBeUndefined()
-    expect(k.publicKey).toMatch(/^pk-eval-/)
+    expect(k.token).toBeUndefined()
+    expect(k.tokenHash).toBeUndefined()
+    expect(k.tokenEncrypted).toBeUndefined()
+    expect(k.tokenPreview).toMatch(/^eval-/)
   })
 })
 

@@ -1,8 +1,8 @@
 /**
- * API Key 数据访问。
+ * API Key 数据访问（单一 Bearer token）。
  *
  * 双访问模式：
- *  - findByPublicKey()：鉴权解析用，**全局**查找（无 tenant，先确定 Key 属于哪个 project）。
+ *  - findByTokenHash()：鉴权解析用，**全局**查找（无 tenant，先确定 Key 属于哪个 project）。
  *  - listByProject/create/revoke：管理用，**项目级租户过滤**（强制 projectId 属于当前 org）。
  */
 
@@ -15,9 +15,9 @@ export type ApiKeyWithProject = ApiKey & {
 
 export interface ApiKeyCreateInput {
   projectId: string
-  publicKey: string
-  secretHash: string
-  secretEncrypted: string
+  tokenHash: string
+  tokenEncrypted: string
+  tokenPreview: string
   name: string
   expiresAt?: Date | null
 }
@@ -27,10 +27,10 @@ class ApiKeyRepository extends BaseRepository {
     super(tenant)
   }
 
-  /** 全局按 publicKey 查（鉴权解析）。含 project 用于回填 tenant。 */
-  findByPublicKey(publicKey: string): Promise<ApiKeyWithProject | null> {
+  /** 全局按 tokenHash 查（鉴权解析）。含 project 用于回填 tenant。 */
+  findByTokenHash(tokenHash: string): Promise<ApiKeyWithProject | null> {
     return this.prisma.apiKey.findUnique({
-      where: { publicKey },
+      where: { tokenHash },
       include: { project: { select: { id: true, orgId: true } } },
     })
   }
@@ -52,9 +52,9 @@ class ApiKeyRepository extends BaseRepository {
     return this.prisma.apiKey.create({
       data: {
         projectId: data.projectId,
-        publicKey: data.publicKey,
-        secretHash: data.secretHash,
-        secretEncrypted: data.secretEncrypted,
+        tokenHash: data.tokenHash,
+        tokenEncrypted: data.tokenEncrypted,
+        tokenPreview: data.tokenPreview,
         name: data.name,
         scopes: ["ingest"],
         expiresAt: data.expiresAt ?? null,

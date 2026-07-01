@@ -1,25 +1,21 @@
 /**
- * eval-gateway 转发客户端（调试台用）。
+ * eval-gateway 转发客户端（调试台用）—— Bearer 鉴权。
  *
- * web backend 以「目标项目的 API Key」身份向 gateway 签名转发，算法与
- * scripts/sim_courseware_package_gateway.py、gateway/auth/crypto.py 完全一致：
- *   canonical = METHOD\nPATH\nsha256(rawBody)
- *   Authorization: Eval <publicKey>:<hex(HMAC-SHA256(secret, canonical))>
+ * web backend 以「目标项目的 API Key（单一 token）」身份向 gateway 转发：
+ *   Authorization: Bearer <token>
  *
- * 关键点：HMAC 必须对**原始 body 字节**签名。fetch 的 FormData body 是 opaque 流，
- * 无法在发送前取得字节做签名，故 multipart body 在此**手动构造**（与 sim 脚本同构）。
+ * multipart body 仍手动构造（fetch FormData 是 opaque 流，手动构造便于统一处理 boundary
+ * 与大小控制）；Bearer 无需对 body 签名。
  */
 
 import { randomBytes } from "crypto"
-import { authHeader, signHmac } from "./crypto"
 import { PlatformError } from "../middleware/errorHandler"
 
 const JOB_PATH = "/v1/jobs"
 
 export interface GatewaySubmitInput {
   baseUrl: string
-  publicKey: string
-  secret: string
+  token: string
   filename: string
   fileBytes: Buffer
   ruleSetId: string
@@ -100,11 +96,10 @@ export async function submitJob(input: GatewaySubmitInput): Promise<GatewaySubmi
     if (val && val.trim()) fields.push({ name, value: val })
   }
   const body = buildMultipart(fields, boundary)
-  const sig = signHmac(input.secret, "POST", JOB_PATH, body)
   const res = await fetch(`${input.baseUrl}${JOB_PATH}`, {
     method: "POST",
     headers: {
-      Authorization: authHeader(input.publicKey, sig),
+      Authorization: `Bearer ${input.token}`,
       "Content-Type": `multipart/form-data; boundary=${boundary}`,
     },
     body,
@@ -113,18 +108,16 @@ export async function submitJob(input: GatewaySubmitInput): Promise<GatewaySubmi
   return (await res.json()) as GatewaySubmitResult
 }
 
-/** GET /v1/jobs/{id}（无 body，签名 sha256(b"")）。返回任务态。 */
+/** GET /v1/jobs/{id}。返回任务态。 */
 export async function getJob(
   baseUrl: string,
-  publicKey: string,
-  secret: string,
+  token: string,
   jobId: string,
 ): Promise<GatewayJobStatus> {
   const path = `${JOB_PATH}/${jobId}`
-  const sig = signHmac(secret, "GET", path)
   const res = await fetch(`${baseUrl}${path}`, {
     method: "GET",
-    headers: { Authorization: authHeader(publicKey, sig) },
+    headers: { Authorization: `Bearer ${token}` },
   })
   await ensureOk(res, "GET", path)
   return (await res.json()) as GatewayJobStatus

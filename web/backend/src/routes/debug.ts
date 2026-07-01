@@ -12,7 +12,7 @@ import { requireAuth } from "../middleware/auth"
 import { projectGuard } from "../middleware/tenantGuard"
 import { PlatformError } from "../middleware/errorHandler"
 import { getConfig } from "../config"
-import { decryptSecret } from "../infra/crypto"
+import { decryptToken } from "../infra/crypto"
 import { getJob, submitJob } from "../infra/gatewayClient"
 import { ApiKeyRepository } from "../repositories/apiKey.repository"
 import { AuditService } from "../services/audit.service"
@@ -25,8 +25,8 @@ const wrap =
   (req, res, next) =>
     Promise.resolve(fn(req, res, next)).catch(next)
 
-/** 取项目首个未吊销 API Key 的 (publicKey, secret 明文)；无可用 key → 抛 400。 */
-async function pickProjectKey(projectId: string, orgId: string): Promise<{ publicKey: string; secret: string }> {
+/** 取项目首个未吊销 API Key 的 token 明文；无可用 key → 抛 400。 */
+async function pickProjectKey(projectId: string, orgId: string): Promise<string> {
   const repo = new ApiKeyRepository({ kind: "user", orgId, projectId, role: "owner" })
   const keys = await repo.listByProject(projectId)
   const key = keys.find((k) => k.revokedAt === null)
@@ -36,7 +36,7 @@ async function pickProjectKey(projectId: string, orgId: string): Promise<{ publi
       code: "NO_API_KEY",
     })
   }
-  return { publicKey: key.publicKey, secret: decryptSecret(key.secretEncrypted) }
+  return decryptToken(key.tokenEncrypted)
 }
 
 // 入参用 application/octet-stream（原始文件字节）+ 查询串元数据，避开 multipart 解析依赖
@@ -64,12 +64,11 @@ router.post(
     const taskTitle = q.task_title?.trim() || undefined
     const taskSubject = q.task_subject?.trim() || undefined
 
-    const { publicKey, secret } = await pickProjectKey(projectId, tenant.orgId!)
+    const token = await pickProjectKey(projectId, tenant.orgId!)
     const baseUrl = getConfig().gatewayBaseUrl
     const result = await submitJob({
       baseUrl,
-      publicKey,
-      secret,
+      token,
       filename,
       fileBytes,
       ruleSetId,
@@ -97,8 +96,8 @@ router.get(
   projectGuard({ role: "owner" }),
   wrap(async (req, res) => {
     const tenant = req.tenant!
-    const { publicKey, secret } = await pickProjectKey(tenant.projectId!, tenant.orgId!)
-    const job = await getJob(getConfig().gatewayBaseUrl, publicKey, secret, req.params.jobId)
+    const token = await pickProjectKey(tenant.projectId!, tenant.orgId!)
+    const job = await getJob(getConfig().gatewayBaseUrl, token, req.params.jobId)
     res.json(job)
   }),
 )

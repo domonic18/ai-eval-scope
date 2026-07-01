@@ -2,7 +2,6 @@
 
 import request from "supertest"
 import type { Application } from "express"
-import { signHmac, authHeader } from "../src/infra/crypto"
 
 let _counter = 0
 function uniq(prefix: string): string {
@@ -33,15 +32,24 @@ export async function registerUser(
       email,
       password: opts.password || "password123",
       name: opts.name || `User-${t}`,
-      orgName: opts.orgName || `Org-${t}`,
     })
   if (r.status !== 201) throw new Error(`register failed: ${r.status} ${JSON.stringify(r.body)}`)
+  const accessToken: string = r.body.access_token
+  // 团队改造后注册不再自动建团队；测试显式创建一个团队给该用户
+  const orgRes = await request(app)
+    .post("/api/v1/orgs")
+    .set("Authorization", `Bearer ${accessToken}`)
+    .send({ name: opts.orgName || `Org-${t}` })
+  if (orgRes.status !== 201) {
+    throw new Error(`createOrg failed: ${orgRes.status} ${JSON.stringify(orgRes.body)}`)
+  }
+  const org = orgRes.body.org
   return {
     email,
-    accessToken: r.body.access_token,
+    accessToken,
     refreshToken: r.body.refresh_token,
     user: r.body.user,
-    org: r.body.org,
+    org: { id: org.id, name: org.name, slug: org.slug },
   }
 }
 
@@ -79,22 +87,20 @@ export async function issueKey(
   if (r.status !== 201) throw new Error(`issueKey failed: ${r.status} ${JSON.stringify(r.body)}`)
   return r.body.key as {
     id: string
-    publicKey: string
-    secretKey: string
+    token: string
+    tokenPreview: string
     name: string
   }
 }
 
-/** 用 HMAC 签名并发送（保证 rawBody 与签名字节一致）。 */
-export async function signedPost(
+/** Bearer 鉴权 POST（单一 token）。 */
+export async function bearerPost(
   app: Application,
-  p: { url: string; secretKey: string; publicKey: string; bodyObj: unknown },
+  p: { url: string; token: string; bodyObj: unknown },
 ) {
-  const body = JSON.stringify(p.bodyObj)
-  const sig = signHmac(p.secretKey, "POST", p.url, Buffer.from(body))
   return request(app)
     .post(p.url)
     .type("json")
-    .send(body)
-    .set("Authorization", authHeader(p.publicKey, sig))
+    .send(p.bodyObj as object)
+    .set("Authorization", `Bearer ${p.token}`)
 }

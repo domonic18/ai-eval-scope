@@ -41,7 +41,7 @@ const FLOW = [
     n: "01 / 接入",
     title: "新建项目并创建 Key",
     desc: "在项目设置中新建 API Key，复制 public_key / secret_key 到评估器环境。",
-    code: "pk-eval-… / sk-eval-…",
+    code: "eval-<48hex>（单一 Bearer Key）",
   },
   {
     n: "02 / 运行",

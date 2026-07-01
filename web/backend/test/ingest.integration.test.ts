@@ -15,7 +15,7 @@ import { getPrisma } from "../src/infra/prisma"
 import { requireApiKey } from "../src/middleware/apiKeyAuth"
 import { rateLimiter } from "../src/middleware/rateLimiter"
 import { errorHandler } from "../src/middleware/errorHandler"
-import { registerUser, createProject, issueKey, signedPost } from "./helpers"
+import { registerUser, createProject, issueKey, bearerPost } from "./helpers"
 import { buildObjectKey } from "../src/infra/objectStorage"
 
 const prisma = getPrisma()
@@ -88,10 +88,9 @@ describe("#1 合法入库 + 重复幂等", () => {
   it("ingests run/sample/constraint and persists to DB", async () => {
     const runId = uid("run")
     const sid = uid("s")
-    const r = await signedPost(app, {
+    const r = await bearerPost(app, {
       url: "/api/public/ingest",
-      secretKey: key.secretKey,
-      publicKey: key.publicKey,
+      token: key.token,
       bodyObj: {
         schema_version: "1.0",
         events: [
@@ -116,18 +115,16 @@ describe("#1 合法入库 + 重复幂等", () => {
   it("duplicate event_id is idempotent (duplicates, no extra rows)", async () => {
     const eventId = uid("ev")
     const runId = uid("run")
-    const first = await signedPost(app, {
+    const first = await bearerPost(app, {
       url: "/api/public/ingest",
-      secretKey: key.secretKey,
-      publicKey: key.publicKey,
+      token: key.token,
       bodyObj: { schema_version: "1.0", events: [runEvent(runId, eventId, 0.5)] },
     })
     expect(first.body.accepted).toBe(1)
 
-    const second = await signedPost(app, {
+    const second = await bearerPost(app, {
       url: "/api/public/ingest",
-      secretKey: key.secretKey,
-      publicKey: key.publicKey,
+      token: key.token,
       bodyObj: { schema_version: "1.0", events: [runEvent(runId, eventId, 0.99)] }, // 同 event_id
     })
     expect(second.status).toBe(202)
@@ -146,10 +143,9 @@ describe("#2 schema 非法 → SCHEMA_INVALID 且不落库", () => {
   it("rejects an event missing required metrics (per-event error, 202)", async () => {
     const badEventId = uid("ev")
     const goodRunId = uid("run")
-    const r = await signedPost(app, {
+    const r = await bearerPost(app, {
       url: "/api/public/ingest",
-      secretKey: key.secretKey,
-      publicKey: key.publicKey,
+      token: key.token,
       bodyObj: {
         schema_version: "1.0",
         events: [
@@ -174,10 +170,9 @@ describe("#2 schema 非法 → SCHEMA_INVALID 且不落库", () => {
   })
 
   it("rejects whole malformed envelope (400 SCHEMA_INVALID)", async () => {
-    const r = await signedPost(app, {
+    const r = await bearerPost(app, {
       url: "/api/public/ingest",
-      secretKey: key.secretKey,
-      publicKey: key.publicKey,
+      token: key.token,
       bodyObj: { schema_version: "1.0" }, // 缺 events
     })
     expect(r.status).toBe(400)
@@ -185,10 +180,9 @@ describe("#2 schema 非法 → SCHEMA_INVALID 且不落库", () => {
   })
 
   it("rejects unsupported schema_version (400 SCHEMA_VERSION_UNSUPPORTED)", async () => {
-    const r = await signedPost(app, {
+    const r = await bearerPost(app, {
       url: "/api/public/ingest",
-      secretKey: key.secretKey,
-      publicKey: key.publicKey,
+      token: key.token,
       bodyObj: { schema_version: "2.0", events: [runEvent(uid("r"), uid("ev"))] },
     })
     expect(r.status).toBe(400)
@@ -198,10 +192,9 @@ describe("#2 schema 非法 → SCHEMA_INVALID 且不落库", () => {
 
 describe("#4 跨项目 project_id → PROJECT_FORBIDDEN", () => {
   it("rejects ingest with foreign project_id (403)", async () => {
-    const r = await signedPost(app, {
+    const r = await bearerPost(app, {
       url: "/api/public/ingest",
-      secretKey: key.secretKey,
-      publicKey: key.publicKey,
+      token: key.token,
       bodyObj: {
         schema_version: "1.0",
         project_id: "00000000-0000-0000-0000-000000000000", // 他项目
@@ -217,10 +210,9 @@ describe("#6 超批量 → PAYLOAD_TOO_LARGE", () => {
   it("rejects batches exceeding max events (413, not silent truncate)", async () => {
     // 临时把 maxBatch 调小不可行（route 用 cfg）；直接发 >500 事件
     const events = Array.from({ length: 501 }, (_, i) => runEvent(uid("r"), uid(`ev${i}`)))
-    const r = await signedPost(app, {
+    const r = await bearerPost(app, {
       url: "/api/public/ingest",
-      secretKey: key.secretKey,
-      publicKey: key.publicKey,
+      token: key.token,
       bodyObj: { schema_version: "1.0", events },
     })
     expect(r.status).toBe(413)
@@ -231,10 +223,9 @@ describe("#6 超批量 → PAYLOAD_TOO_LARGE", () => {
 describe("依赖缺失 → DEPENDENCY_MISSING", () => {
   it("sample before run is rejected with DEPENDENCY_MISSING (retryable, not consumed)", async () => {
     const eventId = uid("ev")
-    const r = await signedPost(app, {
+    const r = await bearerPost(app, {
       url: "/api/public/ingest",
-      secretKey: key.secretKey,
-      publicKey: key.publicKey,
+      token: key.token,
       bodyObj: {
         schema_version: "1.0",
         events: [sampleEvent("run-not-yet", uid("s"), eventId)],
@@ -244,10 +235,9 @@ describe("依赖缺失 → DEPENDENCY_MISSING", () => {
     expect(r.body.accepted).toBe(0)
     expect(r.body.errors[0].code).toBe("DEPENDENCY_MISSING")
     // event_id 未被消费：重发（补 run）可成功
-    const r2 = await signedPost(app, {
+    const r2 = await bearerPost(app, {
       url: "/api/public/ingest",
-      secretKey: key.secretKey,
-      publicKey: key.publicKey,
+      token: key.token,
       bodyObj: {
         schema_version: "1.0",
         events: [
@@ -265,18 +255,16 @@ describe("制品 presigned url + artifact 事件", () => {
   it("issues a presigned PUT, accepts upload, then artifact event links", async () => {
     const externalRunId = uid("run")
     // 先建 run（artifact 事件依赖 run 存在）
-    await signedPost(app, {
+    await bearerPost(app, {
       url: "/api/public/ingest",
-      secretKey: key.secretKey,
-      publicKey: key.publicKey,
+      token: key.token,
       bodyObj: { schema_version: "1.0", events: [runEvent(externalRunId, uid("ev"))] },
     })
 
     // 申请 presigned
-    const urlReq = await signedPost(app, {
+    const urlReq = await bearerPost(app, {
       url: "/api/public/artifacts/url",
-      secretKey: key.secretKey,
-      publicKey: key.publicKey,
+      token: key.token,
       bodyObj: {
         external_run_id: externalRunId,
         kind: "output",
@@ -306,10 +294,9 @@ describe("制品 presigned url + artifact 事件", () => {
     expect(up.status).toBe(200)
 
     // artifact 事件引用该 object_key
-    const r = await signedPost(app, {
+    const r = await bearerPost(app, {
       url: "/api/public/ingest",
-      secretKey: key.secretKey,
-      publicKey: key.publicKey,
+      token: key.token,
       bodyObj: {
         schema_version: "1.0",
         events: [
@@ -346,16 +333,14 @@ describe("制品 presigned url + artifact 事件", () => {
 
   it("artifact event for a non-uploaded object → DEPENDENCY_MISSING", async () => {
     const externalRunId = uid("run")
-    await signedPost(app, {
+    await bearerPost(app, {
       url: "/api/public/ingest",
-      secretKey: key.secretKey,
-      publicKey: key.publicKey,
+      token: key.token,
       bodyObj: { schema_version: "1.0", events: [runEvent(externalRunId, uid("ev"))] },
     })
-    const r = await signedPost(app, {
+    const r = await bearerPost(app, {
       url: "/api/public/ingest",
-      secretKey: key.secretKey,
-      publicKey: key.publicKey,
+      token: key.token,
       bodyObj: {
         schema_version: "1.0",
         events: [
@@ -397,10 +382,9 @@ describe("#5 限流（独立 app，小配额令牌桶）", () => {
     limApp.use(errorHandler)
 
     const fire = () =>
-      signedPost(limApp, {
+      bearerPost(limApp, {
         url: "/api/public/ingest",
-        secretKey: key.secretKey,
-        publicKey: key.publicKey,
+        token: key.token,
         bodyObj: { schema_version: "1.0", events: [] },
       })
 
@@ -420,10 +404,9 @@ describe("回归：tier=hard_score + project_id=null（防 7e 集成缺陷）", 
   it("accepts a constraint with tier=hard_score", async () => {
     const runId = uid("run")
     const sid = uid("s")
-    const r = await signedPost(app, {
+    const r = await bearerPost(app, {
       url: "/api/public/ingest",
-      secretKey: key.secretKey,
-      publicKey: key.publicKey,
+      token: key.token,
       bodyObj: {
         schema_version: "1.0",
         events: [
@@ -454,10 +437,9 @@ describe("回归：tier=hard_score + project_id=null（防 7e 集成缺陷）", 
   })
 
   it("accepts envelope with project_id=null (key-bound project)", async () => {
-    const r = await signedPost(app, {
+    const r = await bearerPost(app, {
       url: "/api/public/ingest",
-      secretKey: key.secretKey,
-      publicKey: key.publicKey,
+      token: key.token,
       bodyObj: {
         schema_version: "1.0",
         project_id: null, // ← 未指定项目，曾经被浅层校验拒
@@ -471,10 +453,9 @@ describe("回归：tier=hard_score + project_id=null（防 7e 集成缺陷）", 
   })
 
   it("still rejects an unknown tier (enum guard intact)", async () => {
-    const r = await signedPost(app, {
+    const r = await bearerPost(app, {
       url: "/api/public/ingest",
-      secretKey: key.secretKey,
-      publicKey: key.publicKey,
+      token: key.token,
       bodyObj: {
         schema_version: "1.0",
         events: [

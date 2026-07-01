@@ -6,7 +6,7 @@
 
 import request from "supertest"
 import { createApp } from "../src/server"
-import { registerUser, login, createProject, issueKey, signedPost } from "./helpers"
+import { registerUser, login, createProject, issueKey, bearerPost } from "./helpers"
 
 let app: ReturnType<typeof createApp>
 let owner: Awaited<ReturnType<typeof registerUser>>
@@ -84,10 +84,9 @@ beforeAll(async () => {
   const extRun2 = uid("run")
   const extSample = uid("s")
   for (const er of [extRun1, extRun2]) {
-    await signedPost(app, {
+    await bearerPost(app, {
       url: "/api/public/ingest",
-      secretKey: key.secretKey,
-      publicKey: key.publicKey,
+      token: key.token,
       bodyObj: {
         schema_version: "1.0",
         events: [

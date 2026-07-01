@@ -15,7 +15,7 @@ import { createApp } from "../src/server"
 import { getPrisma } from "../src/infra/prisma"
 import { requireApiKey } from "../src/middleware/apiKeyAuth"
 import { errorHandler } from "../src/middleware/errorHandler"
-import { registerUser, createProject, issueKey, signedPost } from "./helpers"
+import { registerUser, createProject, issueKey, bearerPost } from "./helpers"
 
 const prisma = getPrisma()
 
@@ -50,25 +50,23 @@ beforeAll(async () => {
   ingestion = ingestionApp()
 })
 
-describe("#4 API Key HMAC 鉴权与吊销", () => {
+describe("#4 API Key Bearer 鉴权与吊销", () => {
   const url = "/api/public/ingest"
   const payload = { schema_version: "1.0", events: [] }
 
   it("accepts a correctly signed request (202)", async () => {
-    const r = await signedPost(ingestion, {
+    const r = await bearerPost(ingestion, {
       url,
-      secretKey: key.secretKey,
-      publicKey: key.publicKey,
+      token: key.token,
       bodyObj: payload,
     })
     expect(r.status).toBe(202)
   })
 
-  it("rejects a wrong-signature request (401 AUTH_INVALID)", async () => {
-    const r = await signedPost(ingestion, {
+  it("rejects a wrong token (401 AUTH_INVALID)", async () => {
+    const r = await bearerPost(ingestion, {
       url,
-      secretKey: "sk-eval-wrongsecret",
-      publicKey: key.publicKey,
+      token: "eval-wrongtoken",
       bodyObj: payload,
     })
     expect(r.status).toBe(401)
@@ -90,10 +88,9 @@ describe("#4 API Key HMAC 鉴权与吊销", () => {
     const row = await prisma.apiKey.findUnique({ where: { id: key.id } })
     expect(row!.revokedAt).not.toBeNull()
 
-    const r = await signedPost(ingestion, {
+    const r = await bearerPost(ingestion, {
       url,
-      secretKey: key.secretKey,
-      publicKey: key.publicKey,
+      token: key.token,
       bodyObj: payload,
     })
     expect(r.status).toBe(401)
