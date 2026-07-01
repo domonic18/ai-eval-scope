@@ -7,17 +7,17 @@ llm:
   default: kimi_judge
   providers:
     kimi_judge:
-      provider: openai          # OpenAI 兼容客户端（factory.py: deepseek|openai → OpenAICompatClient，支持自定义 base_url）
-      model: moonshot-v1-128k   # 128k 上下文，适合长课件评估；如需 kimi-k2 系列请填准确 model id
+      provider: anthropic          # OpenAI 兼容客户端（factory.py: deepseek|openai → OpenAICompatClient，支持自定义 base_url）
+      model: moonshot-v1-128k   # 128k 上下文，适合长课件评估
       api_key: ${KIMI_API_KEY}
-      base_url: https://api.moonshot.cn/v1
+      base_url: https://api.moonshot.cn/anthropic
       max_tokens: 8192
       temperature: 0.0
       seed: 42
     kimi_vision:
       provider: anthropic
-      model: kimi-for-coding
+      model: kimi-k2.6
       api_key: ${KIMI_API_KEY}
-      base_url: https://api.kimi.com/coding/
+      base_url: https://api.moonshot.cn/anthropic
       max_tokens: 8192
       temperature: 0.0
