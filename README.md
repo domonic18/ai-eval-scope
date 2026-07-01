@@ -39,7 +39,7 @@ uv run agent-eval pack \
 
 # ② 评估
 uv run agent-eval eval \
-  --package-dir ../workspace/packages/大单元学习总导/ \
+  --package-dir workspace/packages/大单元学习总导/ \
   --rule-set agent_eval/assets/rules/default_rule_set.yaml
 
 # ③ 查看报告
