@@ -64,7 +64,8 @@ router.post(
     const taskTitle = q.task_title?.trim() || undefined
     const taskSubject = q.task_subject?.trim() || undefined
 
-    const token = await pickProjectKey(projectId, tenant.orgId!)
+    const apiKey = q.api_key?.trim()
+    const token = apiKey || (await pickProjectKey(projectId, tenant.orgId!))
     const baseUrl = getConfig().gatewayBaseUrl
     const result = await submitJob({
       baseUrl,
@@ -96,7 +97,8 @@ router.get(
   projectGuard({ role: "owner" }),
   wrap(async (req, res) => {
     const tenant = req.tenant!
-    const token = await pickProjectKey(tenant.projectId!, tenant.orgId!)
+    const apiKey = (req.query as Record<string, string | undefined>).api_key?.trim()
+    const token = apiKey || (await pickProjectKey(tenant.projectId!, tenant.orgId!))
     const job = await getJob(getConfig().gatewayBaseUrl, token, req.params.jobId)
     res.json(job)
   }),

@@ -195,18 +195,22 @@ export const api = {
     projectId: string,
     file: File,
     ruleSetId: string,
-    opts?: { taskId?: string; taskTitle?: string },
+    opts?: { taskId?: string; taskTitle?: string; apiKey?: string },
   ): Promise<{ job_id: string; status: string; poll_url: string }> {
     const qs = new URLSearchParams({ filename: file.name, rule_set_id: ruleSetId })
     if (opts?.taskId) qs.set("task_id", opts.taskId)
     if (opts?.taskTitle) qs.set("task_title", opts.taskTitle)
+    if (opts?.apiKey) qs.set("api_key", opts.apiKey)
     return (await http.post(`/projects/${projectId}/debug/jobs?${qs.toString()}`, file, {
       headers: { "Content-Type": "application/octet-stream" },
       timeout: 60000,
     })).data
   },
-  async getDebugJob(projectId: string, jobId: string): Promise<DebugJobStatus> {
-    return (await http.get(`/projects/${projectId}/debug/jobs/${jobId}`)).data
+  async getDebugJob(projectId: string, jobId: string, apiKey?: string): Promise<DebugJobStatus> {
+    const qs = new URLSearchParams()
+    if (apiKey) qs.set("api_key", apiKey)
+    const suffix = qs.toString() ? `?${qs.toString()}` : ""
+    return (await http.get(`/projects/${projectId}/debug/jobs/${jobId}${suffix}`)).data
   },
 
   /* ── 超管后台 ─────────────────────────────────────── */

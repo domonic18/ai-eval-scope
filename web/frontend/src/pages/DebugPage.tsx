@@ -73,6 +73,7 @@ export default function DebugPage() {
   const [ruleSet, setRuleSet] = useState(RULE_SETS[0])
   const [taskId, setTaskId] = useState("")
   const [taskTitle, setTaskTitle] = useState("")
+  const [apiKey, setApiKey] = useState("")
   const [file, setFile] = useState<File | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -104,7 +105,11 @@ export default function DebugPage() {
     let stopped = false
     const tick = async () => {
       try {
-        const j = await api.getDebugJob(activeJob.projectId, activeJob.jobId)
+        const j = await api.getDebugJob(
+          activeJob.projectId,
+          activeJob.jobId,
+          apiKey.trim() || undefined,
+        )
         if (stopped) return
         setJob(j)
         setHistory((h) => h.map((it) => (it.jobId === j.job_id ? { ...it, status: j.status } : it)))
@@ -130,6 +135,7 @@ export default function DebugPage() {
       const res = await api.submitDebugJob(projectId, file, ruleSet, {
         taskId: taskId.trim() || undefined,
         taskTitle: taskTitle.trim() || undefined,
+        apiKey: apiKey.trim() || undefined,
       })
       const proj = projects.find((p) => p.id === projectId)
       setJob({ job_id: res.job_id, status: res.status })
@@ -240,6 +246,19 @@ export default function DebugPage() {
                   onChange={(e) => setTaskTitle(e.target.value)}
                   placeholder="如 分数入门（留空 → job_id）"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label>API Key（可选，留空用项目首个 Key）</Label>
+                <Input
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="eval-…（留空则用所选项目下首个未吊销 Key）"
+                  className="font-mono"
+                />
+                <p className="text-xs text-muted-foreground">
+                  填写后，以该 Key 身份提交 gateway（便于测试任意 Key 的归属/鉴权）；留空则用项目自动 Key。
+                </p>
               </div>
 
               <div className="rounded-lg border border-sky-500/30 bg-sky-500/5 p-3 text-xs leading-relaxed text-muted-foreground">
