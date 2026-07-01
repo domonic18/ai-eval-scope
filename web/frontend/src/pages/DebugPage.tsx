@@ -171,7 +171,11 @@ export default function DebugPage() {
     let stopped = false
     const tick = async () => {
       const { projectId: pid, jobId, apiKey: ak } = activeJob
-      pushLog("req", `GET /v1/jobs/${jobId.slice(0, 8)}…`)
+      pushLog("req", `GET /v1/jobs/${jobId.slice(0, 8)}…`, {
+        url: `/api/v1/projects/${pid}/debug/jobs/${jobId}`,
+        method: "GET",
+        query: ak.trim() ? { api_key: ak.trim() } : {},
+      })
       try {
         const j = await api.getDebugJob(pid, jobId, ak.trim() || undefined)
         if (stopped) return
@@ -202,10 +206,17 @@ export default function DebugPage() {
     if (!projectId || !file) return
     setSubmitting(true)
     pushLog("req", "POST /v1/jobs", {
-      file: file.name,
-      rule_set_id: ruleSet,
-      task_id: taskId.trim() || undefined,
-      task_title: taskTitle.trim() || undefined,
+      url: `/api/v1/projects/${projectId}/debug/jobs`,
+      method: "POST",
+      headers: { "Content-Type": "application/octet-stream" },
+      query: {
+        filename: file.name,
+        rule_set_id: ruleSet,
+        ...(taskId.trim() ? { task_id: taskId.trim() } : {}),
+        ...(taskTitle.trim() ? { task_title: taskTitle.trim() } : {}),
+        ...(apiKey.trim() ? { api_key: apiKey.trim() } : {}),
+      },
+      body: `${file.name} (${(file.size / 1024).toFixed(1)} KB)`,
     })
     try {
       const res = await api.submitDebugJob(projectId, file, ruleSet, {
@@ -213,7 +224,7 @@ export default function DebugPage() {
         taskTitle: taskTitle.trim() || undefined,
         apiKey: apiKey.trim() || undefined,
       })
-      pushLog("resp", "202 Accepted", res)
+      pushLog("resp", "202 Accepted", res.debug ?? res)
       setJob({ job_id: res.job_id, status: res.status })
       setActiveJob({ projectId, jobId: res.job_id, apiKey })
       toast.success(`已提交，job_id=${res.job_id.slice(0, 8)}…`)
