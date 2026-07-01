@@ -272,21 +272,6 @@ curl "https://eval.bj33smarter.com/gateway/v1/jobs/$JOB" -H "Authorization: Eval
 
 ---
 
-## 用评估器 CLI 接入
-
-如果你直接使用评估器命令行（`agent-eval`），评估结果可经 Web 摄取链路自动回传，无需调用 gateway。在 `.env` 配置：
-
-| 变量 | 默认 | 说明 |
-| --- | --- | --- |
-| `AGENT_EVAL_HOST` | `http://localhost:9000` | Web 平台地址 |
-| `AGENT_EVAL_PUBLIC_KEY` | —（必填） | `pk-eval-…` |
-| `AGENT_EVAL_SECRET_KEY` | —（必填） | `sk-eval-…` |
-| `AGENT_EVAL_PROJECT` | Key 所属项目 | 项目 uuid 或 slug（可省略） |
-| `AGENT_EVAL_UPLOAD` | `false` | 设为 `true` 开启摄取（**需显式开启**） |
-
-配置后正常运行评估命令，`ResultSink` 会把运行 / 样本 / 约束 / 制品经 HMAC 摄取入库；网络失败自动入离线队列重放。
-
----
 
 ## Roadmap
 
