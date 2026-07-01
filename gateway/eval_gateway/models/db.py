@@ -21,6 +21,8 @@ class Job(Base):
     __table_args__ = {"schema": "gateway"}
 
     job_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    # 提交者 API Key id（回传时按此查第三方 token，让结果落到第三方项目）
+    api_key_id: Mapped[str] = mapped_column(String(64), nullable=False)
     project_id: Mapped[str] = mapped_column(String(64), nullable=False)
     org_id: Mapped[str] = mapped_column(String(64), nullable=False)
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="queued")

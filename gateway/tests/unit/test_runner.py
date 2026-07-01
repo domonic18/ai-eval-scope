@@ -22,6 +22,7 @@ def sample_job(tmp_path: Path, mock_settings: MagicMock) -> Job:
 
     return Job(
         job_id="job-1",
+        api_key_id="key-1",
         project_id="project-1",
         org_id="org-1",
         status="running",
@@ -50,11 +51,11 @@ async def test_run_job_evaluates_and_flushes(
     fake_result.report = fake_report
 
     monkeypatch.setattr(runner_mod, "eval_packages", MagicMock(return_value=fake_result))
+    monkeypatch.setattr(runner_mod, "_resolve_submit_token", AsyncMock(return_value="eval-token"))
 
     mock_sink_instance = MagicMock()
     mock_sink_instance.flush = MagicMock()
     monkeypatch.setattr(runner_mod, "ResultSink", MagicMock(return_value=mock_sink_instance))
-    monkeypatch.setattr(runner_mod, "load_config", MagicMock())
 
     with patch.object(runner_mod, "mark_done", new=AsyncMock()) as mock_mark_done:
         await run_job(sample_job)

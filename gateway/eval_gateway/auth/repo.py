@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -48,10 +49,40 @@ async def find_api_key_by_token_hash(session: AsyncSession, token_hash: str) -> 
     if row is None:
         return None
 
+    return _row_to_record(row)
+
+
+_KEY_BY_ID_SQL = text(
+    """
+    SELECT
+        a.id AS api_key_id,
+        a.token_hash AS token_hash,
+        a.token_encrypted AS token_encrypted,
+        a.scopes AS scopes,
+        a.expires_at AS expires_at,
+        a.revoked_at AS revoked_at,
+        p.id AS project_id,
+        p.org_id AS org_id
+    FROM public.api_keys a
+    JOIN public.projects p ON a.project_id = p.id
+    WHERE a.id = :api_key_id
+    """
+)
+
+
+async def find_api_key_by_id(session: AsyncSession, api_key_id: str) -> ApiKeyRecord | None:
+    """按 id 查 API Key（gateway 回传时解密 token 用）。"""
+    result = await session.execute(_KEY_BY_ID_SQL, {"api_key_id": api_key_id})
+    row = result.mappings().first()
+    if row is None:
+        return None
+    return _row_to_record(row)
+
+
+def _row_to_record(row: Any) -> ApiKeyRecord:
     scopes = row["scopes"] or []
     if isinstance(scopes, str):
         scopes = [scopes]
-
     return ApiKeyRecord(
         api_key_id=row["api_key_id"],
         token_hash=row["token_hash"],

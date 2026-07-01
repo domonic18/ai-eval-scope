@@ -29,9 +29,7 @@ def _to_asyncpg_url(url: str) -> str:
     未知 query 参数当作 connect kwargs 报 ``TypeError``，故剥离 schema 等再交给引擎。
     """
     parsed = urlparse(url)
-    query = [
-        (k, v) for k, v in parse_qsl(parsed.query) if k not in _ASYNCPG_DROP_QUERY_PARAMS
-    ]
+    query = [(k, v) for k, v in parse_qsl(parsed.query) if k not in _ASYNCPG_DROP_QUERY_PARAMS]
     return urlunparse(parsed._replace(scheme="postgresql+asyncpg", query=urlencode(query)))
 
 

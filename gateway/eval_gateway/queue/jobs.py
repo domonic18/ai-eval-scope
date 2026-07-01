@@ -33,6 +33,7 @@ async def enqueue(
     """第三方提交的任务入队。"""
     job = Job(
         job_id=job_id,
+        api_key_id=tenant.api_key_id,
         project_id=tenant.project_id,
         org_id=tenant.org_id,
         status=JobStatus.QUEUED.value,
