@@ -4,6 +4,7 @@
  */
 import type { ReactNode } from "react"
 import { Button } from "@/components/shadcn/button"
+import { Checkbox } from "@/components/shadcn/checkbox"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/shadcn/card"
 import {
   Table,
@@ -82,18 +83,64 @@ export function DataTable<T>({
   rowKey,
   empty = "无数据",
   onRowClick,
+  selectable = false,
+  selectedKeys,
+  onSelectionChange,
+  getRowId,
 }: {
   columns: Column<T>[]
   rows: T[]
   rowKey: (row: T) => string | number
   empty?: ReactNode
   onRowClick?: (row: T) => void
+  selectable?: boolean
+  selectedKeys?: Set<string>
+  onSelectionChange?: (keys: Set<string>) => void
+  getRowId?: (row: T) => string
 }) {
+  const colCount = columns.length + (selectable ? 1 : 0)
+  const ids = selectable
+    ? rows.map((r) => (getRowId ? getRowId(r) : String(rowKey(r))))
+    : []
+  const allSelected =
+    !!selectedKeys && selectable && ids.length > 0 && ids.every((id) => selectedKeys.has(id))
+  const someSelected = !!selectedKeys && selectable && ids.some((id) => selectedKeys.has(id))
+  const headerChecked: boolean | "indeterminate" = allSelected
+    ? true
+    : someSelected
+      ? "indeterminate"
+      : false
+
+  const toggleAll = () => {
+    if (!onSelectionChange || !selectedKeys) return
+    const next = new Set(selectedKeys)
+    if (allSelected) ids.forEach((id) => next.delete(id))
+    else ids.forEach((id) => next.add(id))
+    onSelectionChange(next)
+  }
+  const toggleOne = (id: string) => {
+    if (!onSelectionChange || !selectedKeys) return
+    const next = new Set(selectedKeys)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    onSelectionChange(next)
+  }
+
   return (
     <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
+            {selectable && (
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={headerChecked}
+                  onCheckedChange={toggleAll}
+                  disabled={ids.length === 0}
+                  aria-label="全选"
+                />
+              </TableHead>
+            )}
             {columns.map((c) => (
               <TableHead key={c.key} className={c.num ? "text-right" : ""}>
                 {c.title}
@@ -104,24 +151,37 @@ export function DataTable<T>({
         <TableBody>
           {rows.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
+              <TableCell colSpan={colCount} className="h-24 text-center text-muted-foreground">
                 {empty}
               </TableCell>
             </TableRow>
           ) : (
-            rows.map((row) => (
-              <TableRow
-                key={rowKey(row)}
-                className={onRowClick ? "cursor-pointer" : ""}
-                onClick={onRowClick ? () => onRowClick(row) : undefined}
-              >
-                {columns.map((c) => (
-                  <TableCell key={c.key} className={c.num ? "text-right tabular-nums" : ""}>
-                    {c.render ? c.render(row) : (row as Record<string, ReactNode>)[c.key]}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))
+            rows.map((row, i) => {
+              const id = ids[i]
+              return (
+                <TableRow
+                  key={rowKey(row)}
+                  data-state={selectable && selectedKeys?.has(id) ? "selected" : undefined}
+                  className={onRowClick ? "cursor-pointer" : ""}
+                  onClick={onRowClick ? () => onRowClick(row) : undefined}
+                >
+                  {selectable && (
+                    <TableCell className="w-10" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={selectedKeys?.has(id) ?? false}
+                        onCheckedChange={() => toggleOne(id)}
+                        aria-label="选择该行"
+                      />
+                    </TableCell>
+                  )}
+                  {columns.map((c) => (
+                    <TableCell key={c.key} className={c.num ? "text-right tabular-nums" : ""}>
+                      {c.render ? c.render(row) : (row as Record<string, ReactNode>)[c.key]}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              )
+            })
           )}
         </TableBody>
       </Table>
