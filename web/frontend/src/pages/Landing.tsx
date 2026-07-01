@@ -2,19 +2,21 @@
  * 产品落地页（公开 /）— 对应原型 docs/design/index.html。
  * 已登录访问 / 由 RootRedirect 直接跳 /dashboard，此页仅未登录访客可见。
  */
+import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { Button } from "@/components/shadcn/button"
 import { Card, CardContent } from "@/components/shadcn/card"
 import { loadSession } from "../store/auth"
 import { APP_VERSION } from "../version"
+import { SemPill, TierChip } from "../components/shared"
 import { ArrowRight, Columns2, KeyRound, LineChart, ShieldCheck } from "lucide-react"
 
 const FEATURES = [
   {
     icon: LineChart,
     color: "var(--primary)",
-    title: "四维核心指标",
-    desc: "DR / CPR / Reward / CondR 自动聚合，每项带阈值对照与环比趋势，运行健康度一眼可判。",
+    title: "五维核心指标",
+    desc: "DR / CPR / Soft / Pref / Reward 自动聚合，每项带阈值对照与环比趋势，运行健康度一眼可判。",
   },
   {
     icon: ShieldCheck,
@@ -31,8 +33,8 @@ const FEATURES = [
   {
     icon: KeyRound,
     color: "var(--warning)",
-    title: "HMAC 安全摄取",
-    desc: "项目级 API Key + HMAC 签名，评估器一行配置即可推送，密钥仅创建时明文展示一次。",
+    title: "API Key 安全接入",
+    desc: "项目级单一 API Key（eval-…），HTTPS 下 Bearer 直传、免签名，密钥仅创建时明文展示一次。",
   },
 ]
 
@@ -40,13 +42,13 @@ const FLOW = [
   {
     n: "01 / 接入",
     title: "新建项目并创建 Key",
-    desc: "在项目设置中新建 API Key，复制 public_key / secret_key 到评估器环境。",
+    desc: "在项目设置中新建 API Key，复制单一 Bearer Key（eval-…）备用。",
     code: "eval-<48hex>（单一 Bearer Key）",
   },
   {
     n: "02 / 运行",
-    title: "评估器推送结果",
-    desc: "经 HMAC 签名将运行 / 样本 / 约束 / 制品摄取入库，无需改动评估流程。",
+    title: "提交内容评估",
+    desc: "携带 Bearer Key 向 /v1/jobs 提交文件或文本，立即拿到 job_id，异步评估后结果自动入库。",
     code: "POST /v1/jobs",
   },
   {
@@ -57,11 +59,71 @@ const FLOW = [
   },
 ]
 
+/** 预览用五维指标 —— 对齐真实概览卡（ProjectDetail）：阈值着色（达标绿 / 未达黄）+ 环比 delta。 */
 const PREVIEW_METRICS = [
-  { label: "DR", value: "0.962", color: "var(--success)", pct: 96, badge: "达标" },
-  { label: "CPR", value: "0.914", color: "var(--chart-2)", pct: 91, badge: "达标" },
-  { label: "Reward", value: "0.781", color: "var(--warning)", pct: 78, badge: "偏低" },
-  { label: "CondR", value: "0.842", color: "var(--primary)", pct: 84, badge: "" },
+  { key: "DR", label: "交付率(DR)", value: "0.962", color: "var(--success)", delta: "+1.2%", deltaColor: "var(--success)" },
+  { key: "CPR", label: "约束通过率(CPR)", value: "0.914", color: "var(--success)", delta: "+0.6%", deltaColor: "var(--success)" },
+  { key: "Soft", label: "内容质量分(Soft)", value: "0.780", color: "var(--success)", delta: "+1.8%", deltaColor: "var(--success)" },
+  { key: "Pref", label: "用户偏好分(Pref)", value: "0.720", color: "var(--success)", delta: "+0.4%", deltaColor: "var(--success)" },
+  { key: "Reward", label: "综合评分(Reward)", value: "0.781", color: "var(--warning)", delta: "-2.1%", deltaColor: "var(--danger)" },
+]
+
+/** 预览用样本详情约束 —— 来自真实运行案例（contents）。 */
+const PREVIEW_CONSTRAINTS: {
+  stage: string
+  chips: ("hard" | "soft" | "pref")[]
+  scoreText: string
+  tone: string
+  items: {
+    pass: boolean
+    name: string
+    cid: string
+    score: string
+    reason?: string
+    meta?: { method?: string; judge?: string; durationMs?: number }
+  }[]
+}[] = [
+  {
+    stage: "格式 Format",
+    chips: ["hard"],
+    scoreText: "S_format = 1.00",
+    tone: "var(--success)",
+    items: [
+      { pass: true, name: "HTML 有效性检查", cid: "format.html_validity", score: "1.00" },
+      { pass: true, name: "文件格式检查", cid: "format.response_format", score: "1.00" },
+    ],
+  },
+  {
+    stage: "常识 Commonsense",
+    chips: ["hard"],
+    scoreText: "S_common = 0.00",
+    tone: "var(--danger)",
+    items: [
+      { pass: true, name: "逻辑一致性检查", cid: "commonsense.logical_consistency", score: "1.00" },
+      {
+        pass: false,
+        name: "知识准确性检查",
+        cid: "commonsense.info_accuracy",
+        score: "0.00",
+        reason: "知识准确性（LLM + 规则）：factual_correctness=10.0, statement_accuracy=10.0；发现错误（经 LLM 二次确认）：原文中提到的计算是 12×2 + 7 + 3 + 5 + 18 = 100，但实际上 12×2 等于 24，24 + 7 + 3 + 5 + 18 等于 57，因此原文中的等式是错误的。",
+        meta: { method: "LLM_JUDGE", judge: "kimi_judge / moonshot-v1-128k", durationMs: 10052 },
+      },
+      { pass: true, name: "时序正确性检查", cid: "commonsense.chronological_order", score: "1.00" },
+    ],
+  },
+  {
+    stage: "质量 Quality",
+    chips: ["soft", "pref"],
+    scoreText: "S_soft 0.80 · S_pref 0.88",
+    tone: "var(--warning)",
+    items: [
+      { pass: true, name: "需求满足度", cid: "pref.request_fulfillment", score: "0.90" },
+      { pass: true, name: "风格偏好", cid: "pref.style_preference", score: "0.90" },
+      { pass: true, name: "深度偏好", cid: "pref.depth_preference", score: "0.83" },
+      { pass: true, name: "教学逻辑", cid: "soft.teaching_logic", score: "0.87" },
+      { pass: true, name: "内容多样性", cid: "soft.content_diversity", score: "0.73" },
+    ],
+  },
 ]
 
 const STRIP = [
@@ -74,6 +136,7 @@ const STRIP = [
 export default function Landing() {
   const nav = useNavigate()
   const goConsole = () => nav(loadSession() ? "/dashboard" : "/login", { replace: true })
+  const [previewTab, setPreviewTab] = useState<"overview" | "detail">("overview")
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
@@ -203,38 +266,259 @@ export default function Landing() {
 
         {/* 产品预览 */}
         <section id="preview" className="scroll-mt-20 pt-20">
-          <div className="mb-12 text-center">
+          <div className="mb-8 text-center">
             <h2 className="mb-3 text-3xl font-bold tracking-tight">产品预览</h2>
             <p className="text-sm text-muted-foreground">仪器级暗色界面，数据优先</p>
+            <div className="mt-6 inline-flex rounded-md border bg-secondary p-0.5 text-sm">
+              <button
+                onClick={() => setPreviewTab("overview")}
+                className={`rounded px-4 py-1.5 font-medium transition-colors ${
+                  previewTab === "overview"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                概览
+              </button>
+              <button
+                onClick={() => setPreviewTab("detail")}
+                className={`rounded px-4 py-1.5 font-medium transition-colors ${
+                  previewTab === "detail"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                样本详情
+              </button>
+            </div>
           </div>
+
           <div className="overflow-hidden rounded-xl border shadow-2xl">
+            {/* 浏览器/应用窗口栏 */}
             <div className="flex h-10 items-center gap-2 border-b bg-card px-4">
               <span className="size-2.5 rounded-full bg-[var(--danger)]" />
               <span className="size-2.5 rounded-full bg-[var(--warning)]" />
               <span className="size-2.5 rounded-full bg-[var(--success)]" />
               <span className="ml-2 font-mono text-[11px] text-muted-foreground">
-                运行 #run_2f8a · 课件生成评估 — EvalScope
+                {previewTab === "overview"
+                  ? "课件生成评估 · 概览 — EvalScope"
+                  : "样本 contents — EvalScope"}
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-3 bg-background p-5 md:grid-cols-4">
-              {PREVIEW_METRICS.map((m) => (
-                <div key={m.label} className="rounded-lg border bg-card p-4">
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">{m.label}</span>
-                    {m.badge && <span className="text-[10px] text-muted-foreground">{m.badge}</span>}
+
+            {previewTab === "overview" ? (
+              <div className="space-y-3 bg-background p-5">
+                {/* 五维指标卡：对齐真实概览（阈值着色 + 环比） */}
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                  {PREVIEW_METRICS.map((m) => (
+                    <div key={m.key} className="rounded-lg border bg-card p-4">
+                      <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        {m.label}
+                      </div>
+                      <div
+                        className="mt-2 font-mono text-2xl font-bold tabular-nums"
+                        style={{ color: m.color }}
+                      >
+                        {m.value}
+                      </div>
+                      <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                        <span style={{ color: m.deltaColor }}>
+                          {m.delta.startsWith("+") ? "▲" : "▼"} {m.delta}
+                        </span>
+                        <span>较上次</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* 指标趋势 */}
+                <div className="rounded-lg border bg-card">
+                  <div className="flex items-center justify-between border-b px-4 py-2.5">
+                    <span className="text-sm font-semibold">指标趋势</span>
+                    <span className="text-xs text-muted-foreground">近 8 周</span>
                   </div>
-                  <div className="font-mono text-xl font-bold" style={{ color: m.color }}>
-                    {m.value}
-                  </div>
-                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${m.pct}%`, background: m.color }}
-                    />
+                  <div className="p-4">
+                    <svg viewBox="0 0 320 120" className="h-28 w-full" preserveAspectRatio="none">
+                      <line x1="0" y1="30" x2="320" y2="30" stroke="var(--border)" strokeDasharray="3 4" />
+                      <line x1="0" y1="60" x2="320" y2="60" stroke="var(--border)" strokeDasharray="3 4" />
+                      <line x1="0" y1="90" x2="320" y2="90" stroke="var(--border)" strokeDasharray="3 4" />
+                      <polyline
+                        points="0,28 46,24 91,26 137,20 182,22 228,16 274,18 320,12"
+                        fill="none"
+                        stroke="var(--success)"
+                        strokeWidth="2"
+                      />
+                      <polyline
+                        points="0,52 46,55 91,48 137,50 182,44 228,46 274,40 320,38"
+                        fill="none"
+                        stroke="var(--chart-2)"
+                        strokeWidth="2"
+                      />
+                      <polyline
+                        points="0,80 46,76 91,82 137,74 182,84 228,78 274,86 320,82"
+                        fill="none"
+                        stroke="var(--primary)"
+                        strokeWidth="2"
+                      />
+                    </svg>
+                    <div className="mt-2 flex justify-center gap-5 text-[11px] text-muted-foreground">
+                      <span className="flex items-center gap-1.5">
+                        <span className="inline-block h-0.5 w-3" style={{ background: "var(--success)" }} />
+                        DR
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="inline-block h-0.5 w-3" style={{ background: "var(--chart-2)" }} />
+                        CPR
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="inline-block h-0.5 w-3" style={{ background: "var(--primary)" }} />
+                        Reward
+                      </span>
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 bg-background lg:grid-cols-2">
+                {/* 左：约束结论 */}
+                <div className="border-b p-5 lg:border-b-0 lg:border-r">
+                  <div className="mb-4 flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-sm font-semibold">contents</span>
+                    <SemPill tone="danger">fail</SemPill>
+                    <SemPill tone="neutral">
+                      综合评分(Reward) <b className="ml-1 font-mono text-[var(--danger)]">0.669</b>
+                    </SemPill>
+                    <SemPill tone="danger" dot>
+                      1 项约束失败
+                    </SemPill>
+                  </div>
+                  {PREVIEW_CONSTRAINTS.map((s) => (
+                    <div key={s.stage} className="mb-5">
+                      <div className="mb-2 flex items-center gap-2">
+                        <span className="block h-3 w-1 rounded-full" style={{ background: s.tone }} />
+                        <span className="text-sm font-semibold">{s.stage}</span>
+                        <div className="flex items-center gap-1">
+                          {s.chips.map((c) => (
+                            <TierChip key={c} tier={c}>
+                              {c === "hard" ? "HARD_GATE" : c === "soft" ? "SOFT" : "PREFERENCE"}
+                            </TierChip>
+                          ))}
+                        </div>
+                        <span className="ml-auto font-mono text-xs text-muted-foreground">{s.scoreText}</span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {s.items.map((it) => (
+                          <div
+                            key={it.cid}
+                            className={`rounded-md border px-3 py-2 ${
+                              it.pass ? "border-border" : "border-[var(--danger)]/40 bg-[var(--danger-soft)]"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 text-sm">
+                              <SemPill tone={it.pass ? "success" : "danger"}>
+                                {it.pass ? "PASS" : "FAIL"}
+                              </SemPill>
+                              <span className="min-w-0 flex-1 truncate">
+                                {it.name}
+                                <span className="ml-2 font-mono text-[10px] text-muted-foreground">
+                                  {it.cid}
+                                </span>
+                              </span>
+                              <span
+                                className="font-mono text-xs tabular-nums"
+                                style={{ color: it.pass ? "var(--success)" : "var(--danger)" }}
+                              >
+                                {it.score}
+                              </span>
+                            </div>
+                            {!it.pass && it.reason && (
+                              <div className="mt-2 space-y-2 border-l-2 border-[var(--danger)] pl-3 text-xs leading-5 text-muted-foreground">
+                                <div>{it.reason}</div>
+                                {it.meta && (
+                                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                                    <span>
+                                      <b className="text-foreground">方法</b> {it.meta.method}
+                                    </span>
+                                    <span>
+                                      <b className="text-foreground">Judge</b> {it.meta.judge}
+                                    </span>
+                                    <span>
+                                      <b className="text-foreground">耗时</b> {it.meta.durationMs}ms
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* 右：原文预览（真实案例 contents） */}
+                <div className="bg-inset p-5">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="flex rounded-md border bg-secondary p-0.5">
+                      <span className="rounded bg-card px-3 py-1 text-xs font-medium text-foreground">原始文档</span>
+                      <span className="px-3 py-1 text-xs text-muted-foreground">执行 Trace</span>
+                    </div>
+                    <span className="rounded border border-border bg-secondary px-2 py-1 text-xs text-muted-foreground">
+                      大单元学习总纲 / M2 学习单
+                    </span>
+                  </div>
+                  <div
+                    className="mx-auto max-w-lg rounded p-6 text-[#1a1a1a] shadow-lg"
+                    style={{ background: "#fff", fontFamily: "var(--sans)" }}
+                  >
+                    <div className="mb-4 text-sm font-semibold text-sky-700">情境挑战</div>
+                    <p className="mb-4 text-sm leading-7">
+                      妈妈的购物卡原有200元，先充值了50元，又买了水果用去75元，现在卡里还剩多少元？
+                    </p>
+                    <div className="mb-4 rounded-lg bg-[#f0f9ff] p-4">
+                      <div className="mb-2 text-xs font-semibold text-sky-700">解题思路</div>
+                      <p className="text-sm leading-6">充值后：200 + 50 = 250 元</p>
+                      <p className="text-sm leading-6">消费后：250 - 75 = 175 元</p>
+                    </div>
+                    <div className="mb-4 rounded-lg bg-[#fffbeb] p-4">
+                      <div className="mb-2 text-xs font-semibold text-amber-700">思维进阶</div>
+                      <p className="text-sm leading-6">
+                        理解“充值”是加法操作，“消费”是减法操作，建立收支平衡的概念。
+                      </p>
+                    </div>
+
+                    <div className="mb-3 flex items-center gap-2">
+                      <span className="flex size-6 items-center justify-center rounded-full bg-sky-600 text-xs font-bold text-white">
+                        七
+                      </span>
+                      <span className="text-base font-bold">设计购物方案</span>
+                    </div>
+                    <div className="mb-4 text-sm leading-7">
+                      你有100元，要买以下物品中的几样，使得刚好花完或者剩余最少：铅笔5元/支，橡皮3元/个，尺子7元/把，笔记本12元/本，彩笔18元/盒。你会怎么买？
+                    </div>
+                    <div className="mb-4 rounded-lg bg-[#f0f9ff] p-4">
+                      <div className="mb-2 text-xs font-semibold text-sky-700">方案示例</div>
+                      <p className="text-sm leading-6">方案一（刚好花完）：18 + 12 + 7 + 3 + 5 = 45 元 → 剩余55元</p>
+                      <p className="text-sm leading-6">方案二（剩余最少）：100 - (18 + 12 + 7 + 3 + 5) = 55 元</p>
+                      <p className="text-sm leading-6">
+                        最优方案：12×2 + 7 + 3 + 5 + 18 ={" "}
+                        <span
+                          className="rounded px-0.5 underline decoration-2 underline-offset-2"
+                          style={{ background: "#ffe9e9", textDecorationColor: "var(--danger)" }}
+                        >
+                          100
+                        </span>{" "}
+                        元（刚好花完）
+                      </p>
+                    </div>
+                    <div className="rounded-lg bg-[#fffbeb] p-4">
+                      <div className="mb-2 text-xs font-semibold text-amber-700">思维进阶</div>
+                      <p className="text-sm leading-6">
+                        开放性问题，培养组合思维与优化意识，鼓励孩子多角度思考不同方案。
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </section>
 
