@@ -3,7 +3,7 @@ import { useEffect, useState } from "react"
 import { api, type AdminAuditRow } from "../../api/client"
 import { Input } from "@/components/shadcn/input"
 import { useToast } from "../../components/toast"
-import { DataTable, PageHead, Pager, type Column } from "../../components/shared"
+import { DataTable, Page, PageHead, Pager, type Column } from "../../components/shared"
 import { timeAgo } from "../../lib/format"
 import { useDebouncedValue } from "../../lib/useDebounce"
 
@@ -75,7 +75,7 @@ export default function AdminAudit() {
   ]
 
   return (
-    <div className="space-y-6 p-6">
+    <Page>
       <PageHead title="审计日志" sub={`共 ${total} 条（全平台，含平台级操作 orgId=platform）`} />
       <div className="space-y-3 rounded-lg border bg-card p-4 text-card-foreground">
         <Input
@@ -86,6 +86,6 @@ export default function AdminAudit() {
         <DataTable columns={columns} rows={rows} rowKey={(a) => a.id} />
         <Pager page={page} total={total} onPrev={() => load(page - 1)} onNext={() => load(page + 1)} />
       </div>
-    </div>
+    </Page>
   )
 }

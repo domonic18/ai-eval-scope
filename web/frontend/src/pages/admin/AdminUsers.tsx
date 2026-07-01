@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/shadcn/select"
 import { useToast } from "../../components/toast"
-import { DataTable, PageHead, Pager, StatusBadge, type Column } from "../../components/shared"
+import { DataTable, Page, PageHead, Pager, StatusBadge, type Column } from "../../components/shared"
 import { timeAgo } from "../../lib/format"
 import { loadSession } from "../../store/auth"
 import { useDebouncedValue } from "../../lib/useDebounce"
@@ -146,7 +146,7 @@ export default function AdminUsers() {
   ]
 
   return (
-    <div className="space-y-6 p-6">
+    <Page>
       <PageHead title="用户管理" sub={`共 ${total} 个账号`} />
       <div className="space-y-3 rounded-lg border bg-card p-4 text-card-foreground">
         <Input
@@ -240,6 +240,6 @@ export default function AdminUsers() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </Page>
   )
 }

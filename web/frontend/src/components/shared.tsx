@@ -3,6 +3,7 @@
  * 用 Tailwind；替代旧 components/ui 的 DataTable/Metric 等。
  */
 import type { ReactNode } from "react"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/shadcn/button"
 import { Checkbox } from "@/components/shadcn/checkbox"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/shadcn/card"
@@ -24,6 +25,14 @@ export function PageHead({ title, sub, right }: { title: ReactNode; sub?: ReactN
       </div>
       {right}
     </div>
+  )
+}
+
+/** 页面容器：对齐原型 theme.css 的 .page —— 最大 1320px 居中 + 28px(p-7) 内边距。
+ *  所有路由页应用此包裹，避免内容在宽屏被拉满贴边（左右边距不一致）。 */
+export function Page({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <div className={cn("mx-auto w-full max-w-[1320px] space-y-6 p-7", className)}>{children}</div>
   )
 }
 
@@ -189,19 +198,92 @@ export function DataTable<T>({
   )
 }
 
-/** 状态徽标：按语义色映射（outline + 文本色）。 */
-export function StatusBadge({ status }: { status: string }) {
-  const cls =
-    status === "active" || status === "completed"
-      ? "border-emerald-500/40 text-emerald-400"
-      : status === "disabled" || status === "failed"
-        ? "border-red-500/40 text-red-400"
-        : status === "running" || status === "queued" || status === "pending"
-          ? "border-sky-500/40 text-sky-400"
-          : "border-border text-muted-foreground"
+/** 语义胶囊：对齐原型 theme.css 的 .badge —— 圆角全胶囊 + 柔和底色 + 语义文字色，
+ *  无硬描边（neutral 例外）。tone 决定颜色；dot 渲染左侧小圆点（running/失败计数），
+ *  pulse 使圆点呼吸。颜色经 var() 引用令牌，与原型 1:1。 */
+export type PillTone = "success" | "warning" | "danger" | "info" | "accent" | "neutral"
+
+const PILL_STYLE: Record<PillTone, React.CSSProperties> = {
+  success: { background: "var(--success-soft)", color: "var(--success)" },
+  warning: { background: "var(--warning-soft)", color: "var(--warning)" },
+  danger: { background: "var(--danger-soft)", color: "var(--danger)" },
+  info: { background: "var(--info-soft)", color: "var(--info)" },
+  accent: { background: "var(--accent-soft)", color: "var(--accent-brand)" },
+  neutral: {
+    background: "var(--secondary)",
+    color: "var(--muted-foreground)",
+    border: "1px solid var(--border)",
+  },
+}
+
+export function SemPill({
+  tone,
+  children,
+  dot = false,
+  pulse = false,
+  className,
+}: {
+  tone: PillTone
+  children: ReactNode
+  dot?: boolean
+  pulse?: boolean
+  className?: string
+}) {
   return (
-    <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium ${cls}`}>
-      {status}
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap",
+        className,
+      )}
+      style={PILL_STYLE[tone]}
+    >
+      {dot && (
+        <span
+          className={cn("size-1.5 rounded-full", pulse && "animate-pulse")}
+          style={{ background: "currentColor" }}
+        />
+      )}
+      {children}
     </span>
+  )
+}
+
+/** 评估约束层级小标：对齐原型 .chip —— 等宽、小圆角、tier 柔和底色。 */
+export type Tier = "hard" | "soft" | "pref"
+
+const TIER_STYLE: Record<Tier, React.CSSProperties> = {
+  hard: { background: "var(--danger-soft)", color: "var(--tier-hard)" },
+  soft: { background: "var(--warning-soft)", color: "var(--tier-soft)" },
+  pref: { background: "var(--info-soft)", color: "var(--tier-pref)" },
+}
+
+export function TierChip({ tier, children }: { tier: Tier; children: ReactNode }) {
+  return (
+    <span
+      className="inline-flex items-center rounded px-2 py-0.5 font-mono text-[11px] font-semibold tracking-wide"
+      style={TIER_STYLE[tier]}
+    >
+      {children}
+    </span>
+  )
+}
+
+/** 状态徽标：语义胶囊，按状态映射 tone（running/queued/pending 带脉冲圆点）。 */
+export function StatusBadge({ status }: { status: string }) {
+  const live = status === "running" || status === "queued" || status === "pending"
+  const tone: PillTone =
+    status === "active" || status === "completed"
+      ? "success"
+      : status === "disabled" || status === "failed"
+        ? "danger"
+        : status === "partial"
+          ? "warning"
+          : live
+            ? "info"
+            : "neutral"
+  return (
+    <SemPill tone={tone} dot={live} pulse={live}>
+      {status}
+    </SemPill>
   )
 }

@@ -16,7 +16,7 @@ import {
 } from "@/components/shadcn/dialog"
 import { useCrumbs } from "../components/AppShell"
 import { useToast } from "../components/toast"
-import { DataTable, PageHead, StatusBadge, type Column } from "../components/shared"
+import { DataTable, Page, PageHead, StatusBadge, type Column } from "../components/shared"
 import { Download, ExternalLink, Trash2 } from "lucide-react"
 
 interface SampleRow {
@@ -185,7 +185,7 @@ export default function RunDetail() {
   ]
 
   return (
-    <div className="space-y-6 p-6">
+    <Page>
       <PageHead
         title={<span className="flex items-center gap-2 font-mono">运行 #{run.externalRunId} <StatusBadge status={run.status} /></span>}
         sub={`${run.mode} 模式 · ${num(run.totalSamples)} 个样本 · ${new Date(run.createdAt).toLocaleString("zh-CN")}`}
@@ -361,6 +361,6 @@ export default function RunDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </Page>
   )
 }

@@ -8,67 +8,69 @@
    品牌主色沿用 EvalScope 电蓝 #3d6dff；数据辅色信号青 #2fe6c8 映射到 chart-2。 */
 :root {
   --radius: 0.625rem;
-  --background: oklch(0.16 0.012 260);
-  --foreground: oklch(0.95 0.005 260);
-  --card: oklch(0.19 0.014 260);
-  --card-foreground: oklch(0.95 0.005 260);
-  --popover: oklch(0.19 0.014 260);
-  --popover-foreground: oklch(0.95 0.005 260);
-  --primary: oklch(0.62 0.19 264);
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.24 0.014 260);
-  --secondary-foreground: oklch(0.95 0.005 260);
-  --muted: oklch(0.24 0.014 260);
-  --muted-foreground: oklch(0.68 0.012 260);
-  --accent: oklch(0.27 0.02 264);
-  --accent-foreground: oklch(0.95 0.005 260);
-  --destructive: oklch(0.62 0.21 25);
-  --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.28 0.014 260);
-  --input: oklch(0.24 0.014 260);
-  --ring: oklch(0.62 0.19 264);
-  --chart-1: oklch(0.62 0.19 264); /* 电蓝 */
-  --chart-2: oklch(0.78 0.13 175); /* 信号青 */
-  --chart-3: oklch(0.7 0.16 70); /* 黄 */
-  --chart-4: oklch(0.65 0.2 25); /* 红 */
-  --chart-5: oklch(0.62 0.16 145); /* 绿 */
-  --sidebar: oklch(0.17 0.012 260);
-  --sidebar-foreground: oklch(0.95 0.005 260);
-  --sidebar-primary: oklch(0.62 0.19 264);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.24 0.014 260);
-  --sidebar-accent-foreground: oklch(0.95 0.005 260);
-  --sidebar-border: oklch(0.28 0.014 260);
-  --sidebar-ring: oklch(0.62 0.19 264);
+
+  /* 表面色对齐原型 theme.css「仪器级深色仪表盘」（hex 1:1）。
+     Tailwind v4 经 @theme inline 派生 bg-card / bg-background / border-border … 全站生效。 */
+  --background: #0a0c10; /* --bg */
+  --foreground: #eef1f6; /* --text-primary */
+  --card: #0f1116; /* --bg-elevated */
+  --card-foreground: #eef1f6;
+  --popover: #0f1116;
+  --popover-foreground: #eef1f6;
+  --primary: #3d6dff; /* 电蓝 --accent */
+  --primary-foreground: #ffffff;
+  --secondary: #161922; /* --bg-surface */
+  --secondary-foreground: #eef1f6;
+  --muted: #161922;
+  --muted-foreground: #8b919e; /* --text-secondary */
+  --accent: #1b1f29; /* hover 底 --bg-hover */
+  --accent-foreground: #eef1f6;
+  --destructive: #f85149; /* --danger */
+  --destructive-foreground: #ffffff;
+  --border: #20242e; /* --border */
+  --input: #161922;
+  --ring: #3d6dff;
+  --chart-1: #3d6dff; /* 电蓝（Reward） */
+  --chart-2: #2fe6c8; /* 信号青（CPR） */
+  --chart-3: #d29922; /* 黄（Soft） */
+  --chart-4: #f85149; /* 红（Pref/危险） */
+  --chart-5: #3fb950; /* 绿（DR/成功） */
+  --sidebar: #0f1116;
+  --sidebar-foreground: #eef1f6;
+  --sidebar-primary: #3d6dff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1b1f29;
+  --sidebar-accent-foreground: #eef1f6;
+  --sidebar-border: #20242e;
+  --sidebar-ring: #3d6dff;
+
+  /* 语义色别名（对齐原型） */
+  --success: #3fb950;
+  --warning: #d29922;
+  --danger: #f85149;
+  --info: #58a6ff;
+  --signal: #2fe6c8;
+  --accent-brand: #3d6dff;
+
+  /* 柔和底色（徽标 pill 背景，移植原型 *-soft） */
+  --success-soft: rgba(63, 185, 80, 0.12);
+  --warning-soft: rgba(210, 153, 34, 0.12);
+  --danger-soft: rgba(248, 81, 73, 0.12);
+  --info-soft: rgba(88, 166, 255, 0.12);
+  --accent-soft: rgba(61, 109, 255, 0.12);
+
+  /* 评估约束层级色（tier chip） */
+  --tier-hard: #f85149;
+  --tier-soft: #d29922;
+  --tier-pref: #58a6ff;
+
+  /* 更深的内嵌表面（右侧预览面板等） */
+  --bg-inset: #0c0e13;
 }
 
-/* 暗色为默认（html.dark）。token 与 :root 一致，仅留作显式 dark 变体覆盖点。 */
+/* 暗色为默认（html.dark）。:root 已是深色 token，这里仅保留旧 token 名兼容别名
+   （lib/eval 等处仍用 --text-primary / --text-secondary 引用）。 */
 .dark {
-  --background: oklch(0.16 0.012 260);
-  --foreground: oklch(0.95 0.005 260);
-  --card: oklch(0.19 0.014 260);
-  --card-foreground: oklch(0.95 0.005 260);
-  --popover: oklch(0.19 0.014 260);
-  --popover-foreground: oklch(0.95 0.005 260);
-  --primary: oklch(0.62 0.19 264);
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.24 0.014 260);
-  --secondary-foreground: oklch(0.95 0.005 260);
-  --muted: oklch(0.24 0.014 260);
-  --muted-foreground: oklch(0.68 0.012 260);
-  --accent: oklch(0.27 0.02 264);
-  --accent-foreground: oklch(0.95 0.005 260);
-  --destructive: oklch(0.62 0.21 25);
-  --border: oklch(0.28 0.014 260);
-  --input: oklch(0.24 0.014 260);
-  --ring: oklch(0.62 0.19 264);
-
-  /* 语义别名（兼容 lib/eval 等处对旧 token 的引用） */
-  --success: oklch(0.7 0.16 145);
-  --warning: oklch(0.7 0.16 70);
-  --danger: var(--destructive);
-  --info: oklch(0.7 0.13 240);
-  --signal: var(--chart-2);
   --text-primary: var(--foreground);
   --text-secondary: var(--muted-foreground);
 }
@@ -109,6 +111,7 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-inset: var(--bg-inset);
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 }

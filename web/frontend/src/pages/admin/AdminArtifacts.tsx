@@ -18,7 +18,7 @@ import {
   DialogTitle,
 } from "@/components/shadcn/dialog"
 import { useToast } from "../../components/toast"
-import { DataTable, PageHead, Pager, StatCard, type Column } from "../../components/shared"
+import { DataTable, Page, PageHead, Pager, StatCard, type Column } from "../../components/shared"
 import { fmtBytes, timeAgo } from "../../lib/format"
 
 const KINDS = ["all", "output", "screenshot", "judge_record", "trace", "manifest"]
@@ -125,7 +125,7 @@ export default function AdminArtifacts() {
   ]
 
   return (
-    <div className="space-y-6 p-6">
+    <Page>
       <PageHead
         title="产出物管理"
         sub="全平台评估制品（output / screenshot / judge_record / trace / manifest）"
@@ -214,6 +214,6 @@ export default function AdminArtifacts() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </Page>
   )
 }

@@ -20,7 +20,7 @@ import {
   DialogTitle,
 } from "@/components/shadcn/dialog"
 import { useToast } from "../../components/toast"
-import { DataTable, PageHead, Pager, type Column } from "../../components/shared"
+import { DataTable, Page, PageHead, Pager, type Column } from "../../components/shared"
 import { timeAgo } from "../../lib/format"
 import { useDebouncedValue } from "../../lib/useDebounce"
 
@@ -118,7 +118,7 @@ export default function AdminProjects() {
   ]
 
   return (
-    <div className="space-y-6 p-6">
+    <Page>
       <PageHead title="项目管理" sub={`共 ${total} 个项目（跨所有工作组）`} />
       <div className="space-y-3 rounded-lg border bg-card p-4 text-card-foreground">
         <div className="flex gap-2">
@@ -161,6 +161,6 @@ export default function AdminProjects() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </Page>
   )
 }

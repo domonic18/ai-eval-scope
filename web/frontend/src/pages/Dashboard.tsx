@@ -20,15 +20,14 @@ import {
 import { Sparkline } from "@/components/Sparkline"
 import { useCrumbs, useOrg } from "../components/AppShell"
 import { useToast } from "../components/toast"
-import { PageHead } from "../components/shared"
+import { Page, PageHead, SemPill, type PillTone } from "../components/shared"
 import { Plus, RefreshCw } from "lucide-react"
 
-function healthColor(p: DashboardProject): { dot: string; spark: string; label: string; cls: string } {
+function healthColor(p: DashboardProject): { tone: PillTone; spark: string; label: string } {
   const dr = p.latestRun?.dr
-  if (dr == null)
-    return { dot: "bg-muted-foreground", spark: "var(--muted-foreground)", label: "未运行", cls: "border-border text-muted-foreground" }
-  if (dr >= 0.95) return { dot: "bg-emerald-500", spark: "var(--chart-2)", label: "健康", cls: "border-emerald-500/40 text-emerald-400" }
-  return { dot: "bg-yellow-500", spark: "var(--chart-3)", label: "关注", cls: "border-yellow-500/40 text-yellow-400" }
+  if (dr == null) return { tone: "neutral", spark: "var(--muted-foreground)", label: "未运行" }
+  if (dr >= 0.95) return { tone: "success", spark: "var(--chart-2)", label: "健康" }
+  return { tone: "warning", spark: "var(--chart-3)", label: "关注" }
 }
 
 export default function Dashboard() {
@@ -103,7 +102,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <Page>
       <PageHead
         title="项目看板"
         sub="我的全部评估项目"
@@ -145,19 +144,18 @@ export default function Dashboard() {
             const drCls = drVal == null ? "text-muted-foreground" : drVal >= 0.95 ? "text-emerald-400" : "text-yellow-400"
             return (
               <Link key={p.id} to={`/project/${p.id}`} className="block">
-                <Card className="transition-colors hover:border-primary/50 hover:bg-accent/40">
-                  <CardContent className="space-y-3 pt-6">
+                <Card className="transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md">
+                  <CardContent className="space-y-3 p-[18px]">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <div className="truncate font-medium">{p.name}</div>
+                        <div className="truncate text-[15px] font-semibold">{p.name}</div>
                         <div className="truncate text-xs text-muted-foreground">
                           {p.slug} · 创建者 {p.ownerName}
                         </div>
                       </div>
-                      <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium ${h.cls}`}>
-                        <span className={`size-1.5 rounded-full ${h.dot}`} />
+                      <SemPill tone={h.tone} dot={drVal != null} className="shrink-0">
                         {h.label}
-                      </span>
+                      </SemPill>
                     </div>
 
                     <div className="flex h-7 items-center">
@@ -170,18 +168,26 @@ export default function Dashboard() {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 border-t pt-3">
+                    <div className="grid grid-cols-3 gap-2 border-y py-3.5">
                       <div>
-                        <div className={`text-lg font-semibold tabular-nums ${drCls}`}>{fmt3(p.latestRun?.dr)}</div>
-                        <div className="text-[11px] text-muted-foreground">{METRIC_LABEL.DR}</div>
+                        <div className={`font-mono text-lg font-semibold tabular-nums ${drCls}`}>
+                          {fmt3(p.latestRun?.dr)}
+                        </div>
+                        <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                          {METRIC_LABEL.DR}
+                        </div>
                       </div>
                       <div>
-                        <div className="text-lg font-semibold tabular-nums">{fmt3(p.latestRun?.avgReward)}</div>
-                        <div className="text-[11px] text-muted-foreground">{METRIC_LABEL.Reward}</div>
+                        <div className="font-mono text-lg font-semibold tabular-nums">
+                          {fmt3(p.latestRun?.avgReward)}
+                        </div>
+                        <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                          {METRIC_LABEL.Reward}
+                        </div>
                       </div>
                       <div>
-                        <div className="text-lg font-semibold tabular-nums">{num(p.runCount)}</div>
-                        <div className="text-[11px] text-muted-foreground">运行数</div>
+                        <div className="font-mono text-lg font-semibold tabular-nums">{num(p.runCount)}</div>
+                        <div className="text-[11px] uppercase tracking-wide text-muted-foreground">运行数</div>
                       </div>
                     </div>
 
@@ -234,6 +240,6 @@ export default function Dashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </Page>
   )
 }

@@ -12,6 +12,7 @@ import {
   type ChartConfig,
 } from "@/components/shadcn/chart"
 import { num, fmtBytes } from "../../lib/format"
+import { Page } from "../../components/shared"
 
 interface Overview {
   users: { total: number; active: number; disabled: number; admins: number }
@@ -73,7 +74,7 @@ export default function AdminOverview() {
   const trendData = trends.map((t, i) => ({ i: i + 1, DR: t.DR, Reward: t.Reward }))
 
   return (
-    <div className="space-y-6 p-6">
+    <Page>
       <div className="flex items-center gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">平台总览</h1>
         <Badge variant="secondary">super admin</Badge>
@@ -131,6 +132,6 @@ export default function AdminOverview() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </Page>
   )
 }

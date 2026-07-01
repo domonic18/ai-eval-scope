@@ -38,7 +38,7 @@ import {
 } from "@/components/shadcn/select"
 import { useCrumbs } from "../components/AppShell"
 import { useToast } from "../components/toast"
-import { DataTable, PageHead, StatusBadge, type Column } from "../components/shared"
+import { DataTable, Page, PageHead, SemPill, StatusBadge, type Column } from "../components/shared"
 import { Download, Plus, Search, Trash2 } from "lucide-react"
 
 interface Project {
@@ -147,24 +147,25 @@ export default function ProjectDetail() {
     label: new Date(t.created_at).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" }),
     values: { DR: t.DR, CPR: t.CPR, Reward: t.Reward, Soft: t.Soft, Pref: t.Pref },
   }))
+  // 趋势线配色对齐原型 project-detail.html 图例：DR 绿 / CPR 信号青 / Reward 电蓝
   const trendSeries = [
     { key: "DR", name: "交付率(DR)", color: "var(--chart-5)" },
-    { key: "CPR", name: "约束通过率(CPR)", color: "var(--chart-3)" },
+    { key: "CPR", name: "约束通过率(CPR)", color: "var(--chart-2)" },
     { key: "Reward", name: "综合评分(Reward)", color: "var(--chart-1)" },
-    { key: "Soft", name: "内容质量分(Soft)", color: "var(--chart-2)" },
+    { key: "Soft", name: "内容质量分(Soft)", color: "var(--chart-3)" },
     { key: "Pref", name: "用户偏好分(Pref)", color: "var(--chart-4)" },
   ]
 
   return (
-    <div className="space-y-6 p-6">
+    <Page>
       <PageHead
         title={
           <span className="flex items-center gap-2">
             {project ? project.name : "项目"}
             {project && (
-              <span className="inline-flex items-center rounded-md border border-emerald-500/40 px-2 py-0.5 text-xs font-medium text-emerald-400">
+              <SemPill tone="success" dot>
                 健康
-              </span>
+              </SemPill>
             )}
           </span>
         }
@@ -267,7 +268,7 @@ export default function ProjectDetail() {
           )}
         </TabsContent>
       </Tabs>
-    </div>
+    </Page>
   )
 }
 
@@ -545,9 +546,9 @@ AGENT_EVAL_PROJECT=${slug}`
                 title: "状态",
                 render: (k) =>
                   k.revokedAt ? (
-                    <span className="inline-flex items-center rounded-md border border-red-500/40 px-2 py-0.5 text-xs text-red-400">已删除</span>
+                    <SemPill tone="danger">已删除</SemPill>
                   ) : (
-                    <span className="inline-flex items-center rounded-md border border-emerald-500/40 px-2 py-0.5 text-xs text-emerald-400">有效</span>
+                    <SemPill tone="success">有效</SemPill>
                   ),
               },
               {

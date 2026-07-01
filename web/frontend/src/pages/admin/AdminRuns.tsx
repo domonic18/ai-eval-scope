@@ -20,7 +20,7 @@ import {
   DialogTitle,
 } from "@/components/shadcn/dialog"
 import { useToast } from "../../components/toast"
-import { DataTable, PageHead, Pager, StatusBadge, type Column } from "../../components/shared"
+import { DataTable, Page, PageHead, Pager, StatusBadge, type Column } from "../../components/shared"
 import { fmt3, timeAgo } from "../../lib/format"
 import { useDebouncedValue } from "../../lib/useDebounce"
 
@@ -114,7 +114,7 @@ export default function AdminRuns() {
   ]
 
   return (
-    <div className="space-y-6 p-6">
+    <Page>
       <PageHead title="评估任务" sub={`共 ${total} 次运行（全平台）`} />
       <div className="space-y-3 rounded-lg border bg-card p-4 text-card-foreground">
         <div className="flex gap-2">
@@ -158,6 +158,6 @@ export default function AdminRuns() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </Page>
   )
 }

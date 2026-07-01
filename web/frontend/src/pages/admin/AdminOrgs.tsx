@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from "@/components/shadcn/dialog"
 import { useToast } from "../../components/toast"
-import { DataTable, PageHead, Pager, type Column } from "../../components/shared"
+import { DataTable, Page, PageHead, Pager, type Column } from "../../components/shared"
 import { timeAgo } from "../../lib/format"
 
 export default function AdminOrgs() {
@@ -73,7 +73,7 @@ export default function AdminOrgs() {
   ]
 
   return (
-    <div className="space-y-6 p-6">
+    <Page>
       <PageHead title="工作组管理" sub={`共 ${total} 个工作组（删除将级联清除其项目 / 运行 / 制品）`} />
       <div className="space-y-3 rounded-lg border bg-card p-4 text-card-foreground">
         <DataTable columns={columns} rows={rows} rowKey={(o) => o.id} />
@@ -103,6 +103,6 @@ export default function AdminOrgs() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </Page>
   )
 }

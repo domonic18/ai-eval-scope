@@ -20,6 +20,7 @@ import {
 } from "@/components/shadcn/tooltip"
 import { useCrumbs } from "../components/AppShell"
 import { useToast } from "../components/toast"
+import { SemPill, TierChip } from "../components/shared"
 import { ChevronRight, ExternalLink, HelpCircle } from "lucide-react"
 
 interface SampleData {
@@ -85,20 +86,19 @@ export default function SampleDetail() {
     <div className="flex h-[calc(100vh-3.5rem)] flex-col">
       {/* 样本摘要条 */}
       <div className="flex items-center justify-between border-b px-6 py-3">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <span className="font-mono text-sm font-semibold">{sample.externalSampleId}</span>
-          <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs ${sample.status === "pass" || sample.status === "passed" ? "border-emerald-500/40 text-emerald-400" : "border-red-500/40 text-red-400"}`}>
+          <SemPill tone={sample.status === "pass" || sample.status === "passed" ? "success" : "danger"}>
             {sample.status}
-          </span>
-          <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-xs">
+          </SemPill>
+          <SemPill tone="neutral">
             {METRIC_LABEL.Reward}
-            <b className="ml-1 font-mono text-red-400">{fmt3(sample.reward)}</b>
-          </span>
+            <b className="ml-1 font-mono text-[var(--danger)]">{fmt3(sample.reward)}</b>
+          </SemPill>
           {failedCount > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-md border border-red-500/40 px-2 py-0.5 text-xs text-red-400">
-              <span className="size-1.5 rounded-full bg-red-500" />
+            <SemPill tone="danger" dot>
               {failedCount} 项约束失败
-            </span>
+            </SemPill>
           )}
         </div>
         <div className="flex gap-2">
@@ -120,9 +120,9 @@ export default function SampleDetail() {
                     <span className="h-3 w-1 rounded-full" style={{ background: stage.bar }} />
                     <h3 className="text-sm font-semibold">{stage.title}</h3>
                     {stage.chips.map((ch) => (
-                      <span key={ch.label} className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] ${ch.chip === "hard" ? "border-red-500/40 text-red-400" : ch.chip === "soft" ? "border-yellow-500/40 text-yellow-400" : "border-sky-500/40 text-sky-400"}`}>
+                      <TierChip key={ch.label} tier={ch.chip}>
                         {ch.label}
-                      </span>
+                      </TierChip>
                     ))}
                     {stage.scoreExplainKey && (
                       <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
@@ -183,9 +183,9 @@ function ConstraintItem({ c }: { c: ConstraintRow }) {
     <div className={`rounded-md border ${!c.passed ? "border-red-500/30 bg-red-500/5" : "border-border"}`}>
       <button onClick={() => setOpen((o) => !o)} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm">
         {c.passed ? (
-          <span className="inline-flex items-center rounded border border-emerald-500/40 px-1.5 py-0.5 text-[10px] text-emerald-400">PASS</span>
+          <SemPill tone="success">PASS</SemPill>
         ) : (
-          <span className="inline-flex items-center rounded border border-red-500/40 px-1.5 py-0.5 text-[10px] text-red-400">FAIL</span>
+          <SemPill tone="danger">FAIL</SemPill>
         )}
         <span className="flex-1 truncate">
           {c.name}
@@ -327,7 +327,7 @@ function PreviewPane({ artifacts, isMultimodal }: { artifacts: ArtifactRow[]; is
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto bg-muted/20 p-4">
+      <div className="min-h-0 flex-1 overflow-auto bg-inset p-4">
         {!hasAny ? (
           <div className="py-8 text-center text-sm text-muted-foreground">该样本暂无可预览的产出物。</div>
         ) : !current ? (
