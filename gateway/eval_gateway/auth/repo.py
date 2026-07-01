@@ -1,4 +1,4 @@
-"""API Key 数据访问 — 共享 Web 的 PG，只读 api_keys + projects。"""
+"""API Key 数据访问 — 共享 Web 的 PG，只读 api_keys + projects（单一 Bearer token）。"""
 
 from __future__ import annotations
 
@@ -11,11 +11,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 @dataclass
 class ApiKeyRecord:
-    """验签查询结果。"""
+    """验签/回传查询结果。"""
 
     api_key_id: str
-    public_key: str
-    secret_encrypted: str
+    token_hash: str
+    token_encrypted: str
     scopes: list[str]
     project_id: str
     org_id: str
@@ -27,8 +27,8 @@ _API_KEY_SQL = text(
     """
     SELECT
         a.id AS api_key_id,
-        a.public_key AS public_key,
-        a.secret_encrypted AS secret_encrypted,
+        a.token_hash AS token_hash,
+        a.token_encrypted AS token_encrypted,
         a.scopes AS scopes,
         a.expires_at AS expires_at,
         a.revoked_at AS revoked_at,
@@ -36,14 +36,14 @@ _API_KEY_SQL = text(
         p.org_id AS org_id
     FROM public.api_keys a
     JOIN public.projects p ON a.project_id = p.id
-    WHERE a.public_key = :public_key
+    WHERE a.token_hash = :token_hash
     """
 )
 
 
-async def find_api_key_by_public_key(session: AsyncSession, public_key: str) -> ApiKeyRecord | None:
-    """按 public_key 查 API Key，返回验签所需的全部字段。"""
-    result = await session.execute(_API_KEY_SQL, {"public_key": public_key})
+async def find_api_key_by_token_hash(session: AsyncSession, token_hash: str) -> ApiKeyRecord | None:
+    """按 token_hash 查 API Key，返回验签所需的全部字段。"""
+    result = await session.execute(_API_KEY_SQL, {"token_hash": token_hash})
     row = result.mappings().first()
     if row is None:
         return None
@@ -54,8 +54,8 @@ async def find_api_key_by_public_key(session: AsyncSession, public_key: str) -> 
 
     return ApiKeyRecord(
         api_key_id=row["api_key_id"],
-        public_key=row["public_key"],
-        secret_encrypted=row["secret_encrypted"],
+        token_hash=row["token_hash"],
+        token_encrypted=row["token_encrypted"],
         scopes=list(scopes),
         project_id=row["project_id"],
         org_id=row["org_id"],

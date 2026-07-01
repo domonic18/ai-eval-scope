@@ -1,10 +1,9 @@
-"""FastAPI 鉴权依赖 — 复刻 web/backend/src/middleware/apiKeyAuth.ts。
+"""FastAPI 鉴权依赖 — 复刻 web/backend/src/middleware/apiKeyAuth.ts（Bearer）。
 
-流程：解析 Authorization → 查库 → 校验 revoked/expires/scopes → 解密 secret →
-重算 HMAC（基于原始 body）→ 常量时间比较 → 把 tenant 注入 request.state。
+流程：解析 Authorization: Bearer <token> → sha256(token) 查库 →
+校验 revoked/expires/scopes → 把 tenant 注入 request.state。
 
-raw body 获取：直接 `await request.body()`（Starlette 会缓存到 request._body），
-不使用 BaseHTTPMiddleware（其会破坏下游 form()/json() 对 body 的复用）。
+Bearer 无需读取/校验请求体（无签名），下游 form()/json() 可正常复用 body。
 """
 
 from __future__ import annotations
@@ -14,13 +13,9 @@ from datetime import UTC, datetime
 
 from fastapi import HTTPException, Request, status
 
-from eval_gateway.auth.crypto import decrypt_secret, hmac_verify, parse_auth_header
-from eval_gateway.auth.repo import find_api_key_by_public_key
-from eval_gateway.config.settings import get_settings
-from eval_gateway.core.logging import get_logger
+from eval_gateway.auth.crypto import hash_token, parse_bearer_token
+from eval_gateway.auth.repo import find_api_key_by_token_hash
 from eval_gateway.storage.session import get_async_session
-
-LOG = get_logger(__name__)
 
 
 @dataclass
@@ -34,17 +29,17 @@ class Tenant:
 
 
 async def verify_api_key(request: Request) -> Tenant:
-    """FastAPI 依赖：验证 HMAC 签名并返回 Tenant。
+    """FastAPI 依赖：验证 Bearer token 并返回 Tenant。
 
     失败时抛出 401 HTTPException，与 web 行为一致。
     """
     header = request.headers.get("authorization")
-    parsed = parse_auth_header(header)
-    if parsed is None:
+    token = parse_bearer_token(header)
+    if token is None:
         raise _unauthorized()
 
     async for session in get_async_session():  # noqa: ASYNC102
-        key = await find_api_key_by_public_key(session, parsed.public_key)
+        key = await find_api_key_by_token_hash(session, hash_token(token))
     if key is None:
         raise _unauthorized()
 
@@ -54,18 +49,6 @@ async def verify_api_key(request: Request) -> Tenant:
         raise _unauthorized("key expired")
     if "ingest" not in key.scopes:
         raise _unauthorized("scope denied")
-
-    settings = get_settings()
-    try:
-        secret = decrypt_secret(key.secret_encrypted, settings.key_encryption_key)
-    except Exception as exc:  # noqa: BLE001
-        LOG.warning("decrypt_secret.failed", api_key_id=key.api_key_id, error=str(exc))
-        raise _unauthorized() from exc
-
-    raw_body = await request.body()
-    path = request.url.path  # 不带 query string，与 web originalUrl.split('?')[0] 一致
-    if not hmac_verify(secret, request.method, path, raw_body, parsed.signature):
-        raise _unauthorized("signature mismatch")
 
     tenant = Tenant(
         api_key_id=key.api_key_id,
@@ -77,7 +60,7 @@ async def verify_api_key(request: Request) -> Tenant:
     return tenant
 
 
-def _unauthorized(detail: str = "invalid api key or signature") -> HTTPException:
+def _unauthorized(detail: str = "invalid api key") -> HTTPException:
     return HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail={"error": detail, "code": "AUTH_INVALID"},

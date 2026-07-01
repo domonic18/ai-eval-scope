@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     key_encryption_key: str = Field(
         default="dev-insecure-encryption-key",
         alias="PLATFORM_KEY_ENCRYPTION_KEY",
-        description="AES-256-GCM 解密 api_keys.secret_encrypted 的主密钥（key = SHA256(此值)）",
+        description="AES-256-GCM 解密 api_keys.token_encrypted 的主密钥（key = SHA256(此值)）",
     )
 
     # ── gateway 自身（EVALGATEWAY_*）──

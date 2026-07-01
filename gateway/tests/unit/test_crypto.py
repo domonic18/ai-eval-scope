@@ -1,21 +1,18 @@
-"""crypto 单元测试 — 对齐 web/backend/src/infra/crypto.ts。"""
+"""crypto 单元测试 — 对齐 web/backend/src/infra/crypto.ts（单一 Bearer token）。"""
 
 from __future__ import annotations
 
 import base64
 import hashlib
-import hmac
 
 import pytest
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from eval_gateway.auth.crypto import (
-    canonical_string,
-    decrypt_secret,
+    decrypt_token,
     derive_aes_key,
-    hmac_verify,
-    parse_auth_header,
-    sign_hmac,
+    hash_token,
+    parse_bearer_token,
 )
 
 
@@ -25,9 +22,9 @@ def encryption_key() -> str:
 
 
 @pytest.fixture
-def secret(encryption_key: str) -> str:
-    """用 Python 加密一个 secret，模拟 web 端生成的 secretEncrypted。"""
-    plain = "sk-eval-deadbeefcafebabe0102030405060708090a0b0c0d0e0f"
+def token_ciphertext(encryption_key: str) -> str:
+    """用 Python 加密一个 token，模拟 web 端生成的 tokenEncrypted。"""
+    plain = "eval-deadbeefcafebabe0102030405060708090a0b0c0d0e0f"
     key = derive_aes_key(encryption_key)
     iv = b"\x00" * 12  # 测试用固定 IV；生产必须随机
     aesgcm = AESGCM(key)
@@ -43,60 +40,29 @@ def test_derive_aes_key(encryption_key: str) -> None:
     assert key == hashlib.sha256(encryption_key.encode("utf-8")).digest()
 
 
-def test_decrypt_secret(secret: str, encryption_key: str) -> None:
-    plain = decrypt_secret(secret, encryption_key)
-    assert plain.startswith("sk-eval-")
+def test_decrypt_token(token_ciphertext: str, encryption_key: str) -> None:
+    plain = decrypt_token(token_ciphertext, encryption_key)
+    assert plain.startswith("eval-")
 
 
-def test_decrypt_secret_invalid_version() -> None:
-    with pytest.raises(ValueError, match="invalid secret ciphertext"):
-        decrypt_secret("v2:abc:def:ghi", "key")
+def test_decrypt_token_invalid_version() -> None:
+    with pytest.raises(ValueError, match="invalid token ciphertext"):
+        decrypt_token("v2:abc:def:ghi", "key")
 
 
-def test_canonical_string_empty_body() -> None:
-    canonical = canonical_string("POST", "/v1/jobs")
-    empty_hash = hashlib.sha256(b"").hexdigest()
-    assert canonical == f"POST\n/v1/jobs\n{empty_hash}"
+def test_hash_token() -> None:
+    assert hash_token("eval-abc") == hashlib.sha256(b"eval-abc").hexdigest()
 
 
-def test_canonical_string_with_body() -> None:
-    body = b'{"hello":"world"}'
-    canonical = canonical_string("POST", "/v1/jobs", body)
-    expected_hash = hashlib.sha256(body).hexdigest()
-    assert canonical == f"POST\n/v1/jobs\n{expected_hash}"
+def test_parse_bearer_token_valid() -> None:
+    assert parse_bearer_token("Bearer eval-deadbeef") == "eval-deadbeef"
 
 
-def test_sign_hmac() -> None:
-    sig = sign_hmac("secret", "POST", "/v1/jobs", b"body")
-    canonical = "POST\n/v1/jobs\n" + hashlib.sha256(b"body").hexdigest()
-    expected = hmac.new(b"secret", canonical.encode(), hashlib.sha256).hexdigest()
-    assert sig == expected
+def test_parse_bearer_token_case_insensitive_scheme() -> None:
+    assert parse_bearer_token("bearer eval-x") == "eval-x"
 
 
-def test_hmac_verify_success() -> None:
-    sig = sign_hmac("secret", "GET", "/v1/jobs/123")
-    assert hmac_verify("secret", "GET", "/v1/jobs/123", None, sig)
-
-
-def test_hmac_verify_wrong_secret() -> None:
-    sig = sign_hmac("secret", "GET", "/v1/jobs/123")
-    assert not hmac_verify("wrong", "GET", "/v1/jobs/123", None, sig)
-
-
-def test_parse_auth_header_valid() -> None:
-    parsed = parse_auth_header("Eval pk-eval-abc:deadbeef")
-    assert parsed is not None
-    assert parsed.public_key == "pk-eval-abc"
-    assert parsed.signature == "deadbeef"
-
-
-def test_parse_auth_header_uppercase_signature_normalized() -> None:
-    parsed = parse_auth_header("Eval pk-eval-abc:DEADBEEF")
-    assert parsed is not None
-    assert parsed.signature == "deadbeef"
-
-
-def test_parse_auth_header_invalid() -> None:
-    assert parse_auth_header("Bearer token") is None
-    assert parse_auth_header(None) is None
-    assert parse_auth_header("") is None
+def test_parse_bearer_token_invalid() -> None:
+    assert parse_bearer_token("Eval pk-eval-abc:deadbeef") is None  # 旧 HMAC 格式不再支持
+    assert parse_bearer_token(None) is None
+    assert parse_bearer_token("") is None
