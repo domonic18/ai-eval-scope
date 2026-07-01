@@ -326,7 +326,7 @@ export function AppShell() {
             </nav>
             <div className="border-t p-3">
               <Link
-                to="/dashboard"
+                to="/docs"
                 className="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
               >
                 <BookOpen className="size-4" />

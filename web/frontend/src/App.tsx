@@ -1,6 +1,8 @@
 import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom"
 import { loadSession } from "./store/auth"
 import { AppShell, useOrg } from "./components/AppShell"
+import Landing from "./pages/Landing"
+import DocsPage from "./pages/DocsPage"
 import LoginPage from "./pages/LoginPage"
 import RegisterPage from "./pages/RegisterPage"
 import JoinPage from "./pages/JoinPage"
@@ -19,9 +21,9 @@ import AdminRuns from "./pages/admin/AdminRuns"
 import AdminArtifacts from "./pages/admin/AdminArtifacts"
 import AdminAudit from "./pages/admin/AdminAudit"
 
-/** 根路径：已登录进看板，未登录进登录页（为公开落地页占位）。 */
+/** 根路径：已登录进看板，未登录展示产品落地页。 */
 function RootRedirect() {
-  return <Navigate to={loadSession() ? "/dashboard" : "/login"} replace />
+  return loadSession() ? <Navigate to="/dashboard" replace /> : <Landing />
 }
 
 /** 登录守卫：无 session 跳登录（记下来源）。通过则渲染 AppShell（含 Outlet）。 */
@@ -59,6 +61,7 @@ export default function App() {
       <Route path="/" element={<RootRedirect />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/docs" element={<DocsPage />} />
       <Route element={<RequireAuth />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/join" element={<JoinPage />} />
