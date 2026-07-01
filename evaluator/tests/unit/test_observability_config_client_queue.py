@@ -1,13 +1,10 @@
-"""observability 配置 / HMAC 签名 / 离线队列 单测。"""
+"""observability 配置 / Bearer 鉴权 / 离线队列 单测。"""
 
 from __future__ import annotations
 
-import hashlib
-import hmac
 import time
 from pathlib import Path
 
-from agent_eval.observability.client import sign
 from agent_eval.observability.config import load_config
 from agent_eval.observability.queue import IngestQueue
 
@@ -24,14 +21,14 @@ def test_config_enabled_with_credentials_and_upload(tmp_path: Path):
         workspace=tmp_path,
         env={
             "AGENT_EVAL_HOST": "https://platform.example.com",
-            "AGENT_EVAL_PUBLIC_KEY": "pk-eval-abc",
-            "AGENT_EVAL_SECRET_KEY": "sk-eval-xyz",
+            "AGENT_EVAL_API_KEY": "eval-abc",
             "AGENT_EVAL_UPLOAD": "true",
             "AGENT_EVAL_PROJECT": "demo",
         },
     )
     assert cfg.enabled is True
     assert cfg.has_credentials() is True
+    assert cfg.api_key == "eval-abc"
     assert cfg.ingest_url == "https://platform.example.com/api/public/ingest"
     assert cfg.artifacts_url == "https://platform.example.com/api/public/artifacts/url"
     assert cfg.project == "demo"
@@ -40,26 +37,9 @@ def test_config_enabled_with_credentials_and_upload(tmp_path: Path):
 
 def test_config_upload_override(tmp_path: Path):
     # 有凭据但 env 未开 upload → disabled；CLI --upload 覆盖 → enabled
-    env = {"AGENT_EVAL_PUBLIC_KEY": "pk", "AGENT_EVAL_SECRET_KEY": "sk"}
+    env = {"AGENT_EVAL_API_KEY": "eval-x"}
     assert load_config(workspace=tmp_path, env=env).enabled is False
     assert load_config(workspace=tmp_path, env=env, upload_override=True).enabled is True
-
-
-# ── HMAC 签名（与后端 crypto.ts 一致）──
-def test_sign_matches_canonical_formula():
-    """独立按公式重算，验证 sign() 实现（METHOD\\nPATH\\nsha256(body)）。"""
-    method, path, secret = "POST", "/api/public/ingest", "the-secret"
-    body = b'{"schema_version":"1.0","events":[]}'
-    expected_canon = f"{method}\n{path}\n{hashlib.sha256(body).hexdigest()}"
-    expected = hmac.new(secret.encode(), expected_canon.encode(), hashlib.sha256).hexdigest()
-    assert sign(method, path, body, secret) == expected
-
-
-def test_sign_deterministic_and_method_uppercased():
-    body = b"x"
-    s1 = sign("post", "/p", body, "k")
-    s2 = sign("POST", "/p", body, "k")
-    assert s1 == s2  # 方法大小写归一
 
 
 # ── 离线队列 ──

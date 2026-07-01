@@ -1,4 +1,4 @@
-"""端到端跨语言验证：Python ResultSink 的 HMAC 签名必须被 Node 后端 apiKeyAuth 接受。
+"""端到端验证：Python ResultSink 的 Bearer 鉴权必须被 Node 后端 apiKeyAuth 接受。
 
 默认跳过（需后端在跑）。显式启用：
     AGENT_EVAL_E2E=1 uv run pytest tests/integration/test_observability_e2e.py
@@ -26,16 +26,25 @@ HOST = os.environ.get("AGENT_EVAL_E2E_HOST", "http://localhost:9000")
 
 @pytest.fixture(scope="module")
 def project_key() -> dict[str, str]:
-    """注册用户 → 建项目 → 签发 Key，返回 {projectId, publicKey, secretKey, accessToken}。"""
+    """注册用户 → 建团队 → 建项目 → 签发 Key，返回 {projectId, token}。"""
     suffix = uuid.uuid4().hex[:8]
     email = f"e2e_{suffix}@example.com"
     r = httpx.post(
         f"{HOST}/api/v1/auth/register",
-        json={"email": email, "password": "password123", "name": "E2E", "orgName": f"Org{suffix}"},
+        json={"email": email, "password": "password123", "name": "E2E"},
         timeout=30,
     )
     r.raise_for_status()
     access_token = r.json()["access_token"]
+
+    # 团队改造后注册不再自动建团队，需显式建团队
+    r = httpx.post(
+        f"{HOST}/api/v1/orgs",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={"name": f"Org{suffix}"},
+        timeout=30,
+    )
+    r.raise_for_status()
     org_id = r.json()["org"]["id"]
 
     r = httpx.post(
@@ -55,7 +64,7 @@ def project_key() -> dict[str, str]:
     )
     r.raise_for_status()
     key = r.json()["key"]
-    return {"projectId": project_id, "publicKey": key["publicKey"], "secretKey": key["secretKey"]}
+    return {"projectId": project_id, "token": key["token"]}
 
 
 def _fake_eval_result(run_id: str):
@@ -99,7 +108,7 @@ def _fake_eval_result(run_id: str):
 
 
 def test_result_sink_end_to_end(project_key):
-    """ResultSink.flush → 后端 202，事件被接受（证明 Python HMAC 与 Node 验签一致 + 链路通）。"""
+    """ResultSink.flush → 后端 202，事件被接受（Bearer 鉴权 + 链路通）。"""
     from agent_eval.observability.config import load_config
     from agent_eval.observability.sink import ResultSink
 
@@ -107,8 +116,7 @@ def test_result_sink_end_to_end(project_key):
         upload_override=True,
         env={
             "AGENT_EVAL_HOST": HOST,
-            "AGENT_EVAL_PUBLIC_KEY": project_key["publicKey"],
-            "AGENT_EVAL_SECRET_KEY": project_key["secretKey"],
+            "AGENT_EVAL_API_KEY": project_key["token"],
             "AGENT_EVAL_PROJECT": project_key["projectId"],
         },
     )
@@ -133,8 +141,7 @@ def test_cross_project_forbidden(project_key):
         upload_override=True,
         env={
             "AGENT_EVAL_HOST": HOST,
-            "AGENT_EVAL_PUBLIC_KEY": project_key["publicKey"],
-            "AGENT_EVAL_SECRET_KEY": project_key["secretKey"],
+            "AGENT_EVAL_API_KEY": project_key["token"],
             "AGENT_EVAL_PROJECT": "00000000-0000-0000-0000-000000000000",  # 他项目
         },
     )

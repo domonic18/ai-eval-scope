@@ -322,7 +322,7 @@ def upload(
     """把历史运行的评估结果回填到可观测平台（Sprint 7e）。
 
     从 workspace/runs/{run}/ 的 summary.json + 各 task 的 report.json 重建事件并推送。
-    需配置 AGENT_EVAL_HOST / AGENT_EVAL_PUBLIC_KEY / AGENT_EVAL_SECRET_KEY。
+    需配置 AGENT_EVAL_HOST / AGENT_EVAL_API_KEY。
     """
     import json as _json
 
@@ -351,7 +351,7 @@ def upload(
     cfg = load_config(upload_override=True)
     if not cfg.has_credentials():
         rprint(
-            "[red]未配置凭据：请设置 AGENT_EVAL_HOST / AGENT_EVAL_PUBLIC_KEY / AGENT_EVAL_SECRET_KEY[/red]"
+            "[red]未配置凭据：请设置 AGENT_EVAL_HOST / AGENT_EVAL_API_KEY[/red]"
         )
         raise typer.Exit(code=1)
 

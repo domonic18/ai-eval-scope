@@ -1,17 +1,12 @@
-"""IngestionClient：HTTP + HMAC 签名 + presigned 制品上传 + 重试退避。
+"""IngestionClient：HTTP + Bearer 鉴权 + presigned 制品上传 + 重试退避。
 
-签名算法与后端 apiKeyAuth（web/backend/src/infra/crypto.ts）严格一致：
-    canonical = METHOD + "\n" + PATH + "\n" + sha256(body)
-    signature  = hex(HMAC_SHA256(secret, canonical))
-    Authorization: "Eval " + public_key + ":" + signature
-
+鉴权（单一 API Key，Bearer）：Authorization: Bearer <api_key>。
 重试：429/5xx 指数退避，尊重 Retry-After。
 """
 
 from __future__ import annotations
 
 import hashlib
-import hmac
 import json
 import random
 import time
@@ -44,21 +39,6 @@ class IngestResponse:
     raw: dict[str, Any]
 
 
-def sign(method: str, path: str, body: bytes, secret: str) -> str:
-    """计算 HMAC-SHA256 签名（与后端一致）。"""
-    body_hash = hashlib.sha256(body).hexdigest()
-    canonical = f"{method.upper()}\n{path}\n{body_hash}"
-    return hmac.new(secret.encode("utf-8"), canonical.encode("utf-8"), hashlib.sha256).hexdigest()
-
-
-def _path_of(url: str) -> str:
-    """从绝对 URL 取 path（签名只用 path，不含 host/query）。"""
-    from urllib.parse import urlparse
-
-    p = urlparse(url)
-    return p.path or "/"
-
-
 class IngestionClient:
     """平台摄取客户端（线程安全；每次调用独立 httpx 请求）。"""
 
@@ -74,7 +54,7 @@ class IngestionClient:
             separators=(",", ":"),
             ensure_ascii=False,
         ).encode("utf-8")
-        return self._signed_post(self.cfg.ingest_url, body, parse_ingest=True)
+        return self._bearer_post(self.cfg.ingest_url, body, parse_ingest=True)
 
     def health(self) -> dict[str, Any]:
         """GET /health 启动自检（无签名）。失败抛异常。"""
@@ -87,13 +67,12 @@ class IngestionClient:
     def presign_put(self, request: dict[str, Any]) -> dict[str, Any]:
         """POST /api/public/artifacts/url 申请 presigned PUT。返回 {object_key, upload_url, headers, expires_at}。"""
         body = json.dumps(request, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
-        resp = self._signed_post(self.cfg.artifacts_url, body, parse_ingest=False)
-        return resp  # type: ignore[return-value]
+        return self._bearer_post(self.cfg.artifacts_url, body, parse_ingest=False)  # type: ignore[return-value]
 
     def upload_file(
         self, local_path: Path, presigned: dict[str, Any], content_type: str
     ) -> dict[str, Any]:
-        """PUT 本地文件到 presigned URL。返回 {md5, size}。"""
+        """PUT 本地文件到 presigned URL（presigned URL 自带签名，无需 Authorization）。返回 {md5, size}。"""
         data = local_path.read_bytes()
         headers = dict(presigned.get("headers") or {})
         headers.setdefault("Content-Type", content_type)
@@ -102,12 +81,10 @@ class IngestionClient:
             resp.raise_for_status()
         return {"md5": hashlib.md5(data).hexdigest(), "size": len(data)}
 
-    # ── 内部：带签名的 POST + 退避重试 ──
-    def _signed_post(self, url: str, body: bytes, *, parse_ingest: bool) -> Any:
-        path = _path_of(url)
-        signature = sign("POST", path, body, self.cfg.secret_key)
+    # ── 内部：Bearer POST + 退避重试 ──
+    def _bearer_post(self, url: str, body: bytes, *, parse_ingest: bool) -> Any:
         headers = {
-            "Authorization": f"Eval {self.cfg.public_key}:{signature}",
+            "Authorization": f"Bearer {self.cfg.api_key}",
             "Content-Type": "application/json",
             "X-Eval-Client": self.cfg.client_version,
         }

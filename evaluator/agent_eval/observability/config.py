@@ -1,9 +1,8 @@
 """读取 AGENT_EVAL_* 环境变量，生成 ObservabilityConfig。
 
-约定（与 docs/arch/09 §12.3 评估器侧变量一致）：
+约定（单一 Bearer Key）：
   AGENT_EVAL_HOST          平台地址（默认 http://localhost:9000）
-  AGENT_EVAL_PUBLIC_KEY    pk-eval-...（API Key 公钥）
-  AGENT_EVAL_SECRET_KEY    sk-eval-...（API Key 密钥，仅客户端持有）
+  AGENT_EVAL_API_KEY       eval-...（单一 API Key，Bearer 鉴权）
   AGENT_EVAL_PROJECT       目标项目（uuid 或 slug，可选；缺省=Key 所属项目）
   AGENT_EVAL_UPLOAD        true/1 启用摄取（默认 false，需显式开启）
   AGENT_EVAL_QUEUE_DIR     离线队列目录（默认 <workspace>/.ingest_queue）
@@ -26,8 +25,7 @@ class ObservabilityConfig:
 
     enabled: bool
     host: str
-    public_key: str
-    secret_key: str
+    api_key: str
     project: str | None
     upload: bool
     ingest_url: str
@@ -44,7 +42,7 @@ class ObservabilityConfig:
     client_version: str
 
     def has_credentials(self) -> bool:
-        return bool(self.public_key and self.secret_key)
+        return bool(self.api_key)
 
 
 def _truthy(val: str | None) -> bool:
@@ -75,8 +73,7 @@ def load_config(
     d = OBSERVABILITY_DEFAULTS
 
     host = e.get("AGENT_EVAL_HOST", d.host).rstrip("/")
-    public_key = e.get("AGENT_EVAL_PUBLIC_KEY", "").strip()
-    secret_key = e.get("AGENT_EVAL_SECRET_KEY", "").strip()
+    api_key = e.get("AGENT_EVAL_API_KEY", "").strip()
     project = e.get("AGENT_EVAL_PROJECT", "").strip() or None
 
     upload = _truthy(e.get("AGENT_EVAL_UPLOAD"))
@@ -91,13 +88,12 @@ def load_config(
     else:
         queue_dir = Path(".ingest_queue")
 
-    enabled = upload and bool(public_key) and bool(secret_key)
+    enabled = upload and bool(api_key)
 
     return ObservabilityConfig(
         enabled=enabled,
         host=host,
-        public_key=public_key,
-        secret_key=secret_key,
+        api_key=api_key,
         project=project,
         upload=upload,
         ingest_url=host + d.ingest_path,
