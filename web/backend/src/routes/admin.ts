@@ -11,6 +11,8 @@ import { hashPassword } from "../infra/crypto"
 import { adminRepository } from "../repositories/admin.repository"
 import { adminStatsRepository } from "../repositories/adminStats.repository"
 import { AuditService } from "../services/audit.service"
+import { getLogger } from "../infra/logger"
+import { getObjectStorage } from "../infra/objectStorage"
 import { getPrisma } from "../infra/prisma"
 
 const router = Router()
@@ -35,6 +37,19 @@ const audit = (req: Request, action: string, targetId: string, metadata?: Record
     targetId,
     metadata: metadata as never,
   }).catch(() => undefined)
+
+/** 对象存储 best-effort 清理：失败仅 warn（DB 已删、走势以 DB 为准）。 */
+async function cleanupObjects(keys: string[], label: string) {
+  if (!keys.length) return
+  try {
+    await getObjectStorage().deleteObjects(keys)
+  } catch (err) {
+    getLogger().warn(
+      { label, count: keys.length, error: (err as Error).message },
+      "admin_delete_objects_failed",
+    )
+  }
+}
 
 /* ── 统计 ───────────────────────────────────────────── */
 router.get(
@@ -110,7 +125,7 @@ router.post(
 router.patch(
   "/users/:id",
   wrap(async (req, res) => {
-    const { role, status } = req.body || {}
+    const { role, status, name } = req.body || {}
     if (role && !["user", "admin"].includes(role)) {
       throw new PlatformError("invalid role", { status: 400, code: "SCHEMA_INVALID" })
     }
@@ -121,12 +136,25 @@ router.patch(
     if (req.user!.userId === req.params.id && (role === "user" || status === "disabled")) {
       throw new PlatformError("cannot demote/disable yourself", { status: 400, code: "SELF_LOCKOUT" })
     }
-    const data: { role?: string; status?: string } = {}
+    const data: { role?: string; status?: string; name?: string | null } = {}
     if (role) data.role = role
     if (status) data.status = status
+    if (name !== undefined) data.name = name === "" ? null : name
     const user = await adminRepository.updateUser(req.params.id, data)
     await audit(req, "admin.user.update", user.id, data)
-    res.json({ id: user.id, role: user.role, status: user.status })
+    res.json({ id: user.id, name: user.name, role: user.role, status: user.status })
+  }),
+)
+router.delete(
+  "/users/:id",
+  wrap(async (req, res) => {
+    // 防自锁：不允许删除自己
+    if (req.user!.userId === req.params.id) {
+      throw new PlatformError("cannot delete yourself", { status: 400, code: "SELF_LOCKOUT" })
+    }
+    await adminRepository.deleteUser(req.params.id)
+    await audit(req, "admin.user.delete", req.params.id)
+    res.json({ ok: true })
   }),
 )
 
@@ -166,6 +194,15 @@ router.get(
     ),
   ),
 )
+router.delete(
+  "/projects/:id",
+  wrap(async (req, res) => {
+    const keys = await adminRepository.deleteProject(req.params.id)
+    await cleanupObjects(keys, `project:${req.params.id}`)
+    await audit(req, "admin.project.delete", req.params.id, { objectKeys: keys.length })
+    res.json({ ok: true })
+  }),
+)
 
 /* ── 评估任务（全平台 run）────────────────────────── */
 router.get(
@@ -183,6 +220,15 @@ router.get(
     ),
   ),
 )
+router.delete(
+  "/runs/:id",
+  wrap(async (req, res) => {
+    const keys = await adminRepository.deleteRun(req.params.id)
+    await cleanupObjects(keys, `run:${req.params.id}`)
+    await audit(req, "admin.run.delete", req.params.id, { objectKeys: keys.length })
+    res.json({ ok: true })
+  }),
+)
 
 /* ── 产出物（制品）管理 ─────────────────────────────── */
 router.get(
@@ -196,6 +242,31 @@ router.get(
       }),
     ),
   ),
+)
+router.delete(
+  "/artifacts/:id",
+  wrap(async (req, res) => {
+    const key = await adminRepository.deleteArtifact(req.params.id)
+    if (key) await cleanupObjects([key], `artifact:${req.params.id}`)
+    await audit(req, "admin.artifact.delete", req.params.id)
+    res.json({ ok: true })
+  }),
+)
+router.delete(
+  "/artifacts",
+  wrap(async (req, res) => {
+    const ids: unknown = (req.body || {}).ids
+    if (!Array.isArray(ids) || !ids.every((x) => typeof x === "string") || !ids.length) {
+      throw new PlatformError("ids must be a non-empty string array", { status: 400, code: "SCHEMA_INVALID" })
+    }
+    if (ids.length > 500) {
+      throw new PlatformError("batch delete limited to 500 items", { status: 400, code: "SCHEMA_INVALID" })
+    }
+    const keys = await adminRepository.deleteArtifacts(ids)
+    await cleanupObjects(keys, `artifacts:batch:${ids.length}`)
+    await audit(req, "admin.artifact.batch_delete", ids.join(","), { count: ids.length, ids })
+    res.json({ ok: true, deleted: ids.length })
+  }),
 )
 
 /* ── 审计日志（全平台）────────────────────────────── */

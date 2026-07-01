@@ -63,7 +63,21 @@ export function projectGuard(opts: GuardOpts = {}): RequestHandler {
         return next(new PlatformError("auth required", { status: 401, code: "AUTH_INVALID" }))
       }
       const project = await projectRepoBootstrap.findByIdAny(projectId!)
-      if (!project || project.archivedAt) {
+      if (!project) {
+        return next(new PlatformError("not found", { status: 404, code: "NOT_FOUND" }))
+      }
+      // 平台超管跨租户放行：以项目所属组织 owner 身份注入 tenant
+      if (req.user.platformAdmin) {
+        req.tenant = {
+          kind: "user",
+          userId: req.user.userId,
+          orgId: project.orgId,
+          projectId,
+          role: "owner",
+        }
+        return next()
+      }
+      if (project.archivedAt) {
         return next(new PlatformError("not found", { status: 404, code: "NOT_FOUND" }))
       }
       const membership = await orgRepo.findMembership(project.orgId, req.user.userId)
@@ -115,6 +129,16 @@ export function runGuard(opts: GuardOpts = {}): RequestHandler {
       if (!project) {
         return next(new PlatformError("not found", { status: 404, code: "NOT_FOUND" }))
       }
+      if (req.user.platformAdmin) {
+        req.tenant = {
+          kind: "user",
+          userId: req.user.userId,
+          orgId: project.orgId,
+          projectId: run.projectId,
+          role: "owner",
+        }
+        return next()
+      }
       const membership = await orgRepo.findMembership(project.orgId, req.user.userId)
       if (!membership) {
         return next(new PlatformError("not found", { status: 404, code: "NOT_FOUND" }))
@@ -153,6 +177,16 @@ export function artifactGuard(): RequestHandler {
       })
       if (!art) {
         return next(new PlatformError("not found", { status: 404, code: "NOT_FOUND" }))
+      }
+      if (req.user.platformAdmin) {
+        req.tenant = {
+          kind: "user",
+          userId: req.user.userId,
+          orgId: art.project.orgId,
+          projectId: art.project.id,
+          role: "owner",
+        }
+        return next()
       }
       const membership = await orgRepo.findMembership(art.project.orgId, req.user.userId)
       if (!membership) {

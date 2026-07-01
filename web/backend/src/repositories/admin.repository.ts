@@ -63,7 +63,7 @@ class AdminRepository {
     })
   }
 
-  updateUser(id: string, data: { role?: string; status?: string }) {
+  updateUser(id: string, data: { role?: string; status?: string; name?: string | null }) {
     return this.prisma.user.update({ where: { id }, data })
   }
 
@@ -233,6 +233,49 @@ class AdminRepository {
       }),
       this.prisma.auditLog.count({ where }),
     ]).then(([items, total]) => ({ items, total, page, size }))
+  }
+
+  /* ── 删除操作（跨租户管理）────────────────────────── */
+
+  /** 删用户：OrgMembership/JoinRequest 均 onDelete:Cascade，自动清理。 */
+  deleteUser(id: string) {
+    return this.prisma.user.delete({ where: { id } })
+  }
+
+  /** 删单条制品（叶子表，无级联）；返回 objectKey 供 best-effort 清对象存储，不存在返回 null。 */
+  async deleteArtifact(id: string): Promise<string | null> {
+    const a = await this.prisma.artifact.findUnique({ where: { id }, select: { objectKey: true } })
+    if (!a) return null
+    await this.prisma.artifact.delete({ where: { id } })
+    return a.objectKey
+  }
+
+  /** 批量删制品：单事务原子，返回待清理的 objectKey 列表。 */
+  async deleteArtifacts(ids: string[]): Promise<string[]> {
+    if (!ids.length) return []
+    return this.prisma.$transaction(async (tx) => {
+      const arts = await tx.artifact.findMany({ where: { id: { in: ids } }, select: { objectKey: true } })
+      await tx.artifact.deleteMany({ where: { id: { in: ids } } })
+      return arts.map((a) => a.objectKey)
+    })
+  }
+
+  /** 删项目：事务内先取关联 artifact objectKey，再 project.delete（DB 级联删 run/apiKey/artifact）。 */
+  async deleteProject(id: string): Promise<string[]> {
+    return this.prisma.$transaction(async (tx) => {
+      const arts = await tx.artifact.findMany({ where: { projectId: id }, select: { objectKey: true } })
+      await tx.project.delete({ where: { id } })
+      return arts.map((a) => a.objectKey)
+    })
+  }
+
+  /** 删运行：事务内先取关联 artifact objectKey，再 run.delete（DB 级联删 sample/constraint/artifact）。 */
+  async deleteRun(id: string): Promise<string[]> {
+    return this.prisma.$transaction(async (tx) => {
+      const arts = await tx.artifact.findMany({ where: { runId: id }, select: { objectKey: true } })
+      await tx.run.delete({ where: { id } })
+      return arts.map((a) => a.objectKey)
+    })
   }
 }
 
