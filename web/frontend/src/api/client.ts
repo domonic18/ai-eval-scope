@@ -240,8 +240,14 @@ export const api = {
       size: number
     }
   },
-  async adminUpdateUser(id: string, data: { role?: string; status?: string }) {
+  async adminUpdateUser(
+    id: string,
+    data: { role?: string; status?: string; name?: string | null },
+  ) {
     return (await http.patch(`/admin/users/${id}`, data)).data
+  },
+  async adminDeleteUser(id: string) {
+    return (await http.delete(`/admin/users/${id}`)).data
   },
   async adminListOrgs(opts: { search?: string; page?: number } = {}) {
     const qs = new URLSearchParams()
@@ -269,6 +275,9 @@ export const api = {
       size: number
     }
   },
+  async adminDeleteProject(id: string) {
+    return (await http.delete(`/admin/projects/${id}`)).data
+  },
   async adminListRuns(opts: { status?: string; search?: string; page?: number } = {}) {
     const qs = new URLSearchParams()
     if (opts.status) qs.set("status", opts.status)
@@ -281,6 +290,9 @@ export const api = {
       size: number
     }
   },
+  async adminDeleteRun(id: string) {
+    return (await http.delete(`/admin/runs/${id}`)).data
+  },
   async adminListArtifacts(opts: { kind?: string; page?: number } = {}) {
     const qs = new URLSearchParams()
     if (opts.kind) qs.set("kind", opts.kind)
@@ -290,6 +302,15 @@ export const api = {
       total: number
       page: number
       size: number
+    }
+  },
+  async adminDeleteArtifact(id: string) {
+    return (await http.delete(`/admin/artifacts/${id}`)).data
+  },
+  async adminBatchDeleteArtifacts(ids: string[]) {
+    return (await http.delete("/admin/artifacts", { data: { ids } })).data as {
+      ok: boolean
+      deleted: number
     }
   },
   async adminListAudit(opts: { action?: string; page?: number } = {}) {

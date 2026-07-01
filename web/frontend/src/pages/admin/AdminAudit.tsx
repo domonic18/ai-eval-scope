@@ -1,11 +1,11 @@
 /** 超管后台 · 审计日志：全平台敏感操作流水。 */
 import { useEffect, useState } from "react"
 import { api, type AdminAuditRow } from "../../api/client"
-import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
 import { useToast } from "../../components/toast"
 import { DataTable, PageHead, Pager, type Column } from "../../components/shared"
 import { timeAgo } from "../../lib/format"
+import { useDebouncedValue } from "../../lib/useDebounce"
 
 export default function AdminAudit() {
   const toast = useToast()
@@ -13,10 +13,11 @@ export default function AdminAudit() {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [action, setAction] = useState("")
+  const debouncedAction = useDebouncedValue(action, 300)
 
   async function load(p = 1) {
     try {
-      const r = await api.adminListAudit({ action: action || undefined, page: p })
+      const r = await api.adminListAudit({ action: debouncedAction || undefined, page: p })
       setRows(r.items)
       setTotal(r.total)
       setPage(r.page)
@@ -25,9 +26,9 @@ export default function AdminAudit() {
     }
   }
   useEffect(() => {
-    load()
+    load(1)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [debouncedAction])
 
   const columns: Column<AdminAuditRow>[] = [
     {
@@ -77,15 +78,11 @@ export default function AdminAudit() {
     <div className="space-y-6 p-6">
       <PageHead title="审计日志" sub={`共 ${total} 条（全平台，含平台级操作 orgId=platform）`} />
       <div className="space-y-3 rounded-lg border bg-card p-4 text-card-foreground">
-        <div className="flex gap-2">
-          <Input
-            value={action}
-            onChange={(e) => setAction(e.target.value)}
-            placeholder="按操作过滤，如 user.update / key.create"
-            onKeyDown={(e) => e.key === "Enter" && load(1)}
-          />
-          <Button onClick={() => load(1)}>筛选</Button>
-        </div>
+        <Input
+          value={action}
+          onChange={(e) => setAction(e.target.value)}
+          placeholder="按操作过滤，如 user.update / key.create / artifact.delete"
+        />
         <DataTable columns={columns} rows={rows} rowKey={(a) => a.id} />
         <Pager page={page} total={total} onPrev={() => load(page - 1)} onNext={() => load(page + 1)} />
       </div>

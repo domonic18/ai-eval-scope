@@ -1,4 +1,4 @@
-/** 超管后台 · 项目管理：跨组织项目列表 + 归档过滤。 */
+/** 超管后台 · 项目管理：跨组织项目列表 + 归档过滤 + 删除。 */
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { api, type AdminProject } from "../../api/client"
@@ -11,9 +11,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/shadcn/select"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/shadcn/dialog"
 import { useToast } from "../../components/toast"
 import { DataTable, PageHead, Pager, type Column } from "../../components/shared"
 import { timeAgo } from "../../lib/format"
+import { useDebouncedValue } from "../../lib/useDebounce"
 
 export default function AdminProjects() {
   const toast = useToast()
@@ -21,13 +30,16 @@ export default function AdminProjects() {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState("")
-  const [archived, setArchived] = useState<string>("")
+  const [archived, setArchived] = useState("all")
+  const debouncedSearch = useDebouncedValue(search, 300)
+  const [delTarget, setDelTarget] = useState<AdminProject | null>(null)
+  const [busy, setBusy] = useState(false)
 
   async function load(p = 1) {
     try {
       const r = await api.adminListProjects({
-        search: search || undefined,
-        archived: archived === "" ? undefined : archived === "true",
+        search: debouncedSearch || undefined,
+        archived: archived === "all" ? undefined : archived === "true",
         page: p,
       })
       setRows(r.items)
@@ -38,9 +50,24 @@ export default function AdminProjects() {
     }
   }
   useEffect(() => {
-    load()
+    load(1)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [debouncedSearch, archived])
+
+  async function confirmDelete() {
+    if (!delTarget) return
+    setBusy(true)
+    try {
+      await api.adminDeleteProject(delTarget.id)
+      toast.success("已删除")
+      setDelTarget(null)
+      await load()
+    } catch {
+      toast.error("删除失败")
+    } finally {
+      setBusy(false)
+    }
+  }
 
   const columns: Column<AdminProject>[] = [
     {
@@ -70,12 +97,22 @@ export default function AdminProjects() {
     },
     { key: "created", title: "创建", render: (p) => timeAgo(p.createdAt) },
     {
-      key: "go",
-      title: "",
+      key: "actions",
+      title: "操作",
       render: (p) => (
-        <Button variant="outline" size="sm" asChild>
-          <Link to={`/project/${p.id}`}>查看</Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link to={`/project/${p.id}`}>查看</Link>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-red-400"
+            onClick={() => setDelTarget(p)}
+          >
+            删除
+          </Button>
+        </div>
       ),
     },
   ]
@@ -89,7 +126,6 @@ export default function AdminProjects() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="名称 / slug"
-            onKeyDown={(e) => e.key === "Enter" && load(1)}
           />
           <Select value={archived} onValueChange={setArchived}>
             <SelectTrigger className="w-32">
@@ -101,11 +137,30 @@ export default function AdminProjects() {
               <SelectItem value="true">已归档</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={() => load(1)}>筛选</Button>
         </div>
         <DataTable columns={columns} rows={rows} rowKey={(p) => p.id} />
         <Pager page={page} total={total} onPrev={() => load(page - 1)} onNext={() => load(page + 1)} />
       </div>
+
+      <Dialog open={!!delTarget} onOpenChange={(o) => !o && setDelTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>删除项目</DialogTitle>
+            <DialogDescription>
+              确认删除项目 <strong>{delTarget?.name}</strong>？其下所有运行、样本、产出物与 API Key
+              将一并级联删除，此操作不可撤销。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDelTarget(null)}>
+              取消
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete} disabled={busy}>
+              删除
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
