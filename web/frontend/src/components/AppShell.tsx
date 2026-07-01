@@ -237,8 +237,9 @@ export function AppShell() {
     <OrgContext.Provider value={{ activeOrg, memberships, loading: orgLoading, setActive: setActiveOrgId }}>
       <CrumbsContext.Provider value={{ crumbs, setCrumbs }}>
         <div className="flex min-h-screen bg-background text-foreground">
+          <div className="scanlines" aria-hidden />
           {/* Sidebar */}
-          <aside className="flex w-60 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground">
+          <aside className="relative z-10 flex w-60 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground">
             <div className="border-b p-4">
               <Link to="/dashboard" className="mb-3 inline-flex items-center gap-2">
                 <span className="flex size-7 items-center justify-center">
@@ -335,7 +336,7 @@ export function AppShell() {
           </aside>
 
           {/* Main */}
-          <div className="flex min-w-0 flex-1 flex-col">
+          <div className="relative z-10 flex min-w-0 flex-1 flex-col">
             <header className="flex h-14 items-center justify-between border-b px-6">
               <div className="flex items-center gap-2 text-sm">
                 {crumbs.length === 0 ? (

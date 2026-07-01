@@ -42,7 +42,8 @@ export default function AdminLayout() {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <aside className="flex w-60 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground">
+      <div className="scanlines" aria-hidden />
+      <aside className="relative z-10 flex w-60 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground">
         <div className="border-b p-4">
           <div className="flex items-center gap-2">
             <div className="flex size-7 items-center justify-center rounded-md bg-primary font-bold text-primary-foreground">
@@ -84,7 +85,7 @@ export default function AdminLayout() {
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="relative z-10 flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 items-center justify-between border-b px-6">
           <div className="font-semibold">平台管理</div>
           <div className="flex items-center gap-3">
