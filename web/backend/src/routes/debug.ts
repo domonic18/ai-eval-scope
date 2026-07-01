@@ -4,7 +4,7 @@
  *  - GET  /jobs/:jobId   查询任务态（透传 gateway JobResponse）
  *
  * 鉴权：projectGuard({ role: "owner" }) —— 仅目标项目的组织 owner 可用（普通 member 403）。
- * 签名：复用该项目首个未吊销 API Key，解密 secret 后以该 key 身份 HMAC 签名转发 gateway。
+ * 凭据：以该项目 API Key（Bearer token）转发 gateway；token 来自请求 api_key 或项目首个未吊销 Key。
  */
 
 import { raw, Router, type RequestHandler } from "express"
@@ -37,6 +37,11 @@ async function pickProjectKey(projectId: string, orgId: string): Promise<string>
     })
   }
   return decryptToken(key.tokenEncrypted)
+}
+
+/** token 脱敏：eval-xxxx…yyyy（调试台展示用，不回显完整 token）。 */
+function maskToken(token: string): string {
+  return token.length > 16 ? `${token.slice(0, 12)}…${token.slice(-4)}` : "***"
 }
 
 // 入参用 application/octet-stream（原始文件字节）+ 查询串元数据，避开 multipart 解析依赖
@@ -87,7 +92,28 @@ router.post(
       metadata: { jobId: result.job_id, filename, ruleSetId, taskId },
     }).catch((e) => getLogger().warn({ error: (e as Error).message }, "audit_log_failed"))
 
-    res.status(202).json(result)
+    res.status(202).json({
+      ...result,
+      debug: {
+        request: {
+          method: "POST",
+          url: `${baseUrl}/v1/jobs`,
+          headers: {
+            Authorization: `Bearer ${maskToken(token)}`,
+            "Content-Type": "multipart/form-data; boundary=<auto>",
+          },
+          body: {
+            file: { filename, sizeBytes: fileBytes.length },
+            fields: {
+              rule_set_id: ruleSetId,
+              ...(taskId ? { task_id: taskId } : {}),
+              ...(taskTitle ? { task_title: taskTitle } : {}),
+            },
+          },
+        },
+        response: { status: 202, body: result },
+      },
+    })
   }),
 )
 

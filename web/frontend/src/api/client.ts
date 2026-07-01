@@ -196,7 +196,12 @@ export const api = {
     file: File,
     ruleSetId: string,
     opts?: { taskId?: string; taskTitle?: string; apiKey?: string },
-  ): Promise<{ job_id: string; status: string; poll_url: string }> {
+  ): Promise<{
+    job_id: string
+    status: string
+    poll_url: string
+    debug?: { request: Record<string, unknown>; response: Record<string, unknown> }
+  }> {
     const qs = new URLSearchParams({ filename: file.name, rule_set_id: ruleSetId })
     if (opts?.taskId) qs.set("task_id", opts.taskId)
     if (opts?.taskTitle) qs.set("task_title", opts.taskTitle)

@@ -2,13 +2,13 @@
 
 三步接入 EvalScope 评估：
 
-1. **创建 API Key** — 登录 [EvalScope 控制台](/dashboard)，进入任一项目的「API Key」页新建 Key，复制 **API Key**（`eval-…`，单一 Bearer Key）。**仅创建时明文展示一次，请妥善保存。**
+1. **创建 API Key** — 登录 [EvalScope 控制台](/dashboard) → 左侧「项目看板」选项目 → 「API Key」页 → 新建 → 复制 **API Key**（`eval-…`，单一 Bearer Key）。**仅创建时明文展示一次，请妥善保存。**
 2. **提交评估** — 携带 `Authorization: Bearer <api_key>` 向 `POST /v1/jobs` 提交内容，立即拿到 `job_id`（`202 Accepted`）。
 3. **查询结果** — 轮询 `GET /v1/jobs/{job_id}`，直到 `status` 变为 `completed`，读取 `metrics` 与 `web_run_url`。
 
 > **网关地址（线上）**：`https://eval.bj33smarter.com/gateway`
 >
-> 不想调 HTTP？也可以直接用 [评估器 CLI](#7-用评估器-cli-接入)，配置环境变量即可自动摄取。
+> 想先试一下？登录后打开 [调试台](/debug)，填 API Key + 上传文件即可在线提交、实时查看 request / response / 评估结果。
 
 ---
 
