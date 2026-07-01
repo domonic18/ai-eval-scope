@@ -2,12 +2,13 @@
 
 三步接入 EvalScope 评估：
 
-1. **创建 API Key** — 登录 [EvalScope 控制台](/dashboard)，进入任一项目的「API Key」页新建 Key，复制 `public_key`（`pk-eval-…`）与 `secret_key`（`sk-eval-…`）。**secret 仅展示一次，请妥善保存。**
-2. **提交评估** — 用 Key 签名后向 `POST /v1/jobs` 提交内容，立即拿到 `job_id`（`202 Accepted`）。
+1. **创建 API Key** — 登录 [EvalScope 控制台](/dashboard)，进入任一项目的「API Key」页新建 Key，复制 **API Key**（`eval-…`，单一 Bearer Key）。**仅创建时明文展示一次，请妥善保存。**
+2. **提交评估** — 携带 `Authorization: Bearer <api_key>` 向 `POST /v1/jobs` 提交内容，立即拿到 `job_id`（`202 Accepted`）。
 3. **查询结果** — 轮询 `GET /v1/jobs/{job_id}`，直到 `status` 变为 `completed`，读取 `metrics` 与 `web_run_url`。
 
 > **网关地址（线上）**：`https://eval.bj33smarter.com/gateway`
 >
+> 不想调 HTTP？也可以直接用 [评估器 CLI](#7-用评估器-cli-接入)，配置环境变量即可自动摄取。
 
 ---
 
@@ -15,20 +16,10 @@
 
 ```bash
 POST https://eval.bj33smarter.com/gateway/v1/jobs
-Authorization: Eval <public_key>:<signature>
+Authorization: Bearer <api_key>
 ```
 
-请求头 `Authorization` 的签名规则：
-
-```
-signature = lowercase_hex( HMAC_SHA256( secret_key, METHOD + "\n" + PATH + "\n" + sha256(body) ) )
-```
-
-- `METHOD`：HTTP 方法大写（`POST` / `GET`）。
-- `PATH`：URL 路径，不含 query string（如 `/v1/jobs`）。
-- `body`：请求体的**原始字节**（GET 请求为空字符串）；务必用**实际发送的字节**计算哈希。
-
-> 完整可运行的签名代码见 [代码示例](#6-代码示例)。
+所有请求通过 `Authorization: Bearer <api_key>` 鉴权（`api_key` 即控制台签发的单一 Key）。**无需计算签名**，强制 HTTPS 下直接传输即可。
 
 按 `Content-Type` 分两种提交方式：
 
@@ -41,7 +32,16 @@ signature = lowercase_hex( HMAC_SHA256( secret_key, METHOD + "\n" + PATH + "\n" 
 | `file` | 是 | file | 待评估文件，如 `lesson.html`、`unit.zip` |
 | `rule_set_id` | 否 | string | 规则集，默认 `coursework-default` |
 | `task_id` | 否 | string | 自定义任务标识，如 `math-2024-q1` |
-| `task_title` | 否 | string | 任务标题，如 `大单元总导` |
+| `task_title` | 否 | string | 任务标题，如《分数入门》 |
+
+### 内联内容（application/json）
+
+适合直接传文本，无需落盘。
+
+| 字段 | 必需 | 类型 | 说明 |
+| --- | --- | --- | --- |
+| `content` | 是 | object | `{ filename: string, text: string }`，如 `{"filename":"lesson.html","text":"<html>…"}` |
+| `rule_set_id` / `task_id` / `task_title` | 否 | string | 同上 |
 
 > 单文件为「单页」评估；`.zip` 解析为「单元」评估（保留目录结构）。
 
@@ -62,7 +62,7 @@ signature = lowercase_hex( HMAC_SHA256( secret_key, METHOD + "\n" + PATH + "\n" 
 
 ```bash
 GET https://eval.bj33smarter.com/gateway/v1/jobs/{job_id}
-Authorization: Eval <public_key>:<signature>
+Authorization: Bearer <api_key>
 ```
 
 **状态机**：
@@ -129,9 +129,9 @@ Authorization: Eval <public_key>:<signature>
 
 ## 取消任务
 
-```
+```bash
 POST https://eval.bj33smarter.com/gateway/v1/jobs/{job_id}/cancel
-Authorization: Eval <public_key>:<signature>
+Authorization: Bearer <api_key>
 ```
 
 仅 `queued` 状态可取消；已进入 `running` 返回 `409 CANCEL_FAILED`。
@@ -159,7 +159,7 @@ Authorization: Eval <public_key>:<signature>
 | --- | --- | --- |
 | `202` | — | 提交成功，任务已入队 |
 | `400` | `InputInvalidError` | 字段缺失或非法（如缺 `file` / `content`） |
-| `401` | `AUTH_INVALID` | 缺少/错误的签名、Key 已吊销或过期、scope 不含 `ingest` |
+| `401` | `AUTH_INVALID` | 缺少/错误的 API Key、Key 已吊销或过期、scope 不含 `ingest` |
 | `404` | `JOB_NOT_FOUND` | 任务不存在或不属于当前 Key 的项目 |
 | `409` | `CANCEL_FAILED` | 非 `queued` 态调用取消 |
 
@@ -170,29 +170,24 @@ Authorization: Eval <public_key>:<signature>
 ### Python（httpx）
 
 ```python
-import hashlib, hmac, time, httpx
+import time
+import httpx
 
-PK = "pk-eval-..."
-SK = "sk-eval-..."
+API_KEY = "eval-..."
 BASE = "https://eval.bj33smarter.com/gateway"
-
-def sign(method, path, body: bytes, secret):
-    body_hash = hashlib.sha256(body).hexdigest()
-    canonical = f"{method.upper()}\n{path}\n{body_hash}"
-    return hmac.new(secret.encode(), canonical.encode(), hashlib.sha256).hexdigest()
+HEADERS = {"Authorization": f"Bearer {API_KEY}"}
 
 # 1) 提交（JSON 内联）
-body = b'{"content":{"filename":"lesson.html","text":"<html>...</html>"}}'
-headers = {"Authorization": f"Eval {PK}:{sign('POST', '/v1/jobs', body, SK)}",
-           "Content-Type": "application/json"}
-job = httpx.post(f"{BASE}/v1/jobs", content=body, headers=headers).json()
+job = httpx.post(
+    f"{BASE}/v1/jobs",
+    headers={**HEADERS, "Content-Type": "application/json"},
+    json={"content": {"filename": "lesson.html", "text": "<html>...</html>"}},
+).json()
 print(job["job_id"])
 
 # 2) 轮询结果
 while True:
-    path = f"/v1/jobs/{job['job_id']}"
-    h = {"Authorization": f"Eval {PK}:{sign('GET', path, b'', SK)}"}
-    r = httpx.get(f"{BASE}{path}", headers=h).json()
+    r = httpx.get(f"{BASE}/v1/jobs/{job['job_id']}", headers=HEADERS).json()
     if r["status"] in ("completed", "failed"):
         print(r["status"], r.get("metrics") or r.get("error"))
         break
@@ -201,14 +196,14 @@ while True:
 
 ### 提交 .zip 文件（单元评估）
 
-`.zip` 会保留目录结构，按「单元」评估。注意 multipart body 必须**手工拼装**（boundary 固定），签名才能与实际发送的字节完全一致 —— 直接用 SDK 的 `files=` 会因自动生成 boundary 而导致签名失败。
+`.zip` 会保留目录结构，按「单元」评估。multipart body 仍建议**手工拼装**（boundary 固定，便于精确控制）：
 
 ```python
 # 读取已打包好的 zip 文件（多文件已保留目录结构）
 with open("unit.zip", "rb") as f:
     zip_bytes = f.read()
 
-# 手工拼装 multipart（boundary 固定 → 签名字节与发送字节一致）
+# 手工拼装 multipart（boundary 固定）
 boundary = "----evalboundary"
 body = (
     f"--{boundary}\r\n".encode()
@@ -221,57 +216,52 @@ body = (
     + b"coursework-default\r\n"
     + f"--{boundary}--\r\n".encode()
 )
-sig = sign("POST", "/v1/jobs", body, SK)  # sign 函数见上方 Python 示例
 r = httpx.post(
     f"{BASE}/v1/jobs",
     content=body,
-    headers={
-        "Authorization": f"Eval {PK}:{sig}",
-        "Content-Type": f"multipart/form-data; boundary={boundary}",
-    },
+    headers={**HEADERS, "Content-Type": f"multipart/form-data; boundary={boundary}"},
 )
 print(r.status_code, r.json())  # 202 {"job_id":"…","status":"queued",…}
 ```
 
-### TypeScript（fetch + node:crypto）
+### TypeScript（fetch）
 
 ```ts
-import { createHmac, createHash } from "crypto"
-
-const PK = "pk-eval-..."
-const SK = "sk-eval-..."
+const API_KEY = "eval-..."
 const BASE = "https://eval.bj33smarter.com/gateway"
 
-const sign = (method: string, path: string, body: Buffer) => {
-  const bodyHash = createHash("sha256").update(body).digest("hex")
-  const canonical = `${method.toUpperCase()}\n${path}\n${bodyHash}`
-  return createHmac("sha256", SK).update(canonical).digest("hex")
-}
-
-const body = Buffer.from(JSON.stringify({ content: { filename: "lesson.html", text: "<html>...</html>" } }))
 const res = await fetch(`${BASE}/v1/jobs`, {
   method: "POST",
-  headers: { Authorization: `Eval ${PK}:${sign("POST", "/v1/jobs", body)}`, "Content-Type": "application/json" },
-  body,
+  headers: { Authorization: `Bearer ${API_KEY}`, "Content-Type": "application/json" },
+  body: JSON.stringify({ content: { filename: "lesson.html", text: "<html>...</html>" } }),
 })
 const job = await res.json()
 console.log(job.job_id)
 ```
 
-### curl（查询，GET 无 body 签名最简）
+### curl（查询）
 
 ```bash
-PK="pk-eval-..."; SK="sk-eval-..."; JOB="d3f1...e8a2"
-BODY_HASH=$(printf '' | sha256sum | cut -d' ' -f1)
-SIG=$(printf 'GET\n/v1/jobs/'"$JOB"'\n'"$BODY_HASH" \
-      | openssl dgst -sha256 -hmac "$SK" | cut -d' ' -f2)
-curl "https://eval.bj33smarter.com/gateway/v1/jobs/$JOB" -H "Authorization: Eval $PK:$SIG"
+API_KEY="eval-..."; JOB="d3f1...e8a2"
+curl "https://eval.bj33smarter.com/gateway/v1/jobs/$JOB" -H "Authorization: Bearer $API_KEY"
 ```
-
-> curl 对带 body 的 `POST` 精确签名较繁琐，提交评估建议用 Python / TS 示例。
 
 ---
 
+## 用评估器 CLI 接入
+
+如果你直接使用评估器命令行（`agent-eval`），评估结果可经 Web 摄取链路自动回传，无需调用 gateway。在 `.env` 配置：
+
+| 变量 | 默认 | 说明 |
+| --- | --- | --- |
+| `AGENT_EVAL_HOST` | `http://localhost:9000` | Web 平台地址 |
+| `AGENT_EVAL_API_KEY` | —（必填） | `eval-…`（单一 API Key） |
+| `AGENT_EVAL_PROJECT` | Key 所属项目 | 项目 uuid 或 slug（可省略） |
+| `AGENT_EVAL_UPLOAD` | `false` | 设为 `true` 开启摄取（**需显式开启**） |
+
+配置后正常运行评估命令，`ResultSink` 会把运行 / 样本 / 约束 / 制品经 Bearer Key 摄取入库；网络失败自动入离线队列重放。
+
+---
 
 ## Roadmap
 
