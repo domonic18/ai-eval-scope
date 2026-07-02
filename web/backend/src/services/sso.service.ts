@@ -23,7 +23,7 @@ import saml2 from "saml2-js"
 import { Prisma, User } from "@prisma/client"
 import { getPrisma } from "../infra/prisma"
 import { UserRepository } from "../repositories/user.repository"
-import { issueTokenPair } from "../infra/crypto"
+import { issueAccessTokenResult } from "../infra/crypto"
 import { getSamlConfig, validateSamlConfig } from "../config"
 import { PlatformError } from "../middleware/errorHandler"
 
@@ -103,7 +103,6 @@ const CODE_TTL_MS = 60_000
 
 interface SsoSession {
   access_token: string
-  refresh_token: string
   expires_in: number
   user: {
     id: string
@@ -226,7 +225,7 @@ export async function handleAcs(samlResponse: string): Promise<{ code: string }>
   const attributes = normalizeAttributes(u?.attributes)
 
   const { user, org } = await matchOrCreateSsoUser({ email, name, nameId, attributes })
-  const tokens = issueTokenPair({
+  const tokens = issueAccessTokenResult({
     userId: user.id,
     orgId: org?.id,
     role: org ? "owner" : undefined,
@@ -235,7 +234,6 @@ export async function handleAcs(samlResponse: string): Promise<{ code: string }>
   })
   const code = issueCode({
     access_token: tokens.access_token,
-    refresh_token: tokens.refresh_token,
     expires_in: tokens.expires_in,
     user: {
       id: user.id,

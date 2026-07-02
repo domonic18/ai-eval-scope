@@ -111,10 +111,9 @@ describe("POST /api/v1/auth/sso/acs", () => {
 })
 
 describe("POST /api/v1/auth/sso/exchange", () => {
-  it("returns token pair for valid code", async () => {
+  it("returns access token for valid code", async () => {
     mockSsoService.exchangeCode.mockReturnValue({
       access_token: "at",
-      refresh_token: "rt",
       expires_in: 1800,
       user: { id: "u", email: "a@b.c", name: null },
     })

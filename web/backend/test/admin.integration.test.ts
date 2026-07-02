@@ -7,7 +7,7 @@ import request from "supertest"
 import { describe, it, expect, beforeAll, afterAll } from "vitest"
 import { createApp } from "../src/server"
 import { getPrisma } from "../src/infra/prisma"
-import { hashPassword, issueTokenPair } from "../src/infra/crypto"
+import { hashPassword, issueAccessTokenResult } from "../src/infra/crypto"
 
 const app = createApp()
 const prisma = getPrisma()
@@ -29,8 +29,8 @@ beforeAll(async () => {
   })
   adminId = admin.id
   userId = user.id
-  adminToken = issueTokenPair({ userId: adminId, platformAdmin: true }).access_token
-  userToken = issueTokenPair({ userId, platformAdmin: false }).access_token
+  adminToken = issueAccessTokenResult({ userId: adminId, platformAdmin: true }).access_token
+  userToken = issueAccessTokenResult({ userId, platformAdmin: false }).access_token
 })
 
 afterAll(async () => {
@@ -104,7 +104,7 @@ describe("超管后台 /api/v1/admin", () => {
     await prisma.user.update({ where: { id: userId }, data: { role: "admin" } })
     const r = await request(app)
       .patch(`/api/v1/admin/users/${adminId}`)
-      .set("Authorization", `Bearer ${issueTokenPair({ userId, platformAdmin: true }).access_token}`)
+      .set("Authorization", `Bearer ${issueAccessTokenResult({ userId, platformAdmin: true }).access_token}`)
       .send({ status: "disabled" })
     expect(r.status).toBe(200)
     const r2 = await request(app)

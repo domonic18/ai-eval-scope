@@ -2,7 +2,6 @@
  * 认证路由（/api/v1/auth）。
  *  - POST /register  注册（PLATFORM_ALLOW_SIGNUP 开关）
  *  - POST /login     登录
- *  - POST /refresh   刷新 token
  *  - GET  /me        当前用户（需鉴权）
  */
 
@@ -29,13 +28,6 @@ router.post(
   "/login",
   wrap(async (req, res) => {
     res.json(await AuthService.login(req.body || {}))
-  }),
-)
-
-router.post(
-  "/refresh",
-  wrap(async (req, res) => {
-    res.json(await AuthService.refresh(req.body || {}))
   }),
 )
 

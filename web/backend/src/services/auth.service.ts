@@ -1,5 +1,5 @@
 /**
- * 认证业务（注册/登录/刷新）。
+ * 认证业务（注册/登录）。
  *
  * 注册：邮箱+密码 → 建 user。**不再自动建个人 Org**（纯团队中心模型）：
  * 新用户登录后无团队，需「创建团队」或「申请加入团队」（见 org.service / join request）。
@@ -10,9 +10,8 @@ import { UserRepository } from "../repositories/user.repository"
 import {
   hashPassword,
   verifyPassword,
-  issueTokenPair,
-  verifyToken,
-  type TokenPair,
+  issueAccessTokenResult,
+  type AccessToken,
 } from "../infra/crypto"
 import { getConfig } from "../config"
 import { PlatformError } from "../middleware/errorHandler"
@@ -46,10 +45,10 @@ export interface AuthPublicUser {
   platformAdmin: boolean
   status: string
 }
-export interface RegisterResult extends TokenPair {
+export interface RegisterResult extends AccessToken {
   user: AuthPublicUser
 }
-export interface LoginResult extends TokenPair {
+export interface LoginResult extends AccessToken {
   user: AuthPublicUser
 }
 
@@ -80,7 +79,7 @@ export async function register(input: RegisterInput): Promise<RegisterResult> {
   })
 
   // 无团队：token 不带 orgId（鉴权不依赖它；前端 me() memberships 为空 → 引导创建/加入团队）
-  const tokens = issueTokenPair({
+  const tokens = issueAccessTokenResult({
     userId: user.id,
     name: user.name,
     platformAdmin: role === "admin",
@@ -115,7 +114,7 @@ export async function login(input: { email?: string; password?: string }): Promi
   }
   const memberships = await userRepo.listMemberships(user.id)
   const primary = memberships[0]
-  const tokens = issueTokenPair({
+  const tokens = issueAccessTokenResult({
     userId: user.id,
     orgId: primary ? primary.orgId : undefined,
     role: primary ? primary.role : undefined,
@@ -133,33 +132,6 @@ export async function login(input: { email?: string; password?: string }): Promi
     },
     ...tokens,
   }
-}
-
-/** 刷新：校验 refresh token → 重发（保留同一 org/role 上下文，platform_admin 以 DB 为准）。 */
-export async function refresh(input: { refresh_token?: string }): Promise<TokenPair> {
-  let payload
-  try {
-    payload = verifyToken(input.refresh_token!)
-  } catch {
-    throw new PlatformError("invalid or expired refresh token", {
-      status: 401,
-      code: "AUTH_INVALID",
-    })
-  }
-  if (payload.kind !== "refresh") {
-    throw new PlatformError("not a refresh token", { status: 401, code: "AUTH_INVALID" })
-  }
-  // 重取用户：令禁用/降权在下次刷新即失效（不纯信旧 token）
-  const user = await userRepo.findById(payload.sub)
-  if (!user || user.status === "disabled") {
-    throw new PlatformError("invalid or expired refresh token", { status: 401, code: "AUTH_INVALID" })
-  }
-  return issueTokenPair({
-    userId: payload.sub,
-    orgId: payload.org_id || undefined,
-    role: payload.role || undefined,
-    platformAdmin: user.role === "admin",
-  })
 }
 
 /** 当前用户信息 + 成员关系。 */
@@ -182,4 +154,4 @@ export async function me(userId: string) {
   }
 }
 
-export const AuthService = { register, login, refresh, me }
+export const AuthService = { register, login, me }

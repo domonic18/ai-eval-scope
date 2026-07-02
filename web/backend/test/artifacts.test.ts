@@ -8,7 +8,7 @@ import { vi } from "vitest"
 import request from "supertest"
 import jwt from "jsonwebtoken"
 import { createApp } from "../src/server"
-import { issueArtifactToken, issueTokenPair } from "../src/infra/crypto"
+import { issueArtifactToken, issueAccessTokenResult } from "../src/infra/crypto"
 import { getConfig } from "../src/config"
 
 const { storageGet, storagePresignGet } = vi.hoisted(() => ({
@@ -71,7 +71,7 @@ describe("GET /api/v1/artifacts/:id/raw", () => {
   })
 
   it("access token（kind=access）不可用于 raw → 401", async () => {
-    const pair = issueTokenPair({ userId: "u1", orgId: "o1", role: "owner" })
+    const pair = issueAccessTokenResult({ userId: "u1", orgId: "o1", role: "owner" })
     const r = await request(app).get(`/api/v1/artifacts/${ART}/raw?token=${pair.access_token}`)
     expect(r.status).toBe(401)
   })

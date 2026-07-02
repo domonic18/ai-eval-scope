@@ -1,10 +1,13 @@
 /**
- * API client：axios 实例 + JWT 注入 + 401 刷新拦截器。
+ * API client：axios 实例 + JWT 注入 + 401 登出。
  * baseURL /api/v1（与后端路由约定）。
+ *
+ * 鉴权模型：单一长效 access token（7 天）。不再做静默 refresh——SCF 冷启动下
+ * refresh 链路偶发失败反而导致掉登录；token 过期即视为登录失效，直接登出。
  */
 
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios"
-import { clearSession, getRefreshToken, getToken, saveSession } from "../store/auth"
+import { clearSession, getToken, saveSession } from "../store/auth"
 import type { DebugJobStatus, ProjectSample, SampleTrendPoint } from "../types"
 
 export const http = axios.create({
@@ -19,38 +22,11 @@ http.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   return config
 })
 
-// 401 → 尝试用 refresh_token 刷新一次后重试
-let refreshing: Promise<boolean> | null = null
-
-async function doRefresh(): Promise<boolean> {
-  const refresh = getRefreshToken()
-  if (!refresh) return false
-  try {
-    const resp = await axios.post("/api/v1/auth/refresh", { refresh_token: refresh })
-    const cur = localStorage.getItem("agent_eval_session")
-    if (cur) {
-      const stored = JSON.parse(cur)
-      saveSession({ ...resp.data, user: stored.user })
-    }
-    return true
-  } catch {
-    return false
-  }
-}
-
+// 401 → token 失效，清 session 跳登录（不再静默刷新）
 http.interceptors.response.use(
   (r) => r,
-  async (error: AxiosError) => {
-    const original = error.config as InternalAxiosRequestConfig & { _retried?: boolean }
-    if (error.response?.status === 401 && !original._retried && !original.url?.includes("/auth/")) {
-      original._retried = true
-      refreshing =
-        refreshing ||
-        doRefresh().finally(() => {
-          refreshing = null
-        })
-      const ok = await refreshing
-      if (ok) return http(original)
+  (error: AxiosError) => {
+    if (error.response?.status === 401 && !error.config?.url?.includes("/auth/")) {
       clearSession()
       if (location.pathname !== "/login") location.href = "/login"
     }

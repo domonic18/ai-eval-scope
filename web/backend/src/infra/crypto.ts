@@ -2,7 +2,7 @@
  * 加密原语（§六 认证与多租户）。
  *
  * - 密码：argon2id 哈希（验证标准要求）。
- * - JWT：access（短期，含 userId/orgId/role）+ refresh（长期）。
+ * - JWT：单一长效 access token（含 userId/orgId/role）。无 refresh；过期即重登。
  * - API Key：pk-eval-<hex> / sk-eval-<hex>；secret 明文仅客户端持有，
  *   服务端存「加密态」（AES-256-GCM，方案 A 验签用）+「哈希态」（sha256，审计/不回显）。
  * - HMAC：canonical(METHOD\nPATH\nsha256(body)) → HMAC-SHA256，常量时间比较（apiKeyAuth 验签用）。
@@ -33,8 +33,9 @@ export async function verifyPassword(plain: string, hash: string): Promise<boole
 }
 
 /* ── JWT ────────────────────────────────────────────── */
-export const ACCESS_TTL_SEC = 60 * 30 // 30 min
-export const REFRESH_TTL_SEC = 60 * 60 * 24 * 14 // 14 days
+// 单一长效 access token（对齐简化鉴权模型）：会话内不依赖静默 refresh，
+// 避免 SCF 冷启动下 refresh 链路偶发失败导致掉登录。无 refresh token，过期即重登。
+export const ACCESS_TTL_SEC = 60 * 60 * 24 * 7 // 7 days
 
 export interface TokenPayloadInput {
   userId: string
@@ -45,7 +46,7 @@ export interface TokenPayloadInput {
 }
 
 export interface TokenClaims extends jwt.JwtPayload {
-  kind: "access" | "refresh"
+  kind: "access"
   sub: string
   org_id: string | null
   role: string | null
@@ -54,12 +55,11 @@ export interface TokenClaims extends jwt.JwtPayload {
   auth_time: number
 }
 
-function issueToken(payload: TokenPayloadInput, kind: "access" | "refresh"): string {
+function issueAccessToken(payload: TokenPayloadInput): string {
   const cfg = getConfig()
-  const ttl = kind === "access" ? ACCESS_TTL_SEC : REFRESH_TTL_SEC
   return jwt.sign(
     {
-      kind,
+      kind: "access",
       sub: payload.userId,
       org_id: payload.orgId || null,
       role: payload.role || null,
@@ -68,20 +68,18 @@ function issueToken(payload: TokenPayloadInput, kind: "access" | "refresh"): str
       auth_time: Math.floor(Date.now() / 1000),
     },
     cfg.jwtSecret,
-    { expiresIn: ttl, algorithm: "HS256" },
+    { expiresIn: ACCESS_TTL_SEC, algorithm: "HS256" },
   )
 }
 
-export interface TokenPair {
+export interface AccessToken {
   access_token: string
-  refresh_token: string
   expires_in: number
 }
 
-export function issueTokenPair(payload: TokenPayloadInput): TokenPair {
+export function issueAccessTokenResult(payload: TokenPayloadInput): AccessToken {
   return {
-    access_token: issueToken(payload, "access"),
-    refresh_token: issueToken(payload, "refresh"),
+    access_token: issueAccessToken(payload),
     expires_in: ACCESS_TTL_SEC,
   }
 }

@@ -15,7 +15,6 @@ function tag(): string {
 export interface RegisteredUser {
   email: string
   accessToken: string
-  refreshToken: string
   user: { id: string; email: string; name: string | null }
   org: { id: string; name: string; slug: string }
 }
@@ -47,7 +46,6 @@ export async function registerUser(
   return {
     email,
     accessToken,
-    refreshToken: r.body.refresh_token,
     user: r.body.user,
     org: { id: org.id, name: org.name, slug: org.slug },
   }

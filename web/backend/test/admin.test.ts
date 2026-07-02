@@ -5,7 +5,7 @@
 import request from "supertest"
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { createApp } from "../src/server"
-import { issueTokenPair } from "../src/infra/crypto"
+import { issueAccessTokenResult } from "../src/infra/crypto"
 
 const {
   findByIdMock,
@@ -61,7 +61,7 @@ vi.mock("../src/services/audit.service", () => ({
 
 const app = createApp()
 const adminId = "u-admin"
-const adminToken = issueTokenPair({ userId: adminId, platformAdmin: true }).access_token
+const adminToken = issueAccessTokenResult({ userId: adminId, platformAdmin: true }).access_token
 
 const adminUser = { role: "admin", status: "active" }
 const regularUser = { role: "user", status: "active" }
@@ -83,7 +83,7 @@ beforeEach(() => {
 describe("GET /api/v1/admin/stats/overview — 鉴权门", () => {
   it("非超管 → 403", async () => {
     findByIdMock.mockResolvedValue(regularUser)
-    const token = issueTokenPair({ userId: "u-other", platformAdmin: false }).access_token
+    const token = issueAccessTokenResult({ userId: "u-other", platformAdmin: false }).access_token
     const r = await request(app)
       .get("/api/v1/admin/stats/overview")
       .set("Authorization", `Bearer ${token}`)

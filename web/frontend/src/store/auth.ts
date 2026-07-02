@@ -7,7 +7,6 @@ const ORG_KEY = "agent_eval_org"
 
 interface Stored {
   access_token: string
-  refresh_token: string
   user: User
 }
 
@@ -33,10 +32,6 @@ export function clearSession(): void {
 
 export function getToken(): string | null {
   return loadSession()?.access_token ?? null
-}
-
-export function getRefreshToken(): string | null {
-  return loadSession()?.refresh_token ?? null
 }
 
 /** 当前组织上下文（首登取首个 membership；用户可切换）。 */

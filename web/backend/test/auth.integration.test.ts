@@ -29,11 +29,10 @@ describe("#1 注册 / 登录 / 刷新 + argon2 哈希", () => {
     expect(row!.passwordHash!.startsWith("$argon2id")).toBe(true)
   })
 
-  it("logs in with correct password and gets a new token pair", async () => {
+  it("logs in with correct password and gets an access token", async () => {
     const u = await registerUser(app, "a2")
     const sess = await login(app, u.email)
     expect(sess.access_token).toBeDefined()
-    expect(sess.refresh_token).toBeDefined()
   })
 
   it("rejects login with wrong password (401 AUTH_INVALID)", async () => {
@@ -43,22 +42,6 @@ describe("#1 注册 / 登录 / 刷新 + argon2 哈希", () => {
       .send({ email: u.email, password: "wrong-password" })
     expect(r.status).toBe(401)
     expect(r.body.code).toBe("AUTH_INVALID")
-  })
-
-  it("refreshes tokens with a valid refresh_token", async () => {
-    const u = await registerUser(app, "a4")
-    const r = await request(app)
-      .post("/api/v1/auth/refresh")
-      .send({ refresh_token: u.refreshToken })
-    expect(r.status).toBe(200)
-    expect(r.body.access_token).toBeDefined()
-  })
-
-  it("rejects refresh with tampered token", async () => {
-    const r = await request(app)
-      .post("/api/v1/auth/refresh")
-      .send({ refresh_token: "garbage.token.here" })
-    expect(r.status).toBe(401)
   })
 })
 
