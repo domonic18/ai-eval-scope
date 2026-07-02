@@ -12,9 +12,14 @@ RUN pip install --no-cache-dir uv
 COPY evaluator ./evaluator
 COPY gateway ./gateway
 
-# 以 editable 方式安装 agent-eval[llm]（gateway 需 LLM Judge）+ eval-gateway，并锁定依赖
-RUN cd evaluator && uv pip install --system -e '.[llm]'
+# 以 editable 方式安装 agent-eval[vision]（含 LLM Judge + Playwright，支撑多模态视觉评估）
+# + eval-gateway，并锁定依赖
+RUN cd evaluator && uv pip install --system -e '.[vision]'
 RUN cd gateway && uv pip install --system -e .
+
+# 多模态视觉评估依赖 Chromium：下载浏览器二进制（含 Debian 运行库 --with-deps）。
+# 镜像因此增大约 300MB；若部署确定不用视觉，可注释下行并保持 EVALGATEWAY_ENABLE_VISION=false。
+RUN playwright install --with-deps chromium
 
 # 容器内监听端口：默认 9000（腾讯云函数 SCF 要求）
 ENV EVALGATEWAY_PORT=9000

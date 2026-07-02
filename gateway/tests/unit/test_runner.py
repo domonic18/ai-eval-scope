@@ -37,6 +37,7 @@ async def test_run_job_evaluates_and_flushes(
     sample_job: Job,
     tmp_path: Path,
     fake_sessionmaker: MagicMock,
+    mock_settings: MagicMock,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """验证 eval_packages 与 ResultSink.flush 被调用，且 job 落 completed。"""
@@ -60,8 +61,9 @@ async def test_run_job_evaluates_and_flushes(
     with patch.object(runner_mod, "mark_done", new=AsyncMock()) as mock_mark_done:
         await run_job(sample_job)
 
-    # eval_packages 被调用
+    # eval_packages 被调用，且透传 enable_vision（多模态由 settings.EVALGATEWAY_ENABLE_VISION 控制）
     runner_mod.eval_packages.assert_called_once()
+    assert runner_mod.eval_packages.call_args.kwargs["enable_vision"] is mock_settings.enable_vision
 
     # ResultSink.flush 被显式调用，且传了 package_dir（源文件制品上传）
     mock_sink_instance.flush.assert_called_once()

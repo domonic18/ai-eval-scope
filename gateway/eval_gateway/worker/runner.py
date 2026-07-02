@@ -118,6 +118,7 @@ async def run_job(job: Job) -> None:
             output_dir=job_output_dir / "workspace",
             project=job.project_id,
             llm_config_path=_llm_config_path(),
+            enable_vision=settings.enable_vision,
         )
 
         # 按 job 提交者身份回传（per-job token + project）→ 结果落到第三方项目
