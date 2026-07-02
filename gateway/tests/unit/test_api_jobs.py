@@ -34,6 +34,9 @@ async def test_submit_multipart(
     assert body["status"] == JobStatus.QUEUED.value
     assert body["job_id"]
     assert body["poll_url"].startswith("/v1/jobs/")
+    # 归属由 API Key 验签解析（tenant），调用方不在请求体传 project_id
+    assert body["project_id"] == "project-1"
+    assert body["org_id"] == "org-1"
     fake_session.add.assert_called_once()
 
 

@@ -54,6 +54,9 @@ class JobSubmissionResponse(BaseModel):
 
     job_id: str
     status: JobStatus
+    # 归属信息（由 API Key 验签解析，调用方无需也无需在请求体传 project_id）
+    project_id: str
+    org_id: str
     web_run_url: str | None
     poll_url: str
 

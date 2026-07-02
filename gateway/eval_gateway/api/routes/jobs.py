@@ -110,6 +110,8 @@ async def submit_job(
         return JobSubmissionResponse(
             job_id=job_id,
             status=JobStatus.QUEUED,
+            project_id=tenant.project_id,
+            org_id=tenant.org_id,
             web_run_url=None,
             poll_url=poll_url,
         )
