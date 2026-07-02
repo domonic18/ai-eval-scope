@@ -105,6 +105,7 @@ export default function RegisterPage() {
                 <Input
                   id="password"
                   type="password"
+                  autoComplete="new-password"
                   required
                   minLength={8}
                   value={password}
@@ -134,6 +135,7 @@ export default function RegisterPage() {
                 <Input
                   id="confirm"
                   type="password"
+                  autoComplete="new-password"
                   required
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
