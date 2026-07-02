@@ -114,8 +114,18 @@ class IngestionClient:
                     body=self._safe_json(resp),
                 )
             # 429 / 5xx → 退避重试
+            body = self._safe_json(resp)
             last_exc = IngestionError(
-                f"retryable: HTTP {resp.status_code}", status=resp.status_code
+                f"retryable: HTTP {resp.status_code}", status=resp.status_code, body=body
+            )
+            # 5xx 时把上游真实响应体打出来，便于定位网关/函数侧错误（默认 body 会被丢弃）
+            self.log.warning(
+                "observability.upstream_retryable",
+                url=url,
+                status=resp.status_code,
+                attempt=attempt + 1,
+                max_attempts=self.cfg.max_retries + 1,
+                body=body,
             )
             if attempt >= self.cfg.max_retries:
                 break
