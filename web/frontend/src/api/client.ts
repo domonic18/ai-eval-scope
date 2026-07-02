@@ -166,9 +166,8 @@ export const api = {
   ): Promise<{ url: string; contentType: string; filename: string }> {
     return (await http.get(`/artifacts/${artifactId}/preview`)).data
   },
-  // ── 调试台：转发 eval-gateway（owner 专属）──
+  // ── 调试台：转发 eval-gateway（登录即可用，项目由 API Key 解析）──
   async submitDebugJob(
-    projectId: string,
     file: File,
     ruleSetId: string,
     opts?: { taskId?: string; taskTitle?: string; apiKey?: string },
@@ -182,16 +181,18 @@ export const api = {
     if (opts?.taskId) qs.set("task_id", opts.taskId)
     if (opts?.taskTitle) qs.set("task_title", opts.taskTitle)
     if (opts?.apiKey) qs.set("api_key", opts.apiKey)
-    return (await http.post(`/projects/${projectId}/debug/jobs?${qs.toString()}`, file, {
-      headers: { "Content-Type": "application/octet-stream" },
-      timeout: 60000,
-    })).data
+    return (
+      await http.post(`/debug/jobs?${qs.toString()}`, file, {
+        headers: { "Content-Type": "application/octet-stream" },
+        timeout: 60000,
+      })
+    ).data
   },
-  async getDebugJob(projectId: string, jobId: string, apiKey?: string): Promise<DebugJobStatus> {
+  async getDebugJob(jobId: string, apiKey?: string): Promise<DebugJobStatus> {
     const qs = new URLSearchParams()
     if (apiKey) qs.set("api_key", apiKey)
     const suffix = qs.toString() ? `?${qs.toString()}` : ""
-    return (await http.get(`/projects/${projectId}/debug/jobs/${jobId}${suffix}`)).data
+    return (await http.get(`/debug/jobs/${jobId}${suffix}`)).data
   },
 
   /* ── 超管后台 ─────────────────────────────────────── */

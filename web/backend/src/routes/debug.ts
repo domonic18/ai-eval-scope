@@ -1,13 +1,14 @@
 /**
- * 调试台路由（/api/v1/projects/:id/debug）—— SSO 登录用户共享的评估沙盒，把请求转发给 eval-gateway。
+ * 调试台路由（/api/v1/debug）—— SSO 登录用户共享的评估沙盒，把请求转发给 eval-gateway。
  *  - POST /jobs          提交评估（原始文件字节 + 查询串元数据）→ gateway multipart 上传
  *  - GET  /jobs/:jobId   查询任务态（透传 gateway JobResponse）
  *
  * 鉴权：requireAuth（仅需 SSO 登录，作为审计 actor）+ 必填 api_key。
- *   - 不再校验项目 owner：调试台是面向所有登录开发者的沙盒，谁都可用预置 Demo Key 提交。
  *   - 授权 = 持有一把有效 API Key，由 gateway 验签；结果按 Key 归属落到对应项目。
- *   - api_key 必填：去掉 owner 门禁后，绝不能再"留空则取项目库里的 Key"（否则任何登录用户
- *     只要知道项目 UUID 就能借用该项目的 Key = 越权）。路由 :id 仅用于审计与调试回显。
+ *   - api_key 必填：任何登录用户必须自带 Key，绝不能"留空则取项目库里的 Key"（否则
+ *     只要知道项目 UUID 就能借用该项目的 Key = 越权）。
+ *   - 不再接收 project_id：项目归属完全由 API Key 决定，gateway 在 202 响应里回传
+ *     project_id/org_id，本路由据此落审计。
  */
 
 import { raw, Router, type RequestHandler } from "express"
@@ -18,7 +19,7 @@ import { getJob, submitJob } from "../infra/gatewayClient"
 import { AuditService } from "../services/audit.service"
 import { getLogger } from "../infra/logger"
 
-const router = Router({ mergeParams: true })
+const router = Router()
 
 const wrap =
   (fn: RequestHandler): RequestHandler =>
@@ -46,7 +47,6 @@ router.post(
   // 原始 body 解析：仅本路由生效，不动全局 json parser
   raw({ type: "application/octet-stream", limit: "50mb" }),
   wrap(async (req, res) => {
-    const projectId = req.params.id
     const q = req.query as Record<string, string | undefined>
     const filename = q.filename
     if (!filename) {
@@ -76,11 +76,12 @@ router.post(
     })
 
     await AuditService.log({
-      orgId: null,
+      // 归属由 API Key 验签解析（gateway 202 回传），而非调用方传入
+      orgId: result.org_id ?? null,
       actorUserId: req.user!.userId,
       action: "debug.job.submit",
       targetType: "project",
-      targetId: projectId,
+      targetId: result.project_id ?? null,
       metadata: { jobId: result.job_id, filename, ruleSetId, taskId },
     }).catch((e) => getLogger().warn({ error: (e as Error).message }, "audit_log_failed"))
 

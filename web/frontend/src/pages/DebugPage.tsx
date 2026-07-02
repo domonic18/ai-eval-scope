@@ -1,6 +1,7 @@
 /**
- * 调试台（/debug）—— owner 专属。左右结构：左侧参数+结果，右侧 Console 日志流。
+ * 调试台（/debug）—— 登录即可访问。左右结构：左侧参数+结果，右侧 Console 日志流。
  * 实时输出 request / response / 轮询 / 结果全过程，类似浏览器 DevTools Console。
+ * 项目归属由 API Key 决定（gateway 验签解析），无需也不接收 project_id。
  */
 import { useEffect, useRef, useState } from "react"
 import { api } from "../api/client"
@@ -32,7 +33,6 @@ const POLL_INTERVAL = 3000
 
 /** 参数默认值（hardcode，非动态拉取；用户可在编辑框内直接修改）。 */
 const DEFAULTS = {
-  projectId: "",
   ruleSet: RULE_SETS[0],
   taskId: "",
   taskTitle: "",
@@ -99,7 +99,6 @@ export default function DebugPage() {
   const { setCrumbs } = useCrumbs()
   const toast = useToast()
 
-  const [projectId, setProjectId] = useState(DEFAULTS.projectId)
   const [ruleSet, setRuleSet] = useState(DEFAULTS.ruleSet)
   const [taskId, setTaskId] = useState(DEFAULTS.taskId)
   const [taskTitle, setTaskTitle] = useState(DEFAULTS.taskTitle)
@@ -109,7 +108,6 @@ export default function DebugPage() {
 
   const [job, setJob] = useState<DebugJobStatus | null>(null)
   const [activeJob, setActiveJob] = useState<{
-    projectId: string
     jobId: string
     apiKey: string
   } | null>(null)
@@ -150,14 +148,14 @@ export default function DebugPage() {
     if (!activeJob) return
     let stopped = false
     const tick = async () => {
-      const { projectId: pid, jobId, apiKey: ak } = activeJob
+      const { jobId, apiKey: ak } = activeJob
       pushLog("req", `GET /v1/jobs/${jobId.slice(0, 8)}…`, {
-        url: `/api/v1/projects/${pid}/debug/jobs/${jobId}`,
+        url: `/api/v1/debug/jobs/${jobId}`,
         method: "GET",
         query: ak.trim() ? { api_key: ak.trim() } : {},
       })
       try {
-        const j = await api.getDebugJob(pid, jobId, ak.trim() || undefined)
+        const j = await api.getDebugJob(jobId, ak.trim() || undefined)
         if (stopped) return
         pushLog("resp", j.status, j)
         setJob(j)
@@ -182,10 +180,10 @@ export default function DebugPage() {
   }, [activeJob])
 
   async function submit() {
-    if (!projectId || !file) return
+    if (!file) return
     setSubmitting(true)
     pushLog("req", "POST /v1/jobs", {
-      url: `/api/v1/projects/${projectId}/debug/jobs`,
+      url: `/api/v1/debug/jobs`,
       method: "POST",
       headers: { "Content-Type": "application/octet-stream" },
       query: {
@@ -198,14 +196,14 @@ export default function DebugPage() {
       body: `${file.name} (${(file.size / 1024).toFixed(1)} KB)`,
     })
     try {
-      const res = await api.submitDebugJob(projectId, file, ruleSet, {
+      const res = await api.submitDebugJob(file, ruleSet, {
         taskId: taskId.trim() || undefined,
         taskTitle: taskTitle.trim() || undefined,
         apiKey: apiKey.trim() || undefined,
       })
       pushLog("resp", "202 Accepted", res.debug ?? res)
       setJob({ job_id: res.job_id, status: res.status })
-      setActiveJob({ projectId, jobId: res.job_id, apiKey })
+      setActiveJob({ jobId: res.job_id, apiKey })
       toast.success(`已提交，job_id=${res.job_id.slice(0, 8)}…`)
     } catch (e) {
       const msg = e as {
@@ -245,22 +243,6 @@ export default function DebugPage() {
               <CardTitle className="text-sm">参数配置</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-1.5">
-                <ParamLabel
-                  name="project_id"
-                  required
-                  help={
-                    "评估结果（run / 样本 / 制品）落到该项目，用其 API Key 鉴权转发 gateway。\n\n获取方法：打开项目详情页，浏览器地址 /project/ 后面那段 UUID 即是（不是 slug）。"
-                  }
-                />
-                <Input
-                  value={projectId}
-                  onChange={(e) => setProjectId(e.target.value)}
-                  placeholder="项目 ID"
-                  className="h-9 font-mono text-xs"
-                />
-              </div>
-
               <div className="space-y-1.5">
                 <ParamLabel
                   name="rule_set_id"
@@ -309,8 +291,9 @@ export default function DebugPage() {
               <div className="space-y-1.5">
                 <ParamLabel
                   name="api_key"
+                  required
                   help={
-                    "Bearer 鉴权 Key（须与上方 project_id 属同一项目，否则 401）。\n\n获取方法：项目详情页 → API Key 管理，创建后复制 eval- 开头的明文（仅创建时可见一次）。"
+                    "Bearer 鉴权 Key，决定结果归属的项目（gateway 据此验签解析 project_id）。\n\n获取方法：项目详情页 → API Key 管理，创建后复制 eval- 开头的明文（仅创建时可见一次）。"
                   }
                 />
                 <Input
@@ -335,12 +318,7 @@ export default function DebugPage() {
                 />
               </div>
 
-              <Button
-                disabled={!projectId || !file || submitting}
-                onClick={submit}
-                size="sm"
-                className="w-full"
-              >
+              <Button disabled={!file || submitting} onClick={submit} size="sm" className="w-full">
                 {submitting ? "提交中…" : "提交评估"}
               </Button>
             </CardContent>

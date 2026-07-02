@@ -89,10 +89,14 @@ Authorization: Bearer <api_key>
 {
   "job_id": "d3f1...e8a2",
   "status": "queued",
+  "project_id": "9b30ef3c-867b-4110-8799-b49c1d4db32b",
+  "org_id": "1968916c-9aed-4df5-ba5e-6b5c9f757a06",
   "web_run_url": null,
   "poll_url": "/v1/jobs/d3f1...e8a2"
 }
 ```
+
+> `project_id` / `org_id` 由 API Key 验签解析后回传，**提交时无需也不接受 project_id**——结果归属完全由 Key 决定。
 
 ---
 

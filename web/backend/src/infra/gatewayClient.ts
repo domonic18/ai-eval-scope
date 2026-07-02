@@ -28,6 +28,9 @@ export interface GatewaySubmitInput {
 export interface GatewaySubmitResult {
   job_id: string
   status: string
+  /** 归属由 API Key 验签解析（gateway 回传），供 web 审计落库。 */
+  project_id?: string
+  org_id?: string
   poll_url: string
 }
 
