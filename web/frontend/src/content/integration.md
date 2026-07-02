@@ -16,27 +16,31 @@
 
 ---
 
+
+
 ## 接入流程
 
 第三方系统一行 HTTP 请求把待评估内容提交给 EvalScope，平台异步运行评估器，完成后回传指标与证据。
 
 ```text
-┌──────────┐   POST /v1/jobs    ┌──────────────────────┐    调用     ┌──────────┐
-│ 第三方系统 │  ───────────────▶ │  EvalScope Gateway   │ ─────────▶ │  评估器   │
-│          │  Authorization: Bearer │ Bearer Key · 异步调度 │          │          │
-└──────────┘                   └──────────────────────┘          └──────────┘
-                                                                        │
-                                                                        ▼
-                                              结果经 Web 摄取链路回传    ┌──────────────┐
+┌──────────┐   POST /v1/jobs         ┌──────────────────────┐    调用     ┌──────────┐
+│ 第三方系统 │  ───────────────▶       │  EvalScope Gateway   │ ─────────▶ │  评估器   │
+│          │  Authorization: Bearer  │ Bearer Key · 异步调度 │             │          │
+└──────────┘                         └──────────────────────┘            └──────────┘
+                                                                              │
+                                                                              ▼
+                                              结果经 Web 摄取链路回传        ┌──────────────┐
                                               第三方轮询 GET /v1/jobs/{id} │ Web 可观测平台 │
                                                                           └──────────────┘
 ```
 
 - **网关地址（线上）**：`https://eval.bj33smarter.com/gateway`
-- **鉴权方式**：`Authorization: Bearer <api_key>`（单一 API Key，**无需 HMAC 签名**）
+- **鉴权方式**：`Authorization: Bearer <api_key>`
 - **交互方式**：提交后拿到 `job_id`，轮询 `GET /v1/jobs/{job_id}` 获取结果
 
 ---
+
+
 
 ## 提交评估
 
@@ -53,23 +57,31 @@ Authorization: Bearer <api_key>
 
 适合提交 HTML / Markdown / 压缩包等已有文件。
 
-| 字段          | 必需 | 类型   | 说明                                     |
-| ------------- | ---- | ------ | ---------------------------------------- |
+
+| 字段            | 必需  | 类型     | 说明                               |
+| ------------- | --- | ------ | -------------------------------- |
 | `file`        | 是   | file   | 待评估文件，如 `lesson.html`、`unit.zip` |
-| `rule_set_id` | 否   | string | 规则集，默认 `coursework-default`        |
-| `task_id`     | 否   | string | 自定义任务标识，如 `math-2024-q1`        |
-| `task_title`  | 否   | string | 任务标题，如《分数入门》                 |
+| `rule_set_id` | 否   | string | 规则集，默认 `coursework-default`      |
+| `task_id`     | 否   | string | 自定义任务标识，如 `math-2024-q1`         |
+| `task_title`  | 否   | string | 任务标题，如《分数入门》                     |
+
+
+
 
 ### 内联内容（application/json）
 
 适合直接传文本，无需落盘。
 
-| 字段                                     | 必需 | 类型   | 说明                                                                                   |
-| ---------------------------------------- | ---- | ------ | -------------------------------------------------------------------------------------- |
+
+| 字段                                       | 必需  | 类型     | 说明                                                                                   |
+| ---------------------------------------- | --- | ------ | ------------------------------------------------------------------------------------ |
 | `content`                                | 是   | object | `{ filename: string, text: string }`，如 `{"filename":"lesson.html","text":"<html>…"}` |
 | `rule_set_id` / `task_id` / `task_title` | 否   | string | 同上                                                                                   |
 
+
 > 单文件为「单页」评估；`.zip` 解析为「单元」评估（保留目录结构）。
+
+
 
 ### 响应（`202 Accepted`）
 
@@ -83,6 +95,8 @@ Authorization: Bearer <api_key>
 ```
 
 ---
+
+
 
 ## 查询结果
 
@@ -106,19 +120,23 @@ Authorization: Bearer <api_key>
 
 **响应字段**（`completed` 后 `metrics` 有值；`failed` 后 `error` 有值）：
 
-| 字段                                        | 说明                                                    |
-| ------------------------------------------- | ------------------------------------------------------- |
-| `job_id` / `status`                         | 任务 id 与当前状态                                      |
-| `project_id` / `org_id`                     | 归属（来自 API Key）                                    |
-| `input_kind` / `scope`                      | `upload` / `inline`、`unit` / `single`                  |
-| `rule_set_id` / `task_id` / `task_title`    | 提交时传入                                              |
-| `run_id`                                    | 评估运行 id（进入 running 后填充）                      |
-| `web_run_url`                               | Web 平台运行详情页（完成后可访问）                      |
+
+| 字段                                          | 说明                                            |
+| ------------------------------------------- | --------------------------------------------- |
+| `job_id` / `status`                         | 任务 id 与当前状态                                   |
+| `project_id` / `org_id`                     | 归属（来自 API Key）                                |
+| `input_kind` / `scope`                      | `upload` / `inline`、`unit` / `single`         |
+| `rule_set_id` / `task_id` / `task_title`    | 提交时传入                                         |
+| `run_id`                                    | 评估运行 id（进入 running 后填充）                       |
+| `web_run_url`                               | Web 平台运行详情页（完成后可访问）                           |
 | `metrics`                                   | 四维指标 `DR` / `CPR` / `Reward` / `CondR` 等（完成后） |
-| `error`                                     | 失败原因（失败时）                                      |
-| `created_at` / `started_at` / `finished_at` | 各阶段时间戳                                            |
+| `error`                                     | 失败原因（失败时）                                     |
+| `created_at` / `started_at` / `finished_at` | 各阶段时间戳                                        |
+
 
 > 越权访问（`job_id` 不属于当前 Key 的项目）一律返回 `404`，不泄露存在性。
+
+
 
 ### 响应
 
@@ -153,6 +171,8 @@ Authorization: Bearer <api_key>
 
 ---
 
+
+
 ## 取消任务
 
 ```bash
@@ -179,19 +199,27 @@ Authorization: Bearer <api_key>
 
 ---
 
+
+
 ## 状态码与错误码
 
-| HTTP  | code                | 触发场景                                                   |
-| ----- | ------------------- | ---------------------------------------------------------- |
-| `202` | —                   | 提交成功，任务已入队                                       |
-| `400` | `InputInvalidError` | 字段缺失或非法（如缺 `file` / `content`）                  |
+
+| HTTP  | code                | 触发场景                                        |
+| ----- | ------------------- | ------------------------------------------- |
+| `202` | —                   | 提交成功，任务已入队                                  |
+| `400` | `InputInvalidError` | 字段缺失或非法（如缺 `file` / `content`）              |
 | `401` | `AUTH_INVALID`      | 缺少/错误的 API Key、Key 已吊销或过期、scope 不含 `ingest` |
-| `404` | `JOB_NOT_FOUND`     | 任务不存在或不属于当前 Key 的项目                          |
-| `409` | `CANCEL_FAILED`     | 非 `queued` 态调用取消                                     |
+| `404` | `JOB_NOT_FOUND`     | 任务不存在或不属于当前 Key 的项目                         |
+| `409` | `CANCEL_FAILED`     | 非 `queued` 态调用取消                            |
+
 
 ---
 
+
+
 ## 代码示例
+
+
 
 ### Python（httpx）
 
@@ -219,6 +247,8 @@ while True:
         break
     time.sleep(3)
 ```
+
+
 
 ### 提交 .zip 文件（单元评估）
 
@@ -250,6 +280,8 @@ r = httpx.post(
 print(r.status_code, r.json())  # 202 {"job_id":"…","status":"queued",…}
 ```
 
+
+
 ### TypeScript（fetch）
 
 ```ts
@@ -265,6 +297,8 @@ const job = await res.json()
 console.log(job.job_id)
 ```
 
+
+
 ### curl（查询）
 
 ```bash
@@ -274,20 +308,26 @@ curl "https://eval.bj33smarter.com/gateway/v1/jobs/$JOB" -H "Authorization: Bear
 
 ---
 
+
+
 ## 用评估器 CLI 接入
 
 如果你直接使用评估器命令行（`agent-eval`），评估结果可经 Web 摄取链路自动回传，无需调用 gateway。在 `.env` 配置：
 
-| 变量                 | 默认                    | 说明                                   |
-| -------------------- | ----------------------- | -------------------------------------- |
-| `AGENT_EVAL_HOST`    | `http://localhost:9000` | Web 平台地址                           |
-| `AGENT_EVAL_API_KEY` | —（必填）               | `eval-…`（单一 API Key）               |
-| `AGENT_EVAL_PROJECT` | Key 所属项目            | 项目 uuid 或 slug（可省略）            |
+
+| 变量                   | 默认                      | 说明                        |
+| -------------------- | ----------------------- | ------------------------- |
+| `AGENT_EVAL_HOST`    | `http://localhost:9000` | Web 平台地址                  |
+| `AGENT_EVAL_API_KEY` | —（必填）                   | `eval-…`（单一 API Key）      |
+| `AGENT_EVAL_PROJECT` | Key 所属项目                | 项目 uuid 或 slug（可省略）       |
 | `AGENT_EVAL_UPLOAD`  | `false`                 | 设为 `true` 开启摄取（**需显式开启**） |
+
 
 配置后正常运行评估命令，`ResultSink` 会把运行 / 样本 / 约束 / 制品经 Bearer Key 摄取入库；网络失败自动入离线队列重放。
 
 ---
+
+
 
 ## Roadmap
 
