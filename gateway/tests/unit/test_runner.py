@@ -87,3 +87,49 @@ async def test_run_job_marks_failed_on_exception(
     mock_mark_failed.assert_awaited_once()
     _, kwargs = mock_mark_failed.call_args
     assert "message" in kwargs["error"]
+
+
+def test_flush_result_recomputes_enabled_with_per_job_token(
+    sample_job: Job,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """回归：部署未配 AGENT_EVAL_API_KEY 时 base_cfg.enabled=False；per-job token 覆盖
+    api_key 后必须把派生字段 enabled 重算为 True，否则 ResultSink.flush 会静默跳过回传。"""
+    # 模拟部署环境未设 AGENT_EVAL_API_KEY → load_config 得 enabled=False
+    monkeypatch.delenv("AGENT_EVAL_API_KEY", raising=False)
+
+    captured: dict[str, object] = {}
+
+    def _capture_sink(cfg: object) -> MagicMock:
+        captured["cfg"] = cfg
+        inst = MagicMock()
+        inst.flush = MagicMock(
+            return_value=MagicMock(enabled=True, error=None, sent=1, queued=0, artifacts_uploaded=0)
+        )
+        return inst
+
+    monkeypatch.setattr(runner_mod, "ResultSink", _capture_sink)
+
+    result = MagicMock()
+    result.run_workspace = None
+
+    runner_mod._flush_result(result, tmp_path / "pkg", sample_job, "eval-token", tmp_path / "out")
+
+    cfg = captured["cfg"]
+    assert cfg.enabled is True  # ← 核心断言：派生字段已随 per-job token 重算
+    assert cfg.api_key == "eval-token"
+    assert cfg.project == sample_job.project_id
+
+
+def test_flush_result_skips_without_token(
+    sample_job: Job,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """无凭据（token=None）→ 不构造 ResultSink，返回 None。"""
+    monkeypatch.setattr(
+        runner_mod, "ResultSink", MagicMock(side_effect=AssertionError("不应构造 sink"))
+    )
+    report = runner_mod._flush_result(MagicMock(), tmp_path / "pkg", sample_job, None, tmp_path)
+    assert report is None

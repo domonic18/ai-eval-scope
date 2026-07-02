@@ -66,15 +66,17 @@ def _flush_result(
     job: Job,
     token: str | None,
     job_output_dir: Path,
-) -> None:
+) -> Any:
     """以「提交者身份」回传评估结果到 Web（per-job config）。
 
     - 用提交者的 token（Bearer）回传 → web 按该 token 绑定的项目落库 = 第三方项目。
     - host/超时/重试 等仍取部署 env（AGENT_EVAL_HOST）；api_key/project/queue_dir per-job 覆盖。
     - 队列目录绑定到本 job 工作区：回传失败的事件不被跨 job 重放（best-effort，§5.6）。
+
+    返回 SinkReport（供调用方记录回传结果）；无凭据时返回 None。
     """
     if not token:
-        return  # 无可用凭据（Key 已删/吊销）→ 跳过回传，评估结果仍存 jobs.metrics
+        return None  # 无可用凭据（Key 已删/吊销）→ 跳过回传，评估结果仍存 jobs.metrics
 
     base_cfg = load_config(upload_override=True)  # 读 AGENT_EVAL_HOST 等
     per_job_cfg = replace(
@@ -82,10 +84,14 @@ def _flush_result(
         api_key=token,
         project=job.project_id,
         queue_dir=job_output_dir / ".ingest_queue",  # per-job 临时队列，不跨 job 重放
+        # enabled 是 load_config 依据 env AGENT_EVAL_API_KEY 算出的派生字段；gateway 用 per-job
+        # token 覆盖 api_key 后必须同步重算 —— 否则部署未配 AGENT_EVAL_API_KEY 时 base_cfg.enabled
+        # 恒为 False，ResultSink.flush 会静默跳过回传（run 不落 web，且无任何报错）。
+        enabled=base_cfg.upload and bool(token),
     )
     sink = ResultSink(per_job_cfg)
     run_workspace = result.run_workspace.root if result.run_workspace else None
-    sink.flush(result, run_workspace=run_workspace, package_dir=package_dir)
+    return sink.flush(result, run_workspace=run_workspace, package_dir=package_dir)
 
 
 async def run_job(job: Job) -> None:
@@ -117,10 +123,30 @@ async def run_job(job: Job) -> None:
         # 按 job 提交者身份回传（per-job token + project）→ 结果落到第三方项目
         token = await _resolve_submit_token(job)
         try:
-            await asyncio.wait_for(
+            report = await asyncio.wait_for(
                 asyncio.to_thread(_flush_result, result, package_dir, job, token, job_output_dir),
                 timeout=FLUSH_TIMEOUT_SEC,
             )
+            if report is None:
+                LOG.warning("job.flush.skipped_no_credential", job_id=job.job_id)
+            elif not report.enabled:
+                LOG.warning("job.flush.skipped_disabled", job_id=job.job_id)
+            elif report.error:
+                LOG.warning(
+                    "job.flush.error",
+                    job_id=job.job_id,
+                    error=report.error,
+                    sent=report.sent,
+                    queued=report.queued,
+                )
+            else:
+                LOG.info(
+                    "job.flush.ok",
+                    job_id=job.job_id,
+                    sent=report.sent,
+                    queued=report.queued,
+                    artifacts=report.artifacts_uploaded,
+                )
         except Exception as exc:  # noqa: BLE001
             LOG.warning("job.flush.best_effort_failed", job_id=job.job_id, error=str(exc))
 
