@@ -15,9 +15,30 @@
  *
  * 设计要点:
  *   1. latest 标签仅在 main 分支推送，避免 feature 分支覆盖生产镜像
- *   2. push 带重试（3次），应对 registry 网络抖动
+ *   2. build/push 均带重试（3次），应对 registry 网络抖动
+ *      （build --pull 会去 CCR 拉基础镜像，TLS 握手超时同样需要重试兜底）
  *   3. 避免脚本级变量（Jenkins 沙箱不允许跨方法访问）
  */
+
+/**
+ * 带重试的 docker build
+ *   构建含 --pull，会重新拉取 FROM 基础镜像；registry 抖动（TLS handshake timeout）时重试。
+ */
+def buildWithRetry(String buildCmd) {
+    int maxRetries = 3
+    for (int i = 1; i <= maxRetries; i++) {
+        try {
+            sh buildCmd
+            return
+        } catch (Exception e) {
+            echo ">>> docker build 第 ${i}/${maxRetries} 次失败: ${e.getMessage()}"
+            if (i == maxRetries) {
+                error("docker build 失败，已重试 ${maxRetries} 次")
+            }
+            sleep(10)
+        }
+    }
+}
 
 /**
  * 带重试的 docker push
@@ -64,7 +85,7 @@ def buildAndPush(String serviceDir, String dockerfile, String serviceName, List 
     // ---- 4. 构建镜像（从项目根目录）----
     docker.withRegistry('https://ccr.ccs.tencentyun.com', 'tencent-registry-credentials') {
         def latestTagOpt = isMain ? " -t ${imageName}:latest" : ''
-        sh """
+        buildWithRetry("""
             docker build \
                 --pull \
                 -f ${dockerfile} \
@@ -72,7 +93,7 @@ def buildAndPush(String serviceDir, String dockerfile, String serviceName, List 
                 -t ${fullTag} \
                 ${latestTagOpt} \
                 ${serviceDir}
-        """
+        """)
     }
 
     // ---- 5. 推送到腾讯云 CCR ----
