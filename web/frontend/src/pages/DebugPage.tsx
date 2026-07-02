@@ -32,12 +32,11 @@ const POLL_INTERVAL = 3000
 
 /** 参数默认值（hardcode，非动态拉取；用户可在编辑框内直接修改）。 */
 const DEFAULTS = {
-  // 线上 Demo 项目（slug: demo-courseware）
-  projectId: "9b30ef3c-867b-4110-8799-b49c1d4db32b",
+  projectId: "",
   ruleSet: RULE_SETS[0],
   taskId: "",
   taskTitle: "",
-  apiKey: "eval-ed817e3285111214188e52da60b3a38f0bcdc0972a00c387",
+  apiKey: "",
 }
 
 interface ConsoleEntry {
@@ -74,27 +73,11 @@ function JsonBlock({ data }: { data: unknown }) {
   )
 }
 
-function ParamLabel({
-  name,
-  required,
-  help,
-  defaulted,
-}: {
-  name: string
-  required?: boolean
-  help: string
-  /** 该字段当前仍为系统预置默认值（未被用户修改）时，展示「默认值」提示。 */
-  defaulted?: boolean
-}) {
+function ParamLabel({ name, required, help }: { name: string; required?: boolean; help: string }) {
   return (
     <div className="flex items-center gap-1">
       <span className="text-xs font-medium">{name}</span>
       {required && <span className="text-red-400">*</span>}
-      {defaulted && (
-        <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium leading-none text-amber-600 dark:text-amber-400">
-          默认值 · 可改
-        </span>
-      )}
       <Tooltip>
         <TooltipTrigger asChild>
           <button
@@ -111,9 +94,6 @@ function ParamLabel({
     </div>
   )
 }
-
-/** 输入框仍为系统预置默认值时的视觉样式（琥珀色描边），提示用户可自行修改。 */
-const DEFAULT_FIELD_CLASS = "border-amber-500/40 bg-amber-500/5"
 
 export default function DebugPage() {
   const { setCrumbs } = useCrumbs()
@@ -248,10 +228,6 @@ export default function DebugPage() {
 
   const metrics = (job?.metrics as { metrics?: Record<string, number> } | null)?.metrics
 
-  // 字段是否仍为系统预置默认值（未被用户修改）
-  const projectIsDefault = projectId === DEFAULTS.projectId
-  const apiKeyIsDefault = apiKey === DEFAULTS.apiKey
-
   return (
     <TooltipProvider>
       <div className="flex h-[calc(100vh-3.5rem)]">
@@ -273,16 +249,15 @@ export default function DebugPage() {
                 <ParamLabel
                   name="project_id"
                   required
-                  defaulted={projectIsDefault}
                   help={
-                    "评估结果（run / 样本 / 制品）落到该项目，用其 API Key 鉴权转发 gateway。\n\n获取方法：打开项目详情页，浏览器地址 /project/ 后面那段 UUID 即是（不是 slug）。\n\n默认值：线上 Demo 项目 demo-courseware。"
+                    "评估结果（run / 样本 / 制品）落到该项目，用其 API Key 鉴权转发 gateway。\n\n获取方法：打开项目详情页，浏览器地址 /project/ 后面那段 UUID 即是（不是 slug）。"
                   }
                 />
                 <Input
                   value={projectId}
                   onChange={(e) => setProjectId(e.target.value)}
                   placeholder="项目 ID"
-                  className={`h-9 font-mono text-xs ${projectIsDefault ? DEFAULT_FIELD_CLASS : ""}`}
+                  className="h-9 font-mono text-xs"
                 />
               </div>
 
@@ -334,16 +309,15 @@ export default function DebugPage() {
               <div className="space-y-1.5">
                 <ParamLabel
                   name="api_key"
-                  defaulted={apiKeyIsDefault}
                   help={
-                    "Bearer 鉴权 Key（须与上方 project_id 属同一项目，否则 401）。\n\n获取方法：项目详情页 → API Key 管理，创建后复制 eval- 开头的明文（仅创建时可见一次）。\n\n默认值：线上 Demo 项目的 Key；留空则用该项目首个未吊销 Key。"
+                    "Bearer 鉴权 Key（须与上方 project_id 属同一项目，否则 401）。\n\n获取方法：项目详情页 → API Key 管理，创建后复制 eval- 开头的明文（仅创建时可见一次）。"
                   }
                 />
                 <Input
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
                   placeholder="eval-…"
-                  className={`h-9 font-mono text-xs ${apiKeyIsDefault ? DEFAULT_FIELD_CLASS : ""}`}
+                  className="h-9 font-mono text-xs"
                 />
               </div>
 
