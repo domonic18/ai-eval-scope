@@ -20,7 +20,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/shadcn/tooltip"
-import { useCrumbs, useOrg } from "../components/AppShell"
+import { useCrumbs } from "../components/AppShell"
 import { FilePicker } from "../components/FilePicker"
 import { useToast } from "../components/toast"
 import { StatCard, StatusBadge } from "../components/shared"
@@ -30,10 +30,14 @@ import type { DebugJobStatus } from "../types"
 const RULE_SETS = ["coursework-default", "format-only"]
 const POLL_INTERVAL = 3000
 
-interface Project {
-  id: string
-  name: string
-  slug: string
+/** 参数默认值（hardcode，非动态拉取；用户可在编辑框内直接修改）。 */
+const DEFAULTS = {
+  // 线上 Demo 项目（slug: demo-courseware）
+  projectId: "9b30ef3c-867b-4110-8799-b49c1d4db32b",
+  ruleSet: RULE_SETS[0],
+  taskId: "",
+  taskTitle: "",
+  apiKey: "eval-ed817e3285111214188e52da60b3a38f0bcdc0972a00c387",
 }
 
 interface ConsoleEntry {
@@ -74,15 +78,23 @@ function ParamLabel({
   name,
   required,
   help,
+  defaulted,
 }: {
   name: string
   required?: boolean
   help: string
+  /** 该字段当前仍为系统预置默认值（未被用户修改）时，展示「默认值」提示。 */
+  defaulted?: boolean
 }) {
   return (
     <div className="flex items-center gap-1">
       <span className="text-xs font-medium">{name}</span>
       {required && <span className="text-red-400">*</span>}
+      {defaulted && (
+        <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium leading-none text-amber-600 dark:text-amber-400">
+          默认值 · 可改
+        </span>
+      )}
       <Tooltip>
         <TooltipTrigger asChild>
           <button
@@ -92,7 +104,7 @@ function ParamLabel({
             <HelpCircle className="size-3" />
           </button>
         </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-[220px]">
+        <TooltipContent side="top" className="max-w-[260px] whitespace-pre-line">
           {help}
         </TooltipContent>
       </Tooltip>
@@ -100,17 +112,18 @@ function ParamLabel({
   )
 }
 
+/** 输入框仍为系统预置默认值时的视觉样式（琥珀色描边），提示用户可自行修改。 */
+const DEFAULT_FIELD_CLASS = "border-amber-500/40 bg-amber-500/5"
+
 export default function DebugPage() {
-  const { activeOrg, memberships } = useOrg()
   const { setCrumbs } = useCrumbs()
   const toast = useToast()
 
-  const [projects, setProjects] = useState<Project[]>([])
-  const [projectId, setProjectId] = useState("")
-  const [ruleSet, setRuleSet] = useState(RULE_SETS[0])
-  const [taskId, setTaskId] = useState("")
-  const [taskTitle, setTaskTitle] = useState("")
-  const [apiKey, setApiKey] = useState("eval-ed817e3285111214188e52da60b3a38f0bcdc0972a00c387")
+  const [projectId, setProjectId] = useState(DEFAULTS.projectId)
+  const [ruleSet, setRuleSet] = useState(DEFAULTS.ruleSet)
+  const [taskId, setTaskId] = useState(DEFAULTS.taskId)
+  const [taskTitle, setTaskTitle] = useState(DEFAULTS.taskTitle)
+  const [apiKey, setApiKey] = useState(DEFAULTS.apiKey)
   const [file, setFile] = useState<File | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -126,23 +139,10 @@ export default function DebugPage() {
   const consoleRef = useRef<HTMLDivElement>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  const isOwner = memberships.find((m) => m.orgId === activeOrg)?.role === "owner"
-
   useEffect(() => {
     setCrumbs([{ label: "调试台" }])
     return () => setCrumbs([])
   }, [setCrumbs])
-
-  useEffect(() => {
-    if (!activeOrg) return
-    api
-      .dashboard(activeOrg)
-      .then((ps: Project[]) => {
-        setProjects(ps)
-        setProjectId((cur) => cur || ps[0]?.id || "")
-      })
-      .catch(() => toast.error("加载项目列表失败"))
-  }, [activeOrg, toast])
 
   const pushLog = (dir: ConsoleEntry["dir"], label: string, data?: unknown) => {
     logIdRef.current += 1
@@ -199,7 +199,6 @@ export default function DebugPage() {
       stopped = true
       if (pollRef.current) clearInterval(pollRef.current)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeJob])
 
   async function submit() {
@@ -245,27 +244,22 @@ export default function DebugPage() {
 
   const metrics = (job?.metrics as { metrics?: Record<string, number> } | null)?.metrics
 
+  // 字段是否仍为系统预置默认值（未被用户修改）
+  const projectIsDefault = projectId === DEFAULTS.projectId
+  const apiKeyIsDefault = apiKey === DEFAULTS.apiKey
+
   return (
     <TooltipProvider>
-    <div className="flex h-[calc(100vh-3.5rem)]">
-      {/* 左侧：参数 + 结果 */}
-      <div className="w-96 shrink-0 space-y-4 overflow-y-auto border-r p-4">
-        <div>
-          <h1 className="text-lg font-semibold tracking-tight">调试台</h1>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            向 gateway 提交评估，实时查看请求 / 响应 / 结果。
-          </p>
-        </div>
+      <div className="flex h-[calc(100vh-3.5rem)]">
+        {/* 左侧：参数 + 结果 */}
+        <div className="w-96 shrink-0 space-y-4 overflow-y-auto border-r p-4">
+          <div>
+            <h1 className="text-lg font-semibold tracking-tight">调试台</h1>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              向 gateway 提交评估，实时查看请求 / 响应 / 结果。
+            </p>
+          </div>
 
-        {!isOwner ? (
-          <div className="rounded-lg border border-yellow-500/40 bg-yellow-500/5 p-3 text-xs text-yellow-400">
-            当前组织你不是 owner，无权使用调试台。
-          </div>
-        ) : projects.length === 0 ? (
-          <div className="rounded-lg border bg-card p-6 text-center text-xs text-muted-foreground">
-            当前组织下还没有项目。
-          </div>
-        ) : (
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm">参数配置</CardTitle>
@@ -275,20 +269,17 @@ export default function DebugPage() {
                 <ParamLabel
                   name="project_id"
                   required
-                  help="评估结果（run / 样本 / 制品）落到该项目，用其 API Key 鉴权转发 gateway。"
+                  defaulted={projectIsDefault}
+                  help={
+                    "评估结果（run / 样本 / 制品）落到该项目，用其 API Key 鉴权转发 gateway。\n\n获取方法：打开项目详情页，浏览器地址 /project/ 后面那段 UUID 即是（不是 slug）。\n\n默认值：线上 Demo 项目 demo-courseware。"
+                  }
                 />
-                <Select value={projectId} onValueChange={setProjectId}>
-                  <SelectTrigger className="h-9 text-xs">
-                    <SelectValue placeholder="选择项目" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {projects.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.name}（{p.slug}）
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  value={projectId}
+                  onChange={(e) => setProjectId(e.target.value)}
+                  placeholder="项目 ID"
+                  className={`h-9 font-mono text-xs ${projectIsDefault ? DEFAULT_FIELD_CLASS : ""}`}
+                />
               </div>
 
               <div className="space-y-1.5">
@@ -313,12 +304,13 @@ export default function DebugPage() {
               <div className="space-y-1.5">
                 <ParamLabel
                   name="task_id"
-                  help="自定义任务标识，决定 run 内 sample_id；留空则单页恒为 contents。"
+                  help={
+                    "自定义任务标识，决定 run 内 sample_id；留空则单页恒为 contents。\n\n示例：lesson-3"
+                  }
                 />
                 <Input
                   value={taskId}
                   onChange={(e) => setTaskId(e.target.value)}
-                  placeholder="如 lesson-3"
                   className="h-9 text-xs"
                 />
               </div>
@@ -326,12 +318,11 @@ export default function DebugPage() {
               <div className="space-y-1.5">
                 <ParamLabel
                   name="task_title"
-                  help="任务展示标题；留空则用 job_id 兜底。"
+                  help={"任务展示标题；留空则用 job_id 兜底。\n\n示例：分数入门"}
                 />
                 <Input
                   value={taskTitle}
                   onChange={(e) => setTaskTitle(e.target.value)}
-                  placeholder="如 分数入门"
                   className="h-9 text-xs"
                 />
               </div>
@@ -339,13 +330,16 @@ export default function DebugPage() {
               <div className="space-y-1.5">
                 <ParamLabel
                   name="api_key"
-                  help="Bearer 鉴权 Key；留空则用所选项目首个未吊销 Key。"
+                  defaulted={apiKeyIsDefault}
+                  help={
+                    "Bearer 鉴权 Key（须与上方 project_id 属同一项目，否则 401）。\n\n获取方法：项目详情页 → API Key 管理，创建后复制 eval- 开头的明文（仅创建时可见一次）。\n\n默认值：线上 Demo 项目的 Key；留空则用该项目首个未吊销 Key。"
+                  }
                 />
                 <Input
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
                   placeholder="eval-…"
-                  className="h-9 font-mono text-xs"
+                  className={`h-9 font-mono text-xs ${apiKeyIsDefault ? DEFAULT_FIELD_CLASS : ""}`}
                 />
               </div>
 
@@ -373,102 +367,108 @@ export default function DebugPage() {
               </Button>
             </CardContent>
           </Card>
-        )}
 
-        {/* 当前结果 */}
-        {job && (
-          <Card>
-            <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm">当前结果</CardTitle>
-              <StatusBadge status={job.status} />
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="font-mono text-xs text-muted-foreground">job_id: {job.job_id}</div>
-              {job.status === "completed" && metrics && (
-                <div className="grid grid-cols-3 gap-2">
-                  <StatCard label="DR" value={fmt3(metrics.DR)} />
-                  <StatCard label="CPR" value={fmt3(metrics.CPR)} />
-                  <StatCard label="Reward" value={fmt3(metrics.avg_reward)} />
-                </div>
-              )}
-              {job.web_run_url && (
-                <Button asChild variant="outline" size="sm" className="w-full">
-                  <a href={job.web_run_url} target="_blank" rel="noreferrer">
-                    <ExternalLink className="size-3.5" /> 在 web 平台查看
-                  </a>
-                </Button>
-              )}
-              {job.status === "failed" && job.error && (
-                <div className="rounded-md border border-red-500/40 bg-red-500/5 p-2 text-xs text-red-400">
-                  {job.error.message || "未知错误"}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* 右侧：Console 日志流 */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        {/* 工具栏 */}
-        <div className="flex items-center justify-between border-b px-4 py-2">
-          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-            <Terminal className="size-3.5" /> Console
-            <span className="text-muted-foreground/60">({logs.length})</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <label className="flex cursor-pointer items-center gap-1 text-xs text-muted-foreground">
-              <input
-                type="checkbox"
-                checked={autoScroll}
-                onChange={(e) => setAutoScroll(e.target.checked)}
-                className="size-3"
-              />
-              自动滚动
-            </label>
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              className="size-6"
-              onClick={() => setLogs([])}
-              title="清空"
-            >
-              <Trash2 className="size-3.5" />
-            </Button>
-          </div>
-        </div>
-        {/* 日志流 */}
-        <div ref={consoleRef} className="flex-1 space-y-0.5 overflow-y-auto p-3 font-mono text-xs">
-          {logs.length === 0 ? (
-            <div className="italic text-muted-foreground">
-              提交评估后，request / response / 轮询 / 结果将在此实时输出…
-            </div>
-          ) : (
-            logs.map((log) => {
-              const style = DIR_STYLE[log.dir]
-              return (
-                <details
-                  key={log.id}
-                  className="group rounded px-2 py-1 transition-colors hover:bg-muted/30"
-                >
-                  <summary
-                    className={`flex cursor-pointer items-center gap-2 [&::-webkit-details-marker]:hidden ${style.color}`}
-                  >
-                    <span className="w-3 select-none text-center">{style.icon}</span>
-                    <span className="w-16 shrink-0 select-none text-muted-foreground/70">{log.ts}</span>
-                    <span className="flex-1 truncate">{log.label}</span>
-                    {log.data != null && (
-                      <span className="shrink-0 text-muted-foreground/50 group-open:hidden">▸</span>
-                    )}
-                  </summary>
-                  {log.data != null && <JsonBlock data={log.data} />}
-                </details>
-              )
-            })
+          {/* 当前结果 */}
+          {job && (
+            <Card>
+              <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
+                <CardTitle className="text-sm">当前结果</CardTitle>
+                <StatusBadge status={job.status} />
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="font-mono text-xs text-muted-foreground">job_id: {job.job_id}</div>
+                {job.status === "completed" && metrics && (
+                  <div className="grid grid-cols-3 gap-2">
+                    <StatCard label="DR" value={fmt3(metrics.DR)} />
+                    <StatCard label="CPR" value={fmt3(metrics.CPR)} />
+                    <StatCard label="Reward" value={fmt3(metrics.avg_reward)} />
+                  </div>
+                )}
+                {job.web_run_url && (
+                  <Button asChild variant="outline" size="sm" className="w-full">
+                    <a href={job.web_run_url} target="_blank" rel="noreferrer">
+                      <ExternalLink className="size-3.5" /> 在 web 平台查看
+                    </a>
+                  </Button>
+                )}
+                {job.status === "failed" && job.error && (
+                  <div className="rounded-md border border-red-500/40 bg-red-500/5 p-2 text-xs text-red-400">
+                    {job.error.message || "未知错误"}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           )}
         </div>
+
+        {/* 右侧：Console 日志流 */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          {/* 工具栏 */}
+          <div className="flex items-center justify-between border-b px-4 py-2">
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+              <Terminal className="size-3.5" /> Console
+              <span className="text-muted-foreground/60">({logs.length})</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="flex cursor-pointer items-center gap-1 text-xs text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={autoScroll}
+                  onChange={(e) => setAutoScroll(e.target.checked)}
+                  className="size-3"
+                />
+                自动滚动
+              </label>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                className="size-6"
+                onClick={() => setLogs([])}
+                title="清空"
+              >
+                <Trash2 className="size-3.5" />
+              </Button>
+            </div>
+          </div>
+          {/* 日志流 */}
+          <div
+            ref={consoleRef}
+            className="flex-1 space-y-0.5 overflow-y-auto p-3 font-mono text-xs"
+          >
+            {logs.length === 0 ? (
+              <div className="italic text-muted-foreground">
+                提交评估后，request / response / 轮询 / 结果将在此实时输出…
+              </div>
+            ) : (
+              logs.map((log) => {
+                const style = DIR_STYLE[log.dir]
+                return (
+                  <details
+                    key={log.id}
+                    className="group rounded px-2 py-1 transition-colors hover:bg-muted/30"
+                  >
+                    <summary
+                      className={`flex cursor-pointer items-center gap-2 [&::-webkit-details-marker]:hidden ${style.color}`}
+                    >
+                      <span className="w-3 select-none text-center">{style.icon}</span>
+                      <span className="w-16 shrink-0 select-none text-muted-foreground/70">
+                        {log.ts}
+                      </span>
+                      <span className="flex-1 truncate">{log.label}</span>
+                      {log.data != null && (
+                        <span className="shrink-0 text-muted-foreground/50 group-open:hidden">
+                          ▸
+                        </span>
+                      )}
+                    </summary>
+                    {log.data != null && <JsonBlock data={log.data} />}
+                  </details>
+                )
+              })
+            )}
+          </div>
+        </div>
       </div>
-    </div>
     </TooltipProvider>
   )
 }
