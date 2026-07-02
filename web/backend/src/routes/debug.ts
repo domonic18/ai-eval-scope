@@ -1,20 +1,20 @@
 /**
- * 调试台路由（/api/v1/projects/:id/debug）—— owner 专属，把评估请求转发给 eval-gateway。
+ * 调试台路由（/api/v1/projects/:id/debug）—— SSO 登录用户共享的评估沙盒，把请求转发给 eval-gateway。
  *  - POST /jobs          提交评估（原始文件字节 + 查询串元数据）→ gateway multipart 上传
  *  - GET  /jobs/:jobId   查询任务态（透传 gateway JobResponse）
  *
- * 鉴权：projectGuard({ role: "owner" }) —— 仅目标项目的组织 owner 可用（普通 member 403）。
- * 凭据：以该项目 API Key（Bearer token）转发 gateway；token 来自请求 api_key 或项目首个未吊销 Key。
+ * 鉴权：requireAuth（仅需 SSO 登录，作为审计 actor）+ 必填 api_key。
+ *   - 不再校验项目 owner：调试台是面向所有登录开发者的沙盒，谁都可用预置 Demo Key 提交。
+ *   - 授权 = 持有一把有效 API Key，由 gateway 验签；结果按 Key 归属落到对应项目。
+ *   - api_key 必填：去掉 owner 门禁后，绝不能再"留空则取项目库里的 Key"（否则任何登录用户
+ *     只要知道项目 UUID 就能借用该项目的 Key = 越权）。路由 :id 仅用于审计与调试回显。
  */
 
 import { raw, Router, type RequestHandler } from "express"
 import { requireAuth } from "../middleware/auth"
-import { projectGuard } from "../middleware/tenantGuard"
 import { PlatformError } from "../middleware/errorHandler"
 import { getConfig } from "../config"
-import { decryptToken } from "../infra/crypto"
 import { getJob, submitJob } from "../infra/gatewayClient"
-import { ApiKeyRepository } from "../repositories/apiKey.repository"
 import { AuditService } from "../services/audit.service"
 import { getLogger } from "../infra/logger"
 
@@ -25,18 +25,13 @@ const wrap =
   (req, res, next) =>
     Promise.resolve(fn(req, res, next)).catch(next)
 
-/** 取项目首个未吊销 API Key 的 token 明文；无可用 key → 抛 400。 */
-async function pickProjectKey(projectId: string, orgId: string): Promise<string> {
-  const repo = new ApiKeyRepository({ kind: "user", orgId, projectId, role: "owner" })
-  const keys = await repo.listByProject(projectId)
-  const key = keys.find((k) => k.revokedAt === null)
-  if (!key) {
-    throw new PlatformError("该项目尚无可用 API Key，请先在项目设置创建", {
-      status: 400,
-      code: "NO_API_KEY",
-    })
+/** 从查询串取必填 api_key（明文 Bearer token）；缺失 → 抛 400。 */
+function requireApiKey(req: Parameters<RequestHandler>[0]): string {
+  const token = (req.query as Record<string, string | undefined>).api_key?.trim()
+  if (!token) {
+    throw new PlatformError("api_key is required (query)", { status: 400, code: "INPUT_INVALID" })
   }
-  return decryptToken(key.tokenEncrypted)
+  return token
 }
 
 /** token 脱敏：eval-xxxx…yyyy（调试台展示用，不回显完整 token）。 */
@@ -48,12 +43,10 @@ function maskToken(token: string): string {
 router.post(
   "/jobs",
   requireAuth,
-  projectGuard({ role: "owner" }),
   // 原始 body 解析：仅本路由生效，不动全局 json parser
   raw({ type: "application/octet-stream", limit: "50mb" }),
   wrap(async (req, res) => {
-    const tenant = req.tenant!
-    const projectId = tenant.projectId!
+    const projectId = req.params.id
     const q = req.query as Record<string, string | undefined>
     const filename = q.filename
     if (!filename) {
@@ -69,8 +62,7 @@ router.post(
     const taskTitle = q.task_title?.trim() || undefined
     const taskSubject = q.task_subject?.trim() || undefined
 
-    const apiKey = q.api_key?.trim()
-    const token = apiKey || (await pickProjectKey(projectId, tenant.orgId!))
+    const token = requireApiKey(req)
     const baseUrl = getConfig().gatewayBaseUrl
     const result = await submitJob({
       baseUrl,
@@ -84,8 +76,8 @@ router.post(
     })
 
     await AuditService.log({
-      orgId: tenant.orgId,
-      actorUserId: tenant.userId,
+      orgId: null,
+      actorUserId: req.user!.userId,
       action: "debug.job.submit",
       targetType: "project",
       targetId: projectId,
@@ -120,11 +112,8 @@ router.post(
 router.get(
   "/jobs/:jobId",
   requireAuth,
-  projectGuard({ role: "owner" }),
   wrap(async (req, res) => {
-    const tenant = req.tenant!
-    const apiKey = (req.query as Record<string, string | undefined>).api_key?.trim()
-    const token = apiKey || (await pickProjectKey(tenant.projectId!, tenant.orgId!))
+    const token = requireApiKey(req)
     const job = await getJob(getConfig().gatewayBaseUrl, token, req.params.jobId)
     res.json(job)
   }),
