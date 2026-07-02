@@ -1,6 +1,6 @@
 /**
  * 第三方接入 API 文档页（公开 /docs）。
- * 左侧 TOC（章节锚点 + 滚动高亮）+ 概述区（JSX 精美链路图）+ react-markdown 渲染 integration.md。
+ * 左侧 TOC（章节锚点 + 滚动高亮），正文统一由 integration.md 维护并通过 react-markdown 渲染。
  */
 import { useEffect, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
@@ -12,7 +12,6 @@ import { Button } from "@/components/shadcn/button"
 import { cn } from "@/lib/utils"
 import { loadSession } from "../store/auth"
 import { APP_VERSION } from "../version"
-import { ArrowRight, CornerLeftDown } from "lucide-react"
 import integrationMd from "../content/integration.md?raw"
 
 interface Heading {
@@ -125,17 +124,7 @@ export default function DocsPage() {
         </aside>
 
         <main className="min-w-0 max-w-3xl pt-10">
-          {/* 概述 */}
-          <h1 className="mb-4 text-3xl font-bold tracking-tight">第三方接入 EvalScope 评估器</h1>
-          <p className="text-sm leading-7 text-muted-foreground">
-            通过 <strong className="text-foreground">eval-gateway</strong>，第三方系统（课件平台、Agent
-            编排等）一行 HTTP 请求即可把待评估内容提交给 EvalScope；平台异步运行评估器，并回传
-            <strong className="text-foreground"> 可量化的指标</strong> 与
-            <strong className="text-foreground"> 可追溯的证据</strong>。
-          </p>
-          <FlowDiagram />
-
-          {/* markdown 正文 */}
+          {/* 正文全部由 integration.md 维护，避免页面 hardcode */}
           <article>
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
@@ -230,61 +219,6 @@ export default function DocsPage() {
           </article>
         </main>
       </div>
-    </div>
-  )
-}
-
-/* ── 链路图组件 ────────────────────────────────────── */
-function FlowDiagram() {
-  return (
-    <div className="my-8 overflow-hidden rounded-xl border bg-card">
-      <div className="flex flex-col items-stretch gap-3 p-6 lg:flex-row lg:items-center">
-        <FlowNode title="第三方系统" desc="提交待评估内容" tone="primary" />
-        <FlowArrow label="POST /v1/jobs" />
-        <FlowNode title="eval-gateway" desc="HMAC 验签 · 异步调度" tone="signal" />
-        <FlowArrow label="调用" />
-        <FlowNode title="评估器" desc="运行评估 · 产出指标" tone="info" />
-      </div>
-      <div className="flex items-start gap-2 border-t bg-background/40 px-6 py-3 text-xs leading-6 text-muted-foreground">
-        <CornerLeftDown className="mt-0.5 size-3.5 shrink-0" />
-        <span>
-          评估完成后，结果经 Web 摄取链路回传；第三方通过{" "}
-          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-primary">
-            GET /v1/jobs/{"{job_id}"}
-          </code>{" "}
-          轮询获取指标与{" "}
-          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-primary">web_run_url</code>。
-        </span>
-      </div>
-    </div>
-  )
-}
-
-function FlowNode({
-  title,
-  desc,
-  tone,
-}: {
-  title: string
-  desc: string
-  tone: "primary" | "signal" | "info"
-}) {
-  const color =
-    tone === "primary" ? "var(--primary)" : tone === "signal" ? "var(--chart-2)" : "var(--info)"
-  return (
-    <div className="flex-1 rounded-lg border p-4" style={{ borderColor: `${color}55` }}>
-      <div className="mb-2 size-2 rounded-full" style={{ background: color }} />
-      <div className="text-sm font-semibold text-foreground">{title}</div>
-      <div className="mt-0.5 text-xs text-muted-foreground">{desc}</div>
-    </div>
-  )
-}
-
-function FlowArrow({ label }: { label: string }) {
-  return (
-    <div className="flex shrink-0 items-center gap-1.5 self-center font-mono text-xs text-muted-foreground">
-      <span>{label}</span>
-      <ArrowRight className="size-4 rotate-90 lg:rotate-0" />
     </div>
   )
 }
