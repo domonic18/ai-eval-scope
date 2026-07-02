@@ -111,8 +111,12 @@ export class S3Storage {
       : this.client
   }
 
-  /** 懒建桶（本地 MinIO 首次启动用，幂等）。 */
+  /** 懒建桶（仅本地 MinIO 首次启动用，幂等）。
+   * 生产 cos/s3 桶由运维预置，运行时不应 CreateBucket——既无必要，又会在 SCF 内
+   * 触发一次对 COS 的额外网络往返（端点不可达/权限不足时挂起到超时），把 presign 等
+   * 请求拖过函数超时导致网关 502。故 cos/s3 一律跳过。 */
   async ensureBucket(): Promise<void> {
+    if (this.kind !== "minio") return
     if (this.bucketEnsured) return
     try {
       await this.client.send(new CreateBucketCommand({ Bucket: this.bucket }))
