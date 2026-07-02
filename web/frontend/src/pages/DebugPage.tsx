@@ -229,10 +229,14 @@ export default function DebugPage() {
       toast.success(`已提交，job_id=${res.job_id.slice(0, 8)}…`)
     } catch (e) {
       const msg = e as {
-        response?: { data?: { details?: { upstreamBody?: string }; message?: string } }
+        response?: {
+          data?: { details?: { upstreamBody?: string }; error?: string; message?: string }
+        }
       }
+      // 后端统一错误体字段为 error（errorHandler），旧代码误读 message 导致恒回退到"提交失败"
       const detail =
         msg.response?.data?.details?.upstreamBody?.slice(0, 300) ||
+        msg.response?.data?.error ||
         msg.response?.data?.message ||
         "提交失败"
       pushLog("error", "提交失败", detail)
