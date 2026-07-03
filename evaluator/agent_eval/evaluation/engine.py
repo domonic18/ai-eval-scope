@@ -305,12 +305,11 @@ def build_pipeline(registry: EvaluatorRegistry, rule_set: Any) -> PipelineEngine
 def build_default_pipeline(registry: EvaluatorRegistry) -> PipelineEngine:
     """加载内置默认规则集并构建管线（``build_pipeline`` 的便捷封装）。
 
-    默认规则集 ``assets/rules/default_rule_set.yaml`` 现为评估器集合的唯一来源，
-    含全部 format/commonsense/soft/pref 评估器；vision.quality 默认 ``enabled: false``，
-    需多模态时在规则集中置 true（docs/arch/13）。
+    默认采用 ``coursework-quality``（门控 + 质量评估，无视觉）——安全默认，不依赖 Chromium。
+    评估器集合的唯一来源是规则集（docs/arch/13）。
     """
     from agent_eval.config.loader import ConfigLoader
     from agent_eval.config.paths import paths
 
-    rule_set = ConfigLoader.load_rule_set(paths.rules_dir / "default_rule_set.yaml")
+    rule_set = ConfigLoader.load_rule_set(paths.rules_dir / "coursework-quality.yaml")
     return build_pipeline(registry, rule_set)

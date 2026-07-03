@@ -1,5 +1,5 @@
 version: "1.0"
-description: "课件生成评估规则集（评估器集合的唯一来源，docs/arch/13）"
+description: "课件完整评估：门控 + 质量评估 + 多模态视觉质量（gateway 需预装 Chromium）"
 
 dimensions:
   - id: functional
@@ -115,7 +115,7 @@ rules:
       template_id: request_fulfillment
     weight: 1.0
 
-  # ── 多模态视觉（默认禁用；需视觉评估时置 enabled: true）──
+  # ── 多模态视觉（gateway 需预装 Chromium；未装时提交会被 422 拦截）──
   - id: VISION_Q
     name: "视觉质量"
     dimension: effectiveness
@@ -125,4 +125,4 @@ rules:
       template_id: visual_quality
       llm_provider: kimi_vision
     weight: 1.0
-    enabled: false
+    enabled: true
