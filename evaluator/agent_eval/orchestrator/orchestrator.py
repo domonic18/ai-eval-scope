@@ -22,7 +22,7 @@ load_dotenv()
 import agent_eval.evaluation.evaluators  # noqa: F401
 from agent_eval.config import SCORE_AGGREGATION_WEIGHTS
 from agent_eval.core.exceptions import OrchestratorError
-from agent_eval.evaluation.engine import PipelineEngine, build_default_pipeline
+from agent_eval.evaluation.engine import PipelineEngine, build_default_pipeline, build_pipeline
 from agent_eval.evaluation.models import (
     MetricsReport,
     SampleResult,
@@ -110,13 +110,15 @@ class Orchestrator:
         Returns:
             EvalResult 实例。
         """
-        # with_vision 时用含视觉评估器的管线 + 显式软约束权重（含 vision.quality）
+        # 管线由规则集构建（单一事实源，docs/arch/13）；视觉评估器是否纳入取决于规则集。
+        # 传了 rule_set → 据其重建管线；未传（None）→ 复用 __init__ 的默认管线（已含全部评估器）。
+        # with_vision=True 时显式覆盖软约束权重（含 vision.quality）以保持归一化正确。
+        if rule_set is not None:
+            self.pipeline_engine = build_pipeline(registry, rule_set)
         if with_vision:
-            self.pipeline_engine = build_default_pipeline(registry, with_vision=True)
             self.pipeline_engine.aggregator.soft_weights = vision_soft_weights or dict(
                 SCORE_AGGREGATION_WEIGHTS.vision_soft_weights
             )
-            self.pipeline_engine.apply_rule_set_params(rule_set)
         package_dir = Path(package_dir)
         if not package_dir.exists():
             raise OrchestratorError(f"执行包目录不存在: {package_dir}")
@@ -182,10 +184,7 @@ class Orchestrator:
                         files=rel_paths,
                     )
 
-        # 4. 用 RuleSet 参数覆盖评估器默认参数
-        self.pipeline_engine.apply_rule_set_params(rule_set)
-
-        # 5. 加载缓存
+        # 4. 加载缓存
         self._load_cache(self.workspace, self.pipeline_engine)
 
         # 6. 构建 extra_context

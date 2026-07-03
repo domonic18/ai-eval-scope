@@ -76,43 +76,6 @@ class PipelineEngine:
         self._cache: dict[str, SampleResult] = {}
         self._build_stages()
 
-    def apply_rule_set_params(self, rule_set: Any) -> None:
-        """用 RuleSet 的 params 覆盖评估器参数，并按 enabled 过滤评估器。
-
-        - params：RuleSet 指定的参数覆盖默认值（如 max: 30）。
-        - enabled：RuleSet 显式 enabled: false 的评估器从管线移除（不评估、不计分）。
-          未在 RuleSet 中定义的评估器默认启用（向后兼容）。
-        """
-        if rule_set is None or not hasattr(rule_set, "rules"):
-            return
-
-        # 建立 evaluator_id → (params, enabled) 映射
-        rule_map: dict[str, dict[str, Any]] = {}
-        for rule in rule_set.rules:
-            if hasattr(rule, "evaluator") and rule.evaluator:
-                rule_map[rule.evaluator] = {
-                    "params": rule.params if hasattr(rule, "params") and rule.params else {},
-                    "enabled": getattr(rule, "enabled", True),
-                }
-
-        if not rule_map:
-            return
-
-        # 遍历所有阶段：合并 params + 过滤 enabled=false
-        for stage in self.stages:
-            kept: list[Any] = []
-            for evaluator in stage.evaluators:
-                eid = evaluator.evaluator_id
-                cfg = rule_map.get(eid)
-                if cfg is not None:
-                    if not cfg["enabled"]:
-                        continue  # 显式禁用，移除
-                    if cfg["params"]:
-                        merged = {**evaluator.params, **cfg["params"]}
-                        evaluator.setup(merged)
-                kept.append(evaluator)
-            stage.evaluators = kept
-
     def _build_stages(self) -> None:
         """根据配置构建级联阶段。"""
         for stage_conf in self.config.stages:
@@ -300,63 +263,54 @@ class PipelineEngine:
         self._cache.clear()
 
 
-def build_default_pipeline(
-    registry: EvaluatorRegistry, *, with_vision: bool = False
-) -> PipelineEngine:
-    """构建默认的三阶段级联管线。
+def build_pipeline(registry: EvaluatorRegistry, rule_set: Any) -> PipelineEngine:
+    """从规则集构建管线 —— 评估器集合的唯一事实源（docs/arch/13 §3.6）。
 
-    阶段:
-        1. format (fail_fast): 格式门控
-        2. commonsense (fail_fast): 常识检查
-        3. quality (continue_all): 质量评估
+    - stage 顺序与短路策略：取自 ``rule_set.cascade``（``stop_on_fail`` → ``fail_fast``）。
+    - 评估器集合：取自 ``rule_set.rules``，``enabled: false`` 的规则跳过，``params`` 注入。
+    - 视觉评估器是否纳入：取决于规则集中对应规则 ``enabled``（含 vision.* 即启用）。
 
-    Args:
-        registry: 评估器注册表。
-        with_vision: 是否启用视觉评估器（vision.quality）。默认 False —— 视觉
-            需浏览器渲染与多模态 Provider，作为 opt-in 能力。启用时调用方需自行
-            传入显式 soft_weights（含 vision.quality）以保持归一化正确。
+    rule_set 为 None 时返回空管线（无评估器）。
     """
-    quality_evaluators = [
-        # LLM Judge 软约束
-        EvaluatorConfig("soft.teaching_logic", {"template_id": "pedagogical_logic"}),
-        EvaluatorConfig("soft.content_diversity", {"template_id": "content_diversity"}),
-        # LLM Judge 偏好约束
-        EvaluatorConfig("pref.style_preference", {"template_id": "style_preference"}),
-        EvaluatorConfig("pref.depth_preference", {"template_id": "depth_preference"}),
-        EvaluatorConfig("pref.request_fulfillment", {"template_id": "request_fulfillment"}),
-    ]
-    if with_vision:
-        quality_evaluators.append(
-            EvaluatorConfig(
-                "vision.quality",
-                {"template_id": "visual_quality", "llm_provider": "kimi_vision"},
-            )
-        )
+    stage_order: list[str] = []
+    stage_policy: dict[str, str] = {}
+    for st in getattr(rule_set, "cascade", None) or []:
+        stage_order.append(st.stage)
+        stage_policy[st.stage] = "fail_fast" if st.stop_on_fail else "continue_all"
+
+    by_stage: dict[str, list[EvaluatorConfig]] = {s: [] for s in stage_order}
+    for rule in getattr(rule_set, "rules", None) or []:
+        if not getattr(rule, "enabled", True) or not getattr(rule, "evaluator", ""):
+            continue
+        stage = rule.stage or "quality"
+        if stage not in by_stage:
+            stage_order.append(stage)
+            by_stage[stage] = []
+            stage_policy.setdefault(stage, "continue_all")
+        by_stage[stage].append(EvaluatorConfig(rule.evaluator, dict(rule.params or {})))
 
     config = PipelineConfig(
         stages=[
             StageConfig(
-                id="format",
-                short_circuit_policy="fail_fast",
-                evaluators=[
-                    EvaluatorConfig("format.response_format", {"allowed_formats": ["md", "html"]}),
-                    EvaluatorConfig("format.html_validity", {"check_html_only": True}),
-                ],
-            ),
-            StageConfig(
-                id="commonsense",
-                short_circuit_policy="fail_fast",
-                evaluators=[
-                    EvaluatorConfig("commonsense.info_accuracy", {}),
-                    EvaluatorConfig("commonsense.chronological_order"),
-                    EvaluatorConfig("commonsense.logical_consistency"),
-                ],
-            ),
-            StageConfig(
-                id="quality",
-                short_circuit_policy="continue_all",
-                evaluators=quality_evaluators,
-            ),
-        ],
+                id=s,
+                short_circuit_policy=stage_policy.get(s, "continue_all"),
+                evaluators=by_stage[s],
+            )
+            for s in stage_order
+        ]
     )
     return PipelineEngine(config, registry)
+
+
+def build_default_pipeline(registry: EvaluatorRegistry) -> PipelineEngine:
+    """加载内置默认规则集并构建管线（``build_pipeline`` 的便捷封装）。
+
+    默认规则集 ``assets/rules/default_rule_set.yaml`` 现为评估器集合的唯一来源，
+    含全部 format/commonsense/soft/pref 评估器；vision.quality 默认 ``enabled: false``，
+    需多模态时在规则集中置 true（docs/arch/13）。
+    """
+    from agent_eval.config.loader import ConfigLoader
+    from agent_eval.config.paths import paths
+
+    rule_set = ConfigLoader.load_rule_set(paths.rules_dir / "default_rule_set.yaml")
+    return build_pipeline(registry, rule_set)

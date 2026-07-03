@@ -1,5 +1,5 @@
 version: "1.0"
-description: "课件生成评估规则集"
+description: "课件生成评估规则集（评估器集合的唯一来源，docs/arch/13）"
 
 dimensions:
   - id: functional
@@ -9,19 +9,25 @@ dimensions:
     name: "效果性"
     weight: 1.0
 
+# cascade 定义阶段顺序与短路策略：stop_on_fail=true → 该阶段失败阻塞后续。
+# 管线由 build_pipeline 据此 + rules 构建（stage id 与规则 stage 对齐）。
 cascade:
-  - stage: format_gate
+  - stage: format
     name: "格式门控"
     stop_on_fail: true
-  - stage: commonsense_gate
+  - stage: commonsense
     name: "常识门控"
+    stop_on_fail: false
+  - stage: quality
+    name: "质量评估"
     stop_on_fail: false
 
 rules:
+  # ── format 门控（HARD_GATE，失败 -3 并阻塞后续）──
   - id: FMT_001
     name: "输出格式有效"
     dimension: functional
-    stage: format_gate
+    stage: format
     description: "SUT 必须生成有效的 Markdown 或 HTML 文件"
     evaluator: format.response_format
     params:
@@ -29,11 +35,20 @@ rules:
     weight: 1.0
     penalty_on_fail: -3
 
-  # ─── 常识门控（commonsense）— 可按需 enabled: false 禁用某项 ───
+  - id: FMT_002
+    name: "HTML 有效性"
+    dimension: functional
+    stage: format
+    evaluator: format.html_validity
+    params:
+      check_html_only: true
+    weight: 1.0
+
+  # ── commonsense 门控（HARD_SCORE，失败归零本阶段但不阻塞）──
   - id: COMMON_INFO
     name: "知识准确性"
     dimension: functional
-    stage: commonsense_gate
+    stage: commonsense
     evaluator: commonsense.info_accuracy
     weight: 1.0
     enabled: true
@@ -41,7 +56,7 @@ rules:
   - id: COMMON_CHRONO
     name: "时序正确性"
     dimension: functional
-    stage: commonsense_gate
+    stage: commonsense
     evaluator: commonsense.chronological_order
     weight: 1.0
     enabled: true   # 不关注时序的课件改 false 即禁用
@@ -49,7 +64,65 @@ rules:
   - id: COMMON_LOGIC
     name: "逻辑一致性"
     dimension: functional
-    stage: commonsense_gate
+    stage: commonsense
     evaluator: commonsense.logical_consistency
     weight: 1.0
     enabled: true
+
+  # ── quality 软约束/偏好（SOFT/PREFERENCE，effectiveness 维度，LLM Judge）──
+  - id: SOFT_LOGIC
+    name: "教学逻辑"
+    dimension: effectiveness
+    stage: quality
+    evaluator: soft.teaching_logic
+    params:
+      template_id: pedagogical_logic
+    weight: 1.0
+
+  - id: SOFT_DIV
+    name: "内容多样性"
+    dimension: effectiveness
+    stage: quality
+    evaluator: soft.content_diversity
+    params:
+      template_id: content_diversity
+    weight: 1.0
+
+  - id: PREF_STYLE
+    name: "风格偏好"
+    dimension: effectiveness
+    stage: quality
+    evaluator: pref.style_preference
+    params:
+      template_id: style_preference
+    weight: 1.0
+
+  - id: PREF_DEPTH
+    name: "深度偏好"
+    dimension: effectiveness
+    stage: quality
+    evaluator: pref.depth_preference
+    params:
+      template_id: depth_preference
+    weight: 1.0
+
+  - id: PREF_REQ
+    name: "需求满足"
+    dimension: effectiveness
+    stage: quality
+    evaluator: pref.request_fulfillment
+    params:
+      template_id: request_fulfillment
+    weight: 1.0
+
+  # ── 多模态视觉（默认禁用；需视觉评估时置 enabled: true）──
+  - id: VISION_Q
+    name: "视觉质量"
+    dimension: effectiveness
+    stage: quality
+    evaluator: vision.quality
+    params:
+      template_id: visual_quality
+      llm_provider: kimi_vision
+    weight: 1.0
+    enabled: false
