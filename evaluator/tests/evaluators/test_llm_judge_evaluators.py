@@ -137,13 +137,15 @@ class TestProductionTemplates:
         assert len(user_prompt) > 10
 
     def test_template_dimensions_valid(self, prompts_dir: Path) -> None:
-        """所有模板维度权重之和为 1.0。"""
+        """所有评分模板维度权重之和为 1.0（非评分工具模板无维度，跳过）。"""
         from agent_eval.llm.judge.template_manager import TemplateManager
 
         mgr = TemplateManager(prompts_dir)
         mgr.load_all()
         for tid in mgr.template_ids:
             template = mgr.get(tid)
+            if not template.dimensions:
+                continue  # 非评分模板（如知识提取 knowledge_extract_misconceptions）无维度权重
             total_weight = sum(d.weight for d in template.dimensions)
             assert abs(total_weight - 1.0) < 0.01, f"模板 {tid} 权重之和为 {total_weight}，不为 1.0"
 
