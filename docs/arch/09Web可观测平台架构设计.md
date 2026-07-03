@@ -220,7 +220,7 @@ model Project {
   slug            String
   name            String
   description     String?
-  defaultRuleSet  String?   @map("default_rule_set")
+  defaultRuleSet  String?   @map("default_rule_set")  // 默认规则集 id，如 coursework-quality / coursework-gate / coursework-vision
   defaultTaskSet  String?   @map("default_task_set")
   retentionDays   Int?      @map("retention_days")
   createdBy       String    @map("created_by")

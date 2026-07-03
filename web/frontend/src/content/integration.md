@@ -61,7 +61,7 @@ Authorization: Bearer <api_key>
 | 字段            | 必需  | 类型     | 说明                               |
 | ------------- | --- | ------ | -------------------------------- |
 | `file`        | 是   | file   | 待评估文件，如 `lesson.html`、`unit.zip` |
-| `rule_set_id` | 否   | string | 规则集，默认 `coursework-default`      |
+| `rule_set_id` | 否   | string | 规则集，默认 `coursework-quality`      |
 | `task_id`     | 否   | string | 自定义任务标识，如 `math-2024-q1`         |
 | `task_title`  | 否   | string | 任务标题，如《分数入门》                     |
 
@@ -154,7 +154,7 @@ Authorization: Bearer <api_key>
   "org_id": "1968916c-9aed-4df5-ba5e-6b5c9f757a06",
   "input_kind": "inline",
   "scope": "single",
-  "rule_set_id": "coursework-default",
+  "rule_set_id": "coursework-quality",
   "task_id": null,
   "task_title": null,
   "run_id": "2f8a1c...",
@@ -273,7 +273,7 @@ body = (
     + b"\r\n"
     + f"--{boundary}\r\n".encode()
     + b'Content-Disposition: form-data; name="rule_set_id"\r\n\r\n'
-    + b"coursework-default\r\n"
+    + b"coursework-quality\r\n"
     + f"--{boundary}--\r\n".encode()
 )
 r = httpx.post(
