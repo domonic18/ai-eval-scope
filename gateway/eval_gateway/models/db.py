@@ -30,7 +30,7 @@ class Job(Base):
     scope: Mapped[str] = mapped_column(String(16), nullable=False)
     input_ref: Mapped[str] = mapped_column(Text, nullable=False)
     rule_set_id: Mapped[str] = mapped_column(
-        String(64), nullable=False, default="coursework-default"
+        String(64), nullable=False, default="coursework-quality"
     )
     # 调用方可设的任务标识/标题/学科（不填则由 builder 回退：单页→"contents"）
     task_id: Mapped[str | None] = mapped_column(String(128), nullable=True)

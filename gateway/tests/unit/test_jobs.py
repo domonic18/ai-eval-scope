@@ -33,7 +33,7 @@ async def test_enqueue_adds_job(fake_session: MagicMock, tenant: Tenant) -> None
         input_kind=InputKind.UPLOAD.value,
         scope=Scope.UNIT.value,
         input_ref="/tmp/job-1",
-        rule_set_id="coursework-default",
+        rule_set_id="coursework-quality",
     )
 
     assert job.job_id == "job-1"
@@ -77,7 +77,7 @@ async def test_get_job_filters_by_tenant(fake_session: MagicMock, tenant: Tenant
         input_kind=InputKind.UPLOAD.value,
         scope=Scope.UNIT.value,
         input_ref="/tmp",
-        rule_set_id="coursework-default",
+        rule_set_id="coursework-quality",
     )
     fake_session.execute = AsyncMock()
     fake_session.execute.return_value.scalar_one_or_none = MagicMock(return_value=expected_job)
@@ -96,7 +96,7 @@ async def test_get_job_wrong_tenant_returns_none(fake_session: MagicMock, tenant
         input_kind=InputKind.UPLOAD.value,
         scope=Scope.UNIT.value,
         input_ref="/tmp",
-        rule_set_id="coursework-default",
+        rule_set_id="coursework-quality",
     )
     fake_session.execute = AsyncMock()
     fake_session.execute.return_value.scalar_one_or_none = MagicMock(return_value=other_job)

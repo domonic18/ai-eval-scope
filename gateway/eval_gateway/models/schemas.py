@@ -24,7 +24,7 @@ class JobCreateInline(BaseModel):
     task_id: str | None = Field(default=None, description="任务标识（决定 run 内 sample_id）")
     task_title: str | None = Field(default=None, description="任务标题")
     task_subject: str | None = Field(default=None, description="学科")
-    rule_set_id: str = Field(default="coursework-default", description="规则集标识")
+    rule_set_id: str = Field(default="coursework-quality", description="规则集标识")
 
 
 class JobResponse(BaseModel):

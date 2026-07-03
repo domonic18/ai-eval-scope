@@ -182,13 +182,17 @@ async def test_list_rule_sets(client: AsyncClient) -> None:
     assert response.status_code == 200
     items = response.json()["rule_sets"]
     ids = {item["id"] for item in items}
-    assert {"coursework-default", "format-only"} <= ids
+    # 三个递进 coursework tier + format-only
+    assert {"coursework-gate", "coursework-quality", "coursework-vision", "format-only"} == ids
     # 每项含 capabilities（派生）+ scopes
     for item in items:
         assert "capabilities" in item
         assert "scopes" in item
-    # format-only 无 LLM 依赖；coursework-default 含 LLM
-    fmt = next(i for i in items if i["id"] == "format-only")
-    assert "llm" not in fmt["capabilities"]
-    cw = next(i for i in items if i["id"] == "coursework-default")
-    assert "llm" in cw["capabilities"]
+    # 能力递进：format-only 无；gate/quality 仅 llm；vision 含 llm+vision
+    assert next(i for i in items if i["id"] == "format-only")["capabilities"] == []
+    assert next(i for i in items if i["id"] == "coursework-gate")["capabilities"] == ["llm"]
+    assert next(i for i in items if i["id"] == "coursework-quality")["capabilities"] == ["llm"]
+    assert next(i for i in items if i["id"] == "coursework-vision")["capabilities"] == [
+        "llm",
+        "vision",
+    ]

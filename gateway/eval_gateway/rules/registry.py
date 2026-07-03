@@ -35,10 +35,22 @@ class RuleSetInfo:
 
 _BUILTIN: tuple[RuleSetInfo, ...] = (
     RuleSetInfo(
-        id="coursework-default",
-        name="课件默认规则集",
-        description="课件生成评估：格式门控 + 常识门控 + 软约束(质量) + 偏好（含 LLM Judge）",
-        path=agent_eval_paths.rules_dir / "default_rule_set.yaml",
+        id="coursework-gate",
+        name="课件基础（门控）",
+        description="格式门控 + 常识门控（LLM 二次确认），不含质量/视觉评估",
+        path=agent_eval_paths.rules_dir / "coursework-gate.yaml",
+    ),
+    RuleSetInfo(
+        id="coursework-quality",
+        name="课件质量评估",
+        description="门控 + 软约束/偏好质量评估（LLM Judge），不含视觉",
+        path=agent_eval_paths.rules_dir / "coursework-quality.yaml",
+    ),
+    RuleSetInfo(
+        id="coursework-vision",
+        name="课件完整评估（含视觉）",
+        description="门控 + 质量评估 + 多模态视觉质量（gateway 需预装 Chromium）",
+        path=agent_eval_paths.rules_dir / "coursework-vision.yaml",
     ),
     RuleSetInfo(
         id="format-only",

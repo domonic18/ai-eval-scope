@@ -40,9 +40,9 @@ def _rule_set_path(rule_set_id: str) -> str:
 
     path = get_path(rule_set_id)
     if path is None:
-        # 未知 id：回退默认规则集（不破坏存量调用），并记录便于排查
+        # 未知 id：回退 coursework-quality（安全默认，不依赖 Chromium）
         LOG.warning("rule_set.unknown_id_fallback", rule_set_id=rule_set_id)
-        path = agent_eval_paths.rules_dir / "default_rule_set.yaml"
+        path = agent_eval_paths.rules_dir / "coursework-quality.yaml"
     return str(path)
 
 

@@ -113,7 +113,7 @@ async def submit_job(
                 raise InputInvalidError("file is required for multipart upload")
             rule_set_id_raw = form.get("rule_set_id")
             rule_set_id = (
-                rule_set_id_raw if isinstance(rule_set_id_raw, str) else "coursework-default"
+                rule_set_id_raw if isinstance(rule_set_id_raw, str) else "coursework-quality"
             )
             task_id = _str_field(form, "task_id")
             task_title = _str_field(form, "task_title")
@@ -132,7 +132,7 @@ async def submit_job(
                 raise InputInvalidError("content required")
             rule_set_id_raw = data.get("rule_set_id")
             rule_set_id = (
-                rule_set_id_raw if isinstance(rule_set_id_raw, str) else "coursework-default"
+                rule_set_id_raw if isinstance(rule_set_id_raw, str) else "coursework-quality"
             )
             task_id = data.get("task_id") if isinstance(data.get("task_id"), str) else None
             task_title = data.get("task_title") if isinstance(data.get("task_title"), str) else None
