@@ -48,15 +48,6 @@ class Settings(BaseSettings):
         alias="EVALGATEWAY_POLL_INTERVAL_SEC",
         description="worker 轮询 queued 任务的间隔",
     )
-    enable_vision: bool = Field(
-        default=False,
-        alias="EVALGATEWAY_ENABLE_VISION",
-        description=(
-            "启用多模态视觉评估。opt-in：需镜像内预装 Chromium（见 docker/gateway/Dockerfile "
-            "的 `playwright install chromium`）。未启用或浏览器缺失时，视觉维度自动降级为跳过，"
-            "不阻塞评估。"
-        ),
-    )
 
 
 def get_settings() -> Settings:
