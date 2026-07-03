@@ -43,7 +43,7 @@ class JobResponse(BaseModel):
     run_id: str | None
     web_run_url: str | None
     metrics: dict[str, Any] | None
-    # 透明度（docs/arch/13 §3.9）：HTTP 调用方看不到进程日志，须显式暴露实际跑了什么
+    # 透明度：HTTP 调用方看不到进程日志，须显式暴露实际跑了什么
     capabilities: dict[str, Any] | None = None  # {"required":[...], "provisioned":[...]}
     skipped: list[dict[str, Any]] | None = None  # [{"evaluator":..., "reason":...}]
     error: dict[str, Any] | None

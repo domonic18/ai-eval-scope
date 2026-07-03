@@ -32,10 +32,7 @@ _ASSETS_DIR = Path(__file__).resolve().parent.parent / "assets"
 
 
 def _rule_set_path(rule_set_id: str) -> str:
-    """规则集标识 → 文件路径（经注册表查找；未知 id 回退默认，保持向后兼容）。
-
-    docs/arch/13 §3.7：规则集作为一等资源，替代原硬编码 2 分支逻辑。
-    """
+    """规则集标识 → 文件路径（经注册表查找；未知 id 回退默认，保持向后兼容）。"""
     from eval_gateway.rules.registry import get_path
 
     path = get_path(rule_set_id)
@@ -210,7 +207,7 @@ async def run_job(job: Job) -> None:
             LOG.warning("job.flush.best_effort_failed", job_id=job.job_id, error=str(exc))
 
         metrics = result.report.to_dict()
-        # 透明度（docs/arch/13 §3.9）：把能力需求 + 被跳过的评估器折进 metrics._gateway，
+        # 透明度：把能力需求 + 被跳过的评估器折进 metrics._gateway，
         # 供 GET /v1/jobs/{id} 显式回显（HTTP 调用方看不到进程日志，杜绝静默失真）。
         metrics["_gateway"] = _eval_meta(result, job)
         web_run_url = f"{settings.web_base_url}/run/{result.run_id}"

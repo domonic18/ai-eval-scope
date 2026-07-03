@@ -177,7 +177,7 @@ from eval_gateway.auth.deps import Tenant  # noqa: E402
 
 
 async def test_list_rule_sets(client: AsyncClient) -> None:
-    """GET /v1/rule-sets 返回内置规则集目录，含派生能力（docs/arch/13 §3.7）。"""
+    """GET /v1/rule-sets 返回内置规则集目录，含派生能力。"""
     response = await client.get("/v1/rule-sets")
     assert response.status_code == 200
     items = response.json()["rule_sets"]

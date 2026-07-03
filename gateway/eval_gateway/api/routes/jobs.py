@@ -59,7 +59,7 @@ def _vision_provisioned() -> bool:
 
 
 def _assert_capabilities_provisioned(rule_set_id: str) -> None:
-    """规则集所需能力不可达 → 422（strict，docs/arch/13 §3.9）。"""
+    """规则集所需能力不可达 → 422（strict）。"""
     from eval_gateway.rules.registry import get_path
 
     path = get_path(rule_set_id)
@@ -144,7 +144,7 @@ async def submit_job(
         else:
             raise InputInvalidError(f"unsupported content-type: {content_type}")
 
-        # 能力守卫（docs/arch/13 §3.9）：规则集需要视觉但 gateway 未预装 Chromium →
+        # 能力守卫：规则集需要视觉但 gateway 未预装 Chromium →
         # 提交时即 422 拒绝，并给可操作提示，绝不入队一个会静默降级的任务。
         _assert_capabilities_provisioned(rule_set_id)
 
@@ -185,7 +185,7 @@ async def get_job_status(
     """查询任务状态。
 
     capabilities/skipped 从 metrics._gateway 取出（runner 落库；无 DB 迁移），
-    显式暴露实际跑了哪些评估器、哪些被降级跳过（docs/arch/13 §3.9）。
+    显式暴露实际跑了哪些评估器、哪些被降级跳过。
     """
     job = await get_job(session, job_id, tenant)
     if job is None:

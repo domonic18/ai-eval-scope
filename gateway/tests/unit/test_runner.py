@@ -61,7 +61,7 @@ async def test_run_job_evaluates_and_flushes(
     with patch.object(runner_mod, "mark_done", new=AsyncMock()) as mock_mark_done:
         await run_job(sample_job)
 
-    # eval_packages 被调用（视觉能力现由规则集派生，见 docs/arch/13）
+    # eval_packages 被调用（视觉能力现由规则集派生）
     runner_mod.eval_packages.assert_called_once()
 
     # ResultSink.flush 被显式调用，且传了 package_dir（源文件制品上传）
