@@ -1,4 +1,4 @@
-"""CapabilityResolver 单测 — 规则集派生能力需求（docs/arch/13）。"""
+"""CapabilityResolver 单测 — 规则集派生能力需求。"""
 
 from __future__ import annotations
 

@@ -41,10 +41,6 @@ class RuleTemplate(BaseModel):
     evaluator: str = Field(description="默认评估器标识")
     params: dict[str, Any] = Field(default_factory=dict, description="默认参数")
     weight: float = Field(default=1.0, ge=0.0, description="默认权重")
-    penalty_on_fail: float | None = Field(
-        default=None,
-        description="失败惩罚分值（如 -3）",
-    )
 
     model_config = {"extra": "allow"}
 
@@ -66,10 +62,6 @@ class Rule(BaseModel):
     evaluator: str = Field(default="", description="评估器标识，如 format.response_format")
     params: dict[str, Any] = Field(default_factory=dict, description="评估器参数")
     weight: float = Field(default=1.0, ge=0.0, description="规则权重")
-    penalty_on_fail: float | None = Field(
-        default=None,
-        description="失败惩罚分值（如 -3）",
-    )
     # 模板继承相关
     template_ref: str | None = Field(
         default=None,

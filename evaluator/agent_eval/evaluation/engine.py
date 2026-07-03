@@ -242,7 +242,7 @@ class PipelineEngine:
             context["sample_id"] = task_data.get("id", context["sample_id"])
             context["constraints"] = task_data.get("constraints", {})
             context["task_input"] = task_data.get("input", {})
-        # 内容指纹（溯源/版本标记，来自 pack manifest；详见 docs/arch/13 §5）
+        # 内容指纹（溯源/版本标记，来自 pack manifest）
         _manifest = getattr(package, "manifest", None)
         if _manifest is not None and getattr(_manifest, "content_hash", None):
             context["content_hash"] = _manifest.content_hash
@@ -264,7 +264,7 @@ class PipelineEngine:
 
 
 def build_pipeline(registry: EvaluatorRegistry, rule_set: Any) -> PipelineEngine:
-    """从规则集构建管线 —— 评估器集合的唯一事实源（docs/arch/13 §3.6）。
+    """从规则集构建管线 —— 评估器集合的唯一事实源。
 
     - stage 顺序与短路策略：取自 ``rule_set.cascade``（``stop_on_fail`` → ``fail_fast``）。
     - 评估器集合：取自 ``rule_set.rules``，``enabled: false`` 的规则跳过，``params`` 注入。
@@ -306,7 +306,7 @@ def build_default_pipeline(registry: EvaluatorRegistry) -> PipelineEngine:
     """加载内置默认规则集并构建管线（``build_pipeline`` 的便捷封装）。
 
     默认采用 ``coursework-quality``（门控 + 质量评估，无视觉）——安全默认，不依赖 Chromium。
-    评估器集合的唯一来源是规则集（docs/arch/13）。
+    评估器集合的唯一来源是规则集。
     """
     from agent_eval.config.loader import ConfigLoader
     from agent_eval.config.paths import paths

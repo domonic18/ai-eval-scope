@@ -34,7 +34,7 @@ app = typer.Typer(
 
 
 def _content_hash(source_dir: Path) -> str | None:
-    """计算目录内容的稳定短哈希（SHA256 前 8 位），用于样本内容寻址（docs/arch/13 §5）。
+    """计算目录内容的稳定短哈希（SHA256 前 8 位），用于样本内容寻址。
 
     按「相对路径 + 文件内容」聚合哈希（相对路径排序保证遍历顺序稳定），
     确保同内容同哈希、不同内容不同哈希，不受时间戳/路径位置/遍历顺序影响。
@@ -90,7 +90,7 @@ def pack(
 
         # 自动推导 task_id：取末级目录名作为「逻辑课件标识」（跨版本稳定，便于走势聚合）。
         # 内容指纹另存为 content_hash 字段（溯源/版本标记），不混入 task_id。
-        # 不同课件若同名，应以 --task-id 显式区分（详见 docs/arch/13 §5）。
+        # 不同课件若同名，应以 --task-id 显式区分。
         if task_id is None:
             if source_dir:
                 task_id = Path(source_dir).resolve().name
@@ -221,7 +221,7 @@ def eval(
         # 3. 创建 Workspace
         ws = Workspace(output_dir) if output_dir else Workspace()
 
-        # 4. 视觉派生（docs/arch/13）：含视觉评估器即启用，或显式 --enable-vision 覆盖
+        # 4. 视觉派生：含视觉评估器即启用，或显式 --enable-vision 覆盖
         import agent_eval.evaluation.evaluators  # noqa: F401  触发注册
         from agent_eval.core.types import Capability
         from agent_eval.evaluation.capability import CapabilityResolver

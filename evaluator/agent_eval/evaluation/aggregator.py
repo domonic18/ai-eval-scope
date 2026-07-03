@@ -71,7 +71,8 @@ class ScoreAggregator:
     def _format(self, r: SampleResult) -> float:
         """计算格式约束得分。
 
-        全通过 → +1，任一失败 → -3。
+        全通过 → +1，任一失败 → 0（format 失败的严重性由 DR + fail-fast 体现，
+        不再使用负惩罚，保证 Reward 归一化到 [0,1]）。
         """
         weights = SCORE_AGGREGATION_WEIGHTS
         s = r.stage_results.get("format")

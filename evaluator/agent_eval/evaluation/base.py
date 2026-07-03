@@ -12,7 +12,7 @@ from agent_eval.core.types import Capability, ConstraintTier, EvalMethod, EvalSt
 from agent_eval.evaluation.models import ConstraintResult
 
 # method → Capability 默认映射：新评估器零配置即可正确声明能力。
-# 显式 requires 优先于此映射（见 BaseEvaluator.capabilities，docs/arch/13）。
+# 显式 requires 优先于此映射（见 BaseEvaluator.capabilities）。
 _METHOD_DEFAULT_CAPABILITY: dict[EvalMethod, frozenset[Capability]] = {
     EvalMethod.LLM_JUDGE: frozenset({Capability.LLM}),
     EvalMethod.LLM_CONSISTENCY: frozenset({Capability.LLM}),
@@ -34,7 +34,7 @@ class BaseEvaluator(ABC):
         name: 人类可读名称
         tier: 约束层级（HARD_GATE / HARD_SCORE / SOFT / PREFERENCE）
         method: 评估方法（RULE / FACT_VERIFY / MATH_VERIFY / LLM_JUDGE / ...）
-        requires: 所需基础设施能力（显式声明，优先于 method 默认映射；见 docs/arch/13）
+        requires: 所需基础设施能力（显式声明，优先于 method 默认映射）
     """
 
     evaluator_id: str = ""

@@ -53,7 +53,7 @@ class EvalMethod(str, Enum):
 class Capability(str, Enum):
     """评估器所需的基础设施能力（与 EvalMethod 正交：method=怎么评，capability=要什么）。
 
-    单一事实源（docs/arch/13）：能力需求声明在评估器定义处，由 CapabilityResolver
+    单一事实源：能力需求声明在评估器定义处，由 CapabilityResolver
     扫描规则集派生，而非由 CLI/HTTP flag 重复控制。
     """
 

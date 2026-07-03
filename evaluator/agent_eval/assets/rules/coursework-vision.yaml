@@ -23,7 +23,7 @@ cascade:
     stop_on_fail: false
 
 rules:
-  # ── format 门控（HARD_GATE，失败 -3 并阻塞后续）──
+  # ── format 门控（HARD_GATE，失败阻塞后续；S_format = 0，Reward 由 [0,1] 归一化体现）──
   - id: FMT_001
     name: "输出格式有效"
     dimension: functional
@@ -33,7 +33,6 @@ rules:
     params:
       allowed_formats: ["md", "html"]
     weight: 1.0
-    penalty_on_fail: -3
 
   - id: FMT_002
     name: "HTML 有效性"

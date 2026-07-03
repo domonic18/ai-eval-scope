@@ -56,7 +56,7 @@ def _init_judge_orchestrator(
 
 
 def _check_llm_availability(rule_set_obj: object, judge_orch: object | None, strict: bool) -> None:
-    """预检：rule_set 含需 LLM 的评估器但 Judge 未配置时提示/阻断（docs/arch/13）。
+    """预检：rule_set 含需 LLM 的评估器但 Judge 未配置时提示/阻断。
 
     能力需求由 CapabilityResolver 从规则集派生（评估器自描述），不再用字符串前缀猜测。
 

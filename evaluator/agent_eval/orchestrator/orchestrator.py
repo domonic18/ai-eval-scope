@@ -52,7 +52,7 @@ class EvalResult:
     run_id: str = ""
     run_workspace: RunWorkspace | None = None
     samples: list[SampleResult] = field(default_factory=list)
-    # 运行溯源：规则集版本（docs/arch/13 §4），透传至 sink → run event → 平台
+    # 运行溯源：规则集版本，透传至 sink → run event → 平台
     rule_set_version: str = ""
 
 
@@ -110,7 +110,7 @@ class Orchestrator:
         Returns:
             EvalResult 实例。
         """
-        # 管线由规则集构建（单一事实源，docs/arch/13）；视觉评估器是否纳入取决于规则集。
+        # 管线由规则集构建（单一事实源）；视觉评估器是否纳入取决于规则集。
         # 传了 rule_set → 据其重建管线；未传（None）→ 复用 __init__ 的默认管线（已含全部评估器）。
         # with_vision=True 时显式覆盖软约束权重（含 vision.quality）以保持归一化正确。
         if rule_set is not None:
@@ -260,7 +260,7 @@ class Orchestrator:
             summary_md,
             encoding="utf-8",
         )
-        # 注入运行溯源（供 upload 子命令从 summary.json 重建 run event，docs/arch/13 §4）
+        # 注入运行溯源（供 upload 子命令从 summary.json 重建 run event）
         summary_json["rule_set_version"] = rule_set_version
         (run_workspace.reports_dir / "summary.json").write_text(
             json.dumps(summary_json, ensure_ascii=False, indent=2),
@@ -542,7 +542,7 @@ def eval_packages(
     Returns:
         EvalResult 实例。
 
-    能力（LLM/视觉）由规则集声明派生（docs/arch/13）：含 vision.* 评估器即自动
+    能力（LLM/视觉）由规则集声明派生：含 vision.* 评估器即自动
     启用视觉管线 + PlaywrightScreenshotRenderer（需安装 vision extra + Chromium）。
     """
     from agent_eval.config.loader import ConfigLoader
@@ -568,7 +568,7 @@ def eval_packages(
 
     renderer = None
     try:
-        # 能力派生（docs/arch/13）：视觉是否启用由规则集派生（含 vision.* 评估器即启用）。
+        # 能力派生：视觉是否启用由规则集派生（含 vision.* 评估器即启用）。
         # 单一事实源 —— 规则集声明 vision.* 评估器即自动启用，无需 CLI/HTTP flag。
         from agent_eval.core.types import Capability
         from agent_eval.evaluation.capability import CapabilityResolver
