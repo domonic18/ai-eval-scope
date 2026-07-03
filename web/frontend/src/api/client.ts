@@ -194,6 +194,12 @@ export const api = {
     const suffix = qs.toString() ? `?${qs.toString()}` : ""
     return (await http.get(`/debug/jobs/${jobId}${suffix}`)).data
   },
+  // 规则集目录（代理 gateway GET /v1/rule-sets，含派生能力 llm/vision/kb）
+  async debugRuleSets(): Promise<
+    Array<{ id: string; name: string; description: string; capabilities: string[]; scopes: string[] }>
+  > {
+    return (await http.get("/debug/rule-sets")).data.rule_sets
+  },
 
   /* ── 超管后台 ─────────────────────────────────────── */
   async adminOverview() {

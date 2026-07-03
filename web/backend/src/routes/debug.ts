@@ -15,7 +15,7 @@ import { raw, Router, type RequestHandler } from "express"
 import { requireAuth } from "../middleware/auth"
 import { PlatformError } from "../middleware/errorHandler"
 import { getConfig } from "../config"
-import { getJob, submitJob } from "../infra/gatewayClient"
+import { getJob, listRuleSets, submitJob } from "../infra/gatewayClient"
 import { AuditService } from "../services/audit.service"
 import { getLogger } from "../infra/logger"
 
@@ -117,6 +117,16 @@ router.get(
     const token = requireApiKey(req)
     const job = await getJob(getConfig().gatewayBaseUrl, token, req.params.jobId)
     res.json(job)
+  }),
+)
+
+// 规则集目录（代理 gateway GET /v1/rule-sets，含派生能力）；登录即可读
+router.get(
+  "/rule-sets",
+  requireAuth,
+  wrap(async (_req, res) => {
+    const ruleSets = await listRuleSets(getConfig().gatewayBaseUrl)
+    res.json({ rule_sets: ruleSets })
   }),
 )
 

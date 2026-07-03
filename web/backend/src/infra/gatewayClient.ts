@@ -125,3 +125,20 @@ export async function getJob(
   await ensureOk(res, "GET", path)
   return (await res.json()) as GatewayJobStatus
 }
+
+export interface GatewayRuleSet {
+  id: string
+  name: string
+  description: string
+  capabilities: string[]
+  scopes: string[]
+}
+
+/** GET /v1/rule-sets。返回规则集目录（公开，无需鉴权）。 */
+export async function listRuleSets(baseUrl: string): Promise<GatewayRuleSet[]> {
+  const path = "/v1/rule-sets"
+  const res = await fetch(`${baseUrl}${path}`, { method: "GET" })
+  await ensureOk(res, "GET", path)
+  const data = (await res.json()) as { rule_sets?: GatewayRuleSet[] }
+  return data.rule_sets ?? []
+}

@@ -28,12 +28,27 @@ import { StatCard, StatusBadge } from "../components/shared"
 import { CopyIcon, ExternalLink, HelpCircle, Terminal, Trash2 } from "lucide-react"
 import type { DebugJobStatus } from "../types"
 
-const RULE_SETS = ["coursework-default", "format-only"]
 const POLL_INTERVAL = 3000
 
-/** 参数默认值（hardcode，非动态拉取；用户可在编辑框内直接修改）。 */
+/** 规则集目录项（挂载时从 gateway GET /v1/rule-sets 拉取，单一事实源）。 */
+interface RuleSetInfo {
+  id: string
+  name: string
+  description: string
+  capabilities: string[]
+  scopes: string[]
+}
+
+/** 能力 → 展示徽标。 */
+const CAPABILITY_BADGE: Record<string, { label: string; cls: string }> = {
+  llm: { label: "需 LLM", cls: "bg-sky-500/15 text-sky-300" },
+  vision: { label: "需视觉", cls: "bg-purple-500/15 text-purple-300" },
+  kb: { label: "需知识库", cls: "bg-amber-500/15 text-amber-300" },
+}
+
+/** 参数默认值（用户可在编辑框内直接修改）。 */
 const DEFAULTS = {
-  ruleSet: RULE_SETS[0],
+  ruleSet: "coursework-default",
   taskId: "",
   taskTitle: "",
   apiKey: "",
@@ -100,6 +115,7 @@ export default function DebugPage() {
   const toast = useToast()
 
   const [ruleSet, setRuleSet] = useState(DEFAULTS.ruleSet)
+  const [ruleSets, setRuleSets] = useState<RuleSetInfo[]>([])
   const [taskId, setTaskId] = useState(DEFAULTS.taskId)
   const [taskTitle, setTaskTitle] = useState(DEFAULTS.taskTitle)
   const [apiKey, setApiKey] = useState(DEFAULTS.apiKey)
@@ -121,6 +137,22 @@ export default function DebugPage() {
     setCrumbs([{ label: "调试台" }])
     return () => setCrumbs([])
   }, [setCrumbs])
+
+  // 挂载时拉取规则集目录（gateway 注册表，单一事实源；含派生能力）
+  useEffect(() => {
+    api
+      .debugRuleSets()
+      .then((items) => {
+        setRuleSets(items)
+        if (items.length && !items.some((r) => r.id === ruleSet)) {
+          setRuleSet(items[0].id)
+        }
+      })
+      .catch(() => {
+        /* 拉取失败不阻塞：下拉回退到当前 ruleSet 值 */
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const pushLog = (dir: ConsoleEntry["dir"], label: string, data?: unknown) => {
     logIdRef.current += 1
@@ -246,18 +278,32 @@ export default function DebugPage() {
               <div className="space-y-1.5">
                 <ParamLabel
                   name="rule_set_id"
-                  help="coursework-default 完整评估（含 LLM 评判）；format-only 仅格式检查（无 LLM，速度快）。"
+                  help="规则集来自 gateway 注册表（单一事实源）；徽标表示该规则集派生的能力需求（LLM/视觉/知识库），由所选规则集决定是否触发多模态等评估。"
                 />
                 <Select value={ruleSet} onValueChange={setRuleSet}>
                   <SelectTrigger className="h-9 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {RULE_SETS.map((r) => (
-                      <SelectItem key={r} value={r}>
-                        {r}
-                      </SelectItem>
-                    ))}
+                    {(ruleSets.length ? ruleSets : [{ id: ruleSet, name: ruleSet, description: "", capabilities: [], scopes: [] }]).map(
+                      (r) => (
+                        <SelectItem key={r.id} value={r.id}>
+                          <span className="flex items-center gap-1.5">
+                            <span>{r.name || r.id}</span>
+                            {r.capabilities
+                              .filter((c) => CAPABILITY_BADGE[c])
+                              .map((c) => (
+                                <span
+                                  key={c}
+                                  className={`rounded px-1 py-px text-[10px] ${CAPABILITY_BADGE[c].cls}`}
+                                >
+                                  {CAPABILITY_BADGE[c].label}
+                                </span>
+                              ))}
+                          </span>
+                        </SelectItem>
+                      ),
+                    )}
                   </SelectContent>
                 </Select>
               </div>
