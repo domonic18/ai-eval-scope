@@ -6,7 +6,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
-from eval_gateway.api.routes import health, jobs
+from eval_gateway.api.routes import health, jobs, rule_sets
 from eval_gateway.config.settings import get_settings
 from eval_gateway.core.exceptions import GatewayError, InputInvalidError
 from eval_gateway.core.logging import setup_logging
@@ -15,6 +15,7 @@ from eval_gateway.worker.loop import WorkerLoop
 app = FastAPI(title="eval-gateway", version="0.1.0")
 app.include_router(health.router)
 app.include_router(jobs.router)
+app.include_router(rule_sets.router)
 
 _worker: WorkerLoop | None = None
 

@@ -103,7 +103,7 @@ def fake_sessionmaker(fake_session: MagicMock, monkeypatch: pytest.MonkeyPatch) 
 @pytest.fixture
 def app(tenant: Tenant, fake_session: MagicMock) -> FastAPI:
     """构造测试用 FastAPI app，用 dependency_overrides 覆盖鉴权与 DB 依赖。"""
-    from eval_gateway.api.routes import health, jobs
+    from eval_gateway.api.routes import health, jobs, rule_sets
     from eval_gateway.auth.deps import verify_api_key
     from eval_gateway.storage.session import get_async_session
 
@@ -116,6 +116,7 @@ def app(tenant: Tenant, fake_session: MagicMock) -> FastAPI:
     app_ = FastAPI()
     app_.include_router(health.router)
     app_.include_router(jobs.router)
+    app_.include_router(rule_sets.router)
     app_.dependency_overrides[verify_api_key] = _override_auth
     app_.dependency_overrides[get_async_session] = _override_session
     return app_

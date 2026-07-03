@@ -17,7 +17,6 @@ from eval_gateway.config.settings import get_settings
 from eval_gateway.core.exceptions import InputInvalidError
 from eval_gateway.core.logging import get_logger
 from eval_gateway.core.types import InputKind, JobStatus
-from eval_gateway.models.db import Job
 from eval_gateway.models.schemas import JobResponse, JobSubmissionResponse
 from eval_gateway.queue.jobs import enqueue, get_job, mark_cancelled
 from eval_gateway.storage.session import get_async_session
@@ -35,6 +34,59 @@ def _str_field(form: Any, key: str) -> str | None:
     """从 multipart 表单取字符串字段（UploadFile/None → None）。"""
     val = form.get(key)
     return val if isinstance(val, str) else None
+
+
+def _vision_provisioned() -> bool:
+    """gateway 镜像是否具备视觉能力（playwright 包 + Chromium 二进制的轻量探测）。"""
+    try:
+        import playwright  # noqa: F401  包级探测
+    except Exception:  # noqa: BLE001
+        return False
+    # 二进制存在性探测：renderer 启动时才真正校验，这里做路径存在性快速判断
+    try:
+        from playwright._impl._driver import (
+            compute_driver_executable,  # type: ignore[import-not-found]
+        )
+    except Exception:  # noqa: BLE001
+        return True  # 探测接口不可用时退化为「包已装即视为就绪」，留给运行时校验
+    try:
+        from pathlib import Path
+
+        node, driver = compute_driver_executable()
+        return Path(driver).exists()
+    except Exception:  # noqa: BLE001
+        return True
+
+
+def _assert_capabilities_provisioned(rule_set_id: str) -> None:
+    """规则集所需能力不可达 → 422（strict，docs/arch/13 §3.9）。"""
+    from eval_gateway.rules.registry import get_path
+
+    path = get_path(rule_set_id)
+    if path is None:
+        return  # 未知 id 由 runner 回退默认，此处不阻断
+    try:
+        import agent_eval.evaluation.evaluators  # noqa: F401  触发注册
+        from agent_eval.config.loader import ConfigLoader
+        from agent_eval.core.types import Capability
+        from agent_eval.evaluation.capability import CapabilityResolver
+        from agent_eval.evaluation.registry import registry as eval_registry
+
+        rule_set = ConfigLoader.load_rule_set(path)
+        required = CapabilityResolver(eval_registry).resolve(rule_set)
+    except Exception as exc:  # noqa: BLE001  规则集解析失败不阻断提交（runner 会兜底）
+        LOG.warning("capability.resolve_failed_at_submit", rule_set_id=rule_set_id, error=str(exc))
+        return
+    if Capability.VISION in required.capabilities and not _vision_provisioned():
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "error": "rule set requires vision capability, but Chromium is not provisioned",
+                "code": "CAPABILITY_UNAVAILABLE",
+                "hint": "在 gateway 镜像内执行 playwright install chromium，或改用不含视觉评估器的规则集",
+                "rule_set_id": rule_set_id,
+            },
+        )
 
 
 @router.post("", response_model=JobSubmissionResponse, status_code=status.HTTP_202_ACCEPTED)
@@ -92,6 +144,10 @@ async def submit_job(
         else:
             raise InputInvalidError(f"unsupported content-type: {content_type}")
 
+        # 能力守卫（docs/arch/13 §3.9）：规则集需要视觉但 gateway 未预装 Chromium →
+        # 提交时即 422 拒绝，并给可操作提示，绝不入队一个会静默降级的任务。
+        _assert_capabilities_provisioned(rule_set_id)
+
         await enqueue(
             session,
             tenant,
@@ -125,15 +181,24 @@ async def get_job_status(
     job_id: str,
     tenant: Annotated[Tenant, Depends(verify_api_key)],
     session: Annotated[AsyncSession, Depends(get_async_session)],
-) -> Job:
-    """查询任务状态。"""
+) -> JobResponse:
+    """查询任务状态。
+
+    capabilities/skipped 从 metrics._gateway 取出（runner 落库；无 DB 迁移），
+    显式暴露实际跑了哪些评估器、哪些被降级跳过（docs/arch/13 §3.9）。
+    """
     job = await get_job(session, job_id, tenant)
     if job is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"error": "job not found", "code": "JOB_NOT_FOUND"},
         )
-    return job
+    resp = JobResponse.model_validate(job, from_attributes=True)
+    meta = (job.metrics or {}).get("_gateway") if isinstance(job.metrics, dict) else None
+    if isinstance(meta, dict):
+        resp.capabilities = meta.get("capabilities")  # type: ignore[assignment]
+        resp.skipped = meta.get("skipped")  # type: ignore[assignment]
+    return resp
 
 
 @router.post("/{job_id}/cancel")

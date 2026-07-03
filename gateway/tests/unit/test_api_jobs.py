@@ -174,3 +174,21 @@ async def test_submit_inline_json_passes_task_id(
 
 # Tenant 类型提示
 from eval_gateway.auth.deps import Tenant  # noqa: E402
+
+
+async def test_list_rule_sets(client: AsyncClient) -> None:
+    """GET /v1/rule-sets 返回内置规则集目录，含派生能力（docs/arch/13 §3.7）。"""
+    response = await client.get("/v1/rule-sets")
+    assert response.status_code == 200
+    items = response.json()["rule_sets"]
+    ids = {item["id"] for item in items}
+    assert {"coursework-default", "format-only"} <= ids
+    # 每项含 capabilities（派生）+ scopes
+    for item in items:
+        assert "capabilities" in item
+        assert "scopes" in item
+    # format-only 无 LLM 依赖；coursework-default 含 LLM
+    fmt = next(i for i in items if i["id"] == "format-only")
+    assert "llm" not in fmt["capabilities"]
+    cw = next(i for i in items if i["id"] == "coursework-default")
+    assert "llm" in cw["capabilities"]
