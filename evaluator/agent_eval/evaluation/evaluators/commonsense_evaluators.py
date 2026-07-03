@@ -171,7 +171,8 @@ class InfoAccuracyEvaluator(BaseEvaluator):
     evaluator_id = "commonsense.info_accuracy"
     name = "知识准确性检查"
     tier = ConstraintTier.HARD_SCORE
-    method = EvalMethod.FACT_VERIFY
+    # 算术等式正则校验（非知识库事实验证）→ MATH_VERIFY：不派生 KNOWLEDGE_BASE 能力
+    method = EvalMethod.MATH_VERIFY
 
     # 算术等式正则 — 匹配完整左侧 "A op B op C ... = result"
     # (?<!\d)   — 不从数字中间开始（防止 "224" 中的 "4" 成为起点）
