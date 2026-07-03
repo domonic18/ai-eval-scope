@@ -643,10 +643,10 @@ class TestInfoAccuracyLLM:
             },
         )
 
-        # 规则有 error 即使 LLM 高分也 FAIL
+        # 规则有 error 即使 LLM 高分也 FAIL，且 reason 反映规则发现的算术错误
         assert result.status == EvalStatus.FAIL
         assert result.score == 0.0
-        assert "规则检查发现" in result.reason
+        assert "算术错误" in result.reason
 
     def test_constant_false_positive_filtered_by_llm(self, tmp_path: Path) -> None:
         """规则误报（金/信息密度误匹配"金的密度"）经 LLM 二次确认过滤 → PASS。"""
