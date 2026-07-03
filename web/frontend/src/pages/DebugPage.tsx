@@ -48,7 +48,7 @@ const CAPABILITY_BADGE: Record<string, { label: string; cls: string }> = {
 
 /** 参数默认值（用户可在编辑框内直接修改）。 */
 const DEFAULTS = {
-  ruleSet: "coursework-default",
+  ruleSet: "coursework-quality",
   taskId: "",
   taskTitle: "",
   apiKey: "",
@@ -290,6 +290,12 @@ export default function DebugPage() {
                         <SelectItem key={r.id} value={r.id}>
                           <span className="flex items-center gap-1.5">
                             <span>{r.name || r.id}</span>
+                            {/* 文件 id（与 assets/rules/<id>.yaml 对照），便于开发者定位 */}
+                            {r.name && r.name !== r.id && (
+                              <span className="font-mono text-[10px] text-muted-foreground">
+                                {r.id}
+                              </span>
+                            )}
                             {r.capabilities
                               .filter((c) => CAPABILITY_BADGE[c])
                               .map((c) => (

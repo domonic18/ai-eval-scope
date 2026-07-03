@@ -38,7 +38,7 @@ describe("gatewayClient.submitJob", () => {
       token: TOKEN,
       filename: "lesson.html",
       fileBytes,
-      ruleSetId: "coursework-default",
+      ruleSetId: "coursework-quality",
     })
 
     expect(fetchMock).toHaveBeenCalledOnce()
@@ -56,7 +56,7 @@ describe("gatewayClient.submitJob", () => {
     const sentBody = opts.body as Buffer
     const text = sentBody.toString("binary")
     expect(text).toContain('name="rule_set_id"')
-    expect(text).toContain("coursework-default")
+    expect(text).toContain("coursework-quality")
     expect(text).toContain('filename="lesson.html"')
     expect(text).toContain("<html>hi</html>")
 

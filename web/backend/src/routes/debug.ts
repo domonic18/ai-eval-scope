@@ -56,7 +56,7 @@ router.post(
     if (!Buffer.isBuffer(fileBytes) || fileBytes.length === 0) {
       throw new PlatformError("file body is empty", { status: 400, code: "INPUT_INVALID" })
     }
-    const ruleSetId = q.rule_set_id || "coursework-default"
+    const ruleSetId = q.rule_set_id || "coursework-quality"
     // 可选任务字段：不填则 gateway 回退（单页 sample_id 恒为 contents）
     const taskId = q.task_id?.trim() || undefined
     const taskTitle = q.task_title?.trim() || undefined
