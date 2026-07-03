@@ -50,6 +50,19 @@ class EvalMethod(str, Enum):
     VISION = "vision"  # 多模态视觉评估
 
 
+class Capability(str, Enum):
+    """评估器所需的基础设施能力（与 EvalMethod 正交：method=怎么评，capability=要什么）。
+
+    单一事实源（docs/arch/13）：能力需求声明在评估器定义处，由 CapabilityResolver
+    扫描规则集派生，而非由 CLI/HTTP flag 重复控制。
+    """
+
+    LLM = "llm"  # 需要 LLM Judge（文本）
+    VISION = "vision"  # 需要截图渲染（Chromium）+ 视觉 LLM
+    KNOWLEDGE_BASE = "kb"  # 需要知识库（事实验证）
+    SANDBOX = "sandbox"  # 需要代码执行沙箱（未来）
+
+
 class CascadeStageID(str, Enum):
     """级联阶段标识。"""
 

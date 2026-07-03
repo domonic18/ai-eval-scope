@@ -8,8 +8,19 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any
 
-from agent_eval.core.types import ConstraintTier, EvalMethod, EvalStatus
+from agent_eval.core.types import Capability, ConstraintTier, EvalMethod, EvalStatus
 from agent_eval.evaluation.models import ConstraintResult
+
+# method → Capability 默认映射：新评估器零配置即可正确声明能力。
+# 显式 requires 优先于此映射（见 BaseEvaluator.capabilities，docs/arch/13）。
+_METHOD_DEFAULT_CAPABILITY: dict[EvalMethod, frozenset[Capability]] = {
+    EvalMethod.LLM_JUDGE: frozenset({Capability.LLM}),
+    EvalMethod.LLM_CONSISTENCY: frozenset({Capability.LLM}),
+    EvalMethod.VISION: frozenset({Capability.LLM, Capability.VISION}),
+    EvalMethod.FACT_VERIFY: frozenset({Capability.KNOWLEDGE_BASE}),
+    EvalMethod.RULE: frozenset(),
+    EvalMethod.MATH_VERIFY: frozenset(),
+}
 
 
 class BaseEvaluator(ABC):
@@ -23,15 +34,24 @@ class BaseEvaluator(ABC):
         name: 人类可读名称
         tier: 约束层级（HARD_GATE / HARD_SCORE / SOFT / PREFERENCE）
         method: 评估方法（RULE / FACT_VERIFY / MATH_VERIFY / LLM_JUDGE / ...）
+        requires: 所需基础设施能力（显式声明，优先于 method 默认映射；见 docs/arch/13）
     """
 
     evaluator_id: str = ""
     name: str = ""
     tier: ConstraintTier = ConstraintTier.SOFT
     method: EvalMethod = EvalMethod.RULE
+    requires: frozenset[Capability] = frozenset()
 
     def __init__(self) -> None:
         self.params: dict[str, Any] = {}
+
+    @classmethod
+    def capabilities(cls) -> frozenset[Capability]:
+        """评估器所需能力：显式 requires 优先，否则取 method 默认映射。"""
+        if cls.requires:
+            return cls.requires
+        return _METHOD_DEFAULT_CAPABILITY.get(cls.method, frozenset())
 
     def setup(self, params: dict[str, Any]) -> None:
         """配置评估器参数（从 YAML 规则的 params 字段加载）。

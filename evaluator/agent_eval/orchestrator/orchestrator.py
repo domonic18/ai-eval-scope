@@ -521,7 +521,6 @@ def eval_packages(
     output_dir: str | Path | None = None,
     llm_provider: str | None = None,
     project: str | None = None,
-    enable_vision: bool = False,
 ) -> EvalResult:
     """SDK eval 接口 — Python 可直接调用。
 
@@ -540,11 +539,12 @@ def eval_packages(
         output_dir: 输出目录（可选，默认 ./workspace）。
         llm_provider: LLM Provider 名称覆盖（可选）。
         project: 项目 ID（可选）。
-        enable_vision: 是否启用视觉评估（默认 False，opt-in）。启用时自动创建
-            PlaywrightScreenshotRenderer（需安装 vision extra）。
 
     Returns:
         EvalResult 实例。
+
+    能力（LLM/视觉）由规则集声明派生（docs/arch/13）：含 vision.* 评估器即自动
+    启用视觉管线 + PlaywrightScreenshotRenderer（需安装 vision extra + Chromium）。
     """
     from agent_eval.config.loader import ConfigLoader
 
@@ -569,7 +569,14 @@ def eval_packages(
 
     renderer = None
     try:
-        if enable_vision:
+        # 能力派生（docs/arch/13）：视觉是否启用由规则集派生（含 vision.* 评估器即启用）。
+        # 单一事实源 —— 规则集声明 vision.* 评估器即自动启用，无需 CLI/HTTP flag。
+        from agent_eval.core.types import Capability
+        from agent_eval.evaluation.capability import CapabilityResolver
+
+        required = CapabilityResolver(registry).resolve(rule_set)
+        want_vision = Capability.VISION in required.capabilities
+        if want_vision:
             from agent_eval.evaluation.vision import PlaywrightScreenshotRenderer
 
             renderer = PlaywrightScreenshotRenderer()
@@ -580,7 +587,7 @@ def eval_packages(
             judge_orchestrator=judge_orch,
             llm_provider=llm_provider,
             project=project,
-            with_vision=enable_vision,
+            with_vision=want_vision,
             screenshot_renderer=renderer,
         )
     finally:

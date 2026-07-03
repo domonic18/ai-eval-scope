@@ -153,16 +153,15 @@ def eval(
     llm_provider: str | None = typer.Option(None, "--llm-provider", help="覆盖默认 LLM Provider"),
     llm_config: str | None = typer.Option(None, "--llm-config", help="LLM 配置文件路径"),
     project: str | None = typer.Option(None, "--project", help="项目 ID"),
-    enable_vision: bool = typer.Option(
-        False, "--enable-vision", help="启用多模态视觉评估（需安装 vision extra 与视觉 Provider）"
-    ),
     upload: bool | None = typer.Option(
         None,
         "--upload/--no-upload",
         help="评估完成后把结果推送到可观测平台（覆盖 AGENT_EVAL_UPLOAD）",
     ),
-    require_llm: bool = typer.Option(
-        False, "--require-llm", help="要求 LLM 可用（质量/偏好评估依赖）；不可用时阻断退出"
+    on_missing: str = typer.Option(
+        "skip",
+        "--on-missing-capability",
+        help="所需能力不可用时：strict=阻断退出（推荐），skip=降级跳过并继续（默认）",
     ),
     no_cache: bool = typer.Option(
         False, "--no-cache", help="跳过评估缓存，强制重新评估（含 LLM 调用）"
@@ -181,8 +180,7 @@ def eval(
     rprint(f"[blue]评估模式:[/blue] {eval_mode}")
     rprint(f"[blue]执行包:[/blue] {package_dir}")
     rprint(f"[blue]规则集:[/blue] {rule_set}")
-    if enable_vision:
-        rprint("[blue]视觉评估:[/blue] 已启用")
+    strict = on_missing == "strict"
 
     try:
         from agent_eval.config.loader import ConfigLoader
@@ -218,18 +216,26 @@ def eval(
             llm_signature = "no-llm"
 
         # LLM 可用性预检：rule_set 含 LLM 评估器但 Judge 未配置时提示/阻断
-        _check_llm_availability(rule_set_obj, judge_orch, require_llm)
+        _check_llm_availability(rule_set_obj, judge_orch, strict)
 
         # 3. 创建 Workspace
         ws = Workspace(output_dir) if output_dir else Workspace()
 
-        # 4. 创建截图渲染器（仅 --enable-vision 时）
+        # 4. 视觉派生（docs/arch/13）：含视觉评估器即启用，或显式 --enable-vision 覆盖
+        import agent_eval.evaluation.evaluators  # noqa: F401  触发注册
+        from agent_eval.core.types import Capability
+        from agent_eval.evaluation.capability import CapabilityResolver
+        from agent_eval.evaluation.registry import registry
+
+        required = CapabilityResolver(registry).resolve(rule_set_obj)
+        want_vision = Capability.VISION in required.capabilities
         renderer = None
-        if enable_vision:
+        if want_vision:
             try:
                 from agent_eval.evaluation.vision import PlaywrightScreenshotRenderer
 
                 renderer = PlaywrightScreenshotRenderer()
+                rprint("[blue]视觉评估:[/blue] 已启用")
             except Exception as e:
                 rprint(f"[yellow]⚠ 视觉渲染器初始化失败，视觉评估器将降级: {e}[/yellow]")
 
@@ -242,7 +248,7 @@ def eval(
                 judge_orchestrator=judge_orch,
                 llm_provider=llm_provider,
                 project=project,
-                with_vision=enable_vision,
+                with_vision=want_vision,
                 screenshot_renderer=renderer,
                 llm_signature=llm_signature,
                 no_cache=no_cache,
@@ -350,9 +356,7 @@ def upload(
     # upload 子命令默认强制开启上传
     cfg = load_config(upload_override=True)
     if not cfg.has_credentials():
-        rprint(
-            "[red]未配置凭据：请设置 AGENT_EVAL_HOST / AGENT_EVAL_API_KEY[/red]"
-        )
+        rprint("[red]未配置凭据：请设置 AGENT_EVAL_HOST / AGENT_EVAL_API_KEY[/red]")
         raise typer.Exit(code=1)
 
     metrics = summary.get("metrics", {})
