@@ -1,0 +1,48 @@
+[
+  {
+    "id": "coursework-gate",
+    "name": "课件基础（门控）",
+    "description": "格式门控 + 常识门控（LLM 二次确认），不含质量/视觉评估",
+    "capabilities": [
+      "llm"
+    ],
+    "scopes": [
+      "single",
+      "unit"
+    ]
+  },
+  {
+    "id": "coursework-quality",
+    "name": "课件质量评估",
+    "description": "门控 + 软约束/偏好质量评估（LLM Judge），不含视觉",
+    "capabilities": [
+      "llm"
+    ],
+    "scopes": [
+      "single",
+      "unit"
+    ]
+  },
+  {
+    "id": "coursework-vision",
+    "name": "课件完整评估（含视觉）",
+    "description": "门控 + 质量评估 + 多模态视觉质量（executor 需预装 Chromium）",
+    "capabilities": [
+      "llm",
+      "vision"
+    ],
+    "scopes": [
+      "single",
+      "unit"
+    ]
+  },
+  {
+    "id": "format-only",
+    "name": "纯格式规则集",
+    "description": "仅格式校验，无 LLM 依赖（冒烟 / CI 用）",
+    "capabilities": [],
+    "scopes": [
+      "single"
+    ]
+  }
+]

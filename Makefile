@@ -1,4 +1,4 @@
-.PHONY: install dev test test-cov lint format clean golden web-install web-test web-typecheck docker-build docker-up docker-down docker-logs db-init db-migrate-prod hooks check gateway-install gateway-dev gateway-test gateway-lint gateway-format gateway-check
+.PHONY: install dev test test-cov lint format clean golden web-install web-test web-typecheck docker-build docker-up docker-down docker-logs db-init db-migrate-prod hooks check executor-install executor-dev executor-test executor-lint executor-format executor-check
 
 # 使用 uv 进行包管理（推荐）
 # 需要先安装 uv: curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -45,27 +45,27 @@ web-test:
 web-typecheck:
 	cd web/backend && npm run typecheck
 
-# ─── Gateway（第三方对接服务）───
+# ─── Executor（评测执行；SCF 事件函数镜像，docs/arch/14）───
 
-gateway-install:
-	cd gateway && uv sync
+executor-install:
+	cd executor && uv sync
 
-gateway-dev:
-	cd gateway && uv sync --extra dev
+executor-dev:
+	cd executor && uv sync --extra dev
 
-gateway-test:
-	cd gateway && uv run pytest tests/ -v --tb=short
+executor-test:
+	cd executor && uv run pytest tests/ -v --tb=short
 
-gateway-lint:
-	cd gateway && uv run ruff check eval_gateway tests
+executor-lint:
+	cd executor && uv run ruff check eval_executor tests
 
-gateway-format:
-	cd gateway && uv run ruff format eval_gateway tests
-	cd gateway && uv run ruff check --fix eval_gateway tests
+executor-format:
+	cd executor && uv run ruff format eval_executor tests
+	cd executor && uv run ruff check --fix eval_executor tests
 
-gateway-check:
-	cd gateway && uv run ruff check eval_gateway tests
-	cd gateway && uv run pytest tests/unit -q
+executor-check:
+	cd executor && uv run ruff check eval_executor tests
+	cd executor && uv run pytest tests/unit -q
 
 # ─── Docker（平台栈：postgres + minio + web，配置见根 docker-compose.yml + .env）───
 
@@ -103,5 +103,5 @@ hooks:
 check:
 	cd evaluator && uv run ruff check agent_eval tests
 	cd evaluator && uv run pytest tests/unit -q
-	cd gateway && uv run ruff check eval_gateway tests
-	cd gateway && uv run pytest tests/unit -q
+	cd executor && uv run ruff check eval_executor tests
+	cd executor && uv run pytest tests/unit -q
