@@ -280,3 +280,34 @@ model IngestEvent {
   @@index([projectId, receivedAt])
   @@map("ingest_events")
 }
+
+// ── 评测执行任务（gateway 合并至 Web；executor 消费）──────────────────
+// 由 Web 写入（queued），SCF executor 消费（running → completed/failed）。
+// 见 docs/arch/14执行拆分与网关合并方案.md
+model EvalJob {
+  id                String    @id @default(uuid()) @map("job_id")
+  projectId         String    @map("project_id")
+  orgId             String    @map("org_id")
+  apiKeyId          String    @map("api_key_id") // 提交者 API Key id（executor 回传时解密 token）
+  status            String    @default("queued") // queued | running | completed | failed
+  inputKind         String    @map("input_kind") // upload | inline
+  scope             String // single | unit
+  inputObjectKey    String    @map("input_object_key") // 对象存储 key
+  inputPresignedUrl String?   @map("input_presigned_url") // Web 签发的短期下载 URL（worker 模式用）
+  ruleSetId         String    @map("rule_set_id")
+  taskId            String?   @map("task_id")
+  taskTitle         String?   @map("task_title")
+  taskSubject       String?   @map("task_subject")
+  runId             String?   @map("run_id")
+  webRunUrl         String?   @map("web_run_url")
+  scfRequestId      String?   @map("scf_request_id") // SCF Invoke RequestId（链路追踪）
+  metrics           Json?     @db.JsonB
+  error             Json?     @db.JsonB
+  createdAt         DateTime  @default(now()) @map("created_at")
+  startedAt         DateTime? @map("started_at")
+  finishedAt        DateTime? @map("finished_at")
+
+  @@index([status])
+  @@index([projectId, createdAt(sort: Desc)])
+  @@map("eval_jobs")
+}

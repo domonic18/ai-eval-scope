@@ -1,23 +1,25 @@
 /**
- * 调试台路由（/api/v1/debug）—— SSO 登录用户共享的评估沙盒，把请求转发给 eval-gateway。
- *  - POST /jobs          提交评估（原始文件字节 + 查询串元数据）→ gateway multipart 上传
- *  - GET  /jobs/:jobId   查询任务态（透传 gateway JobResponse）
+ * 调试台路由（/api/v1/debug）—— SSO 登录用户共享的评估沙盒。
+ *  - POST /jobs          提交评估（原始文件字节 + 查询串元数据）→ evalJobService（合并自 gateway）
+ *  - GET  /jobs/:jobId   查询任务态
+ *  - GET  /rule-sets     规则集目录（静态 catalog）
  *
- * 鉴权：requireAuth（仅需 SSO 登录，作为审计 actor）+ 必填 api_key。
- *   - 授权 = 持有一把有效 API Key，由 gateway 验签；结果按 Key 归属落到对应项目。
- *   - api_key 必填：任何登录用户必须自带 Key，绝不能"留空则取项目库里的 Key"（否则
- *     只要知道项目 UUID 就能借用该项目的 Key = 越权）。
- *   - 不再接收 project_id：项目归属完全由 API Key 决定，gateway 在 202 响应里回传
- *     project_id/org_id，本路由据此落审计。
+ * 鉴权：requireAuth（SSO 登录，作为审计 actor）+ 必填 api_key（query，明文 Bearer token）。
+ *   - 授权 = 持有一把有效 API Key；结果按 Key 归属落到对应项目。
+ *   - api_key 必填：任何登录用户必须自带 Key，绝不能"留空则取项目库里的 Key"（否则越权）。
+ *   - 不再转发 gateway：直接在 Web 进程内调用 evalJobService（提交后由 executor 执行）。
  */
 
 import { raw, Router, type RequestHandler } from "express"
 import { requireAuth } from "../middleware/auth"
 import { PlatformError } from "../middleware/errorHandler"
-import { getConfig } from "../config"
-import { getJob, listRuleSets, submitJob } from "../infra/gatewayClient"
-import { AuditService } from "../services/audit.service"
+import { hashToken } from "../infra/crypto"
+import { readRuleSetsCatalog } from "../infra/ruleSetsCatalog"
 import { getLogger } from "../infra/logger"
+import { ApiKeyRepository } from "../repositories/apiKey.repository"
+import type { Tenant } from "../repositories/base.repository"
+import { createEvalJobService } from "../services/evalJob.service"
+import { AuditService } from "../services/audit.service"
 
 const router = Router()
 
@@ -40,11 +42,32 @@ function maskToken(token: string): string {
   return token.length > 16 ? `${token.slice(0, 12)}…${token.slice(-4)}` : "***"
 }
 
+/** 由明文 token 解析 tenant（复用鉴权逻辑，调试台从 query 而非 Bearer 头取 token）。 */
+async function resolveTenant(token: string): Promise<Tenant> {
+  const repo = new ApiKeyRepository()
+  const key = await repo.findByTokenHash(hashToken(token))
+  if (!key || !key.project) {
+    throw new PlatformError("invalid api key", { status: 401, code: "AUTH_INVALID" })
+  }
+  if (key.revokedAt) {
+    throw new PlatformError("key revoked", { status: 401, code: "AUTH_INVALID" })
+  }
+  if (key.expiresAt && key.expiresAt.getTime() < Date.now()) {
+    throw new PlatformError("key expired", { status: 401, code: "AUTH_INVALID" })
+  }
+  return {
+    kind: "apikey",
+    apiKeyId: key.id,
+    projectId: key.project.id,
+    orgId: key.project.orgId,
+    scopes: key.scopes,
+  }
+}
+
 // 入参用 application/octet-stream（原始文件字节）+ 查询串元数据，避开 multipart 解析依赖
 router.post(
   "/jobs",
   requireAuth,
-  // 原始 body 解析：仅本路由生效，不动全局 json parser
   raw({ type: "application/octet-stream", limit: "50mb" }),
   wrap(async (req, res) => {
     const q = req.query as Record<string, string | undefined>
@@ -57,16 +80,14 @@ router.post(
       throw new PlatformError("file body is empty", { status: 400, code: "INPUT_INVALID" })
     }
     const ruleSetId = q.rule_set_id || "coursework-quality"
-    // 可选任务字段：不填则 gateway 回退（单页 sample_id 恒为 contents）
     const taskId = q.task_id?.trim() || undefined
     const taskTitle = q.task_title?.trim() || undefined
     const taskSubject = q.task_subject?.trim() || undefined
 
     const token = requireApiKey(req)
-    const baseUrl = getConfig().gatewayBaseUrl
-    const result = await submitJob({
-      baseUrl,
-      token,
+    const tenant = await resolveTenant(token)
+    const svc = createEvalJobService(tenant)
+    const result = await svc.submit({
       filename,
       fileBytes,
       ruleSetId,
@@ -76,13 +97,13 @@ router.post(
     })
 
     await AuditService.log({
-      // 归属由 API Key 验签解析（gateway 202 回传），而非调用方传入
-      orgId: result.org_id ?? null,
+      // 归属由 API Key 验签解析
+      orgId: tenant.orgId ?? null,
       actorUserId: req.user!.userId,
       action: "debug.job.submit",
       targetType: "project",
-      targetId: result.project_id ?? null,
-      metadata: { jobId: result.job_id, filename, ruleSetId, taskId },
+      targetId: tenant.projectId ?? null,
+      metadata: { jobId: result.jobId, filename, ruleSetId, taskId },
     }).catch((e) => getLogger().warn({ error: (e as Error).message }, "audit_log_failed"))
 
     res.status(202).json({
@@ -90,17 +111,16 @@ router.post(
       debug: {
         request: {
           method: "POST",
-          url: `${baseUrl}/v1/jobs`,
+          url: "/api/v1/jobs",
           headers: {
             Authorization: `Bearer ${maskToken(token)}`,
-            "Content-Type": "multipart/form-data; boundary=<auto>",
+            "Content-Type": "application/octet-stream",
           },
           body: {
             file: { filename, sizeBytes: fileBytes.length },
             fields: {
               rule_set_id: ruleSetId,
               ...(taskId ? { task_id: taskId } : {}),
-              ...(taskTitle ? { task_title: taskTitle } : {}),
             },
           },
         },
@@ -115,18 +135,22 @@ router.get(
   requireAuth,
   wrap(async (req, res) => {
     const token = requireApiKey(req)
-    const job = await getJob(getConfig().gatewayBaseUrl, token, req.params.jobId)
-    res.json(job)
+    const tenant = await resolveTenant(token)
+    const svc = createEvalJobService(tenant)
+    const job = await svc.get(req.params.jobId)
+    if (!job) {
+      throw new PlatformError("job not found", { status: 404, code: "JOB_NOT_FOUND" })
+    }
+    res.json({ job })
   }),
 )
 
-// 规则集目录（代理 gateway GET /v1/rule-sets，含派生能力）；登录即可读
+// 规则集目录（静态 catalog，与 /api/v1/rule-sets 同源）；登录即可读
 router.get(
   "/rule-sets",
   requireAuth,
   wrap(async (_req, res) => {
-    const ruleSets = await listRuleSets(getConfig().gatewayBaseUrl)
-    res.json({ rule_sets: ruleSets })
+    res.json({ rule_sets: readRuleSetsCatalog() })
   }),
 )
 

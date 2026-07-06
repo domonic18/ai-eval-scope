@@ -34,6 +34,9 @@ import runsRouter from "./routes/runs"
 import artifactsRouter from "./routes/artifacts"
 import debugRouter from "./routes/debug"
 import adminRouter from "./routes/admin"
+import evalJobsRouter from "./routes/eval/jobs"
+import evalRuleSetsRouter from "./routes/eval/ruleSets"
+import evalHealthRouter from "./routes/eval/health"
 
 // ── 摄取路由（HMAC 鉴权，7d）──
 import ingestRouter from "./routes/public/ingest"
@@ -66,6 +69,9 @@ export function createApp(): express.Application {
   app.use("/api/v1/projects", projectsRouter) // 项目管理 + Query（runs/trends）
   app.use("/api/v1/projects/:id/keys", keysRouter) // API Key 管理（嵌套于项目）
   app.use("/api/v1/debug", debugRouter) // 调试台（SSO 登录 + api_key 鉴权，转发 gateway；项目由 Key 解析）
+  app.use("/api/v1/jobs", evalJobsRouter) // 评测任务提交/查询（合并自 gateway；Bearer API Key）
+  app.use("/api/v1/rule-sets", evalRuleSetsRouter) // 规则集目录（构建期静态 catalog）
+  app.use("/api/v1/health", evalHealthRouter) // eval 子系统健康
   app.use("/api/v1/runs", runsRouter) // 运行/样本详情（Query，§九）
   app.use("/api/v1/artifacts", artifactsRouter) // 制品下载（presigned 重定向）
   app.use("/api/v1/admin", adminRouter) // 超管后台（platformAdminGuard，跨租户）

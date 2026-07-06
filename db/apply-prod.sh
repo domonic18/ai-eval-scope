@@ -3,8 +3,9 @@
 # 与 db/apply.sh 同源，差异：
 #   - 凭据从 .secret/.env 读（生产 PLATFORM_DATABASE_URL，或由 POSTGRES_* 拼接，密码 URL 编码）；
 #   - web 段只补未应用的 pending 迁移（查 _prisma_migrations 差集，不重跑已应用）；
-#   - gateway 段全跑（幂等 IF NOT EXISTS）；
 #   - 逐条可见、需人工 y 确认；不跑 prisma generate（client 由 CI/Docker 构建生成）。
+#
+# gateway schema 已废弃（eval_jobs 并入 public schema）。
 #
 # ⚠️ 生产操作：执行前务必确认 DB_URL 指向正确的线上库，建议先备份。
 set -euo pipefail
@@ -46,9 +47,8 @@ fi
 echo "目标库：$DB_URL"
 
 WEB_MIGRATIONS="$ROOT/db/web/prisma/migrations"
-GATEWAY_MIGRATIONS="$ROOT/db/gateway/migrations"
 
-echo "==> 1/2 web(public schema)：仅应用 pending 迁移（查 _prisma_migrations 差集）"
+echo "==> 1/1 web(public schema)：仅应用 pending 迁移（查 _prisma_migrations 差集）"
 applied="$(psql "$DB_URL" -tAc "SELECT migration_name FROM _prisma_migrations" 2>/dev/null || true)"
 cd "$ROOT/web/backend"
 for d in $(ls -d "$WEB_MIGRATIONS"/*/ 2>/dev/null | sort); do
@@ -67,13 +67,5 @@ for d in $(ls -d "$WEB_MIGRATIONS"/*/ 2>/dev/null | sort); do
   fi
 done
 
-echo "==> 2/2 gateway(gateway schema)：应用全部幂等 SQL"
-cd "$ROOT"
-for f in $(ls "$GATEWAY_MIGRATIONS"/*.sql 2>/dev/null | sort); do
-  name=$(basename "$f")
-  echo "    • gateway/$name"
-  psql "$DB_URL" -v ON_ERROR_STOP=1 -f "$f"
-done
-
 echo ""
-echo "✅ 线上迁移完成（web pending + gateway 幂等）。单一来源 = db/。"
+echo "✅ 线上迁移完成（web pending）。单一来源 = db/。"
