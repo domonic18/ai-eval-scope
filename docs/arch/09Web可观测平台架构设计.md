@@ -35,7 +35,7 @@
 │    PipelineEngine ── 评估 ──> MetricsReport/SampleResult/Constraint     │
 │    agent_eval/llm/tracing.py ────────> Langfuse SaaS (LLM 调用链)        │
 │    agent_eval/observability/sink.py ──┐                                  │
-│         事件拼装 + HMAC + 队列重放     │                                  │
+│         事件拼装 + Bearer Key + 队列重放 │                                  │
 │    executor/ ── SCF Invoke / worker ──┘  消费 eval_jobs，按提交者身份回传│
 └────────────────────────────────────────┼─────────────────────────────────┘
                                          │ ① 结构化事件 ② presigned 制品
@@ -43,7 +43,7 @@
 ┌─────────────────────────────────────────────────────────────────────────┐
 │  可观测平台后端 (Node.js / Express)                                       │
 │ ┌──────────────────── 接入层 (routes + middleware) ────────────────────┐│
-│ │ AuthMiddleware (JWT) · ApiKeyAuth (HMAC/Bearer) · TenantGuard ·      ││
+│ │ AuthMiddleware (JWT) · ApiKeyAuth (Bearer) · TenantGuard ·           ││
 │ │ RateLimiter · RequestLog · ErrorHandler                              ││
 │ └──────────────────────────────────────────────────────────────────────┘│
 │ ┌────────── Ingestion 服务 ──────────┐ ┌────────── Query 服务 ─────────┐│
@@ -102,13 +102,13 @@ web/backend/
 │   │   └── index.ts
 │   ├── middleware/
 │   │   ├── auth.ts                   # JWT 解析与 req.user 注入
-│   │   ├── apiKeyAuth.ts             # HMAC 验签（Ingestion）+ Bearer 解析（/api/v1/jobs）
+│   │   ├── apiKeyAuth.ts             # Bearer API Key 鉴权（Ingestion + /api/v1/jobs）
 │   │   ├── tenantGuard.ts            # 强制 org/project 上下文与越权拦截
 │   │   ├── rateLimiter.ts            # 限流（Ingestion/Query 分别配置）
 │   │   ├── requestLog.ts             # 结构化日志
 │   │   └── errorHandler.ts
 │   ├── routes/
-│   │   ├── public/                   # Ingestion（API Key HMAC 鉴权）
+│   │   ├── public/                   # Ingestion（API Key Bearer 鉴权）
 │   │   │   ├── ingest.js
 │   │   │   ├── artifacts.js
 │   │   │   └── health.js
@@ -142,7 +142,7 @@ web/backend/
 │   ├── infra/
 │   │   ├── prisma.js                 # PrismaClient 单例（PgBouncer）
 │   │   ├── objectStorage.js          # ObjectStorage 工厂
-│   │   ├── crypto.js                 # HMAC / 哈希 / token
+│   │   ├── crypto.js                 # 哈希 / token / Bearer 解析
 │   │   ├── scf.ts                    # 腾讯云 SCF Invoke 客户端（TC3-HMAC-SHA256）
 │   │   ├── inputMaterialize.ts       # zip 探测/解压/scope 推导（复刻 workspace.py）
 │   │   └── ruleSetsCatalog.ts        # 读取构建期 rule-sets.json
@@ -255,7 +255,7 @@ model ApiKey {
   projectId    String    @map("project_id")
   publicKey    String    @unique @map("public_key") // pk-eval-...
   secretHash   String    @map("secret_hash")        // 哈希态：审计/不回显
-  secretEncrypted String @map("secret_encrypted")   // 加密态：HMAC 验签（§6.3 方案 A，明文永不落库）
+  secretEncrypted String @map("secret_encrypted")   // 加密态：executor 回传时解密（§6.3，明文永不落库）
   name         String
   scopes       String[]  @default(["ingest"])
   expiresAt    DateTime? @map("expires_at")
@@ -532,53 +532,29 @@ projects/{project_id}/runs/{run_id}/artifacts/{kind}/{name}
 - 中间件 `auth.js` 解析 access_token → 注入 `req.user`；过期则前端用 refresh_token 刷新。
 - 敏感操作（吊销 Key、删除/归档项目、邀请成员）可要求 recent login（`auth_time` 校验）。
 
-### 6.3 API Key 鉴权
+### 6.3 API Key 鉴权（统一 Bearer）
 
-平台存在两种 API Key 鉴权模型，分别用于不同端点：
-
-| 端点 | 鉴权方式 | 说明 |
-|------|----------|------|
-| `/api/public/ingest`、`/api/public/artifacts/url` | **HMAC 签名** | 评估器 / executor 回传结果与制品，使用 `Eval {publicKey}:{signature}` |
-| `/api/v1/jobs`、`/api/v1/rule-sets` | **Bearer API Key** | 第三方提交评测任务，使用 `Authorization: Bearer {api_key}`（单一 Key，无需计算签名） |
-
-#### 6.3.1 HMAC 签名（Ingestion 侧）
-
-**签名算法**（评估器与平台必须一致）：
-
-```
-canonical_string = METHOD + "\n" + PATH + "\n" + sha256(body)
-signature        = hex( HMAC_SHA256(secret_key, canonical_string) )
-Authorization    = "Eval " + public_key + ":" + signature
-```
-
-- `METHOD`：大写 HTTP 方法（`POST`）。
-- `PATH`：请求路径（不含 query），如 `/api/public/ingest`。
-- `body`：请求体字节（与发送字节严格一致，客户端须用相同字节计算）。
-- 平台按 `public_key` 查 `api_keys.secret_hash`——注意：**HMAC 验签需要原 secret**，故 `api_keys` 需存可逆形态。两种取法：
-  - **方案 A（推荐，本期）**：`secret_hash` 存 secret 的**哈希用于"泄露检测/不回显"**，另存 `secret_encrypted`（服务端密钥对称加密，`PLATFORM_KEY_ENCRYPTION_KEY`）用于验签；secret 明文永不落库、永不回显。
-  - 方案 B（简化退路）：用 `Bearer pk:sk` 明文头，平台仅存哈希做"使用记录"，secret 不验签——安全性弱，仅用于早期联调。
-
-**验签步骤**（`apiKeyAuth.js`）：
-1. 解析 `Authorization` 得 `public_key` + `signature`。
-2. 查 `api_keys`：存在、未吊销、未过期、scope 含 `ingest`。
-3. 用 `secret_encrypted` 解密得 secret，重算 HMAC，常量时间比较。
-4. 通过 → 注入 `req.tenant = { projectId, apiKeyId }`；失败 → `401 AUTH_INVALID`。
-5. 更新 `last_used_at` / `call_count` / `last_ip`（异步，不阻塞）。
-
-**防重放**：body 哈希入签已覆盖请求完整性；如需更强防重放，加 `X-Eval-Timestamp` 头并纳入 canonical string + 服务端时间窗校验（±5min）。本期可选。
-
-#### 6.3.2 Bearer API Key（评测任务提交侧）
-
-第三方系统调用 `/api/v1/jobs` 提交评测任务时使用单一 Bearer Key：
+所有 API Key 端点（Ingestion `/api/public/*` 与评测任务 `/api/v1/jobs`、`/api/v1/rule-sets`）均使用单一 **Bearer API Key** 鉴权：
 
 ```
 Authorization: Bearer eval-xxxxx
 ```
 
 - `api_key` 即 Web 控制台签发的完整 Key（`eval-…`），**仅创建时明文展示一次**。
-- 平台按 token 哈希查 `api_keys`，校验存在/未吊销/未过期/scope 含 `ingest`；通过即解析出 `{ projectId, orgId, apiKeyId }` 注入 `req.tenant`。
+- 平台按 `sha256(token)` 查 `api_keys.token_hash`，校验存在 / 未吊销 / 未过期 / scope 含 `ingest`；通过即解析出 `{ projectId, orgId, apiKeyId }` 注入 `req.tenant`。
 - 项目归属完全由 Key 决定：提交时**不接受也不应传入** `project_id`。
-- 与 HMAC 相比，第三方无需计算签名，接入成本更低；生产强制 HTTPS 传输。
+- 生产强制 HTTPS 传输；无需计算签名，接入成本低。
+
+**存储方案（方案 A）**：
+
+| 字段 | 用途 |
+|------|------|
+| `token_hash` | `sha256(api_key)`，用于鉴权查找与泄露检测 |
+| `token_encrypted` | AES-256-GCM 加密态，**executor 按 job 回传时解密**得明文 token（per-job ResultSink） |
+| `token_preview` | 明文前缀，列表展示用，不可还原 |
+
+- 明文 token 永不落库、永不回显；签发响应仅含一次性 plaintext token。
+- `PLATFORM_KEY_ENCRYPTION_KEY` 用于加解密；Web 与 executor 必须一致。
 
 ### 6.4 隔离实现
 
@@ -613,7 +589,7 @@ Authorization: Bearer eval-xxxxx
 
 ### 7.1 事件 schema v1.0
 
-请求信封（`POST /api/public/ingest`，HMAC 鉴权）：
+请求信封（`POST /api/public/ingest`，Bearer API Key 鉴权）：
 
 ```jsonc
 {
@@ -784,7 +760,7 @@ Web /api/public/ingest + /api/public/artifacts/url → PG + 对象存储
 evaluator/agent_eval/observability/
   __init__.py
   sink.py            # ResultSink：编排拼装→上传制品→发事件→失败入队
-  client.py          # IngestionClient：HTTP + HMAC 签名 + presigned + 重试退避
+  client.py          # IngestionClient：HTTP + Bearer 鉴权 + presigned + 重试退避
   queue.py           # 离线队列（SQLite）+ 重放 + 死信
   events.py          # 现有模型 → 事件 dict 映射
   config.py          # 读 AGENT_EVAL_* env
@@ -803,20 +779,24 @@ evaluator/agent_eval/observability/
 
 > **字段名对齐**：评估器序列化的 `passed`/`rule_id`（见现状 `rule_results.json`）与 dataclass `to_dict` 的 `status`/`constraint_id` 存在差异——`events.py` 统一以**事件 schema**为准输出，兼容两种来源，确保后端只认 schema。
 
-### 8.3 HMAC 客户端（`client.py`）
+### 8.3 Bearer 客户端（`client.py`）
 
 ```python
-def sign(method, path, body: bytes, secret: str) -> str:
-    canon = f"{method.upper()}\n{path}\n{hashlib.sha256(body).hexdigest()}"
-    return hmac.new(secret.encode(), canon.encode(), hashlib.sha256).hexdigest()
-
-def post_ingest(events, *, public_key, secret_key, host):
-    body = json.dumps({"schema_version":"1.0","events":events}, separators=(",",":")).encode()
-    sig = sign("POST","/api/public/ingest", body, secret_key)
-    headers = {"Authorization": f"Eval {public_key}:{sig}",
-               "Content-Type":"application/json", "X-Eval-Client": client_version()}
+def post_ingest(events, *, api_key: str, host: str):
+    body = json.dumps(
+        {"schema_version": "1.0", "project_id": project, "events": events},
+        separators=(",", ":"),
+    ).encode()
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "X-Eval-Client": client_version(),
+    }
     # 指数退避重试（429/5xx），尊重 Retry-After
 ```
+
+- 使用单一 `api_key`（`eval-…`）作为 Bearer token，无需计算签名。
+- `project_id` 可显式指定，也可由后端根据 Key 解析；显式指定时后端仍以 Key 所属项目为准做权限校验。
 
 ### 8.4 离线队列与重放（`queue.py`）
 
@@ -1038,7 +1018,7 @@ volumes: { pgdata: {} }
 
 | 层级 | 范围 | 通过标准 |
 |------|------|----------|
-| 单元测试 | services / repositories / crypto(HMAC) / event 映射 | 覆盖率 ≥ 80% |
+| 单元测试 | services / repositories / crypto(token) / event 映射 | 覆盖率 ≥ 80% |
 | 契约测试 | 评估器与后端共享 JSON Schema 一致性（CI diff 校验） | schema 漂移即 CI 失败 |
 | 集成测试 | 摄取端到端（注册→建项目→签 key→eval→入库→查询） | 全链路通过 |
 | 越权测试 | A 组织/B 用户枚举/直查/跨项目写、吊销 key 后写、过期 key | 全部被拒（403/401/404） |
@@ -1052,7 +1032,7 @@ volumes: { pgdata: {} }
 
 | 版本 | 日期 | 变更内容 |
 |------|------|----------|
-| v1.0 | 2026-06-16 | 初版：基于 [03Web 可观测平台重构需求](../requirement/03Web可观测平台重构需求.md) 给出分层架构、后端工程结构、Prisma 数据模型 DDL、对象存储抽象、JWT+HMAC 认证与多租户隔离、Ingestion 摄取服务（事件 schema/幂等/校验/限流/两段式制品上传）、评估器 ResultSink 对接、Query API 与聚合、前端改造、迁移回填、部署运维、安全与测试策略 |
+| v1.0 | 2026-06-16 | 初版：基于 [03Web 可观测平台重构需求](../requirement/03Web可观测平台重构需求.md) 给出分层架构、后端工程结构、Prisma 数据模型 DDL、对象存储抽象、JWT+Bearer 认证与多租户隔离、Ingestion 摄取服务（事件 schema/幂等/校验/限流/两段式制品上传）、评估器 ResultSink 对接、Query API 与聚合、前端改造、迁移回填、部署运维、安全与测试策略 |
 | v1.1 | 2026-06-29 | 同步代码 + 合并原 14《样本级评估走势设计》：数据模型补 User SSO 字段 / `JoinRequest` / `ApiKey.secretEncrypted` / `Run.avgSoft,avgPref` / `Sample.contentHash`；§6.1 改团队中心模型（注册不自动建 Org + 申请审批），新增 §6.6 SAML SSO；§九 Query API 补 `samples`/`sample-trends`/DELETE 端点 + §9.4 样本级走势（Run 级 vs Sample 级，合并自原 doc 14）；§5.4 制品同源预览代理（raw + artifact token）；ObjectStorage 补 `deleteObjects`；§4.3 `make db-init` 替代 schema.sql；趋势 SQL 补 orgId 隔离 + Soft/Pref；前端补样本 Tab + 走势视图 + 登录/注册/加入页拆分 + SSO Tab |
 | v1.2 | 2026-06-30 | 数据库治理统一：web 的 `prisma/` 迁至仓库根 `db/web/prisma/`，与 gateway 的 `db/gateway/migrations/` 同归 `db/`；§4.1/§4.3 目录树与建库命令同步（`make db-init`=`db/apply.sh` 统一应用 web+gateway，`make db-migrate-prod`=`db/apply-prod.sh` 线上增量）；schema.prisma 显式 output 以兼容迁出 web/backend 后的 Prisma 项目根推断（见 db/README.md） |
-| v1.3 | 2026-07-07 | **执行拆分与网关合并**：删除 gateway 相关描述；新增 §7.7 评测任务提交与执行（`/api/v1/jobs` + executor）；架构图/后端工程结构/Prisma 模型补 `EvalJob`；§6.3 区分 HMAC（Ingestion）与 Bearer（jobs）；§12.1/§12.3 补 executor/SCF 配置；说明 gateway SQL 已移除、任务表由 Prisma 统一治理 |
+| v1.3 | 2026-07-07 | **执行拆分与网关合并**：删除 gateway 相关描述；新增 §7.7 评测任务提交与执行（`/api/v1/jobs` + executor）；架构图/后端工程结构/Prisma 模型补 `EvalJob`；§6.3 统一为 Bearer API Key（移除 HMAC）；§12.1/§12.3 补 executor/SCF 配置；说明 gateway SQL 已移除、任务表由 Prisma 统一治理 |
