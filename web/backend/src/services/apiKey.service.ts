@@ -3,7 +3,7 @@
  *
  * 存储（§6.3 方案 A）：
  *  - tokenHash：sha256（鉴权查找）
- *  - tokenEncrypted：AES-256-GCM（gateway 回传时解密得明文）
+ *  - tokenEncrypted：AES-256-GCM（executor 回传时解密得明文）
  *  - tokenPreview：明文前缀，供列表识别（不可还原）
  *  明文 token 永不落库、永不回显；签发响应仅含一次性的 plaintext token。
  */

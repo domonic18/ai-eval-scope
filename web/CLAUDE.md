@@ -23,11 +23,11 @@ web/
 
 ## 本地起栈（Docker Compose，推荐）
 
-起 postgres + minio + 后端（postgres 为空库；建库改为起栈后手动 `make db-init`，单一来源 = db/，已废弃 schema.sql）：
+起 postgres + minio + web + executor（postgres 为空库；建库改为起栈后手动 `make db-init`，单一来源 = db/（web=Prisma，executor 复用 public.*），已废弃 schema.sql）：
 
 ```bash
 make docker-up          # = docker compose up -d（根 docker-compose.yml，读根 .env）
-make db-init            # 手动建库：统一应用 web(prisma)+gateway(SQL) 迁移（首次必跑，见 db/README.md）
+make db-init            # 手动建库：统一应用 web Prisma 迁移（首次必跑，见 db/README.md）
 curl http://localhost:9000/health
 ```
 
@@ -81,8 +81,8 @@ npm start                  # node dist/server.js（生产）
 
 ## 数据库与迁移
 
-- backend 用 Prisma，schema 在仓库根 [`db/web/prisma/schema.prisma`](../db/web/prisma/schema.prisma)（已迁出 web/backend，统一到 db/）。
-- **操作规范**：[`db/README.md`](../db/README.md) — 全库（web=Prisma、gateway=SQL）统一治理；含初始化/变更命令流程与禁止事项。
+- backend 用 Prisma，schema 在仓库根 [`db/web/prisma/schema.prisma`](../db/web/prisma/schema.prisma)（已迁出 web/backend，统一到 db/）。该 schema 同时治理 `public.eval_jobs`（executor 复用）。
+- **操作规范**：[`db/README.md`](../db/README.md) — 全库（web=Prisma，executor 复用 public.*）统一治理；含初始化/变更命令流程与禁止事项。
 - 日常变更：`prisma migrate dev --create-only`（生成 SQL 不执行）→ 由 `make db-init`（本地）/ `make db-migrate-prod`（线上）统一应用。
 
 ## 测试

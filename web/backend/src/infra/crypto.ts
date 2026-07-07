@@ -145,7 +145,7 @@ function deriveAesKey(): Buffer {
   return crypto.createHash("sha256").update(cfg.keyEncryptionKey).digest()
 }
 
-/** 加密 token 明文 → "v1:<iv_b64>:<ct_b64>:<tag_b64>"（gateway 回传时解密）。 */
+/** 加密 token 明文 → "v1:<iv_b64>:<ct_b64>:<tag_b64>"（executor 回传时解密）。 */
 export function encryptToken(plain: string): string {
   const key = deriveAesKey()
   const iv = crypto.randomBytes(12)

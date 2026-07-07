@@ -139,7 +139,7 @@ class QueryRepository extends BaseRepository {
     `
   }
 
-  /** 样本清单：项目下 distinct externalSampleId + 评估次数 + 最近一次指标（docs/arch/14）。 */
+  /** 样本清单：项目下 distinct externalSampleId + 评估次数 + 最近一次指标（docs/arch/09 §9.4）。 */
   async listSamplesByProject(projectId: string) {
     const orgId = this.requireOrg()
     const rows = await this.prisma.$queryRaw<
@@ -174,7 +174,7 @@ class QueryRepository extends BaseRepository {
     }))
   }
 
-  /** 样本走势：某 externalSampleId 跨 run 的指标时间序列（docs/arch/14）。 */
+  /** 样本走势：某 externalSampleId 跨 run 的指标时间序列（docs/arch/09 §9.4）。 */
   async sampleTrends(projectId: string, externalSampleId: string, limit: number) {
     const orgId = this.requireOrg()
     return this.prisma.$queryRaw<

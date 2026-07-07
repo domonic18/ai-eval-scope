@@ -78,7 +78,7 @@ export interface SampleSummary {
   sPref: number
 }
 
-/** 项目下样本（课件）清单项（docs/arch/14）。 */
+/** 项目下样本（课件）清单项（docs/arch/09 §9.4）。 */
 export interface ProjectSample {
   externalSampleId: string
   evalCount: number
@@ -88,7 +88,7 @@ export interface ProjectSample {
   latestContentHash: string | null
 }
 
-/** 样本走势点（某 externalSampleId 跨 run 的时间序列，docs/arch/14）。 */
+/** 样本走势点（某 externalSampleId 跨 run 的时间序列，docs/arch/09 §9.4）。 */
 export interface SampleTrendPoint {
   run_id: string
   created_at: string
@@ -145,7 +145,7 @@ export interface IssuedApiKey extends ApiKeySafe {
   token: string
 }
 
-/** 调试台：gateway 任务态（GET /v1/jobs/{id} 透传）。 */
+/** 调试台：eval job 任务态（GET /api/v1/jobs/{id} 透传）。 */
 export interface DebugJobStatus {
   job_id: string
   status: string // queued | running | completed | failed

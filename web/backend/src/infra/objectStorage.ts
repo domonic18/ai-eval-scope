@@ -152,7 +152,7 @@ export class S3Storage {
       input.ContentMD5 = md5B64
       headers["Content-MD5"] = md5B64
     }
-    // 上传用对外 client（external endpoint）：上传方（评估器 CLI / 浏览器 / gateway）
+    // 上传用对外 client（external endpoint）：上传方（评估器 CLI / 浏览器 / executor）
     // 需用可达端点签名（MinIO 严格校验签名 Host）——external 对所有上传方可达：
     // 本地 CLI/浏览器 → localhost:9100；生产 → 公网 COS 域名。
     const url = await getSignedUrl(this.presignClient, new PutObjectCommand(input), {
