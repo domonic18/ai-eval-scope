@@ -36,6 +36,9 @@ COPY db/web/prisma /app/db/web/prisma
 RUN npx prisma generate
 COPY --from=backend-builder /app/web/backend/dist ./dist
 COPY --from=frontend-builder /app/web/frontend/dist ./public
+# 静态 catalog（构建期由 scripts/gen_rule_sets.py 生成）：ruleSetsCatalog 运行时读取
+# （/api/v1/rule-sets、/api/v1/debug/rule-sets）
+COPY web/backend/assets ./assets
 
 ENV PORT=9000 \
     HOST=0.0.0.0 \
