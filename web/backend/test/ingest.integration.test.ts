@@ -2,7 +2,7 @@
  * Sprint 7d 摄取服务验证（§7.5 / 计划验证标准 1-6）：
  *  1. 合法事件入库；重复 event_id 幂等（duplicates）
  *  2. schema 非法 → SCHEMA_INVALID 且不落库
- *  3. HMAC 验签正确（已在 apiKeyAuth.test 覆盖）；此处补充 ingestion 成功路径
+ *  3. Bearer 鉴权正确（已在 apiKeyAuth.test 覆盖）；此处补充 ingestion 成功路径
  *  4. A 项目 Key 携 B project_id → PROJECT_FORBIDDEN
  *  5. 限流触发 429 + Retry-After
  *  6. 超批量 → PAYLOAD_TOO_LARGE（不静默截断）

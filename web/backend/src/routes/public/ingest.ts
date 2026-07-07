@@ -1,5 +1,5 @@
 /**
- * 摄取路由（/api/public/ingest，HMAC 鉴权 + 限流）。
+ * 摄取路由（/api/public/ingest，Bearer API Key 鉴权 + 限流）。
  *
  * 鉴权 → 限流（按 apiKey）→ 体积/批量上限 → ingest() → 映射 outcome 到 HTTP。
  */

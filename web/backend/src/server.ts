@@ -38,7 +38,7 @@ import evalJobsRouter from "./routes/eval/jobs"
 import evalRuleSetsRouter from "./routes/eval/ruleSets"
 import evalHealthRouter from "./routes/eval/health"
 
-// ── 摄取路由（HMAC 鉴权，7d）──
+// ── 摄取路由（Bearer API Key 鉴权，7d）──
 import ingestRouter from "./routes/public/ingest"
 import publicArtifactsRouter from "./routes/public/artifacts"
 
@@ -48,7 +48,7 @@ export function createApp(): express.Application {
 
   // 全局中间件
   app.use(cors()) // 按需收紧；当前开放，便于多端调用
-  // 捕获原始请求体字节供 API Key HMAC 验签（req.rawBody）；与发送字节严格一致
+  // 捕获原始请求体字节供体积校验/日志（req.rawBody）
   app.use(
     express.json({
       limit: "8mb",
@@ -76,7 +76,7 @@ export function createApp(): express.Application {
   app.use("/api/v1/artifacts", artifactsRouter) // 制品下载（presigned 重定向）
   app.use("/api/v1/admin", adminRouter) // 超管后台（platformAdminGuard，跨租户）
 
-  // ── 摄取路由（HMAC 鉴权 + 限流，7d）──
+  // ── 摄取路由（Bearer API Key 鉴权 + 限流，7d）──
   app.use("/api/public/ingest", ingestRouter) // POST /api/public/ingest
   app.use("/api/public/artifacts", publicArtifactsRouter) // POST /api/public/artifacts/url
 

@@ -10,7 +10,7 @@
 web/
 ├── backend/            TypeScript API（纯 JSON）
 │   ├── src/            分层：config / middleware / infra / routes / services / repositories / schemas / types / utils
-│   │   └── routes/public/   公开摄取端点（HMAC 鉴权）
+│   │   └── routes/public/   公开摄取端点（Bearer API Key 鉴权）
 │   ├── (prisma 已迁出)  schema/迁移统一在仓库根 db/web/prisma/（见 db/README.md）
 │   ├── test/           vitest + supertest 集成测试
 │   ├── server.ts       入口（薄代理）→ 编译为 dist/server.js
@@ -103,7 +103,7 @@ make web-typecheck      # = cd web/backend && npm run typecheck
 - `GET|POST /api/v1/orgs/:org/projects` — 组织下项目
 - `GET|PATCH /api/v1/projects/:id`、`POST /api/v1/projects/:id/{archive,unarchive}` — 项目管理
 - `GET|POST /api/v1/projects/:id/keys`、`POST /api/v1/projects/:id/keys/:keyId/revoke` — API Key 管理
-- `POST /api/public/ingest`（HMAC 鉴权）— 评估结果摄取
+- `POST /api/public/ingest`（Bearer API Key 鉴权）— 评估结果摄取
 
 > Query API（运行 / 样本 / 趋势 / 制品）见架构文档 §九。
 
