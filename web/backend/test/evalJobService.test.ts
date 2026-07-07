@@ -64,8 +64,8 @@ describe("createEvalJobService.submit", () => {
     })
 
     expect(r.status).toBe("queued")
-    expect(r.projectId).toBe("p-1")
-    expect(r.jobId).toBeTruthy()
+    expect(r.project_id).toBe("p-1")
+    expect(r.job_id).toBeTruthy()
     expect(mocks.put).toHaveBeenCalledOnce()
     expect(mocks.presignGet).toHaveBeenCalledOnce()
     expect(mocks.create).toHaveBeenCalledOnce()
@@ -86,7 +86,7 @@ describe("createEvalJobService.submit", () => {
 
     expect(mocks.invokeScf).toHaveBeenCalledOnce()
     expect(mocks.updateScfRequestId).toHaveBeenCalledOnce()
-    expect(r.scfRequestId).toBe("scf-rid")
+    expect(r.scf_request_id).toBe("scf-rid")
     const data = mocks.create.mock.calls[0]![0] as { scope: string }
     expect(data.scope).toBe("unit")
   })

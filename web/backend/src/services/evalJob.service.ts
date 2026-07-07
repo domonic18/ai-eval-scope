@@ -36,11 +36,11 @@ export interface SubmitInput {
 }
 
 export interface SubmitResult {
-  jobId: string
+  job_id: string
   status: "queued"
-  projectId: string
-  pollUrl: string
-  scfRequestId?: string
+  project_id: string
+  poll_url: string
+  scf_request_id?: string
 }
 
 function extOf(filename: string, scope: "single" | "unit"): string {
@@ -117,7 +117,13 @@ export function createEvalJobService(tenant: Tenant) {
       }
     }
 
-    return { jobId, status: "queued", projectId, pollUrl: `/api/v1/jobs/${jobId}`, scfRequestId }
+    return {
+      job_id: jobId,
+      status: "queued",
+      project_id: projectId,
+      poll_url: `/api/v1/jobs/${jobId}`,
+      scf_request_id: scfRequestId,
+    }
   }
 
   async function get(jobId: string) {
