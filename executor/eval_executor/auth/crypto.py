@@ -1,6 +1,6 @@
 """加密原语 — Python 复刻 web/backend/src/infra/crypto.ts（单一 Bearer token）。
 
-- token 加密态：AES-256-GCM，序列化 v1:<iv_b64>:<ct_b64>:<tag_b64>（gateway 回传时解密）。
+- token 加密态：AES-256-GCM，序列化 v1:<iv_b64>:<ct_b64>:<tag_b64>（executor 回传时解密）。
 - token 哈希态：sha256(token)（鉴权查找）。
 - Bearer 头解析：Authorization: Bearer <token>。
 """
@@ -20,7 +20,7 @@ def derive_aes_key(encryption_key_str: str) -> bytes:
 
 
 def decrypt_token(serialized: str, encryption_key_str: str) -> str:
-    """解密 api_keys.token_encrypted → token 明文（gateway 回传 web 时用）。
+    """解密 api_keys.token_encrypted → token 明文（executor 回传 web 时用）。
 
     对齐 web crypto.ts::decryptToken：
       iv 12 字节；tag 16 字节；ct 与 tag 独立 base64 编码，解密时 tag 追加在 ct 后。

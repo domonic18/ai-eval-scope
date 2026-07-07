@@ -71,7 +71,7 @@ _KEY_BY_ID_SQL = text(
 
 
 async def find_api_key_by_id(session: AsyncSession, api_key_id: str) -> ApiKeyRecord | None:
-    """按 id 查 API Key（gateway 回传时解密 token 用）。"""
+    """按 id 查 API Key（executor 回传时解密 token 用）。"""
     result = await session.execute(_KEY_BY_ID_SQL, {"api_key_id": api_key_id})
     row = result.mappings().first()
     if row is None:
