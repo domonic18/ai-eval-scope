@@ -16,7 +16,7 @@ class ObservabilityDefaults:
     # 未设置 AGENT_EVAL_HOST 时的默认平台地址（本地 docker compose 起栈）。
     host: str = "http://localhost:9000"
 
-    # 摄取端点（HMAC 鉴权）。
+    # 摄取端点（Bearer API Key 鉴权）。
     ingest_path: str = "/api/public/ingest"
     # 制品 presigned 申请端点。
     artifacts_path: str = "/api/public/artifacts/url"
