@@ -103,7 +103,7 @@ router.post(
       action: "debug.job.submit",
       targetType: "project",
       targetId: tenant.projectId ?? null,
-      metadata: { jobId: result.jobId, filename, ruleSetId, taskId },
+      metadata: { job_id: result.job_id, filename, ruleSetId, taskId },
     }).catch((e) => getLogger().warn({ error: (e as Error).message }, "audit_log_failed"))
 
     res.status(202).json({
@@ -141,7 +141,7 @@ router.get(
     if (!job) {
       throw new PlatformError("job not found", { status: 404, code: "JOB_NOT_FOUND" })
     }
-    res.json({ job })
+    res.json(job)
   }),
 )
 

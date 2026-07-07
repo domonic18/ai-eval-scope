@@ -82,7 +82,7 @@ router.get(
     if (!job) {
       throw new PlatformError("job not found", { status: 404, code: "JOB_NOT_FOUND" })
     }
-    res.json({ job })
+    res.json(job)
   }),
 )
 
