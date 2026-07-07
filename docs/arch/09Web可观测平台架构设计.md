@@ -31,30 +31,35 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│  评估器侧 (Python / agent-eval)                                          │
+│  评估器侧 (Python / agent-eval) / executor（评测执行）                    │
 │    PipelineEngine ── 评估 ──> MetricsReport/SampleResult/Constraint     │
 │    agent_eval/llm/tracing.py ────────> Langfuse SaaS (LLM 调用链)        │
 │    agent_eval/observability/sink.py ──┐                                  │
 │         事件拼装 + HMAC + 队列重放     │                                  │
+│    executor/ ── SCF Invoke / worker ──┘  消费 eval_jobs，按提交者身份回传│
 └────────────────────────────────────────┼─────────────────────────────────┘
                                          │ ① 结构化事件 ② presigned 制品
                                          ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │  可观测平台后端 (Node.js / Express)                                       │
 │ ┌──────────────────── 接入层 (routes + middleware) ────────────────────┐│
-│ │ AuthMiddleware (JWT) · ApiKeyAuth (HMAC) · TenantGuard · RateLimiter ││
-│ │ RequestLog · ErrorHandler                                            ││
+│ │ AuthMiddleware (JWT) · ApiKeyAuth (HMAC/Bearer) · TenantGuard ·      ││
+│ │ RateLimiter · RequestLog · ErrorHandler                              ││
 │ └──────────────────────────────────────────────────────────────────────┘│
 │ ┌────────── Ingestion 服务 ──────────┐ ┌────────── Query 服务 ─────────┐│
 │ │  EventValidator (ajv)              │ │  ProjectService / RunService  ││
 │ │  IngestService (幂等 upsert)       │ │  TrendService / SampleService ││
 │ │  ArtifactService (presigned)       │ │  ArtifactService (签名下载)   ││
 │ └────────────────────────────────────┘ └───────────────────────────────┘│
-│ ┌────────── 管理服务 ────────────────┐ ┌────────── 共享 ───────────────┐│
-│ │  AuthServervice / OrgService       │ │  Repositories (强制租户过滤)  ││
-│ │  ProjectService / ApiKeyService    │ │  ObjectStorage (MinIO/S3/COS) ││
-│ │  AuditService                      │ │  PrismaClient (PgBouncer)     ││
+│ ┌────────── 管理服务 ────────────────┐ ┌────────── 评测任务服务 ───────┐│
+│ │  AuthServervice / OrgService       │ │  EvalJobService               ││
+│ │  ProjectService / ApiKeyService    │ │  InputMaterialize / SCF Invoke││
+│ │  AuditService                      │ │  EvalJobRepository            ││
 │ └────────────────────────────────────┘ └───────────────────────────────┘│
+│ ┌────────── 共享 ─────────────────────────────────────────────────────┐│
+│ │  Repositories (强制租户过滤) · ObjectStorage (MinIO/S3/COS) ·        ││
+│ │  PrismaClient (PgBouncer)                                            ││
+│ └──────────────────────────────────────────────────────────────────────┘│
 └───────────────────────────┬─────────────────────────────────────────────┘
                             ▼
         ┌───────────────────────┴───────────────────────┐
@@ -62,6 +67,7 @@
 ┌──────────────────────┐                     ┌──────────────────────────┐
 │  PostgreSQL          │                     │  对象存储                 │
 │  结构化数据 + 审计    │                     │  S3 / COS / MinIO         │
+│  public.* (含 eval_jobs)                   │                           │
 └──────────────────────┘                     └──────────────────────────┘
         ▲
         │
@@ -72,8 +78,8 @@
 
 ### 2.2 部署拓扑
 
-- **本地（开发/演示）**：`docker compose up` 起 express + postgres + minio；前端由 Express 托管（沿用 `serve` 模式）。
-- **生产**：Express 部署到腾讯云函数（SCF）/ 容器；PostgreSQL 用云数据库；对象存储用 COS（S3 兼容）。DB 连接经 PgBouncer（SCF 为短连接，需连接池）。
+- **本地（开发/演示）**：`docker compose up` 起 express + postgres + minio + **executor（worker 模式）**；前端由 Express 托管（沿用 `serve` 模式）。
+- **生产**：Express 部署到腾讯云函数（SCF）/ 容器；PostgreSQL 用云数据库；对象存储用 COS（S3 兼容）；**executor 部署为 SCF 事件函数 + Job 镜像 + 异步执行（最长 24h），由 Web 后端经 SCF Invoke 触发**。DB 连接经 PgBouncer（SCF 为短连接，需连接池）。
 - **可拆分演进**：Ingestion 与 Query 为两套路由 + 中间件，未来可拆为两个进程/服务独立扩缩容。
 
 ### 2.3 与 Langfuse 的协作
@@ -91,49 +97,60 @@
 ```
 web/backend/
 ├── src/
-│   ├── server.js                     # Express 入口
-│   ├── config/                       # 环境配置 (env 校验)
-│   │   └── index.js
+│   ├── server.ts                     # Express 入口
+│   ├── config/                       # 环境配置 (env 校验，含 SCF 触发配置)
+│   │   └── index.ts
 │   ├── middleware/
-│   │   ├── auth.js                   # JWT 解析与 req.user 注入
-│   │   ├── apiKeyAuth.js             # HMAC 验签（Ingestion）
-│   │   ├── tenantGuard.js            # 强制 org/project 上下文与越权拦截
-│   │   ├── rateLimiter.js            # 限流（Ingestion/Query 分别配置）
-│   │   ├── requestLog.js             # 结构化日志
-│   │   └── errorHandler.js
+│   │   ├── auth.ts                   # JWT 解析与 req.user 注入
+│   │   ├── apiKeyAuth.ts             # HMAC 验签（Ingestion）+ Bearer 解析（/api/v1/jobs）
+│   │   ├── tenantGuard.ts            # 强制 org/project 上下文与越权拦截
+│   │   ├── rateLimiter.ts            # 限流（Ingestion/Query 分别配置）
+│   │   ├── requestLog.ts             # 结构化日志
+│   │   └── errorHandler.ts
 │   ├── routes/
-│   │   ├── public/                   # Ingestion（API Key 鉴权）
+│   │   ├── public/                   # Ingestion（API Key HMAC 鉴权）
 │   │   │   ├── ingest.js
 │   │   │   ├── artifacts.js
 │   │   │   └── health.js
+│   │   ├── eval/                     # 评测任务（合并自 gateway；Bearer API Key）
+│   │   │   ├── jobs.ts               # POST /api/v1/jobs、GET /api/v1/jobs/:id
+│   │   │   ├── ruleSets.ts           # GET /api/v1/rule-sets（构建期静态 catalog）
+│   │   │   └── health.ts             # GET /api/v1/health（eval 子系统健康）
 │   │   ├── auth.js                   # 注册/登录/刷新
 │   │   ├── orgs.js
 │   │   ├── projects.js
 │   │   ├── keys.js                   # API Key 管理
 │   │   ├── runs.js                   # Query API
-│   │   └── samples.js
-│   ├── services/                     # 业务逻辑（无直接 SQL）
+│   │   ├── samples.js
+│   │   └── debug.ts                  # 调试台（SSO + api_key，直接调用 evalJobService）
+│   ├── services/
 │   │   ├── auth.service.js
 │   │   ├── project.service.js
 │   │   ├── apiKey.service.js
 │   │   ├── ingest.service.js         # 事件校验/幂等/事务
 │   │   ├── artifact.service.js       # presigned + 签名下载
+│   │   ├── evalJob.service.ts        # 评测任务提交：物化输入 → 上传 → 写 eval_jobs → SCF Invoke
 │   │   ├── run.service.js
 │   │   ├── trend.service.js
 │   │   └── audit.service.js
 │   ├── repositories/                 # 数据访问层（强制租户过滤）
 │   │   ├── base.repository.js        # 注入 orgId/projectId 过滤
+│   │   ├── evalJob.repository.ts     # public.eval_jobs 读写
 │   │   ├── run.repository.js
 │   │   ├── sample.repository.js
 │   │   └── ...
 │   ├── infra/
 │   │   ├── prisma.js                 # PrismaClient 单例（PgBouncer）
 │   │   ├── objectStorage.js          # ObjectStorage 工厂
-│   │   └── crypto.js                 # HMAC / 哈希 / token
+│   │   ├── crypto.js                 # HMAC / 哈希 / token
+│   │   ├── scf.ts                    # 腾讯云 SCF Invoke 客户端（TC3-HMAC-SHA256）
+│   │   ├── inputMaterialize.ts       # zip 探测/解压/scope 推导（复刻 workspace.py）
+│   │   └── ruleSetsCatalog.ts        # 读取构建期 rule-sets.json
 │   ├── schemas/                      # 事件 JSON Schema（与评估器共享）
 │   │   ├── ingest.event.v1.json
 │   │   └── ...
 │   └── utils/
+├── assets/                           # rule-sets.json（构建期生成，提交入库）
 ├── (prisma 已迁出)                   # schema/migrations 统一到仓库根 db/web/prisma/（全库治理见 db/README.md）
 ├── public/                           # 前端构建产物（生产）
 ├── test/                             # 单元/集成/越权
@@ -377,6 +394,35 @@ model AuditLog {
   @@index([orgId, createdAt(sort: Desc)])
   @@map("audit_logs")
 }
+
+// ── 评测执行任务（gateway 合并至 Web；executor 消费）──────────────────
+model EvalJob {
+  id                String    @id @default(uuid()) @map("job_id")
+  projectId         String    @map("project_id")
+  orgId             String    @map("org_id")
+  apiKeyId          String    @map("api_key_id") // 提交者 API Key id（executor 回传时解密 token）
+  status            String    @default("queued") // queued | running | completed | failed
+  inputKind         String    @map("input_kind") // upload | inline
+  scope             String // single | unit
+  inputObjectKey    String    @map("input_object_key") // 对象存储 key
+  inputPresignedUrl String?   @map("input_presigned_url") // Web 签发的短期下载 URL（worker 模式用）
+  ruleSetId         String    @map("rule_set_id")
+  taskId            String?   @map("task_id")
+  taskTitle         String?   @map("task_title")
+  taskSubject       String?   @map("task_subject")
+  runId             String?   @map("run_id")
+  webRunUrl         String?   @map("web_run_url")
+  scfRequestId      String?   @map("scf_request_id") // SCF Invoke RequestId（链路追踪）
+  metrics           Json?     @db.JsonB
+  error             Json?     @db.JsonB
+  createdAt         DateTime  @default(now()) @map("created_at")
+  startedAt         DateTime? @map("started_at")
+  finishedAt        DateTime? @map("finished_at")
+
+  @@index([status])
+  @@index([projectId, createdAt(sort: Desc)])
+  @@map("eval_jobs")
+}
 ```
 
 > 幂等约束补充：Ingestion 事件级幂等不靠业务表唯一键（一个 run/sample 由多条事件分批到达），而是用独立的 `ingest_events` 去重表（见 §7.2）。上表中的 `@@unique([projectId, externalRunId])` 与 `@@unique([runId, externalSampleId])` 是**业务级**幂等兜底。
@@ -392,7 +438,7 @@ model AuditLog {
 ### 4.3 迁移策略
 
 - **Prisma Migrate**：`prisma migrate dev`（开发）/ `prisma migrate deploy`（CI/生产），schema 变更版本化、可回滚（生成 down 脚本由 CI 管理）。日常变更走 `prisma migrate dev --create-only`（生成 SQL 不执行）→ 手动跑 SQL → `prisma migrate resolve --applied`（见 `db/README.md`）。
-- **本地建库（`make db-init`）**：起栈后 postgres 为空库，手动 `make db-init`（`db/apply.sh`）按时间戳顺序应用 prisma migration SQL + `prisma migrate resolve --applied` + `prisma generate`，再应用 gateway 版本化 SQL；**单一来源 = `db/`（web=Prisma + gateway=SQL），已废弃 `schema.sql` 自动建表**。线上库（腾讯云 CDB）迁移走 `make db-migrate-prod`（`db/apply-prod.sh`）补 pending + gateway 幂等 SQL。
+- **本地建库（`make db-init`）**：起栈后 postgres 为空库，手动 `make db-init`（`db/apply.sh`）按时间戳顺序应用 prisma migration SQL + `prisma migrate resolve --applied` + `prisma generate`；**单一来源 = `db/`（web=Prisma，含 `public.eval_jobs`），已废弃 `schema.sql` 自动建表，gateway SQL 已随网关合并移除**。线上库（腾讯云 CDB）迁移走 `make db-migrate-prod`（`db/apply-prod.sh`）补 pending。
 - **JSONB 优先于加列**：`details`/`failure_breakdown`/`thresholds`/`extra`/`moduleResults` 等半结构化字段用 JSONB，避免评估模型迭代时频繁改表。
 - **一等列仅给"要索引/聚合"的字段**：DR/CPR/Reward 等核心指标落列，其余 JSONB。
 
@@ -486,7 +532,16 @@ projects/{project_id}/runs/{run_id}/artifacts/{kind}/{name}
 - 中间件 `auth.js` 解析 access_token → 注入 `req.user`；过期则前端用 refresh_token 刷新。
 - 敏感操作（吊销 Key、删除/归档项目、邀请成员）可要求 recent login（`auth_time` 校验）。
 
-### 6.3 API Key 与 HMAC 签名（Ingestion 侧）
+### 6.3 API Key 鉴权
+
+平台存在两种 API Key 鉴权模型，分别用于不同端点：
+
+| 端点 | 鉴权方式 | 说明 |
+|------|----------|------|
+| `/api/public/ingest`、`/api/public/artifacts/url` | **HMAC 签名** | 评估器 / executor 回传结果与制品，使用 `Eval {publicKey}:{signature}` |
+| `/api/v1/jobs`、`/api/v1/rule-sets` | **Bearer API Key** | 第三方提交评测任务，使用 `Authorization: Bearer {api_key}`（单一 Key，无需计算签名） |
+
+#### 6.3.1 HMAC 签名（Ingestion 侧）
 
 **签名算法**（评估器与平台必须一致）：
 
@@ -511,6 +566,19 @@ Authorization    = "Eval " + public_key + ":" + signature
 5. 更新 `last_used_at` / `call_count` / `last_ip`（异步，不阻塞）。
 
 **防重放**：body 哈希入签已覆盖请求完整性；如需更强防重放，加 `X-Eval-Timestamp` 头并纳入 canonical string + 服务端时间窗校验（±5min）。本期可选。
+
+#### 6.3.2 Bearer API Key（评测任务提交侧）
+
+第三方系统调用 `/api/v1/jobs` 提交评测任务时使用单一 Bearer Key：
+
+```
+Authorization: Bearer eval-xxxxx
+```
+
+- `api_key` 即 Web 控制台签发的完整 Key（`eval-…`），**仅创建时明文展示一次**。
+- 平台按 token 哈希查 `api_keys`，校验存在/未吊销/未过期/scope 含 `ingest`；通过即解析出 `{ projectId, orgId, apiKeyId }` 注入 `req.tenant`。
+- 项目归属完全由 Key 决定：提交时**不接受也不应传入** `project_id`。
+- 与 HMAC 相比，第三方无需计算签名，接入成本更低；生产强制 HTTPS 传输。
 
 ### 6.4 隔离实现
 
@@ -653,6 +721,58 @@ HTTP 202  // 合法的已入库
   │  202 {accepted, duplicates, errors}    │                              │
   │<───────────────────────────────────────┤                              │
 ```
+
+### 7.7 评测任务提交与执行（/api/v1/jobs）
+
+第三方系统或调试台提交评测任务后，Web 后端负责**物化输入、持久化任务、触发执行器**；实际评估由 `executor` 完成。
+
+```
+第三方 / 调试台
+    │
+    ▼
+POST /api/v1/jobs (Bearer API Key)
+    │
+    ├── ① 物化输入：application/octet-stream + 查询串 或 application/json inline
+    │      inputMaterialize.ts 做 zip 探测/解压/scope 推导（single/unit）
+    ├── ② 上传对象存储：projects/{project_id}/eval/jobs/{job_id}/input.{ext}
+    ├── ③ 签发短期 presigned GET URL（executor 下载用，不持对象存储凭据）
+    ├── ④ 写入 public.eval_jobs（status = queued）
+    └── ⑤ 触发 executor：
+           生产：SCF Invoke Event（TC3-HMAC-SHA256 签名）
+           本地：TENCENT_SCF_ENABLED=false，由 executor worker 模式轮询
+    │
+    ▼
+executor（SCF 事件函数 / worker）
+    │ 读 SCF_CUSTOM_CONTAINER_EVENT 或轮询 eval_jobs
+    │ 第一时间 mark_running
+    │ 经 presigned URL 下载输入
+    │ build_package → eval_packages()
+    │ 按 job.api_key_id 解密 token，per-job ResultSink.flush() 回传 Web
+    │ mark_done / mark_failed
+    ▼
+Web /api/public/ingest + /api/public/artifacts/url → PG + 对象存储
+```
+
+**关键决策**：
+
+| 决策 | 说明 |
+|------|------|
+| 任务表由 Web 统一 owning | `public.eval_jobs` 由 Prisma 治理；gateway 的 SQL 迁移目录已删除 |
+| executor 不持对象存储凭据 | 输入经 Web 签发的短期 presigned GET URL 下载；制品经 `/api/public/artifacts/url` 签发的 presigned PUT 直传 |
+| 输入走对象存储 | SCF 事件体经 env 注入有 128KB/2MB 限制，大单元 zip 必须落对象存储 |
+| 本地开发用 worker 模式 | 无真实 SCF 时，executor 容器以 worker 模式轮询 `public.eval_jobs` |
+| 失败兜底为乐观模型 | executor 启动第一时间 `mark_running`；评估异常走 `mark_failed`；不做 reaper |
+
+**相关端点**：
+
+| 方法 | 路径 | 鉴权 | 说明 |
+|------|------|------|------|
+| POST | `/api/v1/jobs` | Bearer API Key | 提交评测任务，202 返回 `job_id` |
+| GET | `/api/v1/jobs/:id` | Bearer API Key | 查询任务态（含 `metrics`、`error`、`web_run_url`） |
+| GET | `/api/v1/rule-sets` | Bearer API Key | 规则集静态 catalog（构建期生成） |
+| GET | `/api/v1/health` | 公开 | eval 子系统健康 |
+
+详细接口契约、示例与部署策略见 [12 第三方系统对接方案](./12第三方系统对接方案.md)。
 
 ---
 
@@ -856,12 +976,13 @@ LIMIT $4;
 # docker-compose.yml（平台）
 services:
   postgres: { image: postgres:16, env: [POSTGRES_PASSWORD=...], volumes: ["pgdata:/var/lib/postgresql/data"] }
-  minio:    { image: minio/minio, command: server /data, ports: ["9000:9000"], env: [MINIO_ROOT_USER=..., MINIO_ROOT_PASSWORD=...] }
-  web: { build: ./web/backend, env_file: .env, ports: ["9000:9000"], depends_on: [postgres, minio] }
+  minio:    { image: minio/minio, command: server /data, ports: ["9100:9100"], env: [MINIO_ROOT_USER=..., MINIO_ROOT_PASSWORD=...] }
+  web: { build: ./docker/web, env_file: .env, ports: ["9000:9000"], depends_on: [postgres, minio] }
+  executor: { build: ./docker/executor, env_file: .env, depends_on: [postgres, minio, web] }
 volumes: { pgdata: {} }
 ```
 
-`PLATFORM_DATABASE_URL=postgresql://...@postgres:5432/eval`，`PLATFORM_OBJECT_STORAGE=minio`，指向 minio endpoint。
+`TENCENT_SCF_ENABLED=false` 时，Web 写入 `public.eval_jobs` 后由 `executor` worker 模式轮询执行；生产设为 `true`，Web 经 SCF Invoke 触发事件函数。
 
 ### 12.2 生产（腾讯云）
 
@@ -877,12 +998,16 @@ volumes: { pgdata: {} }
 | `PLATFORM_DATABASE_URL` | PG 连接串（含 `?pgbouncer=true`） |
 | `PLATFORM_OBJECT_STORAGE` | `minio` / `s3` / `cos` |
 | `PLATFORM_S3_ENDPOINT/REGION/BUCKET/ACCESS_KEY/SECRET_KEY` | 对象存储凭证（cos 用 S3 兼容 endpoint） |
+| `PLATFORM_S3_EXTERNAL_ENDPOINT` | presigned URL 对外端点（浏览器/客户端可达） |
 | `PLATFORM_JWT_SECRET` | JWT 签名密钥 |
-| `PLATFORM_KEY_ENCRYPTION_KEY` | API Key secret 对称加密密钥（§6.3 方案 A） |
+| `PLATFORM_KEY_ENCRYPTION_KEY` | API Key secret 对称加密密钥（§6.3 方案 A；executor 解密提交者 token 用） |
 | `PLATFORM_ALLOW_SIGNUP` | 是否开放注册（默认 true） |
 | `PLATFORM_INGEST_RATE_LIMIT` | 摄取限流（令牌桶配额） |
 | `PLATFORM_INGEST_MAX_BATCH` | 单批事件/体积上限 |
 | `PLATFORM_RETENTION_DEFAULT_DAYS` | 项目默认保留天数 |
+| `TENCENT_SCF_ENABLED` | 是否启用腾讯云 SCF executor 触发（本地 false） |
+| `TENCENT_SCF_REGION/NAMESPACE/FUNCTION_NAME` | SCF 函数配置 |
+| `TENCENT_SECRET_ID/SECRET_KEY` | 腾讯云 API 密钥（SCF Invoke 签名；启用 SCF 时必填） |
 
 ### 12.4 健康检查与监控
 
@@ -930,3 +1055,4 @@ volumes: { pgdata: {} }
 | v1.0 | 2026-06-16 | 初版：基于 [03Web 可观测平台重构需求](../requirement/03Web可观测平台重构需求.md) 给出分层架构、后端工程结构、Prisma 数据模型 DDL、对象存储抽象、JWT+HMAC 认证与多租户隔离、Ingestion 摄取服务（事件 schema/幂等/校验/限流/两段式制品上传）、评估器 ResultSink 对接、Query API 与聚合、前端改造、迁移回填、部署运维、安全与测试策略 |
 | v1.1 | 2026-06-29 | 同步代码 + 合并原 14《样本级评估走势设计》：数据模型补 User SSO 字段 / `JoinRequest` / `ApiKey.secretEncrypted` / `Run.avgSoft,avgPref` / `Sample.contentHash`；§6.1 改团队中心模型（注册不自动建 Org + 申请审批），新增 §6.6 SAML SSO；§九 Query API 补 `samples`/`sample-trends`/DELETE 端点 + §9.4 样本级走势（Run 级 vs Sample 级，合并自原 doc 14）；§5.4 制品同源预览代理（raw + artifact token）；ObjectStorage 补 `deleteObjects`；§4.3 `make db-init` 替代 schema.sql；趋势 SQL 补 orgId 隔离 + Soft/Pref；前端补样本 Tab + 走势视图 + 登录/注册/加入页拆分 + SSO Tab |
 | v1.2 | 2026-06-30 | 数据库治理统一：web 的 `prisma/` 迁至仓库根 `db/web/prisma/`，与 gateway 的 `db/gateway/migrations/` 同归 `db/`；§4.1/§4.3 目录树与建库命令同步（`make db-init`=`db/apply.sh` 统一应用 web+gateway，`make db-migrate-prod`=`db/apply-prod.sh` 线上增量）；schema.prisma 显式 output 以兼容迁出 web/backend 后的 Prisma 项目根推断（见 db/README.md） |
+| v1.3 | 2026-07-07 | **执行拆分与网关合并**：删除 gateway 相关描述；新增 §7.7 评测任务提交与执行（`/api/v1/jobs` + executor）；架构图/后端工程结构/Prisma 模型补 `EvalJob`；§6.3 区分 HMAC（Ingestion）与 Bearer（jobs）；§12.1/§12.3 补 executor/SCF 配置；说明 gateway SQL 已移除、任务表由 Prisma 统一治理 |
