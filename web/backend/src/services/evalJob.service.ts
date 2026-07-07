@@ -93,7 +93,7 @@ export function createEvalJobService(tenant: Tenant) {
       taskSubject: input.taskSubject ?? null,
     })
 
-    // 触发 executor（生产 SCF；本地 SCF_ENABLED=false 时仅入队，由 worker 轮询）
+    // 触发 executor（生产 SCF；本地 TENCENT_SCF_ENABLED=false 时仅入队，由 worker 轮询）
     const cfg = getConfig()
     let scfRequestId: string | undefined
     if (cfg.scfEnabled) {
