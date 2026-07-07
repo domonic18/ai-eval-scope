@@ -6,7 +6,7 @@
 
 调用评估器 CapabilityResolver 派生每个内置规则集的所需能力（LLM/视觉），
 产出 ``web/backend/assets/rule-sets.json`` 并提交入库。Web 的 /api/v1/rule-sets
-直接 import 该 JSON（docs/arch/14 §6.3），无需运行时 Python。
+直接 import 该 JSON（docs/arch/09 §7.7），无需运行时 Python。
 
 内置规则集目录与 ``executor/eval_executor/rules/registry.py`` 的 _BUILTIN 保持一致；
 改规则集后须重跑本脚本，避免 catalog 漂移（建议挂 pre-commit / CI）。

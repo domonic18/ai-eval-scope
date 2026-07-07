@@ -72,15 +72,15 @@ repos:
         language: system
         files: ^web/backend/.*\.(ts|js)$
         pass_filenames: false
-      - id: ruff-check-gateway
-        name: ruff check (gateway)
-        entry: bash -c 'cd gateway && uv run ruff check --fix eval_gateway tests'
+      - id: ruff-check-executor
+        name: ruff check (executor)
+        entry: bash -c 'cd executor && uv run ruff check --fix eval_executor tests'
         language: system
-        files: ^gateway/.*\.py$
+        files: ^executor/.*\.py$
         pass_filenames: false
-      - id: ruff-format-gateway
-        name: ruff format (gateway)
-        entry: bash -c 'cd gateway && uv run ruff format eval_gateway tests'
+      - id: ruff-format-executor
+        name: ruff format (executor)
+        entry: bash -c 'cd executor && uv run ruff format eval_executor tests'
         language: system
-        files: ^gateway/.*\.py$
+        files: ^executor/.*\.py$
         pass_filenames: false
