@@ -107,7 +107,9 @@ services:
       EVALEXECUTOR_WORKSPACE: /tmp/executor-workspace
       # Settings 读 PLATFORM_DATABASE_URL（与 web 一致），容器内 host=postgres。
       PLATFORM_DATABASE_URL: postgresql://${POSTGRES_USER:-eval}:${POSTGRES_PASSWORD:-evalpassword}@postgres:5432/${POSTGRES_DB:-agent_eval}?schema=public
-      EVALEXECUTOR_WEB_BASE_URL: http://localhost:9000
+      # executor 写入 eval_jobs.web_run_url 的 Web 根地址（最终用户/第三方打开运行详情页）；
+      # 部署到非本机时在 .env 覆盖为对外域名。本地默认 http://localhost:9000。
+      EVALEXECUTOR_WEB_BASE_URL: ${EVALEXECUTOR_WEB_BASE_URL:-http://localhost:9000}
       # executor 经 ResultSink 回传结果/制品到 web（web 再落 minio）；容器内走 compose 服务名。
       AGENT_EVAL_HOST: http://web:9000
       AGENT_EVAL_UPLOAD: "true"
