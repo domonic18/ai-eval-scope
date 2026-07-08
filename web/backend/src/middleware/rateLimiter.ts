@@ -1,10 +1,12 @@
 /**
- * 限流中间件（§7.4）。按 api_key 维度令牌桶；超限 429 + Retry-After。
+ * 限流中间件（§7.4）。按 api_key 维度令牌桶；超限 → 429 RATE_LIMITED + Retry-After。
+ * 超限走 PlatformError → errorHandler 统一输出规范错误体（{error, code, hint?}）并记日志。
  * 进程内内存桶（单实例够用；多实例需换 Redis 后端，远期）。
  */
 
 import type { RequestHandler } from "express"
 import { getConfig } from "../config"
+import { PlatformError } from "./errorHandler"
 
 interface Bucket {
   tokens: number
@@ -32,8 +34,13 @@ export function rateLimiter(opts?: { capacity?: number; ratePerSec?: number }): 
 
     if (b.tokens < 1) {
       const retryAfter = Math.max(1, Math.ceil((1 - b.tokens) / ratePerSec))
-      res.set("Retry-After", String(retryAfter))
-      return res.status(429).json({ error: "rate limited", code: "RATE_LIMITED" })
+      res.set("Retry-After", String(retryAfter)) // errorHandler 不会覆盖已设响应头
+      return next(
+        new PlatformError("rate limited, please retry later", {
+          status: 429,
+          code: "RATE_LIMITED",
+        }),
+      )
     }
     b.tokens -= 1
     next()

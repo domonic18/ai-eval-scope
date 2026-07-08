@@ -12,6 +12,7 @@
 import { raw, Router, type RequestHandler } from "express"
 import { requireApiKey } from "../../middleware/apiKeyAuth"
 import { PlatformError } from "../../middleware/errorHandler"
+import { rateLimiter } from "../../middleware/rateLimiter"
 import { createEvalJobService } from "../../services/evalJob.service"
 
 const router = Router()
@@ -26,6 +27,7 @@ const DEFAULT_RULE_SET = "coursework-quality"
 router.post(
   "/",
   requireApiKey,
+  rateLimiter(), // 按 API Key 令牌桶限流；超限 429 RATE_LIMITED + Retry-After
   // octet-stream 原始 body（仅本路由生效，不动全局 json parser）
   raw({ type: ["application/octet-stream", "text/plain"], limit: "50mb" }),
   wrap(async (req, res) => {
