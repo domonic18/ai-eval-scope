@@ -339,10 +339,3 @@ curl "https://eval.bj33smarter.com/api/v1/jobs/$JOB" -H "Authorization: Bearer $
 
 配置后正常运行评估命令，`ResultSink` 会把运行 / 样本 / 约束 / 制品经 Bearer Key 摄取入库；网络失败自动入离线队列重放。
 
----
-
-## Roadmap
-
-以下能力**规划中**：
-
-- **Webhook 回调** — 任务状态变更主动推送（`job.running` / `job.completed` / `job.failed`）。
