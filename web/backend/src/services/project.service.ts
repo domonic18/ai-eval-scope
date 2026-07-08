@@ -20,7 +20,10 @@ export interface ProjectCreateInput {
   retentionDays?: number | null
 }
 export type ProjectPatch = Partial<
-  Pick<Project, "name" | "description" | "defaultRuleSet" | "defaultTaskSet" | "retentionDays">
+  Pick<
+    Project,
+    "name" | "description" | "defaultRuleSet" | "defaultTaskSet" | "retentionDays" | "isPublic"
+  >
 >
 
 export interface ProjectService {
@@ -90,14 +93,38 @@ export function createProjectService(tenant: Tenant): ProjectService {
       "defaultRuleSet",
       "defaultTaskSet",
       "retentionDays",
+      "isPublic",
     ] as const) {
       if (patch[k] !== undefined) (allowed as Record<string, unknown>)[k] = patch[k]
+    }
+    // 公开开关：仅 owner 可改（公开后项目运行/样本免登录可读，敏感）；且必须为布尔。
+    if (allowed.isPublic !== undefined) {
+      if (typeof allowed.isPublic !== "boolean") {
+        throw new PlatformError("isPublic must be boolean", { status: 400, code: "SCHEMA_INVALID" })
+      }
+      if (tenant.role !== "owner") {
+        throw new PlatformError("owner role required to toggle public", {
+          status: 403,
+          code: "FORBIDDEN",
+        })
+      }
     }
     const existing = await repo.findByIdSafe(projectId)
     if (!existing) throw new PlatformError("project not found", { status: 404, code: "NOT_FOUND" })
     const res = await repo.update(projectId, allowed)
     if (res.count === 0)
       throw new PlatformError("project not found", { status: 404, code: "NOT_FOUND" })
+    // 审计：公开开关变更（docs/arch/12 §十）
+    if (allowed.isPublic !== undefined && allowed.isPublic !== existing.isPublic) {
+      await AuditService.log({
+        orgId: tenant.orgId,
+        actorUserId: tenant.userId,
+        action: "project.public_toggle",
+        targetType: "project",
+        targetId: projectId,
+        metadata: { isPublic: allowed.isPublic },
+      })
+    }
     return repo.findByIdSafe(projectId)
   }
 

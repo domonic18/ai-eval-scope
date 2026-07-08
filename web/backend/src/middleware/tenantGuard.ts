@@ -115,9 +115,6 @@ export function runGuard(opts: GuardOpts = {}): RequestHandler {
   return async (req, _res, next) => {
     try {
       const runId: string | undefined = req.params[param]
-      if (!req.user) {
-        return next(new PlatformError("auth required", { status: 401, code: "AUTH_INVALID" }))
-      }
       const run = await prisma.run.findFirst({
         where: { OR: [{ id: runId }, { externalRunId: runId }] },
         select: { id: true, projectId: true },
@@ -128,6 +125,19 @@ export function runGuard(opts: GuardOpts = {}): RequestHandler {
       const project = await projectRepoBootstrap.findByIdAny(run.projectId)
       if (!project) {
         return next(new PlatformError("not found", { status: 404, code: "NOT_FOUND" }))
+      }
+      // 匿名访问（optionalAuth 未注入 req.user）：仅公开项目可读（只读 role）；写操作须登录。
+      if (!req.user) {
+        if (requiredRole !== "owner" && project.isPublic) {
+          req.tenant = {
+            kind: "public",
+            orgId: project.orgId,
+            projectId: run.projectId,
+            role: "public",
+          }
+          return next()
+        }
+        return next(new PlatformError("auth required", { status: 401, code: "AUTH_INVALID" }))
       }
       if (req.user.platformAdmin) {
         req.tenant = {
@@ -168,15 +178,25 @@ export function artifactGuard(): RequestHandler {
   return async (req, _res, next) => {
     try {
       const artifactId: string | undefined = req.params.id
-      if (!req.user) {
-        return next(new PlatformError("auth required", { status: 401, code: "AUTH_INVALID" }))
-      }
       const art = await prisma.artifact.findUnique({
         where: { id: artifactId! },
-        select: { id: true, project: { select: { id: true, orgId: true } } },
+        select: { id: true, project: { select: { id: true, orgId: true, isPublic: true } } },
       })
       if (!art) {
         return next(new PlatformError("not found", { status: 404, code: "NOT_FOUND" }))
+      }
+      // 匿名访问：仅公开项目的制品可读（制品预览/下载，只读）。
+      if (!req.user) {
+        if (art.project.isPublic) {
+          req.tenant = {
+            kind: "public",
+            orgId: art.project.orgId,
+            projectId: art.project.id,
+            role: "public",
+          }
+          return next()
+        }
+        return next(new PlatformError("auth required", { status: 401, code: "AUTH_INVALID" }))
       }
       if (req.user.platformAdmin) {
         req.tenant = {

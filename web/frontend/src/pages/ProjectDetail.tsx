@@ -47,8 +47,9 @@ interface Project {
   slug: string
   description: string | null
   ruleSetVersion?: string | null
+  isPublic?: boolean
 }
-type SetTab = "keys" | "basic" | "retention" | "danger"
+type SetTab = "keys" | "basic" | "retention" | "public" | "danger"
 
 /* ── 趋势图（recharts）── 一组 points({label,values}) + series + thresholds */
 function MetricTrendChart({
@@ -263,6 +264,8 @@ export default function ProjectDetail() {
               slug={project.slug}
               name={project.name}
               description={project.description}
+              isPublic={!!project.isPublic}
+              onPublicChanged={(v) => setProject({ ...project, isPublic: v })}
               onArchived={() => nav("/dashboard")}
             />
           )}
@@ -421,12 +424,16 @@ function SettingsTab({
   slug,
   name,
   description,
+  isPublic,
+  onPublicChanged,
   onArchived,
 }: {
   projectId: string
   slug: string
   name: string
   description: string | null
+  isPublic: boolean
+  onPublicChanged: (v: boolean) => void
   onArchived: () => void
 }) {
   const toast = useToast()
@@ -435,6 +442,7 @@ function SettingsTab({
     ["keys", "API Keys"],
     ["basic", "基本信息"],
     ["retention", "数据保留"],
+    ["public", "公开访问"],
     ["danger", "危险区"],
   ]
   return (
@@ -456,9 +464,66 @@ function SettingsTab({
         {panel === "keys" && <KeysPanel projectId={projectId} slug={slug} />}
         {panel === "basic" && <BasicPanel name={name} slug={slug} description={description} onSave={() => toast.info("基本信息接口待后端接入")} />}
         {panel === "retention" && <RetentionPanel onSave={() => toast.info("数据保留接口待后端接入")} />}
+        {panel === "public" && (
+          <PublicPanel projectId={projectId} isPublic={isPublic} onChanged={onPublicChanged} />
+        )}
         {panel === "danger" && <DangerPanel projectId={projectId} slug={slug} onArchived={onArchived} />}
       </div>
     </div>
+  )
+}
+
+/** 公开访问面板：开启后该项目运行/样本详情页免登录可读，可被第三方 iframe 嵌入。 */
+function PublicPanel({
+  projectId,
+  isPublic,
+  onChanged,
+}: {
+  projectId: string
+  isPublic: boolean
+  onChanged: (v: boolean) => void
+}) {
+  const toast = useToast()
+  const [saving, setSaving] = useState(false)
+  async function toggle(next: boolean) {
+    setSaving(true)
+    try {
+      await api.updateProject(projectId, { isPublic: next })
+      onChanged(next)
+      toast.success(next ? "已开启公开访问" : "已关闭公开访问")
+    } catch (e) {
+      const ex = e as { response?: { data?: { error?: string } }; message?: string }
+      toast.error(ex.response?.data?.error || ex.message || "操作失败")
+    } finally {
+      setSaving(false)
+    }
+  }
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">公开访问</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="text-sm font-medium">{isPublic ? "已开启" : "未开启"}</div>
+            <div className="text-xs text-muted-foreground">
+              开启后，本项目的运行/样本详情页<b>免登录可读</b>，第三方系统可用 iframe 直接嵌入
+              <code className="mx-1 rounded bg-muted px-1 py-0.5 font-mono">/run/&#123;id&#125;</code>页面。
+            </div>
+          </div>
+          <Button variant={isPublic ? "default" : "outline"} disabled={saving} onClick={() => toggle(!isPublic)}>
+            {saving ? "处理中…" : isPublic ? "关闭公开" : "开启公开"}
+          </Button>
+        </div>
+        {isPublic && (
+          <div className="rounded-md border border-yellow-500/40 bg-yellow-500/10 p-3 text-xs text-yellow-200">
+            ⚠️ 公开后<b>任何持有链接的人都能查看</b>本项目下所有运行/样本（只读，不含 Key 与写操作）。
+            请确认内容可对外可见后再开启。
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 

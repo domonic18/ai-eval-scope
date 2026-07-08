@@ -86,4 +86,18 @@ router.get(
   }),
 )
 
+// 速览：过没过 / 分数 + 各评测项得分与失败原因（docs/arch/12 §6.6）。深度详情走 iframe。
+router.get(
+  "/:jobId/overview",
+  requireApiKey,
+  wrap(async (req, res) => {
+    const svc = createEvalJobService(req.tenant!)
+    const overview = await svc.overview(req.params.jobId)
+    if (!overview) {
+      throw new PlatformError("job not found", { status: 404, code: "JOB_NOT_FOUND" })
+    }
+    res.json(overview)
+  }),
+)
+
 export default router
