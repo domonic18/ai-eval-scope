@@ -240,6 +240,7 @@ model Project {
   defaultRuleSet  String?   @map("default_rule_set")  // 默认规则集 id，如 coursework-quality / coursework-gate / coursework-vision
   defaultTaskSet  String?   @map("default_task_set")
   retentionDays   Int?      @map("retention_days")
+  isPublic        Boolean   @default(false) @map("is_public") // 项目公开开关（docs/arch/12 §3.5）：公开后运行/样本详情免登录可读 + 可 iframe 嵌入
   createdBy       String    @map("created_by")
   createdAt       DateTime  @default(now()) @map("created_at")
   archivedAt      DateTime? @map("archived_at")

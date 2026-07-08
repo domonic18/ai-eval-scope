@@ -275,8 +275,8 @@ curl "https://eval.bj33smarter.com/api/v1/jobs/$JOB" -H "Authorization: Bearer $
 以下能力**规划中**，当前版本请以轮询为准：
 
 - **Webhook 回调** — 任务状态变更主动推送（`job.running` / `job.completed` / `job.failed`）。
-- **结果端点** — `GET /api/v1/jobs/{id}/result`，独立获取完整结果快照。
-- **细粒度 scope** — `eval:submit` / `eval:read`（当前统一为 `ingest`）。
-- **限额与精细化错误码** — `429 RATE_LIMITED` / `422 INPUT_INVALID`。
+- **评测速览端点** — `GET /api/v1/jobs/{id}/overview`，一次拿到"过没过 / 多少分 + 各评测项得分与失败原因"；深度详情（逐条约束 / 制品预览）不开放 API，走下方 iframe 嵌入查看。
+- **项目公开 + iframe 嵌入** — 项目 owner 可把项目设为公开，公开后运行/样本详情页免登录可读，第三方直接 `<iframe src={web_run_url}>` 嵌入。
+- **限额错误码** — `429 RATE_LIMITED`（输入校验沿用现有 `400 INPUT_INVALID`）。
 
-如需优先支持某项，或在接入中遇到问题，请联系平台管理员。
+> 鉴权保持"一把 Key 走天下"（单一 Bearer Key，**不再引入** `eval:submit` / `eval:read` 等细粒度 scope）。如需优先支持某项，或在接入中遇到问题，请联系平台管理员。
