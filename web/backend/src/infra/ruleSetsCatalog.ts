@@ -1,7 +1,7 @@
 /**
  * 规则集静态 catalog 读取（构建期由 scripts/gen_rule_sets.py 生成）。
  *
- * catalog 落 web/backend/assets/rule-sets.json；eval /debug 路由共用此读取器（docs/arch/14 §6.3）。
+ * catalog 落 web/backend/assets/rule-sets.json；eval /debug 路由共用此读取器（docs/arch/09 §7.7）。
  */
 
 import fs from "fs"

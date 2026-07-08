@@ -32,7 +32,7 @@ export interface PlatformConfig {
   host: string
   schemaVersion: string // 事件 schema 版本（同时为 /health 上报）
   logLevel: string
-  // ── SCF executor 触发（评测执行；docs/arch/14）──
+  // ── SCF executor 触发（评测执行；docs/arch/09 §7.7 / 12）──
   scfEnabled: boolean
   scfRegion: string
   scfNamespace: string

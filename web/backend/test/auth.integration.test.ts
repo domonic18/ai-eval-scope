@@ -58,7 +58,7 @@ describe("#2 项目 + API Key：token 仅返回一次，DB 仅存哈希/加密�
     expect(row!.tokenEncrypted.startsWith("v1:")).toBe(true) // AES-GCM
     expect(row!.tokenEncrypted).not.toContain(key.token)
     expect(row!.callCount.toString()).toBe("0")
-    // 方案 A：加密态可还原为明文（gateway 回传解密）
+    // 方案 A：加密态可还原为明文（executor 回传解密）
     expect(decryptToken(row!.tokenEncrypted)).toBe(key.token)
   })
 

@@ -166,7 +166,7 @@ export const api = {
   ): Promise<{ url: string; contentType: string; filename: string }> {
     return (await http.get(`/artifacts/${artifactId}/preview`)).data
   },
-  // ── 调试台：转发 eval-gateway（登录即可用，项目由 API Key 解析）──
+  // ── 调试台：提交到 Web 后端 /api/v1/debug/jobs（登录即可用，项目由 API Key 解析）──
   async submitDebugJob(
     file: File,
     ruleSetId: string,
@@ -194,7 +194,7 @@ export const api = {
     const suffix = qs.toString() ? `?${qs.toString()}` : ""
     return (await http.get(`/debug/jobs/${jobId}${suffix}`)).data
   },
-  // 规则集目录（代理 gateway GET /v1/rule-sets，含派生能力 llm/vision/kb）
+  // 规则集目录（GET /api/v1/rule-sets，构建期静态 catalog，含派生能力 llm/vision/kb）
   async debugRuleSets(): Promise<
     Array<{ id: string; name: string; description: string; capabilities: string[]; scopes: string[] }>
   > {

@@ -1,6 +1,6 @@
 # eval-executor Docker 镜像（SCF 事件函数 / 本地 worker）
-# 部署形态：腾讯云 SCF「事件函数 + Job 镜像 + 异步执行」（timeout ≤ 24h，docs/arch/14）。
-# 基于「预烘焙 Chromium 的基础镜像」（与 gateway 同源），避免 Jenkins 构建时联网下载 Chromium。
+# 部署形态：腾讯云 SCF「事件函数 + Job 镜像 + 异步执行」（timeout ≤ 24h，docs/arch/09 §7.7 / 12）。
+# 基于「预烘焙 Chromium 的基础镜像」（与 evaluator 同源），避免 Jenkins 构建时联网下载 Chromium。
 
 FROM ccr.ccs.tencentyun.com/sasan/python:3.11-slim-pw
 

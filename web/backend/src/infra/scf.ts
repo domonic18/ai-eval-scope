@@ -4,7 +4,7 @@
  * 手写 TC3-HMAC-SHA256 签名调用 `scf.<region>.tencentcloudapi.com`，`InvocationType=Event`
  * 异步触发（fire-and-forget），Web 立即返回 jobId。参考 SasanLens backend/src/tencentcloud.js。
  *
- * executor 是「事件函数 + Job 镜像 + 异步执行」（docs/arch/14），事件经
+ * executor 是「事件函数 + Job 镜像 + 异步执行」（docs/arch/09 §7.7 / 12），事件经
  * SCF_CUSTOM_CONTAINER_EVENT 注入。
  */
 

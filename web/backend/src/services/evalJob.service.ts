@@ -1,5 +1,5 @@
 /**
- * 评测任务提交 / 查询服务（docs/arch/14）。
+ * 评测任务提交 / 查询服务（docs/arch/09 §7.7 / 12）。
  *
  * 提交流程：物化输入 → 上传对象存储 → 签发 presigned GET → 写 eval_jobs(queued)
  *           → SCF Invoke Event 触发 executor（生产）。

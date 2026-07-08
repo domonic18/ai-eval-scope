@@ -3,9 +3,7 @@
  *
  * - 密码：argon2id 哈希（验证标准要求）。
  * - JWT：单一长效 access token（含 userId/orgId/role）。无 refresh；过期即重登。
- * - API Key：pk-eval-<hex> / sk-eval-<hex>；secret 明文仅客户端持有，
- *   服务端存「加密态」（AES-256-GCM，方案 A 验签用）+「哈希态」（sha256，审计/不回显）。
- * - HMAC：canonical(METHOD\nPATH\nsha256(body)) → HMAC-SHA256，常量时间比较（apiKeyAuth 验签用）。
+ * - API Key：单一 Bearer token（eval-<hex>）；服务端存「加密态」（AES-256-GCM，executor 回传解密用）+「哈希态」（sha256，鉴权查找/审计/不回显）。
  */
 
 import crypto from "crypto"
@@ -145,7 +143,7 @@ function deriveAesKey(): Buffer {
   return crypto.createHash("sha256").update(cfg.keyEncryptionKey).digest()
 }
 
-/** 加密 token 明文 → "v1:<iv_b64>:<ct_b64>:<tag_b64>"（gateway 回传时解密）。 */
+/** 加密 token 明文 → "v1:<iv_b64>:<ct_b64>:<tag_b64>"（executor 回传时解密）。 */
 export function encryptToken(plain: string): string {
   const key = deriveAesKey()
   const iv = crypto.randomBytes(12)

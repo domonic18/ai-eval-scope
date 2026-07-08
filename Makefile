@@ -45,7 +45,7 @@ web-test:
 web-typecheck:
 	cd web/backend && npm run typecheck
 
-# ─── Executor（评测执行；SCF 事件函数镜像，docs/arch/14）───
+# ─── Executor（评测执行；SCF 事件函数镜像，docs/arch/09 §7.7 / 12）───
 
 executor-install:
 	cd executor && uv sync
@@ -82,13 +82,13 @@ docker-down:
 docker-logs:
 	docker compose logs -f web
 
-# 全库建库/迁移统一应用（本地 docker 栈）：web(public, Prisma) + gateway(gateway, SQL) 两 schema。
+# 全库建库/迁移统一应用（本地 docker 栈）：web(public, Prisma) 单一 schema，含 eval_jobs。
 # 前置：make docker-up。单一来源 = db/（详见 db/README.md）。
 db-init:
 	@test -f .env || { echo "❌ 缺少 .env：请先 cp .env.example .env"; exit 1; }
 	bash db/apply.sh
 
-# 线上增量迁移：从 .secret/.env 读生产凭据，只补 web pending + gateway 幂等 SQL。
+# 线上增量迁移：从 .secret/.env 读生产凭据，只补 web pending。
 db-migrate-prod:
 	bash db/apply-prod.sh
 

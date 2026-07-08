@@ -1,5 +1,5 @@
 /**
- * 制品 presigned 上传（/api/public/artifacts/url，HMAC 鉴权）。
+ * 制品 presigned 上传（/api/public/artifacts/url，Bearer API Key 鉴权）。
  *
  * 客户端发送 {external_run_id, kind, name, content_type, size_bytes?, md5?}，
  * 平台以 Key 所属项目 + external_run_id 构造对象 key（租户隔离前缀）并签发 presigned PUT。

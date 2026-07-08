@@ -1,7 +1,7 @@
 /**
  * 调试台（/debug）—— 登录即可访问。左右结构：左侧参数+结果，右侧 Console 日志流。
  * 实时输出 request / response / 轮询 / 结果全过程，类似浏览器 DevTools Console。
- * 项目归属由 API Key 决定（gateway 验签解析），无需也不接收 project_id。
+ * 项目归属由 API Key 决定（Web 后端验签解析），无需也不接收 project_id。
  */
 import { useEffect, useRef, useState } from "react"
 import { api } from "../api/client"
@@ -30,7 +30,7 @@ import type { DebugJobStatus } from "../types"
 
 const POLL_INTERVAL = 3000
 
-/** 规则集目录项（挂载时从 gateway GET /v1/rule-sets 拉取，单一事实源）。 */
+/** 规则集目录项（挂载时从 /api/v1/rule-sets 拉取，构建期静态 catalog，单一事实源）。 */
 interface RuleSetInfo {
   id: string
   name: string
@@ -138,7 +138,7 @@ export default function DebugPage() {
     return () => setCrumbs([])
   }, [setCrumbs])
 
-  // 挂载时拉取规则集目录（gateway 注册表，单一事实源；含派生能力）
+  // 挂载时拉取规则集目录（/api/v1/rule-sets，构建期静态 catalog，单一事实源；含派生能力）
   useEffect(() => {
     api
       .debugRuleSets()
@@ -266,7 +266,7 @@ export default function DebugPage() {
           <div>
             <h1 className="text-lg font-semibold tracking-tight">调试台</h1>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              向 gateway 提交评估，实时查看请求 / 响应 / 结果。
+              向 Web 后端提交评估，由 executor 异步执行，实时查看请求 / 响应 / 结果。
             </p>
           </div>
 
@@ -278,7 +278,7 @@ export default function DebugPage() {
               <div className="space-y-1.5">
                 <ParamLabel
                   name="rule_set_id"
-                  help="规则集来自 gateway 注册表（单一事实源）；徽标表示该规则集派生的能力需求（LLM/视觉/知识库），由所选规则集决定是否触发多模态等评估。"
+                  help="规则集来自 /api/v1/rule-sets（构建期静态 catalog，单一事实源）；徽标表示该规则集派生的能力需求（LLM/视觉/知识库），由所选规则集决定是否触发多模态等评估。"
                 />
                 <Select value={ruleSet} onValueChange={setRuleSet}>
                   <SelectTrigger className="h-9 text-xs">
@@ -345,7 +345,7 @@ export default function DebugPage() {
                   name="api_key"
                   required
                   help={
-                    "Bearer 鉴权 Key，决定结果归属的项目（gateway 据此验签解析 project_id）。\n\n获取方法：项目详情页 → API Key 管理，创建后复制 eval- 开头的明文（仅创建时可见一次）。"
+                    "Bearer 鉴权 Key，决定结果归属的项目（Web 后端据此验签解析 project_id）。\n\n获取方法：项目详情页 → API Key 管理，创建后复制 eval- 开头的明文（仅创建时可见一次）。"
                   }
                 />
                 <Input

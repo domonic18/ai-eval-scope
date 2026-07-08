@@ -237,8 +237,8 @@ Sprint 7a 已交付 Web Portal MVP，技术栈为 React（前端）+ Express（�
 |----|------|--------|
 | F-O-INGEST-01 | 平台提供 `POST /api/public/ingest` 批量摄取端点，请求体为版本化事件数组（schema 见 §七）。 | P0 |
 | F-O-INGEST-02 | 评估器侧提供 **ResultSink**（`agent_eval/observability/sink.py`），在 `agent-eval eval` 完成后自动拼装事件并上报，无需用户编写上传代码。 | P0 |
-| F-O-INGEST-03 | 评估器通过环境变量配置凭据与目标（见 §八）：`AGENT_EVAL_PUBLIC_KEY` / `AGENT_EVAL_SECRET_KEY` / `AGENT_EVAL_HOST`。未配置时自动禁用摄取，不影响本地评估。 | P0 |
-| F-O-INGEST-04 | 鉴权：每个请求用 secret_key 对请求体（或规范化串）计算签名（HMAC-SHA256），平台用对应 public_key 的 secret_hash 校验。 | P0 |
+| F-O-INGEST-03 | 评估器通过环境变量配置凭据与目标（见 §八）：`AGENT_EVAL_API_KEY` / `AGENT_EVAL_HOST`。未配置时自动禁用摄取，不影响本地评估。 | P0 |
+| F-O-INGEST-04 | 鉴权：Ingestion 端点使用单一 Bearer API Key（`Authorization: Bearer eval-…`），平台按 `sha256(token)` 查 `api_keys.token_hash` 校验。 | P0 |
 | F-O-INGEST-05 | 幂等：每个事件携带客户端生成的 `event_id`，平台按 `(project_id, event_id)` 去重，重复推送不产生重复数据。 | P0 |
 | F-O-INGEST-06 | 可靠性：网络失败/平台不可用时，ResultSink 把待发事件持久化到本地队列（`workspace/.ingest_queue/`），后台重试至成功或超时；评估结论不因平台故障而丢失。 | P0 |
 | F-O-INGEST-07 | 制品上传：ResultSink 先为每个制品申请 presigned PUT URL（`POST /api/public/artifacts/url`），直传对象存储，再把 `object_key` + `md5` 作为 `artifact` 事件随结构化事件一同摄取。 | P0 |
@@ -553,11 +553,11 @@ projects/{project_id}/runs/{run_id}/artifacts/{kind}/{name}
 
 | 端点族 | 鉴权方式 |
 |--------|----------|
-| Ingestion API（评估器写入） | API Key 签名：`Authorization: Eval <public_key>:<hex_hmac>`，其中 `hmac = HMAC-SHA256(secret_key, canonical_string)`，`canonical_string = METHOD + "\n" + PATH + "\n" + body_sha256`。 |
+| Ingestion API（评估器写入） | API Key Bearer：`Authorization: Bearer <api_key>`（单一 `eval-…` token，平台按 `sha256(token)` 校验）。 |
 | 制品上传 | presigned PUT URL（由 Ingestion 凭据申请，短时效，限定 object_key）。 |
 | Query / 管理 API（前端） | JWT Bearer（登录获取），中间件解析并把 `user_id / org_id` 注入上下文，数据访问层据此强制过滤。 |
 
-> 选 HMAC 签名而非简单 `Bearer secret`：避免 secret 在每次请求头中明文流转，且可防重放（请求体哈希入签）。MVP 也可退化为 `Authorization: Bearer <public_key>:<secret>` 的简化方案，后续升级签名。
+> 采用单一 Bearer API Key：明文 token 仅客户端持有，服务端存加密态（executor 回传时解密）+ 哈希态（鉴权查找）；生产强制 HTTPS，不额外计算签名。
 
 ### 7.2 Ingestion API
 
@@ -565,7 +565,7 @@ projects/{project_id}/runs/{run_id}/artifacts/{kind}/{name}
 
 请求头：
 ```http
-Authorization: Eval <public_key>:<hex_hmac>
+Authorization: Bearer eval-xxxxx
 Content-Type: application/json
 X-Eval-Client: agent-eval/0.x
 ```
@@ -702,7 +702,7 @@ X-Eval-Client: agent-eval/0.x
 agent_eval/observability/
   __init__.py
   sink.py              # ResultSink：拼装事件、鉴权、上传、重试
-  client.py            # IngestionClient：HTTP + HMAC 签名 + presigned
+  client.py            # IngestionClient：HTTP + Bearer 鉴权 + presigned
   queue.py             # 离线队列（SQLite 或 JSON 文件）+ 重放
   events.py            # Run/Sample/Constraint/Artifact → 事件映射
   tracing.py           # 暂沿用 agent_eval/llm/tracing.py 的 trace_id 透传
@@ -770,7 +770,7 @@ agent-eval upload --run 20260616_001625 --project courseware-agent
 |------|------|------|------|----------|
 | **Sprint 7b** | 后端基础设施与数据模型 | 1 周 | PG + 对象存储地基就绪 | Express 工程化（分层/配置/日志）、PG 接入与 ORM 选型、§六 全表 schema + 迁移脚本、对象存储抽象（MinIO 本地）、Docker Compose 起栈、`/health` |
 | **Sprint 7c** | 认证与多租户 | 1 周 | 用户/组织/项目/Key 可用 | 注册/登录/JWT、组织与成员（owner/member）、项目 CRUD、API Key 签发/哈希/轮换/吊销、隔离中间件与数据访问层强制过滤、审计日志、注册开关 |
-| **Sprint 7d** | 摄取服务（Ingestion） | 1.5 周 | 评估结果可入库 | 事件 schema（§七）与校验、`/api/public/ingest`（批量/幂等/去重）、`/api/public/artifacts/url`（presigned）、HMAC 鉴权、限流、schema_version 兼容 |
+| **Sprint 7d** | 摄取服务（Ingestion） | 1.5 周 | 评估结果可入库 | 事件 schema（§七）与校验、`/api/public/ingest`（批量/幂等/去重）、`/api/public/artifacts/url`（presigned）、Bearer API Key 鉴权、限流、schema_version 兼容 |
 | **Sprint 7e** | 评估器对接（ResultSink） | 1 周 | eval 完成自动上报 | `agent_eval/observability/` 全套（sink/client/queue/events）、env 配置、离线队列重放、CLI `--upload/--no-upload` 与 `upload` 回填子命令、双写、trace_id 透传、与 Langfuse 并存 |
 | **Sprint 7f** | 前端重接 + Query API | 1.5 周 | 浏览器登录查看 | Query API（§7.3）、前端登录态/组织项目切换器、看板/趋势/运行详情/任务详情改为查 DB、制品预览、Langfuse 跳转、文件→DB 回填对账 |
 | **Sprint 7g** | 高级与运维（可裁剪） | 1 周 | 生产可用收尾 | 跨运行对比、失败 TopN、保留期清理、平台自身指标/监控、生产部署文档（云函数 + 云 PG + COS） |
@@ -818,7 +818,7 @@ agent-eval upload --run 20260616_001625 --project courseware-agent
 | D2 | 持久化方案 | **PostgreSQL + 对象存储** | 结构化数据入 PG，大制品入对象存储（S3/COS/MinIO 抽象） |
 | D3 | 多租户模型 | **用户账号 + 组织/项目** | 注册/登录、组织下建项目、项目级 API Key，数据按项目隔离；含基础 RBAC（owner/member） |
 | D4 | 与 Langfuse 关系 | **并存** | Langfuse 看 LLM 调用链，自建看评估结论，经 `langfuse_trace_id` 关联 |
-| D5 | 鉴权方式 | Ingestion 用 API Key（HMAC 签名）/ Query·管理用 JWT | 写入与查看分离鉴权 |
+| D5 | 鉴权方式 | Ingestion 用 API Key（Bearer）/ Query·管理用 JWT | 写入与查看分离鉴权 |
 | D6 | 向后兼容 | 重构期保留本地 workspace 输出 + 双写 + 回填工具 | 零破坏切换 |
 
 ---

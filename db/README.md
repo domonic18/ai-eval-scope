@@ -2,7 +2,7 @@
 
 本目录是**整个仓库数据库 schema 的唯一来源**：web 平台（`public` schema，Prisma）的建库/迁移都收敛到此，由**单一命令**统一应用。Web 与 executor 服务都**不在代码里建库**——启动只连库，建库/刷新走命令。
 
-> 原 `gateway` schema 已随「执行拆分与网关合并」（[docs/arch/14](../docs/arch/14执行拆分与网关合并方案.md)）废弃；任务表 `eval_jobs` 并入 `public` schema，由 Prisma 统一治理。`db/gateway/` 目录已删除。
+> 原 `gateway` schema 已随「执行拆分与网关合并」废弃；任务表 `eval_jobs` 并入 `public` schema，由 Prisma 统一治理。`db/gateway/` 目录已删除。详见 [09 Web 可观测平台架构设计](../docs/arch/09Web可观测平台架构设计.md) §7.7 与 [12 第三方系统对接方案](../docs/arch/12第三方系统对接方案.md)。
 
 ## 目录结构
 

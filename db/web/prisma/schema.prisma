@@ -283,7 +283,7 @@ model IngestEvent {
 
 // ── 评测执行任务（gateway 合并至 Web；executor 消费）──────────────────
 // 由 Web 写入（queued），SCF executor 消费（running → completed/failed）。
-// 见 docs/arch/14执行拆分与网关合并方案.md
+// 见 docs/arch/09Web可观测平台架构设计.md §7.7 与 docs/arch/12第三方系统对接方案.md。
 model EvalJob {
   id                String    @id @default(uuid()) @map("job_id")
   projectId         String    @map("project_id")

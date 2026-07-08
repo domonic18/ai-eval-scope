@@ -1,5 +1,5 @@
 version: "1.0"
-description: "纯格式规则集（gateway 冒烟/CI 用，无 LLM 依赖）"
+description: "纯格式规则集（executor 冒烟/CI 用，无 LLM 依赖）"
 
 dimensions:
   - id: functional

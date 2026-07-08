@@ -1,5 +1,5 @@
 version: "1.0"
-description: "课件完整评估：门控 + 质量评估 + 多模态视觉质量（gateway 需预装 Chromium）"
+description: "课件完整评估：门控 + 质量评估 + 多模态视觉质量（executor 需预装 Chromium）"
 
 dimensions:
   - id: functional
