@@ -238,6 +238,7 @@ Authorization: Bearer <api_key>
 | `401` | `AUTH_INVALID`      | 缺少/错误的 API Key、Key 已吊销或过期、scope 不含 `ingest` |
 | `404` | `JOB_NOT_FOUND`     | 任务不存在或不属于当前 Key 的项目                         |
 | `413` | `PAYLOAD_TOO_LARGE` | 上传内容超限（默认 50MB）                              |
+| `429` | `RATE_LIMITED`      | 触发令牌桶限流（按 API Key，提交 / 摄取），响应带 `Retry-After` 头 |
 
 ---
 
@@ -338,13 +339,3 @@ curl "https://eval.bj33smarter.com/api/v1/jobs/$JOB" -H "Authorization: Bearer $
 
 配置后正常运行评估命令，`ResultSink` 会把运行 / 样本 / 约束 / 制品经 Bearer Key 摄取入库；网络失败自动入离线队列重放。
 
----
-
-## Roadmap
-
-以下能力**规划中**：
-
-- **Webhook 回调** — 任务状态变更主动推送（`job.running` / `job.completed` / `job.failed`）。
-- **限额错误码** — `429 RATE_LIMITED` 响应体规范化（输入校验沿用现有 `400 INPUT_INVALID`）。
-
-> 评测速览（`GET /jobs/{id}/overview`）与公开项目 iframe 嵌入**已上线**（见上）。鉴权保持"一把 Key 走天下"（单一 Bearer Key，**不再引入** `eval:submit` / `eval:read` 等细粒度 scope）。如需优先支持某项，或在接入中遇到问题，请联系平台管理员。
