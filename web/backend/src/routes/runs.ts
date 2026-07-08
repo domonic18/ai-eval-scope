@@ -8,7 +8,7 @@
  */
 
 import { Router, type RequestHandler } from "express"
-import { requireAuth } from "../middleware/auth"
+import { requireAuth, optionalAuth } from "../middleware/auth"
 import { runGuard } from "../middleware/tenantGuard"
 import { createQueryService } from "../services/query.service"
 
@@ -19,9 +19,11 @@ const wrap =
   (req, res, next) =>
     Promise.resolve(fn(req, res, next)).catch(next)
 
+// GET 用 optionalAuth：公开项目的运行/样本详情免登录可读（iframe 嵌入，docs/arch/12 §3.5）。
+// DELETE 仍 requireAuth + owner（写操作不开放匿名）。
 router.get(
   "/:id",
-  requireAuth,
+  optionalAuth,
   runGuard(),
   wrap(async (req, res) => {
     const svc = createQueryService(req.tenant!)
@@ -31,7 +33,7 @@ router.get(
 
 router.get(
   "/:id/samples/:sid",
-  requireAuth,
+  optionalAuth,
   runGuard(),
   wrap(async (req, res) => {
     const svc = createQueryService(req.tenant!)

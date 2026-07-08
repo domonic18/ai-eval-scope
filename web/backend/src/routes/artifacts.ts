@@ -7,7 +7,7 @@
  */
 
 import { Router, type RequestHandler } from "express"
-import { requireAuth } from "../middleware/auth"
+import { optionalAuth } from "../middleware/auth"
 import { artifactGuard } from "../middleware/tenantGuard"
 import { PlatformError } from "../middleware/errorHandler"
 import { createQueryService } from "../services/query.service"
@@ -49,7 +49,7 @@ function requireArtifactToken(token: string): ArtifactTokenClaims {
 
 router.get(
   "/:id",
-  requireAuth,
+  optionalAuth,
   artifactGuard(),
   wrap(async (req, res) => {
     const svc = createQueryService(req.tenant!)
@@ -64,7 +64,7 @@ router.get(
 
 router.get(
   "/:id/preview",
-  requireAuth,
+  optionalAuth,
   artifactGuard(),
   wrap(async (req, res) => {
     const svc = createQueryService(req.tenant!)

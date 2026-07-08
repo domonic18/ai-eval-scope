@@ -243,6 +243,29 @@ class QueryRepository extends BaseRepository {
     })
   }
 
+  /**
+   * 速览聚合（docs/arch/12 §6.6）：运行 + 各样本（含其未通过约束的 name+reason+tier）。
+   * job.runId 即 Run.externalRunId（executor 回写）。仅 completed 态调用方有意义。
+   */
+  async runOverview(projectId: string, externalRunId: string) {
+    const orgId = this.requireOrg()
+    return this.prisma.run.findFirst({
+      where: { projectId, project: { orgId }, externalRunId },
+      include: {
+        samples: {
+          orderBy: { externalSampleId: "asc" },
+          include: {
+            constraintResults: {
+              where: { passed: false },
+              select: { name: true, reason: true, tier: true },
+              orderBy: [{ tier: "asc" }, { name: "asc" }],
+            },
+          },
+        },
+      },
+    })
+  }
+
   /** 制品下载引用（校验归属后返回对象 key + 元信息）。 */
   async artifactRef(artifactId: string) {
     const orgId = this.requireOrg()

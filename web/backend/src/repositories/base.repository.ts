@@ -13,7 +13,7 @@ import { PlatformError } from "../middleware/errorHandler"
 
 /** 租户上下文（由 auth/apiKeyAuth/tenantGuard 注入到 req.tenant，再传给 repository）。 */
 export interface Tenant {
-  kind?: "user" | "apikey"
+  kind?: "user" | "apikey" | "public"
   userId?: string
   orgId?: string
   projectId?: string

@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes, useLocation } from "react-router-dom"
 import { loadSession } from "./store/auth"
 import { AppShell } from "./components/AppShell"
+import { PublicShell } from "./components/PublicShell"
 import Landing from "./pages/Landing"
 import DocsPage from "./pages/DocsPage"
 import LoginPage from "./pages/LoginPage"
@@ -43,6 +44,15 @@ function RequireAdmin() {
   return <AdminLayout />
 }
 
+/**
+ * 运行/样本详情外壳选择器（docs/arch/12 §3.5 公开嵌入）：
+ * 已登录 → AppShell（完整）；匿名 → PublicShell（只读，支持公开项目 iframe 嵌入）。
+ * 匿名访问非公开项目时，页面内 Query 401 由 axios 拦截器跳转登录。
+ */
+function RunViewShell() {
+  return loadSession() ? <AppShell /> : <PublicShell />
+}
+
 export default function App() {
   return (
     <Routes>
@@ -54,11 +64,14 @@ export default function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/join" element={<JoinPage />} />
         <Route path="/project/:id" element={<ProjectDetail />} />
-        <Route path="/run/:id" element={<RunDetail />} />
-        <Route path="/run/:id/sample/:sid" element={<SampleDetail />} />
         <Route path="/runs" element={<ComingSoon title="全部运行" />} />
         {/* 调试台：登录即可访问，不限组织 / 角色 */}
         <Route path="/debug" element={<DebugPage />} />
+      </Route>
+      {/* 运行/样本详情：登录走 AppShell，匿名走 PublicShell（公开项目可 iframe 嵌入） */}
+      <Route element={<RunViewShell />}>
+        <Route path="/run/:id" element={<RunDetail />} />
+        <Route path="/run/:id/sample/:sid" element={<SampleDetail />} />
       </Route>
       {/* 超管后台（独立 shell，platformAdmin 专属）*/}
       <Route element={<RequireAdmin />}>
