@@ -157,6 +157,76 @@ Authorization: Bearer <api_key>
 }
 ```
 
+> 想看"过没过 / 各项为什么没过"，用下面的速览端点；想看逐条约束 / 制品，用 iframe 嵌入（见「公开访问与 iframe 嵌入」）。
+
+---
+
+## 评测速览（overview）
+
+`GET /api/v1/jobs/{job_id}` 只回顶层指标，看不到"各项为什么没过"。速览端点一次拿到**过没过 / 多少分 + 各评测项的失败原因**：
+
+```bash
+GET https://eval.bj33smarter.com/api/v1/jobs/{job_id}/overview
+Authorization: Bearer <api_key>
+```
+
+响应（`completed` 后）：
+
+```json
+{
+  "job_id": "ed4c0834-9120-42c1-8349-7d6a8ad1a522",
+  "run_id": "20260706_083721",
+  "status": "completed",
+  "web_run_url": "https://eval.bj33smarter.com/run/20260706_083721",
+  "verdict": "fail",
+  "score": 0.669,
+  "metrics": { "DR": 1.0, "CPR": 0.0, "condR": 0.0, "avg_time_ms": 125005 },
+  "summary": { "total": 1, "passed": 0, "failed": 1, "skipped": 0 },
+  "dimension_pass": { "format": 1, "commonsense": 0, "soft": 1, "preference": 1 },
+  "items": [
+    {
+      "external_sample_id": "contents",
+      "score": 0.669,
+      "passed": false,
+      "failures": [
+        {
+          "name": "知识准确性检查",
+          "reason": "原文提到 12×2 + 7 + 3 + 5 + 18 = 100，实际应为 57，等式错误（经 LLM 二次确认）"
+        }
+      ]
+    }
+  ]
+}
+```
+
+| 字段 | 说明 |
+| ---- | ---- |
+| `verdict` | `pass` / `fail`：DR / CPR / Reward 达标且无 `hard_gate` 失败 = `pass` |
+| `score` | 综合分 = `avg_reward` |
+| `metrics` | DR / CPR / condR / 平均耗时 |
+| `summary` | 样本通过 / 失败 / 跳过计数 |
+| `dimension_pass` | 各阶段（format / commonsense / soft / preference）达标样本数 |
+| `items[]` | 各评测项（样本）：`score` + `passed` + `failures`（未通过约束的 `name` + `reason`） |
+
+> - 任务未完成（`queued` / `running` / `failed`）时，只回 `status` + 任务级 `error`，`items` 为空。
+> - 速览**只给摘要**：逐条约束的 `details` / 制品预览等深度详情不开放 API，由 iframe 嵌入公开页查看。
+> - 越权（`job_id` 不属于当前 Key 的项目）一律 `404`，不泄露存在性。
+
+---
+
+## 公开访问与 iframe 嵌入
+
+把项目设为公开后，运行 / 样本详情页可被第三方**免登录** iframe 嵌入（详见 `docs/arch/12第三方系统对接方案.md` §3.5）：
+
+1. 项目 owner 在 Web 控制台「项目设置 → 公开访问」开启**公开**。
+2. 直接把运行详情页地址放进 iframe：
+
+```html
+<iframe src="https://eval.bj33smarter.com/run/{run_id}" style="width:100%;height:800px;border:0"></iframe>
+```
+
+公开 = 任何人持链接可**只读**查看该项目运行 / 样本（不含 Key / 写操作）；不公开的项目仍需登录。`run_id` 取自 `GET /jobs/{id}` 或 `/overview` 的 `run_id` / `web_run_url`。
+
 ---
 
 ## 状态码与错误码
@@ -272,11 +342,9 @@ curl "https://eval.bj33smarter.com/api/v1/jobs/$JOB" -H "Authorization: Bearer $
 
 ## Roadmap
 
-以下能力**规划中**，当前版本请以轮询为准：
+以下能力**规划中**：
 
 - **Webhook 回调** — 任务状态变更主动推送（`job.running` / `job.completed` / `job.failed`）。
-- **评测速览端点** — `GET /api/v1/jobs/{id}/overview`，一次拿到"过没过 / 多少分 + 各评测项得分与失败原因"；深度详情（逐条约束 / 制品预览）不开放 API，走下方 iframe 嵌入查看。
-- **项目公开 + iframe 嵌入** — 项目 owner 可把项目设为公开，公开后运行/样本详情页免登录可读，第三方直接 `<iframe src={web_run_url}>` 嵌入。
-- **限额错误码** — `429 RATE_LIMITED`（输入校验沿用现有 `400 INPUT_INVALID`）。
+- **限额错误码** — `429 RATE_LIMITED` 响应体规范化（输入校验沿用现有 `400 INPUT_INVALID`）。
 
-> 鉴权保持"一把 Key 走天下"（单一 Bearer Key，**不再引入** `eval:submit` / `eval:read` 等细粒度 scope）。如需优先支持某项，或在接入中遇到问题，请联系平台管理员。
+> 评测速览（`GET /jobs/{id}/overview`）与公开项目 iframe 嵌入**已上线**（见上）。鉴权保持"一把 Key 走天下"（单一 Bearer Key，**不再引入** `eval:submit` / `eval:read` 等细粒度 scope）。如需优先支持某项，或在接入中遇到问题，请联系平台管理员。
