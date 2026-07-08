@@ -112,6 +112,9 @@ class EvaluatorDefaults:
             ("readability", "可读性", 0.2),
         ]
     )
+    # 视觉截图渲染单页超时（毫秒）。SCF/容器等受限环境需比 Playwright 默认 30s 更宽容，
+    # 否则 full_page 截超长课件页易超时（见 renderer PlaywrightScreenshotRenderer）。
+    vision_screenshot_timeout_ms: int = 60_000
     # 文本收集时默认扫描的文档扩展名（glob 模式）
     text_collection_patterns: list[str] = field(
         default_factory=lambda: ["*.md", "*.markdown", "*.html", "*.htm"]
