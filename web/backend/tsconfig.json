@@ -18,7 +18,16 @@
     "outDir": "dist",
     "rootDir": ".",
     "declaration": false,
-    "sourceMap": true
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@modelcontextprotocol/sdk/server/mcp.js": [
+        "node_modules/@modelcontextprotocol/sdk/dist/esm/server/mcp.d.ts"
+      ],
+      "@modelcontextprotocol/sdk/server/streamableHttp.js": [
+        "node_modules/@modelcontextprotocol/sdk/dist/esm/server/streamableHttp.d.ts"
+      ]
+    }
   },
   "include": ["src/**/*", "server.ts", "test/**/*", "*.config.ts"],
   "exclude": ["node_modules", "dist"]

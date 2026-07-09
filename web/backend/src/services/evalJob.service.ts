@@ -30,6 +30,8 @@ export interface SubmitInput {
   // 内联 JSON
   inlineFilename?: string
   inlineText?: string
+  // 大文件（MCP presigned PUT 直传）：客户端已上传的对象 key，submit 直接复用
+  inputObjectKey?: string
   // 元数据
   ruleSetId: string
   taskId?: string
@@ -259,14 +261,40 @@ export function createEvalJobService(tenant: Tenant) {
     const projectId = tenant.projectId
     const jobId = crypto.randomUUID()
 
-    // 物化输入 + scope 探测
-    const mat = input.fileBytes
-      ? materializeUpload(input.filename || "input", input.fileBytes)
-      : materializeInline(input.inlineFilename || "input.md", input.inlineText || "")
+    // 物化输入 + scope 探测（三种承载方式：已上传对象 / 上传字节 / 内联）
+    let inputKind: string
+    let scope: string
+    let objectKey: string
+    if (input.inputObjectKey) {
+      // 大文件（MCP presigned PUT 直传）：复用客户端已上传的对象，不再物化/上传
+      if (!input.inputObjectKey.startsWith(`projects/${projectId}/`)) {
+        throw new PlatformError("input object does not belong to this project", {
+          status: 403,
+          code: "FORBIDDEN",
+        })
+      }
+      const head = await storage.head({ key: input.inputObjectKey })
+      if (!head) {
+        throw new PlatformError("input object not found (presigned upload 未完成?)", {
+          status: 400,
+          code: "INPUT_INVALID",
+        })
+      }
+      inputKind = "upload"
+      scope = input.inputObjectKey.endsWith(".zip") ? "unit" : "single"
+      objectKey = input.inputObjectKey
+    } else {
+      const mat = input.fileBytes
+        ? materializeUpload(input.filename || "input", input.fileBytes)
+        : materializeInline(input.inlineFilename || "input.md", input.inlineText || "")
+      // 上传对象存储
+      objectKey = buildObjectKey(projectId, jobId, mat)
+      await storage.put({ key: objectKey, body: mat.bytes, contentType: "application/octet-stream" })
+      inputKind = mat.inputKind
+      scope = mat.scope
+    }
 
-    // 上传对象存储 + 签发短期 presigned GET（executor 下载用，不持凭据）
-    const objectKey = buildObjectKey(projectId, jobId, mat)
-    await storage.put({ key: objectKey, body: mat.bytes, contentType: "application/octet-stream" })
+    // 签发短期 presigned GET（executor 下载用，不持凭据）
     const presigned = await storage.presignGet({ key: objectKey })
 
     // 写 eval_jobs（queued）
@@ -275,8 +303,8 @@ export function createEvalJobService(tenant: Tenant) {
       projectId,
       orgId: tenant.orgId,
       apiKeyId: tenant.apiKeyId,
-      inputKind: mat.inputKind,
-      scope: mat.scope,
+      inputKind,
+      scope,
       inputObjectKey: objectKey,
       inputPresignedUrl: presigned.url,
       ruleSetId: input.ruleSetId,
@@ -292,8 +320,8 @@ export function createEvalJobService(tenant: Tenant) {
       const payload: ScfInvokePayload = {
         job_id: jobId,
         rule_set_id: input.ruleSetId,
-        input_kind: mat.inputKind,
-        scope: mat.scope,
+        input_kind: inputKind,
+        scope,
         input_object_key: objectKey,
         input_presigned_url: presigned.url,
         task_id: input.taskId,
