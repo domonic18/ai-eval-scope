@@ -229,6 +229,60 @@ Authorization: Bearer <api_key>
 
 ---
 
+## MCP 接入（智能体）
+
+EvalScope 同时提供 MCP server，任意兼容 Streamable HTTP 的 MCP 客户端（Claude Code / Cursor / Windsurf 等）无需调用 HTTP 即可提交/查询评测。
+
+### 支持的内容格式与评估粒度
+
+| 文件名扩展名 | 评估粒度 | 说明 |
+| ------------ | -------- | ---- |
+| `.zip` | **单元评估** | zip 内保留目录树，适用于多文件/多课件的单元；**必须真是合法 zip 包** |
+| `.html` / `.htm` | 单页评估 | 单个课件网页 |
+| `.md` / `.markdown` | 单页评估 | 单个 Markdown 文档 |
+
+> 文件名决定 `scope`：`.zip` 会触发解压并按单元评估；其余扩展名按单页评估。若声明为 `.zip` 但内容不是合法 zip，提交时会被拒绝。
+
+### 客户端配置
+
+把项目签发的 API Key 填入 `headers.Authorization`，服务端与 HTTP API 使用同一套 Bearer 鉴权：
+
+```jsonc
+{
+  "mcpServers": {
+    "evalscope": {
+      "url": "https://eval.bj33smarter.com/api/v1/mcp",
+      "headers": { "Authorization": "Bearer eval-…" }
+    }
+  }
+}
+```
+
+> Claude Desktop 配置文件路径：
+> - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+> - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+### 可用工具
+
+| 工具 | 说明 |
+| ---- | ---- |
+| `submit_eval_job` | 提交评测任务；小文件走 `content` inline / `file` base64（≤5MB），大文件先调用 `request_input_upload` 获取 presigned PUT，再传入 `input_object_key`；文件名决定粒度：`.zip` 单元评估，`.html/.md` 单页评估 |
+| `get_eval_job` | 查询任务状态，返回 `status` / `metrics` / `web_run_url` 等 |
+| `get_eval_job_overview` | 速览：返回 `verdict` / `score` + 各评测项 `failures`（约束 `name` + `reason`） |
+| `list_rule_sets` | 列出当前项目可用规则集 |
+| `eval_health` | 健康检查 |
+| `request_input_upload` | 为即将提交的大文件申请 presigned PUT URL |
+
+### 大文件提交流程
+
+1. 调用 `request_input_upload(filename="unit.zip")`，返回 `upload_url` 与最终使用的 `object_key`。文件名决定评估粒度：`.zip` 会按单元评估解压，`.html/.md` 等按单页评估。
+2. 用 HTTP `PUT` 把文件字节上传到 `upload_url`。
+3. 调用 `submit_eval_job(input_object_key=object_key, …)` 提交评测。
+
+> 若 `filename` 以 `.zip` 结尾但上传内容不是合法 zip 包，提交会被拒绝，避免 executor 侧解压失败。
+
+---
+
 ## 状态码与错误码
 
 | HTTP  | code                | 触发场景                                        |

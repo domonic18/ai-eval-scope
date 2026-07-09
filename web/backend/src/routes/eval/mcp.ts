@@ -123,9 +123,9 @@ function buildServer(tenant: Tenant): McpServer {
     "request_input_upload",
     {
       description:
-        "大文件上传：签发 presigned PUT URL，客户端直传对象存储后，把返回的 object_key 传给 submit_eval_job（避免 MCP 传大 base64）",
+        "大文件上传：签发 presigned PUT URL，客户端直传对象存储后，把返回的 object_key 传给 submit_eval_job（避免 MCP 传大 base64）。文件名决定评估粒度：.zip → 单元评估（多文件目录树），.html/.md 等 → 单页评估。",
       inputSchema: {
-        filename: z.string().describe("文件名（决定扩展名，如 unit.zip / lesson.html）"),
+        filename: z.string().describe("文件名（决定扩展名与评估粒度：unit.zip / lesson.html / notes.md）"),
         content_type: z.string().optional().describe("可选 MIME，默认 application/octet-stream"),
       },
     },
@@ -158,20 +158,20 @@ function buildServer(tenant: Tenant): McpServer {
     "submit_eval_job",
     {
       description:
-        "提交评测任务（异步）。入参三选一：content(inline 文本) / file(base64 小二进制 ≤5MB) / input_object_key(大文件，先用 request_input_upload 直传)。另可传 rule_set_id(默认 coursework-quality)、task_id/task_title/task_subject。",
+        "提交评测任务（异步）。入参三选一：content(inline 文本) / file(base64 小二进制 ≤5MB) / input_object_key(大文件，先用 request_input_upload 直传)。文件名决定评估粒度：.zip 为单元评估（多文件目录树），.html/.md 等为单页评估；声明为 .zip 但内容不是合法 zip 会被拒绝。",
       inputSchema: {
         content: z
           .object({ filename: z.string(), text: z.string() })
           .optional()
-          .describe("inline 文本内容"),
+          .describe("inline 文本内容（小体量 HTML/Markdown）"),
         file: z
           .object({ filename: z.string(), base64: z.string() })
           .optional()
-          .describe("base64 小二进制（解码后 ≤5MB）"),
+          .describe("base64 小二进制（解码后 ≤5MB）；.zip → 单元评估，.html/.md → 单页评估"),
         input_object_key: z
           .string()
           .optional()
-          .describe("大文件：request_input_upload 返回的 object_key"),
+          .describe("大文件：request_input_upload 返回的 object_key；key 以 .zip 结尾会按单元评估解压"),
         rule_set_id: z.string().optional(),
         task_id: z.string().optional(),
         task_title: z.string().optional(),
