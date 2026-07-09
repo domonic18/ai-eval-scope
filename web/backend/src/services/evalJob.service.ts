@@ -9,6 +9,7 @@
  */
 
 import crypto from "crypto"
+import type { EvalJob } from "@prisma/client"
 import { getConfig } from "../config"
 import { getObjectStorage } from "../infra/objectStorage"
 import {
@@ -42,6 +43,54 @@ export interface SubmitResult {
   project_id: string
   poll_url: string
   scf_request_id?: string
+}
+
+/**
+ * 对外 job DTO（snake_case，对齐 integration.md / docs/arch/12 §6.3 契约）。
+ * 仅暴露文档字段；input_object_key / input_presigned_url / api_key_id / scf_request_id
+ * 等内部字段不外泄（input_presigned_url 为短期输入下载 URL，尤不应泄露）。
+ */
+export interface JobDto {
+  job_id: string
+  status: string
+  project_id: string
+  org_id: string
+  input_kind: string
+  scope: string
+  rule_set_id: string
+  task_id: string | null
+  task_title: string | null
+  task_subject: string | null
+  run_id: string | null
+  web_run_url: string | null
+  metrics: unknown
+  error: unknown
+  created_at: Date
+  started_at: Date | null
+  finished_at: Date | null
+}
+
+/** Prisma EvalJob（camelCase）→ 对外 snake_case DTO。 */
+export function serializeJob(job: EvalJob): JobDto {
+  return {
+    job_id: job.id,
+    status: job.status,
+    project_id: job.projectId,
+    org_id: job.orgId,
+    input_kind: job.inputKind,
+    scope: job.scope,
+    rule_set_id: job.ruleSetId,
+    task_id: job.taskId,
+    task_title: job.taskTitle,
+    task_subject: job.taskSubject,
+    run_id: job.runId,
+    web_run_url: job.webRunUrl,
+    metrics: job.metrics,
+    error: job.error,
+    created_at: job.createdAt,
+    started_at: job.startedAt,
+    finished_at: job.finishedAt,
+  }
 }
 
 function extOf(filename: string, scope: "single" | "unit"): string {
@@ -243,8 +292,9 @@ export function createEvalJobService(tenant: Tenant) {
     }
   }
 
-  async function get(jobId: string) {
-    return repo.findById(jobId)
+  async function get(jobId: string): Promise<JobDto | null> {
+    const job = await repo.findById(jobId)
+    return job ? serializeJob(job) : null
   }
 
   /** 速览（docs/arch/12 §6.6）：job 维度解析其 run，聚合成 verdict/score + 各项失败原因。 */

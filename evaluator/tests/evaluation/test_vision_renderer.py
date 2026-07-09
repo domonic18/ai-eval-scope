@@ -51,13 +51,15 @@ class _FakeBrowser:
 class _FakePlaywright:
     def __init__(self) -> None:
         self._browser = _FakeBrowser()
+        self.launch_kwargs: dict | None = None
 
     @property
     def chromium(self):
         outer = self
 
         class _Chromium:
-            def launch(self):
+            def launch(self, **kwargs):
+                outer.launch_kwargs = kwargs
                 return outer._browser
 
         return _Chromium()
@@ -67,10 +69,16 @@ class _FakePlaywright:
 
 
 class _FakePlaywrightStarter:
-    """模拟 sync_playwright() 的返回值：调用 .start() 返回 playwright 实例。"""
+    """模拟 sync_playwright() 的返回值：调用 .start() 返回 playwright 实例。
+
+    保留 instance 引用，便于测试断言 launch 收到的参数。
+    """
+
+    def __init__(self) -> None:
+        self.instance = _FakePlaywright()
 
     def start(self) -> _FakePlaywright:
-        return _FakePlaywright()
+        return self.instance
 
 
 def _fake_sync_playwright():
@@ -119,6 +127,28 @@ class TestPlaywrightScreenshotRenderer:
             r.close()
 
         assert len(results) == 1
+
+    def test_launch_uses_container_args(self, tmp_path: Path) -> None:
+        """SCF/容器适配：launch 必须传 --no-sandbox / --disable-dev-shm-usage 等参数。"""
+        md_file = tmp_path / "doc.md"
+        md_file.write_text("# x", encoding="utf-8")
+
+        starter = _fake_sync_playwright()
+        fake_module = MagicMock()
+        fake_module.sync_playwright = lambda: starter
+
+        with patch.dict(sys.modules, {"playwright.sync_api": fake_module}):
+            from agent_eval.evaluation.vision.renderer import (
+                PlaywrightScreenshotRenderer,
+            )
+
+            with PlaywrightScreenshotRenderer() as r:
+                r.render([md_file], out_dir=tmp_path / "out")
+
+        args = starter.instance.launch_kwargs.get("args", [])
+        assert "--disable-dev-shm-usage" in args  # 规避容器 /dev/shm 不足
+        assert "--no-sandbox" in args
+        assert starter.instance.launch_kwargs.get("headless") is True
 
     def test_playwright_not_installed(self, tmp_path: Path) -> None:
         """playwright 未安装时抛 VisionError 含安装提示。"""

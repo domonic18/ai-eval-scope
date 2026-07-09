@@ -14,6 +14,7 @@ from pathlib import Path
 
 import markdown as md_lib
 
+from agent_eval.config import EVALUATOR_DEFAULTS
 from agent_eval.core.exceptions import VisionError
 
 # 内置基础 CSS — 保证不同文档/不同运行间截图可比，含 CJK 字体栈
@@ -37,6 +38,15 @@ img { max-width: 100%; }
 code { background: #f4f4f4; padding: 2px 4px; border-radius: 3px; }
 pre { background: #f4f4f4; padding: 12px; border-radius: 6px; overflow-x: auto; }
 """
+
+# Chromium 启动参数 — 容器/SCF 适配（本地同样安全：仅在无对应资源时无害降级）。
+# --disable-dev-shm-usage 是关键：容器 /dev/shm 通常仅 64MB，full_page 截整页 PNG 会撑爆
+# 共享内存致渲染挂起、超过 screenshot 默认 30s 超时；改用 /tmp 作共享内存规避。
+_CHROMIUM_LAUNCH_ARGS = [
+    "--no-sandbox",  # SCF/容器 root 运行，无 sandbox 命名空间
+    "--disable-dev-shm-usage",  # 改用 /tmp，规避容器共享内存不足
+    "--disable-gpu",  # 无 GPU 环境
+]
 
 
 def _markdown_to_html(md_text: str) -> str:
@@ -118,7 +128,10 @@ class PlaywrightScreenshotRenderer(ScreenshotRenderer):
 
         try:
             self._playwright = sync_playwright().start()
-            self._browser = self._playwright.chromium.launch()
+            self._browser = self._playwright.chromium.launch(
+                headless=True,
+                args=_CHROMIUM_LAUNCH_ARGS,
+            )
         except Exception as e:
             # 最常见原因：浏览器二进制未下载
             raise VisionError(
@@ -150,10 +163,16 @@ class PlaywrightScreenshotRenderer(ScreenshotRenderer):
             try:
                 if src.suffix.lower() in (".md", ".markdown"):
                     html = _markdown_to_html(src.read_text(encoding="utf-8"))
-                    page.set_content(html, wait_until="load")
+                    page.set_content(html, wait_until="domcontentloaded")
                 else:
-                    page.goto(src.resolve().as_uri(), wait_until="load")
-                page.screenshot(path=str(png_path), full_page=True)
+                    # domcontentloaded：不等外部图片/字体等资源，避免无外网的 SCF 环境卡在 load。
+                    page.goto(src.resolve().as_uri(), wait_until="domcontentloaded")
+                page.screenshot(
+                    path=str(png_path),
+                    full_page=True,
+                    timeout=EVALUATOR_DEFAULTS.vision_screenshot_timeout_ms,
+                    animations="disabled",  # 冻结 CSS/JS 动画，避免 full_page 等待动画稳定
+                )
             except Exception as e:
                 raise VisionError(
                     f"渲染截图失败: {src}: {e}",
