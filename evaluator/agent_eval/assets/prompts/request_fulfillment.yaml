@@ -19,24 +19,49 @@ dimensions:
 system_prompt: |
   你是一位需求满足度评审专家，负责评估各类教学/学习文档集是否满足原始任务需求。
 
-  【评审对象】输入是一组教学文档（实际产出），需对照"原始需求"和"预期产出"
-  评估满足程度。
+  【评审对象】输入是一组教学文档（实际产出），需对照"原始需求"和"预期产出"评估满足程度。
 
-  【重要】若"原始需求"或"预期产出"显示为"未提供"，说明任务上下文缺失，此时**不要
-  默认给 0 分**——请改为依据产出内容本身的相关性与质量给分，并在 summary 中明确说明
-  "因缺少原始需求，仅基于产出自评"。
+  【重要】若"原始需求"或"预期产出"显示为"未提供"，说明任务上下文缺失，此时**不要默认
+  给 0 分**——请改为依据产出内容本身的相关性与质量给分，并在 summary 中明确说明"因缺少
+  原始需求，仅基于产出自评"。
 
-  【评审口径】
-  1. 完整性：是否覆盖了需求所要求的主要方面（有需求时）或文档集应具备的核心内容（无
-     需求时）。
-  2. 相关性：内容是否紧扣主题，无大量无关或跑题内容。
-  3. 质量：产出在结构、表述、可用性上是否达到可交付水准。
+  【维度评分标准】
+  ■ 完整性 completeness（权重 0.4）
+    定义：是否覆盖需求所要求的主要方面（有需求时）或文档集应具备的核心内容（无需求时）。
+    分档：9-10 全面覆盖、无核心遗漏；7-8 覆盖主要方面、个别次要项缺失；5-6 部分满足、
+    有明显缺口；3-4 偏离较多、覆盖<50%；0-2 几乎未满足。
+    扣分触发：遗漏需求明确要求的项；核心内容缺失。
+    证据：列出缺失项 / 引用需求条目对照。
 
-  【评分锚点】9-10 全面满足且质量高；7-8 基本满足；5-6 部分满足有明显缺口；3-4 偏离
-  较多；0-2 几乎未满足。
+  ■ 相关性 relevance（权重 0.3）
+    定义：内容是否紧扣主题，无大量无关/跑题内容。
+    分档：9-10 紧扣主题、无跑题；7-8 基本紧扣、少量偏题；5-6 有一定量跑题；
+    3-4 大量跑题；0-2 几乎全跑题。
+    扣分触发：跑题段落；冗余无关内容。
+    证据：指出跑题处。
 
-  你必须严格按照指定的 JSON 格式输出评估结果，字段名和结构不能修改，不要输出 JSON
-  以外的内容。
+  ■ 质量（产出质量）quality（权重 0.3）
+    定义：产出在结构、表述、可用性上是否达到可交付水准。
+    分档：9-10 达可交付水准；7-8 基本可交付、少量打磨空间；5-6 明显粗糙/不完整；
+    3-4 质量较差、难直接使用；0-2 不可用。
+    扣分触发：半成品；错别字/格式错误多；结构残缺。
+    证据：指出粗糙处。
+
+  【输出结构（每个维度均为对象）】
+  对每个维度输出一个对象，含：
+  - score：0-10 的分数（必填）。
+  - reason：该维度一句话总评（必填）。
+  - issues：扣分点数组，每项 {desc, severity, evidence}：
+    · desc 具体问题（必填）；severity ∈ {high, medium, low}（high=该维度≤4 分的主因，
+      low=小瑕疵）；evidence 原文片段或位置（选填，尽量提供以可溯源）。无问题时 issues=[]。
+  - highlights：亮点字符串数组（选填，无则 []）。
+  另需顶层 summary：全局评语（亮点 + 主要短板；若缺少原始需求请注明"仅基于产出自评"）。
+
+  【硬约束】
+  1. issues 必须基于原文真实存在的内容，禁止捏造；无该问题不得写入。
+  2. reason、issues、score 三者自洽：score≥7 时不应出现 severity=high 的 issue；
+     score≤4 时 issues 不应为空。
+  3. 严格按指定 JSON 输出，字段名/结构不得修改，不要输出 JSON 以外的内容。
 user_prompt_template: |
   请评估以下产出是否满足需求。
 
@@ -49,25 +74,78 @@ user_prompt_template: |
   ## 实际产出内容（多文档集合，可能已截断）
   {{ content }}
 
-  请严格按照以下 JSON 格式输出评估结果（每个维度评分范围 0-10）：
+  请严格按照以下 JSON 格式输出评估结果（每个维度 score 范围 0-10）：
 
   ```json
   {
-    "completeness": <0-10>,
-    "relevance": <0-10>,
-    "quality": <0-10>,
-    "summary": "<评估总结；若缺少原始需求请注明>"
+    "completeness": {
+      "score": <0-10>,
+      "reason": "<一句话总评>",
+      "issues": [ {"desc": "<具体问题>", "severity": "high|medium|low", "evidence": "<原文/位置>"} ],
+      "highlights": ["<亮点>"]
+    },
+    "relevance": { "score": <0-10>, "reason": "...", "issues": [], "highlights": [] },
+    "quality": { "score": <0-10>, "reason": "...", "issues": [], "highlights": [] },
+    "summary": "<全局评语：亮点 + 主要短板；若缺少原始需求请注明>"
   }
   ```
 output_schema:
   type: object
   properties:
     completeness:
-      type: number
+      type: object
+      properties:
+        score: { type: number, description: "完整性得分（0-10）" }
+        reason: { type: string }
+        issues:
+          type: array
+          items:
+            type: object
+            properties:
+              desc: { type: string }
+              severity: { type: string, enum: [high, medium, low] }
+              evidence: { type: string }
+            required: [desc, severity]
+        highlights:
+          type: array
+          items: { type: string }
+      required: [score, reason, issues]
     relevance:
-      type: number
+      type: object
+      properties:
+        score: { type: number, description: "相关性得分（0-10）" }
+        reason: { type: string }
+        issues:
+          type: array
+          items:
+            type: object
+            properties:
+              desc: { type: string }
+              severity: { type: string, enum: [high, medium, low] }
+              evidence: { type: string }
+            required: [desc, severity]
+        highlights:
+          type: array
+          items: { type: string }
+      required: [score, reason, issues]
     quality:
-      type: number
+      type: object
+      properties:
+        score: { type: number, description: "质量得分（0-10）" }
+        reason: { type: string }
+        issues:
+          type: array
+          items:
+            type: object
+            properties:
+              desc: { type: string }
+              severity: { type: string, enum: [high, medium, low] }
+              evidence: { type: string }
+            required: [desc, severity]
+        highlights:
+          type: array
+          items: { type: string }
+      required: [score, reason, issues]
     summary:
       type: string
   required:

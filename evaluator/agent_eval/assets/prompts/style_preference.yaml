@@ -19,22 +19,48 @@ dimensions:
 system_prompt: |
   你是一位教育内容风格评审专家，负责评审各类教学文档集的语言与风格。
 
-  【评审对象】输入是一组教学文档。请注意：你读到的是从 HTML 提取的纯文本，
-  视觉排版（配色/卡片）由专门的视觉评估器负责，本项**只评估文本层面**的语言风格、
-  文本组织与语气，不要因为缺少视觉描述而扣分。
+  【评审对象】输入是一组教学文档。请注意：你读到的是从 HTML 提取的纯文本，视觉排版
+  （配色/卡片）由专门的视觉评估器负责，本项**只评估文本层面**的语言风格、文本组织与
+  语气，不要因为缺少视觉描述而扣分。
 
-  【评审口径】
-  1. 语言风格：用词是否贴合目标学习者（如特定学段学生），是否清晰、生动、可理解，
-     避免过于学术或成人化的表述。
-  2. 排版风格（文本组织）：标题层级、列表、分层结构（基础/进阶/挑战）等文本组织是否
-     清晰、一致、便于阅读。
-  3. 语气风格：是否具有引导性、鼓励性、恰当的亲和力，符合教学/导学场景。
+  【维度评分标准】
+  ■ 语言风格 language_style（权重 0.4）
+    定义：用词是否贴合目标学习者（如特定学段学生），是否清晰、生动、可理解。
+    分档：9-10 贴合学段、清晰生动；7-8 整体贴合、偶有学术/成人化；5-6 部分表述不适配
+    学段；3-4 大量学术/成人化、学习者难懂；0-2 完全不适配。
+    扣分触发：生僻词无解释；长难句；学术腔。
+    证据：引用不适配的表述。
 
-  【评分锚点】9-10 语言贴切且组织精良；7-8 良好；5-6 合格但偶有不通畅；3-4 较弱；
-  0-2 不适合目标受众。
+  ■ 排版风格（文本组织）formatting（权重 0.3）
+    定义：标题层级、列表、分层结构（基础/进阶/挑战）等文本组织是否清晰、一致。
+    分档：9-10 标题层级清晰、列表/分层一致、便于阅读；7-8 整体清晰、偶有不一致；
+    5-6 层级混乱或缺乏结构标记；3-4 基本无排版结构；0-2 一团文本。
+    扣分触发：标题层级缺失/混乱；无列表或分层；信息密度过高。
+    证据：指出排版混乱处。
 
-  你必须严格按照指定的 JSON 格式输出评估结果，字段名和结构不能修改，不要输出 JSON
-  以外的内容。
+  ■ 语气风格 tone（权重 0.3）
+    定义：是否具有引导性、鼓励性、恰当亲和力，符合教学/导学场景。
+    分档：9-10 引导/鼓励/亲和恰当；7-8 整体得体、偶有生硬；5-6 中性偏冷；
+    3-4 生硬/说教；0-2 不友好。
+    扣分触发：说教腔；缺乏鼓励；冷漠。
+    证据：引用语气问题。
+
+  【输出结构（每个维度均为对象）】
+  对每个维度输出一个对象，含：
+  - score：0-10 的分数（必填）。
+  - reason：该维度一句话总评（必填）。
+  - issues：扣分点数组，每项 {desc, severity, evidence}：
+    · desc 具体问题（必填）；severity ∈ {high, medium, low}（high=该维度≤4 分的主因，
+      low=小瑕疵）；evidence 原文片段或位置（选填，尽量提供以可溯源）。无问题时 issues=[]。
+  - highlights：亮点字符串数组（选填，无则 []）。
+  另需顶层 summary：全局评语（亮点 + 主要短板）。
+
+  【硬约束】
+  1. issues 必须基于原文真实存在的内容，禁止捏造；无该问题不得写入。
+  2. reason、issues、score 三者自洽：score≥7 时不应出现 severity=high 的 issue；
+     score≤4 时 issues 不应为空。
+  3. 仅评估文本层面，不得因缺少视觉描述而扣分。
+  4. 严格按指定 JSON 输出，字段名/结构不得修改，不要输出 JSON 以外的内容。
 user_prompt_template: |
   请评估以下教学文档集的风格偏好（仅文本层面）。
 
@@ -44,25 +70,78 @@ user_prompt_template: |
   ## 文档内容（多文档集合，可能已截断）
   {{ content }}
 
-  请严格按照以下 JSON 格式输出评估结果（每个维度评分范围 0-10）：
+  请严格按照以下 JSON 格式输出评估结果（每个维度 score 范围 0-10）：
 
   ```json
   {
-    "language_style": <0-10>,
-    "formatting": <0-10>,
-    "tone": <0-10>,
-    "summary": "<评估总结>"
+    "language_style": {
+      "score": <0-10>,
+      "reason": "<一句话总评>",
+      "issues": [ {"desc": "<具体问题>", "severity": "high|medium|low", "evidence": "<原文/位置>"} ],
+      "highlights": ["<亮点>"]
+    },
+    "formatting": { "score": <0-10>, "reason": "...", "issues": [], "highlights": [] },
+    "tone": { "score": <0-10>, "reason": "...", "issues": [], "highlights": [] },
+    "summary": "<全局评语：亮点 + 主要短板>"
   }
   ```
 output_schema:
   type: object
   properties:
     language_style:
-      type: number
+      type: object
+      properties:
+        score: { type: number, description: "语言风格得分（0-10）" }
+        reason: { type: string }
+        issues:
+          type: array
+          items:
+            type: object
+            properties:
+              desc: { type: string }
+              severity: { type: string, enum: [high, medium, low] }
+              evidence: { type: string }
+            required: [desc, severity]
+        highlights:
+          type: array
+          items: { type: string }
+      required: [score, reason, issues]
     formatting:
-      type: number
+      type: object
+      properties:
+        score: { type: number, description: "排版风格（文本组织）得分（0-10）" }
+        reason: { type: string }
+        issues:
+          type: array
+          items:
+            type: object
+            properties:
+              desc: { type: string }
+              severity: { type: string, enum: [high, medium, low] }
+              evidence: { type: string }
+            required: [desc, severity]
+        highlights:
+          type: array
+          items: { type: string }
+      required: [score, reason, issues]
     tone:
-      type: number
+      type: object
+      properties:
+        score: { type: number, description: "语气风格得分（0-10）" }
+        reason: { type: string }
+        issues:
+          type: array
+          items:
+            type: object
+            properties:
+              desc: { type: string }
+              severity: { type: string, enum: [high, medium, low] }
+              evidence: { type: string }
+            required: [desc, severity]
+        highlights:
+          type: array
+          items: { type: string }
+      required: [score, reason, issues]
     summary:
       type: string
   required:
