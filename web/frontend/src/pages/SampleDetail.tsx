@@ -197,6 +197,7 @@ function ConstraintItem({ c }: { c: ConstraintRow }) {
       {open && (
         <div className="space-y-2 border-t px-3 py-2 text-xs">
           {c.reason && <div className="text-muted-foreground">{c.reason}</div>}
+          <DimensionBreakdown details={c.details} />
           {constraintErrors(c.details).length > 0 && (
             <div className="rounded border border-red-500/20 bg-red-500/5 p-2">
               <div className="mb-1 font-medium text-red-400">发现的问题</div>
@@ -224,6 +225,77 @@ function ConstraintItem({ c }: { c: ConstraintRow }) {
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+/** 质量（soft/preference）约束的逐维度评分 + 扣分原因渲染。
+ *  读 details.dimensions[]（每项含 score/band/reason/issues/highlights），由评估器
+ *  从 LLM 结构化输出透传（docs/arch/14 §五）。硬约束无此结构 → 不渲染。 */
+interface DimensionIssue {
+  desc: string
+  severity?: "high" | "medium" | "low"
+  evidence?: string
+}
+interface DimensionDetail {
+  id?: string
+  name?: string
+  score?: number
+  band?: string
+  confidence?: string
+  reason?: string
+  issues?: DimensionIssue[]
+  highlights?: string[]
+}
+
+function bandTone(band: string): string {
+  if (band === "优秀" || band === "良好") return "text-emerald-400"
+  if (band === "合格") return "text-amber-400"
+  return "text-red-400"
+}
+function severityTone(sev?: string): string {
+  if (sev === "high") return "text-red-400"
+  if (sev === "medium") return "text-amber-400"
+  return "text-muted-foreground"
+}
+
+function DimensionBreakdown({ details }: { details: Record<string, unknown> | null }) {
+  const dims = details?.dimensions
+  if (!Array.isArray(dims) || dims.length === 0) return null
+  return (
+    <div className="space-y-1.5">
+      {(dims as DimensionDetail[]).map((d, i) => {
+        const issues = Array.isArray(d.issues) ? d.issues : []
+        const highlights = Array.isArray(d.highlights) ? d.highlights : []
+        return (
+          <div key={d.id ?? i} className="rounded border border-border bg-background/40 p-2">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+              <span className="font-medium text-foreground">{d.name ?? d.id}</span>
+              <span className="font-mono tabular-nums text-muted-foreground">
+                {d.score != null ? d.score.toFixed(1) : "—"}/10
+              </span>
+              {d.band && <span className={`font-medium ${bandTone(d.band)}`}>{d.band}</span>}
+              {d.confidence === "low" && (
+                <span className="text-[10px] text-amber-400">置信度低</span>
+              )}
+            </div>
+            {d.reason && <div className="mt-1 text-muted-foreground">{d.reason}</div>}
+            {issues.length > 0 && (
+              <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                {issues.map((it, j) => (
+                  <li key={j}>
+                    <span className={severityTone(it.severity)}>{it.desc}</span>
+                    {it.evidence && <span className="text-muted-foreground"> — {it.evidence}</span>}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {highlights.length > 0 && (
+              <div className="mt-1 text-emerald-400">亮点：{highlights.join("；")}</div>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }

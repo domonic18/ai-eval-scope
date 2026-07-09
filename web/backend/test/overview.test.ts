@@ -64,7 +64,16 @@ describe("buildJobOverview (pure)", () => {
           sCommon: 0,
           sSoft: 0.5,
           sPref: 0.4,
-          constraintResults: [{ name: "格式门禁", reason: "缺少 <html> 根标签", tier: "hard_gate" }],
+          constraintResults: [
+            {
+              name: "格式门禁",
+              reason: "缺少 <html> 根标签",
+              tier: "hard_gate",
+              details: {
+                dimensions: [{ issues: [{ desc: "缺 <html> 根标签", severity: "high" }] }],
+              },
+            },
+          ],
         },
         {
           id: "s2",
@@ -89,7 +98,13 @@ describe("buildJobOverview (pure)", () => {
       external_sample_id: "A",
       score: 0.1,
       passed: false,
-      failures: [{ name: "格式门禁", reason: "缺少 <html> 根标签" }],
+      failures: [
+        {
+          name: "格式门禁",
+          reason: "缺少 <html> 根标签",
+          top_issues: ["缺 <html> 根标签"], // 从 details.dimensions[].issues 聚合 high
+        },
+      ],
     })
     expect(ov.items[1]!.failures).toEqual([])
   })
