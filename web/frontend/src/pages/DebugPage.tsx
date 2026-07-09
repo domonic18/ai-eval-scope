@@ -24,7 +24,7 @@ import {
 import { useCrumbs } from "../components/AppShell"
 import { FilePicker } from "../components/FilePicker"
 import { useToast } from "../components/toast"
-import { StatCard, StatusBadge } from "../components/shared"
+import { StatusBadge } from "../components/shared"
 import { CopyIcon, ExternalLink, HelpCircle, Terminal, Trash2 } from "lucide-react"
 import type { DebugJobStatus } from "../types"
 
@@ -262,7 +262,7 @@ export default function DebugPage() {
     <TooltipProvider>
       <div className="flex h-[calc(100vh-3.5rem)]">
         {/* 左侧：参数 + 结果 */}
-        <div className="w-96 shrink-0 space-y-4 overflow-y-auto border-r p-4">
+        <div className="w-[30rem] shrink-0 space-y-4 overflow-y-auto border-r p-4">
           <div>
             <h1 className="text-lg font-semibold tracking-tight">调试台</h1>
             <p className="mt-0.5 text-xs text-muted-foreground">
@@ -386,10 +386,17 @@ export default function DebugPage() {
               <CardContent className="space-y-3">
                 <div className="font-mono text-xs text-muted-foreground">job_id: {job.job_id}</div>
                 {job.status === "completed" && metrics && (
-                  <div className="grid grid-cols-3 gap-2">
-                    <StatCard label="DR" value={fmt3(metrics.DR)} />
-                    <StatCard label="CPR" value={fmt3(metrics.CPR)} />
-                    <StatCard label="Reward" value={fmt3(metrics.avg_reward)} />
+                  <div className="overflow-hidden rounded-md border">
+                    <div className="grid grid-cols-3 divide-x divide-border">
+                      <MetricCell label="DR" value={fmt3(metrics.DR)} />
+                      <MetricCell label="CPR" value={fmt3(metrics.CPR)} />
+                      <MetricCell label="Reward" value={fmt3(metrics.avg_reward)} />
+                    </div>
+                    <div className="grid grid-cols-3 divide-x divide-border border-t">
+                      <MetricCell label="CondR" value={fmt3(metrics.condR)} />
+                      <MetricCell label="Soft" value={fmt3(metrics.avg_soft)} />
+                      <MetricCell label="Pref" value={fmt3(metrics.avg_pref)} />
+                    </div>
                   </div>
                 )}
                 {job.web_run_url && (
@@ -483,4 +490,16 @@ export default function DebugPage() {
 
 function fmt3(n?: number): string {
   return n == null ? "—" : n.toFixed(3)
+}
+
+/** 紧凑指标格：小号标签 + 中等字号数值（tabular-nums 对齐，不溢出）。 */
+function MetricCell({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="px-2 py-1.5 text-center">
+      <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-0.5 text-sm font-semibold tabular-nums">{value}</div>
+    </div>
+  )
 }
