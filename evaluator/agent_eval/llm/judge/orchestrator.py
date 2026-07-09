@@ -60,6 +60,17 @@ def _coerce_score(value: Any) -> float:
     raise LLMError(f"维度分值类型非法（{type(value).__name__}）: {value!r}")
 
 
+def _extract_dim_detail(value: Any) -> dict[str, Any]:
+    """从 LLM 维度对象提取可解释性字段 {reason, issues, highlights}。
+
+    结构化提示词每维返回 {"score", "reason", "issues", "highlights"}；此处取出除 score
+    外的字段（score 已由 _coerce_score 单独提取并走中位数）。纯数值提示词返回 {}。
+    """
+    if not isinstance(value, dict):
+        return {}
+    return {k: value[k] for k in ("reason", "issues", "highlights") if k in value}
+
+
 class JudgeOrchestrator:
     """LLM Judge 调用编排器。
 
@@ -241,6 +252,12 @@ class JudgeOrchestrator:
             for key in parsed:
                 if key not in result:
                     result[key] = parsed[key]
+            # 逐维度可解释性详情（reason/issues/highlights）随 result 搭便车到 all_samples
+            # （非维度键，不影响 stability 的中位数计算），供 JudgeRecord 取末样本透传
+            result["_dim_details"] = {
+                dim.dim_id: _extract_dim_detail(parsed.get(dim.dim_id))
+                for dim in template.dimensions
+            }
             return result
 
         # 5. 稳定性控制 — 多次采样（采样次数由模板指定，视觉模板可设 num_samples=1）
@@ -254,6 +271,7 @@ class JudgeOrchestrator:
         timestamp = datetime.now(tz=UTC).isoformat()
         last_parsed = stable_result.all_samples[-1] if stable_result.all_samples else {}
         summary_text = str(last_parsed.get("summary", ""))
+        dim_details = last_parsed.get("_dim_details", {})
         judge_id = (
             f"judge_{constraint_id}_{datetime.now(tz=UTC).strftime(JUDGE_ID_DATETIME_FORMAT)}"
         )
@@ -276,6 +294,7 @@ class JudgeOrchestrator:
             confidence=stable_result.confidence,
             num_samples=stable_result.num_samples,
             summary=summary_text,
+            dim_details=dim_details,
             total_duration_ms=total_duration_ms,
             token_usage=total_tokens,
             timestamp=timestamp,
