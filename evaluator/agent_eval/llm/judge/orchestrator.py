@@ -15,6 +15,7 @@ from typing import Any
 import structlog
 
 from agent_eval.config import JUDGE_ID_DATETIME_FORMAT
+from agent_eval.core.exceptions import LLMError
 from agent_eval.llm.judge.recorder import JudgeRecorder
 from agent_eval.llm.judge.stability import StabilityController
 from agent_eval.llm.judge.structured_output import StructuredOutputParser
@@ -39,29 +40,24 @@ def _hash_images(images: list[str]) -> list[str]:
 
 
 def _coerce_score(value: Any) -> float:
-    """把 LLM 返回的维度分值规约为 float。
+    """从 LLM 维度输出严格提取分数（float），不静默兜底。
 
-    模板要求维度为 number，但部分 LLM（尤其多模态模型在低内容页上）会自作主张返回
-    嵌套对象 `{"score": 8, "issues": [...]}` 或字符串 "8"。此处统一容错：
-    - number → float
-    - dict → 取其中的 score/value/rating/分 键（递归一层），缺失则 0.0
-    - str → 提取首个数字
-    - 其他 → 0.0
-    规约后裁剪到 [0, 10]（与模板 score_range 对齐）。
+    接受两种形态（由 output_schema 校验保证）：
+    - number（纯数值提示词）→ float
+    - 对象 {"score": <number>, ...}（结构化提示词）→ 取 score
+
+    bool / str / None / 对象缺 score 等非法形态一律抛 LLMError，便于调试定位，
+    不再回退到 0.0 或正则提取字符串。
     """
     if isinstance(value, bool):  # bool 是 int 子类，先排除
-        return 0.0
+        raise LLMError(f"维度分值类型非法（bool）: {value}")
     if isinstance(value, (int, float)):
         return float(value)
     if isinstance(value, dict):
-        for k in ("score", "value", "rating", "分", "分数", "得分"):
-            if k in value:
-                return _coerce_score(value[k])
-        return 0.0
-    if isinstance(value, str):
-        m = re.search(r"-?\d+(?:\.\d+)?", value)
-        return float(m.group()) if m else 0.0
-    return 0.0
+        if "score" not in value:
+            raise LLMError(f"维度对象缺少 score 字段: {value}")
+        return _coerce_score(value["score"])
+    raise LLMError(f"维度分值类型非法（{type(value).__name__}）: {value!r}")
 
 
 class JudgeOrchestrator:
@@ -232,9 +228,15 @@ class JudgeOrchestrator:
             # 解析结构化输出
             parsed = self.parser.parse(response.content, template.output_schema)
             # 确保维度分数为 float，同时保留 summary 等非维度字段
+            # 缺维度不再静默兜底 0.0 —— schema 已 required，缺失即视为异常，抛错定位
             result: dict[str, Any] = {}
             for dim in template.dimensions:
-                result[dim.dim_id] = _coerce_score(parsed.get(dim.dim_id, 0.0))
+                if dim.dim_id not in parsed:
+                    raise LLMError(
+                        f"LLM 输出缺少维度 {dim.dim_id}",
+                        details={"dim_id": dim.dim_id, "parsed_keys": list(parsed.keys())},
+                    )
+                result[dim.dim_id] = _coerce_score(parsed[dim.dim_id])
             # 保留 summary 等非维度字段（用于可解释性）
             for key in parsed:
                 if key not in result:
