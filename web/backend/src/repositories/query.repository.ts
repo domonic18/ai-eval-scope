@@ -257,7 +257,7 @@ class QueryRepository extends BaseRepository {
           include: {
             constraintResults: {
               where: { passed: false },
-              select: { name: true, reason: true, tier: true },
+              select: { name: true, reason: true, tier: true, details: true },
               orderBy: [{ tier: "asc" }, { name: "asc" }],
             },
           },

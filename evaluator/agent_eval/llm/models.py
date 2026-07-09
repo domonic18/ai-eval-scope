@@ -119,6 +119,8 @@ class JudgeRecord:
     confidence: dict[str, str] = field(default_factory=dict)  # dim_id -> "high" | "low"
     # LLM 评价总结（可解释性说明）
     summary: str = ""
+    # 逐维度可解释性详情：dim_id -> {reason, issues[], highlights[]}（取自末样本）
+    dim_details: dict[str, Any] = field(default_factory=dict)
     # 统计
     num_samples: int = field(default_factory=lambda: JUDGE_RECORD_DEFAULTS.num_samples)
     total_duration_ms: float = 0.0
@@ -144,6 +146,7 @@ class JudgeRecord:
             "confidence": self.confidence,
             "num_samples": self.num_samples,
             "summary": self.summary,
+            "dim_details": self.dim_details,
             "total_duration_ms": self.total_duration_ms,
             "timestamp": self.timestamp,
             "image_hashes": self.image_hashes,

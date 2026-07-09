@@ -32,6 +32,19 @@ from agent_eval.evaluation.text_utils import get_output_dir as _get_output_dir
 # ─── LLM Judge 评估器 ───
 
 
+def _band_of(score: float) -> str:
+    """0-10 维度分 → 分档标签（与提示词评分锚点一致；band 由分派生，不让 LLM 给）。"""
+    if score >= 9:
+        return "优秀"
+    if score >= 7:
+        return "良好"
+    if score >= 5:
+        return "合格"
+    if score >= 3:
+        return "不足"
+    return "严重不足"
+
+
 class BaseLLMJudgeEvaluator(BaseEvaluator):
     """LLM Judge 评估器基类 — 处理 LLM 评估的通用流程。
 
@@ -177,15 +190,19 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
         if record and hasattr(record, "summary"):
             details["summary"] = record.summary
         if template and template.dimensions:
+            dim_details = record.dim_details if record and hasattr(record, "dim_details") else {}
             details["dimensions"] = [
                 {
                     "id": dim.dim_id,
                     "name": dim.name,
                     "score": scores.get(dim.dim_id, 0.0),
                     "weight": dim.weight,
+                    "band": _band_of(scores.get(dim.dim_id, 0.0)),
                     "confidence": (
                         record.confidence.get(dim.dim_id, "unknown") if record else "unknown"
                     ),
+                    # 透传该维度可解释性字段（reason/issues/highlights）；旧提示词无则缺省
+                    **(dim_details.get(dim.dim_id, {})),
                 }
                 for dim in template.dimensions
             ]

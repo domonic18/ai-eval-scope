@@ -109,6 +109,7 @@ function buildObjectKey(projectId: string, jobId: string, mat: MaterializedInput
 export interface OverviewFailure {
   name: string
   reason: string
+  top_issues?: string[]
 }
 export interface OverviewItem {
   external_sample_id: string
@@ -139,7 +140,7 @@ type OverviewSample = {
   sCommon: number
   sSoft: number
   sPref: number
-  constraintResults: { name: string; reason: string; tier: string }[]
+  constraintResults: { name: string; reason: string; tier: string; details: unknown }[]
 }
 type OverviewRun = {
   externalRunId: string
@@ -165,6 +166,27 @@ function thresholdOf(t: unknown, keys: string[], fallback: number): number {
 
 function isPassStatus(status: string): boolean {
   return status === "pass" || status === "passed"
+}
+
+/**
+ * 从约束 details.dimensions[].issues 提取关键扣分点（desc），用于速览。
+ * 仅取 high/medium（low 视为小瑕疵不进速览），按 high→medium 排序，最多 3 条。
+ * details 形态见 docs/arch/14 §五（质量约束有 dimensions；硬约束无则返回 []）。
+ */
+function extractTopIssues(details: unknown): string[] {
+  const d = details as { dimensions?: { issues?: { desc: string; severity?: string }[] }[] } | null
+  const dims = d?.dimensions
+  if (!Array.isArray(dims)) return []
+  const all: { desc: string; severity?: string }[] = []
+  for (const dim of dims) {
+    if (Array.isArray(dim.issues)) all.push(...dim.issues)
+  }
+  const order = (sev?: string): number => (sev === "high" ? 0 : sev === "medium" ? 1 : 2)
+  return all
+    .filter((it) => it.severity !== "low")
+    .sort((a, b) => order(a.severity) - order(b.severity))
+    .slice(0, 3)
+    .map((it) => it.desc)
 }
 
 /**
@@ -214,7 +236,11 @@ export function buildJobOverview(
       external_sample_id: s.externalSampleId,
       score: s.reward,
       passed: isPassStatus(s.status),
-      failures: s.constraintResults.map((c) => ({ name: c.name, reason: c.reason })),
+      failures: s.constraintResults.map((c) => ({
+        name: c.name,
+        reason: c.reason,
+        top_issues: extractTopIssues(c.details),
+      })),
     })),
   }
 }

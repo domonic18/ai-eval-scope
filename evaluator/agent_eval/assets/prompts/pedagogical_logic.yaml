@@ -24,20 +24,48 @@ system_prompt: |
   设计来评估，而非孤立的页面。若内容明显为节选（标注了"已截断"），请基于可见部分评估，
   并在 summary 中注明评估范围受限。
 
-  【评审口径】
-  1. 结构完整性：这套文档是否覆盖了教学设计应有的主要环节（如目标/导入 → 内容展开
-     → 练习/示例 → 总结/评价）。不必每篇都齐全，但作为一个集合应能支撑完整的教学
-     流程。
-  2. 知识递进：认知层次的编排是否符合"由浅入深、由具体到抽象"的规律，是否存在断层
-     或跳跃。
-  3. 互动设计：是否设计了有效的学习者参与环节（探究任务、分层挑战、协作、自评等），
-     而非单向信息呈现。
+  【维度评分标准】
+  ■ 结构完整性 structure（权重 0.4）
+    定义：是否覆盖教学设计应有的主要环节（目标/导入 → 内容展开 → 练习/示例 → 总结/
+    评价），并能支撑完整教学流程。
+    分档：9-10 完整覆盖全环节、承转自然；7-8 覆盖≥4 环节、个别偏弱但流程可支撑；
+    5-6 缺 1-2 个关键环节或环节间断层/缺衔接；3-4 仅内容堆砌、导入/练习/总结缺≥3 项；
+    0-2 无教学设计结构、纯文本罗列。
+    扣分触发：缺总结/评价；无导入或目标；练习与内容脱节；环节断裂无过渡。
+    证据：指出缺失环节名 / 引用衔接处原文。
 
-  【评分锚点】9-10 优秀（环节齐备且设计精当）；7-8 良好；5-6 合格但有明显短板；
-  3-4 不足；0-2 严重缺失。依据整体表现给分，不要因单篇瑕疵过度压低集合分。
+  ■ 知识递进 progression（权重 0.3）
+    定义：认知层次编排是否符合"由浅入深、由具体到抽象"的规律。
+    分档：9-10 清晰阶梯、前后铺垫呼应、无断层；7-8 整体合理、局部跳跃略大但可理解；
+    5-6 存在明显认知跳跃/难度断层；3-4 编排混乱、难度反复横跳；0-2 无递进逻辑、
+    知识点随机堆放。
+    扣分触发：概念先于其前置知识出现；抽象内容无具体示例铺垫；难度断崖。
+    证据：指出跳跃发生在哪两个知识点之间。
 
-  你必须严格按照指定的 JSON 格式输出评估结果，字段名和结构不能修改，不要输出 JSON
-  以外的内容。
+  ■ 互动设计 engagement（权重 0.3）
+    定义：是否设计了有效的学习者参与环节（探究/分层/协作/自评等）。
+    分档：9-10 多元有效参与且与目标匹配；7-8 有互动但形式较单一（如仅问答）；
+    5-6 偶有互动但流于形式（"思考一下"无具体任务）；3-4 基本单向信息呈现；
+    0-2 完全单向灌输。
+    扣分触发：互动与目标无关；一刀切无分层；伪互动。
+    证据：引用互动任务或指出其缺失。
+
+  【输出结构（每个维度均为对象）】
+  对每个维度输出一个对象，含：
+  - score：0-10 的分数（必填）。
+  - reason：该维度一句话总评（必填）。
+  - issues：扣分点数组，每项 {desc, severity, evidence}：
+    · desc 具体问题（必填）；severity ∈ {high, medium, low}（high=该维度≤4 分的主因，
+      low=小瑕疵）；evidence 原文片段或位置（选填，尽量提供以可溯源）。无问题时 issues=[]。
+  - highlights：亮点字符串数组（选填，无则 []）。
+  另需顶层 summary：全局评语（亮点 + 主要短板）。
+
+  【硬约束】
+  1. issues 必须基于原文真实存在的内容，禁止捏造；无该问题不得写入。
+  2. reason、issues、score 三者自洽：score≥7 时不应出现 severity=high 的 issue；
+     score≤4 时 issues 不应为空。
+  3. 依据整体表现给分，不要因单篇瑕疵过度压低集合分。
+  4. 严格按指定 JSON 输出，字段名/结构不得修改，不要输出 JSON 以外的内容。
 user_prompt_template: |
   请评估以下教学文档集的教学逻辑质量。
 
@@ -50,31 +78,81 @@ user_prompt_template: |
   ## 文档内容（可能为多文档集合，或因长度受限已截断）
   {{ content }}
 
-  请严格按照以下 JSON 格式输出评估结果（每个维度评分范围 0-10）：
+  请严格按照以下 JSON 格式输出评估结果（每个维度 score 范围 0-10）：
 
   ```json
   {
-    "structure": <0-10>,
-    "progression": <0-10>,
-    "engagement": <0-10>,
-    "summary": "<评估总结：指出亮点与主要短板>"
+    "structure": {
+      "score": <0-10>,
+      "reason": "<一句话总评>",
+      "issues": [ {"desc": "<具体问题>", "severity": "high|medium|low", "evidence": "<原文/位置>"} ],
+      "highlights": ["<亮点>"]
+    },
+    "progression": { "score": <0-10>, "reason": "...", "issues": [], "highlights": [] },
+    "engagement": { "score": <0-10>, "reason": "...", "issues": [], "highlights": [] },
+    "summary": "<全局评语：亮点 + 主要短板>"
   }
   ```
 output_schema:
   type: object
   properties:
     structure:
-      type: number
-      description: 结构完整性得分（0-10）
+      type: object
+      properties:
+        score: { type: number, description: "结构完整性得分（0-10）" }
+        reason: { type: string, description: "该维度一句话总评" }
+        issues:
+          type: array
+          items:
+            type: object
+            properties:
+              desc: { type: string }
+              severity: { type: string, enum: [high, medium, low] }
+              evidence: { type: string }
+            required: [desc, severity]
+        highlights:
+          type: array
+          items: { type: string }
+      required: [score, reason, issues]
     progression:
-      type: number
-      description: 知识递进得分（0-10）
+      type: object
+      properties:
+        score: { type: number, description: "知识递进得分（0-10）" }
+        reason: { type: string }
+        issues:
+          type: array
+          items:
+            type: object
+            properties:
+              desc: { type: string }
+              severity: { type: string, enum: [high, medium, low] }
+              evidence: { type: string }
+            required: [desc, severity]
+        highlights:
+          type: array
+          items: { type: string }
+      required: [score, reason, issues]
     engagement:
-      type: number
-      description: 互动设计得分（0-10）
+      type: object
+      properties:
+        score: { type: number, description: "互动设计得分（0-10）" }
+        reason: { type: string }
+        issues:
+          type: array
+          items:
+            type: object
+            properties:
+              desc: { type: string }
+              severity: { type: string, enum: [high, medium, low] }
+              evidence: { type: string }
+            required: [desc, severity]
+        highlights:
+          type: array
+          items: { type: string }
+      required: [score, reason, issues]
     summary:
       type: string
-      description: 简要评语
+      description: "全局评语：亮点 + 主要短板"
   required:
     - structure
     - progression
