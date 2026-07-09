@@ -308,10 +308,10 @@ prompt YAML(assets/prompts/*.yaml) → orchestrator.judge → _coerce_score【�
    - `user_prompt_template`：JSON 示例改为对象结构。
 
 2. **`agent_eval/llm/judge/orchestrator.py`**（`_coerce_score` + `single_judge` + JudgeRecord 透传）
-   - 保留 `_coerce_score` 提取 `score`（number）用于稳定性中位数（不改其行为）。
-   - **新增**：`single_judge` 中对每个维度，若 LLM 返回 dict，则把 `{reason, issues, highlights}` 收集到 `dim_details[dim_id]`（per sample），与 `scores` 并行；非 dict 时 `dim_details[dim_id]={}`。
-   - 把 `dim_details`（取**中位数样本**对应那次；temperature=0 下三样本近似一致，取最后一次亦可）写入 `JudgeRecord`（`llm/models.py:100-161` 增字段 `dim_details` + `to_dict`），随 `evidence/*.json` 持久化。
-   - 兼容：旧提示词返回裸 number → `dim_details` 为空 → 下游 details 维持旧 5 字段形态。
+   - `_coerce_score` 改为**严格解析**（仅接受 `number` 与 `{"score": number, ...}`；bool/str/None/对象缺 score 等非法形态一律抛 `LLMError`，不再静默兜底 0.0 或正则提取字符串），便于调试定位；`single_judge` 缺维度同样抛错（schema 已 required）。
+   - **新增**：`single_judge` 中对每个维度，若 LLM 返回 dict，则把 `{reason, issues, highlights}` 收集到 `dim_details[dim_id]`（per sample，经 `_extract_dim_detail`），与 `scores` 并行；纯数值维度 `dim_details[dim_id]={}`。
+   - 把 `dim_details`（取末样本；temperature=0 下三样本近似一致）写入 `JudgeRecord`（`llm/models.py` 增字段 `dim_details` + `to_dict`/`from_dict`），随 `evidence/*.json` 持久化。
+   - 兼容：纯数值提示词的维度 → `dim_details` 为空 → 下游 details 维持旧形态（number 仍被严格解析接受）。
 
 3. **`agent_eval/evaluation/evaluators/quality_evaluators.py:170-191`**（组装 details）
    - `details["dimensions"][i]` 增补 `reason/issues/highlights/band`（band 由 score 派生），取自 `record.dim_details.get(dim_id, {})`。
@@ -370,3 +370,4 @@ prompt YAML(assets/prompts/*.yaml) → orchestrator.judge → _coerce_score【�
 | 版本 | 日期 | 说明 |
 |------|------|------|
 | v1.0 | 2026-07-09 | 初稿：5 个质量评估器（soft×2 + pref×3）的逐维度细化评分标准（分档行为 + 扣分触发 + 证据要求）；结构化逐项输出 schema（`{score, reason, issues[], highlights[]}`）；产出端 3 处 + 展示端 2 处改动清单；兼容性与逐评估器灰度落地顺序、验证。 |
+| v1.1 | 2026-07-09 | 实施同步：`_coerce_score` 改严格解析（去兼容兜底，非法形态抛 `LLMError`，§五.1.2 更新）；`dim_details` 透传落地（orchestrator `_extract_dim_detail` → JudgeRecord → quality_evaluators details.dimensions[].band/issues/highlights）；前端 `DimensionBreakdown` + 速览 `top_issues`；补单测（`_coerce_score` / `_extract_dim_detail` / quality details 组装）；真实 LLM 跑评 + 前端实地渲染验证通过。 |
