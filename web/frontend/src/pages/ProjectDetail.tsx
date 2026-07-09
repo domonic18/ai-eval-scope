@@ -39,6 +39,7 @@ import {
 import { useCrumbs } from "../components/AppShell"
 import { useToast } from "../components/toast"
 import { DataTable, Page, PageHead, SemPill, StatusBadge, type Column } from "../components/shared"
+import { CodeBlock } from "@/components/CodeBlock"
 import { Download, Plus, Search, Trash2 } from "lucide-react"
 
 interface Project {
@@ -584,6 +585,13 @@ AGENT_EVAL_HOST=https://app.evalscope.io
 AGENT_EVAL_API_KEY=${snippetKey}••••
 AGENT_EVAL_PROJECT=${slug}`
 
+  const activeKey = keys.find((k) => !k.revokedAt)
+  const PLACEHOLDER_KEY = "<YOUR_API_KEY>"
+  const mcpKey = issued?.token ?? PLACEHOLDER_KEY
+  const serverUrl = `${window.location.origin}/api/v1/mcp`
+  const mcpConfigs = buildMcpConfigs(serverUrl, mcpKey)
+  const hasActiveKey = !!activeKey
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -643,6 +651,37 @@ AGENT_EVAL_PROJECT=${slug}`
           ResultSink 会在评估结束后自动以 Bearer Key 上报运行、样本、约束结论与制品文件。
         </p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">MCP 客户端配置</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            任意支持 Streamable HTTP 的 MCP 客户端（Claude Code / Cursor / Windsurf 等）可直接接入本项目。
+          </p>
+          <CopyRow label="Server URL" value={serverUrl} onCopy={() => toast.success("已复制 Server URL")} />
+          <div className="space-y-3">
+            <CodeBlock title="Claude Desktop — claude_desktop_config.json" code={mcpConfigs.claudeDesktop} />
+            <CodeBlock title="Cherry Studio" code={mcpConfigs.cherryStudio} />
+            <CodeBlock title="通用 / cURL 测试" code={mcpConfigs.generic} />
+          </div>
+          {!hasActiveKey ? (
+            <div className="rounded-md border border-yellow-500/40 bg-yellow-500/5 p-3 text-xs text-yellow-200">
+              ⚠️ 请先在上方创建 API Key，并将样例中的 <code className="font-mono">&lt;YOUR_API_KEY&gt;</code>{" "}
+              替换为实际 Key。
+            </div>
+          ) : issued ? (
+            <div className="rounded-md border border-green-500/40 bg-green-500/5 p-3 text-xs text-green-200">
+              ✅ API Key 已填入下方样例，关闭弹窗后将恢复为 <code className="font-mono">&lt;YOUR_API_KEY&gt;</code> 占位符。
+            </div>
+          ) : (
+            <div className="rounded-md border border-yellow-500/40 bg-yellow-500/5 p-3 text-xs text-yellow-200">
+              ⚠️ 下方样例中的 <code className="font-mono">&lt;YOUR_API_KEY&gt;</code> 请替换为你的实际 Key。
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent>
@@ -724,6 +763,44 @@ function CopyRow({ label, value, onCopy }: { label: string; value: string; onCop
       </div>
     </div>
   )
+}
+
+function buildMcpConfigs(serverUrl: string, token: string) {
+  const claudeDesktop = JSON.stringify(
+    {
+      mcpServers: {
+        evalscope: {
+          url: serverUrl,
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      },
+    },
+    null,
+    2,
+  )
+  const cherryStudio = JSON.stringify(
+    {
+      mcpServers: [
+        {
+          name: "EvalScope",
+          url: serverUrl,
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      ],
+    },
+    null,
+    2,
+  )
+  const generic = `# 环境变量方式
+EVALSCOPE_MCP_URL=${serverUrl}
+EVALSCOPE_MCP_TOKEN=${token}
+
+# cURL 测试连接
+curl -X POST ${serverUrl} \\
+  -H "Authorization: Bearer ${token}" \\
+  -H "Content-Type: application/json" \\
+  -d '{"jsonrpc":"2.0","method":"initialize","id":1,"params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"test","version":"1.0.0"}}}'`
+  return { claudeDesktop, cherryStudio, generic }
 }
 
 function BasicPanel({ name, slug, description, onSave }: { name: string; slug: string; description: string | null; onSave: () => void }) {

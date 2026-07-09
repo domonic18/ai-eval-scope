@@ -37,6 +37,9 @@ import adminRouter from "./routes/admin"
 import evalJobsRouter from "./routes/eval/jobs"
 import evalRuleSetsRouter from "./routes/eval/ruleSets"
 import evalHealthRouter from "./routes/eval/health"
+import evalMcpRouter from "./routes/eval/mcp"
+import { requireApiKey } from "./middleware/apiKeyAuth"
+import { rateLimiter } from "./middleware/rateLimiter"
 
 // ── 摄取路由（Bearer API Key 鉴权，7d）──
 import ingestRouter from "./routes/public/ingest"
@@ -72,6 +75,12 @@ export function createApp(): express.Application {
   app.use("/api/v1/jobs", evalJobsRouter) // 评测任务提交/查询（合并自 gateway；Bearer API Key）
   app.use("/api/v1/rule-sets", evalRuleSetsRouter) // 规则集目录（构建期静态 catalog）
   app.use("/api/v1/health", evalHealthRouter) // eval 子系统健康
+  app.use(
+    "/api/v1/mcp",
+    requireApiKey,
+    rateLimiter(),
+    evalMcpRouter,
+  ) // MCP 接入（Bearer API Key；复用 evalJobService，见 docs/arch/12 §3.7）
   app.use("/api/v1/runs", runsRouter) // 运行/样本详情（Query，§九）
   app.use("/api/v1/artifacts", artifactsRouter) // 制品下载（presigned 重定向）
   app.use("/api/v1/admin", adminRouter) // 超管后台（platformAdminGuard，跨租户）

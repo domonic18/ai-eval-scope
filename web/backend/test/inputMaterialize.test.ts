@@ -31,6 +31,12 @@ describe("inputMaterialize", () => {
     expect(m.bytes.toString("utf-8")).toBe("text content")
   })
 
+  it("rejects .zip extension with non-zip content", () => {
+    expect(() => materializeUpload("unit.zip", Buffer.from("not a zip"))).toThrow(
+      /ends with .zip but content is not a valid zip archive/,
+    )
+  })
+
   it("isZip magic byte check", () => {
     expect(isZip(Buffer.from([0x50, 0x4b]))).toBe(true)
     expect(isZip(Buffer.from("# x"))).toBe(false)

@@ -39,10 +39,19 @@ export function materializeUpload(
       code: "PAYLOAD_TOO_LARGE",
     })
   }
+  const hasZipExtension = filename.toLowerCase().endsWith(".zip")
+  const zipMagic = isZip(bytes)
+  // 扩展名声明为 zip 但实际魔数不符：提前拒绝，避免 executor 解压失败
+  if (hasZipExtension && !zipMagic) {
+    throw new PlatformError(
+      `filename ends with .zip but content is not a valid zip archive`,
+      { status: 400, code: "INPUT_INVALID" },
+    )
+  }
   return {
     bytes,
     filename,
-    scope: isZip(bytes) ? "unit" : "single",
+    scope: zipMagic ? "unit" : "single",
     inputKind: "upload",
   }
 }
