@@ -20,11 +20,15 @@ import structlog
 from agent_eval.config import EVALUATOR_DEFAULTS
 from agent_eval.core.types import ConstraintTier, EvalMethod, EvalStatus
 from agent_eval.evaluation.base import BaseEvaluator
-from agent_eval.evaluation.evaluators.quality_evaluators import BaseLLMJudgeEvaluator
+from agent_eval.evaluation.evaluators.quality_evaluators import (
+    BaseLLMJudgeEvaluator,
+    _aggregate_source_files,
+    _band_of,
+)
 from agent_eval.evaluation.registry import registry
 from agent_eval.evaluation.text_utils import (
     collect_file_texts,
-    collect_text_content,
+    collect_text_content_with_markers,
 )
 from agent_eval.evaluation.text_utils import (
     get_output_dir as _get_output_dir,
@@ -38,12 +42,12 @@ FACT_VERDICT_BATCH_SIZE = 20
 
 
 def _collect_text_content(output_dir: Path) -> str:
-    """收集目录下所有文档的文本内容（合并为单字符串）。
+    """收集目录下所有文档的文本内容（带文件边界标记，合并为单字符串）。
 
-    其他评估器（chronological_order 等）仍在使用此函数。HTML 经
-    `text_utils.collect_text_content` 干净提取（剥除 style/script，保留块级结构）。
+    logical_consistency 使用：判官读到 `=== FILE: 相对路径 ===` 标记后，可在 issue
+    的 involved_files 引用具体文件名（docs/arch/15 §5.1）。
     """
-    return collect_text_content(output_dir)
+    return collect_text_content_with_markers(output_dir)
 
 
 def _collect_file_names(output_dir: Path) -> list[str]:
@@ -1101,6 +1105,28 @@ class LogicalConsistencyEvaluator(BaseEvaluator):
         if record:
             record_path = f"evidence/{record.judge_id}.json"
 
+        # 维度详情透传（reason/issues/highlights，issues 含 involved_files）+ 文件定位聚合
+        dim_details = record.dim_details if record and hasattr(record, "dim_details") else {}
+        dimensions = (
+            [
+                {
+                    "id": d.dim_id,
+                    "name": d.name,
+                    "weight": d.weight,
+                    "score": scores.get(d.dim_id, 0.0),
+                    "band": _band_of(scores.get(d.dim_id, 0.0)),
+                    "confidence": (
+                        record.confidence.get(d.dim_id, "unknown") if record else "unknown"
+                    ),
+                    **(dim_details.get(d.dim_id, {})),
+                }
+                for d in template.dimensions
+            ]
+            if template and template.dimensions
+            else []
+        )
+        source_files = _aggregate_source_files(dimensions, context)
+
         from agent_eval.evaluation.models import ConstraintResult
 
         return ConstraintResult(
@@ -1114,6 +1140,8 @@ class LogicalConsistencyEvaluator(BaseEvaluator):
                 "scores": scores,
                 "confidence": record.confidence if record else {},
                 "files_checked": _collect_file_names(output_dir) if output_dir else [],
+                "dimensions": dimensions,
+                "source_files": source_files,
             },
             duration_ms=elapsed,
             judge_provider=record.provider_name if record else None,
