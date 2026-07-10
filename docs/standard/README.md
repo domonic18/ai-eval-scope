@@ -9,7 +9,7 @@
 | 提交 / 分支 / PR 规范 | [`../../CONTRIBUTING.md`](../../CONTRIBUTING.md) |
 | Git hooks（pre-commit + commitizen） | [`../../.pre-commit-config.yaml`](../../.pre-commit-config.yaml)、[`../../evaluator/pyproject.toml`](../../evaluator/pyproject.toml) `[tool.commitizen]` |
 | 配置与数据管理规范 | [`../arch/06数据管理与配置规范.md`](../arch/06数据管理与配置规范.md) |
-| 数据库迁移治理（web=Prisma，executor 复用 public.*） | [`../../db/README.md`](../../db/README.md) |
+| 数据库迁移治理（web=Prisma，executor 复用 public.*） | [`../../web/CLAUDE.md`](../../web/CLAUDE.md)「数据库与迁移」、[`../../scripts/db-apply.sh`](../../scripts/db-apply.sh) |
 | 编辑器/换行规范 | [`../../.editorconfig`](../../.editorconfig)、[`../../.gitattributes`](../../.gitattributes) |
 
 ## 规范原则

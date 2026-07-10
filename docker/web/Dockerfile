@@ -20,7 +20,7 @@ FROM ccr.ccs.tencentyun.com/sasan/node:22.15.1-bookworm AS backend-builder
 WORKDIR /app/web/backend
 COPY web/backend/package*.json ./
 RUN npm ci
-COPY db/web/prisma /app/db/web/prisma
+COPY web/backend/prisma ./prisma
 RUN npx prisma generate
 COPY web/backend/tsconfig.json web/backend/tsconfig.build.json ./
 COPY web/backend/src ./src
@@ -32,7 +32,7 @@ FROM ccr.ccs.tencentyun.com/sasan/node:22.15.1-bookworm
 WORKDIR /app/web/backend
 COPY web/backend/package*.json ./
 RUN npm ci --omit=dev
-COPY db/web/prisma /app/db/web/prisma
+COPY web/backend/prisma ./prisma
 RUN npx prisma generate
 COPY --from=backend-builder /app/web/backend/dist ./dist
 COPY --from=frontend-builder /app/web/frontend/dist ./public

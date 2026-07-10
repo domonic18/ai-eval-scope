@@ -320,7 +320,7 @@ prompt YAML(assets/prompts/*.yaml) → orchestrator.judge → _coerce_score【�
 ### 5.2 管道层（无需改动，已验证）
 
 - `observability/events.py`：`details` 整体透传。
-- `db/web/prisma/schema.prisma` + `web/backend/src/repositories/ingest.repository.ts`：`details/moduleResults` 已 JSONB 整块写。
+- `web/backend/prisma/schema.prisma` + `web/backend/src/repositories/ingest.repository.ts`：`details/moduleResults` 已 JSONB 整块写。
 - `web/backend/src/schemas/ingest.event.v1.json`：`details` 为 `{}`（任意 JSON）——**可选**补 `properties.dimensions[].issues` 描述强契约（非必须）。
 
 ### 5.3 展示端（`web/frontend/`）

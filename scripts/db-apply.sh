@@ -32,7 +32,7 @@ if ! docker compose ps postgres 2>/dev/null | grep -q "Up"; then
   exit 1
 fi
 
-WEB_MIGRATIONS="$ROOT/db/web/prisma/migrations"
+WEB_MIGRATIONS="$ROOT/web/backend/prisma/migrations"
 DB_URL="postgresql://$PGUSER:$PGPASSWORD@localhost:5432/$PGDB?schema=public"
 
 # 查某 web 迁移是否已在 _prisma_migrations（表不存在视为未应用，返回空）
@@ -60,4 +60,4 @@ npx prisma generate >/dev/null
 
 echo ""
 echo "✅ 完成：web(public) schema 已就绪、迁移已标记、client 已生成（增量幂等，可安全重跑）。"
-echo "   目标库 = ${PGDB}；单一来源 = db/（web=Prisma）；详见 db/README.md。"
+echo "   目标库 = ${PGDB}；schema 来源 = web/backend/prisma（Prisma）；详见 web/CLAUDE.md。"

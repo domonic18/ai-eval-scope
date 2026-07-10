@@ -27,7 +27,7 @@ services:
       # 持久化到 workspace 下，便于调试/重置/检视
       - ./workspace/data/postgres:/var/lib/postgresql/data
       # 不再挂载 schema.sql：建库改为起栈后手动 `make db-init`（统一应用 web Prisma 迁移）
-      # 单一来源 = db/（web=Prisma，executor 复用 public.*）；详见 db/README.md
+      # schema 来源 = web/backend/prisma（web=Prisma，executor 复用 public.*）；详见 web/CLAUDE.md
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-eval} -d ${POSTGRES_DB:-agent_eval}"]
       interval: 5s

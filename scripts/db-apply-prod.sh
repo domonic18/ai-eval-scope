@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 全库建库/迁移统一应用（线上/生产）。
-# 与 db/apply.sh 同源，差异：
+# 与 scripts/db-apply.sh 同源，差异：
 #   - 凭据从 .secret/.env 读（生产 PLATFORM_DATABASE_URL，或由 POSTGRES_* 拼接，密码 URL 编码）；
 #   - web 段只补未应用的 pending 迁移（查 _prisma_migrations 差集，不重跑已应用）；
 #   - 逐条可见、需人工 y 确认；不跑 prisma generate（client 由 CI/Docker 构建生成）。
@@ -46,7 +46,7 @@ else
 fi
 echo "目标库：$DB_URL"
 
-WEB_MIGRATIONS="$ROOT/db/web/prisma/migrations"
+WEB_MIGRATIONS="$ROOT/web/backend/prisma/migrations"
 
 echo "==> 1/1 web(public schema)：仅应用 pending 迁移（查 _prisma_migrations 差集）"
 applied="$(psql "$DB_URL" -tAc "SELECT migration_name FROM _prisma_migrations" 2>/dev/null || true)"
