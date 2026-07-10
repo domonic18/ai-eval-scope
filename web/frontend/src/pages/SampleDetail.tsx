@@ -220,6 +220,7 @@ export default function SampleDetail() {
                         key={c.id}
                         c={c}
                         artifacts={sample.artifacts}
+                        activeFileId={previewSelected[previewTab]}
                         onSelectFile={handleSelectFile}
                       />
                     ))}
@@ -252,10 +253,12 @@ export default function SampleDetail() {
 function ConstraintItem({
   c,
   artifacts,
+  activeFileId,
   onSelectFile,
 }: {
   c: ConstraintRow
   artifacts: ArtifactRow[]
+  activeFileId: string
   onSelectFile: (a: ArtifactRow) => void
 }) {
   const [open, setOpen] = useState(!c.passed)
@@ -280,7 +283,12 @@ function ConstraintItem({
         <div className="space-y-2 border-t px-3 py-2 text-xs">
           {c.reason && <div className="text-muted-foreground">{c.reason}</div>}
           {sourceFiles.length > 0 && (
-            <SourceFileChips files={sourceFiles} artifacts={artifacts} onSelectFile={onSelectFile} />
+            <SourceFileChips
+              files={sourceFiles}
+              artifacts={artifacts}
+              activeFileId={activeFileId}
+              onSelectFile={onSelectFile}
+            />
           )}
           <DimensionBreakdown details={c.details} />
           {constraintErrors(c.details).length > 0 && (
@@ -319,10 +327,12 @@ function ConstraintItem({
 function SourceFileChips({
   files,
   artifacts,
+  activeFileId,
   onSelectFile,
 }: {
   files: SourceFile[]
   artifacts: ArtifactRow[]
+  activeFileId: string
   onSelectFile: (a: ArtifactRow) => void
 }) {
   return (
@@ -330,6 +340,7 @@ function SourceFileChips({
       <span className="text-muted-foreground">涉及文件：</span>
       {files.map((sf, i) => {
         const hit = matchArtifactByFilename(artifacts, sf.filename)
+        const active = !!hit && hit.id === activeFileId
         return (
           <button
             key={i}
@@ -337,14 +348,16 @@ function SourceFileChips({
             disabled={!hit}
             onClick={() => hit && onSelectFile(hit)}
             title={hit ? `点击在右侧预览 ${sf.filename}` : `${sf.filename}（未找到对应制品）`}
-            className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] transition-colors ${
-              hit
-                ? "cursor-pointer border-primary/40 bg-primary/10 text-primary hover:bg-primary/20"
-                : "cursor-not-allowed border-border text-muted-foreground/50 line-through"
+            className={`inline-flex max-w-[240px] items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] transition-colors ${
+              active
+                ? "border-primary bg-primary/20 text-primary"
+                : hit
+                  ? "cursor-pointer border-primary/40 bg-primary/10 text-primary hover:bg-primary/20"
+                  : "cursor-not-allowed border-border text-muted-foreground/50 line-through"
             }`}
           >
-            <FileText className="size-3" />
-            {sf.filename}
+            <FileText className="size-3 shrink-0" />
+            <span className="truncate">{sf.filename}</span>
           </button>
         )
       })}

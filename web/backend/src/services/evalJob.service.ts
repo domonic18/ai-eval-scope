@@ -112,6 +112,8 @@ export interface OverviewFailure {
   name: string
   reason: string
   top_issues?: string[]
+  /** 该约束涉及的源文件相对路径（docs/arch/15 §4.1 details.source_files 聚合） */
+  files?: string[]
 }
 export interface OverviewItem {
   external_sample_id: string
@@ -192,6 +194,22 @@ function extractTopIssues(details: unknown): string[] {
 }
 
 /**
+ * 从约束 details.source_files 提取涉及的源文件相对路径（docs/arch/15 §4.1）。
+ * 供速览 failures[].files，让第三方/MCP 调用方也能定位文件。
+ */
+function extractSourceFiles(details: unknown): string[] {
+  const d = details as { source_files?: { filename?: string }[] } | null
+  const sf = d?.source_files
+  if (!Array.isArray(sf)) return []
+  const files: string[] = []
+  for (const x of sf) {
+    const f = x?.filename
+    if (typeof f === "string" && f) files.push(f)
+  }
+  return files
+}
+
+/**
  * 纯函数：由 run（含样本 + 未通过约束）构造速览 DTO。
  * - verdict：核心指标达标（DR/CPR/Reward，阈值取 run.thresholds 或默认 0.95/0.9/0.8）
  *   且无 hard_gate 失败 → pass；否则 fail。
@@ -242,6 +260,7 @@ export function buildJobOverview(
         name: c.name,
         reason: c.reason,
         top_issues: extractTopIssues(c.details),
+        files: extractSourceFiles(c.details),
       })),
     })),
   }
