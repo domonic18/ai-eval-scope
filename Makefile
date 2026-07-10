@@ -83,14 +83,14 @@ docker-logs:
 	docker compose logs -f web
 
 # 全库建库/迁移统一应用（本地 docker 栈）：web(public, Prisma) 单一 schema，含 eval_jobs。
-# 前置：make docker-up。单一来源 = db/（详见 db/README.md）。
+# 前置：make docker-up。schema 来源 = web/backend/prisma（详见 web/CLAUDE.md）。
 db-init:
 	@test -f .env || { echo "❌ 缺少 .env：请先 cp .env.example .env"; exit 1; }
-	bash db/apply.sh
+	bash scripts/db-apply.sh
 
 # 线上增量迁移：从 .secret/.env 读生产凭据，只补 web pending。
 db-migrate-prod:
-	bash db/apply-prod.sh
+	bash scripts/db-apply-prod.sh
 
 # ─── 代码规范（pre-commit + commitizen）───
 

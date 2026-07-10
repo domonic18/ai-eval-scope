@@ -151,7 +151,7 @@ web/backend/
 │   │   └── ...
 │   └── utils/
 ├── assets/                           # rule-sets.json（构建期生成，提交入库）
-├── (prisma 已迁出)                   # schema/migrations 统一到仓库根 db/web/prisma/（全库治理见 db/README.md）
+├── prisma/                           # schema.prisma + migrations（Prisma 项目根 = web/backend）
 ├── public/                           # 前端构建产物（生产）
 ├── test/                             # 单元/集成/越权
 ├── Dockerfile
@@ -169,7 +169,7 @@ web/backend/
 ### 4.1 Prisma schema（核心）
 
 ```prisma
-// db/web/prisma/schema.prisma（已迁出 web/backend，统一到 db/）
+// web/backend/prisma/schema.prisma
 generator client { provider = "prisma-client-js" }
 datasource db { provider = "postgresql"; url = env("PLATFORM_DATABASE_URL") }
 
@@ -438,8 +438,8 @@ model EvalJob {
 
 ### 4.3 迁移策略
 
-- **Prisma Migrate**：`prisma migrate dev`（开发）/ `prisma migrate deploy`（CI/生产），schema 变更版本化、可回滚（生成 down 脚本由 CI 管理）。日常变更走 `prisma migrate dev --create-only`（生成 SQL 不执行）→ 手动跑 SQL → `prisma migrate resolve --applied`（见 `db/README.md`）。
-- **本地建库（`make db-init`）**：起栈后 postgres 为空库，手动 `make db-init`（`db/apply.sh`）按时间戳顺序应用 prisma migration SQL + `prisma migrate resolve --applied` + `prisma generate`；**单一来源 = `db/`（web=Prisma，含 `public.eval_jobs`），已废弃 `schema.sql` 自动建表，gateway SQL 已随网关合并移除**。线上库（腾讯云 CDB）迁移走 `make db-migrate-prod`（`db/apply-prod.sh`）补 pending。
+- **Prisma Migrate**：`prisma migrate dev`（开发）/ `prisma migrate deploy`（CI/生产），schema 变更版本化、可回滚（生成 down 脚本由 CI 管理）。日常变更走 `prisma migrate dev --create-only`（生成 SQL 不执行）→ 手动跑 SQL → `prisma migrate resolve --applied`（见 `web/CLAUDE.md`）。
+- **本地建库（`make db-init`）**：起栈后 postgres 为空库，手动 `make db-init`（`scripts/db-apply.sh`）按时间戳顺序应用 prisma migration SQL + `prisma migrate resolve --applied` + `prisma generate`；**schema 来源 = `web/backend/prisma/`（web=Prisma，含 `public.eval_jobs`），已废弃 `schema.sql` 自动建表，gateway SQL 已随网关合并移除**。线上库（腾讯云 CDB）迁移走 `make db-migrate-prod`（`scripts/db-apply-prod.sh`）补 pending。
 - **JSONB 优先于加列**：`details`/`failure_breakdown`/`thresholds`/`extra`/`moduleResults` 等半结构化字段用 JSONB，避免评估模型迭代时频繁改表。
 - **一等列仅给"要索引/聚合"的字段**：DR/CPR/Reward 等核心指标落列，其余 JSONB。
 
@@ -1037,3 +1037,4 @@ volumes: { pgdata: {} }
 | v1.1 | 2026-06-29 | 同步代码 + 合并原 14《样本级评估走势设计》：数据模型补 User SSO 字段 / `JoinRequest` / `ApiKey.secretEncrypted` / `Run.avgSoft,avgPref` / `Sample.contentHash`；§6.1 改团队中心模型（注册不自动建 Org + 申请审批），新增 §6.6 SAML SSO；§九 Query API 补 `samples`/`sample-trends`/DELETE 端点 + §9.4 样本级走势（Run 级 vs Sample 级，合并自原 doc 14）；§5.4 制品同源预览代理（raw + artifact token）；ObjectStorage 补 `deleteObjects`；§4.3 `make db-init` 替代 schema.sql；趋势 SQL 补 orgId 隔离 + Soft/Pref；前端补样本 Tab + 走势视图 + 登录/注册/加入页拆分 + SSO Tab |
 | v1.2 | 2026-06-30 | 数据库治理统一：web 的 `prisma/` 迁至仓库根 `db/web/prisma/`，与 gateway 的 `db/gateway/migrations/` 同归 `db/`；§4.1/§4.3 目录树与建库命令同步（`make db-init`=`db/apply.sh` 统一应用 web+gateway，`make db-migrate-prod`=`db/apply-prod.sh` 线上增量）；schema.prisma 显式 output 以兼容迁出 web/backend 后的 Prisma 项目根推断（见 db/README.md） |
 | v1.3 | 2026-07-07 | **执行拆分与网关合并**：删除 gateway 相关描述；新增 §7.7 评测任务提交与执行（`/api/v1/jobs` + executor）；架构图/后端工程结构/Prisma 模型补 `EvalJob`；§6.3 统一为 Bearer API Key（移除 HMAC）；§12.1/§12.3 补 executor/SCF 配置；说明 gateway SQL 已移除、任务表由 Prisma 统一治理 |
+| v1.4 | 2026-07-10 | **Prisma schema 迁回 web/backend**（反转 v1.2 的迁出决策）：schema + migrations 由 `db/web/prisma/` 移至 `web/backend/prisma/`（Prisma 项目根归位），消除「schema 跨目录导致 `prisma generate` 在仓库根触发 auto-install」的 CI 构建失败（npm i 在干净 root 失败）+ 显式 `output` hack + 根级 `node_modules`/`package.json` 副作用；`db/` 目录撤销，建库脚本迁至 `scripts/db-apply.sh` / `scripts/db-apply-prod.sh`（`make db-init` / `make db-migrate-prod` 不变）；§4.1/§4.3 目录树与建库命令同步 |

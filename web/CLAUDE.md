@@ -11,7 +11,7 @@ web/
 ├── backend/            TypeScript API（纯 JSON）
 │   ├── src/            分层：config / middleware / infra / routes / services / repositories / schemas / types / utils
 │   │   └── routes/public/   公开摄取端点（Bearer API Key 鉴权）
-│   ├── (prisma 已迁出)  schema/迁移统一在仓库根 db/web/prisma/（见 db/README.md）
+│   ├── prisma/         schema.prisma + migrations/（Prisma 项目根 = web/backend）
 │   ├── test/           vitest + supertest 集成测试
 │   ├── server.ts       入口（薄代理）→ 编译为 dist/server.js
 │   ├── tsconfig*.json  tsc 配置（build / 类型检查）
@@ -23,11 +23,11 @@ web/
 
 ## 本地起栈（Docker Compose，推荐）
 
-起 postgres + minio + web + executor（postgres 为空库；建库改为起栈后手动 `make db-init`，单一来源 = db/（web=Prisma，executor 复用 public.*），已废弃 schema.sql）：
+起 postgres + minio + web + executor（postgres 为空库；建库改为起栈后手动 `make db-init`，schema 来源 = web/backend/prisma（web=Prisma，executor 复用 public.*），已废弃 schema.sql）：
 
 ```bash
 make docker-up          # = docker compose up -d（根 docker-compose.yml，读根 .env）
-make db-init            # 手动建库：统一应用 web Prisma 迁移（首次必跑，见 db/README.md）
+make db-init            # 手动建库：统一应用 web Prisma 迁移（首次必跑，见下方「数据库与迁移」）
 curl http://localhost:9000/health
 ```
 
@@ -81,9 +81,19 @@ npm start                  # node dist/server.js（生产）
 
 ## 数据库与迁移
 
-- backend 用 Prisma，schema 在仓库根 [`db/web/prisma/schema.prisma`](../db/web/prisma/schema.prisma)（已迁出 web/backend，统一到 db/）。该 schema 同时治理 `public.eval_jobs`（executor 复用）。
-- **操作规范**：[`db/README.md`](../db/README.md) — 全库（web=Prisma，executor 复用 public.*）统一治理；含初始化/变更命令流程与禁止事项。
-- 日常变更：`prisma migrate dev --create-only`（生成 SQL 不执行）→ 由 `make db-init`（本地）/ `make db-migrate-prod`（线上）统一应用。
+- backend 用 Prisma，schema 在 [`backend/prisma/schema.prisma`](./backend/prisma/schema.prisma)（web/backend 下，Prisma 项目根）。该 schema 同时治理 `public.eval_jobs`（executor 复用）。
+- 建库/迁移脚本在 [`scripts/db-apply.sh`](../scripts/db-apply.sh)（本地 = `make db-init`）/ [`scripts/db-apply-prod.sh`](../scripts/db-apply-prod.sh)（线上 = `make db-migrate-prod`）：逐条查 `_prisma_migrations`，已应用跳过、空库全量、有库增量，安全重跑。
+- **变更流程**（create-only 范式，SQL 手动执行控制）：
+  ```bash
+  cd web/backend
+  # 1. 改 prisma/schema.prisma（加 model / 字段 / @@index）
+  # 2. 生成迁移 SQL（仅生成，不执行）
+  npx prisma migrate dev --create-only --name <描述性名>   # 如 add_user_avatar
+  # 3. review
+  cat prisma/migrations/*_<描述性名>/migration.sql
+  # 4-5. 实际应用由 make db-init（本地）或 make db-migrate-prod（线上）统一完成
+  ```
+- **禁止事项**：❌ `prisma migrate dev`（无 `--create-only`，自动执行 SQL 绕过手动控制）；❌ `prisma db push`（绕过迁移记录，破坏 `_prisma_migrations` 一致性）；❌ 手动 `ALTER TABLE`（不经 schema + migration）；❌ 在 web/executor 代码里建库建表（如 `Base.metadata.create_all`、`CREATE SCHEMA`）；❌ 手动执行 SQL 后跳过 `migrate resolve --applied`。
 
 ## 测试
 
