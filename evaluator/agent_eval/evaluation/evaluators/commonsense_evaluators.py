@@ -730,6 +730,10 @@ class InfoAccuracyEvaluator(BaseEvaluator):
             details={
                 "findings": findings,
                 "files_checked": list(file_texts.keys()),
+                "source_files": [
+                    {"filename": fn}
+                    for fn in sorted({f["file"] for f in findings if f.get("file")})
+                ],
                 "checks_total": checks_total,
                 "errors": len(errors),
                 "warnings": len(warnings),
@@ -872,6 +876,10 @@ class InfoAccuracyEvaluator(BaseEvaluator):
                 "scores": scores,
                 "confidence": record.confidence if record else {},
                 "files_checked": list(file_texts.keys()),
+                "source_files": [
+                    {"filename": fn}
+                    for fn in sorted({f["file"] for f in findings if f.get("file")})
+                ],
                 "checks_total": len(findings),
                 "errors": len(rule_errors),
                 "warnings": len(rule_warnings),

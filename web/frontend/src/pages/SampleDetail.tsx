@@ -21,7 +21,7 @@ import {
 import { useCrumbs } from "../components/AppShell"
 import { useToast } from "../components/toast"
 import { SemPill, TierChip } from "../components/shared"
-import { ChevronRight, ExternalLink, HelpCircle } from "lucide-react"
+import { ChevronRight, ExternalLink, FileText, HelpCircle } from "lucide-react"
 
 interface SampleData {
   id: string
@@ -45,11 +45,75 @@ function avg(nums: number[]): number | undefined {
   return nums.reduce((a, b) => a + b, 0) / nums.length
 }
 
+/** 文件定位（约束→源课件文件），评估器产出 details.source_files（docs/arch/15）。 */
+interface SourceFile {
+  filename: string
+  artifact_kind?: string
+  page?: number
+  snippet?: string
+}
+
+/** 制品归属的预览 tab（与 PreviewPane 分组一致）。 */
+function artifactTab(a: ArtifactRow): PrevTab {
+  if (a.kind === "trace" || a.contentType.includes("json") || a.kind === "judge_record") return "trace"
+  if (a.contentType.startsWith("image") || a.kind === "screenshot") return "shot"
+  return "doc"
+}
+
+/** 按 filename 匹配 sample 制品：精确 originalName → 尾缀（相对路径）→ basename。 */
+function matchArtifactByFilename(artifacts: ArtifactRow[], filename: string): ArtifactRow | null {
+  const f = filename.trim()
+  if (!f) return null
+  const norm = (s: string) => s.replace(/\\/g, "/").toLowerCase()
+  const target = norm(f)
+  const base = target.split("/").pop() || target
+  const cands = artifacts.filter((a) => a.originalName)
+  return (
+    cands.find((a) => norm(a.originalName!) === target) ||
+    cands.find((a) => {
+      const n = norm(a.originalName!)
+      return n.endsWith("/" + target) || n.endsWith(target)
+    }) ||
+    cands.find((a) => {
+      const ob = norm(a.originalName!).split("/").pop() || ""
+      return ob === base
+    }) ||
+    null
+  )
+}
+
+/** 从约束 details 解析 source_files（容错：历史数据无此字段返回空）。 */
+function parseSourceFiles(details: Record<string, unknown> | null): SourceFile[] {
+  const s = details?.source_files
+  if (!Array.isArray(s)) return []
+  return s
+    .filter((x): x is Record<string, unknown> => !!x && typeof x === "object")
+    .map((x) => ({
+      filename: String(x.filename ?? "").trim(),
+      artifact_kind: typeof x.artifact_kind === "string" ? x.artifact_kind : undefined,
+      page: typeof x.page === "number" ? x.page : undefined,
+      snippet: typeof x.snippet === "string" ? x.snippet : undefined,
+    }))
+    .filter((x) => x.filename.length > 0)
+}
+
 export default function SampleDetail() {
   const { id, sid } = useParams<{ id: string; sid: string }>()
   const { setCrumbs } = useCrumbs()
   const toast = useToast()
   const [sample, setSample] = useState<SampleData | null>(null)
+  // 制品预览受控状态（docs/arch/15 §4.4）：状态上提，供扣分项文件 chip 联动驱动
+  const [previewTab, setPreviewTab] = useState<PrevTab>("doc")
+  const [previewSelected, setPreviewSelected] = useState<Record<PrevTab, string>>({
+    doc: "",
+    shot: "",
+    trace: "",
+  })
+  const handleSelectFile = (a: ArtifactRow) => {
+    const t = artifactTab(a)
+    setPreviewTab(t)
+    setPreviewSelected((prev) => ({ ...prev, [t]: a.id }))
+  }
 
   useEffect(() => {
     if (!id || !sid) return
@@ -152,7 +216,12 @@ export default function SampleDetail() {
                   </div>
                   <div className="space-y-1">
                     {constraints.map((c) => (
-                      <ConstraintItem key={c.id} c={c} />
+                      <ConstraintItem
+                        key={c.id}
+                        c={c}
+                        artifacts={sample.artifacts}
+                        onSelectFile={handleSelectFile}
+                      />
                     ))}
                   </div>
                 </div>
@@ -169,6 +238,10 @@ export default function SampleDetail() {
           <PreviewPane
             artifacts={sample.artifacts}
             isMultimodal={sample.constraintResults.some((c) => c.constraintId?.includes("vision"))}
+            tab={previewTab}
+            onTabChange={setPreviewTab}
+            selectedId={previewSelected}
+            onSelectId={(t, id) => setPreviewSelected((prev) => ({ ...prev, [t]: id }))}
           />
         </div>
       </div>
@@ -176,9 +249,18 @@ export default function SampleDetail() {
   )
 }
 
-function ConstraintItem({ c }: { c: ConstraintRow }) {
+function ConstraintItem({
+  c,
+  artifacts,
+  onSelectFile,
+}: {
+  c: ConstraintRow
+  artifacts: ArtifactRow[]
+  onSelectFile: (a: ArtifactRow) => void
+}) {
   const [open, setOpen] = useState(!c.passed)
   const method = c.judgeProvider ? "LLM_JUDGE" : "RULE"
+  const sourceFiles = parseSourceFiles(c.details)
   return (
     <div className={`rounded-md border ${!c.passed ? "border-red-500/30 bg-red-500/5" : "border-border"}`}>
       <button onClick={() => setOpen((o) => !o)} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm">
@@ -197,6 +279,9 @@ function ConstraintItem({ c }: { c: ConstraintRow }) {
       {open && (
         <div className="space-y-2 border-t px-3 py-2 text-xs">
           {c.reason && <div className="text-muted-foreground">{c.reason}</div>}
+          {sourceFiles.length > 0 && (
+            <SourceFileChips files={sourceFiles} artifacts={artifacts} onSelectFile={onSelectFile} />
+          )}
           <DimensionBreakdown details={c.details} />
           {constraintErrors(c.details).length > 0 && (
             <div className="rounded border border-red-500/20 bg-red-500/5 p-2">
@@ -225,6 +310,44 @@ function ConstraintItem({ c }: { c: ConstraintRow }) {
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+/** 约束的「涉及文件」chip 行（docs/arch/15）：点击命中制品 → 右侧预览联动切换。
+ *  无 source_files 的历史数据不渲染（降级）。 */
+function SourceFileChips({
+  files,
+  artifacts,
+  onSelectFile,
+}: {
+  files: SourceFile[]
+  artifacts: ArtifactRow[]
+  onSelectFile: (a: ArtifactRow) => void
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      <span className="text-muted-foreground">涉及文件：</span>
+      {files.map((sf, i) => {
+        const hit = matchArtifactByFilename(artifacts, sf.filename)
+        return (
+          <button
+            key={i}
+            type="button"
+            disabled={!hit}
+            onClick={() => hit && onSelectFile(hit)}
+            title={hit ? `点击在右侧预览 ${sf.filename}` : `${sf.filename}（未找到对应制品）`}
+            className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] transition-colors ${
+              hit
+                ? "cursor-pointer border-primary/40 bg-primary/10 text-primary hover:bg-primary/20"
+                : "cursor-not-allowed border-border text-muted-foreground/50 line-through"
+            }`}
+          >
+            <FileText className="size-3" />
+            {sf.filename}
+          </button>
+        )
+      })}
     </div>
   )
 }
@@ -310,33 +433,38 @@ function hasDebug(c: ConstraintRow): boolean {
   return (!!c.details && Object.keys(c.details).length > 0) || (!!c.moduleResults && Object.keys(c.moduleResults).length > 0)
 }
 
-function PreviewPane({ artifacts, isMultimodal }: { artifacts: ArtifactRow[]; isMultimodal: boolean }) {
-  const [tab, setTab] = useState<PrevTab>("doc")
+function PreviewPane({
+  artifacts,
+  isMultimodal,
+  tab,
+  onTabChange,
+  selectedId,
+  onSelectId,
+}: {
+  artifacts: ArtifactRow[]
+  isMultimodal: boolean
+  tab: PrevTab
+  onTabChange: (t: PrevTab) => void
+  selectedId: Record<PrevTab, string>
+  onSelectId: (t: PrevTab, id: string) => void
+}) {
   const [preview, setPreview] = useState<PreviewState>({ mode: "none" })
   const [loading, setLoading] = useState(false)
 
   const groups = useMemo(() => {
-    const isHtml = (a: ArtifactRow) => a.contentType.includes("html") || a.kind === "output"
-    const isImg = (a: ArtifactRow) => a.contentType.startsWith("image") || a.kind === "screenshot"
-    const isTrace = (a: ArtifactRow) => a.kind === "trace" || a.contentType.includes("json") || a.kind === "judge_record"
-    return { doc: artifacts.filter(isHtml), shot: artifacts.filter(isImg), trace: artifacts.filter(isTrace) }
+    const shot = artifacts.filter((a) => artifactTab(a) === "shot")
+    const trace = artifacts.filter((a) => artifactTab(a) === "trace")
+    const used = new Set([...shot, ...trace].map((a) => a.id))
+    const doc = artifacts.filter((a) => !used.has(a.id))
+    return { doc, shot, trace }
   }, [artifacts])
 
-  const docArts = useMemo(() => {
-    const used = new Set([...groups.shot, ...groups.trace].map((a) => a.id))
-    return artifacts.filter((a) => !used.has(a.id))
-  }, [artifacts, groups])
-
-  const listFor = (t: PrevTab): ArtifactRow[] => (t === "doc" ? docArts : t === "shot" ? groups.shot : groups.trace)
-  const [selectedId, setSelectedId] = useState<Record<PrevTab, string>>({ doc: "", shot: "", trace: "" })
+  const listFor = (t: PrevTab): ArtifactRow[] =>
+    t === "doc" ? groups.doc : t === "shot" ? groups.shot : groups.trace
 
   const currentList = listFor(tab)
   const currentId = selectedId[tab] || currentList[0]?.id || ""
   const current = currentList.find((a) => a.id === currentId) || currentList[0]
-
-  useEffect(() => {
-    setSelectedId({ doc: docArts[0]?.id || "", shot: groups.shot[0]?.id || "", trace: groups.trace[0]?.id || "" })
-  }, [docArts, groups.shot, groups.trace])
 
   useEffect(() => {
     let cancelled = false
@@ -371,14 +499,14 @@ function PreviewPane({ artifacts, isMultimodal }: { artifacts: ArtifactRow[]; is
       <div className="flex items-center justify-between border-b px-4 py-2">
         <div className="flex rounded-md border p-0.5">
           {tabs.map(([k, label]) => (
-            <button key={k} onClick={() => setTab(k)} className={`rounded px-2.5 py-1 text-xs transition-colors ${tab === k ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+            <button key={k} onClick={() => onTabChange(k)} className={`rounded px-2.5 py-1 text-xs transition-colors ${tab === k ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
               {label}
             </button>
           ))}
         </div>
         <div className="flex items-center gap-2">
           {currentList.length > 0 && (
-            <Select value={currentId} onValueChange={(v) => setSelectedId((s) => ({ ...s, [tab]: v }))}>
+            <Select value={currentId} onValueChange={(v) => onSelectId(tab, v)}>
               <SelectTrigger className="h-7 w-48 text-xs">
                 <SelectValue />
               </SelectTrigger>

@@ -26,7 +26,7 @@ from agent_eval.core.types import ConstraintTier, EvalMethod, EvalStatus
 from agent_eval.evaluation.base import BaseEvaluator
 from agent_eval.evaluation.models import ConstraintResult
 from agent_eval.evaluation.registry import registry
-from agent_eval.evaluation.text_utils import collect_text_content
+from agent_eval.evaluation.text_utils import collect_text_content_with_markers
 from agent_eval.evaluation.text_utils import get_output_dir as _get_output_dir
 
 # ─── LLM Judge 评估器 ───
@@ -43,6 +43,55 @@ def _band_of(score: float) -> str:
     if score >= 3:
         return "不足"
     return "严重不足"
+
+
+def _manifest_filename_map(manifest: Any) -> dict[str, str] | None:
+    """构建「全路径/基名 → 全路径」映射（用于校验 + 基名归一）。
+
+    判官常只给文件基名（如 ``建构性导学.html``），这里既登记全路径也登记基名，
+    基名冲突时取首个。manifest 缺失/异常返回 None（不校验，保留全部）。
+    """
+    if not isinstance(manifest, dict):
+        return None
+    mapping: dict[str, str] = {}
+    for mod in manifest.get("modules") or []:
+        for child in mod.get("children") or []:
+            path = child.get("path")
+            if not (isinstance(path, str) and path):
+                continue
+            mapping[path] = path
+            mapping.setdefault(path.rsplit("/", 1)[-1], path)
+    return mapping or None
+
+
+def _aggregate_source_files(
+    dimensions: list[dict[str, Any]] | None,
+    context: dict[str, Any],
+) -> list[dict[str, str]]:
+    """聚合维度 issues[].involved_files → details.source_files（docs/arch/15 §4.4 C 档）。
+
+    经 directory_manifest 校验，剔除判官幻觉的文件名；基名命中时归一为全路径。
+    """
+    if not dimensions:
+        return []
+    mapping = _manifest_filename_map(context.get("directory_manifest"))
+    files: set[str] = set()
+    for dim in dimensions:
+        for issue in dim.get("issues") or []:
+            for name in issue.get("involved_files") or []:
+                if not isinstance(name, str):
+                    continue
+                name = name.strip()
+                if not name:
+                    continue
+                if mapping is None:
+                    files.add(name)
+                else:
+                    # 全路径优先；否则按基名归一为 manifest 中的全路径
+                    resolved = mapping.get(name) or mapping.get(name.rsplit("/", 1)[-1])
+                    if resolved:
+                        files.add(resolved)
+    return [{"filename": fn} for fn in sorted(files)]
 
 
 class BaseLLMJudgeEvaluator(BaseEvaluator):
@@ -88,11 +137,11 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
                 duration_ms=elapsed,
             )
 
-        # 收集文档内容
+        # 收集文档内容（带文件边界标记，供判官在 involved_files 引用文件名）
         output_dir = _get_output_dir(sample)
         text = ""
         if output_dir and output_dir.exists():
-            text = collect_text_content(output_dir)
+            text = collect_text_content_with_markers(output_dir)
 
         if not text.strip():
             elapsed = (time.monotonic() - start) * 1000
@@ -206,6 +255,8 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
                 }
                 for dim in template.dimensions
             ]
+            # 文件定位（docs/arch/15 C 档）：聚合 issues[].involved_files，经 manifest 校验
+            details["source_files"] = _aggregate_source_files(details["dimensions"], context)
 
         # 获取 judge record 路径
         record_path = None

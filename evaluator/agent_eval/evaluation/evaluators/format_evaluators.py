@@ -104,6 +104,8 @@ class ResponseFormatEvaluator(BaseEvaluator):
 
         # 收集所有输出文件（跳过 _manifest.json）
         files = [f for f in output_dir.rglob("*") if f.is_file() and f.name != "_manifest.json"]
+        # 文件定位（docs/arch/15）：相对路径供前端「涉及文件」chip 联动切换预览
+        source_files = [{"filename": str(f.relative_to(output_dir))} for f in files]
 
         if not files:
             return self._make_result(
@@ -135,6 +137,7 @@ class ResponseFormatEvaluator(BaseEvaluator):
                 reason=f"全部 {valid_count} 个文件格式有效",
                 details={
                     "checked_files": [f.name for f in files],
+                    "source_files": source_files,
                     "valid_formats": sorted(allowed_exts),
                     "total": len(files),
                     "valid_count": valid_count,
@@ -149,6 +152,7 @@ class ResponseFormatEvaluator(BaseEvaluator):
                 details={
                     "invalid_files": invalid_files,
                     "checked_files": [f.name for f in files],
+                    "source_files": source_files,
                     "valid_count": valid_count,
                     "total": len(files),
                 },
@@ -218,6 +222,8 @@ class HtmlValidityEvaluator(BaseEvaluator):
             )
 
         html_files = list(output_dir.rglob("*.html")) + list(output_dir.rglob("*.htm"))
+        # 文件定位（docs/arch/15）：相对路径供前端「涉及文件」chip 联动切换预览
+        source_files = [{"filename": str(f.relative_to(output_dir))} for f in html_files]
 
         if check_html_only and not html_files:
             # 没有 HTML 文件时自动通过（仅检查 HTML）
@@ -261,7 +267,11 @@ class HtmlValidityEvaluator(BaseEvaluator):
                 status=EvalStatus.PASS,
                 score=1.0,
                 reason=f"全部 {valid_count} 个 HTML 文件有效",
-                details={"valid_files": [f.name for f in html_files], "total": len(html_files)},
+                details={
+                    "valid_files": [f.name for f in html_files],
+                    "source_files": source_files,
+                    "total": len(html_files),
+                },
                 duration_ms=elapsed,
             )
         else:
@@ -274,6 +284,7 @@ class HtmlValidityEvaluator(BaseEvaluator):
                     "valid_count": valid_count,
                     "total": len(html_files),
                     "checked_files": [f.name for f in html_files],
+                    "source_files": source_files,
                 },
                 duration_ms=elapsed,
             )

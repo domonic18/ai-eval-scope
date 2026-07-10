@@ -107,6 +107,7 @@ class VisionQualityEvaluator(BaseLLMJudgeEvaluator):
             doc_files=doc_files,
             sample_id=context.get("sample_id", "unknown"),
             evidence_dir=ev,
+            output_dir=Path(output_dir) if output_dir else None,
             title=task_input.get("title", "未知标题"),
             provider_name=provider_name,
             trace_id=context.get("trace_id"),
@@ -128,18 +129,21 @@ class VisionQualityEvaluator(BaseLLMJudgeEvaluator):
         doc_files: list[Path],
         sample_id: str,
         evidence_dir: Path,
+        output_dir: Path | None,
         title: str,
         provider_name: str | None,
         trace_id: str | None = None,
     ) -> list[dict[str, Any]]:
         """逐文档调用视觉 judge，返回每文档评估记录列表。
 
-        每条记录：{doc_name, scores, summary, judge_id, ok}。单文档失败（异常）记
+        每条记录：{doc_name, doc_path, scores, summary, judge_id, ok}。单文档失败（异常）记
         ok=False 并继续，不中断其余文档。
         """
         records: list[dict[str, Any]] = []
         for idx, (doc, png) in enumerate(zip(doc_files, screenshots, strict=False)):
             doc_name = Path(doc).stem
+            # 相对 output 目录的路径（docs/arch/15 文件定位）；无 output_dir 时回退基名
+            doc_path = str(Path(doc).relative_to(output_dir)) if output_dir else Path(doc).name
             variables = {"title": title, "num_documents": 1}
             try:
                 scores, record = orchestrator.judge(
@@ -156,6 +160,7 @@ class VisionQualityEvaluator(BaseLLMJudgeEvaluator):
                 records.append(
                     {
                         "doc_name": doc_name,
+                        "doc_path": doc_path,
                         "screenshot": png.name,
                         "scores": scores,
                         "summary": getattr(record, "summary", "") if record else "",
@@ -167,7 +172,13 @@ class VisionQualityEvaluator(BaseLLMJudgeEvaluator):
                 )
             except Exception as e:  # noqa: BLE001 — 单文档失败不致命
                 records.append(
-                    {"doc_name": doc_name, "screenshot": png.name, "error": str(e), "ok": False}
+                    {
+                        "doc_name": doc_name,
+                        "doc_path": doc_path,
+                        "screenshot": png.name,
+                        "error": str(e),
+                        "ok": False,
+                    }
                 )
         return records
 
@@ -211,9 +222,16 @@ class VisionQualityEvaluator(BaseLLMJudgeEvaluator):
             "screenshot_paths": [str(p) for p in screenshots],
             "total_documents": total_docs,
             "evaluated_documents": len(ok_docs),
+            # 文件定位（docs/arch/15）：逐文档相对路径，前端点击 chip → 切到对应截图
+            "source_files": [
+                {"filename": d.get("doc_path"), "artifact_kind": "shot"}
+                for d in per_doc
+                if d.get("doc_path")
+            ],
             "per_document": [
                 {
                     "doc": d.get("doc_name"),
+                    "doc_path": d.get("doc_path"),
                     "screenshot": d.get("screenshot"),
                     "scores": d.get("scores"),
                     **({"error": d["error"]} if not d.get("ok") and "error" in d else {}),
