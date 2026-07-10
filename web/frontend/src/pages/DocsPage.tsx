@@ -17,18 +17,24 @@ import integrationMd from "../content/integration.md?raw"
 interface Heading {
   text: string
   id: string
+  level: 2 | 3
 }
 
 export default function DocsPage() {
   const loggedIn = !!loadSession()
   const [active, setActive] = useState("")
 
-  // 从 markdown 提取 ## 标题作为 TOC（与下方 h2 组件的 toSlug 保持一致）
+  // 从 markdown 提取 ## / ### 标题作为 TOC（与下方 h2/h3 组件的 toSlug 保持一致）
   const headings: Heading[] = useMemo(() => {
-    const lines = integrationMd.match(/^## .+$/gm) ?? []
+    const lines = integrationMd.match(/^#{2,3} .+$/gm) ?? []
     return lines.map((line) => {
-      const full = line.replace(/^## /, "")
-      return { text: full.replace(/^\d+\.\s*/, ""), id: toSlug(full) }
+      const m = line.match(/^(#{2,3}) (.+)$/)!
+      const full = m[2]
+      return {
+        text: full.replace(/^\d+\.\s*/, ""),
+        id: toSlug(full),
+        level: m[1].length as 2 | 3,
+      }
     })
   }, [])
 
@@ -69,7 +75,7 @@ export default function DocsPage() {
 
       {/* 顶部导航 */}
       <header className="relative z-10 border-b backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-6">
           <Link to="/" className="inline-flex items-center gap-2.5 text-[15px] font-medium">
             <span className="flex size-7 items-center justify-center">
               <img src="/logo.svg" alt="EvalScope" className="h-full w-full" />
@@ -98,7 +104,7 @@ export default function DocsPage() {
       </header>
 
       {/* 内容 + 左侧 TOC */}
-      <div className="relative z-10 mx-auto flex max-w-6xl gap-10 px-6 pb-24">
+      <div className="relative z-10 mx-auto flex max-w-7xl gap-10 px-6 pb-24">
         <aside className="hidden w-52 shrink-0 md:block">
           <div className="sticky top-24">
             <div className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -110,7 +116,8 @@ export default function DocsPage() {
                   key={h.id}
                   href={`#${h.id}`}
                   className={cn(
-                    "-ml-px block border-l-2 px-3 py-1.5 text-sm transition-colors",
+                    "-ml-px block border-l-2 py-1.5 pr-3 transition-colors",
+                    h.level === 3 ? "pl-8 text-xs" : "pl-3 text-sm",
                     active === h.id
                       ? "border-primary font-medium text-primary"
                       : "border-transparent text-muted-foreground hover:text-foreground",
@@ -123,7 +130,7 @@ export default function DocsPage() {
           </div>
         </aside>
 
-        <main className="min-w-0 max-w-3xl pt-10">
+        <main className="min-w-0 max-w-4xl pt-10">
           {/* 正文全部由 integration.md 维护，避免页面 hardcode */}
           <article>
             <ReactMarkdown
