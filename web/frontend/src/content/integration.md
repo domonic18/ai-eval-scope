@@ -1,22 +1,47 @@
 # 第三方接入 EvalScope 评估器
 
-通过 EvalScope **Web 后端 `/api/v1/jobs`**，第三方系统（课件平台、Agent 编排等）一行 HTTP 请求即可把待评估内容提交给 EvalScope；平台异步运行评估器，并回传 **可量化的指标** 与 **可追溯的证据**。
+通过 EvalScope，第三方系统（课件平台、Agent 编排、智能体客户端等）可一行请求把待评估内容提交给平台；平台异步运行评估器，并回传**可量化的指标**与**可追溯的证据**。所有结果回流到同一可观测平台，支持多项目趋势与详情查看。
 
-## 快速开始
-
-三步接入 EvalScope 评估：
-
-1. **创建 API Key** — 登录 [EvalScope 控制台](/dashboard) → 左侧「项目看板」选项目 → 「API Key」页 → 新建 → 复制 **API Key**（`eval-…`，单一 Bearer Key）。**仅创建时明文展示一次，请妥善保存。**
-2. **提交评估** — 携带 `Authorization: Bearer <api_key>` 向 `POST /api/v1/jobs` 提交内容，立即拿到 `job_id`（`202 Accepted`）。
-3. **查询结果** — 轮询 `GET /api/v1/jobs/{job_id}`，直到 `status` 变为 `completed`，读取 `metrics` 与 `web_run_url`。
-
-> **Base URL（线上）**：`https://eval.bj33smarter.com`
->
-> 想先试一下？登录后打开 [调试台](/debug)，填 API Key + 上传文件即可在线提交、实时查看 request / response / 评估结果。
+EvalScope 提供**三种接入方式**，均使用同一把 API Key、同一套评测引擎与租户隔离，可按场景混合使用。
 
 ---
 
-## 接入流程
+## 接入方式总览
+
+| 方式 | 调用形态 | 适用场景 | 适合谁 |
+|------|----------|----------|--------|
+| **[HTTP API](#http-协议接入)** | REST（`POST/GET`） | 服务端系统对接、服务端编排、CI/CD | 课件平台后端、第三方服务、自动化脚本 |
+| **[MCP](#mcp-接入-智能体)** | MCP 工具调用 | 让 AI 智能体直接提交/查询评测 | Claude Code / Cursor / Windsurf / Claude Desktop |
+| **[CLI](#cli-接入-评估器直跑)** | 命令行 + `.env` | 本地开发联调、离线批跑 | 开发者本地、定时任务、不方便走 HTTP 的场景 |
+
+**选型建议**：
+
+- 服务端系统对接 → **HTTP API**（最通用，REST 调用）
+- 让 AI 智能体在对话中评测课件 → **MCP**（客户端即插即用，无需手写 HTTP）
+- 本地手跑或脚本化批跑 → **CLI**（评估器直跑，结果自动回传）
+
+> 三种方式提交的任务都进入同一个 `eval_jobs` 队列，由 executor 异步执行，结果与制品落同一可观测平台。
+
+---
+
+## 准备工作
+
+三种接入方式共用以下准备步骤：
+
+1. **创建项目** — 登录[控制台](/dashboard) → 左侧「项目看板」→ 新建项目。
+2. **签发 API Key** — 进入项目 →「设置 & API Key」→ 新建 → 复制 **API Key**（`eval-…`）。**仅创建时明文展示一次，请妥善保存。**
+3. **Base URL（线上）** — `https://eval.bj33smarter.com`
+4. **在线调试** — 登录后打开[调试台](/debug)，填 API Key + 上传文件即可在线提交、实时查看 request / response / 评估结果。
+
+> **统一鉴权**：所有方式均使用 `Authorization: Bearer <api_key>`（一把 Key 走天下：提交 / 查状态 / 取速览）。**项目归属完全由 Key 决定**，提交时无需也不接受 `project_id`。
+
+---
+
+## HTTP 协议接入
+
+服务端系统通过 REST API 提交评测、轮询结果、取速览。第三方对接的**主力方式**。
+
+### 接入流程
 
 ```text
 ┌──────────┐   POST /api/v1/jobs     ┌──────────────────────┐    SCF Invoke / worker   ┌──────────┐
@@ -33,26 +58,22 @@
                                                                           └────────────────────────────┘
 ```
 
-- **Base URL（线上）**：`https://eval.bj33smarter.com`
-- **鉴权方式**：`Authorization: Bearer <api_key>`（单一 Key，无需计算签名）
-- **交互方式**：提交后拿到 `job_id`，轮询 `GET /api/v1/jobs/{job_id}` 获取结果
+- **Base URL**：`https://eval.bj33smarter.com`
+- **鉴权**：`Authorization: Bearer <api_key>`（无需计算签名，生产强制 HTTPS）
+- **交互**：提交后拿 `job_id` → 轮询 `GET /api/v1/jobs/{job_id}` → 读结果
 
----
-
-## 提交评估
+### 提交评测任务
 
 ```bash
 POST https://eval.bj33smarter.com/api/v1/jobs
 Authorization: Bearer <api_key>
 ```
 
-所有请求通过 `Authorization: Bearer <api_key>` 鉴权（`api_key` 即控制台签发的单一 Key）。**无需计算签名**，生产强制 HTTPS 下直接传输即可。
+按 `Content-Type` 分两种提交方式，覆盖课件的两类形态（**HTML 课件网页** 与 **Markdown 文档**，两种格式 / 两种粒度均完整支持）：
 
-按 `Content-Type` 分两种提交方式：
+#### 上传原始字节（application/octet-stream）
 
-### 上传原始字节（application/octet-stream）
-
-适合提交 HTML / Markdown / 压缩包等已有文件。请求体为文件原始字节，元数据通过**查询串**传递。
+适合提交已有文件。请求体为文件原始字节，元数据通过查询串传递。单文件为「单页」评估；`.zip` 解析为「单元」评估（保留目录树）。
 
 | 查询串字段      | 必需  | 类型     | 说明                               |
 | --------------- | --- | ------ | -------------------------------- |
@@ -62,9 +83,9 @@ Authorization: Bearer <api_key>
 | `task_title`    | 否   | string | 任务标题，如《分数入门》                     |
 | `task_subject`  | 否   | string | 任务学科                               |
 
-> 单文件为「单页」评估；`.zip` 解析为「单元」评估（保留目录结构）。
+> 声明为 `.zip` 但内容不是合法 zip 包会被拒绝，避免 executor 解压失败。
 
-### 内联内容（application/json）
+#### 内联内容（application/json）
 
 适合直接传文本，无需落盘。
 
@@ -73,7 +94,7 @@ Authorization: Bearer <api_key>
 | `content`                                | 是   | object | `{ filename: string, text: string }`，如 `{"filename":"lesson.html","text":"<html>…"}` |
 | `rule_set_id` / `task_id` / `task_title` | 否   | string | 同上                                                                                   |
 
-### 响应（`202 Accepted`）
+#### 响应（202 Accepted）
 
 ```json
 {
@@ -85,12 +106,9 @@ Authorization: Bearer <api_key>
 }
 ```
 
-> `project_id` 由 API Key 验签解析后回传，**提交时无需也不接受 project_id**——结果归属完全由 Key 决定。
-> `scf_request_id` 仅在生产 SCF 触发时返回；本地开发为 `null`。
+> `project_id` 由 API Key 验签解析后回传，提交时无需传入。`scf_request_id` 仅在生产 SCF 触发时返回；本地开发为 `null`。
 
----
-
-## 查询结果
+### 查询结果
 
 ```bash
 GET https://eval.bj33smarter.com/api/v1/jobs/{job_id}
@@ -126,16 +144,14 @@ Authorization: Bearer <api_key>
 
 > 越权访问（`job_id` 不属于当前 Key 的项目）一律返回 `404`，不泄露存在性。
 
-### 响应示例
-
-以 `completed` 为例（`failed` 时 `metrics` 为 `null`、`error` 填充失败原因）：
+以 `completed` 为例：
 
 ```json
 {
   "job_id": "0bc0b717-ada1-4783-8718-7889b5982060",
   "status": "completed",
   "project_id": "d288698e-ee7c-4d4e-b1fc-a2d050ce4a9b",
-  "org_id": "1968916c-9aed-4df5-ba5e-6b5c9f757a06",
+  "org_id": "1968916c-9aed-4df5-b5ae-6b5c9f757a06",
   "input_kind": "inline",
   "scope": "single",
   "rule_set_id": "coursework-quality",
@@ -157,11 +173,7 @@ Authorization: Bearer <api_key>
 }
 ```
 
-> 想看"过没过 / 各项为什么没过"，用下面的速览端点；想看逐条约束 / 制品，用 iframe 嵌入（见「公开访问与 iframe 嵌入」）。
-
----
-
-## 评测速览（overview）
+### 评测速览（overview）
 
 `GET /api/v1/jobs/{job_id}` 只回顶层指标，看不到"各项为什么没过"。速览端点一次拿到**过没过 / 多少分 + 各评测项的失败原因**：
 
@@ -210,13 +222,10 @@ Authorization: Bearer <api_key>
 
 > - 任务未完成（`queued` / `running` / `failed`）时，只回 `status` + 任务级 `error`，`items` 为空。
 > - 速览**只给摘要**：逐条约束的 `details` / 制品预览等深度详情不开放 API，由 iframe 嵌入公开页查看。
-> - 越权（`job_id` 不属于当前 Key 的项目）一律 `404`，不泄露存在性。
 
----
+### 公开访问与 iframe 嵌入
 
-## 公开访问与 iframe 嵌入
-
-把项目设为公开后，运行 / 样本详情页可被第三方**免登录** iframe 嵌入（详见 `docs/arch/12第三方系统对接方案.md` §3.5）：
+把项目设为公开后，运行 / 样本详情页可被第三方**免登录** iframe 嵌入：
 
 1. 项目 owner 在 Web 控制台「项目设置 → 公开访问」开启**公开**。
 2. 直接把运行详情页地址放进 iframe：
@@ -227,78 +236,9 @@ Authorization: Bearer <api_key>
 
 公开 = 任何人持链接可**只读**查看该项目运行 / 样本（不含 Key / 写操作）；不公开的项目仍需登录。`run_id` 取自 `GET /jobs/{id}` 或 `/overview` 的 `run_id` / `web_run_url`。
 
----
+### 代码示例
 
-## MCP 接入（智能体）
-
-EvalScope 同时提供 MCP server，任意兼容 Streamable HTTP 的 MCP 客户端（Claude Code / Cursor / Windsurf 等）无需调用 HTTP 即可提交/查询评测。
-
-### 支持的内容格式与评估粒度
-
-| 文件名扩展名 | 评估粒度 | 说明 |
-| ------------ | -------- | ---- |
-| `.zip` | **单元评估** | zip 内保留目录树，适用于多文件/多课件的单元；**必须真是合法 zip 包** |
-| `.html` / `.htm` | 单页评估 | 单个课件网页 |
-| `.md` / `.markdown` | 单页评估 | 单个 Markdown 文档 |
-
-> 文件名决定 `scope`：`.zip` 会触发解压并按单元评估；其余扩展名按单页评估。若声明为 `.zip` 但内容不是合法 zip，提交时会被拒绝。
-
-### 客户端配置
-
-把项目签发的 API Key 填入 `headers.Authorization`，服务端与 HTTP API 使用同一套 Bearer 鉴权：
-
-```jsonc
-{
-  "mcpServers": {
-    "evalscope": {
-      "url": "https://eval.bj33smarter.com/api/v1/mcp",
-      "headers": { "Authorization": "Bearer eval-…" }
-    }
-  }
-}
-```
-
-> Claude Desktop 配置文件路径：
-> - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-> - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-
-### 可用工具
-
-| 工具 | 说明 |
-| ---- | ---- |
-| `submit_eval_job` | 提交评测任务；小文件走 `content` inline / `file` base64（≤5MB），大文件先调用 `request_input_upload` 获取 presigned PUT，再传入 `input_object_key`；文件名决定粒度：`.zip` 单元评估，`.html/.md` 单页评估 |
-| `get_eval_job` | 查询任务状态，返回 `status` / `metrics` / `web_run_url` 等 |
-| `get_eval_job_overview` | 速览：返回 `verdict` / `score` + 各评测项 `failures`（约束 `name` + `reason`） |
-| `list_rule_sets` | 列出当前项目可用规则集 |
-| `eval_health` | 健康检查 |
-| `request_input_upload` | 为即将提交的大文件申请 presigned PUT URL |
-
-### 大文件提交流程
-
-1. 调用 `request_input_upload(filename="unit.zip")`，返回 `upload_url` 与最终使用的 `object_key`。文件名决定评估粒度：`.zip` 会按单元评估解压，`.html/.md` 等按单页评估。
-2. 用 HTTP `PUT` 把文件字节上传到 `upload_url`。
-3. 调用 `submit_eval_job(input_object_key=object_key, …)` 提交评测。
-
-> 若 `filename` 以 `.zip` 结尾但上传内容不是合法 zip 包，提交会被拒绝，避免 executor 侧解压失败。
-
----
-
-## 状态码与错误码
-
-| HTTP  | code                | 触发场景                                        |
-| ----- | ------------------- | ------------------------------------------- |
-| `202` | —                   | 提交成功，任务已入队                                  |
-| `400` | `INPUT_INVALID`     | 字段缺失或非法（如缺 `filename` / `content`）              |
-| `401` | `AUTH_INVALID`      | 缺少/错误的 API Key、Key 已吊销或过期、scope 不含 `ingest` |
-| `404` | `JOB_NOT_FOUND`     | 任务不存在或不属于当前 Key 的项目                         |
-| `413` | `PAYLOAD_TOO_LARGE` | 上传内容超限（默认 50MB）                              |
-| `429` | `RATE_LIMITED`      | 触发令牌桶限流（按 API Key，提交 / 摄取），响应带 `Retry-After` 头 |
-
----
-
-## 代码示例
-
-### Python（httpx）
+#### Python（httpx）
 
 ```python
 import time
@@ -325,7 +265,7 @@ while True:
     time.sleep(3)
 ```
 
-### 上传 .zip 文件（单元评估）
+#### 上传 .zip 文件（单元评估）
 
 ```python
 import httpx
@@ -345,7 +285,7 @@ r = httpx.post(
 print(r.status_code, r.json())  # 202 {"job_id":"…","status":"queued",…}
 ```
 
-### TypeScript（fetch）
+#### TypeScript（fetch）
 
 ```ts
 const API_KEY = "eval-..."
@@ -360,29 +300,130 @@ const job = await res.json()
 console.log(job.job_id)
 ```
 
-### curl（octet-stream 上传）
+#### curl
 
 ```bash
+# 上传单页
 API_KEY="eval-..."
 curl -X POST "https://eval.bj33smarter.com/api/v1/jobs" \
   -H "Authorization: Bearer $API_KEY" \
   -H "Content-Type: application/octet-stream" \
   --data-binary @lesson.html \
   -G -d "filename=lesson.html" -d "rule_set_id=coursework-quality"
-```
 
-### curl（查询）
-
-```bash
-API_KEY="eval-..."; JOB="d3f1...e8a2"
+# 查询
+JOB="d3f1...e8a2"
 curl "https://eval.bj33smarter.com/api/v1/jobs/$JOB" -H "Authorization: Bearer $API_KEY"
 ```
 
 ---
 
-## 用评估器 CLI 接入
+## MCP 接入（智能体）
 
-如果你直接使用评估器命令行（`agent-eval`），评估结果可经 Web 摄取链路自动回传，无需调用 `/api/v1/jobs`。在 `.env` 配置：
+任意兼容 Streamable HTTP 的 MCP 客户端（Claude Code / Cursor / Windsurf / Claude Desktop / VS Code Copilot / 自研 Agent 等）无需手写 HTTP，直接以**工具调用**提交/查询评测。与 HTTP **同一把 API Key、同一套功能、同一租户隔离** —— MCP 只是同一接入层的新 transport。
+
+### 客户端配置
+
+把项目签发的 API Key 填入 `headers.Authorization`：
+
+```jsonc
+{
+  "mcpServers": {
+    "evalscope": {
+      "url": "https://eval.bj33smarter.com/api/v1/mcp",
+      "headers": { "Authorization": "Bearer eval-…" }
+    }
+  }
+}
+```
+
+> Claude Desktop 配置文件路径：
+> - macOS：`~/Library/Application Support/Claude/claude_desktop_config.json`
+> - Windows：`%APPDATA%\Claude\claude_desktop_config.json`
+
+### 支持的内容格式与评估粒度
+
+| 文件名扩展名 | 评估粒度 | 说明 |
+| ------------ | -------- | ---- |
+| `.zip` | **单元评估** | zip 内保留目录树，适用于多文件/多课件的单元；**必须是合法 zip 包** |
+| `.html` / `.htm` | 单页评估 | 单个课件网页 |
+| `.md` / `.markdown` | 单页评估 | 单个 Markdown 文档 |
+
+> 文件名决定 `scope`：`.zip` 触发解压按单元评估；其余按单页评估。声明为 `.zip` 但内容不是合法 zip 会被拒绝。
+
+### 可用工具
+
+| 工具 | 对应 HTTP | 说明 |
+| ---- | -------- | ---- |
+| `submit_eval_job` | `POST /api/v1/jobs` | 提交评测任务；小文件走 `content` inline / `file` base64（≤5MB），大文件先 `request_input_upload` 再传 `input_object_key` |
+| `get_eval_job` | `GET /api/v1/jobs/:id` | 查询任务状态，返回 `status` / `metrics` / `web_run_url` 等 |
+| `get_eval_job_overview` | `GET /api/v1/jobs/:id/overview` | 速览：返回 `verdict` / `score` + 各评测项 `failures`（约束 `name` + `reason`） |
+| `list_rule_sets` | `GET /api/v1/rule-sets` | 列出当前项目可用规则集 |
+| `eval_health` | `GET /api/v1/health` | 健康检查 |
+| `request_input_upload` | （HTTP 无；MCP 大文件专用） | 为即将提交的大文件申请 presigned PUT URL |
+
+### 使用流程
+
+接入后，直接用**自然语言**让智能体评估课件即可，无需关心底层工具调用与上传细节。以 Claude Code 为例：
+
+**评估单个课件**
+
+```
+你：请评估 lesson.html 这个课件
+
+智能体：已提交评估，等待结果……
+       ✅ 评估完成（综合评分 0.78，通过）
+         · 交付率 DR 0.96 / 约束通过率 CPR 0.91
+         ⚠️ 知识准确性检查未通过：原文等式计算有误
+         详情：https://eval.bj33smarter.com/run/2f8a1c...
+```
+
+**评估整个单元（目录或 zip）**
+
+```
+你：请对 ./courseware/unit5 目录下的课件做单元评估
+
+智能体：已将目录打包为单元评估提交……
+       ✅ 完成，共 3 个课件：2 通过 / 1 未通过
+         （逐项汇报分数与失败原因）
+```
+
+**智能体会自动处理的事**（你无需关心）：
+
+- 选择规则集（默认 `coursework-quality`，可说"用 xxx 规则集评估"指定）
+- 单文件直接提交；目录 / 大文件自动打包并上传，无需手动处理上传地址
+- 提交后自动轮询，完成后汇报综合评分、各项指标与失败原因
+- 需要看截图、逐条约束时，给出可点击的详情页链接
+
+> 想指定任务信息直接说即可，例如"评估 unit5.zip，标题《分数入门》，学科数学"。
+
+---
+
+## CLI 接入（评估器直跑）
+
+直接使用评估器命令行 `agent-eval`，评估结果经 Web 摄取链路（ResultSink）**自动回传**，无需调用 `/api/v1/jobs`。
+
+### 适用场景
+
+- 本地开发联调评估流程
+- CI / 定时脚本批量评估
+- 不方便走 HTTP 的离线场景（结果先入离线队列，联网后重放）
+
+### 安装
+
+```bash
+# 1. 克隆仓库
+git clone https://git.code.tencent.com/domonic/agent-eval-system.git
+cd agent-eval-system
+
+# 2. 进入评估器目录并安装依赖（需先安装 uv：curl -LsSf https://astral.sh/uv/install.sh | sh）
+cd evaluator
+uv sync
+```
+
+### 配置
+
+在仓库根 `.env` 配置：
 
 | 变量                   | 默认                      | 说明                        |
 | -------------------- | ----------------------- | ------------------------- |
@@ -391,5 +432,39 @@ curl "https://eval.bj33smarter.com/api/v1/jobs/$JOB" -H "Authorization: Bearer $
 | `AGENT_EVAL_PROJECT` | Key 所属项目                | 项目 uuid 或 slug（可省略）       |
 | `AGENT_EVAL_UPLOAD`  | `false`                 | 设为 `true` 开启摄取（**需显式开启**） |
 
-配置后正常运行评估命令，`ResultSink` 会把运行 / 样本 / 约束 / 制品经 Bearer Key 摄取入库；网络失败自动入离线队列重放。
+### 运行
 
+在 `evaluator/` 目录下，配置好 `.env` 后即可用命令行运行评估：
+
+```bash
+cd evaluator
+uv run agent-eval --help          # 查看可用命令
+uv run agent-eval eval --help     # 查看评估子命令用法
+```
+
+运行后，`ResultSink` 会把运行 / 样本 / 约束 / 制品经 Bearer Key 自动摄取入库；网络失败自动入离线队列，联网后重放。
+
+---
+
+## 状态码与错误码
+
+| HTTP  | code                | 触发场景                                        |
+| ----- | ------------------- | ------------------------------------------- |
+| `202` | —                   | 提交成功，任务已入队                                  |
+| `400` | `INPUT_INVALID`     | 字段缺失或非法（如缺 `filename` / `content`、`.zip` 飞行检查失败） |
+| `401` | `AUTH_INVALID`      | 缺少/错误的 API Key、Key 已吊销或过期、scope 不含 `ingest` |
+| `404` | `JOB_NOT_FOUND`     | 任务不存在或不属于当前 Key 的项目                         |
+| `413` | `PAYLOAD_TOO_LARGE` | 上传内容超限（默认 50MB；MCP base64 超 5MB 引导走 presigned） |
+| `429` | `RATE_LIMITED`      | 触发令牌桶限流（按 API Key，提交 / 摄取），响应带 `Retry-After` 头 |
+
+> MCP 工具调用错误以 `isError: true` + `{ code, message }` 返回，错误码与 HTTP 一致，不泄露资源存在性。
+
+---
+
+## 限额与约束
+
+- **上传上限**：单次 50MB（`application/octet-stream` / JSON inline）；MCP `base64` 解码后 ≤5MB，超出走 `request_input_upload` presigned 直传。
+- **单元评估**：`.zip` 解压总大小上限 100MB、含 zip-slip 防护。
+- **限流**：按 API Key 令牌桶（提交 / 摄取共用口径）。
+- **保留期**：运行 / 样本 / 制品保留期由项目设置控制。
+- **鉴权**：一把 Key 绑定单一项目，所有读写按 Key 验签所得 `project_id/org_id` 过滤，越权返回 `404`。
