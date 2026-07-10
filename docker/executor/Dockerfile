@@ -9,6 +9,9 @@ WORKDIR /app
 # 安装 uv（与 evaluator CI 一致）
 RUN pip install --no-cache-dir uv
 
+# uv 走腾讯 PyPI 镜像（国内构建环境 pypi.org 不可达，与 web 的 npm 镜像同源）
+ENV UV_INDEX_URL=https://mirrors.cloud.tencent.com/pypi/simple
+
 # 先复制并安装评估器（path 依赖）与 executor
 COPY evaluator ./evaluator
 COPY executor ./executor
