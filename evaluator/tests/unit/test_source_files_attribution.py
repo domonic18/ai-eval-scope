@@ -15,9 +15,11 @@ from agent_eval.evaluation.evaluators.format_evaluators import (
     HtmlValidityEvaluator,
     ResponseFormatEvaluator,
 )
+from agent_eval.evaluation.evaluators.quality_evaluators import _aggregate_source_files
 from agent_eval.evaluation.evaluators.vision_evaluators import (
     VisionQualityEvaluator,
 )
+from agent_eval.evaluation.text_utils import collect_text_content_with_markers
 
 # ─── format.response_format（B 档：相对路径，非 basename）───
 
@@ -111,3 +113,52 @@ def test_vision_source_files_from_per_doc() -> None:
     assert {sf["filename"] for sf in sfs} == {"dir/a.html", "b.html"}
     # vision 联动目标是截图
     assert all(sf["artifact_kind"] == "shot" for sf in sfs)
+
+
+# ─── P2: C 档（soft/pref）合并文本标记 + involved_files 聚合 ───
+
+
+def test_collect_text_content_with_markers(tmp_path: Path) -> None:
+    out = tmp_path / "output"
+    out.mkdir()
+    (out / "a.md").write_text("内容A")
+    (out / "sub").mkdir()
+    (out / "sub" / "b.html").write_text("<html>x</html>")
+
+    text = collect_text_content_with_markers(out)
+
+    assert "=== FILE: a.md ===" in text
+    assert "=== FILE: sub/b.html ===" in text  # 相对路径标记
+    assert "内容A" in text
+
+
+def test_aggregate_source_files_filters_hallucination() -> None:
+    dims = [
+        {"issues": [{"involved_files": ["a.html", "sub/b.md"]}, {"involved_files": ["a.html"]}]},
+        {"issues": [{"involved_files": ["c.html", "ghost.html"]}]},  # ghost 不在 manifest
+    ]
+    manifest = {
+        "modules": [{"children": [{"path": "a.html"}, {"path": "sub/b.md"}, {"path": "c.html"}]}]
+    }
+    sfs = _aggregate_source_files(dims, {"directory_manifest": manifest})
+    # 去重 + 过滤幻觉文件名 ghost.html
+    assert {sf["filename"] for sf in sfs} == {"a.html", "sub/b.md", "c.html"}
+
+
+def test_aggregate_source_files_no_manifest_keeps_all() -> None:
+    dims = [{"issues": [{"involved_files": ["x.html", "y.md"]}]}]
+    sfs = _aggregate_source_files(dims, {})  # 无 manifest → 不过滤
+    assert {sf["filename"] for sf in sfs} == {"x.html", "y.md"}
+
+
+def test_aggregate_source_files_empty() -> None:
+    assert _aggregate_source_files(None, {}) == []
+    assert _aggregate_source_files([{"issues": []}], {}) == []
+
+
+def test_aggregate_source_files_basename_resolved() -> None:
+    # 判官常只给基名 → 归一为 manifest 中的全路径
+    dims = [{"issues": [{"involved_files": ["建构性导学.html"]}]}]
+    manifest = {"modules": [{"children": [{"path": "M1/建构性导学/建构性导学.html"}]}]}
+    sfs = _aggregate_source_files(dims, {"directory_manifest": manifest})
+    assert sfs == [{"filename": "M1/建构性导学/建构性导学.html"}]

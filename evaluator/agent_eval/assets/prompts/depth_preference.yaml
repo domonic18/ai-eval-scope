@@ -98,7 +98,7 @@ user_prompt_template: |
     "knowledge_depth": {
       "score": <0-10>,
       "reason": "<一句话总评>",
-      "issues": [ {"desc": "<具体问题>", "severity": "high|medium|low", "evidence": "<原文/位置>"} ],
+      "issues": [ {"desc": "<具体问题>", "severity": "high|medium|low", "evidence": "<原文/位置>", "involved_files": ["<文件相对路径>"]} ],
       "highlights": ["<亮点>"]
     },
     "detail_level": { "score": <0-10>, "reason": "...", "issues": [], "highlights": [] },
@@ -122,6 +122,10 @@ output_schema:
               desc: { type: string }
               severity: { type: string, enum: [high, medium, low] }
               evidence: { type: string }
+              involved_files:
+                type: array
+                description: "该 issue 涉及的文件相对路径（取自 === FILE: 标记）"
+                items: { type: string }
             required: [desc, severity]
         highlights:
           type: array
@@ -140,6 +144,10 @@ output_schema:
               desc: { type: string }
               severity: { type: string, enum: [high, medium, low] }
               evidence: { type: string }
+              involved_files:
+                type: array
+                description: "该 issue 涉及的文件相对路径（取自 === FILE: 标记）"
+                items: { type: string }
             required: [desc, severity]
         highlights:
           type: array
@@ -158,6 +166,10 @@ output_schema:
               desc: { type: string }
               severity: { type: string, enum: [high, medium, low] }
               evidence: { type: string }
+              involved_files:
+                type: array
+                description: "该 issue 涉及的文件相对路径（取自 === FILE: 标记）"
+                items: { type: string }
             required: [desc, severity]
         highlights:
           type: array
