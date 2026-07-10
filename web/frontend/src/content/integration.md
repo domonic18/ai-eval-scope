@@ -10,9 +10,9 @@ EvalScope 提供**三种接入方式**，均使用同一把 API Key、同一套�
 
 | 方式 | 调用形态 | 适用场景 | 适合谁 |
 |------|----------|----------|--------|
-| **[HTTP API](#http-协议接入)** | REST（`POST/GET`） | 服务端系统对接、服务端编排、CI/CD | 课件平台后端、第三方服务、自动化脚本 |
-| **[MCP](#mcp-接入-智能体)** | MCP 工具调用 | 让 AI 智能体直接提交/查询评测 | Claude Code / Cursor / Windsurf / Claude Desktop |
-| **[CLI](#cli-接入-评估器直跑)** | 命令行 + `.env` | 本地开发联调、离线批跑 | 开发者本地、定时任务、不方便走 HTTP 的场景 |
+| **[HTTP API](#方式一-http-协议接入)** | REST（`POST/GET`） | 服务端系统对接、服务端编排、CI/CD | 课件平台后端、第三方服务、自动化脚本 |
+| **[MCP](#方式二-mcp-接入-智能体)** | MCP 工具调用 | 让 AI 智能体直接提交/查询评测 | 使用workbuddy，claudecode等智能体进行评测 |
+| **[CLI](#方式三-cli-接入-评估器直跑)** | 命令行 + `.env` | 本地开发联调、离线批跑 | 开发者本地、定时任务、不方便走 HTTP 的场景 |
 
 **选型建议**：
 
@@ -37,7 +37,7 @@ EvalScope 提供**三种接入方式**，均使用同一把 API Key、同一套�
 
 ---
 
-## HTTP 协议接入
+## 方式一：HTTP 协议接入
 
 服务端系统通过 REST API 提交评测、轮询结果、取速览。第三方对接的**主力方式**。
 
@@ -318,7 +318,7 @@ curl "https://eval.bj33smarter.com/api/v1/jobs/$JOB" -H "Authorization: Bearer $
 
 ---
 
-## MCP 接入（智能体）
+## 方式二：MCP 接入（智能体）
 
 任意兼容 Streamable HTTP 的 MCP 客户端（Claude Code / Cursor / Windsurf / Claude Desktop / VS Code Copilot / 自研 Agent 等）无需手写 HTTP，直接以**工具调用**提交/查询评测。与 HTTP **同一把 API Key、同一套功能、同一租户隔离** —— MCP 只是同一接入层的新 transport。
 
@@ -337,10 +337,6 @@ curl "https://eval.bj33smarter.com/api/v1/jobs/$JOB" -H "Authorization: Bearer $
 }
 ```
 
-> Claude Desktop 配置文件路径：
-> - macOS：`~/Library/Application Support/Claude/claude_desktop_config.json`
-> - Windows：`%APPDATA%\Claude\claude_desktop_config.json`
-
 ### 支持的内容格式与评估粒度
 
 | 文件名扩展名 | 评估粒度 | 说明 |
@@ -350,17 +346,6 @@ curl "https://eval.bj33smarter.com/api/v1/jobs/$JOB" -H "Authorization: Bearer $
 | `.md` / `.markdown` | 单页评估 | 单个 Markdown 文档 |
 
 > 文件名决定 `scope`：`.zip` 触发解压按单元评估；其余按单页评估。声明为 `.zip` 但内容不是合法 zip 会被拒绝。
-
-### 可用工具
-
-| 工具 | 对应 HTTP | 说明 |
-| ---- | -------- | ---- |
-| `submit_eval_job` | `POST /api/v1/jobs` | 提交评测任务；小文件走 `content` inline / `file` base64（≤5MB），大文件先 `request_input_upload` 再传 `input_object_key` |
-| `get_eval_job` | `GET /api/v1/jobs/:id` | 查询任务状态，返回 `status` / `metrics` / `web_run_url` 等 |
-| `get_eval_job_overview` | `GET /api/v1/jobs/:id/overview` | 速览：返回 `verdict` / `score` + 各评测项 `failures`（约束 `name` + `reason`） |
-| `list_rule_sets` | `GET /api/v1/rule-sets` | 列出当前项目可用规则集 |
-| `eval_health` | `GET /api/v1/health` | 健康检查 |
-| `request_input_upload` | （HTTP 无；MCP 大文件专用） | 为即将提交的大文件申请 presigned PUT URL |
 
 ### 使用流程
 
@@ -399,7 +384,7 @@ curl "https://eval.bj33smarter.com/api/v1/jobs/$JOB" -H "Authorization: Bearer $
 
 ---
 
-## CLI 接入（评估器直跑）
+## 方式三：CLI 接入（评估器直跑）
 
 直接使用评估器命令行 `agent-eval`，评估结果经 Web 摄取链路（ResultSink）**自动回传**，无需调用 `/api/v1/jobs`。
 
