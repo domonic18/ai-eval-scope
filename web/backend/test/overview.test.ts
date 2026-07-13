@@ -71,6 +71,7 @@ describe("buildJobOverview (pure)", () => {
               tier: "hard_gate",
               details: {
                 dimensions: [{ issues: [{ desc: "缺 <html> 根标签", severity: "high" }] }],
+                source_files: [{ filename: "index.html" }],
               },
             },
           ],
@@ -103,6 +104,7 @@ describe("buildJobOverview (pure)", () => {
           name: "格式门禁",
           reason: "缺少 <html> 根标签",
           top_issues: ["缺 <html> 根标签"], // 从 details.dimensions[].issues 聚合 high
+          files: ["index.html"], // 从 details.source_files 聚合（docs/arch/15 P3）
         },
       ],
     })

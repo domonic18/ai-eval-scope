@@ -191,3 +191,16 @@ def collect_file_texts(output_dir: Path) -> dict[str, str]:
             if t.strip():
                 out[str(f.relative_to(base))] = t
     return out
+
+
+def collect_text_content_with_markers(output_dir: Path) -> str:
+    """合并文档文本，每文件前注入 ``=== FILE: 相对路径 ===`` 边界标记。
+
+    供 C 档 LLM 评估器（soft/pref）使用：判官读到带标记的文本后，可在 issue 的
+    ``involved_files`` 里引用具体文件名，实现「扣分→定位文件」（docs/arch/15 §5.1）。
+    无文档时返回空串。
+    """
+    parts: list[str] = [
+        f"=== FILE: {fname} ===\n{text}" for fname, text in collect_file_texts(output_dir).items()
+    ]
+    return "\n\n".join(parts)
