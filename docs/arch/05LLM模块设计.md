@@ -796,3 +796,4 @@ sys.modules.setdefault("langfuse", MagicMock())
 | v1.1 | 2026-06-08 | 新增 ProviderPool 多模型管理、运行时切换、JudgeRecord 评审溯源、ConstraintResult 模型溯源字段 |
 | v1.2 | 2026-06-08 | 视觉评估从 PPTX 截图调整为 HTML 渲染截图；PPTX 评估标注为后续插件扩展 |
 | **v2.0** | **2026-06-12** | **§1.3 更新 Provider 实现现状（DeepSeekClient 覆盖 deepseek+openai；Anthropic 未实现）；§1.5 Factory 更新为实际代码；LLMResponse 新增 duration_ms 字段；JudgeRecord 新增 summary 字段；JudgeOrchestrator.judge() 签名更新为 keyword-only + 返回 tuple；新增 §2.7 降级机制；合并原 09 Langfuse 调用追踪设计文档到 §五** |
+| **v2.1** | **2026-07-13** | **对接 [13 配置管理设计](./13配置管理设计.md)**：`TemplateManager`（§2.3）演进为 `PromptStore` 抽象——`FilePromptStore`（从场景包 `prompts/` 加载）/ `DbPromptStore`（从 Web DB）/ `SnapshotPromptStore`（从 `RunConfigSnapshot`）；提示词模板增加 `scenario_id`/`package_id`/`namespace`/`variables` 字段；支持版本与标签（`production`/`staging`）。`JudgeOrchestrator` 通过 `PromptStore` 解析模板，不再直接读扁平 `assets/prompts/`。 |
