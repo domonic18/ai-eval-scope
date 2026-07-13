@@ -1,4 +1,5 @@
 template_id: depth_preference
+scenario: courseware
 name: 深度偏好评估
 dimensions:
   - dim_id: knowledge_depth

@@ -1,4 +1,5 @@
 template_id: info_accuracy
+scenario: courseware
 name: "知识准确性验证"
 description: "验证教育内容中的历史事实、科学常数、数学公式等是否准确"
 

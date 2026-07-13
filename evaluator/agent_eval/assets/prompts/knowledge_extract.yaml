@@ -1,4 +1,5 @@
 template_id: knowledge_extract_misconceptions
+scenario: courseware
 name: "知识点提取 - 常见误解（misconceptions）"
 description: |
   从评测选择题的干扰项（错误选项）提取学生常见误解，供 InfoAccuracyEvaluator 在课件

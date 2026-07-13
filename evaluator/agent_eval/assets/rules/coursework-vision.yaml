@@ -1,4 +1,5 @@
 version: "1.0"
+scenario: courseware
 description: "课件完整评估：门控 + 质量评估 + 多模态视觉质量（executor 需预装 Chromium）"
 
 dimensions:

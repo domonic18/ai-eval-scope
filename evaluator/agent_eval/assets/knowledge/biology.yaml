@@ -1,4 +1,5 @@
 subject: biology
+scenario: courseware
 description: 生物知识库：常见动物分类误区、人体基本事实、细胞生物学、光合作用
 version: '1.0'
 constants: []

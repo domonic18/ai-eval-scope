@@ -1,4 +1,5 @@
 template_id: pedagogical_logic
+scenario: courseware
 name: 教学逻辑评估
 dimensions:
   - dim_id: structure

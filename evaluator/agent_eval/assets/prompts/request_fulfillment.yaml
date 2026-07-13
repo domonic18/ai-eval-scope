@@ -1,4 +1,5 @@
 template_id: request_fulfillment
+scenario: courseware
 name: 需求满足度评估
 dimensions:
   - dim_id: completeness

@@ -1,4 +1,5 @@
 template_id: knowledge_extract_constants
+scenario: courseware
 name: "知识点提取 - 数值常数（constants）"
 description: |
   从科学题目提取可入库的数值常数（constants），供 InfoAccuracyEvaluator 在课件中做

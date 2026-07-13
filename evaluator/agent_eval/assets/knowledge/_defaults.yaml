@@ -3,6 +3,7 @@
 # 被 _load_fact_db() 始终加载
 
 subject: "_defaults"
+scenario: courseware
 description: "跨学科通用知识准确性规则（始终加载）"
 version: "1.0"
 

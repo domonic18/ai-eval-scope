@@ -1,4 +1,5 @@
 subject: chemistry
+scenario: courseware
 description: 化学知识库：常量、常见误区纠正、元素/化合物/指示剂基础事实
 version: '1.0'
 constants:

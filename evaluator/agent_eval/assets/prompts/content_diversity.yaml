@@ -1,4 +1,5 @@
 template_id: content_diversity
+scenario: courseware
 name: 内容多样性评估
 dimensions:
   - dim_id: media_variety

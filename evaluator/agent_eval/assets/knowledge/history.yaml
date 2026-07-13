@@ -1,4 +1,5 @@
 subject: history
+scenario: courseware
 description: 中国与世界历史知识准确性规则（K-12 教育）
 version: '1.0'
 constants:

@@ -1,4 +1,5 @@
 template_id: fact_verdict
+scenario: courseware
 name: "规则候选错误二次确认"
 description: "对规则引擎（正则）产出的疑似事实错误逐条 LLM 裁定，过滤中文误报"
 

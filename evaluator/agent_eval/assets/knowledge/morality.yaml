@@ -1,4 +1,5 @@
 subject: morality
+scenario: courseware
 description: 道德与法治知识库：国家象征、重要纪念日、宪法基础知识
 version: '1.0'
 constants:

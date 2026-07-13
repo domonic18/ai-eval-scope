@@ -1,4 +1,5 @@
 subject: math
+scenario: courseware
 description: 数学知识准确性规则（小学至初中）
 version: '1.0'
 constants:

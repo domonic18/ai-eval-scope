@@ -1,4 +1,5 @@
 template_id: chronological_order
+scenario: courseware
 name: "时序一致性评估"
 description: "评审教学课件（多文档集合）的时间线/序号/步骤顺序是否合理"
 

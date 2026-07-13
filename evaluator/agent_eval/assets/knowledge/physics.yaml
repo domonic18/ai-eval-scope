@@ -1,4 +1,5 @@
 subject: physics
+scenario: courseware
 description: 物理知识准确性规则（小学科学至初中物理）
 version: '1.0'
 constants:

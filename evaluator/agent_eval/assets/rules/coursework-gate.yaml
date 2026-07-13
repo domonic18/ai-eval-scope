@@ -1,4 +1,5 @@
 version: "1.0"
+scenario: courseware
 description: "课件基础评估：格式门控 + 常识门控（LLM 二次确认），不含质量/视觉评估"
 
 dimensions:

@@ -1,4 +1,5 @@
 version: "1.0"
+scenario: courseware
 description: "课件质量评估：门控 + 软约束/偏好质量评估（LLM Judge），不含视觉"
 
 dimensions:

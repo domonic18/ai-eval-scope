@@ -1,4 +1,5 @@
 subject: chinese
+scenario: courseware
 description: 语文知识库：古诗作者归属纠错、小学必背古诗、常见成语正确写法
 version: '1.0'
 constants: []
