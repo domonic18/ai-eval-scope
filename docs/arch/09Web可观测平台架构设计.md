@@ -746,8 +746,14 @@ Web /api/public/ingest + /api/public/artifacts/url → PG + 对象存储
 |------|------|------|------|
 | POST | `/api/v1/jobs` | Bearer API Key | 提交评测任务，202 返回 `job_id` |
 | GET | `/api/v1/jobs/:id` | Bearer API Key | 查询任务态（含 `metrics`、`error`、`web_run_url`） |
+| GET | `/api/v1/jobs/:id/overview` | Bearer API Key | 速览：运行摘要 + 失败项 + 关键扣分点 + 涉及文件 |
 | GET | `/api/v1/rule-sets` | Bearer API Key | 规则集静态 catalog（构建期生成） |
 | GET | `/api/v1/health` | 公开 | eval 子系统健康 |
+
+`GET /api/v1/jobs/:id/overview` 返回运行速览，其中 `items[].failures[]` 包含：
+
+- `top_issues: string[]`：从失败约束的 `details.dimensions[].issues` 聚合的最多 3 条 high/medium 扣分点描述，供第三方/MCP 快速了解失败原因。
+- `files?: string[]`：从 `details.source_files` 提取的涉及文件列表，支持调用方定位问题文件。
 
 详细接口契约、示例与部署策略见 [12 第三方系统对接方案](./12第三方系统对接方案.md)。
 
@@ -922,6 +928,11 @@ LIMIT $4;
 - **页面映射**：ProjectList/ProjectDetail/RunDetail/TaskDetail 等页面**新建**（Sprint 7a 的本地查看器前端已移除），数据源为 Query API；目录模式（DirectoryTree/ModuleScoreTable）按 `module_results` 字段切换。
 - **样本 Tab（项目页）**：项目页新增「样本」Tab——样本清单表（`externalSampleId` / 最近评估时间 / 最近 Reward / 评估次数 / 状态 / 内容版本）；点样本进入样本走势视图：该样本 `reward` 跨 run 走势图（复用 LineChart）+ 历次评估明细表（时间 / run / reward / s_format / s_common / 状态 / `content_hash`）。与运行视图互补：运行视图看「每次评估评了什么」，样本视图看「每个样本随时间的演进」。
 - **制品预览**：任务详情页对 `artifact.kind`（screenshot/judge_record/output）提供预览，经 `GET /api/artifacts/:id/preview` 取 URL——image 走 presigned 直链，html/text/trace 走同源 raw 代理（`/raw?token=`，见 §5.4）。
+- **扣分项文件定位与制品联动**：
+  - 数据：`ConstraintResult.details.source_files` 标注约束涉及的课件文件（`filename`、`artifact_kind`、`page`、`snippet`）。
+  - 匹配：前端用 `matchArtifactByFilename(artifacts, filename)` 将 `filename` 匹配到 sample 制品的 `originalName`。
+  - 交互：`SourceFileChips` 渲染在扣分项/维度下方；点击 chip 调用 `handleSelectFile` 切换 `PreviewPane` 的 `tab` 与 `selectedId`，右侧预览自动切到对应文件；当前预览文件 chip 高亮，实现双向联动。
+  - 降级：无 `source_files` 的历史数据不渲染 chip，体验同原状；未匹配到制品的文件显示未命中样式，不阻塞交互。
 - **Langfuse 跳转**：运行/任务详情页，若 `langfuse_trace_id` 存在，渲染"在 Langfuse 查看"按钮 → `${langfuse_host}/trace/${langfuse_trace_id}`。
 - **危险操作**：项目/运行永久删除置于「危险区」，需输入项目 slug 二次确认（owner only）。
 
@@ -1038,3 +1049,4 @@ volumes: { pgdata: {} }
 | v1.2 | 2026-06-30 | 数据库治理统一：web 的 `prisma/` 迁至仓库根 `db/web/prisma/`，与 gateway 的 `db/gateway/migrations/` 同归 `db/`；§4.1/§4.3 目录树与建库命令同步（`make db-init`=`db/apply.sh` 统一应用 web+gateway，`make db-migrate-prod`=`db/apply-prod.sh` 线上增量）；schema.prisma 显式 output 以兼容迁出 web/backend 后的 Prisma 项目根推断（见 db/README.md） |
 | v1.3 | 2026-07-07 | **执行拆分与网关合并**：删除 gateway 相关描述；新增 §7.7 评测任务提交与执行（`/api/v1/jobs` + executor）；架构图/后端工程结构/Prisma 模型补 `EvalJob`；§6.3 统一为 Bearer API Key（移除 HMAC）；§12.1/§12.3 补 executor/SCF 配置；说明 gateway SQL 已移除、任务表由 Prisma 统一治理 |
 | v1.4 | 2026-07-10 | **Prisma schema 迁回 web/backend**（反转 v1.2 的迁出决策）：schema + migrations 由 `db/web/prisma/` 移至 `web/backend/prisma/`（Prisma 项目根归位），消除「schema 跨目录导致 `prisma generate` 在仓库根触发 auto-install」的 CI 构建失败（npm i 在干净 root 失败）+ 显式 `output` hack + 根级 `node_modules`/`package.json` 副作用；`db/` 目录撤销，建库脚本迁至 `scripts/db-apply.sh` / `scripts/db-apply-prod.sh`（`make db-init` / `make db-migrate-prod` 不变）；§4.1/§4.3 目录树与建库命令同步 |
+| v1.5 | 2026-07-13 | 合并 15《评估结果文件定位与制品联动方案》：§7.7 端点表格补 `GET /api/v1/jobs/:id/overview` 并说明 `failures[].top_issues` 与 `failures[].files`；§十 前端改造补「扣分项文件定位与制品联动」（`SourceFileChips`、`matchArtifactByFilename`、预览窗受控化、双向高亮、降级策略）。 |
