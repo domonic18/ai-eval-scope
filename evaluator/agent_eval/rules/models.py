@@ -111,6 +111,11 @@ class RuleSet(BaseModel):
         description="所属场景 ID（命名空间），如 courseware",
     )
     package_id: str | None = Field(default=None, description="所属场景包 ID，如 courseware-quality")
+    # Phase 1 新增（对齐 04 §7'.2/§10.4）：声明该规则集使用的聚合策略 ID；
+    # 未声明时自动套用 courseware 默认策略（scenario_id=courseware）。
+    aggregation_policy_id: str | None = Field(
+        default=None, description="聚合策略 ID，如 courseware-default；None → 场景默认策略"
+    )
     description: str = Field(default="", description="规则集描述")
     schema_ref: str | None = Field(
         default=None,

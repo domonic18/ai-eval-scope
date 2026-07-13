@@ -17,6 +17,10 @@
       "type": ["string", "null"],
       "description": "所属场景包 ID，如 courseware-quality"
     },
+    "aggregation_policy_id": {
+      "type": ["string", "null"],
+      "description": "聚合策略 ID（对齐 13 配置管理设计 §10.4），如 courseware-default；缺省时套用场景默认策略"
+    },
     "description": {
       "type": "string",
       "description": "规则集描述"

@@ -110,6 +110,14 @@ class ScoreAggregationError(EvaluationError):
     """评分聚合异常。"""
 
 
+class ScenarioError(EvaluationError):
+    """场景化配置异常（AggregationPolicy / MetricDefinition 解析或执行失败）。"""
+
+
+class ScenarioExpressionError(ScenarioError):
+    """场景化指标表达式求值失败（语法错误、未知变量、非法节点等）。"""
+
+
 class VisionError(EvaluationError):
     """视觉评估异常（截图渲染失败、playwright/浏览器不可用等）。"""
 
