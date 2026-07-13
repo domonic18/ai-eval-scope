@@ -34,7 +34,7 @@ coverage.xml
 
 # Runtime data (not version controlled)
 workspace/
-packages/
+/packages/
 
 # OS
 .DS_Store

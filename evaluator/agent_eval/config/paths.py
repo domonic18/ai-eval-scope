@@ -19,6 +19,17 @@ from pathlib import Path
 PACKAGE_ROOT = Path(__file__).resolve().parent.parent  # = agent_eval/
 
 
+def _semver_tuple(version: str) -> tuple[int, ...]:
+    """把 ``"1.2.3"`` 解析为可比较的整数元组，供内置包版本目录排序。"""
+    parts: list[int] = []
+    for chunk in version.split("."):
+        digits = "".join(ch for ch in chunk if ch.isdigit())
+        parts.append(int(digits) if digits else 0)
+    while len(parts) < 3:
+        parts.append(0)
+    return tuple(parts)
+
+
 class ProjectPaths:
     """路径配置（pip-installable）。
 
@@ -55,19 +66,44 @@ class ProjectPaths:
         return self.assets_dir / "schemas"
 
     @property
-    def prompts_dir(self) -> Path:
-        """``assets/prompts/`` — LLM Judge Prompt 模板。"""
-        return self.assets_dir / "prompts"
-
-    @property
-    def rules_dir(self) -> Path:
-        """``assets/rules/`` — 默认规则集。"""
-        return self.assets_dir / "rules"
-
-    @property
     def configs_dir(self) -> Path:
         """``assets/configs/`` — 配置文件（llm_config 等）。"""
         return self.assets_dir / "configs"
+
+    # ── 内置场景包（Scenario Package，Phase 2 重组）──
+    # 原 assets/{rules,prompts,knowledge}/ 已归入 assets/packages/courseware/<version>/
+    # rules/prompts/datasets 访问器透出到内置 courseware 包，旧调用点无需改动。
+
+    @property
+    def packages_dir(self) -> Path:
+        """``assets/packages/`` — 内置场景包根。"""
+        return self.assets_dir / "packages"
+
+    def builtin_package_root(self, scenario: str = "courseware") -> Path:
+        """内置场景包根目录（取该场景下最高版本目录）。"""
+        base = self.packages_dir / scenario
+        if not base.is_dir():
+            return base / "1.0.0"  # 不存在时返回约定路径，调用方自然报错
+        versions = sorted(
+            (d for d in base.iterdir() if d.is_dir()),
+            key=lambda d: _semver_tuple(d.name),
+        )
+        return versions[-1] if versions else base / "1.0.0"
+
+    @property
+    def rules_dir(self) -> Path:
+        """内置 courseware 包的规则目录（``packages/courseware/<ver>/rules``）。"""
+        return self.builtin_package_root() / "rules"
+
+    @property
+    def prompts_dir(self) -> Path:
+        """内置 courseware 包的提示词目录（``packages/courseware/<ver>/prompts``）。"""
+        return self.builtin_package_root() / "prompts"
+
+    @property
+    def knowledge_dir(self) -> Path:
+        """参考知识目录（原 ``assets/knowledge/``，现归入 courseware 包 ``datasets/``）。"""
+        return self.builtin_package_root() / "datasets"
 
     # ── 工作目录（用户数据，不随包发布）──
 

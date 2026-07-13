@@ -169,25 +169,24 @@ def test_dataset_schema_rejects_invalid_role() -> None:
         jsonschema_validate(instance={"id": "x", "role": "invalid"}, schema=_dataset_schema())
 
 
-# ── 内置 courseware 资产标记 ───────────────────────────────────────────────────
+# ── 内置 courseware 包资产标记（Phase 2 重组后位于 packages/courseware/<ver>/）──
 
 
 @pytest.mark.parametrize(
-    "rel",
-    [
-        "rules/coursework-quality.yaml",
-        "rules/coursework-gate.yaml",
-        "rules/coursework-vision.yaml",
-    ],
+    "name",
+    ["coursework-quality.yaml", "coursework-gate.yaml", "coursework-vision.yaml"],
 )
-def test_builtin_rule_sets_marked_courseware(rel: str) -> None:
-    data = yaml.safe_load((paths.assets_dir / rel).read_text(encoding="utf-8"))
-    assert data.get("scenario") == "courseware", rel
+def test_builtin_rule_sets_marked_courseware(name: str) -> None:
+    data = yaml.safe_load((paths.rules_dir / name).read_text(encoding="utf-8"))
+    assert data.get("scenario") == "courseware", name
 
 
-def test_builtin_prompts_and_knowledge_marked_courseware() -> None:
-    for sub in ("prompts", "knowledge"):
-        for path in (paths.assets_dir / sub).glob("*.yaml"):
+def test_builtin_prompts_and_reference_marked_courseware() -> None:
+    # prompts_dir 与 knowledge_dir（参考知识，原 knowledge/）现归入内置 courseware 包
+    for d in (paths.prompts_dir, paths.knowledge_dir):
+        files = list(d.glob("*.yaml"))
+        assert files, f"{d} 下无 yaml，可能重组后路径未对齐"  # 防止空 glob 静默通过
+        for path in files:
             data = yaml.safe_load(path.read_text(encoding="utf-8"))
             assert data.get("scenario") == "courseware", path
 
@@ -196,7 +195,7 @@ def test_builtin_rule_set_loads_with_scenario_and_passes_schema() -> None:
     from agent_eval.config.loader import ConfigLoader
 
     rs = ConfigLoader.load_rule_set(
-        paths.assets_dir / "rules" / "coursework-quality.yaml",
+        paths.rules_dir / "coursework-quality.yaml",
         schema_path=paths.schemas_dir / "rule_set_schema.json",
     )
     assert rs.scenario_id == "courseware"

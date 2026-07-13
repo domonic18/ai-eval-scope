@@ -141,6 +141,25 @@ class PackageValidationError(PackageError):
     """执行包校验失败（缺少必要文件等）。"""
 
 
+# ─── 场景包（Scenario Package）相关 ───
+
+
+class ScenarioPackageError(AgentEvalError):
+    """场景包操作异常（manifest 解析、版本/标签解析、拉取等）。"""
+
+
+class ScenarioPackageNotFoundError(ScenarioPackageError):
+    """场景包不存在。"""
+
+    def __init__(self, ref: str):
+        super().__init__(f"场景包不存在: {ref}", details={"ref": ref})
+        self.ref = ref
+
+
+class ScenarioPackageValidationError(ScenarioPackageError):
+    """场景包校验失败（manifest 非法、缺资源目录等）。"""
+
+
 # ─── LLM 相关 ───
 
 

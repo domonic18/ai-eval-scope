@@ -1,0 +1,10 @@
+package:
+  id: courseware
+  scenario: courseware
+  version: 1.0.0
+  name: 课件质量评估内置包
+  description: 课件生成场景的默认规则集、LLM Judge 提示词与参考知识（role=reference）。
+  author: builtin
+  labels: [production, latest]
+  artifact_types:
+    - courseware/*
