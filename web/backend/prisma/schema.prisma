@@ -88,45 +88,48 @@ model OrgMembership {
 
 // ── 项目与 API Key ──────────────────────────────────────
 model Project {
-  id             String       @id @default(uuid())
-  orgId          String       @map("org_id")
-  slug           String
-  name           String
-  description    String?
-  defaultRuleSet String?      @map("default_rule_set")
-  defaultTaskSet String?      @map("default_task_set")
-  retentionDays  Int?         @map("retention_days")
+  id              String       @id @default(uuid())
+  orgId           String       @map("org_id")
+  slug            String
+  name            String
+  description     String?
+  defaultRuleSet  String?      @map("default_rule_set")
+  defaultTaskSet  String?      @map("default_task_set")
+  // Phase 3 场景化：项目默认场景与包（对齐 09 §4.1、13）
+  defaultScenario String?      @map("default_scenario")
+  defaultPackage  String?      @map("default_package")
+  retentionDays   Int?         @map("retention_days")
   // 项目公开开关（docs/arch/12 §3.5）：公开后运行/样本详情页免登录可读 + 可被第三方 iframe 嵌入。
-  isPublic       Boolean      @default(false) @map("is_public")
-  createdBy      String       @map("created_by")
-  createdAt      DateTime     @default(now()) @map("created_at")
-  archivedAt     DateTime?    @map("archived_at")
-  org            Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  apiKeys        ApiKey[]
-  runs           Run[]
-  artifacts      Artifact[]
+  isPublic        Boolean      @default(false) @map("is_public")
+  createdBy       String       @map("created_by")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  archivedAt      DateTime?    @map("archived_at")
+  org             Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  apiKeys         ApiKey[]
+  runs            Run[]
+  artifacts       Artifact[]
 
   @@unique([orgId, slug])
   @@map("projects")
 }
 
 model ApiKey {
-  id              String    @id @default(uuid())
-  projectId       String    @map("project_id")
+  id             String    @id @default(uuid())
+  projectId      String    @map("project_id")
   // §6.3 方案 A（单一 Bearer token）：哈希态鉴权查找；加密态 gateway 回传解密；preview 识别用（明文永不落库）
-  tokenHash       String    @unique @map("token_hash")
-  tokenEncrypted  String    @map("token_encrypted")
-  tokenPreview    String    @map("token_preview")
-  name            String
-  scopes          String[]  @default(["ingest"])
-  expiresAt       DateTime? @map("expires_at")
-  lastUsedAt      DateTime? @map("last_used_at")
-  lastIp          String?   @map("last_ip")
-  callCount       BigInt    @default(0) @map("call_count")
-  createdBy       String    @map("created_by")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  revokedAt       DateTime? @map("revoked_at")
-  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tokenHash      String    @unique @map("token_hash")
+  tokenEncrypted String    @map("token_encrypted")
+  tokenPreview   String    @map("token_preview")
+  name           String
+  scopes         String[]  @default(["ingest"])
+  expiresAt      DateTime? @map("expires_at")
+  lastUsedAt     DateTime? @map("last_used_at")
+  lastIp         String?   @map("last_ip")
+  callCount      BigInt    @default(0) @map("call_count")
+  createdBy      String    @map("created_by")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  revokedAt      DateTime? @map("revoked_at")
+  project        Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
   @@map("api_keys")
@@ -134,32 +137,39 @@ model ApiKey {
 
 // ── 评估数据 ────────────────────────────────────────────
 model Run {
-  id               String     @id @default(uuid())
-  projectId        String     @map("project_id")
-  externalRunId    String     @map("external_run_id") // 评估器 run_id
-  mode             String // eval_only | run | pipeline
-  status           String     @default("completed") // running|completed|failed|partial
-  totalSamples     Int        @default(0) @map("total_samples")
-  // 一等指标列（聚合/索引友好）
-  dr               Float
-  cpr              Float
-  avgReward        Float      @map("avg_reward")
-  avgSoft          Float      @default(0) @map("avg_soft")
-  avgPref          Float      @default(0) @map("avg_pref")
-  condR            Float      @map("cond_r")
-  avgTimeMs        Float      @map("avg_time_ms")
-  ruleSetVersion   String?    @map("rule_set_version")
-  sutVersion       String?    @map("sut_version")
-  langfuseTraceId  String?    @map("langfuse_trace_id")
-  langfuseHost     String?    @map("langfuse_host")
-  failureBreakdown Json?      @map("failure_breakdown") @db.JsonB
-  thresholds       Json?      @db.JsonB
-  sourceClient     String?    @map("source_client")
-  createdAt        DateTime   @default(now()) @map("created_at") // = 评估运行时间
-  finishedAt       DateTime?  @map("finished_at")
-  project          Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  samples          Sample[]
-  artifacts        Artifact[]
+  id                  String             @id @default(uuid())
+  projectId           String             @map("project_id")
+  externalRunId       String             @map("external_run_id") // 评估器 run_id
+  mode                String // eval_only | run | pipeline
+  status              String             @default("completed") // running|completed|failed|partial
+  totalSamples        Int                @default(0) @map("total_samples")
+  // 场景化指标（Phase 3，对齐 09 §9.5.2）：metrics JSONB 为权威，键为 MetricDefinition.id
+  scenarioId          String?            @map("scenario_id")
+  packageId           String?            @map("package_id")
+  packageVersion      String?            @map("package_version")
+  metrics             Json?              @db.JsonB // Record<metric_id, number>
+  runConfigSnapshotId String?            @map("run_config_snapshot_id")
+  // 一等指标列（聚合/索引友好）——Phase 3 起降级为可空遗留列，迁移完成后（Phase 5 阶段C）删除
+  dr                  Float?
+  cpr                 Float?
+  avgReward           Float?             @map("avg_reward")
+  avgSoft             Float?             @map("avg_soft")
+  avgPref             Float?             @map("avg_pref")
+  condR               Float?             @map("cond_r")
+  avgTimeMs           Float?             @map("avg_time_ms")
+  ruleSetVersion      String?            @map("rule_set_version")
+  sutVersion          String?            @map("sut_version")
+  langfuseTraceId     String?            @map("langfuse_trace_id")
+  langfuseHost        String?            @map("langfuse_host")
+  failureBreakdown    Json?              @map("failure_breakdown") @db.JsonB
+  thresholds          Json?              @db.JsonB
+  sourceClient        String?            @map("source_client")
+  createdAt           DateTime           @default(now()) @map("created_at") // = 评估运行时间
+  finishedAt          DateTime?          @map("finished_at")
+  project             Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  runConfigSnapshot   RunConfigSnapshot? @relation(fields: [runConfigSnapshotId], references: [id], onDelete: SetNull)
+  samples             Sample[]
+  artifacts           Artifact[]
 
   @@unique([projectId, externalRunId])
   @@index([projectId, createdAt(sort: Desc)])
@@ -173,12 +183,14 @@ model Sample {
   externalSampleId  String             @map("external_sample_id") // task_id/sample_id（逻辑课件标识，跨版本稳定）
   contentHash       String?            @map("content_hash") // 内容指纹（版本标记，不参与唯一键，详见 docs/arch/13）
   status            String
-  sFormat           Float              @map("s_format")
-  sCommon           Float              @map("s_common")
-  sSoft             Float              @map("s_soft")
-  sPref             Float              @map("s_pref")
-  reward            Float
-  totalDurationMs   Float              @map("total_duration_ms")
+  // 场景化样本指标（Phase 3）：metrics JSONB 为权威；下列列降级为可空遗留列（迁移期保留）
+  metrics           Json?              @db.JsonB // Record<metric_id, number>
+  sFormat           Float?             @map("s_format")
+  sCommon           Float?             @map("s_common")
+  sSoft             Float?             @map("s_soft")
+  sPref             Float?             @map("s_pref")
+  reward            Float?
+  totalDurationMs   Float?             @map("total_duration_ms")
   llmCalls          Int                @default(0) @map("llm_calls")
   tokenUsage        Int                @default(0) @map("token_usage")
   extra             Json?              @db.JsonB // module_results 等
@@ -309,4 +321,146 @@ model EvalJob {
   @@index([status])
   @@index([projectId, createdAt(sort: Desc)])
   @@map("eval_jobs")
+}
+
+// ── 场景包配置资产（Phase 3，对齐 13 配置管理设计 §11.1）──────────────────────
+// 配置资产按 场景(scenario) → 包(package) → 版本/标签 组织；content 为 JSONB 全量内容，
+// contentHash 用于去重与快照校验。labels 为可变指针（latest/production/staging）。
+
+model Scenario {
+  id          String   @id
+  name        String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  packages    ScenarioPackage[]
+  ruleSets    RuleSetAsset[]
+  prompts     PromptTemplateAsset[]
+  datasets    DatasetAsset[]
+  sutConfigs  SUTConfigAsset[]
+  inferencers InferencerAsset[]
+
+  @@map("scenarios")
+}
+
+model ScenarioPackage {
+  id          String   @id @default(uuid())
+  scenarioId  String   @map("scenario_id")
+  assetId     String   @map("asset_id") // 包内标识，如 quality
+  version     String
+  labels      String[] @default([])
+  contentHash String   @map("content_hash")
+  content     Json     @db.JsonB // agent_eval.yaml 清单 + 资产清单
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  scenario    Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@unique([scenarioId, assetId, version])
+  @@map("scenario_packages")
+}
+
+model RuleSetAsset {
+  id          String   @id @default(uuid())
+  scenarioId  String   @map("scenario_id")
+  packageId   String?  @map("package_id")
+  assetId     String   @map("asset_id") // 如 quality / gate / vision
+  version     String
+  labels      String[] @default([])
+  contentHash String   @map("content_hash")
+  content     Json     @db.JsonB
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  scenario    Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@unique([scenarioId, assetId, version])
+  @@map("rule_set_assets")
+}
+
+model PromptTemplateAsset {
+  id          String   @id @default(uuid())
+  scenarioId  String   @map("scenario_id")
+  packageId   String?  @map("package_id")
+  assetId     String   @map("asset_id") // template_id
+  namespace   String
+  version     String
+  labels      String[] @default([])
+  contentHash String   @map("content_hash")
+  content     Json     @db.JsonB
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  scenario    Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@unique([scenarioId, namespace, assetId, version])
+  @@map("prompt_template_assets")
+}
+
+model DatasetAsset {
+  id            String   @id @default(uuid())
+  scenarioId    String   @map("scenario_id")
+  packageId     String?  @map("package_id")
+  assetId       String   @map("asset_id")
+  role          String // test | reference
+  version       String
+  labels        String[] @default([])
+  backendType   String   @map("backend_type")
+  backendConfig Json     @map("backend_config") @db.JsonB
+  contentHash   String   @map("content_hash")
+  content       Json     @db.JsonB
+  createdBy     String   @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+  scenario      Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@unique([scenarioId, assetId, version])
+  @@map("dataset_assets")
+}
+
+model SUTConfigAsset {
+  id          String   @id @default(uuid())
+  scenarioId  String   @map("scenario_id")
+  packageId   String?  @map("package_id")
+  assetId     String   @map("asset_id")
+  version     String
+  labels      String[] @default([])
+  contentHash String   @map("content_hash")
+  content     Json     @db.JsonB
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  scenario    Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@unique([scenarioId, assetId, version])
+  @@map("sut_config_assets")
+}
+
+model InferencerAsset {
+  id          String   @id @default(uuid())
+  scenarioId  String   @map("scenario_id")
+  packageId   String?  @map("package_id")
+  assetId     String   @map("asset_id")
+  version     String
+  labels      String[] @default([])
+  contentHash String   @map("content_hash")
+  content     Json     @db.JsonB
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  scenario    Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@unique([scenarioId, assetId, version])
+  @@map("inferencer_assets")
+}
+
+// 运行配置快照：单次 Run 使用的完整配置（规则/提示词/数据集/聚合策略/指标定义 + content_hash）。
+// 大快照走对象存储（objectKey），小快照 inline content JSONB。
+model RunConfigSnapshot {
+  id             String   @id @default(uuid())
+  scenarioId     String   @map("scenario_id")
+  packageId      String   @map("package_id")
+  packageVersion String   @map("package_version")
+  content        Json     @db.JsonB
+  contentHash    String   @map("content_hash")
+  objectKey      String?  @map("object_key")
+  createdAt      DateTime @default(now()) @map("created_at")
+  runs           Run[]
+
+  @@index([scenarioId, packageId, packageVersion])
+  @@map("run_config_snapshots")
 }
