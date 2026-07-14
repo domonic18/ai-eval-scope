@@ -3,8 +3,11 @@ import { useNavigate, useParams } from "react-router-dom"
 import { api } from "../api/client"
 import { fmt3, fmtMsRaw, num } from "../lib/format"
 import { METRIC_LABEL, THRESHOLDS } from "../lib/eval"
-import type { MetricKey } from "../lib/eval"
-import { DynamicMetricGrid, extractMetricDefs } from "../components/DynamicMetricGrid"
+import {
+  DynamicMetricGrid,
+  extractMetricDefs,
+  COURSEWARE_DEFAULT_METRIC_DEFS,
+} from "../components/DynamicMetricGrid"
 import { Button } from "@/components/shadcn/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/shadcn/card"
 import {
@@ -173,13 +176,6 @@ export default function RunDetail() {
     }
   }
 
-  const metricRows: { k: MetricKey; val: number; thr: number }[] = [
-    { k: "DR", val: run.dr, thr: THRESHOLDS.DR },
-    { k: "CPR", val: run.cpr, thr: THRESHOLDS.CPR },
-    { k: "Soft", val: run.avgSoft, thr: THRESHOLDS.Soft },
-    { k: "Pref", val: run.avgPref, thr: THRESHOLDS.Pref },
-    { k: "Reward", val: run.avgReward, thr: THRESHOLDS.Reward },
-  ]
   // Phase 5：场景化指标定义（来自运行配置快照）；存在时优先动态渲染
   const metricDefs = extractMetricDefs(run.runConfigSnapshot)
   const meta = [
@@ -228,13 +224,14 @@ export default function RunDetail() {
         ))}
       </div>
 
-      {/* Phase 5：场景化动态指标（来自运行快照 metric_definitions；无快照时回落下方遗留卡）*/}
-      {metricDefs.length > 0 && (
-        <section className="space-y-2">
-          <h3 className="text-sm font-medium text-muted-foreground">场景化指标</h3>
-          <DynamicMetricGrid defs={metricDefs} metrics={run.metrics} />
-        </section>
-      )}
+      {/* Phase 5：场景化动态指标（运行快照 metric_definitions；无快照回落 courseware 默认）*/}
+      <section className="space-y-2">
+        <h3 className="text-sm font-medium text-muted-foreground">场景化指标</h3>
+        <DynamicMetricGrid
+          defs={metricDefs.length > 0 ? metricDefs : COURSEWARE_DEFAULT_METRIC_DEFS}
+          metrics={run.metrics}
+        />
+      </section>
 
       {/* Phase 5：运行配置快照（只读，P5-7）*/}
       {run.runConfigSnapshot && (
@@ -246,32 +243,6 @@ export default function RunDetail() {
             {JSON.stringify(run.runConfigSnapshot.content, null, 2)}
           </pre>
         </details>
-      )}
-
-      {/* metric cards（遗留一等列；P5-8 删除。有场景化指标时隐藏，避免重复）*/}
-      {metricDefs.length === 0 && (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
-          {metricRows.map((m) => {
-            const ok = m.val >= m.thr
-          return (
-            <Card key={m.k}>
-              <CardContent className="pt-5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">{METRIC_LABEL[m.k]}</span>
-                  <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] ${ok ? "border-emerald-500/40 text-emerald-400" : "border-yellow-500/40 text-yellow-400"}`}>
-                    {ok ? "达标" : "未达"}
-                  </span>
-                </div>
-                <div className={`mt-1 text-2xl font-semibold tabular-nums ${ok ? "" : "text-yellow-400"}`}>{fmt3(m.val)}</div>
-                <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-muted">
-                  <div className={`h-full rounded-full ${ok ? "bg-emerald-500" : "bg-yellow-500"}`} style={{ width: `${Math.min(100, m.val * 100)}%` }} />
-                </div>
-                <div className="mt-1 text-[11px] text-muted-foreground">阈值 ≥ {m.thr}</div>
-              </CardContent>
-            </Card>
-          )
-        })}
-        </div>
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">

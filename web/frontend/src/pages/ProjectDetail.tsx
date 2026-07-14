@@ -12,9 +12,7 @@ import type {
   TrendPoint,
 } from "../types"
 import { fmt3, num, timeAgo } from "../lib/format"
-import { METRIC_EXPLAIN, METRIC_LABEL, metricColor } from "../lib/eval"
-import type { MetricKey } from "../lib/eval"
-import { MetricCard } from "../components/MetricCard"
+import { METRIC_LABEL } from "../lib/eval"
 import {
   DynamicMetricGrid,
   COURSEWARE_DEFAULT_METRIC_DEFS,
@@ -138,16 +136,6 @@ export default function ProjectDetail() {
     [trends],
   )
   const latest = trendsAsc[trendsAsc.length - 1]
-  const prev = trendsAsc[trendsAsc.length - 2]
-
-  const deltaOf = (cur: number | undefined, prevV: number | undefined) => {
-    if (cur == null) return null
-    if (prevV == null || prevV === 0) return "首次评估"
-    const diff = cur - prevV
-    if (Math.abs(diff) < 0.0005) return "持平"
-    const pct = (diff / prevV) * 100
-    return `${diff > 0 ? "+" : ""}${pct.toFixed(1)}%`
-  }
 
   const trendPoints = trendsAsc.map((t) => ({
     label: new Date(t.created_at).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" }),
@@ -202,36 +190,11 @@ export default function ProjectDetail() {
         <Separator className="mb-4" />
 
         <TabsContent value="overview" className="space-y-4">
-          {/* Phase 5：有 metrics 时动态渲染（COURSEWARE 默认定义），否则回落遗留卡（P5-8 删）*/}
-          {latest?.metrics ? (
-            <DynamicMetricGrid defs={COURSEWARE_DEFAULT_METRIC_DEFS} metrics={latest.metrics} />
-          ) : (
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
-              {([
-                { key: "DR", label: "交付率(DR)" },
-                { key: "CPR", label: "约束通过率(CPR)" },
-                { key: "Soft", label: "内容质量分(SOFT)" },
-                { key: "Pref", label: "用户偏好分(PREF)" },
-                { key: "Reward", label: "综合评分(REWARD)" },
-              ] as { key: MetricKey; label: string }[]).map((m) => {
-                const kk = m.key as "DR" | "CPR" | "Reward" | "Soft" | "Pref"
-                const val = latest ? latest[kk] : undefined
-                const prevVal = prev ? prev[kk] : undefined
-                const delta = deltaOf(val, prevVal)
-                return (
-                  <MetricCard
-                    key={m.key}
-                    label={m.label}
-                    value={fmt3(val)}
-                    explain={METRIC_EXPLAIN[m.key]}
-                    delta={delta}
-                    recentRunTime={latest ? timeAgo(latest.created_at) : undefined}
-                    valueStyle={{ color: metricColor(m.key, val) }}
-                  />
-                )
-              })}
-            </div>
-          )}
+          {/* Phase 5：场景化动态指标（COURSEWARE 默认定义 + 最新运行 metrics）*/}
+          <DynamicMetricGrid
+            defs={COURSEWARE_DEFAULT_METRIC_DEFS}
+            metrics={latest?.metrics ?? undefined}
+          />
 
           <Card>
             <CardHeader>
