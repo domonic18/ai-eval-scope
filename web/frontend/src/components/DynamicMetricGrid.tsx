@@ -8,6 +8,20 @@
 import { MetricCard } from "./MetricCard"
 import type { MetricDef } from "../types"
 
+/**
+ * courseware 默认指标定义（镜像 evaluator Phase 1 COURSEWARE_DEFAULT_METRICS）。
+ * 项目级列表页（Dashboard/ProjectDetail/Admin）无单一运行快照时，用此默认集渲染
+ * run.metrics；运行自身有快照时优先用快照的 metric_definitions。
+ */
+export const COURSEWARE_DEFAULT_METRIC_DEFS: MetricDef[] = [
+  { id: "courseware:document_rate", name: "交付率 DR", threshold: 0.95, unit: "ratio" },
+  { id: "courseware:constraint_pass_rate", name: "约束通过率 CPR", threshold: 0.9, unit: "ratio" },
+  { id: "courseware:reward", name: "平均 Reward", threshold: 0.7, unit: "score" },
+  { id: "courseware:soft", name: "内容质量", unit: "score" },
+  { id: "courseware:pref", name: "用户偏好", unit: "score" },
+  { id: "courseware:conditional_reward", name: "条件 Reward", unit: "score" },
+]
+
 function fmt(v: number | undefined): string {
   if (v == null || Number.isNaN(v)) return "—"
   return v.toFixed(3)
