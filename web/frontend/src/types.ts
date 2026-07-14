@@ -34,6 +34,7 @@ export interface DashboardProject {
     dr: number | null
     cpr: number | null
     avgReward: number | null
+    metrics?: Record<string, number> | null
   } | null
 }
 

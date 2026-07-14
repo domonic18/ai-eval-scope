@@ -92,9 +92,24 @@ export default function AdminRuns() {
       ),
     },
     { key: "status", title: "状态", render: (r) => <StatusBadge status={r.status} /> },
-    { key: "dr", title: "DR", num: true, render: (r) => fmt3(r.dr) },
-    { key: "cpr", title: "CPR", num: true, render: (r) => fmt3(r.cpr) },
-    { key: "reward", title: "Reward", num: true, render: (r) => fmt3(r.avgReward) },
+    {
+      key: "dr",
+      title: "DR",
+      num: true,
+      render: (r) => fmt3(r.metrics?.["courseware:document_rate"] ?? r.dr),
+    },
+    {
+      key: "cpr",
+      title: "CPR",
+      num: true,
+      render: (r) => fmt3(r.metrics?.["courseware:constraint_pass_rate"] ?? r.cpr),
+    },
+    {
+      key: "reward",
+      title: "Reward",
+      num: true,
+      render: (r) => fmt3(r.metrics?.["courseware:reward"] ?? r.avgReward),
+    },
     { key: "samples", title: "样本", num: true, render: (r) => r.totalSamples },
     { key: "created", title: "时间", render: (r) => timeAgo(r.createdAt) },
     {

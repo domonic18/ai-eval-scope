@@ -440,6 +440,8 @@ export interface AdminRun {
   avgReward: number
   totalSamples: number
   createdAt: string
+  /** Phase 5 场景化指标（与 dr/cpr 并存，P5-8 清理遗留列后为唯一来源）*/
+  metrics?: Record<string, number>
   project: { id: string; name: string; org: { id: string; name: string } }
 }
 export interface AdminArtifact {
