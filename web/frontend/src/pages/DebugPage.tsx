@@ -5,6 +5,7 @@
  */
 import { useEffect, useRef, useState } from "react"
 import { api } from "../api/client"
+import { DynamicMetricGrid, COURSEWARE_DEFAULT_METRIC_DEFS } from "@/components/DynamicMetricGrid"
 import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/shadcn/card"
@@ -386,18 +387,7 @@ export default function DebugPage() {
               <CardContent className="space-y-3">
                 <div className="font-mono text-xs text-muted-foreground">job_id: {job.job_id}</div>
                 {job.status === "completed" && metrics && (
-                  <div className="overflow-hidden rounded-md border">
-                    <div className="grid grid-cols-3 divide-x divide-border">
-                      <MetricCell label="DR" value={fmt3(metrics.DR)} />
-                      <MetricCell label="CPR" value={fmt3(metrics.CPR)} />
-                      <MetricCell label="Reward" value={fmt3(metrics.avg_reward)} />
-                    </div>
-                    <div className="grid grid-cols-3 divide-x divide-border border-t">
-                      <MetricCell label="CondR" value={fmt3(metrics.condR)} />
-                      <MetricCell label="Soft" value={fmt3(metrics.avg_soft)} />
-                      <MetricCell label="Pref" value={fmt3(metrics.avg_pref)} />
-                    </div>
-                  </div>
+                  <DynamicMetricGrid defs={COURSEWARE_DEFAULT_METRIC_DEFS} metrics={metrics} />
                 )}
                 {job.web_run_url && (
                   <Button asChild variant="outline" size="sm" className="w-full">
@@ -485,21 +475,5 @@ export default function DebugPage() {
         </div>
       </div>
     </TooltipProvider>
-  )
-}
-
-function fmt3(n?: number): string {
-  return n == null ? "—" : n.toFixed(3)
-}
-
-/** 紧凑指标格：小号标签 + 中等字号数值（tabular-nums 对齐，不溢出）。 */
-function MetricCell({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="px-2 py-1.5 text-center">
-      <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-        {label}
-      </div>
-      <div className="mt-0.5 text-sm font-semibold tabular-nums">{value}</div>
-    </div>
   )
 }
