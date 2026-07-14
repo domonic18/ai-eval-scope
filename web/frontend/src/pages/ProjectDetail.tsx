@@ -13,10 +13,8 @@ import type {
 } from "../types"
 import { fmt3, num, timeAgo } from "../lib/format"
 import { METRIC_LABEL } from "../lib/eval"
-import {
-  DynamicMetricGrid,
-  COURSEWARE_DEFAULT_METRIC_DEFS,
-} from "../components/DynamicMetricGrid"
+import { DynamicMetricGrid } from "../components/DynamicMetricGrid"
+import { useScenarioDefaults } from "../hooks/useScenarioDefaults"
 import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
 import { Label } from "@/components/shadcn/label"
@@ -136,6 +134,7 @@ export default function ProjectDetail() {
     [trends],
   )
   const latest = trendsAsc[trendsAsc.length - 1]
+  const defaultDefs = useScenarioDefaults()
 
   const trendPoints = trendsAsc.map((t) => ({
     label: new Date(t.created_at).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" }),
@@ -191,10 +190,7 @@ export default function ProjectDetail() {
 
         <TabsContent value="overview" className="space-y-4">
           {/* Phase 5：场景化动态指标（COURSEWARE 默认定义 + 最新运行 metrics）*/}
-          <DynamicMetricGrid
-            defs={COURSEWARE_DEFAULT_METRIC_DEFS}
-            metrics={latest?.metrics ?? undefined}
-          />
+          <DynamicMetricGrid defs={defaultDefs} metrics={latest?.metrics ?? undefined} />
 
           <Card>
             <CardHeader>

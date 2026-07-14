@@ -15,6 +15,7 @@ import { Router } from "express"
 import { requireAuth } from "../../middleware/auth"
 import { platformAdminGuard } from "../../middleware/adminGuard"
 import { PlatformError } from "../../middleware/errorHandler"
+import { getPrisma } from "../../infra/prisma"
 import { ScenarioRepository } from "../../repositories/scenario.repository"
 
 const router = Router()
@@ -33,6 +34,19 @@ router.get("/:id/catalog", async (req, res) => {
     return
   }
   res.json(catalog)
+})
+
+/** 场景默认指标定义（列表页 fetch，前端无 hardcode）。 */
+router.get("/:id/defaults", async (req, res) => {
+  const scenario = await getPrisma().scenario.findUnique({
+    where: { id: req.params.id },
+    select: { defaultMetricDefinitions: true },
+  })
+  if (!scenario) {
+    res.status(404).json({ error: "scenario not found", scenario_id: req.params.id })
+    return
+  }
+  res.json({ metric_definitions: scenario.defaultMetricDefinitions ?? [] })
 })
 
 async function publishAssetHandler(

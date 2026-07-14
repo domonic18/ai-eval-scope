@@ -328,10 +328,12 @@ model EvalJob {
 // contentHash 用于去重与快照校验。labels 为可变指针（latest/production/staging）。
 
 model Scenario {
-  id          String   @id
-  name        String
-  description String?
-  createdAt   DateTime @default(now()) @map("created_at")
+  id                       String   @id
+  name                     String
+  description              String?
+  // 场景默认指标定义（单一源落库，前端列表页 GET /scenarios/:id/defaults 取，无前端 hardcode）
+  defaultMetricDefinitions Json?    @map("default_metric_definitions") @db.JsonB
+  createdAt                DateTime @default(now()) @map("created_at")
 
   packages    ScenarioPackage[]
   ruleSets    RuleSetAsset[]

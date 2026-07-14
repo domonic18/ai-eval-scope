@@ -5,7 +5,8 @@
  */
 import { useEffect, useRef, useState } from "react"
 import { api } from "../api/client"
-import { DynamicMetricGrid, COURSEWARE_DEFAULT_METRIC_DEFS } from "@/components/DynamicMetricGrid"
+import { DynamicMetricGrid } from "@/components/DynamicMetricGrid"
+import { useScenarioDefaults } from "@/hooks/useScenarioDefaults"
 import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/shadcn/card"
@@ -258,6 +259,7 @@ export default function DebugPage() {
   }
 
   const metrics = (job?.metrics as { metrics?: Record<string, number> } | null)?.metrics
+  const defaultDefs = useScenarioDefaults()
 
   return (
     <TooltipProvider>
@@ -387,7 +389,7 @@ export default function DebugPage() {
               <CardContent className="space-y-3">
                 <div className="font-mono text-xs text-muted-foreground">job_id: {job.job_id}</div>
                 {job.status === "completed" && metrics && (
-                  <DynamicMetricGrid defs={COURSEWARE_DEFAULT_METRIC_DEFS} metrics={metrics} />
+                  <DynamicMetricGrid defs={defaultDefs} metrics={metrics} />
                 )}
                 {job.web_run_url && (
                   <Button asChild variant="outline" size="sm" className="w-full">

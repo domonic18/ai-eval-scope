@@ -3,11 +3,8 @@ import { useNavigate, useParams } from "react-router-dom"
 import { api } from "../api/client"
 import { fmt3, fmtMsRaw, num } from "../lib/format"
 import { METRIC_LABEL, THRESHOLDS } from "../lib/eval"
-import {
-  DynamicMetricGrid,
-  extractMetricDefs,
-  COURSEWARE_DEFAULT_METRIC_DEFS,
-} from "../components/DynamicMetricGrid"
+import { DynamicMetricGrid, extractMetricDefs } from "../components/DynamicMetricGrid"
+import { useScenarioDefaults } from "../hooks/useScenarioDefaults"
 import { Button } from "@/components/shadcn/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/shadcn/card"
 import {
@@ -178,6 +175,7 @@ export default function RunDetail() {
 
   // Phase 5：场景化指标定义（来自运行配置快照）；存在时优先动态渲染
   const metricDefs = extractMetricDefs(run.runConfigSnapshot)
+  const defaultDefs = useScenarioDefaults("courseware")
   const meta = [
     { lab: "规则集", val: run.ruleSetVersion ?? "—" },
     { lab: "评估模式", val: run.mode },
@@ -228,7 +226,7 @@ export default function RunDetail() {
       <section className="space-y-2">
         <h3 className="text-sm font-medium text-muted-foreground">场景化指标</h3>
         <DynamicMetricGrid
-          defs={metricDefs.length > 0 ? metricDefs : COURSEWARE_DEFAULT_METRIC_DEFS}
+          defs={metricDefs.length > 0 ? metricDefs : defaultDefs}
           metrics={run.metrics}
         />
       </section>

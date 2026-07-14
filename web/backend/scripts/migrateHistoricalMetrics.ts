@@ -12,27 +12,14 @@
 
 import { createHash } from "crypto"
 import { Prisma, type PrismaClient } from "@prisma/client"
+import {
+  COURSEWARE_DEFAULT_METRIC_DEFS,
+  COURSEWARE_DEFAULT_AGGREGATION_POLICY,
+} from "../src/config/coursewareDefaults"
 
-// courseware 默认指标定义（镜像 evaluator Phase 1 COURSEWARE_DEFAULT_METRICS）
-const COURSEWARE_METRIC_DEFINITIONS = [
-  { id: "courseware:document_rate", name: "交付率 DR", threshold: 0.95, unit: "ratio" },
-  { id: "courseware:constraint_pass_rate", name: "约束通过率 CPR", threshold: 0.9, unit: "ratio" },
-  { id: "courseware:reward", name: "平均 Reward", threshold: 0.7, unit: "score" },
-  { id: "courseware:soft", name: "平均内容质量", threshold: null, unit: "score" },
-  { id: "courseware:pref", name: "平均用户偏好", threshold: null, unit: "score" },
-  { id: "courseware:conditional_reward", name: "条件 Reward CondR", threshold: null, unit: "score" },
-]
-
-const COURSEWARE_AGGREGATION_POLICY = {
-  id: "courseware-default",
-  scenario_id: "courseware",
-  stage_weights: [
-    { stage_id: "format", weight: 1.0, is_gate: true },
-    { stage_id: "commonsense", weight: 1.0, is_gate: true },
-    { stage_id: "quality", weight: 1.0, is_gate: false, skip_tiers_in_reward: ["hard_gate", "hard_score"] },
-  ],
-  normalize_to: [0.0, 1.0],
-}
+// 单一源（src/config/coursewareDefaults.ts），本脚本与 import 脚本共用
+const COURSEWARE_METRIC_DEFINITIONS = COURSEWARE_DEFAULT_METRIC_DEFS
+const COURSEWARE_AGGREGATION_POLICY = COURSEWARE_DEFAULT_AGGREGATION_POLICY
 
 export interface MigrationResult {
   scenarioId: string
@@ -67,7 +54,7 @@ export async function migrateHistoricalMetrics(prisma: PrismaClient): Promise<Mi
             scenarioId: "courseware",
             packageId: "courseware",
             packageVersion: "1.0.0",
-            content,
+            content: content as unknown as Prisma.InputJsonValue,
             contentHash,
           },
           select: { id: true },

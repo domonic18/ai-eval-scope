@@ -8,7 +8,7 @@
 
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios"
 import { clearSession, getToken, saveSession } from "../store/auth"
-import type { DebugJobStatus, ProjectSample, SampleTrendPoint } from "../types"
+import type { DebugJobStatus, MetricDef, ProjectSample, SampleTrendPoint } from "../types"
 
 export const http = axios.create({
   baseURL: "/api/v1",
@@ -210,6 +210,10 @@ export const api = {
   },
   async scenarioCatalog(scenarioId: string): Promise<ScenarioCatalog> {
     return (await http.get(`/scenarios/${scenarioId}/catalog`)).data as ScenarioCatalog
+  },
+  /** 场景默认指标定义（GET /scenarios/:id/defaults，前端无 hardcode）。 */
+  async scenarioDefaults(scenarioId: string): Promise<MetricDef[]> {
+    return (await http.get(`/scenarios/${scenarioId}/defaults`)).data.metric_definitions as MetricDef[]
   },
   async publishPackage(
     scenarioId: string,
