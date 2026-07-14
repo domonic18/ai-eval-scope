@@ -62,6 +62,27 @@ export class IngestRepository {
 
   /** run：按 (projectId, externalRunId) upsert。返回 runId。 */
   async upsertRun(tx: Tx, d: RunEventData): Promise<string> {
+    // Phase 5：inline 运行配置快照 → 建 RunConfigSnapshot 行（按 contentHash 去重），关联 run
+    let snapshotId = d.run_config_snapshot_id ?? null
+    if (d.run_config_snapshot) {
+      const snap = d.run_config_snapshot as Record<string, unknown>
+      const contentHash = (snap.snapshot_hash as string) ?? "sha256:unknown"
+      const existing = await tx.runConfigSnapshot.findFirst({ where: { contentHash } })
+      snapshotId = existing
+        ? existing.id
+        : (
+            await tx.runConfigSnapshot.create({
+              data: {
+                scenarioId: (snap.scenario_id as string) ?? "courseware",
+                packageId: ((snap.package as { id?: string })?.id) ?? "courseware",
+                packageVersion: ((snap.package as { version?: string })?.version) ?? "1.0.0",
+                content: snap as Prisma.InputJsonValue,
+                contentHash,
+              },
+              select: { id: true },
+            })
+          ).id
+    }
     const run = await tx.run.upsert({
       where: {
         projectId_externalRunId: { projectId: this.projectId, externalRunId: d.external_run_id },
@@ -76,7 +97,7 @@ export class IngestRepository {
         scenarioId: d.scenario_id ?? null,
         packageId: d.package_id ?? null,
         packageVersion: d.package_version ?? null,
-        runConfigSnapshotId: d.run_config_snapshot_id ?? null,
+        runConfigSnapshotId: snapshotId,
         metrics: d.metrics as Prisma.InputJsonValue,
         // 遗留一等列：从 metrics 回填（迁移期保留，Phase 5 阶段C 删除）
         dr: metric(d.metrics, "DR"),
@@ -102,7 +123,7 @@ export class IngestRepository {
         scenarioId: d.scenario_id ?? null,
         packageId: d.package_id ?? null,
         packageVersion: d.package_version ?? null,
-        runConfigSnapshotId: d.run_config_snapshot_id ?? null,
+        runConfigSnapshotId: snapshotId,
         metrics: d.metrics as Prisma.InputJsonValue,
         dr: metric(d.metrics, "DR"),
         cpr: metric(d.metrics, "CPR"),

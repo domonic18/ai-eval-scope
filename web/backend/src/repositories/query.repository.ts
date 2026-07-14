@@ -224,9 +224,25 @@ class QueryRepository extends BaseRepository {
             sPref: true,
           },
         },
+        // Phase 5：附带运行配置快照（metricDefinitions / aggregationPolicy），供前端动态渲染
+        runConfigSnapshot: { select: { content: true, contentHash: true } },
       },
     })
     return run
+  }
+
+  /** 运行配置快照（完整 content）。 */
+  async runSnapshot(projectId: string, runId: string) {
+    const orgId = this.requireOrg()
+    const run = await this.prisma.run.findFirst({
+      where: {
+        projectId,
+        project: { orgId },
+        OR: [{ id: runId }, { externalRunId: runId }],
+      },
+      select: { runConfigSnapshot: { select: { content: true, contentHash: true } } },
+    })
+    return run?.runConfigSnapshot ?? null
   }
 
   /** 样本详情（含约束 + 制品引用）。 */

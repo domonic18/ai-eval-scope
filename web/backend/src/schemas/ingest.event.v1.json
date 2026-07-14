@@ -84,6 +84,7 @@
         "package_id": { "type": ["string", "null"] },
         "package_version": { "type": ["string", "null"] },
         "run_config_snapshot_id": { "type": ["string", "null"] },
+        "run_config_snapshot": { "type": ["object", "null"] },
         "rule_set_version": { "type": ["string", "null"] },
         "sut_version": { "type": ["string", "null"] },
         "failure_breakdown": { "type": ["object", "null"] },

@@ -30,6 +30,8 @@ export interface RunEventData {
   package_id?: string
   package_version?: string
   run_config_snapshot_id?: string
+  /** Phase 5：inline 运行配置快照内容（含 snapshot_hash）；后端据此建 RunConfigSnapshot 行 */
+  run_config_snapshot?: Record<string, unknown>
   rule_set_version?: string
   sut_version?: string
   failure_breakdown?: Record<string, unknown> | null
