@@ -1,6 +1,6 @@
-/** 超管后台 · 总览（shadcn/ui + Recharts 重写）：规模卡 + 指标趋势 + score 分布。 */
+/** 超管后台 · 总览（shadcn/ui + Recharts 重写）：规模卡 + score 分布。 */
 import { useEffect, useState } from "react"
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { api } from "../../api/client"
 import { Badge } from "@/components/shadcn/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/shadcn/alert"
@@ -13,7 +13,6 @@ import {
 } from "@/components/shadcn/chart"
 import { num, fmtBytes } from "../../lib/format"
 import { Page } from "../../components/shared"
-import { useScenarioDefaults } from "../../hooks/useScenarioDefaults"
 
 interface Overview {
   users: { total: number; active: number; disabled: number; admins: number }
@@ -24,7 +23,6 @@ interface Overview {
   artifacts: { total: number; storageBytes: number }
 }
 
-const CHART_PALETTE = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"]
 const distConfig = { count: { label: "样本数", color: "var(--chart-2)" } } satisfies ChartConfig
 
 function StatCard({ label, value, foot }: { label: string; value: string; foot?: string }) {
@@ -43,27 +41,13 @@ function StatCard({ label, value, foot }: { label: string; value: string; foot?:
 
 export default function AdminOverview() {
   const [ov, setOv] = useState<Overview | null>(null)
-  const [trends, setTrends] = useState<{ created_at: string; metrics?: Record<string, number> | null }[]>([])
   const [dist, setDist] = useState<{ bucket: string; count: number }[]>([])
   const [err, setErr] = useState("")
-  // #65：指标趋势从 defaultDefs 动态生成（零 courseware 硬编码）
-  const defaultDefs = useScenarioDefaults()
-  const trendDefs = defaultDefs.filter((d) => d.threshold != null)
-  const trendSeries = trendDefs.map((d, i) => ({
-    key: d.id.replace(/:/g, "_"),
-    metricId: d.id,
-    name: d.name ?? d.id,
-    color: CHART_PALETTE[i % CHART_PALETTE.length],
-  }))
-  const trendConfig = Object.fromEntries(
-    trendSeries.map((s) => [s.key, { label: s.name, color: s.color }]),
-  ) satisfies ChartConfig
 
   useEffect(() => {
-    Promise.all([api.adminOverview(), api.adminTrends(100), api.adminScoreDistribution()])
-      .then(([o, t, d]) => {
+    Promise.all([api.adminOverview(), api.adminScoreDistribution()])
+      .then(([o, d]) => {
         setOv(o)
-        setTrends(t)
         setDist(d)
       })
       .catch((e) => setErr((e as Error).message))
@@ -80,11 +64,6 @@ export default function AdminOverview() {
     )
   if (!ov)
     return <div className="p-8 text-muted-foreground">加载中…</div>
-
-  const trendData = trends.map((t, i) => ({
-    i: i + 1,
-    ...Object.fromEntries(trendSeries.map((s) => [s.key, t.metrics?.[s.metricId]])),
-  }))
 
   return (
     <Page>
@@ -103,57 +82,27 @@ export default function AdminOverview() {
         <StatCard label="产出物" value={num(ov.artifacts.total)} foot={fmtBytes(ov.artifacts.storageBytes)} />
       </div>
 
-      {/* 趋势 */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">指标趋势（最近 {trends.length} 次运行）</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={trendConfig} className="h-[240px] w-full">
-              <AreaChart data={trendData} margin={{ left: 4, right: 8, top: 8, bottom: 0 }}>
+      {/* score 分布 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">样本 reward 分布</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {dist.length === 0 ? (
+            <div className="text-sm text-muted-foreground">暂无数据</div>
+          ) : (
+            <ChartContainer config={distConfig} className="h-[240px] w-full">
+              <BarChart data={dist} margin={{ left: 4, right: 8, top: 8, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-                <XAxis dataKey="i" tickLine={false} axisLine={false} tickMargin={8} fontSize={11} />
-                <YAxis domain={[0, 1]} tickLine={false} axisLine={false} width={32} fontSize={11} />
+                <XAxis dataKey="bucket" tickLine={false} axisLine={false} tickMargin={8} fontSize={10} interval={0} />
+                <YAxis tickLine={false} axisLine={false} width={32} fontSize={11} allowDecimals={false} />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                {trendSeries.map((s) => (
-                  <Area
-                    key={s.key}
-                    dataKey={s.key}
-                    type="monotone"
-                    stroke={`var(--color-${s.key})`}
-                    fill={`var(--color-${s.key})`}
-                    fillOpacity={0.12}
-                    strokeWidth={2}
-                  />
-                ))}
-              </AreaChart>
+                <Bar dataKey="count" fill="var(--color-count)" radius={[4, 4, 0, 0]} />
+              </BarChart>
             </ChartContainer>
-          </CardContent>
-        </Card>
-
-        {/* score 分布 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">样本 reward 分布</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {dist.length === 0 ? (
-              <div className="text-sm text-muted-foreground">暂无数据</div>
-            ) : (
-              <ChartContainer config={distConfig} className="h-[240px] w-full">
-                <BarChart data={dist} margin={{ left: 4, right: 8, top: 8, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-                  <XAxis dataKey="bucket" tickLine={false} axisLine={false} tickMargin={8} fontSize={10} interval={0} />
-                  <YAxis tickLine={false} axisLine={false} width={32} fontSize={11} allowDecimals={false} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="count" fill="var(--color-count)" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ChartContainer>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+          )}
+        </CardContent>
+      </Card>
     </Page>
   )
 }
