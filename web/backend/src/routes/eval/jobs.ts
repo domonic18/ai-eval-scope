@@ -39,6 +39,7 @@ router.post(
       const body = (req.body || {}) as {
         content?: { filename?: string; text?: string }
         rule_set_id?: string
+        package_id?: string // Phase 3：rule_set_id 的 package 语义别名（优先）
         task_id?: string
         task_title?: string
         task_subject?: string
@@ -46,7 +47,7 @@ router.post(
       const result = await svc.submit({
         inlineFilename: body.content?.filename,
         inlineText: body.content?.text,
-        ruleSetId: body.rule_set_id || DEFAULT_RULE_SET,
+        ruleSetId: body.package_id || body.rule_set_id || DEFAULT_RULE_SET,
         taskId: q.task_id || body.task_id,
         taskTitle: q.task_title || body.task_title,
         taskSubject: q.task_subject || body.task_subject,
@@ -66,7 +67,7 @@ router.post(
     const result = await svc.submit({
       filename,
       fileBytes,
-      ruleSetId: q.rule_set_id || DEFAULT_RULE_SET,
+      ruleSetId: q.package_id || q.rule_set_id || DEFAULT_RULE_SET,
       taskId: q.task_id,
       taskTitle: q.task_title,
       taskSubject: q.task_subject,

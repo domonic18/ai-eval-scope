@@ -1,17 +1,63 @@
 /**
- * 规则集目录路由（/api/v1/rule-sets）—— 托管构建期生成的静态 catalog。
+ * 规则集目录路由（/api/v1/rule-sets）—— Phase 3 起动态化（对齐 12 §6.4）。
  *
- * catalog 由 scripts/gen_rule_sets.py 在评估器环境下调用 CapabilityResolver 生成，
- * 落 web/backend/assets/rule-sets.json 并提交入库（docs/arch/09 §7.7）。
+ * 优先返回 DB 场景包资产（RuleSetAsset，经 catalog 导入/P3-4 发布），并合并构建期
+ * 静态 catalog（rule-sets.json）的能力声明（capabilities/scopes）；DB 无数据时回退静态。
+ * 第三方可据此发现场景包，并以 package_id（= rule_set_id 语义）提交评测。
  */
 
 import { Router } from "express"
+import { getPrisma } from "../../infra/prisma"
 import { readRuleSetsCatalog } from "../../infra/ruleSetsCatalog"
 
 const router = Router()
 
-router.get("/", (_req, res) => {
-  res.json({ rule_sets: readRuleSetsCatalog() })
+interface StaticEntry {
+  id: string
+  name?: string
+  description?: string
+  capabilities?: string[]
+  scopes?: string[]
+  scenario_id?: string
+  version?: string
+}
+
+router.get("/", async (_req, res) => {
+  const staticCatalog = readRuleSetsCatalog() as StaticEntry[]
+  const byId = new Map(staticCatalog.map((e) => [e.id, e]))
+
+  // DB 场景包规则集（每个 assetId 取最新版本）
+  const dbRows = await getPrisma().ruleSetAsset.findMany()
+  const latest = new Map<string, (typeof dbRows)[number]>()
+  for (const r of dbRows) {
+    const prev = latest.get(r.assetId)
+    if (!prev || (prev.labels.includes("production") ? false : r.labels.includes("production")) || r.version > prev.version) {
+      latest.set(r.assetId, r)
+    }
+  }
+
+  const entries: StaticEntry[] = []
+  const seen = new Set<string>()
+  for (const r of latest.values()) {
+    const content = (r.content ?? {}) as Record<string, unknown>
+    const base = byId.get(r.assetId)
+    entries.push({
+      id: r.assetId,
+      name: (content.name as string) ?? base?.name ?? r.assetId,
+      description: (content.description as string) ?? base?.description ?? "",
+      capabilities: base?.capabilities ?? [],
+      scopes: base?.scopes ?? ["single", "unit"],
+      scenario_id: r.scenarioId,
+      version: r.version,
+    })
+    seen.add(r.assetId)
+  }
+  // 静态 catalog 中未被 DB 覆盖的（如 format-only）保留
+  for (const e of staticCatalog) {
+    if (!seen.has(e.id)) entries.push(e)
+  }
+
+  res.json({ rule_sets: entries })
 })
 
 export default router
