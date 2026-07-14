@@ -57,7 +57,11 @@ def test_run_event_mapping_fields():
     d = ev["data"]
     assert d["external_run_id"] == "run_1"
     assert d["mode"] == "eval_only"
-    assert d["metrics"] == {
+    # 遗留指标键（迁移期保留）
+    assert {
+        k: d["metrics"][k]
+        for k in ("DR", "CPR", "avg_reward", "avg_soft", "avg_pref", "condR", "avg_time_ms")
+    } == {
         "DR": 0.9,
         "CPR": 0.7,
         "avg_reward": 0.6,
@@ -66,6 +70,13 @@ def test_run_event_mapping_fields():
         "condR": 0.65,
         "avg_time_ms": 1200,
     }
+    # Phase 5：场景化指标键 + 运行配置快照
+    assert d["metrics"]["courseware:document_rate"] == 0.9
+    assert d["metrics"]["courseware:reward"] == 0.6
+    assert d["scenario_id"] == "courseware"
+    assert d["package_id"] == "courseware"
+    assert d["run_config_snapshot"]["snapshot_hash"].startswith("sha256:")
+    assert len(d["run_config_snapshot"]["metric_definitions"]) == 6
     assert d["total_samples"] == 2
     assert d["langfuse_host"] == "https://lf"
 
