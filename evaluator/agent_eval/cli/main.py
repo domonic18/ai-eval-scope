@@ -325,7 +325,7 @@ def eval(
         raise typer.Exit(code=1) from e
 
 
-@app.command()
+@app.command(hidden=True)
 def run(
     task_set: str = typer.Option(..., "--task-set", help="任务集文件路径"),
     sut_config: str = typer.Option(..., "--sut-config", help="SUT 配置文件路径"),
@@ -344,7 +344,7 @@ def run(
     rprint("[yellow]run 命令的完整逻辑将在 Sprint 8 中实现。[/yellow]")
 
 
-@app.command()
+@app.command(hidden=True)
 def pipeline(
     task_set: str = typer.Option(..., "--task-set", help="任务集文件路径"),
     sut_config: str = typer.Option(..., "--sut-config", help="SUT 配置文件路径"),
