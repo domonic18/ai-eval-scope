@@ -98,6 +98,8 @@ export default function RunDetail() {
   const [seg, setSeg] = useState<"all" | "fail" | "skip">("all")
   const toast = useToast()
   const [deleteOpen, setDeleteOpen] = useState(false)
+  // Hooks 必须在所有 early return 之前调用
+  const defaultDefs = useScenarioDefaults("courseware")
 
   useEffect(() => {
     if (!id) return
@@ -170,7 +172,6 @@ export default function RunDetail() {
 
   // Phase 5：场景化指标定义（来自运行配置快照）；存在时优先动态渲染
   const metricDefs = extractMetricDefs(run.runConfigSnapshot)
-  const defaultDefs = useScenarioDefaults("courseware")
   const meta = [
     { lab: "规则集", val: run.ruleSetVersion ?? "—" },
     { lab: "评估模式", val: run.mode },
