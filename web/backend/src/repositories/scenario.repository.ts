@@ -6,8 +6,13 @@
  * （labels 含 production 优先，否则最高版本）。
  */
 
+import { createHash } from "crypto"
 import type { PrismaClient } from "@prisma/client"
 import { getPrisma } from "../infra/prisma"
+
+function hashContent(content: unknown): string {
+  return "sha256:" + createHash("sha256").update(JSON.stringify(content)).digest("hex")
+}
 
 export interface CatalogEntry {
   asset_id: string
@@ -29,6 +34,52 @@ export class ScenarioRepository {
 
   async listScenarios() {
     return this.prisma.scenario.findMany({ orderBy: { id: "asc" } })
+  }
+
+  /** 发布/更新一个场景包版本（幂等 upsert；场景不存在则创建）。 */
+  async publishPackage(
+    scenarioId: string,
+    input: {
+      name?: string
+      description?: string
+      assetId: string
+      version: string
+      labels?: string[]
+      content: Record<string, unknown>
+      createdBy: string
+    },
+  ): Promise<{ packageId: string; scenarioId: string }> {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.scenario.upsert({
+        where: { id: scenarioId },
+        update: { name: input.name ?? undefined, description: input.description ?? undefined },
+        create: {
+          id: scenarioId,
+          name: input.name || scenarioId,
+          description: input.description ?? null,
+        },
+      })
+      const contentHash = hashContent(input.content)
+      const created = await tx.scenarioPackage.upsert({
+        where: { scenarioId_assetId_version: { scenarioId, assetId: input.assetId, version: input.version } },
+        update: {
+          labels: input.labels ?? [],
+          content: input.content as never,
+          contentHash,
+        },
+        create: {
+          scenarioId,
+          assetId: input.assetId,
+          version: input.version,
+          labels: input.labels ?? [],
+          content: input.content as never,
+          contentHash,
+          createdBy: input.createdBy,
+        },
+        select: { id: true },
+      })
+      return { packageId: created.id, scenarioId }
+    })
   }
 
   async getCatalog(scenarioId: string): Promise<ScenarioCatalog | null> {
