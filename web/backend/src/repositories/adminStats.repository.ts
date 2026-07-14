@@ -17,9 +17,7 @@ export interface AdminOverview {
 export interface AdminTrendPoint {
   run_id: string
   created_at: Date
-  DR: number
-  CPR: number
-  Reward: number
+  metrics: Record<string, number> | null
 }
 
 class AdminStatsRepository {
@@ -72,10 +70,7 @@ class AdminStatsRepository {
   async trends(opts: { limit?: number; from?: Date } = {}): Promise<AdminTrendPoint[]> {
     const limit = Math.min(500, Math.max(1, opts.limit ?? 100))
     const rows = await this.prisma.$queryRaw<AdminTrendPoint[]>`
-      SELECT external_run_id AS run_id, created_at,
-             (metrics->>'courseware:document_rate')::float AS "DR",
-             (metrics->>'courseware:constraint_pass_rate')::float AS "CPR",
-             (metrics->>'courseware:reward')::float AS "Reward"
+      SELECT external_run_id AS run_id, created_at, metrics
       FROM runs
       WHERE metrics IS NOT NULL
       ${opts.from ? Prisma.sql`AND created_at >= ${opts.from}` : Prisma.empty}

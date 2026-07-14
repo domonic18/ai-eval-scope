@@ -138,17 +138,20 @@ export default function ProjectDetail() {
   const defaultDefs = useScenarioDefaults()
 
   // 动态趋势序列：从 defaultDefs（后端 fetch）取有阈值的指标，色板循环（非场景专用）
+  // 注意：series key 不能含冒号（CSS var(--color-<key>) 会解析失败）→ 用 _ 替换
   const CHART_PALETTE = ["var(--chart-5)", "var(--chart-2)", "var(--chart-1)", "var(--chart-3)", "var(--chart-4)"]
-  const trendSeries = defaultDefs
-    .filter((d) => d.threshold != null)
-    .map((d, i) => ({
-      key: d.id,
-      name: d.name ?? d.id,
-      color: CHART_PALETTE[i % CHART_PALETTE.length],
-    }))
+  const trendDefs = defaultDefs.filter((d) => d.threshold != null)
+  const trendSeries = trendDefs.map((d, i) => ({
+    key: d.id.replace(/:/g, "_"), // 安全 CSS 变量名（如 courseware_document_rate）
+    metricId: d.id, // 原始 metric ID（从 metrics JSONB 取值用）
+    name: d.name ?? d.id,
+    color: CHART_PALETTE[i % CHART_PALETTE.length],
+  }))
   const trendPoints = trendsAsc.map((t) => ({
     label: new Date(t.created_at).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" }),
-    values: Object.fromEntries(trendSeries.map((s) => [s.key, t.metrics?.[s.key]])) as Record<string, number>,
+    values: Object.fromEntries(
+      trendSeries.map((s) => [s.key, t.metrics?.[s.metricId]]),
+    ) as Record<string, number>,
   }))
 
   return (

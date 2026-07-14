@@ -269,9 +269,7 @@ export const api = {
     return (await http.get(`/admin/stats/trends?limit=${limit}`)).data as Array<{
       run_id: string
       created_at: string
-      DR: number
-      CPR: number
-      Reward: number
+      metrics?: Record<string, number> | null
     }>
   },
   async adminScoreDistribution() {

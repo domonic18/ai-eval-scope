@@ -13,6 +13,7 @@ import {
 } from "@/components/shadcn/chart"
 import { num, fmtBytes } from "../../lib/format"
 import { Page } from "../../components/shared"
+import { useScenarioDefaults } from "../../hooks/useScenarioDefaults"
 
 interface Overview {
   users: { total: number; active: number; disabled: number; admins: number }
@@ -23,10 +24,7 @@ interface Overview {
   artifacts: { total: number; storageBytes: number }
 }
 
-const trendConfig = {
-  DR: { label: "DR", color: "var(--chart-1)" },
-  Reward: { label: "Reward", color: "var(--chart-2)" },
-} satisfies ChartConfig
+const CHART_PALETTE = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"]
 const distConfig = { count: { label: "样本数", color: "var(--chart-2)" } } satisfies ChartConfig
 
 function StatCard({ label, value, foot }: { label: string; value: string; foot?: string }) {
@@ -45,15 +43,27 @@ function StatCard({ label, value, foot }: { label: string; value: string; foot?:
 
 export default function AdminOverview() {
   const [ov, setOv] = useState<Overview | null>(null)
-  const [trends, setTrends] = useState<{ created_at: string; DR: number; Reward: number }[]>([])
+  const [trends, setTrends] = useState<{ created_at: string; metrics?: Record<string, number> | null }[]>([])
   const [dist, setDist] = useState<{ bucket: string; count: number }[]>([])
   const [err, setErr] = useState("")
+  // #65：指标趋势从 defaultDefs 动态生成（零 courseware 硬编码）
+  const defaultDefs = useScenarioDefaults()
+  const trendDefs = defaultDefs.filter((d) => d.threshold != null)
+  const trendSeries = trendDefs.map((d, i) => ({
+    key: d.id.replace(/:/g, "_"),
+    metricId: d.id,
+    name: d.name ?? d.id,
+    color: CHART_PALETTE[i % CHART_PALETTE.length],
+  }))
+  const trendConfig = Object.fromEntries(
+    trendSeries.map((s) => [s.key, { label: s.name, color: s.color }]),
+  ) satisfies ChartConfig
 
   useEffect(() => {
     Promise.all([api.adminOverview(), api.adminTrends(100), api.adminScoreDistribution()])
       .then(([o, t, d]) => {
         setOv(o)
-        setTrends(t.map((p) => ({ created_at: p.created_at, DR: p.DR, Reward: p.Reward })))
+        setTrends(t)
         setDist(d)
       })
       .catch((e) => setErr((e as Error).message))
@@ -71,7 +81,10 @@ export default function AdminOverview() {
   if (!ov)
     return <div className="p-8 text-muted-foreground">加载中…</div>
 
-  const trendData = trends.map((t, i) => ({ i: i + 1, DR: t.DR, Reward: t.Reward }))
+  const trendData = trends.map((t, i) => ({
+    i: i + 1,
+    ...Object.fromEntries(trendSeries.map((s) => [s.key, t.metrics?.[s.metricId]])),
+  }))
 
   return (
     <Page>
@@ -94,7 +107,7 @@ export default function AdminOverview() {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">DR / Reward 趋势（最近 {trends.length} 次运行）</CardTitle>
+            <CardTitle className="text-base">指标趋势（最近 {trends.length} 次运行）</CardTitle>
           </CardHeader>
           <CardContent>
             <ChartContainer config={trendConfig} className="h-[240px] w-full">
@@ -103,8 +116,17 @@ export default function AdminOverview() {
                 <XAxis dataKey="i" tickLine={false} axisLine={false} tickMargin={8} fontSize={11} />
                 <YAxis domain={[0, 1]} tickLine={false} axisLine={false} width={32} fontSize={11} />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <Area dataKey="DR" type="monotone" stroke="var(--color-DR)" fill="var(--color-DR)" fillOpacity={0.12} strokeWidth={2} />
-                <Area dataKey="Reward" type="monotone" stroke="var(--color-Reward)" fill="var(--color-Reward)" fillOpacity={0.12} strokeWidth={2} />
+                {trendSeries.map((s) => (
+                  <Area
+                    key={s.key}
+                    dataKey={s.key}
+                    type="monotone"
+                    stroke={`var(--color-${s.key})`}
+                    fill={`var(--color-${s.key})`}
+                    fillOpacity={0.12}
+                    strokeWidth={2}
+                  />
+                ))}
               </AreaChart>
             </ChartContainer>
           </CardContent>

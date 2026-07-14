@@ -23,11 +23,14 @@ import { useToast } from "../../components/toast"
 import { DataTable, Page, PageHead, Pager, StatusBadge, type Column } from "../../components/shared"
 import { fmt3, timeAgo } from "../../lib/format"
 import { useDebouncedValue } from "../../lib/useDebounce"
+import { useScenarioDefaults } from "../../hooks/useScenarioDefaults"
 
 const STATUSES = ["all", "completed", "failed", "running", "partial"]
 
 export default function AdminRuns() {
   const toast = useToast()
+  // #65：指标列从 defaultDefs 动态生成（零 courseware:* 硬编码）
+  const defaultDefs = useScenarioDefaults()
   const [rows, setRows] = useState<AdminRun[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -92,24 +95,15 @@ export default function AdminRuns() {
       ),
     },
     { key: "status", title: "状态", render: (r) => <StatusBadge status={r.status} /> },
-    {
-      key: "dr",
-      title: "DR",
-      num: true,
-      render: (r) => fmt3(r.metrics?.["courseware:document_rate"]),
-    },
-    {
-      key: "cpr",
-      title: "CPR",
-      num: true,
-      render: (r) => fmt3(r.metrics?.["courseware:constraint_pass_rate"] ),
-    },
-    {
-      key: "reward",
-      title: "Reward",
-      num: true,
-      render: (r) => fmt3(r.metrics?.["courseware:reward"] ),
-    },
+    // #65：指标列从 defaultDefs 动态生成（有阈值的指标）
+    ...defaultDefs
+      .filter((d) => d.threshold != null)
+      .map((d) => ({
+        key: d.id,
+        title: d.name ?? d.id,
+        num: true as const,
+        render: (r: AdminRun) => fmt3(r.metrics?.[d.id]),
+      })),
     { key: "samples", title: "样本", num: true, render: (r) => r.totalSamples },
     { key: "created", title: "时间", render: (r) => timeAgo(r.createdAt) },
     {
