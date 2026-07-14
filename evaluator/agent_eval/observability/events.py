@@ -58,14 +58,6 @@ def build_run_event(
             "status": status,
             "finished_at": finished_at,
             "metrics": {
-                # 遗留键（迁移期回填一等列）
-                "DR": report.dr,
-                "CPR": report.cpr,
-                "avg_reward": report.avg_reward,
-                "avg_soft": report.avg_soft,
-                "avg_pref": report.avg_pref,
-                "condR": report.cond_r,
-                "avg_time_ms": report.avg_time_ms,
                 # 场景化键（与 metric_definitions.id 对齐，前端动态渲染用）
                 "courseware:document_rate": report.dr,
                 "courseware:constraint_pass_rate": report.cpr,
@@ -73,6 +65,7 @@ def build_run_event(
                 "courseware:soft": report.avg_soft,
                 "courseware:pref": report.avg_pref,
                 "courseware:conditional_reward": report.cond_r,
+                "avg_time_ms": report.avg_time_ms,
             },
             "total_samples": report.total_samples,
             "scenario_id": snapshot["scenario_id"],

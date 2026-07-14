@@ -24,10 +24,8 @@ import { Page, PageHead, SemPill, type PillTone } from "../components/shared"
 import { Plus, RefreshCw } from "lucide-react"
 
 /** Phase 5：优先从 metrics 取场景化指标，回落遗留列（P5-8 删列后为唯一来源）。 */
-const drOf = (p: DashboardProject) =>
-  p.latestRun?.metrics?.["courseware:document_rate"] ?? p.latestRun?.dr
-const rewardOf = (p: DashboardProject) =>
-  p.latestRun?.metrics?.["courseware:reward"] ?? p.latestRun?.avgReward
+const drOf = (p: DashboardProject) => p.latestRun?.metrics?.["courseware:document_rate"]
+const rewardOf = (p: DashboardProject) => p.latestRun?.metrics?.["courseware:reward"]
 
 function healthColor(p: DashboardProject): { tone: PillTone; spark: string; label: string } {
   const dr = drOf(p)
@@ -66,7 +64,12 @@ export default function Dashboard() {
         ps.map(async (p): Promise<[string, number[]]> => {
           try {
             const t: TrendPoint[] = await api.projectTrends(p.id, 8)
-            return [p.id, t.map((x) => x.DR).filter((v): v is number => v != null)]
+            return [
+              p.id,
+              t
+                .map((x) => x.metrics?.["courseware:document_rate"])
+                .filter((v): v is number => v != null),
+            ]
           } catch {
             return [p.id, []]
           }

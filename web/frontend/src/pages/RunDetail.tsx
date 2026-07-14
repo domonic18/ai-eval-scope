@@ -38,21 +38,14 @@ interface RunData {
   mode: string
   status: string
   totalSamples: number
-  dr: number
-  cpr: number
-  avgReward: number
-  avgSoft: number
-  avgPref: number
-  condR: number
-  avgTimeMs: number
+  /** Phase 5 场景化指标 + 运行配置快照（动态渲染用） */
+  metrics?: Record<string, number>
+  runConfigSnapshot?: { content: Record<string, unknown>; contentHash: string } | null
   ruleSetVersion: string | null
   langfuseTraceId: string | null
   langfuseHost: string | null
   createdAt: string
   samples: SampleRow[]
-  /** Phase 5 场景化指标 + 运行配置快照（动态渲染用） */
-  metrics?: Record<string, number>
-  runConfigSnapshot?: { content: Record<string, unknown>; contentHash: string } | null
 }
 type StageFilter = "format" | "commonsense" | "soft" | "pref" | null
 
@@ -182,7 +175,7 @@ export default function RunDetail() {
     { lab: "规则集", val: run.ruleSetVersion ?? "—" },
     { lab: "评估模式", val: run.mode },
     { lab: "样本数", val: num(run.totalSamples) },
-    { lab: "平均耗时/样本", val: fmtMsRaw(run.avgTimeMs) },
+    { lab: "平均耗时/样本", val: fmtMsRaw(run.metrics?.["avg_time_ms"] ?? 0) },
     { lab: "创建时间", val: new Date(run.createdAt).toLocaleString("zh-CN") },
   ]
 

@@ -149,14 +149,6 @@ model Run {
   packageVersion      String?            @map("package_version")
   metrics             Json?              @db.JsonB // Record<metric_id, number>
   runConfigSnapshotId String?            @map("run_config_snapshot_id")
-  // 一等指标列（聚合/索引友好）——Phase 3 起降级为可空遗留列，迁移完成后（Phase 5 阶段C）删除
-  dr                  Float?
-  cpr                 Float?
-  avgReward           Float?             @map("avg_reward")
-  avgSoft             Float?             @map("avg_soft")
-  avgPref             Float?             @map("avg_pref")
-  condR               Float?             @map("cond_r")
-  avgTimeMs           Float?             @map("avg_time_ms")
   ruleSetVersion      String?            @map("rule_set_version")
   sutVersion          String?            @map("sut_version")
   langfuseTraceId     String?            @map("langfuse_trace_id")

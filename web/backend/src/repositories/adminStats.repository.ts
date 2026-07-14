@@ -73,9 +73,11 @@ class AdminStatsRepository {
     const limit = Math.min(500, Math.max(1, opts.limit ?? 100))
     const rows = await this.prisma.$queryRaw<AdminTrendPoint[]>`
       SELECT external_run_id AS run_id, created_at,
-             dr AS "DR", cpr AS "CPR", avg_reward AS "Reward"
+             (metrics->>'courseware:document_rate')::float AS "DR",
+             (metrics->>'courseware:constraint_pass_rate')::float AS "CPR",
+             (metrics->>'courseware:reward')::float AS "Reward"
       FROM runs
-      WHERE dr IS NOT NULL
+      WHERE metrics IS NOT NULL
       ${opts.from ? Prisma.sql`AND created_at >= ${opts.from}` : Prisma.empty}
       ORDER BY created_at DESC
       LIMIT ${limit}

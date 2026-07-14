@@ -109,7 +109,7 @@ describe("#1 合法入库 + 重复幂等", () => {
       where: { projectId_externalRunId: { projectId: project.id, externalRunId: runId } },
     })
     expect(run).not.toBeNull()
-    expect(run!.dr).toBe(0.9)
+    expect((run!.metrics as Record<string, number>)?.DR).toBe(0.9)
   })
 
   it("duplicate event_id is idempotent (duplicates, no extra rows)", async () => {
@@ -135,7 +135,7 @@ describe("#1 合法入库 + 重复幂等", () => {
     const run = await prisma.run.findUnique({
       where: { projectId_externalRunId: { projectId: project.id, externalRunId: runId } },
     })
-    expect(run!.dr).toBe(0.5)
+    expect((run!.metrics as Record<string, number>)?.DR).toBe(0.5)
   })
 })
 

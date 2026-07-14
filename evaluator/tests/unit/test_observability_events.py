@@ -57,22 +57,14 @@ def test_run_event_mapping_fields():
     d = ev["data"]
     assert d["external_run_id"] == "run_1"
     assert d["mode"] == "eval_only"
-    # 遗留指标键（迁移期保留）
-    assert {
-        k: d["metrics"][k]
-        for k in ("DR", "CPR", "avg_reward", "avg_soft", "avg_pref", "condR", "avg_time_ms")
-    } == {
-        "DR": 0.9,
-        "CPR": 0.7,
-        "avg_reward": 0.6,
-        "avg_soft": 0.0,
-        "avg_pref": 0.0,
-        "condR": 0.65,
-        "avg_time_ms": 1200,
-    }
-    # Phase 5：场景化指标键 + 运行配置快照
+    # P5-8：仅场景化指标键（遗留 DR/CPR 等键已移除）
     assert d["metrics"]["courseware:document_rate"] == 0.9
+    assert d["metrics"]["courseware:constraint_pass_rate"] == 0.7
     assert d["metrics"]["courseware:reward"] == 0.6
+    assert d["metrics"]["courseware:soft"] == 0.0
+    assert d["metrics"]["courseware:pref"] == 0.0
+    assert d["metrics"]["courseware:conditional_reward"] == 0.65
+    assert d["metrics"]["avg_time_ms"] == 1200
     assert d["scenario_id"] == "courseware"
     assert d["package_id"] == "courseware"
     assert d["run_config_snapshot"]["snapshot_hash"].startswith("sha256:")

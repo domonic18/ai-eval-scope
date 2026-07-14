@@ -19,12 +19,6 @@ import type {
 
 type Tx = Prisma.TransactionClient
 
-/** 从动态 metrics 中取遗留一等列值（courseware 场景回填；缺省 null）。 */
-function metric(m: Record<string, number>, key: string): number | null {
-  const v = m[key]
-  return typeof v === "number" ? v : null
-}
-
 export class DependencyMissingError extends Error {
   constructor(msg: string) {
     super(msg)
@@ -100,13 +94,6 @@ export class IngestRepository {
         runConfigSnapshotId: snapshotId,
         metrics: d.metrics as Prisma.InputJsonValue,
         // 遗留一等列：从 metrics 回填（迁移期保留，Phase 5 阶段C 删除）
-        dr: metric(d.metrics, "DR"),
-        cpr: metric(d.metrics, "CPR"),
-        avgReward: metric(d.metrics, "avg_reward"),
-        avgSoft: metric(d.metrics, "avg_soft"),
-        avgPref: metric(d.metrics, "avg_pref"),
-        condR: metric(d.metrics, "condR"),
-        avgTimeMs: metric(d.metrics, "avg_time_ms"),
         ruleSetVersion: d.rule_set_version ?? null,
         sutVersion: d.sut_version ?? null,
         failureBreakdown: (d.failure_breakdown ?? undefined) as Prisma.InputJsonValue,
@@ -125,13 +112,6 @@ export class IngestRepository {
         packageVersion: d.package_version ?? null,
         runConfigSnapshotId: snapshotId,
         metrics: d.metrics as Prisma.InputJsonValue,
-        dr: metric(d.metrics, "DR"),
-        cpr: metric(d.metrics, "CPR"),
-        avgReward: metric(d.metrics, "avg_reward"),
-        avgSoft: metric(d.metrics, "avg_soft"),
-        avgPref: metric(d.metrics, "avg_pref"),
-        condR: metric(d.metrics, "condR"),
-        avgTimeMs: metric(d.metrics, "avg_time_ms"),
         ruleSetVersion: d.rule_set_version ?? null,
         sutVersion: d.sut_version ?? null,
         failureBreakdown: (d.failure_breakdown ?? undefined) as Prisma.InputJsonValue,

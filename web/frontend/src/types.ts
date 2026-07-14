@@ -31,9 +31,6 @@ export interface DashboardProject {
   latestRun: {
     runId: string
     createdAt: string | null
-    dr: number | null
-    cpr: number | null
-    avgReward: number | null
     metrics?: Record<string, number> | null
   } | null
 }
@@ -45,14 +42,7 @@ export interface RunSummary {
   status: string
   totalSamples: number
   samples?: { externalSampleId: string }[]
-  dr: number
-  cpr: number
-  avgReward: number
-  avgSoft: number
-  avgPref: number
-  condR: number
-  avgTimeMs: number
-  /** Phase 5 场景化指标（权威，键=MetricDefinition.id）；遗留列保留至 P5-8 清理 */
+  /** Phase 5 场景化指标（权威，键=MetricDefinition.id） */
   metrics?: Record<string, number>
   metricDefinitions?: MetricDef[]
   ruleSetVersion: string | null
@@ -64,12 +54,6 @@ export interface RunSummary {
 export interface TrendPoint {
   run_id: string
   created_at: string
-  DR: number
-  CPR: number
-  Reward: number
-  Soft: number
-  Pref: number
-  /** Phase 5 场景化指标序列 */
   metrics?: Record<string, number>
 }
 

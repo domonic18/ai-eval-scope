@@ -439,9 +439,6 @@ export interface AdminRun {
   externalRunId: string
   mode: string
   status: string
-  dr: number
-  cpr: number
-  avgReward: number
   totalSamples: number
   createdAt: string
   /** Phase 5 场景化指标（与 dr/cpr 并存，P5-8 清理遗留列后为唯一来源）*/
