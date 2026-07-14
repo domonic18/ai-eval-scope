@@ -224,6 +224,38 @@ export const api = {
   ): Promise<{ package: { packageId: string; scenarioId: string } }> {
     return (await http.post(`/scenarios/${scenarioId}/packages`, input)).data
   },
+  async publishAsset(
+    scenarioId: string,
+    kind: AssetKind,
+    input: {
+      asset_id: string
+      version: string
+      labels?: string[]
+      content?: Record<string, unknown>
+      namespace?: string
+      role?: string
+      backend_type?: string
+      backend_config?: Record<string, unknown>
+    },
+  ): Promise<{ asset: { assetId: string; version: string } }> {
+    return (await http.post(`/scenarios/${scenarioId}/${kind}`, input)).data
+  },
+  async listAssetVersions(
+    scenarioId: string,
+    kind: AssetKind,
+    assetId: string,
+  ): Promise<Array<{ version: string; labels: string[]; contentHash: string; createdAt: string }>> {
+    return (await http.get(`/scenarios/${scenarioId}/${kind}/${assetId}/versions`)).data.versions
+  },
+  async promoteAssetLabels(
+    scenarioId: string,
+    kind: AssetKind,
+    assetId: string,
+    version: string,
+    labels: string[],
+  ): Promise<void> {
+    await http.post(`/scenarios/${scenarioId}/${kind}/${assetId}/versions/${version}/labels`, { labels })
+  },
 
   /* ── 超管后台 ─────────────────────────────────────── */
   async adminOverview() {
@@ -341,6 +373,8 @@ export const api = {
     }
   },
 }
+
+export type AssetKind = "rule-sets" | "prompts" | "datasets"
 
 export interface Scenario {
   id: string

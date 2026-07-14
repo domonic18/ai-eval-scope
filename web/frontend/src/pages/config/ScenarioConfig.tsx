@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { useParams } from "react-router-dom"
+import { useParams, useNavigate } from "react-router-dom"
 import { useCrumbs } from "../../components/AppShell"
 import { Page, PageHead, DataTable } from "../../components/shared"
 import { Card, CardContent } from "../../components/shadcn/card"
@@ -21,6 +21,7 @@ const errMsg = (e: unknown, fb: string) =>
 
 export default function ScenarioConfig() {
   const { id = "" } = useParams()
+  const nav = useNavigate()
   const { setCrumbs } = useCrumbs()
   const [catalog, setCatalog] = useState<ScenarioCatalog | null>(null)
   const [loading, setLoading] = useState(true)
@@ -58,13 +59,21 @@ export default function ScenarioConfig() {
             <TabsTrigger value="datasets">数据集 ({catalog.datasets.length})</TabsTrigger>
           </TabsList>
           <TabsContent value="rules">
-            <EntryTable rows={catalog.rule_sets} emptyHint="无规则集" />
+            <EntryTable
+              rows={catalog.rule_sets}
+              emptyHint="无规则集"
+              onOpen={(aid) => nav(`/config/scenarios/${id}/rule-sets/${aid}`)}
+            />
           </TabsContent>
           <TabsContent value="prompts">
-            <EntryTable rows={catalog.prompts} emptyHint="无提示词" />
+            <EntryTable
+              rows={catalog.prompts}
+              emptyHint="无提示词"
+              onOpen={(aid) => nav(`/config/scenarios/${id}/prompts/${aid}`)}
+            />
           </TabsContent>
           <TabsContent value="datasets">
-            <DatasetTable rows={catalog.datasets} />
+            <DatasetTable rows={catalog.datasets} onOpen={(aid) => nav(`/config/scenarios/${id}/datasets/${aid}`)} />
           </TabsContent>
         </Tabs>
       ) : null}
@@ -74,7 +83,15 @@ export default function ScenarioConfig() {
   )
 }
 
-function EntryTable({ rows, emptyHint }: { rows: CatalogEntry[]; emptyHint: string }) {
+function EntryTable({
+  rows,
+  emptyHint,
+  onOpen,
+}: {
+  rows: CatalogEntry[]
+  emptyHint: string
+  onOpen: (assetId: string) => void
+}) {
   if (rows.length === 0)
     return (
       <Card>
@@ -84,6 +101,7 @@ function EntryTable({ rows, emptyHint }: { rows: CatalogEntry[]; emptyHint: stri
   return (
     <DataTable
       rows={rows}
+      onRowClick={(r) => onOpen(r.asset_id)}
       columns={[
         { key: "asset_id", title: "ID", render: (r) => <span className="font-mono text-xs">{r.asset_id}</span> },
         { key: "name", title: "名称", render: (r) => r.name ?? "—" },
@@ -108,7 +126,7 @@ function EntryTable({ rows, emptyHint }: { rows: CatalogEntry[]; emptyHint: stri
   )
 }
 
-function DatasetTable({ rows }: { rows: DatasetCatalogEntry[] }) {
+function DatasetTable({ rows, onOpen }: { rows: DatasetCatalogEntry[]; onOpen: (assetId: string) => void }) {
   if (rows.length === 0)
     return (
       <Card>
@@ -118,6 +136,7 @@ function DatasetTable({ rows }: { rows: DatasetCatalogEntry[] }) {
   return (
     <DataTable
       rows={rows}
+      onRowClick={(r) => onOpen(r.asset_id)}
       columns={[
         { key: "asset_id", title: "ID", render: (r) => <span className="font-mono text-xs">{r.asset_id}</span> },
         {

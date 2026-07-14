@@ -15,6 +15,7 @@ import ComingSoon from "./pages/ComingSoon"
 import DebugPage from "./pages/DebugPage"
 import ConfigHub from "./pages/config/ConfigHub"
 import ScenarioConfig from "./pages/config/ScenarioConfig"
+import AssetEditor from "./pages/config/AssetEditor"
 import AdminLayout from "./pages/admin/AdminLayout"
 import AdminOverview from "./pages/admin/AdminOverview"
 import AdminUsers from "./pages/admin/AdminUsers"
@@ -72,6 +73,7 @@ export default function App() {
         {/* 配置中心：场景包配置资产可视化 + 发布（Phase 4）*/}
         <Route path="/config" element={<ConfigHub />} />
         <Route path="/config/scenarios/:id" element={<ScenarioConfig />} />
+        <Route path="/config/scenarios/:id/:kind/:assetId" element={<AssetEditor />} />
       </Route>
       {/* 运行/样本详情：登录走 AppShell，匿名走 PublicShell（公开项目可 iframe 嵌入） */}
       <Route element={<RunViewShell />}>
