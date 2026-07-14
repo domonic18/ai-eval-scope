@@ -51,6 +51,9 @@ export interface RunSummary {
   avgPref: number
   condR: number
   avgTimeMs: number
+  /** Phase 5 场景化指标（权威，键=MetricDefinition.id）；遗留列保留至 P5-8 清理 */
+  metrics?: Record<string, number>
+  metricDefinitions?: MetricDef[]
   ruleSetVersion: string | null
   langfuseTraceId: string | null
   langfuseHost: string | null
@@ -65,6 +68,8 @@ export interface TrendPoint {
   Reward: number
   Soft: number
   Pref: number
+  /** Phase 5 场景化指标序列 */
+  metrics?: Record<string, number>
 }
 
 export interface SampleSummary {
@@ -76,6 +81,17 @@ export interface SampleSummary {
   sCommon: number
   sSoft: number
   sPref: number
+  /** Phase 5 场景化样本指标 */
+  metrics?: Record<string, number>
+}
+
+/** Phase 5 场景化指标定义（来自 RunConfigSnapshot.metric_definitions）。 */
+export interface MetricDef {
+  id: string
+  name?: string
+  expression?: string
+  threshold?: number | null
+  unit?: string | null
 }
 
 /** 项目下样本（课件）清单项（docs/arch/09 §9.4）。 */

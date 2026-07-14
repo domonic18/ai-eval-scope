@@ -4,6 +4,7 @@ import { api } from "../api/client"
 import { fmt3, fmtMsRaw, num } from "../lib/format"
 import { METRIC_LABEL, THRESHOLDS } from "../lib/eval"
 import type { MetricKey } from "../lib/eval"
+import { DynamicMetricGrid, extractMetricDefs } from "../components/DynamicMetricGrid"
 import { Button } from "@/components/shadcn/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/shadcn/card"
 import {
@@ -49,6 +50,9 @@ interface RunData {
   langfuseHost: string | null
   createdAt: string
   samples: SampleRow[]
+  /** Phase 5 场景化指标 + 运行配置快照（动态渲染用） */
+  metrics?: Record<string, number>
+  runConfigSnapshot?: { content: Record<string, unknown>; contentHash: string } | null
 }
 type StageFilter = "format" | "commonsense" | "soft" | "pref" | null
 
@@ -176,6 +180,8 @@ export default function RunDetail() {
     { k: "Pref", val: run.avgPref, thr: THRESHOLDS.Pref },
     { k: "Reward", val: run.avgReward, thr: THRESHOLDS.Reward },
   ]
+  // Phase 5：场景化指标定义（来自运行配置快照）；存在时优先动态渲染
+  const metricDefs = extractMetricDefs(run.runConfigSnapshot)
   const meta = [
     { lab: "规则集", val: run.ruleSetVersion ?? "—" },
     { lab: "评估模式", val: run.mode },
@@ -222,10 +228,31 @@ export default function RunDetail() {
         ))}
       </div>
 
-      {/* metric cards */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
-        {metricRows.map((m) => {
-          const ok = m.val >= m.thr
+      {/* Phase 5：场景化动态指标（来自运行快照 metric_definitions；无快照时回落下方遗留卡）*/}
+      {metricDefs.length > 0 && (
+        <section className="space-y-2">
+          <h3 className="text-sm font-medium text-muted-foreground">场景化指标</h3>
+          <DynamicMetricGrid defs={metricDefs} metrics={run.metrics} />
+        </section>
+      )}
+
+      {/* Phase 5：运行配置快照（只读，P5-7）*/}
+      {run.runConfigSnapshot && (
+        <details className="rounded-lg border bg-card">
+          <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium">
+            配置快照 <span className="font-mono text-xs text-muted-foreground">{run.runConfigSnapshot.contentHash}</span>
+          </summary>
+          <pre className="max-h-96 overflow-auto border-t px-4 py-3 font-mono text-xs text-muted-foreground">
+            {JSON.stringify(run.runConfigSnapshot.content, null, 2)}
+          </pre>
+        </details>
+      )}
+
+      {/* metric cards（遗留一等列；P5-8 删除。有场景化指标时隐藏，避免重复）*/}
+      {metricDefs.length === 0 && (
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
+          {metricRows.map((m) => {
+            const ok = m.val >= m.thr
           return (
             <Card key={m.k}>
               <CardContent className="pt-5">
@@ -244,7 +271,8 @@ export default function RunDetail() {
             </Card>
           )
         })}
-      </div>
+        </div>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* 失败分布 */}
