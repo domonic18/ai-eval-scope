@@ -13,6 +13,8 @@ import RunDetail from "./pages/RunDetail"
 import SampleDetail from "./pages/SampleDetail"
 import ComingSoon from "./pages/ComingSoon"
 import DebugPage from "./pages/DebugPage"
+import ConfigHub from "./pages/config/ConfigHub"
+import ScenarioConfig from "./pages/config/ScenarioConfig"
 import AdminLayout from "./pages/admin/AdminLayout"
 import AdminOverview from "./pages/admin/AdminOverview"
 import AdminUsers from "./pages/admin/AdminUsers"
@@ -67,6 +69,9 @@ export default function App() {
         <Route path="/runs" element={<ComingSoon title="全部运行" />} />
         {/* 调试台：登录即可访问，不限组织 / 角色 */}
         <Route path="/debug" element={<DebugPage />} />
+        {/* 配置中心：场景包配置资产可视化 + 发布（Phase 4）*/}
+        <Route path="/config" element={<ConfigHub />} />
+        <Route path="/config/scenarios/:id" element={<ScenarioConfig />} />
       </Route>
       {/* 运行/样本详情：登录走 AppShell，匿名走 PublicShell（公开项目可 iframe 嵌入） */}
       <Route element={<RunViewShell />}>

@@ -204,6 +204,27 @@ export const api = {
     return (await http.get("/debug/rule-sets")).data.rule_sets
   },
 
+  /* ── 配置管理（场景包，Phase 3/4）─────────────────── */
+  async scenarios(): Promise<Scenario[]> {
+    return (await http.get("/scenarios")).data.scenarios as Scenario[]
+  },
+  async scenarioCatalog(scenarioId: string): Promise<ScenarioCatalog> {
+    return (await http.get(`/scenarios/${scenarioId}/catalog`)).data as ScenarioCatalog
+  },
+  async publishPackage(
+    scenarioId: string,
+    input: {
+      asset_id: string
+      version: string
+      labels?: string[]
+      name?: string
+      description?: string
+      content?: Record<string, unknown>
+    },
+  ): Promise<{ package: { packageId: string; scenarioId: string } }> {
+    return (await http.post(`/scenarios/${scenarioId}/packages`, input)).data
+  },
+
   /* ── 超管后台 ─────────────────────────────────────── */
   async adminOverview() {
     return (await http.get("/admin/stats/overview")).data
@@ -319,6 +340,30 @@ export const api = {
       size: number
     }
   },
+}
+
+export interface Scenario {
+  id: string
+  name: string
+  description: string | null
+  createdAt: string
+}
+export interface CatalogEntry {
+  asset_id: string
+  version: string
+  labels: string[]
+  name: string | null
+  description: string | null
+}
+export interface DatasetCatalogEntry extends CatalogEntry {
+  role: string
+  backend_type: string
+}
+export interface ScenarioCatalog {
+  scenario: { id: string; name: string; description: string | null }
+  rule_sets: CatalogEntry[]
+  prompts: CatalogEntry[]
+  datasets: DatasetCatalogEntry[]
 }
 
 export interface AdminUser {
