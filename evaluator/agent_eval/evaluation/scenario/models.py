@@ -77,6 +77,13 @@ class MetricDefinition(BaseModel):
     )
     threshold: float | None = Field(default=None, description="通过阈值（可选）")
     unit: str | None = Field(default=None, description="单位：ratio/score/ms/count")
+    explain: dict | None = Field(
+        default=None,
+        description=(
+            "可选指标说明（前端 ? hover 提示）：{title, rows:[{dt, dd, tone?}]}，"
+            "tone ∈ default/primary/danger/success/warning 控制强调色"
+        ),
+    )
 
     model_config = {"extra": "allow"}
 

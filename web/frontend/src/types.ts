@@ -93,6 +93,20 @@ export interface MetricDef {
   expression?: string
   threshold?: number | null
   unit?: string | null
+  /** 可选指标说明（hover ? 提示，对齐旧 METRIC_EXPLAIN）；由定义驱动，缺省不显示 */
+  explain?: MetricExplain
+}
+
+/** 可序列化的指标说明（驱动 ? hover 提示，含彩色强调）。 */
+export interface MetricExplain {
+  title: string
+  rows: MetricExplainRow[]
+}
+export interface MetricExplainRow {
+  dt: string
+  dd: string
+  /** dd 的强调色：primary/danger/success/warning/default */
+  tone?: "default" | "primary" | "danger" | "success" | "warning"
 }
 
 /** 项目下样本（课件）清单项（docs/arch/09 §9.4）。 */

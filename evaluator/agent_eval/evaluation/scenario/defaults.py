@@ -56,7 +56,10 @@ def _build_default_policy() -> AggregationPolicy:
 
 
 def _build_default_metrics() -> list[MetricDefinition]:
-    """构造 courseware 默认 MetricDefinition 列表（等价旧 MetricsCalculator 指标）。"""
+    """构造 courseware 默认 MetricDefinition 列表（等价旧 MetricsCalculator 指标）。
+
+    每项含 explain（前端 ? hover 说明，对齐旧 METRIC_EXPLAIN），由运行快照携带。
+    """
     t = METRIC_THRESHOLDS
     return [
         MetricDefinition(
@@ -65,6 +68,22 @@ def _build_default_metrics() -> list[MetricDefinition]:
             expression="count(format_gate) / total",
             threshold=t.dr,
             unit="ratio",
+            explain={
+                "title": "DR · Delivery Rate 交付率",
+                "rows": [
+                    {
+                        "dt": "定义",
+                        "dd": "能正常打开、格式符合基本要求的样本占多少——连格式都不对就没法使用。",
+                        "tone": "primary",
+                    },
+                    {"dt": "计算", "dd": "格式合格的样本数 ÷ 全部样本数"},
+                    {
+                        "dt": "标准",
+                        "dd": f"达标线 ≥ {t.dr}（即 {round(t.dr * 100)}%）；低于则这批整体不合格。",
+                        "tone": "danger",
+                    },
+                ],
+            },
         ),
         MetricDefinition(
             id="courseware:constraint_pass_rate",
@@ -72,6 +91,22 @@ def _build_default_metrics() -> list[MetricDefinition]:
             expression="count(both(format_gate, commonsense_gate)) / total",
             threshold=t.cpr,
             unit="ratio",
+            explain={
+                "title": "CPR · Constraint Pass Rate 约束通过率",
+                "rows": [
+                    {
+                        "dt": "定义",
+                        "dd": "格式 + 常识双门控都通过的样本占比——内容基本正确、无明显硬伤。",
+                        "tone": "primary",
+                    },
+                    {"dt": "计算", "dd": "双门控通过样本数 ÷ 全部样本数"},
+                    {
+                        "dt": "标准",
+                        "dd": f"达标线 ≥ {t.cpr}；低于则存在较多常识性错误。",
+                        "tone": "danger",
+                    },
+                ],
+            },
         ),
         MetricDefinition(
             id="courseware:reward",
@@ -79,24 +114,73 @@ def _build_default_metrics() -> list[MetricDefinition]:
             expression="mean(reward)",
             threshold=t.avg_reward,
             unit="score",
+            explain={
+                "title": "Reward · 综合评分",
+                "rows": [
+                    {
+                        "dt": "定义",
+                        "dd": "归一化到 [0,1] 的综合质量分，融合门控与软/偏好质量。",
+                        "tone": "primary",
+                    },
+                    {"dt": "计算", "dd": "(S_format + S_common + S_soft + S_pref) / 4"},
+                    {
+                        "dt": "标准",
+                        "dd": f"达标线 ≥ {t.avg_reward}；综合质量合格。",
+                        "tone": "success",
+                    },
+                ],
+            },
         ),
         MetricDefinition(
             id="courseware:soft",
             name="平均内容质量",
             expression="mean(s_soft)",
             unit="score",
+            explain={
+                "title": "Soft · 内容质量分",
+                "rows": [
+                    {
+                        "dt": "定义",
+                        "dd": "教学逻辑、内容多样性等软约束维度的平均得分（独立指标，不混入 Reward）。",
+                        "tone": "primary",
+                    },
+                    {"dt": "范围", "dd": "[0, 1]，越高越好"},
+                ],
+            },
         ),
         MetricDefinition(
             id="courseware:pref",
             name="平均用户偏好",
             expression="mean(s_pref)",
             unit="score",
+            explain={
+                "title": "Pref · 用户偏好分",
+                "rows": [
+                    {
+                        "dt": "定义",
+                        "dd": "风格、深度、需求满足度等偏好维度的平均得分（独立指标）。",
+                        "tone": "primary",
+                    },
+                    {"dt": "范围", "dd": "[0, 1]，越高越好"},
+                ],
+            },
         ),
         MetricDefinition(
             id="courseware:conditional_reward",
             name="条件 Reward CondR",
             expression="gated_mean(reward, format_gate, commonsense_gate)",
             unit="score",
+            explain={
+                "title": "CondR · Conditional Reward",
+                "rows": [
+                    {
+                        "dt": "定义",
+                        "dd": "仅统计通过双门控样本的 Reward 均值——排除格式/常识失败后的真实质量。",
+                        "tone": "primary",
+                    },
+                    {"dt": "范围", "dd": "[0, 1]"},
+                ],
+            },
         ),
     ]
 
