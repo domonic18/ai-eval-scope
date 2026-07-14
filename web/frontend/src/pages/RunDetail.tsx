@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { api } from "../api/client"
 import { fmt3, fmtMsRaw, num } from "../lib/format"
-import { METRIC_LABEL, THRESHOLDS } from "../lib/eval"
+import { METRIC_LABEL } from "../lib/eval"
 import { DynamicMetricGrid, extractMetricDefs } from "../components/DynamicMetricGrid"
 import { useScenarioDefaults } from "../hooks/useScenarioDefaults"
 import { Button } from "@/components/shadcn/button"
@@ -143,15 +143,17 @@ export default function RunDetail() {
   const failCount = run.samples.filter((s) => s.status === "fail" || s.status === "failed").length
 
   function downloadReport(kind: "md" | "json") {
+    const m = run!.metrics ?? {}
     const summary = {
       run: run!.externalRunId,
       mode: run!.mode,
       samples: run!.totalSamples,
-      metrics: { DR: run!.dr, CPR: run!.cpr, Reward: run!.avgReward, CondR: run!.condR },
+      metrics: m,
       pass: passCount,
       fail: failCount,
     }
-    const text = kind === "json" ? JSON.stringify(summary, null, 2) : `# 运行 #${run!.externalRunId}\n\n- 样本：${run!.totalSamples}（通过 ${passCount} / 失败 ${failCount}）\n- DR=${fmt3(run!.dr)} · CPR=${fmt3(run!.cpr)} · Reward=${fmt3(run!.avgReward)} · CondR=${fmt3(run!.condR)}\n`
+    const mdMetrics = Object.entries(m).map(([k, v]) => `${k}=${fmt3(v)}`).join(" · ")
+    const text = kind === "json" ? JSON.stringify(summary, null, 2) : `# 运行 #${run!.externalRunId}\n\n- 样本：${run!.totalSamples}（通过 ${passCount} / 失败 ${failCount}）\n- ${mdMetrics}\n`
     const blob = new Blob([text], { type: kind === "json" ? "application/json" : "text/markdown" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
@@ -275,8 +277,20 @@ export default function RunDetail() {
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <p>
-              本次 {num(run.totalSamples)} 个样本，<span className="font-medium text-emerald-400">{passCount} 通过</span> / <span className="font-medium text-red-400">{failCount} 失败</span>。
-              DR {run.dr >= THRESHOLDS.DR ? "达标" : "未达"}（{fmt3(run.dr)}）、CPR {run.cpr >= THRESHOLDS.CPR ? "达标" : "未达"}（{fmt3(run.cpr)}），Reward <span className={run.avgReward >= THRESHOLDS.Reward ? "text-emerald-400" : "text-red-400"}>{run.avgReward >= THRESHOLDS.Reward ? "达标" : `偏低（${fmt3(run.avgReward)}）`}</span>。
+              本次 {num(run.totalSamples)} 个样本，<span className="font-medium text-emerald-400">{passCount} 通过</span> / <span className="font-medium text-red-400">{failCount} 失败</span>。{" "}
+              {(metricDefs.length > 0 ? metricDefs : defaultDefs)
+                .filter((d) => d.threshold != null && run.metrics?.[d.id] != null)
+                .map((d) => {
+                  const val = run.metrics![d.id]
+                  const ok = val >= (d.threshold as number)
+                  return (
+                    <span key={d.id}>
+                      {d.name}{" "}
+                      <span className={ok ? "text-emerald-400" : "text-red-400"}>{ok ? "达标" : "未达"}</span>
+                      （{fmt3(val)}）、{" "}
+                    </span>
+                  )
+                })}
             </p>
             <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
               {!!failCounts?.format && <li>{failCounts.format} 个样本未通过格式门禁。</li>}
