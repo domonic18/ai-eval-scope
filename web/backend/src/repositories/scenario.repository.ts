@@ -14,6 +14,15 @@ function hashContent(content: unknown): string {
   return "sha256:" + createHash("sha256").update(JSON.stringify(content)).digest("hex")
 }
 
+/** 确保场景行存在（资产发布前 upsert）。 */
+async function prismaEnsureScenario(prisma: PrismaClient, scenarioId: string): Promise<void> {
+  await prisma.scenario.upsert({
+    where: { id: scenarioId },
+    update: {},
+    create: { id: scenarioId, name: scenarioId },
+  })
+}
+
 export interface CatalogEntry {
   asset_id: string
   version: string
@@ -80,6 +89,152 @@ export class ScenarioRepository {
       })
       return { packageId: created.id, scenarioId }
     })
+  }
+
+  /** 发布/更新一个规则集资产版本（幂等 upsert）。 */
+  async publishRuleSetAsset(
+    scenarioId: string,
+    input: {
+      assetId: string
+      version: string
+      labels?: string[]
+      content: Record<string, unknown>
+      createdBy: string
+      packageId?: string
+    },
+  ): Promise<{ assetId: string; version: string }> {
+    const contentHash = hashContent(input.content)
+    await prismaEnsureScenario(this.prisma, scenarioId)
+    await this.prisma.ruleSetAsset.upsert({
+      where: { scenarioId_assetId_version: { scenarioId, assetId: input.assetId, version: input.version } },
+      update: { labels: input.labels ?? [], content: input.content as never, contentHash },
+      create: {
+        scenarioId,
+        packageId: input.packageId ?? null,
+        assetId: input.assetId,
+        version: input.version,
+        labels: input.labels ?? [],
+        content: input.content as never,
+        contentHash,
+        createdBy: input.createdBy,
+      },
+    })
+    return { assetId: input.assetId, version: input.version }
+  }
+
+  /** 发布/更新一个提示词资产版本（幂等 upsert）。 */
+  async publishPromptAsset(
+    scenarioId: string,
+    input: {
+      assetId: string
+      namespace?: string
+      version: string
+      labels?: string[]
+      content: Record<string, unknown>
+      createdBy: string
+      packageId?: string
+    },
+  ): Promise<{ assetId: string; version: string }> {
+    const namespace = input.namespace ?? scenarioId
+    const contentHash = hashContent(input.content)
+    await prismaEnsureScenario(this.prisma, scenarioId)
+    await this.prisma.promptTemplateAsset.upsert({
+      where: {
+        scenarioId_namespace_assetId_version: { scenarioId, namespace, assetId: input.assetId, version: input.version },
+      },
+      update: { labels: input.labels ?? [], content: input.content as never, contentHash },
+      create: {
+        scenarioId,
+        packageId: input.packageId ?? null,
+        assetId: input.assetId,
+        namespace,
+        version: input.version,
+        labels: input.labels ?? [],
+        content: input.content as never,
+        contentHash,
+        createdBy: input.createdBy,
+      },
+    })
+    return { assetId: input.assetId, version: input.version }
+  }
+
+  /** 发布/更新一个数据集资产版本（幂等 upsert）。 */
+  async publishDatasetAsset(
+    scenarioId: string,
+    input: {
+      assetId: string
+      role: string // test | reference
+      version: string
+      labels?: string[]
+      backendType: string
+      backendConfig: Record<string, unknown>
+      content: Record<string, unknown>
+      createdBy: string
+      packageId?: string
+    },
+  ): Promise<{ assetId: string; version: string }> {
+    const contentHash = hashContent(input.content)
+    await prismaEnsureScenario(this.prisma, scenarioId)
+    await this.prisma.datasetAsset.upsert({
+      where: { scenarioId_assetId_version: { scenarioId, assetId: input.assetId, version: input.version } },
+      update: {
+        labels: input.labels ?? [],
+        role: input.role,
+        backendType: input.backendType,
+        backendConfig: input.backendConfig as never,
+        content: input.content as never,
+        contentHash,
+      },
+      create: {
+        scenarioId,
+        packageId: input.packageId ?? null,
+        assetId: input.assetId,
+        role: input.role,
+        version: input.version,
+        labels: input.labels ?? [],
+        backendType: input.backendType,
+        backendConfig: input.backendConfig as never,
+        content: input.content as never,
+        contentHash,
+        createdBy: input.createdBy,
+      },
+    })
+    return { assetId: input.assetId, version: input.version }
+  }
+
+  /** 列出某资产的全部历史版本（VersionTimeline 用）。 */
+  async listAssetVersions(
+    scenarioId: string,
+    kind: "rule-sets" | "prompts" | "datasets",
+    assetId: string,
+  ): Promise<Array<{ version: string; labels: string[]; contentHash: string; createdAt: Date }>> {
+    const select = { version: true, labels: true, contentHash: true, createdAt: true }
+    if (kind === "rule-sets") {
+      return this.prisma.ruleSetAsset.findMany({ where: { scenarioId, assetId }, select, orderBy: { createdAt: "desc" } })
+    }
+    if (kind === "datasets") {
+      return this.prisma.datasetAsset.findMany({ where: { scenarioId, assetId }, select, orderBy: { createdAt: "desc" } })
+    }
+    return this.prisma.promptTemplateAsset.findMany({ where: { scenarioId, assetId }, select, orderBy: { createdAt: "desc" } })
+  }
+
+  /** 标签晋升：覆盖某资产版本的 labels（P4-5 标签晋升）。 */
+  async setAssetLabels(
+    scenarioId: string,
+    kind: "rule-sets" | "prompts" | "datasets",
+    assetId: string,
+    version: string,
+    labels: string[],
+  ): Promise<void> {
+    // updateMany 不支持复合唯一键快捷式，按字段 AND 过滤
+    const filter = { scenarioId, assetId, version }
+    if (kind === "rule-sets") {
+      await this.prisma.ruleSetAsset.updateMany({ where: filter, data: { labels } })
+    } else if (kind === "datasets") {
+      await this.prisma.datasetAsset.updateMany({ where: filter, data: { labels } })
+    } else {
+      await this.prisma.promptTemplateAsset.updateMany({ where: filter, data: { labels } })
+    }
   }
 
   async getCatalog(scenarioId: string): Promise<ScenarioCatalog | null> {

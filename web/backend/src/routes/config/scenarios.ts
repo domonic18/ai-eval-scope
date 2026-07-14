@@ -1,9 +1,14 @@
 /**
- * 场景配置路由（/api/v1/scenarios）—— Phase 3 动态 catalog + 包发布（对齐 13 §11.2、09 §9.5）。
+ * 场景配置路由（/api/v1/scenarios）—— Phase 3 catalog + Phase 4 asset 编辑/发布。
  *
- * - GET  /                列出全部场景（公开）
- * - GET  /:id/catalog     返回该场景下规则集/提示词/数据集 catalog（公开，替代静态 rule-sets.json）
- * - POST /:id/packages    发布/更新一个场景包版本（platform admin）
+ * - GET  /                                  列出全部场景（公开）
+ * - GET  /:id/catalog                       catalog（公开）
+ * - POST /:id/packages                      发布场景包版本（admin）
+ * - POST /:id/rule-sets                     发布规则集资产版本（admin）         [P4-2]
+ * - POST /:id/prompts                       发布提示词资产版本（admin）         [P4-3]
+ * - POST /:id/datasets                      发布数据集资产版本（admin）         [P4-4]
+ * - GET  /:id/:kind/:assetId/versions       资产版本历史（VersionTimeline）     [P4-5]
+ * - POST /:id/:kind/:assetId/versions/:ver/labels  标签晋升（admin）            [P4-5]
  */
 
 import { Router } from "express"
@@ -14,6 +19,8 @@ import { ScenarioRepository } from "../../repositories/scenario.repository"
 
 const router = Router()
 const repo = () => new ScenarioRepository()
+const ASSET_KINDS = ["rule-sets", "prompts", "datasets"] as const
+type AssetKind = (typeof ASSET_KINDS)[number]
 
 router.get("/", async (_req, res) => {
   res.json({ scenarios: await repo().listScenarios() })
@@ -27,6 +34,74 @@ router.get("/:id/catalog", async (req, res) => {
   }
   res.json(catalog)
 })
+
+async function publishAssetHandler(
+  kind: AssetKind,
+  scenarioId: string,
+  body: Record<string, unknown>,
+  createdBy: string,
+): Promise<unknown> {
+  const r = repo()
+  const common = {
+    assetId: body.asset_id as string,
+    version: body.version as string,
+    labels: (body.labels as string[]) ?? [],
+    content: (body.content as Record<string, unknown>) ?? {},
+    createdBy,
+    packageId: body.package_id as string | undefined,
+  }
+  if (!common.assetId || !common.version) {
+    throw new PlatformError("asset_id 与 version 必填", { status: 400, code: "VALIDATION_ERROR" })
+  }
+  if (kind === "rule-sets") return r.publishRuleSetAsset(scenarioId, common)
+  if (kind === "prompts")
+    return r.publishPromptAsset(scenarioId, { ...common, namespace: body.namespace as string | undefined })
+  const role = (body.role as string) ?? "reference"
+  if (role !== "test" && role !== "reference") {
+    throw new PlatformError("role 必须为 test 或 reference", { status: 400, code: "VALIDATION_ERROR" })
+  }
+  return r.publishDatasetAsset(scenarioId, {
+    ...common,
+    role,
+    backendType: (body.backend_type as string) ?? "yaml_file",
+    backendConfig: (body.backend_config as Record<string, unknown>) ?? {},
+  })
+}
+
+for (const kind of ASSET_KINDS) {
+  router.post(`/:id/${kind}`, requireAuth, platformAdminGuard, async (req, res, next) => {
+    try {
+      const result = await publishAssetHandler(kind, req.params.id, req.body ?? {}, req.user!.userId)
+      res.status(201).json({ asset: result })
+    } catch (e) {
+      next(e)
+    }
+  })
+}
+
+// 资产版本历史（VersionTimeline）
+router.get("/:id/:kind/:assetId/versions", async (req, res, next) => {
+  const kind = req.params.kind as AssetKind
+  if (!ASSET_KINDS.includes(kind)) return next(new PlatformError("unknown asset kind", { status: 404, code: "NOT_FOUND" }))
+  res.json({ versions: await repo().listAssetVersions(req.params.id, kind, req.params.assetId) })
+})
+
+// 标签晋升（覆盖某版本 labels）
+router.post(
+  "/:id/:kind/:assetId/versions/:ver/labels",
+  requireAuth,
+  platformAdminGuard,
+  async (req, res, next) => {
+    const kind = req.params.kind as AssetKind
+    if (!ASSET_KINDS.includes(kind)) return next(new PlatformError("unknown asset kind", { status: 404, code: "NOT_FOUND" }))
+    try {
+      await repo().setAssetLabels(req.params.id, kind, req.params.assetId, req.params.ver, (req.body.labels as string[]) ?? [])
+      res.json({ ok: true })
+    } catch (e) {
+      next(e)
+    }
+  },
+)
 
 router.post(
   "/:id/packages",
