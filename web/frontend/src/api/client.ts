@@ -211,9 +211,20 @@ export const api = {
   async scenarioCatalog(scenarioId: string): Promise<ScenarioCatalog> {
     return (await http.get(`/scenarios/${scenarioId}/catalog`)).data as ScenarioCatalog
   },
-  /** 场景默认指标定义（GET /scenarios/:id/defaults，前端无 hardcode）。 */
+  /** 场景默认指标定义 + 聚合策略（GET /scenarios/:id/defaults，前端无 hardcode）。 */
   async scenarioDefaults(scenarioId: string): Promise<MetricDef[]> {
     return (await http.get(`/scenarios/${scenarioId}/defaults`)).data.metric_definitions as MetricDef[]
+  },
+  async scenarioAggregationPolicy(scenarioId: string): Promise<Record<string, unknown> | null> {
+    return (await http.get(`/scenarios/${scenarioId}/defaults`)).data.aggregation_policy ?? null
+  },
+  /** 资产完整内容（评测规则浏览器用）。 */
+  async assetContent(
+    scenarioId: string,
+    kind: AssetKind,
+    assetId: string,
+  ): Promise<Record<string, unknown>> {
+    return (await http.get(`/scenarios/${scenarioId}/${kind}/${assetId}/content`)).data.content
   },
   async publishPackage(
     scenarioId: string,

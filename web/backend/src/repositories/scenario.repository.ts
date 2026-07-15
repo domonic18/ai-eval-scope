@@ -218,6 +218,24 @@ export class ScenarioRepository {
     return this.prisma.promptTemplateAsset.findMany({ where: { scenarioId, assetId }, select, orderBy: { createdAt: "desc" } })
   }
 
+  /** 获取某资产最新版本的完整 content（评测规则浏览器用）。 */
+  async getAssetContent(
+    scenarioId: string,
+    kind: "rule-sets" | "prompts" | "datasets",
+    assetId: string,
+  ): Promise<Record<string, unknown> | null> {
+    const rows =
+      kind === "rule-sets"
+        ? await this.prisma.ruleSetAsset.findMany({ where: { scenarioId, assetId } })
+        : kind === "datasets"
+          ? await this.prisma.datasetAsset.findMany({ where: { scenarioId, assetId } })
+          : await this.prisma.promptTemplateAsset.findMany({ where: { scenarioId, assetId } })
+    if (!rows.length) return null
+    // 取最新版本（复用 _latestPerAsset 逻辑）
+    const latest = this._latestPerAsset(rows)[0]
+    return latest.content as Record<string, unknown>
+  }
+
   /** 标签晋升：覆盖某资产版本的 labels（P4-5 标签晋升）。 */
   async setAssetLabels(
     scenarioId: string,

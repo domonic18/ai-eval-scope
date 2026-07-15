@@ -325,6 +325,7 @@ model Scenario {
   description              String?
   // 场景默认指标定义（单一源落库，前端列表页 GET /scenarios/:id/defaults 取，无前端 hardcode）
   defaultMetricDefinitions Json?    @map("default_metric_definitions") @db.JsonB
+  defaultAggregationPolicy Json?    @map("default_aggregation_policy") @db.JsonB
   createdAt                DateTime @default(now()) @map("created_at")
 
   packages    ScenarioPackage[]

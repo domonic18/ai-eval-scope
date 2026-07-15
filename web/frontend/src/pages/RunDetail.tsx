@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
+import { Link, useNavigate, useParams } from "react-router-dom"
 import { api } from "../api/client"
 import { fmt3, fmtMsRaw, num } from "../lib/format"
 import { METRIC_LABEL } from "../lib/eval"
@@ -40,6 +40,7 @@ interface RunData {
   totalSamples: number
   /** Phase 5 场景化指标 + 运行配置快照（动态渲染用） */
   metrics?: Record<string, number>
+  scenarioId?: string | null
   runConfigSnapshot?: { content: Record<string, unknown>; contentHash: string } | null
   ruleSetVersion: string | null
   langfuseTraceId: string | null
@@ -230,8 +231,21 @@ export default function RunDetail() {
       {/* Phase 5：运行配置快照（只读，P5-7）*/}
       {run.runConfigSnapshot && (
         <details className="rounded-lg border bg-card">
-          <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium">
-            配置快照 <span className="font-mono text-xs text-muted-foreground">{run.runConfigSnapshot.contentHash}</span>
+          <summary className="flex cursor-pointer items-center justify-between px-4 py-2.5 text-sm font-medium">
+            <span className="flex items-center gap-2">
+              配置快照
+              <span className="font-mono text-xs text-muted-foreground">{run.runConfigSnapshot.contentHash}</span>
+            </span>
+            {run.scenarioId && (
+              <Link
+                to={`/config/scenarios/${run.scenarioId}/explorer`}
+                className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-normal text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ExternalLink className="size-3" />
+                查看评测规则
+              </Link>
+            )}
           </summary>
           <pre className="max-h-96 overflow-auto border-t px-4 py-3 font-mono text-xs text-muted-foreground">
             {JSON.stringify(run.runConfigSnapshot.content, null, 2)}

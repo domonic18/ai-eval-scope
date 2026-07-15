@@ -36,17 +36,33 @@ router.get("/:id/catalog", async (req, res) => {
   res.json(catalog)
 })
 
-/** 场景默认指标定义（列表页 fetch，前端无 hardcode）。 */
+/** 场景默认指标定义 + 聚合策略（列表页 fetch，前端无 hardcode）。 */
 router.get("/:id/defaults", async (req, res) => {
   const scenario = await getPrisma().scenario.findUnique({
     where: { id: req.params.id },
-    select: { defaultMetricDefinitions: true },
+    select: { defaultMetricDefinitions: true, defaultAggregationPolicy: true },
   })
   if (!scenario) {
     res.status(404).json({ error: "scenario not found", scenario_id: req.params.id })
     return
   }
-  res.json({ metric_definitions: scenario.defaultMetricDefinitions ?? [] })
+  res.json({
+    metric_definitions: scenario.defaultMetricDefinitions ?? [],
+    aggregation_policy: scenario.defaultAggregationPolicy ?? null,
+  })
+})
+
+/** 资产完整内容（评测规则浏览器用，只读）。 */
+router.get("/:id/:kind/:assetId/content", async (req, res, next) => {
+  const kind = req.params.kind as AssetKind
+  if (!ASSET_KINDS.includes(kind))
+    return next(new PlatformError("unknown asset kind", { status: 404, code: "NOT_FOUND" }))
+  const content = await repo().getAssetContent(req.params.id, kind, req.params.assetId)
+  if (!content) {
+    res.status(404).json({ error: "asset not found", asset_id: req.params.assetId })
+    return
+  }
+  res.json({ content })
 })
 
 async function publishAssetHandler(
