@@ -361,7 +361,7 @@ function DatasetDetail({ scenarioId, assetId }: { scenarioId: string; assetId: s
         <Card>
           <CardHeader><CardTitle className="text-sm">常量/公式（{constants.length}）</CardTitle></CardHeader>
           <CardContent>
-            <div className="scroll-area max-h-[280px] space-y-1 overflow-y-auto rounded bg-muted/20 p-2 pr-1">
+            <div className="space-y-1 rounded bg-muted/20 p-3">
               {constants.map((c: any, i: number) => (
                 <div key={i} className="flex items-start gap-3 border-t py-2 text-sm first:border-t-0">
                   <span className="min-w-0 flex-1 truncate">{c.name}</span>
@@ -378,7 +378,7 @@ function DatasetDetail({ scenarioId, assetId }: { scenarioId: string; assetId: s
         <Card>
           <CardHeader><CardTitle className="text-sm">常见误区（{misconceptions.length}）</CardTitle></CardHeader>
           <CardContent>
-            <div className="scroll-area max-h-[280px] space-y-1 overflow-y-auto rounded bg-muted/20 p-2 pr-1">
+            <div className="space-y-1 rounded bg-muted/20 p-3">
               {misconceptions.map((m: any, i: number) => (
                 <div key={i} className="flex items-start gap-3 border-t py-2 text-sm first:border-t-0">
                   <Badge variant={m.severity === "error" ? "destructive" : "secondary"} className="shrink-0 text-[10px]">
