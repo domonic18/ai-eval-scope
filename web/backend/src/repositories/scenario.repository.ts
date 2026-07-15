@@ -218,11 +218,12 @@ export class ScenarioRepository {
     return this.prisma.promptTemplateAsset.findMany({ where: { scenarioId, assetId }, select, orderBy: { createdAt: "desc" } })
   }
 
-  /** 获取某资产最新版本的完整 content（评测规则浏览器用）。 */
+  /** 获取某资产指定版本的完整 content（评测规则浏览器/编辑器 diff 用）。 */
   async getAssetContent(
     scenarioId: string,
     kind: "rule-sets" | "prompts" | "datasets",
     assetId: string,
+    version?: string,
   ): Promise<Record<string, unknown> | null> {
     const rows =
       kind === "rule-sets"
@@ -231,7 +232,10 @@ export class ScenarioRepository {
           ? await this.prisma.datasetAsset.findMany({ where: { scenarioId, assetId } })
           : await this.prisma.promptTemplateAsset.findMany({ where: { scenarioId, assetId } })
     if (!rows.length) return null
-    // 取最新版本（复用 _latestPerAsset 逻辑）
+    if (version) {
+      const exact = rows.find((r) => r.version === version)
+      return (exact?.content as Record<string, unknown>) ?? null
+    }
     const latest = this._latestPerAsset(rows)[0]
     return latest.content as Record<string, unknown>
   }

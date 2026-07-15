@@ -57,7 +57,7 @@ router.get("/:id/:kind/:assetId/content", async (req, res, next) => {
   const kind = req.params.kind as AssetKind
   if (!ASSET_KINDS.includes(kind))
     return next(new PlatformError("unknown asset kind", { status: 404, code: "NOT_FOUND" }))
-  const content = await repo().getAssetContent(req.params.id, kind, req.params.assetId)
+  const content = await repo().getAssetContent(req.params.id, kind, req.params.assetId, req.query.version as string | undefined)
   if (!content) {
     res.status(404).json({ error: "asset not found", asset_id: req.params.assetId })
     return

@@ -1,5 +1,13 @@
+/**
+ * 统一资产编辑器（P4-2/3/4/5 升级版）。
+ *
+ * 按 kind 切换专用表单（RuleSetForm / PromptForm / DatasetForm）+ YAML 模式切换 +
+ * 版本时间线 + 标签晋升 + 版本 diff。替代旧的纯 YAML textarea 编辑器。
+ */
+
 import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
+import * as yaml from "js-yaml"
 import { useCrumbs } from "../../components/AppShell"
 import { Page, PageHead } from "../../components/shared"
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/shadcn/card"
@@ -10,29 +18,49 @@ import { Label } from "../../components/shadcn/label"
 import { Textarea } from "../../components/shadcn/textarea"
 import { toast } from "sonner"
 import { api, type AssetKind } from "../../api/client"
-import { Save, GitBranch, ArrowUpCircle } from "lucide-react"
+import {
+  ArrowUpCircle,
+  Code2,
+  FileText,
+  GitBranch,
+  GitCompare,
+  Save,
+} from "lucide-react"
+import { RuleSetForm, type RuleSetData } from "./forms/RuleSetForm"
+import { PromptForm, type PromptData } from "./forms/PromptForm"
+import { DatasetForm, type DatasetData } from "./forms/DatasetForm"
 
 const KIND_LABEL: Record<AssetKind, string> = {
   "rule-sets": "规则集",
   prompts: "提示词",
   datasets: "数据集",
 }
-
+const VERSION_LABELS = ["production", "staging", "latest"]
 const errMsg = (e: unknown, fb: string) =>
   (e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? fb
 
-const VERSION_LABELS = ["production", "staging", "latest"]
+type Mode = "form" | "yaml"
 
-/** 统一资产编辑器：YAML 编辑 → 发布新版本；版本时间线 + 标签晋升（P4-2/3/4/5）。 */
 export default function AssetEditor() {
-  const { id = "", kind = "rule-sets", assetId = "" } = useParams<{ id: string; kind: AssetKind; assetId: string }>()
+  const { id = "", kind = "rule-sets", assetId = "" } = useParams<{
+    id: string
+    kind: AssetKind
+    assetId: string
+  }>()
   const { setCrumbs } = useCrumbs()
-  const [yaml, setYaml] = useState("")
+
+  const [mode, setMode] = useState<Mode>("form")
+  const [content, setContent] = useState<Record<string, any> | null>(null)
+  const [yamlText, setYamlText] = useState("")
+  const [loading, setLoading] = useState(true)
   const [version, setVersion] = useState("1.0.0")
   const [label, setLabel] = useState("latest")
-  const [role, setRole] = useState("reference")
-  const [versions, setVersions] = useState<Array<{ version: string; labels: string[]; contentHash: string; createdAt: string }>>([])
   const [busy, setBusy] = useState(false)
+  const [versions, setVersions] = useState<
+    Array<{ version: string; labels: string[]; contentHash: string; createdAt: string }>
+  >([])
+  const [diffVersion, setDiffVersion] = useState<string | null>(null)
+  const [diffContent, setDiffContent] = useState<string | null>(null)
 
   useEffect(() => {
     setCrumbs([
@@ -40,48 +68,52 @@ export default function AssetEditor() {
       { label: id, to: `/config/scenarios/${id}` },
       { label: `${KIND_LABEL[kind]} · ${assetId}` },
     ])
-    // 载入当前 catalog 中的最新版本内容作为编辑起点
+    setContent(null)
+    setLoading(true)
     api
-      .scenarioCatalog(id)
-      .then((cat) => {
-        const list =
-          kind === "rule-sets" ? cat.rule_sets : kind === "prompts" ? cat.prompts : cat.datasets
-        const entry = list.find((e) => e.asset_id === assetId)
-        if (entry) setVersion(bumpVersion(entry.version))
+      .assetContent(id, kind, assetId)
+      .then((c) => {
+        setContent(c)
+        setYamlText(yaml.dump(c, { sortKeys: false }))
       })
-      .catch(() => {})
-    reloadVersions()
+      .catch(() => setContent(null))
+      .finally(() => setLoading(false))
+    api.listAssetVersions(id, kind, assetId).then(setVersions).catch(() => setVersions([]))
   }, [id, kind, assetId, setCrumbs])
 
-  function reloadVersions() {
-    api.listAssetVersions(id, kind, assetId).then(setVersions).catch(() => setVersions([]))
+  const updateContent = (d: Record<string, any>) => {
+    setContent(d)
+    setYamlText(yaml.dump(d, { sortKeys: false }))
   }
 
-  async function publish() {
+  const onYamlChange = (text: string) => {
+    setYamlText(text)
+    try {
+      const parsed = yaml.load(text)
+      if (parsed && typeof parsed === "object") setContent(parsed as Record<string, any>)
+    } catch {
+      // YAML 语法错误时不更新 content（用户继续编辑）
+    }
+  }
+
+  const publish = async () => {
     setBusy(true)
     try {
-      let content: Record<string, unknown>
-      try {
-        content = parseYaml(yaml)
-      } catch (e) {
-        toast.error("YAML 解析失败：" + errMsg(e, "语法错误"))
-        setBusy(false)
-        return
-      }
+      const publishContent = content ?? {}
       const input: Parameters<typeof api.publishAsset>[2] = {
         asset_id: assetId,
         version,
         labels: label ? [label] : [],
-        content,
+        content: publishContent,
       }
       if (kind === "datasets") {
-        input.role = role
-        input.backend_type = "yaml_file"
-        input.backend_config = {}
+        input.role = (publishContent as any).role ?? "reference"
+        input.backend_type = (publishContent as any).backend_type ?? "yaml_file"
       }
       await api.publishAsset(id, kind, input)
       toast.success(`已发布 ${KIND_LABEL[kind]} ${assetId}@${version}`)
-      reloadVersions()
+      const newVersions = await api.listAssetVersions(id, kind, assetId)
+      setVersions(newVersions)
     } catch (e) {
       toast.error(errMsg(e, "发布失败"))
     } finally {
@@ -89,109 +121,161 @@ export default function AssetEditor() {
     }
   }
 
-  async function promote(ver: string, lbl: string) {
+  const promote = async (ver: string, lbl: string) => {
     try {
       await api.promoteAssetLabels(id, kind, assetId, ver, [lbl])
       toast.success(`${ver} 已晋升为 ${lbl}`)
-      reloadVersions()
+      setVersions(await api.listAssetVersions(id, kind, assetId))
     } catch (e) {
       toast.error(errMsg(e, "晋升失败"))
     }
   }
 
-  const starter = yamlStarter(kind, assetId)
+  const showDiff = async (ver: string) => {
+    if (diffVersion === ver) {
+      setDiffVersion(null)
+      setDiffContent(null)
+      return
+    }
+    try {
+      const old = await api.assetContent(id, kind, assetId, ver)
+      setDiffVersion(ver)
+      setDiffContent(yaml.dump(old, { sortKeys: false }))
+    } catch {
+      toast.error("获取版本内容失败")
+    }
+  }
+
+  if (loading) return <Page><div className="text-sm text-muted-foreground">加载中…</div></Page>
 
   return (
     <Page>
-      <PageHead title={`${KIND_LABEL[kind]} · ${assetId}`} sub={`场景 ${id} · 编辑并发布新版本`} />
-      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Save className="size-4" /> 编辑（YAML）
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Textarea
-              className="font-mono text-xs"
-              rows={22}
-              value={yaml || starter}
-              onChange={(e) => setYaml(e.target.value)}
-              placeholder={starter}
-            />
-            <div className="grid grid-cols-3 gap-3">
-              <div className="space-y-1">
-                <Label>新版本号</Label>
-                <Input value={version} onChange={(e) => setVersion(e.target.value)} />
-              </div>
-              <div className="space-y-1">
-                <Label>标签</Label>
-                <select
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                  value={label}
-                  onChange={(e) => setLabel(e.target.value)}
-                >
-                  <option value="">（无）</option>
-                  {VERSION_LABELS.map((l) => (
-                    <option key={l} value={l}>
-                      {l}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {kind === "datasets" && (
-                <div className="space-y-1">
-                  <Label>角色</Label>
-                  <select
-                    className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                  >
-                    <option value="reference">reference（参考知识）</option>
-                    <option value="test">test（测试集）</option>
-                  </select>
-                </div>
-              )}
+      <PageHead
+        title={`${KIND_LABEL[kind]} · ${assetId}`}
+        sub="编辑并发布新版本"
+        right={
+          <div className="flex gap-2">
+            <div className="flex rounded-md border">
+              <button
+                onClick={() => setMode("form")}
+                className={`flex items-center gap-1 rounded-l-md px-3 py-1.5 text-sm transition-colors ${mode === "form" ? "bg-accent font-medium" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <FileText className="size-3.5" /> 表单
+              </button>
+              <button
+                onClick={() => setMode("yaml")}
+                className={`flex items-center gap-1 rounded-r-md px-3 py-1.5 text-sm transition-colors ${mode === "yaml" ? "bg-accent font-medium" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <Code2 className="size-3.5" /> YAML
+              </button>
             </div>
             <Button onClick={publish} disabled={busy || !version}>
-              {busy ? "发布中…" : "发布新版本"}
+              <Save className="mr-1 size-4" /> {busy ? "发布中…" : "发布"}
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        }
+      />
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <GitBranch className="size-4" /> 版本时间线
-            </CardTitle>
+      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+        {/* 左：编辑区 */}
+        <div className="space-y-4">
+          {/* 版本 diff 视图 */}
+          {diffVersion && diffContent ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">版本对比：当前编辑 vs {diffVersion}</span>
+                <Button size="sm" variant="ghost" onClick={() => { setDiffVersion(null); setDiffContent(null) }}>关闭对比</Button>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Card>
+                  <CardHeader><CardTitle className="text-xs text-muted-foreground">{diffVersion}</CardTitle></CardHeader>
+                  <CardContent>
+                    <pre className="max-h-[400px] overflow-auto whitespace-pre-wrap rounded bg-muted/20 p-3 font-mono text-xs text-muted-foreground">{diffContent}</pre>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader><CardTitle className="text-xs text-muted-foreground">当前编辑</CardTitle></CardHeader>
+                  <CardContent>
+                    <pre className="max-h-[400px] overflow-auto whitespace-pre-wrap rounded bg-muted/20 p-3 font-mono text-xs text-muted-foreground">{yamlText}</pre>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* 表单模式 */}
+              {mode === "form" && content && kind === "rule-sets" && (
+                <RuleSetForm data={content as RuleSetData} onChange={updateContent} />
+              )}
+              {mode === "form" && content && kind === "prompts" && (
+                <PromptForm data={content as PromptData} onChange={updateContent} />
+              )}
+              {mode === "form" && content && kind === "datasets" && (
+                <DatasetForm data={content as DatasetData} onChange={updateContent} />
+              )}
+
+              {/* YAML 模式 */}
+              {mode === "yaml" && (
+                <Card>
+                  <CardHeader><CardTitle className="text-sm">YAML 编辑</CardTitle></CardHeader>
+                  <CardContent>
+                    <Textarea
+                      className="min-h-[500px] font-mono text-xs leading-relaxed"
+                      value={yamlText}
+                      onChange={(e) => onYamlChange(e.target.value)}
+                    />
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
+
+          {/* 发布设置 */}
+          <Card>
+            <CardHeader><CardTitle className="text-sm">发布新版本</CardTitle></CardHeader>
+            <CardContent className="flex items-end gap-3">
+              <div><Label>版本号</Label><Input value={version} onChange={(e) => setVersion(e.target.value)} className="font-mono" /></div>
+              <div>
+                <Label>标签</Label>
+                <select className="rounded-md border bg-background px-3 py-2 text-sm" value={label} onChange={(e) => setLabel(e.target.value)}>
+                  <option value="">(无)</option>
+                  {VERSION_LABELS.map((l) => <option key={l} value={l}>{l}</option>)}
+                </select>
+              </div>
+              <Button onClick={publish} disabled={busy || !version}>
+                <Save className="mr-1 size-4" /> {busy ? "发布中…" : "发布"}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* 右：版本时间线 */}
+        <Card className="h-fit">
+          <CardHeader className="flex-row items-center justify-between">
+            <CardTitle className="flex items-center gap-1.5 text-sm"><GitBranch className="size-4" /> 版本时间线</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {versions.length === 0 ? (
               <p className="text-sm text-muted-foreground">暂无历史版本</p>
             ) : (
               versions.map((v) => (
-                <div key={v.version} className="rounded-md border p-2.5">
+                <div key={v.version} className="rounded-md border border-border p-2.5">
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-sm font-medium">{v.version}</span>
                     <div className="flex gap-1">
                       {v.labels.map((l) => (
-                        <Badge key={l} variant={l === "production" ? "default" : "secondary"} className="text-xs">
-                          {l}
-                        </Badge>
+                        <Badge key={l} variant={l === "production" ? "default" : "secondary"} className="text-[10px]">{l}</Badge>
                       ))}
                     </div>
                   </div>
                   <p className="mt-0.5 truncate font-mono text-[10px] text-muted-foreground">{v.contentHash}</p>
                   <div className="mt-1.5 flex flex-wrap gap-1">
+                    <Button size="sm" variant="outline" className="h-6 px-2 text-[10px]" onClick={() => showDiff(v.version)}>
+                      <GitCompare className="mr-1 size-3" /> 对比
+                    </Button>
                     {VERSION_LABELS.filter((l) => !v.labels.includes(l)).map((l) => (
-                      <Button
-                        key={l}
-                        variant="outline"
-                        size="sm"
-                        className="h-6 px-2 text-xs"
-                        onClick={() => promote(v.version, l)}
-                      >
-                        <ArrowUpCircle className="mr-1 size-3" /> 晋升 {l}
+                      <Button key={l} size="sm" variant="outline" className="h-6 px-2 text-[10px]" onClick={() => promote(v.version, l)}>
+                        <ArrowUpCircle className="mr-1 size-3" /> {l}
                       </Button>
                     ))}
                   </div>
@@ -203,26 +287,4 @@ export default function AssetEditor() {
       </div>
     </Page>
   )
-}
-
-/** 极简 YAML→JS（仅 key: value / 列表项用 -）。复杂结构建议后端解析；此处用于发布前校验非空。 */
-function parseYaml(text: string): Record<string, unknown> {
-  if (!text.trim()) throw new Error("内容为空")
-  // 仅做存在性校验，真实解析在后端；返回占位结构
-  return { _raw: text }
-}
-
-function bumpVersion(v: string): string {
-  const parts = v.split(".").map((n) => parseInt(n, 10) || 0)
-  while (parts.length < 3) parts.push(0)
-  parts[2] += 1
-  return parts.join(".")
-}
-
-function yamlStarter(kind: AssetKind, assetId: string): string {
-  if (kind === "prompts")
-    return `template_id: ${assetId}\nname: \nsystem_prompt: |\nuser_prompt_template: |\nvariables:\n  - name: x\n    type: string\n`
-  if (kind === "datasets")
-    return `dataset:\n  id: ${assetId}\n  role: reference\n  backend:\n    type: yaml_file\n    config: {}\n`
-  return `version: "1.0"\nscenario: \ndimensions: []\ncascade: []\nrules: []\n`
 }
