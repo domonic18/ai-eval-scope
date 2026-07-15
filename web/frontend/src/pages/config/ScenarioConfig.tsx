@@ -43,9 +43,14 @@ export default function ScenarioConfig() {
         title={catalog?.scenario.name ?? id}
         sub={catalog?.scenario.description ?? `场景 ${id} 的规则集 / 提示词 / 数据集`}
         right={
-          <Button onClick={() => setPublishOpen(true)}>
-            <Plus className="size-4" /> 发布包版本
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => nav(`/config/scenarios/${id}/edit`)}>
+              <Pencil className="size-4" /> 进入包编辑器
+            </Button>
+            <Button onClick={() => setPublishOpen(true)}>
+              <Plus className="size-4" /> 发布包版本
+            </Button>
+          </div>
         }
       />
       {error && <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">{error}</div>}
