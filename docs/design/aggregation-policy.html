@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>聚合策略 courseware-default — EvalScope</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  /* ── 区块标题 ── */
+  .section-title { font-size: 14px; font-weight: 650; margin: 28px 0 12px; display: flex; align-items: center; gap: 8px; }
+  .section-title:first-of-type { margin-top: 4px; }
+  .section-title .hint { font-size: 12px; color: var(--text-tertiary); font-weight: 400; }
+
+  /* ── stage 表 ── */
+  .stage-table td { vertical-align: top; }
+  .stage-id { font-family: var(--mono); font-weight: 600; color: var(--text-primary); }
+  .stage-sub { font-family: var(--mono); font-size: 11px; color: var(--text-tertiary); }
+  .gate-pill { font-size: 10px; padding: 1px 7px; border-radius: 4px; font-weight: 600; font-family: var(--mono); }
+  .gate-yes { background: var(--danger-soft); color: var(--danger); }
+  .gate-no { background: var(--bg-surface); color: var(--text-tertiary); }
+  .weight-val { font-family: var(--mono); font-weight: 600; color: var(--signal); }
+  .skip-tag { font-family: var(--mono); font-size: 11px; color: var(--warning); background: var(--warning-soft); padding: 1px 6px; border-radius: var(--r-xs); }
+  .ew-list { display: flex; flex-direction: column; gap: 3px; }
+  .ew-item { font-family: var(--mono); font-size: 11.5px; color: var(--text-secondary); }
+  .ew-item .w { color: var(--text-tertiary); }
+
+  /* ── Reward 公式 ── */
+  .formula-box { background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 24px 28px; margin-bottom: 20px; position: relative; overflow: hidden; }
+  .formula-box::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--accent-line), transparent); }
+  .formula-label { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 14px; }
+  .formula { font-family: var(--mono); font-size: 17px; line-height: 2; display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; }
+  .formula .num { text-align: inherit; font-family: inherit; }
+  .formula .c { font-weight: 700; padding: 2px 9px; border-radius: var(--r-sm); }
+  .formula .c-format { color: var(--danger); background: var(--danger-soft); }
+  .formula .c-common { color: var(--warning); background: var(--warning-soft); }
+  .formula .c-soft { color: var(--tier-soft); background: var(--warning-soft); }
+  .formula .c-pref { color: var(--tier-pref); background: var(--info-soft); }
+  .formula .op { color: var(--text-tertiary); }
+  .formula .denom { color: var(--text-secondary); }
+  .formula-legend { display: flex; gap: 18px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-secondary); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+
+  /* ── 归一化区间 ── */
+  .range-wrap { display: flex; align-items: center; gap: 16px; }
+  .range-bar { flex: 1; height: 28px; border-radius: var(--r-sm); background: linear-gradient(90deg, var(--danger-soft) 0%, var(--warning-soft) 50%, var(--success-soft) 100%); border: 1px solid var(--border); position: relative; }
+  .range-bar .tick { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--text-secondary); }
+  .range-bar .tick-l { left: 0; }
+  .range-bar .tick-r { right: 0; }
+  .range-endpoint { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--text-primary); }
+
+  /* ── 门控流程 ── */
+  .gate-flow { display: flex; align-items: stretch; gap: 0; flex-wrap: wrap; }
+  .gate-stage { flex: 1; min-width: 180px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--r-md); padding: 14px 16px; position: relative; }
+  .gate-stage.is-gate { border-color: rgba(248,81,73,.35); }
+  .gate-stage-arrow { display: flex; align-items: center; justify-content: center; width: 36px; color: var(--text-tertiary); flex-shrink: 0; }
+  .gs-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .gs-name { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--text-primary); }
+  .gs-tag { font-size: 10px; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
+  .gs-tag-gate { background: var(--danger-soft); color: var(--danger); }
+  .gs-tag-soft { background: var(--warning-soft); color: var(--tier-soft); }
+  .gs-tag-pref { background: var(--info-soft); color: var(--tier-pref); }
+  .gs-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 8px; }
+  .gs-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+  .gs-meta .mini { font-family: var(--mono); font-size: 10.5px; color: var(--text-tertiary); background: var(--bg-surface); padding: 1px 6px; border-radius: var(--r-xs); }
+  .gs-fail { font-size: 11px; color: var(--danger); display: flex; align-items: center; gap: 4px; margin-top: 8px; }
+  @media (max-width: 1000px){ .gate-stage-arrow { transform: rotate(90deg); width: 100%; height: 28px; } .gate-flow { flex-direction: column; } }
+</style>
+</head>
+<body>
+<div class="ambient"></div>
+<div class="scanlines"></div>
+<div class="shell">
+  <!-- 侧栏 -->
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <a href="index.html" class="logo" style="margin-bottom:14px"><span class="logo-mark"><img src="assets/logo.svg" alt="" style="width:100%"></span><span class="logo-text">Eval<b>Scope</b></span></a>
+      <div class="org-switcher"><div class="org-avatar">智</div><div class="org-meta"><div class="org-name">智能教育研发组</div><div class="org-plan">Team · 5 项目</div></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+    </div>
+    <nav class="nav-section">
+      <a class="nav-item" href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> 项目看板</a>
+      <a class="nav-item" href="run-detail.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg> 全部运行</a>
+      <a class="nav-item active" href="eval-rule-explorer.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> 评测规则</a>
+      <div class="nav-label">组织</div>
+      <a class="nav-item" href="members.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg> 成员</a>
+    </nav>
+    <div class="sidebar-foot"><a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> 接入指引</a></div>
+  </aside>
+
+  <!-- 主区域 -->
+  <div class="main">
+    <header class="topbar">
+      <div class="crumbs">
+        <a href="eval-rule-explorer.html">评测规则</a><span class="sep">/</span>
+        <a href="eval-rule-explorer.html">聚合策略</a><span class="sep">/</span>
+        <span class="current mono">courseware-default</span>
+      </div>
+      <div class="topbar-right"><div class="avatar">张</div></div>
+    </header>
+
+    <div class="page reveal">
+      <!-- 页头 -->
+      <div class="page-head r-1">
+        <div class="page-title">
+          <h1><span class="mono">courseware-default</span> <span class="badge badge-neutral" style="font-size:12px">scenario: courseware</span></h1>
+          <div class="sub">4 阶段加权归一化 · 门控短路 + 软/偏好质量聚合 · normalize_to [0.0, 1.0]</div>
+        </div>
+        <div class="page-actions">
+          <button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> 下载 policy.yaml</button>
+        </div>
+      </div>
+
+      <!-- 阶段权重表 -->
+      <div class="section-title r-2">阶段权重（stage_weights）<span class="hint">4 个阶段</span></div>
+      <div class="card r-2" style="margin-bottom:0">
+        <div class="table-wrap">
+          <table class="data stage-table">
+            <thead><tr><th>stage_id</th><th class="num">weight</th><th>is_gate</th><th>id (tier)</th><th>skip_tiers_in_reward</th><th>evaluator_weights</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="stage-id">format</span><br><span class="stage-sub">格式门控</span></td>
+                <td class="num weight-val">1.0</td>
+                <td><span class="gate-pill gate-yes">true</span></td>
+                <td><span class="stage-sub">—</span></td>
+                <td><span class="muted">—</span></td>
+                <td><span class="stage-sub">format.response_format</span></td>
+              </tr>
+              <tr>
+                <td><span class="stage-id">commonsense</span><br><span class="stage-sub">常识门控</span></td>
+                <td class="num weight-val">1.0</td>
+                <td><span class="gate-pill gate-yes">true</span></td>
+                <td><span class="stage-sub">—</span></td>
+                <td><span class="muted">—</span></td>
+                <td><span class="stage-sub">commonsense.info_accuracy</span></td>
+              </tr>
+              <tr>
+                <td><span class="stage-id">quality</span><br><span class="stage-sub">质量评估</span></td>
+                <td class="num weight-val">1.0</td>
+                <td><span class="gate-pill gate-no">false</span></td>
+                <td><span class="stage-id" style="color:var(--tier-soft)">soft</span></td>
+                <td><span class="skip-tag">[hard_gate, hard_score]</span></td>
+                <td>
+                  <div class="ew-list">
+                    <span class="ew-item">soft.teaching_logic <span class="w">0.5</span></span>
+                    <span class="ew-item">soft.content_diversity <span class="w">0.5</span></span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td><span class="stage-id">quality</span><br><span class="stage-sub">质量评估</span></td>
+                <td class="num weight-val">1.0</td>
+                <td><span class="gate-pill gate-no">false</span></td>
+                <td><span class="stage-id" style="color:var(--tier-pref)">pref</span></td>
+                <td><span class="skip-tag">[hard_gate, hard_score]</span></td>
+                <td>
+                  <div class="ew-list">
+                    <span class="ew-item">pref.style_preference <span class="w">0.33</span></span>
+                    <span class="ew-item">pref.depth_preference <span class="w">0.33</span></span>
+                    <span class="ew-item">pref.request_fulfillment <span class="w">0.34</span></span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Reward 公式 -->
+      <div class="section-title r-3">Reward 计算公式</div>
+      <div class="formula-box r-3">
+        <div class="formula-label">单样本 Reward（加权平均后归一化到 [0,1]）</div>
+        <div class="formula">
+          <span class="op">Reward =</span>
+          <span class="op">(</span>
+          <span class="c c-format">S<sub>format</sub></span><span class="op">+</span>
+          <span class="c c-common">S<sub>common</sub></span><span class="op">+</span>
+          <span class="c c-soft">w₃·S<sub>soft</sub></span><span class="op">+</span>
+          <span class="c c-pref">w₄·S<sub>pref</sub></span>
+          <span class="op">)</span>
+          <span class="op">/</span>
+          <span class="denom">(1 + 1 + w₃ + w₄)</span>
+        </div>
+        <div class="formula-legend">
+          <span class="legend-item"><span class="legend-dot" style="background:var(--danger)"></span> S<sub>format</sub> · 格式门控（w=1.0）</span>
+          <span class="legend-item"><span class="legend-dot" style="background:var(--warning)"></span> S<sub>common</sub> · 常识门控（w=1.0）</span>
+          <span class="legend-item"><span class="legend-dot" style="background:var(--tier-soft)"></span> S<sub>soft</sub> · 内容质量（w₃=1.0）</span>
+          <span class="legend-item"><span class="legend-dot" style="background:var(--tier-pref)"></span> S<sub>pref</sub> · 用户偏好（w₄=1.0）</span>
+        </div>
+        <div style="text-align:center;margin-top:14px;font-size:12px;color:var(--text-tertiary)">
+          当前权重代入：<span class="mono" style="color:var(--text-secondary)">(S_format + S_common + S_soft + S_pref) / 4</span>
+          <span style="margin-left:12px">·</span>
+          <span style="margin-left:12px">quality 阶段已 <span class="skip-tag">skip_tiers: [hard_gate, hard_score]</span></span>
+        </div>
+      </div>
+
+      <!-- 归一化区间 -->
+      <div class="section-title r-4">归一化区间（normalize_to）</div>
+      <div class="card r-4" style="margin-bottom:0">
+        <div class="card-body">
+          <div class="range-wrap">
+            <span class="range-endpoint">0.0</span>
+            <div class="range-bar">
+              <span class="tick tick-l"></span>
+              <span class="tick tick-r"></span>
+            </div>
+            <span class="range-endpoint">1.0</span>
+          </div>
+          <div style="font-size:12px;color:var(--text-tertiary);margin-top:10px">所有阶段得分经加权平均后线性归一化到 <span class="mono" style="color:var(--text-secondary)">[0.0, 1.0]</span>；越高越好。</div>
+        </div>
+      </div>
+
+      <!-- 门控流程图 -->
+      <div class="section-title r-5">门控流程<span class="hint">stop_on_fail: format 短路 · commonsense 不短路（继续 quality）</span></div>
+      <div class="gate-flow r-5">
+        <div class="gate-stage is-gate">
+          <div class="gs-head">
+            <span class="gs-name">format</span>
+            <span class="gs-tag gs-tag-gate">GATE</span>
+          </div>
+          <div class="gs-desc">格式门控：输出格式有效（md/html）。</div>
+          <div class="gs-meta">
+            <span class="mini">w=1.0</span>
+            <span class="mini">stop_on_fail</span>
+          </div>
+          <div class="gs-fail"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> 失败 → S_format=0，短路终止</div>
+        </div>
+        <div class="gate-stage-arrow"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+        <div class="gate-stage is-gate">
+          <div class="gs-head">
+            <span class="gs-name">commonsense</span>
+            <span class="gs-tag gs-tag-gate">GATE</span>
+          </div>
+          <div class="gs-desc">常识门控：知识准确性 + 时序正确性。</div>
+          <div class="gs-meta">
+            <span class="mini">w=1.0</span>
+            <span class="mini">continue</span>
+          </div>
+          <div class="gs-fail" style="color:var(--warning)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> 失败 → 记 0，但继续 quality</div>
+        </div>
+        <div class="gate-stage-arrow"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+        <div class="gate-stage">
+          <div class="gs-head">
+            <span class="gs-name">quality · soft</span>
+            <span class="gs-tag gs-tag-soft">SOFT</span>
+          </div>
+          <div class="gs-desc">内容质量：教学逻辑 0.5 + 内容多样性 0.5。</div>
+          <div class="gs-meta">
+            <span class="mini">w=1.0</span>
+            <span class="mini">skip hard tiers</span>
+          </div>
+        </div>
+        <div class="gate-stage-arrow"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+        <div class="gate-stage">
+          <div class="gs-head">
+            <span class="gs-name">quality · pref</span>
+            <span class="gs-tag gs-tag-pref">PREF</span>
+          </div>
+          <div class="gs-desc">用户偏好：风格 0.33 + 深度 0.33 + 需求满足 0.34。</div>
+          <div class="gs-meta">
+            <span class="mini">w=1.0</span>
+            <span class="mini">不影响达标</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="assets/ui.js"></script>
+</body>
+</html>

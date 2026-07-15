@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom"
 import { api } from "../api/client"
 import type { DashboardProject, TrendPoint } from "../types"
 import { fmt3, num, timeAgo } from "../lib/format"
-import { METRIC_LABEL } from "../lib/eval"
+import { useScenarioDefaults } from "../hooks/useScenarioDefaults"
 import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
 import { Label } from "@/components/shadcn/label"
@@ -23,17 +23,27 @@ import { useToast } from "../components/toast"
 import { Page, PageHead, SemPill, type PillTone } from "../components/shared"
 import { Plus, RefreshCw } from "lucide-react"
 
-function healthColor(p: DashboardProject): { tone: PillTone; spark: string; label: string } {
-  const dr = p.latestRun?.dr
-  if (dr == null) return { tone: "neutral", spark: "var(--muted-foreground)", label: "未运行" }
-  if (dr >= 0.95) return { tone: "success", spark: "var(--chart-2)", label: "健康" }
-  return { tone: "warning", spark: "var(--chart-3)", label: "关注" }
-}
-
 export default function Dashboard() {
   const { activeOrg } = useOrg()
   const { setCrumbs } = useCrumbs()
   const toast = useToast()
+  // #65：跨场景参数化——主指标从 defaultDefs（后端 fetch）取，零 courseware:* 硬编码
+  const defaultDefs = useScenarioDefaults()
+  const primaryMetrics = defaultDefs.filter((d) => d.threshold != null)
+  const healthMetric = primaryMetrics[0]
+  const scoreMetric = primaryMetrics[primaryMetrics.length - 1] ?? primaryMetrics[0]
+  const drOf = (p: DashboardProject) =>
+    healthMetric ? p.latestRun?.metrics?.[healthMetric.id] : undefined
+  const rewardOf = (p: DashboardProject) =>
+    scoreMetric ? p.latestRun?.metrics?.[scoreMetric.id] : undefined
+  const healthThr = healthMetric?.threshold
+  function healthColor(p: DashboardProject): { tone: PillTone; spark: string; label: string } {
+    const v = drOf(p)
+    if (v == null || healthThr == null)
+      return { tone: "neutral", spark: "var(--muted-foreground)", label: "未运行" }
+    if (v >= healthThr) return { tone: "success", spark: "var(--chart-2)", label: "健康" }
+    return { tone: "warning", spark: "var(--chart-3)", label: "关注" }
+  }
   const nav = useNavigate()
   const [projects, setProjects] = useState<DashboardProject[] | null>(null)
   const [sparks, setSparks] = useState<Record<string, number[]>>({})
@@ -60,7 +70,12 @@ export default function Dashboard() {
         ps.map(async (p): Promise<[string, number[]]> => {
           try {
             const t: TrendPoint[] = await api.projectTrends(p.id, 8)
-            return [p.id, t.map((x) => x.DR).filter((v): v is number => v != null)]
+            return [
+              p.id,
+              t
+                .map((x) => (healthMetric ? x.metrics?.[healthMetric.id] : undefined))
+                .filter((v): v is number => v != null),
+            ]
           } catch {
             return [p.id, []]
           }
@@ -140,8 +155,13 @@ export default function Dashboard() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((p) => {
             const h = healthColor(p)
-            const drVal = p.latestRun?.dr
-            const drCls = drVal == null ? "text-muted-foreground" : drVal >= 0.95 ? "text-emerald-400" : "text-yellow-400"
+            const drVal = drOf(p)
+            const drCls =
+              drVal == null || healthThr == null
+                ? "text-muted-foreground"
+                : drVal >= healthThr
+                  ? "text-emerald-400"
+                  : "text-yellow-400"
             return (
               <Link key={p.id} to={`/project/${p.id}`} className="block">
                 <Card className="transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md">
@@ -171,18 +191,18 @@ export default function Dashboard() {
                     <div className="grid grid-cols-3 gap-2 border-y py-3.5">
                       <div>
                         <div className={`font-mono text-lg font-semibold tabular-nums ${drCls}`}>
-                          {fmt3(p.latestRun?.dr)}
+                          {fmt3(drOf(p))}
                         </div>
                         <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                          {METRIC_LABEL.DR}
+                          {healthMetric?.name ?? "—"}
                         </div>
                       </div>
                       <div>
                         <div className="font-mono text-lg font-semibold tabular-nums">
-                          {fmt3(p.latestRun?.avgReward)}
+                          {fmt3(rewardOf(p))}
                         </div>
                         <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                          {METRIC_LABEL.Reward}
+                          {scoreMetric?.name ?? "—"}
                         </div>
                       </div>
                       <div>

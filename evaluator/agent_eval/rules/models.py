@@ -34,6 +34,11 @@ class RuleTemplate(BaseModel):
     """规则模板 — 可复用的规则蓝图，可被规则引用并覆盖部分字段。"""
 
     id: str = Field(description="模板唯一标识")
+    # 场景包标识（Phase 0 新增，对齐 13 配置管理设计 §3.1）
+    scenario_id: str | None = Field(
+        default=None, description="所属场景 ID（命名空间），如 courseware"
+    )
+    package_id: str | None = Field(default=None, description="所属场景包 ID")
     name: str = Field(description="模板名称")
     description: str = Field(default="", description="模板描述")
     dimension: str = Field(description="默认维度 ID")
@@ -55,6 +60,11 @@ class Rule(BaseModel):
     """
 
     id: str = Field(description="规则 ID，如 FMT_001")
+    # 场景包标识（Phase 0 新增，对齐 13 配置管理设计 §3.1）
+    scenario_id: str | None = Field(
+        default=None, description="所属场景 ID（命名空间），如 courseware"
+    )
+    package_id: str | None = Field(default=None, description="所属场景包 ID")
     name: str = Field(default="", description="规则名称，如 输出格式有效")
     dimension: str = Field(default="", description="所属维度 ID")
     stage: str = Field(default="", description="所属级联阶段 ID")
@@ -93,6 +103,19 @@ class RuleSet(BaseModel):
     """规则集 — 评估场景的完整规则定义。"""
 
     version: str = Field(default="1.0.0", description="规则集版本号（与 meta.version 保持一致）")
+    # 场景包标识（Phase 0 新增，对齐 13 配置管理设计 §3.1）
+    # YAML 中以 `scenario:` 键承载场景 ID，Python 侧统一用 scenario_id
+    scenario_id: str | None = Field(
+        default=None,
+        alias="scenario",
+        description="所属场景 ID（命名空间），如 courseware",
+    )
+    package_id: str | None = Field(default=None, description="所属场景包 ID，如 courseware-quality")
+    # Phase 1 新增（对齐 04 §7'.2/§10.4）：声明该规则集使用的聚合策略 ID；
+    # 未声明时自动套用 courseware 默认策略（scenario_id=courseware）。
+    aggregation_policy_id: str | None = Field(
+        default=None, description="聚合策略 ID，如 courseware-default；None → 场景默认策略"
+    )
     description: str = Field(default="", description="规则集描述")
     schema_ref: str | None = Field(
         default=None,

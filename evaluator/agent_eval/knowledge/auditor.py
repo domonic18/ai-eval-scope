@@ -311,8 +311,8 @@ def audit_text(
 
 
 def knowledge_dir() -> Path:
-    """knowledge 资源目录。"""
-    return paths.assets_dir / "knowledge"
+    """knowledge 资源目录（内置 courseware 包 datasets/）。"""
+    return paths.knowledge_dir
 
 
 def audit_all(

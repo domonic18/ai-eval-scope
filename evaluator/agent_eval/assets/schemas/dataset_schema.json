@@ -1,0 +1,100 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Dataset Schema",
+  "description": "统一 Dataset 配置的 JSON Schema（对齐 13 配置管理设计 §9/§16、06 数据管理与配置规范 §2.2.5）。通过 role 区分测试数据(test)与参考知识(reference)；通过 backend.type 声明数据源后端。本 schema 校验 dataset 对象本身（YAML 文件中以 `dataset:` 键承载）。",
+  "type": "object",
+  "required": ["id", "role"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "数据集唯一标识，如 gsm8k / math_reference"
+    },
+    "scenario": {
+      "type": ["string", "null"],
+      "description": "所属场景 ID（命名空间），如 courseware / math"
+    },
+    "package_id": {
+      "type": ["string", "null"],
+      "description": "所属场景包 ID"
+    },
+    "role": {
+      "type": "string",
+      "enum": ["test", "reference"],
+      "description": "数据集角色：test=测试集（生成 TaskSet，如 benchmark）；reference=参考知识（被评估器查询，如课件知识点库）"
+    },
+    "version": {
+      "type": "string",
+      "description": "数据集版本号（语义化版本）"
+    },
+    "name": {
+      "type": "string",
+      "description": "数据集名称"
+    },
+    "description": {
+      "type": "string",
+      "description": "数据集描述"
+    },
+    "backend": {
+      "type": "object",
+      "description": "数据集后端声明",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "后端类型：yaml_file / jsonl / huggingface / csv / vector / graph / api / code_reference",
+          "enum": [
+            "yaml_file",
+            "jsonl",
+            "huggingface",
+            "csv",
+            "vector",
+            "graph",
+            "api",
+            "code_reference"
+          ]
+        },
+        "config": {
+          "type": "object",
+          "description": "后端配置：huggingface 用 path/split；yaml_file 用 defaults_path/subject_files 等",
+          "properties": {
+            "path": { "type": "string" },
+            "split": { "type": "string" },
+            "defaults_path": { "type": "string" },
+            "subject_files": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "reader_cfg": {
+      "type": "object",
+      "description": "读取配置（test role 常用）",
+      "properties": {
+        "input_columns": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "output_column": { "type": "string" }
+      }
+    },
+    "infer_cfg": {
+      "type": "object",
+      "description": "推理配置（test role，benchmark 场景）",
+      "properties": {
+        "prompt_template_id": { "type": "string" },
+        "inferencer": { "type": "string" },
+        "max_out_len": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "eval_cfg": {
+      "type": "object",
+      "description": "评估配置（test role）",
+      "properties": {
+        "evaluator": { "type": "string" },
+        "pred_postprocessor": { "type": "string" }
+      }
+    }
+  }
+}

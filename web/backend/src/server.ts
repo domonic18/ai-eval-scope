@@ -38,6 +38,7 @@ import evalJobsRouter from "./routes/eval/jobs"
 import evalRuleSetsRouter from "./routes/eval/ruleSets"
 import evalHealthRouter from "./routes/eval/health"
 import evalMcpRouter from "./routes/eval/mcp"
+import configScenariosRouter from "./routes/config/scenarios"
 import { requireApiKey } from "./middleware/apiKeyAuth"
 import { rateLimiter } from "./middleware/rateLimiter"
 
@@ -73,7 +74,8 @@ export function createApp(): express.Application {
   app.use("/api/v1/projects/:id/keys", keysRouter) // API Key 管理（嵌套于项目）
   app.use("/api/v1/debug", debugRouter) // 调试台（SSO 登录 + api_key 鉴权，直接调用 evalJobService；项目由 Key 解析）
   app.use("/api/v1/jobs", evalJobsRouter) // 评测任务提交/查询（合并自 gateway；Bearer API Key）
-  app.use("/api/v1/rule-sets", evalRuleSetsRouter) // 规则集目录（构建期静态 catalog）
+  app.use("/api/v1/rule-sets", evalRuleSetsRouter) // 规则集目录（构建期静态 catalog，迁移期保留）
+  app.use("/api/v1/scenarios", configScenariosRouter) // 场景配置 catalog（Phase 3 动态，替代静态）
   app.use("/api/v1/health", evalHealthRouter) // eval 子系统健康
   app.use(
     "/api/v1/mcp",

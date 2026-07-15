@@ -2,15 +2,12 @@
  * 摄取事件 TS 类型（与 ingest.event.v1.json 一致；供 service/repository 使用）。
  */
 
-export interface RunMetrics {
-  DR: number
-  CPR: number
-  avg_reward: number
-  avg_soft?: number
-  avg_pref?: number
-  condR: number
-  avg_time_ms: number
-}
+/**
+ * 运行级指标：场景化后为动态键值（键 = MetricDefinition.id）。
+ * courseware 遗留键（DR / CPR / avg_reward / avg_soft / avg_pref / condR / avg_time_ms）
+ * 在评估器迁移期仍会发送，repository 经 metric() 回填一等列；新场景用任意 metric_id 作键。
+ */
+export type RunMetrics = Record<string, number>
 
 export interface DimensionInput {
   dimension_id: string
@@ -28,6 +25,13 @@ export interface RunEventData {
   finished_at?: string | null
   metrics: RunMetrics
   total_samples?: number
+  // Phase 3 场景化（对齐 09 §9.5.3）：场景包标识与运行快照
+  scenario_id?: string
+  package_id?: string
+  package_version?: string
+  run_config_snapshot_id?: string
+  /** Phase 5：inline 运行配置快照内容（含 snapshot_hash）；后端据此建 RunConfigSnapshot 行 */
+  run_config_snapshot?: Record<string, unknown>
   rule_set_version?: string
   sut_version?: string
   failure_breakdown?: Record<string, unknown> | null
@@ -41,11 +45,13 @@ export interface SampleEventData {
   external_sample_id: string
   content_hash?: string | null
   status?: string
-  s_format: number
-  s_common: number
-  s_soft: number
-  s_pref: number
-  reward: number
+  // Phase 3 场景化样本指标：metrics JSONB 为权威；下列列为遗留（迁移期保留）
+  metrics?: Record<string, number>
+  s_format?: number
+  s_common?: number
+  s_soft?: number
+  s_pref?: number
+  reward?: number
   total_duration_ms?: number
   llm_calls?: number
   token_usage?: number

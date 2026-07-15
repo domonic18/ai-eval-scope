@@ -17,9 +17,7 @@ export interface AdminOverview {
 export interface AdminTrendPoint {
   run_id: string
   created_at: Date
-  DR: number
-  CPR: number
-  Reward: number
+  metrics: Record<string, number> | null
 }
 
 class AdminStatsRepository {
@@ -72,10 +70,9 @@ class AdminStatsRepository {
   async trends(opts: { limit?: number; from?: Date } = {}): Promise<AdminTrendPoint[]> {
     const limit = Math.min(500, Math.max(1, opts.limit ?? 100))
     const rows = await this.prisma.$queryRaw<AdminTrendPoint[]>`
-      SELECT external_run_id AS run_id, created_at,
-             dr AS "DR", cpr AS "CPR", avg_reward AS "Reward"
+      SELECT external_run_id AS run_id, created_at, metrics
       FROM runs
-      WHERE dr IS NOT NULL
+      WHERE metrics IS NOT NULL
       ${opts.from ? Prisma.sql`AND created_at >= ${opts.from}` : Prisma.empty}
       ORDER BY created_at DESC
       LIMIT ${limit}

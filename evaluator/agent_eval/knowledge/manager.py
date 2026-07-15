@@ -1,7 +1,7 @@
 """知识库管理。
 
-统一加载、合并、缓存 `assets/knowledge/` 下的学科知识库文件，
-为事实验证评估器（如 `commonsense.info_accuracy`）提供结构化知识数据。
+统一加载、合并、缓存内置 courseware 包 ``datasets/``（原 ``assets/knowledge/``）下的
+学科知识库文件，为事实验证评估器（如 `commonsense.info_accuracy`）提供结构化知识数据。
 """
 
 from __future__ import annotations
@@ -24,9 +24,7 @@ class KnowledgeBaseManager:
     """
 
     def __init__(self, knowledge_dir: Path | str | None = None) -> None:
-        self.knowledge_dir = (
-            Path(knowledge_dir) if knowledge_dir else paths.assets_dir / "knowledge"
-        )
+        self.knowledge_dir = Path(knowledge_dir) if knowledge_dir else paths.knowledge_dir
         self._defaults_path = self.knowledge_dir / "_defaults.yaml"
         self._cache: dict[str, dict[str, Any]] = {}
 

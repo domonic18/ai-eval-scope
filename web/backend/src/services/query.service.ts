@@ -30,6 +30,10 @@ export interface QueryService {
     projectId: string,
     sampleId: string,
   ) => Promise<NonNullable<Awaited<ReturnType<QueryRepository["sampleDetail"]>>>>
+  runSnapshot: (
+    projectId: string,
+    runId: string,
+  ) => Promise<NonNullable<Awaited<ReturnType<QueryRepository["runSnapshot"]>>>>
   artifactMeta: (
     artifactId: string,
   ) => Promise<{ objectKey: string; contentType: string; filename: string }>
@@ -56,6 +60,11 @@ export function createQueryService(tenant: Tenant): QueryService {
     const s = await repo.sampleDetail(projectId, sampleId)
     if (!s) throw new PlatformError("sample not found", { status: 404, code: "NOT_FOUND" })
     return s
+  }
+  const runSnapshot: QueryService["runSnapshot"] = async (projectId, runId) => {
+    const snap = await repo.runSnapshot(projectId, runId)
+    if (!snap) throw new PlatformError("snapshot not found", { status: 404, code: "NOT_FOUND" })
+    return snap
   }
 
   async function artifactMeta(artifactId: string) {
@@ -100,6 +109,7 @@ export function createQueryService(tenant: Tenant): QueryService {
     trends: (pid, f) => repo.trends(pid, f),
     runDetail,
     sampleDetail,
+    runSnapshot,
     artifactMeta,
     deleteRun,
     samples: (pid) => repo.listSamplesByProject(pid),

@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
+import { Link, useNavigate, useParams } from "react-router-dom"
 import { api } from "../api/client"
 import { fmt3, fmtMsRaw, num } from "../lib/format"
-import { METRIC_LABEL, THRESHOLDS } from "../lib/eval"
-import type { MetricKey } from "../lib/eval"
+import { METRIC_LABEL } from "../lib/eval"
+import { DynamicMetricGrid, extractMetricDefs } from "../components/DynamicMetricGrid"
+import { useScenarioDefaults } from "../hooks/useScenarioDefaults"
 import { Button } from "@/components/shadcn/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/shadcn/card"
 import {
@@ -37,13 +38,10 @@ interface RunData {
   mode: string
   status: string
   totalSamples: number
-  dr: number
-  cpr: number
-  avgReward: number
-  avgSoft: number
-  avgPref: number
-  condR: number
-  avgTimeMs: number
+  /** Phase 5 场景化指标 + 运行配置快照（动态渲染用） */
+  metrics?: Record<string, number>
+  scenarioId?: string | null
+  runConfigSnapshot?: { content: Record<string, unknown>; contentHash: string } | null
   ruleSetVersion: string | null
   langfuseTraceId: string | null
   langfuseHost: string | null
@@ -101,6 +99,8 @@ export default function RunDetail() {
   const [seg, setSeg] = useState<"all" | "fail" | "skip">("all")
   const toast = useToast()
   const [deleteOpen, setDeleteOpen] = useState(false)
+  // Hooks 必须在所有 early return 之前调用
+  const defaultDefs = useScenarioDefaults("courseware")
 
   useEffect(() => {
     if (!id) return
@@ -139,15 +139,17 @@ export default function RunDetail() {
   const failCount = run.samples.filter((s) => s.status === "fail" || s.status === "failed").length
 
   function downloadReport(kind: "md" | "json") {
+    const m = run!.metrics ?? {}
     const summary = {
       run: run!.externalRunId,
       mode: run!.mode,
       samples: run!.totalSamples,
-      metrics: { DR: run!.dr, CPR: run!.cpr, Reward: run!.avgReward, CondR: run!.condR },
+      metrics: m,
       pass: passCount,
       fail: failCount,
     }
-    const text = kind === "json" ? JSON.stringify(summary, null, 2) : `# 运行 #${run!.externalRunId}\n\n- 样本：${run!.totalSamples}（通过 ${passCount} / 失败 ${failCount}）\n- DR=${fmt3(run!.dr)} · CPR=${fmt3(run!.cpr)} · Reward=${fmt3(run!.avgReward)} · CondR=${fmt3(run!.condR)}\n`
+    const mdMetrics = Object.entries(m).map(([k, v]) => `${k}=${fmt3(v)}`).join(" · ")
+    const text = kind === "json" ? JSON.stringify(summary, null, 2) : `# 运行 #${run!.externalRunId}\n\n- 样本：${run!.totalSamples}（通过 ${passCount} / 失败 ${failCount}）\n- ${mdMetrics}\n`
     const blob = new Blob([text], { type: kind === "json" ? "application/json" : "text/markdown" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
@@ -169,18 +171,13 @@ export default function RunDetail() {
     }
   }
 
-  const metricRows: { k: MetricKey; val: number; thr: number }[] = [
-    { k: "DR", val: run.dr, thr: THRESHOLDS.DR },
-    { k: "CPR", val: run.cpr, thr: THRESHOLDS.CPR },
-    { k: "Soft", val: run.avgSoft, thr: THRESHOLDS.Soft },
-    { k: "Pref", val: run.avgPref, thr: THRESHOLDS.Pref },
-    { k: "Reward", val: run.avgReward, thr: THRESHOLDS.Reward },
-  ]
+  // Phase 5：场景化指标定义（来自运行配置快照）；存在时优先动态渲染
+  const metricDefs = extractMetricDefs(run.runConfigSnapshot)
   const meta = [
     { lab: "规则集", val: run.ruleSetVersion ?? "—" },
     { lab: "评估模式", val: run.mode },
     { lab: "样本数", val: num(run.totalSamples) },
-    { lab: "平均耗时/样本", val: fmtMsRaw(run.avgTimeMs) },
+    { lab: "平均耗时/样本", val: fmtMsRaw(run.metrics?.["avg_time_ms"] ?? 0) },
     { lab: "创建时间", val: new Date(run.createdAt).toLocaleString("zh-CN") },
   ]
 
@@ -222,29 +219,39 @@ export default function RunDetail() {
         ))}
       </div>
 
-      {/* metric cards */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
-        {metricRows.map((m) => {
-          const ok = m.val >= m.thr
-          return (
-            <Card key={m.k}>
-              <CardContent className="pt-5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">{METRIC_LABEL[m.k]}</span>
-                  <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] ${ok ? "border-emerald-500/40 text-emerald-400" : "border-yellow-500/40 text-yellow-400"}`}>
-                    {ok ? "达标" : "未达"}
-                  </span>
-                </div>
-                <div className={`mt-1 text-2xl font-semibold tabular-nums ${ok ? "" : "text-yellow-400"}`}>{fmt3(m.val)}</div>
-                <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-muted">
-                  <div className={`h-full rounded-full ${ok ? "bg-emerald-500" : "bg-yellow-500"}`} style={{ width: `${Math.min(100, m.val * 100)}%` }} />
-                </div>
-                <div className="mt-1 text-[11px] text-muted-foreground">阈值 ≥ {m.thr}</div>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
+      {/* Phase 5：场景化动态指标（运行快照 metric_definitions；无快照回落 courseware 默认）*/}
+      <section className="space-y-2">
+        <h3 className="text-sm font-medium text-muted-foreground">场景化指标</h3>
+        <DynamicMetricGrid
+          defs={metricDefs.length > 0 ? metricDefs : defaultDefs}
+          metrics={run.metrics}
+        />
+      </section>
+
+      {/* Phase 5：运行配置快照（只读，P5-7）*/}
+      {run.runConfigSnapshot && (
+        <details className="rounded-lg border bg-card">
+          <summary className="flex cursor-pointer items-center justify-between px-4 py-2.5 text-sm font-medium">
+            <span className="flex items-center gap-2">
+              配置快照
+              <span className="font-mono text-xs text-muted-foreground">{run.runConfigSnapshot.contentHash}</span>
+            </span>
+            {run.scenarioId && (
+              <Link
+                to={`/config/scenarios/${run.scenarioId}/explorer`}
+                className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-normal text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ExternalLink className="size-3" />
+                查看评测规则
+              </Link>
+            )}
+          </summary>
+          <pre className="max-h-96 overflow-auto border-t px-4 py-3 font-mono text-xs text-muted-foreground">
+            {JSON.stringify(run.runConfigSnapshot.content, null, 2)}
+          </pre>
+        </details>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* 失败分布 */}
@@ -278,8 +285,20 @@ export default function RunDetail() {
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <p>
-              本次 {num(run.totalSamples)} 个样本，<span className="font-medium text-emerald-400">{passCount} 通过</span> / <span className="font-medium text-red-400">{failCount} 失败</span>。
-              DR {run.dr >= THRESHOLDS.DR ? "达标" : "未达"}（{fmt3(run.dr)}）、CPR {run.cpr >= THRESHOLDS.CPR ? "达标" : "未达"}（{fmt3(run.cpr)}），Reward <span className={run.avgReward >= THRESHOLDS.Reward ? "text-emerald-400" : "text-red-400"}>{run.avgReward >= THRESHOLDS.Reward ? "达标" : `偏低（${fmt3(run.avgReward)}）`}</span>。
+              本次 {num(run.totalSamples)} 个样本，<span className="font-medium text-emerald-400">{passCount} 通过</span> / <span className="font-medium text-red-400">{failCount} 失败</span>。{" "}
+              {(metricDefs.length > 0 ? metricDefs : defaultDefs)
+                .filter((d) => d.threshold != null && run.metrics?.[d.id] != null)
+                .map((d) => {
+                  const val = run.metrics![d.id]
+                  const ok = val >= (d.threshold as number)
+                  return (
+                    <span key={d.id}>
+                      {d.name}{" "}
+                      <span className={ok ? "text-emerald-400" : "text-red-400"}>{ok ? "达标" : "未达"}</span>
+                      （{fmt3(val)}）、{" "}
+                    </span>
+                  )
+                })}
             </p>
             <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
               {!!failCounts?.format && <li>{failCounts.format} 个样本未通过格式门禁。</li>}

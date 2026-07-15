@@ -39,6 +39,7 @@ import {
   Plus,
   Search,
   Trash2,
+  Boxes,
 } from "lucide-react"
 
 /** 面包屑：label + 可选回跳 to。 */
@@ -84,6 +85,7 @@ interface JoinRequestRow {
 const NAV_MAIN = [
   { to: "/dashboard", icon: LayoutDashboard, label: "项目看板", match: (p: string) => p === "/dashboard" || p.startsWith("/project") },
   { to: "/runs", icon: Activity, label: "全部运行", match: (p: string) => p.startsWith("/run") },
+  { to: "/config", icon: Boxes, label: "配置中心", match: (p: string) => p.startsWith("/config") },
 ]
 
 export function AppShell() {

@@ -6,15 +6,16 @@ import { api } from "../api/client"
 import type {
   ApiKeySafe,
   IssuedApiKey,
+  MetricDef,
   ProjectSample,
   RunSummary,
   SampleTrendPoint,
   TrendPoint,
 } from "../types"
 import { fmt3, num, timeAgo } from "../lib/format"
-import { METRIC_EXPLAIN, METRIC_LABEL, metricColor } from "../lib/eval"
-import type { MetricKey } from "../lib/eval"
-import { MetricCard } from "../components/MetricCard"
+import { METRIC_LABEL } from "../lib/eval"
+import { DynamicMetricGrid } from "../components/DynamicMetricGrid"
+import { useScenarioDefaults } from "../hooks/useScenarioDefaults"
 import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
 import { Label } from "@/components/shadcn/label"
@@ -134,29 +135,24 @@ export default function ProjectDetail() {
     [trends],
   )
   const latest = trendsAsc[trendsAsc.length - 1]
-  const prev = trendsAsc[trendsAsc.length - 2]
+  const defaultDefs = useScenarioDefaults()
 
-  const deltaOf = (cur: number | undefined, prevV: number | undefined) => {
-    if (cur == null) return null
-    if (prevV == null || prevV === 0) return "首次评估"
-    const diff = cur - prevV
-    if (Math.abs(diff) < 0.0005) return "持平"
-    const pct = (diff / prevV) * 100
-    return `${diff > 0 ? "+" : ""}${pct.toFixed(1)}%`
-  }
-
+  // 动态趋势序列：从 defaultDefs（后端 fetch）取有阈值的指标，色板循环（非场景专用）
+  // 注意：series key 不能含冒号（CSS var(--color-<key>) 会解析失败）→ 用 _ 替换
+  const CHART_PALETTE = ["var(--chart-5)", "var(--chart-2)", "var(--chart-1)", "var(--chart-3)", "var(--chart-4)"]
+  const trendDefs = defaultDefs.filter((d) => d.threshold != null)
+  const trendSeries = trendDefs.map((d, i) => ({
+    key: d.id.replace(/:/g, "_"), // 安全 CSS 变量名（如 courseware_document_rate）
+    metricId: d.id, // 原始 metric ID（从 metrics JSONB 取值用）
+    name: d.name ?? d.id,
+    color: CHART_PALETTE[i % CHART_PALETTE.length],
+  }))
   const trendPoints = trendsAsc.map((t) => ({
     label: new Date(t.created_at).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" }),
-    values: { DR: t.DR, CPR: t.CPR, Reward: t.Reward, Soft: t.Soft, Pref: t.Pref },
+    values: Object.fromEntries(
+      trendSeries.map((s) => [s.key, t.metrics?.[s.metricId]]),
+    ) as Record<string, number>,
   }))
-  // 趋势线配色对齐原型 project-detail.html 图例：DR 绿 / CPR 信号青 / Reward 电蓝
-  const trendSeries = [
-    { key: "DR", name: "交付率(DR)", color: "var(--chart-5)" },
-    { key: "CPR", name: "约束通过率(CPR)", color: "var(--chart-2)" },
-    { key: "Reward", name: "综合评分(Reward)", color: "var(--chart-1)" },
-    { key: "Soft", name: "内容质量分(Soft)", color: "var(--chart-3)" },
-    { key: "Pref", name: "用户偏好分(Pref)", color: "var(--chart-4)" },
-  ]
 
   return (
     <Page>
@@ -198,31 +194,8 @@ export default function ProjectDetail() {
         <Separator className="mb-4" />
 
         <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
-            {([
-              { key: "DR", label: "交付率(DR)" },
-              { key: "CPR", label: "约束通过率(CPR)" },
-              { key: "Soft", label: "内容质量分(SOFT)" },
-              { key: "Pref", label: "用户偏好分(PREF)" },
-              { key: "Reward", label: "综合评分(REWARD)" },
-            ] as { key: MetricKey; label: string }[]).map((m) => {
-              const kk = m.key as "DR" | "CPR" | "Reward" | "Soft" | "Pref"
-              const val = latest ? latest[kk] : undefined
-              const prevVal = prev ? prev[kk] : undefined
-              const delta = deltaOf(val, prevVal)
-              return (
-                <MetricCard
-                  key={m.key}
-                  label={m.label}
-                  value={fmt3(val)}
-                  explain={METRIC_EXPLAIN[m.key]}
-                  delta={delta}
-                  recentRunTime={latest ? timeAgo(latest.created_at) : undefined}
-                  valueStyle={{ color: metricColor(m.key, val) }}
-                />
-              )
-            })}
-          </div>
+          {/* Phase 5：场景化动态指标（COURSEWARE 默认定义 + 最新运行 metrics）*/}
+          <DynamicMetricGrid defs={defaultDefs} metrics={latest?.metrics ?? undefined} />
 
           <Card>
             <CardHeader>
@@ -247,7 +220,7 @@ export default function ProjectDetail() {
               </button>
             </CardHeader>
             <CardContent>
-              <DataTable columns={runColumns()} rows={runs.slice(0, 6)} rowKey={(r) => r.id} onRowClick={(r) => nav(`/run/${r.id}`)} />
+              <DataTable columns={runColumns(defaultDefs)} rows={runs.slice(0, 6)} rowKey={(r) => r.id} onRowClick={(r) => nav(`/run/${r.id}`)} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -276,7 +249,15 @@ export default function ProjectDetail() {
   )
 }
 
-function runColumns(): Column<RunSummary>[] {
+function runColumns(defs: MetricDef[]): Column<RunSummary>[] {
+  const metricCols: Column<RunSummary>[] = defs
+    .filter((d) => d.threshold != null)
+    .map((d) => ({
+      key: d.id,
+      title: d.name ?? d.id,
+      num: true,
+      render: (r: RunSummary) => fmt3(r.metrics?.[d.id]),
+    }))
   return [
     { key: "externalRunId", title: "运行", render: (r) => <span className="font-mono text-xs">#{r.externalRunId}</span> },
     { key: "mode", title: "模式", render: (r) => <span className="text-xs text-muted-foreground">{r.mode}</span> },
@@ -295,14 +276,13 @@ function runColumns(): Column<RunSummary>[] {
         )
       },
     },
-    { key: "dr", title: METRIC_LABEL.DR, num: true, render: (r) => fmt3(r.dr) },
-    { key: "cpr", title: METRIC_LABEL.CPR, num: true, render: (r) => fmt3(r.cpr) },
-    { key: "avgReward", title: METRIC_LABEL.Reward, num: true, render: (r) => fmt3(r.avgReward) },
+    ...metricCols,
     { key: "createdAt", title: "时间", render: (r) => <span className="text-muted-foreground">{timeAgo(r.createdAt)}</span> },
   ]
 }
 
 function RunsTab({ runs, total, onOpen }: { runs: RunSummary[]; total: number; onOpen: (r: RunSummary) => void }) {
+  const defaultDefs = useScenarioDefaults()
   const [q, setQ] = useState("")
   const [mode, setMode] = useState("all")
   const [status, setStatus] = useState("all")
@@ -348,7 +328,7 @@ function RunsTab({ runs, total, onOpen }: { runs: RunSummary[]; total: number; o
       </Card>
       <Card>
         <CardContent className="pt-6">
-          <DataTable columns={runColumns()} rows={filtered} rowKey={(r) => r.id} onRowClick={onOpen} empty="无匹配运行" />
+          <DataTable columns={runColumns(defaultDefs)} rows={filtered} rowKey={(r) => r.id} onRowClick={onOpen} empty="无匹配运行" />
         </CardContent>
       </Card>
     </div>

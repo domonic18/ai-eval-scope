@@ -31,9 +31,7 @@ export interface DashboardProject {
   latestRun: {
     runId: string
     createdAt: string | null
-    dr: number | null
-    cpr: number | null
-    avgReward: number | null
+    metrics?: Record<string, number> | null
   } | null
 }
 
@@ -44,13 +42,9 @@ export interface RunSummary {
   status: string
   totalSamples: number
   samples?: { externalSampleId: string }[]
-  dr: number
-  cpr: number
-  avgReward: number
-  avgSoft: number
-  avgPref: number
-  condR: number
-  avgTimeMs: number
+  /** Phase 5 场景化指标（权威，键=MetricDefinition.id） */
+  metrics?: Record<string, number>
+  metricDefinitions?: MetricDef[]
   ruleSetVersion: string | null
   langfuseTraceId: string | null
   langfuseHost: string | null
@@ -60,11 +54,7 @@ export interface RunSummary {
 export interface TrendPoint {
   run_id: string
   created_at: string
-  DR: number
-  CPR: number
-  Reward: number
-  Soft: number
-  Pref: number
+  metrics?: Record<string, number>
 }
 
 export interface SampleSummary {
@@ -76,6 +66,31 @@ export interface SampleSummary {
   sCommon: number
   sSoft: number
   sPref: number
+  /** Phase 5 场景化样本指标 */
+  metrics?: Record<string, number>
+}
+
+/** Phase 5 场景化指标定义（来自 RunConfigSnapshot.metric_definitions）。 */
+export interface MetricDef {
+  id: string
+  name?: string
+  expression?: string
+  threshold?: number | null
+  unit?: string | null
+  /** 可选指标说明（hover ? 提示，对齐旧 METRIC_EXPLAIN）；由定义驱动，缺省不显示 */
+  explain?: MetricExplain
+}
+
+/** 可序列化的指标说明（驱动 ? hover 提示，含彩色强调）。 */
+export interface MetricExplain {
+  title: string
+  rows: MetricExplainRow[]
+}
+export interface MetricExplainRow {
+  dt: string
+  dd: string
+  /** dd 的强调色：primary/danger/success/warning/default */
+  tone?: "default" | "primary" | "danger" | "success" | "warning"
 }
 
 /** 项目下样本（课件）清单项（docs/arch/09 §9.4）。 */

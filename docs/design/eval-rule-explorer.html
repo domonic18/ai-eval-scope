@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>评测规则浏览器 — EvalScope</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  /* ── 布局 ── */
+  .eval-explorer { display: grid; grid-template-columns: 260px 1fr; gap: 0; min-height: calc(100vh - 52px); }
+  @media (max-width: 1000px){ .eval-explorer { grid-template-columns: 1fr; } }
+
+  /* ── 左侧资产树 ── */
+  .asset-tree { border-right: 1px solid var(--border); padding: 16px; overflow-y: auto; }
+  .tree-section { margin-bottom: 20px; }
+  .tree-label { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; padding-left: 4px; }
+  .tree-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: var(--r-sm); cursor: pointer; font-size: 13px; color: var(--text-secondary); transition: all .12s; }
+  .tree-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+  .tree-item.active { background: var(--bg-surface); color: var(--text-primary); }
+  .tree-item .tree-icon { width: 16px; height: 16px; flex-shrink: 0; opacity: .7; }
+  .tree-item.active .tree-icon { opacity: 1; }
+  .tree-item .tree-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tree-item .tree-version { font-family: var(--mono); font-size: 10px; color: var(--text-tertiary); }
+  .tree-badge { font-size: 9px; padding: 1px 5px; border-radius: 3px; font-weight: 600; }
+  .tree-badge.prod { background: rgba(55,179,90,.15); color: var(--success); }
+  .tree-badge.staging { background: rgba(255,170,0,.15); color: #ffaa00; }
+
+  /* ── 右侧详情面板 ── */
+  .detail-panel { padding: 24px 32px; overflow-y: auto; }
+  .detail-head { margin-bottom: 20px; }
+  .detail-head h2 { font-size: 18px; margin-bottom: 4px; }
+  .detail-head .sub { font-size: 13px; color: var(--text-secondary); }
+  .detail-head .meta-row { display: flex; gap: 16px; margin-top: 8px; flex-wrap: wrap; }
+  .meta-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-tertiary); }
+  .meta-chip svg { width: 13px; height: 13px; }
+
+  /* ── Tab 切换 ── */
+  .tab-bar { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+  .tab-btn { padding: 8px 16px; font-size: 13px; color: var(--text-secondary); border-bottom: 2px solid transparent; cursor: pointer; transition: all .12s; }
+  .tab-btn:hover { color: var(--text-primary); }
+  .tab-btn.active { color: var(--text-primary); border-bottom-color: var(--border-focus); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── YAML 只读查看 ── */
+  .yaml-viewer { background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--r-md); padding: 16px; font-family: var(--mono); font-size: 12.5px; line-height: 1.7; overflow-x: auto; color: var(--text-secondary); white-space: pre; }
+  .yaml-viewer .k { color: #7aa2f7; }
+  .yaml-viewer .s { color: #9ece6a; }
+  .yaml-viewer .n { color: #ff9e64; }
+  .yaml-viewer .c { color: var(--text-tertiary); font-style: italic; }
+  .yaml-viewer .b { color: #f7768e; }
+
+  /* ── 规则卡片 ── */
+  .rule-card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--r-md); padding: 14px 16px; margin-bottom: 10px; transition: border-color .12s; }
+  .rule-card:hover { border-color: var(--border-hover); }
+  .rule-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .rule-id { font-family: var(--mono); font-size: 12px; color: var(--text-tertiary); }
+  .rule-name { font-size: 14px; font-weight: 550; }
+  .rule-meta { display: flex; gap: 10px; }
+  .tier-pill { font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 600; }
+  .tier-gate { background: rgba(255,68,68,.12); color: #ff5555; }
+  .tier-score { background: rgba(255,170,0,.12); color: #ffaa00; }
+  .tier-soft { background: rgba(187,128,9,.12); color: #bb8009; }
+  .tier-pref { background: rgba(61,109,255,.12); color: #3d6dff; }
+  .rule-body { font-size: 12.5px; color: var(--text-secondary); line-height: 1.6; }
+  .rule-eval { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
+  .eval-tag { font-family: var(--mono); font-size: 11px; color: var(--text-tertiary); background: var(--bg-surface); padding: 2px 7px; border-radius: var(--r-xs); }
+
+  /* ── 数据集表格 ── */
+  .ds-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; }
+  .ds-card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--r-md); padding: 16px; }
+  .ds-card h4 { font-size: 14px; margin-bottom: 4px; }
+  .ds-card .ds-sub { font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; }
+  .ds-rows { font-size: 12px; }
+  .ds-row { display: grid; grid-template-columns: 90px 1fr; gap: 8px; padding: 4px 0; border-top: 1px solid var(--border); }
+  .ds-row:first-child { border-top: none; }
+  .ds-key { color: var(--text-tertiary); font-family: var(--mono); font-size: 11px; }
+  .ds-val { color: var(--text-secondary); }
+
+  /* ── 提示词预览 ── */
+  .prompt-preview { background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; }
+  .prompt-section { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+  .prompt-section:last-child { border-bottom: none; }
+  .prompt-label { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; margin-bottom: 6px; }
+  .prompt-content { font-size: 13px; line-height: 1.75; color: var(--text-secondary); white-space: pre-wrap; }
+  .prompt-content .var { color: var(--border-focus); font-family: var(--mono); font-size: 12px; }
+  .prompt-vars { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .var-tag { font-family: var(--mono); font-size: 11px; color: var(--border-focus); background: rgba(61,109,255,.1); padding: 2px 8px; border-radius: var(--r-xs); }
+
+  /* ── 快照引用 ── */
+  .snapshot-ref { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
+  .snapshot-ref .icon { width: 20px; height: 20px; color: var(--text-tertiary); }
+  .snapshot-ref .info { flex: 1; }
+  .snapshot-ref .title { font-size: 13px; font-weight: 550; }
+  .snapshot-ref .hash { font-family: var(--mono); font-size: 11px; color: var(--text-tertiary); }
+
+  /* ── 关联跳转 ── */
+  .link-chain { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-tertiary); margin-bottom: 16px; }
+  .link-chain a { color: var(--border-focus); text-decoration: none; }
+  .link-chain a:hover { text-decoration: underline; }
+  .link-chain .sep { color: var(--text-quaternary); }
+</style>
+</head>
+<body>
+<div class="ambient"></div>
+<div class="scanlines"></div>
+<div class="shell">
+  <!-- 侧栏（复用原型侧栏，active=配置中心 → 评测规则浏览器） -->
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <a href="index.html" class="logo" style="margin-bottom:14px"><span class="logo-mark"><img src="assets/logo.svg" alt="" style="width:100%"></span><span class="logo-text">Eval<b>Scope</b></span></a>
+      <div class="org-switcher"><div class="org-avatar">智</div><div class="org-meta"><div class="org-name">智能教育研发组</div><div class="org-plan">Team · 5 项目</div></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+    </div>
+    <nav class="nav-section">
+      <a class="nav-item" href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> 项目看板</a>
+      <a class="nav-item" href="run-detail.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg> 全部运行</a>
+      <a class="nav-item active" href="eval-rule-explorer.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> 评测规则</a>
+      <div class="nav-label">组织</div>
+      <a class="nav-item" href="members.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg> 成员</a>
+    </nav>
+    <div class="sidebar-foot"><a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> 接入指引</a></div>
+  </aside>
+
+  <!-- 主区域 -->
+  <div class="main">
+    <header class="topbar">
+      <div class="crumbs"><a href="dashboard.html">项目看板</a><span class="sep">/</span><span class="current">评测规则浏览器</span></div>
+      <div class="topbar-right"><div class="avatar">张</div></div>
+    </header>
+
+    <!-- 关联链：运行 → 快照 → 规则集（从运行详情页点「查看评测规则」进入时显示） -->
+    <div class="page reveal">
+      <div class="link-chain" style="margin-bottom:20px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <span>关联自</span>
+        <a href="run-detail.html">运行 #run_2f8a</a>
+        <span class="sep">→</span>
+        <a href="#">配置快照 sha256:a3f2…</a>
+        <span class="sep">→</span>
+        <span style="color:var(--text-primary)">规则集 coursework-quality</span>
+      </div>
+
+      <h1 style="font-size:22px; margin-bottom:4px">评测规则浏览器</h1>
+      <div class="sub" style="font-size:13px; color:var(--text-secondary); margin-bottom:24px">
+        完整查看本次评估使用的规则集、提示词、参考数据。所有内容来自运行配置快照（不可变，可复现）。
+      </div>
+
+      <!-- 快照引用卡 -->
+      <div class="snapshot-ref">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7l-8-4-8 4 8 4 8-4z"/><path d="M4 7v10l8 4 8-4V7"/><path d="M12 11v10"/></svg>
+        <div class="info">
+          <div class="title">courseware 场景包 · v1.0.0 · production</div>
+          <div class="hash">content_hash: sha256:a3f2c8e1… · 6 项指标定义 · 4 阶段聚合策略</div>
+        </div>
+      </div>
+
+      <!-- 左右分栏：资产树 + 详情 -->
+      <div class="eval-explorer">
+        <!-- ── 资产树 ── -->
+        <div class="asset-tree">
+          <div class="tree-section">
+            <div class="tree-label">规则集</div>
+            <div class="tree-item active">
+              <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              <span class="tree-name">coursework-quality</span>
+              <span class="tree-version">v1.0</span>
+            </div>
+            <div class="tree-item">
+              <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              <span class="tree-name">coursework-gate</span>
+              <span class="tree-version">v1.0</span>
+            </div>
+            <div class="tree-item">
+              <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              <span class="tree-name">coursework-vision</span>
+              <span class="tree-version">v1.0</span>
+            </div>
+          </div>
+
+          <div class="tree-section">
+            <div class="tree-label">提示词模板</div>
+            <div class="tree-item">
+              <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <span class="tree-name">pedagogical_logic</span>
+            </div>
+            <div class="tree-item">
+              <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <span class="tree-name">info_accuracy</span>
+            </div>
+            <div class="tree-item">
+              <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <span class="tree-name">content_diversity</span>
+            </div>
+            <div class="tree-item">
+              <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <span class="tree-name">chronological_order</span>
+            </div>
+            <div class="tree-item">
+              <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <span class="tree-name">style_preference</span>
+            </div>
+            <div class="tree-item">
+              <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <span class="tree-name">depth_preference</span>
+            </div>
+            <div class="tree-item">
+              <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <span class="tree-name">request_fulfillment</span>
+            </div>
+            <div class="tree-item">
+              <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <span class="tree-name">logical_consistency</span>
+            </div>
+            <div class="tree-item">
+              <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <span class="tree-name">visual_quality</span>
+            </div>
+          </div>
+
+          <div class="tree-section">
+            <div class="tree-label">参考数据集</div>
+            <div class="tree-item">
+              <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+              <span class="tree-name">_defaults</span>
+              <span class="tree-badge prod">ref</span>
+            </div>
+            <div class="tree-item">
+              <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+              <span class="tree-name">math</span>
+              <span class="tree-badge prod">ref</span>
+            </div>
+            <div class="tree-item">
+              <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+              <span class="tree-name">history</span>
+              <span class="tree-badge prod">ref</span>
+            </div>
+            <div class="tree-item">
+              <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+              <span class="tree-name">physics</span>
+              <span class="tree-badge prod">ref</span>
+            </div>
+            <div class="tree-item">
+              <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+              <span class="tree-name">chemistry</span>
+              <span class="tree-badge prod">ref</span>
+            </div>
+          </div>
+
+          <div class="tree-section">
+            <div class="tree-label">聚合策略</div>
+            <div class="tree-item">
+              <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 4-6"/></svg>
+              <span class="tree-name">courseware-default</span>
+            </div>
+          </div>
+
+          <div class="tree-section">
+            <div class="tree-label">指标定义</div>
+            <div class="tree-item">
+              <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              <span class="tree-name">DR · 交付率</span>
+            </div>
+            <div class="tree-item">
+              <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              <span class="tree-name">CPR · 约束通过率</span>
+            </div>
+            <div class="tree-item">
+              <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              <span class="tree-name">Reward · 综合评分</span>
+            </div>
+            <div class="tree-item">
+              <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              <span class="tree-name">Soft · 内容质量</span>
+            </div>
+            <div class="tree-item">
+              <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              <span class="tree-name">Pref · 用户偏好</span>
+            </div>
+            <div class="tree-item">
+              <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              <span class="tree-name">CondR · 条件Reward</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── 详情面板 ── -->
+        <div class="detail-panel">
+          <div class="detail-head">
+            <h2>coursework-quality</h2>
+            <div class="sub">课件质量评估：门控 + 软约束/偏好质量评估（LLM Judge），不含视觉</div>
+            <div class="meta-row">
+              <span class="meta-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> 版本 v1.0</span>
+              <span class="meta-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg> 5 条规则</span>
+              <span class="meta-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 4-6"/></svg> 3 级阶段</span>
+              <span class="meta-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg> 7 个提示词</span>
+              <span class="meta-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg> 9 个参考数据</span>
+            </div>
+          </div>
+
+          <!-- Tab 切换 -->
+          <div class="tab-bar">
+            <div class="tab-btn active" onclick="switchTab(event,'overview')">概览</div>
+            <div class="tab-btn" onclick="switchTab(event,'rules')">规则详情</div>
+            <div class="tab-btn" onclick="switchTab(event,'prompts')">提示词</div>
+            <div class="tab-btn" onclick="switchTab(event,'datasets')">参考数据</div>
+            <div class="tab-btn" onclick="switchTab(event,'yaml')">原始 YAML</div>
+          </div>
+
+          <!-- Tab: 概览 -->
+          <div class="tab-panel active" id="tab-overview">
+            <div class="rule-card" style="margin-bottom:16px">
+              <div class="rule-head">
+                <span class="rule-name">聚合策略 courseware-default</span>
+              </div>
+              <div class="rule-body">
+                4 个阶段加权归一化到 [0, 1]：<strong>format</strong>（门控，w=1.0）→ <strong>commonsense</strong>（门控，w=1.0）→ <strong>quality-soft</strong>（加权，w=1.0）→ <strong>quality-pref</strong>（加权，w=1.0）
+                <br>Reward = (S_format + S_common + S_soft + S_pref) / 4
+              </div>
+            </div>
+
+            <div class="ds-grid">
+              <div class="ds-card">
+                <h4>📋 5 条规则</h4>
+                <div class="ds-sub">按阶段组织：format 门控 → commonsense 门控 → quality 软/偏好评估</div>
+                <div class="ds-rows">
+                  <div class="ds-row"><span class="ds-key">HARD_GATE</span><span class="ds-val">format.response_format — 输出格式有效</span></div>
+                  <div class="ds-row"><span class="ds-key">HARD_SCORE</span><span class="ds-val">commonsense.info_accuracy — 知识准确性</span></div>
+                  <div class="ds-row"><span class="ds-key">HARD_SCORE</span><span class="ds-val">commonsense.chronological_order — 时序正确性</span></div>
+                  <div class="ds-row"><span class="ds-key">SOFT</span><span class="ds-val">soft.teaching_logic — 教学逻辑</span></div>
+                  <div class="ds-row"><span class="ds-key">SOFT</span><span class="ds-val">soft.content_diversity — 内容多样性</span></div>
+                </div>
+              </div>
+              <div class="ds-card">
+                <h4>🎯 6 项指标</h4>
+                <div class="ds-sub">场景化指标定义（来自运行配置快照）</div>
+                <div class="ds-rows">
+                  <div class="ds-row"><span class="ds-key">DR</span><span class="ds-val">交付率，阈值 ≥ 0.95</span></div>
+                  <div class="ds-row"><span class="ds-key">CPR</span><span class="ds-val">约束通过率，阈值 ≥ 0.90</span></div>
+                  <div class="ds-row"><span class="ds-key">Reward</span><span class="ds-val">综合评分，阈值 ≥ 0.70</span></div>
+                  <div class="ds-row"><span class="ds-key">Soft</span><span class="ds-val">内容质量分，[0,1]</span></div>
+                  <div class="ds-row"><span class="ds-key">Pref</span><span class="ds-val">用户偏好分，[0,1]</span></div>
+                  <div class="ds-row"><span class="ds-key">CondR</span><span class="ds-val">条件 Reward，[0,1]</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab: 规则详情 -->
+          <div class="tab-panel" id="tab-rules">
+            <div class="rule-card">
+              <div class="rule-head">
+                <div>
+                  <span class="rule-name">输出格式有效</span>
+                  <span class="rule-id" style="margin-left:8px">FMT_001</span>
+                </div>
+                <div class="rule-meta">
+                  <span class="tier-pill tier-gate">HARD_GATE</span>
+                  <span class="tree-badge prod">format</span>
+                </div>
+              </div>
+              <div class="rule-body">SUT 必须生成有效的 Markdown 或 HTML 文件。format 失败 → S_format=0，后续阶段短路。</div>
+              <div class="rule-eval">
+                <span class="eval-tag">format.response_format</span>
+                <span class="eval-tag">allowed: [md, html]</span>
+              </div>
+            </div>
+
+            <div class="rule-card">
+              <div class="rule-head">
+                <div>
+                  <span class="rule-name">知识准确性检查</span>
+                  <span class="rule-id" style="margin-left:8px">COM_001</span>
+                </div>
+                <div class="rule-meta">
+                  <span class="tier-pill tier-score">HARD_SCORE</span>
+                  <span class="tree-badge prod">commonsense</span>
+                </div>
+              </div>
+              <div class="rule-body">
+                三层检查：①内置自动检查（始终执行）→ ②可配置 fact_rules（正则）→ ③LLM 语义验证（可选）。
+                检查历史/科学常数/数学公式等是否准确。
+              </div>
+              <div class="rule-eval">
+                <span class="eval-tag">commonsense.info_accuracy</span>
+                <span class="eval-tag">prompt: info_accuracy</span>
+                <span class="eval-tag">LLM Judge</span>
+              </div>
+            </div>
+
+            <div class="rule-card">
+              <div class="rule-head">
+                <div>
+                  <span class="rule-name">教学逻辑评估</span>
+                  <span class="rule-id" style="margin-left:8px">QUA_001</span>
+                </div>
+                <div class="rule-meta">
+                  <span class="tier-pill tier-soft">SOFT</span>
+                  <span class="tree-badge prod">quality</span>
+                </div>
+              </div>
+              <div class="rule-body">LLM Judge 按结构完整性 / 知识递进 / 互动设计 3 维度独立打分（每维 0-10），加权归一化。</div>
+              <div class="rule-eval">
+                <span class="eval-tag">soft.teaching_logic</span>
+                <span class="eval-tag">prompt: pedagogical_logic</span>
+                <span class="eval-tag">weight: 0.5</span>
+              </div>
+            </div>
+
+            <div class="rule-card">
+              <div class="rule-head">
+                <div>
+                  <span class="rule-name">内容多样性评估</span>
+                  <span class="rule-id" style="margin-left:8px">QUA_002</span>
+                </div>
+                <div class="rule-meta">
+                  <span class="tier-pill tier-soft">SOFT</span>
+                  <span class="tree-badge prod">quality</span>
+                </div>
+              </div>
+              <div class="rule-body">LLM Judge 按题型多样性 / 认知层次 / 资源丰富度 3 维度打分。</div>
+              <div class="rule-eval">
+                <span class="eval-tag">soft.content_diversity</span>
+                <span class="eval-tag">prompt: content_diversity</span>
+                <span class="eval-tag">weight: 0.5</span>
+              </div>
+            </div>
+
+            <div class="rule-card">
+              <div class="rule-head">
+                <div>
+                  <span class="rule-name">风格偏好评估</span>
+                  <span class="rule-id" style="margin-left:8px">QUA_003</span>
+                </div>
+                <div class="rule-meta">
+                  <span class="tier-pill tier-pref">PREFERENCE</span>
+                  <span class="tree-badge prod">quality</span>
+                </div>
+              </div>
+              <div class="rule-body">LLM Judge 评估语言风格 / 视觉排版 / 交互体验。偏好约束不影响达标判定。</div>
+              <div class="rule-eval">
+                <span class="eval-tag">pref.style_preference</span>
+                <span class="eval-tag">prompt: style_preference</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab: 提示词 -->
+          <div class="tab-panel" id="tab-prompts">
+            <div style="margin-bottom:12px; font-size:13px; color:var(--text-tertiary)">选中左侧提示词查看详情 · 以下展示 <strong style="color:var(--text-primary)">pedagogical_logic</strong></div>
+            <div class="prompt-preview">
+              <div class="prompt-section">
+                <div class="prompt-label">System Prompt</div>
+                <div class="prompt-content"># 角色
+你是一位资深的教学设计评审专家，专审各类教学文档的「教学逻辑」。
+
+# 任务
+评估一组教学文档的教学逻辑，按 3 个维度独立打分（每维 0-10），并对每个扣分点给出可溯源的证据。</div>
+              </div>
+              <div class="prompt-section">
+                <div class="prompt-label">User Prompt Template（Jinja2）</div>
+                <div class="prompt-content">请评审以下 <span class="var">{{ documents | length }}</span> 篇教学文档：
+
+<span class="var">{% for doc in documents %}</span>
+---
+## 文档 <span class="var">{{ loop.index }}</span>：{{ doc.filename }}
+<span class="var">{{ doc.content }}</span>
+<span class="var">{% endfor %}</span>
+
+按 JSON Schema 输出评审结果。</div>
+              </div>
+              <div class="prompt-section">
+                <div class="prompt-label">变量声明</div>
+                <div class="prompt-vars">
+                  <span class="var-tag">documents: array</span>
+                  <span class="var-tag">temperature: 0.2</span>
+                  <span class="var-tag">seed: 42</span>
+                  <span class="var-tag">num_samples: 1</span>
+                </div>
+              </div>
+              <div class="prompt-section">
+                <div class="prompt-label">评分维度（output_schema）</div>
+                <div class="ds-rows">
+                  <div class="ds-row"><span class="ds-key">structure</span><span class="ds-val">结构完整性 · weight 0.4</span></div>
+                  <div class="ds-row"><span class="ds-key">progression</span><span class="ds-val">知识递进 · weight 0.3</span></div>
+                  <div class="ds-row"><span class="ds-key">engagement</span><span class="ds-val">互动设计 · weight 0.3</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab: 参考数据 -->
+          <div class="tab-panel" id="tab-datasets">
+            <div style="margin-bottom:12px; font-size:13px; color:var(--text-tertiary)">参考知识库（role=reference）· 被评估器查询，用于事实验证</div>
+            <div class="ds-grid">
+              <div class="ds-card">
+                <h4>_defaults</h4>
+                <div class="ds-sub">跨学科通用知识准确性规则（始终加载）</div>
+                <div class="ds-rows">
+                  <div class="ds-row"><span class="ds-key">type</span><span class="ds-val">YAML · role=reference</span></div>
+                  <div class="ds-row"><span class="ds-key">backend</span><span class="ds-val">yaml_file</span></div>
+                  <div class="ds-row"><span class="ds-key">constants</span><span class="ds-val">圆周率 π ≈ 3.14159、光速 c ≈ 3×10⁸ m/s …</span></div>
+                </div>
+              </div>
+              <div class="ds-card">
+                <h4>math</h4>
+                <div class="ds-sub">数学知识准确性规则（小学至初中）</div>
+                <div class="ds-rows">
+                  <div class="ds-row"><span class="ds-key">type</span><span class="ds-val">YAML · role=reference</span></div>
+                  <div class="ds-row"><span class="ds-key">backend</span><span class="ds-val">yaml_file</span></div>
+                  <div class="ds-row"><span class="ds-key">constants</span><span class="ds-val">28 条数学常数/公式</span></div>
+                  <div class="ds-row"><span class="ds-key">misconceptions</span><span class="ds-val">18 条常见误解</span></div>
+                </div>
+              </div>
+              <div class="ds-card">
+                <h4>history</h4>
+                <div class="ds-sub">中国与世界历史知识准确性规则（K-12 教育）</div>
+                <div class="ds-rows">
+                  <div class="ds-row"><span class="ds-key">type</span><span class="ds-val">YAML · role=reference</span></div>
+                  <div class="ds-row"><span class="ds-key">backend</span><span class="ds-val">yaml_file</span></div>
+                  <div class="ds-row"><span class="ds-key">constants</span><span class="ds-val">35 条历史事实</span></div>
+                </div>
+              </div>
+              <div class="ds-card">
+                <h4>physics</h4>
+                <div class="ds-sub">物理知识准确性规则（小学科学至初中物理）</div>
+                <div class="ds-rows">
+                  <div class="ds-row"><span class="ds-key">type</span><span class="ds-val">YAML · role=reference</span></div>
+                  <div class="ds-row"><span class="ds-key">backend</span><span class="ds-val">yaml_file</span></div>
+                  <div class="ds-row"><span class="ds-key">constants</span><span class="ds-val">22 条物理常数/公式</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab: 原始 YAML -->
+          <div class="tab-panel" id="tab-yaml">
+            <div style="margin-bottom:12px; font-size:13px; color:var(--text-tertiary)">规则集原始配置（只读 · 来自运行配置快照）</div>
+<div class="yaml-viewer"><span class="c"># coursework-quality.yaml — 课件质量评估规则集</span>
+<span class="k">version</span>: <span class="s">"1.0"</span>
+<span class="k">scenario</span>: courseware
+
+<span class="k">dimensions</span>:
+  - <span class="k">id</span>: functional
+    <span class="k">name</span>: 功能性
+    <span class="k">weight</span>: <span class="n">1.0</span>
+  - <span class="k">id</span>: effectiveness
+    <span class="k">name</span>: 效果性
+    <span class="k">weight</span>: <span class="n">1.0</span>
+
+<span class="k">cascade</span>:
+  - <span class="k">stage</span>: format
+    <span class="k">name</span>: 格式门控
+    <span class="k">stop_on_fail</span>: <span class="b">true</span>
+  - <span class="k">stage</span>: commonsense
+    <span class="k">name</span>: 常识门控
+    <span class="k">stop_on_fail</span>: <span class="b">false</span>
+  - <span class="k">stage</span>: quality
+    <span class="k">name</span>: 质量评估
+    <span class="k">stop_on_fail</span>: <span class="b">false</span>
+
+<span class="k">rules</span>:
+  - <span class="k">id</span>: FMT_001
+    <span class="k">name</span>: 输出格式有效
+    <span class="k">stage</span>: format
+    <span class="k">evaluator</span>: <span class="s">format.response_format</span>
+    <span class="k">params</span>:
+      <span class="k">allowed_formats</span>: [<span class="s">md</span>, <span class="s">html</span>]
+    <span class="k">weight</span>: <span class="n">1.0</span>
+
+  - <span class="k">id</span>: COM_001
+    <span class="k">name</span>: 知识准确性检查
+    <span class="k">stage</span>: commonsense
+    <span class="k">evaluator</span>: <span class="s">commonsense.info_accuracy</span>
+    <span class="k">params</span>:
+      <span class="k">template_id</span>: info_accuracy
+    <span class="k">weight</span>: <span class="n">1.0</span>
+
+  - <span class="k">id</span>: QUA_001
+    <span class="k">name</span>: 教学逻辑评估
+    <span class="k">stage</span>: quality
+    <span class="k">evaluator</span>: <span class="s">soft.teaching_logic</span>
+    <span class="k">params</span>:
+      <span class="k">template_id</span>: pedagogical_logic
+    <span class="k">weight</span>: <span class="n">1.0</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchTab(e, name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  e.target.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+// 资产树点击
+document.querySelectorAll('.tree-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.tree-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

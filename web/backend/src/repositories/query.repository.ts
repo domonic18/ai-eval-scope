@@ -21,11 +21,7 @@ export interface RunListFilter {
 export interface TrendPoint {
   run_id: string
   created_at: Date
-  DR: number
-  CPR: number
-  Reward: number
-  Soft: number
-  Pref: number
+  metrics?: Record<string, number>
 }
 
 class QueryRepository extends BaseRepository {
@@ -48,15 +44,13 @@ class QueryRepository extends BaseRepository {
         run_count: bigint
         latest_run_id: string | null
         latest_created_at: Date | null
-        dr: number | null
-        cpr: number | null
-        avg_reward: number | null
+        metrics: Record<string, number> | null
         owner_name: string | null
       }>
     >(Prisma.sql`
       SELECT p.id, p.name, p.slug, p.description, p.archived_at, p.created_at,
              COALESCE(r_cnt.run_count, 0)::bigint AS run_count,
-             lr.latest_run_id, lr.latest_created_at, lr.dr, lr.cpr, lr.avg_reward,
+             lr.latest_run_id, lr.latest_created_at, lr.metrics,
              COALESCE(u.name, u.email) AS owner_name
       FROM projects p
       LEFT JOIN users u ON u.id = p.created_by
@@ -64,7 +58,7 @@ class QueryRepository extends BaseRepository {
         SELECT project_id, COUNT(*)::bigint AS run_count FROM runs GROUP BY project_id
       ) r_cnt ON r_cnt.project_id = p.id
       LEFT JOIN LATERAL (
-        SELECT id AS latest_run_id, created_at AS latest_created_at, dr, cpr, avg_reward
+        SELECT id AS latest_run_id, created_at AS latest_created_at, metrics
         FROM runs WHERE project_id = p.id ORDER BY created_at DESC LIMIT 1
       ) lr ON true
       WHERE p.org_id = ${orgId} AND p.archived_at IS NULL
@@ -81,9 +75,7 @@ class QueryRepository extends BaseRepository {
         ? {
             runId: r.latest_run_id,
             createdAt: r.latest_created_at,
-            dr: r.dr,
-            cpr: r.cpr,
-            avgReward: r.avg_reward,
+            metrics: r.metrics,
           }
         : null,
       ownerName: r.owner_name,
@@ -126,9 +118,7 @@ class QueryRepository extends BaseRepository {
     const orgId = this.requireOrg()
     const limit = Math.min(500, Math.max(1, f.limit ?? 100))
     return this.prisma.$queryRaw<TrendPoint[]>`
-      SELECT external_run_id AS run_id, created_at,
-             dr AS "DR", cpr AS "CPR", avg_reward AS "Reward",
-             avg_soft AS "Soft", avg_pref AS "Pref"
+      SELECT external_run_id AS run_id, created_at, metrics
       FROM runs
       WHERE project_id = ${projectId}
         AND project_id IN (SELECT id FROM projects WHERE org_id = ${orgId})
@@ -188,10 +178,12 @@ class QueryRepository extends BaseRepository {
         s_pref: number
         status: string
         content_hash: string | null
+        metrics: Record<string, number> | null
       }>
     >(Prisma.sql`
       SELECT r.external_run_id AS run_id, r.created_at,
-             s.reward, s.s_format, s.s_common, s.s_soft, s.s_pref, s.status, s.content_hash
+             s.reward, s.s_format, s.s_common, s.s_soft, s.s_pref, s.status, s.content_hash,
+             s.metrics
       FROM samples s JOIN runs r ON s.run_id = r.id
       WHERE s.project_id = ${projectId}
         AND s.external_sample_id = ${externalSampleId}
@@ -224,9 +216,25 @@ class QueryRepository extends BaseRepository {
             sPref: true,
           },
         },
+        // Phase 5：附带运行配置快照（metricDefinitions / aggregationPolicy），供前端动态渲染
+        runConfigSnapshot: { select: { content: true, contentHash: true } },
       },
     })
     return run
+  }
+
+  /** 运行配置快照（完整 content）。 */
+  async runSnapshot(projectId: string, runId: string) {
+    const orgId = this.requireOrg()
+    const run = await this.prisma.run.findFirst({
+      where: {
+        projectId,
+        project: { orgId },
+        OR: [{ id: runId }, { externalRunId: runId }],
+      },
+      select: { runConfigSnapshot: { select: { content: true, contentHash: true } } },
+    })
+    return run?.runConfigSnapshot ?? null
   }
 
   /** 样本详情（含约束 + 制品引用）。 */

@@ -144,10 +144,57 @@ def pack(
         raise typer.Exit(code=1) from e
 
 
+def _resolve_rule_set_path(package: str | None, rule_set: str | None) -> str:
+    """解析规则集路径。
+
+    - 都未给 → 报错。
+    - 仅 --rule-set 且是路径（含 / 或 .yaml）→ 直接返回（旧流程）。
+    - --package → PackageManager.resolve_ref 取包根；--rule-set 作包内名称（rules/<name>.yaml），
+      缺省取包内唯一规则集（多个则列出可用并报错）。
+    """
+    import typer
+
+    if package is None:
+        if not rule_set:
+            raise typer.BadParameter("必须提供 --rule-set（路径/名称）或 --package（场景包引用）")
+        return rule_set
+
+    from agent_eval.packages import PackageManager
+
+    pkg = PackageManager().resolve_ref(package)
+    rules_dir = pkg.rules_dir
+    # 显式路径优先
+    if rule_set and ("/" in rule_set or rule_set.endswith((".yaml", ".yml"))):
+        return rule_set
+    name = rule_set
+    if not name:
+        avail = sorted(p.stem for p in rules_dir.glob("*.yaml"))
+        if len(avail) == 1:
+            name = avail[0]
+        elif not avail:
+            raise typer.BadParameter(f"包 {pkg.manifest.ref} 的 rules/ 下无规则集")
+        else:
+            raise typer.BadParameter(
+                f"包 {pkg.manifest.ref} 含多个规则集，请用 --rule-set 指定：{', '.join(avail)}"
+            )
+    path = rules_dir / f"{name}.yaml"
+    if not path.exists():
+        avail = ", ".join(sorted(p.stem for p in rules_dir.glob("*.yaml"))) or "（无）"
+        raise typer.BadParameter(f"包 {pkg.manifest.ref} 内未找到规则集 '{name}'；可用: {avail}")
+    return str(path)
+
+
 @app.command()
 def eval(
     package_dir: str = typer.Option(..., "--package-dir", help="ExecutionPackage 目录路径"),
-    rule_set: str = typer.Option(..., "--rule-set", help="规则集文件路径"),
+    rule_set: str | None = typer.Option(
+        None, "--rule-set", help="规则集：包内名称（与 --package 配合）或文件路径"
+    ),
+    package: str | None = typer.Option(
+        None,
+        "--package",
+        help="ScenarioPackage 引用（如 courseware 或 courseware:production）；解析后从包内 rules/ 取规则集",
+    ),
     output_dir: str | None = typer.Option(None, "--output-dir", help="输出目录"),
     eval_mode: str = typer.Option("pipeline", "--eval-mode", help="评估模式: pipeline | agent"),
     llm_provider: str | None = typer.Option(None, "--llm-provider", help="覆盖默认 LLM Provider"),
@@ -179,7 +226,6 @@ def eval(
 
     rprint(f"[blue]评估模式:[/blue] {eval_mode}")
     rprint(f"[blue]执行包:[/blue] {package_dir}")
-    rprint(f"[blue]规则集:[/blue] {rule_set}")
     strict = on_missing == "strict"
 
     try:
@@ -187,8 +233,12 @@ def eval(
         from agent_eval.orchestrator.orchestrator import Orchestrator
         from agent_eval.storage.workspace import Workspace
 
+        # 0. 解析规则集路径：--package（ScenarioPackage 解析）或 --rule-set（路径/包内名）
+        rule_set_path = _resolve_rule_set_path(package, rule_set)
+        rprint(f"[blue]规则集:[/blue] {rule_set_path}" + (f"（包: {package}）" if package else ""))
+
         # 1. 加载 RuleSet
-        rule_set_obj = ConfigLoader.load_rule_set(rule_set)
+        rule_set_obj = ConfigLoader.load_rule_set(rule_set_path)
 
         # 2. 初始化 LLM Judge（可选）
         #    --llm-config 未指定时，按优先级查找：
@@ -275,7 +325,7 @@ def eval(
         raise typer.Exit(code=1) from e
 
 
-@app.command()
+@app.command(hidden=True)
 def run(
     task_set: str = typer.Option(..., "--task-set", help="任务集文件路径"),
     sut_config: str = typer.Option(..., "--sut-config", help="SUT 配置文件路径"),
@@ -294,7 +344,7 @@ def run(
     rprint("[yellow]run 命令的完整逻辑将在 Sprint 8 中实现。[/yellow]")
 
 
-@app.command()
+@app.command(hidden=True)
 def pipeline(
     task_set: str = typer.Option(..., "--task-set", help="任务集文件路径"),
     sut_config: str = typer.Option(..., "--sut-config", help="SUT 配置文件路径"),
@@ -335,9 +385,12 @@ def upload(
     from agent_eval.evaluation.models import SampleResult
     from agent_eval.observability import ResultSink, load_config
     from agent_eval.observability.events import (
+        build_artifact_event,
         build_constraint_event,
+        build_run_event,
         build_sample_event,
     )
+    from agent_eval.observability.sink import SinkReport
 
     run_dir = Path(workspace).resolve() / "runs" / run
     if not run_dir.exists():
@@ -360,29 +413,25 @@ def upload(
         raise typer.Exit(code=1)
 
     metrics = summary.get("metrics", {})
+    # 用 build_run_event 重建 run 事件（P5-1：附带 courseware:* 指标键 + scenario_id + 运行配置快照）
+    from agent_eval.evaluation.models import MetricsReport
+
+    report = MetricsReport(
+        run_id=summary.get("run_id", run),
+        total_samples=summary.get("total_samples", 0),
+        dr=metrics.get("DR", 0.0),
+        cpr=metrics.get("CPR", 0.0),
+        avg_reward=metrics.get("avg_reward", 0.0),
+        avg_soft=metrics.get("avg_soft", 0.0),
+        avg_pref=metrics.get("avg_pref", 0.0),
+        cond_r=metrics.get("condR", 0.0),
+        avg_time_ms=metrics.get("avg_time_ms", 0.0),
+    )
     events: list[dict[str, Any]] = [
-        {
-            "event_id": __import__("uuid").uuid4().hex,
-            "type": "run",
-            "data": {
-                "external_run_id": summary.get("run_id", run),
-                "mode": "eval_only",
-                "status": "completed",
-                "metrics": {
-                    "DR": metrics.get("DR", 0.0),
-                    "CPR": metrics.get("CPR", 0.0),
-                    "avg_reward": metrics.get("avg_reward", 0.0),
-                    "avg_soft": metrics.get("avg_soft", 0.0),
-                    "avg_pref": metrics.get("avg_pref", 0.0),
-                    "condR": metrics.get("condR", 0.0),
-                    "avg_time_ms": metrics.get("avg_time_ms", 0.0),
-                },
-                "total_samples": summary.get("total_samples", 0),
-                "rule_set_version": summary.get("rule_set_version"),
-                "failure_breakdown": summary.get("failure_breakdown") or None,
-                "thresholds": summary.get("thresholds") or None,
-            },
-        }
+        build_run_event(
+            report,
+            rule_set_version=summary.get("rule_set_version"),
+        ),
     ]
 
     results_dir = run_dir / "results"
@@ -411,8 +460,100 @@ def upload(
                     )
             sample_count += 1
 
-    rprint(f"[blue]回填:[/blue] 运行 {run}，样本 {sample_count}，事件 {len(events)}")
+    # ── artifacts: 扫描 evidence/ 目录上传截图 + judge 记录；扫描 package 上传原始文件 ──
+    run_id_str = summary.get("run_id", run)
     sink = ResultSink(cfg)
+    art_report = SinkReport(enabled=True)
+    artifact_count = 0
+
+    # 从 run_manifest 获取 package_dir（原始课件文件所在）
+    manifest_path = run_dir / "run_manifest.json"
+    package_dir_str = ""
+    if manifest_path.exists():
+        package_dir_str = _json.loads(manifest_path.read_text(encoding="utf-8")).get(
+            "package_dir", ""
+        )
+
+    if results_dir.exists():
+        for task_dir in sorted(p for p in results_dir.iterdir() if p.is_dir()):
+            report_path = task_dir / "report.json"
+            if not report_path.exists():
+                continue
+            try:
+                sample = SampleResult.from_dict(
+                    _json.loads(report_path.read_text(encoding="utf-8"))
+                )
+            except Exception:
+                continue
+
+            evidence_dir = task_dir / "evidence"
+            if evidence_dir.exists():
+                # 截图（.png）
+                for shot in sorted(evidence_dir.glob("*.png")):
+                    ok_obj = sink._upload_artifact(
+                        shot,
+                        external_run_id=run_id_str,
+                        external_sample_id=sample.sample_id,
+                        kind="screenshot",
+                        content_type="image/png",
+                        original_name=shot.name,
+                        report=art_report,
+                    )
+                    if ok_obj:
+                        events.append(
+                            build_artifact_event(
+                                external_run_id=run_id_str,
+                                external_sample_id=sample.sample_id,
+                                kind="screenshot",
+                                object_key=ok_obj,
+                                content_type="image/png",
+                                size_bytes=shot.stat().st_size,
+                                original_name=shot.name,
+                            )
+                        )
+                        artifact_count += 1
+                # judge 记录（judge_*.json）
+                for jf in sorted(evidence_dir.glob("judge_*.json")):
+                    ok_obj = sink._upload_artifact(
+                        jf,
+                        external_run_id=run_id_str,
+                        external_sample_id=sample.sample_id,
+                        kind="judge_record",
+                        content_type="application/json",
+                        original_name=jf.name,
+                        report=art_report,
+                    )
+                    if ok_obj:
+                        events.append(
+                            build_artifact_event(
+                                external_run_id=run_id_str,
+                                external_sample_id=sample.sample_id,
+                                kind="judge_record",
+                                object_key=ok_obj,
+                                content_type="application/json",
+                                size_bytes=jf.stat().st_size,
+                                original_name=jf.name,
+                            )
+                        )
+                        artifact_count += 1
+
+            # 原始课件文件（从 package_dir 扫描 HTML/MD）
+            if package_dir_str:
+                pkg = Path(package_dir_str)
+                if pkg.exists():
+                    src_events = sink._upload_source_files(
+                        pkg,
+                        run_id_str,
+                        sample.sample_id,
+                        art_report,
+                    )
+                    events.extend(src_events)
+                    artifact_count += len(src_events)
+
+    rprint(
+        f"[blue]回填:[/blue] 运行 {run}，样本 {sample_count}，"
+        f"事件 {len(events)}（含 {artifact_count} 制品）"
+    )
     sent, queued = sink.dispatch(events)
     rprint(f"[green]✓ 回填完成[/green] 已发送 {sent}、入队 {queued}")
 

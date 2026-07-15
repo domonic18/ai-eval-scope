@@ -8,7 +8,7 @@
 
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios"
 import { clearSession, getToken, saveSession } from "../store/auth"
-import type { DebugJobStatus, ProjectSample, SampleTrendPoint } from "../types"
+import type { DebugJobStatus, MetricDef, ProjectSample, SampleTrendPoint } from "../types"
 
 export const http = axios.create({
   baseURL: "/api/v1",
@@ -204,6 +204,74 @@ export const api = {
     return (await http.get("/debug/rule-sets")).data.rule_sets
   },
 
+  /* ── 配置管理（场景包，Phase 3/4）─────────────────── */
+  async scenarios(): Promise<Scenario[]> {
+    return (await http.get("/scenarios")).data.scenarios as Scenario[]
+  },
+  async scenarioCatalog(scenarioId: string): Promise<ScenarioCatalog> {
+    return (await http.get(`/scenarios/${scenarioId}/catalog`)).data as ScenarioCatalog
+  },
+  /** 场景默认指标定义 + 聚合策略（GET /scenarios/:id/defaults，前端无 hardcode）。 */
+  async scenarioDefaults(scenarioId: string): Promise<MetricDef[]> {
+    return (await http.get(`/scenarios/${scenarioId}/defaults`)).data.metric_definitions as MetricDef[]
+  },
+  async scenarioAggregationPolicy(scenarioId: string): Promise<Record<string, unknown> | null> {
+    return (await http.get(`/scenarios/${scenarioId}/defaults`)).data.aggregation_policy ?? null
+  },
+  /** 资产完整内容（评测规则浏览器用）。 */
+  async assetContent(
+    scenarioId: string,
+    kind: AssetKind,
+    assetId: string,
+  ): Promise<Record<string, unknown>> {
+    return (await http.get(`/scenarios/${scenarioId}/${kind}/${assetId}/content`)).data.content
+  },
+  async publishPackage(
+    scenarioId: string,
+    input: {
+      asset_id: string
+      version: string
+      labels?: string[]
+      name?: string
+      description?: string
+      content?: Record<string, unknown>
+    },
+  ): Promise<{ package: { packageId: string; scenarioId: string } }> {
+    return (await http.post(`/scenarios/${scenarioId}/packages`, input)).data
+  },
+  async publishAsset(
+    scenarioId: string,
+    kind: AssetKind,
+    input: {
+      asset_id: string
+      version: string
+      labels?: string[]
+      content?: Record<string, unknown>
+      namespace?: string
+      role?: string
+      backend_type?: string
+      backend_config?: Record<string, unknown>
+    },
+  ): Promise<{ asset: { assetId: string; version: string } }> {
+    return (await http.post(`/scenarios/${scenarioId}/${kind}`, input)).data
+  },
+  async listAssetVersions(
+    scenarioId: string,
+    kind: AssetKind,
+    assetId: string,
+  ): Promise<Array<{ version: string; labels: string[]; contentHash: string; createdAt: string }>> {
+    return (await http.get(`/scenarios/${scenarioId}/${kind}/${assetId}/versions`)).data.versions
+  },
+  async promoteAssetLabels(
+    scenarioId: string,
+    kind: AssetKind,
+    assetId: string,
+    version: string,
+    labels: string[],
+  ): Promise<void> {
+    await http.post(`/scenarios/${scenarioId}/${kind}/${assetId}/versions/${version}/labels`, { labels })
+  },
+
   /* ── 超管后台 ─────────────────────────────────────── */
   async adminOverview() {
     return (await http.get("/admin/stats/overview")).data
@@ -212,9 +280,7 @@ export const api = {
     return (await http.get(`/admin/stats/trends?limit=${limit}`)).data as Array<{
       run_id: string
       created_at: string
-      DR: number
-      CPR: number
-      Reward: number
+      metrics?: Record<string, number> | null
     }>
   },
   async adminScoreDistribution() {
@@ -321,6 +387,32 @@ export const api = {
   },
 }
 
+export type AssetKind = "rule-sets" | "prompts" | "datasets"
+
+export interface Scenario {
+  id: string
+  name: string
+  description: string | null
+  createdAt: string
+}
+export interface CatalogEntry {
+  asset_id: string
+  version: string
+  labels: string[]
+  name: string | null
+  description: string | null
+}
+export interface DatasetCatalogEntry extends CatalogEntry {
+  role: string
+  backend_type: string
+}
+export interface ScenarioCatalog {
+  scenario: { id: string; name: string; description: string | null }
+  rule_sets: CatalogEntry[]
+  prompts: CatalogEntry[]
+  datasets: DatasetCatalogEntry[]
+}
+
 export interface AdminUser {
   id: string
   email: string
@@ -356,11 +448,10 @@ export interface AdminRun {
   externalRunId: string
   mode: string
   status: string
-  dr: number
-  cpr: number
-  avgReward: number
   totalSamples: number
   createdAt: string
+  /** Phase 5 场景化指标（与 dr/cpr 并存，P5-8 清理遗留列后为唯一来源）*/
+  metrics?: Record<string, number>
   project: { id: string; name: string; org: { id: string; name: string } }
 }
 export interface AdminArtifact {

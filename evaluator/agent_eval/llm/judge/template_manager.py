@@ -33,6 +33,10 @@ class JudgeTemplate:
 
     template_id: str
     name: str
+    # 场景包标识（Phase 0 新增，对齐 13 配置管理设计 §8）
+    scenario_id: str | None = None
+    package_id: str | None = None
+    namespace: str | None = None
     dimensions: list[JudgeDimension] = field(default_factory=list)
     system_prompt: str = ""
     user_prompt_template: str = ""
@@ -143,6 +147,9 @@ class TemplateManager:
         template = JudgeTemplate(
             template_id=data["template_id"],
             name=data.get("name", data["template_id"]),
+            scenario_id=data.get("scenario"),
+            package_id=data.get("package_id"),
+            namespace=data.get("namespace"),
             dimensions=dimensions,
             system_prompt=data.get("system_prompt", ""),
             user_prompt_template=data.get("user_prompt_template", ""),

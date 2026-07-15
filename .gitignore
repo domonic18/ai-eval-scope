@@ -34,7 +34,7 @@ coverage.xml
 
 # Runtime data (not version controlled)
 workspace/
-packages/
+/packages/
 
 # OS
 .DS_Store
@@ -67,3 +67,4 @@ web/backend/public/
 /llm_config.yaml
 # evaluator 包内默认配置：仅 ${VAR} 引用、无明文 key，入库供 CI 构建使用（参考 .example.yaml）
 !evaluator/agent_eval/assets/configs/llm_config.yaml
+*.env.local

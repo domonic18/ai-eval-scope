@@ -41,6 +41,17 @@ router.get(
   }),
 )
 
+// Phase 5：运行配置快照（metricDefinitions / aggregationPolicy，前端动态渲染用）
+router.get(
+  "/:id/snapshot",
+  optionalAuth,
+  runGuard(),
+  wrap(async (req, res) => {
+    const svc = createQueryService(req.tenant!)
+    res.json({ snapshot: await svc.runSnapshot(req.tenant!.projectId!, req.params.id) })
+  }),
+)
+
 router.delete(
   "/:id",
   requireAuth,

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>提示词 pedagogical_logic — EvalScope</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  /* ── 元数据行 ── */
+  .meta-row { display: flex; gap: 20px; flex-wrap: wrap; align-items: center; margin-bottom: 20px; }
+  .meta-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text-secondary); }
+  .meta-chip .lab { color: var(--text-tertiary); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+  .meta-chip .val { font-family: var(--mono); font-weight: 600; color: var(--text-primary); }
+
+  /* ── namespace 徽标 ── */
+  .ns-badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 100px; font-size: 11.5px; font-weight: 600; background: var(--accent-soft); color: var(--accent); }
+
+  /* ── 提示词代码块 ── */
+  .prompt-block { background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; margin-bottom: 20px; }
+  .prompt-block-head { padding: 10px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--bg-surface); }
+  .prompt-block-head .label { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: .05em; display: flex; align-items: center; gap: 7px; }
+  .prompt-block-head .len { font-family: var(--mono); font-size: 11px; color: var(--text-tertiary); }
+  .prompt-content { padding: 16px; font-family: var(--mono); font-size: 12.5px; line-height: 1.75; color: var(--text-secondary); white-space: pre-wrap; }
+  .prompt-content .var { color: var(--border-focus); }
+  .prompt-content .tag { color: var(--signal); }
+  .prompt-content .h { color: var(--text-primary); font-weight: 600; }
+
+  /* ── 区块标题 ── */
+  .section-title { font-size: 14px; font-weight: 650; margin: 28px 0 12px; display: flex; align-items: center; gap: 8px; }
+  .section-title:first-of-type { margin-top: 4px; }
+  .section-title .hint { font-size: 12px; color: var(--text-tertiary); font-weight: 400; }
+
+  /* ── 变量声明表 ── */
+  .vars-table td { vertical-align: top; }
+  .vars-table .vname { font-family: var(--mono); color: var(--border-focus); font-weight: 600; }
+  .vars-table .vtype { font-family: var(--mono); color: var(--signal); font-size: 12px; }
+  .req-pill { font-size: 10px; padding: 1px 6px; border-radius: 3px; font-weight: 600; font-family: var(--mono); }
+  .req-yes { background: var(--danger-soft); color: var(--danger); }
+  .req-no { background: var(--bg-surface); color: var(--text-tertiary); }
+
+  /* ── schema 表 ── */
+  .schema-card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; }
+  .schema-head { padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--bg-surface); font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: .04em; display: flex; align-items: center; gap: 8px; }
+  .schema-head .mono { color: var(--signal); text-transform: none; }
+  .schema-row { display: grid; grid-template-columns: 150px 110px 90px 1fr 1fr; gap: 12px; padding: 11px 16px; border-bottom: 1px solid var(--border); font-size: 12.5px; align-items: center; }
+  .schema-row:last-child { border-bottom: none; }
+  .schema-row.s-head { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-tertiary); background: var(--bg-surface); }
+  .schema-row .pn { font-family: var(--mono); font-weight: 600; color: var(--border-focus); }
+  .schema-row .pt { font-family: var(--mono); color: var(--signal); font-size: 12px; }
+  .schema-row .pw { font-family: var(--mono); color: var(--text-secondary); }
+  .schema-row .psr { font-family: var(--mono); color: var(--warning); font-size: 11.5px; }
+  .schema-row .pd { color: var(--text-tertiary); }
+
+  /* ── 渲染预览 ── */
+  .render-note { font-size: 12px; color: var(--text-tertiary); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .render-val { font-family: var(--mono); font-size: 11px; color: var(--signal); background: var(--signal-soft); padding: 1px 6px; border-radius: var(--r-xs); }
+</style>
+</head>
+<body>
+<div class="ambient"></div>
+<div class="scanlines"></div>
+<div class="shell">
+  <!-- 侧栏 -->
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <a href="index.html" class="logo" style="margin-bottom:14px"><span class="logo-mark"><img src="assets/logo.svg" alt="" style="width:100%"></span><span class="logo-text">Eval<b>Scope</b></span></a>
+      <div class="org-switcher"><div class="org-avatar">智</div><div class="org-meta"><div class="org-name">智能教育研发组</div><div class="org-plan">Team · 5 项目</div></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+    </div>
+    <nav class="nav-section">
+      <a class="nav-item" href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> 项目看板</a>
+      <a class="nav-item" href="run-detail.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg> 全部运行</a>
+      <a class="nav-item active" href="eval-rule-explorer.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> 评测规则</a>
+      <div class="nav-label">组织</div>
+      <a class="nav-item" href="members.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg> 成员</a>
+    </nav>
+    <div class="sidebar-foot"><a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> 接入指引</a></div>
+  </aside>
+
+  <!-- 主区域 -->
+  <div class="main">
+    <header class="topbar">
+      <div class="crumbs">
+        <a href="eval-rule-explorer.html">评测规则</a><span class="sep">/</span>
+        <a href="eval-rule-explorer.html">提示词</a><span class="sep">/</span>
+        <span class="current mono">pedagogical_logic</span>
+      </div>
+      <div class="topbar-right"><div class="avatar">张</div></div>
+    </header>
+
+    <div class="page reveal">
+      <!-- 页头 -->
+      <div class="page-head r-1">
+        <div class="page-title">
+          <h1><span class="mono">pedagogical_logic</span> <span class="ns-badge">courseware</span> <span class="badge badge-neutral" style="font-size:12px">教学逻辑评估</span></h1>
+          <div class="sub">SOFT 维度 · LLM Judge 按结构/递进/互动 3 维独立打分（0-10），加权归一化</div>
+        </div>
+        <div class="page-actions">
+          <button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> 下载 YAML</button>
+        </div>
+      </div>
+
+      <!-- 元数据行 -->
+      <div class="meta-row r-2">
+        <span class="meta-chip"><span class="lab">version</span><span class="val">1.0</span></span>
+        <span class="meta-chip"><span class="lab">temperature</span><span class="val">0.0</span></span>
+        <span class="meta-chip"><span class="lab">seed</span><span class="val">42</span></span>
+        <span class="meta-chip"><span class="lab">num_samples</span><span class="val">3</span></span>
+        <span class="meta-chip"><span class="lab">model</span><span class="val">kimi-for-coding</span></span>
+        <span class="meta-chip"><span class="lab">content_hash</span><span class="val">sha256:7b1e…</span></span>
+      </div>
+
+      <!-- System Prompt -->
+      <div class="section-title r-2">System Prompt</div>
+      <div class="prompt-block r-2">
+        <div class="prompt-block-head">
+          <span class="label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg> system_prompt</span>
+          <span class="len">~1.8k chars · 3 维度标准</span>
+        </div>
+        <div class="prompt-content"><span class="h"># 角色</span>
+你是一位资深的教学设计评审专家，专审各类教学文档的「教学逻辑」。
+
+<span class="h"># 任务</span>
+评估一组教学文档的教学逻辑，按 3 个维度独立打分（每维 0-10），并对每个扣分点给出可溯源的证据。
+
+<span class="h"># 评审对象</span>
+输入通常是一组相互关联的教学文档（教案/讲义/导学案/学习指南/配套练习/资源说明等），
+共同服务于一次或一组教学活动。请把它们视为一个整体的教学设计评估。
+
+<span class="h"># 评分方法（强制）</span>
+1. 逐维度独立评分：先核对「观察点」，再对照「分档标准」定档定分。
+2. 就低不就高：只要命中更低档的任一条件，即归入该档。
+3. 证据先行：每个 issues 必须引用原文片段或指出位置，禁止臆测。
+4. 分级自洽：score 与 issues.severity 一致。
+
+<span class="h"># 维度评分标准</span>
+<span class="tag">## 结构完整性 structure（权重 0.4）</span>
+- 9-10：5 类环节齐全 + 环节间有明确过渡
+- 7-8：≥4 类环节，过渡基本到位
+- 5-6：仅 3 类环节，或缺练习或总结之一
+- 3-4：仅 1-2 类环节，结构明显残缺
+- 0-2：无教学结构，纯内容罗列
+
+<span class="tag">## 知识递进 progression（权重 0.3）</span>
+- 9-10：全程梯度清晰，每个抽象点都有具体铺垫
+- 5-6：存在 1 处明显认知断层
+- 0-2：无递进逻辑，知识点随机排列
+
+<span class="tag">## 互动设计 engagement（权重 0.3）</span>
+- 9-10：≥2 类有效互动，与目标匹配
+- 5-6：有互动但流于形式
+- 0-2：完全单向灌输</div>
+      </div>
+
+      <!-- User Prompt Template -->
+      <div class="section-title r-3">User Prompt Template<span class="hint">Jinja2 · 变量以 <span class="code-inline">{{ var }}</span> 高亮</span></div>
+      <div class="prompt-block r-3">
+        <div class="prompt-block-head">
+          <span class="label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg> user_prompt_template</span>
+          <span class="len">3 个变量</span>
+        </div>
+        <div class="prompt-content">请评估以下教学文档集的教学逻辑质量。
+
+<span class="h">## 文档集标题</span>
+<span class="var">{{ title }}</span>
+
+<span class="h">## 学科领域</span>
+<span class="var">{{ subject }}</span>
+
+<span class="h">## 文档内容（可能为多文档集合，或因长度受限已截断）</span>
+<span class="var">{{ content }}</span>
+
+请严格按照以下 JSON 格式输出评估结果（每个维度 score 范围 0-10）：
+
+<span class="tag">```json</span>
+{
+  <span class="var">"structure"</span>: { "score": &lt;0-10&gt;, "reason": "...", "issues": [], "highlights": [] },
+  <span class="var">"progression"</span>: { "score": &lt;0-10&gt;, "reason": "...", "issues": [], "highlights": [] },
+  <span class="var">"engagement"</span>: { "score": &lt;0-10&gt;, "reason": "...", "issues": [], "highlights": [] },
+  <span class="var">"summary"</span>: "&lt;全局评语：亮点 + 主要短板&gt;"
+}
+<span class="tag">```</span></div>
+      </div>
+
+      <!-- 变量声明 -->
+      <div class="section-title r-4">变量声明</div>
+      <div class="card r-4" style="margin-bottom:0">
+        <div class="table-wrap">
+          <table class="data vars-table">
+            <thead><tr><th>name</th><th>type</th><th>required</th><th>default</th></tr></thead>
+            <tbody>
+              <tr><td class="vname">{{ title }}</td><td class="vtype">string</td><td><span class="req-pill req-yes">required</span></td><td class="muted">—</td></tr>
+              <tr><td class="vname">{{ subject }}</td><td class="vtype">string</td><td><span class="req-pill req-yes">required</span></td><td class="muted">—</td></tr>
+              <tr><td class="vname">{{ content }}</td><td class="vtype">string</td><td><span class="req-pill req-yes">required</span></td><td class="muted">—</td></tr>
+              <tr><td class="vname">temperature</td><td class="vtype">float</td><td><span class="req-pill req-no">optional</span></td><td class="mono">0.0</td></tr>
+              <tr><td class="vname">seed</td><td class="vtype">int</td><td><span class="req-pill req-no">optional</span></td><td class="mono">42</td></tr>
+              <tr><td class="vname">num_samples</td><td class="vtype">int</td><td><span class="req-pill req-no">optional</span></td><td class="mono">3</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Output Schema -->
+      <div class="section-title r-5">Output Schema<span class="hint">JSON Schema · type: object</span></div>
+      <div class="schema-card r-5" style="margin-bottom:0">
+        <div class="schema-head"><span>评分维度（dimensions）</span> <span class="mono">· required: [structure, progression, engagement]</span></div>
+        <div class="schema-row s-head"><span>dim_id</span><span>name</span><span>weight</span><span>score_range</span><span>description</span></div>
+        <div class="schema-row">
+          <span class="pn">structure</span><span>结构完整性</span><span class="pw">0.4</span><span class="psr">[0.0, 10.0]</span><span class="pd">教学环节是否齐全，且能衔接成完整教学流程</span>
+        </div>
+        <div class="schema-row">
+          <span class="pn">progression</span><span>知识递进</span><span class="pw">0.3</span><span class="psr">[0.0, 10.0]</span><span class="pd">认知层次是否由浅入深、由具体到抽象，无断层</span>
+        </div>
+        <div class="schema-row">
+          <span class="pn">engagement</span><span>互动设计</span><span class="pw">0.3</span><span class="psr">[0.0, 10.0]</span><span class="pd">是否设计了有效的学习者参与环节</span>
+        </div>
+        <div class="schema-row">
+          <span class="pn">summary</span><span>全局评语</span><span class="pw">—</span><span class="psr">string</span><span class="pd">亮点 + 主要短板</span>
+        </div>
+      </div>
+
+      <!-- 渲染预览 -->
+      <div class="section-title r-6">渲染预览<span class="hint">使用 mock 变量值填充</span></div>
+      <div class="render-note r-6">
+        <span>变量赋值：</span>
+        <span class="render-val">title = "五年级数学·多边形的面积"</span>
+        <span class="render-val">subject = "math"</span>
+        <span class="render-val">content = "（截断）=== FILE: 教案.md === ..."</span>
+      </div>
+      <div class="prompt-block r-6">
+        <div class="prompt-block-head">
+          <span class="label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> rendered_user_prompt</span>
+          <span class="len">mock 渲染</span>
+        </div>
+        <div class="prompt-content">请评估以下教学文档集的教学逻辑质量。
+
+<span class="h">## 文档集标题</span>
+五年级数学·多边形的面积
+
+<span class="h">## 学科领域</span>
+math
+
+<span class="h">## 文档内容（可能为多文档集合，或因长度受限已截断）</span>
+（截断）=== FILE: 教案.md ===
+【教学目标】理解平行四边形/三角形/梯形面积公式推导…
+=== FILE: 配套练习.md ===
+1. 计算底 8cm 高 5cm 的平行四边形面积 …
+
+请严格按照以下 JSON 格式输出评估结果（每个维度 score 范围 0-10）…</div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="assets/ui.js"></script>
+</body>
+</html>

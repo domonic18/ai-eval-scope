@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>指标定义 — EvalScope</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  /* ── 指标卡片网格 ── */
+  .metric-defs-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  @media (max-width: 1000px){ .metric-defs-grid { grid-template-columns: 1fr; } }
+
+  /* ── 指标卡 ── */
+  .mdef { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; position: relative; overflow: hidden; transition: border-color .15s; }
+  .mdef:hover { border-color: var(--border-hover); }
+  .mdef::before { content: ''; position: absolute; top: 0; left: 16px; right: 16px; height: 1px; background: linear-gradient(90deg, transparent, var(--accent-line), transparent); opacity: 0; transition: opacity .2s; }
+  .mdef:hover::before { opacity: 1; }
+
+  .mdef-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .mdef-id { font-family: var(--mono); font-size: 12.5px; color: var(--border-focus); font-weight: 600; }
+  .mdef-name { font-size: 15px; font-weight: 650; color: var(--text-primary); margin-top: 2px; }
+  .unit-pill { font-size: 10px; padding: 2px 8px; border-radius: 100px; font-weight: 600; font-family: var(--mono); flex-shrink: 0; }
+  .unit-ratio { background: var(--accent-soft); color: var(--accent); }
+  .unit-score { background: var(--signal-soft); color: var(--signal); }
+
+  /* ── 表达式 ── */
+  .expr-block { background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 9px 12px; font-family: var(--mono); font-size: 12px; line-height: 1.5; color: var(--signal); overflow-x: auto; white-space: nowrap; }
+  .expr-block .fn { color: var(--border-focus); }
+
+  /* ── 阈值 ── */
+  .thresh-row { display: flex; align-items: center; gap: 12px; }
+  .thresh-label { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; min-width: 64px; }
+  .thresh-track { flex: 1; height: 8px; background: var(--bg-surface); border-radius: 4px; position: relative; overflow: hidden; }
+  .thresh-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; }
+  .thresh-fill.ok { background: linear-gradient(90deg, var(--success-soft), var(--success)); }
+  .thresh-marker { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--text-secondary); border-radius: 1px; }
+  .thresh-marker::after { content: ''; position: absolute; top: -4px; left: -3px; width: 8px; height: 8px; background: var(--text-secondary); border-radius: 50%; transform: scale(.6); }
+  .thresh-val { font-family: var(--mono); font-size: 12px; font-weight: 600; min-width: 70px; text-align: right; }
+  .thresh-val.has { color: var(--success); }
+  .thresh-val.none { color: var(--text-tertiary); }
+
+  /* ── 说明 ── */
+  .explain-section { border-top: 1px solid var(--border); padding-top: 12px; }
+  .explain-title { font-size: 13px; font-weight: 650; color: var(--text-primary); margin-bottom: 8px; }
+  .explain-dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 12px; }
+  .explain-dl dt { font-size: 11px; color: var(--text-tertiary); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; padding-top: 2px; }
+  .explain-dl dd { font-size: 12.5px; color: var(--text-secondary); line-height: 1.55; }
+  .explain-dl dd.tone-primary { color: var(--text-primary); }
+  .explain-dl dd.tone-danger { color: var(--danger); }
+  .explain-dl dd.tone-success { color: var(--success); }
+  .explain-dl dd .mono { color: var(--signal); }
+</style>
+</head>
+<body>
+<div class="ambient"></div>
+<div class="scanlines"></div>
+<div class="shell">
+  <!-- 侧栏 -->
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <a href="index.html" class="logo" style="margin-bottom:14px"><span class="logo-mark"><img src="assets/logo.svg" alt="" style="width:100%"></span><span class="logo-text">Eval<b>Scope</b></span></a>
+      <div class="org-switcher"><div class="org-avatar">智</div><div class="org-meta"><div class="org-name">智能教育研发组</div><div class="org-plan">Team · 5 项目</div></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+    </div>
+    <nav class="nav-section">
+      <a class="nav-item" href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> 项目看板</a>
+      <a class="nav-item" href="run-detail.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg> 全部运行</a>
+      <a class="nav-item active" href="eval-rule-explorer.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> 评测规则</a>
+      <div class="nav-label">组织</div>
+      <a class="nav-item" href="members.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg> 成员</a>
+    </nav>
+    <div class="sidebar-foot"><a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> 接入指引</a></div>
+  </aside>
+
+  <!-- 主区域 -->
+  <div class="main">
+    <header class="topbar">
+      <div class="crumbs">
+        <a href="eval-rule-explorer.html">评测规则</a><span class="sep">/</span>
+        <span class="current">指标定义</span>
+      </div>
+      <div class="topbar-right"><div class="avatar">张</div></div>
+    </header>
+
+    <div class="page reveal">
+      <!-- 页头 -->
+      <div class="page-head r-1">
+        <div class="page-title">
+          <h1>courseware 场景指标定义 <span class="badge badge-neutral" style="font-size:12px">6 项</span></h1>
+          <div class="sub">场景化指标定义（来自运行配置快照 · metric_definitions）· 4 项含达标阈值，2 项为观测指标</div>
+        </div>
+        <div class="page-actions">
+          <div class="segment">
+            <button class="active">全部 6</button>
+            <button>达标指标 4</button>
+            <button>观测指标 2</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 指标卡片网格 -->
+      <div class="metric-defs-grid">
+        <!-- 1. DR -->
+        <div class="mdef r-2">
+          <div class="mdef-head">
+            <div>
+              <div class="mdef-id">courseware:document_rate</div>
+              <div class="mdef-name">DR · 交付率</div>
+            </div>
+            <span class="unit-pill unit-ratio">ratio</span>
+          </div>
+          <div class="expr-block"><span class="fn">count</span>(format_gate) <span class="fn">/</span> total</div>
+          <div class="thresh-row">
+            <span class="thresh-label">阈值</span>
+            <div class="thresh-track"><span class="thresh-fill ok" style="width:95%"></span><span class="thresh-marker" style="left:95%"></span></div>
+            <span class="thresh-val has">≥ 0.95</span>
+          </div>
+          <div class="explain-section">
+            <div class="explain-title">DR · Delivery Rate 交付率</div>
+            <dl class="explain-dl">
+              <dt>定义</dt><dd class="tone-primary">能正常打开、格式符合基本要求的样本占多少——连格式都不对就没法使用。</dd>
+              <dt>计算</dt><dd><span class="mono">count(format_gate)</span> / total</dd>
+              <dt>标准</dt><dd class="tone-danger">达标线 ≥ 0.95（即 95%）；低于则这批整体不合格。</dd>
+            </dl>
+          </div>
+        </div>
+
+        <!-- 2. CPR -->
+        <div class="mdef r-2">
+          <div class="mdef-head">
+            <div>
+              <div class="mdef-id">courseware:constraint_pass_rate</div>
+              <div class="mdef-name">CPR · 约束通过率</div>
+            </div>
+            <span class="unit-pill unit-ratio">ratio</span>
+          </div>
+          <div class="expr-block"><span class="fn">count</span>(<span class="fn">both</span>(format_gate, commonsense_gate)) <span class="fn">/</span> total</div>
+          <div class="thresh-row">
+            <span class="thresh-label">阈值</span>
+            <div class="thresh-track"><span class="thresh-fill ok" style="width:90%"></span><span class="thresh-marker" style="left:90%"></span></div>
+            <span class="thresh-val has">≥ 0.90</span>
+          </div>
+          <div class="explain-section">
+            <div class="explain-title">CPR · Constraint Pass Rate 约束通过率</div>
+            <dl class="explain-dl">
+              <dt>定义</dt><dd class="tone-primary">格式 + 常识双门控都通过的样本占比——内容基本正确、无明显硬伤。</dd>
+              <dt>计算</dt><dd><span class="mono">count(both(format_gate, commonsense_gate))</span> / total</dd>
+              <dt>标准</dt><dd class="tone-danger">达标线 ≥ 0.90；低于则存在较多常识性错误。</dd>
+            </dl>
+          </div>
+        </div>
+
+        <!-- 3. Reward -->
+        <div class="mdef r-3">
+          <div class="mdef-head">
+            <div>
+              <div class="mdef-id">courseware:reward</div>
+              <div class="mdef-name">Reward · 综合评分</div>
+            </div>
+            <span class="unit-pill unit-score">score</span>
+          </div>
+          <div class="expr-block"><span class="fn">mean</span>(reward)</div>
+          <div class="thresh-row">
+            <span class="thresh-label">阈值</span>
+            <div class="thresh-track"><span class="thresh-fill ok" style="width:70%"></span><span class="thresh-marker" style="left:70%"></span></div>
+            <span class="thresh-val has">≥ 0.70</span>
+          </div>
+          <div class="explain-section">
+            <div class="explain-title">Reward · 综合评分</div>
+            <dl class="explain-dl">
+              <dt>定义</dt><dd class="tone-primary">归一化到 [0,1] 的综合质量分，融合门控与软/偏好质量。</dd>
+              <dt>计算</dt><dd><span class="mono">(S_format + S_common + S_soft + S_pref) / 4</span></dd>
+              <dt>标准</dt><dd class="tone-success">达标线 ≥ 0.70；综合质量合格。</dd>
+            </dl>
+          </div>
+        </div>
+
+        <!-- 4. Soft -->
+        <div class="mdef r-3">
+          <div class="mdef-head">
+            <div>
+              <div class="mdef-id">courseware:soft</div>
+              <div class="mdef-name">Soft · 内容质量</div>
+            </div>
+            <span class="unit-pill unit-score">score</span>
+          </div>
+          <div class="expr-block"><span class="fn">mean</span>(s_soft)</div>
+          <div class="thresh-row">
+            <span class="thresh-label">阈值</span>
+            <div class="thresh-track"></div>
+            <span class="thresh-val none">— 无</span>
+          </div>
+          <div class="explain-section">
+            <div class="explain-title">Soft · 内容质量分</div>
+            <dl class="explain-dl">
+              <dt>定义</dt><dd class="tone-primary">教学逻辑、内容多样性等软约束维度的平均得分（独立指标，不混入 Reward）。</dd>
+              <dt>范围</dt><dd><span class="mono">[0, 1]</span>，越高越好</dd>
+            </dl>
+          </div>
+        </div>
+
+        <!-- 5. Pref -->
+        <div class="mdef r-4">
+          <div class="mdef-head">
+            <div>
+              <div class="mdef-id">courseware:pref</div>
+              <div class="mdef-name">Pref · 用户偏好</div>
+            </div>
+            <span class="unit-pill unit-score">score</span>
+          </div>
+          <div class="expr-block"><span class="fn">mean</span>(s_pref)</div>
+          <div class="thresh-row">
+            <span class="thresh-label">阈值</span>
+            <div class="thresh-track"></div>
+            <span class="thresh-val none">— 无</span>
+          </div>
+          <div class="explain-section">
+            <div class="explain-title">Pref · 用户偏好分</div>
+            <dl class="explain-dl">
+              <dt>定义</dt><dd class="tone-primary">风格、深度、需求满足度等偏好维度的平均得分（独立指标）。</dd>
+              <dt>范围</dt><dd><span class="mono">[0, 1]</span>，越高越好</dd>
+            </dl>
+          </div>
+        </div>
+
+        <!-- 6. CondR -->
+        <div class="mdef r-4">
+          <div class="mdef-head">
+            <div>
+              <div class="mdef-id">courseware:conditional_reward</div>
+              <div class="mdef-name">CondR · 条件 Reward</div>
+            </div>
+            <span class="unit-pill unit-score">score</span>
+          </div>
+          <div class="expr-block"><span class="fn">gated_mean</span>(reward, format_gate, commonsense_gate)</div>
+          <div class="thresh-row">
+            <span class="thresh-label">阈值</span>
+            <div class="thresh-track"></div>
+            <span class="thresh-val none">— 无</span>
+          </div>
+          <div class="explain-section">
+            <div class="explain-title">CondR · Conditional Reward</div>
+            <dl class="explain-dl">
+              <dt>定义</dt><dd class="tone-primary">仅统计通过双门控样本的 Reward 均值——排除格式/常识失败后的真实质量。</dd>
+              <dt>范围</dt><dd><span class="mono">[0, 1]</span></dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-info r-5" style="margin-top:20px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <div>指标定义来自 <span class="code-inline">metrics/policy.yaml</span>，与运行配置快照绑定（不可变）。达标指标（DR / CPR / Reward）决定运行是否「合格」；Soft / Pref / CondR 为观测指标，仅记录水位不参与达标判定。</div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="assets/ui.js"></script>
+</body>
+</html>
