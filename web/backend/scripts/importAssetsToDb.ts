@@ -43,16 +43,19 @@ export async function importCoursewarePackage(
   prisma: PrismaClient,
   packageDir: string = defaultPackageDir(),
 ): Promise<ImportResult> {
-  // 写入场景默认指标定义（单一源 coursewareDefaults.ts → DB；前端 GET /scenarios/:id/defaults 取）
-  const { COURSEWARE_DEFAULT_METRIC_DEFS } = await import("../src/config/coursewareDefaults")
+  // #60：从包内 metrics/policy.yaml 读取指标定义（跨语言单一源），写入 DB
+  const policyPath = join(packageDir, "metrics", "policy.yaml")
+  const policy = loadYaml(policyPath) as {
+    metric_definitions: Record<string, unknown>[]
+  }
   await prisma.scenario.upsert({
     where: { id: SCENARIO_ID },
-    update: { defaultMetricDefinitions: COURSEWARE_DEFAULT_METRIC_DEFS as never },
+    update: { defaultMetricDefinitions: policy.metric_definitions as never },
     create: {
       id: SCENARIO_ID,
       name: "课件质量评估",
       description: "课件生成场景默认包",
-      defaultMetricDefinitions: COURSEWARE_DEFAULT_METRIC_DEFS as never,
+      defaultMetricDefinitions: policy.metric_definitions as never,
     },
   })
 
