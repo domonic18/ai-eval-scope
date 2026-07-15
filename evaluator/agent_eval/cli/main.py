@@ -385,10 +385,12 @@ def upload(
     from agent_eval.evaluation.models import SampleResult
     from agent_eval.observability import ResultSink, load_config
     from agent_eval.observability.events import (
+        build_artifact_event,
         build_constraint_event,
         build_run_event,
         build_sample_event,
     )
+    from agent_eval.observability.sink import SinkReport
 
     run_dir = Path(workspace).resolve() / "runs" / run
     if not run_dir.exists():
@@ -458,8 +460,100 @@ def upload(
                     )
             sample_count += 1
 
-    rprint(f"[blue]回填:[/blue] 运行 {run}，样本 {sample_count}，事件 {len(events)}")
+    # ── artifacts: 扫描 evidence/ 目录上传截图 + judge 记录；扫描 package 上传原始文件 ──
+    run_id_str = summary.get("run_id", run)
     sink = ResultSink(cfg)
+    art_report = SinkReport(enabled=True)
+    artifact_count = 0
+
+    # 从 run_manifest 获取 package_dir（原始课件文件所在）
+    manifest_path = run_dir / "run_manifest.json"
+    package_dir_str = ""
+    if manifest_path.exists():
+        package_dir_str = _json.loads(manifest_path.read_text(encoding="utf-8")).get(
+            "package_dir", ""
+        )
+
+    if results_dir.exists():
+        for task_dir in sorted(p for p in results_dir.iterdir() if p.is_dir()):
+            report_path = task_dir / "report.json"
+            if not report_path.exists():
+                continue
+            try:
+                sample = SampleResult.from_dict(
+                    _json.loads(report_path.read_text(encoding="utf-8"))
+                )
+            except Exception:
+                continue
+
+            evidence_dir = task_dir / "evidence"
+            if evidence_dir.exists():
+                # 截图（.png）
+                for shot in sorted(evidence_dir.glob("*.png")):
+                    ok_obj = sink._upload_artifact(
+                        shot,
+                        external_run_id=run_id_str,
+                        external_sample_id=sample.sample_id,
+                        kind="screenshot",
+                        content_type="image/png",
+                        original_name=shot.name,
+                        report=art_report,
+                    )
+                    if ok_obj:
+                        events.append(
+                            build_artifact_event(
+                                external_run_id=run_id_str,
+                                external_sample_id=sample.sample_id,
+                                kind="screenshot",
+                                object_key=ok_obj,
+                                content_type="image/png",
+                                size_bytes=shot.stat().st_size,
+                                original_name=shot.name,
+                            )
+                        )
+                        artifact_count += 1
+                # judge 记录（judge_*.json）
+                for jf in sorted(evidence_dir.glob("judge_*.json")):
+                    ok_obj = sink._upload_artifact(
+                        jf,
+                        external_run_id=run_id_str,
+                        external_sample_id=sample.sample_id,
+                        kind="judge_record",
+                        content_type="application/json",
+                        original_name=jf.name,
+                        report=art_report,
+                    )
+                    if ok_obj:
+                        events.append(
+                            build_artifact_event(
+                                external_run_id=run_id_str,
+                                external_sample_id=sample.sample_id,
+                                kind="judge_record",
+                                object_key=ok_obj,
+                                content_type="application/json",
+                                size_bytes=jf.stat().st_size,
+                                original_name=jf.name,
+                            )
+                        )
+                        artifact_count += 1
+
+            # 原始课件文件（从 package_dir 扫描 HTML/MD）
+            if package_dir_str:
+                pkg = Path(package_dir_str)
+                if pkg.exists():
+                    src_events = sink._upload_source_files(
+                        pkg,
+                        run_id_str,
+                        sample.sample_id,
+                        art_report,
+                    )
+                    events.extend(src_events)
+                    artifact_count += len(src_events)
+
+    rprint(
+        f"[blue]回填:[/blue] 运行 {run}，样本 {sample_count}，"
+        f"事件 {len(events)}（含 {artifact_count} 制品）"
+    )
     sent, queued = sink.dispatch(events)
     rprint(f"[green]✓ 回填完成[/green] 已发送 {sent}、入队 {queued}")
 
