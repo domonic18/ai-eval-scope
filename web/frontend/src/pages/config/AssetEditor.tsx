@@ -73,6 +73,8 @@ export default function AssetEditor() {
     api
       .assetContent(id, kind, assetId)
       .then((c) => {
+        // 数据集 role 不在 content 内（在 DB DatasetAsset.role 列），补充默认值
+        if (kind === "datasets" && !c.role) c.role = "reference"
         setContent(c)
         setYamlText(yaml.dump(c, { sortKeys: false }))
       })
