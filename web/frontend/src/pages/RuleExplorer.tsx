@@ -5,6 +5,28 @@
  * 和 /scenarios/:id/defaults。只读查看（非编辑），用于理解评测如何运作。
  */
 
+/* 行业最佳实践滚动条：深色模式下高对比、宽 8px、带 track 背景 */
+<style>{`
+  .scroll-area {
+    scrollbar-width: auto;
+    scrollbar-color: #4a5060 var(--bg-inset);
+  }
+  .scroll-area::-webkit-scrollbar { width: 8px; height: 8px; }
+  .scroll-area::-webkit-scrollbar-track {
+    background: var(--bg-inset);
+    border-radius: 4px;
+  }
+  .scroll-area::-webkit-scrollbar-thumb {
+    background: #3a3f4b;
+    border-radius: 4px;
+    border: 1px solid #4a5060;
+  }
+  .scroll-area::-webkit-scrollbar-thumb:hover {
+    background: #565c6a;
+  }
+  .scroll-area::-webkit-scrollbar-corner { background: var(--bg-inset); }
+`}</style>
+
 import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 import { useCrumbs } from "../components/AppShell"
@@ -339,7 +361,7 @@ function DatasetDetail({ scenarioId, assetId }: { scenarioId: string; assetId: s
         <Card>
           <CardHeader><CardTitle className="text-sm">常量/公式（{constants.length}）</CardTitle></CardHeader>
           <CardContent>
-            <div className="max-h-80 space-y-1 overflow-y-auto">
+            <div className="scroll-area max-h-[280px] space-y-1 overflow-y-auto pr-1">
               {constants.map((c: any, i: number) => (
                 <div key={i} className="flex items-start gap-3 border-t py-2 text-sm first:border-t-0">
                   <span className="min-w-0 flex-1 truncate">{c.name}</span>
@@ -356,7 +378,7 @@ function DatasetDetail({ scenarioId, assetId }: { scenarioId: string; assetId: s
         <Card>
           <CardHeader><CardTitle className="text-sm">常见误区（{misconceptions.length}）</CardTitle></CardHeader>
           <CardContent>
-            <div className="max-h-80 space-y-1 overflow-y-auto">
+            <div className="scroll-area max-h-[280px] space-y-1 overflow-y-auto pr-1">
               {misconceptions.map((m: any, i: number) => (
                 <div key={i} className="flex items-start gap-3 border-t py-2 text-sm first:border-t-0">
                   <Badge variant={m.severity === "error" ? "destructive" : "secondary"} className="shrink-0 text-[10px]">
@@ -513,7 +535,7 @@ function CodeBlock({ label, content, highlightVars }: { label: string; content: 
     <Card>
       <CardHeader><CardTitle className="text-sm">{label}</CardTitle></CardHeader>
       <CardContent>
-        <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded bg-muted/30 p-3 font-mono text-xs leading-relaxed text-muted-foreground">
+        <pre className="scroll-area max-h-[400px] overflow-auto whitespace-pre-wrap rounded bg-muted/30 p-3 font-mono text-xs leading-relaxed text-muted-foreground">
           {highlightVars
             ? content.replace(/\{\{[^}]+\}\}/g, (m) => `${m}`).split("\n").map((line, i) => (
                 <span key={i}>
