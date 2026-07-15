@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>提示词编辑器 · pedagogical_logic — EvalScope</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  /* ── 元数据栏 ── */
+  .meta-bar { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 14px 18px; margin-bottom: 18px; display: flex; flex-direction: column; gap: 12px; }
+  .meta-row1 { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+  .mi { display: flex; flex-direction: column; gap: 3px; }
+  .mi .lab { font-size: 10.5px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: .04em; }
+  .mi .val { font-family: var(--mono); font-weight: 600; font-size: 13.5px; }
+  .mi .input { padding: 6px 10px; font-size: 13px; min-width: 160px; }
+  .ns-badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 100px; font-size: 11.5px; font-weight: 600; background: var(--accent-soft); color: var(--accent); }
+  .ver-badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 100px; font-size: 11.5px; font-weight: 600; background: var(--warning-soft); color: var(--warning); }
+  .param-row { display: flex; gap: 18px; flex-wrap: wrap; padding-top: 12px; border-top: 1px solid var(--border); }
+  .param { display: flex; flex-direction: column; gap: 3px; }
+  .param .lab { font-size: 10.5px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: .04em; }
+  .param .input { width: 110px; padding: 5px 9px; font-family: var(--mono); font-size: 12.5px; }
+
+  /* ── 拆分编辑器 ── */
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 1100px){ .split { grid-template-columns: 1fr; } }
+  .pane { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; display: flex; flex-direction: column; }
+  .pane-head { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .pane-head h3 { font-size: 13px; font-weight: 650; display: flex; align-items: center; gap: 7px; }
+  .pane-head .len { font-family: var(--mono); font-size: 11px; color: var(--text-tertiary); }
+  .pane-body { padding: 16px; }
+
+  /* 编辑器 tab */
+  .tab-bar { display: flex; gap: 2px; }
+  .tab-btn { padding: 6px 12px; font-size: 12.5px; color: var(--text-secondary); border: none; border-bottom: 2px solid transparent; cursor: pointer; font-family: inherit; background: none; transition: all .12s; }
+  .tab-btn:hover { color: var(--text-primary); }
+  .tab-btn.active { color: var(--text-primary); border-bottom-color: var(--border-focus); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* 可编辑代码块 */
+  .prompt-edit { background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--r-md); padding: 14px 16px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8; color: var(--text-secondary); white-space: pre-wrap; min-height: 240px; outline: none; transition: border-color .15s var(--ease), box-shadow .15s var(--ease); }
+  .prompt-edit:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .prompt-edit .var { color: var(--border-focus); }
+  .prompt-edit .tag { color: var(--signal); }
+  .prompt-edit .h { color: var(--text-primary); font-weight: 600; }
+  textarea.prompt-edit { resize: vertical; width: 100%; }
+
+  /* 变量表单 */
+  .var-form { display: flex; flex-direction: column; gap: 9px; margin-bottom: 14px; }
+  .var-field { display: grid; grid-template-columns: 110px 1fr; gap: 10px; align-items: center; }
+  .var-field .vname { font-family: var(--mono); font-size: 12px; color: var(--border-focus); display: flex; align-items: center; gap: 5px; }
+  .var-field .vtype { font-family: var(--mono); font-size: 10px; color: var(--text-tertiary); }
+
+  /* 渲染预览卡 */
+  .render-card { background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--r-md); padding: 14px 16px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8; color: var(--text-secondary); white-space: pre-wrap; min-height: 180px; }
+  .render-card .h { color: var(--text-primary); font-weight: 600; }
+
+  /* ── 可折叠区块 ── */
+  .collapsible { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; margin-top: 18px; }
+  .collapsible-head { padding: 13px 18px; display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; user-select: none; }
+  .collapsible-head h3 { font-size: 13.5px; font-weight: 650; display: flex; align-items: center; gap: 8px; }
+  .collapsible-head .chev { transition: transform .15s var(--ease); color: var(--text-tertiary); }
+  .collapsible.open .chev { transform: rotate(90deg); }
+  .collapsible-body { display: none; padding: 0 18px 18px; border-top: 1px solid var(--border); }
+  .collapsible.open .collapsible-body { display: block; }
+
+  /* schema 表 */
+  .schema-row { display: grid; grid-template-columns: 140px 1fr 90px 130px 60px; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--border); font-size: 12.5px; align-items: center; }
+  .schema-row.s-head { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-tertiary); background: var(--bg-surface); padding: 9px 16px; }
+  .schema-row:last-child { border-bottom: none; }
+  .schema-row .pn { font-family: var(--mono); font-weight: 600; color: var(--border-focus); }
+  .schema-row .pt { font-family: var(--mono); color: var(--signal); font-size: 11.5px; }
+  .schema-row .pw { font-family: var(--mono); color: var(--text-secondary); }
+  .schema-row .psr { font-family: var(--mono); color: var(--warning); font-size: 11.5px; }
+  .req-pill { font-size: 10px; padding: 1px 6px; border-radius: 3px; font-weight: 600; font-family: var(--mono); }
+  .req-yes { background: var(--danger-soft); color: var(--danger); }
+  .req-no { background: var(--bg-surface); color: var(--text-tertiary); }
+
+  /* ── 版本时间线（底部网格） ── */
+  .version-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+  .version-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: 12px 13px; transition: border-color .12s; }
+  .version-card:hover { border-color: var(--border-hover); }
+  .version-card.active { border-color: var(--accent-line); box-shadow: 0 0 0 1px var(--accent-line); background: linear-gradient(180deg, var(--accent-soft), var(--bg-surface)); }
+  .vc-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+  .vc-ver { font-family: var(--mono); font-size: 13px; font-weight: 700; }
+  .vc-labels { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+  .lbl { font-size: 9.5px; padding: 1px 6px; border-radius: 3px; font-weight: 600; font-family: var(--mono); }
+  .lbl-prod { background: var(--success-soft); color: var(--success); }
+  .lbl-staging { background: var(--warning-soft); color: var(--warning); }
+  .lbl-latest { background: var(--info-soft); color: var(--info); }
+  .vc-hash { font-family: var(--mono); font-size: 11px; color: var(--text-tertiary); }
+  .vc-time { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+  .vc-actions { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 9px; }
+  .vc-btn { font-size: 10.5px; padding: 3px 8px; border-radius: var(--r-xs); border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text-secondary); cursor: pointer; transition: all .12s; font-family: inherit; white-space: nowrap; }
+  .vc-btn:hover { border-color: var(--border-hover); color: var(--text-primary); }
+  .vc-btn.promote { color: var(--accent); }
+  .vc-btn.promote:hover { background: var(--accent-soft); border-color: var(--accent-line); }
+
+  /* diff */
+  .diff-grid { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; margin-top: 14px; }
+  .diff-side-head { padding: 8px 14px; background: var(--bg-surface); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: .04em; }
+  .diff-side-head + .diff-side-head { border-left: 1px solid var(--border); }
+  .diff-side { padding: 12px 14px; font-family: var(--mono); font-size: 11.5px; line-height: 1.75; white-space: pre; overflow-x: auto; border-left: 1px solid var(--border); }
+  .diff-side:first-of-type { border-left: none; }
+  .diff-line.add { background: rgba(63,185,80,.1); color: #7ee090; }
+  .diff-line.del { background: rgba(248,81,73,.1); color: #ff8b84; }
+  .diff-line.ctx { color: var(--text-tertiary); }
+  .diff-mark { display: inline-block; width: 14px; color: var(--text-quaternary); }
+  .dirty-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--warning); box-shadow: 0 0 0 3px var(--warning-soft); }
+</style>
+</head>
+<body>
+<div class="ambient"></div>
+<div class="scanlines"></div>
+<div class="shell">
+  <!-- 侧栏 -->
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <a href="index.html" class="logo" style="margin-bottom:14px"><span class="logo-mark"><img src="assets/logo.svg" alt="" style="width:100%"></span><span class="logo-text">Eval<b>Scope</b></span></a>
+      <div class="org-switcher"><div class="org-avatar">智</div><div class="org-meta"><div class="org-name">智能教育研发组</div><div class="org-plan">Team · 5 项目</div></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+    </div>
+    <nav class="nav-section">
+      <a class="nav-item" href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> 项目看板</a>
+      <a class="nav-item" href="run-detail.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg> 全部运行</a>
+      <a class="nav-item active" href="eval-rule-explorer.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> 评测规则</a>
+      <div class="nav-label">组织</div>
+      <a class="nav-item" href="members.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg> 成员</a>
+    </nav>
+    <div class="sidebar-foot"><a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> 接入指引</a></div>
+  </aside>
+
+  <!-- 主区域 -->
+  <div class="main">
+    <header class="topbar">
+      <div class="crumbs">
+        <a href="#">配置中心</a><span class="sep">/</span>
+        <a href="#">courseware</a><span class="sep">/</span>
+        <span class="current">提示词 · <span class="mono">pedagogical_logic</span></span>
+      </div>
+      <div class="topbar-right">
+        <span class="row" style="font-size:12px;color:var(--text-tertiary)"><span class="dirty-dot"></span> 有未保存改动</span>
+        <button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> 保存草稿</button>
+        <button class="btn btn-primary" onclick="openPublish()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> 发布</button>
+        <div class="avatar">张</div>
+      </div>
+    </header>
+
+    <div class="page reveal">
+      <!-- 元数据栏 -->
+      <div class="meta-bar r-1">
+        <div class="meta-row1">
+          <div class="mi"><span class="lab">template_id</span><input class="input mono" value="pedagogical_logic"></div>
+          <div class="mi"><span class="lab">name</span><input class="input" value="教学逻辑评估"></div>
+          <div class="mi"><span class="lab">namespace</span><span class="ns-badge">courseware</span></div>
+          <div class="mi"><span class="lab">version</span><span class="ver-badge">v1.1 · draft</span></div>
+          <div class="mi"><span class="lab">content_hash</span><span class="val mono" style="color:var(--text-tertiary)">sha256:8c2f…</span></div>
+        </div>
+        <div class="param-row">
+          <div class="param"><span class="lab">temperature</span><input class="input" value="0.0"></div>
+          <div class="param"><span class="lab">seed</span><input class="input" value="42"></div>
+          <div class="param"><span class="lab">num_samples</span><input class="input" value="3"></div>
+          <div class="param"><span class="lab">model</span><input class="input" value="kimi-for-coding"></div>
+        </div>
+      </div>
+
+      <!-- 拆分编辑 + 预览 -->
+      <div class="split r-2">
+        <!-- 编辑器 -->
+        <div class="pane">
+          <div class="pane-head">
+            <div class="tab-bar">
+              <button class="tab-btn active" onclick="switchPromptTab(event,'sys')">System Prompt</button>
+              <button class="tab-btn" onclick="switchPromptTab(event,'usr')">User Template</button>
+            </div>
+            <span class="len" id="editLen">~1.8k chars</span>
+          </div>
+          <div class="pane-body">
+            <div class="tab-panel active" id="ptab-sys">
+              <textarea class="prompt-edit" spellcheck="false"># 角色
+你是一位资深的教学设计评审专家，专审各类教学文档的「教学逻辑」。
+
+# 任务
+评估一组教学文档的教学逻辑，按 3 个维度独立打分（每维 0-10），并对每个扣分点给出可溯源的证据。
+
+# 评分方法（强制）
+1. 逐维度独立评分：先核对「观察点」，再对照「分档标准」定档定分。
+2. 就低不就高：只要命中更低档的任一条件，即归入该档。
+3. 证据先行：每个 issues 必须引用原文片段或指出位置，禁止臆测。
+4. 分级自洽：score 与 issues.severity 一致。</textarea>
+            </div>
+            <div class="tab-panel" id="ptab-usr">
+              <div class="callout callout-info" style="margin-bottom:10px;font-size:12px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg><div>Jinja2 模板 · <span class="code-inline">{{ var }}</span> 高亮为蓝色，右侧实时渲染预览。</div></div>
+              <div class="prompt-edit" contenteditable="true" spellcheck="false">请评估以下教学文档集的教学逻辑质量。
+
+<span class="h">## 文档集标题</span>
+<span class="var">{{ title }}</span>
+
+<span class="h">## 学科领域</span>
+<span class="var">{{ subject }}</span>
+
+<span class="h">## 文档内容（可能为多文档集合，或因长度受限已截断）</span>
+<span class="var">{{ content }}</span>
+
+请严格按照以下 JSON 格式输出评估结果（每个维度 score 范围 0-10）：
+
+<span class="tag">```json</span>
+{
+  <span class="var">"structure"</span>: { "score": &lt;0-10&gt;, "reason": "...", "issues": [] },
+  <span class="var">"progression"</span>: { "score": &lt;0-10&gt;, "reason": "...", "issues": [] },
+  <span class="var">"engagement"</span>: { "score": &lt;0-10&gt;, "reason": "...", "issues": [] },
+  <span class="var">"summary"</span>: "&lt;全局评语&gt;"
+}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 渲染预览 -->
+        <div class="pane">
+          <div class="pane-head">
+            <h3><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> 渲染预览</h3>
+            <button class="btn btn-sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> 刷新预览</button>
+          </div>
+          <div class="pane-body">
+            <div style="font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">变量赋值（自动检测 3 个变量）</div>
+            <div class="var-form">
+              <div class="var-field"><span class="vname">{{ title }} <span class="vtype">string</span></span><input class="input" value="五年级数学·多边形的面积"></div>
+              <div class="var-field"><span class="vname">{{ subject }} <span class="vtype">string</span></span><input class="input" value="math"></div>
+              <div class="var-field"><span class="vname">{{ content }} <span class="vtype">string</span></span><input class="input" value="（截断）=== FILE: 教案.md === 【教学目标】理解平行四边形/三角形/梯形面积公式推导…"></div>
+            </div>
+            <div style="font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;margin-top:14px">rendered_user_prompt</div>
+            <div class="render-card">请评估以下教学文档集的教学逻辑质量。
+
+<span class="h">## 文档集标题</span>
+五年级数学·多边形的面积
+
+<span class="h">## 学科领域</span>
+math
+
+<span class="h">## 文档内容（可能为多文档集合，或因长度受限已截断）</span>
+（截断）=== FILE: 教案.md ===
+【教学目标】理解平行四边形/三角形/梯形面积公式推导…
+
+请严格按照以下 JSON 格式输出评估结果（每个维度 score 范围 0-10）…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Output Schema 查看器（可折叠） -->
+      <div class="collapsible open r-3">
+        <div class="collapsible-head" onclick="toggleCollapsible(this)">
+          <h3><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg> 输出 Schema（JSON Schema）<span class="hint" style="font-size:12px;color:var(--text-tertiary);font-weight:400">type: object · 4 属性</span></h3>
+          <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div class="collapsible-body" style="padding:16px 18px 18px">
+          <div style="border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden">
+            <div class="schema-row s-head"><span>property</span><span>description</span><span>type</span><span>score_range / items</span><span>required</span></div>
+            <div class="schema-row"><span class="pn">structure</span><span>结构完整性 · 教学环节是否齐全且能衔接成完整教学流程</span><span class="pt">object</span><span class="psr">score [0,10]</span><span><span class="req-pill req-yes">required</span></span></div>
+            <div class="schema-row"><span class="pn">progression</span><span>知识递进 · 认知层次由浅入深，无断层</span><span class="pt">object</span><span class="psr">score [0,10]</span><span><span class="req-pill req-yes">required</span></span></div>
+            <div class="schema-row"><span class="pn">engagement</span><span>互动设计 · 是否设计了有效的学习者参与环节</span><span class="pt">object</span><span class="psr">score [0,10]</span><span><span class="req-pill req-yes">required</span></span></div>
+            <div class="schema-row"><span class="pn">summary</span><span>全局评语 · 亮点 + 主要短板</span><span class="pt">string</span><span class="pw">—</span><span><span class="req-pill req-yes">required</span></span></div>
+            <div class="schema-row" style="background:var(--bg-surface)"><span class="pn" style="grid-column:span 5">issues[] （嵌套数组 · 每个维度对象内）</span></div>
+            <div class="schema-row"><span class="pn" style="padding-left:24px">→ severity</span><span>问题严重度</span><span class="pt">enum</span><span class="pw">blocker|major|minor</span><span><span class="req-pill req-yes">required</span></span></div>
+            <div class="schema-row"><span class="pn" style="padding-left:24px">→ evidence</span><span>原文片段引用（可溯源）</span><span class="pt">string</span><span class="pw">—</span><span><span class="req-pill req-yes">required</span></span></div>
+            <div class="schema-row"><span class="pn" style="padding-left:24px">→ reason</span><span>扣分理由</span><span class="pt">string</span><span class="pw">—</span><span><span class="req-pill req-no">optional</span></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 版本时间线（可折叠底部） -->
+      <div class="collapsible r-4">
+        <div class="collapsible-head" onclick="toggleCollapsible(this)">
+          <h3><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> 版本时间线 <span class="hint" style="font-size:12px;color:var(--text-tertiary);font-weight:400">4 个版本</span></h3>
+          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openPublish()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> 发布新版本</button>
+        </div>
+        <div class="collapsible-body" style="padding:16px 18px 18px">
+          <div class="version-grid">
+            <div class="version-card active">
+              <div class="vc-top"><span class="vc-ver">v1.1 <span class="mono" style="color:var(--warning);font-weight:500">· draft</span></span><span class="vc-labels"><span class="lbl" style="background:var(--warning-soft);color:var(--warning)">编辑中</span></span></div>
+              <div class="vc-hash">sha256:8c2f4a1b…</div>
+              <div class="vc-time">改动：engagement 维度评分标准微调</div>
+            </div>
+            <div class="version-card">
+              <div class="vc-top"><span class="vc-ver">v1.0</span><span class="vc-labels"><span class="lbl lbl-prod">production</span><span class="lbl lbl-latest">latest</span></span></div>
+              <div class="vc-hash">sha256:7b1e9d3c…</div>
+              <div class="vc-time">2 个月前 · 2026-05-12</div>
+              <div class="vc-actions"><button class="vc-btn" onclick="openDiff(this)">对比</button><button class="vc-btn promote">晋升 staging</button></div>
+            </div>
+            <div class="version-card">
+              <div class="vc-top"><span class="vc-ver">v0.9</span><span class="vc-labels"><span class="lbl lbl-staging">staging</span></span></div>
+              <div class="vc-hash">sha256:6a0d2f51…</div>
+              <div class="vc-time">3 个月前 · 2026-04-22</div>
+              <div class="vc-actions"><button class="vc-btn" onclick="openDiff(this)">对比</button><button class="vc-btn promote">晋升 production</button></div>
+            </div>
+            <div class="version-card">
+              <div class="vc-top"><span class="vc-ver">v0.8</span><span class="vc-labels"></span></div>
+              <div class="vc-hash">sha256:4f8c1e7a…</div>
+              <div class="vc-time">4 个月前 · 2026-03-10</div>
+              <div class="vc-actions"><button class="vc-btn" onclick="openDiff(this)">对比</button><button class="vc-btn promote">晋升 latest</button></div>
+            </div>
+          </div>
+
+          <div id="diffWrap" style="display:none;margin-top:16px">
+            <div class="spread" style="margin-bottom:8px"><span class="mono" style="font-size:12.5px;color:var(--text-secondary)">v1.0.0 <span class="muted">→ 当前草稿 (v1.1)</span></span><button class="btn btn-sm" onclick="closeDiff()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> 关闭对比</button></div>
+            <div class="diff-grid">
+              <div>
+                <div class="diff-side-head">v1.0 · production</div>
+                <div class="diff-side"><span class="diff-line ctx"><span class="diff-mark"> </span>## 互动设计 engagement（权重 0.3）</span>
+<span class="diff-line del"><span class="diff-mark">-</span>- 9-10：≥2 类有效互动</span>
+<span class="diff-line del"><span class="diff-mark">-</span>- 5-6：有互动但流于形式</span>
+<span class="diff-line ctx"><span class="diff-mark"> </span>- 0-2：完全单向灌输</span></div>
+              </div>
+              <div>
+                <div class="diff-side-head">当前草稿 · v1.1</div>
+                <div class="diff-side"><span class="diff-line ctx"><span class="diff-mark"> </span>## 互动设计 engagement（权重 0.3）</span>
+<span class="diff-line add"><span class="diff-mark">+</span>- 9-10：≥2 类有效互动，且与目标匹配</span>
+<span class="diff-line add"><span class="diff-mark">+</span>- 5-6：有互动但流于形式，或仅 1 类</span>
+<span class="diff-line ctx"><span class="diff-mark"> </span>- 0-2：完全单向灌输</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 发布 Modal -->
+<div class="scrim" id="publishScrim" style="display:none">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <h2>发布新版本</h2>
+      <p>将当前草稿发布为不可变版本，并绑定标签。</p>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>版本号</label>
+        <input class="input mono" value="1.1.0">
+        <div class="help">遵循语义化版本（semver）。</div>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label>标签（可多选）</label>
+        <div class="row" style="gap:10px;flex-wrap:wrap">
+          <label class="toggle" style="display:inline-flex;align-items:center;gap:7px"><input type="checkbox"><span style="width:30px;height:17px;border-radius:10px;background:var(--bg-inset);border:1px solid var(--border);position:relative;display:inline-block"></span><span style="font-size:11px;color:var(--success)">production</span></label>
+          <label class="toggle" style="display:inline-flex;align-items:center;gap:7px"><input type="checkbox" checked><span style="width:30px;height:17px;border-radius:10px;background:var(--warning-soft);border:1px solid rgba(210,153,34,.4);position:relative;display:inline-block"></span><span style="font-size:11px;color:var(--warning)">staging</span></label>
+          <label class="toggle" style="display:inline-flex;align-items:center;gap:7px"><input type="checkbox" checked><span style="width:30px;height:17px;border-radius:10px;background:var(--info-soft);border:1px solid rgba(88,166,255,.4);position:relative;display:inline-block"></span><span style="font-size:11px;color:var(--info)">latest</span></label>
+        </div>
+        <div class="help">同一标签仅能绑定到一个版本，发布后将自动从旧版本解绑。</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closePublish()">取消</button>
+      <button class="btn btn-primary" onclick="closePublish()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> 发布</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/ui.js"></script>
+<script>
+function switchPromptTab(e, name) {
+  document.querySelectorAll('.pane .tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.pane .tab-panel').forEach(p => p.classList.remove('active'));
+  e.target.classList.add('active');
+  document.getElementById('ptab-' + name).classList.add('active');
+  document.getElementById('editLen').textContent = name === 'sys' ? '~1.8k chars' : '~0.9k chars · 3 vars';
+}
+function toggleCollapsible(head) { head.parentElement.classList.toggle('open'); }
+function openPublish(){ var s=document.getElementById('publishScrim'); s.style.display='flex'; s.setAttribute('data-open',''); }
+function closePublish(){ var s=document.getElementById('publishScrim'); s.style.display='none'; s.removeAttribute('data-open'); }
+function openDiff(){ document.getElementById('diffWrap').style.display='block'; }
+function closeDiff(){ document.getElementById('diffWrap').style.display='none'; }
+document.getElementById('publishScrim').addEventListener('click', closePublish);
+</script>
+</body>
+</html>
