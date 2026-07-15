@@ -12,7 +12,7 @@ import { Label } from "../../components/shadcn/label"
 import { Textarea } from "../../components/shadcn/textarea"
 import { toast } from "sonner"
 import { api, type ScenarioCatalog, type CatalogEntry, type DatasetCatalogEntry } from "../../api/client"
-import { Package, Plus } from "lucide-react"
+import { Package, Pencil, Plus } from "lucide-react"
 
 const VERSION_LABELS = ["production", "staging", "latest"] as const
 
@@ -120,6 +120,15 @@ function EntryTable({
           ),
         },
         { key: "description", title: "描述", render: (r) => <span className="text-muted-foreground">{r.description ?? "—"}</span> },
+        {
+          key: "actions",
+          title: "",
+          render: (r) => (
+            <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={(e) => { e.stopPropagation(); onOpen(r.asset_id) }}>
+              <Pencil className="size-3" /> 编辑
+            </Button>
+          ),
+        },
       ]}
       rowKey={(r) => r.asset_id}
     />
@@ -149,6 +158,15 @@ function DatasetTable({ rows, onOpen }: { rows: DatasetCatalogEntry[]; onOpen: (
         { key: "backend_type", title: "后端", render: (r) => <span className="font-mono text-xs">{r.backend_type}</span> },
         { key: "version", title: "版本", render: (r) => <Badge variant="secondary">{r.version}</Badge> },
         { key: "description", title: "描述", render: (r) => <span className="text-muted-foreground">{r.description ?? "—"}</span> },
+        {
+          key: "actions",
+          title: "",
+          render: (r) => (
+            <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={(e) => { e.stopPropagation(); onOpen(r.asset_id) }}>
+              <Pencil className="size-3" /> 编辑
+            </Button>
+          ),
+        },
       ]}
       rowKey={(r) => `${r.role}-${r.asset_id}`}
     />
