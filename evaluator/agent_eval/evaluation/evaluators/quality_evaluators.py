@@ -105,6 +105,11 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
     template_id: str = ""  # 子类必须设置
     pass_threshold: float | None = None  # HARD_SCORE 二值阈值；None=连续分（SOFT/PREF）
 
+    @property
+    def _effective_template_id(self) -> str:
+        """优先使用规则层传入的 prompt_id，回退到 params.template_id，最后才是类默认值。"""
+        return self.params.get("prompt_id") or self.params.get("template_id") or self.template_id
+
     def evaluate(self, sample: Any, context: dict[str, Any]) -> ConstraintResult:
         import time
 
@@ -203,7 +208,7 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
         elapsed = (time.monotonic() - start) * 1000
 
         # 计算加权分数：各维度得分 × 权重 / 总权重
-        template = orchestrator.templates.get(self.template_id)
+        template = orchestrator.templates.get(self._effective_template_id)
         if template and template.dimensions:
             total_weight = sum(d.weight for d in template.dimensions)
             weighted_score = sum(scores.get(d.dim_id, 0.0) * d.weight for d in template.dimensions)
@@ -315,7 +320,7 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
         scores, record = orchestrator.judge(
             constraint_id=self.evaluator_id,
             sample_id=context.get("sample_id", "unknown"),
-            template_id=self.template_id,
+            template_id=self._effective_template_id,
             variables=variables,
             evidence_dir=ev,
             provider_name=provider_name,

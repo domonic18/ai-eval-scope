@@ -12,10 +12,28 @@ from agent_eval.rules.models import Rule, RuleSet
 def _make_rule_set(evaluators: list[str], *, disabled: set[int] | None = None) -> RuleSet:
     """构造含指定 evaluator 的 RuleSet。"""
     disabled = disabled or set()
-    rules = [
-        Rule(id=f"R{i}", evaluator=ev, enabled=(i not in disabled))
-        for i, ev in enumerate(evaluators)
-    ]
+    rules: list[Rule] = []
+    for i, ev in enumerate(evaluators):
+        prefix = ev.split(".")[0]
+        method = {
+            "llm": "llm",
+            "vision": "llm_vision",
+            "soft": "llm",
+            "pref": "llm",
+            "commonsense": "rule_set",
+            "rule": "rule_set",
+            "format": "format",
+        }.get(prefix)
+        kwargs: dict[str, object] = {"method": method}
+        suffix = ev.split(".", 1)[1] if "." in ev else ""
+        if method in ("llm", "llm_vision"):
+            kwargs["prompt_id"] = suffix
+        elif method == "rule_set":
+            kwargs["dataset_id"] = suffix
+        elif method == "format":
+            kwargs["format_type"] = "extension"
+            kwargs["extensions"] = ["md"]
+        rules.append(Rule(id=f"R{i}", evaluator=ev, enabled=(i not in disabled), **kwargs))
     return RuleSet(rules=rules)
 
 

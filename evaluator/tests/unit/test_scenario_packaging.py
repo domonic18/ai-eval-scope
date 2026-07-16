@@ -51,7 +51,15 @@ def test_rule_set_accepts_field_name_too() -> None:
 
 
 def test_rule_and_template_carry_optional_package_fields() -> None:
-    rule = Rule(id="FMT_001", scenario_id="courseware", package_id="courseware-quality")
+    rule = Rule(
+        id="FMT_001",
+        scenario_id="courseware",
+        package_id="courseware-quality",
+        method="format",
+        format_type="extension",
+        extensions=["md"],
+        evaluator="format.response_format",
+    )
     assert rule.scenario_id == "courseware" and rule.package_id == "courseware-quality"
 
     tpl = RuleTemplate(
@@ -59,6 +67,9 @@ def test_rule_and_template_carry_optional_package_fields() -> None:
         name="t",
         dimension="functional",
         stage="format",
+        method="format",
+        format_type="extension",
+        extensions=["md"],
         evaluator="format.response_format",
         scenario_id="courseware",
     )
@@ -66,8 +77,20 @@ def test_rule_and_template_carry_optional_package_fields() -> None:
 
 
 def test_rule_set_scenario_defaults_none_for_legacy_assets() -> None:
-    # 未标记 scenario 的旧资产仍可加载，字段为 None（向后不破坏）
-    rs = RuleSet.model_validate({"version": "1.0", "rules": [{"id": "FMT_001"}]})
+    # 未标记 scenario 的资产仍可加载，字段为 None（scenario/package_id 仍可选）
+    rs = RuleSet.model_validate(
+        {
+            "version": "1.0",
+            "rules": [
+                {
+                    "id": "FMT_001",
+                    "method": "format",
+                    "format_type": "extension",
+                    "extensions": ["md"],
+                },
+            ],
+        },
+    )
     assert rs.scenario_id is None
     assert rs.package_id is None
 

@@ -75,12 +75,8 @@ class RuleSetValidator:
         for rule in rule_set.rules:
             if not rule.enabled:
                 continue
-            # 若规则使用模板且未覆盖 evaluator，则 evaluator 可能为空
-            if not rule.evaluator:
-                if rule.template_ref is None:
-                    self._add_error(f"规则 '{rule.id}': evaluator 未设置")
-                continue
-            if not registry.is_registered(rule.evaluator):
+            # evaluator 可选；若提供则必须已注册
+            if rule.evaluator and not registry.is_registered(rule.evaluator):
                 self._add_error(
                     f"规则 '{rule.id}': evaluator '{rule.evaluator}' 未注册；"
                     f"已注册评估器: {', '.join(registry.list_registered())}"

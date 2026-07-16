@@ -293,6 +293,9 @@ class TestRuleSet:
                     name="格式",
                     dimension="func",
                     stage="format_gate",
+                    method="format",
+                    format_type="extension",
+                    extensions=["md", "html"],
                     evaluator="format.response_format",
                 ),
             ],
@@ -303,9 +306,33 @@ class TestRuleSet:
         rs = RuleSet(
             version="1.0",
             rules=[
-                Rule(id="R1", name="A", dimension="f", stage="s1", evaluator="e1"),
-                Rule(id="R2", name="B", dimension="f", stage="s2", evaluator="e2"),
-                Rule(id="R3", name="C", dimension="f", stage="s1", evaluator="e3"),
+                Rule(
+                    id="R1",
+                    name="A",
+                    dimension="f",
+                    stage="s1",
+                    method="llm",
+                    prompt_id="p1",
+                    evaluator="llm.p1",
+                ),
+                Rule(
+                    id="R2",
+                    name="B",
+                    dimension="f",
+                    stage="s2",
+                    method="llm",
+                    prompt_id="p2",
+                    evaluator="llm.p2",
+                ),
+                Rule(
+                    id="R3",
+                    name="C",
+                    dimension="f",
+                    stage="s1",
+                    method="llm",
+                    prompt_id="p3",
+                    evaluator="llm.p3",
+                ),
             ],
         )
         s1_rules = rs.get_rules_by_stage("s1")
@@ -324,7 +351,17 @@ class TestRuleSet:
     def test_get_rule(self) -> None:
         rs = RuleSet(
             version="1.0",
-            rules=[Rule(id="FMT_001", name="test", dimension="f", stage="s", evaluator="e")],
+            rules=[
+                Rule(
+                    id="FMT_001",
+                    name="test",
+                    dimension="f",
+                    stage="s",
+                    method="llm",
+                    prompt_id="p",
+                    evaluator="llm.p",
+                )
+            ],
         )
         r = rs.get_rule("FMT_001")
         assert r is not None
@@ -340,7 +377,9 @@ class TestRuleSet:
                     name="Rule 1",
                     dimension="f",
                     stage="s",
-                    evaluator="e",
+                    method="llm",
+                    prompt_id="p",
+                    evaluator="llm.p",
                     params={"min": 1},
                     weight=0.5,
                 ),

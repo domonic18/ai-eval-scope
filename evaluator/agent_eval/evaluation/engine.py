@@ -19,6 +19,51 @@ from agent_eval.evaluation.metrics import MetricsCalculator
 from agent_eval.evaluation.models import SampleResult, StageResult
 from agent_eval.evaluation.registry import EvaluatorRegistry
 from agent_eval.evaluation.stage import PipelineStage
+from agent_eval.rules.models import RuleMethod
+
+
+def _derive_evaluator_name(rule: Any) -> str | None:
+    """当 rule.evaluator 缺失时，按 method + 绑定资产派生默认执行器名。"""
+    method = getattr(rule, "method", None)
+    if method == RuleMethod.LLM:
+        pid = getattr(rule, "prompt_id", None)
+        return f"llm.{pid}" if pid else None
+    if method == RuleMethod.LLM_VISION:
+        pid = getattr(rule, "prompt_id", None)
+        return f"vision.{pid}" if pid else None
+    if method == RuleMethod.RULE_SET:
+        # rule_set 派生：单数据集时 rule.<id>；多数据集/空时不派生（需显式 evaluator）
+        dids = getattr(rule, "dataset_ids", None)
+        if dids and len(dids) == 1:
+            return f"rule.{dids[0]}"
+        return None
+    if method == RuleMethod.FORMAT:
+        ft = getattr(rule, "format_type", None)
+        return f"format.{ft}" if ft else None
+    return None
+
+
+def _rule_params(rule: Any) -> dict[str, Any]:
+    """把规则层的绑定字段合并进 params，供执行器读取。"""
+    params = dict(getattr(rule, "params", None) or {})
+    method = getattr(rule, "method", None)
+    if method in (RuleMethod.LLM, RuleMethod.LLM_VISION):
+        if getattr(rule, "prompt_id", None):
+            params.setdefault("prompt_id", rule.prompt_id)
+    elif method == RuleMethod.RULE_SET:
+        # 数据集列表 → params.subjects（空则不注入 → 评估器加载全部知识库）
+        if getattr(rule, "dataset_ids", None):
+            params.setdefault("subjects", list(rule.dataset_ids))
+        if getattr(rule, "prompt_id", None):
+            params.setdefault("prompt_id", rule.prompt_id)
+        if getattr(rule, "confirmation_prompt_id", None):
+            params.setdefault("fact_verdict_prompt_id", rule.confirmation_prompt_id)
+    elif method == RuleMethod.FORMAT:
+        if getattr(rule, "format_type", None):
+            params.setdefault("format_type", rule.format_type)
+        if getattr(rule, "extensions", None):
+            params.setdefault("extensions", rule.extensions)
+    return params
 
 
 @dataclass
@@ -280,14 +325,17 @@ def build_pipeline(registry: EvaluatorRegistry, rule_set: Any) -> PipelineEngine
 
     by_stage: dict[str, list[EvaluatorConfig]] = {s: [] for s in stage_order}
     for rule in getattr(rule_set, "rules", None) or []:
-        if not getattr(rule, "enabled", True) or not getattr(rule, "evaluator", ""):
+        if not getattr(rule, "enabled", True):
+            continue
+        evaluator = getattr(rule, "evaluator", None) or _derive_evaluator_name(rule)
+        if not evaluator:
             continue
         stage = rule.stage or "quality"
         if stage not in by_stage:
             stage_order.append(stage)
             by_stage[stage] = []
             stage_policy.setdefault(stage, "continue_all")
-        by_stage[stage].append(EvaluatorConfig(rule.evaluator, dict(rule.params or {})))
+        by_stage[stage].append(EvaluatorConfig(evaluator, _rule_params(rule)))
 
     config = PipelineConfig(
         stages=[
