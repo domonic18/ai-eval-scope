@@ -208,6 +208,9 @@ export const api = {
   async scenarios(): Promise<Scenario[]> {
     return (await http.get("/scenarios")).data.scenarios as Scenario[]
   },
+  async createScenario(id: string, name: string, description?: string): Promise<Scenario> {
+    return (await http.post("/scenarios", { id, name, description })).data.scenario
+  },
   async scenarioCatalog(scenarioId: string): Promise<ScenarioCatalog> {
     return (await http.get(`/scenarios/${scenarioId}/catalog`)).data as ScenarioCatalog
   },

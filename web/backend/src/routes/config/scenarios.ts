@@ -27,6 +27,25 @@ router.get("/", async (_req, res) => {
   res.json({ scenarios: await repo().listScenarios() })
 })
 
+/** 创建场景（admin）。 */
+router.post("/", requireAuth, platformAdminGuard, async (req, res, next) => {
+  const { id, name, description } = req.body ?? {}
+  if (!id || !name) {
+    return next(new PlatformError("id 与 name 必填", { status: 400, code: "VALIDATION_ERROR" }))
+  }
+  try {
+    const r = await getPrisma()
+    const existing = await r.scenario.findUnique({ where: { id } })
+    if (existing) {
+      return next(new PlatformError(`场景已存在: ${id}`, { status: 409, code: "CONFLICT" }))
+    }
+    await r.scenario.create({ data: { id, name, description: description ?? null } })
+    res.status(201).json({ scenario: { id, name, description: description ?? null } })
+  } catch (e) {
+    next(e)
+  }
+})
+
 router.get("/:id/catalog", async (req, res) => {
   const catalog = await repo().getCatalog(req.params.id)
   if (!catalog) {

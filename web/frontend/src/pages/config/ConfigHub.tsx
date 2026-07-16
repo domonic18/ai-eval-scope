@@ -1,17 +1,19 @@
 import { useEffect, useState } from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { useCrumbs } from "../../components/AppShell"
 import { Page, PageHead } from "../../components/shared"
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/shadcn/card"
 import { Badge } from "../../components/shadcn/badge"
+import { Button } from "../../components/shadcn/button"
 import { api, type Scenario } from "../../api/client"
-import { Boxes, ChevronRight } from "lucide-react"
+import { Boxes, ChevronRight, Plus } from "lucide-react"
 
 /** 配置中心入口：列出全部场景，点选进入场景详情（规则集/提示词/数据集 catalog）。 */
 const errMsg = (e: unknown, fb: string) =>
   (e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? fb
 
 export default function ConfigHub() {
+  const nav = useNavigate()
   const { setCrumbs } = useCrumbs()
   const [items, setItems] = useState<Scenario[]>([])
   const [loading, setLoading] = useState(true)
@@ -31,6 +33,9 @@ export default function ConfigHub() {
       <PageHead
         title="配置中心"
         sub="场景包配置资产：规则集、提示词、数据集（动态 catalog，对齐 13 配置管理设计）"
+        right={
+          <Button onClick={() => nav("/config/create")}><Plus className="mr-1 size-4" />创建场景包</Button>
+        }
       />
       {error && <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">{error}</div>}
       {loading ? (
