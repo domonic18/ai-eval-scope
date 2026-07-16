@@ -34,7 +34,9 @@ export default function ConfigHub() {
         title="配置中心"
         sub="场景包配置资产：规则集、提示词、数据集（动态 catalog，对齐 13 配置管理设计）"
         right={
-          <Button onClick={() => nav("/config/create")}><Plus className="mr-1 size-4" />创建场景包</Button>
+          <div className="flex gap-2">
+            <Button onClick={() => nav("/config/create")}><Plus className="mr-1 size-4" />创建场景包</Button>
+          </div>
         }
       />
       {error && <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">{error}</div>}
