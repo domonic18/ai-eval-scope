@@ -17,8 +17,7 @@ import { Input } from "../../components/shadcn/input"
 import { Label } from "../../components/shadcn/label"
 import { Textarea } from "../../components/shadcn/textarea"
 import { toast } from "sonner"
-import { api, type AssetKind, type CatalogEntry } from "../../api/client"
-import type { MetricDef, MetricExplainRow } from "../../types"
+import { api, type AssetKind, type CatalogEntry, type DatasetCatalogEntry } from "../../api/client"
 import {
   ArrowUpCircle,
   BookOpen,
@@ -36,6 +35,9 @@ import {
 import { RuleSetForm, type RuleSetData } from "./forms/RuleSetForm"
 import { PromptForm, type PromptData } from "./forms/PromptForm"
 import { DatasetForm, type DatasetData } from "./forms/DatasetForm"
+import { createEmptyPrompt, createEmptyDataset } from "./forms/defaults"
+import { MetricDefsEditor } from "./forms/MetricDefsEditor"
+import { AggregationPolicyEditor } from "./forms/AggregationPolicyEditor"
 
 type Selection =
   | { type: "rule-set"; assetId: string }
@@ -54,7 +56,7 @@ export default function PackageEditor() {
   const [catalog, setCatalog] = useState<{
     rule_sets: CatalogEntry[]
     prompts: CatalogEntry[]
-    datasets: CatalogEntry[]
+    datasets: DatasetCatalogEntry[]
   } | null>(null)
   const [sel, setSel] = useState<Selection | null>(null)
   const [content, setContent] = useState<Record<string, any> | null>(null)
@@ -86,12 +88,10 @@ export default function PackageEditor() {
   }, [id, setCrumbs])
 
   // 新建空白资产（提示词/数据集），填入编辑器并直接进入编辑
+  // 提示词预置默认 System/User 骨架内容，便于用户填写修改
   const newAsset = (kind: AssetKind) => {
     const assetId = kind === "prompts" ? `prompt_${Date.now().toString(36).slice(-4)}` : `dataset_${Date.now().toString(36).slice(-4)}`
-    const emptyContent =
-      kind === "prompts"
-        ? { template_id: assetId, name: "", system_prompt: "", user_prompt_template: "", temperature: 0.2, seed: 42, num_samples: 1, dimensions: [] }
-        : { subject: "", description: "", version: "1.0", role: "reference", constants: [], misconceptions: [] }
+    const emptyContent = kind === "prompts" ? createEmptyPrompt(assetId) : createEmptyDataset()
     setContent(emptyContent)
     setYamlText(yaml.dump(emptyContent, { sortKeys: false }))
     setVersion("0.1.0")
@@ -291,7 +291,14 @@ export default function PackageEditor() {
             <>
               {/* 表单模式 */}
               {canEdit && mode === "form" && content && sel?.type === "rule-set" && (
-                <RuleSetForm data={content as RuleSetData} onChange={updateContent} />
+                <RuleSetForm
+                  data={content as RuleSetData}
+                  onChange={updateContent}
+                  prompts={catalog?.prompts ?? []}
+                  datasets={(catalog?.datasets ?? []).filter((d) => d.role === "reference")}
+                  onNewPrompt={() => newAsset("prompts")}
+                  onNewDataset={() => newAsset("datasets")}
+                />
               )}
               {canEdit && mode === "form" && content && sel?.type === "prompt" && (
                 <PromptForm data={content as PromptData} onChange={updateContent} />
@@ -304,9 +311,9 @@ export default function PackageEditor() {
                 <Card><CardContent><Textarea className="min-h-[500px] font-mono text-xs leading-relaxed" value={yamlText} onChange={(e) => onYamlChange(e.target.value)} /></CardContent></Card>
               )}
               {/* 聚合策略（只读） */}
-              {sel?.type === "policy" && <PolicyReadonly scenarioId={id} />}
-              {/* 指标定义（只读） */}
-              {sel?.type === "metrics" && <MetricsReadonly scenarioId={id} />}
+              {sel?.type === "policy" && <AggregationPolicyEditor scenarioId={id} />}
+              {/* 指标定义（可编辑） */}
+              {sel?.type === "metrics" && <MetricDefsEditor scenarioId={id} />}
             </>
           )}
 
@@ -378,51 +385,5 @@ function TreeNode({ active, name, icon: Icon, onClick }: { active: boolean; name
       <Icon className="size-3 shrink-0 opacity-60" /><span className="flex-1 truncate font-mono">{name}</span>
       {active && <ChevronRight className="size-3 shrink-0" />}
     </button>
-  )
-}
-
-// ── 聚合策略只读 ──
-function PolicyReadonly({ scenarioId }: { scenarioId: string }) {
-  const [policy, setPolicy] = useState<Record<string, any> | null>(null)
-  useEffect(() => { api.scenarioAggregationPolicy(scenarioId).then(setPolicy).catch(() => setPolicy(null)) }, [scenarioId])
-  if (!policy) return <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">加载中…</CardContent></Card>
-  return (
-    <Card>
-      <CardHeader><CardTitle className="text-sm">{policy.id ?? "聚合策略"}</CardTitle></CardHeader>
-      <CardContent className="space-y-1">
-        {(policy.stage_weights ?? []).map((s: any, i: number) => (
-          <div key={i} className="flex items-center gap-2 border-t py-1.5 text-xs first:border-t-0">
-            <span className="w-24 font-mono">{s.stage_id}</span>
-            {s.id && <Badge variant="outline" className="text-[9px]">{s.id}</Badge>}
-            <span className="text-muted-foreground">w={s.weight}</span>
-            {s.is_gate && <Badge className="bg-red-500/15 text-red-400 text-[9px]">GATE</Badge>}
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-  )
-}
-
-// ── 指标定义只读 ──
-function MetricsReadonly({ scenarioId }: { scenarioId: string }) {
-  const [defs, setDefs] = useState<MetricDef[]>([])
-  useEffect(() => { api.scenarioDefaults(scenarioId).then(setDefs).catch(() => setDefs([])) }, [scenarioId])
-  return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {defs.map((d) => <MetricMiniCard key={d.id} def={d} />)}
-    </div>
-  )
-}
-function MetricMiniCard({ def }: { def: MetricDef }) {
-  return (
-    <Card><CardContent className="p-3">
-      <div className="flex items-center justify-between">
-        <span className="font-mono text-[10px] text-muted-foreground">{def.id}</span>
-        <Badge variant="secondary" className="text-[9px]">{def.unit ?? "—"}</Badge>
-      </div>
-      <div className="mt-0.5 text-sm font-medium">{def.name ?? def.id}</div>
-      <div className="mt-1 rounded bg-muted/50 px-2 py-0.5 font-mono text-[10px] text-emerald-400">{def.expression ?? "—"}</div>
-      {def.threshold != null && <div className="mt-1 text-[10px] text-muted-foreground">阈值 ≥ {def.threshold}</div>}
-    </CardContent></Card>
   )
 }

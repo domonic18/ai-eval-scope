@@ -17,7 +17,7 @@ import { Input } from "../../components/shadcn/input"
 import { Label } from "../../components/shadcn/label"
 import { Textarea } from "../../components/shadcn/textarea"
 import { toast } from "sonner"
-import { api, type AssetKind } from "../../api/client"
+import { api, type AssetKind, type CatalogEntry, type DatasetCatalogEntry } from "../../api/client"
 import {
   ArrowUpCircle,
   Code2,
@@ -61,6 +61,9 @@ export default function AssetEditor() {
   >([])
   const [diffVersion, setDiffVersion] = useState<string | null>(null)
   const [diffContent, setDiffContent] = useState<string | null>(null)
+  // 规则集表单按评估方式绑定包内提示词/参考数据集所需
+  const [prompts, setPrompts] = useState<CatalogEntry[]>([])
+  const [refDatasets, setRefDatasets] = useState<DatasetCatalogEntry[]>([])
 
   useEffect(() => {
     setCrumbs([
@@ -81,6 +84,14 @@ export default function AssetEditor() {
       .catch(() => setContent(null))
       .finally(() => setLoading(false))
     api.listAssetVersions(id, kind, assetId).then(setVersions).catch(() => setVersions([]))
+    // 载入场景资产目录，供规则集表单选择提示词/参考数据集
+    api
+      .scenarioCatalog(id)
+      .then((c) => {
+        setPrompts(c.prompts)
+        setRefDatasets(c.datasets.filter((d) => d.role === "reference"))
+      })
+      .catch(() => {})
   }, [id, kind, assetId, setCrumbs])
 
   const updateContent = (d: Record<string, any>) => {
@@ -207,7 +218,12 @@ export default function AssetEditor() {
             <>
               {/* 表单模式 */}
               {mode === "form" && content && kind === "rule-sets" && (
-                <RuleSetForm data={content as RuleSetData} onChange={updateContent} />
+                <RuleSetForm
+                  data={content as RuleSetData}
+                  onChange={updateContent}
+                  prompts={prompts}
+                  datasets={refDatasets}
+                />
               )}
               {mode === "form" && content && kind === "prompts" && (
                 <PromptForm data={content as PromptData} onChange={updateContent} />
