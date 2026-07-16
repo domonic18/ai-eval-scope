@@ -62,9 +62,20 @@ export function AddButton({
   )
 }
 
-/** 区块卡片 —— 对齐原型 .section-card：去掉默认内部 gap */
+/** 区块卡片 —— 对齐原型 .section-card：标题贴顶，去掉默认 py-6/gap-6 */
 export function SectionCard({ children, className }: { children: ReactNode; className?: string }) {
-  return <Card className={cn("gap-0", className)}>{children}</Card>
+  return <Card className={cn("gap-0 py-0", className)}>{children}</Card>
+}
+
+/** 区块卡片内容区 —— 对齐原型 .section-body：16px 18px padding */
+export function SectionCardContent({
+  children,
+  className,
+}: {
+  children: ReactNode
+  className?: string
+}) {
+  return <CardContent className={cn("px-[18px] py-4", className)}>{children}</CardContent>
 }
 
 /** 区块卡片标题 —— 对齐原型 .section-head：13px 18px padding、flex 布局 */
@@ -78,7 +89,7 @@ export function SectionCardHeader({
   return (
     <CardHeader
       className={cn(
-        "flex flex-row items-center justify-between gap-2 border-b border-border px-[18px] py-[13px] !pb-[13px]",
+        "flex flex-row items-center justify-between gap-2 border-b border-border px-[18px] py-[13px]",
         className,
       )}
     >

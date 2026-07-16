@@ -2,6 +2,8 @@
  * 单条规则卡片 — 引导式 + 条件化填写。
  * 检查内容 → 所属阶段（可新建）→ 评估方式（LLM/视觉/规则集/格式检查）→ 按方式绑定提示词/数据集或配置格式校验。
  * 评估方式为 4 个场景无关的通用选项（替代原课件专用硬编码评估器列表）。
+ *
+ * 字段命名与持久化 schema 一致（snake_case）：prompt_id / dataset_ids / format_type / confirmation_prompt_id。
  */
 import { useState } from "react"
 import { Button } from "../../../components/shadcn/button"
@@ -21,7 +23,7 @@ export interface CascadeStage {
 const EVAL_METHODS: { value: EvalMethod; label: string; icon: string; hint: string }[] = [
   { value: "llm", label: "LLM 评估", icon: "🤖", hint: "文本 LLM Judge，需绑定提示词" },
   { value: "llm_vision", label: "LLM 视觉评估", icon: "📸", hint: "截图 + 视觉 LLM 判断，需绑定提示词" },
-  { value: "rule_set", label: "规则集评估", icon: "🔧", hint: "基于参考数据集的规则/事实校验，需绑定数据集" },
+  { value: "rule_set", label: "规则集评估", icon: "🔧", hint: "基于参考数据集（知识库）的事实/规则校验；可叠加 LLM 二次确认" },
   { value: "format", label: "格式/程序化检查", icon: "📐", hint: "程序化校验（文件后缀/JSON/HTML/Markdown），不调用 LLM" },
 ]
 
@@ -49,10 +51,13 @@ function isDerivedEvaluator(evaluator: string | undefined): boolean {
   return evaluator === undefined || evaluator === "" || /^(llm|vision|rule|format)\./.test(evaluator)
 }
 function deriveEvaluator(rule: RuleItem): string {
-  if (rule.method === "llm") return rule.promptId ? `llm.${rule.promptId}` : ""
-  if (rule.method === "llm_vision") return rule.promptId ? `vision.${rule.promptId}` : ""
-  if (rule.method === "rule_set") return rule.datasetId ? `rule.${rule.datasetId}` : ""
-  if (rule.method === "format") return rule.formatType ? `format.${rule.formatType}` : ""
+  if (rule.method === "llm") return rule.prompt_id ? `llm.${rule.prompt_id}` : ""
+  if (rule.method === "llm_vision") return rule.prompt_id ? `vision.${rule.prompt_id}` : ""
+  if (rule.method === "rule_set") {
+    const dids = rule.dataset_ids ?? []
+    return dids.length === 1 ? `rule.${dids[0]}` : ""
+  }
+  if (rule.method === "format") return rule.format_type ? `format.${rule.format_type}` : ""
   return rule.evaluator ?? ""
 }
 
@@ -81,7 +86,7 @@ export function RuleCard({
 }) {
   const m = methodOf(rule.method)
   const needsPrompt = rule.method === "llm" || rule.method === "llm_vision"
-  const needsDataset = rule.method === "rule_set"
+  const needsRuleSet = rule.method === "rule_set"
   const needsFormat = rule.method === "format"
   const [extInput, setExtInput] = useState("")
   const [advOpen, setAdvOpen] = useState(false)
@@ -95,6 +100,14 @@ export function RuleCard({
       patch.evaluator = deriveEvaluator({ ...rule, ...patch })
     }
     onUpdate(patch)
+  }
+
+  const selectedDatasets = rule.dataset_ids ?? []
+  const toggleDataset = (id: string) => {
+    const next = selectedDatasets.includes(id)
+      ? selectedDatasets.filter((x) => x !== id)
+      : [...selectedDatasets, id]
+    reseedEvaluator({ dataset_ids: next })
   }
 
   return (
@@ -162,10 +175,19 @@ export function RuleCard({
               const method = (e.target.value || undefined) as EvalMethod | undefined
               const patch: Partial<RuleItem> = { method }
               // 切换方式时清掉无关绑定，避免脏数据
-              if (method !== "llm" && method !== "llm_vision") patch.promptId = undefined
-              if (method !== "rule_set") patch.datasetId = undefined
+              if (method !== "llm" && method !== "llm_vision" && method !== "rule_set") {
+                patch.prompt_id = undefined
+              }
+              if (method !== "rule_set") {
+                patch.dataset_ids = undefined
+                patch.confirmation_prompt_id = undefined
+              }
+              if (method === "rule_set") {
+                // rule_set 不绑 prompt_id（主提示词单独可选，见下方）；清掉 LLM 主提示词
+                patch.prompt_id = undefined
+              }
               if (method !== "format") {
-                patch.formatType = undefined
+                patch.format_type = undefined
                 patch.extensions = undefined
               }
               reseedEvaluator(patch)
@@ -181,7 +203,7 @@ export function RuleCard({
         </div>
       </div>
 
-      {/* 第三行：按评估方式条件化绑定资产 */}
+      {/* LLM / 视觉：主提示词 */}
       {needsPrompt && (
         <div className="mt-2 flex flex-wrap items-end gap-2">
           <div className="min-w-[220px] flex-1">
@@ -190,8 +212,8 @@ export function RuleCard({
             </Label>
             <select
               className="w-full rounded-md border border-border bg-secondary px-2 py-2 text-xs text-foreground"
-              value={rule.promptId ?? ""}
-              onChange={(e) => reseedEvaluator({ promptId: e.target.value || undefined })}
+              value={rule.prompt_id ?? ""}
+              onChange={(e) => reseedEvaluator({ prompt_id: e.target.value || undefined })}
             >
               <option value="">选择提示词…</option>
               {prompts.map((p) => (
@@ -201,10 +223,10 @@ export function RuleCard({
               ))}
             </select>
           </div>
-          {rule.promptId && onJumpAsset && (
+          {rule.prompt_id && onJumpAsset && (
             <button
               type="button"
-              onClick={() => onJumpAsset("prompt", rule.promptId!)}
+              onClick={() => onJumpAsset("prompt", rule.prompt_id!)}
               className="mb-1 text-[11px] text-primary hover:underline"
             >
               跳转编辑→
@@ -224,43 +246,108 @@ export function RuleCard({
           </p>
         </div>
       )}
-      {needsDataset && (
-        <div className="mt-2 flex flex-wrap items-end gap-2">
-          <div className="min-w-[220px] flex-1">
-            <Label className="text-[11px] text-muted-foreground/70">
-              数据集（参考知识）<span className="ml-0.5 text-destructive">*</span>
-            </Label>
-            <select
-              className="w-full rounded-md border border-border bg-secondary px-2 py-2 text-xs text-foreground"
-              value={rule.datasetId ?? ""}
-              onChange={(e) => reseedEvaluator({ datasetId: e.target.value || undefined })}
-            >
-              <option value="">选择数据集…</option>
-              {datasets.map((d) => (
-                <option key={d.asset_id} value={d.asset_id}>
-                  {d.name ? `${d.asset_id} · ${d.name}` : d.asset_id}
-                </option>
-              ))}
-            </select>
+
+      {/* 规则集评估：数据集多选（空=全部知识库）+ 主提示词 + 二次确认提示词 */}
+      {needsRuleSet && (
+        <div className="mt-2 space-y-2">
+          {/* 参考数据集：多选 chips */}
+          <div>
+            <Label className="text-[11px] text-muted-foreground/70">参考数据集（知识库）</Label>
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {datasets.length === 0 && (
+                <p className="text-[11px] text-muted-foreground">
+                  {onNewDataset ? "暂无参考数据集，点「新建」创建。" : "暂无参考数据集，请先在配置中心创建。"}
+                </p>
+              )}
+              {datasets.map((d) => {
+                const on = selectedDatasets.includes(d.asset_id)
+                return (
+                  <button
+                    key={d.asset_id}
+                    type="button"
+                    onClick={() => toggleDataset(d.asset_id)}
+                    className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] transition-colors ${
+                      on
+                        ? "border-primary bg-primary/15 text-primary"
+                        : "border-border bg-transparent text-muted-foreground hover:border-primary/50"
+                    }`}
+                    title={d.name ?? d.asset_id}
+                  >
+                    {d.name ? `${d.asset_id} · ${d.name}` : d.asset_id}
+                  </button>
+                )
+              })}
+              {onNewDataset && (
+                <Button size="xs" variant="outline" onClick={onNewDataset}>
+                  <Plus className="size-3" />新建
+                </Button>
+              )}
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              {selectedDatasets.length === 0
+                ? "未选择时使用全部参考数据集（知识库）进行事实/规则校验。"
+                : `已选 ${selectedDatasets.length} 个数据集进行事实/规则校验。`}
+            </p>
           </div>
-          {rule.datasetId && onJumpAsset && (
-            <button
-              type="button"
-              onClick={() => onJumpAsset("dataset", rule.datasetId!)}
-              className="mb-1 text-[11px] text-primary hover:underline"
-            >
-              编辑数据集→
-            </button>
-          )}
-          {onNewDataset && (
-            <Button size="sm" variant="outline" className="mb-0.5" onClick={onNewDataset}>
-              <Plus className="mr-1 size-3" />新建
-            </Button>
-          )}
-          <p className="basis-full text-[11px] text-muted-foreground">
-            仅列出参考数据集（role=reference），用于事实/规则校验
-            {datasets.length === 0 && !onNewDataset ? "；请先在配置中心创建。" : "。"}
-          </p>
+
+          {/* 主提示词（可选，默认 info_accuracy） */}
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="min-w-[220px] flex-1">
+              <Label className="text-[11px] text-muted-foreground/70">主提示词（LLM 验证）</Label>
+              <select
+                className="mt-1 w-full rounded-md border border-border bg-secondary px-2 py-2 text-xs text-foreground"
+                value={rule.prompt_id ?? ""}
+                onChange={(e) => onUpdate({ prompt_id: e.target.value || undefined })}
+              >
+                <option value="">使用默认（info_accuracy）</option>
+                {prompts.map((p) => (
+                  <option key={p.asset_id} value={p.asset_id}>
+                    {p.name ? `${p.asset_id} · ${p.name}` : p.asset_id}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {rule.prompt_id && onJumpAsset && (
+              <button
+                type="button"
+                onClick={() => onJumpAsset("prompt", rule.prompt_id!)}
+                className="mb-1 text-[11px] text-primary hover:underline"
+              >
+                跳转编辑→
+              </button>
+            )}
+          </div>
+
+          {/* 二次确认提示词（可选，默认 fact_verdict） */}
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="min-w-[220px] flex-1">
+              <Label className="text-[11px] text-muted-foreground/70">二次确认提示词（LLM 裁定）</Label>
+              <select
+                className="mt-1 w-full rounded-md border border-border bg-secondary px-2 py-2 text-xs text-foreground"
+                value={rule.confirmation_prompt_id ?? ""}
+                onChange={(e) => onUpdate({ confirmation_prompt_id: e.target.value || undefined })}
+              >
+                <option value="">使用默认（fact_verdict）</option>
+                {prompts.map((p) => (
+                  <option key={p.asset_id} value={p.asset_id}>
+                    {p.name ? `${p.asset_id} · ${p.name}` : p.asset_id}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {rule.confirmation_prompt_id && onJumpAsset && (
+              <button
+                type="button"
+                onClick={() => onJumpAsset("prompt", rule.confirmation_prompt_id!)}
+                className="mb-1 text-[11px] text-primary hover:underline"
+              >
+                跳转编辑→
+              </button>
+            )}
+            <p className="basis-full text-[11px] text-muted-foreground">
+              规则正则命中后，由 LLM 二次裁定是否为真实错误（过滤误报）；留空使用 fact_verdict。
+            </p>
+          </div>
         </div>
       )}
 
@@ -273,12 +360,12 @@ export function RuleCard({
             </Label>
             <select
               className="w-full rounded-md border border-border bg-secondary px-2 py-2 text-xs text-foreground"
-              value={rule.formatType ?? ""}
+              value={rule.format_type ?? ""}
               onChange={(e) => {
                 const formatType = (e.target.value || undefined) as FormatCheckType | undefined
                 // 切到非后缀类型时清空后缀列表
                 const patch: Partial<RuleItem> =
-                  formatType === "extension" ? { formatType } : { formatType, extensions: undefined }
+                  formatType === "extension" ? { format_type: formatType } : { format_type: formatType, extensions: undefined }
                 reseedEvaluator(patch)
               }}
             >
@@ -290,14 +377,14 @@ export function RuleCard({
               ))}
             </select>
             <p className="mt-1 text-[11px] text-muted-foreground">
-              {rule.formatType
-                ? FORMAT_CHECKS.find((f) => f.value === rule.formatType)?.hint
+              {rule.format_type
+                ? FORMAT_CHECKS.find((f) => f.value === rule.format_type)?.hint
                 : "程序化校验，不调用 LLM，常用于格式门控阶段。"}
             </p>
           </div>
 
           {/* 后缀名可配置列表 */}
-          {rule.formatType === "extension" && (
+          {rule.format_type === "extension" && (
             <div>
               <Label className="text-[11px] text-muted-foreground/70">允许的文件后缀</Label>
               <div className="flex gap-2">

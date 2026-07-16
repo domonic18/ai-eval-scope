@@ -3,11 +3,10 @@
  * role 切换（reference/test）；reference: 常量/误区可编辑表格；test: reader/infer/eval 配置。
  * 基本信息与子配置均带填写提示 + 必填/选填标识。
  */
-import { CardContent } from "../../../components/shadcn/card"
 import { Button } from "../../../components/shadcn/button"
 import { Input } from "../../../components/shadcn/input"
 import { Trash2 } from "lucide-react"
-import { AddButton, SectionCard, SectionCardHeader, SectionCardTitle } from "../../../components/shared"
+import { AddButton, SectionCard, SectionCardContent, SectionCardHeader, SectionCardTitle } from "../../../components/shared"
 import { Field } from "./Field"
 
 export interface DatasetData {
@@ -36,7 +35,7 @@ export function DatasetForm({
     <div className="space-y-4">
       {/* 基本信息 */}
       <SectionCard>
-        <CardContent className="grid grid-cols-3 gap-3 p-4">
+        <SectionCardContent className="grid grid-cols-3 gap-3 p-4">
           <Field label="subject" required hint="主题/学科标识，如 math / safety">
             <Input value={data.subject ?? ""} onChange={(e) => update({ subject: e.target.value })} />
           </Field>
@@ -54,7 +53,7 @@ export function DatasetForm({
               <Input value={data.description ?? ""} onChange={(e) => update({ description: e.target.value })} />
             </Field>
           </div>
-        </CardContent>
+        </SectionCardContent>
       </SectionCard>
 
       {data.role === "reference" ? (
@@ -62,7 +61,7 @@ export function DatasetForm({
           {/* 常量/公式 */}
           <SectionCard>
             <SectionCardHeader><SectionCardTitle className="text-sm">常量/公式（{data.constants?.length ?? 0}）</SectionCardTitle></SectionCardHeader>
-            <CardContent className="space-y-2">
+            <SectionCardContent className="space-y-2">
               <p className="text-[10px] text-muted-foreground">用于事实校验的已知常量/公式：名称、抽取正则、标准值与容差。</p>
               {(data.constants ?? []).map((c, i) => (
                 <div key={i} className="flex items-start gap-2">
@@ -76,13 +75,13 @@ export function DatasetForm({
               <AddButton onClick={() => update({ constants: [...(data.constants ?? []), { name: "", value: 0 }] })}>
                 添加
               </AddButton>
-            </CardContent>
+            </SectionCardContent>
           </SectionCard>
 
           {/* 常见误区 */}
           <SectionCard>
             <SectionCardHeader><SectionCardTitle className="text-sm">常见误区（{data.misconceptions?.length ?? 0}）</SectionCardTitle></SectionCardHeader>
-            <CardContent className="space-y-2">
+            <SectionCardContent className="space-y-2">
               <p className="text-[10px] text-muted-foreground">匹配常见错误模式并给出正确答案；error 级会直接判错，warning 级仅扣分。</p>
               {(data.misconceptions ?? []).map((m, i) => (
                 <div key={i} className="flex items-start gap-2">
@@ -99,7 +98,7 @@ export function DatasetForm({
               <AddButton onClick={() => update({ misconceptions: [...(data.misconceptions ?? []), { pattern: "", severity: "warning" }] })}>
                 添加
               </AddButton>
-            </CardContent>
+            </SectionCardContent>
           </SectionCard>
         </>
       ) : (
@@ -107,15 +106,15 @@ export function DatasetForm({
         <div className="grid gap-4 sm:grid-cols-3">
           <SectionCard>
             <SectionCardHeader><SectionCardTitle className="text-sm">读取配置 reader_cfg</SectionCardTitle></SectionCardHeader>
-            <CardContent className="space-y-2">
+            <SectionCardContent className="space-y-2">
               <Field label="output_column" optional hint="样本中作为模型输出的列名">
                 <Input className="text-xs" value={data.reader_cfg?.output_column ?? ""} onChange={(e) => update({ reader_cfg: { ...data.reader_cfg, output_column: e.target.value } })} />
               </Field>
-            </CardContent>
+            </SectionCardContent>
           </SectionCard>
           <SectionCard>
             <SectionCardHeader><SectionCardTitle className="text-sm">推理配置 infer_cfg</SectionCardTitle></SectionCardHeader>
-            <CardContent className="space-y-2">
+            <SectionCardContent className="space-y-2">
               <Field label="prompt_template_id" optional hint="推理时使用的提示词 id">
                 <Input className="font-mono text-xs" value={data.infer_cfg?.prompt_template_id ?? ""} onChange={(e) => update({ infer_cfg: { ...data.infer_cfg, prompt_template_id: e.target.value } })} />
               </Field>
@@ -125,18 +124,18 @@ export function DatasetForm({
               <Field label="max_out_len" optional hint="最大输出 token 数">
                 <Input type="number" className="text-xs" value={data.infer_cfg?.max_out_len ?? 512} onChange={(e) => update({ infer_cfg: { ...data.infer_cfg, max_out_len: parseInt(e.target.value) || 512 } })} />
               </Field>
-            </CardContent>
+            </SectionCardContent>
           </SectionCard>
           <SectionCard>
             <SectionCardHeader><SectionCardTitle className="text-sm">评估配置 eval_cfg</SectionCardTitle></SectionCardHeader>
-            <CardContent className="space-y-2">
+            <SectionCardContent className="space-y-2">
               <Field label="evaluator" optional hint="评估器 id（如 format.json_validity）">
                 <Input className="font-mono text-xs" value={data.eval_cfg?.evaluator ?? ""} onChange={(e) => update({ eval_cfg: { ...data.eval_cfg, evaluator: e.target.value } })} />
               </Field>
               <Field label="pred_postprocessor" optional hint="预测结果后处理器 id">
                 <Input className="text-xs" value={data.eval_cfg?.pred_postprocessor ?? ""} onChange={(e) => update({ eval_cfg: { ...data.eval_cfg, pred_postprocessor: e.target.value } })} />
               </Field>
-            </CardContent>
+            </SectionCardContent>
           </SectionCard>
         </div>
       )}

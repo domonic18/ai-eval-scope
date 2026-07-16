@@ -4,12 +4,11 @@
  * 新建提示词时由 createEmptyPrompt() 预置默认骨架内容，便于用户填写修改。
  */
 import { useMemo, useState } from "react"
-import { CardContent } from "../../../components/shadcn/card"
 import { Badge } from "../../../components/shadcn/badge"
 import { Input } from "../../../components/shadcn/input"
 import { Textarea } from "../../../components/shadcn/textarea"
 import { Eye } from "lucide-react"
-import { SectionCard, SectionCardHeader, SectionCardTitle } from "../../../components/shared"
+import { SectionCard, SectionCardContent, SectionCardHeader, SectionCardTitle } from "../../../components/shared"
 import { Field } from "./Field"
 
 export interface PromptData {
@@ -56,7 +55,7 @@ export function PromptForm({
     <div className="space-y-4">
       {/* 基本信息 */}
       <SectionCard>
-        <CardContent className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3">
+        <SectionCardContent className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3">
           <Field label="template_id" required hint="唯一标识，包内不可重复，如 safety_check">
             <Input className="font-mono text-xs" value={data.template_id} onChange={(e) => update({ template_id: e.target.value })} />
           </Field>
@@ -75,7 +74,7 @@ export function PromptForm({
           <Field label="num_samples" optional hint="每个输入的采样次数（多次取聚合）">
             <Input type="number" value={data.num_samples ?? 1} onChange={(e) => update({ num_samples: parseInt(e.target.value) || 1 })} />
           </Field>
-        </CardContent>
+        </SectionCardContent>
       </SectionCard>
 
       {/* System Prompt（上下布局，始终可见） */}
@@ -83,14 +82,14 @@ export function PromptForm({
         <SectionCardHeader className="pb-2">
           <SectionCardTitle className="text-sm">System Prompt</SectionCardTitle>
         </SectionCardHeader>
-        <CardContent>
+        <SectionCardContent>
           <Textarea
             className="min-h-[200px] font-mono text-xs leading-relaxed"
             value={data.system_prompt}
             onChange={(e) => update({ system_prompt: e.target.value })}
             placeholder="设定评估者的角色、原则与输出格式约束…"
           />
-        </CardContent>
+        </SectionCardContent>
       </SectionCard>
 
       {/* User Prompt Template（上下布局，始终可见） */}
@@ -105,14 +104,14 @@ export function PromptForm({
             </div>
           )}
         </SectionCardHeader>
-        <CardContent>
+        <SectionCardContent>
           <Textarea
             className="min-h-[200px] font-mono text-xs leading-relaxed"
             value={data.user_prompt_template}
             onChange={(e) => update({ user_prompt_template: e.target.value })}
             placeholder="用 {{ var }} 引用变量，描述评估对象、标准与输出要求…"
           />
-        </CardContent>
+        </SectionCardContent>
       </SectionCard>
 
       {/* 渲染预览 */}
@@ -120,7 +119,7 @@ export function PromptForm({
         <SectionCardHeader className="pb-2">
           <SectionCardTitle className="flex items-center gap-1.5 text-sm"><Eye className="size-3.5" /> 渲染预览</SectionCardTitle>
         </SectionCardHeader>
-        <CardContent className="space-y-3">
+        <SectionCardContent className="space-y-3">
           {/* 变量 Mock 值 */}
           {vars.length > 0 && (
             <div className="space-y-1 rounded-md bg-muted/30 p-2">
@@ -141,14 +140,14 @@ export function PromptForm({
             <p className="mb-1 text-[10px] uppercase tracking-wide text-muted-foreground">User（渲染后）</p>
             <pre className="max-h-[200px] overflow-auto whitespace-pre-wrap rounded-md bg-muted/20 p-3 font-mono text-xs leading-relaxed text-muted-foreground">{rendered || "(空)"}</pre>
           </div>
-        </CardContent>
+        </SectionCardContent>
       </SectionCard>
 
       {/* 评分维度（output_schema） */}
       {data.dimensions && data.dimensions.length > 0 && (
         <SectionCard>
           <SectionCardHeader><SectionCardTitle className="text-sm">评分维度（output_schema）</SectionCardTitle></SectionCardHeader>
-          <CardContent>
+          <SectionCardContent>
             <div className="space-y-1">
               {data.dimensions.map((dim, i) => (
                 <div key={i} className="flex items-center gap-3 border-t py-2 text-sm first:border-t-0">
@@ -159,7 +158,7 @@ export function PromptForm({
                 </div>
               ))}
             </div>
-          </CardContent>
+          </SectionCardContent>
         </SectionCard>
       )}
     </div>

@@ -4,14 +4,13 @@
  */
 import { useEffect, useState } from "react"
 import * as yaml from "js-yaml"
-import { CardContent } from "../../../components/shadcn/card"
 import { Button } from "../../../components/shadcn/button"
 import { Input } from "../../../components/shadcn/input"
 import { Textarea } from "../../../components/shadcn/textarea"
-import { Plus, Save, Trash2 } from "lucide-react"
+import { Save, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { api } from "../../../api/client"
-import { AddButton, SectionCard, SectionCardHeader, SectionCardTitle } from "../../../components/shared"
+import { AddButton, SectionCard, SectionCardContent, SectionCardHeader, SectionCardTitle } from "../../../components/shared"
 import { Field, FormYamlToggle } from "./Field"
 
 interface StageWeight {
@@ -101,7 +100,7 @@ export function AggregationPolicyEditor({ scenarioId }: { scenarioId: string }) 
   if (loading) {
     return (
       <SectionCard>
-        <CardContent className="py-10 text-center text-sm text-muted-foreground">加载中…</CardContent>
+        <SectionCardContent className="py-10 text-center text-sm text-muted-foreground">加载中…</SectionCardContent>
       </SectionCard>
     )
   }
@@ -112,7 +111,7 @@ export function AggregationPolicyEditor({ scenarioId }: { scenarioId: string }) 
         <SectionCardTitle>聚合策略（场景默认）</SectionCardTitle>
         <FormYamlToggle mode={mode} onChange={switchMode} />
       </SectionCardHeader>
-      <CardContent className="space-y-3">
+      <SectionCardContent className="space-y-3">
         {mode === "form" ? (
           <>
             <Field label="策略 id" optional hint="聚合策略标识，可空">
@@ -153,7 +152,7 @@ export function AggregationPolicyEditor({ scenarioId }: { scenarioId: string }) 
         <Button onClick={save} disabled={busy}>
           <Save className="mr-1 size-4" />{busy ? "保存中…" : "保存"}
         </Button>
-      </CardContent>
+      </SectionCardContent>
     </SectionCard>
   )
 }

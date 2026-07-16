@@ -26,7 +26,7 @@ export function CompletenessPanel({
   items.push({ ok: rules.length > 0, label: `规则集（${rules.length} 条）` })
 
   const llmUnbound = rules.filter(
-    (r) => (r.method === "llm" || r.method === "llm_vision") && !r.promptId,
+    (r) => (r.method === "llm" || r.method === "llm_vision") && !r.prompt_id,
   ).length
   items.push({
     ok: llmUnbound === 0,
@@ -34,10 +34,13 @@ export function CompletenessPanel({
     fix: llmUnbound > 0 ? "修复" : undefined,
   })
 
-  const rsUnbound = rules.filter((r) => r.method === "rule_set" && !r.datasetId).length
+  const rsCount = rules.filter((r) => r.method === "rule_set").length
   items.push({
-    ok: rsUnbound === 0,
-    label: rsUnbound === 0 ? "规则集评估已绑定数据集" : `${rsUnbound} 条规则集评估未绑定数据集`,
+    ok: true,
+    label:
+      rsCount === 0
+        ? "无规则集评估"
+        : `规则集评估 ${rsCount} 条（默认使用全部参考数据集/知识库）`,
   })
 
   items.push({ ok: cascade.length > 0, label: "级联阶段已配置" })

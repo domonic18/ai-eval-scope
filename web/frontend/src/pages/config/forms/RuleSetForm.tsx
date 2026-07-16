@@ -4,11 +4,16 @@
  * 基本信息 + 级联阶段（卡片流：可增/删/改 id+名/上下移动/门控开关）+ 规则列表（RuleCard 引导式）。
  * 评估方式为场景无关通用项（LLM/视觉/规则集/格式检查），不再硬编码课件专用评估器。
  */
-import { useEffect, useRef } from "react"
-import { CardContent } from "../../../components/shadcn/card"
+import { useRef } from "react"
 import { Input } from "../../../components/shadcn/input"
 import { ChevronDown, ChevronRight, ChevronUp, ClipboardCheck, GripVertical, Info, TrendingUp, X } from "lucide-react"
-import { AddButton, SectionCard, SectionCardHeader, SectionCardTitle } from "../../../components/shared"
+import {
+  AddButton,
+  SectionCard,
+  SectionCardContent,
+  SectionCardHeader,
+  SectionCardTitle,
+} from "../../../components/shared"
 import type { CatalogEntry, DatasetCatalogEntry } from "../../../api/client"
 import { RuleCard } from "./RuleCard"
 import { Field, Toggle } from "./Field"
@@ -30,10 +35,11 @@ export interface RuleItem {
   dimension: string
   stage: string
   method?: EvalMethod // 评估方式（通用：llm / llm_vision / rule_set / format）
-  promptId?: string // LLM/视觉方式绑定的提示词 asset_id
-  datasetId?: string // 规则集方式绑定的参考数据集 asset_id
-  formatType?: FormatCheckType // 格式检查方式：后缀/JSON/HTML/Markdown
-  extensions?: string[] // formatType=extension 时的允许后缀列表
+  prompt_id?: string // LLM/视觉/复合评估的主提示词 asset_id
+  confirmation_prompt_id?: string // rule_set 复合评估的二次确认提示词（如 fact_verdict）
+  dataset_ids?: string[] // 规则集评估的参考数据集列表；空=全部参考数据集（知识库）
+  format_type?: FormatCheckType // 格式检查方式：后缀/JSON/HTML/Markdown
+  extensions?: string[] // format_type=extension 时的允许后缀列表
   evaluator?: string // 具体执行器标识；省略时由 method + 绑定资产派生
   weight: number
   description?: string
@@ -71,7 +77,14 @@ export function RuleSetForm({
     update({
       rules: [
         ...data.rules,
-        { id: "", name: "", dimension: "functional", stage: data.cascade[0]?.stage ?? "", evaluator: "", weight: 1 },
+        {
+          id: "",
+          name: "",
+          dimension: "functional",
+          stage: data.cascade[0]?.stage ?? "",
+          method: undefined,
+          weight: 1,
+        },
       ],
     })
   }
@@ -128,7 +141,7 @@ export function RuleSetForm({
             <Info className="size-4" /> 基本信息
           </SectionCardTitle>
         </SectionCardHeader>
-        <CardContent className="grid grid-cols-2 gap-3">
+        <SectionCardContent className="grid grid-cols-2 gap-3">
           <Field label="版本" required hint="语义化版本号，如 1.0.0">
             <Input value={data.version} onChange={(e) => update({ version: e.target.value })} />
           </Field>
@@ -140,7 +153,7 @@ export function RuleSetForm({
               <Input value={data.description} onChange={(e) => update({ description: e.target.value })} />
             </Field>
           </div>
-        </CardContent>
+        </SectionCardContent>
       </SectionCard>
 
       {/* 级联阶段 */}
@@ -153,7 +166,7 @@ export function RuleSetForm({
           </SectionCardTitle>
           <span className="text-[11px] text-muted-foreground">拖拽调整顺序 · 失败可短路</span>
         </SectionCardHeader>
-        <CardContent>
+        <SectionCardContent>
           <div ref={cascadeRef} className="flex flex-wrap items-stretch gap-2">
             {data.cascade.length === 0 && (
               <p className="text-[11px] text-muted-foreground">还没有阶段，点下方「添加阶段」创建（如：格式校验 / 安全 / 质量）。</p>
@@ -202,7 +215,7 @@ export function RuleSetForm({
             阶段决定评估顺序，门控阶段失败会短路后续；规则必须归属某个阶段。
           </p>
           <AddButton onClick={addStage}>添加阶段</AddButton>
-        </CardContent>
+        </SectionCardContent>
       </SectionCard>
 
       {/* 规则 */}
@@ -214,7 +227,7 @@ export function RuleSetForm({
             <span className="text-[11px] font-normal text-muted-foreground">{data.rules.length} 条</span>
           </SectionCardTitle>
         </SectionCardHeader>
-        <CardContent className="space-y-3">
+        <SectionCardContent className="space-y-3">
           {data.rules.map((rule, i) => (
             <RuleCard
               key={i}
@@ -234,7 +247,7 @@ export function RuleSetForm({
             <p className="py-4 text-center text-sm text-muted-foreground">还没有规则，点击下方「添加规则」开始</p>
           )}
           <AddButton onClick={addRule}>添加规则</AddButton>
-        </CardContent>
+        </SectionCardContent>
       </SectionCard>
     </div>
   )
