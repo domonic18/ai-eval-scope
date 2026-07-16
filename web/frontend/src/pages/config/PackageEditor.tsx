@@ -30,6 +30,7 @@ import {
   GitBranch,
   GitCompare,
   Layers,
+  Plus,
   Save,
 } from "lucide-react"
 import { RuleSetForm, type RuleSetData } from "./forms/RuleSetForm"
@@ -83,6 +84,24 @@ export default function PackageEditor() {
       })
       .catch(() => {})
   }, [id, setCrumbs])
+
+  // 新建空白资产（提示词/数据集），填入编辑器并直接进入编辑
+  const newAsset = (kind: AssetKind) => {
+    const assetId = kind === "prompts" ? `prompt_${Date.now().toString(36).slice(-4)}` : `dataset_${Date.now().toString(36).slice(-4)}`
+    const emptyContent =
+      kind === "prompts"
+        ? { template_id: assetId, name: "", system_prompt: "", user_prompt_template: "", temperature: 0.2, seed: 42, num_samples: 1, dimensions: [] }
+        : { subject: "", description: "", version: "1.0", role: "reference", constants: [], misconceptions: [] }
+    setContent(emptyContent)
+    setYamlText(yaml.dump(emptyContent, { sortKeys: false }))
+    setVersion("0.1.0")
+    setLabel("latest")
+    setVersions([])
+    setSel(kind === "prompts" ? { type: "prompt", assetId } : { type: "dataset", assetId })
+    setLoading(false)
+    setDiffVersion(null)
+    setDiffContent(null)
+  }
 
   const selectAsset = (s: Selection) => {
     setSel(s)
@@ -201,21 +220,27 @@ export default function PackageEditor() {
             </TreeSection>
             <TreeSection icon={BookOpen} label="提示词">
               {catalog?.prompts.length === 0 && (
-                <p className="px-2 py-1 text-[11px] text-muted-foreground/60">暂无，发布规则集后在右侧添加</p>
+                <p className="px-2 py-1 text-[11px] text-muted-foreground/60">暂无提示词</p>
               )}
               {catalog?.prompts.map((p) => (
                 <TreeNode key={p.asset_id} active={sel?.type === "prompt" && sel.assetId === p.asset_id}
                   name={p.asset_id} icon={FileText} onClick={() => selectAsset({ type: "prompt", assetId: p.asset_id })} />
               ))}
+              <button onClick={() => newAsset("prompts")} className="mt-1 flex w-full items-center gap-1.5 rounded px-2 py-1 text-left text-[11px] text-primary/80 transition-colors hover:bg-accent/50">
+                <Plus className="size-3" /> 新建提示词
+              </button>
             </TreeSection>
             <TreeSection icon={Database} label="参考数据">
               {catalog?.datasets.length === 0 && (
-                <p className="px-2 py-1 text-[11px] text-muted-foreground/60">暂无，可选</p>
+                <p className="px-2 py-1 text-[11px] text-muted-foreground/60">暂无数据集</p>
               )}
               {catalog?.datasets.map((d) => (
                 <TreeNode key={d.asset_id} active={sel?.type === "dataset" && sel.assetId === d.asset_id}
                   name={d.asset_id} icon={Database} onClick={() => selectAsset({ type: "dataset", assetId: d.asset_id })} />
               ))}
+              <button onClick={() => newAsset("datasets")} className="mt-1 flex w-full items-center gap-1.5 rounded px-2 py-1 text-left text-[11px] text-primary/80 transition-colors hover:bg-accent/50">
+                <Plus className="size-3" /> 新建数据集
+              </button>
             </TreeSection>
             <TreeSection icon={Gauge} label="策略">
               <TreeNode active={sel?.type === "policy"} name="聚合策略" icon={Gauge} onClick={() => selectAsset({ type: "policy" })} />
