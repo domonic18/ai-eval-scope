@@ -71,6 +71,37 @@ router.get("/:id/defaults", async (req, res) => {
   })
 })
 
+/** 更新场景默认指标定义 / 聚合策略（admin；直接覆盖 JSONB，非版本化）。 */
+router.patch("/:id/defaults", requireAuth, platformAdminGuard, async (req, res, next) => {
+  const { metric_definitions, aggregation_policy } = req.body ?? {}
+  if (metric_definitions === undefined && aggregation_policy === undefined) {
+    return next(
+      new PlatformError("至少提供 metric_definitions 或 aggregation_policy", {
+        status: 400,
+        code: "VALIDATION_ERROR",
+      }),
+    )
+  }
+  if (metric_definitions !== undefined && !Array.isArray(metric_definitions)) {
+    return next(new PlatformError("metric_definitions 必须为数组", { status: 400, code: "VALIDATION_ERROR" }))
+  }
+  if (
+    aggregation_policy !== undefined &&
+    (typeof aggregation_policy !== "object" || Array.isArray(aggregation_policy))
+  ) {
+    return next(new PlatformError("aggregation_policy 必须为对象", { status: 400, code: "VALIDATION_ERROR" }))
+  }
+  try {
+    await repo().updateDefaults(req.params.id, {
+      metricDefinitions: metric_definitions,
+      aggregationPolicy: aggregation_policy,
+    })
+    res.json({ ok: true })
+  } catch (e) {
+    next(e)
+  }
+})
+
 /** 资产完整内容（评测规则浏览器用，只读）。 */
 router.get("/:id/:kind/:assetId/content", async (req, res, next) => {
   const kind = req.params.kind as AssetKind
