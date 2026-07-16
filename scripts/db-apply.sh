@@ -43,17 +43,39 @@ web_already_applied() {
 
 echo "==> 1/2 应用 web(public schema) prisma migrations（增量幂等：已应用的跳过）"
 cd "$ROOT/web/backend"
+
+# 在删除遗留指标列的 drop 迁移前，必须先回填 metrics 与 snapshot，否则历史数据会丢失。
+# 本地 docker 栈同样适用；脚本幂等，可安全重跑。
+ensure_historical_migration() {
+  if [ "${_HISTORICAL_MIGRATION_DONE:-}" = "1" ]; then
+    return
+  fi
+  echo ""
+  echo "    ⚠️  即将应用删除遗留列的迁移，先执行一次性历史数据迁移（幂等）"
+  PLATFORM_DATABASE_URL="$DB_URL" npx tsx scripts/importAssetsToDb.ts
+  PLATFORM_DATABASE_URL="$DB_URL" npx tsx scripts/migrateHistoricalMetrics.ts
+  _HISTORICAL_MIGRATION_DONE=1
+}
+
 for d in $(ls -d "$WEB_MIGRATIONS"/*/ 2>/dev/null | sort); do
   name=$(basename "$d")
   if [ "$(web_already_applied "$name")" = "1" ]; then
     echo "    • skip (applied): web/$name"
     continue
   fi
+  # drop_run_legacy_metric_columns 会删除一等指标列，必须在此之前完成数据回填
+  if echo "$name" | grep -q "drop_run_legacy"; then
+    ensure_historical_migration
+  fi
   echo "    • apply: web/$name"
   docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U "$PGUSER" -d "$PGDB" \
     < "$d/migration.sql" >/dev/null
   PLATFORM_DATABASE_URL="$DB_URL" npx prisma migrate resolve --applied "$name" >/dev/null
 done
+
+# 若循环中未触发 drop 迁移（本地空库首次初始化不会走到 drop），仍兜底执行一次，
+# 确保 courseware 场景、资产、snapshot 已就绪。
+ensure_historical_migration
 
 echo "==> 2/2 生成 prisma client（host node_modules）"
 npx prisma generate >/dev/null

@@ -48,14 +48,32 @@ echo "目标库：$DB_URL"
 
 WEB_MIGRATIONS="$ROOT/web/backend/prisma/migrations"
 
-echo "==> 1/1 web(public schema)：仅应用 pending 迁移（查 _prisma_migrations 差集）"
+echo "==> 1/2 web(public schema)：仅应用 pending 迁移（查 _prisma_migrations 差集）"
 applied="$(psql "$DB_URL" -tAc "SELECT migration_name FROM _prisma_migrations" 2>/dev/null || true)"
 cd "$ROOT/web/backend"
+
+# 在删除遗留指标列的 drop 迁移前，必须先回填 metrics 与 snapshot，否则历史数据会丢失。
+# 通过迁移名特征识别；数据迁移脚本幂等，可安全重跑。
+ensure_historical_migration() {
+  if [ "${_HISTORICAL_MIGRATION_DONE:-}" = "1" ]; then
+    return
+  fi
+  echo ""
+  echo "    ⚠️  即将应用删除遗留列的迁移，先执行一次性历史数据迁移（幂等）"
+  PLATFORM_DATABASE_URL="$DB_URL" npx tsx scripts/importAssetsToDb.ts
+  PLATFORM_DATABASE_URL="$DB_URL" npx tsx scripts/migrateHistoricalMetrics.ts
+  _HISTORICAL_MIGRATION_DONE=1
+}
+
 for d in $(ls -d "$WEB_MIGRATIONS"/*/ 2>/dev/null | sort); do
   name=$(basename "$d")
   if grep -qx "$name" <<<"$applied"; then
     echo "    • skip (applied): $name"
     continue
+  fi
+  # drop_run_legacy_metric_columns 会删除一等指标列，必须在此之前完成数据回填
+  if echo "$name" | grep -q "drop_run_legacy"; then
+    ensure_historical_migration
   fi
   read -r -p "    应用 web/$name？[y/N] " ans </dev/tty
   if [ "$ans" = "y" ] || [ "$ans" = "Y" ]; then
@@ -67,5 +85,9 @@ for d in $(ls -d "$WEB_MIGRATIONS"/*/ 2>/dev/null | sort); do
   fi
 done
 
+# 若循环中未触发 drop 迁移（例如已经应用过），仍兜底执行一次数据迁移，
+# 确保新增库或跳级部署时 scenario + snapshot 已就绪。
+ensure_historical_migration
+
 echo ""
-echo "✅ 线上迁移完成（web pending）。单一来源 = db/。"
+echo "✅ 线上迁移完成（web pending + 历史数据）。单一来源 = db/。"
