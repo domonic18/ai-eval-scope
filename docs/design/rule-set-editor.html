@@ -268,6 +268,9 @@
             <div class="section-card">
               <div class="section-head">
                 <h3><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> 规则 rules <span class="hint">3 条</span></h3>
+                <button style="display:inline-flex; align-items:center; gap:4px; padding:4px 12px; border:1px solid var(--border); border-radius:var(--r-sm); background:var(--bg-elevated); color:var(--text-secondary); font-size:12px; cursor:pointer; float:right;">
+                  ✨ AI 推荐规则
+                </button>
               </div>
               <div class="section-body">
                 <div class="rule-list">
@@ -288,6 +291,10 @@
                     <div class="rc-row r3">
                       <label class="f-label">evaluator</label>
                       <input class="f-input mono" value="format.response_format">
+                      <div class="eval-info" style="margin-top:6px; padding:6px 10px; border-radius:var(--r-xs); background:var(--bg-inset); display:flex; gap:8px; align-items:center; font-size:11px;">
+                        <span class="eval-method-badge" style="display:inline-flex; gap:3px; padding:2px 8px; border-radius:3px; background:var(--bg-surface); color:var(--text-tertiary);">🔧 RULE</span>
+                        <span style="color:var(--text-tertiary);">仅参数配置（无需提示词）</span>
+                      </div>
                       <label class="f-label" style="margin-top:10px">params</label>
                       <div class="kv-list">
                         <div class="kv-row"><input class="f-input mono sm" value="allowed_formats"><input class="f-input mono sm" value="[md, html]"><button class="btn btn-danger btn-sm" style="padding:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
@@ -315,6 +322,12 @@
                     <div class="rc-row r3">
                       <label class="f-label">evaluator</label>
                       <input class="f-input mono" value="commonsense.info_accuracy">
+                      <div class="eval-info" style="margin-top:6px; padding:6px 10px; border-radius:var(--r-xs); background:var(--bg-inset); display:flex; gap:8px; align-items:center; font-size:11px;">
+                        <span class="eval-method-badge" style="display:inline-flex; gap:3px; padding:2px 8px; border-radius:3px; background:rgba(210,153,34,.12); color:var(--warning);">🔬 FACT_VERIFY</span>
+                        <span style="color:var(--text-tertiary);">需要提示词</span>
+                        <span style="color:var(--success);">✅ 已绑定: info_accuracy</span>
+                        <a href="prompt-editor.html" style="color:var(--accent); text-decoration:none; margin-left:auto;">跳转编辑 →</a>
+                      </div>
                       <label class="f-label" style="margin-top:10px">params</label>
                       <div class="kv-list">
                         <div class="kv-row"><input class="f-input mono sm" value="template_id"><input class="f-input mono sm" value="info_accuracy"><button class="btn btn-danger btn-sm" style="padding:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
@@ -343,6 +356,12 @@
                     <div class="rc-row r3">
                       <label class="f-label">evaluator</label>
                       <input class="f-input mono" value="soft.teaching_logic">
+                      <div class="eval-info" style="margin-top:6px; padding:6px 10px; border-radius:var(--r-xs); background:var(--bg-inset); display:flex; gap:8px; align-items:center; font-size:11px;">
+                        <span class="eval-method-badge" style="display:inline-flex; gap:3px; padding:2px 8px; border-radius:3px; background:rgba(61,109,255,.12); color:var(--accent);">🤖 LLM_JUDGE</span>
+                        <span style="color:var(--text-tertiary);">需要提示词</span>
+                        <span style="color:var(--success);">✅ 已绑定: pedagogical_logic</span>
+                        <a href="prompt-editor.html" style="color:var(--accent); text-decoration:none; margin-left:auto;">跳转编辑 →</a>
+                      </div>
                       <label class="f-label" style="margin-top:10px">params</label>
                       <div class="kv-list">
                         <div class="kv-row"><input class="f-input mono sm" value="template_id"><input class="f-input mono sm" value="pedagogical_logic"><button class="btn btn-danger btn-sm" style="padding:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
@@ -516,6 +535,29 @@
                   <button class="vc-btn promote">晋升 production</button>
                 </div>
               </div>
+            </div>
+          </div>
+          <!-- 配置完整度 -->
+          <div style="margin-top:16px; border:1px solid var(--border); border-radius:var(--r-md); padding:12px;">
+            <div style="font-size:11px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px;">配置完整度</div>
+            <div style="display:flex; align-items:center; gap:6px; padding:4px 0; font-size:12px;">
+              <span style="color:var(--success);">✅</span> <span>清单信息</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px; padding:4px 0; font-size:12px;">
+              <span style="color:var(--success);">✅</span> <span>规则集（10 条）</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px; padding:4px 0; font-size:12px;">
+              <span style="color:var(--warning);">⚠️</span> <span>2 条 LLM 规则未绑定提示词</span>
+              <a href="#" style="color:var(--accent); margin-left:auto; font-size:11px;">修复</a>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px; padding:4px 0; font-size:12px;">
+              <span style="color:var(--success);">✅</span> <span>指标定义（6 项）</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px; padding:4px 0; font-size:12px;">
+              <span style="color:var(--success);">✅</span> <span>聚合策略</span>
+            </div>
+            <div style="margin-top:8px; padding-top:8px; border-top:1px solid var(--border); font-size:11px; color:var(--text-tertiary);">
+              整体完整度: <span style="color:var(--warning); font-weight:600;">80%</span>
             </div>
           </div>
         </div>

@@ -304,6 +304,7 @@
             <div class="tab-btn" onclick="switchTab(event,'rules')">规则详情</div>
             <div class="tab-btn" onclick="switchTab(event,'prompts')">提示词</div>
             <div class="tab-btn" onclick="switchTab(event,'datasets')">参考数据</div>
+            <div class="tab-btn" onclick="switchTab(event,'graph')">关系图</div>
             <div class="tab-btn" onclick="switchTab(event,'yaml')">原始 YAML</div>
           </div>
 
@@ -529,6 +530,55 @@
                   <div class="ds-row"><span class="ds-key">backend</span><span class="ds-val">yaml_file</span></div>
                   <div class="ds-row"><span class="ds-key">constants</span><span class="ds-val">22 条物理常数/公式</span></div>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab: 关系图 -->
+          <div class="tab-panel" id="tab-graph">
+            <div style="padding:20px; text-align:center;">
+              <div style="font-size:13px; color:var(--text-secondary); margin-bottom:16px;">场景包资产关系图（点击节点查看详情）</div>
+              <div style="display:flex; justify-content:center; gap:40px; flex-wrap:wrap;">
+                <!-- 左列：规则集 -->
+                <div style="text-align:center;">
+                  <div style="font-size:11px; color:var(--text-tertiary); margin-bottom:8px; text-transform:uppercase;">规则集</div>
+                  <div style="background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--r-sm); padding:8px 12px; margin-bottom:6px; font-size:11px;">
+                    FMT_001 格式检查<br><span style="color:var(--text-tertiary);">🔧 RULE</span>
+                  </div>
+                  <div style="background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--r-sm); padding:8px 12px; margin-bottom:6px; font-size:11px;">
+                    SOFT_LOGIC 教学逻辑<br><span style="color:var(--accent);">🤖 LLM_JUDGE</span>
+                  </div>
+                  <div style="background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--r-sm); padding:8px 12px; font-size:11px;">
+                    COM_001 知识准确性<br><span style="color:var(--warning);">🔬 FACT_VERIFY</span>
+                  </div>
+                </div>
+                <!-- 箭头列 -->
+                <div style="display:flex; flex-direction:column; justify-content:center; gap:6px; color:var(--text-tertiary); font-size:20px;">→<br>→<br>→</div>
+                <!-- 中列：提示词 + 数据 -->
+                <div style="text-align:center;">
+                  <div style="font-size:11px; color:var(--text-tertiary); margin-bottom:8px; text-transform:uppercase;">提示词 + 数据</div>
+                  <div style="background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--r-sm); padding:8px 12px; margin-bottom:6px; font-size:11px;">
+                    pedagogical_logic<br><span style="color:var(--text-tertiary);">被 1 条规则引用</span>
+                  </div>
+                  <div style="background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--r-sm); padding:8px 12px; font-size:11px;">
+                    math (reference)<br><span style="color:var(--text-tertiary);">被 1 个评估器查询</span>
+                  </div>
+                </div>
+                <!-- 箭头 -->
+                <div style="display:flex; flex-direction:column; justify-content:center; gap:6px; color:var(--text-tertiary); font-size:20px;">→<br>→</div>
+                <!-- 右列：指标 + 策略 -->
+                <div style="text-align:center;">
+                  <div style="font-size:11px; color:var(--text-tertiary); margin-bottom:8px; text-transform:uppercase;">指标 + 策略</div>
+                  <div style="background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--r-sm); padding:8px 12px; margin-bottom:6px; font-size:11px;">
+                    DR 交付率 ≥0.95<br><span style="color:var(--text-tertiary);">count(format_gate)/total</span>
+                  </div>
+                  <div style="background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--r-sm); padding:8px 12px; font-size:11px;">
+                    聚合策略<br><span style="color:var(--text-tertiary);">3 阶段 w=1/1/1</span>
+                  </div>
+                </div>
+              </div>
+              <div style="margin-top:20px; font-size:11px; color:var(--text-tertiary);">
+                <span style="color:var(--success);">✅</span> 全部配置完整 · 无缺失
               </div>
             </div>
           </div>

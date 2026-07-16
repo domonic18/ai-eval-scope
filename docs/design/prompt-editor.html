@@ -164,6 +164,13 @@
         </div>
       </div>
 
+      <!-- 引用上下文 -->
+      <div style="margin:8px 0; padding:6px 12px; border-radius:var(--r-sm); background:rgba(55,179,90,.08); border:1px solid rgba(55,179,90,.2); font-size:12px; display:flex; align-items:center; gap:6px;">
+        <span style="color:var(--success);">🔗</span>
+        <span style="color:var(--text-secondary);">此提示词被以下规则引用：</span>
+        <a href="rule-set-editor.html" style="color:var(--accent); text-decoration:none; font-family:var(--mono); font-size:11px;">SOFT_LOGIC (soft.teaching_logic)</a>
+      </div>
+
       <!-- 拆分编辑 + 预览 -->
       <div class="split r-2">
         <!-- 编辑器 -->
@@ -172,6 +179,9 @@
             <div class="tab-bar">
               <button class="tab-btn active" onclick="switchPromptTab(event,'sys')">System Prompt</button>
               <button class="tab-btn" onclick="switchPromptTab(event,'usr')">User Template</button>
+              <button style="display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border:1px solid var(--border); border-radius:var(--r-sm); background:var(--bg-elevated); color:var(--text-secondary); font-size:11px; cursor:pointer; margin-left:auto;">
+                ✨ AI 优化
+              </button>
             </div>
             <span class="len" id="editLen">~1.8k chars</span>
           </div>
