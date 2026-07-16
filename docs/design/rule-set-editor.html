@@ -87,6 +87,26 @@
   .collapse-toggle.open svg { transform: rotate(90deg); }
   .collapse-panel { display: none; margin-top: 8px; }
 
+  /* ── 引导式规则卡（评估方式 + 条件化绑定） ── */
+  .rc-head { display: grid; grid-template-columns: 1fr auto auto; gap: 9px; align-items: end; margin-bottom: 9px; }
+  .rc-line2 { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-bottom: 9px; }
+  .rc-bind { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; }
+  .rc-bind .goto { font-size: 11.5px; color: var(--accent); text-decoration: none; white-space: nowrap; padding-bottom: 6px; }
+  .rc-bind .goto:hover { text-decoration: underline; }
+  .method-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: var(--r-xs); font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .mb-llm { background: rgba(61,109,255,.12); color: var(--accent); }
+  .mb-vis { background: rgba(88,166,255,.12); color: var(--info); }
+  .mb-rule { background: var(--bg-elevated); color: var(--text-secondary); border: 1px solid var(--border); }
+  .mb-fmt { background: var(--bg-elevated); color: var(--text-secondary); border: 1px solid var(--border); }
+  .req { color: var(--danger); margin-left: 2px; }
+  .fhelp { font-size: 11px; color: var(--text-tertiary); margin-top: 5px; }
+  .ext-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+  .ext-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px 2px 9px; border-radius: 100px; background: var(--bg-elevated); border: 1px solid var(--border); font-family: var(--mono); font-size: 11px; color: var(--text-secondary); }
+  .ext-chip button { background: none; border: none; color: var(--text-quaternary); cursor: pointer; padding: 0; line-height: 1; font-size: 13px; }
+  .ext-chip button:hover { color: var(--danger); }
+  .ext-add { display: flex; gap: 6px; margin-top: 7px; align-items: center; }
+  .ext-add .f-input { max-width: 180px; }
+
   /* ── YAML 模式 ── */
   .yaml-viewer { background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--r-md); padding: 18px; font-family: var(--mono); font-size: 12.5px; line-height: 1.75; overflow-x: auto; color: var(--text-secondary); white-space: pre; }
   .yaml-viewer .k { color: #7aa2f7; }
@@ -275,98 +295,112 @@
               <div class="section-body">
                 <div class="rule-list">
 
-                  <!-- 规则 1 -->
+                  <!-- 规则 1 · 格式/程序化检查（文件后缀） -->
                   <div class="rule-card">
-                    <div class="rc-row r1">
-                      <input class="f-input mono sm" value="FMT_001" placeholder="rule.id">
-                      <input class="f-input sm" value="输出格式有效" placeholder="rule.name">
-                      <div class="tier-select"><select class="f-input sm tier-gate"><option selected>HARD_GATE</option><option>HARD_SCORE</option><option>SOFT</option><option>PREFERENCE</option></select></div>
+                    <div class="rc-head">
+                      <div>
+                        <label class="f-label">检查内容<span class="req">*</span></label>
+                        <input class="f-input" value="输出格式有效" placeholder="如：行程安全检查 / 格式是否有效 / 教学逻辑">
+                      </div>
+                      <span class="method-badge mb-fmt">📐 格式检查</span>
                       <button class="btn btn-danger btn-sm" style="padding:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button>
                     </div>
-                    <div class="rc-row r2">
-                      <div><label class="f-label">dimension</label><select class="f-input sm"><option>functional</option><option>effectiveness</option></select></div>
-                      <div><label class="f-label">stage</label><select class="f-input sm"><option>format</option><option>commonsense</option><option>quality</option></select></div>
-                      <div><label class="f-label">weight</label><input class="f-input mono sm" value="1.0"></div>
-                    </div>
-                    <div class="rc-row r3">
-                      <label class="f-label">evaluator</label>
-                      <input class="f-input mono" value="format.response_format">
-                      <div class="eval-info" style="margin-top:6px; padding:6px 10px; border-radius:var(--r-xs); background:var(--bg-inset); display:flex; gap:8px; align-items:center; font-size:11px;">
-                        <span class="eval-method-badge" style="display:inline-flex; gap:3px; padding:2px 8px; border-radius:3px; background:var(--bg-surface); color:var(--text-tertiary);">🔧 RULE</span>
-                        <span style="color:var(--text-tertiary);">仅参数配置（无需提示词）</span>
+                    <div class="rc-line2">
+                      <div>
+                        <label class="f-label">所属阶段<span class="req">*</span></label>
+                        <select class="f-input sm"><option selected>format（格式门控）</option><option>commonsense（常识门控）</option><option>quality（质量评估）</option><option value="">＋ 新建阶段…</option></select>
                       </div>
-                      <label class="f-label" style="margin-top:10px">params</label>
-                      <div class="kv-list">
-                        <div class="kv-row"><input class="f-input mono sm" value="allowed_formats"><input class="f-input mono sm" value="[md, html]"><button class="btn btn-danger btn-sm" style="padding:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+                      <div>
+                        <label class="f-label">评估方式<span class="req">*</span></label>
+                        <select class="f-input sm"><option>🤖 LLM 评估</option><option>📸 LLM 视觉评估</option><option>🔧 规则集评估</option><option selected>📐 格式/程序化检查</option></select>
                       </div>
-                      <span class="kv-add"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> 添加参数</span>
                     </div>
-                    <div style="margin-top:10px"><button class="collapse-toggle" onclick="toggleCollapse(this)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> 描述</button>
-                      <div class="collapse-panel"><textarea class="f-input" placeholder="规则描述…">SUT 必须生成有效的 Markdown 或 HTML 文件。format 失败 → S_format=0，后续阶段短路。</textarea></div>
+                    <!-- 条件化：格式检查类型 + 后缀 -->
+                    <div>
+                      <label class="f-label">格式检查类型<span class="req">*</span></label>
+                      <select class="f-input sm" style="max-width:260px"><option selected>文件后缀名（可配置）</option><option>JSON 格式有效性</option><option>HTML 格式有效性</option><option>Markdown 格式有效性</option></select>
+                      <p class="fhelp">程序化校验，不调用 LLM；常用于格式门控阶段。</p>
+                      <label class="f-label" style="margin-top:10px">允许的文件后缀</label>
+                      <div class="ext-add">
+                        <input class="f-input sm mono" placeholder="如 md（不含点），回车或点添加">
+                        <button class="btn btn-sm"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> 添加</button>
+                      </div>
+                      <div class="ext-chips">
+                        <span class="ext-chip">.md<button title="移除">×</button></span>
+                        <span class="ext-chip">.html<button title="移除">×</button></span>
+                        <span class="ext-chip">.json<button title="移除">×</button></span>
+                      </div>
+                    </div>
+                    <div style="margin-top:10px"><button class="collapse-toggle" onclick="toggleCollapse(this)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> 高级 ▸ 自定义 evaluator ID</button>
+                      <div class="collapse-panel"><input class="f-input mono sm" value="format.extension" placeholder="默认按方式+资产派生（format.extension）；如需指定可填，如 my.checker"></div>
                     </div>
                   </div>
 
-                  <!-- 规则 2 -->
+                  <!-- 规则 2 · 规则集评估（绑参考数据集） -->
                   <div class="rule-card">
-                    <div class="rc-row r1">
-                      <input class="f-input mono sm" value="COM_001" placeholder="rule.id">
-                      <input class="f-input sm" value="知识准确性检查" placeholder="rule.name">
-                      <div class="tier-select"><select class="f-input sm tier-score"><option>HARD_GATE</option><option selected>HARD_SCORE</option><option>SOFT</option><option>PREFERENCE</option></select></div>
+                    <div class="rc-head">
+                      <div>
+                        <label class="f-label">检查内容<span class="req">*</span></label>
+                        <input class="f-input" value="知识准确性检查" placeholder="如：行程安全检查 / 格式是否有效 / 教学逻辑">
+                      </div>
+                      <span class="method-badge mb-rule">🔧 规则集评估</span>
                       <button class="btn btn-danger btn-sm" style="padding:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button>
                     </div>
-                    <div class="rc-row r2">
-                      <div><label class="f-label">dimension</label><select class="f-input sm"><option>functional</option><option selected>effectiveness</option></select></div>
-                      <div><label class="f-label">stage</label><select class="f-input sm"><option>format</option><option selected>commonsense</option><option>quality</option></select></div>
-                      <div><label class="f-label">weight</label><input class="f-input mono sm" value="1.0"></div>
-                    </div>
-                    <div class="rc-row r3">
-                      <label class="f-label">evaluator</label>
-                      <input class="f-input mono" value="commonsense.info_accuracy">
-                      <div class="eval-info" style="margin-top:6px; padding:6px 10px; border-radius:var(--r-xs); background:var(--bg-inset); display:flex; gap:8px; align-items:center; font-size:11px;">
-                        <span class="eval-method-badge" style="display:inline-flex; gap:3px; padding:2px 8px; border-radius:3px; background:rgba(210,153,34,.12); color:var(--warning);">🔬 FACT_VERIFY</span>
-                        <span style="color:var(--text-tertiary);">需要提示词</span>
-                        <span style="color:var(--success);">✅ 已绑定: info_accuracy</span>
-                        <a href="prompt-editor.html" style="color:var(--accent); text-decoration:none; margin-left:auto;">跳转编辑 →</a>
+                    <div class="rc-line2">
+                      <div>
+                        <label class="f-label">所属阶段<span class="req">*</span></label>
+                        <select class="f-input sm"><option>format（格式门控）</option><option selected>commonsense（常识门控）</option><option>quality（质量评估）</option><option value="">＋ 新建阶段…</option></select>
                       </div>
-                      <label class="f-label" style="margin-top:10px">params</label>
-                      <div class="kv-list">
-                        <div class="kv-row"><input class="f-input mono sm" value="template_id"><input class="f-input mono sm" value="info_accuracy"><button class="btn btn-danger btn-sm" style="padding:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
-                        <div class="kv-row"><input class="f-input mono sm" value="fact_datasets"><input class="f-input mono sm" value="[_defaults, math, history]"><button class="btn btn-danger btn-sm" style="padding:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+                      <div>
+                        <label class="f-label">评估方式<span class="req">*</span></label>
+                        <select class="f-input sm"><option>🤖 LLM 评估</option><option>📸 LLM 视觉评估</option><option selected>🔧 规则集评估</option><option>📐 格式/程序化检查</option></select>
                       </div>
-                      <span class="kv-add"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> 添加参数</span>
                     </div>
-                    <div style="margin-top:10px"><button class="collapse-toggle open" onclick="toggleCollapse(this)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> 描述</button>
-                      <div class="collapse-panel" style="display:block"><textarea class="f-input" placeholder="规则描述…">三层检查：①内置自动检查 → ②可配置 fact_rules（正则）→ ③LLM 语义验证（可选）。</textarea></div>
+                    <!-- 条件化：绑定参考数据集 -->
+                    <div class="rc-bind">
+                      <div>
+                        <label class="f-label">数据集（参考知识）<span class="req">*</span></label>
+                        <select class="f-input sm"><option selected>math · 学科常量</option><option>history · 历史常识</option><option>_defaults · 通用</option></select>
+                        <p class="fhelp">仅参考数据集（role=reference），用于事实/规则校验。</p>
+                      </div>
+                      <a href="dataset-editor.html" class="goto">编辑数据集 →</a>
+                    </div>
+                    <div style="margin-top:10px"><button class="collapse-toggle" onclick="toggleCollapse(this)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> 高级 ▸ 自定义 evaluator ID</button>
+                      <div class="collapse-panel"><input class="f-input mono sm" value="rule.math" placeholder="默认按方式+资产派生（rule.<dataset>）；如需指定可填，如 my.checker"></div>
                     </div>
                   </div>
 
-                  <!-- 规则 3 -->
+                  <!-- 规则 3 · LLM 评估（绑提示词） -->
                   <div class="rule-card">
-                    <div class="rc-row r1">
-                      <input class="f-input mono sm" value="QUA_001" placeholder="rule.id">
-                      <input class="f-input sm" value="教学逻辑评估" placeholder="rule.name">
-                      <div class="tier-select"><select class="f-input sm tier-soft"><option>HARD_GATE</option><option>HARD_SCORE</option><option selected>SOFT</option><option>PREFERENCE</option></select></div>
+                    <div class="rc-head">
+                      <div>
+                        <label class="f-label">检查内容<span class="req">*</span></label>
+                        <input class="f-input" value="教学逻辑评估" placeholder="如：行程安全检查 / 格式是否有效 / 教学逻辑">
+                      </div>
+                      <span class="method-badge mb-llm">🤖 LLM 评估</span>
                       <button class="btn btn-danger btn-sm" style="padding:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button>
                     </div>
-                    <div class="rc-row r2">
-                      <div><label class="f-label">dimension</label><select class="f-input sm"><option>functional</option><option selected>effectiveness</option></select></div>
-                      <div><label class="f-label">stage</label><select class="f-input sm"><option>format</option><option>commonsense</option><option selected>quality</option></select></div>
-                      <div><label class="f-label">weight</label><input class="f-input mono sm" value="0.5"></div>
+                    <div class="rc-line2">
+                      <div>
+                        <label class="f-label">所属阶段<span class="req">*</span></label>
+                        <select class="f-input sm"><option>format（格式门控）</option><option>commonsense（常识门控）</option><option selected>quality（质量评估）</option><option value="">＋ 新建阶段…</option></select>
+                      </div>
+                      <div>
+                        <label class="f-label">评估方式<span class="req">*</span></label>
+                        <select class="f-input sm"><option selected>🤖 LLM 评估</option><option>📸 LLM 视觉评估</option><option>🔧 规则集评估</option><option>📐 格式/程序化检查</option></select>
+                      </div>
                     </div>
-                    <div class="rc-row r3">
-                      <label class="f-label">evaluator</label>
-                      <input class="f-input mono" value="soft.teaching_logic">
-                      <div class="eval-info" style="margin-top:6px; padding:6px 10px; border-radius:var(--r-xs); background:var(--bg-inset); display:flex; gap:8px; align-items:center; font-size:11px;">
-                        <span class="eval-method-badge" style="display:inline-flex; gap:3px; padding:2px 8px; border-radius:3px; background:rgba(61,109,255,.12); color:var(--accent);">🤖 LLM_JUDGE</span>
-                        <span style="color:var(--text-tertiary);">需要提示词</span>
-                        <span style="color:var(--success);">✅ 已绑定: pedagogical_logic</span>
-                        <a href="prompt-editor.html" style="color:var(--accent); text-decoration:none; margin-left:auto;">跳转编辑 →</a>
+                    <!-- 条件化：绑定提示词 -->
+                    <div class="rc-bind">
+                      <div>
+                        <label class="f-label">提示词<span class="req">*</span></label>
+                        <select class="f-input sm"><option selected>pedagogical_logic · 教学逻辑</option><option>info_accuracy · 知识准确</option></select>
+                        <p class="fhelp">提示词内容在「提示词」资产中编辑。</p>
                       </div>
-                      <label class="f-label" style="margin-top:10px">params</label>
-                      <div class="kv-list">
-                        <div class="kv-row"><input class="f-input mono sm" value="template_id"><input class="f-input mono sm" value="pedagogical_logic"><button class="btn btn-danger btn-sm" style="padding:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
-                      </div>
-                      <span class="kv-add"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> 添加参数</span>
+                      <a href="prompt-editor.html" class="goto">跳转编辑 →</a>
+                    </div>
+                    <div style="margin-top:10px"><button class="collapse-toggle" onclick="toggleCollapse(this)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> 高级 ▸ 自定义 evaluator ID</button>
+                      <div class="collapse-panel"><input class="f-input mono sm" value="llm.pedagogical_logic" placeholder="默认按方式+资产派生（llm.<prompt>）；如需指定可填，如 my.checker"></div>
                     </div>
                   </div>
 

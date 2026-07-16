@@ -30,6 +30,14 @@
   .pane-head .len { font-family: var(--mono); font-size: 11px; color: var(--text-tertiary); }
   .pane-body { padding: 16px; }
 
+  /* System / User 上下堆叠（常驻可见，非横向 Tab） */
+  .ps-block { margin-bottom: 18px; }
+  .ps-block:last-child { margin-bottom: 0; }
+  .ps-title { font-size: 12px; font-weight: 650; color: var(--text-secondary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .ps-title .len { font-family: var(--mono); font-size: 11px; color: var(--text-tertiary); font-weight: 400; }
+  .req { color: var(--danger); margin-left: 2px; }
+  .mhelp { font-size: 10.5px; color: var(--text-tertiary); margin-top: 3px; }
+
   /* 编辑器 tab */
   .tab-bar { display: flex; gap: 2px; }
   .tab-btn { padding: 6px 12px; font-size: 12.5px; color: var(--text-secondary); border: none; border-bottom: 2px solid transparent; cursor: pointer; font-family: inherit; background: none; transition: all .12s; }
@@ -150,9 +158,9 @@
       <!-- 元数据栏 -->
       <div class="meta-bar r-1">
         <div class="meta-row1">
-          <div class="mi"><span class="lab">template_id</span><input class="input mono" value="pedagogical_logic"></div>
-          <div class="mi"><span class="lab">name</span><input class="input" value="教学逻辑评估"></div>
-          <div class="mi"><span class="lab">namespace</span><span class="ns-badge">courseware</span></div>
+          <div class="mi"><span class="lab">template_id<span class="req">*</span></span><input class="input mono" value="pedagogical_logic"><span class="mhelp">唯一标识，包内不可重复</span></div>
+          <div class="mi"><span class="lab">name<span class="req">*</span></span><input class="input" value="教学逻辑评估"><span class="mhelp">人类可读名称</span></div>
+          <div class="mi"><span class="lab">namespace</span><span class="ns-badge">courseware</span><span class="mhelp">资产隔离命名空间</span></div>
           <div class="mi"><span class="lab">version</span><span class="ver-badge">v1.1 · draft</span></div>
           <div class="mi"><span class="lab">content_hash</span><span class="val mono" style="color:var(--text-tertiary)">sha256:8c2f…</span></div>
         </div>
@@ -176,17 +184,14 @@
         <!-- 编辑器 -->
         <div class="pane">
           <div class="pane-head">
-            <div class="tab-bar">
-              <button class="tab-btn active" onclick="switchPromptTab(event,'sys')">System Prompt</button>
-              <button class="tab-btn" onclick="switchPromptTab(event,'usr')">User Template</button>
-              <button style="display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border:1px solid var(--border); border-radius:var(--r-sm); background:var(--bg-elevated); color:var(--text-secondary); font-size:11px; cursor:pointer; margin-left:auto;">
-                ✨ AI 优化
-              </button>
-            </div>
-            <span class="len" id="editLen">~1.8k chars</span>
+            <h3><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> 提示词编辑（System + User 上下布局）</h3>
+            <button style="display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border:1px solid var(--border); border-radius:var(--r-sm); background:var(--bg-elevated); color:var(--text-secondary); font-size:11px; cursor:pointer;">
+              ✨ AI 优化
+            </button>
           </div>
           <div class="pane-body">
-            <div class="tab-panel active" id="ptab-sys">
+            <div class="ps-block">
+            <div class="ps-title">System Prompt <span class="len">~1.8k chars</span></div>
               <textarea class="prompt-edit" spellcheck="false"># 角色
 你是一位资深的教学设计评审专家，专审各类教学文档的「教学逻辑」。
 
@@ -199,7 +204,8 @@
 3. 证据先行：每个 issues 必须引用原文片段或指出位置，禁止臆测。
 4. 分级自洽：score 与 issues.severity 一致。</textarea>
             </div>
-            <div class="tab-panel" id="ptab-usr">
+            <div class="ps-block">
+            <div class="ps-title">User Prompt Template（Jinja2）</div>
               <div class="callout callout-info" style="margin-bottom:10px;font-size:12px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg><div>Jinja2 模板 · <span class="code-inline">{{ var }}</span> 高亮为蓝色，右侧实时渲染预览。</div></div>
               <div class="prompt-edit" contenteditable="true" spellcheck="false">请评估以下教学文档集的教学逻辑质量。
 
