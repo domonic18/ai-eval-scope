@@ -22,18 +22,18 @@ export function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <Label className="text-foreground/60">
+      <Label className="text-[11px] font-medium text-muted-foreground/70">
         {label}
-        {required && <span className="ml-0.5 text-red-400">*</span>}
+        {required && <span className="ml-0.5 text-destructive">*</span>}
         {!required && optional && (
-          <span className="ml-1 rounded bg-white/5 px-1 py-px text-[9px] font-normal uppercase tracking-wide text-foreground/50">
+          <span className="ml-1 rounded bg-secondary px-1 py-px text-[9px] font-normal uppercase tracking-wide text-muted-foreground">
             选填
           </span>
         )}
       </Label>
       {children}
       {hint && (
-        <p className="flex items-start gap-1 text-[11px] leading-tight text-foreground/45">
+        <p className="flex items-start gap-1 text-[11px] leading-tight text-muted-foreground/70">
           <Info className="mt-px size-3 shrink-0" />
           <span>{hint}</span>
         </p>
@@ -55,17 +55,43 @@ export function FormYamlToggle({
       <button
         type="button"
         onClick={() => onChange("form")}
-        className={`rounded-l-md px-3 py-1 text-xs transition-colors ${mode === "form" ? "bg-accent font-medium text-accent-foreground" : "text-muted-foreground hover:text-foreground"}`}
+        className={`rounded-l-md px-3 py-1 text-xs transition-colors ${mode === "form" ? "bg-primary font-medium text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
       >
         表单
       </button>
       <button
         type="button"
         onClick={() => onChange("yaml")}
-        className={`rounded-r-md px-3 py-1 text-xs transition-colors ${mode === "yaml" ? "bg-accent font-medium text-accent-foreground" : "text-muted-foreground hover:text-foreground"}`}
+        className={`rounded-r-md px-3 py-1 text-xs transition-colors ${mode === "yaml" ? "bg-primary font-medium text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
       >
         YAML
       </button>
     </div>
+  )
+}
+
+/** 自定义开关（对齐原型 .toggle）：选中变红，用于门控/失败短路。 */
+export function Toggle({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean
+  onChange: (v: boolean) => void
+  label?: string
+}) {
+  return (
+    <button type="button" onClick={() => onChange(!checked)} className="inline-flex items-center gap-1.5">
+      <span
+        className={`relative inline-block h-[17px] w-[30px] rounded-full border transition-colors ${checked ? "border-destructive/40 bg-destructive/15" : "border-border bg-inset"}`}
+      >
+        <span
+          className={`absolute top-1/2 size-[11px] -translate-y-1/2 rounded-full transition-all ${checked ? "left-[15px] bg-destructive" : "left-[2px] bg-muted-foreground"}`}
+        />
+      </span>
+      {label && (
+        <span className={`text-[10px] ${checked ? "text-destructive" : "text-muted-foreground"}`}>{label}</span>
+      )}
+    </button>
   )
 }

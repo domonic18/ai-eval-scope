@@ -4,11 +4,12 @@
  * 新建提示词时由 createEmptyPrompt() 预置默认骨架内容，便于用户填写修改。
  */
 import { useMemo, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "../../../components/shadcn/card"
+import { CardContent } from "../../../components/shadcn/card"
 import { Badge } from "../../../components/shadcn/badge"
 import { Input } from "../../../components/shadcn/input"
 import { Textarea } from "../../../components/shadcn/textarea"
 import { Eye } from "lucide-react"
+import { SectionCard, SectionCardHeader, SectionCardTitle } from "../../../components/shared"
 import { Field } from "./Field"
 
 export interface PromptData {
@@ -54,7 +55,7 @@ export function PromptForm({
   return (
     <div className="space-y-4">
       {/* 基本信息 */}
-      <Card>
+      <SectionCard>
         <CardContent className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3">
           <Field label="template_id" required hint="唯一标识，包内不可重复，如 safety_check">
             <Input className="font-mono text-xs" value={data.template_id} onChange={(e) => update({ template_id: e.target.value })} />
@@ -75,13 +76,13 @@ export function PromptForm({
             <Input type="number" value={data.num_samples ?? 1} onChange={(e) => update({ num_samples: parseInt(e.target.value) || 1 })} />
           </Field>
         </CardContent>
-      </Card>
+      </SectionCard>
 
       {/* System Prompt（上下布局，始终可见） */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm">System Prompt</CardTitle>
-        </CardHeader>
+      <SectionCard>
+        <SectionCardHeader className="pb-2">
+          <SectionCardTitle className="text-sm">System Prompt</SectionCardTitle>
+        </SectionCardHeader>
         <CardContent>
           <Textarea
             className="min-h-[200px] font-mono text-xs leading-relaxed"
@@ -90,12 +91,12 @@ export function PromptForm({
             placeholder="设定评估者的角色、原则与输出格式约束…"
           />
         </CardContent>
-      </Card>
+      </SectionCard>
 
       {/* User Prompt Template（上下布局，始终可见） */}
-      <Card>
-        <CardHeader className="flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm">User Prompt Template（Jinja2）</CardTitle>
+      <SectionCard>
+        <SectionCardHeader className="flex-row items-center justify-between pb-2">
+          <SectionCardTitle className="text-sm">User Prompt Template（Jinja2）</SectionCardTitle>
           {vars.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {vars.map((v) => (
@@ -103,7 +104,7 @@ export function PromptForm({
               ))}
             </div>
           )}
-        </CardHeader>
+        </SectionCardHeader>
         <CardContent>
           <Textarea
             className="min-h-[200px] font-mono text-xs leading-relaxed"
@@ -112,13 +113,13 @@ export function PromptForm({
             placeholder="用 {{ var }} 引用变量，描述评估对象、标准与输出要求…"
           />
         </CardContent>
-      </Card>
+      </SectionCard>
 
       {/* 渲染预览 */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-1.5 text-sm"><Eye className="size-3.5" /> 渲染预览</CardTitle>
-        </CardHeader>
+      <SectionCard>
+        <SectionCardHeader className="pb-2">
+          <SectionCardTitle className="flex items-center gap-1.5 text-sm"><Eye className="size-3.5" /> 渲染预览</SectionCardTitle>
+        </SectionCardHeader>
         <CardContent className="space-y-3">
           {/* 变量 Mock 值 */}
           {vars.length > 0 && (
@@ -141,12 +142,12 @@ export function PromptForm({
             <pre className="max-h-[200px] overflow-auto whitespace-pre-wrap rounded-md bg-muted/20 p-3 font-mono text-xs leading-relaxed text-muted-foreground">{rendered || "(空)"}</pre>
           </div>
         </CardContent>
-      </Card>
+      </SectionCard>
 
       {/* 评分维度（output_schema） */}
       {data.dimensions && data.dimensions.length > 0 && (
-        <Card>
-          <CardHeader><CardTitle className="text-sm">评分维度（output_schema）</CardTitle></CardHeader>
+        <SectionCard>
+          <SectionCardHeader><SectionCardTitle className="text-sm">评分维度（output_schema）</SectionCardTitle></SectionCardHeader>
           <CardContent>
             <div className="space-y-1">
               {data.dimensions.map((dim, i) => (
@@ -159,7 +160,7 @@ export function PromptForm({
               ))}
             </div>
           </CardContent>
-        </Card>
+        </SectionCard>
       )}
     </div>
   )

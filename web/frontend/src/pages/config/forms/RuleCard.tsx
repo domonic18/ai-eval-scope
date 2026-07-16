@@ -4,11 +4,10 @@
  * 评估方式为 4 个场景无关的通用选项（替代原课件专用硬编码评估器列表）。
  */
 import { useState } from "react"
-import { Badge } from "../../../components/shadcn/badge"
 import { Button } from "../../../components/shadcn/button"
 import { Input } from "../../../components/shadcn/input"
 import { Label } from "../../../components/shadcn/label"
-import { Plus, Trash2, X } from "lucide-react"
+import { ChevronRight, Plus, Trash2, X } from "lucide-react"
 import type { CatalogEntry, DatasetCatalogEntry } from "../../../api/client"
 import type { EvalMethod, FormatCheckType, RuleItem } from "./RuleSetForm"
 
@@ -36,18 +35,25 @@ const FORMAT_CHECKS: { value: FormatCheckType; label: string; hint: string }[] =
 
 const methodOf = (m?: EvalMethod) => EVAL_METHODS.find((x) => x.value === m)
 
+/** 方式徽标配色（soft 底 + 对应文字色，对齐原型 method-badge） */
+const badgeClassOf = (m?: EvalMethod): string => {
+  if (m === "llm") return "bg-primary/15 text-primary"
+  if (m === "llm_vision") return "bg-cyan-500/15 text-cyan-300"
+  return "border border-border bg-secondary text-muted-foreground" // rule_set / format
+}
+
 const NEW_STAGE = "__new_stage__"
 
 /** evaluator 是否处于"派生态"（空或 llm./vision./rule./format. 前缀）；非派生视为用户自定义覆盖，不自动改写。 */
-function isDerivedEvaluator(evaluator: string): boolean {
-  return evaluator === "" || /^(llm|vision|rule|format)\./.test(evaluator)
+function isDerivedEvaluator(evaluator: string | undefined): boolean {
+  return evaluator === undefined || evaluator === "" || /^(llm|vision|rule|format)\./.test(evaluator)
 }
 function deriveEvaluator(rule: RuleItem): string {
   if (rule.method === "llm") return rule.promptId ? `llm.${rule.promptId}` : ""
   if (rule.method === "llm_vision") return rule.promptId ? `vision.${rule.promptId}` : ""
   if (rule.method === "rule_set") return rule.datasetId ? `rule.${rule.datasetId}` : ""
   if (rule.method === "format") return rule.formatType ? `format.${rule.formatType}` : ""
-  return ""
+  return rule.evaluator ?? ""
 }
 
 export function RuleCard({
@@ -60,6 +66,7 @@ export function RuleCard({
   onNewStage,
   onNewPrompt,
   onNewDataset,
+  onJumpAsset,
 }: {
   rule: RuleItem
   cascade: CascadeStage[]
@@ -70,12 +77,14 @@ export function RuleCard({
   onNewStage: () => void
   onNewPrompt?: () => void
   onNewDataset?: () => void
+  onJumpAsset?: (type: "prompt" | "dataset", assetId: string) => void
 }) {
   const m = methodOf(rule.method)
   const needsPrompt = rule.method === "llm" || rule.method === "llm_vision"
   const needsDataset = rule.method === "rule_set"
   const needsFormat = rule.method === "format"
   const [extInput, setExtInput] = useState("")
+  const [advOpen, setAdvOpen] = useState(false)
 
   /**
    * 切换方式或绑定资产后：若 evaluator 当前为派生态，则同步派生；
@@ -89,11 +98,13 @@ export function RuleCard({
   }
 
   return (
-    <div className="rounded-md border border-border p-3">
+    <div className="rounded-md border border-border bg-secondary p-3">
       {/* 第一行：检查内容 + 方式徽标 + 删除 */}
-      <div className="flex items-start gap-2">
-        <div className="flex-1">
-          <Label className="text-[11px] text-muted-foreground">检查内容</Label>
+      <div className="grid grid-cols-[1fr_auto_auto] items-end gap-2">
+        <div>
+          <Label className="text-[11px] text-muted-foreground/70">
+            检查内容<span className="ml-0.5 text-destructive">*</span>
+          </Label>
           <Input
             placeholder="如：行程安全检查 / 格式是否有效 / 教学逻辑"
             value={rule.name}
@@ -101,21 +112,26 @@ export function RuleCard({
           />
         </div>
         {m && (
-          <Badge className="mt-5 shrink-0 text-[10px]" title={m.hint}>
+          <span
+            className={`mb-1 inline-flex shrink-0 items-center gap-1 rounded-sm px-2 py-0.5 text-[11px] font-semibold ${badgeClassOf(rule.method)}`}
+            title={m.hint}
+          >
             {m.icon} {m.label}
-          </Badge>
+          </span>
         )}
-        <Button size="sm" variant="ghost" className="mt-5 text-red-400" onClick={onDelete}>
+        <Button size="sm" variant="ghost" className="text-red-400" onClick={onDelete}>
           <Trash2 className="size-3.5" />
         </Button>
       </div>
 
       {/* 第二行：所属阶段 + 评估方式 */}
-      <div className="mt-2 flex flex-wrap items-end gap-2">
-        <div className="min-w-[140px]">
-          <Label className="text-[11px] text-muted-foreground">所属阶段</Label>
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <div>
+          <Label className="text-[11px] text-muted-foreground/70">
+            所属阶段<span className="ml-0.5 text-destructive">*</span>
+          </Label>
           <select
-            className="w-full rounded-md border border-white/10 bg-white/5 px-2 py-2 text-xs text-foreground"
+            className="w-full rounded-md border border-border bg-secondary px-2 py-2 text-xs text-foreground"
             value={rule.stage}
             onChange={(e) => {
               if (e.target.value === NEW_STAGE) {
@@ -135,10 +151,12 @@ export function RuleCard({
             <option value={NEW_STAGE}>＋ 新建阶段…</option>
           </select>
         </div>
-        <div className="min-w-[180px] flex-1">
-          <Label className="text-[11px] text-muted-foreground">评估方式</Label>
+        <div>
+          <Label className="text-[11px] text-muted-foreground/70">
+            评估方式<span className="ml-0.5 text-destructive">*</span>
+          </Label>
           <select
-            className="w-full rounded-md border border-white/10 bg-white/5 px-2 py-2 text-xs text-foreground"
+            className="w-full rounded-md border border-border bg-secondary px-2 py-2 text-xs text-foreground"
             value={rule.method ?? ""}
             onChange={(e) => {
               const method = (e.target.value || undefined) as EvalMethod | undefined
@@ -167,9 +185,11 @@ export function RuleCard({
       {needsPrompt && (
         <div className="mt-2 flex flex-wrap items-end gap-2">
           <div className="min-w-[220px] flex-1">
-            <Label className="text-[11px] text-muted-foreground">提示词</Label>
+            <Label className="text-[11px] text-muted-foreground/70">
+              提示词<span className="ml-0.5 text-destructive">*</span>
+            </Label>
             <select
-              className="w-full rounded-md border border-white/10 bg-white/5 px-2 py-2 text-xs text-foreground"
+              className="w-full rounded-md border border-border bg-secondary px-2 py-2 text-xs text-foreground"
               value={rule.promptId ?? ""}
               onChange={(e) => reseedEvaluator({ promptId: e.target.value || undefined })}
             >
@@ -181,6 +201,15 @@ export function RuleCard({
               ))}
             </select>
           </div>
+          {rule.promptId && onJumpAsset && (
+            <button
+              type="button"
+              onClick={() => onJumpAsset("prompt", rule.promptId!)}
+              className="mb-1 text-[11px] text-primary hover:underline"
+            >
+              跳转编辑→
+            </button>
+          )}
           {onNewPrompt && (
             <Button size="sm" variant="outline" className="mb-0.5" onClick={onNewPrompt}>
               <Plus className="mr-1 size-3" />新建
@@ -198,9 +227,11 @@ export function RuleCard({
       {needsDataset && (
         <div className="mt-2 flex flex-wrap items-end gap-2">
           <div className="min-w-[220px] flex-1">
-            <Label className="text-[11px] text-muted-foreground">数据集（参考知识）</Label>
+            <Label className="text-[11px] text-muted-foreground/70">
+              数据集（参考知识）<span className="ml-0.5 text-destructive">*</span>
+            </Label>
             <select
-              className="w-full rounded-md border border-white/10 bg-white/5 px-2 py-2 text-xs text-foreground"
+              className="w-full rounded-md border border-border bg-secondary px-2 py-2 text-xs text-foreground"
               value={rule.datasetId ?? ""}
               onChange={(e) => reseedEvaluator({ datasetId: e.target.value || undefined })}
             >
@@ -212,6 +243,15 @@ export function RuleCard({
               ))}
             </select>
           </div>
+          {rule.datasetId && onJumpAsset && (
+            <button
+              type="button"
+              onClick={() => onJumpAsset("dataset", rule.datasetId!)}
+              className="mb-1 text-[11px] text-primary hover:underline"
+            >
+              编辑数据集→
+            </button>
+          )}
           {onNewDataset && (
             <Button size="sm" variant="outline" className="mb-0.5" onClick={onNewDataset}>
               <Plus className="mr-1 size-3" />新建
@@ -228,9 +268,11 @@ export function RuleCard({
       {needsFormat && (
         <div className="mt-2 space-y-2">
           <div>
-            <Label className="text-[11px] text-muted-foreground">格式检查类型</Label>
+            <Label className="text-[11px] text-muted-foreground/70">
+              格式检查类型<span className="ml-0.5 text-destructive">*</span>
+            </Label>
             <select
-              className="w-full rounded-md border border-white/10 bg-white/5 px-2 py-2 text-xs text-foreground"
+              className="w-full rounded-md border border-border bg-secondary px-2 py-2 text-xs text-foreground"
               value={rule.formatType ?? ""}
               onChange={(e) => {
                 const formatType = (e.target.value || undefined) as FormatCheckType | undefined
@@ -257,7 +299,7 @@ export function RuleCard({
           {/* 后缀名可配置列表 */}
           {rule.formatType === "extension" && (
             <div>
-              <Label className="text-[11px] text-muted-foreground">允许的文件后缀</Label>
+              <Label className="text-[11px] text-muted-foreground/70">允许的文件后缀</Label>
               <div className="flex gap-2">
                 <Input
                   className="font-mono text-xs"
@@ -291,10 +333,13 @@ export function RuleCard({
               {(rule.extensions ?? []).length > 0 && (
                 <div className="mt-1.5 flex flex-wrap gap-1">
                   {(rule.extensions ?? []).map((ext, ei) => (
-                    <Badge key={ei} variant="outline" className="font-mono text-[10px]">
+                    <span
+                      key={ei}
+                      className="inline-flex items-center rounded-full border border-border bg-secondary py-0.5 pl-2 pr-1 font-mono text-[11px] text-muted-foreground"
+                    >
                       .{ext}
                       <button
-                        className="ml-1 text-muted-foreground hover:text-red-400"
+                        className="ml-1 text-muted-foreground hover:text-destructive"
                         title="移除"
                         onClick={() =>
                           onUpdate({ extensions: (rule.extensions ?? []).filter((_, j) => j !== ei) })
@@ -302,7 +347,7 @@ export function RuleCard({
                       >
                         <X className="size-2.5" />
                       </button>
-                    </Badge>
+                    </span>
                   ))}
                 </div>
               )}
@@ -311,16 +356,25 @@ export function RuleCard({
         </div>
       )}
 
-      {/* 高级：自定义 evaluator ID（始终可用，修复原"点击无反应"Bug） */}
-      <details className="mt-2">
-        <summary className="cursor-pointer text-[11px] text-muted-foreground">高级 ▸ 自定义 evaluator ID</summary>
-        <Input
-          className="mt-1.5 font-mono text-xs"
-          placeholder="默认按方式+资产派生；手动填写则作为覆盖，如 my.checker"
-          value={rule.evaluator}
-          onChange={(e) => onUpdate({ evaluator: e.target.value })}
-        />
-      </details>
+      {/* 高级：自定义 evaluator ID（受控折叠，对齐原型 collapse-toggle） */}
+      <div className="mt-2">
+        <button
+          type="button"
+          onClick={() => setAdvOpen((o) => !o)}
+          className="inline-flex items-center gap-1 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ChevronRight className={`size-3 transition-transform ${advOpen ? "rotate-90" : ""}`} />
+          高级 ▸ 自定义 evaluator ID
+        </button>
+        {advOpen && (
+          <Input
+            className="mt-1.5 font-mono text-xs"
+            placeholder="默认按方式+资产派生；手动填写则作为覆盖，如 my.checker"
+            value={rule.evaluator ?? ""}
+            onChange={(e) => onUpdate({ evaluator: e.target.value })}
+          />
+        )}
+      </div>
     </div>
   )
 }
