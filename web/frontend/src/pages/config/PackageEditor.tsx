@@ -191,18 +191,27 @@ export default function PackageEditor() {
         <Card className="h-fit">
           <CardContent className="space-y-4 p-3">
             <TreeSection icon={Layers} label="规则集">
+              {catalog?.rule_sets.length === 0 && (
+                <p className="px-2 py-1 text-[11px] text-muted-foreground/60">无规则集，先发布一个</p>
+              )}
               {catalog?.rule_sets.map((r) => (
                 <TreeNode key={r.asset_id} active={sel?.type === "rule-set" && sel.assetId === r.asset_id}
                   name={r.asset_id} icon={FileText} onClick={() => selectAsset({ type: "rule-set", assetId: r.asset_id })} />
               ))}
             </TreeSection>
             <TreeSection icon={BookOpen} label="提示词">
+              {catalog?.prompts.length === 0 && (
+                <p className="px-2 py-1 text-[11px] text-muted-foreground/60">暂无，发布规则集后在右侧添加</p>
+              )}
               {catalog?.prompts.map((p) => (
                 <TreeNode key={p.asset_id} active={sel?.type === "prompt" && sel.assetId === p.asset_id}
                   name={p.asset_id} icon={FileText} onClick={() => selectAsset({ type: "prompt", assetId: p.asset_id })} />
               ))}
             </TreeSection>
             <TreeSection icon={Database} label="参考数据">
+              {catalog?.datasets.length === 0 && (
+                <p className="px-2 py-1 text-[11px] text-muted-foreground/60">暂无，可选</p>
+              )}
               {catalog?.datasets.map((d) => (
                 <TreeNode key={d.asset_id} active={sel?.type === "dataset" && sel.assetId === d.asset_id}
                   name={d.asset_id} icon={Database} onClick={() => selectAsset({ type: "dataset", assetId: d.asset_id })} />

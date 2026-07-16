@@ -61,14 +61,19 @@ export function RuleSetForm({
       {/* 维度 */}
       <Card>
         <CardHeader className="flex-row items-center justify-between">
-          <CardTitle className="text-sm">维度（{data.dimensions.length}）</CardTitle>
+          <div>
+            <CardTitle className="text-sm">维度（{data.dimensions.length}）</CardTitle>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              维度是规则的分类标签，用于按类别汇总得分。如「功能性」「效果性」。
+            </p>
+          </div>
           <Button size="sm" variant="outline" onClick={() => update({ dimensions: [...data.dimensions, { id: "", name: "", weight: 1 }] })}><Plus className="mr-1 size-3" />添加</Button>
         </CardHeader>
         <CardContent className="space-y-2">
           {data.dimensions.map((dim, i) => (
             <div key={i} className="flex items-center gap-2">
-              <Input className="w-32 font-mono text-xs" placeholder="id" value={dim.id} onChange={(e) => { const d = [...data.dimensions]; d[i] = { ...dim, id: e.target.value }; update({ dimensions: d }) }} />
-              <Input className="flex-1" placeholder="名称" value={dim.name} onChange={(e) => { const d = [...data.dimensions]; d[i] = { ...dim, name: e.target.value }; update({ dimensions: d }) }} />
+              <Input className="w-32 font-mono text-xs" placeholder="英文标识 如 functional" value={dim.id} onChange={(e) => { const d = [...data.dimensions]; d[i] = { ...dim, id: e.target.value }; update({ dimensions: d }) }} />
+              <Input className="flex-1" placeholder="展示名称 如 功能性" value={dim.name} onChange={(e) => { const d = [...data.dimensions]; d[i] = { ...dim, name: e.target.value }; update({ dimensions: d }) }} />
               <Input className="w-20" type="number" step="0.1" value={dim.weight} onChange={(e) => { const d = [...data.dimensions]; d[i] = { ...dim, weight: parseFloat(e.target.value) || 0 }; update({ dimensions: d }) }} />
               <Button size="sm" variant="ghost" className="text-red-400" onClick={() => update({ dimensions: data.dimensions.filter((_, j) => j !== i) })}><Trash2 className="size-3.5" /></Button>
             </div>
@@ -100,7 +105,12 @@ export function RuleSetForm({
       {/* 规则 */}
       <Card>
         <CardHeader className="flex-row items-center justify-between">
-          <CardTitle className="text-sm">规则（{data.rules.length}）</CardTitle>
+          <div>
+            <CardTitle className="text-sm">规则（{data.rules.length}）</CardTitle>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              每条规则绑定一个评估器（决定评估方式），归属于一个维度和级联阶段。
+            </p>
+          </div>
           <Button size="sm" variant="outline" onClick={() => update({ rules: [...data.rules, { id: "", name: "", dimension: "", stage: "", evaluator: "", weight: 1 }] })}><Plus className="mr-1 size-3" />添加</Button>
         </CardHeader>
         <CardContent className="space-y-2">
@@ -110,18 +120,18 @@ export function RuleSetForm({
             return (
               <div key={i} className="rounded-md border border-border p-3">
                 <div className="flex items-center gap-2">
-                  <Input className="w-28 font-mono text-xs" placeholder="ID" value={rule.id} onChange={(e) => { const r = [...data.rules]; r[i] = { ...rule, id: e.target.value }; update({ rules: r }) }} />
-                  <Input className="flex-1" placeholder="规则名称" value={rule.name} onChange={(e) => { const r = [...data.rules]; r[i] = { ...rule, name: e.target.value }; update({ rules: r }) }} />
+                  <Input className="w-28 font-mono text-xs" placeholder="规则ID 如 FMT_001" value={rule.id} onChange={(e) => { const r = [...data.rules]; r[i] = { ...rule, id: e.target.value }; update({ rules: r }) }} />
+                  <Input className="flex-1" placeholder="规则描述 如 输出格式有效" value={rule.name} onChange={(e) => { const r = [...data.rules]; r[i] = { ...rule, name: e.target.value }; update({ rules: r }) }} />
                   {tier && <Badge className={`shrink-0 text-[10px] ${tier.color}`}>{tier.label}</Badge>}
                   <Button size="sm" variant="ghost" className="text-red-400" onClick={() => update({ rules: data.rules.filter((_, j) => j !== i) })}><Trash2 className="size-3.5" /></Button>
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <select className="rounded-md border bg-background px-2 py-1 text-xs" value={rule.dimension} onChange={(e) => { const r = [...data.rules]; r[i] = { ...rule, dimension: e.target.value }; update({ rules: r }) }}>
-                    <option value="">维度...</option>
-                    {data.dimensions.map((d) => <option key={d.id} value={d.id}>{d.id}</option>)}
+                    <option value="">所属维度</option>
+                    {data.dimensions.map((d) => <option key={d.id} value={d.id}>{d.id}（{d.name}）</option>)}
                   </select>
                   <select className="rounded-md border bg-background px-2 py-1 text-xs" value={rule.stage} onChange={(e) => { const r = [...data.rules]; r[i] = { ...rule, stage: e.target.value }; update({ rules: r }) }}>
-                    <option value="">阶段...</option>
+                    <option value="">所属阶段</option>
                     {data.cascade.map((c) => <option key={c.stage} value={c.stage}>{c.stage}</option>)}
                   </select>
                   <Input className="flex-1 font-mono text-xs" placeholder="evaluator" value={rule.evaluator} onChange={(e) => { const r = [...data.rules]; r[i] = { ...rule, evaluator: e.target.value }; update({ rules: r }) }} />
