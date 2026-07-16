@@ -4,7 +4,7 @@
  */
 import { useEffect, useState } from "react"
 import * as yaml from "js-yaml"
-import { Card, CardContent, CardHeader, CardTitle } from "../../../components/shadcn/card"
+import { CardContent } from "../../../components/shadcn/card"
 import { Button } from "../../../components/shadcn/button"
 import { Input } from "../../../components/shadcn/input"
 import { Textarea } from "../../../components/shadcn/textarea"
@@ -12,6 +12,7 @@ import { Plus, Save, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { api } from "../../../api/client"
 import type { MetricDef } from "../../../types"
+import { AddButton, SectionCard, SectionCardHeader, SectionCardTitle } from "../../../components/shared"
 import { Field, FormYamlToggle } from "./Field"
 
 const errMsg = (e: unknown) =>
@@ -82,18 +83,18 @@ export function MetricDefsEditor({ scenarioId }: { scenarioId: string }) {
 
   if (loading) {
     return (
-      <Card>
+      <SectionCard>
         <CardContent className="py-10 text-center text-sm text-muted-foreground">加载中…</CardContent>
-      </Card>
+      </SectionCard>
     )
   }
 
   return (
-    <Card>
-      <CardHeader className="flex-row items-center justify-between">
-        <CardTitle className="text-sm">指标定义（场景默认）</CardTitle>
+    <SectionCard>
+      <SectionCardHeader className="flex-row items-center justify-between">
+        <SectionCardTitle>指标定义（场景默认）</SectionCardTitle>
         <FormYamlToggle mode={mode} onChange={switchMode} />
-      </CardHeader>
+      </SectionCardHeader>
       <CardContent className="space-y-3">
         {mode === "form" ? (
           <>
@@ -127,9 +128,7 @@ export function MetricDefsEditor({ scenarioId }: { scenarioId: string }) {
                 </div>
               </div>
             ))}
-            <Button size="sm" variant="outline" onClick={add}>
-              <Plus className="mr-1 size-3" />添加指标
-            </Button>
+            <AddButton onClick={add}>添加指标</AddButton>
           </>
         ) : (
           <>
@@ -147,6 +146,6 @@ export function MetricDefsEditor({ scenarioId }: { scenarioId: string }) {
           <Save className="mr-1 size-4" />{busy ? "保存中…" : "保存"}
         </Button>
       </CardContent>
-    </Card>
+    </SectionCard>
   )
 }

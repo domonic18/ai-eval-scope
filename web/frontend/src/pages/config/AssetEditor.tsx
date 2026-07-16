@@ -9,7 +9,7 @@ import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 import * as yaml from "js-yaml"
 import { useCrumbs } from "../../components/AppShell"
-import { Page, PageHead } from "../../components/shared"
+import { Page } from "../../components/shared"
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/shadcn/card"
 import { Badge } from "../../components/shadcn/badge"
 import { Button } from "../../components/shadcn/button"
@@ -25,6 +25,7 @@ import {
   GitBranch,
   GitCompare,
   Save,
+  Upload,
 } from "lucide-react"
 import { RuleSetForm, type RuleSetData } from "./forms/RuleSetForm"
 import { PromptForm, type PromptData } from "./forms/PromptForm"
@@ -52,10 +53,13 @@ export default function AssetEditor() {
   const [mode, setMode] = useState<Mode>("form")
   const [content, setContent] = useState<Record<string, any> | null>(null)
   const [yamlText, setYamlText] = useState("")
+  const [baselineYaml, setBaselineYaml] = useState("")
+  const [draftKey, setDraftKey] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [version, setVersion] = useState("1.0.0")
   const [label, setLabel] = useState("latest")
   const [busy, setBusy] = useState(false)
+  const dirty = !!content && yamlText !== baselineYaml
   const [versions, setVersions] = useState<
     Array<{ version: string; labels: string[]; contentHash: string; createdAt: string }>
   >([])
@@ -73,13 +77,16 @@ export default function AssetEditor() {
     ])
     setContent(null)
     setLoading(true)
+    setDraftKey(`draft:${id}:${kind}:${assetId}`)
     api
       .assetContent(id, kind, assetId)
       .then((c) => {
         // 数据集 role 不在 content 内（在 DB DatasetAsset.role 列），补充默认值
         if (kind === "datasets" && !c.role) c.role = "reference"
         setContent(c)
-        setYamlText(yaml.dump(c, { sortKeys: false }))
+        const y = yaml.dump(c, { sortKeys: false })
+        setYamlText(y)
+        setBaselineYaml(y)
       })
       .catch(() => setContent(null))
       .finally(() => setLoading(false))
@@ -109,6 +116,13 @@ export default function AssetEditor() {
     }
   }
 
+  const saveDraft = () => {
+    if (!content || !draftKey) return
+    localStorage.setItem(draftKey, JSON.stringify({ content, savedAt: new Date().toISOString() }))
+    setBaselineYaml(yamlText)
+    toast.success("草稿已保存到本地")
+  }
+
   const publish = async () => {
     setBusy(true)
     try {
@@ -127,6 +141,7 @@ export default function AssetEditor() {
       toast.success(`已发布 ${KIND_LABEL[kind]} ${assetId}@${version}`)
       const newVersions = await api.listAssetVersions(id, kind, assetId)
       setVersions(newVersions)
+      setBaselineYaml(yamlText)
     } catch (e) {
       toast.error(errMsg(e, "发布失败"))
     } finally {
@@ -163,31 +178,39 @@ export default function AssetEditor() {
 
   return (
     <Page>
-      <PageHead
-        title={`${KIND_LABEL[kind]} · ${assetId}`}
-        sub="编辑并发布新版本"
-        right={
-          <div className="flex gap-2">
-            <div className="flex rounded-md border">
-              <button
-                onClick={() => setMode("form")}
-                className={`flex items-center gap-1 rounded-l-md px-3 py-1.5 text-sm transition-colors ${mode === "form" ? "bg-accent font-medium" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                <FileText className="size-3.5" /> 表单
-              </button>
-              <button
-                onClick={() => setMode("yaml")}
-                className={`flex items-center gap-1 rounded-r-md px-3 py-1.5 text-sm transition-colors ${mode === "yaml" ? "bg-accent font-medium" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                <Code2 className="size-3.5" /> YAML
-              </button>
-            </div>
-            <Button onClick={publish} disabled={busy || !version}>
-              <Save className="mr-1 size-4" /> {busy ? "发布中…" : "发布"}
-            </Button>
-          </div>
-        }
-      />
+      {/* 顶部工具栏：模式切换 + 操作按钮 */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex rounded-md border">
+          <button
+            type="button"
+            onClick={() => setMode("form")}
+            className={`flex items-center gap-1 rounded-l-md px-3 py-1.5 text-sm transition-colors ${mode === "form" ? "bg-primary font-medium text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            <FileText className="size-3.5" /> 表单模式
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("yaml")}
+            className={`flex items-center gap-1 rounded-r-md px-3 py-1.5 text-sm transition-colors ${mode === "yaml" ? "bg-primary font-medium text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            <Code2 className="size-3.5" /> YAML 模式
+          </button>
+        </div>
+        <div className="flex items-center gap-2">
+          {dirty && (
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span className="size-2 rounded-full bg-warning shadow-[0_0_0_3px_var(--warning-soft)]" />
+              有未保存改动
+            </span>
+          )}
+          <Button variant="outline" size="sm" onClick={saveDraft} disabled={!dirty}>
+            <Save className="mr-1 size-4" /> 保存草稿
+          </Button>
+          <Button size="sm" onClick={publish} disabled={busy || !version}>
+            <Upload className="mr-1 size-4" /> {busy ? "发布中…" : "发布"}
+          </Button>
+        </div>
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         {/* 左：编辑区 */}
@@ -248,31 +271,41 @@ export default function AssetEditor() {
             </>
           )}
 
-          {/* 发布设置 */}
-          <Card>
-            <CardHeader><CardTitle className="text-sm">发布新版本</CardTitle></CardHeader>
-            <CardContent className="flex items-end gap-3">
-              <div><Label>版本号</Label><Input value={version} onChange={(e) => setVersion(e.target.value)} className="font-mono" /></div>
-              <div>
-                <Label>标签</Label>
-                <select className="rounded-md border bg-background px-3 py-2 text-sm" value={label} onChange={(e) => setLabel(e.target.value)}>
-                  <option value="">(无)</option>
-                  {VERSION_LABELS.map((l) => <option key={l} value={l}>{l}</option>)}
-                </select>
-              </div>
-              <Button onClick={publish} disabled={busy || !version}>
-                <Save className="mr-1 size-4" /> {busy ? "发布中…" : "发布"}
-              </Button>
-            </CardContent>
-          </Card>
         </div>
 
         {/* 右：版本时间线 */}
         <Card className="h-fit">
           <CardHeader className="flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-1.5 text-sm"><GitBranch className="size-4" /> 版本时间线</CardTitle>
+            <Button size="sm" variant="outline" onClick={publish} disabled={busy || !version}>
+              <Upload className="mr-1 size-3" /> 发布新版本
+            </Button>
           </CardHeader>
           <CardContent className="space-y-2">
+            <div className="flex items-end gap-2 border-b border-border pb-3">
+              <div className="flex-1">
+                <Label className="text-[11px] text-muted-foreground">版本号</Label>
+                <Input
+                  value={version}
+                  onChange={(e) => setVersion(e.target.value)}
+                  placeholder="1.0.0"
+                  className="mt-1 h-8 font-mono text-xs"
+                />
+              </div>
+              <div>
+                <Label className="text-[11px] text-muted-foreground">标签</Label>
+                <select
+                  className="mt-1 h-8 rounded-md border bg-background px-2 text-xs"
+                  value={label}
+                  onChange={(e) => setLabel(e.target.value)}
+                >
+                  <option value="">(无)</option>
+                  {VERSION_LABELS.map((l) => (
+                    <option key={l} value={l}>{l}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
             {versions.length === 0 ? (
               <p className="text-sm text-muted-foreground">暂无历史版本</p>
             ) : (

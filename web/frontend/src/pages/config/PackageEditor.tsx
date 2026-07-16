@@ -1,43 +1,39 @@
 /**
  * 场景包编辑器 — 一个页面管理包内所有资产。
  *
- * 左侧资产树（规则集/提示词/参考数据/聚合策略/指标定义）+ 右侧编辑面板。
- * 点击树节点切换右侧编辑器（RuleSetForm/PromptForm/DatasetForm/只读详情）+ 版本时间线。
+ * 左资产树 + 中编辑面板（表单/YAML）+ 右版本时间线（sticky + 草稿卡）。
+ * 顶栏：dirty 指示 + 保存草稿(localStorage) + 发布(Modal 多选标签)。
+ * 规则集时右侧附带「配置完整度」面板（前端派生）。
  */
 
 import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 import * as yaml from "js-yaml"
 import { useCrumbs } from "../../components/AppShell"
-import { Page, PageHead, TierChip } from "../../components/shared"
+import { Page, PageHead } from "../../components/shared"
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/shadcn/card"
-import { Badge } from "../../components/shadcn/badge"
 import { Button } from "../../components/shadcn/button"
 import { Input } from "../../components/shadcn/input"
-import { Label } from "../../components/shadcn/label"
 import { Textarea } from "../../components/shadcn/textarea"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../components/shadcn/dialog"
 import { toast } from "sonner"
 import { api, type AssetKind, type CatalogEntry, type DatasetCatalogEntry } from "../../api/client"
-import {
-  ArrowUpCircle,
-  BookOpen,
-  ChevronRight,
-  Code2,
-  Database,
-  FileText,
-  Gauge,
-  GitBranch,
-  GitCompare,
-  Layers,
-  Plus,
-  Save,
-} from "lucide-react"
+import { BookOpen, ChevronRight, Database, FileText, Gauge, GitBranch, Layers, Plus, Save, Upload } from "lucide-react"
 import { RuleSetForm, type RuleSetData } from "./forms/RuleSetForm"
 import { PromptForm, type PromptData } from "./forms/PromptForm"
 import { DatasetForm, type DatasetData } from "./forms/DatasetForm"
 import { createEmptyPrompt, createEmptyDataset } from "./forms/defaults"
 import { MetricDefsEditor } from "./forms/MetricDefsEditor"
 import { AggregationPolicyEditor } from "./forms/AggregationPolicyEditor"
+import { CompletenessPanel } from "./forms/CompletenessPanel"
+import { FormYamlToggle } from "./forms/Field"
 
 type Selection =
   | { type: "rule-set"; assetId: string }
@@ -50,6 +46,14 @@ const VERSION_LABELS = ["production", "staging", "latest"]
 const errMsg = (e: unknown, fb: string) =>
   (e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? fb
 
+/** 相对时间 + 日期，对齐原型 .vc-time */
+function relTime(iso: string): string {
+  const d = new Date(iso)
+  const days = Math.floor((Date.now() - d.getTime()) / 86400000)
+  const ago = days > 30 ? `${Math.floor(days / 30)}个月前` : days > 0 ? `${days}天前` : "今天"
+  return `${ago} · ${d.toLocaleDateString("zh-CN")}`
+}
+
 export default function PackageEditor() {
   const { id = "" } = useParams<{ id: string }>()
   const { setCrumbs } = useCrumbs()
@@ -61,16 +65,26 @@ export default function PackageEditor() {
   const [sel, setSel] = useState<Selection | null>(null)
   const [content, setContent] = useState<Record<string, any> | null>(null)
   const [yamlText, setYamlText] = useState("")
+  const [baselineYaml, setBaselineYaml] = useState("")
   const [mode, setMode] = useState<"form" | "yaml">("form")
   const [loading, setLoading] = useState(false)
   const [version, setVersion] = useState("1.0.0")
-  const [label, setLabel] = useState("latest")
   const [busy, setBusy] = useState(false)
   const [versions, setVersions] = useState<
     Array<{ version: string; labels: string[]; contentHash: string; createdAt: string }>
   >([])
   const [diffVersion, setDiffVersion] = useState<string | null>(null)
   const [diffContent, setDiffContent] = useState<string | null>(null)
+  // 发布 Modal（多选标签）
+  const [pubOpen, setPubOpen] = useState(false)
+  const [pubLabels, setPubLabels] = useState<string[]>([])
+  // 草稿恢复
+  const [draftRestore, setDraftRestore] = useState<Record<string, any> | null>(null)
+  // 完整度数据
+  const [metricCount, setMetricCount] = useState(0)
+  const [hasPolicy, setHasPolicy] = useState(false)
+
+  const dirty = !!sel && sel.type !== "policy" && sel.type !== "metrics" && yamlText !== baselineYaml
 
   useEffect(() => {
     setCrumbs([
@@ -85,22 +99,32 @@ export default function PackageEditor() {
         if (c.rule_sets.length) selectAsset({ type: "rule-set", assetId: c.rule_sets[0].asset_id })
       })
       .catch(() => {})
+    // 完整度：场景默认指标 + 聚合策略
+    api.scenarioDefaults(id).then((m) => setMetricCount(m.length)).catch(() => {})
+    api.scenarioAggregationPolicy(id).then((p) => setHasPolicy(p != null)).catch(() => {})
   }, [id, setCrumbs])
 
-  // 新建空白资产（提示词/数据集），填入编辑器并直接进入编辑
-  // 提示词预置默认 System/User 骨架内容，便于用户填写修改
+  const draftKey = (s: Selection | null): string | null => {
+    if (!s || s.type === "policy" || s.type === "metrics") return null
+    const kind = s.type === "rule-set" ? "rule-sets" : s.type === "prompt" ? "prompts" : "datasets"
+    return `draft:${id}:${kind}:${s.assetId}`
+  }
+
+  // 新建空白资产（提示词/数据集）
   const newAsset = (kind: AssetKind) => {
     const assetId = kind === "prompts" ? `prompt_${Date.now().toString(36).slice(-4)}` : `dataset_${Date.now().toString(36).slice(-4)}`
     const emptyContent = kind === "prompts" ? createEmptyPrompt(assetId) : createEmptyDataset()
     setContent(emptyContent)
-    setYamlText(yaml.dump(emptyContent, { sortKeys: false }))
+    const y = yaml.dump(emptyContent, { sortKeys: false })
+    setYamlText(y)
+    setBaselineYaml(y)
     setVersion("0.1.0")
-    setLabel("latest")
     setVersions([])
     setSel(kind === "prompts" ? { type: "prompt", assetId } : { type: "dataset", assetId })
     setLoading(false)
     setDiffVersion(null)
     setDiffContent(null)
+    setDraftRestore(null)
   }
 
   const selectAsset = (s: Selection) => {
@@ -108,6 +132,7 @@ export default function PackageEditor() {
     setContent(null)
     setDiffVersion(null)
     setDiffContent(null)
+    setDraftRestore(null)
     setLoading(true)
     if (s.type === "policy" || s.type === "metrics") {
       setLoading(false)
@@ -119,16 +144,28 @@ export default function PackageEditor() {
       .then((c) => {
         if (s.type === "dataset" && !c.role) c.role = "reference"
         setContent(c)
-        setYamlText(yaml.dump(c, { sortKeys: false }))
+        const y = yaml.dump(c, { sortKeys: false })
+        setYamlText(y)
+        setBaselineYaml(y)
         const ver = (catalog as any)?.[s.type === "rule-set" ? "rule_sets" : s.type === "prompt" ? "prompts" : "datasets"]?.find(
           (e: any) => e.asset_id === s.assetId,
         )?.version
         if (ver) setVersion(ver)
         api.listAssetVersions(id, kind as AssetKind, s.assetId).then(setVersions).catch(() => setVersions([]))
+        // 检测本地草稿
+        try {
+          const raw = localStorage.getItem(`draft:${id}:${kind}:${s.assetId}`)
+          if (raw) setDraftRestore((JSON.parse(raw).content as Record<string, any>) ?? null)
+        } catch {
+          /* ignore */
+        }
       })
       .catch(() => setContent(null))
       .finally(() => setLoading(false))
   }
+
+  const onJumpAsset = (type: "prompt" | "dataset", assetId: string) =>
+    selectAsset({ type, assetId })
 
   const updateContent = (d: Record<string, any>) => {
     setContent(d)
@@ -144,6 +181,21 @@ export default function PackageEditor() {
     }
   }
 
+  const saveDraft = () => {
+    const k = draftKey(sel)
+    if (!k || !content) return
+    localStorage.setItem(k, JSON.stringify({ content, savedAt: new Date().toISOString() }))
+    setBaselineYaml(yamlText)
+    toast.success("草稿已保存到本地")
+  }
+  const restoreDraft = () => {
+    if (!draftRestore) return
+    setContent(draftRestore)
+    setYamlText(yaml.dump(draftRestore, { sortKeys: false }))
+    setDraftRestore(null)
+    toast.info("已恢复本地草稿")
+  }
+
   const publish = async () => {
     if (!sel || sel.type === "policy" || sel.type === "metrics") return
     setBusy(true)
@@ -152,7 +204,7 @@ export default function PackageEditor() {
       const input: Parameters<typeof api.publishAsset>[2] = {
         asset_id: sel.assetId,
         version,
-        labels: label ? [label] : [],
+        labels: pubLabels,
         content: content ?? {},
       }
       if (sel.type === "dataset") {
@@ -162,6 +214,12 @@ export default function PackageEditor() {
       await api.publishAsset(id, kind as AssetKind, input)
       toast.success(`已发布 ${sel.assetId}@${version}`)
       setVersions(await api.listAssetVersions(id, kind as AssetKind, sel.assetId))
+      // 发布后清理本地草稿 + 重置 baseline（dirty 归零）
+      const k = draftKey(sel)
+      if (k) localStorage.removeItem(k)
+      setBaselineYaml(yamlText)
+      setPubLabels([])
+      setPubOpen(false)
     } catch (e) {
       toast.error(errMsg(e, "发布失败"))
     } finally {
@@ -201,11 +259,52 @@ export default function PackageEditor() {
   const selKind: AssetKind | null =
     sel?.type === "rule-set" ? "rule-sets" : sel?.type === "prompt" ? "prompts" : sel?.type === "dataset" ? "datasets" : null
   const canEdit = sel && sel.type !== "policy" && sel.type !== "metrics"
+  const assetLabel =
+    sel?.type === "rule-set"
+      ? `规则集 · ${sel.assetId}`
+      : sel?.type === "prompt"
+        ? `提示词 · ${sel.assetId}`
+        : sel?.type === "dataset"
+          ? `数据集 · ${sel.assetId}`
+          : sel?.type === "policy"
+            ? "聚合策略"
+            : sel?.type === "metrics"
+              ? "指标定义"
+              : ""
 
   return (
     <Page>
       <PageHead title="场景包编辑器" sub={`${id} 场景 · 统一编辑包内所有配置资产`} />
-      <div className="grid gap-4 lg:grid-cols-[220px_1fr_280px]">
+
+      {/* 子顶栏：资产名 + dirty + 保存草稿 + 发布 */}
+      {canEdit && (
+        <div className="mb-4 flex items-center justify-between rounded-md border border-border bg-card px-4 py-2">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="font-medium">{assetLabel}</span>
+            {dirty && (
+              <>
+                <span title="有未保存改动" className="size-[7px] rounded-full bg-warning shadow-[0_0_0_3px_var(--warning-soft)]" />
+                <span className="text-[11px] text-warning">有未保存改动</span>
+              </>
+            )}
+            {draftRestore && (
+              <button onClick={restoreDraft} className="text-[11px] text-primary hover:underline">
+                恢复本地草稿
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={saveDraft}>
+              <Save className="mr-1 size-3" />保存草稿
+            </Button>
+            <Button size="sm" onClick={() => setPubOpen(true)}>
+              <Upload className="mr-1 size-3" />发布
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <div className="grid items-start gap-5 lg:grid-cols-[220px_1fr_360px]">
         {/* ── 左侧资产树 ── */}
         <Card className="h-fit">
           <CardContent className="space-y-4 p-3">
@@ -251,31 +350,12 @@ export default function PackageEditor() {
 
         {/* ── 中间编辑面板 ── */}
         <div className="space-y-3">
-          {/* 面包屑 + 模式切换 */}
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">
-              {sel?.type === "rule-set" && `规则集 · ${sel.assetId}`}
-              {sel?.type === "prompt" && `提示词 · ${sel.assetId}`}
-              {sel?.type === "dataset" && `数据集 · ${sel.assetId}`}
-              {sel?.type === "policy" && "聚合策略"}
-              {sel?.type === "metrics" && "指标定义"}
-            </span>
-            {canEdit && (
-              <div className="flex gap-2">
-                <div className="flex rounded-md border">
-                  <button onClick={() => setMode("form")} className={`rounded-l-md px-3 py-1 text-xs ${mode === "form" ? "bg-accent font-medium" : "text-muted-foreground"}`}>
-                    <FileText className="mr-1 inline size-3" />表单
-                  </button>
-                  <button onClick={() => setMode("yaml")} className={`rounded-r-md px-3 py-1 text-xs ${mode === "yaml" ? "bg-accent font-medium" : "text-muted-foreground"}`}>
-                    <Code2 className="mr-1 inline size-3" />YAML
-                  </button>
-                </div>
-                <Button size="sm" onClick={publish} disabled={busy}>
-                  <Save className="mr-1 size-3" />{busy ? "发布中…" : "发布"}
-                </Button>
-              </div>
-            )}
-          </div>
+          {/* 模式切换 */}
+          {canEdit && (
+            <div className="flex items-center justify-end">
+              <FormYamlToggle mode={mode} onChange={setMode} />
+            </div>
+          )}
 
           {/* 版本 diff */}
           {diffVersion && diffContent ? (
@@ -298,6 +378,7 @@ export default function PackageEditor() {
                   datasets={(catalog?.datasets ?? []).filter((d) => d.role === "reference")}
                   onNewPrompt={() => newAsset("prompts")}
                   onNewDataset={() => newAsset("datasets")}
+                  onJumpAsset={onJumpAsset}
                 />
               )}
               {canEdit && mode === "form" && content && sel?.type === "prompt" && (
@@ -310,62 +391,111 @@ export default function PackageEditor() {
               {canEdit && mode === "yaml" && (
                 <Card><CardContent><Textarea className="min-h-[500px] font-mono text-xs leading-relaxed" value={yamlText} onChange={(e) => onYamlChange(e.target.value)} /></CardContent></Card>
               )}
-              {/* 聚合策略（只读） */}
+              {/* 聚合策略 / 指标定义 */}
               {sel?.type === "policy" && <AggregationPolicyEditor scenarioId={id} />}
-              {/* 指标定义（可编辑） */}
               {sel?.type === "metrics" && <MetricDefsEditor scenarioId={id} />}
             </>
           )}
-
-          {/* 发布设置 */}
-          {canEdit && (
-            <Card>
-              <CardContent className="flex items-end gap-3 p-4">
-                <div><Label>版本号</Label><Input value={version} onChange={(e) => setVersion(e.target.value)} className="font-mono" /></div>
-                <div><Label>标签</Label>
-                  <select className="rounded-md border bg-background px-3 py-2 text-sm" value={label} onChange={(e) => setLabel(e.target.value)}>
-                    <option value="">(无)</option>
-                    {VERSION_LABELS.map((l) => <option key={l} value={l}>{l}</option>)}
-                  </select>
-                </div>
-                <Button onClick={publish} disabled={busy || !version}><Save className="mr-1 size-4" />{busy ? "发布中…" : "发布"}</Button>
-              </CardContent>
-            </Card>
-          )}
         </div>
 
-        {/* ── 右侧版本时间线 ── */}
+        {/* ── 右侧：版本时间线（sticky）+ 配置完整度 ── */}
         {canEdit && selKind && (
-          <Card className="h-fit">
-            <CardHeader className="pb-2"><CardTitle className="flex items-center gap-1.5 text-sm"><GitBranch className="size-4" />版本时间线</CardTitle></CardHeader>
-            <CardContent className="space-y-2">
-              {versions.length === 0 ? (
-                <p className="text-xs text-muted-foreground">暂无历史版本</p>
-              ) : versions.map((v) => (
-                <div key={v.version} className="rounded-md border p-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-medium">{v.version}</span>
-                    <div className="flex gap-0.5">
-                      {v.labels.map((l) => <Badge key={l} variant={l === "production" ? "default" : "secondary"} className="text-[9px]">{l}</Badge>)}
+          <Card className="h-fit lg:sticky lg:top-[72px]">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-1.5 text-sm"><GitBranch className="size-4" />版本时间线</CardTitle>
+              <Button size="sm" variant="outline" onClick={() => setPubOpen(true)}>
+                <Plus className="mr-1 size-3" />发布新版本
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="max-h-[calc(100vh-260px)] space-y-2 overflow-y-auto pr-1">
+                {/* 当前草稿卡 */}
+                {content && (
+                  <div className="rounded-md border border-primary/40 bg-gradient-to-b from-primary/10 to-transparent p-2 ring-1 ring-primary/20">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-xs font-medium">{version || "草稿"}</span>
+                      <span className="rounded-sm bg-warning/15 px-1.5 py-px text-[9px] font-semibold text-warning">编辑中</span>
                     </div>
+                    <p className="mt-0.5 text-[10px] text-muted-foreground">{dirty ? "有未保存改动" : "已与已发布一致"}</p>
                   </div>
-                  <p className="mt-0.5 truncate font-mono text-[9px] text-muted-foreground">{v.contentHash}</p>
-                  <div className="mt-1 flex flex-wrap gap-0.5">
-                    <Button size="sm" variant="outline" className="h-5 px-1.5 text-[9px]" onClick={() => showDiff(v.version)}>
-                      <GitCompare className="mr-0.5 size-2.5" />对比
-                    </Button>
-                    {VERSION_LABELS.filter((l) => !v.labels.includes(l)).map((l) => (
-                      <Button key={l} size="sm" variant="outline" className="h-5 px-1.5 text-[9px]" onClick={() => promote(v.version, l)}>
-                        <ArrowUpCircle className="mr-0.5 size-2.5" />{l}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                )}
+                {/* 已发布版本 */}
+                {versions.length === 0 && !content ? (
+                  <p className="text-xs text-muted-foreground">暂无历史版本</p>
+                ) : (
+                  versions.map((v) => (
+                    <div key={v.version} className="rounded-md border border-border p-2 transition-colors hover:border-primary/30">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-xs font-medium">{v.version}</span>
+                        <div className="flex gap-0.5">
+                          {v.labels.map((l) => (
+                            <span key={l} className={`rounded-sm px-1.5 py-px font-mono text-[9px] font-semibold ${l === "production" ? "bg-success/15 text-success" : l === "staging" ? "bg-warning/15 text-warning" : "bg-info/15 text-info"}`}>
+                              {l}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <p className="mt-0.5 truncate font-mono text-[9px] text-muted-foreground">{v.contentHash}</p>
+                      <p className="mt-0.5 text-[9px] text-muted-foreground">{relTime(v.createdAt)}</p>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        <button onClick={() => showDiff(v.version)} className="rounded-sm px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-accent hover:text-foreground">对比</button>
+                        {VERSION_LABELS.filter((l) => !v.labels.includes(l)).map((l) => (
+                          <button key={l} onClick={() => promote(v.version, l)} className="rounded-sm px-1.5 py-0.5 text-[10px] text-primary hover:bg-primary/10">晋升{l}</button>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* 配置完整度（仅规则集） */}
+              {sel?.type === "rule-set" && content && (
+                <CompletenessPanel data={content as RuleSetData} metricCount={metricCount} hasPolicy={hasPolicy} />
+              )}
             </CardContent>
           </Card>
         )}
       </div>
+
+      {/* 发布 Modal */}
+      <Dialog open={pubOpen} onOpenChange={setPubOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>发布新版本</DialogTitle>
+            <DialogDescription>
+              发布后生成不可变版本；同一标签仅绑定一个版本，发布后会自动从旧版本解绑。
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-1">
+            <div>
+              <label className="text-[11px] text-muted-foreground">版本号（语义化，如 1.0.0）</label>
+              <Input className="mt-1 font-mono" value={version} onChange={(e) => setVersion(e.target.value)} placeholder="1.0.0" />
+            </div>
+            <div>
+              <label className="text-[11px] text-muted-foreground">标签（可多选）</label>
+              <div className="mt-1.5 flex gap-2">
+                {VERSION_LABELS.map((l) => {
+                  const on = pubLabels.includes(l)
+                  return (
+                    <button
+                      key={l}
+                      type="button"
+                      onClick={() => setPubLabels((prev) => (prev.includes(l) ? prev.filter((x) => x !== l) : [...prev, l]))}
+                      className={`rounded-md border px-3 py-1 text-xs transition-colors ${on ? "border-primary bg-primary text-primary-foreground" : "border-border text-muted-foreground hover:text-foreground"}`}
+                    >
+                      {l}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPubOpen(false)}>取消</Button>
+            <Button onClick={publish} disabled={busy || !version}>{busy ? "发布中…" : "发布"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Page>
   )
 }
@@ -381,7 +511,7 @@ function TreeSection({ icon: Icon, label, children }: { icon: any; label: string
 }
 function TreeNode({ active, name, icon: Icon, onClick }: { active: boolean; name: string; icon: any; onClick: () => void }) {
   return (
-    <button onClick={onClick} className={`flex w-full items-center gap-1.5 rounded px-2 py-1.5 text-left text-xs transition-colors ${active ? "bg-accent font-medium text-accent-foreground" : "text-muted-foreground hover:bg-accent/50"}`}>
+    <button onClick={onClick} className={`flex w-full items-center gap-1.5 rounded px-2 py-1.5 text-left text-xs transition-colors ${active ? "bg-primary/15 font-medium text-primary" : "text-muted-foreground hover:bg-accent/50"}`}>
       <Icon className="size-3 shrink-0 opacity-60" /><span className="flex-1 truncate font-mono">{name}</span>
       {active && <ChevronRight className="size-3 shrink-0" />}
     </button>

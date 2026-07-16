@@ -4,13 +4,14 @@
  */
 import { useEffect, useState } from "react"
 import * as yaml from "js-yaml"
-import { Card, CardContent, CardHeader, CardTitle } from "../../../components/shadcn/card"
+import { CardContent } from "../../../components/shadcn/card"
 import { Button } from "../../../components/shadcn/button"
 import { Input } from "../../../components/shadcn/input"
 import { Textarea } from "../../../components/shadcn/textarea"
 import { Plus, Save, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { api } from "../../../api/client"
+import { AddButton, SectionCard, SectionCardHeader, SectionCardTitle } from "../../../components/shared"
 import { Field, FormYamlToggle } from "./Field"
 
 interface StageWeight {
@@ -99,18 +100,18 @@ export function AggregationPolicyEditor({ scenarioId }: { scenarioId: string }) 
 
   if (loading) {
     return (
-      <Card>
+      <SectionCard>
         <CardContent className="py-10 text-center text-sm text-muted-foreground">加载中…</CardContent>
-      </Card>
+      </SectionCard>
     )
   }
 
   return (
-    <Card>
-      <CardHeader className="flex-row items-center justify-between">
-        <CardTitle className="text-sm">聚合策略（场景默认）</CardTitle>
+    <SectionCard>
+      <SectionCardHeader className="flex-row items-center justify-between">
+        <SectionCardTitle>聚合策略（场景默认）</SectionCardTitle>
         <FormYamlToggle mode={mode} onChange={switchMode} />
-      </CardHeader>
+      </SectionCardHeader>
       <CardContent className="space-y-3">
         {mode === "form" ? (
           <>
@@ -140,9 +141,7 @@ export function AggregationPolicyEditor({ scenarioId }: { scenarioId: string }) 
                   </Button>
                 </div>
               ))}
-              <Button size="sm" variant="outline" onClick={addW}>
-                <Plus className="mr-1 size-3" />添加阶段权重
-              </Button>
+              <AddButton onClick={addW}>添加阶段权重</AddButton>
             </div>
           </>
         ) : (
@@ -155,6 +154,6 @@ export function AggregationPolicyEditor({ scenarioId }: { scenarioId: string }) 
           <Save className="mr-1 size-4" />{busy ? "保存中…" : "保存"}
         </Button>
       </CardContent>
-    </Card>
+    </SectionCard>
   )
 }
