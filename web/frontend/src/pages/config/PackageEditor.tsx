@@ -194,24 +194,25 @@ export default function PackageEditor() {
             </Card>
           )}
 
-          {/* 规则集：配置完整度 */}
-          {parsed?.kind === "rule-sets" && doc?.content && (
-            <CompletenessPanel data={doc.content as unknown as RuleSetData} metricCount={metricCount} hasPolicy={hasPolicy} />
-          )}
         </div>
 
-        {/* ── 右侧：版本时间线 ── */}
+        {/* ── 右侧：版本时间线 + 配置完整度（规则集时） ── */}
         {selected && parsed && doc && (
-          <VersionTimeline
-            doc={doc}
-            dirty={dirtyOf(selected)}
-            busy={busy}
-            missingRefs={refs}
-            onPublish={(labels, withRefs) => publish(selected, labels, { withRefs })}
-            onPromote={(ver, lbl) => promote(selected, ver, lbl)}
-            onDiff={(ver) => showDiff(selected, ver)}
-            onVersionChange={(v) => setNextVersion(selected, v)}
-          />
+          <div className="space-y-4 lg:sticky lg:top-[72px] lg:max-h-[calc(100vh-88px)] lg:overflow-y-auto">
+            <VersionTimeline
+              doc={doc}
+              dirty={dirtyOf(selected)}
+              busy={busy}
+              missingRefs={refs}
+              onPublish={(labels, withRefs) => publish(selected, labels, { withRefs })}
+              onPromote={(ver, lbl) => promote(selected, ver, lbl)}
+              onDiff={(ver) => showDiff(selected, ver)}
+              onVersionChange={(v) => setNextVersion(selected, v)}
+            />
+            {parsed.kind === "rule-sets" && doc.content && (
+              <CompletenessPanel data={doc.content as unknown as RuleSetData} metricCount={metricCount} hasPolicy={hasPolicy} />
+            )}
+          </div>
         )}
       </div>
     </Page>
