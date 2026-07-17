@@ -23,14 +23,16 @@ export interface PromptData {
   dimensions?: { dim_id: string; name: string; weight: number; score_range?: [number, number] }[]
 }
 
-/** 从模板提取 {{ var }} 变量名 */
-function extractVars(template: string): string[] {
+/** 从模板提取 {{ var }} 变量名（防御 undefined/非字符串，避免 .match 崩溃） */
+function extractVars(template: unknown): string[] {
+  if (typeof template !== "string" || !template) return []
   const matches = template.match(/\{\{\s*(\w+)/g) ?? []
   return [...new Set(matches.map((m) => m.replace(/\{\{\s*/, "")))]
 }
 
-/** 简易 Jinja2 渲染（替换 {{ var }} 为 mock 值） */
-function renderTemplate(template: string, vars: Record<string, string>): string {
+/** 简易 Jinja2 渲染（替换 {{ var }} 为 mock 值；防御 undefined） */
+function renderTemplate(template: unknown, vars: Record<string, string>): string {
+  if (typeof template !== "string" || !template) return ""
   return template.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, key) => vars[key] ?? `{{ ${key} }}`)
 }
 
