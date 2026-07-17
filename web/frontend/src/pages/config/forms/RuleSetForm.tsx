@@ -59,6 +59,7 @@ export function RuleSetForm({
   prompts = [],
   datasets = [],
   onNewPrompt,
+  onNewPromptForRule,
   onNewDataset,
   onJumpAsset,
 }: {
@@ -66,7 +67,10 @@ export function RuleSetForm({
   onChange: (d: RuleSetData) => void
   prompts?: CatalogEntry[]
   datasets?: DatasetCatalogEntry[]
+  /** 旧入口：无规则上下文的新建（如顶部工具栏） */
   onNewPrompt?: () => void
+  /** 按规则绑定的新建提示词：创建后自动写入指定规则的字段 */
+  onNewPromptForRule?: (ruleIndex: number, field: "prompt_id" | "confirmation_prompt_id") => void
   onNewDataset?: () => void
   onJumpAsset?: (type: "prompt" | "dataset", assetId: string) => void
 }) {
@@ -238,7 +242,16 @@ export function RuleSetForm({
               onUpdate={(patch) => updateRule(i, patch)}
               onDelete={() => update({ rules: data.rules.filter((_, j) => j !== i) })}
               onNewStage={addStage}
-              onNewPrompt={onNewPrompt}
+              onNewPrompt={
+                onNewPromptForRule
+                  ? () => onNewPromptForRule(i, "prompt_id")
+                  : onNewPrompt
+              }
+              onNewConfirmationPrompt={
+                onNewPromptForRule
+                  ? () => onNewPromptForRule(i, "confirmation_prompt_id")
+                  : undefined
+              }
               onNewDataset={onNewDataset}
               onJumpAsset={onJumpAsset}
             />

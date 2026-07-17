@@ -70,6 +70,7 @@ export function RuleCard({
   onDelete,
   onNewStage,
   onNewPrompt,
+  onNewConfirmationPrompt,
   onNewDataset,
   onJumpAsset,
 }: {
@@ -81,6 +82,7 @@ export function RuleCard({
   onDelete: () => void
   onNewStage: () => void
   onNewPrompt?: () => void
+  onNewConfirmationPrompt?: () => void
   onNewDataset?: () => void
   onJumpAsset?: (type: "prompt" | "dataset", assetId: string) => void
 }) {
@@ -316,6 +318,11 @@ export function RuleCard({
                 跳转编辑→
               </button>
             )}
+            {onNewPrompt && (
+              <Button size="sm" variant="outline" className="mb-0.5" onClick={onNewPrompt}>
+                <Plus className="mr-1 size-3" />新建
+              </Button>
+            )}
           </div>
 
           {/* 二次确认提示词（可选，默认 fact_verdict） */}
@@ -343,6 +350,11 @@ export function RuleCard({
               >
                 跳转编辑→
               </button>
+            )}
+            {onNewConfirmationPrompt && (
+              <Button size="sm" variant="outline" className="mb-0.5" onClick={onNewConfirmationPrompt}>
+                <Plus className="mr-1 size-3" />新建
+              </Button>
             )}
             <p className="basis-full text-[11px] text-muted-foreground">
               规则正则命中后，由 LLM 二次裁定是否为真实错误（过滤误报）；留空使用 fact_verdict。

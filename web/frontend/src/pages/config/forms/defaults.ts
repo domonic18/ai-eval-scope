@@ -46,3 +46,15 @@ export function createEmptyPrompt(assetId: string): PromptData {
 export function createEmptyDataset(): DatasetData {
   return { subject: "", description: "", version: "1.0", role: "reference", constants: [], misconceptions: [] }
 }
+
+/** 新建规则集时的最小骨架（docs/arch/14 配置编辑器交互设计 §6.4 补「新建规则集」死路） */
+export function createEmptyRuleSet(_assetId: string, scenarioId: string): Record<string, unknown> {
+  return {
+    version: "0.1.0",
+    scenario: scenarioId,
+    description: "",
+    dimensions: [{ id: "functional", name: "功能性", weight: 1.0 }],
+    cascade: [{ stage: "stage_1", name: "", stop_on_fail: false }],
+    rules: [],
+  }
+}

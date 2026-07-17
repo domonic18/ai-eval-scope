@@ -67,18 +67,18 @@ export default function ScenarioConfig() {
             <EntryTable
               rows={catalog.rule_sets}
               emptyHint="无规则集"
-              onOpen={(aid) => nav(`/config/scenarios/${id}/rule-sets/${aid}`)}
+              onOpen={(aid) => nav(`/config/scenarios/${id}/edit?select=rule-sets:${aid}`)}
             />
           </TabsContent>
           <TabsContent value="prompts">
             <EntryTable
               rows={catalog.prompts}
               emptyHint="无提示词"
-              onOpen={(aid) => nav(`/config/scenarios/${id}/prompts/${aid}`)}
+              onOpen={(aid) => nav(`/config/scenarios/${id}/edit?select=prompts:${aid}`)}
             />
           </TabsContent>
           <TabsContent value="datasets">
-            <DatasetTable rows={catalog.datasets} onOpen={(aid) => nav(`/config/scenarios/${id}/datasets/${aid}`)} />
+            <DatasetTable rows={catalog.datasets} onOpen={(aid) => nav(`/config/scenarios/${id}/edit?select=datasets:${aid}`)} />
           </TabsContent>
         </Tabs>
       ) : null}
