@@ -2,9 +2,8 @@ import { useEffect, useMemo, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import { api } from "../api/client"
 import { fmt3, fmtMsRaw, num } from "../lib/format"
-import { METRIC_LABEL } from "../lib/eval"
 import { DynamicMetricGrid } from "../components/DynamicMetricGrid"
-import { extractMetricDefs } from "../lib/metricGrid"
+import { extractMetricDefs, metricLabelOf } from "../lib/metricGrid"
 import { useScenarioDefaults } from "../hooks/useScenarioDefaults"
 import { Button } from "@/components/shadcn/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/shadcn/card"
@@ -342,7 +341,7 @@ export default function RunDetail() {
             columns={[
               { key: "externalSampleId", title: "样本 (task_id)", render: (s) => <span className="font-mono text-xs">{s.externalSampleId}</span> },
               { key: "status", title: "状态", render: (s) => <StatusBadge status={s.status} /> },
-              { key: "reward", title: METRIC_LABEL.Reward, num: true, render: (s) => <span className={s.reward < 0.5 ? "text-red-400" : "text-emerald-400"}>{fmt3(s.reward)}</span> },
+              { key: "reward", title: metricLabelOf(metricDefs.length > 0 ? metricDefs : defaultDefs, "reward", "Reward"), num: true, render: (s) => <span className={s.reward < 0.5 ? "text-red-400" : "text-emerald-400"}>{fmt3(s.reward)}</span> },
               { key: "sFormat", title: "S_format", num: true, render: (s) => <span className={s.sFormat < 1 ? "text-red-400" : ""}>{fmt3(s.sFormat)}</span> },
               { key: "sCommon", title: "S_common", num: true, render: (s) => <span className={s.sCommon <= 0 ? "text-red-400" : ""}>{fmt3(s.sCommon)}</span> },
               { key: "sSoft", title: "S_soft", num: true, render: (s) => fmt3(s.sSoft) },
