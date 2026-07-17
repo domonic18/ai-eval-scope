@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { useCrumbs } from "../../components/AppShell"
+import { useCrumbs } from "../../context/navigation"
 import { Page, PageHead } from "../../components/shared"
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/shadcn/card"
 import { Badge } from "../../components/shadcn/badge"

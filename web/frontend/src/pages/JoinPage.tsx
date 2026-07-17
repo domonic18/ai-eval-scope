@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react"
 import { api } from "../api/client"
 import { Button } from "@/components/shadcn/button"
-import { useToast } from "../components/toast"
+import { useToast } from "../hooks/useToast"
 import { PageHead } from "../components/shared"
 
 interface Team {

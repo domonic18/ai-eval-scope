@@ -18,8 +18,8 @@ import {
   DialogTitle,
 } from "@/components/shadcn/dialog"
 import { Sparkline } from "@/components/Sparkline"
-import { useCrumbs, useOrg } from "../components/AppShell"
-import { useToast } from "../components/toast"
+import { useCrumbs, useOrg } from "../context/navigation"
+import { useToast } from "../hooks/useToast"
 import { Page, PageHead, SemPill, type PillTone } from "../components/shared"
 import { Plus, RefreshCw } from "lucide-react"
 

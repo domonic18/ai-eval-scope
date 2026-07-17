@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { useCrumbs } from "../../components/AppShell"
+import { useCrumbs } from "../../context/navigation"
 import { Page, PageHead, DataTable } from "../../components/shared"
 import { Card, CardContent } from "../../components/shadcn/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/shadcn/tabs"

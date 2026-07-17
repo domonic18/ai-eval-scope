@@ -37,8 +37,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/shadcn/select"
-import { useCrumbs } from "../components/AppShell"
-import { useToast } from "../components/toast"
+import { useCrumbs } from "../context/navigation"
+import { useToast } from "../hooks/useToast"
 import { DataTable, Page, PageHead, SemPill, StatusBadge, type Column } from "../components/shared"
 import { CodeBlock } from "@/components/CodeBlock"
 import { Download, Plus, Search, Trash2 } from "lucide-react"

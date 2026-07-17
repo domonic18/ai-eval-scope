@@ -19,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/shadcn/dialog"
-import { useToast } from "../../components/toast"
+import { useToast } from "../../hooks/useToast"
 import { DataTable, Page, PageHead, Pager, type Column } from "../../components/shared"
 import { timeAgo } from "../../lib/format"
 import { useDebouncedValue } from "../../lib/useDebounce"

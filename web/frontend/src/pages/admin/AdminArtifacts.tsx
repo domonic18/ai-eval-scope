@@ -17,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/shadcn/dialog"
-import { useToast } from "../../components/toast"
+import { useToast } from "../../hooks/useToast"
 import { DataTable, Page, PageHead, Pager, StatCard, type Column } from "../../components/shared"
 import { fmtBytes, timeAgo } from "../../lib/format"
 
