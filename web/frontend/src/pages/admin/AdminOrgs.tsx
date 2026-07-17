@@ -1,5 +1,5 @@
 /** 超管后台 · 工作组（组织）管理：列表 + 删除（级联）。 */
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { api, type AdminOrg } from "../../api/client"
 import { Button } from "@/components/shadcn/button"
 import {
@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/shadcn/dialog"
-import { useToast } from "../../components/toast"
+import { useToast } from "../../hooks/useToast"
 import { DataTable, Page, PageHead, Pager, type Column } from "../../components/shared"
 import { timeAgo } from "../../lib/format"
 
@@ -21,7 +21,7 @@ export default function AdminOrgs() {
   const [page, setPage] = useState(1)
   const [del, setDel] = useState<AdminOrg | null>(null)
 
-  async function load(p = 1) {
+  const load = useCallback(async (p = 1) => {
     try {
       const r = await api.adminListOrgs({ page: p })
       setRows(r.items)
@@ -30,10 +30,12 @@ export default function AdminOrgs() {
     } catch {
       toast.error("加载工作组失败")
     }
-  }
+  }, [toast])
+
   useEffect(() => {
     load()
-  }, [])
+  }, [load])
+
   async function confirmDelete() {
     if (!del) return
     try {

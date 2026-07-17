@@ -33,6 +33,7 @@ export interface Catalog {
   datasets: DatasetCatalogEntry[]
 }
 
+export type Dict = Record<string, unknown>
 const selOf = (kind: AssetKind, assetId: string): Selection => `${kind}:${assetId}`
 const newAssetId = (prefix: string) => `${prefix}_${Date.now().toString(36).slice(-5)}`
 
@@ -93,7 +94,7 @@ export function useEditorStore(scenarioId: string) {
         if (kind === "datasets" && !c.role) c.role = "reference"
         const baselineYaml = yaml.dump(c, { sortKeys: false })
         // 检测 localStorage 草稿：存在且与已发布不同 → 待用户确认，不静默覆盖
-        let pendingDraft: Record<string, any> | null = null
+        let pendingDraft: Dict | null = null
         try {
           const raw = localStorage.getItem(draftKeyOf(scenarioId, kind, assetId))
           if (raw) {
@@ -103,7 +104,7 @@ export function useEditorStore(scenarioId: string) {
               typeof d.content === "object" &&
               yaml.dump(d.content, { sortKeys: false }) !== baselineYaml
             ) {
-              pendingDraft = d.content as Record<string, any>
+              pendingDraft = d.content as Dict
             }
           }
         } catch {
@@ -155,7 +156,7 @@ export function useEditorStore(scenarioId: string) {
   }, [selected, loadDoc])
 
   // ── 编辑：更新内容（内存态），防抖落 localStorage 草稿兜底 ──
-  const updateDoc = useCallback((sel: Selection, content: Record<string, any>) => {
+  const updateDoc = useCallback((sel: Selection, content: Dict) => {
     setDocs((prev) => {
       const doc = prev[sel]
       if (!doc) return prev
@@ -234,10 +235,10 @@ export function useEditorStore(scenarioId: string) {
       const assetId = newAssetId(prefix)
       const content =
         kind === "prompts"
-          ? (createEmptyPrompt(assetId) as unknown as Record<string, any>)
+          ? (createEmptyPrompt(assetId) as unknown as Dict)
           : kind === "datasets"
-            ? (createEmptyDataset() as unknown as Record<string, any>)
-            : (createEmptyRuleSet(assetId, scenarioId) as unknown as Record<string, any>)
+            ? (createEmptyDataset() as unknown as Dict)
+            : (createEmptyRuleSet(assetId, scenarioId) as unknown as Dict)
       const key = selOf(kind, assetId)
       setDocs((prev) => ({
         ...prev,
@@ -265,7 +266,7 @@ export function useEditorStore(scenarioId: string) {
       setDocs((prev) => {
         const doc = prev[ruleSel]
         if (!doc?.content) return prev
-        const rules = (doc.content.rules as Record<string, any>[]).map((r, i) =>
+        const rules = ((doc.content as Dict).rules as Dict[]).map((r, i) =>
           i === ruleIndex ? { ...r, [field]: assetId } : r,
         )
         return { ...prev, [ruleSel]: { ...doc, content: { ...doc.content, rules } } }
@@ -281,13 +282,16 @@ export function useEditorStore(scenarioId: string) {
       const doc = docs[sel]
       const out = { prompts: [] as string[], datasets: [] as string[], unpublished: [] as Selection[] }
       if (!doc || doc.kind !== "rule-sets" || !doc.content) return out
-      const rules = (doc.content.rules as Record<string, any>[]) ?? []
+      const rules = ((doc.content as Dict).rules as Dict[]) ?? []
       const promptIds = new Set<string>()
       const datasetIds = new Set<string>()
       for (const r of rules) {
-        if (r.prompt_id) promptIds.add(r.prompt_id)
-        if (r.confirmation_prompt_id) promptIds.add(r.confirmation_prompt_id)
-        for (const d of r.dataset_ids ?? []) datasetIds.add(d)
+        const prompt_id = r.prompt_id as string | undefined
+        const confirmation_prompt_id = r.confirmation_prompt_id as string | undefined
+        const dataset_ids = r.dataset_ids as string[] | undefined
+        if (prompt_id) promptIds.add(prompt_id)
+        if (confirmation_prompt_id) promptIds.add(confirmation_prompt_id)
+        for (const d of dataset_ids ?? []) datasetIds.add(d)
       }
       const catalogPrompts = new Set((catalog?.prompts ?? []).map((p) => p.asset_id))
       const catalogDatasets = new Set((catalog?.datasets ?? []).map((d) => d.asset_id))
@@ -337,7 +341,7 @@ export function useEditorStore(scenarioId: string) {
               labels: [],
               content: refDoc.content,
               ...(refDoc.kind === "datasets"
-                ? { role: (refDoc.content as any).role ?? "reference", backend_type: (refDoc.content as any).backend_type ?? "yaml_file" }
+                ? { role: ((refDoc.content as Dict).role as string) ?? "reference", backend_type: ((refDoc.content as Dict).backend_type as string) ?? "yaml_file" }
                 : {}),
             })
             const parsed = parseSelection(refSel)!
@@ -354,7 +358,7 @@ export function useEditorStore(scenarioId: string) {
           labels,
           content: doc.content,
           ...(doc.kind === "datasets"
-            ? { role: (doc.content as any).role ?? "reference", backend_type: (doc.content as any).backend_type ?? "yaml_file" }
+            ? { role: ((doc.content as Dict).role as string) ?? "reference", backend_type: ((doc.content as Dict).backend_type as string) ?? "yaml_file" }
             : {}),
         })
         const parsed = parseSelection(sel)!

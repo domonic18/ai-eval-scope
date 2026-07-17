@@ -8,7 +8,7 @@
 
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { useCrumbs } from "../../components/AppShell"
+import { useCrumbs } from "../../context/navigation"
 import { Page, PageHead } from "../../components/shared"
 import { Card, CardContent } from "../../components/shadcn/card"
 import { Badge } from "../../components/shadcn/badge"
@@ -43,8 +43,8 @@ export default function PackageWizard() {
       await api.createScenario(scenarioId, name, description)
       toast.success(`场景 ${scenarioId} 创建成功！`)
       nav(`/config/scenarios/${scenarioId}/edit`)
-    } catch (e: any) {
-      const err = e?.response?.data?.error ?? "创建失败"
+    } catch (e: unknown) {
+      const err = (e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "创建失败"
       toast.error(err)
     } finally {
       setBusy(false)

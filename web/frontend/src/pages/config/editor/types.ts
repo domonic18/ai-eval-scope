@@ -23,7 +23,7 @@ export interface DocState {
   kind: AssetKind
   assetId: string
   /** null = 加载中 */
-  content: Record<string, any> | null
+  content: Record<string, unknown> | null
   /** 最近一次已发布/保存干净的 YAML 文本（dirty 判定基线） */
   baselineYaml: string
   /** 本地新建、尚未发布到服务端 */
@@ -32,7 +32,7 @@ export interface DocState {
   nextVersion: string
   versions: VersionInfo[]
   /** 存在可恢复的 localStorage 草稿（等待用户显式确认） */
-  pendingDraft?: Record<string, any> | null
+  pendingDraft?: Record<string, unknown> | null
 }
 
 export const parseSelection = (

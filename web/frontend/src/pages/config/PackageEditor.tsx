@@ -9,7 +9,7 @@
 import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 import * as yaml from "js-yaml"
-import { useCrumbs } from "../../components/AppShell"
+import { useCrumbs } from "../../context/navigation"
 import { Page, PageHead } from "../../components/shared"
 import { Card, CardContent } from "../../components/shadcn/card"
 import { Textarea } from "../../components/shadcn/textarea"
@@ -25,7 +25,7 @@ import { FormYamlToggle } from "./forms/Field"
 import { AssetTree } from "./editor/AssetTree"
 import { EditorTabs } from "./editor/EditorTabs"
 import { VersionTimeline } from "./editor/VersionTimeline"
-import { useEditorStore } from "./editor/useEditorStore"
+import { useEditorStore, type Dict } from "./editor/useEditorStore"
 import { parseSelection } from "./editor/types"
 
 export default function PackageEditor() {
@@ -77,7 +77,7 @@ export default function PackageEditor() {
     if (!selected) return
     try {
       const parsedYaml = yaml.load(text)
-      if (parsedYaml && typeof parsedYaml === "object") updateDoc(selected, parsedYaml as Record<string, any>)
+      if (parsedYaml && typeof parsedYaml === "object") updateDoc(selected, parsedYaml as Record<string, unknown>)
     } catch {
       /* YAML 语法错误时继续编辑 */
     }
@@ -170,8 +170,8 @@ export default function PackageEditor() {
             <>
               {parsed?.kind === "rule-sets" && (
                 <RuleSetForm
-                  data={doc.content as RuleSetData}
-                  onChange={(d) => updateDoc(selected, d)}
+                  data={doc.content as unknown as RuleSetData}
+                  onChange={(d) => updateDoc(selected, d as unknown as Dict)}
                   prompts={catalog?.prompts ?? []}
                   datasets={(catalog?.datasets ?? []).filter((d) => d.role === "reference")}
                   onNewPromptForRule={(i, field) => createAndBindPrompt(selected, i, field)}
@@ -180,10 +180,10 @@ export default function PackageEditor() {
                 />
               )}
               {parsed?.kind === "prompts" && (
-                <PromptForm data={doc.content as PromptData} onChange={(d) => updateDoc(selected, d)} />
+                <PromptForm data={doc.content as unknown as PromptData} onChange={(d) => updateDoc(selected, d as unknown as Dict)} />
               )}
               {parsed?.kind === "datasets" && (
-                <DatasetForm data={doc.content as DatasetData} onChange={(d) => updateDoc(selected, d)} />
+                <DatasetForm data={doc.content as unknown as DatasetData} onChange={(d) => updateDoc(selected, d as unknown as Dict)} />
               )}
             </>
           ) : (
@@ -196,7 +196,7 @@ export default function PackageEditor() {
 
           {/* 规则集：配置完整度 */}
           {parsed?.kind === "rule-sets" && doc?.content && (
-            <CompletenessPanel data={doc.content as RuleSetData} metricCount={metricCount} hasPolicy={hasPolicy} />
+            <CompletenessPanel data={doc.content as unknown as RuleSetData} metricCount={metricCount} hasPolicy={hasPolicy} />
           )}
         </div>
 

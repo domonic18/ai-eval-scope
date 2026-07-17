@@ -44,7 +44,7 @@ export interface RuleItem {
   weight: number
   description?: string
   enabled?: boolean
-  params?: Record<string, any> // 执行器额外参数（保留给高级场景）
+  params?: Record<string, unknown> // 执行器额外参数（保留给高级场景）
 }
 
 function autoId(name: string, index: number): string {
