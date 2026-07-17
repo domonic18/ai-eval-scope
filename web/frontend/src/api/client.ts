@@ -208,6 +208,9 @@ export const api = {
   async scenarios(): Promise<Scenario[]> {
     return (await http.get("/scenarios")).data.scenarios as Scenario[]
   },
+  async createScenario(id: string, name: string, description?: string): Promise<Scenario> {
+    return (await http.post("/scenarios", { id, name, description })).data.scenario
+  },
   async scenarioCatalog(scenarioId: string): Promise<ScenarioCatalog> {
     return (await http.get(`/scenarios/${scenarioId}/catalog`)).data as ScenarioCatalog
   },
@@ -218,13 +221,26 @@ export const api = {
   async scenarioAggregationPolicy(scenarioId: string): Promise<Record<string, unknown> | null> {
     return (await http.get(`/scenarios/${scenarioId}/defaults`)).data.aggregation_policy ?? null
   },
-  /** 资产完整内容（评测规则浏览器用）。 */
+  /** 更新场景默认指标定义 / 聚合策略（PATCH /scenarios/:id/defaults，admin；直接覆盖 JSONB）。 */
+  async updateScenarioDefaults(
+    scenarioId: string,
+    payload: { metricDefinitions?: unknown; aggregationPolicy?: unknown },
+  ): Promise<void> {
+    await http.patch(`/scenarios/${scenarioId}/defaults`, {
+      metric_definitions: payload.metricDefinitions,
+      aggregation_policy: payload.aggregationPolicy,
+    })
+  },
+  /** 资产完整内容（评测规则浏览器/编辑器 diff 用）。 */
   async assetContent(
     scenarioId: string,
     kind: AssetKind,
     assetId: string,
+    version?: string,
   ): Promise<Record<string, unknown>> {
-    return (await http.get(`/scenarios/${scenarioId}/${kind}/${assetId}/content`)).data.content
+    const params = version ? `?version=${encodeURIComponent(version)}` : ""
+    return (await http.get(`/scenarios/${scenarioId}/${kind}/${assetId}/content${params}`)).data
+      .content
   },
   async publishPackage(
     scenarioId: string,

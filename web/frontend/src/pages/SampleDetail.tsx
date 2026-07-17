@@ -18,8 +18,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/shadcn/tooltip"
-import { useCrumbs } from "../components/AppShell"
-import { useToast } from "../components/toast"
+import { useCrumbs } from "../context/navigation"
+import { useToast } from "../hooks/useToast"
 import { SemPill, TierChip } from "../components/shared"
 import { ChevronRight, ExternalLink, FileText, HelpCircle } from "lucide-react"
 

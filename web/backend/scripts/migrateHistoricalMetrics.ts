@@ -5,13 +5,15 @@
  * metrics JSONB，并为每条 Run 关联 courseware 默认 RunConfigSnapshot。无前端 fallback：
  * 迁移完成后所有历史 Run 均具备完整场景化 metrics + 快照，前端可彻底动态渲染。
  *
- * 幂等：仅处理 metrics 为空的行，可安全重跑。
+ * 幂等：仅处理 metrics 为空的行 / run_config_snapshot_id 为空的行，可安全重跑。
+ * 兼容：即使遗留列已被后续 drop 迁移删除（P5-8 阶段C），本脚本仍可正常执行
+ * （跳过去列回填，仅补齐 snapshot 与 scenario/package 关联）。
  *
  * 用法：npx tsx scripts/migrateHistoricalMetrics.ts   （读 PLATFORM_DATABASE_URL）
  */
 
 import { createHash } from "crypto"
-import { Prisma, type PrismaClient } from "@prisma/client"
+import { type PrismaClient } from "@prisma/client"
 import {
   COURSEWARE_DEFAULT_METRIC_DEFS,
   COURSEWARE_DEFAULT_AGGREGATION_POLICY,
@@ -20,94 +22,130 @@ import {
 // 单一源（src/config/coursewareDefaults.ts），本脚本与 import 脚本共用
 const COURSEWARE_METRIC_DEFINITIONS = COURSEWARE_DEFAULT_METRIC_DEFS
 const COURSEWARE_AGGREGATION_POLICY = COURSEWARE_DEFAULT_AGGREGATION_POLICY
+const COURSEWARE_SCENARIO_ID = "courseware"
 
 export interface MigrationResult {
   scenarioId: string
   snapshotId: string
   runsUpdated: number
   samplesUpdated: number
+  runsSnapshotted: number
 }
 
-/** 执行一次性历史指标迁移。幂等（仅处理 metrics 为空的行）。 */
+/** 检测某表是否存在指定列（用于兼容 drop 迁移后的库）。 */
+async function hasColumn(prisma: PrismaClient, table: string, column: string): Promise<boolean> {
+  const rows = await prisma.$queryRawUnsafe<{ exists: boolean }[]>(
+    `SELECT EXISTS (
+       SELECT 1 FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = ${escapeLiteral(table)} AND column_name = ${escapeLiteral(column)}
+     ) AS exists`,
+  )
+  return rows[0]?.exists ?? false
+}
+
+function escapeLiteral(value: string): string {
+  return "'" + value.replace(/'/g, "''") + "'"
+}
+
+/** 执行一次性历史指标迁移。幂等（仅处理缺失数据的行）。 */
 export async function migrateHistoricalMetrics(prisma: PrismaClient): Promise<MigrationResult> {
-  // 1. 确保 courseware 场景存在
+  // 1. 确保 courseware 场景存在（不覆盖已有 defaultMetricDefinitions，由 importAssetsToDb 负责写入权威定义）
   await prisma.scenario.upsert({
-    where: { id: "courseware" },
+    where: { id: COURSEWARE_SCENARIO_ID },
     update: {},
-    create: { id: "courseware", name: "课件质量评估", description: "课件生成场景默认包" },
+    create: {
+      id: COURSEWARE_SCENARIO_ID,
+      name: "课件质量评估",
+      description: "课件生成场景默认包",
+    },
   })
 
   // 2. 找到/创建 courseware 默认 RunConfigSnapshot（按 content_hash 去重）
   const content = {
-    scenario_id: "courseware",
-    package: { id: "courseware", version: "1.0.0" },
+    scenario_id: COURSEWARE_SCENARIO_ID,
+    package: { id: COURSEWARE_SCENARIO_ID, version: "1.0.0" },
     aggregation_policy: COURSEWARE_AGGREGATION_POLICY,
     metric_definitions: COURSEWARE_METRIC_DEFINITIONS,
   }
-  const contentHash = "sha256:" + createHash("sha256").update(JSON.stringify(content)).digest("hex")
+  const contentHash =
+    "sha256:" + createHash("sha256").update(JSON.stringify(content)).digest("hex")
   const snapshot = await prisma.runConfigSnapshot.findFirst({ where: { contentHash } })
   const snapshotId = snapshot
     ? snapshot.id
     : (
         await prisma.runConfigSnapshot.create({
           data: {
-            scenarioId: "courseware",
-            packageId: "courseware",
+            scenarioId: COURSEWARE_SCENARIO_ID,
+            packageId: COURSEWARE_SCENARIO_ID,
             packageVersion: "1.0.0",
-            content: content as unknown as Prisma.InputJsonValue,
+            content: content as unknown as never,
             contentHash,
           },
           select: { id: true },
         })
       ).id
 
-  // 3. 回填 Run.metrics（仅 metrics 为 DB NULL 的 Run）
-  const runs = await prisma.run.findMany({
-    where: { metrics: { equals: Prisma.DbNull } },
-    select: { id: true, dr: true, cpr: true, avgReward: true, avgSoft: true, avgPref: true, condR: true },
-  })
+  // 3. 回填 Run.metrics（仅当遗留列仍存在时；drop 迁移后由其他方式保证 metrics 已存在）
   let runsUpdated = 0
-  for (const r of runs) {
-    const m: Record<string, number> = {}
-    if (r.dr != null) m["courseware:document_rate"] = r.dr
-    if (r.cpr != null) m["courseware:constraint_pass_rate"] = r.cpr
-    if (r.avgReward != null) m["courseware:reward"] = r.avgReward
-    if (r.avgSoft != null) m["courseware:soft"] = r.avgSoft
-    if (r.avgPref != null) m["courseware:pref"] = r.avgPref
-    if (r.condR != null) m["courseware:conditional_reward"] = r.condR
-    if (Object.keys(m).length === 0) continue // 无任何遗留指标，跳过
-    await prisma.run.update({
-      where: { id: r.id },
-      data: {
-        metrics: m,
-        scenarioId: "courseware",
-        packageId: "courseware",
-        packageVersion: "1.0.0",
-        runConfigSnapshotId: snapshotId,
-      },
-    })
-    runsUpdated++
+  if (await hasColumn(prisma, "runs", "dr")) {
+    const runsResult = await prisma.$executeRawUnsafe(
+      `UPDATE runs
+       SET metrics = jsonb_build_object(
+         'courseware:document_rate', dr,
+         'courseware:constraint_pass_rate', cpr,
+         'courseware:reward', avg_reward,
+         'courseware:soft', avg_soft,
+         'courseware:pref', avg_pref,
+         'courseware:conditional_reward', cond_r,
+         'avg_time_ms', avg_time_ms
+       )
+       WHERE metrics IS NULL
+         AND dr IS NOT NULL
+         AND cpr IS NOT NULL
+         AND avg_reward IS NOT NULL`,
+    )
+    runsUpdated = Number(runsResult)
   }
 
-  // 4. 回填 Sample.metrics（仅 metrics 为 DB NULL 的 Sample）
-  const samples = await prisma.sample.findMany({
-    where: { metrics: { equals: Prisma.DbNull } },
-    select: { id: true, reward: true, sSoft: true, sPref: true, sFormat: true, sCommon: true },
-  })
+  // 4. 回填 Sample.metrics（仅当遗留列仍存在时）
   let samplesUpdated = 0
-  for (const s of samples) {
-    const m: Record<string, number> = {}
-    if (s.reward != null) m["reward"] = s.reward
-    if (s.sSoft != null) m["soft"] = s.sSoft
-    if (s.sPref != null) m["pref"] = s.sPref
-    if (s.sFormat != null) m["format"] = s.sFormat
-    if (s.sCommon != null) m["common"] = s.sCommon
-    if (Object.keys(m).length === 0) continue
-    await prisma.sample.update({ where: { id: s.id }, data: { metrics: m } })
-    samplesUpdated++
+  if (await hasColumn(prisma, "samples", "s_format")) {
+    const samplesResult = await prisma.$executeRawUnsafe(
+      `UPDATE samples
+       SET metrics = jsonb_build_object(
+         'courseware:format', s_format,
+         'courseware:commonsense', s_common,
+         'courseware:soft', s_soft,
+         'courseware:pref', s_pref,
+         'courseware:reward', reward
+       )
+       WHERE metrics IS NULL
+         AND s_format IS NOT NULL
+         AND s_common IS NOT NULL
+         AND s_soft IS NOT NULL
+         AND s_pref IS NOT NULL`,
+    )
+    samplesUpdated = Number(samplesResult)
   }
 
-  return { scenarioId: "courseware", snapshotId, runsUpdated, samplesUpdated }
+  // 5. 为所有历史 Run 补齐 scenario/package 关联与 snapshot（幂等）
+  const snapshottedResult = await prisma.$executeRawUnsafe(
+    `UPDATE runs
+     SET scenario_id = ${escapeLiteral(COURSEWARE_SCENARIO_ID)},
+         package_id = ${escapeLiteral(COURSEWARE_SCENARIO_ID)},
+         package_version = '1.0.0',
+         run_config_snapshot_id = ${escapeLiteral(snapshotId)}
+     WHERE run_config_snapshot_id IS NULL`,
+  )
+  const runsSnapshotted = Number(snapshottedResult)
+
+  return {
+    scenarioId: COURSEWARE_SCENARIO_ID,
+    snapshotId,
+    runsUpdated,
+    samplesUpdated,
+    runsSnapshotted,
+  }
 }
 
 // CLI 入口（直接执行时运行）

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { useCrumbs } from "../../components/AppShell"
+import { useCrumbs } from "../../context/navigation"
 import { Page, PageHead, DataTable } from "../../components/shared"
 import { Card, CardContent } from "../../components/shadcn/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/shadcn/tabs"
@@ -12,7 +12,7 @@ import { Label } from "../../components/shadcn/label"
 import { Textarea } from "../../components/shadcn/textarea"
 import { toast } from "sonner"
 import { api, type ScenarioCatalog, type CatalogEntry, type DatasetCatalogEntry } from "../../api/client"
-import { Package, Plus } from "lucide-react"
+import { Package, Pencil, Plus } from "lucide-react"
 
 const VERSION_LABELS = ["production", "staging", "latest"] as const
 
@@ -43,9 +43,14 @@ export default function ScenarioConfig() {
         title={catalog?.scenario.name ?? id}
         sub={catalog?.scenario.description ?? `场景 ${id} 的规则集 / 提示词 / 数据集`}
         right={
-          <Button onClick={() => setPublishOpen(true)}>
-            <Plus className="size-4" /> 发布包版本
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => nav(`/config/scenarios/${id}/edit`)}>
+              <Pencil className="size-4" /> 进入包编辑器
+            </Button>
+            <Button onClick={() => setPublishOpen(true)}>
+              <Plus className="size-4" /> 发布包版本
+            </Button>
+          </div>
         }
       />
       {error && <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">{error}</div>}
@@ -62,18 +67,18 @@ export default function ScenarioConfig() {
             <EntryTable
               rows={catalog.rule_sets}
               emptyHint="无规则集"
-              onOpen={(aid) => nav(`/config/scenarios/${id}/rule-sets/${aid}`)}
+              onOpen={(aid) => nav(`/config/scenarios/${id}/edit?select=rule-sets:${aid}`)}
             />
           </TabsContent>
           <TabsContent value="prompts">
             <EntryTable
               rows={catalog.prompts}
               emptyHint="无提示词"
-              onOpen={(aid) => nav(`/config/scenarios/${id}/prompts/${aid}`)}
+              onOpen={(aid) => nav(`/config/scenarios/${id}/edit?select=prompts:${aid}`)}
             />
           </TabsContent>
           <TabsContent value="datasets">
-            <DatasetTable rows={catalog.datasets} onOpen={(aid) => nav(`/config/scenarios/${id}/datasets/${aid}`)} />
+            <DatasetTable rows={catalog.datasets} onOpen={(aid) => nav(`/config/scenarios/${id}/edit?select=datasets:${aid}`)} />
           </TabsContent>
         </Tabs>
       ) : null}
@@ -120,6 +125,15 @@ function EntryTable({
           ),
         },
         { key: "description", title: "描述", render: (r) => <span className="text-muted-foreground">{r.description ?? "—"}</span> },
+        {
+          key: "actions",
+          title: "",
+          render: (r) => (
+            <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={(e) => { e.stopPropagation(); onOpen(r.asset_id) }}>
+              <Pencil className="size-3" /> 编辑
+            </Button>
+          ),
+        },
       ]}
       rowKey={(r) => r.asset_id}
     />
@@ -149,6 +163,15 @@ function DatasetTable({ rows, onOpen }: { rows: DatasetCatalogEntry[]; onOpen: (
         { key: "backend_type", title: "后端", render: (r) => <span className="font-mono text-xs">{r.backend_type}</span> },
         { key: "version", title: "版本", render: (r) => <Badge variant="secondary">{r.version}</Badge> },
         { key: "description", title: "描述", render: (r) => <span className="text-muted-foreground">{r.description ?? "—"}</span> },
+        {
+          key: "actions",
+          title: "",
+          render: (r) => (
+            <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={(e) => { e.stopPropagation(); onOpen(r.asset_id) }}>
+              <Pencil className="size-3" /> 编辑
+            </Button>
+          ),
+        },
       ]}
       rowKey={(r) => `${r.role}-${r.asset_id}`}
     />

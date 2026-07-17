@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/shadcn/select"
-import { useToast } from "../../components/toast"
+import { useToast } from "../../hooks/useToast"
 import { DataTable, Page, PageHead, Pager, StatusBadge, type Column } from "../../components/shared"
 import { timeAgo } from "../../lib/format"
 import { loadSession } from "../../store/auth"

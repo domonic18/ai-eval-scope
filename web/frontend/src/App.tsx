@@ -17,6 +17,8 @@ import ConfigHub from "./pages/config/ConfigHub"
 import ScenarioConfig from "./pages/config/ScenarioConfig"
 import AssetEditor from "./pages/config/AssetEditor"
 import RuleExplorer from "./pages/RuleExplorer"
+import PackageEditor from "./pages/config/PackageEditor"
+import PackageWizard from "./pages/config/PackageWizard"
 import AdminLayout from "./pages/admin/AdminLayout"
 import AdminOverview from "./pages/admin/AdminOverview"
 import AdminUsers from "./pages/admin/AdminUsers"
@@ -75,6 +77,8 @@ export default function App() {
         <Route path="/config" element={<ConfigHub />} />
         <Route path="/config/scenarios/:id" element={<ScenarioConfig />} />
         <Route path="/config/scenarios/:id/:kind/:assetId" element={<AssetEditor />} />
+        <Route path="/config/scenarios/:id/edit" element={<PackageEditor />} />
+        <Route path="/config/create" element={<PackageWizard />} />
         <Route path="/config/scenarios/:id/explorer" element={<RuleExplorer />} />
       </Route>
       {/* 运行/样本详情：登录走 AppShell，匿名走 PublicShell（公开项目可 iframe 嵌入） */}

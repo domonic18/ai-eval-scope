@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react"
 import { api, type AdminAuditRow } from "../../api/client"
 import { Input } from "@/components/shadcn/input"
-import { useToast } from "../../components/toast"
+import { useToast } from "../../hooks/useToast"
 import { DataTable, Page, PageHead, Pager, type Column } from "../../components/shared"
 import { timeAgo } from "../../lib/format"
 import { useDebouncedValue } from "../../lib/useDebounce"

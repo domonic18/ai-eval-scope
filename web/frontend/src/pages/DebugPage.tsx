@@ -23,9 +23,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/shadcn/tooltip"
-import { useCrumbs } from "../components/AppShell"
+import { useCrumbs } from "../context/navigation"
 import { FilePicker } from "../components/FilePicker"
-import { useToast } from "../components/toast"
+import { useToast } from "../hooks/useToast"
 import { StatusBadge } from "../components/shared"
 import { CopyIcon, ExternalLink, HelpCircle, Terminal, Trash2 } from "lucide-react"
 import type { DebugJobStatus } from "../types"

@@ -81,7 +81,10 @@ class ResponseFormatEvaluator(BaseEvaluator):
         import time
 
         start = time.monotonic()
-        allowed = set(self.params.get("allowed_formats", EVALUATOR_DEFAULTS.allowed_formats))
+        allowed = set(
+            self.params.get("extensions")
+            or self.params.get("allowed_formats", EVALUATOR_DEFAULTS.allowed_formats)
+        )
         allowed_exts = set()
         for fmt in allowed:
             fmt = fmt.lower().strip(".")

@@ -23,8 +23,9 @@ rules:
     dimension: functional
     stage: format_gate
     description: "SUT 必须生成有效的 Markdown 或 HTML 文件"
+    method: format
+    format_type: extension
+    extensions: ["md", "html"]
     evaluator: format.response_format
-    params:
-      allowed_formats: ["md", "html"]
     weight: 1.0
     penalty_on_fail: -3

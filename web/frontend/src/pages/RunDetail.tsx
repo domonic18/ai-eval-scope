@@ -3,7 +3,8 @@ import { Link, useNavigate, useParams } from "react-router-dom"
 import { api } from "../api/client"
 import { fmt3, fmtMsRaw, num } from "../lib/format"
 import { METRIC_LABEL } from "../lib/eval"
-import { DynamicMetricGrid, extractMetricDefs } from "../components/DynamicMetricGrid"
+import { DynamicMetricGrid } from "../components/DynamicMetricGrid"
+import { extractMetricDefs } from "../lib/metricGrid"
 import { useScenarioDefaults } from "../hooks/useScenarioDefaults"
 import { Button } from "@/components/shadcn/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/shadcn/card"
@@ -15,8 +16,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/shadcn/dialog"
-import { useCrumbs } from "../components/AppShell"
-import { useToast } from "../components/toast"
+import { useCrumbs } from "../context/navigation"
+import { useToast } from "../hooks/useToast"
 import { DataTable, Page, PageHead, StatusBadge, type Column } from "../components/shared"
 import { Download, ExternalLink, Trash2 } from "lucide-react"
 

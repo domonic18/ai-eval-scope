@@ -29,12 +29,11 @@
 
 import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
-import { useCrumbs } from "../components/AppShell"
+import { useCrumbs } from "../context/navigation"
 import { Page, PageHead, TierChip } from "../components/shared"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/shadcn/card"
 import { Badge } from "../components/shadcn/badge"
-import { Button } from "../components/shadcn/button"
-import { api, type AssetKind, type CatalogEntry } from "../api/client"
+import { api, type CatalogEntry } from "../api/client"
 import type { MetricDef, MetricExplainRow } from "../types"
 import {
   BookOpen,
@@ -44,6 +43,58 @@ import {
   Gauge,
   Layers,
 } from "lucide-react"
+
+// 本地数据类型（只读详情视图使用）
+type Dict = Record<string, unknown>
+
+interface RuleItem {
+  id?: string
+  name?: string
+  description?: string
+  evaluator?: string
+  stage?: string
+  params?: Dict
+}
+
+interface StageItem {
+  stage: string
+  name?: string
+  stop_on_fail?: boolean
+}
+
+interface DimensionItem {
+  id?: string
+  dim_id?: string
+  name?: string
+  weight?: number
+  score_range?: unknown
+}
+
+interface ConstantItem {
+  name?: string
+  value?: unknown
+  tolerance?: unknown
+}
+
+interface MisconceptionItem {
+  severity?: string
+  pattern?: string
+  correct?: string
+}
+
+interface StageWeight {
+  stage_id?: string
+  id?: string
+  weight?: number
+  is_gate?: boolean
+  evaluator_weights?: Dict
+}
+
+interface PolicyContent {
+  id?: string
+  stage_weights?: StageWeight[]
+  normalize_to?: [number, number]
+}
 
 type Selection =
   | { type: "rule-set"; assetId: string }
@@ -212,9 +263,21 @@ function TreeItem({
 // ── 1. 规则集详情 ──
 
 function RuleSetDetail({ scenarioId, assetId }: { scenarioId: string; assetId: string }) {
-  const [content, setContent] = useState<Record<string, any> | null>(null)
+  const [content, setContent] = useState<{
+    description?: string
+    rules: RuleItem[]
+    cascade: StageItem[]
+    dimensions?: DimensionItem[]
+  } | null>(null)
   useEffect(() => {
-    api.assetContent(scenarioId, "rule-sets", assetId).then(setContent).catch(() => setContent(null))
+    api.assetContent(scenarioId, "rule-sets", assetId)
+      .then((c) => setContent(c as unknown as {
+        description?: string
+        rules: RuleItem[]
+        cascade: StageItem[]
+        dimensions?: DimensionItem[]
+      } | null))
+      .catch(() => setContent(null))
   }, [scenarioId, assetId])
 
   if (!content) return <LoadingCard />
@@ -226,8 +289,8 @@ function RuleSetDetail({ scenarioId, assetId }: { scenarioId: string; assetId: s
     <div className="space-y-4">
       <DetailHeader title={assetId} sub={content.description ?? ""} meta={[
         { label: "规则数", value: String(rules.length) },
-        { label: "阶段", value: cascade.map((c: any) => c.stage).join(" → ") },
-        { label: "维度", value: dims.map((d: any) => d.id).join(", ") },
+        { label: "阶段", value: cascade.map((c) => c.stage).join(" → ") },
+        { label: "维度", value: dims.map((d) => d.id ?? "—").join(", ") },
       ]} />
 
       {/* 级联流程 */}
@@ -235,7 +298,7 @@ function RuleSetDetail({ scenarioId, assetId }: { scenarioId: string; assetId: s
         <CardHeader><CardTitle className="text-sm">级联流程</CardTitle></CardHeader>
         <CardContent>
           <div className="flex flex-wrap items-center gap-2">
-            {cascade.map((c: any, i: number) => (
+            {cascade.map((c, i) => (
               <div key={c.stage} className="flex items-center gap-2">
                 {i > 0 && <ChevronRight className="size-4 text-muted-foreground" />}
                 <div className={`rounded-md border px-3 py-1.5 text-sm ${c.stop_on_fail ? "border-red-500/40 text-red-400" : "border-border text-muted-foreground"}`}>
@@ -250,7 +313,7 @@ function RuleSetDetail({ scenarioId, assetId }: { scenarioId: string; assetId: s
 
       {/* 规则列表 */}
       <div className="space-y-2">
-        {rules.map((r: any) => (
+        {rules.map((r) => (
           <RuleCard key={r.id} rule={r} />
         ))}
       </div>
@@ -258,7 +321,7 @@ function RuleSetDetail({ scenarioId, assetId }: { scenarioId: string; assetId: s
   )
 }
 
-function RuleCard({ rule }: { rule: any }) {
+function RuleCard({ rule }: { rule: RuleItem }) {
   const tier = rule.evaluator?.split(".")[0] ?? rule.stage
   const tierMap: Record<string, "hard" | "soft" | "pref"> = {
     format: "hard", commonsense: "hard", soft: "soft", pref: "pref", vision: "soft",
@@ -275,9 +338,9 @@ function RuleCard({ rule }: { rule: any }) {
             {rule.description && <p className="mt-1 text-xs text-muted-foreground">{rule.description}</p>}
             <div className="mt-2 flex flex-wrap gap-1.5">
               <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">{rule.evaluator}</span>
-              {rule.params?.template_id && (
+              {!!rule.params?.template_id && (
                 <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
-                  prompt: {rule.params.template_id}
+                  prompt: {rule.params.template_id as string}
                 </span>
               )}
               <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
@@ -285,7 +348,7 @@ function RuleCard({ rule }: { rule: any }) {
               </span>
             </div>
           </div>
-          <TierChip tier={tierMap[tier] ?? "hard"}>{tier}</TierChip>
+          <TierChip tier={tierMap[tier ?? ""] ?? "hard"}>{tier}</TierChip>
         </div>
       </CardContent>
     </Card>
@@ -295,9 +358,27 @@ function RuleCard({ rule }: { rule: any }) {
 // ── 2. 提示词详情 ──
 
 function PromptDetail({ scenarioId, assetId }: { scenarioId: string; assetId: string }) {
-  const [content, setContent] = useState<Record<string, any> | null>(null)
+  const [content, setContent] = useState<{
+    template_id?: string
+    name?: string
+    temperature?: number
+    seed?: number
+    system_prompt?: string
+    user_prompt_template?: string
+    dimensions?: DimensionItem[]
+  } | null>(null)
   useEffect(() => {
-    api.assetContent(scenarioId, "prompts", assetId).then(setContent).catch(() => setContent(null))
+    api.assetContent(scenarioId, "prompts", assetId)
+      .then((c) => setContent(c as unknown as {
+        template_id?: string
+        name?: string
+        temperature?: number
+        seed?: number
+        system_prompt?: string
+        user_prompt_template?: string
+        dimensions?: DimensionItem[]
+      } | null))
+      .catch(() => setContent(null))
   }, [scenarioId, assetId])
 
   if (!content) return <LoadingCard />
@@ -322,12 +403,12 @@ function PromptDetail({ scenarioId, assetId }: { scenarioId: string; assetId: st
           <CardHeader><CardTitle className="text-sm">评分维度（output_schema）</CardTitle></CardHeader>
           <CardContent>
             <div className="space-y-1">
-              {vars.map((v: any) => (
-                <div key={v.dim_id} className="flex items-center gap-3 border-t py-2 text-sm first:border-t-0">
+              {vars.map((v) => (
+                <div key={v.dim_id ?? v.id} className="flex items-center gap-3 border-t py-2 text-sm first:border-t-0">
                   <span className="w-28 shrink-0 font-mono text-xs text-muted-foreground">{v.dim_id}</span>
                   <span className="flex-1">{v.name}</span>
                   <span className="text-xs text-muted-foreground">w={v.weight}</span>
-                  <span className="text-xs text-muted-foreground">{JSON.stringify(v.score_range ?? "—")}</span>
+                  <span className="text-xs text-muted-foreground">{JSON.stringify((v.score_range ?? "—") as unknown)}</span>
                 </div>
               ))}
             </div>
@@ -341,9 +422,21 @@ function PromptDetail({ scenarioId, assetId }: { scenarioId: string; assetId: st
 // ── 3. 数据集详情 ──
 
 function DatasetDetail({ scenarioId, assetId }: { scenarioId: string; assetId: string }) {
-  const [content, setContent] = useState<Record<string, any> | null>(null)
+  const [content, setContent] = useState<{
+    description?: string
+    subject?: string
+    constants?: ConstantItem[]
+    misconceptions?: MisconceptionItem[]
+  } | null>(null)
   useEffect(() => {
-    api.assetContent(scenarioId, "datasets", assetId).then(setContent).catch(() => setContent(null))
+    api.assetContent(scenarioId, "datasets", assetId)
+      .then((c) => setContent(c as unknown as {
+        description?: string
+        subject?: string
+        constants?: ConstantItem[]
+        misconceptions?: MisconceptionItem[]
+      } | null))
+      .catch(() => setContent(null))
   }, [scenarioId, assetId])
 
   if (!content) return <LoadingCard />
@@ -362,11 +455,11 @@ function DatasetDetail({ scenarioId, assetId }: { scenarioId: string; assetId: s
           <CardHeader><CardTitle className="text-sm">常量/公式（{constants.length}）</CardTitle></CardHeader>
           <CardContent>
             <div className="scroll-area max-h-[50vh] space-y-1 overflow-y-auto rounded bg-muted/20 p-3">
-              {constants.map((c: any, i: number) => (
+              {constants.map((c, i) => (
                 <div key={i} className="flex items-start gap-3 border-t py-2 text-sm first:border-t-0">
                   <span className="min-w-0 flex-1 truncate">{c.name}</span>
-                  <span className="shrink-0 font-mono text-xs text-emerald-400">{c.value}</span>
-                  {c.tolerance && <span className="shrink-0 text-[10px] text-muted-foreground">±{c.tolerance}</span>}
+                  <span className="shrink-0 font-mono text-xs text-emerald-400">{String(c.value ?? "")}</span>
+                  {c.tolerance != null && <span className="shrink-0 text-[10px] text-muted-foreground">±{String(c.tolerance)}</span>}
                 </div>
               ))}
             </div>
@@ -379,7 +472,7 @@ function DatasetDetail({ scenarioId, assetId }: { scenarioId: string; assetId: s
           <CardHeader><CardTitle className="text-sm">常见误区（{misconceptions.length}）</CardTitle></CardHeader>
           <CardContent>
             <div className="scroll-area max-h-[50vh] space-y-1 overflow-y-auto rounded bg-muted/20 p-3">
-              {misconceptions.map((m: any, i: number) => (
+              {misconceptions.map((m, i) => (
                 <div key={i} className="flex items-start gap-3 border-t py-2 text-sm first:border-t-0">
                   <Badge variant={m.severity === "error" ? "destructive" : "secondary"} className="shrink-0 text-[10px]">
                     {m.severity ?? "warning"}
@@ -401,9 +494,11 @@ function DatasetDetail({ scenarioId, assetId }: { scenarioId: string; assetId: s
 // ── 4. 聚合策略详情 ──
 
 function PolicyDetail({ scenarioId }: { scenarioId: string }) {
-  const [policy, setPolicy] = useState<Record<string, any> | null>(null)
+  const [policy, setPolicy] = useState<PolicyContent | null>(null)
   useEffect(() => {
-    api.scenarioAggregationPolicy(scenarioId).then(setPolicy).catch(() => setPolicy(null))
+    api.scenarioAggregationPolicy(scenarioId)
+      .then((p) => setPolicy(p as unknown as PolicyContent | null))
+      .catch(() => setPolicy(null))
   }, [scenarioId])
 
   if (!policy) return <LoadingCard />
@@ -421,7 +516,7 @@ function PolicyDetail({ scenarioId }: { scenarioId: string }) {
         <CardHeader><CardTitle className="text-sm">阶段权重</CardTitle></CardHeader>
         <CardContent>
           <div className="space-y-1">
-            {stages.map((s: any, i: number) => (
+            {stages.map((s, i) => (
               <div key={i} className="flex items-center gap-3 border-t py-2 text-sm first:border-t-0">
                 <span className="w-28 shrink-0 font-mono text-xs">{s.stage_id}</span>
                 {s.id && <Badge variant="outline" className="shrink-0 text-[10px]">{s.id}</Badge>}

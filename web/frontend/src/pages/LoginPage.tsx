@@ -10,7 +10,7 @@ import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
 import { Label } from "@/components/shadcn/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/shadcn/tabs"
-import { useToast } from "../components/toast"
+import { useToast } from "../hooks/useToast"
 import { APP_VERSION } from "../version"
 import { ArrowRight, KeyRound, Lock, Mail } from "lucide-react"
 
