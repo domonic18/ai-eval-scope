@@ -114,6 +114,9 @@ make web-typecheck      # = cd web/backend && npm run typecheck
 - `GET|PATCH /api/v1/projects/:id`、`POST /api/v1/projects/:id/{archive,unarchive}` — 项目管理
 - `GET|POST /api/v1/projects/:id/keys`、`POST /api/v1/projects/:id/keys/:keyId/revoke` — API Key 管理
 - `POST /api/public/ingest`（Bearer API Key 鉴权）— 评估结果摄取
+- `GET|POST|PATCH|DELETE /api/v1/admin/llm-models`（platformAdmin）— LLM 模型配置 CRUD
+- `POST /api/v1/admin/llm-models/:id/{set-default,test}`、`POST /api/v1/admin/llm-models/export-yaml` — 设默认/连通性测试/导出
+- `POST /api/v1/ai/{optimize-prompt,recommend-rules,generate-metrics,generate-policy}`（requireAuth + 限流）— 配置资产 AI 生成
 
 > Query API（运行 / 样本 / 趋势 / 制品）见架构文档 §九。
 
