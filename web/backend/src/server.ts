@@ -34,6 +34,7 @@ import runsRouter from "./routes/runs"
 import artifactsRouter from "./routes/artifacts"
 import debugRouter from "./routes/debug"
 import adminRouter from "./routes/admin"
+import aiRouter from "./routes/ai"
 import evalJobsRouter from "./routes/eval/jobs"
 import evalRuleSetsRouter from "./routes/eval/ruleSets"
 import evalHealthRouter from "./routes/eval/health"
@@ -86,6 +87,7 @@ export function createApp(): express.Application {
   app.use("/api/v1/runs", runsRouter) // 运行/样本详情（Query，§九）
   app.use("/api/v1/artifacts", artifactsRouter) // 制品下载（presigned 重定向）
   app.use("/api/v1/admin", adminRouter) // 超管后台（platformAdminGuard，跨租户）
+  app.use("/api/v1/ai", aiRouter) // 配置资产 AI 生成（requireAuth，默认 LLM）
 
   // ── 摄取路由（Bearer API Key 鉴权 + 限流，7d）──
   app.use("/api/public/ingest", ingestRouter) // POST /api/public/ingest

@@ -459,3 +459,24 @@ model RunConfigSnapshot {
   @@index([scenarioId, packageId, packageVersion])
   @@map("run_config_snapshots")
 }
+
+/// LLM 模型配置（docs/arch/15）。provider 为协议（openai | anthropic）；
+/// api_key AES-256-GCM 加密存储；is_default 全局唯一（partial unique index 见迁移）。
+model LlmModel {
+  id              String   @id @default(uuid())
+  name            String
+  provider        String // openai | anthropic
+  baseUrl         String? @map("base_url")
+  apiKeyEncrypted String  @map("api_key_encrypted")
+  modelName       String  @map("model_name")
+  isActive        Boolean @default(true) @map("is_active")
+  isDefault       Boolean @default(false) @map("is_default")
+  extra           Json?
+  lastTestedAt    DateTime? @map("last_tested_at")
+  lastTestStatus  String?   @map("last_test_status") // success | failed
+  lastTestError   String?   @map("last_test_error")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("llm_models")
+}
