@@ -74,8 +74,8 @@ export function AssetTree({ catalog, docs, selected, dirtyOf, onSelect, onCreate
         </AddButton>
       </TreeSection>
       <TreeSection icon={Gauge} label="策略">
-        <TreeNode active={selected === "policy"} name="聚合策略" icon={Gauge} onClick={() => onSelect("policy")} />
         <TreeNode active={selected === "metrics"} name="指标定义" icon={Layers} onClick={() => onSelect("metrics")} />
+        <TreeNode active={selected === "policy"} name="聚合策略" icon={Gauge} onClick={() => onSelect("policy")} />
       </TreeSection>
     </div>
   )
