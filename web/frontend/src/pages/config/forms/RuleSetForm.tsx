@@ -17,6 +17,7 @@ import {
 } from "../../../components/shared"
 import { AiResultDialog } from "../../../components/AiResultDialog"
 import { toast } from "sonner"
+import { extractErr } from "../../../hooks/useAiGeneration"
 import { api } from "../../../api/client"
 import type { CatalogEntry, DatasetCatalogEntry } from "../../../api/client"
 import { RuleCard } from "./RuleCard"
@@ -97,7 +98,7 @@ export function RuleSetForm({
       })
       setAiRules(r.rules)
     } catch (e) {
-      toast.error((e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "AI 推荐失败")
+      toast.error(extractErr(e, "AI 推荐失败"))
       setAiOpen(false)
     } finally {
       setAiLoading(false)

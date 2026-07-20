@@ -10,8 +10,9 @@ import * as yaml from "js-yaml"
 import { Button } from "../../../components/shadcn/button"
 import { Input } from "../../../components/shadcn/input"
 import { Textarea } from "../../../components/shadcn/textarea"
-import { Save, Sparkles, Trash2, AlertTriangle, Plus, ArrowRight, Layers } from "lucide-react"
+import { Save, Sparkles, Trash2, AlertTriangle, Plus, ArrowRight } from "lucide-react"
 import { toast } from "sonner"
+import { extractErr } from "../../../hooks/useAiGeneration"
 import { api } from "../../../api/client"
 import { AddButton, SectionCard, SectionCardContent, SectionCardHeader, SectionCardTitle } from "../../../components/shared"
 import { AiResultDialog } from "../../../components/AiResultDialog"
@@ -29,8 +30,7 @@ interface AggPolicy {
   [k: string]: unknown
 }
 
-const errMsg = (e: unknown) =>
-  (e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "保存失败"
+const errMsg = (e: unknown) => extractErr(e, "保存失败")
 
 const normalize = (raw: Record<string, unknown> | null): AggPolicy => {
   if (!raw || typeof raw !== "object") return { stage_weights: [] }
@@ -144,7 +144,7 @@ export function AggregationPolicyEditor({ scenarioId }: { scenarioId: string }) 
       const np = normalize(r.aggregationPolicy as Record<string, unknown> | null)
       setAiPolicy(np)
     } catch (e) {
-      toast.error((e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "AI 生成失败")
+      toast.error(extractErr(e, "AI 生成失败"))
     } finally {
       setAiLoading(false)
     }

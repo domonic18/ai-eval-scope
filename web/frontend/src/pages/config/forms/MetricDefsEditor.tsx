@@ -9,14 +9,14 @@ import { Input } from "../../../components/shadcn/input"
 import { Textarea } from "../../../components/shadcn/textarea"
 import { Save, Sparkles, Trash2 } from "lucide-react"
 import { toast } from "sonner"
+import { extractErr } from "../../../hooks/useAiGeneration"
 import { api } from "../../../api/client"
 import type { MetricDef } from "../../../types"
 import { AddButton, SectionCard, SectionCardContent, SectionCardHeader, SectionCardTitle } from "../../../components/shared"
 import { AiResultDialog } from "../../../components/AiResultDialog"
 import { Field, FormYamlToggle } from "./Field"
 
-const errMsg = (e: unknown) =>
-  (e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "保存失败"
+const errMsg = (e: unknown) => extractErr(e, "保存失败")
 
 export function MetricDefsEditor({ scenarioId }: { scenarioId: string }) {
   const [metrics, setMetrics] = useState<MetricDef[]>([])
@@ -104,7 +104,7 @@ export function MetricDefsEditor({ scenarioId }: { scenarioId: string }) {
       const r = await api.aiGenerateMetrics({ scenario: scenarioId, description: aiDesc })
       setAiMetrics(r.metricDefinitions as unknown as MetricDef[])
     } catch (e) {
-      toast.error((e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "AI 生成失败")
+      toast.error(extractErr(e, "AI 生成失败"))
     } finally {
       setAiLoading(false)
     }

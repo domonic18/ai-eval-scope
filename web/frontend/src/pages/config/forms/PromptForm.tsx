@@ -10,6 +10,7 @@ import { Input } from "../../../components/shadcn/input"
 import { Textarea } from "../../../components/shadcn/textarea"
 import { Eye, Sparkles } from "lucide-react"
 import { toast } from "sonner"
+import { extractErr } from "../../../hooks/useAiGeneration"
 import { SectionCard, SectionCardContent, SectionCardHeader, SectionCardTitle } from "../../../components/shared"
 import { AiResultDialog } from "../../../components/AiResultDialog"
 import { api } from "../../../api/client"
@@ -84,7 +85,7 @@ export function PromptForm({
       })
       setAiResult(r)
     } catch (e) {
-      toast.error((e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "AI 生成失败")
+      toast.error(extractErr(e, "AI 生成失败"))
     } finally {
       setAiLoading(false)
     }
