@@ -3,10 +3,11 @@
  * 跨租户管理：用户 / 工作组 / 项目 / 评估任务 / 产出物 / 审计 / 统计。
  * 参照 SquadSight 控制台的 IA；复用现有设计系统组件在前端实现。
  */
-import { Router, type Request, type RequestHandler } from "express"
+import { Router, type Request } from "express"
 import { requireAuth } from "../middleware/auth"
 import { platformAdminGuard } from "../middleware/adminGuard"
 import { PlatformError } from "../middleware/errorHandler"
+import { wrap } from "../middleware/wrap"
 import { hashPassword } from "../infra/crypto"
 import { adminRepository } from "../repositories/admin.repository"
 import { adminStatsRepository } from "../repositories/adminStats.repository"
@@ -20,11 +21,6 @@ import { getPrisma } from "../infra/prisma"
 const router = Router()
 // 全部 admin 接口：登录 + 平台超管（DB 鉴权，即时反映 role/status 变更）
 router.use(requireAuth, platformAdminGuard)
-
-const wrap =
-  (fn: RequestHandler): RequestHandler =>
-  (req, res, next) =>
-    Promise.resolve(fn(req, res, next)).catch(next)
 
 const num = (v: unknown, d: number) => {
   const n = Number(v)

@@ -87,7 +87,7 @@ export function createApp(): express.Application {
   app.use("/api/v1/runs", runsRouter) // 运行/样本详情（Query，§九）
   app.use("/api/v1/artifacts", artifactsRouter) // 制品下载（presigned 重定向）
   app.use("/api/v1/admin", adminRouter) // 超管后台（platformAdminGuard，跨租户）
-  app.use("/api/v1/ai", aiRouter) // 配置资产 AI 生成（requireAuth，默认 LLM）
+  app.use("/api/v1/ai", rateLimiter({ capacity: 10, ratePerSec: 0.5 }), aiRouter) // 配置资产 AI 生成（requireAuth + 限流，LLM 调用成本可控）
 
   // ── 摄取路由（Bearer API Key 鉴权 + 限流，7d）──
   app.use("/api/public/ingest", ingestRouter) // POST /api/public/ingest

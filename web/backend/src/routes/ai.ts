@@ -7,96 +7,15 @@
  * 入口对齐原型：prompt-editor ✨AI优化 / rule-set-editor ✨AI推荐规则 /
  * 指标定义 ✨AI生成 / 聚合策略 ✨AI生成（后两者为本次新增入口）。
  */
-import { Router, type RequestHandler } from "express"
+import { Router } from "express"
 import { requireAuth } from "../middleware/auth"
 import { PlatformError } from "../middleware/errorHandler"
+import { wrap } from "../middleware/wrap"
+import { extractJson } from "../utils/jsonRepair"
 import { llmClientService, type ChatMessage } from "../services/llm-client.service"
 
 const router = Router()
 router.use(requireAuth)
-
-const wrap =
-  (fn: RequestHandler): RequestHandler =>
-  (req, res, next) =>
-    Promise.resolve(fn(req, res, next)).catch(next)
-
-/** 尝试修复被 max_tokens 截断的 JSON：补全未闭合的字符串与括号。
- *  仅作尽力修复（best-effort），失败则由调用方抛出友好错误。 */
-function repairTruncatedJson(s: string): string {
-  let out = s
-  // 1) 移除尾部不完整的键值对（键后跟冒号但值未开始，或值中途截断）
-  // 截到最后一个完整的 `,` 或 `{`/`[` 之前
-  // 2) 闭合未配对的字符串（行内出现的奇数个双引号）
-  const dq = (out.match(/(?<!\\)"/g) ?? []).length
-  if (dq % 2 === 1) out += '"'
-  // 3) 统计未闭合的括号并补全
-  const stack: string[] = []
-  let inStr = false
-  let escape = false
-  for (const ch of out) {
-    if (escape) {
-      escape = false
-      continue
-    }
-    if (ch === "\\") {
-      escape = true
-      continue
-    }
-    if (ch === '"') {
-      inStr = !inStr
-      continue
-    }
-    if (inStr) continue
-    if (ch === "{" || ch === "[") stack.push(ch)
-    else if (ch === "}" || ch === "]") {
-      const top = stack[stack.length - 1]
-      if ((ch === "}" && top === "{") || (ch === "]" && top === "[")) stack.pop()
-    }
-  }
-  // 移除尾部悬挂的逗号
-  out = out.replace(/,\s*$/, "")
-  while (stack.length) {
-    const top = stack.pop()!
-    out += top === "{" ? "}" : "]"
-  }
-  return out
-}
-
-/** 从 LLM 文本响应中抽取首个 JSON 对象/数组（容忍 ```json 代码块包裹与截断）。 */
-function extractJson(text: string): unknown {
-  if (!text) throw new PlatformError("LLM 未返回内容", { status: 502, code: "AI_EMPTY" })
-  const cleaned = text.replace(/```json\s*/gi, "").replace(/```\s*$/g, "").trim()
-  // 直接解析
-  try {
-    return JSON.parse(cleaned)
-  } catch {
-    /* fall through */
-  }
-  // 抽取首个 {...} 或 [...] 起始
-  const start = cleaned.search(/[[{]/)
-  if (start < 0) throw new PlatformError("LLM 响应非合法 JSON", { status: 502, code: "AI_BAD_JSON" })
-  const tail = cleaned.slice(start)
-  // 尝试原样解析（找到最后闭合符）
-  const open = cleaned[start]
-  const close = open === "[" ? "]" : "}"
-  const end = cleaned.lastIndexOf(close)
-  if (end > start) {
-    try {
-      return JSON.parse(cleaned.slice(start, end + 1))
-    } catch {
-      /* fall through to repair */
-    }
-  }
-  // 截断修复：补全未闭合字符串与括号
-  try {
-    return JSON.parse(repairTruncatedJson(tail))
-  } catch {
-    throw new PlatformError("LLM 响应 JSON 解析失败（可能输出被截断，请重试）", {
-      status: 502,
-      code: "AI_BAD_JSON",
-    })
-  }
-}
 
 /** 调用 LLM 并抽取 JSON。 */
 async function chatJson(messages: ChatMessage[]): Promise<unknown> {

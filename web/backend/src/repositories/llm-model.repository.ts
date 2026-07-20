@@ -5,6 +5,7 @@
 import type { LlmModel, Prisma } from "@prisma/client"
 import { getPrisma } from "../infra/prisma"
 import { decryptToken, encryptToken, maskToken } from "../infra/crypto"
+import { PlatformError } from "../middleware/errorHandler"
 
 export type LlmProtocol = "openai" | "anthropic"
 
@@ -87,9 +88,9 @@ class LlmModelRepository {
   }
 
   async create(input: LlmModelInput): Promise<LlmModelVO> {
-    if (!input.apiKey) throw new PlatformInputError("api_key 必填")
+    if (!input.apiKey) throw new PlatformError("api_key 必填", { status: 400, code: "VALIDATION_ERROR" })
     if (!["openai", "anthropic"].includes(input.provider)) {
-      throw new PlatformInputError("provider 必须为 openai 或 anthropic")
+      throw new PlatformError("provider 必须为 openai 或 anthropic", { status: 400, code: "VALIDATION_ERROR" })
     }
     const apiKey = input.apiKey
     return this.prisma.$transaction(async (tx) => {
@@ -112,8 +113,10 @@ class LlmModelRepository {
 
   async update(id: string, input: Partial<LlmModelInput>): Promise<LlmModelVO> {
     if (input.provider && !["openai", "anthropic"].includes(input.provider)) {
-      throw new PlatformInputError("provider 必须为 openai 或 anthropic")
+      throw new PlatformError("provider 必须为 openai 或 anthropic", { status: 400, code: "VALIDATION_ERROR" })
     }
+    const existing = await this.getRaw(id)
+    if (!existing) throw new PlatformError("llm model not found", { status: 404, code: "NOT_FOUND" })
     return this.prisma.$transaction(async (tx) => {
       if (input.isDefault) await tx.llmModel.updateMany({ where: { isDefault: true }, data: { isDefault: false } })
       const data: Prisma.LlmModelUpdateInput = {}
@@ -133,13 +136,13 @@ class LlmModelRepository {
     })
   }
 
-  /** 删除；若删的是默认项，自动改派首个 active 为默认。 */
+  /** 删除；若删的是默认项，自动改派首个 active 为默认。缺失 ID → 404。 */
   async remove(id: string): Promise<void> {
+    const existing = await this.getRaw(id)
+    if (!existing) throw new PlatformError("llm model not found", { status: 404, code: "NOT_FOUND" })
     await this.prisma.$transaction(async (tx) => {
-      const target = await tx.llmModel.findUnique({ where: { id } })
-      if (!target) return
       await tx.llmModel.delete({ where: { id } })
-      if (target.isDefault) {
+      if (existing.isDefault) {
         const next = await tx.llmModel.findFirst({ where: { isActive: true }, orderBy: { createdAt: "desc" } })
         if (next) await tx.llmModel.update({ where: { id: next.id }, data: { isDefault: true } })
       }
@@ -149,7 +152,7 @@ class LlmModelRepository {
   async setDefault(id: string): Promise<LlmModelVO> {
     return this.prisma.$transaction(async (tx) => {
       const target = await tx.llmModel.findUnique({ where: { id } })
-      if (!target) throw new PlatformNotFound("llm model")
+      if (!target) throw new PlatformError("llm model not found", { status: 404, code: "NOT_FOUND" })
       await tx.llmModel.updateMany({ where: { isDefault: true }, data: { isDefault: false } })
       const row = await tx.llmModel.update({ where: { id }, data: { isDefault: true, isActive: true } })
       return toVO(row)
@@ -162,19 +165,6 @@ class LlmModelRepository {
       where: { id },
       data: { lastTestedAt: new Date(), lastTestStatus: status, lastTestError: error },
     })
-  }
-}
-
-class PlatformInputError extends Error {
-  constructor(msg: string) {
-    super(msg)
-    this.name = "PlatformInputError"
-  }
-}
-class PlatformNotFound extends Error {
-  constructor(msg: string) {
-    super(msg)
-    this.name = "PlatformNotFound"
   }
 }
 

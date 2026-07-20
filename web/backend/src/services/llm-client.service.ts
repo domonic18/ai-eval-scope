@@ -8,7 +8,7 @@
  * 不引入 SDK 依赖，仅用全局 fetch（Node 18+）。
  */
 import type { LlmModel } from "@prisma/client"
-import { decryptToken, encryptToken } from "../infra/crypto"
+import { decryptToken } from "../infra/crypto"
 import { llmModelRepository } from "../repositories/llm-model.repository"
 import { PlatformError } from "../middleware/errorHandler"
 
@@ -160,6 +160,14 @@ class LlmClientService {
           code: "LLM_TIMEOUT",
         })
       }
+      // 上游 LLM HTTP 错误（401/429/500…）不应泄漏给客户端 → 包装为 502
+      if (e instanceof LlmHttpError) {
+        throw new PlatformError(`LLM 上游错误（HTTP ${e.status}）`, {
+          status: 502,
+          code: "LLM_UPSTREAM",
+          details: { upstreamStatus: e.status, body: e.body.slice(0, 200) },
+        })
+      }
       throw e
     }
   }
@@ -208,8 +216,6 @@ class LlmClientService {
         return `    ${slug(r.name)}:\n${lines}`
       })
       .join("\n")
-    // encryptToken 仅用于避免未用导入告警（导出不回写）
-    void encryptToken
     return `# 由 Web 后台导出 — 覆盖 evaluator/agent_eval/assets/configs/llm_config.yaml
 # 需在 evaluator/.env 配置以下变量：
 # ${envHint.join("\n# ")}
