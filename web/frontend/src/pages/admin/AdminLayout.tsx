@@ -16,6 +16,7 @@ import {
   Eye,
   LogOut,
   ArrowLeft,
+  Cpu,
 } from "lucide-react"
 
 const NAV = [
@@ -25,6 +26,7 @@ const NAV = [
   { to: "/admin/projects", label: "项目管理", icon: FileText },
   { to: "/admin/runs", label: "评估任务", icon: Activity },
   { to: "/admin/artifacts", label: "产出物", icon: Download },
+  { to: "/admin/llm-models", label: "LLM 配置", icon: Cpu },
   { to: "/admin/audit", label: "审计日志", icon: Eye },
 ]
 

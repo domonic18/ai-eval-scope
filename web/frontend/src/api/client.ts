@@ -401,6 +401,52 @@ export const api = {
       size: number
     }
   },
+  async adminListLlmModels(): Promise<LlmModelVO[]> {
+    return (await http.get("/admin/llm-models")).data
+  },
+  async adminCreateLlmModel(input: LlmModelInput): Promise<LlmModelVO> {
+    return (await http.post("/admin/llm-models", input)).data
+  },
+  async adminUpdateLlmModel(id: string, input: Partial<LlmModelInput>): Promise<LlmModelVO> {
+    return (await http.patch(`/admin/llm-models/${id}`, input)).data
+  },
+  async adminDeleteLlmModel(id: string): Promise<void> {
+    await http.delete(`/admin/llm-models/${id}`)
+  },
+  async adminSetDefaultLlmModel(id: string): Promise<LlmModelVO> {
+    return (await http.post(`/admin/llm-models/${id}/set-default`)).data
+  },
+  async adminTestLlmModel(id: string): Promise<{ status: "success" | "failed"; detail: string; testedAt: string }> {
+    return (await http.post(`/admin/llm-models/${id}/test`)).data
+  },
+  async adminExportLlmYaml(): Promise<string> {
+    return (await http.post("/admin/llm-models/export-yaml", {}, { responseType: "text", transformResponse: (x) => x })).data
+  },
+  async aiOptimizePrompt(input: {
+    instruction: string
+    scenario?: string
+    currentSystem?: string
+    currentUserPrompt?: string
+  }): Promise<{ system: string; userPrompt: string }> {
+    return (await http.post("/ai/optimize-prompt", input)).data
+  },
+  async aiRecommendRules(input: {
+    scenario?: string
+    cascade?: Array<{ stage: string; name?: string }>
+    existingRules?: Array<{ name?: string; method?: string; stage?: string }>
+  }): Promise<{ rules: Record<string, unknown>[] }> {
+    return (await http.post("/ai/recommend-rules", input)).data
+  },
+  async aiGenerateMetrics(input: { scenario?: string; description: string }): Promise<{ metricDefinitions: Record<string, unknown>[] }> {
+    return (await http.post("/ai/generate-metrics", input)).data
+  },
+  async aiGeneratePolicy(input: {
+    scenario?: string
+    cascade?: Array<{ stage: string; name?: string }>
+    metricDefinitions?: Array<{ id?: string; name?: string; threshold?: number | null; unit?: string | null }>
+  }): Promise<{ aggregationPolicy: Record<string, unknown> | null }> {
+    return (await http.post("/ai/generate-policy", input)).data
+  },
 }
 
 export type AssetKind = "rule-sets" | "prompts" | "datasets"
@@ -488,6 +534,34 @@ export interface AdminAuditRow {
   targetType: string | null
   targetId: string | null
   createdAt: string
+}
+
+/* ── LLM 模型配置（docs/arch/15）+ 配置资产 AI 生成 ──────────── */
+export interface LlmModelVO {
+  id: string
+  name: string
+  provider: string // openai | anthropic
+  baseUrl: string | null
+  apiKeyMasked: string
+  modelName: string
+  isActive: boolean
+  isDefault: boolean
+  extra: Record<string, unknown> | null
+  lastTestedAt: string | null
+  lastTestStatus: string | null // success | failed | null
+  lastTestError: string | null
+  createdAt: string
+  updatedAt: string
+}
+export interface LlmModelInput {
+  name: string
+  provider: string
+  baseUrl?: string | null
+  apiKey?: string
+  modelName: string
+  isActive?: boolean
+  isDefault?: boolean
+  extra?: Record<string, unknown> | null
 }
 
 export { saveSession }

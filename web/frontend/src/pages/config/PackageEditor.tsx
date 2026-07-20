@@ -180,7 +180,7 @@ export default function PackageEditor() {
                 />
               )}
               {parsed?.kind === "prompts" && (
-                <PromptForm data={doc.content as unknown as PromptData} onChange={(d) => updateDoc(selected, d as unknown as Dict)} />
+                <PromptForm data={doc.content as unknown as PromptData} onChange={(d) => updateDoc(selected, d as unknown as Dict)} scenarioId={id} />
               )}
               {parsed?.kind === "datasets" && (
                 <DatasetForm data={doc.content as unknown as DatasetData} onChange={(d) => updateDoc(selected, d as unknown as Dict)} />
