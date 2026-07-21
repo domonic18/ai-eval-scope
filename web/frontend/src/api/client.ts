@@ -136,6 +136,27 @@ export const api = {
   async runDetail(runId: string) {
     return (await http.get(`/runs/${runId}`)).data.run
   },
+  async runOverview(runId: string): Promise<{
+    verdict?: "pass" | "fail"
+    score?: number
+    metrics?: { DR: number; CPR: number; condR: number; avg_time_ms: number }
+    metrics_raw?: Record<string, number>
+    summary?: { total: number; passed: number; failed: number; skipped: number }
+    summary_report?: {
+      headline?: string
+      highlights?: string[]
+      issues?: Array<{ title?: string; detail?: string; severity?: string; files?: string[] }>
+      suggestion?: string
+    } | null
+    items: Array<{
+      external_sample_id: string
+      score: number
+      passed: boolean
+      failures: Array<{ name: string; reason: string; top_issues?: string[]; files?: string[] }>
+    }>
+  }> {
+    return (await http.get(`/runs/${runId}/overview`)).data.overview
+  },
   async sampleDetail(runId: string, sampleId: string) {
     return (await http.get(`/runs/${runId}/samples/${sampleId}`)).data.sample
   },
@@ -196,6 +217,12 @@ export const api = {
     if (apiKey) qs.set("api_key", apiKey)
     const suffix = qs.toString() ? `?${qs.toString()}` : ""
     return (await http.get(`/debug/jobs/${jobId}${suffix}`)).data
+  },
+  async getDebugOverview(jobId: string, apiKey?: string): Promise<Record<string, unknown>> {
+    const qs = new URLSearchParams()
+    if (apiKey) qs.set("api_key", apiKey)
+    const suffix = qs.toString() ? `?${qs.toString()}` : ""
+    return (await http.get(`/debug/jobs/${jobId}/overview${suffix}`)).data
   },
   // 规则集目录（GET /api/v1/rule-sets，构建期静态 catalog，含派生能力 llm/vision/kb）
   async debugRuleSets(): Promise<

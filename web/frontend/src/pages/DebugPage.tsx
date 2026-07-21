@@ -27,10 +27,10 @@ import { useCrumbs } from "../context/navigation"
 import { FilePicker } from "../components/FilePicker"
 import { useToast } from "../hooks/useToast"
 import { StatusBadge } from "../components/shared"
-import { CopyIcon, ExternalLink, HelpCircle, Terminal, Trash2 } from "lucide-react"
+import { CopyIcon, ExternalLink, FileJson, HelpCircle, Terminal, Trash2 } from "lucide-react"
 import type { DebugJobStatus } from "../types"
 
-const POLL_INTERVAL = 3000
+const POLL_INTERVAL = 30000
 
 /** 规则集目录项（挂载时从 /api/v1/rule-sets 拉取，构建期静态 catalog，单一事实源）。 */
 interface RuleSetInfo {
@@ -413,6 +413,29 @@ export default function DebugPage() {
                 <div className="font-mono text-xs text-muted-foreground">job_id: {job.job_id}</div>
                 {job.status === "completed" && metrics && (
                   <DynamicMetricGrid defs={defaultDefs} metrics={metrics} />
+                )}
+                {job.status === "completed" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={async () => {
+                      if (!job) return
+                      pushLog("req", `GET /debug/jobs/${job.job_id.slice(0, 8)}/overview`, {
+                        url: `/api/v1/debug/jobs/${job.job_id}/overview`,
+                        method: "GET",
+                      })
+                      try {
+                        const ov = await api.getDebugOverview(job.job_id, apiKey.trim() || undefined)
+                        pushLog("resp", "200", ov)
+                        pushLog("info", `Overview: verdict=${(ov as { verdict?: string }).verdict ?? "—"} score=${(ov as { score?: number }).score ?? "—"}`, ov)
+                      } catch (e) {
+                        pushLog("error", "Overview 获取失败", String(e))
+                      }
+                    }}
+                  >
+                    <FileJson className="size-3.5" /> 获取 Overview 速览
+                  </Button>
                 )}
                 {job.web_run_url && (
                   <Button asChild variant="outline" size="sm" className="w-full">
