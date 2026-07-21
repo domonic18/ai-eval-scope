@@ -3,7 +3,7 @@
  * 实时输出 request / response / 轮询 / 结果全过程，类似浏览器 DevTools Console。
  * 项目归属由 API Key 决定（Web 后端验签解析），无需也不接收 project_id。
  */
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { api } from "../api/client"
 import { DynamicMetricGrid } from "@/components/DynamicMetricGrid"
 import { useScenarioDefaults } from "@/hooks/useScenarioDefaults"
@@ -258,8 +258,31 @@ export default function DebugPage() {
     }
   }
 
-  const metrics = (job?.metrics as { metrics?: Record<string, number> } | null)?.metrics
+  const rawMetrics = (job?.metrics as { metrics?: Record<string, number> } | null)?.metrics
   const defaultDefs = useScenarioDefaults()
+
+  // executor 原始响应用旧格式键（DR/CPR/avg_reward…），需映射到 courseware:* 新格式键
+  // 才能匹配 DynamicMetricGrid 的 metricDefinitions
+  const legacyToNew: Record<string, string> = {
+    DR: "courseware:document_rate",
+    CPR: "courseware:constraint_pass_rate",
+    avg_reward: "courseware:reward",
+    avg_soft: "courseware:soft",
+    avg_pref: "courseware:pref",
+    condR: "courseware:conditional_reward",
+    avg_time_ms: "courseware:avg_time_ms",
+  }
+  const metrics: Record<string, number> | undefined = useMemo(() => {
+    if (!rawMetrics) return undefined
+    // 如果已经是新格式（含 courseware: 前缀），直接用
+    if (Object.keys(rawMetrics).some((k) => k.startsWith("courseware:"))) return rawMetrics
+    // 否则映射旧格式
+    const mapped: Record<string, number> = {}
+    for (const [k, v] of Object.entries(rawMetrics)) {
+      mapped[legacyToNew[k] ?? k] = v
+    }
+    return mapped
+  }, [rawMetrics])
 
   return (
     <TooltipProvider>

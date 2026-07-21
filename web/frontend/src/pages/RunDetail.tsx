@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import { api } from "../api/client"
 import { fmt3, fmtMsRaw, num } from "../lib/format"
 import { DynamicMetricGrid } from "../components/DynamicMetricGrid"
-import { extractMetricDefs, metricLabelOf } from "../lib/metricGrid"
+import { extractMetricDefs } from "../lib/metricGrid"
 import { useScenarioDefaults } from "../hooks/useScenarioDefaults"
 import { Button } from "@/components/shadcn/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/shadcn/card"
@@ -15,20 +15,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/shadcn/dialog"
+import { SectionCard, SectionCardContent, SectionCardHeader, SectionCardTitle } from "../components/shared"
 import { useCrumbs } from "../context/navigation"
 import { useToast } from "../hooks/useToast"
-import { DataTable, Page, PageHead, StatusBadge, type Column } from "../components/shared"
-import { Download, ExternalLink, Trash2 } from "lucide-react"
+import { Page, PageHead, StatusBadge } from "../components/shared"
+import { ChevronRight, Download, ExternalLink, FileText, Trash2 } from "lucide-react"
 
 interface SampleRow {
   id: string
   externalSampleId: string
   status: string
   reward: number
-  sFormat: number
-  sCommon: number
-  sSoft: number
-  sPref: number
 }
 interface RunData {
   id: string
@@ -38,7 +35,6 @@ interface RunData {
   mode: string
   status: string
   totalSamples: number
-  /** Phase 5 场景化指标 + 运行配置快照（动态渲染用） */
   metrics?: Record<string, number>
   scenarioId?: string | null
   runConfigSnapshot?: { content: Record<string, unknown>; contentHash: string } | null
@@ -48,58 +44,14 @@ interface RunData {
   createdAt: string
   samples: SampleRow[]
 }
-type StageFilter = "format" | "commonsense" | "soft" | "pref" | null
-
-function stageFail(s: SampleRow, stage: NonNullable<StageFilter>): boolean {
-  switch (stage) {
-    case "format":
-      return s.sFormat < 1
-    case "commonsense":
-      return s.sCommon <= 0
-    case "soft":
-      return s.sSoft < 0.6
-    case "pref":
-      return s.sPref < 0.6
-  }
-}
-function worstStage(s: SampleRow): string | null {
-  if (s.sFormat < 1) return "format"
-  if (s.sCommon <= 0) return "commonsense"
-  if (s.sSoft < 0.6) return "soft"
-  if (s.sPref < 0.6) return "pref"
-  return null
-}
-function tierCls(chip: "hard" | "soft" | "pref" | null): string {
-  if (chip === "hard") return "border-red-500/40 text-red-400"
-  if (chip === "soft") return "border-yellow-500/40 text-yellow-400"
-  if (chip === "pref") return "border-sky-500/40 text-sky-400"
-  return "border-border text-muted-foreground"
-}
-
-function FailBar({ name, count, max, color, active, onClick }: { name: string; count: number; max: number; color: string; active?: boolean; onClick: () => void }) {
-  return (
-    <button onClick={onClick} className={`block w-full rounded-md px-2 py-1.5 text-left transition-colors hover:bg-accent/50 ${active ? "bg-accent/60" : ""}`}>
-      <div className="mb-1 flex items-center justify-between text-xs">
-        <span>{name}</span>
-        <span className="font-mono tabular-nums text-muted-foreground">{count}</span>
-      </div>
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-        <div className="h-full rounded-full" style={{ width: `${(count / max) * 100}%`, background: color }} />
-      </div>
-    </button>
-  )
-}
 
 export default function RunDetail() {
   const { id } = useParams<{ id: string }>()
   const nav = useNavigate()
   const { setCrumbs } = useCrumbs()
   const [run, setRun] = useState<RunData | null>(null)
-  const [stageFilter, setStageFilter] = useState<StageFilter>(null)
-  const [seg, setSeg] = useState<"all" | "fail" | "skip">("all")
   const toast = useToast()
   const [deleteOpen, setDeleteOpen] = useState(false)
-  // Hooks 必须在所有 early return 之前调用
   const defaultDefs = useScenarioDefaults("courseware")
 
   useEffect(() => {
@@ -110,44 +62,17 @@ export default function RunDetail() {
     }).catch(() => setRun(null))
   }, [id, setCrumbs])
 
-  const failCounts = useMemo(() => {
-    if (!run) return null
-    const s = run.samples
-    return {
-      format: s.filter((x) => stageFail(x, "format")).length,
-      commonsense: s.filter((x) => stageFail(x, "commonsense")).length,
-      soft: s.filter((x) => stageFail(x, "soft")).length,
-      pref: s.filter((x) => stageFail(x, "pref")).length,
-    }
-  }, [run])
-  const failMax = failCounts ? Math.max(failCounts.format, failCounts.commonsense, failCounts.soft, failCounts.pref, 1) : 1
-
-  const filteredSamples = useMemo(() => {
-    if (!run) return []
-    return run.samples.filter((s) => {
-      if (seg === "fail" && s.status !== "fail" && s.status !== "failed") return false
-      if (seg === "skip" && s.status !== "skip" && s.status !== "skipped") return false
-      if (stageFilter && !stageFail(s, stageFilter)) return false
-      return true
-    })
-  }, [run, seg, stageFilter])
-
-  if (!run) return <div className="p-8 text-muted-foreground">加载运行详情…</div>
+  if (!run) return <Page><div className="text-muted-foreground">加载运行详情…</div></Page>
 
   const langfuseUrl = run.langfuseTraceId && run.langfuseHost ? `${run.langfuseHost}/trace/${run.langfuseTraceId}` : null
   const passCount = run.samples.filter((s) => s.status === "pass" || s.status === "passed").length
   const failCount = run.samples.filter((s) => s.status === "fail" || s.status === "failed").length
+  const metricDefs = extractMetricDefs(run.runConfigSnapshot)
+  const activeDefs = metricDefs.length > 0 ? metricDefs : defaultDefs
 
   function downloadReport(kind: "md" | "json") {
     const m = run!.metrics ?? {}
-    const summary = {
-      run: run!.externalRunId,
-      mode: run!.mode,
-      samples: run!.totalSamples,
-      metrics: m,
-      pass: passCount,
-      fail: failCount,
-    }
+    const summary = { run: run!.externalRunId, mode: run!.mode, samples: run!.totalSamples, metrics: m, pass: passCount, fail: failCount }
     const mdMetrics = Object.entries(m).map(([k, v]) => `${k}=${fmt3(v)}`).join(" · ")
     const text = kind === "json" ? JSON.stringify(summary, null, 2) : `# 运行 #${run!.externalRunId}\n\n- 样本：${run!.totalSamples}（通过 ${passCount} / 失败 ${failCount}）\n- ${mdMetrics}\n`
     const blob = new Blob([text], { type: kind === "json" ? "application/json" : "text/markdown" })
@@ -171,15 +96,11 @@ export default function RunDetail() {
     }
   }
 
-  // Phase 5：场景化指标定义（来自运行配置快照）；存在时优先动态渲染
-  const metricDefs = extractMetricDefs(run.runConfigSnapshot)
-  const meta = [
-    { lab: "规则集", val: run.ruleSetVersion ?? "—" },
-    { lab: "评估模式", val: run.mode },
-    { lab: "样本数", val: num(run.totalSamples) },
-    { lab: "平均耗时/样本", val: fmtMsRaw(run.metrics?.["avg_time_ms"] ?? 0) },
-    { lab: "创建时间", val: new Date(run.createdAt).toLocaleString("zh-CN") },
-  ]
+  // 规则集链接：跳转场景包编辑器查看规则（需 scenarioId + ruleSetVersion）
+  const ruleSetId = run.ruleSetVersion?.split(":")[0] ?? run.ruleSetVersion
+  const ruleSetLink = run.scenarioId && ruleSetId
+    ? `/config/scenarios/${run.scenarioId}/edit?select=rule-sets:${ruleSetId}`
+    : null
 
   return (
     <Page>
@@ -207,166 +128,161 @@ export default function RunDetail() {
         }
       />
 
-      {/* meta */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        {meta.map((m) => (
-          <Card key={m.lab}>
-            <CardContent className="pt-5">
-              <div className="text-xs text-muted-foreground">{m.lab}</div>
-              <div className="mt-1 font-mono text-sm">{m.val}</div>
-            </CardContent>
-          </Card>
-        ))}
+      {/* 紧凑信息条（键值对形式，清晰可读） */}
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-md border border-border bg-card px-4 py-3 text-xs">
+        {ruleSetLink ? (
+          <Link to={ruleSetLink} className="inline-flex items-center gap-1.5 text-primary transition-colors hover:underline">
+            <FileText className="size-3.5" />
+            <span className="text-muted-foreground">规则集</span>
+            <span className="font-medium">{run.ruleSetVersion}</span>
+          </Link>
+        ) : (
+          <span className="inline-flex items-center gap-1.5">
+            <FileText className="size-3.5 text-muted-foreground" />
+            <span className="text-muted-foreground">规则集</span>
+            <span className="font-medium">{run.ruleSetVersion ?? "—"}</span>
+          </span>
+        )}
+        <Sep />
+        <span className="inline-flex items-center gap-1.5">
+          <span className="text-muted-foreground">评估模式</span>
+          <span className="font-medium">{run.mode === "eval_only" ? "仅评估" : run.mode === "pipeline" ? "流水线" : run.mode}</span>
+        </span>
+        <Sep />
+        <span className="inline-flex items-center gap-1.5">
+          <span className="text-muted-foreground">样本数</span>
+          <span className="font-medium tabular-nums">{num(run.totalSamples)}</span>
+        </span>
+        <Sep />
+        <span className="inline-flex items-center gap-1.5">
+          <span className="text-muted-foreground">平均耗时</span>
+          <span className="font-medium tabular-nums">{fmtMsRaw(run.metrics?.["avg_time_ms"] ?? run.metrics?.["courseware:avg_time_ms"] ?? 0)}</span>
+        </span>
+        <Sep />
+        <span className="inline-flex items-center gap-1.5">
+          <span className="text-muted-foreground">运行时间</span>
+          <span className="font-medium">{new Date(run.createdAt).toLocaleString("zh-CN")}</span>
+        </span>
       </div>
 
-      {/* Phase 5：场景化动态指标（运行快照 metric_definitions；无快照回落 courseware 默认）*/}
+      {/* 场景化指标 */}
       <section className="space-y-2">
         <h3 className="text-sm font-medium text-muted-foreground">场景化指标</h3>
-        <DynamicMetricGrid
-          defs={metricDefs.length > 0 ? metricDefs : defaultDefs}
-          metrics={run.metrics}
-        />
+        <DynamicMetricGrid defs={activeDefs} metrics={run.metrics} />
       </section>
 
-      {/* Phase 5：运行配置快照（只读，P5-7）*/}
-      {run.runConfigSnapshot && (
-        <details className="rounded-lg border bg-card">
-          <summary className="flex cursor-pointer items-center justify-between px-4 py-2.5 text-sm font-medium">
-            <span className="flex items-center gap-2">
-              配置快照
-              <span className="font-mono text-xs text-muted-foreground">{run.runConfigSnapshot.contentHash}</span>
-            </span>
-            {run.scenarioId && (
-              <Link
-                to={`/config/scenarios/${run.scenarioId}/explorer`}
-                className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-normal text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <ExternalLink className="size-3" />
-                查看评测规则
-              </Link>
-            )}
-          </summary>
-          <pre className="max-h-96 overflow-auto border-t px-4 py-3 font-mono text-xs text-muted-foreground">
-            {JSON.stringify(run.runConfigSnapshot.content, null, 2)}
-          </pre>
-        </details>
-      )}
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        {/* 失败分布 */}
-        <Card>
-          <CardHeader className="flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-base">失败分布</CardTitle>
-            <span className="text-xs text-muted-foreground">点击下钻样本</span>
-          </CardHeader>
-          <CardContent className="space-y-1">
-            {failCounts && failCounts.format + failCounts.commonsense + failCounts.soft + failCounts.pref === 0 ? (
-              <div className="py-6 text-center text-sm text-muted-foreground">无失败/偏低项</div>
-            ) : (
-              <>
-                <FailBar name="format 格式门禁" count={failCounts?.format ?? 0} max={failMax} color="var(--destructive)" active={stageFilter === "format"} onClick={() => setStageFilter(stageFilter === "format" ? null : "format")} />
-                <FailBar name="commonsense 常识" count={failCounts?.commonsense ?? 0} max={failMax} color="var(--destructive)" active={stageFilter === "commonsense"} onClick={() => setStageFilter(stageFilter === "commonsense" ? null : "commonsense")} />
-                <FailBar name="soft 软约束偏低" count={failCounts?.soft ?? 0} max={failMax} color="var(--chart-3)" active={stageFilter === "soft"} onClick={() => setStageFilter(stageFilter === "soft" ? null : "soft")} />
-                <FailBar name="preference 偏好偏低" count={failCounts?.pref ?? 0} max={failMax} color="var(--chart-4)" active={stageFilter === "pref"} onClick={() => setStageFilter(stageFilter === "pref" ? null : "pref")} />
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* 报告摘要 */}
-        <Card>
-          <CardHeader className="flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-base">报告摘要</CardTitle>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => downloadReport("md")}>MD</Button>
-              <Button size="sm" variant="outline" onClick={() => downloadReport("json")}>JSON</Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <p>
-              本次 {num(run.totalSamples)} 个样本，<span className="font-medium text-emerald-400">{passCount} 通过</span> / <span className="font-medium text-red-400">{failCount} 失败</span>。{" "}
-              {(metricDefs.length > 0 ? metricDefs : defaultDefs)
-                .filter((d) => d.threshold != null && run.metrics?.[d.id] != null)
-                .map((d) => {
-                  const val = run.metrics![d.id]
-                  const ok = val >= (d.threshold as number)
-                  return (
-                    <span key={d.id}>
-                      {d.name}{" "}
-                      <span className={ok ? "text-emerald-400" : "text-red-400"}>{ok ? "达标" : "未达"}</span>
-                      （{fmt3(val)}）、{" "}
-                    </span>
-                  )
-                })}
-            </p>
-            <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
-              {!!failCounts?.format && <li>{failCounts.format} 个样本未通过格式门禁。</li>}
-              {!!failCounts?.commonsense && <li>{failCounts.commonsense} 个样本存在常识性错误。</li>}
-              {!!failCounts?.soft && <li>{failCounts.soft} 个样本软约束偏低（&lt; 0.6）。</li>}
-              {!!failCounts?.pref && <li>{failCounts.pref} 个样本偏好偏低（&lt; 0.6）。</li>}
-              {(!failCounts || (failCounts.format + failCounts.commonsense + failCounts.soft + failCounts.pref === 0)) && <li>未发现明显短板。</li>}
-            </ul>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* 样本表 */}
-      <Card id="samples">
-        <CardHeader className="flex-row items-center justify-between space-y-0">
-          <CardTitle className="text-base">
-            样本 <span className="ml-1 text-muted-foreground">{num(run.samples.length)}</span>
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            <div className="flex rounded-md border p-0.5">
-              {([["all", "全部"], ["fail", `失败 ${failCount}`], ["skip", "跳过"]] as const).map(([k, label]) => (
-                <button
-                  key={k}
-                  onClick={() => setSeg(k)}
-                  className={`rounded px-2 py-1 text-xs transition-colors ${seg === k ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            {stageFilter && (
-              <button onClick={() => setStageFilter(null)} className="inline-flex items-center rounded-md border border-primary/40 px-2 py-0.5 text-xs text-primary">
-                筛选：{stageFilter} ✕
-              </button>
-            )}
+      {/* 摘要报告 */}
+      <SectionCard>
+        <SectionCardHeader>
+          <SectionCardTitle>摘要报告</SectionCardTitle>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => downloadReport("md")}>MD</Button>
+            <Button size="sm" variant="outline" onClick={() => downloadReport("json")}>JSON</Button>
           </div>
-        </CardHeader>
-        <CardContent>
-          <DataTable
-            columns={[
-              { key: "externalSampleId", title: "样本 (task_id)", render: (s) => <span className="font-mono text-xs">{s.externalSampleId}</span> },
-              { key: "status", title: "状态", render: (s) => <StatusBadge status={s.status} /> },
-              { key: "reward", title: metricLabelOf(metricDefs.length > 0 ? metricDefs : defaultDefs, "reward", "Reward"), num: true, render: (s) => <span className={s.reward < 0.5 ? "text-red-400" : "text-emerald-400"}>{fmt3(s.reward)}</span> },
-              { key: "sFormat", title: "S_format", num: true, render: (s) => <span className={s.sFormat < 1 ? "text-red-400" : ""}>{fmt3(s.sFormat)}</span> },
-              { key: "sCommon", title: "S_common", num: true, render: (s) => <span className={s.sCommon <= 0 ? "text-red-400" : ""}>{fmt3(s.sCommon)}</span> },
-              { key: "sSoft", title: "S_soft", num: true, render: (s) => fmt3(s.sSoft) },
-              { key: "sPref", title: "S_pref", num: true, render: (s) => fmt3(s.sPref) },
-              {
-                key: "fail",
-                title: "失败约束",
-                render: (s) => {
-                  const w = worstStage(s)
-                  const chip = w === "format" || w === "commonsense" ? "hard" : w === "soft" ? "soft" : w === "pref" ? "pref" : null
-                  return w ? (
-                    <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[11px] ${tierCls(chip)}`}>{w}</span>
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )
-                },
-              },
-            ] as Column<SampleRow>[]}
-            rows={filteredSamples}
-            rowKey={(s) => s.id}
-            onRowClick={(s) => nav(`/run/${id}/sample/${s.id}`)}
-            empty="无匹配样本"
-          />
-        </CardContent>
-      </Card>
+        </SectionCardHeader>
+        <SectionCardContent className="space-y-4 text-sm">
+          {/* 总体评价（人话） */}
+          <div className="space-y-2">
+            {(() => {
+              const reward = run.metrics?.["courseware:reward"] ?? run.metrics?.["reward"] ?? 0
+              const dr = run.metrics?.["courseware:document_rate"] ?? run.metrics?.["DR"] ?? 0
+              const cpr = run.metrics?.["courseware:constraint_pass_rate"] ?? run.metrics?.["CPR"] ?? 0
+
+              // 总体结论
+              let headline: string
+              let headlineColor: string
+              if (dr < 1) {
+                headline = "部分样本格式不合规，无法完成评估"
+                headlineColor = "text-red-400"
+              } else if (cpr < 0.9) {
+                headline = `综合评分 ${fmt3(reward)}，存在明显内容问题需改进`
+                headlineColor = "text-red-400"
+              } else if (reward < 0.8) {
+                headline = `综合评分 ${fmt3(reward)}，基本合格但有提升空间`
+                headlineColor = "text-warning"
+              } else {
+                headline = `综合评分 ${fmt3(reward)}，质量良好`
+                headlineColor = "text-emerald-400"
+              }
+
+              return (
+                <>
+                  <p className={`text-base font-semibold ${headlineColor}`}>{headline}</p>
+                  <p className="text-muted-foreground">
+                    共评估 {num(run.totalSamples)} 个样本，{passCount > 0 && <span className="text-emerald-400">{passCount} 个通过</span>}
+                    {passCount > 0 && failCount > 0 && "，"}
+                    {failCount > 0 && <span className="text-red-400">{failCount} 个未通过</span>}。
+                  </p>
+                </>
+              )
+            })()}
+          </div>
+
+          {/* 问题诊断（按指标列出，说人话） */}
+          <div className="space-y-1.5 border-t border-border pt-3">
+            <p className="text-xs font-semibold text-muted-foreground">评估详情</p>
+            {activeDefs
+              .filter((d) => d.threshold != null && run.metrics?.[d.id] != null)
+              .map((d) => {
+                const val = run.metrics![d.id]
+                const thr = d.threshold as number
+                const ok = val >= thr
+                // 用人话解释每个指标的含义
+                const hint = d.id.includes("document_rate")
+                  ? "所有样本格式是否合规（能正常打开和使用）"
+                  : d.id.includes("constraint_pass_rate")
+                    ? "内容是否存在事实错误或常识问题"
+                    : d.id.includes("reward")
+                      ? "综合质量评分（格式 + 内容 + 质量 + 偏好加权）"
+                      : d.id.includes("soft")
+                        ? "内容质量（教学逻辑、多样性等）"
+                        : d.id.includes("pref")
+                          ? "用户偏好满足度（风格、深度等）"
+                          : d.id.includes("conditional_reward")
+                            ? "合格样本的平均质量（排除格式不合格的）"
+                            : d.name
+                return (
+                  <div key={d.id} className="flex items-center justify-between py-0.5 text-xs">
+                    <span className="flex items-center gap-2">
+                      <span className={`size-1.5 rounded-full ${ok ? "bg-emerald-400" : "bg-red-400"}`} />
+                      <span className="text-muted-foreground">{hint}</span>
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className={`font-mono font-medium ${ok ? "text-emerald-400" : "text-red-400"}`}>{fmt3(val)}</span>
+                      <span className="text-muted-foreground/60">达标线 {fmt3(thr)}</span>
+                    </span>
+                  </div>
+                )
+              })}
+          </div>
+
+          {/* 查看详细评估结果 */}
+          <div className="border-t border-border pt-3">
+            <p className="mb-2 text-xs font-semibold text-muted-foreground">详细评估结果</p>
+            <div className="flex flex-wrap gap-2">
+              {run.samples.slice(0, 5).map((s) => (
+                <Link
+                  key={s.id}
+                  to={`/run/${id}/sample/${s.id}`}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs transition-colors hover:border-primary/40 hover:bg-primary/5"
+                >
+                  <FileText className="size-3.5 text-muted-foreground" />
+                  <span>查看详细评估</span>
+                  <ChevronRight className="size-3 text-muted-foreground" />
+                </Link>
+              ))}
+              {run.samples.length > 5 && (
+                <Link
+                  to={`/run/${id}/sample/${run.samples[5].id}`}
+                  className="inline-flex items-center gap-1 px-2 py-2 text-xs text-primary hover:underline"
+                >
+                  查看全部 {num(run.samples.length)} 个 →
+                </Link>
+              )}
+            </div>
+          </div>
+        </SectionCardContent>
+      </SectionCard>
 
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent>
@@ -382,4 +298,8 @@ export default function RunDetail() {
       </Dialog>
     </Page>
   )
+}
+
+function Sep() {
+  return <span className="text-border">·</span>
 }
