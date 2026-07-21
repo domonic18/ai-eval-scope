@@ -136,6 +136,27 @@ export const api = {
   async runDetail(runId: string) {
     return (await http.get(`/runs/${runId}`)).data.run
   },
+  async runOverview(runId: string): Promise<{
+    verdict?: "pass" | "fail"
+    score?: number
+    metrics?: { DR: number; CPR: number; condR: number; avg_time_ms: number }
+    metrics_raw?: Record<string, number>
+    summary?: { total: number; passed: number; failed: number; skipped: number }
+    summary_report?: {
+      headline?: string
+      highlights?: string[]
+      issues?: Array<{ title?: string; detail?: string; severity?: string; files?: string[] }>
+      suggestion?: string
+    } | null
+    items: Array<{
+      external_sample_id: string
+      score: number
+      passed: boolean
+      failures: Array<{ name: string; reason: string; top_issues?: string[]; files?: string[] }>
+    }>
+  }> {
+    return (await http.get(`/runs/${runId}/overview`)).data.overview
+  },
   async sampleDetail(runId: string, sampleId: string) {
     return (await http.get(`/runs/${runId}/samples/${sampleId}`)).data.sample
   },
@@ -196,6 +217,12 @@ export const api = {
     if (apiKey) qs.set("api_key", apiKey)
     const suffix = qs.toString() ? `?${qs.toString()}` : ""
     return (await http.get(`/debug/jobs/${jobId}${suffix}`)).data
+  },
+  async getDebugOverview(jobId: string, apiKey?: string): Promise<Record<string, unknown>> {
+    const qs = new URLSearchParams()
+    if (apiKey) qs.set("api_key", apiKey)
+    const suffix = qs.toString() ? `?${qs.toString()}` : ""
+    return (await http.get(`/debug/jobs/${jobId}/overview${suffix}`)).data
   },
   // 规则集目录（GET /api/v1/rule-sets，构建期静态 catalog，含派生能力 llm/vision/kb）
   async debugRuleSets(): Promise<
@@ -401,6 +428,52 @@ export const api = {
       size: number
     }
   },
+  async adminListLlmModels(): Promise<LlmModelVO[]> {
+    return (await http.get("/admin/llm-models")).data
+  },
+  async adminCreateLlmModel(input: LlmModelInput): Promise<LlmModelVO> {
+    return (await http.post("/admin/llm-models", input)).data
+  },
+  async adminUpdateLlmModel(id: string, input: Partial<LlmModelInput>): Promise<LlmModelVO> {
+    return (await http.patch(`/admin/llm-models/${id}`, input)).data
+  },
+  async adminDeleteLlmModel(id: string): Promise<void> {
+    await http.delete(`/admin/llm-models/${id}`)
+  },
+  async adminSetDefaultLlmModel(id: string): Promise<LlmModelVO> {
+    return (await http.post(`/admin/llm-models/${id}/set-default`)).data
+  },
+  async adminTestLlmModel(id: string): Promise<{ status: "success" | "failed"; detail: string; testedAt: string }> {
+    return (await http.post(`/admin/llm-models/${id}/test`)).data
+  },
+  async adminExportLlmYaml(): Promise<string> {
+    return (await http.post("/admin/llm-models/export-yaml", {}, { responseType: "text", transformResponse: (x) => x })).data
+  },
+  async aiOptimizePrompt(input: {
+    instruction: string
+    scenario?: string
+    currentSystem?: string
+    currentUserPrompt?: string
+  }): Promise<{ system: string; userPrompt: string }> {
+    return (await http.post("/ai/optimize-prompt", input)).data
+  },
+  async aiRecommendRules(input: {
+    scenario?: string
+    cascade?: Array<{ stage: string; name?: string }>
+    existingRules?: Array<{ name?: string; method?: string; stage?: string }>
+  }): Promise<{ rules: Record<string, unknown>[] }> {
+    return (await http.post("/ai/recommend-rules", input)).data
+  },
+  async aiGenerateMetrics(input: { scenario?: string; description: string }): Promise<{ metricDefinitions: Record<string, unknown>[] }> {
+    return (await http.post("/ai/generate-metrics", input)).data
+  },
+  async aiGeneratePolicy(input: {
+    scenario?: string
+    cascade?: Array<{ stage: string; name?: string }>
+    metricDefinitions?: Array<{ id?: string; name?: string; threshold?: number | null; unit?: string | null }>
+  }): Promise<{ aggregationPolicy: Record<string, unknown> | null }> {
+    return (await http.post("/ai/generate-policy", input)).data
+  },
 }
 
 export type AssetKind = "rule-sets" | "prompts" | "datasets"
@@ -488,6 +561,34 @@ export interface AdminAuditRow {
   targetType: string | null
   targetId: string | null
   createdAt: string
+}
+
+/* ── LLM 模型配置（docs/arch/15）+ 配置资产 AI 生成 ──────────── */
+export interface LlmModelVO {
+  id: string
+  name: string
+  provider: string // openai | anthropic
+  baseUrl: string | null
+  apiKeyMasked: string
+  modelName: string
+  isActive: boolean
+  isDefault: boolean
+  extra: Record<string, unknown> | null
+  lastTestedAt: string | null
+  lastTestStatus: string | null // success | failed | null
+  lastTestError: string | null
+  createdAt: string
+  updatedAt: string
+}
+export interface LlmModelInput {
+  name: string
+  provider: string
+  baseUrl?: string | null
+  apiKey?: string
+  modelName: string
+  isActive?: boolean
+  isDefault?: boolean
+  extra?: Record<string, unknown> | null
 }
 
 export { saveSession }

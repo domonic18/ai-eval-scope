@@ -285,13 +285,21 @@ export function useEditorStore(scenarioId: string) {
       const rules = ((doc.content as Dict).rules as Dict[]) ?? []
       const promptIds = new Set<string>()
       const datasetIds = new Set<string>()
+      // 按 method 决定哪些绑定字段参与校验（对齐 RuleCard 条件化渲染与 evaluator 模型）：
+      // 仅 llm/llm_vision/rule_set 的 prompt_id、rule_set 的 confirmation_prompt_id/dataset_ids 才算资产引用；
+      // format 规则残留的 prompt_id/dataset_id 等不参与（UI 不渲染、评估器也不用）。
       for (const r of rules) {
+        const method = r.method as string | undefined
         const prompt_id = r.prompt_id as string | undefined
         const confirmation_prompt_id = r.confirmation_prompt_id as string | undefined
         const dataset_ids = r.dataset_ids as string[] | undefined
-        if (prompt_id) promptIds.add(prompt_id)
-        if (confirmation_prompt_id) promptIds.add(confirmation_prompt_id)
-        for (const d of dataset_ids ?? []) datasetIds.add(d)
+        if (method === "llm" || method === "llm_vision" || method === "rule_set") {
+          if (prompt_id) promptIds.add(prompt_id)
+        }
+        if (method === "rule_set") {
+          if (confirmation_prompt_id) promptIds.add(confirmation_prompt_id)
+          for (const d of dataset_ids ?? []) datasetIds.add(d)
+        }
       }
       const catalogPrompts = new Set((catalog?.prompts ?? []).map((p) => p.asset_id))
       const catalogDatasets = new Set((catalog?.datasets ?? []).map((d) => d.asset_id))

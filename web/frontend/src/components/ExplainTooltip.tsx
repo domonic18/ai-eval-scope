@@ -9,7 +9,16 @@ import {
   TooltipTrigger,
 } from "@/components/shadcn/tooltip"
 import { cn } from "@/lib/utils"
-import type { ExplainContent, ExplainRow } from "@/lib/eval"
+
+/** 「?」说明弹窗的内容结构（通用 UI 展示类型，场景无关）。 */
+export interface ExplainRow {
+  dt: string
+  dd: ReactNode
+}
+export interface ExplainContent {
+  title: ReactNode
+  rows: ExplainRow[]
+}
 
 interface ExplainTooltipProps {
   /** 说明内容；与 children 二选一。 */

@@ -4,9 +4,10 @@
  * 基本信息 + 级联阶段（卡片流：可增/删/改 id+名/上下移动/门控开关）+ 规则列表（RuleCard 引导式）。
  * 评估方式为场景无关通用项（LLM/视觉/规则集/格式检查），不再硬编码课件专用评估器。
  */
-import { useRef } from "react"
+import { useRef, useState } from "react"
+import { Button } from "../../../components/shadcn/button"
 import { Input } from "../../../components/shadcn/input"
-import { ChevronDown, ChevronRight, ChevronUp, ClipboardCheck, GripVertical, Info, TrendingUp, X } from "lucide-react"
+import { ChevronDown, ChevronRight, ChevronUp, ClipboardCheck, GripVertical, Info, Sparkles, TrendingUp, X } from "lucide-react"
 import {
   AddButton,
   SectionCard,
@@ -14,6 +15,10 @@ import {
   SectionCardHeader,
   SectionCardTitle,
 } from "../../../components/shared"
+import { AiResultDialog } from "../../../components/AiResultDialog"
+import { toast } from "sonner"
+import { extractErr } from "../../../hooks/useAiGeneration"
+import { api } from "../../../api/client"
 import type { CatalogEntry, DatasetCatalogEntry } from "../../../api/client"
 import { RuleCard } from "./RuleCard"
 import { Field, Toggle } from "./Field"
@@ -76,6 +81,43 @@ export function RuleSetForm({
 }) {
   const cascadeRef = useRef<HTMLDivElement>(null)
   const update = (patch: Partial<RuleSetData>) => onChange({ ...data, ...patch })
+
+  // AI 推荐规则
+  const [aiOpen, setAiOpen] = useState(false)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiRules, setAiRules] = useState<Record<string, unknown>[]>([])
+  async function runAiRecommend() {
+    setAiOpen(true)
+    setAiLoading(true)
+    setAiRules([])
+    try {
+      const r = await api.aiRecommendRules({
+        scenario: data.scenario,
+        cascade: data.cascade,
+        existingRules: data.rules.map((r) => ({ name: r.name, method: r.method, stage: r.stage })),
+      })
+      setAiRules(r.rules)
+    } catch (e) {
+      toast.error(extractErr(e, "AI 推荐失败"))
+      setAiOpen(false)
+    } finally {
+      setAiLoading(false)
+    }
+  }
+  function acceptAiRules() {
+    const newRules = aiRules.map((r) => ({
+      id: "",
+      name: String(r.name ?? ""),
+      dimension: "functional",
+      stage: String(r.stage ?? data.cascade[0]?.stage ?? ""),
+      method: (r.method as RuleItem["method"]) ?? "llm",
+      weight: 1,
+      description: typeof r.description === "string" ? r.description : undefined,
+    })) as RuleItem[]
+    update({ rules: [...data.rules, ...newRules] })
+    setAiOpen(false)
+    toast.success(`已采纳 ${newRules.length} 条 AI 推荐规则`)
+  }
 
   const addRule = () => {
     update({
@@ -230,6 +272,9 @@ export function RuleSetForm({
             规则
             <span className="text-[11px] font-normal text-muted-foreground">{data.rules.length} 条</span>
           </SectionCardTitle>
+          <Button size="sm" variant="outline" onClick={runAiRecommend}>
+            <Sparkles className="mr-1 size-3.5" /> AI 推荐规则
+          </Button>
         </SectionCardHeader>
         <SectionCardContent className="space-y-3">
           {data.rules.map((rule, i) => (
@@ -262,6 +307,30 @@ export function RuleSetForm({
           <AddButton onClick={addRule}>添加规则</AddButton>
         </SectionCardContent>
       </SectionCard>
+
+      <AiResultDialog
+        open={aiOpen}
+        loading={aiLoading}
+        title="✨ AI 推荐规则"
+        description="审阅推荐结果，点击采纳追加到规则列表"
+        onAccept={aiRules.length > 0 ? acceptAiRules : undefined}
+        onCancel={() => setAiOpen(false)}
+      >
+        {aiRules.length > 0 && (
+          <div className="space-y-2">
+            {aiRules.map((r, i) => (
+              <div key={i} className="rounded border border-border bg-background p-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{String(r.name ?? "")}</span>
+                  <span className="rounded bg-primary/15 px-1.5 text-[10px] font-semibold text-primary">{String(r.method ?? "")}</span>
+                  <span className="font-mono text-[10px] text-muted-foreground">@{String(r.stage ?? "")}</span>
+                </div>
+                {typeof r.description === "string" && <p className="mt-1 text-muted-foreground">{r.description}</p>}
+              </div>
+            ))}
+          </div>
+        )}
+      </AiResultDialog>
     </div>
   )
 }

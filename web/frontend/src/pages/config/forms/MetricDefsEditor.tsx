@@ -7,15 +7,16 @@ import * as yaml from "js-yaml"
 import { Button } from "../../../components/shadcn/button"
 import { Input } from "../../../components/shadcn/input"
 import { Textarea } from "../../../components/shadcn/textarea"
-import { Save, Trash2 } from "lucide-react"
+import { Save, Sparkles, Trash2 } from "lucide-react"
 import { toast } from "sonner"
+import { extractErr } from "../../../hooks/useAiGeneration"
 import { api } from "../../../api/client"
 import type { MetricDef } from "../../../types"
 import { AddButton, SectionCard, SectionCardContent, SectionCardHeader, SectionCardTitle } from "../../../components/shared"
+import { AiResultDialog } from "../../../components/AiResultDialog"
 import { Field, FormYamlToggle } from "./Field"
 
-const errMsg = (e: unknown) =>
-  (e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "保存失败"
+const errMsg = (e: unknown) => extractErr(e, "保存失败")
 
 export function MetricDefsEditor({ scenarioId }: { scenarioId: string }) {
   const [metrics, setMetrics] = useState<MetricDef[]>([])
@@ -23,6 +24,11 @@ export function MetricDefsEditor({ scenarioId }: { scenarioId: string }) {
   const [mode, setMode] = useState<"form" | "yaml">("form")
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
+  // AI 生成（hook 必须在 early return 之前，避免 hooks 顺序违规）
+  const [aiOpen, setAiOpen] = useState(false)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiDesc, setAiDesc] = useState("")
+  const [aiMetrics, setAiMetrics] = useState<MetricDef[]>([])
 
   useEffect(() => {
     api
@@ -88,11 +94,41 @@ export function MetricDefsEditor({ scenarioId }: { scenarioId: string }) {
     )
   }
 
+  async function runAiGenerate() {
+    if (!aiDesc.trim()) {
+      toast.error("请先填写评估目标描述")
+      return
+    }
+    setAiLoading(true)
+    try {
+      const r = await api.aiGenerateMetrics({ scenario: scenarioId, description: aiDesc })
+      setAiMetrics(r.metricDefinitions as unknown as MetricDef[])
+    } catch (e) {
+      toast.error(extractErr(e, "AI 生成失败"))
+    } finally {
+      setAiLoading(false)
+    }
+  }
+  function acceptAiMetrics() {
+    setMetrics([...metrics, ...aiMetrics])
+    syncYaml([...metrics, ...aiMetrics])
+    setAiOpen(false)
+    setAiDesc("")
+    setAiMetrics([])
+    toast.success(`已采纳 ${aiMetrics.length} 项 AI 生成的指标`)
+  }
+
   return (
+    <>
     <SectionCard>
       <SectionCardHeader className="flex-row items-center justify-between">
         <SectionCardTitle>指标定义（场景默认）</SectionCardTitle>
-        <FormYamlToggle mode={mode} onChange={switchMode} />
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => setAiOpen(true)}>
+            <Sparkles className="mr-1 size-3.5" /> AI 生成
+          </Button>
+          <FormYamlToggle mode={mode} onChange={switchMode} />
+        </div>
       </SectionCardHeader>
       <SectionCardContent className="space-y-3">
         {mode === "form" ? (
@@ -146,5 +182,38 @@ export function MetricDefsEditor({ scenarioId }: { scenarioId: string }) {
         </Button>
       </SectionCardContent>
     </SectionCard>
+      <AiResultDialog
+        open={aiOpen}
+        loading={aiLoading}
+        title="✨ AI 生成指标定义"
+        description="填写评估目标描述，生成可量化指标"
+        onAccept={aiMetrics.length > 0 ? acceptAiMetrics : undefined}
+        onCancel={() => {
+          setAiOpen(false)
+          setAiMetrics([])
+        }}
+      >
+        <div className="space-y-3">
+          <div>
+            <p className="mb-1 font-semibold text-foreground">评估目标描述</p>
+            <Textarea
+              className="min-h-[80px]"
+              value={aiDesc}
+              onChange={(e) => setAiDesc(e.target.value)}
+              placeholder="如：评估课件生成的事实正确性、格式合规性与教学逻辑质量"
+            />
+            <Button size="sm" className="mt-2" onClick={runAiGenerate} disabled={aiLoading}>
+              {aiLoading ? "生成中…" : "生成"}
+            </Button>
+          </div>
+          {aiMetrics.length > 0 && (
+            <div>
+              <p className="mb-1 font-semibold text-foreground">生成结果（点击采纳追加）</p>
+              <pre className="whitespace-pre-wrap rounded bg-background p-2 font-mono text-[11px]">{JSON.stringify(aiMetrics, null, 2)}</pre>
+            </div>
+          )}
+        </div>
+      </AiResultDialog>
+    </>
   )
 }

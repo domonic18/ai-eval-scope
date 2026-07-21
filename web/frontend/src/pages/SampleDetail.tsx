@@ -3,7 +3,6 @@ import { useParams } from "react-router-dom"
 import { api } from "../api/client"
 import type { ArtifactRow, ConstraintRow } from "../types"
 import { fmt3 } from "../lib/format"
-import { METRIC_LABEL, SCORE_EXPLAIN, STAGES } from "../lib/eval"
 import { Button } from "@/components/shadcn/button"
 import {
   Select,
@@ -20,8 +19,53 @@ import {
 } from "@/components/shadcn/tooltip"
 import { useCrumbs } from "../context/navigation"
 import { useToast } from "../hooks/useToast"
-import { SemPill, TierChip } from "../components/shared"
+import { SemPill, TierChip, type Tier } from "../components/shared"
 import { ChevronRight, ExternalLink, FileText, HelpCircle } from "lucide-react"
+
+/** 约束层级（evaluator 全局 ConstraintTier）→ 展示语义（场景无关）。 */
+interface TierGroupDef {
+  tier: string
+  title: string
+  chip: Tier
+  bar: string
+  explain: string
+}
+const TIER_GROUPS: TierGroupDef[] = [
+  {
+    tier: "hard_gate",
+    title: "门禁约束",
+    chip: "hard",
+    bar: "var(--danger)",
+    explain: "硬门禁（HARD_GATE）：任一约束失败即 fail-fast，终止后续阶段评估。",
+  },
+  {
+    tier: "hard_score",
+    title: "硬性约束",
+    chip: "hard",
+    bar: "var(--danger)",
+    explain: "硬性约束（HARD_SCORE）：失败不中断同阶段其它评估，但记 0 分并标记门禁未过。",
+  },
+  {
+    tier: "soft",
+    title: "软约束",
+    chip: "soft",
+    bar: "var(--warning)",
+    explain: "软约束（SOFT）：各评估器打分加权平均，归一化到 [0,1]，按权重计入综合分。",
+  },
+  {
+    tier: "preference",
+    title: "偏好约束",
+    chip: "pref",
+    bar: "var(--info)",
+    explain: "偏好约束（PREFERENCE）：主观偏好维度加权平均，归一化到 [0,1]，按权重计入综合分。",
+  },
+]
+const TIER_LABEL: Record<string, string> = {
+  hard_gate: "HARD_GATE",
+  hard_score: "HARD_SCORE",
+  soft: "SOFT",
+  preference: "PREFERENCE",
+}
 
 interface SampleData {
   id: string
@@ -39,11 +83,6 @@ interface PreviewState {
   text?: string
 }
 type PrevTab = "doc" | "shot" | "trace"
-
-function avg(nums: number[]): number | undefined {
-  if (nums.length === 0) return undefined
-  return nums.reduce((a, b) => a + b, 0) / nums.length
-}
 
 /** 文件定位（约束→源课件文件），评估器产出 details.source_files（docs/arch/15）。 */
 interface SourceFile {
@@ -127,19 +166,21 @@ export default function SampleDetail() {
     }).catch(() => setSample(null))
   }, [id, sid, setCrumbs])
 
-  const stageScores = useMemo(() => {
+  /** 按 tier 分组的约束统计（全过/未过数 + 均分），场景无关。 */
+  const tierStats = useMemo(() => {
     const cs = sample?.constraintResults ?? []
-    const byTier = (t: string) => cs.filter((c) => c.tier === t)
-    const fmt = byTier("hard_gate")
-    const com = byTier("hard_score")
-    const soft = byTier("soft")
-    const pref = byTier("preference")
-    return {
-      sFormat: fmt.length ? (fmt.every((c) => c.passed) ? 1 : -3) : undefined,
-      sCommon: com.length ? (com.every((c) => c.passed) ? 1 : 0) : undefined,
-      sSoft: avg(soft.map((c) => c.score)),
-      sPref: avg(pref.map((c) => c.score)),
+    const stats: Record<string, { total: number; passed: number; avg?: number }> = {}
+    for (const g of TIER_GROUPS) {
+      const rows = cs.filter((c) => c.tier === g.tier)
+      if (rows.length === 0) continue
+      const scores = rows.map((c) => c.score)
+      stats[g.tier] = {
+        total: rows.length,
+        passed: rows.filter((c) => c.passed).length,
+        avg: scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : undefined,
+      }
     }
+    return stats
   }, [sample])
 
   if (!sample) return <div className="p-8 text-muted-foreground">加载样本详情…</div>
@@ -156,7 +197,7 @@ export default function SampleDetail() {
             {sample.status}
           </SemPill>
           <SemPill tone="neutral">
-            {METRIC_LABEL.Reward}
+            综合评分
             <b className="ml-1 font-mono text-[var(--danger)]">{fmt3(sample.reward)}</b>
           </SemPill>
           {failedCount > 0 && (
@@ -175,44 +216,33 @@ export default function SampleDetail() {
         {/* 左：约束结论 */}
         <div className="overflow-y-auto border-r p-6">
           <TooltipProvider delayDuration={200}>
-            {STAGES.map((stage) => {
-              const constraints = sample.constraintResults.filter((c) => stage.tiers.includes(c.tier))
+            {TIER_GROUPS.map((group) => {
+              const constraints = sample.constraintResults.filter((c) => c.tier === group.tier)
               if (constraints.length === 0) return null
+              const stat = tierStats[group.tier]
               return (
-                <div key={stage.key} className="mb-6">
+                <div key={group.tier} className="mb-6">
                   <div className="mb-2 flex items-center gap-2">
-                    <span className="h-3 w-1 rounded-full" style={{ background: stage.bar }} />
-                    <h3 className="text-sm font-semibold">{stage.title}</h3>
-                    {stage.chips.map((ch) => (
-                      <TierChip key={ch.label} tier={ch.chip}>
-                        {ch.label}
-                      </TierChip>
-                    ))}
-                    {stage.scoreExplainKey && (
-                      <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
-                        {stage.scoreText?.(stageScores)}
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <HelpCircle className="size-3.5 cursor-help" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            {(() => {
-                              const ex = SCORE_EXPLAIN[stage.scoreExplainKey]
-                              return (
-                                <div className="max-w-[220px] space-y-1">
-                                  <div className="font-medium">{ex.title}</div>
-                                  {ex.rows.map((r, i) => (
-                                    <div key={i} className="text-xs">
-                                      <span className="font-mono">{r.dt}</span>：{r.dd}
-                                    </div>
-                                  ))}
-                                </div>
-                              )
-                            })()}
-                          </TooltipContent>
-                        </Tooltip>
-                      </span>
-                    )}
+                    <span className="h-3 w-1 rounded-full" style={{ background: group.bar }} />
+                    <h3 className="text-sm font-semibold">{group.title}</h3>
+                    <TierChip tier={group.chip}>{TIER_LABEL[group.tier]}</TierChip>
+                    <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
+                      {stat && (
+                        <span className="font-mono">
+                          {group.tier === "soft" || group.tier === "preference"
+                            ? `均分 ${stat.avg != null ? stat.avg.toFixed(2) : "—"}`
+                            : `${stat.passed}/${stat.total} 通过`}
+                        </span>
+                      )}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="size-3.5 cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <div className="max-w-[220px] text-xs">{group.explain}</div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </span>
                   </div>
                   <div className="space-y-1">
                     {constraints.map((c) => (

@@ -255,10 +255,10 @@ class QueryRepository extends BaseRepository {
    * 速览聚合（docs/arch/12 §6.6）：运行 + 各样本（含其未通过约束的 name+reason+tier）。
    * job.runId 即 Run.externalRunId（executor 回写）。仅 completed 态调用方有意义。
    */
-  async runOverview(projectId: string, externalRunId: string) {
+  async runOverview(projectId: string, runId: string) {
     const orgId = this.requireOrg()
     return this.prisma.run.findFirst({
-      where: { projectId, project: { orgId }, externalRunId },
+      where: { projectId, project: { orgId }, OR: [{ id: runId }, { externalRunId: runId }] },
       include: {
         samples: {
           orderBy: { externalSampleId: "asc" },

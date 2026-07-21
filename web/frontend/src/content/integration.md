@@ -138,7 +138,8 @@ Authorization: Bearer <api_key>
 | `rule_set_id` / `task_id` / `task_title`    | 提交时传入                                         |
 | `run_id`                                    | 评估运行 id（进入 running 后填充）                       |
 | `web_run_url`                               | Web 平台运行详情页（完成后可访问）                           |
-| `metrics`                                   | 四维指标 `DR` / `CPR` / `Reward` / `CondR` 等（完成后）；含 `_executor` 透明度字段 |
+| `metrics`                                   | 指标 `DR` / `CPR` / `Reward` / `CondR` 等（完成后）；含 `_executor` 透明度字段 |
+| `metrics.metrics`                           | 旧格式指标数值（DR/CPR/avg_reward/condR/avg_soft/avg_pref/avg_time_ms）；**含 `summary_report` 时应使用 overview 速览端点获取人话摘要** |
 | `error`                                     | 失败原因（失败时）                                     |
 | `created_at` / `started_at` / `finished_at` | 各阶段时间戳                                        |
 
@@ -193,7 +194,29 @@ Authorization: Bearer <api_key>
   "verdict": "fail",
   "score": 0.669,
   "metrics": { "DR": 1.0, "CPR": 0.0, "condR": 0.0, "avg_time_ms": 125005 },
+  "metrics_raw": {
+    "courseware:document_rate": 1.0,
+    "courseware:constraint_pass_rate": 0.0,
+    "courseware:reward": 0.669,
+    "courseware:soft": 0.795,
+    "courseware:pref": 0.797,
+    "courseware:conditional_reward": 0.0,
+    "avg_time_ms": 125005
+  },
   "summary": { "total": 1, "passed": 0, "failed": 1, "skipped": 0 },
+  "summary_report": {
+    "headline": "综合评分 0.67，内容存在明显问题需改进",
+    "highlights": ["所有样本格式合规", "内容质量评分较高（0.80）"],
+    "issues": [
+      {
+        "title": "知识准确性未达标",
+        "detail": "发现算术错误：12×2+7+3+5+18=100 应为 57（经 LLM 二次确认）",
+        "severity": "high",
+        "files": ["解析性案例.html"]
+      }
+    ],
+    "suggestion": "建议检查所有算术公式的计算结果，确保数据准确。"
+  },
   "dimension_pass": { "format": 1, "commonsense": 0, "soft": 1, "preference": 1 },
   "items": [
     {
@@ -203,7 +226,9 @@ Authorization: Bearer <api_key>
       "failures": [
         {
           "name": "知识准确性检查",
-          "reason": "原文提到 12×2 + 7 + 3 + 5 + 18 = 100，实际应为 57，等式错误（经 LLM 二次确认）"
+          "reason": "原文提到 12×2 + 7 + 3 + 5 + 18 = 100，实际应为 57，等式错误（经 LLM 二次确认）",
+          "top_issues": ["算式结果错误：12×2+7+3+5+18=57 而非 100"],
+          "files": ["解析性案例.html"]
         }
       ]
     }
@@ -215,12 +240,15 @@ Authorization: Bearer <api_key>
 | ---- | ---- |
 | `verdict` | `pass` / `fail`：DR / CPR / Reward 达标且无 `hard_gate` 失败 = `pass` |
 | `score` | 综合分 = `avg_reward` |
-| `metrics` | DR / CPR / condR / 平均耗时 |
+| `metrics` | DR / CPR / condR / 平均耗时（兼容旧格式） |
+| `metrics_raw` | 完整场景化指标 JSONB（`courseware:*` 键，动态适配不同场景包） |
 | `summary` | 样本通过 / 失败 / 跳过计数 |
+| `summary_report` | LLM 生成的人话版摘要报告（headline / highlights / issues / suggestion）；LLM 不可用时为 `null` |
 | `dimension_pass` | 各阶段（format / commonsense / soft / preference）达标样本数 |
-| `items[]` | 各评测项（样本）：`score` + `passed` + `failures`（未通过约束的 `name` + `reason`） |
+| `items[]` | 各评测项（样本）：`score` + `passed` + `failures`（未通过约束的 `name` + `reason` + `top_issues` + `files`） |
 
 > - 任务未完成（`queued` / `running` / `failed`）时，只回 `status` + 任务级 `error`，`items` 为空。
+> - `summary_report` 由评估器在评估完成后自动调用 LLM 生成（prompt 配置在 `summary_prompt.yaml`），不是手动创建。
 > - 速览**只给摘要**：逐条约束的 `details` / 制品预览等深度详情不开放 API，由 iframe 嵌入公开页查看。
 
 ### 公开访问与 iframe 嵌入

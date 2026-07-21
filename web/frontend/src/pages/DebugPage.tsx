@@ -3,7 +3,7 @@
  * 实时输出 request / response / 轮询 / 结果全过程，类似浏览器 DevTools Console。
  * 项目归属由 API Key 决定（Web 后端验签解析），无需也不接收 project_id。
  */
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { api } from "../api/client"
 import { DynamicMetricGrid } from "@/components/DynamicMetricGrid"
 import { useScenarioDefaults } from "@/hooks/useScenarioDefaults"
@@ -27,10 +27,10 @@ import { useCrumbs } from "../context/navigation"
 import { FilePicker } from "../components/FilePicker"
 import { useToast } from "../hooks/useToast"
 import { StatusBadge } from "../components/shared"
-import { CopyIcon, ExternalLink, HelpCircle, Terminal, Trash2 } from "lucide-react"
+import { CopyIcon, ExternalLink, FileJson, HelpCircle, Terminal, Trash2 } from "lucide-react"
 import type { DebugJobStatus } from "../types"
 
-const POLL_INTERVAL = 3000
+const POLL_INTERVAL = 30000
 
 /** 规则集目录项（挂载时从 /api/v1/rule-sets 拉取，构建期静态 catalog，单一事实源）。 */
 interface RuleSetInfo {
@@ -258,8 +258,31 @@ export default function DebugPage() {
     }
   }
 
-  const metrics = (job?.metrics as { metrics?: Record<string, number> } | null)?.metrics
+  const rawMetrics = (job?.metrics as { metrics?: Record<string, number> } | null)?.metrics
   const defaultDefs = useScenarioDefaults()
+
+  // executor 原始响应用旧格式键（DR/CPR/avg_reward…），需映射到 courseware:* 新格式键
+  // 才能匹配 DynamicMetricGrid 的 metricDefinitions
+  const legacyToNew: Record<string, string> = {
+    DR: "courseware:document_rate",
+    CPR: "courseware:constraint_pass_rate",
+    avg_reward: "courseware:reward",
+    avg_soft: "courseware:soft",
+    avg_pref: "courseware:pref",
+    condR: "courseware:conditional_reward",
+    avg_time_ms: "courseware:avg_time_ms",
+  }
+  const metrics: Record<string, number> | undefined = useMemo(() => {
+    if (!rawMetrics) return undefined
+    // 如果已经是新格式（含 courseware: 前缀），直接用
+    if (Object.keys(rawMetrics).some((k) => k.startsWith("courseware:"))) return rawMetrics
+    // 否则映射旧格式
+    const mapped: Record<string, number> = {}
+    for (const [k, v] of Object.entries(rawMetrics)) {
+      mapped[legacyToNew[k] ?? k] = v
+    }
+    return mapped
+  }, [rawMetrics])
 
   return (
     <TooltipProvider>
@@ -390,6 +413,29 @@ export default function DebugPage() {
                 <div className="font-mono text-xs text-muted-foreground">job_id: {job.job_id}</div>
                 {job.status === "completed" && metrics && (
                   <DynamicMetricGrid defs={defaultDefs} metrics={metrics} />
+                )}
+                {job.status === "completed" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={async () => {
+                      if (!job) return
+                      pushLog("req", `GET /debug/jobs/${job.job_id.slice(0, 8)}/overview`, {
+                        url: `/api/v1/debug/jobs/${job.job_id}/overview`,
+                        method: "GET",
+                      })
+                      try {
+                        const ov = await api.getDebugOverview(job.job_id, apiKey.trim() || undefined)
+                        pushLog("resp", "200", ov)
+                        pushLog("info", `Overview: verdict=${(ov as { verdict?: string }).verdict ?? "—"} score=${(ov as { score?: number }).score ?? "—"}`, ov)
+                      } catch (e) {
+                        pushLog("error", "Overview 获取失败", String(e))
+                      }
+                    }}
+                  >
+                    <FileJson className="size-3.5" /> 获取 Overview 速览
+                  </Button>
                 )}
                 {job.web_run_url && (
                   <Button asChild variant="outline" size="sm" className="w-full">

@@ -27,6 +27,7 @@ import AdminProjects from "./pages/admin/AdminProjects"
 import AdminRuns from "./pages/admin/AdminRuns"
 import AdminArtifacts from "./pages/admin/AdminArtifacts"
 import AdminAudit from "./pages/admin/AdminAudit"
+import AdminLlmModels from "./pages/admin/AdminLlmModels"
 
 /** 根路径：已登录进看板，未登录展示产品落地页。 */
 function RootRedirect() {
@@ -94,6 +95,7 @@ export default function App() {
         <Route path="/admin/projects" element={<AdminProjects />} />
         <Route path="/admin/runs" element={<AdminRuns />} />
         <Route path="/admin/artifacts" element={<AdminArtifacts />} />
+        <Route path="/admin/llm-models" element={<AdminLlmModels />} />
         <Route path="/admin/audit" element={<AdminAudit />} />
       </Route>
     </Routes>

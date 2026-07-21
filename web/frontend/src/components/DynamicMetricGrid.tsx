@@ -7,7 +7,7 @@
  * 指标说明（? hover 提示）为可选：MetricDef.explain 定义时显示，否则不显示。
  */
 import { MetricCard } from "./MetricCard"
-import type { ExplainContent } from "../lib/eval"
+import type { ExplainContent } from "./ExplainTooltip"
 import type { MetricDef, MetricExplain } from "../types"
 
 /** dd 行 tone → 颜色（强调重点）。 */

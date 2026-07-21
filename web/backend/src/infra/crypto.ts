@@ -172,6 +172,13 @@ export function hashToken(plain: string): string {
   return crypto.createHash("sha256").update(plain).digest("hex")
 }
 
+/** 脱敏：保留首 4 + 末 4，中间以 * 填充（LLM api_key 等回显用，明文不下发）。 */
+export function maskToken(plain: string): string {
+  if (!plain) return ""
+  if (plain.length <= 8) return "*".repeat(plain.length)
+  return `${plain.slice(0, 4)}${"*".repeat(plain.length - 8)}${plain.slice(-4)}`
+}
+
 /* ── Bearer 鉴权头解析 ─────────────────────────────── */
 /** 解析 `Authorization: Bearer <token>` → token | null。 */
 export function parseBearerToken(header?: string): string | null {

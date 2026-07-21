@@ -34,6 +34,10 @@ export interface QueryService {
     projectId: string,
     runId: string,
   ) => Promise<NonNullable<Awaited<ReturnType<QueryRepository["runSnapshot"]>>>>
+  runOverview: (
+    projectId: string,
+    runId: string,
+  ) => Promise<Awaited<ReturnType<QueryRepository["runOverview"]>>>
   artifactMeta: (
     artifactId: string,
   ) => Promise<{ objectKey: string; contentType: string; filename: string }>
@@ -65,6 +69,9 @@ export function createQueryService(tenant: Tenant): QueryService {
     const snap = await repo.runSnapshot(projectId, runId)
     if (!snap) throw new PlatformError("snapshot not found", { status: 404, code: "NOT_FOUND" })
     return snap
+  }
+  const runOverview: QueryService["runOverview"] = async (projectId, runId) => {
+    return repo.runOverview(projectId, runId)
   }
 
   async function artifactMeta(artifactId: string) {
@@ -110,6 +117,7 @@ export function createQueryService(tenant: Tenant): QueryService {
     runDetail,
     sampleDetail,
     runSnapshot,
+    runOverview,
     artifactMeta,
     deleteRun,
     samples: (pid) => repo.listSamplesByProject(pid),

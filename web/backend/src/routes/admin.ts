@@ -3,13 +3,16 @@
  * 跨租户管理：用户 / 工作组 / 项目 / 评估任务 / 产出物 / 审计 / 统计。
  * 参照 SquadSight 控制台的 IA；复用现有设计系统组件在前端实现。
  */
-import { Router, type Request, type RequestHandler } from "express"
+import { Router, type Request } from "express"
 import { requireAuth } from "../middleware/auth"
 import { platformAdminGuard } from "../middleware/adminGuard"
 import { PlatformError } from "../middleware/errorHandler"
+import { wrap } from "../middleware/wrap"
 import { hashPassword } from "../infra/crypto"
 import { adminRepository } from "../repositories/admin.repository"
 import { adminStatsRepository } from "../repositories/adminStats.repository"
+import { llmModelRepository, type LlmModelInput } from "../repositories/llm-model.repository"
+import { llmClientService } from "../services/llm-client.service"
 import { AuditService } from "../services/audit.service"
 import { getLogger } from "../infra/logger"
 import { getObjectStorage } from "../infra/objectStorage"
@@ -18,11 +21,6 @@ import { getPrisma } from "../infra/prisma"
 const router = Router()
 // 全部 admin 接口：登录 + 平台超管（DB 鉴权，即时反映 role/status 变更）
 router.use(requireAuth, platformAdminGuard)
-
-const wrap =
-  (fn: RequestHandler): RequestHandler =>
-  (req, res, next) =>
-    Promise.resolve(fn(req, res, next)).catch(next)
 
 const num = (v: unknown, d: number) => {
   const n = Number(v)
@@ -283,6 +281,66 @@ router.get(
       ...r,
       items: r.items.map((a) => ({ ...a, id: a.id.toString() })),
     })
+  }),
+)
+
+/* ── LLM 模型配置（docs/arch/15）────────────────────── */
+router.get(
+  "/llm-models",
+  wrap(async (_req, res) => res.json(await llmModelRepository.list())),
+)
+
+router.post(
+  "/llm-models",
+  wrap(async (req, res) => {
+    const vo = await llmModelRepository.create(req.body as LlmModelInput)
+    await audit(req, "llm_model.create", vo.id, { name: vo.name, provider: vo.provider })
+    res.status(201).json(vo)
+  }),
+)
+
+router.patch(
+  "/llm-models/:id",
+  wrap(async (req, res) => {
+    const vo = await llmModelRepository.update(req.params.id, req.body as Partial<LlmModelInput>)
+    await audit(req, "llm_model.update", vo.id, { name: vo.name })
+    res.json(vo)
+  }),
+)
+
+router.delete(
+  "/llm-models/:id",
+  wrap(async (req, res) => {
+    await llmModelRepository.remove(req.params.id)
+    await audit(req, "llm_model.delete", req.params.id, {})
+    res.status(204).end()
+  }),
+)
+
+router.post(
+  "/llm-models/:id/set-default",
+  wrap(async (req, res) => {
+    const vo = await llmModelRepository.setDefault(req.params.id)
+    await audit(req, "llm_model.set_default", vo.id, {})
+    res.json(vo)
+  }),
+)
+
+router.post(
+  "/llm-models/:id/test",
+  wrap(async (req, res) => {
+    const model = await llmModelRepository.getRaw(req.params.id)
+    if (!model) throw new PlatformError("model not found", { status: 404, code: "NOT_FOUND" })
+    const result = await llmClientService.testModel(model)
+    res.json(result)
+  }),
+)
+
+router.post(
+  "/llm-models/export-yaml",
+  wrap(async (_req, res) => {
+    const yaml = await llmClientService.exportYaml()
+    res.type("text/yaml").send(yaml)
   }),
 )
 

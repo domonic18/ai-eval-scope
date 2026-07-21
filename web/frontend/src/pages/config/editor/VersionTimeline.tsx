@@ -39,7 +39,7 @@ export function VersionTimeline({
   const hasUnpublishedRefs = missingRefs.unpublished.length > 0
 
   return (
-    <SectionCard className="h-fit lg:sticky lg:top-[72px]">
+    <SectionCard className="h-fit">
       <SectionCardHeader>
         <SectionCardTitle className="flex items-center gap-1.5">
           <GitBranch className="size-4" />

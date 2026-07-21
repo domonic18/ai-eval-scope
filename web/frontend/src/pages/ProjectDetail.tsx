@@ -13,8 +13,8 @@ import type {
   TrendPoint,
 } from "../types"
 import { fmt3, num, timeAgo } from "../lib/format"
-import { METRIC_LABEL } from "../lib/eval"
 import { DynamicMetricGrid } from "../components/DynamicMetricGrid"
+import { metricLabelOf, metricThresholdOf } from "../lib/metricGrid"
 import { useScenarioDefaults } from "../hooks/useScenarioDefaults"
 import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
@@ -339,6 +339,9 @@ function SamplesTab({ projectId }: { projectId: string }) {
   const [samples, setSamples] = useState<ProjectSample[]>([])
   const [selected, setSelected] = useState<string | null>(null)
   const [trend, setTrend] = useState<SampleTrendPoint[]>([])
+  const defs = useScenarioDefaults()
+  const rewardLabel = metricLabelOf(defs, "reward", "Reward")
+  const rewardThr = metricThresholdOf(defs, "reward")
 
   useEffect(() => {
     api.listSamples(projectId).then(setSamples).catch(() => setSamples([]))
@@ -389,8 +392,8 @@ function SamplesTab({ projectId }: { projectId: string }) {
                 label: new Date(t.created_at).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }),
                 values: { Reward: t.reward },
               }))}
-              series={[{ key: "Reward", name: METRIC_LABEL.Reward, color: "var(--chart-1)" }]}
-              thresholds={[{ label: "达标 0.8", value: 0.8, color: "var(--chart-5)" }]}
+              series={[{ key: "Reward", name: rewardLabel, color: "var(--chart-1)" }]}
+              thresholds={rewardThr != null ? [{ label: `达标 ${rewardThr}`, value: rewardThr, color: "var(--chart-5)" }] : []}
               height={300}
             />
           )}

@@ -10,14 +10,11 @@
 import { Router, type RequestHandler } from "express"
 import { requireAuth, optionalAuth } from "../middleware/auth"
 import { runGuard } from "../middleware/tenantGuard"
+import { wrap } from "../middleware/wrap"
 import { createQueryService } from "../services/query.service"
+import { buildJobOverview, type OverviewResult } from "../services/evalJob.service"
 
 const router = Router()
-
-const wrap =
-  (fn: RequestHandler): RequestHandler =>
-  (req, res, next) =>
-    Promise.resolve(fn(req, res, next)).catch(next)
 
 // GET 用 optionalAuth：公开项目的运行/样本详情免登录可读（iframe 嵌入，docs/arch/12 §3.5）。
 // DELETE 仍 requireAuth + owner（写操作不开放匿名）。
@@ -49,6 +46,36 @@ router.get(
   wrap(async (req, res) => {
     const svc = createQueryService(req.tenant!)
     res.json({ snapshot: await svc.runSnapshot(req.tenant!.projectId!, req.params.id) })
+  }),
+)
+
+// 运行速览（overview）：复用 buildJobOverview，与第三方 /jobs/:jobId/overview 结构一致
+router.get(
+  "/:id/overview",
+  optionalAuth,
+  runGuard(),
+  wrap(async (req, res) => {
+    const svc = createQueryService(req.tenant!)
+    const run = await svc.runOverview(req.tenant!.projectId!, req.params.id)
+    if (!run) {
+      res.status(404).json({ error: "run not found" })
+      return
+    }
+    const base = {
+      job_id: "",
+      run_id: run.externalRunId,
+      status: "completed",
+      web_run_url: null,
+      error: null,
+    }
+    const overview: OverviewResult = buildJobOverview(base, run as never)
+    res.json({
+      overview: {
+        ...overview,
+        metrics_raw: run.metrics,
+        summary_report: (run as { summaryReport?: unknown }).summaryReport ?? null,
+      },
+    })
   }),
 )
 

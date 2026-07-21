@@ -25,10 +25,11 @@ export interface MetricDefDTO {
   expression: string
   threshold: number | null
   unit: string
+  summary?: string
   explain?: MetricExplain
 }
 
-/** courseware 默认指标定义（含 explain，对齐 evaluator Phase 1）。 */
+/** courseware 默认指标定义（含 explain + summary，对齐 evaluator Phase 1）。 */
 export const COURSEWARE_DEFAULT_METRIC_DEFS: MetricDefDTO[] = [
   {
     id: "courseware:document_rate",
@@ -36,6 +37,7 @@ export const COURSEWARE_DEFAULT_METRIC_DEFS: MetricDefDTO[] = [
     expression: "count(format_gate) / total",
     threshold: 0.95,
     unit: "ratio",
+    summary: "所有样本的格式是否合规（能不能正常打开和使用）",
     explain: {
       title: "DR · Delivery Rate 交付率",
       rows: [
@@ -51,6 +53,7 @@ export const COURSEWARE_DEFAULT_METRIC_DEFS: MetricDefDTO[] = [
     expression: "count(both(format_gate, commonsense_gate)) / total",
     threshold: 0.9,
     unit: "ratio",
+    summary: "内容是否存在事实错误或常识问题",
     explain: {
       title: "CPR · Constraint Pass Rate 约束通过率",
       rows: [
@@ -66,6 +69,7 @@ export const COURSEWARE_DEFAULT_METRIC_DEFS: MetricDefDTO[] = [
     expression: "mean(reward)",
     threshold: 0.7,
     unit: "score",
+    summary: "综合质量评分（格式 + 内容 + 质量 + 偏好加权平均）",
     explain: {
       title: "Reward · 综合评分",
       rows: [
@@ -81,6 +85,7 @@ export const COURSEWARE_DEFAULT_METRIC_DEFS: MetricDefDTO[] = [
     expression: "mean(s_soft)",
     threshold: null,
     unit: "score",
+    summary: "内容本身的质量（教学逻辑、多样性、可读性等）",
     explain: {
       title: "Soft · 内容质量分",
       rows: [
@@ -95,6 +100,7 @@ export const COURSEWARE_DEFAULT_METRIC_DEFS: MetricDefDTO[] = [
     expression: "mean(s_pref)",
     threshold: null,
     unit: "score",
+    summary: "是否符合用户主观喜好（风格、深度、需求契合度等）",
     explain: {
       title: "Pref · 用户偏好分",
       rows: [
@@ -109,6 +115,7 @@ export const COURSEWARE_DEFAULT_METRIC_DEFS: MetricDefDTO[] = [
     expression: "gated_mean(reward, format_gate, commonsense_gate)",
     threshold: null,
     unit: "score",
+    summary: "合格样本的平均质量（排除格式不合格的）",
     explain: {
       title: "CondR · Conditional Reward",
       rows: [

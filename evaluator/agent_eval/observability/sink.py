@@ -118,6 +118,7 @@ class ResultSink:
                 rule_set_version=result.rule_set_version or None,
                 langfuse_trace_id=langfuse[0],
                 langfuse_host=langfuse[1],
+                summary_report=result.summary_report,
             )
         ]
 

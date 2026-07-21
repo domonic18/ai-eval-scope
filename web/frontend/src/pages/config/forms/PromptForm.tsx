@@ -5,10 +5,15 @@
  */
 import { useMemo, useState } from "react"
 import { Badge } from "../../../components/shadcn/badge"
+import { Button } from "../../../components/shadcn/button"
 import { Input } from "../../../components/shadcn/input"
 import { Textarea } from "../../../components/shadcn/textarea"
-import { Eye } from "lucide-react"
+import { Eye, Sparkles } from "lucide-react"
+import { toast } from "sonner"
+import { extractErr } from "../../../hooks/useAiGeneration"
 import { SectionCard, SectionCardContent, SectionCardHeader, SectionCardTitle } from "../../../components/shared"
+import { AiResultDialog } from "../../../components/AiResultDialog"
+import { api } from "../../../api/client"
 import { Field } from "./Field"
 
 export interface PromptData {
@@ -39,11 +44,17 @@ function renderTemplate(template: unknown, vars: Record<string, string>): string
 export function PromptForm({
   data,
   onChange,
+  scenarioId,
 }: {
   data: PromptData
   onChange: (d: PromptData) => void
+  scenarioId?: string
 }) {
   const [mockVars, setMockVars] = useState<Record<string, string>>({})
+  const [aiOpen, setAiOpen] = useState(false)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiInstruction, setAiInstruction] = useState("")
+  const [aiResult, setAiResult] = useState<{ system: string; userPrompt: string } | null>(null)
 
   const vars = useMemo(() => extractVars(data.user_prompt_template), [data.user_prompt_template])
   const rendered = useMemo(
@@ -53,8 +64,89 @@ export function PromptForm({
 
   const update = (patch: Partial<PromptData>) => onChange({ ...data, ...patch })
 
+  function openAiDialog() {
+    setAiInstruction("")
+    setAiResult(null)
+    setAiOpen(true)
+  }
+  async function runAiGenerate() {
+    if (!aiInstruction.trim()) {
+      toast.error("请先描述你希望提示词做什么")
+      return
+    }
+    setAiLoading(true)
+    setAiResult(null)
+    try {
+      const r = await api.aiOptimizePrompt({
+        instruction: aiInstruction,
+        scenario: scenarioId,
+        currentSystem: data.system_prompt,
+        currentUserPrompt: data.user_prompt_template,
+      })
+      setAiResult(r)
+    } catch (e) {
+      toast.error(extractErr(e, "AI 生成失败"))
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
   return (
     <div className="space-y-4">
+      {/* AI 生成工具栏 */}
+      <div className="flex items-center justify-between rounded-md border border-primary/30 bg-primary/5 px-3 py-2">
+        <span className="text-xs text-muted-foreground">AI 辅助：描述你的评估需求，由 AI 生成提示词（System + User Prompt）</span>
+        <Button size="sm" variant="outline" onClick={openAiDialog}>
+          <Sparkles className="mr-1 size-3.5" /> AI 生成
+        </Button>
+      </div>
+      <AiResultDialog
+        open={aiOpen}
+        loading={aiLoading}
+        title={aiResult ? "✨ AI 生成结果" : "✨ AI 生成提示词"}
+        description={aiResult ? "审阅结果，点击采纳写回编辑器（将覆盖当前内容）" : "描述你的评估意图，AI 据此生成提示词"}
+        onAccept={
+          aiResult
+            ? () => {
+                update({ system_prompt: aiResult.system, user_prompt_template: aiResult.userPrompt })
+                setAiOpen(false)
+                toast.success("已采纳 AI 生成结果")
+              }
+            : undefined
+        }
+        onCancel={() => setAiOpen(false)}
+      >
+        {aiResult ? (
+          <div className="space-y-3">
+            <div>
+              <p className="mb-1 font-semibold text-foreground">System Prompt</p>
+              <pre className="whitespace-pre-wrap rounded bg-background p-2">{aiResult.system || "(空)"}</pre>
+            </div>
+            <div>
+              <p className="mb-1 font-semibold text-foreground">User Prompt Template</p>
+              <pre className="whitespace-pre-wrap rounded bg-background p-2">{aiResult.userPrompt || "(空)"}</pre>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div>
+              <p className="mb-1 font-semibold text-foreground">评估需求描述</p>
+              <Textarea
+                className="min-h-[120px]"
+                value={aiInstruction}
+                onChange={(e) => setAiInstruction(e.target.value)}
+                placeholder={"例如：\n- 评估课件生成的「教学逻辑」是否清晰、知识递进是否合理，按 0-10 打分并指出问题\n- 检查 RAG 答案是否忠实于检索到的文档、有无幻觉，输出 JSON {score, reason}\n- 评估对话回复的安全性（是否含 PII / 有害内容），二值判定 pass/fail"}
+              />
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                描述越具体（评估对象、评分维度、输出格式），生成质量越高。AI 会用简体中文生成，保留 &#123;&#123; &#125;&#125; 变量。
+              </p>
+            </div>
+            <Button size="sm" onClick={runAiGenerate} disabled={aiLoading}>
+              {aiLoading ? "生成中…" : "生成提示词"}
+            </Button>
+          </div>
+        )}
+      </AiResultDialog>
       {/* 基本信息 */}
       <SectionCard>
         <SectionCardContent className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3">

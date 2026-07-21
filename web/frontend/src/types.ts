@@ -77,6 +77,8 @@ export interface MetricDef {
   expression?: string
   threshold?: number | null
   unit?: string | null
+  /** 一句话大白话描述（摘要报告用，非技术用户可读） */
+  summary?: string
   /** 可选指标说明（hover ? 提示，对齐旧 METRIC_EXPLAIN）；由定义驱动，缺省不显示 */
   explain?: MetricExplain
 }

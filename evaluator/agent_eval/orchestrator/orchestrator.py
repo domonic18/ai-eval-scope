@@ -28,6 +28,7 @@ from agent_eval.evaluation.models import (
     SampleResult,
 )
 from agent_eval.evaluation.registry import registry
+from agent_eval.evaluation.summary import SummaryGenerator
 from agent_eval.reporting.report_generator import ReportGenerator
 from agent_eval.storage.package import (
     EvalResultManifest,
@@ -54,6 +55,8 @@ class EvalResult:
     samples: list[SampleResult] = field(default_factory=list)
     # 运行溯源：规则集版本，透传至 sink → run event → 平台
     rule_set_version: str = ""
+    # 评估摘要报告（LLM 生成的人话总结，LLM 不可用时为 None）
+    summary_report: dict[str, Any] | None = None
 
 
 class Orchestrator:
@@ -267,7 +270,55 @@ class Orchestrator:
             encoding="utf-8",
         )
 
-        # 11. 保存缓存
+        # 11. 生成评估摘要报告（LLM 人话总结，LLM 不可用时跳过）
+        summary_report: dict[str, Any] | None = None
+        try:
+            from agent_eval.config.loader import ConfigLoader
+            from agent_eval.config.paths import paths
+
+            llm_cfg_path = paths.configs_dir / "llm_config.yaml"
+            if llm_cfg_path.exists():
+                llm_config = ConfigLoader.load_llm_config(llm_cfg_path)
+                from agent_eval.llm.pool import ProviderPool
+
+                pool = ProviderPool(llm_config)
+                scenario_name = project if project else ""
+                # 指标定义（含 summary）
+                metric_defs: list[dict[str, Any]] = []
+                scenario_cfg = getattr(self.pipeline_engine, "scenario_config", None)
+                if scenario_cfg:
+                    metric_defs = [m.model_dump() for m in scenario_cfg.metric_definitions]
+                # 仅传内容质量指标，且键须与 metric_definitions 对齐。
+                # avg_time_ms 是「评测耗时」过程元数据，不属于被评估对象的质量维度，
+                # 不进入摘要输入（否则 LLM 会对评测时间做评价）。
+                metrics_dict = {
+                    "courseware:document_rate": metrics_report.dr,
+                    "courseware:constraint_pass_rate": metrics_report.cpr,
+                    "courseware:reward": metrics_report.avg_reward,
+                    "courseware:soft": metrics_report.avg_soft,
+                    "courseware:pref": metrics_report.avg_pref,
+                    "courseware:conditional_reward": metrics_report.cond_r,
+                }
+                summary_report = SummaryGenerator(pool).generate(
+                    metrics=metrics_dict,
+                    sample_results=sample_results,
+                    metric_definitions=metric_defs,
+                    scenario=scenario_name,
+                )
+                if summary_report:
+                    logger.info("summary_generator.ok", headline=summary_report.get("headline", ""))
+                    # 回写 summary.json（供 upload 子命令重建 run event 时携带）
+                    summary_json["summary_report"] = summary_report
+                    (run_workspace.reports_dir / "summary.json").write_text(
+                        json.dumps(summary_json, ensure_ascii=False, indent=2),
+                        encoding="utf-8",
+                    )
+                else:
+                    logger.info("summary_generator.skip", reason="llm_unavailable_or_parse_failed")
+        except Exception as e:
+            logger.warning("summary_generator.error", error=str(e))
+
+        # 12. 保存缓存
         self._save_cache(self.workspace, self.pipeline_engine)
 
         # 12. 更新 workspace index
@@ -294,6 +345,7 @@ class Orchestrator:
             run_workspace=run_workspace,
             samples=sample_results,
             rule_set_version=rule_set_version,
+            summary_report=summary_report,
         )
 
     def _load_packages(self, package_dir: Path) -> list[ExecutionPackage]:
