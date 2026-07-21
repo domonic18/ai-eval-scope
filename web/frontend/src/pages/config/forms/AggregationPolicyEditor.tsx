@@ -167,9 +167,6 @@ export function AggregationPolicyEditor({ scenarioId }: { scenarioId: string }) 
   const orphanWeights = weights
     .map((w, i) => ({ w, i }))
     .filter((x) => !cascadeStages.some((cs) => cs.stage === x.w.stage_id))
-  // 未配置权重的级联阶段
-  const missingStages = cascadeStages.filter((cs) => !stageToWeightIdx.has(cs.stage))
-
   function addStageWeight(stageId: string, isGate?: boolean) {
     setWeights([...weights, { stage_id: stageId, weight: 0.5, is_gate: isGate ?? false }])
   }

@@ -7,7 +7,7 @@
  * runGuard 解析 :id(run)→project→org→成员关系，注入 req.tenant（含 projectId）。
  */
 
-import { Router, type RequestHandler } from "express"
+import { Router } from "express"
 import { requireAuth, optionalAuth } from "../middleware/auth"
 import { runGuard } from "../middleware/tenantGuard"
 import { wrap } from "../middleware/wrap"
