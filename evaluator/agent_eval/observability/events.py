@@ -39,6 +39,7 @@ def build_run_event(
     langfuse_host: str | None = None,
     rule_set: RuleSet | None = None,
     scenario_config: ScenarioConfig | None = None,
+    summary_report: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """MetricsReport → run 事件。
 
@@ -78,6 +79,7 @@ def build_run_event(
             "thresholds": dict(report.thresholds) or None,
             "langfuse_trace_id": langfuse_trace_id,
             "langfuse_host": langfuse_host,
+            "summary_report": summary_report,
         },
     }
 

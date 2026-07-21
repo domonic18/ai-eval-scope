@@ -431,6 +431,7 @@ def upload(
         build_run_event(
             report,
             rule_set_version=summary.get("rule_set_version"),
+            summary_report=summary.get("summary_report"),
         ),
     ]
 

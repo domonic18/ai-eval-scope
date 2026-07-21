@@ -77,6 +77,9 @@ class MetricDefinition(BaseModel):
     )
     threshold: float | None = Field(default=None, description="通过阈值（可选）")
     unit: str | None = Field(default=None, description="单位：ratio/score/ms/count")
+    summary: str | None = Field(
+        default=None, description="一句话大白话描述指标含义，用于摘要报告展示（非技术用户可读）"
+    )
     explain: dict | None = Field(
         default=None,
         description=(
