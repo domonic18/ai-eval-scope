@@ -35,6 +35,7 @@ export interface RunEventData {
   rule_set_version?: string
   sut_version?: string
   failure_breakdown?: Record<string, unknown> | null
+  summary_report?: Record<string, unknown> | null
   thresholds?: Record<string, unknown> | null
   langfuse_trace_id?: string | null
   langfuse_host?: string | null

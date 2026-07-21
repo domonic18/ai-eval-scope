@@ -191,7 +191,7 @@ describe("createEvalJobService.overview", () => {
     mocks.findById.mockResolvedValue({ id: "j1", status: "running", runId: null, webRunUrl: null, error: null })
     const svc = createEvalJobService(tenant)
     const ov = await svc.overview("j1")
-    expect(ov.items).toEqual([])
+    expect(ov!.items).toEqual([])
   })
 
   it("job completed → 聚合 run（mock）", async () => {
@@ -212,8 +212,8 @@ describe("createEvalJobService.overview", () => {
     })
     const svc = createEvalJobService(tenant)
     const ov = await svc.overview("j1")
-    expect(ov.verdict).toBe("pass")
-    expect(ov.items).toHaveLength(1)
+    expect(ov!.verdict).toBe("pass")
+    expect(ov!.items).toHaveLength(1)
   })
 
   it("job completed but run 未找到 → 空 items", async () => {
@@ -221,6 +221,6 @@ describe("createEvalJobService.overview", () => {
     mocks.runOverview.mockResolvedValue(null)
     const svc = createEvalJobService(tenant)
     const ov = await svc.overview("j1")
-    expect(ov.items).toEqual([])
+    expect(ov!.items).toEqual([])
   })
 })

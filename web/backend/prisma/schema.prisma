@@ -154,6 +154,7 @@ model Run {
   langfuseTraceId     String?            @map("langfuse_trace_id")
   langfuseHost        String?            @map("langfuse_host")
   failureBreakdown    Json?              @map("failure_breakdown") @db.JsonB
+  summaryReport       Json?              @map("summary_report") @db.JsonB
   thresholds          Json?              @db.JsonB
   sourceClient        String?            @map("source_client")
   createdAt           DateTime           @default(now()) @map("created_at") // = 评估运行时间

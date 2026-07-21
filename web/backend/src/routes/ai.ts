@@ -104,7 +104,7 @@ router.post(
       {
         role: "system",
         content:
-          '你是评估指标设计专家。基于评估目标，设计可量化的指标定义。所有文本字段（name）必须用**简体中文**（id/expression 保持英文标识符）。每项字段：id(小写snake), name(中文), expression(可计算表达式), threshold(0-1 数值或 null), unit(ratio|score|count|ms)。严格只返回 JSON：{"metricDefinitions": [...]}。',
+          '你是评估指标设计专家。基于评估目标，设计可量化的指标定义。所有文本字段（name/summary）必须用**简体中文**（id/expression 保持英文标识符）。每项字段：id(小写snake), name(中文), summary(一句话大白话描述指标含义，给非技术用户看，如"所有样本的格式是否合规"), expression(可计算表达式), threshold(0-1 数值或 null), unit(ratio|score|count|ms)。严格只返回 JSON：{"metricDefinitions": [...]}。',
       },
       {
         role: "user",

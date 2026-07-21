@@ -145,6 +145,22 @@ router.get(
   }),
 )
 
+// 速览（overview）：与第三方 /jobs/:jobId/overview 同结构，方便 /debug 页面调试
+router.get(
+  "/jobs/:jobId/overview",
+  requireAuth,
+  wrap(async (req, res) => {
+    const token = requireApiKey(req)
+    const tenant = await resolveTenant(token)
+    const svc = createEvalJobService(tenant)
+    const overview = await svc.overview(req.params.jobId)
+    if (!overview) {
+      throw new PlatformError("job not found", { status: 404, code: "JOB_NOT_FOUND" })
+    }
+    res.json(overview)
+  }),
+)
+
 // 规则集目录（静态 catalog，与 /api/v1/rule-sets 同源）；登录即可读
 router.get(
   "/rule-sets",

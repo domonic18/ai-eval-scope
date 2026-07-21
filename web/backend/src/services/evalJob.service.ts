@@ -130,8 +130,10 @@ export interface OverviewResult {
   verdict?: "pass" | "fail"
   score?: number
   metrics?: { DR: number; CPR: number; condR: number; avg_time_ms: number }
+  metrics_raw?: Record<string, number>
   summary?: { total: number; passed: number; failed: number; skipped: number }
   dimension_pass?: { format: number; commonsense: number; soft: number; preference: number }
+  summary_report?: Record<string, unknown> | null
   items: OverviewItem[]
 }
 
@@ -414,7 +416,16 @@ export function createEvalJobService(tenant: Tenant) {
       // job 已 completed 但 run 未回传/未找到：返回空 items，避免阻塞调用方
       return { ...base, items: [] }
     }
-    return buildJobOverview(base, run)
+    const overview = buildJobOverview(base, run)
+    return {
+      ...overview,
+      metrics_raw: ((run as { metrics?: Record<string, number> }).metrics ?? undefined) as
+        | Record<string, number>
+        | undefined,
+      summary_report: ((run as { summaryReport?: Record<string, unknown> }).summaryReport ?? undefined) as
+        | Record<string, unknown>
+        | undefined,
+    }
   }
 
   return { submit, get, overview }
