@@ -98,7 +98,9 @@ export default function RunDetail() {
   const passCount = overview?.summary?.passed ?? run.samples.filter((s) => s.status === "pass" || s.status === "passed").length
   const failCount = overview?.summary?.failed ?? run.samples.filter((s) => s.status === "fail" || s.status === "failed").length
   const metricDefs = extractMetricDefs(run.runConfigSnapshot)
-  const activeDefs = metricDefs.length > 0 ? metricDefs : defaultDefs
+  // 优先用最新场景默认指标定义（id 稳定，name/explain 随场景包更新）；
+  // 运行快照里的 metric_definitions 是历史拷贝（旧名/已删指标），仅在默认缺失时回退
+  const activeDefs = defaultDefs.length > 0 ? defaultDefs : metricDefs
   const rawMetrics = overview?.metrics_raw ?? run.metrics ?? {}
 
   function downloadReport(kind: "md" | "json") {
