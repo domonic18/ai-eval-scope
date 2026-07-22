@@ -156,6 +156,15 @@ export function MetricDefsEditor({ scenarioId }: { scenarioId: string }) {
                         onChange={(e) => update(i, { threshold: e.target.value === "" ? null : Number(e.target.value) })}
                       />
                     </Field>
+                    <div className="col-span-2">
+                      <Field label="说明（大白话）" optional hint="摘要报告用的一句话描述；详细 explain 请切 YAML 模式">
+                        <Input
+                          value={d.summary ?? ""}
+                          onChange={(e) => update(i, { summary: e.target.value })}
+                          placeholder="如：所有样本的格式是否合规"
+                        />
+                      </Field>
+                    </div>
                   </div>
                   <Button size="sm" variant="ghost" className="mt-5 text-red-400" onClick={() => remove(i)}>
                     <Trash2 className="size-3.5" />
