@@ -44,22 +44,23 @@ export function DynamicMetricGrid({
 }) {
   if (!defs || defs.length === 0) return null
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+    <div className="flex flex-wrap gap-3">
       {defs.map((d) => {
         const val = metrics?.[d.id]
         const hasThr = d.threshold != null
         const pass = hasThr && typeof val === "number" && val >= (d.threshold as number)
         const explain = d.explain ? toExplainContent(d.explain) : undefined
         return (
-          <MetricCard
-            key={d.id}
-            label={d.name ?? d.id}
-            value={fmt(val)}
-            explain={explain}
-            valueClassName={
-              hasThr ? (pass ? "text-emerald-400" : "text-red-400") : undefined
-            }
-          />
+          <div key={d.id} className="min-w-[180px] flex-1">
+            <MetricCard
+              label={d.name ?? d.id}
+              value={fmt(val)}
+              explain={explain}
+              valueClassName={
+                hasThr ? (pass ? "text-emerald-400" : "text-red-400") : undefined
+              }
+            />
+          </div>
         )
       })}
     </div>

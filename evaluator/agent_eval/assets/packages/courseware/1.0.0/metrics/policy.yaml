@@ -32,12 +32,13 @@ aggregation_policy:
 
 metric_definitions:
   - id: courseware:document_rate
-    name: 交付率 DR
+    name: 格式合格率
+    summary: 所有样本的格式是否合规（能不能正常打开和使用）
     expression: "count(format_gate) / total"
     threshold: 0.95
     unit: ratio
     explain:
-      title: "DR · Delivery Rate 交付率"
+      title: "格式合格率 · Delivery Rate"
       rows:
         - dt: 定义
           dd: "能正常打开、格式符合基本要求的样本占多少——连格式都不对就没法使用。"
@@ -48,12 +49,13 @@ metric_definitions:
           dd: "达标线 ≥ 0.95（即 95%）；低于则这批整体不合格。"
           tone: danger
   - id: courseware:constraint_pass_rate
-    name: 约束通过率 CPR
+    name: 内容合格率
+    summary: 内容是否存在事实错误或常识问题
     expression: "count(both(format_gate, commonsense_gate)) / total"
     threshold: 0.9
     unit: ratio
     explain:
-      title: "CPR · Constraint Pass Rate 约束通过率"
+      title: "内容合格率 · Constraint Pass Rate"
       rows:
         - dt: 定义
           dd: "格式 + 常识双门控都通过的样本占比——内容基本正确、无明显硬伤。"
@@ -63,13 +65,42 @@ metric_definitions:
         - dt: 标准
           dd: "达标线 ≥ 0.90；低于则存在较多常识性错误。"
           tone: danger
+  - id: courseware:soft
+    name: 内容质量
+    summary: 内容本身的质量（教学逻辑、多样性、可读性等）
+    expression: "mean(s_soft)"
+    threshold: null
+    unit: score
+    explain:
+      title: "内容质量 · Soft 质量分"
+      rows:
+        - dt: 定义
+          dd: "教学逻辑、内容多样性等软约束维度的平均得分（独立指标，不混入综合得分）。"
+          tone: primary
+        - dt: 范围
+          dd: "[0, 1]，越高越好"
+  - id: courseware:pref
+    name: 偏好匹配度
+    summary: 是否符合用户主观喜好（风格、深度、需求契合度等）
+    expression: "mean(s_pref)"
+    threshold: null
+    unit: score
+    explain:
+      title: "偏好匹配度 · Preference"
+      rows:
+        - dt: 定义
+          dd: "风格、深度、需求满足度等偏好维度的平均得分（独立指标）。"
+          tone: primary
+        - dt: 范围
+          dd: "[0, 1]，越高越好"
   - id: courseware:reward
-    name: 平均 Reward
+    name: 综合得分
+    summary: 综合质量评分（格式 + 内容 + 质量 + 偏好加权平均）
     expression: "mean(reward)"
     threshold: 0.7
     unit: score
     explain:
-      title: "Reward · 综合评分"
+      title: "综合得分 · Reward"
       rows:
         - dt: 定义
           dd: "归一化到 [0,1] 的综合质量分，融合门控与软/偏好质量。"
@@ -79,42 +110,3 @@ metric_definitions:
         - dt: 标准
           dd: "达标线 ≥ 0.70；综合质量合格。"
           tone: success
-  - id: courseware:soft
-    name: 内容质量
-    expression: "mean(s_soft)"
-    threshold: null
-    unit: score
-    explain:
-      title: "Soft · 内容质量分"
-      rows:
-        - dt: 定义
-          dd: "教学逻辑、内容多样性等软约束维度的平均得分（独立指标，不混入 Reward）。"
-          tone: primary
-        - dt: 范围
-          dd: "[0, 1]，越高越好"
-  - id: courseware:pref
-    name: 用户偏好
-    expression: "mean(s_pref)"
-    threshold: null
-    unit: score
-    explain:
-      title: "Pref · 用户偏好分"
-      rows:
-        - dt: 定义
-          dd: "风格、深度、需求满足度等偏好维度的平均得分（独立指标）。"
-          tone: primary
-        - dt: 范围
-          dd: "[0, 1]，越高越好"
-  - id: courseware:conditional_reward
-    name: 条件 Reward
-    expression: "gated_mean(reward, format_gate, commonsense_gate)"
-    threshold: null
-    unit: score
-    explain:
-      title: "CondR · Conditional Reward"
-      rows:
-        - dt: 定义
-          dd: "仅统计通过双门控样本的 Reward 均值——排除格式/常识失败后的真实质量。"
-          tone: primary
-        - dt: 范围
-          dd: "[0, 1]"
