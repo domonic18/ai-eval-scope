@@ -1,5 +1,5 @@
 /**
- * 统一编辑器左侧资产树（docs/arch/14 §6.2）。
+ * 统一编辑器左侧资产树（docs/arch/13 §6.2）。
  *
  * 分组展示规则集/提示词/数据集/策略；新建按钮创建本地 isNew 草稿（标记「未发布」）；
  * 节点显示 dirty 圆点（有未保存改动）与草稿/未发布标记。
@@ -22,9 +22,10 @@ interface TreeProps {
   dirtyOf: (sel: Selection) => boolean
   onSelect: (sel: Selection) => void
   onCreate: (kind: AssetKind) => void
+  canEdit: boolean
 }
 
-export function AssetTree({ catalog, docs, selected, dirtyOf, onSelect, onCreate }: TreeProps) {
+export function AssetTree({ catalog, docs, selected, dirtyOf, onSelect, onCreate, canEdit }: TreeProps) {
   // 本地新建（未发布）资产：在树中追加展示
   const newDocs = (kind: AssetKind) =>
     Object.values(docs).filter((d) => d.isNew && d.kind === kind)
@@ -49,9 +50,11 @@ export function AssetTree({ catalog, docs, selected, dirtyOf, onSelect, onCreate
         )}
         {catalog?.rule_sets.map((r) => node(`rule-sets:${r.asset_id}`, r.asset_id, FileText))}
         {newDocs("rule-sets").map((d) => node(`rule-sets:${d.assetId}`, d.assetId, FileText, "new"))}
-        <AddButton className="mt-1 w-full justify-start" onClick={() => onCreate("rule-sets")}>
-          新建规则集
-        </AddButton>
+        {canEdit && (
+          <AddButton className="mt-1 w-full justify-start" onClick={() => onCreate("rule-sets")}>
+            新建规则集
+          </AddButton>
+        )}
       </TreeSection>
       <TreeSection icon={BookOpen} label="提示词">
         {catalog?.prompts.length === 0 && newDocs("prompts").length === 0 && (
@@ -59,9 +62,11 @@ export function AssetTree({ catalog, docs, selected, dirtyOf, onSelect, onCreate
         )}
         {catalog?.prompts.map((p) => node(`prompts:${p.asset_id}`, p.asset_id, FileText))}
         {newDocs("prompts").map((d) => node(`prompts:${d.assetId}`, d.assetId, FileText, "new"))}
-        <AddButton className="mt-1 w-full justify-start" onClick={() => onCreate("prompts")}>
-          新建提示词
-        </AddButton>
+        {canEdit && (
+          <AddButton className="mt-1 w-full justify-start" onClick={() => onCreate("prompts")}>
+            新建提示词
+          </AddButton>
+        )}
       </TreeSection>
       <TreeSection icon={Database} label="参考数据">
         {catalog?.datasets.length === 0 && newDocs("datasets").length === 0 && (
@@ -69,9 +74,11 @@ export function AssetTree({ catalog, docs, selected, dirtyOf, onSelect, onCreate
         )}
         {catalog?.datasets.map((d) => node(`datasets:${d.asset_id}`, d.asset_id, Database))}
         {newDocs("datasets").map((d) => node(`datasets:${d.assetId}`, d.assetId, Database, "new"))}
-        <AddButton className="mt-1 w-full justify-start" onClick={() => onCreate("datasets")}>
-          新建数据集
-        </AddButton>
+        {canEdit && (
+          <AddButton className="mt-1 w-full justify-start" onClick={() => onCreate("datasets")}>
+            新建数据集
+          </AddButton>
+        )}
       </TreeSection>
       <TreeSection icon={Gauge} label="策略">
         <TreeNode active={selected === "metrics"} name="指标定义" icon={Layers} onClick={() => onSelect("metrics")} />

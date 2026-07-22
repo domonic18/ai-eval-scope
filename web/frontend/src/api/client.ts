@@ -563,7 +563,7 @@ export interface AdminAuditRow {
   createdAt: string
 }
 
-/* ── LLM 模型配置（docs/arch/15）+ 配置资产 AI 生成 ──────────── */
+/* ── LLM 模型配置（docs/arch/13）+ 配置资产 AI 生成 ──────────── */
 export interface LlmModelVO {
   id: string
   name: string

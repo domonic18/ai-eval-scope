@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/shadc
 import { Badge } from "../../components/shadcn/badge"
 import { Button } from "../../components/shadcn/button"
 import { api, type Scenario } from "../../api/client"
+import { canEditConfig } from "../../store/auth"
 import { Boxes, ChevronRight, Plus } from "lucide-react"
 
 /** 配置中心入口：列出全部场景，点选进入场景详情（规则集/提示词/数据集 catalog）。 */
@@ -35,7 +36,9 @@ export default function ConfigHub() {
         sub="场景包配置资产：规则集、提示词、数据集（动态 catalog，对齐 13 配置管理设计）"
         right={
           <div className="flex gap-2">
-            <Button onClick={() => nav("/config/create")}><Plus className="mr-1 size-4" />创建场景包</Button>
+            {canEditConfig() && (
+              <Button onClick={() => nav("/config/create")}><Plus className="mr-1 size-4" />创建场景包</Button>
+            )}
           </div>
         }
       />

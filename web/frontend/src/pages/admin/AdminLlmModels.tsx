@@ -1,4 +1,4 @@
-/** 超管后台 · LLM 模型配置（docs/arch/15）。
+/** 超管后台 · LLM 模型配置（docs/arch/13）。
  * 多模型 CRUD + 连通性测试 + 设默认 + 导出 llm_config.yaml。
  * provider 为协议（OpenAI / Anthropic）；api_key 加密存储，回显仅脱敏。 */
 import { useEffect, useState } from "react"

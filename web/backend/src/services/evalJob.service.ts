@@ -112,7 +112,7 @@ export interface OverviewFailure {
   name: string
   reason: string
   top_issues?: string[]
-  /** 该约束涉及的源文件相对路径（docs/arch/15 §4.1 details.source_files 聚合） */
+  /** 该约束涉及的源文件相对路径（docs/arch/13 §4.1 details.source_files 聚合） */
   files?: string[]
 }
 export interface OverviewItem {
@@ -174,7 +174,7 @@ function isPassStatus(status: string): boolean {
 /**
  * 从约束 details.dimensions[].issues 提取关键扣分点（desc），用于速览。
  * 仅取 high/medium（low 视为小瑕疵不进速览），按 high→medium 排序，最多 3 条。
- * details 形态见 docs/arch/14 §五（质量约束有 dimensions；硬约束无则返回 []）。
+ * details 形态见 docs/arch/13 §五（质量约束有 dimensions；硬约束无则返回 []）。
  */
 function extractTopIssues(details: unknown): string[] {
   const d = details as { dimensions?: { issues?: { desc: string; severity?: string }[] }[] } | null
@@ -193,7 +193,7 @@ function extractTopIssues(details: unknown): string[] {
 }
 
 /**
- * 从约束 details.source_files 提取涉及的源文件相对路径（docs/arch/15 §4.1）。
+ * 从约束 details.source_files 提取涉及的源文件相对路径（docs/arch/13 §4.1）。
  * 供速览 failures[].files，让第三方/MCP 调用方也能定位文件。
  */
 function extractSourceFiles(details: unknown): string[] {

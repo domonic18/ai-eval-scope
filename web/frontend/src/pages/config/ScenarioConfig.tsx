@@ -12,6 +12,7 @@ import { Label } from "../../components/shadcn/label"
 import { Textarea } from "../../components/shadcn/textarea"
 import { toast } from "sonner"
 import { api, type ScenarioCatalog, type CatalogEntry, type DatasetCatalogEntry } from "../../api/client"
+import { canEditConfig } from "../../store/auth"
 import { Package, Pencil, Plus } from "lucide-react"
 
 const VERSION_LABELS = ["production", "staging", "latest"] as const
@@ -44,12 +45,16 @@ export default function ScenarioConfig() {
         sub={catalog?.scenario.description ?? `场景 ${id} 的规则集 / 提示词 / 数据集`}
         right={
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => nav(`/config/scenarios/${id}/edit`)}>
-              <Pencil className="size-4" /> 进入包编辑器
-            </Button>
-            <Button onClick={() => setPublishOpen(true)}>
-              <Plus className="size-4" /> 发布包版本
-            </Button>
+            {canEditConfig() && (
+              <>
+                <Button variant="outline" onClick={() => nav(`/config/scenarios/${id}/edit`)}>
+                  <Pencil className="size-4" /> 进入包编辑器
+                </Button>
+                <Button onClick={() => setPublishOpen(true)}>
+                  <Plus className="size-4" /> 发布包版本
+                </Button>
+              </>
+            )}
           </div>
         }
       />
@@ -128,11 +133,12 @@ function EntryTable({
         {
           key: "actions",
           title: "",
-          render: (r) => (
-            <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={(e) => { e.stopPropagation(); onOpen(r.asset_id) }}>
-              <Pencil className="size-3" /> 编辑
-            </Button>
-          ),
+          render: (r) =>
+            canEditConfig() ? (
+              <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={(e) => { e.stopPropagation(); onOpen(r.asset_id) }}>
+                <Pencil className="size-3" /> 编辑
+              </Button>
+            ) : null,
         },
       ]}
       rowKey={(r) => r.asset_id}
@@ -166,11 +172,12 @@ function DatasetTable({ rows, onOpen }: { rows: DatasetCatalogEntry[]; onOpen: (
         {
           key: "actions",
           title: "",
-          render: (r) => (
-            <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={(e) => { e.stopPropagation(); onOpen(r.asset_id) }}>
-              <Pencil className="size-3" /> 编辑
-            </Button>
-          ),
+          render: (r) =>
+            canEditConfig() ? (
+              <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={(e) => { e.stopPropagation(); onOpen(r.asset_id) }}>
+                <Pencil className="size-3" /> 编辑
+              </Button>
+            ) : null,
         },
       ]}
       rowKey={(r) => `${r.role}-${r.asset_id}`}

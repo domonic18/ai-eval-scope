@@ -1,5 +1,5 @@
 /**
- * 配置资产 AI 生成统一结果弹窗（docs/arch/15）。
+ * 配置资产 AI 生成统一结果弹窗（docs/arch/13）。
  * 展示 AI 返回内容（可读 JSON / 文本），用户「采纳」回写编辑器 / 「取消」。
  */
 import { ReactNode } from "react"

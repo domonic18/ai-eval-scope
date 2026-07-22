@@ -1,5 +1,5 @@
 /**
- * 统一编辑器类型定义（docs/arch/14配置编辑器交互设计.md）。
+ * 统一编辑器类型定义（docs/arch/13配置管理设计.md）。
  *
  * Selection 编码进 URL query（`?select=<kind>:<assetId>`），刷新/分享/前进后退天然正确。
  * 每个资产在内存中持有一份 DocState，切换不丢未保存内容；localStorage 草稿仅作刷新兜底，

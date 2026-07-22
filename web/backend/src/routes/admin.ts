@@ -284,7 +284,7 @@ router.get(
   }),
 )
 
-/* ── LLM 模型配置（docs/arch/15）────────────────────── */
+/* ── LLM 模型配置（docs/arch/13）────────────────────── */
 router.get(
   "/llm-models",
   wrap(async (_req, res) => res.json(await llmModelRepository.list())),

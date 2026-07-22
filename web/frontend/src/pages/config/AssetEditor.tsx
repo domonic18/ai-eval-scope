@@ -1,5 +1,5 @@
 /**
- * 旧独立资产编辑器路由 — 301 重定向到统一包编辑器（docs/arch/14配置编辑器交互设计.md §6.1）。
+ * 旧独立资产编辑器路由 — 301 重定向到统一包编辑器（docs/arch/13配置管理设计.md §6.1）。
  *
  * /config/scenarios/:id/:kind/:assetId  →  /config/scenarios/:id/edit?select=<kind>:<assetId>
  * 保留外链兼容；全部编辑能力已收敛到 PackageEditor。

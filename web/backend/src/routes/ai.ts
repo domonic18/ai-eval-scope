@@ -1,5 +1,5 @@
 /**
- * 配置资产 AI 生成路由（/api/v1/ai）—— 所有登录用户可用（requireAuth）。
+ * 配置资产 AI 生成路由（/api/v1/ai）—— 仅平台管理员可用（requireAuth + platformAdminGuard，docs/arch/13）。
  *
  * 复用 llmClientService.chat()（默认 LLM）。每个端点内置该资产的结构化 prompt，
  * 要求 LLM 返回严格 JSON，后端解析校验后回传，前端再「采纳」写回编辑器。
@@ -9,13 +9,14 @@
  */
 import { Router } from "express"
 import { requireAuth } from "../middleware/auth"
+import { platformAdminGuard } from "../middleware/adminGuard"
 import { PlatformError } from "../middleware/errorHandler"
 import { wrap } from "../middleware/wrap"
 import { extractJson } from "../utils/jsonRepair"
 import { llmClientService, type ChatMessage } from "../services/llm-client.service"
 
 const router = Router()
-router.use(requireAuth)
+router.use(requireAuth, platformAdminGuard)
 
 /** 调用 LLM 并抽取 JSON。 */
 async function chatJson(messages: ChatMessage[]): Promise<unknown> {
