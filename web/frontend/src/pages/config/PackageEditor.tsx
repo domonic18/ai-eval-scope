@@ -1,5 +1,5 @@
 /**
- * 场景包统一编辑器（docs/arch/14配置编辑器交互设计.md）。
+ * 场景包统一编辑器（docs/arch/13配置管理设计.md）。
  *
  * 唯一编辑器入口：左资产树 + 中编辑区（Tab + 表单/YAML）+ 右版本时间线。
  * 选中资产编码进 URL `?select=<kind>:<assetId>`；旧路由 /:kind/:assetId 重定向至此。
@@ -26,6 +26,7 @@ import { AssetTree } from "./editor/AssetTree"
 import { EditorTabs } from "./editor/EditorTabs"
 import { VersionTimeline } from "./editor/VersionTimeline"
 import { useEditorStore, type Dict } from "./editor/useEditorStore"
+import { canEditConfig } from "../../store/auth"
 import { parseSelection } from "./editor/types"
 
 export default function PackageEditor() {
@@ -56,6 +57,7 @@ export default function PackageEditor() {
     setNextVersion,
   } = store
 
+  const canEdit = canEditConfig()
   const [mode, setMode] = useState<"form" | "yaml">("form")
   const [metricCount, setMetricCount] = useState(0)
   const [hasPolicy, setHasPolicy] = useState(false)
@@ -103,6 +105,7 @@ export default function PackageEditor() {
               dirtyOf={dirtyOf}
               onSelect={select}
               onCreate={createAsset}
+              canEdit={canEdit}
             />
           </CardContent>
         </Card>
@@ -115,7 +118,7 @@ export default function PackageEditor() {
           </div>
 
           {/* 草稿恢复横幅（显式确认，绝不静默覆盖） */}
-          {parsed && doc?.pendingDraft && (
+          {canEdit && parsed && doc?.pendingDraft && (
             <div className="flex items-center justify-between rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs">
               <span className="text-warning">检测到该资产的本地草稿（未发布）。</span>
               <span className="flex gap-2">
@@ -158,16 +161,16 @@ export default function PackageEditor() {
               </CardContent>
             </Card>
           ) : isSpecial ? (
-            <>
+            <fieldset disabled={!canEdit} className="m-0 border-0 p-0">
               {selected === "policy" && <AggregationPolicyEditor scenarioId={id} />}
               {selected === "metrics" && <MetricDefsEditor scenarioId={id} />}
-            </>
+            </fieldset>
           ) : !doc || doc.content == null ? (
             <Card>
               <CardContent className="py-10 text-center text-sm text-muted-foreground">加载中…</CardContent>
             </Card>
           ) : mode === "form" ? (
-            <>
+            <fieldset disabled={!canEdit} className="m-0 border-0 p-0">
               {parsed?.kind === "rule-sets" && (
                 <RuleSetForm
                   data={doc.content as unknown as RuleSetData}
@@ -185,11 +188,11 @@ export default function PackageEditor() {
               {parsed?.kind === "datasets" && (
                 <DatasetForm data={doc.content as unknown as DatasetData} onChange={(d) => updateDoc(selected, d as unknown as Dict)} />
               )}
-            </>
+            </fieldset>
           ) : (
             <Card>
               <CardContent>
-                <Textarea className="min-h-[500px] font-mono text-xs leading-relaxed" value={currentYaml} onChange={(e) => onYamlChange(e.target.value)} />
+                <Textarea className="min-h-[500px] font-mono text-xs leading-relaxed" value={currentYaml} readOnly={!canEdit} onChange={(e) => onYamlChange(e.target.value)} />
               </CardContent>
             </Card>
           )}
@@ -203,6 +206,7 @@ export default function PackageEditor() {
               doc={doc}
               dirty={dirtyOf(selected)}
               busy={busy}
+              canEdit={canEdit}
               missingRefs={refs}
               onPublish={(labels, withRefs) => publish(selected, labels, { withRefs })}
               onPromote={(ver, lbl) => promote(selected, ver, lbl)}

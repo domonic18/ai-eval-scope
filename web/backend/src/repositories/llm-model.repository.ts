@@ -1,5 +1,5 @@
 /**
- * LLM 模型配置仓库（docs/arch/15）。单表多模型；api_key 加密存储，回显仅脱敏。
+ * LLM 模型配置仓库（docs/arch/13）。单表多模型；api_key 加密存储，回显仅脱敏。
  * is_default 全局唯一（partial unique index），原子切换。
  */
 import type { LlmModel, Prisma } from "@prisma/client"

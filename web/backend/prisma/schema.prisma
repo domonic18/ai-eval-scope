@@ -461,7 +461,7 @@ model RunConfigSnapshot {
   @@map("run_config_snapshots")
 }
 
-/// LLM 模型配置（docs/arch/15）。provider 为协议（openai | anthropic）；
+/// LLM 模型配置（docs/arch/13）。provider 为协议（openai | anthropic）；
 /// api_key AES-256-GCM 加密存储；is_default 全局唯一（partial unique index 见迁移）。
 model LlmModel {
   id              String   @id @default(uuid())

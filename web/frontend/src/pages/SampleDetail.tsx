@@ -84,7 +84,7 @@ interface PreviewState {
 }
 type PrevTab = "doc" | "shot" | "trace"
 
-/** 文件定位（约束→源课件文件），评估器产出 details.source_files（docs/arch/15）。 */
+/** 文件定位（约束→源课件文件），评估器产出 details.source_files（docs/arch/13）。 */
 interface SourceFile {
   filename: string
   artifact_kind?: string
@@ -141,7 +141,7 @@ export default function SampleDetail() {
   const { setCrumbs } = useCrumbs()
   const toast = useToast()
   const [sample, setSample] = useState<SampleData | null>(null)
-  // 制品预览受控状态（docs/arch/15 §4.4）：状态上提，供扣分项文件 chip 联动驱动
+  // 制品预览受控状态（docs/arch/13 §4.4）：状态上提，供扣分项文件 chip 联动驱动
   const [previewTab, setPreviewTab] = useState<PrevTab>("doc")
   const [previewSelected, setPreviewSelected] = useState<Record<PrevTab, string>>({
     doc: "",
@@ -352,7 +352,7 @@ function ConstraintItem({
   )
 }
 
-/** 约束的「涉及文件」chip 行（docs/arch/15）：点击命中制品 → 右侧预览联动切换。
+/** 约束的「涉及文件」chip 行（docs/arch/13）：点击命中制品 → 右侧预览联动切换。
  *  无 source_files 的历史数据不渲染（降级）。 */
 function SourceFileChips({
   files,
@@ -397,7 +397,7 @@ function SourceFileChips({
 
 /** 质量（soft/preference）约束的逐维度评分 + 扣分原因渲染。
  *  读 details.dimensions[]（每项含 score/band/reason/issues/highlights），由评估器
- *  从 LLM 结构化输出透传（docs/arch/14 §五）。硬约束无此结构 → 不渲染。 */
+ *  从 LLM 结构化输出透传（docs/arch/13 §五）。硬约束无此结构 → 不渲染。 */
 interface DimensionIssue {
   desc: string
   severity?: "high" | "medium" | "low"

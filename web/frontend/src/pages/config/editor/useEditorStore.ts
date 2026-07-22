@@ -1,5 +1,5 @@
 /**
- * 统一编辑器 Store（docs/arch/14配置编辑器交互设计.md §6.3）。
+ * 统一编辑器 Store（docs/arch/13配置管理设计.md §6.3）。
  *
  * - docs：每资产一份内存编辑态，切换 Tab/树不丢未保存内容；
  * - selection 经 URL `?select=` 驱动（可分享/刷新/前进后退）；

@@ -1,5 +1,5 @@
 /**
- * LLM 客户端服务（docs/arch/15）。
+ * LLM 客户端服务（docs/arch/13）。
  *
  * 协议分支裸 HTTP：openai 走 /chat/completions，anthropic 走 /v1/messages。
  * - testModel(id): 1-token ping，返回 {status, detail}（失败也为 200，body 字段），写回 last_test_*。
