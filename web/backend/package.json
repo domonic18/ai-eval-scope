@@ -4,7 +4,7 @@
   "description": "Agent Eval observability platform backend (TypeScript + Express + Prisma + object storage)",
   "type": "commonjs",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.12.0"
   },
   "scripts": {
     "build": "prisma generate && tsc -p tsconfig.build.json",
