@@ -298,7 +298,8 @@ model EvalJob {
   scope             String // single | unit
   inputObjectKey    String    @map("input_object_key") // 对象存储 key
   inputPresignedUrl String?   @map("input_presigned_url") // Web 签发的短期下载 URL（worker 模式用）
-  ruleSetId         String    @map("rule_set_id")
+  ruleSetId         String    @map("rule_set_id") // 包内规则集名（如 coursework-quality）
+  packageRef        String?   @map("package_ref") // 场景包引用 scenario/package:label（S2-D；缺失=历史 job，executor 拒绝）
   taskId            String?   @map("task_id")
   taskTitle         String?   @map("task_title")
   taskSubject       String?   @map("task_subject")

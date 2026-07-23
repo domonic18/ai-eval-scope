@@ -10,8 +10,8 @@
  */
 
 import { createHash } from "crypto"
-import { readFileSync, readdirSync } from "fs"
-import { join, resolve } from "path"
+import { existsSync, readFileSync, readdirSync, statSync } from "fs"
+import { join, relative, resolve } from "path"
 import yaml from "js-yaml"
 import type { PrismaClient } from "@prisma/client"
 
@@ -29,6 +29,25 @@ function hash(obj: unknown): string {
 
 function loadYaml(file: string): Record<string, unknown> {
   return (yaml.load(readFileSync(file, "utf-8")) ?? {}) as Record<string, unknown>
+}
+
+/** 递归收集包内 rules/prompts/datasets 的 yaml 文件为 { 相对路径: 文本 }（S2-1，供 executor 拉取）。 */
+function collectPackageFiles(packageDir: string): Record<string, string> {
+  const out: Record<string, string> = {}
+  const walk = (dir: string): void => {
+    for (const name of readdirSync(dir)) {
+      const p = join(dir, name)
+      if (statSync(p).isDirectory()) walk(p)
+      else if (name.endsWith(".yaml") || name.endsWith(".yml")) {
+        out[relative(packageDir, p)] = readFileSync(p, "utf-8")
+      }
+    }
+  }
+  for (const sub of ["rules", "prompts", "datasets"]) {
+    const d = join(packageDir, sub)
+    if (existsSync(d)) walk(d)
+  }
+  return out
 }
 
 export interface ImportResult {
@@ -67,16 +86,19 @@ export async function importCoursewarePackage(
   const labels = ["production", "latest"]
   const manifestPath = join(packageDir, "agent_eval.yaml")
   const manifest = loadYaml(manifestPath)["package"] as Record<string, unknown> | undefined
+  // S2-1：发布 {manifest, files}（executor 运行时拉取所需结构，ADR-01）
+  const files = collectPackageFiles(packageDir)
+  const packageContent = { manifest: manifest ?? {}, files }
   await prisma.scenarioPackage.upsert({
     where: { scenarioId_assetId_version: { scenarioId: SCENARIO_ID, assetId: SCENARIO_ID, version: VERSION } },
-    update: { labels, content: (manifest ?? {}) as never, contentHash: hash(manifest ?? {}) },
+    update: { labels, content: packageContent as never, contentHash: hash(packageContent) },
     create: {
       scenarioId: SCENARIO_ID,
       assetId: SCENARIO_ID,
       version: VERSION,
       labels,
-      content: (manifest ?? {}) as never,
-      contentHash: hash(manifest ?? {}),
+      content: packageContent as never,
+      contentHash: hash(packageContent),
       createdBy: "import-script",
     },
   })

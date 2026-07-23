@@ -40,6 +40,7 @@ router.post(
         content?: { filename?: string; text?: string }
         rule_set_id?: string
         package_id?: string // Phase 3：rule_set_id 的 package 语义别名（优先）
+        package_ref?: string // S2-D：场景包引用 scenario/package:label（缺省对 courseware 自动补全）
         task_id?: string
         task_title?: string
         task_subject?: string
@@ -48,6 +49,7 @@ router.post(
         inlineFilename: body.content?.filename,
         inlineText: body.content?.text,
         ruleSetId: body.package_id || body.rule_set_id || DEFAULT_RULE_SET,
+        packageRef: body.package_ref,
         taskId: q.task_id || body.task_id,
         taskTitle: q.task_title || body.task_title,
         taskSubject: q.task_subject || body.task_subject,
@@ -68,6 +70,7 @@ router.post(
       filename,
       fileBytes,
       ruleSetId: q.package_id || q.rule_set_id || DEFAULT_RULE_SET,
+      packageRef: q.package_ref,
       taskId: q.task_id,
       taskTitle: q.task_title,
       taskSubject: q.task_subject,

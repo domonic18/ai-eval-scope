@@ -15,6 +15,7 @@ import { getConfig } from "../config"
 export interface ScfInvokePayload {
   job_id: string
   rule_set_id: string
+  package_ref?: string | null
   input_kind: string
   scope: string
   input_object_key: string

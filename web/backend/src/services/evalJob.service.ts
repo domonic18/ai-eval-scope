@@ -34,9 +34,20 @@ export interface SubmitInput {
   inputObjectKey?: string
   // 元数据
   ruleSetId: string
+  packageRef?: string // 场景包引用 scenario/package:label；缺省对 courseware 规则集自动补全
   taskId?: string
   taskTitle?: string
   taskSubject?: string
+}
+
+/**
+ * 对 courseware 内置规则集（coursework-gate/quality/vision）自动补全 package_ref，
+ * 指向内置 bundled 包 courseware/courseware:production。非 courseware 规则集须调用方显式提供 packageRef，
+ * 否则 job 落库 packageRef=null，executor 按历史 job 拒绝（S2-D/§03）。
+ */
+function defaultPackageRef(ruleSetId: string): string | null {
+  if (ruleSetId.startsWith("coursework-")) return "courseware/courseware:production"
+  return null
 }
 
 export interface SubmitResult {
@@ -60,6 +71,7 @@ export interface JobDto {
   input_kind: string
   scope: string
   rule_set_id: string
+  package_ref: string | null
   task_id: string | null
   task_title: string | null
   task_subject: string | null
@@ -82,6 +94,7 @@ export function serializeJob(job: EvalJob): JobDto {
     input_kind: job.inputKind,
     scope: job.scope,
     rule_set_id: job.ruleSetId,
+    package_ref: job.packageRef,
     task_id: job.taskId,
     task_title: job.taskTitle,
     task_subject: job.taskSubject,
@@ -352,6 +365,7 @@ export function createEvalJobService(tenant: Tenant) {
       inputObjectKey: objectKey,
       inputPresignedUrl: presigned.url,
       ruleSetId: input.ruleSetId,
+      packageRef: input.packageRef ?? defaultPackageRef(input.ruleSetId),
       taskId: input.taskId ?? null,
       taskTitle: input.taskTitle ?? null,
       taskSubject: input.taskSubject ?? null,
@@ -364,6 +378,7 @@ export function createEvalJobService(tenant: Tenant) {
       const payload: ScfInvokePayload = {
         job_id: jobId,
         rule_set_id: input.ruleSetId,
+        package_ref: input.packageRef ?? defaultPackageRef(input.ruleSetId),
         input_kind: inputKind,
         scope,
         input_object_key: objectKey,
