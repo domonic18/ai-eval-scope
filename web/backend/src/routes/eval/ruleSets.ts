@@ -9,6 +9,7 @@
 import { Router } from "express"
 import { getPrisma } from "../../infra/prisma"
 import { readRuleSetsCatalog } from "../../infra/ruleSetsCatalog"
+import { pickLatestPerAsset } from "../../utils/versioning"
 
 const router = Router()
 
@@ -26,19 +27,14 @@ router.get("/", async (_req, res) => {
   const staticCatalog = readRuleSetsCatalog() as StaticEntry[]
   const byId = new Map(staticCatalog.map((e) => [e.id, e]))
 
-  // DB 场景包规则集（每个 assetId 取最新版本）
+  // DB 场景包规则集（每个 assetId 取最新版本；与 catalog 共用 pickLatestPerAsset，避免
+  // 字符串比较与数值 semver 不一致导致 1.10.0/1.9.0 分歧）
   const dbRows = await getPrisma().ruleSetAsset.findMany()
-  const latest = new Map<string, (typeof dbRows)[number]>()
-  for (const r of dbRows) {
-    const prev = latest.get(r.assetId)
-    if (!prev || (prev.labels.includes("production") ? false : r.labels.includes("production")) || r.version > prev.version) {
-      latest.set(r.assetId, r)
-    }
-  }
+  const latest = pickLatestPerAsset(dbRows)
 
   const entries: StaticEntry[] = []
   const seen = new Set<string>()
-  for (const r of latest.values()) {
+  for (const r of latest) {
     const content = (r.content ?? {}) as Record<string, unknown>
     const base = byId.get(r.assetId)
     entries.push({

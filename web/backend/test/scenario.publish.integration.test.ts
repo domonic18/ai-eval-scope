@@ -40,7 +40,7 @@ describe("POST /api/v1/scenarios/:id/packages", () => {
     expect(res.status).toBe(403)
   })
 
-  it("publishes a package version as admin (201, idempotent upsert)", async () => {
+  it("publishes a package version as admin (201)", async () => {
     const app = createApp()
     const u = await registerUser(app, "pub-admin")
     USER_EMAIL.push(u.email)
@@ -75,24 +75,41 @@ describe("POST /api/v1/scenarios/:id/packages", () => {
     })
     expect(pkg?.labels).toContain("production")
     expect(pkg?.createdBy).toBe(u.user.id)
+  })
 
-    // 幂等：再发一次（改 labels）应 upsert 同一行
-    const res2 = await request(app)
+  it("rejects re-publishing an existing version (409 immutable)", async () => {
+    const app = createApp()
+    const u = await registerUser(app, "pub-imm")
+    USER_EMAIL.push(u.email)
+    ORG_SLUGS.push(u.org.slug)
+    await prisma.user.update({ where: { email: u.email }, data: { role: "admin" } })
+
+    const body = {
+      asset_id: "quality",
+      version: "1.0.0",
+      labels: ["production"],
+      content: { manifest: { id: "quality" } },
+    }
+    const first = await request(app)
+      .post(`/api/v1/scenarios/${SCENARIO_ID}/packages`)
+      .set("Authorization", `Bearer ${u.accessToken}`)
+      .send(body)
+    expect(first.status).toBe(201)
+
+    // 同版本号重发（改 labels）→ 409（版本不可变，不再 upsert 覆盖）
+    const again = await request(app)
       .post(`/api/v1/scenarios/${SCENARIO_ID}/packages`)
       .set("Authorization", `Bearer ${u.accessToken}`)
       .send({ ...body, labels: ["staging"] })
-    expect(res2.status).toBe(201)
-    const pkg2 = await prisma.scenarioPackage.findUnique({
+    expect(again.status).toBe(409)
+
+    // 原行未被覆盖
+    const pkg = await prisma.scenarioPackage.findUnique({
       where: {
-        scenarioId_assetId_version: {
-          scenarioId: SCENARIO_ID,
-          assetId: "quality",
-          version: "1.0.0",
-        },
+        scenarioId_assetId_version: { scenarioId: SCENARIO_ID, assetId: "quality", version: "1.0.0" },
       },
     })
-    expect(pkg2?.id).toBe(pkg?.id) // 同一行
-    expect(pkg2?.labels).toEqual(["staging"])
+    expect(pkg?.labels).toEqual(["production"])
   })
 
   it("rejects missing fields (400)", async () => {

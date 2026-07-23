@@ -211,4 +211,30 @@ router.post(
   },
 )
 
+/**
+ * 拉取场景包内容（S2-A，公开读，executor/evaluator 运行时获取最新版本）。
+ * 解析：?version= > ?label=(如 production) > 最新。content 为 { manifest, files }。
+ * 鉴权：与 GET /api/v1/rule-sets、catalog 一致，公开（场景包为非敏感配置）。
+ */
+router.get("/:id/packages/:assetId", async (req, res) => {
+  const version = req.query.version as string | undefined
+  const label = req.query.label as string | undefined
+  const pkg = await repo().getPackageContent(req.params.id, req.params.assetId, version, label)
+  if (!pkg) {
+    res
+      .status(404)
+      .json({ error: "package not found", scenario_id: req.params.id, asset_id: req.params.assetId })
+    return
+  }
+  res.json({
+    package: {
+      scenario_id: req.params.id,
+      asset_id: req.params.assetId,
+      version: pkg.version,
+      labels: pkg.labels,
+      content: pkg.content,
+    },
+  })
+})
+
 export default router
