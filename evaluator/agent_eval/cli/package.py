@@ -131,16 +131,19 @@ def package_list(
 @package_app.command("pull")
 def package_pull(
     ref: str = typer.Argument(..., help="scenario/package:version_or_label"),
-    remote: str | None = typer.Option(None, "--remote", help="远端仓库基址（Phase 3 启用）"),
+    remote: str | None = typer.Option(
+        None, "--remote", help="远端仓库基址（如 http://localhost:9000）；默认读 AGENT_EVAL_REGISTRY_URL"
+    ),
 ) -> None:
     """从线上拉取场景包到本地缓存（~/.agent_eval/packages/）。"""
     from agent_eval.packages import PackageStore, get_remote_client
+    from agent_eval.packages.remote_client import HttpRemotePackageClient
 
-    client = get_remote_client()
+    client = HttpRemotePackageClient(remote) if remote else get_remote_client()
     if client is None:
         rprint(
-            "[yellow]⚠ 远端拉取未配置（Phase 3 服务端就绪后启用）。[/yellow]\n"
-            "[dim]测试/开发可通过 monkeypatch agent_eval.packages.get_remote_client 注入假客户端。[/dim]"
+            "[yellow]⚠ 远端拉取未配置。[/yellow]\n"
+            "[dim]设置环境变量 AGENT_EVAL_REGISTRY_URL（Web 平台基址）或用 --remote <base_url>。[/dim]"
         )
         raise typer.Exit(code=1)
 
