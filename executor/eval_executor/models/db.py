@@ -37,6 +37,8 @@ class EvalJob(Base):
     rule_set_id: Mapped[str] = mapped_column(
         String(64), nullable=False, default="coursework-quality"
     )
+    # 场景包引用 scenario/package:label（S2-D）；缺失视为历史 job，executor 拒绝执行。
+    package_ref: Mapped[str | None] = mapped_column(String(128), nullable=True)
     # 调用方可设的任务标识/标题/学科（不填则由 builder 回退：单页→"contents"）
     task_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     task_title: Mapped[str | None] = mapped_column(String(256), nullable=True)
