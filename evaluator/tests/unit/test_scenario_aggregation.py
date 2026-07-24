@@ -84,15 +84,14 @@ def _make(
 
 
 def _backfill_legacy_scores(r: SampleResult) -> None:
-    """模拟 PipelineEngine：用旧 ScoreAggregator 回填 reward/s_* 到 SampleResult。"""
+    """模拟 PipelineEngine：用旧 ScoreAggregator 回填 stage_metrics（+ reward）到 SampleResult。
+
+    SampleScore 保留 s_*（旧 deprecated 聚合器输出）；新模型以 stage_metrics dict 为准，
+    soft/pref/reward 从 SampleScore 映射填入。
+    """
     sc = ScoreAggregator().aggregate(r)
-    r.s_format, r.s_common, r.s_soft, r.s_pref, r.reward = (
-        sc.s_format,
-        sc.s_common,
-        sc.s_soft,
-        sc.s_pref,
-        sc.reward,
-    )
+    r.stage_metrics = {"reward": sc.reward, "soft": sc.s_soft, "pref": sc.s_pref}
+    r.reward = sc.reward
 
 
 # ── P1-1 模型往返 ──────────────────────────────────────────────────────────────
@@ -173,11 +172,15 @@ def test_metrics_equivalence() -> None:
     results = _batch()
     old = MetricsCalculator().compute(results, run_id="r")
     new = ScenarioMetricsCalculator(COURSEWARE_DEFAULT_METRICS).compute(results)
-    assert new["courseware:document_rate"] == pytest.approx(old.dr, abs=1e-12)
-    assert new["courseware:constraint_pass_rate"] == pytest.approx(old.cpr, abs=1e-12)
-    assert new["courseware:reward"] == pytest.approx(old.avg_reward, abs=1e-12)
-    assert new["courseware:soft"] == pytest.approx(old.avg_soft, abs=1e-12)
-    assert new["courseware:pref"] == pytest.approx(old.avg_pref, abs=1e-12)
+    assert new["courseware:document_rate"] == pytest.approx(
+        old.metrics["courseware:document_rate"], abs=1e-12
+    )
+    assert new["courseware:constraint_pass_rate"] == pytest.approx(
+        old.metrics["courseware:constraint_pass_rate"], abs=1e-12
+    )
+    assert new["courseware:reward"] == pytest.approx(old.metrics["courseware:reward"], abs=1e-12)
+    assert new["courseware:soft"] == pytest.approx(old.metrics["courseware:soft"], abs=1e-12)
+    assert new["courseware:pref"] == pytest.approx(old.metrics["courseware:pref"], abs=1e-12)
 
 
 def test_metrics_empty_results_returns_empty() -> None:

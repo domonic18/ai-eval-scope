@@ -70,7 +70,8 @@ class MetricDefinition(BaseModel):
     name: str = Field(default="", description="指标展示名")
     expression: str = Field(
         description=(
-            "安全表达式。可用：total；样本数值字段数组（reward/s_soft/s_pref/...）；"
+            "安全表达式。可用：total；样本过程字段数组（reward/total_duration_ms/llm_calls/token_usage）；"
+            "场景化样本指标数组（SampleResult.stage_metrics 的 key，如 soft/pref）；"
             "<stage_id>_gate（该阶段门控通过布尔数组）；"
             "函数 mean/count/sum/min/max/len/abs/both/all/any/gated_mean"
         ),

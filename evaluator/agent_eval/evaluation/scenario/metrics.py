@@ -14,13 +14,10 @@ from agent_eval.evaluation.models import SampleResult
 from agent_eval.evaluation.scenario.expr import safe_eval
 from agent_eval.evaluation.scenario.models import MetricDefinition
 
-# 自动暴露为表达式的 SampleResult 数值标量字段
+# 自动暴露为表达式的 SampleResult 数值标量字段（场景无关的过程元数据）。
+# 场景化质量分（soft/pref 等）不在此列 —— 它们经 stage_metrics dict 动态暴露（见 _build_context）。
 _SCALAR_FIELDS = (
     "reward",
-    "s_format",
-    "s_common",
-    "s_soft",
-    "s_pref",
     "total_duration_ms",
     "llm_calls",
     "token_usage",
@@ -33,8 +30,16 @@ class ScenarioMetricsCalculator:
     从一组 SampleResult 计算每个 MetricDefinition.id 对应的运行级指标值。
     """
 
-    def __init__(self, definitions: list[MetricDefinition]) -> None:
+    def __init__(
+        self,
+        definitions: list[MetricDefinition],
+        *,
+        stage_ids: list[str] | None = None,
+    ) -> None:
         self.definitions = definitions
+        # policy 声明的 stage_id：确保 expression 引用的 <stage>_gate 即使该 stage
+        # 在本次结果中缺失（如仅评估 format）也能取到默认全 False 数组，而非未知变量。
+        self.stage_ids = stage_ids
 
     def compute(self, results: list[SampleResult]) -> dict[str, float]:
         """计算所有指标，返回 ``Record[metric_id, number]``。"""
@@ -49,15 +54,23 @@ class ScenarioMetricsCalculator:
         if total == 0:
             return ctx
 
-        # 1. 样本数值标量字段 → 同长数组
-        for field in _SCALAR_FIELDS:
-            ctx[field] = [getattr(r, field, 0.0) for r in results]
+        # 1. 样本数值标量字段（过程元数据）→ 同长数组
+        for fld in _SCALAR_FIELDS:
+            ctx[fld] = [getattr(r, fld, 0.0) for r in results]
 
-        # 2. 每个出现的 stage → <stage_id>_gate 布尔数组（及 <stage_id>_score）
-        stage_ids: set[str] = set()
+        # 2. 场景化样本指标（stage_metrics）每个 key → 同名数组变量
+        #    key = StageWeight.id（soft/pref）+ reward；expression 直接引用（如 mean(soft)）
+        metric_keys: set[str] = set()
+        for r in results:
+            metric_keys.update(r.stage_metrics.keys())
+        for key in metric_keys:
+            ctx[key] = [r.stage_metrics.get(key, 0.0) for r in results]
+
+        # 3. stage gate/score 数组：policy 声明的 stage ∪ results 出现的 stage（缺失填默认）
+        stage_ids: set[str] = set(self.stage_ids or [])
         for r in results:
             stage_ids.update(r.stage_results.keys())
-        for sid in stage_ids:
+        for sid in sorted(stage_ids):
             gate_arr: list[bool] = []
             score_arr: list[float] = []
             for r in results:

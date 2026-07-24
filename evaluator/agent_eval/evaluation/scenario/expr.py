@@ -5,7 +5,8 @@
 
 表达式方言（扁平数组，避免嵌套点访问的歧义）：
 - ``total``：样本总数（int）
-- 样本数值字段数组：``reward`` / ``s_soft`` / ``s_pref`` / ``s_format`` / ``s_common`` ...
+- 样本过程字段数组：``reward`` / ``total_duration_ms`` / ``llm_calls`` / ``token_usage``
+- 场景化样本指标数组：``stage_metrics`` 的每个 key（如 courseware 下的 ``soft`` / ``pref``）
 - ``<stage_id>_gate``：该阶段门控通过的布尔数组
 - 函数：``mean`` / ``count`` / ``sum`` / ``min`` / ``max`` / ``len`` / ``abs`` /
   ``both`` / ``all`` / ``any`` / ``gated_mean``

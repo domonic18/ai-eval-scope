@@ -31,7 +31,9 @@ class TestScoreAggregationWeights:
     def test_format_penalty(self) -> None:
         """格式门控奖惩值。"""
         assert SCORE_AGGREGATION_WEIGHTS.format_pass == 1.0
-        assert SCORE_AGGREGATION_WEIGHTS.format_fail == -3.0
+        assert (
+            SCORE_AGGREGATION_WEIGHTS.format_fail == 0.0
+        )  # 归一化后 format 失败不惩罚（0，非 -3）
 
     def test_commonsense_penalty(self) -> None:
         """常识门控奖惩值。"""

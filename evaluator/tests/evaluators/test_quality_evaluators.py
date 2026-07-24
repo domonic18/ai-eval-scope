@@ -462,10 +462,10 @@ class TestFullCascadeEndToEnd:
             assert cr.judge_record_path.startswith("evidence/")
 
         # 评分聚合正确计算
-        assert result.s_format == 1.0
-        assert result.s_common == 1.0
-        assert result.s_soft > 0.0
-        assert result.s_pref > 0.0
+        assert result.stage_results["format"].gate_passed is True
+        assert result.stage_results["commonsense"].gate_passed is True
+        assert result.stage_metrics["soft"] > 0.0
+        assert result.stage_metrics["pref"] > 0.0
         assert result.reward > 0.0
 
     def test_full_cascade_short_circuit_on_format_fail(self, tmp_path: Path) -> None:
@@ -494,10 +494,10 @@ class TestFullCascadeEndToEnd:
         assert result.stage_results["format"].status == EvalStatus.FAIL
         assert result.stage_results["commonsense"].status == EvalStatus.SKIP
         assert result.stage_results["quality"].status == EvalStatus.SKIP
-        assert result.s_format == 0.0  # 归一化后 format 失败不惩罚（0，非 -3）
-        # 短路后 soft/pref 得 0 分
-        assert result.s_soft == 0.0
-        assert result.s_pref == 0.0
+        assert result.stage_results["format"].gate_passed is False  # format 失败
+        # 短路后 soft/pref 不计入（stage_metrics 无 soft/pref 或为 0）
+        assert result.stage_metrics.get("soft", 0.0) == 0.0
+        assert result.stage_metrics.get("pref", 0.0) == 0.0
 
     def test_full_cascade_metrics_report(self, tmp_path: Path) -> None:
         """批量评估可产出 MetricsReport，且指标计算正确。"""
@@ -521,7 +521,7 @@ class TestFullCascadeEndToEnd:
         )
 
         assert report.total_samples == 2
-        assert report.dr == 1.0
-        assert report.cpr == 1.0
-        assert report.avg_reward > 0.0
+        assert report.metrics["courseware:document_rate"] == 1.0
+        assert report.metrics["courseware:constraint_pass_rate"] == 1.0
+        assert report.metrics["courseware:reward"] > 0.0
         assert report.run_id == "e2e_run"

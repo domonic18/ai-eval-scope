@@ -253,14 +253,14 @@ class TestSampleResult:
         sr = SampleResult(
             sample_id="s001",
             status=EvalStatus.PASS,
-            s_format=1.0,
-            s_common=1.0,
+            stage_metrics={"reward": 2.43, "soft": 0.8, "pref": 0.6},
             reward=2.43,
         )
         d = sr.to_dict()
         restored = SampleResult.from_dict(d)
         assert restored.sample_id == "s001"
         assert restored.reward == 2.43
+        assert restored.stage_metrics["soft"] == 0.8
 
 
 class TestMetricsReport:
@@ -268,12 +268,10 @@ class TestMetricsReport:
         report = MetricsReport(
             run_id="run_001",
             total_samples=10,
-            dr=0.95,
-            cpr=0.88,
-            avg_reward=1.72,
+            metrics={"courseware:document_rate": 0.95, "courseware:reward": 1.72},
         )
         d = report.to_dict()
-        assert d["metrics"]["DR"] == 0.95
+        assert d["metrics"]["courseware:document_rate"] == 0.95
         assert d["total_samples"] == 10
 
 
@@ -409,9 +407,10 @@ class TestPackageModels:
         assert m.sut_name == "manual"
 
     def test_score_summary(self) -> None:
-        s = ScoreSummary(s_format=1.0, s_common=1.0, s_soft=0.78, reward=2.43)
+        s = ScoreSummary(reward=2.43, stage_metrics={"soft": 0.78, "pref": 0.6})
         d = json.loads(s.model_dump_json())
         assert d["reward"] == 2.43
+        assert d["stage_metrics"]["soft"] == 0.78
 
     def test_eval_result_manifest(self) -> None:
         m = EvalResultManifest(

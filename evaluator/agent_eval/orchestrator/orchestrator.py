@@ -69,7 +69,7 @@ class Orchestrator:
 
         orch = Orchestrator(engine, report_gen, workspace)
         result = orch.eval_only(package_dir, rule_set)
-        print(result.report.dr)
+        print(result.report.metrics["courseware:reward"])
     """
 
     def __init__(
@@ -122,8 +122,8 @@ class Orchestrator:
         if rule_set is not None:
             self.pipeline_engine = build_pipeline(registry, rule_set)
         if with_vision:
-            self.pipeline_engine.aggregator.soft_weights = vision_soft_weights or dict(
-                SCORE_AGGREGATION_WEIGHTS.vision_soft_weights
+            self.pipeline_engine.override_evaluator_weights(
+                vision_soft_weights or dict(SCORE_AGGREGATION_WEIGHTS.vision_soft_weights)
             )
         package_dir = Path(package_dir)
         if not package_dir.exists():
@@ -253,7 +253,7 @@ class Orchestrator:
             )
 
         # 9. 计算聚合指标
-        metrics_report = self.pipeline_engine.metrics_calculator.compute(
+        metrics_report = self.pipeline_engine.compute_metrics(
             sample_results,
             run_id=run_id,
         )
@@ -294,14 +294,8 @@ class Orchestrator:
                 # 仅传内容质量指标，且键须与 metric_definitions 对齐。
                 # avg_time_ms 是「评测耗时」过程元数据，不属于被评估对象的质量维度，
                 # 不进入摘要输入（否则 LLM 会对评测时间做评价）。
-                _sid = scenario_cfg.scenario_id if scenario_cfg else "courseware"
-                metrics_dict = {
-                    f"{_sid}:document_rate": metrics_report.dr,
-                    f"{_sid}:constraint_pass_rate": metrics_report.cpr,
-                    f"{_sid}:reward": metrics_report.avg_reward,
-                    f"{_sid}:soft": metrics_report.avg_soft,
-                    f"{_sid}:pref": metrics_report.avg_pref,
-                }
+                # metrics_report.metrics 已是场景化 dict（key=metric_id，如 courseware:document_rate）
+                metrics_dict = dict(metrics_report.metrics)
                 summary_report = SummaryGenerator(pool).generate(
                     metrics=metrics_dict,
                     sample_results=sample_results,
@@ -336,9 +330,7 @@ class Orchestrator:
             "eval-only 评估完成",
             run_id=run_id,
             total_samples=metrics_report.total_samples,
-            dr=metrics_report.dr,
-            cpr=metrics_report.cpr,
-            avg_reward=metrics_report.avg_reward,
+            metrics=metrics_report.metrics,
         )
 
         scenario_cfg = getattr(self.pipeline_engine, "scenario_config", None)
@@ -411,11 +403,8 @@ class Orchestrator:
 
         # 评分
         scores = ScoreSummary(
-            s_format=sample_result.s_format,
-            s_common=sample_result.s_common,
-            s_soft=sample_result.s_soft,
-            s_pref=sample_result.s_pref,
             reward=sample_result.reward,
+            stage_metrics=dict(sample_result.stage_metrics),
         )
 
         # 报告
@@ -502,9 +491,7 @@ class Orchestrator:
                 "mode": "eval_only",
                 "total_samples": metrics_report.total_samples,
                 "metrics": {
-                    "DR": metrics_report.dr,
-                    "CPR": metrics_report.cpr,
-                    "avg_reward": metrics_report.avg_reward,
+                    **metrics_report.metrics,
                     "avg_time_ms": metrics_report.avg_time_ms,
                 },
                 "failure_breakdown": metrics_report.failure_breakdown,
@@ -586,7 +573,7 @@ def eval_packages(
             "./workspace/runs/xxx/packages",
             rule_set_path="./rule_set.yaml",
         )
-        print(result.report.dr)
+        print(result.report.metrics["courseware:reward"])
 
     Args:
         package_dir: ExecutionPackage 目录路径。

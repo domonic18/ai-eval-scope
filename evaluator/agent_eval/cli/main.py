@@ -416,15 +416,16 @@ def upload(
     # 用 build_run_event 重建 run 事件（P5-1：附带 courseware:* 指标键 + scenario_id + 运行配置快照）
     from agent_eval.evaluation.models import MetricsReport
 
+    # summary["metrics"] 已是场景化指标 dict（key=metric_id）；avg_time_ms 为顶层过程元数据
     report = MetricsReport(
         run_id=summary.get("run_id", run),
         total_samples=summary.get("total_samples", 0),
-        dr=metrics.get("DR", 0.0),
-        cpr=metrics.get("CPR", 0.0),
-        avg_reward=metrics.get("avg_reward", 0.0),
-        avg_soft=metrics.get("avg_soft", 0.0),
-        avg_pref=metrics.get("avg_pref", 0.0),
-        avg_time_ms=metrics.get("avg_time_ms", 0.0),
+        metrics={
+            k: float(v)
+            for k, v in metrics.items()
+            if k != "avg_time_ms" and isinstance(v, int | float)
+        },
+        avg_time_ms=summary.get("avg_time_ms", metrics.get("avg_time_ms", 0.0)),
     )
     events: list[dict[str, Any]] = [
         build_run_event(
