@@ -1,13 +1,13 @@
 /**
- * 场景默认指标定义编辑器（表单 + YAML 切换）。
- * 直接 PATCH Scenario.defaultMetricDefinitions（场景级默认值，非版本化资产）。
+ * 场景默认指标定义编辑器（受控：data + onChange）。
+ * 数据来自 useEditorStore 的 defaults doc；发布走右侧 VersionTimeline（版本化），无独立 save。
  */
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import * as yaml from "js-yaml"
 import { Button } from "../../../components/shadcn/button"
 import { Input } from "../../../components/shadcn/input"
 import { Textarea } from "../../../components/shadcn/textarea"
-import { Save, Sparkles, Trash2 } from "lucide-react"
+import { Sparkles, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { extractErr } from "../../../hooks/useAiGeneration"
 import { api } from "../../../api/client"
@@ -16,56 +16,35 @@ import { AddButton, SectionCard, SectionCardContent, SectionCardHeader, SectionC
 import { AiResultDialog } from "../../../components/AiResultDialog"
 import { Field, FormYamlToggle } from "./Field"
 
-const errMsg = (e: unknown) => extractErr(e, "保存失败")
-
-export function MetricDefsEditor({ scenarioId }: { scenarioId: string }) {
-  const [metrics, setMetrics] = useState<MetricDef[]>([])
-  const [yamlText, setYamlText] = useState("")
+export function MetricDefsEditor({
+  scenarioId,
+  data,
+  onChange,
+}: {
+  scenarioId: string
+  data: MetricDef[]
+  onChange: (m: MetricDef[]) => void
+}) {
+  const metrics = data
   const [mode, setMode] = useState<"form" | "yaml">("form")
-  const [loading, setLoading] = useState(true)
-  const [busy, setBusy] = useState(false)
-  // AI 生成（hook 必须在 early return 之前，避免 hooks 顺序违规）
+  const [yamlText, setYamlText] = useState("")
   const [aiOpen, setAiOpen] = useState(false)
   const [aiLoading, setAiLoading] = useState(false)
   const [aiDesc, setAiDesc] = useState("")
   const [aiMetrics, setAiMetrics] = useState<MetricDef[]>([])
 
-  useEffect(() => {
-    api
-      .scenarioDefaults(scenarioId)
-      .then((m) => {
-        setMetrics(m)
-        setYamlText(yaml.dump(m, { sortKeys: false }))
-      })
-      .catch(() => {
-        setMetrics([])
-        setYamlText("[]")
-      })
-      .finally(() => setLoading(false))
-  }, [scenarioId])
-
-  const syncYaml = (m: MetricDef[]) => setYamlText(yaml.dump(m, { sortKeys: false }))
   const update = (i: number, patch: Partial<MetricDef>) => {
     const arr = [...metrics]
     arr[i] = { ...arr[i], ...patch }
-    setMetrics(arr)
-    syncYaml(arr)
+    onChange(arr)
   }
-  const add = () => {
-    const arr = [...metrics, { id: "" }]
-    setMetrics(arr)
-    syncYaml(arr)
-  }
-  const remove = (i: number) => {
-    const arr = metrics.filter((_, j) => j !== i)
-    setMetrics(arr)
-    syncYaml(arr)
-  }
+  const add = () => onChange([...metrics, { id: "" }])
+  const remove = (i: number) => onChange(metrics.filter((_, j) => j !== i))
   const onYamlChange = (text: string) => {
     setYamlText(text)
     try {
       const parsed = yaml.load(text)
-      if (Array.isArray(parsed)) setMetrics(parsed as MetricDef[])
+      if (Array.isArray(parsed)) onChange(parsed as MetricDef[])
     } catch {
       /* YAML 语法错误时保留编辑 */
     }
@@ -73,33 +52,6 @@ export function MetricDefsEditor({ scenarioId }: { scenarioId: string }) {
   const switchMode = (m: "form" | "yaml") => {
     if (m === "yaml") setYamlText(yaml.dump(metrics, { sortKeys: false }))
     setMode(m)
-  }
-  const save = async () => {
-    const version = window.prompt("发布版本号（版本不可变，请递增，如 1.0.1）", "1.0.1")
-    if (!version) return
-    setBusy(true)
-    try {
-      // 合并未改部分（aggregation_policy）+ 本次 metric_definitions，发布新版本（不覆盖旧版本）
-      const aggregationPolicy = await api.scenarioAggregationPolicy(scenarioId).catch(() => null)
-      await api.publishDefaults(scenarioId, {
-        version,
-        metric_definitions: metrics,
-        aggregation_policy: aggregationPolicy ?? null,
-      })
-      toast.success(`指标定义已发布 ${version}`)
-    } catch (e) {
-      toast.error(errMsg(e))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  if (loading) {
-    return (
-      <SectionCard>
-        <SectionCardContent className="py-10 text-center text-sm text-muted-foreground">加载中…</SectionCardContent>
-      </SectionCard>
-    )
   }
 
   async function runAiGenerate() {
@@ -118,8 +70,7 @@ export function MetricDefsEditor({ scenarioId }: { scenarioId: string }) {
     }
   }
   function acceptAiMetrics() {
-    setMetrics([...metrics, ...aiMetrics])
-    syncYaml([...metrics, ...aiMetrics])
+    onChange([...metrics, ...aiMetrics])
     setAiOpen(false)
     setAiDesc("")
     setAiMetrics([])
@@ -185,7 +136,7 @@ export function MetricDefsEditor({ scenarioId }: { scenarioId: string }) {
         ) : (
           <>
             <p className="text-[11px] text-muted-foreground">
-              YAML 模式可编辑全部字段（含 explain 等深层结构）；保存以当前解析结构为准。
+              YAML 模式可编辑全部字段（含 explain 等深层结构）；发布以当前解析结构为准。
             </p>
             <Textarea
               className="min-h-[360px] font-mono text-xs leading-relaxed"
@@ -194,9 +145,7 @@ export function MetricDefsEditor({ scenarioId }: { scenarioId: string }) {
             />
           </>
         )}
-        <Button onClick={save} disabled={busy}>
-          <Save className="mr-1 size-4" />{busy ? "保存中…" : "保存"}
-        </Button>
+        <p className="text-[11px] text-muted-foreground">编辑后在右侧「版本时间线」发布新版本。</p>
       </SectionCardContent>
     </SectionCard>
       <AiResultDialog

@@ -37,6 +37,12 @@ export type Dict = Record<string, unknown>
 const selOf = (kind: AssetKind, assetId: string): Selection => `${kind}:${assetId}`
 const newAssetId = (prefix: string) => `${prefix}_${Date.now().toString(36).slice(-5)}`
 
+// defaults（指标定义 + 聚合策略）作为单个 DefaultsAsset 版本化；metrics/policy 两 selection 共享一个 "defaults" doc
+const DEFAULTS_KEY: Selection = "defaults"
+const isDefaultsSel = (sel: Selection | null | undefined): boolean => sel === "metrics" || sel === "policy"
+const effectiveKey = (sel: Selection | null | undefined): Selection | null =>
+  sel ? (isDefaultsSel(sel) ? DEFAULTS_KEY : sel) : null
+
 export function useEditorStore(scenarioId: string) {
   const [searchParams, setSearchParams] = useSearchParams()
   const selected: Selection | null = searchParams.get("select")
@@ -138,12 +144,71 @@ export function useEditorStore(scenarioId: string) {
     [scenarioId],
   )
 
+  // ── defaults doc 加载（metrics/policy 共享；GET /defaults 组装 + 版本历史）──
+  const loadDefaultsDoc = useCallback(async () => {
+    try {
+      const c = await api.scenarioDefaultsContent(scenarioId)
+      const content: Dict = {
+        metric_definitions: c.metric_definitions ?? [],
+        aggregation_policy: c.aggregation_policy ?? null,
+      }
+      const baselineYaml = yaml.dump(content, { sortKeys: false })
+      let pendingDraft: Dict | null = null
+      try {
+        const raw = localStorage.getItem(`draft:${scenarioId}:defaults:default`)
+        if (raw) {
+          const d = JSON.parse(raw)
+          if (d?.content && typeof d.content === "object" && yaml.dump(d.content, { sortKeys: false }) !== baselineYaml) {
+            pendingDraft = d.content as Dict
+          }
+        }
+      } catch {
+        /* 草稿损坏忽略 */
+      }
+      let versions: DocState["versions"] = []
+      try {
+        versions = await api.listDefaultsVersions(scenarioId)
+      } catch {
+        /* 忽略 */
+      }
+      setDocs((prev) => ({
+        ...prev,
+        [DEFAULTS_KEY]: {
+          kind: "defaults",
+          assetId: "default",
+          content,
+          baselineYaml,
+          nextVersion: versions[0]?.version ?? "1.0.0",
+          versions,
+          pendingDraft,
+        },
+      }))
+    } catch {
+      setDocs((prev) => ({
+        ...prev,
+        [DEFAULTS_KEY]: {
+          kind: "defaults",
+          assetId: "default",
+          content: { metric_definitions: [], aggregation_policy: null },
+          baselineYaml: "",
+          nextVersion: "1.0.1",
+          versions: [],
+        },
+      }))
+    }
+  }, [scenarioId])
+
   // 选中资产文档不存在则加载；同时维护 tabs。
   // 注意：仅在内存中无该文档时加载——切回已打开/本地新建(isNew)资产不得重拉覆盖未保存编辑。
   const docsRef = useRef(docs)
   docsRef.current = docs
   useEffect(() => {
-    if (!selected || SPECIAL_SELECTIONS.includes(selected as (typeof SPECIAL_SELECTIONS)[number])) return
+    if (!selected) return
+    // SPECIAL metrics/policy → 加载共享 defaults doc（不作为独立 tab）
+    if (isDefaultsSel(selected)) {
+      if (!docsRef.current[DEFAULTS_KEY]) loadDefaultsDoc()
+      return
+    }
     const parsed = parseSelection(selected)
     if (!parsed) return
     setTabs((prev) => (prev.includes(selected) ? prev : [...prev, selected]))
@@ -153,20 +218,21 @@ export function useEditorStore(scenarioId: string) {
       return { ...prev, [selected]: { kind: parsed.kind, assetId: parsed.assetId, content: null, baselineYaml: "", nextVersion: "0.1.0", versions: [] } }
     })
     loadDoc(parsed.kind, parsed.assetId)
-  }, [selected, loadDoc])
+  }, [selected, loadDoc, loadDefaultsDoc])
 
   // ── 编辑：更新内容（内存态），防抖落 localStorage 草稿兜底 ──
   const updateDoc = useCallback((sel: Selection, content: Dict) => {
+    const key = effectiveKey(sel) ?? sel
     setDocs((prev) => {
-      const doc = prev[sel]
+      const doc = prev[key]
       if (!doc) return prev
-      return { ...prev, [sel]: { ...doc, content, pendingDraft: null } }
+      return { ...prev, [key]: { ...doc, content, pendingDraft: null } }
     })
   }, [])
 
   const dirtyOf = useCallback(
     (sel: Selection): boolean => {
-      const doc = docs[sel]
+      const doc = docs[effectiveKey(sel) ?? sel]
       if (!doc || doc.content == null) return false
       return yaml.dump(doc.content, { sortKeys: false }) !== doc.baselineYaml || !!doc.isNew
     },
@@ -174,10 +240,11 @@ export function useEditorStore(scenarioId: string) {
   )
 
   const setNextVersion = useCallback((sel: Selection, v: string) => {
+    const key = effectiveKey(sel) ?? sel
     setDocs((prev) => {
-      const doc = prev[sel]
+      const doc = prev[key]
       if (!doc) return prev
-      return { ...prev, [sel]: { ...doc, nextVersion: v } }
+      return { ...prev, [key]: { ...doc, nextVersion: v } }
     })
   }, [])
 
@@ -185,9 +252,11 @@ export function useEditorStore(scenarioId: string) {
   useEffect(() => {
     const t = setTimeout(() => {
       for (const [sel, doc] of Object.entries(docsRef.current)) {
+        if (doc.content == null) continue
+        const isDefaults = sel === DEFAULTS_KEY
         const parsed = parseSelection(sel)
-        if (!parsed || doc.content == null) continue
-        const key = draftKeyOf(scenarioId, parsed.kind, parsed.assetId)
+        if (!isDefaults && !parsed) continue
+        const key = isDefaults ? `draft:${scenarioId}:defaults:default` : draftKeyOf(scenarioId, parsed!.kind, parsed!.assetId)
         const dirty = yaml.dump(doc.content, { sortKeys: false }) !== doc.baselineYaml || !!doc.isNew
         try {
           if (dirty) {
@@ -205,24 +274,30 @@ export function useEditorStore(scenarioId: string) {
 
   // ── 草稿显式恢复 / 忽略 ──
   const restoreDraft = useCallback((sel: Selection) => {
+    const key = effectiveKey(sel) ?? sel
     setDocs((prev) => {
-      const doc = prev[sel]
+      const doc = prev[key]
       if (!doc?.pendingDraft) return prev
       const dc = doc.pendingDraft
       if (doc.kind === "datasets" && !dc.role) dc.role = "reference"
-      return { ...prev, [sel]: { ...doc, content: dc, pendingDraft: null } }
+      return { ...prev, [key]: { ...doc, content: dc, pendingDraft: null } }
     })
     toast.info("已恢复本地草稿（基线仍为已发布版本，发布后才生效）")
   }, [])
 
   const discardDraft = useCallback(
     (sel: Selection) => {
-      const parsed = parseSelection(sel)
-      if (parsed) localStorage.removeItem(draftKeyOf(scenarioId, parsed.kind, parsed.assetId))
+      const key = effectiveKey(sel) ?? sel
+      if (isDefaultsSel(sel)) {
+        localStorage.removeItem(`draft:${scenarioId}:defaults:default`)
+      } else {
+        const parsed = parseSelection(sel)
+        if (parsed) localStorage.removeItem(draftKeyOf(scenarioId, parsed.kind, parsed.assetId))
+      }
       setDocs((prev) => {
-        const doc = prev[sel]
+        const doc = prev[key]
         if (!doc) return prev
-        return { ...prev, [sel]: { ...doc, pendingDraft: null } }
+        return { ...prev, [key]: { ...doc, pendingDraft: null } }
       })
     },
     [scenarioId],
@@ -323,10 +398,27 @@ export function useEditorStore(scenarioId: string) {
   // ── 发布 ──
   const publish = useCallback(
     async (sel: Selection, labels: string[], opts?: { withRefs?: boolean }) => {
-      const doc = docs[sel]
+      const key = effectiveKey(sel) ?? sel
+      const doc = docs[key]
       if (!doc?.content) return false
       setBusy(true)
       try {
+        if (doc.kind === "defaults") {
+          await api.publishDefaults(scenarioId, {
+            version: doc.nextVersion,
+            labels,
+            metric_definitions: (doc.content as Dict).metric_definitions ?? [],
+            aggregation_policy: (doc.content as Dict).aggregation_policy ?? null,
+          })
+          localStorage.removeItem(`draft:${scenarioId}:defaults:default`)
+          const versions = await api.listDefaultsVersions(scenarioId).catch(() => [])
+          setDocs((prev) => ({
+            ...prev,
+            [key]: { ...prev[key], baselineYaml: yaml.dump(prev[key].content, { sortKeys: false }), versions },
+          }))
+          toast.success(`已发布 defaults@${doc.nextVersion}`)
+          return true
+        }
         if (doc.kind === "rule-sets") {
           const refs = missingRefs(sel)
           if (refs.prompts.length || refs.datasets.length) {
@@ -343,7 +435,7 @@ export function useEditorStore(scenarioId: string) {
           for (const refSel of refs.unpublished) {
             const refDoc = docs[refSel]
             if (!refDoc?.content) continue
-            await api.publishAsset(scenarioId, refDoc.kind, {
+            await api.publishAsset(scenarioId, refDoc.kind as AssetKind, {
               asset_id: refDoc.assetId,
               version: refDoc.nextVersion || "0.1.0",
               labels: [],
@@ -360,7 +452,7 @@ export function useEditorStore(scenarioId: string) {
             }))
           }
         }
-        await api.publishAsset(scenarioId, doc.kind, {
+        await api.publishAsset(scenarioId, doc.kind as AssetKind, {
           asset_id: doc.assetId,
           version: doc.nextVersion,
           labels,
@@ -371,7 +463,7 @@ export function useEditorStore(scenarioId: string) {
         })
         const parsed = parseSelection(sel)!
         localStorage.removeItem(draftKeyOf(scenarioId, parsed.kind, parsed.assetId))
-        const versions = await api.listAssetVersions(scenarioId, doc.kind, doc.assetId).catch(() => [])
+        const versions = await api.listAssetVersions(scenarioId, doc.kind as AssetKind, doc.assetId).catch(() => [])
         setDocs((prev) => ({
           ...prev,
           [sel]: {
@@ -397,9 +489,16 @@ export function useEditorStore(scenarioId: string) {
   // ── 标签晋升 / 版本对比 ──
   const promote = useCallback(
     async (sel: Selection, ver: string, lbl: string) => {
-      const parsed = parseSelection(sel)
-      if (!parsed) return
       try {
+        if (isDefaultsSel(sel)) {
+          await api.promoteDefaultsLabels(scenarioId, ver, [lbl])
+          toast.success(`${ver} 已晋升为 ${lbl}`)
+          const versions = await api.listDefaultsVersions(scenarioId)
+          setDocs((prev) => ({ ...prev, [DEFAULTS_KEY]: { ...prev[DEFAULTS_KEY], versions } }))
+          return
+        }
+        const parsed = parseSelection(sel)
+        if (!parsed) return
         await api.promoteAssetLabels(scenarioId, parsed.kind, parsed.assetId, ver, [lbl])
         toast.success(`${ver} 已晋升为 ${lbl}`)
         const versions = await api.listAssetVersions(scenarioId, parsed.kind, parsed.assetId)
@@ -417,10 +516,15 @@ export function useEditorStore(scenarioId: string) {
         setDiff(null)
         return
       }
-      const parsed = parseSelection(sel)
-      if (!parsed) return
       try {
-        const old = await api.assetContent(scenarioId, parsed.kind, parsed.assetId, ver)
+        let old: Record<string, unknown>
+        if (isDefaultsSel(sel)) {
+          old = await api.scenarioDefaultsContent(scenarioId, ver)
+        } else {
+          const parsed = parseSelection(sel)
+          if (!parsed) return
+          old = await api.assetContent(scenarioId, parsed.kind, parsed.assetId, ver)
+        }
         setDiff({ version: ver, content: yaml.dump(old, { sortKeys: false }) })
       } catch {
         toast.error("获取版本内容失败")
@@ -441,7 +545,7 @@ export function useEditorStore(scenarioId: string) {
     [selected, select],
   )
 
-  const doc = selected ? (docs[selected] ?? null) : null
+  const doc = selected ? (docs[effectiveKey(selected) ?? selected] ?? null) : null
   const dirty = selected ? dirtyOf(selected) : false
   const currentYaml = useMemo(
     () => (doc?.content ? yaml.dump(doc.content, { sortKeys: false }) : ""),

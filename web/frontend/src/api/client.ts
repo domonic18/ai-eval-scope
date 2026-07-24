@@ -248,6 +248,14 @@ export const api = {
   async scenarioAggregationPolicy(scenarioId: string): Promise<Record<string, unknown> | null> {
     return (await http.get(`/scenarios/${scenarioId}/defaults`)).data.aggregation_policy ?? null
   },
+  /** 一次 GET 拿完整 defaults（metric_definitions + aggregation_policy），供编辑器 loadDoc 组装。 */
+  async scenarioDefaultsContent(
+    scenarioId: string,
+    version?: string,
+  ): Promise<{ metric_definitions: MetricDef[]; aggregation_policy: Record<string, unknown> | null }> {
+    const params = version ? `?version=${encodeURIComponent(version)}` : ""
+    return (await http.get(`/scenarios/${scenarioId}/defaults${params}`)).data
+  },
   /** 发布场景默认配置新版本（指标定义 + 聚合策略版本化；POST /scenarios/:id/defaults）。 */
   async publishDefaults(
     scenarioId: string,
