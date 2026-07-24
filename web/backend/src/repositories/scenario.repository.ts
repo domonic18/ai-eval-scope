@@ -70,13 +70,11 @@ export class ScenarioRepository {
     await prismaEnsureScenario(this.prisma, scenarioId)
     const existing = await this.prisma.defaultsAsset.findUnique({
       where: { scenarioId_assetId_version: { scenarioId, assetId, version: input.version } },
-      select: { id: true, contentHash: true },
+      select: { id: true },
     })
-    // 幂等：同版本同内容重发（importAssetsToDb 重导）直接返回；同版本不同内容才冲突
-    if (existing) {
-      if (existing.contentHash === contentHash) return { assetId, version: input.version }
-      throw versionConflict(assetId, input.version)
-    }
+    // 版本不可变（与 publishRuleSetAsset 一致）：同 version 重发一律 409，要求升版本号。
+    // importAssetsToDb 重导由 existingDefaults 预检查跳过，不依赖此处幂等。
+    if (existing) throw versionConflict(assetId, input.version)
     await this.prisma.defaultsAsset.create({
       data: {
         scenarioId,
