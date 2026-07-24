@@ -22,7 +22,6 @@ import {
   draftKeyOf,
   errMsg,
   parseSelection,
-  SPECIAL_SELECTIONS,
   type DocState,
   type Selection,
 } from "./types"
