@@ -55,6 +55,9 @@ class EvalResult:
     samples: list[SampleResult] = field(default_factory=list)
     # 运行溯源：规则集版本，透传至 sink → run event → 平台
     rule_set_version: str = ""
+    # S2-E：实际使用的规则集与场景配置，供 sink→run event→快照记录真实版本与指标定义
+    rule_set: Any = None
+    scenario_config: Any = None
     # 评估摘要报告（LLM 生成的人话总结，LLM 不可用时为 None）
     summary_report: dict[str, Any] | None = None
 
@@ -291,13 +294,13 @@ class Orchestrator:
                 # 仅传内容质量指标，且键须与 metric_definitions 对齐。
                 # avg_time_ms 是「评测耗时」过程元数据，不属于被评估对象的质量维度，
                 # 不进入摘要输入（否则 LLM 会对评测时间做评价）。
+                _sid = scenario_cfg.scenario_id if scenario_cfg else "courseware"
                 metrics_dict = {
-                    "courseware:document_rate": metrics_report.dr,
-                    "courseware:constraint_pass_rate": metrics_report.cpr,
-                    "courseware:reward": metrics_report.avg_reward,
-                    "courseware:soft": metrics_report.avg_soft,
-                    "courseware:pref": metrics_report.avg_pref,
-                    "courseware:conditional_reward": metrics_report.cond_r,
+                    f"{_sid}:document_rate": metrics_report.dr,
+                    f"{_sid}:constraint_pass_rate": metrics_report.cpr,
+                    f"{_sid}:reward": metrics_report.avg_reward,
+                    f"{_sid}:soft": metrics_report.avg_soft,
+                    f"{_sid}:pref": metrics_report.avg_pref,
                 }
                 summary_report = SummaryGenerator(pool).generate(
                     metrics=metrics_dict,
@@ -338,6 +341,7 @@ class Orchestrator:
             avg_reward=metrics_report.avg_reward,
         )
 
+        scenario_cfg = getattr(self.pipeline_engine, "scenario_config", None)
         return EvalResult(
             report=metrics_report,
             results=result_map,
@@ -345,6 +349,8 @@ class Orchestrator:
             run_workspace=run_workspace,
             samples=sample_results,
             rule_set_version=rule_set_version,
+            rule_set=rule_set,
+            scenario_config=scenario_cfg,
             summary_report=summary_report,
         )
 
@@ -499,7 +505,6 @@ class Orchestrator:
                     "DR": metrics_report.dr,
                     "CPR": metrics_report.cpr,
                     "avg_reward": metrics_report.avg_reward,
-                    "condR": metrics_report.cond_r,
                     "avg_time_ms": metrics_report.avg_time_ms,
                 },
                 "failure_breakdown": metrics_report.failure_breakdown,

@@ -379,7 +379,6 @@ class TestWorkspaceIndexErrorPaths:
             dr=1.0,
             cpr=1.0,
             avg_reward=1.0,
-            cond_r=1.0,
             avg_time_ms=100,
             sample_scores=[],
             failure_breakdown={},

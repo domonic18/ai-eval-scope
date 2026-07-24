@@ -173,7 +173,6 @@ class MetricsReport:
     avg_reward: float = 0.0  # 平均 Reward（综合评分）
     avg_soft: float = 0.0  # 平均内容质量分（SOFT 维度，独立指标）
     avg_pref: float = 0.0  # 平均用户偏好分（PREFERENCE 维度，独立指标）
-    cond_r: float = 0.0  # Conditional Reward（条件 Reward）
     avg_time_ms: float = 0.0  # 平均耗时
     sample_scores: list[SampleScore] = field(default_factory=list)
     failure_breakdown: dict[str, int] = field(default_factory=dict)
@@ -191,7 +190,6 @@ class MetricsReport:
                 "avg_reward": self.avg_reward,
                 "avg_soft": self.avg_soft,
                 "avg_pref": self.avg_pref,
-                "condR": self.cond_r,
                 "avg_time_ms": self.avg_time_ms,
                 "llm_skipped": self.llm_skipped,
             },

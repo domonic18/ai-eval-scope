@@ -162,7 +162,6 @@ def metrics_report() -> MetricsReport:
         dr=0.5,
         cpr=0.5,
         avg_reward=-0.225,
-        cond_r=2.55,
         avg_time_ms=12.0,
         sample_scores=[
             SampleScore(

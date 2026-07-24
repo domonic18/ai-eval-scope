@@ -48,7 +48,6 @@ def test_run_event_mapping_fields():
         dr=0.9,
         cpr=0.7,
         avg_reward=0.6,
-        cond_r=0.65,
         avg_time_ms=1200,
     )
     ev = build_run_event(report, langfuse_host="https://lf")
@@ -63,14 +62,33 @@ def test_run_event_mapping_fields():
     assert d["metrics"]["courseware:reward"] == 0.6
     assert d["metrics"]["courseware:soft"] == 0.0
     assert d["metrics"]["courseware:pref"] == 0.0
-    assert d["metrics"]["courseware:conditional_reward"] == 0.65
     assert d["metrics"]["avg_time_ms"] == 1200
     assert d["scenario_id"] == "courseware"
     assert d["package_id"] == "courseware"
     assert d["run_config_snapshot"]["snapshot_hash"].startswith("sha256:")
-    assert len(d["run_config_snapshot"]["metric_definitions"]) == 6
+    assert len(d["run_config_snapshot"]["metric_definitions"]) == 5
     assert d["total_samples"] == 2
     assert d["langfuse_host"] == "https://lf"
+
+
+def test_run_event_snapshot_records_real_rule_set_version():
+    """S2-E：传入 rule_set 时，快照 package.version 取自规则集版本（不再硬编码 1.0.0）。"""
+
+    class _StubRuleSet:
+        version = "2.3.4"
+        scenario_id = "courseware"
+
+        def model_dump(self, **_kw):
+            return {"version": self.version}
+
+    report = MetricsReport(run_id="run_v", total_samples=1)
+    ev = build_run_event(report, rule_set=_StubRuleSet())  # type: ignore[arg-type]
+    snap = ev["data"]["run_config_snapshot"]
+    assert snap["package"]["version"] == "2.3.4"
+    assert snap["rule_set"]["version"] == "2.3.4"  # type: ignore[index]
+    # 未传 rule_set 时回退默认 1.0.0（回归）
+    ev2 = build_run_event(MetricsReport(run_id="run_d", total_samples=1))
+    assert ev2["data"]["run_config_snapshot"]["package"]["version"] == "1.0.0"
 
 
 def test_sample_event_mapping_fields():

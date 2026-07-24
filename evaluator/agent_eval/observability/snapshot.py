@@ -55,10 +55,15 @@ def build_run_config_snapshot(
             "content_hash": _sha256(rs_content),
         }
 
+    # S2-E：package.version 取自实际规则集版本（不再硬编码 1.0.0）；rule_set 缺失时回退 cfg/默认。
+    package_version = "1.0.0"
+    if rule_set is not None:
+        package_version = getattr(rule_set, "version", None) or package_version
+
     return {
         "scenario_id": scenario_id,
         "run_id": run_id,
-        "package": {"id": scenario_id, "version": "1.0.0"},
+        "package": {"id": scenario_id, "version": package_version},
         "rule_set": rule_set_entry,
         "aggregation_policy": cfg.aggregation_policy.model_dump(),
         "metric_definitions": [m.model_dump() for m in cfg.metric_definitions],

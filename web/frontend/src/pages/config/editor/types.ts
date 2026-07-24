@@ -20,7 +20,7 @@ export interface VersionInfo {
 
 /** 单个资产的编辑态 */
 export interface DocState {
-  kind: AssetKind
+  kind: string
   assetId: string
   /** null = 加载中 */
   content: Record<string, unknown> | null

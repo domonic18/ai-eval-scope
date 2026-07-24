@@ -23,6 +23,11 @@ const repo = () => new ScenarioRepository()
 const ASSET_KINDS = ["rule-sets", "prompts", "datasets"] as const
 type AssetKind = (typeof ASSET_KINDS)[number]
 
+/** S3-1：发布默认带 latest 标签（「发布即 latest」），避免忘选标签导致新版本被老版本盖过。 */
+function injectLatest(labels: string[]): string[] {
+  return labels.includes("latest") ? labels : [...labels, "latest"]
+}
+
 router.get("/", async (_req, res) => {
   res.json({ scenarios: await repo().listScenarios() })
 })
@@ -55,52 +60,66 @@ router.get("/:id/catalog", async (req, res) => {
   res.json(catalog)
 })
 
-/** 场景默认指标定义 + 聚合策略（列表页 fetch，前端无 hardcode）。 */
+/** 场景默认指标定义 + 聚合策略（最新已发布版本；列表页 fetch，前端无 hardcode）。 */
 router.get("/:id/defaults", async (req, res) => {
-  const scenario = await getPrisma().scenario.findUnique({
-    where: { id: req.params.id },
-    select: { defaultMetricDefinitions: true, defaultAggregationPolicy: true },
-  })
+  const scenario = await getPrisma().scenario.findUnique({ where: { id: req.params.id }, select: { id: true } })
   if (!scenario) {
     res.status(404).json({ error: "scenario not found", scenario_id: req.params.id })
     return
   }
+  const defaults = await repo().getDefaultsContent(req.params.id, req.query.version as string | undefined)
+  const content = (defaults?.content ?? {}) as { metric_definitions?: unknown[]; aggregation_policy?: unknown }
   res.json({
-    metric_definitions: scenario.defaultMetricDefinitions ?? [],
-    aggregation_policy: scenario.defaultAggregationPolicy ?? null,
+    metric_definitions: content.metric_definitions ?? [],
+    aggregation_policy: content.aggregation_policy ?? null,
   })
 })
 
-/** 更新场景默认指标定义 / 聚合策略（admin；直接覆盖 JSONB，非版本化）。 */
-router.patch("/:id/defaults", requireAuth, platformAdminGuard, async (req, res, next) => {
-  const { metric_definitions, aggregation_policy } = req.body ?? {}
-  if (metric_definitions === undefined && aggregation_policy === undefined) {
-    return next(
-      new PlatformError("至少提供 metric_definitions 或 aggregation_policy", {
-        status: 400,
-        code: "VALIDATION_ERROR",
-      }),
-    )
+/** 发布场景默认配置新版本（指标定义 + 聚合策略一起版本化；admin）。 */
+router.post("/:id/defaults", requireAuth, platformAdminGuard, async (req, res, next) => {
+  const { version, labels, metric_definitions, aggregation_policy } = req.body ?? {}
+  if (!version) {
+    return next(new PlatformError("version 必填", { status: 400, code: "VALIDATION_ERROR" }))
   }
   if (metric_definitions !== undefined && !Array.isArray(metric_definitions)) {
     return next(new PlatformError("metric_definitions 必须为数组", { status: 400, code: "VALIDATION_ERROR" }))
   }
-  if (
-    aggregation_policy !== undefined &&
-    (typeof aggregation_policy !== "object" || Array.isArray(aggregation_policy))
-  ) {
-    return next(new PlatformError("aggregation_policy 必须为对象", { status: 400, code: "VALIDATION_ERROR" }))
+  const content: Record<string, unknown> = {
+    metric_definitions: metric_definitions ?? [],
+    aggregation_policy: aggregation_policy ?? null,
   }
   try {
-    await repo().updateDefaults(req.params.id, {
-      metricDefinitions: metric_definitions,
-      aggregationPolicy: aggregation_policy,
+    const result = await repo().publishDefaultsAsset(req.params.id, {
+      version,
+      labels: injectLatest((labels as string[]) ?? []),
+      content,
+      createdBy: req.user!.userId,
     })
-    res.json({ ok: true })
+    res.status(201).json({ asset: result })
   } catch (e) {
     next(e)
   }
 })
+
+/** 场景默认配置版本历史（VersionTimeline）。 */
+router.get("/:id/defaults/versions", async (req, res) => {
+  res.json({ versions: await repo().listDefaultsVersions(req.params.id) })
+})
+
+/** 场景默认配置标签晋升（admin；latest/production/staging 互斥）。 */
+router.post(
+  "/:id/defaults/versions/:ver/labels",
+  requireAuth,
+  platformAdminGuard,
+  async (req, res, next) => {
+    try {
+      await repo().setDefaultsLabels(req.params.id, req.params.ver, (req.body.labels as string[]) ?? [])
+      res.json({ ok: true })
+    } catch (e) {
+      next(e)
+    }
+  },
+)
 
 /** 资产完整内容（评测规则浏览器用，只读）。 */
 router.get("/:id/:kind/:assetId/content", async (req, res, next) => {
@@ -125,7 +144,7 @@ async function publishAssetHandler(
   const common = {
     assetId: body.asset_id as string,
     version: body.version as string,
-    labels: (body.labels as string[]) ?? [],
+    labels: injectLatest((body.labels as string[]) ?? []),
     content: (body.content as Record<string, unknown>) ?? {},
     createdBy,
     packageId: body.package_id as string | undefined,
@@ -198,7 +217,7 @@ router.post(
       const result = await repo().publishPackage(req.params.id, {
         assetId: body.asset_id,
         version: body.version,
-        labels: body.labels ?? [],
+        labels: injectLatest((body.labels as string[]) ?? []),
         name: body.name,
         description: body.description,
         content: body.content ?? {},
@@ -210,5 +229,31 @@ router.post(
     }
   },
 )
+
+/**
+ * 拉取场景包内容（S2-A，公开读，executor/evaluator 运行时获取最新版本）。
+ * 解析：?version= > ?label=(如 production) > 最新。content 为 { manifest, files }。
+ * 鉴权：与 GET /api/v1/rule-sets、catalog 一致，公开（场景包为非敏感配置）。
+ */
+router.get("/:id/packages/:assetId", async (req, res) => {
+  const version = req.query.version as string | undefined
+  const label = req.query.label as string | undefined
+  const pkg = await repo().getPackageContent(req.params.id, req.params.assetId, version, label)
+  if (!pkg) {
+    res
+      .status(404)
+      .json({ error: "package not found", scenario_id: req.params.id, asset_id: req.params.assetId })
+    return
+  }
+  res.json({
+    package: {
+      scenario_id: req.params.id,
+      asset_id: req.params.assetId,
+      version: pkg.version,
+      labels: pkg.labels,
+      content: pkg.content,
+    },
+  })
+})
 
 export default router

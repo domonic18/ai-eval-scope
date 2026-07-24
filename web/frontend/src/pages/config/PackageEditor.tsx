@@ -27,6 +27,7 @@ import { EditorTabs } from "./editor/EditorTabs"
 import { VersionTimeline } from "./editor/VersionTimeline"
 import { useEditorStore, type Dict } from "./editor/useEditorStore"
 import { canEditConfig } from "../../store/auth"
+import type { MetricDef } from "../../types"
 import { parseSelection } from "./editor/types"
 
 export default function PackageEditor() {
@@ -160,11 +161,27 @@ export default function PackageEditor() {
                 从左侧选择资产开始编辑，或点「新建」创建
               </CardContent>
             </Card>
-          ) : isSpecial ? (
+          ) : isSpecial && doc?.content ? (
             <fieldset disabled={!canEdit} className="m-0 border-0 p-0">
-              {selected === "policy" && <AggregationPolicyEditor scenarioId={id} />}
-              {selected === "metrics" && <MetricDefsEditor scenarioId={id} />}
+              {selected === "policy" && (
+                <AggregationPolicyEditor
+                  scenarioId={id}
+                  data={(doc.content.aggregation_policy as Record<string, unknown>) ?? {}}
+                  onChange={(p) => updateDoc(selected, { ...doc.content, aggregation_policy: p } as Dict)}
+                />
+              )}
+              {selected === "metrics" && (
+                <MetricDefsEditor
+                  scenarioId={id}
+                  data={(doc.content.metric_definitions as unknown as MetricDef[]) ?? []}
+                  onChange={(m) => updateDoc(selected, { ...doc.content, metric_definitions: m } as Dict)}
+                />
+              )}
             </fieldset>
+          ) : isSpecial ? (
+            <Card>
+              <CardContent className="py-10 text-center text-sm text-muted-foreground">加载中…</CardContent>
+            </Card>
           ) : !doc || doc.content == null ? (
             <Card>
               <CardContent className="py-10 text-center text-sm text-muted-foreground">加载中…</CardContent>
@@ -200,7 +217,7 @@ export default function PackageEditor() {
         </div>
 
         {/* ── 右侧：版本时间线 + 配置完整度（规则集时） ── */}
-        {selected && parsed && doc && (
+        {selected && doc && (
           <div className="space-y-4 lg:sticky lg:top-[72px] lg:max-h-[calc(100vh-88px)] lg:overflow-y-auto">
             <VersionTimeline
               doc={doc}
@@ -213,7 +230,7 @@ export default function PackageEditor() {
               onDiff={(ver) => showDiff(selected, ver)}
               onVersionChange={(v) => setNextVersion(selected, v)}
             />
-            {parsed.kind === "rule-sets" && doc.content && (
+            {parsed?.kind === "rule-sets" && doc.content && (
               <CompletenessPanel data={doc.content as unknown as RuleSetData} metricCount={metricCount} hasPolicy={hasPolicy} />
             )}
           </div>

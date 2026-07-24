@@ -267,16 +267,6 @@ class TestMetricsCalculator:
         report = calc.compute([r])
         assert "format.response_format" in report.failure_breakdown
 
-    def test_cond_r(self) -> None:
-        calc = MetricsCalculator()
-        results = [
-            self._make_result("s1", fmt_passed=True, com_passed=True, reward=3.0),
-            self._make_result("s2", fmt_passed=True, com_passed=True, reward=2.0),
-            self._make_result("s3", fmt_passed=False, reward=-1.0),  # 不通过门控
-        ]
-        report = calc.compute(results)
-        # CondR = (3.0 + 2.0) / 2 = 2.5
-        assert report.cond_r == pytest.approx(2.5, abs=0.01)
 
 
 # ─── PipelineEngine 端到端测试 ───

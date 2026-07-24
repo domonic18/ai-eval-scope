@@ -10,10 +10,11 @@
  */
 
 import { createHash } from "crypto"
-import { readFileSync, readdirSync } from "fs"
-import { join, resolve } from "path"
+import { existsSync, readFileSync, readdirSync, statSync } from "fs"
+import { join, relative, resolve } from "path"
 import yaml from "js-yaml"
 import type { PrismaClient } from "@prisma/client"
+import { ScenarioRepository } from "../src/repositories/scenario.repository"
 
 const SCENARIO_ID = "courseware"
 const VERSION = "1.0.0"
@@ -31,6 +32,25 @@ function loadYaml(file: string): Record<string, unknown> {
   return (yaml.load(readFileSync(file, "utf-8")) ?? {}) as Record<string, unknown>
 }
 
+/** 递归收集包内 rules/prompts/datasets 的 yaml 文件为 { 相对路径: 文本 }（S2-1，供 executor 拉取）。 */
+function collectPackageFiles(packageDir: string): Record<string, string> {
+  const out: Record<string, string> = {}
+  const walk = (dir: string): void => {
+    for (const name of readdirSync(dir)) {
+      const p = join(dir, name)
+      if (statSync(p).isDirectory()) walk(p)
+      else if (name.endsWith(".yaml") || name.endsWith(".yml")) {
+        out[relative(packageDir, p)] = readFileSync(p, "utf-8")
+      }
+    }
+  }
+  for (const sub of ["rules", "prompts", "datasets"]) {
+    const d = join(packageDir, sub)
+    if (existsSync(d)) walk(d)
+  }
+  return out
+}
+
 export interface ImportResult {
   scenarioId: string
   ruleSets: number
@@ -43,40 +63,51 @@ export async function importCoursewarePackage(
   prisma: PrismaClient,
   packageDir: string = defaultPackageDir(),
 ): Promise<ImportResult> {
-  // #60：从包内 metrics/policy.yaml 读取指标定义 + 聚合策略（跨语言单一源），写入 DB
+  // #60：从包内 metrics/policy.yaml 读取指标定义 + 聚合策略（跨语言单一源）
   const policyPath = join(packageDir, "metrics", "policy.yaml")
   const policy = loadYaml(policyPath) as {
     metric_definitions: Record<string, unknown>[]
     aggregation_policy: Record<string, unknown>
   }
+  // 场景行（name/description）
   await prisma.scenario.upsert({
     where: { id: SCENARIO_ID },
-    update: {
-      defaultMetricDefinitions: policy.metric_definitions as never,
-      defaultAggregationPolicy: policy.aggregation_policy as never,
-    },
-    create: {
-      id: SCENARIO_ID,
-      name: "课件质量评估",
-      description: "课件生成场景默认包",
-      defaultMetricDefinitions: policy.metric_definitions as never,
-      defaultAggregationPolicy: policy.aggregation_policy as never,
-    },
+    update: { name: "课件质量评估", description: "课件生成场景默认包" },
+    create: { id: SCENARIO_ID, name: "课件质量评估", description: "课件生成场景默认包" },
   })
+  // defaults 版本化：发布 v1.0.0（assetId=default）；已存在则跳过（幂等，不覆盖不可变版本）
+  const existingDefaults = await prisma.defaultsAsset.findUnique({
+    where: { scenarioId_assetId_version: { scenarioId: SCENARIO_ID, assetId: "default", version: VERSION } },
+    select: { id: true },
+  })
+  if (!existingDefaults) {
+    await new ScenarioRepository(prisma).publishDefaultsAsset(SCENARIO_ID, {
+      version: VERSION,
+      labels: ["latest", "production"],
+      content: {
+        metric_definitions: policy.metric_definitions ?? [],
+        aggregation_policy: policy.aggregation_policy ?? null,
+      },
+      createdBy: "import-script",
+    })
+  }
 
   const labels = ["production", "latest"]
   const manifestPath = join(packageDir, "agent_eval.yaml")
   const manifest = loadYaml(manifestPath)["package"] as Record<string, unknown> | undefined
+  // S2-1：发布 {manifest, files}（executor 运行时拉取所需结构，ADR-01）
+  const files = collectPackageFiles(packageDir)
+  const packageContent = { manifest: manifest ?? {}, files }
   await prisma.scenarioPackage.upsert({
     where: { scenarioId_assetId_version: { scenarioId: SCENARIO_ID, assetId: SCENARIO_ID, version: VERSION } },
-    update: { labels, content: (manifest ?? {}) as never, contentHash: hash(manifest ?? {}) },
+    update: { labels, content: packageContent as never, contentHash: hash(packageContent) },
     create: {
       scenarioId: SCENARIO_ID,
       assetId: SCENARIO_ID,
       version: VERSION,
       labels,
-      content: (manifest ?? {}) as never,
-      contentHash: hash(manifest ?? {}),
+      content: packageContent as never,
+      contentHash: hash(packageContent),
       createdBy: "import-script",
     },
   })

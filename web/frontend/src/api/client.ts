@@ -248,15 +248,33 @@ export const api = {
   async scenarioAggregationPolicy(scenarioId: string): Promise<Record<string, unknown> | null> {
     return (await http.get(`/scenarios/${scenarioId}/defaults`)).data.aggregation_policy ?? null
   },
-  /** 更新场景默认指标定义 / 聚合策略（PATCH /scenarios/:id/defaults，admin；直接覆盖 JSONB）。 */
-  async updateScenarioDefaults(
+  /** 一次 GET 拿完整 defaults（metric_definitions + aggregation_policy），供编辑器 loadDoc 组装。 */
+  async scenarioDefaultsContent(
     scenarioId: string,
-    payload: { metricDefinitions?: unknown; aggregationPolicy?: unknown },
-  ): Promise<void> {
-    await http.patch(`/scenarios/${scenarioId}/defaults`, {
-      metric_definitions: payload.metricDefinitions,
-      aggregation_policy: payload.aggregationPolicy,
-    })
+    version?: string,
+  ): Promise<{ metric_definitions: MetricDef[]; aggregation_policy: Record<string, unknown> | null }> {
+    const params = version ? `?version=${encodeURIComponent(version)}` : ""
+    return (await http.get(`/scenarios/${scenarioId}/defaults${params}`)).data
+  },
+  /** 发布场景默认配置新版本（指标定义 + 聚合策略版本化；POST /scenarios/:id/defaults）。 */
+  async publishDefaults(
+    scenarioId: string,
+    input: {
+      version: string
+      labels?: string[]
+      metric_definitions?: unknown
+      aggregation_policy?: unknown
+    },
+  ): Promise<{ asset: { assetId: string; version: string } }> {
+    return (await http.post(`/scenarios/${scenarioId}/defaults`, input)).data
+  },
+  async listDefaultsVersions(
+    scenarioId: string,
+  ): Promise<Array<{ version: string; labels: string[]; contentHash: string; createdAt: string }>> {
+    return (await http.get(`/scenarios/${scenarioId}/defaults/versions`)).data.versions
+  },
+  async promoteDefaultsLabels(scenarioId: string, version: string, labels: string[]): Promise<void> {
+    await http.post(`/scenarios/${scenarioId}/defaults/versions/${version}/labels`, { labels })
   },
   /** 资产完整内容（评测规则浏览器/编辑器 diff 用）。 */
   async assetContent(

@@ -7,11 +7,21 @@
  */
 
 import { createHash } from "crypto"
-import type { PrismaClient } from "@prisma/client"
+import { Prisma, type PrismaClient } from "@prisma/client"
 import { getPrisma } from "../infra/prisma"
+import { PlatformError } from "../middleware/errorHandler"
+import { MUTUALLY_EXCLUSIVE_LABELS, pickLatestPerAsset } from "../utils/versioning"
 
 function hashContent(content: unknown): string {
   return "sha256:" + createHash("sha256").update(JSON.stringify(content)).digest("hex")
+}
+
+/** 同版本号重发：版本不可变（S1-2），拒绝并要求升版本号。 */
+function versionConflict(assetId: string, version: string): PlatformError {
+  return new PlatformError(`资产版本已存在（不可变）：${assetId}@${version}，请升版本号`, {
+    status: 409,
+    code: "CONFLICT",
+  })
 }
 
 /** 确保场景行存在（资产发布前 upsert）。 */
@@ -45,15 +55,91 @@ export class ScenarioRepository {
     return this.prisma.scenario.findMany({ orderBy: { id: "asc" } })
   }
 
-  /** 更新场景默认指标定义 / 聚合策略（JSONB，仅更新提供的字段；非版本化）。 */
-  async updateDefaults(
+  /** 发布场景默认配置（指标定义 + 聚合策略）版本（版本不可变；assetId 固定 "default"）。 */
+  async publishDefaultsAsset(
     scenarioId: string,
-    patch: { metricDefinitions?: unknown; aggregationPolicy?: unknown },
-  ) {
-    const data: Record<string, unknown> = {}
-    if (patch.metricDefinitions !== undefined) data.defaultMetricDefinitions = patch.metricDefinitions
-    if (patch.aggregationPolicy !== undefined) data.defaultAggregationPolicy = patch.aggregationPolicy
-    return this.prisma.scenario.update({ where: { id: scenarioId }, data })
+    input: {
+      version: string
+      labels?: string[]
+      content: Record<string, unknown> // { metric_definitions?, aggregation_policy? }
+      createdBy: string
+    },
+  ): Promise<{ assetId: string; version: string }> {
+    const assetId = "default"
+    const contentHash = hashContent(input.content)
+    await prismaEnsureScenario(this.prisma, scenarioId)
+    const existing = await this.prisma.defaultsAsset.findUnique({
+      where: { scenarioId_assetId_version: { scenarioId, assetId, version: input.version } },
+      select: { id: true },
+    })
+    // 版本不可变（与 publishRuleSetAsset 一致）：同 version 重发一律 409，要求升版本号。
+    // importAssetsToDb 重导由 existingDefaults 预检查跳过，不依赖此处幂等。
+    if (existing) throw versionConflict(assetId, input.version)
+    await this.prisma.defaultsAsset.create({
+      data: {
+        scenarioId,
+        assetId,
+        version: input.version,
+        labels: input.labels ?? [],
+        content: input.content as never,
+        contentHash,
+        createdBy: input.createdBy,
+      },
+    })
+    return { assetId, version: input.version }
+  }
+
+  /** 列出场景默认配置的全部历史版本（VersionTimeline 用）。 */
+  async listDefaultsVersions(
+    scenarioId: string,
+  ): Promise<Array<{ version: string; labels: string[]; contentHash: string; createdAt: Date }>> {
+    return this.prisma.defaultsAsset.findMany({
+      where: { scenarioId, assetId: "default" },
+      select: { version: true, labels: true, contentHash: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+    })
+  }
+
+  /** 读取场景默认配置最新（或指定）版本的 content（GET /defaults 用）。 */
+  async getDefaultsContent(
+    scenarioId: string,
+    version?: string,
+  ): Promise<{ version: string; labels: string[]; content: Record<string, unknown> } | null> {
+    const rows = await this.prisma.defaultsAsset.findMany({
+      where: { scenarioId, assetId: "default" },
+    })
+    if (!rows.length) return null
+    const chosen = version ? rows.find((r) => r.version === version) : pickLatestPerAsset(rows)[0]
+    if (!chosen) return null
+    return {
+      version: chosen.version,
+      labels: chosen.labels,
+      content: chosen.content as Record<string, unknown>,
+    }
+  }
+
+  /** 标签晋升：覆盖默认配置某版本的 labels（latest/production/staging 互斥）。 */
+  async setDefaultsLabels(scenarioId: string, version: string, labels: string[]): Promise<void> {
+    const exclusive = labels.filter((l) => (MUTUALLY_EXCLUSIVE_LABELS as readonly string[]).includes(l))
+    await this.prisma.$transaction(async (tx) => {
+      if (exclusive.length) {
+        const others = await tx.defaultsAsset.findMany({
+          where: { scenarioId, assetId: "default", NOT: { version } },
+          select: { id: true, labels: true },
+        })
+        for (const o of others) {
+          if (!o.labels.some((l) => exclusive.includes(l))) continue
+          await tx.defaultsAsset.update({
+            where: { id: o.id },
+            data: { labels: o.labels.filter((l) => !exclusive.includes(l)) },
+          })
+        }
+      }
+      await tx.defaultsAsset.updateMany({
+        where: { scenarioId, assetId: "default", version },
+        data: { labels },
+      })
+    })
   }
 
   /** 发布/更新一个场景包版本（幂等 upsert；场景不存在则创建）。 */
@@ -80,14 +166,16 @@ export class ScenarioRepository {
         },
       })
       const contentHash = hashContent(input.content)
-      const created = await tx.scenarioPackage.upsert({
-        where: { scenarioId_assetId_version: { scenarioId, assetId: input.assetId, version: input.version } },
-        update: {
-          labels: input.labels ?? [],
-          content: input.content as never,
-          contentHash,
+      // S1-2 版本不可变：同 (scenario, asset, version) 重发拒绝（409），不再 upsert 覆盖。
+      const existing = await tx.scenarioPackage.findUnique({
+        where: {
+          scenarioId_assetId_version: { scenarioId, assetId: input.assetId, version: input.version },
         },
-        create: {
+        select: { id: true },
+      })
+      if (existing) throw versionConflict(input.assetId, input.version)
+      const created = await tx.scenarioPackage.create({
+        data: {
           scenarioId,
           assetId: input.assetId,
           version: input.version,
@@ -102,7 +190,37 @@ export class ScenarioRepository {
     })
   }
 
-  /** 发布/更新一个规则集资产版本（幂等 upsert）。 */
+  /**
+   * 读取场景包内容（S2-A，executor/evaluator 运行时拉取用；公开读）。
+   * 解析优先级：显式 version > label（如 production）> 最新（rank+semver）。
+   * content 由发布方按 `{ manifest, files: { 相对路径: 内容 } }` 结构存入，原样下发，
+   * evaluator 侧 PackageStore.install 可直接消费（ADR-01）。
+   */
+  async getPackageContent(
+    scenarioId: string,
+    assetId: string,
+    version?: string,
+    label?: string,
+  ): Promise<{ version: string; labels: string[]; content: Record<string, unknown> } | null> {
+    const rows = await this.prisma.scenarioPackage.findMany({ where: { scenarioId, assetId } })
+    if (!rows.length) return null
+    let chosen: (typeof rows)[number] | undefined
+    if (version) {
+      chosen = rows.find((r) => r.version === version)
+    } else if (label) {
+      chosen = pickLatestPerAsset(rows.filter((r) => r.labels.includes(label)))[0]
+    } else {
+      chosen = pickLatestPerAsset(rows)[0]
+    }
+    if (!chosen) return null
+    return {
+      version: chosen.version,
+      labels: chosen.labels,
+      content: chosen.content as Record<string, unknown>,
+    }
+  }
+
+  /** 发布一个规则集资产版本（版本不可变；同版本号重发返回 409）。 */
   async publishRuleSetAsset(
     scenarioId: string,
     input: {
@@ -116,10 +234,13 @@ export class ScenarioRepository {
   ): Promise<{ assetId: string; version: string }> {
     const contentHash = hashContent(input.content)
     await prismaEnsureScenario(this.prisma, scenarioId)
-    await this.prisma.ruleSetAsset.upsert({
+    const existing = await this.prisma.ruleSetAsset.findUnique({
       where: { scenarioId_assetId_version: { scenarioId, assetId: input.assetId, version: input.version } },
-      update: { labels: input.labels ?? [], content: input.content as never, contentHash },
-      create: {
+      select: { id: true },
+    })
+    if (existing) throw versionConflict(input.assetId, input.version)
+    await this.prisma.ruleSetAsset.create({
+      data: {
         scenarioId,
         packageId: input.packageId ?? null,
         assetId: input.assetId,
@@ -133,7 +254,7 @@ export class ScenarioRepository {
     return { assetId: input.assetId, version: input.version }
   }
 
-  /** 发布/更新一个提示词资产版本（幂等 upsert）。 */
+  /** 发布一个提示词资产版本（版本不可变；同版本号重发返回 409）。 */
   async publishPromptAsset(
     scenarioId: string,
     input: {
@@ -149,12 +270,20 @@ export class ScenarioRepository {
     const namespace = input.namespace ?? scenarioId
     const contentHash = hashContent(input.content)
     await prismaEnsureScenario(this.prisma, scenarioId)
-    await this.prisma.promptTemplateAsset.upsert({
+    const existing = await this.prisma.promptTemplateAsset.findUnique({
       where: {
-        scenarioId_namespace_assetId_version: { scenarioId, namespace, assetId: input.assetId, version: input.version },
+        scenarioId_namespace_assetId_version: {
+          scenarioId,
+          namespace,
+          assetId: input.assetId,
+          version: input.version,
+        },
       },
-      update: { labels: input.labels ?? [], content: input.content as never, contentHash },
-      create: {
+      select: { id: true },
+    })
+    if (existing) throw versionConflict(input.assetId, input.version)
+    await this.prisma.promptTemplateAsset.create({
+      data: {
         scenarioId,
         packageId: input.packageId ?? null,
         assetId: input.assetId,
@@ -169,7 +298,7 @@ export class ScenarioRepository {
     return { assetId: input.assetId, version: input.version }
   }
 
-  /** 发布/更新一个数据集资产版本（幂等 upsert）。 */
+  /** 发布一个数据集资产版本（版本不可变；同版本号重发返回 409）。 */
   async publishDatasetAsset(
     scenarioId: string,
     input: {
@@ -186,17 +315,13 @@ export class ScenarioRepository {
   ): Promise<{ assetId: string; version: string }> {
     const contentHash = hashContent(input.content)
     await prismaEnsureScenario(this.prisma, scenarioId)
-    await this.prisma.datasetAsset.upsert({
+    const existing = await this.prisma.datasetAsset.findUnique({
       where: { scenarioId_assetId_version: { scenarioId, assetId: input.assetId, version: input.version } },
-      update: {
-        labels: input.labels ?? [],
-        role: input.role,
-        backendType: input.backendType,
-        backendConfig: input.backendConfig as never,
-        content: input.content as never,
-        contentHash,
-      },
-      create: {
+      select: { id: true },
+    })
+    if (existing) throw versionConflict(input.assetId, input.version)
+    await this.prisma.datasetAsset.create({
+      data: {
         scenarioId,
         packageId: input.packageId ?? null,
         assetId: input.assetId,
@@ -247,11 +372,15 @@ export class ScenarioRepository {
       const exact = rows.find((r) => r.version === version)
       return (exact?.content as Record<string, unknown>) ?? null
     }
-    const latest = this._latestPerAsset(rows)[0]
+    const latest = pickLatestPerAsset(rows)[0]
     return latest.content as Record<string, unknown>
   }
 
-  /** 标签晋升：覆盖某资产版本的 labels（P4-5 标签晋升）。 */
+  /**
+   * 标签晋升：覆盖某资产版本的 labels（S1-4 互斥）。
+   * production / staging / latest 为互斥标签——赋予某版本时，从同资产其它版本摘除同名标签，
+   * 保证每个互斥标签在资产内全局唯一。其余自定义标签不受影响。
+   */
   async setAssetLabels(
     scenarioId: string,
     kind: "rule-sets" | "prompts" | "datasets",
@@ -259,14 +388,43 @@ export class ScenarioRepository {
     version: string,
     labels: string[],
   ): Promise<void> {
-    // updateMany 不支持复合唯一键快捷式，按字段 AND 过滤
-    const filter = { scenarioId, assetId, version }
+    const exclusive = labels.filter((l) => (MUTUALLY_EXCLUSIVE_LABELS as readonly string[]).includes(l))
+    await this.prisma.$transaction(async (tx) => {
+      if (exclusive.length) {
+        await this._stripLabelsFromOthers(tx, kind, scenarioId, assetId, version, exclusive)
+      }
+      const filter = { scenarioId, assetId, version }
+      if (kind === "rule-sets") await tx.ruleSetAsset.updateMany({ where: filter, data: { labels } })
+      else if (kind === "datasets") await tx.datasetAsset.updateMany({ where: filter, data: { labels } })
+      else await tx.promptTemplateAsset.updateMany({ where: filter, data: { labels } })
+    })
+  }
+
+  /** 从同资产、非目标版本上摘除指定互斥标签（事务内调用）。 */
+  private async _stripLabelsFromOthers(
+    tx: Prisma.TransactionClient,
+    kind: "rule-sets" | "prompts" | "datasets",
+    scenarioId: string,
+    assetId: string,
+    version: string,
+    labels: string[],
+  ): Promise<void> {
+    const whereOther = { scenarioId, assetId, NOT: { version } }
+    const select = { id: true, labels: true }
+    let others: Array<{ id: string; labels: string[] }>
     if (kind === "rule-sets") {
-      await this.prisma.ruleSetAsset.updateMany({ where: filter, data: { labels } })
+      others = await tx.ruleSetAsset.findMany({ where: whereOther, select })
     } else if (kind === "datasets") {
-      await this.prisma.datasetAsset.updateMany({ where: filter, data: { labels } })
+      others = await tx.datasetAsset.findMany({ where: whereOther, select })
     } else {
-      await this.prisma.promptTemplateAsset.updateMany({ where: filter, data: { labels } })
+      others = await tx.promptTemplateAsset.findMany({ where: whereOther, select })
+    }
+    for (const o of others) {
+      if (!o.labels.some((l) => labels.includes(l))) continue
+      const cleaned = o.labels.filter((l) => !labels.includes(l))
+      if (kind === "rule-sets") await tx.ruleSetAsset.update({ where: { id: o.id }, data: { labels: cleaned } })
+      else if (kind === "datasets") await tx.datasetAsset.update({ where: { id: o.id }, data: { labels: cleaned } })
+      else await tx.promptTemplateAsset.update({ where: { id: o.id }, data: { labels: cleaned } })
     }
   }
 
@@ -282,49 +440,14 @@ export class ScenarioRepository {
 
     return {
       scenario: { id: scenario.id, name: scenario.name, description: scenario.description },
-      rule_sets: this._latestPerAsset(ruleSets).map((r) => this._toEntry(r)),
-      prompts: this._latestPerAsset(prompts).map((p) => this._toEntry(p)),
-      datasets: this._latestPerAsset(datasets).map((d) => ({
+      rule_sets: pickLatestPerAsset(ruleSets).map((r) => this._toEntry(r)),
+      prompts: pickLatestPerAsset(prompts).map((p) => this._toEntry(p)),
+      datasets: pickLatestPerAsset(datasets).map((d) => ({
         ...this._toEntry(d),
         role: d.role,
         backend_type: d.backendType,
       })),
     }
-  }
-
-  /** 每个 assetId 取一条：production 标签优先，否则最高版本。 */
-  private _latestPerAsset<T extends { assetId: string; version: string; labels: string[] }>(
-    rows: T[],
-  ): T[] {
-    const byAsset = new Map<string, T[]>()
-    for (const r of rows) {
-      const arr = byAsset.get(r.assetId) ?? []
-      arr.push(r)
-      byAsset.set(r.assetId, arr)
-    }
-    const out: T[] = []
-    for (const arr of byAsset.values()) {
-      arr.sort((a, b) => this._rank(b) - this._rank(a) || this._cmpVersion(b.version, a.version))
-      out.push(arr[0])
-    }
-    return out
-  }
-
-  private _rank(r: { labels: string[] }): number {
-    if (r.labels.includes("production")) return 3
-    if (r.labels.includes("staging")) return 2
-    if (r.labels.includes("latest")) return 1
-    return 0
-  }
-
-  private _cmpVersion(a: string, b: string): number {
-    const pa = a.split(".").map((n) => parseInt(n, 10) || 0)
-    const pb = b.split(".").map((n) => parseInt(n, 10) || 0)
-    for (let i = 0; i < 3; i++) {
-      const d = (pa[i] ?? 0) - (pb[i] ?? 0)
-      if (d !== 0) return d
-    }
-    return 0
   }
 
   private _toEntry(r: {

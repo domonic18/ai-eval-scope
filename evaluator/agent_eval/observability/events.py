@@ -59,13 +59,12 @@ def build_run_event(
             "status": status,
             "finished_at": finished_at,
             "metrics": {
-                # 场景化键（与 metric_definitions.id 对齐，前端动态渲染用）
-                "courseware:document_rate": report.dr,
-                "courseware:constraint_pass_rate": report.cpr,
-                "courseware:reward": report.avg_reward,
-                "courseware:soft": report.avg_soft,
-                "courseware:pref": report.avg_pref,
-                "courseware:conditional_reward": report.cond_r,
+                # 场景化键（scenario_id 前缀动态，与 metric_definitions.id 对齐；S2-E 多场景化）
+                f"{snapshot['scenario_id']}:document_rate": report.dr,
+                f"{snapshot['scenario_id']}:constraint_pass_rate": report.cpr,
+                f"{snapshot['scenario_id']}:reward": report.avg_reward,
+                f"{snapshot['scenario_id']}:soft": report.avg_soft,
+                f"{snapshot['scenario_id']}:pref": report.avg_pref,
                 "avg_time_ms": report.avg_time_ms,
             },
             "total_samples": report.total_samples,

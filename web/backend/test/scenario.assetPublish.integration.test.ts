@@ -113,4 +113,91 @@ describe("Phase 4 asset publish", () => {
     })
     expect(row?.labels).toEqual(["production"])
   })
+
+  it("rejects re-publishing an existing asset version (409 immutable)", async () => {
+    const app = createApp()
+    const tok = await adminToken(app, "asset-imm")
+    const url = `/api/v1/scenarios/${SCENARIO_ID}/rule-sets`
+    const first = await request(app).post(url).set("Authorization", `Bearer ${tok}`).send({
+      asset_id: "imm",
+      version: "1.0.0",
+      labels: ["latest"],
+      content: { v: 1 },
+    })
+    expect(first.status).toBe(201)
+    const again = await request(app).post(url).set("Authorization", `Bearer ${tok}`).send({
+      asset_id: "imm",
+      version: "1.0.0",
+      labels: [],
+      content: { v: 2 },
+    })
+    expect(again.status).toBe(409)
+    const row = await prisma.ruleSetAsset.findUnique({
+      where: {
+        scenarioId_assetId_version: { scenarioId: SCENARIO_ID, assetId: "imm", version: "1.0.0" },
+      },
+    })
+    expect(row?.labels).toEqual(["latest"]) // 原行未被覆盖
+  })
+
+  it("picks latest by numeric semver consistently (catalog & rule-sets: 1.10.0 > 1.9.0)", async () => {
+    const app = createApp()
+    const tok = await adminToken(app, "asset-semver")
+    const url = `/api/v1/scenarios/${SCENARIO_ID}/rule-sets`
+    await request(app)
+      .post(url)
+      .set("Authorization", `Bearer ${tok}`)
+      .send({ asset_id: "semver", version: "1.9.0", content: { name: "semver" } })
+    await request(app)
+      .post(url)
+      .set("Authorization", `Bearer ${tok}`)
+      .send({ asset_id: "semver", version: "1.10.0", content: { name: "semver" } })
+
+    // catalog 端（数值 semver）
+    const cat = await request(app).get(`/api/v1/scenarios/${SCENARIO_ID}/catalog`)
+    const catEntry = cat.body.rule_sets.find((r: { asset_id: string }) => r.asset_id === "semver")
+    expect(catEntry.version).toBe("1.10.0")
+
+    // rule-sets 发现端（曾用字符串比较，会错误返回 1.9.0）
+    const rs = await request(app).get("/api/v1/rule-sets")
+    const rsEntry = rs.body.rule_sets.find((r: { id: string }) => r.id === "semver")
+    expect(rsEntry.version).toBe("1.10.0")
+  })
+
+  it("promotes labels mutually exclusively (production globally unique per asset)", async () => {
+    const app = createApp()
+    const tok = await adminToken(app, "asset-mutex")
+    const url = `/api/v1/scenarios/${SCENARIO_ID}/rule-sets`
+    await request(app)
+      .post(url)
+      .set("Authorization", `Bearer ${tok}`)
+      .send({ asset_id: "mutex", version: "1.0.0", content: { v: 1 } })
+    await request(app)
+      .post(url)
+      .set("Authorization", `Bearer ${tok}`)
+      .send({ asset_id: "mutex", version: "1.1.0", content: { v: 2 } })
+
+    const promote = (ver: string, labels: string[]) =>
+      request(app)
+        .post(`/api/v1/scenarios/${SCENARIO_ID}/rule-sets/mutex/versions/${ver}/labels`)
+        .set("Authorization", `Bearer ${tok}`)
+        .send({ labels })
+
+    expect((await promote("1.0.0", ["production"])).status).toBe(200)
+    // 再把 1.1.0 标 production → 应从 1.0.0 摘除 production（互斥）
+    expect((await promote("1.1.0", ["production"])).status).toBe(200)
+
+    const v1 = await prisma.ruleSetAsset.findUnique({
+      where: {
+        scenarioId_assetId_version: { scenarioId: SCENARIO_ID, assetId: "mutex", version: "1.0.0" },
+      },
+    })
+    const v2 = await prisma.ruleSetAsset.findUnique({
+      where: {
+        scenarioId_assetId_version: { scenarioId: SCENARIO_ID, assetId: "mutex", version: "1.1.0" },
+      },
+    })
+    expect(v1?.labels).toEqual([])
+    expect(v2?.labels).toEqual(["production"])
+  })
 })

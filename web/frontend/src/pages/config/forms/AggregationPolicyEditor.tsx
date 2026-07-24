@@ -1,16 +1,14 @@
 /**
- * 场景默认聚合策略编辑器（可视化表单 + YAML 切换）。
- *
- * 可视化展示聚合策略与级联阶段的关联：
- *   级联阶段 → [加权聚合] → Reward → [指标计算] → 运行指标
- * 每个级联阶段一张卡片，权重以比例条 + 滑块展示，门控开关带说明。
+ * 场景默认聚合策略编辑器（受控：data + onChange；可视化表单 + YAML）。
+ * 数据来自 useEditorStore 的 defaults doc；发布走右侧 VersionTimeline（版本化），无独立 save。
+ * metric_defs / cascade 仍拉取（AI 生成上下文 + 可视化辅助），不参与受控（只读）。
  */
 import { useEffect, useState } from "react"
 import * as yaml from "js-yaml"
 import { Button } from "../../../components/shadcn/button"
 import { Input } from "../../../components/shadcn/input"
 import { Textarea } from "../../../components/shadcn/textarea"
-import { Save, Sparkles, Trash2, AlertTriangle, Plus, ArrowRight } from "lucide-react"
+import { Sparkles, Trash2, AlertTriangle, Plus, ArrowRight } from "lucide-react"
 import { toast } from "sonner"
 import { extractErr } from "../../../hooks/useAiGeneration"
 import { api } from "../../../api/client"
@@ -30,24 +28,26 @@ interface AggPolicy {
   [k: string]: unknown
 }
 
-const errMsg = (e: unknown) => extractErr(e, "保存失败")
-
-const normalize = (raw: Record<string, unknown> | null): AggPolicy => {
+const normalize = (raw: Record<string, unknown> | null | undefined): AggPolicy => {
   if (!raw || typeof raw !== "object") return { stage_weights: [] }
   const p = raw as AggPolicy
   if (!Array.isArray(p.stage_weights)) p.stage_weights = []
   return p
 }
+const STAGE_COLORS = ["#3d6ff", "#2fe6c8", "#d29922", "#f85149", "#a78bfa", "#3fb950"]
 
-/** 阶段配色（循环） */
-const STAGE_COLORS = ["#3d6dff", "#2fe6c8", "#d29922", "#f85149", "#a78bfa", "#3fb950"]
-
-export function AggregationPolicyEditor({ scenarioId }: { scenarioId: string }) {
-  const [policy, setPolicy] = useState<AggPolicy>({ stage_weights: [] })
-  const [yamlText, setYamlText] = useState("")
+export function AggregationPolicyEditor({
+  scenarioId,
+  data,
+  onChange,
+}: {
+  scenarioId: string
+  data: Record<string, unknown> | null | undefined
+  onChange: (p: Record<string, unknown>) => void
+}) {
+  const policy = normalize(data)
   const [mode, setMode] = useState<"form" | "yaml">("form")
-  const [loading, setLoading] = useState(true)
-  const [busy, setBusy] = useState(false)
+  const [yamlText, setYamlText] = useState("")
   const [aiOpen, setAiOpen] = useState(false)
   const [aiLoading, setAiLoading] = useState(false)
   const [aiPolicy, setAiPolicy] = useState<AggPolicy | null>(null)
@@ -55,18 +55,6 @@ export function AggregationPolicyEditor({ scenarioId }: { scenarioId: string }) 
   const [cascadeStages, setCascadeStages] = useState<Array<{ stage: string; name?: string; stop_on_fail?: boolean }>>([])
 
   useEffect(() => {
-    api
-      .scenarioAggregationPolicy(scenarioId)
-      .then((p) => {
-        const np = normalize(p)
-        setPolicy(np)
-        setYamlText(yaml.dump(np, { sortKeys: false }))
-      })
-      .catch(() => {
-        setPolicy({ stage_weights: [] })
-        setYamlText("stage_weights: []")
-      })
-      .finally(() => setLoading(false))
     api.scenarioDefaults(scenarioId).then((m) => setMetricDefs(m as Array<{ id?: string; name?: string; threshold?: number | null; unit?: string | null }>)).catch(() => {})
     api
       .scenarioCatalog(scenarioId)
@@ -84,12 +72,7 @@ export function AggregationPolicyEditor({ scenarioId }: { scenarioId: string }) 
       .catch(() => {})
   }, [scenarioId])
 
-  const syncYaml = (p: AggPolicy) => setYamlText(yaml.dump(p, { sortKeys: false }))
-  const setWeights = (w: StageWeight[]) => {
-    const np = { ...policy, stage_weights: w }
-    setPolicy(np)
-    syncYaml(np)
-  }
+  const setWeights = (w: StageWeight[]) => onChange({ ...policy, stage_weights: w })
   const updateW = (i: number, patch: Partial<StageWeight>) => {
     const w = [...(policy.stage_weights ?? [])]
     w[i] = { ...w[i], ...patch }
@@ -100,9 +83,7 @@ export function AggregationPolicyEditor({ scenarioId }: { scenarioId: string }) 
     setYamlText(text)
     try {
       const parsed = yaml.load(text)
-      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-        setPolicy(normalize(parsed as Record<string, unknown>))
-      }
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) onChange(normalize(parsed as Record<string, unknown>))
     } catch {
       /* YAML 语法错误时保留编辑 */
     }
@@ -111,38 +92,14 @@ export function AggregationPolicyEditor({ scenarioId }: { scenarioId: string }) 
     if (m === "yaml") setYamlText(yaml.dump(policy, { sortKeys: false }))
     setMode(m)
   }
-  const save = async () => {
-    setBusy(true)
-    try {
-      await api.updateScenarioDefaults(scenarioId, { aggregationPolicy: policy })
-      toast.success("聚合策略已保存")
-    } catch (e) {
-      toast.error(errMsg(e))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  if (loading) {
-    return (
-      <SectionCard>
-        <SectionCardContent className="py-10 text-center text-sm text-muted-foreground">加载中…</SectionCardContent>
-      </SectionCard>
-    )
-  }
 
   async function runAiGenerate() {
     setAiOpen(true)
     setAiLoading(true)
     setAiPolicy(null)
     try {
-      const r = await api.aiGeneratePolicy({
-        scenario: scenarioId,
-        cascade: cascadeStages,
-        metricDefinitions: metricDefs,
-      })
-      const np = normalize(r.aggregationPolicy as Record<string, unknown> | null)
-      setAiPolicy(np)
+      const r = await api.aiGeneratePolicy({ scenario: scenarioId, cascade: cascadeStages, metricDefinitions: metricDefs })
+      setAiPolicy(normalize(r.aggregationPolicy as Record<string, unknown> | null))
     } catch (e) {
       toast.error(extractErr(e, "AI 生成失败"))
     } finally {
@@ -151,22 +108,16 @@ export function AggregationPolicyEditor({ scenarioId }: { scenarioId: string }) 
   }
   function acceptAiPolicy() {
     if (!aiPolicy) return
-    setPolicy(aiPolicy)
-    syncYaml(aiPolicy)
+    onChange(aiPolicy)
     setAiOpen(false)
     toast.success("已采纳 AI 生成的聚合策略")
   }
 
-  // ── 可视化辅助：阶段权重映射 ──
   const weights = policy.stage_weights ?? []
   const totalWeight = weights.reduce((s, w) => s + (w.weight ?? 0), 0) || 1
-  // 级联阶段 → 权重索引
   const stageToWeightIdx = new Map<string, number>()
   weights.forEach((w, i) => stageToWeightIdx.set(w.stage_id, i))
-  // 未匹配的 stage_weights（不在级联阶段中）
-  const orphanWeights = weights
-    .map((w, i) => ({ w, i }))
-    .filter((x) => !cascadeStages.some((cs) => cs.stage === x.w.stage_id))
+  const orphanWeights = weights.map((w, i) => ({ w, i })).filter((x) => !cascadeStages.some((cs) => cs.stage === x.w.stage_id))
   function addStageWeight(stageId: string, isGate?: boolean) {
     setWeights([...weights, { stage_id: stageId, weight: 0.5, is_gate: isGate ?? false }])
   }
@@ -186,7 +137,6 @@ export function AggregationPolicyEditor({ scenarioId }: { scenarioId: string }) 
       <SectionCardContent className="space-y-4">
         {mode === "form" ? (
           <>
-            {/* ── 概念说明：数据流图 ── */}
             <div className="rounded-lg border border-border bg-secondary/50 p-4">
               <p className="mb-3 text-xs font-semibold text-foreground">聚合策略如何工作</p>
               <div className="flex flex-wrap items-center gap-2 text-[11px]">
@@ -201,12 +151,9 @@ export function AggregationPolicyEditor({ scenarioId }: { scenarioId: string }) 
                 <span className="rounded-md border border-border bg-card px-2 py-1">运行级指标</span>
               </div>
               <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-                聚合策略为每个<b>级联阶段</b>分配权重和门控语义，加权合成样本级 Reward；
-                指标定义再从 Reward 等字段计算运行级统计量（DR/CPR/覆盖率…）。两者是上下游关系。
+                聚合策略为每个<b>级联阶段</b>分配权重和门控语义，加权合成样本级 Reward；指标定义再从 Reward 等字段计算运行级统计量。
               </p>
             </div>
-
-            {/* ── 权重分布条 ── */}
             {weights.length > 0 && (
               <div>
                 <p className="mb-1.5 text-[11px] font-semibold text-muted-foreground">权重分布（各阶段在 Reward 中的占比）</p>
@@ -229,13 +176,9 @@ export function AggregationPolicyEditor({ scenarioId }: { scenarioId: string }) 
                 </div>
               </div>
             )}
-
-            {/* ── 级联阶段卡片（已关联的） ── */}
             {cascadeStages.length > 0 ? (
               <div className="space-y-2">
-                <p className="text-[11px] font-semibold text-muted-foreground">
-                  级联阶段（来自规则集）→ 聚合权重配置
-                </p>
+                <p className="text-[11px] font-semibold text-muted-foreground">级联阶段（来自规则集）→ 聚合权重配置</p>
                 {cascadeStages.map((cs, si) => {
                   const wi = stageToWeightIdx.get(cs.stage)
                   const w = wi != null ? weights[wi] : null
@@ -247,9 +190,7 @@ export function AggregationPolicyEditor({ scenarioId }: { scenarioId: string }) 
                       className={`rounded-md border p-3 transition-colors ${w ? "border-border bg-secondary" : "border-dashed border-muted-foreground/30 bg-transparent"}`}
                     >
                       <div className="flex items-center gap-3">
-                        {/* 左色条 */}
                         <div className="h-10 w-1 shrink-0 rounded-full" style={{ background: color }} />
-                        {/* 阶段信息 */}
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium">{cs.name || cs.stage}</span>
@@ -270,7 +211,6 @@ export function AggregationPolicyEditor({ scenarioId }: { scenarioId: string }) 
                             <p className="mt-0.5 text-[10px] text-muted-foreground">尚未配置权重</p>
                           )}
                         </div>
-                        {/* 权重控制 */}
                         {w ? (
                           <>
                             <div className="flex items-center gap-2">
@@ -321,8 +261,6 @@ export function AggregationPolicyEditor({ scenarioId }: { scenarioId: string }) 
                 <p className="mt-1 text-[11px] text-muted-foreground">可手动添加 stage_weights，或点「AI 生成」自动推断</p>
               </div>
             )}
-
-            {/* ── 未匹配的权重（不在级联阶段中） ── */}
             {orphanWeights.length > 0 && (
               <div className="rounded-md border border-warning/40 bg-warning/10 p-3">
                 <p className="flex items-center gap-1.5 text-[11px] font-semibold text-warning">
@@ -340,28 +278,22 @@ export function AggregationPolicyEditor({ scenarioId }: { scenarioId: string }) 
                 </div>
               </div>
             )}
-
-            {/* ── 手动添加（无级联阶段时或补充） ── */}
             {cascadeStages.length === 0 && (
               <AddButton onClick={() => setWeights([...weights, { stage_id: "", weight: 0.5, is_gate: false }])}>
                 添加阶段权重
               </AddButton>
             )}
-
-            {/* ── 策略 ID ── */}
             <Field label="策略 id" optional hint="聚合策略标识，可空">
-              <Input className="font-mono text-xs" value={policy.id ?? ""} onChange={(e) => { const np = { ...policy, id: e.target.value }; setPolicy(np); syncYaml(np) }} />
+              <Input className="font-mono text-xs" value={policy.id ?? ""} onChange={(e) => onChange({ ...policy, id: e.target.value })} />
             </Field>
           </>
         ) : (
           <>
-            <p className="text-[11px] text-muted-foreground">YAML 模式可编辑完整聚合策略；保存以当前解析结构为准。</p>
+            <p className="text-[11px] text-muted-foreground">YAML 模式可编辑完整聚合策略；发布以当前解析结构为准。</p>
             <Textarea className="min-h-[300px] font-mono text-xs leading-relaxed" value={yamlText} onChange={(e) => onYamlChange(e.target.value)} />
           </>
         )}
-        <Button onClick={save} disabled={busy}>
-          <Save className="mr-1 size-4" />{busy ? "保存中…" : "保存"}
-        </Button>
+        <p className="text-[11px] text-muted-foreground">编辑后在右侧「版本时间线」发布新版本。</p>
       </SectionCardContent>
     </SectionCard>
       <AiResultDialog
