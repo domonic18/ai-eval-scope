@@ -55,15 +55,93 @@ export class ScenarioRepository {
     return this.prisma.scenario.findMany({ orderBy: { id: "asc" } })
   }
 
-  /** 更新场景默认指标定义 / 聚合策略（JSONB，仅更新提供的字段；非版本化）。 */
-  async updateDefaults(
+  /** 发布场景默认配置（指标定义 + 聚合策略）版本（版本不可变；assetId 固定 "default"）。 */
+  async publishDefaultsAsset(
     scenarioId: string,
-    patch: { metricDefinitions?: unknown; aggregationPolicy?: unknown },
-  ) {
-    const data: Record<string, unknown> = {}
-    if (patch.metricDefinitions !== undefined) data.defaultMetricDefinitions = patch.metricDefinitions
-    if (patch.aggregationPolicy !== undefined) data.defaultAggregationPolicy = patch.aggregationPolicy
-    return this.prisma.scenario.update({ where: { id: scenarioId }, data })
+    input: {
+      version: string
+      labels?: string[]
+      content: Record<string, unknown> // { metric_definitions?, aggregation_policy? }
+      createdBy: string
+    },
+  ): Promise<{ assetId: string; version: string }> {
+    const assetId = "default"
+    const contentHash = hashContent(input.content)
+    await prismaEnsureScenario(this.prisma, scenarioId)
+    const existing = await this.prisma.defaultsAsset.findUnique({
+      where: { scenarioId_assetId_version: { scenarioId, assetId, version: input.version } },
+      select: { id: true, contentHash: true },
+    })
+    // 幂等：同版本同内容重发（importAssetsToDb 重导）直接返回；同版本不同内容才冲突
+    if (existing) {
+      if (existing.contentHash === contentHash) return { assetId, version: input.version }
+      throw versionConflict(assetId, input.version)
+    }
+    await this.prisma.defaultsAsset.create({
+      data: {
+        scenarioId,
+        assetId,
+        version: input.version,
+        labels: input.labels ?? [],
+        content: input.content as never,
+        contentHash,
+        createdBy: input.createdBy,
+      },
+    })
+    return { assetId, version: input.version }
+  }
+
+  /** 列出场景默认配置的全部历史版本（VersionTimeline 用）。 */
+  async listDefaultsVersions(
+    scenarioId: string,
+  ): Promise<Array<{ version: string; labels: string[]; contentHash: string; createdAt: Date }>> {
+    return this.prisma.defaultsAsset.findMany({
+      where: { scenarioId, assetId: "default" },
+      select: { version: true, labels: true, contentHash: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+    })
+  }
+
+  /** 读取场景默认配置最新（或指定）版本的 content（GET /defaults 用）。 */
+  async getDefaultsContent(
+    scenarioId: string,
+    version?: string,
+  ): Promise<{ version: string; labels: string[]; content: Record<string, unknown> } | null> {
+    const rows = await this.prisma.defaultsAsset.findMany({
+      where: { scenarioId, assetId: "default" },
+    })
+    if (!rows.length) return null
+    const chosen = version ? rows.find((r) => r.version === version) : pickLatestPerAsset(rows)[0]
+    if (!chosen) return null
+    return {
+      version: chosen.version,
+      labels: chosen.labels,
+      content: chosen.content as Record<string, unknown>,
+    }
+  }
+
+  /** 标签晋升：覆盖默认配置某版本的 labels（latest/production/staging 互斥）。 */
+  async setDefaultsLabels(scenarioId: string, version: string, labels: string[]): Promise<void> {
+    const exclusive = labels.filter((l) => (MUTUALLY_EXCLUSIVE_LABELS as readonly string[]).includes(l))
+    await this.prisma.$transaction(async (tx) => {
+      if (exclusive.length) {
+        const others = await tx.defaultsAsset.findMany({
+          where: { scenarioId, assetId: "default", NOT: { version } },
+          select: { id: true, labels: true },
+        })
+        for (const o of others) {
+          if (!o.labels.some((l) => exclusive.includes(l))) continue
+          await tx.defaultsAsset.update({
+            where: { id: o.id },
+            data: { labels: o.labels.filter((l) => !exclusive.includes(l)) },
+          })
+        }
+      }
+      await tx.defaultsAsset.updateMany({
+        where: { scenarioId, assetId: "default", version },
+        data: { labels },
+      })
+    })
   }
 
   /** 发布/更新一个场景包版本（幂等 upsert；场景不存在则创建）。 */

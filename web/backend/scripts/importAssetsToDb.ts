@@ -14,6 +14,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from "fs"
 import { join, relative, resolve } from "path"
 import yaml from "js-yaml"
 import type { PrismaClient } from "@prisma/client"
+import { ScenarioRepository } from "../src/repositories/scenario.repository"
 
 const SCENARIO_ID = "courseware"
 const VERSION = "1.0.0"
@@ -62,26 +63,34 @@ export async function importCoursewarePackage(
   prisma: PrismaClient,
   packageDir: string = defaultPackageDir(),
 ): Promise<ImportResult> {
-  // #60：从包内 metrics/policy.yaml 读取指标定义 + 聚合策略（跨语言单一源），写入 DB
+  // #60：从包内 metrics/policy.yaml 读取指标定义 + 聚合策略（跨语言单一源）
   const policyPath = join(packageDir, "metrics", "policy.yaml")
   const policy = loadYaml(policyPath) as {
     metric_definitions: Record<string, unknown>[]
     aggregation_policy: Record<string, unknown>
   }
+  // 场景行（name/description）
   await prisma.scenario.upsert({
     where: { id: SCENARIO_ID },
-    update: {
-      defaultMetricDefinitions: policy.metric_definitions as never,
-      defaultAggregationPolicy: policy.aggregation_policy as never,
-    },
-    create: {
-      id: SCENARIO_ID,
-      name: "课件质量评估",
-      description: "课件生成场景默认包",
-      defaultMetricDefinitions: policy.metric_definitions as never,
-      defaultAggregationPolicy: policy.aggregation_policy as never,
-    },
+    update: { name: "课件质量评估", description: "课件生成场景默认包" },
+    create: { id: SCENARIO_ID, name: "课件质量评估", description: "课件生成场景默认包" },
   })
+  // defaults 版本化：发布 v1.0.0（assetId=default）；已存在则跳过（幂等，不覆盖不可变版本）
+  const existingDefaults = await prisma.defaultsAsset.findUnique({
+    where: { scenarioId_assetId_version: { scenarioId: SCENARIO_ID, assetId: "default", version: VERSION } },
+    select: { id: true },
+  })
+  if (!existingDefaults) {
+    await new ScenarioRepository(prisma).publishDefaultsAsset(SCENARIO_ID, {
+      version: VERSION,
+      labels: ["latest", "production"],
+      content: {
+        metric_definitions: policy.metric_definitions ?? [],
+        aggregation_policy: policy.aggregation_policy ?? null,
+      },
+      createdBy: "import-script",
+    })
+  }
 
   const labels = ["production", "latest"]
   const manifestPath = join(packageDir, "agent_eval.yaml")

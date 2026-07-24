@@ -75,10 +75,18 @@ export function MetricDefsEditor({ scenarioId }: { scenarioId: string }) {
     setMode(m)
   }
   const save = async () => {
+    const version = window.prompt("发布版本号（版本不可变，请递增，如 1.0.1）", "1.0.1")
+    if (!version) return
     setBusy(true)
     try {
-      await api.updateScenarioDefaults(scenarioId, { metricDefinitions: metrics })
-      toast.success("指标定义已保存")
+      // 合并未改部分（aggregation_policy）+ 本次 metric_definitions，发布新版本（不覆盖旧版本）
+      const aggregationPolicy = await api.scenarioAggregationPolicy(scenarioId).catch(() => null)
+      await api.publishDefaults(scenarioId, {
+        version,
+        metric_definitions: metrics,
+        aggregation_policy: aggregationPolicy ?? null,
+      })
+      toast.success(`指标定义已发布 ${version}`)
     } catch (e) {
       toast.error(errMsg(e))
     } finally {

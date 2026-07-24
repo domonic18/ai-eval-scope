@@ -325,9 +325,6 @@ model Scenario {
   id                       String   @id
   name                     String
   description              String?
-  // 场景默认指标定义（单一源落库，前端列表页 GET /scenarios/:id/defaults 取，无前端 hardcode）
-  defaultMetricDefinitions Json?    @map("default_metric_definitions") @db.JsonB
-  defaultAggregationPolicy Json?    @map("default_aggregation_policy") @db.JsonB
   createdAt                DateTime @default(now()) @map("created_at")
 
   packages    ScenarioPackage[]
@@ -336,6 +333,7 @@ model Scenario {
   datasets    DatasetAsset[]
   sutConfigs  SUTConfigAsset[]
   inferencers InferencerAsset[]
+  defaults    DefaultsAsset[]
 
   @@map("scenarios")
 }
@@ -443,6 +441,24 @@ model InferencerAsset {
 
   @@unique([scenarioId, assetId, version])
   @@map("inferencer_assets")
+}
+
+// 场景默认配置（指标定义 + 聚合策略）版本化资产——与 rule-sets/prompts/datasets 同构。
+// 修复「defaults 编辑即上线」：发布产生不可变新版本，草稿不入库（前端隔离）。
+model DefaultsAsset {
+  id          String   @id @default(uuid())
+  scenarioId  String   @map("scenario_id")
+  assetId     String   @map("asset_id") // 固定 "default"（指标定义 + 聚合策略一起版本化）
+  version     String
+  labels      String[] @default([])
+  contentHash String   @map("content_hash")
+  content     Json     @db.JsonB // { metricDefinitions?, aggregationPolicy? }
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  scenario    Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@unique([scenarioId, assetId, version])
+  @@map("defaults_assets")
 }
 
 // 运行配置快照：单次 Run 使用的完整配置（规则/提示词/数据集/聚合策略/指标定义 + content_hash）。

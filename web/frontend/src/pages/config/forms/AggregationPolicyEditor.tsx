@@ -112,10 +112,18 @@ export function AggregationPolicyEditor({ scenarioId }: { scenarioId: string }) 
     setMode(m)
   }
   const save = async () => {
+    const version = window.prompt("发布版本号（版本不可变，请递增，如 1.0.1）", "1.0.1")
+    if (!version) return
     setBusy(true)
     try {
-      await api.updateScenarioDefaults(scenarioId, { aggregationPolicy: policy })
-      toast.success("聚合策略已保存")
+      // 合并未改部分（metric_definitions）+ 本次 aggregation_policy，发布新版本（不覆盖旧版本）
+      const metricDefinitions = await api.scenarioDefaults(scenarioId).catch(() => [])
+      await api.publishDefaults(scenarioId, {
+        version,
+        metric_definitions: metricDefinitions,
+        aggregation_policy: policy,
+      })
+      toast.success(`聚合策略已发布 ${version}`)
     } catch (e) {
       toast.error(errMsg(e))
     } finally {
