@@ -34,20 +34,10 @@ export interface SubmitInput {
   inputObjectKey?: string
   // 元数据
   ruleSetId: string
-  packageRef?: string // 场景包引用 scenario/package:label；缺省对 courseware 规则集自动补全
+  packageRef?: string // 场景包引用 scenario/package[:label]；调用方须显式提供，否则 job 落 packageRef=null 被 executor 拒绝（S2-D）
   taskId?: string
   taskTitle?: string
   taskSubject?: string
-}
-
-/**
- * 对 courseware 内置规则集（coursework-gate/quality/vision）自动补全 package_ref，
- * 指向内置 bundled 包 courseware/courseware:production。非 courseware 规则集须调用方显式提供 packageRef，
- * 否则 job 落库 packageRef=null，executor 按历史 job 拒绝（S2-D/§03）。
- */
-function defaultPackageRef(ruleSetId: string): string | null {
-  if (ruleSetId.startsWith("coursework-")) return "courseware/courseware:production"
-  return null
 }
 
 export interface SubmitResult {
@@ -134,6 +124,11 @@ export interface OverviewItem {
   passed: boolean
   failures: OverviewFailure[]
 }
+export interface OverviewMetric {
+  value: number
+  threshold: number | null
+  passed: boolean | null
+}
 export interface OverviewResult {
   job_id: string
   run_id: string | null
@@ -142,10 +137,9 @@ export interface OverviewResult {
   error: unknown
   verdict?: "pass" | "fail"
   score?: number
-  metrics?: { DR: number; CPR: number; condR: number; avg_time_ms: number }
+  metrics?: Record<string, OverviewMetric>
   metrics_raw?: Record<string, number>
   summary?: { total: number; passed: number; failed: number; skipped: number }
-  dimension_pass?: { format: number; commonsense: number; soft: number; preference: number }
   summary_report?: Record<string, unknown> | null
   items: OverviewItem[]
 }
@@ -168,16 +162,6 @@ type OverviewRun = {
   totalSamples: number
   thresholds: unknown
   samples: OverviewSample[]
-}
-
-/** 阈值容错取数：兼容 DR/dr、CPR/cpr、avg_reward/avgReward/Reward 多种键；缺失给默认。 */
-function thresholdOf(t: unknown, keys: string[], fallback: number): number {
-  const obj = (t ?? {}) as Record<string, unknown>
-  for (const k of keys) {
-    const v = obj[k]
-    if (typeof v === "number" && Number.isFinite(v)) return v
-  }
-  return fallback
 }
 
 function isPassStatus(status: string): boolean {
@@ -221,23 +205,12 @@ function extractSourceFiles(details: unknown): string[] {
   return files
 }
 
-/** 从 run.metrics JSONB 安全取数（兼容 courseware:* 新格式与旧格式键）。 */
-function metricOf(metrics: Record<string, number> | null | undefined, ...keys: string[]): number | undefined {
-  if (!metrics) return undefined
-  for (const k of keys) {
-    const v = metrics[k]
-    if (typeof v === "number" && Number.isFinite(v)) return v
-  }
-  return undefined
-}
-
 /**
- * 纯函数：由 run（含样本 + 未通过约束）构造速览 DTO。
- * - 指标从 run.metrics JSONB 读取（Phase 5 场景化，键 courseware:*）。
- * - verdict：核心指标达标（DR/CPR/Reward，阈值取 run.thresholds 或默认 0.95/0.9/0.8）
- *   且无 hard_gate 失败 → pass；否则 fail。
- * - dimension_pass：各阶段达标样本数（format≥1 / commonsense>0 / soft≥0.6 / pref≥0.6），
- *   样本级分数从 sample.metrics JSONB 或遗留列读取。
+ * 纯函数：由 run（含样本 + 未通过约束）构造速览 DTO（场景化，数据驱动）。
+ * - metrics：遍历 run.metrics（key=metric_id），配 run.thresholds（{threshold, unit}），
+ *   输出 {id: {value, threshold, passed}}。不 hardcode 任何指标键。
+ * - verdict：所有声明了 threshold 的指标均达标，且无 hard_gate 失败 → pass。
+ * - score：首个 unit=score 且有 threshold 的指标值（courseware 下为 reward）。
  */
 export function buildJobOverview(
   base: Pick<OverviewResult, "job_id" | "run_id" | "status" | "web_run_url" | "error">,
@@ -248,47 +221,43 @@ export function buildJobOverview(
   const failedN = samples.filter((s) => s.status === "fail" || s.status === "failed").length
   const skippedN = samples.filter((s) => s.status === "skip" || s.status === "skipped").length
 
-  // 从 metrics JSONB 取指标值（兼容新旧键）
-  const m = run.metrics
-  const dr = metricOf(m, "courseware:document_rate", "DR", "dr") ?? 0
-  const cpr = metricOf(m, "courseware:constraint_pass_rate", "CPR", "cpr") ?? 0
-  const reward = metricOf(m, "courseware:reward", "avg_reward", "avgReward", "Reward") ?? 0
-  const condR = metricOf(m, "courseware:conditional_reward", "condR") ?? 0
-  const avgTimeMs = metricOf(m, "courseware:avg_time_ms", "avg_time_ms", "avgTimeMs") ?? 0
+  // 动态指标：遍历 run.metrics（key=metric_id），配 thresholds（{threshold, unit}）
+  const metrics: Record<string, OverviewMetric> = {}
+  const thresholds = (run.thresholds ?? {}) as Record<string, { threshold?: number; unit?: string }>
+  let scoreValue: number | undefined
+  for (const [id, raw] of Object.entries(run.metrics ?? {})) {
+    if (typeof raw !== "number" || !Number.isFinite(raw)) continue
+    const meta = thresholds[id]
+    const threshold =
+      typeof meta?.threshold === "number" && Number.isFinite(meta.threshold) ? meta.threshold : null
+    const passed = threshold != null ? raw >= threshold : null
+    metrics[id] = { value: raw, threshold, passed }
+    // 综合得分：首个 unit=score 且有 threshold 的指标（courseware 下为 reward）
+    if (scoreValue === undefined && meta?.unit === "score" && threshold != null) scoreValue = raw
+  }
 
+  // verdict：所有有 threshold 的指标达标，且无 hard_gate 失败
   const hasHardGateFail = samples.some((s) =>
     s.constraintResults.some((c) => c.tier === "hard_gate"),
   )
-  const drT = thresholdOf(run.thresholds, ["DR", "dr", "courseware:document_rate"], 0.95)
-  const cprT = thresholdOf(run.thresholds, ["CPR", "cpr", "courseware:constraint_pass_rate"], 0.9)
-  const rewT = thresholdOf(run.thresholds, ["avg_reward", "avgReward", "Reward", "courseware:reward"], 0.8)
-  const metricsOk = dr >= drT && cpr >= cprT && reward >= rewT
-  const verdict: "pass" | "fail" = metricsOk && !hasHardGateFail ? "pass" : "fail"
-
-  // 样本级阶段分：优先 metrics JSONB，回退遗留列
-  const sFmt = (s: OverviewSample) => s.metrics?.["courseware:s_format"] ?? s.sFormat ?? 0
-  const sCom = (s: OverviewSample) => s.metrics?.["courseware:s_common"] ?? s.sCommon ?? 0
-  const sSft = (s: OverviewSample) => s.metrics?.["courseware:s_soft"] ?? s.sSoft ?? 0
-  const sPrf = (s: OverviewSample) => s.metrics?.["courseware:s_pref"] ?? s.sPref ?? 0
+  const allThresholdPassed = Object.values(metrics).every(
+    (mt) => mt.threshold == null || mt.passed === true,
+  )
+  const verdict: "pass" | "fail" = allThresholdPassed && !hasHardGateFail ? "pass" : "fail"
+  const score = scoreValue ?? samples[0]?.reward ?? 0
 
   return {
     ...base,
     run_id: run.externalRunId,
     status: "completed",
     verdict,
-    score: reward,
-    metrics: { DR: dr, CPR: cpr, condR, avg_time_ms: avgTimeMs },
+    score,
+    metrics,
     summary: {
       total: run.totalSamples || samples.length,
       passed: passedN,
       failed: failedN,
       skipped: skippedN,
-    },
-    dimension_pass: {
-      format: samples.filter((s) => sFmt(s) >= 1).length,
-      commonsense: samples.filter((s) => sCom(s) > 0).length,
-      soft: samples.filter((s) => sSft(s) >= 0.6).length,
-      preference: samples.filter((s) => sPrf(s) >= 0.6).length,
     },
     items: samples.map((s) => ({
       external_sample_id: s.externalSampleId,
@@ -365,7 +334,7 @@ export function createEvalJobService(tenant: Tenant) {
       inputObjectKey: objectKey,
       inputPresignedUrl: presigned.url,
       ruleSetId: input.ruleSetId,
-      packageRef: input.packageRef ?? defaultPackageRef(input.ruleSetId),
+      packageRef: input.packageRef ?? null,
       taskId: input.taskId ?? null,
       taskTitle: input.taskTitle ?? null,
       taskSubject: input.taskSubject ?? null,
@@ -378,7 +347,7 @@ export function createEvalJobService(tenant: Tenant) {
       const payload: ScfInvokePayload = {
         job_id: jobId,
         rule_set_id: input.ruleSetId,
-        package_ref: input.packageRef ?? defaultPackageRef(input.ruleSetId),
+        package_ref: input.packageRef ?? null,
         input_kind: inputKind,
         scope,
         input_object_key: objectKey,

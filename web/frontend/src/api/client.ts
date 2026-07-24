@@ -194,7 +194,7 @@ export const api = {
   async submitDebugJob(
     file: File,
     ruleSetId: string,
-    opts?: { taskId?: string; taskTitle?: string; apiKey?: string },
+    opts?: { packageRef?: string; taskId?: string; taskTitle?: string; apiKey?: string },
   ): Promise<{
     job_id: string
     status: string
@@ -202,6 +202,7 @@ export const api = {
     debug?: { request: Record<string, unknown>; response: Record<string, unknown> }
   }> {
     const qs = new URLSearchParams({ filename: file.name, rule_set_id: ruleSetId })
+    if (opts?.packageRef) qs.set("package_ref", opts.packageRef)
     if (opts?.taskId) qs.set("task_id", opts.taskId)
     if (opts?.taskTitle) qs.set("task_title", opts.taskTitle)
     if (opts?.apiKey) qs.set("api_key", opts.apiKey)
@@ -518,6 +519,7 @@ export interface ScenarioCatalog {
   rule_sets: CatalogEntry[]
   prompts: CatalogEntry[]
   datasets: DatasetCatalogEntry[]
+  packages: CatalogEntry[]
 }
 
 export interface AdminUser {

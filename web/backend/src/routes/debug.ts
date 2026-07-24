@@ -83,6 +83,7 @@ router.post(
     const taskId = q.task_id?.trim() || undefined
     const taskTitle = q.task_title?.trim() || undefined
     const taskSubject = q.task_subject?.trim() || undefined
+    const packageRef = q.package_ref?.trim() || undefined
 
     const token = requireApiKey(req)
     const tenant = await resolveTenant(token)
@@ -91,6 +92,7 @@ router.post(
       filename,
       fileBytes,
       ruleSetId,
+      packageRef,
       taskId,
       taskTitle,
       taskSubject,

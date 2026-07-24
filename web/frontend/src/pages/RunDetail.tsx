@@ -137,7 +137,9 @@ export default function RunDetail() {
 
   // verdict 从 overview 取（与第三方 API 一致）
   const verdict = overview?.verdict
-  const rewardScore = overview?.score ?? rawMetrics["courseware:reward"] ?? rawMetrics["reward"] ?? 0
+  // reward 类指标 id 从 activeDefs 动态查（unit=score 且有 threshold），去 courseware:reward 直接键
+  const rewardDef = activeDefs.find((d) => d.unit === "score" && d.threshold != null)
+  const rewardScore = overview?.score ?? (rewardDef ? (rawMetrics[rewardDef.id] ?? 0) : 0)
 
   // 收集所有失败约束（跨样本）
   const allFailures = overview?.items?.flatMap((item) =>

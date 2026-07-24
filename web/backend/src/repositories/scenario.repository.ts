@@ -46,6 +46,7 @@ export interface ScenarioCatalog {
   rule_sets: CatalogEntry[]
   prompts: CatalogEntry[]
   datasets: Array<CatalogEntry & { role: string; backend_type: string }>
+  packages: CatalogEntry[]
 }
 
 export class ScenarioRepository {
@@ -432,10 +433,11 @@ export class ScenarioRepository {
     const scenario = await this.prisma.scenario.findUnique({ where: { id: scenarioId } })
     if (!scenario) return null
 
-    const [ruleSets, prompts, datasets] = await Promise.all([
+    const [ruleSets, prompts, datasets, packages] = await Promise.all([
       this.prisma.ruleSetAsset.findMany({ where: { scenarioId } }),
       this.prisma.promptTemplateAsset.findMany({ where: { scenarioId } }),
       this.prisma.datasetAsset.findMany({ where: { scenarioId } }),
+      this.prisma.scenarioPackage.findMany({ where: { scenarioId } }),
     ])
 
     return {
@@ -447,6 +449,7 @@ export class ScenarioRepository {
         role: d.role,
         backend_type: d.backendType,
       })),
+      packages: pickLatestPerAsset(packages).map((p) => this._toEntry(p)),
     }
   }
 

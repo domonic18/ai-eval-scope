@@ -1,6 +1,6 @@
 /**
  * overview 速览单测（docs/arch/12 §6.6）：
- *  - buildJobOverview 纯函数：verdict / summary / dimension_pass / items / failures
+ *  - buildJobOverview 纯函数：verdict / summary / metrics(dict) / items / failures
  *  - createEvalJobService.overview：mock 仓储，覆盖 未完成→空 items / completed→聚合 / run 缺失
  *
  *  数据格式：Phase 5 场景化指标 JSONB（run.metrics / sample.metrics），键为 MetricDefinition.id。
@@ -46,7 +46,7 @@ const base = {
 }
 
 describe("buildJobOverview (pure)", () => {
-  it("verdict=fail when a hard_gate constraint failed; 聚合 summary/dimension_pass/items", () => {
+  it("verdict=fail when a hard_gate constraint failed; 聚合 summary/metrics/items", () => {
     const run = {
       externalRunId: "r1",
       metrics: {
@@ -57,7 +57,11 @@ describe("buildJobOverview (pure)", () => {
         "courseware:avg_time_ms": 100,
       },
       totalSamples: 2,
-      thresholds: null,
+      thresholds: {
+        "courseware:document_rate": { threshold: 0.95, unit: "ratio" },
+        "courseware:constraint_pass_rate": { threshold: 0.9, unit: "ratio" },
+        "courseware:reward": { threshold: 0.8, unit: "score" },
+      },
       samples: [
         {
           id: "s1",
@@ -97,10 +101,15 @@ describe("buildJobOverview (pure)", () => {
     }
     const ov = buildJobOverview(base, run as never)
     expect(ov.verdict).toBe("fail") // hard_gate 失败 → fail
-    expect(ov.score).toBe(0.9)
-    expect(ov.metrics).toEqual({ DR: 0.99, CPR: 0.95, condR: 0.9, avg_time_ms: 100 })
+    expect(ov.score).toBe(0.9) // reward（unit=score 且有 threshold）
+    expect(ov.metrics).toEqual({
+      "courseware:document_rate": { value: 0.99, threshold: 0.95, passed: true },
+      "courseware:constraint_pass_rate": { value: 0.95, threshold: 0.9, passed: true },
+      "courseware:conditional_reward": { value: 0.9, threshold: null, passed: null },
+      "courseware:reward": { value: 0.9, threshold: 0.8, passed: true },
+      "courseware:avg_time_ms": { value: 100, threshold: null, passed: null },
+    })
     expect(ov.summary).toEqual({ total: 2, passed: 1, failed: 1, skipped: 0 })
-    expect(ov.dimension_pass).toEqual({ format: 1, commonsense: 1, soft: 1, preference: 1 })
     expect(ov.items[0]).toEqual({
       external_sample_id: "A",
       score: 0.1,
@@ -128,7 +137,11 @@ describe("buildJobOverview (pure)", () => {
         "courseware:avg_time_ms": 50,
       },
       totalSamples: 1,
-      thresholds: { DR: 0.95, CPR: 0.9, avg_reward: 0.8 },
+      thresholds: {
+        "courseware:document_rate": { threshold: 0.95, unit: "ratio" },
+        "courseware:constraint_pass_rate": { threshold: 0.9, unit: "ratio" },
+        "courseware:reward": { threshold: 0.8, unit: "score" },
+      },
       samples: [
         {
           id: "s1",
@@ -147,37 +160,6 @@ describe("buildJobOverview (pure)", () => {
     const ov = buildJobOverview(base, run as never)
     expect(ov.verdict).toBe("pass")
     expect(ov.score).toBe(0.82)
-  })
-
-  it("dimension_pass 用默认阈值（format≥1 / commonsense>0 / soft≥0.6 / pref≥0.6）", () => {
-    const run = {
-      externalRunId: "r1",
-      metrics: { "courseware:document_rate": 1, "courseware:constraint_pass_rate": 1, "courseware:reward": 0.9 },
-      totalSamples: 3,
-      thresholds: null,
-      samples: [
-        {
-          id: "s1", externalSampleId: "A", status: "pass", reward: 0.9,
-          sFormat: null, sCommon: null, sSoft: null, sPref: null,
-          metrics: { "courseware:s_format": 1, "courseware:s_common": 1, "courseware:s_soft": 0.7, "courseware:s_pref": 0.65 },
-          constraintResults: [],
-        },
-        {
-          id: "s2", externalSampleId: "B", status: "pass", reward: 0.6,
-          sFormat: null, sCommon: null, sSoft: null, sPref: null,
-          metrics: { "courseware:s_format": 1, "courseware:s_common": 0, "courseware:s_soft": 0.4, "courseware:s_pref": 0.3 },
-          constraintResults: [],
-        },
-        {
-          id: "s3", externalSampleId: "C", status: "fail", reward: 0,
-          sFormat: null, sCommon: null, sSoft: null, sPref: null,
-          metrics: { "courseware:s_format": -3, "courseware:s_common": 0, "courseware:s_soft": 0, "courseware:s_pref": 0 },
-          constraintResults: [{ name: "格式", reason: "r", tier: "hard_score", details: {} }],
-        },
-      ],
-    }
-    const ov = buildJobOverview(base, run as never)
-    expect(ov.dimension_pass).toEqual({ format: 2, commonsense: 1, soft: 1, preference: 1 })
   })
 })
 
