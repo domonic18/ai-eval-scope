@@ -108,7 +108,6 @@ def _print_summary(result: object) -> None:
     table.add_row("Reward (综合评分)", f"{result.avg_reward:.3f}", reward_status)
     table.add_row("Soft (内容质量分)", f"{result.avg_soft:.3f}", "—")
     table.add_row("Pref (用户偏好分)", f"{result.avg_pref:.3f}", "—")
-    table.add_row("CondR (条件Reward)", f"{result.cond_r:.3f}", "—")
     table.add_row("Avg Time", f"{result.avg_time_ms:.0f}ms", "—")
 
     rprint(table)

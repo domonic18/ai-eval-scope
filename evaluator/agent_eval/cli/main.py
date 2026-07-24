@@ -424,7 +424,6 @@ def upload(
         avg_reward=metrics.get("avg_reward", 0.0),
         avg_soft=metrics.get("avg_soft", 0.0),
         avg_pref=metrics.get("avg_pref", 0.0),
-        cond_r=metrics.get("condR", 0.0),
         avg_time_ms=metrics.get("avg_time_ms", 0.0),
     )
     events: list[dict[str, Any]] = [

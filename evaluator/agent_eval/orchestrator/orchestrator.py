@@ -294,13 +294,13 @@ class Orchestrator:
                 # 仅传内容质量指标，且键须与 metric_definitions 对齐。
                 # avg_time_ms 是「评测耗时」过程元数据，不属于被评估对象的质量维度，
                 # 不进入摘要输入（否则 LLM 会对评测时间做评价）。
+                _sid = scenario_cfg.scenario_id if scenario_cfg else "courseware"
                 metrics_dict = {
-                    "courseware:document_rate": metrics_report.dr,
-                    "courseware:constraint_pass_rate": metrics_report.cpr,
-                    "courseware:reward": metrics_report.avg_reward,
-                    "courseware:soft": metrics_report.avg_soft,
-                    "courseware:pref": metrics_report.avg_pref,
-                    "courseware:conditional_reward": metrics_report.cond_r,
+                    f"{_sid}:document_rate": metrics_report.dr,
+                    f"{_sid}:constraint_pass_rate": metrics_report.cpr,
+                    f"{_sid}:reward": metrics_report.avg_reward,
+                    f"{_sid}:soft": metrics_report.avg_soft,
+                    f"{_sid}:pref": metrics_report.avg_pref,
                 }
                 summary_report = SummaryGenerator(pool).generate(
                     metrics=metrics_dict,
@@ -505,7 +505,6 @@ class Orchestrator:
                     "DR": metrics_report.dr,
                     "CPR": metrics_report.cpr,
                     "avg_reward": metrics_report.avg_reward,
-                    "condR": metrics_report.cond_r,
                     "avg_time_ms": metrics_report.avg_time_ms,
                 },
                 "failure_breakdown": metrics_report.failure_breakdown,

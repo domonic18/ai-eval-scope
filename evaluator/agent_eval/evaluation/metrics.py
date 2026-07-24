@@ -1,6 +1,6 @@
 """MetricsCalculator — 批量指标计算。
 
-计算 DR / CPR / Reward / CondR / Time 等指标。
+计算 DR / CPR / Reward / Time 等指标。
 """
 
 from __future__ import annotations
@@ -55,9 +55,6 @@ class MetricsCalculator:
             ).gate_passed
         )
 
-        # 通过双门控的样本（用于 CondR）
-        gated = [r for r in results if self._passed_gates(r)]
-
         # Reward 分布
         rewards = [r.reward for r in results]
 
@@ -79,7 +76,6 @@ class MetricsCalculator:
             avg_reward=sum(rewards) / total,
             avg_soft=avg_soft,
             avg_pref=avg_pref,
-            cond_r=(sum(r.reward for r in gated) / len(gated)) if gated else 0.0,
             avg_time_ms=sum(r.total_duration_ms for r in results) / total,
             sample_scores=[
                 SampleScore(
@@ -95,12 +91,6 @@ class MetricsCalculator:
             failure_breakdown=failure_breakdown,
             llm_skipped=llm_skipped,
         )
-
-    def _passed_gates(self, r: SampleResult) -> bool:
-        """判断样本是否通过了格式 + 常识双门控。"""
-        f = r.stage_results.get("format")
-        c = r.stage_results.get("commonsense")
-        return bool(f and f.gate_passed and c and c.gate_passed)
 
     def _breakdown(self, results: list[SampleResult]) -> dict[str, int]:
         """统计各约束 ID 的失败次数。"""

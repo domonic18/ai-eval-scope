@@ -178,7 +178,6 @@ def test_metrics_equivalence() -> None:
     assert new["courseware:reward"] == pytest.approx(old.avg_reward, abs=1e-12)
     assert new["courseware:soft"] == pytest.approx(old.avg_soft, abs=1e-12)
     assert new["courseware:pref"] == pytest.approx(old.avg_pref, abs=1e-12)
-    assert new["courseware:conditional_reward"] == pytest.approx(old.cond_r, abs=1e-12)
 
 
 def test_metrics_empty_results_returns_empty() -> None:

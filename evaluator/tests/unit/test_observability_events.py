@@ -48,7 +48,6 @@ def test_run_event_mapping_fields():
         dr=0.9,
         cpr=0.7,
         avg_reward=0.6,
-        cond_r=0.65,
         avg_time_ms=1200,
     )
     ev = build_run_event(report, langfuse_host="https://lf")
@@ -63,7 +62,6 @@ def test_run_event_mapping_fields():
     assert d["metrics"]["courseware:reward"] == 0.6
     assert d["metrics"]["courseware:soft"] == 0.0
     assert d["metrics"]["courseware:pref"] == 0.0
-    assert d["metrics"]["courseware:conditional_reward"] == 0.65
     assert d["metrics"]["avg_time_ms"] == 1200
     assert d["scenario_id"] == "courseware"
     assert d["package_id"] == "courseware"

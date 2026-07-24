@@ -29,7 +29,6 @@ _METRIC_LABELS: dict[str, str] = {
     "DR": "交付率 (DR)",
     "CPR": "约束通过率 (CPR)",
     "avg_reward": "平均 Reward",
-    "condR": "条件 Reward (CondR)",
     "avg_time_ms": "平均耗时 (ms)",
 }
 
@@ -218,9 +217,6 @@ class ReportGenerator:
             else:
                 lines.append(f"| {label} | {value:.3f} | — | — |")
 
-        # CondR
-        cond_r = metrics_report.cond_r
-        lines.append(f"| {_METRIC_LABELS.get('condR', 'CondR')} | {cond_r:.3f} | — | — |")
         lines.append(
             f"| {_METRIC_LABELS.get('avg_time_ms', '耗时')} | {metrics_report.avg_time_ms:.0f}ms | — | — |"
         )
