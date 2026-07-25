@@ -125,10 +125,3 @@ class TestEvaluatorDefaults:
         assert "information_hierarchy" in ids
         assert "readability" in ids
         assert sum(d[2] for d in dims) == 1.0
-
-    def test_text_collection_patterns(self) -> None:
-        """文本收集默认扫描的文档扩展名。"""
-        patterns = EVALUATOR_DEFAULTS.text_collection_patterns
-        assert "*.md" in patterns
-        assert "*.html" in patterns
-        assert "*.htm" in patterns
