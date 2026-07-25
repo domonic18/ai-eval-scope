@@ -1,0 +1,51 @@
+version: "1.0"
+scenario: code
+description: "代码生成质量评估：格式门控（有效 .py）+ 代码正确性/风格 LLM Judge"
+
+dimensions:
+  - id: functional
+    name: "功能性"
+    weight: 1.0
+  - id: effectiveness
+    name: "效果性"
+    weight: 1.0
+
+cascade:
+  - stage: format
+    name: "格式门控"
+    stop_on_fail: true
+  - stage: quality
+    name: "质量评估"
+    stop_on_fail: false
+
+rules:
+  # ── format 门控（HARD_GATE，失败阻塞后续；code.* 评估器由包 entry_points 注册）──
+  - id: FMT_001
+    name: "输出为有效 Python 文件"
+    dimension: functional
+    stage: format
+    description: "SUT 必须生成有效的 Python 代码文件（.py）"
+    method: format
+    format_type: extension
+    extensions: ["py"]
+    evaluator: format.response_format
+    weight: 1.0
+
+  # ── quality 软约束（SOFT，effectiveness 维度，LLM Judge；evaluator=code.* 随包注册）──
+  - id: CODE_CORRECTNESS
+    name: "代码正确性"
+    dimension: effectiveness
+    stage: quality
+    method: llm
+    prompt_id: code_correctness
+    evaluator: code.correctness
+    weight: 1.0
+
+  - id: CODE_STYLE
+    name: "代码风格"
+    dimension: effectiveness
+    stage: quality
+    method: llm
+    prompt_id: code_style
+    evaluator: code.style
+    weight: 1.0

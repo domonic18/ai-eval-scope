@@ -135,7 +135,7 @@ export default function ProjectDetail() {
     [trends],
   )
   const latest = trendsAsc[trendsAsc.length - 1]
-  const defaultDefs = useScenarioDefaults()
+  const defaultDefs = useScenarioDefaults(runs[0]?.scenarioId ?? "courseware")
 
   // 动态趋势序列：从 defaultDefs（后端 fetch）取有阈值的指标，色板循环（非场景专用）
   // 注意：series key 不能含冒号（CSS var(--color-<key>) 会解析失败）→ 用 _ 替换
@@ -229,7 +229,7 @@ export default function ProjectDetail() {
           <RunsTab runs={runs} total={runsTotal} onOpen={(r) => nav(`/run/${r.id}`)} />
         </TabsContent>
 
-        <TabsContent value="samples">{id && <SamplesTab projectId={id} />}</TabsContent>
+        <TabsContent value="samples">{id && <SamplesTab projectId={id} scenarioId={runs[0]?.scenarioId ?? "courseware"} />}</TabsContent>
 
         <TabsContent value="settings">
           {project && (
@@ -282,7 +282,7 @@ function runColumns(defs: MetricDef[]): Column<RunSummary>[] {
 }
 
 function RunsTab({ runs, total, onOpen }: { runs: RunSummary[]; total: number; onOpen: (r: RunSummary) => void }) {
-  const defaultDefs = useScenarioDefaults()
+  const defaultDefs = useScenarioDefaults(runs[0]?.scenarioId ?? "courseware")
   const [q, setQ] = useState("")
   const [mode, setMode] = useState("all")
   const [status, setStatus] = useState("all")
@@ -335,11 +335,11 @@ function RunsTab({ runs, total, onOpen }: { runs: RunSummary[]; total: number; o
   )
 }
 
-function SamplesTab({ projectId }: { projectId: string }) {
+function SamplesTab({ projectId, scenarioId }: { projectId: string; scenarioId: string }) {
   const [samples, setSamples] = useState<ProjectSample[]>([])
   const [selected, setSelected] = useState<string | null>(null)
   const [trend, setTrend] = useState<SampleTrendPoint[]>([])
-  const defs = useScenarioDefaults()
+  const defs = useScenarioDefaults(scenarioId)
   const rewardLabel = metricLabelOf(defs, "reward", "Reward")
   const rewardThr = metricThresholdOf(defs, "reward")
 

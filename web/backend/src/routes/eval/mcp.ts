@@ -173,6 +173,7 @@ function buildServer(tenant: Tenant): McpServer {
           .optional()
           .describe("大文件：request_input_upload 返回的 object_key；key 以 .zip 结尾会按单元评估解压"),
         rule_set_id: z.string().optional(),
+        package_ref: z.string().optional(),
         task_id: z.string().optional(),
         task_title: z.string().optional(),
         task_subject: z.string().optional(),
@@ -180,9 +181,11 @@ function buildServer(tenant: Tenant): McpServer {
     },
     async (args) => {
       try {
-        const ruleSetId = args.rule_set_id || "coursework-quality"
+        // rule_set_id 缺省空串 → executor 从场景包推导唯一规则集（去 courseware 默认）
+        const ruleSetId = args.rule_set_id || ""
         const common = {
           ruleSetId,
+          packageRef: args.package_ref,
           taskId: args.task_id,
           taskTitle: args.task_title,
           taskSubject: args.task_subject,

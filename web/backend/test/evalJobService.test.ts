@@ -91,11 +91,11 @@ describe("createEvalJobService.submit", () => {
     expect(data.scope).toBe("unit")
   })
 
-  it("defaults packageRef for courseware rule sets (S2-D)", async () => {
+  it("leaves packageRef null when not provided (no courseware auto-default, S2-D)", async () => {
     const svc = createEvalJobService(tenant)
     await svc.submit({ filename: "lesson.md", fileBytes: Buffer.from("# hi"), ruleSetId: "coursework-quality" })
     const data = mocks.create.mock.calls[0]![0] as { packageRef: string | null }
-    expect(data.packageRef).toBe("courseware/courseware:production")
+    expect(data.packageRef).toBeNull()
   })
 
   it("uses explicit packageRef when provided (S2-D)", async () => {
@@ -117,10 +117,15 @@ describe("createEvalJobService.submit", () => {
     expect(data.packageRef).toBeNull()
   })
 
-  it("forwards package_ref in SCF payload (S2-D)", async () => {
+  it("forwards explicit package_ref in SCF payload (S2-D)", async () => {
     mocks.cfg.scfEnabled = true
     const svc = createEvalJobService(tenant)
-    await svc.submit({ filename: "lesson.md", fileBytes: Buffer.from("# hi"), ruleSetId: "coursework-quality" })
+    await svc.submit({
+      filename: "lesson.md",
+      fileBytes: Buffer.from("# hi"),
+      ruleSetId: "coursework-quality",
+      packageRef: "courseware/courseware:production",
+    })
     const payload = mocks.invokeScf.mock.calls[0]![0] as { package_ref?: string | null }
     expect(payload.package_ref).toBe("courseware/courseware:production")
   })

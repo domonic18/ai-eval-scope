@@ -1,0 +1,14 @@
+package:
+  id: code
+  scenario: code
+  version: 1.0.0
+  name: 代码生成质量评估内置包
+  description: 代码生成场景的默认规则集（格式门控 + 代码正确性/风格 LLM Judge）与提示词。
+  author: builtin
+  labels: [production, latest]
+  # 阶段 4：包声明自己的评估器入口 —— 加载本包时导入该模块并触发 @registry.register，
+  # 使 code.* 评估器随包可用（解除「评估器固定 courseware 一组」的限制）。
+  entry_points:
+    evaluators: "agent_eval.evaluation.evaluators.scenario.code:register"
+  artifact_types:
+    - code/*

@@ -68,7 +68,7 @@ metric_definitions:
   - id: courseware:soft
     name: 内容质量
     summary: 内容本身的质量（教学逻辑、多样性、可读性等）
-    expression: "mean(s_soft)"
+    expression: "mean(soft)"
     threshold: null
     unit: score
     explain:
@@ -82,7 +82,7 @@ metric_definitions:
   - id: courseware:pref
     name: 偏好匹配度
     summary: 是否符合用户主观喜好（风格、深度、需求契合度等）
-    expression: "mean(s_pref)"
+    expression: "mean(pref)"
     threshold: null
     unit: score
     explain:

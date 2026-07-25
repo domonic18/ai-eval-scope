@@ -24,6 +24,7 @@ def build_package(
     task_title: str | None = None,
     task_subject: str | None = None,
     task_id: str | None = None,
+    file_patterns: list[str] | None = None,
 ) -> Path:
     """把物化目录打包为标准 ExecutionPackage。"""
     # 局部导入，避免 evaluator 内部循环导入问题
@@ -37,10 +38,12 @@ def build_package(
     if task_subject:
         task_input["subject"] = task_subject
 
+    # file_patterns 由调用方按规则集 format 门控推导（code→*.py / courseware→*.html,*.md）；
+    # 缺省全收 ["*"]，由 format 门控兜底校验（去 courseware html/md 硬编码）。
     task = Task(
         id=task_id,
         input=task_input,
-        file_patterns=["*.html", "*.htm", "*.md", "*.markdown"],
+        file_patterns=file_patterns or ["*"],
     )
     content_hash = _content_hash(input_dir)
 

@@ -39,6 +39,7 @@ export interface CatalogEntry {
   labels: string[]
   name: string | null
   description: string | null
+  accept: string[] // format 门控声明的扩展名（如 ["py"] / ["md","html"]），供 /debug 限定可上传类型
 }
 
 export interface ScenarioCatalog {
@@ -46,6 +47,7 @@ export interface ScenarioCatalog {
   rule_sets: CatalogEntry[]
   prompts: CatalogEntry[]
   datasets: Array<CatalogEntry & { role: string; backend_type: string }>
+  packages: CatalogEntry[]
 }
 
 export class ScenarioRepository {
@@ -432,10 +434,11 @@ export class ScenarioRepository {
     const scenario = await this.prisma.scenario.findUnique({ where: { id: scenarioId } })
     if (!scenario) return null
 
-    const [ruleSets, prompts, datasets] = await Promise.all([
+    const [ruleSets, prompts, datasets, packages] = await Promise.all([
       this.prisma.ruleSetAsset.findMany({ where: { scenarioId } }),
       this.prisma.promptTemplateAsset.findMany({ where: { scenarioId } }),
       this.prisma.datasetAsset.findMany({ where: { scenarioId } }),
+      this.prisma.scenarioPackage.findMany({ where: { scenarioId } }),
     ])
 
     return {
@@ -447,6 +450,7 @@ export class ScenarioRepository {
         role: d.role,
         backend_type: d.backendType,
       })),
+      packages: pickLatestPerAsset(packages).map((p) => this._toEntry(p)),
     }
   }
 
@@ -457,12 +461,20 @@ export class ScenarioRepository {
     content: unknown
   }): CatalogEntry {
     const c = (r.content ?? {}) as Record<string, unknown>
+    // 收集 format 门控声明的扩展名（method=format + extensions），供 /debug 限定可上传类型
+    const accept = new Set<string>()
+    for (const rule of Array.isArray(c.rules) ? (c.rules as Array<Record<string, unknown>>) : []) {
+      if (rule.method === "format" && Array.isArray(rule.extensions)) {
+        for (const e of rule.extensions) accept.add(String(e))
+      }
+    }
     return {
       asset_id: r.assetId,
       version: r.version,
       labels: r.labels,
       name: (c.name as string) ?? null,
       description: (c.description as string) ?? null,
+      accept: [...accept],
     }
   }
 }

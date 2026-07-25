@@ -139,7 +139,7 @@ export const api = {
   async runOverview(runId: string): Promise<{
     verdict?: "pass" | "fail"
     score?: number
-    metrics?: { DR: number; CPR: number; condR: number; avg_time_ms: number }
+    metrics?: Record<string, number>
     metrics_raw?: Record<string, number>
     summary?: { total: number; passed: number; failed: number; skipped: number }
     summary_report?: {
@@ -194,7 +194,7 @@ export const api = {
   async submitDebugJob(
     file: File,
     ruleSetId: string,
-    opts?: { taskId?: string; taskTitle?: string; apiKey?: string },
+    opts?: { packageRef?: string; taskId?: string; taskTitle?: string; apiKey?: string },
   ): Promise<{
     job_id: string
     status: string
@@ -202,6 +202,7 @@ export const api = {
     debug?: { request: Record<string, unknown>; response: Record<string, unknown> }
   }> {
     const qs = new URLSearchParams({ filename: file.name, rule_set_id: ruleSetId })
+    if (opts?.packageRef) qs.set("package_ref", opts.packageRef)
     if (opts?.taskId) qs.set("task_id", opts.taskId)
     if (opts?.taskTitle) qs.set("task_title", opts.taskTitle)
     if (opts?.apiKey) qs.set("api_key", opts.apiKey)
@@ -508,6 +509,7 @@ export interface CatalogEntry {
   labels: string[]
   name: string | null
   description: string | null
+  accept?: string[]
 }
 export interface DatasetCatalogEntry extends CatalogEntry {
   role: string
@@ -518,6 +520,7 @@ export interface ScenarioCatalog {
   rule_sets: CatalogEntry[]
   prompts: CatalogEntry[]
   datasets: DatasetCatalogEntry[]
+  packages: CatalogEntry[]
 }
 
 export interface AdminUser {
@@ -553,6 +556,7 @@ export interface AdminProject {
 export interface AdminRun {
   id: string
   externalRunId: string
+  scenarioId: string | null
   mode: string
   status: string
   totalSamples: number

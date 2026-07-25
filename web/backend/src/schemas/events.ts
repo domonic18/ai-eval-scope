@@ -3,9 +3,7 @@
  */
 
 /**
- * 运行级指标：场景化后为动态键值（键 = MetricDefinition.id）。
- * courseware 遗留键（DR / CPR / avg_reward / avg_soft / avg_pref / condR / avg_time_ms）
- * 在评估器迁移期仍会发送，repository 经 metric() 回填一等列；新场景用任意 metric_id 作键。
+ * 运行级指标：场景化动态键值（键 = MetricDefinition.id，如 code:delivery_rate）+ avg_time_ms。
  */
 export type RunMetrics = Record<string, number>
 

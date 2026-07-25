@@ -98,10 +98,7 @@ def sample_result_pass() -> SampleResult:
                 duration_ms=4.0,
             ),
         },
-        s_format=1.0,
-        s_common=1.0,
-        s_soft=0.85,
-        s_pref=0.70,
+        stage_metrics={"reward": 2.55, "soft": 0.85, "pref": 0.70},
         reward=2.55,
         total_duration_ms=19.0,
     )
@@ -142,44 +139,42 @@ def sample_result_fail() -> SampleResult:
                 gate_passed=False,
             ),
         },
-        s_format=-3.0,
-        s_common=0.0,
-        s_soft=0.0,
-        s_pref=0.0,
-        reward=-3.0,
+        stage_metrics={"reward": 0.0},
+        reward=0.0,
         total_duration_ms=5.0,
     )
 
 
 @pytest.fixture
 def metrics_report() -> MetricsReport:
-    """构造 MetricsReport。"""
-    from agent_eval.evaluation.models import SampleScore
-
+    """构造 MetricsReport（场景化 metrics dict + metric_definitions + sample_scores dict）。"""
     return MetricsReport(
         run_id="20260609_120000",
         total_samples=2,
-        dr=0.5,
-        cpr=0.5,
-        avg_reward=-0.225,
+        metrics={
+            "courseware:document_rate": 0.5,
+            "courseware:constraint_pass_rate": 0.5,
+            "courseware:reward": -0.225,
+        },
+        metric_definitions=[
+            {
+                "id": "courseware:document_rate",
+                "name": "格式合格率",
+                "threshold": 0.95,
+                "unit": "ratio",
+            },
+            {
+                "id": "courseware:constraint_pass_rate",
+                "name": "内容合格率",
+                "threshold": 0.9,
+                "unit": "ratio",
+            },
+            {"id": "courseware:reward", "name": "综合得分", "threshold": 0.7, "unit": "score"},
+        ],
         avg_time_ms=12.0,
         sample_scores=[
-            SampleScore(
-                sample_id="task_001",
-                s_format=1.0,
-                s_common=1.0,
-                s_soft=0.85,
-                s_pref=0.70,
-                reward=2.55,
-            ),
-            SampleScore(
-                sample_id="task_002",
-                s_format=-3.0,
-                s_common=0.0,
-                s_soft=0.0,
-                s_pref=0.0,
-                reward=-3.0,
-            ),
+            {"sample_id": "task_001", "reward": 2.55, "soft": 0.85, "pref": 0.70},
+            {"sample_id": "task_002", "reward": -3.0, "soft": 0.0, "pref": 0.0},
         ],
         failure_breakdown={"format.response_format": 1},
     )

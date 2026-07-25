@@ -20,8 +20,6 @@ from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 
-from agent_eval.config import EVALUATOR_DEFAULTS
-
 
 def get_output_dir(sample: Any) -> Path | None:
     """从样本中提取 output 目录。
@@ -160,20 +158,20 @@ def file_to_text(path: Path) -> str:
     return raw
 
 
-_DOC_EXTS = tuple(EVALUATOR_DEFAULTS.text_collection_patterns)
-
-
 def collect_text_content(output_dir: Path) -> str:
-    """收集目录下所有文档的文本内容，合并为单个字符串（文档间以分隔标记连接）。
+    """收集 output_dir 下所有产出文件的文本内容，合并为单个字符串。
 
-    用于需要把整套产出物作为整体评估的场景（如教学逻辑、内容多样性）。
+    output/ 已由 build_package 按场景 format 门控预过滤（code→.py / courseware→.html,.md），
+    故此处收集全部文件（跳过目录清单 _manifest.json），由 file_to_text 按扩展名处理
+    （html 剥标签，其余原样），二进制/异常安全。去 courseware html/md 白名单硬编码。
     """
     texts: list[str] = []
-    for ext in _DOC_EXTS:
-        for f in sorted(Path(output_dir).rglob(ext)):
-            t = file_to_text(f)
-            if t.strip():
-                texts.append(t)
+    for f in sorted(Path(output_dir).rglob("*")):
+        if not f.is_file() or f.name == "_manifest.json":
+            continue
+        t = file_to_text(f)
+        if t.strip():
+            texts.append(t)
     return "\n\n".join(texts)
 
 
@@ -185,11 +183,12 @@ def collect_file_texts(output_dir: Path) -> dict[str, str]:
     """
     out: dict[str, str] = {}
     base = Path(output_dir)
-    for ext in _DOC_EXTS:
-        for f in sorted(base.rglob(ext)):
-            t = file_to_text(f)
-            if t.strip():
-                out[str(f.relative_to(base))] = t
+    for f in sorted(base.rglob("*")):
+        if not f.is_file() or f.name == "_manifest.json":
+            continue
+        t = file_to_text(f)
+        if t.strip():
+            out[str(f.relative_to(base))] = t
     return out
 
 

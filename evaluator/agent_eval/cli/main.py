@@ -255,7 +255,13 @@ def eval(
                 llm_config = str(cwd_cfg)
             elif pkg_cfg.exists():
                 llm_config = str(pkg_cfg)
-        judge_orch = _init_judge_orchestrator(llm_config, llm_provider)
+        # 场景包 prompts/（code→code_correctness），缺省回退内置 courseware prompts
+        _prompts_dir: str | None = None
+        if rule_set_path:
+            _pp = Path(rule_set_path).resolve().parent.parent / "prompts"
+            if _pp.exists():
+                _prompts_dir = str(_pp)
+        judge_orch = _init_judge_orchestrator(llm_config, llm_provider, prompts_dir=_prompts_dir)
 
         # 构造 LLM 指纹（纳入 cache_key，LLM 配置/可用性变更时缓存自动失效）
         import hashlib
@@ -291,6 +297,12 @@ def eval(
 
         # 5. 创建 Orchestrator 并执行
         orch = Orchestrator(workspace=ws)
+        # 场景包根 = rule_set_path 的 rules/ 上一层（含 metrics/policy.yaml + agent_eval.yaml）
+        scenario_pkg_dir = None
+        if rule_set_path:
+            _cand = Path(rule_set_path).resolve().parent.parent
+            if (_cand / "metrics" / "policy.yaml").exists():
+                scenario_pkg_dir = _cand
         try:
             result = orch.eval_only(
                 Path(package_dir),
@@ -302,6 +314,7 @@ def eval(
                 screenshot_renderer=renderer,
                 llm_signature=llm_signature,
                 no_cache=no_cache,
+                scenario_package_dir=scenario_pkg_dir,
             )
         finally:
             if renderer is not None:
@@ -413,24 +426,45 @@ def upload(
         raise typer.Exit(code=1)
 
     metrics = summary.get("metrics", {})
-    # 用 build_run_event 重建 run 事件（P5-1：附带 courseware:* 指标键 + scenario_id + 运行配置快照）
+    # 用 build_run_event 重建 run 事件（附带场景化指标键 + scenario_id + 运行配置快照）
     from agent_eval.evaluation.models import MetricsReport
 
+    # summary["metrics"] 已是场景化指标 dict（key=metric_id）；avg_time_ms 为顶层过程元数据
     report = MetricsReport(
         run_id=summary.get("run_id", run),
         total_samples=summary.get("total_samples", 0),
-        dr=metrics.get("DR", 0.0),
-        cpr=metrics.get("CPR", 0.0),
-        avg_reward=metrics.get("avg_reward", 0.0),
-        avg_soft=metrics.get("avg_soft", 0.0),
-        avg_pref=metrics.get("avg_pref", 0.0),
-        avg_time_ms=metrics.get("avg_time_ms", 0.0),
+        metrics={
+            k: float(v)
+            for k, v in metrics.items()
+            if k != "avg_time_ms" and isinstance(v, int | float)
+        },
+        avg_time_ms=summary.get("avg_time_ms", metrics.get("avg_time_ms", 0.0)),
+    )
+    # 从 summary 重建 ScenarioConfig，使回填 run 的 scenario_id/指标定义与原运行一致
+    # （S2-13：不再回退 courseware）。scenario_id 由指标 id 前缀推导（如 code:delivery_rate → code）。
+    from agent_eval.evaluation.scenario.models import (
+        AggregationPolicy,
+        MetricDefinition,
+        ScenarioConfig,
+    )
+
+    mdefs_raw = summary.get("metric_definitions") or []
+    backfill_sid = (
+        str(mdefs_raw[0]["id"]).split(":", 1)[0] if mdefs_raw else "courseware"
+    )
+    scenario_config = ScenarioConfig(
+        scenario_id=backfill_sid,
+        aggregation_policy=AggregationPolicy(
+            id=f"{backfill_sid}-backfill", scenario_id=backfill_sid, stage_weights=[]
+        ),
+        metric_definitions=[MetricDefinition.model_validate(m) for m in mdefs_raw],
     )
     events: list[dict[str, Any]] = [
         build_run_event(
             report,
             rule_set_version=summary.get("rule_set_version"),
             summary_report=summary.get("summary_report"),
+            scenario_config=scenario_config,
         ),
     ]
 
@@ -466,7 +500,7 @@ def upload(
     art_report = SinkReport(enabled=True)
     artifact_count = 0
 
-    # 从 run_manifest 获取 package_dir（原始课件文件所在）
+    # 从 run_manifest 获取 package_dir（原始产出物所在）
     manifest_path = run_dir / "run_manifest.json"
     package_dir_str = ""
     if manifest_path.exists():
@@ -537,7 +571,7 @@ def upload(
                         )
                         artifact_count += 1
 
-            # 原始课件文件（从 package_dir 扫描 HTML/MD）
+            # 原始产出物（从 package_dir 扫描，含任意场景文件）
             if package_dir_str:
                 pkg = Path(package_dir_str)
                 if pkg.exists():

@@ -45,12 +45,13 @@ class QueryRepository extends BaseRepository {
         latest_run_id: string | null
         latest_created_at: Date | null
         metrics: Record<string, number> | null
+        scenario_id: string | null
         owner_name: string | null
       }>
     >(Prisma.sql`
       SELECT p.id, p.name, p.slug, p.description, p.archived_at, p.created_at,
              COALESCE(r_cnt.run_count, 0)::bigint AS run_count,
-             lr.latest_run_id, lr.latest_created_at, lr.metrics,
+             lr.latest_run_id, lr.latest_created_at, lr.metrics, lr.scenario_id,
              COALESCE(u.name, u.email) AS owner_name
       FROM projects p
       LEFT JOIN users u ON u.id = p.created_by
@@ -58,7 +59,7 @@ class QueryRepository extends BaseRepository {
         SELECT project_id, COUNT(*)::bigint AS run_count FROM runs GROUP BY project_id
       ) r_cnt ON r_cnt.project_id = p.id
       LEFT JOIN LATERAL (
-        SELECT id AS latest_run_id, created_at AS latest_created_at, metrics
+        SELECT id AS latest_run_id, created_at AS latest_created_at, metrics, scenario_id
         FROM runs WHERE project_id = p.id ORDER BY created_at DESC LIMIT 1
       ) lr ON true
       WHERE p.org_id = ${orgId} AND p.archived_at IS NULL
@@ -76,6 +77,7 @@ class QueryRepository extends BaseRepository {
             runId: r.latest_run_id,
             createdAt: r.latest_created_at,
             metrics: r.metrics,
+            scenarioId: r.scenario_id,
           }
         : null,
       ownerName: r.owner_name,

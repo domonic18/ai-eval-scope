@@ -32,12 +32,14 @@ export interface DashboardProject {
     runId: string
     createdAt: string | null
     metrics?: Record<string, number> | null
+    scenarioId: string | null
   } | null
 }
 
 export interface RunSummary {
   id: string
   externalRunId: string
+  scenarioId: string | null
   mode: string
   status: string
   totalSamples: number
@@ -174,16 +176,7 @@ export interface DebugJobStatus {
   web_run_url?: string | null
   metrics?: {
     run_id?: string
-    metrics?: {
-      DR?: number
-      CPR?: number
-      condR?: number
-      avg_reward?: number
-      avg_soft?: number
-      avg_pref?: number
-      avg_time_ms?: number
-      llm_skipped?: number
-    }
+    metrics?: Record<string, number>
     total_samples?: number
     failure_breakdown?: Record<string, number>
   } | null

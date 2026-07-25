@@ -2,7 +2,8 @@
  * 制品路由（/api/v1/artifacts）。
  *  - GET /:id        校验归属后 302 重定向到 presigned GET（下载/新窗口，attachment 语义）
  *  - GET /:id/preview  返回预览 URL + 元信息（JSON，前端 iframe/fetch 用）：
- *                      image→COS presigned 直链；其余→同源 raw 代理（规避 COS 强制下载）
+ *                      生产 COS image→presigned 直链；其余(含本地 minio image)→同源 raw 代理
+ *                      （本地 minio 内部端点浏览器不可达，presigned 直链会 502，故 image 也走代理）
  *  - GET /:id/raw    同源流式代理：token 鉴权后拉取对象，强制 inline + 正确 Content-Type 回吐
  */
 
@@ -70,15 +71,16 @@ router.get(
     const svc = createQueryService(req.tenant!)
     const meta = await svc.artifactMeta(req.params.id)
     let url: string
-    if (meta.contentType.startsWith("image")) {
-      // image：COS presigned 直链（img 标签不触发下载、省函数流量、规避 SCF 响应大小上限）
+    // 生产 COS image 用 presigned 直链（公网域名浏览器可达，img 不触发下载、省函数流量、规避 SCF 响应大小上限）。
+    // 本地 minio image 走同源 raw 代理：minio 内部端点(minio:9000)浏览器不可达，presigned 直链会 502。
+    if (meta.contentType.startsWith("image") && getConfig().objectStorage === "cos") {
       const g = await getObjectStorage().presignGet({
         key: meta.objectKey,
         ttlSec: getConfig().presignTtlSec,
       })
       url = g.url
     } else {
-      // html/text/trace：同源 raw 代理（规避 COS 默认 attachment 下载 + 跨域 fetch CORS）
+      // 本地 minio image / html / text / trace：同源 raw 代理（规避 COS 默认 attachment 下载 + 跨域 fetch CORS）
       const token = issueArtifactToken({
         artifactId: req.params.id,
         objectKey: meta.objectKey,

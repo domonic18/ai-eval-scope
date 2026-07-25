@@ -230,9 +230,9 @@ class TestMetricsCalculator:
         report = calc.compute(results, run_id="run_001")
 
         assert report.total_samples == 5
-        assert report.dr == 1.0
-        assert report.cpr == 1.0
-        assert report.avg_reward == pytest.approx(2.2, abs=0.01)
+        assert report.metrics["courseware:document_rate"] == 1.0
+        assert report.metrics["courseware:constraint_pass_rate"] == 1.0
+        assert report.metrics["courseware:reward"] == pytest.approx(2.2, abs=0.01)
 
     def test_mixed_results(self) -> None:
         calc = MetricsCalculator()
@@ -244,8 +244,8 @@ class TestMetricsCalculator:
         ]
         report = calc.compute(results)
 
-        assert report.dr == 0.75  # 3/4
-        assert report.cpr == 0.5  # 2/4
+        assert report.metrics["courseware:document_rate"] == 0.75  # 3/4
+        assert report.metrics["courseware:constraint_pass_rate"] == 0.5  # 2/4
 
     def test_empty_results(self) -> None:
         calc = MetricsCalculator()
@@ -266,7 +266,6 @@ class TestMetricsCalculator:
         )
         report = calc.compute([r])
         assert "format.response_format" in report.failure_breakdown
-
 
 
 # ─── PipelineEngine 端到端测试 ───
@@ -295,7 +294,6 @@ class TestPipelineEngine:
         engine = PipelineEngine(config, registry)
         result = engine.evaluate_sample(tmp_path, {"sample_id": "test_001"})
 
-        assert result.s_format == 1.0
         assert result.stage_results["format"].gate_passed is True
 
     def test_invalid_format_short_circuits(self, tmp_path: Path) -> None:
@@ -325,7 +323,7 @@ class TestPipelineEngine:
         engine = PipelineEngine(config, registry)
         result = engine.evaluate_sample(tmp_path, {"sample_id": "test_002"})
 
-        assert result.s_format == 0.0  # 归一化后 format 失败不惩罚（0，非 -3）
+        assert result.stage_results["format"].gate_passed is False  # format 失败
         # 常识阶段应被 SKIP
         assert result.stage_results.get("commonsense") is not None
         assert result.stage_results["commonsense"].status == EvalStatus.SKIP
@@ -352,7 +350,6 @@ class TestPipelineEngine:
         result = engine.evaluate_sample(pkg_dir, {"sample_id": "golden_valid"})
 
         assert result.stage_results["format"].gate_passed is True
-        assert result.s_format == 1.0
 
     def test_cache_hit(self, tmp_path: Path) -> None:
         """相同输入重复评估命中缓存。"""
@@ -437,4 +434,4 @@ class TestPipelineEngine:
         report = engine.evaluate_batch(packages, run_id="run_batch")
 
         assert report.total_samples == 3
-        assert report.dr == 1.0
+        assert report.metrics["courseware:document_rate"] == 1.0

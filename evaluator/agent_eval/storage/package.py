@@ -242,13 +242,14 @@ class EvalResultManifest(BaseModel):
 
 
 class ScoreSummary(BaseModel):
-    """评分汇总 — scores.json。"""
+    """评分汇总 — scores.json。
 
-    s_format: float = Field(default=0.0)
-    s_common: float = Field(default=0.0)
-    s_soft: float = Field(default=0.0)
-    s_pref: float = Field(default=0.0)
+    stage_metrics 为权威（ScenarioScoreAggregator 输出，key = StageWeight.id + reward），
+    替代旧 s_format/s_common/s_soft/s_pref 标量。旧 scores.json 的 s_* 字段会被忽略（Pydantic 默认）。
+    """
+
     reward: float = Field(default=0.0)
+    stage_metrics: dict[str, float] = Field(default_factory=dict)
     dimensions: dict[str, float] = Field(default_factory=dict)
 
 

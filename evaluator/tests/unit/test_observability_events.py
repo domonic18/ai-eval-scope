@@ -32,7 +32,7 @@ def _constraint(
 
 
 def _sample(sample_id="sample_001"):
-    s = SampleResult(sample_id=sample_id, status=EvalStatus.PASS, s_format=1.0, reward=0.8)
+    s = SampleResult(sample_id=sample_id, status=EvalStatus.PASS, reward=0.8)
     s.stage_results = {
         "format": StageResult(
             stage_id="format", status=EvalStatus.PASS, constraint_results=[_constraint()]
@@ -45,9 +45,13 @@ def test_run_event_mapping_fields():
     report = MetricsReport(
         run_id="run_1",
         total_samples=2,
-        dr=0.9,
-        cpr=0.7,
-        avg_reward=0.6,
+        metrics={
+            "courseware:document_rate": 0.9,
+            "courseware:constraint_pass_rate": 0.7,
+            "courseware:reward": 0.6,
+            "courseware:soft": 0.0,
+            "courseware:pref": 0.0,
+        },
         avg_time_ms=1200,
     )
     ev = build_run_event(report, langfuse_host="https://lf")
@@ -97,7 +101,7 @@ def test_sample_event_mapping_fields():
     d = ev["data"]
     assert d["external_run_id"] == "run_1"
     assert d["external_sample_id"] == "sample_001"
-    assert d["s_format"] == 1.0
+    assert isinstance(d["stage_metrics"], dict)  # 场景化样本指标 dict（已去 s_* 遗留标量）
     assert d["reward"] == 0.8
 
 

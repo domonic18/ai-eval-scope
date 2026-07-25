@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from agent_eval.core.types import EvalStatus
-from agent_eval.evaluation.models import MetricsReport, SampleResult, SampleScore, StageResult
+from agent_eval.evaluation.models import MetricsReport, SampleResult, StageResult
 
 
 class MetricsCalculator:
@@ -21,14 +21,10 @@ class MetricsCalculator:
         *,
         run_id: str = "",
     ) -> MetricsReport:
-        """计算批量评估指标。
+        """计算批量评估指标（deprecated：保留作 courseware 等价对照基准）。
 
-        Args:
-            results: 所有样本的评估结果列表。
-            run_id: 运行 ID。
-
-        Returns:
-            MetricsReport 实例。
+        输出场景化 metrics dict（courseware:* 键），与新 ScenarioMetricsCalculator 对齐；
+        soft/pref/reward 从 SampleResult.stage_metrics 读取（由聚合器填充）。
         """
         total = len(results)
         if total == 0:
@@ -55,39 +51,26 @@ class MetricsCalculator:
             ).gate_passed
         )
 
-        # Reward 分布
-        rewards = [r.reward for r in results]
+        # 内容质量 / 用户偏好 / reward 从 stage_metrics 读（ScenarioScoreAggregator 输出）
+        avg_soft = sum(r.stage_metrics.get("soft", 0.0) for r in results) / total
+        avg_pref = sum(r.stage_metrics.get("pref", 0.0) for r in results) / total
+        avg_reward = sum(r.reward for r in results) / total
 
-        # 内容质量 / 用户偏好 分项均值（独立指标，不混入 Reward）
-        avg_soft = sum(r.s_soft for r in results) / total
-        avg_pref = sum(r.s_pref for r in results) / total
-
-        # 失败分类
         failure_breakdown = self._breakdown(results)
-
-        # LLM 不可用导致的跳过数
         llm_skipped = self._llm_skipped(results)
 
         return MetricsReport(
             run_id=run_id,
             total_samples=total,
-            dr=fmt_pass / total,
-            cpr=com_pass / total,
-            avg_reward=sum(rewards) / total,
-            avg_soft=avg_soft,
-            avg_pref=avg_pref,
+            metrics={
+                "courseware:document_rate": fmt_pass / total,
+                "courseware:constraint_pass_rate": com_pass / total,
+                "courseware:reward": avg_reward,
+                "courseware:soft": avg_soft,
+                "courseware:pref": avg_pref,
+            },
             avg_time_ms=sum(r.total_duration_ms for r in results) / total,
-            sample_scores=[
-                SampleScore(
-                    sample_id=r.sample_id,
-                    s_format=r.s_format,
-                    s_common=r.s_common,
-                    s_soft=r.s_soft,
-                    s_pref=r.s_pref,
-                    reward=r.reward,
-                )
-                for r in results
-            ],
+            sample_scores=[{"sample_id": r.sample_id, **r.stage_metrics} for r in results],
             failure_breakdown=failure_breakdown,
             llm_skipped=llm_skipped,
         )
