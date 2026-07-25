@@ -426,7 +426,7 @@ def upload(
         raise typer.Exit(code=1)
 
     metrics = summary.get("metrics", {})
-    # 用 build_run_event 重建 run 事件（P5-1：附带 courseware:* 指标键 + scenario_id + 运行配置快照）
+    # 用 build_run_event 重建 run 事件（附带场景化指标键 + scenario_id + 运行配置快照）
     from agent_eval.evaluation.models import MetricsReport
 
     # summary["metrics"] 已是场景化指标 dict（key=metric_id）；avg_time_ms 为顶层过程元数据
@@ -440,11 +440,31 @@ def upload(
         },
         avg_time_ms=summary.get("avg_time_ms", metrics.get("avg_time_ms", 0.0)),
     )
+    # 从 summary 重建 ScenarioConfig，使回填 run 的 scenario_id/指标定义与原运行一致
+    # （S2-13：不再回退 courseware）。scenario_id 由指标 id 前缀推导（如 code:delivery_rate → code）。
+    from agent_eval.evaluation.scenario.models import (
+        AggregationPolicy,
+        MetricDefinition,
+        ScenarioConfig,
+    )
+
+    mdefs_raw = summary.get("metric_definitions") or []
+    backfill_sid = (
+        str(mdefs_raw[0]["id"]).split(":", 1)[0] if mdefs_raw else "courseware"
+    )
+    scenario_config = ScenarioConfig(
+        scenario_id=backfill_sid,
+        aggregation_policy=AggregationPolicy(
+            id=f"{backfill_sid}-backfill", scenario_id=backfill_sid, stage_weights=[]
+        ),
+        metric_definitions=[MetricDefinition.model_validate(m) for m in mdefs_raw],
+    )
     events: list[dict[str, Any]] = [
         build_run_event(
             report,
             rule_set_version=summary.get("rule_set_version"),
             summary_report=summary.get("summary_report"),
+            scenario_config=scenario_config,
         ),
     ]
 
@@ -480,7 +500,7 @@ def upload(
     art_report = SinkReport(enabled=True)
     artifact_count = 0
 
-    # 从 run_manifest 获取 package_dir（原始课件文件所在）
+    # 从 run_manifest 获取 package_dir（原始产出物所在）
     manifest_path = run_dir / "run_manifest.json"
     package_dir_str = ""
     if manifest_path.exists():
@@ -551,7 +571,7 @@ def upload(
                         )
                         artifact_count += 1
 
-            # 原始课件文件（从 package_dir 扫描 HTML/MD）
+            # 原始产出物（从 package_dir 扫描，含任意场景文件）
             if package_dir_str:
                 pkg = Path(package_dir_str)
                 if pkg.exists():

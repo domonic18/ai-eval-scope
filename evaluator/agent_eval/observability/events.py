@@ -26,12 +26,6 @@ def _new_event_id() -> str:
     return uuid.uuid4().hex
 
 
-def _gate_score(sample: SampleResult, stage_id: str) -> float:
-    """门控阶段得分（兼容遗留 s_format/s_common 标量）：通过=1.0，否则 0.0。"""
-    sr = sample.stage_results.get(stage_id)
-    return 1.0 if (sr is not None and sr.gate_passed) else 0.0
-
-
 def build_run_event(
     report: MetricsReport,
     *,
@@ -101,11 +95,6 @@ def build_sample_event(
             "status": sample.status.value,
             # 场景化样本指标（权威）：key = StageWeight.id + reward
             "stage_metrics": dict(sample.stage_metrics),
-            # 遗留标量字段（兼容 backend 迁移期列；schema 场景化后移除）
-            "s_format": _gate_score(sample, "format"),
-            "s_common": _gate_score(sample, "commonsense"),
-            "s_soft": sample.stage_metrics.get("soft", 0.0),
-            "s_pref": sample.stage_metrics.get("pref", 0.0),
             "reward": sample.reward,
             "total_duration_ms": sample.total_duration_ms,
             "llm_calls": sample.llm_calls,

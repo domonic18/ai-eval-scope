@@ -47,7 +47,7 @@ interface RunData {
 interface OverviewData {
   verdict?: "pass" | "fail"
   score?: number
-  metrics?: { DR: number; CPR: number; condR: number; avg_time_ms: number }
+  metrics?: Record<string, number>
   metrics_raw?: Record<string, number>
   summary?: { total: number; passed: number; failed: number; skipped: number }
   summary_report?: {
@@ -200,7 +200,7 @@ export default function RunDetail() {
         <Sep />
         <span className="inline-flex items-center gap-1.5">
           <span className="text-muted-foreground">平均耗时</span>
-          <span className="font-medium tabular-nums">{fmtMsRaw(rawMetrics["avg_time_ms"] ?? rawMetrics["courseware:avg_time_ms"] ?? 0)}</span>
+          <span className="font-medium tabular-nums">{fmtMsRaw(rawMetrics["avg_time_ms"] ?? 0)}</span>
         </span>
         <Sep />
         <span className="inline-flex items-center gap-1.5">

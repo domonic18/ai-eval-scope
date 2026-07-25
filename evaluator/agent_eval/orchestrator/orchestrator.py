@@ -69,7 +69,7 @@ class Orchestrator:
 
         orch = Orchestrator(engine, report_gen, workspace)
         result = orch.eval_only(package_dir, rule_set)
-        print(result.report.metrics["courseware:reward"])
+        print(result.report.metrics)  # 场景化指标 dict，键如 code:reward / courseware:reward
     """
 
     def __init__(
@@ -585,7 +585,7 @@ def eval_packages(
             "./workspace/runs/xxx/packages",
             rule_set_path="./rule_set.yaml",
         )
-        print(result.report.metrics["courseware:reward"])
+        print(result.report.metrics)  # 场景化指标 dict，键如 code:reward / courseware:reward
 
     Args:
         package_dir: ExecutionPackage 目录路径。

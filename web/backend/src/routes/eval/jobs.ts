@@ -22,8 +22,6 @@ const wrap =
   (req, res, next) =>
     Promise.resolve(fn(req, res, next)).catch(next)
 
-const DEFAULT_RULE_SET = "coursework-quality"
-
 router.post(
   "/",
   requireApiKey,
@@ -40,7 +38,7 @@ router.post(
         content?: { filename?: string; text?: string }
         rule_set_id?: string
         package_id?: string // Phase 3：rule_set_id 的 package 语义别名（优先）
-        package_ref?: string // S2-D：场景包引用 scenario/package:label（缺省对 courseware 自动补全）
+        package_ref?: string // S2-D：场景包引用 scenario/package:label（调用方须显式提供）
         task_id?: string
         task_title?: string
         task_subject?: string
@@ -48,7 +46,7 @@ router.post(
       const result = await svc.submit({
         inlineFilename: body.content?.filename,
         inlineText: body.content?.text,
-        ruleSetId: body.package_id || body.rule_set_id || DEFAULT_RULE_SET,
+        ruleSetId: body.package_id || body.rule_set_id || "",
         packageRef: body.package_ref,
         taskId: q.task_id || body.task_id,
         taskTitle: q.task_title || body.task_title,
@@ -69,7 +67,7 @@ router.post(
     const result = await svc.submit({
       filename,
       fileBytes,
-      ruleSetId: q.package_id || q.rule_set_id || DEFAULT_RULE_SET,
+      ruleSetId: q.package_id || q.rule_set_id || "",
       packageRef: q.package_ref,
       taskId: q.task_id,
       taskTitle: q.task_title,

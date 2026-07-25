@@ -79,7 +79,7 @@ router.post(
     if (!Buffer.isBuffer(fileBytes) || fileBytes.length === 0) {
       throw new PlatformError("file body is empty", { status: 400, code: "INPUT_INVALID" })
     }
-    const ruleSetId = q.rule_set_id || "coursework-quality"
+    const ruleSetId = q.rule_set_id || ""
     const taskId = q.task_id?.trim() || undefined
     const taskTitle = q.task_title?.trim() || undefined
     const taskSubject = q.task_subject?.trim() || undefined

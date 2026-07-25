@@ -101,7 +101,7 @@ def test_sample_event_mapping_fields():
     d = ev["data"]
     assert d["external_run_id"] == "run_1"
     assert d["external_sample_id"] == "sample_001"
-    assert d["s_format"] == 1.0
+    assert isinstance(d["stage_metrics"], dict)  # 场景化样本指标 dict（已去 s_* 遗留标量）
     assert d["reward"] == 0.8
 
 

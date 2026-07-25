@@ -181,7 +181,8 @@ function buildServer(tenant: Tenant): McpServer {
     },
     async (args) => {
       try {
-        const ruleSetId = args.rule_set_id || "coursework-quality"
+        // rule_set_id 缺省空串 → executor 从场景包推导唯一规则集（去 courseware 默认）
+        const ruleSetId = args.rule_set_id || ""
         const common = {
           ruleSetId,
           packageRef: args.package_ref,

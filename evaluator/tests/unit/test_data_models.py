@@ -41,7 +41,7 @@ class TestTaskModel:
         )
         assert task.id == "t001"
         assert task.input_mode == "inline"
-        assert task.file_patterns == ["*.html"]
+        assert task.file_patterns == ["*"]  # 默认全收，由规则集 format 门控收敛
 
     def test_task_directory_mode(self) -> None:
         task = Task(

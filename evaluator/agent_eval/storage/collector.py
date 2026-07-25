@@ -57,7 +57,7 @@ class DirectoryCollector:
             max_depth: 最大遍历深度。
         """
         self.root_dir = Path(root_dir)
-        self.file_patterns = file_patterns or ["*.html", "*.htm"]
+        self.file_patterns = file_patterns or ["*"]
         self.exclude_dirs = set(exclude_dirs or ["__MACOSX", ".git", ".DS_Store"])
         self.max_depth = max_depth
 

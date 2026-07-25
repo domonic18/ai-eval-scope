@@ -195,7 +195,7 @@ class PackageBuilder:
             raise NotADirectoryError(f"不是目录: {source_dir}")
 
         # 使用 DirectoryCollector 收集文件
-        file_patterns = task.file_patterns or ["*.html", "*.htm"]
+        file_patterns = task.file_patterns or ["*"]
         collector = DirectoryCollector(
             root_dir=source_dir,
             file_patterns=file_patterns,

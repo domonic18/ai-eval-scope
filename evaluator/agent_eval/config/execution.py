@@ -18,8 +18,8 @@ class SUTToolsDefaults:
     http_timeout: float = 120.0
     # CLI SUT 默认超时（秒）
     cli_default_timeout: float = 120.0
-    # 默认文件匹配模式（目录收集时使用）
-    file_patterns: list[str] = field(default_factory=lambda: ["*.html", "*.htm"])
+    # 默认文件匹配模式（目录收集时使用）；默认全收 ["*"]，由规则集 format 门控/调用方收敛
+    file_patterns: list[str] = field(default_factory=lambda: ["*"])
 
 
 @dataclass(frozen=True)
@@ -58,8 +58,8 @@ class TaskDefaults:
 
     # 默认输入模式
     input_mode: str = "inline"
-    # 默认文件匹配模式
-    file_patterns: list[str] = field(default_factory=lambda: ["*.html"])
+    # 默认文件匹配模式；默认全收 ["*"]，由规则集 format 门控/调用方收敛（去 courseware html 偏向）
+    file_patterns: list[str] = field(default_factory=lambda: ["*"])
 
 
 # 模块级单例

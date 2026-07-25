@@ -20,8 +20,6 @@ from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 
-from agent_eval.config import EVALUATOR_DEFAULTS
-
 
 def get_output_dir(sample: Any) -> Path | None:
     """从样本中提取 output 目录。
@@ -158,9 +156,6 @@ def file_to_text(path: Path) -> str:
     if path.suffix.lower() in (".html", ".htm"):
         return html_to_text(raw)
     return raw
-
-
-_DOC_EXTS = tuple(EVALUATOR_DEFAULTS.text_collection_patterns)
 
 
 def collect_text_content(output_dir: Path) -> str:

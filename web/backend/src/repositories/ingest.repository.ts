@@ -67,9 +67,9 @@ export class IngestRepository {
         : (
             await tx.runConfigSnapshot.create({
               data: {
-                scenarioId: (snap.scenario_id as string) ?? "courseware",
-                packageId: ((snap.package as { id?: string })?.id) ?? "courseware",
-                packageVersion: ((snap.package as { version?: string })?.version) ?? "1.0.0",
+                scenarioId: (snap.scenario_id as string) ?? "",
+                packageId: ((snap.package as { id?: string })?.id) ?? "",
+                packageVersion: ((snap.package as { version?: string })?.version) ?? "",
                 content: snap as Prisma.InputJsonValue,
                 contentHash,
               },
