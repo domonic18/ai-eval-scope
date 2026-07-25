@@ -165,6 +165,31 @@ def _flush_result(
     return sink.flush(result, run_workspace=run_workspace, package_dir=package_dir)
 
 
+def _file_patterns_from_rule_set(rule_set_path: str | Path | None) -> list[str]:
+    """从规则集 format 门控推导要收集的文件类型（code→*.py / courseware→*.html,*.md）。
+
+    与 /debug 的 accept 同源（规则集 rules[].extensions）；无 format 门控或缺规则集
+    → 回退 ["*"] 全收，由 format 门控兜底校验。
+    """
+    if not rule_set_path:
+        return ["*"]
+    try:
+        import yaml
+
+        data = yaml.safe_load(Path(rule_set_path).read_text(encoding="utf-8")) or {}
+        exts: set[str] = set()
+        for rule in data.get("rules") or []:
+            if (
+                isinstance(rule, dict)
+                and rule.get("method") == "format"
+                and isinstance(rule.get("extensions"), list)
+            ):
+                exts.update(str(e).lstrip(".") for e in rule["extensions"])
+        return [f"*.{e}" for e in sorted(exts)] or ["*"]
+    except Exception:
+        return ["*"]
+
+
 async def run_job(job: EvalJob, input_dir: Path) -> None:
     """执行单个任务（input_dir 为已下载物化的输入目录）。"""
     settings = get_settings()
@@ -172,15 +197,16 @@ async def run_job(job: EvalJob, input_dir: Path) -> None:
     package_dir = job_output_dir / "package"
 
     try:
+        rule_set_path = _resolve_rule_set_path(job)
+
         build_package(
             input_dir=input_dir,
             package_dir=package_dir,
             task_id=job.task_id,
             task_title=job.task_title or job.job_id,
             task_subject=job.task_subject,
+            file_patterns=_file_patterns_from_rule_set(rule_set_path),
         )
-
-        rule_set_path = _resolve_rule_set_path(job)
 
         result = await asyncio.to_thread(
             eval_packages,
