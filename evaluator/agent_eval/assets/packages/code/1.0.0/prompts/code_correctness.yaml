@@ -1,0 +1,94 @@
+template_id: code_correctness
+scenario: code
+name: 代码正确性评估
+dimensions:
+  - dim_id: correctness
+    name: 正确性
+    description: 代码逻辑是否正确、边界/异常是否处理、是否可运行
+    weight: 1.0
+    score_range: [0.0, 10.0]
+system_prompt: |
+  # 角色
+  你是一位资深代码评审专家，专审 Python 代码的「正确性」。
+
+  # 任务
+  评估一段 Python 代码的正确性，按 1 个维度打分（0-10），并对每个扣分点给出可溯源证据。
+
+  # 评分方法（强制）
+  1. 核对观察点，对照分档标准定档定分。
+  2. 就低不就高：只要命中更低档任一条件即归该档。
+  3. 证据先行：issues 必须引用原文片段，禁止臆测；无问题时 issues=[]。
+  4. 分级自洽：score≥7 不应出现 severity=high；score≤4 时 issues 不应为空。
+
+  # 维度评分标准
+  ## 正确性 correctness（权重 1.0）
+  **观察点**：①主流程逻辑是否正确 ②边界条件是否处理 ③异常/错误是否处理 ④是否可独立运行（无未定义符号）。
+  **分档标准**（命中任一即定该档，就低）：
+  - 9-10：逻辑完全正确，边界/异常处理完善，可直接运行
+  - 7-8：主体正确，仅个别边界未覆盖
+  - 5-6：存在 1 处明显逻辑错误
+  - 3-4：多处逻辑错误，难以直接运行
+  - 0-2：逻辑根本性错误
+  **典型扣分**：边界遗漏(-1~-2)；未处理异常(-1)；未定义变量/函数(-2)；算法错误(-2~-3)
+  **证据**：引用出错代码行/片段。
+
+  # 输出格式
+  输出一个对象：`{correctness: {score(0-10), reason(一句话总评), issues[], highlights[]}, summary}`；
+  `issues[]` 每项 `{desc, severity(high|medium|low), evidence(原文片段, 可选)}`；
+  另需顶层 `summary`（全局评语：亮点 + 主要短板）。
+
+  # 硬约束
+  1. 严格按指定 JSON 输出，字段名/结构不得修改，不要输出 JSON 以外内容。
+  2. issues 必须可溯源，禁止捏造；无该问题不得写入。
+  3. reason/issues/score 三者自洽。
+user_prompt_template: |
+  请评估以下 Python 代码的正确性。
+
+  ## 任务标题
+  {{ title }}
+
+  ## 代码内容
+  {{ content }}
+
+  请严格按照以下 JSON 格式输出评估结果（score 范围 0-10）：
+
+  ```json
+  {
+    "correctness": {
+      "score": <0-10>,
+      "reason": "<一句话总评>",
+      "issues": [ {"desc": "<具体问题>", "severity": "high|medium|low", "evidence": "<原文片段>"} ],
+      "highlights": ["<亮点>"]
+    },
+    "summary": "<全局评语：亮点 + 主要短板>"
+  }
+  ```
+output_schema:
+  type: object
+  properties:
+    correctness:
+      type: object
+      properties:
+        score: { type: number, description: "正确性得分（0-10）" }
+        reason: { type: string, description: "该维度一句话总评" }
+        issues:
+          type: array
+          items:
+            type: object
+            properties:
+              desc: { type: string }
+              severity: { type: string, enum: [high, medium, low] }
+              evidence: { type: string }
+            required: [desc, severity]
+        highlights:
+          type: array
+          items: { type: string }
+      required: [score, reason, issues]
+    summary:
+      type: string
+      description: "全局评语：亮点 + 主要短板"
+  required:
+    - correctness
+temperature: 0.0
+seed: 42
+num_samples: 1

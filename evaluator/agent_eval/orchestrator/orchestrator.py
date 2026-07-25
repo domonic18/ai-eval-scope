@@ -96,6 +96,7 @@ class Orchestrator:
         vision_soft_weights: dict[str, float] | None = None,
         llm_signature: str = "",
         no_cache: bool = False,
+        scenario_package_dir: Any = None,
     ) -> EvalResult:
         """eval-only 模式：加载 packages → 评估 → 报告。
 
@@ -120,7 +121,11 @@ class Orchestrator:
         # 传了 rule_set → 据其重建管线；未传（None）→ 复用 __init__ 的默认管线（已含全部评估器）。
         # with_vision=True 时显式覆盖软约束权重（含 vision.quality）以保持归一化正确。
         if rule_set is not None:
-            self.pipeline_engine = build_pipeline(registry, rule_set)
+            # package_dir 此处是 ExecutionPackage（SUT 产出）；场景 policy/entry_points 取自
+            # scenario_package_dir（场景包根，含 metrics/policy.yaml + agent_eval.yaml）。
+            self.pipeline_engine = build_pipeline(
+                registry, rule_set, package_dir=scenario_package_dir
+            )
         if with_vision:
             self.pipeline_engine.override_evaluator_weights(
                 vision_soft_weights or dict(SCORE_AGGREGATION_WEIGHTS.vision_soft_weights)
@@ -513,12 +518,15 @@ class Orchestrator:
 def _init_judge_orchestrator(
     llm_config: Any | None = None,
     llm_provider: str | None = None,
+    prompts_dir: Any = None,
 ) -> Any | None:
     """初始化 JudgeOrchestrator。
 
     Args:
         llm_config: LLMConfig 实例（可选）。
         llm_provider: Provider 名称覆盖（可选）。
+        prompts_dir: 场景包的 prompts/ 目录（code→code_correctness 等）；缺省回退
+            内置 courseware prompts（paths.prompts_dir）。
 
     Returns:
         JudgeOrchestrator 实例，或 None（无 LLM 配置时）。
@@ -540,7 +548,11 @@ def _init_judge_orchestrator(
         pool = ProviderPool(llm_config)
         from agent_eval.config.paths import paths
 
-        templates = TemplateManager(paths.prompts_dir)
+        # 优先用场景包的 prompts/（code→code_correctness），缺省回退内置 courseware prompts
+        _prompts = (
+            Path(prompts_dir) if prompts_dir and Path(prompts_dir).exists() else paths.prompts_dir
+        )
+        templates = TemplateManager(_prompts)
         templates.load_all()
         stability = StabilityController()
         parser = StructuredOutputParser()
@@ -595,14 +607,25 @@ def eval_packages(
     rule_set = None
     if rule_set_path:
         rule_set = ConfigLoader.load_rule_set(rule_set_path)
+    # 场景包根 = rule_set_path 的 rules/ 上一层（含 metrics/policy.yaml + agent_eval.yaml），
+    # 供 _resolve_scenario_config 读场景 policy + 触发 entry_points（阶段 4）。
+    scenario_package_dir = None
+    if rule_set_path:
+        _cand = Path(rule_set_path).resolve().parent.parent
+        if (_cand / "metrics" / "policy.yaml").exists():
+            scenario_package_dir = _cand
 
     # 加载 LLM 配置（可选）
     llm_config = None
     if llm_config_path:
         llm_config = ConfigLoader.load_llm_config(llm_config_path)
 
-    # 初始化 JudgeOrchestrator（可选）
-    judge_orch = _init_judge_orchestrator(llm_config, llm_provider)
+    # 初始化 JudgeOrchestrator（可选）—— 模板取自场景包 prompts/（code→code_correctness）
+    judge_orch = _init_judge_orchestrator(
+        llm_config,
+        llm_provider,
+        prompts_dir=scenario_package_dir / "prompts" if scenario_package_dir else None,
+    )
 
     # 创建 Workspace
     workspace = Workspace(output_dir) if output_dir else Workspace()
@@ -632,6 +655,7 @@ def eval_packages(
             project=project,
             with_vision=want_vision,
             screenshot_renderer=renderer,
+            scenario_package_dir=scenario_package_dir,
         )
     finally:
         if renderer is not None:

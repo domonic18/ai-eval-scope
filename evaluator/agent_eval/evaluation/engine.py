@@ -402,7 +402,9 @@ class PipelineEngine:
         return out
 
 
-def build_pipeline(registry: EvaluatorRegistry, rule_set: Any) -> PipelineEngine:
+def build_pipeline(
+    registry: EvaluatorRegistry, rule_set: Any, *, package_dir: Any = None
+) -> PipelineEngine:
     """从规则集构建管线 —— 评估器集合的唯一事实源。
 
     - stage 顺序与短路策略：取自 ``rule_set.cascade``（``stop_on_fail`` → ``fail_fast``）。
@@ -441,21 +443,33 @@ def build_pipeline(registry: EvaluatorRegistry, rule_set: Any) -> PipelineEngine
             for s in stage_order
         ]
     )
-    return PipelineEngine(config, registry, scenario_config=_resolve_scenario_config(rule_set))
+    return PipelineEngine(
+        config, registry, scenario_config=_resolve_scenario_config(rule_set, package_dir)
+    )
 
 
-def _resolve_scenario_config(rule_set: Any) -> ScenarioConfig:
-    """从 rule_set.scenario_id 解析 ScenarioConfig（缺省 courseware）。
+def _resolve_scenario_config(rule_set: Any, package_dir: Any = None) -> ScenarioConfig:
+    """从 rule_set.scenario_id + package_dir 解析 ScenarioConfig（缺省 courseware）。
 
-    本阶段仅 courseware 场景已实现；非 courseware 的 scenario_id 暂回退 courseware
-    默认（占位），多场景 policy 加载见后续阶段。
+    package_dir 命中 ``metrics/policy.yaml`` → 数据驱动构造该场景的 ScenarioConfig
+    （多场景加载，解除恒返回 courseware 的占位）；否则回退 COURSEWARE_SCENARIO_CONFIG。
     """
+    if package_dir is not None:
+        from agent_eval.evaluation.evaluators.plugins import load_package_entry_points
+        from agent_eval.evaluation.scenario.defaults import load_scenario_config_from_package
+
+        # 先注册包声明的评估器（entry_points），再构造场景配置（评估器在 evaluate 时才 create）
+        load_package_entry_points(package_dir)
+        cfg = load_scenario_config_from_package(package_dir)
+        if cfg is not None:
+            return cfg
+
     sid = getattr(rule_set, "scenario_id", None) or COURSEWARE_SCENARIO_ID
     if sid != COURSEWARE_SCENARIO_ID:
         import structlog
 
         structlog.get_logger("pipeline").warning(
-            "scenario 未知，回退 courseware 默认（多场景加载见后续阶段）", scenario_id=sid
+            "scenario 包无 policy.yaml，回退 courseware 默认", scenario_id=sid
         )
     return COURSEWARE_SCENARIO_CONFIG
 

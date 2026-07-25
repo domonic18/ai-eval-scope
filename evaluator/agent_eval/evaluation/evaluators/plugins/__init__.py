@@ -56,3 +56,36 @@ def discover_plugins(package_path: Path | str | None = None) -> list[str]:
             )
 
     return loaded
+
+
+def load_package_entry_points(package_path: Path | str) -> list[str]:
+    """加载场景包声明的 entry_points 评估器（manifest.entry_points.evaluators）。
+
+    值为 ``"module"`` 或 ``"module:func"``：``importlib.import_module`` 导入模块（首次导入
+    触发模块内 ``@registry.register`` 装饰器，Python 模块缓存保证幂等——重复加载不会二次注册）；
+    有 ``:func`` 则调用（func 须幂等）。使场景包能携带自己的评估器（阶段 4），解除评估器固定
+    courseware 一组的限制。无 manifest / 无 entry_points / 加载失败 → 空操作（不阻塞评估）。
+    """
+    root = Path(package_path)
+    try:
+        from agent_eval.packages.manifest import load_manifest
+
+        manifest = load_manifest(root)
+    except Exception:  # noqa: BLE001 - 无清单或解析失败 → 视作无 entry_points
+        return []
+    ep = (manifest.entry_points or {}).get("evaluators")
+    if not ep:
+        return []
+    module_name, _, func_name = str(ep).partition(":")
+    try:
+        mod = importlib.import_module(module_name)
+        if func_name:
+            getattr(mod, func_name)()
+        return [module_name]
+    except Exception:  # noqa: BLE001 - 单个 entry_point 失败不应阻塞评估
+        import structlog
+
+        structlog.get_logger("evaluator_plugins").warning(
+            "entry_points 加载失败", package=str(root), entry_point=ep
+        )
+        return []

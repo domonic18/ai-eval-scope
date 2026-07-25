@@ -22,12 +22,15 @@ __all__ = [
 def _init_judge_orchestrator(
     llm_config_path: str | None,
     llm_provider: str | None,
+    prompts_dir: str | None = None,
 ) -> object | None:
     """初始化 JudgeOrchestrator（可选）。"""
     if llm_config_path is None:
         return None
 
     try:
+        from pathlib import Path
+
         from agent_eval.config.loader import ConfigLoader
         from agent_eval.llm.judge.orchestrator import JudgeOrchestrator
         from agent_eval.llm.judge.stability import StabilityController
@@ -39,7 +42,11 @@ def _init_judge_orchestrator(
         pool = ProviderPool(llm_config)
         from agent_eval.config.paths import paths
 
-        templates = TemplateManager(paths.prompts_dir)
+        # 优先用场景包的 prompts/（code→code_correctness），缺省回退内置 courseware prompts
+        _prompts = (
+            Path(prompts_dir) if prompts_dir and Path(prompts_dir).exists() else paths.prompts_dir
+        )
+        templates = TemplateManager(_prompts)
         templates.load_all()
         stability = StabilityController()
         parser = StructuredOutputParser()

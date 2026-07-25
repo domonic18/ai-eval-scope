@@ -59,3 +59,28 @@ COURSEWARE_SCENARIO_CONFIG: ScenarioConfig = ScenarioConfig(
     aggregation_policy=COURSEWARE_DEFAULT_POLICY,
     metric_definitions=COURSEWARE_DEFAULT_METRICS,
 )
+
+
+def load_scenario_config_from_package(package_dir: Any) -> ScenarioConfig | None:
+    """从场景包目录的 metrics/policy.yaml 构造 ScenarioConfig（数据驱动，任意场景）。
+
+    多场景配置加载的统一入口：解析 ``<package_dir>/metrics/policy.yaml`` 的
+    aggregation_policy + metric_definitions。缺文件或格式异常 → None（调用方回退 courseware）。
+    与 courseware 默认共用同一份 policy.yaml 契约（#60 跨语言单一源）。
+    """
+    from pathlib import Path
+
+    policy_yaml = Path(package_dir) / "metrics" / "policy.yaml"
+    if not policy_yaml.exists():
+        return None
+    data = yaml.safe_load(policy_yaml.read_text(encoding="utf-8"))
+    if not isinstance(data, dict) or "aggregation_policy" not in data:
+        return None
+    scenario_id = data["aggregation_policy"].get("scenario_id") or Path(package_dir).name
+    return ScenarioConfig(
+        scenario_id=str(scenario_id),
+        aggregation_policy=AggregationPolicy.model_validate(data["aggregation_policy"]),
+        metric_definitions=[
+            MetricDefinition.model_validate(m) for m in data.get("metric_definitions", [])
+        ],
+    )

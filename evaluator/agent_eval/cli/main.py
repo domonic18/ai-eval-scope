@@ -255,7 +255,13 @@ def eval(
                 llm_config = str(cwd_cfg)
             elif pkg_cfg.exists():
                 llm_config = str(pkg_cfg)
-        judge_orch = _init_judge_orchestrator(llm_config, llm_provider)
+        # 场景包 prompts/（code→code_correctness），缺省回退内置 courseware prompts
+        _prompts_dir: str | None = None
+        if rule_set_path:
+            _pp = Path(rule_set_path).resolve().parent.parent / "prompts"
+            if _pp.exists():
+                _prompts_dir = str(_pp)
+        judge_orch = _init_judge_orchestrator(llm_config, llm_provider, prompts_dir=_prompts_dir)
 
         # 构造 LLM 指纹（纳入 cache_key，LLM 配置/可用性变更时缓存自动失效）
         import hashlib
@@ -291,6 +297,12 @@ def eval(
 
         # 5. 创建 Orchestrator 并执行
         orch = Orchestrator(workspace=ws)
+        # 场景包根 = rule_set_path 的 rules/ 上一层（含 metrics/policy.yaml + agent_eval.yaml）
+        scenario_pkg_dir = None
+        if rule_set_path:
+            _cand = Path(rule_set_path).resolve().parent.parent
+            if (_cand / "metrics" / "policy.yaml").exists():
+                scenario_pkg_dir = _cand
         try:
             result = orch.eval_only(
                 Path(package_dir),
@@ -302,6 +314,7 @@ def eval(
                 screenshot_renderer=renderer,
                 llm_signature=llm_signature,
                 no_cache=no_cache,
+                scenario_package_dir=scenario_pkg_dir,
             )
         finally:
             if renderer is not None:
