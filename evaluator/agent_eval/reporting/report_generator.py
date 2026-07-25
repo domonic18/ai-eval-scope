@@ -2,7 +2,7 @@
 
 生成任务级和聚合级两种报告：
 - 任务级: 每个评估样本的约束结果、得分、LLM 溯源
-- 聚合级: DR/CPR/Reward 指标表、阈值对比、失败项明细
+- 聚合级: 场景化指标表（metric_definitions）、阈值对比、失败项明细
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ class ReportGenerator:
     """报告生成器 — 将评估结果转换为 Markdown + JSON 格式。
 
     Args:
-        thresholds: 指标阈值映射，默认 DR ≥ 0.95, CPR ≥ 0.90, avg_reward ≥ 0.70。
+        thresholds: 指标阈值映射（仅向后兼容保留）；权威来源为 metric_definitions（MetricsReport 携带）。
     """
 
     def __init__(self, thresholds: dict[str, float] | None = None) -> None:

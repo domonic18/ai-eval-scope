@@ -44,12 +44,8 @@ export interface SampleEventData {
   external_sample_id: string
   content_hash?: string | null
   status?: string
-  // Phase 3 场景化样本指标：metrics JSONB 为权威；下列列为遗留（迁移期保留）
+  // 场景化样本指标：metrics JSONB 为权威（key=metric_id）
   metrics?: Record<string, number>
-  s_format?: number
-  s_common?: number
-  s_soft?: number
-  s_pref?: number
   reward?: number
   total_duration_ms?: number
   llm_calls?: number
