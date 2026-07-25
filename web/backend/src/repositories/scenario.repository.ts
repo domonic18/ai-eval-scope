@@ -176,18 +176,35 @@ export class ScenarioRepository {
         select: { id: true },
       })
       if (existing) throw versionConflict(input.assetId, input.version)
+      // S3-1：发布即 latest —— 新版本自动带 latest，并从同资产其它版本摘除（保证 latest 全局唯一）
+      const labels = [...new Set([...(input.labels ?? []), "latest"])]
       const created = await tx.scenarioPackage.create({
         data: {
           scenarioId,
           assetId: input.assetId,
           version: input.version,
-          labels: input.labels ?? [],
+          labels,
           content: input.content as never,
           contentHash,
           createdBy: input.createdBy,
         },
         select: { id: true },
       })
+      const others = await tx.scenarioPackage.findMany({
+        where: {
+          scenarioId,
+          assetId: input.assetId,
+          NOT: { version: input.version },
+          labels: { has: "latest" },
+        },
+        select: { id: true, labels: true },
+      })
+      for (const o of others) {
+        await tx.scenarioPackage.update({
+          where: { id: o.id },
+          data: { labels: o.labels.filter((l) => l !== "latest") },
+        })
+      }
       return { packageId: created.id, scenarioId }
     })
   }
