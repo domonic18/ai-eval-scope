@@ -32,12 +32,14 @@ export interface DashboardProject {
     runId: string
     createdAt: string | null
     metrics?: Record<string, number> | null
+    scenarioId: string | null
   } | null
 }
 
 export interface RunSummary {
   id: string
   externalRunId: string
+  scenarioId: string | null
   mode: string
   status: string
   totalSamples: number

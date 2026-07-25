@@ -1,5 +1,5 @@
 /** 超管后台 · 评估任务：全平台 run 列表 + 状态过滤 + 指标 + 删除。 */
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 import { api, type AdminRun } from "../../api/client"
 import { Button } from "@/components/shadcn/button"
@@ -23,14 +23,12 @@ import { useToast } from "../../hooks/useToast"
 import { DataTable, Page, PageHead, Pager, StatusBadge, type Column } from "../../components/shared"
 import { fmt3, timeAgo } from "../../lib/format"
 import { useDebouncedValue } from "../../lib/useDebounce"
-import { useScenarioDefaults } from "../../hooks/useScenarioDefaults"
+import { useScenarioDefaultsMap } from "../../hooks/useScenarioDefaults"
 
 const STATUSES = ["all", "completed", "failed", "running", "partial"]
 
 export default function AdminRuns() {
   const toast = useToast()
-  // #65：指标列从 defaultDefs 动态生成（零 courseware:* 硬编码）
-  const defaultDefs = useScenarioDefaults()
   const [rows, setRows] = useState<AdminRun[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -39,6 +37,22 @@ export default function AdminRuns() {
   const debouncedSearch = useDebouncedValue(search, 300)
   const [delTarget, setDelTarget] = useState<AdminRun | null>(null)
   const [busy, setBusy] = useState(false)
+
+  // 多场景：按各行 run 场景批量取 defs；指标列 = 出现场景的 threshold 指标并集（各行填自身值，他场景列留空）
+  const scenarioIds = useMemo(
+    () => [...new Set(rows.map((r) => r.scenarioId).filter((v): v is string => !!v))],
+    [rows],
+  )
+  const defsByScn = useScenarioDefaultsMap(scenarioIds)
+  const metricCols = useMemo(() => {
+    const seen = new Map<string, { id: string; name: string }>()
+    for (const scn of scenarioIds) {
+      for (const d of defsByScn[scn] ?? []) {
+        if (d.threshold != null && !seen.has(d.id)) seen.set(d.id, { id: d.id, name: d.name ?? d.id })
+      }
+    }
+    return [...seen.values()]
+  }, [scenarioIds, defsByScn])
 
   async function load(p = 1) {
     try {
@@ -95,15 +109,14 @@ export default function AdminRuns() {
       ),
     },
     { key: "status", title: "状态", render: (r) => <StatusBadge status={r.status} /> },
-    // #65：指标列从 defaultDefs 动态生成（有阈值的指标）
-    ...defaultDefs
-      .filter((d) => d.threshold != null)
-      .map((d) => ({
-        key: d.id,
-        title: d.name ?? d.id,
-        num: true as const,
-        render: (r: AdminRun) => fmt3(r.metrics?.[d.id]),
-      })),
+    { key: "scenario", title: "场景", render: (r) => <span className="font-mono text-xs text-muted-foreground">{r.scenarioId ?? "—"}</span> },
+    // 指标列 = 出现场景的 threshold 指标并集（各行填自身场景值，他场景列留空）
+    ...metricCols.map((d) => ({
+      key: d.id,
+      title: d.name,
+      num: true as const,
+      render: (r: AdminRun) => fmt3(r.metrics?.[d.id]),
+    })),
     { key: "samples", title: "样本", num: true, render: (r) => r.totalSamples },
     { key: "created", title: "时间", render: (r) => timeAgo(r.createdAt) },
     {

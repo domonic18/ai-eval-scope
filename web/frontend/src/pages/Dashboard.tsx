@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { api } from "../api/client"
 import type { DashboardProject, TrendPoint } from "../types"
 import { fmt3, num, timeAgo } from "../lib/format"
-import { useScenarioDefaults } from "../hooks/useScenarioDefaults"
+import { useScenarioDefaultsMap } from "../hooks/useScenarioDefaults"
 import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
 import { Label } from "@/components/shadcn/label"
@@ -27,23 +27,6 @@ export default function Dashboard() {
   const { activeOrg } = useOrg()
   const { setCrumbs } = useCrumbs()
   const toast = useToast()
-  // #65：跨场景参数化——主指标从 defaultDefs（后端 fetch）取，零 courseware:* 硬编码
-  const defaultDefs = useScenarioDefaults()
-  const primaryMetrics = defaultDefs.filter((d) => d.threshold != null)
-  const healthMetric = primaryMetrics[0]
-  const scoreMetric = primaryMetrics[primaryMetrics.length - 1] ?? primaryMetrics[0]
-  const drOf = (p: DashboardProject) =>
-    healthMetric ? p.latestRun?.metrics?.[healthMetric.id] : undefined
-  const rewardOf = (p: DashboardProject) =>
-    scoreMetric ? p.latestRun?.metrics?.[scoreMetric.id] : undefined
-  const healthThr = healthMetric?.threshold
-  function healthColor(p: DashboardProject): { tone: PillTone; spark: string; label: string } {
-    const v = drOf(p)
-    if (v == null || healthThr == null)
-      return { tone: "neutral", spark: "var(--muted-foreground)", label: "未运行" }
-    if (v >= healthThr) return { tone: "success", spark: "var(--chart-2)", label: "健康" }
-    return { tone: "warning", spark: "var(--chart-3)", label: "关注" }
-  }
   const nav = useNavigate()
   const [projects, setProjects] = useState<DashboardProject[] | null>(null)
   const [sparks, setSparks] = useState<Record<string, number[]>>({})
@@ -51,6 +34,36 @@ export default function Dashboard() {
   const [name, setName] = useState("")
   const [slug, setSlug] = useState("")
   const [creating, setCreating] = useState(false)
+
+  // 多场景：按各项目 latestRun 场景批量取 defs；每张卡用各自场景的 health/score 指标（零 courseware 硬编码）
+  const scenarioIds = useMemo(
+    () => [...new Set((projects ?? []).map((p) => p.latestRun?.scenarioId).filter((v): v is string => !!v))],
+    [projects],
+  )
+  const defsByScn = useScenarioDefaultsMap(scenarioIds)
+  const primaryMetricsOf = (p: DashboardProject) =>
+    (defsByScn[p.latestRun?.scenarioId ?? ""] ?? []).filter((d) => d.threshold != null)
+  const healthMetricOf = (p: DashboardProject) => primaryMetricsOf(p)[0]
+  const scoreMetricOf = (p: DashboardProject) => {
+    const pm = primaryMetricsOf(p)
+    return pm[pm.length - 1] ?? pm[0]
+  }
+  const drOf = (p: DashboardProject) => {
+    const h = healthMetricOf(p)
+    return h ? p.latestRun?.metrics?.[h.id] : undefined
+  }
+  const rewardOf = (p: DashboardProject) => {
+    const s = scoreMetricOf(p)
+    return s ? p.latestRun?.metrics?.[s.id] : undefined
+  }
+  function healthColor(p: DashboardProject): { tone: PillTone; spark: string; label: string } {
+    const thr = healthMetricOf(p)?.threshold
+    const v = drOf(p)
+    if (v == null || thr == null)
+      return { tone: "neutral", spark: "var(--muted-foreground)", label: "未运行" }
+    if (v >= thr) return { tone: "success", spark: "var(--chart-2)", label: "健康" }
+    return { tone: "warning", spark: "var(--chart-3)", label: "关注" }
+  }
 
   useEffect(() => {
     setCrumbs([{ label: "项目看板" }])
@@ -73,7 +86,10 @@ export default function Dashboard() {
             return [
               p.id,
               t
-                .map((x) => (healthMetric ? x.metrics?.[healthMetric.id] : undefined))
+                .map((x) => {
+                  const hm = healthMetricOf(p)
+                  return hm ? x.metrics?.[hm.id] : undefined
+                })
                 .filter((v): v is number => v != null),
             ]
           } catch {
@@ -156,10 +172,11 @@ export default function Dashboard() {
           {projects.map((p) => {
             const h = healthColor(p)
             const drVal = drOf(p)
+            const hThr = healthMetricOf(p)?.threshold
             const drCls =
-              drVal == null || healthThr == null
+              drVal == null || hThr == null
                 ? "text-muted-foreground"
-                : drVal >= healthThr
+                : drVal >= hThr
                   ? "text-emerald-400"
                   : "text-yellow-400"
             return (
@@ -194,7 +211,7 @@ export default function Dashboard() {
                           {fmt3(drOf(p))}
                         </div>
                         <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                          {healthMetric?.name ?? "—"}
+                          {healthMetricOf(p)?.name ?? "—"}
                         </div>
                       </div>
                       <div>
@@ -202,7 +219,7 @@ export default function Dashboard() {
                           {fmt3(rewardOf(p))}
                         </div>
                         <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                          {scoreMetric?.name ?? "—"}
+                          {scoreMetricOf(p)?.name ?? "—"}
                         </div>
                       </div>
                       <div>

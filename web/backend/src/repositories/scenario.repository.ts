@@ -39,6 +39,7 @@ export interface CatalogEntry {
   labels: string[]
   name: string | null
   description: string | null
+  accept: string[] // format 门控声明的扩展名（如 ["py"] / ["md","html"]），供 /debug 限定可上传类型
 }
 
 export interface ScenarioCatalog {
@@ -460,12 +461,20 @@ export class ScenarioRepository {
     content: unknown
   }): CatalogEntry {
     const c = (r.content ?? {}) as Record<string, unknown>
+    // 收集 format 门控声明的扩展名（method=format + extensions），供 /debug 限定可上传类型
+    const accept = new Set<string>()
+    for (const rule of Array.isArray(c.rules) ? (c.rules as Array<Record<string, unknown>>) : []) {
+      if (rule.method === "format" && Array.isArray(rule.extensions)) {
+        for (const e of rule.extensions) accept.add(String(e))
+      }
+    }
     return {
       asset_id: r.assetId,
       version: r.version,
       labels: r.labels,
       name: (c.name as string) ?? null,
       description: (c.description as string) ?? null,
+      accept: [...accept],
     }
   }
 }

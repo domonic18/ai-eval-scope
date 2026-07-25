@@ -228,6 +228,11 @@ export default function DebugPage() {
   // 由所选场景包推导 package_ref（scenario/asset_id:label）
   const selectedPackage = catalog?.packages.find((p) => p.asset_id === packageAssetId)
   const packageRef = selectedPackage ? packageRefOf(scenario, selectedPackage) : undefined
+  // 由所选 rule_set 的 format 门控扩展名推导可上传类型（code→.py / courseware→.html,.md）
+  const selectedRuleSet = catalog?.rule_sets.find((r) => r.asset_id === ruleSet)
+  const accept = selectedRuleSet?.accept?.length
+    ? selectedRuleSet.accept.map((e) => "." + e).join(",")
+    : ".html,.htm,.md,.markdown,.zip,.py"
 
   async function submit() {
     if (!file) return
@@ -431,8 +436,8 @@ export default function DebugPage() {
                 <FilePicker
                   value={file}
                   onChange={setFile}
-                  accept=".html,.htm,.md,.markdown,.zip"
-                  hint=".html / .md / .zip"
+                  accept={accept}
+                  hint={selectedRuleSet?.accept?.map((e) => "." + e).join(" / ") ?? "按规则集格式门控"}
                 />
               </div>
 

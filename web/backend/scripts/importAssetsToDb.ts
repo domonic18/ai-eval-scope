@@ -1,9 +1,11 @@
 /**
- * 课程场景包资产导入脚本（Phase 3，对齐 13 §5.3 文件→DB）。
+ * 场景包资产导入脚本（Phase 4，对齐 13 §5.3 文件→DB）。
  *
- * 读取 evaluator 内置 courseware 包（agent_eval/assets/packages/courseware/<ver>/），
- * 把规则/提示词/数据集（参考知识）导入 Web 配置资产表，使动态 catalog 有真实数据。
- * 幂等：按 (scenarioId, assetId, version) upsert，可安全重跑。
+ * 读取任意场景包（默认 evaluator 内置 courseware 包；PACKAGE_DIR 可指向其它包），
+ * 把规则/提示词/数据集（参考知识）+ defaults(指标定义/聚合策略) + 场景包本体导入 Web 配置资产表，
+ * 使动态 catalog 有真实数据。幂等：按 (scenarioId, assetId, version) upsert，可安全重跑。
+ *
+ * scenario_id / version / name / description 均从包内 agent_eval.yaml 的 package 段读取（去 courseware 硬编码）。
  *
  * 用法：npx tsx scripts/importAssetsToDb.ts [--package-dir <path>]
  *   PACKAGE_DIR 环境变量亦可指定包根（默认仓库内 evaluator 内置 courseware 包）。
@@ -16,12 +18,12 @@ import yaml from "js-yaml"
 import type { PrismaClient } from "@prisma/client"
 import { ScenarioRepository } from "../src/repositories/scenario.repository"
 
-const SCENARIO_ID = "courseware"
-const VERSION = "1.0.0"
+const DEFAULT_SCENARIO_ID = "courseware"
+const DEFAULT_VERSION = "1.0.0"
 
 function defaultPackageDir(): string {
   // __dirname = web/backend/scripts → 仓库根为 ../../../
-  return resolve(__dirname, "../../../evaluator/agent_eval/assets/packages/courseware", VERSION)
+  return resolve(__dirname, "../../../evaluator/agent_eval/assets/packages/courseware", DEFAULT_VERSION)
 }
 
 function hash(obj: unknown): string {
@@ -58,11 +60,18 @@ export interface ImportResult {
   datasets: number
 }
 
-/** 导入 courseware 包资产到 DB。 */
-export async function importCoursewarePackage(
+/** 导入场景包资产到 DB（scenario/version/name 从 manifest 读取，任意场景通用）。 */
+export async function importScenarioPackage(
   prisma: PrismaClient,
   packageDir: string = defaultPackageDir(),
 ): Promise<ImportResult> {
+  // 从 agent_eval.yaml 的 package 段读 scenario/version/name/description（去硬编码）
+  const manifest = loadYaml(join(packageDir, "agent_eval.yaml"))["package"] as Record<string, unknown>
+  const SCENARIO_ID = String(manifest.scenario ?? DEFAULT_SCENARIO_ID)
+  const VERSION = String(manifest.version ?? DEFAULT_VERSION)
+  const SCENARIO_NAME = String(manifest.name ?? SCENARIO_ID)
+  const SCENARIO_DESC = String(manifest.description ?? "")
+
   // #60：从包内 metrics/policy.yaml 读取指标定义 + 聚合策略（跨语言单一源）
   const policyPath = join(packageDir, "metrics", "policy.yaml")
   const policy = loadYaml(policyPath) as {
@@ -72,10 +81,10 @@ export async function importCoursewarePackage(
   // 场景行（name/description）
   await prisma.scenario.upsert({
     where: { id: SCENARIO_ID },
-    update: { name: "课件质量评估", description: "课件生成场景默认包" },
-    create: { id: SCENARIO_ID, name: "课件质量评估", description: "课件生成场景默认包" },
+    update: { name: SCENARIO_NAME, description: SCENARIO_DESC },
+    create: { id: SCENARIO_ID, name: SCENARIO_NAME, description: SCENARIO_DESC },
   })
-  // defaults 版本化：发布 v1.0.0（assetId=default）；已存在则跳过（幂等，不覆盖不可变版本）
+  // defaults 版本化：发布（assetId=default）；已存在则跳过（幂等，不覆盖不可变版本）
   const existingDefaults = await prisma.defaultsAsset.findUnique({
     where: { scenarioId_assetId_version: { scenarioId: SCENARIO_ID, assetId: "default", version: VERSION } },
     select: { id: true },
@@ -93,8 +102,6 @@ export async function importCoursewarePackage(
   }
 
   const labels = ["production", "latest"]
-  const manifestPath = join(packageDir, "agent_eval.yaml")
-  const manifest = loadYaml(manifestPath)["package"] as Record<string, unknown> | undefined
   // S2-1：发布 {manifest, files}（executor 运行时拉取所需结构，ADR-01）
   const files = collectPackageFiles(packageDir)
   const packageContent = { manifest: manifest ?? {}, files }
@@ -164,7 +171,7 @@ export async function importCoursewarePackage(
         scenarioId: SCENARIO_ID,
         packageId: SCENARIO_ID,
         assetId: stem,
-        role: "reference", // 课件知识点库 → role=reference
+        role: "reference", // 参考知识库 → role=reference
         version: VERSION,
         labels,
         backendType: "yaml_file",
@@ -179,12 +186,14 @@ export async function importCoursewarePackage(
   return { scenarioId: SCENARIO_ID, ruleSets, prompts, datasets }
 }
 
+/** 导入一个子目录的 yaml 资产；目录不存在则跳过（返回 0）。 */
 async function importDir(
   packageDir: string,
   sub: string,
   fn: (stem: string, content: Record<string, unknown>) => Promise<void>,
 ): Promise<number> {
   const dir = join(packageDir, sub)
+  if (!existsSync(dir)) return 0
   let n = 0
   for (const f of readdirSync(dir).filter((x) => x.endsWith(".yaml"))) {
     const stem = f.replace(/\.ya?ml$/, "")
@@ -199,8 +208,8 @@ async function main() {
   const prisma = new PrismaClient()
   const pkgDir = process.env.PACKAGE_DIR || defaultPackageDir()
   try {
-    const res = await importCoursewarePackage(prisma, pkgDir)
-    console.log("✅ 课程场景包导入完成：", res)
+    const res = await importScenarioPackage(prisma, pkgDir)
+    console.log("✅ 场景包导入完成：", res)
   } finally {
     await prisma.$disconnect()
   }

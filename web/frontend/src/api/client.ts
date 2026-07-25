@@ -509,6 +509,7 @@ export interface CatalogEntry {
   labels: string[]
   name: string | null
   description: string | null
+  accept?: string[]
 }
 export interface DatasetCatalogEntry extends CatalogEntry {
   role: string
@@ -555,6 +556,7 @@ export interface AdminProject {
 export interface AdminRun {
   id: string
   externalRunId: string
+  scenarioId: string | null
   mode: string
   status: string
   totalSamples: number
