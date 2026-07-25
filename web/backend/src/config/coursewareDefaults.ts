@@ -1,9 +1,11 @@
 /**
- * courseware 场景默认指标定义（backend TS 镜像）。
+ * courseware 场景默认指标定义（backend TS 镜像）—— **仅历史迁移脚本使用**。
  *
  * 镜像 evaluator 包内 agent_eval/assets/packages/courseware/1.0.0/metrics/policy.yaml
  * （真相源 = policy.yaml，importAssetsToDb 从其写入 Scenario.defaultMetricDefinitions）。
- * 本文件当前无运行时引用（保留作 TS 侧镜像，便于检索/历史迁移脚本复用）。
+ * 运行时（listRuns/overview/useScenarioDefaults 等）已全部走 DB defaults，不读本文件；
+ * 唯一消费方是 scripts/migrateHistoricalMetrics.ts（一次性回填 courseware 历史运行的指标定义，
+ * 因历史运行本就是 courseware，用 courseware 默认正确）。非 courseware 场景的 defaults 走 DB。
  */
 
 export interface MetricExplainRow {

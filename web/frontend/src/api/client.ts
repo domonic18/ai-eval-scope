@@ -139,7 +139,7 @@ export const api = {
   async runOverview(runId: string): Promise<{
     verdict?: "pass" | "fail"
     score?: number
-    metrics?: { DR: number; CPR: number; condR: number; avg_time_ms: number }
+    metrics?: Record<string, number>
     metrics_raw?: Record<string, number>
     summary?: { total: number; passed: number; failed: number; skipped: number }
     summary_report?: {

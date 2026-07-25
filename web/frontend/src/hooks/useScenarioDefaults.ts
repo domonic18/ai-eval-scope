@@ -1,8 +1,7 @@
 /**
  * 场景默认指标定义 hook（模块级缓存，多页面共享一次 fetch）。
  *
- * 取代前端硬编码的 COURSEWARE_DEFAULT_METRIC_DEFS——指标定义统一来自后端
- * GET /scenarios/:id/defaults（单一源落库，由 import 脚本写入）。
+ * 指标定义统一来自后端 GET /scenarios/:id/defaults（单一源落库，由 import 脚本写入）。
  */
 import { useEffect, useState } from "react"
 import { api } from "../api/client"
