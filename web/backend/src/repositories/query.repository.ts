@@ -174,17 +174,13 @@ class QueryRepository extends BaseRepository {
         run_id: string
         created_at: Date
         reward: number
-        s_format: number
-        s_common: number
-        s_soft: number
-        s_pref: number
         status: string
         content_hash: string | null
         metrics: Record<string, number> | null
       }>
     >(Prisma.sql`
       SELECT r.external_run_id AS run_id, r.created_at,
-             s.reward, s.s_format, s.s_common, s.s_soft, s.s_pref, s.status, s.content_hash,
+             s.reward, s.status, s.content_hash,
              s.metrics
       FROM samples s JOIN runs r ON s.run_id = r.id
       WHERE s.project_id = ${projectId}
@@ -212,10 +208,6 @@ class QueryRepository extends BaseRepository {
             externalSampleId: true,
             status: true,
             reward: true,
-            sFormat: true,
-            sCommon: true,
-            sSoft: true,
-            sPref: true,
           },
         },
         // Phase 5：附带运行配置快照（metricDefinitions / aggregationPolicy），供前端动态渲染

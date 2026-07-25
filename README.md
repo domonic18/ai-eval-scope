@@ -114,6 +114,12 @@ cp agent_eval/assets/configs/llm_config.example.yaml agent_eval/assets/configs/l
 - `runs/{id}/reports/summary.md` — 聚合报告（DR/CPR/Reward）
 - `cache/evaluation_cache.json` — 跨运行缓存
 
+### 新增评估场景
+
+系统是**场景无关 + 数据驱动**的——聚合策略、指标定义、评估器集合全来自场景包配置，不写死任何场景。除内置的课件（courseware）外，已内置 **代码生成（code）** 场景作为可运行范例（含专属 `code.correctness`/`code.style` LLM Judge，经 `entry_points` 随包加载）。
+
+新增自己的场景（RAG / 对话 / 自定义）见 [场景扩展指南](./docs/arch/14场景扩展指南.md)：写包（清单 + 指标策略 + 规则集 + 提示词），声明 `entry_points`（如需专属评估器），导入即可端到端评估。
+
 ## 可观测平台
 
 项目内置仿 Langfuse 的多租户可观测平台（`web/`），可视化追踪评估运行、管理项目与 API Key、下钻指标与样本。本地一键启动：

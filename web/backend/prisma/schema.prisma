@@ -176,12 +176,8 @@ model Sample {
   externalSampleId  String             @map("external_sample_id") // task_id/sample_id（逻辑课件标识，跨版本稳定）
   contentHash       String?            @map("content_hash") // 内容指纹（版本标记，不参与唯一键，详见 docs/arch/13）
   status            String
-  // 场景化样本指标（Phase 3）：metrics JSONB 为权威；下列列降级为可空遗留列（迁移期保留）
+  // 场景化样本指标：metrics JSONB 为权威（key=metric_id）
   metrics           Json?              @db.JsonB // Record<metric_id, number>
-  sFormat           Float?             @map("s_format")
-  sCommon           Float?             @map("s_common")
-  sSoft             Float?             @map("s_soft")
-  sPref             Float?             @map("s_pref")
   reward            Float?
   totalDurationMs   Float?             @map("total_duration_ms")
   llmCalls          Int                @default(0) @map("llm_calls")
