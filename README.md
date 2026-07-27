@@ -9,6 +9,45 @@ Agent 能力评估系统 — 基于 Agent-Driven 架构的评测框架。
 
 以课件生成为切入点，支持代码生成、RAG、对话等多类 Agent 评估。
 
+## 核心特性
+
+- **数据驱动场景抽象**：聚合策略、指标定义、评估器集合全来自场景包配置（YAML），不写死任何场景
+- **场景可插拔**：新增场景只需写包（manifest + policy + rules + prompts + 可选专属评估器），无需改代码（见 [场景扩展指南](./docs/arch/14场景扩展指南.md)）
+- **多模态评估**：格式门控 + LLM Judge + 视觉截图评估（Playwright headless Chromium）
+- **可观测平台**：仿 Langfuse 的多租户平台，可视化运行/趋势/指标/样本详情 + Webhook 回调
+- **第三方对接**：HTTP API + MCP 工具 + Webhook 推送，无需安装 Python SDK
+
+## 架构概览
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                        agent-eval-system                            │
+├─────────────────┬──────────────────────┬───────────────────────────┤
+│   evaluator/    │       web/           │       executor/            │
+│  (Python CLI)   │  (TS 可观测平台)     │  (Python SCF/Worker)       │
+│                 │                      │                           │
+│ • 场景包 + CLI  │ • React 前端         │ • 从 DB 认领 job           │
+│ • 评估引擎      │ • Express 后端       │ • 拉取场景包               │
+│ • LLM Judge     │ • PostgreSQL         │ • 执行评估                 │
+│ • 视觉评估      │ • MinIO / COS        │ • 结果回流 + Webhook       │
+│ • observability │ • API Key 鉴权       │                           │
+│ • package CLI   │ • 多租户隔离         │                           │
+└─────────────────┴──────────────────────┴───────────────────────────┘
+         │                │                        │
+         └────────────────┴────────────────────────┘
+                          │
+                    共享 PostgreSQL（eval_jobs + runs + samples + scenarios）
+```
+
+## 已内置场景
+
+| 场景 | 描述 | 指标 |
+|------|------|------|
+| **courseware** | 课件质量评估（HTML/MD） | document_rate / constraint_pass_rate / soft / pref / reward |
+| **code** | 代码生成质量评估（.py） | delivery_rate / correctness / style / reward |
+
+新增自己的场景（RAG / 对话 / 自定义）见 [场景扩展指南](./docs/arch/14场景扩展指南.md)。
+
 ## 安装
 
 ```bash
@@ -122,7 +161,11 @@ cp agent_eval/assets/configs/llm_config.example.yaml agent_eval/assets/configs/l
 
 ## 可观测平台
 
-项目内置仿 Langfuse 的多租户可观测平台（`web/`），可视化追踪评估运行、管理项目与 API Key、下钻指标与样本。本地一键启动：
+项目内置仿 Langfuse 的多租户可观测平台（`web/`），可视化追踪评估运行、管理项目与 API Key、下钻指标与样本。
+
+**特性**：场景化指标动态渲染 · Webhook 回调（HMAC 签名 + 投递历史 + 详情查看）· MCP 工具接入 · 跨运行趋势对比 · 多场景支持。
+
+本地一键启动：
 
 ```bash
 cp .env.example .env          # 填入 DB / 对象存储 / 安全密钥
