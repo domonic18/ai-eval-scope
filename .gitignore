@@ -21,8 +21,12 @@ llm_config.yaml
 .idea/
 .vscode/
 
-# Claude Code
-.claude/
+# Claude Code：团队共享配置（agents/commands/hooks/skills）入库。
+# ~/.gitignore_global 的 *.md 会连带忽略 .claude 下文档，故先重新包含整个 .claude，
+# 再在最后显式排除个人本地设置 settings.local.json（gitignore 后置规则生效）。
+!.claude/
+!.claude/**
+.claude/settings.local.json
 *.swp
 *.swo
 
