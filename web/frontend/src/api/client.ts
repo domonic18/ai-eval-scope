@@ -60,8 +60,36 @@ export const api = {
   async project(id: string) {
     return (await http.get(`/projects/${id}`)).data.project
   },
-  async updateProject(projectId: string, data: { isPublic?: boolean }) {
+  async updateProject(
+    projectId: string,
+    data: { isPublic?: boolean; webhookUrl?: string | null; webhookSecret?: string },
+  ) {
     return (await http.patch(`/projects/${projectId}`, data)).data.project
+  },
+  async testWebhook(projectId: string): Promise<{ sent: boolean; url: string | null }> {
+    return (await http.post(`/projects/${projectId}/test-webhook`)).data
+  },
+  async getWebhookDeliveries(
+    projectId: string,
+    limit = 20,
+  ): Promise<
+    Array<{
+      id: string
+      jobId: string | null
+      event: string
+      url: string
+      attempt: number
+      success: boolean
+      statusCode: number | null
+      error: string | null
+      durationMs: number | null
+      requestBody: unknown | null
+      responseBody: string | null
+      createdAt: string
+    }>
+  > {
+    return (await http.get(`/projects/${projectId}/webhook-deliveries?limit=${limit}`)).data
+      .deliveries
   },
   async createProject(orgId: string, name: string, slug: string) {
     return (await http.post(`/orgs/${orgId}/projects`, { name, slug })).data.project

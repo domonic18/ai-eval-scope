@@ -190,11 +190,32 @@ def _file_patterns_from_rule_set(rule_set_path: str | Path | None) -> list[str]:
         return ["*"]
 
 
+async def _notify_web_completion(job_id: str, token: str | None) -> None:
+    """job 完成/失败后通知 web → web 异步投递 webhook 回调。best-effort（失败仅日志）。"""
+    if not token:
+        return
+    try:
+        cfg = load_config()
+        if not cfg.host:
+            return
+        import httpx
+
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.post(
+                f"{cfg.host}/api/v1/jobs/{job_id}/notify-completion",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+        LOG.info("job.notified", job_id=job_id, status_code=resp.status_code)
+    except Exception as exc:  # noqa: BLE001
+        LOG.warning("job.notify_failed", job_id=job_id, error=str(exc))
+
+
 async def run_job(job: EvalJob, input_dir: Path) -> None:
     """执行单个任务（input_dir 为已下载物化的输入目录）。"""
     settings = get_settings()
     job_output_dir = settings.workspace_dir / job.job_id
     package_dir = job_output_dir / "package"
+    token: str | None = None
 
     try:
         rule_set_path = _resolve_rule_set_path(job)
@@ -259,6 +280,8 @@ async def run_job(job: EvalJob, input_dir: Path) -> None:
                 metrics=metrics,
                 web_run_url=web_run_url,
             )
+        # 通知 web → 投递 webhook 回调（best-effort）
+        await _notify_web_completion(job.job_id, token)
     except Exception as exc:  # noqa: BLE001
         LOG.exception("job.execution_failed", job_id=job.job_id, error=str(exc))
         error = {
@@ -267,3 +290,5 @@ async def run_job(job: EvalJob, input_dir: Path) -> None:
         }
         async with make_sessionmaker()() as session:
             await mark_failed(session, job.job_id, error=error)
+        # 失败也通知（token 可能在异常前已解析，best-effort）
+        await _notify_web_completion(job.job_id, token)

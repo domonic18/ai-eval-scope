@@ -101,6 +101,9 @@ model Project {
   retentionDays   Int?         @map("retention_days")
   // 项目公开开关（docs/arch/12 §3.5）：公开后运行/样本详情页免登录可读 + 可被第三方 iframe 嵌入。
   isPublic        Boolean      @default(false) @map("is_public")
+  // Webhook 回调（docs/arch/12）：评估完成主动 POST 通知第三方；secret AES-256-GCM 加密存储。
+  webhookUrl              String?  @map("webhook_url")
+  webhookSecretEncrypted  String?  @map("webhook_secret_encrypted")
   createdBy       String       @map("created_by")
   createdAt       DateTime     @default(now()) @map("created_at")
   archivedAt      DateTime?    @map("archived_at")
@@ -108,6 +111,7 @@ model Project {
   apiKeys         ApiKey[]
   runs            Run[]
   artifacts       Artifact[]
+  webhookDeliveries WebhookDelivery[]
 
   @@unique([orgId, slug])
   @@map("projects")
@@ -493,4 +497,26 @@ model LlmModel {
   updatedAt       DateTime @updatedAt @map("updated_at")
 
   @@map("llm_models")
+}
+
+/// Webhook 投递历史（每次 attempt 一行，含成功/失败/状态码/耗时）
+model WebhookDelivery {
+  id          String   @id @default(uuid())
+  projectId   String   @map("project_id")
+  jobId       String?  @map("job_id")
+  event       String
+  url         String
+  attempt     Int
+  success     Boolean  @default(false)
+  statusCode  Int?     @map("status_code")
+  error       String?
+  durationMs  Int?     @map("duration_ms")
+  requestBody Json?    @map("request_body")
+  responseBody String? @map("response_body")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, createdAt])
+  @@map("webhook_deliveries")
 }
