@@ -110,6 +110,8 @@ Authorization: Bearer <api_key>
 
 ### 查询结果
 
+提交后拿 `job_id` 轮询结果；不想轮询可配置 [Webhook 回调](#webhook-结果回调)，评估完成后平台主动 POST 你的服务。
+
 ```bash
 GET https://eval.bj33smarter.com/api/v1/jobs/{job_id}
 Authorization: Bearer <api_key>
@@ -456,6 +458,147 @@ uv run agent-eval eval --help     # 查看评估子命令用法
 ```
 
 运行后，`ResultSink` 会把运行 / 样本 / 约束 / 制品经 Bearer Key 自动摄取入库；网络失败自动入离线队列，联网后重放。
+
+---
+
+## Webhook 结果回调
+
+三种接入方式提交的任务，在评估完成（`completed` / `failed`）后，平台可**主动 POST 回调**你的服务，免去轮询。Webhook 是**项目级配置**，对该项目下所有 job 生效，与轮询 `GET /api/v1/jobs/{id}` 互补——可单独使用，也可作轮询的兜底。
+
+> 即便不配 Webhook，也随时可轮询 `GET /api/v1/jobs/{id}`；Webhook 投递失败时第三方应回退轮询。
+
+### 配置
+
+项目 **owner** 在控制台「项目设置」中填写回调地址与密钥，或调用接口：
+
+```http
+PATCH https://eval.bj33smarter.com/api/v1/projects/{project_id}
+Authorization: Bearer <api_key>
+```
+
+| 字段 | 必需 | 说明 |
+| ---- | ---- | ---- |
+| `webhookUrl` | 是 | 回调地址（生产强制 HTTPS），如 `https://your.host/eval-callback` |
+| `webhookSecret` | 否 | 签名密钥，用于校验 `X-Webhook-Signature`；AES-256-GCM 加密存储，**留空表示不改**（更新 URL 时 secret 留空即保持原值） |
+
+> secret 不回显，前端以 `webhookSecretSet` 布尔表示是否已设置。仅项目 owner 可改 webhook 配置，变更写入审计日志（不含 secret 明文）。
+
+### 触发与投递
+
+评估器完成 job 后，平台内部触发回调（fire-and-forget，不阻塞任务完成）：
+
+```text
+executor 完成 ──▶ POST /api/v1/jobs/{id}/notify-completion（内部触发）
+                     │
+                     ▼
+              查 project.webhookUrl
+                     │ 已配置
+                     ▼
+              POST <webhookUrl>  +  X-Webhook-Signature
+                     │
+          3 次重试（0s / 1s / 4s 退避，单次超时 10s）
+                     │
+                     ▼
+              落库 webhookDelivery（投递记录）
+```
+
+- **触发事件**：`job.completed`（评估成功）/ `job.failed`（评估失败）；未终态（`queued` / `running`）不触发。
+- **幂等**：投递为 fire-and-forget，第三方应按 `job_id` **自行去重**（同一 job 的多次内部通知可能重复投递）。
+
+### 请求格式
+
+平台向你配置的 `webhookUrl` 发起 `POST`：
+
+| Header | 说明 |
+| ---- | ---- |
+| `Content-Type` | `application/json` |
+| `X-Webhook-Signature` | `sha256=<hex>`，HMAC-SHA256 签名（**仅配置了 secret 时携带**） |
+
+**Payload 结构**：
+
+| 字段 | 说明 |
+| ---- | ---- |
+| `source` | 固定 `agent-eval-system` |
+| `event` | `job.completed` / `job.failed` |
+| `timestamp` | 投递时间（ISO 8601） |
+| `overview_url` | 速览端点相对路径 `/api/v1/jobs/{id}/overview` |
+| 其余字段 | 完整 job DTO，与 `GET /api/v1/jobs/{id}` 完全一致（`job_id` / `status` / `run_id` / `metrics` / `error` 等） |
+
+payload 示例（`job.completed`）：
+
+```json
+{
+  "source": "agent-eval-system",
+  "event": "job.completed",
+  "timestamp": "2026-07-27T09:12:33.000Z",
+  "overview_url": "/api/v1/jobs/0bc0b717-ada1-4783-8718-7889b5982060/overview",
+  "job_id": "0bc0b717-ada1-4783-8718-7889b5982060",
+  "status": "completed",
+  "project_id": "d288698e-ee7c-4d4e-b1fc-a2d050ce4a9b",
+  "run_id": "2f8a1c...",
+  "web_run_url": "https://eval.bj33smarter.com/run/2f8a1c...",
+  "metrics": { "DR": 0.962, "CPR": 0.914, "avg_reward": 0.781 },
+  "error": null,
+  "created_at": "2026-07-27T09:10:00.000Z",
+  "finished_at": "2026-07-27T09:12:30.000Z"
+}
+```
+
+> payload 已含完整 job，可直接消费；要"过没过 / 各项失败原因"的人话摘要，再请求 `overview_url`（需带 API Key）。
+
+### 签名校验
+
+对请求 **body 原始字节**用配置的 secret 做 HMAC-SHA256，与 `X-Webhook-Signature` 比对（仿 Stripe / GitHub 范式）。务必先验签、再解析 JSON。
+
+**Python（FastAPI / Flask）**
+
+```python
+import hmac, hashlib
+
+def verify(body: bytes, signature: str, secret: str) -> bool:
+    if not signature.startswith("sha256="):
+        return False
+    expected = "sha256=" + hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, signature)
+```
+
+**TypeScript（Express）**
+
+```ts
+import crypto from "crypto"
+
+function verify(body: Buffer, signature: string, secret: string): boolean {
+  const expected = `sha256=${crypto.createHmac("sha256", secret).update(body).digest("hex")}`
+  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature))
+}
+```
+
+> 未配置 secret 的项目不会携带签名头，此时建议辅以来源 IP 白名单或回拉 `overview_url` 校验。
+
+### 重试与可靠性
+
+- **重试**：HTTP 非 2xx 或网络异常时，按 `0s / 1s / 4s` 指数退避重试，**最多 3 次**；单次请求超时 **10s**。
+- **落库**：每次投递在 `webhookDelivery` 记一行（`attempt` / `success` / `statusCode` / `requestBody` / `responseBody` / 耗时），可在控制台或 `GET /api/v1/projects/{id}/webhook-deliveries` 查询（默认最近 20 条，上限 50）。
+- **兜底**：3 次仍失败仅记日志、不再重投——请回退轮询 `GET /api/v1/jobs/{id}`。
+
+### 测试回调
+
+配置后用控制台「发送测试回调」按钮（或接口）验证链路，会投递一条 `event=webhook.test` 的 payload：
+
+```bash
+POST https://eval.bj33smarter.com/api/v1/projects/{project_id}/test-webhook
+Authorization: Bearer <api_key>   # 需 owner 权限
+```
+
+```json
+{
+  "source": "agent-eval-system",
+  "event": "webhook.test",
+  "project_id": "...",
+  "status": "test",
+  "message": "Webhook 测试回调 — 收到此消息说明配置正确。"
+}
+```
 
 ---
 
