@@ -3,6 +3,7 @@
  */
 
 import { Project } from "@prisma/client"
+import { encryptToken } from "../infra/crypto"
 import { ProjectRepository } from "../repositories/project.repository"
 import { AuditService } from "./audit.service"
 import { getObjectStorage } from "../infra/objectStorage"
@@ -22,9 +23,15 @@ export interface ProjectCreateInput {
 export type ProjectPatch = Partial<
   Pick<
     Project,
-    "name" | "description" | "defaultRuleSet" | "defaultTaskSet" | "retentionDays" | "isPublic"
+    | "name"
+    | "description"
+    | "defaultRuleSet"
+    | "defaultTaskSet"
+    | "retentionDays"
+    | "isPublic"
+    | "webhookUrl"
   >
->
+> & { webhookSecret?: string | null }
 
 export interface ProjectService {
   list: (opts?: { includeArchived?: boolean }) => Promise<Project[]>
@@ -35,17 +42,26 @@ export interface ProjectService {
   delete: (projectId: string) => Promise<void>
 }
 
+/** 不回显加密态 webhook secret（前端用 webhookSecretSet 布尔判断是否已设置）。 */
+function sanitizeProject(p: Project): Project {
+  const has = !!p.webhookSecretEncrypted
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { webhookSecretEncrypted, ...rest } = p
+  return { ...rest, webhookSecretSet: has } as unknown as Project
+}
+
 export function createProjectService(tenant: Tenant): ProjectService {
   const repo = new ProjectRepository(tenant)
 
   async function list(opts: { includeArchived?: boolean } = {}): Promise<Project[]> {
-    return repo.listByOrg(opts)
+    const projects = await repo.listByOrg(opts)
+    return projects.map(sanitizeProject)
   }
 
   async function get(projectId: string): Promise<Project> {
     const p = await repo.findByIdSafe(projectId)
     if (!p) throw new PlatformError("project not found", { status: 404, code: "NOT_FOUND" })
-    return p
+    return sanitizeProject(p)
   }
 
   async function create(input: ProjectCreateInput): Promise<Project> {
@@ -86,7 +102,7 @@ export function createProjectService(tenant: Tenant): ProjectService {
   }
 
   async function update(projectId: string, patch: ProjectPatch): Promise<Project | null> {
-    const allowed: ProjectPatch = {}
+    const allowed: Record<string, unknown> = {}
     for (const k of [
       "name",
       "description",
@@ -94,8 +110,9 @@ export function createProjectService(tenant: Tenant): ProjectService {
       "defaultTaskSet",
       "retentionDays",
       "isPublic",
+      "webhookUrl",
     ] as const) {
-      if (patch[k] !== undefined) (allowed as Record<string, unknown>)[k] = patch[k]
+      if (patch[k] !== undefined) allowed[k] = patch[k]
     }
     // 公开开关：仅 owner 可改（公开后项目运行/样本免登录可读，敏感）；且必须为布尔。
     if (allowed.isPublic !== undefined) {
@@ -108,6 +125,18 @@ export function createProjectService(tenant: Tenant): ProjectService {
           code: "FORBIDDEN",
         })
       }
+    }
+    // Webhook 配置：仅 owner 可改；secret AES-256-GCM 加密，留空不改（仿 LlmModel.apiKey）
+    if (patch.webhookSecret !== undefined || patch.webhookUrl !== undefined) {
+      if (tenant.role !== "owner") {
+        throw new PlatformError("owner role required to configure webhook", {
+          status: 403,
+          code: "FORBIDDEN",
+        })
+      }
+    }
+    if (patch.webhookSecret !== undefined) {
+      allowed.webhookSecretEncrypted = patch.webhookSecret ? encryptToken(patch.webhookSecret) : null
     }
     const existing = await repo.findByIdSafe(projectId)
     if (!existing) throw new PlatformError("project not found", { status: 404, code: "NOT_FOUND" })
@@ -125,7 +154,19 @@ export function createProjectService(tenant: Tenant): ProjectService {
         metadata: { isPublic: allowed.isPublic },
       })
     }
-    return repo.findByIdSafe(projectId)
+    // 审计：webhook 配置变更（不含 secret 明文）
+    if (patch.webhookUrl !== undefined || patch.webhookSecret !== undefined) {
+      await AuditService.log({
+        orgId: tenant.orgId,
+        actorUserId: tenant.userId,
+        action: "project.webhook_update",
+        targetType: "project",
+        targetId: projectId,
+        metadata: { webhookUrl: patch.webhookUrl ?? existing.webhookUrl },
+      })
+    }
+    const updated = await repo.findByIdSafe(projectId)
+    return updated ? sanitizeProject(updated) : null
   }
 
   async function setArchived(projectId: string, archived: boolean): Promise<Project | null> {

@@ -11,6 +11,7 @@
 
 import { Router, type RequestHandler } from "express"
 import { requireAuth } from "../middleware/auth"
+import { PlatformError } from "../middleware/errorHandler"
 import { projectGuard } from "../middleware/tenantGuard"
 import { createProjectService } from "../services/project.service"
 import { createQueryService } from "../services/query.service"
@@ -138,6 +139,54 @@ router.delete(
     const svc = createProjectService(req.tenant!)
     await svc.delete(req.params.id)
     res.json({ ok: true })
+  }),
+)
+
+// Webhook 测试回调（前端「发送测试回调」按钮）
+router.post(
+  "/:id/test-webhook",
+  requireAuth,
+  projectGuard({ role: "owner" }),
+  wrap(async (req, res) => {
+    const { sendTestWebhook } = await import("../services/webhook.service")
+    const result = await sendTestWebhook(req.params.id)
+    if (!result.url) {
+      throw new PlatformError("no webhook URL configured", { status: 400, code: "INPUT_INVALID" })
+    }
+    res.json(result)
+  }),
+)
+
+// Webhook 投递历史（项目级，最近 N 条）
+router.get(
+  "/:id/webhook-deliveries",
+  requireAuth,
+  projectGuard(),
+  wrap(async (req, res) => {
+    const { PrismaClient } = await import("@prisma/client")
+    const prisma = new PrismaClient()
+    const limit = Math.min(50, parseInt(String(req.query.limit ?? "20"), 10) || 20)
+    const deliveries = await prisma.webhookDelivery.findMany({
+      where: { projectId: req.params.id },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      select: {
+        id: true,
+        jobId: true,
+        event: true,
+        url: true,
+        attempt: true,
+        success: true,
+        statusCode: true,
+        error: true,
+        durationMs: true,
+        requestBody: true,
+        responseBody: true,
+        createdAt: true,
+      },
+    })
+    await prisma.$disconnect()
+    res.json({ deliveries })
   }),
 )
 

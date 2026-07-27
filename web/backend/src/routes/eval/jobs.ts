@@ -14,6 +14,8 @@ import { requireApiKey } from "../../middleware/apiKeyAuth"
 import { PlatformError } from "../../middleware/errorHandler"
 import { rateLimiter } from "../../middleware/rateLimiter"
 import { createEvalJobService } from "../../services/evalJob.service"
+import { notifyJobCompletion } from "../../services/webhook.service"
+import { getLogger } from "../../infra/logger"
 
 const router = Router()
 
@@ -101,6 +103,18 @@ router.get(
       throw new PlatformError("job not found", { status: 404, code: "JOB_NOT_FOUND" })
     }
     res.json(overview)
+  }),
+)
+
+// executor 完成 job 后通知 web → web 异步投递 webhook 回调（fire-and-forget，不阻塞响应）
+router.post(
+  "/:jobId/notify-completion",
+  requireApiKey,
+  wrap(async (req, res) => {
+    notifyJobCompletion(req.params.jobId).catch((e) =>
+      getLogger().warn({ jobId: req.params.jobId, error: String(e) }, "webhook.notify_failed"),
+    )
+    res.status(202).json({ notified: true })
   }),
 )
 
