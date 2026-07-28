@@ -13,6 +13,7 @@ from agent_eval.evaluation.evaluators.quality_evaluators import (
     RequestFulfillmentEvaluator,
     StylePreferenceEvaluator,
     TeachingLogicEvaluator,
+    _resolve_granularity_groups,
 )
 from agent_eval.evaluation.models import ConstraintResult
 from agent_eval.evaluation.registry import registry
@@ -215,14 +216,147 @@ class TestContentDiversityEvaluator:
         assert evaluator.template_id == "content_diversity"
 
     def test_build_variables_includes_media(self, tmp_path: Path) -> None:
-        """变量包含媒体检测信息。"""
-        content = "# Test\n$E=mc^2$\n\n| a | b |\n\n![img](x.png)\n\n- item"
+        """变量包含媒体检测信息（从产出物原文统计，修 html_to_text 剥标签 bug）。"""
+        (tmp_path / "lesson.md").write_text(
+            "# Test\n$E=mc^2$\n\n| a | b |\n\n![img](x.png)\n\n- item", encoding="utf-8"
+        )
         evaluator = ContentDiversityEvaluator()
-        variables = evaluator._build_variables(content, {})
+        variables = evaluator._build_variables("ignored", {"output_dir": tmp_path})
         assert variables["has_formula"] == "是"
         assert variables["has_table"] == "是"
         assert variables["has_image"] == "是"
         assert variables["has_list"] == "是"
+
+    def test_build_variables_media_html_source(self, tmp_path: Path) -> None:
+        """HTML 源的 <table>/<img> 能被识别（修旧实现剥标签后失效的 bug）。"""
+        (tmp_path / "lesson.html").write_text(
+            "<html><body><table><tr><td>a</td></tr></table>"
+            "<img src='x.png'/><ul><li>x</li></ul></body></html>",
+            encoding="utf-8",
+        )
+        evaluator = ContentDiversityEvaluator()
+        variables = evaluator._build_variables("ignored", {"output_dir": tmp_path})
+        assert variables["has_table"] == "是"  # HTML <table> 原文命中
+        assert variables["has_image"] == "是"  # HTML <img> 原文命中
+        assert variables["has_list"] == "是"
+
+
+class TestGranularityGroups:
+    """目录模式粒度分组（_resolve_granularity_groups）测试。"""
+
+    @staticmethod
+    def _manifest(modules: list[dict]) -> dict:
+        return {
+            "mode": "directory",
+            "total_files": sum(len(m.get("children") or []) for m in modules),
+            "modules": modules,
+        }
+
+    @staticmethod
+    def _write(out: Path, rel: str, text: str = "x") -> None:
+        fp = out / rel
+        fp.parent.mkdir(parents=True, exist_ok=True)
+        fp.write_text(text, encoding="utf-8")
+
+    def test_package_granularity_single_group(self, tmp_path: Path) -> None:
+        out = tmp_path / "output"
+        self._write(out, "a.md")
+        groups = _resolve_granularity_groups(self._manifest([]), out, "package")
+        assert len(groups) == 1
+        assert groups[0]["key"] == "__package__"
+
+    def test_no_manifest_single_group(self, tmp_path: Path) -> None:
+        out = tmp_path / "output"
+        self._write(out, "a.md")
+        assert len(_resolve_granularity_groups(None, out, "module")) == 1
+
+    def test_module_multi_groups(self, tmp_path: Path) -> None:
+        """3 模块各 2 文件 → 3 组。"""
+        out = tmp_path / "output"
+        manifest = self._manifest(
+            [
+                {"name": "第一章", "children": [{"path": "第一章/a.md"}, {"path": "第一章/b.md"}]},
+                {"name": "第二章", "children": [{"path": "第二章/a.md"}, {"path": "第二章/b.md"}]},
+                {"name": "第三章", "children": [{"path": "第三章/a.md"}, {"path": "第三章/b.md"}]},
+            ]
+        )
+        for mod in ("第一章", "第二章", "第三章"):
+            self._write(out, f"{mod}/a.md", "内容")
+            self._write(out, f"{mod}/b.md", "内容")
+        groups = _resolve_granularity_groups(manifest, out, "module")
+        assert len(groups) == 3
+        assert [g["key"] for g in groups] == ["第一章", "第二章", "第三章"]
+        assert all(g["file_count"] == 2 for g in groups)
+
+    def test_degenerate_flat_falls_back(self, tmp_path: Path) -> None:
+        """扁平（模块数==文件数，每模块1文件）→ 回退单组。"""
+        out = tmp_path / "output"
+        self._write(out, "f1.md")
+        self._write(out, "f2.md")
+        manifest = self._manifest(
+            [
+                {"name": "f1", "children": [{"path": "f1.md"}]},
+                {"name": "f2", "children": [{"path": "f2.md"}]},
+            ]
+        )
+        assert len(_resolve_granularity_groups(manifest, out, "module")) == 1
+
+    def test_single_module_falls_back(self, tmp_path: Path) -> None:
+        """单模块 → 回退单组。"""
+        out = tmp_path / "output"
+        self._write(out, "唯一/a.md", "内容")
+        self._write(out, "唯一/b.md", "内容")
+        manifest = self._manifest(
+            [{"name": "唯一", "children": [{"path": "唯一/a.md"}, {"path": "唯一/b.md"}]}]
+        )
+        assert len(_resolve_granularity_groups(manifest, out, "module")) == 1
+
+
+class TestModuleGranularityEvaluate:
+    """module 粒度多组评估集成（_evaluate_multi_group + module_results 填充）。"""
+
+    def test_multi_group_fills_module_results(self, tmp_path: Path) -> None:
+        out = tmp_path / "output"
+        for mod in ("M1", "M2"):
+            (out / mod).mkdir(parents=True)
+            (out / mod / "a.md").write_text("教学内容。" * 20, encoding="utf-8")
+        manifest = {
+            "mode": "directory",
+            "total_files": 2,
+            "modules": [
+                {"name": "M1", "children": [{"path": "M1/a.md"}]},
+                {"name": "M2", "children": [{"path": "M2/a.md"}]},
+            ],
+        }
+        mock_record = MagicMock()
+        mock_record.provider_name = "test"
+        mock_record.model = "m"
+        mock_record.summary = ""
+        mock_orch = MagicMock()
+        mock_orch.judge.return_value = ({"structure": 8.0}, mock_record)
+        dim = MagicMock()
+        dim.dim_id = "structure"
+        dim.name = "结构"
+        dim.weight = 1.0
+        mock_template = MagicMock()
+        mock_template.dimensions = [dim]
+        mock_orch.templates.get.return_value = mock_template
+
+        evaluator = TeachingLogicEvaluator()  # default_granularity = module
+        result = evaluator.evaluate(
+            tmp_path,
+            {
+                "judge_orchestrator": mock_orch,
+                "evidence_dir": tmp_path / "ev",
+                "directory_manifest": manifest,
+            },
+        )
+        # module 粒度 + 2 模块 → 2 次 judge（不再单次塞全文）
+        assert mock_orch.judge.call_count == 2
+        # module_results 填充 2 条
+        assert result.module_results is not None
+        assert len(result.module_results) == 2
+        assert {m["module"] for m in result.module_results} == {"M1", "M2"}
 
 
 class TestPreferenceEvaluators:
