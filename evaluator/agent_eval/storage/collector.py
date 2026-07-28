@@ -139,10 +139,22 @@ class DirectoryCollector:
         return sorted(files, key=lambda f: f.relative_path)
 
     def _build_modules(self, files: list[CollectedFile]) -> list[DirectoryManifestModule]:
-        """按顶层目录将文件组织为模块。"""
+        """按目录层级组织模块。
+
+        默认按顶层目录（relative_path 首段）切；若顶层仅 1 个目录（单层包裹，如
+        「大单元学习总导」下套 M1-M20），自动降一层按第二段切，使真实模块被识别，
+        避免 module 粒度退化（单模块 → package）。
+        """
+        parts_list = [f.relative_path.split("/") for f in files]
+        top = {p[0] for p in parts_list if p}
+        # 顶层仅 1 个目录、且文件位于更深层级 → 降一层切（避免单模块退化）
+        use_second_level = len(top) == 1 and any(len(p) >= 2 for p in parts_list)
+        idx = 1 if use_second_level else 0
+
         modules_dict: dict[str, list[CollectedFile]] = {}
-        for f in files:
-            modules_dict.setdefault(f.parent_module, []).append(f)
+        for f, p in zip(files, parts_list):
+            module_name = p[idx] if len(p) > idx else (p[0] if p else "")
+            modules_dict.setdefault(module_name, []).append(f)
 
         modules: list[DirectoryManifestModule] = []
         for module_name, module_files in modules_dict.items():
