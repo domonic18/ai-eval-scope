@@ -231,7 +231,7 @@ export default function DebugPage() {
   // 由所选 rule_set 的 format 门控扩展名推导可上传类型（code→.py / courseware→.html,.md）
   const selectedRuleSet = catalog?.rule_sets.find((r) => r.asset_id === ruleSet)
   const accept = selectedRuleSet?.accept?.length
-    ? selectedRuleSet.accept.map((e) => "." + e).join(",")
+    ? [...selectedRuleSet.accept, "zip"].map((e) => "." + e).join(",")
     : ".html,.htm,.md,.markdown,.zip,.py"
 
   async function submit() {
