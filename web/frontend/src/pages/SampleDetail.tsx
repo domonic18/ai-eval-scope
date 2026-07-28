@@ -337,12 +337,12 @@ function ConstraintItem({
             <span><b className="text-foreground">耗时</b> {Math.round(c.durationMs)}ms</span>
             {c.tier !== "hard_gate" && c.tier !== "hard_score" && <span><b className="text-foreground">层级</b> {c.tier}</span>}
           </div>
+          {c.moduleResults && c.moduleResults.length > 0 && <ModuleResultsTable modules={c.moduleResults} />}
           {hasDebug(c) && (
             <details className="pt-1">
               <summary className="cursor-pointer text-muted-foreground">调试详情（技术细节）</summary>
               <div className="mt-1 space-y-2">
                 {c.details && Object.keys(c.details).length > 0 && <pre className="overflow-x-auto rounded bg-muted/50 p-2 text-[11px]">{JSON.stringify(c.details, null, 2)}</pre>}
-                {c.moduleResults && Object.keys(c.moduleResults).length > 0 && <pre className="overflow-x-auto rounded bg-muted/50 p-2 text-[11px]">{JSON.stringify(c.moduleResults, null, 2)}</pre>}
               </div>
             </details>
           )}
@@ -473,7 +473,49 @@ function constraintErrors(details: Record<string, unknown> | null): string[] {
   return e.filter((x): x is string => typeof x === "string")
 }
 function hasDebug(c: ConstraintRow): boolean {
-  return (!!c.details && Object.keys(c.details).length > 0) || (!!c.moduleResults && Object.keys(c.moduleResults).length > 0)
+  return !!c.details && Object.keys(c.details).length > 0
+}
+
+/** 目录模式（大单元）模块级评估结果表（docs/arch/04 §5.5.3）。 */
+function ModuleResultsTable({ modules }: { modules: Array<Record<string, unknown>> }) {
+  return (
+    <div className="mt-2 overflow-x-auto rounded border border-border">
+      <table className="w-full text-[11px]">
+        <thead className="bg-muted/50 text-muted-foreground">
+          <tr>
+            <th className="px-2 py-1 text-left">模块</th>
+            <th className="px-2 py-1 text-right">文件数</th>
+            <th className="px-2 py-1 text-right">得分</th>
+            <th className="px-2 py-1 text-center">通过</th>
+            <th className="px-2 py-1 text-left">原因</th>
+          </tr>
+        </thead>
+        <tbody>
+          {modules.map((m, i) => {
+            const score = typeof m.score === "number" ? m.score : null
+            return (
+              <tr key={i} className="border-t border-border/50">
+                <td className="px-2 py-1">{String(m.module ?? "?")}</td>
+                <td className="px-2 py-1 text-right">{String(m.file_count ?? "-")}</td>
+                <td className={`px-2 py-1 text-right font-medium ${scoreColor(score)}`}>
+                  {score !== null ? score.toFixed(2) : "-"}
+                </td>
+                <td className="px-2 py-1 text-center">{m.passed === true ? "✓" : "✗"}</td>
+                <td className="px-2 py-1 text-muted-foreground">{String(m.reason ?? "")}</td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function scoreColor(score: number | null): string {
+  if (score === null) return ""
+  if (score >= 0.7) return "text-green-600"
+  if (score >= 0.4) return "text-yellow-600"
+  return "text-red-600"
 }
 
 function PreviewPane({

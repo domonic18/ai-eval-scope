@@ -287,34 +287,41 @@ class TestBuildVariables:
         assert variables["title"] == "方程"
         assert variables["subject"] == "数学"
 
-    def test_content_diversity_media_detection_formula(self) -> None:
-        """内容多样性 — 公式检测。"""
+    def test_content_diversity_media_detection_formula(self, tmp_path: Path) -> None:
+        """内容多样性 — 公式检测（从产出物原文统计）。"""
+        (tmp_path / "lesson.md").write_text("$E=mc^2$", encoding="utf-8")
         evaluator = ContentDiversityEvaluator()
-        variables = evaluator._build_variables("$E=mc^2$", {})
+        variables = evaluator._build_variables("ignored", {"output_dir": tmp_path})
         assert variables["has_formula"] == "是"
 
-    def test_content_diversity_media_detection_table(self) -> None:
+    def test_content_diversity_media_detection_table(self, tmp_path: Path) -> None:
         """内容多样性 — 表格检测（Markdown）。"""
+        (tmp_path / "lesson.md").write_text("| a | b |\n|---|---|", encoding="utf-8")
         evaluator = ContentDiversityEvaluator()
-        variables = evaluator._build_variables("| a | b |\n|---|---|", {})
+        variables = evaluator._build_variables("ignored", {"output_dir": tmp_path})
         assert variables["has_table"] == "是"
 
-    def test_content_diversity_media_detection_html_table(self) -> None:
-        """内容多样性 — 表格检测（HTML）。"""
+    def test_content_diversity_media_detection_html_table(self, tmp_path: Path) -> None:
+        """内容多样性 — 表格检测（HTML 原文，修旧实现剥标签后失效的 bug）。"""
+        (tmp_path / "lesson.html").write_text(
+            "<table><tr><td>1</td></tr></table>", encoding="utf-8"
+        )
         evaluator = ContentDiversityEvaluator()
-        variables = evaluator._build_variables("<table><tr><td>1</td></tr></table>", {})
+        variables = evaluator._build_variables("ignored", {"output_dir": tmp_path})
         assert variables["has_table"] == "是"
 
-    def test_content_diversity_media_detection_image(self) -> None:
+    def test_content_diversity_media_detection_image(self, tmp_path: Path) -> None:
         """内容多样性 — 图片检测。"""
+        (tmp_path / "lesson.md").write_text("![图](img.png)", encoding="utf-8")
         evaluator = ContentDiversityEvaluator()
-        variables = evaluator._build_variables("![图](img.png)", {})
+        variables = evaluator._build_variables("ignored", {"output_dir": tmp_path})
         assert variables["has_image"] == "是"
 
-    def test_content_diversity_media_detection_none(self) -> None:
+    def test_content_diversity_media_detection_none(self, tmp_path: Path) -> None:
         """内容多样性 — 无任何媒体。"""
+        (tmp_path / "lesson.md").write_text("纯文字内容", encoding="utf-8")
         evaluator = ContentDiversityEvaluator()
-        variables = evaluator._build_variables("纯文字内容", {})
+        variables = evaluator._build_variables("ignored", {"output_dir": tmp_path})
         assert variables["has_formula"] == "否"
         assert variables["has_table"] == "否"
         assert variables["has_image"] == "否"

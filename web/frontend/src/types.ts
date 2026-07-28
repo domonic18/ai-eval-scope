@@ -135,7 +135,7 @@ export interface ConstraintRow {
   durationMs: number
   judgeProvider: string | null
   judgeModel: string | null
-  moduleResults: Record<string, unknown> | null
+  moduleResults: Array<Record<string, unknown>> | null
 }
 
 export interface ArtifactRow {

@@ -994,6 +994,8 @@ class ChronologicalOrderEvaluator(BaseLLMJudgeEvaluator):
     method = EvalMethod.LLM_JUDGE
     template_id = "chronological_order"
     pass_threshold = EVALUATOR_DEFAULTS.logical_consistency_pass_threshold
+    # 时序是跨模块全局语义（整个课件的时间线/步骤顺序），保持整单元单次评估
+    default_granularity = "package"
 
 
 @registry.register("commonsense.logical_consistency")

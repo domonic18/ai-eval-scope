@@ -70,7 +70,7 @@ export interface ConstraintEventData {
   judge_provider?: string
   judge_model?: string
   judge_record_object_key?: string
-  module_results?: Record<string, unknown>
+  module_results?: Array<Record<string, unknown>>
 }
 
 export interface ArtifactEventData {
