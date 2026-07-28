@@ -117,6 +117,8 @@ export interface OverviewFailure {
   top_issues?: string[]
   /** 该约束涉及的源文件相对路径（docs/arch/13 §4.1 details.source_files 聚合） */
   files?: string[]
+  /** 目录模式（大单元）模块级归因（docs/arch/04 §5.5.3，按模块评估时填充） */
+  module_results?: Array<Record<string, unknown>>
 }
 export interface OverviewItem {
   external_sample_id: string
@@ -154,7 +156,13 @@ type OverviewSample = {
   sSoft: number | null
   sPref: number | null
   metrics: Record<string, number> | null // Phase 5 场景化样本指标（权威）
-  constraintResults: { name: string; reason: string; tier: string; details: unknown }[]
+  constraintResults: {
+    name: string
+    reason: string
+    tier: string
+    details: unknown
+    moduleResults: Array<Record<string, unknown>> | null
+  }[]
 }
 type OverviewRun = {
   externalRunId: string
@@ -268,6 +276,7 @@ export function buildJobOverview(
         reason: c.reason,
         top_issues: extractTopIssues(c.details),
         files: extractSourceFiles(c.details),
+        module_results: c.moduleResults ?? undefined,
       })),
     })),
   }
