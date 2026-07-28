@@ -6,6 +6,7 @@
  */
 
 import { Prisma } from "@prisma/client"
+import { PlatformError } from "../middleware/errorHandler"
 import { BaseRepository, type Tenant } from "./base.repository"
 
 export interface RunListFilter {
@@ -283,12 +284,23 @@ class QueryRepository extends BaseRepository {
    * 归属由 runGuard 校验，此处信任 runId。
    */
   async deleteRun(runId: string): Promise<string[]> {
+    const orgId = this.requireOrg() // 租户隔离：限定当前 org，防跨租户误删
     return this.prisma.$transaction(async (tx) => {
+      // runId 可能是内部 UUID(id) 或评估器 externalRunId（URL 传的是后者）；
+      // externalRunId 是 [projectId, externalRunId] 复合唯一，不能直接用于 delete where，
+      // 故先解析到内部 id（与 runDetail 的 OR 兼容两者一致），并强制 org 作用域
+      const run = await tx.run.findFirst({
+        where: { project: { orgId }, OR: [{ id: runId }, { externalRunId: runId }] },
+        select: { id: true },
+      })
+      if (!run) {
+        throw new PlatformError("run not found", { status: 404, code: "RUN_NOT_FOUND" })
+      }
       const arts = await tx.artifact.findMany({
-        where: { runId },
+        where: { runId: run.id },
         select: { objectKey: true },
       })
-      await tx.run.delete({ where: { id: runId } })
+      await tx.run.delete({ where: { id: run.id } })
       return arts.map((a) => a.objectKey)
     })
   }

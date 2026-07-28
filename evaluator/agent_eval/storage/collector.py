@@ -147,8 +147,10 @@ class DirectoryCollector:
         """
         parts_list = [f.relative_path.split("/") for f in files]
         top = {p[0] for p in parts_list if p}
-        # 顶层仅 1 个目录、且文件位于更深层级 → 降一层切（避免单模块退化）
-        use_second_level = len(top) == 1 and any(len(p) >= 2 for p in parts_list)
+        # 顶层仅 1 个目录、且文件位于第三层及以下（顶层套子目录套文件，如「总导/M1/a.html」）
+        # → 降一层切 parts[1]；若仅套到第二层（「课件包/a.html」，文件直接在顶层目录内）
+        # 则不降（保持 1 模块，避免每文件成 1 模块的扁平退化）
+        use_second_level = len(top) == 1 and any(len(p) >= 3 for p in parts_list)
         idx = 1 if use_second_level else 0
 
         modules_dict: dict[str, list[CollectedFile]] = {}
