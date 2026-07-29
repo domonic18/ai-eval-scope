@@ -51,7 +51,7 @@ Agent 能力评估系统 — 基于 Agent-Driven 架构的评测框架。
 ## 安装
 
 ```bash
-git clone https://github.com/domonic18/ai-eval-scope.git && cd agent-eval-system
+git clone https://github.com/domonic18/ai-eval-scope.git && cd agent-eval-system/evaluator
 uv sync                      # 基础安装
 uv sync --extra dev          # 开发依赖
 uv sync --extra llm          # LLM 依赖（可选）
@@ -79,10 +79,10 @@ uv run agent-eval pack \
 # ② 评估
 uv run agent-eval eval \
   --package-dir workspace/packages/大单元学习总导/ \
-  --rule-set agent_eval/assets/rules/default_rule_set.yaml
+  --rule-set agent_eval/assets/rules/coursework-quality.yaml
 
 # ③ 查看报告
-cat ../workspace/runs/*/reports/summary.md
+cat workspace/runs/*/reports/summary.md
 ```
 
 不配置 LLM 时，Rule-based 评估器（格式门控 + 常识阶段的规则/事实/公式检查）正常运行；LLM Judge 评估器（质量阶段）自动降级为 `score=0.7`，逻辑一致性评估器降级为规则匹配；多模态视觉评估（`vision.quality`）需配置视觉模型，未配置时跳过。
