@@ -10,6 +10,7 @@ LLM Judge:
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 from typing import Any
 
@@ -108,14 +109,15 @@ def _package_group(output_dir: Path | None) -> list[dict[str, Any]]:
 
 
 def _resolve_granularity_groups(
-    manifest: Any, output_dir: Path | None, granularity: str
+    manifest: Any, output_dir: Path | None, granularity: str, *, max_modules: int = 12
 ) -> list[dict[str, Any]]:
     """按评估粒度把产出物文件分成若干评估组（docs/arch/04 §5.5）。
 
     每组: ``{"key", "label", "files", "text", "file_count"}``。
     - ``package`` / manifest 缺失 / output_dir 缺失 → 单组（全部文件）
     - ``module`` → 读 manifest.modules；**退化检测**（无模块 / 单模块 / 每模块恰 1 文件=扁平）
-      → 回退单组（避免退化为 N 次调用或截断依旧）；模块文本超 max_content_chars → sample_module_brief
+      → 回退单组；模块数超 ``max_modules`` → 合并相邻模块到 max_modules 组（防 LLM 调用爆炸）；
+      模块文本超 max_content_chars → sample_module_brief
     """
     if granularity != "module" or not isinstance(manifest, dict) or output_dir is None:
         return _package_group(output_dir)
@@ -128,6 +130,19 @@ def _resolve_granularity_groups(
     )
     if not modules or len(modules) == 1 or is_flat:
         return _package_group(output_dir)  # 退化 → 回退 package
+
+    # max_modules 保护：模块数超限 → 合并相邻模块到 max_modules 组（合并 children，
+    # collect 时统一处理），防大单元如 20 模块 × N 评估器 = LLM 调用爆炸
+    if len(modules) > max_modules:
+        chunk_size = max(1, math.ceil(len(modules) / max_modules))
+        merged: list[dict[str, Any]] = []
+        for i in range(0, len(modules), chunk_size):
+            group_mods = modules[i : i + chunk_size]
+            children = [c for m in group_mods for c in (m.get("children") or [])]
+            first = group_mods[0].get("name") or group_mods[0].get("path") or "module"
+            name = first if len(group_mods) == 1 else f"{first} 等 {len(group_mods)} 模块"
+            merged.append({"name": name, "children": children})
+        modules = merged
 
     max_chars = EVALUATOR_DEFAULTS.max_content_chars
     groups: list[dict[str, Any]] = []
@@ -212,7 +227,10 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
         output_dir = _get_output_dir(sample)
         context["output_dir"] = output_dir  # 供 content_diversity 等子类 _build_variables 复用
         groups = _resolve_granularity_groups(
-            context.get("directory_manifest"), output_dir, self._effective_granularity()
+            context.get("directory_manifest"),
+            output_dir,
+            self._effective_granularity(),
+            max_modules=self.params.get("max_modules", 12),
         )
 
         # 多组（module 粒度且非退化）：逐组评估 + module_results 聚合

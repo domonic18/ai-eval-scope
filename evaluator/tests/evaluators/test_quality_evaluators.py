@@ -311,6 +311,17 @@ class TestGranularityGroups:
         )
         assert len(_resolve_granularity_groups(manifest, out, "module")) == 1
 
+    def test_max_modules_merges_adjacent(self, tmp_path: Path) -> None:
+        """模块数超 max_modules → 合并相邻到 ≤max_modules 组（防 LLM 调用爆炸）。"""
+        out = tmp_path / "output"
+        modules = []
+        for i in range(20):  # 20 模块各 1 文件（子目录，非退化）
+            self._write(out, f"M{i}/a.md", "内容")
+            modules.append({"name": f"M{i}", "children": [{"path": f"M{i}/a.md"}]})
+        manifest = self._manifest(modules)
+        groups = _resolve_granularity_groups(manifest, out, "module", max_modules=6)
+        assert 1 < len(groups) <= 6  # 合并到 ≤6 组，仍多组（非退化）
+
 
 class TestModuleGranularityEvaluate:
     """module 粒度多组评估集成（_evaluate_multi_group + module_results 填充）。"""
