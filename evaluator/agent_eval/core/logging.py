@@ -2,11 +2,19 @@
 
 from __future__ import annotations
 
+import io
 import logging
 import sys
 from typing import Any
 
 import structlog
+
+
+def _ensure_utf8_streams() -> None:
+    """强制 stdout/stderr 为 UTF-8，规避非 UTF-8 locale 下输出中文日志时的编码错误。"""
+    for stream in (sys.stdout, sys.stderr):
+        if isinstance(stream, io.TextIOWrapper):
+            stream.reconfigure(encoding="utf-8", errors="replace")
 
 
 def setup_logging(level: str = "INFO", json_output: bool = False) -> None:
@@ -16,6 +24,8 @@ def setup_logging(level: str = "INFO", json_output: bool = False) -> None:
         level: 日志级别（DEBUG/INFO/WARNING/ERROR）。
         json_output: 是否输出 JSON 格式（默认为控制台友好的 dev 格式）。
     """
+    _ensure_utf8_streams()
+
     shared_processors: list[Any] = [
         structlog.contextvars.merge_contextvars,
         structlog.stdlib.add_logger_name,
