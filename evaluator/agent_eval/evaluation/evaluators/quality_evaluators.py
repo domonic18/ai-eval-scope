@@ -308,7 +308,7 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
         elapsed = (time.monotonic() - start) * 1000
 
         # 计算加权分数：各维度得分 × 权重 / 总权重
-        template = orchestrator.templates.get(self._effective_template_id)
+        template = orchestrator.templates.get(None, self._effective_template_id)
         if template and template.dimensions:
             total_weight = sum(d.weight for d in template.dimensions)
             weighted_score = sum(scores.get(d.dim_id, 0.0) * d.weight for d in template.dimensions)
@@ -481,7 +481,7 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
         """
         import time
 
-        template = orchestrator.templates.get(self._effective_template_id)
+        template = orchestrator.templates.get(None, self._effective_template_id)
         dims = template.dimensions if template and template.dimensions else []
         threshold = (
             self.pass_threshold

@@ -16,10 +16,10 @@ import structlog
 
 from agent_eval.config import JUDGE_ID_DATETIME_FORMAT
 from agent_eval.core.exceptions import LLMError
+from agent_eval.llm.judge.prompt_store import PromptStore
 from agent_eval.llm.judge.recorder import JudgeRecorder
 from agent_eval.llm.judge.stability import StabilityController
 from agent_eval.llm.judge.structured_output import StructuredOutputParser
-from agent_eval.llm.judge.template_manager import TemplateManager
 from agent_eval.llm.models import JudgeRecord, Message, TokenUsage
 from agent_eval.llm.pool import ProviderPool
 from agent_eval.llm.tracing import create_span, create_trace
@@ -86,7 +86,7 @@ class JudgeOrchestrator:
     def __init__(
         self,
         pool: ProviderPool,
-        template_manager: TemplateManager,
+        prompt_store: PromptStore,
         stability: StabilityController,
         parser: StructuredOutputParser,
     ) -> None:
@@ -94,12 +94,12 @@ class JudgeOrchestrator:
 
         Args:
             pool: Provider 管理池。
-            template_manager: Prompt 模板管理器。
+            prompt_store: Prompt 模板存储（PromptStore 抽象，File/Db/Snapshot 实现）。
             stability: 稳定性控制器。
             parser: 结构化输出解析器。
         """
         self.pool = pool
-        self.templates = template_manager
+        self.templates = prompt_store  # 保留 templates 属性名（评估器直访点兼容）
         self.stability = stability
         self.parser = parser
 
@@ -115,6 +115,9 @@ class JudgeOrchestrator:
         images: list[str] | None = None,
         judge_id_suffix: str | None = None,
         trace_id: str | None = None,
+        scenario_id: str | None = None,
+        version: str | None = None,
+        label: str | None = None,
     ) -> tuple[dict[str, Any], JudgeRecord]:
         """执行完整 judge pipeline。
 
@@ -142,8 +145,8 @@ class JudgeOrchestrator:
         provider_info = client.provider_info
 
         # 2. 渲染模板
-        template = self.templates.get(template_id)
-        system_prompt, user_prompt = self.templates.render(template_id, variables)
+        template = self.templates.get(scenario_id, template_id, version, label)
+        system_prompt, user_prompt = self.templates.render(template, variables)
 
         # 3. Langfuse Trace（v4 API: start_observation）
         # 若外层已传入 trace_id，本次 judge 作为该 trace 下的 span；
@@ -320,7 +323,7 @@ class JudgeOrchestrator:
         template_id: str,
     ) -> str:
         """构建评估原因描述。"""
-        template = self.templates.get(template_id)
+        template = self.templates.get(None, template_id)
         parts = []
         for dim in template.dimensions:
             score = scores.get(dim.dim_id, 0.0)

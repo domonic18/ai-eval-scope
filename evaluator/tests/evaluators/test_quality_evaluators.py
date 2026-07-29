@@ -516,7 +516,9 @@ def _make_e2e_mock_orchestrator() -> MagicMock:
         record.raw_response = {"summary": record.summary}
         return scores, record
 
-    def _templates_get(template_id: str) -> MagicMock | None:
+    def _templates_get(*args: Any) -> MagicMock | None:
+        # PromptStore.get(scenario_id, template_id, ...) —— template_id 是第 2 位置参
+        template_id = args[1] if len(args) > 1 else (args[0] if args else "")
         dims = dimensions_by_template.get(template_id)
         if dims is None:
             return None

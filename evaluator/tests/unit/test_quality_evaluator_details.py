@@ -38,8 +38,11 @@ def test_quality_details_dimensions_carry_issues_band_highlights(tmp_path, monke
         SimpleNamespace(dim_id="progression", name="知识递进", weight=0.3),
         SimpleNamespace(dim_id="engagement", name="互动设计", weight=0.3),
     ]
+    _templates_map = {"pedagogical_logic": SimpleNamespace(dimensions=dims)}
     orchestrator = SimpleNamespace(
-        templates={"pedagogical_logic": SimpleNamespace(dimensions=dims)}
+        templates=SimpleNamespace(
+            get=lambda *a: _templates_map.get(a[1] if len(a) > 1 else (a[0] if a else ""))
+        )
     )
 
     scores = {"structure": 9.0, "progression": 8.0, "engagement": 5.0}

@@ -809,7 +809,7 @@ class InfoAccuracyEvaluator(BaseEvaluator):
         elapsed = (time.monotonic() - start) * 1000
 
         # 计算加权分数
-        template = orchestrator.templates.get(self._effective_prompt_id("info_accuracy"))
+        template = orchestrator.templates.get(None, self._effective_prompt_id("info_accuracy"))
         if template and template.dimensions:
             total_weight = sum(d.weight for d in template.dimensions)
             weighted = sum(scores.get(d.dim_id, 0.0) * d.weight for d in template.dimensions)
@@ -1102,7 +1102,7 @@ class LogicalConsistencyEvaluator(BaseEvaluator):
         elapsed = (time.monotonic() - start) * 1000
 
         # 计算分数
-        template = orchestrator.templates.get("logical_consistency")
+        template = orchestrator.templates.get(None, "logical_consistency")
         if template and template.dimensions:
             total_weight = sum(d.weight for d in template.dimensions)
             weighted = sum(scores.get(d.dim_id, 0.0) * d.weight for d in template.dimensions)
