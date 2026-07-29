@@ -42,7 +42,9 @@ class _FakeTemplates:
     def __init__(self, score_map: dict[str, dict[str, float]]) -> None:
         self._m = score_map
 
-    def get(self, tid: str) -> _FakeTemplate:
+    def get(self, *args: object) -> _FakeTemplate:
+        # PromptStore.get(scenario_id, template_id, ...) —— template_id 是第 2 位置参
+        tid = str(args[1]) if len(args) > 1 else (str(args[0]) if args else "")
         return _FakeTemplate(self._m.get(tid, {}))
 
 

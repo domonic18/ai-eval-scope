@@ -7,9 +7,9 @@ from unittest.mock import MagicMock
 
 import yaml
 
+from agent_eval.llm.judge.file_prompt_store import FilePromptStore
 from agent_eval.llm.judge.orchestrator import JudgeOrchestrator
 from agent_eval.llm.judge.structured_output import StructuredOutputParser
-from agent_eval.llm.judge.template_manager import TemplateManager
 from agent_eval.llm.models import LLMResponse
 
 
@@ -62,10 +62,10 @@ class TestJudgeOrchestratorVision:
         pool = MagicMock()
         pool.get.return_value = client
 
-        tm = TemplateManager(prompts_dir)
+        tm = FilePromptStore(prompts_dir)
         tm.load_all()
         orch = JudgeOrchestrator(
-            pool=pool, template_manager=tm, stability=MagicMock(), parser=StructuredOutputParser()
+            pool=pool, prompt_store=tm, stability=MagicMock(), parser=StructuredOutputParser()
         )
         # stability 真实调用以拿到 num_samples=1
         from agent_eval.llm.judge.stability import StabilityController
@@ -106,13 +106,13 @@ class TestJudgeOrchestratorVision:
         pool = MagicMock()
         pool.get.return_value = client
 
-        tm = TemplateManager(prompts_dir)
+        tm = FilePromptStore(prompts_dir)
         tm.load_all()
         from agent_eval.llm.judge.stability import StabilityController
 
         orch = JudgeOrchestrator(
             pool=pool,
-            template_manager=tm,
+            prompt_store=tm,
             stability=StabilityController(),
             parser=StructuredOutputParser(),
         )

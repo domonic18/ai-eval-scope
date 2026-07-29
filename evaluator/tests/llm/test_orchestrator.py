@@ -8,9 +8,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 import yaml
 
+from agent_eval.llm.judge.file_prompt_store import FilePromptStore
 from agent_eval.llm.judge.orchestrator import JudgeOrchestrator
 from agent_eval.llm.judge.structured_output import StructuredOutputParser
-from agent_eval.llm.judge.template_manager import TemplateManager
 from agent_eval.llm.models import LLMResponse, TokenUsage
 
 
@@ -67,7 +67,7 @@ class TestJudgeOrchestrator:
         mock_pool.get.return_value = mock_client
 
         # 使用真实的 TemplateManager 和 StructuredOutputParser
-        tm = TemplateManager(prompts_dir)
+        tm = FilePromptStore(prompts_dir)
         tm.load_all()
         parser = StructuredOutputParser()
 
@@ -78,7 +78,7 @@ class TestJudgeOrchestrator:
 
         orchestrator = JudgeOrchestrator(
             pool=mock_pool,
-            template_manager=tm,
+            prompt_store=tm,
             stability=stability,
             parser=parser,
         )
@@ -124,13 +124,13 @@ class TestJudgeOrchestrator:
         mock_pool = MagicMock()
         mock_pool.get.return_value = mock_client
 
-        tm = TemplateManager(prompts_dir)
+        tm = FilePromptStore(prompts_dir)
         tm.load_all()
         from agent_eval.llm.judge.stability import StabilityController
 
         orchestrator = JudgeOrchestrator(
             pool=mock_pool,
-            template_manager=tm,
+            prompt_store=tm,
             stability=StabilityController(num_samples=1),
             parser=StructuredOutputParser(),
         )
@@ -167,14 +167,14 @@ class TestJudgeOrchestrator:
         mock_pool = MagicMock()
         mock_pool.get.return_value = mock_client
 
-        tm = TemplateManager(prompts_dir)
+        tm = FilePromptStore(prompts_dir)
         tm.load_all()
         from agent_eval.llm.judge.recorder import JudgeRecorder
         from agent_eval.llm.judge.stability import StabilityController
 
         orchestrator = JudgeOrchestrator(
             pool=mock_pool,
-            template_manager=tm,
+            prompt_store=tm,
             stability=StabilityController(num_samples=1),
             parser=StructuredOutputParser(),
         )
@@ -230,14 +230,14 @@ class TestJudgeOrchestrator:
         mock_pool = MagicMock()
         mock_pool.get.return_value = mock_client
 
-        tm = TemplateManager(prompts_dir)
+        tm = FilePromptStore(prompts_dir)
         tm.load_all()
 
         from agent_eval.llm.judge.stability import StabilityController
 
         orchestrator = JudgeOrchestrator(
             pool=mock_pool,
-            template_manager=tm,
+            prompt_store=tm,
             stability=StabilityController(num_samples=3),
             parser=StructuredOutputParser(),
         )
@@ -270,14 +270,14 @@ class TestJudgeOrchestrator:
         mock_pool = MagicMock()
         mock_pool.get.return_value = mock_client
 
-        tm = TemplateManager(prompts_dir)
+        tm = FilePromptStore(prompts_dir)
         tm.load_all()
 
         from agent_eval.llm.judge.stability import StabilityController
 
         orchestrator = JudgeOrchestrator(
             pool=mock_pool,
-            template_manager=tm,
+            prompt_store=tm,
             stability=StabilityController(num_samples=1),
             parser=StructuredOutputParser(),
         )
@@ -315,13 +315,13 @@ class TestJudgeOrchestratorTracing:
         mock_pool = MagicMock()
         mock_pool.get.return_value = mock_client
 
-        tm = TemplateManager(prompts_dir)
+        tm = FilePromptStore(prompts_dir)
         tm.load_all()
         from agent_eval.llm.judge.stability import StabilityController
 
         orchestrator = JudgeOrchestrator(
             pool=mock_pool,
-            template_manager=tm,
+            prompt_store=tm,
             stability=StabilityController(num_samples=1),
             parser=StructuredOutputParser(),
         )
@@ -369,13 +369,13 @@ class TestJudgeOrchestratorTracing:
         mock_pool = MagicMock()
         mock_pool.get.return_value = mock_client
 
-        tm = TemplateManager(prompts_dir)
+        tm = FilePromptStore(prompts_dir)
         tm.load_all()
         from agent_eval.llm.judge.stability import StabilityController
 
         orchestrator = JudgeOrchestrator(
             pool=mock_pool,
-            template_manager=tm,
+            prompt_store=tm,
             stability=StabilityController(num_samples=1),
             parser=StructuredOutputParser(),
         )

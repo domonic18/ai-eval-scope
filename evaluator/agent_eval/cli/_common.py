@@ -32,10 +32,10 @@ def _init_judge_orchestrator(
         from pathlib import Path
 
         from agent_eval.config.loader import ConfigLoader
+        from agent_eval.llm.judge.file_prompt_store import FilePromptStore
         from agent_eval.llm.judge.orchestrator import JudgeOrchestrator
         from agent_eval.llm.judge.stability import StabilityController
         from agent_eval.llm.judge.structured_output import StructuredOutputParser
-        from agent_eval.llm.judge.template_manager import TemplateManager
         from agent_eval.llm.pool import ProviderPool
 
         llm_config = ConfigLoader.load_llm_config(llm_config_path)
@@ -46,14 +46,14 @@ def _init_judge_orchestrator(
         _prompts = (
             Path(prompts_dir) if prompts_dir and Path(prompts_dir).exists() else paths.prompts_dir
         )
-        templates = TemplateManager(_prompts)
+        templates = FilePromptStore(_prompts)
         templates.load_all()
         stability = StabilityController()
         parser = StructuredOutputParser()
 
         return JudgeOrchestrator(
             pool=pool,
-            template_manager=templates,
+            prompt_store=templates,
             stability=stability,
             parser=parser,
         )
