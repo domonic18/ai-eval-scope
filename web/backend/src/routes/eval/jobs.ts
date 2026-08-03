@@ -10,12 +10,14 @@
  */
 
 import { raw, Router, type RequestHandler } from "express"
+import crypto from "crypto"
 import { requireApiKey } from "../../middleware/apiKeyAuth"
 import { PlatformError } from "../../middleware/errorHandler"
 import { rateLimiter } from "../../middleware/rateLimiter"
 import { createEvalJobService } from "../../services/evalJob.service"
 import { notifyJobCompletion } from "../../services/webhook.service"
 import { getLogger } from "../../infra/logger"
+import { getObjectStorage } from "../../infra/objectStorage"
 
 const router = Router()
 
@@ -38,6 +40,7 @@ router.post(
     if (ct.includes("application/json")) {
       const body = (req.body || {}) as {
         content?: { filename?: string; text?: string }
+        input_object_key?: string
         rule_set_id?: string
         package_id?: string // Phase 3：rule_set_id 的 package 语义别名（优先）
         package_ref?: string // S2-D：场景包引用 scenario/package:label（调用方须显式提供）
@@ -48,6 +51,7 @@ router.post(
       const result = await svc.submit({
         inlineFilename: body.content?.filename,
         inlineText: body.content?.text,
+        inputObjectKey: body.input_object_key,
         ruleSetId: body.package_id || body.rule_set_id || "",
         packageRef: body.package_ref,
         taskId: q.task_id || body.task_id,
@@ -76,6 +80,37 @@ router.post(
       taskSubject: q.task_subject,
     })
     res.status(202).json(result)
+  }),
+)
+
+// 签发 presigned PUT URL —— 大文件客户端直传对象存储后，用 input_object_key 提交评测
+router.post(
+  "/request-upload",
+  requireApiKey,
+  wrap(async (req, res) => {
+    const projectId = req.tenant!.projectId!
+    const body = (req.body || {}) as {
+      filename?: string
+      content_type?: string
+    }
+    const filename = body.filename
+    if (!filename) {
+      throw new PlatformError("filename is required", {
+        status: 400,
+        code: "INPUT_INVALID",
+      })
+    }
+    const ext = (filename.match(/\.[^.]+$/) || [".md"])[0]
+    const objectKey = `projects/${projectId}/eval/jobs/uploads/${crypto.randomUUID()}/input${ext}`
+    const presigned = await getObjectStorage().presignPut({
+      key: objectKey,
+      contentType: body.content_type || "application/octet-stream",
+    })
+    res.status(200).json({
+      upload_url: presigned.url,
+      object_key: objectKey,
+      expires_at: presigned.expiresAt,
+    })
   }),
 )
 
