@@ -94,6 +94,64 @@ Authorization: Bearer <api_key>
 | `content`                                | 是   | object | `{ filename: string, text: string }`，如 `{"filename":"lesson.html","text":"<html>…"}` |
 | `rule_set_id` / `task_id` / `task_title` | 否   | string | 同上                                                                                   |
 
+#### 大文件直传（presigned PUT，>50MB）
+
+直接 `POST /api/v1/jobs` 的请求体上限为 50MB（超出返回 `413 PAYLOAD_TOO_LARGE`）。文件更大时——或希望客户端**直传对象存储**、不经 Web 后端中转——走**两段式上传**：先换取一个预签名 URL，客户端直传到对象存储，再用返回的 `object_key` 提交评测。
+
+**Step 1 · 换取上传地址**
+
+```bash
+curl -X POST https://eval.bj33smarter.com/api/v1/jobs/request-upload \
+  -H "Authorization: Bearer <api_key>" \
+  -H "Content-Type: application/json" \
+  -d '{"filename":"courseware.zip","content_type":"application/zip"}'
+```
+
+| 字段 | 必需 | 说明 |
+| ---- | ---- | ---- |
+| `filename` | 是 | 文件名；后缀决定存储对象扩展名（如 `.zip` / `.html`），评估粒度随之确定 |
+| `content_type` | 否 | MIME 类型，默认 `application/octet-stream`；**Step 2 上传时须用同一值** |
+
+响应（`200`）：
+
+```json
+{
+  "upload_url": "https://cos.example.com/agent-eval/projects/.../input.zip?X-Amz-Algorithm=...&X-Amz-Signature=...",
+  "object_key": "projects/9b30ef3c-.../eval/jobs/uploads/8a3f.../input.zip",
+  "expires_at": 1722678520
+}
+```
+
+- `upload_url` 有效期 **≤ 15 分钟**（默认 900 秒）；过期重新换取即可。
+- `object_key` 是 Step 3 提交评测的凭证，需**原样回填**，不要自行拼接。
+
+**Step 2 · 客户端直传到对象存储**
+
+```bash
+curl -X PUT "<upload_url>" \
+  -H "Content-Type: application/zip" \
+  --data-binary @courseware.zip
+```
+
+- `Content-Type` 必须与 Step 1 声明一致，否则签名校验失败。
+- 预签名 URL 由 S3 兼容 SDK 签发，可能签入内容校验头。**推荐用 S3 兼容客户端上传**（AWS SDK / `aws s3 cp` / MinIO `mc`），由其自动补齐签名所涉 header 与校验值；若用 `curl` 等裸 HTTP，须保证请求 header 与 URL 中 `X-Amz-SignedHeaders` 列出的**完全一致**。
+
+**Step 3 · 提交评测（引用已上传对象）**
+
+```bash
+curl -X POST https://eval.bj33smarter.com/api/v1/jobs \
+  -H "Authorization: Bearer <api_key>" \
+  -H "Content-Type: application/json" \
+  -d '{"input_object_key":"<object_key>","rule_set_id":"coursework-quality"}'
+```
+
+| 字段 | 必需 | 说明 |
+| ---- | ---- | ---- |
+| `input_object_key` | 是 | Step 1 返回的 `object_key`，平台据此从对象存储拉取输入 |
+| `rule_set_id` / `task_id` / `task_title` | 否 | 同「上传原始字节」 |
+
+提交后的响应见下方「响应」。
+
 #### 响应（202 Accepted）
 
 ```json
@@ -610,7 +668,7 @@ Authorization: Bearer <api_key>   # 需 owner 权限
 | `400` | `INPUT_INVALID`     | 字段缺失或非法（如缺 `filename` / `content`、`.zip` 飞行检查失败） |
 | `401` | `AUTH_INVALID`      | 缺少/错误的 API Key、Key 已吊销或过期、scope 不含 `ingest` |
 | `404` | `JOB_NOT_FOUND`     | 任务不存在或不属于当前 Key 的项目                         |
-| `413` | `PAYLOAD_TOO_LARGE` | 上传内容超限（默认 50MB；MCP base64 超 5MB 引导走 presigned） |
+| `413` | `PAYLOAD_TOO_LARGE` | 上传内容超限（默认 50MB；超出走 presigned 直传，见「大文件直传」） |
 | `429` | `RATE_LIMITED`      | 触发令牌桶限流（按 API Key，提交 / 摄取），响应带 `Retry-After` 头 |
 
 > MCP 工具调用错误以 `isError: true` + `{ code, message }` 返回，错误码与 HTTP 一致，不泄露资源存在性。
