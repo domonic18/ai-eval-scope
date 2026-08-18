@@ -3,8 +3,7 @@
 对齐 04 评估引擎设计 §7'.3。与旧 ScoreAggregator 的关键差异（均为保证 courseware
 等价复刻）：
 1. 阶段由 policy.stage_weights 声明，不再写死 format/commonsense/quality；
-2. denom 恒为各 stage 权重之和（即便阶段缺失/SKIP 也计入），复刻旧公式固定分母
-   ``format_pass + commonsense_pass + w3 + w4``；
+2. 分母仅计入实际参与计算的阶段（stage 缺失/SKIP 时不计入），而非旧公式固定分母；
 3. evaluator_weights 挂在 StageWeight 上，允许 quality 拆为 soft/pref 两项。
 """
 
@@ -34,22 +33,33 @@ class ScenarioScoreAggregator:
         for sw in self.policy.stage_weights:
             stage = result.stage_results.get(sw.stage_id)
             s = self._stage_score(stage, sw)
+            if s is None:
+                # 阶段未参与计算（如仅选门控时质量阶段被跳过），不计入分母
+                continue
             numer += sw.weight * s
-            denom += sw.weight  # 恒计入分母（即便阶段缺失/SKIP），复刻旧固定分母
+            denom += sw.weight
             if sw.id:
                 per_stage[sw.id] = s
         span = hi - lo
         reward = lo + span * (numer / denom) if denom > 0 else lo
         return {"reward": reward, **per_stage}
 
-    def _stage_score(self, stage: StageResult | None, sw: StageWeight) -> float:
-        """计算单个阶段的归一化得分（归一化区间映射前，∈ [0,1]）。"""
+    def _stage_score(self, stage: StageResult | None, sw: StageWeight) -> float | None:
+        """计算单个阶段的归一化得分（归一化区间映射前，∈ [0,1]）。
+
+        返回 None 表示该阶段未参与计算（stage 不存在且为门控阶段，或 stage.status == SKIP）。
+        """
         if not sw.evaluator_weights:
-            # 门控语义：全过=1，任一失败/跳过/缺失=0（复刻 format/commonsense）
-            return 1.0 if (stage is not None and stage.gate_passed) else 0.0
-        # 加权语义：缺失/SKIP → 0；否则按 evaluator_weights 加权平均（复刻 quality soft/pref）
+            # 门控语义：无 evaluator_weights → 纯门控阶段
+            #   - stage 存在且 gate_passed=True → 1.0
+            #   - stage 不存在（未参与计算，如仅选门控时质量阶段被跳过）→ None（不参与）
+            #   - stage 存在但 gate_passed=False → 0.0（门控失败，按失败计）
+            if stage is None:
+                return None  # 未参与计算
+            return 1.0 if stage.gate_passed else 0.0
+        # 加权语义：缺失/SKIP → None（不参与）；否则按 evaluator_weights 加权平均
         if stage is None or stage.status == EvalStatus.SKIP:
-            return 0.0
+            return None
         ew = sw.evaluator_weights
         skip_tiers = set(sw.skip_tiers_in_reward)
         wsum = 0.0
@@ -57,7 +67,7 @@ class ScenarioScoreAggregator:
             if cr.status == EvalStatus.SKIP:
                 continue
             if cr.tier in skip_tiers:
-                continue  # courseware quality 跳过 hard_*（实践中 ew 仅含 soft/pref，冗余但安全）
+                continue
             if cr.constraint_id in ew:
                 wsum += ew[cr.constraint_id] * cr.score
         wtotal = sum(ew.values())
