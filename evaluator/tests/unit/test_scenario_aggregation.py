@@ -100,6 +100,47 @@ def test_aggregator_exposes_per_stage_metrics() -> None:
     assert set(["reward", "soft", "pref"]).issubset(out.keys())
 
 
+def test_aggregator_gate_only_missing_quality() -> None:
+    """仅选门控（format + commonsense），质量阶段缺失时 reward 应为 1.0。
+
+    验证修复：stage 缺失时不计入分母，而非贡献 0 分占分母。
+    旧行为：(1 + 1 + 0 + 0) / 4 = 0.5（错误）
+    新行为：(1 + 1) / 2 = 1.0（正确）
+    """
+    # 构造只有 format 和 commonsense 的 SampleResult，quality 阶段完全缺失
+    sr = SampleResult(sample_id="gate-only", status=EvalStatus.PASS)
+    sr.stage_results = {
+        "format": _stage("format", EvalStatus.PASS, True),
+        "commonsense": _stage("commonsense", EvalStatus.PASS, True),
+        # quality 阶段故意不创建（None），模拟"仅选门控"场景
+    }
+
+    out = ScenarioScoreAggregator(COURSEWARE_DEFAULT_POLICY).aggregate(sr)
+
+    # 期望：只有门控参与，分母=2，reward=1.0
+    assert out["reward"] == 1.0
+    # soft/pref 不应出现在 stage_metrics 中（因未参与计算）
+    assert "soft" not in out
+    assert "pref" not in out
+
+
+def test_aggregator_gate_one_fail_missing_quality() -> None:
+    """门控部分失败，质量阶段缺失时 reward 应为 0.5。
+
+    format 通过（1.0）+ commonsense 失败（0.0），分母只计这两个 = 2.0。
+    """
+    sr = SampleResult(sample_id="gate-fail", status=EvalStatus.PASS)
+    sr.stage_results = {
+        "format": _stage("format", EvalStatus.PASS, True),
+        "commonsense": _stage("commonsense", EvalStatus.FAIL, False),
+    }
+
+    out = ScenarioScoreAggregator(COURSEWARE_DEFAULT_POLICY).aggregate(sr)
+
+    # (1.0 + 0.0) / 2 = 0.5
+    assert out["reward"] == 0.5
+
+
 def test_metrics_empty_results_returns_empty() -> None:
     new = ScenarioMetricsCalculator(COURSEWARE_DEFAULT_METRICS).compute([])
     assert new == {}
