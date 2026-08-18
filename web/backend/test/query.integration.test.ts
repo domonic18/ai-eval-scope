@@ -115,7 +115,7 @@ describe("Query API", () => {
     expect(p).toBeDefined()
     expect(p.runCount).toBeGreaterThanOrEqual(2)
     expect(p.latestRun).not.toBeNull()
-    expect(p.latestRun.dr).toBeGreaterThanOrEqual(0.8) // 最新运行（最后入库者）指标已回填
+    expect((p.latestRun.metrics as Record<string, number>)?.DR).toBeGreaterThanOrEqual(0.8)
   })
 
   it("GET /projects/:id/runs lists runs (paginated)", async () => {
@@ -123,7 +123,7 @@ describe("Query API", () => {
     expect(r.status).toBe(200)
     expect(r.body.total).toBeGreaterThanOrEqual(2)
     expect(Array.isArray(r.body.items)).toBe(true)
-    expect(r.body.items[0].dr).toBeDefined()
+    expect(r.body.items[0].metrics).toBeDefined()
   })
 
   it("GET /projects/:id/trends returns ordered points", async () => {
@@ -135,9 +135,7 @@ describe("Query API", () => {
     expect(r.body.length).toBeGreaterThanOrEqual(2)
     // 按 created_at ASC
     expect(r.body[0].created_at <= r.body[1].created_at).toBe(true)
-    expect(r.body[0]).toHaveProperty("DR")
-    expect(r.body[0]).toHaveProperty("CPR")
-    expect(r.body[0]).toHaveProperty("Reward")
+    expect(r.body[0]).toHaveProperty("metrics")
   })
 
   it("GET /runs/:id returns run with samples", async () => {

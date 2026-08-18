@@ -147,8 +147,7 @@ class TestValidDocsetE2E:
         scores_file = run_ws.get_result_dir(task_id) / "scores.json"
 
         scores = json.loads(scores_file.read_text(encoding="utf-8"))
-        assert "s_format" in scores
-        assert "s_common" in scores
+        assert "stage_metrics" in scores  # 场景化样本指标（替代旧 s_format/s_common）
         assert "reward" in scores
 
     def test_report_markdown_readable(self, tmp_path: Path) -> None:
@@ -203,7 +202,7 @@ class TestValidDocsetE2E:
 
         md_content = summary_md.read_text(encoding="utf-8")
         assert "聚合报告" in md_content
-        assert "DR" in md_content
+        assert "格式合格率" in md_content  # metric_definitions.name（去 DR 硬编码）
 
         json_content = json.loads(summary_json.read_text(encoding="utf-8"))
         assert "metrics" in json_content
@@ -223,7 +222,7 @@ class TestValidDocsetE2E:
         index = json.loads(index_file.read_text(encoding="utf-8"))
         assert index["runs"][0]["project"] == "e2e_test"
         assert "metrics" in index["runs"][0]
-        assert "DR" in index["runs"][0]["metrics"]
+        assert "courseware:document_rate" in index["runs"][0]["metrics"]
 
     def test_valid_docset_passes_format_gate(self, tmp_path: Path) -> None:
         """valid_docset 通过格式门控。"""
@@ -234,7 +233,7 @@ class TestValidDocsetE2E:
         orch = Orchestrator(workspace=ws)
         result = orch.eval_only(pkg_dir)
 
-        assert result.report.dr == 1.0  # 所有样本通过格式门控
+        assert result.report.metrics["courseware:document_rate"] == 1.0  # 所有样本通过格式门控
 
     def test_eval_result_loadable(self, tmp_path: Path) -> None:
         """EvaluationResult 可从磁盘加载。"""
@@ -268,8 +267,8 @@ class TestFormatInvalidE2E:
         orch = Orchestrator(workspace=ws)
         result = orch.eval_only(pkg_dir)
 
-        # 格式门控失败 → DR = 0
-        assert result.report.dr == 0.0
+        # 格式门控失败 → document_rate = 0
+        assert result.report.metrics["courseware:document_rate"] == 0.0
         assert result.report.total_samples == 1
 
 
@@ -291,8 +290,14 @@ class TestCacheBehavior:
         result2 = orch2.eval_only(pkg_dir)
 
         # 结果一致
-        assert result1.report.dr == result2.report.dr
-        assert result1.report.avg_reward == result2.report.avg_reward
+        assert (
+            result1.report.metrics["courseware:document_rate"]
+            == result2.report.metrics["courseware:document_rate"]
+        )
+        assert (
+            result1.report.metrics["courseware:reward"]
+            == result2.report.metrics["courseware:reward"]
+        )
 
     def test_cache_file_exists_after_eval(self, tmp_path: Path) -> None:
         """评估后缓存文件存在。"""

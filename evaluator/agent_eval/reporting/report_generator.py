@@ -2,43 +2,20 @@
 
 生成任务级和聚合级两种报告：
 - 任务级: 每个评估样本的约束结果、得分、LLM 溯源
-- 聚合级: DR/CPR/Reward 指标表、阈值对比、失败项明细
+- 聚合级: 场景化指标表（metric_definitions）、阈值对比、失败项明细
 """
 
 from __future__ import annotations
 
 from typing import Any
 
-from agent_eval.config import METRIC_THRESHOLDS, REPORTING_DEFAULTS
+from agent_eval.config import REPORTING_DEFAULTS
 from agent_eval.core.types import EvalStatus
 from agent_eval.evaluation.models import (
     ConstraintResult,
     MetricsReport,
     SampleResult,
 )
-
-# 默认阈值（集中维护于 agent_eval.config.evaluation）
-_DEFAULT_THRESHOLDS: dict[str, float] = {
-    "DR": METRIC_THRESHOLDS.dr,
-    "CPR": METRIC_THRESHOLDS.cpr,
-    "avg_reward": METRIC_THRESHOLDS.avg_reward,
-}
-
-# 指标中文名映射
-_METRIC_LABELS: dict[str, str] = {
-    "DR": "交付率 (DR)",
-    "CPR": "约束通过率 (CPR)",
-    "avg_reward": "平均 Reward",
-    "condR": "条件 Reward (CondR)",
-    "avg_time_ms": "平均耗时 (ms)",
-}
-
-# 阶段中文名映射
-_STAGE_LABELS: dict[str, str] = {
-    "format": "格式门控",
-    "commonsense": "常识检查",
-    "quality": "质量评估",
-}
 
 # 约束层中文标记
 _TIER_MARKERS: dict[str, str] = {
@@ -53,11 +30,12 @@ class ReportGenerator:
     """报告生成器 — 将评估结果转换为 Markdown + JSON 格式。
 
     Args:
-        thresholds: 指标阈值映射，默认 DR ≥ 0.95, CPR ≥ 0.90, avg_reward ≥ 0.70。
+        thresholds: 指标阈值映射（仅向后兼容保留）；权威来源为 metric_definitions（MetricsReport 携带）。
     """
 
     def __init__(self, thresholds: dict[str, float] | None = None) -> None:
-        self.thresholds = thresholds or dict(_DEFAULT_THRESHOLDS)
+        # thresholds 仅向后兼容保留；指标阈值权威来源为 metric_definitions（MetricsReport 携带）
+        self.thresholds = thresholds or {}
 
     # ─── 任务级报告 ───
 
@@ -87,23 +65,23 @@ class ReportGenerator:
         lines.append(f"**耗时**: {sample_result.total_duration_ms:.0f}ms")
         lines.append("")
 
-        # 各阶段得分
+        # 场景化样本指标（stage_metrics：key = StageWeight.id + reward）
         lines.append("## 得分概览")
         lines.append("")
-        lines.append("| 维度 | 得分 |")
-        lines.append("|------|------|")
-        lines.append(f"| S_format | {sample_result.s_format:+.1f} |")
-        lines.append(f"| S_common | {sample_result.s_common:+.1f} |")
-        lines.append(f"| S_soft | {sample_result.s_soft:.3f} |")
-        lines.append(f"| S_pref | {sample_result.s_pref:.3f} |")
-        lines.append(f"| **Reward** | **{sample_result.reward:.2f}** |")
-        lines.append("")
+        if sample_result.stage_metrics:
+            lines.append("| 指标 | 得分 |")
+            lines.append("|------|------|")
+            for key, val in sample_result.stage_metrics.items():
+                lines.append(f"| {key} | {val:.3f} |")
+            lines.append("")
+        else:
+            lines.append(f"**Reward**: {sample_result.reward:.2f}")
+            lines.append("")
 
         # 约束结果详情
         for stage_id, stage_result in sample_result.stage_results.items():
-            stage_label = _STAGE_LABELS.get(stage_id, stage_id)
             gate_icon = "✅" if stage_result.gate_passed else "❌"
-            lines.append(f"## {stage_label} {gate_icon}")
+            lines.append(f"## {stage_id} {gate_icon}")
             lines.append("")
 
             if stage_result.status == EvalStatus.SKIP:
@@ -198,32 +176,30 @@ class ReportGenerator:
         lines.append(f"**样本总数**: {metrics_report.total_samples}")
         lines.append("")
 
-        # 指标概览
+        # 指标概览（从 metrics dict + metric_definitions 动态渲染）
         lines.append("## 指标概览")
         lines.append("")
         lines.append("| 指标 | 值 | 目标 | 状态 |")
         lines.append("|------|-----|------|------|")
-
-        metrics_data = {
-            "DR": metrics_report.dr,
-            "CPR": metrics_report.cpr,
-            "avg_reward": metrics_report.avg_reward,
-        }
-        for metric_key, value in metrics_data.items():
-            target = self.thresholds.get(metric_key)
-            label = _METRIC_LABELS.get(metric_key, metric_key)
-            if target is not None:
-                status = "✅ PASS" if value >= target else "❌ BELOW"
-                lines.append(f"| {label} | {value:.3f} | ≥{target:.2f} | {status} |")
+        rendered: set[str] = set()
+        for md in metrics_report.metric_definitions:
+            mid = md.get("id")
+            if mid is None or mid not in metrics_report.metrics:
+                continue
+            rendered.add(mid)
+            name = md.get("name") or mid
+            value = metrics_report.metrics[mid]
+            threshold = md.get("threshold")
+            if threshold is not None:
+                status = "✅ PASS" if value >= threshold else "❌ BELOW"
+                lines.append(f"| {name} | {value:.3f} | ≥{threshold:.2f} | {status} |")
             else:
-                lines.append(f"| {label} | {value:.3f} | — | — |")
-
-        # CondR
-        cond_r = metrics_report.cond_r
-        lines.append(f"| {_METRIC_LABELS.get('condR', 'CondR')} | {cond_r:.3f} | — | — |")
-        lines.append(
-            f"| {_METRIC_LABELS.get('avg_time_ms', '耗时')} | {metrics_report.avg_time_ms:.0f}ms | — | — |"
-        )
+                lines.append(f"| {name} | {value:.3f} | — | — |")
+        # 兜底：metric_definitions 未覆盖的残余指标
+        for mid, value in metrics_report.metrics.items():
+            if mid not in rendered:
+                lines.append(f"| {mid} | {value:.3f} | — | — |")
+        lines.append(f"| 平均耗时 | {metrics_report.avg_time_ms:.0f}ms | — | — |")
         lines.append("")
 
         # 失败项明细
@@ -240,32 +216,29 @@ class ReportGenerator:
                 lines.append(f"| `{cid}` | {count} |")
             lines.append("")
 
-        # 样本得分一览
+        # 样本得分一览（从 sample_scores dict 动态渲染列；key = stage_metrics 各项）
         if metrics_report.sample_scores:
-            lines.append("## 样本得分一览")
-            lines.append("")
-            lines.append("| 样本 | S_format | S_common | S_soft | S_pref | Reward |")
-            lines.append("|------|----------|----------|--------|--------|--------|")
+            col_keys: list[str] = []
+            seen_cols: set[str] = set()
             for s in metrics_report.sample_scores:
-                if isinstance(s, dict):
-                    lines.append(
-                        f"| {s.get('sample_id', '?')} "
-                        f"| {s.get('s_format', 0):+.1f} "
-                        f"| {s.get('s_common', 0):+.1f} "
-                        f"| {s.get('s_soft', 0):.3f} "
-                        f"| {s.get('s_pref', 0):.3f} "
-                        f"| **{s.get('reward', 0):.2f}** |"
-                    )
-                else:
-                    lines.append(
-                        f"| {s.sample_id} "
-                        f"| {s.s_format:+.1f} "
-                        f"| {s.s_common:+.1f} "
-                        f"| {s.s_soft:.3f} "
-                        f"| {s.s_pref:.3f} "
-                        f"| **{s.reward:.2f}** |"
-                    )
-            lines.append("")
+                if not isinstance(s, dict):
+                    continue
+                for k in s:
+                    if k != "sample_id" and k not in seen_cols:
+                        seen_cols.add(k)
+                        col_keys.append(k)
+            if col_keys:
+                lines.append("## 样本得分一览")
+                lines.append("")
+                lines.append("| 样本 | " + " | ".join(col_keys) + " |")
+                lines.append("|------|" + "|".join("------" for _ in col_keys) + "|")
+                for s in metrics_report.sample_scores:
+                    if not isinstance(s, dict):
+                        continue
+                    sid = s.get("sample_id", "?")
+                    cells = " | ".join(f"{s.get(k, 0):.3f}" for k in col_keys)
+                    lines.append(f"| {sid} | {cells} |")
+                lines.append("")
 
         return "\n".join(lines)
 

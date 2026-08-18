@@ -20,7 +20,7 @@ class TestSUTToolsDefaults:
 
     def test_file_patterns(self) -> None:
         """默认文件匹配模式。"""
-        assert SUT_TOOLS_DEFAULTS.file_patterns == ["*.html", "*.htm"]
+        assert SUT_TOOLS_DEFAULTS.file_patterns == ["*"]  # 默认全收，由规则集 format 门控收敛
 
 
 class TestAgentDefaults:
@@ -66,4 +66,4 @@ class TestTaskDefaults:
 
     def test_file_patterns(self) -> None:
         """默认文件匹配模式。"""
-        assert TASK_DEFAULTS.file_patterns == ["*.html"]
+        assert TASK_DEFAULTS.file_patterns == ["*"]  # 默认全收，由规则集 format 门控收敛

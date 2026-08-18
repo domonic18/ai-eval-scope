@@ -18,10 +18,11 @@
 | **契约优先** | Python 评估器与 Node 后端以版本化 JSON 事件 schema 为唯一契约 |
 | **自托管生产就绪** | Docker Compose 本地、云函数 + 云 PG + COS 生产 |
 
-### 1.2 范围（本期 Sprint 7b–7g）
+### 1.2 范围（本期 Sprint 7b–7g + 配置管理对接）
 
 - 含：账号/组织/项目/API Key、Ingestion API、PG + 对象存储、ResultSink、Query API、前端重接、回填迁移、自托管部署；**SAML SSO 登录**、**团队中心模型**（注册不自动建个人 Org，申请 + 审批加入团队）、**样本级走势**、项目/运行**永久删除**、制品**同源预览代理**
-- 不含：细粒度 RBAC 矩阵、实时流式评估、Web 端规则编辑、人工仲裁界面（远期）
+- 配置管理对接（详见 [13 配置管理设计](./13配置管理设计.md) 与 [02 配置管理开发计划](../plan/02配置管理开发计划.md)）：**场景化指标体系**（`Run.metrics` / `Sample.metrics` JSONB 替代固定一等列，见 §9.5）、**运行配置快照**（`RunConfigSnapshot`）、**场景目录 API**（`/api/scenarios/:id/catalog`）、**Web 端 Rule/Prompt/Dataset 编辑器**。
+- 不含：细粒度 RBAC 矩阵、实时流式评估、人工仲裁界面（远期）
 
 ---
 
@@ -237,7 +238,9 @@ model Project {
   slug            String
   name            String
   description     String?
-  defaultRuleSet  String?   @map("default_rule_set")  // 默认规则集 id，如 coursework-quality / coursework-gate / coursework-vision
+  defaultScenario String?   @map("default_scenario")   // 默认场景 id，如 courseware / travel-itinerary / math
+  defaultPackage  String?   @map("default_package")    // 默认场景包 id，如 courseware/quality
+  defaultRuleSet  String?   @map("default_rule_set")   // 默认规则集 id（旧字段，迁移后由 default_package 派生）
   defaultTaskSet  String?   @map("default_task_set")
   retentionDays   Int?      @map("retention_days")
   isPublic        Boolean   @default(false) @map("is_public") // 项目公开开关（docs/arch/12 §3.5）：公开后运行/样本详情免登录可读 + 可 iframe 嵌入
@@ -248,6 +251,7 @@ model Project {
   apiKeys         ApiKey[]
   runs            Run[]
   @@unique([orgId, slug])
+  @@index([defaultScenario])
   @@map("projects")
 }
 
@@ -273,34 +277,43 @@ model ApiKey {
 
 // ── 评估数据 ────────────────────────────────────────────
 model Run {
-  id              String   @id @default(uuid())
-  projectId       String   @map("project_id")
-  externalRunId   String   @map("external_run_id")  // 评估器 run_id
-  mode            String                            // eval_only | run | pipeline
-  status          String   @default("completed")    // running|completed|failed|partial
-  totalSamples    Int      @default(0) @map("total_samples")
-  // 一等指标列（聚合/索引友好）
-  dr              Float
-  cpr             Float
-  avgReward       Float    @map("avg_reward")
-  avgSoft         Float    @default(0) @map("avg_soft")
-  avgPref         Float    @default(0) @map("avg_pref")
-  condR           Float    @map("cond_r")
-  avgTimeMs       Float    @map("avg_time_ms")
-  ruleSetVersion  String?  @map("rule_set_version")
-  sutVersion      String?  @map("sut_version")
-  langfuseTraceId String?  @map("langfuse_trace_id")
-  langfuseHost    String?  @map("langfuse_host")
-  failureBreakdown Json?   @map("failure_breakdown") @db.JsonB
-  thresholds      Json?    @db.JsonB
-  sourceClient    String?  @map("source_client")
-  createdAt       DateTime @default(now()) @map("created_at") // = 评估运行时间
-  finishedAt      DateTime? @map("finished_at")
-  project         Project  @relation(fields: [projectId], references: [id])
-  samples         Sample[]
-  artifacts       Artifact[]
+  id                  String   @id @default(uuid())
+  projectId           String   @map("project_id")
+  externalRunId       String   @map("external_run_id")  // 评估器 run_id
+  scenarioId          String?  @map("scenario_id")       // 本次运行所属场景（如 courseware / math）
+  packageId           String?  @map("package_id")        // 本次运行使用的场景包 id
+  packageVersion      String?  @map("package_version")   // 本次运行使用的场景包版本
+  mode                String                             // eval_only | run | pipeline
+  status              String   @default("completed")     // running|completed|failed|partial
+  totalSamples        Int      @default(0) @map("total_samples")
+  // 场景化指标统一存储（键 = metric_id，值 = 数值）
+  metrics             Json     @default("{}") @db.JsonB
+  // 运行配置快照（不可变）
+  runConfigSnapshotId String?  @unique @map("run_config_snapshot_id")
+  // 课件场景遗留列（courseware 默认策略回填，迁移完成后删除）
+  dr                  Float?
+  cpr                 Float?
+  avgReward           Float?   @map("avg_reward")
+  avgSoft             Float?   @default(0) @map("avg_soft")
+  avgPref             Float?   @default(0) @map("avg_pref")
+  condR               Float?   @map("cond_r")
+  avgTimeMs           Float    @map("avg_time_ms")
+  ruleSetVersion      String?  @map("rule_set_version")
+  sutVersion          String?  @map("sut_version")
+  langfuseTraceId     String?  @map("langfuse_trace_id")
+  langfuseHost        String?  @map("langfuse_host")
+  failureBreakdown    Json?    @map("failure_breakdown") @db.JsonB
+  thresholds          Json?    @db.JsonB
+  sourceClient        String?  @map("source_client")
+  createdAt           DateTime @default(now()) @map("created_at") // = 评估运行时间
+  finishedAt          DateTime? @map("finished_at")
+  project             Project  @relation(fields: [projectId], references: [id])
+  samples             Sample[]
+  artifacts           Artifact[]
+  runConfigSnapshot   RunConfigSnapshot? @relation(fields: [runConfigSnapshotId], references: [id])
   @@unique([projectId, externalRunId])
   @@index([projectId, createdAt(sort: Desc)])
+  @@index([projectId, scenarioId])
   @@map("runs")
 }
 
@@ -311,11 +324,14 @@ model Sample {
   externalSampleId  String   @map("external_sample_id") // task_id/sample_id（逻辑课件标识，跨版本稳定）
   contentHash       String?  @map("content_hash")       // 内容指纹（版本标记，不参与唯一键，走势点可标注内容变更）
   status            String
-  sFormat           Float    @map("s_format")
-  sCommon           Float    @map("s_common")
-  sSoft             Float    @map("s_soft")
-  sPref             Float    @map("s_pref")
-  reward            Float
+  // 场景化样本指标统一存储（键 = metric_id 或 stage_id）
+  metrics           Json?    @db.JsonB
+  // 课件场景遗留列（courseware 默认策略回填，迁移完成后删除）
+  sFormat           Float?   @map("s_format")
+  sCommon           Float?   @map("s_common")
+  sSoft             Float?   @map("s_soft")
+  sPref             Float?   @map("s_pref")
+  reward            Float?
   totalDurationMs   Float    @map("total_duration_ms")
   llmCalls          Int      @default(0) @map("llm_calls")
   tokenUsage        Int      @default(0) @map("token_usage")
@@ -326,6 +342,20 @@ model Sample {
   @@unique([runId, externalSampleId])
   @@index([projectId, externalSampleId])
   @@map("samples")
+}
+
+model RunConfigSnapshot {
+  id             String   @id @default(uuid())
+  runId          String   @unique @map("run_id")
+  scenarioId     String   @map("scenario_id")
+  packageId      String   @map("package_id")
+  packageVersion String   @map("package_version")
+  content        Json     @db.JsonB                  // 快照内容：规则集、提示词、数据集、聚合策略、指标定义、evaluator manifest 等
+  contentHash    String   @map("content_hash")
+  objectKey      String?  @map("object_key")          // 大快照走对象存储
+  createdAt      DateTime @default(now()) @map("created_at")
+  run            Run      @relation(fields: [runId], references: [id])
+  @@map("run_config_snapshots")
 }
 
 model ConstraintResult {
@@ -430,11 +460,12 @@ model EvalJob {
 
 ### 4.2 索引设计要点
 
-- 趋势/看板：`runs(project_id, created_at DESC)` 直接支撑"项目最近 N 次运行"与趋势聚合。
+- 趋势/看板：`runs(project_id, created_at DESC)` 直接支撑"项目最近 N 次运行"与趋势聚合；`runs(project_id, scenario_id)` 支撑按场景过滤。
+- 场景化指标：`runs.metrics` 使用 GIN 索引（`CREATE INDEX idx_run_metrics ON runs USING GIN (metrics)`），加速动态指标键查询。
 - 详情钻取：`samples(run_id)`、`constraint_results(sample_id)` 支撑运行详情→任务详情→约束三级钻取。
 - 失败聚合：`constraint_results(project_id, constraint_id)` 支撑"最常失败约束 TopN"。
 - 鉴权：`api_keys(public_key) UNIQUE` 支撑 O(1) 鉴权查找。
-- 可选物化视图 `project_trends_mv`：周期刷新 `(project_id, created_at, dr, cpr, avg_reward)`，加速大盘（Sprint 7g）。
+- 可选物化视图 `project_trends_mv`：周期刷新 `(project_id, created_at, metrics)`，加速大盘（Sprint 7g）。
 
 ### 4.3 迁移策略
 
@@ -605,14 +636,14 @@ Authorization: Bearer eval-xxxxx
 
 | type | data 关键字段 | 来源映射（评估器侧） |
 |------|--------------|----------------------|
-| `run` | `external_run_id, mode, created_at, finished_at, metrics{DR,CPR,avg_reward,condR,avg_time_ms}, total_samples, rule_set_version, sut_version, failure_breakdown, thresholds` | `run_manifest.json` + `summary.json(MetricsReport)` |
-| `sample` | `external_sample_id, status, s_format, s_common, s_soft, s_pref, reward, total_duration_ms, llm_calls, token_usage, dimensions` | `SampleResult.to_dict()` + `scores.json` |
+| `run` | `external_run_id, mode, created_at, finished_at, scenario_id, package_id, package_version, run_config_snapshot_id, metrics{<metric_id>: value}, total_samples, rule_set_version, sut_version, failure_breakdown, thresholds` | `run_manifest.json` + `summary.json(MetricsReport)` + `RunConfigSnapshot` |
+| `sample` | `external_sample_id, status, metrics{<metric_id/stage_id>: value}, total_duration_ms, llm_calls, token_usage, dimensions` | `SampleResult.to_dict()` + `scores.json` |
 | `constraint` | `external_sample_id, constraint_id, rule_id, name, tier, status, passed, score, raw_score, reason, details, duration_ms, judge_provider, judge_model, judge_record_object_key, module_results` | `rule_results.json[]` 元素（ConstraintResult） |
 | `artifact` | `external_run_id, external_sample_id?, kind, object_key, content_type, size_bytes, md5, original_name, linked_constraint_id?` | 制品上传后的引用 |
 
 > run/sample 事件可携带 `langfuse_trace_id`/`langfuse_host`（run 顶级字段）。
-
-JSON Schema（`src/schemas/ingest.event.v1.json`）逐类型校验：必填、类型、枚举（`tier`/`status`/`mode`/`kind`）、数值范围。
+> `metrics` 为动态键值对象，键由对应 scenario 的 `MetricDefinition.id` 定义，不再强制固定 `DR/CPR/avg_reward/condR`。courseware 场景仍上报这些指标 id，但 Web 后端不再把它们映射到 `Run` 的固定列，而是存入 `Run.metrics` JSONB；同时回填 `dr/cpr/avgReward/...` 遗留列以兼容旧版查询（迁移完成后可删除回填逻辑）。
+> `run_config_snapshot_id` 必须在 run 事件到达前由评估器通过 `POST /api/v1/run-config-snapshots` 预创建并上传快照内容。
 - `tier` 枚举须与评估器 `ConstraintTier` 四档完全一致：`hard_gate | hard_score | soft | preference`（`hard_score` = 硬性评分，失败归零；曾因 schema 漏列该档导致真实评估被拒，已纳入回归测试）。
 - `project_id`/`batch_id` 可为 `null`（未指定项目时用 Key 所属项目）。
 **该 schema 文件同时拷贝到评估器 `evaluator/agent_eval/observability/schemas/`，作为双方契约并由 CI 校验一致性**（NF-O-13 防漂移）。
@@ -744,10 +775,17 @@ Web /api/public/ingest + /api/public/artifacts/url → PG + 对象存储
 
 | 方法 | 路径 | 鉴权 | 说明 |
 |------|------|------|------|
-| POST | `/api/v1/jobs` | Bearer API Key | 提交评测任务，202 返回 `job_id` |
+| POST | `/api/v1/jobs` | Bearer API Key | 提交评测任务（`package_id` / `package_version` 指定场景包），202 返回 `job_id` |
 | GET | `/api/v1/jobs/:id` | Bearer API Key | 查询任务态（含 `metrics`、`error`、`web_run_url`） |
-| GET | `/api/v1/rule-sets` | Bearer API Key | 规则集静态 catalog（构建期生成） |
+| GET | `/api/v1/jobs/:id/overview` | Bearer API Key | 速览：运行摘要 + 失败项 + 关键扣分点 + 涉及文件（verdict 由快照 `metricDefinitions` 动态判定） |
+| GET | `/api/v1/scenarios` | Bearer API Key | 列出场景 |
+| GET | `/api/v1/scenarios/:id/catalog` | Bearer API Key | 场景下可用包/规则集/数据集目录（替代静态 `rule-sets.json`） |
 | GET | `/api/v1/health` | 公开 | eval 子系统健康 |
+
+`GET /api/v1/jobs/:id/overview` 返回运行速览，其中 `items[].failures[]` 包含：
+
+- `top_issues: string[]`：从失败约束的 `details.dimensions[].issues` 聚合的最多 3 条 high/medium 扣分点描述，供第三方/MCP 快速了解失败原因。
+- `files?: string[]`：从 `details.source_files` 提取的涉及文件列表，支持调用方定位问题文件。
 
 详细接口契约、示例与部署策略见 [12 第三方系统对接方案](./12第三方系统对接方案.md)。
 
@@ -772,8 +810,8 @@ evaluator/agent_eval/observability/
 
 | 评估器对象 | 事件 | 映射要点 |
 |-----------|------|---------|
-| `run_manifest.json` + `MetricsReport` | `run` | `run_id → external_run_id`；`metrics → DR/CPR/...`；`failure_breakdown/thresholds` 直传 |
-| `SampleResult` + `scores.json` | `sample` | `sample_id → external_sample_id`；`s_format/s_common/s_soft/s_pref/reward` 直传；`dimensions` 从 scores.json |
+| `run_manifest.json` + `MetricsReport` + `RunConfigSnapshot` | `run` | `run_id → external_run_id`；`scenario_id/package_id/package_version` 从 `RunConfigSnapshot` 提取；`metrics → Record<metric_id, number>`；`run_config_snapshot_id` 预创建后填入；`failure_breakdown/thresholds` 直传 |
+| `SampleResult` + `scores.json` | `sample` | `sample_id → external_sample_id`；`metrics → Record<metric_id/stage_id, number>`（替代固定 `s_format/s_common/s_soft/s_pref/reward`）；`dimensions` 从 scores.json |
 | `ConstraintResult`（rule_results.json 元素） | `constraint` | `constraint_id/rule_id/name/tier/status/passed/score/reason/details/duration_ms/judge_*` 直传；`judge_record_path → judge_record_object_key`（制品上传后替换） |
 | 截图 / 原始产出物 / JudgeRecord / trace.json | `artifact` | 上传后生成 `object_key`，附 `kind/md5/size/content_type` |
 | Langfuse `trace_id` | run 字段 | `tracing.get_current_trace_id()` 透传 |
@@ -830,12 +868,15 @@ def post_ingest(events, *, api_key: str, host: str):
 |------|------|------|
 | GET | `/api/orgs/:org/projects` | 组织下项目看板（每项目最新运行、运行总数、创建者） |
 | GET | `/api/projects/:id` | 项目详情 |
-| GET | `/api/projects/:id/runs` | 运行列表（`?mode&rule_set_version&from&to&order&page&size`） |
-| GET | `/api/projects/:id/trends` | Run 级趋势（`?from&to&limit`） |
+| GET | `/api/projects/:id/runs` | 运行列表（`?mode&scenario_id&package_id&from&to&order&page&size`） |
+| GET | `/api/projects/:id/trends` | Run 级趋势（`?from&to&limit&metric_ids=...`） |
 | GET | `/api/projects/:id/samples` | 样本清单（distinct `externalSampleId` + 评估次数 + 最近指标） |
-| GET | `/api/projects/:id/sample-trends` | 样本级走势（`?sample_id&limit`，某样本跨 run 指标时序） |
-| GET | `/api/runs/:id` | 运行详情 |
+| GET | `/api/projects/:id/sample-trends` | 样本级走势（`?sample_id&limit&metric_ids=...`，某样本跨 run 指标时序） |
+| GET | `/api/runs/:id` | 运行详情（含 `metrics`、`snapshot.metricDefinitions`、`snapshot.aggregationPolicy`） |
+| GET | `/api/runs/:id/snapshot` | 本次运行使用的完整配置快照 |
 | GET | `/api/runs/:id/samples/:sid` | 样本详情（约束 + 溯源 + 制品） |
+| GET | `/api/scenarios` | 列出所有场景 |
+| GET | `/api/scenarios/:id/catalog` | 场景下可用包/规则集/提示词/数据集目录（替代静态 `rule-sets.json`） |
 | DELETE | `/api/projects/:id` | 永久删除项目（owner；DB 级联 + 对象存储回收 + 审计） |
 | DELETE | `/api/runs/:id` | 永久删除运行（owner；同上） |
 | GET | `/api/artifacts/:id` | 制品下载（presigned 重定向） |
@@ -844,27 +885,37 @@ def post_ingest(events, *, api_key: str, host: str):
 
 ### 9.2 趋势聚合 SQL（示例）
 
+场景化指标统一存储在 `runs.metrics` JSONB 中，趋势查询按 `metric_ids` 参数动态提取：
+
 ```sql
 SELECT external_run_id AS run_id,
        created_at,
-       dr AS "DR", cpr AS "CPR", avg_reward AS "Reward",
-       avg_soft AS "Soft", avg_pref AS "Pref"
+       metrics->>'courseware:document_rate' AS "DR",
+       metrics->>'courseware:constraint_pass_rate' AS "CPR",
+       metrics->>'courseware:reward' AS "Reward"
 FROM runs
 WHERE project_id = $1
-  AND project_id IN (SELECT id FROM projects WHERE org_id = $2)   -- orgId 双层隔离
+  AND project_id IN (SELECT id FROM projects WHERE org_id = $2)
   AND created_at BETWEEN $3 AND $4
 ORDER BY created_at ASC
 LIMIT $5;
 ```
 
-> 因核心指标已为一等列（含 `avg_soft`/`avg_pref`），趋势查询走索引扫描，无需 JSONB 解包；`project_id IN (org 的 projects)` 是租户隔离的强制条件（与 §六.4 同范式），越权 404。
+> 生产中对高频查询的指标可建表达式索引，例如：
+> ```sql
+> CREATE INDEX idx_run_dr_metric ON runs (((metrics->>'courseware:document_rate')::float));
+> ```
+> `project_id IN (org 的 projects)` 是租户隔离的强制条件（与 §六.4 同范式），越权 404。
 
 ### 9.3 物化视图（可选，Sprint 7g）
 
 ```sql
 CREATE MATERIALIZED VIEW project_trends_mv AS
 SELECT project_id, date_trunc('day', created_at) AS day,
-       avg(dr) AS dr, avg(cpr) AS cpr, avg(avg_reward) AS reward, count(*) AS runs
+       avg((metrics->>'courseware:document_rate')::float) AS dr,
+       avg((metrics->>'courseware:constraint_pass_rate')::float) AS cpr,
+       avg((metrics->>'courseware:reward')::float) AS reward,
+       count(*) AS runs
 FROM runs GROUP BY project_id, day;
 CREATE INDEX ON project_trends_mv (project_id, day);
 -- REFRESH MATERIALIZED VIEW CONCURRENTLY project_trends_mv;  （定时任务）
@@ -876,8 +927,8 @@ CREATE INDEX ON project_trends_mv (project_id, day);
 
 | 走势类型 | 粒度 | 主指标 | 数据来源 |
 |----------|------|--------|----------|
-| Run 走势（§9.2） | Run（一次评估） | DR / CPR / Reward（跨样本聚合率） | `runs` 表 |
-| **样本走势** | Sample（一个样本） | `reward`（综合评分）+ `s_format`/`s_common` 达标 | `samples` 表，按 `externalSampleId` 跨 run 聚合 |
+| Run 走势（§9.2） | Run（一次评估） | 场景化指标（按 `MetricDefinition` 动态选择） | `runs.metrics` |
+| **样本走势** | Sample（一个样本） | 样本级指标（按场景的 sample metric 定义动态选择） | `samples.metrics`，按 `externalSampleId` 跨 run 聚合 |
 
 > 单 Project 多样本是生产常态（API Key 一次配置、绑定单一 Project，同 Project 下评估多个样本）。Run 走势看整体水位，**样本走势看每个样本随时间的演进**。样本以 `externalSampleId`（**逻辑课件标识**，跨版本稳定）为唯一键聚合；内容变更（课件优化）记录在 `content_hash`、不改变 `sample_id`，故同课件走势连续——内容哈希会随优化而变，不能作为聚合键。
 
@@ -885,7 +936,9 @@ CREATE INDEX ON project_trends_mv (project_id, day);
 
 ```sql
 WITH ranked AS (
-  SELECT s.external_sample_id, s.reward, s.status, s.content_hash, r.created_at,
+  SELECT s.external_sample_id,
+         (s.metrics->>'courseware:reward')::float AS reward,
+         s.status, s.content_hash, r.created_at,
          COUNT(*) OVER (PARTITION BY s.external_sample_id)::bigint AS eval_count,
          ROW_NUMBER() OVER (PARTITION BY s.external_sample_id ORDER BY r.created_at DESC) AS rn
   FROM samples s JOIN runs r ON s.run_id = r.id
@@ -901,7 +954,7 @@ ORDER BY created_at DESC;
 
 ```sql
 SELECT r.external_run_id AS run_id, r.created_at,
-       s.reward, s.s_format, s.s_common, s.s_soft, s.s_pref, s.status, s.content_hash
+       s.metrics, s.status, s.content_hash
 FROM samples s JOIN runs r ON s.run_id = r.id
 WHERE s.project_id = $1
   AND s.external_sample_id = $2
@@ -910,7 +963,56 @@ ORDER BY r.created_at ASC
 LIMIT $4;
 ```
 
-> 样本走势主轴用 `reward`（连续综合分，能反映样本质量随迭代/规则演进的变化）；单样本的 DR/CPR 是布尔值、走势呈 0/1 阶跃、信息量低，故仅作 `s_format`/`s_common` 达标辅助。隔离仍由 `project_id IN (org 的 projects)` 强制（与 §9.2 同范式），越权 404。
+> 样本走势主轴使用场景定义的综合分指标（courseware 场景为 `reward`）；具体展示哪些指标由前端从 `RunConfigSnapshot` 的 `metricDefinitions` 动态决定，而非硬编码。隔离仍由 `project_id IN (org 的 projects)` 强制（与 §9.2 同范式），越权 404。
+
+### 9.5 场景化指标体系（替代硬编码指标）
+
+> 本节是对齐 [13 配置管理设计](./13配置管理设计.md) 的关键改造：把 Web 平台从"课件固定指标（DR/CPR/Reward/Soft/Pref/CondR）"升级为"按场景动态定义指标"。
+
+#### 9.5.1 问题背景
+
+旧实现中，指标在前后端均被硬编码：
+
+- 后端：`Run` 表一等列 `dr/cpr/avgReward/avgSoft/avgPref/condR`；`Sample` 表 `sFormat/sCommon/sSoft/sPref/reward`；摄取 schema `ingest.event.v1.json` 要求固定键；查询 SQL 固定列。
+- 前端：`lib/eval.tsx` 的 `MetricKey`/`THRESHOLDS`/`METRIC_LABEL`/`STAGES`；各页面（Dashboard/ProjectDetail/RunDetail/SampleDetail/DebugPage/Admin）写死指标卡、趋势序列、表格列、阶段分组。
+
+新方案引入 `MetricDefinition`（`id/name/expression/threshold/unit`）与 `AggregationPolicy`（`stageWeights/evaluatorWeights/normalizeTo/skipTiers`），指标随场景变化，Web 必须动态渲染。
+
+#### 9.5.2 数据层方案
+
+- **统一存储**：`Run.metrics` 与 `Sample.metrics` 为 JSONB（`Record<metric_id, number>`），键为 `MetricDefinition.id`。
+- **遗留列过渡**：`Run.dr/cpr/avgReward/avgSoft/avgPref/condR` 与 `Sample.sFormat/sCommon/sSoft/sPref/reward` 改为可空遗留列；courseware 场景摄取时由后端回填，保证旧查询/旧前端在迁移期不中断。
+- **快照**：每次 Run 关联一个 `RunConfigSnapshot`，内含本次运行使用的 `metricDefinitions` 与 `aggregationPolicy`，前端据此动态渲染。
+
+#### 9.5.3 摄取层方案
+
+- `ingest.event.v1.json` 的 `run.metrics` / `sample.metrics` 改为动态键值对象（`additionalProperties: number`），不再强制 `DR/CPR/avg_reward/condR`。
+- run 事件新增 `scenario_id` / `package_id` / `package_version` / `run_config_snapshot_id`。
+- `events.ts` 的 `RunMetrics` 类型从固定接口改为 `Record<string, number>`。
+- `ingest.repository.ts`：把 metrics 写入 `Run.metrics` JSONB；若 `scenario_id=courseware`，同时回填遗留列（`dr/cpr/...`）。
+
+#### 9.5.4 查询层方案
+
+- dashboard / trends / run-list / sample-trends 接口改为从 `metrics` JSONB 取值，支持 `?metric_ids=` 参数指定要返回的指标。
+- `GET /api/runs/:id` 返回 `run.metrics` + `snapshot.metricDefinitions` + `snapshot.aggregationPolicy`。
+- `EvalJobService.buildJobOverview` 从 snapshot 的 `metricDefinitions` 与 `aggregationPolicy` 动态计算 verdict / score，不再硬编码 `DR/CPR/Reward`。
+- 新增 `GET /api/runs/:id/snapshot` 返回完整配置快照。
+
+#### 9.5.5 前端方案
+
+- `lib/eval.tsx` 的硬编码常量（`MetricKey` / `THRESHOLDS` / `METRIC_LABEL` / `STAGES`）**直接删除**，主路径改为运行时从 API 取 `metricDefinitions` / `aggregationPolicy`。历史数据通过一次性迁移补齐快照与 `metrics`（见 §9.5.6），前端不再保留任何课件专用 fallback。
+- 新增 `MetricGrid` / `MetricCard` 通用组件，按 `MetricDef[]` + `Record<string, number>` 渲染。
+- Dashboard / ProjectDetail / RunDetail / SampleDetail / DebugPage / Admin 全部改为动态渲染指标（健康度、卡片、趋势序列、表头、阶段分组均来自场景配置）。
+- 类型层：`RunSummary` / `TrendPoint` / `SampleTrendPoint` 改为通用 `metrics` 结构。
+
+#### 9.5.6 迁移与清理（无 fallback，历史数据一次性迁移）
+
+1. 加表、加 `Run.metrics` / `Sample.metrics` / `RunConfigSnapshot`，遗留列改可空。
+2. **历史数据迁移**：编写一次性迁移脚本，遍历所有历史 Run/Sample，按其 `rule_set_version` / `scenario` 回填 `metrics` JSONB 与对应 `RunConfigSnapshot`（courseware 场景用内置 courseware 默认 `metricDefinitions` 生成快照）。迁移完成后，每条历史 Run 都具备完整 `metrics` 与快照。
+3. 摄取改造：接收动态 metrics，写入 `metrics` JSONB；courseware 场景同时回填遗留列（仅迁移期临时保留，供回滚校验）。
+4. 后端查询改造：dashboard/trends 返回通用指标。
+5. 前端类型 + API client + 组件动态化（无 fallback）。
+6. 确认历史数据已迁移、查询与前端均走 `metrics` 后，删除遗留列 `dr/cpr/avgReward/avgSoft/avgPref/condR` 与 `sFormat/sCommon/sSoft/sPref/reward`（DDL 删列）。
 
 ---
 
@@ -922,8 +1024,24 @@ LIMIT $4;
 - **页面映射**：ProjectList/ProjectDetail/RunDetail/TaskDetail 等页面**新建**（Sprint 7a 的本地查看器前端已移除），数据源为 Query API；目录模式（DirectoryTree/ModuleScoreTable）按 `module_results` 字段切换。
 - **样本 Tab（项目页）**：项目页新增「样本」Tab——样本清单表（`externalSampleId` / 最近评估时间 / 最近 Reward / 评估次数 / 状态 / 内容版本）；点样本进入样本走势视图：该样本 `reward` 跨 run 走势图（复用 LineChart）+ 历次评估明细表（时间 / run / reward / s_format / s_common / 状态 / `content_hash`）。与运行视图互补：运行视图看「每次评估评了什么」，样本视图看「每个样本随时间的演进」。
 - **制品预览**：任务详情页对 `artifact.kind`（screenshot/judge_record/output）提供预览，经 `GET /api/artifacts/:id/preview` 取 URL——image 走 presigned 直链，html/text/trace 走同源 raw 代理（`/raw?token=`，见 §5.4）。
+- **扣分项文件定位与制品联动**：
+  - 数据：`ConstraintResult.details.source_files` 标注约束涉及的课件文件（`filename`、`artifact_kind`、`page`、`snippet`）。
+  - 匹配：前端用 `matchArtifactByFilename(artifacts, filename)` 将 `filename` 匹配到 sample 制品的 `originalName`。
+  - 交互：`SourceFileChips` 渲染在扣分项/维度下方；点击 chip 调用 `handleSelectFile` 切换 `PreviewPane` 的 `tab` 与 `selectedId`，右侧预览自动切到对应文件；当前预览文件 chip 高亮，实现双向联动。
+  - 降级：无 `source_files` 的历史数据不渲染 chip，体验同原状；未匹配到制品的文件显示未命中样式，不阻塞交互。
 - **Langfuse 跳转**：运行/任务详情页，若 `langfuse_trace_id` 存在，渲染"在 Langfuse 查看"按钮 → `${langfuse_host}/trace/${langfuse_trace_id}`。
 - **危险操作**：项目/运行永久删除置于「危险区」，需输入项目 slug 二次确认（owner only）。
+- **指标动态渲染（场景化指标体系，见 §九.5 与 [13 配置管理设计](./13配置管理设计.md)）**：
+  - 旧实现中 `lib/eval.tsx` 的 `MetricKey` / `THRESHOLDS` / `METRIC_LABEL` / `METRIC_EXPLAIN` / `STAGES` 等常量是课件场景的硬编码，新方案下不再假设固定指标集。
+  - 新模型：每个 `Run` 携带 `metrics: Record<metric_id, number>`，且关联一个 `RunConfigSnapshot`，其中包含 `metricDefinitions`（`id/name/threshold/unit`）与 `aggregationPolicy`（`stageWeights`）。
+  - 前端从 `GET /api/runs/:id`（或快照接口）取得 `metricDefinitions`，据此动态渲染指标卡、趋势图序列、表格列、阶段分组；阈值与单位也来自 `metricDefinitions`，不再读 `THRESHOLDS` 常量。
+  - 新增通用组件 `MetricGrid` / `MetricCard`：接收 `MetricDef[]` + `Record<string, number>`，按 scenario 自动选择主指标（健康度）、副指标（看板卡片）、趋势序列。
+  - Dashboard 健康度：使用场景主指标及其阈值，而非写死 `dr >= 0.95`。
+  - ProjectDetail：指标卡列表、`MetricTrendChart` 序列、运行列表表头、样本走势序列全部动态生成。
+  - RunDetail：顶部指标卡、失败分布（按 `aggregationPolicy.stageWeights` 的阶段而非写死 `format/commonsense/quality`）、样本表列均动态生成；报告下载模板按 `metricDefinitions` 输出。
+  - SampleDetail：阶段从 `aggregationPolicy.stageWeights` 动态获取。
+  - 历史数据：不保留前端 fallback，历史 Run 通过一次性迁移脚本补齐 `metrics` 与 `RunConfigSnapshot`（见 §9.5.6），迁移后所有 Run 均具备完整场景化指标与快照。
+  - `frontend/src/types.ts`：`RunSummary` / `TrendPoint` / `SampleTrendPoint` 改为携带 `metrics: Record<string, number>` 的通用结构，不再固定 `dr/cpr/avgReward/...` 字段。
 
 ---
 
@@ -931,20 +1049,26 @@ LIMIT $4;
 
 ### 11.1 回填工具（`agent-eval upload`）
 
-1. 遍历 `workspace/runs/{run_id}/`，读 `run_manifest.json` + `reports/summary.json` + `results/*/`。
-2. 拼装 run/sample/constraint/artifact 事件。
+1. 遍历 `workspace/runs/{run_id}/`，读 `run_manifest.json` + `reports/summary.json` + `results/*/` + `run_config_snapshot.json`。
+2. 拼装 run/sample/constraint/artifact 事件；run 事件携带 `scenario_id` / `package_id` / `package_version` / `metrics`；先上传 `RunConfigSnapshot` 得到 `run_config_snapshot_id`。
 3. 制品（JudgeRecord、截图、原始产出物）按 §5.3 两段式上传。
 4. 经 Ingestion API 摄取（与正常 eval 同路径，复用 ResultSink）。
 
 ### 11.2 对账
 
-- 脚本比对：本地 `summary.json` 的 DR/CPR/Reward 与 DB 中 `runs` 对应行一致；本地样本数与 DB `samples` 行数一致；制品数与 `artifacts` 行数一致。
+- 脚本比对：本地 `summary.json` 的指标与 DB 中 `runs.metrics`（或 courseware 遗留列）一致；本地样本数与 DB `samples` 行数一致；制品数与 `artifacts` 行数一致；快照 `content_hash` 与 DB `RunConfigSnapshot.contentHash` 一致。
 - 差异输出报告，支撑双写灰度切换决策。
 
-### 11.3 双写灰度
+### 11.3 场景化指标迁移（对齐 §9.5）
+
+- **阶段 A（加列，向后不破坏）**：新增 `Run.metrics` / `Sample.metrics` JSONB 与 `RunConfigSnapshot` 表；`Project` 加 `default_scenario` / `default_package`；`Run` 加 `scenario_id` / `package_id` / `package_version` / `run_config_snapshot_id`。现有一等指标列保留可写。
+- **阶段 B（历史数据迁移 + 双写）**：先运行一次性迁移脚本，为所有历史 Run/Sample 按 courseware 默认 `metricDefinitions` 补齐 `metrics` 与 `RunConfigSnapshot`；之后评估器上报动态 `metrics`，后端写入 `metrics` JSONB，并在 `scenario_id=courseware` 时回填遗留列（仅迁移期临时保留，供回滚校验）。前端切到动态渲染，**不保留 fallback**。
+- **阶段 C（清理）**：确认历史数据已迁移、查询与前端均走 `metrics` 后，删除遗留列（DDL 删列），同步移除 `lib/eval.tsx` 的硬编码常量。
+
+### 11.4 双写灰度
 
 - 阶段一：eval 双写（本地 workspace + 平台），对账确认一致。
-- 阶段二：前端（Sprint 7f 新建）连平台 Query API；遗留本地查看器已移除，`workspace/index/*.json` 不再被 Web 侧消费（仅供评估器/回填工具）。
+- 阶段二：前端连平台 Query API；遗留本地查看器已移除，`workspace/index/*.json` 不再被 Web 侧消费（仅供评估器/回填工具）。
 - 阶段三：可选 `--no-local`，平台为权威。
 
 ---
@@ -1038,3 +1162,5 @@ volumes: { pgdata: {} }
 | v1.2 | 2026-06-30 | 数据库治理统一：web 的 `prisma/` 迁至仓库根 `db/web/prisma/`，与 gateway 的 `db/gateway/migrations/` 同归 `db/`；§4.1/§4.3 目录树与建库命令同步（`make db-init`=`db/apply.sh` 统一应用 web+gateway，`make db-migrate-prod`=`db/apply-prod.sh` 线上增量）；schema.prisma 显式 output 以兼容迁出 web/backend 后的 Prisma 项目根推断（见 db/README.md） |
 | v1.3 | 2026-07-07 | **执行拆分与网关合并**：删除 gateway 相关描述；新增 §7.7 评测任务提交与执行（`/api/v1/jobs` + executor）；架构图/后端工程结构/Prisma 模型补 `EvalJob`；§6.3 统一为 Bearer API Key（移除 HMAC）；§12.1/§12.3 补 executor/SCF 配置；说明 gateway SQL 已移除、任务表由 Prisma 统一治理 |
 | v1.4 | 2026-07-10 | **Prisma schema 迁回 web/backend**（反转 v1.2 的迁出决策）：schema + migrations 由 `db/web/prisma/` 移至 `web/backend/prisma/`（Prisma 项目根归位），消除「schema 跨目录导致 `prisma generate` 在仓库根触发 auto-install」的 CI 构建失败（npm i 在干净 root 失败）+ 显式 `output` hack + 根级 `node_modules`/`package.json` 副作用；`db/` 目录撤销，建库脚本迁至 `scripts/db-apply.sh` / `scripts/db-apply-prod.sh`（`make db-init` / `make db-migrate-prod` 不变）；§4.1/§4.3 目录树与建库命令同步 |
+| v1.5 | 2026-07-13 | 合并 15《评估结果文件定位与制品联动方案》：§7.7 端点表格补 `GET /api/v1/jobs/:id/overview` 并说明 `failures[].top_issues` 与 `failures[].files`；§十 前端改造补「扣分项文件定位与制品联动」（`SourceFileChips`、`matchArtifactByFilename`、预览窗受控化、双向高亮、降级策略）。 |
+| v1.6 | 2026-07-13 | **对接 [13 配置管理设计](./13配置管理设计.md)（场景化指标 + 运行配置快照）**：§4.1 `Project` 加 `default_scenario`/`default_package`，`Run`/`Sample` 加 `metrics` JSONB（指标统一存储，键=`metric_id`）+ `scenario_id`/`package_id`/`package_version`/`run_config_snapshot_id`，新增 `RunConfigSnapshot` 模型；`dr/cpr/avgReward/avgSoft/avgPref/condR` 与 `sFormat/sCommon/sSoft/sPref/reward` 降级为可空遗留列（courseware 回填，最终删除）；§7.1 摄取 schema 的 `metrics` 改为动态键值对象；§7.7 catalog 端点改为 `/api/v1/scenarios/:id/catalog`；§9.2/§9.3/§9.4 查询 SQL 改为从 `metrics` JSONB 取值；**新增 §9.5 场景化指标体系**（数据/摄取/查询/前端/迁移清理方案）；§9.1 端点补 `snapshot` 与 `scenarios`；§十 前端补「指标动态渲染」；§11 迁移补场景化指标迁移阶段 A/B/C。 |

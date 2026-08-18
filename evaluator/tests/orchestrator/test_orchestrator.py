@@ -376,10 +376,7 @@ class TestWorkspaceIndexErrorPaths:
         metrics = MetricsReport(
             run_id="test",
             total_samples=1,
-            dr=1.0,
-            cpr=1.0,
-            avg_reward=1.0,
-            cond_r=1.0,
+            metrics={"courseware:document_rate": 1.0},
             avg_time_ms=100,
             sample_scores=[],
             failure_breakdown={},

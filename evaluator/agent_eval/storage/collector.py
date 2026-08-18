@@ -57,7 +57,7 @@ class DirectoryCollector:
             max_depth: 最大遍历深度。
         """
         self.root_dir = Path(root_dir)
-        self.file_patterns = file_patterns or ["*.html", "*.htm"]
+        self.file_patterns = file_patterns or ["*"]
         self.exclude_dirs = set(exclude_dirs or ["__MACOSX", ".git", ".DS_Store"])
         self.max_depth = max_depth
 
@@ -139,10 +139,24 @@ class DirectoryCollector:
         return sorted(files, key=lambda f: f.relative_path)
 
     def _build_modules(self, files: list[CollectedFile]) -> list[DirectoryManifestModule]:
-        """按顶层目录将文件组织为模块。"""
+        """按目录层级组织模块。
+
+        默认按顶层目录（relative_path 首段）切；若顶层仅 1 个目录（单层包裹，如
+        「大单元学习总导」下套 M1-M20），自动降一层按第二段切，使真实模块被识别，
+        避免 module 粒度退化（单模块 → package）。
+        """
+        parts_list = [f.relative_path.split("/") for f in files]
+        top = {p[0] for p in parts_list if p}
+        # 顶层仅 1 个目录、且文件位于第三层及以下（顶层套子目录套文件，如「总导/M1/a.html」）
+        # → 降一层切 parts[1]；若仅套到第二层（「课件包/a.html」，文件直接在顶层目录内）
+        # 则不降（保持 1 模块，避免每文件成 1 模块的扁平退化）
+        use_second_level = len(top) == 1 and any(len(p) >= 3 for p in parts_list)
+        idx = 1 if use_second_level else 0
+
         modules_dict: dict[str, list[CollectedFile]] = {}
-        for f in files:
-            modules_dict.setdefault(f.parent_module, []).append(f)
+        for f, p in zip(files, parts_list):
+            module_name = p[idx] if len(p) > idx else (p[0] if p else "")
+            modules_dict.setdefault(module_name, []).append(f)
 
         modules: list[DirectoryManifestModule] = []
         for module_name, module_files in modules_dict.items():

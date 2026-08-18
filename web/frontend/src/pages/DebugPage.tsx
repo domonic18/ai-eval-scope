@@ -4,7 +4,9 @@
  * 项目归属由 API Key 决定（Web 后端验签解析），无需也不接收 project_id。
  */
 import { useEffect, useRef, useState } from "react"
-import { api } from "../api/client"
+import { api, type CatalogEntry, type ScenarioCatalog } from "../api/client"
+import { DynamicMetricGrid } from "@/components/DynamicMetricGrid"
+import { useScenarioDefaults } from "@/hooks/useScenarioDefaults"
 import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/shadcn/card"
@@ -21,34 +23,24 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/shadcn/tooltip"
-import { useCrumbs } from "../components/AppShell"
+import { useCrumbs } from "../context/navigation"
 import { FilePicker } from "../components/FilePicker"
-import { useToast } from "../components/toast"
+import { useToast } from "../hooks/useToast"
 import { StatusBadge } from "../components/shared"
-import { CopyIcon, ExternalLink, HelpCircle, Terminal, Trash2 } from "lucide-react"
+import { CopyIcon, ExternalLink, FileJson, HelpCircle, Terminal, Trash2 } from "lucide-react"
 import type { DebugJobStatus } from "../types"
 
-const POLL_INTERVAL = 3000
+const POLL_INTERVAL = 30000
 
-/** 规则集目录项（挂载时从 /api/v1/rule-sets 拉取，构建期静态 catalog，单一事实源）。 */
-interface RuleSetInfo {
-  id: string
-  name: string
-  description: string
-  capabilities: string[]
-  scopes: string[]
-}
-
-/** 能力 → 展示徽标。 */
-const CAPABILITY_BADGE: Record<string, { label: string; cls: string }> = {
-  llm: { label: "需 LLM", cls: "bg-sky-500/15 text-sky-300" },
-  vision: { label: "需视觉", cls: "bg-purple-500/15 text-purple-300" },
-  kb: { label: "需知识库", cls: "bg-amber-500/15 text-amber-300" },
+/** 由场景包目录项推导 package_ref（scenario/asset_id:label，优先 production 标签）。 */
+function packageRefOf(scenario: string, pkg: CatalogEntry): string {
+  const label = pkg.labels.includes("production") ? "production" : (pkg.labels[0] ?? pkg.version)
+  return `${scenario}/${pkg.asset_id}:${label}`
 }
 
 /** 参数默认值（用户可在编辑框内直接修改）。 */
 const DEFAULTS = {
-  ruleSet: "coursework-quality",
+  scenario: "courseware",
   taskId: "",
   taskTitle: "",
   apiKey: "",
@@ -114,8 +106,11 @@ export default function DebugPage() {
   const { setCrumbs } = useCrumbs()
   const toast = useToast()
 
-  const [ruleSet, setRuleSet] = useState(DEFAULTS.ruleSet)
-  const [ruleSets, setRuleSets] = useState<RuleSetInfo[]>([])
+  const [scenario, setScenario] = useState(DEFAULTS.scenario)
+  const [scenarios, setScenarios] = useState<Array<{ id: string; name: string }>>([])
+  const [catalog, setCatalog] = useState<ScenarioCatalog | null>(null)
+  const [ruleSet, setRuleSet] = useState("coursework-quality")
+  const [packageAssetId, setPackageAssetId] = useState<string>("")
   const [taskId, setTaskId] = useState(DEFAULTS.taskId)
   const [taskTitle, setTaskTitle] = useState(DEFAULTS.taskTitle)
   const [apiKey, setApiKey] = useState(DEFAULTS.apiKey)
@@ -138,21 +133,39 @@ export default function DebugPage() {
     return () => setCrumbs([])
   }, [setCrumbs])
 
-  // 挂载时拉取规则集目录（/api/v1/rule-sets，构建期静态 catalog，单一事实源；含派生能力）
+  // 挂载时拉取场景列表
   useEffect(() => {
     api
-      .debugRuleSets()
-      .then((items) => {
-        setRuleSets(items)
-        if (items.length && !items.some((r) => r.id === ruleSet)) {
-          setRuleSet(items[0].id)
+      .scenarios()
+      .then((items) => setScenarios(items.map((s) => ({ id: s.id, name: s.name }))))
+      .catch(() => {
+        /* 拉取失败不阻塞：选择器回退到当前 scenario */
+      })
+  }, [])
+
+  // scenario 变化时拉取场景 catalog（rule_sets + packages 同源），重置 rule_set / package 默认
+  useEffect(() => {
+    let stopped = false
+    api
+      .scenarioCatalog(scenario)
+      .then((cat) => {
+        if (stopped || !cat) return
+        setCatalog(cat)
+        const rs = cat.rule_sets.map((r) => r.asset_id)
+        if (!rs.includes(ruleSet)) {
+          setRuleSet(rs.includes("coursework-quality") ? "coursework-quality" : (rs[0] ?? ""))
         }
+        const prod = cat.packages.find((p) => p.labels.includes("production"))
+        setPackageAssetId(prod?.asset_id ?? cat.packages[0]?.asset_id ?? "")
       })
       .catch(() => {
-        /* 拉取失败不阻塞：下拉回退到当前 ruleSet 值 */
+        /* catalog 拉取失败：选择器回退到当前值 */
       })
+    return () => {
+      stopped = true
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [scenario])
 
   const pushLog = (dir: ConsoleEntry["dir"], label: string, data?: unknown) => {
     logIdRef.current += 1
@@ -192,8 +205,9 @@ export default function DebugPage() {
         pushLog("resp", j.status, j)
         setJob(j)
         if (j.status === "completed") {
-          const m = (j.metrics as { metrics?: { DR?: number } } | null)?.metrics
-          pushLog("info", `评估完成  DR=${m?.DR ?? "—"}`, j)
+          const m = (j.metrics as { metrics?: Record<string, number> } | null)?.metrics
+          const rewardKey = m ? Object.keys(m).find((k) => k.endsWith(":reward")) : undefined
+          pushLog("info", `评估完成${rewardKey && m ? `  ${rewardKey}=${m[rewardKey]}` : ""}`, j)
           if (pollRef.current) clearInterval(pollRef.current)
         } else if (j.status === "failed") {
           pushLog("error", "评估失败", j.error)
@@ -211,8 +225,21 @@ export default function DebugPage() {
     }
   }, [activeJob])
 
+  // 由所选场景包推导 package_ref（scenario/asset_id:label）
+  const selectedPackage = catalog?.packages.find((p) => p.asset_id === packageAssetId)
+  const packageRef = selectedPackage ? packageRefOf(scenario, selectedPackage) : undefined
+  // 由所选 rule_set 的 format 门控扩展名推导可上传类型（code→.py / courseware→.html,.md）
+  const selectedRuleSet = catalog?.rule_sets.find((r) => r.asset_id === ruleSet)
+  const accept = selectedRuleSet?.accept?.length
+    ? [...selectedRuleSet.accept, "zip"].map((e) => "." + e).join(",")
+    : ".html,.htm,.md,.markdown,.zip,.py"
+
   async function submit() {
     if (!file) return
+    if (!packageRef) {
+      toast.error("该场景无可用的场景包（package_ref），无法提交")
+      return
+    }
     setSubmitting(true)
     pushLog("req", "POST /v1/jobs", {
       url: `/api/v1/debug/jobs`,
@@ -221,6 +248,7 @@ export default function DebugPage() {
       query: {
         filename: file.name,
         rule_set_id: ruleSet,
+        package_ref: packageRef,
         ...(taskId.trim() ? { task_id: taskId.trim() } : {}),
         ...(taskTitle.trim() ? { task_title: taskTitle.trim() } : {}),
         ...(apiKey.trim() ? { api_key: apiKey.trim() } : {}),
@@ -229,6 +257,7 @@ export default function DebugPage() {
     })
     try {
       const res = await api.submitDebugJob(file, ruleSet, {
+        packageRef,
         taskId: taskId.trim() || undefined,
         taskTitle: taskTitle.trim() || undefined,
         apiKey: apiKey.trim() || undefined,
@@ -256,7 +285,9 @@ export default function DebugPage() {
     }
   }
 
+  // executor（阶段1场景化）直出 courseware:* 指标键，无需旧→新映射
   const metrics = (job?.metrics as { metrics?: Record<string, number> } | null)?.metrics
+  const defaultDefs = useScenarioDefaults(scenario)
 
   return (
     <TooltipProvider>
@@ -277,39 +308,79 @@ export default function DebugPage() {
             <CardContent className="space-y-4">
               <div className="space-y-1.5">
                 <ParamLabel
+                  name="scenario"
+                  help="场景（决定可用的规则集与场景包）。切换后自动拉取该场景 catalog。"
+                />
+                <Select value={scenario} onValueChange={setScenario}>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(scenarios.length ? scenarios : [{ id: scenario, name: scenario }]).map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        <span className="flex items-center gap-1.5">
+                          <span>{s.name || s.id}</span>
+                          {s.name && s.name !== s.id && (
+                            <span className="font-mono text-[10px] text-muted-foreground">{s.id}</span>
+                          )}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <ParamLabel
                   name="rule_set_id"
-                  help="规则集来自 /api/v1/rule-sets（构建期静态 catalog，单一事实源）；徽标表示该规则集派生的能力需求（LLM/视觉/知识库），由所选规则集决定是否触发多模态等评估。"
+                  help="规则集来自所选场景的 catalog（与场景包同源）。"
                 />
                 <Select value={ruleSet} onValueChange={setRuleSet}>
                   <SelectTrigger className="h-9 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {(ruleSets.length ? ruleSets : [{ id: ruleSet, name: ruleSet, description: "", capabilities: [], scopes: [] }]).map(
-                      (r) => (
-                        <SelectItem key={r.id} value={r.id}>
-                          <span className="flex items-center gap-1.5">
-                            <span>{r.name || r.id}</span>
-                            {/* 文件 id（与 assets/rules/<id>.yaml 对照），便于开发者定位 */}
-                            {r.name && r.name !== r.id && (
-                              <span className="font-mono text-[10px] text-muted-foreground">
-                                {r.id}
-                              </span>
-                            )}
-                            {r.capabilities
-                              .filter((c) => CAPABILITY_BADGE[c])
-                              .map((c) => (
-                                <span
-                                  key={c}
-                                  className={`rounded px-1 py-px text-[10px] ${CAPABILITY_BADGE[c].cls}`}
-                                >
-                                  {CAPABILITY_BADGE[c].label}
-                                </span>
-                              ))}
+                    {(catalog?.rule_sets.length
+                      ? catalog.rule_sets
+                      : [{ asset_id: ruleSet, name: ruleSet, version: "", labels: [], description: null }]
+                    ).map((r) => (
+                      <SelectItem key={r.asset_id} value={r.asset_id}>
+                        <span className="flex items-center gap-1.5">
+                          <span>{r.name || r.asset_id}</span>
+                          {r.name && r.name !== r.asset_id && (
+                            <span className="font-mono text-[10px] text-muted-foreground">
+                              {r.asset_id}
+                            </span>
+                          )}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <ParamLabel
+                  name="package_ref"
+                  required
+                  help={`场景包引用（scenario/package:label），executor 据此解析规则集文件；不再对 courseware 自动补全。当前：${packageRef ?? "（该场景无可用包）"}`}
+                />
+                <Select value={packageAssetId} onValueChange={setPackageAssetId}>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="无可用场景包" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(catalog?.packages ?? []).map((p) => (
+                      <SelectItem key={p.asset_id} value={p.asset_id}>
+                        <span className="flex items-center gap-1.5">
+                          <span>{p.name || p.asset_id}</span>
+                          <span className="font-mono text-[10px] text-muted-foreground">
+                            {scenario}/{p.asset_id}:
+                            {p.labels.includes("production") ? "production" : (p.labels[0] ?? p.version)}
                           </span>
-                        </SelectItem>
-                      ),
-                    )}
+                        </span>
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -365,12 +436,12 @@ export default function DebugPage() {
                 <FilePicker
                   value={file}
                   onChange={setFile}
-                  accept=".html,.htm,.md,.markdown,.zip"
-                  hint=".html / .md / .zip"
+                  accept={accept}
+                  hint={selectedRuleSet?.accept?.map((e) => "." + e).join(" / ") ?? "按规则集格式门控"}
                 />
               </div>
 
-              <Button disabled={!file || submitting} onClick={submit} size="sm" className="w-full">
+              <Button disabled={!file || submitting || !packageRef} onClick={submit} size="sm" className="w-full">
                 {submitting ? "提交中…" : "提交评估"}
               </Button>
             </CardContent>
@@ -386,18 +457,30 @@ export default function DebugPage() {
               <CardContent className="space-y-3">
                 <div className="font-mono text-xs text-muted-foreground">job_id: {job.job_id}</div>
                 {job.status === "completed" && metrics && (
-                  <div className="overflow-hidden rounded-md border">
-                    <div className="grid grid-cols-3 divide-x divide-border">
-                      <MetricCell label="DR" value={fmt3(metrics.DR)} />
-                      <MetricCell label="CPR" value={fmt3(metrics.CPR)} />
-                      <MetricCell label="Reward" value={fmt3(metrics.avg_reward)} />
-                    </div>
-                    <div className="grid grid-cols-3 divide-x divide-border border-t">
-                      <MetricCell label="CondR" value={fmt3(metrics.condR)} />
-                      <MetricCell label="Soft" value={fmt3(metrics.avg_soft)} />
-                      <MetricCell label="Pref" value={fmt3(metrics.avg_pref)} />
-                    </div>
-                  </div>
+                  <DynamicMetricGrid defs={defaultDefs} metrics={metrics} />
+                )}
+                {job.status === "completed" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={async () => {
+                      if (!job) return
+                      pushLog("req", `GET /debug/jobs/${job.job_id.slice(0, 8)}/overview`, {
+                        url: `/api/v1/debug/jobs/${job.job_id}/overview`,
+                        method: "GET",
+                      })
+                      try {
+                        const ov = await api.getDebugOverview(job.job_id, apiKey.trim() || undefined)
+                        pushLog("resp", "200", ov)
+                        pushLog("info", `Overview: verdict=${(ov as { verdict?: string }).verdict ?? "—"} score=${(ov as { score?: number }).score ?? "—"}`, ov)
+                      } catch (e) {
+                        pushLog("error", "Overview 获取失败", String(e))
+                      }
+                    }}
+                  >
+                    <FileJson className="size-3.5" /> 获取 Overview 速览
+                  </Button>
                 )}
                 {job.web_run_url && (
                   <Button asChild variant="outline" size="sm" className="w-full">
@@ -485,21 +568,5 @@ export default function DebugPage() {
         </div>
       </div>
     </TooltipProvider>
-  )
-}
-
-function fmt3(n?: number): string {
-  return n == null ? "—" : n.toFixed(3)
-}
-
-/** 紧凑指标格：小号标签 + 中等字号数值（tabular-nums 对齐，不溢出）。 */
-function MetricCell({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="px-2 py-1.5 text-center">
-      <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-        {label}
-      </div>
-      <div className="mt-0.5 text-sm font-semibold tabular-nums">{value}</div>
-    </div>
   )
 }

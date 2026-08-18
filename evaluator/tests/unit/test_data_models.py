@@ -41,7 +41,7 @@ class TestTaskModel:
         )
         assert task.id == "t001"
         assert task.input_mode == "inline"
-        assert task.file_patterns == ["*.html"]
+        assert task.file_patterns == ["*"]  # 默认全收，由规则集 format 门控收敛
 
     def test_task_directory_mode(self) -> None:
         task = Task(
@@ -253,14 +253,14 @@ class TestSampleResult:
         sr = SampleResult(
             sample_id="s001",
             status=EvalStatus.PASS,
-            s_format=1.0,
-            s_common=1.0,
+            stage_metrics={"reward": 2.43, "soft": 0.8, "pref": 0.6},
             reward=2.43,
         )
         d = sr.to_dict()
         restored = SampleResult.from_dict(d)
         assert restored.sample_id == "s001"
         assert restored.reward == 2.43
+        assert restored.stage_metrics["soft"] == 0.8
 
 
 class TestMetricsReport:
@@ -268,12 +268,10 @@ class TestMetricsReport:
         report = MetricsReport(
             run_id="run_001",
             total_samples=10,
-            dr=0.95,
-            cpr=0.88,
-            avg_reward=1.72,
+            metrics={"courseware:document_rate": 0.95, "courseware:reward": 1.72},
         )
         d = report.to_dict()
-        assert d["metrics"]["DR"] == 0.95
+        assert d["metrics"]["courseware:document_rate"] == 0.95
         assert d["total_samples"] == 10
 
 
@@ -293,6 +291,9 @@ class TestRuleSet:
                     name="格式",
                     dimension="func",
                     stage="format_gate",
+                    method="format",
+                    format_type="extension",
+                    extensions=["md", "html"],
                     evaluator="format.response_format",
                 ),
             ],
@@ -303,9 +304,33 @@ class TestRuleSet:
         rs = RuleSet(
             version="1.0",
             rules=[
-                Rule(id="R1", name="A", dimension="f", stage="s1", evaluator="e1"),
-                Rule(id="R2", name="B", dimension="f", stage="s2", evaluator="e2"),
-                Rule(id="R3", name="C", dimension="f", stage="s1", evaluator="e3"),
+                Rule(
+                    id="R1",
+                    name="A",
+                    dimension="f",
+                    stage="s1",
+                    method="llm",
+                    prompt_id="p1",
+                    evaluator="llm.p1",
+                ),
+                Rule(
+                    id="R2",
+                    name="B",
+                    dimension="f",
+                    stage="s2",
+                    method="llm",
+                    prompt_id="p2",
+                    evaluator="llm.p2",
+                ),
+                Rule(
+                    id="R3",
+                    name="C",
+                    dimension="f",
+                    stage="s1",
+                    method="llm",
+                    prompt_id="p3",
+                    evaluator="llm.p3",
+                ),
             ],
         )
         s1_rules = rs.get_rules_by_stage("s1")
@@ -324,7 +349,17 @@ class TestRuleSet:
     def test_get_rule(self) -> None:
         rs = RuleSet(
             version="1.0",
-            rules=[Rule(id="FMT_001", name="test", dimension="f", stage="s", evaluator="e")],
+            rules=[
+                Rule(
+                    id="FMT_001",
+                    name="test",
+                    dimension="f",
+                    stage="s",
+                    method="llm",
+                    prompt_id="p",
+                    evaluator="llm.p",
+                )
+            ],
         )
         r = rs.get_rule("FMT_001")
         assert r is not None
@@ -340,7 +375,9 @@ class TestRuleSet:
                     name="Rule 1",
                     dimension="f",
                     stage="s",
-                    evaluator="e",
+                    method="llm",
+                    prompt_id="p",
+                    evaluator="llm.p",
                     params={"min": 1},
                     weight=0.5,
                 ),
@@ -370,9 +407,10 @@ class TestPackageModels:
         assert m.sut_name == "manual"
 
     def test_score_summary(self) -> None:
-        s = ScoreSummary(s_format=1.0, s_common=1.0, s_soft=0.78, reward=2.43)
+        s = ScoreSummary(reward=2.43, stage_metrics={"soft": 0.78, "pref": 0.6})
         d = json.loads(s.model_dump_json())
         assert d["reward"] == 2.43
+        assert d["stage_metrics"]["soft"] == 0.78
 
     def test_eval_result_manifest(self) -> None:
         m = EvalResultManifest(

@@ -24,13 +24,11 @@ class KnowledgeMerger:
     """知识点合并器——将提取/转换产物合并到 knowledge yaml。
 
     Args:
-        knowledge_dir: knowledge 目录路径，默认 assets/knowledge/。
+        knowledge_dir: knowledge 目录路径，默认内置 courseware 包 datasets/（``paths.knowledge_dir``）。
     """
 
     def __init__(self, knowledge_dir: Path | str | None = None) -> None:
-        self.knowledge_dir = (
-            Path(knowledge_dir) if knowledge_dir else paths.assets_dir / "knowledge"
-        )
+        self.knowledge_dir = Path(knowledge_dir) if knowledge_dir else paths.knowledge_dir
 
     def _subject_path(self, subject: str) -> Path:
         """获取学科 yaml 路径。"""

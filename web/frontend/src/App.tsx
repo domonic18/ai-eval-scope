@@ -13,6 +13,12 @@ import RunDetail from "./pages/RunDetail"
 import SampleDetail from "./pages/SampleDetail"
 import ComingSoon from "./pages/ComingSoon"
 import DebugPage from "./pages/DebugPage"
+import ConfigHub from "./pages/config/ConfigHub"
+import ScenarioConfig from "./pages/config/ScenarioConfig"
+import AssetEditor from "./pages/config/AssetEditor"
+import RuleExplorer from "./pages/RuleExplorer"
+import PackageEditor from "./pages/config/PackageEditor"
+import PackageWizard from "./pages/config/PackageWizard"
 import AdminLayout from "./pages/admin/AdminLayout"
 import AdminOverview from "./pages/admin/AdminOverview"
 import AdminUsers from "./pages/admin/AdminUsers"
@@ -21,6 +27,7 @@ import AdminProjects from "./pages/admin/AdminProjects"
 import AdminRuns from "./pages/admin/AdminRuns"
 import AdminArtifacts from "./pages/admin/AdminArtifacts"
 import AdminAudit from "./pages/admin/AdminAudit"
+import AdminLlmModels from "./pages/admin/AdminLlmModels"
 
 /** 根路径：已登录进看板，未登录展示产品落地页。 */
 function RootRedirect() {
@@ -42,6 +49,15 @@ function RequireAdmin() {
   if (!session) return <Navigate to="/login" replace state={{ from: "/admin" }} />
   if (!session.user?.platformAdmin) return <Navigate to="/dashboard" replace />
   return <AdminLayout />
+}
+
+/** 配置中心编辑守卫：非 platformAdmin → 回配置中心列表（只读，docs/arch/13）。 */
+function RequireEditor() {
+  const loc = useLocation()
+  const session = loadSession()
+  if (!session) return <Navigate to="/login" replace state={{ from: loc.pathname }} />
+  if (!session.user?.platformAdmin) return <Navigate to="/config" replace />
+  return <AppShell />
 }
 
 /**
@@ -67,6 +83,16 @@ export default function App() {
         <Route path="/runs" element={<ComingSoon title="全部运行" />} />
         {/* 调试台：登录即可访问，不限组织 / 角色 */}
         <Route path="/debug" element={<DebugPage />} />
+        {/* 配置中心·查看：登录即可（场景包 / 编辑器只读 / 规则浏览器，docs/arch/13） */}
+        <Route path="/config" element={<ConfigHub />} />
+        <Route path="/config/scenarios/:id" element={<ScenarioConfig />} />
+        <Route path="/config/scenarios/:id/:kind/:assetId" element={<AssetEditor />} />
+        <Route path="/config/scenarios/:id/edit" element={<PackageEditor />} />
+        <Route path="/config/scenarios/:id/explorer" element={<RuleExplorer />} />
+      </Route>
+      {/* 配置中心·新建场景包：platformAdmin 专属（docs/arch/13） */}
+      <Route element={<RequireEditor />}>
+        <Route path="/config/create" element={<PackageWizard />} />
       </Route>
       {/* 运行/样本详情：登录走 AppShell，匿名走 PublicShell（公开项目可 iframe 嵌入） */}
       <Route element={<RunViewShell />}>
@@ -81,6 +107,7 @@ export default function App() {
         <Route path="/admin/projects" element={<AdminProjects />} />
         <Route path="/admin/runs" element={<AdminRuns />} />
         <Route path="/admin/artifacts" element={<AdminArtifacts />} />
+        <Route path="/admin/llm-models" element={<AdminLlmModels />} />
         <Route path="/admin/audit" element={<AdminAudit />} />
       </Route>
     </Routes>

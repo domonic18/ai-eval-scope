@@ -6,15 +6,16 @@ import { api } from "../api/client"
 import type {
   ApiKeySafe,
   IssuedApiKey,
+  MetricDef,
   ProjectSample,
   RunSummary,
   SampleTrendPoint,
   TrendPoint,
 } from "../types"
 import { fmt3, num, timeAgo } from "../lib/format"
-import { METRIC_EXPLAIN, METRIC_LABEL, metricColor } from "../lib/eval"
-import type { MetricKey } from "../lib/eval"
-import { MetricCard } from "../components/MetricCard"
+import { DynamicMetricGrid } from "../components/DynamicMetricGrid"
+import { metricLabelOf, metricThresholdOf } from "../lib/metricGrid"
+import { useScenarioDefaults } from "../hooks/useScenarioDefaults"
 import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
 import { Label } from "@/components/shadcn/label"
@@ -36,8 +37,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/shadcn/select"
-import { useCrumbs } from "../components/AppShell"
-import { useToast } from "../components/toast"
+import { useCrumbs } from "../context/navigation"
+import { useToast } from "../hooks/useToast"
 import { DataTable, Page, PageHead, SemPill, StatusBadge, type Column } from "../components/shared"
 import { CodeBlock } from "@/components/CodeBlock"
 import { Download, Plus, Search, Trash2 } from "lucide-react"
@@ -50,7 +51,7 @@ interface Project {
   ruleSetVersion?: string | null
   isPublic?: boolean
 }
-type SetTab = "keys" | "basic" | "retention" | "public" | "danger"
+type SetTab = "keys" | "basic" | "retention" | "public" | "webhook" | "danger"
 
 /* ── 趋势图（recharts）── 一组 points({label,values}) + series + thresholds */
 function MetricTrendChart({
@@ -134,29 +135,24 @@ export default function ProjectDetail() {
     [trends],
   )
   const latest = trendsAsc[trendsAsc.length - 1]
-  const prev = trendsAsc[trendsAsc.length - 2]
+  const defaultDefs = useScenarioDefaults(runs[0]?.scenarioId ?? "courseware")
 
-  const deltaOf = (cur: number | undefined, prevV: number | undefined) => {
-    if (cur == null) return null
-    if (prevV == null || prevV === 0) return "首次评估"
-    const diff = cur - prevV
-    if (Math.abs(diff) < 0.0005) return "持平"
-    const pct = (diff / prevV) * 100
-    return `${diff > 0 ? "+" : ""}${pct.toFixed(1)}%`
-  }
-
+  // 动态趋势序列：从 defaultDefs（后端 fetch）取有阈值的指标，色板循环（非场景专用）
+  // 注意：series key 不能含冒号（CSS var(--color-<key>) 会解析失败）→ 用 _ 替换
+  const CHART_PALETTE = ["var(--chart-5)", "var(--chart-2)", "var(--chart-1)", "var(--chart-3)", "var(--chart-4)"]
+  const trendDefs = defaultDefs.filter((d) => d.threshold != null)
+  const trendSeries = trendDefs.map((d, i) => ({
+    key: d.id.replace(/:/g, "_"), // 安全 CSS 变量名（如 courseware_document_rate）
+    metricId: d.id, // 原始 metric ID（从 metrics JSONB 取值用）
+    name: d.name ?? d.id,
+    color: CHART_PALETTE[i % CHART_PALETTE.length],
+  }))
   const trendPoints = trendsAsc.map((t) => ({
     label: new Date(t.created_at).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" }),
-    values: { DR: t.DR, CPR: t.CPR, Reward: t.Reward, Soft: t.Soft, Pref: t.Pref },
+    values: Object.fromEntries(
+      trendSeries.map((s) => [s.key, t.metrics?.[s.metricId]]),
+    ) as Record<string, number>,
   }))
-  // 趋势线配色对齐原型 project-detail.html 图例：DR 绿 / CPR 信号青 / Reward 电蓝
-  const trendSeries = [
-    { key: "DR", name: "交付率(DR)", color: "var(--chart-5)" },
-    { key: "CPR", name: "约束通过率(CPR)", color: "var(--chart-2)" },
-    { key: "Reward", name: "综合评分(Reward)", color: "var(--chart-1)" },
-    { key: "Soft", name: "内容质量分(Soft)", color: "var(--chart-3)" },
-    { key: "Pref", name: "用户偏好分(Pref)", color: "var(--chart-4)" },
-  ]
 
   return (
     <Page>
@@ -198,31 +194,8 @@ export default function ProjectDetail() {
         <Separator className="mb-4" />
 
         <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
-            {([
-              { key: "DR", label: "交付率(DR)" },
-              { key: "CPR", label: "约束通过率(CPR)" },
-              { key: "Soft", label: "内容质量分(SOFT)" },
-              { key: "Pref", label: "用户偏好分(PREF)" },
-              { key: "Reward", label: "综合评分(REWARD)" },
-            ] as { key: MetricKey; label: string }[]).map((m) => {
-              const kk = m.key as "DR" | "CPR" | "Reward" | "Soft" | "Pref"
-              const val = latest ? latest[kk] : undefined
-              const prevVal = prev ? prev[kk] : undefined
-              const delta = deltaOf(val, prevVal)
-              return (
-                <MetricCard
-                  key={m.key}
-                  label={m.label}
-                  value={fmt3(val)}
-                  explain={METRIC_EXPLAIN[m.key]}
-                  delta={delta}
-                  recentRunTime={latest ? timeAgo(latest.created_at) : undefined}
-                  valueStyle={{ color: metricColor(m.key, val) }}
-                />
-              )
-            })}
-          </div>
+          {/* Phase 5：场景化动态指标（COURSEWARE 默认定义 + 最新运行 metrics）*/}
+          <DynamicMetricGrid defs={defaultDefs} metrics={latest?.metrics ?? undefined} />
 
           <Card>
             <CardHeader>
@@ -247,7 +220,7 @@ export default function ProjectDetail() {
               </button>
             </CardHeader>
             <CardContent>
-              <DataTable columns={runColumns()} rows={runs.slice(0, 6)} rowKey={(r) => r.id} onRowClick={(r) => nav(`/run/${r.id}`)} />
+              <DataTable columns={runColumns(defaultDefs)} rows={runs.slice(0, 6)} rowKey={(r) => r.id} onRowClick={(r) => nav(`/run/${r.id}`)} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -256,7 +229,7 @@ export default function ProjectDetail() {
           <RunsTab runs={runs} total={runsTotal} onOpen={(r) => nav(`/run/${r.id}`)} />
         </TabsContent>
 
-        <TabsContent value="samples">{id && <SamplesTab projectId={id} />}</TabsContent>
+        <TabsContent value="samples">{id && <SamplesTab projectId={id} scenarioId={runs[0]?.scenarioId ?? "courseware"} />}</TabsContent>
 
         <TabsContent value="settings">
           {project && (
@@ -266,6 +239,8 @@ export default function ProjectDetail() {
               name={project.name}
               description={project.description}
               isPublic={!!project.isPublic}
+              webhookUrl={(project as { webhookUrl?: string | null }).webhookUrl ?? null}
+              webhookSecretSet={!!(project as { webhookSecretSet?: boolean }).webhookSecretSet}
               onPublicChanged={(v) => setProject({ ...project, isPublic: v })}
               onArchived={() => nav("/dashboard")}
             />
@@ -276,7 +251,15 @@ export default function ProjectDetail() {
   )
 }
 
-function runColumns(): Column<RunSummary>[] {
+function runColumns(defs: MetricDef[]): Column<RunSummary>[] {
+  const metricCols: Column<RunSummary>[] = defs
+    .filter((d) => d.threshold != null)
+    .map((d) => ({
+      key: d.id,
+      title: d.name ?? d.id,
+      num: true,
+      render: (r: RunSummary) => fmt3(r.metrics?.[d.id]),
+    }))
   return [
     { key: "externalRunId", title: "运行", render: (r) => <span className="font-mono text-xs">#{r.externalRunId}</span> },
     { key: "mode", title: "模式", render: (r) => <span className="text-xs text-muted-foreground">{r.mode}</span> },
@@ -295,14 +278,13 @@ function runColumns(): Column<RunSummary>[] {
         )
       },
     },
-    { key: "dr", title: METRIC_LABEL.DR, num: true, render: (r) => fmt3(r.dr) },
-    { key: "cpr", title: METRIC_LABEL.CPR, num: true, render: (r) => fmt3(r.cpr) },
-    { key: "avgReward", title: METRIC_LABEL.Reward, num: true, render: (r) => fmt3(r.avgReward) },
+    ...metricCols,
     { key: "createdAt", title: "时间", render: (r) => <span className="text-muted-foreground">{timeAgo(r.createdAt)}</span> },
   ]
 }
 
 function RunsTab({ runs, total, onOpen }: { runs: RunSummary[]; total: number; onOpen: (r: RunSummary) => void }) {
+  const defaultDefs = useScenarioDefaults(runs[0]?.scenarioId ?? "courseware")
   const [q, setQ] = useState("")
   const [mode, setMode] = useState("all")
   const [status, setStatus] = useState("all")
@@ -348,17 +330,20 @@ function RunsTab({ runs, total, onOpen }: { runs: RunSummary[]; total: number; o
       </Card>
       <Card>
         <CardContent className="pt-6">
-          <DataTable columns={runColumns()} rows={filtered} rowKey={(r) => r.id} onRowClick={onOpen} empty="无匹配运行" />
+          <DataTable columns={runColumns(defaultDefs)} rows={filtered} rowKey={(r) => r.id} onRowClick={onOpen} empty="无匹配运行" />
         </CardContent>
       </Card>
     </div>
   )
 }
 
-function SamplesTab({ projectId }: { projectId: string }) {
+function SamplesTab({ projectId, scenarioId }: { projectId: string; scenarioId: string }) {
   const [samples, setSamples] = useState<ProjectSample[]>([])
   const [selected, setSelected] = useState<string | null>(null)
   const [trend, setTrend] = useState<SampleTrendPoint[]>([])
+  const defs = useScenarioDefaults(scenarioId)
+  const rewardLabel = metricLabelOf(defs, "reward", "Reward")
+  const rewardThr = metricThresholdOf(defs, "reward")
 
   useEffect(() => {
     api.listSamples(projectId).then(setSamples).catch(() => setSamples([]))
@@ -409,8 +394,8 @@ function SamplesTab({ projectId }: { projectId: string }) {
                 label: new Date(t.created_at).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }),
                 values: { Reward: t.reward },
               }))}
-              series={[{ key: "Reward", name: METRIC_LABEL.Reward, color: "var(--chart-1)" }]}
-              thresholds={[{ label: "达标 0.8", value: 0.8, color: "var(--chart-5)" }]}
+              series={[{ key: "Reward", name: rewardLabel, color: "var(--chart-1)" }]}
+              thresholds={rewardThr != null ? [{ label: `达标 ${rewardThr}`, value: rewardThr, color: "var(--chart-5)" }] : []}
               height={300}
             />
           )}
@@ -426,6 +411,8 @@ function SettingsTab({
   name,
   description,
   isPublic,
+  webhookUrl,
+  webhookSecretSet,
   onPublicChanged,
   onArchived,
 }: {
@@ -434,6 +421,8 @@ function SettingsTab({
   name: string
   description: string | null
   isPublic: boolean
+  webhookUrl: string | null
+  webhookSecretSet: boolean
   onPublicChanged: (v: boolean) => void
   onArchived: () => void
 }) {
@@ -444,6 +433,7 @@ function SettingsTab({
     ["basic", "基本信息"],
     ["retention", "数据保留"],
     ["public", "公开访问"],
+    ["webhook", "Webhook 回调"],
     ["danger", "危险区"],
   ]
   return (
@@ -467,6 +457,9 @@ function SettingsTab({
         {panel === "retention" && <RetentionPanel onSave={() => toast.info("数据保留接口待后端接入")} />}
         {panel === "public" && (
           <PublicPanel projectId={projectId} isPublic={isPublic} onChanged={onPublicChanged} />
+        )}
+        {panel === "webhook" && (
+          <WebhookPanel projectId={projectId} webhookUrl={webhookUrl} webhookSecretSet={webhookSecretSet} />
         )}
         {panel === "danger" && <DangerPanel projectId={projectId} slug={slug} onArchived={onArchived} />}
       </div>
@@ -874,6 +867,245 @@ function RetentionPanel({ onSave }: { onSave: () => void }) {
         </div>
       </div>
     </div>
+  )
+}
+
+/** Webhook 回调面板：配置回调 URL + 签名 secret，评估完成后平台主动 POST 通知第三方。 */
+function WebhookPanel({
+  projectId,
+  webhookUrl: initialUrl,
+  webhookSecretSet: initialSecretSet,
+}: {
+  projectId: string
+  webhookUrl: string | null
+  webhookSecretSet: boolean
+}) {
+  const toast = useToast()
+  const [url, setUrl] = useState(initialUrl ?? "")
+  const [secret, setSecret] = useState("")
+  const [secretSet, setSecretSet] = useState(initialSecretSet)
+  const [saving, setSaving] = useState(false)
+  const [testing, setTesting] = useState(false)
+  const [deliveries, setDeliveries] = useState<
+    Array<{
+      id: string
+      jobId: string | null
+      event: string
+      attempt: number
+      success: boolean
+      statusCode: number | null
+      error: string | null
+      durationMs: number | null
+      requestBody: unknown | null
+      responseBody: string | null
+      createdAt: string
+    }>
+  >([])
+  const [detailDelivery, setDetailDelivery] = useState<(typeof deliveries)[0] | null>(null)
+
+  async function loadDeliveries() {
+    try {
+      setDeliveries(await api.getWebhookDeliveries(projectId))
+    } catch {
+      /* best-effort */
+    }
+  }
+
+  useEffect(() => {
+    loadDeliveries()
+  }, [projectId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function save() {
+    setSaving(true)
+    try {
+      const data: { webhookUrl?: string | null; webhookSecret?: string } = {}
+      if (url !== (initialUrl ?? "")) data.webhookUrl = url || null
+      if (secret) data.webhookSecret = secret
+      if (Object.keys(data).length === 0) {
+        toast.info("无变更")
+        return
+      }
+      await api.updateProject(projectId, data)
+      if (secret) {
+        setSecret("")
+        setSecretSet(true)
+      }
+      toast.success("Webhook 配置已保存")
+    } catch (e) {
+      const ex = e as { response?: { data?: { error?: string } }; message?: string }
+      toast.error(ex.response?.data?.error || ex.message || "保存失败")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function testWebhook() {
+    setTesting(true)
+    try {
+      const r = await api.testWebhook(projectId)
+      if (r.sent) toast.success(`测试回调已发送至 ${r.url}`)
+      else toast.error("未配置 Webhook URL")
+      // 延迟刷新投递历史（等投递完成）
+      setTimeout(loadDeliveries, 3000)
+    } catch (e) {
+      toast.error("测试回调失败：" + ((e as Error).message ?? ""))
+    } finally {
+      setTesting(false)
+    }
+  }
+
+  return (
+    <>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Webhook 回调</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="text-xs text-muted-foreground">
+          评估任务完成/失败后，平台主动 POST 通知此 URL（含 HMAC-SHA256 签名头{" "}
+          <code className="rounded bg-muted px-1 py-0.5 font-mono">X-Webhook-Signature</code>）。
+          第三方可据此被动接收结果，无需轮询。
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium">回调 URL</label>
+          <Input
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="https://your-server.com/webhook"
+            className="font-mono text-xs"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium">
+            签名 Secret{" "}
+            {secretSet && <span className="text-xs text-muted-foreground">（已设置）</span>}
+          </label>
+          <Input
+            type="password"
+            value={secret}
+            onChange={(e) => setSecret(e.target.value)}
+            placeholder={secretSet ? "••••（留空不改）" : "设置后用于 HMAC 签名验证"}
+            className="font-mono text-xs"
+          />
+        </div>
+        <div className="flex gap-2">
+          <Button size="sm" disabled={saving} onClick={save}>
+            {saving ? "保存中…" : "保存"}
+          </Button>
+          {url && (
+            <Button size="sm" variant="outline" disabled={testing} onClick={testWebhook}>
+              {testing ? "发送中…" : "发送测试回调"}
+            </Button>
+          )}
+        </div>
+
+        {/* 投递历史 */}
+        {deliveries.length > 0 && (
+          <div className="space-y-2 border-t pt-3">
+            <div className="text-sm font-medium">投递历史（最近 {deliveries.length} 条，点击查看详情）</div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b text-muted-foreground">
+                    <th className="py-1.5 pr-3 text-left font-medium">事件</th>
+                    <th className="py-1.5 pr-3 text-left font-medium">状态</th>
+                    <th className="py-1.5 pr-3 text-left font-medium">状态码</th>
+                    <th className="py-1.5 pr-3 text-left font-medium">耗时</th>
+                    <th className="py-1.5 pr-3 text-left font-medium">时间</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {deliveries.map((d) => (
+                    <tr
+                      key={d.id}
+                      onClick={() => setDetailDelivery(d)}
+                      className="cursor-pointer border-b last:border-0 transition-colors hover:bg-accent/50"
+                    >
+                      <td className="py-1.5 pr-3 font-mono">{d.event}</td>
+                      <td className="py-1.5 pr-3">{d.success ? "✅" : "❌"}</td>
+                      <td className="py-1.5 pr-3 font-mono">{d.statusCode ?? "—"}</td>
+                      <td className="py-1.5 pr-3 font-mono">{d.durationMs ? `${d.durationMs}ms` : "—"}</td>
+                      <td className="py-1.5 pr-3 text-muted-foreground">
+                        {new Date(d.createdAt).toLocaleString("zh-CN")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+
+    {/* 投递详情 Dialog（仿工蜂 Webhook 详情） */}
+    <Dialog open={!!detailDelivery} onOpenChange={(v) => !v && setDetailDelivery(null)}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-sm">
+            <span className="font-mono">{detailDelivery?.event}</span>
+            {detailDelivery && (
+              <span
+                className={`rounded px-1.5 py-0.5 text-xs font-medium ${
+                  detailDelivery.success
+                    ? "bg-emerald-500/15 text-emerald-300"
+                    : "bg-red-500/15 text-red-300"
+                }`}
+              >
+                {detailDelivery.statusCode ?? "ERROR"}
+              </span>
+            )}
+          </DialogTitle>
+          <DialogDescription className="text-xs">
+            {detailDelivery && `第 ${detailDelivery.attempt} 次尝试 · ${new Date(detailDelivery.createdAt).toLocaleString("zh-CN")} · 耗时 ${detailDelivery.durationMs ?? "—"}ms`}
+          </DialogDescription>
+        </DialogHeader>
+
+        {detailDelivery && (
+          <div className="max-h-[60vh] space-y-4 overflow-y-auto">
+            {/* 请求 */}
+            <div className="space-y-1.5">
+              <div className="text-xs font-semibold text-muted-foreground">请求</div>
+              <div className="text-[11px] text-muted-foreground">
+                POST <code className="rounded bg-muted px-1 font-mono">{detailDelivery.event === "webhook.test" ? "测试回调" : "job 回调"}</code>
+                {" · Headers: "}
+                <code className="font-mono">Content-Type: application/json</code>
+                {", "}
+                <code className="font-mono">X-Webhook-Signature: sha256=…</code>
+              </div>
+              <pre className="overflow-x-auto rounded-md border bg-secondary/40 p-2 text-xs leading-relaxed">
+                <code>{JSON.stringify(detailDelivery.requestBody ?? {}, null, 2)}</code>
+              </pre>
+            </div>
+
+            {/* 响应 */}
+            <div className="space-y-1.5">
+              <div className="text-xs font-semibold text-muted-foreground">响应</div>
+              {detailDelivery.error ? (
+                <pre className="overflow-x-auto rounded-md border border-red-500/30 bg-red-500/5 p-2 text-xs text-red-300">
+                  <code>{detailDelivery.error}</code>
+                </pre>
+              ) : detailDelivery.responseBody ? (
+                <pre className="overflow-x-auto rounded-md border bg-secondary/40 p-2 text-xs leading-relaxed">
+                  <code>
+                    {(() => {
+                      try {
+                        return JSON.stringify(JSON.parse(detailDelivery.responseBody!), null, 2)
+                      } catch {
+                        return detailDelivery.responseBody
+                      }
+                    })()}
+                  </code>
+                </pre>
+              ) : (
+                <div className="text-xs text-muted-foreground">（无响应体）</div>
+              )}
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+    </>
   )
 }
 

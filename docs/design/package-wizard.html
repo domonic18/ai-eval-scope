@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>场景包创建向导 — EvalScope</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  /* ── 页面标题 ── */
+  .wiz-head { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:18px; }
+  .wiz-head h1 { font-size:20px; font-weight:700; letter-spacing:-0.02em; display:flex; align-items:center; gap:9px; }
+  .wiz-head .sub { font-size:13px; color:var(--text-secondary); margin-top:4px; }
+
+  /* ── 模式选择（首屏选择卡片，选后隐藏） ── */
+  .mode-select { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px; }
+  .mode-card {
+    display:flex; align-items:center; gap:14px; padding:20px 22px;
+    border-radius:var(--r-lg); border:1px solid var(--border); background:var(--bg-elevated);
+    cursor:pointer; transition:all .18s var(--ease); text-align:left; font-family:inherit;
+    color:var(--text-secondary); position:relative; overflow:hidden;
+  }
+  .mode-card:hover {
+    border-color:var(--accent-line); color:var(--text-primary);
+    background:linear-gradient(135deg, var(--accent-soft) 0%, var(--bg-elevated) 60%);
+    box-shadow:0 0 0 1px var(--accent-line), 0 10px 30px rgba(61,109,255,.10);
+  }
+  .mode-icon { font-size:28px; line-height:1; flex-shrink:0; filter:saturate(1.1); }
+  .mode-text { display:flex; flex-direction:column; gap:3px; min-width:0; }
+  .mode-title { font-size:16px; font-weight:650; color:var(--text-primary); }
+  .mode-desc { font-size:12px; color:var(--text-tertiary); }
+  .mode-card .pill {
+    margin-left:auto; font-family:var(--mono); font-size:10px; padding:2px 7px; border-radius:100px;
+    background:var(--bg-surface); color:var(--text-tertiary); border:1px solid var(--border); white-space:nowrap;
+  }
+
+  /* 模式面板：首屏隐藏，选择后显示 */
+  .mode-panel { display:none; }
+  .mode-panel.active { display:block; }
+
+  /* 返回选择按钮条 */
+  .mode-bar { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  .back-btn {
+    display:inline-flex; align-items:center; gap:4px; padding:5px 12px;
+    border:1px solid var(--border); border-radius:var(--r-sm); background:var(--bg-elevated);
+    color:var(--text-secondary); font-size:12px; cursor:pointer; transition:all .12s;
+  }
+  .back-btn:hover { border-color:var(--border-hover); color:var(--text-primary); }
+  .mode-label { font-size:13px; font-weight:600; color:var(--text-secondary); }
+
+  /* ── 模式 A：左右分栏 45/55 ── */
+  .wiz-split { display:grid; grid-template-columns:45fr 55fr; gap:16px; height:calc(100vh - 232px); min-height:580px; }
+  @media (max-width:1100px){ .wiz-split{ grid-template-columns:1fr; height:auto; } .chat-col,.preview-col{ min-height:520px; } }
+
+  /* ── 左侧：对话列 ── */
+  .chat-col { display:flex; flex-direction:column; background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--r-lg); overflow:hidden; }
+  .chat-head { padding:13px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; background:var(--bg-elevated); }
+  .chat-head .title { font-size:13.5px; font-weight:600; display:flex; align-items:center; gap:8px; }
+  .chat-head .live { display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--signal); font-family:var(--mono); }
+  .chat-head .live .dot { width:6px; height:6px; border-radius:50%; background:var(--signal); }
+  .chat-stream { flex:1; overflow-y:auto; padding:18px 16px; display:flex; flex-direction:column; gap:16px; }
+
+  .msg { display:flex; gap:10px; max-width:94%; animation:es-rise .4s var(--ease) both; }
+  .msg.ai { align-self:flex-start; }
+  .msg.user { align-self:flex-end; flex-direction:row-reverse; }
+  .av { width:28px; height:28px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; }
+  .av-ai { background:linear-gradient(135deg, var(--accent), var(--signal)); color:#061018; }
+  .av-user { background:linear-gradient(135deg, #7c6cff, var(--accent)); color:#fff; }
+  .bubble-col { display:flex; flex-direction:column; gap:4px; min-width:0; }
+  .bubble-meta { font-size:10.5px; color:var(--text-quaternary); font-family:var(--mono); }
+  .msg.user .bubble-meta { text-align:right; }
+  .bubble { padding:11px 14px; border-radius:var(--r-md); font-size:13px; line-height:1.62; }
+  .msg.ai .bubble { background:var(--bg-surface); border:1px solid var(--border); border-top-left-radius:4px; color:var(--text-primary); }
+  .msg.user .bubble { background:rgba(61,109,255,0.20); border:1px solid var(--accent-line); border-top-right-radius:4px; color:var(--text-primary); }
+  .bubble strong { color:var(--text-primary); font-weight:650; }
+  .bubble .inline-code { font-family:var(--mono); font-size:11.5px; background:var(--bg-inset); border:1px solid var(--border); padding:0 5px; border-radius:var(--r-xs); color:var(--signal); }
+
+  /* AI 气泡内的草案预览条 */
+  .draft-ref { margin-top:10px; display:flex; flex-direction:column; gap:6px; }
+  .draft-ref .hint { font-size:11px; color:var(--text-tertiary); display:flex; align-items:center; gap:6px; }
+  .draft-item { display:flex; align-items:center; gap:8px; padding:7px 10px; background:var(--bg-inset); border:1px solid var(--border); border-radius:var(--r-sm); font-size:12px; color:var(--text-secondary); }
+  .draft-item .di-icon { font-size:13px; }
+  .draft-item .di-name { flex:1; }
+  .draft-item .di-tag { font-family:var(--mono); font-size:10px; color:var(--text-tertiary); }
+
+  /* 对话输入区 */
+  .chat-foot { border-top:1px solid var(--border); padding:11px 14px 13px; flex-shrink:0; background:var(--bg-elevated); }
+  .chat-chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:9px; }
+  .chat-chip { font-size:11.5px; padding:4px 10px; border-radius:100px; background:var(--bg-surface); border:1px solid var(--border); color:var(--text-secondary); cursor:pointer; transition:all .12s var(--ease); display:inline-flex; align-items:center; gap:5px; }
+  .chat-chip:hover { border-color:var(--accent-line); color:var(--accent); background:var(--accent-soft); }
+  .chat-input-row { display:flex; gap:8px; align-items:flex-end; }
+  .chat-input-row textarea {
+    flex:1; resize:none; min-height:42px; max-height:120px; padding:10px 12px;
+    background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--r-sm);
+    color:var(--text-primary); font-size:13px; font-family:inherit; line-height:1.5;
+    transition:border-color .15s var(--ease), box-shadow .15s var(--ease);
+  }
+  .chat-input-row textarea:focus { outline:none; border-color:var(--border-focus); box-shadow:0 0 0 3px var(--accent-soft); }
+
+  /* ── 右侧：生成预览列 ── */
+  .preview-col { overflow-y:auto; display:flex; flex-direction:column; gap:11px; padding-right:4px; }
+  .preview-header {
+    position:sticky; top:0; z-index:5; padding:12px 14px; margin:-2px -4px 2px;
+    background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--r-md);
+    display:flex; align-items:center; gap:10px;
+  }
+  .preview-header .ph-title { font-size:13px; font-weight:600; flex:1; min-width:0; display:flex; align-items:center; gap:7px; }
+  .preview-header .ph-ver { font-family:var(--mono); font-size:11px; color:var(--accent); background:var(--accent-soft); border:1px solid var(--accent-line); padding:1px 7px; border-radius:var(--r-xs); }
+  .preview-header .ph-draft { font-family:var(--mono); font-size:10.5px; color:var(--warning); background:var(--warning-soft); padding:1px 6px; border-radius:var(--r-xs); }
+
+  /* 生成卡片 */
+  .gen-card { background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--r-md); overflow:hidden; transition:border-color .15s var(--ease); position:relative; }
+  .gen-card:hover { border-color:var(--border-hover); }
+  .gen-card::before { content:''; position:absolute; top:0; left:14px; right:14px; height:1px; background:linear-gradient(90deg,transparent,var(--accent-line),transparent); opacity:0; transition:opacity .2s var(--ease); }
+  .gen-card:hover::before { opacity:1; }
+  .gen-head { display:flex; align-items:center; gap:10px; padding:12px 14px; cursor:pointer; user-select:none; }
+  .gen-head .gicon { font-size:16px; flex-shrink:0; }
+  .gen-head .gtitle { font-size:13.5px; font-weight:600; flex:1; min-width:0; }
+  .gen-head .gcount { font-family:var(--mono); font-size:10.5px; color:var(--text-tertiary); }
+  .gen-head .gtoggle { color:var(--text-tertiary); transition:transform .18s var(--ease); flex-shrink:0; }
+  .gen-card.collapsed .gtoggle { transform:rotate(-90deg); }
+  .gen-body { padding:0 14px 14px; }
+  .gen-card.collapsed .gen-body { display:none; }
+  .gen-actions { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+
+  /* 完整度徽标 */
+  .cbadge { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; padding:2px 8px; border-radius:100px; white-space:nowrap; }
+  .cbadge.ok { background:var(--success-soft); color:var(--success); }
+  .cbadge.warn { background:var(--warning-soft); color:var(--warning); }
+  .cbadge.muted { background:var(--bg-surface); color:var(--text-tertiary); border:1px solid var(--border); }
+  .new-tag { background:var(--signal-soft); color:var(--signal); font-family:var(--mono); }
+
+  /* 清单信息键值网格 */
+  .kv-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:var(--border); border:1px solid var(--border); border-radius:var(--r-sm); overflow:hidden; }
+  .kv-cell { background:var(--bg-surface); padding:9px 12px; display:flex; flex-direction:column; gap:2px; }
+  .kv-key { font-size:10.5px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:.04em; font-weight:600; }
+  .kv-val { font-size:13px; color:var(--text-primary); }
+  .kv-val.mono { font-family:var(--mono); font-size:12.5px; color:var(--signal); }
+
+  /* 级联阶段流程图 */
+  .cascade-flow { display:flex; align-items:stretch; gap:0; }
+  .stage-node { flex:1; padding:11px 12px; border:1px solid var(--border); border-radius:var(--r-sm); background:var(--bg-surface); position:relative; }
+  .stage-node.gate { border-color:rgba(248,81,73,.3); }
+  .stage-node.score { border-color:rgba(47,230,200,.3); }
+  .stage-name { font-size:12.5px; font-weight:600; display:flex; align-items:center; gap:6px; }
+  .stage-type { font-family:var(--mono); font-size:10px; padding:1px 6px; border-radius:var(--r-xs); margin-top:6px; display:inline-block; }
+  .stage-type.gate { background:var(--danger-soft); color:var(--danger); }
+  .stage-type.score { background:var(--signal-soft); color:var(--signal); }
+  .stage-flag { font-size:10.5px; color:var(--text-tertiary); margin-top:4px; font-family:var(--mono); }
+  .stage-arrow { display:flex; align-items:center; padding:0 6px; color:var(--text-quaternary); font-size:16px; flex-shrink:0; }
+
+  /* 规则迷你卡片 */
+  .rule-list { display:flex; flex-direction:column; gap:7px; }
+  .rule-mini { display:grid; grid-template-columns:74px 1fr auto; gap:9px; align-items:center; padding:9px 12px; background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--r-sm); font-size:12px; transition:border-color .12s; }
+  .rule-mini:hover { border-color:var(--border-hover); }
+  .rule-mini.added { border-color:rgba(47,230,200,.4); background:rgba(47,230,200,.04); }
+  .rule-mini.added::after { content:''; position:absolute; }
+  .rm-id { font-family:var(--mono); font-size:11px; color:var(--text-tertiary); }
+  .rm-body { display:flex; flex-direction:column; gap:3px; min-width:0; }
+  .rm-name { font-size:12.5px; font-weight:550; color:var(--text-primary); display:flex; align-items:center; gap:6px; }
+  .rm-meta { font-family:var(--mono); font-size:10.5px; color:var(--text-tertiary); display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .rm-stage { font-size:10px; padding:1px 6px; border-radius:var(--r-xs); font-weight:600; }
+  .rm-stage.safety { background:var(--danger-soft); color:var(--danger); }
+  .rm-stage.constraints { background:var(--warning-soft); color:var(--warning); }
+  .rm-stage.quality { background:var(--signal-soft); color:var(--signal); }
+  .eval-kind { display:inline-flex; align-items:center; gap:4px; font-size:10.5px; font-family:var(--mono); padding:1px 6px; border-radius:var(--r-xs); background:var(--bg-inset); border:1px solid var(--border); color:var(--text-secondary); }
+  .eval-kind.llm { color:var(--accent); border-color:var(--accent-line); }
+  .rm-need { font-size:10.5px; display:inline-flex; align-items:center; gap:3px; }
+
+  /* 提示词预览 */
+  .prompt-block { background:var(--bg-inset); border:1px solid var(--border); border-radius:var(--r-sm); overflow:hidden; }
+  .prompt-block + .prompt-block { margin-top:8px; }
+  .prompt-block-head { padding:8px 12px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:12px; color:var(--signal); background:var(--bg-surface); }
+  .prompt-block-head .bind { margin-left:auto; font-size:10px; color:var(--success); font-family:var(--sans); }
+  .prompt-pre { padding:10px 12px; font-family:var(--mono); font-size:11.5px; line-height:1.7; color:var(--text-secondary); white-space:pre-wrap; }
+  .prompt-pre .v { color:var(--accent); }
+  .prompt-pre .c { color:var(--text-tertiary); }
+
+  /* 指标定义 */
+  .metric-row { display:flex; align-items:center; gap:12px; padding:9px 12px; background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--r-sm); }
+  .metric-row + .metric-row { margin-top:6px; }
+  .metric-row .mname { font-family:var(--mono); font-size:12px; color:var(--text-primary); width:150px; flex-shrink:0; }
+  .metric-row .mthresh { font-family:var(--mono); font-size:12px; color:var(--success); margin-left:auto; }
+  .metric-row .mthresh.warn { color:var(--warning); }
+  .metric-gauge { flex:1; height:5px; background:var(--bg-inset); border-radius:3px; overflow:hidden; position:relative; }
+  .metric-gauge .fill { height:100%; border-radius:3px; background:linear-gradient(90deg,var(--accent),var(--signal)); }
+  .metric-gauge .mark { position:absolute; top:-2px; bottom:-2px; width:2px; background:var(--text-secondary); }
+
+  /* 聚合策略 */
+  .agg-box { background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--r-sm); padding:12px 14px; }
+  .agg-stages { display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+  .agg-line { display:grid; grid-template-columns:1fr 60px 70px; gap:10px; align-items:center; font-size:12px; padding:5px 0; border-bottom:1px solid var(--border); }
+  .agg-line:last-child { border-bottom:none; }
+  .agg-line .al-name { color:var(--text-secondary); }
+  .agg-line .al-w { font-family:var(--mono); color:var(--accent); text-align:center; }
+  .agg-line .al-type { font-family:var(--mono); font-size:10.5px; color:var(--text-tertiary); text-align:right; }
+  .agg-formula { margin-top:10px; padding:9px 12px; background:var(--bg-inset); border:1px solid var(--border); border-radius:var(--r-sm); font-family:var(--mono); font-size:11.5px; color:var(--text-secondary); line-height:1.6; }
+  .agg-formula .k { color:var(--signal); }
+
+  /* 发布底栏 */
+  .publish-foot {
+    position:sticky; bottom:0; margin-top:auto; padding:13px 14px;
+    background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--r-md);
+    display:flex; gap:10px; align-items:center; box-shadow:var(--shadow-md);
+  }
+  .publish-foot .input { flex:1; }
+
+  /* ── 模式 B：步骤向导 ── */
+  .steps-bar { display:flex; align-items:flex-start; background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--r-lg); padding:20px 16px; margin-bottom:20px; }
+  .step-node { position:relative; flex:1; display:flex; flex-direction:column; align-items:center; gap:7px; min-width:0; }
+  .step-node:not(:last-child)::after {
+    content:''; position:absolute; top:14px; left:calc(50% + 17px); width:calc(100% - 34px); height:2px; background:var(--border);
+  }
+  .step-node.done:not(:last-child)::after { background:var(--success); }
+  .step-circle {
+    width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:700; font-family:var(--mono); border:1px solid var(--border);
+    background:var(--bg-surface); color:var(--text-tertiary); z-index:1; position:relative;
+  }
+  .step-node.done .step-circle { background:var(--success); border-color:var(--success); color:#061018; }
+  .step-node.active .step-circle { background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 0 0 4px var(--accent-soft); }
+  .step-label { font-size:11px; color:var(--text-tertiary); text-align:center; white-space:nowrap; }
+  .step-node.active .step-label { color:var(--text-primary); font-weight:600; }
+  .step-node.done .step-label { color:var(--text-secondary); }
+  .step-badge { font-size:9.5px; padding:1px 6px; border-radius:3px; font-weight:600; }
+  .step-badge.req { background:rgba(255,68,68,.12); color:var(--danger); }
+  .step-badge.opt { background:var(--bg-surface); color:var(--text-tertiary); border:1px solid var(--border); }
+  .step-badge.cond { background:rgba(255,170,0,.12); color:var(--warning); }
+
+  .wiz-layout { display:grid; grid-template-columns:1fr 270px; gap:18px; align-items:flex-start; }
+  @media (max-width:1100px){ .wiz-layout{ grid-template-columns:1fr; } }
+  .wiz-main { background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--r-lg); overflow:hidden; }
+  .wiz-step-head { padding:18px 22px; border-bottom:1px solid var(--border); }
+  .wiz-step-head .sh-row { display:flex; align-items:center; gap:10px; }
+  .wiz-step-head h2 { font-size:16px; font-weight:650; }
+  .wiz-step-head .sh-sub { font-size:12.5px; color:var(--text-secondary); margin-top:6px; }
+  .wiz-step-body { padding:20px 22px; }
+  .wiz-step-foot { padding:14px 22px; border-top:1px solid var(--border); background:var(--bg-inset); display:flex; justify-content:space-between; align-items:center; }
+
+  .eval-select { display:inline-flex; align-items:center; gap:6px; padding:5px 10px; background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--r-sm); font-size:12px; color:var(--text-secondary); cursor:pointer; }
+  .eval-select.llm { border-color:var(--accent-line); color:var(--accent); background:var(--accent-soft); }
+  .eval-select.rule { color:var(--text-secondary); }
+  .eval-select.fact { border-color:rgba(47,230,200,.3); color:var(--signal); }
+
+  .inline-warn { display:flex; align-items:flex-start; gap:7px; margin-top:6px; padding:7px 10px; background:var(--warning-soft); border:1px solid rgba(210,153,34,.25); border-radius:var(--r-sm); font-size:11.5px; color:#e6c068; }
+
+  /* 向导右侧栏 */
+  .wiz-side { display:flex; flex-direction:column; gap:14px; position:sticky; top:72px; }
+  .side-card { background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--r-lg); padding:16px; }
+  .side-card h4 { font-size:12px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:.05em; margin-bottom:12px; }
+  .progress-row { display:flex; align-items:center; gap:8px; padding:6px 0; font-size:12.5px; }
+  .progress-row .pr-ico { width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; flex-shrink:0; }
+  .progress-row .pr-ico.done { background:var(--success); color:#061018; }
+  .progress-row .pr-ico.active { background:var(--accent); color:#fff; }
+  .progress-row .pr-ico.todo { background:var(--bg-surface); border:1px solid var(--border); color:var(--text-quaternary); }
+  .progress-row .pr-name { flex:1; color:var(--text-secondary); }
+  .progress-row.done .pr-name { color:var(--text-secondary); }
+  .progress-row.active .pr-name { color:var(--text-primary); font-weight:600; }
+  .progress-row .pr-flag { font-size:9.5px; }
+
+  .completion-bar { height:8px; background:var(--bg-surface); border-radius:4px; overflow:hidden; margin:10px 0 6px; }
+  .completion-bar > span { display:block; height:100%; background:linear-gradient(90deg,var(--accent),var(--signal)); border-radius:4px; }
+
+  .skip-box { background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--r-md); padding:12px 14px; }
+  .skip-box .sb-title { font-size:12.5px; font-weight:600; display:flex; align-items:center; gap:6px; }
+  .skip-box .sb-desc { font-size:11.5px; color:var(--text-tertiary); margin:6px 0 10px; line-height:1.5; }
+
+  /* 工具样式 */
+  .mini-table { width:100%; border-collapse:collapse; }
+  .mini-table th { text-align:left; padding:8px 12px; font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.04em; color:var(--text-tertiary); background:var(--bg-surface); border-bottom:1px solid var(--border); }
+  .mini-table td { padding:11px 12px; font-size:12.5px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  .mini-table tbody tr:hover td { background:var(--bg-hover); }
+  .mini-table tbody tr:last-child td { border-bottom:none; }
+  .stage-tag { font-size:10px; padding:2px 7px; border-radius:var(--r-xs); font-weight:600; font-family:var(--mono); }
+
+  .ghost-link { color:var(--accent); cursor:pointer; }
+  .ghost-link:hover { text-decoration:underline; }
+</style>
+</head>
+<body>
+<div class="ambient"></div>
+<div class="scanlines"></div>
+<div class="shell">
+  <!-- 侧栏（复用原型侧栏，active=评测规则） -->
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <a href="index.html" class="logo" style="margin-bottom:14px"><span class="logo-mark"><img src="assets/logo.svg" alt="" style="width:100%"></span><span class="logo-text">Eval<b>Scope</b></span></a>
+      <div class="org-switcher"><div class="org-avatar">智</div><div class="org-meta"><div class="org-name">智能教育研发组</div><div class="org-plan">Team · 5 项目</div></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+    </div>
+    <nav class="nav-section">
+      <a class="nav-item" href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> 项目看板</a>
+      <a class="nav-item" href="run-detail.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg> 全部运行</a>
+      <a class="nav-item active" href="eval-rule-explorer.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> 评测规则</a>
+      <div class="nav-label">组织</div>
+      <a class="nav-item" href="members.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg> 成员</a>
+    </nav>
+    <div class="sidebar-foot"><a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> 接入指引</a></div>
+  </aside>
+
+  <!-- 主区域 -->
+  <div class="main">
+    <header class="topbar">
+      <div class="crumbs"><a href="eval-rule-explorer.html">评测规则</a><span class="sep">/</span><span class="current">场景包创建向导</span></div>
+      <div class="topbar-right"><div class="avatar">张</div></div>
+    </header>
+
+    <div class="page reveal" style="max-width:1480px;">
+      <!-- 标题 -->
+      <div class="wiz-head r-1">
+        <div>
+          <h1>✨ 场景包创建向导</h1>
+          <div class="sub">两种模式创建可复用的评测场景包：与 AI 对话快速生成草案，或按步骤逐项精配。</div>
+        </div>
+        <div class="page-actions">
+          <button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> 导入 YAML</button>
+          <button class="btn">取消</button>
+        </div>
+      </div>
+
+      <!-- 模式选择（首屏，选择后隐藏） -->
+      <div class="mode-select r-2" id="mode-select">
+        <button class="mode-card" onclick="enterMode('chat')">
+          <span class="mode-icon">🤖</span>
+          <span class="mode-text">
+            <span class="mode-title">AI 对话创建</span>
+            <span class="mode-desc">描述评估目标，AI 自动生成规则集 / 提示词 / 指标草案</span>
+          </span>
+          <span class="pill">推荐</span>
+        </button>
+        <button class="mode-card" onclick="enterMode('wizard')">
+          <span class="mode-icon">📋</span>
+          <span class="mode-text">
+            <span class="mode-title">步骤向导</span>
+            <span class="mode-desc">8 步逐项配置：清单 → 阶段 → 规则 → 提示词 → 指标</span>
+          </span>
+          <span class="pill">精细</span>
+        </button>
+      </div>
+
+      <!-- ══════════════ 模式 A：AI 对话创建 ══════════════ -->
+      <div class="mode-panel r-3" id="mode-chat">
+      <div class="mode-bar"><button class="back-btn" onclick="backToSelect()">← 返回选择</button><span class="mode-label">🤖 AI 对话创建</span></div>
+        <div class="wiz-split">
+          <!-- ── 左：对话 ── -->
+          <div class="chat-col">
+            <div class="chat-head">
+              <div class="title">🤖 场景包助手 · 对话生成</div>
+              <div class="live"><span class="dot pulse"></span> 已生成草案</div>
+            </div>
+            <div class="chat-stream">
+              <!-- AI 初始问候 -->
+              <div class="msg ai">
+                <div class="av av-ai">AI</div>
+                <div class="bubble-col">
+                  <div class="bubble">你好！请描述你想创建的评估场景。例如：<strong>评估 AI 生成的研学行程规划文档</strong>，重点检查行程安全、预算约束和内容质量。</div>
+                  <div class="bubble-meta">SCENARIO_AGENT · 刚刚</div>
+                </div>
+              </div>
+
+              <!-- 用户 1 -->
+              <div class="msg user">
+                <div class="av av-user">我</div>
+                <div class="bubble-col">
+                  <div class="bubble">我要评估 AI 生成的研学行程规划文档。重点检查：<strong>行程安全</strong>（不能有危险地点）、<strong>约束满足</strong>（预算/时间/人数）、<strong>内容质量</strong>（逻辑性/丰富度）。用 LLM Judge 评分。</div>
+                  <div class="bubble-meta">用户 · 12:04</div>
+                </div>
+              </div>
+
+              <!-- AI 2：生成草案 -->
+              <div class="msg ai">
+                <div class="av av-ai">AI</div>
+                <div class="bubble-col">
+                  <div class="bubble">
+                    好的！我为你生成了以下场景包草案，请在右侧预览并调整。
+                    <div class="draft-ref">
+                      <div class="hint">✨ 已生成 6 个资产块 · 点击右侧「接受✓」逐项确认</div>
+                      <div class="draft-item"><span class="di-icon">📋</span><span class="di-name">清单信息</span><span class="di-tag">travel-itinerary-quality</span></div>
+                      <div class="draft-item"><span class="di-icon">🔄</span><span class="di-name">级联阶段 · 3 级</span><span class="di-tag">safety → constraints → quality</span></div>
+                      <div class="draft-item"><span class="di-icon">📝</span><span class="di-name">规则集 · 5 条</span><span class="di-tag">2 LLM_JUDGE · 3 RULE</span></div>
+                      <div class="draft-item"><span class="di-icon">💬</span><span class="di-name">提示词 · 2 个</span><span class="di-tag">safety_check · content_quality</span></div>
+                      <div class="draft-item"><span class="di-icon">📊</span><span class="di-name">指标定义 · 3 项</span><span class="di-tag">阈值已推断</span></div>
+                    </div>
+                  </div>
+                  <div class="bubble-meta">SCENARIO_AGENT · 12:04</div>
+                </div>
+              </div>
+
+              <!-- 用户 2 -->
+              <div class="msg user">
+                <div class="av av-user">我</div>
+                <div class="bubble-col">
+                  <div class="bubble">加一个<strong>预算超标的硬约束规则</strong></div>
+                  <div class="bubble-meta">用户 · 12:05</div>
+                </div>
+              </div>
+
+              <!-- AI 3：确认添加 -->
+              <div class="msg ai">
+                <div class="av av-ai">AI</div>
+                <div class="bubble-col">
+                  <div class="bubble">已添加规则 <span class="inline-code">CON_003</span> <strong>「预算超标检查」</strong>到约束满足阶段（HARD_GATE，超标即判不达标）。右侧规则集已实时更新，标记为「刚添加」。</div>
+                  <div class="bubble-meta">SCENARIO_AGENT · 12:05</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 输入区 -->
+            <div class="chat-foot">
+              <div class="chat-chips">
+                <span class="chat-chip">✨ 评估课件质量</span>
+                <span class="chat-chip">⌨️ 评估代码生成</span>
+                <span class="chat-chip">🛡️ 评估对话安全</span>
+                <span class="chat-chip">🔎 评估 RAG 检索质量</span>
+              </div>
+              <div class="chat-input-row">
+                <textarea placeholder="继续描述你的需求，例如：再加一条人数上限的约束…"></textarea>
+                <button class="btn btn-primary">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                  发送
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── 右：生成预览 ── -->
+          <div class="preview-col">
+            <div class="preview-header">
+              <div class="ph-title">
+                <span class="pulse" style="width:7px;height:7px;border-radius:50%;background:var(--signal);display:inline-block;"></span>
+                生成预览
+                <span class="ph-ver">travel-itinerary-quality v0.1.0</span>
+                <span class="ph-draft">草案</span>
+              </div>
+              <button class="btn btn-sm btn-ghost" onclick="toggleAll(this)">全部折叠</button>
+            </div>
+
+            <!-- 卡片 1：清单信息 -->
+            <div class="gen-card">
+              <div class="gen-head" onclick="toggleCard(this)">
+                <span class="gicon">📋</span>
+                <span class="gtitle">清单信息</span>
+                <span class="cbadge ok">✅ 完整</span>
+                <span class="gtoggle">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                </span>
+              </div>
+              <div class="gen-body">
+                <div class="kv-grid">
+                  <div class="kv-cell"><span class="kv-key">scenario</span><span class="kv-val mono">travel-itinerary</span></div>
+                  <div class="kv-cell"><span class="kv-key">package</span><span class="kv-val mono">quality</span></div>
+                  <div class="kv-cell"><span class="kv-key">version</span><span class="kv-val mono">0.1.0</span></div>
+                  <div class="kv-cell"><span class="kv-key">name</span><span class="kv-val">研学行程规划质量评估</span></div>
+                </div>
+                <div class="gen-actions" style="margin-top:10px;">
+                  <button class="btn btn-sm">✎ 编辑</button>
+                  <button class="btn btn-sm btn-primary">✓ 接受</button>
+                  <button class="btn btn-sm btn-ghost">跳过</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 卡片 2：级联阶段 -->
+            <div class="gen-card">
+              <div class="gen-head" onclick="toggleCard(this)">
+                <span class="gicon">🔄</span>
+                <span class="gtitle">级联阶段</span>
+                <span class="gcount">3 级</span>
+                <span class="cbadge ok">✅ 完整</span>
+                <span class="gtoggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></span>
+              </div>
+              <div class="gen-body">
+                <div class="cascade-flow">
+                  <div class="stage-node gate">
+                    <div class="stage-name">🛡️ safety</div>
+                    <span class="stage-type gate">GATE</span>
+                    <div class="stage-flag">stop_on_fail: true</div>
+                  </div>
+                  <div class="stage-arrow">→</div>
+                  <div class="stage-node gate">
+                    <div class="stage-name">📐 constraints</div>
+                    <span class="stage-type gate">GATE</span>
+                    <div class="stage-flag">stop_on_fail: true</div>
+                  </div>
+                  <div class="stage-arrow">→</div>
+                  <div class="stage-node score">
+                    <div class="stage-name">⭐ quality</div>
+                    <span class="stage-type score">SCORE</span>
+                    <div class="stage-flag">normalize [0,1]</div>
+                  </div>
+                </div>
+                <div class="gen-actions" style="margin-top:12px;">
+                  <button class="btn btn-sm">✎ 编辑</button>
+                  <button class="btn btn-sm btn-primary">✓ 接受</button>
+                  <button class="btn btn-sm btn-ghost">跳过</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 卡片 3：规则集 -->
+            <div class="gen-card">
+              <div class="gen-head" onclick="toggleCard(this)">
+                <span class="gicon">📝</span>
+                <span class="gtitle">规则集</span>
+                <span class="gcount">6 条</span>
+                <span class="cbadge warn">⚠️ 1 条待确认</span>
+                <span class="gtoggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></span>
+              </div>
+              <div class="gen-body">
+                <div class="rule-list">
+                  <div class="rule-mini">
+                    <span class="rm-id">SAF_001</span>
+                    <div class="rm-body">
+                      <span class="rm-name">行程安全检查</span>
+                      <span class="rm-meta">
+                        <span class="rm-stage safety">safety</span>
+                        <span>travel.safety.pii_check</span>
+                        <span class="eval-kind llm">🤖 LLM_JUDGE</span>
+                        <span class="rm-need" style="color:var(--success);">需提示词 safety_check ✅</span>
+                      </span>
+                    </div>
+                  </div>
+                  <div class="rule-mini">
+                    <span class="rm-id">SAF_002</span>
+                    <div class="rm-body">
+                      <span class="rm-name">危险地点检测</span>
+                      <span class="rm-meta">
+                        <span class="rm-stage safety">safety</span>
+                        <span>travel.safety.danger</span>
+                        <span class="eval-kind rule">🔧 RULE</span>
+                        <span class="rm-need">参数 only</span>
+                      </span>
+                    </div>
+                  </div>
+                  <div class="rule-mini">
+                    <span class="rm-id">CON_001</span>
+                    <div class="rm-body">
+                      <span class="rm-name">预算约束</span>
+                      <span class="rm-meta">
+                        <span class="rm-stage constraints">constraints</span>
+                        <span>travel.constraints.budget</span>
+                        <span class="eval-kind rule">🔧 RULE</span>
+                      </span>
+                    </div>
+                  </div>
+                  <div class="rule-mini">
+                    <span class="rm-id">CON_002</span>
+                    <div class="rm-body">
+                      <span class="rm-name">时间约束</span>
+                      <span class="rm-meta">
+                        <span class="rm-stage constraints">constraints</span>
+                        <span>travel.constraints.time</span>
+                        <span class="eval-kind rule">🔧 RULE</span>
+                      </span>
+                    </div>
+                  </div>
+                  <!-- 刚添加的规则 -->
+                  <div class="rule-mini added">
+                    <span class="rm-id" style="color:var(--signal);">CON_003</span>
+                    <div class="rm-body">
+                      <span class="rm-name">预算超标检查 <span class="new-tag" style="font-size:9px;padding:1px 6px;border-radius:3px;">刚添加</span></span>
+                      <span class="rm-meta">
+                        <span class="rm-stage constraints">constraints</span>
+                        <span>travel.constraints.budget_overrun</span>
+                        <span class="eval-kind rule">🔧 RULE</span>
+                        <span class="rm-need" style="color:var(--warning);">HARD_GATE · 待确认</span>
+                      </span>
+                    </div>
+                  </div>
+                  <div class="rule-mini">
+                    <span class="rm-id">QUA_001</span>
+                    <div class="rm-body">
+                      <span class="rm-name">内容质量</span>
+                      <span class="rm-meta">
+                        <span class="rm-stage quality">quality</span>
+                        <span>travel.quality.logic</span>
+                        <span class="eval-kind llm">🤖 LLM_JUDGE</span>
+                        <span class="rm-need" style="color:var(--success);">需提示词 content_quality ✅</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div class="gen-actions" style="margin-top:12px;">
+                  <button class="btn btn-sm">✎ 编辑</button>
+                  <button class="btn btn-sm btn-primary">✓ 接受</button>
+                  <button class="btn btn-sm btn-ghost">跳过</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 卡片 4：提示词 -->
+            <div class="gen-card">
+              <div class="gen-head" onclick="toggleCard(this)">
+                <span class="gicon">💬</span>
+                <span class="gtitle">提示词</span>
+                <span class="gcount">2 个</span>
+                <span class="cbadge ok">✅ 完整</span>
+                <span class="gtoggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></span>
+              </div>
+              <div class="gen-body">
+                <div class="prompt-block">
+                  <div class="prompt-block-head">📝 safety_check <span class="bind">● 绑定 SAF_001</span></div>
+                  <div class="prompt-pre"><span class="c"># 角色</span>
+你是研学行程安全审查专家，专注检测行程规划中的安全隐患与合规风险。
+<span class="c"># 任务</span>
+评估行程文档是否存在危险地点、违规活动…</div>
+                </div>
+                <div class="prompt-block">
+                  <div class="prompt-block-head">📝 content_quality <span class="bind">● 绑定 QUA_001</span></div>
+                  <div class="prompt-pre"><span class="c"># 角色</span>
+你是研学行程内容质量评审专家，关注逻辑连贯性与教育价值。
+<span class="c"># 任务</span>
+从逻辑性 / 丰富度 / 教育适配 3 维度独立打分（0-10）…</div>
+                </div>
+                <div class="gen-actions" style="margin-top:10px;">
+                  <button class="btn btn-sm">✎ 编辑</button>
+                  <button class="btn btn-sm btn-primary">✓ 接受</button>
+                  <button class="btn btn-sm btn-ghost">跳过</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 卡片 5：指标定义 -->
+            <div class="gen-card">
+              <div class="gen-head" onclick="toggleCard(this)">
+                <span class="gicon">📊</span>
+                <span class="gtitle">指标定义</span>
+                <span class="gcount">3 项</span>
+                <span class="cbadge ok">✅ 完整</span>
+                <span class="gtoggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></span>
+              </div>
+              <div class="gen-body">
+                <div class="metric-row">
+                  <span class="mname">safety_rate</span>
+                  <div class="metric-gauge"><span class="fill" style="width:96%"></span><span class="mark" style="left:95%"></span></div>
+                  <span class="mthresh">≥ 0.95</span>
+                </div>
+                <div class="metric-row">
+                  <span class="mname">constraint_rate</span>
+                  <div class="metric-gauge"><span class="fill" style="width:92%"></span><span class="mark" style="left:90%"></span></div>
+                  <span class="mthresh warn">≥ 0.90</span>
+                </div>
+                <div class="metric-row">
+                  <span class="mname">quality_reward</span>
+                  <div class="metric-gauge"><span class="fill" style="width:74%"></span><span class="mark" style="left:70%"></span></div>
+                  <span class="mthresh">≥ 0.70</span>
+                </div>
+                <div class="gen-actions" style="margin-top:12px;">
+                  <button class="btn btn-sm">✎ 编辑</button>
+                  <button class="btn btn-sm btn-primary">✓ 接受</button>
+                  <button class="btn btn-sm btn-ghost">跳过</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 卡片 6：聚合策略 -->
+            <div class="gen-card">
+              <div class="gen-head" onclick="toggleCard(this)">
+                <span class="gicon">⚙️</span>
+                <span class="gtitle">聚合策略</span>
+                <span class="gcount">3 阶段</span>
+                <span class="cbadge ok">✅ 完整</span>
+                <span class="gtoggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></span>
+              </div>
+              <div class="gen-body">
+                <div class="agg-box">
+                  <div class="agg-stages">
+                    <div class="agg-line"><span class="al-name">🛡️ safety</span><span class="al-w">1.0</span><span class="al-type">GATE</span></div>
+                    <div class="agg-line"><span class="al-name">📐 constraints</span><span class="al-w">1.0</span><span class="al-type">GATE</span></div>
+                    <div class="agg-line"><span class="al-name">⭐ quality</span><span class="al-w">1.0</span><span class="al-type">SCORE</span></div>
+                  </div>
+                  <div class="agg-formula">
+                    weights = [<span class="k">1, 1, 1</span>] · normalize = <span class="k">[0, 1]</span><br>
+                    Reward = (S_safety ∧ S_constraints) · S_quality / 3
+                  </div>
+                </div>
+                <div class="gen-actions" style="margin-top:12px;">
+                  <button class="btn btn-sm">✎ 编辑</button>
+                  <button class="btn btn-sm btn-primary">✓ 接受</button>
+                  <button class="btn btn-sm btn-ghost">跳过</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 发布底栏 -->
+            <div class="publish-foot">
+              <input class="input" placeholder="继续对话微调，例如：把质量权重提高到 2…">
+              <button class="btn btn-primary btn-lg">✨ 发布场景包</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════ 模式 B：步骤向导 ══════════════ -->
+      <div class="mode-panel r-3" id="mode-wizard">
+      <div class="mode-bar"><button class="back-btn" onclick="backToSelect()">← 返回选择</button><span class="mode-label">📋 步骤向导</span></div>
+        <!-- 步骤指示器 -->
+        <div class="steps-bar">
+          <div class="step-node done">
+            <div class="step-circle"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <span class="step-label">清单信息</span>
+            <span class="step-badge req">必选</span>
+          </div>
+          <div class="step-node done">
+            <div class="step-circle"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <span class="step-label">级联阶段</span>
+            <span class="step-badge req">必选</span>
+          </div>
+          <div class="step-node active">
+            <div class="step-circle">3</div>
+            <span class="step-label">规则配置</span>
+            <span class="step-badge req">必选</span>
+          </div>
+          <div class="step-node">
+            <div class="step-circle">4</div>
+            <span class="step-label">提示词</span>
+            <span class="step-badge cond">条件必选</span>
+          </div>
+          <div class="step-node">
+            <div class="step-circle">5</div>
+            <span class="step-label">参考数据</span>
+            <span class="step-badge opt">可选</span>
+          </div>
+          <div class="step-node">
+            <div class="step-circle">6</div>
+            <span class="step-label">指标定义</span>
+            <span class="step-badge req">必选</span>
+          </div>
+          <div class="step-node">
+            <div class="step-circle">7</div>
+            <span class="step-label">聚合策略</span>
+            <span class="step-badge req">必选</span>
+          </div>
+          <div class="step-node">
+            <div class="step-circle">8</div>
+            <span class="step-label">审阅发布</span>
+            <span class="step-badge req">必选</span>
+          </div>
+        </div>
+
+        <div class="wiz-layout">
+          <!-- 主区：当前步骤内容 -->
+          <div class="wiz-main">
+            <div class="wiz-step-head">
+              <div class="sh-row">
+                <h2>📝 步骤 3 · 规则配置</h2>
+                <span class="step-badge req">必选</span>
+              </div>
+              <div class="sh-sub">为每个级联阶段添加评估规则，选择评估器类型并配置参数。LLM Judge 规则需在步骤 4 绑定提示词。</div>
+            </div>
+            <div class="wiz-step-body">
+              <div class="table-wrap" style="border:1px solid var(--border); border-radius:var(--r-md); overflow:hidden;">
+                <table class="mini-table">
+                  <thead>
+                    <tr>
+                      <th>规则 ID</th>
+                      <th>名称</th>
+                      <th>阶段</th>
+                      <th>评估器</th>
+                      <th>权重</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><span class="mono" style="color:var(--text-tertiary);">SAF_001</span></td>
+                      <td>行程安全检查</td>
+                      <td><span class="stage-tag" style="background:var(--danger-soft);color:var(--danger);">safety</span></td>
+                      <td>
+                        <span class="eval-select llm">🤖 LLM_JUDGE ▾</span>
+                        <div class="inline-warn">⚠️ 此规则需要绑定提示词，将在步骤 4 配置（已预填 <span class="mono" style="color:var(--signal);">safety_check</span>）</div>
+                      </td>
+                      <td><span class="mono">1.0</span></td>
+                      <td><span class="ghost-link">编辑</span></td>
+                    </tr>
+                    <tr>
+                      <td><span class="mono" style="color:var(--text-tertiary);">SAF_002</span></td>
+                      <td>危险地点检测</td>
+                      <td><span class="stage-tag" style="background:var(--danger-soft);color:var(--danger);">safety</span></td>
+                      <td><span class="eval-select rule">🔧 RULE ▾</span></td>
+                      <td><span class="mono">1.0</span></td>
+                      <td><span class="ghost-link">编辑</span></td>
+                    </tr>
+                    <tr>
+                      <td><span class="mono" style="color:var(--text-tertiary);">CON_001</span></td>
+                      <td>预算约束</td>
+                      <td><span class="stage-tag" style="background:var(--warning-soft);color:var(--warning);">constraints</span></td>
+                      <td><span class="eval-select rule">🔧 RULE ▾</span></td>
+                      <td><span class="mono">1.0</span></td>
+                      <td><span class="ghost-link">编辑</span></td>
+                    </tr>
+                    <tr>
+                      <td><span class="mono" style="color:var(--text-tertiary);">CON_002</span></td>
+                      <td>时间约束</td>
+                      <td><span class="stage-tag" style="background:var(--warning-soft);color:var(--warning);">constraints</span></td>
+                      <td><span class="eval-select rule">🔧 RULE ▾</span></td>
+                      <td><span class="mono">1.0</span></td>
+                      <td><span class="ghost-link">编辑</span></td>
+                    </tr>
+                    <tr>
+                      <td><span class="mono" style="color:var(--text-tertiary);">QUA_001</span></td>
+                      <td>内容质量</td>
+                      <td><span class="stage-tag" style="background:var(--signal-soft);color:var(--signal);">quality</span></td>
+                      <td>
+                        <span class="eval-select llm">🤖 LLM_JUDGE ▾</span>
+                        <div class="inline-warn">⚠️ 此规则需要绑定提示词，将在步骤 4 配置（已预填 <span class="mono" style="color:var(--signal);">content_quality</span>）</div>
+                      </td>
+                      <td><span class="mono">1.0</span></td>
+                      <td><span class="ghost-link">编辑</span></td>
+                    </tr>
+                    <tr>
+                      <td colspan="6" style="text-align:center;">
+                        <button class="btn btn-sm" style="color:var(--accent);">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                          添加规则
+                        </button>
+                        <span style="margin-left:10px;font-size:11.5px;color:var(--text-tertiary);">或点击 <span class="ghost-link">✨ AI 补全建议规则</span></span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="callout callout-info" style="margin-top:16px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <div>本场景包已配置 <strong>5 条规则</strong>（2 条 LLM_JUDGE + 3 条 RULE）。2 条 LLM_JUDGE 规则将在<strong>步骤 4</strong>要求绑定提示词，届时无法跳过。</div>
+              </div>
+            </div>
+            <div class="wiz-step-foot">
+              <button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> 上一步</button>
+              <div style="font-size:12px;color:var(--text-tertiary);">步骤 <strong style="color:var(--text-primary);">3</strong> / 8</div>
+              <button class="btn btn-primary">下一步：提示词 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
+            </div>
+          </div>
+
+          <!-- 右侧：进度 + 跳过 -->
+          <div class="wiz-side">
+            <div class="side-card">
+              <h4>完成进度</h4>
+              <div class="completion-bar"><span style="width:31%;"></span></div>
+              <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--text-tertiary);font-family:var(--mono);">
+                <span>2 / 8 已完成</span><span>31%</span>
+              </div>
+              <div style="margin-top:14px;display:flex;flex-direction:column;gap:1px;">
+                <div class="progress-row done"><span class="pr-ico done">✓</span><span class="pr-name">1. 清单信息</span><span class="pr-flag step-badge req">必选</span></div>
+                <div class="progress-row done"><span class="pr-ico done">✓</span><span class="pr-name">2. 级联阶段</span><span class="pr-flag step-badge req">必选</span></div>
+                <div class="progress-row active"><span class="pr-ico active">3</span><span class="pr-name">3. 规则配置</span><span class="pr-flag step-badge req">必选</span></div>
+                <div class="progress-row"><span class="pr-ico todo">4</span><span class="pr-name">4. 提示词</span><span class="pr-flag step-badge cond">条件必选</span></div>
+                <div class="progress-row"><span class="pr-ico todo">5</span><span class="pr-name">5. 参考数据</span><span class="pr-flag step-badge opt">可选</span></div>
+                <div class="progress-row"><span class="pr-ico todo">6</span><span class="pr-name">6. 指标定义</span><span class="pr-flag step-badge req">必选</span></div>
+                <div class="progress-row"><span class="pr-ico todo">7</span><span class="pr-name">7. 聚合策略</span><span class="pr-flag step-badge req">必选</span></div>
+                <div class="progress-row"><span class="pr-ico todo">8</span><span class="pr-name">8. 审阅发布</span><span class="pr-flag step-badge req">必选</span></div>
+              </div>
+            </div>
+
+            <div class="skip-box">
+              <div class="sb-title">⏭️ 跳过此步</div>
+              <div class="sb-desc">「规则配置」为<strong style="color:var(--danger);">必选</strong>步骤，无法跳过。至少需配置 1 条规则才能继续。<br><br>下一步「提示词」为<strong style="color:var(--warning);">条件必选</strong>——仅当本步存在 LLM_JUDGE 规则时不可跳过（当前有 2 条）。</div>
+              <button class="btn btn-sm" disabled style="opacity:.5;cursor:not-allowed;">跳过此步（不可用）</button>
+            </div>
+
+            <div class="side-card">
+              <h4>✨ AI 助手</h4>
+              <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;margin-bottom:12px;">基于当前级联阶段，AI 可推荐常见规则模板并预填参数。</div>
+              <button class="btn btn-sm" style="width:100%;justify-content:center;color:var(--accent);">✨ AI 补全建议规则</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 模式选择 → 进入对应内容
+  function enterMode(mode) {
+    document.getElementById('mode-select').style.display = 'none';
+    document.getElementById('mode-' + mode).classList.add('active');
+  }
+  function backToSelect() {
+    document.getElementById('mode-select').style.display = '';
+    document.getElementById('mode-chat').classList.remove('active');
+    document.getElementById('mode-wizard').classList.remove('active');
+  }
+
+  // 卡片折叠 / 展开
+  function toggleCard(headEl) {
+    headEl.parentElement.classList.toggle('collapsed');
+  }
+
+  // 全部折叠 / 展开
+  function toggleAll(btn) {
+    const cards = document.querySelectorAll('#mode-chat .gen-card');
+    const allCollapsed = [...cards].every(c => c.classList.contains('collapsed'));
+    cards.forEach(c => c.classList.toggle('collapsed', !allCollapsed));
+    btn.textContent = allCollapsed ? '全部展开' : '全部折叠';
+  }
+
+  // 聊天芯片点击 → 填入输入框
+  document.querySelectorAll('.chat-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const ta = document.querySelector('.chat-input-row textarea');
+      if (ta) { ta.value = chip.textContent.replace(/^[^一-龥a-zA-Z]+/, '').trim(); ta.focus(); }
+    });
+  });
+
+  // 输入框自适应高度
+  document.querySelector('.chat-input-row textarea').addEventListener('input', function () {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+  });
+</script>
+</body>
+</html>

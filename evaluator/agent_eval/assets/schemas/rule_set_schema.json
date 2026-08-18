@@ -9,6 +9,18 @@
       "type": "string",
       "description": "规则集版本号"
     },
+    "scenario": {
+      "type": ["string", "null"],
+      "description": "所属场景 ID（命名空间），如 courseware（对齐 13 配置管理设计）"
+    },
+    "package_id": {
+      "type": ["string", "null"],
+      "description": "所属场景包 ID，如 courseware-quality"
+    },
+    "aggregation_policy_id": {
+      "type": ["string", "null"],
+      "description": "聚合策略 ID（对齐 13 配置管理设计 §10.4），如 courseware-default；缺省时套用场景默认策略"
+    },
     "description": {
       "type": "string",
       "description": "规则集描述"
@@ -45,14 +57,36 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id"],
+        "required": ["id", "method"],
         "properties": {
           "id": { "type": "string" },
           "name": { "type": "string" },
           "dimension": { "type": "string" },
           "stage": { "type": "string" },
           "description": { "type": "string" },
-          "evaluator": { "type": "string" },
+          "method": {
+            "type": "string",
+            "enum": ["llm", "llm_vision", "rule_set", "format"],
+            "description": "评估方式"
+          },
+          "prompt_id": { "type": ["string", "null"], "description": "LLM/视觉评估的主提示词 ID；rule_set 复合评估也可绑定" },
+          "confirmation_prompt_id": { "type": ["string", "null"], "description": "rule_set 复合评估的二次确认提示词 ID（如 fact_verdict）；仅 rule_set 可用" },
+          "dataset_ids": {
+            "type": ["array", "null"],
+            "items": { "type": "string" },
+            "description": "规则集评估关联的参考数据集 ID 列表；空/None=使用全部参考数据集（知识库）"
+          },
+          "format_type": {
+            "type": ["string", "null"],
+            "enum": ["extension", "json_validity", "html_validity", "markdown"],
+            "description": "格式检查子类型"
+          },
+          "extensions": {
+            "type": ["array", "null"],
+            "items": { "type": "string" },
+            "description": "format_type=extension 时允许的后缀列表"
+          },
+          "evaluator": { "type": ["string", "null"], "description": "具体执行器标识；省略时由 method + 绑定资产派生" },
           "params": { "type": "object" },
           "weight": { "type": "number", "minimum": 0 },
           "penalty_on_fail": { "type": ["number", "null"] },
@@ -60,7 +94,28 @@
           "overrides": { "type": "object" },
           "enabled": { "type": "boolean" },
           "metadata": { "type": "object" }
-        }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "method": { "const": "llm" } } },
+            "then": { "required": ["prompt_id"] }
+          },
+          {
+            "if": { "properties": { "method": { "const": "llm_vision" } } },
+            "then": { "required": ["prompt_id"] }
+          },
+          {
+            "if": { "properties": { "method": { "const": "format" } } },
+            "then": { "required": ["format_type"] }
+          },
+          {
+            "if": {
+              "required": ["format_type"],
+              "properties": { "format_type": { "const": "extension" } }
+            },
+            "then": { "required": ["extensions"] }
+          }
+        ]
       }
     },
     "meta": {
@@ -79,18 +134,61 @@
       "description": "规则模板定义",
       "items": {
         "type": "object",
-        "required": ["id", "name", "dimension", "stage", "evaluator"],
+        "required": ["id", "name", "dimension", "stage", "method"],
         "properties": {
           "id": { "type": "string" },
           "name": { "type": "string" },
           "description": { "type": "string" },
           "dimension": { "type": "string" },
           "stage": { "type": "string" },
-          "evaluator": { "type": "string" },
+          "method": {
+            "type": "string",
+            "enum": ["llm", "llm_vision", "rule_set", "format"],
+            "description": "评估方式"
+          },
+          "prompt_id": { "type": ["string", "null"], "description": "LLM/视觉评估的主提示词 ID；rule_set 复合评估也可绑定" },
+          "confirmation_prompt_id": { "type": ["string", "null"], "description": "rule_set 复合评估的二次确认提示词 ID（如 fact_verdict）；仅 rule_set 可用" },
+          "dataset_ids": {
+            "type": ["array", "null"],
+            "items": { "type": "string" },
+            "description": "规则集评估关联的参考数据集 ID 列表；空/None=使用全部参考数据集（知识库）"
+          },
+          "format_type": {
+            "type": ["string", "null"],
+            "enum": ["extension", "json_validity", "html_validity", "markdown"],
+            "description": "格式检查子类型"
+          },
+          "extensions": {
+            "type": ["array", "null"],
+            "items": { "type": "string" },
+            "description": "format_type=extension 时允许的后缀列表"
+          },
+          "evaluator": { "type": ["string", "null"], "description": "具体执行器标识；省略时由 method + 绑定资产派生" },
           "params": { "type": "object" },
           "weight": { "type": "number", "minimum": 0 },
           "penalty_on_fail": { "type": ["number", "null"] }
-        }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "method": { "const": "llm" } } },
+            "then": { "required": ["prompt_id"] }
+          },
+          {
+            "if": { "properties": { "method": { "const": "llm_vision" } } },
+            "then": { "required": ["prompt_id"] }
+          },
+          {
+            "if": { "properties": { "method": { "const": "format" } } },
+            "then": { "required": ["format_type"] }
+          },
+          {
+            "if": {
+              "required": ["format_type"],
+              "properties": { "format_type": { "const": "extension" } }
+            },
+            "then": { "required": ["extensions"] }
+          }
+        ]
       }
     }
   }

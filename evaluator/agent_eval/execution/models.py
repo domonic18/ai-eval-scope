@@ -18,6 +18,11 @@ class Task(BaseModel):
     """单个评测任务 — 定义被测 Agent 需要完成的输入与期望。"""
 
     id: str = Field(description="任务唯一标识，如 math_grade7_001")
+    # 场景包标识（Phase 0 新增，对齐 13 配置管理设计 §3.1）
+    scenario_id: str | None = Field(
+        default=None, description="所属场景 ID（命名空间），如 courseware"
+    )
+    package_id: str | None = Field(default=None, description="所属场景包 ID")
     input: dict[str, Any] = Field(
         description="输入参数（学科、年级、知识点等）",
     )
@@ -57,11 +62,19 @@ class TaskSet(BaseModel):
     """任务集 — 一组相关任务的集合。"""
 
     id: str = Field(description="任务集唯一标识")
+    # 场景包标识（Phase 0 新增，对齐 13 配置管理设计 §3.1）
+    # YAML 中以 `scenario:` 键承载场景 ID，Python 侧统一用 scenario_id
+    scenario_id: str | None = Field(
+        default=None,
+        alias="scenario",
+        description="所属场景 ID（命名空间），如 courseware",
+    )
+    package_id: str | None = Field(default=None, description="所属场景包 ID")
     name: str = Field(description="任务集名称")
     description: str = Field(default="", description="任务集描述")
     tasks: list[Task] = Field(default_factory=list, description="任务列表")
 
-    model_config = {"extra": "allow"}
+    model_config = {"extra": "allow", "populate_by_name": True}
 
 
 class SUTResponse(BaseModel):

@@ -8,7 +8,7 @@ import { loadSession } from "../store/auth"
 import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
 import { Label } from "@/components/shadcn/label"
-import { useToast } from "../components/toast"
+import { useToast } from "../hooks/useToast"
 import { Lock, Mail } from "lucide-react"
 
 function passwordStrength(pw: string): { score: number; level: string; label: string } {

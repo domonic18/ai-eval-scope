@@ -94,6 +94,64 @@ Authorization: Bearer <api_key>
 | `content`                                | 是   | object | `{ filename: string, text: string }`，如 `{"filename":"lesson.html","text":"<html>…"}` |
 | `rule_set_id` / `task_id` / `task_title` | 否   | string | 同上                                                                                   |
 
+#### 大文件直传（presigned PUT，>50MB）
+
+直接 `POST /api/v1/jobs` 的请求体上限为 50MB（超出返回 `413 PAYLOAD_TOO_LARGE`）。文件更大时——或希望客户端**直传对象存储**、不经 Web 后端中转——走**两段式上传**：先换取一个预签名 URL，客户端直传到对象存储，再用返回的 `object_key` 提交评测。
+
+**Step 1 · 换取上传地址**
+
+```bash
+curl -X POST https://eval.bj33smarter.com/api/v1/jobs/request-upload \
+  -H "Authorization: Bearer <api_key>" \
+  -H "Content-Type: application/json" \
+  -d '{"filename":"courseware.zip","content_type":"application/zip"}'
+```
+
+| 字段 | 必需 | 说明 |
+| ---- | ---- | ---- |
+| `filename` | 是 | 文件名；后缀决定存储对象扩展名（如 `.zip` / `.html`），评估粒度随之确定 |
+| `content_type` | 否 | MIME 类型，默认 `application/octet-stream`；**Step 2 上传时须用同一值** |
+
+响应（`200`）：
+
+```json
+{
+  "upload_url": "https://cos.example.com/agent-eval/projects/.../input.zip?X-Amz-Algorithm=...&X-Amz-Signature=...",
+  "object_key": "projects/9b30ef3c-.../eval/jobs/uploads/8a3f.../input.zip",
+  "expires_at": 1722678520
+}
+```
+
+- `upload_url` 有效期 **≤ 15 分钟**（默认 900 秒）；过期重新换取即可。
+- `object_key` 是 Step 3 提交评测的凭证，需**原样回填**，不要自行拼接。
+
+**Step 2 · 客户端直传到对象存储**
+
+```bash
+curl -X PUT "<upload_url>" \
+  -H "Content-Type: application/zip" \
+  --data-binary @courseware.zip
+```
+
+- `Content-Type` 必须与 Step 1 声明一致，否则签名校验失败。
+- 预签名 URL 由 S3 兼容 SDK 签发，可能签入内容校验头。**推荐用 S3 兼容客户端上传**（AWS SDK / `aws s3 cp` / MinIO `mc`），由其自动补齐签名所涉 header 与校验值；若用 `curl` 等裸 HTTP，须保证请求 header 与 URL 中 `X-Amz-SignedHeaders` 列出的**完全一致**。
+
+**Step 3 · 提交评测（引用已上传对象）**
+
+```bash
+curl -X POST https://eval.bj33smarter.com/api/v1/jobs \
+  -H "Authorization: Bearer <api_key>" \
+  -H "Content-Type: application/json" \
+  -d '{"input_object_key":"<object_key>","rule_set_id":"coursework-quality"}'
+```
+
+| 字段 | 必需 | 说明 |
+| ---- | ---- | ---- |
+| `input_object_key` | 是 | Step 1 返回的 `object_key`，平台据此从对象存储拉取输入 |
+| `rule_set_id` / `task_id` / `task_title` | 否 | 同「上传原始字节」 |
+
+提交后的响应见下方「响应」。
+
 #### 响应（202 Accepted）
 
 ```json
@@ -109,6 +167,8 @@ Authorization: Bearer <api_key>
 > `project_id` 由 API Key 验签解析后回传，提交时无需传入。`scf_request_id` 仅在生产 SCF 触发时返回；本地开发为 `null`。
 
 ### 查询结果
+
+提交后拿 `job_id` 轮询结果；不想轮询可配置 [Webhook 回调](#webhook-结果回调)，评估完成后平台主动 POST 你的服务。
 
 ```bash
 GET https://eval.bj33smarter.com/api/v1/jobs/{job_id}
@@ -138,7 +198,8 @@ Authorization: Bearer <api_key>
 | `rule_set_id` / `task_id` / `task_title`    | 提交时传入                                         |
 | `run_id`                                    | 评估运行 id（进入 running 后填充）                       |
 | `web_run_url`                               | Web 平台运行详情页（完成后可访问）                           |
-| `metrics`                                   | 四维指标 `DR` / `CPR` / `Reward` / `CondR` 等（完成后）；含 `_executor` 透明度字段 |
+| `metrics`                                   | 指标 `DR` / `CPR` / `Reward` / `CondR` 等（完成后）；含 `_executor` 透明度字段 |
+| `metrics.metrics`                           | 旧格式指标数值（DR/CPR/avg_reward/condR/avg_soft/avg_pref/avg_time_ms）；**含 `summary_report` 时应使用 overview 速览端点获取人话摘要** |
 | `error`                                     | 失败原因（失败时）                                     |
 | `created_at` / `started_at` / `finished_at` | 各阶段时间戳                                        |
 
@@ -193,7 +254,29 @@ Authorization: Bearer <api_key>
   "verdict": "fail",
   "score": 0.669,
   "metrics": { "DR": 1.0, "CPR": 0.0, "condR": 0.0, "avg_time_ms": 125005 },
+  "metrics_raw": {
+    "courseware:document_rate": 1.0,
+    "courseware:constraint_pass_rate": 0.0,
+    "courseware:reward": 0.669,
+    "courseware:soft": 0.795,
+    "courseware:pref": 0.797,
+    "courseware:conditional_reward": 0.0,
+    "avg_time_ms": 125005
+  },
   "summary": { "total": 1, "passed": 0, "failed": 1, "skipped": 0 },
+  "summary_report": {
+    "headline": "综合评分 0.67，内容存在明显问题需改进",
+    "highlights": ["所有样本格式合规", "内容质量评分较高（0.80）"],
+    "issues": [
+      {
+        "title": "知识准确性未达标",
+        "detail": "发现算术错误：12×2+7+3+5+18=100 应为 57（经 LLM 二次确认）",
+        "severity": "high",
+        "files": ["解析性案例.html"]
+      }
+    ],
+    "suggestion": "建议检查所有算术公式的计算结果，确保数据准确。"
+  },
   "dimension_pass": { "format": 1, "commonsense": 0, "soft": 1, "preference": 1 },
   "items": [
     {
@@ -203,7 +286,9 @@ Authorization: Bearer <api_key>
       "failures": [
         {
           "name": "知识准确性检查",
-          "reason": "原文提到 12×2 + 7 + 3 + 5 + 18 = 100，实际应为 57，等式错误（经 LLM 二次确认）"
+          "reason": "原文提到 12×2 + 7 + 3 + 5 + 18 = 100，实际应为 57，等式错误（经 LLM 二次确认）",
+          "top_issues": ["算式结果错误：12×2+7+3+5+18=57 而非 100"],
+          "files": ["解析性案例.html"]
         }
       ]
     }
@@ -215,12 +300,15 @@ Authorization: Bearer <api_key>
 | ---- | ---- |
 | `verdict` | `pass` / `fail`：DR / CPR / Reward 达标且无 `hard_gate` 失败 = `pass` |
 | `score` | 综合分 = `avg_reward` |
-| `metrics` | DR / CPR / condR / 平均耗时 |
+| `metrics` | DR / CPR / condR / 平均耗时（兼容旧格式） |
+| `metrics_raw` | 完整场景化指标 JSONB（`courseware:*` 键，动态适配不同场景包） |
 | `summary` | 样本通过 / 失败 / 跳过计数 |
+| `summary_report` | LLM 生成的人话版摘要报告（headline / highlights / issues / suggestion）；LLM 不可用时为 `null` |
 | `dimension_pass` | 各阶段（format / commonsense / soft / preference）达标样本数 |
-| `items[]` | 各评测项（样本）：`score` + `passed` + `failures`（未通过约束的 `name` + `reason`） |
+| `items[]` | 各评测项（样本）：`score` + `passed` + `failures`（未通过约束的 `name` + `reason` + `top_issues` + `files`） |
 
 > - 任务未完成（`queued` / `running` / `failed`）时，只回 `status` + 任务级 `error`，`items` 为空。
+> - `summary_report` 由评估器在评估完成后自动调用 LLM 生成（prompt 配置在 `summary_prompt.yaml`），不是手动创建。
 > - 速览**只给摘要**：逐条约束的 `details` / 制品预览等深度详情不开放 API，由 iframe 嵌入公开页查看。
 
 ### 公开访问与 iframe 嵌入
@@ -431,6 +519,147 @@ uv run agent-eval eval --help     # 查看评估子命令用法
 
 ---
 
+## Webhook 结果回调
+
+三种接入方式提交的任务，在评估完成（`completed` / `failed`）后，平台可**主动 POST 回调**你的服务，免去轮询。Webhook 是**项目级配置**，对该项目下所有 job 生效，与轮询 `GET /api/v1/jobs/{id}` 互补——可单独使用，也可作轮询的兜底。
+
+> 即便不配 Webhook，也随时可轮询 `GET /api/v1/jobs/{id}`；Webhook 投递失败时第三方应回退轮询。
+
+### 配置
+
+项目 **owner** 在控制台「项目设置」中填写回调地址与密钥，或调用接口：
+
+```http
+PATCH https://eval.bj33smarter.com/api/v1/projects/{project_id}
+Authorization: Bearer <api_key>
+```
+
+| 字段 | 必需 | 说明 |
+| ---- | ---- | ---- |
+| `webhookUrl` | 是 | 回调地址（生产强制 HTTPS），如 `https://your.host/eval-callback` |
+| `webhookSecret` | 否 | 签名密钥，用于校验 `X-Webhook-Signature`；AES-256-GCM 加密存储，**留空表示不改**（更新 URL 时 secret 留空即保持原值） |
+
+> secret 不回显，前端以 `webhookSecretSet` 布尔表示是否已设置。仅项目 owner 可改 webhook 配置，变更写入审计日志（不含 secret 明文）。
+
+### 触发与投递
+
+评估器完成 job 后，平台内部触发回调（fire-and-forget，不阻塞任务完成）：
+
+```text
+executor 完成 ──▶ POST /api/v1/jobs/{id}/notify-completion（内部触发）
+                     │
+                     ▼
+              查 project.webhookUrl
+                     │ 已配置
+                     ▼
+              POST <webhookUrl>  +  X-Webhook-Signature
+                     │
+          3 次重试（0s / 1s / 4s 退避，单次超时 10s）
+                     │
+                     ▼
+              落库 webhookDelivery（投递记录）
+```
+
+- **触发事件**：`job.completed`（评估成功）/ `job.failed`（评估失败）；未终态（`queued` / `running`）不触发。
+- **幂等**：投递为 fire-and-forget，第三方应按 `job_id` **自行去重**（同一 job 的多次内部通知可能重复投递）。
+
+### 请求格式
+
+平台向你配置的 `webhookUrl` 发起 `POST`：
+
+| Header | 说明 |
+| ---- | ---- |
+| `Content-Type` | `application/json` |
+| `X-Webhook-Signature` | `sha256=<hex>`，HMAC-SHA256 签名（**仅配置了 secret 时携带**） |
+
+**Payload 结构**：
+
+| 字段 | 说明 |
+| ---- | ---- |
+| `source` | 固定 `agent-eval-system` |
+| `event` | `job.completed` / `job.failed` |
+| `timestamp` | 投递时间（ISO 8601） |
+| `overview_url` | 速览端点相对路径 `/api/v1/jobs/{id}/overview` |
+| 其余字段 | 完整 job DTO，与 `GET /api/v1/jobs/{id}` 完全一致（`job_id` / `status` / `run_id` / `metrics` / `error` 等） |
+
+payload 示例（`job.completed`）：
+
+```json
+{
+  "source": "agent-eval-system",
+  "event": "job.completed",
+  "timestamp": "2026-07-27T09:12:33.000Z",
+  "overview_url": "/api/v1/jobs/0bc0b717-ada1-4783-8718-7889b5982060/overview",
+  "job_id": "0bc0b717-ada1-4783-8718-7889b5982060",
+  "status": "completed",
+  "project_id": "d288698e-ee7c-4d4e-b1fc-a2d050ce4a9b",
+  "run_id": "2f8a1c...",
+  "web_run_url": "https://eval.bj33smarter.com/run/2f8a1c...",
+  "metrics": { "DR": 0.962, "CPR": 0.914, "avg_reward": 0.781 },
+  "error": null,
+  "created_at": "2026-07-27T09:10:00.000Z",
+  "finished_at": "2026-07-27T09:12:30.000Z"
+}
+```
+
+> payload 已含完整 job，可直接消费；要"过没过 / 各项失败原因"的人话摘要，再请求 `overview_url`（需带 API Key）。
+
+### 签名校验
+
+对请求 **body 原始字节**用配置的 secret 做 HMAC-SHA256，与 `X-Webhook-Signature` 比对（仿 Stripe / GitHub 范式）。务必先验签、再解析 JSON。
+
+**Python（FastAPI / Flask）**
+
+```python
+import hmac, hashlib
+
+def verify(body: bytes, signature: str, secret: str) -> bool:
+    if not signature.startswith("sha256="):
+        return False
+    expected = "sha256=" + hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, signature)
+```
+
+**TypeScript（Express）**
+
+```ts
+import crypto from "crypto"
+
+function verify(body: Buffer, signature: string, secret: string): boolean {
+  const expected = `sha256=${crypto.createHmac("sha256", secret).update(body).digest("hex")}`
+  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature))
+}
+```
+
+> 未配置 secret 的项目不会携带签名头，此时建议辅以来源 IP 白名单或回拉 `overview_url` 校验。
+
+### 重试与可靠性
+
+- **重试**：HTTP 非 2xx 或网络异常时，按 `0s / 1s / 4s` 指数退避重试，**最多 3 次**；单次请求超时 **10s**。
+- **落库**：每次投递在 `webhookDelivery` 记一行（`attempt` / `success` / `statusCode` / `requestBody` / `responseBody` / 耗时），可在控制台或 `GET /api/v1/projects/{id}/webhook-deliveries` 查询（默认最近 20 条，上限 50）。
+- **兜底**：3 次仍失败仅记日志、不再重投——请回退轮询 `GET /api/v1/jobs/{id}`。
+
+### 测试回调
+
+配置后用控制台「发送测试回调」按钮（或接口）验证链路，会投递一条 `event=webhook.test` 的 payload：
+
+```bash
+POST https://eval.bj33smarter.com/api/v1/projects/{project_id}/test-webhook
+Authorization: Bearer <api_key>   # 需 owner 权限
+```
+
+```json
+{
+  "source": "agent-eval-system",
+  "event": "webhook.test",
+  "project_id": "...",
+  "status": "test",
+  "message": "Webhook 测试回调 — 收到此消息说明配置正确。"
+}
+```
+
+---
+
 ## 状态码与错误码
 
 | HTTP  | code                | 触发场景                                        |
@@ -439,7 +668,7 @@ uv run agent-eval eval --help     # 查看评估子命令用法
 | `400` | `INPUT_INVALID`     | 字段缺失或非法（如缺 `filename` / `content`、`.zip` 飞行检查失败） |
 | `401` | `AUTH_INVALID`      | 缺少/错误的 API Key、Key 已吊销或过期、scope 不含 `ingest` |
 | `404` | `JOB_NOT_FOUND`     | 任务不存在或不属于当前 Key 的项目                         |
-| `413` | `PAYLOAD_TOO_LARGE` | 上传内容超限（默认 50MB；MCP base64 超 5MB 引导走 presigned） |
+| `413` | `PAYLOAD_TOO_LARGE` | 上传内容超限（默认 50MB；超出走 presigned 直传，见「大文件直传」） |
 | `429` | `RATE_LIMITED`      | 触发令牌桶限流（按 API Key，提交 / 摄取），响应带 `Retry-After` 头 |
 
 > MCP 工具调用错误以 `isError: true` + `{ code, message }` 返回，错误码与 HTTP 一致，不泄露资源存在性。

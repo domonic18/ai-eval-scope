@@ -1,6 +1,5 @@
-import { createContext, useContext, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom"
-import type { ReactNode } from "react"
 import { api } from "@/api/client"
 import { clearSession, getActiveOrg, loadSession, setActiveOrg, updateSessionUser } from "@/store/auth"
 import { APP_VERSION } from "@/version"
@@ -26,7 +25,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/shadcn/dropdown-menu"
-import { useToast } from "@/components/toast"
+import { useToast } from "@/hooks/useToast"
+import { CrumbsContext, OrgContext, type Crumb } from "@/context/navigation"
 import {
   Bell,
   BookOpen,
@@ -39,34 +39,8 @@ import {
   Plus,
   Search,
   Trash2,
+  Boxes,
 } from "lucide-react"
-
-/** 面包屑：label + 可选回跳 to。 */
-export interface Crumb {
-  label: ReactNode
-  to?: string
-}
-interface CrumbsApi {
-  crumbs: Crumb[]
-  setCrumbs: (c: Crumb[]) => void
-}
-interface OrgApi {
-  activeOrg: string | null
-  memberships: Membership[]
-  loading: boolean
-  setActive: (orgId: string) => void
-}
-
-const CrumbsContext = createContext<CrumbsApi>({ crumbs: [], setCrumbs: () => {} })
-const OrgContext = createContext<OrgApi>({
-  activeOrg: null,
-  memberships: [],
-  loading: true,
-  setActive: () => {},
-})
-
-export const useCrumbs = () => useContext(CrumbsContext)
-export const useOrg = () => useContext(OrgContext)
 
 interface MemberRow {
   userId: string
@@ -84,6 +58,7 @@ interface JoinRequestRow {
 const NAV_MAIN = [
   { to: "/dashboard", icon: LayoutDashboard, label: "项目看板", match: (p: string) => p === "/dashboard" || p.startsWith("/project") },
   { to: "/runs", icon: Activity, label: "全部运行", match: (p: string) => p.startsWith("/run") },
+  { to: "/config", icon: Boxes, label: "配置中心", match: (p: string) => p.startsWith("/config") },
 ]
 
 export function AppShell() {

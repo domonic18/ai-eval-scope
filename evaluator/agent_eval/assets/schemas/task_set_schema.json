@@ -9,6 +9,14 @@
       "type": "string",
       "description": "任务集唯一标识"
     },
+    "scenario": {
+      "type": ["string", "null"],
+      "description": "所属场景 ID（命名空间），如 courseware（对齐 13 配置管理设计）"
+    },
+    "package_id": {
+      "type": ["string", "null"],
+      "description": "所属场景包 ID"
+    },
     "name": {
       "type": "string",
       "description": "任务集名称"

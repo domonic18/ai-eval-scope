@@ -1,8 +1,7 @@
 import type { ReactNode } from "react"
 import { Card, CardContent } from "@/components/shadcn/card"
-import { ExplainTooltip } from "@/components/ExplainTooltip"
+import { ExplainTooltip, type ExplainContent } from "@/components/ExplainTooltip"
 import { cn } from "@/lib/utils"
-import type { ExplainContent } from "@/lib/eval"
 
 interface MetricCardProps {
   /** 指标标签，通常大写。 */

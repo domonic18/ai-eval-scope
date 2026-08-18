@@ -1,0 +1,8 @@
+# 代码审查评分配置
+# 修改后无需重启，下次审查自动生效
+
+pass_threshold: 60
+severity_penalties:
+  critical: 15    # 每个严重问题扣 15 分
+  warning: 5      # 每个警告扣 5 分
+  suggestion: 1   # 每个建议扣 1 分

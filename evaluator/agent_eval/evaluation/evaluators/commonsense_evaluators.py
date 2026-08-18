@@ -197,6 +197,10 @@ class InfoAccuracyEvaluator(BaseEvaluator):
     # 算术表达式周围的上下文窗口大小（字符数）
     _ARITH_CONTEXT_WINDOW = EVALUATOR_DEFAULTS.arith_context_window
 
+    def _effective_prompt_id(self, default: str) -> str:
+        """优先使用规则层传入的 prompt_id，回退到 params.template_id，最后才是默认值。"""
+        return self.params.get("prompt_id") or self.params.get("template_id") or default
+
     def evaluate(self, sample: Any, context: dict[str, Any]) -> Any:
         start = time.monotonic()
 
@@ -221,6 +225,7 @@ class InfoAccuracyEvaluator(BaseEvaluator):
             )
 
         # Phase 1: 内置自动检查
+        # subjects 为空/None → 加载全部参考数据集（知识库）；指定则只加载对应学科
         subjects = self.params.get("subjects")
         fact_db = _load_fact_db(subjects)
         findings: list[dict[str, Any]] = []
@@ -786,10 +791,11 @@ class InfoAccuracyEvaluator(BaseEvaluator):
         }
 
         try:
+            info_prompt = self._effective_prompt_id("info_accuracy")
             scores, record = orchestrator.judge(
                 constraint_id=self.evaluator_id,
                 sample_id=context.get("sample_id", "unknown"),
-                template_id="info_accuracy",
+                template_id=info_prompt,
                 variables=variables,
                 evidence_dir=Path(evidence_dir)
                 if not isinstance(evidence_dir, Path)
@@ -803,7 +809,7 @@ class InfoAccuracyEvaluator(BaseEvaluator):
         elapsed = (time.monotonic() - start) * 1000
 
         # 计算加权分数
-        template = orchestrator.templates.get("info_accuracy")
+        template = orchestrator.templates.get(None, self._effective_prompt_id("info_accuracy"))
         if template and template.dimensions:
             total_weight = sum(d.weight for d in template.dimensions)
             weighted = sum(scores.get(d.dim_id, 0.0) * d.weight for d in template.dimensions)
@@ -925,6 +931,7 @@ class InfoAccuracyEvaluator(BaseEvaluator):
         }
 
         # 分批调用 fact_verdict（候选过多时单次 prompt 过大会导致 LLM 调用失败）
+        verdict_prompt_id = self.params.get("fact_verdict_prompt_id", "fact_verdict")
         all_verdicts: list[dict[str, Any]] = []
         for batch_start in range(0, len(candidates), batch_size):
             batch = candidates[batch_start : batch_start + batch_size]
@@ -933,7 +940,7 @@ class InfoAccuracyEvaluator(BaseEvaluator):
                 _scores, record = orchestrator.judge(
                     constraint_id=self.evaluator_id,
                     sample_id=context.get("sample_id", "unknown"),
-                    template_id="fact_verdict",
+                    template_id=verdict_prompt_id,
                     variables={**variables_base, "candidates": batch},
                     evidence_dir=ev_dir,
                     provider_name=self.params.get("llm_provider"),
@@ -987,6 +994,8 @@ class ChronologicalOrderEvaluator(BaseLLMJudgeEvaluator):
     method = EvalMethod.LLM_JUDGE
     template_id = "chronological_order"
     pass_threshold = EVALUATOR_DEFAULTS.logical_consistency_pass_threshold
+    # 时序是跨模块全局语义（整个课件的时间线/步骤顺序），保持整单元单次评估
+    default_granularity = "package"
 
 
 @registry.register("commonsense.logical_consistency")
@@ -1065,10 +1074,15 @@ class LogicalConsistencyEvaluator(BaseEvaluator):
         }
 
         try:
+            consistency_prompt = (
+                self.params.get("prompt_id")
+                or self.params.get("template_id")
+                or "logical_consistency"
+            )
             scores, record = orchestrator.judge(
                 constraint_id=self.evaluator_id,
                 sample_id=context.get("sample_id", "unknown"),
-                template_id="logical_consistency",
+                template_id=consistency_prompt,
                 variables=variables,
                 evidence_dir=Path(evidence_dir)
                 if not isinstance(evidence_dir, Path)
@@ -1088,7 +1102,7 @@ class LogicalConsistencyEvaluator(BaseEvaluator):
         elapsed = (time.monotonic() - start) * 1000
 
         # 计算分数
-        template = orchestrator.templates.get("logical_consistency")
+        template = orchestrator.templates.get(None, "logical_consistency")
         if template and template.dimensions:
             total_weight = sum(d.weight for d in template.dimensions)
             weighted = sum(scores.get(d.dim_id, 0.0) * d.weight for d in template.dimensions)

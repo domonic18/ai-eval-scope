@@ -23,7 +23,8 @@ def sample_job() -> EvalJob:
         input_kind="upload",
         scope="single",
         input_object_key="projects/project-1/eval/jobs/job-1/input.md",
-        rule_set_id="format-only",
+        rule_set_id="coursework-quality",
+        package_ref="courseware/courseware:production",
     )
 
 
@@ -131,3 +132,72 @@ def test_flush_result_skips_without_token(
     )
     report = runner_mod._flush_result(MagicMock(), tmp_path / "pkg", sample_job, None, tmp_path)
     assert report is None
+
+
+def _job(**overrides) -> EvalJob:
+    """构造 EvalJob，默认带合法 package_ref（courseware 内置包）。"""
+    base = dict(
+        job_id="j",
+        api_key_id="key-1",
+        project_id="project-1",
+        org_id="org-1",
+        status="running",
+        input_kind="upload",
+        scope="single",
+        input_object_key="projects/project-1/eval/jobs/j/input.md",
+        rule_set_id="coursework-quality",
+        package_ref="courseware/courseware:production",
+    )
+    base.update(overrides)
+    return EvalJob(**base)
+
+
+def test_resolve_rejects_legacy_job(monkeypatch: pytest.MonkeyPatch) -> None:
+    """无 package_ref 的历史 job 被拒绝（LegacyJobRejectedError），不再回退 _BUILTIN。"""
+    from eval_executor.core.exceptions import LegacyJobRejectedError
+
+    monkeypatch.delenv("AGENT_EVAL_REGISTRY_URL", raising=False)
+    job = _job(package_ref=None)
+    with pytest.raises(LegacyJobRejectedError):
+        runner_mod._resolve_rule_set_path(job)
+
+
+def test_resolve_builtin_package_by_ref(monkeypatch: pytest.MonkeyPatch) -> None:
+    """package_ref 解析内置 courseware 包，rule_set_id 选定包内规则集文件。"""
+    monkeypatch.delenv("AGENT_EVAL_REGISTRY_URL", raising=False)
+    path = runner_mod._resolve_rule_set_path(_job(rule_set_id="coursework-quality"))
+    assert path.endswith("coursework-quality.yaml")
+
+
+def test_resolve_unknown_package_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+    """未知 package_ref（无远端配置）→ 解析失败抛错，而非跑错规则集。"""
+    from agent_eval.core.exceptions import ScenarioPackageNotFoundError
+
+    monkeypatch.delenv("AGENT_EVAL_REGISTRY_URL", raising=False)
+    with pytest.raises(ScenarioPackageNotFoundError):
+        runner_mod._resolve_rule_set_path(_job(package_ref="courseware/nope:1.0.0"))
+
+
+async def test_run_job_marks_failed_on_legacy_job(
+    sample_input: Path,
+    fake_sessionmaker: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """无 package_ref 的历史 job → mark_failed（含 legacy job rejected）。"""
+    monkeypatch.delenv("AGENT_EVAL_REGISTRY_URL", raising=False)
+    job = _job(job_id="legacy-job", package_ref=None)
+
+    with patch.object(runner_mod, "mark_failed", new=AsyncMock()) as mock_mark_failed:
+        await run_job(job, sample_input)
+
+    mock_mark_failed.assert_awaited_once()
+    _, kwargs = mock_mark_failed.call_args
+    assert "legacy job rejected" in kwargs["error"]["message"]
+
+
+def test_format_only_path_for_smoke() -> None:
+    """纯格式冒烟规则集路径仍可取（CI 直接路径调用，不经 package_ref 解析）。"""
+    from eval_executor.rules.registry import format_only_path
+
+    assert format_only_path().name == "format_only.yaml"
+

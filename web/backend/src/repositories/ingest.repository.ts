@@ -56,6 +56,27 @@ export class IngestRepository {
 
   /** run：按 (projectId, externalRunId) upsert。返回 runId。 */
   async upsertRun(tx: Tx, d: RunEventData): Promise<string> {
+    // Phase 5：inline 运行配置快照 → 建 RunConfigSnapshot 行（按 contentHash 去重），关联 run
+    let snapshotId = d.run_config_snapshot_id ?? null
+    if (d.run_config_snapshot) {
+      const snap = d.run_config_snapshot as Record<string, unknown>
+      const contentHash = (snap.snapshot_hash as string) ?? "sha256:unknown"
+      const existing = await tx.runConfigSnapshot.findFirst({ where: { contentHash } })
+      snapshotId = existing
+        ? existing.id
+        : (
+            await tx.runConfigSnapshot.create({
+              data: {
+                scenarioId: (snap.scenario_id as string) ?? "",
+                packageId: ((snap.package as { id?: string })?.id) ?? "",
+                packageVersion: ((snap.package as { version?: string })?.version) ?? "",
+                content: snap as Prisma.InputJsonValue,
+                contentHash,
+              },
+              select: { id: true },
+            })
+          ).id
+    }
     const run = await tx.run.upsert({
       where: {
         projectId_externalRunId: { projectId: this.projectId, externalRunId: d.external_run_id },
@@ -66,16 +87,17 @@ export class IngestRepository {
         mode: d.mode,
         status: d.status ?? "completed",
         totalSamples: d.total_samples ?? 0,
-        dr: d.metrics.DR,
-        cpr: d.metrics.CPR,
-        avgReward: d.metrics.avg_reward,
-        avgSoft: d.metrics.avg_soft ?? 0,
-        avgPref: d.metrics.avg_pref ?? 0,
-        condR: d.metrics.condR,
-        avgTimeMs: d.metrics.avg_time_ms,
+        // 场景化：metrics JSONB 为权威
+        scenarioId: d.scenario_id ?? null,
+        packageId: d.package_id ?? null,
+        packageVersion: d.package_version ?? null,
+        runConfigSnapshotId: snapshotId,
+        metrics: d.metrics as Prisma.InputJsonValue,
+        // 遗留一等列：从 metrics 回填（迁移期保留，Phase 5 阶段C 删除）
         ruleSetVersion: d.rule_set_version ?? null,
         sutVersion: d.sut_version ?? null,
         failureBreakdown: (d.failure_breakdown ?? undefined) as Prisma.InputJsonValue,
+        summaryReport: (d.summary_report ?? undefined) as Prisma.InputJsonValue,
         thresholds: (d.thresholds ?? undefined) as Prisma.InputJsonValue,
         langfuseTraceId: d.langfuse_trace_id ?? null,
         langfuseHost: d.langfuse_host ?? null,
@@ -86,13 +108,12 @@ export class IngestRepository {
         mode: d.mode,
         status: d.status ?? "completed",
         totalSamples: d.total_samples ?? 0,
-        dr: d.metrics.DR,
-        cpr: d.metrics.CPR,
-        avgReward: d.metrics.avg_reward,
-        avgSoft: d.metrics.avg_soft ?? 0,
-        avgPref: d.metrics.avg_pref ?? 0,
-        condR: d.metrics.condR,
-        avgTimeMs: d.metrics.avg_time_ms,
+        summaryReport: (d.summary_report ?? undefined) as Prisma.InputJsonValue,
+        scenarioId: d.scenario_id ?? null,
+        packageId: d.package_id ?? null,
+        packageVersion: d.package_version ?? null,
+        runConfigSnapshotId: snapshotId,
+        metrics: d.metrics as Prisma.InputJsonValue,
         ruleSetVersion: d.rule_set_version ?? null,
         sutVersion: d.sut_version ?? null,
         failureBreakdown: (d.failure_breakdown ?? undefined) as Prisma.InputJsonValue,
@@ -116,24 +137,18 @@ export class IngestRepository {
         externalSampleId: d.external_sample_id,
         contentHash: d.content_hash ?? null,
         status: d.status ?? "completed",
-        sFormat: d.s_format,
-        sCommon: d.s_common,
-        sSoft: d.s_soft,
-        sPref: d.s_pref,
-        reward: d.reward,
-        totalDurationMs: d.total_duration_ms ?? 0,
+        metrics: (d.metrics ?? undefined) as Prisma.InputJsonValue,
+        reward: d.reward ?? null,
+        totalDurationMs: d.total_duration_ms ?? null,
         llmCalls: d.llm_calls ?? 0,
         tokenUsage: d.token_usage ?? 0,
       },
       update: {
         contentHash: d.content_hash ?? null,
         status: d.status ?? "completed",
-        sFormat: d.s_format,
-        sCommon: d.s_common,
-        sSoft: d.s_soft,
-        sPref: d.s_pref,
-        reward: d.reward,
-        totalDurationMs: d.total_duration_ms ?? 0,
+        metrics: (d.metrics ?? undefined) as Prisma.InputJsonValue,
+        reward: d.reward ?? null,
+        totalDurationMs: d.total_duration_ms ?? null,
         llmCalls: d.llm_calls ?? 0,
         tokenUsage: d.token_usage ?? 0,
       },

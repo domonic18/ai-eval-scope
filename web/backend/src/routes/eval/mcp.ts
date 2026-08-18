@@ -16,7 +16,9 @@ import { z } from "zod"
 // MCP SDK（ESM-first，tsconfig paths 映射 d.ts；运行时经 package exports 解析 cjs）
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js"
+import { getPrisma } from "../../infra/prisma"
 import { getObjectStorage } from "../../infra/objectStorage"
+import { buildPackagesCatalog } from "../../infra/packageCatalog"
 import { readRuleSetsCatalog } from "../../infra/ruleSetsCatalog"
 import { getLogger } from "../../infra/logger"
 import { PlatformError } from "../../middleware/errorHandler"
@@ -84,6 +86,32 @@ function buildServer(tenant: Tenant): McpServer {
     async () => mcpOk({ status: "ok", subsystem: "eval" }),
   )
 
+  // 2b. list_packages —— 发现可用场景包及其 package_ref（submit 前先调）
+  //     补齐 list_rule_sets 只给 scenario_id/version、不直接给出 executor 可解析 ref 串的缺口。
+  server.registerTool(
+    "list_packages",
+    {
+      description:
+        "列出可用的评测场景包及其 package_ref（submit_eval_job 的必填 package_ref 从这里取值）。返回每个包的 scenario/package_id/version/labels/name/描述/制品类型。",
+    },
+    async () => {
+      try {
+        const rows = await getPrisma().scenarioPackage.findMany({
+          select: {
+            scenarioId: true,
+            assetId: true,
+            version: true,
+            labels: true,
+            content: true,
+          },
+        })
+        return mcpOk({ packages: buildPackagesCatalog(rows) })
+      } catch (e) {
+        return mcpError(e)
+      }
+    },
+  )
+
   // 3. get_eval_job —— GET /api/v1/jobs/:id
   server.registerTool(
     "get_eval_job",
@@ -145,7 +173,7 @@ function buildServer(tenant: Tenant): McpServer {
           upload_url: presigned.url,
           object_key: objectKey,
           expires_at: presigned.expiresAt,
-          hint: "PUT 二进制到 upload_url 后，调 submit_eval_job 传 input_object_key",
+          hint: "PUT 二进制到 upload_url 后，调 submit_eval_job 时用 input_object_key 引用此输入产物。注意：input_object_key 只是产物句柄，与 package_ref 无关——submit 仍需另行提供 package_ref 指定评测场景包，可用值先调 list_packages 查询。",
         })
       } catch (e) {
         return mcpError(e)
@@ -172,17 +200,34 @@ function buildServer(tenant: Tenant): McpServer {
           .string()
           .optional()
           .describe("大文件：request_input_upload 返回的 object_key；key 以 .zip 结尾会按单元评估解压"),
-        rule_set_id: z.string().optional(),
-        task_id: z.string().optional(),
-        task_title: z.string().optional(),
-        task_subject: z.string().optional(),
+        rule_set_id: z
+          .string()
+          .optional()
+          .describe("可选：包内规则集 id（如 coursework-quality）。缺省时 executor 取包内唯一规则集，包内不唯一则必填"),
+        package_ref: z
+          .string()
+          .optional()
+          .describe(
+            "场景包引用，**必填**（缺失会被 executor 拒绝）。格式 scenario/package[:version_or_label]，如 courseware/courseware:latest、code/code、courseware/courseware:1.0.0。可用值先调 list_packages 查询；它不是上传返回的 object_key，二者无关",
+          ),
+        task_id: z
+          .string()
+          .optional()
+          .describe("可选：调用方自定义任务标识，原样回填 eval_jobs.task_id（不填默认按样本 id 推导）"),
+        task_title: z.string().optional().describe("可选：任务展示标题"),
+        task_subject: z
+          .string()
+          .optional()
+          .describe("可选：任务学科/主题（如 chemistry、python），用于按学科选取参考知识"),
       },
     },
     async (args) => {
       try {
-        const ruleSetId = args.rule_set_id || "coursework-quality"
+        // rule_set_id 缺省空串 → executor 从场景包推导唯一规则集（去 courseware 默认）
+        const ruleSetId = args.rule_set_id || ""
         const common = {
           ruleSetId,
+          packageRef: args.package_ref,
           taskId: args.task_id,
           taskTitle: args.task_title,
           taskSubject: args.task_subject,

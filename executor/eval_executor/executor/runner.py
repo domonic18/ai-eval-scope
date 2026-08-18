@@ -22,6 +22,7 @@ from agent_eval.orchestrator import eval_packages
 from eval_executor.auth.crypto import decrypt_token
 from eval_executor.auth.repo import find_api_key_by_id
 from eval_executor.config.settings import get_settings
+from eval_executor.core.exceptions import LegacyJobRejectedError, RuleSetNotFoundError
 from eval_executor.core.logging import get_logger
 from eval_executor.executor.builder import build_package
 from eval_executor.models.db import EvalJob
@@ -34,16 +35,44 @@ LOG = get_logger(__name__)
 FLUSH_TIMEOUT_SEC = 60.0
 
 
-def _rule_set_path(rule_set_id: str) -> str:
-    """规则集标识 → 文件路径（经注册表查找；未知 id 回退默认，保持向后兼容）。"""
-    from eval_executor.rules.registry import get_path
+def _resolve_rule_set_path(job: EvalJob) -> str:
+    """按 job.package_ref 解析规则集文件路径（S2-C）。
 
-    path = get_path(rule_set_id)
-    if path is None:
-        # 未知 id：回退 coursework-quality（安全默认，不依赖 Chromium）
-        LOG.warning("rule_set.unknown_id_fallback", rule_set_id=rule_set_id)
-        path = agent_eval_paths.rules_dir / "coursework-quality.yaml"
-    return str(path)
+    - 缺失 package_ref → 历史 job，拒绝（LegacyJobRejectedError，不再用 _BUILTIN 回退）。
+    - 本地（builtin + 缓存）解析；未命中且配置了 ``AGENT_EVAL_REGISTRY_URL`` → 拉取后重解析。
+    - 包内规则集：优先 job.rule_set_id，其次包内唯一规则集，否则报错。
+    """
+    from agent_eval.core.exceptions import ScenarioPackageNotFoundError
+    from agent_eval.packages import PackageManager, PackageStore
+    from agent_eval.packages.remote_client import get_remote_client
+
+    ref = job.package_ref
+    if not ref:
+        raise LegacyJobRejectedError(job.job_id)
+
+    pm = PackageManager()
+    try:
+        pkg = pm.resolve_ref(ref)
+    except ScenarioPackageNotFoundError:
+        # 本地未命中：配置了远端则拉取后重解析，否则原样抛出
+        client = get_remote_client()
+        if client is None:
+            raise
+        remote_pkg = client.fetch(ref)
+        PackageStore().install(remote_pkg.manifest, dict(remote_pkg.files))
+        pkg = pm.resolve_ref(ref)
+
+    rules_dir = pkg.rules_dir
+    name = job.rule_set_id or pkg.manifest.id
+    path = rules_dir / f"{name}.yaml"
+    if path.exists():
+        return str(path)
+    avail = sorted(p.stem for p in rules_dir.glob("*.yaml"))
+    if len(avail) == 1:
+        return str(rules_dir / f"{avail[0]}.yaml")
+    if not avail:
+        raise RuleSetNotFoundError(f"{ref}（包内无规则集）")
+    raise RuleSetNotFoundError(f"{ref}（包内规则集不明确，请指定 rule_set_id：{avail}）")
 
 
 def _llm_config_path() -> str | None:
@@ -52,14 +81,13 @@ def _llm_config_path() -> str | None:
     return str(cfg) if cfg.exists() else None
 
 
-def _eval_meta(result: Any, job: EvalJob) -> dict[str, Any]:
+def _eval_meta(result: Any, job: EvalJob, rule_set_path: str) -> dict[str, Any]:
     """构建评估透明度元数据：所需能力 + 实际就绪 + 被跳过的评估器。"""
     import agent_eval.evaluation.evaluators  # noqa: F401  触发注册
     from agent_eval.config.loader import ConfigLoader
     from agent_eval.core.types import Capability
     from agent_eval.evaluation.capability import CapabilityResolver
 
-    rule_set_path = _rule_set_path(job.rule_set_id)
     required_caps: list[str] = []
     try:
         rs = ConfigLoader.load_rule_set(rule_set_path)
@@ -137,25 +165,74 @@ def _flush_result(
     return sink.flush(result, run_workspace=run_workspace, package_dir=package_dir)
 
 
+def _file_patterns_from_rule_set(rule_set_path: str | Path | None) -> list[str]:
+    """从规则集 format 门控推导要收集的文件类型（code→*.py / courseware→*.html,*.md）。
+
+    与 /debug 的 accept 同源（规则集 rules[].extensions）；无 format 门控或缺规则集
+    → 回退 ["*"] 全收，由 format 门控兜底校验。
+    """
+    if not rule_set_path:
+        return ["*"]
+    try:
+        import yaml
+
+        data = yaml.safe_load(Path(rule_set_path).read_text(encoding="utf-8")) or {}
+        exts: set[str] = set()
+        for rule in data.get("rules") or []:
+            if (
+                isinstance(rule, dict)
+                and rule.get("method") == "format"
+                and isinstance(rule.get("extensions"), list)
+            ):
+                exts.update(str(e).lstrip(".") for e in rule["extensions"])
+        return [f"*.{e}" for e in sorted(exts)] or ["*"]
+    except Exception:
+        return ["*"]
+
+
+async def _notify_web_completion(job_id: str, token: str | None) -> None:
+    """job 完成/失败后通知 web → web 异步投递 webhook 回调。best-effort（失败仅日志）。"""
+    if not token:
+        return
+    try:
+        cfg = load_config()
+        if not cfg.host:
+            return
+        import httpx
+
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.post(
+                f"{cfg.host}/api/v1/jobs/{job_id}/notify-completion",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+        LOG.info("job.notified", job_id=job_id, status_code=resp.status_code)
+    except Exception as exc:  # noqa: BLE001
+        LOG.warning("job.notify_failed", job_id=job_id, error=str(exc))
+
+
 async def run_job(job: EvalJob, input_dir: Path) -> None:
     """执行单个任务（input_dir 为已下载物化的输入目录）。"""
     settings = get_settings()
     job_output_dir = settings.workspace_dir / job.job_id
     package_dir = job_output_dir / "package"
+    token: str | None = None
 
     try:
+        rule_set_path = _resolve_rule_set_path(job)
+
         build_package(
             input_dir=input_dir,
             package_dir=package_dir,
             task_id=job.task_id,
             task_title=job.task_title or job.job_id,
             task_subject=job.task_subject,
+            file_patterns=_file_patterns_from_rule_set(rule_set_path),
         )
 
         result = await asyncio.to_thread(
             eval_packages,
             package_dir=package_dir,
-            rule_set_path=_rule_set_path(job.rule_set_id),
+            rule_set_path=rule_set_path,
             output_dir=job_output_dir / "workspace",
             project=job.project_id,
             llm_config_path=_llm_config_path(),
@@ -193,7 +270,7 @@ async def run_job(job: EvalJob, input_dir: Path) -> None:
 
         metrics = result.report.to_dict()
         # 透明度：把能力需求 + 被跳过的评估器折进 metrics._executor，供 GET /api/v1/jobs/:id 回显。
-        metrics["_executor"] = _eval_meta(result, job)
+        metrics["_executor"] = _eval_meta(result, job, rule_set_path)
         web_run_url = f"{settings.web_base_url}/run/{result.run_id}"
         async with make_sessionmaker()() as session:
             await mark_done(
@@ -203,6 +280,8 @@ async def run_job(job: EvalJob, input_dir: Path) -> None:
                 metrics=metrics,
                 web_run_url=web_run_url,
             )
+        # 通知 web → 投递 webhook 回调（best-effort）
+        await _notify_web_completion(job.job_id, token)
     except Exception as exc:  # noqa: BLE001
         LOG.exception("job.execution_failed", job_id=job.job_id, error=str(exc))
         error = {
@@ -211,3 +290,5 @@ async def run_job(job: EvalJob, input_dir: Path) -> None:
         }
         async with make_sessionmaker()() as session:
             await mark_failed(session, job.job_id, error=error)
+        # 失败也通知（token 可能在异常前已解析，best-effort）
+        await _notify_web_completion(job.job_id, token)

@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { api } from "../api/client"
 import type { DashboardProject, TrendPoint } from "../types"
 import { fmt3, num, timeAgo } from "../lib/format"
-import { METRIC_LABEL } from "../lib/eval"
+import { useScenarioDefaultsMap } from "../hooks/useScenarioDefaults"
 import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
 import { Label } from "@/components/shadcn/label"
@@ -18,17 +18,10 @@ import {
   DialogTitle,
 } from "@/components/shadcn/dialog"
 import { Sparkline } from "@/components/Sparkline"
-import { useCrumbs, useOrg } from "../components/AppShell"
-import { useToast } from "../components/toast"
+import { useCrumbs, useOrg } from "../context/navigation"
+import { useToast } from "../hooks/useToast"
 import { Page, PageHead, SemPill, type PillTone } from "../components/shared"
 import { Plus, RefreshCw } from "lucide-react"
-
-function healthColor(p: DashboardProject): { tone: PillTone; spark: string; label: string } {
-  const dr = p.latestRun?.dr
-  if (dr == null) return { tone: "neutral", spark: "var(--muted-foreground)", label: "未运行" }
-  if (dr >= 0.95) return { tone: "success", spark: "var(--chart-2)", label: "健康" }
-  return { tone: "warning", spark: "var(--chart-3)", label: "关注" }
-}
 
 export default function Dashboard() {
   const { activeOrg } = useOrg()
@@ -41,6 +34,36 @@ export default function Dashboard() {
   const [name, setName] = useState("")
   const [slug, setSlug] = useState("")
   const [creating, setCreating] = useState(false)
+
+  // 多场景：按各项目 latestRun 场景批量取 defs；每张卡用各自场景的 health/score 指标（零 courseware 硬编码）
+  const scenarioIds = useMemo(
+    () => [...new Set((projects ?? []).map((p) => p.latestRun?.scenarioId).filter((v): v is string => !!v))],
+    [projects],
+  )
+  const defsByScn = useScenarioDefaultsMap(scenarioIds)
+  const primaryMetricsOf = (p: DashboardProject) =>
+    (defsByScn[p.latestRun?.scenarioId ?? ""] ?? []).filter((d) => d.threshold != null)
+  const healthMetricOf = (p: DashboardProject) => primaryMetricsOf(p)[0]
+  const scoreMetricOf = (p: DashboardProject) => {
+    const pm = primaryMetricsOf(p)
+    return pm[pm.length - 1] ?? pm[0]
+  }
+  const drOf = (p: DashboardProject) => {
+    const h = healthMetricOf(p)
+    return h ? p.latestRun?.metrics?.[h.id] : undefined
+  }
+  const rewardOf = (p: DashboardProject) => {
+    const s = scoreMetricOf(p)
+    return s ? p.latestRun?.metrics?.[s.id] : undefined
+  }
+  function healthColor(p: DashboardProject): { tone: PillTone; spark: string; label: string } {
+    const thr = healthMetricOf(p)?.threshold
+    const v = drOf(p)
+    if (v == null || thr == null)
+      return { tone: "neutral", spark: "var(--muted-foreground)", label: "未运行" }
+    if (v >= thr) return { tone: "success", spark: "var(--chart-2)", label: "健康" }
+    return { tone: "warning", spark: "var(--chart-3)", label: "关注" }
+  }
 
   useEffect(() => {
     setCrumbs([{ label: "项目看板" }])
@@ -60,7 +83,15 @@ export default function Dashboard() {
         ps.map(async (p): Promise<[string, number[]]> => {
           try {
             const t: TrendPoint[] = await api.projectTrends(p.id, 8)
-            return [p.id, t.map((x) => x.DR).filter((v): v is number => v != null)]
+            return [
+              p.id,
+              t
+                .map((x) => {
+                  const hm = healthMetricOf(p)
+                  return hm ? x.metrics?.[hm.id] : undefined
+                })
+                .filter((v): v is number => v != null),
+            ]
           } catch {
             return [p.id, []]
           }
@@ -140,8 +171,14 @@ export default function Dashboard() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((p) => {
             const h = healthColor(p)
-            const drVal = p.latestRun?.dr
-            const drCls = drVal == null ? "text-muted-foreground" : drVal >= 0.95 ? "text-emerald-400" : "text-yellow-400"
+            const drVal = drOf(p)
+            const hThr = healthMetricOf(p)?.threshold
+            const drCls =
+              drVal == null || hThr == null
+                ? "text-muted-foreground"
+                : drVal >= hThr
+                  ? "text-emerald-400"
+                  : "text-yellow-400"
             return (
               <Link key={p.id} to={`/project/${p.id}`} className="block">
                 <Card className="transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md">
@@ -171,18 +208,18 @@ export default function Dashboard() {
                     <div className="grid grid-cols-3 gap-2 border-y py-3.5">
                       <div>
                         <div className={`font-mono text-lg font-semibold tabular-nums ${drCls}`}>
-                          {fmt3(p.latestRun?.dr)}
+                          {fmt3(drOf(p))}
                         </div>
                         <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                          {METRIC_LABEL.DR}
+                          {healthMetricOf(p)?.name ?? "—"}
                         </div>
                       </div>
                       <div>
                         <div className="font-mono text-lg font-semibold tabular-nums">
-                          {fmt3(p.latestRun?.avgReward)}
+                          {fmt3(rewardOf(p))}
                         </div>
                         <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                          {METRIC_LABEL.Reward}
+                          {scoreMetricOf(p)?.name ?? "—"}
                         </div>
                       </div>
                       <div>

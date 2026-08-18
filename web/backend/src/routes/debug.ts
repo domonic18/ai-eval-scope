@@ -79,10 +79,11 @@ router.post(
     if (!Buffer.isBuffer(fileBytes) || fileBytes.length === 0) {
       throw new PlatformError("file body is empty", { status: 400, code: "INPUT_INVALID" })
     }
-    const ruleSetId = q.rule_set_id || "coursework-quality"
+    const ruleSetId = q.rule_set_id || ""
     const taskId = q.task_id?.trim() || undefined
     const taskTitle = q.task_title?.trim() || undefined
     const taskSubject = q.task_subject?.trim() || undefined
+    const packageRef = q.package_ref?.trim() || undefined
 
     const token = requireApiKey(req)
     const tenant = await resolveTenant(token)
@@ -91,6 +92,7 @@ router.post(
       filename,
       fileBytes,
       ruleSetId,
+      packageRef,
       taskId,
       taskTitle,
       taskSubject,
@@ -142,6 +144,22 @@ router.get(
       throw new PlatformError("job not found", { status: 404, code: "JOB_NOT_FOUND" })
     }
     res.json(job)
+  }),
+)
+
+// 速览（overview）：与第三方 /jobs/:jobId/overview 同结构，方便 /debug 页面调试
+router.get(
+  "/jobs/:jobId/overview",
+  requireAuth,
+  wrap(async (req, res) => {
+    const token = requireApiKey(req)
+    const tenant = await resolveTenant(token)
+    const svc = createEvalJobService(tenant)
+    const overview = await svc.overview(req.params.jobId)
+    if (!overview) {
+      throw new PlatformError("job not found", { status: 404, code: "JOB_NOT_FOUND" })
+    }
+    res.json(overview)
   }),
 )
 

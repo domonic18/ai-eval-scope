@@ -76,16 +76,15 @@
         "finished_at": { "type": ["string", "null"], "format": "date-time" },
         "metrics": {
           "type": "object",
-          "required": ["DR", "CPR", "avg_reward", "condR", "avg_time_ms"],
-          "properties": {
-            "DR": { "type": "number" },
-            "CPR": { "type": "number" },
-            "avg_reward": { "type": "number" },
-            "condR": { "type": "number" },
-            "avg_time_ms": { "type": "number" }
-          }
+          "description": "场景化运行指标：动态键值（键=MetricDefinition.id）。courseware 遗留键 DR/CPR/avg_reward/condR/avg_time_ms 仍接受以兼容旧评估器。",
+          "additionalProperties": { "type": "number" }
         },
         "total_samples": { "type": ["integer", "null"], "minimum": 0 },
+        "scenario_id": { "type": ["string", "null"] },
+        "package_id": { "type": ["string", "null"] },
+        "package_version": { "type": ["string", "null"] },
+        "run_config_snapshot_id": { "type": ["string", "null"] },
+        "run_config_snapshot": { "type": ["object", "null"] },
         "rule_set_version": { "type": ["string", "null"] },
         "sut_version": { "type": ["string", "null"] },
         "failure_breakdown": { "type": ["object", "null"] },
@@ -96,24 +95,21 @@
     },
     "sampleData": {
       "type": "object",
-      "required": [
-        "external_run_id",
-        "external_sample_id",
-        "s_format",
-        "s_common",
-        "s_soft",
-        "s_pref",
-        "reward"
-      ],
+      "required": ["external_run_id", "external_sample_id"],
       "properties": {
         "external_run_id": { "type": "string", "minLength": 1 },
         "external_sample_id": { "type": "string", "minLength": 1 },
         "status": { "type": ["string", "null"] },
-        "s_format": { "type": "number" },
-        "s_common": { "type": "number" },
-        "s_soft": { "type": "number" },
-        "s_pref": { "type": "number" },
-        "reward": { "type": "number" },
+        "metrics": {
+          "type": ["object", "null"],
+          "description": "场景化样本指标：动态键值（键=MetricDefinition.id）。",
+          "additionalProperties": { "type": "number" }
+        },
+        "s_format": { "type": ["number", "null"] },
+        "s_common": { "type": ["number", "null"] },
+        "s_soft": { "type": ["number", "null"] },
+        "s_pref": { "type": ["number", "null"] },
+        "reward": { "type": ["number", "null"] },
         "total_duration_ms": { "type": ["number", "null"] },
         "llm_calls": { "type": ["integer", "null"], "minimum": 0 },
         "token_usage": { "type": ["integer", "null"], "minimum": 0 },

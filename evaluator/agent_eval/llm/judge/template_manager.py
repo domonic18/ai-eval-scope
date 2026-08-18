@@ -17,6 +17,17 @@ logger = structlog.get_logger("template_manager")
 
 
 @dataclass
+class PromptVariable:
+    """Prompt 入参声明（arch/13 §8.1 variables[]）。"""
+
+    name: str
+    type: str = "string"
+    required: bool = True
+    default: Any = None
+    items: dict[str, Any] | None = None  # type=array 时的元素 schema
+
+
+@dataclass
 class JudgeDimension:
     """评分维度。"""
 
@@ -33,6 +44,10 @@ class JudgeTemplate:
 
     template_id: str
     name: str
+    # 场景包标识（Phase 0 新增，对齐 13 配置管理设计 §8）
+    scenario_id: str | None = None
+    package_id: str | None = None
+    namespace: str | None = None
     dimensions: list[JudgeDimension] = field(default_factory=list)
     system_prompt: str = ""
     user_prompt_template: str = ""
@@ -40,6 +55,11 @@ class JudgeTemplate:
     temperature: float = JUDGE_DEFAULTS.temperature
     seed: int = JUDGE_DEFAULTS.seed
     num_samples: int = JUDGE_DEFAULTS.num_samples
+    # Phase 1 补字段（对齐 arch/13 §8.1，PromptStore 抽象用）
+    variables: list[PromptVariable] = field(default_factory=list)
+    version: str | None = None
+    labels: list[str] = field(default_factory=list)
+    content_hash: str | None = None
 
 
 class TemplateManager:
@@ -140,9 +160,22 @@ class TemplateManager:
             for d in data.get("dimensions", [])
         ]
 
+        variables = [
+            PromptVariable(
+                name=v["name"],
+                type=v.get("type", "string"),
+                required=v.get("required", True),
+                default=v.get("default"),
+                items=v.get("items"),
+            )
+            for v in data.get("variables", [])
+        ]
         template = JudgeTemplate(
             template_id=data["template_id"],
             name=data.get("name", data["template_id"]),
+            scenario_id=data.get("scenario"),
+            package_id=data.get("package_id"),
+            namespace=data.get("namespace"),
             dimensions=dimensions,
             system_prompt=data.get("system_prompt", ""),
             user_prompt_template=data.get("user_prompt_template", ""),
@@ -150,5 +183,9 @@ class TemplateManager:
             temperature=data.get("temperature", JUDGE_DEFAULTS.temperature),
             seed=data.get("seed", JUDGE_DEFAULTS.seed),
             num_samples=data.get("num_samples", JUDGE_DEFAULTS.num_samples),
+            variables=variables,
+            version=data.get("version"),
+            labels=data.get("labels", []),
+            content_hash=data.get("content_hash"),
         )
         self._templates[template.template_id] = template

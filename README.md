@@ -9,10 +9,49 @@ Agent 能力评估系统 — 基于 Agent-Driven 架构的评测框架。
 
 以课件生成为切入点，支持代码生成、RAG、对话等多类 Agent 评估。
 
+## 核心特性
+
+- **数据驱动场景抽象**：聚合策略、指标定义、评估器集合全来自场景包配置（YAML），不写死任何场景
+- **场景可插拔**：新增场景只需写包（manifest + policy + rules + prompts + 可选专属评估器），无需改代码（见 [场景扩展指南](./docs/arch/14场景扩展指南.md)）
+- **多模态评估**：格式门控 + LLM Judge + 视觉截图评估（Playwright headless Chromium）
+- **可观测平台**：仿 Langfuse 的多租户平台，可视化运行/趋势/指标/样本详情 + Webhook 回调
+- **第三方对接**：HTTP API + MCP 工具 + Webhook 推送，无需安装 Python SDK
+
+## 架构概览
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                        agent-eval-system                            │
+├─────────────────┬──────────────────────┬───────────────────────────┤
+│   evaluator/    │       web/           │       executor/            │
+│  (Python CLI)   │  (TS 可观测平台)     │  (Python SCF/Worker)       │
+│                 │                      │                           │
+│ • 场景包 + CLI  │ • React 前端         │ • 从 DB 认领 job           │
+│ • 评估引擎      │ • Express 后端       │ • 拉取场景包               │
+│ • LLM Judge     │ • PostgreSQL         │ • 执行评估                 │
+│ • 视觉评估      │ • MinIO / COS        │ • 结果回流 + Webhook       │
+│ • observability │ • API Key 鉴权       │                           │
+│ • package CLI   │ • 多租户隔离         │                           │
+└─────────────────┴──────────────────────┴───────────────────────────┘
+         │                │                        │
+         └────────────────┴────────────────────────┘
+                          │
+                    共享 PostgreSQL（eval_jobs + runs + samples + scenarios）
+```
+
+## 已内置场景
+
+| 场景 | 描述 | 指标 |
+|------|------|------|
+| **courseware** | 课件质量评估（HTML/MD） | document_rate / constraint_pass_rate / soft / pref / reward |
+| **code** | 代码生成质量评估（.py） | delivery_rate / correctness / style / reward |
+
+新增自己的场景（RAG / 对话 / 自定义）见 [场景扩展指南](./docs/arch/14场景扩展指南.md)。
+
 ## 安装
 
 ```bash
-git clone https://github.com/domonic18/ai-eval-scope.git && cd agent-eval-system
+git clone https://github.com/domonic18/ai-eval-scope.git && cd agent-eval-system/evaluator
 uv sync                      # 基础安装
 uv sync --extra dev          # 开发依赖
 uv sync --extra llm          # LLM 依赖（可选）
@@ -40,10 +79,10 @@ uv run agent-eval pack \
 # ② 评估
 uv run agent-eval eval \
   --package-dir workspace/packages/大单元学习总导/ \
-  --rule-set agent_eval/assets/rules/default_rule_set.yaml
+  --rule-set agent_eval/assets/rules/coursework-quality.yaml
 
 # ③ 查看报告
-cat ../workspace/runs/*/reports/summary.md
+cat workspace/runs/*/reports/summary.md
 ```
 
 不配置 LLM 时，Rule-based 评估器（格式门控 + 常识阶段的规则/事实/公式检查）正常运行；LLM Judge 评估器（质量阶段）自动降级为 `score=0.7`，逻辑一致性评估器降级为规则匹配；多模态视觉评估（`vision.quality`）需配置视觉模型，未配置时跳过。
@@ -114,9 +153,19 @@ cp agent_eval/assets/configs/llm_config.example.yaml agent_eval/assets/configs/l
 - `runs/{id}/reports/summary.md` — 聚合报告（DR/CPR/Reward）
 - `cache/evaluation_cache.json` — 跨运行缓存
 
+### 新增评估场景
+
+系统是**场景无关 + 数据驱动**的——聚合策略、指标定义、评估器集合全来自场景包配置，不写死任何场景。除内置的课件（courseware）外，已内置 **代码生成（code）** 场景作为可运行范例（含专属 `code.correctness`/`code.style` LLM Judge，经 `entry_points` 随包加载）。
+
+新增自己的场景（RAG / 对话 / 自定义）见 [场景扩展指南](./docs/arch/14场景扩展指南.md)：写包（清单 + 指标策略 + 规则集 + 提示词），声明 `entry_points`（如需专属评估器），导入即可端到端评估。
+
 ## 可观测平台
 
-项目内置仿 Langfuse 的多租户可观测平台（`web/`），可视化追踪评估运行、管理项目与 API Key、下钻指标与样本。本地一键启动：
+项目内置仿 Langfuse 的多租户可观测平台（`web/`），可视化追踪评估运行、管理项目与 API Key、下钻指标与样本。
+
+**特性**：场景化指标动态渲染 · Webhook 回调（HMAC 签名 + 投递历史 + 详情查看）· MCP 工具接入 · 跨运行趋势对比 · 多场景支持。
+
+本地一键启动：
 
 ```bash
 cp .env.example .env          # 填入 DB / 对象存储 / 安全密钥

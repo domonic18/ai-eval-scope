@@ -73,14 +73,8 @@
         "finished_at": { "type": ["string", "null"], "format": "date-time" },
         "metrics": {
           "type": "object",
-          "required": ["DR", "CPR", "avg_reward", "condR", "avg_time_ms"],
-          "properties": {
-            "DR": { "type": "number" },
-            "CPR": { "type": "number" },
-            "avg_reward": { "type": "number" },
-            "condR": { "type": "number" },
-            "avg_time_ms": { "type": "number" }
-          }
+          "description": "场景化指标 dict（key=metric_id，如 code:delivery_rate / courseware:document_rate）+ avg_time_ms",
+          "additionalProperties": { "type": "number" }
         },
         "total_samples": { "type": ["integer", "null"], "minimum": 0 },
         "rule_set_version": { "type": ["string", "null"] },
@@ -93,15 +87,16 @@
     },
     "sampleData": {
       "type": "object",
-      "required": ["external_run_id", "external_sample_id", "s_format", "s_common", "s_soft", "s_pref", "reward"],
+      "required": ["external_run_id", "external_sample_id", "reward"],
       "properties": {
         "external_run_id": { "type": "string", "minLength": 1 },
         "external_sample_id": { "type": "string", "minLength": 1 },
         "status": { "type": ["string", "null"] },
-        "s_format": { "type": "number" },
-        "s_common": { "type": "number" },
-        "s_soft": { "type": "number" },
-        "s_pref": { "type": "number" },
+        "stage_metrics": {
+          "type": "object",
+          "description": "场景化样本指标 dict（key=StageWeight.id + reward）",
+          "additionalProperties": { "type": "number" }
+        },
         "reward": { "type": "number" },
         "total_duration_ms": { "type": ["number", "null"] },
         "llm_calls": { "type": ["integer", "null"], "minimum": 0 },

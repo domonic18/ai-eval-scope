@@ -8,7 +8,7 @@
 
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios"
 import { clearSession, getToken, saveSession } from "../store/auth"
-import type { DebugJobStatus, ProjectSample, SampleTrendPoint } from "../types"
+import type { DebugJobStatus, MetricDef, ProjectSample, SampleTrendPoint } from "../types"
 
 export const http = axios.create({
   baseURL: "/api/v1",
@@ -60,8 +60,36 @@ export const api = {
   async project(id: string) {
     return (await http.get(`/projects/${id}`)).data.project
   },
-  async updateProject(projectId: string, data: { isPublic?: boolean }) {
+  async updateProject(
+    projectId: string,
+    data: { isPublic?: boolean; webhookUrl?: string | null; webhookSecret?: string },
+  ) {
     return (await http.patch(`/projects/${projectId}`, data)).data.project
+  },
+  async testWebhook(projectId: string): Promise<{ sent: boolean; url: string | null }> {
+    return (await http.post(`/projects/${projectId}/test-webhook`)).data
+  },
+  async getWebhookDeliveries(
+    projectId: string,
+    limit = 20,
+  ): Promise<
+    Array<{
+      id: string
+      jobId: string | null
+      event: string
+      url: string
+      attempt: number
+      success: boolean
+      statusCode: number | null
+      error: string | null
+      durationMs: number | null
+      requestBody: unknown | null
+      responseBody: string | null
+      createdAt: string
+    }>
+  > {
+    return (await http.get(`/projects/${projectId}/webhook-deliveries?limit=${limit}`)).data
+      .deliveries
   },
   async createProject(orgId: string, name: string, slug: string) {
     return (await http.post(`/orgs/${orgId}/projects`, { name, slug })).data.project
@@ -136,6 +164,27 @@ export const api = {
   async runDetail(runId: string) {
     return (await http.get(`/runs/${runId}`)).data.run
   },
+  async runOverview(runId: string): Promise<{
+    verdict?: "pass" | "fail"
+    score?: number
+    metrics?: Record<string, number>
+    metrics_raw?: Record<string, number>
+    summary?: { total: number; passed: number; failed: number; skipped: number }
+    summary_report?: {
+      headline?: string
+      highlights?: string[]
+      issues?: Array<{ title?: string; detail?: string; severity?: string; files?: string[] }>
+      suggestion?: string
+    } | null
+    items: Array<{
+      external_sample_id: string
+      score: number
+      passed: boolean
+      failures: Array<{ name: string; reason: string; top_issues?: string[]; files?: string[] }>
+    }>
+  }> {
+    return (await http.get(`/runs/${runId}/overview`)).data.overview
+  },
   async sampleDetail(runId: string, sampleId: string) {
     return (await http.get(`/runs/${runId}/samples/${sampleId}`)).data.sample
   },
@@ -173,7 +222,7 @@ export const api = {
   async submitDebugJob(
     file: File,
     ruleSetId: string,
-    opts?: { taskId?: string; taskTitle?: string; apiKey?: string },
+    opts?: { packageRef?: string; taskId?: string; taskTitle?: string; apiKey?: string },
   ): Promise<{
     job_id: string
     status: string
@@ -181,6 +230,7 @@ export const api = {
     debug?: { request: Record<string, unknown>; response: Record<string, unknown> }
   }> {
     const qs = new URLSearchParams({ filename: file.name, rule_set_id: ruleSetId })
+    if (opts?.packageRef) qs.set("package_ref", opts.packageRef)
     if (opts?.taskId) qs.set("task_id", opts.taskId)
     if (opts?.taskTitle) qs.set("task_title", opts.taskTitle)
     if (opts?.apiKey) qs.set("api_key", opts.apiKey)
@@ -197,11 +247,119 @@ export const api = {
     const suffix = qs.toString() ? `?${qs.toString()}` : ""
     return (await http.get(`/debug/jobs/${jobId}${suffix}`)).data
   },
+  async getDebugOverview(jobId: string, apiKey?: string): Promise<Record<string, unknown>> {
+    const qs = new URLSearchParams()
+    if (apiKey) qs.set("api_key", apiKey)
+    const suffix = qs.toString() ? `?${qs.toString()}` : ""
+    return (await http.get(`/debug/jobs/${jobId}/overview${suffix}`)).data
+  },
   // 规则集目录（GET /api/v1/rule-sets，构建期静态 catalog，含派生能力 llm/vision/kb）
   async debugRuleSets(): Promise<
     Array<{ id: string; name: string; description: string; capabilities: string[]; scopes: string[] }>
   > {
     return (await http.get("/debug/rule-sets")).data.rule_sets
+  },
+
+  /* ── 配置管理（场景包，Phase 3/4）─────────────────── */
+  async scenarios(): Promise<Scenario[]> {
+    return (await http.get("/scenarios")).data.scenarios as Scenario[]
+  },
+  async createScenario(id: string, name: string, description?: string): Promise<Scenario> {
+    return (await http.post("/scenarios", { id, name, description })).data.scenario
+  },
+  async scenarioCatalog(scenarioId: string): Promise<ScenarioCatalog> {
+    return (await http.get(`/scenarios/${scenarioId}/catalog`)).data as ScenarioCatalog
+  },
+  /** 场景默认指标定义 + 聚合策略（GET /scenarios/:id/defaults，前端无 hardcode）。 */
+  async scenarioDefaults(scenarioId: string): Promise<MetricDef[]> {
+    return (await http.get(`/scenarios/${scenarioId}/defaults`)).data.metric_definitions as MetricDef[]
+  },
+  async scenarioAggregationPolicy(scenarioId: string): Promise<Record<string, unknown> | null> {
+    return (await http.get(`/scenarios/${scenarioId}/defaults`)).data.aggregation_policy ?? null
+  },
+  /** 一次 GET 拿完整 defaults（metric_definitions + aggregation_policy），供编辑器 loadDoc 组装。 */
+  async scenarioDefaultsContent(
+    scenarioId: string,
+    version?: string,
+  ): Promise<{ metric_definitions: MetricDef[]; aggregation_policy: Record<string, unknown> | null }> {
+    const params = version ? `?version=${encodeURIComponent(version)}` : ""
+    return (await http.get(`/scenarios/${scenarioId}/defaults${params}`)).data
+  },
+  /** 发布场景默认配置新版本（指标定义 + 聚合策略版本化；POST /scenarios/:id/defaults）。 */
+  async publishDefaults(
+    scenarioId: string,
+    input: {
+      version: string
+      labels?: string[]
+      metric_definitions?: unknown
+      aggregation_policy?: unknown
+    },
+  ): Promise<{ asset: { assetId: string; version: string } }> {
+    return (await http.post(`/scenarios/${scenarioId}/defaults`, input)).data
+  },
+  async listDefaultsVersions(
+    scenarioId: string,
+  ): Promise<Array<{ version: string; labels: string[]; contentHash: string; createdAt: string }>> {
+    return (await http.get(`/scenarios/${scenarioId}/defaults/versions`)).data.versions
+  },
+  async promoteDefaultsLabels(scenarioId: string, version: string, labels: string[]): Promise<void> {
+    await http.post(`/scenarios/${scenarioId}/defaults/versions/${version}/labels`, { labels })
+  },
+  /** 资产完整内容（评测规则浏览器/编辑器 diff 用）。 */
+  async assetContent(
+    scenarioId: string,
+    kind: AssetKind,
+    assetId: string,
+    version?: string,
+  ): Promise<Record<string, unknown>> {
+    const params = version ? `?version=${encodeURIComponent(version)}` : ""
+    return (await http.get(`/scenarios/${scenarioId}/${kind}/${assetId}/content${params}`)).data
+      .content
+  },
+  async publishPackage(
+    scenarioId: string,
+    input: {
+      asset_id: string
+      version: string
+      labels?: string[]
+      name?: string
+      description?: string
+      content?: Record<string, unknown>
+    },
+  ): Promise<{ package: { packageId: string; scenarioId: string } }> {
+    return (await http.post(`/scenarios/${scenarioId}/packages`, input)).data
+  },
+  async publishAsset(
+    scenarioId: string,
+    kind: AssetKind,
+    input: {
+      asset_id: string
+      version: string
+      labels?: string[]
+      content?: Record<string, unknown>
+      namespace?: string
+      role?: string
+      backend_type?: string
+      backend_config?: Record<string, unknown>
+    },
+  ): Promise<{ asset: { assetId: string; version: string } }> {
+    return (await http.post(`/scenarios/${scenarioId}/${kind}`, input)).data
+  },
+  async listAssetVersions(
+    scenarioId: string,
+    kind: AssetKind,
+    assetId: string,
+  ): Promise<Array<{ version: string; labels: string[]; contentHash: string; createdAt: string }>> {
+    return (await http.get(`/scenarios/${scenarioId}/${kind}/${assetId}/versions`)).data.versions
+  },
+  async promoteAssetLabels(
+    scenarioId: string,
+    kind: AssetKind,
+    assetId: string,
+    version: string,
+    labels: string[],
+  ): Promise<void> {
+    await http.post(`/scenarios/${scenarioId}/${kind}/${assetId}/versions/${version}/labels`, { labels })
   },
 
   /* ── 超管后台 ─────────────────────────────────────── */
@@ -212,9 +370,7 @@ export const api = {
     return (await http.get(`/admin/stats/trends?limit=${limit}`)).data as Array<{
       run_id: string
       created_at: string
-      DR: number
-      CPR: number
-      Reward: number
+      metrics?: Record<string, number> | null
     }>
   },
   async adminScoreDistribution() {
@@ -319,6 +475,80 @@ export const api = {
       size: number
     }
   },
+  async adminListLlmModels(): Promise<LlmModelVO[]> {
+    return (await http.get("/admin/llm-models")).data
+  },
+  async adminCreateLlmModel(input: LlmModelInput): Promise<LlmModelVO> {
+    return (await http.post("/admin/llm-models", input)).data
+  },
+  async adminUpdateLlmModel(id: string, input: Partial<LlmModelInput>): Promise<LlmModelVO> {
+    return (await http.patch(`/admin/llm-models/${id}`, input)).data
+  },
+  async adminDeleteLlmModel(id: string): Promise<void> {
+    await http.delete(`/admin/llm-models/${id}`)
+  },
+  async adminSetDefaultLlmModel(id: string): Promise<LlmModelVO> {
+    return (await http.post(`/admin/llm-models/${id}/set-default`)).data
+  },
+  async adminTestLlmModel(id: string): Promise<{ status: "success" | "failed"; detail: string; testedAt: string }> {
+    return (await http.post(`/admin/llm-models/${id}/test`)).data
+  },
+  async adminExportLlmYaml(): Promise<string> {
+    return (await http.post("/admin/llm-models/export-yaml", {}, { responseType: "text", transformResponse: (x) => x })).data
+  },
+  async aiOptimizePrompt(input: {
+    instruction: string
+    scenario?: string
+    currentSystem?: string
+    currentUserPrompt?: string
+  }): Promise<{ system: string; userPrompt: string }> {
+    return (await http.post("/ai/optimize-prompt", input)).data
+  },
+  async aiRecommendRules(input: {
+    scenario?: string
+    cascade?: Array<{ stage: string; name?: string }>
+    existingRules?: Array<{ name?: string; method?: string; stage?: string }>
+  }): Promise<{ rules: Record<string, unknown>[] }> {
+    return (await http.post("/ai/recommend-rules", input)).data
+  },
+  async aiGenerateMetrics(input: { scenario?: string; description: string }): Promise<{ metricDefinitions: Record<string, unknown>[] }> {
+    return (await http.post("/ai/generate-metrics", input)).data
+  },
+  async aiGeneratePolicy(input: {
+    scenario?: string
+    cascade?: Array<{ stage: string; name?: string }>
+    metricDefinitions?: Array<{ id?: string; name?: string; threshold?: number | null; unit?: string | null }>
+  }): Promise<{ aggregationPolicy: Record<string, unknown> | null }> {
+    return (await http.post("/ai/generate-policy", input)).data
+  },
+}
+
+export type AssetKind = "rule-sets" | "prompts" | "datasets"
+
+export interface Scenario {
+  id: string
+  name: string
+  description: string | null
+  createdAt: string
+}
+export interface CatalogEntry {
+  asset_id: string
+  version: string
+  labels: string[]
+  name: string | null
+  description: string | null
+  accept?: string[]
+}
+export interface DatasetCatalogEntry extends CatalogEntry {
+  role: string
+  backend_type: string
+}
+export interface ScenarioCatalog {
+  scenario: { id: string; name: string; description: string | null }
+  rule_sets: CatalogEntry[]
+  prompts: CatalogEntry[]
+  datasets: DatasetCatalogEntry[]
+  packages: CatalogEntry[]
 }
 
 export interface AdminUser {
@@ -354,13 +584,13 @@ export interface AdminProject {
 export interface AdminRun {
   id: string
   externalRunId: string
+  scenarioId: string | null
   mode: string
   status: string
-  dr: number
-  cpr: number
-  avgReward: number
   totalSamples: number
   createdAt: string
+  /** Phase 5 场景化指标（与 dr/cpr 并存，P5-8 清理遗留列后为唯一来源）*/
+  metrics?: Record<string, number>
   project: { id: string; name: string; org: { id: string; name: string } }
 }
 export interface AdminArtifact {
@@ -381,6 +611,34 @@ export interface AdminAuditRow {
   targetType: string | null
   targetId: string | null
   createdAt: string
+}
+
+/* ── LLM 模型配置（docs/arch/13）+ 配置资产 AI 生成 ──────────── */
+export interface LlmModelVO {
+  id: string
+  name: string
+  provider: string // openai | anthropic
+  baseUrl: string | null
+  apiKeyMasked: string
+  modelName: string
+  isActive: boolean
+  isDefault: boolean
+  extra: Record<string, unknown> | null
+  lastTestedAt: string | null
+  lastTestStatus: string | null // success | failed | null
+  lastTestError: string | null
+  createdAt: string
+  updatedAt: string
+}
+export interface LlmModelInput {
+  name: string
+  provider: string
+  baseUrl?: string | null
+  apiKey?: string
+  modelName: string
+  isActive?: boolean
+  isDefault?: boolean
+  extra?: Record<string, unknown> | null
 }
 
 export { saveSession }

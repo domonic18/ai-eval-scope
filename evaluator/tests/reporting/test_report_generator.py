@@ -25,7 +25,7 @@ class TestTaskReport:
         assert isinstance(md, str)
         assert "task_001" in md
         assert "Reward" in md
-        assert "格式门控" in md
+        assert "format" in md  # stage_id（去 _STAGE_LABELS 硬编码）
         assert "✅" in md
 
     def test_generate_task_report_fail(self, sample_result_fail: SampleResult) -> None:
@@ -56,10 +56,10 @@ class TestTaskReport:
         gen = ReportGenerator()
         md, _ = gen.generate_task_report(sample_result_pass)
 
-        assert "S_format" in md
-        assert "S_common" in md
-        assert "S_soft" in md
-        assert "S_pref" in md
+        assert "得分概览" in md
+        assert "soft" in md
+        assert "pref" in md
+        assert "reward" in md
 
 
 class TestSummaryReport:
@@ -72,9 +72,9 @@ class TestSummaryReport:
 
         assert isinstance(md, str)
         assert "聚合报告" in md
-        assert "DR" in md
-        assert "CPR" in md
-        assert "Reward" in md
+        assert "格式合格率" in md  # metric_definitions.name
+        assert "内容合格率" in md
+        assert "综合得分" in md
 
     def test_summary_metrics_table(self, metrics_report: MetricsReport) -> None:
         """聚合报告包含指标表格。"""
@@ -116,7 +116,7 @@ class TestSummaryReport:
 
         assert "run_id" in json_dict
         assert "metrics" in json_dict
-        assert json_dict["metrics"]["DR"] == 0.5
+        assert json_dict["metrics"]["courseware:document_rate"] == 0.5
         assert "failure_breakdown" in json_dict
 
     def test_summary_json_serializable(self, metrics_report: MetricsReport) -> None:
@@ -250,10 +250,7 @@ class TestLLMJudgeRendering:
                     gate_passed=True,
                 ),
             },
-            s_format=1.0,
-            s_common=1.0,
-            s_soft=0.85,
-            s_pref=0.0,
+            stage_metrics={"reward": 1.85, "soft": 0.85},
             reward=1.85,
             total_duration_ms=100.0,
         )
@@ -298,10 +295,7 @@ class TestLLMJudgeRendering:
                     gate_passed=True,
                 ),
             },
-            s_format=1.0,
-            s_common=1.0,
-            s_soft=0.0,
-            s_pref=0.7,
+            stage_metrics={"reward": 1.7, "pref": 0.7},
             reward=1.7,
             total_duration_ms=50.0,
         )
@@ -328,10 +322,7 @@ class TestEmptyConstraintResults:
                     gate_passed=True,
                 ),
             },
-            s_format=1.0,
-            s_common=0.0,
-            s_soft=0.0,
-            s_pref=0.0,
+            stage_metrics={"reward": 1.0},
             reward=1.0,
             total_duration_ms=10.0,
         )

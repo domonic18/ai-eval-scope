@@ -17,6 +17,9 @@ from agent_eval.evaluation.models import (
     MetricsReport,
     SampleResult,
 )
+from agent_eval.evaluation.scenario.models import ScenarioConfig
+from agent_eval.observability.snapshot import build_snapshot_with_hash
+from agent_eval.rules.models import RuleSet
 
 
 def _new_event_id() -> str:
@@ -34,9 +37,19 @@ def build_run_event(
     sut_version: str | None = None,
     langfuse_trace_id: str | None = None,
     langfuse_host: str | None = None,
+    rule_set: RuleSet | None = None,
+    scenario_config: ScenarioConfig | None = None,
+    summary_report: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """MetricsReport → run 事件。"""
+    """MetricsReport → run 事件。
+
+    Phase 5：附带 scenario_id/package_id/package_version + 运行配置快照（inline），
+    并在 metrics 中同时给出 courseware:* 场景化指标键（与 metric_definitions 对齐）。
+    """
     external_run_id = run_id or report.run_id
+    snapshot = build_snapshot_with_hash(
+        rule_set, scenario_config=scenario_config, run_id=external_run_id
+    )
     return {
         "event_id": _new_event_id(),
         "type": "run",
@@ -46,21 +59,22 @@ def build_run_event(
             "status": status,
             "finished_at": finished_at,
             "metrics": {
-                "DR": report.dr,
-                "CPR": report.cpr,
-                "avg_reward": report.avg_reward,
-                "avg_soft": report.avg_soft,
-                "avg_pref": report.avg_pref,
-                "condR": report.cond_r,
+                # 场景化指标 dict（key=metric_id，与 metric_definitions.id 对齐）
+                **report.metrics,
                 "avg_time_ms": report.avg_time_ms,
             },
             "total_samples": report.total_samples,
+            "scenario_id": snapshot["scenario_id"],
+            "package_id": snapshot["package"]["id"],
+            "package_version": snapshot["package"]["version"],
+            "run_config_snapshot": snapshot,
             "rule_set_version": rule_set_version,
             "sut_version": sut_version,
             "failure_breakdown": dict(report.failure_breakdown) or None,
             "thresholds": dict(report.thresholds) or None,
             "langfuse_trace_id": langfuse_trace_id,
             "langfuse_host": langfuse_host,
+            "summary_report": summary_report,
         },
     }
 
@@ -79,10 +93,8 @@ def build_sample_event(
             "external_sample_id": sample.sample_id,
             "content_hash": sample.content_hash,
             "status": sample.status.value,
-            "s_format": sample.s_format,
-            "s_common": sample.s_common,
-            "s_soft": sample.s_soft,
-            "s_pref": sample.s_pref,
+            # 场景化样本指标（权威）：key = StageWeight.id + reward
+            "stage_metrics": dict(sample.stage_metrics),
             "reward": sample.reward,
             "total_duration_ms": sample.total_duration_ms,
             "llm_calls": sample.llm_calls,

@@ -34,6 +34,7 @@ export interface SubmitInput {
   inputObjectKey?: string
   // 元数据
   ruleSetId: string
+  packageRef?: string // 场景包引用 scenario/package[:label]；调用方须显式提供，否则 job 落 packageRef=null 被 executor 拒绝（S2-D）
   taskId?: string
   taskTitle?: string
   taskSubject?: string
@@ -60,6 +61,7 @@ export interface JobDto {
   input_kind: string
   scope: string
   rule_set_id: string
+  package_ref: string | null
   task_id: string | null
   task_title: string | null
   task_subject: string | null
@@ -82,6 +84,7 @@ export function serializeJob(job: EvalJob): JobDto {
     input_kind: job.inputKind,
     scope: job.scope,
     rule_set_id: job.ruleSetId,
+    package_ref: job.packageRef,
     task_id: job.taskId,
     task_title: job.taskTitle,
     task_subject: job.taskSubject,
@@ -112,14 +115,21 @@ export interface OverviewFailure {
   name: string
   reason: string
   top_issues?: string[]
-  /** 该约束涉及的源文件相对路径（docs/arch/15 §4.1 details.source_files 聚合） */
+  /** 该约束涉及的源文件相对路径（docs/arch/13 §4.1 details.source_files 聚合） */
   files?: string[]
+  /** 目录模式（大单元）模块级归因（docs/arch/04 §5.5.3，按模块评估时填充） */
+  module_results?: Array<Record<string, unknown>>
 }
 export interface OverviewItem {
   external_sample_id: string
   score: number
   passed: boolean
   failures: OverviewFailure[]
+}
+export interface OverviewMetric {
+  value: number
+  threshold: number | null
+  passed: boolean | null
 }
 export interface OverviewResult {
   job_id: string
@@ -129,9 +139,10 @@ export interface OverviewResult {
   error: unknown
   verdict?: "pass" | "fail"
   score?: number
-  metrics?: { DR: number; CPR: number; condR: number; avg_time_ms: number }
+  metrics?: Record<string, OverviewMetric>
+  metrics_raw?: Record<string, number>
   summary?: { total: number; passed: number; failed: number; skipped: number }
-  dimension_pass?: { format: number; commonsense: number; soft: number; preference: number }
+  summary_report?: Record<string, unknown> | null
   items: OverviewItem[]
 }
 
@@ -139,33 +150,26 @@ type OverviewSample = {
   id: string
   externalSampleId: string
   status: string
-  reward: number
-  sFormat: number
-  sCommon: number
-  sSoft: number
-  sPref: number
-  constraintResults: { name: string; reason: string; tier: string; details: unknown }[]
+  reward: number | null
+  sFormat: number | null
+  sCommon: number | null
+  sSoft: number | null
+  sPref: number | null
+  metrics: Record<string, number> | null // Phase 5 场景化样本指标（权威）
+  constraintResults: {
+    name: string
+    reason: string
+    tier: string
+    details: unknown
+    moduleResults: Array<Record<string, unknown>> | null
+  }[]
 }
 type OverviewRun = {
   externalRunId: string
-  dr: number
-  cpr: number
-  condR: number
-  avgReward: number
-  avgTimeMs: number
+  metrics: Record<string, number> | null // Phase 5 场景化指标 JSONB（权威，键为 MetricDefinition.id）
   totalSamples: number
   thresholds: unknown
   samples: OverviewSample[]
-}
-
-/** 阈值容错取数：兼容 DR/dr、CPR/cpr、avg_reward/avgReward/Reward 多种键；缺失给默认。 */
-function thresholdOf(t: unknown, keys: string[], fallback: number): number {
-  const obj = (t ?? {}) as Record<string, unknown>
-  for (const k of keys) {
-    const v = obj[k]
-    if (typeof v === "number" && Number.isFinite(v)) return v
-  }
-  return fallback
 }
 
 function isPassStatus(status: string): boolean {
@@ -175,7 +179,7 @@ function isPassStatus(status: string): boolean {
 /**
  * 从约束 details.dimensions[].issues 提取关键扣分点（desc），用于速览。
  * 仅取 high/medium（low 视为小瑕疵不进速览），按 high→medium 排序，最多 3 条。
- * details 形态见 docs/arch/14 §五（质量约束有 dimensions；硬约束无则返回 []）。
+ * details 形态见 docs/arch/13 §五（质量约束有 dimensions；硬约束无则返回 []）。
  */
 function extractTopIssues(details: unknown): string[] {
   const d = details as { dimensions?: { issues?: { desc: string; severity?: string }[] }[] } | null
@@ -194,7 +198,7 @@ function extractTopIssues(details: unknown): string[] {
 }
 
 /**
- * 从约束 details.source_files 提取涉及的源文件相对路径（docs/arch/15 §4.1）。
+ * 从约束 details.source_files 提取涉及的源文件相对路径（docs/arch/13 §4.1）。
  * 供速览 failures[].files，让第三方/MCP 调用方也能定位文件。
  */
 function extractSourceFiles(details: unknown): string[] {
@@ -210,10 +214,11 @@ function extractSourceFiles(details: unknown): string[] {
 }
 
 /**
- * 纯函数：由 run（含样本 + 未通过约束）构造速览 DTO。
- * - verdict：核心指标达标（DR/CPR/Reward，阈值取 run.thresholds 或默认 0.95/0.9/0.8）
- *   且无 hard_gate 失败 → pass；否则 fail。
- * - dimension_pass：各阶段达标样本数（与前端 lib/eval.tsx 口径一致：format≥1 / commonsense>0 / soft≥0.6 / pref≥0.6）。
+ * 纯函数：由 run（含样本 + 未通过约束）构造速览 DTO（场景化，数据驱动）。
+ * - metrics：遍历 run.metrics（key=metric_id），配 run.thresholds（{threshold, unit}），
+ *   输出 {id: {value, threshold, passed}}。不 hardcode 任何指标键。
+ * - verdict：所有声明了 threshold 的指标均达标，且无 hard_gate 失败 → pass。
+ * - score：首个 unit=score 且有 threshold 的指标值（courseware 下为 reward）。
  */
 export function buildJobOverview(
   base: Pick<OverviewResult, "job_id" | "run_id" | "status" | "web_run_url" | "error">,
@@ -224,43 +229,54 @@ export function buildJobOverview(
   const failedN = samples.filter((s) => s.status === "fail" || s.status === "failed").length
   const skippedN = samples.filter((s) => s.status === "skip" || s.status === "skipped").length
 
+  // 动态指标：遍历 run.metrics（key=metric_id），配 thresholds（{threshold, unit}）
+  const metrics: Record<string, OverviewMetric> = {}
+  const thresholds = (run.thresholds ?? {}) as Record<string, { threshold?: number; unit?: string }>
+  let scoreValue: number | undefined
+  for (const [id, raw] of Object.entries(run.metrics ?? {})) {
+    if (typeof raw !== "number" || !Number.isFinite(raw)) continue
+    const meta = thresholds[id]
+    const threshold =
+      typeof meta?.threshold === "number" && Number.isFinite(meta.threshold) ? meta.threshold : null
+    const passed = threshold != null ? raw >= threshold : null
+    metrics[id] = { value: raw, threshold, passed }
+    // 综合得分：首个 unit=score 且有 threshold 的指标（courseware 下为 reward）
+    if (scoreValue === undefined && meta?.unit === "score" && threshold != null) scoreValue = raw
+  }
+
+  // verdict：所有有 threshold 的指标达标，且无 hard_gate 失败
   const hasHardGateFail = samples.some((s) =>
     s.constraintResults.some((c) => c.tier === "hard_gate"),
   )
-  const drT = thresholdOf(run.thresholds, ["DR", "dr"], 0.95)
-  const cprT = thresholdOf(run.thresholds, ["CPR", "cpr"], 0.9)
-  const rewT = thresholdOf(run.thresholds, ["avg_reward", "avgReward", "Reward"], 0.8)
-  const metricsOk = run.dr >= drT && run.cpr >= cprT && run.avgReward >= rewT
-  const verdict: "pass" | "fail" = metricsOk && !hasHardGateFail ? "pass" : "fail"
+  const allThresholdPassed = Object.values(metrics).every(
+    (mt) => mt.threshold == null || mt.passed === true,
+  )
+  const verdict: "pass" | "fail" = allThresholdPassed && !hasHardGateFail ? "pass" : "fail"
+  const score = scoreValue ?? samples[0]?.reward ?? 0
 
   return {
     ...base,
     run_id: run.externalRunId,
     status: "completed",
     verdict,
-    score: run.avgReward,
-    metrics: { DR: run.dr, CPR: run.cpr, condR: run.condR, avg_time_ms: run.avgTimeMs },
+    score,
+    metrics,
     summary: {
       total: run.totalSamples || samples.length,
       passed: passedN,
       failed: failedN,
       skipped: skippedN,
     },
-    dimension_pass: {
-      format: samples.filter((s) => s.sFormat >= 1).length,
-      commonsense: samples.filter((s) => s.sCommon > 0).length,
-      soft: samples.filter((s) => s.sSoft >= 0.6).length,
-      preference: samples.filter((s) => s.sPref >= 0.6).length,
-    },
     items: samples.map((s) => ({
       external_sample_id: s.externalSampleId,
-      score: s.reward,
+      score: s.reward ?? 0,
       passed: isPassStatus(s.status),
       failures: s.constraintResults.map((c) => ({
         name: c.name,
         reason: c.reason,
         top_issues: extractTopIssues(c.details),
         files: extractSourceFiles(c.details),
+        module_results: c.moduleResults ?? undefined,
       })),
     })),
   }
@@ -327,6 +343,7 @@ export function createEvalJobService(tenant: Tenant) {
       inputObjectKey: objectKey,
       inputPresignedUrl: presigned.url,
       ruleSetId: input.ruleSetId,
+      packageRef: input.packageRef ?? null,
       taskId: input.taskId ?? null,
       taskTitle: input.taskTitle ?? null,
       taskSubject: input.taskSubject ?? null,
@@ -339,6 +356,7 @@ export function createEvalJobService(tenant: Tenant) {
       const payload: ScfInvokePayload = {
         job_id: jobId,
         rule_set_id: input.ruleSetId,
+        package_ref: input.packageRef ?? null,
         input_kind: inputKind,
         scope,
         input_object_key: objectKey,
@@ -391,7 +409,16 @@ export function createEvalJobService(tenant: Tenant) {
       // job 已 completed 但 run 未回传/未找到：返回空 items，避免阻塞调用方
       return { ...base, items: [] }
     }
-    return buildJobOverview(base, run)
+    const overview = buildJobOverview(base, run)
+    return {
+      ...overview,
+      metrics_raw: ((run as { metrics?: Record<string, number> }).metrics ?? undefined) as
+        | Record<string, number>
+        | undefined,
+      summary_report: ((run as { summaryReport?: Record<string, unknown> }).summaryReport ?? undefined) as
+        | Record<string, unknown>
+        | undefined,
+    }
   }
 
   return { submit, get, overview }

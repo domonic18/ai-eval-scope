@@ -10,10 +10,14 @@
  */
 
 import { raw, Router, type RequestHandler } from "express"
+import crypto from "crypto"
 import { requireApiKey } from "../../middleware/apiKeyAuth"
 import { PlatformError } from "../../middleware/errorHandler"
 import { rateLimiter } from "../../middleware/rateLimiter"
 import { createEvalJobService } from "../../services/evalJob.service"
+import { notifyJobCompletion } from "../../services/webhook.service"
+import { getLogger } from "../../infra/logger"
+import { getObjectStorage } from "../../infra/objectStorage"
 
 const router = Router()
 
@@ -21,8 +25,6 @@ const wrap =
   (fn: RequestHandler): RequestHandler =>
   (req, res, next) =>
     Promise.resolve(fn(req, res, next)).catch(next)
-
-const DEFAULT_RULE_SET = "coursework-quality"
 
 router.post(
   "/",
@@ -38,7 +40,10 @@ router.post(
     if (ct.includes("application/json")) {
       const body = (req.body || {}) as {
         content?: { filename?: string; text?: string }
+        input_object_key?: string
         rule_set_id?: string
+        package_id?: string // Phase 3：rule_set_id 的 package 语义别名（优先）
+        package_ref?: string // S2-D：场景包引用 scenario/package:label（调用方须显式提供）
         task_id?: string
         task_title?: string
         task_subject?: string
@@ -46,7 +51,9 @@ router.post(
       const result = await svc.submit({
         inlineFilename: body.content?.filename,
         inlineText: body.content?.text,
-        ruleSetId: body.rule_set_id || DEFAULT_RULE_SET,
+        inputObjectKey: body.input_object_key,
+        ruleSetId: body.package_id || body.rule_set_id || "",
+        packageRef: body.package_ref,
         taskId: q.task_id || body.task_id,
         taskTitle: q.task_title || body.task_title,
         taskSubject: q.task_subject || body.task_subject,
@@ -66,12 +73,44 @@ router.post(
     const result = await svc.submit({
       filename,
       fileBytes,
-      ruleSetId: q.rule_set_id || DEFAULT_RULE_SET,
+      ruleSetId: q.package_id || q.rule_set_id || "",
+      packageRef: q.package_ref,
       taskId: q.task_id,
       taskTitle: q.task_title,
       taskSubject: q.task_subject,
     })
     res.status(202).json(result)
+  }),
+)
+
+// 签发 presigned PUT URL —— 大文件客户端直传对象存储后，用 input_object_key 提交评测
+router.post(
+  "/request-upload",
+  requireApiKey,
+  wrap(async (req, res) => {
+    const projectId = req.tenant!.projectId!
+    const body = (req.body || {}) as {
+      filename?: string
+      content_type?: string
+    }
+    const filename = body.filename
+    if (!filename) {
+      throw new PlatformError("filename is required", {
+        status: 400,
+        code: "INPUT_INVALID",
+      })
+    }
+    const ext = (filename.match(/\.[^.]+$/) || [".md"])[0]
+    const objectKey = `projects/${projectId}/eval/jobs/uploads/${crypto.randomUUID()}/input${ext}`
+    const presigned = await getObjectStorage().presignPut({
+      key: objectKey,
+      contentType: body.content_type || "application/octet-stream",
+    })
+    res.status(200).json({
+      upload_url: presigned.url,
+      object_key: objectKey,
+      expires_at: presigned.expiresAt,
+    })
   }),
 )
 
@@ -99,6 +138,18 @@ router.get(
       throw new PlatformError("job not found", { status: 404, code: "JOB_NOT_FOUND" })
     }
     res.json(overview)
+  }),
+)
+
+// executor 完成 job 后通知 web → web 异步投递 webhook 回调（fire-and-forget，不阻塞响应）
+router.post(
+  "/:jobId/notify-completion",
+  requireApiKey,
+  wrap(async (req, res) => {
+    notifyJobCompletion(req.params.jobId).catch((e) =>
+      getLogger().warn({ jobId: req.params.jobId, error: String(e) }, "webhook.notify_failed"),
+    )
+    res.status(202).json({ notified: true })
   }),
 )
 

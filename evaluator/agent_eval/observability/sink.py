@@ -116,8 +116,11 @@ class ResultSink:
                 result.report,
                 run_id=run_id,
                 rule_set_version=result.rule_set_version or None,
+                rule_set=result.rule_set,
+                scenario_config=result.scenario_config,
                 langfuse_trace_id=langfuse[0],
                 langfuse_host=langfuse[1],
+                summary_report=result.summary_report,
             )
         ]
 
@@ -205,10 +208,10 @@ class ResultSink:
             output_dir = package_dir  # 兼容：output 不存在则扫整个包
 
         events: list[dict[str, Any]] = []
+        # output/ 已由 build_package 按场景 format 门控预过滤（code→.py / courseware→.html,.md），
+        # 故上传全部文件（去 courseware html/md/json/txt 白名单硬编码，任意场景源文件均可预览）。
         for f in sorted(output_dir.rglob("*")):
             if not f.is_file():
-                continue
-            if f.suffix.lower() not in (".html", ".htm", ".md", ".json", ".txt"):
                 continue
             rel_name = str(f.relative_to(output_dir))
             ct = "text/html" if f.suffix.lower() in (".html", ".htm") else "text/plain"

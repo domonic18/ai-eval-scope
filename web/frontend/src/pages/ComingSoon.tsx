@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import { useCrumbs } from "../components/AppShell"
+import { useCrumbs } from "../context/navigation"
 import { Page, PageHead } from "../components/shared"
 import { BookOpen } from "lucide-react"
 

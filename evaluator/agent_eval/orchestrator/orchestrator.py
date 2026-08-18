@@ -28,6 +28,7 @@ from agent_eval.evaluation.models import (
     SampleResult,
 )
 from agent_eval.evaluation.registry import registry
+from agent_eval.evaluation.summary import SummaryGenerator
 from agent_eval.reporting.report_generator import ReportGenerator
 from agent_eval.storage.package import (
     EvalResultManifest,
@@ -54,6 +55,11 @@ class EvalResult:
     samples: list[SampleResult] = field(default_factory=list)
     # 运行溯源：规则集版本，透传至 sink → run event → 平台
     rule_set_version: str = ""
+    # S2-E：实际使用的规则集与场景配置，供 sink→run event→快照记录真实版本与指标定义
+    rule_set: Any = None
+    scenario_config: Any = None
+    # 评估摘要报告（LLM 生成的人话总结，LLM 不可用时为 None）
+    summary_report: dict[str, Any] | None = None
 
 
 class Orchestrator:
@@ -63,7 +69,7 @@ class Orchestrator:
 
         orch = Orchestrator(engine, report_gen, workspace)
         result = orch.eval_only(package_dir, rule_set)
-        print(result.report.dr)
+        print(result.report.metrics)  # 场景化指标 dict，键如 code:reward / courseware:reward
     """
 
     def __init__(
@@ -90,6 +96,7 @@ class Orchestrator:
         vision_soft_weights: dict[str, float] | None = None,
         llm_signature: str = "",
         no_cache: bool = False,
+        scenario_package_dir: Any = None,
     ) -> EvalResult:
         """eval-only 模式：加载 packages → 评估 → 报告。
 
@@ -114,10 +121,14 @@ class Orchestrator:
         # 传了 rule_set → 据其重建管线；未传（None）→ 复用 __init__ 的默认管线（已含全部评估器）。
         # with_vision=True 时显式覆盖软约束权重（含 vision.quality）以保持归一化正确。
         if rule_set is not None:
-            self.pipeline_engine = build_pipeline(registry, rule_set)
+            # package_dir 此处是 ExecutionPackage（SUT 产出）；场景 policy/entry_points 取自
+            # scenario_package_dir（场景包根，含 metrics/policy.yaml + agent_eval.yaml）。
+            self.pipeline_engine = build_pipeline(
+                registry, rule_set, package_dir=scenario_package_dir
+            )
         if with_vision:
-            self.pipeline_engine.aggregator.soft_weights = vision_soft_weights or dict(
-                SCORE_AGGREGATION_WEIGHTS.vision_soft_weights
+            self.pipeline_engine.override_evaluator_weights(
+                vision_soft_weights or dict(SCORE_AGGREGATION_WEIGHTS.vision_soft_weights)
             )
         package_dir = Path(package_dir)
         if not package_dir.exists():
@@ -247,7 +258,7 @@ class Orchestrator:
             )
 
         # 9. 计算聚合指标
-        metrics_report = self.pipeline_engine.metrics_calculator.compute(
+        metrics_report = self.pipeline_engine.compute_metrics(
             sample_results,
             run_id=run_id,
         )
@@ -267,7 +278,49 @@ class Orchestrator:
             encoding="utf-8",
         )
 
-        # 11. 保存缓存
+        # 11. 生成评估摘要报告（LLM 人话总结，LLM 不可用时跳过）
+        summary_report: dict[str, Any] | None = None
+        try:
+            from agent_eval.config.loader import ConfigLoader
+            from agent_eval.config.paths import paths
+
+            llm_cfg_path = paths.configs_dir / "llm_config.yaml"
+            if llm_cfg_path.exists():
+                llm_config = ConfigLoader.load_llm_config(llm_cfg_path)
+                from agent_eval.llm.pool import ProviderPool
+
+                pool = ProviderPool(llm_config)
+                scenario_name = project if project else ""
+                # 指标定义（含 summary）
+                metric_defs: list[dict[str, Any]] = []
+                scenario_cfg = getattr(self.pipeline_engine, "scenario_config", None)
+                if scenario_cfg:
+                    metric_defs = [m.model_dump() for m in scenario_cfg.metric_definitions]
+                # 仅传内容质量指标，且键须与 metric_definitions 对齐。
+                # avg_time_ms 是「评测耗时」过程元数据，不属于被评估对象的质量维度，
+                # 不进入摘要输入（否则 LLM 会对评测时间做评价）。
+                # metrics_report.metrics 已是场景化 dict（key=metric_id，如 courseware:document_rate）
+                metrics_dict = dict(metrics_report.metrics)
+                summary_report = SummaryGenerator(pool).generate(
+                    metrics=metrics_dict,
+                    sample_results=sample_results,
+                    metric_definitions=metric_defs,
+                    scenario=scenario_name,
+                )
+                if summary_report:
+                    logger.info("summary_generator.ok", headline=summary_report.get("headline", ""))
+                    # 回写 summary.json（供 upload 子命令重建 run event 时携带）
+                    summary_json["summary_report"] = summary_report
+                    (run_workspace.reports_dir / "summary.json").write_text(
+                        json.dumps(summary_json, ensure_ascii=False, indent=2),
+                        encoding="utf-8",
+                    )
+                else:
+                    logger.info("summary_generator.skip", reason="llm_unavailable_or_parse_failed")
+        except Exception as e:
+            logger.warning("summary_generator.error", error=str(e))
+
+        # 12. 保存缓存
         self._save_cache(self.workspace, self.pipeline_engine)
 
         # 12. 更新 workspace index
@@ -282,11 +335,10 @@ class Orchestrator:
             "eval-only 评估完成",
             run_id=run_id,
             total_samples=metrics_report.total_samples,
-            dr=metrics_report.dr,
-            cpr=metrics_report.cpr,
-            avg_reward=metrics_report.avg_reward,
+            metrics=metrics_report.metrics,
         )
 
+        scenario_cfg = getattr(self.pipeline_engine, "scenario_config", None)
         return EvalResult(
             report=metrics_report,
             results=result_map,
@@ -294,6 +346,9 @@ class Orchestrator:
             run_workspace=run_workspace,
             samples=sample_results,
             rule_set_version=rule_set_version,
+            rule_set=rule_set,
+            scenario_config=scenario_cfg,
+            summary_report=summary_report,
         )
 
     def _load_packages(self, package_dir: Path) -> list[ExecutionPackage]:
@@ -353,11 +408,8 @@ class Orchestrator:
 
         # 评分
         scores = ScoreSummary(
-            s_format=sample_result.s_format,
-            s_common=sample_result.s_common,
-            s_soft=sample_result.s_soft,
-            s_pref=sample_result.s_pref,
             reward=sample_result.reward,
+            stage_metrics=dict(sample_result.stage_metrics),
         )
 
         # 报告
@@ -444,10 +496,7 @@ class Orchestrator:
                 "mode": "eval_only",
                 "total_samples": metrics_report.total_samples,
                 "metrics": {
-                    "DR": metrics_report.dr,
-                    "CPR": metrics_report.cpr,
-                    "avg_reward": metrics_report.avg_reward,
-                    "condR": metrics_report.cond_r,
+                    **metrics_report.metrics,
                     "avg_time_ms": metrics_report.avg_time_ms,
                 },
                 "failure_breakdown": metrics_report.failure_breakdown,
@@ -469,12 +518,15 @@ class Orchestrator:
 def _init_judge_orchestrator(
     llm_config: Any | None = None,
     llm_provider: str | None = None,
+    prompts_dir: Any = None,
 ) -> Any | None:
     """初始化 JudgeOrchestrator。
 
     Args:
         llm_config: LLMConfig 实例（可选）。
         llm_provider: Provider 名称覆盖（可选）。
+        prompts_dir: 场景包的 prompts/ 目录（code→code_correctness 等）；缺省回退
+            内置 courseware prompts（paths.prompts_dir）。
 
     Returns:
         JudgeOrchestrator 实例，或 None（无 LLM 配置时）。
@@ -484,10 +536,10 @@ def _init_judge_orchestrator(
 
     try:
         from agent_eval.config import LLMConfig
+        from agent_eval.llm.judge.file_prompt_store import FilePromptStore
         from agent_eval.llm.judge.orchestrator import JudgeOrchestrator
         from agent_eval.llm.judge.stability import StabilityController
         from agent_eval.llm.judge.structured_output import StructuredOutputParser
-        from agent_eval.llm.judge.template_manager import TemplateManager
         from agent_eval.llm.pool import ProviderPool
 
         if not isinstance(llm_config, LLMConfig):
@@ -496,14 +548,18 @@ def _init_judge_orchestrator(
         pool = ProviderPool(llm_config)
         from agent_eval.config.paths import paths
 
-        templates = TemplateManager(paths.prompts_dir)
+        # 优先用场景包的 prompts/（code→code_correctness），缺省回退内置 courseware prompts
+        _prompts = (
+            Path(prompts_dir) if prompts_dir and Path(prompts_dir).exists() else paths.prompts_dir
+        )
+        templates = FilePromptStore(_prompts)
         templates.load_all()
         stability = StabilityController()
         parser = StructuredOutputParser()
 
         return JudgeOrchestrator(
             pool=pool,
-            template_manager=templates,
+            prompt_store=templates,
             stability=stability,
             parser=parser,
         )
@@ -529,7 +585,7 @@ def eval_packages(
             "./workspace/runs/xxx/packages",
             rule_set_path="./rule_set.yaml",
         )
-        print(result.report.dr)
+        print(result.report.metrics)  # 场景化指标 dict，键如 code:reward / courseware:reward
 
     Args:
         package_dir: ExecutionPackage 目录路径。
@@ -551,14 +607,25 @@ def eval_packages(
     rule_set = None
     if rule_set_path:
         rule_set = ConfigLoader.load_rule_set(rule_set_path)
+    # 场景包根 = rule_set_path 的 rules/ 上一层（含 metrics/policy.yaml + agent_eval.yaml），
+    # 供 _resolve_scenario_config 读场景 policy + 触发 entry_points（阶段 4）。
+    scenario_package_dir = None
+    if rule_set_path:
+        _cand = Path(rule_set_path).resolve().parent.parent
+        if (_cand / "metrics" / "policy.yaml").exists():
+            scenario_package_dir = _cand
 
     # 加载 LLM 配置（可选）
     llm_config = None
     if llm_config_path:
         llm_config = ConfigLoader.load_llm_config(llm_config_path)
 
-    # 初始化 JudgeOrchestrator（可选）
-    judge_orch = _init_judge_orchestrator(llm_config, llm_provider)
+    # 初始化 JudgeOrchestrator（可选）—— 模板取自场景包 prompts/（code→code_correctness）
+    judge_orch = _init_judge_orchestrator(
+        llm_config,
+        llm_provider,
+        prompts_dir=scenario_package_dir / "prompts" if scenario_package_dir else None,
+    )
 
     # 创建 Workspace
     workspace = Workspace(output_dir) if output_dir else Workspace()
@@ -588,6 +655,7 @@ def eval_packages(
             project=project,
             with_vision=want_vision,
             screenshot_renderer=renderer,
+            scenario_package_dir=scenario_package_dir,
         )
     finally:
         if renderer is not None:

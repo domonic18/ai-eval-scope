@@ -21,6 +21,9 @@ def test_sdk_create_rule_set() -> None:
                 "name": "输出格式有效",
                 "dimension": "functional",
                 "stage": "format",
+                "method": "format",
+                "format_type": "extension",
+                "extensions": ["md", "html"],
                 "evaluator": "format.response_format",
             }
         ],
@@ -47,6 +50,9 @@ def test_sdk_add_rule(tmp_path: Path) -> None:
             "name": "输出格式有效",
             "dimension": "functional",
             "stage": "format",
+            "method": "format",
+            "format_type": "extension",
+            "extensions": ["md", "html"],
             "evaluator": "format.response_format",
         },
     )
@@ -66,6 +72,9 @@ def test_sdk_validate_detects_missing_dimension(tmp_path: Path) -> None:
                 "name": "输出格式有效",
                 "dimension": "not_exist",
                 "stage": "format",
+                "method": "format",
+                "format_type": "extension",
+                "extensions": ["md", "html"],
                 "evaluator": "format.response_format",
             }
         ],
@@ -87,6 +96,9 @@ def test_sdk_resolve_templates() -> None:
                 "name": "格式模板",
                 "dimension": "functional",
                 "stage": "format",
+                "method": "format",
+                "format_type": "extension",
+                "extensions": ["md"],
                 "evaluator": "format.response_format",
                 "params": {"allowed_formats": ["md"]},
             }

@@ -102,10 +102,10 @@ class SampleResult:
     status: EvalStatus
     content_hash: str | None = None
     stage_results: dict[str, StageResult] = field(default_factory=dict)
-    s_format: float = 0.0
-    s_common: float = 0.0
-    s_soft: float = 0.0
-    s_pref: float = 0.0
+    # 场景化样本级指标：由 ScenarioScoreAggregator.aggregate() 输出，
+    # key = StageWeight.id（courseware 下为 soft/pref）+ "reward"。
+    # 替代旧 s_format/s_common/s_soft/s_pref 标量（已废弃，dict 化以支持任意场景）。
+    stage_metrics: dict[str, float] = field(default_factory=dict)
     reward: float = 0.0
     total_duration_ms: float = 0.0
     llm_calls: int = 0
@@ -118,10 +118,7 @@ class SampleResult:
             "content_hash": self.content_hash,
             "status": self.status.value,
             "stage_results": {k: v.to_dict() for k, v in self.stage_results.items()},
-            "s_format": self.s_format,
-            "s_common": self.s_common,
-            "s_soft": self.s_soft,
-            "s_pref": self.s_pref,
+            "stage_metrics": dict(self.stage_metrics),
             "reward": self.reward,
             "total_duration_ms": self.total_duration_ms,
             "llm_calls": self.llm_calls,
@@ -130,12 +127,19 @@ class SampleResult:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> SampleResult:
-        """从字典反序列化。"""
+        """从字典反序列化。
+
+        兼容旧格式：若含已废弃的 s_format/s_common/s_soft/s_pref 标量字段则丢弃
+        （新模型以 stage_metrics dict 为准；旧缓存条目因缺失 stage_metrics 将重算填充）。
+        """
         data = dict(data)
+        for legacy in ("s_format", "s_common", "s_soft", "s_pref"):
+            data.pop(legacy, None)
         data["status"] = EvalStatus(data["status"])
         data["stage_results"] = {
             k: StageResult.from_dict(v) for k, v in data.get("stage_results", {}).items()
         }
+        data.setdefault("stage_metrics", {})
         return cls(**data)
 
 
@@ -168,14 +172,13 @@ class MetricsReport:
 
     run_id: str
     total_samples: int = 0
-    dr: float = 0.0  # Delivery Rate（交付率）
-    cpr: float = 0.0  # Constraint Pass Rate（约束通过率）
-    avg_reward: float = 0.0  # 平均 Reward（综合评分）
-    avg_soft: float = 0.0  # 平均内容质量分（SOFT 维度，独立指标）
-    avg_pref: float = 0.0  # 平均用户偏好分（PREFERENCE 维度，独立指标）
-    cond_r: float = 0.0  # Conditional Reward（条件 Reward）
-    avg_time_ms: float = 0.0  # 平均耗时
-    sample_scores: list[SampleScore] = field(default_factory=list)
+    # 场景化运行级指标：key = MetricDefinition.id（如 courseware:document_rate），
+    # 由 ScenarioMetricsCalculator.compute() 按 expression 求值输出。替代旧 dr/cpr/avg_*。
+    metrics: dict[str, float] = field(default_factory=dict)
+    # 指标定义快照（name/threshold/summary/explain 等），供报告渲染与下游展示
+    metric_definitions: list[dict[str, Any]] = field(default_factory=list)
+    avg_time_ms: float = 0.0  # 平均耗时（过程元数据，不进入质量指标 dict）
+    sample_scores: list[dict[str, Any]] = field(default_factory=list)
     failure_breakdown: dict[str, int] = field(default_factory=dict)
     thresholds: dict[str, dict[str, Any]] = field(default_factory=dict)
     llm_skipped: int = 0  # 因 LLM 不可用而跳过的约束数
@@ -185,17 +188,11 @@ class MetricsReport:
         return {
             "run_id": self.run_id,
             "total_samples": self.total_samples,
-            "metrics": {
-                "DR": self.dr,
-                "CPR": self.cpr,
-                "avg_reward": self.avg_reward,
-                "avg_soft": self.avg_soft,
-                "avg_pref": self.avg_pref,
-                "condR": self.cond_r,
-                "avg_time_ms": self.avg_time_ms,
-                "llm_skipped": self.llm_skipped,
-            },
+            "metrics": dict(self.metrics),
+            "metric_definitions": list(self.metric_definitions),
+            "avg_time_ms": self.avg_time_ms,
             "thresholds": self.thresholds,
             "failure_breakdown": self.failure_breakdown,
-            "sample_scores": [s.to_dict() for s in self.sample_scores],
+            "sample_scores": list(self.sample_scores),
+            "llm_skipped": self.llm_skipped,
         }

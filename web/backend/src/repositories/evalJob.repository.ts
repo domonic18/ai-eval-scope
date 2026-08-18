@@ -18,6 +18,7 @@ export interface EvalJobCreateInput {
   inputObjectKey: string
   inputPresignedUrl: string
   ruleSetId: string
+  packageRef?: string | null
   taskId?: string | null
   taskTitle?: string | null
   taskSubject?: string | null

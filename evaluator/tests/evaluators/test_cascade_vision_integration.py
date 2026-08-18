@@ -42,7 +42,9 @@ class _FakeTemplates:
     def __init__(self, score_map: dict[str, dict[str, float]]) -> None:
         self._m = score_map
 
-    def get(self, tid: str) -> _FakeTemplate:
+    def get(self, *args: object) -> _FakeTemplate:
+        # PromptStore.get(scenario_id, template_id, ...) —— template_id 是第 2 位置参
+        tid = str(args[1]) if len(args) > 1 else (str(args[0]) if args else "")
         return _FakeTemplate(self._m.get(tid, {}))
 
 
@@ -141,11 +143,13 @@ class TestCascadeVisionIntegration:
             ]
         )
         engine = PipelineEngine(config, registry)
-        # 显式 soft_weights（含 vision.quality）
-        engine.aggregator.soft_weights = {
-            "soft.teaching_logic": 0.4,
-            "vision.quality": 0.6,
-        }
+        # 显式 soft 加权（含 vision.quality）→ 覆盖 quality soft 项的 evaluator_weights
+        engine.override_evaluator_weights(
+            {
+                "soft.teaching_logic": 0.4,
+                "vision.quality": 0.6,
+            }
+        )
 
         context = {
             "judge_orchestrator": orch,
@@ -168,5 +172,5 @@ class TestCascadeVisionIntegration:
         ev_files = list((tmp_path / "ev").glob("*.png"))
         assert len(ev_files) == 1
 
-        # s_soft = (0.4*0.8 + 0.6*0.8) / 1.0 = 0.8（含 vision 权重）
-        assert result.s_soft == pytest.approx(0.8)
+        # stage_metrics["soft"] = (0.4*0.8 + 0.6*0.8) / 1.0 = 0.8（含 vision 权重）
+        assert result.stage_metrics["soft"] == pytest.approx(0.8)

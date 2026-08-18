@@ -22,31 +22,38 @@ __all__ = [
 def _init_judge_orchestrator(
     llm_config_path: str | None,
     llm_provider: str | None,
+    prompts_dir: str | None = None,
 ) -> object | None:
     """初始化 JudgeOrchestrator（可选）。"""
     if llm_config_path is None:
         return None
 
     try:
+        from pathlib import Path
+
         from agent_eval.config.loader import ConfigLoader
+        from agent_eval.llm.judge.file_prompt_store import FilePromptStore
         from agent_eval.llm.judge.orchestrator import JudgeOrchestrator
         from agent_eval.llm.judge.stability import StabilityController
         from agent_eval.llm.judge.structured_output import StructuredOutputParser
-        from agent_eval.llm.judge.template_manager import TemplateManager
         from agent_eval.llm.pool import ProviderPool
 
         llm_config = ConfigLoader.load_llm_config(llm_config_path)
         pool = ProviderPool(llm_config)
         from agent_eval.config.paths import paths
 
-        templates = TemplateManager(paths.prompts_dir)
+        # 优先用场景包的 prompts/（code→code_correctness），缺省回退内置 courseware prompts
+        _prompts = (
+            Path(prompts_dir) if prompts_dir and Path(prompts_dir).exists() else paths.prompts_dir
+        )
+        templates = FilePromptStore(_prompts)
         templates.load_all()
         stability = StabilityController()
         parser = StructuredOutputParser()
 
         return JudgeOrchestrator(
             pool=pool,
-            template_manager=templates,
+            prompt_store=templates,
             stability=stability,
             parser=parser,
         )
@@ -99,16 +106,25 @@ def _print_summary(result: object) -> None:
     table.add_column("值", justify="right")
     table.add_column("状态")
 
-    dr_status = "✅" if result.dr >= 0.95 else "❌"
-    cpr_status = "✅" if result.cpr >= 0.90 else "❌"
-    reward_status = "✅" if result.avg_reward >= 0.70 else "❌"
-
-    table.add_row("DR (交付率)", f"{result.dr:.3f}", dr_status)
-    table.add_row("CPR (约束通过率)", f"{result.cpr:.3f}", cpr_status)
-    table.add_row("Reward (综合评分)", f"{result.avg_reward:.3f}", reward_status)
-    table.add_row("Soft (内容质量分)", f"{result.avg_soft:.3f}", "—")
-    table.add_row("Pref (用户偏好分)", f"{result.avg_pref:.3f}", "—")
-    table.add_row("CondR (条件Reward)", f"{result.cond_r:.3f}", "—")
+    # 场景化指标：从 metrics dict + metric_definitions 动态渲染（去 DR/CPR 硬编码）
+    metrics_by_id = result.metrics
+    for md in result.metric_definitions:
+        mid = md.get("id")
+        if mid is None or mid not in metrics_by_id:
+            continue
+        name = md.get("name") or mid
+        value = metrics_by_id[mid]
+        threshold = md.get("threshold")
+        if threshold is not None:
+            status = "✅" if value >= threshold else "❌"
+            table.add_row(name, f"{value:.3f}", status)
+        else:
+            table.add_row(name, f"{value:.3f}", "—")
+    # 兜底：metric_definitions 未覆盖的残余指标
+    rendered_ids = {md.get("id") for md in result.metric_definitions}
+    for mid, value in metrics_by_id.items():
+        if mid not in rendered_ids:
+            table.add_row(mid, f"{value:.3f}", "—")
     table.add_row("Avg Time", f"{result.avg_time_ms:.0f}ms", "—")
 
     rprint(table)

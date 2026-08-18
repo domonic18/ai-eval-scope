@@ -118,3 +118,33 @@ class TestDirectoryCollector:
         )
         manifest = collector.collect()
         assert manifest.total_files == 1  # 只收集 normal/good.html
+
+    def test_single_top_dir_descends_one_level(self, tmp_path: Path) -> None:
+        """顶层仅 1 个目录（单层包裹）时降一层切——如「大单元学习总导」套 M1-M20。"""
+        for mod in ("M1", "M2"):
+            d = tmp_path / "总导" / mod
+            d.mkdir(parents=True)
+            (d / "a.html").write_text("<html></html>", encoding="utf-8")
+        manifest = DirectoryCollector(root_dir=tmp_path, file_patterns=["*.html"]).collect()
+        # 降一层 → 2 模块（M1/M2），而非 1 模块（总导）
+        assert len(manifest.modules) == 2
+        assert {m.name for m in manifest.modules} == {"M1", "M2"}
+
+    def test_flat_files_no_descend(self, tmp_path: Path) -> None:
+        """扁平根平铺（文件在根、无目录层级）→ 不降层。"""
+        (tmp_path / "a.html").write_text("<html></html>", encoding="utf-8")
+        (tmp_path / "b.html").write_text("<html></html>", encoding="utf-8")
+        manifest = DirectoryCollector(root_dir=tmp_path, file_patterns=["*.html"]).collect()
+        # parts 仅 1 段 → 不降层，每文件自成 1 模块（退化检测在 _resolve_granularity_groups 处理）
+        assert len(manifest.modules) == 2
+
+    def test_single_top_dir_direct_files_no_descend(self, tmp_path: Path) -> None:
+        """顶层 1 目录、文件直接在其下（课件包/a.html，常见 zip 结构）→ 不降层，保持 1 模块。"""
+        d = tmp_path / "课件包"
+        d.mkdir()
+        (d / "a.html").write_text("<html></html>", encoding="utf-8")
+        (d / "b.html").write_text("<html></html>", encoding="utf-8")
+        manifest = DirectoryCollector(root_dir=tmp_path, file_patterns=["*.html"]).collect()
+        assert len(manifest.modules) == 1
+        assert manifest.modules[0].name == "课件包"
+        assert manifest.modules[0].file_count == 2

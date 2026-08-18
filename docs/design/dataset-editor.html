@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数据集编辑器 · math — EvalScope</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  /* ── 元数据栅格 ── */
+  .meta-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 1px; background: var(--border); border-radius: var(--r-md); overflow: hidden; margin-bottom: 18px; }
+  .meta-cell { background: var(--bg-elevated); padding: 11px 16px; }
+  .meta-lab { font-size: 10.5px; color: var(--text-tertiary); margin-bottom: 3px; text-transform: uppercase; letter-spacing: .04em; }
+  .meta-val { font-size: 13px; font-weight: 600; }
+  @media (max-width: 1000px){ .meta-grid { grid-template-columns: repeat(2,1fr); } }
+
+  /* ── 区段卡 ── */
+  .section-card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; margin-bottom: 16px; }
+  .section-head { padding: 13px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .section-head h3 { font-size: 13.5px; font-weight: 650; display: flex; align-items: center; gap: 8px; }
+  .section-head .count-pill { font-family: var(--mono); font-size: 11px; color: var(--text-tertiary); background: var(--bg-surface); padding: 1px 7px; border-radius: var(--r-xs); font-weight: 500; }
+  .section-body { padding: 0; }
+
+  /* ── 可编辑表格 ── */
+  table.edit { width: 100%; border-collapse: collapse; }
+  table.edit th { text-align: left; padding: 9px 14px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-tertiary); background: var(--bg-surface); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  table.edit td { padding: 6px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  table.edit tbody tr:last-child td { border-bottom: none; }
+  table.edit tbody tr:hover td { background: var(--bg-hover); }
+  .cell-input { width: 100%; background: transparent; border: 1px solid transparent; border-radius: var(--r-xs); color: var(--text-primary); font-size: 12.5px; font-family: inherit; padding: 5px 7px; transition: all .12s var(--ease); }
+  .cell-input:hover { border-color: var(--border); background: var(--bg-surface); }
+  .cell-input:focus { outline: none; border-color: var(--border-focus); background: var(--bg-surface); box-shadow: 0 0 0 2px var(--accent-soft); }
+  .cell-input.mono { font-family: var(--mono); font-size: 11px; }
+  .cell-input.num { font-family: var(--mono); text-align: right; font-size: 12px; }
+  .cell-select { width: 100%; padding: 5px 7px; background: transparent; border: 1px solid transparent; border-radius: var(--r-xs); color: var(--text-primary); font-size: 12px; font-family: inherit; cursor: pointer; appearance: none; }
+  .cell-select:hover { border-color: var(--border); background: var(--bg-surface); }
+  .sev-error { color: var(--danger); }
+  .sev-warning { color: var(--warning); }
+  .icon-cell { width: 36px; text-align: center; }
+  .add-row { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1px dashed var(--border-hover); border-radius: var(--r-sm); background: transparent; color: var(--text-secondary); font-size: 12.5px; font-family: inherit; cursor: pointer; transition: all .12s; margin: 12px 18px; }
+  .add-row:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+  /* ── JSON 树 ── */
+  .json-tree { font-family: var(--mono); font-size: 12px; line-height: 1.9; padding: 16px 18px; overflow-x: auto; }
+  .jt-row { padding-left: 20px; position: relative; }
+  .jt-row.collapsed > .jt-children { display: none; }
+  .jt-caret { position: absolute; left: 2px; top: 7px; cursor: pointer; color: var(--text-tertiary); transition: transform .12s; }
+  .jt-row.collapsed > .jt-head .jt-caret { transform: rotate(-90deg); }
+  .jt-key { color: #7aa2f7; }
+  .jt-str { color: #9ece6a; }
+  .jt-num { color: #ff9e64; }
+  .jt-bool { color: #f7768e; }
+  .jt-br { color: var(--text-tertiary); }
+  .jt-count { color: var(--text-quaternary); font-size: 11px; }
+
+  /* ── 搜索 ── */
+  .search-box { display: flex; gap: 8px; padding: 16px 18px; border-bottom: 1px solid var(--border); }
+  .search-box .input { flex: 1; }
+  .search-result { padding: 14px 18px; }
+  .search-hit { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: 11px 14px; margin-bottom: 8px; }
+  .search-hit .hit-name { font-size: 13px; font-weight: 550; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+  .search-hit .hit-snippet { font-size: 11.5px; color: var(--text-secondary); font-family: var(--mono); }
+  .search-hit mark { background: rgba(47,230,200,.18); color: var(--signal); padding: 0 2px; border-radius: 2px; }
+  .hit-tag { font-family: var(--mono); font-size: 10px; padding: 1px 6px; border-radius: 3px; background: var(--signal-soft); color: var(--signal); }
+
+  /* ── cfg 卡 ── */
+  .cfg-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; padding: 16px 18px; }
+  @media (max-width: 1000px){ .cfg-grid { grid-template-columns: 1fr; } }
+  .cfg-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: 14px 16px; }
+  .cfg-card .cfg-head { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 12px; }
+  .cfg-field { margin-bottom: 10px; }
+  .cfg-field:last-child { margin-bottom: 0; }
+  .cfg-field .lab { font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px; display: block; }
+  .cfg-field .input, .cfg-field .select { padding: 6px 9px; font-size: 12.5px; width: 100%; }
+  .multi-select { display: flex; flex-wrap: wrap; gap: 5px; padding: 6px; background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--r-sm); min-height: 34px; }
+  .ms-chip { display: inline-flex; align-items: center; gap: 4px; font-family: var(--mono); font-size: 11px; padding: 2px 7px; border-radius: var(--r-xs); background: var(--accent-soft); color: var(--accent); }
+  .ms-chip .x { cursor: pointer; opacity: .6; }
+
+  /* 样本预览 */
+  .sample-table th { padding: 9px 14px; }
+  .sample-table td { padding: 10px 14px; font-size: 12px; vertical-align: top; }
+  .sample-table .col-key { font-family: var(--mono); color: var(--text-tertiary); white-space: nowrap; }
+  .sample-table .col-val { color: var(--text-secondary); font-family: var(--mono); font-size: 11px; max-width: 320px; word-break: break-all; }
+
+  /* ── YAML ── */
+  .yaml-viewer { background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--r-md); padding: 18px; font-family: var(--mono); font-size: 12.5px; line-height: 1.75; overflow-x: auto; color: var(--text-secondary); white-space: pre; }
+  .yaml-viewer .k { color: #7aa2f7; }
+  .yaml-viewer .s { color: #9ece6a; }
+  .yaml-viewer .n { color: #ff9e64; }
+  .yaml-viewer .c { color: var(--text-tertiary); font-style: italic; }
+  .yaml-viewer .b { color: #f7768e; }
+
+  /* ── 可折叠 ── */
+  .collapsible { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; margin-bottom: 16px; }
+  .collapsible-head { padding: 13px 18px; display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; user-select: none; }
+  .collapsible-head h3 { font-size: 13.5px; font-weight: 650; display: flex; align-items: center; gap: 8px; }
+  .collapsible-head .chev { transition: transform .15s var(--ease); color: var(--text-tertiary); }
+  .collapsible.open .chev { transform: rotate(90deg); }
+  .collapsible-body { display: none; }
+  .collapsible.open .collapsible-body { display: block; }
+
+  /* ── 版本时间线（底部网格） ── */
+  .version-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; padding: 16px 18px; }
+  .version-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: 12px 13px; transition: border-color .12s; }
+  .version-card:hover { border-color: var(--border-hover); }
+  .version-card.active { border-color: var(--accent-line); box-shadow: 0 0 0 1px var(--accent-line); background: linear-gradient(180deg, var(--accent-soft), var(--bg-surface)); }
+  .vc-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+  .vc-ver { font-family: var(--mono); font-size: 13px; font-weight: 700; }
+  .vc-labels { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+  .lbl { font-size: 9.5px; padding: 1px 6px; border-radius: 3px; font-weight: 600; font-family: var(--mono); }
+  .lbl-prod { background: var(--success-soft); color: var(--success); }
+  .lbl-staging { background: var(--warning-soft); color: var(--warning); }
+  .lbl-latest { background: var(--info-soft); color: var(--info); }
+  .vc-hash { font-family: var(--mono); font-size: 11px; color: var(--text-tertiary); }
+  .vc-time { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+  .vc-actions { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 9px; }
+  .vc-btn { font-size: 10.5px; padding: 3px 8px; border-radius: var(--r-xs); border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text-secondary); cursor: pointer; transition: all .12s; font-family: inherit; white-space: nowrap; }
+  .vc-btn:hover { border-color: var(--border-hover); color: var(--text-primary); }
+  .vc-btn.promote { color: var(--accent); }
+  .vc-btn.promote:hover { background: var(--accent-soft); border-color: var(--accent-line); }
+  .dirty-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--warning); box-shadow: 0 0 0 3px var(--warning-soft); }
+  .role-badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 100px; font-size: 11.5px; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="ambient"></div>
+<div class="scanlines"></div>
+<div class="shell">
+  <!-- 侧栏 -->
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <a href="index.html" class="logo" style="margin-bottom:14px"><span class="logo-mark"><img src="assets/logo.svg" alt="" style="width:100%"></span><span class="logo-text">Eval<b>Scope</b></span></a>
+      <div class="org-switcher"><div class="org-avatar">智</div><div class="org-meta"><div class="org-name">智能教育研发组</div><div class="org-plan">Team · 5 项目</div></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+    </div>
+    <nav class="nav-section">
+      <a class="nav-item" href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> 项目看板</a>
+      <a class="nav-item" href="run-detail.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg> 全部运行</a>
+      <a class="nav-item active" href="eval-rule-explorer.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> 评测规则</a>
+      <div class="nav-label">组织</div>
+      <a class="nav-item" href="members.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg> 成员</a>
+    </nav>
+    <div class="sidebar-foot"><a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> 接入指引</a></div>
+  </aside>
+
+  <!-- 主区域 -->
+  <div class="main">
+    <header class="topbar">
+      <div class="crumbs">
+        <a href="#">配置中心</a><span class="sep">/</span>
+        <a href="#">courseware</a><span class="sep">/</span>
+        <span class="current">数据集 · <span class="mono">math</span></span>
+      </div>
+      <div class="topbar-right">
+        <span class="row" style="font-size:12px;color:var(--text-tertiary)"><span class="dirty-dot"></span> 有未保存改动</span>
+        <button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> 保存草稿</button>
+        <button class="btn btn-primary" onclick="openPublish()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> 发布</button>
+        <div class="avatar">张</div>
+      </div>
+    </header>
+
+    <div class="page reveal">
+      <!-- 元数据栅格 -->
+      <div class="meta-grid r-1">
+        <div class="meta-cell"><div class="meta-lab">dataset_id</div><div class="meta-val mono">math</div></div>
+        <div class="meta-cell"><div class="meta-lab">scenario</div><div class="meta-val mono">courseware</div></div>
+        <div class="meta-cell"><div class="meta-lab">version</div><div class="meta-val mono">1.1 · draft</div></div>
+        <div class="meta-cell"><div class="meta-lab">backend_type</div><div class="meta-val mono">yaml_file</div></div>
+        <div class="meta-cell"><div class="meta-lab">content_hash</div><div class="meta-val mono" style="color:var(--text-tertiary)">sha256:c9d1…</div></div>
+      </div>
+
+      <!-- 评估器关联 -->
+      <div style="margin:8px 0; padding:6px 12px; border-radius:var(--r-sm); background:rgba(55,179,90,.08); border:1px solid rgba(55,179,90,.2); font-size:12px; display:flex; align-items:center; gap:6px;">
+        <span style="color:var(--success);">🔗</span>
+        <span style="color:var(--text-secondary);">此数据集被以下评估器查询：</span>
+        <span style="font-family:var(--mono); font-size:11px; color:var(--text-primary);">commonsense.info_accuracy (🔬 FACT_VERIFY)</span>
+      </div>
+
+      <!-- 模式 + 角色切换 -->
+      <div class="spread r-2" style="margin-bottom:16px">
+        <div class="row" style="gap:12px">
+          <div class="segment">
+            <button class="active" onclick="switchMode(event,'form')">表单模式</button>
+            <button onclick="switchMode(event,'yaml')">YAML 模式</button>
+          </div>
+          <div class="segment" id="roleSeg">
+            <button class="active" onclick="switchRole(event,'reference')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> reference</button>
+            <button onclick="switchRole(event,'test')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> test</button>
+          </div>
+        </div>
+        <span class="role-badge" id="roleBadge" style="background:var(--signal-soft);color:var(--signal)"><span class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--signal)"></span>reference · 被评估器查询</span>
+      </div>
+      <p style="font-size:11px; color:var(--text-tertiary); margin:-8px 0 16px;">reference=参考知识（供规则集评估查询）；test=测试样本（被评估的输入数据）。</p>
+
+      <!-- 表单模式 -->
+      <div id="mode-form">
+        <!-- ===== Role: reference ===== -->
+        <div id="role-reference">
+          <!-- 常量/公式 -->
+          <div class="section-card">
+            <div class="section-head"><h3><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg> 常量 / 公式 constants <span style="font-size:9px; padding:2px 6px; border-radius:3px; background:rgba(255,68,68,.12); color:var(--danger); font-weight:600;">必选</span></h3><div class="row" style="gap:8px"><span class="count-pill">3 条</span><button style="display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border:1px solid var(--border); border-radius:var(--r-sm); background:var(--bg-elevated); color:var(--text-secondary); font-size:11px; cursor:pointer; margin-left:8px;">✨ AI 生成</button></div></div>
+            <div class="section-body">
+              <div class="table-wrap">
+                <table class="edit">
+                  <thead><tr><th>name</th><th>extract_pattern</th><th style="text-align:right">value</th><th style="text-align:right">tolerance</th><th>description</th><th class="icon-cell"></th></tr></thead>
+                  <tbody>
+                    <tr>
+                      <td><input class="cell-input mono" value="周角 (360度)"></td>
+                      <td><input class="cell-input mono" value="(?:周角|一周角|一整圈)\s*(?:＝|=|等于)\s*(\d+)\s*(?:度|°)"></td>
+                      <td><input class="cell-input num" value="360"></td>
+                      <td><input class="cell-input num" value="0"></td>
+                      <td><input class="cell-input" value="1周角 = 360度"></td>
+                      <td class="icon-cell"><button class="btn btn-danger btn-sm" style="padding:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button></td>
+                    </tr>
+                    <tr>
+                      <td><input class="cell-input mono" value="高斯求和 1+...+100"></td>
+                      <td><input class="cell-input mono" value="(?:1\+2\+\.{3}\+100|从1加到100)\s*(?:＝|=|等于)\s*(\d+)"></td>
+                      <td><input class="cell-input num" value="5050"></td>
+                      <td><input class="cell-input num" value="0"></td>
+                      <td><input class="cell-input" value="1+2+...+100 = 5050（高斯配对法）"></td>
+                      <td class="icon-cell"><button class="btn btn-danger btn-sm" style="padding:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button></td>
+                    </tr>
+                    <tr>
+                      <td><input class="cell-input mono" value="黄金分割比"></td>
+                      <td><input class="cell-input mono" value="(?:黄金分割|黄金比例)\s*(?:≈|＝|=|约为)\s*(\d+\.?\d*)"></td>
+                      <td><input class="cell-input num" value="0.618"></td>
+                      <td><input class="cell-input num" value="0.001"></td>
+                      <td><input class="cell-input" value="黄金分割比 ≈ 0.618"></td>
+                      <td class="icon-cell"><button class="btn btn-danger btn-sm" style="padding:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <button class="add-row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> 添加常量</button>
+            </div>
+          </div>
+
+          <!-- 常见误区 -->
+          <div class="section-card">
+            <div class="section-head"><h3><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> 常见误区 misconceptions <span style="font-size:9px; padding:2px 6px; border-radius:3px; background:var(--bg-surface); color:var(--text-tertiary); border:1px solid var(--border); font-weight:600;">选填</span></h3><div class="row" style="gap:8px"><span class="count-pill">3 条</span><button style="display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border:1px solid var(--border); border-radius:var(--r-sm); background:var(--bg-elevated); color:var(--text-secondary); font-size:11px; cursor:pointer; margin-left:8px;">✨ AI 生成</button></div></div>
+            <div class="section-body">
+              <div class="table-wrap">
+                <table class="edit">
+                  <thead><tr><th>pattern</th><th>correct</th><th>severity</th><th>description</th><th class="icon-cell"></th></tr></thead>
+                  <tbody>
+                    <tr>
+                      <td><input class="cell-input mono" value="余数.*(?:大于等于|>=|≥)\s*除数"></td>
+                      <td><input class="cell-input" value="余数必须严格小于除数"></td>
+                      <td><select class="cell-select sev-error"><option selected>error</option><option>warning</option></select></td>
+                      <td><input class="cell-input" value="余数 < 除数"></td>
+                      <td class="icon-cell"><button class="btn btn-danger btn-sm" style="padding:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button></td>
+                    </tr>
+                    <tr>
+                      <td><input class="cell-input mono" value="分母.*(?:为|等于|是)\s*0"></td>
+                      <td><input class="cell-input" value="分母不能为0，除数不能为0"></td>
+                      <td><select class="cell-select sev-error"><option selected>error</option><option>warning</option></select></td>
+                      <td><input class="cell-input" value="除零错误"></td>
+                      <td class="icon-cell"><button class="btn btn-danger btn-sm" style="padding:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button></td>
+                    </tr>
+                    <tr>
+                      <td><input class="cell-input mono" value="三七二十四"></td>
+                      <td><input class="cell-input" value="三七二十一（3×7=21）"></td>
+                      <td><select class="cell-select sev-warning"><option>error</option><option selected>warning</option></select></td>
+                      <td><input class="cell-input" value="乘法口诀错误"></td>
+                      <td class="icon-cell"><button class="btn btn-danger btn-sm" style="padding:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <button class="add-row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> 添加误区</button>
+            </div>
+          </div>
+
+          <!-- 领域事实（JSON 树） -->
+          <div class="collapsible open">
+            <div class="collapsible-head" onclick="toggleCollapsible(this)">
+              <h3><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg> 领域事实 domain_facts <span class="count-pill">JSON · 只读</span> <span style="font-size:9px; padding:2px 6px; border-radius:3px; background:var(--bg-surface); color:var(--text-tertiary); font-weight:600;">可选</span></h3>
+              <div class="row" style="gap:8px" onclick="event.stopPropagation()">
+                <span class="muted" style="font-size:11px">编辑模式：</span>
+                <div class="segment">
+                  <button class="active" onclick="event.stopPropagation()">树形</button>
+                  <button onclick="event.stopPropagation()">编辑 JSON</button>
+                </div>
+                <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+            </div>
+            <div class="collapsible-body">
+              <div class="json-tree">
+                <div class="jt-row">
+                  <div class="jt-head"><span class="jt-caret" onclick="toggleJt(this)">▼</span><span class="jt-br">{</span></div>
+                  <div class="jt-children">
+                    <div class="jt-row">
+                      <div class="jt-head"><span class="jt-caret" onclick="toggleJt(this)">▼</span><span class="jt-key">"math_formulas"</span><span class="jt-br">: [</span> <span class="jt-count">3</span></div>
+                      <div class="jt-children">
+                        <div class="jt-row" style="padding-left:20px"><div class="jt-head"><span class="jt-br">{</span> <span class="jt-key">"name"</span><span class="jt-br">:</span> <span class="jt-str">"三角形面积"</span><span class="jt-br">,</span> <span class="jt-key">"formula"</span><span class="jt-br">:</span> <span class="jt-str">"½×底×高"</span> <span class="jt-br">}</span></div></div>
+                        <div class="jt-row" style="padding-left:20px"><div class="jt-head"><span class="jt-br">{</span> <span class="jt-key">"name"</span><span class="jt-br">:</span> <span class="jt-str">"圆面积"</span><span class="jt-br">,</span> <span class="jt-key">"formula"</span><span class="jt-br">:</span> <span class="jt-str">"π×r²"</span> <span class="jt-br">}</span></div></div>
+                        <div class="jt-row" style="padding-left:20px"><div class="jt-head"><span class="jt-br">{</span> <span class="jt-key">"name"</span><span class="jt-br">:</span> <span class="jt-str">"梯形面积"</span><span class="jt-br">,</span> <span class="jt-key">"formula"</span><span class="jt-br">:</span> <span class="jt-str">"½×(上底+下底)×高"</span> <span class="jt-br">}</span></div></div>
+                        <div style="padding-left:20px"><span class="jt-br">]</span></div>
+                      </div>
+                    </div>
+                    <div class="jt-row">
+                      <div class="jt-head"><span class="jt-caret" onclick="toggleJt(this)">▼</span><span class="jt-key">"grade_topics"</span><span class="jt-br">: {</span> <span class="jt-count">2</span></div>
+                      <div class="jt-children">
+                        <div class="jt-row" style="padding-left:20px"><div class="jt-head"><span class="jt-key">"grade_5"</span><span class="jt-br">:</span> <span class="jt-str">"多边形面积、分数加减"</span></div></div>
+                        <div class="jt-row" style="padding-left:20px"><div class="jt-head"><span class="jt-key">"grade_6"</span><span class="jt-br">:</span> <span class="jt-str">"比例、圆、统计初步"</span></div></div>
+                        <div style="padding-left:20px"><span class="jt-br">}</span></div>
+                      </div>
+                    </div>
+                    <div class="jt-row" style="padding-left:0"><div class="jt-head"><span class="jt-key">"constants_count"</span><span class="jt-br">:</span> <span class="jt-num">32</span></div></div>
+                    <div style="padding-left:0"><span class="jt-br">}</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 搜索测试 -->
+          <div class="section-card">
+            <div class="section-head"><h3><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> 搜索测试</h3></div>
+            <div class="search-box">
+              <div class="input-icon-wrap" style="flex:1">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input class="input" placeholder="输入关键词测试常量/误区匹配命中…" value="黄金分割">
+              </div>
+              <button class="btn btn-primary">搜索</button>
+            </div>
+            <div class="search-result">
+              <div class="search-hit">
+                <div class="hit-name"><span class="mono">constants · 黄金分割比</span> <span class="hit-tag">value: 0.618</span></div>
+                <div class="hit-snippet"><mark>黄金分割</mark>比 ≈ <mark>0.618</mark> · tolerance 0.001</div>
+              </div>
+              <div class="search-hit">
+                <div class="hit-name"><span class="mono">constants · 黄金分割比</span></div>
+                <div class="hit-snippet">pattern: (?:<mark>黄金分割</mark>|黄金比例)\s*(?:≈|＝|=|约为)\s*(\d+\.?\d*)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Role: test ===== -->
+        <div id="role-test" style="display:none">
+          <div class="section-card">
+            <div class="section-head"><h3><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33"/></svg> 测试集配置</h3></div>
+            <div class="cfg-grid">
+              <!-- reader_cfg -->
+              <div class="cfg-card">
+                <div class="cfg-head"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> 读取配置 reader_cfg</div>
+                <div class="cfg-field">
+                  <span class="lab">input_columns</span>
+                  <div class="multi-select">
+                    <span class="ms-chip">question<span class="x">×</span></span>
+                    <span class="ms-chip">subject<span class="x">×</span></span>
+                    <span class="ms-chip">grade<span class="x">×</span></span>
+                  </div>
+                </div>
+                <div class="cfg-field"><span class="lab">output_column</span><input class="input mono" value="reference"></div>
+              </div>
+              <!-- infer_cfg -->
+              <div class="cfg-card">
+                <div class="cfg-head"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> 推理配置 infer_cfg</div>
+                <div class="cfg-field"><span class="lab">prompt_template_id</span><select class="select"><option selected>coursework_generate</option><option>math_generate</option></select></div>
+                <div class="cfg-field"><span class="lab">inferencer</span><select class="select"><option selected>SUTAgent</option><option>DirectLLM</option></select></div>
+                <div class="cfg-field"><span class="lab">max_out_len</span><input class="input mono" value="4096"></div>
+              </div>
+              <!-- eval_cfg -->
+              <div class="cfg-card">
+                <div class="cfg-head"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> 评估配置 eval_cfg</div>
+                <div class="cfg-field"><span class="lab">evaluator</span><select class="select"><option selected>coursework-quality</option><option>coursework-gate</option></select></div>
+                <div class="cfg-field"><span class="lab">pred_postprocessor</span><select class="select"><option selected>markdown_extract</option><option>none</option></select></div>
+                <div class="cfg-field"><span class="lab">dataset_refs</span><input class="input mono" value="[_defaults, math, history]"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 样本预览 -->
+          <div class="section-card">
+            <div class="section-head"><h3><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg> 样本预览 <span class="count-pill">前 3 条 / 共 120</span></h3></div>
+            <div class="table-wrap">
+              <table class="edit sample-table">
+                <thead><tr><th>#</th><th>question (input)</th><th>reference (output)</th><th>subject</th></tr></thead>
+                <tbody>
+                  <tr><td class="col-key">1</td><td class="col-val">请为五年级数学《多边形的面积》设计一节课件，包含平行四边形、三角形、梯形面积公式推导…</td><td class="col-val">=== FILE: 教案.md === 【教学目标】理解面积公式推导…</td><td class="col-key">math</td></tr>
+                  <tr><td class="col-key">2</td><td class="col-val">设计六年级《圆的面积》课件，要求展示割圆术推导过程…</td><td class="col-val">=== FILE: 教案.md === 【教学目标】掌握圆面积公式…</td><td class="col-key">math</td></tr>
+                  <tr><td class="col-key">3</td><td class="col-val">请生成《分数加减法》单元讲义，含同分母/异分母例题…</td><td class="col-val">=== FILE: 讲义.md === 一、同分母分数加减法…</td><td class="col-key">math</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- YAML 模式 -->
+      <div id="mode-yaml" style="display:none">
+        <div class="callout callout-info" style="margin-bottom:14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><div>YAML 源码由表单状态实时生成，此处为只读预览。当前展示 <strong>reference</strong> 角色。</div></div>
+<div class="yaml-viewer"><span class="c"># datasets/math.yaml — role=reference · backend=yaml_file</span>
+<span class="k">subject</span>: math
+<span class="k">scenario</span>: courseware
+<span class="k">description</span>: 数学知识准确性规则（小学至初中）
+<span class="k">version</span>: <span class="s">'1.1'</span>
+<span class="k">role</span>: reference
+
+<span class="k">constants</span>:
+  - <span class="k">name</span>: 周角 (360度)
+    <span class="k">extract_pattern</span>: (?:周角|一周角)\s*(?:＝|=|等于)\s*(\d+)\s*(?:度|°)
+    <span class="k">value</span>: <span class="n">360</span>
+    <span class="k">tolerance</span>: <span class="n">0</span>
+    <span class="k">description</span>: 1周角 = 360度
+  - <span class="k">name</span>: 黄金分割比
+    <span class="k">extract_pattern</span>: (?:黄金分割|黄金比例)\s*(?:≈|＝|约为)\s*(\d+\.?\d*)
+    <span class="k">value</span>: <span class="n">0.618</span>
+    <span class="k">tolerance</span>: <span class="n">0.001</span>
+
+<span class="k">misconceptions</span>:
+  - <span class="k">pattern</span>: 余数.*(?:大于等于|>=|≥)\s*除数
+    <span class="k">correct</span>: 余数必须严格小于除数
+    <span class="k">severity</span>: error
+  - <span class="k">pattern</span>: 三七二十四
+    <span class="k">correct</span>: 三七二十一（3×7=21）
+    <span class="k">severity</span>: warning
+
+<span class="k">domain_facts</span>:
+  <span class="k">math_formulas</span>:
+    - { <span class="k">name</span>: 三角形面积, <span class="k">formula</span>: <span class="s">"½×底×高"</span> }
+    - { <span class="k">name</span>: 圆面积, <span class="k">formula</span>: <span class="s">"π×r²"</span> }
+  <span class="k">grade_topics</span>:
+    <span class="k">grade_5</span>: 多边形面积、分数加减
+    <span class="k">grade_6</span>: 比例、圆、统计初步</div>
+      </div>
+
+      <!-- 版本时间线（可折叠底部） -->
+      <div class="collapsible r-5">
+        <div class="collapsible-head" onclick="toggleCollapsible(this)">
+          <h3><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> 版本时间线 <span class="count-pill">3 个版本</span></h3>
+          <div class="row" style="gap:8px">
+            <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openPublish()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> 发布新版本</button>
+            <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </div>
+        <div class="collapsible-body">
+          <div class="version-grid">
+            <div class="version-card active">
+              <div class="vc-top"><span class="vc-ver">v1.1 <span class="mono" style="color:var(--warning);font-weight:500">· draft</span></span><span class="vc-labels"><span class="lbl" style="background:var(--warning-soft);color:var(--warning)">编辑中</span></span></div>
+              <div class="vc-hash">sha256:c9d1f2a0…</div>
+              <div class="vc-time">改动：新增「三七二十四」误区 · severity warning</div>
+            </div>
+            <div class="version-card">
+              <div class="vc-top"><span class="vc-ver">v1.0</span><span class="vc-labels"><span class="lbl lbl-prod">production</span><span class="lbl lbl-latest">latest</span></span></div>
+              <div class="vc-hash">sha256:a3f2c8e1…</div>
+              <div class="vc-time">2 个月前 · 2026-05-12</div>
+              <div class="vc-actions"><button class="vc-btn">对比</button><button class="vc-btn promote">晋升 staging</button></div>
+            </div>
+            <div class="version-card">
+              <div class="vc-top"><span class="vc-ver">v0.9</span><span class="vc-labels"><span class="lbl lbl-staging">staging</span></span></div>
+              <div class="vc-hash">sha256:71ad3f0c…</div>
+              <div class="vc-time">3 个月前 · 2026-04-20</div>
+              <div class="vc-actions"><button class="vc-btn">对比</button><button class="vc-btn promote">晋升 production</button><button class="vc-btn promote">晋升 latest</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 发布 Modal -->
+<div class="scrim" id="publishScrim" style="display:none">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <h2>发布新版本</h2>
+      <p>将当前草稿发布为不可变版本，并绑定标签。</p>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>版本号</label>
+        <input class="input mono" value="1.1.0">
+        <div class="help">遵循语义化版本（semver）。</div>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label>标签（可多选）</label>
+        <div class="row" style="gap:10px;flex-wrap:wrap">
+          <span class="row" style="gap:7px"><span style="width:30px;height:17px;border-radius:10px;background:var(--bg-inset);border:1px solid var(--border);display:inline-block"></span><span style="font-size:11px;color:var(--success)">production</span></span>
+          <span class="row" style="gap:7px"><span style="width:30px;height:17px;border-radius:10px;background:var(--warning-soft);border:1px solid rgba(210,153,34,.4);display:inline-block"></span><span style="font-size:11px;color:var(--warning)">staging</span></span>
+          <span class="row" style="gap:7px"><span style="width:30px;height:17px;border-radius:10px;background:var(--info-soft);border:1px solid rgba(88,166,255,.4);display:inline-block"></span><span style="font-size:11px;color:var(--info)">latest</span></span>
+        </div>
+        <div class="help">同一标签仅能绑定到一个版本，发布后将自动从旧版本解绑。</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closePublish()">取消</button>
+      <button class="btn btn-primary" onclick="closePublish()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> 发布</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/ui.js"></script>
+<script>
+function switchMode(e, mode) {
+  document.querySelectorAll('.page > .spread .segment')[0].querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  e.target.classList.add('active');
+  document.getElementById('mode-form').style.display = mode === 'form' ? '' : 'none';
+  document.getElementById('mode-yaml').style.display = mode === 'yaml' ? '' : 'none';
+  document.getElementById('roleSeg').style.display = mode === 'form' ? '' : 'none';
+}
+function switchRole(e, role) {
+  document.querySelectorAll('#roleSeg button').forEach(b => b.classList.remove('active'));
+  e.target.classList.add('active');
+  document.getElementById('role-reference').style.display = role === 'reference' ? '' : 'none';
+  document.getElementById('role-test').style.display = role === 'test' ? '' : 'none';
+  var badge = document.getElementById('roleBadge');
+  if (role === 'reference') { badge.style.background = 'var(--signal-soft)'; badge.style.color = 'var(--signal)'; badge.innerHTML = '<span class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--signal)"></span>reference · 被评估器查询'; }
+  else { badge.style.background = 'var(--accent-soft)'; badge.style.color = 'var(--accent)'; badge.innerHTML = '<span class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--accent)"></span>test · SUT 输入/参考输出'; }
+}
+function toggleCollapsible(head) { head.parentElement.classList.toggle('open'); }
+function toggleJt(caret) { caret.parentElement.parentElement.classList.toggle('collapsed'); }
+function openPublish(){ var s=document.getElementById('publishScrim'); s.style.display='flex'; s.setAttribute('data-open',''); }
+function closePublish(){ var s=document.getElementById('publishScrim'); s.style.display='none'; s.removeAttribute('data-open'); }
+document.getElementById('publishScrim').addEventListener('click', closePublish);
+</script>
+</body>
+</html>

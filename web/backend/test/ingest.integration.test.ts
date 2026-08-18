@@ -36,7 +36,15 @@ function runEvent(externalRunId: string, eventId: string, dr = 0.9) {
       external_run_id: externalRunId,
       mode: "eval_only",
       status: "completed",
-      metrics: { DR: dr, CPR: 0.7, avg_reward: 0.6, condR: 0.65, avg_time_ms: 1200 },
+      metrics: {
+        "courseware:document_rate": dr,
+        "courseware:constraint_pass_rate": 0.7,
+        "courseware:reward": 0.6,
+        "courseware:soft": 0,
+        "courseware:pref": 0,
+        "courseware:conditional_reward": 0.65,
+        avg_time_ms: 1200,
+      },
       total_samples: 1,
     },
   }
@@ -109,7 +117,7 @@ describe("#1 合法入库 + 重复幂等", () => {
       where: { projectId_externalRunId: { projectId: project.id, externalRunId: runId } },
     })
     expect(run).not.toBeNull()
-    expect(run!.dr).toBe(0.9)
+    expect((run!.metrics as Record<string, number>)?.["courseware:document_rate"]).toBe(0.9)
   })
 
   it("duplicate event_id is idempotent (duplicates, no extra rows)", async () => {
@@ -135,7 +143,7 @@ describe("#1 合法入库 + 重复幂等", () => {
     const run = await prisma.run.findUnique({
       where: { projectId_externalRunId: { projectId: project.id, externalRunId: runId } },
     })
-    expect(run!.dr).toBe(0.5)
+    expect((run!.metrics as Record<string, number>)?.["courseware:document_rate"]).toBe(0.5)
   })
 })
 

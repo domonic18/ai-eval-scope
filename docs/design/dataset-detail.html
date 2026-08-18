@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数据集 math — EvalScope</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  /* ── 元数据栅格 ── */
+  .meta-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 1px; background: var(--border); border-radius: var(--r-md); overflow: hidden; margin-bottom: 20px; }
+  .meta-cell { background: var(--bg-elevated); padding: 12px 16px; }
+  .meta-lab { font-size: 11px; color: var(--text-tertiary); margin-bottom: 3px; text-transform: uppercase; letter-spacing: .04em; }
+  .meta-val { font-size: 13px; font-weight: 550; }
+  @media (max-width: 1000px){ .meta-grid { grid-template-columns: repeat(2,1fr); } }
+
+  /* ── 区块标题 ── */
+  .section-title { font-size: 14px; font-weight: 650; margin: 4px 0 10px; display: flex; align-items: center; gap: 8px; }
+  .section-title .count-pill { font-family: var(--mono); font-size: 11px; color: var(--text-tertiary); background: var(--bg-surface); padding: 1px 7px; border-radius: var(--r-xs); font-weight: 500; }
+
+  /* ── 角色徽标 ── */
+  .role-badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 100px; font-size: 11.5px; font-weight: 600; }
+  .role-ref { background: var(--signal-soft); color: var(--signal); }
+  .role-test { background: var(--accent-soft); color: var(--accent); }
+
+  /* ── 常量/误解表格 ── */
+  .consts-table th, .consts-table td { vertical-align: top; }
+  .consts-table .pat { font-family: var(--mono); font-size: 11px; color: var(--text-secondary); word-break: break-all; max-width: 360px; }
+  .consts-table .val { font-family: var(--mono); font-weight: 600; color: var(--signal); }
+  .consts-table .tol { font-family: var(--mono); color: var(--text-tertiary); }
+  .sev-pill { font-size: 10px; padding: 1px 6px; border-radius: 3px; font-weight: 600; font-family: var(--mono); }
+  .sev-error { background: var(--danger-soft); color: var(--danger); }
+  .sev-warning { background: var(--warning-soft); color: var(--warning); }
+  .corr { color: var(--signal); }
+
+  /* ── YAML 只读查看 ── */
+  .yaml-viewer { background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--r-md); padding: 16px; font-family: var(--mono); font-size: 12.5px; line-height: 1.7; overflow-x: auto; color: var(--text-secondary); white-space: pre; }
+  .yaml-viewer .k { color: #7aa2f7; }
+  .yaml-viewer .s { color: #9ece6a; }
+  .yaml-viewer .n { color: #ff9e64; }
+  .yaml-viewer .c { color: var(--text-tertiary); font-style: italic; }
+
+  /* ── 搜索测试 ── */
+  .search-box { display: flex; gap: 8px; }
+  .search-box .input { flex: 1; }
+  .search-result { margin-top: 14px; }
+  .search-hit { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--r-md); padding: 12px 16px; margin-bottom: 8px; }
+  .search-hit .hit-name { font-size: 13px; font-weight: 550; margin-bottom: 4px; }
+  .search-hit .hit-snippet { font-size: 12px; color: var(--text-secondary); font-family: var(--mono); }
+  .search-hit mark { background: rgba(47,230,200,.18); color: var(--signal); padding: 0 2px; border-radius: 2px; }
+
+  /* ── cfg 卡片 ── */
+  .cfg-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+  @media (max-width: 1000px){ .cfg-grid { grid-template-columns: 1fr; } }
+  .cfg-card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--r-md); padding: 14px 16px; }
+  .cfg-card .cfg-head { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 10px; }
+  .cfg-row { display: grid; grid-template-columns: 110px 1fr; gap: 8px; padding: 4px 0; border-top: 1px solid var(--border); font-size: 12px; }
+  .cfg-row:first-of-type { border-top: none; }
+  .cfg-key { color: var(--text-tertiary); font-family: var(--mono); font-size: 11px; }
+  .cfg-val { color: var(--text-secondary); font-family: var(--mono); font-size: 11.5px; }
+</style>
+</head>
+<body>
+<div class="ambient"></div>
+<div class="scanlines"></div>
+<div class="shell">
+  <!-- 侧栏 -->
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <a href="index.html" class="logo" style="margin-bottom:14px"><span class="logo-mark"><img src="assets/logo.svg" alt="" style="width:100%"></span><span class="logo-text">Eval<b>Scope</b></span></a>
+      <div class="org-switcher"><div class="org-avatar">智</div><div class="org-meta"><div class="org-name">智能教育研发组</div><div class="org-plan">Team · 5 项目</div></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+    </div>
+    <nav class="nav-section">
+      <a class="nav-item" href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> 项目看板</a>
+      <a class="nav-item" href="run-detail.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg> 全部运行</a>
+      <a class="nav-item active" href="eval-rule-explorer.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> 评测规则</a>
+      <div class="nav-label">组织</div>
+      <a class="nav-item" href="members.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg> 成员</a>
+    </nav>
+    <div class="sidebar-foot"><a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> 接入指引</a></div>
+  </aside>
+
+  <!-- 主区域 -->
+  <div class="main">
+    <header class="topbar">
+      <div class="crumbs">
+        <a href="eval-rule-explorer.html">评测规则</a><span class="sep">/</span>
+        <a href="eval-rule-explorer.html">参考数据</a><span class="sep">/</span>
+        <span class="current mono">math</span>
+      </div>
+      <div class="topbar-right"><div class="avatar">张</div></div>
+    </header>
+
+    <div class="page reveal">
+      <!-- 页头 -->
+      <div class="page-head r-1">
+        <div class="page-title">
+          <h1><span class="mono">math</span> <span class="role-badge role-ref"><span class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--signal)"></span>reference</span></h1>
+          <div class="sub">数学知识准确性规则（小学至初中）· 被评估器查询，用于事实验证</div>
+        </div>
+        <div class="page-actions">
+          <button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> 导出 JSON</button>
+        </div>
+      </div>
+
+      <!-- 元数据栅格 -->
+      <div class="meta-grid r-2">
+        <div class="meta-cell"><div class="meta-lab">scenario</div><div class="meta-val mono">courseware</div></div>
+        <div class="meta-cell"><div class="meta-lab">version</div><div class="meta-val mono">1.0</div></div>
+        <div class="meta-cell"><div class="meta-lab">backend_type</div><div class="meta-val mono">yaml_file</div></div>
+        <div class="meta-cell"><div class="meta-lab">content_hash</div><div class="meta-val mono">sha256:a3f2c8e1…</div></div>
+        <div class="meta-cell"><div class="meta-lab">created_at</div><div class="meta-val mono">2026-05-12 10:24</div></div>
+      </div>
+
+      <!-- 常量表 -->
+      <div class="section-title r-3">常量定义（constants）<span class="count-pill">32 条</span></div>
+      <div class="card r-3" style="margin-bottom:24px">
+        <div class="table-wrap">
+          <table class="data consts-table">
+            <thead><tr><th>name</th><th>extract_pattern</th><th class="num">value</th><th class="num">tolerance</th><th>description</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">周角 (360度)</td><td class="pat">(?:周角|一周角|一整圈|转一圈)\s*(?:＝|=|等于|为|是)\s*(\d+)\s*(?:度|°)</td><td class="num val">360</td><td class="num tol">0</td><td>1周角 = 360度</td></tr>
+              <tr><td class="mono">高斯求和 1+2+...+100</td><td class="pat">(?:1\+2\+\.{3}\+100|1加2加.*加100|从1加到100)\s*(?:＝|=|等于|为|结果[是为])\s*(\d+)</td><td class="num val">5050</td><td class="num tol">0</td><td>1+2+...+100 = 5050（高斯配对法：50×101）</td></tr>
+              <tr><td class="mono">根号2 (√2)</td><td class="pat">(?:根号2|√2|2的算术平方根)\s*(?:≈|＝|=|约为|约)\s*(\d+\.?\d*)</td><td class="num val">1.414</td><td class="num tol">0.001</td><td>√2 ≈ 1.414（勾股定理、单位正方形对角线）</td></tr>
+              <tr><td class="mono">黄金分割比</td><td class="pat">(?:黄金分割|黄金比例|黄金比)\s*(?:≈|＝|=|约为|约)\s*(\d+\.?\d*)</td><td class="num val">0.618</td><td class="num tol">0.001</td><td>黄金分割比 ≈ 0.618</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 误解表 -->
+      <div class="section-title r-4">常见错误（misconceptions）<span class="count-pill">26 条</span></div>
+      <div class="card r-4" style="margin-bottom:24px">
+        <div class="table-wrap">
+          <table class="data consts-table">
+            <thead><tr><th>pattern</th><th>correction</th><th>severity</th></tr></thead>
+            <tbody>
+              <tr><td class="pat">余数.*(?:大于等于|>=|≥|不小[于过])\s*除数</td><td class="corr">余数必须严格小于除数（余数 &lt; 除数）</td><td><span class="sev-pill sev-error">error</span></td></tr>
+              <tr><td class="pat">分母.*(?:为|等于|是)\s*0</td><td class="corr">分母不能为0，除数不能为0</td><td><span class="sev-pill sev-error">error</span></td></tr>
+              <tr><td class="pat">长方形(?:面积|周长).*长\+宽[^×\*]</td><td class="corr">长方形周长=2×(长+宽)，面积=长×宽</td><td><span class="sev-pill sev-error">error</span></td></tr>
+              <tr><td class="pat">三七二十四</td><td class="corr">三七二十一（3×7=21）</td><td><span class="sev-pill sev-error">error</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 搜索测试 -->
+      <div class="section-title r-5">搜索测试</div>
+      <div class="card r-5" style="margin-bottom:24px">
+        <div class="card-body">
+          <div class="search-box">
+            <div class="input-icon-wrap" style="flex:1">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input class="input" placeholder="输入关键词（如 黄金分割、圆周率、余数）测试匹配命中…" value="黄金分割">
+            </div>
+            <button class="btn btn-primary">搜索</button>
+          </div>
+          <div class="search-result">
+            <div class="search-hit">
+              <div class="hit-name"><span class="mono">constants · 黄金分割比</span> <span class="sev-pill" style="background:var(--signal-soft);color:var(--signal)">value: 0.618</span></div>
+              <div class="hit-snippet"><mark>黄金分割</mark>比 ≈ <mark>0.618</mark> · tolerance 0.001</div>
+            </div>
+            <div class="search-hit">
+              <div class="hit-name"><span class="mono">constants · 黄金分割比</span></div>
+              <div class="hit-snippet">pattern: (?:<mark>黄金分割</mark>|黄金比例|黄金比)\s*(?:≈|＝|=|约为|约)\s*(\d+\.?\d*)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 原始 YAML -->
+      <div class="section-title r-6">原始 YAML（只读）</div>
+      <div class="r-6 yaml-viewer"><span class="c"># datasets/math.yaml — role=reference · backend=yaml_file</span>
+<span class="k">subject</span>: math
+<span class="k">scenario</span>: courseware
+<span class="k">description</span>: 数学知识准确性规则（小学至初中）
+<span class="k">version</span>: <span class="s">'1.0'</span>
+
+<span class="k">constants</span>:
+  - <span class="k">name</span>: 周角 (360度)
+    <span class="k">extract_pattern</span>: (?:周角|一周角|一整圈|转一圈)\s*(?:＝|=|等于|为|是)\s*(\d+)\s*(?:度|°)
+    <span class="k">value</span>: <span class="n">360</span>
+    <span class="k">tolerance</span>: <span class="n">0</span>
+    <span class="k">description</span>: 1周角 = 360度
+  - <span class="k">name</span>: 高斯求和 1+2+...+100
+    <span class="k">extract_pattern</span>: (?:1\+2\+\.{3}\+100|从1加到100)\s*(?:＝|=|等于)\s*(\d+)
+    <span class="k">value</span>: <span class="n">5050</span>
+    <span class="k">tolerance</span>: <span class="n">0</span>
+    <span class="k">description</span>: 1+2+...+100 = 5050（高斯配对法：50×101）
+  - <span class="k">name</span>: 黄金分割比
+    <span class="k">extract_pattern</span>: (?:黄金分割|黄金比例|黄金比)\s*(?:≈|＝|=|约为)\s*(\d+\.?\d*)
+    <span class="k">value</span>: <span class="n">0.618</span>
+    <span class="k">tolerance</span>: <span class="n">0.001</span>
+    <span class="k">description</span>: 黄金分割比 ≈ 0.618
+
+<span class="k">misconceptions</span>:
+  - <span class="k">pattern</span>: 余数.*(?:大于等于|>=|≥|不小[于过])\s*除数
+    <span class="k">correct</span>: 余数必须严格小于除数（余数 &lt; 除数）
+    <span class="k">severity</span>: error
+  - <span class="k">pattern</span>: 分母.*(?:为|等于|是)\s*0
+    <span class="k">correct</span>: 分母不能为0，除数不能为0
+    <span class="k">severity</span>: error</div>
+    </div>
+  </div>
+</div>
+<script src="assets/ui.js"></script>
+</body>
+</html>

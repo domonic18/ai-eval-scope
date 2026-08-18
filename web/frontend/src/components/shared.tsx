@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/shadcn/button"
 import { Checkbox } from "@/components/shadcn/checkbox"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/shadcn/card"
+import { Plus } from "lucide-react"
 import {
   Table,
   TableBody,
@@ -34,6 +35,78 @@ export function Page({ children, className }: { children: ReactNode; className?:
   return (
     <div className={cn("mx-auto w-full max-w-[1320px] space-y-6 p-7", className)}>{children}</div>
   )
+}
+
+/** 添加按钮 —— 对齐原型 .add-btn：透明底 + 虚线边框 + 紧凑尺寸 */
+export function AddButton({
+  children,
+  onClick,
+  className,
+}: {
+  children: ReactNode
+  onClick?: () => void
+  className?: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "mt-2 inline-flex items-center gap-1.5 rounded-sm border border-dashed border-border bg-transparent px-3 py-[7px] text-[12.5px] text-muted-foreground transition-colors hover:border-primary hover:bg-primary/10 hover:text-primary",
+        className,
+      )}
+    >
+      <Plus className="size-3.5" />
+      {children}
+    </button>
+  )
+}
+
+/** 区块卡片 —— 对齐原型 .section-card：标题贴顶，去掉默认 py-6/gap-6 */
+export function SectionCard({ children, className }: { children: ReactNode; className?: string }) {
+  return <Card className={cn("gap-0 py-0", className)}>{children}</Card>
+}
+
+/** 区块卡片内容区 —— 对齐原型 .section-body：16px 18px padding */
+export function SectionCardContent({
+  children,
+  className,
+}: {
+  children: ReactNode
+  className?: string
+}) {
+  return <CardContent className={cn("px-[18px] py-4", className)}>{children}</CardContent>
+}
+
+/** 区块卡片标题 —— 对齐原型 .section-head：13px 18px padding、flex 布局 */
+export function SectionCardHeader({
+  children,
+  className,
+}: {
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <CardHeader
+      className={cn(
+        "flex flex-row items-center justify-between gap-2 border-b border-border px-[18px] py-[13px]",
+        className,
+      )}
+    >
+      {children}
+    </CardHeader>
+  )
+}
+
+/** 区块卡片标题文字 —— 对齐原型 .section-head h3 */
+export function SectionCardTitle({
+  children,
+  className,
+}: {
+  children: ReactNode
+  className?: string
+}) {
+  return <CardTitle className={cn("text-[13.5px] font-[650]", className)}>{children}</CardTitle>
 }
 
 export function StatCard({ label, value, foot }: { label: string; value: string; foot?: string }) {
