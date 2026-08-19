@@ -34,6 +34,10 @@ class PackageManifest(BaseModel):
     )
     dependencies: list[str] = Field(default_factory=list, description="依赖的其它包")
     artifact_types: list[str] = Field(default_factory=list, description="制品类型声明")
+    default_rule_set: str | None = Field(
+        default=None,
+        description="默认规则集 id（job 未指定 rule_set_id 时采用，如 coursework-vision）",
+    )
 
     model_config = {"extra": "allow"}
 

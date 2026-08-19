@@ -169,6 +169,13 @@ def test_resolve_builtin_package_by_ref(monkeypatch: pytest.MonkeyPatch) -> None
     assert path.endswith("coursework-quality.yaml")
 
 
+def test_resolve_default_rule_set_from_manifest(monkeypatch: pytest.MonkeyPatch) -> None:
+    """未指定 rule_set_id → 取包清单 default_rule_set（courseware=coursework-vision）。"""
+    monkeypatch.delenv("AGENT_EVAL_REGISTRY_URL", raising=False)
+    path = runner_mod._resolve_rule_set_path(_job(rule_set_id=""))
+    assert path.endswith("coursework-vision.yaml")
+
+
 def test_resolve_unknown_package_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     """未知 package_ref（无远端配置）→ 解析失败抛错，而非跑错规则集。"""
     from agent_eval.core.exceptions import ScenarioPackageNotFoundError
