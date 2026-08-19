@@ -115,6 +115,13 @@ class EvaluatorDefaults:
     # 视觉截图渲染单页超时（毫秒）。SCF/容器等受限环境需比 Playwright 默认 30s 更宽容，
     # 否则 full_page 截超长课件页易超时（见 renderer PlaywrightScreenshotRenderer）。
     vision_screenshot_timeout_ms: int = 60_000
+    # 内容完整性检查：判定「空壳文件」的相对阈值 — 剥标签正文低于包内中位数的该比例
+    # （且无媒体元素）判为疑似空占位。相对比例而非绝对字数，跨学段/学科/页面类型自适应。
+    content_empty_body_ratio: float = 0.15
+    # 内容完整性检查：视为「实质内容」的媒体元素（存在任一即不判空，如图片型课件页）
+    content_media_tags: list[str] = field(
+        default_factory=lambda: ["img", "table", "video", "audio", "svg", "canvas", "iframe"]
+    )
 
 
 # 模块级单例

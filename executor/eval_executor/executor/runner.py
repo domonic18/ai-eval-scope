@@ -40,7 +40,8 @@ def _resolve_rule_set_path(job: EvalJob) -> str:
 
     - 缺失 package_ref → 历史 job，拒绝（LegacyJobRejectedError，不再用 _BUILTIN 回退）。
     - 本地（builtin + 缓存）解析；未命中且配置了 ``AGENT_EVAL_REGISTRY_URL`` → 拉取后重解析。
-    - 包内规则集：优先 job.rule_set_id，其次包内唯一规则集，否则报错。
+    - 包内规则集：优先 job.rule_set_id，其次包清单 default_rule_set（courseware=coursework-vision），
+      再次包内唯一规则集，否则报错。
     """
     from agent_eval.core.exceptions import ScenarioPackageNotFoundError
     from agent_eval.packages import PackageManager, PackageStore
@@ -63,7 +64,8 @@ def _resolve_rule_set_path(job: EvalJob) -> str:
         pkg = pm.resolve_ref(ref)
 
     rules_dir = pkg.rules_dir
-    name = job.rule_set_id or pkg.manifest.id
+    # 回退链：job 显式指定 → 包清单 default_rule_set → 包 id（与规则集同名时）
+    name = job.rule_set_id or pkg.manifest.default_rule_set or pkg.manifest.id
     path = rules_dir / f"{name}.yaml"
     if path.exists():
         return str(path)

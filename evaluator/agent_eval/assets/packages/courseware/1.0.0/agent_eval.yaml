@@ -6,5 +6,7 @@ package:
   description: 课件生成场景的默认规则集、LLM Judge 提示词与参考知识（role=reference）。
   author: builtin
   labels: [production, latest]
+  # 默认规则集：HTTP/调试台提交未指定 rule_set_id 时采用（含多模态视觉评估，评估更完整）
+  default_rule_set: coursework-vision
   artifact_types:
     - courseware/*

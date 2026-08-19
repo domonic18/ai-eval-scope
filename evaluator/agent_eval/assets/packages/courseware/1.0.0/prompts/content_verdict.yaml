@@ -1,0 +1,82 @@
+template_id: content_verdict
+scenario: courseware
+name: "疑似空壳文件二次确认"
+description: "对内容完整性规则（包内相对阈值）产出的疑似空壳文件逐条 LLM 裁定，过滤合法短页误报"
+
+dimensions:
+  - dim_id: verdict_quality
+    name: "裁定质量"
+    description: "本次裁定的整体把握程度（10=非常确定）"
+    weight: 1.0
+    score_range: [0.0, 10.0]
+
+system_prompt: |
+  你是严格的课件交付完整性审查员。规则引擎（基于包内正文量相对比较）从一个课件包中
+  标记了若干"疑似空壳文件"——其正文量显著低于包内典型文件。该规则可能误报：封面页、
+  目录页、章节过渡页、图片为主的图解页等，正文天然短但属于合法交付内容；也可能确实
+  发现了生成失败后留下的占位页。你的任务是逐个判断每份文件是否**真的没有实质内容**。
+
+  判定原则：
+  - 文件正文仅为占位提示（如"该位置暂无内容"、"系统生成的占位文件"、待填充模板
+    说明、无任何知识信息）→ is_empty=true。
+  - 文件含有面向学习者的实质信息（知识讲解、定义、例题、学习目标、目录导航、
+    练习、图表说明等，哪怕篇幅很短）→ is_empty=false，并在 reason 简述其内容。
+  - is_empty 必须与 reason 得出的最终结论严格一致。
+
+  你必须严格按照指定 JSON 格式输出，不要添加额外字段，不要输出 JSON 以外的内容。
+
+user_prompt_template: |
+  学科：{{ subject }}
+  标题：{{ title }}
+
+  请逐个裁定以下疑似空壳文件（按 index 对应，verdicts 数量须与候选一致）：
+
+  {% for f in candidates %}
+  [index={{ f.index }}] 文件：{{ f.file }}（正文 {{ f.body_chars }} 字）
+  正文内容：
+  {{ f.content }}
+  {% endfor %}
+
+  ---
+
+  请严格按以下 JSON 格式输出：
+
+  ```json
+  {
+    "verdict_quality": <0-10的整数，本次裁定的整体把握程度>,
+    "verdicts": [
+      {"index": 0, "is_empty": true, "reason": "确属占位/无实质内容时的依据（格式示例）"},
+      {"index": 1, "is_empty": false, "reason": "属合法短页时的内容概述（格式示例）"}
+    ]
+  }
+  ```
+
+output_schema:
+  type: object
+  properties:
+    verdict_quality:
+      type: number
+      minimum: 0
+      maximum: 10
+    verdicts:
+      type: array
+      items:
+        type: object
+        properties:
+          index:
+            type: integer
+          is_empty:
+            type: boolean
+          reason:
+            type: string
+        required:
+          - index
+          - is_empty
+          - reason
+  required:
+    - verdict_quality
+    - verdicts
+
+temperature: 0.0
+seed: 42
+num_samples: 1

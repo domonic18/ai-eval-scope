@@ -203,7 +203,9 @@ function buildServer(tenant: Tenant): McpServer {
         rule_set_id: z
           .string()
           .optional()
-          .describe("可选：包内规则集 id（如 coursework-quality）。缺省时 executor 取包内唯一规则集，包内不唯一则必填"),
+          .describe(
+            "可选：包内规则集 id（coursework-gate / coursework-quality / coursework-vision）。缺省时取包清单 default_rule_set（courseware=coursework-vision，含多模态视觉评估）",
+          ),
         package_ref: z
           .string()
           .optional()

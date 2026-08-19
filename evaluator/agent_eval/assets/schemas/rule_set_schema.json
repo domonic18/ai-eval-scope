@@ -3,22 +3,34 @@
   "title": "RuleSet Schema",
   "description": "规则集配置文件的 JSON Schema 校验定义",
   "type": "object",
-  "required": ["version", "rules"],
+  "required": [
+    "version",
+    "rules"
+  ],
   "properties": {
     "version": {
       "type": "string",
       "description": "规则集版本号"
     },
     "scenario": {
-      "type": ["string", "null"],
+      "type": [
+        "string",
+        "null"
+      ],
       "description": "所属场景 ID（命名空间），如 courseware（对齐 13 配置管理设计）"
     },
     "package_id": {
-      "type": ["string", "null"],
+      "type": [
+        "string",
+        "null"
+      ],
       "description": "所属场景包 ID，如 courseware-quality"
     },
     "aggregation_policy_id": {
-      "type": ["string", "null"],
+      "type": [
+        "string",
+        "null"
+      ],
       "description": "聚合策略 ID（对齐 13 配置管理设计 §10.4），如 courseware-default；缺省时套用场景默认策略"
     },
     "description": {
@@ -26,18 +38,31 @@
       "description": "规则集描述"
     },
     "schema": {
-      "type": ["string", "null"],
+      "type": [
+        "string",
+        "null"
+      ],
       "description": "JSON Schema 引用路径"
     },
     "dimensions": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "name"],
+        "required": [
+          "id",
+          "name"
+        ],
         "properties": {
-          "id": { "type": "string" },
-          "name": { "type": "string" },
-          "weight": { "type": "number", "minimum": 0 }
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "weight": {
+            "type": "number",
+            "minimum": 0
+          }
         }
       }
     },
@@ -45,11 +70,19 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["stage"],
+        "required": [
+          "stage"
+        ],
         "properties": {
-          "stage": { "type": "string" },
-          "name": { "type": "string" },
-          "stop_on_fail": { "type": "boolean" }
+          "stage": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "stop_on_fail": {
+            "type": "boolean"
+          }
         }
       }
     },
@@ -57,63 +90,179 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "method"],
+        "required": [
+          "id",
+          "method"
+        ],
         "properties": {
-          "id": { "type": "string" },
-          "name": { "type": "string" },
-          "dimension": { "type": "string" },
-          "stage": { "type": "string" },
-          "description": { "type": "string" },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "dimension": {
+            "type": "string"
+          },
+          "stage": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
           "method": {
             "type": "string",
-            "enum": ["llm", "llm_vision", "rule_set", "format"],
+            "enum": [
+              "llm",
+              "llm_vision",
+              "rule_set",
+              "format"
+            ],
             "description": "评估方式"
           },
-          "prompt_id": { "type": ["string", "null"], "description": "LLM/视觉评估的主提示词 ID；rule_set 复合评估也可绑定" },
-          "confirmation_prompt_id": { "type": ["string", "null"], "description": "rule_set 复合评估的二次确认提示词 ID（如 fact_verdict）；仅 rule_set 可用" },
+          "prompt_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "LLM/视觉评估的主提示词 ID；rule_set 复合评估也可绑定"
+          },
+          "confirmation_prompt_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "rule_set 复合评估的二次确认提示词 ID（如 fact_verdict）；仅 rule_set 可用"
+          },
           "dataset_ids": {
-            "type": ["array", "null"],
-            "items": { "type": "string" },
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            },
             "description": "规则集评估关联的参考数据集 ID 列表；空/None=使用全部参考数据集（知识库）"
           },
           "format_type": {
-            "type": ["string", "null"],
-            "enum": ["extension", "json_validity", "html_validity", "markdown"],
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "extension",
+              "json_validity",
+              "html_validity",
+              "markdown",
+              "content_completeness"
+            ],
             "description": "格式检查子类型"
           },
           "extensions": {
-            "type": ["array", "null"],
-            "items": { "type": "string" },
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            },
             "description": "format_type=extension 时允许的后缀列表"
           },
-          "evaluator": { "type": ["string", "null"], "description": "具体执行器标识；省略时由 method + 绑定资产派生" },
-          "params": { "type": "object" },
-          "weight": { "type": "number", "minimum": 0 },
-          "penalty_on_fail": { "type": ["number", "null"] },
-          "template_ref": { "type": ["string", "null"] },
-          "overrides": { "type": "object" },
-          "enabled": { "type": "boolean" },
-          "metadata": { "type": "object" }
+          "evaluator": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "具体执行器标识；省略时由 method + 绑定资产派生"
+          },
+          "params": {
+            "type": "object"
+          },
+          "weight": {
+            "type": "number",
+            "minimum": 0
+          },
+          "penalty_on_fail": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "template_ref": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "overrides": {
+            "type": "object"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "metadata": {
+            "type": "object"
+          }
         },
         "allOf": [
           {
-            "if": { "properties": { "method": { "const": "llm" } } },
-            "then": { "required": ["prompt_id"] }
-          },
-          {
-            "if": { "properties": { "method": { "const": "llm_vision" } } },
-            "then": { "required": ["prompt_id"] }
-          },
-          {
-            "if": { "properties": { "method": { "const": "format" } } },
-            "then": { "required": ["format_type"] }
+            "if": {
+              "properties": {
+                "method": {
+                  "const": "llm"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "prompt_id"
+              ]
+            }
           },
           {
             "if": {
-              "required": ["format_type"],
-              "properties": { "format_type": { "const": "extension" } }
+              "properties": {
+                "method": {
+                  "const": "llm_vision"
+                }
+              }
             },
-            "then": { "required": ["extensions"] }
+            "then": {
+              "required": [
+                "prompt_id"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "method": {
+                  "const": "format"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "format_type"
+              ]
+            }
+          },
+          {
+            "if": {
+              "required": [
+                "format_type"
+              ],
+              "properties": {
+                "format_type": {
+                  "const": "extension"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "extensions"
+              ]
+            }
           }
         ]
       }
@@ -122,11 +271,21 @@
       "type": "object",
       "description": "规则集元数据与版本信息",
       "properties": {
-        "version": { "type": "string" },
-        "description": { "type": "string" },
-        "author": { "type": "string" },
-        "created_at": { "type": "string" },
-        "updated_at": { "type": "string" }
+        "version": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "author": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "updated_at": {
+          "type": "string"
+        }
       }
     },
     "templates": {
@@ -134,59 +293,167 @@
       "description": "规则模板定义",
       "items": {
         "type": "object",
-        "required": ["id", "name", "dimension", "stage", "method"],
+        "required": [
+          "id",
+          "name",
+          "dimension",
+          "stage",
+          "method"
+        ],
         "properties": {
-          "id": { "type": "string" },
-          "name": { "type": "string" },
-          "description": { "type": "string" },
-          "dimension": { "type": "string" },
-          "stage": { "type": "string" },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "dimension": {
+            "type": "string"
+          },
+          "stage": {
+            "type": "string"
+          },
           "method": {
             "type": "string",
-            "enum": ["llm", "llm_vision", "rule_set", "format"],
+            "enum": [
+              "llm",
+              "llm_vision",
+              "rule_set",
+              "format"
+            ],
             "description": "评估方式"
           },
-          "prompt_id": { "type": ["string", "null"], "description": "LLM/视觉评估的主提示词 ID；rule_set 复合评估也可绑定" },
-          "confirmation_prompt_id": { "type": ["string", "null"], "description": "rule_set 复合评估的二次确认提示词 ID（如 fact_verdict）；仅 rule_set 可用" },
+          "prompt_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "LLM/视觉评估的主提示词 ID；rule_set 复合评估也可绑定"
+          },
+          "confirmation_prompt_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "rule_set 复合评估的二次确认提示词 ID（如 fact_verdict）；仅 rule_set 可用"
+          },
           "dataset_ids": {
-            "type": ["array", "null"],
-            "items": { "type": "string" },
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            },
             "description": "规则集评估关联的参考数据集 ID 列表；空/None=使用全部参考数据集（知识库）"
           },
           "format_type": {
-            "type": ["string", "null"],
-            "enum": ["extension", "json_validity", "html_validity", "markdown"],
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "extension",
+              "json_validity",
+              "html_validity",
+              "markdown",
+              "content_completeness"
+            ],
             "description": "格式检查子类型"
           },
           "extensions": {
-            "type": ["array", "null"],
-            "items": { "type": "string" },
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            },
             "description": "format_type=extension 时允许的后缀列表"
           },
-          "evaluator": { "type": ["string", "null"], "description": "具体执行器标识；省略时由 method + 绑定资产派生" },
-          "params": { "type": "object" },
-          "weight": { "type": "number", "minimum": 0 },
-          "penalty_on_fail": { "type": ["number", "null"] }
+          "evaluator": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "具体执行器标识；省略时由 method + 绑定资产派生"
+          },
+          "params": {
+            "type": "object"
+          },
+          "weight": {
+            "type": "number",
+            "minimum": 0
+          },
+          "penalty_on_fail": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
         },
         "allOf": [
           {
-            "if": { "properties": { "method": { "const": "llm" } } },
-            "then": { "required": ["prompt_id"] }
-          },
-          {
-            "if": { "properties": { "method": { "const": "llm_vision" } } },
-            "then": { "required": ["prompt_id"] }
-          },
-          {
-            "if": { "properties": { "method": { "const": "format" } } },
-            "then": { "required": ["format_type"] }
+            "if": {
+              "properties": {
+                "method": {
+                  "const": "llm"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "prompt_id"
+              ]
+            }
           },
           {
             "if": {
-              "required": ["format_type"],
-              "properties": { "format_type": { "const": "extension" } }
+              "properties": {
+                "method": {
+                  "const": "llm_vision"
+                }
+              }
             },
-            "then": { "required": ["extensions"] }
+            "then": {
+              "required": [
+                "prompt_id"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "method": {
+                  "const": "format"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "format_type"
+              ]
+            }
+          },
+          {
+            "if": {
+              "required": [
+                "format_type"
+              ],
+              "properties": {
+                "format_type": {
+                  "const": "extension"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "extensions"
+              ]
+            }
           }
         ]
       }

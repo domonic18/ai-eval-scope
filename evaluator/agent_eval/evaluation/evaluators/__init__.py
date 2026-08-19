@@ -7,6 +7,9 @@ from agent_eval.evaluation.evaluators.commonsense_evaluators import (  # noqa: F
     InfoAccuracyEvaluator,
     LogicalConsistencyEvaluator,
 )
+from agent_eval.evaluation.evaluators.content_completeness import (  # noqa: F401
+    ContentCompletenessEvaluator,
+)
 from agent_eval.evaluation.evaluators.format_evaluators import (  # noqa: F401
     HtmlValidityEvaluator,
     ResponseFormatEvaluator,
@@ -36,6 +39,7 @@ __all__ = [
     # 格式评估器
     "ResponseFormatEvaluator",
     "HtmlValidityEvaluator",
+    "ContentCompletenessEvaluator",
     # 常识评估器
     "InfoAccuracyEvaluator",
     "ChronologicalOrderEvaluator",
