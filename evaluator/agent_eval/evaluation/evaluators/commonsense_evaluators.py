@@ -851,9 +851,11 @@ class InfoAccuracyEvaluator(BaseEvaluator):
         passed = combined_score >= threshold and len(rule_errors) == 0
         score = 1.0 if passed else 0.0
 
-        # 构建 reason（含具体错误描述，面向用户可读，替代"N 处错误"模板）
-        score_parts = [f"{k}={v:.1f}" for k, v in scores.items()]
-        reason = f"知识准确性（LLM + 规则）：{', '.join(score_parts)}"
+        # 构建 reason（面向用户可读，不暴露内部 LLM 维度分数细节）
+        if passed:
+            reason = "知识准确性（LLM + 规则）：通过"
+        else:
+            reason = "知识准确性（LLM + 规则）：未通过"
         if rule_errors:
             # 列出 LLM 二次确认的具体错误（_llm_reason 优先，回退规则描述），最多 5 条
             err_descs = [
