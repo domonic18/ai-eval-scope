@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import yaml
 from jsonschema import ValidationError
@@ -21,10 +21,14 @@ from agent_eval.core.exceptions import (
     ConfigFileNotFoundError,
     SchemaValidationError,
 )
-from agent_eval.execution.models import TaskSet
 from agent_eval.rules.models import RuleSet
 from agent_eval.rules.template import TemplateResolver
 from agent_eval.rules.validation import RuleSetValidator
+
+if TYPE_CHECKING:
+    # 惰性导入打破 config.loader ↔ execution.models 循环
+    # （execution.models 顶部需要 config 默认值；此处仅类型引用，运行时在方法内导入）
+    from agent_eval.execution.models import TaskSet
 
 
 class ConfigLoader:
@@ -177,6 +181,8 @@ class ConfigLoader:
         Returns:
             TaskSet 实例。
         """
+        from agent_eval.execution.models import TaskSet
+
         data = ConfigLoader.load_and_validate(path, schema_path)
         return TaskSet.model_validate(data)
 
