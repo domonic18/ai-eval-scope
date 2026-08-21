@@ -46,15 +46,24 @@ class ExecutionAgent:
     - 状态：WorkspaceCheckpointer 会话状态落盘（崩溃可恢复，thread_id=task.id）
     """
 
-    def __init__(self, config: AgentConfig, sut_tools: SUTToolServer | None = None) -> None:
+    def __init__(
+        self,
+        config: AgentConfig,
+        sut_tools: SUTToolServer | None = None,
+        *,
+        extra_tool_servers: list[Any] | None = None,
+    ) -> None:
         """初始化 ExecutionAgent（DeepAgents 图惰性装配，导入本类无需 [agent] extra）。
 
         Args:
             config: Agent 配置（轮次/预算/llm_provider/workspace 等）。
             sut_tools: SUT 工具注册表；缺省按 config.sut_tools_config 构建。
+            extra_tool_servers: 追加工具注册表（如 AgentProtocolToolServer，
+                arch/03 §4.0.6 语义工具面），与 SUT Tools 一同显式绑定。
         """
         self.config = config
         self.sut_tools = sut_tools or SUTToolServer(config.sut_tools_config)
+        self.tool_servers: list[Any] = [self.sut_tools, *(extra_tool_servers or [])]
         self._graph: Any = None
 
     # ─── 对外入口 ───
@@ -135,14 +144,19 @@ class ExecutionAgent:
                 "请执行: pip install 'agent-eval[agent]'",
                 details={"missing_module": "deepagents"},
             ) from None
+        tools = [tool for server in self.tool_servers for tool in server.to_langchain_tools()]
         return create_deep_agent(
             model=build_chat_model(self.config.llm_provider, self.config.model),
-            tools=self.sut_tools.to_langchain_tools(),
+            tools=tools,
             system_prompt=self._build_system_prompt(),
             checkpointer=WorkspaceCheckpointer(self.config.workspace_dir),
         )
 
     # ─── Prompt 构建（arch/03 §3.3/§3.4） ───
+
+    def _describe_all_tools(self) -> str:
+        """汇总全部工具注册表（SUT Tools + 追加注册表）的描述清单。"""
+        return "\n".join(server.describe_tools() for server in self.tool_servers)
 
     def _build_system_prompt(self) -> str:
         """System Prompt：角色职责 + 可用工具 + 执行规则 + 输出规范。"""
@@ -156,7 +170,7 @@ class ExecutionAgent:
 5. 任务结束时调用 write_package 写入执行包
 
 ## 可用工具
-{self.sut_tools.describe_tools()}
+{self._describe_all_tools()}
 
 ## 执行规则
 - 每个任务必须在 {self.config.max_turns} 轮内完成

@@ -338,23 +338,94 @@ def eval(
         raise typer.Exit(code=1) from e
 
 
-@app.command(hidden=True)
+@app.command()
 def run(
     task_set: str = typer.Option(..., "--task-set", help="任务集文件路径"),
-    sut_config: str = typer.Option(..., "--sut-config", help="SUT 配置文件路径"),
-    output_dir: str | None = typer.Option(None, "--output-dir", help="输出目录"),
+    sut_config: str = typer.Option(
+        ..., "--sut-config", help="被测系统配置路径（sut_config v2，yaml 文件或目录）"
+    ),
+    sut_name: str | None = typer.Option(
+        None, "--sut-name", help="被测系统名（sut_config 为目录且含多系统时必填）"
+    ),
+    output_dir: str | None = typer.Option(
+        None, "--output-dir", help="执行包输出目录（默认 ./workspace）"
+    ),
+    llm_provider: str | None = typer.Option(
+        None, "--llm-provider", help="执行 Agent 使用的 llm_config provider（默认 deepseek）"
+    ),
+    max_turns: int | None = typer.Option(None, "--max-turns", help="单任务最大交互轮次"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="详细输出"),
 ) -> None:
-    """执行被测 Agent（ExecutionAgent 驱动），生成 ExecutionPackage。"""
+    """执行被测 Agent（ExecutionAgent/DeepAgents 驱动），生成 ExecutionPackage。"""
+    import asyncio
+    from pathlib import Path
+
+    from agent_eval.agent.execution_agent import ExecutionAgent
+    from agent_eval.agent.protocol_tools import AgentProtocolToolServer
+    from agent_eval.config.loader import ConfigLoader
+    from agent_eval.core.exceptions import AgentEvalError
     from agent_eval.core.logging import setup_logging
+    from agent_eval.execution.channels.base import create_channel
+    from agent_eval.execution.models import AgentConfig
+    from agent_eval.execution.registry import SUTRegistry
+    from agent_eval.storage.package import generate_run_id
 
     setup_logging(level="DEBUG" if verbose else "INFO")
 
-    rprint(f"[blue]任务集:[/blue] {task_set}")
-    rprint(f"[blue]SUT 配置:[/blue] {sut_config}")
+    try:
+        config_path = Path(sut_config)
+        registry = (
+            SUTRegistry.load_dir(config_path)
+            if config_path.is_dir()
+            else SUTRegistry.load(config_path)
+        )
+        sut = registry.get(sut_name) if sut_name else registry.default
+        task_set_model = ConfigLoader.load_task_set(task_set)
+    except AgentEvalError as e:
+        rprint(f"[red]配置加载失败:[/red] {e}")
+        raise typer.Exit(code=1) from e
 
-    # Sprint 8 完整实现
-    rprint("[yellow]run 命令的完整逻辑将在 Sprint 8 中实现。[/yellow]")
+    run_id = generate_run_id()
+    rprint(f"[blue]任务集:[/blue] {task_set}（{len(task_set_model.tasks)} 个任务）")
+    rprint(f"[blue]被测系统:[/blue] {sut.name}（channel={sut.channel}, base_url={sut.base_url}）")
+    rprint(f"[blue]运行 ID:[/blue] {run_id}")
+
+    channel = None
+    try:
+        channel = create_channel(sut)
+        protocol_tools = AgentProtocolToolServer(
+            channel, default_metadata={"eval_run_id": run_id, "sut_name": sut.name}
+        )
+        agent = ExecutionAgent(
+            AgentConfig(
+                llm_provider=llm_provider or "deepseek",
+                max_turns=max_turns or 20,
+                workspace_dir=Path(output_dir) if output_dir else Path("./workspace"),
+            ),
+            extra_tool_servers=[protocol_tools],
+        )
+        packages = asyncio.run(agent.run_task_set(task_set_model))
+    except AgentEvalError as e:
+        rprint(f"[red]执行失败:[/red] {e}")
+        raise typer.Exit(code=1) from e
+    finally:
+        if channel is not None:
+            asyncio.run(channel.aclose())
+
+    succeeded = sum(1 for p in packages if p.manifest.status == "success")
+    rprint(
+        f"[green]执行完成:[/green] {succeeded}/{len(packages)} 成功；"
+        f"结构化日志: {agent.config.workspace_dir}/runs/{run_id}/agent_logs/"
+    )
+    for package in packages:
+        status_color = "green" if package.manifest.status == "success" else "red"
+        rprint(
+            f"  [{status_color}]{package.manifest.status}[/{status_color}] "
+            f"{package.manifest.task_id} → {package.output_dir or package.manifest.package_id}"
+        )
+        rprint(
+            f"    评估: [blue]agent-eval eval --package-dir {package.output_dir} --package <场景包>[/blue]"
+        )
 
 
 @app.command(hidden=True)
@@ -449,9 +520,7 @@ def upload(
     )
 
     mdefs_raw = summary.get("metric_definitions") or []
-    backfill_sid = (
-        str(mdefs_raw[0]["id"]).split(":", 1)[0] if mdefs_raw else "courseware"
-    )
+    backfill_sid = str(mdefs_raw[0]["id"]).split(":", 1)[0] if mdefs_raw else "courseware"
     scenario_config = ScenarioConfig(
         scenario_id=backfill_sid,
         aggregation_policy=AggregationPolicy(
