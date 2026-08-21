@@ -82,6 +82,18 @@ class TaskBuildError(ExecutionError):
     """任务集构建失败（模板渲染错误、LLM 生成异常等）。"""
 
 
+class SUTAuthError(ExecutionError):
+    """SUT 鉴权失败（凭证缺失、登录失败、自动重登超频等，arch/03 §4.0）。"""
+
+
+class SUTChannelError(ExecutionError):
+    """SUT 通道交互失败（请求异常、协议响应不合规等）。"""
+
+
+class AgentProtocolError(SUTChannelError):
+    """Agent Protocol 通道错误（runs/threads/agents 接口调用失败，arch/03 §4.0.6）。"""
+
+
 # ─── 评估引擎相关 ───
 
 
