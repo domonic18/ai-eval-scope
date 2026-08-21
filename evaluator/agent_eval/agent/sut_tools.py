@@ -3,20 +3,18 @@
 提供 invoke_http_sut、invoke_cli_sut、scan_directory、read_file、
 collect_results、write_package、list_files 七个工具。v4.6 起 SUTToolServer
 演进为**工具注册表**：工具实现为普通异步方法（可直接调用与测试，不依赖任何
-Agent 框架），to_langchain_tools() 惰性加载 langchain_core 将其导出为
-LangChain Tool 显式绑定给 DeepAgents；MCP 封装为可选能力（未在本期排期）。
+Agent 框架），ToolExporterMixin（agent/tools.py）惰性导出 LangChain Tool
+显式绑定给 DeepAgents；MCP 封装为可选能力（未在本期排期）。
 """
 
 from __future__ import annotations
 
 import asyncio
-import functools
 import json
 import os
 import shutil
 import sys
 from collections.abc import Callable
-from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -24,12 +22,11 @@ from typing import Any
 import httpx
 from jinja2 import Template as JinjaTemplate
 
-from agent_eval.core.exceptions import (
-    AgentError,
-    CollectionError,
-    ToolExecutionError,
-)
+from agent_eval.agent.tools import ToolExporterMixin, ToolSpec
+from agent_eval.agent.tools import truncate as _truncate
+from agent_eval.core.exceptions import CollectionError, ToolExecutionError
 from agent_eval.execution.models import SUTToolsConfig
+from agent_eval.execution.utils import extract_by_path as _extract_by_path
 from agent_eval.storage.collector import DirectoryCollector
 from agent_eval.storage.package import (
     PackageManifest,
@@ -41,39 +38,6 @@ from agent_eval.storage.package import (
 # 工具输出截断上限（字节级上下文经济性保护，非业务阈值）
 HTTP_RAW_MAX_CHARS = 4000
 CLI_OUTPUT_MAX_CHARS = 20000
-
-
-@dataclass(frozen=True)
-class ToolSpec:
-    """单个 SUT 工具的注册信息（名称/描述/方法名）。"""
-
-    name: str
-    description: str
-    method: str
-
-
-def _truncate(text: str, max_chars: int) -> str:
-    """超长文本截断（尾部追加标记）。"""
-    if len(text) <= max_chars:
-        return text
-    return f"{text[:max_chars]}...（已截断，共 {len(text)} 字符）"
-
-
-def _extract_by_path(data: Any, path: str) -> Any:
-    """按点分路径提取字段值（数字段表示列表下标），如 "choices.0.message.content"。"""
-    current = data
-    for segment in path.split("."):
-        if isinstance(current, dict):
-            current = current[segment]
-        elif isinstance(current, list) and segment.lstrip("-").isdigit():
-            current = current[int(segment)]
-        else:
-            raise ToolExecutionError(
-                f"response_mapping 路径无法解析: {path!r}（当前节点类型 {type(current).__name__}）",
-                details={"path": path, "segment": segment},
-            )
-    return current
-
 
 TOOL_SPECS: list[ToolSpec] = [
     ToolSpec(
@@ -114,12 +78,14 @@ TOOL_SPECS: list[ToolSpec] = [
 ]
 
 
-class SUTToolServer:
+class SUTToolServer(ToolExporterMixin):
     """SUT 交互工具注册表，为 ExecutionAgent 提供工具集。
 
     工具方法不依赖 deepagents/langchain，可独立调用与测试；
-    to_langchain_tools() 在 Agent-Driven 模式下将其导出为 LangChain Tool。
+    to_langchain_tools()（ToolExporterMixin）在 Agent-Driven 模式下导出 LangChain Tool。
     """
+
+    TOOL_SPECS = TOOL_SPECS
 
     def __init__(
         self,
@@ -362,59 +328,6 @@ class SUTToolServer:
         if error:
             summary["error"] = error
         return summary
-
-    # ─── 工具注册表 ───
-
-    def to_langchain_tools(self) -> list[Any]:
-        """导出 LangChain Tool 列表供 DeepAgents 显式绑定（v4.6，惰性导入）。"""
-        try:
-            from langchain_core.tools import StructuredTool
-        except ImportError:
-            raise AgentError(
-                "导出 LangChain Tool 需要 langchain-core。请执行: pip install 'agent-eval[agent]'",
-                details={"missing_module": "langchain_core"},
-            ) from None
-        return [
-            StructuredTool.from_function(
-                coroutine=self._json_tool(getattr(self, spec.method)),
-                name=spec.name,
-                description=spec.description,
-            )
-            for spec in TOOL_SPECS
-        ]
-
-    def _json_tool(self, method: Any) -> Any:
-        """包装工具方法：结果 JSON 序列化为字符串（dict/list 统一文本化）。
-
-        functools.wraps 保留原方法签名（含类型注解与默认值），
-        StructuredTool.from_function 由此推导参数 Schema。
-        """
-
-        @functools.wraps(method)
-        async def run(*args: Any, **kwargs: Any) -> str:
-            result = await method(*args, **kwargs)
-            if isinstance(result, str):
-                return result
-            return json.dumps(result, ensure_ascii=False, default=str)
-
-        return run
-
-    def get_tool_names(self) -> list[str]:
-        """返回所有注册的工具名称。"""
-        return [spec.name for spec in TOOL_SPECS]
-
-    def describe_tools(self) -> str:
-        """返回工具描述清单，用于构建 System Prompt。"""
-        lines = []
-        for spec in TOOL_SPECS:
-            method = getattr(self, spec.method)
-            params = ", ".join(
-                f"{name}: {annot.__name__ if hasattr(annot, '__name__') else annot}"
-                for name, annot in getattr(method, "__annotations__", {}).items()
-                if name != "return"
-            )
-            lines.append(f"- {spec.name}({params}): {spec.description}")
-        return "\n".join(lines)
 
     def _resolve_url(self, url: str) -> str:
         """相对 URL 拼接配置的 http_base_url；无 base_url 的相对路径直接报错。"""
