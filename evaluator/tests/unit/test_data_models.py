@@ -138,7 +138,8 @@ class TestAgentConfig:
         config = AgentConfig()
         assert config.max_turns == 20
         assert config.max_budget_usd == 1.0
-        assert config.model == "claude-sonnet-4-20250514"
+        assert config.llm_provider == "deepseek"  # v4.6：模型无关（llm_config 桥接）
+        assert config.model is None
         assert config.workspace_dir == Path("./workspace")
 
     def test_custom_config(self) -> None:
@@ -157,13 +158,13 @@ class TestAgentConfig:
     def test_roundtrip(self) -> None:
         config = AgentConfig(
             max_turns=30,
-            model="claude-opus",
+            model="kimi-latest",
             workspace_dir=Path("/tmp/ws"),
         )
         json_str = config.model_dump_json()
         restored = AgentConfig.model_validate_json(json_str)
         assert restored.max_turns == 30
-        assert restored.model == "claude-opus"
+        assert restored.model == "kimi-latest"
 
     def test_sut_tools_config(self) -> None:
         config = AgentConfig(
