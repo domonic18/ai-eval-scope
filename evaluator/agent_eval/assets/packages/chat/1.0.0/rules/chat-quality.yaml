@@ -1,0 +1,51 @@
+version: "1.0"
+scenario: chat
+description: "对话型 SUT 评估：回答门控（非空 answer.md）+ 答案精确匹配 + 回答质量 LLM Judge"
+
+dimensions:
+  - id: functional
+    name: "功能性"
+    weight: 1.0
+  - id: effectiveness
+    name: "效果性"
+    weight: 1.0
+
+cascade:
+  - stage: format
+    name: "回答门控"
+    stop_on_fail: true
+  - stage: quality
+    name: "质量评估"
+    stop_on_fail: false
+
+rules:
+  # ── format 门控（HARD_GATE，失败阻塞后续；SUT 回答由 ExecutionAgent 物化为 output/answer.md）──
+  - id: FMT_001
+    name: "回答文件存在且格式有效"
+    dimension: functional
+    stage: format
+    description: "SUT 必须产生非空回答（answer.md）"
+    method: format
+    format_type: extension
+    extensions: ["md"]
+    evaluator: format.response_format
+    weight: 1.0
+
+  # ── quality（HARD_SCORE 精确匹配 + SOFT LLM Judge；chat.* 评估器由包 entry_points 注册）──
+  - id: ANS_EXACT
+    name: "答案精确匹配"
+    dimension: functional
+    stage: quality
+    description: "任务声明 expected.answer 时，回答须命中该值（未声明则跳过）"
+    method: rule_set
+    evaluator: chat.answer_exact
+    weight: 1.0
+
+  - id: ANS_QUALITY
+    name: "回答质量"
+    dimension: effectiveness
+    stage: quality
+    method: llm
+    prompt_id: chat_answer_quality
+    evaluator: chat.answer_quality
+    weight: 1.0

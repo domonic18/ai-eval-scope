@@ -1,0 +1,14 @@
+package:
+  id: chat
+  scenario: chat
+  version: 1.0.0
+  name: 对话质量评估内置包
+  description: 对话型 SUT 的默认规则集（回答门控 + 答案精确匹配 + 回答质量 LLM Judge）与提示词。
+  author: builtin
+  labels: [production, latest]
+  # 阶段 4：包声明自己的评估器入口 —— 加载本包时导入该模块并触发 @registry.register，
+  # 使 chat.* 评估器随包可用。
+  entry_points:
+    evaluators: "agent_eval.evaluation.evaluators.scenario.chat:register"
+  artifact_types:
+    - chat/*
