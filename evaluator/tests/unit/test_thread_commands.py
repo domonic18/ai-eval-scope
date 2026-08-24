@@ -39,17 +39,17 @@ def _channel(sut: SUTSystemConfig, handler) -> AgentProtocolChannel:
 # ─── 纯函数 ───
 
 
-def test_messages_from_input_str_wraps_user_message() -> None:
+def test_messages_from_input_str_wraps_human_message() -> None:
     msgs = messages_from_input("你好")
     assert len(msgs) == 1
-    assert msgs[0]["role"] == "user"
+    assert msgs[0]["type"] == "human"
     assert msgs[0]["content"] == "你好"
     assert msgs[0]["id"]
 
 
 def test_messages_from_input_messages_dict_passthrough_with_defaults() -> None:
-    msgs = messages_from_input({"messages": [{"role": "user", "content": "hi"}]})
-    assert msgs[0]["content"] == "hi" and msgs[0]["id"]
+    msgs = messages_from_input({"messages": [{"content": "hi"}]})
+    assert msgs[0]["type"] == "human" and msgs[0]["content"] == "hi" and msgs[0]["id"]
     assert messages_from_input({"messages": ["裸文本"]})[0]["content"] == "裸文本"
 
 
@@ -128,6 +128,9 @@ def test_channel_run_dispatches_commands_flavor_with_conversation_header() -> No
     assert captured["body"]["method"] == "run.start"
     assert captured["body"]["params"]["config"]["configurable"] == {"modelId": "19"}
     assert captured["body"]["params"]["metadata"] == {"task_id": "t1"}
+    # 消息置于 params.input.messages 且为 LangGraph type 格式（v4.6.4 契约）
+    sent = captured["body"]["params"]["input"]["messages"]
+    assert sent == [{"type": "human", "id": sent[0]["id"], "content": "只回复两个字"}]
     assert result["status"] == "success"
     assert result["run"]["run_id"] == "run-9" and result["run"]["thread_id"] == captured["conv"]
     assert result["text"] == "收到"

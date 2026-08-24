@@ -57,22 +57,29 @@ def commands_agent_info(
 
 
 def messages_from_input(input: Any) -> list[dict[str, Any]]:
-    """str → 单条 user 消息；{messages:[...]} → 补 id 透传；其他 dict → JSON 串。"""
+    """str → 单条 human 消息；{messages:[...]} → 补 type/id 透传；其他 dict → JSON 串。
+
+    消息形态为 LangGraph/LangChain 格式（`type: human|ai`，无 role 字段）——
+    AG-UI 网关族按 type 识别，Agent Protocol 的 `role: user` 会被静默丢弃
+    （v4.6.4 实测：SUT 收不到输入、按空会话即兴回答）。
+    """
     if isinstance(input, str):
-        return [{"id": str(uuid.uuid4()), "role": "user", "content": input}]
+        return [{"type": "human", "id": str(uuid.uuid4()), "content": input}]
     if isinstance(input, dict) and isinstance(input.get("messages"), list):
         out: list[dict[str, Any]] = []
         for message in input["messages"]:
+            if isinstance(message, str):
+                message = {"content": message}
             msg = dict(message) if isinstance(message, dict) else {"content": message}
-            msg.setdefault("role", "user")
+            msg.setdefault("type", "human")
             msg.setdefault("id", str(uuid.uuid4()))
             out.append(msg)
         return out
     if isinstance(input, dict):
         return [
             {
+                "type": "human",
                 "id": str(uuid.uuid4()),
-                "role": "user",
                 "content": json.dumps(input, ensure_ascii=False),
             }
         ]
@@ -145,8 +152,8 @@ async def commands_run(
 def run_start_envelope(
     channel: AgentProtocolChannel, input: Any, metadata: dict[str, Any] | None
 ) -> dict[str, Any]:
-    """构造 run.start 命令信封；sut.configurable 注入 config.configurable。"""
-    params: dict[str, Any] = {"messages": messages_from_input(input)}
+    """构造 run.start 命令信封；消息置于 params.input.messages（v4.6.4 契约）。"""
+    params: dict[str, Any] = {"input": {"messages": messages_from_input(input)}}
     if channel.sut.configurable:
         params["config"] = {"configurable": dict(channel.sut.configurable)}
     if metadata:
