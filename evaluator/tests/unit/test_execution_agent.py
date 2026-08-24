@@ -277,3 +277,49 @@ def test_trace_without_sut_run_keeps_counts_only(tmp_path, monkeypatch) -> None:
     trace = _read_json(tmp_path / "task_1" / "trace.json")
     assert "sut" not in trace["response"]
     assert trace["response"]["tool_calls"] >= 0
+
+
+def test_answer_file_materialized_from_last_run(tmp_path, monkeypatch) -> None:
+    """SUT 回答物化为 output/answer.md（对话型任务，评估器按文件收集文本）。"""
+    _install_fakes(monkeypatch, FakeGraph(result={"messages": _messages()}))
+
+    class _StubSutServer:
+        last_run = {"status": "success", "thread_id": "t", "run_id": "r", "text": "回答正文"}
+
+        def to_langchain_tools(self) -> list:
+            return []
+
+        def describe_tools(self) -> str:
+            return "stub"
+
+    agent = ExecutionAgent(
+        AgentConfig(workspace_dir=tmp_path, max_turns=7), extra_tool_servers=[_StubSutServer()]
+    )
+    asyncio.run(agent.sut_tools.write_package(task_id="task_1", success=True))
+    asyncio.run(agent.run_task(_task()))
+    answer = tmp_path / "task_1" / "output" / "answer.md"
+    assert answer.exists() and answer.read_text(encoding="utf-8") == "回答正文"
+
+
+def test_answer_file_not_duplicated_when_output_has_files(tmp_path, monkeypatch) -> None:
+    """SUT 已有产物文件时不物化（不覆盖真实产物）。"""
+    _install_fakes(monkeypatch, FakeGraph(result={"messages": _messages()}))
+
+    class _StubSutServer:
+        last_run = {"status": "success", "thread_id": "t", "run_id": "r", "text": "回答"}
+
+        def to_langchain_tools(self) -> list:
+            return []
+
+        def describe_tools(self) -> str:
+            return "stub"
+
+    agent = ExecutionAgent(
+        AgentConfig(workspace_dir=tmp_path, max_turns=7), extra_tool_servers=[_StubSutServer()]
+    )
+    asyncio.run(agent.sut_tools.write_package(task_id="task_1", success=True))
+    output_dir = tmp_path / "task_1" / "output"
+    output_dir.mkdir(parents=True)
+    (output_dir / "artifact.html").write_text("<html/>", encoding="utf-8")
+    asyncio.run(agent.run_task(_task()))
+    assert not (output_dir / "answer.md").exists()

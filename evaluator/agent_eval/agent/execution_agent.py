@@ -240,6 +240,7 @@ class ExecutionAgent:
             )
         self._ensure_task_file(task, package_dir)
         self._ensure_trace_file(session, package_dir)
+        self._ensure_answer_file(package_dir)
         self._ensure_metrics_file(session, package_dir)
         return ExecutionPackage.load(package_dir)
 
@@ -295,6 +296,17 @@ class ExecutionAgent:
             if last:
                 return last
         return None
+
+    def _ensure_answer_file(self, package_dir: Path) -> None:
+        """SUT 回答物化为 output/answer.md（对话型任务无产物文件；评估器按文件收集文本）。"""
+        text = (self._last_sut_run() or {}).get("text") or ""
+        if not text.strip():
+            return
+        output_dir = package_dir / "output"
+        if output_dir.exists() and any(output_dir.iterdir()):
+            return  # SUT 已有产物文件，不重复物化
+        output_dir.mkdir(parents=True, exist_ok=True)
+        (output_dir / "answer.md").write_text(text, encoding="utf-8")
 
     def _ensure_metrics_file(self, session: AgentSession, package_dir: Path) -> None:
         metrics_file = package_dir / "metrics.json"
