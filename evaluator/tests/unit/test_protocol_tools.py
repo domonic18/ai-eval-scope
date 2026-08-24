@@ -124,3 +124,34 @@ def test_tool_guard_converts_channel_error_to_failed_result() -> None:
     assert result["status"] == "failed"
     assert result["error"]["type"] == "AgentProtocolError"
     assert "必须指定模型" in result["error"]["message"]
+
+
+def test_agent_run_records_last_run_summary() -> None:
+    """run 后记录摘要（thread/run/status/未截断 text），供 trace 回填 SUT 回答。"""
+    payload = {
+        "run": {"run_id": "r-9", "thread_id": "th-9", "status": "success"},
+        "values": {"messages": []},
+        "output": {"text": "回答" * 3000},
+        "text": "回答" * 3000,
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=payload)
+
+    channel = AgentProtocolChannel(
+        SUTSystemConfig(
+            name="cw",
+            channel="agent_protocol",
+            base_url="https://ap.example.com",
+            output_paths=OutputPathsConfig(text_field="output.text"),
+        ),
+        http_client_factory=lambda: httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+    )
+    server = AgentProtocolToolServer(channel)
+    asyncio.run(server.agent_run("问题"))
+    assert server.last_run == {
+        "status": "success",
+        "thread_id": "th-9",
+        "run_id": "r-9",
+        "text": "回答" * 3000,  # 截断前原文
+    }

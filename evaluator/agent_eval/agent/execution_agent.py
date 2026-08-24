@@ -271,17 +271,30 @@ class ExecutionAgent:
         trace_file = package_dir / "trace.json"
         if trace_file.exists():
             return
+        response: dict[str, Any] = {
+            "messages": len(session.messages),
+            "tool_calls": session.tool_call_count,
+        }
+        # 回填 SUT 最终回答（trace 只存计数时下游 eval 拿不到评估对象，v4.6.4）
+        sut_run = self._last_sut_run()
+        if sut_run is not None:
+            response["sut"] = sut_run
         trace = {
             "request": {"executor": "ExecutionAgent", "llm_provider": self.config.llm_provider},
-            "response": {
-                "messages": len(session.messages),
-                "tool_calls": session.tool_call_count,
-            },
+            "response": response,
             "started_at": session.started_at,
             "finished_at": session.finished_at or _now_iso(),
             "error": None,
         }
         trace_file.write_text(json.dumps(trace, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    def _last_sut_run(self) -> dict[str, Any] | None:
+        """取工具注册表记录的最近一次 SUT run 摘要（AgentProtocolToolServer.last_run）。"""
+        for server in self.tool_servers:
+            last: dict[str, Any] | None = getattr(server, "last_run", None)
+            if last:
+                return last
+        return None
 
     def _ensure_metrics_file(self, session: AgentSession, package_dir: Path) -> None:
         metrics_file = package_dir / "metrics.json"

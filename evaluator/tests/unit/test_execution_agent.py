@@ -235,3 +235,45 @@ def test_task_prompt_expected_block(tmp_path) -> None:
     prompt = agent._build_task_prompt(task)
     assert "预期结果" in prompt
     assert "浮力" in prompt
+
+
+def test_trace_backfills_sut_last_run_text(tmp_path, monkeypatch) -> None:
+    """trace 回填 SUT 最终回答（工具注册表记录的 last_run，v4.6.4）。"""
+    graph = _install_fakes(monkeypatch, FakeGraph(result={"messages": _messages()}))
+    assert graph is not None
+
+    class _StubSutServer:
+        last_run = {
+            "status": "success",
+            "thread_id": "th-1",
+            "run_id": "r-1",
+            "text": "一元一次方程的标准形式是 ax+b=0…",
+        }
+
+        def to_langchain_tools(self) -> list:
+            return []
+
+        def describe_tools(self) -> str:
+            return "stub"
+
+    agent = ExecutionAgent(
+        AgentConfig(workspace_dir=tmp_path, max_turns=7), extra_tool_servers=[_StubSutServer()]
+    )
+    # 模拟 Agent 会话内已写成功包（run_task 不再兜底 failed）
+    asyncio.run(agent.sut_tools.write_package(task_id="task_1", success=True))
+    package = asyncio.run(agent.run_task(_task()))
+    assert package.manifest.status == "success"
+    trace = _read_json(tmp_path / "task_1" / "trace.json")
+    assert trace["response"]["sut"]["text"].startswith("一元一次方程")
+    assert trace["response"]["sut"]["thread_id"] == "th-1"
+    assert trace["response"]["messages"] == len(_messages())
+
+
+def test_trace_without_sut_run_keeps_counts_only(tmp_path, monkeypatch) -> None:
+    """无 last_run 注册表（如目录模式）时 trace 保持计数形态，不造 sut 键。"""
+    _install_fakes(monkeypatch, FakeGraph(result={"messages": _messages()}))
+    agent = _agent(tmp_path)
+    asyncio.run(agent.run_task(_task()))
+    trace = _read_json(tmp_path / "task_1" / "trace.json")
+    assert "sut" not in trace["response"]
+    assert trace["response"]["tool_calls"] >= 0
