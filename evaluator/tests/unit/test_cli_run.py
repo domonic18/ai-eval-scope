@@ -36,7 +36,7 @@ class FakeExecutionAgent:
         from agent_eval.agent.sut_tools import SUTToolServer
         from agent_eval.storage.package import ExecutionPackage
 
-        self._sut_tools = SUTToolServer()
+        self._sut_tools = SUTToolServer(workspace_dir=self.config.workspace_dir)
         self._package_cls = ExecutionPackage
         self.extra_tool_servers = extra_tool_servers or []
 
@@ -44,7 +44,6 @@ class FakeExecutionAgent:
         packages = []
         for task in task_set.tasks:
             await self._sut_tools.write_package(
-                workspace_dir=str(self.config.workspace_dir),
                 task_id=task.id,
                 success=True,
                 trace={"request": {}, "response": {}, "started_at": "t", "finished_at": "t"},
@@ -131,3 +130,40 @@ def test_run_command_multi_sut_requires_name(tmp_path) -> None:
     )
     # 命中系统名后进入执行阶段（FakeExecutionAgent 未注入 → deepagents 缺失报错也算到达）
     assert "other-agent" in result_named.output
+
+
+def test_run_command_closes_channel_same_loop(tmp_path, monkeypatch) -> None:
+    """通道 aclose 必须与 run 同一 event loop 恰好执行一次（v4.6.3 收尾修复）。"""
+    task_set = tmp_path / "task_set.yaml"
+    sut_cfg = tmp_path / "sut.yaml"
+    out_dir = tmp_path / "out"
+    task_set.write_text(TASK_SET_YAML, encoding="utf-8")
+    sut_cfg.write_text(SUT_YAML, encoding="utf-8")
+
+    import agent_eval.agent.execution_agent as execution_agent_mod
+    from agent_eval.execution.channels import base as channels_base
+
+    monkeypatch.setattr(execution_agent_mod, "ExecutionAgent", FakeExecutionAgent)
+
+    calls: list[str] = []
+
+    class FakeChannel:
+        async def aclose(self) -> None:
+            calls.append("aclose")
+
+    monkeypatch.setattr(channels_base, "create_channel", lambda sut: FakeChannel())
+
+    result = runner.invoke(
+        app,
+        [
+            "run",
+            "--task-set",
+            str(task_set),
+            "--sut-config",
+            str(sut_cfg),
+            "--output-dir",
+            str(out_dir),
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert calls == ["aclose"]

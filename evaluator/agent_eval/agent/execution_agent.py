@@ -3,8 +3,7 @@
 端到端驱动评测执行流程：理解任务、调用 SUT Tools、处理错误、收集结果、
 生成 ExecutionPackage。底座为 deepagents 的 create_deep_agent（惰性导入，
 [agent] optional extra）；模型经 build_chat_model 从 llm_config 双协议桥接；
-BudgetGuard/SessionLogCallback 以 LangGraph 回调注入（预算/结构化日志）；
-会话状态经 WorkspaceCheckpointer 落盘（推理-执行-状态分离）。
+BudgetGuard/SessionLogCallback 以 LangGraph 回调注入（预算/结构化日志）。
 """
 
 from __future__ import annotations
@@ -17,7 +16,7 @@ from typing import Any
 from agent_eval.agent.callbacks import BudgetGuard, SessionLogCallback
 from agent_eval.agent.hooks import SessionLogger
 from agent_eval.agent.model_bridge import build_chat_model
-from agent_eval.agent.session import AgentSession, WorkspaceCheckpointer
+from agent_eval.agent.session import AgentSession
 from agent_eval.agent.sut_tools import SUTToolServer
 from agent_eval.core.exceptions import (
     AgentError,
@@ -43,7 +42,7 @@ class ExecutionAgent:
     - 模型：llm_config.yaml provider → build_chat_model() 构造 ChatModel（双协议，模型无关）
     - 工具：SUT Tools 经 LangChain Tool 显式绑定（白名单），未绑定工具不可用
     - 预算：BudgetGuard 回调（on_llm_end 累计 token/成本，超限抛 BudgetExceededError）
-    - 状态：WorkspaceCheckpointer 会话状态落盘（崩溃可恢复，thread_id=task.id）
+    - 状态：单任务单发 ainvoke，不接 checkpointer（见 _build_graph 说明）
     """
 
     def __init__(
@@ -62,7 +61,12 @@ class ExecutionAgent:
                 arch/03 §4.0.6 语义工具面），与 SUT Tools 一同显式绑定。
         """
         self.config = config
-        self.sut_tools = sut_tools or SUTToolServer(config.sut_tools_config)
+        self.sut_tools = sut_tools or SUTToolServer(
+            config.sut_tools_config, workspace_dir=config.workspace_dir
+        )
+        # 外部注入的注册表（如 AgentProtocolToolServer）同样以 config.workspace_dir
+        # 为落盘根——write_package/collect_results 的目的地不交给 LLM 决定
+        self.sut_tools.workspace_dir = Path(config.workspace_dir)
         self.tool_servers: list[Any] = [self.sut_tools, *(extra_tool_servers or [])]
         self._graph: Any = None
 
@@ -95,7 +99,6 @@ class ExecutionAgent:
             result = await graph.ainvoke(
                 {"messages": [{"role": "user", "content": self._build_task_prompt(task)}]},
                 config={
-                    "configurable": {"thread_id": task.id},
                     "recursion_limit": self.config.max_turns * 2,
                     "callbacks": [SessionLogCallback(logger), guard],
                 },
@@ -135,7 +138,14 @@ class ExecutionAgent:
         return self._graph
 
     def _build_graph(self) -> Any:
-        """构建 DeepAgents 图：模型桥接 + 工具显式绑定 + 状态落盘。"""
+        """构建 DeepAgents 图：模型桥接 + 工具显式绑定。
+
+        不接 checkpointer：单任务单发 ainvoke 无恢复需求；且 langgraph 会经
+        put/put_writes/get_tuple 高频触达 saver，文件全量读写实现会拖垮执行
+        （v4.6.3 实测 CPU 空转）。WorkspaceCheckpointer 保留为独立组件，
+        待 B4 实现语义正确的真 saver（增量写 + pending_writes 按
+        checkpoint_id 索引）后再接回。
+        """
         try:
             from deepagents import create_deep_agent
         except ImportError:
@@ -149,7 +159,6 @@ class ExecutionAgent:
             model=build_chat_model(self.config.llm_provider, self.config.model),
             tools=tools,
             system_prompt=self._build_system_prompt(),
-            checkpointer=WorkspaceCheckpointer(self.config.workspace_dir),
         )
 
     # ─── Prompt 构建（arch/03 §3.3/§3.4） ───
@@ -179,7 +188,8 @@ class ExecutionAgent:
 - 如果 SUT 交互失败且无法恢复，调用 write_package(success=false, error=...) 写入错误信息
 
 ## 输出规范
-- 所有输出文件必须写入指定 workspace 目录
+- 所有输出文件必须写入指定 workspace 目录（write_package/collect_results 自管目的地，不要传路径）
+- 对话型 SUT 的纯文本结果没有产物文件，跳过 collect_results，直接 write_package
 - 目录模式任务需先调用 scan_directory 扫描目录结构
 """
 
@@ -224,7 +234,6 @@ class ExecutionAgent:
         """
         if not (package_dir / "manifest.json").exists():
             await self.sut_tools.write_package(
-                workspace_dir=str(self.config.workspace_dir),
                 task_id=task.id,
                 success=False,
                 error="Agent 未调用 write_package，已由 ExecutionAgent 兜底写包",
@@ -246,7 +255,6 @@ class ExecutionAgent:
         logger.log_error(type(error).__name__, str(error))
         if not (package_dir / "manifest.json").exists():
             await self.sut_tools.write_package(
-                workspace_dir=str(self.config.workspace_dir),
                 task_id=task.id,
                 success=False,
                 error=str(error),

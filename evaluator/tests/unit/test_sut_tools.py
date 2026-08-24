@@ -172,8 +172,8 @@ def test_collect_results_copies_files(tmp_path) -> None:
     src.mkdir()
     (src / "out.html").write_text("<html/>", encoding="utf-8")
     workspace = tmp_path / "workspace"
-    server = SUTToolServer()
-    result = asyncio.run(server.collect_results([str(src / "out.html")], str(workspace), "task_1"))
+    server = SUTToolServer(workspace_dir=workspace)
+    result = asyncio.run(server.collect_results([str(src / "out.html")], "task_1"))
     output = workspace / "task_1" / "output" / "out.html"
     assert output.exists()
     assert result["collected_files"] == [str(output)]
@@ -182,9 +182,42 @@ def test_collect_results_copies_files(tmp_path) -> None:
 def test_collect_results_missing_source_raises(tmp_path) -> None:
     import asyncio
 
-    server = SUTToolServer()
+    server = SUTToolServer(workspace_dir=tmp_path)
     with pytest.raises(CollectionError):
-        asyncio.run(server.collect_results([str(tmp_path / "ghost")], str(tmp_path), "t"))
+        asyncio.run(server.collect_results([str(tmp_path / "ghost")], "t"))
+
+
+def test_collect_results_unsafe_task_id_rejected(tmp_path) -> None:
+    import asyncio
+
+    from agent_eval.core.exceptions import ToolExecutionError
+
+    server = SUTToolServer(workspace_dir=tmp_path)
+    with pytest.raises(ToolExecutionError, match="非法 task_id"):
+        asyncio.run(server.collect_results([str(tmp_path)], "../escape"))
+
+
+def test_collect_results_unconfigured_workspace_rejected(tmp_path) -> None:
+    import asyncio
+
+    from agent_eval.core.exceptions import ToolExecutionError
+
+    server = SUTToolServer()  # 未注入 workspace_dir
+    with pytest.raises(ToolExecutionError, match="workspace_dir 未配置"):
+        asyncio.run(server.collect_results([str(tmp_path / "x")], "task_1"))
+
+
+def test_collect_results_mkdir_oserror_becomes_tool_error(tmp_path) -> None:
+    """mkdir 的 OSError 必须转 ToolExecutionError（tool_guard 才能兜住，v4.6.3）。"""
+    import asyncio
+
+    from agent_eval.core.exceptions import ToolExecutionError
+
+    blocker = tmp_path / "blocker"
+    blocker.write_text("occupied", encoding="utf-8")  # 文件占位 → 其下 mkdir 必败
+    server = SUTToolServer(workspace_dir=blocker / "ws")
+    with pytest.raises(ToolExecutionError, match="输出目录创建失败"):
+        asyncio.run(server.collect_results([str(tmp_path / "x")], "task_1"))
 
 
 def test_write_package_layout_loadable(tmp_path) -> None:
@@ -192,10 +225,9 @@ def test_write_package_layout_loadable(tmp_path) -> None:
 
     from agent_eval.storage.package import ExecutionPackage
 
-    server = SUTToolServer()
+    server = SUTToolServer(workspace_dir=tmp_path)
     result = asyncio.run(
         server.write_package(
-            workspace_dir=str(tmp_path),
             task_id="task_9",
             success=True,
             output_files=["a.html"],
@@ -251,7 +283,9 @@ def test_to_langchain_tools_exports_seven(monkeypatch) -> None:
 
 
 def test_to_langchain_tools_without_langchain_raises(monkeypatch) -> None:
+    # 真环境 langchain 已装（agent extra）→ 父模块与子模块都要置空防缓存命中
     monkeypatch.setitem(sys.modules, "langchain_core", None)  # 触发 ImportError
+    monkeypatch.setitem(sys.modules, "langchain_core.tools", None)
     server = SUTToolServer()
     with pytest.raises(AgentError, match="agent-eval\\[agent\\]"):
         server.to_langchain_tools()

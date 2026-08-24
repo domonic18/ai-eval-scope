@@ -404,13 +404,19 @@ def run(
             ),
             extra_tool_servers=[protocol_tools],
         )
-        packages = asyncio.run(agent.run_task_set(task_set_model))
+
+        async def _run_and_close() -> list[Any]:
+            # 通道关闭必须与 run 同一 event loop（httpx client 绑定创建时的 loop，
+            # 另起 asyncio.run 关旧 loop 上的 client 会 RuntimeError: Event loop is closed）
+            try:
+                return await agent.run_task_set(task_set_model)
+            finally:
+                await channel.aclose()
+
+        packages = asyncio.run(_run_and_close())
     except AgentEvalError as e:
         rprint(f"[red]执行失败:[/red] {e}")
         raise typer.Exit(code=1) from e
-    finally:
-        if channel is not None:
-            asyncio.run(channel.aclose())
 
     succeeded = sum(1 for p in packages if p.manifest.status == "success")
     rprint(

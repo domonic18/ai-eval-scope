@@ -12,6 +12,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
 import shutil
 import sys
 from collections.abc import Callable
@@ -91,16 +92,34 @@ class SUTToolServer(ToolExporterMixin):
         self,
         config: SUTToolsConfig | None = None,
         *,
+        workspace_dir: str | Path | None = None,
         http_client_factory: Callable[[], httpx.AsyncClient] | None = None,
     ) -> None:
         """初始化 SUTToolServer。
 
         Args:
             config: SUT Tools 配置（超时/默认请求头/文件模式等）。
+            workspace_dir: workspace 根目录（collect_results/write_package 落盘位置）。
+                目的地路径属执行器基础设施，不由 LLM 决定——v4.6.3 实测 LLM 会
+                幻觉绝对路径（/workspace/...）导致 OS 错误击穿图执行。
             http_client_factory: 注入自定义 httpx.AsyncClient（测试用 MockTransport）。
         """
         self.config = config or SUTToolsConfig()
+        self.workspace_dir: Path | None = Path(workspace_dir) if workspace_dir else None
         self._http_client_factory = http_client_factory
+
+    def _package_root(self, task_id: str) -> Path:
+        """校验 task_id 并解析包目录（workspace/{task_id}，防路径逃逸）。"""
+        if self.workspace_dir is None:
+            raise ToolExecutionError(
+                "workspace_dir 未配置（SUTToolServer 构造时需传入或由 ExecutionAgent 注入）"
+            )
+        if not re.fullmatch(r"[A-Za-z0-9._-]+", task_id):
+            raise ToolExecutionError(
+                f"非法 task_id（仅允许字母/数字/./_/-）: {task_id!r}",
+                details={"task_id": task_id},
+            )
+        return self.workspace_dir / task_id
 
     # ─── SUT 调用 ───
 
@@ -244,12 +263,16 @@ class SUTToolServer(ToolExporterMixin):
     async def collect_results(
         self,
         source_paths: list[str],
-        workspace_dir: str,
         task_id: str,
     ) -> dict[str, Any]:
-        """将源文件/目录复制到 {workspace_dir}/{task_id}/output/。"""
-        output_dir = Path(workspace_dir) / task_id / "output"
-        output_dir.mkdir(parents=True, exist_ok=True)
+        """将源文件/目录复制到 {workspace_dir}/{task_id}/output/（目的地由服务端持有）。"""
+        output_dir = self._package_root(task_id) / "output"
+        try:
+            output_dir.mkdir(parents=True, exist_ok=True)
+        except OSError as e:
+            raise ToolExecutionError(
+                f"输出目录创建失败: {e}", details={"output_dir": str(output_dir)}
+            ) from e
 
         collected: list[str] = []
         try:
@@ -271,7 +294,6 @@ class SUTToolServer(ToolExporterMixin):
 
     async def write_package(
         self,
-        workspace_dir: str,
         task_id: str,
         success: bool,
         output_files: list[str] | None = None,
@@ -284,10 +306,16 @@ class SUTToolServer(ToolExporterMixin):
         """将 ExecutionPackage 写入 workspace（manifest/metadata/trace/metrics）。
 
         写入布局与评估引擎（PipelineEngine）的 ExecutionPackage.load 对齐。
+        目的地 workspace 由服务端持有，LLM 只传 task_id 与内容字段。
         """
         run_id = generate_run_id()
-        package_dir = Path(workspace_dir) / task_id
-        package_dir.mkdir(parents=True, exist_ok=True)
+        package_dir = self._package_root(task_id)
+        try:
+            package_dir.mkdir(parents=True, exist_ok=True)
+        except OSError as e:
+            raise ToolExecutionError(
+                f"包目录创建失败: {e}", details={"package_dir": str(package_dir)}
+            ) from e
 
         manifest = PackageManifest(
             package_id=f"pkg_{run_id}_{task_id}",

@@ -3,8 +3,10 @@
 AgentSession 从 DeepAgents/LangGraph 消息序列构建会话统计；
 WorkspaceCheckpointer 实现 LangGraph checkpointer 语义（鸭子类型），
 将会话状态 pickle 落盘 workspace/agent_sessions/——推理-执行-状态分离，
-崩溃可恢复/可重放/可审计。PoC 说明（v4.6）：单进程文件实现，
-SCF 部署时替换为 PG/COS 后端（适配层隔离，接口不变）。
+崩溃可恢复/可重放/可审计。PoC 说明（v4.6.3）：单进程文件实现，
+**未接入 ExecutionAgent 图装配**——langgraph 高频触达 saver，全量读写
+实现会拖垮执行（实测 CPU 空转）；且 pending_writes 尚未按 checkpoint_id
+索引，恢复语义不完整。待 B4 实现增量真 saver 后接回。
 """
 
 from __future__ import annotations
@@ -22,6 +24,15 @@ from typing import Any
 CheckpointTuple = namedtuple(
     "CheckpointTuple", ["config", "checkpoint", "parent_config", "metadata", "pending_writes"]
 )
+
+# langgraph 侧 CompiledStateGraph 对 checkpointer 做 isinstance 校验（鸭子类型不被
+# 接受）；[agent] extra 环境下挂真基类过校验，纯 mock 测试环境退化为 object
+try:
+    from langgraph.checkpoint.base import (
+        BaseCheckpointSaver as _LGBaseCheckpointSaver,
+    )
+except ImportError:  # pragma: no cover — langgraph 属 [agent] extra，可选
+    _LGBaseCheckpointSaver = object  # type: ignore[assignment,misc]
 
 _THREAD_SAFE = re.compile(r"^[A-Za-z0-9._-]+$")
 
@@ -74,14 +85,17 @@ def _message_type(message: Any) -> str:
     return type(message).__name__.lower()
 
 
-class WorkspaceCheckpointer:
-    """LangGraph checkpointer（鸭子类型）：会话状态落盘 workspace/agent_sessions/。
+class WorkspaceCheckpointer(_LGBaseCheckpointSaver):  # type: ignore[misc]
+    """LangGraph checkpointer：会话状态落盘 workspace/agent_sessions/。
 
     实现协议方法 put/put_writes/get_tuple/list（含 async 变体），按 thread_id
     一文件存储，pickle 序列化（内部工作区状态，崩溃恢复用，非跨系统交换格式）。
+    继承 BaseCheckpointSaver 仅为通过 langgraph 的 isinstance 校验（PoC，v4.6）。
     """
 
     def __init__(self, workspace_dir: Path | str) -> None:
+        if _LGBaseCheckpointSaver is not object:
+            super().__init__()
         self.sessions_dir = Path(workspace_dir) / "agent_sessions"
         self.sessions_dir.mkdir(parents=True, exist_ok=True)
 
@@ -101,7 +115,8 @@ class WorkspaceCheckpointer:
         if not path.exists():
             return {"checkpoints": [], "writes": {}}
         with path.open("rb") as f:
-            return pickle.load(f)  # 仅读写自身 workspace 产物
+            data: dict[str, Any] = pickle.load(f)  # 仅读写自身 workspace 产物
+            return data
 
     def _save(self, thread_id: str, data: dict[str, Any]) -> None:
         with self._path(thread_id).open("wb") as f:
@@ -109,7 +124,7 @@ class WorkspaceCheckpointer:
 
     # ─── 同步协议 ───
 
-    def put(
+    def put(  # type: ignore[override]
         self,
         config: dict[str, Any],
         checkpoint: dict[str, Any],
@@ -129,7 +144,7 @@ class WorkspaceCheckpointer:
         data["checkpoints"].append((record_config, checkpoint, metadata))
         self._save(thread_id, data)
 
-    def put_writes(
+    def put_writes(  # type: ignore[override]
         self,
         config: dict[str, Any],
         writes: list[tuple[str, Any]],
@@ -141,7 +156,9 @@ class WorkspaceCheckpointer:
         data["writes"][task_id] = writes
         self._save(thread_id, data)
 
-    def get_tuple(self, config: dict[str, Any]) -> CheckpointTuple | None:
+    def get_tuple(  # type: ignore[override]
+        self, config: dict[str, Any]
+    ) -> CheckpointTuple | None:
         """读取 checkpoint（checkpoint_id 指定则取该版本，否则取最新）。"""
         thread_id = self._thread_id(config)
         data = self._load(thread_id)
@@ -170,7 +187,7 @@ class WorkspaceCheckpointer:
             pending_writes=data["writes"].get("__latest__", []),
         )
 
-    def list(
+    def list(  # type: ignore[override]
         self,
         config: dict[str, Any],
         *,
@@ -196,17 +213,23 @@ class WorkspaceCheckpointer:
 
     # ─── 异步协议（委托同步实现） ───
 
-    async def aput(
+    async def aput(  # type: ignore[override]
         self, config: Any, checkpoint: Any, metadata: Any, new_versions: Any = None
     ) -> None:
         self.put(config, checkpoint, metadata, new_versions)
 
-    async def aput_writes(self, config: Any, writes: Any, task_id: str) -> None:
+    async def aput_writes(  # type: ignore[override]
+        self, config: Any, writes: Any, task_id: str
+    ) -> None:
         self.put_writes(config, writes, task_id)
 
-    async def aget_tuple(self, config: Any) -> CheckpointTuple | None:
+    async def aget_tuple(  # type: ignore[override]
+        self, config: Any
+    ) -> CheckpointTuple | None:
         return self.get_tuple(config)
 
-    async def alist(self, config: Any, **kwargs: Any) -> Iterator[CheckpointTuple]:
+    async def alist(  # type: ignore[override,misc]
+        self, config: Any, **kwargs: Any
+    ) -> Iterator[CheckpointTuple]:
         for item in self.list(config, **kwargs):
             yield item

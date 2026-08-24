@@ -1,9 +1,11 @@
 """LangGraph 回调 — 预算护栏与会话日志注入（arch/03 §7a.6 v4.6）。
 
-BudgetGuard / SessionLogCallback 为鸭子类型回调处理器（实现 LangChain
-回调协议的 on_llm_end / on_tool_start / on_tool_end 方法，无需继承
-langchain_core 基类），经 ainvoke(config={"callbacks": [...]}) 注入
-DeepAgents 图执行。
+BudgetGuard / SessionLogCallback 实现 LangChain 回调协议的
+on_llm_end / on_tool_start / on_tool_end 方法，经
+ainvoke(config={"callbacks": [...]}) 注入 DeepAgents 图执行。
+[agent] extra 环境下继承 BaseCallbackHandler（真 langchain 回调管理器会
+访问 run_inline / ignore_* 等基类属性，裸鸭子类型会 AttributeError）；
+纯 mock 测试环境退化为 object。
 """
 
 from __future__ import annotations
@@ -13,6 +15,11 @@ from typing import Any
 from agent_eval.agent.hooks import BudgetController, SessionLogger
 from agent_eval.agent.sut_tools import HTTP_RAW_MAX_CHARS
 from agent_eval.core.exceptions import BudgetExceededError
+
+try:
+    from langchain_core.callbacks import BaseCallbackHandler as _LCBaseCallbackHandler
+except ImportError:  # pragma: no cover — langchain 属 [agent] extra，可选
+    _LCBaseCallbackHandler = object  # type: ignore[assignment,misc]
 
 
 def _extract_usage(response: Any) -> dict[str, int] | None:
@@ -56,7 +63,7 @@ def _normalize_usage(usage: dict[str, int] | None) -> tuple[int, int]:
     return int(input_tokens), int(output_tokens)
 
 
-class BudgetGuard:
+class BudgetGuard(_LCBaseCallbackHandler):  # type: ignore[misc]
     """预算护栏回调：on_llm_end 累计 token/成本，超限抛 BudgetExceededError 终止图执行。
 
     成本估算依赖可选 pricing 配置（{"input_per_1k": x, "output_per_1k": y}，
@@ -74,7 +81,7 @@ class BudgetGuard:
         self.pricing = pricing or {}
         self.llm_calls = 0
 
-    def on_llm_end(self, response: Any, **kwargs: Any) -> None:
+    def on_llm_end(self, response: Any, *, run_id: Any = None, **kwargs: Any) -> None:
         """LLM 调用结束：计量 token/成本并检查预算。"""
         self.llm_calls += 1
         input_tokens, output_tokens = _normalize_usage(_extract_usage(response))
@@ -101,7 +108,7 @@ class BudgetGuard:
         return self.controller.total_tokens
 
 
-class SessionLogCallback:
+class SessionLogCallback(_LCBaseCallbackHandler):  # type: ignore[misc]
     """会话日志回调：on_tool_start/on_tool_end → SessionLogger 结构化日志。"""
 
     def __init__(self, logger: SessionLogger) -> None:

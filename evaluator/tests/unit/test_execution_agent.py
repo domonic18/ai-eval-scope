@@ -35,8 +35,10 @@ class FakeGraph:
         if self.fire_callbacks and config:
             for callback in config.get("callbacks", []):
                 if hasattr(callback, "on_llm_end"):
+                    # 对齐真 langchain 派发：on_llm_end 必带 run_id 关键字
                     callback.on_llm_end(
-                        {"usage_metadata": {"input_tokens": 10, "output_tokens": 5}}
+                        {"usage_metadata": {"input_tokens": 10, "output_tokens": 5}},
+                        run_id="fake-run-id",
                     )
         if self.error is not None:
             raise self.error
@@ -87,7 +89,6 @@ def test_run_task_success_with_agent_package(tmp_path, monkeypatch) -> None:
     # 模拟 Agent 会话内已调用 write_package（成功包）
     asyncio.run(
         agent.sut_tools.write_package(
-            workspace_dir=str(tmp_path),
             task_id="task_1",
             success=True,
             trace={"request": {}, "response": {}, "started_at": "t", "finished_at": "t"},
@@ -100,9 +101,10 @@ def test_run_task_success_with_agent_package(tmp_path, monkeypatch) -> None:
     assert package.manifest.status == "success"
     assert package.task_data["input"] == {"subject": "数学"}  # 缺省补写 task.json
 
-    # ainvoke 配置：thread_id=task.id、recursion_limit=max_turns*2、双回调
+    # ainvoke 配置：recursion_limit=max_turns*2、双回调；
+    # 不注入 thread_id（无 checkpointer，单任务单发无恢复语义，v4.6.3）
     _, config = graph.invocations[0]
-    assert config["configurable"]["thread_id"] == "task_1"
+    assert "configurable" not in config
     assert config["recursion_limit"] == 14
     assert len(config["callbacks"]) == 2
 
@@ -162,9 +164,7 @@ def test_run_task_budget_exceeded_preserves_partial_package(tmp_path, monkeypatc
     _install_fakes(monkeypatch, FakeGraph(error=BudgetExceededError("over budget")))
     agent = _agent(tmp_path)
     # 预置 Agent 已写的成功包（部分结果）→ 异常路径不得覆盖
-    asyncio.run(
-        agent.sut_tools.write_package(workspace_dir=str(tmp_path), task_id="task_1", success=True)
-    )
+    asyncio.run(agent.sut_tools.write_package(task_id="task_1", success=True))
     with pytest.raises(BudgetExceededError):
         asyncio.run(agent.run_task(_task()))
     manifest = _read_json(tmp_path / "task_1" / "manifest.json")
