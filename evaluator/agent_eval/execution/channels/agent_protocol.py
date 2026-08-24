@@ -8,6 +8,7 @@ threads 多轮、cancel、agents 能力发现；RunStatus → 执行引擎状态
 from __future__ import annotations
 
 import json
+import uuid
 from collections.abc import Callable
 from typing import Any
 
@@ -15,6 +16,12 @@ import httpx
 
 from agent_eval.core.exceptions import AgentProtocolError
 from agent_eval.execution.channels.base import SUTChannel
+from agent_eval.execution.channels.thread_commands import (
+    _iter_sse,  # noqa: F401 — SSE 解析迁至 thread_commands，此处重导出保持兼容
+    commands_agent_info,
+    commands_run,
+    commands_stream,
+)
 from agent_eval.execution.registry import SUTSystemConfig
 from agent_eval.execution.utils import extract_by_path
 
@@ -53,6 +60,10 @@ class AgentProtocolChannel(SUTChannel):
     ) -> dict[str, Any]:
         """执行一次 run：wait（默认阻塞）/ background（超时自动 cancel）/ stream。"""
         mode = exec_mode or self.sut.exec_mode
+        if self.sut.protocol_flavor == "commands":
+            if mode == "stream":
+                return await commands_stream(self, input, metadata=metadata)
+            return await commands_run(self, input, metadata=metadata)
         if mode == "stream":
             return await self.run_stream(input, metadata=metadata)
         if mode == "wait":
@@ -87,6 +98,8 @@ class AgentProtocolChannel(SUTChannel):
         metadata: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """runs/stream（SSE）：容错聚合——未知事件原样保留，语义聚合仅依赖 run 终态。"""
+        if self.sut.protocol_flavor == "commands":
+            return await commands_stream(self, input, metadata=metadata)
         body = {
             **self._run_body(input, metadata),
             "stream_mode": stream_mode or self.sut.stream_mode,
@@ -139,6 +152,9 @@ class AgentProtocolChannel(SUTChannel):
     # ─── Threads 多轮（§4.0.6-e：每 thread 单活跃 run，多轮任务才显式建线程） ───
 
     async def create_thread(self, metadata: dict[str, Any] | None = None) -> dict[str, Any]:
+        if self.sut.protocol_flavor == "commands":
+            # commands 形态线程由客户端生成 UUID（首个 run.start 隐式建线程）
+            return {"thread_id": str(uuid.uuid4())}
         response = await self.request("POST", "/threads", json_body={"metadata": metadata or {}})
         thread_id = self._json(response).get("thread_id")
         if not thread_id:
@@ -152,6 +168,8 @@ class AgentProtocolChannel(SUTChannel):
         *,
         metadata: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
+        if self.sut.protocol_flavor == "commands":
+            return await commands_run(self, input, thread_id=thread_id, metadata=metadata)
         response = await self.request(
             "POST", f"/threads/{thread_id}/runs/wait", json_body=self._run_body(input, metadata)
         )
@@ -168,6 +186,8 @@ class AgentProtocolChannel(SUTChannel):
 
     async def get_agent_info(self, agent_id: str | None = None) -> dict[str, Any]:
         """/agents/search + /agents/{id}/schemas 能力与 schema 发现。"""
+        if self.sut.protocol_flavor == "commands":
+            return commands_agent_info(self, agent_id)
         response = await self.request("POST", "/agents/search", json_body={})
         agents = self._json(response).get("agents") or []
         resolved = agent_id or self.sut.agent_id
@@ -232,7 +252,8 @@ class AgentProtocolChannel(SUTChannel):
 
     def _json(self, response: httpx.Response) -> dict[str, Any]:
         try:
-            return response.json()
+            payload: dict[str, Any] = response.json()
+            return payload
         except ValueError as e:
             raise AgentProtocolError(
                 f"协议响应不是合法 JSON: {e}",
@@ -277,22 +298,3 @@ class AgentProtocolChannel(SUTChannel):
             await self.cancel_run(run_id, action="interrupt")
         except Exception:  # noqa: BLE001 — 取消失败不掩盖主错误
             pass
-
-
-async def _iter_sse(response: httpx.Response):
-    """逐块解析 SSE：event:/data: 行组块；缺 id/event 字段按 data-only 兜底。"""
-    event_name: str | None = None
-    data_lines: list[str] = []
-
-    async for line in response.aiter_lines():
-        if line == "":
-            if data_lines or event_name is not None:
-                yield event_name, "\n".join(data_lines)
-            event_name, data_lines = None, []
-        elif line.startswith("event:"):
-            event_name = line.split(":", 1)[1].strip()
-        elif line.startswith("data:"):
-            data_lines.append(line.split(":", 1)[1].strip())
-        # id:/注释等未知行忽略（data-only 兜底）
-    if data_lines or event_name is not None:
-        yield event_name, "\n".join(data_lines)

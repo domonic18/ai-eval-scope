@@ -20,13 +20,17 @@ CHANNEL_TYPES = ("agent_protocol", "generic_http", "browser")
 EXEC_MODES = ("wait", "background", "stream")
 STREAM_MODES = ("values", "messages", "updates", "custom")
 AUTH_TYPES = ("none", "static_token", "api_login", "session_cookie")
+# Agent Protocol 两种部署形态：runs（/runs/wait 族）| commands（/threads/{id}/commands + state）
+PROTOCOL_FLAVORS = ("runs", "commands")
 
 
 class AuthLoginConfig(BaseModel):
     """api_login / session_cookie 的登录接口模板。"""
 
     method: str = "POST"
-    path: str = Field(description="登录接口路径（相对 base_url）")
+    path: str = Field(
+        description="登录接口路径（相对 base_url；跨域登录接口可填完整 http(s):// URL）"
+    )
     body_template: str = Field(
         default='{"username": "{{ username }}", "password": "{{ password }}"}',
         description="登录请求体模板（Jinja2，username/password 从 env 凭证注入）",
@@ -92,6 +96,15 @@ class SUTSystemConfig(BaseModel):
     protocol_version: str | None = Field(
         default=None, description="Agent Protocol 实现版本（如 0.1.6）"
     )
+    protocol_flavor: str = Field(
+        default="runs",
+        description="runs（POST /runs/wait 族）| commands（POST /threads/{id}/commands"
+        " + GET state 轮询，官方 Streaming 端点形态）",
+    )
+    configurable: dict[str, Any] = Field(
+        default_factory=dict,
+        description='run 请求 config.configurable 缺省值（如 {"modelId": "19"}）',
+    )
     agent_id: str | None = Field(default=None, description="缺省用服务默认 agent")
     exec_mode: str = Field(default="wait", description="wait | background | stream")
     stream_mode: str = Field(default="messages", description="exec_mode=stream 时的事件模式")
@@ -115,6 +128,13 @@ class SUTSystemConfig(BaseModel):
     def _validate_exec_mode(cls, v: str) -> str:
         if v not in EXEC_MODES:
             raise ValueError(f"exec_mode 必须为 {EXEC_MODES} 之一，得到: {v!r}")
+        return v
+
+    @field_validator("protocol_flavor")
+    @classmethod
+    def _validate_protocol_flavor(cls, v: str) -> str:
+        if v not in PROTOCOL_FLAVORS:
+            raise ValueError(f"protocol_flavor 必须为 {PROTOCOL_FLAVORS} 之一，得到: {v!r}")
         return v
 
     @field_validator("stream_mode")

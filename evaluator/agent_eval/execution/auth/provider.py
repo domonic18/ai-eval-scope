@@ -124,7 +124,10 @@ class AuthProvider:
             username=self.credentials.require(ref, "USERNAME"),
             password=self.credentials.require(ref, "PASSWORD"),
         )
-        url = f"{self.sut.base_url.rstrip('/')}/{login.path.lstrip('/')}"
+        if login.path.startswith(("http://", "https://")):
+            url = login.path
+        else:
+            url = f"{self.sut.base_url.rstrip('/')}/{login.path.lstrip('/')}"
         client_cm = (
             self._http_client_factory()
             if self._http_client_factory
