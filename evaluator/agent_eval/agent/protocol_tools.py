@@ -7,16 +7,41 @@ AgentProtocolChannel 暴露给 DeepAgents 显式绑定（ToolExporterMixin）。
 
 from __future__ import annotations
 
+import functools
 import json
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 from agent_eval.agent.tools import ToolExporterMixin, ToolSpec, truncate
+from agent_eval.core.exceptions import AgentEvalError
 from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel
 
 # 工具结果中大体量字段的截断上限（上下文经济性，非业务阈值）
 VALUES_MAX_CHARS = 4000
 EVENT_DATA_MAX_CHARS = 500
 MAX_STREAM_EVENTS = 100
+
+
+def tool_guard(
+    fn: Callable[..., Awaitable[dict[str, Any]]],
+) -> Callable[..., Awaitable[dict[str, Any]]]:
+    """通道异常 → failed 结果（执行 Agent 可据以重试/降级/写错误包，而非中断图）。"""
+
+    @functools.wraps(fn)
+    async def wrapper(*args: Any, **kwargs: Any) -> dict[str, Any]:
+        try:
+            return await fn(*args, **kwargs)
+        except AgentEvalError as e:
+            return {
+                "status": "failed",
+                "error": {
+                    "type": type(e).__name__,
+                    "message": truncate(str(e), VALUES_MAX_CHARS),
+                },
+            }
+
+    return wrapper
+
 
 TOOL_SPECS: list[ToolSpec] = [
     ToolSpec(
@@ -73,6 +98,7 @@ class AgentProtocolToolServer(ToolExporterMixin):
         self.channel = channel
         self.default_metadata = default_metadata or {}
 
+    @tool_guard
     async def agent_run(
         self,
         input: dict[str, Any] | str,
@@ -85,6 +111,7 @@ class AgentProtocolToolServer(ToolExporterMixin):
         )
         return _bounded_result(result)
 
+    @tool_guard
     async def agent_run_stream(
         self,
         input: dict[str, Any] | str,
@@ -106,10 +133,12 @@ class AgentProtocolToolServer(ToolExporterMixin):
         ]
         return _bounded_result(result)
 
+    @tool_guard
     async def create_thread(self, metadata: dict[str, Any] | None = None) -> dict[str, Any]:
         """创建多轮会话线程。"""
         return await self.channel.create_thread(self._merge_metadata(metadata))
 
+    @tool_guard
     async def run_on_thread(
         self,
         thread_id: str,
@@ -122,10 +151,12 @@ class AgentProtocolToolServer(ToolExporterMixin):
         )
         return _bounded_result(result)
 
+    @tool_guard
     async def cancel_run(self, run_id: str, action: str = "interrupt") -> dict[str, Any]:
         """主动取消 run。"""
         return await self.channel.cancel_run(run_id, action)
 
+    @tool_guard
     async def get_agent_info(self, agent_id: str | None = None) -> dict[str, Any]:
         """能力与 schema 发现。"""
         return await self.channel.get_agent_info(agent_id)

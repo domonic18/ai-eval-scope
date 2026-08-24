@@ -109,3 +109,18 @@ def test_to_langchain_tools_export(monkeypatch) -> None:
     output = asyncio.run(created[0]["coroutine"](input={"q": 1}))
     assert isinstance(output, str)
     assert json.loads(output)["status"] == "success"
+
+
+def test_tool_guard_converts_channel_error_to_failed_result() -> None:
+    """通道异常不炸图：转 failed 结果交给执行 Agent 决策重试/降级。"""
+    from agent_eval.core.exceptions import AgentProtocolError
+
+    class _BoomChannel:
+        async def run(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
+            raise AgentProtocolError("run.start 失败: 必须指定模型(modelId)")
+
+    server = AgentProtocolToolServer(_BoomChannel())  # type: ignore[arg-type]
+    result = asyncio.run(server.agent_run("hi"))
+    assert result["status"] == "failed"
+    assert result["error"]["type"] == "AgentProtocolError"
+    assert "必须指定模型" in result["error"]["message"]
