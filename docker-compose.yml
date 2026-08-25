@@ -24,13 +24,13 @@ name: agent-eval-platform
 services:
   # ── PostgreSQL（结构化评估数据）──
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     env_file: ./.env              # POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB
     ports:
       - "5432:5432"
     volumes:
       # 持久化到 workspace 下，便于调试/重置/检视
-      - ./workspace/data/postgres:/var/lib/postgresql/data
+      - ./workspace/data/postgres:/var/lib/postgresql
       # 不再挂载 schema.sql：建库改为起栈后手动 `make db-init`（统一应用 web Prisma 迁移）
       # schema 来源 = web/backend/prisma（web=Prisma，executor 复用 public.*）；详见 web/CLAUDE.md
     healthcheck:
