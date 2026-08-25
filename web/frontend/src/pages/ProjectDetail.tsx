@@ -51,7 +51,7 @@ interface Project {
   ruleSetVersion?: string | null
   isPublic?: boolean
 }
-type SetTab = "keys" | "basic" | "retention" | "public" | "webhook" | "danger"
+type SetTab = "keys" | "basic" | "retention" | "public" | "webhook" | "secrets" | "danger"
 
 /* ── 趋势图（recharts）── 一组 points({label,values}) + series + thresholds */
 function MetricTrendChart({
@@ -434,6 +434,7 @@ function SettingsTab({
     ["retention", "数据保留"],
     ["public", "公开访问"],
     ["webhook", "Webhook 回调"],
+    ["secrets", "团队 Secrets"],
     ["danger", "危险区"],
   ]
   return (
@@ -461,8 +462,109 @@ function SettingsTab({
         {panel === "webhook" && (
           <WebhookPanel projectId={projectId} webhookUrl={webhookUrl} webhookSecretSet={webhookSecretSet} />
         )}
+        {panel === "secrets" && <OrgSecretsPanel />}
         {panel === "danger" && <DangerPanel projectId={projectId} slug={slug} onArchived={onArchived} />}
       </div>
+    </div>
+  )
+}
+
+/** 团队 Secrets 面板（org 级，GitHub Secrets 式）：值写后不可读，供 executor 拉取注入 env。 */
+function OrgSecretsPanel() {
+  const toast = useToast()
+  const [rows, setRows] = useState<{ name: string; updatedAt: string }[]>([])
+  const [name, setName] = useState("")
+  const [value, setValue] = useState("")
+  const [busy, setBusy] = useState(false)
+  const orgId = localStorage.getItem("agent_eval_org")
+
+  const load = async () => {
+    if (!orgId) return
+    try {
+      setRows(await api.listOrgSecrets(orgId))
+    } catch {
+      toast.error("加载 Secrets 失败")
+    }
+  }
+  useEffect(() => {
+    void load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orgId])
+
+  const add = async () => {
+    if (!orgId || !name || !value) {
+      toast.error("名称与值必填")
+      return
+    }
+    setBusy(true)
+    try {
+      await api.putOrgSecret(orgId, name, value)
+      toast.success(`已保存 ${name}（值不再显示）`)
+      setName("")
+      setValue("")
+      await load()
+    } catch (e) {
+      toast.error((e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "保存失败")
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const remove = async (n: string) => {
+    if (!orgId) return
+    try {
+      await api.deleteOrgSecret(orgId, n)
+      toast.success(`已删除 ${n}`)
+      await load()
+    } catch {
+      toast.error("删除失败")
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="text-sm text-muted-foreground">
+        团队级凭证 KV（如被测系统账号）。值加密存储、保存后不可查看；评测执行器启动时拉取注入运行环境。
+      </div>
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="w-64">
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value.toUpperCase())}
+            placeholder="名称（如 SASAN__USERNAME）"
+            className="font-mono text-xs"
+          />
+        </div>
+        <div className="w-64">
+          <Input
+            type="password"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder="值（保存后不可见）"
+          />
+        </div>
+        <Button onClick={add} disabled={busy}>
+          {busy ? "保存中…" : rows.some((r) => r.name === name) ? "覆盖" : "新增"}
+        </Button>
+      </div>
+      <DataTable
+        rows={rows}
+        columns={[
+          { key: "name", title: "名称", render: (r) => <span className="font-mono text-xs">{r.name}</span> },
+          { key: "updatedAt", title: "最后修改", render: (r) => new Date(r.updatedAt).toLocaleString() },
+          {
+            key: "actions",
+            title: "",
+            render: (r) => (
+              <Button size="icon-xs" variant="ghost" className="text-destructive" onClick={() => remove(r.name)}>
+                <Trash2 className="size-3.5" />
+              </Button>
+            ),
+          },
+        ]}
+        rowKey={(r) => r.name}
+        empty="暂无 Secrets"
+      />
     </div>
   )
 }

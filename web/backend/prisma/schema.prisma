@@ -53,6 +53,7 @@ model Organization {
   members      OrgMembership[]
   projects     Project[]
   joinRequests JoinRequest[]
+  secrets      Secret[]
 
   @@map("organizations")
 }
@@ -542,4 +543,22 @@ model WebhookDelivery {
 
   @@index([projectId, createdAt])
   @@map("webhook_deliveries")
+}
+
+// 平台 Secrets（org 级通用 KV，GitHub Secrets 式，arch/16 §2.4）：
+// 值 AES-256-GCM 加密存储（复用 PLATFORM_KEY_ENCRYPTION_KEY 设施），
+// 页面写后不可读（列表只显名称与时间）；executor 经 /api/public/secrets
+// 鉴权拉取后注入进程 env（CredentialStore env 通道读取）。
+model Secret {
+  id              String   @id @default(uuid())
+  orgId           String   @map("org_id")
+  name            String
+  valueEncrypted  String   @map("value_encrypted")
+  createdBy       String   @map("created_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  org             Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, name])
+  @@map("secrets")
 }

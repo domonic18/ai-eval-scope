@@ -475,6 +475,16 @@ export const api = {
       size: number
     }
   },
+  async listOrgSecrets(orgId: string): Promise<OrgSecret[]> {
+    return (await http.get(`/orgs/${orgId}/secrets`)).data.secrets
+  },
+  async putOrgSecret(orgId: string, name: string, value: string): Promise<OrgSecret> {
+    return (await http.put(`/orgs/${orgId}/secrets/${encodeURIComponent(name)}`, { value })).data
+  },
+  async deleteOrgSecret(orgId: string, name: string): Promise<void> {
+    await http.delete(`/orgs/${orgId}/secrets/${encodeURIComponent(name)}`)
+  },
+
   async adminListLlmModels(): Promise<LlmModelVO[]> {
     return (await http.get("/admin/llm-models")).data
   },
@@ -568,6 +578,13 @@ export interface AdminOrg {
   projectCount: number
   runCount: number
 }
+/** org 级平台 Secret（值写后不可读，列表仅名称与时间） */
+export interface OrgSecret {
+  name: string
+  createdAt: string
+  updatedAt: string
+}
+
 export interface AdminProject {
   id: string
   name: string

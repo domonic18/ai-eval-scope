@@ -84,9 +84,39 @@ async def _run_worker() -> None:
     await loop.run()
 
 
+def _inject_platform_secrets() -> None:
+    """启动时拉取平台 Secrets 注入进程 env（W4，arch/16 §2.4）。
+
+    executor 无状态、无交互入口：org 级凭证（SUT 账号等）经页面录入，
+    启动时经 ``GET /api/public/secrets``（Bearer AGENT_EVAL_API_KEY）拉取解密
+    KV 注入 ``os.environ``——评估器的 CredentialStore env 通道零改动读到。
+    未配置通道或拉取失败：警告降级，不阻断启动（本地开发无平台时正常跑）。
+    """
+    host = os.getenv("AGENT_EVAL_HOST", "").rstrip("/")
+    api_key = os.getenv("AGENT_EVAL_API_KEY", "")
+    if not host or not api_key:
+        LOG.info("secrets.inject.skipped_no_channel")
+        return
+    try:
+        import httpx
+
+        resp = httpx.get(
+            f"{host}/api/public/secrets",
+            headers={"Authorization": f"Bearer {api_key}"},
+            timeout=10.0,
+        )
+        resp.raise_for_status()
+        data = resp.json().get("secrets") or {}
+        os.environ.update(data)
+        LOG.info("secrets.inject.ok", count=len(data))  # 只记数量，不记名称与值
+    except Exception as e:  # noqa: BLE001 — 注入失败不阻断启动
+        LOG.warning("secrets.inject.failed", error=str(e)[:200])
+
+
 def main() -> None:
     """容器入口。"""
     setup_logging()
+    _inject_platform_secrets()
     event = _parse_event()
     if event is not None:
         asyncio.run(_run_single_job(event))
