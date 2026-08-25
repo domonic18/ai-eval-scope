@@ -27,7 +27,6 @@ agent-eval-system/
 - 数据集下载：[`docs/arch/10数据集下载设计.md`](docs/arch/10数据集下载设计.md)
 - 配置管理：[`docs/arch/13配置管理设计.md`](docs/arch/13配置管理设计.md)
 - 场景扩展：[`docs/arch/14场景扩展指南.md`](docs/arch/14场景扩展指南.md)（如何新增一个评估场景，含 entry_points 可插拔评估器）
-- 评测数据全景：[`docs/arch/16评测数据全景与存储梳理.md`](docs/arch/16评测数据全景与存储梳理.md)（配置与数据架构：两轴模型/敏感分级/目录组织/运行数据流/实施指引）
 - 编码规范索引：[`docs/standard/README.md`](docs/standard/README.md)
 - 贡献指南（提交 / 分支 / PR）：[`CONTRIBUTING.md`](CONTRIBUTING.md)
 

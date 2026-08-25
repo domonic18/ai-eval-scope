@@ -131,7 +131,7 @@ uv run agent-eval models list    # 查看（key 脱敏）
 ```
 
 保存于 `~/.agent_eval/llm.json`（0600 权限，不入 git）。云端 executor 则在平台
-`/admin` 按角色配置，运行时经 API Key 拉取——两套形态互不感知（arch/16 §6.2-四）。
+`/admin` 按角色配置，运行时经 API Key 拉取——两套形态互不感知。
 
 ### 其他命令
 
