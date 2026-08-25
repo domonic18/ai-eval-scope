@@ -1,7 +1,8 @@
 """SUTSession 与 SessionStore — 会话产物及其持久化（arch/03 §4.0.1/§4.0.4/§4.0.5）。
 
 SUTSession = token/挂载方式 + 过期时间；进程内缓存 + 落盘持久化
-（workspace 之外、0600 权限，过期自动清理）——落盘文件等同凭证管理。
+（workspace/sut_sessions/、0600 权限，过期自动清理）——落盘文件等同凭证管理；
+评测状态聚集于 workspace，清 workspace 即全新重测（arch/16 §三）。
 """
 
 from __future__ import annotations
@@ -12,12 +13,28 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-# 会话落盘目录（可 env 覆盖）；默认在 workspace 之外（用户主目录）
+# 会话落盘目录（可 env 覆盖）。默认 workspace/sut_sessions/（arch/16 §三）：
+# 评测状态单一聚集于 workspace——清 workspace 即全新重测（含登录态）；
+# 目录 0600 语义不变。迁移自 ~/.agent_eval/sut_sessions（旧目录存在时自动搬迁）。
 SESSION_DIR_ENV = "AGENT_EVAL_SUT_SESSION_DIR"
-DEFAULT_SESSION_DIR = Path.home() / ".agent_eval" / "sut_sessions"
+LEGACY_SESSION_DIR = Path.home() / ".agent_eval" / "sut_sessions"
 
 # 登录响应无 expires_in 时的固定 TTL（秒）
 DEFAULT_SESSION_TTL_S = 3600.0
+
+
+def default_session_dir() -> Path:
+    """缺省会话目录：workspace/sut_sessions/（自动搬迁旧目录内容）。"""
+    from agent_eval.config.paths import paths
+
+    target = paths.default_workspace / "sut_sessions"
+    if LEGACY_SESSION_DIR.is_dir() and not target.exists():
+        target.mkdir(parents=True, exist_ok=True)
+        import shutil
+
+        for f in LEGACY_SESSION_DIR.glob("*.json"):
+            shutil.move(str(f), target / f.name)
+    return target
 
 
 class SUTSession(BaseModel):
@@ -53,7 +70,8 @@ class SessionStore:
 
     def __init__(self, base_dir: Path | str | None = None) -> None:
         if base_dir is None:
-            base_dir = Path(os.environ.get(SESSION_DIR_ENV, DEFAULT_SESSION_DIR))
+            env_dir = os.environ.get(SESSION_DIR_ENV, "").strip()
+            base_dir = Path(env_dir).expanduser() if env_dir else default_session_dir()
         self.base_dir = Path(base_dir)
         self.base_dir.mkdir(parents=True, exist_ok=True)
         # 会话目录等同凭证存储：收紧为仅当前用户可读写

@@ -227,3 +227,25 @@ def test_provider_auto_relogin_rate_limit() -> None:
     assert provider.auto_relogin_allowed()
     provider.mark_auto_relogin()
     assert not provider.auto_relogin_allowed()  # 30 分钟窗口内拒绝再次自动重登
+
+
+def test_session_store_default_in_workspace(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    """W5：缺省会话目录迁至 workspace/sut_sessions（旧目录自动搬迁）。"""
+    import agent_eval.execution.auth.session as session_mod
+
+    workspace = tmp_path / "ws"
+    workspace.mkdir()
+    legacy = tmp_path / "home" / ".agent_eval" / "sut_sessions"
+    legacy.mkdir(parents=True)
+    (legacy / "sys-a.json").write_text("{}", encoding="utf-8")
+
+    from agent_eval.config.paths import ProjectPaths
+
+    monkeypatch.setattr(session_mod, "LEGACY_SESSION_DIR", legacy)  # 导入期常量，patch 模块属性
+    monkeypatch.setattr(ProjectPaths, "default_workspace", workspace)  # 覆盖 property
+    monkeypatch.delenv("AGENT_EVAL_SUT_SESSION_DIR", raising=False)
+
+    store = session_mod.SessionStore()
+    assert store.base_dir == workspace / "sut_sessions"
+    assert (workspace / "sut_sessions" / "sys-a.json").exists()  # 旧会话已搬迁
+    assert not (legacy / "sys-a.json").exists()
