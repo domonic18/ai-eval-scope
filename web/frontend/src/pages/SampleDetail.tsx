@@ -189,7 +189,8 @@ export default function SampleDetail() {
 
   if (!sample) return <div className="p-8 text-muted-foreground">加载样本详情…</div>
 
-  const failedCount = sample.constraintResults.filter((c) => !c.passed).length
+  const failedCount = sample.constraintResults.filter((c) => !c.passed && c.status !== "skip").length
+  const skippedCount = sample.constraintResults.filter((c) => c.status === "skip").length
 
   return (
     <div className="flex h-[calc(100vh-3.5rem)] flex-col">
@@ -298,19 +299,24 @@ function ConstraintItem({
   const [open, setOpen] = useState(!c.passed)
   const method = c.judgeProvider ? "LLM_JUDGE" : "RULE"
   const sourceFiles = parseSourceFiles(c.details)
+  const skipped = c.status === "skip"
   return (
-    <div className={`rounded-md border ${!c.passed ? "border-red-500/30 bg-red-500/5" : "border-border"}`}>
+    <div className={`rounded-md border ${!c.passed && !skipped ? "border-red-500/30 bg-red-500/5" : "border-border"}`}>
       <button onClick={() => setOpen((o) => !o)} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm">
-        {c.passed ? (
+        {skipped ? (
+          <SemPill tone="neutral">SKIP</SemPill>
+        ) : c.passed ? (
           <SemPill tone="success">PASS</SemPill>
         ) : (
           <SemPill tone="danger">FAIL</SemPill>
         )}
-        <span className="flex-1 truncate">
+        <span className={`flex-1 truncate ${skipped ? "opacity-60" : ""}`}>
           {c.name}
           <span className="ml-2 font-mono text-[10px] text-muted-foreground">{c.constraintId}</span>
         </span>
-        <span className={`font-mono text-xs tabular-nums ${c.passed ? "text-emerald-400" : "text-red-400"}`}>{c.score.toFixed(2)}</span>
+        <span className={`font-mono text-xs tabular-nums ${skipped ? "text-muted-foreground" : c.passed ? "text-emerald-400" : "text-red-400"}`}>
+          {skipped ? "—" : c.score.toFixed(2)}
+        </span>
         <ChevronRight className={`size-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-90" : ""}`} />
       </button>
       {open && (
