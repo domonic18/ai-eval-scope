@@ -14,6 +14,7 @@ export interface LlmModelVO {
   id: string
   name: string
   provider: string
+  role: string
   baseUrl: string | null
   apiKeyMasked: string
   modelName: string
@@ -30,6 +31,7 @@ export interface LlmModelVO {
 export interface LlmModelInput {
   name: string
   provider: string
+  role?: string
   baseUrl?: string | null
   apiKey?: string // 明文；创建必填，更新留空=不改
   modelName: string
@@ -49,6 +51,7 @@ function toVO(m: LlmModel): LlmModelVO {
     id: m.id,
     name: m.name,
     provider: m.provider,
+    role: m.role,
     baseUrl: m.baseUrl,
     apiKeyMasked,
     modelName: m.modelName,
@@ -79,6 +82,14 @@ class LlmModelRepository {
   }
 
   /** 取默认模型原始行（含密文 key）；无默认则取首个 active。 */
+  /** 活跃行（含密文），isDefault 优先、其次最新——角色拉取与兜底取行共用。 */
+  async listActiveRaw(): Promise<LlmModel[]> {
+    return this.prisma.llmModel.findMany({
+      where: { isActive: true },
+      orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
+    })
+  }
+
   async getDefaultRaw(): Promise<LlmModel | null> {
     const def = await this.prisma.llmModel.findFirst({
       where: { isDefault: true, isActive: true },
@@ -92,6 +103,9 @@ class LlmModelRepository {
     if (!["openai", "anthropic"].includes(input.provider)) {
       throw new PlatformError("provider 必须为 openai 或 anthropic", { status: 400, code: "VALIDATION_ERROR" })
     }
+    if (input.role !== undefined && !["text", "vision", "agent"].includes(input.role)) {
+      throw new PlatformError("role 必须为 text、vision 或 agent", { status: 400, code: "VALIDATION_ERROR" })
+    }
     const apiKey = input.apiKey
     return this.prisma.$transaction(async (tx) => {
       if (input.isDefault) await tx.llmModel.updateMany({ where: { isDefault: true }, data: { isDefault: false } })
@@ -99,6 +113,7 @@ class LlmModelRepository {
         data: {
           name: input.name,
           provider: input.provider,
+          role: input.role ?? "text",
           baseUrl: input.baseUrl ?? null,
           apiKeyEncrypted: encryptToken(apiKey),
           modelName: input.modelName,
@@ -115,6 +130,9 @@ class LlmModelRepository {
     if (input.provider && !["openai", "anthropic"].includes(input.provider)) {
       throw new PlatformError("provider 必须为 openai 或 anthropic", { status: 400, code: "VALIDATION_ERROR" })
     }
+    if (input.role !== undefined && !["text", "vision", "agent"].includes(input.role)) {
+      throw new PlatformError("role 必须为 text、vision 或 agent", { status: 400, code: "VALIDATION_ERROR" })
+    }
     const existing = await this.getRaw(id)
     if (!existing) throw new PlatformError("llm model not found", { status: 404, code: "NOT_FOUND" })
     return this.prisma.$transaction(async (tx) => {
@@ -122,6 +140,7 @@ class LlmModelRepository {
       const data: Prisma.LlmModelUpdateInput = {}
       if (input.name !== undefined) data.name = input.name
       if (input.provider !== undefined) data.provider = input.provider
+      if (input.role !== undefined) data.role = input.role
       if (input.baseUrl !== undefined) data.baseUrl = input.baseUrl
       if (input.modelName !== undefined) data.modelName = input.modelName
       if (input.isActive !== undefined) data.isActive = input.isActive

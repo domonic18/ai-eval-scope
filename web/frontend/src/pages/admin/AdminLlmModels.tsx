@@ -1,5 +1,6 @@
-/** 超管后台 · LLM 模型配置（docs/arch/13）。
- * 多模型 CRUD + 连通性测试 + 设默认 + 导出 llm_config.yaml。
+/** 超管后台 · LLM 模型配置（arch/16 §6.2-四 云端形态）。
+ * 多模型 CRUD + 连通性测试 + 设默认；role 为角色（text/vision/agent），
+ * executor 经 /api/public/llm-config 按角色拉取（替代原导出 llm_config.yaml）。
  * provider 为协议（OpenAI / Anthropic）；api_key 加密存储，回显仅脱敏。 */
 import { useEffect, useState } from "react"
 import { api, type LlmModelInput, type LlmModelVO } from "../../api/client"
@@ -17,14 +18,17 @@ import {
 import { useToast } from "../../hooks/useToast"
 import { Badge } from "@/components/shadcn/badge"
 import { DataTable, Page, PageHead, type Column } from "../../components/shared"
-import { Download, Pencil, Plus, Star, Trash2, Zap } from "lucide-react"
+import { Pencil, Plus, Star, Trash2, Zap } from "lucide-react"
 
 type Provider = "openai" | "anthropic"
 const PROVIDER_LABEL: Record<Provider, string> = { openai: "OpenAI 协议", anthropic: "Anthropic 协议" }
+type Role = "text" | "vision" | "agent"
+const ROLE_LABEL: Record<Role, string> = { text: "text·评估文本", vision: "vision·视觉", agent: "agent·执行侧" }
 
 const emptyForm: LlmModelInput = {
   name: "",
   provider: "openai",
+  role: "text",
   baseUrl: "",
   apiKey: "",
   modelName: "",
@@ -68,6 +72,7 @@ export default function AdminLlmModels() {
     setForm({
       name: r.name,
       provider: r.provider,
+      role: r.role,
       baseUrl: r.baseUrl ?? "",
       apiKey: "",
       modelName: r.modelName,
@@ -123,22 +128,6 @@ export default function AdminLlmModels() {
     }
   }
 
-  async function exportYaml() {
-    try {
-      const yaml = await api.adminExportLlmYaml()
-      const blob = new Blob([yaml], { type: "text/yaml" })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = "llm_config.yaml"
-      a.click()
-      URL.revokeObjectURL(url)
-      toast.success("已导出 llm_config.yaml，覆盖 evaluator 配置后在 .env 配置对应变量")
-    } catch {
-      toast.error("导出失败")
-    }
-  }
-
   async function confirmDelete() {
     if (!del) return
     try {
@@ -163,6 +152,7 @@ export default function AdminLlmModels() {
       ),
     },
     { key: "provider", title: "协议", render: (r) => <Badge variant="outline">{PROVIDER_LABEL[r.provider as Provider] ?? r.provider}</Badge> },
+    { key: "role", title: "角色", render: (r) => <Badge variant="secondary">{ROLE_LABEL[r.role as Role] ?? r.role}</Badge> },
     { key: "modelName", title: "模型", render: (r) => <span className="font-mono text-xs">{r.modelName}</span> },
     { key: "apiKeyMasked", title: "API Key", render: (r) => <span className="font-mono text-xs text-muted-foreground">{r.apiKeyMasked}</span> },
     {
@@ -196,12 +186,9 @@ export default function AdminLlmModels() {
     <Page>
       <PageHead
         title="LLM 模型配置"
-        sub="管理系统所用 LLM（OpenAI / Anthropic 协议）；默认模型供配置资产 AI 生成与评估器导出使用"
+        sub="管理系统所用 LLM（OpenAI / Anthropic 协议）；按角色供评估器/执行侧拉取，默认模型供配置资产 AI 生成使用"
         right={
           <div className="flex gap-2">
-            <Button variant="outline" onClick={exportYaml}>
-              <Download className="size-4" /> 导出 llm_config.yaml
-            </Button>
             <Button onClick={openCreate}>
               <Plus className="size-4" /> 新增模型
             </Button>
@@ -218,7 +205,7 @@ export default function AdminLlmModels() {
             <DialogDescription>配置协议、模型、API Key；API Key 加密存储，仅回显脱敏。</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div>
                 <Label>名称</Label>
                 <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="如 Kimi Judge" />
@@ -232,6 +219,18 @@ export default function AdminLlmModels() {
                 >
                   <option value="openai">OpenAI 协议</option>
                   <option value="anthropic">Anthropic 协议</option>
+                </select>
+              </div>
+              <div>
+                <Label>角色</Label>
+                <select
+                  className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  value={form.role ?? "text"}
+                  onChange={(e) => setForm({ ...form, role: e.target.value })}
+                >
+                  <option value="text">text·评估文本</option>
+                  <option value="vision">vision·视觉</option>
+                  <option value="agent">agent·执行侧</option>
                 </select>
               </div>
             </div>

@@ -493,9 +493,6 @@ export const api = {
   async adminTestLlmModel(id: string): Promise<{ status: "success" | "failed"; detail: string; testedAt: string }> {
     return (await http.post(`/admin/llm-models/${id}/test`)).data
   },
-  async adminExportLlmYaml(): Promise<string> {
-    return (await http.post("/admin/llm-models/export-yaml", {}, { responseType: "text", transformResponse: (x) => x })).data
-  },
   async aiOptimizePrompt(input: {
     instruction: string
     scenario?: string
@@ -618,6 +615,7 @@ export interface LlmModelVO {
   id: string
   name: string
   provider: string // openai | anthropic
+  role: string // text | vision | agent（arch/16 §6.2-四，executor 按角色拉取）
   baseUrl: string | null
   apiKeyMasked: string
   modelName: string
@@ -633,6 +631,7 @@ export interface LlmModelVO {
 export interface LlmModelInput {
   name: string
   provider: string
+  role?: string // text | vision | agent
   baseUrl?: string | null
   apiKey?: string
   modelName: string

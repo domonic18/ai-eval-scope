@@ -46,6 +46,7 @@ import { rateLimiter } from "./middleware/rateLimiter"
 // ── 摄取路由（Bearer API Key 鉴权，7d）──
 import ingestRouter from "./routes/public/ingest"
 import publicArtifactsRouter from "./routes/public/artifacts"
+import publicLlmConfigRouter from "./routes/public/llmConfig"
 
 /** 组装 Express app。供测试 import（supertest 直接挂在 app 上）。 */
 export function createApp(): express.Application {
@@ -92,6 +93,7 @@ export function createApp(): express.Application {
   // ── 摄取路由（Bearer API Key 鉴权 + 限流，7d）──
   app.use("/api/public/ingest", ingestRouter) // POST /api/public/ingest
   app.use("/api/public/artifacts", publicArtifactsRouter) // POST /api/public/artifacts/url
+  app.use("/api/public/llm-config", publicLlmConfigRouter) // GET /（executor 角色配置拉取，LLM③）
 
   // ── 前端静态托管（生产；dev 用 vite 单独跑 :5173）──
   // 以 cwd 为基准（host: web/backend/public；Docker: /app/web/backend/public）
