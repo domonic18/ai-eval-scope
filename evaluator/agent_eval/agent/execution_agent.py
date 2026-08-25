@@ -97,10 +97,16 @@ class ExecutionAgent:
 
     # ─── 对外入口 ───
 
-    async def run_task_set(self, task_set: TaskSet) -> list[ExecutionPackage]:
-        """批量执行任务集（共享 run_id），返回执行包列表。"""
-        run_id = generate_run_id()
-        return [await self.run_task(task, run_id=run_id) for task in task_set.tasks]
+    async def run_task_set(
+        self, task_set: TaskSet, *, run_id: str | None = None
+    ) -> tuple[str, list[ExecutionPackage]]:
+        """批量执行任务集（共享 run_id），返回 (run_id, 执行包列表)。
+
+        run_id 可由调用方（CLI）注入——用于运行清单登记与外部关联。
+        """
+        run_id = run_id or generate_run_id()
+        packages = [await self.run_task(task, run_id=run_id) for task in task_set.tasks]
+        return run_id, packages
 
     async def run_task(self, task: Task, *, run_id: str | None = None) -> ExecutionPackage:
         """执行单个任务，返回 ExecutionPackage。
@@ -112,7 +118,13 @@ class ExecutionAgent:
         """
         run_id = run_id or generate_run_id()
         workspace = Path(self.config.workspace_dir)
-        package_dir = workspace / task.id
+        # W7（arch/16 §三）：执行包归位 runs/{run_id}/packages/{task_id}——
+        # 挂 run_id 与 agent_logs/results 同层可关联（旧布局 workspace/{task_id}
+        # 同名重跑互相覆盖且无法归属运行）。write_package 的目的地由
+        # sut_tools.workspace_dir 决定，逐 run 注入包根。
+        run_packages_root = workspace / "runs" / run_id / "packages"
+        self.sut_tools.workspace_dir = run_packages_root
+        package_dir = run_packages_root / task.id
         log_dir = workspace / "runs" / run_id / "agent_logs"
 
         logger = SessionLogger(run_id, task.id, log_dir=log_dir)

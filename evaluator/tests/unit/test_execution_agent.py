@@ -83,10 +83,21 @@ def _read_json(path: Path):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _fix_run_id(monkeypatch, run_id: str = "r_fix") -> None:
+    """固定 run_id（W7：预写包须落在 runs/{run_id}/packages/ 下）。"""
+    monkeypatch.setattr(execution_agent_mod, "generate_run_id", lambda: run_id)
+
+
+def _pkg_root(tmp_path: Path, run_id: str = "r_fix") -> Path:
+    return tmp_path / "runs" / run_id / "packages"
+
+
 def test_run_task_success_with_agent_package(tmp_path, monkeypatch) -> None:
     agent = _agent(tmp_path)
     graph = _install_fakes(monkeypatch, FakeGraph(result={"messages": _messages()}))
-    # 模拟 Agent 会话内已调用 write_package（成功包）
+    _fix_run_id(monkeypatch)
+    # 模拟 Agent 会话内已调用 write_package（成功包；W7 落 runs/{run_id}/packages/）
+    agent.sut_tools.workspace_dir = _pkg_root(tmp_path)
     asyncio.run(
         agent.sut_tools.write_package(
             task_id="task_1",
@@ -133,15 +144,17 @@ def _messages() -> list[SimpleNamespace]:
 
 
 def test_run_task_fallback_package_when_agent_skips_write(tmp_path, monkeypatch) -> None:
+    _fix_run_id(monkeypatch)
     _install_fakes(monkeypatch, FakeGraph(result={"messages": _messages()}, fire_callbacks=True))
     agent = _agent(tmp_path)
     package = asyncio.run(agent.run_task(_task()))
 
     # Agent 未写包 → 兜底失败包 + task/trace/metrics 补齐
     assert package.manifest.status == "failed"
-    assert (tmp_path / "task_1" / "task.json").exists()
-    assert (tmp_path / "task_1" / "trace.json").exists()
-    metrics = _read_json(tmp_path / "task_1" / "metrics.json")
+    pkg_dir = _pkg_root(tmp_path) / "task_1"
+    assert (pkg_dir / "task.json").exists()
+    assert (pkg_dir / "trace.json").exists()
+    metrics = _read_json(pkg_dir / "metrics.json")
     assert metrics["tool_calls"] == 1
 
     # 回调触发的 token 计量进入汇总日志（一次 on_llm_end: 10+5）
@@ -152,26 +165,30 @@ def test_run_task_fallback_package_when_agent_skips_write(tmp_path, monkeypatch)
 
 
 def test_run_task_recursion_error_becomes_timeout(tmp_path, monkeypatch) -> None:
+    _fix_run_id(monkeypatch)
     _install_fakes(monkeypatch, FakeGraph(error=GraphRecursionError("limit")))
     agent = _agent(tmp_path)
     with pytest.raises(AgentTimeoutError):
         asyncio.run(agent.run_task(_task()))
-    manifest = _read_json(tmp_path / "task_1" / "manifest.json")
+    manifest = _read_json(_pkg_root(tmp_path) / "task_1" / "manifest.json")
     assert manifest["status"] == "failed"
 
 
 def test_run_task_budget_exceeded_preserves_partial_package(tmp_path, monkeypatch) -> None:
     _install_fakes(monkeypatch, FakeGraph(error=BudgetExceededError("over budget")))
     agent = _agent(tmp_path)
+    _fix_run_id(monkeypatch)
     # 预置 Agent 已写的成功包（部分结果）→ 异常路径不得覆盖
+    agent.sut_tools.workspace_dir = _pkg_root(tmp_path)
     asyncio.run(agent.sut_tools.write_package(task_id="task_1", success=True))
     with pytest.raises(BudgetExceededError):
         asyncio.run(agent.run_task(_task()))
-    manifest = _read_json(tmp_path / "task_1" / "manifest.json")
+    manifest = _read_json(_pkg_root(tmp_path) / "task_1" / "manifest.json")
     assert manifest["status"] == "success"
 
 
 def test_run_task_generic_error_wrapped(tmp_path, monkeypatch) -> None:
+    _fix_run_id(monkeypatch)
     _install_fakes(monkeypatch, FakeGraph(error=RuntimeError("checkpointer down")))
     agent = _agent(tmp_path)
     with pytest.raises(AgentError, match="会话异常中断"):
@@ -179,23 +196,30 @@ def test_run_task_generic_error_wrapped(tmp_path, monkeypatch) -> None:
 
 
 def test_run_task_without_deepagents_friendly_error(tmp_path, monkeypatch) -> None:
+    _fix_run_id(monkeypatch)
     # 未安装伪 deepagents 且真实环境未安装 → 友好提示 + 失败包
     monkeypatch.setitem(sys.modules, "deepagents", None)
     agent = _agent(tmp_path)
     with pytest.raises(AgentError, match="agent-eval\\[agent\\]"):
         asyncio.run(agent.run_task(_task()))
-    assert (tmp_path / "task_1" / "manifest.json").exists()
+    # W7：包归位 runs/{run_id}/packages/
+    assert (_pkg_root(tmp_path) / "task_1" / "manifest.json").exists()
 
 
 def test_run_task_set_shares_run_id(tmp_path, monkeypatch) -> None:
     _install_fakes(monkeypatch, FakeGraph(result={"messages": _messages()}))
     agent = _agent(tmp_path)
     task_set = TaskSet(id="ts", name="批量", tasks=[_task("t_a"), _task("t_b")])
-    packages = asyncio.run(agent.run_task_set(task_set))
+    run_id, packages = asyncio.run(agent.run_task_set(task_set))
     assert [p.manifest.task_id for p in packages] == ["t_a", "t_b"]
-    run_dirs = list((tmp_path / "runs").iterdir())
-    assert len(run_dirs) == 1  # 共享 run_id
-    log_names = sorted(p.name for p in (run_dirs[0] / "agent_logs").glob("agent_t*.jsonl"))
+    run_dir = tmp_path / "runs" / run_id
+    assert run_id
+    assert run_dir.is_dir()  # 共享 run_id
+    # W7：执行包归位 runs/{run_id}/packages/{task_id}（不再写 workspace 根）
+    assert (run_dir / "packages" / "t_a" / "manifest.json").exists()
+    assert (run_dir / "packages" / "t_b" / "manifest.json").exists()
+    assert not (tmp_path / "t_a").exists()
+    log_names = sorted(p.name for p in (run_dir / "agent_logs").glob("agent_t*.jsonl"))
     assert log_names == ["agent_t_a.jsonl", "agent_t_b.jsonl"]
 
 
@@ -261,8 +285,13 @@ def test_task_prompt_expected_block(tmp_path) -> None:
 
 
 def test_trace_backfills_sut_last_run_text(tmp_path, monkeypatch) -> None:
+    _fix_run_id(monkeypatch)
     """trace 回填 SUT 最终回答（工具注册表记录的 last_run，v4.6.4）。"""
     graph = _install_fakes(monkeypatch, FakeGraph(result={"messages": _messages()}))
+    agent = _agent(tmp_path)
+    agent.sut_tools.workspace_dir = _pkg_root(tmp_path)
+    asyncio.run(agent.sut_tools.write_package(task_id="task_1", success=True))
+    agent = _agent(tmp_path)
     assert graph is not None
 
     class _StubSutServer:
@@ -286,23 +315,25 @@ def test_trace_backfills_sut_last_run_text(tmp_path, monkeypatch) -> None:
     asyncio.run(agent.sut_tools.write_package(task_id="task_1", success=True))
     package = asyncio.run(agent.run_task(_task()))
     assert package.manifest.status == "success"
-    trace = _read_json(tmp_path / "task_1" / "trace.json")
+    trace = _read_json(_pkg_root(tmp_path) / "task_1" / "trace.json")
     assert trace["response"]["sut"]["text"].startswith("一元一次方程")
     assert trace["response"]["sut"]["thread_id"] == "th-1"
     assert trace["response"]["messages"] == len(_messages())
 
 
 def test_trace_without_sut_run_keeps_counts_only(tmp_path, monkeypatch) -> None:
+    _fix_run_id(monkeypatch)
     """无 last_run 注册表（如目录模式）时 trace 保持计数形态，不造 sut 键。"""
     _install_fakes(monkeypatch, FakeGraph(result={"messages": _messages()}))
     agent = _agent(tmp_path)
     asyncio.run(agent.run_task(_task()))
-    trace = _read_json(tmp_path / "task_1" / "trace.json")
+    trace = _read_json(_pkg_root(tmp_path) / "task_1" / "trace.json")
     assert "sut" not in trace["response"]
     assert trace["response"]["tool_calls"] >= 0
 
 
 def test_answer_file_materialized_from_last_run(tmp_path, monkeypatch) -> None:
+    _fix_run_id(monkeypatch)
     """SUT 回答物化为 output/answer.md（对话型任务，评估器按文件收集文本）。"""
     _install_fakes(monkeypatch, FakeGraph(result={"messages": _messages()}))
 
@@ -320,7 +351,7 @@ def test_answer_file_materialized_from_last_run(tmp_path, monkeypatch) -> None:
     )
     asyncio.run(agent.sut_tools.write_package(task_id="task_1", success=True))
     asyncio.run(agent.run_task(_task()))
-    answer = tmp_path / "task_1" / "output" / "answer.md"
+    answer = _pkg_root(tmp_path) / "task_1" / "output" / "answer.md"
     assert answer.exists() and answer.read_text(encoding="utf-8") == "回答正文"
 
 
@@ -341,7 +372,7 @@ def test_answer_file_not_duplicated_when_output_has_files(tmp_path, monkeypatch)
         AgentConfig(workspace_dir=tmp_path, max_turns=7), extra_tool_servers=[_StubSutServer()]
     )
     asyncio.run(agent.sut_tools.write_package(task_id="task_1", success=True))
-    output_dir = tmp_path / "task_1" / "output"
+    output_dir = _pkg_root(tmp_path) / "task_1" / "output"
     output_dir.mkdir(parents=True)
     (output_dir / "artifact.html").write_text("<html/>", encoding="utf-8")
     asyncio.run(agent.run_task(_task()))

@@ -151,6 +151,19 @@ def pack(
         raise typer.Exit(code=1) from e
 
 
+def _write_run_manifest(run_dir: Path, payload: dict[str, Any]) -> None:
+    """写运行清单（runs/{run_id}/run_manifest.json，绑定显式化第一步）。"""
+    import json
+
+    try:
+        run_dir.mkdir(parents=True, exist_ok=True)
+        (run_dir / "run_manifest.json").write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+    except OSError as e:
+        rprint(f"[yellow]⚠ 运行清单写入失败: {e}[/yellow]")
+
+
 def _resolve_rule_set_path(package: str | None, rule_set: str | None) -> str:
     """解析规则集路径。
 
@@ -375,6 +388,7 @@ def run(
     from agent_eval.execution.models import AgentConfig
     from agent_eval.execution.registry import SUTRegistry
     from agent_eval.packages.assets import resolve_sut_configs_dir, resolve_task_set_path
+    from agent_eval.packages.manifest import ResolvedPackage
     from agent_eval.packages.manager import PackageManager
     from agent_eval.storage.package import generate_run_id
 
@@ -382,7 +396,9 @@ def run(
 
     try:
         # 输入解析（arch/16 §2.1）：--package 启用包内解析；显式路径参数优先
-        resolved_pkg = PackageManager().resolve_ref(package) if package else None
+        resolved_pkg: ResolvedPackage | None = (
+            PackageManager().resolve_ref(package) if package else None
+        )
 
         task_set_path: Path | None = (
             Path(task_set) if task_set and Path(task_set).exists() else None
@@ -436,18 +452,33 @@ def run(
             extra_tool_servers=[protocol_tools],
         )
 
-        async def _run_and_close() -> list[Any]:
+        async def _run_and_close() -> tuple[str, list[Any]]:
             # 通道关闭必须与 run 同一 event loop（httpx client 绑定创建时的 loop，
             # 另起 asyncio.run 关旧 loop 上的 client 会 RuntimeError: Event loop is closed）
             try:
-                return await agent.run_task_set(task_set_model)
+                return await agent.run_task_set(task_set_model, run_id=run_id)
             finally:
                 await channel.aclose()
 
-        packages = asyncio.run(_run_and_close())
+        _, packages = asyncio.run(_run_and_close())
     except AgentEvalError as e:
         rprint(f"[red]执行失败:[/red] {e}")
         raise typer.Exit(code=1) from e
+
+    # 运行清单（W7 + 绑定显式化第一步，arch/16 §五）：登记包路径与输入绑定
+    packages_run_dir = Path(agent.config.workspace_dir) / "runs" / run_id
+    _write_run_manifest(
+        packages_run_dir,
+        {
+            "mode": "run",
+            "run_id": run_id,
+            "package_ref": resolved_pkg.manifest.ref if resolved_pkg else None,
+            "task_set": str(task_set_path),
+            "sut": {"name": sut.name, "base_url": sut.base_url},
+            "llm_role": llm_role or "agent",
+            "packages": [str(p.output_dir or p.manifest.package_id) for p in packages],
+        },
+    )
 
     succeeded = sum(1 for p in packages if p.manifest.status == "success")
     rprint(
@@ -460,9 +491,10 @@ def run(
             f"  [{status_color}]{package.manifest.status}[/{status_color}] "
             f"{package.manifest.task_id} → {package.output_dir or package.manifest.package_id}"
         )
-        rprint(
-            f"    评估: [blue]agent-eval eval --package-dir {package.output_dir} --package <场景包>[/blue]"
-        )
+    rprint(
+        f"    评估: [blue]agent-eval eval --package-dir {packages_run_dir / 'packages'} "
+        f"--package <场景包>[/blue]"
+    )
 
 
 @app.command(hidden=True)

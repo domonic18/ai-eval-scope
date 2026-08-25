@@ -40,17 +40,19 @@ class FakeExecutionAgent:
         self._package_cls = ExecutionPackage
         self.extra_tool_servers = extra_tool_servers or []
 
-    async def run_task_set(self, task_set):
+    async def run_task_set(self, task_set, *, run_id: str | None = None):
+        packages_root = Path(self.config.workspace_dir) / "runs" / (run_id or "r_fake") / "packages"
         packages = []
         for task in task_set.tasks:
+            self._sut_tools.workspace_dir = packages_root
             await self._sut_tools.write_package(
                 task_id=task.id,
                 success=True,
                 trace={"request": {}, "response": {}, "started_at": "t", "finished_at": "t"},
                 metrics={"tool_calls": 0},
             )
-            packages.append(self._package_cls.load(Path(self.config.workspace_dir) / task.id))
-        return packages
+            packages.append(self._package_cls.load(packages_root / task.id))
+        return run_id or "r_fake", packages
 
 
 def test_run_command_produces_packages(tmp_path, monkeypatch) -> None:
@@ -79,8 +81,13 @@ def test_run_command_produces_packages(tmp_path, monkeypatch) -> None:
     assert result.exit_code == 0, result.output
     assert "cw-agent" in result.output
     assert "1/1 成功" in result.output
-    assert (out_dir / "t_cli_1" / "manifest.json").exists()
-    assert (out_dir / "t_cli_1" / "metrics.json").exists()
+    import re
+
+    rid = re.search(r"运行 ID: (\S+)", result.output).group(1)
+    assert (
+        out_dir / "runs" / rid / "packages" / "t_cli_1" / "manifest.json"
+    ).exists()  # W7：包归位
+    assert (out_dir / "runs" / rid / "packages" / "t_cli_1" / "metrics.json").exists()
     # 输出包含下一步评估提示
     assert "agent-eval eval --package-dir" in result.output
 
