@@ -337,12 +337,21 @@ def eval(
 
 @app.command()
 def run(
-    task_set: str = typer.Option(..., "--task-set", help="任务集文件路径"),
-    sut_config: str = typer.Option(
-        ..., "--sut-config", help="被测系统配置路径（sut_config v2，yaml 文件或目录）"
+    package: str | None = typer.Option(
+        None,
+        "--package",
+        help="场景包引用（如 chat / chat:1.0.0）——考卷与 SUT 从包内解析（arch/16 §2.1）",
+    ),
+    task_set: str | None = typer.Option(
+        None, "--task-set", help="任务集：文件路径，或包内名（与 --package 配合，如 default）"
+    ),
+    sut_config: str | None = typer.Option(
+        None,
+        "--sut-config",
+        help="被测系统配置路径（sut_config v2，yaml 文件或目录）；缺省从包内 sut_configs/ 解析",
     ),
     sut_name: str | None = typer.Option(
-        None, "--sut-name", help="被测系统名（sut_config 为目录且含多系统时必填）"
+        None, "--sut-name", help="被测系统名（多系统时必填；唯一系统自动选中）"
     ),
     output_dir: str | None = typer.Option(
         None, "--output-dir", help="执行包输出目录（默认 ./workspace）"
@@ -365,25 +374,50 @@ def run(
     from agent_eval.execution.channels.base import create_channel
     from agent_eval.execution.models import AgentConfig
     from agent_eval.execution.registry import SUTRegistry
+    from agent_eval.packages.assets import resolve_sut_configs_dir, resolve_task_set_path
+    from agent_eval.packages.manager import PackageManager
     from agent_eval.storage.package import generate_run_id
 
     setup_logging(level="DEBUG" if verbose else "INFO")
 
     try:
-        config_path = Path(sut_config)
+        # 输入解析（arch/16 §2.1）：--package 启用包内解析；显式路径参数优先
+        resolved_pkg = PackageManager().resolve_ref(package) if package else None
+
+        task_set_path: Path | None = (
+            Path(task_set) if task_set and Path(task_set).exists() else None
+        )
+        if task_set_path is None:
+            if resolved_pkg is not None:
+                task_set_path = resolve_task_set_path(resolved_pkg, task_set)
+            else:
+                raise AgentEvalError("必须提供 --task-set（路径）或 --package（包内任务集解析）")
+
+        if sut_config and Path(sut_config).exists():
+            config_path = Path(sut_config)
+        elif resolved_pkg is not None:
+            config_path = resolve_sut_configs_dir(resolved_pkg)
+        else:
+            raise AgentEvalError(
+                "必须提供 --sut-config（路径）或 --package（包内 sut_configs/ 解析）"
+            )
+
         registry = (
             SUTRegistry.load_dir(config_path)
             if config_path.is_dir()
             else SUTRegistry.load(config_path)
         )
         sut = registry.get(sut_name) if sut_name else registry.default
-        task_set_model = ConfigLoader.load_task_set(task_set)
+        task_set_model = ConfigLoader.load_task_set(task_set_path)
     except AgentEvalError as e:
         rprint(f"[red]配置加载失败:[/red] {e}")
         raise typer.Exit(code=1) from e
 
     run_id = generate_run_id()
-    rprint(f"[blue]任务集:[/blue] {task_set}（{len(task_set_model.tasks)} 个任务）")
+    rprint(
+        f"[blue]任务集:[/blue] {task_set_path}（{len(task_set_model.tasks)} 个任务）"
+        + (f"（包 {resolved_pkg.manifest.ref}）" if resolved_pkg else "")
+    )
     rprint(f"[blue]被测系统:[/blue] {sut.name}（channel={sut.channel}, base_url={sut.base_url}）")
     rprint(f"[blue]运行 ID:[/blue] {run_id}")
 

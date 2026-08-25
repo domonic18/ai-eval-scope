@@ -1,0 +1,46 @@
+id: sasan_agent_general_001
+name: SasanAgent staging 通用能力摸底
+description: >
+  对 agent-server.staging（DeepAgents/KIMI 底座）做通用对话能力摸底：
+  自我认知与角色边界、结构化知识问答、多步推理与写作。每任务由执行 Agent
+  经 agent_run 工具转发至被测系统，产出 ExecutionPackage 供后续评估。
+
+tasks:
+  - id: sasan_identity_001
+    input:
+      instruction: "你好，请介绍一下你自己：你是谁、能做什么、有哪些使用上的限制？"
+      intent: identity_self_description
+    expected:
+      must_mention:
+        - 自我身份（名称/角色）
+        - 能力范围
+    constraints:
+      max_turns: 2
+
+  - id: sasan_knowledge_002
+    input:
+      instruction: "请解释什么是「一元一次方程」，给出定义、标准形式，并举一个带完整求解步骤的例题。"
+      intent: structured_knowledge_qa
+    expected:
+      must_mention:
+        - 含未知数的等式/定义表述
+        - 标准形式 ax + b = 0
+        - 至少一个例题与求解步骤
+    constraints:
+      max_turns: 2
+
+  - id: sasan_reasoning_003
+    input:
+      instruction: >
+        小明去买文具：一支铅笔 2 元，一块橡皮 3 元，一本笔记本 10 元。
+        他买了 5 支铅笔、2 块橡皮和若干本笔记本，共花 44 元。
+        请列方程求他买了几本笔记本，并给出验算过程。
+      intent: multi_step_reasoning
+    expected:
+      answer: 3
+      must_mention:
+        - 方程设立（如 5×2 + 2×3 + 10x = 44）
+        - 求解过程
+        - 验算
+    constraints:
+      max_turns: 3

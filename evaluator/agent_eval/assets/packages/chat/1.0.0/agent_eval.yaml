@@ -12,3 +12,5 @@ package:
     evaluators: "agent_eval.evaluation.evaluators.scenario.chat:register"
   artifact_types:
     - chat/*
+  # 考卷与被测系统接入内嵌于包（arch/16 §2.1）：task_sets/、sut_configs/
+  default_task_set: default

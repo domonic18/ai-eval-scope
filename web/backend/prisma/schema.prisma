@@ -334,6 +334,7 @@ model Scenario {
   sutConfigs   SutConfigAsset[]
   inferencers InferencerAsset[]
   defaults    DefaultsAsset[]
+  taskSets    TaskSetAsset[]
 
   @@map("scenarios")
 }
@@ -407,6 +408,24 @@ model DatasetAsset {
 
   @@unique([scenarioId, assetId, version])
   @@map("dataset_assets")
+}
+
+// 评测任务集资产（scenario 级，随场景包 task_sets/ 同步，arch/16 §2.1——考卷内嵌于包）。
+model TaskSetAsset {
+  id          String   @id @default(uuid())
+  scenarioId  String   @map("scenario_id")
+  packageId   String?  @map("package_id")
+  assetId     String   @map("asset_id") // 任务集文件 stem（如 default）
+  version     String
+  labels      String[] @default([])
+  contentHash String   @map("content_hash")
+  content     Json     @db.JsonB // 完整 task_set YAML 解析结果
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  scenario    Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@unique([scenarioId, assetId, version])
+  @@map("task_set_assets")
 }
 
 // SUT 接入配置资产（scenario 级，随场景包 sut_configs/ 同步，arch/16 §2.1）。
