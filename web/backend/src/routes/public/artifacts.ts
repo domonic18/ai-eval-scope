@@ -27,6 +27,7 @@ router.post(
     const cfg = getConfig()
     const b = (req.body || {}) as {
       external_run_id?: string
+      external_sample_id?: string
       kind?: string
       name?: string
       content_type?: string
@@ -44,6 +45,7 @@ router.post(
     const key = buildObjectKey({
       projectId,
       runId: b.external_run_id,
+      sampleId: b.external_sample_id,
       kind: b.kind,
       name: b.name,
     })

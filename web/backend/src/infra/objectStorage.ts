@@ -43,14 +43,16 @@ export interface HeadResult {
   etag?: string
 }
 
-/** 构造制品 key（租户隔离前缀）。 */
+/** 构造制品 key（租户隔离前缀；sampleId 使多样本 run 的同名文件不冲突）。 */
 export function buildObjectKey(p: {
   projectId: string
   runId: string
   kind: string
   name: string
+  sampleId?: string
 }): string {
-  return `projects/${p.projectId}/runs/${p.runId}/artifacts/${p.kind}/${p.name}`
+  const sampleSeg = p.sampleId ? `samples/${p.sampleId}/` : ""
+  return `projects/${p.projectId}/runs/${p.runId}/artifacts/${p.kind}/${sampleSeg}${p.name}`
 }
 
 /** 从 object_key 解析 projectId（用于下载签发前的租户校验 §6.4）。 */

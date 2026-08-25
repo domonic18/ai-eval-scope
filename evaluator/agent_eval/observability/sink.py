@@ -194,6 +194,7 @@ class ResultSink:
             presigned = self.client.presign_put(
                 {
                     "external_run_id": external_run_id,
+                    "external_sample_id": external_sample_id,
                     "kind": kind,
                     "name": original_name,
                     "content_type": content_type,
