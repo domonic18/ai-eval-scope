@@ -331,7 +331,7 @@ model Scenario {
   ruleSets    RuleSetAsset[]
   prompts     PromptTemplateAsset[]
   datasets    DatasetAsset[]
-  sutConfigs  SUTConfigAsset[]
+  sutConfigs   SutConfigAsset[]
   inferencers InferencerAsset[]
   defaults    DefaultsAsset[]
 
@@ -409,7 +409,10 @@ model DatasetAsset {
   @@map("dataset_assets")
 }
 
-model SUTConfigAsset {
+// SUT 接入配置资产（scenario 级，随场景包 sut_configs/ 同步，arch/16 §2.1）。
+// 模型名用 Sut 非 SUT：Prisma 会把 SUTConfigAsset 驼峰化为 sUTConfigAsset（缩写陷阱）；
+// 表名经 @@map 保持 sut_config_assets，改名零迁移（无既有代码引用）。
+model SutConfigAsset {
   id          String   @id @default(uuid())
   scenarioId  String   @map("scenario_id")
   packageId   String?  @map("package_id")
