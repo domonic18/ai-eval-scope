@@ -32,6 +32,11 @@ app = typer.Typer(
     no_args_is_help=True,
 )
 
+# 子命令组：模型配置管理（arch/16 §6.2-四 CLI 形态）
+from agent_eval.cli.models import models_app  # noqa: E402
+
+app.add_typer(models_app, name="models")
+
 
 def _content_hash(source_dir: Path) -> str | None:
     """计算目录内容的稳定短哈希（SHA256 前 8 位），用于样本内容寻址。
