@@ -1,6 +1,6 @@
 version: "1.0"
 scenario: chat
-description: "对话型 SUT 评估：回答门控（非空 answer.md）+ 答案精确匹配 + 回答质量 LLM Judge"
+description: "对话型 SUT 评估：回答门控 + 答案精确匹配 + 语义一致性（对照参考答案）+ 回答质量 LLM Judge"
 
 dimensions:
   - id: functional
@@ -39,6 +39,16 @@ rules:
     description: "任务声明 expected.answer 时，回答须命中该值（未声明则跳过）"
     method: rule_set
     evaluator: chat.answer_exact
+    weight: 1.0
+
+  - id: ANS_CONSIST
+    name: "答案语义一致性"
+    dimension: functional
+    stage: quality
+    description: "任务声明 expected.reference 时，回答须与参考答案语义一致（主张级核对，未声明则跳过）"
+    method: llm
+    prompt_id: chat_answer_consistency
+    evaluator: chat.answer_consistency
     weight: 1.0
 
   - id: ANS_QUALITY

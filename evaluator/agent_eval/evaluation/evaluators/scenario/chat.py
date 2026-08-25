@@ -1,6 +1,8 @@
-"""chat 场景专属评估器（对话型 SUT：答案精确匹配 + 回答质量 LLM Judge）。
+"""chat 场景专属评估器（对话型 SUT：精确匹配 + 语义一致性 + 回答质量）。
 
 - ``chat.answer_exact``: expected.answer 在回答文本中命中（规则式，HARD_SCORE 二值）
+- ``chat.answer_consistency``: 对照 expected.reference 的语义一致性 LLM Judge
+  （主张级核对：遗漏部分扣分、矛盾重扣；评"说得是否一致"而非"说得好不好"）
 - ``chat.answer_quality``: 回答质量 LLM Judge（对照任务指令与 must_mention 要点）
 
 由 chat 场景包 ``manifest.entry_points.evaluators`` 在加载时导入注册。
@@ -94,6 +96,45 @@ class ChatAnswerQualityEvaluator(BaseLLMJudgeEvaluator):
         }
 
 
+@registry.register("chat.answer_consistency")
+class ChatAnswerConsistencyEvaluator(BaseLLMJudgeEvaluator):
+    """答案语义一致性 — 对照 expected.reference，主张级核对（遗漏扣分、矛盾重扣）。
+
+    与 answer_quality 互补：quality 问"回答好不好"，本评估器只问"与参考答案
+    说的是否一致"——角色认知/事实类任务的核心闸门。未声明 reference 时跳过。
+    """
+
+    evaluator_id = "chat.answer_consistency"
+    name = "答案语义一致性"
+    tier = ConstraintTier.SOFT
+    method = EvalMethod.LLM_JUDGE
+    template_id = "chat_answer_consistency"
+
+    def evaluate(self, sample: Any, context: dict[str, Any]) -> Any:
+        """未声明 expected.reference 时 SKIP（不计分），否则走 LLM Judge 基类流程。"""
+        import time
+
+        expected = context.get("task_expected") or {}
+        if expected.get("reference") is None:
+            start = time.monotonic()
+            return self._make_result(
+                status=EvalStatus.SKIP,
+                score=0.0,
+                reason="任务未声明 expected.reference，跳过",
+                duration_ms=(time.monotonic() - start) * 1000,
+            )
+        return super().evaluate(sample, context)
+
+    def _build_variables(self, text: str, context: dict[str, Any]) -> dict[str, Any]:
+        task_input = context.get("task_input") or {}
+        expected = context.get("task_expected") or {}
+        return {
+            "content": text,
+            "instruction": task_input.get("instruction", "未提供任务指令"),
+            "reference": str(expected.get("reference", "")),
+        }
+
+
 def register() -> list[str]:
     """entry_points 入口：模块导入即完成 chat.* 注册，返回已注册 id。"""
-    return ["chat.answer_exact", "chat.answer_quality"]
+    return ["chat.answer_exact", "chat.answer_consistency", "chat.answer_quality"]

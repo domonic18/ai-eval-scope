@@ -75,3 +75,58 @@ def test_answer_quality_variables_default_when_no_expected() -> None:
     variables = ev._build_variables("t", {"task_input": {}})
     assert variables["must_mention"] == "无"
     assert variables["instruction"] == "未提供任务指令"
+
+
+# ── chat.answer_consistency（expected.reference 语义一致性）──
+
+
+def test_answer_consistency_skips_when_reference_undeclared(tmp_path) -> None:
+    """未声明 expected.reference → SKIP（不计分），与 answer_exact 的 SKIP 语义一致。"""
+    from agent_eval.evaluation.evaluators.scenario.chat import ChatAnswerConsistencyEvaluator
+
+    ev = ChatAnswerConsistencyEvaluator()
+    ev.setup({})
+    sample = _sample_with_answer(tmp_path, "任何回答")
+    result = ev.evaluate(sample, {"task_expected": {}})
+    assert result.status == EvalStatus.SKIP
+    assert "expected.reference" in result.reason
+
+
+def test_answer_consistency_variables_inject_reference_and_instruction() -> None:
+    from agent_eval.evaluation.evaluators.scenario.chat import ChatAnswerConsistencyEvaluator
+
+    ev = ChatAnswerConsistencyEvaluator()
+    ev.setup({})
+    variables = ev._build_variables(
+        "我是 SasanAgent 助手",
+        {
+            "task_input": {"instruction": "请介绍你自己"},
+            "task_expected": {"reference": "我是 SasanAgent，通用 AI 助手"},
+        },
+    )
+    assert variables["content"] == "我是 SasanAgent 助手"
+    assert variables["reference"] == "我是 SasanAgent，通用 AI 助手"
+    assert variables["instruction"] == "请介绍你自己"
+
+
+def test_answer_consistency_rule_and_prompt_registered(tmp_path) -> None:
+    """规则集声明 ANS_CONSIST + 提示词模板可加载（模板/规则/评估器三件套齐全）。"""
+    import yaml
+
+    from agent_eval.evaluation.evaluators.scenario import chat as chat_mod
+    from agent_eval.llm.judge.file_prompt_store import FilePromptStore
+    from agent_eval.packages.manager import PackageManager
+
+    assert "chat.answer_consistency" in chat_mod.register()
+
+    pkg = PackageManager().resolve_ref("chat")
+    rules = yaml.safe_load((pkg.rules_dir / "chat-quality.yaml").read_text(encoding="utf-8"))
+    consist = [r for r in rules["rules"] if r["id"] == "ANS_CONSIST"]
+    assert len(consist) == 1
+    assert consist[0]["evaluator"] == "chat.answer_consistency"
+
+    store = FilePromptStore(pkg.prompts_dir)
+    store.load_all()
+    template = store.get("chat", "chat_answer_consistency")
+    assert template is not None
+    assert "reference" in template.user_prompt_template  # 模板消费 reference 变量

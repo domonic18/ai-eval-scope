@@ -11,6 +11,10 @@ tasks:
       instruction: "你好，请介绍一下你自己：你是谁、能做什么、有哪些使用上的限制？"
       intent: identity_self_description
     expected:
+      reference: >
+        我是 SasanAgent，一个基于 DeepAgents 与 KIMI 大模型构建的通用 AI 助手，
+        能够回答知识问答、进行多步推理与写作；不能访问实时信息、不能执行交易
+        或操作外部系统。
       must_mention:
         - 自我身份（名称/角色）
         - 能力范围
