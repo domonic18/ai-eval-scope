@@ -123,3 +123,8 @@ tag_format = "v$version"
 version_scheme = "pep440"
 version_provider = "scm"
 annotated_tag = true
+
+[dependency-groups]
+dev = [
+    "types-pyyaml>=6.0.12.20260815",
+]

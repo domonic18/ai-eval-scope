@@ -10,14 +10,18 @@ from __future__ import annotations
 
 import json
 from datetime import UTC, datetime
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
+
+import yaml
 
 from agent_eval.agent.callbacks import BudgetGuard, SessionLogCallback
 from agent_eval.agent.hooks import SessionLogger
 from agent_eval.agent.model_bridge import build_chat_model
 from agent_eval.agent.session import AgentSession
 from agent_eval.agent.sut_tools import SUTToolServer
+from agent_eval.config.paths import PACKAGE_ROOT
 from agent_eval.core.exceptions import (
     AgentError,
     AgentTimeoutError,
@@ -25,6 +29,27 @@ from agent_eval.core.exceptions import (
 )
 from agent_eval.execution.models import AgentConfig, ProcessMetrics, Task, TaskSet
 from agent_eval.storage.package import ExecutionPackage, generate_run_id
+
+# 执行 Agent 提示词资产（prompt 在 YAML 中维护，不 hardcode；对齐 summary_prompt.yaml 惯例）
+_PROMPTS_PATH = PACKAGE_ROOT / "assets" / "configs" / "execution_agent_prompts.yaml"
+
+
+@lru_cache(maxsize=1)
+def _load_prompts() -> dict[str, Any]:
+    """加载 execution_agent_prompts.yaml → {system_prompt, task_prompt}。"""
+    try:
+        data = yaml.safe_load(_PROMPTS_PATH.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError) as e:
+        raise AgentError(
+            f"执行 Agent 提示词资产损坏: {_PROMPTS_PATH}（{e}）",
+            details={"path": str(_PROMPTS_PATH)},
+        ) from e
+    if not isinstance(data, dict) or not data.get("system_prompt") or not data.get("task_prompt"):
+        raise AgentError(
+            f"执行 Agent 提示词资产结构不完整（需 system_prompt/task_prompt 两段）: {_PROMPTS_PATH}",
+            details={"path": str(_PROMPTS_PATH)},
+        )
+    return data
 
 
 def _now_iso() -> str:
@@ -168,56 +193,45 @@ class ExecutionAgent:
         return "\n".join(server.describe_tools() for server in self.tool_servers)
 
     def _build_system_prompt(self) -> str:
-        """System Prompt：角色职责 + 可用工具 + 执行规则 + 输出规范。"""
-        return f"""你是一个评测执行 Agent（ExecutionAgent），负责驱动被测系统（SUT）执行任务并收集结果。
-
-## 你的职责
-1. 理解任务描述，确定需要调用的 SUT 交互方式
-2. 构造正确的请求参数，调用合适的 SUT Tool
-3. 检查响应是否成功，如遇错误则智能重试或降级
-4. 收集执行结果文件，生成目录清单（如适用）
-5. 任务结束时调用 write_package 写入执行包
-
-## 可用工具
-{self._describe_all_tools()}
-
-## 执行规则
-- 每个任务必须在 {self.config.max_turns} 轮内完成
-- 遇到超时或服务错误时，最多重试 {self.config.max_retries} 次，仍失败则降级或终止
-- 必须在任务结束时调用 write_package 写入执行包
-- 如果 SUT 交互失败且无法恢复，调用 write_package(success=false, error=...) 写入错误信息
-
-## 输出规范
-- 所有输出文件必须写入指定 workspace 目录（write_package/collect_results 自管目的地，不要传路径）
-- 对话型 SUT 的纯文本结果没有产物文件，跳过 collect_results，直接 write_package
-- 目录模式任务需先调用 scan_directory 扫描目录结构
-"""
+        """System Prompt：角色职责 + 可用工具 + 执行规则 + 输出规范（模板见 execution_agent_prompts.yaml）。"""
+        template: str = _load_prompts()["system_prompt"]
+        return template.format(
+            tools=self._describe_all_tools(),
+            max_turns=self.config.max_turns,
+            max_retries=self.config.max_retries,
+        )
 
     def _build_task_prompt(self, task: Task) -> str:
-        """Task Prompt：任务输入/预期/约束 + 目录模式说明 + 写包指令。"""
+        """Task Prompt：任务输入/预期/约束 + 目录模式说明 + 写包指令（分段模板见 execution_agent_prompts.yaml）。"""
+        segments: dict[str, str] = _load_prompts()["task_prompt"]
         package_dir = Path(self.config.workspace_dir) / task.id
         parts = [
-            f"## 任务 ID: {task.id}",
-            "## 任务输入",
-            json.dumps(task.input, ensure_ascii=False, indent=2),
+            segments["header"].format(task_id=task.id),
+            segments["input"].format(
+                task_input=json.dumps(task.input, ensure_ascii=False, indent=2)
+            ),
         ]
         if task.expected:
-            parts.append(f"## 预期结果\n{json.dumps(task.expected, ensure_ascii=False, indent=2)}")
+            parts.append(
+                segments["expected"].format(
+                    expected=json.dumps(task.expected, ensure_ascii=False, indent=2)
+                )
+            )
         if task.constraints:
             parts.append(
-                f"## 约束条件\n{json.dumps(task.constraints, ensure_ascii=False, indent=2)}"
+                segments["constraints"].format(
+                    constraints=json.dumps(task.constraints, ensure_ascii=False, indent=2)
+                )
             )
         if task.input_mode == "directory" and task.directory_path:
-            parts.extend(
-                [
-                    "## 目录模式",
-                    f"- 目录路径: {task.directory_path}",
-                    f"- 文件匹配模式: {task.file_patterns}",
-                    "请先调用 scan_directory 扫描目录结构，然后收集结果文件。",
-                ]
+            parts.append(
+                segments["directory_mode"].format(
+                    directory_path=task.directory_path,
+                    file_patterns=task.file_patterns,
+                )
             )
-        parts.append(f"请执行上述任务，并在完成后调用 write_package 将执行包写入 {package_dir}。")
-        return "\n\n".join(parts)
+        parts.append(segments["footer"].format(package_dir=package_dir))
+        return "\n\n".join(p.rstrip("\n") for p in parts)
 
     # ─── ExecutionPackage 构建 ───
 

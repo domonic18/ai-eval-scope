@@ -219,6 +219,29 @@ def test_prompt_contents(tmp_path) -> None:
     assert str(tmp_path / "dir_task") in task_prompt
 
 
+def test_prompts_sourced_from_yaml_asset(tmp_path) -> None:
+    """提示词由 YAML 资产承载（不 hardcode）：结构完整 + 变量替换正确。"""
+    from agent_eval.agent.execution_agent import _load_prompts
+
+    prompts = _load_prompts()
+    assert set(prompts["task_prompt"]) == {
+        "header",
+        "input",
+        "expected",
+        "constraints",
+        "directory_mode",
+        "footer",
+    }
+
+    agent = _agent(tmp_path)
+    system_prompt = agent._build_system_prompt()
+    # YAML 模板特征句 + 运行时变量替换（工具清单 / 轮次与重试上限）
+    assert "## 输出规范" in system_prompt
+    assert "scan_directory" in system_prompt
+    assert f"{agent.config.max_turns} 轮内完成" in system_prompt
+    assert f"最多重试 {agent.config.max_retries} 次" in system_prompt
+
+
 def test_graph_built_once_and_reused(tmp_path, monkeypatch) -> None:
     graph = _install_fakes(monkeypatch, FakeGraph(result={"messages": _messages()}))
     agent = _agent(tmp_path)
