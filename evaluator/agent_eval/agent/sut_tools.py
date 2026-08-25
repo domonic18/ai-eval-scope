@@ -324,6 +324,12 @@ class SUTToolServer(ToolExporterMixin):
             sut_config_id="agent",
             status=PackageStatus.SUCCESS if success else PackageStatus.FAILED,
         )
+        # W8（arch/16 §六-P2）：执行包内容指纹——先写内容文件再算 hash 回填 manifest，
+        # 评估缓存键恢复内容维度（此前恒 null，包内容变化仍命中旧缓存）
+        (package_dir / "manifest.json").write_text(
+            manifest.model_dump_json(indent=2), encoding="utf-8"
+        )
+        manifest.content_hash = self._content_fingerprint(package_dir)
         (package_dir / "manifest.json").write_text(
             manifest.model_dump_json(indent=2), encoding="utf-8"
         )
@@ -356,6 +362,23 @@ class SUTToolServer(ToolExporterMixin):
         if error:
             summary["error"] = error
         return summary
+
+    def _content_fingerprint(self, package_dir: Path) -> str:
+        """聚合 output/ + task/trace/metrics 内容的 sha256（排序稳定，跳过 manifest 自身）。"""
+        import hashlib
+
+        h = hashlib.sha256()
+        files = sorted(
+            p
+            for p in package_dir.rglob("*")
+            if p.is_file() and p.name != "manifest.json" and not p.name.startswith(".")
+        )
+        for f in files:
+            h.update(f.relative_to(package_dir).as_posix().encode("utf-8"))
+            h.update(b"\x00")
+            h.update(f.read_bytes())
+            h.update(b"\x00")
+        return h.hexdigest()
 
     def _resolve_url(self, url: str) -> str:
         """相对 URL 拼接配置的 http_base_url；无 base_url 的相对路径直接报错。"""

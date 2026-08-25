@@ -227,6 +227,9 @@ class Orchestrator:
             context = self.pipeline_engine._build_context(pkg, rule_set, index=i)
             context.update(extra_context)
 
+            # W8：执行包内容指纹进缓存键（包内容变 → 缓存自动失效）
+            context["content_hash"] = pkg.manifest.content_hash or ""
+
             # 设置 evidence_dir
             task_id = context.get("sample_id", f"task_{i:03d}")
             result_dir = run_workspace.get_result_dir(task_id)
