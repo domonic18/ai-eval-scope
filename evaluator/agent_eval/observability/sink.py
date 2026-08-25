@@ -116,6 +116,7 @@ class ResultSink:
                 result.report,
                 run_id=run_id,
                 rule_set_version=result.rule_set_version or None,
+                sut_version=result.sut_version or None,
                 rule_set=result.rule_set,
                 scenario_config=result.scenario_config,
                 langfuse_trace_id=langfuse[0],

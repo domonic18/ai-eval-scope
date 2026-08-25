@@ -35,9 +35,11 @@ app = typer.Typer(
 # 子命令组：模型配置管理（arch/16 §6.2-四 CLI 形态）
 from agent_eval.cli.models import models_app  # noqa: E402
 from agent_eval.cli.secrets import secrets_app  # noqa: E402
+from agent_eval.cli.suite import suite_app  # noqa: E402
 
 app.add_typer(models_app, name="models")
 app.add_typer(secrets_app, name="secrets")
+app.add_typer(suite_app, name="suite")
 
 
 def _content_hash(source_dir: Path) -> str | None:
@@ -340,6 +342,13 @@ def eval(
 
         rprint("[green]✅ 评估完成[/green] — 结果已保存至 workspace")
 
+        # 7.5 W6：回填 SUT 身份（包 metadata.sut_name@sut_version → run event）
+        if result.samples:
+            sample_meta = getattr(result.samples[0], "metadata", None) or {}
+            result.sut_version = str(
+                sample_meta.get("sut_version") or sample_meta.get("sut_name") or ""
+            )
+
         # 8. 推送到可观测平台（ResultSink，Sprint 7e）
         _flush_observability(result, upload_override=upload, package_dir=package_dir)
 
@@ -388,8 +397,8 @@ def run(
     from agent_eval.execution.models import AgentConfig
     from agent_eval.execution.registry import SUTRegistry
     from agent_eval.packages.assets import resolve_sut_configs_dir, resolve_task_set_path
-    from agent_eval.packages.manifest import ResolvedPackage
     from agent_eval.packages.manager import PackageManager
+    from agent_eval.packages.manifest import ResolvedPackage
     from agent_eval.storage.package import generate_run_id
 
     setup_logging(level="DEBUG" if verbose else "INFO")
