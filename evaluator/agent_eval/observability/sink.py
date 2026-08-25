@@ -32,6 +32,18 @@ if TYPE_CHECKING:
     from agent_eval.orchestrator.orchestrator import EvalResult
 
 
+def _content_type_for(f: Path) -> str:
+    """按文件后缀给语义化 Content-Type（前端据 contentType/kind 分栏与渲染）。"""
+    suffix = f.suffix.lower()
+    if suffix in (".html", ".htm"):
+        return "text/html"
+    if suffix == ".json":
+        return "application/json"
+    if suffix == ".md":
+        return "text/markdown"
+    return "text/plain"
+
+
 @dataclass
 class SinkReport:
     """一次 flush 的结果摘要（供 CLI 打印）。"""
@@ -83,13 +95,12 @@ class ResultSink:
 
             events = self._build_events(result, run_workspace=run_workspace, report=report)
 
-            # 上传源文件（让平台可预览原始产出物，方便排查约束失败）
+            # 上传源文件（按样本归属；output/ 产物 + 执行包技术文件分类）
             if package_dir and result.samples:
-                sample = result.samples[0]
-                src_events = self._upload_source_files(
+                src_events = self._upload_package_artifacts(
                     Path(package_dir),
                     result.run_id or result.report.run_id,
-                    sample.sample_id,
+                    result.samples,
                     report,
                 )
                 events.extend(src_events)
@@ -203,39 +214,111 @@ class ResultSink:
         external_sample_id: str,
         report: SinkReport,
     ) -> list[dict[str, Any]]:
-        """上传 ExecutionPackage 的源文件（output/ 下的 HTML/MD/JSON），让平台可预览。"""
-        output_dir = package_dir / "output"
-        if not output_dir.exists():
-            output_dir = package_dir  # 兼容：output 不存在则扫整个包
-
+        """上传单个样本执行包的产物（output/ → kind=output；包根技术 json → kind=trace）。"""
         events: list[dict[str, Any]] = []
-        # output/ 已由 build_package 按场景 format 门控预过滤（code→.py / courseware→.html,.md），
-        # 故上传全部文件（去 courseware html/md/json/txt 白名单硬编码，任意场景源文件均可预览）。
-        for f in sorted(output_dir.rglob("*")):
-            if not f.is_file():
-                continue
-            rel_name = str(f.relative_to(output_dir))
-            ct = "text/html" if f.suffix.lower() in (".html", ".htm") else "text/plain"
-            object_key = self._upload_artifact(
-                f,
-                external_run_id=external_run_id,
-                external_sample_id=external_sample_id,
-                kind="output",
-                content_type=ct,
-                original_name=rel_name,
-                report=report,
-            )
-            if object_key:
-                events.append(
-                    build_artifact_event(
+
+        def _upload(files: list[tuple[Path, str, str]], kind: str) -> None:
+            """files: [(文件, 相对名, 相对根)]，按后缀给 contentType。"""
+            for f, rel_name, rel_root in files:
+                ct = _content_type_for(f)
+                object_key = self._upload_artifact(
+                    f,
+                    external_run_id=external_run_id,
+                    external_sample_id=external_sample_id,
+                    kind=kind,
+                    content_type=ct,
+                    original_name=rel_name,
+                    report=report,
+                )
+                if object_key:
+                    events.append(
+                        build_artifact_event(
+                            external_run_id=external_run_id,
+                            external_sample_id=external_sample_id,
+                            kind=kind,
+                            object_key=object_key,
+                            content_type=ct,
+                            size_bytes=f.stat().st_size,
+                            original_name=rel_name,
+                        )
+                    )
+                del rel_root  # rel_root 仅为语义清晰保留
+
+        # ① 评测结果产物：output/ 下全部文件（SUT 产出，前端「原始文档」栏）
+        output_dir = package_dir / "output"
+        if output_dir.is_dir():
+            # output/ 已由 build_package 按场景 format 门控预过滤，全量上传（任意场景均可预览）
+            out_files = [
+                (f, str(f.relative_to(output_dir)), str(output_dir))
+                for f in sorted(output_dir.rglob("*"))
+                if f.is_file()
+            ]
+            _upload(out_files, kind="output")
+
+        # ② 执行包技术文件：包根 manifest/metadata/metrics/task/trace.json（前端「执行 Trace」栏）
+        tech_files = [
+            (f, f.name, str(package_dir))
+            for f in sorted(package_dir.glob("*.json"))
+            if f.is_file() and f.stem in ("manifest", "metadata", "metrics", "task", "trace")
+        ]
+        _upload(tech_files, kind="trace")
+
+        # 兼容：无 output/ 且无技术文件（极简包/异常布局）→ 扫整包为 output
+        if not events:
+            for f in sorted(package_dir.rglob("*")):
+                if f.is_file():
+                    rel_name = str(f.relative_to(package_dir))
+                    ct = _content_type_for(f)
+                    object_key = self._upload_artifact(
+                        f,
                         external_run_id=external_run_id,
                         external_sample_id=external_sample_id,
                         kind="output",
-                        object_key=object_key,
                         content_type=ct,
-                        size_bytes=f.stat().st_size,
                         original_name=rel_name,
+                        report=report,
                     )
+                    if object_key:
+                        events.append(
+                            build_artifact_event(
+                                external_run_id=external_run_id,
+                                external_sample_id=external_sample_id,
+                                kind="output",
+                                object_key=object_key,
+                                content_type=ct,
+                                size_bytes=f.stat().st_size,
+                                original_name=rel_name,
+                            )
+                        )
+        return events
+
+    def _upload_package_artifacts(
+        self,
+        package_dir: Path,
+        external_run_id: str,
+        samples: list[Any],
+        report: SinkReport,
+    ) -> list[dict[str, Any]]:
+        """按样本上传执行包产物：单包目录归唯一样本；包集合目录逐样本各取各的子目录。
+
+        多样本 run（runs/{run_id}/packages/{task_id}/…）此前只把全部文件绑到
+        samples[0]——本方法保证每个样本的产物正确归属自身。
+        """
+        pdir = Path(package_dir)
+        events: list[dict[str, Any]] = []
+        if (pdir / "manifest.json").exists():
+            # 单包目录 → 唯一样本
+            if samples:
+                events.extend(
+                    self._upload_source_files(pdir, external_run_id, samples[0].sample_id, report)
+                )
+            return events
+        # 包集合目录：逐样本子目录（子目录名 = task_id = sample_id）
+        for sample in samples:
+            sub = pdir / sample.sample_id
+            if sub.is_dir():
+                events.extend(
+                    self._upload_source_files(sub, external_run_id, sample.sample_id, report)
                 )
         return events
 

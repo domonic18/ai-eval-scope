@@ -14,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/shadcn/dialog"
-import { SectionCard, SectionCardContent, SectionCardHeader, SectionCardTitle } from "../components/shared"
+import { DataTable, SectionCard, SectionCardContent, SectionCardHeader, SectionCardTitle } from "../components/shared"
 import { useCrumbs } from "../context/navigation"
 import { useToast } from "../hooks/useToast"
 import { Page, PageHead, StatusBadge } from "../components/shared"
@@ -364,29 +364,51 @@ export default function RunDetail() {
             </>
           )}
 
-          {/* 查看详细评估结果 */}
+          {/* 样本明细表（全量、逐行进详情——适配多任务 run） */}
           <div className="border-t border-border pt-3">
-            <div className="flex flex-wrap gap-2">
-              {run.samples.slice(0, 5).map((s) => (
-                <Link
-                  key={s.id}
-                  to={`/run/${id}/sample/${s.id}`}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs transition-colors hover:border-primary/40 hover:bg-primary/5"
-                >
-                  <FileText className="size-3.5 text-muted-foreground" />
-                  <span>查看详细评估</span>
-                  <ChevronRight className="size-3 text-muted-foreground" />
-                </Link>
-              ))}
-              {run.samples.length > 5 && (
-                <Link
-                  to={`/run/${id}/sample/${run.samples[5].id}`}
-                  className="inline-flex items-center gap-1 px-2 py-2 text-xs text-primary hover:underline"
-                >
-                  查看全部 {num(run.samples.length)} 个 →
-                </Link>
-              )}
-            </div>
+            <DataTable
+              rows={run.samples}
+              columns={[
+                {
+                  key: "externalSampleId",
+                  title: "样本",
+                  render: (s) => (
+                    <Link
+                      to={`/run/${id}/sample/${s.id}`}
+                      className="font-mono text-xs text-primary hover:underline"
+                    >
+                      {s.externalSampleId}
+                    </Link>
+                  ),
+                },
+                {
+                  key: "status",
+                  title: "状态",
+                  render: (s) => <StatusBadge status={s.status} />,
+                },
+                {
+                  key: "reward",
+                  title: "得分",
+                  render: (s) => <span className="font-mono text-xs">{num(s.reward)}</span>,
+                },
+                {
+                  key: "actions",
+                  title: "",
+                  render: (s) => (
+                    <Link
+                      to={`/run/${id}/sample/${s.id}`}
+                      className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-primary"
+                    >
+                      <FileText className="size-3.5" />
+                      <span>详情</span>
+                      <ChevronRight className="size-3" />
+                    </Link>
+                  ),
+                },
+              ]}
+              rowKey={(s) => s.id}
+              empty="无样本"
+            />
           </div>
         </SectionCardContent>
       </SectionCard>

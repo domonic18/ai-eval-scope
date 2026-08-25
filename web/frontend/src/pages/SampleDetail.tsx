@@ -1,4 +1,8 @@
 import { useEffect, useMemo, useState } from "react"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
+import rehypeHighlight from "rehype-highlight"
+import { CodeBlock } from "../components/CodeBlock"
 import { useParams } from "react-router-dom"
 import { api } from "../api/client"
 import type { ArtifactRow, ConstraintRow } from "../types"
@@ -76,7 +80,7 @@ interface SampleData {
   artifacts: ArtifactRow[]
 }
 
-type PreviewMode = "iframe" | "img" | "text" | "none"
+type PreviewMode = "iframe" | "img" | "markdown" | "json" | "text" | "none"
 interface PreviewState {
   mode: PreviewMode
   url?: string
@@ -565,7 +569,10 @@ function PreviewPane({
       else {
         try {
           const resp = await fetch(p.url)
-          setPreview({ mode: "text", text: await resp.text() })
+          const text = await resp.text()
+          if (p.contentType.includes("markdown")) setPreview({ mode: "markdown", text })
+          else if (p.contentType.includes("json")) setPreview({ mode: "json", text })
+          else setPreview({ mode: "text", text })
         } catch {
           setPreview({ mode: "text", text: "（无法加载文件内容）" })
         }
@@ -624,6 +631,16 @@ function PreviewPane({
         ) : preview.mode === "img" ? (
           <div className="mx-auto max-w-2xl">
             <img src={preview.url} alt="screenshot" className="w-full rounded-lg border" />
+          </div>
+        ) : preview.mode === "markdown" ? (
+          <article className="mx-auto max-w-3xl rounded-lg border bg-background p-6 text-sm leading-relaxed [&_h1]:mb-3 [&_h1]:text-xl [&_h1]:font-semibold [&_h2]:mb-2 [&_h2]:text-lg [&_h2]:font-semibold [&_p]:mb-2 [&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-inset [&_pre]:p-3 [&_code]:font-mono [&_code]:text-xs [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-1 [&_strong]:font-semibold">
+            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+              {preview.text ?? ""}
+            </ReactMarkdown>
+          </article>
+        ) : preview.mode === "json" ? (
+          <div className="mx-auto max-w-4xl">
+            <CodeBlock title={current?.originalName || "JSON"} code={preview.text ?? ""} />
           </div>
         ) : (
           <pre className="overflow-x-auto whitespace-pre-wrap break-all rounded-lg border bg-background p-4 text-xs text-muted-foreground">

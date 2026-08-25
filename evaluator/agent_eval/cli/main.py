@@ -718,18 +718,28 @@ def upload(
                         )
                         artifact_count += 1
 
-            # 原始产出物（从 package_dir 扫描，含任意场景文件）
-            if package_dir_str:
-                pkg = Path(package_dir_str)
-                if pkg.exists():
-                    src_events = sink._upload_source_files(
-                        pkg,
-                        run_id_str,
-                        sample.sample_id,
-                        art_report,
-                    )
-                    events.extend(src_events)
-                    artifact_count += len(src_events)
+    # 原始产出物：按样本归属上传（output/ 产物 + 执行包技术文件分类）——需样本列表
+    if package_dir_str:
+        pkg = Path(package_dir_str)
+        if pkg.exists():
+            # 从 results/ 重建样本引用（sample_id = task_id），供归属
+            from types import SimpleNamespace
+
+            sids = (
+                [
+                    d.name
+                    for d in (run_dir / "results").iterdir()
+                    if d.is_dir() and (d / "report.json").exists()
+                ]
+                if (run_dir / "results").is_dir()
+                else []
+            )
+            if sids:
+                src_events = sink._upload_package_artifacts(
+                    pkg, run_id_str, [SimpleNamespace(sample_id=sid) for sid in sids], art_report
+                )
+                events.extend(src_events)
+                artifact_count += len(src_events)
 
     rprint(
         f"[blue]回填:[/blue] 运行 {run}，样本 {sample_count}，"
