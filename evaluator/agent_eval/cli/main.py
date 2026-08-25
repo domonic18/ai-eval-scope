@@ -34,8 +34,10 @@ app = typer.Typer(
 
 # 子命令组：模型配置管理（arch/16 §6.2-四 CLI 形态）
 from agent_eval.cli.models import models_app  # noqa: E402
+from agent_eval.cli.secrets import secrets_app  # noqa: E402
 
 app.add_typer(models_app, name="models")
+app.add_typer(secrets_app, name="secrets")
 
 
 def _content_hash(source_dir: Path) -> str | None:
