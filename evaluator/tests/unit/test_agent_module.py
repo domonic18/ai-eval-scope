@@ -57,11 +57,11 @@ def test_import_model_bridge_and_callbacks_and_session() -> None:
 
 
 def test_agent_config_model_agnostic_fields() -> None:
-    """v4.6：llm_provider + 可选 model（模型无关），无 permission_mode/allowed_tools。"""
+    """v4.6：llm_role + 可选 model（模型无关），无 permission_mode/allowed_tools。"""
     from agent_eval.execution.models import AgentConfig
 
     config = AgentConfig()
-    assert config.llm_provider == "deepseek"
+    assert config.llm_role == "agent"  # LLM②：角色注册表，默认 agent（回退 text）
     assert config.model is None
     assert not hasattr(config, "permission_mode")
     assert not hasattr(config, "allowed_tools")

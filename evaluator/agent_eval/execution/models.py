@@ -169,10 +169,10 @@ class AgentConfig(BaseModel):
         description="工具调用失败最大重试次数",
     )
 
-    # 模型配置（v4.6：走 llm_config Provider 双协议，见 arch/05 LLM 模块设计）
-    llm_provider: str = Field(
-        default=AGENT_DEFAULTS.llm_provider,
-        description="llm_config.yaml 中的 provider 名（deepseek/kimi/…），经 build_chat_model 桥接",
+    # 模型配置（v4.6 双协议桥接；LLM② 起走角色注册表，见 arch/16 §6.2-四）
+    llm_role: str = Field(
+        default=AGENT_DEFAULTS.llm_role,
+        description="执行侧 LLM 角色（text|vision|agent），经 build_chat_model 桥接",
     )
     model: str | None = Field(
         default=AGENT_DEFAULTS.model,

@@ -85,7 +85,7 @@ def test_anthropic_protocol_bridge(monkeypatch) -> None:
 
 def test_unknown_provider_name_raises() -> None:
     cfg = _config({"ds": ProviderConfig(provider="deepseek", model="m", api_key="sk-x")})
-    with pytest.raises(AgentError, match="不存在 provider"):
+    with pytest.raises(AgentError, match="未配置"):
         build_chat_model("ghost", llm_config=cfg)
 
 

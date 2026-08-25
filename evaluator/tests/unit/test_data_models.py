@@ -138,7 +138,7 @@ class TestAgentConfig:
         config = AgentConfig()
         assert config.max_turns == 20
         assert config.max_budget_usd == 1.0
-        assert config.llm_provider == "deepseek"  # v4.6：模型无关（llm_config 桥接）
+        assert config.llm_role == "agent"  # LLM②：角色注册表（arch/16 §6.2-四）
         assert config.model is None
         assert config.workspace_dir == Path("./workspace")
 

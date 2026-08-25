@@ -89,7 +89,6 @@ class Orchestrator:
         *,
         judge_orchestrator: Any | None = None,
         run_workspace: RunWorkspace | None = None,
-        llm_provider: str | None = None,
         project: str | None = None,
         with_vision: bool = False,
         screenshot_renderer: Any | None = None,
@@ -105,7 +104,6 @@ class Orchestrator:
             rule_set: 规则集（RuleSet 实例）。
             judge_orchestrator: LLM Judge 编排器（可选，无则评估器降级）。
             run_workspace: 运行工作空间（可选，自动创建）。
-            llm_provider: LLM Provider 名称覆盖（可选）。
             project: 项目 ID（可选，用于 workspace index）。
             with_vision: 是否启用视觉评估器 vision.quality（默认 False）。
                 视觉为 opt-in：需同时提供 screenshot_renderer 与支持视觉的 Provider。
@@ -206,8 +204,6 @@ class Orchestrator:
         extra_context: dict[str, Any] = {}
         if judge_orchestrator is not None:
             extra_context["judge_orchestrator"] = judge_orchestrator
-        if llm_provider is not None:
-            extra_context["llm_provider"] = llm_provider
         if screenshot_renderer is not None:
             extra_context["screenshot_renderer"] = screenshot_renderer
         if trace_id is not None:
@@ -281,12 +277,13 @@ class Orchestrator:
         # 11. 生成评估摘要报告（LLM 人话总结，LLM 不可用时跳过）
         summary_report: dict[str, Any] | None = None
         try:
-            from agent_eval.config.loader import ConfigLoader
-            from agent_eval.config.paths import paths
+            from agent_eval.config.llm_resolution import resolve_llm_config
 
-            llm_cfg_path = paths.configs_dir / "llm_config.yaml"
-            if llm_cfg_path.exists():
-                llm_config = ConfigLoader.load_llm_config(llm_cfg_path)
+            try:
+                llm_config = resolve_llm_config()
+            except Exception:
+                llm_config = None
+            if llm_config is not None:
                 from agent_eval.llm.pool import ProviderPool
 
                 pool = ProviderPool(llm_config)
@@ -517,14 +514,12 @@ class Orchestrator:
 
 def _init_judge_orchestrator(
     llm_config: Any | None = None,
-    llm_provider: str | None = None,
     prompts_dir: Any = None,
 ) -> Any | None:
     """初始化 JudgeOrchestrator。
 
     Args:
         llm_config: LLMConfig 实例（可选）。
-        llm_provider: Provider 名称覆盖（可选）。
         prompts_dir: 场景包的 prompts/ 目录（code→code_correctness 等）；缺省回退
             内置 courseware prompts（paths.prompts_dir）。
 
@@ -572,9 +567,7 @@ def eval_packages(
     package_dir: str | Path,
     rule_set_path: str | Path | None = None,
     *,
-    llm_config_path: str | Path | None = None,
     output_dir: str | Path | None = None,
-    llm_provider: str | None = None,
     project: str | None = None,
 ) -> EvalResult:
     """SDK eval 接口 — Python 可直接调用。
@@ -590,9 +583,7 @@ def eval_packages(
     Args:
         package_dir: ExecutionPackage 目录路径。
         rule_set_path: 规则集 YAML 文件路径（可选）。
-        llm_config_path: LLM 配置 YAML 文件路径（可选）。
         output_dir: 输出目录（可选，默认 ./workspace）。
-        llm_provider: LLM Provider 名称覆盖（可选）。
         project: 项目 ID（可选）。
 
     Returns:
@@ -615,15 +606,18 @@ def eval_packages(
         if (_cand / "metrics" / "policy.yaml").exists():
             scenario_package_dir = _cand
 
-    # 加载 LLM 配置（可选）
+    # 解析 LLM 配置（可选；本地 llm.json → 平台拉取，见 arch/16 §6.2-四）
     llm_config = None
-    if llm_config_path:
-        llm_config = ConfigLoader.load_llm_config(llm_config_path)
+    try:
+        from agent_eval.config.llm_resolution import resolve_llm_config
+
+        llm_config = resolve_llm_config()
+    except Exception:
+        llm_config = None
 
     # 初始化 JudgeOrchestrator（可选）—— 模板取自场景包 prompts/（code→code_correctness）
     judge_orch = _init_judge_orchestrator(
         llm_config,
-        llm_provider,
         prompts_dir=scenario_package_dir / "prompts" if scenario_package_dir else None,
     )
 
@@ -651,7 +645,6 @@ def eval_packages(
             Path(package_dir),
             rule_set,
             judge_orchestrator=judge_orch,
-            llm_provider=llm_provider,
             project=project,
             with_vision=want_vision,
             screenshot_renderer=renderer,

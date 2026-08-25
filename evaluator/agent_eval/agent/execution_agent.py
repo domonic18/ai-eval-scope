@@ -2,7 +2,7 @@
 
 端到端驱动评测执行流程：理解任务、调用 SUT Tools、处理错误、收集结果、
 生成 ExecutionPackage。底座为 deepagents 的 create_deep_agent（惰性导入，
-[agent] optional extra）；模型经 build_chat_model 从 llm_config 双协议桥接；
+[agent] optional extra）；模型经 build_chat_model 从角色注册表双协议桥接；
 BudgetGuard/SessionLogCallback 以 LangGraph 回调注入（预算/结构化日志）。
 """
 
@@ -39,7 +39,7 @@ def _is_recursion_error(error: BaseException) -> bool:
 class ExecutionAgent:
     """基于 DeepAgents 的执行 Agent，端到端驱动评测执行流程。
 
-    - 模型：llm_config.yaml provider → build_chat_model() 构造 ChatModel（双协议，模型无关）
+    - 模型：LLM 角色注册表（arch/16 §6.2-四）→ build_chat_model() 构造 ChatModel（双协议，模型无关）
     - 工具：SUT Tools 经 LangChain Tool 显式绑定（白名单），未绑定工具不可用
     - 预算：BudgetGuard 回调（on_llm_end 累计 token/成本，超限抛 BudgetExceededError）
     - 状态：单任务单发 ainvoke，不接 checkpointer（见 _build_graph 说明）
@@ -55,7 +55,7 @@ class ExecutionAgent:
         """初始化 ExecutionAgent（DeepAgents 图惰性装配，导入本类无需 [agent] extra）。
 
         Args:
-            config: Agent 配置（轮次/预算/llm_provider/workspace 等）。
+            config: Agent 配置（轮次/预算/llm_role/workspace 等）。
             sut_tools: SUT 工具注册表；缺省按 config.sut_tools_config 构建。
             extra_tool_servers: 追加工具注册表（如 AgentProtocolToolServer，
                 arch/03 §4.0.6 语义工具面），与 SUT Tools 一同显式绑定。
@@ -156,7 +156,7 @@ class ExecutionAgent:
             ) from None
         tools = [tool for server in self.tool_servers for tool in server.to_langchain_tools()]
         return create_deep_agent(
-            model=build_chat_model(self.config.llm_provider, self.config.model),
+            model=build_chat_model(self.config.llm_role, self.config.model),
             tools=tools,
             system_prompt=self._build_system_prompt(),
         )
@@ -281,7 +281,7 @@ class ExecutionAgent:
         if sut_run is not None:
             response["sut"] = sut_run
         trace = {
-            "request": {"executor": "ExecutionAgent", "llm_provider": self.config.llm_provider},
+            "request": {"executor": "ExecutionAgent", "llm_role": self.config.llm_role},
             "response": response,
             "started_at": session.started_at,
             "finished_at": session.finished_at or _now_iso(),

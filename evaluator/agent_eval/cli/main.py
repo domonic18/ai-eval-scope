@@ -202,8 +202,6 @@ def eval(
     ),
     output_dir: str | None = typer.Option(None, "--output-dir", help="输出目录"),
     eval_mode: str = typer.Option("pipeline", "--eval-mode", help="评估模式: pipeline | agent"),
-    llm_provider: str | None = typer.Option(None, "--llm-provider", help="覆盖默认 LLM Provider"),
-    llm_config: str | None = typer.Option(None, "--llm-config", help="LLM 配置文件路径"),
     project: str | None = typer.Option(None, "--project", help="项目 ID"),
     upload: bool | None = typer.Option(
         None,
@@ -245,36 +243,29 @@ def eval(
         # 1. 加载 RuleSet
         rule_set_obj = ConfigLoader.load_rule_set(rule_set_path)
 
-        # 2. 初始化 LLM Judge（可选）
-        #    --llm-config 未指定时，按优先级查找：
-        #    a) CWD/llm_config.yaml（用户当前目录，pip install 场景）
-        #    b) 包内 assets/configs/llm_config.yaml（开发库内置，dev 场景）
-        if llm_config is None:
-            from pathlib import Path as _Path
+        # 2. 解析 LLM 配置（本地 llm.json → 平台拉取，arch/16 §6.2-四；不可用时 Judge 降级）
+        from agent_eval.config.llm_resolution import (
+            llm_signature as _llm_sig,
+        )
+        from agent_eval.config.llm_resolution import (
+            resolve_llm_config,
+        )
 
-            from agent_eval.config.paths import paths
-
-            cwd_cfg = _Path.cwd() / "llm_config.yaml"
-            pkg_cfg = paths.configs_dir / "llm_config.yaml"
-            if cwd_cfg.exists():
-                llm_config = str(cwd_cfg)
-            elif pkg_cfg.exists():
-                llm_config = str(pkg_cfg)
+        try:
+            llm_cfg = resolve_llm_config()
+        except Exception as e:
+            llm_cfg = None
+            rprint(f"[yellow]⚠ LLM 配置不可用，LLM 评估器将降级: {e}[/yellow]")
         # 场景包 prompts/（code→code_correctness），缺省回退内置 courseware prompts
         _prompts_dir: str | None = None
         if rule_set_path:
             _pp = Path(rule_set_path).resolve().parent.parent / "prompts"
             if _pp.exists():
                 _prompts_dir = str(_pp)
-        judge_orch = _init_judge_orchestrator(llm_config, llm_provider, prompts_dir=_prompts_dir)
+        judge_orch = _init_judge_orchestrator(llm_cfg, prompts_dir=_prompts_dir)
 
-        # 构造 LLM 指纹（纳入 cache_key，LLM 配置/可用性变更时缓存自动失效）
-        import hashlib
-
-        if judge_orch is not None and llm_config:
-            llm_signature = hashlib.sha256(Path(llm_config).read_bytes()).hexdigest()[:12]
-        else:
-            llm_signature = "no-llm"
+        # 构造 LLM 指纹（纳入 cache_key；剔除密钥，配置/可用性变更时缓存自动失效）
+        llm_signature = _llm_sig(llm_cfg) if llm_cfg is not None else "no-llm"
 
         # LLM 可用性预检：rule_set 含 LLM 评估器但 Judge 未配置时提示/阻断
         _check_llm_availability(rule_set_obj, judge_orch, strict)
@@ -313,7 +304,6 @@ def eval(
                 Path(package_dir),
                 rule_set_obj,
                 judge_orchestrator=judge_orch,
-                llm_provider=llm_provider,
                 project=project,
                 with_vision=want_vision,
                 screenshot_renderer=renderer,
@@ -355,8 +345,8 @@ def run(
     output_dir: str | None = typer.Option(
         None, "--output-dir", help="执行包输出目录（默认 ./workspace）"
     ),
-    llm_provider: str | None = typer.Option(
-        None, "--llm-provider", help="执行 Agent 使用的 llm_config provider（默认 deepseek）"
+    llm_role: str | None = typer.Option(
+        None, "--llm-role", help="执行侧 LLM 角色（text|vision|agent，默认 agent）"
     ),
     max_turns: int | None = typer.Option(None, "--max-turns", help="单任务最大交互轮次"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="详细输出"),
@@ -403,7 +393,7 @@ def run(
         )
         agent = ExecutionAgent(
             AgentConfig(
-                llm_provider=llm_provider or "deepseek",
+                llm_role=llm_role or "agent",
                 max_turns=max_turns or 20,
                 workspace_dir=Path(output_dir) if output_dir else Path("./workspace"),
             ),

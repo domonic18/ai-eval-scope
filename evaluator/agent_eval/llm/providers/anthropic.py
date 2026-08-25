@@ -18,7 +18,7 @@ from typing import Any
 
 import anthropic
 
-from agent_eval.config import ProviderConfig, resolve_api_key
+from agent_eval.config import ProviderConfig
 from agent_eval.core.exceptions import (
     LLMAuthError,
     LLMError,
@@ -109,7 +109,7 @@ class AnthropicCompatClient(LLMClient):
         self._name = name
         self._config = config
         self._client = anthropic.Anthropic(
-            api_key=resolve_api_key(config.api_key),
+            api_key=config.api_key,
             base_url=config.base_url,
         )
 

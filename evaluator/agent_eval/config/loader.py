@@ -14,7 +14,6 @@ import yaml
 from jsonschema import ValidationError
 from jsonschema import validate as jsonschema_validate
 
-from agent_eval.config.llm import LLMConfig
 from agent_eval.config.paths import paths
 from agent_eval.core.exceptions import (
     ConfigError,
@@ -207,25 +206,6 @@ class ConfigLoader:
 
         builder = TaskSetBuilder(template_path)
         return builder.build(variables, output_path=output_path)
-
-    @staticmethod
-    def load_llm_config(
-        path: Path | str,
-        schema_path: Path | str | None = None,
-    ) -> LLMConfig:
-        """加载 LLM 配置并转换为 LLMConfig 模型。
-
-        Args:
-            path: llm_config.yaml 文件路径。
-            schema_path: JSON Schema 文件路径（可选）。
-
-        Returns:
-            LLMConfig 实例。
-        """
-        data = ConfigLoader.load_and_validate(path, schema_path)
-        # 兼容顶层 llm: 或直接就是 providers 结构
-        llm_data = data.get("llm", data)
-        return LLMConfig.model_validate(llm_data)
 
 
 def get_schema_path(schema_name: str) -> Path:

@@ -77,12 +77,6 @@ def _resolve_rule_set_path(job: EvalJob) -> str:
     raise RuleSetNotFoundError(f"{ref}（包内规则集不明确，请指定 rule_set_id：{avail}）")
 
 
-def _llm_config_path() -> str | None:
-    """评估器 LLM 配置路径（自动发现 llm_config.yaml）。"""
-    cfg = agent_eval_paths.configs_dir / "llm_config.yaml"
-    return str(cfg) if cfg.exists() else None
-
-
 def _eval_meta(result: Any, job: EvalJob, rule_set_path: str) -> dict[str, Any]:
     """构建评估透明度元数据：所需能力 + 实际就绪 + 被跳过的评估器。"""
     import agent_eval.evaluation.evaluators  # noqa: F401  触发注册
@@ -237,7 +231,6 @@ async def run_job(job: EvalJob, input_dir: Path) -> None:
             rule_set_path=rule_set_path,
             output_dir=job_output_dir / "workspace",
             project=job.project_id,
-            llm_config_path=_llm_config_path(),
         )
 
         # 按 job 提交者身份回传（per-job token + project）→ 结果落到第三方项目

@@ -33,7 +33,7 @@ class AgentDefaults:
     # 工具调用失败最大重试次数
     max_retries: int = 3
     # llm_config.yaml 中的 provider 名（经 build_chat_model 桥接双协议——模型无关）
-    llm_provider: str = "deepseek"
+    llm_role: str = "agent"
     # 覆盖 provider 默认模型（None=用 provider 默认）
     model: str | None = None
     # 默认工作空间目录

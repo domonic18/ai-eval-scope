@@ -152,6 +152,6 @@ rules:
     prompt_id: visual_quality
     evaluator: vision.quality
     params:
-      llm_provider: kimi_vision
+      llm_role: vision
     weight: 1.0
     enabled: true

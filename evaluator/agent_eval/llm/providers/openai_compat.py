@@ -15,7 +15,7 @@ from typing import Any
 
 import openai
 
-from agent_eval.config import ProviderConfig, resolve_api_key
+from agent_eval.config import ProviderConfig
 from agent_eval.core.exceptions import (
     LLMAuthError,
     LLMError,
@@ -83,7 +83,7 @@ class OpenAICompatClient(LLMClient):
         if not base_url and config.provider == "deepseek":
             base_url = _DEEPSEEK_DEFAULT_BASE_URL
         self._client = openai.OpenAI(
-            api_key=resolve_api_key(config.api_key),
+            api_key=config.api_key,
             base_url=base_url,
         )
 
