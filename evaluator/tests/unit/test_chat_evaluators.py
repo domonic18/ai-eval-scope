@@ -1,11 +1,14 @@
-"""chat 场景评估器测试（answer_exact 精确匹配 / answer_quality 变量注入 / answer.md 物化）。"""
+"""chat 场景评估器测试（answer_exact 两阶段 / answer_quality / answer_consistency / 三件套注册）。"""
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
+from types import SimpleNamespace
 
 from agent_eval.core.types import EvalStatus
 from agent_eval.evaluation.evaluators.scenario.chat import (
+    ChatAnswerConsistencyEvaluator,
     ChatAnswerExactEvaluator,
     ChatAnswerQualityEvaluator,
 )
@@ -24,23 +27,87 @@ def _exact_evaluator() -> ChatAnswerExactEvaluator:
     return ev
 
 
-def test_answer_exact_numeric_word_boundary_hit(tmp_path) -> None:
-    sample = _sample_with_answer(tmp_path, "解方程得 x = 3，即小明买了 3 本笔记本。")
-    result = _exact_evaluator().evaluate(sample, {"task_expected": {"answer": 3}})
-    assert result.status == EvalStatus.PASS and result.score == 1.0
+class _FakeJudgeOrchestrator:
+    """模拟 judge_orchestrator：templates.get/render + pool.get 直调路径。"""
+
+    def __init__(self, extracted: str | None) -> None:
+        self._extracted = extracted
+        self.templates = SimpleNamespace(
+            get=lambda *a, **kw: SimpleNamespace(
+                system_prompt="sys", user_prompt_template="{{ content }}"
+            ),
+            render=lambda tpl, vars: ("sys", vars.get("content", "")),
+        )
+        self.pool = SimpleNamespace(
+            get=lambda name=None: SimpleNamespace(
+                chat=lambda msgs: SimpleNamespace(content=json.dumps({"answer": self._extracted}))
+            )
+        )
 
 
-def test_answer_exact_numeric_word_boundary_miss(tmp_path) -> None:
-    """13/30 不得命中 expected=3（词边界）。"""
-    sample = _sample_with_answer(tmp_path, "他买了 13 本，花费 30 元。")
-    result = _exact_evaluator().evaluate(sample, {"task_expected": {"answer": 3}})
-    assert result.status == EvalStatus.FAIL and result.score == 0.0
+# ── answer_exact：两阶段（LLM 提取 → 规则比对）──
 
 
-def test_answer_exact_string_substring(tmp_path) -> None:
-    sample = _sample_with_answer(tmp_path, "标准形式是 ax + b = 0（a≠0）。")
-    result = _exact_evaluator().evaluate(sample, {"task_expected": {"answer": "ax + b = 0"}})
+def test_answer_exact_llm_extract_mismatch_fails(tmp_path) -> None:
+    """Phase 1 LLM 提取 2.8 → Phase 2 expected=3 → FAIL（reason 报提取值）。"""
+    text = """$$10x = 28$$
+x = 2.8 是方程的解。
+若共花 **46 元**：得 **x = 3 本**（验算 ✓）
+"""
+    sample = _sample_with_answer(tmp_path, text)
+    ev = _exact_evaluator()
+    context = {
+        "task_expected": {"answer": 3},
+        "task_input": {"instruction": "求笔记本数"},
+        "judge_orchestrator": _FakeJudgeOrchestrator("2.8"),
+    }
+    result = ev.evaluate(sample, context)
+    assert result.status == EvalStatus.FAIL
+    assert "2.8" in result.reason
+
+
+def test_answer_exact_llm_extract_match_passes(tmp_path) -> None:
+    """Phase 1 LLM 提取 3 → Phase 2 expected=3 → PASS。"""
+    sample = _sample_with_answer(tmp_path, "答案是 3 本")
+    ev = _exact_evaluator()
+    context = {
+        "task_expected": {"answer": 3},
+        "task_input": {"instruction": "求笔记本数"},
+        "judge_orchestrator": _FakeJudgeOrchestrator("3"),
+    }
+    result = ev.evaluate(sample, context)
     assert result.status == EvalStatus.PASS
+
+
+def test_answer_exact_llm_extract_null_fails(tmp_path) -> None:
+    """Phase 1 LLM 判定无明确答案 → FAIL（reason 报「未给出明确答案」）。"""
+    sample = _sample_with_answer(tmp_path, "这个嘛……不太好说")
+    ev = _exact_evaluator()
+    context = {
+        "task_expected": {"answer": 42},
+        "task_input": {"instruction": "求值"},
+        "judge_orchestrator": _FakeJudgeOrchestrator(None),
+    }
+    result = ev.evaluate(sample, context)
+    assert result.status == EvalStatus.FAIL
+    assert "未给出明确答案" in result.reason
+
+
+def test_answer_exact_offline_fallback_fulltext(tmp_path) -> None:
+    """无 judge_orchestrator → 回退全文搜索（离线退化，文档声明的局限）。"""
+    sample = _sample_with_answer(tmp_path, "标准形式是 ax + b = 0（a≠0）。")
+    ev = _exact_evaluator()
+    result = ev.evaluate(sample, {"task_expected": {"answer": "ax + b = 0"}})
+    assert result.status == EvalStatus.PASS
+    assert "全文搜索" in result.reason
+
+
+def test_answer_exact_offline_numeric_word_boundary(tmp_path) -> None:
+    """离线退化时词边界仍生效：13/30 不命中 expected=3。"""
+    sample = _sample_with_answer(tmp_path, "他买了 13 本，花费 30 元。")
+    ev = _exact_evaluator()
+    result = ev.evaluate(sample, {"task_expected": {"answer": 3}})
+    assert result.status == EvalStatus.FAIL
 
 
 def test_answer_exact_skips_when_answer_undeclared(tmp_path) -> None:
@@ -52,6 +119,9 @@ def test_answer_exact_skips_when_answer_undeclared(tmp_path) -> None:
 def test_answer_exact_fails_when_no_output(tmp_path) -> None:
     result = _exact_evaluator().evaluate(tmp_path, {"task_expected": {"answer": 3}})
     assert result.status == EvalStatus.FAIL
+
+
+# ── answer_quality：变量注入 ──
 
 
 def test_answer_quality_variables_inject_instruction_and_must_mention() -> None:
@@ -77,13 +147,10 @@ def test_answer_quality_variables_default_when_no_expected() -> None:
     assert variables["instruction"] == "未提供任务指令"
 
 
-# ── chat.answer_consistency（expected.reference 语义一致性）──
+# ── answer_consistency：SKIP 语义 + 变量注入 ──
 
 
 def test_answer_consistency_skips_when_reference_undeclared(tmp_path) -> None:
-    """未声明 expected.reference → SKIP（不计分），与 answer_exact 的 SKIP 语义一致。"""
-    from agent_eval.evaluation.evaluators.scenario.chat import ChatAnswerConsistencyEvaluator
-
     ev = ChatAnswerConsistencyEvaluator()
     ev.setup({})
     sample = _sample_with_answer(tmp_path, "任何回答")
@@ -93,8 +160,6 @@ def test_answer_consistency_skips_when_reference_undeclared(tmp_path) -> None:
 
 
 def test_answer_consistency_variables_inject_reference_and_instruction() -> None:
-    from agent_eval.evaluation.evaluators.scenario.chat import ChatAnswerConsistencyEvaluator
-
     ev = ChatAnswerConsistencyEvaluator()
     ev.setup({})
     variables = ev._build_variables(
@@ -109,24 +174,27 @@ def test_answer_consistency_variables_inject_reference_and_instruction() -> None
     assert variables["instruction"] == "请介绍你自己"
 
 
-def test_answer_consistency_rule_and_prompt_registered(tmp_path) -> None:
-    """规则集声明 ANS_CONSIST + 提示词模板可加载（模板/规则/评估器三件套齐全）。"""
+# ── 三件套注册（提取模板 / 规则 / 评估器）──
+
+
+def test_extract_prompt_template_registered() -> None:
+    """chat_answer_extract 模板可从包内加载；规则声明正确。"""
     import yaml
 
     from agent_eval.evaluation.evaluators.scenario import chat as chat_mod
     from agent_eval.llm.judge.file_prompt_store import FilePromptStore
     from agent_eval.packages.manager import PackageManager
 
-    assert "chat.answer_consistency" in chat_mod.register()
+    assert "chat.answer_exact" in chat_mod.register()
 
     pkg = PackageManager().resolve_ref("chat")
-    rules = yaml.safe_load((pkg.rules_dir / "chat-quality.yaml").read_text(encoding="utf-8"))
-    consist = [r for r in rules["rules"] if r["id"] == "ANS_CONSIST"]
-    assert len(consist) == 1
-    assert consist[0]["evaluator"] == "chat.answer_consistency"
-
     store = FilePromptStore(pkg.prompts_dir)
     store.load_all()
-    template = store.get("chat", "chat_answer_consistency")
+    template = store.get("chat", "chat_answer_extract")
     assert template is not None
-    assert "reference" in template.user_prompt_template  # 模板消费 reference 变量
+    assert "instruction" in template.user_prompt_template
+
+    rules = yaml.safe_load((pkg.rules_dir / "chat-quality.yaml").read_text(encoding="utf-8"))
+    exact = [r for r in rules["rules"] if r["id"] == "ANS_EXACT"]
+    assert len(exact) == 1
+    assert exact[0]["evaluator"] == "chat.answer_exact"

@@ -1,0 +1,53 @@
+template_id: chat_answer_extract
+scenario: chat
+name: 最终答案提取
+description: >
+  从 SUT 自由文本回答中提取最终答案（两阶段精确匹配的 Phase 1）。
+  通用指令，无领域/语言特定模式——LLM 通过上下文理解区分主结论与修正假设/引用/中间步骤。
+
+dimensions:
+  - dim_id: extracted_answer
+    name: 提取的最终答案
+    weight: 1.0
+    score_range: [0.0, 1.0]
+
+system_prompt: |
+  # 角色
+  你是一个答案提取器，从 AI 助手的回答中提取**最终答案**。
+
+  # 任务
+  根据任务指令，从回答中提取最终答案值（仅输出答案本身，不输出任何解释、前缀或标点）。
+
+  # 提取规则（强制）
+  1. **取最终确认值**：如果回答经过推导/修正/验算后给出了多个数值，取回答者最终确认的那一个。
+  2. **排除修正假设**：回答中"若…则…"、"假设"、"应该是"等假设性修正中的值不是主答案。
+  3. **排除引用与中间步骤**：题干原文引用、方程中间解、验算中间值均不是主答案。
+  4. **仅输出答案值**：数字（含小数/分数/负号）或简短文本，一行，无前缀无后缀。
+  5. **无法提取**：回答确实没有给出明确答案时输出 null。
+
+  # 输出格式
+  严格 JSON：{"answer": "<答案值或 null>"}
+
+user_prompt_template: |
+  ## 任务指令
+  {{ instruction }}
+
+  ## 被测回答
+  {{ content }}
+
+  请从上述回答中提取最终答案，严格按 JSON 输出：{"answer": "<值或 null>"}
+
+output_schema:
+  type: object
+  properties:
+    answer:
+      description: 提取的最终答案值；无法提取时为 null
+      oneOf:
+        - type: string
+        - type: number
+        - type: "null"
+  required:
+    - answer
+temperature: 0.0
+seed: 42
+num_samples: 1
