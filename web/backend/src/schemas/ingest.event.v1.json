@@ -67,7 +67,7 @@
       "required": ["external_run_id", "mode", "metrics"],
       "properties": {
         "external_run_id": { "type": "string", "minLength": 1 },
-        "mode": { "type": "string", "enum": ["eval_only", "run", "pipeline"] },
+        "mode": { "type": "string", "enum": ["eval_only", "agent", "run", "pipeline"] },
         "status": {
           "type": ["string", "null"],
           "enum": ["running", "completed", "failed", "partial", null]

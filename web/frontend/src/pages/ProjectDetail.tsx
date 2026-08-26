@@ -309,6 +309,7 @@ function RunsTab({ runs, total, onOpen }: { runs: RunSummary[]; total: number; o
             <SelectContent>
               <SelectItem value="all">全部模式</SelectItem>
               <SelectItem value="eval_only">eval_only</SelectItem>
+              <SelectItem value="agent">agent</SelectItem>
               <SelectItem value="pipeline">pipeline</SelectItem>
               <SelectItem value="run">run</SelectItem>
             </SelectContent>

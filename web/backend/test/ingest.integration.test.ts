@@ -120,6 +120,39 @@ describe("#1 合法入库 + 重复幂等", () => {
     expect((run!.metrics as Record<string, number>)?.["courseware:document_rate"]).toBe(0.9)
   })
 
+  it("accepts run events with mode=agent/pipeline; rejects unknown mode (Sprint 9 mode 语义)", async () => {
+    // agent：执行器执行 + 评估（agent-eval run 产物复评上报）；pipeline：一体化流水线
+    for (const mode of ["agent", "pipeline"]) {
+      const runId = uid(`run-${mode}`)
+      const r = await bearerPost(app, {
+        url: "/api/public/ingest",
+        token: key.token,
+        bodyObj: {
+          schema_version: "1.0",
+          events: [{ ...runEvent(runId, uid("ev")), data: { ...runEvent(runId, uid("ev")).data, mode } }],
+        },
+      })
+      expect(r.status).toBe(202)
+      expect(r.body.accepted).toBe(1)
+      const run = await prisma.run.findUnique({
+        where: { projectId_externalRunId: { projectId: project.id, externalRunId: runId } },
+      })
+      expect(run?.mode).toBe(mode)
+    }
+    // 未知 mode 仍按 SCHEMA_INVALID 拒收（枚举不旁路）
+    const base = runEvent(uid("run-bad"), uid("ev"))
+    const bad = await bearerPost(app, {
+      url: "/api/public/ingest",
+      token: key.token,
+      bodyObj: {
+        schema_version: "1.0",
+        events: [{ ...base, data: { ...base.data, mode: "bogus" } }],
+      },
+    })
+    expect(bad.status).toBe(202)
+    expect(bad.body.errors[0].code).toBe("SCHEMA_INVALID")
+  })
+
   it("duplicate event_id is idempotent (duplicates, no extra rows)", async () => {
     const eventId = uid("ev")
     const runId = uid("run")
