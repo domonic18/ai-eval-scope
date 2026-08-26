@@ -14,7 +14,6 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
-from agent_eval.config.paths import paths as agent_eval_paths
 from agent_eval.evaluation.registry import registry
 from agent_eval.observability import ResultSink, load_config
 from agent_eval.orchestrator import eval_packages
