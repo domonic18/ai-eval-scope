@@ -126,6 +126,7 @@ class ResultSink:
             build_run_event(
                 result.report,
                 run_id=run_id,
+                mode=result.mode,
                 rule_set_version=result.rule_set_version or None,
                 sut_version=result.sut_version or None,
                 rule_set=result.rule_set,

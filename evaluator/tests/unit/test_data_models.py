@@ -263,6 +263,27 @@ class TestSampleResult:
         assert restored.reward == 2.43
         assert restored.stage_metrics["soft"] == 0.8
 
+    def test_process_metrics_roundtrip_and_legacy_defaults(self) -> None:
+        """过程指标序列化 round-trip；旧数据（无新键）反序列化默认 0（缓存兼容）。"""
+        sr = SampleResult(
+            sample_id="s002",
+            status=EvalStatus.PASS,
+            agent_turns=3,
+            agent_tool_calls=7,
+            agent_exec_ms=1234.5,
+        )
+        restored = SampleResult.from_dict(sr.to_dict())
+        assert restored.agent_turns == 3
+        assert restored.agent_tool_calls == 7
+        assert restored.agent_exec_ms == 1234.5
+
+        legacy = SampleResult.from_dict(
+            {"sample_id": "s003", "status": "pass"}  # 旧缓存条目无新键
+        )
+        assert legacy.agent_turns == 0
+        assert legacy.agent_tool_calls == 0
+        assert legacy.agent_exec_ms == 0.0
+
 
 class TestMetricsReport:
     def test_to_dict(self) -> None:

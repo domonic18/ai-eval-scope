@@ -103,6 +103,10 @@ def test_sample_event_mapping_fields():
     assert d["external_sample_id"] == "sample_001"
     assert isinstance(d["stage_metrics"], dict)  # 场景化样本指标 dict（已去 s_* 遗留标量）
     assert d["reward"] == 0.8
+    # 过程指标（Sprint 9 v6.0）：执行链路 turns/tool_calls/exec_ms 随 sample 事件上报
+    assert "agent_turns" in d
+    assert "agent_tool_calls" in d
+    assert "agent_exec_ms" in d
 
 
 def test_constraint_event_mapping_and_passed_derivation():

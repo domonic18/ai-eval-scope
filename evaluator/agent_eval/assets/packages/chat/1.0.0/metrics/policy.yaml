@@ -67,3 +67,23 @@ metric_definitions:
         - dt: 标准
           dd: "达标线 ≥ 0.70；对话能力合格。"
           tone: success
+  # ── 过程效率指标（Sprint 9 v6.0：执行链路 Steps/Turns、Tool Calls、Latency 落库）──
+  # 无 threshold：过程量非质量达标项，中性展示（不进达标对比与趋势门控）
+  - id: chat:avg_turns
+    name: 平均交互轮次
+    summary: 执行 Agent 与 SUT 的平均对话轮次
+    expression: "mean(agent_turns)"
+    threshold: null
+    unit: count
+  - id: chat:avg_tool_calls
+    name: 平均工具调用数
+    summary: 单任务平均工具调用次数（含 agent_run 转发）
+    expression: "mean(agent_tool_calls)"
+    threshold: null
+    unit: count
+  - id: chat:avg_exec_time
+    name: 平均执行耗时
+    summary: 单任务执行阶段平均耗时（毫秒）
+    expression: "mean(agent_exec_ms)"
+    threshold: null
+    unit: ms

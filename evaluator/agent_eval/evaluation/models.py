@@ -110,6 +110,12 @@ class SampleResult:
     total_duration_ms: float = 0.0
     llm_calls: int = 0
     token_usage: int = 0
+    # 执行链路过程指标（Sprint 9 v6.0：Steps/Turns、Tool Calls、Latency 落库）。
+    # 由 orchestrator 从 ExecutionPackage 的 trace/metrics 注入（缓存命中路径同样生效）；
+    # eval_only 的外部包无执行链路时保持 0。
+    agent_turns: int = 0
+    agent_tool_calls: int = 0
+    agent_exec_ms: float = 0.0
 
     def to_dict(self) -> dict[str, Any]:
         """序列化为字典。"""
@@ -123,6 +129,9 @@ class SampleResult:
             "total_duration_ms": self.total_duration_ms,
             "llm_calls": self.llm_calls,
             "token_usage": self.token_usage,
+            "agent_turns": self.agent_turns,
+            "agent_tool_calls": self.agent_tool_calls,
+            "agent_exec_ms": self.agent_exec_ms,
         }
 
     @classmethod

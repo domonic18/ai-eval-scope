@@ -318,6 +318,9 @@ def test_trace_backfills_sut_last_run_text(tmp_path, monkeypatch) -> None:
     assert package.manifest.status == "success"
     trace = _read_json(_pkg_root(tmp_path) / "task_1" / "trace.json")
     assert trace["response"]["sut"]["text"].startswith("一元一次方程")
+    # 过程指标（Sprint 9 v6.0）：trace.response 携带真轮次与执行耗时
+    assert "turns" in trace["response"]
+    assert "duration_ms" in trace["response"]
     assert trace["response"]["sut"]["thread_id"] == "th-1"
     assert trace["response"]["messages"] == len(_messages())
 

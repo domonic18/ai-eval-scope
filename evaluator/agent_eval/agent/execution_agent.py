@@ -322,9 +322,19 @@ class ExecutionAgent:
         trace_file = package_dir / "trace.json"
         if trace_file.exists():
             return
+        duration_ms = 0.0
+        try:
+            start = datetime.fromisoformat(session.started_at)
+            end = datetime.fromisoformat(session.finished_at or _now_iso())
+            duration_ms = (end - start).total_seconds() * 1000
+        except ValueError:
+            pass
         response: dict[str, Any] = {
             "messages": len(session.messages),
             "tool_calls": session.tool_call_count,
+            # 过程指标（Sprint 9 v6.0）：真轮次（AI 消息数）与执行耗时（与 metrics 同源）
+            "turns": session.turns_used,
+            "duration_ms": duration_ms,
         }
         # 回填 SUT 最终回答（trace 只存计数时下游 eval 拿不到评估对象，v4.6.4）
         sut_run = self._last_sut_run()

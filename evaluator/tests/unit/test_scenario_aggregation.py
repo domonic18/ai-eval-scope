@@ -183,3 +183,43 @@ def test_safe_eval_rejects_dangerous(expr: str) -> None:
 def test_safe_eval_unknown_variable() -> None:
     with pytest.raises(ScenarioExpressionError):
         safe_eval("mean(nonexistent)", {"reward": [1.0]})
+
+
+def test_process_metrics_expressions_eval() -> None:
+    """过程指标表达式（Sprint 9 v6.0）：_SCALAR_FIELDS 暴露 agent_* 数组，mean 可求值。"""
+    from agent_eval.evaluation.scenario.metrics import ScenarioMetricsCalculator
+    from agent_eval.evaluation.scenario.models import MetricDefinition
+
+    defs = [
+        MetricDefinition(
+            id="chat:avg_turns", name="t", expression="mean(agent_turns)", unit="count"
+        ),
+        MetricDefinition(
+            id="chat:avg_tool_calls", name="c", expression="mean(agent_tool_calls)", unit="count"
+        ),
+        MetricDefinition(
+            id="chat:avg_exec_time", name="e", expression="mean(agent_exec_ms)", unit="ms"
+        ),
+    ]
+    results = [
+        SampleResult(
+            sample_id="s1",
+            status=EvalStatus.PASS,
+            stage_metrics={"reward": 0.8},
+            agent_turns=2,
+            agent_tool_calls=4,
+            agent_exec_ms=1000.0,
+        ),
+        SampleResult(
+            sample_id="s2",
+            status=EvalStatus.PASS,
+            stage_metrics={"reward": 0.6},
+            agent_turns=4,
+            agent_tool_calls=6,
+            agent_exec_ms=2000.0,
+        ),
+    ]
+    computed = ScenarioMetricsCalculator(defs).compute(results)
+    assert computed["chat:avg_turns"] == 3
+    assert computed["chat:avg_tool_calls"] == 5
+    assert computed["chat:avg_exec_time"] == 1500.0
