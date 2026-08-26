@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 from agent_eval.core.exceptions import ScenarioPackageValidationError
 from agent_eval.packages.manifest import ResolvedPackage
@@ -82,4 +83,87 @@ def resolve_sut_configs_dir(pkg: ResolvedPackage) -> Path:
     return directory
 
 
-__all__ = ["resolve_sut_configs_dir", "resolve_task_set_path"]
+def select_tasks(
+    tasks: list[Any],
+    selection: str | None,
+) -> list[Any]:
+    """按选择表达式过滤任务列表（pytest 风格，arch/16 §2.1）。
+
+    语法（逗号分隔多个条件，按序合并）：
+      ``identity_001``     精确匹配
+      ``safety_*``        glob 通配（fnmatch）
+      ``3-6`` / ``3:6``   序号范围（1-based，含端点）
+      ``a_id:b_id``       任务 ID 范围（含端点）
+      ``!pattern``        排除（从已选集合中去掉匹配项）
+
+    Args:
+        tasks: 完整任务列表。
+        selection: 选择表达式；None / "*" / "" 返回全部。
+
+    Raises:
+        ScenarioPackageValidationError: 任何非排除条件命中 0 个任务。
+    """
+    import fnmatch
+
+    if not selection or selection.strip() in ("", "*"):
+        return tasks
+
+    selected: list[Any] = []
+    excluded: list[Any] = []
+    parts = [s.strip() for s in selection.split(",") if s.strip()]
+    available_ids = [t.id for t in tasks]
+
+    def _match_glob(pattern: str) -> list[Any]:
+        return [t for t in tasks if fnmatch.fnmatch(t.id, pattern)]
+
+    def _match_range(expr: str) -> list[Any]:
+        """解析 a-b / a:b（序号或 ID 范围）。"""
+        sep = "-" if "-" in expr else ":" if ":" in expr else None
+        if sep is None:
+            return []
+        left, right = expr.split(sep, 1)
+        if not left.strip() or not right.strip():
+            return []
+        # 纯数字 → 序号范围（1-based）
+        if left.strip().isdigit() and right.strip().isdigit():
+            lo, hi = int(left), int(right)
+            if lo > hi:
+                lo, hi = hi, lo
+            if lo >= 1 and hi <= len(tasks):
+                return tasks[lo - 1 : hi]
+            return []
+        # ID 范围
+        if left in available_ids and right in available_ids:
+            li = available_ids.index(left)
+            ri = available_ids.index(right)
+            if li > ri:
+                li, ri = ri, li
+            return tasks[li : ri + 1]
+        return []
+
+    for part in parts:
+        if part.startswith("!"):
+            pattern = part[1:]
+            excluded.extend(_match_glob(pattern))
+            excluded.extend(_match_range(pattern))
+        else:
+            hits = _match_glob(part) or _match_range(part)
+            if not hits:
+                raise ScenarioPackageValidationError(
+                    f"任务选择 '{part}' 未命中任何任务（可用: {available_ids}）",
+                    details={"selection": selection, "part": part},
+                )
+            selected.extend(t for t in hits if t not in selected)
+
+    if excluded:
+        selected = [t for t in selected if t not in excluded]
+
+    if not selected:
+        raise ScenarioPackageValidationError(
+            f"任务选择 '{selection}' 排除后无剩余任务",
+            details={"selection": selection},
+        )
+    return selected
+
+
+__all__ = ["resolve_sut_configs_dir", "resolve_task_set_path", "select_tasks"]

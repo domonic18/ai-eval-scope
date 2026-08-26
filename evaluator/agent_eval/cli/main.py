@@ -367,6 +367,11 @@ def run(
     task_set: str | None = typer.Option(
         None, "--task-set", help="任务集：文件路径，或包内名（与 --package 配合，如 default）"
     ),
+    task_select: str | None = typer.Option(
+        None,
+        "--task",
+        help="任务选择：ID / glob(safety_*) / 范围(3-6 或 a:b) / 逗号分隔 / !排除",
+    ),
     sut_config: str | None = typer.Option(
         None,
         "--sut-config",
@@ -397,6 +402,7 @@ def run(
     from agent_eval.execution.models import AgentConfig
     from agent_eval.execution.registry import SUTRegistry
     from agent_eval.packages.assets import resolve_sut_configs_dir, resolve_task_set_path
+    from agent_eval.packages.assets import select_tasks as _select_tasks
     from agent_eval.packages.manager import PackageManager
     from agent_eval.packages.manifest import ResolvedPackage
     from agent_eval.storage.package import generate_run_id
@@ -434,6 +440,8 @@ def run(
         )
         sut = registry.get(sut_name) if sut_name else registry.default
         task_set_model = ConfigLoader.load_task_set(task_set_path)
+        # 任务选择过滤（--task：glob/范围/排除，pytest 风格）
+        task_set_model.tasks = _select_tasks(task_set_model.tasks, task_select)
     except AgentEvalError as e:
         rprint(f"[red]配置加载失败:[/red] {e}")
         raise typer.Exit(code=1) from e

@@ -88,6 +88,13 @@ def run_suite(
             sut_dir = resolve_sut_configs_dir(pkg)
             task_set_model = ConfigLoader.load_task_set(task_set_path)
 
+            # 条目级任务选择（同 --task 语法）
+            from agent_eval.packages.assets import select_tasks
+
+            task_select = entry.get("task")
+            if task_select:
+                task_set_model.tasks = select_tasks(task_set_model.tasks, str(task_select))
+
             registry = SUTRegistry.load_dir(sut_dir)
             sut_name = entry.get("sut")
             sut = registry.get(str(sut_name)) if sut_name else registry.default
