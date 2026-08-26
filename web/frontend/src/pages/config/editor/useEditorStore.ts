@@ -16,8 +16,16 @@ import {
   type CatalogEntry,
   type DatasetCatalogEntry,
   type ScenarioCatalog,
+  type SutCatalogEntry,
+  type TaskSetCatalogEntry,
 } from "../../../api/client"
-import { createEmptyDataset, createEmptyPrompt, createEmptyRuleSet } from "../forms/defaults"
+import {
+  createEmptyDataset,
+  createEmptyPrompt,
+  createEmptyRuleSet,
+  createEmptySutConfig,
+  createEmptyTaskSet,
+} from "../forms/defaults"
 import {
   draftKeyOf,
   errMsg,
@@ -30,6 +38,8 @@ export interface Catalog {
   rule_sets: CatalogEntry[]
   prompts: CatalogEntry[]
   datasets: DatasetCatalogEntry[]
+  task_sets: TaskSetCatalogEntry[]
+  sut_configs: SutCatalogEntry[]
 }
 
 export type Dict = Record<string, unknown>
@@ -72,9 +82,15 @@ export function useEditorStore(scenarioId: string) {
   const reloadCatalog = useCallback(async () => {
     try {
       const c: ScenarioCatalog = await api.scenarioCatalog(scenarioId)
-      setCatalog({ rule_sets: c.rule_sets, prompts: c.prompts, datasets: c.datasets })
+      setCatalog({
+        rule_sets: c.rule_sets,
+        prompts: c.prompts,
+        datasets: c.datasets,
+        task_sets: c.task_sets ?? [],
+        sut_configs: c.sut_configs ?? [],
+      })
     } catch {
-      setCatalog({ rule_sets: [], prompts: [], datasets: [] })
+      setCatalog({ rule_sets: [], prompts: [], datasets: [], task_sets: [], sut_configs: [] })
     }
   }, [scenarioId])
 
@@ -305,14 +321,27 @@ export function useEditorStore(scenarioId: string) {
   // ── 新建资产（本地 isNew 草稿，不发服务端骨架）──
   const createAsset = useCallback(
     (kind: AssetKind): Selection => {
-      const prefix = kind === "prompts" ? "prompt" : kind === "datasets" ? "dataset" : "ruleset"
+      const prefix =
+        kind === "prompts"
+          ? "prompt"
+          : kind === "datasets"
+            ? "dataset"
+            : kind === "task-sets"
+              ? "taskset"
+              : kind === "sut-configs"
+                ? "sut"
+                : "ruleset"
       const assetId = newAssetId(prefix)
       const content =
         kind === "prompts"
           ? (createEmptyPrompt(assetId) as unknown as Dict)
           : kind === "datasets"
             ? (createEmptyDataset() as unknown as Dict)
-            : (createEmptyRuleSet(assetId, scenarioId) as unknown as Dict)
+            : kind === "task-sets"
+              ? (createEmptyTaskSet(assetId) as unknown as Dict)
+              : kind === "sut-configs"
+                ? (createEmptySutConfig(assetId) as unknown as Dict)
+                : (createEmptyRuleSet(assetId, scenarioId) as unknown as Dict)
       const key = selOf(kind, assetId)
       setDocs((prev) => ({
         ...prev,
@@ -451,8 +480,11 @@ export function useEditorStore(scenarioId: string) {
             }))
           }
         }
+        // SUT 接入：asset_id 语义 = sut.name（与后端校验/导入一致），发布时从 content 派生
+        const publishAssetId =
+          doc.kind === "sut-configs" ? String((doc.content as Dict).name ?? doc.assetId) : doc.assetId
         await api.publishAsset(scenarioId, doc.kind as AssetKind, {
-          asset_id: doc.assetId,
+          asset_id: publishAssetId,
           version: doc.nextVersion,
           labels,
           content: doc.content,
@@ -462,18 +494,21 @@ export function useEditorStore(scenarioId: string) {
         })
         const parsed = parseSelection(sel)!
         localStorage.removeItem(draftKeyOf(scenarioId, parsed.kind, parsed.assetId))
-        const versions = await api.listAssetVersions(scenarioId, doc.kind as AssetKind, doc.assetId).catch(() => [])
+        const versions = await api
+          .listAssetVersions(scenarioId, doc.kind as AssetKind, publishAssetId)
+          .catch(() => [])
         setDocs((prev) => ({
           ...prev,
           [sel]: {
             ...prev[sel],
+            assetId: publishAssetId,
             isNew: false,
             baselineYaml: yaml.dump(prev[sel].content, { sortKeys: false }),
             versions,
           },
         }))
         await reloadCatalog()
-        toast.success(`已发布 ${doc.assetId}@${doc.nextVersion}`)
+        toast.success(`已发布 ${publishAssetId}@${doc.nextVersion}`)
         return true
       } catch (e) {
         toast.error(errMsg(e, "发布失败"))

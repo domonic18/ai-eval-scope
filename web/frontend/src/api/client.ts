@@ -530,7 +530,7 @@ export const api = {
   },
 }
 
-export type AssetKind = "rule-sets" | "prompts" | "datasets"
+export type AssetKind = "rule-sets" | "prompts" | "datasets" | "task-sets" | "sut-configs"
 
 export interface Scenario {
   id: string
@@ -550,11 +550,21 @@ export interface DatasetCatalogEntry extends CatalogEntry {
   role: string
   backend_type: string
 }
+/** 任务集（考卷）catalog 条目：task_count = content.tasks 数量。 */
+export interface TaskSetCatalogEntry extends CatalogEntry {
+  task_count: number
+}
+/** SUT 接入配置 catalog 条目：channel 如 agent_protocol；content 仅 sut: 子树（无真凭证）。 */
+export interface SutCatalogEntry extends CatalogEntry {
+  channel: string | null
+}
 export interface ScenarioCatalog {
   scenario: { id: string; name: string; description: string | null }
   rule_sets: CatalogEntry[]
   prompts: CatalogEntry[]
   datasets: DatasetCatalogEntry[]
+  task_sets: TaskSetCatalogEntry[]
+  sut_configs: SutCatalogEntry[]
   packages: CatalogEntry[]
 }
 

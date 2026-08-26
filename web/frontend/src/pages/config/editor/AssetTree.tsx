@@ -4,8 +4,14 @@
  * 分组展示规则集/提示词/数据集/策略；新建按钮创建本地 isNew 草稿（标记「未发布」）；
  * 节点显示 dirty 圆点（有未保存改动）与草稿/未发布标记。
  */
-import { BookOpen, ChevronRight, Database, FileText, Gauge, Layers } from "lucide-react"
-import type { AssetKind, CatalogEntry, DatasetCatalogEntry } from "../../../api/client"
+import { BookOpen, ChevronRight, ClipboardList, Database, FileText, Gauge, Layers, Plug } from "lucide-react"
+import type {
+  AssetKind,
+  CatalogEntry,
+  DatasetCatalogEntry,
+  SutCatalogEntry,
+  TaskSetCatalogEntry,
+} from "../../../api/client"
 import { AddButton } from "../../../components/shared"
 import type { DocState, Selection } from "./types"
 
@@ -13,6 +19,8 @@ export interface TreeCatalog {
   rule_sets: CatalogEntry[]
   prompts: CatalogEntry[]
   datasets: DatasetCatalogEntry[]
+  task_sets: TaskSetCatalogEntry[]
+  sut_configs: SutCatalogEntry[]
 }
 
 interface TreeProps {
@@ -77,6 +85,30 @@ export function AssetTree({ catalog, docs, selected, dirtyOf, onSelect, onCreate
         {canEdit && (
           <AddButton className="mt-1 w-full justify-start" onClick={() => onCreate("datasets")}>
             新建数据集
+          </AddButton>
+        )}
+      </TreeSection>
+      <TreeSection icon={ClipboardList} label="任务集（考卷）">
+        {catalog?.task_sets.length === 0 && newDocs("task-sets").length === 0 && (
+          <p className="px-2 py-1 text-[11px] text-muted-foreground/60">暂无任务集（考卷）</p>
+        )}
+        {catalog?.task_sets.map((t) => node(`task-sets:${t.asset_id}`, t.asset_id, ClipboardList))}
+        {newDocs("task-sets").map((d) => node(`task-sets:${d.assetId}`, d.assetId, ClipboardList, "new"))}
+        {canEdit && (
+          <AddButton className="mt-1 w-full justify-start" onClick={() => onCreate("task-sets")}>
+            新建任务集
+          </AddButton>
+        )}
+      </TreeSection>
+      <TreeSection icon={Plug} label="SUT 接入">
+        {catalog?.sut_configs.length === 0 && newDocs("sut-configs").length === 0 && (
+          <p className="px-2 py-1 text-[11px] text-muted-foreground/60">暂无 SUT 接入配置</p>
+        )}
+        {catalog?.sut_configs.map((s) => node(`sut-configs:${s.asset_id}`, s.asset_id, Plug))}
+        {newDocs("sut-configs").map((d) => node(`sut-configs:${d.assetId}`, d.assetId, Plug, "new"))}
+        {canEdit && (
+          <AddButton className="mt-1 w-full justify-start" onClick={() => onCreate("sut-configs")}>
+            新建 SUT 配置
           </AddButton>
         )}
       </TreeSection>

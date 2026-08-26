@@ -18,6 +18,7 @@ import { api } from "../../api/client"
 import { RuleSetForm, type RuleSetData } from "./forms/RuleSetForm"
 import { PromptForm, type PromptData } from "./forms/PromptForm"
 import { DatasetForm, type DatasetData } from "./forms/DatasetForm"
+import { SutConfigForm, type SutConfigData } from "./forms/SutConfigForm"
 import { MetricDefsEditor } from "./forms/MetricDefsEditor"
 import { AggregationPolicyEditor } from "./forms/AggregationPolicyEditor"
 import { CompletenessPanel } from "./forms/CompletenessPanel"
@@ -75,12 +76,24 @@ export default function PackageEditor() {
 
   const parsed = selected ? parseSelection(selected) : null
   const isSpecial = selected === "policy" || selected === "metrics"
+  // 任务集（考卷）任务条目异构（expected 三形态组合），本期仅 YAML 编辑（无表单模式）
+  const yamlOnly = parsed?.kind === "task-sets"
 
   const onYamlChange = (text: string) => {
     if (!selected) return
     try {
       const parsedYaml = yaml.load(text)
-      if (parsedYaml && typeof parsedYaml === "object") updateDoc(selected, parsedYaml as Record<string, unknown>)
+      if (parsedYaml && typeof parsedYaml === "object") {
+        // SUT 配置：粘贴完整文件（带 sut: 壳）时防御性解包——存储/发布语义均为子树
+        if (parsed?.kind === "sut-configs") {
+          const sut = (parsedYaml as Dict).sut
+          if (sut && typeof sut === "object") {
+            updateDoc(selected, sut as Record<string, unknown>)
+            return
+          }
+        }
+        updateDoc(selected, parsedYaml as Record<string, unknown>)
+      }
     } catch {
       /* YAML 语法错误时继续编辑 */
     }
@@ -115,7 +128,7 @@ export default function PackageEditor() {
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-2">
             <EditorTabs tabs={tabs} docs={docs} selected={selected} dirtyOf={dirtyOf} onSelect={select} onClose={closeTab} />
-            {parsed && <FormYamlToggle mode={mode} onChange={setMode} />}
+            {parsed && !yamlOnly && <FormYamlToggle mode={mode} onChange={setMode} />}
           </div>
 
           {/* 草稿恢复横幅（显式确认，绝不静默覆盖） */}
@@ -186,7 +199,7 @@ export default function PackageEditor() {
             <Card>
               <CardContent className="py-10 text-center text-sm text-muted-foreground">加载中…</CardContent>
             </Card>
-          ) : mode === "form" ? (
+          ) : mode === "form" && !yamlOnly ? (
             <fieldset disabled={!canEdit} className="m-0 border-0 p-0">
               {parsed?.kind === "rule-sets" && (
                 <RuleSetForm
@@ -205,10 +218,23 @@ export default function PackageEditor() {
               {parsed?.kind === "datasets" && (
                 <DatasetForm data={doc.content as unknown as DatasetData} onChange={(d) => updateDoc(selected, d as unknown as Dict)} />
               )}
+              {parsed?.kind === "sut-configs" && (
+                <SutConfigForm data={doc.content as unknown as SutConfigData} onChange={(d) => updateDoc(selected, d as unknown as Dict)} />
+              )}
             </fieldset>
           ) : (
             <Card>
               <CardContent>
+                {parsed?.kind === "sut-configs" && (
+                  <p className="mb-2 text-[11px] text-muted-foreground/70">
+                    内容为 sut: 子树（不含壳）；发布时以 sut.name 作为资产 ID，粘贴完整文件会自动解包。
+                  </p>
+                )}
+                {yamlOnly && (
+                  <p className="mb-2 text-[11px] text-muted-foreground/70">
+                    任务集（考卷）以 YAML 编辑：tasks 内每条含 input / expected（answer | reference | must_mention）/ constraints。
+                  </p>
+                )}
                 <Textarea className="min-h-[500px] font-mono text-xs leading-relaxed" value={currentYaml} readOnly={!canEdit} onChange={(e) => onYamlChange(e.target.value)} />
               </CardContent>
             </Card>
