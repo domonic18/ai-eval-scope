@@ -72,6 +72,9 @@ requires-dist = [
 ]
 provides-extras = ["dev", "llm", "agent", "vision", "datasets"]
 
+[package.metadata.requires-dev]
+dev = [{ name = "types-pyyaml", specifier = ">=6.0.12.20260815" }]
+
 [[package]]
 name = "annotated-doc"
 version = "0.0.4"
