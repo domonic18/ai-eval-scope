@@ -32,6 +32,7 @@ system_prompt: |
 
 # 任务提示词分段模板（按任务字段拼装；各段以空行分隔）
 #   {task_id} / {task_input} / {expected} / {constraints}：任务字段（input/expected/constraints 为 JSON 序列化文本）
+#   {instruction_text}：从 task.input 提取的纯文本指令（确定性的 agent_run 转发内容）
 #   {directory_path} / {file_patterns}：目录模式字段
 #   {package_dir}：执行包落盘目录
 task_prompt:
@@ -39,8 +40,15 @@ task_prompt:
   input: |
     ## 任务输入
     {task_input}
+  forward: |
+    ## 转发指令（agent_run 的 input 参数——纯文本，不是 JSON）
+    将以下文本原样作为 agent_run 工具的 input 参数发送给被测系统：
+
+    {instruction_text}
+
+    注意：只发送上述纯文本；intent 等元数据放入 metadata 参数，不要混入 input。
   expected: |
-    ## 预期结果
+    ## 预期结果（仅供你理解任务目标，不要转发给 SUT）
     {expected}
   constraints: |
     ## 约束条件

@@ -214,14 +214,20 @@ class ExecutionAgent:
         )
 
     def _build_task_prompt(self, task: Task) -> str:
-        """Task Prompt：任务输入/预期/约束 + 目录模式说明 + 写包指令（分段模板见 execution_agent_prompts.yaml）。"""
+        """Task Prompt：任务输入/转发指令/预期/约束 + 目录模式 + 写包指令（模板见 execution_agent_prompts.yaml）。
+
+        forward 段提供确定性的纯文本转发内容——执行 Agent 不再依赖 LLM
+        自行从 JSON 结构中提取 instruction（此前行为不一致，有时传整个 dict）。
+        """
         segments: dict[str, str] = _load_prompts()["task_prompt"]
         package_dir = Path(self.config.workspace_dir) / task.id
+        instruction_text = self._extract_instruction(task)
         parts = [
             segments["header"].format(task_id=task.id),
             segments["input"].format(
                 task_input=json.dumps(task.input, ensure_ascii=False, indent=2)
             ),
+            segments["forward"].format(instruction_text=instruction_text),
         ]
         if task.expected:
             parts.append(
@@ -244,6 +250,24 @@ class ExecutionAgent:
             )
         parts.append(segments["footer"].format(package_dir=package_dir))
         return "\n\n".join(p.rstrip("\n") for p in parts)
+
+    @staticmethod
+    def _extract_instruction(task: Task) -> str:
+        """从 task.input 提取纯文本指令（agent_run 的确定转发内容）。
+
+        - dict 型 input：取 instruction 字段（缺失时取第一个字符串值）
+        - str 型 input：直接返回
+        """
+        if isinstance(task.input, dict):
+            text = task.input.get("instruction", "")
+            if not text:
+                # 兼容无 instruction 键的 input：取第一个非空字符串值
+                for v in task.input.values():
+                    if isinstance(v, str) and v.strip():
+                        text = v
+                        break
+            return str(text).strip()
+        return str(task.input).strip()
 
     # ─── ExecutionPackage 构建 ───
 

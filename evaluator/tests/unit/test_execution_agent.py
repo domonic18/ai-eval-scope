@@ -251,6 +251,7 @@ def test_prompts_sourced_from_yaml_asset(tmp_path) -> None:
     assert set(prompts["task_prompt"]) == {
         "header",
         "input",
+        "forward",
         "expected",
         "constraints",
         "directory_mode",
@@ -377,3 +378,36 @@ def test_answer_file_not_duplicated_when_output_has_files(tmp_path, monkeypatch)
     (output_dir / "artifact.html").write_text("<html/>", encoding="utf-8")
     asyncio.run(agent.run_task(_task()))
     assert not (output_dir / "answer.md").exists()
+
+
+def test_task_prompt_includes_deterministic_forward_section(tmp_path) -> None:
+    """forward 段提供确定性的纯文本转发内容（修复 agent_run input 格式不一致）。"""
+    agent = _agent(tmp_path)
+    task = _task("task_1")
+    task.input = {"instruction": "请解释什么是勾股定理", "intent": "math_qa"}
+    prompt = agent._build_task_prompt(task)
+    assert "## 转发指令" in prompt
+    assert "请解释什么是勾股定理" in prompt
+    assert "不是 JSON" in prompt  # 明确告知纯文本
+    # intent 的值不混入转发指令文本（应放 metadata；模板自身提及 intent 字样属正常指导语）
+    forward_section = prompt.split("## 转发指令")[1].split("## ")[0]
+    assert "math_qa" not in forward_section  # intent 值不出现
+    # 转发的纯文本行以 instruction 内容开头（agent_run input 就是这段文字）
+    assert "请解释什么是勾股定理" in forward_section
+
+
+def test_extract_instruction_variants() -> None:
+    """_extract_instruction 覆盖 dict/str/缺失键三种形态。"""
+    from agent_eval.execution.models import Task as TaskModel
+
+    # dict 有 instruction 键
+    t = TaskModel(id="t1", input={"instruction": "你好", "intent": "greeting"})
+    assert ExecutionAgent._extract_instruction(t) == "你好"
+
+    # dict 无 instruction 键 → 取第一个字符串值
+    t2 = TaskModel(id="t2", input={"prompt": "测试", "meta": "info"})
+    assert ExecutionAgent._extract_instruction(t2) == "测试"
+
+    # 纯字符串 input
+    t3 = TaskModel(id="t3", input={"instruction": "直接文本"})
+    assert ExecutionAgent._extract_instruction(t3) == "直接文本"
