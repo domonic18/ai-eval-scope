@@ -7,6 +7,8 @@
  * - POST /:id/rule-sets                     发布规则集资产版本（admin）         [P4-2]
  * - POST /:id/prompts                       发布提示词资产版本（admin）         [P4-3]
  * - POST /:id/datasets                      发布数据集资产版本（admin）         [P4-4]
+ * - POST /:id/task-sets                     发布任务集（考卷）资产版本（admin）  arch/13 §四
+ * - POST /:id/sut-configs                   发布 SUT 接入配置版本（admin，content=sut: 子树）
  * - GET  /:id/:kind/:assetId/versions       资产版本历史（VersionTimeline）     [P4-5]
  * - POST /:id/:kind/:assetId/versions/:ver/labels  标签晋升（admin）            [P4-5]
  */
@@ -20,7 +22,7 @@ import { ScenarioRepository } from "../../repositories/scenario.repository"
 
 const router = Router()
 const repo = () => new ScenarioRepository()
-const ASSET_KINDS = ["rule-sets", "prompts", "datasets"] as const
+const ASSET_KINDS = ["rule-sets", "prompts", "datasets", "task-sets", "sut-configs"] as const
 type AssetKind = (typeof ASSET_KINDS)[number]
 
 /** S3-1：发布默认带 latest 标签（「发布即 latest」），避免忘选标签导致新版本被老版本盖过。 */
@@ -155,6 +157,24 @@ async function publishAssetHandler(
   if (kind === "rule-sets") return r.publishRuleSetAsset(scenarioId, common)
   if (kind === "prompts")
     return r.publishPromptAsset(scenarioId, { ...common, namespace: body.namespace as string | undefined })
+  if (kind === "task-sets") {
+    // task_sets 考卷：tasks 必须为非空数组（其余结构由 evaluator 端 task_set_schema 把关）
+    if (!Array.isArray(common.content.tasks) || common.content.tasks.length === 0) {
+      throw new PlatformError("content.tasks 必须为非空数组", { status: 400, code: "VALIDATION_ERROR" })
+    }
+    return r.publishTaskSetAsset(scenarioId, common)
+  }
+  if (kind === "sut-configs") {
+    // SUT 接入：asset_id 语义 = sut.name（与 importAssetsToDb 导入一致），两者必须一致
+    const sutName = common.content.name
+    if (typeof sutName !== "string" || !sutName || sutName !== common.assetId) {
+      throw new PlatformError(
+        `asset_id 与 sut.name 必须一致（当前：${common.assetId} vs ${sutName || "缺失"}）`,
+        { status: 400, code: "VALIDATION_ERROR" },
+      )
+    }
+    return r.publishSutConfigAsset(scenarioId, common)
+  }
   const role = (body.role as string) ?? "reference"
   if (role !== "test" && role !== "reference") {
     throw new PlatformError("role 必须为 test 或 reference", { status: 400, code: "VALIDATION_ERROR" })
