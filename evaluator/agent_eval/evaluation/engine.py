@@ -297,6 +297,8 @@ class PipelineEngine:
             context["sample_id"] = task_data.get("id", context["sample_id"])
             context["constraints"] = task_data.get("constraints", {})
             context["task_input"] = task_data.get("input", {})
+            # 预期结果（expected.answer/must_mention）——评估器对照判定用（v4.6.4）
+            context["task_expected"] = task_data.get("expected") or {}
         # 内容指纹（溯源/版本标记，来自 pack manifest）
         _manifest = getattr(package, "manifest", None)
         if _manifest is not None and getattr(_manifest, "content_hash", None):

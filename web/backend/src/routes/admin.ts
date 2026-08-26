@@ -336,12 +336,5 @@ router.post(
   }),
 )
 
-router.post(
-  "/llm-models/export-yaml",
-  wrap(async (_req, res) => {
-    const yaml = await llmClientService.exportYaml()
-    res.type("text/yaml").send(yaml)
-  }),
-)
 
 export default router

@@ -800,7 +800,7 @@ class InfoAccuracyEvaluator(BaseEvaluator):
                 evidence_dir=Path(evidence_dir)
                 if not isinstance(evidence_dir, Path)
                 else evidence_dir,
-                provider_name=self.params.get("llm_provider"),
+                provider_name=self.params.get("llm_role"),
             )
         except Exception:
             # LLM 调用失败，回退到 Phase 1-2 的结果
@@ -945,7 +945,7 @@ class InfoAccuracyEvaluator(BaseEvaluator):
                     template_id=verdict_prompt_id,
                     variables={**variables_base, "candidates": batch},
                     evidence_dir=ev_dir,
-                    provider_name=self.params.get("llm_provider"),
+                    provider_name=self.params.get("llm_role"),
                     judge_id_suffix=f"fact_verdict_{batch_idx}",
                 )
                 parsed = getattr(record, "parsed_scores", None) if record else None
@@ -1089,7 +1089,7 @@ class LogicalConsistencyEvaluator(BaseEvaluator):
                 evidence_dir=Path(evidence_dir)
                 if not isinstance(evidence_dir, Path)
                 else evidence_dir,
-                provider_name=self.params.get("llm_provider"),
+                provider_name=self.params.get("llm_role"),
             )
         except Exception as e:
             elapsed = (time.monotonic() - start) * 1000

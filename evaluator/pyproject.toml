@@ -57,6 +57,14 @@ llm = [
     "anthropic>=0.30",
     "langfuse>=2.0",
 ]
+# DeepAgents 底座（arch/03 执行引擎 v4.6）：ExecutionAgent Agent-Driven 路径，
+# 惰性导入（仿 playwright 惯例），未安装时 CLI/ExecutionAgent 给出友好提示
+agent = [
+    "deepagents>=0.2",
+    "langgraph>=0.4",
+    "langchain-openai>=0.3",
+    "langchain-anthropic>=0.3",
+]
 vision = [
     "agent-eval[llm]",
     # 精确锁定：与 docker/playwright-base 基础镜像内预装的 chromium 版本严格对齐，
@@ -115,3 +123,8 @@ tag_format = "v$version"
 version_scheme = "pep440"
 version_provider = "scm"
 annotated_tag = true
+
+[dependency-groups]
+dev = [
+    "types-pyyaml>=6.0.12.20260815",
+]

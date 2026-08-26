@@ -20,26 +20,23 @@ __all__ = [
 
 
 def _init_judge_orchestrator(
-    llm_config_path: str | None,
-    llm_provider: str | None,
+    llm_config: object | None,
     prompts_dir: str | None = None,
 ) -> object | None:
-    """初始化 JudgeOrchestrator（可选）。"""
-    if llm_config_path is None:
+    """初始化 JudgeOrchestrator（可选；llm_config 为已解析的 LLMConfig 实例）。"""
+    if llm_config is None:
         return None
 
     try:
         from pathlib import Path
 
-        from agent_eval.config.loader import ConfigLoader
         from agent_eval.llm.judge.file_prompt_store import FilePromptStore
         from agent_eval.llm.judge.orchestrator import JudgeOrchestrator
         from agent_eval.llm.judge.stability import StabilityController
         from agent_eval.llm.judge.structured_output import StructuredOutputParser
         from agent_eval.llm.pool import ProviderPool
 
-        llm_config = ConfigLoader.load_llm_config(llm_config_path)
-        pool = ProviderPool(llm_config)
+        pool = ProviderPool(llm_config)  # type: ignore[arg-type]
         from agent_eval.config.paths import paths
 
         # 优先用场景包的 prompts/（code→code_correctness），缺省回退内置 courseware prompts
@@ -83,7 +80,7 @@ def _check_llm_availability(rule_set_obj: object, judge_orch: object | None, str
 
     rprint("[yellow]⚠ 以下评估器依赖 LLM 但 Judge 未配置，将跳过（不计入得分）：[/yellow]")
     rprint(f"[yellow]   {', '.join(llm_evaluators)}[/yellow]")
-    rprint("[yellow]   请通过 --llm-config 配置 LLM 后重试。[/yellow]")
+    rprint("[yellow]   运行 agent-eval models login 配置 LLM 后重试。[/yellow]")
     if strict:
         raise typer.Exit(code=1)
 

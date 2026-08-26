@@ -77,7 +77,7 @@ vi.mock("../src/services/llm-client.service", () => ({
   llmClientService: {
     testModel: vi.fn().mockResolvedValue({ status: "success", detail: "ok", testedAt: "2026-01-01T00:00:00.000Z" }),
     chat: vi.fn(),
-    exportYaml: vi.fn().mockResolvedValue("llm:\n  default: test\n  providers: {}"),
+    resolveForExecutor: vi.fn().mockResolvedValue({ roles: { text: { provider: "openai", model: "gpt-4", api_key: "sk-1" } } }),
   },
 }))
 

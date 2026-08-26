@@ -56,7 +56,7 @@ class VisionQualityEvaluator(BaseLLMJudgeEvaluator):
     依赖 context 中的：
     - judge_orchestrator + evidence_dir（与文本 LLM 评估器一致）
     - screenshot_renderer：ScreenshotRenderer 实例（缺失则降级）
-    - params.llm_provider：指定视觉 Provider（如 kimi_vision）
+    - params.llm_role：指定视觉角色（vision）
     """
 
     evaluator_id = "vision.quality"
@@ -100,7 +100,7 @@ class VisionQualityEvaluator(BaseLLMJudgeEvaluator):
 
         # 逐文档视觉打分
         task_input = context.get("task_input", {})
-        provider_name = self.params.get("llm_provider")
+        provider_name = self.params.get("llm_role")
         per_doc = self._judge_each(
             orchestrator,
             screenshots=screenshots,
@@ -266,7 +266,7 @@ class VisionQualityEvaluator(BaseLLMJudgeEvaluator):
             else None
         )
         # provider/model 取自评估器配置与首成功文档（逐文档共用同一 provider）
-        provider_name = self.params.get("llm_provider")
+        provider_name = self.params.get("llm_role")
         model_name = first_ok.get("model", "") if first_ok else ""
 
         return ConstraintResult(

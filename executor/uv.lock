@@ -41,13 +41,17 @@ requires-dist = [
     { name = "anthropic", marker = "extra == 'llm'", specifier = ">=0.30" },
     { name = "beautifulsoup4", specifier = ">=4.12" },
     { name = "commitizen", marker = "extra == 'dev'", specifier = ">=3.29" },
+    { name = "deepagents", marker = "extra == 'agent'", specifier = ">=0.2" },
     { name = "diskcache", specifier = ">=5.6" },
     { name = "html5lib", specifier = ">=1.1" },
     { name = "httpx", specifier = ">=0.27" },
     { name = "huggingface-hub", marker = "extra == 'datasets'", specifier = ">=0.24" },
     { name = "jinja2", specifier = ">=3.1" },
     { name = "jsonschema", specifier = ">=4.21" },
+    { name = "langchain-anthropic", marker = "extra == 'agent'", specifier = ">=0.3" },
+    { name = "langchain-openai", marker = "extra == 'agent'", specifier = ">=0.3" },
     { name = "langfuse", marker = "extra == 'llm'", specifier = ">=2.0" },
+    { name = "langgraph", marker = "extra == 'agent'", specifier = ">=0.4" },
     { name = "markdown", specifier = ">=3.5" },
     { name = "modelscope", marker = "extra == 'datasets'", specifier = ">=1.18" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.10" },
@@ -66,7 +70,7 @@ requires-dist = [
     { name = "structlog", specifier = ">=24.0" },
     { name = "typer", specifier = ">=0.12.0" },
 ]
-provides-extras = ["dev", "llm", "vision", "datasets"]
+provides-extras = ["dev", "llm", "agent", "vision", "datasets"]
 
 [[package]]
 name = "annotated-doc"

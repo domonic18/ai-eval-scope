@@ -111,26 +111,27 @@ uv run agent-eval pack --source-dir /path/to/output/ --validate
 ```bash
 cd evaluator
 
-# 最简模式（无 LLM；llm_config 自动从 agent_eval/assets/configs/ 发现）
+# 最简模式（无 LLM；未配置 LLM 时 LLM 评估器自动降级）
 uv run agent-eval eval \
   --package-dir ../workspace/packages/math_001 \
   --rule-set agent_eval/assets/rules/default_rule_set.yaml
 
-# 含 LLM Judge（--llm-config 省略时自动查找 CWD 或包内配置）
+# 含 LLM Judge（配置好后无需任何额外参数）
 uv run agent-eval eval \
   --package-dir ../workspace/packages/math_001 \
-  --rule-set agent_eval/assets/rules/default_rule_set.yaml \
-  --llm-provider deepseek_judge
+  --rule-set agent_eval/assets/rules/default_rule_set.yaml
 ```
 
-### LLM 配置（可选）
+### LLM 配置（可选，交互式向导）
 
 ```bash
-cd evaluator
-cp agent_eval/assets/configs/llm_config.example.yaml agent_eval/assets/configs/llm_config.yaml
-# 编辑填入 API Key（支持 ${DEEPSEEK_API_KEY} 语法，值从 .env 读取）
-# CLI 自动发现此文件，无需 --llm-config
+uv run agent-eval models login   # 选提供商 → 输入 api-key → 选各角色模型
+uv run agent-eval models test    # 连通性验证
+uv run agent-eval models list    # 查看（key 脱敏）
 ```
+
+保存于 `~/.agent_eval/llm.json`（0600 权限，不入 git）。云端 executor 则在平台
+`/admin` 按角色配置，运行时经 API Key 拉取——两套形态互不感知。
 
 ### 其他命令
 

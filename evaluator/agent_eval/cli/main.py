@@ -32,6 +32,15 @@ app = typer.Typer(
     no_args_is_help=True,
 )
 
+# 子命令组：模型配置管理（arch/16 §6.2-四 CLI 形态）
+from agent_eval.cli.models import models_app  # noqa: E402
+from agent_eval.cli.secrets import secrets_app  # noqa: E402
+from agent_eval.cli.suite import suite_app  # noqa: E402
+
+app.add_typer(models_app, name="models")
+app.add_typer(secrets_app, name="secrets")
+app.add_typer(suite_app, name="suite")
+
 
 def _content_hash(source_dir: Path) -> str | None:
     """计算目录内容的稳定短哈希（SHA256 前 8 位），用于样本内容寻址。
@@ -144,6 +153,19 @@ def pack(
         raise typer.Exit(code=1) from e
 
 
+def _write_run_manifest(run_dir: Path, payload: dict[str, Any]) -> None:
+    """写运行清单（runs/{run_id}/run_manifest.json，绑定显式化第一步）。"""
+    import json
+
+    try:
+        run_dir.mkdir(parents=True, exist_ok=True)
+        (run_dir / "run_manifest.json").write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+    except OSError as e:
+        rprint(f"[yellow]⚠ 运行清单写入失败: {e}[/yellow]")
+
+
 def _resolve_rule_set_path(package: str | None, rule_set: str | None) -> str:
     """解析规则集路径。
 
@@ -197,8 +219,6 @@ def eval(
     ),
     output_dir: str | None = typer.Option(None, "--output-dir", help="输出目录"),
     eval_mode: str = typer.Option("pipeline", "--eval-mode", help="评估模式: pipeline | agent"),
-    llm_provider: str | None = typer.Option(None, "--llm-provider", help="覆盖默认 LLM Provider"),
-    llm_config: str | None = typer.Option(None, "--llm-config", help="LLM 配置文件路径"),
     project: str | None = typer.Option(None, "--project", help="项目 ID"),
     upload: bool | None = typer.Option(
         None,
@@ -240,36 +260,29 @@ def eval(
         # 1. 加载 RuleSet
         rule_set_obj = ConfigLoader.load_rule_set(rule_set_path)
 
-        # 2. 初始化 LLM Judge（可选）
-        #    --llm-config 未指定时，按优先级查找：
-        #    a) CWD/llm_config.yaml（用户当前目录，pip install 场景）
-        #    b) 包内 assets/configs/llm_config.yaml（开发库内置，dev 场景）
-        if llm_config is None:
-            from pathlib import Path as _Path
+        # 2. 解析 LLM 配置（本地 llm.json → 平台拉取，arch/16 §6.2-四；不可用时 Judge 降级）
+        from agent_eval.config.llm_resolution import (
+            llm_signature as _llm_sig,
+        )
+        from agent_eval.config.llm_resolution import (
+            resolve_llm_config,
+        )
 
-            from agent_eval.config.paths import paths
-
-            cwd_cfg = _Path.cwd() / "llm_config.yaml"
-            pkg_cfg = paths.configs_dir / "llm_config.yaml"
-            if cwd_cfg.exists():
-                llm_config = str(cwd_cfg)
-            elif pkg_cfg.exists():
-                llm_config = str(pkg_cfg)
+        try:
+            llm_cfg = resolve_llm_config()
+        except Exception as e:
+            llm_cfg = None
+            rprint(f"[yellow]⚠ LLM 配置不可用，LLM 评估器将降级: {e}[/yellow]")
         # 场景包 prompts/（code→code_correctness），缺省回退内置 courseware prompts
         _prompts_dir: str | None = None
         if rule_set_path:
             _pp = Path(rule_set_path).resolve().parent.parent / "prompts"
             if _pp.exists():
                 _prompts_dir = str(_pp)
-        judge_orch = _init_judge_orchestrator(llm_config, llm_provider, prompts_dir=_prompts_dir)
+        judge_orch = _init_judge_orchestrator(llm_cfg, prompts_dir=_prompts_dir)
 
-        # 构造 LLM 指纹（纳入 cache_key，LLM 配置/可用性变更时缓存自动失效）
-        import hashlib
-
-        if judge_orch is not None and llm_config:
-            llm_signature = hashlib.sha256(Path(llm_config).read_bytes()).hexdigest()[:12]
-        else:
-            llm_signature = "no-llm"
+        # 构造 LLM 指纹（纳入 cache_key；剔除密钥，配置/可用性变更时缓存自动失效）
+        llm_signature = _llm_sig(llm_cfg) if llm_cfg is not None else "no-llm"
 
         # LLM 可用性预检：rule_set 含 LLM 评估器但 Judge 未配置时提示/阻断
         _check_llm_availability(rule_set_obj, judge_orch, strict)
@@ -308,7 +321,6 @@ def eval(
                 Path(package_dir),
                 rule_set_obj,
                 judge_orchestrator=judge_orch,
-                llm_provider=llm_provider,
                 project=project,
                 with_vision=want_vision,
                 screenshot_renderer=renderer,
@@ -330,6 +342,13 @@ def eval(
 
         rprint("[green]✅ 评估完成[/green] — 结果已保存至 workspace")
 
+        # 7.5 W6：回填 SUT 身份（包 metadata.sut_name@sut_version → run event）
+        if result.samples:
+            sample_meta = getattr(result.samples[0], "metadata", None) or {}
+            result.sut_version = str(
+                sample_meta.get("sut_version") or sample_meta.get("sut_name") or ""
+            )
+
         # 8. 推送到可观测平台（ResultSink，Sprint 7e）
         _flush_observability(result, upload_override=upload, package_dir=package_dir)
 
@@ -338,23 +357,161 @@ def eval(
         raise typer.Exit(code=1) from e
 
 
-@app.command(hidden=True)
+@app.command()
 def run(
-    task_set: str = typer.Option(..., "--task-set", help="任务集文件路径"),
-    sut_config: str = typer.Option(..., "--sut-config", help="SUT 配置文件路径"),
-    output_dir: str | None = typer.Option(None, "--output-dir", help="输出目录"),
+    package: str | None = typer.Option(
+        None,
+        "--package",
+        help="场景包引用（如 chat / chat:1.0.0）——考卷与 SUT 从包内解析（arch/16 §2.1）",
+    ),
+    task_set: str | None = typer.Option(
+        None, "--task-set", help="任务集：文件路径，或包内名（与 --package 配合，如 default）"
+    ),
+    task_select: str | None = typer.Option(
+        None,
+        "--task",
+        help="任务选择：ID / glob(safety_*) / 范围(3-6 或 a:b) / 逗号分隔 / !排除",
+    ),
+    sut_config: str | None = typer.Option(
+        None,
+        "--sut-config",
+        help="被测系统配置路径（sut_config v2，yaml 文件或目录）；缺省从包内 sut_configs/ 解析",
+    ),
+    sut_name: str | None = typer.Option(
+        None, "--sut-name", help="被测系统名（多系统时必填；唯一系统自动选中）"
+    ),
+    output_dir: str | None = typer.Option(
+        None, "--output-dir", help="执行包输出目录（默认 ./workspace）"
+    ),
+    llm_role: str | None = typer.Option(
+        None, "--llm-role", help="执行侧 LLM 角色（text|vision|agent，默认 agent）"
+    ),
+    max_turns: int | None = typer.Option(None, "--max-turns", help="单任务最大交互轮次"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="详细输出"),
 ) -> None:
-    """执行被测 Agent（ExecutionAgent 驱动），生成 ExecutionPackage。"""
+    """执行被测 Agent（ExecutionAgent/DeepAgents 驱动），生成 ExecutionPackage。"""
+    import asyncio
+    from pathlib import Path
+
+    from agent_eval.agent.execution_agent import ExecutionAgent
+    from agent_eval.agent.protocol_tools import AgentProtocolToolServer
+    from agent_eval.config.loader import ConfigLoader
+    from agent_eval.core.exceptions import AgentEvalError
     from agent_eval.core.logging import setup_logging
+    from agent_eval.execution.channels.base import create_channel
+    from agent_eval.execution.models import AgentConfig
+    from agent_eval.execution.registry import SUTRegistry
+    from agent_eval.packages.assets import resolve_sut_configs_dir, resolve_task_set_path
+    from agent_eval.packages.assets import select_tasks as _select_tasks
+    from agent_eval.packages.manager import PackageManager
+    from agent_eval.packages.manifest import ResolvedPackage
+    from agent_eval.storage.package import generate_run_id
 
     setup_logging(level="DEBUG" if verbose else "INFO")
 
-    rprint(f"[blue]任务集:[/blue] {task_set}")
-    rprint(f"[blue]SUT 配置:[/blue] {sut_config}")
+    try:
+        # 输入解析（arch/16 §2.1）：--package 启用包内解析；显式路径参数优先
+        resolved_pkg: ResolvedPackage | None = (
+            PackageManager().resolve_ref(package) if package else None
+        )
 
-    # Sprint 8 完整实现
-    rprint("[yellow]run 命令的完整逻辑将在 Sprint 8 中实现。[/yellow]")
+        task_set_path: Path | None = (
+            Path(task_set) if task_set and Path(task_set).exists() else None
+        )
+        if task_set_path is None:
+            if resolved_pkg is not None:
+                task_set_path = resolve_task_set_path(resolved_pkg, task_set)
+            else:
+                raise AgentEvalError("必须提供 --task-set（路径）或 --package（包内任务集解析）")
+
+        if sut_config and Path(sut_config).exists():
+            config_path = Path(sut_config)
+        elif resolved_pkg is not None:
+            config_path = resolve_sut_configs_dir(resolved_pkg)
+        else:
+            raise AgentEvalError(
+                "必须提供 --sut-config（路径）或 --package（包内 sut_configs/ 解析）"
+            )
+
+        registry = (
+            SUTRegistry.load_dir(config_path)
+            if config_path.is_dir()
+            else SUTRegistry.load(config_path)
+        )
+        sut = registry.get(sut_name) if sut_name else registry.default
+        task_set_model = ConfigLoader.load_task_set(task_set_path)
+        # 任务选择过滤（--task：glob/范围/排除，pytest 风格）
+        task_set_model.tasks = _select_tasks(task_set_model.tasks, task_select)
+    except AgentEvalError as e:
+        rprint(f"[red]配置加载失败:[/red] {e}")
+        raise typer.Exit(code=1) from e
+
+    run_id = generate_run_id()
+    rprint(
+        f"[blue]任务集:[/blue] {task_set_path}（{len(task_set_model.tasks)} 个任务）"
+        + (f"（包 {resolved_pkg.manifest.ref}）" if resolved_pkg else "")
+    )
+    rprint(f"[blue]被测系统:[/blue] {sut.name}（channel={sut.channel}, base_url={sut.base_url}）")
+    rprint(f"[blue]运行 ID:[/blue] {run_id}")
+
+    channel = None
+    try:
+        channel = create_channel(sut)
+        protocol_tools = AgentProtocolToolServer(
+            channel, default_metadata={"eval_run_id": run_id, "sut_name": sut.name}
+        )
+        agent = ExecutionAgent(
+            AgentConfig(
+                llm_role=llm_role or "agent",
+                max_turns=max_turns or 20,
+                workspace_dir=Path(output_dir) if output_dir else Path("./workspace"),
+            ),
+            extra_tool_servers=[protocol_tools],
+        )
+
+        async def _run_and_close() -> tuple[str, list[Any]]:
+            # 通道关闭必须与 run 同一 event loop（httpx client 绑定创建时的 loop，
+            # 另起 asyncio.run 关旧 loop 上的 client 会 RuntimeError: Event loop is closed）
+            try:
+                return await agent.run_task_set(task_set_model, run_id=run_id)
+            finally:
+                await channel.aclose()
+
+        _, packages = asyncio.run(_run_and_close())
+    except AgentEvalError as e:
+        rprint(f"[red]执行失败:[/red] {e}")
+        raise typer.Exit(code=1) from e
+
+    # 运行清单（W7 + 绑定显式化第一步，arch/16 §五）：登记包路径与输入绑定
+    packages_run_dir = Path(agent.config.workspace_dir) / "runs" / run_id
+    _write_run_manifest(
+        packages_run_dir,
+        {
+            "mode": "run",
+            "run_id": run_id,
+            "package_ref": resolved_pkg.manifest.ref if resolved_pkg else None,
+            "task_set": str(task_set_path),
+            "sut": {"name": sut.name, "base_url": sut.base_url},
+            "llm_role": llm_role or "agent",
+            "packages": [str(p.output_dir or p.manifest.package_id) for p in packages],
+        },
+    )
+
+    succeeded = sum(1 for p in packages if p.manifest.status == "success")
+    rprint(
+        f"[green]执行完成:[/green] {succeeded}/{len(packages)} 成功；"
+        f"结构化日志: {agent.config.workspace_dir}/runs/{run_id}/agent_logs/"
+    )
+    for package in packages:
+        status_color = "green" if package.manifest.status == "success" else "red"
+        rprint(
+            f"  [{status_color}]{package.manifest.status}[/{status_color}] "
+            f"{package.manifest.task_id} → {package.output_dir or package.manifest.package_id}"
+        )
+    rprint(
+        f"    评估: [blue]agent-eval eval --package-dir {packages_run_dir / 'packages'} "
+        f"--package <场景包>[/blue]"
+    )
 
 
 @app.command(hidden=True)
@@ -449,9 +606,7 @@ def upload(
     )
 
     mdefs_raw = summary.get("metric_definitions") or []
-    backfill_sid = (
-        str(mdefs_raw[0]["id"]).split(":", 1)[0] if mdefs_raw else "courseware"
-    )
+    backfill_sid = str(mdefs_raw[0]["id"]).split(":", 1)[0] if mdefs_raw else "courseware"
     scenario_config = ScenarioConfig(
         scenario_id=backfill_sid,
         aggregation_policy=AggregationPolicy(
@@ -571,18 +726,28 @@ def upload(
                         )
                         artifact_count += 1
 
-            # 原始产出物（从 package_dir 扫描，含任意场景文件）
-            if package_dir_str:
-                pkg = Path(package_dir_str)
-                if pkg.exists():
-                    src_events = sink._upload_source_files(
-                        pkg,
-                        run_id_str,
-                        sample.sample_id,
-                        art_report,
-                    )
-                    events.extend(src_events)
-                    artifact_count += len(src_events)
+    # 原始产出物：按样本归属上传（output/ 产物 + 执行包技术文件分类）——需样本列表
+    if package_dir_str:
+        pkg = Path(package_dir_str)
+        if pkg.exists():
+            # 从 results/ 重建样本引用（sample_id = task_id），供归属
+            from types import SimpleNamespace
+
+            sids = (
+                [
+                    d.name
+                    for d in (run_dir / "results").iterdir()
+                    if d.is_dir() and (d / "report.json").exists()
+                ]
+                if (run_dir / "results").is_dir()
+                else []
+            )
+            if sids:
+                src_events = sink._upload_package_artifacts(
+                    pkg, run_id_str, [SimpleNamespace(sample_id=sid) for sid in sids], art_report
+                )
+                events.extend(src_events)
+                artifact_count += len(src_events)
 
     rprint(
         f"[blue]回填:[/blue] 运行 {run}，样本 {sample_count}，"

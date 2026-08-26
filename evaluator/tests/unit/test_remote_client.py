@@ -113,9 +113,7 @@ def test_fetch_missing_manifest_raises(monkeypatch: pytest.MonkeyPatch) -> None:
         HttpRemotePackageClient("http://reg").fetch("courseware/quality")
 
 
-def test_cli_pull_with_remote_flag(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_cli_pull_with_remote_flag(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """--remote <base_url> 直接构造 HTTP 客户端（mock httpx）→ install 到本地缓存。"""
     from typer.testing import CliRunner
 
@@ -129,7 +127,9 @@ def test_cli_pull_with_remote_flag(
     monkeypatch.setattr("agent_eval.packages.remote_client.httpx.get", fake_get)
 
     runner = CliRunner()
-    result = runner.invoke(package_app, ["pull", "courseware/quality:1.0.0", "--remote", "http://reg"])
+    result = runner.invoke(
+        package_app, ["pull", "courseware/quality:1.0.0", "--remote", "http://reg"]
+    )
     assert result.exit_code == 0, result.output
     assert "已拉取" in result.output
     installed = tmp_path / "cache" / "courseware" / "quality" / "1.0.0"

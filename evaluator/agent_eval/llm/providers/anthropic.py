@@ -13,12 +13,14 @@ Anthropic 官方、Kimi（月之暗面）、智谱 GLM、MiniMax 等（通过自
 
 from __future__ import annotations
 
+import inspect
 import time
+from functools import lru_cache
 from typing import Any
 
 import anthropic
 
-from agent_eval.config import ProviderConfig, resolve_api_key
+from agent_eval.config import ProviderConfig
 from agent_eval.core.exceptions import (
     LLMAuthError,
     LLMError,
@@ -32,6 +34,21 @@ from agent_eval.llm.models import LLMResponse, Message, TokenUsage
 # 瞬时错误重试参数（与 openai_compat 一致）
 _MAX_RETRIES = 3
 _RETRY_BASE_DELAY = 1.0
+
+
+@lru_cache(maxsize=1)
+def _supports_temperature() -> bool:
+    """探测当前 SDK 的 Messages.create 是否支持 temperature。
+
+    anthropic SDK 1.0 起移除了 Messages API 的采样参数（temperature/top_p 等），
+    传入会 TypeError: unexpected keyword argument 'temperature'；
+    0.x 及兼容端点（Moonshot/KIMI anthropic 兼容层）照常传。
+    """
+    try:
+        sig = inspect.signature(anthropic.Anthropic().messages.create)
+    except (TypeError, ValueError):  # 签名不可得时保守传参，由上游报错暴露
+        return True
+    return "temperature" in sig.parameters
 
 
 def _is_anthropic_retryable(e: anthropic.APIError) -> bool:
@@ -109,7 +126,7 @@ class AnthropicCompatClient(LLMClient):
         self._name = name
         self._config = config
         self._client = anthropic.Anthropic(
-            api_key=resolve_api_key(config.api_key),
+            api_key=config.api_key,
             base_url=config.base_url,
         )
 
@@ -148,8 +165,11 @@ class AnthropicCompatClient(LLMClient):
             "model": self._config.model,
             "max_tokens": max_tokens,
             "messages": convo,
-            "temperature": temperature,
         }
+        # anthropic SDK 1.0 起移除 Messages.create 的采样参数（temperature 等）；
+        # 不支持的版本不传（采样退服务端默认），0.x 照常传。
+        if _supports_temperature():
+            request_kwargs["temperature"] = temperature
         if system is not None:
             request_kwargs["system"] = system
 

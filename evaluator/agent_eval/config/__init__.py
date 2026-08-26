@@ -32,7 +32,6 @@ from agent_eval.config.llm import (
     ProviderConfig,
     StabilityDefaults,
     StructuredOutputDefaults,
-    resolve_api_key,
 )
 from agent_eval.config.loader import ConfigLoader, get_schema_path
 from agent_eval.config.observability import OBSERVABILITY_DEFAULTS, ObservabilityDefaults
@@ -52,7 +51,6 @@ __all__ = [
     # LLM Provider 配置
     "LLMConfig",
     "ProviderConfig",
-    "resolve_api_key",
     # LLM Judge 默认值
     "JUDGE_DEFAULTS",
     "STABILITY_DEFAULTS",

@@ -5,13 +5,13 @@
 ## 环境
 
 - Python 3.11+，依赖用 `uv` 管理（`uv.lock`）。
-- 安装：`uv sync --extra dev`（开发）；`uv sync --extra llm`（LLM Judge 依赖，可选）。
+- 安装：`uv sync --extra dev`（开发）；`uv sync --extra llm`（LLM Judge 依赖，可选）；`uv sync --extra agent`（ExecutionAgent DeepAgents 底座，可选，见 arch/03 v4.6）。
 - CLI：`uv run agent-eval --help`。所有 `uv run` / `agent-eval` 命令从 `evaluator/` 执行，或用根 `make` 目标自动切换。
 
 ## 配置
 
 - 环境变量从仓库根 `.env` 读取（`load_dotenv()` 自动向上查找）。
-- LLM 配置放在 `agent_eval/assets/configs/llm_config.yaml`（从 `.example.yaml` 复制）；CLI 自动发现，无需 `--llm-config`。
+- LLM 配置走双形态（arch/06 §4.8）：`agent-eval models login` 交互配置 → `~/.agent_eval/llm.json`（0600）；云端经 `AGENT_EVAL_HOST/API_KEY` 拉 `/api/public/llm-config`。固定三角色 text/vision/agent（`config/llm_resolution.py` 解析）。
 
 ## 代码风格（强制）
 

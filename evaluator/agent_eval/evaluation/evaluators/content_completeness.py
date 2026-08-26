@@ -206,7 +206,7 @@ class ContentCompletenessEvaluator(BaseEvaluator):
                 template_id=verdict_prompt_id,
                 variables=variables,
                 evidence_dir=ev_dir,
-                provider_name=self.params.get("llm_provider"),
+                provider_name=self.params.get("llm_role"),
                 judge_id_suffix="content_verdict_0",
             )
         except Exception:

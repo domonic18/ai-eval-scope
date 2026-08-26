@@ -66,11 +66,14 @@ class ScenarioMetricsCalculator:
             metric_keys.update(r.stage_metrics.keys())
         # 从 expressions 提取变量名：支持 mean(soft)、gated_mean(reward, format_gate) 等形式
         import re
+
         for d in self.definitions:
-            for match in re.finditer(r'(?:mean|gated_mean|count|sum|min|max|abs|round)\s*\(([^)]+)\)', d.expression):
-                for v in match.group(1).split(','):
-                    v = v.strip().split('.')[0]
-                    if v and v not in ('total', 'len'):
+            for match in re.finditer(
+                r"(?:mean|gated_mean|count|sum|min|max|abs|round)\s*\(([^)]+)\)", d.expression
+            ):
+                for v in match.group(1).split(","):
+                    v = v.strip().split(".")[0]
+                    if v and v not in ("total", "len"):
                         metric_keys.add(v)
         for key in metric_keys:
             ctx[key] = [r.stage_metrics.get(key, 0.0) for r in results]

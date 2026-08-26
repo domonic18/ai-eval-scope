@@ -53,6 +53,7 @@ model Organization {
   members      OrgMembership[]
   projects     Project[]
   joinRequests JoinRequest[]
+  secrets      Secret[]
 
   @@map("organizations")
 }
@@ -331,9 +332,10 @@ model Scenario {
   ruleSets    RuleSetAsset[]
   prompts     PromptTemplateAsset[]
   datasets    DatasetAsset[]
-  sutConfigs  SUTConfigAsset[]
+  sutConfigs   SutConfigAsset[]
   inferencers InferencerAsset[]
   defaults    DefaultsAsset[]
+  taskSets    TaskSetAsset[]
 
   @@map("scenarios")
 }
@@ -409,7 +411,28 @@ model DatasetAsset {
   @@map("dataset_assets")
 }
 
-model SUTConfigAsset {
+// 评测任务集资产（scenario 级，随场景包 task_sets/ 同步，arch/16 §2.1——考卷内嵌于包）。
+model TaskSetAsset {
+  id          String   @id @default(uuid())
+  scenarioId  String   @map("scenario_id")
+  packageId   String?  @map("package_id")
+  assetId     String   @map("asset_id") // 任务集文件 stem（如 default）
+  version     String
+  labels      String[] @default([])
+  contentHash String   @map("content_hash")
+  content     Json     @db.JsonB // 完整 task_set YAML 解析结果
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  scenario    Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@unique([scenarioId, assetId, version])
+  @@map("task_set_assets")
+}
+
+// SUT 接入配置资产（scenario 级，随场景包 sut_configs/ 同步，arch/16 §2.1）。
+// 模型名用 Sut 非 SUT：Prisma 会把 SUTConfigAsset 驼峰化为 sUTConfigAsset（缩写陷阱）；
+// 表名经 @@map 保持 sut_config_assets，改名零迁移（无既有代码引用）。
+model SutConfigAsset {
   id          String   @id @default(uuid())
   scenarioId  String   @map("scenario_id")
   packageId   String?  @map("package_id")
@@ -484,6 +507,7 @@ model LlmModel {
   id              String   @id @default(uuid())
   name            String
   provider        String // openai | anthropic
+  role            String   @default("text") // LLM③（arch/16 §6.2-四）：text | vision | agent——executor 按角色拉取
   baseUrl         String? @map("base_url")
   apiKeyEncrypted String  @map("api_key_encrypted")
   modelName       String  @map("model_name")
@@ -519,4 +543,22 @@ model WebhookDelivery {
 
   @@index([projectId, createdAt])
   @@map("webhook_deliveries")
+}
+
+// 平台 Secrets（org 级通用 KV，GitHub Secrets 式，arch/16 §2.4）：
+// 值 AES-256-GCM 加密存储（复用 PLATFORM_KEY_ENCRYPTION_KEY 设施），
+// 页面写后不可读（列表只显名称与时间）；executor 经 /api/public/secrets
+// 鉴权拉取后注入进程 env（CredentialStore env 通道读取）。
+model Secret {
+  id              String   @id @default(uuid())
+  orgId           String   @map("org_id")
+  name            String
+  valueEncrypted  String   @map("value_encrypted")
+  createdBy       String   @map("created_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  org             Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, name])
+  @@map("secrets")
 }

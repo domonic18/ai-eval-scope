@@ -132,7 +132,9 @@ def package_list(
 def package_pull(
     ref: str = typer.Argument(..., help="scenario/package:version_or_label"),
     remote: str | None = typer.Option(
-        None, "--remote", help="远端仓库基址（如 http://localhost:9000）；默认读 AGENT_EVAL_REGISTRY_URL"
+        None,
+        "--remote",
+        help="远端仓库基址（如 http://localhost:9000）；默认读 AGENT_EVAL_REGISTRY_URL",
     ),
 ) -> None:
     """从线上拉取场景包到本地缓存（~/.agent_eval/packages/）。"""

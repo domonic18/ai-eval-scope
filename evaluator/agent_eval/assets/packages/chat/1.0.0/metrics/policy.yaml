@@ -1,0 +1,69 @@
+# chat 默认场景配置 — 对话型 SUT 的聚合策略与指标定义（跨语言单一源）
+# 镜像 code policy.yaml 契约：aggregation_policy + metric_definitions
+
+aggregation_policy:
+  id: chat-default
+  scenario_id: chat
+  stage_weights:
+    - stage_id: format
+      weight: 1.0
+      is_gate: true
+    - stage_id: quality
+      weight: 1.0
+      is_gate: false
+      skip_tiers_in_reward: [hard_gate, hard_score]
+      id: quality
+      evaluator_weights:
+        chat.answer_exact: 0.4
+        chat.answer_quality: 0.6
+  normalize_to: [0.0, 1.0]
+
+metric_definitions:
+  - id: chat:delivery_rate
+    name: 回答交付率
+    summary: SUT 是否产生非空回答文件
+    expression: "count(format_gate) / total"
+    threshold: 0.9
+    unit: ratio
+    explain:
+      title: "回答交付率 · Delivery Rate"
+      rows:
+        - dt: 定义
+          dd: "产出非空回答（answer.md）的样本占比——没答上来就谈不上质量。"
+          tone: primary
+        - dt: 计算
+          dd: "回答门控通过的样本数 ÷ 全部样本数"
+        - dt: 标准
+          dd: "达标线 ≥ 0.90；低于则交付不稳定。"
+          tone: danger
+  - id: chat:quality
+    name: 回答质量
+    summary: 答案精确匹配与 LLM 质量评分的加权综合
+    expression: "mean(quality)"
+    threshold: null
+    unit: score
+    explain:
+      title: "回答质量 · Quality"
+      rows:
+        - dt: 定义
+          dd: "答案精确匹配（0.4，声明 expected.answer 的任务二值计分）与回答质量 LLM 评分（0.6）加权平均的软质量分（独立指标，不混入综合得分）。"
+          tone: primary
+        - dt: 范围
+          dd: "[0, 1]，越高越好；逐样本精确匹配明细见 rule_results"
+  - id: chat:reward
+    name: 综合得分
+    summary: 对话质量综合评分（回答门控 + 质量加权，归一化到 [0,1]）
+    expression: "mean(reward)"
+    threshold: 0.7
+    unit: score
+    explain:
+      title: "综合得分 · Reward"
+      rows:
+        - dt: 定义
+          dd: "归一化到 [0,1] 的综合分，融合回答门控与回答质量。"
+          tone: primary
+        - dt: 计算
+          dd: "回答门控 + 回答质量加权（按 stage_weights）"
+        - dt: 标准
+          dd: "达标线 ≥ 0.70；对话能力合格。"
+          tone: success
