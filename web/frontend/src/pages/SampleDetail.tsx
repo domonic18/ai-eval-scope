@@ -210,6 +210,11 @@ export default function SampleDetail() {
               {failedCount} 项约束失败
             </SemPill>
           )}
+          {skippedCount > 0 && (
+            <SemPill tone="neutral" dot>
+              {skippedCount} 项跳过
+            </SemPill>
+          )}
         </div>
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={() => toast.info("请在运行详情的样本表中切换样本")}>上一个</Button>
