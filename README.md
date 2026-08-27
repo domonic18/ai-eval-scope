@@ -69,79 +69,18 @@ uv sync --extra agent        # DeepAgents 底座（可选，run/pipeline 在线�
 
 ## 使用
 
-### 示例：评估课件产出物
-
-以项目自带的 `samples/大单元学习总导/`（HTML 课件目录）为例：
+快速体验（评估自带课件样例，无需配置 LLM）：
 
 ```bash
 cd evaluator
-
-# ① 打包（自动遍历目录，task-id 取目录名"大单元学习总导"）
-uv run agent-eval pack \
-  --source-dir ../samples/大单元学习总导/ \
-  --output-dir workspace/packages
-
-# ② 评估（引用内置 courseware 场景包，缺省用其 default_rule_set = coursework-vision）
-uv run agent-eval eval \
-  --package-dir workspace/packages/大单元学习总导/ \
-  --package courseware
-
-# ③ 查看报告
+uv run agent-eval pack --source-dir ../samples/大单元学习总导/ --output-dir workspace/packages
+uv run agent-eval eval --package-dir workspace/packages/大单元学习总导/ --package courseware
 cat workspace/runs/*/reports/summary.md
 ```
 
-不配置 LLM 时，Rule-based 评估器（格式门控 + 常识阶段的规则/事实/公式检查）正常运行；LLM Judge 评估器（质量阶段）自动降级为 `score=0.7`；多模态视觉评估（`vision.quality`）需 `--extra vision` 与已配置的视觉模型，未配置时跳过。
+在线评测被测 Agent：`uv sync --extra llm --extra agent` 后，`models login` 配置执行侧模型、`secrets set` 录入 SUT 凭证，即可 `agent-eval pipeline --package chat --task "safety_*" --upload` 一键贯通（执行 → 评估 → 报告 → 上传）。
 
-### 示例：在线评测被测 Agent
-
-```bash
-uv sync --extra llm --extra agent     # 执行底座
-uv run agent-eval models login        # 配置执行侧模型
-uv run agent-eval secrets set SASAN.username   # 被测系统凭证
-uv run agent-eval secrets set SASAN.password
-uv run agent-eval pipeline --package chat --task "safety_*" --upload   # 一键贯通
-```
-
-`run` 只执行不评估；`pipeline` 执行 → 评估 → 报告 → 上传单 run_id 贯通。任务选择支持精确 ID / glob / 序号范围 / `a:b` ID 范围 / `!排除`（如 `"safety_*,!safety_porn_009"`）。
-
-### 命令一览
-
-完整用法、参数说明与更多实战见 **[CLI 使用教程](./docs/guide/CLI使用教程.md)**。
-
-| 命令 | 说明 |
-|------|------|
-| `agent-eval pack` | 将产出物打包为标准 ExecutionPackage |
-| `agent-eval eval` | 对 ExecutionPackage 执行评估（`--package <场景包>` 引用规则集/提示词/指标策略） |
-| `agent-eval run` | 执行被测 Agent（ExecutionAgent 驱动），生成执行包（`--package/--task/--sut-name/--llm-role/--max-turns`） |
-| `agent-eval pipeline` | 完整流水线：执行被测 Agent → 评估 → 报告/上传（单 run_id 贯通） |
-| `agent-eval upload` | 把历史运行的评估结果回填到可观测平台（API Key 摄取） |
-| `agent-eval models {login,list,test,logout}` | LLM API Key 与各角色模型配置（保存于 `~/.agent_eval/llm.json`，0600） |
-| `agent-eval secrets {set,list,delete}` | SUT 凭证管理（本机密钥区 0600；云端经平台 Secrets 注入） |
-| `agent-eval package {init,validate,list,pull}` | 场景包创建/校验/发现/拉取 |
-| `agent-eval suite {plan,run}` | 声明式评测矩阵（suite.yaml 批量运行与对照） |
-| `agent-eval rule-set {validate,list-templates}` | 规则集校验与模板浏览 |
-| `agent-eval dataset {download,list}` | 评测数据集下载与索引（详见 [10 数据集下载设计](./docs/arch/10数据集下载设计.md)） |
-| `agent-eval knowledge {convert,extract,merge,audit,list}` | 知识库构建管道（详见 [11 知识点完善管道系统设计](./docs/arch/11知识点完善管道系统设计.md)） |
-| `agent-eval version` | 显示版本信息 |
-
-均需在 `evaluator/` 下执行：`cd evaluator && uv run agent-eval <command> --help`。
-
-### 输出
-
-每次运行在 `workspace/` 目录（默认由 `WORKSPACE_DIR` 控制，缺省 `./workspace`）下生成独立 run 目录：
-
-- `runs/{id}/run_manifest.json` — 运行绑定登记（模式/场景包/任务集/SUT/内容指纹）
-- `runs/{id}/packages/{task}/` — 各任务执行包（含执行轨迹 trace）
-- `runs/{id}/results/{task}/report.md` — 任务报告（人类可读，evidence/ 存截图与 judge 记录）
-- `runs/{id}/reports/summary.md` — 聚合报告（DR/CPR/Reward）
-- `runs/{id}/agent_logs/` — ExecutionAgent 结构化日志
-- `cache/` — 跨运行评估缓存（键含执行包内容指纹 + LLM 配置指纹，内容不变不重复调 LLM）
-
-### 新增评估场景
-
-系统是**场景无关 + 数据驱动**的——聚合策略、指标定义、评估器集合全来自场景包配置，不写死任何场景。除内置的课件（courseware）外，已内置 **代码生成（code）** 场景作为可运行范例（含专属 `code.correctness`/`code.style` LLM Judge，经 `entry_points` 随包加载）。
-
-新增自己的场景（RAG / 对话 / 自定义）见 [场景扩展指南](./docs/arch/14场景扩展指南.md)：写包（清单 + 指标策略 + 规则集 + 提示词），声明 `entry_points`（如需专属评估器），导入即可端到端评估。
+**完整命令与参数说明（run / pipeline / suite / models / secrets / package / dataset …）、`--task` 任务选择语法、输出目录结构与 FAQ 见 [CLI 使用教程](./docs/guide/CLI使用教程.md)。**
 
 ## 可观测平台
 
