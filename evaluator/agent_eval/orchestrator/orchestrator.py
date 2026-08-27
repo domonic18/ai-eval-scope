@@ -246,12 +246,19 @@ class Orchestrator:
             sample_result = self.pipeline_engine.evaluate_sample(pkg, context)
 
             # 过程指标注入（Sprint 9 v6.0）：执行链路的轮次/工具调用/耗时来自包内
-            # trace与 metrics（缓存命中路径同样经过此处；缺失时保持 0）
-            _resp = ((pkg.trace or {}).get("response") or {}) if isinstance(pkg.trace, dict) else {}
-            sample_result.agent_turns = int(_resp.get("turns") or _resp.get("messages") or 0)
+            # trace 与 metrics（缓存命中路径同样经过此处；缺失时保持 0）。
+            # trace 兼容两种形态：Agent 骨架（response.turns/tool_calls）与
+            # LLM write_package 直写的 SUT-run 形态（顶层 turns_used）。
+            _trace = pkg.trace if isinstance(pkg.trace, dict) else {}
+            _resp = _trace.get("response") if isinstance(_trace.get("response"), dict) else {}
+            sample_result.agent_turns = int(
+                _resp.get("turns") or _trace.get("turns_used") or _resp.get("messages") or 0
+            )
             sample_result.agent_tool_calls = int(_resp.get("tool_calls") or 0)
             _pkg_metrics = pkg.metrics if isinstance(pkg.metrics, dict) else {}
-            sample_result.agent_exec_ms = float(_pkg_metrics.get("total_duration_ms") or 0.0)
+            sample_result.agent_exec_ms = float(
+                _pkg_metrics.get("total_duration_ms") or _resp.get("duration_ms") or 0.0
+            )
 
             sample_results.append(sample_result)
 

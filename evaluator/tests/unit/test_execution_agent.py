@@ -414,3 +414,37 @@ def test_extract_instruction_variants() -> None:
     # 纯字符串 input
     t3 = TaskModel(id="t3", input={"instruction": "直接文本"})
     assert ExecutionAgent._extract_instruction(t3) == "直接文本"
+
+
+def test_trace_merge_preserves_llm_sut_run_and_adds_agent_stats(tmp_path, monkeypatch) -> None:
+    """merge 语义（Sprint 9 v6.0）：LLM write_package 已写 SUT-run 形态 trace/metrics 时，
+    Agent 过程统计以 setdefault 补充，不覆盖其字段。"""
+    import asyncio
+
+    _fix_run_id(monkeypatch)
+    graph = _install_fakes(monkeypatch, FakeGraph(result={"messages": _messages()}))
+    assert graph is not None
+    agent = _agent(tmp_path)
+    agent.sut_tools.workspace_dir = _pkg_root(tmp_path)
+    # 模拟 LLM 已通过 write_package 工具写入 SUT-run 形态（真实 pipeline 运行实测形态）
+    asyncio.run(
+        agent.sut_tools.write_package(
+            task_id="task_1",
+            success=True,
+            trace={"run_id": "sut-r", "thread_id": "th", "sut_response": "答", "turns_used": 1},
+            metrics={"response_length": 920, "status": "success"},
+        )
+    )
+    package = asyncio.run(agent.run_task(_task()))
+    assert package.manifest.status == "success"
+    trace = _read_json(_pkg_root(tmp_path) / "task_1" / "trace.json")
+    # LLM 字段保留
+    assert trace["run_id"] == "sut-r"
+    assert trace["sut_response"] == "答"
+    # Agent 过程统计补充（response.* + started/finished）
+    assert "turns" in trace["response"]
+    assert "tool_calls" in trace["response"]
+    assert "duration_ms" in trace["response"]
+    metrics = _read_json(_pkg_root(tmp_path) / "task_1" / "metrics.json")
+    assert metrics["response_length"] == 920  # LLM 字段保留
+    assert "total_duration_ms" in metrics  # 过程统计补充

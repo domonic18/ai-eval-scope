@@ -319,9 +319,22 @@ class ExecutionAgent:
             task_file.write_text(task.model_dump_json(indent=2), encoding="utf-8")
 
     def _ensure_trace_file(self, session: AgentSession, package_dir: Path) -> None:
+        """写/补全 trace.json（merge 语义）。
+
+        LLM 经 write_package 工具已写入 SUT-run 形态（run_id/thread_id/sut_response/
+        turns_used…）时保留其字段，仅以 setdefault 补充 Agent 过程统计
+        （messages/tool_calls/turns/duration_ms，Sprint 9 v6.0 过程指标数据源）；
+        未写时创建完整骨架并回填 SUT 最终回答（v4.6.4）。
+        """
         trace_file = package_dir / "trace.json"
+        trace: dict[str, Any] = {}
         if trace_file.exists():
-            return
+            try:
+                loaded = json.loads(trace_file.read_text(encoding="utf-8"))
+                if isinstance(loaded, dict):
+                    trace = loaded
+            except (OSError, ValueError):
+                trace = {}
         duration_ms = 0.0
         try:
             start = datetime.fromisoformat(session.started_at)
@@ -329,24 +342,24 @@ class ExecutionAgent:
             duration_ms = (end - start).total_seconds() * 1000
         except ValueError:
             pass
-        response: dict[str, Any] = {
-            "messages": len(session.messages),
-            "tool_calls": session.tool_call_count,
-            # 过程指标（Sprint 9 v6.0）：真轮次（AI 消息数）与执行耗时（与 metrics 同源）
-            "turns": session.turns_used,
-            "duration_ms": duration_ms,
-        }
+        response = trace.setdefault("response", {})
+        if not isinstance(response, dict):
+            response = trace["response"] = {}
+        response.setdefault("messages", len(session.messages))
+        response.setdefault("tool_calls", session.tool_call_count)
+        response.setdefault("turns", session.turns_used)
+        response.setdefault("duration_ms", duration_ms)
         # 回填 SUT 最终回答（trace 只存计数时下游 eval 拿不到评估对象，v4.6.4）
-        sut_run = self._last_sut_run()
-        if sut_run is not None:
-            response["sut"] = sut_run
-        trace = {
-            "request": {"executor": "ExecutionAgent", "llm_role": self.config.llm_role},
-            "response": response,
-            "started_at": session.started_at,
-            "finished_at": session.finished_at or _now_iso(),
-            "error": None,
-        }
+        if "sut" not in response:
+            sut_run = self._last_sut_run()
+            if sut_run is not None:
+                response["sut"] = sut_run
+        trace.setdefault(
+            "request", {"executor": "ExecutionAgent", "llm_role": self.config.llm_role}
+        )
+        trace.setdefault("started_at", session.started_at)
+        trace.setdefault("finished_at", session.finished_at or _now_iso())
+        trace.setdefault("error", None)
         trace_file.write_text(json.dumps(trace, ensure_ascii=False, indent=2), encoding="utf-8")
 
     def _last_sut_run(self) -> dict[str, Any] | None:
@@ -369,9 +382,16 @@ class ExecutionAgent:
         (output_dir / "answer.md").write_text(text, encoding="utf-8")
 
     def _ensure_metrics_file(self, session: AgentSession, package_dir: Path) -> None:
+        """写/补全 metrics.json（merge 语义：保留 LLM 已写字段，setdefault 补过程统计）。"""
         metrics_file = package_dir / "metrics.json"
+        metrics: dict[str, Any] = {}
         if metrics_file.exists():
-            return
+            try:
+                loaded = json.loads(metrics_file.read_text(encoding="utf-8"))
+                if isinstance(loaded, dict):
+                    metrics = loaded
+            except (OSError, ValueError):
+                metrics = {}
         duration_ms = 0.0
         try:
             start = datetime.fromisoformat(session.started_at)
@@ -379,11 +399,11 @@ class ExecutionAgent:
             duration_ms = (end - start).total_seconds() * 1000
         except ValueError:
             pass
-        metrics = ProcessMetrics(
+        agent_metrics = ProcessMetrics(
             total_duration_ms=duration_ms,
             steps=len(session.messages),
             tool_calls=session.tool_call_count,
-        )
-        metrics_file.write_text(
-            json.dumps(metrics.model_dump(), ensure_ascii=False, indent=2), encoding="utf-8"
-        )
+        ).model_dump()
+        for k, v in agent_metrics.items():
+            metrics.setdefault(k, v)
+        metrics_file.write_text(json.dumps(metrics, ensure_ascii=False, indent=2), encoding="utf-8")
