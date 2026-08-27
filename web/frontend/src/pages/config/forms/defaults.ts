@@ -58,3 +58,42 @@ export function createEmptyRuleSet(_assetId: string, scenarioId: string): Record
     rules: [],
   }
 }
+
+/** 新建任务集（考卷）的最小骨架：单条含 instruction/intent/must_mention 的任务（arch/13 §四）。 */
+export function createEmptyTaskSet(assetId: string): Record<string, unknown> {
+  return {
+    id: assetId,
+    name: "",
+    description: "",
+    tasks: [
+      {
+        id: "task_001",
+        input: { instruction: "", intent: "" },
+        expected: { must_mention: [] },
+        constraints: { max_turns: 2 },
+      },
+    ],
+  }
+}
+
+/**
+ * 新建 SUT 接入配置的最小骨架（content = sut: 子树，asset_id 语义 = name）。
+ * channel/protocol_flavor/auth 取 chat 内置包现行值作合理缺省；凭证仅 credential_ref 引用。
+ */
+export function createEmptySutConfig(assetId: string): Record<string, unknown> {
+  return {
+    name: assetId,
+    channel: "agent_protocol",
+    base_url: "",
+    protocol_flavor: "commands",
+    exec_mode: "wait",
+    timeout: 300,
+    configurable: {},
+    auth: {
+      type: "api_login",
+      credential_ref: "",
+      login: { method: "POST", path: "", body_template: "" },
+      extract: { token_path: "token", token_type: "Bearer" },
+    },
+  }
+}

@@ -6,16 +6,10 @@ import { Card, CardContent } from "../../components/shadcn/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/shadcn/tabs"
 import { Badge } from "../../components/shadcn/badge"
 import { Button } from "../../components/shadcn/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/shadcn/dialog"
-import { Input } from "../../components/shadcn/input"
-import { Label } from "../../components/shadcn/label"
-import { Textarea } from "../../components/shadcn/textarea"
-import { toast } from "sonner"
-import { api, type ScenarioCatalog, type CatalogEntry, type DatasetCatalogEntry } from "../../api/client"
+import { api, type ScenarioCatalog, type CatalogEntry, type DatasetCatalogEntry, type SutCatalogEntry, type TaskSetCatalogEntry } from "../../api/client"
 import { canEditConfig } from "../../store/auth"
-import { Package, Pencil, Plus } from "lucide-react"
-
-const VERSION_LABELS = ["production", "staging", "latest"] as const
+import { Pencil, Plus } from "lucide-react"
+import { PublishPackageDialog } from "./PublishPackageDialog"
 
 const errMsg = (e: unknown, fb: string) =>
   (e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? fb
@@ -67,6 +61,8 @@ export default function ScenarioConfig() {
             <TabsTrigger value="rules">规则集 ({catalog.rule_sets.length})</TabsTrigger>
             <TabsTrigger value="prompts">提示词 ({catalog.prompts.length})</TabsTrigger>
             <TabsTrigger value="datasets">数据集 ({catalog.datasets.length})</TabsTrigger>
+            <TabsTrigger value="task_sets">任务集 ({catalog.task_sets?.length ?? 0})</TabsTrigger>
+            <TabsTrigger value="sut_configs">SUT 接入 ({catalog.sut_configs?.length ?? 0})</TabsTrigger>
           </TabsList>
           <TabsContent value="rules">
             <EntryTable
@@ -85,10 +81,22 @@ export default function ScenarioConfig() {
           <TabsContent value="datasets">
             <DatasetTable rows={catalog.datasets} onOpen={(aid) => nav(`/config/scenarios/${id}/edit?select=datasets:${aid}`)} />
           </TabsContent>
+          <TabsContent value="task_sets">
+            <TaskSetTable
+              rows={catalog.task_sets ?? []}
+              onOpen={(aid) => nav(`/config/scenarios/${id}/edit?select=task-sets:${aid}`)}
+            />
+          </TabsContent>
+          <TabsContent value="sut_configs">
+            <SutTable
+              rows={catalog.sut_configs ?? []}
+              onOpen={(aid) => nav(`/config/scenarios/${id}/edit?select=sut-configs:${aid}`)}
+            />
+          </TabsContent>
         </Tabs>
       ) : null}
 
-      <PublishDialog open={publishOpen} onOpenChange={setPublishOpen} scenarioId={id} />
+      <PublishPackageDialog open={publishOpen} onOpenChange={setPublishOpen} scenarioId={id} />
     </Page>
   )
 }
@@ -185,102 +193,67 @@ function DatasetTable({ rows, onOpen }: { rows: DatasetCatalogEntry[]; onOpen: (
   )
 }
 
-function PublishDialog({
-  open,
-  onOpenChange,
-  scenarioId,
-}: {
-  open: boolean
-  onOpenChange: (v: boolean) => void
-  scenarioId: string
-}) {
-  const [assetId, setAssetId] = useState("")
-  const [version, setVersion] = useState("1.0.0")
-  const [label, setLabel] = useState<string>("production")
-  const [name, setName] = useState("")
-  const [yaml, setYaml] = useState("package:\n  id: \n  scenario: \n  version: 1.0.0\n")
-  const [busy, setBusy] = useState(false)
-
-  async function submit() {
-    setBusy(true)
-    try {
-      // 前端把整段 YAML manifest 文本存入 content，由后端解析
-      const content: Record<string, unknown> = { manifest_yaml: yaml }
-      await api.publishPackage(scenarioId, {
-        asset_id: assetId,
-        version,
-        labels: label ? [label] : [],
-        name: name || undefined,
-        content,
-      })
-      toast.success("包版本已发布")
-      onOpenChange(false)
-    } catch (e) {
-      toast.error(errMsg(e, "发布失败"))
-    } finally {
-      setBusy(false)
-    }
-  }
-
+function TaskSetTable({ rows, onOpen }: { rows: TaskSetCatalogEntry[]; onOpen: (assetId: string) => void }) {
+  if (rows.length === 0)
+    return (
+      <Card>
+        <CardContent className="py-8 text-center text-sm text-muted-foreground">无任务集（考卷）</CardContent>
+      </Card>
+    )
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Package className="size-4" /> 发布场景包版本
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label>包 ID (asset_id)</Label>
-              <Input value={assetId} onChange={(e) => setAssetId(e.target.value)} placeholder="如 quality" />
-            </div>
-            <div className="space-y-1">
-              <Label>版本</Label>
-              <Input value={version} onChange={(e) => setVersion(e.target.value)} />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label>标签</Label>
-              <select
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                value={label}
-                onChange={(e) => setLabel(e.target.value)}
-              >
-                <option value="">（无）</option>
-                {VERSION_LABELS.map((l) => (
-                  <option key={l} value={l}>
-                    {l}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <Label>展示名</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="可选" />
-            </div>
-          </div>
-          <div className="space-y-1">
-            <Label>清单 (agent_eval.yaml)</Label>
-            <Textarea
-              className="font-mono text-xs"
-              rows={8}
-              value={yaml}
-              onChange={(e) => setYaml(e.target.value)}
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            取消
-          </Button>
-          <Button onClick={submit} disabled={busy || !assetId || !version}>
-            {busy ? "发布中…" : "发布"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <DataTable
+      rows={rows}
+      onRowClick={(r) => onOpen(r.asset_id)}
+      columns={[
+        { key: "asset_id", title: "ID", render: (r) => <span className="font-mono text-xs">{r.asset_id}</span> },
+        { key: "name", title: "名称", render: (r) => r.name ?? "—" },
+        { key: "task_count", title: "任务数", render: (r) => <Badge variant="secondary">{r.task_count}</Badge> },
+        { key: "version", title: "版本", render: (r) => <Badge variant="secondary">{r.version}</Badge> },
+        { key: "description", title: "描述", render: (r) => <span className="text-muted-foreground">{r.description ?? "—"}</span> },
+        {
+          key: "actions",
+          title: "",
+          render: (r) =>
+            canEditConfig() ? (
+              <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={(e) => { e.stopPropagation(); onOpen(r.asset_id) }}>
+                <Pencil className="size-3" /> 编辑
+              </Button>
+            ) : null,
+        },
+      ]}
+      rowKey={(r) => r.asset_id}
+    />
+  )
+}
+
+function SutTable({ rows, onOpen }: { rows: SutCatalogEntry[]; onOpen: (assetId: string) => void }) {
+  if (rows.length === 0)
+    return (
+      <Card>
+        <CardContent className="py-8 text-center text-sm text-muted-foreground">无 SUT 接入配置</CardContent>
+      </Card>
+    )
+  return (
+    <DataTable
+      rows={rows}
+      onRowClick={(r) => onOpen(r.asset_id)}
+      columns={[
+        { key: "asset_id", title: "SUT", render: (r) => <span className="font-mono text-xs">{r.asset_id}</span> },
+        { key: "channel", title: "通道", render: (r) => <Badge variant="secondary">{r.channel ?? "—"}</Badge> },
+        { key: "version", title: "版本", render: (r) => <Badge variant="secondary">{r.version}</Badge> },
+        { key: "description", title: "描述", render: (r) => <span className="text-muted-foreground">{r.description ?? "—"}</span> },
+        {
+          key: "actions",
+          title: "",
+          render: (r) =>
+            canEditConfig() ? (
+              <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={(e) => { e.stopPropagation(); onOpen(r.asset_id) }}>
+                <Pencil className="size-3" /> 编辑
+              </Button>
+            ) : null,
+        },
+      ]}
+      rowKey={(r) => r.asset_id}
+    />
   )
 }

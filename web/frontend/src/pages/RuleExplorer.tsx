@@ -35,13 +35,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/shadcn/c
 import { Badge } from "../components/shadcn/badge"
 import { api, type CatalogEntry } from "../api/client"
 import type { MetricDef, MetricExplainRow } from "../types"
+import { SutConfigDetail, TaskSetDetail } from "./explorer/TaskSetSutDetails"
 import {
   BookOpen,
   ChevronRight,
+  ClipboardList,
   Database,
   FileText,
   Gauge,
   Layers,
+  Plug,
 } from "lucide-react"
 
 // 本地数据类型（只读详情视图使用）
@@ -100,6 +103,8 @@ type Selection =
   | { type: "rule-set"; assetId: string }
   | { type: "prompt"; assetId: string }
   | { type: "dataset"; assetId: string }
+  | { type: "task-set"; assetId: string }
+  | { type: "sut-config"; assetId: string }
   | { type: "policy" }
   | { type: "metrics" }
 
@@ -110,6 +115,8 @@ export default function RuleExplorer() {
     rule_sets: CatalogEntry[]
     prompts: CatalogEntry[]
     datasets: CatalogEntry[]
+    task_sets?: CatalogEntry[]
+    sut_configs?: CatalogEntry[]
   } | null>(null)
   const [defs, setDefs] = useState<MetricDef[]>([])
   const [hasPolicy, setHasPolicy] = useState(false)
@@ -176,6 +183,30 @@ export default function RuleExplorer() {
                 />
               ))}
             </TreeSection>
+            <TreeSection icon={ClipboardList} label={`任务集 (${catalog?.task_sets?.length ?? 0})`}>
+              {catalog?.task_sets?.map((t) => (
+                <TreeItem
+                  key={t.asset_id}
+                  active={sel?.type === "task-set" && sel.assetId === t.asset_id}
+                  icon={ClipboardList}
+                  name={t.asset_id}
+                  version={t.version}
+                  onClick={() => setSel({ type: "task-set", assetId: t.asset_id })}
+                />
+              ))}
+            </TreeSection>
+            <TreeSection icon={Plug} label={`SUT 接入 (${catalog?.sut_configs?.length ?? 0})`}>
+              {catalog?.sut_configs?.map((s) => (
+                <TreeItem
+                  key={s.asset_id}
+                  active={sel?.type === "sut-config" && sel.assetId === s.asset_id}
+                  icon={Plug}
+                  name={s.asset_id}
+                  version={s.version}
+                  onClick={() => setSel({ type: "sut-config", assetId: s.asset_id })}
+                />
+              ))}
+            </TreeSection>
             {hasPolicy && (
               <TreeSection icon={Gauge} label="聚合策略">
                 <TreeItem
@@ -202,6 +233,8 @@ export default function RuleExplorer() {
           {sel?.type === "rule-set" && <RuleSetDetail scenarioId={id} assetId={sel.assetId} />}
           {sel?.type === "prompt" && <PromptDetail scenarioId={id} assetId={sel.assetId} />}
           {sel?.type === "dataset" && <DatasetDetail scenarioId={id} assetId={sel.assetId} />}
+          {sel?.type === "task-set" && <TaskSetDetail scenarioId={id} assetId={sel.assetId} />}
+          {sel?.type === "sut-config" && <SutConfigDetail scenarioId={id} assetId={sel.assetId} />}
           {sel?.type === "policy" && <PolicyDetail scenarioId={id} />}
           {sel?.type === "metrics" && <MetricsDetail defs={defs} />}
         </div>
@@ -605,9 +638,9 @@ function MetricCard({ def }: { def: MetricDef }) {
   )
 }
 
-// ── 共享组件 ──
+// ── 共享组件（explorer/TaskSetSutDetails 复用） ──
 
-function DetailHeader({ title, sub, meta }: { title: string; sub: string; meta: { label: string; value: string }[] }) {
+export function DetailHeader({ title, sub, meta }: { title: string; sub: string; meta: { label: string; value: string }[] }) {
   return (
     <div>
       <h2 className="text-lg font-semibold">{title}</h2>
@@ -625,7 +658,7 @@ function DetailHeader({ title, sub, meta }: { title: string; sub: string; meta: 
   )
 }
 
-function CodeBlock({ label, content, highlightVars }: { label: string; content: string; highlightVars?: boolean }) {
+export function CodeBlock({ label, content, highlightVars }: { label: string; content: string; highlightVars?: boolean }) {
   return (
     <Card>
       <CardHeader><CardTitle className="text-sm">{label}</CardTitle></CardHeader>
@@ -651,7 +684,7 @@ function CodeBlock({ label, content, highlightVars }: { label: string; content: 
   )
 }
 
-function LoadingCard() {
+export function LoadingCard() {
   return (
     <Card>
       <CardContent className="py-10 text-center text-sm text-muted-foreground">加载中…</CardContent>

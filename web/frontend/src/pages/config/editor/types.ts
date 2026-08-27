@@ -7,7 +7,7 @@
  */
 import type { AssetKind } from "../../../api/client"
 
-/** 可选中对象：`rule-sets:x` / `prompts:y` / `datasets:z` / `policy` / `metrics` */
+/** 可选中对象：`rule-sets:x` / `prompts:y` / `datasets:z` / `task-sets:t` / `sut-configs:s` / `policy` / `metrics` */
 export type Selection = string
 export const SPECIAL_SELECTIONS = ["policy", "metrics"] as const
 
@@ -43,7 +43,8 @@ export const parseSelection = (
   if (idx <= 0) return null
   const kind = sel.slice(0, idx) as AssetKind
   const assetId = sel.slice(idx + 1)
-  if (!assetId || !["rule-sets", "prompts", "datasets"].includes(kind)) return null
+  if (!assetId || !["rule-sets", "prompts", "datasets", "task-sets", "sut-configs"].includes(kind))
+    return null
   return { kind, assetId }
 }
 
