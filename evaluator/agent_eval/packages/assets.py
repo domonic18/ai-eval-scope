@@ -1,4 +1,4 @@
-"""包内资产解析 — 任务集与 SUT 接入配置（arch/16 §2.1）。
+"""包内资产解析 — 任务集与 SUT 接入配置（arch/13 §4.1）。
 
 「怎么评 + 问什么 + 问谁」内聚于场景包：task_sets/（考卷）与 sut_configs/
 （被测系统接入，不含凭证）从包内解析；显式路径参数可覆盖（--include_path 惯例）。
@@ -29,7 +29,7 @@ def resolve_task_set_path(pkg: ResolvedPackage, name: str | None = None) -> Path
     directory = pkg.task_sets_dir
     if not directory.is_dir():
         raise ScenarioPackageValidationError(
-            f"包 {pkg.manifest.ref} 无 task_sets/ 目录（考卷应内嵌于场景包，arch/16 §2.1）",
+            f"包 {pkg.manifest.ref} 无 task_sets/ 目录（考卷应内嵌于场景包，arch/13 §4.1）",
             details={"package": pkg.manifest.ref, "dir": str(directory)},
         )
 
@@ -77,7 +77,7 @@ def resolve_sut_configs_dir(pkg: ResolvedPackage) -> Path:
     if not directory.is_dir() or not any(p.suffix in _YAML_EXTS for p in directory.iterdir()):
         raise ScenarioPackageValidationError(
             f"包 {pkg.manifest.ref} 无 sut_configs/（被测系统接入应内嵌于场景包，"
-            "arch/16 §2.1；eval_only 型场景无此目录）",
+            "arch/13 §4.1；eval_only 型场景无此目录）",
             details={"package": pkg.manifest.ref, "dir": str(directory)},
         )
     return directory
@@ -87,7 +87,7 @@ def select_tasks(
     tasks: list[Any],
     selection: str | None,
 ) -> list[Any]:
-    """按选择表达式过滤任务列表（pytest 风格，arch/16 §2.1）。
+    """按选择表达式过滤任务列表（pytest 风格，arch/13 §4.1）。
 
     语法（逗号分隔多个条件，按序合并）：
       ``identity_001``     精确匹配

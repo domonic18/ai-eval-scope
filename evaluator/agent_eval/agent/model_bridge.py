@@ -1,6 +1,6 @@
 """角色注册表 → LangChain ChatModel 桥接（arch/03 §3.2 v4.6；LLM② 切双形态解析）。
 
-执行 Agent 与评估 LLM 共用同一配置源（固定三角色注册表，arch/16 §6.2-四）：按
+执行 Agent 与评估 LLM 共用同一配置源（固定三角色注册表，arch/13 §19.2）：按
 provider 协议构造 ChatOpenAI（deepseek/openai 兼容协议）或 ChatAnthropic（Anthropic
 兼容协议），带 base_url/api_key/model——模型无关，DeepAgents 底座直接消费。
 langchain 相关包为 [agent] optional extra，此处惰性导入。

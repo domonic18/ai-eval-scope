@@ -1,4 +1,4 @@
-"""CredentialStore — 凭证读取（arch/03 §4.0.1/§4.0.5；arch/16 §2.2 双通道）。
+"""CredentialStore — 凭证读取（arch/03 §4.0.1/§4.0.5；arch/13 §19.1 双通道）。
 
 读取顺序：进程 env（云端注入）→ 本机密钥区文件（`~/.agent_eval/sut_credentials.json`，
 `agent-eval secrets set` 录入）；sut_config 只存 credential_ref 引用。

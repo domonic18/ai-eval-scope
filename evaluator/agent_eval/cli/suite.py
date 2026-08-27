@@ -1,4 +1,4 @@
-"""agent-eval suite — 声明式评测矩阵（arch/16 §五，W6）。
+"""agent-eval suite — 声明式评测矩阵（arch/13 §二十一，W6）。
 
 suite.yaml 声明「不同考卷 × 不同环境」的批量运行，一次展开、逐项执行、
 汇总对照。runs 条目字段：package（场景包引用，必填）、task_set（包内名，

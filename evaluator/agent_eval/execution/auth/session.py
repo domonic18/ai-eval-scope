@@ -2,7 +2,7 @@
 
 SUTSession = token/挂载方式 + 过期时间；进程内缓存 + 落盘持久化
 （workspace/sut_sessions/、0600 权限，过期自动清理）——落盘文件等同凭证管理；
-评测状态聚集于 workspace，清 workspace 即全新重测（arch/16 §三）。
+评测状态聚集于 workspace，清 workspace 即全新重测（arch/03 §7a.8）。
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-# 会话落盘目录（可 env 覆盖）。默认 workspace/sut_sessions/（arch/16 §三）：
+# 会话落盘目录（可 env 覆盖）。默认 workspace/sut_sessions/（arch/03 §7a.8）：
 # 评测状态单一聚集于 workspace——清 workspace 即全新重测（含登录态）；
 # 目录 0600 语义不变。迁移自 ~/.agent_eval/sut_sessions（旧目录存在时自动搬迁）。
 SESSION_DIR_ENV = "AGENT_EVAL_SUT_SESSION_DIR"

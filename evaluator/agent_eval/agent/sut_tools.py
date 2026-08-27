@@ -324,7 +324,7 @@ class SUTToolServer(ToolExporterMixin):
             sut_config_id="agent",
             status=PackageStatus.SUCCESS if success else PackageStatus.FAILED,
         )
-        # W8（arch/16 §六-P2）：执行包内容指纹——先写内容文件再算 hash 回填 manifest，
+        # W8（arch/13 §6.2）：执行包内容指纹——先写内容文件再算 hash 回填 manifest，
         # 评估缓存键恢复内容维度（此前恒 null，包内容变化仍命中旧缓存）
         (package_dir / "manifest.json").write_text(
             manifest.model_dump_json(indent=2), encoding="utf-8"

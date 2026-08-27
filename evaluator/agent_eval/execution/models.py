@@ -169,7 +169,7 @@ class AgentConfig(BaseModel):
         description="工具调用失败最大重试次数",
     )
 
-    # 模型配置（v4.6 双协议桥接；LLM② 起走角色注册表，见 arch/16 §6.2-四）
+    # 模型配置（v4.6 双协议桥接；LLM② 起走角色注册表，见 arch/13 §19.2）
     llm_role: str = Field(
         default=AGENT_DEFAULTS.llm_role,
         description="执行侧 LLM 角色（text|vision|agent），经 build_chat_model 桥接",

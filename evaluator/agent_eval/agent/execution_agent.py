@@ -64,7 +64,7 @@ def _is_recursion_error(error: BaseException) -> bool:
 class ExecutionAgent:
     """基于 DeepAgents 的执行 Agent，端到端驱动评测执行流程。
 
-    - 模型：LLM 角色注册表（arch/16 §6.2-四）→ build_chat_model() 构造 ChatModel（双协议，模型无关）
+    - 模型：LLM 角色注册表（arch/13 §19.2）→ build_chat_model() 构造 ChatModel（双协议，模型无关）
     - 工具：SUT Tools 经 LangChain Tool 显式绑定（白名单），未绑定工具不可用
     - 预算：BudgetGuard 回调（on_llm_end 累计 token/成本，超限抛 BudgetExceededError）
     - 状态：单任务单发 ainvoke，不接 checkpointer（见 _build_graph 说明）
@@ -118,7 +118,7 @@ class ExecutionAgent:
         """
         run_id = run_id or generate_run_id()
         workspace = Path(self.config.workspace_dir)
-        # W7（arch/16 §三）：执行包归位 runs/{run_id}/packages/{task_id}——
+        # W7（arch/03 §7a.8）：执行包归位 runs/{run_id}/packages/{task_id}——
         # 挂 run_id 与 agent_logs/results 同层可关联（旧布局 workspace/{task_id}
         # 同名重跑互相覆盖且无法归属运行）。write_package 的目的地由
         # sut_tools.workspace_dir 决定，逐 run 注入包根。
