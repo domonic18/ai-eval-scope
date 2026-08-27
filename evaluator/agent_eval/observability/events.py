@@ -99,6 +99,10 @@ def build_sample_event(
             "total_duration_ms": sample.total_duration_ms,
             "llm_calls": sample.llm_calls,
             "token_usage": sample.token_usage,
+            # 执行链路过程指标（Sprint 9 v6.0；eval_only 外部包为 0）
+            "agent_turns": sample.agent_turns,
+            "agent_tool_calls": sample.agent_tool_calls,
+            "agent_exec_ms": sample.agent_exec_ms,
         },
     }
 

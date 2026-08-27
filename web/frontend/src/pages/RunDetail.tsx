@@ -64,6 +64,11 @@ interface OverviewData {
   }>
 }
 
+/** 运行模式中文标签：eval_only=仅评估；agent=执行器执行+评估（run 产物）；pipeline=一体化流水线 */
+function modeLabel(mode: string): string {
+  return { eval_only: "仅评估", agent: "Agent 执行", pipeline: "流水线" }[mode] ?? mode
+}
+
 /** 从指标定义中提取大白话描述：优先 summary → explain.定义 → name */
 function metricHint(d: MetricDef): string {
   return d.summary
@@ -150,7 +155,7 @@ export default function RunDetail() {
     <Page>
       <PageHead
         title={<span className="flex items-center gap-2 font-mono">运行 #{run.externalRunId} <StatusBadge status={run.status} /></span>}
-        sub={`${run.mode === "eval_only" ? "仅评估" : run.mode === "pipeline" ? "流水线" : run.mode} 模式 · ${num(run.totalSamples)} 个样本 · ${new Date(run.createdAt).toLocaleString("zh-CN")}`}
+        sub={`${modeLabel(run.mode)} 模式 · ${num(run.totalSamples)} 个样本 · ${new Date(run.createdAt).toLocaleString("zh-CN")}`}
         right={
           <div className="flex gap-2">
             {langfuseUrl && (
@@ -190,7 +195,7 @@ export default function RunDetail() {
         <Sep />
         <span className="inline-flex items-center gap-1.5">
           <span className="text-muted-foreground">评估模式</span>
-          <span className="font-medium">{run.mode === "eval_only" ? "仅评估" : run.mode === "pipeline" ? "流水线" : run.mode}</span>
+          <span className="font-medium">{modeLabel(run.mode)}</span>
         </span>
         <Sep />
         <span className="inline-flex items-center gap-1.5">

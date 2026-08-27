@@ -62,50 +62,35 @@ def run_suite(
     dry_run: bool = typer.Option(False, "--dry-run", help="只打印将执行的 run 命令"),
 ) -> None:
     """逐项执行矩阵（串行），结束后输出汇总对照表。"""
-    import asyncio
-
-    from agent_eval.agent.execution_agent import ExecutionAgent
-    from agent_eval.agent.protocol_tools import AgentProtocolToolServer
-    from agent_eval.config.loader import ConfigLoader
+    from agent_eval.cli._stages import execute_stage, resolve_run_inputs
     from agent_eval.core.exceptions import AgentEvalError
-    from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel
-    from agent_eval.execution.channels.base import create_channel
-    from agent_eval.execution.models import AgentConfig
-    from agent_eval.execution.registry import SUTRegistry
-    from agent_eval.packages.assets import resolve_sut_configs_dir, resolve_task_set_path
-    from agent_eval.packages.manager import PackageManager
     from agent_eval.storage.package import generate_run_id
 
     data = _load_suite(Path(suite_file))
-    mgr = PackageManager()
     results: list[dict[str, Any]] = []
 
     for i, entry in enumerate(data["runs"], 1):
         label = f"[{i}/{len(data['runs'])}]"
         try:
-            pkg = mgr.resolve_ref(str(entry["package"]))
-            task_set_path = resolve_task_set_path(pkg, entry.get("task_set"))
-            sut_dir = resolve_sut_configs_dir(pkg)
-            task_set_model = ConfigLoader.load_task_set(task_set_path)
+            inputs = resolve_run_inputs(
+                str(entry["package"]),
+                task_set=entry.get("task_set"),
+                task_select=str(entry.get("task")) if entry.get("task") else None,
+                sut_name=entry.get("sut"),
+            )
+            pkg = inputs.resolved_pkg
+            assert pkg is not None  # suite 条目必为包引用
 
-            # 条目级任务选择（同 --task 语法）
-            from agent_eval.packages.assets import select_tasks
-
-            task_select = entry.get("task")
-            if task_select:
-                task_set_model.tasks = select_tasks(task_set_model.tasks, str(task_select))
-
-            registry = SUTRegistry.load_dir(sut_dir)
-            sut_name = entry.get("sut")
-            sut = registry.get(str(sut_name)) if sut_name else registry.default
-
-            rprint(f"\n{label} {pkg.manifest.ref} | task_set={task_set_path.stem} | sut={sut.name}")
+            rprint(
+                f"\n{label} {pkg.manifest.ref} | "
+                f"task_set={inputs.task_set_path.stem} | sut={inputs.sut.name}"
+            )
             if dry_run:
                 results.append(
                     {
                         "ref": pkg.manifest.ref,
-                        "ts": task_set_path.stem,
-                        "sut": sut.name,
+                        "ts": inputs.task_set_path.stem,
+                        "sut": inputs.sut.name,
                         "ok": 0,
                         "total": 0,
                     }
@@ -113,31 +98,18 @@ def run_suite(
                 continue
 
             run_id = generate_run_id()
-            workspace = Path("./workspace")
-
-            async def _exec() -> tuple[str, list[Any]]:
-                # 通道生命周期与执行同 event loop（httpx client 绑定创建时 loop）
-                channel = create_channel(sut)
-                assert isinstance(channel, AgentProtocolChannel)  # chat 型场景唯一通道
-                try:
-                    protocol_tools = AgentProtocolToolServer(
-                        channel, default_metadata={"eval_run_id": run_id, "sut_name": sut.name}
-                    )
-                    agent = ExecutionAgent(
-                        AgentConfig(workspace_dir=workspace),
-                        extra_tool_servers=[protocol_tools],
-                    )
-                    return await agent.run_task_set(task_set_model, run_id=run_id)
-                finally:
-                    await channel.aclose()
-
-            _, packages = asyncio.run(_exec())
+            packages = execute_stage(
+                inputs,
+                run_id=run_id,
+                workspace_root=Path("./workspace"),
+                mode="run",
+            )
             ok = sum(1 for p in packages if p.manifest.status == "success")
             results.append(
                 {
                     "ref": pkg.manifest.ref,
-                    "ts": task_set_path.stem,
-                    "sut": sut.name,
+                    "ts": inputs.task_set_path.stem,
+                    "sut": inputs.sut.name,
                     "ok": ok,
                     "total": len(packages),
                 }

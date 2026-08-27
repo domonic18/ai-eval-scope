@@ -60,6 +60,9 @@ class EvalResult:
     scenario_config: Any = None
     # 评估摘要报告（LLM 生成的人话总结，LLM 不可用时为 None）
     summary_report: dict[str, Any] | None = None
+    # 运行模式（上报语义）：eval_only=仅评估；agent=执行器执行 + 评估（run 产物）；
+    # pipeline=一体化流水线（Sprint 9）。由 CLI 按包来源标注，透传至 sink → run event → 平台
+    mode: str = "eval_only"
 
 
 class Orchestrator:
@@ -96,6 +99,8 @@ class Orchestrator:
         llm_signature: str = "",
         no_cache: bool = False,
         scenario_package_dir: Any = None,
+        mode: str = "eval_only",
+        manifest_extra: dict[str, Any] | None = None,
     ) -> EvalResult:
         """eval-only 模式：加载 packages → 评估 → 报告。
 
@@ -142,13 +147,15 @@ class Orchestrator:
 
         run_workspace.write_run_manifest(
             {
-                "mode": "eval_only",
+                "mode": mode,
                 "package_dir": str(package_dir),
                 "project": project,
+                # pipeline 一体化：合并执行阶段的绑定字段（package_ref/sut/…），单次原子写
+                **(manifest_extra or {}),
             }
         )
 
-        logger.info("开始 eval-only 评估", run_id=run_id, package_dir=str(package_dir))
+        logger.info("开始评估", run_id=run_id, package_dir=str(package_dir), mode=mode)
 
         # 2. 为本次评测运行创建 Langfuse Trace
         # 同一运行内的所有 LLM/视觉 LLM 调用都归到这个 trace 下；
@@ -161,7 +168,7 @@ class Orchestrator:
                 name=f"eval:{run_id}",
                 metadata={
                     "run_id": run_id,
-                    "mode": "eval_only",
+                    "mode": mode,
                     "package_dir": str(package_dir),
                     "project": project,
                     "with_vision": with_vision,
@@ -237,6 +244,22 @@ class Orchestrator:
             context["evidence_dir"] = evidence_dir
 
             sample_result = self.pipeline_engine.evaluate_sample(pkg, context)
+
+            # 过程指标注入（Sprint 9 v6.0）：执行链路的轮次/工具调用/耗时来自包内
+            # trace 与 metrics（缓存命中路径同样经过此处；缺失时保持 0）。
+            # trace 兼容两种形态：Agent 骨架（response.turns/tool_calls）与
+            # LLM write_package 直写的 SUT-run 形态（顶层 turns_used）。
+            _trace = pkg.trace if isinstance(pkg.trace, dict) else {}
+            _resp = _trace.get("response") if isinstance(_trace.get("response"), dict) else {}
+            sample_result.agent_turns = int(
+                _resp.get("turns") or _trace.get("turns_used") or _resp.get("messages") or 0
+            )
+            sample_result.agent_tool_calls = int(_resp.get("tool_calls") or 0)
+            _pkg_metrics = pkg.metrics if isinstance(pkg.metrics, dict) else {}
+            sample_result.agent_exec_ms = float(
+                _pkg_metrics.get("total_duration_ms") or _resp.get("duration_ms") or 0.0
+            )
+
             sample_results.append(sample_result)
 
             # 8. 转为 EvaluationResult 并保存
@@ -329,6 +352,7 @@ class Orchestrator:
             run_workspace,
             metrics_report,
             project,
+            mode,
         )
 
         logger.info(
@@ -349,6 +373,7 @@ class Orchestrator:
             rule_set=rule_set,
             scenario_config=scenario_cfg,
             summary_report=summary_report,
+            mode=mode,
         )
 
     def _load_packages(self, package_dir: Path) -> list[ExecutionPackage]:
@@ -476,6 +501,7 @@ class Orchestrator:
         run_ws: RunWorkspace,
         metrics_report: MetricsReport,
         project: str | None,
+        mode: str = "eval_only",
     ) -> None:
         """评估完成后更新 workspace 索引，供 Web Portal 读取。"""
         workspace.ensure_dirs()
@@ -493,7 +519,7 @@ class Orchestrator:
 
             run_entry: dict[str, Any] = {
                 "run_id": run_ws.run_id,
-                "mode": "eval_only",
+                "mode": mode,
                 "total_samples": metrics_report.total_samples,
                 "metrics": {
                     **metrics_report.metrics,
