@@ -640,7 +640,7 @@ def eval_packages(
         if (_cand / "metrics" / "policy.yaml").exists():
             scenario_package_dir = _cand
 
-    # 解析 LLM 配置（可选；本地 llm.json → 平台拉取，见 arch/13 §19.2）
+    # 解析 LLM 配置（可选；本地 llm.json → 平台拉取，见 arch/06 §4.6）
     llm_config = None
     try:
         from agent_eval.config.llm_resolution import resolve_llm_config

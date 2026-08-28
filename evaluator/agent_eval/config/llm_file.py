@@ -1,4 +1,4 @@
-"""LLM 配置文件（`~/.agent_eval/llm.json`）— CLI 形态的本地存储（arch/13 §19.2）。
+"""LLM 配置文件（`~/.agent_eval/llm.json`）— CLI 形态的本地存储（arch/06 §4.6）。
 
 `agent-eval models login` 交互式写入；**0600 权限**（对标 gh / AWS CLI / opencode
 的密钥文件惯例）：不打印、不入日志、家目录天然不入 git。路径可经

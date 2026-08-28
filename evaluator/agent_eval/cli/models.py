@@ -1,4 +1,4 @@
-"""agent-eval models — LLM 配置管理（交互式向导，arch/13 §19.2 CLI 形态）。
+"""agent-eval models — LLM 配置管理（交互式向导，arch/06 §4.6 CLI 形态）。
 
 对标 opencode `auth login` / gh 惯例：向导式选择提供商与模型、隐藏输入 api-key，
 保存到 `~/.agent_eval/llm.json`（0600）。密钥不打印、不入日志。

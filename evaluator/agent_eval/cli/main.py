@@ -26,7 +26,7 @@ app = typer.Typer(
     no_args_is_help=True,
 )
 
-# 子命令组：模型配置管理（arch/13 §19.2 CLI 形态）
+# 子命令组：模型配置管理（arch/06 §4.6 CLI 形态）
 from agent_eval.cli.models import models_app  # noqa: E402
 from agent_eval.cli.secrets import secrets_app  # noqa: E402
 from agent_eval.cli.suite import suite_app  # noqa: E402
