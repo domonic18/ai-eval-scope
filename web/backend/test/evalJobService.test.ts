@@ -130,3 +130,35 @@ describe("createEvalJobService.submit", () => {
     expect(payload.package_ref).toBe("courseware/courseware:production")
   })
 })
+
+describe("createEvalJobService.refreshInputUrl", () => {
+  beforeEach(() => {
+    mocks.findById.mockReset()
+    mocks.presignGet.mockReset()
+    mocks.presignGet.mockResolvedValue({ url: "http://presigned-fresh", expiresAt: 1800 })
+  })
+
+  it("re-signs a fresh presigned GET for the job's input object", async () => {
+    // executor 领取任务后重签：提交时签发的 URL ≤15min，队列积压会拖过期（B2b）
+    mocks.findById.mockResolvedValue({ id: "job-1", inputObjectKey: "projects/p-1/eval/jobs/job-1/input.md" })
+
+    const svc = createEvalJobService(tenant)
+    const r = await svc.refreshInputUrl("job-1")
+
+    expect(mocks.findById).toHaveBeenCalledWith("job-1")
+    expect(mocks.presignGet).toHaveBeenCalledOnce()
+    expect(mocks.presignGet).toHaveBeenCalledWith({ key: "projects/p-1/eval/jobs/job-1/input.md" })
+    expect(r).toEqual({ url: "http://presigned-fresh", expires_at: 1800 })
+  })
+
+  it("returns null without presigning when job is not in this tenant's project", async () => {
+    // findById 带 projectId 租户过滤：他项目 job 查不到 → 404 语义，不泄露他项目对象
+    mocks.findById.mockResolvedValue(null)
+
+    const svc = createEvalJobService(tenant)
+    const r = await svc.refreshInputUrl("job-of-other-project")
+
+    expect(r).toBeNull()
+    expect(mocks.presignGet).not.toHaveBeenCalled()
+  })
+})
