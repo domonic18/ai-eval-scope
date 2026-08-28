@@ -63,6 +63,11 @@ class EvalResult:
     # 运行模式（上报语义）：eval_only=仅评估；agent=执行器执行 + 评估（run 产物）；
     # pipeline=一体化流水线（Sprint 9）。由 CLI 按包来源标注，透传至 sink → run event → 平台
     mode: str = "eval_only"
+    # SUT 身份（W6）：完整 pipeline 路径由 cli/_stages 回填；eval-only / 调试台路径无人回填。
+    # 必须是声明字段——sink 拼 run event 无条件读取，缺失会在 flush 时 AttributeError
+    # （回归：'EvalResult' object has no attribute 'sut_version'）
+    sut_name: str = ""
+    sut_version: str = ""
 
 
 class Orchestrator:
